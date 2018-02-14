@@ -37,6 +37,7 @@ static enum MHD_StatusCode
 suspend_action (void *cls,
 		struct MHD_Request *request)
 {
+  (void) cls;
   struct MHD_Connection *connection = request->connection;
   struct MHD_Daemon *daemon = connection->daemon;
 
@@ -48,9 +49,10 @@ suspend_action (void *cls,
       MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
       return MHD_SC_OK;
     }
-  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+  if (daemon->threading_model != MHD_TM_THREAD_PER_CONNECTION)
     {
-      if (connection->connection_timeout == daemon->connection_timeout)
+      if (connection->connection_timeout ==
+	  daemon->connection_default_timeout)
         XDLL_remove (daemon->normal_timeout_head,
                      daemon->normal_timeout_tail,
                      connection);

@@ -100,8 +100,7 @@ MHD_daemon_create (MHD_RequestCallback cb,
   daemon->logger = &file_logger;
   daemon->logger_cls = stderr;
   daemon->unescape_cb = &unescape_wrapper;
-  daemon->tls_ciphers = TLS_CIPHERS_DEFAULT;
-  daemon->connection_memory_limit_b = MHD_POOL_SIZE_DEFAULT;
+  daemon->connection_memory_limit_b = POOL_SIZE_DEFAULT;
   daemon->connection_memory_increment_b = BUF_INC_SIZE_DEFAULT;
 #if ENABLE_DAUTH
   daemon->digest_nc_length = DIGEST_NC_LENGTH_DEFAULT;
@@ -117,15 +116,15 @@ MHD_daemon_create (MHD_RequestCallback cb,
     }  
   if (! MHD_mutex_init_ (&daemon->per_ip_connection_mutex))
     {
-      MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
+      (void) MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
       free (daemon);
       return NULL;
     }
 #ifdef DAUTH_SUPPORT
   if (! MHD_mutex_init_ (&daemon->nnc_lock))
     {
-      MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
-      MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
+      (void) MHD_mutex_destroy_ (&daemon->cleanup_connection_mutex);
+      (void) MHD_mutex_destroy_ (&daemon->per_ip_connection_mutex);
       free (daemon);
       return NULL;
     }

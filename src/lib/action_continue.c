@@ -37,6 +37,8 @@ static enum MHD_StatusCode
 cont_action (void *cls,
 	     struct MHD_Request *request)
 {
+  (void) cls;
+  (void) request;
   /* not sure yet, but this function body may 
      just legitimately stay empty... */
   return MHD_SC_OK;

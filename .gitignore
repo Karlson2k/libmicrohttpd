@@ -44,3 +44,4 @@ po/Makevars.template
 po/POTFILES
 po/configargs.stamp
 **~
+doc/libmicrohttpd.log

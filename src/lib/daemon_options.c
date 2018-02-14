@@ -644,7 +644,7 @@ void
 MHD_daemon_connection_default_timeout (struct MHD_Daemon *daemon,
 				       unsigned int timeout_s)
 {
-  daemon->connection_default_timeout_s = timeout_s;
+  daemon->connection_default_timeout = (time_t) timeout_s;
 }
 
 

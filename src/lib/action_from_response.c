@@ -80,8 +80,8 @@ response_action (void *cls,
       request->response_write_position = response->total_size;
     }
   if ( (MHD_REQUEST_HEADERS_PROCESSED == request->state) &&
-       (MHD_METHOD_POST == request->method) ||
-       (MHD_METHOD_PUT == request->method) )
+       ( (MHD_METHOD_POST == request->method) ||
+	 (MHD_METHOD_PUT == request->method) ) )
     {
       /* response was queued "early", refuse to read body / footers or
          further requests! */

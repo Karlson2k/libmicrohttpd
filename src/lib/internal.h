@@ -33,6 +33,7 @@
 #include "microhttpd_tls.h"
 #include "mhd_assert.h"
 #include "mhd_compat.h"
+#include "mhd_mono_clock.h"
 #include "memorypool.h"
 
 #ifdef HTTPS_SUPPORT
@@ -748,6 +749,37 @@ struct MHD_Connection
   struct MHD_Request request;
 
   /**
+   * Length of the foreign address.
+   */
+  socklen_t addr_len;
+
+  /**
+   * Last time this connection had any activity
+   * (reading or writing).
+   */
+  time_t last_activity;
+
+  /**
+   * After how many seconds of inactivity should
+   * this connection time out?  Zero for no timeout.
+   */
+  time_t connection_timeout;
+
+  /**
+   * Socket for this connection.  Set to #MHD_INVALID_SOCKET if
+   * this connection has died (daemon should clean
+   * up in that case).
+   */
+  MHD_socket socket_fd;
+
+#ifdef EPOLL_SUPPORT
+  /**
+   * What is the state of this socket in relation to epoll?
+   */
+  enum MHD_EpollState epoll_state;
+#endif
+
+  /**
    * Is the connection suspended?
    */
   bool suspended;
@@ -774,44 +806,8 @@ struct MHD_Connection
    * from this socket).
    */
   bool read_closed;
-
-  /**
-   * Length of the foreign address.
-   */
-  socklen_t addr_len;
-
-  /**
-   * Last time this connection had any activity
-   * (reading or writing).
-   */
-  time_t last_activity;
-
-  /**
-   * After how many seconds of inactivity should
-   * this connection time out?  Zero for no timeout.
-   */
-  time_t connection_timeout;
-
-  /**
-   * Socket for this connection.  Set to #MHD_INVALID_SOCKET if
-   * this connection has died (daemon should clean
-   * up in that case).
-   */
-  MHD_socket socket_fd;
-
-
-#ifdef EPOLL_SUPPORT
-  /**
-   * What is the state of this socket in relation to epoll?
-   */
-  enum MHD_EpollState epoll_state;
-#endif
-
   
 };
-
-
-
 
 
 /**
@@ -1002,6 +998,35 @@ struct MHD_Daemon
 #endif /* UPGRADE_SUPPORT */
 #endif /* EPOLL_SUPPORT */
 
+#ifdef DAUTH_SUPPORT
+
+  /**
+   * Character array of random values.
+   */
+  const char *digest_auth_random;
+
+  /**
+   * An array that contains the map nonce-nc.
+   */
+  struct MHD_NonceNc *nnc;
+
+  /**
+   * A rw-lock for synchronizing access to @e nnc.
+   */
+  MHD_mutex_ nnc_lock;
+
+  /**
+   * Size of `digest_auth_random.
+   */
+  size_t digest_auth_rand_size;
+
+  /**
+   * Size of the nonce-nc array.
+   */
+  unsigned int nonce_nc_size;
+
+#endif
+  
   /** 
    * Socket address to bind to for the listen socket.
    */
@@ -1024,9 +1049,13 @@ struct MHD_Daemon
    */
   size_t listen_sa_len;
 
+/**
+ * Default size of the per-connection memory pool.
+ */
+#define POOL_SIZE_DEFAULT (32 * 1024) 
   /**
    * Buffer size to use for each connection. Default
-   * is #MHD_POOL_SIZE_DEFAULT.
+   * is #POOL_SIZE_DEFAULT.
    */
   size_t connection_memory_limit_b;
 
@@ -1108,7 +1137,7 @@ struct MHD_Daemon
   /**
    * Default timeout in seconds for idle connections.
    */
-  unsigned int connection_default_timeout_s;
+  time_t connection_default_timeout;
   
   /** 
    * Listen socket we should use, MHD_INVALID_SOCKET means
@@ -1116,6 +1145,34 @@ struct MHD_Daemon
    */
   MHD_socket listen_socket;
 
+#ifdef EPOLL_SUPPORT
+  /**
+   * File descriptor associated with our epoll loop.
+   */
+  int epoll_fd;
+
+  /**
+   * true if the listen socket is in the 'epoll' set,
+   * false if not.
+   */
+  bool listen_socket_in_epoll;
+
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
+  /**
+   * File descriptor associated with the #run_epoll_for_upgrade() loop.
+   * Only available if #MHD_USE_HTTPS_EPOLL_UPGRADE is set.
+   */
+  int epoll_upgrade_fd;
+
+  /**
+   * true if @e epoll_upgrade_fd is in the 'epoll' set,
+   * false if not.
+   */
+  bool upgrade_fd_in_epoll;
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
+
+#endif
+  
   /**
    * Inter-thread communication channel.
    */
