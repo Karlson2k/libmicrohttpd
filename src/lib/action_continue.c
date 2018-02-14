@@ -31,13 +31,15 @@
  *
  * @param cls NULL
  * @param request the request to apply the action to
+ * @return #MHD_SC_OK on success
  */
-static void
+static enum MHD_StatusCode
 cont_action (void *cls,
 	     struct MHD_Request *request)
 {
   /* not sure yet, but this function body may 
      just legitimately stay empty... */
+  return MHD_SC_OK;
 }
 
 
@@ -49,7 +51,7 @@ cont_action (void *cls,
 struct MHD_Action *
 MHD_action_continue (void)
 {
-  static MHD_Action acont = {
+  static struct MHD_Action acont = {
     .action = &cont_action,
     .action_cls = NULL
   };

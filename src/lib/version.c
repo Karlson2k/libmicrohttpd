@@ -65,8 +65,8 @@ MHD_get_version (void)
  * feature is not supported or feature is unknown.
  * @ingroup specialized
  */
-_MHD_EXTERN int
-MHD_is_feature_supported(enum MHD_FEATURE feature)
+_MHD_EXTERN enum MHD_Bool
+MHD_is_feature_supported(enum MHD_Feature feature)
 {
   switch(feature)
     {

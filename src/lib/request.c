@@ -24,6 +24,7 @@
  * @author Christian Grothoff
  * @author Karlson2k (Evgeny Grin)
  */
+#include "internal.h"
 
 
 /**

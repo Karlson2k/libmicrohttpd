@@ -51,8 +51,9 @@ struct UploadAction
  *    function we are to call for upload data
  * @param request the request for which we are to process 
  *    upload data
+ * @return #MHD_SC_OK on success
  */
-static void
+static enum MHD_StatusCode
 upload_action (void *cls,
 	       struct MHD_Request *request)
 {
@@ -60,6 +61,7 @@ upload_action (void *cls,
 
   (void) ua;
   // FIXME: implement!
+  return -1;
 }
 
 
@@ -79,11 +81,11 @@ MHD_action_process_upload (MHD_UploadCallback uc,
 
   if (NULL == (ua = malloc (sizeof (struct UploadAction))))
     return NULL;
-  ua->action = &upload_action;
-  ua->action_cls = ua;
+  ua->action.action = &upload_action;
+  ua->action.action_cls = ua;
   ua->uc = uc;
   ua->uc_cls = uc_cls;
-  return ua;
+  return &ua->action;
 }
 
 

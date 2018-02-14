@@ -129,7 +129,7 @@ MHD_response_add_header (struct MHD_Response *response,
   return add_response_entry (response,
 			     MHD_HEADER_KIND,
 			     header,
-			     content) ? MHD_TRUE : MHD_FALSE;
+			     content) ? MHD_YES : MHD_NO;
 }
 
 
@@ -151,7 +151,7 @@ MHD_response_add_trailer (struct MHD_Response *response,
   return add_response_entry (response,
 			     MHD_FOOTER_KIND,
 			     footer,
-			     content) ? MHD_TRUE : MHD_FALSE;
+			     content) ? MHD_YES : MHD_NO;
 }
 
 

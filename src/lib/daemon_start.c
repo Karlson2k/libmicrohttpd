@@ -643,9 +643,9 @@ setup_thread_pool (struct MHD_Daemon *daemon)
   /* Coarse-grained count of connections per thread (note error
    * due to integer division). Also keep track of how many
    * connections are leftover after an equal split. */
-  unsigned int conns_per_thread = daemon->connection_limit
+  unsigned int conns_per_thread = daemon->global_connection_limit
     / daemon->threading_model;
-  unsigned int leftover_conns = daemon->connection_limit
+  unsigned int leftover_conns = daemon->global_connection_limit
     % daemon->threading_model;
   unsigned int i;
   enum MHD_StatusCode sc;
@@ -674,9 +674,9 @@ setup_thread_pool (struct MHD_Daemon *daemon)
       /* Divide available connections evenly amongst the threads.
        * Thread indexes in [0, leftover_conns) each get one of the
        * leftover connections. */
-      d->connection_limit = conns_per_thread;
+      d->global_connection_limit = conns_per_thread;
       if (i < leftover_conns)
-	++d->connection_limit;
+	++d->global_connection_limit;
 	  
       if (! daemon->disable_itc)	
 	{

@@ -46,7 +46,7 @@ MHD_response_from_buffer (enum MHD_HTTP_StatusCode sc,
   struct MHD_Response *response;
   void *tmp;
 
-  mhd_assert ( (NULL != data) ||
+  mhd_assert ( (NULL != buffer) ||
 	       (0 == size) );
   if (NULL ==
       (response = MHD_calloc_ (1,
@@ -68,19 +68,19 @@ MHD_response_from_buffer (enum MHD_HTTP_StatusCode sc,
           return NULL;
         }
       memcpy (tmp,
-	      data,
+	      buffer,
 	      size);
-      data = tmp;
+      buffer = tmp;
     }
   if (MHD_RESPMEM_PERSISTENT != mode)
     {
       response->crfc = &free;
-      response->crc_cls = data;
+      response->crc_cls = buffer;
     }
   response->status_code = sc;
   response->reference_count = 1;
   response->total_size = size;
-  response->data = data;
+  response->data = buffer;
   response->data_size = size;
   return response;
 }

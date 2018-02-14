@@ -31,11 +31,13 @@
  *
  * @param cls NULL
  * @param request the request to apply the action to
+ * @return #MHD_SC_OK on success
  */
-static void
+static enum MHD_StatusCode
 suspend_action (void *cls,
 		struct MHD_Request *request)
 {
+  struct MHD_Connection *connection = request->connection;
   struct MHD_Daemon *daemon = connection->daemon;
 
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
@@ -44,7 +46,7 @@ suspend_action (void *cls,
       /* suspending again while we didn't even complete resuming yet */
       connection->resuming = false;
       MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
-      return;
+      return MHD_SC_OK;
     }
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
@@ -88,6 +90,7 @@ suspend_action (void *cls,
     }
 #endif
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+  return MHD_SC_OK;
 }
 
 

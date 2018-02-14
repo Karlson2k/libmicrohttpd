@@ -74,6 +74,57 @@
 #define MICROHTTPD2_H
 
 
+#ifdef __cplusplus
+extern "C"
+{
+#if 0                           /* keep Emacsens' auto-indent happy */
+}
+#endif
+#endif
+
+/* While we generally would like users to use a configure-driven
+   build process which detects which headers are present and
+   hence works on any platform, we use "standard" includes here
+   to build out-of-the-box for beginning users on common systems.
+
+   If generic headers don't work on your platform, include headers
+   which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
+   'uint16_t', 'uint32_t', 'uint64_t', 'off_t', 'struct sockaddr',
+   'socklen_t', 'fd_set' and "#define MHD_PLATFORM_H" before
+   including "microhttpd.h". Then the following "standard"
+   includes won't be used (which might be a good idea, especially
+   on platforms where they do not exist).
+   */
+#ifndef MHD_PLATFORM_H
+#include <stdarg.h>
+#include <stdint.h>
+#include <sys/types.h>
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <ws2tcpip.h>
+#if defined(_MSC_FULL_VER) && !defined (_SSIZE_T_DEFINED)
+#define _SSIZE_T_DEFINED
+typedef intptr_t ssize_t;
+#endif /* !_SSIZE_T_DEFINED */
+#else
+#include <unistd.h>
+#include <sys/time.h>
+#include <sys/socket.h>
+#endif
+#endif
+
+#if defined(__CYGWIN__) && !defined(_SYS_TYPES_FD_SET)
+/* Do not define __USE_W32_SOCKETS under Cygwin! */
+#error Cygwin with winsock fd_set is not supported
+#endif
+
+/**
+ * Current version of the library.
+ * 0x01093001 = 1.9.30-1.
+ */
+#define MHD_VERSION 0x01000000
+
+
+
 /**
  * Representation of 'bool' in the public API as stdbool.h may not
  * always be available.
@@ -96,6 +147,144 @@ enum MHD_Bool
 
 
 /**
+ * Constant used to indicate unknown size (use when
+ * creating a response).
+ */
+#ifdef UINT64_MAX
+#define MHD_SIZE_UNKNOWN UINT64_MAX
+#else
+#define MHD_SIZE_UNKNOWN  ((uint64_t) -1LL)
+#endif
+
+#ifdef SIZE_MAX
+#define MHD_CONTENT_READER_END_OF_STREAM SIZE_MAX
+#define MHD_CONTENT_READER_END_WITH_ERROR (SIZE_MAX - 1)
+#else
+#define MHD_CONTENT_READER_END_OF_STREAM ((size_t) -1LL)
+#define MHD_CONTENT_READER_END_WITH_ERROR (((size_t) -1LL) - 1)
+#endif
+
+#ifndef _MHD_EXTERN
+#if defined(_WIN32) && defined(MHD_W32LIB)
+#define _MHD_EXTERN extern
+#elif defined (_WIN32) && defined(MHD_W32DLL)
+/* Define MHD_W32DLL when using MHD as W32 .DLL to speed up linker a little */
+#define _MHD_EXTERN __declspec(dllimport)
+#else
+#define _MHD_EXTERN extern
+#endif
+#endif
+
+#ifndef MHD_SOCKET_DEFINED
+/**
+ * MHD_socket is type for socket FDs
+ */
+#if !defined(_WIN32) || defined(_SYS_TYPES_FD_SET)
+#define MHD_POSIX_SOCKETS 1
+typedef int MHD_socket;
+#define MHD_INVALID_SOCKET (-1)
+#else /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
+#define MHD_WINSOCK_SOCKETS 1
+#include <winsock2.h>
+typedef SOCKET MHD_socket;
+#define MHD_INVALID_SOCKET (INVALID_SOCKET)
+#endif /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
+#define MHD_SOCKET_DEFINED 1
+#endif /* MHD_SOCKET_DEFINED */
+
+/**
+ * Define MHD_NO_DEPRECATION before including "microhttpd.h" to disable deprecation messages
+ */
+#ifdef MHD_NO_DEPRECATION
+#define _MHD_DEPR_MACRO(msg)
+#define _MHD_NO_DEPR_IN_MACRO 1
+#define _MHD_DEPR_IN_MACRO(msg)
+#define _MHD_NO_DEPR_FUNC 1
+#define _MHD_DEPR_FUNC(msg)
+#endif /* MHD_NO_DEPRECATION */
+
+#ifndef _MHD_DEPR_MACRO
+#if defined(_MSC_FULL_VER) && _MSC_VER+0 >= 1500
+/* VS 2008 or later */
+/* Stringify macros */
+#define _MHD_INSTRMACRO(a) #a
+#define _MHD_STRMACRO(a) _MHD_INSTRMACRO(a)
+/* deprecation message */
+#define _MHD_DEPR_MACRO(msg) __pragma(message(__FILE__ "(" _MHD_STRMACRO(__LINE__)"): warning: " msg))
+#define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO(msg)
+#elif defined(__clang__) || defined (__GNUC_PATCHLEVEL__)
+/* clang or GCC since 3.0 */
+#define _MHD_GCC_PRAG(x) _Pragma (#x)
+#if (defined(__clang__) && (__clang_major__+0 >= 5 ||			\
+			    (!defined(__apple_build_version__) && (__clang_major__+0  > 3 || (__clang_major__+0 == 3 && __clang_minor__ >= 3))))) || \
+  __GNUC__+0 > 4 || (__GNUC__+0 == 4 && __GNUC_MINOR__+0 >= 8)
+/* clang >= 3.3 (or XCode's clang >= 5.0) or
+   GCC >= 4.8 */
+#define _MHD_DEPR_MACRO(msg) _MHD_GCC_PRAG(GCC warning msg)
+#define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO(msg)
+#else /* older clang or GCC */
+/* clang < 3.3, XCode's clang < 5.0, 3.0 <= GCC < 4.8 */
+#define _MHD_DEPR_MACRO(msg) _MHD_GCC_PRAG(message msg)
+#if (defined(__clang__) && (__clang_major__+0  > 2 || (__clang_major__+0 == 2 && __clang_minor__ >= 9))) /* FIXME: clang >= 2.9, earlier versions not tested */
+/* clang handles inline pragmas better than GCC */
+#define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO(msg)
+#endif /* clang >= 2.9 */
+#endif  /* older clang or GCC */
+/* #elif defined(SOMEMACRO) */ /* add compiler-specific macros here if required */
+#endif /* clang || GCC >= 3.0 */
+#endif /* !_MHD_DEPR_MACRO */
+
+#ifndef _MHD_DEPR_MACRO
+#define _MHD_DEPR_MACRO(msg)
+#endif /* !_MHD_DEPR_MACRO */
+
+#ifndef _MHD_DEPR_IN_MACRO
+#define _MHD_NO_DEPR_IN_MACRO 1
+#define _MHD_DEPR_IN_MACRO(msg)
+#endif /* !_MHD_DEPR_IN_MACRO */
+
+#ifndef _MHD_DEPR_FUNC
+#if defined(_MSC_FULL_VER) && _MSC_VER+0 >= 1400
+/* VS 2005 or later */
+#define _MHD_DEPR_FUNC(msg) __declspec(deprecated(msg))
+#elif defined(_MSC_FULL_VER) && _MSC_VER+0 >= 1310
+/* VS .NET 2003 deprecation do not support custom messages */
+#define _MHD_DEPR_FUNC(msg) __declspec(deprecated)
+#elif (__GNUC__+0 >= 5) || (defined (__clang__) && \
+  (__clang_major__+0 > 2 || (__clang_major__+0 == 2 && __clang_minor__ >= 9)))  /* FIXME: earlier versions not tested */
+/* GCC >= 5.0 or clang >= 2.9 */
+#define _MHD_DEPR_FUNC(msg) __attribute__((deprecated(msg)))
+#elif defined (__clang__) || __GNUC__+0 > 3 || (__GNUC__+0 == 3 && __GNUC_MINOR__+0 >= 1)
+/* 3.1 <= GCC < 5.0 or clang < 2.9 */
+/* old GCC-style deprecation do not support custom messages */
+#define _MHD_DEPR_FUNC(msg) __attribute__((__deprecated__))
+/* #elif defined(SOMEMACRO) */ /* add compiler-specific macros here if required */
+#endif /* clang < 2.9 || GCC >= 3.1 */
+#endif /* !_MHD_DEPR_FUNC */
+
+#ifndef _MHD_DEPR_FUNC
+#define _MHD_NO_DEPR_FUNC 1
+#define _MHD_DEPR_FUNC(msg)
+#endif /* !_MHD_DEPR_FUNC */
+
+/**
+ * Not all architectures and `printf()`'s support the `long long` type.
+ * This gives the ability to replace `long long` with just a `long`,
+ * standard `int` or a `short`.
+ */
+#ifndef MHD_UNSIGNED_LONG_LONG
+#define MHD_UNSIGNED_LONG_LONG unsigned long long
+#endif
+/**
+ * Format string for printing a variable of type #MHD_LONG_LONG.
+ * You should only redefine this if you also define #MHD_LONG_LONG.
+ */
+#ifndef MHD_UNSIGNED_LONG_LONG_PRINTF
+#define MHD_UNSIGNED_LONG_LONG_PRINTF "%llu"
+#endif
+
+
+/**
  * @brief Handle for a connection / HTTP request.
  *
  * With HTTP/1.1, multiple requests can be run over the same
@@ -109,6 +298,14 @@ enum MHD_Bool
  * @ingroup request
  */
 struct MHD_Request;
+
+
+/**
+ * A connection corresponds to the network/stream abstraction.
+ * A single network (i.e. TCP) stream may be used for multiple
+ * requests, which in HTTP/1.1 must be processed sequentially.
+ */
+struct MHD_Connection;
 
 
 /**
@@ -164,7 +361,7 @@ enum MHD_StatusCode
    * The application requested a TLS cipher suite which is not
    * supported by the selected backend.
    */
-  MHD_SC_TLS_CIPHERS_INVALID = 50002
+  MHD_SC_TLS_CIPHERS_INVALID = 50002,
   
   /**
    * The application attempted to setup TLS paramters before
@@ -299,6 +496,19 @@ enum MHD_StatusCode
    * We failed to allocate mutex for thread pool worker.
    */
   MHD_SC_THREAD_POOL_CREATE_MUTEX_FAILURE = 50027,
+
+  /**
+   * There was an attempt to upgrade a connection on
+   * a daemon where upgrades are disallowed.
+   */
+  MHD_SC_UPGRADE_ON_DAEMON_WITH_UPGRADE_DISALLOWED = 50028,
+
+  /**
+   * Queueing a response failed because the respective
+   * daemon is already too deep inside of the shutdown 
+   * activity and the reponse cannot be sent any longer.
+   */
+  MHD_SC_DAEMON_ALREADY_SHUTDOWN = 50029,
 
   /**
    * We failed to initialize the main thread for listening.
@@ -1069,8 +1279,9 @@ MHD_daemon_gnutls_credentials (struct MHD_Daemon *daemon,
  *
  * @param daemon daemon to configure callback for
  * @param cb must be of type `gnutls_certificate_retrieve_function2 *`.
+ * @return #MHD_SC_OK on success
  */
-_MHD_EXTERN void
+_MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_gnutls_key_and_cert_from_callback (struct MHD_Daemon *daemon,
 					      void *cb);
 
@@ -1174,9 +1385,9 @@ MHD_daemon_accept_policy (struct MHD_Daemon *daemon,
  * @return value to set for the "request_context" of @a request
  */
 typedef void *
-(MHD_EarlyUriLogCallback)(void *cls,
-			  const char *uri,
-			  struct MHD_Request *request);
+(*MHD_EarlyUriLogCallback)(void *cls,
+			   const char *uri,
+			   struct MHD_Request *request);
 
 
 /**
@@ -1192,6 +1403,29 @@ _MHD_EXTERN void
 MHD_daemon_set_early_uri_logger (struct MHD_Daemon *daemon,
 				 MHD_EarlyUriLogCallback cb,
 				 void *cb_cls);
+
+
+/**
+ * The `enum MHD_ConnectionNotificationCode` specifies types
+ * of connection notifications.
+ * @ingroup request
+ */
+enum MHD_ConnectionNotificationCode
+{
+
+  /**
+   * A new connection has been started.
+   * @ingroup request
+   */
+  MHD_CONNECTION_NOTIFY_STARTED = 0,
+
+  /**
+   * A connection is closed.
+   * @ingroup request
+   */
+  MHD_CONNECTION_NOTIFY_CLOSED = 1
+
+};
 
 
 /**
@@ -1214,9 +1448,9 @@ MHD_daemon_set_early_uri_logger (struct MHD_Daemon *daemon,
  * @ingroup request
  */
 typedef void
-(*MHD_ConnectionCompletedCallback) (void *cls,
-				    struct MHD_Connection *connection,
-				    enum MHD_ConnectionNotificationCode toe);
+(*MHD_NotifyConnectionCallback) (void *cls,
+				 struct MHD_Connection *connection,
+				 enum MHD_ConnectionNotificationCode toe);
 
 
 /**
@@ -1310,9 +1544,9 @@ MHD_daemon_connection_default_timeout (struct MHD_Daemon *daemon,
  * @return number of characters in @a s (excluding 0-terminator)
  */
 typedef size_t
-MHD_UnescapeCallback (void *cls,
-		      struct MHD_Request *req,
-		      char *s);
+(*MHD_UnescapeCallback) (void *cls,
+			 struct MHD_Request *req,
+			 char *s);
 
 
 /**
@@ -1376,6 +1610,69 @@ MHD_connection_set_timeout (struct MHD_Connection *connection,
 
 
 /* **************** Request handling functions ***************** */
+
+
+/**
+ * The `enum MHD_ValueKind` specifies the source of
+ * the key-value pairs in the HTTP protocol.
+ */
+enum MHD_ValueKind
+{
+
+  /**
+   * HTTP header (request/response).
+   */
+  MHD_HEADER_KIND = 1,
+
+  /**
+   * Cookies.  Note that the original HTTP header containing
+   * the cookie(s) will still be available and intact.
+   */
+  MHD_COOKIE_KIND = 2,
+
+  /**
+   * POST data.  This is available only if a content encoding
+   * supported by MHD is used (currently only URL encoding),
+   * and only if the posted content fits within the available
+   * memory pool.  Note that in that case, the upload data
+   * given to the #MHD_AccessHandlerCallback will be
+   * empty (since it has already been processed).
+   */
+  MHD_POSTDATA_KIND = 4,
+
+  /**
+   * GET (URI) arguments.
+   */
+  MHD_GET_ARGUMENT_KIND = 8,
+
+  /**
+   * HTTP footer (only for HTTP 1.1 chunked encodings).
+   */
+  MHD_FOOTER_KIND = 16
+};
+
+
+
+/**
+ * Iterator over key-value pairs.  This iterator can be used to
+ * iterate over all of the cookies, headers, or POST-data fields of a
+ * request, and also to iterate over the headers that have been added
+ * to a response.
+ *
+ * @param cls closure
+ * @param kind kind of the header we are looking at
+ * @param key key for the value, can be an empty string
+ * @param value corresponding value, can be NULL
+ * @return #MHD_YES to continue iterating,
+ *         #MHD_NO to abort the iteration
+ * @ingroup request
+ */
+typedef int
+(*MHD_KeyValueIterator) (void *cls,
+                         enum MHD_ValueKind kind,
+                         const char *key,
+                         const char *value);
+
 
 /**
  * Get all of the headers from the request.
@@ -1596,6 +1893,14 @@ MHD_request_resume (struct MHD_Request *request);
 
 
 /**
+ * Data transmitted in response to an HTTP request.
+ * Usually the final action taken in response to
+ * receiving a request.
+ */
+struct MHD_Response;
+
+
+/**
  * Converts a @a response to an action.  If @a consume
  * is set, the reference to the @a response is consumed
  * by the conversion. If @a consume is #MHD_NO, then
@@ -1614,7 +1919,7 @@ MHD_request_resume (struct MHD_Request *request);
  */
 _MHD_EXTERN struct MHD_Action *
 MHD_action_from_response (struct MHD_Response *response,
-			  enum MHD_bool destroy_after_use);
+			  enum MHD_Bool destroy_after_use);
 
 
 /**
@@ -1628,9 +1933,67 @@ _MHD_EXTERN void
 MHD_response_option_v10_only (struct MHD_Response *response);
 
 
+/**
+ * The `enum MHD_RequestTerminationCode` specifies reasons
+ * why a request has been terminated (or completed).
+ * @ingroup request
+ */
+enum MHD_RequestTerminationCode
+{
+
+  /**
+   * We finished sending the response.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_COMPLETED_OK = 0,
+
+  /**
+   * Error handling the connection (resources
+   * exhausted, other side closed connection,
+   * application error accepting request, etc.)
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_WITH_ERROR = 1,
+
+  /**
+   * No activity on the connection for the number
+   * of seconds specified using
+   * #MHD_OPTION_CONNECTION_TIMEOUT.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED = 2,
+
+  /**
+   * We had to close the session since MHD was being
+   * shut down.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3,
+
+  /**
+   * We tried to read additional data, but the other side closed the
+   * connection.  This error is similar to
+   * #MHD_REQUEST_TERMINATED_WITH_ERROR, but specific to the case where
+   * the connection died because the other side did not send expected
+   * data.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_READ_ERROR = 4,
+
+  /**
+   * The client terminated the connection by closing the socket
+   * for writing (TCP half-closed); MHD aborted sending the
+   * response according to RFC 2616, section 8.1.4.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_CLIENT_ABORT = 5
+
+};
+
+
 /** 
- * Signature of the callback used by MHD to notify the
- * application about completed requests.
+ * Signature of the callback used by MHD to notify the application
+ * about completed requests.
  *
  * @param cls client-defined closure
  * @param toe reason for request termination
@@ -1657,6 +2020,69 @@ _MHD_EXTERN void
 MHD_response_option_termination_callback (struct MHD_Response *response,
 					  MHD_RequestTerminationCallback termination_cb,
 					  void *termination_cb_cls);
+
+
+/**
+ * Callback used by libmicrohttpd in order to obtain content.  The
+ * callback is to copy at most @a max bytes of content into @a buf.  The
+ * total number of bytes that has been placed into @a buf should be
+ * returned.
+ *
+ * Note that returning zero will cause libmicrohttpd to try again.
+ * Thus, returning zero should only be used in conjunction
+ * with MHD_suspend_connection() to avoid busy waiting.
+ *
+ * @param cls extra argument to the callback
+ * @param pos position in the datastream to access;
+ *        note that if a `struct MHD_Response` object is re-used,
+ *        it is possible for the same content reader to
+ *        be queried multiple times for the same data;
+ *        however, if a `struct MHD_Response` is not re-used,
+ *        libmicrohttpd guarantees that "pos" will be
+ *        the sum of all non-negative return values
+ *        obtained from the content reader so far.
+ * @param buf where to copy the data
+ * @param max maximum number of bytes to copy to @a buf (size of @a buf)
+ * @return number of bytes written to @a buf;
+ *  0 is legal unless we are running in internal select mode (since
+ *    this would cause busy-waiting); 0 in external select mode
+ *    will cause this function to be called again once the external
+ *    select calls MHD again;
+ *  #MHD_CONTENT_READER_END_OF_STREAM (-1) for the regular
+ *    end of transmission (with chunked encoding, MHD will then
+ *    terminate the chunk and send any HTTP footers that might be
+ *    present; without chunked encoding and given an unknown
+ *    response size, MHD will simply close the connection; note
+ *    that while returning #MHD_CONTENT_READER_END_OF_STREAM is not technically
+ *    legal if a response size was specified, MHD accepts this
+ *    and treats it just as #MHD_CONTENT_READER_END_WITH_ERROR;
+ *  #MHD_CONTENT_READER_END_WITH_ERROR (-2) to indicate a server
+ *    error generating the response; this will cause MHD to simply
+ *    close the connection immediately.  If a response size was
+ *    given or if chunked encoding is in use, this will indicate
+ *    an error to the client.  Note, however, that if the client
+ *    does not know a response size and chunked encoding is not in
+ *    use, then clients will not be able to tell the difference between
+ *    #MHD_CONTENT_READER_END_WITH_ERROR and #MHD_CONTENT_READER_END_OF_STREAM.
+ *    This is not a limitation of MHD but rather of the HTTP protocol.
+ */
+typedef ssize_t
+(*MHD_ContentReaderCallback) (void *cls,
+                              uint64_t pos,
+                              char *buf,
+                              size_t max);
+
+
+/**
+ * This method is called by libmicrohttpd if we are done with a
+ * content reader.  It should be used to free resources associated
+ * with the content reader.
+ *
+ * @param cls closure
+ * @ingroup response
+ */
+typedef void
+(*MHD_ContentReaderFreeCallback) (void *cls);
 
 
 /**
@@ -2503,6 +2929,221 @@ MHD_daemon_get_information_sz (struct MHD_Daemon *daemon,
                                    info_type,    \
                                    return_value) \
 	MHD_daemon_get_information_sz((daemon), (info_type), (return_value), sizeof(union MHD_DaemonInformation));
+
+
+/**
+ * Callback for serious error condition. The default action is to print
+ * an error message and `abort()`.
+ *
+ * @param cls user specified value
+ * @param file where the error occured
+ * @param line where the error occured
+ * @param reason error detail, may be NULL
+ * @ingroup logging
+ */
+typedef void
+(*MHD_PanicCallback) (void *cls,
+                      const char *file,
+                      unsigned int line,
+                      const char *reason);
+
+
+/**
+ * Sets the global error handler to a different implementation.  @a cb
+ * will only be called in the case of typically fatal, serious
+ * internal consistency issues.  These issues should only arise in the
+ * case of serious memory corruption or similar problems with the
+ * architecture.  While @a cb is allowed to return and MHD will then
+ * try to continue, this is never safe.
+ *
+ * The default implementation that is used if no panic function is set
+ * simply prints an error message and calls `abort()`.  Alternative
+ * implementations might call `exit()` or other similar functions.
+ *
+ * @param cb new error handler
+ * @param cls passed to @a cb
+ * @ingroup logging
+ */
+_MHD_EXTERN void
+MHD_set_panic_func (MHD_PanicCallback cb,
+		    void *cls);
+
+
+
+/**
+ * Types of information about MHD features,
+ * used by #MHD_is_feature_supported().
+ */
+enum MHD_Feature
+{
+  /**
+   * Get whether messages are supported. If supported then in debug
+   * mode messages can be printed to stderr or to external logger.
+   */
+  MHD_FEATURE_MESSAGES = 1,
+
+  /**
+   * Get whether HTTPS is supported.  If supported then flag
+   * #MHD_USE_TLS and options #MHD_OPTION_HTTPS_MEM_KEY,
+   * #MHD_OPTION_HTTPS_MEM_CERT, #MHD_OPTION_HTTPS_MEM_TRUST,
+   * #MHD_OPTION_HTTPS_MEM_DHPARAMS, #MHD_OPTION_HTTPS_CRED_TYPE,
+   * #MHD_OPTION_HTTPS_PRIORITIES can be used.
+   */
+  MHD_FEATURE_TLS = 2,
+
+  /**
+   * Get whether option #MHD_OPTION_HTTPS_CERT_CALLBACK is
+   * supported.
+   */
+  MHD_FEATURE_HTTPS_CERT_CALLBACK = 3,
+
+  /**
+   * Get whether IPv6 is supported. If supported then flag
+   * #MHD_USE_IPv6 can be used.
+   */
+  MHD_FEATURE_IPv6 = 4,
+
+  /**
+   * Get whether IPv6 without IPv4 is supported. If not supported
+   * then IPv4 is always enabled in IPv6 sockets and
+   * flag #MHD_USE_DUAL_STACK if always used when #MHD_USE_IPv6 is
+   * specified.
+   */
+  MHD_FEATURE_IPv6_ONLY = 5,
+
+  /**
+   * Get whether `poll()` is supported. If supported then flag
+   * #MHD_USE_POLL can be used.
+   */
+  MHD_FEATURE_POLL = 6,
+
+  /**
+   * Get whether `epoll()` is supported. If supported then Flags
+   * #MHD_USE_EPOLL and
+   * #MHD_USE_EPOLL_INTERNAL_THREAD can be used.
+   */
+  MHD_FEATURE_EPOLL = 7,
+
+  /**
+   * Get whether shutdown on listen socket to signal other
+   * threads is supported. If not supported flag
+   * #MHD_USE_ITC is automatically forced.
+   */
+  MHD_FEATURE_SHUTDOWN_LISTEN_SOCKET = 8,
+
+  /**
+   * Get whether socketpair is used internally instead of pipe to
+   * signal other threads.
+   */
+  MHD_FEATURE_SOCKETPAIR = 9,
+
+  /**
+   * Get whether TCP Fast Open is supported. If supported then
+   * flag #MHD_USE_TCP_FASTOPEN and option
+   * #MHD_OPTION_TCP_FASTOPEN_QUEUE_SIZE can be used.
+   */
+  MHD_FEATURE_TCP_FASTOPEN = 10,
+
+  /**
+   * Get whether HTTP Basic authorization is supported. If supported
+   * then functions #MHD_basic_auth_get_username_password and
+   * #MHD_queue_basic_auth_fail_response can be used.
+   */
+  MHD_FEATURE_BASIC_AUTH = 11,
+
+  /**
+   * Get whether HTTP Digest authorization is supported. If
+   * supported then options #MHD_OPTION_DIGEST_AUTH_RANDOM,
+   * #MHD_OPTION_NONCE_NC_SIZE and
+   * #MHD_digest_auth_check() can be used.
+   */
+  MHD_FEATURE_DIGEST_AUTH = 12,
+
+  /**
+   * Get whether postprocessor is supported. If supported then
+   * functions #MHD_create_post_processor(), #MHD_post_process() and
+   * #MHD_destroy_post_processor() can
+   * be used.
+   */
+  MHD_FEATURE_POSTPROCESSOR = 13,
+
+  /**
+  * Get whether password encrypted private key for HTTPS daemon is
+  * supported. If supported then option
+  * ::MHD_OPTION_HTTPS_KEY_PASSWORD can be used.
+  */
+  MHD_FEATURE_HTTPS_KEY_PASSWORD = 14,
+
+  /**
+   * Get whether reading files beyond 2 GiB boundary is supported.
+   * If supported then #MHD_create_response_from_fd(),
+   * #MHD_create_response_from_fd64 #MHD_create_response_from_fd_at_offset()
+   * and #MHD_create_response_from_fd_at_offset64() can be used with sizes and
+   * offsets larger than 2 GiB. If not supported value of size+offset is
+   * limited to 2 GiB.
+   */
+  MHD_FEATURE_LARGE_FILE = 15,
+
+  /**
+   * Get whether MHD set names on generated threads.
+   */
+  MHD_FEATURE_THREAD_NAMES = 16,
+
+  /**
+   * Get whether HTTP "Upgrade" is supported.
+   * If supported then #MHD_ALLOW_UPGRADE, #MHD_upgrade_action() and
+   * #MHD_create_response_for_upgrade() can be used.
+   */
+  MHD_FEATURE_UPGRADE = 17,
+
+  /**
+   * Get whether it's safe to use same FD for multiple calls of
+   * #MHD_create_response_from_fd() and whether it's safe to use single
+   * response generated by #MHD_create_response_from_fd() with multiple
+   * connections at same time.
+   * If #MHD_is_feature_supported() return #MHD_NO for this feature then
+   * usage of responses with same file FD in multiple parallel threads may
+   * results in incorrect data sent to remote client.
+   * It's always safe to use same file FD in multiple responses if MHD
+   * is run in any single thread mode.
+   */
+  MHD_FEATURE_RESPONSES_SHARED_FD = 18,
+
+  /**
+   * Get whether MHD support automatic detection of bind port number.
+   * @sa #MHD_DAEMON_INFO_BIND_PORT
+   */
+  MHD_FEATURE_AUTODETECT_BIND_PORT = 19,
+
+  /**
+   * Get whether MHD support SIGPIPE suppression.
+   * If SIGPIPE suppression is not supported, application must handle
+   * SIGPIPE signal by itself.
+   */
+  MHD_FEATURE_AUTOSUPPRESS_SIGPIPE = 20,
+
+  /**
+   * Get whether MHD use system's sendfile() function to send
+   * file-FD based responses over non-TLS connections.
+   * @note Since v0.9.56
+   */
+  MHD_FEATURE_SENDFILE = 21
+};
+
+
+/**
+ * Get information about supported MHD features.
+ * Indicate that MHD was compiled with or without support for
+ * particular feature. Some features require additional support
+ * by kernel. Kernel support is not checked by this function.
+ *
+ * @param feature type of requested information
+ * @return #MHD_YES if feature is supported by MHD, #MHD_NO if
+ * feature is not supported or feature is unknown.
+ * @ingroup specialized
+ */
+_MHD_EXTERN enum MHD_Bool
+MHD_is_feature_supported (enum MHD_Feature feature);
 
 
 #endif

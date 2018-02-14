@@ -92,17 +92,20 @@ MHD_state_to_string (enum MHD_CONNECTION_STATE state)
  */
 void
 MHD_DLOG (const struct MHD_Daemon *daemon,
+	  enum MHD_StatusCode sc,
           const char *format,
           ...)
 {
   va_list va;
 
-  if (0 == (daemon->options & MHD_USE_ERROR_LOG))
+  if (NULL == daemon->logger)
     return;
-  va_start (va, format);
-  daemon->custom_error_log (daemon->custom_error_log_cls,
-                            format,
-                            va);
+  va_start (va,
+	    format);
+  daemon->logger (daemon->logger_cls,
+		  sc,
+		  format,
+		  va);
   va_end (va);
 }
 #endif
@@ -204,9 +207,9 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 	    {
 	      /* last argument, without '=' */
               MHD_unescape_plus (args);
-	      daemon->unescape_callback (daemon->unescape_callback_cls,
-					 connection,
-					 args);
+	      daemon->unescape_cb (daemon->unescape_cb_cls,
+				   connection,
+				   args);
 	      if (MHD_YES != cb (connection,
 				 args,
 				 NULL,
@@ -219,13 +222,13 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 	  equals[0] = '\0';
 	  equals++;
           MHD_unescape_plus (args);
-	  daemon->unescape_callback (daemon->unescape_callback_cls,
-				     connection,
-				     args);
+	  daemon->unescape_cb (daemon->unescape_cb_cls,
+			       connection,
+			       args);
           MHD_unescape_plus (equals);
-	  daemon->unescape_callback (daemon->unescape_callback_cls,
-				     connection,
-				     equals);
+	  daemon->unescape_cb (daemon->unescape_cb_cls,
+			       connection,
+			       equals);
 	  if (MHD_YES != cb (connection,
 			     args,
 			     equals,
@@ -235,16 +238,16 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 	  break;
 	}
       /* amper is non-NULL here */
-      amper[0] = '\0';
+      amper[0] = '\0';d
       amper++;
       if ( (NULL == equals) ||
 	   (equals >= amper) )
 	{
 	  /* got 'foo&bar' or 'foo&bar=val', add key 'foo' with NULL for value */
           MHD_unescape_plus (args);
-	  daemon->unescape_callback (daemon->unescape_callback_cls,
-				     connection,
-				     args);
+	  daemon->unescape_cb (daemon->unescape_cb_cls,
+			       connection,
+			       args);
 	  if (MHD_YES != cb (connection,
 			     args,
 			     NULL,
@@ -260,13 +263,13 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
       equals[0] = '\0';
       equals++;
       MHD_unescape_plus (args);
-      daemon->unescape_callback (daemon->unescape_callback_cls,
-				 connection,
-				 args);
+      daemon->unescape_cb (daemon->unescape_cb_cls,
+			   connection,
+			   args);
       MHD_unescape_plus (equals);
-      daemon->unescape_callback (daemon->unescape_callback_cls,
-				 connection,
-				 equals);
+      daemon->unescape_cb (daemon->unescape_cb_cls,
+			   connection,
+			   equals);
       if (MHD_YES != cb (connection,
 			 args,
 			 equals,

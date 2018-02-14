@@ -32,6 +32,8 @@
 #include "microhttpd2.h"
 #include "microhttpd_tls.h"
 #include "mhd_assert.h"
+#include "mhd_compat.h"
+#include "memorypool.h"
 
 #ifdef HTTPS_SUPPORT
 #include <gnutls/gnutls.h>
@@ -67,7 +69,21 @@
 #include "mhd_threads.h"
 #include "mhd_locks.h"
 #include "mhd_sockets.h"
+#include "mhd_str.h"
 #include "mhd_itc_types.h"
+
+
+#ifdef HAVE_MESSAGES
+/**
+ * fprintf()-like helper function for logging debug
+ * messages.
+ */
+void
+MHD_DLOG (const struct MHD_Daemon *daemon,
+	  enum MHD_StatusCode sc,
+	  const char *format,
+          ...);
+#endif
 
 
 /**
@@ -345,13 +361,40 @@ struct MHD_HTTP_Header
 
 
 /**
+ * What is this request waiting for?
+ */
+enum MHD_RequestEventLoopInfo
+{
+  /**
+   * We are waiting to be able to read.
+   */
+  MHD_EVENT_LOOP_INFO_READ = 0,
+
+  /**
+   * We are waiting to be able to write.
+   */
+  MHD_EVENT_LOOP_INFO_WRITE = 1,
+
+  /**
+   * We are waiting for the application to provide data.
+   */
+  MHD_EVENT_LOOP_INFO_BLOCK = 2,
+
+  /**
+   * We are finished and are awaiting cleanup.
+   */
+  MHD_EVENT_LOOP_INFO_CLEANUP = 3
+};
+
+
+/**
  * State kept for each HTTP request.
  */
 struct MHD_Request
 {
 
   /**
-   * Reference to the MHD_Daemon struct.
+   * Reference to the `struct MHD_Daemon`.  
    */
   struct MHD_Daemon *daemon;
 
@@ -360,6 +403,12 @@ struct MHD_Request
    */
   struct MHD_Connection *connection;
 
+  /**
+   * Response to return for this request, set once
+   * it is available.
+   */
+  struct MHD_Response *response;
+  
   /**
    * Linked list of parsed headers.
    */
@@ -389,9 +438,10 @@ struct MHD_Request
   void *client_context;
 
   /**
-   * Request method.  Should be GET/POST/etc.  Allocated in pool.
+   * Request method as string.  Should be GET/POST/etc.  Allocated in
+   * pool.
    */
-  char *method;
+  char *method_s;
 
   /**
    * Requested URL (everything after "GET" only).  Allocated
@@ -557,6 +607,11 @@ struct MHD_Request
   enum MHD_REQUEST_STATE state;
 
   /**
+   * HTTP method, as an enum.
+   */
+  enum MHD_Method method;
+  
+  /**
    * What is this request waiting for?
    */
   enum MHD_RequestEventLoopInfo event_loop_info;
@@ -589,6 +644,54 @@ struct MHD_Request
    */
   bool have_chunked_upload;
 };
+
+
+#ifdef EPOLL_SUPPORT
+/**
+ * State of the socket with respect to epoll (bitmask).
+ */
+enum MHD_EpollState
+{
+
+  /**
+   * The socket is not involved with a defined state in epoll() right
+   * now.
+   */
+  MHD_EPOLL_STATE_UNREADY = 0,
+
+  /**
+   * epoll() told us that data was ready for reading, and we did
+   * not consume all of it yet.
+   */
+  MHD_EPOLL_STATE_READ_READY = 1,
+
+  /**
+   * epoll() told us that space was available for writing, and we did
+   * not consume all of it yet.
+   */
+  MHD_EPOLL_STATE_WRITE_READY = 2,
+
+  /**
+   * Is this connection currently in the 'eready' EDLL?
+   */
+  MHD_EPOLL_STATE_IN_EREADY_EDLL = 4,
+
+  /**
+   * Is this connection currently in the epoll() set?
+   */
+  MHD_EPOLL_STATE_IN_EPOLL_SET = 8,
+
+  /**
+   * Is this connection currently suspended?
+   */
+  MHD_EPOLL_STATE_SUSPENDED = 16,
+
+  /**
+   * Is this connection in some error state?
+   */
+  MHD_EPOLL_STATE_ERROR = 128
+};
+#endif
 
 
 /**
@@ -990,7 +1093,11 @@ struct MHD_Daemon
    */
   bool allow_address_reuse;
 
-    
+  /**
+   * Are we shutting down?
+   */
+  volatile bool shutdown;
+  
 };
 
 
@@ -1000,10 +1107,11 @@ struct MHD_Daemon
  *
  * @param cls action-specfic closure
  * @param request the request on which the action is to be performed
+ * @return #MHD_SC_OK on success, otherwise an error code
  */
-typedef void
+typedef enum MHD_StatusCode
 (*ActionCallback) (void *cls,
-		   const struct MHD_Request *request);
+		   struct MHD_Request *request);
 
 
 /**
@@ -1151,6 +1259,46 @@ struct MHD_Response
   
 };
 
+
+
+/**
+ * Callback invoked when iterating over @a key / @a value
+ * argument pairs during parsing.
+ *
+ * @param connection context of the iteration
+ * @param key 0-terminated key string, never NULL
+ * @param value 0-terminated value string, may be NULL
+ * @param kind origin of the key-value pair
+ * @return #MHD_YES on success (continue to iterate)
+ *         #MHD_NO to signal failure (and abort iteration)
+ */
+typedef int
+(*MHD_ArgumentIterator_)(struct MHD_Connection *connection,
+			 const char *key,
+			 const char *value,
+			 enum MHD_ValueKind kind);
+
+
+/**
+ * Parse and unescape the arguments given by the client
+ * as part of the HTTP request URI.
+ *
+ * @param kind header kind to pass to @a cb
+ * @param connection connection to add headers to
+ * @param[in,out] args argument URI string (after "?" in URI),
+ *        clobbered in the process!
+ * @param cb function to call on each key-value pair found
+ * @param[out] num_headers set to the number of headers found
+ * @return #MHD_NO on failure (@a cb returned #MHD_NO),
+ *         #MHD_YES for success (parsing succeeded, @a cb always
+ *                               returned #MHD_YES)
+ */
+int
+MHD_parse_arguments_ (struct MHD_Connection *connection,
+		      enum MHD_ValueKind kind,
+		      char *args,
+		      MHD_ArgumentIterator_ cb,
+		      unsigned int *num_headers);
 
 
 #endif

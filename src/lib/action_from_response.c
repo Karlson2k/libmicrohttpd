@@ -31,27 +31,30 @@
  *
  * @param cls the `struct MHD_Response`
  * @param request the request we are processing
+ * @return #MHD_SC_OK on success
  */
-static void
+static enum MHD_StatusCode
 response_action (void *cls,
 		 struct MHD_Request *request)
 {
   struct MHD_Response *response = cls;
-  struct MHD_Daemon *daemon = response->daemon;
+  struct MHD_Daemon *daemon = request->daemon;
 
+  /* If daemon was shut down in parallel,
+   * response will be aborted now or on later stage. */
   if (daemon->shutdown)
-    return MHD_YES; /* If daemon was shut down in parallel,
-                     * response will be aborted now or on later stage. */
+    return MHD_SC_DAEMON_ALREADY_SHUTDOWN;
 
 #ifdef UPGRADE_SUPPORT
   if ( (NULL != response->upgrade_handler) &&
-       (0 == (daemon->options & MHD_ALLOW_UPGRADE)) )
+       daemon->disallow_upgrade )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
+		MHD_SC_UPGRADE_ON_DAEMON_WITH_UPGRADE_DISALLOWED,
                 _("Attempted 'upgrade' connection on daemon without MHD_ALLOW_UPGRADE option!\n"));
 #endif
-      return MHD_NO;
+      return MHD_SC_UPGRADE_ON_DAEMON_WITH_UPGRADE_DISALLOWED;
     }
 #endif /* UPGRADE_SUPPORT */
   request->response = response;
@@ -66,9 +69,7 @@ response_action (void *cls,
     request->resp_sender = MHD_resp_sender_sendfile;
 #endif /* _MHD_HAVE_SENDFILE */
 
-  if ( ( (NULL != request->method) &&
-         (MHD_str_equal_caseless_ (request->method,
-                                   MHD_HTTP_METHOD_HEAD)) ) ||
+  if ( (MHD_METHOD_HEAD == request->method) ||
        (MHD_HTTP_OK > response->status_code) ||
        (MHD_HTTP_NO_CONTENT == response->status_code) ||
        (MHD_HTTP_NOT_MODIFIED == response->status_code) )
@@ -79,19 +80,17 @@ response_action (void *cls,
       request->response_write_position = response->total_size;
     }
   if ( (MHD_REQUEST_HEADERS_PROCESSED == request->state) &&
-       (NULL != connection->method) &&
-       ( (MHD_str_equal_caseless_ (request->method,
-                                   MHD_HTTP_METHOD_POST)) ||
-	 (MHD_str_equal_caseless_ (request->method,
-                                   MHD_HTTP_METHOD_PUT))) )
+       (MHD_METHOD_POST == request->method) ||
+       (MHD_METHOD_PUT == request->method) )
     {
       /* response was queued "early", refuse to read body / footers or
          further requests! */
-      connection->read_closed = true;
-      request->state = MHD_CONNECTION_FOOTERS_RECEIVED;
+      request->connection->read_closed = true;
+      request->state = MHD_REQUEST_FOOTERS_RECEIVED;
     }
   if (! request->in_idle)
-    (void) MHD_connection_handle_idle (connection);
+    (void) MHD_connection_handle_idle (request->connection);
+  return MHD_SC_OK;
 }
 
 
@@ -114,7 +113,7 @@ response_action (void *cls,
  */
 _MHD_EXTERN struct MHD_Action *
 MHD_action_from_response (struct MHD_Response *response,
-			  enum MHD_bool destroy_after_use)
+			  enum MHD_Bool destroy_after_use)
 {
   response->action.action = &response_action;
   response->action.action_cls = response;

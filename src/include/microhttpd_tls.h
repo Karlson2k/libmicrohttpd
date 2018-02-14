@@ -87,7 +87,7 @@ struct MHD_TLS_Plugin
  * @return NULL on errors (in particular, invalid cipher suite)
  */
 typedef struct MHD_TLS_Plugin *
-MHD_TLS_PluginInit (const char *ciphers);
+(*MHD_TLS_PluginInit) (const char *ciphers);
 
 
 /**

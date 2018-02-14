@@ -97,6 +97,8 @@ volatile int global_init_count = 0;
 MHD_MUTEX_STATIC_DEFN_INIT_(global_init_mutex_);
 #endif /* MHD_MUTEX_STATIC_DEFN_INIT_ */
 
+#endif
+
 
 /**
  * Check whether global initialisation was performed

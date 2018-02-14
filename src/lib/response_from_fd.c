@@ -180,7 +180,8 @@ MHD_response_from_fd (enum MHD_HTTP_StatusCode sc,
        ((int64_t) (size + offset) < 0) )
     return NULL;
 
-  response = MHD_response_from_callback (size,
+  response = MHD_response_from_callback (sc,
+					 size,
 					 4 * 1024,
 					 &file_reader,
 					 NULL,
@@ -188,7 +189,6 @@ MHD_response_from_fd (enum MHD_HTTP_StatusCode sc,
   if (NULL == response)
     return NULL;
   response->fd = fd;
-  response->status_code = sc;
   response->fd_off = offset;
   response->crc_cls = response;
   return response;

@@ -23,6 +23,7 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
+#include <dlfcn.h>
 
 
 /**
@@ -150,7 +151,7 @@ MHD_daemon_tcp_fastopen (struct MHD_Daemon *daemon,
 			 unsigned int queue_length)
 {
   daemon->fast_open_method = fom;
-  daemon->fast_open_queue_length = queue_length;
+  daemon->fo_queue_length = queue_length;
   switch (fom)
   {
   case MHD_FOM_DISABLE:
@@ -204,7 +205,6 @@ MHD_daemon_bind_socket_address (struct MHD_Daemon *daemon,
 				const struct sockaddr *sa,
 				size_t sa_len)
 {
-  daemon->sa_given = true;
   memcpy (&daemon->listen_sa,
 	  sa,
 	  sa_len);
@@ -338,37 +338,37 @@ MHD_daemon_set_tls_backend (struct MHD_Daemon *daemon,
 			    const char *ciphers)
 {
 #ifndef HTTPS_SUPPORT
-  return MHD_TLS_DISABLED;
+  return MHD_SC_TLS_DISABLED;
 #else
   char filename[1024];
   int res;
   MHD_TLS_PluginInit init;
 
   /* todo: .dll on W32? */
-  res = MHD_snprintf (filename,
-		      sizeof (filename),
-		      "%s/libmicrohttpd_tls_%s.so",
-		      MHD_PLUGIN_INSTALL_PREFIX,
-		      tls_backend);
+  res = MHD_snprintf_ (filename,
+		       sizeof (filename),
+		       "%s/libmicrohttpd_tls_%s.so",
+		       MHD_PLUGIN_INSTALL_PREFIX,
+		       tls_backend);
   if (0 >= res)
-    return MHD_BACKEND_UNSUPPORTED; /* string too long? */
+    return MHD_SC_TLS_BACKEND_UNSUPPORTED; /* string too long? */
   if (NULL ==
       (daemon->tls_backend_lib = dlopen (filename,
 					 RTLD_NOW | RTLD_LOCAL)))
-    return MHD_BACKEND_UNSUPPORTED; /* plugin not found */
+    return MHD_SC_BACKEND_UNSUPPORTED; /* plugin not found */
   if (NULL == (init = dlsym (daemon->tls_backend_lib,
 			     "MHD_TLS_init_" MHD_TLS_ABI_VERSION_STR)))
 
   {
     dlclose (daemon->tls_backend_lib);
     daemon->tls_backend_lib = NULL;
-    return MHD_BACKEND_UNSUPPORTED; /* possibly wrong version installed */
+    return MHD_SC_BACKEND_UNSUPPORTED; /* possibly wrong version installed */
   }
-  if (NULL == (daemon->tls_backend = init (ciphers)))
+  if (NULL == (daemon->tls_api = init (ciphers)))
   {
     dlclose (daemon->tls_backend_lib);
     daemon->tls_backend_lib = NULL;
-    return MHD_CIPHERS_INVALID; /* possibly wrong version installed */
+    return MHD_SC_CIPHERS_INVALID; /* possibly wrong version installed */
   }
   return MHD_SC_OK;
 #endif
@@ -396,8 +396,8 @@ MHD_daemon_tls_key_and_cert_from_memory (struct MHD_Daemon *daemon,
 {
   struct MHD_TLS_Plugin *plugin;
   
-  if (NULL == (plugin = daemon->tls_backend))
-    return MHD_TLS_BACKEND_UNINITIALIZED;
+  if (NULL == (plugin = daemon->tls_api))
+    return MHD_SC_TLS_BACKEND_UNINITIALIZED;
   return plugin->init_kcp (plugin->cls,
 			   mem_key,
 			   mem_cert,
@@ -420,8 +420,8 @@ MHD_daemon_tls_mem_dhparams (struct MHD_Daemon *daemon,
 {
   struct MHD_TLS_Plugin *plugin;
   
-  if (NULL == (plugin = daemon->tls_backend))
-    return MHD_TLS_BACKEND_UNINITIALIZED;
+  if (NULL == (plugin = daemon->tls_api))
+    return MHD_SC_TLS_BACKEND_UNINITIALIZED;
   return plugin->init_dhparams (plugin->cls,
 				dh);
 }
@@ -442,8 +442,8 @@ MHD_daemon_tls_mem_trust (struct MHD_Daemon *daemon,
 {
   struct MHD_TLS_Plugin *plugin;
   
-  if (NULL == (plugin = daemon->tls_backend))
-    return MHD_TLS_BACKEND_UNINITIALIZED;
+  if (NULL == (plugin = daemon->tls_api))
+    return MHD_SC_TLS_BACKEND_UNINITIALIZED;
   return plugin->init_mem_trust (plugin->cls,
 				 mem_trust);
 }
@@ -462,9 +462,9 @@ MHD_daemon_gnutls_credentials (struct MHD_Daemon *daemon,
 {
   struct MHD_TLS_Plugin *plugin;
   
-  if (NULL == (plugin = daemon->tls_backend))
-    return MHD_TLS_BACKEND_UNINITIALIZED;
-  return MHD_TLS_BACKEND_OPERATION_UNSUPPORTED;
+  if (NULL == (plugin = daemon->tls_api))
+    return MHD_SC_TLS_BACKEND_UNINITIALIZED;
+  return MHD_SC_TLS_BACKEND_OPERATION_UNSUPPORTED;
 }
 
 
@@ -483,16 +483,17 @@ MHD_daemon_gnutls_credentials (struct MHD_Daemon *daemon,
  *
  * @param daemon daemon to configure callback for
  * @param cb must be of type `gnutls_certificate_retrieve_function2 *`.
+ * @return #MHD_SC_OK on success
  */
-void
+enum MHD_StatusCode
 MHD_daemon_gnutls_key_and_cert_from_callback (struct MHD_Daemon *daemon,
 					      void *cb)
 {
   struct MHD_TLS_Plugin *plugin;
   
-  if (NULL == (plugin = daemon->tls_backend))
-    return MHD_TLS_BACKEND_UNINITIALIZED;
-  return MHD_TLS_BACKEND_OPERATION_UNSUPPORTED;
+  if (NULL == (plugin = daemon->tls_api))
+    return MHD_SC_TLS_BACKEND_UNINITIALIZED;
+  return MHD_SC_TLS_BACKEND_OPERATION_UNSUPPORTED;
 }
 
 
@@ -544,8 +545,8 @@ MHD_daemon_set_early_uri_logger (struct MHD_Daemon *daemon,
 				 MHD_EarlyUriLogCallback cb,
 				 void *cb_cls)
 {
-  daemon->early_uri_logger_cb = cb;
-  daemon->early_uri_logger_cb_cls = cb_cls;
+  daemon->early_uri_logger = cb;
+  daemon->early_uri_logger_cls = cb_cls;
 }
 
 
@@ -710,7 +711,7 @@ MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
       MHD_DLOG (daemon,
 		_("Specified value for NC_SIZE too large\n"));
 #endif
-      return MHD_DIGEST_AUTH_NC_LENGTH_TOO_BIG;
+      return MHD_SC_DIGEST_AUTH_NC_LENGTH_TOO_BIG;
     }
   if (0 < nc_length)
     {
@@ -725,13 +726,13 @@ MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
 		    _("Failed to allocate memory for nonce-nc map: %s\n"),
 		    MHD_strerror_ (errno));
 #endif
-	  return MHD_DIGEST_AUTH_NC_ALLOCATION_FAILURE;
+	  return MHD_SC_DIGEST_AUTH_NC_ALLOCATION_FAILURE;
 	}
     }
   daemon->digest_nc_length = nc_length;
   return MHD_SC_OK;
 #else
-  return MHD_DIGEST_AUTH_NOT_SUPPORTED_BY_BUILD;
+  return MHD_SC_DIGEST_AUTH_NOT_SUPPORTED_BY_BUILD;
 #endif
 }
 

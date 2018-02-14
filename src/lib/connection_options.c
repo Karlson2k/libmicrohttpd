@@ -46,6 +46,7 @@ MHD_connection_set_timeout (struct MHD_Connection *connection,
       connection->connection_timeout = (time_t) timeout_s;
       return;
     }
+
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   if (! connection->suspended)
     {
