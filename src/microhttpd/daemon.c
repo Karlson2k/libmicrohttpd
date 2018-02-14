@@ -6339,34 +6339,31 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
           if (0 != (MHD_TEST_ALLOW_SUSPEND_RESUME & daemon->options))
             resume_suspended_connections (daemon);
 
-          if (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
-            {
-              /* Separate thread(s) is used for polling sockets. */
-              if (MHD_ITC_IS_VALID_(daemon->itc))
-                {
-                  if (! MHD_itc_activate_ (daemon->itc, "e"))
-                    MHD_PANIC (_("Failed to signal shutdown via inter-thread communication channel"));
-                }
-              else
-                {
+	  /* Separate thread(s) is used for polling sockets. */
+	  if (MHD_ITC_IS_VALID_(daemon->itc))
+	    {
+	      if (! MHD_itc_activate_ (daemon->itc, "e"))
+		MHD_PANIC (_("Failed to signal shutdown via inter-thread communication channel"));
+	    }
+	  else
+	    {
 #ifdef HAVE_LISTEN_SHUTDOWN
-                  if (MHD_INVALID_SOCKET != fd)
-                    {
-                      if (NULL == daemon->master)
-                        (void) shutdown (fd,
-                                         SHUT_RDWR);
-                    }
-                  else
+	      if (MHD_INVALID_SOCKET != fd)
+		{
+		  if (NULL == daemon->master)
+		    (void) shutdown (fd,
+				     SHUT_RDWR);
+		}
+	      else
 #endif /* HAVE_LISTEN_SHUTDOWN */
-                    mhd_assert (false); /* Should never happen */
-                }
-
-              if (! MHD_join_thread_ (daemon->pid.handle))
-                {
-                  MHD_PANIC (_("Failed to join a thread\n"));
-                }
-              /* close_all_connections() was called in daemon thread. */
-            }
+		mhd_assert (false); /* Should never happen */
+	    }
+	  
+	  if (! MHD_join_thread_ (daemon->pid.handle))
+	    {
+	      MHD_PANIC (_("Failed to join a thread\n"));
+	    }
+	  /* close_all_connections() was called in daemon thread. */
         }
       else
         {
