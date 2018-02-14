@@ -126,7 +126,7 @@ MHD_daemon_disallow_suspend_resume (struct MHD_Daemon *daemon)
 void
 MHD_daemon_disallow_upgrade (struct MHD_Daemon *daemon)
 {
-  daemon->disallow_upgrade;
+  daemon->disallow_upgrade = true;
 }
 
 
@@ -165,6 +165,7 @@ MHD_daemon_tcp_fastopen (struct MHD_Daemon *daemon,
     return MHD_NO;
 #endif
   }
+  return MHD_NO;
 }
 
 
@@ -355,20 +356,20 @@ MHD_daemon_set_tls_backend (struct MHD_Daemon *daemon,
   if (NULL ==
       (daemon->tls_backend_lib = dlopen (filename,
 					 RTLD_NOW | RTLD_LOCAL)))
-    return MHD_SC_BACKEND_UNSUPPORTED; /* plugin not found */
+    return MHD_SC_TLS_BACKEND_UNSUPPORTED; /* plugin not found */
   if (NULL == (init = dlsym (daemon->tls_backend_lib,
 			     "MHD_TLS_init_" MHD_TLS_ABI_VERSION_STR)))
 
   {
     dlclose (daemon->tls_backend_lib);
     daemon->tls_backend_lib = NULL;
-    return MHD_SC_BACKEND_UNSUPPORTED; /* possibly wrong version installed */
+    return MHD_SC_TLS_BACKEND_UNSUPPORTED; /* possibly wrong version installed */
   }
   if (NULL == (daemon->tls_api = init (ciphers)))
   {
     dlclose (daemon->tls_backend_lib);
     daemon->tls_backend_lib = NULL;
-    return MHD_SC_CIPHERS_INVALID; /* possibly wrong version installed */
+    return MHD_SC_TLS_CIPHERS_INVALID; /* possibly wrong version installed */
   }
   return MHD_SC_OK;
 #endif
@@ -545,8 +546,8 @@ MHD_daemon_set_early_uri_logger (struct MHD_Daemon *daemon,
 				 MHD_EarlyUriLogCallback cb,
 				 void *cb_cls)
 {
-  daemon->early_uri_logger = cb;
-  daemon->early_uri_logger_cls = cb_cls;
+  daemon->early_uri_logger_cb = cb;
+  daemon->early_uri_logger_cb_cls = cb_cls;
 }
 
 
@@ -687,6 +688,9 @@ MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
   daemon->digest_auth_random_buf = buf;
   daemon->digest_auth_random_buf_size = buf_size;
 #else
+  (void) daemon;
+  (void) buf_size;
+  (void) buf;
   MHD_PANIC ("digest authentication not supported by this build");
 #endif
 }
@@ -732,6 +736,8 @@ MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
   daemon->digest_nc_length = nc_length;
   return MHD_SC_OK;
 #else
+  (void) daemon;
+  (void) nc_length;
   return MHD_SC_DIGEST_AUTH_NOT_SUPPORTED_BY_BUILD;
 #endif
 }

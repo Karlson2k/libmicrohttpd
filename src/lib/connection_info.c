@@ -46,7 +46,65 @@ MHD_connection_get_information_sz (struct MHD_Connection *connection,
 				   union MHD_ConnectionInformation *return_value,
 				   size_t return_value_size)
 {
-  return MHD_NO; /* FIXME: not yet implemented */
+#define CHECK_SIZE(type) if (sizeof(type) < return_value_size) \
+    return MHD_NO
+  
+  switch (info_type)
+  {
+#ifdef HTTPS_SUPPORT
+  case MHD_CONNECTION_INFORMATION_CIPHER_ALGO:
+    CHECK_SIZE (int);
+    if (NULL == connection->tls_cs)
+      return MHD_NO;
+    // return_value->cipher_algorithm
+    //  = gnutls_cipher_get (connection->tls_session);
+    return MHD_NO; // FIXME: to be implemented
+  case MHD_CONNECTION_INFORMATION_PROTOCOL:
+    CHECK_SIZE (int);
+    if (NULL == connection->tls_cs)
+      return MHD_NO;
+    //return_value->protocol
+    //  = gnutls_protocol_get_version (connection->tls_session);
+    return MHD_NO; // FIXME: to be implemented
+  case MHD_CONNECTION_INFORMATION_GNUTLS_SESSION:
+    CHECK_SIZE (void *);
+    if (NULL == connection->tls_cs)
+      return MHD_NO;
+    // return_value->tls_session = connection->tls_session;
+    return MHD_NO; // FIXME: to be implemented
+#endif /* HTTPS_SUPPORT */
+  case MHD_CONNECTION_INFORMATION_CLIENT_ADDRESS:
+    CHECK_SIZE (struct sockaddr *);
+    return_value->client_addr
+      = (const struct sockaddr *) &connection->addr;
+    return MHD_YES;
+  case MHD_CONNECTION_INFORMATION_DAEMON:
+    CHECK_SIZE (struct MHD_Daemon *);
+    return_value->daemon = connection->daemon;
+    return MHD_YES;
+  case MHD_CONNECTION_INFORMATION_CONNECTION_FD:
+    CHECK_SIZE (MHD_socket);
+    return_value->connect_fd = connection->socket_fd;
+    return MHD_YES;
+  case MHD_CONNECTION_INFORMATION_SOCKET_CONTEXT:
+    CHECK_SIZE (void **);
+    return_value->socket_context = &connection->socket_context;
+    return MHD_YES;
+  case MHD_CONNECTION_INFORMATION_CONNECTION_SUSPENDED:
+    CHECK_SIZE (enum MHD_Bool);
+    return_value->suspended
+      = connection->suspended ? MHD_YES : MHD_NO;
+    return MHD_YES;
+  case MHD_CONNECTION_INFORMATION_CONNECTION_TIMEOUT:
+    CHECK_SIZE (unsigned int);
+    return_value->connection_timeout
+      = (unsigned int) connection->connection_timeout;
+    return MHD_YES;
+  default:
+    return MHD_NO;
+  }
+  
+#undef CHECK_SIZE
 }
 
 /* end of connection_info.c */

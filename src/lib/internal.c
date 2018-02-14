@@ -238,7 +238,7 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 	  break;
 	}
       /* amper is non-NULL here */
-      amper[0] = '\0';d
+      amper[0] = '\0';
       amper++;
       if ( (NULL == equals) ||
 	   (equals >= amper) )

@@ -46,7 +46,41 @@ MHD_request_get_information_sz (struct MHD_Request *request,
 			        union MHD_RequestInformation *return_value,
 			        size_t return_value_size)
 {
-  return MHD_NO; /* not implemented */
+#define CHECK_SIZE(type) if (sizeof(type) < return_value_size)	\
+    return MHD_NO
+  
+  switch (info_type)
+  {
+  case MHD_REQUEST_INFORMATION_CONNECTION:
+    CHECK_SIZE (struct MHD_Connection *);
+    return_value->connection = request->connection;
+    return MHD_YES;
+  case MHD_REQUEST_INFORMATION_CLIENT_CONTEXT:
+    CHECK_SIZE (void **);
+    return_value->request_context = &request->client_context;
+    return MHD_YES;
+  case MHD_REQUEST_INFORMATION_HTTP_VERSION:
+    CHECK_SIZE (const char *);
+    return_value->http_version = request->version_s;
+    return MHD_YES;
+  case MHD_REQUEST_INFORMATION_HTTP_METHOD:
+    CHECK_SIZE (const char *);
+    return_value->http_method = request->method_s;
+    return MHD_YES;
+  case MHD_REQUEST_INFORMATION_HEADER_SIZE:
+    CHECK_SIZE (size_t);
+    if ( (MHD_REQUEST_HEADERS_RECEIVED > request->state) ||
+	 (MHD_REQUEST_CLOSED == request->state) ||
+           (MHD_REQUEST_IN_CLEANUP == request->state) )
+        return MHD_NO; /* invalid, too early! */
+    return_value->header_size = request->header_size;
+    return MHD_YES;
+
+  default:
+    return MHD_NO;
+  }
+  
+#undef CHECK_SIZE
 }
 
 

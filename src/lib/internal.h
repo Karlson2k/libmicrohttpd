@@ -454,7 +454,7 @@ struct MHD_Request
    * HTTP version string (i.e. http/1.1).  Allocated
    * in pool.
    */
-  char *version;
+  char *version_s;
 
   /**
    * Close connection after sending response?
@@ -493,7 +493,6 @@ struct MHD_Request
    */
   char *colon;
 
-
   /**
    * Function used for reading HTTP request stream.
    */
@@ -513,11 +512,6 @@ struct MHD_Request
    */
   struct MHD_UpgradeResponseHandle *urh;
 #endif /* UPGRADE_SUPPORT */
-
-  /**
-   * Foreign address (of length @e addr_len).
-   */
-  struct sockaddr_storage addr;
 
   /**
    * Thread handle for this connection (if we are using
@@ -741,12 +735,33 @@ struct MHD_Connection
    * Reference to the MHD_Daemon struct.
    */
   struct MHD_Daemon *daemon;
+  
+  /**
+   * We allow the main application to associate some pointer with the
+   * TCP connection (which may span multiple HTTP requests).  Here is
+   * where we store it.  (MHD does not know or care what it is).
+   * The location is given to the #MHD_NotifyConnectionCallback and
+   * also accessible via #MHD_CONNECTION_INFO_SOCKET_CONTEXT.
+   */
+  void *socket_context;
 
+#ifdef HTTPS_SUPPORT
+  /**
+   * State kept per TLS connection. Plugin-specific.
+   */
+  struct MHD_TLS_ConnectionState *tls_cs;
+#endif
+  
   /**
    * Information about the current request we are processing
    * on this connection.
    */
   struct MHD_Request request;
+
+  /**
+   * Foreign address (of length @e addr_len). 
+   */
+  struct sockaddr_storage addr;
 
   /**
    * Length of the foreign address.
@@ -858,7 +873,7 @@ struct MHD_Daemon
   /**
    * Closure for @e early_uri_logger_cb.
    */
-  void *early_uri_logger_cls;
+  void *early_uri_logger_cb_cls;
 
   /**
    * Function to call whenever a connection is started or
@@ -881,6 +896,17 @@ struct MHD_Daemon
    * Closure for @e unescape_cb.
    */
   void *unescape_cb_cls;
+
+  /**
+   * Pointer to master daemon (NULL if this is the master)
+   */
+  struct MHD_Daemon *master;
+
+  /**
+   * Worker daemons (one per thread)
+   */
+  struct MHD_Daemon *worker_pool;
+
   
 #if HTTPS_SUPPORT
   /**
@@ -1133,6 +1159,16 @@ struct MHD_Daemon
    * Maximum number of connections we accept per IP, 0 for unlimited.
    */
   unsigned int ip_connection_limit;
+
+  /**
+   * Number of active parallel connections.
+   */
+  unsigned int connections;
+
+  /**
+   * Number of worker daemons
+   */
+  unsigned int worker_pool_size;
 
   /**
    * Default timeout in seconds for idle connections.

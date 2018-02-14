@@ -2608,7 +2608,14 @@ enum MHD_ConnectionInformationType
    * Get connection timeout
    * @ingroup request
    */
-  MHD_CONNECTION_INFORMATION_CONNECTION_TIMEOUT
+  MHD_CONNECTION_INFORMATION_CONNECTION_TIMEOUT,
+  
+  /**
+   * Check whether the connection is suspended.
+   * @ingroup request
+   */
+  MHD_CONNECTION_INFORMATION_CONNECTION_SUSPENDED
+
 
 };
 
@@ -2654,7 +2661,7 @@ union MHD_ConnectionInformation
   /**
    * Address information for the client.
    */
-  struct sockaddr *client_addr;
+  const struct sockaddr *client_addr;
 
   /**
    * Which daemon manages this connection (useful in case there are many
@@ -2663,10 +2670,16 @@ union MHD_ConnectionInformation
   struct MHD_Daemon *daemon;
 
   /**
-   * Socket-specific client context.  Points to the same address as
-   * the "socket_context" of the #MHD_NotifyConnectionCallback.
+   * Pointer to connection-specific client context.  Points to the
+   * same address as the "socket_context" of the
+   * #MHD_NotifyConnectionCallback.
    */
-  void *socket_context;
+  void **socket_context;
+  
+  /**
+   * Is this connection right now suspended?
+   */
+  enum MHD_Bool suspended;
 };
 
 
@@ -2721,15 +2734,10 @@ union MHD_RequestInformation
   struct MHD_Connection *connection;
 
   /**
-   * Socket-specific client context.  Will also be given to
+   * Pointer to client context.  Will also be given to
    * the application in a #MHD_RequestTerminationCallback.
    */
-  void *request_context;
-
-  /**
-   * The suspended status of a request.
-   */
-  enum MHD_Bool suspended;
+  void **request_context;
 
   /**
    * HTTP version requested by the client.
@@ -2762,11 +2770,11 @@ enum MHD_RequestInformationType
   MHD_REQUEST_INFORMATION_CONNECTION,
 
   /**
-   * Check whether the connection is suspended.
-   * @ingroup request
+   * Returns the client-specific pointer to a `void *` that
+   * is specific to this request.
    */
-  MHD_REQUEST_INFORMATION_SUSPENDED,
-
+  MHD_REQUEST_INFORMATION_CLIENT_CONTEXT,
+  
   /**
    * Return the HTTP version string given by the client.
    * @ingroup request
@@ -2837,7 +2845,7 @@ enum MHD_DaemonInformationType
    * Request the file descriptor for the listening socket.
    * No extra arguments should be passed.
    */
-  MHD_DAEMON_INFORMATION_LISTEN_FD,
+  MHD_DAEMON_INFORMATION_LISTEN_SOCKET,
 
   /**
    * Request the file descriptor for the external epoll.
@@ -2871,9 +2879,9 @@ union MHD_DaemonInformation
 {
 
   /**
-   * Socket, returned for #MHD_DAEMON_INFORMATION_LISTEN_FD.
+   * Socket, returned for #MHD_DAEMON_INFORMATION_LISTEN_SOCKET.
    */
-  MHD_socket listen_fd;
+  MHD_socket listen_socket;
 
   /**
    * Bind port number, returned for #MHD_DAEMON_INFORMATION_BIND_PORT.

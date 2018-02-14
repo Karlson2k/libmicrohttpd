@@ -14,6 +14,12 @@
 
 
 /**
+ * Data structure kept per TLS client by the plugin.
+ */
+struct MHD_TLS_ConnectionState;
+
+
+/**
  * Callback functions to use for TLS operations.
  */
 struct MHD_TLS_Plugin
@@ -70,7 +76,19 @@ struct MHD_TLS_Plugin
   enum MHD_StatusCode
   (*init_mem_trust)(void *cls,
 		    const char *mem_trust);
-  
+
+
+  /**
+   * Function called when we receive a connection and need
+   * to initialize our TLS state for it.
+   *
+   * @param cls the @e cls of this struct
+   * @param ... TBD
+   * @return NULL on error
+   */
+  struct MHD_TLS_ConnectionState *
+  (*setup_connection)(void *cls,
+		      ...);
   
   /**
    * TODO: More functions here....
