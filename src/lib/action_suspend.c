@@ -124,7 +124,7 @@ suspend_action (void *cls,
 struct MHD_Action *
 MHD_action_suspend (void)
 {
-  static MHD_Action suspend = {
+  static struct MHD_Action suspend = {
     .action = &suspend_action,
     .action_cls = NULL
   };

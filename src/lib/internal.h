@@ -907,12 +907,117 @@ struct MHD_Daemon
    */
   const void *digest_auth_random_buf;
 #endif
+
+  /**
+   * Head of the XDLL of ALL connections with a default ('normal')
+   * timeout, sorted by timeout (earliest at the tail, most recently
+   * used connection at the head).  MHD can just look at the tail of
+   * this list to determine the timeout for all of its elements;
+   * whenever there is an event of a connection, the connection is
+   * moved back to the tail of the list.
+   *
+   * All connections by default start in this list; if a custom
+   * timeout that does not match @e connection_timeout is set, they
+   * are moved to the @e manual_timeout_head-XDLL.
+   * Not used in MHD_USE_THREAD_PER_CONNECTION mode as each thread
+   * needs only one connection-specific timeout.
+   */
+  struct MHD_Connection *normal_timeout_head;
+
+  /**
+   * Tail of the XDLL of ALL connections with a default timeout,
+   * sorted by timeout (earliest timeout at the tail).
+   * Not used in MHD_USE_THREAD_PER_CONNECTION mode.
+   */
+  struct MHD_Connection *normal_timeout_tail;
+
+  /**
+   * Head of the XDLL of ALL connections with a non-default/custom
+   * timeout, unsorted.  MHD will do a O(n) scan over this list to
+   * determine the current timeout.
+   * Not used in MHD_USE_THREAD_PER_CONNECTION mode.
+   */
+  struct MHD_Connection *manual_timeout_head;
+
+  /**
+   * Tail of the XDLL of ALL connections with a non-default/custom
+   * timeout, unsorted.
+   * Not used in MHD_USE_THREAD_PER_CONNECTION mode.
+   */
+  struct MHD_Connection *manual_timeout_tail;
   
+  /**
+   * Head of doubly-linked list of our current, active connections.
+   */
+  struct MHD_Connection *connections_head;
+
+  /**
+   * Tail of doubly-linked list of our current, active connections.
+   */
+  struct MHD_Connection *connections_tail;
+
+  /**
+   * Head of doubly-linked list of our current but suspended
+   * connections.
+   */
+  struct MHD_Connection *suspended_connections_head;
+
+  /**
+   * Tail of doubly-linked list of our current but suspended
+   * connections.
+   */
+  struct MHD_Connection *suspended_connections_tail;
+
+  /**
+   * Head of doubly-linked list of connections to clean up.
+   */
+  struct MHD_Connection *cleanup_head;
+
+  /**
+   * Tail of doubly-linked list of connections to clean up.
+   */
+  struct MHD_Connection *cleanup_tail;
+
+#ifdef EPOLL_SUPPORT
+  /**
+   * Head of EDLL of connections ready for processing (in epoll mode).
+   */
+  struct MHD_Connection *eready_head;
+
+  /**
+   * Tail of EDLL of connections ready for processing (in epoll mode)
+   */
+  struct MHD_Connection *eready_tail;
+
+#ifdef UPGRADE_SUPPORT
+  /**
+   * Head of EDLL of upgraded connections ready for processing (in epoll mode).
+   */
+  struct MHD_UpgradeResponseHandle *eready_urh_head;
+
+  /**
+   * Tail of EDLL of upgraded connections ready for processing (in epoll mode)
+   */
+  struct MHD_UpgradeResponseHandle *eready_urh_tail;
+#endif /* UPGRADE_SUPPORT */
+#endif /* EPOLL_SUPPORT */
+
   /** 
    * Socket address to bind to for the listen socket.
    */
   struct sockaddr_storage listen_sa;
 
+  /**
+   * Mutex for per-IP connection counts.
+   */
+  MHD_mutex_ per_ip_connection_mutex;
+
+  /**
+   * Mutex for (modifying) access to the "cleanup", "normal_timeout" and
+   * "manual_timeout" DLLs.
+   */
+  MHD_mutex_ cleanup_connection_mutex;
+  
   /** 
    * Number of (valid) bytes in @e listen_sa.  Zero
    * if @e listen_sa is not initialized.
@@ -1299,6 +1404,134 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 		      char *args,
 		      MHD_ArgumentIterator_ cb,
 		      unsigned int *num_headers);
+
+
+
+/**
+ * Insert an element at the head of a DLL. Assumes that head, tail and
+ * element are structs with prev and next fields.
+ *
+ * @param head pointer to the head of the DLL
+ * @param tail pointer to the tail of the DLL
+ * @param element element to insert
+ */
+#define DLL_insert(head,tail,element) do { \
+  mhd_assert (NULL == (element)->next); \
+  mhd_assert (NULL == (element)->prev); \
+  (element)->next = (head); \
+  (element)->prev = NULL; \
+  if ((tail) == NULL) \
+    (tail) = element; \
+  else \
+    (head)->prev = element; \
+  (head) = (element); } while (0)
+
+
+/**
+ * Remove an element from a DLL. Assumes that head, tail and element
+ * are structs with prev and next fields.
+ *
+ * @param head pointer to the head of the DLL
+ * @param tail pointer to the tail of the DLL
+ * @param element element to remove
+ */
+#define DLL_remove(head,tail,element) do { \
+  mhd_assert ( (NULL != (element)->next) || ((element) == (tail)));  \
+  mhd_assert ( (NULL != (element)->prev) || ((element) == (head)));  \
+  if ((element)->prev == NULL) \
+    (head) = (element)->next;  \
+  else \
+    (element)->prev->next = (element)->next; \
+  if ((element)->next == NULL) \
+    (tail) = (element)->prev;  \
+  else \
+    (element)->next->prev = (element)->prev; \
+  (element)->next = NULL; \
+  (element)->prev = NULL; } while (0)
+
+
+
+/**
+ * Insert an element at the head of a XDLL. Assumes that head, tail and
+ * element are structs with prevX and nextX fields.
+ *
+ * @param head pointer to the head of the XDLL
+ * @param tail pointer to the tail of the XDLL
+ * @param element element to insert
+ */
+#define XDLL_insert(head,tail,element) do { \
+  mhd_assert (NULL == (element)->nextX); \
+  mhd_assert (NULL == (element)->prevX); \
+  (element)->nextX = (head); \
+  (element)->prevX = NULL; \
+  if (NULL == (tail)) \
+    (tail) = element; \
+  else \
+    (head)->prevX = element; \
+  (head) = (element); } while (0)
+
+
+/**
+ * Remove an element from a XDLL. Assumes that head, tail and element
+ * are structs with prevX and nextX fields.
+ *
+ * @param head pointer to the head of the XDLL
+ * @param tail pointer to the tail of the XDLL
+ * @param element element to remove
+ */
+#define XDLL_remove(head,tail,element) do { \
+  mhd_assert ( (NULL != (element)->nextX) || ((element) == (tail)));  \
+  mhd_assert ( (NULL != (element)->prevX) || ((element) == (head)));  \
+  if (NULL == (element)->prevX) \
+    (head) = (element)->nextX;  \
+  else \
+    (element)->prevX->nextX = (element)->nextX; \
+  if (NULL == (element)->nextX) \
+    (tail) = (element)->prevX;  \
+  else \
+    (element)->nextX->prevX = (element)->prevX; \
+  (element)->nextX = NULL; \
+  (element)->prevX = NULL; } while (0)
+
+
+/**
+ * Insert an element at the head of a EDLL. Assumes that head, tail and
+ * element are structs with prevE and nextE fields.
+ *
+ * @param head pointer to the head of the EDLL
+ * @param tail pointer to the tail of the EDLL
+ * @param element element to insert
+ */
+#define EDLL_insert(head,tail,element) do { \
+  (element)->nextE = (head); \
+  (element)->prevE = NULL; \
+  if ((tail) == NULL) \
+    (tail) = element; \
+  else \
+    (head)->prevE = element; \
+  (head) = (element); } while (0)
+
+
+/**
+ * Remove an element from a EDLL. Assumes that head, tail and element
+ * are structs with prevE and nextE fields.
+ *
+ * @param head pointer to the head of the EDLL
+ * @param tail pointer to the tail of the EDLL
+ * @param element element to remove
+ */
+#define EDLL_remove(head,tail,element) do { \
+  if ((element)->prevE == NULL) \
+    (head) = (element)->nextE;  \
+  else \
+    (element)->prevE->nextE = (element)->nextE; \
+  if ((element)->nextE == NULL) \
+    (tail) = (element)->prevE;  \
+  else \
+    (element)->nextE->prevE = (element)->prevE; \
+  (element)->nextE = NULL; \
+  (element)->prevE = NULL; } while (0)
+
 
 
 #endif
