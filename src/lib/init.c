@@ -21,6 +21,9 @@
  * @file lib/init.c
  * @brief initialization routines
  * @author Christian Grothoff
+ *
+ * TODO: most of this is only required for gcrypt/GNUtls,
+ * should probably be moved to TLS plugin!
  */
 #include "internal.h"
 #include "init.h"

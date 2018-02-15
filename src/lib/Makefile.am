@@ -110,9 +110,9 @@ libmicrohttpd_la_CFLAGS = \
 libmicrohttpd_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) \
   $(W32_MHD_LIB_LDFLAGS) \
-  -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
+  -version-info 666:0:0 # FIXME: fix once closer to release...
 libmicrohttpd_la_LIBADD = \
-  $(MHD_LIBDEPS)
+  $(MHD_LIBDEPS) # FIXME: should separate out GNUTLS_LIBS/GCRYPT here!
 
 if HAVE_W32
 MHD_DLL_RES_SRC = microhttpd_dll_res.rc
