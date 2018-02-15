@@ -143,22 +143,22 @@ endif
 
 # TBD!
 if HAVE_POSTPROCESSOR
-libmicrohttpd_la_SOURCES += \
-  postprocessor.c
+#libmicrohttpd_la_SOURCES += \
+#  postprocessor.c
 endif
 
 # TBD!
 if ENABLE_DAUTH
-libmicrohttpd_la_SOURCES += \
-  digestauth.c \
-  md5.c md5.h
+#libmicrohttpd_la_SOURCES += \
+#  digestauth.c \
+#  md5.c md5.h
 endif
 
 # TBD!
 if ENABLE_BAUTH
-libmicrohttpd_la_SOURCES += \
-  basicauth.c \
-  base64.c base64.h
+#libmicrohttpd_la_SOURCES += \
+#  basicauth.c \
+#  base64.c base64.h
 endif
 
 

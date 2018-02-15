@@ -173,8 +173,8 @@ MHD_http_unescape (char *val)
  * Parse and unescape the arguments given by the client
  * as part of the HTTP request URI.
  *
+ * @param request request to add headers to
  * @param kind header kind to pass to @a cb
- * @param connection connection to add headers to
  * @param[in,out] args argument URI string (after "?" in URI),
  *        clobbered in the process!
  * @param cb function to call on each key-value pair found
@@ -184,13 +184,13 @@ MHD_http_unescape (char *val)
  *                               returned #MHD_YES)
  */
 int
-MHD_parse_arguments_ (struct MHD_Connection *connection,
+MHD_parse_arguments_ (struct MHD_Request *request,
 		      enum MHD_ValueKind kind,
 		      char *args,
 		      MHD_ArgumentIterator_ cb,
 		      unsigned int *num_headers)
 {
-  struct MHD_Daemon *daemon = connection->daemon;
+  struct MHD_Daemon *daemon = request->daemon;
   char *equals;
   char *amper;
 
@@ -208,9 +208,9 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 	      /* last argument, without '=' */
               MHD_unescape_plus (args);
 	      daemon->unescape_cb (daemon->unescape_cb_cls,
-				   connection,
+				   request,
 				   args);
-	      if (MHD_YES != cb (connection,
+	      if (MHD_YES != cb (request,
 				 args,
 				 NULL,
 				 kind))
@@ -223,13 +223,13 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 	  equals++;
           MHD_unescape_plus (args);
 	  daemon->unescape_cb (daemon->unescape_cb_cls,
-			       connection,
+			       request,
 			       args);
           MHD_unescape_plus (equals);
 	  daemon->unescape_cb (daemon->unescape_cb_cls,
-			       connection,
+			       request,
 			       equals);
-	  if (MHD_YES != cb (connection,
+	  if (MHD_YES != cb (request,
 			     args,
 			     equals,
 			     kind))
@@ -246,9 +246,9 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 	  /* got 'foo&bar' or 'foo&bar=val', add key 'foo' with NULL for value */
           MHD_unescape_plus (args);
 	  daemon->unescape_cb (daemon->unescape_cb_cls,
-			       connection,
+			       request,
 			       args);
-	  if (MHD_YES != cb (connection,
+	  if (MHD_YES != cb (request,
 			     args,
 			     NULL,
 			     kind))
@@ -264,13 +264,13 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
       equals++;
       MHD_unescape_plus (args);
       daemon->unescape_cb (daemon->unescape_cb_cls,
-			   connection,
+			   request,
 			   args);
       MHD_unescape_plus (equals);
       daemon->unescape_cb (daemon->unescape_cb_cls,
-			   connection,
+			   request,
 			   equals);
-      if (MHD_YES != cb (connection,
+      if (MHD_YES != cb (request,
 			 args,
 			 equals,
 			 kind))

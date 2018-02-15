@@ -77,11 +77,11 @@ MHD_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
   response->total_size = MHD_SIZE_UNKNOWN;
   response->reference_count = 1;
   if (MHD_NO ==
-      MHD_add_response_header (response,
+      MHD_response_add_header (response,
                                MHD_HTTP_HEADER_CONNECTION,
                                "Upgrade"))
     {
-      MHD_destroy_response (response);
+      MHD_response_queue_for_destroy (response);
       return NULL;
     }
   return response;

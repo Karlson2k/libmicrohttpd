@@ -246,6 +246,19 @@ MHD_daemon_listen_allow_address_reuse (struct MHD_Daemon *daemon)
 
 
 /**
+ * Use SHOUTcast.  This will cause the response to begin
+ * with the SHOUTcast "ICY" line instad of "HTTP".
+ *
+ * @param daemon daemon to set SHOUTcast option for
+ */
+_MHD_EXTERN void
+MHD_daemon_enable_shoutcast (struct MHD_Daemon *daemon)
+{
+  daemon->enable_shoutcast = true;
+}
+
+
+/**
  * Accept connections from the given socket.  Socket
  * must be a TCP or UNIX domain (stream) socket.
  *

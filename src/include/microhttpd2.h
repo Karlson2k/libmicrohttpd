@@ -520,7 +520,28 @@ enum MHD_StatusCode
    */
   MHD_SC_THREAD_POOL_LAUNCH_FAILURE = 50031,
 
+  /**
+   * We failed to add a socket to the epoll() set.
+   */
+  MHD_SC_EPOLL_CTL_ADD_FAILED = 50032,
+
+  /**
+   * We failed to start a thread.
+   */
+  MHD_SC_THREAD_LAUNCH_FAILURE = 50033,
   
+  /**
+   * We failed to create control socket for the epoll().
+   */
+  MHD_SC_EPOLL_CTL_CREATE_FAILED = 50034,
+
+  /**
+   * We failed to configure control socket for the epoll()
+   * to be non-inheritable.
+   */
+  MHD_SC_EPOLL_CTL_CONFIGURE_NOINHERIT_FAILED = 50035,
+
+
 };
 
 
@@ -542,6 +563,12 @@ struct MHD_Action;
  * add additional methods (as per IANA registry), thus even if the API
  * returns "unknown" today, it may return a method-specific header in
  * the future!
+ *
+ * @defgroup methods HTTP methods
+ * HTTP methods (as strings).
+ * See: http://www.iana.org/assignments/http-methods/http-methods.xml
+ * Registry Version 2015-05-19
+ * @{
  */
 enum MHD_Method
 {
@@ -553,31 +580,37 @@ enum MHD_Method
 
   /**
    * "OPTIONS" method.
+   * Safe.     Idempotent.     RFC7231, Section 4.3.7.
    */
   MHD_METHOD_OPTIONS = 1,
 
   /**
    * "GET" method.
+   * Safe.     Idempotent.     RFC7231, Section 4.3.1.
    */
   MHD_METHOD_GET = 2,
 
   /**
    * "HEAD" method.
+   * Safe.     Idempotent.     RFC7231, Section 4.3.2.
    */
   MHD_METHOD_HEAD = 3,
 
   /**
    * "POST" method.
+   * Not safe. Not idempotent. RFC7231, Section 4.3.3. 
    */
   MHD_METHOD_POST = 4,
 
   /**
    * "PUT" method.
+   * Not safe. Idempotent.     RFC7231, Section 4.3.4. 
    */
   MHD_METHOD_PUT = 5,
 
   /**
    * "DELETE" method.
+   * Not safe. Idempotent.     RFC7231, Section 4.3.5. 
    */
   MHD_METHOD_DELETE = 6,
 
@@ -745,6 +778,339 @@ enum MHD_Method
      https://www.iana.org/assignments/http-methods/http-methods.xhtml */
 
 };
+
+/** @} */ /* end of group methods */
+
+
+/**
+ * @defgroup postenc HTTP POST encodings
+ * See also: http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4
+ * @{
+ */
+#define MHD_HTTP_POST_ENCODING_FORM_URLENCODED "application/x-www-form-urlencoded"
+#define MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA "multipart/form-data"
+
+/** @} */ /* end of group postenc */
+
+
+
+/**
+ * @defgroup headers HTTP headers
+ * These are the standard headers found in HTTP requests and responses.
+ * See: http://www.iana.org/assignments/message-headers/message-headers.xml
+ * Registry Version 2017-01-27
+ * @{
+ */
+
+/* Main HTTP headers. */
+/* Standard.      RFC7231, Section 5.3.2 */
+#define MHD_HTTP_HEADER_ACCEPT "Accept"
+/* Standard.      RFC7231, Section 5.3.3 */
+#define MHD_HTTP_HEADER_ACCEPT_CHARSET "Accept-Charset"
+/* Standard.      RFC7231, Section 5.3.4; RFC7694, Section 3 */
+#define MHD_HTTP_HEADER_ACCEPT_ENCODING "Accept-Encoding"
+/* Standard.      RFC7231, Section 5.3.5 */
+#define MHD_HTTP_HEADER_ACCEPT_LANGUAGE "Accept-Language"
+/* Standard.      RFC7233, Section 2.3 */
+#define MHD_HTTP_HEADER_ACCEPT_RANGES "Accept-Ranges"
+/* Standard.      RFC7234, Section 5.1 */
+#define MHD_HTTP_HEADER_AGE "Age"
+/* Standard.      RFC7231, Section 7.4.1 */
+#define MHD_HTTP_HEADER_ALLOW "Allow"
+/* Standard.      RFC7235, Section 4.2 */
+#define MHD_HTTP_HEADER_AUTHORIZATION "Authorization"
+/* Standard.      RFC7234, Section 5.2 */
+#define MHD_HTTP_HEADER_CACHE_CONTROL "Cache-Control"
+/* Reserved.      RFC7230, Section 8.1 */
+#define MHD_HTTP_HEADER_CLOSE "Close"
+/* Standard.      RFC7230, Section 6.1 */
+#define MHD_HTTP_HEADER_CONNECTION "Connection"
+/* Standard.      RFC7231, Section 3.1.2.2 */
+#define MHD_HTTP_HEADER_CONTENT_ENCODING "Content-Encoding"
+/* Standard.      RFC7231, Section 3.1.3.2 */
+#define MHD_HTTP_HEADER_CONTENT_LANGUAGE "Content-Language"
+/* Standard.      RFC7230, Section 3.3.2 */
+#define MHD_HTTP_HEADER_CONTENT_LENGTH "Content-Length"
+/* Standard.      RFC7231, Section 3.1.4.2 */
+#define MHD_HTTP_HEADER_CONTENT_LOCATION "Content-Location"
+/* Standard.      RFC7233, Section 4.2 */
+#define MHD_HTTP_HEADER_CONTENT_RANGE "Content-Range"
+/* Standard.      RFC7231, Section 3.1.1.5 */
+#define MHD_HTTP_HEADER_CONTENT_TYPE "Content-Type"
+/* Standard.      RFC7231, Section 7.1.1.2 */
+#define MHD_HTTP_HEADER_DATE "Date"
+/* Standard.      RFC7232, Section 2.3 */
+#define MHD_HTTP_HEADER_ETAG "ETag"
+/* Standard.      RFC7231, Section 5.1.1 */
+#define MHD_HTTP_HEADER_EXPECT "Expect"
+/* Standard.      RFC7234, Section 5.3 */
+#define MHD_HTTP_HEADER_EXPIRES "Expires"
+/* Standard.      RFC7231, Section 5.5.1 */
+#define MHD_HTTP_HEADER_FROM "From"
+/* Standard.      RFC7230, Section 5.4 */
+#define MHD_HTTP_HEADER_HOST "Host"
+/* Standard.      RFC7232, Section 3.1 */
+#define MHD_HTTP_HEADER_IF_MATCH "If-Match"
+/* Standard.      RFC7232, Section 3.3 */
+#define MHD_HTTP_HEADER_IF_MODIFIED_SINCE "If-Modified-Since"
+/* Standard.      RFC7232, Section 3.2 */
+#define MHD_HTTP_HEADER_IF_NONE_MATCH "If-None-Match"
+/* Standard.      RFC7233, Section 3.2 */
+#define MHD_HTTP_HEADER_IF_RANGE "If-Range"
+/* Standard.      RFC7232, Section 3.4 */
+#define MHD_HTTP_HEADER_IF_UNMODIFIED_SINCE "If-Unmodified-Since"
+/* Standard.      RFC7232, Section 2.2 */
+#define MHD_HTTP_HEADER_LAST_MODIFIED "Last-Modified"
+/* Standard.      RFC7231, Section 7.1.2 */
+#define MHD_HTTP_HEADER_LOCATION "Location"
+/* Standard.      RFC7231, Section 5.1.2 */
+#define MHD_HTTP_HEADER_MAX_FORWARDS "Max-Forwards"
+/* Standard.      RFC7231, Appendix A.1 */
+#define MHD_HTTP_HEADER_MIME_VERSION "MIME-Version"
+/* Standard.      RFC7234, Section 5.4 */
+#define MHD_HTTP_HEADER_PRAGMA "Pragma"
+/* Standard.      RFC7235, Section 4.3 */
+#define MHD_HTTP_HEADER_PROXY_AUTHENTICATE "Proxy-Authenticate"
+/* Standard.      RFC7235, Section 4.4 */
+#define MHD_HTTP_HEADER_PROXY_AUTHORIZATION "Proxy-Authorization"
+/* Standard.      RFC7233, Section 3.1 */
+#define MHD_HTTP_HEADER_RANGE "Range"
+/* Standard.      RFC7231, Section 5.5.2 */
+#define MHD_HTTP_HEADER_REFERER "Referer"
+/* Standard.      RFC7231, Section 7.1.3 */
+#define MHD_HTTP_HEADER_RETRY_AFTER "Retry-After"
+/* Standard.      RFC7231, Section 7.4.2 */
+#define MHD_HTTP_HEADER_SERVER "Server"
+/* Standard.      RFC7230, Section 4.3 */
+#define MHD_HTTP_HEADER_TE "TE"
+/* Standard.      RFC7230, Section 4.4 */
+#define MHD_HTTP_HEADER_TRAILER "Trailer"
+/* Standard.      RFC7230, Section 3.3.1 */
+#define MHD_HTTP_HEADER_TRANSFER_ENCODING "Transfer-Encoding"
+/* Standard.      RFC7230, Section 6.7 */
+#define MHD_HTTP_HEADER_UPGRADE "Upgrade"
+/* Standard.      RFC7231, Section 5.5.3 */
+#define MHD_HTTP_HEADER_USER_AGENT "User-Agent"
+/* Standard.      RFC7231, Section 7.1.4 */
+#define MHD_HTTP_HEADER_VARY "Vary"
+/* Standard.      RFC7230, Section 5.7.1 */
+#define MHD_HTTP_HEADER_VIA "Via"
+/* Standard.      RFC7235, Section 4.1 */
+#define MHD_HTTP_HEADER_WWW_AUTHENTICATE "WWW-Authenticate"
+/* Standard.      RFC7234, Section 5.5 */
+#define MHD_HTTP_HEADER_WARNING "Warning"
+
+/* Additional HTTP headers. */
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_A_IM "A-IM"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_ACCEPT_ADDITIONS "Accept-Additions"
+/* Informational. RFC7089 */
+#define MHD_HTTP_HEADER_ACCEPT_DATETIME "Accept-Datetime"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_ACCEPT_FEATURES "Accept-Features"
+/* No category.   RFC5789 */
+#define MHD_HTTP_HEADER_ACCEPT_PATCH "Accept-Patch"
+/* Standard.      RFC7639, Section 2 */
+#define MHD_HTTP_HEADER_ALPN "ALPN"
+/* Standard.      RFC7838 */
+#define MHD_HTTP_HEADER_ALT_SVC "Alt-Svc"
+/* Standard.      RFC7838 */
+#define MHD_HTTP_HEADER_ALT_USED "Alt-Used"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_ALTERNATES "Alternates"
+/* No category.   RFC4437 */
+#define MHD_HTTP_HEADER_APPLY_TO_REDIRECT_REF "Apply-To-Redirect-Ref"
+/* Experimental.  RFC8053, Section 4 */
+#define MHD_HTTP_HEADER_AUTHENTICATION_CONTROL "Authentication-Control"
+/* Standard.      RFC7615, Section 3 */
+#define MHD_HTTP_HEADER_AUTHENTICATION_INFO "Authentication-Info"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_C_EXT "C-Ext"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_C_MAN "C-Man"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_C_OPT "C-Opt"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_C_PEP "C-PEP"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_C_PEP_INFO "C-PEP-Info"
+/* Standard.      RFC7809, Section 7.1 */
+#define MHD_HTTP_HEADER_CALDAV_TIMEZONES "CalDAV-Timezones"
+/* Obsoleted.     RFC2068; RFC2616 */
+#define MHD_HTTP_HEADER_CONTENT_BASE "Content-Base"
+/* Standard.      RFC6266 */
+#define MHD_HTTP_HEADER_CONTENT_DISPOSITION "Content-Disposition"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_CONTENT_ID "Content-ID"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_CONTENT_MD5 "Content-MD5"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_CONTENT_SCRIPT_TYPE "Content-Script-Type"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_CONTENT_STYLE_TYPE "Content-Style-Type"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_CONTENT_VERSION "Content-Version"
+/* Standard.      RFC6265 */
+#define MHD_HTTP_HEADER_COOKIE "Cookie"
+/* Obsoleted.     RFC2965; RFC6265 */
+#define MHD_HTTP_HEADER_COOKIE2 "Cookie2"
+/* Standard.      RFC5323 */
+#define MHD_HTTP_HEADER_DASL "DASL"
+/* Standard.      RFC4918 */
+#define MHD_HTTP_HEADER_DAV "DAV"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_DEFAULT_STYLE "Default-Style"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_DELTA_BASE "Delta-Base"
+/* Standard.      RFC4918 */
+#define MHD_HTTP_HEADER_DEPTH "Depth"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_DERIVED_FROM "Derived-From"
+/* Standard.      RFC4918 */
+#define MHD_HTTP_HEADER_DESTINATION "Destination"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_DIFFERENTIAL_ID "Differential-ID"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_DIGEST "Digest"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_EXT "Ext"
+/* Standard.      RFC7239 */
+#define MHD_HTTP_HEADER_FORWARDED "Forwarded"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_GETPROFILE "GetProfile"
+/* Experimental.  RFC7486, Section 6.1.1 */
+#define MHD_HTTP_HEADER_HOBAREG "Hobareg"
+/* Standard.      RFC7540, Section 3.2.1 */
+#define MHD_HTTP_HEADER_HTTP2_SETTINGS "HTTP2-Settings"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_IM "IM"
+/* Standard.      RFC4918 */
+#define MHD_HTTP_HEADER_IF "If"
+/* Standard.      RFC6638 */
+#define MHD_HTTP_HEADER_IF_SCHEDULE_TAG_MATCH "If-Schedule-Tag-Match"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_KEEP_ALIVE "Keep-Alive"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_LABEL "Label"
+/* No category.   RFC5988 */
+#define MHD_HTTP_HEADER_LINK "Link"
+/* Standard.      RFC4918 */
+#define MHD_HTTP_HEADER_LOCK_TOKEN "Lock-Token"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_MAN "Man"
+/* Informational. RFC7089 */
+#define MHD_HTTP_HEADER_MEMENTO_DATETIME "Memento-Datetime"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_METER "Meter"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_NEGOTIATE "Negotiate"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_OPT "Opt"
+/* Experimental.  RFC8053, Section 3 */
+#define MHD_HTTP_HEADER_OPTIONAL_WWW_AUTHENTICATE "Optional-WWW-Authenticate"
+/* Standard.      RFC4229 */
+#define MHD_HTTP_HEADER_ORDERING_TYPE "Ordering-Type"
+/* Standard.      RFC6454 */
+#define MHD_HTTP_HEADER_ORIGIN "Origin"
+/* Standard.      RFC4918 */
+#define MHD_HTTP_HEADER_OVERWRITE "Overwrite"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_P3P "P3P"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_PEP "PEP"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_PICS_LABEL "PICS-Label"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_PEP_INFO "Pep-Info"
+/* Standard.      RFC4229 */
+#define MHD_HTTP_HEADER_POSITION "Position"
+/* Standard.      RFC7240 */
+#define MHD_HTTP_HEADER_PREFER "Prefer"
+/* Standard.      RFC7240 */
+#define MHD_HTTP_HEADER_PREFERENCE_APPLIED "Preference-Applied"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_PROFILEOBJECT "ProfileObject"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_PROTOCOL "Protocol"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_PROTOCOL_INFO "Protocol-Info"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_PROTOCOL_QUERY "Protocol-Query"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_PROTOCOL_REQUEST "Protocol-Request"
+/* Standard.      RFC7615, Section 4 */
+#define MHD_HTTP_HEADER_PROXY_AUTHENTICATION_INFO "Proxy-Authentication-Info"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_PROXY_FEATURES "Proxy-Features"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_PROXY_INSTRUCTION "Proxy-Instruction"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_PUBLIC "Public"
+/* Standard.      RFC7469 */
+#define MHD_HTTP_HEADER_PUBLIC_KEY_PINS "Public-Key-Pins"
+/* Standard.      RFC7469 */
+#define MHD_HTTP_HEADER_PUBLIC_KEY_PINS_REPORT_ONLY "Public-Key-Pins-Report-Only"
+/* No category.   RFC4437 */
+#define MHD_HTTP_HEADER_REDIRECT_REF "Redirect-Ref"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_SAFE "Safe"
+/* Standard.      RFC6638 */
+#define MHD_HTTP_HEADER_SCHEDULE_REPLY "Schedule-Reply"
+/* Standard.      RFC6638 */
+#define MHD_HTTP_HEADER_SCHEDULE_TAG "Schedule-Tag"
+/* Standard.      RFC6455 */
+#define MHD_HTTP_HEADER_SEC_WEBSOCKET_ACCEPT "Sec-WebSocket-Accept"
+/* Standard.      RFC6455 */
+#define MHD_HTTP_HEADER_SEC_WEBSOCKET_EXTENSIONS "Sec-WebSocket-Extensions"
+/* Standard.      RFC6455 */
+#define MHD_HTTP_HEADER_SEC_WEBSOCKET_KEY "Sec-WebSocket-Key"
+/* Standard.      RFC6455 */
+#define MHD_HTTP_HEADER_SEC_WEBSOCKET_PROTOCOL "Sec-WebSocket-Protocol"
+/* Standard.      RFC6455 */
+#define MHD_HTTP_HEADER_SEC_WEBSOCKET_VERSION "Sec-WebSocket-Version"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_SECURITY_SCHEME "Security-Scheme"
+/* Standard.      RFC6265 */
+#define MHD_HTTP_HEADER_SET_COOKIE "Set-Cookie"
+/* Obsoleted.     RFC2965; RFC6265 */
+#define MHD_HTTP_HEADER_SET_COOKIE2 "Set-Cookie2"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_SETPROFILE "SetProfile"
+/* Standard.      RFC5023 */
+#define MHD_HTTP_HEADER_SLUG "SLUG"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_SOAPACTION "SoapAction"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_STATUS_URI "Status-URI"
+/* Standard.      RFC6797 */
+#define MHD_HTTP_HEADER_STRICT_TRANSPORT_SECURITY "Strict-Transport-Security"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_SURROGATE_CAPABILITY "Surrogate-Capability"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_SURROGATE_CONTROL "Surrogate-Control"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_TCN "TCN"
+/* Standard.      RFC4918 */
+#define MHD_HTTP_HEADER_TIMEOUT "Timeout"
+/* Standard.      RFC8030, Section 5.4 */
+#define MHD_HTTP_HEADER_TOPIC "Topic"
+/* Standard.      RFC8030, Section 5.2 */
+#define MHD_HTTP_HEADER_TTL "TTL"
+/* Standard.      RFC8030, Section 5.3 */
+#define MHD_HTTP_HEADER_URGENCY "Urgency"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_URI "URI"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_VARIANT_VARY "Variant-Vary"
+/* No category.   RFC4229 */
+#define MHD_HTTP_HEADER_WANT_DIGEST "Want-Digest"
+/* Informational. RFC7034 */
+#define MHD_HTTP_HEADER_X_FRAME_OPTIONS "X-Frame-Options"
+
+/* Some provisional headers. */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN "Access-Control-Allow-Origin"
+/** @} */ /* end of group headers */
 
 
 /**
@@ -1184,6 +1550,16 @@ enum MHD_ProtocolStrictLevel
 _MHD_EXTERN void
 MHD_daemon_protocol_strict_level (struct MHD_Daemon *daemon,
 				  enum MHD_ProtocolStrictLevel sl);
+
+
+/**
+ * Use SHOUTcast.  This will cause the response to begin
+ * with the SHOUTcast "ICY" line instad of "HTTP".
+ *
+ * @param daemon daemon to set SHOUTcast option for
+ */
+_MHD_EXTERN void
+MHD_daemon_enable_shoutcast (struct MHD_Daemon *daemon);
 
 
 /**
@@ -1836,8 +2212,30 @@ enum MHD_HTTP_StatusCode {
   MHD_HTTP_NETWORK_AUTHENTICATION_REQUIRED = 511
 
 };
+
+
+/**
+ * Returns the string reason phrase for a response code.
+ *
+ * If we don't have a string for a status code, we give the first
+ * message in that status code class.
+ */
+_MHD_EXTERN const char *
+MHD_get_reason_phrase_for (enum MHD_HTTP_StatusCode code);
+
 /** @} */ /* end of group httpcode */
 
+
+/**
+ * @defgroup versions HTTP versions
+ * These strings should be used to match against the first line of the
+ * HTTP header.
+ * @{
+ */
+#define MHD_HTTP_VERSION_1_0 "HTTP/1.0"
+#define MHD_HTTP_VERSION_1_1 "HTTP/1.1"
+
+/** @} */ /* end of group versions */
 
 
 /**

@@ -119,6 +119,37 @@ MHD_check_global_init_ (void)
 
 
 /**
+ * Default implementation of the panic function,
+ * prints an error message and aborts.
+ *
+ * @param cls unused
+ * @param file name of the file with the problem
+ * @param line line number with the problem
+ * @param reason error message with details
+ */
+static void
+mhd_panic_std (void *cls,
+	       const char *file,
+	       unsigned int line,
+	       const char *reason)
+{
+  (void)cls; /* Mute compiler warning. */
+#ifdef HAVE_MESSAGES
+  fprintf (stderr,
+           _("Fatal error in GNU libmicrohttpd %s:%u: %s\n"),
+	   file,
+           line,
+           reason);
+#else  /* ! HAVE_MESSAGES */
+  (void)file;   /* Mute compiler warning. */
+  (void)line;   /* Mute compiler warning. */
+  (void)reason; /* Mute compiler warning. */
+#endif
+  abort ();
+}
+
+
+/**
  * Initialize do setup work.
  */
 void

@@ -23,6 +23,7 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
+#include "init.h"
 
 
 /**
@@ -95,6 +96,9 @@ MHD_daemon_create (MHD_RequestCallback cb,
   memset (daemon,
 	  0,
 	  sizeof (struct MHD_Daemon));
+#ifdef EPOLL_SUPPORT
+  daemon->epoll_itc_marker = "itc_marker";
+#endif
   daemon->rc = cb;
   daemon->rc_cls = cb_cls;
   daemon->logger = &file_logger;

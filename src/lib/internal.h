@@ -33,6 +33,7 @@
 #include "microhttpd_tls.h"
 #include "mhd_assert.h"
 #include "mhd_compat.h"
+#include "mhd_itc.h"
 #include "mhd_mono_clock.h"
 #include "memorypool.h"
 
@@ -1011,6 +1012,13 @@ struct MHD_Daemon
    */
   struct MHD_Connection *eready_tail;
 
+#ifdef EPOLL_SUPPORT
+  /**
+   * Pointer to marker used to indicate ITC slot in epoll sets.
+   */
+  const char *epoll_itc_marker;
+#endif
+  
 #ifdef UPGRADE_SUPPORT
   /**
    * Head of EDLL of upgraded connections ready for processing (in epoll mode).
@@ -1052,6 +1060,11 @@ struct MHD_Daemon
   unsigned int nonce_nc_size;
 
 #endif
+
+  /**
+   * The select thread handle (if we have internal select)
+   */
+  MHD_thread_handle_ID_ pid;
   
   /** 
    * Socket address to bind to for the listen socket.
@@ -1286,11 +1299,21 @@ struct MHD_Daemon
   bool enable_turbo;
 
   /**
+   * MHD_daemon_quiesce() was run against this daemon.
+   */
+  bool was_quiesced;
+
+  /**
    * Allow reusing the address:port combination when binding.
    * See #MHD_daemon_listen_allow_address_reuse().
    */
   bool allow_address_reuse;
 
+  /**
+   * MHD should speak SHOUTcast instead of HTTP.
+   */
+  bool enable_shoutcast;
+  
   /**
    * Are we shutting down?
    */
@@ -1463,7 +1486,7 @@ struct MHD_Response
  * Callback invoked when iterating over @a key / @a value
  * argument pairs during parsing.
  *
- * @param connection context of the iteration
+ * @param request context of the iteration
  * @param key 0-terminated key string, never NULL
  * @param value 0-terminated value string, may be NULL
  * @param kind origin of the key-value pair
@@ -1471,7 +1494,7 @@ struct MHD_Response
  *         #MHD_NO to signal failure (and abort iteration)
  */
 typedef int
-(*MHD_ArgumentIterator_)(struct MHD_Connection *connection,
+(*MHD_ArgumentIterator_)(struct MHD_Request *request,
 			 const char *key,
 			 const char *value,
 			 enum MHD_ValueKind kind);
@@ -1481,8 +1504,8 @@ typedef int
  * Parse and unescape the arguments given by the client
  * as part of the HTTP request URI.
  *
+ * @param request request to add headers to
  * @param kind header kind to pass to @a cb
- * @param connection connection to add headers to
  * @param[in,out] args argument URI string (after "?" in URI),
  *        clobbered in the process!
  * @param cb function to call on each key-value pair found
@@ -1492,7 +1515,7 @@ typedef int
  *                               returned #MHD_YES)
  */
 int
-MHD_parse_arguments_ (struct MHD_Connection *connection,
+MHD_parse_arguments_ (struct MHD_Request *request,
 		      enum MHD_ValueKind kind,
 		      char *args,
 		      MHD_ArgumentIterator_ cb,
