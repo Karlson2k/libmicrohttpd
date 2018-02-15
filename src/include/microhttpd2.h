@@ -596,7 +596,34 @@ enum MHD_StatusCode
    * Encountered an unexpected error from select()
    * (should never happen).
    */
-  MHD_SC_CONFIGURATION_UNEXPECTED_SELECT_ERROR = 50042,
+  MHD_SC_UNEXPECTED_SELECT_ERROR = 50042,
+
+  /**
+   * poll() is not supported.
+   */
+  MHD_SC_POLL_NOT_SUPPORTED = 50043,
+  
+  /**
+   * Encountered an unexpected error from poll()
+   * (should never happen).
+   */
+  MHD_SC_UNEXPECTED_POLL_ERROR = 50044,
+
+  /**
+   * We failed to allocate memory for poll() syscall.
+   */
+  MHD_SC_POLL_MALLOC_FAILURE = 50045,
+
+  /**
+   * Encountered an unexpected error from epoll_wait()
+   * (should never happen).
+   */
+  MHD_SC_UNEXPECTED_EPOLL_WAIT_ERROR = 50046,
+
+  /**
+   * epoll file descriptor is invalid (strange)
+   */
+  MHD_SC_EPOLL_FD_INVALID = 50047,
 
 };
 
