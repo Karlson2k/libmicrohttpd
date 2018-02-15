@@ -60,10 +60,15 @@ libmicrohttpd_la_SOURCES = \
   action_suspend.c \
   connection_info.c \
   connection_options.c \
+  daemon_add_connection.c \
   daemon_create.c \
   daemon_destroy.c \
+  daemon_get_fdset.c \
+  daemon_get_timeout.c \
   daemon_info.c \
   daemon_options.c \
+  daemon_run.c \
+  daemon_run_from_select.c \
   daemon_start.c \
   daemon_quiesce.c \
   init.c init.h \

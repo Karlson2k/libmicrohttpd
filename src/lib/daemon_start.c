@@ -18,7 +18,7 @@
 */
 
 /**
- * @file lib/daemon.c
+ * @file lib/daemon_start.c
  * @brief functions to start a daemon
  * @author Christian Grothoff
  */
@@ -958,5 +958,4 @@ MHD_daemon_start (struct MHD_Daemon *daemon)
 }
 
 
-
-/* end of daemon.c */
+/* end of daemon_start.c */

@@ -18,7 +18,7 @@
 */
 
 /**
- * @file lib/daemon.c
+ * @file lib/daemon_quiesce.c
  * @brief main functions to quiesce a daemon
  * @author Christian Grothoff
  */
@@ -124,4 +124,5 @@ MHD_daemon_quiesce (struct MHD_Daemon *daemon)
   return listen_socket;
 }
 
+/* end of daemon_quiesce.c */
 

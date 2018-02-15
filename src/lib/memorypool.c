@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007, 2009, 2010 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2007, 2009, 2010, 2018 Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -71,9 +71,9 @@ struct MemoryPool
   size_t end;
 
   /**
-   * #MHD_NO if pool was malloc'ed, #MHD_YES if mmapped (VirtualAlloc'ed for W32).
+   * false if pool was malloc'ed, true if mmapped (VirtualAlloc'ed for W32).
    */
-  int is_mmap;
+  bool is_mmap;
 };
 
 
@@ -135,11 +135,11 @@ MHD_pool_create (size_t max)
           free (pool);
           return NULL;
         }
-      pool->is_mmap = MHD_NO;
+      pool->is_mmap = false;
     }
   else
     {
-      pool->is_mmap = MHD_YES;
+      pool->is_mmap = true;
     }
   pool->pos = 0;
   pool->end = max;
@@ -158,7 +158,7 @@ MHD_pool_destroy (struct MemoryPool *pool)
 {
   if (NULL == pool)
     return;
-  if (MHD_NO == pool->is_mmap)
+  if (! pool->is_mmap)
     free (pool->memory);
   else
 #if defined(MAP_ANONYMOUS) && !defined(_WIN32)

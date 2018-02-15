@@ -1197,6 +1197,209 @@ _MHD_EXTERN void
 MHD_daemon_destroy (struct MHD_Daemon *daemon);
 
 
+/**
+ * Add another client connection to the set of connections managed by
+ * MHD.  This API is usually not needed (since MHD will accept inbound
+ * connections on the server socket).  Use this API in special cases,
+ * for example if your HTTP server is behind NAT and needs to connect
+ * out to the HTTP client, or if you are building a proxy.
+ *
+ * If you use this API in conjunction with a internal select or a
+ * thread pool, you must set the option #MHD_USE_ITC to ensure that
+ * the freshly added connection is immediately processed by MHD.
+ *
+ * The given client socket will be managed (and closed!) by MHD after
+ * this call and must no longer be used directly by the application
+ * afterwards.
+ *
+ * @param daemon daemon that manages the connection
+ * @param client_socket socket to manage (MHD will expect
+ *        to receive an HTTP request from this socket next).
+ * @param addr IP address of the client
+ * @param addrlen number of bytes in @a addr
+ * @return #MHD_SC_OK on success
+ *        The socket will be closed in any case; `errno` is
+ *        set to indicate further details about the error.
+ * @ingroup specialized
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_daemon_add_connection (struct MHD_Daemon *daemon,
+			   MHD_socket client_socket,
+			   const struct sockaddr *addr,
+			   socklen_t addrlen);
+
+
+/**
+ * Obtain the `select()` sets for this daemon.  Daemon's FDs will be
+ * added to fd_sets. To get only daemon FDs in fd_sets, call FD_ZERO
+ * for each fd_set before calling this function. FD_SETSIZE is assumed
+ * to be platform's default.
+ *
+ * This function should only be called in when MHD is configured to
+ * use external select with 'select()' or with 'epoll'.  In the latter
+ * case, it will only add the single 'epoll()' file descriptor used by
+ * MHD to the sets.  It's necessary to use #MHD_get_timeout() in
+ * combination with this function.
+ *
+ * This function must be called only for daemon started without
+ * #MHD_USE_INTERNAL_POLLING_THREAD flag.
+ *
+ * @param daemon daemon to get sets from
+ * @param read_fd_set read set
+ * @param write_fd_set write set
+ * @param except_fd_set except set
+ * @param max_fd increased to largest FD added (if larger
+ *               than existing value); can be NULL
+ * @return #MHD_SC_OK on success, otherwise error code
+ * @ingroup event
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_daemon_get_fdset (struct MHD_Daemon *daemon,
+		      fd_set *read_fd_set,
+		      fd_set *write_fd_set,
+		      fd_set *except_fd_set,
+		      MHD_socket *max_fd);
+
+
+/**
+ * Obtain the `select()` sets for this daemon.  Daemon's FDs will be
+ * added to fd_sets. To get only daemon FDs in fd_sets, call FD_ZERO
+ * for each fd_set before calling this function.
+ *
+ * Passing custom FD_SETSIZE as @a fd_setsize allow usage of
+ * larger/smaller than platform's default fd_sets.
+ *
+ * This function should only be called in when MHD is configured to
+ * use external select with 'select()' or with 'epoll'.  In the latter
+ * case, it will only add the single 'epoll' file descriptor used by
+ * MHD to the sets.  It's necessary to use #MHD_get_timeout() in
+ * combination with this function.
+ *
+ * This function must be called only for daemon started
+ * without #MHD_USE_INTERNAL_POLLING_THREAD flag.
+ *
+ * @param daemon daemon to get sets from
+ * @param read_fd_set read set
+ * @param write_fd_set write set
+ * @param except_fd_set except set
+ * @param max_fd increased to largest FD added (if larger
+ *               than existing value); can be NULL
+ * @param fd_setsize value of FD_SETSIZE
+ * @return #MHD_SC_OK on success, otherwise error code
+ * @ingroup event
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_daemon_get_fdset2 (struct MHD_Daemon *daemon,
+		       fd_set *read_fd_set,
+		       fd_set *write_fd_set,
+		       fd_set *except_fd_set,
+		       MHD_socket *max_fd,
+		       unsigned int fd_setsize);
+
+
+/**
+ * Obtain the `select()` sets for this daemon.  Daemon's FDs will be
+ * added to fd_sets. To get only daemon FDs in fd_sets, call FD_ZERO
+ * for each fd_set before calling this function. Size of fd_set is
+ * determined by current value of FD_SETSIZE.  It's necessary to use
+ * #MHD_get_timeout() in combination with this function.
+ *
+ * This function could be called only for daemon started
+ * without #MHD_USE_INTERNAL_POLLING_THREAD flag.
+ *
+ * @param daemon daemon to get sets from
+ * @param read_fd_set read set
+ * @param write_fd_set write set
+ * @param except_fd_set except set
+ * @param max_fd increased to largest FD added (if larger
+ *               than existing value); can be NULL
+ * @return #MHD_YES on success, #MHD_NO if this
+ *         daemon was not started with the right
+ *         options for this call or any FD didn't
+ *         fit fd_set.
+ * @ingroup event
+ */
+#define MHD_daemon_get_fdset(daemon,read_fd_set,write_fd_set,except_fd_set,max_fd) \
+  MHD_get_fdset2((daemon),(read_fd_set),(write_fd_set),(except_fd_set),(max_fd),FD_SETSIZE)
+
+
+/**
+ * Obtain timeout value for polling function for this daemon.
+ * This function set value to amount of milliseconds for which polling
+ * function (`select()` or `poll()`) should at most block, not the
+ * timeout value set for connections.
+ * It is important to always use this function, even if connection
+ * timeout is not set, as in some cases MHD may already have more
+ * data to process on next turn (data pending in TLS buffers,
+ * connections are already ready with epoll etc.) and returned timeout
+ * will be zero.
+ *
+ * @param daemon daemon to query for timeout
+ * @param timeout set to the timeout (in milliseconds)
+ * @return #MHD_SC_OK on success, #MHD_SC_NO_TIMEOUT if timeouts are
+ *        not used (or no connections exist that would
+ *        necessitate the use of a timeout right now), otherwise
+ *        an error code
+ * @ingroup event
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_daemon_get_timeout (struct MHD_Daemon *daemon,
+			MHD_UNSIGNED_LONG_LONG *timeout);
+
+
+/**
+ * Run webserver operations (without blocking unless in client
+ * callbacks).  This method should be called by clients in combination
+ * with #MHD_get_fdset if the client-controlled select method is used
+ * and #MHD_get_timeout().
+ *
+ * This function is a convenience method, which is useful if the
+ * fd_sets from #MHD_get_fdset were not directly passed to `select()`;
+ * with this function, MHD will internally do the appropriate `select()`
+ * call itself again.  While it is always safe to call #MHD_run (if
+ * #MHD_USE_INTERNAL_POLLING_THREAD is not set), you should call
+ * #MHD_run_from_select if performance is important (as it saves an
+ * expensive call to `select()`).
+ *
+ * @param daemon daemon to run
+ * @return #MHD_SC_OK on success
+ * @ingroup event
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_daemon_run (struct MHD_Daemon *daemon);
+
+
+/**
+ * Run webserver operations. This method should be called by clients
+ * in combination with #MHD_get_fdset and #MHD_get_timeout() if the
+ * client-controlled select method is used.
+ *
+ * You can use this function instead of #MHD_run if you called
+ * `select()` on the result from #MHD_get_fdset.  File descriptors in
+ * the sets that are not controlled by MHD will be ignored.  Calling
+ * this function instead of #MHD_run is more efficient as MHD will not
+ * have to call `select()` again to determine which operations are
+ * ready.
+ *
+ * This function cannot be used with daemon started with
+ * #MHD_USE_INTERNAL_POLLING_THREAD flag.
+ *
+ * @param daemon daemon to run select loop for
+ * @param read_fd_set read set
+ * @param write_fd_set write set
+ * @param except_fd_set except set
+ * @return #MHD_SC_OK on success
+ * @ingroup event
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_daemon_run_from_select (struct MHD_Daemon *daemon,
+			    const fd_set *read_fd_set,
+			    const fd_set *write_fd_set,
+			    const fd_set *except_fd_set);
+
+
+
+
 /* ********************* daemon options ************** */
 
 

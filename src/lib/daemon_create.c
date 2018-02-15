@@ -135,3 +135,6 @@ MHD_daemon_create (MHD_RequestCallback cb,
 #endif
   return daemon;
 }
+
+
+/* end of daemon_create.c */
