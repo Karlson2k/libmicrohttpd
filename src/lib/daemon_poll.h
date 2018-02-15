@@ -68,4 +68,16 @@ MHD_daemon_poll_ (struct MHD_Daemon *daemon,
 #endif
 
 
+#ifdef HTTPS_SUPPORT
+/**
+ * Process upgraded connection with a poll() loop.
+ * We are in our own thread, only processing @a con
+ *
+ * @param con connection to process
+ */
+void
+MHD_daemon_upgrade_connection_with_poll_ (struct MHD_Connection *con)
+  MHD_NONNULL(1);
+#endif
+
 #endif

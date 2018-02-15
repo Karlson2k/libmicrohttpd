@@ -40,4 +40,16 @@ MHD_daemon_select_ (struct MHD_Daemon *daemon,
   MHD_NONNULL(1);
 
 
+#ifdef HTTPS_SUPPORT
+/**
+ * Process upgraded connection with a select loop.
+ * We are in our own thread, only processing @a con
+ *
+ * @param con connection to process
+ */
+void
+MHD_daemon_upgrade_connection_with_select_ (struct MHD_Connection *con)
+  MHD_NONNULL(1);
+#endif
+
 #endif

@@ -477,6 +477,98 @@ internal_run_from_select (struct MHD_Daemon *daemon,
 }
 
 
+#ifdef HTTPS_SUPPORT
+/**
+ * Process upgraded connection with a select loop.
+ * We are in our own thread, only processing @a con
+ *
+ * @param con connection to process
+ */
+void
+MHD_daemon_upgrade_connection_with_select_ (struct MHD_Connection *con)
+{
+  struct MHD_UpgradeResponseHandle *urh = con->request.urh;
+  struct MHD_Daemon *daemon = con->daemon;
+
+  while ( (0 != urh->in_buffer_size) ||
+	  (0 != urh->out_buffer_size) ||
+	  (0 != urh->in_buffer_used) ||
+	  (0 != urh->out_buffer_used) )
+    {
+      /* use select */
+      fd_set rs;
+      fd_set ws;
+      fd_set es;
+      MHD_socket max_fd;
+      int num_ready;
+      bool result;
+      
+      FD_ZERO (&rs);
+      FD_ZERO (&ws);
+      FD_ZERO (&es);
+      max_fd = MHD_INVALID_SOCKET;
+      result = urh_to_fdset (urh,
+			     &rs,
+			     &ws,
+			     &es,
+			     &max_fd,
+			     FD_SETSIZE);
+      if (! result)
+	{
+#ifdef HAVE_MESSAGES
+	  MHD_DLOG (con->daemon,
+		    MHD_SC_SOCKET_OUTSIDE_OF_FDSET_RANGE,
+		    _("Error preparing select\n"));
+#endif
+	  break;
+	}
+      /* FIXME: does this check really needed? */
+      if (MHD_INVALID_SOCKET != max_fd)
+	{
+	  struct timeval* tvp;
+	  struct timeval tv;
+	  if ( (con->tls_read_ready) &&
+	       (urh->in_buffer_used < urh->in_buffer_size))
+	    { /* No need to wait if incoming data is already pending in TLS buffers. */
+	      tv.tv_sec = 0;
+	      tv.tv_usec = 0;
+	      tvp = &tv;
+	    }
+	  else
+	    tvp = NULL;
+	  num_ready = MHD_SYS_select_ (max_fd + 1,
+				       &rs,
+				       &ws,
+				       &es,
+				       tvp);
+	}
+      else
+	num_ready = 0;
+      if (num_ready < 0)
+	{
+	  const int err = MHD_socket_get_error_();
+	  
+	  if (MHD_SCKT_ERR_IS_EINTR_(err))
+	    continue;
+#ifdef HAVE_MESSAGES
+	  MHD_DLOG (con->daemon,
+		    MHD_SC_UNEXPECTED_SELECT_ERROR,
+		    _("Error during select (%d): `%s'\n"),
+		    err,
+		    MHD_socket_strerr_ (err));
+#endif
+	  break;
+	}
+      urh_from_fdset (urh,
+		      &rs,
+		      &ws,
+		      &es);
+      process_urh (urh);
+    }
+}
+#endif
+
+
 /**
  * Run webserver operations. This method should be called by clients
  * in combination with #MHD_get_fdset and #MHD_get_timeout() if the

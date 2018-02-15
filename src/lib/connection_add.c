@@ -24,6 +24,48 @@
 #include "internal.h"
 #include "connection_add.h"
 #include "daemon_ip_limit.h"
+#include "daemon_select.h"
+#include "daemon_poll.h"
+
+
+#ifdef UPGRADE_SUPPORT
+/**
+ * Main function of the thread that handles an individual connection
+ * after it was "upgraded" when #MHD_USE_THREAD_PER_CONNECTION is set.
+ * @remark To be called only from thread that process
+ * connection's recv(), send() and response.
+ *
+ * @param con the connection this thread will handle
+ */
+static void
+thread_main_connection_upgrade (struct MHD_Connection *con)
+{
+#ifdef HTTPS_SUPPORT
+  struct MHD_UpgradeResponseHandle *urh = con->request.urh;
+  struct MHD_Daemon *daemon = con->daemon;
+
+  /* Here, we need to bi-directionally forward
+     until the application tells us that it is done
+     with the socket; */
+  if ( (NULL != daemon->tls_api) &&
+       (MHD_ELS_POLL != daemon->event_loop_syscall) )
+    {
+      MHD_daemon_upgrade_connection_with_select (con);
+    }
+#ifdef HAVE_POLL
+  else if (NULL != daemon->tls_api)
+    {
+      MHD_daemon_upgrade_connection_with_poll_ (con);
+    }
+#endif
+  /* end HTTPS */
+#endif /* HTTPS_SUPPORT */
+  /* TLS forwarding was finished. Cleanup socketpair. */
+  MHD_connection_finish_forward_ (con);
+  /* Do not set 'urh->clean_ready' yet as 'urh' will be used
+   * in connection thread for a little while. */
+}
+#endif /* UPGRADE_SUPPORT */
 
 
 /**

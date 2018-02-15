@@ -450,4 +450,64 @@ MHD_daemon_poll_ (struct MHD_Daemon *daemon,
 #endif
 }
 
+
+#ifdef HTTPS_SUPPORT
+/**
+ * Process upgraded connection with a poll() loop.
+ * We are in our own thread, only processing @a con
+ *
+ * @param con connection to process
+ */
+void
+MHD_daemon_upgrade_connection_with_poll_ (struct MHD_Connection *con)
+{
+  struct MHD_UpgradeResponseHandle *urh = con->request.urh;
+  struct MHD_Daemon *daemon = con->daemon;
+  struct pollfd p[2];
+
+  memset (p,
+	  0,
+	  sizeof (p));
+  p[0].fd = urh->connection->socket_fd;
+  p[1].fd = urh->mhd.socket;
+
+  while ( (0 != urh->in_buffer_size) ||
+	  (0 != urh->out_buffer_size) ||
+	  (0 != urh->in_buffer_used) ||
+	  (0 != urh->out_buffer_used) )
+    {
+      int timeout;
+      
+      urh_update_pollfd (urh,
+			 p);
+      
+      if ( (con->tls_read_ready) &&
+	   (urh->in_buffer_used < urh->in_buffer_size))
+	timeout = 0; /* No need to wait if incoming data is already pending in TLS buffers. */
+      else
+	timeout = -1;
+      
+      if (MHD_sys_poll_ (p,
+			 2,
+			 timeout) < 0)
+	{
+	  const int err = MHD_socket_get_error_ ();
+	  
+	  if (MHD_SCKT_ERR_IS_EINTR_ (err))
+	    continue;
+#ifdef HAVE_MESSAGES
+	  MHD_DLOG (con->daemon,
+		    MHD_SC_UNEXPECTED_POLL_ERROR,
+		    _("Error during poll: `%s'\n"),
+		    MHD_socket_strerr_ (err));
+#endif
+	  break;
+	}
+      urh_from_pollfd (urh,
+		       p);
+      process_urh (urh);
+    }
+}
+#endif
+ 
 /* end of daemon_poll.c */
