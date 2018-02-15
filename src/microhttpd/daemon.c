@@ -776,8 +776,8 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
  * @param p pollfd array to update
  */
 static void
-urh_update_pollfd(struct MHD_UpgradeResponseHandle *urh,
-                  struct pollfd p[2])
+urh_update_pollfd (struct MHD_UpgradeResponseHandle *urh,
+		   struct pollfd p[2])
 {
   p[0].events = 0;
   p[1].events = 0;
@@ -817,12 +817,13 @@ urh_update_pollfd(struct MHD_UpgradeResponseHandle *urh,
  * @param p pollfd array to set
  */
 static void
-urh_to_pollfd(struct MHD_UpgradeResponseHandle *urh,
-              struct pollfd p[2])
+urh_to_pollfd (struct MHD_UpgradeResponseHandle *urh,
+	       struct pollfd p[2])
 {
   p[0].fd = urh->connection->socket_fd;
   p[1].fd = urh->mhd.socket;
-  urh_update_pollfd(urh, p);
+  urh_update_pollfd (urh,
+		     p);
 }
 
 
@@ -832,8 +833,8 @@ urh_to_pollfd(struct MHD_UpgradeResponseHandle *urh,
  * @param p 'poll()' processed pollfd.
  */
 static void
-urh_from_pollfd(struct MHD_UpgradeResponseHandle *urh,
-                struct pollfd p[2])
+urh_from_pollfd (struct MHD_UpgradeResponseHandle *urh,
+		 struct pollfd p[2])
 {
   /* Reset read/write ready, preserve error state. */
   urh->app.celi &= (~MHD_EPOLL_STATE_READ_READY & ~MHD_EPOLL_STATE_WRITE_READY);
