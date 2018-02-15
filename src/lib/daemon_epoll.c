@@ -24,6 +24,7 @@
  */
 #include "internal.h"
 #include "daemon_epoll.h"
+#include "request_resume.h"
 
 #ifdef EPOLL_SUPPORT
 
@@ -301,7 +302,7 @@ MHD_daemon_epoll_ (struct MHD_Daemon *daemon,
     }
 
   if ( (! daemon->disallow_suspend_resume) &&
-       (MHD_YES == resume_suspended_connections (daemon)) )
+       (MHD_resume_suspended_connections_ (daemon)) )
     may_block = false;
 
   if (may_block)

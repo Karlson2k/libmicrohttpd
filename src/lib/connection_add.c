@@ -50,7 +50,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
   if ( (NULL != daemon->tls_api) &&
        (MHD_ELS_POLL != daemon->event_loop_syscall) )
     {
-      MHD_daemon_upgrade_connection_with_select (con);
+      MHD_daemon_upgrade_connection_with_select_ (con);
     }
 #ifdef HAVE_POLL
   else if (NULL != daemon->tls_api)

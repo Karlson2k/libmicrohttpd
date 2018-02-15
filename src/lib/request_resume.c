@@ -62,4 +62,125 @@ MHD_request_resume (struct MHD_Request *request)
     }
 }
 
+
+/**
+ * Run through the suspended connections and move any that are no
+ * longer suspended back to the active state.
+ * @remark To be called only from thread that process
+ * daemon's select()/poll()/etc.
+ *
+ * @param daemon daemon context
+ * @return true if a connection was actually resumed
+ */
+bool
+MHD_resume_suspended_connections_ (struct MHD_Daemon *daemon)
+{
+  struct MHD_Connection *pos;
+  struct MHD_Connection *prev = NULL;
+  bool ret;
+  const bool used_thr_p_c = (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model);
+  
+  mhd_assert (NULL == daemon->worker_pool);
+  ret = false;
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+
+  if (daemon->resuming)
+    {
+      prev = daemon->suspended_connections_tail;
+      /* During shutdown check for resuming is forced. */
+      mhd_assert((NULL != prev) || (daemon->shutdown));
+    }
+
+  daemon->resuming = false;
+
+  while (NULL != (pos = prev))
+    {
+#ifdef UPGRADE_SUPPORT
+      struct MHD_UpgradeResponseHandle * const urh = pos->request.urh;
+#else  /* ! UPGRADE_SUPPORT */
+      static const void * const urh = NULL;
+#endif /* ! UPGRADE_SUPPORT */
+      prev = pos->prev;
+      if ( (! pos->resuming)
+#ifdef UPGRADE_SUPPORT
+          || ( (NULL != urh) &&
+               ( (! urh->was_closed) ||
+                 (! urh->clean_ready) ) )
+#endif /* UPGRADE_SUPPORT */
+         )
+        continue;
+      ret = true;
+      mhd_assert (pos->suspended);
+      DLL_remove (daemon->suspended_connections_head,
+                  daemon->suspended_connections_tail,
+                  pos);
+      pos->suspended = false;
+      if (NULL == urh)
+        {
+          DLL_insert (daemon->connections_head,
+                      daemon->connections_tail,
+                      pos);
+          if (! used_thr_p_c)
+            {
+              /* Reset timeout timer on resume. */
+              if (0 != pos->connection_timeout)
+                pos->last_activity = MHD_monotonic_sec_counter();
+
+              if (pos->connection_timeout == daemon->connection_default_timeout)
+                XDLL_insert (daemon->normal_timeout_head,
+                             daemon->normal_timeout_tail,
+                             pos);
+              else
+                XDLL_insert (daemon->manual_timeout_head,
+                             daemon->manual_timeout_tail,
+                             pos);
+            }
+#ifdef EPOLL_SUPPORT
+          if (MHD_ELS_EPOLL == daemon->event_loop_syscall)
+            {
+              if (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
+                MHD_PANIC ("Resumed connection was already in EREADY set\n");
+              /* we always mark resumed connections as ready, as we
+                 might have missed the edge poll event during suspension */
+              EDLL_insert (daemon->eready_head,
+                           daemon->eready_tail,
+                           pos);
+              pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL | \
+                  MHD_EPOLL_STATE_READ_READY | MHD_EPOLL_STATE_WRITE_READY;
+              pos->epoll_state &= ~MHD_EPOLL_STATE_SUSPENDED;
+            }
+#endif
+        }
+#ifdef UPGRADE_SUPPORT
+      else
+        {
+          /* Data forwarding was finished (for TLS connections) AND
+           * application was closed upgraded connection.
+           * Insert connection into cleanup list. */
+          DLL_insert (daemon->cleanup_head,
+                      daemon->cleanup_tail,
+                      pos);
+
+        }
+#endif /* UPGRADE_SUPPORT */
+      pos->resuming = false;
+    }
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+  if ( (used_thr_p_c) &&
+       (ret) )
+    { /* Wake up suspended connections. */
+      if (! MHD_itc_activate_(daemon->itc,
+                              "w"))
+	{
+#ifdef HAVE_MESSAGES
+	  MHD_DLOG (daemon,
+		    MHD_SC_ITC_USE_FAILED,
+		    _("Failed to signal resume of connection via inter-thread communication channel."));
+#endif
+	}
+    }
+  return ret;
+}
+
+
 /* end of request_resume.c */

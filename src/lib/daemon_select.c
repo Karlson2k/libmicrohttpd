@@ -24,6 +24,8 @@
  */
 #include "internal.h"
 #include "daemon_select.h"
+#include "request_resume.h"
+
 
 /**
  * We defined a macro with the same name as a function we
@@ -595,6 +597,7 @@ enum MHD_StatusCode
 MHD_daemon_run_from_select (struct MHD_Daemon *daemon,
 			    const fd_set *read_fd_set,
 
+			    
 			    const fd_set *write_fd_set,
 			    const fd_set *except_fd_set)
 {
@@ -617,7 +620,7 @@ MHD_daemon_run_from_select (struct MHD_Daemon *daemon,
 
   /* Resuming external connections when using an extern mainloop  */
   if (! daemon->disallow_suspend_resume)
-    resume_suspended_connections (daemon);
+    (void) MHD_resume_suspended_connections_ (daemon);
 
   return internal_run_from_select (daemon,
 				   read_fd_set,
@@ -661,7 +664,7 @@ MHD_daemon_select_ (struct MHD_Daemon *daemon,
   maxsock = MHD_INVALID_SOCKET;
   sc = MHD_SC_OK;
   if ( (! daemon->disallow_suspend_resume) &&
-       (MHD_YES == resume_suspended_connections (daemon)) &&
+       (MHD_resume_suspended_connections_ (daemon)) &&
        (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model) )
     may_block = MHD_NO;
 

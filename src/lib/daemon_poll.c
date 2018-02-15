@@ -23,6 +23,7 @@
  */
 #include "internal.h"
 #include "daemon_poll.h"
+#include "request_resume.h"
 
 #ifdef HAVE_POLL
 
@@ -143,7 +144,7 @@ MHD_daemon_poll_all_ (struct MHD_Daemon *daemon,
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
   if ( (! daemon->disallow_suspend_resume) &&
-       (MHD_YES == resume_suspended_connections (daemon)) )
+       (MHD_resume_suspended_connections_ (daemon)) )
     may_block = false;
 
   /* count number of connections and thus determine poll set size */
@@ -385,7 +386,7 @@ MHD_daemon_poll_listen_socket_ (struct MHD_Daemon *daemon,
     }
 
   if (! daemon->disallow_suspend_resume)
-    (void) resume_suspended_connections (daemon);
+    (void) MHD_resume_suspended_connections_ (daemon);
 
   if (! may_block)
     timeout = 0;

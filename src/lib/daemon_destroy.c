@@ -23,6 +23,7 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
+#include "request_resume.h"
 
 
 /**
@@ -113,7 +114,7 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
         {
 	  /* Worker daemon or single daemon with internal thread(s). */
           if (! daemon->disallow_suspend_resume)
-            resume_suspended_connections (daemon);
+            (void) MHD_resume_suspended_connections_ (daemon);
 
 	  /* Separate thread(s) is used for polling sockets. */
 	  if (MHD_ITC_IS_VALID_(daemon->itc))
