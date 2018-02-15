@@ -826,6 +826,202 @@ struct MHD_Connection
 };
 
 
+#ifdef UPGRADE_SUPPORT
+/**
+ * Buffer we use for upgrade response handling in the unlikely
+ * case where the memory pool was so small it had no buffer
+ * capacity left.  Note that we don't expect to _ever_ use this
+ * buffer, so it's mostly wasted memory (except that it allows
+ * us to handle a tricky error condition nicely). So no need to
+ * make this one big.  Applications that want to perform well
+ * should just pick an adequate size for the memory pools.
+ */
+#define RESERVE_EBUF_SIZE 8
+
+/**
+ * Context we pass to epoll() for each of the two sockets
+ * of a `struct MHD_UpgradeResponseHandle`.  We need to do
+ * this so we can distinguish the two sockets when epoll()
+ * gives us event notifications.
+ */
+struct UpgradeEpollHandle
+{
+  /**
+   * Reference to the overall response handle this struct is
+   * included within.
+   */
+  struct MHD_UpgradeResponseHandle *urh;
+
+  /**
+   * The socket this event is kind-of about.  Note that this is NOT
+   * necessarily the socket we are polling on, as for when we read
+   * from TLS, we epoll() on the connection's socket
+   * (`urh->connection->socket_fd`), while this then the application's
+   * socket (where the application will read from).  Nevertheless, for
+   * the application to read, we need to first read from TLS, hence
+   * the two are related.
+   *
+   * Similarly, for writing to TLS, this epoll() will be on the
+   * connection's `socket_fd`, and this will merely be the FD which
+   * the applicatio would write to.  Hence this struct must always be
+   * interpreted based on which field in `struct
+   * MHD_UpgradeResponseHandle` it is (`app` or `mhd`).
+   */
+  MHD_socket socket;
+
+  /**
+   * IO-state of the @e socket (or the connection's `socket_fd`).
+   */
+  enum MHD_EpollState celi;
+
+};
+
+
+/**
+ * Handle given to the application to manage special
+ * actions relating to MHD responses that "upgrade"
+ * the HTTP protocol (i.e. to WebSockets).
+ */
+struct MHD_UpgradeResponseHandle
+{
+  /**
+   * The connection for which this is an upgrade handle.  Note that
+   * because a response may be shared over many connections, this may
+   * not be the only upgrade handle for the response of this connection.
+   */
+  struct MHD_Connection *connection;
+
+#ifdef HTTPS_SUPPORT
+  /**
+   * Kept in a DLL per daemon.
+   */
+  struct MHD_UpgradeResponseHandle *next;
+
+  /**
+   * Kept in a DLL per daemon.
+   */
+  struct MHD_UpgradeResponseHandle *prev;
+
+#ifdef EPOLL_SUPPORT
+  /**
+   * Next pointer for the EDLL listing urhs that are epoll-ready.
+   */
+  struct MHD_UpgradeResponseHandle *nextE;
+
+  /**
+   * Previous pointer for the EDLL listing urhs that are epoll-ready.
+   */
+  struct MHD_UpgradeResponseHandle *prevE;
+
+  /**
+   * Specifies whether urh already in EDLL list of ready connections.
+   */
+  bool in_eready_list;
+#endif
+
+  /**
+   * The buffer for receiving data from TLS to
+   * be passed to the application.  Contains @e in_buffer_size
+   * bytes (unless @e in_buffer_size is zero). Do not free!
+   */
+  char *in_buffer;
+
+  /**
+   * The buffer for receiving data from the application to
+   * be passed to TLS.  Contains @e out_buffer_size
+   * bytes (unless @e out_buffer_size is zero). Do not free!
+   */
+  char *out_buffer;
+
+  /**
+   * Size of the @e in_buffer.
+   * Set to 0 if the TLS connection went down for reading or socketpair
+   * went down for writing.
+   */
+  size_t in_buffer_size;
+
+  /**
+   * Size of the @e out_buffer.
+   * Set to 0 if the TLS connection went down for writing or socketpair
+   * went down for reading.
+   */
+  size_t out_buffer_size;
+
+  /**
+   * Number of bytes actually in use in the @e in_buffer.  Can be larger
+   * than @e in_buffer_size if and only if @a in_buffer_size is zero and
+   * we still have bytes that can be forwarded.
+   * Reset to zero if all data was forwarded to socketpair or
+   * if socketpair went down for writing.
+   */
+  size_t in_buffer_used;
+
+  /**
+   * Number of bytes actually in use in the @e out_buffer. Can be larger
+   * than @e out_buffer_size if and only if @a out_buffer_size is zero and
+   * we still have bytes that can be forwarded.
+   * Reset to zero if all data was forwarded to TLS connection or
+   * if TLS connection went down for writing.
+   */
+  size_t out_buffer_used;
+
+  /**
+   * The socket we gave to the application (r/w).
+   */
+  struct UpgradeEpollHandle app;
+
+  /**
+   * If @a app_sock was a socketpair, our end of it, otherwise
+   * #MHD_INVALID_SOCKET; (r/w).
+   */
+  struct UpgradeEpollHandle mhd;
+
+  /**
+   * Emergency IO buffer we use in case the memory pool has literally
+   * nothing left.
+   */
+  char e_buf[RESERVE_EBUF_SIZE];
+
+#endif /* HTTPS_SUPPORT */
+
+  /**
+   * Set to true after the application finished with the socket
+   * by #MHD_UPGRADE_ACTION_CLOSE.
+   *
+   * When BOTH @e was_closed (changed by command from application)
+   * AND @e clean_ready (changed internally by MHD) are set to
+   * #MHD_YES, function #MHD_resume_connection() will move this
+   * connection to cleanup list.
+   * @remark This flag could be changed from any thread.
+   */
+  volatile bool was_closed;
+
+  /**
+   * Set to true if connection is ready for cleanup.
+   *
+   * In TLS mode functions #MHD_connection_finish_forward_() must
+   * be called before setting this flag to true.
+   *
+   * In thread-per-connection mode, true in this flag means
+   * that connection's thread exited or about to exit and will
+   * not use MHD_Connection::urh data anymore.
+   *
+   * In any mode true in this flag also means that
+   * MHD_Connection::urh data will not be used for socketpair
+   * forwarding and forwarding itself is finished.
+   *
+   * When BOTH @e was_closed (changed by command from application)
+   * AND @e clean_ready (changed internally by MHD) are set to
+   * true, function #MHD_resume_connection() will move this
+   * connection to cleanup list.
+   * @remark This flag could be changed from thread that process
+   * connection's recv(), send() and response.
+   */
+  bool clean_ready;
+};
+#endif /* UPGRADE_SUPPORT */
+
+
 /**
  * State kept for each MHD daemon.  All connections are kept in two
  * doubly-linked lists.  The first one reflects the state of the
@@ -910,6 +1106,22 @@ struct MHD_Daemon
 
   
 #if HTTPS_SUPPORT
+#ifdef UPGRADE_SUPPORT
+  /**
+   * Head of DLL of upgrade response handles we are processing.
+   * Used for upgraded TLS connections when thread-per-connection
+   * is not used.
+   */
+  struct MHD_UpgradeResponseHandle *urh_head;
+
+  /**
+   * Tail of DLL of upgrade response handles we are processing.
+   * Used for upgraded TLS connections when thread-per-connection
+   * is not used.
+   */
+  struct MHD_UpgradeResponseHandle *urh_tail;
+#endif /* UPGRADE_SUPPORT */
+
   /**
    * Which TLS backend should be used. NULL for no TLS.
    * This is merely the handle to the dlsym() object, not
@@ -1012,13 +1224,10 @@ struct MHD_Daemon
    */
   struct MHD_Connection *eready_tail;
 
-#ifdef EPOLL_SUPPORT
   /**
    * Pointer to marker used to indicate ITC slot in epoll sets.
    */
   const char *epoll_itc_marker;
-#endif
-  
 #ifdef UPGRADE_SUPPORT
   /**
    * Head of EDLL of upgraded connections ready for processing (in epoll mode).

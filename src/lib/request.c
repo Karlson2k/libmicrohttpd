@@ -47,8 +47,6 @@ MHD_request_get_values (struct MHD_Request *request,
   int ret;
   struct MHD_HTTP_Header *pos;
 
-  if (NULL == request)
-    return -1;
   ret = 0;
   for (pos = request->headers_received;
        NULL != pos;
@@ -143,8 +141,6 @@ MHD_request_lookup_value (struct MHD_Request *request,
 {
   struct MHD_HTTP_Header *pos;
 
-  if (NULL == request)
-    return NULL;
   for (pos = request->headers_received;
        NULL != pos;
        pos = pos->next)

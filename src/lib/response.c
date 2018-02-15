@@ -172,9 +172,6 @@ MHD_response_del_header (struct MHD_Response *response,
   struct MHD_HTTP_Header *pos;
   struct MHD_HTTP_Header *prev;
 
-  if ( (NULL == header) ||
-       (NULL == content) )
-    return MHD_NO;
   prev = NULL;
   pos = response->first_header;
   while (NULL != pos)
@@ -248,8 +245,6 @@ MHD_response_get_header (struct MHD_Response *response,
 {
   struct MHD_HTTP_Header *pos;
 
-  if (NULL == key)
-    return NULL;
   for (pos = response->first_header;
        NULL != pos;
        pos = pos->next)

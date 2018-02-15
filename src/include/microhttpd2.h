@@ -267,6 +267,16 @@ typedef SOCKET MHD_socket;
 #define _MHD_DEPR_FUNC(msg)
 #endif /* !_MHD_DEPR_FUNC */
 
+
+/* Define MHD_NONNULL attribute */
+
+/**
+ * Macro to indicate that certain parameters must be
+ * non-null.  Todo: port to non-gcc platforms.
+ */
+#define MHD_NONNULL(...) __THROW __nonnull((__VA_ARGS__))
+
+  
 /**
  * Not all architectures and `printf()`'s support the `long long` type.
  * This gives the ability to replace `long long` with just a `long`,
@@ -541,6 +551,17 @@ enum MHD_StatusCode
    */
   MHD_SC_EPOLL_CTL_CONFIGURE_NOINHERIT_FAILED = 50035,
 
+  /**
+   * We failed to build the FD set because a socket was
+   * outside of the permitted range.
+   */
+  MHD_SC_SOCKET_OUTSIDE_OF_FDSET_RANGE = 50036,
+
+  /**
+   * This daemon was not configured with options that
+   * would allow us to build an FD set for select().
+   */
+  MHD_SC_CONFIGURATION_MISSMATCH_FOR_GET_FDSET = 50037,
 
 };
 
@@ -1148,7 +1169,8 @@ typedef struct MHD_Action *
  */
 _MHD_EXTERN struct MHD_Daemon *
 MHD_daemon_create (MHD_RequestCallback cb,
-		   void *cb_cls);
+		   void *cb_cls)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1160,7 +1182,8 @@ MHD_daemon_create (MHD_RequestCallback cb,
  * @ingroup event
  */
 _MHD_EXTERN enum MHD_StatusCode
-MHD_daemon_start (struct MHD_Daemon *daemon);
+MHD_daemon_start (struct MHD_Daemon *daemon)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1184,7 +1207,8 @@ MHD_daemon_start (struct MHD_Daemon *daemon);
  * @ingroup specialized
  */
 _MHD_EXTERN MHD_socket
-MHD_daemon_quiesce (struct MHD_Daemon *daemon);
+MHD_daemon_quiesce (struct MHD_Daemon *daemon)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1194,7 +1218,8 @@ MHD_daemon_quiesce (struct MHD_Daemon *daemon);
  * @ingroup event
  */
 _MHD_EXTERN void
-MHD_daemon_destroy (struct MHD_Daemon *daemon);
+MHD_daemon_destroy (struct MHD_Daemon *daemon)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1226,7 +1251,8 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_add_connection (struct MHD_Daemon *daemon,
 			   MHD_socket client_socket,
 			   const struct sockaddr *addr,
-			   socklen_t addrlen);
+			   socklen_t addrlen)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1258,7 +1284,8 @@ MHD_daemon_get_fdset (struct MHD_Daemon *daemon,
 		      fd_set *read_fd_set,
 		      fd_set *write_fd_set,
 		      fd_set *except_fd_set,
-		      MHD_socket *max_fd);
+		      MHD_socket *max_fd)
+  MHD_NONNULL(1,2,3,4);
 
 
 /**
@@ -1294,7 +1321,8 @@ MHD_daemon_get_fdset2 (struct MHD_Daemon *daemon,
 		       fd_set *write_fd_set,
 		       fd_set *except_fd_set,
 		       MHD_socket *max_fd,
-		       unsigned int fd_setsize);
+		       unsigned int fd_setsize)
+  MHD_NONNULL(1,2,3,4);
 
 
 /**
@@ -1344,7 +1372,8 @@ MHD_daemon_get_fdset2 (struct MHD_Daemon *daemon,
  */
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_get_timeout (struct MHD_Daemon *daemon,
-			MHD_UNSIGNED_LONG_LONG *timeout);
+			MHD_UNSIGNED_LONG_LONG *timeout)
+  MHD_NONNULL(1,2);
 
 
 /**
@@ -1366,7 +1395,8 @@ MHD_daemon_get_timeout (struct MHD_Daemon *daemon,
  * @ingroup event
  */
 _MHD_EXTERN enum MHD_StatusCode
-MHD_daemon_run (struct MHD_Daemon *daemon);
+MHD_daemon_run (struct MHD_Daemon *daemon)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1395,9 +1425,8 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_run_from_select (struct MHD_Daemon *daemon,
 			    const fd_set *read_fd_set,
 			    const fd_set *write_fd_set,
-			    const fd_set *except_fd_set);
-
-
+			    const fd_set *except_fd_set)
+  MHD_NONNULL(1,2,3,4);
 
 
 /* ********************* daemon options ************** */
@@ -1431,7 +1460,8 @@ typedef void
 _MHD_EXTERN void
 MHD_daemon_set_logger (struct MHD_Daemon *daemon,
 		       MHD_LoggingCallback logger,
-		       void *logger_cls);
+		       void *logger_cls)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1448,7 +1478,8 @@ MHD_daemon_set_logger (struct MHD_Daemon *daemon,
  * @param daemon which instance to disable clock for.
  */
 _MHD_EXTERN void
-MHD_daemon_suppress_date_no_clock (struct MHD_Daemon *daemon);
+MHD_daemon_suppress_date_no_clock (struct MHD_Daemon *daemon)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1469,7 +1500,8 @@ MHD_daemon_suppress_date_no_clock (struct MHD_Daemon *daemon);
  * @param daemon which instance to disable itc for
  */
 _MHD_EXTERN void
-MHD_daemon_disable_itc (struct MHD_Daemon *daemon);
+MHD_daemon_disable_itc (struct MHD_Daemon *daemon)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1481,7 +1513,8 @@ MHD_daemon_disable_itc (struct MHD_Daemon *daemon);
  * @param daemon which instance to enable turbo for
  */
 _MHD_EXTERN void
-MHD_daemon_enable_turbo (struct MHD_Daemon *daemon);
+MHD_daemon_enable_turbo (struct MHD_Daemon *daemon)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1494,7 +1527,8 @@ MHD_daemon_enable_turbo (struct MHD_Daemon *daemon);
  * @param daemon which instance to disable suspend for
  */
 _MHD_EXTERN void
-MHD_daemon_disallow_suspend_resume (struct MHD_Daemon *daemon);
+MHD_daemon_disallow_suspend_resume (struct MHD_Daemon *daemon)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1509,7 +1543,8 @@ MHD_daemon_disallow_suspend_resume (struct MHD_Daemon *daemon);
  * @param daemon which instance to enable suspend/resume for
  */
 _MHD_EXTERN void
-MHD_daemon_disallow_upgrade (struct MHD_Daemon *daemon);
+MHD_daemon_disallow_upgrade (struct MHD_Daemon *daemon)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1555,7 +1590,8 @@ enum MHD_FastOpenMethod
 _MHD_EXTERN enum MHD_Bool
 MHD_daemon_tcp_fastopen (struct MHD_Daemon *daemon,
 			 enum MHD_FastOpenMethod fom,
-			 unsigned int queue_length);
+			 unsigned int queue_length)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1608,7 +1644,8 @@ enum MHD_AddressFamily
 _MHD_EXTERN void
 MHD_daemon_bind_port (struct MHD_Daemon *daemon,
 		      enum MHD_AddressFamily af,
-		      uint16_t port);
+		      uint16_t port)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1623,7 +1660,8 @@ MHD_daemon_bind_port (struct MHD_Daemon *daemon,
 _MHD_EXTERN void
 MHD_daemon_bind_socket_address (struct MHD_Daemon *daemon,
 				const struct sockaddr *sa,
-				size_t sa_len);
+				size_t sa_len)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1635,7 +1673,8 @@ MHD_daemon_bind_socket_address (struct MHD_Daemon *daemon,
  */
 _MHD_EXTERN void
 MHD_daemon_listen_backlog (struct MHD_Daemon *daemon,
-			   int listen_backlog);
+			   int listen_backlog)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1649,7 +1688,8 @@ MHD_daemon_listen_backlog (struct MHD_Daemon *daemon,
  * @param daemon daemon to configure address reuse for
  */
 _MHD_EXTERN void
-MHD_daemon_listen_allow_address_reuse (struct MHD_Daemon *daemon);
+MHD_daemon_listen_allow_address_reuse (struct MHD_Daemon *daemon)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1668,7 +1708,8 @@ MHD_daemon_listen_allow_address_reuse (struct MHD_Daemon *daemon);
  */
 _MHD_EXTERN void
 MHD_daemon_listen_socket (struct MHD_Daemon *daemon,
-			  MHD_socket listen_socket);
+			  MHD_socket listen_socket)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1708,7 +1749,8 @@ enum MHD_EventLoopSyscall
  */
 _MHD_EXTERN enum MHD_Bool
 MHD_daemon_event_loop (struct MHD_Daemon *daemon,
-		       enum MHD_EventLoopSyscall els);
+		       enum MHD_EventLoopSyscall els)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1752,7 +1794,8 @@ enum MHD_ProtocolStrictLevel
  */
 _MHD_EXTERN void
 MHD_daemon_protocol_strict_level (struct MHD_Daemon *daemon,
-				  enum MHD_ProtocolStrictLevel sl);
+				  enum MHD_ProtocolStrictLevel sl)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1762,7 +1805,8 @@ MHD_daemon_protocol_strict_level (struct MHD_Daemon *daemon,
  * @param daemon daemon to set SHOUTcast option for
  */
 _MHD_EXTERN void
-MHD_daemon_enable_shoutcast (struct MHD_Daemon *daemon);
+MHD_daemon_enable_shoutcast (struct MHD_Daemon *daemon)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1783,7 +1827,8 @@ MHD_daemon_enable_shoutcast (struct MHD_Daemon *daemon);
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_tls_backend (struct MHD_Daemon *daemon,
 			    const char *tls_backend,
-			    const char *ciphers);
+			    const char *ciphers)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1802,7 +1847,8 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_tls_key_and_cert_from_memory (struct MHD_Daemon *daemon,
 					 const char *mem_key,
 					 const char *mem_cert,
-					 const char *pass);
+					 const char *pass)
+  MHD_NONNULL(1,2,3);
 
 
 /**
@@ -1815,7 +1861,8 @@ MHD_daemon_tls_key_and_cert_from_memory (struct MHD_Daemon *daemon,
  */
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_tls_mem_dhparams (struct MHD_Daemon *daemon,
-			     const char *dh);
+			     const char *dh)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1828,7 +1875,8 @@ MHD_daemon_tls_mem_dhparams (struct MHD_Daemon *daemon,
  */
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_tls_mem_trust (struct MHD_Daemon *daemon,
-			  const char *mem_trust);
+			  const char *mem_trust)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1840,7 +1888,8 @@ MHD_daemon_tls_mem_trust (struct MHD_Daemon *daemon,
  */
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_gnutls_credentials (struct MHD_Daemon *daemon,
-			       int gnutls_credentials);
+			       int gnutls_credentials)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1862,7 +1911,8 @@ MHD_daemon_gnutls_credentials (struct MHD_Daemon *daemon,
  */
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_gnutls_key_and_cert_from_callback (struct MHD_Daemon *daemon,
-					      void *cb);
+					      void *cb)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1920,7 +1970,8 @@ enum MHD_ThreadingModel
  */
 _MHD_EXTERN void
 MHD_daemon_threading_model (struct MHD_Daemon *daemon,
-			    enum MHD_ThreadingModel tm);
+			    enum MHD_ThreadingModel tm)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1950,7 +2001,8 @@ typedef enum MHD_Bool
 _MHD_EXTERN void
 MHD_daemon_accept_policy (struct MHD_Daemon *daemon,
 			  MHD_AcceptPolicyCallback apc,
-			  void *apc_cls);
+			  void *apc_cls)
+  MHD_NONNULL(1);
 
 
 /**
@@ -1981,7 +2033,8 @@ typedef void *
 _MHD_EXTERN void
 MHD_daemon_set_early_uri_logger (struct MHD_Daemon *daemon,
 				 MHD_EarlyUriLogCallback cb,
-				 void *cb_cls);
+				 void *cb_cls)
+  MHD_NONNULL(1);
 
 
 /**
@@ -2043,7 +2096,8 @@ typedef void
 _MHD_EXTERN void
 MHD_daemon_set_notify_connection (struct MHD_Daemon *daemon,
 				  MHD_NotifyConnectionCallback ncc,
-				  void *ncc_cls);
+				  void *ncc_cls)
+  MHD_NONNULL(1);
 
 
 /**
@@ -2060,7 +2114,8 @@ MHD_daemon_set_notify_connection (struct MHD_Daemon *daemon,
 _MHD_EXTERN void
 MHD_daemon_connection_memory_limit (struct MHD_Daemon *daemon,
 				    size_t memory_limit_b,
-				    size_t memory_increment_b);
+				    size_t memory_increment_b)
+  MHD_NONNULL(1);
 
 
 /**
@@ -2073,7 +2128,8 @@ MHD_daemon_connection_memory_limit (struct MHD_Daemon *daemon,
  */
 _MHD_EXTERN void
 MHD_daemon_thread_stack_size (struct MHD_Daemon *daemon,
-			      size_t stack_limit_b);
+			      size_t stack_limit_b)
+  MHD_NONNULL(1);
 
 
 /**
@@ -2094,7 +2150,8 @@ MHD_daemon_thread_stack_size (struct MHD_Daemon *daemon,
 _MHD_EXTERN void
 MHD_daemon_connection_limits (struct MHD_Daemon *daemon,
 			      unsigned int global_connection_limit,
-			      unsigned int ip_connection_limit);
+			      unsigned int ip_connection_limit)
+  MHD_NONNULL(1);
 
 
 /**
@@ -2107,7 +2164,8 @@ MHD_daemon_connection_limits (struct MHD_Daemon *daemon,
  */
 _MHD_EXTERN void
 MHD_daemon_connection_default_timeout (struct MHD_Daemon *daemon,
-				       unsigned int timeout_s);
+				       unsigned int timeout_s)
+  MHD_NONNULL(1);
 
 
 /**
@@ -2142,7 +2200,8 @@ typedef size_t
 _MHD_EXTERN void
 MHD_daemon_unescape_cb (struct MHD_Daemon *daemon,
 			MHD_UnescapeCallback unescape_cb,
-			void *unescape_cb_cls);
+			void *unescape_cb_cls)
+  MHD_NONNULL(1);
 
 
 /**
@@ -2157,7 +2216,8 @@ MHD_daemon_unescape_cb (struct MHD_Daemon *daemon,
 _MHD_EXTERN void
 MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
 			       size_t buf_size,
-			       const void *buf);
+			       const void *buf)
+  MHD_NONNULL(1,3);
 
 
 /**
@@ -2169,7 +2229,8 @@ MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
  */
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
-				  size_t nc_length);
+				  size_t nc_length)
+  MHD_NONNULL(1);
 
 
 /* ********************* connection options ************** */
@@ -2185,7 +2246,8 @@ MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
  */
 _MHD_EXTERN void
 MHD_connection_set_timeout (struct MHD_Connection *connection,
-			    unsigned int timeout_s);
+			    unsigned int timeout_s)
+  MHD_NONNULL(1);
 
 
 /* **************** Request handling functions ***************** */
@@ -2268,7 +2330,8 @@ _MHD_EXTERN unsigned int
 MHD_request_get_values (struct MHD_Request *request,
 			enum MHD_ValueKind kind,
 			MHD_KeyValueIterator iterator,
-			void *iterator_cls);
+			void *iterator_cls)
+  MHD_NONNULL(1);
 
 
 /**
@@ -2300,7 +2363,8 @@ _MHD_EXTERN enum MHD_Bool
 MHD_request_set_value (struct MHD_Request *request,
 		       enum MHD_ValueKind kind,
 		       const char *key,
-		       const char *value);
+		       const char *value)
+  MHD_NONNULL(1,3,4);
 
 
 /**
@@ -2316,7 +2380,8 @@ MHD_request_set_value (struct MHD_Request *request,
 _MHD_EXTERN const char *
 MHD_request_lookup_value (struct MHD_Request *request,
 			  enum MHD_ValueKind kind,
-			  const char *key);
+			  const char *key)
+  MHD_NONNULL(1);
 
 
 
@@ -2487,7 +2552,8 @@ MHD_action_suspend (void);
  * @param request the request to resume
  */
 _MHD_EXTERN void
-MHD_request_resume (struct MHD_Request *request);
+MHD_request_resume (struct MHD_Request *request)
+  MHD_NONNULL(1);
 
 
 /* **************** Response manipulation functions ***************** */
@@ -2520,7 +2586,8 @@ struct MHD_Response;
  */
 _MHD_EXTERN struct MHD_Action *
 MHD_action_from_response (struct MHD_Response *response,
-			  enum MHD_Bool destroy_after_use);
+			  enum MHD_Bool destroy_after_use)
+  MHD_NONNULL(1);
 
 
 /**
@@ -2531,7 +2598,8 @@ MHD_action_from_response (struct MHD_Response *response,
  * @param request the request for which we force HTTP 1.0 to be used
  */
 _MHD_EXTERN void
-MHD_response_option_v10_only (struct MHD_Response *response);
+MHD_response_option_v10_only (struct MHD_Response *response)
+  MHD_NONNULL(1);
 
 
 /**
@@ -2620,7 +2688,8 @@ typedef void
 _MHD_EXTERN void
 MHD_response_option_termination_callback (struct MHD_Response *response,
 					  MHD_RequestTerminationCallback termination_cb,
-					  void *termination_cb_cls);
+					  void *termination_cb_cls)
+  MHD_NONNULL(1);
 
 
 /**
@@ -2837,7 +2906,8 @@ struct MHD_UpgradeResponseHandle;
 _MHD_EXTERN enum MHD_Bool
 MHD_upgrade_operation (struct MHD_UpgradeResponseHandle *urh,
 		       enum MHD_UpgradeOperation operation,
-		       ...);
+		       ...)
+  MHD_NONNULL(1);
 
 
 /**
@@ -2929,7 +2999,8 @@ typedef void
  */
 _MHD_EXTERN struct MHD_Response *
 MHD_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
-			  void *upgrade_handler_cls);
+			  void *upgrade_handler_cls)
+  MHD_NONNULL(1);
 
 
 /**
@@ -2942,7 +3013,8 @@ MHD_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
  * @ingroup response
  */
 _MHD_EXTERN void
-MHD_response_queue_for_destroy (struct MHD_Response *response);
+MHD_response_queue_for_destroy (struct MHD_Response *response)
+  MHD_NONNULL(1);
 
 
 /**
@@ -2958,7 +3030,8 @@ MHD_response_queue_for_destroy (struct MHD_Response *response);
 _MHD_EXTERN enum MHD_Bool
 MHD_response_add_header (struct MHD_Response *response,
                          const char *header,
-			 const char *content);
+			 const char *content)
+  MHD_NONNULL(1,2,3);
 
 
 /**
@@ -2974,7 +3047,8 @@ MHD_response_add_header (struct MHD_Response *response,
 _MHD_EXTERN enum MHD_Bool
 MHD_response_add_trailer (struct MHD_Response *response,
                           const char *footer,
-                          const char *content);
+                          const char *content)
+  MHD_NONNULL(1,2,3);
 
 
 /**
@@ -2989,7 +3063,8 @@ MHD_response_add_trailer (struct MHD_Response *response,
 _MHD_EXTERN enum MHD_Bool
 MHD_response_del_header (struct MHD_Response *response,
                          const char *header,
-			 const char *content);
+			 const char *content)
+  MHD_NONNULL(1,2,3);
 
 
 /**
@@ -3005,7 +3080,8 @@ MHD_response_del_header (struct MHD_Response *response,
 _MHD_EXTERN unsigned int
 MHD_response_get_headers (struct MHD_Response *response,
                           MHD_KeyValueIterator iterator,
-			  void *iterator_cls);
+			  void *iterator_cls)
+  MHD_NONNULL(1);
 
 
 /**
@@ -3018,7 +3094,8 @@ MHD_response_get_headers (struct MHD_Response *response,
  */
 _MHD_EXTERN const char *
 MHD_response_get_header (struct MHD_Response *response,
-			 const char *key);
+			 const char *key)
+  MHD_NONNULL(1,2);
 
 
 /* ************Upload and PostProcessor functions ********************** */
@@ -3067,7 +3144,8 @@ typedef struct MHD_Action *
  */
 _MHD_EXTERN struct MHD_Action *
 MHD_action_process_upload (MHD_UploadCallback uc,
-			   void *uc_cls);
+			   void *uc_cls)
+  MHD_NONNULL(1);
 
 
 /**
@@ -3132,7 +3210,8 @@ typedef struct MHD_Action *
 _MHD_EXTERN struct MHD_Action *
 MHD_action_parse_post (size_t buffer_size,
 		       MHD_PostDataIterator iter,
-		       void *iter_cls);
+		       void *iter_cls)
+  MHD_NONNULL(2);
 
 
 
@@ -3303,7 +3382,8 @@ _MHD_EXTERN enum MHD_Bool
 MHD_connection_get_information_sz (struct MHD_Connection *connection,
 				   enum MHD_ConnectionInformationType info_type,
 				   union MHD_ConnectionInformation *return_value,
-				   size_t return_value_size);
+				   size_t return_value_size)
+  MHD_NONNULL(1,3);
 
 
 /**
@@ -3415,7 +3495,8 @@ _MHD_EXTERN enum MHD_Bool
 MHD_request_get_information_sz (struct MHD_Request *request,
 			        enum MHD_RequestInformationType info_type,
 			        union MHD_RequestInformation *return_value,
-			        size_t return_value_size);
+			        size_t return_value_size)
+  MHD_NONNULL(1,3);
 
 
 /**
@@ -3521,7 +3602,8 @@ _MHD_EXTERN enum MHD_Bool
 MHD_daemon_get_information_sz (struct MHD_Daemon *daemon,
 			       enum MHD_DaemonInformationType info_type,
 			       union MHD_DaemonInformation *return_value,
-			       size_t return_value_size);
+			       size_t return_value_size)
+  MHD_NONNULL(1,3);
 
 /**
  * Obtain information about the given daemon.
@@ -3588,7 +3670,8 @@ MHD_set_panic_func (MHD_PanicCallback cb,
  *  shorter afterwards due to elimination of escape sequences)
  */
 _MHD_EXTERN size_t
-MHD_http_unescape (char *val);
+MHD_http_unescape (char *val)
+  MHD_NONNULL(1);
 
 
 /**

@@ -93,8 +93,6 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
 {
   MHD_socket fd;
 
-  if (NULL == daemon)
-    return;
   daemon->shutdown = true;
   if (daemon->was_quiesced)
     fd = MHD_INVALID_SOCKET; /* Do not use FD if daemon was quiesced */

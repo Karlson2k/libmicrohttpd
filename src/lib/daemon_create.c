@@ -89,8 +89,6 @@ MHD_daemon_create (MHD_RequestCallback cb,
   struct MHD_Daemon *daemon;
 
   MHD_check_global_init_();
-  if (NULL == cb)
-    return NULL;
   if (NULL == (daemon = malloc (sizeof (struct MHD_Daemon))))
     return NULL;
   memset (daemon,
