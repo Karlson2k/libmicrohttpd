@@ -425,7 +425,7 @@ internal_run_from_select (struct MHD_Daemon *daemon,
        (! daemon->was_quiesced) &&
        (FD_ISSET (ds,
                   read_fd_set)) )
-    (void) MHD_accept_connection (daemon);
+    (void) MHD_accept_connection_ (daemon);
 
   if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model)
     {

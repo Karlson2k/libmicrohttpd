@@ -429,7 +429,7 @@ struct MHD_Request
    * response (which maybe shared between requests) and the IP
    * address (which persists across individual requests).
    */
-  struct MemoryPool *pool;
+  struct MemoryPool *pool; // FIXME: keep with connnection!
 
   /**
    * We allow the main application to associate some pointer with the
@@ -513,12 +513,6 @@ struct MHD_Request
    */
   struct MHD_UpgradeResponseHandle *urh;
 #endif /* UPGRADE_SUPPORT */
-
-  /**
-   * Thread handle for this connection (if we are using
-   * one thread per connection).
-   */
-  MHD_thread_handle_ID_ pid;
 
   /**
    * Size of @e read_buffer (in bytes).  This value indicates
@@ -758,6 +752,12 @@ struct MHD_Connection
    * on this connection.
    */
   struct MHD_Request request;
+
+  /**
+   * Thread handle for this connection (if we are using
+   * one thread per connection).
+   */
+  MHD_thread_handle_ID_ pid;
 
   /**
    * Foreign address (of length @e addr_len). 
@@ -1217,6 +1217,11 @@ struct MHD_Daemon
    * Tail of doubly-linked list of connections to clean up.
    */
   struct MHD_Connection *cleanup_tail;
+
+  /**
+   * Table storing number of connections per IP
+   */
+  void *per_ip_connection_count;
 
 #ifdef EPOLL_SUPPORT
   /**

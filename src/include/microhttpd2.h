@@ -348,6 +348,80 @@ enum MHD_StatusCode
    */
   MHD_SC_NO_TIMEOUT = 10001,
 
+  /**
+   * Informational event, we accepted a connection.
+   */
+  MHD_SC_CONNECTION_ACCEPTED = 10002,
+
+  /**
+   * Informational event, thread processing connection termiantes.
+   */
+  MHD_SC_THREAD_TERMINATING = 10003,
+
+  
+  /**
+   * Resource limit in terms of number of parallel connections
+   * hit.
+   */
+  MHD_SC_LIMIT_CONNECTIONS_REACHED = 30000,
+
+  /**
+   * accept() returned transient error.
+   */
+  MHD_SC_ACCEPT_FAILED_EAGAIN = 30001,
+
+  /**
+   * We failed to allocate memory for poll() syscall.
+   * (May be transient.)
+   */
+  MHD_SC_POLL_MALLOC_FAILURE = 30002,
+
+  /**
+   * The operation failed because the respective
+   * daemon is already too deep inside of the shutdown 
+   * activity.
+   */
+  MHD_SC_DAEMON_ALREADY_SHUTDOWN = 30003,
+
+  /**
+   * We failed to start a thread.
+   */
+  MHD_SC_THREAD_LAUNCH_FAILURE = 30004,
+
+  /**
+   * The operation failed because we either have no
+   * listen socket or were already quiesced.
+   */
+  MHD_SC_DAEMON_ALREADY_QUIESCED = 30005,
+
+  /**
+   * The operation failed because client disconnected
+   * faster than we could accept().
+   */
+  MHD_SC_ACCEPT_FAST_DISCONNECT = 30006,
+
+  /**
+   * Operating resource limits hit on accept().
+   */
+  MHD_SC_ACCEPT_SYSTEM_LIMIT_REACHED = 30007,
+
+  /**
+   * Connection was refused by accept policy callback.
+   */
+  MHD_SC_ACCEPT_POLICY_REJECTED = 30008,
+
+  /**
+   * We failed to allocate memory for the connection.
+   * (May be transient.)
+   */
+  MHD_SC_CONNECTION_MALLOC_FAILURE = 30009,
+
+  /**
+   * We failed to allocate memory for the connection's memory pool.
+   * (May be transient.)
+   */
+  MHD_SC_POOL_MALLOC_FAILURE = 30010,
+  
 
   /**
    * MHD does not support the requested combination of
@@ -362,21 +436,27 @@ enum MHD_StatusCode
   MHD_SC_SYSCALL_QUIESCE_REQUIRES_ITC = 40001,
 
   /**
-   * This build of MHD does not support TLS, but the application
-   * requested TLS.
+   * We failed to bind the listen socket.
    */
-  MHD_SC_TLS_DISABLED = 50000,
+  MHD_SC_LISTEN_SOCKET_BIND_FAILED = 40002,
 
   /**
    * The application requested an unsupported TLS backend to be used.
    */
-  MHD_SC_TLS_BACKEND_UNSUPPORTED = 50001,
+  MHD_SC_TLS_BACKEND_UNSUPPORTED = 40003,
 
   /**
    * The application requested a TLS cipher suite which is not
    * supported by the selected backend.
    */
-  MHD_SC_TLS_CIPHERS_INVALID = 50002,
+  MHD_SC_TLS_CIPHERS_INVALID = 40004,
+
+  
+  /**
+   * This build of MHD does not support TLS, but the application
+   * requested TLS.
+   */
+  MHD_SC_TLS_DISABLED = 50000,
   
   /**
    * The application attempted to setup TLS paramters before
@@ -467,11 +547,6 @@ enum MHD_StatusCode
   MHD_SC_LISTEN_DUAL_STACK_CONFIGURATION_NOT_SUPPORTED = 50018,
 
   /**
-   * We failed to bind the listen socket.
-   */
-  MHD_SC_LISTEN_SOCKET_BIND_FAILED = 50019,
-
-  /**
    * Failed to enable TCP FAST OPEN option.
    */
   MHD_SC_FAST_OPEN_FAILURE = 50020,
@@ -519,12 +594,10 @@ enum MHD_StatusCode
   MHD_SC_UPGRADE_ON_DAEMON_WITH_UPGRADE_DISALLOWED = 50028,
 
   /**
-   * Queueing a response failed because the respective
-   * daemon is already too deep inside of the shutdown 
-   * activity and the reponse cannot be sent any longer.
+   * Failed to signal via ITC channel.
    */
-  MHD_SC_DAEMON_ALREADY_SHUTDOWN = 50029,
-
+  MHD_SC_ITC_USE_FAILED = 50029,
+  
   /**
    * We failed to initialize the main thread for listening.
    */
@@ -539,11 +612,6 @@ enum MHD_StatusCode
    * We failed to add a socket to the epoll() set.
    */
   MHD_SC_EPOLL_CTL_ADD_FAILED = 50032,
-
-  /**
-   * We failed to start a thread.
-   */
-  MHD_SC_THREAD_LAUNCH_FAILURE = 50033,
   
   /**
    * We failed to create control socket for the epoll().
@@ -608,12 +676,13 @@ enum MHD_StatusCode
    * (should never happen).
    */
   MHD_SC_UNEXPECTED_POLL_ERROR = 50044,
-
+  
   /**
-   * We failed to allocate memory for poll() syscall.
+   * We failed to configure accepted socket
+   * to not use a signal pipe.
    */
-  MHD_SC_POLL_MALLOC_FAILURE = 50045,
-
+  MHD_SC_ACCEPT_CONFIGURE_NOSIGPIPE_FAILED = 50045,
+  
   /**
    * Encountered an unexpected error from epoll_wait()
    * (should never happen).
@@ -625,6 +694,35 @@ enum MHD_StatusCode
    */
   MHD_SC_EPOLL_FD_INVALID = 50047,
 
+  /**
+   * We failed to configure accepted socket
+   * to be non-inheritable.
+   */
+  MHD_SC_ACCEPT_CONFIGURE_NOINHERIT_FAILED = 50048,
+
+  /**
+   * We failed to configure accepted socket
+   * to be non-blocking.
+   */
+  MHD_SC_ACCEPT_CONFIGURE_NONBLOCKING_FAILED = 50049,
+
+  /**
+   * accept() returned non-transient error.
+   */
+  MHD_SC_ACCEPT_FAILED_UNEXPECTEDLY = 50050,
+
+  /**
+   * Operating resource limits hit on accept() while
+   * zero connections are active. Oopsie.
+   */
+  MHD_SC_ACCEPT_SYSTEM_LIMIT_REACHED_INSTANTLY = 50051,
+
+  /**
+   * Failed to add IP address to per-IP counter for
+   * some reason.
+   */
+  MHD_SC_IP_COUNTER_FAILURE = 50052,
+  
 };
 
 

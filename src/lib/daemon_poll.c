@@ -333,7 +333,7 @@ MHD_daemon_poll_all_ (struct MHD_Daemon *daemon,
     /* handle 'listen' FD */
     if ( (-1 != poll_listen) &&
 	 (0 != (p[poll_listen].revents & POLLIN)) )
-      (void) MHD_accept_connection (daemon);
+      (void) MHD_accept_connection_ (daemon);
 
     free(p);
   }
@@ -418,7 +418,7 @@ MHD_daemon_poll_listen_socket_ (struct MHD_Daemon *daemon,
     return MHD_SC_DAEMON_ALREADY_SHUTDOWN;
   if ( (-1 != poll_listen) &&
        (0 != (p[poll_listen].revents & POLLIN)) )
-    (void) MHD_accept_connection (daemon);
+    (void) MHD_accept_connection_ (daemon);
   return MHD_SC_OK;
 }
 #endif

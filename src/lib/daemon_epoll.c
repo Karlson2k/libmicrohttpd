@@ -385,7 +385,7 @@ MHD_daemon_epoll_ (struct MHD_Daemon *daemon,
                    * be accepted on next turn (level trigger is used for listen
                    * socket). */
                   while ( (MHD_YES ==
-			   MHD_accept_connection (daemon)) &&
+			   MHD_accept_connection_ (daemon)) &&
                           (series_length < 10) &&
                           (daemon->connections < daemon->global_connection_limit) &&
                           (! daemon->at_limit) )

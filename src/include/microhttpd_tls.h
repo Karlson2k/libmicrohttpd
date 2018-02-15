@@ -89,6 +89,10 @@ struct MHD_TLS_Plugin
   struct MHD_TLS_ConnectionState *
   (*setup_connection)(void *cls,
 		      ...);
+
+  void
+  (*teardown_connection)(void *cls,
+			 struct MHD_TLS_ConnectionState *cs);
   
   /**
    * TODO: More functions here....

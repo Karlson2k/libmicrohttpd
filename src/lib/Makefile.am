@@ -58,14 +58,15 @@ libmicrohttpd_la_SOURCES = \
   action_parse_post.c \
   action_process_upload.c \
   action_suspend.c \
+  connection_add.c connection_add.h \
   connection_info.c \
   connection_options.c \
-  daemon_add_connection.c \
   daemon_create.c \
   daemon_destroy.c \
   daemon_epoll.c daemon_epoll.h \
   daemon_get_timeout.c \
   daemon_info.c \
+  daemon_ip_limit.c daemon_ip_limit.h \
   daemon_options.c \
   daemon_poll.c daemon_poll.h \
   daemon_run.c \
