@@ -326,7 +326,7 @@ MHD_daemon_poll_all_ (struct MHD_Daemon *daemon,
              * moved immediately to cleanup list. Otherwise connection
              * will stay in suspended list until 'urh' will be marked
              * with 'was_closed' by application. */
-            MHD_resume_connection(urh->connection);
+            MHD_request_resume (&urh->connection->request);
           }
       }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */

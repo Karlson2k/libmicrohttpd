@@ -42,7 +42,24 @@
 void
 MHD_request_resume (struct MHD_Request *request)
 {
-  abort (); // not implemented...
+  struct MHD_Daemon *daemon = request->daemon;
+  
+  if (daemon->disallow_suspend_resume)
+    MHD_PANIC (_("Cannot resume connections without enabling MHD_ALLOW_SUSPEND_RESUME!\n"));
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+  request->connection->resuming = true;
+  daemon->resuming = true;
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+  if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
+       (! MHD_itc_activate_ (daemon->itc,
+			     "r")) )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+		MHD_SC_ITC_USE_FAILED,
+                _("Failed to signal resume via inter-thread communication channel."));
+#endif
+    }
 }
 
 /* end of request_resume.c */

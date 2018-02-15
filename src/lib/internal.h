@@ -1542,6 +1542,11 @@ struct MHD_Daemon
   bool was_quiesced;
 
   /**
+   * Is some connection wanting to resume?
+   */
+  bool resuming;
+
+  /**
    * Allow reusing the address:port combination when binding.
    * See #MHD_daemon_listen_allow_address_reuse().
    */

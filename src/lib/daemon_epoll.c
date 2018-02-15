@@ -188,7 +188,7 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
            * will be moved immediately to cleanup list. Otherwise
            * connection will stay in suspended list until 'pos' will
            * be marked with 'was_closed' by application. */
-          MHD_resume_connection (pos->connection);
+          MHD_request_resume (&pos->connection->request);
         }
     }
 

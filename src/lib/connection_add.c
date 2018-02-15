@@ -369,7 +369,7 @@ thread_main_handle_connection (void *data)
            * moved immediately to cleanup list. Otherwise connection
            * will stay in suspended list until 'urh' will be marked
            * with 'was_closed' by application. */
-          MHD_resume_connection (con);
+          MHD_request_resume (&con->request);
 
           /* skip usual clean up  */
           return (MHD_THRD_RTRN_TYPE_) 0;
