@@ -63,12 +63,13 @@ libmicrohttpd_la_SOURCES = \
   daemon_add_connection.c \
   daemon_create.c \
   daemon_destroy.c \
-  daemon_get_fdset.c \
+  daemon_epoll.c daemon_epoll.h \
   daemon_get_timeout.c \
   daemon_info.c \
   daemon_options.c \
+  daemon_poll.c daemon_poll.h \
   daemon_run.c \
-  daemon_run_from_select.c \
+  daemon_select.c daemon_select.h \
   daemon_start.c \
   daemon_quiesce.c \
   init.c init.h \

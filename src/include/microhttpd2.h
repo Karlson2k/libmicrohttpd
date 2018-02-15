@@ -343,6 +343,11 @@ enum MHD_StatusCode
    */
   MHD_SC_DAEMON_STARTED = 10000,
 
+  /**
+   * Informational event, there is no timeout.
+   */
+  MHD_SC_NO_TIMEOUT = 10001,
+
 
   /**
    * MHD does not support the requested combination of
@@ -562,6 +567,36 @@ enum MHD_StatusCode
    * would allow us to build an FD set for select().
    */
   MHD_SC_CONFIGURATION_MISSMATCH_FOR_GET_FDSET = 50037,
+
+  /**
+   * This daemon was not configured with options that
+   * would allow us to obtain a meaningful timeout.
+   */
+  MHD_SC_CONFIGURATION_MISSMATCH_FOR_GET_TIMEOUT = 50038,
+
+  /**
+   * This daemon was not configured with options that
+   * would allow us to run with select() data.
+   */
+  MHD_SC_CONFIGURATION_MISSMATCH_FOR_RUN_SELECT = 50039,
+
+  /**
+   * This daemon was not configured to run with an
+   * external event loop.
+   */
+  MHD_SC_CONFIGURATION_MISSMATCH_FOR_RUN_EXTERNAL = 50040,
+
+  /**
+   * Encountered an unexpected event loop style 
+   * (should never happen).
+   */
+  MHD_SC_CONFIGURATION_UNEXPECTED_ELS = 50041,
+
+  /**
+   * Encountered an unexpected error from select()
+   * (should never happen).
+   */
+  MHD_SC_CONFIGURATION_UNEXPECTED_SELECT_ERROR = 50042,
 
 };
 

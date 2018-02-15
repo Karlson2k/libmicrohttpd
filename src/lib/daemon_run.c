@@ -23,6 +23,9 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
+#include "daemon_epoll.h"
+#include "daemon_poll.h"
+#include "daemon_select.h"
 
 
 /**
@@ -46,7 +49,32 @@
 enum MHD_StatusCode
 MHD_daemon_run (struct MHD_Daemon *daemon)
 {
-  return -1;
+  if (daemon->shutdown)
+    return MHD_SC_DAEMON_ALREADY_SHUTDOWN;
+  if (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_model)
+    return MHD_SC_CONFIGURATION_MISSMATCH_FOR_RUN_EXTERNAL;
+  switch (daemon->event_loop_syscall)
+    {
+    case MHD_ELS_POLL:
+      MHD_daemon_poll_ (daemon,
+	  	        MHD_NO);
+      MHD_cleanup_connections (daemon);
+      break;
+#ifdef EPOLL_SUPPORT
+    case MHD_ELS_EPOLL:
+      MHD_daemon_epoll_ (daemon,
+  		         MHD_NO);
+      MHD_cleanup_connections (daemon);
+      break;
+#endif
+    case MHD_ELS_SELECT:
+       MHD_daemon_select_ (daemon,
+			   MHD_NO);
+      /* MHD_select does MHD_cleanup_connections already */
+      break;
+    default:
+      return MHD_SC_CONFIGURATION_UNEXPECTED_ELS;
+    }
 }
 
 /* end of daemon_run.c */

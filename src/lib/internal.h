@@ -18,7 +18,7 @@
 */
 
 /**
- * @file microhttpd/internal.h
+ * @file lib/internal.h
  * @brief  internal shared structures
  * @author Daniel Pittman
  * @author Christian Grothoff
@@ -801,6 +801,11 @@ struct MHD_Connection
   bool suspended;
 
   /**
+   * Are we ready to read from TLS for this connection?
+   */
+  bool tls_read_ready;
+
+  /**
    * Is the connection wanting to resume?
    */
   bool resuming;
@@ -1501,11 +1506,30 @@ struct MHD_Daemon
   bool disallow_upgrade;
 
   /**
+   * Did we hit some system or process-wide resource limit while
+   * trying to accept() the last time? If so, we don't accept new
+   * connections until we close an existing one.  This effectively
+   * temporarily lowers the "connection_limit" to the current
+   * number of connections.
+   */
+  bool at_limit;
+
+  /**
    * Disables optional calls to `shutdown()` and enables aggressive
    * non-blocking optimistic reads and other potentially unsafe
    * optimizations.  See #MHD_daemon_enable_turbo().
    */
   bool enable_turbo;
+
+  /**
+   * 'True' if some data is already waiting to be processed.  If set
+   * to 'true' - zero timeout for select()/poll*() is used.  Should be
+   * reset each time before processing connections and raised by any
+   * connection which require additional immediately processing
+   * (application does not provide data for response, data waiting in
+   * TLS buffers etc.)
+   */
+  bool data_already_pending;
 
   /**
    * MHD_daemon_quiesce() was run against this daemon.

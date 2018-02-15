@@ -23,15 +23,7 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
-
-/* ************************* event loops ********************** */
-
-
-
-/* TODO: migrate! */
-
-
-/* ************* Functions for MHD_daemon_start() ************ */
+#include "daemon_select.h"
 
 
 /**
@@ -626,17 +618,17 @@ MHD_polling_thread (void *cls)
 	MHD_PANIC ("MHD_ELS_AUTO should have been mapped to preferred style");
 	break;
       case MHD_ELS_SELECT:
-	MHD_select (daemon,
-		    MHD_YES);
+	MHD_daemon_select_ (daemon,
+			    MHD_YES);
 	break;
       case MHD_ELS_POLL:
-	MHD_poll (daemon,
-		  MHD_YES);
+	MHD_daemon_poll_ (daemon,
+			  MHD_YES);
 	break;
       case MHD_ELS_EPOLL:
 #ifdef EPOLL_SUPPORT	
-	MHD_epoll (daemon,
-		   MHD_YES);
+	MHD_daemon_epoll_ (daemon,
+			   MHD_YES);
 #else
 	MHD_PANIC ("MHD_ELS_EPOLL not supported, should have failed earlier");
 #endif
