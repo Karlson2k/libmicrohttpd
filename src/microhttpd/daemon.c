@@ -2677,9 +2677,8 @@ MHD_suspend_connection (struct MHD_Connection *connection)
 void
 MHD_resume_connection (struct MHD_Connection *connection)
 {
-  struct MHD_Daemon *daemon;
-
-  daemon = connection->daemon;
+  struct MHD_Daemon *daemon = connection->daemon;
+  
   if (0 == (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
     MHD_PANIC (_("Cannot resume connections without enabling MHD_ALLOW_SUSPEND_RESUME!\n"));
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
