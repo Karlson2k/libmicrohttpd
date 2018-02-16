@@ -607,13 +607,6 @@ struct MHD_Request
   enum MHD_RequestEventLoopInfo event_loop_info;
 
   /**
-   * Did we ever call the "default_handler" on this request?  (this
-   * flag will determine if we call the #MHD_OPTION_NOTIFY_COMPLETED
-   * handler when the request closes down).
-   */
-  bool client_aware;
-
-  /**
    * Are we currently inside the "idle" handler (to avoid recursively
    * invoking it).
    */
@@ -799,6 +792,14 @@ struct MHD_Connection
    * Is the connection suspended?
    */
   bool suspended;
+
+  /**
+   * Did we ever call the "default_handler" on this request?  (this
+   * flag will determine if we call the
+   * #MHD_daemon_set_notify_connection() handler when the connection
+   * closes down).
+   */
+  bool client_aware;
 
   /**
    * Are we ready to read from TLS for this connection?

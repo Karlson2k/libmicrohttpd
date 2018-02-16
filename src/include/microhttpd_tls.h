@@ -90,6 +90,12 @@ struct MHD_TLS_Plugin
   (*setup_connection)(void *cls,
 		      ...);
 
+
+  enum MHD_Bool
+  (*shutdown_connection) (void *cls,
+			  struct MHD_TLS_ConnectionState *cs);
+
+  
   void
   (*teardown_connection)(void *cls,
 			 struct MHD_TLS_ConnectionState *cs);

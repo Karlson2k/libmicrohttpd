@@ -24,6 +24,9 @@
 #include "internal.h"
 #include "daemon_poll.h"
 #include "request_resume.h"
+#include "connection_add.h"
+#include "connection_finish_forward.h"
+
 
 #ifdef HAVE_POLL
 
@@ -463,7 +466,6 @@ void
 MHD_daemon_upgrade_connection_with_poll_ (struct MHD_Connection *con)
 {
   struct MHD_UpgradeResponseHandle *urh = con->request.urh;
-  struct MHD_Daemon *daemon = con->daemon;
   struct pollfd p[2];
 
   memset (p,

@@ -23,6 +23,7 @@
  */
 #include "internal.h"
 #include "connection_add.h"
+#include "connection_update_last_activity.h"
 #include "daemon_ip_limit.h"
 #include "daemon_select.h"
 #include "daemon_poll.h"
@@ -187,7 +188,7 @@ thread_main_handle_connection (void *data)
 
       if (was_suspended)
         {
-          MHD_update_last_activity_ (con); /* Reset timeout timer. */
+          MHD_connection_update_last_activity_ (con); /* Reset timeout timer. */
           /* Process response queued during suspend and update states. */
           MHD_connection_handle_idle (con);
           was_suspended = false;
@@ -394,14 +395,11 @@ thread_main_handle_connection (void *data)
         {
           /* Normal HTTP processing is finished,
            * notify application. */
-          if ( (NULL != con->request.response->termination_cb) &&
-               (con->request.client_aware) )
+          if (NULL != con->request.response->termination_cb) 
             con->request.response->termination_cb
 	      (con->request.response->termination_cb_cls,
 	       MHD_REQUEST_TERMINATED_COMPLETED_OK,
 	       con->request.client_context);
-          con->request.client_aware = false;
-
           thread_main_connection_upgrade (con);
           /* MHD_connection_finish_forward_() was called by thread_main_connection_upgrade(). */
 

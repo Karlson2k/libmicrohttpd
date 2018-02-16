@@ -25,6 +25,7 @@
 #include "internal.h"
 #include "daemon_select.h"
 #include "request_resume.h"
+#include "connection_finish_forward.h"
 
 
 /**

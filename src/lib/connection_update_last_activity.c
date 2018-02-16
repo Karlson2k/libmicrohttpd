@@ -44,10 +44,10 @@ MHD_connection_update_last_activity_ (struct MHD_Connection *connection)
     return; /* no activity on suspended connections */
 
   connection->last_activity = MHD_monotonic_sec_counter();
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+  if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model)
     return; /* each connection has personal timeout */
 
-  if (connection->connection_timeout != daemon->connection_timeout)
+  if (connection->connection_timeout != daemon->connection_default_timeout)
     return; /* custom timeout, no need to move it in "normal" DLL */
 
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
