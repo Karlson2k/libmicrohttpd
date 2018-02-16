@@ -23,6 +23,7 @@
  */
 #include "internal.h"
 #include "connection_add.h"
+#include "connection_call_handlers.h"
 #include "connection_close.h"
 #include "connection_finish_forward.h"
 #include "connection_update_last_activity.h"
@@ -317,13 +318,13 @@ thread_main_handle_connection (void *data)
             MHD_itc_clear_ (daemon->itc);
 #endif
           if (MHD_NO ==
-              call_handlers (con,
-                             FD_ISSET (con->socket_fd,
-                                       &rs),
-                             FD_ISSET (con->socket_fd,
-                                       &ws),
-                             FD_ISSET (con->socket_fd,
-                                       &es)) )
+              MHD_connection_call_handlers_ (con,
+					     FD_ISSET (con->socket_fd,
+						       &rs),
+					     FD_ISSET (con->socket_fd,
+						       &ws),
+					     FD_ISSET (con->socket_fd,
+						       &es)) )
             goto exit;
 	}
 #ifdef HAVE_POLL
@@ -385,10 +386,10 @@ thread_main_handle_connection (void *data)
             MHD_itc_clear_ (daemon->itc);
 #endif
           if (MHD_NO ==
-              call_handlers (con,
-                             0 != (p[0].revents & POLLIN),
-                             0 != (p[0].revents & POLLOUT),
-                             0 != (p[0].revents & (POLLERR | MHD_POLL_REVENTS_ERR_DISC))))
+              MHD_connection_call_handlers_ (con,
+					     0 != (p[0].revents & POLLIN),
+					     0 != (p[0].revents & POLLOUT),
+					     0 != (p[0].revents & (POLLERR | MHD_POLL_REVENTS_ERR_DISC))))
             goto exit;
 	}
 #endif

@@ -22,11 +22,12 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
+#include "connection_add.h"
+#include "connection_call_handlers.h"
+#include "connection_finish_forward.h"
 #include "daemon_poll.h"
 #include "upgrade_process.h"
 #include "request_resume.h"
-#include "connection_add.h"
-#include "connection_finish_forward.h"
 
 
 #ifdef HAVE_POLL
@@ -294,10 +295,10 @@ MHD_daemon_poll_all_ (struct MHD_Daemon *daemon,
           break; /* connection list changed somehow, retry later ... */
         if (p[poll_server+i].fd != pos->socket_fd)
           continue; /* fd mismatch, something else happened, retry later ... */
-        call_handlers (pos,
-                       0 != (p[poll_server+i].revents & POLLIN),
-                       0 != (p[poll_server+i].revents & POLLOUT),
-                       0 != (p[poll_server+i].revents & MHD_POLL_REVENTS_ERR_DISC));
+        MHD_connection_call_handlers_ (pos,
+				       0 != (p[poll_server+i].revents & POLLIN),
+				       0 != (p[poll_server+i].revents & POLLOUT),
+				       0 != (p[poll_server+i].revents & MHD_POLL_REVENTS_ERR_DISC));
         i++;
       }
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)

@@ -24,6 +24,7 @@
  */
 #include "internal.h"
 #include "connection_add.h"
+#include "connection_call_handlers.h"
 #include "connection_cleanup.h"
 #include "connection_finish_forward.h"
 #include "daemon_select.h"
@@ -444,13 +445,13 @@ internal_run_from_select (struct MHD_Daemon *daemon,
           ds = pos->socket_fd;
           if (MHD_INVALID_SOCKET == ds)
 	    continue;
-          call_handlers (pos,
-                         FD_ISSET (ds,
-                                   read_fd_set),
-                         FD_ISSET (ds,
-                                   write_fd_set),
-                         FD_ISSET (ds,
-                                   except_fd_set));
+          MHD_connection_call_handlers_ (pos,
+					 FD_ISSET (ds,
+						   read_fd_set),
+					 FD_ISSET (ds,
+						   write_fd_set),
+					 FD_ISSET (ds,
+						   except_fd_set));
         }
     }
 

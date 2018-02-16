@@ -23,11 +23,12 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
+#include "connection_add.h"
+#include "connection_call_handlers.h"
+#include "connection_finish_forward.h"
 #include "daemon_epoll.h"
 #include "upgrade_process.h"
 #include "request_resume.h"
-#include "connection_add.h"
-#include "connection_finish_forward.h"
 
 #ifdef EPOLL_SUPPORT
 
@@ -454,10 +455,10 @@ MHD_daemon_epoll_ (struct MHD_Daemon *daemon,
   while (NULL != (pos = prev))
     {
       prev = pos->prevE;
-      call_handlers (pos,
-                     0 != (pos->epoll_state & MHD_EPOLL_STATE_READ_READY),
-                     0 != (pos->epoll_state & MHD_EPOLL_STATE_WRITE_READY),
-                     0 != (pos->epoll_state & MHD_EPOLL_STATE_ERROR));
+      MHD_connection_call_handlers_ (pos,
+				     0 != (pos->epoll_state & MHD_EPOLL_STATE_READ_READY),
+				     0 != (pos->epoll_state & MHD_EPOLL_STATE_WRITE_READY),
+				     0 != (pos->epoll_state & MHD_EPOLL_STATE_ERROR));
       if (MHD_EPOLL_STATE_IN_EREADY_EDLL ==
             (pos->epoll_state & (MHD_EPOLL_STATE_SUSPENDED | MHD_EPOLL_STATE_IN_EREADY_EDLL)))
         {
