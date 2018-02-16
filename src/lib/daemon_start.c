@@ -23,6 +23,7 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
+#include "daemon_close_all_connections.h"
 #include "daemon_select.h"
 
 
@@ -639,7 +640,7 @@ MHD_polling_thread (void *cls)
   /* Resume any pending for resume connections, join
    * all connection's threads (if any) and finally cleanup
    * everything. */
-  close_all_connections (daemon);
+  MHD_daemon_close_all_connections_ (daemon);
 
   return (MHD_THRD_RTRN_TYPE_)0;
 }

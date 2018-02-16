@@ -147,7 +147,7 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
         {
           /* No internal threads are used for polling sockets
 	     (external event loop) */
-          close_all_connections (daemon);
+          MHD_daemon_close_all_connections_ (daemon);
         }
       if (MHD_ITC_IS_VALID_ (daemon->itc))
         MHD_itc_destroy_chk_ (daemon->itc);

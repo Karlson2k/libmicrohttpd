@@ -64,6 +64,7 @@ libmicrohttpd_la_SOURCES = \
   connection_info.c \
   connection_options.c \
   connection_update_last_activity.c connection_update_last_activity.h \
+  daemon_close_all_connections.c daemon_close_all_connections.h \
   daemon_create.c \
   daemon_destroy.c \
   daemon_epoll.c daemon_epoll.h \

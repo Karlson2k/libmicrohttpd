@@ -729,6 +729,12 @@ enum MHD_StatusCode
    * some reason.
    */
   MHD_SC_IP_COUNTER_FAILURE = 50052,
+
+  /**
+   * Application violated our API by calling shutdown
+   * while having an upgrade connection still open.
+   */
+  MHD_SC_SHUTDOWN_WITH_OPEN_UPGRADED_CONNECTION = 50053,
   
 };
 
