@@ -388,7 +388,7 @@ MHD_daemon_epoll_ (struct MHD_Daemon *daemon,
                    * Do not accept more then 10 connections at once. The rest will
                    * be accepted on next turn (level trigger is used for listen
                    * socket). */
-                  while ( (MHD_YES ==
+                  while ( (MHD_SC_OK ==
 			   MHD_accept_connection_ (daemon)) &&
                           (series_length < 10) &&
                           (daemon->connections < daemon->global_connection_limit) &&

@@ -23,6 +23,7 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
+#include "connection_cleanup.h"
 
 
 /**
@@ -69,7 +70,7 @@ MHD_daemon_get_information_sz (struct MHD_Daemon *daemon,
         {
           /* Assumes that MHD_run() in not called in other thread
 	     (of the application) at the same time. */
-          MHD_cleanup_connections (daemon);
+          MHD_connection_cleanup_ (daemon);
 	  return_value->num_connections
 	    = daemon->connections;
         }

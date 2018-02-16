@@ -23,8 +23,11 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
+#include "connection_cleanup.h"
 #include "daemon_close_all_connections.h"
 #include "daemon_select.h"
+#include "daemon_poll.h"
+#include "daemon_epoll.h"
 
 
 /**
@@ -635,7 +638,7 @@ MHD_polling_thread (void *cls)
 #endif
 	break;
       }
-      MHD_cleanup_connections (daemon);
+      MHD_connection_cleanup_ (daemon);
     }
   /* Resume any pending for resume connections, join
    * all connection's threads (if any) and finally cleanup

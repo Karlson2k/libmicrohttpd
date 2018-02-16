@@ -59,6 +59,7 @@ libmicrohttpd_la_SOURCES = \
   action_process_upload.c \
   action_suspend.c \
   connection_add.c connection_add.h \
+  connection_cleanup.c connection_cleanup.h \
   connection_close.c connection_close.h \
   connection_finish_forward.c connection_finish_forward.h \
   connection_info.c \

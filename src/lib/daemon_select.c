@@ -23,10 +23,13 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
+#include "connection_add.h"
+#include "connection_cleanup.h"
+#include "connection_finish_forward.h"
 #include "daemon_select.h"
+#include "daemon_epoll.h"
 #include "request_resume.h"
 #include "upgrade_process.h"
-#include "connection_finish_forward.h"
 
 
 /**
@@ -476,7 +479,7 @@ internal_run_from_select (struct MHD_Daemon *daemon,
         }
     }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
-  MHD_cleanup_connections (daemon);
+  MHD_connection_cleanup_ (daemon);
   return MHD_SC_OK;
 }
 
@@ -492,7 +495,6 @@ void
 MHD_daemon_upgrade_connection_with_select_ (struct MHD_Connection *con)
 {
   struct MHD_UpgradeResponseHandle *urh = con->request.urh;
-  struct MHD_Daemon *daemon = con->daemon;
 
   while ( (0 != urh->in_buffer_size) ||
 	  (0 != urh->out_buffer_size) ||
@@ -613,7 +615,7 @@ MHD_daemon_run_from_select (struct MHD_Daemon *daemon,
 
       sc = MHD_daemon_epoll_ (daemon,
 			      MHD_NO);
-      MHD_cleanup_connections (daemon);
+      MHD_connection_cleanup_ (daemon);
       return sc;
 #else  /* ! EPOLL_SUPPORT */
       return MHD_NO;
@@ -651,7 +653,6 @@ MHD_daemon_select_ (struct MHD_Daemon *daemon,
   struct timeval timeout;
   struct timeval *tv;
   MHD_UNSIGNED_LONG_LONG ltimeout;
-  int err_state;
   MHD_socket ls;
   enum MHD_StatusCode sc;
   enum MHD_StatusCode sc2;

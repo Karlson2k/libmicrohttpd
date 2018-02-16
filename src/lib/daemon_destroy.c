@@ -24,6 +24,7 @@
  */
 #include "internal.h"
 #include "request_resume.h"
+#include "daemon_close_all_connections.h"
 
 
 /**

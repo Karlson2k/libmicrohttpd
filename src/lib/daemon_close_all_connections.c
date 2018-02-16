@@ -23,9 +23,11 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
+#include "connection_cleanup.h"
 #include "connection_close.h"
 #include "connection_finish_forward.h"
 #include "daemon_close_all_connections.h"
+#include "request_resume.h"
 #include "upgrade_process.h"
 
 
@@ -120,7 +122,7 @@ MHD_daemon_close_all_connections_ (struct MHD_Daemon *daemon)
   if (! daemon->disallow_suspend_resume)
     {
       daemon->resuming = true; /* Force check for pending resume. */
-      resume_suspended_connections (daemon);
+      MHD_resume_suspended_connections_ (daemon);
     }
   /* first, make sure all threads are aware of shutdown; need to
      traverse DLLs in peace... */
@@ -211,7 +213,7 @@ MHD_daemon_close_all_connections_ (struct MHD_Daemon *daemon)
   if (upg_allowed)
     {
       daemon->resuming = true; /* Force check for pending resume. */
-      resume_suspended_connections (daemon);
+      MHD_resume_suspended_connections_ (daemon);
     }
 #endif /* UPGRADE_SUPPORT */
 
@@ -223,7 +225,7 @@ MHD_daemon_close_all_connections_ (struct MHD_Daemon *daemon)
       MHD_PANIC (_("Failed to join a thread\n"));
     close_connection (pos);
   }
-  MHD_cleanup_connections (daemon);
+  MHD_connection_cleanup_ (daemon);
 }
 
 /* end of daemon_close_all_connections.c */

@@ -23,6 +23,7 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
+#include "connection_cleanup.h"
 #include "daemon_epoll.h"
 #include "daemon_poll.h"
 #include "daemon_select.h"
@@ -60,19 +61,19 @@ MHD_daemon_run (struct MHD_Daemon *daemon)
     case MHD_ELS_POLL:
       sc = MHD_daemon_poll_ (daemon,
  			     MHD_NO);
-      MHD_cleanup_connections (daemon);
+      MHD_connection_cleanup_ (daemon);
       return sc;
 #ifdef EPOLL_SUPPORT
     case MHD_ELS_EPOLL:
       sc = MHD_daemon_epoll_ (daemon,
   	 	              MHD_NO);
-      MHD_cleanup_connections (daemon);
+      MHD_connection_cleanup_ (daemon);
       return sc;
 #endif
     case MHD_ELS_SELECT:
       return MHD_daemon_select_ (daemon,
  			         MHD_NO);
-      /* MHD_select does MHD_cleanup_connections already */
+      /* MHD_select does MHD_connection_cleanup_ already */
     default:
       return MHD_SC_CONFIGURATION_UNEXPECTED_ELS;
     }
