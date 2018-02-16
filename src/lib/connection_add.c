@@ -29,6 +29,7 @@
 #include "daemon_ip_limit.h"
 #include "daemon_select.h"
 #include "daemon_poll.h"
+#include "mhd_sockets.h"
 
 
 #ifdef UPGRADE_SUPPORT
@@ -453,6 +454,113 @@ exit:
 
 
 /**
+ * Callback for receiving data from the socket.
+ *
+ * @param connection the MHD connection structure
+ * @param other where to write received data to
+ * @param i maximum size of other (in bytes)
+ * @return positive value for number of bytes actually received or
+ *         negative value for error number MHD_ERR_xxx_
+ */
+static ssize_t
+recv_param_adapter (struct MHD_Connection *connection,
+                    void *other,
+                    size_t i)
+{
+  ssize_t ret;
+
+  if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
+       (MHD_REQUEST_CLOSED == connection->request.state) )
+    {
+      return MHD_ERR_NOTCONN_;
+    }
+  if (i > MHD_SCKT_SEND_MAX_SIZE_)
+    i = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
+
+  ret = MHD_recv_ (connection->socket_fd,
+                   other,
+                   i);
+  if (0 > ret)
+    {
+      const int err = MHD_socket_get_error_ ();
+      if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
+        {
+#ifdef EPOLL_SUPPORT
+          /* Got EAGAIN --- no longer read-ready */
+          connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+#endif /* EPOLL_SUPPORT */
+          return MHD_ERR_AGAIN_;
+        }
+      if (MHD_SCKT_ERR_IS_EINTR_ (err))
+        return MHD_ERR_AGAIN_;
+      if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
+        return MHD_ERR_CONNRESET_;
+      /* Treat any other error as hard error. */
+      return MHD_ERR_NOTCONN_;
+    }
+#ifdef EPOLL_SUPPORT
+  else if (i > (size_t)ret)
+    connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+#endif /* EPOLL_SUPPORT */
+  return ret;
+}
+
+
+/**
+ * Callback for writing data to the socket.
+ *
+ * @param connection the MHD connection structure
+ * @param other data to write
+ * @param i number of bytes to write
+ * @return positive value for number of bytes actually sent or
+ *         negative value for error number MHD_ERR_xxx_
+ */
+static ssize_t
+send_param_adapter (struct MHD_Connection *connection,
+                    const void *other,
+                    size_t i)
+{
+  ssize_t ret;
+
+  if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
+       (MHD_REQUEST_CLOSED == connection->request.state) )
+    {
+      return MHD_ERR_NOTCONN_;
+    }
+  if (i > MHD_SCKT_SEND_MAX_SIZE_)
+    i = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
+
+  ret = MHD_send_ (connection->socket_fd,
+                   other,
+                   i);
+  if (0 > ret)
+    {
+      const int err = MHD_socket_get_error_();
+
+      if (MHD_SCKT_ERR_IS_EAGAIN_(err))
+        {
+#ifdef EPOLL_SUPPORT
+          /* EAGAIN --- no longer write-ready */
+          connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+          return MHD_ERR_AGAIN_;
+        }
+      if (MHD_SCKT_ERR_IS_EINTR_ (err))
+        return MHD_ERR_AGAIN_;
+      if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
+        return MHD_ERR_CONNRESET_;
+      /* Treat any other error as hard error. */
+      return MHD_ERR_NOTCONN_;
+    }
+#ifdef EPOLL_SUPPORT
+  else if (i > (size_t)ret)
+    connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+  return ret;
+}
+
+
+/**
  * Add another client connection to the set of connections
  * managed by MHD.  This API is usually not needed (since
  * MHD will accept inbound connections on the server socket).
@@ -669,9 +777,11 @@ internal_add_connection (struct MHD_Daemon *daemon,
     }
   else
 #endif /* ! HTTPS_SUPPORT */
-    /* set default connection handlers  */
-    MHD_set_http_callbacks_ (connection);
-
+    {
+      /* set default connection handlers  */
+      connection->recv_cls = &recv_param_adapter;
+      connection->send_cls = &send_param_adapter;
+    }
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
   /* Firm check under lock. */
   if (daemon->connections >= daemon->global_connection_limit)

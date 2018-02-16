@@ -111,7 +111,7 @@ MHD_daemon_close_all_connections_ (struct MHD_Daemon *daemon)
       MHD_connection_finish_forward_ (urh->connection);
       urh->clean_ready = true;
       /* Resuming will move connection to cleanup list. */
-      MHD_resume_connection (urh->connection);
+      MHD_request_resume (&urh->connection->request);
     }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 

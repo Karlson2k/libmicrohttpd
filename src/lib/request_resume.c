@@ -66,6 +66,7 @@ MHD_request_resume (struct MHD_Request *request)
 /**
  * Run through the suspended connections and move any that are no
  * longer suspended back to the active state.
+ *
  * @remark To be called only from thread that process
  * daemon's select()/poll()/etc.
  *
@@ -74,6 +75,7 @@ MHD_request_resume (struct MHD_Request *request)
  */
 bool
 MHD_resume_suspended_connections_ (struct MHD_Daemon *daemon)
+/* FIXME: rename connections -> requests? */
 {
   struct MHD_Connection *pos;
   struct MHD_Connection *prev = NULL;

@@ -494,16 +494,6 @@ struct MHD_Request
    */
   char *colon;
 
-  /**
-   * Function used for reading HTTP request stream.
-   */
-  ReceiveCallback recv_cls;
-
-  /**
-   * Function used for writing HTTP response stream.
-   */
-  TransmitCallback send_cls;
-
 #ifdef UPGRADE_SUPPORT
   /**
    * If this connection was upgraded, this points to
@@ -740,6 +730,16 @@ struct MHD_Connection
   struct MHD_TLS_ConnectionState *tls_cs;
 #endif
   
+  /**
+   * Function used for reading HTTP request stream.
+   */
+  ReceiveCallback recv_cls;
+
+  /**
+   * Function used for writing HTTP response stream.
+   */
+  TransmitCallback send_cls;
+
   /**
    * Information about the current request we are processing
    * on this connection.
@@ -1891,6 +1891,40 @@ MHD_parse_arguments_ (struct MHD_Request *request,
     (element)->nextE->prevE = (element)->prevE; \
   (element)->nextE = NULL; \
   (element)->prevE = NULL; } while (0)
+
+
+
+/**
+ * Error code similar to EGAIN or EINTR
+ */
+#define MHD_ERR_AGAIN_ (-3073)
+
+/**
+ * Connection was hard-closed by remote peer.
+ */
+#define MHD_ERR_CONNRESET_ (-3074)
+
+/**
+ * Connection is not connected anymore due to
+ * network error or any other reason.
+ */
+#define MHD_ERR_NOTCONN_ (-3075)
+
+/**
+ * "Not enough memory" error code
+ */
+#define MHD_ERR_NOMEM_ (-3076)
+
+/**
+ * "Bad FD" error code
+ */
+#define MHD_ERR_BADF_ (-3077)
+
+/**
+ * Error code similar to EINVAL
+ */
+#define MHD_ERR_INVAL_ (-3078)
+
 
 
 
