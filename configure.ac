@@ -2022,6 +2022,7 @@ doc/examples/Makefile
 m4/Makefile
 src/Makefile
 src/include/Makefile
+src/lib/Makefile
 src/microhttpd/Makefile
 src/examples/Makefile
 src/testcurl/Makefile

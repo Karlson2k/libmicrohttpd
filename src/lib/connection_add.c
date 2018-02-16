@@ -288,7 +288,7 @@ thread_main_handle_connection (void *data)
 	  num_ready = MHD_SYS_select_ (maxsock + 1,
                                        &rs,
                                        &ws,
-                                       NULL,
+                                       &es,
                                        tvp);
 	  if (num_ready < 0)
 	    {
