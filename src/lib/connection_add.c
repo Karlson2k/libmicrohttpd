@@ -23,6 +23,8 @@
  */
 #include "internal.h"
 #include "connection_add.h"
+#include "connection_close.h"
+#include "connection_finish_forward.h"
 #include "connection_update_last_activity.h"
 #include "daemon_ip_limit.h"
 #include "daemon_select.h"
@@ -42,7 +44,6 @@ static void
 thread_main_connection_upgrade (struct MHD_Connection *con)
 {
 #ifdef HTTPS_SUPPORT
-  struct MHD_UpgradeResponseHandle *urh = con->request.urh;
   struct MHD_Daemon *daemon = con->daemon;
 
   /* Here, we need to bi-directionally forward

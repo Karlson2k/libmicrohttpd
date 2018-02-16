@@ -49,6 +49,8 @@
 enum MHD_StatusCode
 MHD_daemon_run (struct MHD_Daemon *daemon)
 {
+  enum MHD_StatusCode sc;
+
   if (daemon->shutdown)
     return MHD_SC_DAEMON_ALREADY_SHUTDOWN;
   if (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_model)
@@ -56,22 +58,21 @@ MHD_daemon_run (struct MHD_Daemon *daemon)
   switch (daemon->event_loop_syscall)
     {
     case MHD_ELS_POLL:
-      MHD_daemon_poll_ (daemon,
-	  	        MHD_NO);
+      sc = MHD_daemon_poll_ (daemon,
+ 			     MHD_NO);
       MHD_cleanup_connections (daemon);
-      break;
+      return sc;
 #ifdef EPOLL_SUPPORT
     case MHD_ELS_EPOLL:
-      MHD_daemon_epoll_ (daemon,
-  		         MHD_NO);
+      sc = MHD_daemon_epoll_ (daemon,
+  	 	              MHD_NO);
       MHD_cleanup_connections (daemon);
-      break;
+      return sc;
 #endif
     case MHD_ELS_SELECT:
-       MHD_daemon_select_ (daemon,
-			   MHD_NO);
+      return MHD_daemon_select_ (daemon,
+ 			         MHD_NO);
       /* MHD_select does MHD_cleanup_connections already */
-      break;
     default:
       return MHD_SC_CONFIGURATION_UNEXPECTED_ELS;
     }

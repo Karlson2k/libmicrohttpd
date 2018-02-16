@@ -91,6 +91,28 @@ struct MHD_TLS_Plugin
 		      ...);
 
 
+  ssize_t
+  (*send)(void *cls,
+	  struct MHD_TLS_ConnectionState *cs,
+	  const void *buf,
+	  size_t buf_size);
+
+
+  ssize_t
+  (*recv)(void *cls,
+	  struct MHD_TLS_ConnectionState *cs,
+	  void *buf,
+	  size_t buf_size);
+
+
+  const char *
+  (*strerror)(void *cls,
+	      int ec);
+
+  enum MHD_Bool
+  (*check_record_pending)(void *cls,
+			  struct MHD_TLS_ConnectionState *cs);
+
   enum MHD_Bool
   (*shutdown_connection) (void *cls,
 			  struct MHD_TLS_ConnectionState *cs);

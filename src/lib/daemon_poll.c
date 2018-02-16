@@ -23,6 +23,7 @@
  */
 #include "internal.h"
 #include "daemon_poll.h"
+#include "upgrade_process.h"
 #include "request_resume.h"
 #include "connection_add.h"
 #include "connection_finish_forward.h"
@@ -315,7 +316,7 @@ MHD_daemon_poll_all_ (struct MHD_Daemon *daemon,
         urh_from_pollfd (urh,
 			 &(p[poll_server+i]));
         i += 2;
-        process_urh (urh);
+        MHD_upgrade_response_handle_process_ (urh);
         /* Finished forwarding? */
         if ( (0 == urh->in_buffer_size) &&
              (0 == urh->out_buffer_size) &&
@@ -508,7 +509,7 @@ MHD_daemon_upgrade_connection_with_poll_ (struct MHD_Connection *con)
 	}
       urh_from_pollfd (urh,
 		       p);
-      process_urh (urh);
+      MHD_upgrade_response_handle_process_ (urh);
     }
 }
 #endif

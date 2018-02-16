@@ -100,6 +100,7 @@ libmicrohttpd_la_SOURCES = \
   request_info.c \
   request_resume.c \
   sysfdsetsize.c sysfdsetsize.h \
+  upgrade_process.c upgrade_process.h \
   panic.c \
   version.c 
 

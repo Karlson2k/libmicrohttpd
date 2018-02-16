@@ -24,7 +24,9 @@
  */
 #include "internal.h"
 #include "daemon_epoll.h"
+#include "upgrade_process.h"
 #include "request_resume.h"
+#include "connection_add.h"
 #include "connection_finish_forward.h"
 
 #ifdef EPOLL_SUPPORT
@@ -170,7 +172,7 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
   while (NULL != (pos = prev))
     {
       prev = pos->prevE;
-      process_urh (pos);
+      MHD_upgrade_response_handle_process_ (pos);
       if (! is_urh_ready(pos))
       	{
       	  EDLL_remove (daemon->eready_urh_head,

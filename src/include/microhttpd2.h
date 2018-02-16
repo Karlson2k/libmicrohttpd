@@ -422,6 +422,13 @@ enum MHD_StatusCode
    */
   MHD_SC_POOL_MALLOC_FAILURE = 30010,
   
+  /**
+   * We failed to forward data from a Web socket to the
+   * application to the remote side due to the socket
+   * being closed prematurely. (May be transient.)
+   */
+  MHD_SC_UPGRADE_FORWARD_INCOMPLETE = 30011,
+  
 
   /**
    * MHD does not support the requested combination of

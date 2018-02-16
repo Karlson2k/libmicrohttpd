@@ -24,6 +24,12 @@
  */
 #include "internal.h"
 #include "daemon_ip_limit.h"
+#if HAVE_SEARCH_H
+#include <search.h>
+#else
+#include "tsearch.h"
+#endif
+
 
 /**
  * Maintain connection count for single address.

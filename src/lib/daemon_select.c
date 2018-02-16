@@ -25,6 +25,7 @@
 #include "internal.h"
 #include "daemon_select.h"
 #include "request_resume.h"
+#include "upgrade_process.h"
 #include "connection_finish_forward.h"
 
 
@@ -461,7 +462,7 @@ internal_run_from_select (struct MHD_Daemon *daemon,
                       write_fd_set,
                       except_fd_set);
       /* call generic forwarding function for passing data */
-      process_urh (urh);
+      MHD_upgrade_response_handle_process_ (urh);
       /* Finished forwarding? */
       if ( (0 == urh->in_buffer_size) &&
            (0 == urh->out_buffer_size) &&
@@ -566,7 +567,7 @@ MHD_daemon_upgrade_connection_with_select_ (struct MHD_Connection *con)
 		      &rs,
 		      &ws,
 		      &es);
-      process_urh (urh);
+      MHD_upgrade_response_handle_process_ (urh);
     }
 }
 #endif
