@@ -333,36 +333,50 @@ struct MHD_Connection;
 enum MHD_StatusCode
 {
 
+  /* 00000-level status codes indicate return values
+     the application must act on. */
+  
   /**
    * Successful operation (not used for logging).
    */
   MHD_SC_OK = 0,
 
   /**
+   * We were asked to return a timeout, but, there is no timeout.
+   */
+  MHD_SC_NO_TIMEOUT = 1,
+
+  
+  /* 10000-level status codes indicate intermediate
+     results of some kind. */
+  
+  /**
    * Informational event, MHD started.
    */
   MHD_SC_DAEMON_STARTED = 10000,
 
   /**
-   * Informational event, there is no timeout.
-   */
-  MHD_SC_NO_TIMEOUT = 10001,
-
-  /**
    * Informational event, we accepted a connection.
    */
-  MHD_SC_CONNECTION_ACCEPTED = 10002,
+  MHD_SC_CONNECTION_ACCEPTED = 10001,
 
   /**
    * Informational event, thread processing connection termiantes.
    */
-  MHD_SC_THREAD_TERMINATING = 10003,
+  MHD_SC_THREAD_TERMINATING = 10002,
 
   /**
    * Informational event, state machine status for a connection.
    */
-  MHD_SC_STATE_MACHINE_STATUS_REPORT = 10004,
+  MHD_SC_STATE_MACHINE_STATUS_REPORT = 10003,
 
+  /**
+   * accept() returned transient error.
+   */
+  MHD_SC_ACCEPT_FAILED_EAGAIN = 10004,
+
+
+  /* 20000-level status codes indicate success of some kind. */
 
   /**
    * MHD is closing a connection after the client closed it
@@ -375,6 +389,11 @@ enum MHD_StatusCode
    * logic to generate the response data completed.
    */
   MHD_SC_APPLICATION_DATA_GENERATION_FINISHED = 20001,
+
+  
+  /* 30000-level status codes indicate transient failures
+     that might go away if the client tries again. */
+
   
   /**
    * Resource limit in terms of number of parallel connections
@@ -383,129 +402,103 @@ enum MHD_StatusCode
   MHD_SC_LIMIT_CONNECTIONS_REACHED = 30000,
 
   /**
-   * accept() returned transient error.
-   */
-  MHD_SC_ACCEPT_FAILED_EAGAIN = 30001,
-
-  /**
    * We failed to allocate memory for poll() syscall.
    * (May be transient.)
    */
-  MHD_SC_POLL_MALLOC_FAILURE = 30002,
+  MHD_SC_POLL_MALLOC_FAILURE = 30001,
 
   /**
    * The operation failed because the respective
    * daemon is already too deep inside of the shutdown 
    * activity.
    */
-  MHD_SC_DAEMON_ALREADY_SHUTDOWN = 30003,
+  MHD_SC_DAEMON_ALREADY_SHUTDOWN = 30002,
 
   /**
    * We failed to start a thread.
    */
-  MHD_SC_THREAD_LAUNCH_FAILURE = 30004,
+  MHD_SC_THREAD_LAUNCH_FAILURE = 30003,
 
   /**
    * The operation failed because we either have no
    * listen socket or were already quiesced.
    */
-  MHD_SC_DAEMON_ALREADY_QUIESCED = 30005,
+  MHD_SC_DAEMON_ALREADY_QUIESCED = 30004,
 
   /**
    * The operation failed because client disconnected
    * faster than we could accept().
    */
-  MHD_SC_ACCEPT_FAST_DISCONNECT = 30006,
+  MHD_SC_ACCEPT_FAST_DISCONNECT = 30005,
 
   /**
    * Operating resource limits hit on accept().
    */
-  MHD_SC_ACCEPT_SYSTEM_LIMIT_REACHED = 30007,
+  MHD_SC_ACCEPT_SYSTEM_LIMIT_REACHED = 30006,
 
   /**
    * Connection was refused by accept policy callback.
    */
-  MHD_SC_ACCEPT_POLICY_REJECTED = 30008,
+  MHD_SC_ACCEPT_POLICY_REJECTED = 30007,
 
   /**
    * We failed to allocate memory for the connection.
    * (May be transient.)
    */
-  MHD_SC_CONNECTION_MALLOC_FAILURE = 30009,
+  MHD_SC_CONNECTION_MALLOC_FAILURE = 30008,
 
   /**
    * We failed to allocate memory for the connection's memory pool.
    * (May be transient.)
    */
-  MHD_SC_POOL_MALLOC_FAILURE = 30010,
+  MHD_SC_POOL_MALLOC_FAILURE = 30009,
   
   /**
    * We failed to forward data from a Web socket to the
    * application to the remote side due to the socket
    * being closed prematurely. (May be transient.)
    */
-  MHD_SC_UPGRADE_FORWARD_INCOMPLETE = 30011,
-
-  /**
-   * MHD is closing a connection because it was reset.
-   */
-  MHD_SC_CONNECTION_RESET_CLOSED = 30012,
-
-  /**
-   * MHD is closing a connection because reading the
-   * request failed.
-   */
-  MHD_SC_CONNECTION_READ_FAIL_CLOSED = 30013,
-
-  /**
-   * MHD is closing a connection because writing the response failed.
-   */
-  MHD_SC_CONNECTION_WRITE_FAIL_CLOSED = 30014,
-
-  /**
-   * MHD is closing a connection because the application
-   * logic to generate the response data failed.
-   */
-  MHD_SC_APPLICATION_DATA_GENERATION_FAILURE_CLOSED = 30015,
+  MHD_SC_UPGRADE_FORWARD_INCOMPLETE = 30010,
 
   /**
    * We failed to allocate memory for generatig the response from our
    * memory pool.  Likely the request header was too large to leave
    * enough room.
    */
-  MHD_SC_CONNECTION_POOL_MALLOC_FAILURE = 30016,
+  MHD_SC_CONNECTION_POOL_MALLOC_FAILURE = 30011,
+
+  
+  /* 40000-level errors are caused by the HTTP client 
+     (or the network) */
+
+  /**
+   * MHD is closing a connection because parsing the
+   * request failed.
+   */
+  MHD_SC_CONNECTION_PARSE_FAIL_CLOSED = 40000,
+
+  /**
+   * MHD is closing a connection because it was reset.
+   */
+  MHD_SC_CONNECTION_RESET_CLOSED = 40001,
+
+  /**
+   * MHD is closing a connection because reading the
+   * request failed.
+   */
+  MHD_SC_CONNECTION_READ_FAIL_CLOSED = 40002,
+
+  /**
+   * MHD is closing a connection because writing the response failed.
+   */
+  MHD_SC_CONNECTION_WRITE_FAIL_CLOSED = 40003,
 
   
 
-  /**
-   * MHD does not support the requested combination of
-   * EPOLL with thread-per-connection mode.
-   */
-  MHD_SC_SYSCALL_THREAD_COMBINATION_INVALID = 40000,
+  /* 50000-level errors are because of an error internal
+     to the MHD logic, possibly including our interaction
+     with the operating system (but not the application) */
 
-  /**
-   * MHD does not support quiescing if ITC was disabled
-   * and threads are used.
-   */
-  MHD_SC_SYSCALL_QUIESCE_REQUIRES_ITC = 40001,
-
-  /**
-   * We failed to bind the listen socket.
-   */
-  MHD_SC_LISTEN_SOCKET_BIND_FAILED = 40002,
-
-  /**
-   * The application requested an unsupported TLS backend to be used.
-   */
-  MHD_SC_TLS_BACKEND_UNSUPPORTED = 40003,
-
-  /**
-   * The application requested a TLS cipher suite which is not
-   * supported by the selected backend.
-   */
-  MHD_SC_TLS_CIPHERS_INVALID = 40004,
-
-  
   /**
    * This build of MHD does not support TLS, but the application
    * requested TLS.
@@ -788,7 +781,46 @@ enum MHD_StatusCode
    * state machine, we closed the connection.
    */
   MHD_SC_STATEMACHINE_FAILURE_CONNECTION_CLOSED = 50054,
-  
+
+
+  /* 60000-level errors are because the application
+     logic did something wrong or generated an error. */
+
+  /**
+   * MHD does not support the requested combination of
+   * EPOLL with thread-per-connection mode.
+   */
+  MHD_SC_SYSCALL_THREAD_COMBINATION_INVALID = 60000,
+
+  /**
+   * MHD does not support quiescing if ITC was disabled
+   * and threads are used.
+   */
+  MHD_SC_SYSCALL_QUIESCE_REQUIRES_ITC = 60001,
+
+  /**
+   * We failed to bind the listen socket.
+   */
+  MHD_SC_LISTEN_SOCKET_BIND_FAILED = 60002,
+
+  /**
+   * The application requested an unsupported TLS backend to be used.
+   */
+  MHD_SC_TLS_BACKEND_UNSUPPORTED = 60003,
+
+  /**
+   * The application requested a TLS cipher suite which is not
+   * supported by the selected backend.
+   */
+  MHD_SC_TLS_CIPHERS_INVALID = 60004,
+
+  /**
+   * MHD is closing a connection because the application
+   * logic to generate the response data failed.
+   */
+  MHD_SC_APPLICATION_DATA_GENERATION_FAILURE_CLOSED = 60005,
+
+
 };
 
 
