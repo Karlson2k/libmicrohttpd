@@ -123,10 +123,10 @@ suspend_action (void *cls,
  *
  * @return action to cause a request to be suspended.
  */
-struct MHD_Action *
+const struct MHD_Action *
 MHD_action_suspend (void)
 {
-  static struct MHD_Action suspend = {
+  static const struct MHD_Action suspend = {
     .action = &suspend_action,
     .action_cls = NULL
   };

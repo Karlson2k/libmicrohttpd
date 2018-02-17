@@ -93,12 +93,10 @@ MHD_connection_close_ (struct MHD_Connection *connection,
       connection->request.response = NULL;
       MHD_response_queue_for_destroy (resp);
     }
-  if ( (NULL != daemon->notify_connection_cb) &&
-       (connection->client_aware) )
+  if (NULL != daemon->notify_connection_cb) 
     daemon->notify_connection_cb (daemon->notify_connection_cb_cls,
 				  connection,
 				  cnc);
-  connection->client_aware = false;
 }
 
 /* end of connection_close.c */

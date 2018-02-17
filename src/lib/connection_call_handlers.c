@@ -26,6 +26,7 @@
 #include "connection_update_last_activity.h"
 #include "connection_close.h"
 
+
 #ifdef MHD_LINUX_SOLARIS_SENDFILE
 #include <sys/sendfile.h>
 #endif /* MHD_LINUX_SOLARIS_SENDFILE */
@@ -45,6 +46,59 @@
  * sendfile() chuck size for thread-per-connection
  */
 #define MHD_SENFILE_CHUNK_THR_P_C_ (0x200000)
+
+
+/**
+ * Response text used when the request (http header) is too big to
+ * be processed.
+ *
+ * Intentionally empty here to keep our memory footprint
+ * minimal.
+ */
+#ifdef HAVE_MESSAGES
+#define REQUEST_TOO_BIG "<html><head><title>Request too big</title></head><body>Your HTTP header was too big for the memory constraints of this webserver.</body></html>"
+#else
+#define REQUEST_TOO_BIG ""
+#endif
+
+/**
+ * Response text used when the request (http header) does not
+ * contain a "Host:" header and still claims to be HTTP 1.1.
+ *
+ * Intentionally empty here to keep our memory footprint
+ * minimal.
+ */
+#ifdef HAVE_MESSAGES
+#define REQUEST_LACKS_HOST "<html><head><title>&quot;Host:&quot; header required</title></head><body>In HTTP 1.1, requests must include a &quot;Host:&quot; header, and your HTTP 1.1 request lacked such a header.</body></html>"
+#else
+#define REQUEST_LACKS_HOST ""
+#endif
+
+/**
+ * Response text used when the request (http header) is
+ * malformed.
+ *
+ * Intentionally empty here to keep our memory footprint
+ * minimal.
+ */
+#ifdef HAVE_MESSAGES
+#define REQUEST_MALFORMED "<html><head><title>Request malformed</title></head><body>Your HTTP request was syntactically incorrect.</body></html>"
+#else
+#define REQUEST_MALFORMED ""
+#endif
+
+/**
+ * Response text used when there is an internal server error.
+ *
+ * Intentionally empty here to keep our memory footprint
+ * minimal.
+ */
+#ifdef HAVE_MESSAGES
+#define INTERNAL_ERROR "<html><head><title>Internal server error</title></head><body>Please ask the developer of this Web server to carefully read the GNU libmicrohttpd documentation about connection management and blocking.</body></html>"
+#else
+#define INTERNAL_ERROR ""
+#endif
+
 
 #ifdef HAVE_FREEBSD_SENDFILE
 #ifdef SF_FLAGS
@@ -931,7 +985,647 @@ MHD_request_handle_write_ (struct MHD_Request *request)
                               _("Internal error\n"));
       break;
     }
-  return;
+}
+
+
+/**
+ * Check whether request header contains particular token.
+ *
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * Case-insensitive match used for header names and tokens.
+ * @param request    the request to get values from
+ * @param header     the header name
+ * @param token      the token to find
+ * @param token_len  the length of token, not including optional
+ *                   terminating null-character.
+ * @return true if token is found in specified header,
+ *         false otherwise
+ */
+static bool
+MHD_lookup_header_token_ci (const struct MHD_Request *request,
+			    const char *header,
+			    const char *token,
+			    size_t token_len)
+{
+  struct MHD_HTTP_Header *pos;
+
+  if ( (NULL == request) || /* FIXME: require non-null? */
+       (NULL == header) || /* FIXME: require non-null? */
+       (0 == header[0]) ||
+       (NULL == token) ||
+       (0 == token[0]) )
+    return false;
+  for (pos = request->headers_received; NULL != pos; pos = pos->next)
+    {
+      if ( (0 != (pos->kind & MHD_HEADER_KIND)) &&
+	   ( (header == pos->header) ||
+	     (MHD_str_equal_caseless_(header,
+				      pos->header)) ) &&
+	   (MHD_str_has_token_caseless_ (pos->value,
+					 token,
+					 token_len)) )
+        return true;
+    }
+  return false;
+}
+
+
+/**
+ * Check whether request header contains particular static @a tkn.
+ *
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * Case-insensitive match used for header names and tokens.
+ * @param r   the request to get values from
+ * @param h   the header name
+ * @param tkn the static string of token to find
+ * @return true if token is found in specified header,
+ *         false otherwise
+ */
+#define MHD_lookup_header_s_token_ci(r,h,tkn) \
+    MHD_lookup_header_token_ci((r),(h),(tkn),MHD_STATICSTR_LEN_(tkn))
+
+
+/**
+ * Are we allowed to keep the given connection alive?  We can use the
+ * TCP stream for a second request if the connection is HTTP 1.1 and
+ * the "Connection" header either does not exist or is not set to
+ * "close", or if the connection is HTTP 1.0 and the "Connection"
+ * header is explicitly set to "keep-alive".  If no HTTP version is
+ * specified (or if it is not 1.0 or 1.1), we definitively close the
+ * connection.  If the "Connection" header is not exactly "close" or
+ * "keep-alive", we proceed to use the default for the respective HTTP
+ * version (which is conservative for HTTP 1.0, but might be a bit
+ * optimistic for HTTP 1.1).
+ *
+ * @param request the request to check for keepalive
+ * @return #MHD_YES if (based on the request), a keepalive is
+ *        legal
+ */
+static bool
+keepalive_possible (struct MHD_Request *request)
+{
+  if (MHD_CONN_MUST_CLOSE == request->keepalive)
+    return false;
+  if (NULL == request->version_s)
+    return false;
+  if ( (NULL != request->response) &&
+       (request->response->v10_only) )
+    return false;
+
+  if (MHD_str_equal_caseless_ (request->version_s,
+			       MHD_HTTP_VERSION_1_1))
+    {
+      if (MHD_lookup_header_s_token_ci (request,
+                                        MHD_HTTP_HEADER_CONNECTION,
+                                        "upgrade"))
+        return false;
+      if (MHD_lookup_header_s_token_ci (request,
+                                        MHD_HTTP_HEADER_CONNECTION,
+                                        "close"))
+        return false;
+      return true;
+    }
+  if (MHD_str_equal_caseless_ (request->version_s,
+			       MHD_HTTP_VERSION_1_0))
+    {
+      if (MHD_lookup_header_s_token_ci (request,
+                                        MHD_HTTP_HEADER_CONNECTION,
+                                        "Keep-Alive"))
+        return true;
+      return false;
+    }
+  return false;
+}
+
+
+/**
+ * Produce HTTP time stamp.
+ *
+ * @param date where to write the header, with
+ *        at least 128 bytes available space.
+ * @param date_len number of bytes in @a date
+ */
+static void
+get_date_string (char *date,
+		 size_t date_len)
+{
+  static const char *const days[] = {
+    "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+  };
+  static const char *const mons[] = {
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  };
+  struct tm now;
+  time_t t;
+#if !defined(HAVE_C11_GMTIME_S) && !defined(HAVE_W32_GMTIME_S) && !defined(HAVE_GMTIME_R)
+  struct tm* pNow;
+#endif
+
+  date[0] = 0;
+  time (&t);
+#if defined(HAVE_C11_GMTIME_S)
+  if (NULL == gmtime_s (&t,
+                        &now))
+    return;
+#elif defined(HAVE_W32_GMTIME_S)
+  if (0 != gmtime_s (&now,
+                     &t))
+    return;
+#elif defined(HAVE_GMTIME_R)
+  if (NULL == gmtime_r(&t,
+                       &now))
+    return;
+#else
+  pNow = gmtime(&t);
+  if (NULL == pNow)
+    return;
+  now = *pNow;
+#endif
+  MHD_snprintf_ (date,
+		 date_len,
+		 "Date: %3s, %02u %3s %04u %02u:%02u:%02u GMT\r\n",
+		 days[now.tm_wday % 7],
+		 (unsigned int) now.tm_mday,
+		 mons[now.tm_mon % 12],
+		 (unsigned int) (1900 + now.tm_year),
+		 (unsigned int) now.tm_hour,
+		 (unsigned int) now.tm_min,
+		 (unsigned int) now.tm_sec);
+}
+
+
+/**
+ * Check whether response header contains particular @a token.
+ *
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * Case-insensitive match used for header names and tokens.
+ * @param response  the response to query
+ * @param key       header name
+ * @param token     the token to find
+ * @param token_len the length of token, not including optional
+ *                  terminating null-character.
+ * @return true if token is found in specified header,
+ *         false otherwise
+ */
+static bool
+check_response_header_token_ci (const struct MHD_Response *response,
+				const char *key,
+				const char *token,
+				size_t token_len)
+{
+  struct MHD_HTTP_Header *pos;
+
+  if ( (NULL == key) ||
+       ('\0' == key[0]) ||
+       (NULL == token) ||
+       ('\0' == token[0]) )
+    return false;
+
+  for (pos = response->first_header;
+       NULL != pos;
+       pos = pos->next)
+    {
+      if ( (pos->kind == MHD_HEADER_KIND) &&
+           MHD_str_equal_caseless_ (pos->header,
+                                    key) &&
+           MHD_str_has_token_caseless_ (pos->value,
+                                        token,
+                                        token_len) )
+        return true;
+    }
+  return false;
+}
+
+
+/**
+ * Check whether response header contains particular static @a tkn.
+ *
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * Case-insensitive match used for header names and tokens.
+ * @param r   the response to query
+ * @param k   header name
+ * @param tkn the static string of token to find
+ * @return true if token is found in specified header,
+ *         false otherwise
+ */
+#define check_response_header_s_token_ci(r,k,tkn) \
+    check_response_header_token_ci((r),(k),(tkn),MHD_STATICSTR_LEN_(tkn))
+
+
+/**
+ * Allocate the connection's write buffer and fill it with all of the
+ * headers (or footers, if we have already sent the body) from the
+ * HTTPd's response.  If headers are missing in the response supplied
+ * by the application, additional headers may be added here.
+ *
+ * @param request the request for which to build the response header
+ * @return true on success, false on failure (out of memory)
+ */
+static bool
+build_header_response (struct MHD_Request *request)
+{
+  struct MHD_Connection *connection = request->connection;
+  struct MHD_Daemon *daemon = request->daemon;
+  struct MHD_Response *response = request->response;
+  size_t size;
+  size_t off;
+  struct MHD_HTTP_Header *pos;
+  char code[256];
+  char date[128];
+  char content_length_buf[128];
+  size_t content_length_len;
+  char *data;
+  enum MHD_ValueKind kind;
+  bool client_requested_close;
+  bool response_has_close;
+  bool response_has_keepalive;
+  const char *have_encoding;
+  const char *have_content_length;
+  bool must_add_close;
+  bool must_add_chunked_encoding;
+  bool must_add_keep_alive;
+  bool must_add_content_length;
+
+  mhd_assert (NULL != request->version_s);
+  if (0 == request->version_s[0])
+    {
+      data = MHD_pool_allocate (connection->pool,
+                                0,
+                                MHD_YES);
+      request->write_buffer = data;
+      request->write_buffer_append_offset = 0;
+      request->write_buffer_send_offset = 0;
+      request->write_buffer_size = 0;
+      return true;
+    }
+  if (MHD_REQUEST_FOOTERS_RECEIVED == request->state)
+    {
+      const char *reason_phrase;
+      const char *version;
+
+      reason_phrase
+	= MHD_get_reason_phrase_for (response->status_code);
+      version
+	= (response->icy)
+	? "ICY"
+	: ( (MHD_str_equal_caseless_ (MHD_HTTP_VERSION_1_0,
+				      request->version_s))
+	    ? MHD_HTTP_VERSION_1_0
+	    : MHD_HTTP_VERSION_1_1);
+      MHD_snprintf_ (code,
+		     sizeof (code),
+		     "%s %u %s\r\n",
+		     version,
+		     response->status_code,
+		     reason_phrase);
+      off = strlen (code);
+      /* estimate size */
+      size = off + 2;           /* +2 for extra "\r\n" at the end */
+      kind = MHD_HEADER_KIND;
+      if ( (! daemon->suppress_date) &&
+	   (NULL == MHD_response_get_header (response,
+					     MHD_HTTP_HEADER_DATE)) )
+        get_date_string (date,
+			 sizeof (date));
+      else
+        date[0] = '\0';
+      size += strlen (date);
+    }
+  else
+    {
+      /* 2 bytes for final CRLF of a Chunked-Body */
+      size = 2;
+      kind = MHD_FOOTER_KIND;
+      off = 0;
+    }
+
+  /* calculate extra headers we need to add, such as 'Connection: close',
+     first see what was explicitly requested by the application */
+  must_add_close = false;
+  must_add_chunked_encoding = false;
+  must_add_keep_alive = false;
+  must_add_content_length = false;
+  response_has_close = false;
+  response_has_keepalive = false;
+  switch (request->state)
+    {
+    case MHD_REQUEST_FOOTERS_RECEIVED:
+      response_has_close
+	= check_response_header_s_token_ci (response,
+					    MHD_HTTP_HEADER_CONNECTION,
+					    "close");
+      response_has_keepalive
+	= check_response_header_s_token_ci (response,
+					    MHD_HTTP_HEADER_CONNECTION,
+					    "Keep-Alive");
+      client_requested_close
+	= MHD_lookup_header_s_token_ci (request,
+					MHD_HTTP_HEADER_CONNECTION,
+					"close");
+
+      if (response->v10_only)
+        request->keepalive = MHD_CONN_MUST_CLOSE;
+#ifdef UPGRADE_SUPPORT
+      else if (NULL != response->upgrade_handler)
+        /* If this connection will not be "upgraded", it must be closed. */
+        request->keepalive = MHD_CONN_MUST_CLOSE;
+#endif /* UPGRADE_SUPPORT */
+
+      /* now analyze chunked encoding situation */
+      request->have_chunked_upload = false;
+
+      if ( (MHD_SIZE_UNKNOWN == response->total_size) &&
+#ifdef UPGRADE_SUPPORT
+           (NULL == response->upgrade_handler) &&
+#endif /* UPGRADE_SUPPORT */
+           (! response_has_close) &&
+           (! client_requested_close) )
+        {
+          /* size is unknown, and close was not explicitly requested;
+             need to either to HTTP 1.1 chunked encoding or
+             close the connection */
+          /* 'close' header doesn't exist yet, see if we need to add one;
+             if the client asked for a close, no need to start chunk'ing */
+          if ( (keepalive_possible (request)) &&
+               (MHD_str_equal_caseless_ (MHD_HTTP_VERSION_1_1,
+                                         request->version_s)) )
+            {
+              have_encoding
+		= MHD_response_get_header (response,
+					   MHD_HTTP_HEADER_TRANSFER_ENCODING);
+              if (NULL == have_encoding)
+                {
+                  must_add_chunked_encoding = true;
+                  request->have_chunked_upload = true;
+                }
+              else if (MHD_str_equal_caseless_ (have_encoding,
+                                                "identity"))
+                {
+                  /* application forced identity encoding, can't do 'chunked' */
+                  must_add_close = true;
+                }
+              else
+                {
+                  request->have_chunked_upload = true;
+                }
+            }
+          else
+            {
+              /* Keep alive or chunking not possible
+                 => set close header if not present */
+              if (! response_has_close)
+                must_add_close = true;
+            }
+        }
+
+      /* check for other reasons to add 'close' header */
+      if ( ( (client_requested_close) ||
+             (connection->read_closed) ||
+             (MHD_CONN_MUST_CLOSE == request->keepalive)) &&
+           (! response_has_close) &&
+#ifdef UPGRADE_SUPPORT
+           (NULL == response->upgrade_handler) &&
+#endif /* UPGRADE_SUPPORT */
+           (! response->v10_only) )
+        must_add_close = true;
+
+      /* check if we should add a 'content length' header */
+      have_content_length
+	= MHD_response_get_header (response,
+				   MHD_HTTP_HEADER_CONTENT_LENGTH);
+
+      /* MHD_HTTP_NO_CONTENT, MHD_HTTP_NOT_MODIFIED and 1xx-status
+         codes SHOULD NOT have a Content-Length according to spec;
+         also chunked encoding / unknown length or CONNECT... */
+      if ( (MHD_SIZE_UNKNOWN != response->total_size) &&
+           (MHD_HTTP_NO_CONTENT != response->status_code) &&
+           (MHD_HTTP_NOT_MODIFIED != response->status_code) &&
+           (MHD_HTTP_OK <= response->status_code) &&
+           (NULL == have_content_length) &&
+           (request->method != MHD_METHOD_CONNECT) )
+        {
+          /*
+            Here we add a content-length if one is missing; however,
+            for 'connect' methods, the responses MUST NOT include a
+            content-length header *if* the response code is 2xx (in
+            which case we expect there to be no body).  Still,
+            as we don't know the response code here in some cases, we
+            simply only force adding a content-length header if this
+            is not a 'connect' or if the response is not empty
+            (which is kind of more sane, because if some crazy
+            application did return content with a 2xx status code,
+            then having a content-length might again be a good idea).
+
+            Note that the change from 'SHOULD NOT' to 'MUST NOT' is
+            a recent development of the HTTP 1.1 specification.
+          */
+          content_length_len
+            = MHD_snprintf_ (content_length_buf,
+			     sizeof (content_length_buf),
+			     MHD_HTTP_HEADER_CONTENT_LENGTH ": " MHD_UNSIGNED_LONG_LONG_PRINTF "\r\n",
+			     (MHD_UNSIGNED_LONG_LONG) response->total_size);
+          must_add_content_length = true;
+        }
+
+      /* check for adding keep alive */
+      if ( (! response_has_keepalive) &&
+           (! response_has_close) &&
+           (! must_add_close) &&
+           (MHD_CONN_MUST_CLOSE != request->keepalive) &&
+#ifdef UPGRADE_SUPPORT
+           (NULL == response->upgrade_handler) &&
+#endif /* UPGRADE_SUPPORT */
+           (keepalive_possible (request)) )
+        must_add_keep_alive = true;
+      break;
+    case MHD_REQUEST_BODY_SENT:
+      response_has_keepalive = false;
+      break;
+    default:
+      mhd_assert (0);
+    }
+
+  if (MHD_CONN_MUST_CLOSE != request->keepalive)
+    {
+      if ( (must_add_close) ||
+	   (response_has_close) )
+        request->keepalive = MHD_CONN_MUST_CLOSE;
+      else if ( (must_add_keep_alive) ||
+		(response_has_keepalive) )
+        request->keepalive = MHD_CONN_USE_KEEPALIVE;
+    }
+
+  if (must_add_close)
+    size += MHD_STATICSTR_LEN_ ("Connection: close\r\n");
+  if (must_add_keep_alive)
+    size += MHD_STATICSTR_LEN_ ("Connection: Keep-Alive\r\n");
+  if (must_add_chunked_encoding)
+    size += MHD_STATICSTR_LEN_ ("Transfer-Encoding: chunked\r\n");
+  if (must_add_content_length)
+    size += content_length_len;
+  mhd_assert (! (must_add_close && must_add_keep_alive) );
+  mhd_assert (! (must_add_chunked_encoding && must_add_content_length) );
+
+  for (pos = response->first_header; NULL != pos; pos = pos->next)
+    {
+      /* TODO: add proper support for excluding "Keep-Alive" token. */
+      if ( (pos->kind == kind) &&
+           (! ( (must_add_close) &&
+                (response_has_keepalive) &&
+                (MHD_str_equal_caseless_(pos->header,
+                                         MHD_HTTP_HEADER_CONNECTION)) &&
+                (MHD_str_equal_caseless_(pos->value,
+                                         "Keep-Alive")) ) ) )
+        size += strlen (pos->header) + strlen (pos->value) + 4; /* colon, space, linefeeds */
+    }
+  /* produce data */
+  data = MHD_pool_allocate (connection->pool,
+                            size + 1,
+                            MHD_NO);
+  if (NULL == data)
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+		MHD_SC_CONNECTION_POOL_MALLOC_FAILURE,
+                "Not enough memory for write!\n");
+#endif
+      return false;
+    }
+  if (MHD_REQUEST_FOOTERS_RECEIVED == request->state)
+    {
+      memcpy (data,
+              code,
+              off);
+    }
+  if (must_add_close)
+    {
+      /* we must add the 'Connection: close' header */
+      memcpy (&data[off],
+              "Connection: close\r\n",
+              MHD_STATICSTR_LEN_ ("Connection: close\r\n"));
+      off += MHD_STATICSTR_LEN_ ("Connection: close\r\n");
+    }
+  if (must_add_keep_alive)
+    {
+      /* we must add the 'Connection: Keep-Alive' header */
+      memcpy (&data[off],
+              "Connection: Keep-Alive\r\n",
+              MHD_STATICSTR_LEN_ ("Connection: Keep-Alive\r\n"));
+      off += MHD_STATICSTR_LEN_ ("Connection: Keep-Alive\r\n");
+    }
+  if (must_add_chunked_encoding)
+    {
+      /* we must add the 'Transfer-Encoding: chunked' header */
+      memcpy (&data[off],
+              "Transfer-Encoding: chunked\r\n",
+              MHD_STATICSTR_LEN_ ("Transfer-Encoding: chunked\r\n"));
+      off += MHD_STATICSTR_LEN_ ("Transfer-Encoding: chunked\r\n");
+    }
+  if (must_add_content_length)
+    {
+      /* we must add the 'Content-Length' header */
+      memcpy (&data[off],
+              content_length_buf,
+	      content_length_len);
+      off += content_length_len;
+    }
+  for (pos = response->first_header; NULL != pos; pos = pos->next)
+    {
+      /* TODO: add proper support for excluding "Keep-Alive" token. */
+      if ( (pos->kind == kind) &&
+           (! ( (must_add_close) &&
+                (response_has_keepalive) &&
+                (MHD_str_equal_caseless_(pos->header,
+                                         MHD_HTTP_HEADER_CONNECTION)) &&
+                (MHD_str_equal_caseless_(pos->value,
+                                         "Keep-Alive")) ) ) )
+        off += MHD_snprintf_ (&data[off],
+                              size - off,
+                              "%s: %s\r\n",
+                              pos->header,
+                              pos->value);
+    }
+  if (MHD_REQUEST_FOOTERS_RECEIVED == request->state)
+    {
+      strcpy (&data[off],
+              date);
+      off += strlen (date);
+    }
+  memcpy (&data[off],
+          "\r\n",
+          2);
+  off += 2;
+
+  if (off != size)
+    mhd_panic (mhd_panic_cls,
+               __FILE__,
+               __LINE__,
+               NULL);
+  request->write_buffer = data;
+  request->write_buffer_append_offset = size;
+  request->write_buffer_send_offset = 0;
+  request->write_buffer_size = size + 1;
+  return true;
+}
+
+
+/**
+ * We encountered an error processing the request.  Handle it properly
+ * by stopping to read data and sending the indicated response code
+ * and message.
+ *
+ * @param request the request
+ * @param ec error code for MHD
+ * @param status_code the response code to send (400, 413 or 414)
+ * @param message the error message to send
+ */
+static void
+transmit_error_response (struct MHD_Request *request,
+			 enum MHD_StatusCode ec,
+                         enum MHD_HTTP_StatusCode status_code,
+			 const char *message)
+{
+  struct MHD_Response *response;
+
+  if (NULL == request->version_s)
+    {
+      /* we were unable to process the full header line, so we don't
+	 really know what version the client speaks; assume 1.0 */
+      request->version_s = MHD_HTTP_VERSION_1_0;
+    }
+  request->state = MHD_REQUEST_FOOTERS_RECEIVED;
+  request->connection->read_closed = true;
+#ifdef HAVE_MESSAGES
+  MHD_DLOG (request->daemon,
+	    ec,
+            _("Error processing request (HTTP response code is %u (`%s')). Closing connection.\n"),
+            status_code,
+            message);
+#endif
+  if (NULL != request->response)
+    {
+      MHD_response_queue_for_destroy (request->response);
+      request->response = NULL;
+    }
+  response = MHD_response_from_buffer (status_code,
+				       strlen (message),
+				       (void *) message,
+				       MHD_RESPMEM_PERSISTENT);
+  request->response = response;
+  /* Do not reuse this connection. */
+  request->keepalive = MHD_CONN_MUST_CLOSE;
+  if (! build_header_response (request))
+    {
+      /* oops - close! */
+      CONNECTION_CLOSE_ERROR (request->connection,
+			      ec,
+			      _("Closing connection (failed to create response header)\n"));
+    }
+  else
+    {
+      request->state = MHD_REQUEST_HEADERS_SENDING;
+    }
 }
 
 
@@ -999,6 +1693,43 @@ method_string_to_enum (const char *method)
 
 
 /**
+ * Add an entry to the HTTP headers of a request.  If this fails,
+ * transmit an error response (request too big).
+ *
+ * @param request the request for which a value should be set
+ * @param kind kind of the value
+ * @param key key for the value
+ * @param value the value itself
+ * @return false on failure (out of memory), true for success
+ */
+static bool
+request_add_header (struct MHD_Request *request,
+		    const char *key,
+		    const char *value,
+		    enum MHD_ValueKind kind)
+{
+  if (MHD_NO ==
+      MHD_request_set_value (request,
+			     kind,
+			     key,
+			     value))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (request->daemon,
+		MHD_SC_CONNECTION_POOL_MALLOC_FAILURE,
+                _("Not enough memory in pool to allocate header record!\n"));
+#endif
+      transmit_error_response (request,
+			       MHD_SC_CLIENT_HEADER_TOO_BIG,
+                               MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
+                               REQUEST_TOO_BIG);
+      return false;
+    }
+  return true;
+}
+
+
+/**
  * Parse the first line of the HTTP HEADER.
  *
  * @param connection the connection (updated)
@@ -1011,7 +1742,6 @@ parse_initial_message_line (struct MHD_Request *request,
                             char *line,
                             size_t line_len)
 {
-  struct MHD_Connection *connection = request->connection;
   struct MHD_Daemon *daemon = request->daemon;
   const char *curi;
   char *uri;
@@ -1036,7 +1766,7 @@ parse_initial_message_line (struct MHD_Request *request,
     {
       curi = "";
       uri = NULL;
-      request->version = "";
+      request->version_s = "";
       args = NULL;
     }
   else
@@ -1055,22 +1785,21 @@ parse_initial_message_line (struct MHD_Request *request,
       if (http_version > uri)
         {
           http_version[0] = '\0';
-          request->version = http_version + 1;
+          request->version_s = http_version + 1;
           args = memchr (uri,
                          '?',
                          http_version - uri);
         }
       else
         {
-          request->version = "";
+          request->version_s = "";
           args = memchr (uri,
                          '?',
                          line_len - (uri - line));
         }
     }
-  if (NULL != daemon->uri_log_callback)
+  if (NULL != daemon->early_uri_logger_cb)
     {
-      request->client_aware = true;
       request->client_context
         = daemon->early_uri_logger_cb (daemon->early_uri_logger_cb_cls,
 				       curi,
@@ -1081,10 +1810,10 @@ parse_initial_message_line (struct MHD_Request *request,
       args[0] = '\0';
       args++;
       /* note that this call clobbers 'args' */
-      MHD_parse_arguments_ (connection,
+      MHD_parse_arguments_ (request,
 			    MHD_GET_ARGUMENT_KIND,
 			    args,
-			    &connection_add_header,
+			    &request_add_header,
 			    &unused_num_headers);
     }
   if (NULL != uri)
@@ -1092,41 +1821,6 @@ parse_initial_message_line (struct MHD_Request *request,
 			 request,
 			 uri);
   request->url = curi;
-  return MHD_YES;
-}
-
-
-/**
- * Add an entry to the HTTP headers of a request.  If this fails,
- * transmit an error response (request too big).
- *
- * @param request the request for which a value should be set
- * @param kind kind of the value
- * @param key key for the value
- * @param value the value itself
- * @return false on failure (out of memory), true for success
- */
-static bool
-connection_add_header (struct MHD_Request *request,
-                       const char *key,
-		       const char *value,
-		       enum MHD_ValueKind kind)
-{
-  if (MHD_NO ==
-      MHD_request_set_value (request,
-			     kind,
-			     key,
-			     value))
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (request->daemon,
-                _("Not enough memory in pool to allocate header record!\n"));
-#endif
-      transmit_error_response (request->connection,
-                               MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                               REQUEST_TOO_BIG);
-      return false;
-    }
   return true;
 }
 
@@ -1148,7 +1842,8 @@ process_header_line (struct MHD_Request *request,
   char *colon;
 
   /* line should be normal header line, find colon */
-  colon = strchr (line, ':');
+  colon = strchr (line,
+		  ':');
   if (NULL == colon)
     {
       /* error in header line, die hard */
@@ -1157,7 +1852,7 @@ process_header_line (struct MHD_Request *request,
 			      _("Received malformed line (no colon). Closing connection.\n"));
       return false;
     }
-  if (-1 >= request->daemon->strict_for_client)
+  if (MHD_PSL_PERMISSIVE != request->daemon->protocol_strict_level)
     {
       /* check for whitespace before colon, which is not allowed
 	 by RFC 7230 section 3.2.4; we count space ' ' and
@@ -1252,7 +1947,8 @@ process_broken_line (struct MHD_Request *request,
                                   last_len + tmp_len + 1);
       if (NULL == last)
         {
-          transmit_error_response (connection,
+          transmit_error_response (request,
+				   MHD_SC_CLIENT_HEADER_TOO_BIG,
                                    MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
                                    REQUEST_TOO_BIG);
           return MHD_NO;
@@ -1270,7 +1966,8 @@ process_broken_line (struct MHD_Request *request,
 			    request->colon,
 			    kind))
     {
-      transmit_error_response (connection,
+      transmit_error_response (request,
+			       MHD_SC_CLIENT_HEADER_TOO_BIG,
                                MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
                                REQUEST_TOO_BIG);
       return false;
@@ -1281,7 +1978,8 @@ process_broken_line (struct MHD_Request *request,
       if (! process_header_line (request,
 				 line))
         {
-          transmit_error_response (connection,
+          transmit_error_response (request,
+				   MHD_SC_CONNECTION_PARSE_FAIL_CLOSED,
                                    MHD_HTTP_BAD_REQUEST,
                                    REQUEST_MALFORMED);
           return false;
@@ -1291,7 +1989,782 @@ process_broken_line (struct MHD_Request *request,
 }
 
 
-#ifdef REWRITE_IN_PROGRESS
+/**
+ * Parse a single line of the HTTP header.  Advance read_buffer (!)
+ * appropriately.  If the current line does not fit, consider growing
+ * the buffer.  If the line is far too long, close the connection.  If
+ * no line is found (incomplete, buffer too small, line too long),
+ * return NULL.  Otherwise return a pointer to the line.
+ *
+ * @param request request we're processing
+ * @param[out] line_len pointer to variable that receive
+ *             length of line or NULL
+ * @return NULL if no full line is available; note that the returned
+ *         string will not be 0-termianted
+ */
+static char *
+get_next_header_line (struct MHD_Request *request,
+                      size_t *line_len)
+{
+  char *rbuf;
+  size_t pos;
+
+  if (0 == request->read_buffer_offset)
+    return NULL;
+  pos = 0;
+  rbuf = request->read_buffer;
+  while ( (pos < request->read_buffer_offset - 1) &&
+          ('\r' != rbuf[pos]) &&
+          ('\n' != rbuf[pos]) )
+    pos++;
+  if ( (pos == request->read_buffer_offset - 1) &&
+       ('\n' != rbuf[pos]) )
+    {
+      /* not found, consider growing... */
+      if ( (request->read_buffer_offset == request->read_buffer_size) &&
+	   (! try_grow_read_buffer (request)) )
+	{
+	  transmit_error_response (request,
+				   MHD_SC_CLIENT_HEADER_TOO_BIG,
+				   (NULL != request->url)
+				   ? MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE
+				   : MHD_HTTP_URI_TOO_LONG,
+				   REQUEST_TOO_BIG);
+	}
+      if (line_len)
+        *line_len = 0;
+      return NULL;
+    }
+
+  if (line_len)
+    *line_len = pos;
+  /* found, check if we have proper LFCR */
+  if ( ('\r' == rbuf[pos]) &&
+       ('\n' == rbuf[pos + 1]) )
+    rbuf[pos++] = '\0';         /* skip both r and n */
+  rbuf[pos++] = '\0';
+  request->read_buffer += pos;
+  request->read_buffer_size -= pos;
+  request->read_buffer_offset -= pos;
+  return rbuf;
+}
+
+
+/**
+ * Check whether is possible to force push socket buffer content as
+ * partial packet.
+ * MHD use different buffering logic depending on whether flushing of
+ * socket buffer is possible or not.
+ * If flushing IS possible than MHD activates extra buffering before
+ * sending data to prevent sending partial packets and flush pending
+ * data in socket buffer to push last partial packet to client after
+ * sending logical completed part of data (for example: after sending
+ * full response header or full response message).
+ * If flushing IS NOT possible than MHD activates no buffering (no
+ * delay sending) when it going to send formed fully completed logical
+ * part of data and activate normal buffering after sending.
+ * For idled keep-alive connection MHD always activate normal
+ * buffering.
+ *
+ * @param connection connection to check
+ * @return true if force push is possible, false otherwise
+ */
+static bool
+socket_flush_possible(struct MHD_Connection *connection)
+{
+  (void) connection; /* Mute compiler warning. */
+#if defined(TCP_CORK) || defined(TCP_PUSH)
+  return true;
+#else  /* !TCP_CORK && !TCP_PUSH */
+  return false;
+#endif /* !TCP_CORK && !TCP_PUSH */
+}
+
+
+/**
+ * Activate extra buffering mode on connection socket to prevent
+ * sending of partial packets.
+ *
+ * @param connection connection to be processed
+ * @return true on success, false otherwise
+ */
+static bool
+socket_start_extra_buffering (struct MHD_Connection *connection)
+{
+  bool res = false;
+  (void)connection; /* Mute compiler warning. */
+#if defined(TCP_CORK) || defined(TCP_NOPUSH)
+  const MHD_SCKT_OPT_BOOL_ on_val = 1;
+#if defined(TCP_NODELAY)
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
+#endif /* TCP_NODELAY */
+  mhd_assert(NULL != connection);
+#if defined(TCP_NOPUSH) && !defined(TCP_CORK)
+  /* Buffer data before sending */
+  res = (0 == setsockopt (connection->socket_fd,
+                          IPPROTO_TCP,
+                          TCP_NOPUSH,
+                          (const void *) &on_val,
+                          sizeof (on_val)))
+    ? true : false;
+#if defined(TCP_NODELAY)
+  /* Enable Nagle's algorithm */
+  /* TCP_NODELAY may interfere with TCP_NOPUSH */
+  res &= (0 == setsockopt (connection->socket_fd,
+                           IPPROTO_TCP,
+                           TCP_NODELAY,
+                           (const void *) &off_val,
+                           sizeof (off_val)))
+    ? true : false;
+#endif /* TCP_NODELAY */
+#else /* TCP_CORK */
+#if defined(TCP_NODELAY)
+  /* Enable Nagle's algorithm */
+  /* TCP_NODELAY may prevent enabling TCP_CORK. Resulting buffering mode depends
+     solely on TCP_CORK result, so ignoring return code here. */
+  (void) setsockopt (connection->socket_fd,
+                     IPPROTO_TCP,
+                     TCP_NODELAY,
+                     (const void *) &off_val,
+                     sizeof (off_val));
+#endif /* TCP_NODELAY */
+  /* Send only full packets */
+  res = (0 == setsockopt (connection->socket_fd,
+                          IPPROTO_TCP,
+                          TCP_CORK,
+                          (const void *) &on_val,
+                          sizeof (on_val)))
+    ? true : false;
+#endif /* TCP_CORK */
+#endif /* TCP_CORK || TCP_NOPUSH */
+  return res;
+}
+
+
+/**
+ * Activate no buffering mode (no delay sending) on connection socket.
+ *
+ * @param connection connection to be processed
+ * @return true on success, false otherwise
+ */
+static bool
+socket_start_no_buffering (struct MHD_Connection *connection)
+{
+#if defined(TCP_NODELAY)
+  bool res = true;
+  const MHD_SCKT_OPT_BOOL_ on_val = 1;
+#if defined(TCP_CORK) || defined(TCP_NOPUSH)
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
+#endif /* TCP_CORK || TCP_NOPUSH */
+
+  (void)connection; /* Mute compiler warning. */
+  mhd_assert(NULL != connection);
+#if defined(TCP_CORK)
+  /* Allow partial packets */
+  res &= (0 == setsockopt (connection->socket_fd,
+                           IPPROTO_TCP,
+                           TCP_CORK,
+                           (const void *) &off_val,
+                           sizeof (off_val)))
+    ? true : false;
+#endif /* TCP_CORK */
+#if defined(TCP_NODELAY)
+  /* Disable Nagle's algorithm for sending packets without delay */
+  res &= (0 == setsockopt (connection->socket_fd,
+                           IPPROTO_TCP,
+                           TCP_NODELAY,
+                           (const void *) &on_val,
+                           sizeof (on_val)))
+    ? true : false;
+#endif /* TCP_NODELAY */
+#if defined(TCP_NOPUSH) && !defined(TCP_CORK)
+  /* Disable extra buffering */
+  res &= (0 == setsockopt (connection->socket_fd,
+                           IPPROTO_TCP,
+                           TCP_NOPUSH,
+                           (const void *) &off_val,
+                           sizeof (off_val)))
+    ? true : false;
+#endif /* TCP_NOPUSH  && !TCP_CORK */
+  return res;
+#else  /* !TCP_NODELAY */
+  return false;
+#endif /* !TCP_NODELAY */
+}
+
+
+/**
+ * Activate no buffering mode (no delay sending) on connection socket
+ * and push to client data pending in socket buffer.
+ *
+ * @param connection connection to be processed
+ * @return true on success, false otherwise
+ */
+static bool
+socket_start_no_buffering_flush (struct MHD_Connection *connection)
+{
+  bool res = true;
+#if defined(TCP_NOPUSH) && !defined(TCP_CORK)
+  const int dummy = 0;
+#endif /* !TCP_CORK */
+
+  if (NULL == connection)
+    return false; /* FIXME: use MHD_NONNULL? */
+  res = socket_start_no_buffering (connection);
+#if defined(TCP_NOPUSH) && !defined(TCP_CORK)
+  /* Force flush data with zero send otherwise Darwin and some BSD systems
+     will add 5 seconds delay. Not required with TCP_CORK as switching off
+     TCP_CORK always flushes socket buffer. */
+  res &= (0 <= MHD_send_ (connection->socket_fd,
+                          &dummy,
+                          0))
+    ? true : false;
+#endif /* TCP_NOPUSH && !TCP_CORK*/
+  return res;
+}
+
+
+/**
+ * Activate normal buffering mode on connection socket.
+ *
+ * @param connection connection to be processed
+ * @return true on success, false otherwise
+ */
+static bool
+socket_start_normal_buffering (struct MHD_Connection *connection)
+{
+#if defined(TCP_NODELAY)
+  bool res = true;
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
+#if defined(TCP_CORK)
+  MHD_SCKT_OPT_BOOL_ cork_val = 0;
+  socklen_t param_size = sizeof (cork_val);
+#endif /* TCP_CORK */
+  
+  mhd_assert(NULL != connection);
+#if defined(TCP_CORK)
+  /* Allow partial packets */
+  /* Disabling TCP_CORK will flush partial packet even if TCP_CORK wasn't enabled before
+     so try to check current value of TCP_CORK to prevent unrequested flushing */
+  if ( (0 != getsockopt (connection->socket_fd,
+                         IPPROTO_TCP,
+                         TCP_CORK,
+                         (void*)&cork_val,
+                         &param_size)) ||
+       (0 != cork_val))
+    res &= (0 == setsockopt (connection->socket_fd,
+                             IPPROTO_TCP,
+                             TCP_CORK,
+                             (const void *) &off_val,
+                             sizeof (off_val)))
+      ? true : false;
+#elif defined(TCP_NOPUSH)
+  /* Disable extra buffering */
+  /* No need to check current value as disabling TCP_NOPUSH will not flush partial
+     packet if TCP_NOPUSH wasn't enabled before */
+  res &= (0 == setsockopt (connection->socket_fd,
+                           IPPROTO_TCP,
+                           TCP_NOPUSH,
+                           (const void *) &off_val,
+                           sizeof (off_val)))
+    ? true : false;
+#endif /* TCP_NOPUSH && !TCP_CORK */
+  /* Enable Nagle's algorithm for normal buffering */
+  res &= (0 == setsockopt (connection->socket_fd,
+                           IPPROTO_TCP,
+                           TCP_NODELAY,
+                           (const void *) &off_val,
+                           sizeof (off_val)))
+    ? true : false;
+  return res;
+#else  /* !TCP_NODELAY */
+  return false;
+#endif /* !TCP_NODELAY */
+}
+
+
+/**
+ * Do we (still) need to send a 100 continue
+ * message for this request?
+ *
+ * @param request the request to test
+ * @return false if we don't need 100 CONTINUE, true if we do
+ */
+static bool
+need_100_continue (struct MHD_Request *request)
+{
+  const char *expect;
+
+  return ( (NULL == request->response) &&
+	   (NULL != request->version_s) &&
+       (MHD_str_equal_caseless_(request->version_s,
+				MHD_HTTP_VERSION_1_1)) &&
+	   (NULL != (expect = MHD_request_lookup_value (request,
+							MHD_HEADER_KIND,
+							MHD_HTTP_HEADER_EXPECT))) &&
+	   (MHD_str_equal_caseless_(expect,
+                                    "100-continue")) &&
+	   (request->continue_message_write_offset <
+	    MHD_STATICSTR_LEN_ (HTTP_100_CONTINUE)) );
+}
+
+
+/**
+ * Parse the cookie header (see RFC 2109).
+ *
+ * @param request request to parse header of
+ * @return true for success, false for failure (malformed, out of memory)
+ */
+static int
+parse_cookie_header (struct MHD_Request *request)
+{
+  const char *hdr;
+  char *cpy;
+  char *pos;
+  char *sce;
+  char *semicolon;
+  char *equals;
+  char *ekill;
+  char old;
+  int quotes;
+
+  hdr = MHD_request_lookup_value (request,
+				  MHD_HEADER_KIND,
+				  MHD_HTTP_HEADER_COOKIE);
+  if (NULL == hdr)
+    return true;
+  cpy = MHD_pool_allocate (request->connection->pool,
+                           strlen (hdr) + 1,
+                           MHD_YES);
+  if (NULL == cpy)
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (request->daemon,
+		MHD_SC_COOKIE_POOL_ALLOCATION_FAILURE,
+                _("Not enough memory in pool to parse cookies!\n"));
+#endif
+      transmit_error_response (request,
+			       MHD_SC_COOKIE_POOL_ALLOCATION_FAILURE,
+                               MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
+                               REQUEST_TOO_BIG);
+      return false;
+    }
+  memcpy (cpy,
+          hdr,
+          strlen (hdr) + 1);
+  pos = cpy;
+  while (NULL != pos)
+    {
+      while (' ' == *pos)
+        pos++;                  /* skip spaces */
+
+      sce = pos;
+      while ( ((*sce) != '\0') &&
+              ((*sce) != ',') &&
+              ((*sce) != ';') &&
+              ((*sce) != '=') )
+        sce++;
+      /* remove tailing whitespace (if any) from key */
+      ekill = sce - 1;
+      while ( (*ekill == ' ') &&
+              (ekill >= pos) )
+        *(ekill--) = '\0';
+      old = *sce;
+      *sce = '\0';
+      if (old != '=')
+        {
+          /* value part omitted, use empty string... */
+          if (! request_add_header (request,
+				    pos,
+				    "",
+				    MHD_COOKIE_KIND))
+            return false;
+          if (old == '\0')
+            break;
+          pos = sce + 1;
+          continue;
+        }
+      equals = sce + 1;
+      quotes = 0;
+      semicolon = equals;
+      while ( ('\0' != semicolon[0]) &&
+              ( (0 != quotes) ||
+                ( (';' != semicolon[0]) &&
+                  (',' != semicolon[0]) ) ) )
+        {
+          if ('"' == semicolon[0])
+            quotes = (quotes + 1) & 1;
+          semicolon++;
+        }
+      if ('\0' == semicolon[0])
+        semicolon = NULL;
+      if (NULL != semicolon)
+        {
+          semicolon[0] = '\0';
+          semicolon++;
+        }
+      /* remove quotes */
+      if ( ('"' == equals[0]) &&
+           ('"' == equals[strlen (equals) - 1]) )
+        {
+          equals[strlen (equals) - 1] = '\0';
+          equals++;
+        }
+      if (! request_add_header (request,
+				pos,
+				equals,
+				MHD_COOKIE_KIND))
+        return false;
+      pos = semicolon;
+    }
+  return true;
+}
+
+
+/**
+ * Parse the various headers; figure out the size
+ * of the upload and make sure the headers follow
+ * the protocol.  Advance to the appropriate state.
+ *
+ * @param request request we're processing
+ */
+static void
+parse_request_headers (struct MHD_Request *request)
+{
+  struct MHD_Daemon *daemon = request->daemon;
+  struct MHD_Connection *connection = request->connection;
+  const char *clen;
+  struct MHD_Response *response;
+  const char *enc;
+  const char *end;
+
+  parse_cookie_header (request); /* FIXME: return value ignored! */
+  if ( (MHD_PSL_STRICT == daemon->protocol_strict_level) &&
+       (NULL != request->version_s) &&
+       (MHD_str_equal_caseless_(MHD_HTTP_VERSION_1_1,
+                                request->version_s)) &&
+       (NULL ==
+        MHD_request_lookup_value (request,
+				  MHD_HEADER_KIND,
+				  MHD_HTTP_HEADER_HOST)) )
+    {
+      /* die, http 1.1 request without host and we are pedantic */
+      request->state = MHD_REQUEST_FOOTERS_RECEIVED;
+      connection->read_closed = true;
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+		MHD_SC_HOST_HEADER_MISSING,
+                _("Received HTTP 1.1 request without `Host' header.\n"));
+#endif
+      mhd_assert (NULL == request->response);
+      response =
+        MHD_response_from_buffer (MHD_HTTP_BAD_REQUEST,
+				  MHD_STATICSTR_LEN_ (REQUEST_LACKS_HOST),
+				  REQUEST_LACKS_HOST,
+				  MHD_RESPMEM_PERSISTENT);
+      request->response = response;
+      // FIXME: state machine advance?
+      return;
+    }
+
+  request->remaining_upload_size = 0;
+  enc = MHD_request_lookup_value (request,
+				  MHD_HEADER_KIND,
+				  MHD_HTTP_HEADER_TRANSFER_ENCODING);
+  if (NULL != enc)
+    {
+      request->remaining_upload_size = MHD_SIZE_UNKNOWN;
+      if (MHD_str_equal_caseless_ (enc,
+				   "chunked"))
+        request->have_chunked_upload = true;
+      return;
+    }
+  clen = MHD_request_lookup_value (request,
+				   MHD_HEADER_KIND,
+				   MHD_HTTP_HEADER_CONTENT_LENGTH);
+  if (NULL == clen)
+    return;
+  end = clen + MHD_str_to_uint64_ (clen,
+				   &request->remaining_upload_size);
+  if ( (clen == end) ||
+       ('\0' != *end) )
+    {
+      request->remaining_upload_size = 0;
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (request->daemon,
+		MHD_SC_CONTENT_LENGTH_MALFORMED,
+		"Failed to parse `Content-Length' header. Closing connection.\n");
+#endif
+      CONNECTION_CLOSE_ERROR (connection,
+			      MHD_SC_CONTENT_LENGTH_MALFORMED,
+			      NULL);
+    }
+}
+
+
+/**
+ * Call the handler of the application for this
+ * request.
+ *
+ * @param request request we're processing
+ */
+static void
+call_request_handler (struct MHD_Request *request)
+{
+  struct MHD_Daemon *daemon = request->daemon;
+  struct MHD_Connection *connection = request->connection;
+  const struct MHD_Action *action;
+
+  if (NULL != request->response)
+    return;                     /* already queued a response */
+  if (NULL == (action = 
+	       daemon->rc (daemon->rc_cls,
+			   request,
+			   request->url,
+			   request->method)))
+    {
+      /* serious internal error, close connection */
+      CONNECTION_CLOSE_ERROR (connection,
+			      MHD_SC_APPLICATION_CALLBACK_FAILURE_CLOSED,
+			      _("Application reported internal error, closing connection.\n"));
+      return;
+    }
+  action->action (action->action_cls,
+		  request);
+}
+
+
+/**
+ * Call the handler of the application for this request.  Handles
+ * chunking of the upload as well as normal uploads.
+ *
+ * @param request request we're processing
+ */
+static void
+process_request_body (struct MHD_Request *request)
+{
+  struct MHD_Daemon *daemon = request->daemon;
+  struct MHD_Connection *connection = request->connection;
+  size_t available;
+  bool instant_retry;
+  char *buffer_head;
+
+  if (NULL != request->response)
+    return;                     /* already queued a response */
+
+  buffer_head = request->read_buffer;
+  available = request->read_buffer_offset;
+  do
+    {
+      size_t to_be_processed;
+      size_t left_unprocessed;
+      size_t processed_size;
+
+      instant_retry = false;
+      if ( (request->have_chunked_upload) &&
+           (MHD_SIZE_UNKNOWN == request->remaining_upload_size) )
+        {
+          if ( (request->current_chunk_offset == request->current_chunk_size) &&
+               (0LLU != request->current_chunk_offset) &&
+               (available >= 2) )
+            {
+              size_t i;
+	      
+              /* skip new line at the *end* of a chunk */
+              i = 0;
+              if ( ('\r' == buffer_head[i]) ||
+                   ('\n' == buffer_head[i]) )
+                i++;            /* skip 1st part of line feed */
+              if ( ('\r' == buffer_head[i]) ||
+                   ('\n' == buffer_head[i]) )
+                i++;            /* skip 2nd part of line feed */
+              if (0 == i)
+                {
+                  /* malformed encoding */
+                  CONNECTION_CLOSE_ERROR (connection,
+					  MHD_SC_CHUNKED_ENCODING_MALFORMED,
+					  _("Received malformed HTTP request (bad chunked encoding). Closing connection.\n"));
+                  return;
+                }
+              available -= i;
+              buffer_head += i;
+              request->current_chunk_offset = 0;
+              request->current_chunk_size = 0;
+            }
+          if (request->current_chunk_offset <
+              request->current_chunk_size)
+            {
+              uint64_t cur_chunk_left;
+
+              /* we are in the middle of a chunk, give
+                 as much as possible to the client (without
+                 crossing chunk boundaries) */
+              cur_chunk_left
+                = request->current_chunk_size - request->current_chunk_offset;
+              if (cur_chunk_left > available)
+		{
+		  to_be_processed = available;
+		}
+              else
+                { /* cur_chunk_left <= (size_t)available */
+                  to_be_processed = (size_t)cur_chunk_left;
+                  if (available > to_be_processed)
+                    instant_retry = true;
+                }
+            }
+          else
+            {
+              size_t i;
+              size_t end_size;
+              bool malformed;
+
+              /* we need to read chunk boundaries */
+              i = 0;
+              while (i < available)
+                {
+                  if ( ('\r' == buffer_head[i]) ||
+                       ('\n' == buffer_head[i]) ||
+		       (';' == buffer_head[i]) )
+                    break;
+                  i++;
+                  if (i >= 16)
+                    break;
+                }
+	      end_size = i;
+	      /* find beginning of CRLF (skip over chunk extensions) */
+	      if (';' == buffer_head[i])
+		{
+		  while (i < available)
+		  {
+		    if ( ('\r' == buffer_head[i]) ||
+			 ('\n' == buffer_head[i]) )
+		      break;
+		    i++;
+		  }
+		}
+              /* take '\n' into account; if '\n' is the unavailable
+                 character, we will need to wait until we have it
+                 before going further */
+              if ( (i + 1 >= available) &&
+                   ! ( (1 == i) &&
+                       (2 == available) &&
+                       ('0' == buffer_head[0]) ) )
+                break;          /* need more data... */
+	      i++;
+              malformed = (end_size >= 16);
+              if (! malformed)
+                {
+                  size_t num_dig = MHD_strx_to_uint64_n_ (buffer_head,
+							  end_size,
+							  &request->current_chunk_size);
+                  malformed = (end_size != num_dig);
+                }
+              if (malformed)
+                {
+                  /* malformed encoding */
+                  CONNECTION_CLOSE_ERROR (connection,
+					  MHD_SC_CHUNKED_ENCODING_MALFORMED,
+					  _("Received malformed HTTP request (bad chunked encoding). Closing connection.\n"));
+                  return;
+                }
+	      /* skip 2nd part of line feed */
+              if ( (i < available) &&
+                   ( ('\r' == buffer_head[i]) ||
+                     ('\n' == buffer_head[i]) ) )
+                i++;
+
+              buffer_head += i;
+              available -= i;
+              request->current_chunk_offset = 0;
+
+              if (available > 0)
+                instant_retry = true;
+              if (0LLU == request->current_chunk_size)
+                {
+                  request->remaining_upload_size = 0;
+                  break;
+                }
+              continue;
+            }
+        }
+      else
+        {
+          /* no chunked encoding, give all to the client */
+          if ( (0 != request->remaining_upload_size) &&
+	       (MHD_SIZE_UNKNOWN != request->remaining_upload_size) &&
+	       (request->remaining_upload_size < available) )
+	    {
+              to_be_processed = (size_t)request->remaining_upload_size;
+	    }
+          else
+	    {
+              /**
+               * 1. no chunked encoding, give all to the client
+               * 2. client may send large chunked data, but only a smaller part is available at one time.
+               */
+              to_be_processed = available;
+	    }
+        }
+      left_unprocessed = to_be_processed;
+#if FIXME_OLD_STYLE
+      if (MHD_NO ==
+          daemon->rc (daemon->rc_cls,
+		      request,
+		      request->url,
+		      request->method,
+		      request->version,
+		      buffer_head,
+		      &left_unprocessed,
+		      &request->client_context))
+        {
+          /* serious internal error, close connection */
+          CONNECTION_CLOSE_ERROR (connection,
+				  MHD_SC_APPLICATION_CALLBACK_FAILURE_CLOSED,
+                                  _("Application reported internal error, closing connection.\n"));
+          return;
+        }
+#endif
+      if (left_unprocessed > to_be_processed)
+        mhd_panic (mhd_panic_cls,
+                   __FILE__,
+                   __LINE__
+#ifdef HAVE_MESSAGES
+		   , _("libmicrohttpd API violation")
+#else
+		   , NULL
+#endif
+		   );
+      if (0 != left_unprocessed)
+	{
+	  instant_retry = false; /* client did not process everything */
+#ifdef HAVE_MESSAGES
+	  /* client did not process all upload data, complain if
+	     the setup was incorrect, which may prevent us from
+	     handling the rest of the request */
+	  if ( (MHD_TM_EXTERNAL_EVENT_LOOP == daemon->threading_model) &&
+	       (! connection->suspended) )
+	    MHD_DLOG (daemon,
+		      MHD_SC_APPLICATION_HUNG_CONNECTION,
+		      _("WARNING: incomplete upload processing and connection not suspended may result in hung connection.\n"));
+#endif
+	}
+      processed_size = to_be_processed - left_unprocessed;
+      if (request->have_chunked_upload)
+        request->current_chunk_offset += processed_size;
+      /* dh left "processed" bytes in buffer for next time... */
+      buffer_head += processed_size;
+      available -= processed_size;
+      if (MHD_SIZE_UNKNOWN != request->remaining_upload_size)
+        request->remaining_upload_size -= processed_size;
+    }
+  while (instant_retry);
+  if (available > 0)
+    memmove (request->read_buffer,
+             buffer_head,
+             available);
+  request->read_buffer_offset = available;
+}
+
 
 /**
  * This function was created to handle per-request processing that
@@ -1304,13 +2777,13 @@ process_broken_line (struct MHD_Request *request,
  *         request (not dead yet), false if it died
  */
 bool
-MHD_request_handle_idle (struct MHD_Request *request)
+MHD_request_handle_idle_ (struct MHD_Request *request)
 {
   struct MHD_Daemon *daemon = request->daemon;
   struct MHD_Connection *connection = request->connection;
   char *line;
   size_t line_len;
-  int ret;
+  bool ret;
 
   request->in_idle = true;
   while (! connection->suspended)
@@ -1358,6 +2831,7 @@ MHD_request_handle_idle (struct MHD_Request *request)
 					  line,
 					  line_len))
             CONNECTION_CLOSE_ERROR (connection,
+				    MHD_SC_CONNECTION_CLOSED,
                                     NULL);
           else
             request->state = MHD_REQUEST_URL_RECEIVED;
@@ -1387,7 +2861,8 @@ MHD_request_handle_idle (struct MHD_Request *request)
           if (! process_header_line (request,
 				     line))
             {
-              transmit_error_response (connection,
+              transmit_error_response (request,
+				       MHD_SC_CONNECTION_PARSE_FAIL_CLOSED,
                                        MHD_HTTP_BAD_REQUEST,
                                        REQUEST_MALFORMED);
               break;
@@ -1444,10 +2919,8 @@ MHD_request_handle_idle (struct MHD_Request *request)
               break;
             }
           if ( (NULL != request->response) &&
-	       ( (MHD_str_equal_caseless_ (request->method,
-                                           MHD_HTTP_METHOD_POST)) ||
-		 (MHD_str_equal_caseless_ (request->method,
-                                           MHD_HTTP_METHOD_PUT))) )
+	       ( (MHD_METHOD_POST == request->method) ||
+		 (MHD_METHOD_PUT == request->method) ) )
             {
               /* we refused (no upload allowed!) */
               request->remaining_upload_size = 0;
@@ -1455,7 +2928,8 @@ MHD_request_handle_idle (struct MHD_Request *request)
               connection->read_closed = true;
             }
           request->state = (0 == request->remaining_upload_size)
-            ? MHD_REQUEST_FOOTERS_RECEIVED : MHD_REQUEST_CONTINUE_SENT;
+            ? MHD_REQUEST_FOOTERS_RECEIVED
+	    : MHD_REQUEST_CONTINUE_SENT;
           if (connection->suspended)
             break;
           continue;
@@ -1464,11 +2938,10 @@ MHD_request_handle_idle (struct MHD_Request *request)
               MHD_STATICSTR_LEN_ (HTTP_100_CONTINUE))
             {
               request->state = MHD_REQUEST_CONTINUE_SENT;
-              if (MHD_NO != socket_flush_possible (request))
-                socket_start_no_buffering_flush (request);
+              if (! socket_flush_possible (connection))
+                socket_start_no_buffering_flush (connection);
               else
-                socket_start_normal_buffering (request);
-
+                socket_start_normal_buffering (connection);
               continue;
             }
           break;
@@ -1482,10 +2955,10 @@ MHD_request_handle_idle (struct MHD_Request *request)
           if ( (0 == request->remaining_upload_size) ||
                ( (MHD_SIZE_UNKNOWN == request->remaining_upload_size) &&
                  (0 == request->read_buffer_offset) &&
-                 (request->read_closed) ) )
+                 (connection->read_closed) ) )
             {
               if ( (request->have_chunked_upload) &&
-                   (! request->read_closed) )
+                   (! connection->read_closed) )
                 request->state = MHD_REQUEST_BODY_RECEIVED;
               else
                 request->state = MHD_REQUEST_FOOTERS_RECEIVED;
@@ -1504,6 +2977,7 @@ MHD_request_handle_idle (struct MHD_Request *request)
               if (connection->read_closed)
                 {
 		  CONNECTION_CLOSE_ERROR (connection,
+					  MHD_SC_CONNECTION_CLOSED,
 					  NULL);
                   continue;
                 }
@@ -1519,7 +2993,8 @@ MHD_request_handle_idle (struct MHD_Request *request)
           if (MHD_NO == process_header_line (request,
                                              line))
             {
-              transmit_error_response (connection,
+              transmit_error_response (request,
+				       MHD_SC_CONNECTION_PARSE_FAIL_CLOSED,
                                        MHD_HTTP_BAD_REQUEST,
                                        REQUEST_MALFORMED);
               break;
@@ -1536,6 +3011,7 @@ MHD_request_handle_idle (struct MHD_Request *request)
               if (connection->read_closed)
                 {
 		  CONNECTION_CLOSE_ERROR (connection,
+					  MHD_SC_CONNECTION_CLOSED,
 					  NULL);
                   continue;
                 }
@@ -1560,10 +3036,11 @@ MHD_request_handle_idle (struct MHD_Request *request)
             continue;
           if (NULL == request->response)
             break;              /* try again next time */
-          if (MHD_NO == build_header_response (request))
+          if (! build_header_response (request))
             {
               /* oops - close! */
 	      CONNECTION_CLOSE_ERROR (connection,
+				      MHD_SC_FAILED_RESPONSE_HEADER_GENERATION,
 				      _("Closing connection (failed to create response header)\n"));
               continue;
             }
@@ -1588,12 +3065,12 @@ MHD_request_handle_idle (struct MHD_Request *request)
               socket_start_normal_buffering (connection);
               request->state = MHD_REQUEST_UPGRADE;
               /* This request is "upgraded".  Pass socket to application. */
-              if (MHD_YES !=
-                  MHD_response_execute_upgrade_ (request->response,
-                                                 request))
+              if (! MHD_response_execute_upgrade_ (request->response,
+						   request))
                 {
                   /* upgrade failed, fail hard */
                   CONNECTION_CLOSE_ERROR (connection,
+					  MHD_SC_CONNECTION_CLOSED,
                                           NULL);
                   continue;
                 }
@@ -1602,7 +3079,7 @@ MHD_request_handle_idle (struct MHD_Request *request)
                 {
                   struct MHD_Response * const resp = request->response;
                   request->response = NULL;
-                  MHD_destroy_response (resp);
+                  MHD_response_queue_for_destroy (resp);
                 }
               continue;
             }
@@ -1671,10 +3148,11 @@ MHD_request_handle_idle (struct MHD_Request *request)
           /* mutex was already unlocked by try_ready_chunked_body */
           break;
         case MHD_REQUEST_BODY_SENT:
-          if (MHD_NO == build_header_response (request))
+          if (! build_header_response (request))
             {
               /* oops - close! */
 	      CONNECTION_CLOSE_ERROR (connection,
+				      MHD_SC_FAILED_RESPONSE_HEADER_GENERATION,
 				      _("Closing connection (failed to create response header)\n"));
               continue;
             }
@@ -1689,32 +3167,33 @@ MHD_request_handle_idle (struct MHD_Request *request)
           /* no default action */
           break;
         case MHD_REQUEST_FOOTERS_SENT:
-	  if (MHD_HTTP_PROCESSING == request->responseCode)
 	  {
-	    /* After this type of response, we allow sending another! */
-	    request->state = MHD_REQUEST_HEADERS_PROCESSED;
-	    MHD_destroy_response (request->response);
+	    struct MHD_Response *response = request->response;
+	    
+	    if (MHD_HTTP_PROCESSING == response->status_code)
+	      {
+		/* After this type of response, we allow sending another! */
+		request->state = MHD_REQUEST_HEADERS_PROCESSED;
+		MHD_response_queue_for_destroy (response);
+		request->response = NULL;
+		/* FIXME: maybe partially reset memory pool? */
+		continue;
+	      }
+	    if (socket_flush_possible (connection))
+	      socket_start_no_buffering_flush (connection);
+	    else
+	      socket_start_normal_buffering (connection);
+	  
+	    if (NULL != response->termination_cb) 
+	      {
+		response->termination_cb (response->termination_cb_cls,
+					  MHD_REQUEST_TERMINATED_COMPLETED_OK,
+					  request->client_context);
+	      }
+	    MHD_response_queue_for_destroy (response);
 	    request->response = NULL;
-	    /* FIXME: maybe partially reset memory pool? */
-	    continue;
 	  }
-          if (MHD_NO != socket_flush_possible (connection))
-            socket_start_no_buffering_flush (connection);
-          else
-            socket_start_normal_buffering (connection);
-
-          MHD_destroy_response (request->response);
-          connection->response = NULL;
-          if ( (NULL != daemon->notify_completed) &&
-               (connection->client_aware) )
-          {
-            connection->client_aware = false;
-	    daemon->notify_completed (daemon->notify_completed_cls,
-				      connection,
-				      &connection->client_context,
-				      MHD_REQUEST_TERMINATED_COMPLETED_OK);
-          }
-          if ( (MHD_CONN_USE_KEEPALIVE != request->keepalive) ||
+	  if ( (MHD_CONN_USE_KEEPALIVE != request->keepalive) ||
                (connection->read_closed) )
             {
               /* have to close for some reason */
@@ -1729,9 +3208,9 @@ MHD_request_handle_idle (struct MHD_Request *request)
           else
             {
               /* can try to keep-alive */
-              if (MHD_NO != socket_flush_possible (connection))
+              if (socket_flush_possible (connection))
                 socket_start_normal_buffering (connection);
-              request->version = NULL;
+              request->version_s = NULL;
               request->state = MHD_REQUEST_INIT;
               request->last = NULL;
               request->colon = NULL;
@@ -1743,10 +3222,12 @@ MHD_request_handle_idle (struct MHD_Request *request)
                 = MHD_pool_reset (connection->pool,
                                   request->read_buffer,
                                   request->read_buffer_offset,
-                                  daemon->pool_size / 2);
+                                  daemon->connection_memory_limit_b / 2);
               request->read_buffer_size
-                = daemon->pool_size / 2;
+                = daemon->connection_memory_limit_b / 2;
             }
+	  // FIXME: this is too much, NULLs out some of the things
+	  // initialized above...
 	  memset (&request,
 		  0,
 		  sizeof (struct MHD_Request));
@@ -1756,11 +3237,11 @@ MHD_request_handle_idle (struct MHD_Request *request)
         case MHD_REQUEST_CLOSED:
 	  cleanup_connection (connection);
           request->in_idle = false;
-	  return MHD_NO;
+	  return false;
 #ifdef UPGRADE_SUPPORT
 	case MHD_REQUEST_UPGRADE:
           request->in_idle = false;
-          return MHD_YES; /* keep open */
+          return true; /* keep open */
 #endif /* UPGRADE_SUPPORT */
        default:
           mhd_assert (0);
@@ -1778,14 +3259,14 @@ MHD_request_handle_idle (struct MHD_Request *request)
           MHD_connection_close_ (connection,
                                  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
           request->in_idle = false;
-          return MHD_YES;
+          return true;
         }
     }
   MHD_connection_update_event_loop_info (connection);
-  ret = MHD_YES;
+  ret = true;
 #ifdef EPOLL_SUPPORT
   if ( (! connection->suspended) &&
-       (0 != (daemon->options & MHD_USE_EPOLL)) )
+       (MHD_ELS_EPOLL == daemon->event_loop_syscall) )
     {
       ret = MHD_connection_epoll_update_ (connection);
     }
@@ -1793,9 +3274,6 @@ MHD_request_handle_idle (struct MHD_Request *request)
   request->in_idle = false;
   return ret;
 }
-
-// rewrite commented out
-#endif
 
 
 /**
@@ -1835,7 +3313,7 @@ MHD_connection_call_handlers_ (struct MHD_Connection *con,
 	   read_ready)
         {
           MHD_request_handle_read_ (&con->request);
-          ret = MHD_connection_handle_idle (con);
+          ret = MHD_request_handle_idle_ (&con->request);
           states_info_processed = true;
         }
       /* No need to check value of 'ret' here as closed connection
@@ -1845,7 +3323,7 @@ MHD_connection_call_handlers_ (struct MHD_Connection *con,
 	   write_ready)
         {
           MHD_request_handle_write_ (&con->request);
-          ret = MHD_connection_handle_idle (con);
+          ret = MHD_request_handle_idle_ (&con->request);
           states_info_processed = true;
         }
     }
@@ -1853,17 +3331,17 @@ MHD_connection_call_handlers_ (struct MHD_Connection *con,
     {
       MHD_connection_close_ (con,
                              MHD_REQUEST_TERMINATED_WITH_ERROR);
-      return MHD_connection_handle_idle (con);
+      return MHD_request_handle_idle_ (&con->request);
     }
 
   if (! states_info_processed)
     { /* Connection is not read or write ready, but external conditions
        * may be changed and need to be processed. */
-      ret = MHD_connection_handle_idle (con);
+      ret = MHD_request_handle_idle_ (&con->request);
     }
   /* Fast track for fast connections. */
   /* If full request was read by single read_handler() invocation
-     and headers were completely prepared by single MHD_connection_handle_idle()
+     and headers were completely prepared by single MHD_request_handle_idle_()
      then try not to wait for next sockets polling and send response
      immediately.
      As writeability of socket was not checked and it may have
@@ -1877,17 +3355,17 @@ MHD_connection_call_handlers_ (struct MHD_Connection *con,
       if (MHD_REQUEST_HEADERS_SENDING == con->request.state)
         {
           MHD_request_handle_write_ (&con->request);
-          /* Always call 'MHD_connection_handle_idle()' after each read/write. */
-          ret = MHD_connection_handle_idle (con);
+          /* Always call 'MHD_request_handle_idle_()' after each read/write. */
+          ret = MHD_request_handle_idle_ (&con->request);
         }
       /* If all headers were sent by single write_handler() and
-       * response body is prepared by single MHD_connection_handle_idle()
+       * response body is prepared by single MHD_request_handle_idle_()
        * call - continue. */
       if ((MHD_REQUEST_NORMAL_BODY_READY == con->request.state) ||
           (MHD_REQUEST_CHUNKED_BODY_READY == con->request.state))
         {
           MHD_request_handle_write_ (&con->request);
-          ret = MHD_connection_handle_idle (con);
+          ret = MHD_request_handle_idle_ (&con->request);
         }
     }
 

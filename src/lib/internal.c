@@ -178,11 +178,11 @@ MHD_http_unescape (char *val)
  *        clobbered in the process!
  * @param cb function to call on each key-value pair found
  * @param[out] num_headers set to the number of headers found
- * @return #MHD_NO on failure (@a cb returned #MHD_NO),
- *         #MHD_YES for success (parsing succeeded, @a cb always
- *                               returned #MHD_YES)
+ * @return false on failure (@a cb returned false),
+ *         true for success (parsing succeeded, @a cb always
+ *                               returned true)
  */
-int
+bool
 MHD_parse_arguments_ (struct MHD_Request *request,
 		      enum MHD_ValueKind kind,
 		      char *args,
@@ -209,11 +209,11 @@ MHD_parse_arguments_ (struct MHD_Request *request,
 	      daemon->unescape_cb (daemon->unescape_cb_cls,
 				   request,
 				   args);
-	      if (MHD_YES != cb (request,
-				 args,
-				 NULL,
-				 kind))
-		return MHD_NO;
+	      if (! cb (request,
+			args,
+			NULL,
+			kind))
+		return false;
 	      (*num_headers)++;
 	      break;
 	    }
@@ -228,11 +228,11 @@ MHD_parse_arguments_ (struct MHD_Request *request,
 	  daemon->unescape_cb (daemon->unescape_cb_cls,
 			       request,
 			       equals);
-	  if (MHD_YES != cb (request,
-			     args,
-			     equals,
-			     kind))
-	    return MHD_NO;
+	  if (! cb (request,
+		    args,
+		    equals,
+		    kind))
+	    return false;
 	  (*num_headers)++;
 	  break;
 	}
@@ -247,11 +247,11 @@ MHD_parse_arguments_ (struct MHD_Request *request,
 	  daemon->unescape_cb (daemon->unescape_cb_cls,
 			       request,
 			       args);
-	  if (MHD_YES != cb (request,
-			     args,
-			     NULL,
-			     kind))
-	    return MHD_NO;
+	  if (! cb (request,
+		    args,
+		    NULL,
+		    kind))
+	    return false;
 	  /* continue with 'bar' */
 	  (*num_headers)++;
 	  args = amper;
@@ -269,15 +269,15 @@ MHD_parse_arguments_ (struct MHD_Request *request,
       daemon->unescape_cb (daemon->unescape_cb_cls,
 			   request,
 			   equals);
-      if (MHD_YES != cb (request,
-			 args,
+      if (! cb (request,
+		args,
 			 equals,
-			 kind))
-        return MHD_NO;
+		kind))
+        return false;
       (*num_headers)++;
       args = amper;
     }
-  return MHD_YES;
+  return true;
 }
 
 /* end of internal.c */

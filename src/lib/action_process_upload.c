@@ -73,7 +73,7 @@ upload_action (void *cls,
  * @return NULL on error (out of memory)
  * @ingroup action
  */
-struct MHD_Action *
+const struct MHD_Action *
 MHD_action_process_upload (MHD_UploadCallback uc,
 			   void *uc_cls)
 {

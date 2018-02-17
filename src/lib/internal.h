@@ -795,14 +795,6 @@ struct MHD_Connection
   bool suspended;
 
   /**
-   * Did we ever call the "default_handler" on this request?  (this
-   * flag will determine if we call the
-   * #MHD_daemon_set_notify_connection() handler when the connection
-   * closes down).
-   */
-  bool client_aware;
-
-  /**
    * Are we ready to read from TLS for this connection?
    */
   bool tls_read_ready;
@@ -1722,6 +1714,11 @@ struct MHD_Response
    * Only respond in HTTP 1.0 mode.
    */
   bool v10_only;
+
+  /**
+   * Use ShoutCAST format.
+   */
+  bool icy;
   
 };
 
@@ -1735,10 +1732,10 @@ struct MHD_Response
  * @param key 0-terminated key string, never NULL
  * @param value 0-terminated value string, may be NULL
  * @param kind origin of the key-value pair
- * @return #MHD_YES on success (continue to iterate)
- *         #MHD_NO to signal failure (and abort iteration)
+ * @return true on success (continue to iterate)
+ *         false to signal failure (and abort iteration)
  */
-typedef int
+typedef bool
 (*MHD_ArgumentIterator_)(struct MHD_Request *request,
 			 const char *key,
 			 const char *value,
@@ -1755,11 +1752,11 @@ typedef int
  *        clobbered in the process!
  * @param cb function to call on each key-value pair found
  * @param[out] num_headers set to the number of headers found
- * @return #MHD_NO on failure (@a cb returned #MHD_NO),
- *         #MHD_YES for success (parsing succeeded, @a cb always
- *                               returned #MHD_YES)
+ * @return false on failure (@a cb returned false),
+ *         true for success (parsing succeeded, @a cb always
+ *                               returned true)
  */
-int
+bool
 MHD_parse_arguments_ (struct MHD_Request *request,
 		      enum MHD_ValueKind kind,
 		      char *args,

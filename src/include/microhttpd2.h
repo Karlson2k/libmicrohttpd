@@ -493,6 +493,27 @@ enum MHD_StatusCode
    */
   MHD_SC_CONNECTION_WRITE_FAIL_CLOSED = 40003,
 
+  /**
+   * MHD is returning an error because the header provided
+   * by the client is too big.
+   */
+  MHD_SC_CLIENT_HEADER_TOO_BIG = 40004,
+
+  /**
+   * An HTTP/1.1 request was sent without the "Host:" header.
+   */
+  MHD_SC_HOST_HEADER_MISSING = 40005,
+
+  /**
+   * The given content length was not a number.
+   */
+  MHD_SC_CONTENT_LENGTH_MALFORMED = 40006,
+
+  /**
+   * The given uploaded, chunked-encoded body was malformed.
+   */
+  MHD_SC_CHUNKED_ENCODING_MALFORMED = 40007,
+
   
 
   /* 50000-level errors are because of an error internal
@@ -782,6 +803,18 @@ enum MHD_StatusCode
    */
   MHD_SC_STATEMACHINE_FAILURE_CONNECTION_CLOSED = 50054,
 
+  /**
+   * Failed to allocate memory in connection's pool
+   * to parse the cookie header.
+   */
+  MHD_SC_COOKIE_POOL_ALLOCATION_FAILURE = 50055,
+  
+  /**
+   * MHD failed to build the response header.
+   */
+  MHD_SC_FAILED_RESPONSE_HEADER_GENERATION = 50056,
+
+
 
   /* 60000-level errors are because the application
      logic did something wrong or generated an error. */
@@ -819,6 +852,19 @@ enum MHD_StatusCode
    * logic to generate the response data failed.
    */
   MHD_SC_APPLICATION_DATA_GENERATION_FAILURE_CLOSED = 60005,
+
+  /**
+   * MHD is closing a connection because the application
+   * callback told it to do so.
+   */
+  MHD_SC_APPLICATION_CALLBACK_FAILURE_CLOSED = 60006,
+
+  /**
+   * Application only partially processed upload and did
+   * not suspend connection. This may result in a hung
+   * connection.
+   */
+  MHD_SC_APPLICATION_HUNG_CONNECTION = 60007,
 
 
 };
@@ -1409,7 +1455,7 @@ enum MHD_Method
  *         if the socket must be closed due to a serios
  *         error while handling the request
  */
-typedef struct MHD_Action *
+typedef const struct MHD_Action *
 (*MHD_RequestCallback) (void *cls,
 			struct MHD_Request *request,
 			const char *url,
@@ -2791,7 +2837,7 @@ MHD_get_reason_phrase_for (enum MHD_HTTP_StatusCode code);
  *
  * @return action to cause a request to be suspended.
  */
-_MHD_EXTERN struct MHD_Action *
+_MHD_EXTERN const struct MHD_Action *
 MHD_action_suspend (void);
 
 
@@ -2826,10 +2872,10 @@ struct MHD_Response;
 
 
 /**
- * Converts a @a response to an action.  If @a consume
+ * Converts a @a response to an action.  If @a destroy_after_use
  * is set, the reference to the @a response is consumed
  * by the conversion. If @a consume is #MHD_NO, then
- * the response can be converted to actions in the future.
+ * the @a response can be converted to actions in the future.
  * However, the @a response is frozen by this step and
  * must no longer be modified (i.e. by setting headers).
  *
@@ -2842,7 +2888,7 @@ struct MHD_Response;
  * as a response *is* an action.  As no memory is
  * allocated, this operation cannot fail.
  */
-_MHD_EXTERN struct MHD_Action *
+_MHD_EXTERN const struct MHD_Action *
 MHD_action_from_response (struct MHD_Response *response,
 			  enum MHD_Bool destroy_after_use)
   MHD_NONNULL(1);
@@ -3364,7 +3410,7 @@ MHD_response_get_header (struct MHD_Response *response,
  *
  * @return action operation, never NULL
  */
-_MHD_EXTERN struct MHD_Action *
+_MHD_EXTERN const struct MHD_Action *
 MHD_action_continue (void);
 
 
@@ -3386,7 +3432,7 @@ MHD_action_continue (void);
  *         NULL to close the socket, or a response
  *         to discard the rest of the upload and return the data given
  */
-typedef struct MHD_Action *
+typedef const struct MHD_Action *
 (*MHD_UploadCallback) (void *cls,
 		       const char *upload_data,
 		       size_t *upload_data_size);
@@ -3400,7 +3446,7 @@ typedef struct MHD_Action *
  * @return NULL on error (out of memory)
  * @ingroup action
  */
-_MHD_EXTERN struct MHD_Action *
+_MHD_EXTERN const struct MHD_Action *
 MHD_action_process_upload (MHD_UploadCallback uc,
 			   void *uc_cls)
   MHD_NONNULL(1);
@@ -3429,7 +3475,7 @@ MHD_action_process_upload (MHD_UploadCallback uc,
  *         NULL to close the socket, or a response
  *         to discard the rest of the upload and return the data given
  */
-typedef struct MHD_Action *
+typedef const struct MHD_Action *
 (*MHD_PostDataIterator) (void *cls,
                          enum MHD_ValueKind kind,
                          const char *key,
@@ -3465,7 +3511,7 @@ typedef struct MHD_Action *
  *         otherwise a PP handle
  * @ingroup request
  */
-_MHD_EXTERN struct MHD_Action *
+_MHD_EXTERN const struct MHD_Action *
 MHD_action_parse_post (size_t buffer_size,
 		       MHD_PostDataIterator iter,
 		       void *iter_cls)

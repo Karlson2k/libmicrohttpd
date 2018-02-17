@@ -50,7 +50,7 @@ cont_action (void *cls,
  *
  * @return action operation, never NULL
  */
-struct MHD_Action *
+const struct MHD_Action *
 MHD_action_continue (void)
 {
   static struct MHD_Action acont = {

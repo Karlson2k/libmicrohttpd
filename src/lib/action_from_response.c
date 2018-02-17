@@ -111,7 +111,7 @@ response_action (void *cls,
  * as a response *is* an action.  As no memory is
  * allocated, this operation cannot fail.
  */
-_MHD_EXTERN struct MHD_Action *
+_MHD_EXTERN const struct MHD_Action *
 MHD_action_from_response (struct MHD_Response *response,
 			  enum MHD_Bool destroy_after_use)
 {
