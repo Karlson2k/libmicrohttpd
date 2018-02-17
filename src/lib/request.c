@@ -100,7 +100,7 @@ MHD_request_set_value (struct MHD_Request *request,
 {
   struct MHD_HTTP_Header *pos;
 
-  pos = MHD_pool_allocate (request->pool,
+  pos = MHD_pool_allocate (request->connection->pool,
                            sizeof (struct MHD_HTTP_Header),
                            MHD_YES);
   if (NULL == pos)

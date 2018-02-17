@@ -92,7 +92,7 @@ MHD_connection_cleanup_ (struct MHD_Daemon *daemon)
 #ifdef UPGRADE_SUPPORT
       cleanup_upgraded_connection (pos);
 #endif /* UPGRADE_SUPPORT */
-      MHD_pool_destroy (pos->request.pool);
+      MHD_pool_destroy (pos->pool);
 #ifdef HTTPS_SUPPORT
       {
 	struct MHD_TLS_Plugin *tls;

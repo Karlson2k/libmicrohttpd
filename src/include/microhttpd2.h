@@ -358,6 +358,23 @@ enum MHD_StatusCode
    */
   MHD_SC_THREAD_TERMINATING = 10003,
 
+  /**
+   * Informational event, state machine status for a connection.
+   */
+  MHD_SC_STATE_MACHINE_STATUS_REPORT = 10004,
+
+
+  /**
+   * MHD is closing a connection after the client closed it
+   * (perfectly normal end).
+   */
+  MHD_SC_CONNECTION_CLOSED = 20000,
+
+  /**
+   * MHD is closing a connection because the application
+   * logic to generate the response data completed.
+   */
+  MHD_SC_APPLICATION_DATA_GENERATION_FINISHED = 20001,
   
   /**
    * Resource limit in terms of number of parallel connections
@@ -428,6 +445,36 @@ enum MHD_StatusCode
    * being closed prematurely. (May be transient.)
    */
   MHD_SC_UPGRADE_FORWARD_INCOMPLETE = 30011,
+
+  /**
+   * MHD is closing a connection because it was reset.
+   */
+  MHD_SC_CONNECTION_RESET_CLOSED = 30012,
+
+  /**
+   * MHD is closing a connection because reading the
+   * request failed.
+   */
+  MHD_SC_CONNECTION_READ_FAIL_CLOSED = 30013,
+
+  /**
+   * MHD is closing a connection because writing the response failed.
+   */
+  MHD_SC_CONNECTION_WRITE_FAIL_CLOSED = 30014,
+
+  /**
+   * MHD is closing a connection because the application
+   * logic to generate the response data failed.
+   */
+  MHD_SC_APPLICATION_DATA_GENERATION_FAILURE_CLOSED = 30015,
+
+  /**
+   * We failed to allocate memory for generatig the response from our
+   * memory pool.  Likely the request header was too large to leave
+   * enough room.
+   */
+  MHD_SC_CONNECTION_POOL_MALLOC_FAILURE = 30016,
+
   
 
   /**
@@ -735,6 +782,12 @@ enum MHD_StatusCode
    * while having an upgrade connection still open.
    */
   MHD_SC_SHUTDOWN_WITH_OPEN_UPGRADED_CONNECTION = 50053,
+
+  /**
+   * Due to an unexpected internal error with the
+   * state machine, we closed the connection.
+   */
+  MHD_SC_STATEMACHINE_FAILURE_CONNECTION_CLOSED = 50054,
   
 };
 

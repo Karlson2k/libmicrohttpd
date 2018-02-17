@@ -732,9 +732,9 @@ internal_add_connection (struct MHD_Daemon *daemon,
       errno = eno;
       return MHD_SC_CONNECTION_MALLOC_FAILURE;
     }
-  connection->request.pool
+  connection->pool
     = MHD_pool_create (daemon->connection_memory_limit_b);
-  if (NULL == connection->request.pool)
+  if (NULL == connection->pool)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -919,7 +919,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 	      daemon->connections_tail,
 	      connection);
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
-  MHD_pool_destroy (connection->request.pool);
+  MHD_pool_destroy (connection->pool);
   free (connection);
   if (0 != eno)
     errno = eno;

@@ -209,8 +209,8 @@ typedef ssize_t
  * not have to be completed yet).  A transition to
  * #MHD_REQUEST_CLOSED or #MHD_REQUEST_INIT requires the write
  * to be complete.
- */
-enum MHD_REQUEST_STATE
+ */ 
+enum MHD_REQUEST_STATE // FIXME: fix capitalization!
 {
   /**
    * Request just started (no headers received).
@@ -422,16 +422,6 @@ struct MHD_Request
   struct MHD_HTTP_Header *headers_received_tail;
 
   /**
-   * The memory pool is created whenever we first read from the TCP
-   * stream and destroyed at the end of each request (and re-created
-   * for the next request).  In the meantime, this pointer is NULL.
-   * The pool is used for all request-related data except for the
-   * response (which maybe shared between requests) and the IP
-   * address (which persists across individual requests).
-   */
-  struct MemoryPool *pool; // FIXME: keep with connnection!
-
-  /**
    * We allow the main application to associate some pointer with the
    * HTTP request, which is passed to each #MHD_AccessHandlerCallback
    * and some other API calls.  Here is where we store it.  (MHD does
@@ -567,7 +557,8 @@ struct MHD_Request
    */
   uint64_t response_write_position;
 
-#if defined(_MHD_HAVE_SENDFILE)
+  #if defined(_MHD_HAVE_SENDFILE)
+  // FIXME: document, fix capitalization!
   enum MHD_resp_sender_
   {
     MHD_resp_sender_std = 0,
@@ -713,6 +704,16 @@ struct MHD_Connection
    * Reference to the MHD_Daemon struct.
    */
   struct MHD_Daemon *daemon;
+
+  /**
+   * The memory pool is created whenever we first read from the TCP
+   * stream and destroyed at the end of each request (and re-created
+   * for the next request).  In the meantime, this pointer is NULL.
+   * The pool is used for all request-related data except for the
+   * response (which maybe shared between requests) and the IP
+   * address (which persists across individual requests).
+   */
+  struct MemoryPool *pool;
   
   /**
    * We allow the main application to associate some pointer with the

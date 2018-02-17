@@ -92,6 +92,11 @@ struct MHD_TLS_Plugin
 		      ...);
 
 
+  enum MHD_Bool
+  (*handshake)(void *cls,
+	       struct MHD_TLS_ConnectionState *cs);
+
+  
   ssize_t
   (*send)(void *cls,
 	  struct MHD_TLS_ConnectionState *cs,
