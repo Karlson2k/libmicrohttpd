@@ -2298,7 +2298,6 @@ call_connection_handler (struct MHD_Connection *connection)
 }
 
 
-
 /**
  * Call the handler of the application for this
  * connection.  Handles chunking of the upload
