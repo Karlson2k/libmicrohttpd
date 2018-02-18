@@ -1692,7 +1692,7 @@ AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"], [AC_MSG
             gnutls_free(data.data);
           ]])], [[have_gnutls_sni=yes]], [[have_gnutls_sni=no]])
      AC_MSG_RESULT([[$have_gnutls_sni]])
-     AC_CACHE_CHECK([[whether GnuTLS require libgcrypt initialisaion]], [mhd_cv_grypt_required],
+     AC_CACHE_CHECK([[whether GnuTLS require libgcrypt initialisaion]], [mhd_cv_gcrypt_required],
        [
         AC_COMPILE_IFELSE(
           [
@@ -1708,7 +1708,7 @@ choke me now
              ]
            )
           ],
-          [[mhd_cv_grypt_required='no']], [[mhd_cv_grypt_required='yes']]
+          [[mhd_cv_gcrypt_required='no']], [[mhd_cv_gcrypt_required='yes']]
         )
        ]
      )
@@ -1723,7 +1723,7 @@ choke me now
     ]
   )
 
-  AS_IF([[test "x$mhd_cv_grypt_required" = "xyes" && test "x$have_gcrypt" = "xunknown"]],
+  AS_IF([[test "x$mhd_cv_gcrypt_required" = "xyes" && test "x$have_gcrypt" = "xunknown"]],
     [
      AM_PATH_LIBGCRYPT([1.2.2], [have_gcrypt=yes], [have_gcrypt=no])
      AS_IF([[test "x$have_gcrypt" = "xyes"]],
@@ -1744,7 +1744,7 @@ choke me now
   AS_UNSET([[crypt_missing]])
   AS_IF([[test "x$have_gnutls" = "xyes"]],
     [
-     AS_IF([[test "x$mhd_cv_grypt_required" = "xyes" && test "x$have_gcrypt" != "xyes"]],
+     AS_IF([[test "x$mhd_cv_gcrypt_required" = "xyes" && test "x$have_gcrypt" != "xyes"]],
        [
         crypt_missing="required libgcrypt"
         AS_IF([[test "x$enable_https" = "xyes" ]], [AC_MSG_ERROR([[HTTPS support cannot be enabled without $crypt_missing.]])])
@@ -1760,35 +1760,35 @@ choke me now
          [
           AC_DEFINE([[HTTPS_SUPPORT]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTPS support.])
           enable_https=yes
-          AS_IF([[test "x$mhd_cv_grypt_required" = "xyes"]],
+          AS_IF([[test "x$mhd_cv_gcrypt_required" = "xyes"]],
             [
              MSG_HTTPS="yes (using libgnutls and libgcrypt)"
-             MHD_LIB_CPPFLAGS="$MHD_LIB_CPPFLAGS $LIBGCRYPT_CFLAGS $GNUTLS_CPPFLAGS"
-             MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $LIBGCRYPT_CFLAGS $GNUTLS_CFLAGS"
-             MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS $GNUTLS_LDFLAGS"
-             MHD_LIBDEPS="$GNUTLS_LIBS $LIBGCRYPT_LIBS $MHD_LIBDEPS"
-             AC_DEFINE([[MHD_HTTPS_REQUIRE_GRYPT]], [[1]], [Define to `1' if HTTPS require initialisation of libgcrypt])
+	     MHD_TLS_LIB_CPPFLAGS="$LIBGCRYPT_CFLAGS $GNUTLS_CPPFLAGS"
+             MHD_TLS_LIB_CFLAGS="$LIBGCRYPT_CFLAGS $GNUTLS_CFLAGS"
+             MHD_TLS_LIB_LDFLAGS="$GNUTLS_LDFLAGS"
+             MHD_TLS_LIBDEPS="$GNUTLS_LIBS $LIBGCRYPT_LIBS"
+             AC_DEFINE([[MHD_HTTPS_REQUIRE_GCRYPT]], [[1]], [Define to `1' if HTTPS require initialisation of libgcrypt])
             ],
             [
              MSG_HTTPS="yes (using libgnutls)"
              AS_UNSET([LIBGCRYPT_CFLAGS])
              AS_UNSET([LIBGCRYPT_LIBS])
-             MHD_LIB_CPPFLAGS="$MHD_LIB_CPPFLAGS $GNUTLS_CPPFLAGS"
-             MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $GNUTLS_CFLAGS"
-             MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS $GNUTLS_LDFLAGS"
-             MHD_LIBDEPS="$GNUTLS_LIBS $MHD_LIBDEPS"
+             MHD_TLS_LIB_CPPFLAGS="$GNUTLS_CPPFLAGS"
+             MHD_TLS_LIB_CFLAGS="$GNUTLS_CFLAGS"
+             MHD_TLS_LIB_LDFLAGS="$GNUTLS_LDFLAGS"
+             MHD_TLS_LIBDEPS="$GNUTLS_LIBS"
             ]
           )
           AS_IF([[ test "x$have_gnutls_pkgcfg" = "xyes" ]],
             [ # remove GnuTLS from private libs in .pc file as it defined in Requires.private
               MHD_REQ_PRIVATE='gnutls'
-              AS_IF([[test "x$mhd_cv_grypt_required" = "xyes"]],
+              AS_IF([[test "x$mhd_cv_gcrypt_required" = "xyes"]],
                 [[MHD_LIBDEPS_PKGCFG="$LIBGCRYPT_LIBS $MHD_LIBDEPS_PKGCFG"]]
               )
             ],
             [
               MHD_REQ_PRIVATE=''
-              AS_IF([[test "x$mhd_cv_grypt_required" = "xyes"]],
+              AS_IF([[test "x$mhd_cv_gcrypt_required" = "xyes"]],
                 [[MHD_LIBDEPS_PKGCFG="$LIBGCRYPT_LIBS $MHD_LIBDEPS_PKGCFG"]]
               )
               MHD_LIBDEPS_PKGCFG="$GNUTLS_LIBS $MHD_LIBDEPS_PKGCFG"
@@ -1818,7 +1818,7 @@ AC_MSG_RESULT([$MSG_HTTPS])
 AM_CONDITIONAL([HAVE_GNUTLS], [[test "x$have_gnutls" = "xyes"]])
 AM_CONDITIONAL([HAVE_GNUTLS_SNI], [[test "x$have_gnutls_sni" = "xyes"]])
 AM_CONDITIONAL([ENABLE_HTTPS], [test "x$enable_https" = "xyes"])
-AM_CONDITIONAL([HTTPS_REQUIRE_GRYPT], [[test "x$enable_https" = "xyes" && test "x$mhd_cv_grypt_required" = "xyes"]])
+AM_CONDITIONAL([HTTPS_REQUIRE_GCRYPT], [[test "x$enable_https" = "xyes" && test "x$mhd_cv_gcrypt_required" = "xyes"]])
 AC_SUBST([GNUTLS_CPPFLAGS])
 AC_SUBST([GNUTLS_CFLAGS])
 AC_SUBST([GNUTLS_LDFLAGS])
@@ -1990,6 +1990,10 @@ AC_SUBST(MHD_LIB_CPPFLAGS)
 AC_SUBST(MHD_LIB_CFLAGS)
 AC_SUBST(MHD_LIB_LDFLAGS)
 AC_SUBST(MHD_LIBDEPS)
+AC_SUBST(MHD_TLS_LIB_CPPFLAGS)
+AC_SUBST(MHD_TLS_LIB_CFLAGS)
+AC_SUBST(MHD_TLS_LIB_LDFLAGS)
+AC_SUBST(MHD_TLS_LIBDEPS)
 
 # for pkg-config
 AC_SUBST([MHD_REQ_PRIVATE])
@@ -2022,6 +2026,7 @@ doc/examples/Makefile
 m4/Makefile
 src/Makefile
 src/include/Makefile
+src/lib/Makefile
 src/microhttpd/Makefile
 src/examples/Makefile
 src/testcurl/Makefile

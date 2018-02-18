@@ -70,16 +70,16 @@ libmicrohttpd_la_SOURCES = \
   response.c response.h
 
 libmicrohttpd_la_CPPFLAGS = \
-  $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) \
+  $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS) \
   -DBUILDING_MHD_LIB=1
 libmicrohttpd_la_CFLAGS = \
-  $(AM_CFLAGS) $(MHD_LIB_CFLAGS)
+  $(AM_CFLAGS) $(MHD_LIB_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 libmicrohttpd_la_LDFLAGS = \
-  $(MHD_LIB_LDFLAGS) \
+  $(MHD_LIB_LDFLAGS) $(MHD_TLS_LIB_LDFLAGS) \
   $(W32_MHD_LIB_LDFLAGS) \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
 libmicrohttpd_la_LIBADD = \
-  $(MHD_LIBDEPS)
+  $(MHD_LIBDEPS) $(MHD_TLS_LIBDEPS)
 
 if HAVE_W32
 MHD_DLL_RES_SRC = microhttpd_dll_res.rc

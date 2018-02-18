@@ -5,54 +5,56 @@ AM_CPPFLAGS = \
 
 AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS)
 
-lib_LTLIBRARIES = \
-  libmicrohttpd.la
+# Call "libmicrohttpd2" for now, but only while under
+# development. Once we have 'compat' working, this should be changed!
+noinst_LTLIBRARIES = \
+  libmicrohttpd2.la
 
 noinst_DATA =
 MOSTLYCLEANFILES =
 
 if W32_SHARED_LIB_EXP
-W32_MHD_LIB_LDFLAGS = -Wl,--output-def,$(lt_cv_objdir)/libmicrohttpd.def -XCClinker -static-libgcc
-noinst_DATA += $(lt_cv_objdir)/libmicrohttpd.lib $(lt_cv_objdir)/libmicrohttpd.def $(lt_cv_objdir)/libmicrohttpd.exp
-MOSTLYCLEANFILES += $(lt_cv_objdir)/libmicrohttpd.lib $(lt_cv_objdir)/libmicrohttpd.def $(lt_cv_objdir)/libmicrohttpd.exp
+W32_MHD_LIB_LDFLAGS = -Wl,--output-def,$(lt_cv_objdir)/libmicrohttpd2.def -XCClinker -static-libgcc
+noinst_DATA += $(lt_cv_objdir)/libmicrohttpd2.lib $(lt_cv_objdir)/libmicrohttpd2.def $(lt_cv_objdir)/libmicrohttpd2.exp
+MOSTLYCLEANFILES += $(lt_cv_objdir)/libmicrohttpd2.lib $(lt_cv_objdir)/libmicrohttpd2.def $(lt_cv_objdir)/libmicrohttpd2.exp
 
-$(lt_cv_objdir)/libmicrohttpd.def: libmicrohttpd.la
+$(lt_cv_objdir)/libmicrohttpd2.def: libmicrohttpd2.la
 
-$(lt_cv_objdir)/libmicrohttpd.exp: $(lt_cv_objdir)/libmicrohttpd.lib
+$(lt_cv_objdir)/libmicrohttpd2.exp: $(lt_cv_objdir)/libmicrohttpd2.lib
 
-$(lt_cv_objdir)/libmicrohttpd.lib: $(lt_cv_objdir)/libmicrohttpd.def libmicrohttpd.la $(libmicrohttpd_la_OBJECTS)
+$(lt_cv_objdir)/libmicrohttpd2.lib: $(lt_cv_objdir)/libmicrohttpd2.def libmicrohttpd2.la $(libmicrohttpd2_la_OBJECTS)
 if USE_MS_LIB_TOOL
-	@echo Creating $@ and libmicrohttpd.exp by $(MS_LIB_TOOL)... && \
-	dll_name=`$(EGREP) -o dlname=\'.+\' libmicrohttpd.la` && \
+	@echo Creating $@ and libmicrohttpd2.exp by $(MS_LIB_TOOL)... && \
+	dll_name=`$(EGREP) -o dlname=\'.+\' libmicrohttpd2.la` && \
 	dll_name=$${dll_name#*\'} && dll_name=$${dll_name%\'} && test -n "$$dll_name" && \
 	echo Creating $$dll_name by $(MS_LIB_TOOL).. && cd "$(lt_cv_objdir)" && \
-	$(MS_LIB_TOOL) -def:libmicrohttpd.def -name:$$dll_name -out:libmicrohttpd.lib $(libmicrohttpd_la_OBJECTS:.lo=.o) && cd ..
+	$(MS_LIB_TOOL) -def:libmicrohttpd2.def -name:$$dll_name -out:libmicrohttpd2.lib $(libmicrohttpd2_la_OBJECTS:.lo=.o) && cd ..
 else
-	@echo Creating $@ and libmicrohttpd.exp by $(DLLTOOL)... && \
-	dll_name=`$(EGREP) -o dlname=\'.+\' libmicrohttpd.la` && \
+	@echo Creating $@ and libmicrohttpd2.exp by $(DLLTOOL)... && \
+	dll_name=`$(EGREP) -o dlname=\'.+\' libmicrohttpd2.la` && \
 	dll_name=$${dll_name#*\'} && dll_name=$${dll_name%\'} && test -n "$$dll_name" && \
 	echo Creating $$dll_name by $(DLLTOOL).. && cd "$(lt_cv_objdir)" && \
-	$(DLLTOOL) -d ./libmicrohttpd.def -D $$dll_name -l libmicrohttpd.lib $(libmicrohttpd_la_OBJECTS:.lo=.o) -e ./libmicrohttpd.exp && cd .. &&\
-	echo Created libmicrohttpd.exp and libmicrohttpd.lib.
+	$(DLLTOOL) -d ./libmicrohttpd2.def -D $$dll_name -l libmicrohttpd2.lib $(libmicrohttpd2_la_OBJECTS:.lo=.o) -e ./libmicrohttpd2.exp && cd .. &&\
+	echo Created libmicrohttpd2.exp and libmicrohttpd2.lib.
 endif
 else
   W32_MHD_LIB_LDFLAGS =
 endif
 
 if W32_STATIC_LIB
-noinst_DATA += $(lt_cv_objdir)/libmicrohttpd-static.lib
-MOSTLYCLEANFILES += $(lt_cv_objdir)/libmicrohttpd-static.lib
+noinst_DATA += $(lt_cv_objdir)/libmicrohttpd2-static.lib
+MOSTLYCLEANFILES += $(lt_cv_objdir)/libmicrohttpd2-static.lib
 
-$(lt_cv_objdir)/libmicrohttpd-static.lib: libmicrohttpd.la $(libmicrohttpd_la_OBJECTS)
+$(lt_cv_objdir)/libmicrohttpd2-static.lib: libmicrohttpd2.la $(libmicrohttpd2_la_OBJECTS)
 if USE_MS_LIB_TOOL
-	$(MS_LIB_TOOL) -out:$@ $(libmicrohttpd_la_OBJECTS:.lo=.o)
+	$(MS_LIB_TOOL) -out:$@ $(libmicrohttpd2_la_OBJECTS:.lo=.o)
 else
-	cp $(lt_cv_objdir)/libmicrohttpd.a $@
+	cp $(lt_cv_objdir)/libmicrohttpd2.a $@
 endif
 endif
 
 
-libmicrohttpd_la_SOURCES = \
+libmicrohttpd2_la_SOURCES = \
   action_continue.c \
   action_from_response.c \
   action_parse_post.c \
@@ -107,26 +109,24 @@ libmicrohttpd_la_SOURCES = \
   panic.c \
   version.c 
 
-
-
-libmicrohttpd_la_CPPFLAGS = \
+libmicrohttpd2_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) \
   -DBUILDING_MHD_LIB=1
-libmicrohttpd_la_CFLAGS = \
+libmicrohttpd2_la_CFLAGS = \
   $(AM_CFLAGS) $(MHD_LIB_CFLAGS)
-libmicrohttpd_la_LDFLAGS = \
-  $(MHD_LIB_LDFLAGS) \
+libmicrohttpd2_la_LDFLAGS = \
+  $(MHD_LIB_LDFLAGS) -ldl \
   $(W32_MHD_LIB_LDFLAGS) \
-  -version-info 666:0:0 # FIXME: fix once closer to release...
-libmicrohttpd_la_LIBADD = \
+  -version-info 0:0:0 # FIXME: fix once closer to release...
+libmicrohttpd2_la_LIBADD = \
   $(MHD_LIBDEPS) # FIXME: should separate out GNUTLS_LIBS/GCRYPT here!
 
 if HAVE_W32
 MHD_DLL_RES_SRC = microhttpd_dll_res.rc
-MHD_DLL_RES_LO = libmicrohttpd_la-$(MHD_DLL_RES_SRC:.rc=.lo)
+MHD_DLL_RES_LO = libmicrohttpd2_la-$(MHD_DLL_RES_SRC:.rc=.lo)
 
-EXTRA_libmicrohttpd_la_DEPENDENCIES = $(MHD_DLL_RES_LO)
-libmicrohttpd_la_LIBADD += $(MHD_DLL_RES_LO)
+EXTRA_libmicrohttpd2_la_DEPENDENCIES = $(MHD_DLL_RES_LO)
+libmicrohttpd2_la_LIBADD += $(MHD_DLL_RES_LO)
 
 # General rule is not required, but keep it just in case
 .rc.lo:
@@ -141,7 +141,7 @@ libmicrohttpd_la_LIBADD += $(MHD_DLL_RES_LO)
 # Note: windres does not understand '-isystem' flag, so all
 # possible '-isystem' flags are replaced by simple '-I' flags.
 $(MHD_DLL_RES_LO): $(MHD_DLL_RES_SRC)
-	RC_CPP_FLAGS=" $(DEFAULT_INCLUDES) $(INCLUDES) $(libmicrohttpd_la_CPPFLAGS) $(CPPFLAGS) " && \
+	RC_CPP_FLAGS=" $(DEFAULT_INCLUDES) $(INCLUDES) $(libmicrohttpd2_la_CPPFLAGS) $(CPPFLAGS) " && \
 	$(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(RCFLAGS) $(DEFS) $${RC_CPP_FLAGS// -isystem / -I } $< -o $@ && \
 	echo > $@-empty.c && $(CC) $(AM_CFLAGS) $(CFLAGS) -c $@-empty.c -o $(@:.lo=.o) && rm -f $@-empty.c
 endif
@@ -151,26 +151,26 @@ if USE_COVERAGE
 endif
 
 if !MHD_HAVE_TSEARCH
-libmicrohttpd_la_SOURCES += \
+libmicrohttpd2_la_SOURCES += \
   tsearch.c tsearch.h
 endif
 
 # TBD!
 if HAVE_POSTPROCESSOR
-#libmicrohttpd_la_SOURCES += \
+#libmicrohttpd2_la_SOURCES += \
 #  postprocessor.c
 endif
 
 # TBD!
 if ENABLE_DAUTH
-#libmicrohttpd_la_SOURCES += \
+#libmicrohttpd2_la_SOURCES += \
 #  digestauth.c \
 #  md5.c md5.h
 endif
 
 # TBD!
 if ENABLE_BAUTH
-#libmicrohttpd_la_SOURCES += \
+#libmicrohttpd2_la_SOURCES += \
 #  basicauth.c \
 #  base64.c base64.h
 endif

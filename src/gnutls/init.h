@@ -17,7 +17,7 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 /**
- * @file lib/init.h
+ * @file gnutls/init.h
  * @brief functions to initialize library
  * @author Christian Grothoff
  */
@@ -31,14 +31,14 @@
  * Do nothing - global initialisation is
  * performed by library constructor.
  */
-#define MHD_check_global_init_() (void)0
+#define MHD_TLS_check_global_init_() (void)0
 #else  /* ! _AUTOINIT_FUNCS_ARE_SUPPORTED */
 /**
  * Check whether global initialisation was performed
  * and call initialiser if necessary.
  */
 void
-MHD_check_global_init_ (void);
+MHD_TLS_check_global_init_ (void);
 #endif /* ! _AUTOINIT_FUNCS_ARE_SUPPORTED */
 
 
