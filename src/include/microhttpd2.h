@@ -323,12 +323,13 @@ struct MHD_Connection;
  * for logging.
  *
  * A value of 0 indicates success (as a return value).
- * Values between 1 and 10000 must not be used.
+ * Values between 0 and 10000 must be handled explicitly by the app.
  * Values from 10000-19999 are informational.
  * Values from 20000-29999 indicate successful operations.
  * Values from 30000-39999 indicate unsuccessful (normal) operations.
  * Values from 40000-49999 indicate client errors.
- * Values from 50000-59999 indicate server errors.
+ * Values from 50000-59999 indicate MHD server errors.
+ * Values from 60000-69999 indicate application errors.
  */
 enum MHD_StatusCode
 {
@@ -865,6 +866,13 @@ enum MHD_StatusCode
    * connection.
    */
   MHD_SC_APPLICATION_HUNG_CONNECTION = 60007,
+
+  /**
+   * Application only partially processed upload and did
+   * not suspend connection and the read buffer was maxxed
+   * out, so MHD closed the connection.
+   */
+  MHD_SC_APPLICATION_HUNG_CONNECTION_CLOSED = 60008,
 
 
 };
@@ -4152,6 +4160,33 @@ enum MHD_Feature
  */
 _MHD_EXTERN enum MHD_Bool
 MHD_is_feature_supported (enum MHD_Feature feature);
+
+
+/**
+ * What is this request waiting for?
+ */
+enum MHD_RequestEventLoopInfo
+{
+  /**
+   * We are waiting to be able to read.
+   */
+  MHD_EVENT_LOOP_INFO_READ = 0,
+
+  /**
+   * We are waiting to be able to write.
+   */
+  MHD_EVENT_LOOP_INFO_WRITE = 1,
+
+  /**
+   * We are waiting for the application to provide data.
+   */
+  MHD_EVENT_LOOP_INFO_BLOCK = 2,
+
+  /**
+   * We are finished and are awaiting cleanup.
+   */
+  MHD_EVENT_LOOP_INFO_CLEANUP = 3
+};
 
 
 #endif

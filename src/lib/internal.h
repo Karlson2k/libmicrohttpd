@@ -363,33 +363,6 @@ struct MHD_HTTP_Header
 
 
 /**
- * What is this request waiting for?
- */
-enum MHD_RequestEventLoopInfo
-{
-  /**
-   * We are waiting to be able to read.
-   */
-  MHD_EVENT_LOOP_INFO_READ = 0,
-
-  /**
-   * We are waiting to be able to write.
-   */
-  MHD_EVENT_LOOP_INFO_WRITE = 1,
-
-  /**
-   * We are waiting for the application to provide data.
-   */
-  MHD_EVENT_LOOP_INFO_BLOCK = 2,
-
-  /**
-   * We are finished and are awaiting cleanup.
-   */
-  MHD_EVENT_LOOP_INFO_CLEANUP = 3
-};
-
-
-/**
  * State kept for each HTTP request.
  */
 struct MHD_Request

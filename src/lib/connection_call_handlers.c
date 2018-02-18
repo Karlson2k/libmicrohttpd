@@ -23,7 +23,6 @@
  */
 #include "internal.h"
 #include "connection_call_handlers.h"
-#include "connection_update_event_loop_info.h"
 #include "connection_update_last_activity.h"
 #include "connection_close.h"
 
@@ -2889,6 +2888,170 @@ connection_epoll_update_ (struct MHD_Connection *connection)
 
 
 /**
+ * Update the 'event_loop_info' field of this connection based on the
+ * state that the connection is now in.  May also close the connection
+ * or perform other updates to the connection if needed to prepare for
+ * the next round of the event loop.
+ *
+ * @param connection connection to get poll set for
+ */
+static void
+connection_update_event_loop_info (struct MHD_Connection *connection)
+{
+  struct MHD_Daemon *daemon = connection->daemon;
+  struct MHD_Request *request = &connection->request;
+  
+  /* Do not update states of suspended connection */
+  if (connection->suspended)
+    return; /* States will be updated after resume. */
+#ifdef HTTPS_SUPPORT
+  {
+    struct MHD_TLS_Plugin *tls;
+    
+    if ( (NULL != (tls = daemon->tls_api)) &&
+	 (tls->update_event_loop_info (tls->cls,
+				       connection->tls_cs,
+				       &request->event_loop_info)) )
+      return; /* TLS has decided what to do */
+  }
+#endif /* HTTPS_SUPPORT */
+  while (1)
+    {
+#if DEBUG_STATES
+      MHD_DLOG (daemon,
+		MHD_SC_STATE_MACHINE_STATUS_REPORT,
+                _("In function %s handling connection at state: %s\n"),
+                __FUNCTION__,
+                MHD_state_to_string (request->state));
+#endif
+      switch (request->state)
+        {
+        case MHD_REQUEST_INIT:
+        case MHD_REQUEST_URL_RECEIVED:
+        case MHD_REQUEST_HEADER_PART_RECEIVED:
+          /* while reading headers, we always grow the
+             read buffer if needed, no size-check required */
+          if ( (request->read_buffer_offset == request->read_buffer_size) &&
+	       (! try_grow_read_buffer (request)) )
+            {
+              transmit_error_response (request,
+				       MHD_SC_CLIENT_HEADER_TOO_BIG,
+                                       (NULL != request->url)
+                                       ? MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE
+                                       : MHD_HTTP_URI_TOO_LONG,
+                                       REQUEST_TOO_BIG);
+              continue;
+            }
+	  if (! connection->read_closed)
+	    request->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+	  else
+	    request->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
+          break;
+        case MHD_REQUEST_HEADERS_RECEIVED:
+          mhd_assert (0);
+          break;
+        case MHD_REQUEST_HEADERS_PROCESSED:
+          mhd_assert (0);
+          break;
+        case MHD_REQUEST_CONTINUE_SENDING:
+          request->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
+          break;
+        case MHD_REQUEST_CONTINUE_SENT:
+          if (request->read_buffer_offset == request->read_buffer_size)
+            {
+              if ( (! try_grow_read_buffer (request)) &&
+		   (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_model) )
+                {
+                  /* failed to grow the read buffer, and the client
+                     which is supposed to handle the received data in
+                     a *blocking* fashion (in this mode) did not
+                     handle the data as it was supposed to!
+
+                     => we would either have to do busy-waiting
+                     (on the client, which would likely fail),
+                     or if we do nothing, we would just timeout
+                     on the connection (if a timeout is even set!).
+
+                     Solution: we kill the connection with an error */
+                  transmit_error_response (request,
+					   MHD_SC_APPLICATION_HUNG_CONNECTION_CLOSED,
+                                           MHD_HTTP_INTERNAL_SERVER_ERROR,
+                                           INTERNAL_ERROR);
+                  continue;
+                }
+            }
+          if ( (request->read_buffer_offset < request->read_buffer_size) &&
+	       (! connection->read_closed) )
+	    request->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+	  else
+	    request->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
+          break;
+        case MHD_REQUEST_BODY_RECEIVED:
+        case MHD_REQUEST_FOOTER_PART_RECEIVED:
+          /* while reading footers, we always grow the
+             read buffer if needed, no size-check required */
+          if (connection->read_closed)
+            {
+	      CONNECTION_CLOSE_ERROR (connection,
+				      MHD_SC_CONNECTION_READ_FAIL_CLOSED,
+				      NULL);
+              continue;
+            }
+	  request->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+          /* transition to FOOTERS_RECEIVED
+             happens in read handler */
+          break;
+        case MHD_REQUEST_FOOTERS_RECEIVED:
+	  request->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
+          break;
+        case MHD_REQUEST_HEADERS_SENDING:
+          /* headers in buffer, keep writing */
+	  request->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
+          break;
+        case MHD_REQUEST_HEADERS_SENT:
+          mhd_assert (0);
+          break;
+        case MHD_REQUEST_NORMAL_BODY_READY:
+	  request->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
+          break;
+        case MHD_REQUEST_NORMAL_BODY_UNREADY:
+	  request->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
+          break;
+        case MHD_REQUEST_CHUNKED_BODY_READY:
+	  request->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
+          break;
+        case MHD_REQUEST_CHUNKED_BODY_UNREADY:
+	  request->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
+          break;
+        case MHD_REQUEST_BODY_SENT:
+          mhd_assert (0);
+          break;
+        case MHD_REQUEST_FOOTERS_SENDING:
+	  request->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
+          break;
+        case MHD_REQUEST_FOOTERS_SENT:
+          mhd_assert (0);
+          break;
+        case MHD_REQUEST_CLOSED:
+	  request->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
+          return;       /* do nothing, not even reading */
+        case MHD_REQUEST_IN_CLEANUP:
+          mhd_assert (0);
+          break;
+#ifdef UPGRADE_SUPPORT
+        case MHD_REQUEST_UPGRADE:
+          mhd_assert (0);
+          break;
+#endif /* UPGRADE_SUPPORT */
+        default:
+          mhd_assert (0);
+        }
+      break;
+    }
+}
+
+
+/**
  * This function was created to handle per-request processing that
  * has to happen even if the socket cannot be read or written to.
  * @remark To be called only from thread that process request's
@@ -3386,7 +3549,7 @@ MHD_request_handle_idle_ (struct MHD_Request *request)
           return true;
         }
     }
-  MHD_connection_update_event_loop_info_ (connection);
+  connection_update_event_loop_info (connection);
   ret = true;
 #ifdef EPOLL_SUPPORT
   if ( (! connection->suspended) &&

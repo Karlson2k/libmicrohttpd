@@ -89,7 +89,7 @@ response_action (void *cls,
       request->state = MHD_REQUEST_FOOTERS_RECEIVED;
     }
   if (! request->in_idle)
-    (void) MHD_connection_handle_idle (request->connection);
+    (void) MHD_request_handle_idle_ (request);
   return MHD_SC_OK;
 }
 

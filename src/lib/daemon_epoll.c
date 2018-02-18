@@ -477,7 +477,7 @@ MHD_daemon_epoll_ (struct MHD_Daemon *daemon,
     }
 
   /* Finally, handle timed-out connections; we need to do this here
-     as the epoll mechanism won't call the 'MHD_connection_handle_idle()' on everything,
+     as the epoll mechanism won't call the 'MHD_request_handle_idle_()' on everything,
      as the other event loops do.  As timeouts do not get an explicit
      event, we need to find those connections that might have timed out
      here.
@@ -488,7 +488,7 @@ MHD_daemon_epoll_ (struct MHD_Daemon *daemon,
   while (NULL != (pos = prev))
     {
       prev = pos->prevX;
-      MHD_connection_handle_idle (pos);
+      MHD_request_handle_idle_ (&pos->request);
     }
   /* Connections with the default timeout are sorted by prepending
      them to the head of the list whenever we touch the connection;
@@ -498,7 +498,7 @@ MHD_daemon_epoll_ (struct MHD_Daemon *daemon,
   while (NULL != (pos = prev))
     {
       prev = pos->prevX;
-      MHD_connection_handle_idle (pos);
+      MHD_request_handle_idle_ (&pos->request);
       if (MHD_REQUEST_CLOSED != pos->request.state)
 	break; /* sorted by timeout, no need to visit the rest! */
     }
