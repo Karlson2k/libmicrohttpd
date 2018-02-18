@@ -23,6 +23,7 @@
  */
 #include "internal.h"
 #include "connection_call_handlers.h"
+#include "connection_update_event_loop_info.h"
 #include "connection_update_last_activity.h"
 #include "connection_close.h"
 
@@ -2767,6 +2768,127 @@ process_request_body (struct MHD_Request *request)
 
 
 /**
+ * Clean up the state of the given connection and move it into the
+ * clean up queue for final disposal.
+ * @remark To be called only from thread that process connection's
+ * recv(), send() and response.
+ *
+ * @param connection handle for the connection to clean up
+ */
+static void
+cleanup_connection (struct MHD_Connection *connection)
+{
+  struct MHD_Daemon *daemon = connection->daemon;
+
+  if (connection->request.in_cleanup)
+    return; /* Prevent double cleanup. */
+  connection->request.in_cleanup = true;
+  if (NULL != connection->request.response)
+    {
+      MHD_response_queue_for_destroy (connection->request.response);
+      connection->request.response = NULL;
+    }
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+  if (connection->suspended)
+    {
+      DLL_remove (daemon->suspended_connections_head,
+                  daemon->suspended_connections_tail,
+                  connection);
+      connection->suspended = false;
+    }
+  else
+    {
+      if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model)
+        {
+          if (connection->connection_timeout ==
+	      daemon->connection_default_timeout)
+            XDLL_remove (daemon->normal_timeout_head,
+                         daemon->normal_timeout_tail,
+                         connection);
+          else
+            XDLL_remove (daemon->manual_timeout_head,
+                         daemon->manual_timeout_tail,
+                         connection);
+        }
+      DLL_remove (daemon->connections_head,
+                  daemon->connections_tail,
+                  connection);
+    }
+  DLL_insert (daemon->cleanup_head,
+	      daemon->cleanup_tail,
+	      connection);
+  connection->resuming = false;
+  connection->request.in_idle = false;
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+  if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model)
+    {
+      /* if we were at the connection limit before and are in
+         thread-per-connection mode, signal the main thread
+         to resume accepting connections */
+      if ( (MHD_ITC_IS_VALID_ (daemon->itc)) &&
+           (! MHD_itc_activate_ (daemon->itc,
+				 "c")) )
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+		    MHD_SC_ITC_USE_FAILED,
+                    _("Failed to signal end of connection via inter-thread communication channel"));
+#endif
+        }
+    }
+}
+
+
+#ifdef EPOLL_SUPPORT
+/**
+ * Perform epoll() processing, possibly moving the connection back into
+ * the epoll() set if needed.
+ *
+ * @param connection connection to process
+ * @return true if we should continue to process the
+ *         connection (not dead yet), false if it died
+ */
+static bool
+connection_epoll_update_ (struct MHD_Connection *connection)
+{
+  struct MHD_Daemon *daemon = connection->daemon;
+
+  if ( (MHD_ELS_EPOLL == daemon->event_loop_syscall) &&
+       (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) &&
+       (0 == (connection->epoll_state & MHD_EPOLL_STATE_SUSPENDED)) &&
+       ( ( (MHD_EVENT_LOOP_INFO_WRITE == connection->request.event_loop_info) &&
+           (0 == (connection->epoll_state & MHD_EPOLL_STATE_WRITE_READY))) ||
+	 ( (MHD_EVENT_LOOP_INFO_READ == connection->request.event_loop_info) &&
+	   (0 == (connection->epoll_state & MHD_EPOLL_STATE_READ_READY)) ) ) )
+    {
+      /* add to epoll set */
+      struct epoll_event event;
+
+      event.events = EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLET;
+      event.data.ptr = connection;
+      if (0 != epoll_ctl (daemon->epoll_fd,
+			  EPOLL_CTL_ADD,
+			  connection->socket_fd,
+			  &event))
+	{
+#ifdef HAVE_MESSAGES
+	  MHD_DLOG (daemon,
+		    MHD_SC_EPOLL_CTL_ADD_FAILED,
+		    _("Call to epoll_ctl failed: %s\n"),
+		    MHD_socket_last_strerr_ ());
+#endif
+	  connection->request.state = MHD_REQUEST_CLOSED;
+	  cleanup_connection (connection);
+	  return false;
+	}
+      connection->epoll_state |= MHD_EPOLL_STATE_IN_EPOLL_SET;
+    }
+  return true;
+}
+#endif
+
+
+/**
  * This function was created to handle per-request processing that
  * has to happen even if the socket cannot be read or written to.
  * @remark To be called only from thread that process request's
@@ -3064,6 +3186,7 @@ MHD_request_handle_idle_ (struct MHD_Request *request)
             {
               socket_start_normal_buffering (connection);
               request->state = MHD_REQUEST_UPGRADE;
+#if FIXME_LEGACY_STYLE
               /* This request is "upgraded".  Pass socket to application. */
               if (! MHD_response_execute_upgrade_ (request->response,
 						   request))
@@ -3074,6 +3197,7 @@ MHD_request_handle_idle_ (struct MHD_Request *request)
                                           NULL);
                   continue;
                 }
+#endif
               /* Response is not required anymore for this request. */
               if (NULL != request->response)
                 {
@@ -3262,13 +3386,13 @@ MHD_request_handle_idle_ (struct MHD_Request *request)
           return true;
         }
     }
-  MHD_connection_update_event_loop_info (connection);
+  MHD_connection_update_event_loop_info_ (connection);
   ret = true;
 #ifdef EPOLL_SUPPORT
   if ( (! connection->suspended) &&
        (MHD_ELS_EPOLL == daemon->event_loop_syscall) )
     {
-      ret = MHD_connection_epoll_update_ (connection);
+      ret = connection_epoll_update_ (connection);
     }
 #endif /* EPOLL_SUPPORT */
   request->in_idle = false;

@@ -45,4 +45,20 @@ MHD_connection_call_handlers_ (struct MHD_Connection *con,
 			       bool force_close)
   MHD_NONNULL (1);
 
+
+/**
+ * This function was created to handle per-request processing that
+ * has to happen even if the socket cannot be read or written to.
+ * @remark To be called only from thread that process request's
+ * recv(), send() and response.
+ *
+ * @param request the request to handle
+ * @return true if we should continue to process the
+ *         request (not dead yet), false if it died
+ */
+bool
+MHD_request_handle_idle_ (struct MHD_Request *request)
+  MHD_NONNULL (1);
+
+  
 #endif

@@ -35,7 +35,7 @@
  * @param connection handle to the upgraded connection to clean
  */
 static void
-cleanup_upgraded_connection (struct MHD_Connection *connection)
+connection_cleanup_upgraded (struct MHD_Connection *connection)
 {
   struct MHD_UpgradeResponseHandle *urh = connection->request.urh;
 
@@ -90,7 +90,7 @@ MHD_connection_cleanup_ (struct MHD_Daemon *daemon)
            (! MHD_join_thread_ (pos->pid.handle)) )
         MHD_PANIC (_("Failed to join a thread\n"));
 #ifdef UPGRADE_SUPPORT
-      cleanup_upgraded_connection (pos);
+      connection_cleanup_upgraded (pos);
 #endif /* UPGRADE_SUPPORT */
       MHD_pool_destroy (pos->pool);
 #ifdef HTTPS_SUPPORT

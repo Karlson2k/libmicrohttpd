@@ -17,7 +17,7 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 /**
- * @file lib/connection_add.c
+ * @file lib/connection_update_last_activity.c
  * @brief functions to add connection to our active set
  * @author Christian Grothoff
  */

@@ -193,7 +193,7 @@ thread_main_handle_connection (void *data)
         {
           MHD_connection_update_last_activity_ (con); /* Reset timeout timer. */
           /* Process response queued during suspend and update states. */
-          MHD_connection_handle_idle (con);
+          MHD_request_handle_idle_ (&con->request);
           was_suspended = false;
         }
 
@@ -433,7 +433,7 @@ thread_main_handle_connection (void *data)
                                (daemon->shutdown) ?
                                MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN:
                                MHD_REQUEST_TERMINATED_WITH_ERROR);
-      MHD_connection_handle_idle (con);
+      MHD_request_handle_idle_ (&con->request);
     }
 exit:
   if (NULL != con->request.response)

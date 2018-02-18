@@ -65,6 +65,7 @@ libmicrohttpd_la_SOURCES = \
   connection_finish_forward.c connection_finish_forward.h \
   connection_info.c \
   connection_options.c \
+  connection_update_event_loop_info.c connection_update_event_loop_info.h \
   connection_update_last_activity.c connection_update_last_activity.h \
   daemon_close_all_connections.c daemon_close_all_connections.h \
   daemon_create.c \
