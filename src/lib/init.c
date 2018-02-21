@@ -43,24 +43,6 @@ MHD_MUTEX_STATIC_DEFN_INIT_(global_init_mutex_);
 
 
 /**
- * Check whether global initialisation was performed
- * and call initialiser if necessary.
- */
-void
-MHD_check_global_init_ (void)
-{
-#ifdef MHD_MUTEX_STATIC_DEFN_INIT_
-  MHD_mutex_lock_chk_(&global_init_mutex_);
-#endif /* MHD_MUTEX_STATIC_DEFN_INIT_ */
-  if (0 == global_init_count++)
-    MHD_init ();
-#ifdef MHD_MUTEX_STATIC_DEFN_INIT_
-  MHD_mutex_unlock_chk_(&global_init_mutex_);
-#endif /* MHD_MUTEX_STATIC_DEFN_INIT_ */
-}
-
-
-/**
  * Default implementation of the panic function,
  * prints an error message and aborts.
  *
@@ -134,5 +116,25 @@ MHD_fini (void)
 }
 
 #ifdef _AUTOINIT_FUNCS_ARE_SUPPORTED
+
 _SET_INIT_AND_DEINIT_FUNCS(MHD_init, MHD_fini);
-#endif /* _AUTOINIT_FUNCS_ARE_SUPPORTED */
+
+#else
+
+/**
+ * Check whether global initialisation was performed
+ * and call initialiser if necessary.
+ */
+void
+MHD_check_global_init_ (void)
+{
+#ifdef MHD_MUTEX_STATIC_DEFN_INIT_
+  MHD_mutex_lock_chk_(&global_init_mutex_);
+#endif /* MHD_MUTEX_STATIC_DEFN_INIT_ */
+  if (0 == global_init_count++)
+    MHD_init ();
+#ifdef MHD_MUTEX_STATIC_DEFN_INIT_
+  MHD_mutex_unlock_chk_(&global_init_mutex_);
+#endif /* MHD_MUTEX_STATIC_DEFN_INIT_ */
+}
+#endif
