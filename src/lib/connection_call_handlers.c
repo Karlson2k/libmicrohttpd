@@ -1307,7 +1307,6 @@ build_header_response (struct MHD_Request *request)
   must_add_keep_alive = false;
   must_add_content_length = false;
   response_has_close = false;
-  response_has_keepalive = false;
   switch (request->state)
     {
     case MHD_REQUEST_FOOTERS_RECEIVED:
@@ -1444,6 +1443,7 @@ build_header_response (struct MHD_Request *request)
       break;
     default:
       mhd_assert (0);
+      return MHD_NO;
     }
 
   if (MHD_CONN_MUST_CLOSE != request->keepalive)

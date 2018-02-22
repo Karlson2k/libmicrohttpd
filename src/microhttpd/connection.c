@@ -1478,7 +1478,6 @@ build_header_response (struct MHD_Connection *connection)
   must_add_keep_alive = MHD_NO;
   must_add_content_length = MHD_NO;
   response_has_close = false;
-  response_has_keepalive = false;
   switch (connection->state)
     {
     case MHD_CONNECTION_FOOTERS_RECEIVED:
@@ -1612,6 +1611,7 @@ build_header_response (struct MHD_Connection *connection)
       break;
     default:
       mhd_assert (0);
+      return MHD_NO;
     }
 
   if (MHD_CONN_MUST_CLOSE != connection->keepalive)

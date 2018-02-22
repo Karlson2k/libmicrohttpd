@@ -888,9 +888,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
 		MHD_SC_ITC_USE_FAILED,
-                _("Failed to signal new connection via inter-thread communication channel."));
+                _("Failed to signal new connection via inter-thread communication channel (not necessarily fatal, continuing anyway)."));
 #endif
-      sc = MHD_SC_ITC_USE_FAILED;
     }
   return MHD_SC_OK;
   

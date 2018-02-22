@@ -761,12 +761,12 @@ setup_thread_pool (struct MHD_Daemon *daemon)
 		    _("Failed to create pool thread: %s\n"),
 		    MHD_strerror_ (errno));
 #endif
-	  sc = MHD_SC_THREAD_POOL_LAUNCH_FAILURE;
 	  /* Free memory for this worker; cleanup below handles
 	   * all previously-created workers. */
 	  if (! daemon->disable_itc)
 	    MHD_itc_destroy_chk_ (d->itc);
 	  MHD_mutex_destroy_chk_ (&d->cleanup_connection_mutex);
+	  sc = MHD_SC_THREAD_POOL_LAUNCH_FAILURE;
 	  goto thread_failed;
 	}
     } /* end for() */
@@ -792,7 +792,7 @@ thread_failed:
      requested. */
   daemon->worker_pool_size = i;
   daemon->listen_socket = MHD_daemon_quiesce (daemon);
-  return MHD_SC_THREAD_LAUNCH_FAILURE;
+  return sc;
 }
 
 
