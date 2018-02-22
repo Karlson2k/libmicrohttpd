@@ -385,8 +385,10 @@ check_nonce_nc (struct MHD_Connection *connection,
   uint32_t off;
   uint32_t mod;
   const char *np;
+  size_t noncelen;
 
-  if (MAX_NONCE_LENGTH <= strlen (nonce))
+  noncelen = strlen (nonce) + 1;
+  if (MAX_NONCE_LENGTH < noncelen)
     return MHD_NO; /* This should be impossible, but static analysis
                       tools have a hard time with it *and* this also
                       protects against unsafe modifications that may
@@ -413,8 +415,9 @@ check_nonce_nc (struct MHD_Connection *connection,
   if (0 == nc)
     {
       /* Fresh nonce, reinitialize array */
-      strcpy (nn->nonce,
-	      nonce);
+      memcpy (nn->nonce,
+	      nonce,
+	      noncelen);
       nn->nc = 0;
       nn->nmask = 0;
       MHD_mutex_unlock_chk_ (&daemon->nnc_lock);

@@ -1233,6 +1233,7 @@ build_header_response (struct MHD_Request *request)
   struct MHD_HTTP_Header *pos;
   char code[256];
   char date[128];
+  size_t datelen;
   char content_length_buf[128];
   size_t content_length_len;
   char *data;
@@ -1290,7 +1291,8 @@ build_header_response (struct MHD_Request *request)
 			 sizeof (date));
       else
         date[0] = '\0';
-      size += strlen (date);
+      datelen = strlen (date);
+      size += datelen;
     }
   else
     {
@@ -1298,6 +1300,7 @@ build_header_response (struct MHD_Request *request)
       size = 2;
       kind = MHD_FOOTER_KIND;
       off = 0;
+      datelen = 0;
     }
 
   /* calculate extra headers we need to add, such as 'Connection: close',
@@ -1548,9 +1551,10 @@ build_header_response (struct MHD_Request *request)
     }
   if (MHD_REQUEST_FOOTERS_RECEIVED == request->state)
     {
-      strcpy (&data[off],
-              date);
-      off += strlen (date);
+      memcpy (&data[off],
+              date,
+	      datelen);
+      off += datelen;
     }
   memcpy (&data[off],
           "\r\n",
