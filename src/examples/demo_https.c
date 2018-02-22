@@ -434,7 +434,7 @@ struct UploadContext
  * @param ret string to update, NULL or 0-terminated
  * @param data data to append
  * @param size number of bytes in 'data'
- * @return MHD_NO on allocation failure, MHD_YES on success
+ * @return #MHD_NO on allocation failure, #MHD_YES on success
  */
 static int
 do_append (char **ret,
@@ -448,13 +448,18 @@ do_append (char **ret,
     old_len = 0;
   else
     old_len = strlen (*ret);
-  buf = malloc (old_len + size + 1);
-  if (NULL == buf)
+  if (NULL == (buf = malloc (old_len + size + 1)))
     return MHD_NO;
-  memcpy (buf, *ret, old_len);
   if (NULL != *ret)
-    free (*ret);
-  memcpy (&buf[old_len], data, size);
+    {
+      memcpy (buf,
+	      *ret,
+	      old_len);
+      free (*ret);
+    }
+  memcpy (&buf[old_len],
+	  data,
+	  size);
   buf[old_len + size] = '\0';
   *ret = buf;
   return MHD_YES;
