@@ -275,7 +275,7 @@ MHD_request_handle_read_ (struct MHD_Request *request)
 				  (MHD_REQUEST_INIT == request->state)
 				  ? MHD_SC_CONNECTION_CLOSED
 				  : MHD_SC_CONNECTION_RESET_CLOSED,
-				  (MHD_REQUEST_INIT == request->state) 
+				  (MHD_REQUEST_INIT == request->state)
 				  ? NULL
 				  : _("Socket disconnected while reading request.\n"));
            return;
@@ -284,8 +284,8 @@ MHD_request_handle_read_ (struct MHD_Request *request)
 			      (MHD_REQUEST_INIT == request->state)
 			      ? MHD_SC_CONNECTION_CLOSED
 			      : MHD_SC_CONNECTION_READ_FAIL_CLOSED,
-                              (MHD_REQUEST_INIT == request->state) 
-			      ? NULL 
+                              (MHD_REQUEST_INIT == request->state)
+			      ? NULL
                               : _("Connection socket is closed due to error when reading request.\n"));
       return;
     }
@@ -411,7 +411,7 @@ sendfile_adapter (struct MHD_Connection *connection)
   if (0 > ret)
     {
       const int err = MHD_socket_get_error_();
-      
+
       if (MHD_SCKT_ERR_IS_EAGAIN_(err))
         {
 #ifdef EPOLL_SUPPORT
@@ -712,8 +712,9 @@ try_ready_chunked_body (struct MHD_Request *request)
        (0 == response->total_size) )
     {
       /* end of message, signal other side! */
-      strcpy (request->write_buffer,
-              "0\r\n");
+      memcpy (request->write_buffer,
+              "0\r\n",
+              3);
       request->write_buffer_append_offset = 3;
       request->write_buffer_send_offset = 0;
       response->total_size = request->response_write_position;
@@ -928,7 +929,7 @@ MHD_request_handle_write_ (struct MHD_Request *request)
 				  MHD_SC_CONNECTION_WRITE_FAIL_CLOSED,
                                   _("Connection was closed while sending response body.\n"));
           return;
-        } 
+        }
       request->write_buffer_send_offset += ret;
       MHD_connection_update_last_activity_ (connection);
       if (MHD_REQUEST_CHUNKED_BODY_READY != request->state)
@@ -2244,7 +2245,7 @@ socket_start_normal_buffering (struct MHD_Connection *connection)
   MHD_SCKT_OPT_BOOL_ cork_val = 0;
   socklen_t param_size = sizeof (cork_val);
 #endif /* TCP_CORK */
-  
+
   mhd_assert(NULL != connection);
 #if defined(TCP_CORK)
   /* Allow partial packets */
@@ -2521,7 +2522,7 @@ call_request_handler (struct MHD_Request *request)
 
   if (NULL != request->response)
     return;                     /* already queued a response */
-  if (NULL == (action = 
+  if (NULL == (action =
 	       daemon->rc (daemon->rc_cls,
 			   request,
 			   request->url,
@@ -2573,7 +2574,7 @@ process_request_body (struct MHD_Request *request)
                (available >= 2) )
             {
               size_t i;
-	      
+
               /* skip new line at the *end* of a chunk */
               i = 0;
               if ( ('\r' == buffer_head[i]) ||
@@ -2904,14 +2905,14 @@ connection_update_event_loop_info (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
   struct MHD_Request *request = &connection->request;
-  
+
   /* Do not update states of suspended connection */
   if (connection->suspended)
     return; /* States will be updated after resume. */
 #ifdef HTTPS_SUPPORT
   {
     struct MHD_TLS_Plugin *tls;
-    
+
     if ( (NULL != (tls = daemon->tls_api)) &&
 	 (tls->update_event_loop_info (tls->cls,
 				       connection->tls_cs,
@@ -3079,7 +3080,7 @@ MHD_request_handle_idle_ (struct MHD_Request *request)
     {
 #ifdef HTTPS_SUPPORT
       struct MHD_TLS_Plugin *tls;
-      
+
       if ( (NULL != (tls = daemon->tls_api)) &&
 	   (! tls->idle_ready (tls->cls,
 			       connection->tls_cs)) )
@@ -3460,7 +3461,7 @@ MHD_request_handle_idle_ (struct MHD_Request *request)
         case MHD_REQUEST_FOOTERS_SENT:
 	  {
 	    struct MHD_Response *response = request->response;
-	    
+
 	    if (MHD_HTTP_PROCESSING == response->status_code)
 	      {
 		/* After this type of response, we allow sending another! */
@@ -3474,8 +3475,8 @@ MHD_request_handle_idle_ (struct MHD_Request *request)
 	      socket_start_no_buffering_flush (connection);
 	    else
 	      socket_start_normal_buffering (connection);
-	  
-	    if (NULL != response->termination_cb) 
+
+	    if (NULL != response->termination_cb)
 	      {
 		response->termination_cb (response->termination_cb_cls,
 					  MHD_REQUEST_TERMINATED_COMPLETED_OK,

@@ -1210,8 +1210,9 @@ try_ready_chunked_body (struct MHD_Connection *connection)
        (0 == response->total_size) )
     {
       /* end of message, signal other side! */
-      strcpy (connection->write_buffer,
-              "0\r\n");
+      memcpy (connection->write_buffer,
+              "0\r\n",
+              3);
       connection->write_buffer_append_offset = 3;
       connection->write_buffer_send_offset = 0;
       response->total_size = connection->response_write_position;
