@@ -408,14 +408,18 @@ MHD_daemon_tls_key_and_cert_from_memory (struct MHD_Daemon *daemon,
 					 const char *mem_cert,
 					 const char *pass)
 {
+#ifndef HTTPS_SUPPORT
+  return MHD_SC_TLS_DISABLED;
+#else
   struct MHD_TLS_Plugin *plugin;
-  
+
   if (NULL == (plugin = daemon->tls_api))
     return MHD_SC_TLS_BACKEND_UNINITIALIZED;
   return plugin->init_kcp (plugin->cls,
 			   mem_key,
 			   mem_cert,
 			   pass);
+#endif
 }
 
 
@@ -432,12 +436,16 @@ enum MHD_StatusCode
 MHD_daemon_tls_mem_dhparams (struct MHD_Daemon *daemon,
 			     const char *dh)
 {
+#ifndef HTTPS_SUPPORT
+  return MHD_SC_TLS_DISABLED;
+#else
   struct MHD_TLS_Plugin *plugin;
-  
+
   if (NULL == (plugin = daemon->tls_api))
     return MHD_SC_TLS_BACKEND_UNINITIALIZED;
   return plugin->init_dhparams (plugin->cls,
 				dh);
+#endif
 }
 
 
@@ -454,12 +462,16 @@ enum MHD_StatusCode
 MHD_daemon_tls_mem_trust (struct MHD_Daemon *daemon,
 			  const char *mem_trust)
 {
+#ifndef HTTPS_SUPPORT
+  return MHD_SC_TLS_DISABLED;
+#else
   struct MHD_TLS_Plugin *plugin;
-  
+
   if (NULL == (plugin = daemon->tls_api))
     return MHD_SC_TLS_BACKEND_UNINITIALIZED;
   return plugin->init_mem_trust (plugin->cls,
 				 mem_trust);
+#endif
 }
 
 
@@ -474,11 +486,15 @@ enum MHD_StatusCode
 MHD_daemon_gnutls_credentials (struct MHD_Daemon *daemon,
 			       int gnutls_credentials)
 {
+#ifndef HTTPS_SUPPORT
+  return MHD_SC_TLS_DISABLED;
+#else
   struct MHD_TLS_Plugin *plugin;
-  
+
   if (NULL == (plugin = daemon->tls_api))
     return MHD_SC_TLS_BACKEND_UNINITIALIZED;
   return MHD_SC_TLS_BACKEND_OPERATION_UNSUPPORTED;
+#endif
 }
 
 
@@ -503,11 +519,15 @@ enum MHD_StatusCode
 MHD_daemon_gnutls_key_and_cert_from_callback (struct MHD_Daemon *daemon,
 					      void *cb)
 {
+#ifndef HTTPS_SUPPORT
+  return MHD_SC_TLS_DISABLED;
+#else
   struct MHD_TLS_Plugin *plugin;
-  
+
   if (NULL == (plugin = daemon->tls_api))
     return MHD_SC_TLS_BACKEND_UNINITIALIZED;
   return MHD_SC_TLS_BACKEND_OPERATION_UNSUPPORTED;
+#endif
 }
 
 
@@ -547,7 +567,7 @@ MHD_daemon_accept_policy (struct MHD_Daemon *daemon,
 
 /**
  * Register a callback to be called first for every request
- * (before any parsing of the header).  Makes it easy to 
+ * (before any parsing of the header).  Makes it easy to
  * log the full URL.
  *
  * @param daemon daemon for which to set the logger
