@@ -145,12 +145,12 @@ testLongUrlGet ()
       curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
       curl_easy_perform (c);
       curl_easy_cleanup (c);
+      free (url);
     }
   fprintf (stderr, "\n");
   zzuf_socat_stop ();
 
   MHD_stop_daemon (d);
-  free (url);
   return 0;
 }
 
@@ -210,12 +210,12 @@ testLongHeaderGet ()
       curl_slist_free_all (header);
       header = NULL;
       curl_easy_cleanup (c);
+      free (url);
     }
   fprintf (stderr, "\n");
   zzuf_socat_stop ();
 
   MHD_stop_daemon (d);
-  free (url);
   return 0;
 }
 

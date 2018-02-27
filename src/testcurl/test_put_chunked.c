@@ -104,6 +104,8 @@ ahc_echo (void *cls,
           printf ("Invalid upload data `%8s'!\n", upload_data);
           return MHD_NO;
         }
+      if (0 == have)
+        return MHD_YES;
       if (0 == memcmp (upload_data, &"Hello123"[*done], have))
         {
           *done += have;
