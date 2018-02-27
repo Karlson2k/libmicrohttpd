@@ -23,6 +23,7 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
+#include "connection_call_handlers.h"
 
 
 /**

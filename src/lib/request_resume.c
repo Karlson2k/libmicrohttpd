@@ -23,7 +23,7 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
-
+#include "connection_close.h"
 
 /**
  * Resume handling of network data for suspended request.  It is
@@ -43,7 +43,7 @@ void
 MHD_request_resume (struct MHD_Request *request)
 {
   struct MHD_Daemon *daemon = request->daemon;
-  
+
   if (daemon->disallow_suspend_resume)
     MHD_PANIC (_("Cannot resume connections without enabling MHD_ALLOW_SUSPEND_RESUME!\n"));
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
@@ -81,7 +81,7 @@ MHD_resume_suspended_connections_ (struct MHD_Daemon *daemon)
   struct MHD_Connection *prev = NULL;
   bool ret;
   const bool used_thr_p_c = (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model);
-  
+
   mhd_assert (NULL == daemon->worker_pool);
   ret = false;
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
@@ -159,6 +159,8 @@ MHD_resume_suspended_connections_ (struct MHD_Daemon *daemon)
           /* Data forwarding was finished (for TLS connections) AND
            * application was closed upgraded connection.
            * Insert connection into cleanup list. */
+          MHD_connection_close_ (pos,
+                                 MHD_CONNECTION_NOTIFY_CLOSED);
           DLL_insert (daemon->cleanup_head,
                       daemon->cleanup_tail,
                       pos);

@@ -2678,7 +2678,7 @@ void
 MHD_resume_connection (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
-  
+
   if (0 == (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
     MHD_PANIC (_("Cannot resume connections without enabling MHD_ALLOW_SUSPEND_RESUME!\n"));
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
@@ -2790,6 +2790,8 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
           /* Data forwarding was finished (for TLS connections) AND
            * application was closed upgraded connection.
            * Insert connection into cleanup list. */
+          MHD_connection_close_ (pos,
+                                 MHD_REQUEST_TERMINATED_COMPLETED_OK);
           DLL_insert (daemon->cleanup_head,
                       daemon->cleanup_tail,
                       pos);
@@ -5425,7 +5427,7 @@ MHD_start_daemon_va (unsigned int flags,
   MHD_DLOG (daemon,  _("Using debug build of libmicrohttpd.\n") );
 #endif /* HAVE_MESSAGES */
 #endif /* ! NDEBUG */
-  
+
   if ( (0 != (*pflags & MHD_USE_ITC)) &&
        (0 == daemon->worker_pool_size) )
     {
@@ -5527,7 +5529,7 @@ MHD_start_daemon_va (unsigned int flags,
     {
       /* try to open listen socket */
       int domain;
-      
+
 #ifdef HAVE_INET6
       domain = (*pflags & MHD_USE_IPv6) ? PF_INET6 : PF_INET;
 #else  /* ! HAVE_INET6 */
@@ -5535,7 +5537,7 @@ MHD_start_daemon_va (unsigned int flags,
 	goto free_and_fail;
       domain = PF_INET;
 #endif /* ! HAVE_INET6 */
-      
+
       listen_fd = MHD_socket_create_listen_(domain);
       if (MHD_INVALID_SOCKET == listen_fd)
 	{
@@ -6358,7 +6360,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #endif /* HAVE_LISTEN_SHUTDOWN */
 		mhd_assert (false); /* Should never happen */
 	    }
-	  
+
 	  if (! MHD_join_thread_ (daemon->pid.handle))
 	    {
 	      MHD_PANIC (_("Failed to join a thread\n"));

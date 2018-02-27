@@ -1,3 +1,7 @@
+Tue Feb 27 23:27:02 CET 2018
+	Ensure MHD_RequestCompletedCallback is also called for
+	upgraded connections. -CG
+
 Fri Feb 16 03:09:33 CET 2018
 	Fixing #5278 as suggested by reporter. -CG/texec
 
