@@ -1,6 +1,6 @@
 # This Makefile.am is in the public domain
 SUBDIRS = .
 
-include_HEADERS = microhttpd.h 
+include_HEADERS = microhttpd.h microhttpd2.h microhttpd_tls.h
 
 EXTRA_DIST = platform.h autoinit_funcs.h mhd_options.h

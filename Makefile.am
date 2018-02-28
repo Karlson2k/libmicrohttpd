@@ -25,6 +25,7 @@ EXTRA_DIST = \
   libmicrohttpd.pc.in \
   $(EXTRA_PO_DIST) \
   $(W32COMMON) $(W32VS2013) $(W32VS2015) $(W32VS2017)
+DISTCLEANFILES=po/configargs.stamp
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libmicrohttpd.pc
@@ -107,7 +108,9 @@ $(srcdir_po)/POTFILES.in:
 	@$(MAKE) $(AM_MAKEFLAGS) update-POTFILES.in
 
 update-POTFILES.in:
-	@$(am__cd) $(srcdir_po) && echo @ECHO_N@ "Creating po/POTFILES.in... @ECHO_C@" && chmod o+w . && \
+	@$(am__cd) $(srcdir_po) && if ! test -e POTFILES.in; then \
+	  echo @ECHO_N@ "Creating po/POTFILES.in... @ECHO_C@" && chmod o+w . && \
 	  find '../src/include' ! -name 'include' -prune -name '*.h' ! -name 'mhd_options.h' > POTFILES.in && \
 	  find '../src/microhttpd' ! -name 'microhttpd' -prune \( -name '*.h' -o -name '*.c' \) ! -name 'test_*' >> POTFILES.in && \
-	  echo "@ECHO_T@done." || (rm -f POTFILES.in ; echo "@ECHO_T@failed." && false)
+	  echo "@ECHO_T@done." || (rm -f POTFILES.in ; echo "@ECHO_T@failed." && false) \
+	fi

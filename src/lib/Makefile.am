@@ -104,6 +104,7 @@ libmicrohttpd2_la_SOURCES = \
   request.c \
   request_info.c \
   request_resume.c \
+  request_resume.h \
   sysfdsetsize.c sysfdsetsize.h \
   upgrade_process.c upgrade_process.h \
   panic.c \
