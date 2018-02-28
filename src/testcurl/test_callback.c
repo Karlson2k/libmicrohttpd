@@ -42,8 +42,7 @@ called_twice(void *cls, uint64_t pos, char *buf, size_t max)
 
   if (cls2->called == 0)
     {
-      memset(buf, 0, max);
-      strcat(buf, "test");
+      memcpy(buf, "test", 5);
       cls2->called = 1;
       return strlen(buf);
     }
