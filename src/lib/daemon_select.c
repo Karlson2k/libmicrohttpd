@@ -320,7 +320,7 @@ MHD_daemon_get_fdset2 (struct MHD_Daemon *daemon,
 		       unsigned int fd_setsize)
 {
   if ( (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_model) ||
-       (MHD_ELS_POLL == daemon->event_loop_syscall) ) 
+       (MHD_ELS_POLL == daemon->event_loop_syscall) )
     return MHD_SC_CONFIGURATION_MISSMATCH_FOR_GET_FDSET;
 
 #ifdef EPOLL_SUPPORT
@@ -350,6 +350,7 @@ MHD_daemon_get_fdset2 (struct MHD_Daemon *daemon,
 }
 
 
+#ifdef HTTPS_SUPPORT
 /**
  * Update the @a urh based on the ready FDs in
  * the @a rs, @a ws, and @a es.
@@ -391,6 +392,7 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
         urh->mhd.celi |= MHD_EPOLL_STATE_ERROR;
     }
 }
+#endif
 
 
 /**
@@ -399,7 +401,7 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
  * @param daemon daemon to run select loop for
  * @param read_fd_set read set
  * @param write_fd_set write set
- * @param except_fd_set except set 
+ * @param except_fd_set except set
  * @return #MHD_SC_OK on success
  * @ingroup event
  */
@@ -509,7 +511,7 @@ MHD_daemon_upgrade_connection_with_select_ (struct MHD_Connection *con)
       MHD_socket max_fd;
       int num_ready;
       bool result;
-      
+
       FD_ZERO (&rs);
       FD_ZERO (&ws);
       FD_ZERO (&es);
@@ -554,7 +556,7 @@ MHD_daemon_upgrade_connection_with_select_ (struct MHD_Connection *con)
       if (num_ready < 0)
 	{
 	  const int err = MHD_socket_get_error_();
-	  
+
 	  if (MHD_SCKT_ERR_IS_EINTR_(err))
 	    continue;
 #ifdef HAVE_MESSAGES
@@ -602,7 +604,7 @@ enum MHD_StatusCode
 MHD_daemon_run_from_select (struct MHD_Daemon *daemon,
 			    const fd_set *read_fd_set,
 
-			    
+
 			    const fd_set *write_fd_set,
 			    const fd_set *except_fd_set)
 {
@@ -674,7 +676,7 @@ MHD_daemon_select_ (struct MHD_Daemon *daemon,
 
   if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model)
     {
-      
+
       /* single-threaded, go over everything */
       if (MHD_SC_OK !=
 	  (sc = internal_get_fdset2 (daemon,
@@ -730,7 +732,7 @@ MHD_daemon_select_ (struct MHD_Daemon *daemon,
                                     FD_SETSIZE))
             {
 #endif /* MHD_WINSOCK_SOCKETS */
-              sc = MHD_SC_SOCKET_OUTSIDE_OF_FDSET_RANGE; 
+              sc = MHD_SC_SOCKET_OUTSIDE_OF_FDSET_RANGE;
 #ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
 			sc,
