@@ -47,7 +47,8 @@ gcc/Stretch:
     when: on_failure
     paths:
       - ./*.log
-      - src/microhttpd/*.log
+      - src/*/*.log
+      - src/*/*/*.log
 
 # In this build we combine
 #  * clang
@@ -71,7 +72,8 @@ Sanitizers/Stretch:
     when: on_failure
     paths:
       - ./*.log
-      - src/microhttpd/*.log
+      - src/*/*.log
+      - src/*/*/*.log
 
 Scan-Build/Debian:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$DEBIAN_BUILD
