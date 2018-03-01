@@ -1470,14 +1470,18 @@ enum MHD_OPTION
   MHD_OPTION_LISTEN_BACKLOG_SIZE = 28,
 
   /**
-   * If set to 1 - be strict about the protocol (as opposed to as
-   * tolerant as possible).  Specifically, at the moment, this flag
-   * causes MHD to reject HTTP 1.1 connections without a "Host" header.
-   * This is required by the standard, but of course in violation of
-   * the "be as liberal as possible in what you accept" norm.  It is
-   * recommended to set this to 1 if you are testing clients against
-   * MHD, and 0 in production.
-   * This option should be followed by an `int` argument.
+   * If set to 1 - be strict about the protocol.  Use -1 to be
+   * as tolerant as possible.
+   *
+   * Specifically, at the moment, at 1 this flag
+   * causes MHD to reject HTTP 1.1 connections without a "Host" header,
+   * and to disallow spaces in the URL or (at -1) in HTTP header key strings.
+   *
+   * These are required by some versions of the standard, but of
+   * course in violation of the "be as liberal as possible in what you
+   * accept" norm.  It is recommended to set this to 1 if you are
+   * testing clients against MHD, and 0 in production.  This option
+   * should be followed by an `int` argument.
    */
   MHD_OPTION_STRICT_FOR_CLIENT = 29
 };

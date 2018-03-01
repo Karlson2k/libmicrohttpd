@@ -1803,6 +1803,14 @@ parse_initial_message_line (struct MHD_Request *request,
                          line_len - (uri - line));
         }
     }
+  if ( (1 <= daemon->strict_for_client) &&
+       (NULL != memchr (line,
+                        ' ',
+                        http_version - line)) )
+    {
+      /* space exists in URI and we are supposed to be strict, reject */
+      return MHD_NO;
+    }
   if (NULL != daemon->early_uri_logger_cb)
     {
       request->client_context
