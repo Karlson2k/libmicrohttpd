@@ -48,7 +48,7 @@ MHD_request_get_information_sz (struct MHD_Request *request,
 {
 #define CHECK_SIZE(type) if (sizeof(type) < return_value_size)	\
     return MHD_NO
-  
+
   switch (info_type)
   {
   case MHD_REQUEST_INFORMATION_CONNECTION:
@@ -70,8 +70,7 @@ MHD_request_get_information_sz (struct MHD_Request *request,
   case MHD_REQUEST_INFORMATION_HEADER_SIZE:
     CHECK_SIZE (size_t);
     if ( (MHD_REQUEST_HEADERS_RECEIVED > request->state) ||
-	 (MHD_REQUEST_CLOSED == request->state) ||
-           (MHD_REQUEST_IN_CLEANUP == request->state) )
+	 (MHD_REQUEST_CLOSED == request->state) )
         return MHD_NO; /* invalid, too early! */
     return_value->header_size = request->header_size;
     return MHD_YES;
@@ -79,7 +78,7 @@ MHD_request_get_information_sz (struct MHD_Request *request,
   default:
     return MHD_NO;
   }
-  
+
 #undef CHECK_SIZE
 }
 

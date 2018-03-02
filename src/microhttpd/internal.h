@@ -507,11 +507,6 @@ enum MHD_CONNECTION_STATE
    */
   MHD_CONNECTION_CLOSED = MHD_CONNECTION_FOOTERS_SENT + 1,
 
-  /**
-   * 20: This connection is finished (only to be freed)
-   */
-  MHD_CONNECTION_IN_CLEANUP = MHD_CONNECTION_CLOSED + 1,
-
 #ifdef UPGRADE_SUPPORT
   /**
    * Connection was "upgraded" and socket is now under the

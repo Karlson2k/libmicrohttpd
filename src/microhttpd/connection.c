@@ -1948,9 +1948,6 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
         case MHD_CONNECTION_CLOSED:
 	  connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
           return;       /* do nothing, not even reading */
-        case MHD_CONNECTION_IN_CLEANUP:
-          mhd_assert (0);
-          break;
 #ifdef UPGRADE_SUPPORT
         case MHD_CONNECTION_UPGRADE:
           mhd_assert (0);
@@ -3151,9 +3148,6 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       return;
     case MHD_CONNECTION_CLOSED:
       return;
-    case MHD_CONNECTION_IN_CLEANUP:
-      mhd_assert (0);
-      return;
 #ifdef UPGRADE_SUPPORT
     case MHD_CONNECTION_UPGRADE:
       mhd_assert (0);
@@ -3857,8 +3851,7 @@ MHD_get_connection_info (struct MHD_Connection *connection,
       return (const union MHD_ConnectionInfo *) &connection->connection_timeout_dummy;
     case MHD_CONNECTION_INFO_REQUEST_HEADER_SIZE:
       if ( (MHD_CONNECTION_HEADERS_RECEIVED > connection->state) ||
-           (MHD_CONNECTION_CLOSED == connection->state) ||
-           (MHD_CONNECTION_IN_CLEANUP == connection->state) )
+           (MHD_CONNECTION_CLOSED == connection->state) )
         return NULL; /* invalid, too early! */
       return (const union MHD_ConnectionInfo *) &connection->header_size;
     default:

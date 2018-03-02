@@ -971,9 +971,6 @@ MHD_request_handle_write_ (struct MHD_Request *request)
       return;
     case MHD_REQUEST_CLOSED:
       return;
-    case MHD_REQUEST_IN_CLEANUP:
-      mhd_assert (0);
-      return;
 #ifdef UPGRADE_SUPPORT
     case MHD_REQUEST_UPGRADE:
       mhd_assert (0);
@@ -3048,9 +3045,6 @@ connection_update_event_loop_info (struct MHD_Connection *connection)
         case MHD_REQUEST_CLOSED:
 	  request->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
           return;       /* do nothing, not even reading */
-        case MHD_REQUEST_IN_CLEANUP:
-          mhd_assert (0);
-          break;
 #ifdef UPGRADE_SUPPORT
         case MHD_REQUEST_UPGRADE:
           mhd_assert (0);

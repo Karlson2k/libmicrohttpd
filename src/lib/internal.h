@@ -209,7 +209,7 @@ typedef ssize_t
  * not have to be completed yet).  A transition to
  * #MHD_REQUEST_CLOSED or #MHD_REQUEST_INIT requires the write
  * to be complete.
- */ 
+ */
 enum MHD_REQUEST_STATE // FIXME: fix capitalization!
 {
   /**
@@ -317,11 +317,6 @@ enum MHD_REQUEST_STATE // FIXME: fix capitalization!
    */
   MHD_REQUEST_CLOSED = MHD_REQUEST_FOOTERS_SENT + 1,
 
-  /**
-   * 20: This request is finished (only to be freed)
-   */
-  MHD_REQUEST_IN_CLEANUP = MHD_REQUEST_CLOSED + 1,
-
 #ifdef UPGRADE_SUPPORT
   /**
    * Request was "upgraded" and socket is now under the
@@ -369,7 +364,7 @@ struct MHD_Request
 {
 
   /**
-   * Reference to the `struct MHD_Daemon`.  
+   * Reference to the `struct MHD_Daemon`.
    */
   struct MHD_Daemon *daemon;
 
@@ -383,7 +378,7 @@ struct MHD_Request
    * it is available.
    */
   struct MHD_Response *response;
-  
+
   /**
    * Linked list of parsed headers.
    */
@@ -554,7 +549,7 @@ struct MHD_Request
    * HTTP method, as an enum.
    */
   enum MHD_Method method;
-  
+
   /**
    * What is this request waiting for?
    */
@@ -633,7 +628,7 @@ enum MHD_EpollState
 
 /**
  * State kept per HTTP connection.
- */ 
+ */
 struct MHD_Connection
 {
 
@@ -687,7 +682,7 @@ struct MHD_Connection
    * address (which persists across individual requests).
    */
   struct MemoryPool *pool;
-  
+
   /**
    * We allow the main application to associate some pointer with the
    * TCP connection (which may span multiple HTTP requests).  Here is
@@ -703,7 +698,7 @@ struct MHD_Connection
    */
   struct MHD_TLS_ConnectionState *tls_cs;
 #endif
-  
+
   /**
    * Function used for reading HTTP request stream.
    */
@@ -727,7 +722,7 @@ struct MHD_Connection
   MHD_thread_handle_ID_ pid;
 
   /**
-   * Foreign address (of length @e addr_len). 
+   * Foreign address (of length @e addr_len).
    */
   struct sockaddr_storage addr;
 
@@ -794,7 +789,7 @@ struct MHD_Connection
    * from this socket).
    */
   bool read_closed;
-  
+
 };
 
 
@@ -1013,7 +1008,7 @@ struct MHD_Daemon
    */
   void *rc_cls;
 
-  /** 
+  /**
    * Function to call for logging.
    */
   MHD_LoggingCallback logger;
@@ -1021,7 +1016,7 @@ struct MHD_Daemon
   /**
    * Closure for @e logger.
    */
-  void *logger_cls;  
+  void *logger_cls;
 
   /**
    * Function to call to accept/reject connections based on
@@ -1076,7 +1071,7 @@ struct MHD_Daemon
    */
   struct MHD_Daemon *worker_pool;
 
-  
+
 #if HTTPS_SUPPORT
 #ifdef UPGRADE_SUPPORT
   /**
@@ -1098,7 +1093,7 @@ struct MHD_Daemon
    * Which TLS backend should be used. NULL for no TLS.
    * This is merely the handle to the dlsym() object, not
    * the API.
-   */ 
+   */
   void *tls_backend_lib;
 
   /**
@@ -1152,7 +1147,7 @@ struct MHD_Daemon
    * Not used in MHD_USE_THREAD_PER_CONNECTION mode.
    */
   struct MHD_Connection *manual_timeout_tail;
-  
+
   /**
    * Head of doubly-linked list of our current, active connections.
    */
@@ -1251,8 +1246,8 @@ struct MHD_Daemon
    * The select thread handle (if we have internal select)
    */
   MHD_thread_handle_ID_ pid;
-  
-  /** 
+
+  /**
    * Socket address to bind to for the listen socket.
    */
   struct sockaddr_storage listen_sa;
@@ -1267,8 +1262,8 @@ struct MHD_Daemon
    * "manual_timeout" DLLs.
    */
   MHD_mutex_ cleanup_connection_mutex;
-  
-  /** 
+
+  /**
    * Number of (valid) bytes in @e listen_sa.  Zero
    * if @e listen_sa is not initialized.
    */
@@ -1277,7 +1272,7 @@ struct MHD_Daemon
 /**
  * Default size of the per-connection memory pool.
  */
-#define POOL_SIZE_DEFAULT (32 * 1024) 
+#define POOL_SIZE_DEFAULT (32 * 1024)
   /**
    * Buffer size to use for each connection. Default
    * is #POOL_SIZE_DEFAULT.
@@ -1292,7 +1287,7 @@ struct MHD_Daemon
  * space).
  */
 #define BUF_INC_SIZE_DEFAULT 1024
-  
+
   /**
    * Increment to use when growing the read buffer. Smaller
    * than @e connection_memory_limit_b.
@@ -1306,7 +1301,7 @@ struct MHD_Daemon
   size_t thread_stack_limit_b;
 
 #if ENABLE_DAUTH
-  
+
   /**
    * Size of @e digest_auth_random_buf.
    */
@@ -1316,14 +1311,14 @@ struct MHD_Daemon
    * Default value for @e digest_nc_length.
    */
 #define DIGEST_NC_LENGTH_DEFAULT 4
-  
+
   /**
    * Desired length of the internal array with the nonce and
    * nonce counters for digest authentication.
    */
   size_t digest_nc_length;
 #endif
-  
+
   /**
    * Default value we use for the listen backlog.
    */
@@ -1332,13 +1327,13 @@ struct MHD_Daemon
 #else  /* !SOMAXCONN */
 #define LISTEN_BACKLOG_DEFAULT 511
 #endif
-  
+
   /**
-   * Backlog argument to use for listen.  See 
+   * Backlog argument to use for listen.  See
    * #MHD_daemon_listen_backlog().
    */
   int listen_backlog;
-  
+
   /**
    * Default queue length to use with fast open.
    */
@@ -1373,8 +1368,8 @@ struct MHD_Daemon
    * Default timeout in seconds for idle connections.
    */
   time_t connection_default_timeout;
-  
-  /** 
+
+  /**
    * Listen socket we should use, MHD_INVALID_SOCKET means
    * we are to initialize the socket from the other options given.
    */
@@ -1407,23 +1402,23 @@ struct MHD_Daemon
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
 #endif
-  
+
   /**
    * Inter-thread communication channel.
    */
   struct MHD_itc_ itc;
-  
+
   /**
    * Which threading model do we use? Postive
    * numbers indicate the number of worker threads to be used.
    * Values larger than 1 imply a thread pool.
    */
   enum MHD_ThreadingModel threading_model;
-  
+
   /**
-   * When should we use TCP_FASTOPEN? 
+   * When should we use TCP_FASTOPEN?
    * See #MHD_daemon_tcp_fastopen().
-   */ 
+   */
   enum MHD_FastOpenMethod fast_open_method;
 
   /**
@@ -1445,36 +1440,36 @@ struct MHD_Daemon
    */
   enum MHD_ProtocolStrictLevel protocol_strict_level;
 
-  /** 
+  /**
    * On which port should we listen on? Only effective if we were not
    * given a listen socket or a full address via
    * #MHD_daemon_bind_sa().  0 means to bind to random free port.
    */
   uint16_t listen_port;
-  
+
   /**
    * Suppress generating the "Date:" header, this system
    * lacks an RTC (or developer is hyper-optimizing).  See
    * #MHD_daemon_suppress_date_no_clock().
-   */ 
+   */
   bool suppress_date;
 
   /**
    * The use of the inter-thread communication channel is disabled.
    * See #MHD_daemon_disable_itc().
-   */ 
+   */
   bool disable_itc;
 
   /**
    * Disable #MHD_action_suspend() functionality.  See
    * #MHD_daemon_disallow_suspend_resume().
-   */ 
+   */
   bool disallow_suspend_resume;
 
   /**
    * Disable #MHD_action_upgrade() functionality.  See
    * #MHD_daemon_disallow_upgrade().
-   */ 
+   */
   bool disallow_upgrade;
 
   /**
@@ -1523,12 +1518,12 @@ struct MHD_Daemon
    * MHD should speak SHOUTcast instead of HTTP.
    */
   bool enable_shoutcast;
-  
+
   /**
    * Are we shutting down?
    */
   volatile bool shutdown;
-  
+
 };
 
 
@@ -1559,9 +1554,9 @@ struct MHD_Action
 
   /**
    * Closure for @a action
-   */ 
+   */
   void *action_cls;
-  
+
 };
 
 
@@ -1577,7 +1572,7 @@ struct MHD_Response
    * must be the first field in a response!
    */
   struct MHD_Action action;
-  
+
   /**
    * Headers to send for the response.  Initially
    * the linked list is created in inverse order;
@@ -1610,7 +1605,7 @@ struct MHD_Response
   MHD_ContentReaderFreeCallback crfc;
 
   /**
-   * Function to call once MHD is finished with 
+   * Function to call once MHD is finished with
    * the request, may be NULL.
    */
   MHD_RequestTerminationCallback termination_cb;
@@ -1619,7 +1614,7 @@ struct MHD_Response
    * Closure for @e termination_cb.
    */
   void *termination_cb_cls;
-  
+
 #ifdef UPGRADE_SUPPORT
   /**
    * Application function to call once we are done sending the headers
@@ -1671,7 +1666,7 @@ struct MHD_Response
    * HTTP status code of the response.
    */
   enum MHD_HTTP_StatusCode status_code;
-  
+
   /**
    * Reference count for this response.  Free once the counter hits
    * zero.
@@ -1692,7 +1687,7 @@ struct MHD_Response
    * Use ShoutCAST format.
    */
   bool icy;
-  
+
 };
 
 

@@ -110,7 +110,7 @@ thread_main_handle_connection (void *data)
   const bool use_poll = false;
 #endif /* ! HAVE_POLL */
   bool was_suspended = false;
-  
+
   MHD_thread_init_(&con->pid);
 
   while ( (! daemon->shutdown) &&
@@ -398,7 +398,7 @@ thread_main_handle_connection (void *data)
         {
           /* Normal HTTP processing is finished,
            * notify application. */
-          if (NULL != con->request.response->termination_cb) 
+          if (NULL != con->request.response->termination_cb)
             con->request.response->termination_cb
 	      (con->request.response->termination_cb_cls,
 	       MHD_REQUEST_TERMINATED_COMPLETED_OK,
@@ -419,22 +419,19 @@ thread_main_handle_connection (void *data)
         }
 #endif /* UPGRADE_SUPPORT */
     }
-  if (MHD_REQUEST_IN_CLEANUP != con->request.state)
-    {
 #if DEBUG_CLOSE
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (con->daemon,
-		MHD_SC_THREAD_TERMINATING,
-                _("Processing thread terminating. Closing connection\n"));
+  MHD_DLOG (con->daemon,
+            MHD_SC_THREAD_TERMINATING,
+            _("Processing thread terminating. Closing connection\n"));
 #endif
 #endif
-      if (MHD_REQUEST_CLOSED != con->request.state)
-	MHD_connection_close_ (con,
-                               (daemon->shutdown) ?
-                               MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN:
-                               MHD_REQUEST_TERMINATED_WITH_ERROR);
-      MHD_request_handle_idle_ (&con->request);
-    }
+  if (MHD_REQUEST_CLOSED != con->request.state)
+    MHD_connection_close_ (con,
+                           (daemon->shutdown) ?
+                           MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN:
+                           MHD_REQUEST_TERMINATED_WITH_ERROR);
+  MHD_request_handle_idle_ (&con->request);
 exit:
   if (NULL != con->request.response)
     {
@@ -892,7 +889,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #endif
     }
   return MHD_SC_OK;
-  
+
  cleanup:
   if (NULL != daemon->notify_connection_cb)
     daemon->notify_connection_cb (daemon->notify_connection_cb_cls,
@@ -908,7 +905,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
                     addr,
                     addrlen);
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
-  if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model) 
+  if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model)
     {
       XDLL_remove (daemon->normal_timeout_head,
                    daemon->normal_timeout_tail,
@@ -976,7 +973,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
     {
       sk_nonbl = true;
     }
-  
+
   if ( (daemon->enable_turbo) &&
        (! MHD_socket_noninheritable_ (client_socket)) )
     {

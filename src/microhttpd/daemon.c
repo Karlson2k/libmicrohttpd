@@ -2066,21 +2066,18 @@ thread_main_handle_connection (void *data)
         }
 #endif /* UPGRADE_SUPPORT */
     }
-  if (MHD_CONNECTION_IN_CLEANUP != con->state)
-    {
 #if DEBUG_CLOSE
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (con->daemon,
-                _("Processing thread terminating. Closing connection\n"));
+  MHD_DLOG (con->daemon,
+            _("Processing thread terminating. Closing connection\n"));
 #endif
 #endif
-      if (MHD_CONNECTION_CLOSED != con->state)
-	MHD_connection_close_ (con,
-                               (daemon->shutdown) ?
-                               MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN:
-                               MHD_REQUEST_TERMINATED_WITH_ERROR);
-      MHD_connection_handle_idle (con);
-    }
+  if (MHD_CONNECTION_CLOSED != con->state)
+    MHD_connection_close_ (con,
+                           (daemon->shutdown) ?
+                           MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN:
+                           MHD_REQUEST_TERMINATED_WITH_ERROR);
+  MHD_connection_handle_idle (con);
 exit:
   if (NULL != con->response)
     {
@@ -2790,8 +2787,6 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
           /* Data forwarding was finished (for TLS connections) AND
            * application was closed upgraded connection.
            * Insert connection into cleanup list. */
-          MHD_connection_close_ (pos,
-                                 MHD_REQUEST_TERMINATED_COMPLETED_OK);
           DLL_insert (daemon->cleanup_head,
                       daemon->cleanup_tail,
                       pos);

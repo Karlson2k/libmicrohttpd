@@ -159,8 +159,6 @@ MHD_resume_suspended_connections_ (struct MHD_Daemon *daemon)
           /* Data forwarding was finished (for TLS connections) AND
            * application was closed upgraded connection.
            * Insert connection into cleanup list. */
-          MHD_connection_close_ (pos,
-                                 MHD_CONNECTION_NOTIFY_CLOSED);
           DLL_insert (daemon->cleanup_head,
                       daemon->cleanup_tail,
                       pos);
