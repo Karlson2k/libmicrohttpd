@@ -1077,7 +1077,7 @@ test_upgrade (int flags,
 
       /* make address sanitizer happy */
       memcpy (&port,
-              &dinfo->port,
+              dinfo /* ->port */,
               sizeof (port));
       if (-1 == (pid = gnutlscli_connect (&tls_fork_sock,
                                           port)))
@@ -1105,7 +1105,7 @@ test_upgrade (int flags,
 
       /* make address sanitizer happy */
       memcpy (&flags,
-              &real_flags->flags,
+              real_flags /* ->flags */,
               sizeof (flags));
       run_mhd_loop (d, flags);
     }
