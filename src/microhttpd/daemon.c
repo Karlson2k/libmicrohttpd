@@ -4079,10 +4079,12 @@ MHD_epoll (struct MHD_Daemon *daemon,
   if ( (daemon->was_quiesced) &&
        (daemon->listen_socket_in_epoll) )
   {
-    if (0 != epoll_ctl (daemon->epoll_fd,
-                        EPOLL_CTL_DEL,
-                        ls,
-                        NULL))
+    if ( (0 != epoll_ctl (daemon->epoll_fd,
+                          EPOLL_CTL_DEL,
+                          ls,
+                          NULL)) &&
+         (ENOENT != errno) ) /* ENOENT can happen due to race with
+                                #MHD_quiesce_daemon() */
       MHD_PANIC ("Failed to remove listen FD from epoll set\n");
     daemon->listen_socket_in_epoll = false;
   }
@@ -4586,10 +4588,12 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
        (-1 != daemon->epoll_fd) &&
        (daemon->listen_socket_in_epoll) )
     {
-      if (0 != epoll_ctl (daemon->epoll_fd,
-			  EPOLL_CTL_DEL,
-			  ret,
-			  NULL))
+      if ( (0 != epoll_ctl (daemon->epoll_fd,
+                            EPOLL_CTL_DEL,
+                            ret,
+                            NULL)) &&
+           (ENOENT != errno) ) /* ENOENT can happen due to race with
+                                  #MHD_epoll() */
 	MHD_PANIC ("Failed to remove listen FD from epoll set\n");
       daemon->listen_socket_in_epoll = false;
     }
