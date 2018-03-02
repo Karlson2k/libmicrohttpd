@@ -1750,6 +1750,7 @@ parse_initial_message_line (struct MHD_Request *request,
   char *http_version;
   char *args;
   unsigned int unused_num_headers;
+  size_t url_end;
 
   if (NULL == (uri = memchr (line,
                              ' ',
@@ -1770,6 +1771,7 @@ parse_initial_message_line (struct MHD_Request *request,
       uri = NULL;
       request->version_s = "";
       args = NULL;
+      url_end = line_len - (line - uri);
     }
   else
     {
@@ -1799,11 +1801,12 @@ parse_initial_message_line (struct MHD_Request *request,
                          '?',
                          line_len - (uri - line));
         }
+      url_end = http_version - uri;
     }
   if ( (MHD_PSL_STRICT == daemon->protocol_strict_level) &&
-       (NULL != memchr (line,
+       (NULL != memchr (uri,
                         ' ',
-                        http_version - line)) )
+                        url_end)) )
     {
       /* space exists in URI and we are supposed to be strict, reject */
       return MHD_NO;

@@ -683,9 +683,9 @@ return_directory_response (struct MHD_Connection *connection)
  * @param method GET, PUT, POST, etc.
  * @param version HTTP version
  * @param upload_data data from upload (PUT/POST)
- * @param upload_data_size number of bytes in "upload_data"
+ * @param upload_data_size number of bytes in @a upload_data
  * @param ptr our context
- * @return MHD_YES on success, MHD_NO to drop connection
+ * @return #MHD_YES on success, #MHD_NO to drop connection
  */
 static int
 generate_page (void *cls,
@@ -700,8 +700,8 @@ generate_page (void *cls,
   int ret;
   int fd;
   struct stat buf;
-  (void)cls;               /* Unused. Silent compiler warning. */
-  (void)version;           /* Unused. Silent compiler warning. */
+  (void) cls;               /* Unused. Silent compiler warning. */
+  (void) version;           /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (url, "/"))
     {

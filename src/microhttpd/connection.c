@@ -2189,6 +2189,7 @@ parse_initial_message_line (struct MHD_Connection *connection,
   char *http_version;
   char *args;
   unsigned int unused_num_headers;
+  size_t uri_len;
 
   if (NULL == (uri = memchr (line,
                              ' ',
@@ -2205,6 +2206,7 @@ parse_initial_message_line (struct MHD_Connection *connection,
   if ((size_t)(uri - line) == line_len)
     {
       curi = "";
+      uri_len = 0;
       uri = NULL;
       connection->version = "";
       args = NULL;
@@ -2237,11 +2239,12 @@ parse_initial_message_line (struct MHD_Connection *connection,
                          '?',
                          line_len - (uri - line));
         }
+      uri_len = http_version - uri;
     }
   if ( (1 <= daemon->strict_for_client) &&
-       (NULL != memchr (line,
+       (NULL != memchr (curi,
                         ' ',
-                        http_version - line)) )
+                        uri_len)) )
     {
       /* space exists in URI and we are supposed to be strict, reject */
       return MHD_NO;
