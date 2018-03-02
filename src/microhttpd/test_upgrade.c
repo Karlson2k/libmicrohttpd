@@ -1008,7 +1008,7 @@ test_upgrade (int flags,
 
   done = false;
 
-  if (!test_tls)
+  if (! test_tls)
     d = MHD_start_daemon (flags | MHD_USE_ERROR_LOG | MHD_ALLOW_UPGRADE,
 			  MHD_is_feature_supported(MHD_FEATURE_AUTODETECT_BIND_PORT) ?
 			      0 : 1090,
@@ -1036,10 +1036,12 @@ test_upgrade (int flags,
 #endif /* HTTPS_SUPPORT */
   if (NULL == d)
     return 2;
-  real_flags = MHD_get_daemon_info(d, MHD_DAEMON_INFO_FLAGS);
+  real_flags = MHD_get_daemon_info(d,
+                                   MHD_DAEMON_INFO_FLAGS);
   if (NULL == real_flags)
     abort ();
-  dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+  dinfo = MHD_get_daemon_info (d,
+                               MHD_DAEMON_INFO_BIND_PORT);
   if (NULL == dinfo || 0 == dinfo->port)
     abort ();
   if (!test_tls || TLS_LIB_GNUTLS == use_tls_tool)

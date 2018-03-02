@@ -2284,6 +2284,7 @@ parse_initial_message_line (struct MHD_Connection *connection,
 static void
 call_connection_handler (struct MHD_Connection *connection)
 {
+  struct MHD_Daemon *daemon = connection->daemon;
   size_t processed;
 
   if (NULL != connection->response)
@@ -2291,14 +2292,14 @@ call_connection_handler (struct MHD_Connection *connection)
   processed = 0;
   connection->client_aware = true;
   if (MHD_NO ==
-      connection->daemon->default_handler (connection->daemon->default_handler_cls,
-					   connection,
-                                           connection->url,
-					   connection->method,
-					   connection->version,
-					   NULL,
-                                           &processed,
-					   &connection->client_context))
+      daemon->default_handler (daemon->default_handler_cls,
+                               connection,
+                               connection->url,
+                               connection->method,
+                               connection->version,
+                               NULL,
+                               &processed,
+                               &connection->client_context))
     {
       /* serious internal error, close connection */
       CONNECTION_CLOSE_ERROR (connection,
@@ -2318,6 +2319,7 @@ call_connection_handler (struct MHD_Connection *connection)
 static void
 process_request_body (struct MHD_Connection *connection)
 {
+  struct MHD_Daemon *daemon = connection->daemon;
   size_t available;
   int instant_retry;
   char *buffer_head;
@@ -2475,14 +2477,14 @@ process_request_body (struct MHD_Connection *connection)
       left_unprocessed = to_be_processed;
       connection->client_aware = true;
       if (MHD_NO ==
-          connection->daemon->default_handler (connection->daemon->default_handler_cls,
-                                               connection,
-                                               connection->url,
-                                               connection->method,
-                                               connection->version,
-                                               buffer_head,
-                                               &left_unprocessed,
-                                               &connection->client_context))
+          daemon->default_handler (daemon->default_handler_cls,
+                                   connection,
+                                   connection->url,
+                                   connection->method,
+                                   connection->version,
+                                   buffer_head,
+                                   &left_unprocessed,
+                                   &connection->client_context))
         {
           /* serious internal error, close connection */
           CONNECTION_CLOSE_ERROR (connection,
@@ -2506,9 +2508,9 @@ process_request_body (struct MHD_Connection *connection)
 	  /* client did not process all upload data, complain if
 	     the setup was incorrect, which may prevent us from
 	     handling the rest of the request */
-	  if ( (0 != (connection->daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
+	  if ( (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
 	       (! connection->suspended) )
-	    MHD_DLOG (connection->daemon,
+	    MHD_DLOG (daemon,
 		      _("WARNING: incomplete upload processing and connection not suspended may result in hung connection.\n"));
 #endif
 	}
@@ -3642,12 +3644,12 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if ( (NULL != daemon->notify_completed) &&
                (connection->client_aware) )
           {
-            connection->client_aware = false;
 	    daemon->notify_completed (daemon->notify_completed_cls,
 				      connection,
 				      &connection->client_context,
 				      MHD_REQUEST_TERMINATED_COMPLETED_OK);
           }
+          connection->client_aware = false;
           if ( (MHD_CONN_USE_KEEPALIVE != connection->keepalive) ||
                (connection->read_closed) )
             {
@@ -3681,7 +3683,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               connection->read_buffer_size
                 = connection->daemon->pool_size / 2;
             }
-	  connection->client_aware = false;
           connection->client_context = NULL;
           connection->continue_message_write_offset = 0;
           connection->responseCode = 0;

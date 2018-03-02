@@ -3350,8 +3350,10 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   if (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
     resume_suspended_connections (daemon);
 
-  return internal_run_from_select (daemon, read_fd_set,
-                                   write_fd_set, except_fd_set);
+  return internal_run_from_select (daemon,
+                                   read_fd_set,
+                                   write_fd_set,
+                                   except_fd_set);
 }
 
 
@@ -6339,7 +6341,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 	  /* Separate thread(s) is used for polling sockets. */
 	  if (MHD_ITC_IS_VALID_(daemon->itc))
 	    {
-	      if (! MHD_itc_activate_ (daemon->itc, "e"))
+	      if (! MHD_itc_activate_ (daemon->itc,
+                                       "e"))
 		MHD_PANIC (_("Failed to signal shutdown via inter-thread communication channel"));
 	    }
 	  else
