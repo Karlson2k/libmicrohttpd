@@ -28,6 +28,7 @@
 #include "daemon_select.h"
 #include "daemon_poll.h"
 #include "daemon_epoll.h"
+#include "request_resume.h"
 
 
 /**
@@ -159,7 +160,7 @@ open_listen_socket (struct MHD_Daemon *daemon)
   const struct sockaddr *sa;
   int pf;
   bool use_v6;
-      
+
   if (MHD_INVALID_SOCKET != daemon->listen_socket)
     return MHD_SC_OK; /* application opened it for us! */
 
@@ -223,7 +224,7 @@ open_listen_socket (struct MHD_Daemon *daemon)
       return MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD;
 #endif
     }
-  
+
   /* try to open listen socket */
  try_open_listen_socket:
   daemon->listen_socket = MHD_socket_create_listen_(pf);
@@ -235,7 +236,7 @@ open_listen_socket (struct MHD_Daemon *daemon)
       pf = PF_INET;
       goto try_open_listen_socket;
     }
-  if (MHD_INVALID_SOCKET == daemon->listen_socket) 
+  if (MHD_INVALID_SOCKET == daemon->listen_socket)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -281,7 +282,7 @@ open_listen_socket (struct MHD_Daemon *daemon)
 #endif
 #endif
     }
-  
+
   /* Determine address to bind to */
   if (0 != daemon->listen_sa_len)
     {
@@ -332,8 +333,8 @@ open_listen_socket (struct MHD_Daemon *daemon)
 	}
       sa = (const struct sockaddr *) &ss;
     }
-      
-  /* actually do the bind() */    
+
+  /* actually do the bind() */
   if (-1 == bind (daemon->listen_socket,
 		  sa,
 		  addrlen))
@@ -406,7 +407,7 @@ open_listen_socket (struct MHD_Daemon *daemon)
 }
 
 
-/** 
+/**
  * Obtain the listen port number from the socket (if it
  * was not explicitly set by us, i.e. if we were given
  * a listen socket or if the port was 0 and the OS picked
@@ -419,7 +420,7 @@ get_listen_port_number (struct MHD_Daemon *daemon)
 {
   struct sockaddr_storage servaddr;
   socklen_t addrlen;
-  
+
   if ( (0 != daemon->listen_port) ||
        (MHD_INVALID_SOCKET == daemon->listen_socket) )
     return; /* nothing to be done */
@@ -457,7 +458,7 @@ get_listen_port_number (struct MHD_Daemon *daemon)
     case AF_INET:
       {
 	struct sockaddr_in *s4 = (struct sockaddr_in *) &servaddr;
-	
+
 	daemon->listen_port = ntohs (s4->sin_port);
 	break;
       }
@@ -465,7 +466,7 @@ get_listen_port_number (struct MHD_Daemon *daemon)
     case AF_INET6:
       {
 	struct sockaddr_in6 *s6 = (struct sockaddr_in6 *) &servaddr;
-	
+
 	daemon->listen_port = ntohs(s6->sin6_port);
 	break;
       }
@@ -630,7 +631,7 @@ MHD_polling_thread (void *cls)
 			  MHD_YES);
 	break;
       case MHD_ELS_EPOLL:
-#ifdef EPOLL_SUPPORT	
+#ifdef EPOLL_SUPPORT
 	MHD_daemon_epoll_ (daemon,
 			   MHD_YES);
 #else
@@ -643,6 +644,8 @@ MHD_polling_thread (void *cls)
   /* Resume any pending for resume connections, join
    * all connection's threads (if any) and finally cleanup
    * everything. */
+  if (! daemon->disallow_suspend_resume)
+    MHD_resume_suspended_connections_ (daemon);
   MHD_daemon_close_all_connections_ (daemon);
 
   return (MHD_THRD_RTRN_TYPE_)0;
@@ -673,13 +676,13 @@ setup_thread_pool (struct MHD_Daemon *daemon)
 				     sizeof (struct MHD_Daemon));
   if (NULL == daemon->worker_pool)
     return MHD_SC_THREAD_POOL_MALLOC_FAILURE;
-  
+
   /* Start the workers in the pool */
   for (i = 0; i < daemon->threading_model; i++)
     {
       /* Create copy of the Daemon object for each worker */
       struct MHD_Daemon *d = &daemon->worker_pool[i];
-      
+
       memcpy (d,
 	      daemon,
 	      sizeof (struct MHD_Daemon));
@@ -695,8 +698,8 @@ setup_thread_pool (struct MHD_Daemon *daemon)
       d->global_connection_limit = conns_per_thread;
       if (((unsigned int) i) < leftover_conns)
 	++d->global_connection_limit;
-	  
-      if (! daemon->disable_itc)	
+
+      if (! daemon->disable_itc)
 	{
 	  if (! MHD_itc_init_ (d->itc))
 	    {
@@ -727,13 +730,13 @@ setup_thread_pool (struct MHD_Daemon *daemon)
 	{
 	  MHD_itc_set_invalid_ (d->itc);
 	}
-      
+
 #ifdef EPOLL_SUPPORT
       if ( (MHD_ELS_EPOLL == daemon->event_loop_syscall) &&
 	   (MHD_SC_OK != (sc = setup_epoll_to_listen (d))) )
 	goto thread_failed;
 #endif
-      
+
       /* Must init cleanup connection mutex for each worker */
       if (! MHD_mutex_init_ (&d->cleanup_connection_mutex))
 	{
@@ -747,7 +750,7 @@ setup_thread_pool (struct MHD_Daemon *daemon)
 	  sc = MHD_SC_THREAD_POOL_CREATE_MUTEX_FAILURE;
 	  goto thread_failed;
 	}
-      
+
       /* Spawn the worker thread */
       if (! MHD_create_named_thread_ (&d->pid,
 				      "MHD-worker",
@@ -867,10 +870,10 @@ MHD_daemon_start (struct MHD_Daemon *daemon)
 	  return MHD_SC_ITC_DESCRIPTOR_TOO_LARGE;
 	}
     }
-  
+
   if (MHD_SC_OK != (sc = open_listen_socket (daemon)))
     return sc;
-  
+
   /* Check listen socket is in range (if we are limited) */
   if ( (MHD_INVALID_SOCKET != daemon->listen_socket) &&
        (MHD_ELS_SELECT == daemon->event_loop_syscall) &&
@@ -886,7 +889,7 @@ MHD_daemon_start (struct MHD_Daemon *daemon)
 #endif
       return MHD_SC_LISTEN_SOCKET_TOO_LARGE;
     }
-  
+
   /* set listen socket to non-blocking */
   if ( (MHD_INVALID_SOCKET != daemon->listen_socket) &&
        (! MHD_socket_nonblocking_ (daemon->listen_socket)) )
@@ -907,7 +910,7 @@ MHD_daemon_start (struct MHD_Daemon *daemon)
 	  return MHD_SC_LISTEN_SOCKET_NONBLOCKING_FAILURE;
 	}
     }
-  
+
 #ifdef EPOLL_SUPPORT
   /* Setup epoll */
   if ( (MHD_ELS_EPOLL == daemon->event_loop_syscall) &&
@@ -916,7 +919,7 @@ MHD_daemon_start (struct MHD_Daemon *daemon)
        (MHD_SC_OK != (sc = setup_epoll_to_listen (daemon))) )
     return sc;
 #endif
-     
+
   /* Setup main listen thread (only if we have no thread pool or
      external event loop and do have a listen socket) */
   /* FIXME: why no worker thread if we have no listen socket? */
@@ -949,7 +952,7 @@ MHD_daemon_start (struct MHD_Daemon *daemon)
 
   /* make sure we know our listen port (if any) */
   get_listen_port_number (daemon);
-  
+
   return MHD_SC_OK;
 }
 

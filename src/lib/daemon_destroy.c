@@ -37,7 +37,7 @@ stop_workers (struct MHD_Daemon *daemon)
 {
   MHD_socket fd;
   unsigned int i;
-	
+
   mhd_assert (1 < daemon->worker_pool_size);
   mhd_assert (1 < daemon->threading_model);
   if (daemon->was_quiesced)
@@ -102,7 +102,7 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
     fd = daemon->listen_socket;
 
   /* FIXME: convert from here to microhttpd2-style API! */
-  
+
   if (NULL != daemon->worker_pool)
     { /* Master daemon with worker pool. */
       stop_workers (daemon);
@@ -114,9 +114,6 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
       if (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_model)
         {
 	  /* Worker daemon or single daemon with internal thread(s). */
-          if (! daemon->disallow_suspend_resume)
-            (void) MHD_resume_suspended_connections_ (daemon);
-
 	  /* Separate thread(s) is used for polling sockets. */
 	  if (MHD_ITC_IS_VALID_(daemon->itc))
 	    {
@@ -137,7 +134,7 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
 #endif /* HAVE_LISTEN_SHUTDOWN */
 		mhd_assert (false); /* Should never happen */
 	    }
-	  
+
 	  if (! MHD_join_thread_ (daemon->pid.handle))
 	    {
 	      MHD_PANIC (_("Failed to join a thread\n"));
@@ -171,10 +168,10 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
     return;
   /* Cleanup that should be done only one time in master/single daemon.
    * Do not perform this cleanup in worker daemons. */
-      
+
   if (MHD_INVALID_SOCKET != fd)
     MHD_socket_close_chk_ (fd);
-  
+
   /* TLS clean up */
 #ifdef HTTPS_SUPPORT
   if (NULL != daemon->tls_api)
@@ -191,7 +188,7 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
 #endif
     }
 #endif /* HTTPS_SUPPORT */
-  
+
 #ifdef DAUTH_SUPPORT
   free (daemon->nnc);
   MHD_mutex_destroy_chk_ (&daemon->nnc_lock);

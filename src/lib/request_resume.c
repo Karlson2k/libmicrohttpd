@@ -156,9 +156,17 @@ MHD_resume_suspended_connections_ (struct MHD_Daemon *daemon)
 #ifdef UPGRADE_SUPPORT
       else
         {
+          struct MHD_Response *response = pos->request.response;
+
           /* Data forwarding was finished (for TLS connections) AND
            * application was closed upgraded connection.
            * Insert connection into cleanup list. */
+          if ( (NULL != response) &&
+               (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model) &&
+               (NULL != response->termination_cb) )
+            response->termination_cb (response->termination_cb_cls,
+                                      MHD_REQUEST_TERMINATED_COMPLETED_OK,
+                                      &pos->request.client_context);
           DLL_insert (daemon->cleanup_head,
                       daemon->cleanup_tail,
                       pos);
