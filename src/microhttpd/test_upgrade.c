@@ -1100,7 +1100,15 @@ test_upgrade (int flags,
                            sock))
     abort ();
   if (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD) )
-    run_mhd_loop (d, real_flags->flags);
+    {
+      enum MHD_FLAG flags;
+
+      /* make address sanitizer happy */
+      memcpy (&flags,
+              &real_flags->flags,
+              sizeof (flags));
+      run_mhd_loop (d, flags);
+    }
   pthread_join (pt_client,
                 NULL);
   pthread_join (pt,
