@@ -1047,13 +1047,14 @@ test_upgrade (int flags,
 #endif /* HTTPS_SUPPORT */
   if (NULL == d)
     return 2;
-  real_flags = MHD_get_daemon_info(d,
-                                   MHD_DAEMON_INFO_FLAGS);
+  real_flags = MHD_get_daemon_info (d,
+                                    MHD_DAEMON_INFO_FLAGS);
   if (NULL == real_flags)
     abort ();
   dinfo = MHD_get_daemon_info (d,
                                MHD_DAEMON_INFO_BIND_PORT);
-  if (NULL == dinfo || 0 == dinfo->port)
+  if ( (NULL == dinfo) ||
+       (0 == dinfo->port) )
     abort ();
   if (!test_tls || TLS_LIB_GNUTLS == use_tls_tool)
     {
@@ -1072,12 +1073,19 @@ test_upgrade (int flags,
     {
 #if defined(HTTPS_SUPPORT) && defined(HAVE_FORK) && defined(HAVE_WAITPID)
       MHD_socket tls_fork_sock;
+      uint16_t port;
+
+      /* make address sanitizer happy */
+      memcpy (&port,
+              &dinfo->port,
+              sizeof (port));
       if (-1 == (pid = gnutlscli_connect (&tls_fork_sock,
-                                          dinfo->port)))
+                                          port)))
         {
           MHD_stop_daemon (d);
           return 4;
         }
+
       sock =  wr_create_from_plain_sckt (tls_fork_sock);
       if (NULL == sock)
         abort ();
