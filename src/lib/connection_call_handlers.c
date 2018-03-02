@@ -1804,7 +1804,7 @@ parse_initial_message_line (struct MHD_Request *request,
       url_end = http_version - uri;
     }
   if ( (MHD_PSL_STRICT == daemon->protocol_strict_level) &&
-       (NULL != memchr (uri,
+       (NULL != memchr (curi,
                         ' ',
                         url_end)) )
     {
