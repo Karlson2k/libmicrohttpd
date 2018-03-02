@@ -76,7 +76,7 @@ urh_update_pollfd (struct MHD_UpgradeResponseHandle *urh,
        (0 != urh->in_buffer_used)))
     p[1].events |= MHD_POLL_EVENTS_ERR_DISC;
 }
- 
+
 
 /**
  * Set @a p to watch for @a urh.
@@ -283,7 +283,7 @@ MHD_daemon_poll_all_ (struct MHD_Daemon *daemon,
     if (daemon->shutdown)
       {
         free(p);
-        return MHD_NO;
+        return MHD_SC_DAEMON_ALREADY_SHUTDOWN;
       }
     i = 0;
     prev = daemon->connections_tail;
@@ -343,7 +343,7 @@ MHD_daemon_poll_all_ (struct MHD_Daemon *daemon,
 
     free(p);
   }
-  return MHD_YES;
+  return MHD_SC_OK;
 }
 
 
@@ -482,22 +482,22 @@ MHD_daemon_upgrade_connection_with_poll_ (struct MHD_Connection *con)
 	  (0 != urh->out_buffer_used) )
     {
       int timeout;
-      
+
       urh_update_pollfd (urh,
 			 p);
-      
+
       if ( (con->tls_read_ready) &&
 	   (urh->in_buffer_used < urh->in_buffer_size))
 	timeout = 0; /* No need to wait if incoming data is already pending in TLS buffers. */
       else
 	timeout = -1;
-      
+
       if (MHD_sys_poll_ (p,
 			 2,
 			 timeout) < 0)
 	{
 	  const int err = MHD_socket_get_error_ ();
-	  
+
 	  if (MHD_SCKT_ERR_IS_EINTR_ (err))
 	    continue;
 #ifdef HAVE_MESSAGES
@@ -514,5 +514,5 @@ MHD_daemon_upgrade_connection_with_poll_ (struct MHD_Connection *con)
     }
 }
 #endif
- 
+
 /* end of daemon_poll.c */

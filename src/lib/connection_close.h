@@ -21,9 +21,10 @@
  * @brief functions to close connection
  * @author Christian Grothoff
  */
-
 #ifndef CONNECTION_CLOSE_H
 #define CONNECTION_CLOSE_H
+
+#include "microhttpd2.h"
 
 /**
  * Mark connection as "closed".
@@ -45,11 +46,11 @@ MHD_connection_mark_closed_ (struct MHD_Connection *connection)
  * connection's recv(), send() and response.
  *
  * @param connection connection to close
- * @param cnc termination reason to give
+ * @param rtc termination reason to give
  */
 void
 MHD_connection_close_ (struct MHD_Connection *connection,
-                       enum MHD_ConnectionNotificationCode cnc)
+                       enum MHD_RequestTerminationCode rtc)
   MHD_NONNULL (1);
 
 #endif

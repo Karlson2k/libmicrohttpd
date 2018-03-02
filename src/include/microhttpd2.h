@@ -276,7 +276,7 @@ typedef SOCKET MHD_socket;
  */
 #define MHD_NONNULL(...) __THROW __nonnull((__VA_ARGS__))
 
-  
+
 /**
  * Not all architectures and `printf()`'s support the `long long` type.
  * This gives the ability to replace `long long` with just a `long`,
@@ -336,7 +336,7 @@ enum MHD_StatusCode
 
   /* 00000-level status codes indicate return values
      the application must act on. */
-  
+
   /**
    * Successful operation (not used for logging).
    */
@@ -347,10 +347,10 @@ enum MHD_StatusCode
    */
   MHD_SC_NO_TIMEOUT = 1,
 
-  
+
   /* 10000-level status codes indicate intermediate
      results of some kind. */
-  
+
   /**
    * Informational event, MHD started.
    */
@@ -391,11 +391,11 @@ enum MHD_StatusCode
    */
   MHD_SC_APPLICATION_DATA_GENERATION_FINISHED = 20001,
 
-  
+
   /* 30000-level status codes indicate transient failures
      that might go away if the client tries again. */
 
-  
+
   /**
    * Resource limit in terms of number of parallel connections
    * hit.
@@ -410,7 +410,7 @@ enum MHD_StatusCode
 
   /**
    * The operation failed because the respective
-   * daemon is already too deep inside of the shutdown 
+   * daemon is already too deep inside of the shutdown
    * activity.
    */
   MHD_SC_DAEMON_ALREADY_SHUTDOWN = 30002,
@@ -453,7 +453,7 @@ enum MHD_StatusCode
    * (May be transient.)
    */
   MHD_SC_POOL_MALLOC_FAILURE = 30009,
-  
+
   /**
    * We failed to forward data from a Web socket to the
    * application to the remote side due to the socket
@@ -468,8 +468,8 @@ enum MHD_StatusCode
    */
   MHD_SC_CONNECTION_POOL_MALLOC_FAILURE = 30011,
 
-  
-  /* 40000-level errors are caused by the HTTP client 
+
+  /* 40000-level errors are caused by the HTTP client
      (or the network) */
 
   /**
@@ -515,7 +515,7 @@ enum MHD_StatusCode
    */
   MHD_SC_CHUNKED_ENCODING_MALFORMED = 40007,
 
-  
+
 
   /* 50000-level errors are because of an error internal
      to the MHD logic, possibly including our interaction
@@ -526,7 +526,7 @@ enum MHD_StatusCode
    * requested TLS.
    */
   MHD_SC_TLS_DISABLED = 50000,
-  
+
   /**
    * The application attempted to setup TLS paramters before
    * enabling TLS.
@@ -575,7 +575,7 @@ enum MHD_StatusCode
    * We failed to open the listen socket. Maybe the build
    * supports IPv6, but your kernel does not?
    */
-  MHD_SC_FAILED_TO_OPEN_LISTEN_SOCKET = 50011,  
+  MHD_SC_FAILED_TO_OPEN_LISTEN_SOCKET = 50011,
 
   /**
    * Specified address family is not supported by this build.
@@ -591,7 +591,7 @@ enum MHD_StatusCode
    * Enabling listen address reuse is not supported by this platform.
    */
   MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_NOT_SUPPORTED = 50014,
-  
+
   /**
    * Failed to disable listen address reuse.
    */
@@ -603,7 +603,7 @@ enum MHD_StatusCode
   MHD_SC_LISTEN_ADDRESS_REUSE_DISABLE_NOT_SUPPORTED = 50016,
 
   /**
-   * We failed to explicitly enable or disable dual stack for 
+   * We failed to explicitly enable or disable dual stack for
    * the IPv6 listen socket.  The socket will be used in whatever
    * the default is the OS gives us.
    */
@@ -666,7 +666,7 @@ enum MHD_StatusCode
    * Failed to signal via ITC channel.
    */
   MHD_SC_ITC_USE_FAILED = 50029,
-  
+
   /**
    * We failed to initialize the main thread for listening.
    */
@@ -681,7 +681,7 @@ enum MHD_StatusCode
    * We failed to add a socket to the epoll() set.
    */
   MHD_SC_EPOLL_CTL_ADD_FAILED = 50032,
-  
+
   /**
    * We failed to create control socket for the epoll().
    */
@@ -724,7 +724,7 @@ enum MHD_StatusCode
   MHD_SC_CONFIGURATION_MISSMATCH_FOR_RUN_EXTERNAL = 50040,
 
   /**
-   * Encountered an unexpected event loop style 
+   * Encountered an unexpected event loop style
    * (should never happen).
    */
   MHD_SC_CONFIGURATION_UNEXPECTED_ELS = 50041,
@@ -739,19 +739,19 @@ enum MHD_StatusCode
    * poll() is not supported.
    */
   MHD_SC_POLL_NOT_SUPPORTED = 50043,
-  
+
   /**
    * Encountered an unexpected error from poll()
    * (should never happen).
    */
   MHD_SC_UNEXPECTED_POLL_ERROR = 50044,
-  
+
   /**
    * We failed to configure accepted socket
    * to not use a signal pipe.
    */
   MHD_SC_ACCEPT_CONFIGURE_NOSIGPIPE_FAILED = 50045,
-  
+
   /**
    * Encountered an unexpected error from epoll_wait()
    * (should never happen).
@@ -809,7 +809,7 @@ enum MHD_StatusCode
    * to parse the cookie header.
    */
   MHD_SC_COOKIE_POOL_ALLOCATION_FAILURE = 50055,
-  
+
   /**
    * MHD failed to build the response header.
    */
@@ -931,19 +931,19 @@ enum MHD_Method
 
   /**
    * "POST" method.
-   * Not safe. Not idempotent. RFC7231, Section 4.3.3. 
+   * Not safe. Not idempotent. RFC7231, Section 4.3.3.
    */
   MHD_METHOD_POST = 4,
 
   /**
    * "PUT" method.
-   * Not safe. Idempotent.     RFC7231, Section 4.3.4. 
+   * Not safe. Idempotent.     RFC7231, Section 4.3.4.
    */
   MHD_METHOD_PUT = 5,
 
   /**
    * "DELETE" method.
-   * Not safe. Idempotent.     RFC7231, Section 4.3.5. 
+   * Not safe. Idempotent.     RFC7231, Section 4.3.5.
    */
   MHD_METHOD_DELETE = 6,
 
@@ -956,158 +956,158 @@ enum MHD_Method
    * "CONNECT" method.
    */
   MHD_METHOD_CONNECT = 8,
-  
+
   /**
    * "ACL" method.
    */
   MHD_METHOD_ACL = 9,
-  
+
   /**
    * "BASELINE-CONTROL" method.
    */
   MHD_METHOD_BASELINE_CONTROL = 10,
-  
+
   /**
    * "BIND" method.
    */
   MHD_METHOD_BIND = 11,
-  
+
   /**
    * "CHECKIN" method.
    */
   MHD_METHOD_CHECKIN = 12,
-  
+
   /**
    * "CHECKOUT" method.
    */
   MHD_METHOD_CHECKOUT = 13,
-  
+
   /**
    * "COPY" method.
    */
   MHD_METHOD_COPY = 14,
-  
+
   /**
    * "LABEL" method.
    */
   MHD_METHOD_LABEL = 15,
-  
+
   /**
    * "LINK" method.
    */
   MHD_METHOD_LINK = 16,
-  
+
   /**
    * "LOCK" method.
    */
   MHD_METHOD_LOCK = 17,
-  
+
   /**
    * "MERGE" method.
    */
   MHD_METHOD_MERGE = 18,
-  
+
   /**
    * "MKACTIVITY" method.
    */
   MHD_METHOD_MKACTIVITY = 19,
-  
+
   /**
    * "MKCOL" method.
    */
   MHD_METHOD_MKCOL = 20,
-  
+
   /**
    * "MKREDIRECTREF" method.
    */
   MHD_METHOD_MKREDIRECTREF = 21,
-  
+
   /**
    * "MKWORKSPACE" method.
    */
   MHD_METHOD_MKWORKSPACE = 22,
-  
+
   /**
    * "MOVE" method.
    */
   MHD_METHOD_MOVE = 23,
-  
+
   /**
    * "ORDERPATCH" method.
    */
   MHD_METHOD_ORDERPATCH = 24,
-  
+
   /**
    * "PATCH" method.
    */
   MHD_METHOD_PATH = 25,
-  
+
   /**
    * "PRI" method.
    */
   MHD_METHOD_PRI = 26,
-  
+
   /**
    * "PROPFIND" method.
    */
   MHD_METHOD_PROPFIND = 27,
-  
+
   /**
    * "PROPPATCH" method.
    */
   MHD_METHOD_PROPPATCH = 28,
-  
+
   /**
    * "REBIND" method.
    */
   MHD_METHOD_REBIND = 29,
-  
+
   /**
    * "REPORT" method.
    */
   MHD_METHOD_REPORT = 30,
-  
+
   /**
    * "SEARCH" method.
    */
   MHD_METHOD_SEARCH = 31,
-  
+
   /**
    * "UNBIND" method.
    */
   MHD_METHOD_UNBIND = 32,
-  
+
   /**
    * "UNCHECKOUT" method.
    */
   MHD_METHOD_UNCHECKOUT = 33,
-  
+
   /**
    * "UNLINK" method.
    */
   MHD_METHOD_UNLINK = 34,
-  
+
   /**
    * "UNLOCK" method.
    */
   MHD_METHOD_UNLOCK = 35,
-  
+
   /**
    * "UPDATE" method.
    */
   MHD_METHOD_UPDATE = 36,
-  
+
   /**
    * "UPDATEDIRECTREF" method.
    */
   MHD_METHOD_UPDATEDIRECTREF = 37,
-  
+
   /**
    * "VERSION-CONTROL" method.
    */
   MHD_METHOD_VERSION_CONTROL = 38
 
-  /* For more, check: 
+  /* For more, check:
      https://www.iana.org/assignments/http-methods/http-methods.xhtml */
 
 };
@@ -1917,12 +1917,12 @@ enum MHD_AddressFamily
    * other means).
    */
   MHD_AF_NONE = 0,
-  
+
   /**
    * Pick "best" available method automatically.
    */
   MHD_AF_AUTO,
-  
+
   /**
    * Use IPv4.
    */
@@ -2335,7 +2335,7 @@ typedef void *
 
 /**
  * Register a callback to be called first for every request
- * (before any parsing of the header).  Makes it easy to 
+ * (before any parsing of the header).  Makes it easy to
  * log the full URL.
  *
  * @param daemon daemon for which to set the logger
@@ -2550,7 +2550,7 @@ MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
 
 /**
  * Set custom timeout for the given connection.
- * Specified as the number of seconds.  Use zero for no timeout.  
+ * Specified as the number of seconds.  Use zero for no timeout.
  * Calling this function will reset timeout timer.
  *
  * @param connection connection to configure timeout for
@@ -2972,7 +2972,7 @@ enum MHD_RequestTerminationCode
 };
 
 
-/** 
+/**
  * Signature of the callback used by MHD to notify the application
  * about completed requests.
  *
@@ -3601,7 +3601,7 @@ enum MHD_ConnectionInformationType
    * @ingroup request
    */
   MHD_CONNECTION_INFORMATION_CONNECTION_TIMEOUT,
-  
+
   /**
    * Check whether the connection is suspended.
    * @ingroup request
@@ -3667,7 +3667,7 @@ union MHD_ConnectionInformation
    * #MHD_NotifyConnectionCallback.
    */
   void **socket_context;
-  
+
   /**
    * Is this connection right now suspended?
    */
@@ -3767,7 +3767,7 @@ enum MHD_RequestInformationType
    * is specific to this request.
    */
   MHD_REQUEST_INFORMATION_CLIENT_CONTEXT,
-  
+
   /**
    * Return the HTTP version string given by the client.
    * @ingroup request

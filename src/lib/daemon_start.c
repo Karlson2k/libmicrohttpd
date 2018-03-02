@@ -551,18 +551,18 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   /* FIXME: update function! */
   daemon->epoll_fd = setup_epoll_fd (daemon);
   if (-1 == daemon->epoll_fd)
-    return MHD_NO;
+    return MHD_SC_EPOLL_CTL_CREATE_FAILED;
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   if (! daemon->disallow_upgrade)
     {
        daemon->epoll_upgrade_fd = setup_epoll_fd (daemon);
        if (MHD_INVALID_SOCKET == daemon->epoll_upgrade_fd)
-         return MHD_NO;
+         return MHD_SC_EPOLL_CTL_CREATE_FAILED;
     }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   if ( (MHD_INVALID_SOCKET == (ls = daemon->listen_socket)) ||
        (daemon->was_quiesced) )
-    return MHD_YES; /* non-listening daemon */
+    return MHD_SC_OK; /* non-listening daemon */
   event.events = EPOLLIN;
   event.data.ptr = daemon;
   if (0 != epoll_ctl (daemon->epoll_fd,
@@ -576,7 +576,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
                 _("Call to epoll_ctl failed: %s\n"),
                 MHD_socket_last_strerr_ ());
 #endif
-      return MHD_NO;
+      return MHD_SC_EPOLL_CTL_ADD_FAILED;
     }
   daemon->listen_socket_in_epoll = true;
   if (MHD_ITC_IS_VALID_(daemon->itc))
@@ -594,7 +594,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
                     _("Call to epoll_ctl failed: %s\n"),
                     MHD_socket_last_strerr_ ());
 #endif
-          return MHD_NO;
+          return MHD_SC_EPOLL_CTL_ADD_FAILED;
         }
     }
   return MHD_SC_OK;

@@ -39,11 +39,11 @@ MHD_connection_mark_closed_ (struct MHD_Connection *connection)
 
   connection->request.state = MHD_REQUEST_CLOSED;
   connection->request.event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
-  if (! daemon->enable_turbo) 
+  if (! daemon->enable_turbo)
     {
 #ifdef HTTPS_SUPPORT
       struct MHD_TLS_Plugin *tls;
-      
+
       /* For TLS connection use shutdown of TLS layer
        * and do not shutdown TCP socket. This give more
        * chances to send TLS closure data to remote side.
@@ -78,25 +78,26 @@ MHD_connection_mark_closed_ (struct MHD_Connection *connection)
  * connection's recv(), send() and response.
  *
  * @param connection connection to close
- * @param cnc termination reason to give
+ * @param rtc termination reason to give
  */
 void
 MHD_connection_close_ (struct MHD_Connection *connection,
-                       enum MHD_ConnectionNotificationCode cnc)
+                       enum MHD_RequestTerminationCode rtc)
 {
   struct MHD_Daemon *daemon = connection->daemon;
   struct MHD_Response *resp = connection->request.response;
 
+  (void) rtc; // FIXME
   MHD_connection_mark_closed_ (connection);
   if (NULL != resp)
     {
       connection->request.response = NULL;
       MHD_response_queue_for_destroy (resp);
     }
-  if (NULL != daemon->notify_connection_cb) 
+  if (NULL != daemon->notify_connection_cb)
     daemon->notify_connection_cb (daemon->notify_connection_cb_cls,
 				  connection,
-				  cnc);
+				  MHD_CONNECTION_NOTIFY_CLOSED);
 }
 
 /* end of connection_close.c */
