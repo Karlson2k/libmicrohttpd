@@ -274,8 +274,11 @@ typedef SOCKET MHD_socket;
  * Macro to indicate that certain parameters must be
  * non-null.  Todo: port to non-gcc platforms.
  */
+#if defined(__CYGWIN__) || defined(_WIN32) || defined(MHD_W32LIB)
+#define MHD_NONNULL(...) /* empty */
+#else
 #define MHD_NONNULL(...) __THROW __nonnull((__VA_ARGS__))
-
+#endif
 
 /**
  * Not all architectures and `printf()`'s support the `long long` type.
