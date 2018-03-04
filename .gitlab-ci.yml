@@ -24,6 +24,7 @@ after_script:
 variables:
   BUILD_IMAGES_PROJECT: libmicrohttpd/build-images
   DEBIAN_BUILD: buildenv-debian-stretch
+  MINGW_BUILD: buildenv-debian-mingw
   GET_SOURCES_ATTEMPTS: "3"
   CONFIGURE_BASE_FLAGS: --enable-asserts --cache-file cache/config.cache
   CFLAGS_DEFAULT: -O0 -g -ggdb3
@@ -92,3 +93,11 @@ Scan-Build/Debian:
     when: on_failure
     paths:
       - scan-build/*
+
+MinGW/Debian:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$MINGW_BUILD
+  script:
+    - export CC="ccache $PREFIX-gcc"
+    - ./bootstrap
+    - ./configure $CONFIGURE_BASE_FLAGS --build=x86_64-pc-linux-gnu --host=$PREFIX
+    - make -j$(nproc)
