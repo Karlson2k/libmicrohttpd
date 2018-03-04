@@ -23,8 +23,9 @@
  * @author Christian Grothoff
  */
 #include "internal.h"
+#if HAVE_DLFCN_H
 #include <dlfcn.h>
-
+#endif
 
 /**
  * Set logging method.  Specify NULL to disable logging entirely.  By
@@ -351,7 +352,7 @@ MHD_daemon_set_tls_backend (struct MHD_Daemon *daemon,
 			    const char *tls_backend,
 			    const char *ciphers)
 {
-#ifndef HTTPS_SUPPORT
+#if ! (defined(HTTPS_SUPPORT) && defined (HAVE_DLFCN_H))
   return MHD_SC_TLS_DISABLED;
 #else
   char filename[1024];

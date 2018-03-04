@@ -108,7 +108,7 @@ libmicrohttpd2_la_SOURCES = \
   sysfdsetsize.c sysfdsetsize.h \
   upgrade_process.c upgrade_process.h \
   panic.c \
-  version.c 
+  version.c
 
 libmicrohttpd2_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) \
@@ -116,9 +116,14 @@ libmicrohttpd2_la_CPPFLAGS = \
 libmicrohttpd2_la_CFLAGS = \
   $(AM_CFLAGS) $(MHD_LIB_CFLAGS)
 libmicrohttpd2_la_LDFLAGS = \
-  $(MHD_LIB_LDFLAGS) -ldl \
+  $(MHD_LIB_LDFLAGS) \
   $(W32_MHD_LIB_LDFLAGS) \
   -version-info 0:0:0 # FIXME: fix once closer to release...
+if MHD_HAVE_TLS_PLUGIN
+libmicrohttpd2_la_LDFLAGS += \
+  -ldl
+endif
+
 libmicrohttpd2_la_LIBADD = \
   $(MHD_LIBDEPS) # FIXME: should separate out GNUTLS_LIBS/GCRYPT here!
 
@@ -175,8 +180,3 @@ if ENABLE_BAUTH
 #  basicauth.c \
 #  base64.c base64.h
 endif
-
-
-
-
-
