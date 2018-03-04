@@ -836,10 +836,12 @@ struct UpgradeEpollHandle
    */
   MHD_socket socket;
 
+#ifdef EPOLL_SUPPORT
   /**
    * IO-state of the @e socket (or the connection's `socket_fd`).
    */
   enum MHD_EpollState celi;
+#endif
 
 };
 
