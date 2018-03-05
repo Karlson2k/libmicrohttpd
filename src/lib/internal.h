@@ -578,7 +578,6 @@ struct MHD_Request
 };
 
 
-#ifdef EPOLL_SUPPORT
 /**
  * State of the socket with respect to epoll (bitmask).
  */
@@ -623,7 +622,6 @@ enum MHD_EpollState
    */
   MHD_EPOLL_STATE_ERROR = 128
 };
-#endif
 
 
 /**
@@ -836,12 +834,10 @@ struct UpgradeEpollHandle
    */
   MHD_socket socket;
 
-#ifdef EPOLL_SUPPORT
   /**
    * IO-state of the @e socket (or the connection's `socket_fd`).
    */
   enum MHD_EpollState celi;
-#endif
 
 };
 

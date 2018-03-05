@@ -315,7 +315,7 @@ MHD_daemon_poll_all_ (struct MHD_Daemon *daemon,
             (p[poll_server+i+1].fd != urh->mhd.socket))
           break;
         urh_from_pollfd (urh,
-			 &(p[poll_server+i]));
+			 &p[poll_server+i]);
         i += 2;
         MHD_upgrade_response_handle_process_ (urh);
         /* Finished forwarding? */
@@ -457,6 +457,7 @@ MHD_daemon_poll_ (struct MHD_Daemon *daemon,
 }
 
 
+#ifdef HAVE_POLL
 #ifdef HTTPS_SUPPORT
 /**
  * Process upgraded connection with a poll() loop.
@@ -513,6 +514,7 @@ MHD_daemon_upgrade_connection_with_poll_ (struct MHD_Connection *con)
       MHD_upgrade_response_handle_process_ (urh);
     }
 }
+#endif
 #endif
 
 /* end of daemon_poll.c */

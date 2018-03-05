@@ -40,7 +40,7 @@ MHD_daemon_select_ (struct MHD_Daemon *daemon,
   MHD_NONNULL(1);
 
 
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
 /**
  * Process upgraded connection with a select loop.
  * We are in our own thread, only processing @a con

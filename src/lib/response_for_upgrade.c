@@ -59,6 +59,7 @@ struct MHD_Response *
 MHD_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
 			  void *upgrade_handler_cls)
 {
+#ifdef UPGRADE_SUPPORT
   struct MHD_Response *response;
 
   mhd_assert (NULL != upgrade_handler);
@@ -85,6 +86,9 @@ MHD_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
       return NULL;
     }
   return response;
+#else
+  return NULL;
+#endif
 }
 
 /* end of response_for_upgrade.c */

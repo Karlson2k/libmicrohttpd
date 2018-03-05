@@ -350,7 +350,7 @@ MHD_daemon_get_fdset2 (struct MHD_Daemon *daemon,
 }
 
 
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
 /**
  * Update the @a urh based on the ready FDs in
  * the @a rs, @a ws, and @a es.
@@ -487,7 +487,7 @@ internal_run_from_select (struct MHD_Daemon *daemon,
 }
 
 
-#ifdef HTTPS_SUPPORT
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
 /**
  * Process upgraded connection with a select loop.
  * We are in our own thread, only processing @a con

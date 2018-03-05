@@ -55,3 +55,6 @@ uninstall-local:
 	  echo " rm -f '$(DESTDIR)$(infodir)/libmicrohttpd_performance_data.png'"; \
 	  rm -f "$(DESTDIR)$(infodir)/libmicrohttpd_performance_data.png" \
 	else : ; fi
+
+# end of 'if BUILD_DOC'
+
