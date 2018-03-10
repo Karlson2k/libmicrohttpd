@@ -113,7 +113,7 @@ configure_listen_reuse (struct MHD_Daemon *daemon)
    */
 #if (defined(MHD_WINSOCK_SOCKETS) && defined(SO_EXCLUSIVEADDRUSE)) ||	\
   (defined(__sun) && defined(SO_EXCLBIND))
-  if (0 > setsockopt (listen_fd,
+  if (0 > setsockopt (daemon->listen_socket,
 		      SOL_SOCKET,
 #ifdef SO_EXCLUSIVEADDRUSE
 		      SO_EXCLUSIVEADDRUSE,
@@ -627,8 +627,12 @@ MHD_polling_thread (void *cls)
 			    MHD_YES);
 	break;
       case MHD_ELS_POLL:
+#if HAVE_POLL
 	MHD_daemon_poll_ (daemon,
 			  MHD_YES);
+#else
+        MHD_PANIC ("MHD_ELS_POLL not supported, should have failed earlier");
+#endif
 	break;
       case MHD_ELS_EPOLL:
 #ifdef EPOLL_SUPPORT
