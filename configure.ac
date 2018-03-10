@@ -1,5 +1,5 @@
 # This file is part of libmicrohttpd.
-# (C) 2006-2017 Christian Grothoff (and other contributing authors)
+# (C) 2006-2018 Christian Grothoff (and other contributing authors)
 #
 # libmicrohttpd is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -68,6 +68,22 @@ AC_PROG_CC_STDC
 MHD_SYS_EXT
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
+
+# Checks for gettext.
+m4_ifdef([AM_GNU_GETTEXT], [
+  AM_GNU_GETTEXT([external],[need-ngettext])
+  AC_CONFIG_FILES([po/Makefile.in])
+  have_po=yes
+], [
+  have_po=no
+])
+m4_ifdef([AM_GNU_GETTEXT_VERSION], [
+#do not indent here
+AM_GNU_GETTEXT_VERSION([0.18.2])
+])
+AM_CONDITIONAL([HAVE_PO], [ test "$have_po" = yes ])
+
+
 
 # Workaround for libgcrypt
 AS_IF([[test "x$lt_sysroot" != "x" && test "x$SYSROOT" = "x"]], [[SYSROOT="$lt_sysroot"]])
@@ -2019,7 +2035,6 @@ AC_DEFINE_DIR([MHD_PLUGIN_INSTALL_PREFIX], [libdir/libmicrohttpd], [tls plugins]
 
 AC_CONFIG_FILES([libmicrohttpd.pc
 w32/common/microhttpd_dll_res_vc.rc
-po/configure.acT:po/configure.ac.in
 Makefile
 contrib/Makefile
 doc/Makefile
@@ -2035,17 +2050,6 @@ src/examples/Makefile
 src/testcurl/Makefile
 src/testcurl/https/Makefile
 src/testzzuf/Makefile])
-AC_CONFIG_COMMANDS([po/configargs.stamp], [
-  $as_echo "$ac_configure_args" > "$ac_tmp/configargs.stamp" || AC_MSG_ERROR([[cannot create file $ac_tmp/configargs.stamp]])
-  AS_IF([[cmp -s "po/configargs.stamp" "$ac_tmp/configargs.stamp" >/dev/null 2>&1]],
-    [AC_MSG_NOTICE([[po/configargs.stamp is unchanged]])],
-    [
-      rm -f po/configargs.stamp
-      mv "$ac_tmp/configargs.stamp" po/configargs.stamp || AC_MSG_ERROR([[cannot create file $ac_tmp/configargs.stamp]])
-      AC_MSG_NOTICE([[po/configargs.stamp is updated]])
-    ]
-  )
-], [ac_configure_args="$ac_configure_args"])
 AC_OUTPUT
 
 # Finally: summary
@@ -2069,6 +2073,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Use thread names:  ${enable_thread_names}
   Use debug asserts: ${enable_asserts}
   Messages:          ${enable_messages}
+  Gettext:           ${have_po}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
   HTTP "Upgrade":    ${enable_httpupgrade}

@@ -1,3 +1,7 @@
+Sat Mar 10 12:15:35 CET 2018
+	Upgrade to gettext-0.19.8.1. Switching to more canonical
+	gettext integration. -CG
+
 Fri Mar  2 21:44:24 CET 2018
 	Ensure MHD_RequestCompletedCallback is always called from
 	the correct thread (even on shutdown and for upgraded connections). -CG

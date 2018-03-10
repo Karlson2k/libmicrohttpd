@@ -1,7 +1,7 @@
 # This configure.ac.in is in the public domain
 
 # Use versions from parent configure
-AC_INIT([@PACKAGE_NAME@], [@PACKAGE_VERSION@], [@PACKAGE_BUGREPORT@])
+AC_INIT([GNU Libmicrohttpd], [0.9.59], [libmicrohttpd@gnu.org])
 
 AC_CONFIG_SRCDIR([Makevars])
 AC_CONFIG_MACRO_DIR([../m4])

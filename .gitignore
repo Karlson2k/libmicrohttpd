@@ -2,6 +2,7 @@ Makefile.in
 Makefile
 .deps
 .libs
+config.rpath
 /test-driver
 /INSTALL
 /libmicrohttpd.pc
