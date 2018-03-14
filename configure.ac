@@ -735,6 +735,8 @@ if test "$enable_epoll" != "no"; then
   fi
 fi
 
+AM_CONDITIONAL([MHD_HAVE_EPOLL], [[test "x$enable_epoll" = xyes]])
+
 if test "x$enable_epoll" = "xyes"; then
   AC_CACHE_CHECK([for epoll_create1()], [mhd_cv_have_epoll_create1], [
     AC_LINK_IFELSE([
