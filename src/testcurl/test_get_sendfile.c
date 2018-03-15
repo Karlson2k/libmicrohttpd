@@ -576,15 +576,19 @@ main (int argc, char *const *argv)
   FILE *f;
   (void)argc;   /* Unused. Silent compiler warning. */
 
+  oneone = (NULL != strrchr (argv[0], (int) '/')) ?
+    (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
+
   if ( (NULL == (tmp = getenv ("TMPDIR"))) &&
        (NULL == (tmp = getenv ("TMP"))) &&
        (NULL == (tmp = getenv ("TEMP"))) )
     tmp = "/tmp";
   sourcefile = malloc (strlen (tmp) + 32);
   sprintf (sourcefile,
-	   "%s/%s",
+	   "%s/%s%s",
 	   tmp,
-	   "test-mhd-sendfile");
+	   "test-mhd-sendfile",
+	   oneone ? "11" : "");
   f = fopen (sourcefile, "w");
   if (NULL == f)
     {
@@ -594,8 +598,6 @@ main (int argc, char *const *argv)
     }
   fwrite (TESTSTR, strlen (TESTSTR), 1, f);
   fclose (f);
-  oneone = (NULL != strrchr (argv[0], (int) '/')) ?
-    (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testInternalGet ();
