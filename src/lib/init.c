@@ -41,6 +41,12 @@ MHD_MUTEX_STATIC_DEFN_INIT_(global_init_mutex_);
 
 #endif
 
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+/**
+ * Track initialization of winsock
+ */
+static int mhd_winsock_inited_ = 0;
+#endif
 
 /**
  * Default implementation of the panic function,
