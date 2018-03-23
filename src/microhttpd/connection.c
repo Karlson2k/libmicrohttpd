@@ -495,13 +495,14 @@ static int
 socket_start_extra_buffering (struct MHD_Connection *connection)
 {
   int res = MHD_NO;
-  (void)connection; /* Mute compiler warning. */
 #if defined(TCP_CORK) || defined(TCP_NOPUSH)
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
 #if defined(TCP_NODELAY)
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
 #endif /* TCP_NODELAY */
-  mhd_assert(NULL != connection);
+  (void) connection; /* mute compiler warning, assertion below
+			may be compiled out! */
+  mhd_assert(NULL != connection); 
 #if defined(TCP_NOPUSH) && !defined(TCP_CORK)
   /* Buffer data before sending */
   res = (0 == setsockopt (connection->socket_fd,
