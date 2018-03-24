@@ -502,7 +502,7 @@ socket_start_extra_buffering (struct MHD_Connection *connection)
 #endif /* TCP_NODELAY */
   (void) connection; /* mute compiler warning, assertion below
 			may be compiled out! */
-  mhd_assert(NULL != connection); 
+  mhd_assert(NULL != connection);
 #if defined(TCP_NOPUSH) && !defined(TCP_CORK)
   /* Buffer data before sending */
   res = (0 == setsockopt (connection->socket_fd,
