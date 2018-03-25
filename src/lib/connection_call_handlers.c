@@ -3525,7 +3525,7 @@ MHD_request_handle_idle_ (struct MHD_Request *request)
             }
 	  // FIXME: this is too much, NULLs out some of the things
 	  // initialized above...
-	  memset (&request,
+	  memset (request,
 		  0,
 		  sizeof (struct MHD_Request));
 	  request->daemon = daemon;
