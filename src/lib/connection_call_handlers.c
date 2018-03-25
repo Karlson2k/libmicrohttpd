@@ -1771,7 +1771,7 @@ parse_initial_message_line (struct MHD_Request *request,
       uri = NULL;
       request->version_s = "";
       args = NULL;
-      url_end = line_len - (line - uri);
+      url_end = line_len - (line - uri); // EH, this is garbage. FIXME!
     }
   else
     {
