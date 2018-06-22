@@ -1756,6 +1756,7 @@ transmit_error_response (struct MHD_Connection *connection,
 			 const char *message)
 {
   struct MHD_Response *response;
+  int iret;
 
   if (NULL == connection->version)
     {
@@ -1779,11 +1780,24 @@ transmit_error_response (struct MHD_Connection *connection,
   response = MHD_create_response_from_buffer (strlen (message),
 					      (void *) message,
 					      MHD_RESPMEM_PERSISTENT);
-  MHD_queue_response (connection,
-                      status_code,
-                      response);
-  mhd_assert (NULL != connection->response);
+  if (NULL == response)
+    {
+      /* can't even send a reply, at least close the connection */
+      connection->state = MHD_CONNECTION_CLOSED;
+      return;
+    }
+  iret = MHD_queue_response (connection,
+                             status_code,
+                             response);
   MHD_destroy_response (response);
+  if (MHD_YES != iret)
+    {
+      /* can't even send a reply, at least close the connection */
+      CONNECTION_CLOSE_ERROR (connection,
+                              _("Closing connection (failed to queue response)\n"));
+      return;
+    }
+  mhd_assert (NULL != connection->response);
   /* Do not reuse this connection. */
   connection->keepalive = MHD_CONN_MUST_CLOSE;
   if (MHD_NO == build_header_response (connection))
@@ -2732,6 +2746,8 @@ parse_connection_headers (struct MHD_Connection *connection)
                                      MHD_HEADER_KIND,
                                      MHD_HTTP_HEADER_HOST)) )
     {
+      int iret;
+
       /* die, http 1.1 request without host and we are pedantic */
       connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
       connection->read_closed = true;
@@ -2744,10 +2760,23 @@ parse_connection_headers (struct MHD_Connection *connection)
         MHD_create_response_from_buffer (MHD_STATICSTR_LEN_ (REQUEST_LACKS_HOST),
 					 REQUEST_LACKS_HOST,
 					 MHD_RESPMEM_PERSISTENT);
-      MHD_queue_response (connection,
-                          MHD_HTTP_BAD_REQUEST,
-                          response);
+      if (NULL == response)
+        {
+          /* can't even send a reply, at least close the connection */
+          CONNECTION_CLOSE_ERROR (connection,
+                                  _("Closing connection (failed to create response)\n"));
+          return;
+        }
+      iret = MHD_queue_response (connection,
+                                 MHD_HTTP_BAD_REQUEST,
+                                 response);
       MHD_destroy_response (response);
+      if (MHD_YES != iret)
+        {
+          /* can't even send a reply, at least close the connection */
+          CONNECTION_CLOSE_ERROR (connection,
+                                  _("Closing connection (failed to queue response)\n"));
+        }
       return;
     }
 
