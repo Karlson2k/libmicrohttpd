@@ -33,12 +33,10 @@ string_to_base64 (const char *message)
   char *tmp;
   size_t length = strlen (message);
 
-  tmp = malloc (length * 2);
+  tmp = malloc (length * 2 + 1);
   if (NULL == tmp)
-    return tmp;
-
+    return NULL;
   tmp[0] = 0;
-
   for (i = 0; i < length; i += 3)
     {
       l = (((unsigned long) message[i]) << 16)
@@ -169,7 +167,7 @@ is_authenticated (struct MHD_Connection *connection,
   const char *strbase = "Basic ";
   int authenticated;
   size_t slen;
-  
+
   headervalue =
     MHD_lookup_connection_value (connection, MHD_HEADER_KIND,
                                  "Authorization");

@@ -224,10 +224,11 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  (void)argc;   /* Unused. Silent compiler warning. */
+  (void) argc;   /* Unused. Silent compiler warning. */
+  const char *sl;
 
-  oneone = (NULL != strrchr (argv[0], (int) '/')) ?
-    (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
+  sl = strrchr (argv[0], (int) '/');
+    oneone = (NULL != sl) ? (NULL != strstr (sl), "11")) : 0;
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testLongUrlGet ();

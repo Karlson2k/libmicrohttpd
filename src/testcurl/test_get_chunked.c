@@ -119,8 +119,11 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   struct MHD_Response **responseptr;
   int ret;
-  (void)url;(void)version;                      /* Unused. Silent compiler warning. */
-  (void)upload_data;(void)upload_data_size;     /* Unused. Silent compiler warning. */
+
+  (void)url;
+  (void)version;                      /* Unused. Silent compiler warning. */
+  (void)upload_data;
+  (void)upload_data_size;     /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */

@@ -561,7 +561,7 @@ process_upload_data (void *cls,
 		uc->category,
 		filename);
       for (i=strlen (fn)-1;i>=0;i--)
-	if (! isprint ((int) fn[i]))
+	if (! isprint ((unsigned char) fn[i]))
 	  fn[i] = '_';
       uc->fd = open (fn,
 		     O_CREAT | O_EXCL

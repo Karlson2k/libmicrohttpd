@@ -3372,12 +3372,12 @@ MHD_request_handle_idle_ (struct MHD_Request *request)
                 }
 #endif
               /* Response is not required anymore for this request. */
-              if (NULL != request->response)
-                {
-                  struct MHD_Response * const resp = request->response;
-                  request->response = NULL;
-                  MHD_response_queue_for_destroy (resp);
-                }
+              {
+                struct MHD_Response * const resp = request->response;
+
+                request->response = NULL;
+                MHD_response_queue_for_destroy (resp);
+              }
               continue;
             }
 #endif /* UPGRADE_SUPPORT */

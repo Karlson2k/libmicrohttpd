@@ -3538,12 +3538,12 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                   continue;
                 }
               /* Response is not required anymore for this connection. */
-              if (NULL != connection->response)
-                {
-                  struct MHD_Response * const resp = connection->response;
-                  connection->response = NULL;
-                  MHD_destroy_response (resp);
-                }
+              {
+                struct MHD_Response * const resp = connection->response;
+
+                connection->response = NULL;
+                MHD_destroy_response (resp);
+              }
               continue;
             }
 #endif /* UPGRADE_SUPPORT */

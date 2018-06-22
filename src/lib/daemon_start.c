@@ -163,7 +163,7 @@ open_listen_socket (struct MHD_Daemon *daemon)
 
   if (MHD_INVALID_SOCKET != daemon->listen_socket)
     return MHD_SC_OK; /* application opened it for us! */
-
+  pf = -1;
   /* Determine address family */
   switch (daemon->listen_af)
     {
@@ -224,7 +224,7 @@ open_listen_socket (struct MHD_Daemon *daemon)
       return MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD;
 #endif
     }
-
+  mhd_assert (-1 != pf);
   /* try to open listen socket */
  try_open_listen_socket:
   daemon->listen_socket = MHD_socket_create_listen_(pf);

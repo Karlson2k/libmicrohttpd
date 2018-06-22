@@ -896,7 +896,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
 				  connection,
 				  MHD_CONNECTION_NOTIFY_CLOSED);
 #ifdef HTTPS_SUPPORT
- if (NULL != connection->tls_cs)
+  if ( (NULL != daemon->tls_api) &&
+       (NULL != connection->tls_cs) )
    daemon->tls_api->teardown_connection (daemon->tls_api->cls,
 					 connection->tls_cs);
 #endif /* HTTPS_SUPPORT */

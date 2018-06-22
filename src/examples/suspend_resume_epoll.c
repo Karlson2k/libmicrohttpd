@@ -54,69 +54,77 @@ ahc_echo (void *cls,
   int ret;
   struct Request* req;
   struct itimerspec ts;
-  (void)url;               /* Unused. Silence compiler warning. */
-  (void)version;           /* Unused. Silence compiler warning. */
-  (void)upload_data;       /* Unused. Silence compiler warning. */
-  (void)upload_data_size;  /* Unused. Silence compiler warning. */
 
+  (void) url;               /* Unused. Silence compiler warning. */
+  (void) version;           /* Unused. Silence compiler warning. */
+  (void) upload_data;       /* Unused. Silence compiler warning. */
+  (void) upload_data_size;  /* Unused. Silence compiler warning. */
   req = *ptr;
-  if (!req)
+  if (NULL == req)
   {
 
-    req = malloc(sizeof(struct Request));
+    req = malloc (sizeof(struct Request));
+    if (NULL == req)
+      return MHD_NO;
     req->connection = connection;
-    req->timerfd = 0;
+    req->timerfd = -1;
     *ptr = req;
     return MHD_YES;
   }
 
-  if (req->timerfd)
+  if (-1 != req->timerfd)
   {
     // send response (echo request url)
     response = MHD_create_response_from_buffer (strlen (url),
                                                 (void *) url,
                                                 MHD_RESPMEM_MUST_COPY);
-    ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+    if (NULL == response)
+      return MHD_NO;
+    ret = MHD_queue_response (connection,
+                              MHD_HTTP_OK,
+                              response);
     MHD_destroy_response (response);
     return ret;
   }
-  else
-  {
-    // create timer and suspend connection
-    req->timerfd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
-    if (-1 == req->timerfd)
+  // create timer and suspend connection
+  req->timerfd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
+  if (-1 == req->timerfd)
     {
       printf("timerfd_create: %s", strerror(errno));
       return MHD_NO;
     }
-    evt.events = EPOLLIN;
-    evt.data.ptr = req;
-    if (-1 == epoll_ctl(epfd, EPOLL_CTL_ADD, req->timerfd, &evt))
+  evt.events = EPOLLIN;
+  evt.data.ptr = req;
+  if (-1 == epoll_ctl(epfd, EPOLL_CTL_ADD, req->timerfd, &evt))
     {
       printf("epoll_ctl: %s", strerror(errno));
       return MHD_NO;
     }
-    ts.it_value.tv_sec = 1;
-    ts.it_value.tv_nsec = 0;
-    ts.it_interval.tv_sec = 0;
-    ts.it_interval.tv_nsec = 0;
-    if (-1 == timerfd_settime(req->timerfd, 0, &ts, NULL))
+  ts.it_value.tv_sec = 1;
+  ts.it_value.tv_nsec = 0;
+  ts.it_interval.tv_sec = 0;
+  ts.it_interval.tv_nsec = 0;
+  if (-1 == timerfd_settime(req->timerfd, 0, &ts, NULL))
     {
       printf("timerfd_settime: %s", strerror(errno));
       return MHD_NO;
     }
-    MHD_suspend_connection(connection);
-    return MHD_YES;
-  }
+  MHD_suspend_connection(connection);
+  return MHD_YES;
 }
 
 
-static int
-connection_done(struct MHD_Connection *connection,
-                void **con_cls,
-                enum MHD_RequestTerminationCode toe)
+static void
+connection_done (void *cls,
+                 struct MHD_Connection *connection,
+                 void **con_cls,
+                 enum MHD_RequestTerminationCode toe)
 {
-  free(*con_cls);
+  struct Request *req = *con_cls;
+
+  if (-1 != req->timerfd)
+    close (req->timerfd);
+  free(req);
 }
 
 
