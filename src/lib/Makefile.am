@@ -128,7 +128,7 @@ libmicrohttpd2_la_LIBADD = \
   $(MHD_LIBDEPS) # FIXME: should separate out GNUTLS_LIBS/GCRYPT here!
 
 if HAVE_W32
-MHD_DLL_RES_SRC = microhttpd_dll_res.rc
+MHD_DLL_RES_SRC = ../microhttpd/microhttpd_dll_res.rc
 MHD_DLL_RES_LO = libmicrohttpd2_la-$(MHD_DLL_RES_SRC:.rc=.lo)
 
 EXTRA_libmicrohttpd2_la_DEPENDENCIES = $(MHD_DLL_RES_LO)
