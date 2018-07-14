@@ -869,6 +869,16 @@ information provided.  The callback is expected to access the SNI data
 using gnutls_server_name_get().  Using this option requires GnuTLS 3.0
 or higher.
 
+@item MHD_OPTION_GNUTLS_PSK_CRED_HANDLER
+@cindex SSL
+@cindex TLS
+@cindex PSK
+Use pre-shared key for TLS credentials.
+Pass a pointer to callback of type 
+@code{MHD_PskServerCredentialsCallback} and a closure.
+The function will be called to 
+retrieve the shared key for a given username.
+
 @item MHD_OPTION_DIGEST_AUTH_RANDOM
 @cindex digest auth
 @cindex random

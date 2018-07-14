@@ -1611,12 +1611,27 @@ struct MHD_Daemon
    */
   gnutls_dh_params_t dh_params;
 
+  /**
+   * Server PSK credentials
+   */
+  gnutls_psk_server_credentials_t psk_cred;
+
 #if GNUTLS_VERSION_MAJOR >= 3
   /**
    * Function that can be used to obtain the certificate.  Needed
    * for SNI support.  See #MHD_OPTION_HTTPS_CERT_CALLBACK.
    */
   gnutls_certificate_retrieve_function2 *cert_callback;
+
+  /**
+   * Function that can be used to obtain the shared key.
+   */
+  MHD_PskServerCredentialsCallback cred_callback;
+
+  /**
+   * Closure for @e cred_callback.
+   */
+  void *cred_callback_cls;
 #endif
 
   /**

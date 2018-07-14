@@ -2181,6 +2181,41 @@ MHD_daemon_tls_mem_dhparams (struct MHD_Daemon *daemon,
 
 
 /**
+ * Function called to lookup the pre shared key (@a psk) for a given
+ * HTTP connection based on the @a username.
+ *
+ * @param cls closure
+ * @param connection the HTTPS connection
+ * @param username the user name claimed by the other side
+ * @param psk[out] to be set to the pre-shared-key; should be allocated with malloc(),
+ *                 will be freed by MHD
+ * @param psk_size[out] to be set to the number of bytes in @a psk
+ * @return 0 on success, -1 on errors 
+ */
+typedef int
+(*MHD_PskServerCredentialsCallback)(void *cls,
+				    const struct MHD_Connection *connection,
+				    const char *username,
+				    void **psk,
+				    size_t *psk_size);
+
+
+/**
+ * Configure PSK to use for the TLS key exchange.
+ *
+ * @param daemon daemon to configure tls for
+ * @param psk_cb function to call to obtain pre-shared key
+ * @param psk_cb_cls closure for @a psk_cb
+ * @return #MHD_SC_OK upon success; TODO: define failure modes
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_daemon_set_tls_psk_callback (struct MHD_Daemon *daemon,
+				 MHD_PskServerCredentialsCallback psk_cb,
+				 void *psk_cb_cls)
+  MHD_NONNULL(1);
+
+
+/**
  * Memory pointer for the certificate (ca.pem) to be used by the
  * HTTPS daemon for client authentification.
  *

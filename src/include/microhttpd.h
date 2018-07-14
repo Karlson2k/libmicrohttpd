@@ -1167,6 +1167,25 @@ typedef void
 
 
 /**
+ * Function called to lookup the pre shared key (@a psk) for a given
+ * HTTP connection based on the @a username.
+ *
+ * @param cls closure
+ * @param connection the HTTPS connection
+ * @param username the user name claimed by the other side
+ * @param psk[out] to be set to the pre-shared-key; should be allocated with malloc(),
+ *                 will be freed by MHD
+ * @param psk_size[out] to be set to the number of bytes in @a psk
+ * @return 0 on success, -1 on errors 
+ */
+typedef int
+(*MHD_PskServerCredentialsCallback)(void *cls,
+				    const struct MHD_Connection *connection,
+				    const char *username,
+				    void **psk,
+				    size_t *psk_size);
+
+/**
  * @brief MHD options.
  *
  * Passed in the varargs portion of #MHD_start_daemon.
@@ -1489,7 +1508,15 @@ enum MHD_OPTION
    * testing clients against MHD, and 0 in production.  This option
    * should be followed by an `int` argument.
    */
-  MHD_OPTION_STRICT_FOR_CLIENT = 29
+  MHD_OPTION_STRICT_FOR_CLIENT = 29,
+
+  /**
+   * This should be a pointer to callback of type 
+   * gnutls_psk_server_credentials_function that will be given to
+   * gnutls_psk_set_server_credentials_function. It is used to
+   * retrieve the shared key for a given username.
+   */
+  MHD_OPTION_GNUTLS_PSK_CRED_HANDLER = 30
 };
 
 
@@ -3150,10 +3177,11 @@ MHD_free (void *ptr);
  */
 _MHD_EXTERN int
 MHD_digest_auth_check (struct MHD_Connection *connection,
-				const char *realm,
-				const char *username,
-				const char *password,
-				unsigned int nonce_timeout);
+		       const char *realm,
+		       const char *username,
+		       const char *password,
+		       unsigned int nonce_timeout);
+
 
 /**
  * Authenticates the authorization header sent by the client

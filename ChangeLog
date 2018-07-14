@@ -1,3 +1,7 @@
+Sat Jul 14 11:42:15 CEST 2018
+	Add MHD_OPTION_GNUTLS_PSK_CRED_HANDLER to allow use of PSK with
+	TLS connections. -CG/TM
+
 Sat Jul 14 11:03:37 CEST 2018
 	Integrate patch for checking digest authentication based on
 	a digest, allowing servers to store passwords only hashed.
