@@ -2393,6 +2393,21 @@ most probably it will be the result of a lookup of the username against a local 
 Most of the time it is sound to specify 300 seconds as its values.
 @end deftypefun
 
+@deftypefun int MHD_digest_auth_check_digest (struct MHD_Connection *connection, const char *realm, const char *username, const unsigned char digest[MHD_MD5_DIGEST_SIZE], unsigned int nonce_timeout)
+Checks if the provided values in the WWW-Authenticate header are valid
+and sound according to RFC2716. If valid return @code{MHD_YES}, otherwise return @code{MHD_NO}.
+
+@var{realm} must reference to a zero-terminated string representing the realm.
+
+@var{username} must reference to a zero-terminated string representing the username,
+it is usually the returned value from MHD_digest_auth_get_username.
+
+@var{digest} pointer to the binary MD5 sum for the precalculated hash value ``userame:realm:password'' of @code{MHD_MD5_DIGEST_SIZE} bytes.
+
+@var{nonce_timeout} is the amount of time in seconds for a nonce to be invalid.
+Most of the time it is sound to specify 300 seconds as its values.
+@end deftypefun
+
 @deftypefun int MHD_queue_auth_fail_response (struct MHD_Connection *connection, const char *realm, const char *opaque, struct MHD_Response *response, int signal_stale)
 Queues a response to request authentication from the client,
 return @code{MHD_YES} if successful, otherwise @code{MHD_NO}.

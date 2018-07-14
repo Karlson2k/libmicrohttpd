@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2010, 2011, 2012, 2015 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2010, 2011, 2012, 2015, 2018 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@
 #include <windows.h>
 #endif /* MHD_W32_MUTEX_ */
 
-#define HASH_MD5_HEX_LEN (2 * MD5_DIGEST_SIZE)
+#define HASH_MD5_HEX_LEN (2 * MHD_MD5_DIGEST_SIZE)
 /* 32 bit value is 4 bytes */
 #define TIMESTAMP_BIN_SIZE 4
 #define TIMESTAMP_HEX_LEN (2 * TIMESTAMP_BIN_SIZE)
@@ -93,8 +93,65 @@ cvthex (const unsigned char *bin,
 
 
 /**
- * calculate H(A1) as per RFC2617 spec and store the
- * result in 'sessionkey'.
+ * calculate H(A1) from given hash as per RFC2617 spec
+ * and store the * result in 'sessionkey'.
+ *
+ * @param alg The hash algorithm used, can be "md5" or "md5-sess"
+ * @param digest An `unsigned char *' pointer to the binary MD5 sum
+ * 			for the precalculated hash value "username:realm:password"
+ * 			of #MHD_MD5_DIGEST_SIZE bytes
+ * @param nonce A `char *' pointer to the nonce value
+ * @param cnonce A `char *' pointer to the cnonce value
+ * @param sessionkey pointer to buffer of HASH_MD5_HEX_LEN+1 bytes
+ */
+static void
+digest_calc_ha1_from_digest (const char *alg,
+			     const uint8_t digest[MHD_MD5_DIGEST_SIZE],
+			     const char *nonce,
+			     const char *cnonce,
+			     char sessionkey[HASH_MD5_HEX_LEN + 1])
+{
+  struct MD5Context md5;
+  
+  if (MHD_str_equal_caseless_(alg,
+                              "md5-sess"))
+    {
+      unsigned char ha1[MHD_MD5_DIGEST_SIZE];
+      
+      MD5Init (&md5);
+      MD5Update (&md5,
+		 digest,
+                 MHD_MD5_DIGEST_SIZE);
+      MD5Update (&md5,
+                 (const unsigned char *) ":",
+                 1);
+      MD5Update (&md5,
+                 (const unsigned char *) nonce,
+                 strlen (nonce));
+      MD5Update (&md5,
+                 (const unsigned char *) ":",
+                 1);
+      MD5Update (&md5,
+                 (const unsigned char *) cnonce,
+                 strlen (cnonce));
+      MD5Final (ha1,
+                &md5);
+      cvthex (ha1,
+              sizeof (ha1),
+              sessionkey);
+    }
+  else
+    {
+      cvthex (digest,
+	      MHD_MD5_DIGEST_SIZE,
+	      sessionkey);
+    }
+}
+
+
+/**
+ * calculate H(A1) from username, realm and password as per RFC2617 spec
+ * and store the result in 'sessionkey'.
  *
  * @param alg The hash algorithm used, can be "md5" or "md5-sess"
  * @param username A `char *' pointer to the username value
@@ -105,16 +162,16 @@ cvthex (const unsigned char *bin,
  * @param sessionkey pointer to buffer of HASH_MD5_HEX_LEN+1 bytes
  */
 static void
-digest_calc_ha1 (const char *alg,
-		 const char *username,
-		 const char *realm,
-		 const char *password,
-		 const char *nonce,
-		 const char *cnonce,
-		 char sessionkey[HASH_MD5_HEX_LEN + 1])
+digest_calc_ha1_from_user (const char *alg,
+			   const char *username,
+			   const char *realm,
+			   const char *password,
+			   const char *nonce,
+			   const char *cnonce,
+			   char sessionkey[HASH_MD5_HEX_LEN + 1])
 {
   struct MD5Context md5;
-  unsigned char ha1[MD5_DIGEST_SIZE];
+  unsigned char ha1[MHD_MD5_DIGEST_SIZE];
 
   MD5Init (&md5);
   MD5Update (&md5,
@@ -134,31 +191,11 @@ digest_calc_ha1 (const char *alg,
              strlen (password));
   MD5Final (ha1,
             &md5);
-  if (MHD_str_equal_caseless_(alg,
-                              "md5-sess"))
-    {
-      MD5Init (&md5);
-      MD5Update (&md5,
-                 (const unsigned char *) ha1,
-                 sizeof (ha1));
-      MD5Update (&md5,
-                 (const unsigned char *) ":",
-                 1);
-      MD5Update (&md5,
-                 (const unsigned char *) nonce,
-                 strlen (nonce));
-      MD5Update (&md5,
-                 (const unsigned char *) ":",
-                 1);
-      MD5Update (&md5,
-                 (const unsigned char *) cnonce,
-                 strlen (cnonce));
-      MD5Final (ha1,
-                &md5);
-    }
-  cvthex (ha1,
-          sizeof (ha1),
-          sessionkey);
+  digest_calc_ha1_from_digest(alg,
+			      ha1,
+			      nonce,
+			      cnonce,
+			      sessionkey);
 }
 
 
@@ -187,8 +224,8 @@ digest_calc_response (const char ha1[HASH_MD5_HEX_LEN + 1],
 		      char response[HASH_MD5_HEX_LEN + 1])
 {
   struct MD5Context md5;
-  unsigned char ha2[MD5_DIGEST_SIZE];
-  unsigned char resphash[MD5_DIGEST_SIZE];
+  unsigned char ha2[MHD_MD5_DIGEST_SIZE];
+  unsigned char resphash[MHD_MD5_DIGEST_SIZE];
   char ha2hex[HASH_MD5_HEX_LEN + 1];
   (void)hentity; /* Unused. Silent compiler warning. */
 
@@ -220,7 +257,7 @@ digest_calc_response (const char ha1[HASH_MD5_HEX_LEN + 1],
   MD5Final (ha2,
             &md5);
   cvthex (ha2,
-          MD5_DIGEST_SIZE,
+          MHD_MD5_DIGEST_SIZE,
           ha2hex);
   MD5Init (&md5);
   /* calculate response */
@@ -518,7 +555,7 @@ calculate_nonce (uint32_t nonce_time,
 {
   struct MD5Context md5;
   unsigned char timestamp[TIMESTAMP_BIN_SIZE];
-  unsigned char tmpnonce[MD5_DIGEST_SIZE];
+  unsigned char tmpnonce[MHD_MD5_DIGEST_SIZE];
   char timestamphex[TIMESTAMP_HEX_LEN + 1];
 
   MD5Init (&md5);
@@ -667,17 +704,21 @@ check_argument_match (struct MHD_Connection *connection,
  * @param realm The realm presented to the client
  * @param username The username needs to be authenticated
  * @param password The password used in the authentication
+ * @param digest An optional `unsigned char *' pointer to the binary MD5 sum
+ * 			for the precalculated hash value "username:realm:password"
+ * 			of #MHD_MD5_DIGEST_SIZE bytes
  * @param nonce_timeout The amount of time for a nonce to be
  * 			invalid in seconds
  * @return #MHD_YES if authenticated, #MHD_NO if not,
  * 			#MHD_INVALID_NONCE if nonce is invalid
  * @ingroup authentication
  */
-int
-MHD_digest_auth_check (struct MHD_Connection *connection,
+static int
+digest_auth_check_all (struct MHD_Connection *connection,
 		       const char *realm,
 		       const char *username,
 		       const char *password,
+		       const uint8_t digest[MHD_MD5_DIGEST_SIZE],
 		       unsigned int nonce_timeout)
 {
   struct MHD_Daemon *daemon = connection->daemon;
@@ -871,13 +912,24 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
       return MHD_NO;
     }
 
-    digest_calc_ha1 ("md5",
-                     username,
-                     realm,
-                     password,
-                     nonce,
-                     cnonce,
-                     ha1);
+    if (NULL != digest)
+      {
+	digest_calc_ha1_from_digest ("md5",
+				     digest,
+				     nonce,
+				     cnonce,
+				     ha1);
+      }
+    else
+      {
+	digest_calc_ha1_from_user ("md5",
+				   username,
+				   realm,
+				   password,
+				   nonce,
+				   cnonce,
+				   ha1);
+      }
     digest_calc_response (ha1,
 			  nonce,
 			  nc,
@@ -887,6 +939,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 			  uri,
 			  hentity,
 			  respexp);
+
 
     /* Need to unescape URI before comparing with connection->url */
     daemon->unescape_callback (daemon->unescape_callback_cls,
@@ -930,6 +983,66 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
       ? MHD_YES
       : MHD_NO;
   }
+}
+
+
+/**
+ * Authenticates the authorization header sent by the client
+ *
+ * @param connection The MHD connection structure
+ * @param realm The realm presented to the client
+ * @param username The username needs to be authenticated
+ * @param password The password used in the authentication
+ * @param nonce_timeout The amount of time for a nonce to be
+ * 			invalid in seconds
+ * @return #MHD_YES if authenticated, #MHD_NO if not,
+ * 			#MHD_INVALID_NONCE if nonce is invalid
+ * @ingroup authentication
+ */
+_MHD_EXTERN int
+MHD_digest_auth_check (struct MHD_Connection *connection,
+		       const char *realm,
+		       const char *username,
+		       const char *password,
+		       unsigned int nonce_timeout)
+{
+  return digest_auth_check_all(connection,
+			       realm,
+			       username,
+			       password,
+			       NULL,
+			       nonce_timeout);
+}
+
+
+/**
+ * Authenticates the authorization header sent by the client
+ *
+ * @param connection The MHD connection structure
+ * @param realm The realm presented to the client
+ * @param username The username needs to be authenticated
+ * @param digest An `unsigned char *' pointer to the binary MD5 sum
+ * 			for the precalculated hash value "username:realm:password"
+ * 			of #MHD_MD5_DIGEST_SIZE bytes
+ * @param nonce_timeout The amount of time for a nonce to be
+ * 			invalid in seconds
+ * @return #MHD_YES if authenticated, #MHD_NO if not,
+ * 			#MHD_INVALID_NONCE if nonce is invalid
+ * @ingroup authentication
+ */
+_MHD_EXTERN int
+MHD_digest_auth_check_digest (struct MHD_Connection *connection,
+			      const char *realm,
+			      const char *username,
+			      const uint8_t digest[MD5_DIGEST_SIZE],
+			      unsigned int nonce_timeout)
+{
+  return digest_auth_check_all (connection,
+				realm,
+				username,
+				NULL,
+				digest,
+				nonce_timeout);
 }
 
 

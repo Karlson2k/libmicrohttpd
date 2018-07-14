@@ -294,6 +294,12 @@ _MHD_DEPR_MACRO("Macro MHD_LONG_LONG_PRINTF is deprecated, use MHD_UNSIGNED_LONG
 
 
 /**
+ * Length of the binary output of the MD5 hash function.
+ */
+#define	 MHD_MD5_DIGEST_SIZE 16
+
+
+/**
  * @defgroup httpcode HTTP response codes.
  * These are the status codes defined for HTTP responses.
  * @{
@@ -3144,10 +3150,32 @@ MHD_free (void *ptr);
  */
 _MHD_EXTERN int
 MHD_digest_auth_check (struct MHD_Connection *connection,
-		       const char *realm,
-		       const char *username,
-		       const char *password,
-		       unsigned int nonce_timeout);
+				const char *realm,
+				const char *username,
+				const char *password,
+				unsigned int nonce_timeout);
+
+/**
+ * Authenticates the authorization header sent by the client
+ *
+ * @param connection The MHD connection structure
+ * @param realm The realm presented to the client
+ * @param username The username needs to be authenticated
+ * @param digest An `unsigned char *' pointer to the binary MD5 sum
+ * 			for the precalculated hash value "username:realm:password"
+ * 			of #MHD_MD5_DIGEST_SIZE bytes
+ * @param nonce_timeout The amount of time for a nonce to be
+ * 			invalid in seconds
+ * @return #MHD_YES if authenticated, #MHD_NO if not,
+ * 			#MHD_INVALID_NONCE if nonce is invalid
+ * @ingroup authentication
+ */
+_MHD_EXTERN int
+MHD_digest_auth_check_digest (struct MHD_Connection *connection,
+			      const char *realm,
+			      const char *username,
+			      const uint8_t digest[MHD_MD5_DIGEST_SIZE],
+			      unsigned int nonce_timeout);
 
 
 /**
