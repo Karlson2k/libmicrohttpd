@@ -2217,7 +2217,7 @@ MHD_daemon_set_tls_psk_callback (struct MHD_Daemon *daemon,
 
 /**
  * Memory pointer for the certificate (ca.pem) to be used by the
- * HTTPS daemon for client authentification.
+ * HTTPS daemon for client authentication.
  *
  * @param daemon daemon to configure tls for
  * @param mem_trust memory pointer to the certificate

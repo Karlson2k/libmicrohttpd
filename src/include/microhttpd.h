@@ -1414,7 +1414,7 @@ enum MHD_OPTION
 
   /**
    * Memory pointer for the certificate (ca.pem) to be used by the
-   * HTTPS daemon for client authentification.
+   * HTTPS daemon for client authentication.
    * This option should be followed by a `const char *` argument.
    */
   MHD_OPTION_HTTPS_MEM_TRUST = 20,
