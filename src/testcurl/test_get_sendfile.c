@@ -596,7 +596,7 @@ main (int argc, char *const *argv)
       free (sourcefile);
       return 1;
     }
-  if (strlen (TESTSTR) !=
+  if (1 !=
       fwrite (TESTSTR, strlen (TESTSTR), 1, f))
     abort ();
   fclose (f);
