@@ -103,8 +103,10 @@ gnutlscli_connect (int *sock,
   MHD_socket_close_chk_ (sp[1]);
   (void) close (0);
   (void) close (1);
-  dup2 (sp[0], 0);
-  dup2 (sp[0], 1);
+  if (-1 == dup2 (sp[0], 0))
+    abort ();
+  if (-1 == dup2 (sp[0], 1))
+    abort ();
   MHD_socket_close_chk_ (sp[0]);
   if (TLS_CLI_GNUTLS == use_tls_tool)
     {
@@ -946,6 +948,7 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
   fd_set rs;
   MHD_UNSIGNED_LONG_LONG to;
   struct timeval tv;
+  int ret;
 
   di = MHD_get_daemon_info (daemon,
                             MHD_DAEMON_INFO_EPOLL_FD);
@@ -962,11 +965,15 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
         to = 1000;
       tv.tv_sec = to / 1000;
       tv.tv_usec = 1000 * (to % 1000);
-      select (ep + 1,
-              &rs,
-              NULL,
-              NULL,
-              &tv);
+      ret = select (ep + 1,
+                    &rs,
+                    NULL,
+                    NULL,
+                    &tv);
+      if ( (-1 == ret) &&
+           (EAGAIN != errno) &&
+           (EINTR != errno) )
+        abort ();
       MHD_run (daemon);
     }
 }

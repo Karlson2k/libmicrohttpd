@@ -2595,9 +2595,9 @@ MHD_suspend_connection (struct MHD_Connection *connection);
  * result in undefined behavior.
  *
  * If you are using this function in ``external'' select mode, you must
- * make sure to run #MHD_run() and #MHD_get_timeout() afterwards (before 
+ * make sure to run #MHD_run() and #MHD_get_timeout() afterwards (before
  * again calling #MHD_get_fdset()), as otherwise the change may not be
- * reflected in the set returned by #MHD_get_fdset() and you may end up 
+ * reflected in the set returned by #MHD_get_fdset() and you may end up
  * with a connection that is stuck until the next network activity.
  *
  * @param connection the connection to resume

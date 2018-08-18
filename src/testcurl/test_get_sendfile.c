@@ -596,7 +596,9 @@ main (int argc, char *const *argv)
       free (sourcefile);
       return 1;
     }
-  fwrite (TESTSTR, strlen (TESTSTR), 1, f);
+  if (strlen (TESTSTR) !=
+      fwrite (TESTSTR, strlen (TESTSTR), 1, f))
+    abort ();
   fclose (f);
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
