@@ -3923,6 +3923,8 @@ MHD_poll (struct MHD_Daemon *daemon,
   return MHD_poll_listen_socket (daemon,
                                  may_block);
 #else
+  (void) daemon;
+  (void) may_block;
   return MHD_NO;
 #endif
 }
@@ -3960,29 +3962,24 @@ is_urh_ready(struct MHD_UpgradeResponseHandle * const urh)
        (0 == urh->in_buffer_used) &&
        (0 == urh->out_buffer_used) )
     return false;
-
   if (connection->daemon->shutdown)
     return true;
-
   if ( ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) ||
          (connection->tls_read_ready) ) &&
        (urh->in_buffer_used < urh->in_buffer_size) )
     return true;
-
   if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) &&
        (urh->out_buffer_used < urh->out_buffer_size) )
     return true;
-
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
        (urh->out_buffer_used > 0) )
     return true;
-
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->mhd.celi)) &&
          (urh->in_buffer_used > 0) )
     return true;
-
   return false;
 }
+
 
 /**
  * Do epoll()-based processing for TLS connections that have been
@@ -4093,10 +4090,12 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
 }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
+
 /**
  * Pointer-marker to distinguish ITC slot in epoll sets.
  */
 static const char * const epoll_itc_marker = "itc_marker";
+
 
 /**
  * Do epoll()-based processing (this function is allowed to
