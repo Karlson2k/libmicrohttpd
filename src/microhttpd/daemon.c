@@ -2164,8 +2164,8 @@ psk_gnutls_adapter (gnutls_session_t session,
   if (NULL == connection)
   {
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-	      _("Internal server error. This should be impossible.\n"));
+    /* Cannot use our logger, we don't even have "daemon" */
+    MHD_PANIC (_("Internal server error. This should be impossible.\n"));
 #endif
     return -1;
   }
@@ -3274,10 +3274,11 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   else
     {
       const time_t second_left = earliest_deadline - now;
-      if (second_left > ULLONG_MAX / 1000) /* Ignore compiler warning: 'second_left' is always positive. */
+      
+      if (((unsigned long long)second_left) > ULLONG_MAX / 1000)
         *timeout = ULLONG_MAX;
       else
-        *timeout = 1000LL * second_left;
+        *timeout = 1000LLU * (unsigned long long) second_left;
   }
   return MHD_YES;
 }
