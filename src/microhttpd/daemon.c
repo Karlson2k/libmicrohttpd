@@ -2439,6 +2439,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
           gnutls_credentials_set (connection->tls_session,
 				  GNUTLS_CRD_CERTIFICATE,
 				  daemon->x509_cred);
+	  break;
         case GNUTLS_CRD_PSK:
           gnutls_credentials_set (connection->tls_session,
                                   GNUTLS_CRD_PSK,
