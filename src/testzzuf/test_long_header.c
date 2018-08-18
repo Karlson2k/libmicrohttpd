@@ -228,7 +228,7 @@ main (int argc, char *const *argv)
   const char *sl;
 
   sl = strrchr (argv[0], (int) '/');
-    oneone = (NULL != sl) ? (NULL != strstr (sl), "11")) : 0;
+  oneone = (NULL != sl) ? (NULL != strstr (sl, "11")) : 0;
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testLongUrlGet ();
