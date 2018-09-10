@@ -1514,8 +1514,6 @@ AC_ARG_WITH([[gnutls]],
                 have_gnutls=yes
               ])], [], [AC_INCLUDES_DEFAULT])
         AS_IF([test "x$have_gnutls" != "xyes"], [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])])
-        LDFLAGS="$SAVE_LDFLAGS"
-        CPPFLAGS="$SAVE_CPPFLAGS"
         ;;
     esac
    ],
