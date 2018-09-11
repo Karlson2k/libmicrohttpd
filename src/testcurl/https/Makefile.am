@@ -20,7 +20,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/microhttpd \
   -I$(top_srcdir)/src/platform \
-  $(LIBCURL_CPPFLAGS) $(GNUTLS_CPPFLAGS)
+  $(LIBCURL_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
 
 check_PROGRAMS = \
   test_tls_options \
@@ -58,7 +58,7 @@ test_https_time_out_SOURCES = \
 test_https_time_out_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(GNUTLS_LDFLAGS) $(GNUTLS_LIBS) @LIBGCRYPT_LIBS@ @LIBCURL@
+  $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_tls_options_SOURCES = \
   test_tls_options.c \
@@ -68,7 +68,7 @@ test_tls_options_SOURCES = \
 test_tls_options_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(GNUTLS_LDFLAGS) $(GNUTLS_LIBS) @LIBGCRYPT_LIBS@ @LIBCURL@
+  $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_https_get_parallel_SOURCES = \
   test_https_get_parallel.c \
@@ -82,7 +82,7 @@ test_https_get_parallel_CFLAGS = \
 test_https_get_parallel_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(PTHREAD_LIBS) $(GNUTLS_LDFLAGS) $(GNUTLS_LIBS) @LIBGCRYPT_LIBS@ @LIBCURL@
+  $(PTHREAD_LIBS) $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_empty_response_SOURCES = \
   test_empty_response.c \
@@ -92,7 +92,7 @@ test_empty_response_SOURCES = \
 test_empty_response_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(GNUTLS_LDFLAGS) $(GNUTLS_LIBS) @LIBGCRYPT_LIBS@ @LIBCURL@
+  $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_https_get_parallel_threads_SOURCES = \
   test_https_get_parallel_threads.c \
@@ -106,7 +106,7 @@ test_https_get_parallel_threads_CFLAGS = \
 test_https_get_parallel_threads_LDADD = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(PTHREAD_LIBS) $(GNUTLS_LDFLAGS) $(GNUTLS_LIBS) @LIBGCRYPT_LIBS@ @LIBCURL@
+  $(PTHREAD_LIBS) $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_tls_authentication_SOURCES = \
   test_tls_authentication.c \
@@ -116,7 +116,7 @@ test_tls_authentication_SOURCES = \
 test_tls_authentication_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(GNUTLS_LDFLAGS) $(GNUTLS_LIBS) @LIBGCRYPT_LIBS@ @LIBCURL@
+  $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_https_session_info_SOURCES = \
   test_https_session_info.c \
@@ -126,7 +126,7 @@ test_https_session_info_SOURCES = \
 test_https_session_info_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(GNUTLS_LDFLAGS) $(GNUTLS_LIBS) @LIBGCRYPT_LIBS@ @LIBCURL@
+  $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_https_multi_daemon_SOURCES = \
   test_https_multi_daemon.c \
@@ -136,7 +136,7 @@ test_https_multi_daemon_SOURCES = \
 test_https_multi_daemon_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(GNUTLS_LDFLAGS) $(GNUTLS_LIBS) @LIBGCRYPT_LIBS@ @LIBCURL@
+  $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_https_get_SOURCES = \
   test_https_get.c \
@@ -146,7 +146,7 @@ test_https_get_SOURCES = \
 test_https_get_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(GNUTLS_LDFLAGS) $(GNUTLS_LIBS) @LIBGCRYPT_LIBS@ @LIBCURL@
+  $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
 if HAVE_GNUTLS_SNI
 test_https_sni_SOURCES = \
@@ -160,7 +160,7 @@ test_https_sni_CPPFLAGS = \
 test_https_sni_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(GNUTLS_LDFLAGS) $(GNUTLS_LIBS) @LIBGCRYPT_LIBS@ @LIBCURL@
+  $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 endif
 
 test_https_get_select_SOURCES = \
@@ -171,5 +171,5 @@ test_https_get_select_SOURCES = \
 test_https_get_select_LDADD  = \
   $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
-  $(GNUTLS_LDFLAGS) $(GNUTLS_LIBS) @LIBGCRYPT_LIBS@ @LIBCURL@
+  $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 

@@ -462,6 +462,8 @@ curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
           MHD_stop_daemon (d);
           return 4096;
         }
+      if (maxsock > maxposixs)
+	maxposixs = maxsock;
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
       if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))

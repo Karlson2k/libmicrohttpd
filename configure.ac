@@ -1502,6 +1502,8 @@ AC_ARG_WITH([[gnutls]],
         AC_MSG_RESULT([[-I$with_gnutls/include -L$with_gnutls/lib -lgnutls]])
         SAVE_LDFLAGS="$LDFLAGS"
         SAVE_CPPFLAGS="$CPPFLAGS"
+        SAVE_CFLAGS="$CFLAGS"
+        SAVE_LIBS="$LIBS"
         LDFLAGS="-L$with_gnutls/lib $LDFLAGS"
         CPPFLAGS="-I$with_gnutls/include $CPPFLAGS"
         have_gnutls_pkgcfg=no
@@ -1514,6 +1516,10 @@ AC_ARG_WITH([[gnutls]],
                 have_gnutls=yes
               ])], [], [AC_INCLUDES_DEFAULT])
         AS_IF([test "x$have_gnutls" != "xyes"], [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])])
+        CPPFLAGS="$SAVE_CPPFLAGS"
+        CFLAGS="$SAVE_CFLAGS"
+        LDFLAGS="$SAVE_LDFLAGS"
+        LIBS="$SAVE_LIBS"
         ;;
     esac
    ],
@@ -1659,7 +1665,8 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
    )
   ]
 )
-AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"], [AC_MSG_ERROR([[can't find usable libgnutls]])])
+AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"],
+      [AC_MSG_ERROR([[can't find usable libgnutls]])])
 #
 # End of large unindented block
 #

@@ -194,11 +194,11 @@ test_daemon_LDADD = \
 test_upgrade_SOURCES = \
   test_upgrade.c test_helpers.h mhd_sockets.h
 test_upgrade_CPPFLAGS = \
-  $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
+  $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
 test_upgrade_CFLAGS = \
-  $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(GNUTLS_CFLAGS)
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 test_upgrade_LDFLAGS = \
-  $(GNUTLS_LDFLAGS)
+  $(MHD_TLS_LIB_LDFLAGS)
 test_upgrade_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(PTHREAD_LIBS)
@@ -206,11 +206,11 @@ test_upgrade_LDADD = \
 test_upgrade_tls_SOURCES = \
   test_upgrade.c test_helpers.h mhd_sockets.h
 test_upgrade_tls_CPPFLAGS = \
-  $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
+  $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
 test_upgrade_tls_CFLAGS = \
-  $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(GNUTLS_CFLAGS)
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 test_upgrade_tls_LDFLAGS = \
-  $(GNUTLS_LDFLAGS)
+  $(MHD_TLS_LIB_LDFLAGS)
 test_upgrade_tls_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(PTHREAD_LIBS)
@@ -218,27 +218,27 @@ test_upgrade_tls_LDADD = \
 test_postprocessor_SOURCES = \
   test_postprocessor.c
 test_postprocessor_CPPFLAGS = \
-  $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
+  $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
 test_postprocessor_CFLAGS = \
-  $(AM_CFLAGS) $(GNUTLS_CFLAGS)
+  $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 test_postprocessor_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_postprocessor_amp_SOURCES = \
   test_postprocessor_amp.c
 test_postprocessor_amp_CPPFLAGS = \
-  $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
+  $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
 test_postprocessor_amp_CFLAGS = \
-  $(AM_CFLAGS) $(GNUTLS_CFLAGS)
+  $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 test_postprocessor_amp_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_postprocessor_large_SOURCES = \
   test_postprocessor_large.c
 test_postprocessor_large_CPPFLAGS = \
-  $(AM_CPPFLAGS) $(GNUTLS_CPPFLAGS)
+  $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
 test_postprocessor_large_CFLAGS = \
-  $(AM_CFLAGS) $(GNUTLS_CFLAGS)
+  $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 test_postprocessor_large_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
 

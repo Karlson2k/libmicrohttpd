@@ -420,6 +420,8 @@ testExternalGet ()
         }
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
+      if (maxsock > maxposixs)
+	maxposixs = maxsock;
       if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
         {
 #ifdef MHD_POSIX_SOCKETS
