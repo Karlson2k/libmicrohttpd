@@ -111,13 +111,13 @@ libmicrohttpd2_la_SOURCES = \
   version.c
 
 libmicrohttpd2_la_CPPFLAGS = \
-  $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) \
+  $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS) \
   -DBUILDING_MHD_LIB=1
 libmicrohttpd2_la_CFLAGS = \
-  $(AM_CFLAGS) $(MHD_LIB_CFLAGS)
+  $(AM_CFLAGS) $(MHD_LIB_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 libmicrohttpd2_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) \
-  $(W32_MHD_LIB_LDFLAGS) \
+  $(W32_MHD_LIB_LDFLAGS) $(MHD_TLS_LIB_LDFLAGS) \
   -version-info 0:0:0 # FIXME: fix once closer to release...
 if MHD_HAVE_TLS_PLUGIN
 libmicrohttpd2_la_LDFLAGS += \
@@ -125,7 +125,7 @@ libmicrohttpd2_la_LDFLAGS += \
 endif
 
 libmicrohttpd2_la_LIBADD = \
-  $(MHD_LIBDEPS) # FIXME: should separate out GNUTLS_LIBS/GCRYPT here!
+  $(MHD_LIBDEPS) $(MHD_TLS_LIBDEPS)
 
 if HAVE_W32
 MHD_DLL_RES_SRC = ../microhttpd/microhttpd_dll_res.rc
