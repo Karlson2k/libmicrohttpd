@@ -5844,7 +5844,7 @@ MHD_start_daemon_va (unsigned int flags,
         if (0 != setsockopt (listen_fd,
                              IPPROTO_TCP,
                              TCP_FASTOPEN,
-                             &daemon->fastopen_queue_size,
+                             (const void*)&daemon->fastopen_queue_size,
                              sizeof (daemon->fastopen_queue_size)))
         {
 #ifdef HAVE_MESSAGES
