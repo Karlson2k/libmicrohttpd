@@ -582,7 +582,7 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
         return GNUTLS_E_MEMORY_ERROR;
       return MHD_init_daemon_certificate (daemon);
     case GNUTLS_CRD_PSK:
-      if (0 != 
+      if (0 !=
           gnutls_psk_allocate_server_credentials (&daemon->psk_cred))
         return GNUTLS_E_MEMORY_ERROR;
       return 0;
@@ -2139,12 +2139,11 @@ MHD_tls_push_func_(gnutls_transport_ptr_t trnsp,
   return MHD_send_ ((MHD_socket)(intptr_t)(trnsp), data, data_size);
 }
 #endif /* MHD_TLSLIB_DONT_SUPPRESS_SIGPIPE */
-#endif /* HTTPS_SUPPORT */
 
 
 /**
  * Function called by GNUtls to obtain the PSK for a given session.
- * 
+ *
  * @param session the session to lookup PSK for
  * @param username username to lookup PSK for
  * @param key[out] where to write PSK
@@ -2200,6 +2199,7 @@ psk_gnutls_adapter (gnutls_session_t session,
   free (app_psk);
   return 0;
 }
+#endif /* HTTPS_SUPPORT */
 
 
 /**
@@ -3274,7 +3274,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   else
     {
       const time_t second_left = earliest_deadline - now;
-      
+
       if (((unsigned long long)second_left) > ULLONG_MAX / 1000)
         *timeout = ULLONG_MAX;
       else
@@ -5177,17 +5177,20 @@ parse_options_va (struct MHD_Daemon *daemon,
           daemon->unescape_callback_cls = va_arg (ap,
                                                   void *);
           break;
+#ifdef HTTPS_SUPPORT
         case MHD_OPTION_GNUTLS_PSK_CRED_HANDLER:
           daemon->cred_callback = va_arg (ap,
                                           MHD_PskServerCredentialsCallback);
 	  daemon->cred_callback_cls = va_arg (ap,
 					      void *);
           break;
+#endif /* HTTPS_SUPPORT */
         default:
 #ifdef HAVE_MESSAGES
           if ( ( (opt >= MHD_OPTION_HTTPS_MEM_KEY) &&
                  (opt <= MHD_OPTION_HTTPS_PRIORITIES) ) ||
-               (opt == MHD_OPTION_HTTPS_MEM_TRUST))
+               (opt == MHD_OPTION_HTTPS_MEM_TRUST) ||
+			   (opt == MHD_OPTION_GNUTLS_PSK_CRED_HANDLER) )
             {
               MHD_DLOG (daemon,
 			_("MHD HTTPS option %d passed to MHD compiled without HTTPS support\n"),
