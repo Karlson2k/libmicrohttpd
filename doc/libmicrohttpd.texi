@@ -874,9 +874,9 @@ or higher.
 @cindex TLS
 @cindex PSK
 Use pre-shared key for TLS credentials.
-Pass a pointer to callback of type 
+Pass a pointer to callback of type
 @code{MHD_PskServerCredentialsCallback} and a closure.
-The function will be called to 
+The function will be called to
 retrieve the shared key for a given username.
 
 @item MHD_OPTION_DIGEST_AUTH_RANDOM
@@ -2049,6 +2049,17 @@ duplicated into memory blocks embedded in @var{response}.
 
 Notice that the strings must not hold newlines, carriage returns or tab
 chars.
+
+MHD_add_response_header() prevents applications from setting a
+``Transfer-Encoding'' header to values other than ``identity'' or
+``chunked'' as other transfer encodings are not supported by MHD. Note
+that usually MHD will pick the transfer encoding correctly
+automatically, but applications can use the header to force a
+particular behavior.
+
+MHD_add_response_header() also prevents applications from setting a
+``Content-Length'' header. MHD will automatically set a correct
+``Content-Length'' header if it is possible and allowed.
 
 Return @code{MHD_NO} on error (i.e. invalid header or content format or
 memory allocation error).

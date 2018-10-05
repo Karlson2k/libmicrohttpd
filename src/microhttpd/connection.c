@@ -1404,6 +1404,7 @@ try_grow_read_buffer (struct MHD_Connection *connection)
 static int
 build_header_response (struct MHD_Connection *connection)
 {
+  struct MHD_Response *response = connection->response;
   size_t size;
   size_t off;
   struct MHD_HTTP_Header *pos;
@@ -1420,11 +1421,11 @@ build_header_response (struct MHD_Connection *connection)
   bool response_has_close;
   bool response_has_keepalive;
   const char *have_encoding;
-  const char *have_content_length;
   int must_add_close;
   int must_add_chunked_encoding;
   int must_add_keep_alive;
   int must_add_content_length;
+  int may_add_content_length;
 
   mhd_assert (NULL != connection->version);
   if (0 == connection->version[0])
@@ -1458,7 +1459,7 @@ build_header_response (struct MHD_Connection *connection)
       size = off + 2;           /* +2 for extra "\r\n" at the end */
       kind = MHD_HEADER_KIND;
       if ( (0 == (connection->daemon->options & MHD_USE_SUPPRESS_DATE_NO_CLOCK)) &&
-	   (NULL == MHD_get_response_header (connection->response,
+	   (NULL == MHD_get_response_header (response,
 					     MHD_HTTP_HEADER_DATE)) )
         get_date_string (date,
 			 sizeof (date));
@@ -1486,30 +1487,35 @@ build_header_response (struct MHD_Connection *connection)
   switch (connection->state)
     {
     case MHD_CONNECTION_FOOTERS_RECEIVED:
-      response_has_close = MHD_check_response_header_s_token_ci (connection->response,
+      response_has_close = MHD_check_response_header_s_token_ci (response,
                                                                  MHD_HTTP_HEADER_CONNECTION,
                                                                  "close");
-      response_has_keepalive = MHD_check_response_header_s_token_ci (connection->response,
+      response_has_keepalive = MHD_check_response_header_s_token_ci (response,
                                                                      MHD_HTTP_HEADER_CONNECTION,
                                                                      "Keep-Alive");
       client_requested_close = MHD_lookup_header_s_token_ci (connection,
-                                                            MHD_HTTP_HEADER_CONNECTION,
-                                                            "close");
+                                                             MHD_HTTP_HEADER_CONNECTION,
+                                                             "close");
 
-      if (0 != (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY))
+      if (0 != (response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY))
         connection->keepalive = MHD_CONN_MUST_CLOSE;
 #ifdef UPGRADE_SUPPORT
-      else if (NULL != connection->response->upgrade_handler)
+      else if (NULL != response->upgrade_handler)
         /* If this connection will not be "upgraded", it must be closed. */
         connection->keepalive = MHD_CONN_MUST_CLOSE;
 #endif /* UPGRADE_SUPPORT */
 
       /* now analyze chunked encoding situation */
       connection->have_chunked_upload = false;
-
-      if ( (MHD_SIZE_UNKNOWN == connection->response->total_size) &&
+      have_encoding = MHD_get_response_header (response,
+                                               MHD_HTTP_HEADER_TRANSFER_ENCODING);
+      if (NULL == have_encoding)
+        may_add_content_length = MHD_YES;
+      else
+        may_add_content_length = MHD_NO; /* RFC 7230, Section 3.3.2 forbids header */
+      if ( (MHD_SIZE_UNKNOWN == response->total_size) &&
 #ifdef UPGRADE_SUPPORT
-           (NULL == connection->response->upgrade_handler) &&
+           (NULL == response->upgrade_handler) &&
 #endif /* UPGRADE_SUPPORT */
            (! response_has_close) &&
            (! client_requested_close) )
@@ -1523,22 +1529,23 @@ build_header_response (struct MHD_Connection *connection)
                (MHD_str_equal_caseless_ (MHD_HTTP_VERSION_1_1,
                                          connection->version) ) )
             {
-              have_encoding = MHD_get_response_header (connection->response,
-                                                       MHD_HTTP_HEADER_TRANSFER_ENCODING);
               if (NULL == have_encoding)
                 {
                   must_add_chunked_encoding = MHD_YES;
                   connection->have_chunked_upload = true;
                 }
-              else if (MHD_str_equal_caseless_ (have_encoding,
-                                                "identity"))
-                {
-                  /* application forced identity encoding, can't do 'chunked' */
-                  must_add_close = MHD_YES;
-                }
               else
                 {
-                  connection->have_chunked_upload = true;
+                  if (MHD_str_equal_caseless_ (have_encoding,
+                                               "identity"))
+                    {
+                      /* application forced identity encoding, can't do 'chunked' */
+                      must_add_close = MHD_YES;
+                    }
+                  else
+                    {
+                      connection->have_chunked_upload = true;
+                    }
                 }
             }
           else
@@ -1556,23 +1563,29 @@ build_header_response (struct MHD_Connection *connection)
              (MHD_CONN_MUST_CLOSE == connection->keepalive)) &&
            (! response_has_close) &&
 #ifdef UPGRADE_SUPPORT
-           (NULL == connection->response->upgrade_handler) &&
+           (NULL == response->upgrade_handler) &&
 #endif /* UPGRADE_SUPPORT */
-           (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
+           (0 == (response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
         must_add_close = MHD_YES;
 
-      /* check if we should add a 'content length' header */
-      have_content_length = MHD_get_response_header (connection->response,
-                                                     MHD_HTTP_HEADER_CONTENT_LENGTH);
-
-      /* MHD_HTTP_NO_CONTENT, MHD_HTTP_NOT_MODIFIED and 1xx-status
+      /* check if we must add 'close' header because we cannot add content-length
+         because it is forbidden AND we don't have a 'chunked' encoding */
+      if ( (! may_add_content_length) &&
+           (! connection->have_chunked_upload) &&
+           (! response_has_close) )
+        must_add_close = MHD_YES;
+      /* #MHD_HTTP_NO_CONTENT, #MHD_HTTP_NOT_MODIFIED and 1xx-status
          codes SHOULD NOT have a Content-Length according to spec;
          also chunked encoding / unknown length or CONNECT... */
-      if ( (MHD_SIZE_UNKNOWN != connection->response->total_size) &&
+      if ( (MHD_SIZE_UNKNOWN != response->total_size) &&
            (MHD_HTTP_NO_CONTENT != rc) &&
            (MHD_HTTP_NOT_MODIFIED != rc) &&
            (MHD_HTTP_OK <= rc) &&
-           (NULL == have_content_length) &&
+           (NULL == /* this should always succeed due to check in
+                       MHD_add_response_header() */
+            MHD_get_response_header (response,
+                                     MHD_HTTP_HEADER_CONTENT_LENGTH)) &&
+           (may_add_content_length) &&
            ( (NULL == connection->method) ||
              (! MHD_str_equal_caseless_ (connection->method,
                                          MHD_HTTP_METHOD_CONNECT)) ) )
@@ -1596,7 +1609,7 @@ build_header_response (struct MHD_Connection *connection)
             = MHD_snprintf_ (content_length_buf,
 			     sizeof (content_length_buf),
 			     MHD_HTTP_HEADER_CONTENT_LENGTH ": " MHD_UNSIGNED_LONG_LONG_PRINTF "\r\n",
-			     (MHD_UNSIGNED_LONG_LONG) connection->response->total_size);
+			     (MHD_UNSIGNED_LONG_LONG) response->total_size);
           must_add_content_length = MHD_YES;
         }
 
@@ -1606,7 +1619,7 @@ build_header_response (struct MHD_Connection *connection)
            (MHD_NO == must_add_close) &&
            (MHD_CONN_MUST_CLOSE != connection->keepalive) &&
 #ifdef UPGRADE_SUPPORT
-           (NULL == connection->response->upgrade_handler) &&
+           (NULL == response->upgrade_handler) &&
 #endif /* UPGRADE_SUPPORT */
            (MHD_YES == keepalive_possible (connection)) )
         must_add_keep_alive = MHD_YES;
@@ -1638,7 +1651,7 @@ build_header_response (struct MHD_Connection *connection)
   mhd_assert (! (must_add_close && must_add_keep_alive) );
   mhd_assert (! (must_add_chunked_encoding && must_add_content_length) );
 
-  for (pos = connection->response->first_header; NULL != pos; pos = pos->next)
+  for (pos = response->first_header; NULL != pos; pos = pos->next)
     {
       /* TODO: add proper support for excluding "Keep-Alive" token. */
       if ( (pos->kind == kind) &&
@@ -1700,7 +1713,7 @@ build_header_response (struct MHD_Connection *connection)
 	      content_length_len);
       off += content_length_len;
     }
-  for (pos = connection->response->first_header; NULL != pos; pos = pos->next)
+  for (pos = response->first_header; NULL != pos; pos = pos->next)
     {
       /* TODO: add proper support for excluding "Keep-Alive" token. */
       if ( (pos->kind == kind) &&
