@@ -970,8 +970,8 @@ main (int argc, char *const *argv)
 			MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) (120 /* seconds */),
 			MHD_OPTION_THREAD_POOL_SIZE, (unsigned int) NUMBER_OF_THREADS,
 			MHD_OPTION_NOTIFY_COMPLETED, &response_completed_callback, NULL,
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_signed_key_pem,
-                        MHD_OPTION_HTTPS_MEM_CERT, srv_signed_cert_pem,
+			MHD_OPTION_HTTPS_MEM_KEY, srv_signed_key_pem,
+			MHD_OPTION_HTTPS_MEM_CERT, srv_signed_cert_pem,
 			MHD_OPTION_END);
   if (NULL == d)
     return 1;
