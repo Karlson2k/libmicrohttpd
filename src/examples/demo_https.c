@@ -27,6 +27,8 @@
  *        run tests against.  Note that the number of threads may need
  *        to be adjusted depending on the number of available cores.
  *        Logic is identical to demo.c, just adds HTTPS support.
+ *        This demonstration uses key/cert stored in static string. Optionally,
+ *        use gnutls_load_file() to load them from file.
  * @author Christian Grothoff
  */
 #include "platform.h"
