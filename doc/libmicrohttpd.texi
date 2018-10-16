@@ -1144,6 +1144,33 @@ Only respond in conservative HTTP 1.0-mode.   In particular,
 do not (automatically) sent "Connection" headers and always
 close the connection after generating the response.
 
+By default, MHD will respond using the same HTTP version which
+was set in the request. You can also set the
+@code{MHD_RF_HTTP_VERSION_1_0_RESPONSE} flag to force version 1.0
+in the response.
+
+@item MHD_RF_HTTP_VERSION_1_0_RESPONSE
+Only respond in HTTP 1.0-mode. Contrary to the
+@code{MHD_RF_HTTP_VERSION_1_0_ONLY} flag, the response's HTTP version will
+always be set to 1.0 and ``Connection'' headers are still supported.
+
+You can even combine this option with MHD_RF_HTTP_VERSION_1_0_ONLY to
+change the response's HTTP version while maintaining strict compliance
+with HTTP 1.0 regarding connection management.
+
+This solution is not perfect as this flag is set on the response which
+is created after header processing. So MHD will behave as a HTTP 1.1
+server until the response is queued. It means that an invalid HTTP 1.1
+request will fail even if the response is sent with HTTP 1.0 and the
+request would be valid if interpreted with this version. For example,
+this request will fail in strict mode:
+
+@verbatim
+GET / HTTP/1.1
+@end verbatim
+
+as the ``Host'' header is missing and is mandatory in HTTP 1.1, but it
+should succeed when interpreted with HTTP 1.0.
 @end table
 @end deftp
 

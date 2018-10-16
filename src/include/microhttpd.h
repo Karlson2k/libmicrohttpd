@@ -2623,8 +2623,19 @@ enum MHD_ResponseFlags
    * Only respond in conservative HTTP 1.0-mode.   In particular,
    * do not (automatically) sent "Connection" headers and always
    * close the connection after generating the response.
+   * By default, MHD will respond using the same HTTP version which
+   * was set in the request. You can also set the
+   * #MHD_RF_HTTP_VERSION_1_0_RESPONSE flag to force version 1.0
+   * in the response.
    */
-  MHD_RF_HTTP_VERSION_1_0_ONLY = 1
+  MHD_RF_HTTP_VERSION_1_0_ONLY = 1,
+
+  /**
+   * Only respond in HTTP 1.0-mode. Contrary to the
+   * #MHD_RF_HTTP_VERSION_1_0_ONLY flag, the response's HTTP version will
+   * always be set to 1.0 and "Connection" headers are still supported.
+   */
+  MHD_RF_HTTP_VERSION_1_0_RESPONSE = 2
 
 };
 

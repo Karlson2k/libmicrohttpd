@@ -1274,7 +1274,9 @@ keepalive_possible (struct MHD_Connection *connection)
     return MHD_NO;
 
   if (MHD_str_equal_caseless_(connection->version,
-                              MHD_HTTP_VERSION_1_1))
+                              MHD_HTTP_VERSION_1_1) &&
+      ( (NULL == connection->response) ||
+        (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_RESPONSE) ) ) )
     {
       if (MHD_lookup_header_s_token_ci (connection,
                                         MHD_HTTP_HEADER_CONNECTION,
@@ -1449,7 +1451,8 @@ build_header_response (struct MHD_Connection *connection)
 		     (0 != (connection->responseCode & MHD_ICY_FLAG))
 		     ? "ICY"
 		     : ( (MHD_str_equal_caseless_ (MHD_HTTP_VERSION_1_0,
-						   connection->version))
+						   connection->version) ||
+		       (0 != (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_RESPONSE)) )
 			 ? MHD_HTTP_VERSION_1_0
 			 : MHD_HTTP_VERSION_1_1),
 		     rc,

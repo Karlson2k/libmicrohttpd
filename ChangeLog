@@ -1,3 +1,7 @@
+Tue Oct 16 20:43:41 CEST 2018
+	Add MHD_RF_HTTP_VERSION_1_0_RESPONSE option to make MHD
+	act more like an HTTP/1.0 server. -GH
+
 Fri Oct  5 18:44:45 CEST 2018
 	MHD_add_response_header() now prevents applications from
 	setting a "Transfer-Encoding" header to values other than
