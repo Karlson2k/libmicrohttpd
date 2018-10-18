@@ -2023,6 +2023,16 @@ AC_SUBST([EMPTY_VAR], [[]])
 AC_DEFINE_DIR([MHD_PLUGIN_INSTALL_PREFIX], [libdir/libmicrohttpd], [tls plugins])
 
 
+# should experimental code be compiled (code that may not yet compile)?
+AC_MSG_CHECKING(whether to compile experimental code)
+AC_ARG_ENABLE([experimental],
+   [AS_HELP_STRING([--enable-experimental], [enable compiling experimental code])],
+   [enable_experimental=${enableval}],
+   [enable_experimental=no])
+AC_MSG_RESULT($enable_experimental)
+AM_CONDITIONAL([HAVE_EXPERIMENTAL], [test "x$enable_experimental" = "xyes"])
+
+
 AC_CONFIG_FILES([libmicrohttpd.pc
 w32/common/microhttpd_dll_res_vc.rc
 Makefile
