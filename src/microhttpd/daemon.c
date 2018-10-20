@@ -2097,6 +2097,14 @@ exit:
        * To avoid data races, do not close socket here. Daemon will
        * use more connections only after cleanup anyway. */
     }
+  if ( (MHD_ITC_IS_VALID_(daemon->itc)) &&
+       (! MHD_itc_activate_ (daemon->itc, "t")) )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("Failed to signal thread termination via inter-thread communication channel."));
+#endif
+    }
   return (MHD_THRD_RTRN_TYPE_) 0;
 }
 
@@ -4502,8 +4510,8 @@ static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
 MHD_polling_thread (void *cls)
 {
   struct MHD_Daemon *daemon = cls;
-  MHD_thread_init_(&(daemon->pid));
 
+  MHD_thread_init_(&(daemon->pid));
   while (! daemon->shutdown)
     {
       if (0 != (daemon->options & MHD_USE_POLL))

@@ -1,3 +1,8 @@
+Sat Oct 20 12:44:16 CEST 2018
+	In thread-per-connection mode, signal main thread for
+	thread termination for instant clean-up and application
+	notification about closed connections. -CG
+
 Tue Oct 16 20:43:41 CEST 2018
 	Add MHD_RF_HTTP_VERSION_1_0_RESPONSE option to make MHD
 	act more like an HTTP/1.0 server. -GH
