@@ -2875,11 +2875,13 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
           if ( (NULL != daemon->notify_completed) &&
                (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
                (pos->client_aware) )
-            daemon->notify_completed (daemon->notify_completed_cls,
-                                      pos,
-                                      &pos->client_context,
-                                      MHD_REQUEST_TERMINATED_COMPLETED_OK);
-          pos->client_aware = false;
+	    {
+	      daemon->notify_completed (daemon->notify_completed_cls,
+					pos,
+					&pos->client_context,
+					MHD_REQUEST_TERMINATED_COMPLETED_OK);
+	      pos->client_aware = false;
+	    }
           DLL_insert (daemon->cleanup_head,
                       daemon->cleanup_tail,
                       pos);
@@ -3431,8 +3433,9 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   if (0 != (daemon->options & MHD_USE_EPOLL))
     {
 #ifdef EPOLL_SUPPORT
-      int ret;
-      ret = MHD_epoll (daemon, MHD_NO);
+      int ret = MHD_epoll (daemon,
+			   MHD_NO);
+ 
       MHD_cleanup_connections (daemon);
       return ret;
 #else  /* ! EPOLL_SUPPORT */
