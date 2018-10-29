@@ -5531,9 +5531,15 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
+
+  if ( (NULL != daemon->notify_completed) &&
+       (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
+    *pflags |= MHD_USE_ITC; /* requires ITC */    
+  
 #ifndef NDEBUG
 #ifdef HAVE_MESSAGES
-  MHD_DLOG (daemon,  _("Using debug build of libmicrohttpd.\n") );
+  MHD_DLOG (daemon,
+	    _("Using debug build of libmicrohttpd.\n") );
 #endif /* HAVE_MESSAGES */
 #endif /* ! NDEBUG */
 
