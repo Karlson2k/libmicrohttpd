@@ -1,3 +1,6 @@
+Thu Nov  1 16:29:59 CET 2018
+	Enable using epoll() without listen socket. -JB
+
 Sat Oct 20 12:44:16 CEST 2018
 	In thread-per-connection mode, signal main thread for
 	thread termination for instant clean-up and application

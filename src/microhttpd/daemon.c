@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2007-2017 Daniel Pittman and Christian Grothoff
+  Copyright (C) 2007-2018 Daniel Pittman and Christian Grothoff
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -5990,8 +5990,7 @@ MHD_start_daemon_va (unsigned int flags,
 
 #ifdef EPOLL_SUPPORT
   if ( (0 != (*pflags & MHD_USE_EPOLL)) &&
-       (0 == daemon->worker_pool_size) &&
-       (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
+       (0 == daemon->worker_pool_size) )
     {
       if (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION))
 	{
