@@ -22,15 +22,15 @@
 #
 AC_PREREQ([2.64])
 LT_PREREQ([2.4.0])
-AC_INIT([GNU Libmicrohttpd],[0.9.59],[libmicrohttpd@gnu.org])
+AC_INIT([GNU Libmicrohttpd],[0.9.60],[libmicrohttpd@gnu.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([silent-rules] [subdir-objects])
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
-LIB_VERSION_CURRENT=58
+LIB_VERSION_CURRENT=59
 LIB_VERSION_REVISION=0
-LIB_VERSION_AGE=46
+LIB_VERSION_AGE=47
 AC_SUBST(LIB_VERSION_CURRENT)
 AC_SUBST(LIB_VERSION_REVISION)
 AC_SUBST(LIB_VERSION_AGE)
@@ -74,7 +74,7 @@ m4_ifdef([AM_GNU_GETTEXT], [
 ])
 m4_ifdef([AM_GNU_GETTEXT_VERSION], [
 #do not indent here
-AM_GNU_GETTEXT_VERSION([0.18.2])
+AM_GNU_GETTEXT_VERSION([0.19.8])
 ])
 AM_CONDITIONAL([HAVE_PO], [ test "$have_po" = yes ])
 

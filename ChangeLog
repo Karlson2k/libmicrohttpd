@@ -1,3 +1,7 @@
+Tue Nov  6 19:43:47 CET 2018
+	Upgrading to gettext 0.19.8.
+	Releasing libmicrohttpd 0.9.60. -CG
+
 Thu Nov  1 16:29:59 CET 2018
 	Enable using epoll() without listen socket. -JB
 
