@@ -2020,6 +2020,24 @@ Return @code{NULL} on error (i.e. invalid arguments, out of memory).
 @end deftypefun
 
 
+@deftypefun {struct MHD_Response *} MHD_create_response_from_buffer_with_free_callback (size_t size, void *data,  MHD_ContentReaderFreeCallback crfc)
+Create a response object.  The buffer at the end must be free'd
+by calling the @var{crfc} function.
+
+@table @var
+@item size
+size of the data portion of the response;
+
+@item buffer
+the data itself;
+
+@item crfc
+function to call at the end to free memory allocated at @var{buffer}.
+@end table
+
+Return @code{NULL} on error (i.e. invalid arguments, out of memory).
+@end deftypefun
+
 @deftypefun {struct MHD_Response *} MHD_create_response_from_data (size_t size, void *data, int must_free, int must_copy)
 Create a response object.  The response object can be extended with
 header information and then it can be used any number of times.

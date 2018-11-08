@@ -701,6 +701,34 @@ MHD_create_response_from_buffer (size_t size,
 }
 
 
+/**
+ * Create a response object.  The response object can be extended with
+ * header information and then be used any number of times.
+ *
+ * @param size size of the data portion of the response
+ * @param buffer size bytes containing the response's data portion
+ * @param crfc function to call to free the @a buffer
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_from_buffer_with_free_callback (size_t size,
+						    void *buffer,
+						    MHD_ContentReaderFreeCallback crfc)
+{
+  struct MHD_Response *r;
+
+  r = MHD_create_response_from_data (size,
+				     buffer,
+				     GNUNET_YES,
+				     GNUNET_NO);
+  if (NULL == r)
+    return r;
+  r->crfc = crfc;
+  return r;
+}
+
+
 #ifdef UPGRADE_SUPPORT
 /**
  * This connection-specific callback is provided by MHD to
