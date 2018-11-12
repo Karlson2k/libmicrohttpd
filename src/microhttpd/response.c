@@ -720,8 +720,8 @@ MHD_create_response_from_buffer_with_free_callback (size_t size,
 
   r = MHD_create_response_from_data (size,
 				     buffer,
-				     GNUNET_YES,
-				     GNUNET_NO);
+				     MHD_YES,
+				     MHD_NO);
   if (NULL == r)
     return r;
   r->crfc = crfc;
