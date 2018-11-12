@@ -1,3 +1,6 @@
+Mon Nov 12 19:50:43 CET 2018
+	Fix #5473 (test case failure due to change in libcurl). -eworm
+
 Thu Nov  8 14:53:27 CET 2018
 	Add MHD_create_response_from_buffer_with_free_callback. -CG
 

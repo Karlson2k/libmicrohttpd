@@ -218,7 +218,7 @@ testDigestAuth ()
         { MHD_stop_daemon (d); return 32; }
       port = (int)dinfo->port;
     }
-  sprintf(url, "http://127.0.0.1:%d/bar%%20 foo?a=bü%%20", port);
+  sprintf(url, "http://127.0.0.1:%d/bar%20foo%3Fkey%3Dvalue", port);
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
