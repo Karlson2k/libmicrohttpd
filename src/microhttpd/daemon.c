@@ -2177,6 +2177,7 @@ psk_gnutls_adapter (gnutls_session_t session,
     return -1;
   }
   daemon = connection->daemon;
+#if GNUTLS_VERSION_MAJOR >= 3
   if (NULL == daemon->cred_callback)
   {
 #ifdef HAVE_MESSAGES
@@ -2206,6 +2207,13 @@ psk_gnutls_adapter (gnutls_session_t session,
 	  app_psk_size);
   free (app_psk);
   return 0;
+#else
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+	      _("PSK not supported by this server.\n"));
+#endif
+    return -1;
+#endif
 }
 #endif /* HTTPS_SUPPORT */
 
@@ -3435,7 +3443,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
 #ifdef EPOLL_SUPPORT
       int ret = MHD_epoll (daemon,
 			   MHD_NO);
- 
+
       MHD_cleanup_connections (daemon);
       return ret;
 #else  /* ! EPOLL_SUPPORT */
@@ -5190,11 +5198,18 @@ parse_options_va (struct MHD_Daemon *daemon,
           break;
 #ifdef HTTPS_SUPPORT
         case MHD_OPTION_GNUTLS_PSK_CRED_HANDLER:
+#if GNUTLS_VERSION_MAJOR >= 3
           daemon->cred_callback = va_arg (ap,
                                           MHD_PskServerCredentialsCallback);
 	  daemon->cred_callback_cls = va_arg (ap,
 					      void *);
           break;
+#else
+          MHD_DLOG (daemon,
+                    _("MHD HTTPS option %d passed to MHD compiled without GNUtls >= 3\n"),
+                    opt);
+          return MHD_NO;
+#endif
 #endif /* HTTPS_SUPPORT */
         default:
 #ifdef HAVE_MESSAGES
@@ -5534,8 +5549,8 @@ MHD_start_daemon_va (unsigned int flags,
 
   if ( (NULL != daemon->notify_completed) &&
        (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
-    *pflags |= MHD_USE_ITC; /* requires ITC */    
-  
+    *pflags |= MHD_USE_ITC; /* requires ITC */
+
 #ifndef NDEBUG
 #ifdef HAVE_MESSAGES
   MHD_DLOG (daemon,
