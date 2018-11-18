@@ -57,8 +57,12 @@ struct CBC
   size_t size;
 };
 
+
 static size_t
-copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
+copyBuffer (void *ptr,
+            size_t size,
+            size_t nmemb,
+            void *ctx)
 {
   struct CBC *cbc = ctx;
 
@@ -68,6 +72,7 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   cbc->pos += size * nmemb;
   return size * nmemb;
 }
+
 
 static int
 ahc_echo (void *cls,
@@ -95,30 +100,33 @@ ahc_echo (void *cls,
       response = MHD_create_response_from_buffer (strlen (DENIED),
                                                   DENIED,
                                                   MHD_RESPMEM_PERSISTENT);
-      ret = MHD_queue_auth_fail_response(connection, realm,
-					 MY_OPAQUE,
-					 response,
-					 MHD_NO);
+      ret = MHD_queue_auth_fail_response (connection,
+                                          realm,
+                                          MY_OPAQUE,
+                                          response,
+                                          MHD_NO);
       MHD_destroy_response(response);
       return ret;
     }
-  ret = MHD_digest_auth_check(connection, realm,
-			      username,
-			      password,
-			      300);
-  free(username);
+  ret = MHD_digest_auth_check (connection,
+                               realm,
+			       username,
+                               password,
+                               300);
+  free (username);
   if ( (ret == MHD_INVALID_NONCE) ||
        (ret == MHD_NO) )
     {
-      response = MHD_create_response_from_buffer(strlen (DENIED),
-						 DENIED,
-						 MHD_RESPMEM_PERSISTENT);
+      response = MHD_create_response_from_buffer (strlen (DENIED),
+                                                  DENIED,
+                                                  MHD_RESPMEM_PERSISTENT);
       if (NULL == response)
 	return MHD_NO;
-      ret = MHD_queue_auth_fail_response(connection, realm,
-					 MY_OPAQUE,
-					 response,
-					 (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);
+      ret = MHD_queue_auth_fail_response (connection,
+                                          realm,
+                                          MY_OPAQUE,
+                                          response,
+                                          (MHD_INVALID_NONCE == ret) ? MHD_YES : MHD_NO);
       MHD_destroy_response(response);
       return ret;
     }
@@ -159,7 +167,8 @@ testDigestAuth ()
   cbc.size = 2048;
   cbc.pos = 0;
 #ifndef WINDOWS
-  fd = open("/dev/urandom", O_RDONLY);
+  fd = open ("/dev/urandom",
+             O_RDONLY);
   if (-1 == fd)
     {
       fprintf (stderr,
@@ -170,7 +179,9 @@ testDigestAuth ()
     }
   while (off < 8)
     {
-      len = read(fd, rnd, 8);
+      len = read (fd,
+                  rnd,
+                  8);
       if (len == (size_t)-1)
         {
           fprintf (stderr,
@@ -187,18 +198,25 @@ testDigestAuth ()
   {
     HCRYPTPROV cc;
     BOOL b;
-    b = CryptAcquireContext (&cc, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT);
+
+    b = CryptAcquireContext (&cc,
+                             NULL,
+                             NULL,
+                             PROV_RSA_FULL,
+                             CRYPT_VERIFYCONTEXT);
     if (b == 0)
     {
-      fprintf (stderr, "Failed to acquire crypto provider context: %lu\n",
-          GetLastError ());
+      fprintf (stderr,
+               "Failed to acquire crypto provider context: %lu\n",
+               GetLastError ());
       return 1;
     }
     b = CryptGenRandom (cc, 8, (BYTE*)rnd);
     if (b == 0)
     {
-      fprintf (stderr, "Failed to generate 8 random bytes: %lu\n",
-          GetLastError ());
+      fprintf (stderr,
+               "Failed to generate 8 random bytes: %lu\n",
+               GetLastError ());
     }
     CryptReleaseContext (cc, 0);
     if (b == 0)
@@ -206,7 +224,8 @@ testDigestAuth ()
   }
 #endif
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, PAGE,
+                        port, NULL, NULL,
+                        &ahc_echo, PAGE,
 			MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof (rnd), rnd,
 			MHD_OPTION_NONCE_NC_SIZE, 300,
 			MHD_OPTION_END);
@@ -215,9 +234,15 @@ testDigestAuth ()
   if (0 == port)
     {
       const union MHD_DaemonInfo *dinfo;
-      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
-      if (NULL == dinfo || 0 == dinfo->port)
-        { MHD_stop_daemon (d); return 32; }
+
+      dinfo = MHD_get_daemon_info (d,
+                                   MHD_DAEMON_INFO_BIND_PORT);
+      if ( (NULL == dinfo) ||
+           (0 == dinfo->port) )
+        {
+          MHD_stop_daemon (d);
+          return 32;
+        }
       port = (int)dinfo->port;
     }
   snprintf (url,

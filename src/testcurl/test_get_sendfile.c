@@ -584,11 +584,12 @@ main (int argc, char *const *argv)
        (NULL == (tmp = getenv ("TEMP"))) )
     tmp = "/tmp";
   sourcefile = malloc (strlen (tmp) + 32);
-  sprintf (sourcefile,
-	   "%s/%s%s",
-	   tmp,
-	   "test-mhd-sendfile",
-	   oneone ? "11" : "");
+  snprintf (sourcefile,
+            strlen (tmp) + 32,
+            "%s/%s%s",
+            tmp,
+            "test-mhd-sendfile",
+            oneone ? "11" : "");
   f = fopen (sourcefile, "w");
   if (NULL == f)
     {

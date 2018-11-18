@@ -207,7 +207,10 @@ testInternalGet (int port, int poll_flag)
         { MHD_stop_daemon (d); return 32; }
       port = (int)dinfo->port;
     }
-  sprintf(url, "http://127.0.0.1:%d/hello_world", port);
+  snprintf (url,
+            sizeof (url),
+            "http://127.0.0.1:%d/hello_world",
+            port);
   start_timer ();
   for (i=0;i<ROUNDS;i++)
     {
@@ -278,7 +281,10 @@ testMultithreadedGet (int port, int poll_flag)
         { MHD_stop_daemon (d); return 32; }
       port = (int)dinfo->port;
     }
-  sprintf(url, "http://127.0.0.1:%d/hello_world", port);
+  snprintf (url,
+            sizeof (url),
+            "http://127.0.0.1:%d/hello_world",
+            port);
   start_timer ();
   for (i=0;i<ROUNDS;i++)
     {
@@ -350,7 +356,10 @@ testMultithreadedPoolGet (int port, int poll_flag)
         { MHD_stop_daemon (d); return 32; }
       port = (int)dinfo->port;
     }
-  sprintf(url, "http://127.0.0.1:%d/hello_world", port);
+  snprintf (url,
+            sizeof (url),
+            "http://127.0.0.1:%d/hello_world",
+            port);
   start_timer ();
   for (i=0;i<ROUNDS;i++)
     {
@@ -424,8 +433,10 @@ testExternalGet (int port)
   cbc.buf = buf;
   cbc.size = 2048;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
-  if (d == NULL)
+                        port, NULL, NULL,
+                        &ahc_echo, "GET",
+                        MHD_OPTION_END);
+  if (NULL == d)
     return 256;
   if (0 == port)
     {
@@ -435,7 +446,10 @@ testExternalGet (int port)
         { MHD_stop_daemon (d); return 32; }
       port = (int)dinfo->port;
     }
-  sprintf(url, "http://127.0.0.1:%d/hello_world", port);
+  snprintf (url,
+            sizeof (url),
+            "http://127.0.0.1:%d/hello_world",
+            port);
   start_timer ();
   multi = curl_multi_init ();
   if (multi == NULL)
