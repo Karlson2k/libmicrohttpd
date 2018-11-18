@@ -2236,6 +2236,7 @@ parse_initial_message_line (struct MHD_Connection *connection,
     uri++;
   if ((size_t)(uri - line) == line_len)
     {
+      /* No URI and no http version given */
       curi = "";
       uri_len = 0;
       uri = NULL;
@@ -2257,29 +2258,36 @@ parse_initial_message_line (struct MHD_Connection *connection,
         http_version--;
       if (http_version > uri)
         {
+          /* http_version points to string before HTTP version string */
           http_version[0] = '\0';
           connection->version = http_version + 1;
-          args = memchr (uri,
-                         '?',
-                         http_version - uri);
+          uri_len = http_version - uri;
         }
       else
         {
           connection->version = "";
-          args = memchr (uri,
-                         '?',
-                         line_len - (uri - line));
+          uri_len = line_len - (uri - line);
         }
-      uri_len = http_version - uri;
+      /* check for spaces in URI if we are "strict" */
+      if ( (1 <= daemon->strict_for_client) &&
+           (NULL != memchr (uri,
+                            ' ',
+                            uri_len)) )
+        {
+          /* space exists in URI and we are supposed to be strict, reject */
+          return MHD_NO;
+        }
+
+      /* unescape URI before searching for arguments */
+      daemon->unescape_callback (daemon->unescape_callback_cls,
+                                 connection,
+                                 uri);
+      uri_len = strlen (uri); /* recalculate: may have changed! */
+      args = memchr (uri,
+                     '?',
+                     uri_len);
     }
-  if ( (1 <= daemon->strict_for_client) &&
-       (NULL != memchr (curi,
-                        ' ',
-                        uri_len)) )
-    {
-      /* space exists in URI and we are supposed to be strict, reject */
-      return MHD_NO;
-    }
+
   if (NULL != daemon->uri_log_callback)
     {
       connection->client_aware = true;

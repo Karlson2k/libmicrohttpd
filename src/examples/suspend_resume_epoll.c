@@ -123,7 +123,8 @@ connection_done (void *cls,
   struct Request *req = *con_cls;
 
   if (-1 != req->timerfd)
-    close (req->timerfd);
+    if (0 != close (req->timerfd))
+      abort ();
   free(req);
 }
 
