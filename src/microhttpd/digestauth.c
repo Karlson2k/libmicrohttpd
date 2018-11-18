@@ -112,12 +112,12 @@ digest_calc_ha1_from_digest (const char *alg,
 			     char sessionkey[HASH_MD5_HEX_LEN + 1])
 {
   struct MD5Context md5;
-  
+
   if (MHD_str_equal_caseless_(alg,
                               "md5-sess"))
     {
       unsigned char ha1[MHD_MD5_DIGEST_SIZE];
-      
+
       MD5Init (&md5);
       MD5Update (&md5,
 		 digest,
@@ -680,7 +680,9 @@ check_argument_match (struct MHD_Connection *connection,
 			      &num_headers);
   free (argb);
   if (MHD_YES != ret)
-    return MHD_NO;
+    {
+      return MHD_NO;
+    }
   /* also check that the number of headers matches */
   for (pos = connection->headers_received; NULL != pos; pos = pos->next)
     {
@@ -690,7 +692,7 @@ check_argument_match (struct MHD_Connection *connection,
     }
   if (0 != num_headers)
     {
-      /* argument count mismatch */
+      /* argument count missmatch */
       return MHD_NO;
     }
   return MHD_YES;
@@ -978,8 +980,8 @@ digest_auth_check_all (struct MHD_Connection *connection,
       }
     }
     free (uri);
-    return (0 == strcmp(response,
-                        respexp))
+    return (0 == strcmp (response,
+                         respexp))
       ? MHD_YES
       : MHD_NO;
   }
@@ -1006,12 +1008,12 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 		       const char *password,
 		       unsigned int nonce_timeout)
 {
-  return digest_auth_check_all(connection,
-			       realm,
-			       username,
-			       password,
-			       NULL,
-			       nonce_timeout);
+  return digest_auth_check_all (connection,
+                                realm,
+                                username,
+                                password,
+                                NULL,
+                                nonce_timeout);
 }
 
 

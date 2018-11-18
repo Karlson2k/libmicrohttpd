@@ -126,7 +126,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00096000
+#define MHD_VERSION 0x00096100
 
 /**
  * MHD-internal return code for "YES".
@@ -1176,7 +1176,7 @@ typedef void
  * @param psk[out] to be set to the pre-shared-key; should be allocated with malloc(),
  *                 will be freed by MHD
  * @param psk_size[out] to be set to the number of bytes in @a psk
- * @return 0 on success, -1 on errors 
+ * @return 0 on success, -1 on errors
  */
 typedef int
 (*MHD_PskServerCredentialsCallback)(void *cls,
@@ -1511,7 +1511,7 @@ enum MHD_OPTION
   MHD_OPTION_STRICT_FOR_CLIENT = 29,
 
   /**
-   * This should be a pointer to callback of type 
+   * This should be a pointer to callback of type
    * gnutls_psk_server_credentials_function that will be given to
    * gnutls_psk_set_server_credentials_function. It is used to
    * retrieve the shared key for a given username.
