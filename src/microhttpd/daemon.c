@@ -4775,6 +4775,9 @@ parse_options_va (struct MHD_Daemon *daemon,
 #ifdef HTTPS_SUPPORT
   int ret;
   const char *pstr;
+#if GNUTLS_VERSION_MAJOR >= 3
+  gnutls_certificate_retrieve_function2 *pgcrf;
+#endif
 #endif /* HTTPS_SUPPORT */
 
   while (MHD_OPTION_END != (opt = (enum MHD_OPTION) va_arg (ap, int)))
@@ -4892,9 +4895,10 @@ parse_options_va (struct MHD_Daemon *daemon,
           break;
 #ifdef HTTPS_SUPPORT
         case MHD_OPTION_HTTPS_MEM_KEY:
+          pstr = va_arg (ap,
+                         const char *);
 	  if (0 != (daemon->options & MHD_USE_TLS))
-	    daemon->https_mem_key = va_arg (ap,
-                                            const char *);
+	    daemon->https_mem_key = pstr;
 #ifdef HAVE_MESSAGES
 	  else
 	    MHD_DLOG (daemon,
@@ -4903,9 +4907,10 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
           break;
         case MHD_OPTION_HTTPS_KEY_PASSWORD:
+          pstr = va_arg (ap,
+                         const char *);
 	  if (0 != (daemon->options & MHD_USE_TLS))
-	    daemon->https_key_password = va_arg (ap,
-                                                 const char *);
+	    daemon->https_key_password = pstr;
 #ifdef HAVE_MESSAGES
 	  else
 	    MHD_DLOG (daemon,
@@ -4914,9 +4919,10 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
           break;
         case MHD_OPTION_HTTPS_MEM_CERT:
+          pstr = va_arg (ap,
+                         const char *);
 	  if (0 != (daemon->options & MHD_USE_TLS))
-	    daemon->https_mem_cert = va_arg (ap,
-                                             const char *);
+	    daemon->https_mem_cert = pstr;
 #ifdef HAVE_MESSAGES
 	  else
 	    MHD_DLOG (daemon,
@@ -4925,9 +4931,10 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
           break;
         case MHD_OPTION_HTTPS_MEM_TRUST:
+          pstr = va_arg (ap,
+                         const char *);
 	  if (0 != (daemon->options & MHD_USE_TLS))
-	    daemon->https_mem_trust = va_arg (ap,
-                                              const char *);
+	    daemon->https_mem_trust = pstr;
 #ifdef HAVE_MESSAGES
 	  else
 	    MHD_DLOG (daemon,
@@ -4940,10 +4947,10 @@ parse_options_va (struct MHD_Daemon *daemon,
                                                                   int);
 	  break;
         case MHD_OPTION_HTTPS_MEM_DHPARAMS:
+          pstr = va_arg (ap,
+                         const char *);
           if (0 != (daemon->options & MHD_USE_TLS))
             {
-              const char *arg = va_arg (ap,
-                                        const char *);
               gnutls_datum_t dhpar;
 
               if (gnutls_dh_params_init (&daemon->https_mem_dhparams) < 0)
@@ -4954,8 +4961,8 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
                   return MHD_NO;
                 }
-              dhpar.data = (unsigned char *) arg;
-              dhpar.size = strlen (arg);
+              dhpar.data = (unsigned char *) pstr;
+              dhpar.size = strlen (pstr);
               if (gnutls_dh_params_import_pkcs3 (daemon->https_mem_dhparams,
                                                  &dhpar,
                                                  GNUTLS_X509_FMT_PEM) < 0)
@@ -4969,22 +4976,21 @@ parse_options_va (struct MHD_Daemon *daemon,
                 }
               daemon->have_dhparams = true;
             }
-          else
-            {
 #ifdef HAVE_MESSAGES
+          else
               MHD_DLOG (daemon,
                         _("MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
                         opt);
 #endif
-              return MHD_NO;
-            }
           break;
         case MHD_OPTION_HTTPS_PRIORITIES:
+          pstr = va_arg (ap,
+                         const char *);
 	  if (0 != (daemon->options & MHD_USE_TLS))
 	    {
 	      gnutls_priority_deinit (daemon->priority_cache);
 	      ret = gnutls_priority_init (&daemon->priority_cache,
-					  pstr = va_arg (ap, const char*),
+					  pstr,
 					  NULL);
 	      if (GNUTLS_E_SUCCESS != ret)
 	      {
@@ -4998,6 +5004,12 @@ parse_options_va (struct MHD_Daemon *daemon,
 		return MHD_NO;
 	      }
 	    }
+#ifdef HAVE_MESSAGES
+          else
+              MHD_DLOG (daemon,
+                        _("MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
+                        opt);
+#endif
           break;
         case MHD_OPTION_HTTPS_CERT_CALLBACK:
 #if GNUTLS_VERSION_MAJOR < 3
@@ -5007,9 +5019,16 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
           return MHD_NO;
 #else
+          pgcrf = va_arg (ap,
+                          gnutls_certificate_retrieve_function2 *);
           if (0 != (daemon->options & MHD_USE_TLS))
-            daemon->cert_callback = va_arg (ap,
-                                            gnutls_certificate_retrieve_function2 *);
+            daemon->cert_callback = pgcrf;
+          else
+#ifdef HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        _("MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
+                        opt);
+#endif
           break;
 #endif
 #endif /* HTTPS_SUPPORT */
