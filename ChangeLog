@@ -1,3 +1,6 @@
+Wed Dec  5 18:08:59 CET 2018
+	Fix regression causing URLs to be unescaped twice. -CG
+
 Sun Nov 18 13:08:11 CET 2018
 	Parse arguments with (properly) escaped URLs correctly.
 	(making things work with recent cURL changes, #5473).

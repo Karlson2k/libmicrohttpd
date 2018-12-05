@@ -2307,10 +2307,6 @@ parse_initial_message_line (struct MHD_Connection *connection,
 			    &connection_add_header,
 			    &unused_num_headers);
     }
-  if (NULL != uri)
-    daemon->unescape_callback (daemon->unescape_callback_cls,
-                               connection,
-                               uri);
   connection->url = curi;
   return MHD_YES;
 }
