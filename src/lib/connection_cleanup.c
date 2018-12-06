@@ -85,7 +85,7 @@ MHD_connection_cleanup_ (struct MHD_Daemon *daemon)
 		  pos);
       MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 
-      if ( (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model) &&
+      if ( (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode) &&
 	   (! pos->thread_joined) &&
            (! MHD_join_thread_ (pos->pid.handle)) )
         MHD_PANIC (_("Failed to join a thread\n"));

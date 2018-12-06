@@ -49,7 +49,7 @@ suspend_action (void *cls,
       MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
       return MHD_SC_OK;
     }
-  if (daemon->threading_model != MHD_TM_THREAD_PER_CONNECTION)
+  if (daemon->threading_mode != MHD_TM_THREAD_PER_CONNECTION)
     {
       if (connection->connection_timeout ==
 	  daemon->connection_default_timeout)

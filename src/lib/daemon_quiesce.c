@@ -53,7 +53,7 @@ MHD_daemon_quiesce (struct MHD_Daemon *daemon)
   if (MHD_INVALID_SOCKET == (listen_socket = daemon->listen_socket))
     return MHD_INVALID_SOCKET;
   if ( (daemon->disable_itc) &&
-       (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_model) )
+       (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_mode) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,

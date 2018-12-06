@@ -379,7 +379,7 @@ sendfile_adapter (struct MHD_Connection *connection)
 #ifdef HAVE_DARWIN_SENDFILE
   off_t len;
 #endif /* HAVE_DARWIN_SENDFILE */
-  const bool used_thr_p_c = (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model);
+  const bool used_thr_p_c = (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode);
   const size_t chunk_size = used_thr_p_c ? MHD_SENFILE_CHUNK_THR_P_C_ : MHD_SENFILE_CHUNK_;
   size_t send_size = 0;
 
@@ -2754,7 +2754,7 @@ process_request_body (struct MHD_Request *request)
 	  /* client did not process all upload data, complain if
 	     the setup was incorrect, which may prevent us from
 	     handling the rest of the request */
-	  if ( (MHD_TM_EXTERNAL_EVENT_LOOP == daemon->threading_model) &&
+	  if ( (MHD_TM_EXTERNAL_EVENT_LOOP == daemon->threading_mode) &&
 	       (! connection->suspended) )
 	    MHD_DLOG (daemon,
 		      MHD_SC_APPLICATION_HUNG_CONNECTION,
@@ -2810,7 +2810,7 @@ cleanup_connection (struct MHD_Connection *connection)
     }
   else
     {
-      if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model)
+      if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_mode)
         {
           if (connection->connection_timeout ==
 	      daemon->connection_default_timeout)
@@ -2832,7 +2832,7 @@ cleanup_connection (struct MHD_Connection *connection)
   connection->resuming = false;
   connection->request.in_idle = false;
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
-  if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model)
+  if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode)
     {
       /* if we were at the connection limit before and are in
          thread-per-connection mode, signal the main thread
@@ -2973,7 +2973,7 @@ connection_update_event_loop_info (struct MHD_Connection *connection)
           if (request->read_buffer_offset == request->read_buffer_size)
             {
               if ( (! try_grow_read_buffer (request)) &&
-		   (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_model) )
+		   (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_mode) )
                 {
                   /* failed to grow the read buffer, and the client
                      which is supposed to handle the received data in
@@ -3675,7 +3675,7 @@ MHD_connection_call_handlers_ (struct MHD_Connection *con,
    * TLS read-ready connection in 'read info' state as connection
    * without space in read buffer will be market as 'info block'. */
   if ( (! daemon->data_already_pending) &&
-       (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model) )
+       (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_mode) )
     {
       if (MHD_EVENT_LOOP_INFO_BLOCK ==
 	  con->request.event_loop_info)

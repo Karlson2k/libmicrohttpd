@@ -40,7 +40,7 @@ MHD_connection_set_timeout (struct MHD_Connection *connection,
   struct MHD_Daemon *daemon = connection->daemon;
   
   connection->last_activity = MHD_monotonic_sec_counter();
-  if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model)
+  if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode)
     {
       /* Simple case, no need to lock to update DLLs */
       connection->connection_timeout = (time_t) timeout_s;
@@ -96,7 +96,7 @@ MHD_update_last_activity_ (struct MHD_Connection *connection)
     return; /* no activity on suspended connections */
 
   connection->last_activity = MHD_monotonic_sec_counter();
-  if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model)
+  if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode)
     return; /* each connection has personal timeout */
 
   if (connection->connection_timeout !=

@@ -319,7 +319,7 @@ MHD_daemon_get_fdset2 (struct MHD_Daemon *daemon,
 		       MHD_socket *max_fd,
 		       unsigned int fd_setsize)
 {
-  if ( (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_model) ||
+  if ( (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_mode) ||
        (MHD_ELS_POLL == daemon->event_loop_syscall) )
     return MHD_SC_CONFIGURATION_MISSMATCH_FOR_GET_FDSET;
 
@@ -437,7 +437,7 @@ internal_run_from_select (struct MHD_Daemon *daemon,
                   read_fd_set)) )
     (void) MHD_accept_connection_ (daemon);
 
-  if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model)
+  if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_mode)
     {
       /* do not have a thread per connection, process all connections now */
       prev = daemon->connections_tail;
@@ -608,7 +608,7 @@ MHD_daemon_run_from_select (struct MHD_Daemon *daemon,
 			    const fd_set *write_fd_set,
 			    const fd_set *except_fd_set)
 {
-  if ( (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_model) ||
+  if ( (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_mode) ||
        (MHD_ELS_POLL == daemon->event_loop_syscall) )
     return MHD_SC_CONFIGURATION_MISSMATCH_FOR_RUN_SELECT;
   if (MHD_ELS_EPOLL == daemon->event_loop_syscall)
@@ -671,10 +671,10 @@ MHD_daemon_select_ (struct MHD_Daemon *daemon,
   sc = MHD_SC_OK;
   if ( (! daemon->disallow_suspend_resume) &&
        (MHD_resume_suspended_connections_ (daemon)) &&
-       (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model) )
+       (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_mode) )
     may_block = MHD_NO;
 
-  if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model)
+  if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_mode)
     {
 
       /* single-threaded, go over everything */
@@ -766,7 +766,7 @@ MHD_daemon_select_ (struct MHD_Daemon *daemon,
       timeout.tv_sec = 0;
       tv = &timeout;
     }
-  else if ( (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model) &&
+  else if ( (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_mode) &&
 	    (MHD_SC_OK ==
 	     MHD_daemon_get_timeout (daemon,
 				     &ltimeout)) )

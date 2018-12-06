@@ -44,7 +44,7 @@ MHD_connection_update_last_activity_ (struct MHD_Connection *connection)
     return; /* no activity on suspended connections */
 
   connection->last_activity = MHD_monotonic_sec_counter();
-  if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model)
+  if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode)
     return; /* each connection has personal timeout */
 
   if (connection->connection_timeout != daemon->connection_default_timeout)

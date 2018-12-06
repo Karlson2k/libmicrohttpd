@@ -669,20 +669,20 @@ setup_thread_pool (struct MHD_Daemon *daemon)
    * due to integer division). Also keep track of how many
    * connections are leftover after an equal split. */
   unsigned int conns_per_thread = daemon->global_connection_limit
-    / daemon->threading_model;
+    / daemon->threading_mode;
   unsigned int leftover_conns = daemon->global_connection_limit
-    % daemon->threading_model;
+    % daemon->threading_mode;
   int i;
   enum MHD_StatusCode sc;
 
   /* Allocate memory for pooled objects */
-  daemon->worker_pool = MHD_calloc_ (daemon->threading_model,
+  daemon->worker_pool = MHD_calloc_ (daemon->threading_mode,
 				     sizeof (struct MHD_Daemon));
   if (NULL == daemon->worker_pool)
     return MHD_SC_THREAD_POOL_MALLOC_FAILURE;
 
   /* Start the workers in the pool */
-  for (i = 0; i < daemon->threading_model; i++)
+  for (i = 0; i < daemon->threading_mode; i++)
     {
       /* Create copy of the Daemon object for each worker */
       struct MHD_Daemon *d = &daemon->worker_pool[i];
@@ -691,7 +691,7 @@ setup_thread_pool (struct MHD_Daemon *daemon)
 	      daemon,
 	      sizeof (struct MHD_Daemon));
       /* Adjust pooling params for worker daemons; note that memcpy()
-	 has already copied MHD_USE_INTERNAL_POLLING_THREAD thread model into
+	 has already copied MHD_USE_INTERNAL_POLLING_THREAD thread mode into
 	 the worker threads. */
       d->master = daemon;
       d->worker_pool_size = 0;
@@ -822,7 +822,7 @@ MHD_daemon_start (struct MHD_Daemon *daemon)
       /* We do not support thread-per-connection in combination
 	 with epoll, so use poll in this case, otherwise prefer
 	 epoll. */
-      if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model)
+      if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode)
 	daemon->event_loop_syscall = MHD_ELS_POLL;
       else
 	daemon->event_loop_syscall = MHD_ELS_EPOLL;
@@ -837,7 +837,7 @@ MHD_daemon_start (struct MHD_Daemon *daemon)
   if ( (MHD_ELS_EPOLL == daemon->event_loop_syscall) &&
        (0 == daemon->worker_pool_size) &&
        (MHD_INVALID_SOCKET != daemon->listen_socket) &&
-       (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model) )
+       (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -927,11 +927,11 @@ MHD_daemon_start (struct MHD_Daemon *daemon)
   /* Setup main listen thread (only if we have no thread pool or
      external event loop and do have a listen socket) */
   /* FIXME: why no worker thread if we have no listen socket? */
-  if ( ( (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model) ||
-	 (1 == daemon->threading_model) ) &&
+  if ( ( (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode) ||
+	 (1 == daemon->threading_mode) ) &&
        (MHD_INVALID_SOCKET != daemon->listen_socket) &&
        (! MHD_create_named_thread_ (&daemon->pid,
-				    (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model)
+				    (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode)
 				    ? "MHD-listen"
 				    : "MHD-single",
 				    daemon->thread_stack_limit_b,
@@ -949,7 +949,7 @@ MHD_daemon_start (struct MHD_Daemon *daemon)
 
   /* Setup worker threads */
   /* FIXME: why no thread pool if we have no listen socket? */
-  if ( (1 < daemon->threading_model) &&
+  if ( (1 < daemon->threading_mode) &&
 	(MHD_INVALID_SOCKET != daemon->listen_socket) &&
 	(MHD_SC_OK != (sc = setup_thread_pool (daemon))) )
     return sc;

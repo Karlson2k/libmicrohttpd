@@ -39,7 +39,7 @@ stop_workers (struct MHD_Daemon *daemon)
   unsigned int i;
 
   mhd_assert (1 < daemon->worker_pool_size);
-  mhd_assert (1 < daemon->threading_model);
+  mhd_assert (1 < daemon->threading_mode);
   if (daemon->was_quiesced)
     fd = MHD_INVALID_SOCKET; /* Do not use FD if daemon was quiesced */
   else
@@ -111,7 +111,7 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
     {
       mhd_assert (0 == daemon->worker_pool_size);
       /* Worker daemon or single-thread daemon. */
-      if (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_model)
+      if (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_mode)
         {
 	  /* Worker daemon or single daemon with internal thread(s). */
 	  /* Separate thread(s) is used for polling sockets. */

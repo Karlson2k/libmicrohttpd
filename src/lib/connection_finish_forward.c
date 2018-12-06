@@ -45,7 +45,7 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
   if (NULL == daemon->tls_api)
     return; /* Nothing to do with non-TLS connection. */
 
-  if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model)
+  if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_mode)
     DLL_remove (daemon->urh_head,
                 daemon->urh_tail,
                 urh);

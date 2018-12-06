@@ -1,3 +1,6 @@
+Thu Dec  6 13:25:08 BRT 2018
+	Renamed all occurrences from _model(s)_ to _mode(s)_. -SC
+
 Thu Dec  6 12:50:11 BRT 2018
 	Optimized the function MHD_create_response_from_callback() for
 	Windows by increasing its internal buffer size and allowed to customize
@@ -1762,7 +1765,7 @@ Tue May 29 13:55:03 CEST 2012
 Tue May 29 13:45:15 CEST 2012
 	Fixing bug where MHD failed to call connection termination callback
 	if a connection either was closed due to read errors or if MHD
-	was terminated with certain threading models.  Added new
+	was terminated with certain threading modes.  Added new
 	termination code MHD_REQUEST_TERMINATED_READ_ERROR for the
 	read-termination cause. -CG
 

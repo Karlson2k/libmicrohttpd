@@ -533,17 +533,17 @@ MHD_daemon_gnutls_key_and_cert_from_callback (struct MHD_Daemon *daemon,
 
 
 /**
- * Specify threading model to use.
+ * Specify threading mode to use.
  *
  * @param daemon daemon to configure
- * @param tm model to use (positive values indicate the
+ * @param tm mode to use (positive values indicate the
  *        number of worker threads to be used)
  */
 void
-MHD_daemon_threading_model (struct MHD_Daemon *daemon,
-			    enum MHD_ThreadingModel tm)
+MHD_daemon_threading_mode (struct MHD_Daemon *daemon,
+			    enum MHD_ThreadingMode tm)
 {
-  daemon->threading_model = tm;
+  daemon->threading_mode = tm;
 }
 
 
@@ -628,7 +628,7 @@ MHD_daemon_connection_memory_limit (struct MHD_Daemon *daemon,
 
 /**
  * Desired size of the stack for threads created by MHD.  Use 0 for
- * system default.  Only useful if the selected threading model
+ * system default.  Only useful if the selected threading mode
  * is not #MHD_TM_EXTERNAL_EVENT_LOOP.
  *
  * @param daemon daemon to configure

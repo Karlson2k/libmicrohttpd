@@ -66,7 +66,7 @@ MHD_daemon_get_information_sz (struct MHD_Daemon *daemon,
 #endif
     case MHD_DAEMON_INFORMATION_CURRENT_CONNECTIONS:
       CHECK_SIZE (unsigned int);
-      if (MHD_TM_EXTERNAL_EVENT_LOOP == daemon->threading_model)
+      if (MHD_TM_EXTERNAL_EVENT_LOOP == daemon->threading_mode)
         {
           /* Assumes that MHD_run() in not called in other thread
 	     (of the application) at the same time. */

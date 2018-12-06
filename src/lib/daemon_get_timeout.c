@@ -53,7 +53,7 @@ MHD_daemon_get_timeout (struct MHD_Daemon *daemon,
   struct MHD_Connection *pos;
   bool have_timeout;
 
-  if (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_model)
+  if (MHD_TM_EXTERNAL_EVENT_LOOP != daemon->threading_mode)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,

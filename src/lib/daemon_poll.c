@@ -207,7 +207,7 @@ MHD_daemon_poll_all_ (struct MHD_Daemon *daemon,
       }
     if (! may_block)
       timeout = 0;
-    else if ( (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model) ||
+    else if ( (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode) ||
 	      (MHD_SC_OK != /* FIXME: distinguish between NO_TIMEOUT and errors! */
 	       MHD_daemon_get_timeout (daemon,
 				       &ltimeout)) )
@@ -444,7 +444,7 @@ MHD_daemon_poll_ (struct MHD_Daemon *daemon,
 #ifdef HAVE_POLL
   if (daemon->shutdown)
     return MHD_SC_DAEMON_ALREADY_SHUTDOWN;
-  if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model)
+  if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_mode)
     return MHD_daemon_poll_all_ (daemon,
 				 may_block);
   return MHD_daemon_poll_listen_socket_ (daemon,

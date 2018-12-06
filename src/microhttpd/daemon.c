@@ -5665,7 +5665,7 @@ MHD_start_daemon_va (unsigned int flags,
     }
 #endif
 
-  /* Thread pooling currently works only with internal select thread model */
+  /* Thread pooling currently works only with internal select thread mode */
   if ( (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) &&
        (daemon->worker_pool_size > 0) )
     {
@@ -6135,7 +6135,7 @@ MHD_start_daemon_va (unsigned int flags,
 
               memcpy (d, daemon, sizeof (struct MHD_Daemon));
               /* Adjust pooling params for worker daemons; note that memcpy()
-                 has already copied MHD_USE_INTERNAL_POLLING_THREAD thread model into
+                 has already copied MHD_USE_INTERNAL_POLLING_THREAD thread mode into
                  the worker threads. */
               d->master = daemon;
               d->worker_pool_size = 0;

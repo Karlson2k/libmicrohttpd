@@ -798,7 +798,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
       goto cleanup;
     }
   daemon->connections++;
-  if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model)
+  if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_mode)
     {
       XDLL_insert (daemon->normal_timeout_head,
                    daemon->normal_timeout_tail,
@@ -815,7 +815,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 				  MHD_CONNECTION_NOTIFY_STARTED);
 
   /* attempt to create handler thread */
-  if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model)
+  if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode)
     {
       if (! MHD_create_named_thread_ (&connection->pid,
                                       "MHD-connection",
@@ -876,7 +876,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
     }
   else /* This 'else' is combined with next 'if'. */
 #endif
-  if ( (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model) &&
+  if ( (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_mode) &&
        (external_add) &&
        (MHD_ITC_IS_VALID_(daemon->itc)) &&
        (! MHD_itc_activate_ (daemon->itc,
@@ -906,7 +906,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
                     addr,
                     addrlen);
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
-  if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model)
+  if (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_mode)
     {
       XDLL_remove (daemon->normal_timeout_head,
                    daemon->normal_timeout_tail,

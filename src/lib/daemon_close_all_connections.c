@@ -44,7 +44,7 @@ close_connection (struct MHD_Connection *pos)
 {
   struct MHD_Daemon *daemon = pos->daemon;
 
-  if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model)
+  if (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode)
     {
       MHD_connection_mark_closed_ (pos);
       return; /* must let thread to do the rest */
@@ -89,7 +89,7 @@ void
 MHD_daemon_close_all_connections_ (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
-  const bool used_thr_p_c = (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model);
+  const bool used_thr_p_c = (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode);
 #ifdef UPGRADE_SUPPORT
   const bool upg_allowed = (! daemon->disallow_upgrade);
 #endif /* UPGRADE_SUPPORT */

@@ -80,7 +80,7 @@ MHD_resume_suspended_connections_ (struct MHD_Daemon *daemon)
   struct MHD_Connection *pos;
   struct MHD_Connection *prev = NULL;
   bool ret;
-  const bool used_thr_p_c = (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_model);
+  const bool used_thr_p_c = (MHD_TM_THREAD_PER_CONNECTION == daemon->threading_mode);
 
   mhd_assert (NULL == daemon->worker_pool);
   ret = false;
@@ -162,7 +162,7 @@ MHD_resume_suspended_connections_ (struct MHD_Daemon *daemon)
            * application was closed upgraded connection.
            * Insert connection into cleanup list. */
           if ( (NULL != response) &&
-               (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model) &&
+               (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_mode) &&
                (NULL != response->termination_cb) )
             response->termination_cb (response->termination_cb_cls,
                                       MHD_REQUEST_TERMINATED_COMPLETED_OK,

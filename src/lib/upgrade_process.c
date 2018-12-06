@@ -358,7 +358,7 @@ MHD_upgrade_response_handle_process_ (struct MHD_UpgradeResponseHandle *urh)
    * and incoming forward buffer have some space. */
   if ( (connection->tls_read_ready) &&
        (urh->in_buffer_used < urh->in_buffer_size) &&
-       (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_model) )
+       (MHD_TM_THREAD_PER_CONNECTION != daemon->threading_mode) )
     daemon->data_already_pending = true;
 
   if ( (daemon->shutdown) &&

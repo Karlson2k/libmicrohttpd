@@ -1407,11 +1407,11 @@ struct MHD_Daemon
   struct MHD_itc_ itc;
 
   /**
-   * Which threading model do we use? Postive
+   * Which threading mode do we use? Postive
    * numbers indicate the number of worker threads to be used.
    * Values larger than 1 imply a thread pool.
    */
-  enum MHD_ThreadingModel threading_model;
+  enum MHD_ThreadingMode threading_mode;
 
   /**
    * When should we use TCP_FASTOPEN?
