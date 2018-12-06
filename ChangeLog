@@ -1,3 +1,6 @@
+Thu Dec  6 02:11:15 -03 2018
+	Referenced the gnutls_load_file() function in the HTTPs examples. -SC
+
 Wed Dec  5 18:08:59 CET 2018
 	Fix regression causing URLs to be unescaped twice. -CG
 
