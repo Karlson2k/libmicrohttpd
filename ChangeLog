@@ -1,4 +1,9 @@
-Thu Dec  6 02:11:15 -03 2018
+Thu Dec  6 12:50:11 BRT 2018
+	Optimized the function MHD_create_response_from_callback() for
+	Windows by increasing its internal buffer size and allowed to customize
+	it via macro MHD_FD_BLOCK_SIZE. -SC
+
+Thu Dec  6 02:11:15 BRT 2018
 	Referenced the gnutls_load_file() function in the HTTPs examples. -SC
 
 Wed Dec  5 18:08:59 CET 2018

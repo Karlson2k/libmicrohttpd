@@ -182,7 +182,7 @@ MHD_response_from_fd (enum MHD_HTTP_StatusCode sc,
 
   response = MHD_response_from_callback (sc,
 					 size,
-					 4 * 1024,
+					 MHD_FD_BLOCK_SIZE,
 					 &file_reader,
 					 NULL,
 					 &free_callback);

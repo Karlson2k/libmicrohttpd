@@ -566,7 +566,7 @@ MHD_create_response_from_fd_at_offset64 (uint64_t size,
     return NULL;
 
   response = MHD_create_response_from_callback (size,
-						4 * 1024,
+						MHD_FD_BLOCK_SIZE,
 						&file_reader,
 						NULL,
 						&free_callback);

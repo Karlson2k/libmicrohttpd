@@ -143,4 +143,12 @@
 #endif /* _WIN32 */
 #endif /* !TIMEVAL_TV_SEC_MAX */
 
+#ifndef MHD_FD_BLOCK_SIZE
+#ifdef _WIN32
+#define MHD_FD_BLOCK_SIZE 16384 /* 16k */
+#else /* _WIN32 */
+#define MHD_FD_BLOCK_SIZE 4096 /* 4k */
+#endif /* _WIN32 */
+#endif /* !MHD_FD_BLOCK_SIZE */
+
 #endif /* MHD_LIMITS_H */
