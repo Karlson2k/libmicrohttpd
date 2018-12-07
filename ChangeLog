@@ -1,6 +1,6 @@
 Fri Dec  7 12:37:17 CET 2018
 	Add option to build MHD without any threads
-	and MHD_FEATURE_THREADS to test for it. -CG
+	and MHD_FEATURE_THREADS to test for it.  -CG
 
 Thu Dec  6 13:25:08 BRT 2018
 	Renamed all occurrences from _model(s)_ to _mode(s)_. -SC
