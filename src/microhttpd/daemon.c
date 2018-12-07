@@ -5745,12 +5745,8 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
 #endif
 
-<<<<<<< HEAD
   /* Thread pooling currently works only with internal select thread mode */
-=======
-  /* Thread pooling currently works only with internal select thread model */
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
->>>>>>> add build option to compile MHD without threads
   if ( (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) &&
         (daemon->worker_pool_size > 0) )
     {

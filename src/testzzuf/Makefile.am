@@ -29,11 +29,11 @@ check_PROGRAMS = \
   test_put_large11 
 
 if USE_POSIX_THREADS
-check_PROGRAMS +=
+check_PROGRAMS += \
   $(THREAD_ONLY_TESTS)
 endif
 if USE_W32_THREADS
-check_PROGRAMS +=
+check_PROGRAMS += \
   $(THREAD_ONLY_TESTS)
 endif
 

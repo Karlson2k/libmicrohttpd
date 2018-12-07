@@ -277,7 +277,7 @@ do not include epoll support, even if it supported (minimally smaller binary siz
 @item ``--enable-coverage''
 set flags for analysis of code-coverage with gcc/gcov (results in slow, large binaries)
 
-@item ``--with-threads={posix,w32,none,auto}''
+@item ``--with-threads=posix,w32,none,auto''
 sets threading library to use. With use ``none'' to not support threads. In this case, MHD will only support the ``external'' threading modes and not perform any locking of data structures! Use @code{MHD_is_feature_supported(MHD_FEATURE_THREADS)} to test if threads are available. Default is ``auto''.
 
 @item ``--with-gcrypt=PATH''
