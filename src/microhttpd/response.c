@@ -350,11 +350,13 @@ MHD_create_response_from_callback (uint64_t size,
   response->fd = -1;
   response->data = (void *) &response[1];
   response->data_buffer_size = block_size;
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if (! MHD_mutex_init_ (&response->mutex))
   {
     free (response);
     return NULL;
   }
+#endif
   response->crc = crc;
   response->crfc = crfc;
   response->crc_cls = crc_cls;
@@ -649,16 +651,20 @@ MHD_create_response_from_data (size_t size,
   if (NULL == (response = MHD_calloc_ (1, sizeof (struct MHD_Response))))
     return NULL;
   response->fd = -1;
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if (! MHD_mutex_init_ (&response->mutex))
     {
       free (response);
       return NULL;
     }
+#endif
   if ((must_copy) && (size > 0))
     {
       if (NULL == (tmp = malloc (size)))
         {
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
           MHD_mutex_destroy_chk_ (&response->mutex);
+#endif
           free (response);
           return NULL;
         }
@@ -1084,11 +1090,13 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
   response = MHD_calloc_ (1, sizeof (struct MHD_Response));
   if (NULL == response)
     return NULL;
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if (! MHD_mutex_init_ (&response->mutex))
     {
       free (response);
       return NULL;
     }
+#endif
   response->upgrade_handler = upgrade_handler;
   response->upgrade_handler_cls = upgrade_handler_cls;
   response->total_size = MHD_SIZE_UNKNOWN;
@@ -1122,14 +1130,20 @@ MHD_destroy_response (struct MHD_Response *response)
 
   if (NULL == response)
     return;
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&response->mutex);
+#endif
   if (0 != --(response->reference_count))
     {
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
       MHD_mutex_unlock_chk_ (&response->mutex);
+#endif
       return;
     }
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_unlock_chk_ (&response->mutex);
   MHD_mutex_destroy_chk_ (&response->mutex);
+#endif
   if (NULL != response->crfc)
     response->crfc (response->crc_cls);
   while (NULL != response->first_header)
@@ -1152,9 +1166,13 @@ MHD_destroy_response (struct MHD_Response *response)
 void
 MHD_increment_response_rc (struct MHD_Response *response)
 {
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&response->mutex);
+#endif
   (response->reference_count)++;
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_unlock_chk_ (&response->mutex);
+#endif
 }
 
 

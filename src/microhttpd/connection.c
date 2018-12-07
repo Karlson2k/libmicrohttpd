@@ -32,7 +32,9 @@
 #include "response.h"
 #include "mhd_mono_clock.h"
 #include "mhd_str.h"
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
 #include "mhd_locks.h"
+#endif
 #include "mhd_sockets.h"
 #include "mhd_compat.h"
 #include "mhd_itc.h"
@@ -1104,7 +1106,9 @@ try_ready_normal_body (struct MHD_Connection *connection)
     {
       /* either error or http 1.0 transfer, close socket! */
       response->total_size = connection->response_write_position;
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
       MHD_mutex_unlock_chk_ (&response->mutex);
+#endif
       if ( ((ssize_t)MHD_CONTENT_READER_END_OF_STREAM) == ret)
 	MHD_connection_close_ (connection,
                                MHD_REQUEST_TERMINATED_COMPLETED_OK);
@@ -1118,7 +1122,9 @@ try_ready_normal_body (struct MHD_Connection *connection)
   if (0 == ret)
     {
       connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
       MHD_mutex_unlock_chk_ (&response->mutex);
+#endif
       return MHD_NO;
     }
   return MHD_YES;
@@ -1156,7 +1162,9 @@ try_ready_chunked_body (struct MHD_Connection *connection)
           size /= 2;
           if (size < 128)
             {
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
               MHD_mutex_unlock_chk_ (&response->mutex);
+#endif
               /* not enough memory */
               CONNECTION_CLOSE_ERROR (connection,
 				      _("Closing connection (out of memory)\n"));
@@ -1202,7 +1210,9 @@ try_ready_chunked_body (struct MHD_Connection *connection)
     {
       /* error, close socket! */
       response->total_size = connection->response_write_position;
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
       MHD_mutex_unlock_chk_ (&response->mutex);
+#endif
       CONNECTION_CLOSE_ERROR (connection,
 			      _("Closing connection (application error generating response)\n"));
       return MHD_NO;
@@ -1222,7 +1232,9 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   if (0 == ret)
     {
       connection->state = MHD_CONNECTION_CHUNKED_BODY_UNREADY;
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
       MHD_mutex_unlock_chk_ (&response->mutex);
+#endif
       return MHD_NO;
     }
   if (ret > 0xFFFFFF)
@@ -2861,8 +2873,9 @@ MHD_update_last_activity_ (struct MHD_Connection *connection)
 
   if (connection->connection_timeout != daemon->connection_timeout)
     return; /* custom timeout, no need to move it in "normal" DLL */
-
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+#endif
   /* move connection to head of timeout list (by remove + add operation) */
   XDLL_remove (daemon->normal_timeout_head,
 	       daemon->normal_timeout_tail,
@@ -2870,7 +2883,9 @@ MHD_update_last_activity_ (struct MHD_Connection *connection)
   XDLL_insert (daemon->normal_timeout_head,
 	       daemon->normal_timeout_tail,
 	       connection);
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+#endif
 }
 
 
@@ -3088,8 +3103,10 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         {
           uint64_t data_write_offset;
 
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
           if (NULL != response->crc)
             MHD_mutex_lock_chk_ (&response->mutex);
+#endif
           if (MHD_YES != try_ready_normal_body (connection))
             {
               /* mutex was already unlocked by try_ready_normal_body */
@@ -3124,8 +3141,10 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                          response->data_start]);
 #endif
             }
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
           if (NULL != response->crc)
             MHD_mutex_unlock_chk_ (&response->mutex);
+#endif
           if (ret < 0)
             {
               if (MHD_ERR_AGAIN_ == ret)
@@ -3239,7 +3258,9 @@ cleanup_connection (struct MHD_Connection *connection)
       MHD_destroy_response (connection->response);
       connection->response = NULL;
     }
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+#endif
   if (connection->suspended)
     {
       DLL_remove (daemon->suspended_connections_head,
@@ -3269,7 +3290,9 @@ cleanup_connection (struct MHD_Connection *connection)
 	      connection);
   connection->resuming = false;
   connection->in_idle = false;
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_unlock_chk_(&daemon->cleanup_connection_mutex);
+#endif
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
       /* if we were at the connection limit before and are in
@@ -3610,19 +3633,25 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           /* nothing to do here */
           break;
         case MHD_CONNECTION_NORMAL_BODY_UNREADY:
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
           if (NULL != connection->response->crc)
             MHD_mutex_lock_chk_ (&connection->response->mutex);
+#endif
           if (0 == connection->response->total_size)
             {
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
               if (NULL != connection->response->crc)
                 MHD_mutex_unlock_chk_ (&connection->response->mutex);
+#endif
               connection->state = MHD_CONNECTION_BODY_SENT;
               continue;
             }
           if (MHD_YES == try_ready_normal_body (connection))
             {
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
 	      if (NULL != connection->response->crc)
 	        MHD_mutex_unlock_chk_ (&connection->response->mutex);
+#endif
               connection->state = MHD_CONNECTION_NORMAL_BODY_READY;
               /* Buffering for flushable socket was already enabled*/
               if (MHD_NO == socket_flush_possible (connection))
@@ -3636,21 +3665,27 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           /* nothing to do here */
           break;
         case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
           if (NULL != connection->response->crc)
             MHD_mutex_lock_chk_ (&connection->response->mutex);
+#endif	  
           if ( (0 == connection->response->total_size) ||
                (connection->response_write_position ==
                 connection->response->total_size) )
             {
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
               if (NULL != connection->response->crc)
                 MHD_mutex_unlock_chk_ (&connection->response->mutex);
+#endif
               connection->state = MHD_CONNECTION_BODY_SENT;
               continue;
             }
           if (MHD_YES == try_ready_chunked_body (connection))
             {
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
               if (NULL != connection->response->crc)
                 MHD_mutex_unlock_chk_ (&connection->response->mutex);
+#endif
               connection->state = MHD_CONNECTION_CHUNKED_BODY_READY;
               /* Buffering for flushable socket was already enabled */
               if (MHD_NO == socket_flush_possible (connection))
@@ -3937,8 +3972,9 @@ MHD_set_connection_option (struct MHD_Connection *connection,
     case MHD_CONNECTION_OPTION_TIMEOUT:
       if (0 == connection->connection_timeout)
         connection->last_activity = MHD_monotonic_sec_counter();
-
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
       MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+#endif
       if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
           (! connection->suspended) )
         {
@@ -3967,7 +4003,9 @@ MHD_set_connection_option (struct MHD_Connection *connection,
                           daemon->manual_timeout_tail,
                           connection);
         }
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
       MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+#endif
       return MHD_YES;
     default:
       return MHD_NO;
@@ -4005,6 +4043,7 @@ MHD_queue_response (struct MHD_Connection *connection,
     return MHD_YES; /* If daemon was shut down in parallel,
                      * response will be aborted now or on later stage. */
 
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if ( (!connection->suspended) &&
        (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
        (!MHD_thread_ID_match_current_(connection->pid.ID)) )
@@ -4015,6 +4054,7 @@ MHD_queue_response (struct MHD_Connection *connection,
 #endif
       return MHD_NO;
     }
+#endif
 #ifdef UPGRADE_SUPPORT
   if ( (NULL != response->upgrade_handler) &&
        (0 == (daemon->options & MHD_ALLOW_UPGRADE)) )

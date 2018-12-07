@@ -361,13 +361,14 @@ AM_CONDITIONAL([CYGWIN_TARGET], [[test "x$os_is_windows" = "xyes" && \
                                   test "x${os_is_native_w32}" != "xyes"]])
 
 AC_ARG_WITH([threads],
-   [AS_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, auto) [auto]])],
+   [AS_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, auto, none) [auto]])],
    [], [with_threads='auto'])
 AS_CASE([[$with_threads]],
   [[win32]], [[with_threads='w32']],
   [[pthreads]], [[with_threads='posix']],
   [[posix]], [[:]],
   [[w32]], [[:]],
+  [[none]], [[with_threads='none']],
   [[auto]], [[:]],
     [AC_MSG_ERROR([[incorrect parameter "$with_threads" specified for --with-threads]])]
 )
@@ -398,41 +399,44 @@ AS_IF([[test "x$with_threads" = "xauto"]],
  ]
 )
 
-AC_MSG_CHECKING([[for threading lib to use with libmicrohttpd]])
-AS_IF([[test "x$with_threads" = "xposix"]],
+AC_MSG_CHECKING([[for threading lib to use with libmicrohttpd ($with_threads)]])
+AS_IF([test "x$with_threads" = "xposix"],
   [ # forced posix threads
-    AS_IF([[test "x$mhd_have_posix_threads" = "xyes"]], [[ USE_THREADS='posix' ]],
+    AS_IF([test "x$mhd_have_posix_threads" = "xyes"], [USE_THREADS='posix'],
       [ AS_IF([[test "x$os_is_windows" = "xyes"]] ,
           [ AC_MSG_ERROR([[Posix threads are not available. Try to configure --with-threads=auto]])],
           [ AC_MSG_ERROR([[No threading lib is available. Consider installing pthreads]])] )
       ])
-    ] ,
-  [[ test "x$with_threads" = "xw32" ]] ,
+    ])
+AS_IF([test "x$with_threads" = "xw32"],
   [ # forced w32 threads
     AS_IF([[test "x$mhd_have_w32_threads" = "xyes"]],
       [[ USE_THREADS='w32' ]],
       [ AC_MSG_ERROR([[W32 threads are not available. Try to configure --with-threads=auto]])])
-    ] ,
-    [ # automatic threads lib selection
-      AS_IF([[test "x$os_is_native_w32" = "xyes" && test "x$mhd_have_w32_threads" = "xyes"]] ,
+    ])
+AS_IF([test "x$with_threads" = "xauto"],
+      [# automatic threads lib selection
+       AS_IF([[test "x$os_is_native_w32" = "xyes" && test "x$mhd_have_w32_threads" = "xyes"]] ,
         [[ USE_THREADS='w32' ]] ,
         [[ test "x$mhd_have_posix_threads" = "xyes" ]], [[ USE_THREADS='posix' ]],
         [[ test "x$mhd_have_w32_threads" = "xyes" ]], [[ USE_THREADS='w32' ]],
         [ AC_MSG_ERROR([[No threading lib is available. Consider installing pthreads]]) ]
-        )
-    ]
-  )
+        )])
+AS_IF([test "x$with_threads" = "xnone"],
+   [USE_THREADS='none'])
+
 AS_IF([test "x$USE_THREADS" = "xposix"],
   [CC="$PTHREAD_CC"
   AC_DEFINE([MHD_USE_POSIX_THREADS],[1],[define to use pthreads])
   MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $PTHREAD_CFLAGS"
   MHD_LIBDEPS="$PTHREAD_LIBS $MHD_LIBDEPS"
-  MHD_LIBDEPS_PKGCFG="$PTHREAD_LIBS $MHD_LIBDEPS_PKGCFG"
-elif test "x$USE_THREADS" = "xw32"; then
-  AC_DEFINE([MHD_USE_W32_THREADS],[1],[define to use W32 threads])])
+  MHD_LIBDEPS_PKGCFG="$PTHREAD_LIBS $MHD_LIBDEPS_PKGCFG"],
+  [AS_IF([test "x$USE_THREADS" = "xw32"],
+   [AC_DEFINE([MHD_USE_W32_THREADS],[1],[define to use W32 threads])])])
 AM_CONDITIONAL([USE_POSIX_THREADS], [test "x$USE_THREADS" = "xposix"])
 AM_CONDITIONAL([USE_W32_THREADS], [test "x$USE_THREADS" = "xw32"])
-AC_MSG_RESULT([[$USE_THREADS]])
+AM_CONDITIONAL([DISABLE_THREADS], [test "x$USE_THREADS" = "xnone"])
+AC_MSG_RESULT([$USE_THREADS])
 
 AC_ARG_ENABLE([[thread-names]],
    [AS_HELP_STRING([--disable-thread-names [auto] ],[do not set names on MHD generated threads])],

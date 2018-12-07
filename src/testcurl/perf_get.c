@@ -589,22 +589,25 @@ main (int argc, char *const *argv)
 					      "/hello_world",
 					      MHD_RESPMEM_MUST_COPY);
   errorCount += testExternalGet (port++);
-  errorCount += testInternalGet (port++, MHD_USE_AUTO);
-  errorCount += testMultithreadedGet (port++, MHD_USE_AUTO);
-  errorCount += testMultithreadedPoolGet (port++, MHD_USE_AUTO);
-  errorCount += testInternalGet (port++, 0);
-  errorCount += testMultithreadedGet (port++, 0);
-  errorCount += testMultithreadedPoolGet (port++, 0);
-  if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_POLL))
+  if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_THREADS))
     {
-      errorCount += testInternalGet(port++, MHD_USE_POLL);
-      errorCount += testMultithreadedGet(port++, MHD_USE_POLL);
-      errorCount += testMultithreadedPoolGet(port++, MHD_USE_POLL);
-    }
-  if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_EPOLL))
-    {
-      errorCount += testInternalGet(port++, MHD_USE_EPOLL);
-      errorCount += testMultithreadedPoolGet(port++, MHD_USE_EPOLL);
+      errorCount += testInternalGet (port++, MHD_USE_AUTO);
+      errorCount += testMultithreadedGet (port++, MHD_USE_AUTO);
+      errorCount += testMultithreadedPoolGet (port++, MHD_USE_AUTO);
+      errorCount += testInternalGet (port++, 0);
+      errorCount += testMultithreadedGet (port++, 0);
+      errorCount += testMultithreadedPoolGet (port++, 0);
+      if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_POLL))
+	{
+	  errorCount += testInternalGet(port++, MHD_USE_POLL);
+	  errorCount += testMultithreadedGet(port++, MHD_USE_POLL);
+	  errorCount += testMultithreadedPoolGet(port++, MHD_USE_POLL);
+	}
+      if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_EPOLL))
+	{
+	  errorCount += testInternalGet(port++, MHD_USE_EPOLL);
+	  errorCount += testMultithreadedPoolGet(port++, MHD_USE_EPOLL);
+	}
     }
   MHD_destroy_response (response);
   if (errorCount != 0)

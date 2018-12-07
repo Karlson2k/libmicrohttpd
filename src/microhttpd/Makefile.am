@@ -62,12 +62,22 @@ libmicrohttpd_la_SOURCES = \
   mhd_limits.h mhd_byteorder.h \
   sysfdsetsize.c sysfdsetsize.h \
   mhd_str.c mhd_str.h \
-  mhd_threads.c mhd_threads.h \
-  mhd_locks.h mhd_assert.h \
+  mhd_assert.h \
   mhd_sockets.c mhd_sockets.h \
   mhd_itc.c mhd_itc.h mhd_itc_types.h \
   mhd_compat.c mhd_compat.h \
   response.c response.h
+
+if USE_POSIX_THREADS
+libmicrohttpd_la_SOURCES += \
+  mhd_threads.c mhd_threads.h \
+  mhd_locks.h
+endif
+if USE_W32_THREADS
+libmicrohttpd_la_SOURCES += \
+  mhd_threads.c mhd_threads.h \
+  mhd_locks.h
+endif
 
 libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS) \
@@ -150,9 +160,19 @@ check_PROGRAMS = \
 
 if HAVE_POSIX_THREADS
 if ENABLE_UPGRADE
+if USE_POSIX_THREADS 
   check_PROGRAMS += test_upgrade
+endif
+if USE_W32_THREADS
+  check_PROGRAMS += test_upgrade
+endif
 if ENABLE_HTTPS
-  check_PROGRAMS += test_upgrade_tls
+if USE_POSIX_THREADS 
+check_PROGRAMS += test_upgrade_tls
+endif
+if USE_W32_THREADS
+check_PROGRAMS += test_upgrade_tls	
+endif
 endif
 endif
 endif
@@ -170,6 +190,7 @@ TESTS = $(check_PROGRAMS)
 # on Cygwin as this ability is deliberately ignored on Cygwin
 # to improve compatibility with core OS.
 if !CYGWIN_TARGET
+if USE_POSIX_THREADS
 if HAVE_LISTEN_SHUTDOWN
 check_PROGRAMS += \
   test_shutdown_select \
@@ -178,6 +199,7 @@ else
 check_PROGRAMS += \
   test_shutdown_select_ignore \
   test_shutdown_poll_ignore
+endif
 endif
 endif
 

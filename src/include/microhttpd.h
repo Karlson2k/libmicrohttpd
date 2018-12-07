@@ -126,7 +126,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00096100
+#define MHD_VERSION 0x00096101
 
 /**
  * MHD-internal return code for "YES".
@@ -3574,7 +3574,12 @@ enum MHD_FEATURE
    * file-FD based responses over non-TLS connections.
    * @note Since v0.9.56
    */
-  MHD_FEATURE_SENDFILE = 21
+  MHD_FEATURE_SENDFILE = 21,
+
+  /**
+   * Get whether MHD supports threads.
+   */
+  MHD_FEATURE_THREADS
 };
 
 

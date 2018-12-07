@@ -583,36 +583,39 @@ main (int argc, char *const *argv)
     (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
-  start_time = now();
-  errorCount += testInternalPost ();
-  fprintf (stderr,
-	   oneone ? "%s: Sequential POSTs (http/1.1) %f/s\n" : "%s: Sequential POSTs (http/1.0) %f/s\n",
-	   "internal select",
-	   (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0));
-  GAUGER ("internal select",
-	  oneone ? "Sequential POSTs (http/1.1)" : "Sequential POSTs (http/1.0)",
-	  (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0),
-	  "requests/s");
-  start_time = now();
-  errorCount += testMultithreadedPost ();
-  fprintf (stderr,
-	   oneone ? "%s: Sequential POSTs (http/1.1) %f/s\n" : "%s: Sequential POSTs (http/1.0) %f/s\n",
-	   "multithreaded post",
-	   (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0));
-  GAUGER ("Multithreaded select",
-	  oneone ? "Sequential POSTs (http/1.1)" : "Sequential POSTs (http/1.0)",
-	  (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0),
-	  "requests/s");
-  start_time = now();
-  errorCount += testMultithreadedPoolPost ();
-  fprintf (stderr,
-	   oneone ? "%s: Sequential POSTs (http/1.1) %f/s\n" : "%s: Sequential POSTs (http/1.0) %f/s\n",
-	   "thread with pool",
-	   (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0));
-  GAUGER ("thread with pool",
-	  oneone ? "Sequential POSTs (http/1.1)" : "Sequential POSTs (http/1.0)",
-	  (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0),
-	  "requests/s");
+  if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_THREADS))
+    {
+      start_time = now();
+      errorCount += testInternalPost ();
+      fprintf (stderr,
+	       oneone ? "%s: Sequential POSTs (http/1.1) %f/s\n" : "%s: Sequential POSTs (http/1.0) %f/s\n",
+	       "internal select",
+	       (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0));
+      GAUGER ("internal select",
+	      oneone ? "Sequential POSTs (http/1.1)" : "Sequential POSTs (http/1.0)",
+	      (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0),
+	      "requests/s");
+      start_time = now();
+      errorCount += testMultithreadedPost ();
+      fprintf (stderr,
+	       oneone ? "%s: Sequential POSTs (http/1.1) %f/s\n" : "%s: Sequential POSTs (http/1.0) %f/s\n",
+	       "multithreaded post",
+	       (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0));
+      GAUGER ("Multithreaded select",
+	      oneone ? "Sequential POSTs (http/1.1)" : "Sequential POSTs (http/1.0)",
+	      (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0),
+	      "requests/s");
+      start_time = now();
+      errorCount += testMultithreadedPoolPost ();
+      fprintf (stderr,
+	       oneone ? "%s: Sequential POSTs (http/1.1) %f/s\n" : "%s: Sequential POSTs (http/1.0) %f/s\n",
+	       "thread with pool",
+	       (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0));
+      GAUGER ("thread with pool",
+	      oneone ? "Sequential POSTs (http/1.1)" : "Sequential POSTs (http/1.0)",
+	      (double) 1000 * LOOPCOUNT / (now() - start_time + 1.0),
+	      "requests/s");
+    }
   start_time = now();
   errorCount += testExternalPost ();
   fprintf (stderr,
