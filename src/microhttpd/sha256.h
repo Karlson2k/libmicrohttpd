@@ -32,13 +32,9 @@
    the GNU Lesser General Public License along with this program.  If
    not, see http://www.gnu.org/licenses/.
 */
- 
+
 #ifndef NETTLE_SHA2_H_INCLUDED
 #define NETTLE_SHA2_H_INCLUDED
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #define SHA256_DIGEST_SIZE 32
 #define SHA256_BLOCK_SIZE 64
@@ -54,21 +50,36 @@ struct sha256_ctx
   unsigned int index;                       /* index into buffer */
 };
 
-void
-sha256_init(struct sha256_ctx *ctx);
 
+/**
+ * Start SHA256 calculation.
+ *
+ * @param ctx_ must be a `struct sha256_ctx *`
+ */
 void
-sha256_update(struct sha256_ctx *ctx,
-	      size_t length,
-	      const uint8_t *data);
+sha256_init (void *ctx_);
 
+
+/**
+ * Update hash calculation.
+ *
+ * @param ctx_ must be a `struct sha256_ctx *`
+ * @param length number of bytes in @a data
+ * @param data bytes to add to hash
+ */
 void
-sha256_digest(struct sha256_ctx *ctx,
-	      size_t length,
-	      uint8_t *digest);
+sha256_update (void *ctx_,
+               const uint8_t *data,
+               size_t length);
 
-#ifdef __cplusplus
-}
-#endif
+/**
+ * Complete SHA256 calculation.
+ *
+ * @param ctx_ must be a `struct sha256_ctx *`
+ * @param digest[out] set to the hash, must be #SHA256_DIGEST_SIZE bytes
+ */
+void
+sha256_digest (void *ctx_,
+               uint8_t digest[SHA256_DIGEST_SIZE]);
 
 #endif /* NETTLE_SHA2_H_INCLUDED */

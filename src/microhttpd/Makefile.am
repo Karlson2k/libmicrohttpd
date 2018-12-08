@@ -133,7 +133,8 @@ endif
 if ENABLE_DAUTH
 libmicrohttpd_la_SOURCES += \
   digestauth.c \
-  md5.c md5.h
+  md5.c md5.h \
+  sha256.c sha256.h
 endif
 
 if ENABLE_BAUTH
@@ -160,18 +161,18 @@ check_PROGRAMS = \
 
 if HAVE_POSIX_THREADS
 if ENABLE_UPGRADE
-if USE_POSIX_THREADS 
+if USE_POSIX_THREADS
   check_PROGRAMS += test_upgrade
 endif
 if USE_W32_THREADS
   check_PROGRAMS += test_upgrade
 endif
 if ENABLE_HTTPS
-if USE_POSIX_THREADS 
+if USE_POSIX_THREADS
 check_PROGRAMS += test_upgrade_tls
 endif
 if USE_W32_THREADS
-check_PROGRAMS += test_upgrade_tls	
+check_PROGRAMS += test_upgrade_tls
 endif
 endif
 endif

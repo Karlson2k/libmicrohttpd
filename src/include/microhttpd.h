@@ -3192,7 +3192,57 @@ MHD_free (void *ptr);
 
 
 /**
- * Authenticates the authorization header sent by the client
+ * Which digest algorithm should MHD use for HTTP digest authentication?
+ */
+enum MHD_DigestAuthAlgorithm {
+
+  /**
+   * MHD should pick (currently defaults to SHA-256).
+   */
+  MHD_DIGEST_ALG_AUTO = 0,
+
+  /**
+   * Force use of MD5.
+   */
+  MHD_DIGEST_ALG_MD5,
+
+  /**
+   * Force use of SHA-256.
+   */
+  MHD_DIGEST_ALG_SHA256
+
+};
+
+
+/**
+ * Authenticates the authorization header sent by the client.
+ *
+ * @param connection The MHD connection structure
+ * @param realm The realm presented to the client
+ * @param username The username needs to be authenticated
+ * @param password The password used in the authentication
+ * @param nonce_timeout The amount of time for a nonce to be
+ * 			invalid in seconds
+ * @param algo digest algorithms allowed for verification
+ * @return #MHD_YES if authenticated, #MHD_NO if not,
+ * 			#MHD_INVALID_NONCE if nonce is invalid
+ * @ingroup authentication
+ */
+_MHD_EXTERN int
+MHD_digest_auth_check2 (struct MHD_Connection *connection,
+			const char *realm,
+			const char *username,
+			const char *password,
+			unsigned int nonce_timeout,
+			enum MHD_DigestAuthAlgorithm algo);
+
+
+/**
+ * Authenticates the authorization header sent by the client.
+ * Uses #MHD_DIGEST_ALG_MD5 (for now, for backwards-compatibility).
+ * Note that this MAY change to #MHD_DIGEST_ALG_AUTO in the future.
+ * If you want to be sure you get MD5, use #MHD_digest_auth_check2()
+ * and specifiy MD5 explicitly.
  *
  * @param connection The MHD connection structure
  * @param realm The realm presented to the client
@@ -3203,6 +3253,7 @@ MHD_free (void *ptr);
  * @return #MHD_YES if authenticated, #MHD_NO if not,
  * 			#MHD_INVALID_NONCE if nonce is invalid
  * @ingroup authentication
+ * @deprecated use MHD_digest_auth_check2()
  */
 _MHD_EXTERN int
 MHD_digest_auth_check (struct MHD_Connection *connection,
@@ -3213,19 +3264,49 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 
 
 /**
- * Authenticates the authorization header sent by the client
+ * Authenticates the authorization header sent by the client.
  *
  * @param connection The MHD connection structure
  * @param realm The realm presented to the client
  * @param username The username needs to be authenticated
  * @param digest An `unsigned char *' pointer to the binary MD5 sum
  * 			for the precalculated hash value "username:realm:password"
- * 			of #MHD_MD5_DIGEST_SIZE bytes
+ * 			of @a digest_size bytes
+ * @param digest_size number of bytes in @a digest (size must match @a algo!)
+ * @param nonce_timeout The amount of time for a nonce to be
+ * 			invalid in seconds
+ * @param algo digest algorithms allowed for verification
+ * @return #MHD_YES if authenticated, #MHD_NO if not,
+ * 			#MHD_INVALID_NONCE if nonce is invalid
+ * @ingroup authentication
+ */
+_MHD_EXTERN int
+MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
+			       const char *realm,
+			       const char *username,
+			       const uint8_t *digest,
+                               size_t digest_size,
+			       unsigned int nonce_timeout,
+			       enum MHD_DigestAuthAlgorithm algo);
+
+
+/**
+ * Authenticates the authorization header sent by the client
+ * Uses #MHD_DIGEST_ALG_MD5 (required, as @a digest is of fixed
+ * size).
+ *
+ * @param connection The MHD connection structure
+ * @param realm The realm presented to the client
+ * @param username The username needs to be authenticated
+ * @param digest An `unsigned char *' pointer to the binary hash
+ * 		for the precalculated hash value "username:realm:password";
+ * 		length must be #MHD_MD5_DIGEST_SIZE bytes
  * @param nonce_timeout The amount of time for a nonce to be
  * 			invalid in seconds
  * @return #MHD_YES if authenticated, #MHD_NO if not,
  * 			#MHD_INVALID_NONCE if nonce is invalid
  * @ingroup authentication
+ * @deprecated use #MHD_digest_auth_check_digest2()
  */
 _MHD_EXTERN int
 MHD_digest_auth_check_digest (struct MHD_Connection *connection,
@@ -3239,6 +3320,32 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  * Queues a response to request authentication from the client
  *
  * @param connection The MHD connection structure
+ * @param realm the realm presented to the client
+ * @param opaque string to user for opaque value
+ * @param response reply to send; should contain the "access denied"
+ *        body; note that this function will set the "WWW Authenticate"
+ *        header and that the caller should not do this
+ * @param signal_stale #MHD_YES if the nonce is invalid to add
+ * 			'stale=true' to the authentication header
+ * @param algo digest algorithm to use
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @ingroup authentication
+ */
+int
+MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
+			       const char *realm,
+			       const char *opaque,
+			       struct MHD_Response *response,
+			       int signal_stale,
+			       enum MHD_DigestAuthAlgorithm algo);
+
+
+/**
+ * Queues a response to request authentication from the client
+ * For now uses MD5 (for backwards-compatibility). Still, if you
+ * need to be sure, use #MHD_queue_fail_auth_response2().
+ *
+ * @param connection The MHD connection structure
  * @param realm The realm presented to the client
  * @param opaque string to user for opaque value
  * @param response reply to send; should contain the "access denied"
@@ -3248,6 +3355,7 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  * 			'stale=true' to the authentication header
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
+ * @deprecated use MHD_queue_auth_fail_response2()
  */
 _MHD_EXTERN int
 MHD_queue_auth_fail_response (struct MHD_Connection *connection,
