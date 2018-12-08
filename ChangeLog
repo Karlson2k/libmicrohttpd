@@ -1,3 +1,8 @@
+Sat Dec  8 23:15:53 CET 2018
+	Fixed missing WSA_FLAG_OVERLAPPED which can cause W32 to block on
+	socket races when using threadpool. (See very detailed description
+	of the issue in the libmicrohttpd mailinglist post of today.) -JM
+
 Sat Dec  8 22:53:56 CET 2018
 	Added test for RFC 7616 and documented new API.
 	Releasing libmicrohttpd 0.9.62. -CG

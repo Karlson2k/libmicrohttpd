@@ -484,7 +484,7 @@ MHD_socket_create_listen_ (int pf)
                    0,
                    NULL,
                    0,
-                   WSA_FLAG_NO_HANDLE_INHERIT);
+                   WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
   cloexec_set = !0;
 #else  /* !SOCK_CLOEXEC */
   fd = MHD_INVALID_SOCKET;
