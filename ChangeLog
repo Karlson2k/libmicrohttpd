@@ -1,5 +1,6 @@
 Sat Dec  8 22:53:56 CET 2018
-	Added test for RFC 7616 and documented new API. -CG
+	Added test for RFC 7616 and documented new API.
+	Releasing libmicrohttpd 0.9.62. -CG
 
 Sat Dec  8 17:34:58 CET 2018
 	Adding support for RFC 7616, experimental, needs
