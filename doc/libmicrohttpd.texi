@@ -2440,13 +2440,34 @@ client with a 401 HTTP status.
 @node microhttpd-dauth digest
 @section Using Digest Authentication
 
+MHD supports MD5 (deprecated by IETF) and SHA-256 hash algorithms
+for digest authentication. The @code{MHD_DigestAuthAlgorithm} enumeration
+is used to specify which algorithm should be used.
+
+@deftp {Enumeration} MHD_DigestAuthAlgorithm
+Which digest algorithm should be used. Must be used consistently.
+
+@table @code
+@item MHD_DIGEST_ALG_AUTO
+Have MHD pick an algorithm currently considered secure.  For now defaults to SHA-256.
+
+@item MHD_DIGEST_ALG_MD5
+Force use of (deprecated, ancient, insecure) MD5.
+
+@item MHD_DIGEST_ALG_SHA256
+Force use of SHA-256.
+
+@end table
+@end deftp
+
+
 @deftypefun {char *} MHD_digest_auth_get_username (struct MHD_Connection *connection)
 Find and return a pointer to the username value from the request header.
 Return @code{NULL} if the value is not found or header does not exist.
 If returned value is not @code{NULL}, the value must be @code{MHD_free()}'ed.
 @end deftypefun
 
-@deftypefun int MHD_digest_auth_check (struct MHD_Connection *connection, const char *realm, const char *username, const char *password, unsigned int nonce_timeout)
+@deftypefun int MHD_digest_auth_check2 (struct MHD_Connection *connection, const char *realm, const char *username, const char *password, unsigned int nonce_timeout, enum MHD_DigestAuthAlgorithm algo)
 Checks if the provided values in the WWW-Authenticate header are valid
 and sound according to RFC2716. If valid return @code{MHD_YES}, otherwise return @code{MHD_NO}.
 
@@ -2460,11 +2481,52 @@ most probably it will be the result of a lookup of the username against a local 
 
 @var{nonce_timeout} is the amount of time in seconds for a nonce to be invalid.
 Most of the time it is sound to specify 300 seconds as its values.
+
+@var{algo} which digest algorithm should we use.
+@end deftypefun
+
+
+@deftypefun int MHD_digest_auth_check (struct MHD_Connection *connection, const char *realm, const char *username, const char *password, unsigned int nonce_timeout)
+Checks if the provided values in the WWW-Authenticate header are valid
+and sound according to RFC2716. If valid return @code{MHD_YES}, otherwise return @code{MHD_NO}.
+Deprecated, use @code{MHD_digest_auth_check2} instead.
+
+
+@var{realm} must reference to a zero-terminated string representing the realm.
+
+@var{username} must reference to a zero-terminated string representing the username,
+it is usually the returned value from MHD_digest_auth_get_username.
+
+@var{password} must reference to a zero-terminated string representing the password,
+most probably it will be the result of a lookup of the username against a local database.
+
+@var{nonce_timeout} is the amount of time in seconds for a nonce to be invalid.
+Most of the time it is sound to specify 300 seconds as its values.
+@end deftypefun
+
+
+
+@deftypefun int MHD_digest_auth_check_digest2 (struct MHD_Connection *connection, const char *realm, const char *username, const uint8_t *digest, unsigned int nonce_timeout, enum MHD_DigestAuthAlgorithm algo)
+Checks if the provided values in the WWW-Authenticate header are valid
+and sound according to RFC2716. If valid return @code{MHD_YES}, otherwise return @code{MHD_NO}.
+
+@var{realm} must reference to a zero-terminated string representing the realm.
+
+@var{username} must reference to a zero-terminated string representing the username,
+it is usually the returned value from MHD_digest_auth_get_username.
+
+@var{digest} pointer to the binary MD5 sum for the precalculated hash value ``userame:realm:password''. The size must match the selected @var{algo}!
+
+@var{nonce_timeout} is the amount of time in seconds for a nonce to be invalid.
+Most of the time it is sound to specify 300 seconds as its values.
+
+@var{algo} digest authentication algorithm to use.
 @end deftypefun
 
 @deftypefun int MHD_digest_auth_check_digest (struct MHD_Connection *connection, const char *realm, const char *username, const unsigned char digest[MHD_MD5_DIGEST_SIZE], unsigned int nonce_timeout)
 Checks if the provided values in the WWW-Authenticate header are valid
 and sound according to RFC2716. If valid return @code{MHD_YES}, otherwise return @code{MHD_NO}.
+Deprecated, use @code{MHD_digest_auth_check_digest2} instead.
 
 @var{realm} must reference to a zero-terminated string representing the realm.
 
@@ -2476,6 +2538,31 @@ it is usually the returned value from MHD_digest_auth_get_username.
 @var{nonce_timeout} is the amount of time in seconds for a nonce to be invalid.
 Most of the time it is sound to specify 300 seconds as its values.
 @end deftypefun
+
+
+@deftypefun int MHD_queue_auth_fail_response2 (struct MHD_Connection *connection, const char *realm, const char *opaque, struct MHD_Response *response, int signal_stale, enum MHD_DigestAuthAlgorithm algo)
+Queues a response to request authentication from the client,
+return @code{MHD_YES} if successful, otherwise @code{MHD_NO}.
+
+@var{realm} must reference to a zero-terminated string representing the realm.
+
+@var{opaque} must reference to a zero-terminated string representing a value
+that gets passed to the client and expected to be passed again to the server
+as-is. This value can be a hexadecimal or base64 string.
+
+@var{response} a response structure to specify what shall be presented to the
+client with a 401 HTTP status.
+
+@var{signal_stale} a value that signals "stale=true" in the response header to
+indicate the invalidity of the nonce and no need to ask for authentication
+parameters and only a new nonce gets generated. @code{MHD_YES} to generate a new
+nonce, @code{MHD_NO} to ask for authentication parameters.
+
+@var{algo} which digest algorithm should we use.  The same algorithm
+must then be selected when checking digests received from clients!
+
+@end deftypefun
+
 
 @deftypefun int MHD_queue_auth_fail_response (struct MHD_Connection *connection, const char *realm, const char *opaque, struct MHD_Response *response, int signal_stale)
 Queues a response to request authentication from the client,
@@ -2517,23 +2604,27 @@ ahc_echo (void *cls,
   const char *realm = "test@@example.com";
   int ret;
 
-  username = MHD_digest_auth_get_username(connection);
+  username = MHD_digest_auth_get_username (connection);
   if (username == NULL)
     @{
       response = MHD_create_response_from_buffer(strlen (DENIED),
 					         DENIED,
 					         MHD_RESPMEM_PERSISTENT);
-      ret = MHD_queue_auth_fail_response(connection, realm,
-					 OPAQUE,
-					 response,
-					 MHD_NO);
+      ret = MHD_queue_auth_fail_response2 (connection,
+                                           realm,
+					   OPAQUE,
+					   response,
+					   MHD_NO,
+                                           MHD_DIGEST_ALG_SHA256);
       MHD_destroy_response(response);
       return ret;
     @}
-  ret = MHD_digest_auth_check(connection, realm,
-			      username,
-			      password,
-			      300);
+  ret = MHD_digest_auth_check2 (connection,
+                                realm,
+			        username,
+			        password,
+			        300,
+                                MHD_DIGEST_ALG_SHA256);
   free(username);
   if ( (ret == MHD_INVALID_NONCE) ||
        (ret == MHD_NO) )
@@ -2543,16 +2634,21 @@ ahc_echo (void *cls,
 					         MHD_RESPMEM_PERSISTENT);
       if (NULL == response)
 	return MHD_NO;
-      ret = MHD_queue_auth_fail_response(connection, realm,
-					 OPAQUE,
-					 response,
-					 (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO);
+      ret = MHD_queue_auth_fail_response2 (connection,
+                                           realm,
+					   OPAQUE,
+					   response,
+					   (ret == MHD_INVALID_NONCE) ? MHD_YES : MHD_NO,
+                                           MHD_DIGEST_ALG_SHA256);
       MHD_destroy_response(response);
       return ret;
     @}
-  response = MHD_create_response_from_buffer (strlen(PAGE), PAGE,
+  response = MHD_create_response_from_buffer (strlen(PAGE),
+                                              PAGE,
  					      MHD_RESPMEM_PERSISTENT);
-  ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+  ret = MHD_queue_response (connection,
+                            MHD_HTTP_OK,
+                            response);
   MHD_destroy_response(response);
   return ret;
 @}

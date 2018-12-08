@@ -23,7 +23,7 @@ THREAD_ONLY_TESTS = \
   test_long_header11 \
   test_iplimit11 \
   test_termination \
-  test_timeout 
+  test_timeout
 
 
 
@@ -42,6 +42,7 @@ endif
 if ENABLE_DAUTH
   THREAD_ONLY_TESTS += \
     test_digestauth \
+    test_digestauth_sha256 \
     test_digestauth_with_arguments
 endif
 
@@ -153,6 +154,12 @@ perf_get_concurrent_LDADD = \
 test_digestauth_SOURCES = \
   test_digestauth.c
 test_digestauth_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBGCRYPT_LIBS@ @LIBCURL@
+
+test_digestauth_sha256_SOURCES = \
+  test_digestauth_sha256.c
+test_digestauth_sha256_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBGCRYPT_LIBS@ @LIBCURL@
 

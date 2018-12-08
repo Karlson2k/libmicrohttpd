@@ -3331,7 +3331,7 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
  */
-int
+_MHD_EXTERN int
 MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
 			       const char *realm,
 			       const char *opaque,
