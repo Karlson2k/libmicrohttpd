@@ -695,6 +695,9 @@ AS_IF([test "$enable_poll" != "no"],
 		[AC_INCLUDES_DEFAULT]),
              [AC_MSG_CHECKING([for WSAPoll()])
               AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#if defined(_WIN32) && ! defined(__CYGWIN__) && ! defined(_WIN32_WINNT)
+#define _WIN32_WINNT 0x0501
+#endif
 #include <winsock2.h>
               ]],[[
 WSAPOLLFD fda[2];
