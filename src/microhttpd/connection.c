@@ -472,16 +472,16 @@ sendfile_adapter (struct MHD_Connection *connection)
  * buffering.
  *
  * @param connection connection to check
- * @return #MHD_YES if force push is possible, #MHD_NO otherwise
+ * @return true if force push is possible, false otherwise
  */
-static int
+_MHD_static_inline bool
 socket_flush_possible(struct MHD_Connection *connection)
 {
   (void)connection; /* Mute compiler warning. */
 #if defined(TCP_CORK) || defined(TCP_PUSH)
-  return MHD_YES;
+  return true;
 #else  /* !TCP_CORK && !TCP_PUSH */
-  return MHD_NO;
+  return false;
 #endif /* !TCP_CORK && !TCP_PUSH */
 }
 
@@ -491,12 +491,12 @@ socket_flush_possible(struct MHD_Connection *connection)
  * sending of partial packets.
  *
  * @param connection connection to be processed
- * @return #MHD_YES on success, #MHD_NO otherwise
+ * @return true on success, false otherwise
  */
-static int
+_MHD_static_inline bool
 socket_start_extra_buffering (struct MHD_Connection *connection)
 {
-  int res = MHD_NO;
+  bool res = false;
 #if defined(TCP_CORK) || defined(TCP_NOPUSH)
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
 #if defined(TCP_NODELAY)
@@ -511,17 +511,15 @@ socket_start_extra_buffering (struct MHD_Connection *connection)
                           IPPROTO_TCP,
                           TCP_NOPUSH,
                           (const void *) &on_val,
-                          sizeof (on_val)))
-    ? MHD_YES : MHD_NO;
+                          sizeof (on_val)));
 #if defined(TCP_NODELAY)
   /* Enable Nagle's algorithm */
   /* TCP_NODELAY may interfere with TCP_NOPUSH */
-  res &= (0 == setsockopt (connection->socket_fd,
+  res = (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
                            TCP_NODELAY,
                            (const void *) &off_val,
-                           sizeof (off_val)))
-    ? MHD_YES : MHD_NO;
+                           sizeof (off_val))) && res;
 #endif /* TCP_NODELAY */
 #else /* TCP_CORK */
 #if defined(TCP_NODELAY)
@@ -539,8 +537,7 @@ socket_start_extra_buffering (struct MHD_Connection *connection)
                           IPPROTO_TCP,
                           TCP_CORK,
                           (const void *) &on_val,
-                          sizeof (on_val)))
-    ? MHD_YES : MHD_NO;
+                          sizeof (on_val)));
 #endif /* TCP_CORK */
 #endif /* TCP_CORK || TCP_NOPUSH */
   return res;
@@ -551,13 +548,13 @@ socket_start_extra_buffering (struct MHD_Connection *connection)
  * Activate no buffering mode (no delay sending) on connection socket.
  *
  * @param connection connection to be processed
- * @return #MHD_YES on success, #MHD_NO otherwise
+ * @return true on success, false otherwise
  */
-static int
+_MHD_static_inline bool
 socket_start_no_buffering (struct MHD_Connection *connection)
 {
 #if defined(TCP_NODELAY)
-  int res = MHD_YES;
+  bool res = true;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
 #if defined(TCP_CORK) || defined(TCP_NOPUSH)
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
@@ -567,34 +564,31 @@ socket_start_no_buffering (struct MHD_Connection *connection)
   mhd_assert(NULL != connection);
 #if defined(TCP_CORK)
   /* Allow partial packets */
-  res &= (0 == setsockopt (connection->socket_fd,
+  res = (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
                            TCP_CORK,
                            (const void *) &off_val,
-                           sizeof (off_val)))
-    ? MHD_YES : MHD_NO;
+                           sizeof (off_val))) && res;
 #endif /* TCP_CORK */
 #if defined(TCP_NODELAY)
   /* Disable Nagle's algorithm for sending packets without delay */
-  res &= (0 == setsockopt (connection->socket_fd,
+  res = (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
                            TCP_NODELAY,
                            (const void *) &on_val,
-                           sizeof (on_val)))
-    ? MHD_YES : MHD_NO;
+                           sizeof (on_val))) && res;
 #endif /* TCP_NODELAY */
 #if defined(TCP_NOPUSH) && !defined(TCP_CORK)
   /* Disable extra buffering */
-  res &= (0 == setsockopt (connection->socket_fd,
+  res = (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
                            TCP_NOPUSH,
                            (const void *) &off_val,
-                           sizeof (off_val)))
-    ? MHD_YES : MHD_NO;
+                           sizeof (off_val))) && res;
 #endif /* TCP_NOPUSH  && !TCP_CORK */
   return res;
 #else  /* !TCP_NODELAY */
-  return MHD_NO;
+  return false;
 #endif /* !TCP_NODELAY */
 }
 
@@ -604,27 +598,27 @@ socket_start_no_buffering (struct MHD_Connection *connection)
  * and push to client data pending in socket buffer.
  *
  * @param connection connection to be processed
- * @return #MHD_YES on success, #MHD_NO otherwise
+ * @return true on success, false otherwise
  */
-static int
+_MHD_static_inline bool
 socket_start_no_buffering_flush (struct MHD_Connection *connection)
 {
-  int res = MHD_YES;
+  bool res;
 #if defined(TCP_NOPUSH) && !defined(TCP_CORK)
   const int dummy = 0;
 #endif /* !TCP_CORK */
 
-  if (NULL == connection)
-    return MHD_NO;
+  (void)connection; /* Mute compiler warning. */
+  mhd_assert(NULL != connection);
+
   res = socket_start_no_buffering (connection);
 #if defined(TCP_NOPUSH) && !defined(TCP_CORK)
   /* Force flush data with zero send otherwise Darwin and some BSD systems
      will add 5 seconds delay. Not required with TCP_CORK as switching off
      TCP_CORK always flushes socket buffer. */
-  res &= (0 <= MHD_send_ (connection->socket_fd,
+  res = (0 <= MHD_send_ (connection->socket_fd,
                           &dummy,
-                          0))
-    ? MHD_YES : MHD_NO;
+                          0)) && res;
 #endif /* TCP_NOPUSH && !TCP_CORK*/
   return res;
 }
@@ -634,13 +628,13 @@ socket_start_no_buffering_flush (struct MHD_Connection *connection)
  * Activate normal buffering mode on connection socket.
  *
  * @param connection connection to be processed
- * @return #MHD_YES on success, #MHD_NO otherwise
+ * @return true on success, false otherwise
  */
-static int
+_MHD_static_inline bool
 socket_start_normal_buffering (struct MHD_Connection *connection)
 {
 #if defined(TCP_NODELAY)
-  int res = MHD_YES;
+  bool res = true;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
 #if defined(TCP_CORK)
   MHD_SCKT_OPT_BOOL_ cork_val = 0;
@@ -657,33 +651,31 @@ socket_start_normal_buffering (struct MHD_Connection *connection)
                          (void*)&cork_val,
                          &param_size)) ||
        (0 != cork_val))
-    res &= (0 == setsockopt (connection->socket_fd,
+    res = (0 == setsockopt (connection->socket_fd,
                              IPPROTO_TCP,
                              TCP_CORK,
                              (const void *) &off_val,
-                             sizeof (off_val)))
-      ? MHD_YES : MHD_NO;
+                             sizeof (off_val))) && res;
 #elif defined(TCP_NOPUSH)
   /* Disable extra buffering */
   /* No need to check current value as disabling TCP_NOPUSH will not flush partial
      packet if TCP_NOPUSH wasn't enabled before */
-  res &= (0 == setsockopt (connection->socket_fd,
+  res = (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
                            TCP_NOPUSH,
                            (const void *) &off_val,
-                           sizeof (off_val)))
-    ? MHD_YES : MHD_NO;
+                           sizeof (off_val))) && res;
 #endif /* TCP_NOPUSH && !TCP_CORK */
   /* Enable Nagle's algorithm for normal buffering */
-  res &= (0 == setsockopt (connection->socket_fd,
+  res = (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
                            TCP_NODELAY,
                            (const void *) &off_val,
-                           sizeof (off_val)))
-    ? MHD_YES : MHD_NO;
+                           sizeof (off_val))) && res;
   return res;
 #else  /* !TCP_NODELAY */
-  return MHD_NO;
+  (void) connection;
+  return false;
 #endif /* !TCP_NODELAY */
 }
 
@@ -3448,7 +3440,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (need_100_continue (connection))
             {
               connection->state = MHD_CONNECTION_CONTINUE_SENDING;
-              if (MHD_NO != socket_flush_possible (connection))
+              if (socket_flush_possible (connection))
                 socket_start_extra_buffering (connection);
               else
                 socket_start_no_buffering (connection);
@@ -3476,7 +3468,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               MHD_STATICSTR_LEN_ (HTTP_100_CONTINUE))
             {
               connection->state = MHD_CONNECTION_CONTINUE_SENT;
-              if (MHD_NO != socket_flush_possible (connection))
+              if (socket_flush_possible (connection))
                 socket_start_no_buffering_flush (connection);
               else
                 socket_start_normal_buffering (connection);
@@ -3580,7 +3572,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               continue;
             }
           connection->state = MHD_CONNECTION_HEADERS_SENDING;
-          if (MHD_NO != socket_flush_possible (connection))
+          if (socket_flush_possible (connection))
             socket_start_extra_buffering (connection);
           else
             socket_start_no_buffering (connection);
@@ -3591,7 +3583,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           break;
         case MHD_CONNECTION_HEADERS_SENT:
           /* Some clients may take some actions right after header receive */
-          if (MHD_NO != socket_flush_possible (connection))
+          if (socket_flush_possible (connection))
             socket_start_no_buffering_flush (connection);
 
 #ifdef UPGRADE_SUPPORT
@@ -3619,7 +3611,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               continue;
             }
 #endif /* UPGRADE_SUPPORT */
-          if (MHD_NO != socket_flush_possible (connection))
+          if (socket_flush_possible (connection))
             socket_start_extra_buffering (connection);
           else
             socket_start_normal_buffering (connection);
@@ -3654,7 +3646,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #endif
               connection->state = MHD_CONNECTION_NORMAL_BODY_READY;
               /* Buffering for flushable socket was already enabled*/
-              if (MHD_NO == socket_flush_possible (connection))
+              if (socket_flush_possible (connection))
                 socket_start_no_buffering (connection);
               break;
             }
@@ -3688,7 +3680,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #endif
               connection->state = MHD_CONNECTION_CHUNKED_BODY_READY;
               /* Buffering for flushable socket was already enabled */
-              if (MHD_NO == socket_flush_possible (connection))
+              if (socket_flush_possible (connection))
                 socket_start_no_buffering (connection);
               continue;
             }
@@ -3722,7 +3714,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 	    /* FIXME: maybe partially reset memory pool? */
 	    continue;
 	  }
-          if (MHD_NO != socket_flush_possible (connection))
+          if (socket_flush_possible (connection))
             socket_start_no_buffering_flush (connection);
           else
             socket_start_normal_buffering (connection);
@@ -3753,7 +3745,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           else
             {
               /* can try to keep-alive */
-              if (MHD_NO != socket_flush_possible (connection))
+              if (socket_flush_possible (connection))
                 socket_start_normal_buffering (connection);
               connection->version = NULL;
               connection->state = MHD_CONNECTION_INIT;
