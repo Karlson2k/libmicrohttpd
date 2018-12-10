@@ -601,6 +601,7 @@ enum MHD_ConnKeepAlive
   MHD_CONN_USE_KEEPALIVE = 1
 };
 
+
 /**
  * State kept for each HTTP request.
  */
@@ -861,6 +862,18 @@ struct MHD_Connection
    * true if #socket_fd is non-blocking, false otherwise.
    */
   bool sk_nonblck;
+
+  /**
+   * Indicate whether connection socket has TCP_NODELAY turned on / Nagle’s algorithm turned off.
+   * TCP_NODELAY should not be turned on when TCP_CORK/TCP_NOPUSH is turned off.
+   */
+  bool sk_tcp_nodelay_on;
+
+  /**
+   * Indicate whether connection socket has TCP_CORK/TCP_NOPUSH turned on.
+   * TCP_CORK/TCP_NOPUSH should not be turned on when TCP_NODELAY is turned off.
+   */
+  bool sk_tcp_cork_nopush_on;
 
   /**
    * Has this socket been closed for reading (i.e.  other side closed

@@ -49,6 +49,10 @@
 #ifdef HTTPS_SUPPORT
 #include "connection_https.h"
 #endif /* HTTPS_SUPPORT */
+#ifdef HAVE_SYS_PARAM_H
+/* For FreeBSD version identification */
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
 
 
 /**
@@ -496,51 +500,46 @@ socket_flush_possible(struct MHD_Connection *connection)
 _MHD_static_inline bool
 socket_start_extra_buffering (struct MHD_Connection *connection)
 {
-  bool res = false;
-#if defined(TCP_CORK) || defined(TCP_NOPUSH)
-  const MHD_SCKT_OPT_BOOL_ on_val = 1;
-#if defined(TCP_NODELAY)
-  const MHD_SCKT_OPT_BOOL_ off_val = 0;
-#endif /* TCP_NODELAY */
-  (void) connection; /* mute compiler warning, assertion below
-			may be compiled out! */
   mhd_assert(NULL != connection);
-#if defined(TCP_NOPUSH) && !defined(TCP_CORK)
-  /* Buffer data before sending */
-  res = (0 == setsockopt (connection->socket_fd,
-                          IPPROTO_TCP,
-                          TCP_NOPUSH,
-                          (const void *) &on_val,
-                          sizeof (on_val)));
 #if defined(TCP_NODELAY)
-  /* Enable Nagle's algorithm */
-  /* TCP_NODELAY may interfere with TCP_NOPUSH */
-  res = (0 == setsockopt (connection->socket_fd,
+  if (connection->sk_tcp_nodelay_on)
+    {
+      const MHD_SCKT_OPT_BOOL_ off_val = 0;
+      /* Enable Nagle's algorithm */
+      /* TCP_NODELAY may interfere with TCP_NOPUSH */
+      if (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
                            TCP_NODELAY,
                            (const void *) &off_val,
-                           sizeof (off_val))) && res;
+                           sizeof (off_val)))
+        {
+          connection->sk_tcp_nodelay_on = false;
+        }
+    }
 #endif /* TCP_NODELAY */
-#else /* TCP_CORK */
+
+#if defined(MHD_TCP_CORK_NOPUSH)
+  if (!connection->sk_tcp_cork_nopush_on)
+    {
+      const MHD_SCKT_OPT_BOOL_ on_val = 1;
+      /* Buffer data before sending (TCP_CORK) or
+       * Send only full frames (TCP_NOPUSH) */
+      if (0 == setsockopt (connection->socket_fd,
+                           IPPROTO_TCP,
+                           MHD_TCP_CORK_NOPUSH,
+                           (const void *) &on_val,
+                           sizeof (on_val)))
+        {
+          connection->sk_tcp_cork_nopush_on = true;
+        }
+    }
+#endif /* MHD_TCP_CORK_NOPUSH */
+
 #if defined(TCP_NODELAY)
-  /* Enable Nagle's algorithm */
-  /* TCP_NODELAY may prevent enabling TCP_CORK. Resulting buffering mode depends
-     solely on TCP_CORK result, so ignoring return code here. */
-  (void) setsockopt (connection->socket_fd,
-                     IPPROTO_TCP,
-                     TCP_NODELAY,
-                     (const void *) &off_val,
-                     sizeof (off_val));
-#endif /* TCP_NODELAY */
-  /* Send only full packets */
-  res = (0 == setsockopt (connection->socket_fd,
-                          IPPROTO_TCP,
-                          TCP_CORK,
-                          (const void *) &on_val,
-                          sizeof (on_val)));
-#endif /* TCP_CORK */
-#endif /* TCP_CORK || TCP_NOPUSH */
-  return res;
+   return connection->sk_tcp_cork_nopush_on && !connection->sk_tcp_nodelay_on;
+#else  /* ! TCP_NODELAY */
+   return connection->sk_tcp_cork_nopush_on;
+#endif /* ! TCP_NODELAY */
 }
 
 
@@ -553,43 +552,38 @@ socket_start_extra_buffering (struct MHD_Connection *connection)
 _MHD_static_inline bool
 socket_start_no_buffering (struct MHD_Connection *connection)
 {
-#if defined(TCP_NODELAY)
-  bool res = true;
-  const MHD_SCKT_OPT_BOOL_ on_val = 1;
-#if defined(TCP_CORK) || defined(TCP_NOPUSH)
-  const MHD_SCKT_OPT_BOOL_ off_val = 0;
-#endif /* TCP_CORK || TCP_NOPUSH */
-
-  (void)connection; /* Mute compiler warning. */
-  mhd_assert(NULL != connection);
-#if defined(TCP_CORK)
-  /* Allow partial packets */
-  res = (0 == setsockopt (connection->socket_fd,
+#if defined(MHD_TCP_CORK_NOPUSH)
+  if (connection->sk_tcp_cork_nopush_on)
+    {
+      const MHD_SCKT_OPT_BOOL_ off_val = 0;
+      /* Disable extra buffering */
+      if (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
-                           TCP_CORK,
+                           MHD_TCP_CORK_NOPUSH,
                            (const void *) &off_val,
-                           sizeof (off_val))) && res;
-#endif /* TCP_CORK */
+                           sizeof (off_val)))
+        {
+          connection->sk_tcp_cork_nopush_on = false;
+        }
+    }
+#endif /* MHD_TCP_CORK_NOPUSH */
+
 #if defined(TCP_NODELAY)
-  /* Disable Nagle's algorithm for sending packets without delay */
-  res = (0 == setsockopt (connection->socket_fd,
+  if (!connection->sk_tcp_nodelay_on)
+    {
+      const MHD_SCKT_OPT_BOOL_ on_val = 1;
+      /* Enable sending without delay */
+      if (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
                            TCP_NODELAY,
                            (const void *) &on_val,
-                           sizeof (on_val))) && res;
+                           sizeof (on_val)))
+        {
+          connection->sk_tcp_nodelay_on = true;
+        }
+    }
 #endif /* TCP_NODELAY */
-#if defined(TCP_NOPUSH) && !defined(TCP_CORK)
-  /* Disable extra buffering */
-  res = (0 == setsockopt (connection->socket_fd,
-                           IPPROTO_TCP,
-                           TCP_NOPUSH,
-                           (const void *) &off_val,
-                           sizeof (off_val))) && res;
-#endif /* TCP_NOPUSH  && !TCP_CORK */
-  return res;
-#else  /* !TCP_NODELAY */
-  return false;
-#endif /* !TCP_NODELAY */
+  return connection->sk_tcp_nodelay_on && !connection->sk_tcp_cork_nopush_on;
 }
 
 
@@ -607,12 +601,24 @@ socket_start_no_buffering_flush (struct MHD_Connection *connection)
 #if defined(TCP_NOPUSH) && !defined(TCP_CORK)
   const int dummy = 0;
 #endif /* !TCP_CORK */
-
-  (void)connection; /* Mute compiler warning. */
-  mhd_assert(NULL != connection);
+#if defined(TCP_CORK) || (defined(__FreeBSD__) &&  __FreeBSD__+0 >= 9)
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
+  /* Switching off TCP_CORK flush buffer even
+   * if TCP_CORK was not enabled */
+  if (0 == setsockopt (connection->socket_fd,
+                       IPPROTO_TCP,
+                       MHD_TCP_CORK_NOPUSH,
+                       (const void *) &off_val,
+                       sizeof (off_val)))
+    {
+      connection->sk_tcp_cork_nopush_on = false;
+    }
+#endif /* MHD_TCP_CORK_NOPUSH */
 
   res = socket_start_no_buffering (connection);
-#if defined(TCP_NOPUSH) && !defined(TCP_CORK)
+#if defined(__FreeBSD__) &&  __FreeBSD__+0 >= 9
+  /* FreeBSD do not need zero-send for flushing starting from version 9 */
+#elif defined(TCP_NOPUSH) && !defined(TCP_CORK)
   /* Force flush data with zero send otherwise Darwin and some BSD systems
      will add 5 seconds delay. Not required with TCP_CORK as switching off
      TCP_CORK always flushes socket buffer. */
@@ -633,50 +639,39 @@ socket_start_no_buffering_flush (struct MHD_Connection *connection)
 _MHD_static_inline bool
 socket_start_normal_buffering (struct MHD_Connection *connection)
 {
-#if defined(TCP_NODELAY)
-  bool res = true;
-  const MHD_SCKT_OPT_BOOL_ off_val = 0;
-#if defined(TCP_CORK)
-  MHD_SCKT_OPT_BOOL_ cork_val = 0;
-  socklen_t param_size = sizeof (cork_val);
-#endif /* TCP_CORK */
   mhd_assert(NULL != connection);
-#if defined(TCP_CORK)
-  /* Allow partial packets */
-  /* Disabling TCP_CORK will flush partial packet even if TCP_CORK wasn't enabled before
-     so try to check current value of TCP_CORK to prevent unrequested flushing */
-  if ( (0 != getsockopt (connection->socket_fd,
-                         IPPROTO_TCP,
-                         TCP_CORK,
-                         (void*)&cork_val,
-                         &param_size)) ||
-       (0 != cork_val))
-    res = (0 == setsockopt (connection->socket_fd,
-                             IPPROTO_TCP,
-                             TCP_CORK,
-                             (const void *) &off_val,
-                             sizeof (off_val))) && res;
-#elif defined(TCP_NOPUSH)
-  /* Disable extra buffering */
-  /* No need to check current value as disabling TCP_NOPUSH will not flush partial
-     packet if TCP_NOPUSH wasn't enabled before */
-  res = (0 == setsockopt (connection->socket_fd,
+#if defined(MHD_TCP_CORK_NOPUSH)
+  if (connection->sk_tcp_cork_nopush_on)
+    {
+      const MHD_SCKT_OPT_BOOL_ off_val = 0;
+      /* Disable extra buffering */
+      if (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
-                           TCP_NOPUSH,
+                           MHD_TCP_CORK_NOPUSH,
                            (const void *) &off_val,
-                           sizeof (off_val))) && res;
-#endif /* TCP_NOPUSH && !TCP_CORK */
-  /* Enable Nagle's algorithm for normal buffering */
-  res = (0 == setsockopt (connection->socket_fd,
+                           sizeof (off_val)))
+        {
+          connection->sk_tcp_cork_nopush_on = false;
+        }
+    }
+#endif /* MHD_TCP_CORK_NOPUSH */
+
+#if defined(TCP_NODELAY)
+  if (connection->sk_tcp_nodelay_on)
+    {
+      const MHD_SCKT_OPT_BOOL_ off_val = 0;
+      /* Enable Nagle's algorithm */
+      if (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
                            TCP_NODELAY,
                            (const void *) &off_val,
-                           sizeof (off_val))) && res;
-  return res;
-#else  /* !TCP_NODELAY */
-  (void) connection;
-  return false;
-#endif /* !TCP_NODELAY */
+                           sizeof (off_val)))
+        {
+          connection->sk_tcp_nodelay_on = false;
+        }
+    }
+#endif /* TCP_NODELAY */
+  return !connection->sk_tcp_nodelay_on && !connection->sk_tcp_cork_nopush_on;
 }
 
 

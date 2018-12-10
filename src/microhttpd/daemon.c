@@ -3020,6 +3020,15 @@ MHD_add_connection (struct MHD_Daemon *daemon,
                 _("Failed to set noninheritable mode on new client socket.\n"));
 #endif
     }
+
+  if ( (0 == (daemon->options & MHD_USE_TURBO)) &&
+       (! MHD_socket_buffering_reset_ (client_socket)) )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("Failed to reset buffering mode on new client socket.\n"));
+#endif
+    }
   return internal_add_connection (daemon,
 				  client_socket,
 				  addr,
