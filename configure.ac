@@ -661,6 +661,7 @@ AX_CHECK_LINK_FLAG([-fno-strict-aliasing],
   [AX_APPEND_COMPILE_FLAGS([-fno-strict-aliasing])])
 
 AC_C_BIGENDIAN
+AC_C_VARARRAYS
 
 AC_CHECK_PROG([HAVE_CURL_BINARY],[curl],[yes],[no])
 AM_CONDITIONAL([HAVE_CURL_BINARY],[test "x$HAVE_CURL_BINARY" = "xyes"])

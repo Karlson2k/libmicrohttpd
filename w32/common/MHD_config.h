@@ -9,6 +9,9 @@
 /* Define if MS VC compiler is used */
 #define MSVC 1
 
+/* Define that MS VC does not support VLAs */
+#define __STDC_NO_VLA__ 1
+
 /* Define to 1 if your C compiler supports inline functions. */
 #define INLINE_FUNC 1
 

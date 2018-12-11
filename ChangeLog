@@ -1,3 +1,6 @@
+Tue Dec 11 09:58:32 CET 2018
+	Add logic to avoid VLA arrays with compilers that do not support them. -CG
+
 Sat Dec  8 23:15:53 CET 2018
 	Fixed missing WSA_FLAG_OVERLAPPED which can cause W32 to block on
 	socket races when using threadpool. (See very detailed description
