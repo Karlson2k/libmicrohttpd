@@ -209,8 +209,8 @@ enum MHD_ConnectionEventLoopInfo
 #define MHD_TEST_ALLOW_SUSPEND_RESUME 8192
 
 /**
- * Maximum length of a nonce in digest authentication.  32(MD5 Hex) +
- * 8(Timestamp Hex) + 1(NULL); hence 41 should suffice, but Opera
+ * Maximum length of a nonce in digest authentication.  64(SHA-256 Hex) +
+ * 8(Timestamp Hex) + 1(NULL); hence 73 should suffice, but Opera
  * (already) takes more (see Mantis #1633), so we've increased the
  * value to support something longer...
  */

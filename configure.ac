@@ -743,7 +743,7 @@ fd = epoll_create1(EPOLL_CLOEXEC);]])],
     AC_DEFINE([[HAVE_EPOLL_CREATE1]], [[1]], [Define if you have epoll_create1 function.])]))
 
 # Check for headers that are ALWAYS required
-AC_CHECK_HEADERS([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h], [], [AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files])], [AC_INCLUDES_DEFAULT])
+AC_CHECK_HEADERS_ONCE([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat.h sys/types.h], [], [AC_MSG_ERROR([Compiling libmicrohttpd requires standard UNIX headers files])], [AC_INCLUDES_DEFAULT])
 
 # Check for optional headers
 AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h time.h sys/mman.h sys/ioctl.h \
