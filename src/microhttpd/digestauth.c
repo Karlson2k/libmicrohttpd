@@ -59,6 +59,8 @@
  */
 #define MAX_DIGEST SHA256_DIGEST_SIZE
 
+#define MAX_NONCE NONCE_STD_LEN((MAX_DIGEST)+1)
+
 /**
  * Macro to avoid using VLAs if the compiler does not support them.
  */
@@ -69,6 +71,13 @@
  * @param n length of the digest to be used for a VLA
  */
 #define VLA_ARRAY_LEN_DIGEST(n) (((n) <= MAX_DIGEST?1:(mhd_panic(mhd_panic_cls, __FILE__, __LINE__, "VLA too big"),1)),MAX_DIGEST)
+
+/**
+ * Check that @a n is below #MAX_NONCE, then return #MAX_NONCE.
+ *
+ * @param n length of the digest to be used for a VLA
+ */
+#define VLA_ARRAY_LEN_NONCE(n) (((n) <= MAX_NONCE?1:(mhd_panic(mhd_panic_cls, __FILE__, __LINE__, "VLA too big"),1)),MAX_NONCE)
 #else
 /**
  * Check that @a n is below #MAX_DIGEST, then return @a n.
@@ -76,6 +85,13 @@
  * @param n length of the digest to be used for a VLA
  */
 #define VLA_ARRAY_LEN_DIGEST(n) (((n) <= MAX_DIGEST?1:(mhd_panic(mhd_panic_cls, __FILE__, __LINE__, "VLA too big"),1)),n)
+
+/**
+ * Check that @a n is below #MAX_NONCE, then return @a n.
+ *
+ * @param n length of the digest to be used for a VLA
+ */
+#define VLA_ARRAY_LEN_NONCE(n) (((n) <= MAX_NONCE?1:(mhd_panic(mhd_panic_cls, __FILE__, __LINE__, "VLA too big"),1)),n)
 #endif
 
 /**
@@ -1320,7 +1336,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
   SETUP_DA (algo, da);
 
   {
-    char nonce[NONCE_STD_LEN(da.digest_size) + 1];
+    char nonce[VLA_ARRAY_LEN_NONCE (NONCE_STD_LEN(da.digest_size) + 1)];
     /* Generating the server nonce */
     calculate_nonce ((uint32_t) MHD_monotonic_sec_counter(),
                      connection->method,
