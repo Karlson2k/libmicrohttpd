@@ -3655,7 +3655,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
           if (NULL != connection->response->crc)
             MHD_mutex_lock_chk_ (&connection->response->mutex);
-#endif	  
+#endif
           if ( (0 == connection->response->total_size) ||
                (connection->response_write_position ==
                 connection->response->total_size) )
@@ -4099,6 +4099,7 @@ MHD_queue_response (struct MHD_Connection *connection,
     }
   if (! connection->in_idle)
     (void) MHD_connection_handle_idle (connection);
+  MHD_update_last_activity_ (connection);
   return MHD_YES;
 }
 
