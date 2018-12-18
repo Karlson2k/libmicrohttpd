@@ -1451,7 +1451,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           if (GNUTLS_E_INTERRUPTED != res)
             {
               urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
-              if (GNUTLS_E_INTERRUPTED != res)
+              if (GNUTLS_E_AGAIN != res)
                 {
                   /* TLS connection shut down or
                    * persistent / unrecoverable error. */
@@ -2740,7 +2740,7 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
       connection->epoll_state |= MHD_EPOLL_STATE_SUSPENDED;
     }
 #endif
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)  
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 #endif
 }
@@ -2949,7 +2949,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
     }
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
-#endif  
+#endif
   if ( (used_thr_p_c) &&
        (MHD_NO != ret) )
     { /* Wake up suspended connections. */
@@ -3121,7 +3121,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
             }
           else
             {
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)	     
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
               MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 #endif
               daemon->at_limit = true;
@@ -4640,7 +4640,7 @@ unescape_wrapper (void *cls,
                   char *val)
 {
   (void) cls; /* Mute compiler warning. */
-  
+
   (void) connection; /* Mute compiler warning. */
   return MHD_http_unescape (val);
 }
@@ -4731,7 +4731,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 #endif
       return MHD_INVALID_SOCKET;
     }
-  
+
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if (NULL != daemon->worker_pool)
     for (i = 0; i < daemon->worker_pool_size; i++)
@@ -6091,7 +6091,7 @@ MHD_start_daemon_va (unsigned int flags,
                 MHD_socket_last_strerr_());
 #endif
       if (0 != (*pflags & MHD_USE_EPOLL)
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)	  
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
           || (daemon->worker_pool_size > 0)
 #endif
 	  )
@@ -6555,7 +6555,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   unsigned int i;
 #endif
-  
+
   if (NULL == daemon)
     return;
 

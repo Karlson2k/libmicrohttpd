@@ -1,3 +1,7 @@
+Wed Dec 19 00:06:03 CET 2018
+	Check for GNUTLS_E_AGAIN instead of GNUTLS_E_INTERRUPTED when
+	giving up on a TLS connection. -LM/CG
+
 Thu Dec 13 22:48:14 CET 2018
 	Fix connection timeout logic if in thread-per-connection mode the
 	working thread takes longer than the timeout to queue the response. -CG
