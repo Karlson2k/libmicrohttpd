@@ -766,6 +766,9 @@ AM_CONDITIONAL([MHD_HAVE_TSEARCH], [[test "x$ac_cv_header_search_h" = xyes && te
 AC_CHECK_HEADERS([dlfcn.h],[have_tlsplugin=yes],[have_tlsplugin=no], [AC_INCLUDES_DEFAULT])
 AM_CONDITIONAL([MHD_HAVE_TLS_PLUGIN], [[test "x$have_tlsplugin" = xyes]])
 
+AC_CHECK_HEADERS([zlib.h],[have_zlib=yes],[have_zlib=no], [AC_INCLUDES_DEFAULT])
+AM_CONDITIONAL([HAVE_ZLIB], [[test "x$have_zlib" = xyes]])
+
 # Check for generic functions
 AC_CHECK_FUNCS([rand random])
 

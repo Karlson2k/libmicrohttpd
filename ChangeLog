@@ -1,3 +1,6 @@
+Tue Jan  8 02:57:21 BRT 2019
+	Added minimal example for how to compress HTTP response. -SC
+
 Wed Dec 19 00:06:03 CET 2018
 	Check for GNUTLS_E_AGAIN instead of GNUTLS_E_INTERRUPTED when
 	giving up on a TLS connection. -LM/CG
