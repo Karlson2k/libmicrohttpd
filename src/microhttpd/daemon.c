@@ -6375,7 +6375,13 @@ thread_failed:
 #endif
 #ifdef HTTPS_SUPPORT
   if (0 != (*pflags & MHD_USE_TLS))
+  {
     gnutls_priority_deinit (daemon->priority_cache);
+    if (daemon->x509_cred)
+      gnutls_certificate_free_credentials (daemon->x509_cred);
+    if (daemon->psk_cred)
+      gnutls_psk_free_server_credentials (daemon->psk_cred);
+  }
 #endif /* HTTPS_SUPPORT */
   if (MHD_ITC_IS_VALID_(daemon->itc))
     MHD_itc_destroy_chk_ (daemon->itc);
