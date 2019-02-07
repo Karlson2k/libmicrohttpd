@@ -1,3 +1,6 @@
+Thu Feb  7 16:16:12 CET 2019
+	Preliminary patch for the raw query string issue, to be tested. -CG
+
 Tue Jan  8 02:57:21 BRT 2019
 	Added minimal example for how to compress HTTP response. -SC
 

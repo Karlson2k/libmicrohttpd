@@ -2257,7 +2257,7 @@ parse_initial_message_line (struct MHD_Connection *connection,
         http_version--;
       if (http_version > uri)
         {
-          /* http_version points to string before HTTP version string */
+          /* http_version points to character before HTTP version string */
           http_version[0] = '\0';
           connection->version = http_version + 1;
           uri_len = http_version - uri;
@@ -2277,24 +2277,21 @@ parse_initial_message_line (struct MHD_Connection *connection,
           return MHD_NO;
         }
 
-      /* unescape URI before searching for arguments */
-      daemon->unescape_callback (daemon->unescape_callback_cls,
-                                 connection,
-                                 uri);
-      uri_len = strlen (uri); /* recalculate: may have changed! */
       args = memchr (uri,
                      '?',
                      uri_len);
     }
 
+  /* log callback before we modify URI *or* args */
   if (NULL != daemon->uri_log_callback)
     {
       connection->client_aware = true;
       connection->client_context
         = daemon->uri_log_callback (daemon->uri_log_callback_cls,
-  				    curi,
+  				    uri,
                                     connection);
     }
+  
   if (NULL != args)
     {
       args[0] = '\0';
@@ -2306,6 +2303,12 @@ parse_initial_message_line (struct MHD_Connection *connection,
 			    &connection_add_header,
 			    &unused_num_headers);
     }
+  
+  /* unescape URI *after* searching for arguments and log callback */
+  if (NULL != uri)
+    daemon->unescape_callback (daemon->unescape_callback_cls,
+			       connection,
+			       uri);
   connection->url = curi;
   return MHD_YES;
 }
