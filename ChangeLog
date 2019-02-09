@@ -1,3 +1,7 @@
+Sat 09 Feb 2019 01:51:02 PM CET
+	Extended test_get to test URI logging and query string parsing
+	to avoid regression fixed in previous patch in the future. -CG
+
 Thu Feb  7 16:16:12 CET 2019
 	Preliminary patch for the raw query string issue, to be tested. -CG
 
