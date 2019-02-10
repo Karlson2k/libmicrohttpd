@@ -1,3 +1,6 @@
+Sun 10 Feb 2019 05:03:44 PM CET
+	Releasing libmicrohttpd 0.9.63. -CG
+
 Sat 09 Feb 2019 01:51:02 PM CET
 	Extended test_get to test URI logging and query string parsing
 	to avoid regression fixed in previous patch in the future. -CG

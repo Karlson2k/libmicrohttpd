@@ -862,6 +862,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
   uint32_t t;
   size_t left; /* number of characters left in 'header' for 'uri' */
   uint64_t nci;
+  char *qmark;
 
   VLA_CHECK_LEN_DIGEST(da->digest_size);
   header = MHD_lookup_connection_value (connection,
@@ -1072,15 +1073,17 @@ digest_auth_check_all (struct MHD_Connection *connection,
 			  uri,
 			  hentity,
 			  da);
-
+    qmark = strchr (uri,
+                    '?');
+    if (NULL != qmark)
+      *qmark = '\0';
 
     /* Need to unescape URI before comparing with connection->url */
     daemon->unescape_callback (daemon->unescape_callback_cls,
                                connection,
                                uri);
-    if (0 != strncmp (uri,
-		      connection->url,
-		      strlen (connection->url)))
+    if (0 != strcmp (uri,
+                     connection->url))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -1091,8 +1094,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
     }
 
     {
-      const char *args = strchr (uri,
-                                 '?');
+      const char *args = qmark;
 
       if (NULL == args)
 	args = "";
