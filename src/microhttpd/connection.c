@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007-2017 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2007-2019 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -706,10 +706,71 @@ MHD_get_connection_values (struct MHD_Connection *connection,
              (MHD_YES != iterator (iterator_cls,
                                    pos->kind,
                                    pos->header,
-                                   pos->value)) )
+                                   pos->value,
+				   pos->value_size)) )
 	  return ret;
       }
   return ret;
+}
+
+
+/**
+ * This function can be used to add an entry to the HTTP headers of a
+ * connection (so that the #MHD_get_connection_values function will
+ * return them -- and the `struct MHD_PostProcessor` will also see
+ * them).  This maybe required in certain situations (see Mantis
+ * #1399) where (broken) HTTP implementations fail to supply values
+ * needed by the post processor (or other parts of the application).
+ *
+ * This function MUST only be called from within the
+ * #MHD_AccessHandlerCallback (otherwise, access maybe improperly
+ * synchronized).  Furthermore, the client must guarantee that the key
+ * and value arguments are 0-terminated strings that are NOT freed
+ * until the connection is closed.  (The easiest way to do this is by
+ * passing only arguments to permanently allocated strings.).
+ *
+ * @param connection the connection for which a
+ *  value should be set
+ * @param kind kind of the value
+ * @param key key for the value
+ * @param value the value itself
+ * @param value_size number of bytes in @a value
+ * @return #MHD_NO if the operation could not be
+ *         performed due to insufficient memory;
+ *         #MHD_YES on success
+ * @ingroup request
+ */
+int
+MHD_set_connection_value2 (struct MHD_Connection *connection,
+			   enum MHD_ValueKind kind,
+			   const char *key,
+			   const char *value,
+			   size_t value_size)
+{
+  struct MHD_HTTP_Header *pos;
+
+  pos = MHD_pool_allocate (connection->pool,
+                           sizeof (struct MHD_HTTP_Header),
+                           MHD_YES);
+  if (NULL == pos)
+    return MHD_NO;
+  pos->header = (char *) key;
+  pos->value = (char *) value;
+  pos->value_size = value_size;
+  pos->kind = kind;
+  pos->next = NULL;
+  /* append 'pos' to the linked list of headers */
+  if (NULL == connection->headers_received_tail)
+    {
+      connection->headers_received = pos;
+      connection->headers_received_tail = pos;
+    }
+  else
+    {
+      connection->headers_received_tail->next = pos;
+      connection->headers_received_tail = pos;
+    }
+  return MHD_YES;
 }
 
 
@@ -744,29 +805,13 @@ MHD_set_connection_value (struct MHD_Connection *connection,
                           const char *key,
                           const char *value)
 {
-  struct MHD_HTTP_Header *pos;
-
-  pos = MHD_pool_allocate (connection->pool,
-                           sizeof (struct MHD_HTTP_Header),
-                           MHD_YES);
-  if (NULL == pos)
-    return MHD_NO;
-  pos->header = (char *) key;
-  pos->value = (char *) value;
-  pos->kind = kind;
-  pos->next = NULL;
-  /* append 'pos' to the linked list of headers */
-  if (NULL == connection->headers_received_tail)
-    {
-      connection->headers_received = pos;
-      connection->headers_received_tail = pos;
-    }
-  else
-    {
-      connection->headers_received_tail->next = pos;
-      connection->headers_received_tail = pos;
-    }
-  return MHD_YES;
+  return MHD_set_connection_value2 (connection,
+				    kind,
+				    key,
+				    value,
+				    NULL != value
+				    ? strlen (value)
+				    : 0);
 }
 
 
@@ -2061,19 +2106,22 @@ get_next_header_line (struct MHD_Connection *connection,
  * @param kind kind of the value
  * @param key key for the value
  * @param value the value itself
+ * @param value_size number of bytes in @a value
  * @return #MHD_NO on failure (out of memory), #MHD_YES for success
  */
 static int
 connection_add_header (struct MHD_Connection *connection,
                        const char *key,
 		       const char *value,
+		       size_t value_size,
 		       enum MHD_ValueKind kind)
 {
   if (MHD_NO ==
-      MHD_set_connection_value (connection,
-				kind,
-				key,
-				value))
+      MHD_set_connection_value2 (connection,
+				 kind,
+				 key,
+				 value,
+				 value_size))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
@@ -2104,6 +2152,7 @@ parse_cookie_header (struct MHD_Connection *connection)
   char *semicolon;
   char *equals;
   char *ekill;
+  char *end;
   char old;
   int quotes;
 
@@ -2155,6 +2204,7 @@ parse_cookie_header (struct MHD_Connection *connection)
               connection_add_header (connection,
                                      pos,
                                      "",
+				     0,
                                      MHD_COOKIE_KIND))
             return MHD_NO;
           if (old == '\0')
@@ -2174,6 +2224,7 @@ parse_cookie_header (struct MHD_Connection *connection)
             quotes = (quotes + 1) & 1;
           semicolon++;
         }
+      end = semicolon;
       if ('\0' == semicolon[0])
         semicolon = NULL;
       if (NULL != semicolon)
@@ -2183,15 +2234,17 @@ parse_cookie_header (struct MHD_Connection *connection)
         }
       /* remove quotes */
       if ( ('"' == equals[0]) &&
-           ('"' == equals[strlen (equals) - 1]) )
+           ('"' == end[-1]) )
         {
-          equals[strlen (equals) - 1] = '\0';
           equals++;
+	  end--;
+          *end = '\0';
         }
       if (MHD_NO ==
 	  connection_add_header (connection,
 				 pos,
 				 equals,
+				 end - equals,
 				 MHD_COOKIE_KIND))
         return MHD_NO;
       pos = semicolon;
@@ -2711,16 +2764,20 @@ process_broken_line (struct MHD_Connection *connection,
                                    REQUEST_TOO_BIG);
           return MHD_NO;
         }
-      memcpy (&last[last_len], tmp, tmp_len + 1);
+      memcpy (&last[last_len],
+	      tmp,
+	      tmp_len + 1);
       connection->last = last;
       return MHD_YES;           /* possibly more than 2 lines... */
     }
   mhd_assert ( (NULL != last) &&
                 (NULL != connection->colon) );
-  if ((MHD_NO == connection_add_header (connection,
-                                        last,
-					connection->colon,
-					kind)))
+  if (MHD_NO ==
+      connection_add_header (connection,
+			     last,
+			     connection->colon,
+			     strlen (connection->colon),
+			     kind))
     {
       transmit_error_response (connection,
                                MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,

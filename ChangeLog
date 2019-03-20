@@ -1,3 +1,9 @@
+Wed 20 Mar 2019 10:20:24 AM CET
+	Adding additional "value_length" argument to MHD_KeyValueIterator
+	callback to support binary zeros in values.  This is done in a
+	backwards-compatible way, but may require adding a cast to existing
+	code to avoid a compiler warning. -CG
+
 Sun Feb 10 21:00:37 BRT 2019
 	Added example for how to compress a chunked HTTP response. -SC
 
