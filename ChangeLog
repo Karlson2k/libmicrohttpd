@@ -1,3 +1,7 @@
+Mon 08 Apr 2019 03:06:05 PM CEST
+	Fix close() checks as suggested by MK on the mailinglist
+        (#3926). -MK/CG
+
 Tue Jan  8 02:57:21 BRT 2019
 	Added minimal example for how to compress HTTP response. -SC
 
