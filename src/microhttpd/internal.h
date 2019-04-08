@@ -276,6 +276,11 @@ struct MHD_HTTP_Header
   char *value;
 
   /**
+   * Number of bytes in @a value.
+   */
+  size_t value_size;
+
+  /**
    * Type of the header (where in the HTTP protocol is this header
    * from).
    */
@@ -1881,7 +1886,8 @@ MHD_unescape_plus (char *arg);
  *
  * @param connection context of the iteration
  * @param key 0-terminated key string, never NULL
- * @param value 0-terminated value string, may be NULL
+ * @param value 0-terminated binary data, may include binary zeros, may be NULL
+ * @param value_size number of bytes in value
  * @param kind origin of the key-value pair
  * @return #MHD_YES on success (continue to iterate)
  *         #MHD_NO to signal failure (and abort iteration)
@@ -1890,6 +1896,7 @@ typedef int
 (*MHD_ArgumentIterator_)(struct MHD_Connection *connection,
 			 const char *key,
 			 const char *value,
+			 size_t value_size,
 			 enum MHD_ValueKind kind);
 
 

@@ -2,6 +2,25 @@ Mon 08 Apr 2019 03:06:05 PM CEST
 	Fix close() checks as suggested by MK on the mailinglist
         (#3926). -MK/CG
 
+Wed 20 Mar 2019 10:20:24 AM CET
+	Adding additional "value_length" argument to MHD_KeyValueIterator
+	callback to support binary zeros in values.  This is done in a
+	backwards-compatible way, but may require adding a cast to existing
+	code to avoid a compiler warning. -CG
+
+Sun Feb 10 21:00:37 BRT 2019
+	Added example for how to compress a chunked HTTP response. -SC
+
+Sun 10 Feb 2019 05:03:44 PM CET
+	Releasing libmicrohttpd 0.9.63. -CG
+
+Sat 09 Feb 2019 01:51:02 PM CET
+	Extended test_get to test URI logging and query string parsing
+	to avoid regression fixed in previous patch in the future. -CG
+
+Thu Feb  7 16:16:12 CET 2019
+	Preliminary patch for the raw query string issue, to be tested. -CG
+
 Tue Jan  8 02:57:21 BRT 2019
 	Added minimal example for how to compress HTTP response. -SC
 

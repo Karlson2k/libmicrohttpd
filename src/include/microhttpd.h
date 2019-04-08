@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2006-2018 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2006--2019 Christian Grothoff (and other contributing authors)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -126,7 +126,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00096203
+#define MHD_VERSION 0x00096301
 
 /**
  * MHD-internal return code for "YES".
@@ -1380,10 +1380,12 @@ enum MHD_OPTION
    *                         struct MHD_Connection *c,
    *                         char *s)
    *
-   * where the return value must be "strlen(s)" and "s" should be
-   * updated.  Note that the unescape function must not lengthen "s"
-   * (the result must be shorter than the input and still be
-   * 0-terminated).  "cls" will be set to the second argument
+   * where the return value must be the length of the value left in
+   * "s" (without the 0-terminator) and "s" should be updated.  Note
+   * that the unescape function must not lengthen "s" (the result must
+   * be shorter than the input and must still be 0-terminated).
+   * However, it may also include binary zeros before the
+   * 0-termination.  "cls" will be set to the second argument
    * following #MHD_OPTION_UNESCAPE_CALLBACK.
    */
   MHD_OPTION_UNESCAPE_CALLBACK = 16,
@@ -2025,6 +2027,8 @@ typedef void
  * @param kind kind of the header we are looking at
  * @param key key for the value, can be an empty string
  * @param value corresponding value, can be NULL
+ * @param value_size number of bytes in @a value, NEW since #MHD_VERSION 0x00096301;
+ *                   for C-strings, the length excludes the 0-terminator
  * @return #MHD_YES to continue iterating,
  *         #MHD_NO to abort the iteration
  * @ingroup request
@@ -2033,7 +2037,8 @@ typedef int
 (*MHD_KeyValueIterator) (void *cls,
                          enum MHD_ValueKind kind,
                          const char *key,
-                         const char *value);
+                         const char *value,
+			 size_t value_size);
 
 
 /**
@@ -2491,6 +2496,40 @@ MHD_set_connection_value (struct MHD_Connection *connection,
                           enum MHD_ValueKind kind,
                           const char *key,
 			  const char *value);
+
+
+/**
+ * This function can be used to add an entry to the HTTP headers of a
+ * connection (so that the #MHD_get_connection_values function will
+ * return them -- and the `struct MHD_PostProcessor` will also see
+ * them).  This maybe required in certain situations (see Mantis
+ * #1399) where (broken) HTTP implementations fail to supply values
+ * needed by the post processor (or other parts of the application).
+ *
+ * This function MUST only be called from within the
+ * #MHD_AccessHandlerCallback (otherwise, access maybe improperly
+ * synchronized).  Furthermore, the client must guarantee that the key
+ * and value arguments are 0-terminated strings that are NOT freed
+ * until the connection is closed.  (The easiest way to do this is by
+ * passing only arguments to permanently allocated strings.).
+ *
+ * @param connection the connection for which a
+ *  value should be set
+ * @param kind kind of the value
+ * @param key key for the value
+ * @param value the value itself 
+ * @param value_size number of bytes in @a value (excluding 0-terminator for C-strings)
+ * @return #MHD_NO if the operation could not be
+ *         performed due to insufficient memory;
+ *         #MHD_YES on success
+ * @ingroup request
+ */
+int
+MHD_set_connection_value2 (struct MHD_Connection *connection,
+			   enum MHD_ValueKind kind,
+			   const char *key,
+			   const char *value,
+			   size_t value_size);
 
 
 /**
@@ -3075,7 +3114,8 @@ MHD_del_response_header (struct MHD_Response *response,
  */
 _MHD_EXTERN int
 MHD_get_response_headers (struct MHD_Response *response,
-                          MHD_KeyValueIterator iterator, void *iterator_cls);
+                          MHD_KeyValueIterator iterator,
+			  void *iterator_cls);
 
 
 /**

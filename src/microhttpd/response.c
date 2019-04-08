@@ -240,7 +240,8 @@ MHD_get_response_headers (struct MHD_Response *response,
           (MHD_YES != iterator (iterator_cls,
                                 pos->kind,
                                 pos->header,
-                                pos->value)))
+                                pos->value,
+				pos->value_size)))
         break;
     }
   return numHeaders;

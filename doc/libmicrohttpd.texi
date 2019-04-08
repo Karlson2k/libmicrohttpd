@@ -1356,7 +1356,7 @@ reason for request termination see @code{MHD_OPTION_NOTIFY_COMPLETED}.
 @end deftypefn
 
 
-@deftypefn {Function Pointer} int {*MHD_KeyValueIterator} (void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
+@deftypefn {Function Pointer} int {*MHD_KeyValueIterator} (void *cls, enum MHD_ValueKind kind, const char *key, const char *value, size_t value_size)
 Iterator over key-value pairs.  This iterator can be used to iterate
 over all of the cookies, headers, or @code{POST}-data fields of a
 request, and also to iterate over the headers that have been added to a
@@ -1374,6 +1374,17 @@ key for the value, can be an empty string
 
 @item value
 value corresponding value, can be NULL
+
+@item value_size
+number of bytes in @code{value}. This argument was introduced in
+@code{MHD_VERSION} 0x00096301 to allow applications to use binary
+zeros in values.  Applications using this argument must ensure that
+they are using a sufficiently recent version of MHD, i.e. by testing
+@code{MHD_get_version()} for values above or equal to 0.9.64.
+Applications that do not need zeros in values and that want to compile
+without warnings against newer versions of MHD should not declare this
+argument and cast the function pointer argument to
+@code{MHD_KeyValueIterator}.
 
 @end table
 
