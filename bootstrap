@@ -1,6 +1,11 @@
 #!/bin/sh
-if ! test -n "$BASH_SOURCE" || ! workdir="${BASH_SOURCE[0]%/*}" || ! test -n "$workdir" || ! cd "$workdir"; then
-  workdir=`dirname "$0"` && test -n "$workdir" && cd "$workdir" || echo "Warning: can't get working directory" 1>&2
+unset bs_srcdir
+if test X"`dirname / 2>/dev/null`" = X"/"; then
+  bs_scrdir=`dirname $0`
+else
+  bs_scrdir="${0%/*}"
 fi
-aclocal -I m4 --install
-autoreconf -I m4 -f -i
+
+test -n "$bs_scrdir" && cd "$bs_scrdir" || echo "Warning: cannot get sources directory" 1>&2
+
+autoreconf -I m4 -i ${1+"$@"}
