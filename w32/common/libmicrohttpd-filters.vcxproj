@@ -96,6 +96,9 @@
     <ClInclude Include="$(MhdSrc)microhttpd\tsearch.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_assert.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_limits.h">
       <Filter>Source Files</Filter>
     </ClInclude>
