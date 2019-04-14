@@ -1057,6 +1057,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
     else
       {
         /* This will initialize da->sessionkey (ha1) */
+        mhd_assert (NULL != password); /* NULL == digest => password != NULL */
 	digest_calc_ha1_from_user (da->alg,
 				   username,
 				   realm,
