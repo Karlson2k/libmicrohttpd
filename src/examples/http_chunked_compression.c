@@ -41,6 +41,7 @@ compress_buf (z_stream *strm, const void *src, size_t src_size, size_t *offset, 
   unsigned int have;
   int ret;
   int flush;
+  void *tmp_dest;
   *dest = NULL;
   *dest_size = 0;
   do
@@ -65,9 +66,14 @@ compress_buf (z_stream *strm, const void *src, size_t src_size, size_t *offset, 
           ret = deflate (strm, flush);
           have = CHUNK - strm->avail_out;
           *dest_size += have;
-          *dest = realloc (*dest, *dest_size);
-          if (NULL == *dest)
-            return MHD_NO;
+          tmp_dest = realloc (*dest, *dest_size);
+          if (NULL == tmp_dest)
+            {
+              free (*dest);
+              *dest = NULL;
+              return MHD_NO;
+            }
+          *dest = tmp_dest;
           memcpy ((*dest) + ((*dest_size) - have), tmp, have);
         }
       while (0 == strm->avail_out);
