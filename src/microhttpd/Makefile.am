@@ -155,6 +155,7 @@ check_PROGRAMS = \
   test_str_to_value \
   test_str_token \
   test_http_reasons \
+  test_md5 \
   test_start_stop \
   test_daemon \
   test_options
@@ -315,6 +316,10 @@ test_str_token_SOURCES = \
 test_http_reasons_SOURCES = \
   test_http_reasons.c \
   reason_phrase.c mhd_str.c mhd_str.h
+
+test_md5_SOURCES = \
+  test_md5.c test_helpers.h \
+  md5.c md5.h
 
 test_options_SOURCES = \
   test_options.c
