@@ -2460,17 +2460,27 @@ internal_add_connection (struct MHD_Daemon *daemon,
   else
     {
 #ifdef HTTPS_SUPPORT
+      gnutls_init_flags_t flags;
+
+      flags = GNUTLS_SERVER;
+#if (GNUTLS_VERSION_NUMBER+0 >= 0x030402)
+      flags |= GNUTLS_NO_SIGNAL;
+#endif /* GNUTLS_VERSION_NUMBER >= 0x030402 */
+#if GNUTLS_VERSION_MAJOR >= 3
+      flags |= GNUTLS_NONBLOCK;
+#endif /* GNUTLS_VERSION_MAJOR >= 3*/
+#if (GNUTLS_VERSION_NUMBER+0 >= 0x030603)
+      if (0 != (daemon->options & MHD_USE_POST_HANDSHAKE_AUTH_SUPPORT))
+	flags |= GNUTLS_POST_HANDSHAKE_AUTH;
+#endif
+#if (GNUTLS_VERSION_NUMBER+0 >= 0x030605)
+      if (0 != (daemon->options & MHD_USE_INSECURE_TLS_EARLY_DATA))
+	flags |= GNUTLS_ENABLE_EARLY_DATA;
+#endif      
       connection->tls_state = MHD_TLS_CONN_INIT;
       MHD_set_https_callbacks (connection);
       gnutls_init (&connection->tls_session,
-                   GNUTLS_SERVER
-#if (GNUTLS_VERSION_NUMBER+0 >= 0x030402)
-                   | GNUTLS_NO_SIGNAL
-#endif /* GNUTLS_VERSION_NUMBER >= 0x030402 */
-#if GNUTLS_VERSION_MAJOR >= 3
-                   | GNUTLS_NONBLOCK
-#endif /* GNUTLS_VERSION_MAJOR >= 3*/
-                  );
+		   flags);
       gnutls_priority_set (connection->tls_session,
 			   daemon->priority_cache);
       gnutls_session_set_ptr (connection->tls_session,

@@ -126,7 +126,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00096301
+#define MHD_VERSION 0x00096302
 
 /**
  * MHD-internal return code for "YES".
@@ -1147,7 +1147,19 @@ enum MHD_FLAG
    * This is combination of #MHD_USE_AUTO and #MHD_USE_INTERNAL_POLLING_THREAD
    * flags.
    */
-  MHD_USE_AUTO_INTERNAL_THREAD = MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD
+  MHD_USE_AUTO_INTERNAL_THREAD = MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD,
+
+  /**
+   * Flag set to enable post-handshake client authentication
+   * (only useful in combination with #MHD_USE_TLS).
+   */
+  MHD_USE_POST_HANDSHAKE_AUTH_SUPPORT = 1U <<17,
+
+  /**
+   * Flag set to enable TLS 1.3 early data.  This has
+   * security implications, be VERY careful when using this.
+   */
+  MHD_USE_INSECURE_TLS_EARLY_DATA = 1U <<18
 
 };
 

@@ -615,6 +615,26 @@ on platform.  If application doesn't have requirements for any
 specific polling function, it's recommended to use this flag.  This
 flag is very convenient for multiplatform applications.
 
+@item MHD_USE_POST_HANDSHAKE_AUTH_SUPPORT
+Tell the TLS library to support post handshake client authentication.
+Only useful in combination with @code{MHD_USE_TLS}.
+
+This option will only work if the underyling TLS library
+supports it (i.e. GnuTLS after 3.6.3). If the TLS library
+does not support it, MHD may ignore the option and proceed
+without supporting this features. 
+
+@item MHD_USE_INSECURE_TLS_EARLY_DATA
+Tell the TLS library to support TLS v1.3 early data (0-RTT) with the
+resulting security drawbacks. Only enable this if you really know what
+you are doing. MHD currently does NOT enforce that this only affects
+GET requests! You have been warned.
+
+This option will only work if the underyling TLS library
+supports it (i.e. GnuTLS after 3.6.3). If the TLS library
+does not support it, MHD may ignore the option and proceed
+without supporting this features. 
+
 @end table
 @end deftp
 
