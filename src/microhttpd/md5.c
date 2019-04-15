@@ -71,21 +71,23 @@ MD5Init (void *ctx_)
 static void
 MD5Pad (struct MD5Context *ctx)
 {
-  uint8_t count[8];
+  uint8_t count_le[8];
   size_t padlen;
+  uint64_t count_bits;
 
   mhd_assert (ctx != NULL);
 
   /* Convert count to 8 bytes in little endian order. */
-  PUT_64BIT_LE(count, ctx->count);
+  count_bits = ctx->count << 3;
+  PUT_64BIT_LE(count_le, count_bits);
 
   /* Pad out to 56 mod 64. */
   padlen = MD5_BLOCK_SIZE -
-    ((ctx->count >> 3) & (MD5_BLOCK_SIZE - 1));
+    ((ctx->count) & (MD5_BLOCK_SIZE - 1));
   if (padlen < 1 + 8)
     padlen += MD5_BLOCK_SIZE;
   MD5Update(ctx, PADDING, padlen - 8);		/* padlen - 8 <= 64 */
-  MD5Update(ctx, count, 8);
+  MD5Update(ctx, count_le, 8);
 }
 
 
@@ -244,11 +246,11 @@ MD5Update (void *ctx_,
   mhd_assert ((ctx != NULL) || (len == 0));
 
   /* Check how many bytes we already have and how many more we need. */
-  have = (size_t)((ctx->count >> 3) & (MD5_BLOCK_SIZE - 1));
+  have = (size_t)((ctx->count) & (MD5_BLOCK_SIZE - 1));
   need = MD5_BLOCK_SIZE - have;
 
-  /* Update bitcount */
-  ctx->count += (uint64_t)len << 3;
+  /* Update bytecount */
+  ctx->count += (uint64_t)len;
 
   if (len >= need)
   {
