@@ -61,7 +61,7 @@ MD5Update (void *ctx_,
  */
 void
 MD5Final (void *ctx_,
-          unsigned char digest[MD5_DIGEST_SIZE]);
+          uint8_t digest[MD5_DIGEST_SIZE]);
 
 
 #endif /* !MHD_MD5_H */

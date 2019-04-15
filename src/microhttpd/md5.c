@@ -96,7 +96,7 @@ MD5Pad (struct MD5Context *ctx)
  */
 void
 MD5Final (void *ctx_,
-          unsigned char digest[MD5_DIGEST_SIZE])
+          uint8_t digest[MD5_DIGEST_SIZE])
 {
   struct MD5Context *ctx = ctx_;
   int i;
