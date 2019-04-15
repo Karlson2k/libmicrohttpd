@@ -21,6 +21,10 @@
 #include "mhd_byteorder.h"
 #include "mhd_assert.h"
 
+#if _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN
+#define PUT_64BIT_LE(cp, value) ((*(uint64_t*)(cp)) = (uint64_t)(value))
+#define PUT_32BIT_LE(cp, value) ((*(uint32_t*)(cp)) = (uint32_t)(value))
+#else
 #define PUT_64BIT_LE(cp, value) do {					\
 	(cp)[7] = (uint8_t)((value) >> 56);				\
 	(cp)[6] = (uint8_t)((value) >> 48);				\
@@ -36,6 +40,7 @@
 	(cp)[2] = (uint8_t)((value) >> 16);				\
 	(cp)[1] = (uint8_t)((value) >> 8);				\
 	(cp)[0] = (uint8_t)((value)); } while (0)
+#endif
 
 static uint8_t PADDING[MD5_BLOCK_SIZE] = {
   0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -135,11 +140,12 @@ static void
 MD5Transform (uint32_t state[4],
               const uint8_t block[MD5_BLOCK_SIZE])
 {
-  uint32_t a, b, c, d, in[MD5_BLOCK_SIZE / 4];
+  uint32_t a, b, c, d;
 
 #if _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN
-  memcpy(in, block, sizeof(in));
+  const uint32_t *in = (const uint32_t *)block;
 #else
+  uint32_t in[MD5_BLOCK_SIZE / 4];
   for (a = 0; a < MD5_BLOCK_SIZE / 4; a++)
   {
     in[a] = (uint32_t)(
