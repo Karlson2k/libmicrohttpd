@@ -19,6 +19,7 @@
 
 #include "md5.h"
 #include "mhd_byteorder.h"
+#include "mhd_assert.h"
 
 #define PUT_64BIT_LE(cp, value) do {					\
 	(cp)[7] = (uint8_t)((value) >> 56);				\
@@ -54,8 +55,7 @@ MD5Init (void *ctx_)
 {
   struct MD5Context *ctx = ctx_;
 
-  if (!ctx)
-    return;
+  mhd_assert (ctx != NULL);
   ctx->count = 0;
   ctx->state[0] = 0x67452301;
   ctx->state[1] = 0xefcdab89;
@@ -74,8 +74,7 @@ MD5Pad (struct MD5Context *ctx)
   uint8_t count[8];
   size_t padlen;
 
-  if (!ctx)
-    return;
+  mhd_assert (ctx != NULL);
 
   /* Convert count to 8 bytes in little endian order. */
   PUT_64BIT_LE(count, ctx->count);
@@ -102,8 +101,8 @@ MD5Final (void *ctx_,
   struct MD5Context *ctx = ctx_;
   int i;
 
-  if (!ctx || !digest)
-    return;
+  mhd_assert (ctx != NULL);
+  mhd_assert (digest != NULL);
 
   MD5Pad(ctx);
   for (i = 0; i < 4; i++)
@@ -241,8 +240,8 @@ MD5Update (void *ctx_,
   struct MD5Context *ctx = ctx_;
   size_t have, need;
 
-  if (!ctx || !input)
-    return;
+  mhd_assert (ctx != NULL);
+  mhd_assert ((ctx != NULL) || (len == 0));
 
   /* Check how many bytes we already have and how many more we need. */
   have = (size_t)((ctx->count >> 3) & (MD5_BLOCK_SIZE - 1));
@@ -280,7 +279,6 @@ MD5Update (void *ctx_,
             input,
             len);
 }
-
 
 
 /* end of md5.c */
