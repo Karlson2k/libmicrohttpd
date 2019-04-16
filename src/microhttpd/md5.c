@@ -15,38 +15,33 @@
  * will fill a supplied 16-byte array with the digest.
  */
 
-/* Based on OpenBSD modifications */
+/* Based on OpenBSD modifications.
+ * Optimized by Karlson2k (Evgeny Grin). */
 
 #include "md5.h"
 #include "mhd_byteorder.h"
 #include "mhd_assert.h"
 
 #if _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN
-#define PUT_64BIT_LE(cp, value) ((*(uint64_t*)(cp)) = (uint64_t)(value))
-#define PUT_32BIT_LE(cp, value) ((*(uint32_t*)(cp)) = (uint32_t)(value))
+#define PUT_64BIT_LE(addr, value64) ((*(uint64_t*)(addr)) = (uint64_t)(value64))
+#define PUT_32BIT_LE(addr, value32) ((*(uint32_t*)(addr)) = (uint32_t)(value32))
 #else
-#define PUT_64BIT_LE(cp, value) do {					\
-	(cp)[7] = (uint8_t)((value) >> 56);				\
-	(cp)[6] = (uint8_t)((value) >> 48);				\
-	(cp)[5] = (uint8_t)((value) >> 40);				\
-	(cp)[4] = (uint8_t)((value) >> 32);				\
-	(cp)[3] = (uint8_t)((value) >> 24);				\
-	(cp)[2] = (uint8_t)((value) >> 16);				\
-	(cp)[1] = (uint8_t)((value) >> 8);				\
-	(cp)[0] = (uint8_t)((value)); } while (0)
+#define PUT_64BIT_LE(addr, value) do {					\
+	(addr)[7] = (uint8_t)((value64) >> 56);				\
+	(addr)[6] = (uint8_t)((value64) >> 48);				\
+	(addr)[5] = (uint8_t)((value64) >> 40);				\
+	(addr)[4] = (uint8_t)((value64) >> 32);				\
+	(addr)[3] = (uint8_t)((value64) >> 24);				\
+	(addr)[2] = (uint8_t)((value64) >> 16);				\
+	(addr)[1] = (uint8_t)((value64) >> 8);				\
+	(addr)[0] = (uint8_t)((value64)); } while (0)
 
-#define PUT_32BIT_LE(cp, value) do {					\
-	(cp)[3] = (uint8_t)((value) >> 24);				\
-	(cp)[2] = (uint8_t)((value) >> 16);				\
-	(cp)[1] = (uint8_t)((value) >> 8);				\
-	(cp)[0] = (uint8_t)((value)); } while (0)
+#define PUT_32BIT_LE(addr, value32) do {				\
+	(addr)[3] = (uint8_t)((value32) >> 24);				\
+	(addr)[2] = (uint8_t)((value32) >> 16);				\
+	(addr)[1] = (uint8_t)((value32) >> 8);				\
+	(addr)[0] = (uint8_t)((value32)); } while (0)
 #endif
-
-static uint8_t PADDING[MD5_BLOCK_SIZE] = {
-  0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
 
 
 /**
@@ -68,36 +63,13 @@ MD5Init (void *ctx_)
   ctx->state[3] = 0x10325476;
 }
 
-
-/**
- * Pad pad to 64-byte boundary with the bit pattern
- * 1 0* (64-bit count of bits processed, MSB-first)
- */
 static void
-MD5Pad (struct MD5Context *ctx)
-{
-  uint8_t count_le[8];
-  size_t padlen;
-  uint64_t count_bits;
-
-  mhd_assert (ctx != NULL);
-
-  /* Convert count to 8 bytes in little endian order. */
-  count_bits = ctx->count << 3;
-  PUT_64BIT_LE(count_le, count_bits);
-
-  /* Pad out to 56 mod 64. */
-  padlen = MD5_BLOCK_SIZE -
-    ((ctx->count) & (MD5_BLOCK_SIZE - 1));
-  if (padlen < 1 + 8)
-    padlen += MD5_BLOCK_SIZE;
-  MD5Update(ctx, PADDING, padlen - 8);		/* padlen - 8 <= 64 */
-  MD5Update(ctx, count_le, 8);
-}
+MD5Transform (uint32_t state[4],
+              const uint8_t block[MD5_BLOCK_SIZE]);
 
 
 /**
- * Final wrapup--call MD5Pad, fill in digest and zero out ctx.
+ * Final wrapup, fill in digest and zero out ctx.
  *
  * @param ctx must be a `struct MD5Context *`
  */
@@ -106,15 +78,40 @@ MD5Final (void *ctx_,
           uint8_t digest[MD5_DIGEST_SIZE])
 {
   struct MD5Context *ctx = ctx_;
-  int i;
+  uint64_t count_bits;
+  size_t have_bytes;
 
   mhd_assert (ctx != NULL);
   mhd_assert (digest != NULL);
 
-  MD5Pad(ctx);
-  for (i = 0; i < 4; i++)
-    PUT_32BIT_LE(digest + i * 4, ctx->state[i]);
+  /* Convert count to 8 bytes in little endian order. */
+  have_bytes = (ctx->count) & (MD5_BLOCK_SIZE - 1);
 
+  /* Pad data */
+  /* Buffer always have space for one byte or more. */
+  ctx->buffer[have_bytes++] = 0x80; /* First padding byte is 0x80 */
+
+  if (MD5_BLOCK_SIZE - have_bytes < 8)
+    { /* Not enough space to put number of bits */
+      while (have_bytes < MD5_BLOCK_SIZE) ctx->buffer[have_bytes++] = 0;
+      MD5Transform(ctx->state, ctx->buffer);
+      have_bytes = 0; /* Additional block */
+    }
+  /* Pad out to 56 */
+  memset(ctx->buffer + have_bytes, 0, MD5_BLOCK_SIZE - have_bytes - 8);
+
+  /* Put number of bits */
+  count_bits = ctx->count << 3;
+  PUT_64BIT_LE(ctx->buffer + 56, count_bits);
+  MD5Transform(ctx->state, ctx->buffer);
+
+  /* Put digest in LE mode */
+  PUT_32BIT_LE(digest, ctx->state[0]);
+  PUT_32BIT_LE(digest + 4, ctx->state[1]);
+  PUT_32BIT_LE(digest + 8, ctx->state[2]);
+  PUT_32BIT_LE(digest + 12, ctx->state[3]);
+
+  /* Erase buffer */
   memset(ctx, 0, sizeof(*ctx));
 }
 
