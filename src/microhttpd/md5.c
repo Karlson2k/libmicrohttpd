@@ -20,28 +20,8 @@
 
 #include "md5.h"
 #include "mhd_byteorder.h"
+#include "mhd_bithelpers.h"
 #include "mhd_assert.h"
-
-#if _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN
-#define PUT_64BIT_LE(addr, value64) ((*(uint64_t*)(addr)) = (uint64_t)(value64))
-#define PUT_32BIT_LE(addr, value32) ((*(uint32_t*)(addr)) = (uint32_t)(value32))
-#else
-#define PUT_64BIT_LE(addr, value) do {					\
-	(addr)[7] = (uint8_t)((value64) >> 56);				\
-	(addr)[6] = (uint8_t)((value64) >> 48);				\
-	(addr)[5] = (uint8_t)((value64) >> 40);				\
-	(addr)[4] = (uint8_t)((value64) >> 32);				\
-	(addr)[3] = (uint8_t)((value64) >> 24);				\
-	(addr)[2] = (uint8_t)((value64) >> 16);				\
-	(addr)[1] = (uint8_t)((value64) >> 8);				\
-	(addr)[0] = (uint8_t)((value64)); } while (0)
-
-#define PUT_32BIT_LE(addr, value32) do {				\
-	(addr)[3] = (uint8_t)((value32) >> 24);				\
-	(addr)[2] = (uint8_t)((value32) >> 16);				\
-	(addr)[1] = (uint8_t)((value32) >> 8);				\
-	(addr)[0] = (uint8_t)((value32)); } while (0)
-#endif
 
 
 /**
@@ -102,14 +82,14 @@ MD5Final (void *ctx_,
 
   /* Put number of bits */
   count_bits = ctx->count << 3;
-  PUT_64BIT_LE(ctx->buffer + 56, count_bits);
+  _MHD_PUT_64BIT_LE(ctx->buffer + 56, count_bits);
   MD5Transform(ctx->state, ctx->buffer);
 
   /* Put digest in LE mode */
-  PUT_32BIT_LE(digest, ctx->state[0]);
-  PUT_32BIT_LE(digest + 4, ctx->state[1]);
-  PUT_32BIT_LE(digest + 8, ctx->state[2]);
-  PUT_32BIT_LE(digest + 12, ctx->state[3]);
+  _MHD_PUT_32BIT_LE(digest, ctx->state[0]);
+  _MHD_PUT_32BIT_LE(digest + 4, ctx->state[1]);
+  _MHD_PUT_32BIT_LE(digest + 8, ctx->state[2]);
+  _MHD_PUT_32BIT_LE(digest + 12, ctx->state[3]);
 
   /* Erase buffer */
   memset(ctx, 0, sizeof(*ctx));

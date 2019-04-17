@@ -133,6 +133,7 @@ endif
 if ENABLE_DAUTH
 libmicrohttpd_la_SOURCES += \
   digestauth.c \
+  mhd_bithelpers.h \
   md5.c md5.h \
   sha256.c sha256.h
 endif
@@ -319,7 +320,7 @@ test_http_reasons_SOURCES = \
 
 test_md5_SOURCES = \
   test_md5.c test_helpers.h \
-  md5.c md5.h
+  md5.c md5.h mhd_bithelpers.h
 
 test_options_SOURCES = \
   test_options.c
