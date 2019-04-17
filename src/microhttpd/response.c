@@ -57,6 +57,19 @@
 
 
 /**
+ * Size of single file read operation for
+ * file-backed responses.
+ */
+#ifndef MHD_FILE_READ_BLOCK_SIZE
+#ifdef _WIN32
+#define MHD_FILE_READ_BLOCK_SIZE 16384 /* 16k */
+#else /* _WIN32 */
+#define MHD_FILE_READ_BLOCK_SIZE 4096 /* 4k */
+#endif /* _WIN32 */
+#endif /* !MHD_FD_BLOCK_SIZE */
+
+
+/**
  * Add a header or footer line to the response.
  *
  * @param response response to add a header to
