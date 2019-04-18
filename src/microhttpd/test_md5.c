@@ -62,7 +62,7 @@ static const size_t units1_num = sizeof(data_units1) / sizeof(data_units1[0]);
 
 struct bin_with_len
 {
-  const uint8_t bin[256];
+  const uint8_t bin[512];
   const size_t len;
 };
 
