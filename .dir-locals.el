@@ -7,7 +7,7 @@
      (show-trailing-whitespace . t)
      (c-basic-offset . 2)
      (ispell-check-comments . exclusive)
-     (ispell-local-dictionary . "american")
+     (ispell-local-dictionary . "british")
      (safe-local-variable-values
 	  '((c-default-style . "gnu")
 	    (sentence-end-double-space . f)
