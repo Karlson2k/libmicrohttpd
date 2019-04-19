@@ -258,7 +258,7 @@ sha256_update (void *ctx_,
   bytes_have = (unsigned)(ctx->count & (SHA256_BLOCK_SIZE-1));
   ctx->count += length;
 
-  if (bytes_have)
+  if (0 != bytes_have)
     {
       unsigned bytes_left = SHA256_BLOCK_SIZE - bytes_have;
       if (length >= bytes_left)
@@ -274,7 +274,7 @@ sha256_update (void *ctx_,
         }
     }
 
-  while (length >= SHA256_BLOCK_SIZE)
+  while (SHA256_BLOCK_SIZE <= length)
     { /* Process any full blocks of new data directly,
          without copying to buffer. */
       sha256_transform (ctx->H, data);
@@ -282,7 +282,7 @@ sha256_update (void *ctx_,
       length -= SHA256_BLOCK_SIZE;
     }
 
-  if (length != 0)
+  if (0 != length)
     { /* Copy incomplete block of new data (if any)
          to buffer. */
       memcpy (ctx->buffer + bytes_have, data, length);
