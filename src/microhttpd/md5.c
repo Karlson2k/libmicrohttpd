@@ -96,6 +96,12 @@ MD5Final (void *ctx_,
 }
 
 
+/**
+ * Number of bytes in single SHA-256 word
+ * used to process data
+ */
+#define MD5_BYTES_IN_WORD (32 / 8)
+
 /* The four core functions - F1 is optimized somewhat */
 
 /* #define F1(x, y, z) (x & y | ~x & z) */
@@ -122,14 +128,12 @@ MD5Transform (uint32_t state[4],
 #if _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN
   const uint32_t *in = (const uint32_t *)block;
 #else
-  uint32_t in[MD5_BLOCK_SIZE / 4];
-  for (a = 0; a < MD5_BLOCK_SIZE / 4; a++)
+  uint32_t in[MD5_BLOCK_SIZE / MD5_BYTES_IN_WORD];
+  int i;
+
+  for (i = 0; i < MD5_BLOCK_SIZE / MD5_BYTES_IN_WORD; i++)
   {
-    in[a] = (uint32_t)(
-      (uint32_t)(block[a * 4 + 0]) |
-      (uint32_t)(block[a * 4 + 1]) << 8 |
-      (uint32_t)(block[a * 4 + 2]) << 16 |
-      (uint32_t)(block[a * 4 + 3]) << 24);
+    in[i] = _MHD_GET_32BIT_LE(block + i * MD5_BYTES_IN_WORD);
   }
 #endif
 

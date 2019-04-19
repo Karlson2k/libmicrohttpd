@@ -101,6 +101,25 @@
         } while (0)
 #endif /* _MHD_BYTE_ORDER != _MHD_BIG_ENDIAN */
 
+/* _MHD_GET_32BIT_LE (addr)
+ * get little-endian 32-bit value storied at addr
+ * and return it in native-endian mode.
+ */
+#if _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN
+#define _MHD_GET_32BIT_LE(addr)             \
+        (*(uint32_t*)(addr))
+#elif _MHD_BYTE_ORDER == _MHD_BIG_ENDIAN
+#define _MHD_GET_32BIT_LE(addr)             \
+        _MHD_BYTES_SWAP32(*(uint32_t*)(addr))
+#else  /* _MHD_BYTE_ORDER != _MHD_BIG_ENDIAN */
+/* Endianess was not detected or non-standard like PDP-endian */
+#define _MHD_GET_32BIT_LE(addr)                       \
+        ( ( (uint32_t)(((uint8_t*)addr)[0]))        | \
+          (((uint32_t)(((uint8_t*)addr)[1])) << 8)  | \
+          (((uint32_t)(((uint8_t*)addr)[2])) << 16) | \
+          (((uint32_t)(((uint8_t*)addr)[3])) << 24) )
+#endif /* _MHD_BYTE_ORDER != _MHD_BIG_ENDIAN */
+
 
 /* _MHD_PUT_64BIT_BE (addr, value64)
  * put native-endian 64-bit value64 to addr
