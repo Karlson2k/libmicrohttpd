@@ -28,6 +28,7 @@
 
 #include "mhd_options.h"
 #include <stdint.h>
+#include <stddef.h>
 
 /**
  *  Digest is kept internally as 8 32-bit words.
