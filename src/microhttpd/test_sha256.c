@@ -255,7 +255,7 @@ int test1_str(void)
 
       sha256_init (&ctx);
       sha256_update (&ctx, (const uint8_t*)data_units1[i].str_l.str, data_units1[i].str_l.len);
-      sha256_digest (&ctx, digest);
+      sha256_finish (&ctx, digest);
       num_failed += check_result (__FUNCTION__, i, digest,
                                   data_units1[i].digest);
     }
@@ -272,7 +272,7 @@ int test1_bin(void)
 
       sha256_init (&ctx);
       sha256_update (&ctx, data_units2[i].bin_l.bin, data_units2[i].bin_l.len);
-      sha256_digest (&ctx, digest);
+      sha256_finish (&ctx, digest);
       num_failed += check_result (__FUNCTION__, i, digest,
                                   data_units2[i].digest);
     }
@@ -292,7 +292,7 @@ int test2_str(void)
       sha256_init (&ctx);
       sha256_update (&ctx, (const uint8_t*)data_units1[i].str_l.str, part_s);
       sha256_update (&ctx, (const uint8_t*)data_units1[i].str_l.str + part_s, data_units1[i].str_l.len - part_s);
-      sha256_digest (&ctx, digest);
+      sha256_finish (&ctx, digest);
       num_failed += check_result (__FUNCTION__, i, digest,
                                   data_units1[i].digest);
     }
@@ -311,7 +311,7 @@ int test2_bin(void)
       sha256_init (&ctx);
       sha256_update (&ctx, data_units2[i].bin_l.bin, part_s);
       sha256_update (&ctx, data_units2[i].bin_l.bin + part_s, data_units2[i].bin_l.len - part_s);
-      sha256_digest (&ctx, digest);
+      sha256_finish (&ctx, digest);
       num_failed += check_result (__FUNCTION__, i, digest,
                                   data_units2[i].digest);
     }

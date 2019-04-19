@@ -90,6 +90,4 @@ void
 sha256_finish (void *ctx_,
                uint8_t digest[SHA256_DIGEST_SIZE]);
 
-#define sha256_digest sha256_finish
-
 #endif /* MHD_SHA256_H */

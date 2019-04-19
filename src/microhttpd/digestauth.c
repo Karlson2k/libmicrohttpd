@@ -1198,7 +1198,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
     da.sessionkey = skey.sha256;                        \
     da.init = &sha256_init;                             \
     da.update = &sha256_update;                         \
-    da.digest = &sha256_digest;                         \
+    da.digest = &sha256_finish;                         \
     break;                                              \
   }
 
