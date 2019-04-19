@@ -157,6 +157,7 @@ check_PROGRAMS = \
   test_str_token \
   test_http_reasons \
   test_md5 \
+  test_sha256 \
   test_start_stop \
   test_daemon \
   test_options
@@ -321,6 +322,10 @@ test_http_reasons_SOURCES = \
 test_md5_SOURCES = \
   test_md5.c test_helpers.h \
   md5.c md5.h mhd_bithelpers.h
+
+test_sha256_SOURCES = \
+  test_sha256.c test_helpers.h \
+  sha256.c sha256.h mhd_bithelpers.h
 
 test_options_SOURCES = \
   test_options.c
