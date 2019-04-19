@@ -662,6 +662,20 @@ AX_CHECK_LINK_FLAG([-fno-strict-aliasing],
 
 AC_C_BIGENDIAN
 AC_C_VARARRAYS
+AC_CACHE_CHECK([[whether __builtin_bswap32() is available]],
+  [[mhd_cv_func___builtin_bswap32_avail]], [dnl
+  AC_TRY_LINK([#include<stdint.h>],[uint32_t a = 1; uint32_t b = __builtin_bswap32(a); a = b;],
+    [[mhd_cv_func___builtin_bswap32_avail="yes"]], [[mhd_cv_func___builtin_bswap32_avail="no"]])
+])
+AS_IF([[test "x$mhd_cv_func___builtin_bswap32_avail" = "xyes"]],
+  [AC_DEFINE([[MHD_HAVE___BUILTIN_BSWAP32]], [[1]], [Define to 1 if you have __builtin_bswap32() builtin function])])
+AC_CACHE_CHECK([[whether __builtin_bswap64() is available]],
+  [[mhd_cv_func___builtin_bswap64_avail]], [dnl
+  AC_TRY_LINK([#include<stdint.h>],[uint64_t a = 1; uint32_t b = __builtin_bswap64(a); a = b;],
+    [[mhd_cv_func___builtin_bswap64_avail="yes"]], [[mhd_cv_func___builtin_bswap64_avail="no"]])
+])
+AS_IF([[test "x$mhd_cv_func___builtin_bswap64_avail" = "xyes"]],
+  [AC_DEFINE([[MHD_HAVE___BUILTIN_BSWAP64]], [[1]], [Define to 1 if you have __builtin_bswap64() builtin function])])
 
 AC_CHECK_PROG([HAVE_CURL_BINARY],[curl],[yes],[no])
 AM_CONDITIONAL([HAVE_CURL_BINARY],[test "x$HAVE_CURL_BINARY" = "xyes"])
