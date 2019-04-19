@@ -27,7 +27,7 @@ variables:
   MINGW_BUILD: buildenv-debian-mingw
   GET_SOURCES_ATTEMPTS: "3"
   CONFIGURE_BASE_FLAGS: --enable-asserts --cache-file cache/config.cache
-  CFLAGS_DEFAULT: -O0 -g -ggdb3
+  CFLAGS_DEFAULT: -O0 -g -ggdb3 -Wall -Wextra
 
 # In this build we combine
 #  * gcc
@@ -39,7 +39,7 @@ gcc/Stretch:
     - ./bootstrap
     - ./configure $CONFIGURE_BASE_FLAGS
     - make -j$(nproc)
-    - make -j$(nproc) check
+    - make check
     - make -j$(nproc) distcheck
   tags:
     - shared
@@ -65,6 +65,7 @@ Sanitizers/Stretch:
     - export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-3.8/bin/llvm-symbolizer
     - ./configure $CONFIGURE_BASE_FLAGS --disable-doc
     - make -j$(nproc) check
+    - make check
     - make -j$(nproc) distcheck
   tags:
     - shared
@@ -83,7 +84,7 @@ Scan-Build/Debian:
     - ./bootstrap
     - scan-build ./configure $CONFIGURE_BASE_FLAGS
     - scan-build -v -enable-checker security,nullability --status-bugs -o scan-build make -j$(nproc)
-    - scan-build -v -enable-checker security,nullability --status-bugs -o scan-build make -j$(nproc) check
+    - scan-build -v -enable-checker security,nullability --status-bugs -o scan-build make check
   tags:
     - shared
   except:
