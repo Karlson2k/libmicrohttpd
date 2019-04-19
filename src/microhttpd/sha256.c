@@ -250,6 +250,9 @@ sha256_update (void *ctx_,
 
   mhd_assert((data != NULL) || (length == 0));
 
+  if (0 == length)
+    return; /* Do nothing */
+
   /* Note: (count & (SHA256_BLOCK_SIZE-1))
            equal (count % SHA256_BLOCK_SIZE) for this block size. */
   bytes_have = (unsigned)(ctx->count & (SHA256_BLOCK_SIZE-1));
