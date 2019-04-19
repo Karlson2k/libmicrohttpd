@@ -18,7 +18,9 @@
 #ifndef MHD_MD5_H
 #define MHD_MD5_H
 
-#include "platform.h"
+#include "mhd_options.h"
+#include <stdint.h>
+#include <stddef.h>
 
 #define	MD5_BLOCK_SIZE              64
 #define	MD5_DIGEST_SIZE             16

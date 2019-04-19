@@ -19,7 +19,10 @@
  * Optimized by Karlson2k (Evgeny Grin). */
 
 #include "md5.h"
-#include "mhd_byteorder.h"
+#include <string.h>
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif /* HAVE_MEMORY_H */
 #include "mhd_bithelpers.h"
 #include "mhd_assert.h"
 
