@@ -101,20 +101,22 @@ extern "C"
    on platforms where they do not exist).
    */
 #ifndef MHD_PLATFORM_H
-#include <stdarg.h>
-#include <stdint.h>
-#include <sys/types.h>
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if !defined(_WIN32) || defined(__CYGWIN__)
+#include <unistd.h>
+#include <sys/time.h>
+#include <sys/socket.h>
+#else  /* _WIN32 && ! __CYGWIN__ */
+/* Declare POSIX-compatible names */
+#define _CRT_DECLARE_NONSTDC_NAMES 1
 #include <ws2tcpip.h>
 #if defined(_MSC_FULL_VER) && !defined (_SSIZE_T_DEFINED)
 #define _SSIZE_T_DEFINED
 typedef intptr_t ssize_t;
 #endif /* !_SSIZE_T_DEFINED */
-#else
-#include <unistd.h>
-#include <sys/time.h>
-#include <sys/socket.h>
-#endif
+#endif /* _WIN32 && ! __CYGWIN__ */
+#include <stdarg.h>
+#include <stdint.h>
+#include <sys/types.h>
 #endif
 
 #if defined(__CYGWIN__) && !defined(_SYS_TYPES_FD_SET)
