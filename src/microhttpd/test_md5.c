@@ -26,6 +26,7 @@
 #include "mhd_options.h"
 #include "md5.h"
 #include "test_helpers.h"
+#include <stdio.h>
 
 static int verbose = 0; /* verbose level (0-1)*/
 
