@@ -28,24 +28,52 @@
 
 #include "mhd_byteorder.h"
 #include <stdint.h>
+#if defined(_MSC_FULL_VER) && (!defined(__clang__) || (defined(__c2__) && defined(__OPTIMIZE__)))
+/* Declarations for VC & Clang/C2 built-ins */
+#include <intrin.h>
+#endif /* _MSC_FULL_VER  */
+
+#ifndef __has_builtin
+/* Avoid precompiler errors with non-clang */
+#  define __has_builtin(x) 0
+#endif
 
 
 #ifdef MHD_HAVE___BUILTIN_BSWAP32
 #define _MHD_BYTES_SWAP32(value32)  \
         ((uint32_t)__builtin_bswap32((uint32_t)value32))
-#else  /* ! MHD_HAVE___BUILTIN_BSWAP32 */
+#elif defined(_MSC_FULL_VER) && (!defined(__clang__) || (defined(__c2__) && defined(__OPTIMIZE__)))
+/* Clang/C2 may not inline this function if optimizations are turned off. */
+#ifndef __clang__
+#pragma intrinsic(_byteswap_ulong)
+#endif /* ! __clang__ */
+#define _MHD_BYTES_SWAP32(value32)  \
+        ((uint32_t)_byteswap_ulong((uint32_t)value32))
+#elif __has_builtin(__builtin_bswap32)
+#define _MHD_BYTES_SWAP32(value32)  \
+        ((uint32_t)__builtin_bswap32((uint32_t)value32))
+#else  /* ! __has_builtin(__builtin_bswap32) */
 #define _MHD_BYTES_SWAP32(value32)                              \
    ( (((uint32_t)(value32))                           << 24) |  \
     ((((uint32_t)(value32)) & ((uint32_t)0x0000FF00)) << 8)  |  \
     ((((uint32_t)(value32)) & ((uint32_t)0x00FF0000)) >> 8)  |  \
      (((uint32_t)(value32))                           >> 24) )
-#endif /* ! MHD_HAVE___BUILTIN_BSWAP32 */
-
+#endif /* ! __has_builtin(__builtin_bswap32) */
 
 #ifdef MHD_HAVE___BUILTIN_BSWAP64
 #define _MHD_BYTES_SWAP64(value64) \
         ((uint64_t)__builtin_bswap64((uint64_t)value64))
-#else  /* ! MHD_HAVE___BUILTIN_BSWAP64 */
+#elif defined(_MSC_FULL_VER) && (!defined(__clang__) || (defined(__c2__) && defined(__OPTIMIZE__)))
+/* Clang/C2 may not inline this function if optimizations are turned off. */
+#ifndef __clang__
+#pragma intrinsic(_byteswap_uint64)
+#endif /* ! __clang__ */
+#define _MHD_BYTES_SWAP64(value64)  \
+        ((uint64_t)_byteswap_uint64((uint64_t)value64))
+#elif __has_builtin(__builtin_bswap64)
+#define _MHD_BYTES_SWAP64(value64) \
+        ((uint64_t)__builtin_bswap64((uint64_t)value64))
+#else  /* ! __has_builtin(__builtin_bswap64) */
 #define _MHD_BYTES_SWAP64(value64)                                     \
   ( (((uint64_t)(value64))                                   << 56) |  \
    ((((uint64_t)(value64)) & ((uint64_t)0x000000000000FF00)) << 40) |  \
@@ -55,7 +83,8 @@
    ((((uint64_t)(value64)) & ((uint64_t)0x0000FF0000000000)) >> 24) |  \
    ((((uint64_t)(value64)) & ((uint64_t)0x00FF000000000000)) >> 40) |  \
     (((uint64_t)(value64))                                   >> 56) )
-#endif /* ! MHD_HAVE___BUILTIN_BSWAP64 */
+#endif /* ! __has_builtin(__builtin_bswap64) */
+
 
 /* _MHD_PUT_64BIT_LE (addr, value64)
  * put native-endian 64-bit value64 to addr
@@ -184,11 +213,23 @@
           ((uint32_t) (((uint8_t*)addr)[3])) )
 #endif /* _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN */
 
+
 /**
  * Rotate right 32-bit value by number of bits.
  * bits parameter must be more than zero and must be less than 32.
- * Defined in form which modern compiler could optimize.
  */
-#define _MHD_ROTR32(value32, bits) ((value32) >> (bits) | (value32) << (32 - bits))
+#if defined(_MSC_FULL_VER) && (!defined(__clang__) || (defined(__c2__) && defined(__OPTIMIZE__)))
+/* Clang/C2 do not inline this function if optimizations are turned off. */
+#ifndef __clang__
+#pragma intrinsic(_rotr)
+#endif /* ! __clang__ */
+#define _MHD_ROTR32(value32, bits) \
+        ((uint32_t)_rotr((uint32_t)(value32),(bits)))
+#else  /* ! _MSC_FULL_VER */
+/* Defined in form which modern compiler could optimize. */
+#define _MHD_ROTR32(value32, bits) \
+        (((uint32_t)(value32)) >> (bits) | ((uint32_t)(value32)) << (32 - bits))
+#endif /* ! _MSC_FULL_VER */
+
 
 #endif /* ! MHD_BITHELPERS_H */
