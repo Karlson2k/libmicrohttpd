@@ -1646,9 +1646,9 @@ build_header_response (struct MHD_Connection *connection)
             simply only force adding a content-length header if this
             is not a 'connect' or if the response is not empty
             (which is kind of more sane, because if some crazy
-            application did return content with a 2xx status code,
+            application did return content with a 2xx status code, 
             then having a content-length might again be a good idea).
-
+           
             Note that the change from 'SHOULD NOT' to 'MUST NOT' is
             a recent development of the HTTP 1.1 specification.
           */
@@ -2886,7 +2886,7 @@ parse_connection_headers (struct MHD_Connection *connection)
               MHD_DLOG (connection->daemon,
                         "Failed to parse `Content-Length' header. Closing connection.\n");
 #endif
-	      CONNECTION_CLOSE_ERROR (connection,
+              CONNECTION_CLOSE_ERROR (connection,
                                       NULL);
               return;
             }
