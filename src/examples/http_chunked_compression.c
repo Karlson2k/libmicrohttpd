@@ -108,7 +108,7 @@ read_cb (void *cls, uint64_t pos, char *mem, size_t size)
     {
       memcpy (mem, buf, size);
     }
-  free (buf); // buf may be set even on error return
+  free (buf); /* Buf may be set even on error return. */
 done:
   free (src);
   return size;
