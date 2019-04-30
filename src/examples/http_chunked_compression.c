@@ -92,7 +92,7 @@ read_cb (void *cls, uint64_t pos, char *mem, size_t size)
   if (NULL == src)
     return MHD_CONTENT_READER_END_WITH_ERROR;
   size = fread (src, 1, size, holder->file);
-  if (size < 0)
+  if ((ssize_t) size < 0)
     {
       size = MHD_CONTENT_READER_END_WITH_ERROR;
       goto done;
