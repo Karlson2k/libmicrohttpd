@@ -67,18 +67,13 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   return size * nmemb;
 }
 
-
 static int 
 test_values (void *cls,
 	     enum MHD_ValueKind kind,
 	     const char *key,
-	     const char *value,
-	     size_t value_size)
+	     const char *value)
 {
-  (void) cls;
-  (void) kind;
-  (void) value_size;
-  
+  (void)cls;(void)kind;         /* Unused. Silent compiler warning. */
   if ( (0 == strcmp (key, "a")) &&
        (0 == strcmp (value, "b")) )
     matches += 1;

@@ -706,8 +706,7 @@ MHD_get_connection_values (struct MHD_Connection *connection,
              (MHD_YES != iterator (iterator_cls,
                                    pos->kind,
                                    pos->header,
-                                   pos->value,
-				   pos->value_size)) )
+                                   pos->value)) )
 	  return ret;
       }
   return ret;
@@ -733,19 +732,21 @@ MHD_get_connection_values (struct MHD_Connection *connection,
  *  value should be set
  * @param kind kind of the value
  * @param key key for the value
+ * @param key_size number of bytes in @a key (excluding 0-terminator for C-strings)
  * @param value the value itself
- * @param value_size number of bytes in @a value
+ * @param value_size number of bytes in @a value (excluding 0-terminator for C-strings)
  * @return #MHD_NO if the operation could not be
  *         performed due to insufficient memory;
  *         #MHD_YES on success
  * @ingroup request
  */
 int
-MHD_set_connection_value2 (struct MHD_Connection *connection,
-			   enum MHD_ValueKind kind,
-			   const char *key,
-			   const char *value,
-			   size_t value_size)
+MHD_set_connection_value_n (struct MHD_Connection *connection,
+                            enum MHD_ValueKind kind,
+                            const char *key,
+                            size_t key_size,
+                            const char *value,
+                            size_t value_size)
 {
   struct MHD_HTTP_Header *pos;
 
@@ -755,6 +756,7 @@ MHD_set_connection_value2 (struct MHD_Connection *connection,
   if (NULL == pos)
     return MHD_NO;
   pos->header = (char *) key;
+  pos->header_size = key_size;
   pos->value = (char *) value;
   pos->value_size = value_size;
   pos->kind = kind;
@@ -805,13 +807,16 @@ MHD_set_connection_value (struct MHD_Connection *connection,
                           const char *key,
                           const char *value)
 {
-  return MHD_set_connection_value2 (connection,
-				    kind,
-				    key,
-				    value,
-				    NULL != value
-				    ? strlen (value)
-				    : 0);
+  return MHD_set_connection_value_n (connection,
+				     kind,
+				     key,
+                                     NULL != key
+                                     ? strlen (key)
+                                     : 0,
+                                     value,
+				     NULL != value
+				     ? strlen (value)
+				     : 0);
 }
 
 
@@ -2105,6 +2110,7 @@ get_next_header_line (struct MHD_Connection *connection,
  *  value should be set
  * @param kind kind of the value
  * @param key key for the value
+ * @param key_size number of bytes in @a key
  * @param value the value itself
  * @param value_size number of bytes in @a value
  * @return #MHD_NO on failure (out of memory), #MHD_YES for success
@@ -2112,16 +2118,18 @@ get_next_header_line (struct MHD_Connection *connection,
 static int
 connection_add_header (struct MHD_Connection *connection,
                        const char *key,
+                       size_t key_size,
 		       const char *value,
 		       size_t value_size,
 		       enum MHD_ValueKind kind)
 {
   if (MHD_NO ==
-      MHD_set_connection_value2 (connection,
-				 kind,
-				 key,
-				 value,
-				 value_size))
+      MHD_set_connection_value_n (connection,
+				  kind,
+				  key,
+                                  key_size,
+				  value,
+				  value_size))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
@@ -2203,6 +2211,7 @@ parse_cookie_header (struct MHD_Connection *connection)
           if (MHD_NO ==
               connection_add_header (connection,
                                      pos,
+                                     ekill - pos + 1,
                                      "",
 				     0,
                                      MHD_COOKIE_KIND))
@@ -2243,6 +2252,7 @@ parse_cookie_header (struct MHD_Connection *connection)
       if (MHD_NO ==
 	  connection_add_header (connection,
 				 pos,
+                                 ekill - pos + 1,
 				 equals,
 				 end - equals,
 				 MHD_COOKIE_KIND))
@@ -2774,6 +2784,7 @@ process_broken_line (struct MHD_Connection *connection,
   if (MHD_NO ==
       connection_add_header (connection,
 			     last,
+			     strlen (last),
 			     connection->colon,
 			     strlen (connection->colon),
 			     kind))

@@ -731,6 +731,7 @@ calculate_nonce (uint32_t nonce_time,
  *
  * @param connection the connection
  * @param key the key
+ * @param key_size number of bytes in @a key
  * @param value the value, can be NULL
  * @param value_size number of bytes in @a value
  * @param kind type of the header
@@ -740,6 +741,7 @@ calculate_nonce (uint32_t nonce_time,
 static int
 test_header (struct MHD_Connection *connection,
 	     const char *key,
+             size_t key_size,
 	     const char *value,
 	     size_t value_size,
 	     enum MHD_ValueKind kind)
@@ -750,10 +752,13 @@ test_header (struct MHD_Connection *connection,
     {
       if (kind != pos->kind)
 	continue;
-      if (value_size != pos->value_size)
+      if (key_size != pos->header_size)
 	continue;
-      if (0 != strcmp (key,
-                       pos->header))
+      if (value_size != pos->value_size)
+        continue;
+      if (0 != memcmp (key,
+                       pos->header,
+                       key_size))
 	continue;
       if ( (NULL == value) &&
 	   (NULL == pos->value) )

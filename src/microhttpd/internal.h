@@ -271,6 +271,11 @@ struct MHD_HTTP_Header
   char *header;
 
   /**
+   * Number of bytes in @a header.
+   */
+  size_t header_size;
+
+  /**
    * The value of the header.
    */
   char *value;
@@ -1886,6 +1891,7 @@ MHD_unescape_plus (char *arg);
  *
  * @param connection context of the iteration
  * @param key 0-terminated key string, never NULL
+ * @param key_size number of bytes in key
  * @param value 0-terminated binary data, may include binary zeros, may be NULL
  * @param value_size number of bytes in value
  * @param kind origin of the key-value pair
@@ -1895,6 +1901,7 @@ MHD_unescape_plus (char *arg);
 typedef int
 (*MHD_ArgumentIterator_)(struct MHD_Connection *connection,
 			 const char *key,
+                         size_t key_size,
 			 const char *value,
 			 size_t value_size,
 			 enum MHD_ValueKind kind);
@@ -1923,14 +1930,17 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 
 
 /**
- * Check whether response header contains particular @a token.
+ * Check whether response header contains particular token.
  *
  * Token could be surrounded by spaces and tabs and delimited by comma.
  * Case-insensitive match used for header names and tokens.
+ *
  * @param response  the response to query
  * @param key       header name
+ * @param key_len   the length of @a key, not including optional
+ *                  terminating null-character.
  * @param token     the token to find
- * @param token_len the length of token, not including optional
+ * @param token_len the length of @a token, not including optional
  *                  terminating null-character.
  * @return true if token is found in specified header,
  *         false otherwise
@@ -1938,6 +1948,7 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 bool
 MHD_check_response_header_token_ci (const struct MHD_Response *response,
                                     const char *key,
+                                    size_t key_len,
                                     const char *token,
                                     size_t token_len);
 
@@ -1953,7 +1964,8 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
  *         false otherwise
  */
 #define MHD_check_response_header_s_token_ci(r,k,tkn) \
-    MHD_check_response_header_token_ci((r),(k),(tkn),MHD_STATICSTR_LEN_(tkn))
+    MHD_check_response_header_token_ci((r),(k),MHD_STATICSTR_LEN_(k),\
+                  (tkn),MHD_STATICSTR_LEN_(tkn))
 
 
 /**

@@ -65,13 +65,8 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   return size * nmemb;
 }
 
-
 static int
-kv_cb (void *cls,
-       enum MHD_ValueKind kind,
-       const char *key,
-       const char *value,
-       size_t value_size)
+kv_cb (void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
   if ((0 == strcmp (key, MHD_HTTP_HEADER_HOST)) &&
       (0 == strncmp (value, "127.0.0.1", strlen("127.0.0.1"))) && (kind == MHD_HEADER_KIND))
@@ -81,7 +76,6 @@ kv_cb (void *cls,
     }
   return MHD_YES;
 }
-
 
 static int
 ahc_echo (void *cls,

@@ -83,6 +83,21 @@ MHD_str_equal_caseless_n_ (const char * const str1,
 
 
 /**
+ * Check two string for equality, ignoring case of US-ASCII letters and
+ * checking exactly @a len characters.
+ * Compares exactly @a len characters, including binary zero characters.
+ * @param str1 first string to compare
+ * @param str2 second string to compare
+ * @param len number of characters to compare
+ * @return non-zero if two strings are equal, zero otherwise.
+ */
+bool
+MHD_str_equal_caseless_bin_n_ (const char * const str1,
+                  const char * const str2,
+                  size_t len);
+
+
+/**
  * Check whether @a str has case-insensitive @a token.
  * Token could be surrounded by spaces and tabs and delimited by comma.
  * Match succeed if substring between start, end of string or comma

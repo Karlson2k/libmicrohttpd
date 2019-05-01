@@ -128,7 +128,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00096302
+#define MHD_VERSION 0x00096303
 
 /**
  * MHD-internal return code for "YES".
@@ -2041,8 +2041,6 @@ typedef void
  * @param kind kind of the header we are looking at
  * @param key key for the value, can be an empty string
  * @param value corresponding value, can be NULL
- * @param value_size number of bytes in @a value, NEW since #MHD_VERSION 0x00096301;
- *                   for C-strings, the length excludes the 0-terminator
  * @return #MHD_YES to continue iterating,
  *         #MHD_NO to abort the iteration
  * @ingroup request
@@ -2051,8 +2049,34 @@ typedef int
 (*MHD_KeyValueIterator) (void *cls,
                          enum MHD_ValueKind kind,
                          const char *key,
+                         const char *value);
+
+
+/**
+ * Iterator over key-value pairs with size parameters.
+ * This iterator can be used to iterate over all of
+ * the cookies, headers, or POST-data fields of a
+ * request, and also to iterate over the headers that
+ * have been added to a response.
+ * @note Available since #MHD_VERSION 0x00096303
+ *
+ * @param cls closure
+ * @param kind kind of the header we are looking at
+ * @param key key for the value, can be an empty string
+ * @param value corresponding value, can be NULL
+ * @param value_size number of bytes in @a value, NEW since #MHD_VERSION 0x00096301;
+ *                   for C-strings, the length excludes the 0-terminator
+ * @return #MHD_YES to continue iterating,
+ *         #MHD_NO to abort the iteration
+ * @ingroup request
+ */
+typedef int
+(*MHD_KeyValueIteratorN) (void *cls,
+                         enum MHD_ValueKind kind,
+                         const char *key,
+                         size_t key_size,
                          const char *value,
-			 size_t value_size);
+                         size_t value_size);
 
 
 /**
@@ -2531,6 +2555,7 @@ MHD_set_connection_value (struct MHD_Connection *connection,
  *  value should be set
  * @param kind kind of the value
  * @param key key for the value
+ * @param key_size number of bytes in @a key (excluding 0-terminator for C-strings)
  * @param value the value itself 
  * @param value_size number of bytes in @a value (excluding 0-terminator for C-strings)
  * @return #MHD_NO if the operation could not be
@@ -2539,11 +2564,12 @@ MHD_set_connection_value (struct MHD_Connection *connection,
  * @ingroup request
  */
 int
-MHD_set_connection_value2 (struct MHD_Connection *connection,
-			   enum MHD_ValueKind kind,
-			   const char *key,
-			   const char *value,
-			   size_t value_size);
+MHD_set_connection_value_n (struct MHD_Connection *connection,
+			    enum MHD_ValueKind kind,
+			    const char *key,
+                            size_t key_size,
+			    const char *value,
+			    size_t value_size);
 
 
 /**

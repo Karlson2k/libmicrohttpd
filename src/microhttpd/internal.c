@@ -190,12 +190,13 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
   struct MHD_Daemon *daemon = connection->daemon;
   char *equals;
   char *amper;
-  size_t len;
 
   *num_headers = 0;
   while ( (NULL != args) &&
 	  ('\0' != args[0]) )
     {
+      size_t key_len;
+      size_t value_len;
       equals = strchr (args, '=');
       amper = strchr (args, '&');
       if (NULL == amper)
@@ -205,11 +206,12 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 	    {
 	      /* last argument, without '=' */
               MHD_unescape_plus (args);
-	      daemon->unescape_callback (daemon->unescape_callback_cls,
-					 connection,
-					 args);
+	      key_len = daemon->unescape_callback (daemon->unescape_callback_cls,
+			                           connection,
+                                                   args);
 	      if (MHD_YES != cb (connection,
 				 args,
+				 key_len,
 				 NULL,
 				 0,
 				 kind))
@@ -221,17 +223,18 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 	  equals[0] = '\0';
 	  equals++;
           MHD_unescape_plus (args);
-	  daemon->unescape_callback (daemon->unescape_callback_cls,
-				     connection,
-				     args);
+	  key_len = daemon->unescape_callback (daemon->unescape_callback_cls,
+                                               connection,
+                                               args);
           MHD_unescape_plus (equals);
-	  len = daemon->unescape_callback (daemon->unescape_callback_cls,
-					   connection,
-					   equals);
+	  value_len = daemon->unescape_callback (daemon->unescape_callback_cls,
+                                                 connection,
+                                                 equals);
 	  if (MHD_YES != cb (connection,
 			     args,
+			     key_len,
 			     equals,
-			     len,
+			     value_len,
 			     kind))
 	    return MHD_NO;
 	  (*num_headers)++;
@@ -245,11 +248,12 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
 	{
 	  /* got 'foo&bar' or 'foo&bar=val', add key 'foo' with NULL for value */
           MHD_unescape_plus (args);
-	  daemon->unescape_callback (daemon->unescape_callback_cls,
-				     connection,
-				     args);
+          key_len = daemon->unescape_callback (daemon->unescape_callback_cls,
+                                               connection,
+                                               args);
 	  if (MHD_YES != cb (connection,
 			     args,
+			     key_len,
 			     NULL,
 			     0,
 			     kind))
@@ -264,17 +268,18 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
       equals[0] = '\0';
       equals++;
       MHD_unescape_plus (args);
-      daemon->unescape_callback (daemon->unescape_callback_cls,
-				 connection,
-				 args);
+      key_len = daemon->unescape_callback (daemon->unescape_callback_cls,
+                                           connection,
+                                           args);
       MHD_unescape_plus (equals);
-      len = daemon->unescape_callback (daemon->unescape_callback_cls,
-				       connection,
-				       equals);
+      value_len = daemon->unescape_callback (daemon->unescape_callback_cls,
+                                             connection,
+                                             equals);
       if (MHD_YES != cb (connection,
 			 args,
+			 key_len,
 			 equals,
-			 len,
+			 value_len,
 			 kind))
         return MHD_NO;
       (*num_headers)++;

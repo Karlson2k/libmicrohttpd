@@ -105,6 +105,7 @@ add_response_entry (struct MHD_Response *response,
       free (hdr);
       return MHD_NO;
     }
+  hdr->header_size = strlen (header);
   if (NULL == (hdr->value = strdup (content)))
     {
       free (hdr->header);
@@ -254,8 +255,7 @@ MHD_get_response_headers (struct MHD_Response *response,
           (MHD_YES != iterator (iterator_cls,
                                 pos->kind,
                                 pos->header,
-                                pos->value,
-				pos->value_size)))
+                                pos->value)))
         break;
     }
   return numHeaders;
@@ -275,14 +275,18 @@ MHD_get_response_header (struct MHD_Response *response,
 			 const char *key)
 {
   struct MHD_HTTP_Header *pos;
+  size_t key_size;
 
   if (NULL == key)
     return NULL;
+
+  key_size = strlen (key);
   for (pos = response->first_header;
        NULL != pos;
        pos = pos->next)
     {
-      if (MHD_str_equal_caseless_ (pos->header, key))
+      if ((pos->header_size == key_size) &&
+          (MHD_str_equal_caseless_bin_n_ (pos->header, key, pos->header_size)))
         return pos->value;
     }
   return NULL;
@@ -297,8 +301,10 @@ MHD_get_response_header (struct MHD_Response *response,
  *
  * @param response  the response to query
  * @param key       header name
+ * @param key_len   the length of @a key, not including optional
+ *                  terminating null-character.
  * @param token     the token to find
- * @param token_len the length of token, not including optional
+ * @param token_len the length of @a token, not including optional
  *                  terminating null-character.
  * @return true if token is found in specified header,
  *         false otherwise
@@ -306,6 +312,7 @@ MHD_get_response_header (struct MHD_Response *response,
 bool
 MHD_check_response_header_token_ci (const struct MHD_Response *response,
                                     const char *key,
+                                    size_t key_len,
                                     const char *token,
                                     size_t token_len)
 {
@@ -317,13 +324,18 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
        ('\0' == token[0]) )
     return false;
 
+  /* Token must not contain binary zero! */
+  mhd_assert(strlen(token) == token_len);
+
   for (pos = response->first_header;
        NULL != pos;
        pos = pos->next)
     {
       if ( (pos->kind == MHD_HEADER_KIND) &&
-           MHD_str_equal_caseless_ (pos->header,
-                                    key) &&
+           (key_len == pos->header_size) &&
+           MHD_str_equal_caseless_bin_n_ (pos->header,
+                                          key,
+                                          key_len) &&
            MHD_str_has_token_caseless_ (pos->value,
                                         token,
                                         token_len) )
