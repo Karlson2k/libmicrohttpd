@@ -111,6 +111,7 @@ add_response_entry (struct MHD_Response *response,
       free (hdr);
       return MHD_NO;
     }
+  hdr->value_size = strlen (content);
   hdr->kind = kind;
   hdr->next = response->first_header;
   response->first_header = hdr;
