@@ -29,7 +29,7 @@
 #include "mhd_options.h"
 
 #include <stdint.h>
-#include <stdlib.h>
+#include <stddef.h>
 #ifdef HAVE_STDBOOL_H
 #include <stdbool.h>
 #endif /* HAVE_STDBOOL_H */
