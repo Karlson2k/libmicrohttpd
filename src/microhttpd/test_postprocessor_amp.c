@@ -38,6 +38,8 @@ main (int argc, char *const *argv)
   connection.headers_received = &header;
   header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
   header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
+  header.header_size = strlen (header.header);
+  header.value_size = strlen (header.value);
   header.kind = MHD_HEADER_KIND;
 
   pp = MHD_create_post_processor (&connection,
