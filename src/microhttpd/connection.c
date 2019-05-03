@@ -715,6 +715,59 @@ MHD_get_connection_values (struct MHD_Connection *connection,
 
 /**
  * This function can be used to add an arbitrary entry to connection.
+ * Internal version of #MHD_set_connection_value_n() without checking
+ * of arguments values.
+ *
+ * @param connection the connection for which a
+ *                   value should be set
+ * @param kind kind of the value
+ * @param key key for the value, must be zero-terminated
+ * @param key_size number of bytes in @a key (excluding 0-terminator)
+ * @param value the value itself, must be zero-terminated
+ * @param value_size number of bytes in @a value (excluding 0-terminator)
+ * @return #MHD_NO if the operation could not be
+ *         performed due to insufficient memory;
+ *         #MHD_YES on success
+ * @ingroup request
+ */
+int
+MHD_set_connection_value_n_nocheck_ (struct MHD_Connection *connection,
+                                     enum MHD_ValueKind kind,
+                                     const char *key,
+                                     size_t key_size,
+                                     const char *value,
+                                     size_t value_size)
+{
+  struct MHD_HTTP_Header *pos;
+
+  pos = MHD_pool_allocate (connection->pool,
+                           sizeof (struct MHD_HTTP_Header),
+                           MHD_YES);
+  if (NULL == pos)
+    return MHD_NO;
+  pos->header = (char *) key;
+  pos->header_size = key_size;
+  pos->value = (char *) value;
+  pos->value_size = value_size;
+  pos->kind = kind;
+  pos->next = NULL;
+  /* append 'pos' to the linked list of headers */
+  if (NULL == connection->headers_received_tail)
+    {
+      connection->headers_received = pos;
+      connection->headers_received_tail = pos;
+    }
+  else
+    {
+      connection->headers_received_tail->next = pos;
+      connection->headers_received_tail = pos;
+    }
+  return MHD_YES;
+}
+
+
+/**
+ * This function can be used to add an arbitrary entry to connection.
  * This function could add entry with binary zero, which is allowed
  * for #MHD_GET_ARGUMENT_KIND. For other kind on entries it is
  * recommended to use #MHD_set_connection_value.
@@ -746,36 +799,17 @@ MHD_set_connection_value_n (struct MHD_Connection *connection,
                             const char *value,
                             size_t value_size)
 {
-  struct MHD_HTTP_Header *pos;
-
   if ( (MHD_GET_ARGUMENT_KIND != kind) &&
        ( ((key ? strlen(key) : 0) != key_size) ||
          ((value ? strlen(value) : 0) != value_size) ) )
     return MHD_NO; /* binary zero is allowed only in GET arguments */
 
-  pos = MHD_pool_allocate (connection->pool,
-                           sizeof (struct MHD_HTTP_Header),
-                           MHD_YES);
-  if (NULL == pos)
-    return MHD_NO;
-  pos->header = (char *) key;
-  pos->header_size = key_size;
-  pos->value = (char *) value;
-  pos->value_size = value_size;
-  pos->kind = kind;
-  pos->next = NULL;
-  /* append 'pos' to the linked list of headers */
-  if (NULL == connection->headers_received_tail)
-    {
-      connection->headers_received = pos;
-      connection->headers_received_tail = pos;
-    }
-  else
-    {
-      connection->headers_received_tail->next = pos;
-      connection->headers_received_tail = pos;
-    }
-  return MHD_YES;
+  return MHD_set_connection_value_n_nocheck_ (connection,
+                                              kind,
+                                              key,
+                                              key_size,
+                                              value,
+                                              value_size);
 }
 
 
@@ -810,16 +844,16 @@ MHD_set_connection_value (struct MHD_Connection *connection,
                           const char *key,
                           const char *value)
 {
-  return MHD_set_connection_value_n (connection,
-				     kind,
-				     key,
-                                     NULL != key
-                                     ? strlen (key)
-                                     : 0,
-                                     value,
-				     NULL != value
-				     ? strlen (value)
-				     : 0);
+  return MHD_set_connection_value_n_nocheck_ (connection,
+                                              kind,
+                                              key,
+                                              NULL != key
+                                              ? strlen (key)
+                                              : 0,
+                                              value,
+                                              NULL != value
+                                              ? strlen (value)
+                                              : 0);
 }
 
 
