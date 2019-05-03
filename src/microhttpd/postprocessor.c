@@ -288,10 +288,12 @@ MHD_create_post_processor (struct MHD_Connection *connection,
                __FILE__,
                __LINE__,
                NULL);
-  encoding = MHD_lookup_connection_value (connection,
-                                          MHD_HEADER_KIND,
-                                          MHD_HTTP_HEADER_CONTENT_TYPE);
-  if (NULL == encoding)
+  if (MHD_NO == MHD_lookup_connection_value_n (connection,
+                                               MHD_HEADER_KIND,
+                                               MHD_HTTP_HEADER_CONTENT_TYPE,
+                                               MHD_STATICSTR_LEN_(MHD_HTTP_HEADER_CONTENT_TYPE),
+                                               &encoding,
+                                               NULL))
     return NULL;
   boundary = NULL;
   if (! MHD_str_equal_caseless_n_ (MHD_HTTP_POST_ENCODING_FORM_URLENCODED,

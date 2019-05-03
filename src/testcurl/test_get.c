@@ -130,9 +130,14 @@ ahc_echo (void *cls,
        (0 != strcmp ("&",
                      v)) )
     abort ();
-  v = MHD_lookup_connection_value (connection,
-                                   MHD_GET_ARGUMENT_KIND,
-                                   "b");
+  v = NULL;
+  if (MHD_YES != MHD_lookup_connection_value_n (connection,
+                                                MHD_GET_ARGUMENT_KIND,
+                                                "b",
+                                                1,
+                                                &v,
+                                                NULL))
+    abort ();
   if ( (NULL == v) ||
        (0 != strcmp ("c",
                      v)) )

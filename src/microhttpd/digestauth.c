@@ -629,10 +629,12 @@ MHD_digest_auth_get_username(struct MHD_Connection *connection)
   char user[MAX_USERNAME_LENGTH];
   const char *header;
 
-  if (NULL == (header =
-               MHD_lookup_connection_value (connection,
-                                            MHD_HEADER_KIND,
-                                            MHD_HTTP_HEADER_AUTHORIZATION)))
+  if (MHD_NO == MHD_lookup_connection_value_n (connection,
+                                               MHD_HEADER_KIND,
+                                               MHD_HTTP_HEADER_AUTHORIZATION,
+                                               MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_AUTHORIZATION),
+                                               &header,
+                                               NULL))
     return NULL;
   if (0 != strncmp (header,
                     _BASE,
@@ -875,10 +877,12 @@ digest_auth_check_all (struct MHD_Connection *connection,
   char *qmark;
 
   VLA_CHECK_LEN_DIGEST(da->digest_size);
-  header = MHD_lookup_connection_value (connection,
-					MHD_HEADER_KIND,
-					MHD_HTTP_HEADER_AUTHORIZATION);
-  if (NULL == header)
+  if (MHD_NO == MHD_lookup_connection_value_n (connection,
+                                               MHD_HEADER_KIND,
+                                               MHD_HTTP_HEADER_AUTHORIZATION,
+                                               MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_AUTHORIZATION),
+                                               &header,
+                                               NULL))
     return MHD_NO;
   if (0 != strncmp (header,
                     _BASE,
