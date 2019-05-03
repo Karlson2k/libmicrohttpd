@@ -741,8 +741,10 @@ MHD_get_connection_values_n (struct MHD_Connection *connection,
 
   if (NULL == iterator)
     for (pos = connection->headers_received; NULL != pos; pos = pos->next)
-      if (kind == pos->kind)
-        ret++;
+      {
+        if (kind == pos->kind)
+          ret++;
+      }
   else
     for (pos = connection->headers_received; NULL != pos; pos = pos->next)
       if (kind == pos->kind)
