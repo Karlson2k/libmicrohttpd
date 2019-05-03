@@ -684,6 +684,7 @@ socket_start_normal_buffering (struct MHD_Connection *connection)
  *        maybe NULL (then just count headers)
  * @param iterator_cls extra argument to @a iterator
  * @return number of entries iterated over
+ *         -1 if connection is NULL.
  * @ingroup request
  */
 int
@@ -709,6 +710,52 @@ MHD_get_connection_values (struct MHD_Connection *connection,
                                    pos->value)) )
 	  return ret;
       }
+  return ret;
+}
+
+
+/**
+ * Get all of the headers from the request.
+ *
+ * @param connection connection to get values from
+ * @param kind types of values to iterate over, can be a bitmask
+ * @param iterator callback to call on each header;
+ *        maybe NULL (then just count headers)
+ * @param iterator_cls extra argument to @a iterator
+ * @return number of entries iterated over,
+ *         -1 if connection is NULL.
+ * @ingroup request
+ */
+int
+MHD_get_connection_values_n (struct MHD_Connection *connection,
+                             enum MHD_ValueKind kind,
+                             MHD_KeyValueIteratorN iterator,
+                             void *iterator_cls)
+{
+  int ret;
+  struct MHD_HTTP_Header *pos;
+
+  if (NULL == connection)
+    return -1;
+  ret = 0;
+
+  if (NULL == iterator)
+    for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+      if (kind == pos->kind)
+        ret++;
+  else
+    for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+      if (kind == pos->kind)
+        {
+          ret++;
+          if (MHD_NO == iterator (iterator_cls,
+                                  pos->kind,
+                                  pos->header,
+                                  pos->header_size,
+                                  pos->value,
+                                  pos->value_size))
+            return ret;
+        }
   return ret;
 }
 

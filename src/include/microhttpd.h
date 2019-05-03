@@ -2493,7 +2493,8 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
  * @param iterator callback to call on each header;
  *        maybe NULL (then just count headers)
  * @param iterator_cls extra argument to @a iterator
- * @return number of entries iterated over
+ * @return number of entries iterated over,
+ *         -1 if connection is NULL.
  * @ingroup request
  */
 _MHD_EXTERN int
@@ -2501,6 +2502,25 @@ MHD_get_connection_values (struct MHD_Connection *connection,
                            enum MHD_ValueKind kind,
                            MHD_KeyValueIterator iterator,
                            void *iterator_cls);
+
+
+/**
+ * Get all of the headers from the request.
+ *
+ * @param connection connection to get values from
+ * @param kind types of values to iterate over, can be a bitmask
+ * @param iterator callback to call on each header;
+ *        maybe NULL (then just count headers)
+ * @param iterator_cls extra argument to @a iterator
+ * @return number of entries iterated over,
+ *         -1 if connection is NULL.
+ * @ingroup request
+ */
+_MHD_EXTERN int
+MHD_get_connection_values_n (struct MHD_Connection *connection,
+                             enum MHD_ValueKind kind,
+                             MHD_KeyValueIteratorN iterator,
+                             void *iterator_cls);
 
 
 /**
