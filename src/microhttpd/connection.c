@@ -838,19 +838,85 @@ MHD_lookup_connection_value (struct MHD_Connection *connection,
                              enum MHD_ValueKind kind,
                              const char *key)
 {
+  const char *value;
+
+  value = NULL;
+  MHD_lookup_connection_value_n (connection,
+                                 kind,
+                                 key,
+                                 (NULL == key) ? 0 : strlen(key),
+                                 &value,
+                                 NULL);
+  return value;
+}
+
+
+/**
+ * Get a particular header value.  If multiple
+ * values match the kind, return any one of them.
+ * @note Since MHD_VERSION 0x00096304
+ *
+ * @param connection connection to get values from
+ * @param kind what kind of value are we looking for
+ * @param key the header to look for, NULL to lookup 'trailing' value without a key
+ * @param key_size the length of @a key in bytes
+ * @param[out] value_ptr the pointer to variable, which will be set to found value,
+ *                       will not be updated if key not found,
+ *                       could be NULL to just check for presence of @a key
+ * @param[out] value_size_ptr the pointer variable, which will set to found value,
+ *                            will not be updated if key not found,
+ *                            could be NULL
+ * @param key_size the length of @a key in bytes
+ * @return #MHD_YES if key is found,
+ *         #MHD_NO otherwise.
+ * @ingroup request
+ */
+_MHD_EXTERN int
+MHD_lookup_connection_value_n (struct MHD_Connection *connection,
+                               enum MHD_ValueKind kind,
+                               const char *key,
+                               size_t key_size,
+                               const char **value_ptr,
+                               size_t *value_size_ptr)
+{
   struct MHD_HTTP_Header *pos;
 
   if (NULL == connection)
-    return NULL;
-  for (pos = connection->headers_received; NULL != pos; pos = pos->next)
-    if ((0 != (pos->kind & kind)) &&
-	( (key == pos->header) ||
-	  ( (NULL != pos->header) &&
-	    (NULL != key) &&
-        (MHD_str_equal_caseless_(key,
-                                 pos->header)))))
-      return pos->value;
-  return NULL;
+    return MHD_NO;
+
+  if (NULL == key)
+    {
+      for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+        {
+          if ( (kind == pos->kind) &&
+               (NULL == pos->header) )
+            break;
+        }
+    }
+  else
+    {
+      for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+        {
+          if ( (kind == pos->kind) &&
+               (key_size == pos->header_size) &&
+               ( (key == pos->header) ||
+                 (MHD_str_equal_caseless_bin_n_ (key,
+                                                 pos->header,
+                                                 key_size) ) ) )
+            break;
+        }
+    }
+
+  if (NULL == pos)
+    return MHD_NO;
+
+  if (NULL != value_ptr)
+    *value_ptr = pos->value;
+
+  if (NULL != value_size_ptr)
+    *value_size_ptr = pos->value_size;
+
+  return MHD_YES;
 }
 
 

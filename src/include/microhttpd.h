@@ -128,7 +128,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00096303
+#define MHD_VERSION 0x00096304
 
 /**
  * MHD-internal return code for "YES".
@@ -2617,6 +2617,35 @@ _MHD_EXTERN const char *
 MHD_lookup_connection_value (struct MHD_Connection *connection,
 			     enum MHD_ValueKind kind,
 			     const char *key);
+
+
+/**
+ * Get a particular header value.  If multiple
+ * values match the kind, return any one of them.
+ * @note Since MHD_VERSION 0x00096304
+ *
+ * @param connection connection to get values from
+ * @param kind what kind of value are we looking for
+ * @param key the header to look for, NULL to lookup 'trailing' value without a key
+ * @param key_size the length of @a key in bytes
+ * @param[out] value_ptr the pointer to variable, which will be set to found value,
+ *                       will not be updated if key not found,
+ *                       could be NULL to just check for presence of @a key
+ * @param[out] value_size_ptr the pointer variable, which will set to found value,
+ *                            will not be updated if key not found,
+ *                            could be NULL
+ * @param key_size the length of @a key in bytes
+ * @return #MHD_YES if key is found,
+ *         #MHD_NO otherwise.
+ * @ingroup request
+ */
+_MHD_EXTERN int
+MHD_lookup_connection_value_n (struct MHD_Connection *connection,
+                               enum MHD_ValueKind kind,
+                               const char *key,
+                               size_t key_size,
+                               const char **value,
+                               size_t *value_size);
 
 
 /**
