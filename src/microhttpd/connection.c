@@ -749,8 +749,8 @@ MHD_set_connection_value_n (struct MHD_Connection *connection,
   struct MHD_HTTP_Header *pos;
 
   if ( (MHD_GET_ARGUMENT_KIND != kind) &&
-       ( (strlen(key) != key_size) ||
-         (strlen(value) != value_size) ) )
+       ( ((key ? strlen(key) : 0) != key_size) ||
+         ((value ? strlen(value) : 0) != value_size) ) )
     return MHD_NO; /* binary zero is allowed only in GET arguments */
 
   pos = MHD_pool_allocate (connection->pool,
