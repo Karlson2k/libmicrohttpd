@@ -714,12 +714,10 @@ MHD_get_connection_values (struct MHD_Connection *connection,
 
 
 /**
- * This function can be used to add an entry to the HTTP headers of a
- * connection (so that the #MHD_get_connection_values function will
- * return them -- and the `struct MHD_PostProcessor` will also see
- * them).  This maybe required in certain situations (see Mantis
- * #1399) where (broken) HTTP implementations fail to supply values
- * needed by the post processor (or other parts of the application).
+ * This function can be used to add an arbitrary entry to connection.
+ * This function could add entry with binary zero, which is allowed
+ * for #MHD_GET_ARGUMENT_KIND. For other kind on entries it is
+ * recommended to use #MHD_set_connection_value.
  *
  * This function MUST only be called from within the
  * #MHD_AccessHandlerCallback (otherwise, access maybe improperly
@@ -731,10 +729,10 @@ MHD_get_connection_values (struct MHD_Connection *connection,
  * @param connection the connection for which a
  *  value should be set
  * @param kind kind of the value
- * @param key key for the value
- * @param key_size number of bytes in @a key (excluding 0-terminator for C-strings)
- * @param value the value itself
- * @param value_size number of bytes in @a value (excluding 0-terminator for C-strings)
+ * @param key key for the value, must be zero-terminated
+ * @param key_size number of bytes in @a key (excluding 0-terminator)
+ * @param value the value itself, must be zero-terminated
+ * @param value_size number of bytes in @a value (excluding 0-terminator)
  * @return #MHD_NO if the operation could not be
  *         performed due to insufficient memory;
  *         #MHD_YES on success
@@ -749,6 +747,11 @@ MHD_set_connection_value_n (struct MHD_Connection *connection,
                             size_t value_size)
 {
   struct MHD_HTTP_Header *pos;
+
+  if ( (MHD_GET_ARGUMENT_KIND != kind) &&
+       ( (strlen(key) != key_size) ||
+         (strlen(value) != value_size) ) )
+    return MHD_NO; /* binary zero is allowed only in GET arguments */
 
   pos = MHD_pool_allocate (connection->pool,
                            sizeof (struct MHD_HTTP_Header),
