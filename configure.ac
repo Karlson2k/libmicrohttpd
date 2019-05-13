@@ -267,58 +267,50 @@ CFLAGS="$save_CFLAGS"
 # Check system type
 shutdown_trig_select='no'
 AC_MSG_CHECKING([[for target host OS]])
-case "$host_os" in
-*darwin* | *rhapsody* | *macosx*)
-     AC_DEFINE_UNQUOTED(OSX,1,[This is an OS X system])
+AS_CASE(["$host_os"],
+ [*darwin* | *rhapsody* | *macosx*],
+ [AC_DEFINE_UNQUOTED(OSX,1,[This is an OS X system])
      CFLAGS="-no-cpp-precomp -fno-common $CFLAGS"
      mhd_host_os='Darwin'
-     AC_MSG_RESULT([[$mhd_host_os]])
-     ;;
-freebsd*)
-     AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
+     AC_MSG_RESULT([[$mhd_host_os]])],
+ [freebsd*],
+ [AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
      mhd_host_os='FreeBSD'
-     AC_MSG_RESULT([[$mhd_host_os]])
-     ;;
-openbsd*)
-     AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
+     AC_MSG_RESULT([[$mhd_host_os]])],
+ [openbsd*],
+ [AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(OPENBSD,1,[This is an OpenBSD system])
      mhd_host_os='OpenBSD'
-     AC_MSG_RESULT([[$mhd_host_os]])
-     ;;
-netbsd*)
-     AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
+     AC_MSG_RESULT([[$mhd_host_os]])],
+ [netbsd*],
+ [AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(NETBSD,1,[This is a NetBSD system])
      mhd_host_os='NetBSD'
-     AC_MSG_RESULT([[$mhd_host_os]])
-     ;;
-*solaris*)
-     AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
+     AC_MSG_RESULT([[$mhd_host_os]])],
+ [*solaris*],
+ [AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
      AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno doesnt work])
      mhd_host_os='Solaris'
      AC_MSG_RESULT([[$mhd_host_os]])
      AC_SEARCH_LIBS(gethostbyname, nsl)
-     AC_SEARCH_LIBS(socket, socket)
-     ;;
-*arm-linux*)
-     AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
+     AC_SEARCH_LIBS(socket, socket)],
+  [*arm-linux*],
+  [AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      mhd_host_os='ARM Linux'
      AC_MSG_RESULT([[$mhd_host_os]])
-     CFLAGS="-fPIC -pipe $CFLAGS"
-     ;;
-*linux*)
-     AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
+     CFLAGS="-fPIC -pipe $CFLAGS"],
+  [*linux*],
+  [AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      mhd_host_os='Linux'
-     AC_MSG_RESULT([[$mhd_host_os]])
-     ;;
-*cygwin*)
-     AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
+     AC_MSG_RESULT([[$mhd_host_os]])],
+  [*cygwin*],
+  [AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
      mhd_host_os='Windows (Cygwin)'
      AC_MSG_RESULT([[$mhd_host_os]])
-     os_is_windows=yes
-     ;;
-*mingw*)
-     AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
+     os_is_windows=yes],
+  [*mingw*],
+  [AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
      AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
      mhd_host_os='Windows (MinGW)'
      AC_MSG_RESULT([[$mhd_host_os]])
@@ -338,24 +330,22 @@ netbsd*)
      AC_SUBST([lt_cv_objdir])
      os_is_windows=yes
      os_is_native_w32=yes
-     ;;
-*openedition*)
-     AC_DEFINE_UNQUOTED(OS390,1,[This is a OS/390 system])
+   ],
+   [*openedition*],
+   [AC_DEFINE_UNQUOTED(OS390,1,[This is a OS/390 system])
      mhd_host_os='OS/390'
-     AC_MSG_RESULT([[$mhd_host_os]])
-    ;;
-gnu*)
-     AC_DEFINE([[GNU_HURD]], [[1]], [Define to `1' if host machine runs on GNU Hurd.])
+     AC_MSG_RESULT([[$mhd_host_os]])],
+   [gnu*],
+   [AC_DEFINE([[GNU_HURD]], [[1]], [Define to `1' if host machine runs on GNU Hurd.])
      mhd_host_os='GNU Hurd'
      AC_MSG_RESULT([[$mhd_host_os]])
-    ;;
-*)
+    ],
+    [
      mhd_host_os='unrecognised OS'
      AC_MSG_RESULT([[$mhd_host_os]])
      AC_MSG_WARN([Unrecognised OS $host_os])
      AC_DEFINE_UNQUOTED(OTHEROS,1,[Some strange OS])
-;;
-esac
+ ])
 
 AM_CONDITIONAL([CYGWIN_TARGET], [[test "x$os_is_windows" = "xyes" && \
                                   test "x${os_is_native_w32}" != "xyes"]])
@@ -1220,24 +1210,23 @@ AC_ARG_ENABLE([curl],
   [AS_HELP_STRING([--disable-curl],[disable cURL based testcases])],
   [enable_curl=${enableval}])
 curl=0
-if test "$enable_curl" != "no"
-then
-  LIBCURL_CHECK_CONFIG([yes],[7.16.4],[enable_curl=yes],
+AS_IF([test "$enable_curl" != "no"],
+ [LIBCURL_CHECK_CONFIG([yes],[7.16.4],[enable_curl=yes],
     [
       if test "x$enable_curl" = "xyes"; then
         AC_MSG_WARN([[cURL-based tests cannot be enabled because libcurl is missing]])
       fi
       enable_curl=no
     ])
-fi
-if test "$enable_curl" != "no"
-then
+])
+AS_IF([test "$enable_curl" != "no"],
+ [
 # Lib cURL & cURL - OpenSSL versions
   AC_DEFINE([MHD_REQ_CURL_VERSION], ["7.16.4"], [required cURL version to run tests])
   AC_DEFINE([MHD_REQ_CURL_OPENSSL_VERSION], ["0.9.8"], [required cURL SSL version to run tests])
   AC_DEFINE([MHD_REQ_CURL_GNUTLS_VERSION], ["2.8.6"], [gnuTLS lib version - used in conjunction with cURL])
   AC_DEFINE([MHD_REQ_CURL_NSS_VERSION], ["3.12.0"], [NSS lib version - used in conjunction with cURL])
-fi
+ ])
 AM_CONDITIONAL([HAVE_CURL], [test "x$enable_curl" = "xyes"])
 
 mhd_have_libmagic="no"
@@ -1501,8 +1490,7 @@ AC_ARG_ENABLE([https],
    [AS_HELP_STRING([--enable-https],
                [enable HTTPS support (yes, no, auto)[auto]])],
    [enable_https=${enableval}])
-if test "x$enable_https" != "xno"
-then
+AS_IF([test "x$enable_https" != "xno"],[
 #
 # Next block is large unindented block
 #
@@ -1693,9 +1681,6 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
 )
 AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"],
       [AC_MSG_ERROR([[can't find usable libgnutls]])])
-#
-# End of large unindented block
-#
 
   AS_IF([test "x$have_gnutls" = "xyes"],
     [
@@ -1843,9 +1828,15 @@ choke me now
      AS_UNSET([GNUTLS_LIBS])
     ]
   )
-else
+],[
   MSG_HTTPS="no (disabled)"
-fi
+])
+
+#
+# End of large unindented block
+#
+
+
 AC_MSG_CHECKING(whether to support HTTPS)
 AC_MSG_RESULT([$MSG_HTTPS])
 
