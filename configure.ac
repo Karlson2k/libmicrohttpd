@@ -318,15 +318,12 @@ AS_CASE(["$host_os"],
      AC_CHECK_HEADERS([winsock2.h ws2tcpip.h], [], [AC_MSG_ERROR([[Winsock2 headers are required for W32]])], [AC_INCLUDES_DEFAULT])
      AC_CACHE_CHECK([for MS lib utility], [ac_cv_use_ms_lib_tool],
        [[mslibcheck=`lib 2>&1`
-        if [[ $mslibcheck = "Microsoft (R) Library Manager"* ]]; then
-          ac_cv_use_ms_lib_tool=yes
-        else
-          ac_cv_use_ms_lib_tool=no
-        fi
+        AS_IF([$mslibcheck = "Microsoft (R) Library Manager"*],
+          [ac_cv_use_ms_lib_tool=yes],
+          [ac_cv_use_ms_lib_tool=no])
          ]])
-     if test "x$ac_cv_use_ms_lib_tool" = "xyes"; then
-       AC_SUBST([MS_LIB_TOOL], [[lib]])
-     fi
+     AS_IF([test "x$ac_cv_use_ms_lib_tool" = "xyes"],
+       [AC_SUBST([MS_LIB_TOOL], [[lib]])])
      AC_SUBST([lt_cv_objdir])
      os_is_windows=yes
      os_is_native_w32=yes
@@ -1187,22 +1184,20 @@ have_inet6=no
 AC_MSG_RESULT($have_inet6)
 
 HIDDEN_VISIBILITY_CFLAGS=""
-case "$host" in
-  *-*-mingw*)
+AS_CASE(["$host"],
+  [*-*-mingw*],[
     dnl on mingw32 we do -fvisibility=hidden and __declspec(dllexport)
     AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) __declspec(dllexport) extern],
               [defines how to decorate public symbols while building])
     HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"
-    ;;
-  *)
+  ],[
     dnl on other compilers, check if we can do -fvisibility=hidden
     AX_CHECK_LINK_FLAG([-fvisibility=hidden],
       [AX_CHECK_COMPILE_FLAG([-fvisibility=hidden],
                            [AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) extern],
                                        [defines how to decorate public symbols while building])
                             HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"])])
-    ;;
-esac
+   ])
 AC_SUBST(HIDDEN_VISIBILITY_CFLAGS)
 
 # libcurl (required for testing)
@@ -1213,9 +1208,8 @@ curl=0
 AS_IF([test "$enable_curl" != "no"],
  [LIBCURL_CHECK_CONFIG([yes],[7.16.4],[enable_curl=yes],
     [
-      if test "x$enable_curl" = "xyes"; then
-        AC_MSG_WARN([[cURL-based tests cannot be enabled because libcurl is missing]])
-      fi
+      AS_IF([test "x$enable_curl" = "xyes"],
+       [AC_MSG_WARN([[cURL-based tests cannot be enabled because libcurl is missing]])])
       enable_curl=no
     ])
 ])
