@@ -1775,7 +1775,7 @@ choke me now
           AS_IF([[test "x$mhd_cv_gcrypt_required" = "xyes"]],
             [
              MSG_HTTPS="yes (using libgnutls and libgcrypt)"
-	     MHD_TLS_LIB_CPPFLAGS="$LIBGCRYPT_CFLAGS $GNUTLS_CPPFLAGS"
+	         MHD_TLS_LIB_CPPFLAGS="$LIBGCRYPT_CFLAGS $GNUTLS_CPPFLAGS"
              MHD_TLS_LIB_CFLAGS="$LIBGCRYPT_CFLAGS $GNUTLS_CFLAGS"
              MHD_TLS_LIB_LDFLAGS="$GNUTLS_LDFLAGS"
              MHD_TLS_LIBDEPS="$GNUTLS_LIBS $LIBGCRYPT_LIBS"
