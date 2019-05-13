@@ -1,9 +1,49 @@
+Mon May  6 11:58:00 MSK 2019
+	Updated README and COPYING files. MHD remains LGPLv2.1-licensed. -EG
+
+Fri May  3 20:08:00 MSK 2019
+	Store connection's keys and values with sizes;
+	Speedup keys search be comparing key length first;
+	Added functions for working with keys and values with binary zeros;
+	Fixed test_postprocessor_amp to fail on problems. -EG
+
+Wed May  1 16:40:00 MSK 2019
+	Reverted change of MHD_KeyValueIterator, implemented MHD_KeyValueIteratorN
+	with sizes for connection's key and value to get keys and values
+	with binary zeros. -EG
+
 Mon 29 Apr 2019 01:26:39 AM BRT
 	Fixed signed/unsigned comparison in example http_chunked_compression.c. -SC/TR
+
+Sun Apr 21 16:40:00 MSK 2019
+	Improved compatibility with MSVC compilers;
+	Fixed MHD compilation by Clang/LLVM in VS;
+	Used MSVC intrinsics for bit rotations and bytes swap;
+	Added project files for VS2019. -EG
+
+Fri Apr 19 23:00:00 MSK 2019
+	Rewritten SHA-256 calculations from scratch to avoid changing LGPL version;
+	Added usage of GCC/Clang built-ins for bytes swap to significantly improve 
+	speed of MD5 and SHA-256 calculation on platforms with known endianness.
+	Added test for SHA-256 calculations. -EG
+
+Wed Apr 17 20:52:00 MSK 2019
+	Refactoring of mhd5.c: optimized, dead code removed;
+	Faster MD5 calculation on little endian platforms;
+	Bit manipulations moved to separate header file.
+	Added tests for MD5 calculations. -EG
 
 Mon 15 Apr 2019 05:33:52 PM CEST
 	Add MHD_USE_POST_HANDSHAKE_AUTH_SUPPORT and
 	MHD_USE_INSECURE_TLS_EARLY_DATA flags. -CG
+
+Thu Apr 11 11:37:00 MSK 2019
+	Fixed MSVC 'Release' builds;
+	Fixed usage of MSVC's assert. -EG
+
+Wed Apr 10 14:31:00 MSK 2019
+	Improved shell compatibility for 'bootstrap', removed bash-ism.
+	Added wrapper script 'autogen.sh'. -EG
 
 Mon 08 Apr 2019 03:06:05 PM CEST
 	Fix close() checks as suggested by MK on the mailinglist
