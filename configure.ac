@@ -317,11 +317,11 @@ AS_CASE(["$host_os"],
      LIBS="$LIBS -lws2_32"
      AC_CHECK_HEADERS([winsock2.h ws2tcpip.h], [], [AC_MSG_ERROR([[Winsock2 headers are required for W32]])], [AC_INCLUDES_DEFAULT])
      AC_CACHE_CHECK([for MS lib utility], [ac_cv_use_ms_lib_tool],
-       [[mslibcheck=`lib 2>&1`
-        AS_IF([$mslibcheck = "Microsoft (R) Library Manager"*],
+       [mslibcheck=`lib 2>&1`
+        AS_IF([test $mslibcheck = "Microsoft (R) Library Manager"*],
           [ac_cv_use_ms_lib_tool=yes],
           [ac_cv_use_ms_lib_tool=no])
-         ]])
+         ])
      AS_IF([test "x$ac_cv_use_ms_lib_tool" = "xyes"],
        [AC_SUBST([MS_LIB_TOOL], [[lib]])])
      AC_SUBST([lt_cv_objdir])
@@ -1495,18 +1495,18 @@ AC_MSG_CHECKING([[how to find GnuTLS library]])
 AC_ARG_WITH([[gnutls]],
    [AS_HELP_STRING([[--with-gnutls[=PFX]]],[use GnuTLS for HTTPS support, optional PFX overrides pkg-config data for GnuTLS headers (PFX/include) and libs (PFX/lib)])],
    [
-    case $with_gnutls in
-      no)
+    AS_CASE([$with_gnutls],
+     [no],[
         AC_MSG_RESULT([[GnuTLS disabled]])
         AS_UNSET([GNUTLS_CPPFLAGS])
         AS_UNSET([GNUTLS_CFLAGS])
         AS_UNSET([GNUTLS_LDFLAGS])
         AS_UNSET([GNUTLS_LIBS])
-        ;;
-      yes)
+      ],
+      [yes],[
         AC_MSG_RESULT([[automatically, forced]])
-        ;;
-      *)
+      ],
+      [
         AC_MSG_RESULT([[-I$with_gnutls/include -L$with_gnutls/lib -lgnutls]])
         SAVE_LDFLAGS="$LDFLAGS"
         SAVE_CPPFLAGS="$CPPFLAGS"
@@ -1528,8 +1528,7 @@ AC_ARG_WITH([[gnutls]],
         CFLAGS="$SAVE_CFLAGS"
         LDFLAGS="$SAVE_LDFLAGS"
         LIBS="$SAVE_LIBS"
-        ;;
-    esac
+      ])
    ],
    [AC_MSG_RESULT([[automatically]])
    ])
@@ -2063,11 +2062,9 @@ src/testzzuf/Makefile])
 AC_OUTPUT
 
 # Finally: summary
-if test "x$enable_curl" != "xyes"; then
- MSG_CURL="no, many unit tests will not run"
-else
- MSG_CURL="yes"
-fi
+AS_IF([test "x$enable_curl" != "xyes"],
+ [MSG_CURL="no, many unit tests will not run"],
+ [MSG_CURL="yes"])
 
 AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Target directory:  ${prefix}
@@ -2093,21 +2090,16 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Test with libcurl: ${MSG_CURL}
 ])
 
-if test "x$enable_https" = "xyes"
-then
- AC_MSG_NOTICE([HTTPS subsystem configuration:
+AS_IF([test "x$enable_https" = "xyes"],
+ [AC_MSG_NOTICE([HTTPS subsystem configuration:
   License         :  LGPL only
- ])
-else
- AC_MSG_NOTICE([
+ ])],
+ [AC_MSG_NOTICE([
   License         :  LGPL or eCos
-])
-fi
+ ])])
 
-if test "x$enable_bauth" != "xyes" || \
+AS_IF([test "x$enable_bauth" != "xyes" || \
    test "x$enable_dauth" != "xyes" || \
    test "x$enable_httpupgrade" != "xyes" || \
-   test "x$enable_postprocessor" != "xyes"
-then
- AC_MSG_NOTICE([WARNING: This will be a custom build with missing symbols. Do NOT use this build in a distribution. Building with these kinds of configure options is only for custom builds for embedded systems.])
-fi
+   test "x$enable_postprocessor" != "xyes"],
+   [AC_MSG_NOTICE([WARNING: This will be a custom build with missing symbols. Do NOT use this build in a distribution. Building with these kinds of configure options is only for custom builds for embedded systems.])])
