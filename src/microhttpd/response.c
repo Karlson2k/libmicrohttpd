@@ -199,18 +199,26 @@ MHD_del_response_header (struct MHD_Response *response,
 {
   struct MHD_HTTP_Header *pos;
   struct MHD_HTTP_Header *prev;
+  size_t header_len;
+  size_t content_len;
 
   if ( (NULL == header) ||
   (NULL == content) )
     return MHD_NO;
+  header_len = strlen (header);
+  content_len = strlen (content);
   prev = NULL;
   pos = response->first_header;
   while (NULL != pos)
     {
-      if ((0 == strcmp (header,
-                        pos->header)) &&
-          (0 == strcmp (content,
-                        pos->value)))
+      if ((header_len == pos->header_size) &&
+          (content_len == pos->value_size) &&
+          (0 == memcmp (header,
+                        pos->header,
+                        header_len)) &&
+          (0 == memcmp (content,
+                        pos->value,
+                        content_len)))
         {
           free (pos->header);
           free (pos->value);

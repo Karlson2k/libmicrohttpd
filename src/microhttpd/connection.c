@@ -1010,6 +1010,8 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
  * Case-insensitive match used for header names and tokens.
  * @param connection the connection to get values from
  * @param header     the header name
+ * @param header_len the length of header, not including optional
+ *                   terminating null-character
  * @param token      the token to find
  * @param token_len  the length of token, not including optional
  *                   terminating null-character.
@@ -1019,6 +1021,7 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
 static bool
 MHD_lookup_header_token_ci (const struct MHD_Connection *connection,
                          const char *header,
+                         size_t header_len,
                          const char *token,
                          size_t token_len)
 {
@@ -1026,12 +1029,15 @@ MHD_lookup_header_token_ci (const struct MHD_Connection *connection,
 
   if (NULL == connection || NULL == header || 0 == header[0] || NULL == token || 0 == token[0])
     return false;
+
   for (pos = connection->headers_received; NULL != pos; pos = pos->next)
     {
       if ((0 != (pos->kind & MHD_HEADER_KIND)) &&
+          (header_len == pos->header_size) &&
           ( (header == pos->header) ||
-            (MHD_str_equal_caseless_(header,
-                                      pos->header)) ) &&
+            (MHD_str_equal_caseless_bin_n_(header,
+                                           pos->header,
+                                           header_len)) ) &&
           (MHD_str_has_token_caseless_ (pos->value, token, token_len)))
         return true;
     }
@@ -1045,13 +1051,14 @@ MHD_lookup_header_token_ci (const struct MHD_Connection *connection,
  * Token could be surrounded by spaces and tabs and delimited by comma.
  * Case-insensitive match used for header names and tokens.
  * @param c   the connection to get values from
- * @param h   the header name
+ * @param h   the static string of header name
  * @param tkn the static string of token to find
  * @return true if token is found in specified header,
  *         false otherwise
  */
 #define MHD_lookup_header_s_token_ci(c,h,tkn) \
-    MHD_lookup_header_token_ci((c),(h),(tkn),MHD_STATICSTR_LEN_(tkn))
+    MHD_lookup_header_token_ci((c),(h),MHD_STATICSTR_LEN_(h),\
+                               (tkn),MHD_STATICSTR_LEN_(tkn))
 
 
 /**
@@ -1649,7 +1656,7 @@ build_header_response (struct MHD_Connection *connection)
   if (MHD_CONNECTION_FOOTERS_RECEIVED == connection->state)
     {
       reason_phrase = MHD_get_reason_phrase_for (rc);
-      MHD_snprintf_ (code,
+      off = MHD_snprintf_ (code,
 		     sizeof (code),
 		     "%s %u %s\r\n",
 		     (0 != (connection->responseCode & MHD_ICY_FLAG))
@@ -1661,7 +1668,6 @@ build_header_response (struct MHD_Connection *connection)
 			 : MHD_HTTP_VERSION_1_1),
 		     rc,
 		     reason_phrase);
-      off = strlen (code);
       /* estimate size */
       size = off + 2;           /* +2 for extra "\r\n" at the end */
       kind = MHD_HEADER_KIND;
@@ -1864,11 +1870,13 @@ build_header_response (struct MHD_Connection *connection)
       if ( (pos->kind == kind) &&
            (! ( (MHD_YES == must_add_close) &&
                 (response_has_keepalive) &&
-                (MHD_str_equal_caseless_(pos->header,
-                                         MHD_HTTP_HEADER_CONNECTION)) &&
+                (pos->header_size == MHD_STATICSTR_LEN_(MHD_HTTP_HEADER_CONNECTION)) &&
+                (MHD_str_equal_caseless_bin_n_(pos->header,
+                                               MHD_HTTP_HEADER_CONNECTION,
+                                               MHD_STATICSTR_LEN_(MHD_HTTP_HEADER_CONNECTION))) &&
                 (MHD_str_equal_caseless_(pos->value,
                                          "Keep-Alive")) ) ) )
-        size += strlen (pos->header) + strlen (pos->value) + 4; /* colon, space, linefeeds */
+        size += pos->header_size + pos->value_size + 4; /* colon, space, linefeeds */
     }
   /* produce data */
   data = MHD_pool_allocate (connection->pool,
@@ -1926,8 +1934,10 @@ build_header_response (struct MHD_Connection *connection)
       if ( (pos->kind == kind) &&
            (! ( (MHD_YES == must_add_close) &&
                 (response_has_keepalive) &&
-                (MHD_str_equal_caseless_(pos->header,
-                                         MHD_HTTP_HEADER_CONNECTION)) &&
+                (pos->header_size == MHD_STATICSTR_LEN_(MHD_HTTP_HEADER_CONNECTION)) &&
+                (MHD_str_equal_caseless_bin_n_(pos->header,
+                                               MHD_HTTP_HEADER_CONNECTION,
+                                               MHD_STATICSTR_LEN_(MHD_HTTP_HEADER_CONNECTION))) &&
                 (MHD_str_equal_caseless_(pos->value,
                                          "Keep-Alive")) ) ) )
         off += MHD_snprintf_ (&data[off],
