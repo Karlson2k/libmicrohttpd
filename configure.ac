@@ -55,6 +55,7 @@ AS_IF([test `uname -s` = "OS/390"],
 
 # Checks for programs.
 AC_PROG_AWK
+AC_PROG_GREP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
@@ -318,7 +319,7 @@ AS_CASE(["$host_os"],
      AC_CHECK_HEADERS([winsock2.h ws2tcpip.h], [], [AC_MSG_ERROR([[Winsock2 headers are required for W32]])], [AC_INCLUDES_DEFAULT])
      AC_CACHE_CHECK([for MS lib utility], [ac_cv_use_ms_lib_tool],
        [mslibcheck=`lib 2>&1`
-        AS_IF([test $mslibcheck = "Microsoft (R) Library Manager"*],
+        AS_IF([echo "$mslibcheck" | $GREP -e '^Microsoft (R) Library Manager' - >/dev/null],
           [ac_cv_use_ms_lib_tool=yes],
           [ac_cv_use_ms_lib_tool=no])
          ])
