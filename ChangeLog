@@ -1,3 +1,6 @@
+Web May 15 14:54:00 MSK 2019
+	Fixed build from source on GNU Hurd. -EG
+
 Mon May  6 11:58:00 MSK 2019
 	Updated README and COPYING files. MHD remains LGPLv2.1-licensed. -EG
 
