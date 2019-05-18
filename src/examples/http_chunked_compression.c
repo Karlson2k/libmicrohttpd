@@ -25,6 +25,22 @@
 #include "platform.h"
 #include <zlib.h>
 #include <microhttpd.h>
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif /* HAVE_LIMITS_H */
+#include <stddef.h>
+
+#ifndef SSIZE_MAX
+#ifdef __SSIZE_MAX__
+#define SSIZE_MAX __SSIZE_MAX__
+#elif defined(PTRDIFF_MAX)
+#define SSIZE_MAX PTRDIFF_MAX
+#elif defined(INTPTR_MAX)
+#define SSIZE_MAX INTPTR_MAX
+#else
+#define SSIZE_MAX ((ssize_t)(((size_t)-1)>>1))
+#endif
+#endif /* ! SSIZE_MAX */
 
 #define CHUNK 16384
 
@@ -89,6 +105,10 @@ read_cb (void *cls, uint64_t pos, char *mem, size_t size)
   void *src;
   void *buf;
   ssize_t ret;
+  size_t offset;
+  if (pos > SSIZE_MAX)
+    return MHD_CONTENT_READER_END_WITH_ERROR;
+  offset = (size_t) pos;
   src = malloc (size);
   if (NULL == src)
     return MHD_CONTENT_READER_END_WITH_ERROR;
@@ -103,7 +123,7 @@ read_cb (void *cls, uint64_t pos, char *mem, size_t size)
       ret = MHD_CONTENT_READER_END_OF_STREAM;
       goto done;
     }
-  if (MHD_YES != compress_buf (&holder->stream, src, ret, &pos, &buf, &size, holder->buf))
+  if (MHD_YES != compress_buf (&holder->stream, src, ret, &offset, &buf, &size, holder->buf))
     ret = MHD_CONTENT_READER_END_WITH_ERROR;
   else
     {
