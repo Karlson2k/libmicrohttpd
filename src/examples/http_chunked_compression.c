@@ -88,30 +88,32 @@ read_cb (void *cls, uint64_t pos, char *mem, size_t size)
   struct Holder *holder = cls;
   void *src;
   void *buf;
+  ssize_t ret;
   src = malloc (size);
   if (NULL == src)
     return MHD_CONTENT_READER_END_WITH_ERROR;
-  size = fread (src, 1, size, holder->file);
-  if ((ssize_t) size < 0)
+  ret = fread (src, 1, size, holder->file);
+  if (ret < 0)
     {
-      size = MHD_CONTENT_READER_END_WITH_ERROR;
+      ret = MHD_CONTENT_READER_END_WITH_ERROR;
       goto done;
     }
   if (0 == size)
     {
-      size = MHD_CONTENT_READER_END_OF_STREAM;
+      ret = MHD_CONTENT_READER_END_OF_STREAM;
       goto done;
     }
-  if (MHD_YES != compress_buf (&holder->stream, src, size, &pos, &buf, &size, holder->buf))
-    size = MHD_CONTENT_READER_END_WITH_ERROR;
+  if (MHD_YES != compress_buf (&holder->stream, src, ret, &pos, &buf, &size, holder->buf))
+    ret = MHD_CONTENT_READER_END_WITH_ERROR;
   else
     {
       memcpy (mem, buf, size);
+      ret = size;
     }
   free (buf); /* Buf may be set even on error return. */
 done:
   free (src);
-  return size;
+  return ret;
 }
 
 static void
