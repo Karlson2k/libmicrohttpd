@@ -108,7 +108,7 @@
 #elif defined(INTPTR_MAX)
 #define SSIZE_MAX INTPTR_MAX
 #else
-#define SSIZE_MAN MHD_SIGNED_TYPE_MAX_(ssize_t)
+#define SSIZE_MAX MHD_SIGNED_TYPE_MAX_(ssize_t)
 #endif
 #endif /* ! SSIZE_MAX */
 
