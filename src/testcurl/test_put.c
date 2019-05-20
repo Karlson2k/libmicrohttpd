@@ -360,11 +360,7 @@ testExternalPut ()
   fd_set ws;
   fd_set es;
   MHD_socket maxsock;
-#ifdef MHD_WINSOCK_SOCKETS
   int maxposixs; /* Max socket number unused on W32 */
-#else  /* MHD_POSIX_SOCKETS */
-#define maxposixs maxsock
-#endif /* MHD_POSIX_SOCKETS */
   int running;
   struct CURLMsg *msg;
   time_t start;
@@ -463,7 +459,7 @@ curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
           return 4096;
         }
       if (maxsock > maxposixs)
-	maxposixs = maxsock;
+        maxposixs = maxsock;
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
       if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))

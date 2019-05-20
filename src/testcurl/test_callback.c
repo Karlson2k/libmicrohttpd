@@ -38,8 +38,9 @@ static ssize_t
 called_twice(void *cls, uint64_t pos, char *buf, size_t max)
 {
   struct callback_closure *cls2 = cls;
-  (void)pos;    /* Unused. Silent compiler warning. */
 
+  (void) pos;    /* Unused. Silence compiler warning. */
+  (void) max;
   if (cls2->called == 0)
     {
       memcpy(buf, "test", 5);

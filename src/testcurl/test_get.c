@@ -17,14 +17,12 @@
      Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
      Boston, MA 02110-1301, USA.
 */
-
 /**
  * @file test_get.c
  * @brief  Testcase for libmicrohttpd GET operations
  *         TODO: test parsing of query
  * @author Christian Grothoff
  */
-
 #include "MHD_config.h"
 #include "platform.h"
 #include <curl/curl.h>
@@ -85,6 +83,8 @@ log_cb (void *cls,
         const char *uri,
         struct MHD_Connection *con)
 {
+  (void) cls;
+  (void) con;
   if (0 != strcmp (uri,
                    EXPECTED_URI_PATH))
     {
@@ -379,11 +379,7 @@ testExternalGet ()
   fd_set ws;
   fd_set es;
   MHD_socket maxsock;
-#ifdef MHD_WINSOCK_SOCKETS
-  int maxposixs; /* Max socket number unused on W32 */
-#else  /* MHD_POSIX_SOCKETS */
-#define maxposixs maxsock
-#endif /* MHD_POSIX_SOCKETS */
+  int maxposixs; 
   int running;
   struct CURLMsg *msg;
   time_t start;
@@ -478,7 +474,7 @@ testExternalGet ()
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
       if (maxsock > maxposixs)
-	maxposixs = maxsock;
+        maxposixs = maxsock;
       if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
         {
 #ifdef MHD_POSIX_SOCKETS
