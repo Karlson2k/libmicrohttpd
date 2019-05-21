@@ -1188,6 +1188,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
   } skey;                                         \
   struct DigestAlgorithm da;                      \
                                                   \
+  do {                                            \
   switch (algo) {                                 \
   case MHD_DIGEST_ALG_MD5:                        \
     da.digest_size = MD5_DIGEST_SIZE;             \
@@ -1209,7 +1210,8 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
     da.update = &sha256_update;                         \
     da.digest = &sha256_finish;                         \
     break;                                              \
-  }
+  }                                                     \
+  } while(0)
 
 
 
