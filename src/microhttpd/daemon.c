@@ -517,8 +517,18 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 #endif
   if (NULL != daemon->https_mem_trust)
     {
+      size_t paramlen;
+      paramlen = strlen (daemon->https_mem_trust);
+      if (UINT_MAX < paramlen)
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG(daemon,
+                   "Too long trust certificate\n");
+#endif
+          return -1;
+        }
       cert.data = (unsigned char *) daemon->https_mem_trust;
-      cert.size = strlen (daemon->https_mem_trust);
+      cert.size = (unsigned int) paramlen;
       if (gnutls_certificate_set_x509_trust_mem (daemon->x509_cred,
                                                  &cert,
 						 GNUTLS_X509_FMT_PEM) < 0)
@@ -540,10 +550,24 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
   if ( (NULL != daemon->https_mem_cert) &&
        (NULL != daemon->https_mem_key) )
     {
+      size_t param1len;
+      size_t param2len;
+
+      param1len = strlen (daemon->https_mem_key);
+      param2len = strlen (daemon->https_mem_cert);
+      if ( (UINT_MAX < param1len) ||
+           (UINT_MAX < param2len) )
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG(daemon,
+                   "Too long key or certificate\n");
+#endif
+          return -1;
+        }
       key.data = (unsigned char *) daemon->https_mem_key;
-      key.size = strlen (daemon->https_mem_key);
+      key.size = (unsigned int)param1len;
       cert.data = (unsigned char *) daemon->https_mem_cert;
-      cert.size = strlen (daemon->https_mem_cert);
+      cert.size = (unsigned int)param2len;
 
       if (NULL != daemon->https_key_password) {
 #if GNUTLS_VERSION_NUMBER >= 0x030111
@@ -2224,7 +2248,16 @@ psk_gnutls_adapter (gnutls_session_t session,
       free (app_psk);
       return -1;
     }
-  key->size = app_psk_size;
+  if (UINT_MAX < app_psk_size)
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("PSK authentication failed: PSK too long\n"));
+#endif
+      free (app_psk);
+      return -1;
+    }
+  key->size = (unsigned int)app_psk_size;
   memcpy (key->data,
 	  app_psk,
 	  app_psk_size);
@@ -5042,6 +5075,7 @@ parse_options_va (struct MHD_Daemon *daemon,
           if (0 != (daemon->options & MHD_USE_TLS))
             {
               gnutls_datum_t dhpar;
+              size_t pstr_len;
 
               if (gnutls_dh_params_init (&daemon->https_mem_dhparams) < 0)
                 {
@@ -5052,7 +5086,16 @@ parse_options_va (struct MHD_Daemon *daemon,
                   return MHD_NO;
                 }
               dhpar.data = (unsigned char *) pstr;
-              dhpar.size = strlen (pstr);
+              pstr_len = strlen (pstr);
+              if (UINT_MAX < pstr_len)
+                {
+#ifdef HAVE_MESSAGES
+                  MHD_DLOG (daemon,
+                            _("Diffie-Hellman parameters string too long\n"));
+#endif
+                  return MHD_NO;
+                }
+              dhpar.size = (unsigned int) pstr_len;
               if (gnutls_dh_params_import_pkcs3 (daemon->https_mem_dhparams,
                                                  &dhpar,
                                                  GNUTLS_X509_FMT_PEM) < 0)
