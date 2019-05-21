@@ -5225,7 +5225,7 @@ parse_options_va (struct MHD_Daemon *daemon,
                                                 unsigned int);
 	  break;
 	case MHD_OPTION_STRICT_FOR_CLIENT:
-          daemon->strict_for_client = va_arg (ap, int);;
+          daemon->strict_for_client = va_arg (ap, int);
 #ifdef HAVE_MESSAGES
 	  if ( (0 != (daemon->options & MHD_USE_PEDANTIC_CHECKS)) &&
 	       (1 != daemon->strict_for_client) )
