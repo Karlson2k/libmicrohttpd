@@ -824,7 +824,7 @@ check_argument_match (struct MHD_Connection *connection,
     }
   if (0 != num_headers)
     {
-      /* argument count missmatch */
+      /* argument count mismatch */
       return MHD_NO;
     }
   return MHD_YES;
