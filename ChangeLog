@@ -1,3 +1,10 @@
+Tue May 21 22:12:43 MSK 2019
+	Fixed doxygen comments,
+	Avoid dropping 'const' qualifier in macros,
+	Fixed some compiler warnings,
+	Properly support automatic port detections on some platforms,
+	Added checks for too long TLS parameters strings. -EG
+
 Tue May 21 17:52:48 MSK 2019
 	Spelling fixes. -EG
 
