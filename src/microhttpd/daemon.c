@@ -6029,14 +6029,17 @@ MHD_start_daemon_va (unsigned int flags,
   if ( (0 == daemon->port) &&
        (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
     { /* Get port number. */
-      struct sockaddr_storage servaddr;
+      struct sockaddr_storage bindaddr;
 
-      memset (&servaddr,
+      memset (&bindaddr,
               0,
               sizeof (struct sockaddr_storage));
-      addrlen = sizeof (servaddr);
+      addrlen = sizeof (struct sockaddr_storage);
+#ifdef HAVE_SOCKADDR_IN_SIN_LEN
+      bindaddr.sin_len = addrlen;
+#endif
       if (0 != getsockname (listen_fd,
-                            (struct sockaddr *) &servaddr,
+                            (struct sockaddr *) &bindaddr,
                             &addrlen))
       {
 #ifdef HAVE_MESSAGES
@@ -6046,7 +6049,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif /* HAVE_MESSAGES */
         }
 #ifdef MHD_POSIX_SOCKETS
-      else if (sizeof (servaddr) < addrlen)
+      else if (sizeof (bindaddr) < addrlen)
         {
           /* should be impossible with `struct sockaddr_storage` */
 #ifdef HAVE_MESSAGES
@@ -6057,11 +6060,11 @@ MHD_start_daemon_va (unsigned int flags,
 #endif /* MHD_POSIX_SOCKETS */
       else
         {
-          switch (servaddr.ss_family)
+          switch (bindaddr.ss_family)
           {
           case AF_INET:
             {
-              struct sockaddr_in *s4 = (struct sockaddr_in *) &servaddr;
+              struct sockaddr_in *s4 = (struct sockaddr_in *) &bindaddr;
 
               daemon->port = ntohs (s4->sin_port);
               break;
@@ -6069,7 +6072,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_INET6
           case AF_INET6:
             {
-              struct sockaddr_in6 *s6 = (struct sockaddr_in6 *) &servaddr;
+              struct sockaddr_in6 *s6 = (struct sockaddr_in6 *) &bindaddr;
 
               daemon->port = ntohs(s6->sin6_port);
               mhd_assert (0 != (*pflags & MHD_USE_IPv6));
