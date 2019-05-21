@@ -69,11 +69,6 @@ sha256_init (void *ctx_)
 #define SHA256_BYTES_IN_WORD 4
 
 /**
- * Length of data block in words
- */
-#define SHA256_BLOCK_LENGTH (SHA256_BLOCK_SIZE / SHA256_BYTES_IN_WORD)
-
-/**
  * Base of SHA-256 transformation.
  * Gets full 64 bytes block of data and updates hash values;
  * @param H     hash values
