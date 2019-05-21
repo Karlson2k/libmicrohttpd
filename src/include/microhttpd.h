@@ -1187,9 +1187,9 @@ typedef void
  * @param cls closure
  * @param connection the HTTPS connection
  * @param username the user name claimed by the other side
- * @param psk[out] to be set to the pre-shared-key; should be allocated with malloc(),
+ * @param[out] psk to be set to the pre-shared-key; should be allocated with malloc(),
  *                 will be freed by MHD
- * @param psk_size[out] to be set to the number of bytes in @a psk
+ * @param[out] psk_size to be set to the number of bytes in @a psk
  * @return 0 on success, -1 on errors
  */
 typedef int
@@ -2654,7 +2654,6 @@ MHD_lookup_connection_value (struct MHD_Connection *connection,
  * @param[out] value_size_ptr the pointer variable, which will set to found value,
  *                            will not be updated if key not found,
  *                            could be NULL
- * @param key_size the length of @a key in bytes
  * @return #MHD_YES if key is found,
  *         #MHD_NO otherwise.
  * @ingroup request
@@ -2664,8 +2663,8 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
                                enum MHD_ValueKind kind,
                                const char *key,
                                size_t key_size,
-                               const char **value,
-                               size_t *value_size);
+                               const char **value_ptr,
+                               size_t *value_size_ptr);
 
 
 /**

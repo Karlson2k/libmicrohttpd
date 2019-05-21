@@ -949,7 +949,6 @@ MHD_lookup_connection_value (struct MHD_Connection *connection,
  * @param[out] value_size_ptr the pointer variable, which will set to found value,
  *                            will not be updated if key not found,
  *                            could be NULL
- * @param key_size the length of @a key in bytes
  * @return #MHD_YES if key is found,
  *         #MHD_NO otherwise.
  * @ingroup request

@@ -1197,7 +1197,7 @@ call_handlers (struct MHD_Connection *con,
    * connections are processed individually. */
   /* Note: no need to check for read buffer availability for
    * TLS read-ready connection in 'read info' state as connection
-   * without space in read buffer will be market as 'info block'. */
+   * without space in read buffer will be marked as 'info block'. */
   if ( (! con->daemon->data_already_pending) &&
        (0 == (con->daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
     {
@@ -2177,7 +2177,7 @@ MHD_tls_push_func_(gnutls_transport_ptr_t trnsp,
  *
  * @param session the session to lookup PSK for
  * @param username username to lookup PSK for
- * @param key[out] where to write PSK
+ * @param[out] key where to write PSK
  * @return 0 on success, -1 on error
  */
 static int

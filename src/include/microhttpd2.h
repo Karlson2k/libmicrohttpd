@@ -2187,9 +2187,9 @@ MHD_daemon_tls_mem_dhparams (struct MHD_Daemon *daemon,
  * @param cls closure
  * @param connection the HTTPS connection
  * @param username the user name claimed by the other side
- * @param psk[out] to be set to the pre-shared-key; should be allocated with malloc(),
+ * @param[out] psk to be set to the pre-shared-key; should be allocated with malloc(),
  *                 will be freed by MHD
- * @param psk_size[out] to be set to the number of bytes in @a psk
+ * @param[out] psk_size to be set to the number of bytes in @a psk
  * @return 0 on success, -1 on errors 
  */
 typedef int

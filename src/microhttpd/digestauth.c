@@ -156,7 +156,7 @@ struct DigestAlgorithm
    * Compute final @a digest.
    *
    * @param ctx context to use
-   * @param digest[out] where to write the result,
+   * @param[out] digest where to write the result,
    *        must be @e digest_length bytes long
    */
   void
@@ -198,7 +198,7 @@ cvthex (const unsigned char *bin,
  * @param alg The hash algorithm used, can be "md5" or "md5-sess"
  *            or "sha-256" or "sha-256-sess"
  *    Note that the rest of the code does not support the the "-sess" variants!
- * @param da[in,out] digest implementation, must match @a alg; the
+ * @param[in,out] da digest implementation, must match @a alg; the
  *          da->sessionkey will be initialized to the digest in HEX
  * @param digest An `unsigned char *' pointer to the binary MD5 sum
  * 			for the precalculated hash value "username:realm:password"
@@ -263,7 +263,7 @@ digest_calc_ha1_from_digest (const char *alg,
  * @param password A `char *' pointer to the password value
  * @param nonce A `char *' pointer to the nonce value
  * @param cnonce A `char *' pointer to the cnonce value
- * @param da[in,out] digest algorithm to use, and where to write
+ * @param[in,out] da digest algorithm to use, and where to write
  *         the sessionkey to
  */
 static void
@@ -317,7 +317,7 @@ digest_calc_ha1_from_user (const char *alg,
  * @param method method from request
  * @param uri requested URL
  * @param hentity H(entity body) if qop="auth-int"
- * @param da[in,out] digest algorithm to use, also
+ * @param[in,out] da digest algorithm to use, also
  *        we write da->sessionkey (set to response request-digest or response-digest)
  */
 static void
@@ -835,7 +835,7 @@ check_argument_match (struct MHD_Connection *connection,
  * Authenticates the authorization header sent by the client
  *
  * @param connection The MHD connection structure
- * @param da[in,out] digest algorithm to use for checking (written to as
+ * @param[in,out] da digest algorithm to use for checking (written to as
  *         part of the calculations, but the values left in the struct
  *         are not actually expected to be useful for the caller)
  * @param realm The realm presented to the client

@@ -300,7 +300,7 @@ sha256_update (void *ctx_,
  * Finalise SHA256 calculation, return digest.
  *
  * @param ctx_ must be a `struct sha256_ctx *`
- * @param digest[out] set to the hash, must be #SHA256_DIGEST_SIZE bytes
+ * @param[out] digest set to the hash, must be #SHA256_DIGEST_SIZE bytes
  */
 void
 sha256_finish (void *ctx_,
