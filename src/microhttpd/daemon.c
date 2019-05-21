@@ -5210,12 +5210,18 @@ parse_options_va (struct MHD_Daemon *daemon,
                                               size_t);
           break;
 #endif
-#ifdef TCP_FASTOPEN
         case MHD_OPTION_TCP_FASTOPEN_QUEUE_SIZE:
+#ifdef TCP_FASTOPEN
           daemon->fastopen_queue_size = va_arg (ap,
                                                 unsigned int);
           break;
-#endif
+#else  /* ! TCP_FASTOPEN */
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    _("TCP fastopen is not supported on this platform\n"));
+          return MHD_NO;
+#endif /* HAVE_MESSAGES */
+#endif /* ! TCP_FASTOPEN */
 	case MHD_OPTION_LISTENING_ADDRESS_REUSE:
 	  daemon->listening_address_reuse = va_arg (ap,
                                                     unsigned int) ? 1 : -1;
