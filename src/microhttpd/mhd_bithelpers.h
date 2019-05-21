@@ -136,17 +136,17 @@
  */
 #if _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN
 #define _MHD_GET_32BIT_LE(addr)             \
-        (*(uint32_t*)(addr))
+        (*(const uint32_t*)(addr))
 #elif _MHD_BYTE_ORDER == _MHD_BIG_ENDIAN
 #define _MHD_GET_32BIT_LE(addr)             \
-        _MHD_BYTES_SWAP32(*(uint32_t*)(addr))
+        _MHD_BYTES_SWAP32(*(const uint32_t*)(addr))
 #else  /* _MHD_BYTE_ORDER != _MHD_BIG_ENDIAN */
 /* Endianess was not detected or non-standard like PDP-endian */
 #define _MHD_GET_32BIT_LE(addr)                       \
-        ( ( (uint32_t)(((uint8_t*)addr)[0]))        | \
-          (((uint32_t)(((uint8_t*)addr)[1])) << 8)  | \
-          (((uint32_t)(((uint8_t*)addr)[2])) << 16) | \
-          (((uint32_t)(((uint8_t*)addr)[3])) << 24) )
+        ( ( (uint32_t)(((const uint8_t*)addr)[0]))        | \
+          (((uint32_t)(((const uint8_t*)addr)[1])) << 8)  | \
+          (((uint32_t)(((const uint8_t*)addr)[2])) << 16) | \
+          (((uint32_t)(((const uint8_t*)addr)[3])) << 24) )
 #endif /* _MHD_BYTE_ORDER != _MHD_BIG_ENDIAN */
 
 
@@ -200,17 +200,17 @@
  */
 #if _MHD_BYTE_ORDER == _MHD_BIG_ENDIAN
 #define _MHD_GET_32BIT_BE(addr)             \
-        (*(uint32_t*)(addr))
+        (*(const uint32_t*)(addr))
 #elif _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN
 #define _MHD_GET_32BIT_BE(addr)             \
-        _MHD_BYTES_SWAP32(*(uint32_t*)(addr))
+        _MHD_BYTES_SWAP32(*(const uint32_t*)(addr))
 #else  /* _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN */
 /* Endianess was not detected or non-standard like PDP-endian */
 #define _MHD_GET_32BIT_BE(addr)                       \
-        ( (((uint32_t)(((uint8_t*)addr)[0])) << 24) | \
-          (((uint32_t)(((uint8_t*)addr)[1])) << 16) | \
-          (((uint32_t)(((uint8_t*)addr)[2])) << 8)  | \
-          ((uint32_t) (((uint8_t*)addr)[3])) )
+        ( (((uint32_t)(((const uint8_t*)addr)[0])) << 24) | \
+          (((uint32_t)(((const uint8_t*)addr)[1])) << 16) | \
+          (((uint32_t)(((const uint8_t*)addr)[2])) << 8)  | \
+          ((uint32_t) (((const uint8_t*)addr)[3])) )
 #endif /* _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN */
 
 

@@ -135,7 +135,7 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
      Input data must be read in big-endian bytes order,
      see FIPS PUB 180-4 paragraph 3.1.2. */
 #define GET_W_FROM_DATA(buf,t) \
-        _MHD_GET_32BIT_BE(((uint8_t*)(buf)) + (t) * SHA256_BYTES_IN_WORD)
+        _MHD_GET_32BIT_BE(((const uint8_t*)(buf)) + (t) * SHA256_BYTES_IN_WORD)
 
   /* During first 16 steps, before making any calculations on each step,
      the W element is read from input data buffer as big-endian value and
