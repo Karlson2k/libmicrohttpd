@@ -779,7 +779,7 @@ MHD_get_connection_values_n (struct MHD_Connection *connection,
  *         #MHD_YES on success
  * @ingroup request
  */
-int
+static int
 MHD_set_connection_value_n_nocheck_ (struct MHD_Connection *connection,
                                      enum MHD_ValueKind kind,
                                      const char *key,
