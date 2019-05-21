@@ -1,3 +1,14 @@
+Tue May 21 17:52:48 MSK 2019
+	Spelling fixes. -EG
+
+Mon May 20 15:39:35 MSK 2019
+	Compiler warning fixes. -EG/CG
+	Fixed example for non-64bits platforms. -EG
+
+Web May 15 23:51:49 MSK 2019
+	Optimized and improved processing speed by using precalculated and
+	already calculated lengths of strings. -EG
+
 Web May 15 14:54:00 MSK 2019
 	Fixed build from source on GNU Hurd. -EG
 
