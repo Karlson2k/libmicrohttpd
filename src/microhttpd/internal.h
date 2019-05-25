@@ -1422,7 +1422,7 @@ struct MHD_Daemon
    * Function for logging error messages (if we
    * support error reporting).
    */
-  void (*custom_error_log) (void *cls, const char *fmt, va_list va);
+  MHD_LogCallback custom_error_log;
 
   /**
    * Closure argument to @e custom_error_log.

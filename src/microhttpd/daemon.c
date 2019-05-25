@@ -218,6 +218,19 @@ MHD_check_global_init_ (void)
 }
 #endif /* ! _AUTOINIT_FUNCS_ARE_SUPPORTED */
 
+
+/**
+ * Default logger function
+ */
+static void
+MHD_default_logger_ (void *cls,
+                     const char *fm,
+                     va_list ap)
+{
+  vfprintf ((FILE*)cls, fm, ap);
+}
+
+
 /**
  * Trace up to and return master daemon. If the supplied daemon
  * is a master, then return the daemon itself.
@@ -5664,7 +5677,7 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->listen_backlog_size = 511; /* should be safe value */
 #endif /* !SOMAXCONN */
 #ifdef HAVE_MESSAGES
-  daemon->custom_error_log = (MHD_LogCallback) &vfprintf;
+  daemon->custom_error_log = &MHD_default_logger_;
   daemon->custom_error_log_cls = stderr;
 #endif
   if ( (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION)) &&
