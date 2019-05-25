@@ -310,7 +310,7 @@ open_listen_socket (struct MHD_Daemon *daemon)
 #ifdef IN6ADDR_ANY_INIT
 	  sin6->sin6_addr = static_in6any;
 #endif
-#if HAVE_SOCKADDR_IN_SIN_LEN
+#if HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
 	  sin6->sin6_len = sizeof (struct sockaddr_in6);
 #endif
 	}
@@ -327,7 +327,7 @@ open_listen_socket (struct MHD_Daemon *daemon)
 	  sin4->sin_port = htons (daemon->listen_port);
 	  if (0 != INADDR_ANY)
 	    sin4->sin_addr.s_addr = htonl (INADDR_ANY);
-#if HAVE_SOCKADDR_IN_SIN_LEN
+#if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
 	  sin4->sin_len = sizeof (struct sockaddr_in);
 #endif
 	}

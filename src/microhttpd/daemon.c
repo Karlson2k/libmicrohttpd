@@ -5981,7 +5981,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef IN6ADDR_ANY_INIT
 	      servaddr6.sin6_addr = static_in6any;
 #endif
-#if HAVE_SOCKADDR_IN_SIN_LEN
+#if HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
 	      servaddr6.sin6_len = sizeof (struct sockaddr_in6);
 #endif
 	      servaddr = (struct sockaddr *) &servaddr6;
@@ -5996,7 +5996,7 @@ MHD_start_daemon_va (unsigned int flags,
 	      servaddr4.sin_port = htons (port);
 	      if (0 != INADDR_ANY)
 	        servaddr4.sin_addr.s_addr = htonl (INADDR_ANY);
-#if HAVE_SOCKADDR_IN_SIN_LEN
+#if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
 	      servaddr4.sin_len = sizeof (struct sockaddr_in);
 #endif
 	      servaddr = (struct sockaddr *) &servaddr4;
@@ -6084,8 +6084,8 @@ MHD_start_daemon_va (unsigned int flags,
               0,
               sizeof (struct sockaddr_storage));
       addrlen = sizeof (struct sockaddr_storage);
-#ifdef HAVE_SOCKADDR_IN_SIN_LEN
-      bindaddr.sin_len = addrlen;
+#ifdef HAVE_STRUCT_SOCKADDR_STORAGE_SS_LEN
+      bindaddr.ss_len = addrlen;
 #endif
       if (0 != getsockname (listen_fd,
                             (struct sockaddr *) &bindaddr,

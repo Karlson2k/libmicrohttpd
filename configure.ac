@@ -774,10 +774,9 @@ AM_CONDITIONAL([HAVE_ZLIB], [[test "x$have_zlib" = xyes]])
 # Check for generic functions
 AC_CHECK_FUNCS([rand random])
 
-AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
-   [ AC_DEFINE(HAVE_SOCKADDR_IN_SIN_LEN, 1, [Do we have sockaddr_in.sin_len?])
-   ],
-   [],
+AC_CHECK_MEMBERS([struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len, 
+                  struct sockaddr_storage.ss_len],
+   [], [],
    [
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -849,7 +848,7 @@ int main(void)
   {
     zr_mem(&sa, c_addr_size);
     sa.sin_family = AF_INET;
-#if HAVE_SOCKADDR_IN_SIN_LEN
+#ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
     sa.sin_len = c_addr_size;
 #endif
     if (0 == bind (sckt, (struct sockaddr *)&sa, c_addr_size))
