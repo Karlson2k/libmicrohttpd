@@ -4920,10 +4920,13 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_CONNECTION_TIMEOUT:
           uv = va_arg (ap,
                        unsigned int);
+          daemon->connection_timeout = (time_t)uv;
           /* Next comparison could be always false on some platforms and whole branch will
            * be optimized out on those platforms. On others it will be compiled into real
            * check. */
-          if (TIME_T_MAX < uv) /* Compiler may warn on some platforms, ignore warning. */
+          if ( ( (MHD_TYPE_IS_SIGNED_(time_t)) &&
+                 (daemon->connection_timeout < 0) ) || /* Compiler may warn on some platforms, ignore warning. */
+               (uv != (unsigned int)daemon->connection_timeout) )
             {
 #ifdef HAVE_MESSAGES
               MHD_DLOG (daemon,
@@ -4931,8 +4934,6 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
               daemon->connection_timeout = 0;
             }
-          else
-            daemon->connection_timeout = (time_t)uv;
           break;
         case MHD_OPTION_NOTIFY_COMPLETED:
           daemon->notify_completed = va_arg (ap,
