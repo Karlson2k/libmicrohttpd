@@ -228,6 +228,9 @@ MHD_default_logger_ (void *cls,
                      va_list ap)
 {
   vfprintf ((FILE*)cls, fm, ap);
+#ifdef _DEBUG
+  fflush ((FILE*)cls);
+#endif /* _DEBUG */
 }
 
 
