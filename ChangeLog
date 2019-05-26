@@ -1,3 +1,8 @@
+Sun May 26 23:05:42 MSK 2019
+	Better detection of sockaddr member in configure, fixed build on *BSD,
+	Fixed compiler warnings,
+	Updated and fixed libcurl tests. -EG
+
 Tue May 21 22:12:43 MSK 2019
 	Fixed doxygen comments,
 	Avoid dropping 'const' qualifier in macros,
