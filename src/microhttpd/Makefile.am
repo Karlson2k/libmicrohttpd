@@ -194,7 +194,7 @@ TESTS = $(check_PROGRAMS)
 # on Cygwin as this ability is deliberately ignored on Cygwin
 # to improve compatibility with core OS.
 if !CYGWIN_TARGET
-if USE_POSIX_THREADS
+if HAVE_POSIX_THREADS
 if HAVE_LISTEN_SHUTDOWN
 check_PROGRAMS += \
   test_shutdown_select \
