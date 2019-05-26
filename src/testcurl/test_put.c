@@ -165,7 +165,7 @@ testInternalPut ()
   curl_easy_setopt (c, CURLOPT_READDATA, &pos);
   curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
   curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
@@ -175,7 +175,7 @@ testInternalPut ()
   /* NOTE: use of CONNECTTIMEOUT without also
    *   setting NOSIGNAL results in really weird
    *   crashes on my system! */
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
       fprintf (stderr,
@@ -240,7 +240,7 @@ testMultithreadedPut ()
   curl_easy_setopt (c, CURLOPT_READDATA, &pos);
   curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
   curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
@@ -250,7 +250,7 @@ testMultithreadedPut ()
   /* NOTE: use of CONNECTTIMEOUT without also
    *   setting NOSIGNAL results in really weird
    *   crashes on my system! */
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
       fprintf (stderr,
@@ -317,7 +317,7 @@ testMultithreadedPoolPut ()
   curl_easy_setopt (c, CURLOPT_READDATA, &pos);
   curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
   curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
@@ -327,7 +327,7 @@ testMultithreadedPoolPut ()
   /* NOTE: use of CONNECTTIMEOUT without also
    *   setting NOSIGNAL results in really weird
    *   crashes on my system! */
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
       fprintf (stderr,
@@ -405,7 +405,7 @@ curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_READDATA, &pos);
   curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
   curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
@@ -415,7 +415,7 @@ curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   /* NOTE: use of CONNECTTIMEOUT without also
    *   setting NOSIGNAL results in really weird
    *   crashes on my system! */
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
 
 
   multi = curl_multi_init ();

@@ -158,11 +158,11 @@ main(int argc, char **argv)
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");
   curl_easy_setopt (c, CURLOPT_PORT, (long)port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &discard_buffer);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
   multi = curl_multi_init ();
   if (multi == NULL)
     {

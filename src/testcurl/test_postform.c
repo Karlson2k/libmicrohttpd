@@ -222,7 +222,7 @@ testInternalPost ()
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   pd = make_form ();
   curl_easy_setopt (c, CURLOPT_HTTPPOST, pd);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
@@ -232,7 +232,7 @@ testInternalPost ()
   /* NOTE: use of CONNECTTIMEOUT without also
    *   setting NOSIGNAL results in really weird
    *   crashes on my system! */
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
       fprintf (stderr,
@@ -297,7 +297,7 @@ testMultithreadedPost ()
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   pd = make_form ();
   curl_easy_setopt (c, CURLOPT_HTTPPOST, pd);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
@@ -307,7 +307,7 @@ testMultithreadedPost ()
   /* NOTE: use of CONNECTTIMEOUT without also
    *   setting NOSIGNAL results in really weird
    *   crashes on my system! */
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
       fprintf (stderr,
@@ -373,7 +373,7 @@ testMultithreadedPoolPost ()
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   pd = make_form ();
   curl_easy_setopt (c, CURLOPT_HTTPPOST, pd);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
@@ -383,7 +383,7 @@ testMultithreadedPoolPost ()
   /* NOTE: use of CONNECTTIMEOUT without also
    *   setting NOSIGNAL results in really weird
    *   crashes on my system! */
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
       fprintf (stderr,
@@ -463,7 +463,7 @@ testExternalPost ()
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   pd = make_form ();
   curl_easy_setopt (c, CURLOPT_HTTPPOST, pd);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
@@ -473,7 +473,7 @@ testExternalPost ()
   /* NOTE: use of CONNECTTIMEOUT without also
    *   setting NOSIGNAL results in really weird
    *   crashes on my system! */
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
 
 
   multi = curl_multi_init ();

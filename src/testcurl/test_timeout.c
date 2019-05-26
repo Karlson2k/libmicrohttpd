@@ -211,7 +211,7 @@ testWithoutTimeout ()
   curl_easy_setopt (c, CURLOPT_READDATA, &pos);
   curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
   curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
@@ -221,7 +221,7 @@ testWithoutTimeout ()
   /* NOTE: use of CONNECTTIMEOUT without also
    *   setting NOSIGNAL results in really weird
    *   crashes on my system! */
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
       curl_easy_cleanup (c);
@@ -285,7 +285,7 @@ testWithTimeout ()
   curl_easy_setopt (c, CURLOPT_READDATA, &testWithTimeout);
   curl_easy_setopt (c, CURLOPT_UPLOAD, 1L);
   curl_easy_setopt (c, CURLOPT_INFILESIZE_LARGE, (curl_off_t) 8L);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
@@ -295,7 +295,7 @@ testWithTimeout ()
   /* NOTE: use of CONNECTTIMEOUT without also
    *   setting NOSIGNAL results in really weird
    *   crashes on my system! */
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
       curl_easy_cleanup (c);
