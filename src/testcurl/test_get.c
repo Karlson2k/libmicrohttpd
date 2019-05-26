@@ -474,8 +474,10 @@ testExternalGet ()
         }
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
+#ifdef MHD_POSIX_SOCKETS
       if (maxsock > maxposixs)
         maxposixs = maxsock;
+#endif /* MHD_POSIX_SOCKETS */
       if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
         {
 #ifdef MHD_POSIX_SOCKETS
@@ -483,7 +485,7 @@ testExternalGet ()
             abort ();
 #else
           if (WSAEINVAL != WSAGetLastError() || 0 != rs.fd_count || 0 != ws.fd_count || 0 != es.fd_count)
-            abort ();
+            _exit (99);
           Sleep (1000);
 #endif
         }

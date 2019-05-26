@@ -459,8 +459,10 @@ curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
           MHD_stop_daemon (d);
           return 4096;
         }
+#ifdef MHD_POSIX_SOCKETS
       if (maxsock > maxposixs)
         maxposixs = maxsock;
+#endif /* MHD_POSIX_SOCKETS */
       tv.tv_sec = 0;
       tv.tv_usec = 1000;
       if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
@@ -470,7 +472,7 @@ curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
             abort ();
 #else
           if (WSAEINVAL != WSAGetLastError() || 0 != rs.fd_count || 0 != ws.fd_count || 0 != es.fd_count)
-            abort ();
+            _exit (99);
           Sleep (1000);
 #endif
         }
