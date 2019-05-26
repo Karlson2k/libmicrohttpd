@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "mhd_has_in_name.h"
+#include "test_helpers.h"
 #include "mhd_sockets.h" /* only macros used */
 
 
@@ -92,7 +92,7 @@ log_cb (void *cls,
       fprintf (stderr,
                "Wrong URI: `%s'\n",
                uri);
-      abort ();
+      _exit (22);
     }
   return NULL;
 }
@@ -130,7 +130,11 @@ ahc_echo (void *cls,
   if ( (NULL == v) ||
        (0 != strcmp ("&",
                      v)) )
-    abort ();
+    {
+      fprintf (stderr, "Found while looking for 'a=&': 'a=%s'\n",
+               NULL == v ? "NULL" : v);
+      _exit (17);
+    }
   v = NULL;
   if (MHD_YES != MHD_lookup_connection_value_n (connection,
                                                 MHD_GET_ARGUMENT_KIND,
@@ -138,11 +142,18 @@ ahc_echo (void *cls,
                                                 1,
                                                 &v,
                                                 NULL))
-    abort ();
+    {
+      fprintf (stderr, "Not found 'b' GET argument.\n");
+      _exit (18);
+    }
   if ( (NULL == v) ||
        (0 != strcmp ("c",
                      v)) )
-    abort ();
+    {
+      fprintf (stderr, "Found while looking for 'b=c': 'b=%s'\n",
+               NULL == v ? "NULL" : v);
+      _exit (19);
+    }
   response = MHD_create_response_from_buffer (strlen (url),
 					      (void *) url,
 					      MHD_RESPMEM_MUST_COPY);
@@ -151,7 +162,10 @@ ahc_echo (void *cls,
                             response);
   MHD_destroy_response (response);
   if (ret == MHD_NO)
-    abort ();
+    {
+      fprintf (stderr, "Failed to queue response.\n");
+      _exit (19);
+    }
   return ret;
 }
 
@@ -707,7 +721,10 @@ ahc_empty (void *cls,
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   if (ret == MHD_NO)
-    abort ();
+    {
+      fprintf (stderr, "Failed to queue response.\n");
+      _exit (20);
+    }
   return ret;
 }
 
@@ -805,44 +822,133 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  (void) argc;   /* Unused. Silence compiler warning. */
+  unsigned int test_result = 0;
+  int verbose = 0;
 
   if (NULL == argv || 0 == argv[0])
     return 99;
   oneone = has_in_name (argv[0], "11");
+  verbose = has_param (argc, argv, "-v") || has_param (argc, argv, "--verbose");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   global_port = 0;
-  errorCount += testExternalGet ();
+  test_result = testExternalGet ();
+  if (test_result)
+    fprintf (stderr, "FAILED: testExternalGet () - %u.\n", test_result);
+  else if (verbose)
+    printf ("PASSED: testExternalGet ().\n");
+  errorCount += test_result;
   if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_THREADS))
     {
-      errorCount += testInternalGet (0);
-      errorCount += testMultithreadedGet (0);
-      errorCount += testMultithreadedPoolGet (0);
-      errorCount += testUnknownPortGet (0);
-      errorCount += testStopRace (0);
-      errorCount += testEmptyGet (0);
+      test_result += testInternalGet (0);
+      if (test_result)
+        fprintf (stderr, "FAILED: testInternalGet (0) - %u.\n", test_result);
+      else if (verbose)
+        printf ("PASSED: testInternalGet (0).\n");
+      errorCount += test_result;
+      test_result += testMultithreadedGet (0);
+      if (test_result)
+        fprintf (stderr, "FAILED: testMultithreadedGet (0) - %u.\n", test_result);
+      else if (verbose)
+        printf ("PASSED: testMultithreadedGet (0).\n");
+      errorCount += test_result;
+      test_result += testMultithreadedPoolGet (0);
+      if (test_result)
+        fprintf (stderr, "FAILED: testMultithreadedPoolGet (0) - %u.\n", test_result);
+      else if (verbose)
+        printf ("PASSED: testMultithreadedPoolGet (0).\n");
+      errorCount += test_result;
+      test_result += testUnknownPortGet (0);
+      if (test_result)
+        fprintf (stderr, "FAILED: testUnknownPortGet (0) - %u.\n", test_result);
+      else if (verbose)
+        printf ("PASSED: testUnknownPortGet (0).\n");
+      errorCount += test_result;
+      test_result += testStopRace (0);
+      if (test_result)
+        fprintf (stderr, "FAILED: testStopRace (0) - %u.\n", test_result);
+      else if (verbose)
+        printf ("PASSED: testStopRace (0).\n");
+      errorCount += test_result;
+      test_result += testEmptyGet (0);
+      if (test_result)
+        fprintf (stderr, "FAILED: testEmptyGet (0) - %u.\n", test_result);
+      else if (verbose)
+        printf ("PASSED: testEmptyGet (0).\n");
+      errorCount += test_result;
       if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_POLL))
 	{
-	  errorCount += testInternalGet(MHD_USE_POLL);
-	  errorCount += testMultithreadedGet(MHD_USE_POLL);
-	  errorCount += testMultithreadedPoolGet(MHD_USE_POLL);
-	  errorCount += testUnknownPortGet(MHD_USE_POLL);
-	  errorCount += testStopRace(MHD_USE_POLL);
-	  errorCount += testEmptyGet(MHD_USE_POLL);
+          test_result += testInternalGet(MHD_USE_POLL);
+          if (test_result)
+            fprintf (stderr, "FAILED: testInternalGet (MHD_USE_POLL) - %u.\n", test_result);
+          else if (verbose)
+            printf ("PASSED: testInternalGet (MHD_USE_POLL).\n");
+          errorCount += test_result;
+          test_result += testMultithreadedGet(MHD_USE_POLL);
+          if (test_result)
+            fprintf (stderr, "FAILED: testMultithreadedGet (MHD_USE_POLL) - %u.\n", test_result);
+          else if (verbose)
+            printf ("PASSED: testMultithreadedGet (MHD_USE_POLL).\n");
+          errorCount += test_result;
+          test_result += testMultithreadedPoolGet(MHD_USE_POLL);
+          if (test_result)
+            fprintf (stderr, "FAILED: testMultithreadedPoolGet (MHD_USE_POLL) - %u.\n", test_result);
+          else if (verbose)
+            printf ("PASSED: testMultithreadedPoolGet (MHD_USE_POLL).\n");
+          errorCount += test_result;
+          test_result += testUnknownPortGet(MHD_USE_POLL);
+          if (test_result)
+            fprintf (stderr, "FAILED: testUnknownPortGet (MHD_USE_POLL) - %u.\n", test_result);
+          else if (verbose)
+            printf ("PASSED: testUnknownPortGet (MHD_USE_POLL).\n");
+          errorCount += test_result;
+          test_result += testStopRace(MHD_USE_POLL);
+          if (test_result)
+            fprintf (stderr, "FAILED: testStopRace (MHD_USE_POLL) - %u.\n", test_result);
+          else if (verbose)
+            printf ("PASSED: testStopRace (MHD_USE_POLL).\n");
+          errorCount += test_result;
+          test_result += testEmptyGet(MHD_USE_POLL);
+          if (test_result)
+            fprintf (stderr, "FAILED: testEmptyGet (MHD_USE_POLL) - %u.\n", test_result);
+          else if (verbose)
+            printf ("PASSED: testEmptyGet (MHD_USE_POLL).\n");
+          errorCount += test_result;
 	}
       if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_EPOLL))
 	{
-	  errorCount += testInternalGet(MHD_USE_EPOLL);
-	  errorCount += testMultithreadedPoolGet(MHD_USE_EPOLL);
-	  errorCount += testUnknownPortGet(MHD_USE_EPOLL);
-	  errorCount += testEmptyGet(MHD_USE_EPOLL);
+          test_result += testInternalGet(MHD_USE_EPOLL);
+          if (test_result)
+            fprintf (stderr, "FAILED: testInternalGet (MHD_USE_EPOLL) - %u.\n", test_result);
+          else if (verbose)
+            printf ("PASSED: testInternalGet (MHD_USE_EPOLL).\n");
+          errorCount += test_result;
+          test_result += testMultithreadedPoolGet(MHD_USE_EPOLL);
+          if (test_result)
+            fprintf (stderr, "FAILED: testMultithreadedPoolGet (MHD_USE_EPOLL) - %u.\n", test_result);
+          else if (verbose)
+            printf ("PASSED: testMultithreadedPoolGet (MHD_USE_EPOLL).\n");
+          errorCount += test_result;
+          test_result += testUnknownPortGet(MHD_USE_EPOLL);
+          if (test_result)
+            fprintf (stderr, "FAILED: testUnknownPortGet (MHD_USE_EPOLL) - %u.\n", test_result);
+          else if (verbose)
+            printf ("PASSED: testUnknownPortGet (MHD_USE_EPOLL).\n");
+          errorCount += test_result;
+          test_result += testEmptyGet(MHD_USE_EPOLL);
+          if (test_result)
+            fprintf (stderr, "FAILED: testEmptyGet (MHD_USE_EPOLL) - %u.\n", test_result);
+          else if (verbose)
+            printf ("PASSED: testEmptyGet (MHD_USE_EPOLL).\n");
+          errorCount += test_result;
 	}
     }
   if (0 != errorCount)
     fprintf (stderr,
 	     "Error (code: %u)\n",
 	     errorCount);
+  else if (verbose)
+    printf ("All tests passed.\n");
   curl_global_cleanup ();
   return errorCount != 0;       /* 0 == pass */
 }

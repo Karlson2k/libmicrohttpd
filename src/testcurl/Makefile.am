@@ -109,7 +109,7 @@ test_concurrent_stop_LDADD = \
   $(PTHREAD_LIBS) @LIBCURL@
 
 test_get_SOURCES = \
-  test_get.c mhd_has_in_name.h
+  test_get.c
 test_get_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
@@ -257,7 +257,7 @@ test_put_chunked_LDADD = \
   @LIBCURL@
 
 test_get11_SOURCES = \
-  test_get.c mhd_has_in_name.h
+  test_get.c
 test_get11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
