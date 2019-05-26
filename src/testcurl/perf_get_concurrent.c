@@ -52,8 +52,13 @@
 /**
  * How many rounds of operations do we do for each
  * test (total number of requests will be ROUNDS * PAR).
+ * Ensure that free ports are not exhausted during test.
  */
+#if CPU_COUNT > 8
+#define ROUNDS (1 + (30000 / 12) / CPU_COUNT)
+#else
 #define ROUNDS 500
+#endif
 
 /**
  * How many requests do we do in parallel?
