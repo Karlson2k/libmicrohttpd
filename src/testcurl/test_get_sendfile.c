@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include "mhd_sockets.h"
+#include "mhd_has_in_name.h"
 
 #ifndef WINDOWS
 #include <sys/socket.h>
@@ -576,8 +577,9 @@ main (int argc, char *const *argv)
   FILE *f;
   (void)argc;   /* Unused. Silent compiler warning. */
 
-  oneone = (NULL != strrchr (argv[0], (int) '/')) ?
-    (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
+  if (NULL == argv || 0 == argv[0])
+    return 99;
+  oneone = has_in_name (argv[0], "11");
 
   if ( (NULL == (tmp = getenv ("TMPDIR"))) &&
        (NULL == (tmp = getenv ("TMP"))) &&

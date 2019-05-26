@@ -109,7 +109,7 @@ test_concurrent_stop_LDADD = \
   $(PTHREAD_LIBS) @LIBCURL@
 
 test_get_SOURCES = \
-  test_get.c
+  test_get.c mhd_has_in_name.h
 test_get_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
@@ -138,7 +138,7 @@ test_callback_LDADD = \
 
 perf_get_SOURCES = \
   perf_get.c \
-  gauger.h
+  gauger.h mhd_has_in_name.h
 perf_get_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
@@ -180,19 +180,19 @@ test_digestauth_with_arguments_LDADD = \
   @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_get_sendfile_SOURCES = \
-  test_get_sendfile.c
+  test_get_sendfile.c mhd_has_in_name.h
 test_get_sendfile_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_urlparse_SOURCES = \
-  test_urlparse.c
+  test_urlparse.c mhd_has_in_name.h
 test_urlparse_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_get_response_cleanup_SOURCES = \
-  test_get_response_cleanup.c
+  test_get_response_cleanup.c mhd_has_in_name.h
 test_get_response_cleanup_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
@@ -203,49 +203,49 @@ test_get_chunked_LDADD = \
   @LIBCURL@
 
 test_post_SOURCES = \
-  test_post.c
+  test_post.c mhd_has_in_name.h
 test_post_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_process_headers_SOURCES = \
-  test_process_headers.c
+  test_process_headers.c mhd_has_in_name.h
 test_process_headers_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_parse_cookies_SOURCES = \
-  test_parse_cookies.c
+  test_parse_cookies.c mhd_has_in_name.h
 test_parse_cookies_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_process_arguments_SOURCES = \
-  test_process_arguments.c
+  test_process_arguments.c mhd_has_in_name.h
 test_process_arguments_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_postform_SOURCES = \
-  test_postform.c
+  test_postform.c mhd_has_in_name.h
 test_postform_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_post_loop_SOURCES = \
-  test_post_loop.c
+  test_post_loop.c mhd_has_in_name.h
 test_post_loop_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_delete_SOURCES = \
-  test_delete.c
+  test_delete.c mhd_has_in_name.h
 test_delete_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_put_SOURCES = \
-  test_put.c
+  test_put.c mhd_has_in_name.h
 test_put_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
@@ -257,37 +257,37 @@ test_put_chunked_LDADD = \
   @LIBCURL@
 
 test_get11_SOURCES = \
-  test_get.c
+  test_get.c mhd_has_in_name.h
 test_get11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_get_sendfile11_SOURCES = \
-  test_get_sendfile.c
+  test_get_sendfile.c mhd_has_in_name.h
 test_get_sendfile11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_post11_SOURCES = \
-  test_post.c
+  test_post.c mhd_has_in_name.h
 test_post11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_postform11_SOURCES = \
-  test_postform.c
+  test_postform.c mhd_has_in_name.h
 test_postform11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBGCRYPT_LIBS@ @LIBCURL@
 
 test_post_loop11_SOURCES = \
-  test_post_loop.c
+  test_post_loop.c mhd_has_in_name.h
 test_post_loop11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_put11_SOURCES = \
-  test_put.c
+  test_put.c mhd_has_in_name.h
 test_put11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
@@ -311,19 +311,19 @@ test_large_put_inc11_LDADD = \
   @LIBCURL@
 
 test_long_header_SOURCES = \
-  test_long_header.c
+  test_long_header.c mhd_has_in_name.h
 test_long_header_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_long_header11_SOURCES = \
-  test_long_header.c
+  test_long_header.c mhd_has_in_name.h
 test_long_header11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_iplimit11_SOURCES = \
-  test_iplimit.c
+  test_iplimit.c mhd_has_in_name.h
 test_iplimit11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
@@ -335,7 +335,7 @@ test_termination_LDADD = \
   @LIBCURL@
 
 test_timeout_SOURCES = \
-  test_timeout.c
+  test_timeout.c mhd_has_in_name.h
 test_timeout_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@

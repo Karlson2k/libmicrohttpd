@@ -43,6 +43,8 @@
 #include <windows.h>
 #endif
 
+#include "mhd_has_in_name.h"
+
 #if defined(CPU_COUNT) && (CPU_COUNT+0) < 2
 #undef CPU_COUNT
 #endif
@@ -770,8 +772,9 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
   (void)argc;   /* Unused. Silent compiler warning. */
 
-  oneone = (NULL != strrchr (argv[0], (int) '/')) ?
-    (NULL != strstr (strrchr (argv[0], (int) '/'), "11")) : 0;
+  if (NULL == argv || 0 == argv[0])
+    return 99;
+  oneone = has_in_name (argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   if (MHD_YES == MHD_is_feature_supported(MHD_FEATURE_THREADS))
