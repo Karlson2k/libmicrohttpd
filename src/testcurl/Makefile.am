@@ -29,6 +29,7 @@ THREAD_ONLY_TESTS = \
 
 if HAVE_POSIX_THREADS
 THREAD_ONLY_TESTS += \
+  perf_get_concurrent11 \
   test_quiesce \
   test_concurrent_stop \
   perf_get_concurrent
@@ -144,10 +145,19 @@ perf_get_LDADD = \
 
 perf_get_concurrent_SOURCES = \
   perf_get_concurrent.c \
-  gauger.h
+  gauger.h mhd_has_in_name.h
 perf_get_concurrent_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 perf_get_concurrent_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  $(PTHREAD_LIBS) @LIBCURL@
+
+perf_get_concurrent11_SOURCES = \
+  perf_get_concurrent.c \
+  gauger.h mhd_has_in_name.h
+perf_get_concurrent11_CFLAGS = \
+  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+perf_get_concurrent11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(PTHREAD_LIBS) @LIBCURL@
 
