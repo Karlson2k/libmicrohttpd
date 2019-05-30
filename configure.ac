@@ -805,6 +805,9 @@ AC_CHECK_DECLS([getsockname],
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
 #endif
