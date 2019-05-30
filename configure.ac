@@ -789,12 +789,25 @@ AC_CHECK_MEMBERS([struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len,
 #endif
    ])
 
-AC_CHECK_DECLS([getsockname],
+MHD_CHECK_FUNC([getsockname],
+  [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif
+  ]],
   [
-   AC_CHECK_FUNCS([getsockname],
-     [
-      AC_CACHE_CHECK([[whether getsockname() is usable]], [[mhc_cv_getsockname_usable]],
-        [
+    struct sockaddr_storage ss;
+    (void)getsockname(socket(0,0,0),(struct sockaddr *)&ss,(void*)0);
+  ],
+  [
+    AC_CACHE_CHECK([[whether getsockname() is usable]], [[mhc_cv_getsockname_usable]],
+      [
          AC_RUN_IFELSE(
            [
             AC_LANG_SOURCE(
@@ -888,22 +901,9 @@ int main(void)
          )
         ]
       )
-      AS_VAR_IF([[mhc_cv_getsockname_usable]], [["no"]], [:],
+    AS_VAR_IF([[mhc_cv_getsockname_usable]], [["no"]], [:],
         [AC_DEFINE([[MHD_USE_GETSOCKNAME]], [[1]], [Define if you have usable `getsockname' function.])])
-     ]
-   )
-  ], [],
-  [[
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-#ifdef HAVE_WINSOCK2_H
-#include <winsock2.h>
-#endif
-  ]]
+  ]
 )
 
 # Check for inter-thread signaling type

@@ -6092,6 +6092,7 @@ MHD_start_daemon_va (unsigned int flags,
       listen_fd = daemon->listen_fd;
     }
 
+#ifdef HAVE_GETSOCKNAME
   if ( (0 == daemon->port) &&
        (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
     { /* Get port number. */
@@ -6160,6 +6161,7 @@ MHD_start_daemon_va (unsigned int flags,
           }
         }
     }
+#endif /* HAVE_GETSOCKNAME */
 
   if ( (MHD_INVALID_SOCKET != listen_fd) &&
        (! MHD_socket_nonblocking_ (listen_fd)) )
