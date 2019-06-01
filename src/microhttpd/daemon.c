@@ -6124,6 +6124,14 @@ MHD_start_daemon_va (unsigned int flags,
                     _("Failed to get listen port number (`struct sockaddr_storage` too small!?)\n"));
 #endif /* HAVE_MESSAGES */
         }
+#ifndef __linux__
+      else if (0 == addrlen)
+        {
+          /* Many non-Linux-based platforms return zero addrlen
+           * for AF_UNIX sockets */
+          daemon->port = 0; /* special value for UNIX domain sockets */
+        }
+#endif /* __linux__ */
 #endif /* MHD_POSIX_SOCKETS */
       else
         {
