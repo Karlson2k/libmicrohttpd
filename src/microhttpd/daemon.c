@@ -3136,7 +3136,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   s = accept4 (fd,
                addr,
                &addrlen,
-               MAYBE_SOCK_CLOEXEC | MAYBE_SOCK_NONBLOCK);
+               MAYBE_SOCK_CLOEXEC | MAYBE_SOCK_NONBLOCK | MAYBE_SOCK_NOSIGPIPE);
   sk_nonbl = (MAYBE_SOCK_NONBLOCK != 0);
 #else  /* ! USE_ACCEPT4 */
   s = accept (fd,

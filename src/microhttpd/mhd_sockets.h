@@ -162,6 +162,12 @@
 #  define MAYBE_SOCK_NONBLOCK 0
 #endif /* ! HAVE_SOCK_NONBLOCK */
 
+#ifdef SOCK_NOSIGPIPE
+#  define MAYBE_SOCK_NOSIGPIPE SOCK_NOSIGPIPE
+#else  /* ! HAVE_SOCK_NONBLOCK */
+#  define MAYBE_SOCK_NOSIGPIPE 0
+#endif /* ! HAVE_SOCK_NONBLOCK */
+
 #ifdef MSG_NOSIGNAL
 #  define MAYBE_MSG_NOSIGNAL MSG_NOSIGNAL
 #else  /* ! MSG_NOSIGNAL */
@@ -178,7 +184,7 @@
 #  define SHUT_RDWR SD_BOTH
 #endif
 
-#if HAVE_ACCEPT4+0 != 0 && (defined(HAVE_SOCK_NONBLOCK) || defined(SOCK_CLOEXEC))
+#if HAVE_ACCEPT4+0 != 0 && (defined(HAVE_SOCK_NONBLOCK) || defined(SOCK_CLOEXEC) || defined(SOCK_NOSIGPIPE))
 #  define USE_ACCEPT4 1
 #endif
 
