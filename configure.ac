@@ -772,7 +772,23 @@ AC_CHECK_HEADERS([zlib.h],[have_zlib=yes],[have_zlib=no], [AC_INCLUDES_DEFAULT])
 AM_CONDITIONAL([HAVE_ZLIB], [[test "x$have_zlib" = xyes]])
 
 # Check for generic functions
-AC_CHECK_FUNCS([rand random])
+MHD_CHECK_FUNC([random],
+  [
+AC_INCLUDES_DEFAULT
+[#include <stdlib.h>
+  ]],
+  [[long int r = random(); (void)r;]],
+  [],
+  [
+    MHD_CHECK_FUNC([rand],
+      [
+AC_INCLUDES_DEFAULT
+[#include <stdlib.h>
+      ]],
+      [[int r = rand(); (void)r;]],
+	)
+  ]
+)
 
 AC_CHECK_MEMBERS([struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len, 
                   struct sockaddr_storage.ss_len],
