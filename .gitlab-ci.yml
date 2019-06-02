@@ -102,3 +102,19 @@ MinGW/Debian:
     - ./bootstrap
     - ./configure $CONFIGURE_BASE_FLAGS --build=x86_64-pc-linux-gnu --host=$PREFIX
     - make -j$(nproc)
+
+dist/Stretch:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$DEBIAN_BUILD
+  script:
+    - export CFLAGS=$CFLAGS_DEFAULT
+    - ./bootstrap
+    - ./configure $CONFIGURE_BASE_FLAGS
+    - make -j$(nproc) dist
+  tags:
+    - shared
+  artifacts:
+    name: "$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
+    expire_in: 2 weeks
+    when: on_success
+    paths:
+      - ./libmicrohttpd-*.*.*.tar.??
