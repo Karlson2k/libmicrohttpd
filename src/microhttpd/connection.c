@@ -924,12 +924,12 @@ MHD_lookup_connection_value (struct MHD_Connection *connection,
   const char *value;
 
   value = NULL;
-  MHD_lookup_connection_value_n (connection,
-                                 kind,
-                                 key,
-                                 (NULL == key) ? 0 : strlen(key),
-                                 &value,
-                                 NULL);
+  (void) MHD_lookup_connection_value_n (connection,
+                                        kind,
+                                        key,
+                                        (NULL == key) ? 0 : strlen(key),
+                                        &value,
+                                        NULL);
   return value;
 }
 
@@ -1811,9 +1811,9 @@ build_header_response (struct MHD_Connection *connection)
             simply only force adding a content-length header if this
             is not a 'connect' or if the response is not empty
             (which is kind of more sane, because if some crazy
-            application did return content with a 2xx status code, 
+            application did return content with a 2xx status code,
             then having a content-length might again be a good idea).
-           
+
             Note that the change from 'SHOULD NOT' to 'MUST NOT' is
             a recent development of the HTTP 1.1 specification.
           */
