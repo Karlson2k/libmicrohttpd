@@ -1,3 +1,7 @@
+Mon 03 Jun 2019 11:45:52 PM CEST
+	Apply MHD_-prefix to hash functions, even if they are not in the
+	officially exported API. -CG/DB
+
 Sun May 26 23:05:42 MSK 2019
 	Better detection of sockaddr member in configure, fixed build on *BSD,
 	Fixed compiler warnings,

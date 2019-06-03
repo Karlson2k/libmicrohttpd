@@ -10,8 +10,8 @@
  * with every copy.
  *
  * To compute the message digest of a chunk of bytes, declare an
- * MD5Context structure, pass it to MD5Init, call MD5Update as
- * needed on buffers full of bytes, and then call MD5Final, which
+ * MD5Context structure, pass it to MHD_MD5Init, call MHD_MD5Update as
+ * needed on buffers full of bytes, and then call MHD_MD5Final, which
  * will fill a supplied 16-byte array with the digest.
  */
 
@@ -34,7 +34,7 @@
  * @param ctx must be a `struct MD5Context *`
  */
 void
-MD5Init (void *ctx_)
+MHD_MD5Init (void *ctx_)
 {
   struct MD5Context *ctx = ctx_;
 
@@ -57,7 +57,7 @@ MD5Transform (uint32_t state[4],
  * @param ctx must be a `struct MD5Context *`
  */
 void
-MD5Final (void *ctx_,
+MHD_MD5Final (void *ctx_,
           uint8_t digest[MD5_DIGEST_SIZE])
 {
   struct MD5Context *ctx = ctx_;
@@ -119,7 +119,7 @@ MD5Final (void *ctx_,
 
 /**
  * The core of the MD5 algorithm, this alters an existing MD5 hash to
- * reflect the addition of 16 longwords of new data.  MD5Update blocks
+ * reflect the addition of 16 longwords of new data.  MHD_MD5Update blocks
  * the data and converts bytes into longwords for this routine.
  */
 static void
@@ -225,7 +225,7 @@ MD5Transform (uint32_t state[4],
  * of bytes.
  */
 void
-MD5Update (void *ctx_,
+MHD_MD5Update (void *ctx_,
            const uint8_t *input,
            size_t len)
 {

@@ -253,8 +253,8 @@ int test1_str(void)
       struct sha256_ctx ctx;
       uint8_t digest[SHA256_DIGEST_SIZE];
 
-      sha256_init (&ctx);
-      sha256_update (&ctx, (const uint8_t*)data_units1[i].str_l.str, data_units1[i].str_l.len);
+      MHD_SHA256_init (&ctx);
+      MHD_SHA256_update (&ctx, (const uint8_t*)data_units1[i].str_l.str, data_units1[i].str_l.len);
       sha256_finish (&ctx, digest);
       num_failed += check_result (__FUNCTION__, i, digest,
                                   data_units1[i].digest);
@@ -270,8 +270,8 @@ int test1_bin(void)
       struct sha256_ctx ctx;
       uint8_t digest[SHA256_DIGEST_SIZE];
 
-      sha256_init (&ctx);
-      sha256_update (&ctx, data_units2[i].bin_l.bin, data_units2[i].bin_l.len);
+      MHD_SHA256_init (&ctx);
+      MHD_SHA256_update (&ctx, data_units2[i].bin_l.bin, data_units2[i].bin_l.len);
       sha256_finish (&ctx, digest);
       num_failed += check_result (__FUNCTION__, i, digest,
                                   data_units2[i].digest);
@@ -289,9 +289,9 @@ int test2_str(void)
       uint8_t digest[SHA256_DIGEST_SIZE];
       size_t part_s = data_units1[i].str_l.len / 4;
 
-      sha256_init (&ctx);
-      sha256_update (&ctx, (const uint8_t*)data_units1[i].str_l.str, part_s);
-      sha256_update (&ctx, (const uint8_t*)data_units1[i].str_l.str + part_s, data_units1[i].str_l.len - part_s);
+      MHD_SHA256_init (&ctx);
+      MHD_SHA256_update (&ctx, (const uint8_t*)data_units1[i].str_l.str, part_s);
+      MHD_SHA256_update (&ctx, (const uint8_t*)data_units1[i].str_l.str + part_s, data_units1[i].str_l.len - part_s);
       sha256_finish (&ctx, digest);
       num_failed += check_result (__FUNCTION__, i, digest,
                                   data_units1[i].digest);
@@ -308,9 +308,9 @@ int test2_bin(void)
       uint8_t digest[SHA256_DIGEST_SIZE];
       size_t part_s = data_units2[i].bin_l.len * 2 / 3;
 
-      sha256_init (&ctx);
-      sha256_update (&ctx, data_units2[i].bin_l.bin, part_s);
-      sha256_update (&ctx, data_units2[i].bin_l.bin + part_s, data_units2[i].bin_l.len - part_s);
+      MHD_SHA256_init (&ctx);
+      MHD_SHA256_update (&ctx, data_units2[i].bin_l.bin, part_s);
+      MHD_SHA256_update (&ctx, data_units2[i].bin_l.bin + part_s, data_units2[i].bin_l.len - part_s);
       sha256_finish (&ctx, digest);
       num_failed += check_result (__FUNCTION__, i, digest,
                                   data_units2[i].digest);

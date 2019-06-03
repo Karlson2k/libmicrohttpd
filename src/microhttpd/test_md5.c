@@ -228,9 +228,9 @@ int test1_str(void)
       struct MD5Context ctx;
       uint8_t digest[MD5_DIGEST_SIZE];
 
-      MD5Init (&ctx);
-      MD5Update (&ctx, (const uint8_t*)data_units1[i].str_l.str, data_units1[i].str_l.len);
-      MD5Final (&ctx, digest);
+      MHD_MD5Init (&ctx);
+      MHD_MD5Update (&ctx, (const uint8_t*)data_units1[i].str_l.str, data_units1[i].str_l.len);
+      MHD_MD5Final (&ctx, digest);
       num_failed += check_result (__FUNCTION__, i, digest,
                                   data_units1[i].digest);
     }
@@ -245,9 +245,9 @@ int test1_bin(void)
       struct MD5Context ctx;
       uint8_t digest[MD5_DIGEST_SIZE];
 
-      MD5Init (&ctx);
-      MD5Update (&ctx, data_units2[i].bin_l.bin, data_units2[i].bin_l.len);
-      MD5Final (&ctx, digest);
+      MHD_MD5Init (&ctx);
+      MHD_MD5Update (&ctx, data_units2[i].bin_l.bin, data_units2[i].bin_l.len);
+      MHD_MD5Final (&ctx, digest);
       num_failed += check_result (__FUNCTION__, i, digest,
                                   data_units2[i].digest);
     }
@@ -264,10 +264,10 @@ int test2_str(void)
       uint8_t digest[MD5_DIGEST_SIZE];
       size_t part_s = data_units1[i].str_l.len / 4;
 
-      MD5Init (&ctx);
-      MD5Update (&ctx, (const uint8_t*)data_units1[i].str_l.str, part_s);
-      MD5Update (&ctx, (const uint8_t*)data_units1[i].str_l.str + part_s, data_units1[i].str_l.len - part_s);
-      MD5Final (&ctx, digest);
+      MHD_MD5Init (&ctx);
+      MHD_MD5Update (&ctx, (const uint8_t*)data_units1[i].str_l.str, part_s);
+      MHD_MD5Update (&ctx, (const uint8_t*)data_units1[i].str_l.str + part_s, data_units1[i].str_l.len - part_s);
+      MHD_MD5Final (&ctx, digest);
       num_failed += check_result (__FUNCTION__, i, digest,
                                   data_units1[i].digest);
     }
@@ -283,10 +283,10 @@ int test2_bin(void)
       uint8_t digest[MD5_DIGEST_SIZE];
       size_t part_s = data_units2[i].bin_l.len * 2 / 3;
 
-      MD5Init (&ctx);
-      MD5Update (&ctx, data_units2[i].bin_l.bin, part_s);
-      MD5Update (&ctx, data_units2[i].bin_l.bin + part_s, data_units2[i].bin_l.len - part_s);
-      MD5Final (&ctx, digest);
+      MHD_MD5Init (&ctx);
+      MHD_MD5Update (&ctx, data_units2[i].bin_l.bin, part_s);
+      MHD_MD5Update (&ctx, data_units2[i].bin_l.bin + part_s, data_units2[i].bin_l.len - part_s);
+      MHD_MD5Final (&ctx, digest);
       num_failed += check_result (__FUNCTION__, i, digest,
                                   data_units2[i].digest);
     }

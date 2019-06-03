@@ -1195,9 +1195,9 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
     da.ctx = &ctx.md5;                            \
     da.alg = "md5";                               \
     da.sessionkey = skey.md5;                     \
-    da.init = &MD5Init;                           \
-    da.update = &MD5Update;                       \
-    da.digest = &MD5Final;                        \
+    da.init = &MHD_MD5Init;                           \
+    da.update = &MHD_MD5Update;                       \
+    da.digest = &MHD_MD5Final;                        \
     break;                                        \
   case MHD_DIGEST_ALG_AUTO:                             \
     /* auto == SHA256, fall-though thus intentional! */ \
@@ -1206,8 +1206,8 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
     da.ctx = &ctx.sha256;                               \
     da.alg = "sha-256";                                 \
     da.sessionkey = skey.sha256;                        \
-    da.init = &sha256_init;                             \
-    da.update = &sha256_update;                         \
+    da.init = &MHD_SHA256_init;                             \
+    da.update = &MHD_SHA256_update;                         \
     da.digest = &sha256_finish;                         \
     break;                                              \
   }                                                     \

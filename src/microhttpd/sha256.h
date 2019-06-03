@@ -64,7 +64,7 @@ struct sha256_ctx
  * @param ctx_ must be a `struct sha256_ctx *`
  */
 void
-sha256_init (void *ctx_);
+MHD_SHA256_init (void *ctx_);
 
 
 /**
@@ -75,7 +75,7 @@ sha256_init (void *ctx_);
  * @param length number of bytes in @a data
  */
 void
-sha256_update (void *ctx_,
+MHD_SHA256_update (void *ctx_,
                const uint8_t *data,
                size_t length);
 

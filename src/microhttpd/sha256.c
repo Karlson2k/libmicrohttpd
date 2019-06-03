@@ -42,7 +42,7 @@
  * @param ctx_ must be a `struct sha256_ctx *`
  */
 void
-sha256_init (void *ctx_)
+MHD_SHA256_init (void *ctx_)
 {
   struct sha256_ctx *const ctx = ctx_;
   /* Initial hash values, see FIPS PUB 180-4 paragraph 5.3.3 */
@@ -236,7 +236,7 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
  * @param length number of bytes in @a data
  */
 void
-sha256_update (void *ctx_,
+MHD_SHA256_update (void *ctx_,
                const uint8_t *data,
                size_t length)
 {

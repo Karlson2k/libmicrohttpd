@@ -10,8 +10,8 @@
  * with every copy.
  *
  * To compute the message digest of a chunk of bytes, declare an
- * MD5Context structure, pass it to MD5Init, call MD5Update as
- * needed on buffers full of bytes, and then call MD5Final, which
+ * MD5Context structure, pass it to MHD_MD5Init, call MHD_MD5Update as
+ * needed on buffers full of bytes, and then call MHD_MD5Final, which
  * will fill a supplied 16-byte array with the digest.
  */
 
@@ -47,7 +47,7 @@ static uint8_t PADDING[MD5_BLOCK_SIZE] = {
  * initialization constants.
  */
 void
-MD5Init(struct MD5Context *ctx)
+MHD_MD5Init(struct MD5Context *ctx)
 {
   if (!ctx)
     return;
@@ -64,7 +64,7 @@ MD5Init(struct MD5Context *ctx)
  * of bytes.
  */
 void
-MD5Update(struct MD5Context *ctx, const unsigned char *input, size_t len)
+MHD_MD5Update(struct MD5Context *ctx, const unsigned char *input, size_t len)
 {
   size_t have, need;
 
@@ -124,15 +124,15 @@ MD5Pad(struct MD5Context *ctx)
     ((ctx->count >> 3) & (MD5_BLOCK_SIZE - 1));
   if (padlen < 1 + 8)
     padlen += MD5_BLOCK_SIZE;
-  MD5Update(ctx, PADDING, padlen - 8);		/* padlen - 8 <= 64 */
-  MD5Update(ctx, count, 8);
+  MHD_MD5Update(ctx, PADDING, padlen - 8);		/* padlen - 8 <= 64 */
+  MHD_MD5Update(ctx, count, 8);
 }
 
 /*
  * Final wrapup--call MD5Pad, fill in digest and zero out ctx.
  */
 void
-MD5Final(unsigned char digest[MD5_DIGEST_SIZE], struct MD5Context *ctx)
+MHD_MD5Final(unsigned char digest[MD5_DIGEST_SIZE], struct MD5Context *ctx)
 {
   int i;
 
@@ -161,7 +161,7 @@ MD5Final(unsigned char digest[MD5_DIGEST_SIZE], struct MD5Context *ctx)
 
 /*
  * The core of the MD5 algorithm, this alters an existing MD5 hash to
- * reflect the addition of 16 longwords of new data.  MD5Update blocks
+ * reflect the addition of 16 longwords of new data.  MHD_MD5Update blocks
  * the data and converts bytes into longwords for this routine.
  */
 void
