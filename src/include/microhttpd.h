@@ -419,7 +419,7 @@ MHD_get_reason_phrase_for (unsigned int code);
  * @defgroup headers HTTP headers
  * These are the standard headers found in HTTP requests and responses.
  * See: http://www.iana.org/assignments/message-headers/message-headers.xml
- * Registry Version 2017-01-27
+ * Registry export date: 2019-06-09
  * @{
  */
 
@@ -532,6 +532,8 @@ MHD_get_reason_phrase_for (unsigned int code);
 #define MHD_HTTP_HEADER_ACCEPT_FEATURES "Accept-Features"
 /* No category.   RFC5789 */
 #define MHD_HTTP_HEADER_ACCEPT_PATCH "Accept-Patch"
+/* Standard.      https://www.w3.org/TR/ldp/ */
+#define MHD_HTTP_HEADER_ACCEPT_POST "Accept-Post"
 /* Standard.      RFC7639, Section 2 */
 #define MHD_HTTP_HEADER_ALPN "ALPN"
 /* Standard.      RFC7838 */
@@ -556,8 +558,12 @@ MHD_get_reason_phrase_for (unsigned int code);
 #define MHD_HTTP_HEADER_C_PEP "C-PEP"
 /* No category.   RFC4229 */
 #define MHD_HTTP_HEADER_C_PEP_INFO "C-PEP-Info"
+/* Standard.      RFC8607, Section 5.1 */
+#define MHD_HTTP_HEADER_CAL_MANAGED_ID "Cal-Managed-ID"
 /* Standard.      RFC7809, Section 7.1 */
 #define MHD_HTTP_HEADER_CALDAV_TIMEZONES "CalDAV-Timezones"
+/* Standard.      RFC8586 */
+#define MHD_HTTP_HEADER_CDN_LOOP "CDN-Loop"
 /* Obsoleted.     RFC2068; RFC2616 */
 #define MHD_HTTP_HEADER_CONTENT_BASE "Content-Base"
 /* Standard.      RFC6266 */
@@ -594,6 +600,10 @@ MHD_get_reason_phrase_for (unsigned int code);
 #define MHD_HTTP_HEADER_DIFFERENTIAL_ID "Differential-ID"
 /* No category.   RFC4229 */
 #define MHD_HTTP_HEADER_DIGEST "Digest"
+/* Standard.      RFC8470 */
+#define MHD_HTTP_HEADER_EARLY_DATA "Early-Data"
+/* Experimental.  RFC-ietf-httpbis-expect-ct-08 */
+#define MHD_HTTP_HEADER_EXPECT_CT "Expect-CT"
 /* No category.   RFC4229 */
 #define MHD_HTTP_HEADER_EXT "Ext"
 /* Standard.      RFC7239 */
@@ -610,11 +620,13 @@ MHD_get_reason_phrase_for (unsigned int code);
 #define MHD_HTTP_HEADER_IF "If"
 /* Standard.      RFC6638 */
 #define MHD_HTTP_HEADER_IF_SCHEDULE_TAG_MATCH "If-Schedule-Tag-Match"
+/* Standard.      RFC8473 */
+#define MHD_HTTP_HEADER_INCLUDE_REFERRED_TOKEN_BINDING_ID "Include-Referred-Token-Binding-ID"
 /* No category.   RFC4229 */
 #define MHD_HTTP_HEADER_KEEP_ALIVE "Keep-Alive"
 /* No category.   RFC4229 */
 #define MHD_HTTP_HEADER_LABEL "Label"
-/* No category.   RFC5988 */
+/* Standard.      RFC8288 */
 #define MHD_HTTP_HEADER_LINK "Link"
 /* Standard.      RFC4918 */
 #define MHD_HTTP_HEADER_LOCK_TOKEN "Lock-Token"
@@ -634,6 +646,8 @@ MHD_get_reason_phrase_for (unsigned int code);
 #define MHD_HTTP_HEADER_ORDERING_TYPE "Ordering-Type"
 /* Standard.      RFC6454 */
 #define MHD_HTTP_HEADER_ORIGIN "Origin"
+/* Standard.      RFC-ietf-core-object-security-16, Section 11.1 */
+#define MHD_HTTP_HEADER_OSCORE "OSCORE"
 /* Standard.      RFC4918 */
 #define MHD_HTTP_HEADER_OVERWRITE "Overwrite"
 /* No category.   RFC4229 */
@@ -674,12 +688,16 @@ MHD_get_reason_phrase_for (unsigned int code);
 #define MHD_HTTP_HEADER_PUBLIC_KEY_PINS_REPORT_ONLY "Public-Key-Pins-Report-Only"
 /* No category.   RFC4437 */
 #define MHD_HTTP_HEADER_REDIRECT_REF "Redirect-Ref"
+/* Standard.      RFC8555, Section 6.5.1 */
+#define MHD_HTTP_HEADER_REPLAY_NONCE "Replay-Nonce"
 /* No category.   RFC4229 */
 #define MHD_HTTP_HEADER_SAFE "Safe"
 /* Standard.      RFC6638 */
 #define MHD_HTTP_HEADER_SCHEDULE_REPLY "Schedule-Reply"
 /* Standard.      RFC6638 */
 #define MHD_HTTP_HEADER_SCHEDULE_TAG "Schedule-Tag"
+/* Standard.      RFC8473 */
+#define MHD_HTTP_HEADER_SEC_TOKEN_BINDING "Sec-Token-Binding"
 /* Standard.      RFC6455 */
 #define MHD_HTTP_HEADER_SEC_WEBSOCKET_ACCEPT "Sec-WebSocket-Accept"
 /* Standard.      RFC6455 */
@@ -706,6 +724,8 @@ MHD_get_reason_phrase_for (unsigned int code);
 #define MHD_HTTP_HEADER_STATUS_URI "Status-URI"
 /* Standard.      RFC6797 */
 #define MHD_HTTP_HEADER_STRICT_TRANSPORT_SECURITY "Strict-Transport-Security"
+/* Informational. RFC8594 */
+#define MHD_HTTP_HEADER_SUNSET "Sunset"
 /* No category.   RFC4229 */
 #define MHD_HTTP_HEADER_SURROGATE_CAPABILITY "Surrogate-Capability"
 /* No category.   RFC4229 */
@@ -726,6 +746,8 @@ MHD_get_reason_phrase_for (unsigned int code);
 #define MHD_HTTP_HEADER_VARIANT_VARY "Variant-Vary"
 /* No category.   RFC4229 */
 #define MHD_HTTP_HEADER_WANT_DIGEST "Want-Digest"
+/* Standard.      https://fetch.spec.whatwg.org/#x-content-type-options-header */
+#define MHD_HTTP_HEADER_X_CONTENT_TYPE_OPTIONS "X-Content-Type-Options"
 /* Informational. RFC7034 */
 #define MHD_HTTP_HEADER_X_FRAME_OPTIONS "X-Frame-Options"
 
@@ -748,9 +770,10 @@ MHD_get_reason_phrase_for (unsigned int code);
  * @defgroup methods HTTP methods
  * HTTP methods (as strings).
  * See: http://www.iana.org/assignments/http-methods/http-methods.xml
- * Registry Version 2015-05-19
+ * Registry export date: 2019-06-09
  * @{
  */
+
 /* Main HTTP methods. */
 /* Not safe. Not idempotent. RFC7231, Section 4.3.6. */
 #define MHD_HTTP_METHOD_CONNECT "CONNECT"
@@ -792,9 +815,9 @@ MHD_get_reason_phrase_for (unsigned int code);
 #define MHD_HTTP_METHOD_MERGE "MERGE"
 /* Not safe. Idempotent.     RFC3253, Section 13.5. */
 #define MHD_HTTP_METHOD_MKACTIVITY "MKACTIVITY"
-/* Not safe. Idempotent.     RFC4791, Section 5.3.1. */
+/* Not safe. Idempotent.     RFC4791, Section 5.3.1; RFC8144, Section 2.3. */
 #define MHD_HTTP_METHOD_MKCALENDAR "MKCALENDAR"
-/* Not safe. Idempotent.     RFC4918, Section 9.3. */
+/* Not safe. Idempotent.     RFC4918, Section 9.3; RFC5689, Section 3; RFC8144, Section 2.3. */
 #define MHD_HTTP_METHOD_MKCOL "MKCOL"
 /* Not safe. Idempotent.     RFC4437, Section 6. */
 #define MHD_HTTP_METHOD_MKREDIRECTREF "MKREDIRECTREF"
@@ -808,13 +831,13 @@ MHD_get_reason_phrase_for (unsigned int code);
 #define MHD_HTTP_METHOD_PATCH "PATCH"
 /* Safe.     Idempotent.     RFC7540, Section 3.5. */
 #define MHD_HTTP_METHOD_PRI "PRI"
-/* Safe.     Idempotent.     RFC4918, Section 9.1. */
+/* Safe.     Idempotent.     RFC4918, Section 9.1; RFC8144, Section 2.1. */
 #define MHD_HTTP_METHOD_PROPFIND "PROPFIND"
-/* Not safe. Idempotent.     RFC4918, Section 9.2. */
+/* Not safe. Idempotent.     RFC4918, Section 9.2; RFC8144, Section 2.2. */
 #define MHD_HTTP_METHOD_PROPPATCH "PROPPATCH"
 /* Not safe. Idempotent.     RFC5842, Section 6. */
 #define MHD_HTTP_METHOD_REBIND "REBIND"
-/* Safe.     Idempotent.     RFC3253, Section 3.6. */
+/* Safe.     Idempotent.     RFC3253, Section 3.6; RFC8144, Section 2.1. */
 #define MHD_HTTP_METHOD_REPORT "REPORT"
 /* Safe.     Idempotent.     RFC5323, Section 2. */
 #define MHD_HTTP_METHOD_SEARCH "SEARCH"
