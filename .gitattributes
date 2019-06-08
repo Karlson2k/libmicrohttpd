@@ -1,4 +1,5 @@
 *.m4	eol=lf
+*.sh	eol=lf
 configure.ac	eol=lf
 makefile.am	eol=lf
 .gitattributes	eol=lf
