@@ -2,6 +2,20 @@ Mon 03 Jun 2019 11:45:52 PM CEST
 	Apply MHD_-prefix to hash functions, even if they are not in the
 	officially exported API. -CG/DB
 
+Sun Jun 02 01:52:11 MSK 2019
+	Support usage of SOCK_NOSIGPIPE on Solaris 11.4 and NetBSD 7+,
+	finally avoid SIGPIPE on Solaris. -EG
+
+Sat Jun 01 22:51:50 MSK 2019
+	Do not report errors if AF_UNIX socket is used on *BSD. -EG
+
+Thu May 30 23:32:09 MSK 2019
+	Improved detection of 'getsockname()' in configure.
+	Avoided using 'getsockname()' in code if not detected. -EG
+
+Sun May 26 23:32:49 MSK 2019
+	Fixed some tests on W32. -EG
+
 Sun May 26 23:05:42 MSK 2019
 	Better detection of sockaddr member in configure, fixed build on *BSD,
 	Fixed compiler warnings,
