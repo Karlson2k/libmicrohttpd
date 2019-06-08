@@ -33,3 +33,5 @@
 /authorization_example
 upgrade_example
 /timeout
+http_chunked_compression
+http_compression
