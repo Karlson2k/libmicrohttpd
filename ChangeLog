@@ -1,3 +1,6 @@
+Sun Jun 09 2019 20:27:04 MSK
+	Releasing libmicrohttpd 0.9.64. -EG
+
 Sun Jun 09 2019 20:03:16 MSK
 	Updated HTTP headers, methods and status codes from registries,
 	Added scripts to import new headers, methods and status codes from
