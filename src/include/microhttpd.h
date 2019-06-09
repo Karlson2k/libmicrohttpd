@@ -304,79 +304,144 @@ _MHD_DEPR_MACRO("Macro MHD_LONG_LONG_PRINTF is deprecated, use MHD_UNSIGNED_LONG
 /**
  * @defgroup httpcode HTTP response codes.
  * These are the status codes defined for HTTP responses.
+ * See: https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+ * Registry export date: 2019-06-09
  * @{
  */
-/* See http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml */
 
+/* 100 "Continue".            RFC7231, Section 6.2.1. */
 #define MHD_HTTP_CONTINUE 100
+/* 101 "Switching Protocols". RFC7231, Section 6.2.2. */
 #define MHD_HTTP_SWITCHING_PROTOCOLS 101
+/* 102 "Processing".          RFC2518. */
 #define MHD_HTTP_PROCESSING 102
+/* 103 "Early Hints".         RFC8297. */
+#define MHD_HTTP_EARLY_HINTS 103
 
+/* 200 "OK".                  RFC7231, Section 6.3.1. */
 #define MHD_HTTP_OK 200
+/* 201 "Created".             RFC7231, Section 6.3.2. */
 #define MHD_HTTP_CREATED 201
+/* 202 "Accepted".            RFC7231, Section 6.3.3. */
 #define MHD_HTTP_ACCEPTED 202
+/* 203 "Non-Authoritative Information". RFC7231, Section 6.3.4. */
 #define MHD_HTTP_NON_AUTHORITATIVE_INFORMATION 203
+/* 204 "No Content".          RFC7231, Section 6.3.5. */
 #define MHD_HTTP_NO_CONTENT 204
+/* 205 "Reset Content".       RFC7231, Section 6.3.6. */
 #define MHD_HTTP_RESET_CONTENT 205
+/* 206 "Partial Content".     RFC7233, Section 4.1. */
 #define MHD_HTTP_PARTIAL_CONTENT 206
+/* 207 "Multi-Status".        RFC4918. */
 #define MHD_HTTP_MULTI_STATUS 207
+/* 208 "Already Reported".    RFC5842. */
 #define MHD_HTTP_ALREADY_REPORTED 208
 
+/* 226 "IM Used".             RFC3229. */
 #define MHD_HTTP_IM_USED 226
 
+/* 300 "Multiple Choices".    RFC7231, Section 6.4.1. */
 #define MHD_HTTP_MULTIPLE_CHOICES 300
+/* 301 "Moved Permanently".   RFC7231, Section 6.4.2. */
 #define MHD_HTTP_MOVED_PERMANENTLY 301
+/* 302 "Found".               RFC7231, Section 6.4.3. */
 #define MHD_HTTP_FOUND 302
+/* 303 "See Other".           RFC7231, Section 6.4.4. */
 #define MHD_HTTP_SEE_OTHER 303
+/* 304 "Not Modified".        RFC7232, Section 4.1. */
 #define MHD_HTTP_NOT_MODIFIED 304
+/* 305 "Use Proxy".           RFC7231, Section 6.4.5. */
 #define MHD_HTTP_USE_PROXY 305
+/* 306 "Switch Proxy".        Not used! RFC7231, Section 6.4.6. */
 #define MHD_HTTP_SWITCH_PROXY 306
+/* 307 "Temporary Redirect".  RFC7231, Section 6.4.7. */
 #define MHD_HTTP_TEMPORARY_REDIRECT 307
+/* 308 "Permanent Redirect".  RFC7538. */
 #define MHD_HTTP_PERMANENT_REDIRECT 308
 
+/* 400 "Bad Request".         RFC7231, Section 6.5.1. */
 #define MHD_HTTP_BAD_REQUEST 400
+/* 401 "Unauthorized".        RFC7235, Section 3.1. */
 #define MHD_HTTP_UNAUTHORIZED 401
+/* 402 "Payment Required".    RFC7231, Section 6.5.2. */
 #define MHD_HTTP_PAYMENT_REQUIRED 402
+/* 403 "Forbidden".           RFC7231, Section 6.5.3. */
 #define MHD_HTTP_FORBIDDEN 403
+/* 404 "Not Found".           RFC7231, Section 6.5.4. */
 #define MHD_HTTP_NOT_FOUND 404
+/* 405 "Method Not Allowed".  RFC7231, Section 6.5.5. */
 #define MHD_HTTP_METHOD_NOT_ALLOWED 405
+/* 406 "Not Acceptable".      RFC7231, Section 6.5.6. */
 #define MHD_HTTP_NOT_ACCEPTABLE 406
+/* 407 "Proxy Authentication Required". RFC7235, Section 3.2. */
 #define MHD_HTTP_PROXY_AUTHENTICATION_REQUIRED 407
+/* 408 "Request Timeout".     RFC7231, Section 6.5.7. */
 #define MHD_HTTP_REQUEST_TIMEOUT 408
+/* 409 "Conflict".            RFC7231, Section 6.5.8. */
 #define MHD_HTTP_CONFLICT 409
+/* 410 "Gone".                RFC7231, Section 6.5.9. */
 #define MHD_HTTP_GONE 410
+/* 411 "Length Required".     RFC7231, Section 6.5.10. */
 #define MHD_HTTP_LENGTH_REQUIRED 411
+/* 412 "Precondition Failed". RFC7232, Section 4.2; RFC8144, Section 3.2. */
 #define MHD_HTTP_PRECONDITION_FAILED 412
+/* 413 "Payload Too Large".   RFC7231, Section 6.5.11. */
 #define MHD_HTTP_PAYLOAD_TOO_LARGE 413
+/* 414 "URI Too Long".        RFC7231, Section 6.5.12. */
 #define MHD_HTTP_URI_TOO_LONG 414
+/* 415 "Unsupported Media Type". RFC7231, Section 6.5.13; RFC7694, Section 3. */
 #define MHD_HTTP_UNSUPPORTED_MEDIA_TYPE 415
+/* 416 "Range Not Satisfiable". RFC7233, Section 4.4. */
 #define MHD_HTTP_RANGE_NOT_SATISFIABLE 416
+/* 417 "Expectation Failed".  RFC7231, Section 6.5.14. */
 #define MHD_HTTP_EXPECTATION_FAILED 417
 
+/* 421 "Misdirected Request". RFC7540, Section 9.1.2. */
 #define MHD_HTTP_MISDIRECTED_REQUEST 421
+/* 422 "Unprocessable Entity". RFC4918. */
 #define MHD_HTTP_UNPROCESSABLE_ENTITY 422
+/* 423 "Locked".              RFC4918. */
 #define MHD_HTTP_LOCKED 423
+/* 424 "Failed Dependency".   RFC4918. */
 #define MHD_HTTP_FAILED_DEPENDENCY 424
+/* 425 "Too Early".           RFC8470. */
+#define MHD_HTTP_TOO_EARLY 425
+/* 426 "Upgrade Required".    RFC7231, Section 6.5.15. */
 #define MHD_HTTP_UPGRADE_REQUIRED 426
 
+/* 428 "Precondition Required". RFC6585. */
 #define MHD_HTTP_PRECONDITION_REQUIRED 428
+/* 429 "Too Many Requests".   RFC6585. */
 #define MHD_HTTP_TOO_MANY_REQUESTS 429
 
+/* 431 "Request Header Fields Too Large". RFC6585. */
 #define MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE 431
 
+/* 451 "Unavailable For Legal Reasons". RFC7725. */
 #define MHD_HTTP_UNAVAILABLE_FOR_LEGAL_REASONS 451
 
+/* 500 "Internal Server Error". RFC7231, Section 6.6.1. */
 #define MHD_HTTP_INTERNAL_SERVER_ERROR 500
+/* 501 "Not Implemented".     RFC7231, Section 6.6.2. */
 #define MHD_HTTP_NOT_IMPLEMENTED 501
+/* 502 "Bad Gateway".         RFC7231, Section 6.6.3. */
 #define MHD_HTTP_BAD_GATEWAY 502
+/* 503 "Service Unavailable". RFC7231, Section 6.6.4. */
 #define MHD_HTTP_SERVICE_UNAVAILABLE 503
+/* 504 "Gateway Timeout".     RFC7231, Section 6.6.5. */
 #define MHD_HTTP_GATEWAY_TIMEOUT 504
+/* 505 "HTTP Version Not Supported". RFC7231, Section 6.6.6. */
 #define MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED 505
+/* 506 "Variant Also Negotiates". RFC2295. */
 #define MHD_HTTP_VARIANT_ALSO_NEGOTIATES 506
+/* 507 "Insufficient Storage". RFC4918. */
 #define MHD_HTTP_INSUFFICIENT_STORAGE 507
+/* 508 "Loop Detected".       RFC5842. */
 #define MHD_HTTP_LOOP_DETECTED 508
 
+/* 510 "Not Extended".        RFC2774. */
 #define MHD_HTTP_NOT_EXTENDED 510
+/* 511 "Network Authentication Required". RFC6585. */
 #define MHD_HTTP_NETWORK_AUTHENTICATION_REQUIRED 511
 
 
