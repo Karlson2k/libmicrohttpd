@@ -101,6 +101,13 @@ extern "C"
    on platforms where they do not exist).
    */
 #ifndef MHD_PLATFORM_H
+#if defined(_WIN32) && ! defined(__CYGWIN__) && \
+  ! defined(_CRT_DECLARE_NONSTDC_NAMES)
+#define _CRT_DECLARE_NONSTDC_NAMES 1
+#endif /* _WIN32 && ! __CYGWIN__ && ! _CRT_DECLARE_NONSTDC_NAMES */
+#include <stdarg.h>
+#include <stdint.h>
+#include <sys/types.h>
 #if !defined(_WIN32) || defined(__CYGWIN__)
 #include <unistd.h>
 #include <sys/time.h>
@@ -114,9 +121,6 @@ extern "C"
 typedef intptr_t ssize_t;
 #endif /* !_SSIZE_T_DEFINED */
 #endif /* _WIN32 && ! __CYGWIN__ */
-#include <stdarg.h>
-#include <stdint.h>
-#include <sys/types.h>
 #endif
 
 #if defined(__CYGWIN__) && !defined(_SYS_TYPES_FD_SET)

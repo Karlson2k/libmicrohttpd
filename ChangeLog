@@ -1,3 +1,11 @@
+Sun Jun 09 2019 20:03:16 MSK
+	Updated HTTP headers, methods and status codes from registries,
+	Added scripts to import new headers, methods and status codes from
+	registries,
+	Minor doxyget comment fix,
+	Added missing MSVS project files to tarball.
+	Reodered includes in microhttpd.h -EG
+
 Mon 03 Jun 2019 11:45:52 PM CEST
 	Apply MHD_-prefix to hash functions, even if they are not in the
 	officially exported API. -CG/DB
