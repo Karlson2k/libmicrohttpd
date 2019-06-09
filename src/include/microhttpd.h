@@ -487,8 +487,8 @@ _MHD_DEPR_MACRO("Macro MHD_LONG_LONG_PRINTF is deprecated, use MHD_UNSIGNED_LONG
 /**
  * Returns the string reason phrase for a response code.
  *
- * If we don't have a string for a status code, we give the first
- * message in that status code class.
+ * If message string is not available for a status code,
+ * "Unknown" string will be returned.
  */
 _MHD_EXTERN const char *
 MHD_get_reason_phrase_for (unsigned int code);
