@@ -276,7 +276,7 @@
  * @return ssize_t type value
  */
 #define MHD_send_(s,b,l) \
-  ((ssize_t)send((s),(const void*)(b),((MHD_SCKT_SEND_SIZE_)l), MAYBE_MSG_NOSIGNAL))
+  ((ssize_t)send((s),(const void*)(b),(MHD_SCKT_SEND_SIZE_)(l), MAYBE_MSG_NOSIGNAL))
 
 
 /**
@@ -287,7 +287,7 @@
  * @return ssize_t type value
  */
 #define MHD_recv_(s,b,l) \
-  ((ssize_t)recv((s),(void*)(b),((MHD_SCKT_SEND_SIZE_)l), 0))
+  ((ssize_t)recv((s),(void*)(b),(MHD_SCKT_SEND_SIZE_)(l), 0))
 
 
 /**
