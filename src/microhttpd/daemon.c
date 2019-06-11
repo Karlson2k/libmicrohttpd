@@ -167,12 +167,12 @@ void
 MHD_init(void);
 
 
-#if defined(_WIN32) && ! defined(__CYGWIN__)
+#if defined(MHD_WINSOCK_SOCKETS)
 /**
  * Track initialization of winsock
  */
 static int mhd_winsock_inited_ = 0;
-#endif
+#endif /* MHD_WINSOCK_SOCKETS */
 
 #ifdef _AUTOINIT_FUNCS_ARE_SUPPORTED
 /**
@@ -7132,20 +7132,20 @@ static struct gcry_thread_cbs gcry_threads_w32 = {
 void
 MHD_init(void)
 {
-#if defined(_WIN32) && ! defined(__CYGWIN__)
+#if defined(MHD_WINSOCK_SOCKETS)
   WSADATA wsd;
-#endif /* _WIN32 && ! __CYGWIN__ */
+#endif /* MHD_WINSOCK_SOCKETS */
 
   if (NULL == mhd_panic)
     mhd_panic = &mhd_panic_std;
 
-#if defined(_WIN32) && ! defined(__CYGWIN__)
+#if defined(MHD_WINSOCK_SOCKETS)
   if (0 != WSAStartup(MAKEWORD(2, 2), &wsd))
     MHD_PANIC (_("Failed to initialize winsock\n"));
   mhd_winsock_inited_ = 1;
   if (2 != LOBYTE(wsd.wVersion) && 2 != HIBYTE(wsd.wVersion))
     MHD_PANIC (_("Winsock version 2.2 is not available\n"));
-#endif
+#endif /* MHD_WINSOCK_SOCKETS */
 #ifdef HTTPS_SUPPORT
 #ifdef MHD_HTTPS_REQUIRE_GRYPT
 #if GCRYPT_VERSION_NUMBER < 0x010600
@@ -7179,10 +7179,10 @@ MHD_fini(void)
 #ifdef HTTPS_SUPPORT
   gnutls_global_deinit ();
 #endif /* HTTPS_SUPPORT */
-#if defined(_WIN32) && ! defined(__CYGWIN__)
+#if defined(MHD_WINSOCK_SOCKETS)
   if (mhd_winsock_inited_)
     WSACleanup();
-#endif
+#endif /* MHD_WINSOCK_SOCKETS */
   MHD_monotonic_sec_counter_finish();
 }
 
