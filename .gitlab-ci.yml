@@ -64,7 +64,6 @@ Sanitizers/Stretch:
     - export UBSAN_OPTIONS=print_stacktrace=1
     - export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-3.8/bin/llvm-symbolizer
     - ./configure $CONFIGURE_BASE_FLAGS --disable-doc
-    - make -j$(nproc) check
     - make check
     - make -j$(nproc) distcheck
   tags:
