@@ -257,55 +257,53 @@ MHD_pool_reallocate (struct MemoryPool *pool,
 		     size_t old_size,
 		     size_t new_size)
 {
-  void *ret;
   size_t asize;
+  uint8_t *new_blc;
 
   mhd_assert (pool->end >= pool->pos);
   mhd_assert (pool->size >= pool->end - pool->pos);
   mhd_assert (old != NULL || old_size == 0);
   mhd_assert (old == NULL || pool->memory <= (uint8_t*)old);
   mhd_assert (old == NULL || pool->memory + pool->size >= (uint8_t*)old + old_size);
-  asize = ROUND_TO_ALIGN (new_size);
-  if ( (0 == asize) &&
-       (0 != new_size) )
-    return NULL; /* new_size too close to SIZE_MAX */
-  if ( (pool->end < old_size) ||
-       (pool->end < asize) )
-    return NULL;                /* unsatisfiable or bogus request */
+  /* Blocks "from the end" must not be reallocated */
+  mhd_assert (old == NULL || pool->memory + pool->pos > (uint8_t*)old);
 
-  if ( (pool->pos >= old_size) &&
-       (&pool->memory[pool->pos - old_size] == old) )
-    {
-      /* was the previous allocation - optimize! */
-      if (pool->pos + asize - old_size <= pool->end)
-        {
-          /* fits */
-          pool->pos += asize - old_size;
-          if (asize < old_size)      /* shrinking - zero again! */
-            memset (&pool->memory[pool->pos],
-                    0,
-                    old_size - asize);
+  if (pool->memory + new_size + 2 * ALIGN_SIZE< pool->memory)
+    return NULL; /* Value wrap, too large new_size. */
+
+  if (0 != old_size)
+    { /* Need to relocate data */
+      const size_t old_offset = (uint8_t*)old - pool->memory;
+
+      if (pool->pos == ROUND_TO_ALIGN (old_offset + old_size))
+        { /* "old" block is the last allocated block */
+          const size_t new_apos = ROUND_TO_ALIGN (old_offset + new_size);
+          if (new_apos > pool->end)
+            return NULL; /* No space */
+
+          pool->pos = new_apos;
+          /* Zero-out unused part if shrinking */
+          if (old_size > new_size)
+            memset (old + new_size, 0, old_size - new_size);
           return old;
         }
-      /* does not fit */
-      return NULL;
     }
-  if (asize <= old_size)
-    return old;                 /* cannot shrink, no need to move */
-  if ((pool->pos + asize >= pool->pos) &&
-      (pool->pos + asize <= pool->end))
+  /* Need to allocate new block */
+  asize = ROUND_TO_ALIGN (new_size);
+  if (asize > pool->end - pool->pos)
+    return NULL; /* No space */
+
+  new_blc = pool->memory + pool->pos;
+  pool->pos += asize;
+
+  if (0 != old_size)
     {
-      /* fits */
-      ret = &pool->memory[pool->pos];
-      if (0 != old_size)
-        memmove (ret,
-                 old,
-                 old_size);
-      pool->pos += asize;
-      return ret;
+      /* Move data no new block, old block remains allocated */
+      memcpy (new_blc, old, old_size);
+      /* Zero-out old block */
+      memset (old, 0, old_size);
     }
-  /* does not fit */
-  return NULL;
+  return new_blc;
 }
 
 
