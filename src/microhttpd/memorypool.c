@@ -40,7 +40,9 @@
 #if defined(MAP_ANON) && !defined(MAP_ANONYMOUS)
 #define MAP_ANONYMOUS MAP_ANON
 #endif
-#ifndef MAP_FAILED
+#if defined(_WIN32)
+#define MAP_FAILED NULL
+#elif ! defined(MAP_FAILED)
 #define MAP_FAILED ((void*)-1)
 #endif
 
@@ -78,7 +80,7 @@ struct MemoryPool
   size_t pos;
 
   /**
-   * Offset of the last unallocated byte.
+   * Offset of the byte after the last unallocated byte.
    */
   size_t end;
 
@@ -100,6 +102,7 @@ MHD_pool_create (size_t max)
 {
   struct MemoryPool *pool;
 
+  max = ROUND_TO_ALIGN(max);
   pool = malloc (sizeof (struct MemoryPool));
   if (NULL == pool)
     return NULL;
