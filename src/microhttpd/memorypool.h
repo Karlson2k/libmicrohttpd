@@ -87,15 +87,15 @@ MHD_pool_allocate (struct MemoryPool *pool,
  * If the given block is not the most recently
  * (re)allocated block, the memory of the previous
  * allocation may be leaked until the pool is
- * destroyed (and copying the data maybe required).
+ * destroyed or reset.
  *
  * @param pool memory pool to use for the operation
  * @param old the existing block
  * @param old_size the size of the existing block
  * @param new_size the new size of the block
  * @return new address of the block, or
- *         NULL if the pool cannot support new_size
- *         bytes (old continues to be valid for old_size)
+ *         NULL if the pool cannot support @a new_size
+ *         bytes (old continues to be valid for @a old_size)
  */
 void *
 MHD_pool_reallocate (struct MemoryPool *pool,

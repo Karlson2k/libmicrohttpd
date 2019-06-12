@@ -54,7 +54,7 @@
 /**
  * Round up 'n' to a multiple of ALIGN_SIZE.
  */
-#define ROUND_TO_ALIGN(n) ((n+(ALIGN_SIZE-1)) & (~(ALIGN_SIZE-1)))
+#define ROUND_TO_ALIGN(n) (((n)+(ALIGN_SIZE-1)) & (~(ALIGN_SIZE-1)))
 
 
 /**
@@ -241,7 +241,7 @@ MHD_pool_allocate (struct MemoryPool *pool,
  * If the given block is not the most recently
  * (re)allocated block, the memory of the previous
  * allocation may be leaked until the pool is
- * destroyed (and copying the data maybe required).
+ * destroyed or reset.
  *
  * @param pool memory pool to use for the operation
  * @param old the existing block
