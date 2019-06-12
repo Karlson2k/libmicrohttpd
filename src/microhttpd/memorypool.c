@@ -25,8 +25,22 @@
  * @author Karlson2k (Evgeny Grin)
  */
 #include "memorypool.h"
-#include "internal.h"
+#include <stdlib.h>
+#include <string.h>
 #include "mhd_assert.h"
+#if HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
+#ifdef _WIN32
+#include <memoryapi.h>
+#endif
+
+#ifndef MHD_YES
+#define MHD_YES 1
+#endif
+#ifndef MHD_NO
+#define MHD_NO 0
+#endif
 
 /* define MAP_ANONYMOUS for Mac OS X */
 #if defined(MAP_ANON) && !defined(MAP_ANONYMOUS)
