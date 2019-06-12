@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007, 2009, 2010 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2007--2019 Daniel Pittman, Christian Grothoff and
+     Karlson2k (Evgeny Grin)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -21,8 +22,10 @@
  * @file memorypool.c
  * @brief memory pool
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 #include "memorypool.h"
+#include "mhd_assert.h"
 
 /* define MAP_ANONYMOUS for Mac OS X */
 #if defined(MAP_ANON) && !defined(MAP_ANONYMOUS)
@@ -158,6 +161,9 @@ MHD_pool_destroy (struct MemoryPool *pool)
 {
   if (NULL == pool)
     return;
+
+  mhd_assert (pool->end >= pool->pos);
+  mhd_assert (pool->size >= pool->end - pool->pos);
   if (MHD_NO == pool->is_mmap)
     free (pool->memory);
   else
@@ -184,6 +190,8 @@ MHD_pool_destroy (struct MemoryPool *pool)
 size_t
 MHD_pool_get_free (struct MemoryPool *pool)
 {
+  mhd_assert (pool->end >= pool->pos);
+  mhd_assert (pool->size >= pool->end - pool->pos);
   return (pool->end - pool->pos);
 }
 
@@ -207,6 +215,8 @@ MHD_pool_allocate (struct MemoryPool *pool,
   void *ret;
   size_t asize;
 
+  mhd_assert (pool->end >= pool->pos);
+  mhd_assert (pool->size >= pool->end - pool->pos);
   asize = ROUND_TO_ALIGN (size);
   if ( (0 == asize) && (0 != size) )
     return NULL; /* size too close to SIZE_MAX */
@@ -253,6 +263,11 @@ MHD_pool_reallocate (struct MemoryPool *pool,
   void *ret;
   size_t asize;
 
+  mhd_assert (pool->end >= pool->pos);
+  mhd_assert (pool->size >= pool->end - pool->pos);
+  mhd_assert (old != NULL || old_size == 0);
+  mhd_assert (old == NULL || pool->memory <= (char*)old);
+  mhd_assert (old == NULL || pool->memory + pool->size >= (char*)old + old_size);
   asize = ROUND_TO_ALIGN (new_size);
   if ( (0 == asize) &&
        (0 != new_size) )
@@ -316,6 +331,11 @@ MHD_pool_reset (struct MemoryPool *pool,
 		size_t copy_bytes,
                 size_t new_size)
 {
+  mhd_assert (pool->end >= pool->pos);
+  mhd_assert (pool->size >= pool->end - pool->pos);
+  mhd_assert (keep != NULL || copy_bytes == 0);
+  mhd_assert (keep == NULL || pool->memory <= (char*)keep);
+  mhd_assert (keep == NULL || pool->memory + pool->size >= (char*)keep + copy_bytes);
   if ( (NULL != keep) &&
        (keep != pool->memory) )
     {
