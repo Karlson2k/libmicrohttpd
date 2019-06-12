@@ -32,6 +32,9 @@
 
 #include "mhd_options.h"
 #include <stddef.h>
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif
 
 /**
  * Opaque handle for a memory pool.
@@ -65,7 +68,7 @@ MHD_pool_destroy (struct MemoryPool *pool);
  *
  * @param pool memory pool to use for the operation
  * @param size number of bytes to allocate
- * @param from_end allocate from end of pool (set to #MHD_YES);
+ * @param from_end allocate from end of pool (set to 'true');
  *        use this for small, persistent allocations that
  *        will never be reallocated
  * @return NULL if the pool cannot support size more
@@ -73,8 +76,8 @@ MHD_pool_destroy (struct MemoryPool *pool);
  */
 void *
 MHD_pool_allocate (struct MemoryPool *pool,
-		   size_t size,
-                   int from_end);
+                   size_t size,
+                   bool from_end);
 
 
 /**

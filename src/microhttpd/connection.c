@@ -791,7 +791,7 @@ MHD_set_connection_value_n_nocheck_ (struct MHD_Connection *connection,
 
   pos = MHD_pool_allocate (connection->pool,
                            sizeof (struct MHD_HTTP_Header),
-                           MHD_YES);
+                           true);
   if (NULL == pos)
     return MHD_NO;
   pos->header = (char *) key;
@@ -1370,7 +1370,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
             }
           buf = MHD_pool_allocate (connection->pool,
                                    size,
-                                   MHD_NO);
+                                   false);
         }
       while (NULL == buf);
       connection->write_buffer_size = size;
@@ -1644,7 +1644,7 @@ build_header_response (struct MHD_Connection *connection)
     {
       data = MHD_pool_allocate (connection->pool,
                                 0,
-                                MHD_YES);
+                                true);
       connection->write_buffer = data;
       connection->write_buffer_append_offset = 0;
       connection->write_buffer_send_offset = 0;
@@ -1880,7 +1880,7 @@ build_header_response (struct MHD_Connection *connection)
   /* produce data */
   data = MHD_pool_allocate (connection->pool,
                             size + 1,
-                            MHD_NO);
+                            false);
   if (NULL == data)
     {
 #ifdef HAVE_MESSAGES
@@ -2338,7 +2338,7 @@ parse_cookie_header (struct MHD_Connection *connection)
     return MHD_YES;
   cpy = MHD_pool_allocate (connection->pool,
                            hdr_len + 1,
-                           MHD_YES);
+                           true);
   if (NULL == cpy)
     {
 #ifdef HAVE_MESSAGES

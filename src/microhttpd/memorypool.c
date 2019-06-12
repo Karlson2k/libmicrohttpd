@@ -27,19 +27,13 @@
 #include "memorypool.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include "mhd_assert.h"
 #if HAVE_SYS_MMAN_H
 #include <sys/mman.h>
 #endif
 #ifdef _WIN32
 #include <memoryapi.h>
-#endif
-
-#ifndef MHD_YES
-#define MHD_YES 1
-#endif
-#ifndef MHD_NO
-#define MHD_NO 0
 #endif
 
 /* define MAP_ANONYMOUS for Mac OS X */
@@ -71,7 +65,7 @@ struct MemoryPool
   /**
    * Pointer to the pool's memory
    */
-  char *memory;
+  uint8_t *memory;
 
   /**
    * Size of the pool.
@@ -89,9 +83,9 @@ struct MemoryPool
   size_t end;
 
   /**
-   * #MHD_NO if pool was malloc'ed, #MHD_YES if mmapped (VirtualAlloc'ed for W32).
+   * 'false' if pool was malloc'ed, 'true' if mmapped (VirtualAlloc'ed for W32).
    */
-  int is_mmap;
+  bool is_mmap;
 };
 
 
@@ -138,11 +132,11 @@ MHD_pool_create (size_t max)
           free (pool);
           return NULL;
         }
-      pool->is_mmap = MHD_NO;
+      pool->is_mmap = false;
     }
   else
     {
-      pool->is_mmap = MHD_YES;
+      pool->is_mmap = true;
     }
   pool->pos = 0;
   pool->end = max;
@@ -164,7 +158,7 @@ MHD_pool_destroy (struct MemoryPool *pool)
 
   mhd_assert (pool->end >= pool->pos);
   mhd_assert (pool->size >= pool->end - pool->pos);
-  if (MHD_NO == pool->is_mmap)
+  if (!pool->is_mmap)
     free (pool->memory);
   else
 #if defined(MAP_ANONYMOUS) && !defined(_WIN32)
@@ -201,7 +195,7 @@ MHD_pool_get_free (struct MemoryPool *pool)
  *
  * @param pool memory pool to use for the operation
  * @param size number of bytes to allocate
- * @param from_end allocate from end of pool (set to #MHD_YES);
+ * @param from_end allocate from end of pool (set to 'true');
  *        use this for small, persistent allocations that
  *        will never be reallocated
  * @return NULL if the pool cannot support size more
@@ -210,7 +204,7 @@ MHD_pool_get_free (struct MemoryPool *pool)
 void *
 MHD_pool_allocate (struct MemoryPool *pool,
 		   size_t size,
-                   int from_end)
+                   bool from_end)
 {
   void *ret;
   size_t asize;
@@ -223,7 +217,7 @@ MHD_pool_allocate (struct MemoryPool *pool,
   if ( (pool->pos + asize > pool->end) ||
        (pool->pos + asize < pool->pos))
     return NULL;
-  if (from_end == MHD_YES)
+  if (from_end)
     {
       ret = &pool->memory[pool->end - asize];
       pool->end -= asize;
@@ -266,8 +260,8 @@ MHD_pool_reallocate (struct MemoryPool *pool,
   mhd_assert (pool->end >= pool->pos);
   mhd_assert (pool->size >= pool->end - pool->pos);
   mhd_assert (old != NULL || old_size == 0);
-  mhd_assert (old == NULL || pool->memory <= (char*)old);
-  mhd_assert (old == NULL || pool->memory + pool->size >= (char*)old + old_size);
+  mhd_assert (old == NULL || pool->memory <= (uint8_t*)old);
+  mhd_assert (old == NULL || pool->memory + pool->size >= (uint8_t*)old + old_size);
   asize = ROUND_TO_ALIGN (new_size);
   if ( (0 == asize) &&
        (0 != new_size) )
@@ -334,8 +328,8 @@ MHD_pool_reset (struct MemoryPool *pool,
   mhd_assert (pool->end >= pool->pos);
   mhd_assert (pool->size >= pool->end - pool->pos);
   mhd_assert (keep != NULL || copy_bytes == 0);
-  mhd_assert (keep == NULL || pool->memory <= (char*)keep);
-  mhd_assert (keep == NULL || pool->memory + pool->size >= (char*)keep + copy_bytes);
+  mhd_assert (keep == NULL || pool->memory <= (uint8_t*)keep);
+  mhd_assert (keep == NULL || pool->memory + pool->size >= (uint8_t*)keep + copy_bytes);
   if ( (NULL != keep) &&
        (keep != pool->memory) )
     {

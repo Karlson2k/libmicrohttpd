@@ -974,7 +974,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
            to another protocol. */
         buf = MHD_pool_allocate (pool,
                                  avail,
-                                 MHD_NO);
+                                 false);
       }
     /* use half the buffer for inbound, half for outbound */
     urh->in_buffer_size = avail / 2;
