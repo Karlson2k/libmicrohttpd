@@ -30,7 +30,8 @@
 #ifndef MEMORYPOOL_H
 #define MEMORYPOOL_H
 
-#include "internal.h"
+#include "mhd_options.h"
+#include <stddef.h>
 
 /**
  * Opaque handle for a memory pool.
