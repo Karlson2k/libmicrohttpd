@@ -202,7 +202,7 @@ testPutInternalThread (unsigned int add_flag)
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | add_flag,
                         port,
                         NULL, NULL, &ahc_echo, &done_flag,
-			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t)(incr_read ? 1024 : (PUT_SIZE * 4)),
+			MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t)(incr_read ? 1024 : (PUT_SIZE * 4 / 3)),
 			MHD_OPTION_END);
   if (d == NULL)
     return 1;
