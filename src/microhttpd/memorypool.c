@@ -33,7 +33,7 @@
 #include <sys/mman.h>
 #endif
 #ifdef _WIN32
-#include <memoryapi.h>
+#include <windows.h>
 #endif
 
 /* define MAP_ANONYMOUS for Mac OS X */
@@ -42,7 +42,7 @@
 #endif
 #if defined(_WIN32)
 #define MAP_FAILED NULL
-#elif ! defined(MAP_FAILED)
+#elif !defined(MAP_FAILED)
 #define MAP_FAILED ((void*)-1)
 #endif
 
@@ -126,8 +126,7 @@ MHD_pool_create (size_t max)
 #else
   pool->memory = MAP_FAILED;
 #endif
-  if ( (MAP_FAILED == pool->memory) ||
-       (NULL == pool->memory))
+  if (MAP_FAILED == pool->memory)
     {
       pool->memory = malloc (max);
       if (NULL == pool->memory)
@@ -285,7 +284,7 @@ MHD_pool_reallocate (struct MemoryPool *pool,
           pool->pos = new_apos;
           /* Zero-out unused part if shrinking */
           if (old_size > new_size)
-            memset (old + new_size, 0, old_size - new_size);
+            memset ((uint8_t*)old + new_size, 0, old_size - new_size);
           return old;
         }
     }
