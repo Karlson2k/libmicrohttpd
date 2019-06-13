@@ -267,29 +267,33 @@ MHD_pool_reallocate (struct MemoryPool *pool,
   /* Blocks "from the end" must not be reallocated */
   mhd_assert (old == NULL || pool->memory + pool->pos > (uint8_t*)old);
 
-  if (new_size + 2 * ALIGN_SIZE < new_size)
-    return NULL; /* Value wrap, too large new_size. */
-
   if (0 != old_size)
-    { /* Need to relocate data */
+    { /* Need to save some data */
       const size_t old_offset = (uint8_t*)old - pool->memory;
-
+      /* Try resizing in-place */
       if (pool->pos == ROUND_TO_ALIGN (old_offset + old_size))
         { /* "old" block is the last allocated block */
           const size_t new_apos = ROUND_TO_ALIGN (old_offset + new_size);
-          if (new_apos > pool->end)
-            return NULL; /* No space */
-
-          pool->pos = new_apos;
-          /* Zero-out unused part if shrinking */
           if (old_size > new_size)
-            memset ((uint8_t*)old + new_size, 0, old_size - new_size);
+            { /* Shrinking in-place, zero-out freed part */
+              memset ((uint8_t*)old + new_size, 0, old_size - new_size);
+            }
+          else
+            { /* Grow in-place, check for enough space. */
+              if ( (new_apos > pool->end) ||
+                   (new_apos < pool->pos) ) /* Value wrap */
+                return NULL; /* No space */
+            }
+          /* Resized in-place */
+          pool->pos = new_apos;
           return old;
         }
     }
   /* Need to allocate new block */
   asize = ROUND_TO_ALIGN (new_size);
-  if (asize > pool->end - pool->pos)
+  if ( ( (0 == asize) &&
+         (0 != new_size) ) || /* Value wrap, too large new_size. */
+       (asize > pool->end - pool->pos) )
     return NULL; /* No space */
 
   new_blc = pool->memory + pool->pos;
@@ -297,9 +301,9 @@ MHD_pool_reallocate (struct MemoryPool *pool,
 
   if (0 != old_size)
     {
-      /* Move data no new block, old block remains allocated */
+      /* Move data to new block, old block remains allocated */
       memcpy (new_blc, old, old_size);
-      /* Zero-out old block */
+      /* Zero-out freed old block */
       memset (old, 0, old_size);
     }
   return new_blc;
