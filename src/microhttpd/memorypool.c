@@ -277,8 +277,7 @@ MHD_pool_reallocate (struct MemoryPool *pool,
       if (pool->pos == ROUND_TO_ALIGN (old_offset + old_size))
         { /* "old" block is the last allocated block */
           const size_t new_apos = ROUND_TO_ALIGN (old_offset + new_size);
-          if ( (new_apos > pool->end) ||
-               (new_apos < pool->pos) ) /* Value wrap */
+          if (new_apos > pool->end)
             return NULL; /* No space */
 
           pool->pos = new_apos;
