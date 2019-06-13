@@ -54,7 +54,7 @@
 /**
  * Round up 'n' to a multiple of ALIGN_SIZE.
  */
-#define ROUND_TO_ALIGN(n) (((n)+(ALIGN_SIZE-1)) & (~(ALIGN_SIZE-1)))
+#define ROUND_TO_ALIGN(n) (((n)+(ALIGN_SIZE-1)) / (ALIGN_SIZE) * (ALIGN_SIZE))
 
 
 /**
