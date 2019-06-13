@@ -268,7 +268,7 @@ MHD_pool_reallocate (struct MemoryPool *pool,
   /* Blocks "from the end" must not be reallocated */
   mhd_assert (old == NULL || pool->memory + pool->pos > (uint8_t*)old);
 
-  if (pool->memory + new_size + 2 * ALIGN_SIZE< pool->memory)
+  if (new_size + 2 * ALIGN_SIZE < new_size)
     return NULL; /* Value wrap, too large new_size. */
 
   if (0 != old_size)
@@ -278,7 +278,8 @@ MHD_pool_reallocate (struct MemoryPool *pool,
       if (pool->pos == ROUND_TO_ALIGN (old_offset + old_size))
         { /* "old" block is the last allocated block */
           const size_t new_apos = ROUND_TO_ALIGN (old_offset + new_size);
-          if (new_apos > pool->end)
+          if ( (new_apos > pool->end) ||
+               (new_apos < pool->pos) ) /* Value wrap */
             return NULL; /* No space */
 
           pool->pos = new_apos;
