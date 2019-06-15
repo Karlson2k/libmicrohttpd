@@ -7185,6 +7185,7 @@ MHD_init(void)
 #ifdef HAVE_FREEBSD_SENDFILE
   MHD_conn_init_static_ ();
 #endif /* HAVE_FREEBSD_SENDFILE */
+  MHD_init_mem_pools_ ();
 }
 
 

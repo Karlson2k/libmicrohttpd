@@ -1202,6 +1202,8 @@ have_inet6=no
 ])
 AC_MSG_RESULT($have_inet6)
 
+MHD_CHECK_FUNC([[sysconf]], [[#include <unitstd.h>]], [[long a = sysconf(0); if (a) return 1;]])
+
 HIDDEN_VISIBILITY_CFLAGS=""
 AS_CASE(["$host"],
   [*-*-mingw*],[

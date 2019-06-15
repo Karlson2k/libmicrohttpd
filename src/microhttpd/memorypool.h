@@ -43,6 +43,12 @@
  */
 struct MemoryPool;
 
+/**
+ * Initilise values for memory pools
+ */
+void
+MHD_init_mem_pools_ (void);
+
 
 /**
  * Create a memory pool.

@@ -35,6 +35,14 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
+#ifdef HAVE_SYSCONF
+#include <unistd.h>
+#if defined(_SC_PAGE_SIZE)
+#define MHD_SC_PAGESIZE _SC_PAGE_SIZE
+#elif defined(_SC_PAGESIZE)
+#define MHD_SC_PAGESIZE _SC_PAGESIZE
+#endif /* _SC_PAGESIZE */
+#endif /* HAVE_SYSCONF */
 
 /* define MAP_ANONYMOUS for Mac OS X */
 #if defined(MAP_ANON) && !defined(MAP_ANONYMOUS)
@@ -56,6 +64,40 @@
  */
 #define ROUND_TO_ALIGN(n) (((n)+(ALIGN_SIZE-1)) / (ALIGN_SIZE) * (ALIGN_SIZE))
 
+#if defined(PAGE_SIZE)
+#define MHD_DEF_PAGE_SIZE_ PAGE_SIZE
+#elif defined(PAGESIZE)
+#define MHD_DEF_PAGE_SIZE_ PAGE_SIZE
+#else  /* ! PAGESIZE */
+#define MHD_DEF_PAGE_SIZE_ (4096)
+#endif /* ! PAGESIZE */
+
+/**
+ * Size of memory page
+ */
+static size_t MHD_sys_page_size_ = MHD_DEF_PAGE_SIZE_; /* Default fallback value */
+
+/**
+ * Initilise values for memory pools
+ */
+void
+MHD_init_mem_pools_ (void)
+{
+#ifdef MHD_SC_PAGESIZE
+  long result;
+  result = sysconf (MHD_SC_PAGESIZE);
+  if (-1 != result)
+    MHD_sys_page_size_ = (size_t) result;
+  else
+    MHD_sys_page_size_ = MHD_DEF_PAGE_SIZE_;
+#elif defined(_WIN32)
+  SYSTEM_INFO si;
+  GetSystemInfo (&si);
+  MHD_sys_page_size_ = (size_t)si.dwPageSize;
+#else
+  MHD_sys_page_size_ = MHD_DEF_PAGE_SIZE_;
+#endif /* _WIN32 */
+}
 
 /**
  * Handle for a memory pool.  Pools are not reentrant and must not be
@@ -101,34 +143,41 @@ struct MemoryPool *
 MHD_pool_create (size_t max)
 {
   struct MemoryPool *pool;
+  size_t alloc_size;
 
-  max = ROUND_TO_ALIGN(max);
   pool = malloc (sizeof (struct MemoryPool));
   if (NULL == pool)
     return NULL;
 #if defined(MAP_ANONYMOUS) || defined(_WIN32)
-  if (max <= 32 * 1024)
+  if ( (max <= 32 * 1024) ||
+       (max < MHD_sys_page_size_ * 4 / 3) )
     pool->memory = MAP_FAILED;
   else
+    {
+      /* Round up allocation to page granularity. */
+      alloc_size = max + MHD_sys_page_size_ - 1;
+      alloc_size -= alloc_size % MHD_sys_page_size_;
 #if defined(MAP_ANONYMOUS) && !defined(_WIN32)
-    pool->memory = mmap (NULL,
-                         max,
-                         PROT_READ | PROT_WRITE,
-			 MAP_PRIVATE | MAP_ANONYMOUS,
-                         -1,
-                         0);
+      pool->memory = mmap (NULL,
+                           alloc_size,
+                           PROT_READ | PROT_WRITE,
+                           MAP_PRIVATE | MAP_ANONYMOUS,
+                           -1,
+                           0);
 #elif defined(_WIN32)
-    pool->memory = VirtualAlloc (NULL,
-                                 max,
-                                 MEM_COMMIT | MEM_RESERVE,
-                                 PAGE_READWRITE);
-#endif
-#else
+      pool->memory = VirtualAlloc (NULL,
+                                   alloc_size,
+                                   MEM_COMMIT | MEM_RESERVE,
+                                   PAGE_READWRITE);
+#endif /* _WIN32 */
+    }
+#else  /* ! _WIN32 && ! MAP_ANONYMOUS */
   pool->memory = MAP_FAILED;
-#endif
+#endif /* ! _WIN32 && ! MAP_ANONYMOUS */
   if (MAP_FAILED == pool->memory)
     {
-      pool->memory = malloc (max);
+      alloc_size = ROUND_TO_ALIGN(max);
+      pool->memory = malloc (alloc_size);
       if (NULL == pool->memory)
         {
           free (pool);
@@ -136,13 +185,15 @@ MHD_pool_create (size_t max)
         }
       pool->is_mmap = false;
     }
+#if defined(MAP_ANONYMOUS) || defined(_WIN32)
   else
     {
       pool->is_mmap = true;
     }
+#endif /* _WIN32 || MAP_ANONYMOUS */
   pool->pos = 0;
-  pool->end = max;
-  pool->size = max;
+  pool->end = alloc_size;
+  pool->size = alloc_size;
   return pool;
 }
 
