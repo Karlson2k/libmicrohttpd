@@ -396,9 +396,39 @@ MHD_pool_reset (struct MemoryPool *pool,
     }
   /* technically not needed, but safer to zero out */
   if (pool->size > copy_bytes)
-    memset (&pool->memory[copy_bytes],
-            0,
-            pool->size - copy_bytes);
+    {
+      size_t to_zero; /** Size of area to zero-out */
+
+      to_zero = pool->size - copy_bytes;
+#ifdef _WIN32
+      if (pool->is_mmap)
+        {
+          size_t to_recommit; /** Size of decommitted and re-committed area. */
+          uint8_t *recommit_addr;
+          /* Round down to page size */
+          to_recommit = to_zero - to_zero % MHD_sys_page_size_;
+          recommit_addr = pool->memory + pool->size - to_recommit;
+
+          /* De-committing and re-committing again clear memory and make
+           * pages free / available for other needs until accessed. */
+          if (VirtualFree (recommit_addr,
+                           to_recommit,
+                           MEM_DECOMMIT))
+            {
+              to_zero -= to_recommit;
+
+              if (recommit_addr != VirtualAlloc (recommit_addr,
+                                                 to_recommit,
+                                                 MEM_COMMIT,
+                                                 PAGE_READWRITE))
+                abort(); /* Serious error, must never happen */
+            }
+        }
+#endif /* _WIN32 */
+      memset (&pool->memory[copy_bytes],
+              0,
+              to_zero);
+    }
   pool->pos = ROUND_TO_ALIGN (new_size);
   pool->end = pool->size;
   return pool->memory;
