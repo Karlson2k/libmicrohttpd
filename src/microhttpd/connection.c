@@ -1342,9 +1342,7 @@ static int
 try_ready_chunked_body (struct MHD_Connection *connection)
 {
   ssize_t ret;
-  char *buf;
   struct MHD_Response *response;
-  size_t size;
   char cbuf[10];                /* 10: max strlen of "%x\r\n" */
   int cblen;
 
@@ -1353,28 +1351,26 @@ try_ready_chunked_body (struct MHD_Connection *connection)
     return MHD_YES;
   if (0 == connection->write_buffer_size)
     {
-      size = MHD_MIN (connection->daemon->pool_size,
-                      2 * (0xFFFFFF + sizeof(cbuf) + 2));
-      do
+      size_t size;
+
+      size = MHD_pool_get_free (connection->pool);
+      if (size < 128)
         {
-          size /= 2;
-          if (size < 128)
-            {
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-              MHD_mutex_unlock_chk_ (&response->mutex);
+          MHD_mutex_unlock_chk_ (&response->mutex);
 #endif
-              /* not enough memory */
-              CONNECTION_CLOSE_ERROR (connection,
-				      _("Closing connection (out of memory)\n"));
-              return MHD_NO;
-            }
-          buf = MHD_pool_allocate (connection->pool,
-                                   size,
-                                   false);
+          /* not enough memory */
+          CONNECTION_CLOSE_ERROR (connection,
+                                  _("Closing connection (out of memory)\n"));
+          return MHD_NO;
         }
-      while (NULL == buf);
+      if ( (2 * (0xFFFFFF + sizeof(cbuf) + 2)) < size)
+        size = 2 * (0xFFFFFF + sizeof(cbuf) + 2);
+      connection->write_buffer = MHD_pool_allocate (connection->pool,
+                                                    size,
+                                                    false);
+      mhd_assert (NULL != connection->write_buffer);
       connection->write_buffer_size = size;
-      connection->write_buffer = buf;
     }
 
   if (0 == response->total_size)
