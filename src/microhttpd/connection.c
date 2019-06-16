@@ -2804,7 +2804,8 @@ process_request_body (struct MHD_Connection *connection)
         connection->remaining_upload_size -= processed_size;
     }
   while (MHD_YES == instant_retry);
-  if (available > 0)
+  if ( (available > 0) &&
+       (buffer_head != connection->read_buffer) )
     memmove (connection->read_buffer,
              buffer_head,
              available);
