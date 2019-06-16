@@ -321,15 +321,16 @@ MHD_pool_reallocate (struct MemoryPool *pool,
   if (0 != old_size)
     { /* Need to save some data */
       const size_t old_offset = (uint8_t*)old - pool->memory;
+      const bool shrinking = (old_size > new_size);
       /* Try resizing in-place */
+      if (shrinking)
+        { /* Shrinking in-place, zero-out freed part */
+          memset ((uint8_t*)old + new_size, 0, old_size - new_size);
+        }
       if (pool->pos == ROUND_TO_ALIGN (old_offset + old_size))
         { /* "old" block is the last allocated block */
           const size_t new_apos = ROUND_TO_ALIGN (old_offset + new_size);
-          if (old_size > new_size)
-            { /* Shrinking in-place, zero-out freed part */
-              memset ((uint8_t*)old + new_size, 0, old_size - new_size);
-            }
-          else
+          if (!shrinking)
             { /* Grow in-place, check for enough space. */
               if ( (new_apos > pool->end) ||
                    (new_apos < pool->pos) ) /* Value wrap */
@@ -339,6 +340,8 @@ MHD_pool_reallocate (struct MemoryPool *pool,
           pool->pos = new_apos;
           return old;
         }
+      if (shrinking)
+        return old; /* Resized in-place, freed part remains allocated */
     }
   /* Need to allocate new block */
   asize = ROUND_TO_ALIGN (new_size);
