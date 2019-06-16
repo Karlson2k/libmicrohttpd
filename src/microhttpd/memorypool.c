@@ -331,6 +331,7 @@ MHD_pool_reset (struct MemoryPool *pool,
 {
   mhd_assert (pool->end >= pool->pos);
   mhd_assert (pool->size >= pool->end - pool->pos);
+  mhd_assert (copy_bytes < new_size);
   mhd_assert (keep != NULL || copy_bytes == 0);
   mhd_assert (keep == NULL || pool->memory <= (uint8_t*)keep);
   mhd_assert (keep == NULL || pool->memory + pool->size >= (uint8_t*)keep + copy_bytes);
@@ -341,17 +342,15 @@ MHD_pool_reset (struct MemoryPool *pool,
         memmove (pool->memory,
                  keep,
                  copy_bytes);
-      keep = pool->memory;
     }
-  pool->end = pool->size;
   /* technically not needed, but safer to zero out */
   if (pool->size > copy_bytes)
     memset (&pool->memory[copy_bytes],
             0,
             pool->size - copy_bytes);
-  if (NULL != keep)
-    pool->pos = ROUND_TO_ALIGN (new_size);
-  return keep;
+  pool->pos = ROUND_TO_ALIGN (new_size);
+  pool->end = pool->size;
+  return pool->memory;
 }
 
 
