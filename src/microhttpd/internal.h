@@ -93,7 +93,7 @@
 
 
 /**
- * Minimum size by which MHD tries to increment read/write buffers.
+ * Minimum reasonable size by which MHD tries to increment read/write buffers.
  * We usually begin with half the available pool space for the
  * IO-buffer, but if absolutely needed we additively grow by the
  * number of bytes given here (up to -- theoretically -- the full pool

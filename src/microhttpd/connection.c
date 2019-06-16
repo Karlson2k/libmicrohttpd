@@ -1575,28 +1575,51 @@ get_date_string (char *date,
  * minimum necessary at that point.
  *
  * @param connection the connection
- * @return #MHD_YES on success, #MHD_NO on failure
+ * @param required set to 'true' if grow is required, i.e. connection
+ *                 will fail if no additional space is granted
+ * @return 'true' on success, 'false' on failure
  */
-static int
-try_grow_read_buffer (struct MHD_Connection *connection)
+static bool
+try_grow_read_buffer (struct MHD_Connection *connection,
+                      bool required)
 {
-  void *buf;
   size_t new_size;
+  size_t avail_size;
 
+  avail_size = MHD_pool_get_free (connection->pool);
+  if (0 == avail_size)
+    return false; /* No more space available */
   if (0 == connection->read_buffer_size)
-    new_size = connection->daemon->pool_size / 2;
+    new_size = avail_size / 2; /* Use half of available buffer for reading */
   else
-    new_size = connection->read_buffer_size + MHD_BUF_INC_SIZE;
-  buf = MHD_pool_reallocate (connection->pool,
-                             connection->read_buffer,
-                             connection->read_buffer_size,
-                             new_size);
-  if (NULL == buf)
-    return MHD_NO;
+    {
+      size_t grow_size;
+
+      grow_size = avail_size / 8;
+      if (MHD_BUF_INC_SIZE > grow_size)
+        { /* Shortage of space */
+          if (!required)
+            return false; /* Grow is not mandatory, leave some space in pool */
+          else
+            {
+              /* Shortage of space, but grow is mandatory */
+              static const size_t small_inc = MHD_BUF_INC_SIZE / 8;
+              if (small_inc < avail_size)
+                grow_size = small_inc;
+              else
+                grow_size = avail_size;
+            }
+        }
+      new_size = connection->read_buffer_size + grow_size;
+    }
   /* we can actually grow the buffer, do it! */
-  connection->read_buffer = buf;
+  connection->read_buffer = MHD_pool_reallocate (connection->pool,
+                                                 connection->read_buffer,
+                                                 connection->read_buffer_size,
+                                                 new_size);
+  mhd_assert (NULL != connection->read_buffer);
   connection->read_buffer_size = new_size;
-  return MHD_YES;
+  return true;
 }
 
 
@@ -2097,7 +2120,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
           /* while reading headers, we always grow the
              read buffer if needed, no size-check required */
           if ( (connection->read_buffer_offset == connection->read_buffer_size) &&
-	       (MHD_NO == try_grow_read_buffer (connection)) )
+	       (!try_grow_read_buffer (connection, true)) )
             {
               transmit_error_response (connection,
                                        (connection->url != NULL)
@@ -2123,9 +2146,10 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
         case MHD_CONNECTION_CONTINUE_SENT:
           if (connection->read_buffer_offset == connection->read_buffer_size)
             {
-              if ((MHD_YES != try_grow_read_buffer (connection)) &&
-                  (0 != (connection->daemon->options &
-                         MHD_USE_INTERNAL_POLLING_THREAD)))
+              const bool internal_poll = (0 != (connection->daemon->options &
+                                         MHD_USE_INTERNAL_POLLING_THREAD));
+              if ( (!try_grow_read_buffer (connection, true)) &&
+                   internal_poll)
                 {
                   /* failed to grow the read buffer, and the
                      client which is supposed to handle the
@@ -2244,8 +2268,7 @@ get_next_header_line (struct MHD_Connection *connection,
     {
       /* not found, consider growing... */
       if ( (connection->read_buffer_offset == connection->read_buffer_size) &&
-	   (MHD_NO ==
-	    try_grow_read_buffer (connection)) )
+	   (!try_grow_read_buffer (connection, true)) )
 	{
 	  transmit_error_response (connection,
 				   (NULL != connection->url)
@@ -3157,7 +3180,8 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
      in buffer to use per system call (if possible) */
   if (connection->read_buffer_offset + connection->daemon->pool_increment >
       connection->read_buffer_size)
-    try_grow_read_buffer (connection);
+    try_grow_read_buffer (connection,
+                          (connection->read_buffer_size == connection->read_buffer_offset));
 
   if (connection->read_buffer_size == connection->read_buffer_offset)
     return; /* No space for receiving data. */
