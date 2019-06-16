@@ -344,8 +344,8 @@ MHD_pool_reallocate (struct MemoryPool *pool,
   asize = ROUND_TO_ALIGN (new_size);
   if ( ( (0 == asize) &&
          (0 != new_size) ) || /* Value wrap, too large new_size. */
-       (asize > pool->end - pool->pos) )
-    return NULL; /* No space */
+       (asize > pool->end - pool->pos) ) /* Not enough space */
+    return NULL;
 
   new_blc = pool->memory + pool->pos;
   pool->pos += asize;
@@ -354,7 +354,7 @@ MHD_pool_reallocate (struct MemoryPool *pool,
     {
       /* Move data to new block, old block remains allocated */
       memcpy (new_blc, old, old_size);
-      /* Zero-out freed old block */
+      /* Zero-out old block */
       memset (old, 0, old_size);
     }
   return new_blc;
