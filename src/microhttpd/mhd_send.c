@@ -288,7 +288,6 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   // -- </pseudo>
 #ifdef WRITEV
   int iovcnt;
-  // TODO: iovec/writev needs no alloc, but consider looking into mmap?
   struct iovec vector[2];
   vector[0].iov_base = header;
   vector[0].iov_len = strlen (header);
@@ -298,8 +297,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   int i = writev (s, vector, iovcnt);
   fprintf (stdout, "i=%d, errno=%d\n", i, errno);
 #else
-  // wait for phonecall clearing this up?
-  // COMMENTARY: not available, send a combination of header + buffer.
+  // not available, send a combination of header + buffer.
   size_t concatsize = header_size + buffer_size;
   const char *concatbuffer;
   concatbuffer = header + buffer;
