@@ -97,7 +97,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   switch (MHD_SendSocketOptions)
   {
   /* No corking */
-  case 0:
+  case MHD_SSO_NO_CORK:
     if (! connection->sk_tcp_nodelay_on)
     {
       opt1 = 1;
@@ -122,7 +122,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
       }
     }
   /* Do corking, do MSG_MORE instead if available */
-  case 1:
+  case MHD_SSO_MAY_CORK:
 #if defined(TCP_CORK) && ! defined(MSG_MORE)
     /*
      * We have TCP_CORK and we don't have MSG_MORE.
@@ -184,7 +184,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     }
 #endif
   /* Cork the header */
-  case 2:
+  case MHD_SSO_HDR_CORK:
     if (something_with_snd_mss > (sizeof (buffer - 10)))
     { // magic guessing?
       if ((! 100_Continue) && (sending_header))
@@ -209,7 +209,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     }
   }
 }
-if (1 == MHD_SendSocketOptions)
+if (MHD_SendSocketOptionsi == 1)
 {
 #ifdef MSG_MORE
   num_bytes = send (s, buffer, buffer_size, MSG_MORE);
@@ -313,12 +313,12 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   size_t opt1, opt2, length;
   switch (MHD_SendSocketOptions)
   {
-  case 0:
+  case MHD_SSO_NO_CORK:
 	  /* No corking */
-  case 1:
-  case 2:
+  case MHD_SSO_MAY_CORK:
+  case MHD_SSO_HDR_CORK:
   }
-if (1 == MHD_SendSocketOptions)
+if (MHD_SendSocketOptions == 1)
 {
 	// bla
 }
