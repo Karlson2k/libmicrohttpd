@@ -102,7 +102,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     {
       opt1 = 1;
       opt2 = sizeof (int);
-      /* 
+      /*
        * TODO: It is possible that Solaris/SunOS depending on
        * the linked library needs a different setsockopt usage:
        * https://stackoverflow.com/questions/48670299/setsockopt-usage-in-linux-and-solaris-invalid-argument-in-solaris
@@ -131,7 +131,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
      */
     if (! connection->sk_tcp_cork_nopush_on)
     {
-      /* 
+      /*
        * corking boolean is false. We want to enable
        * Corking then.
        */
@@ -286,8 +286,19 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   // 	return -1
   // return numBytes
   // -- </pseudo>
-  struct tcp_info *tcp_;
+  struct tcp_info tcp_;
   size_t opt1, opt2, length;
+
+  if (0 ==
+      getsockopt (connection->socket,
+                  TCP_INFO,
+                  IPPROTO_TCP,
+                  &tcp_,
+                  sizeof (tcp_)))
+    {
+      // mss = tcp_.tcpi_snd_mss;
+    }
+
   switch (MHD_SendSocketOptions)
   {
   case MHD_SSO_NO_CORK:
