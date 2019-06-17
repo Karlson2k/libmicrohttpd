@@ -85,7 +85,7 @@ ssize_t
 MHD_send_on_connection_ (struct MHD_Connection *connection,
                          const char *buffer,
                          size_t buffer_size,
-                         enum MHD_SendSocketOptions)
+                         enum MHD_SendSocketOptions options)
 {
   size_t length, opt1, opt2;
   ssize_t num_bytes;
@@ -94,7 +94,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   MHD_socket s = connection->socket_fd;
 
   /* Get socket options, change/set options if necessary. */
-  switch (MHD_SendSocketOptions)
+  switch (options)
   {
   /* No corking */
   case MHD_SSO_NO_CORK:
@@ -258,7 +258,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                           size_t header_size,
                           const char *buffer,
                           size_t buffer_size,
-                          enum MHD_SendSocketOptions)
+                          enum MHD_SendSocketOptions options)
 {
   int errno = 0;
   MHD_socket s = connection->socket_fd;
@@ -299,7 +299,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
       // mss = tcp_.tcpi_snd_mss;
     }
 
-  switch (MHD_SendSocketOptions)
+  switch (options)
   {
   case MHD_SSO_NO_CORK:
     /* No corking */
