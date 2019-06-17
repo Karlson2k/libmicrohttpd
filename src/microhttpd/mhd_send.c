@@ -260,7 +260,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                           size_t buffer_size,
                           enum MHD_SendSocketOptions)
 {
-	int errno = 0;
+  int errno = 0;
   MHD_socket s = connection->socket_fd;
   // -- <pseudo>
   // set socket := connect->MHD_socket
@@ -286,40 +286,39 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   // 	return -1
   // return numBytes
   // -- </pseudo>
-#ifdef WRITEV
-  int iovcnt;
-  struct iovec vector[2];
-  vector[0].iov_base = header;
-  vector[0].iov_len = strlen (header);
-  vector[1].iov_base = buffer;
-  vector[1].iov_len = strlen (buffer);
-  iovcnt = sizeof (vector) / sizeof (struct iovec);
-  int i = writev (s, vector, iovcnt);
-  fprintf (stdout, "i=%d, errno=%d\n", i, errno);
-#else
-  // not available, send a combination of header + buffer.
-  size_t concatsize = header_size + buffer_size;
-  const char *concatbuffer;
-  concatbuffer = header + buffer;
-#ifdef MSG_MORE
-  num_bytes = send (s, concatbuffer, concatsize, MSG_MORE);
-#else
-  num_bytes = send (s, concatbuffer, concatsize);
-#endif
-#endif
   struct tcp_info *tcp_;
   size_t opt1, opt2, length;
   switch (MHD_SendSocketOptions)
   {
   case MHD_SSO_NO_CORK:
-	  /* No corking */
+    /* No corking */
   case MHD_SSO_MAY_CORK:
   case MHD_SSO_HDR_CORK:
   }
-if (MHD_SendSocketOptions == 1)
-{
-	// bla
-}
+  if (MHD_SendSocketOptions == 1)
+  {
+#ifdef WRITEV
+    int iovcnt;
+    struct iovec vector[2];
+    vector[0].iov_base = header;
+    vector[0].iov_len = strlen (header);
+    vector[1].iov_base = buffer;
+    vector[1].iov_len = strlen (buffer);
+    iovcnt = sizeof (vector) / sizeof (struct iovec);
+    int i = writev (s, vector, iovcnt);
+    fprintf (stdout, "i=%d, errno=%d\n", i, errno);
+#else
+    // not available, send a combination of header + buffer.
+    //size_t concatsize = header_size + buffer_size;
+    //const char *concatbuffer;
+    //concatbuffer = header + buffer;
+#ifdef MSG_MORE
+    num_bytes = send (s, header, header_size, MSG_MORE);
+#else
+    num_bytes = send (s, header, header_size);
+#endif
+#endif
+  }
   if (0 != errno)
     return -1;
   if (0 == errno)
