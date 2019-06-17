@@ -93,6 +93,31 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   /* s: the socket. */
   MHD_socket s = connection->socket_fd;
 
+  bool want_cork;
+  bool have_cork;
+  bool have_more;
+
+  switch (options)
+  {
+  case MHD_SSO_NO_CORK:
+    want_cork = false;
+    break;
+  case MHD_SSO_MAY_CORK:
+    want_cork = true;
+    break;
+  case MHD_SSO_HDR_CORK:
+    want_cork = (buffer_size >= 1024) && (buffer_size <= 1220);
+    break;
+  }
+  have_cork = ! connection->sk_tcp_nodelay_on;
+#ifdef MSG_MORE
+  have_more = true;
+#else
+  have_more = false;
+#endif
+
+
+
   /* Get socket options, change/set options if necessary. */
   switch (options)
   {
