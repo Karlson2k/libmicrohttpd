@@ -98,7 +98,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   {
   /* No corking */
   case 0:
-    if (false == connection->sk_tcp_nodelay_on)
+    if (! connection->sk_tcp_nodelay_on)
     {
       opt1 = 1;
       opt2 = sizeof (int);
@@ -129,7 +129,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
      * This means we want to enable corking.
      * Check if our corking boolean is not already set.
      */
-    if (false == connection->sk_tcp_cork_nopush_on)
+    if (! connection->sk_tcp_cork_nopush_on)
     {
       /* 
        * corking boolean is false. We want to enable
@@ -158,7 +158,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
      * for send() and keep the socket on NODELAY.
      * Check if our nodelay boolean is false.
      */
-    if (false == connection->sk_tcp_nodelay_on)
+    if (! connection->sk_tcp_nodelay_on)
     {
       /*
        * If we have MSG_MORE, keep the
@@ -190,7 +190,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
       if ((! 100_Continue) && (sending_header))
       {
         // uncork
-        if (true == connection->sk_tcp_cork_nopush_on)
+        if (connection->sk_tcp_cork_nopush_on)
         {
           opt1 = 0;
           opt2 = sizeof (int);
