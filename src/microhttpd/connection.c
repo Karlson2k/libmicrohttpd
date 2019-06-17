@@ -1995,6 +1995,16 @@ transmit_error_response (struct MHD_Connection *connection,
     }
   connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
   connection->read_closed = true;
+  if (0 != connection->read_buffer_size)
+    {
+      /* Read buffer is not needed anymore, discard it
+       * to free some space for error response. */
+      connection->read_buffer = MHD_pool_reallocate(connection->pool,
+                                                    connection->read_buffer,
+                                                    connection->read_buffer_size,
+                                                    0);
+      connection->read_buffer_size = 0;
+    }
 #ifdef HAVE_MESSAGES
   MHD_DLOG (connection->daemon,
             _("Error processing request (HTTP response code is %u (`%s')). Closing connection.\n"),
