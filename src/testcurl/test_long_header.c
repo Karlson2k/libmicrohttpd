@@ -42,7 +42,7 @@
  * half of this value, so the actual value does not have
  * to be big at all...
  */
-#define VERY_LONG (1024*10)
+#define VERY_LONG (1024*8)
 
 static int oneone;
 
@@ -94,7 +94,7 @@ ahc_echo (void *cls,
 
 
 static int
-testLongUrlGet ()
+testLongUrlGet (size_t buff_size)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -108,7 +108,7 @@ testLongUrlGet ()
     port = 0;
   else
     {
-      port = 1330;
+      port = 1330 + buff_size % 20;
       if (oneone)
         port += 5;
     }
@@ -122,7 +122,7 @@ testLongUrlGet ()
                         &ahc_echo,
                         "GET",
                         MHD_OPTION_CONNECTION_MEMORY_LIMIT,
-                        (size_t) (VERY_LONG / 2), MHD_OPTION_END);
+                        (size_t) buff_size, MHD_OPTION_END);
   if (d == NULL)
     return 1;
   if (0 == port)
@@ -182,7 +182,7 @@ testLongUrlGet ()
 
 
 static int
-testLongHeaderGet ()
+testLongHeaderGet (size_t buff_size)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -197,7 +197,7 @@ testLongHeaderGet ()
     port = 0;
   else
     {
-      port = 1331;
+      port = 1331 + buff_size % 20;
       if (oneone)
         port += 5;
     }
@@ -212,7 +212,7 @@ testLongHeaderGet ()
                         &ahc_echo,
                         "GET",
                         MHD_OPTION_CONNECTION_MEMORY_LIMIT,
-                        (size_t) (VERY_LONG / 2), MHD_OPTION_END);
+                        (size_t) buff_size, MHD_OPTION_END);
   if (d == NULL)
     return 16;
   if (0 == port)
@@ -288,8 +288,10 @@ main (int argc, char *const *argv)
   oneone = has_in_name (argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
-  errorCount += testLongUrlGet ();
-  errorCount += testLongHeaderGet ();
+  errorCount += testLongUrlGet (VERY_LONG / 2);
+  errorCount += testLongUrlGet (VERY_LONG / 2 + 978);
+  errorCount += testLongHeaderGet (VERY_LONG / 2);
+  errorCount += testLongHeaderGet (VERY_LONG / 2 + 1893);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();
