@@ -209,7 +209,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     }
   }
 }
-if (MHD_SendSocketOptionsi == 1)
+if (MHD_SendSocketOptions == 1)
 {
 #ifdef MSG_MORE
   num_bytes = send (s, buffer, buffer_size, MSG_MORE);
