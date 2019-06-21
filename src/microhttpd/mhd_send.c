@@ -218,6 +218,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 #endif
   errno = eno;
   return ret;
+}
 
 
 // * Send header followed by buffer on connection;
@@ -233,38 +234,15 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                           const char *header,
                           size_t header_size,
                           const char *buffer,
-                          size_t buffer_size,
-                          enum MHD_SendSocketOptions options)
+                          size_t buffer_size)
 {
+#if HAVE_WRITEV
   MHD_socket s = connection->socket_fd;
-  bool want_cork, have_cork, have_more;
+  bool have_cork, have_more;
+  int iovcnt;
+  struct iovec vector[2];
 
-  switch (options)
-  {
-  /* No corking */
-  case MHD_SSO_NO_CORK:
-    want_cork = false;
-    break;
-  /* Do corking, do MSG_MORE instead if available */
-  case MHD_SSO_MAY_CORK:
-    want_cork = true;
-    break;
-    /* Cork the header */
-  case MHD_SSO_HDR_CORK:
-    want_cork = (buffer_size >= 1024) && (buffer_size <= 1220);
-    break;
-  }
-  // ! could be avoided by redefining the variable
   have_cork = ! connection->sk_tcp_nodelay_on;
-
-#ifdef MSG_MORE
-  have_more = true;
-#else
-  have_more = false;
-#endif
-
-  bool use_corknopush;
-
 #if HAVE_NODELAY
   use_corknopush = false;
 #elif HAVE_CORK
@@ -273,17 +251,29 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   use_corknopush = true;
 #endif
 
-#if HAVE_WRITEV
-  if ((options == MHD_SSO_HDR_CORK) && want_cork)
+#if HAVE_NODELAY
+  if (! use_corknopush)
   {
-    int iovcnt;
-    struct iovec vector[2];
-    vector[0].iov_base = header;
-    vector[0].iov_len = strlen (header);
-    vector[1].iov_base = buffer;
-    vector[1].iov_len = strlen (buffer);
-    iovcnt = sizeof (vector) / sizeof (struct iovec);
-    ret = writev (s, vector, iovcnt);
+    if (! have_cork && want_cork)
+    {
+      // setsockopt (nodelay-off);
+      setsockopt (s, IPPROTO_TCP, TCP_NODELAY, 0, sizeof (int));
+      connection->sk_tcp_nodelay = false;
+    }
+    // ...
+  }
+#endif
+
+  vector[0].iov_base = header;
+  vector[0].iov_len = strlen (header);
+  vector[1].iov_base = buffer;
+  vector[1].iov_len = strlen (buffer);
+  iovcnt = sizeof (vector) / sizeof (struct iovec);
+  ret = writev (s, vector, iovcnt);
+#if HAVE_CORK
+  {
+    int eno;
+
     eno = errno;
     if ((ret == header_len + buffer_len) && have_cork)
     {
@@ -293,10 +283,12 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
       // connection->sk_tcp_cork_nopush_on = true;
     }
     errno = eno;
-    return ret;
   }
-#endif
-
-  errno = eno;
   return ret;
+#else
+  return MHD_send_on_connection_ (connection,
+                                  header,
+                                  header_size,
+                                  MHD_SSO_HDR_CORK);
+#endif
 }
