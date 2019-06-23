@@ -3815,7 +3815,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     struct pollfd *p;
     MHD_socket ls;
 
-    p = MHD_calloc_ ((2 + num_connections),
+    p = MHD_calloc_ ((2 + (size_t)num_connections),
                      sizeof (struct pollfd));
     if (NULL == p)
       {
