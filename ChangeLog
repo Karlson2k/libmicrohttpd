@@ -1,3 +1,20 @@
+Sun Jun 23 2019 21:27:43 MSK
+	Many fixes and improvments for connection-specific memory pool:
+	* Added asserts;
+	* Added testing of reallocation;
+	* Reallocation code rewritten to avoid extra allocation, when
+	  possible to reuse already allocated memory;
+	* Large memory pools aligned to system page size;
+	* Large memory pools on W32 are cleared more securely after use,
+	  optimised usage of system memory.
+	Better handled connection's memory shortage situations:
+	* error response could be sent to client even if all buffer space
+	  was used;
+	* if buffer space become low when receiving, do not allocate last
+	  buffer space and use small receive blocks instead.
+	Improved sending speed by using all available buffer space for
+	sending. -EG
+
 Sun Jun 09 2019 20:27:04 MSK
 	Releasing libmicrohttpd 0.9.64. -EG
 
