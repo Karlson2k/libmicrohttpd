@@ -30,6 +30,13 @@
 // TODO: sendfile() wrappers.
 
 #include "platform.h"
+#include "internal.h"
+
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif
+#include <errno.h>
+
 
 // NOTE: TCP_CORK == TCP_NOPUSH in FreeBSD.
 //       TCP_CORK is Linux.
@@ -98,6 +105,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   bool want_cork, have_cork, have_more;
   /* The socket. */
   MHD_socket s = connection->socket_fd;
+  int eno, ret, optval;
 
   // new code...
   /* Get socket options, change/set options if necessary. */
@@ -128,29 +136,29 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 
   bool use_corknopush;
 
-#if HAVE_NODELAY
+#if TCP_NODELAY
   use_corknopush = false;
-#elif HAVE_CORK
+#elif TCP_CORK
   use_corknopush = true;
-#elif HAVE_NOPUSH
+#elif TCP_NOPUSH
   use_corknopush = true;
 #endif
 
-#if HAVE_CORK
+#if TCP_CORK
   if (use_corknopush)
   {
     if (have_cork && ! want_cork)
     {
-      setsockopt (s, IPPROTO_TCP, TCP_CORK, 1, sizeof (int)) ||
-        (setsockopt (s, IPPROTO_TCP, TCP_NODELAY, 1, sizeof (int)) &&connection
-           ->sk_tcp_nodelay = true);
+      optval = 1;
+      setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_CORK, &optval, sizeof (&optval)) ||
+        (setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof (&optval)) && (connection->sk_tcp_nodelay = true));
       //setsockopt (cork-on); // or nodelay on // + update connection->sk_tcp_nodelay_on
       // When we have CORK, we can have NODELAY on the same system,
       // at least since Linux 2.2 and both can be combined since
       // Linux 2.5.71. See tcp(7). No other system in 2019-06 has TCP_CORK.
     }
   }
-#elif HAVE_NOPUSH
+#elif TCP_NOPUSH
   /*
  * TCP_NOPUSH on FreeBSD is equal to cork on Linux, with the
  * exception that we know that TCP_NOPUSH will definitely
@@ -160,40 +168,42 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   {
     if (have_cork && ! want_cork)
     {
-      setsockopt (s, IPPROTO_TCP, TCP_NOPUSH, 1, sizeof (int));
+      optval = 1;
+      setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NOPUSH, &optval, sizeof (&optval));
       // TODO: set corknopush to true here?
       // connection->sk_tcp_cork_nopush_on = true;
     }
   }
 #endif
-#if HAVE_NODELAY
+#if TCP_NODELAY
   if (! use_corknopush)
   {
     if (! have_cork && want_cork)
     {
+      optval = 0;
       // setsockopt (nodelay-off);
-      setsockopt (s, IPPROTO_TCP, TCP_NODELAY, 0, sizeof (int));
-      connection->sk_tcp_nodelay = false;
+      setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof (&optval));
+      connection->sk_tcp_nodelay_on = false;
     }
     // ...
   }
 #endif
 
 
-  ret = send (s, buffer, buffer_size, want_cork ? MSG_MORE : 0);
+  ret = send (connection->socket_fd, buffer, buffer_size, want_cork ? MSG_MORE : 0);
   eno = errno;
-#if HAVE_CORK
+#if TCP_CORK
   if (use_corknopush)
   {
     if (! have_cork && want_cork && ! have_more)
     {
+      optval = 0;
       //setsockopt (cork-off); // or nodelay off // + update connection->sk_tcp_nodelay_on
-      setsockopt (s, IPPROTO_TCP, TCP_CORK, 0, sizeof (int)) ||
-        (setsockopt (s, IPPROTO_TCP, TCP_NODELAY, 0, sizeof (int)) &&connection
-           ->sk_tcp_nodelay_on = false);
+      setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_CORK, &optval, sizeof (&optval)) ||
+        (setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof (&optval)) && (connection->sk_tcp_nodelay_on = false));
     }
   }
-#elif HAVE_NOPUSH
+#elif TCP_NOPUSH
   // We don't have MSG_MORE.
   if (use_corknopush)
   {
@@ -201,17 +211,18 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   }
 #endif
 
-#if HAVE_NODELAY
+#if TCP_NODELAY
   if (! use_corknopush)
   {
     if (have_cork && ! want_cork)
     {
+      optval = 1;
       // setsockopt (nodelay - on);
-      setsockopt (s,
+      setsockopt (connection->socket_fd,
                   IPPROTO_TCP,
                   TCP_NODELAY,
-                  1,
-                  sizeof (int)) &&connection->sk_tcp_nodelay_on = true;
+                  &optval,
+                  sizeof (&optval)) && (connection->sk_tcp_nodelay_on = true);
     }
     // ...
   }
@@ -239,26 +250,26 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 #if HAVE_WRITEV
   MHD_socket s = connection->socket_fd;
   bool have_cork, have_more;
-  int iovcnt;
+  int iovcnt, optval;
   struct iovec vector[2];
 
   have_cork = ! connection->sk_tcp_nodelay_on;
-#if HAVE_NODELAY
+#if TCP_NODELAY
   use_corknopush = false;
-#elif HAVE_CORK
+#elif TCP_CORK
   use_corknopush = true;
-#elif HAVE_NOPUSH
+#elif TCP_NOPUSH
   use_corknopush = true;
 #endif
 
-#if HAVE_NODELAY
+#if TCP_NODELAY
   if (! use_corknopush)
   {
     if (! have_cork && want_cork)
     {
+      optval = 0;
       // setsockopt (nodelay-off);
-      setsockopt (s, IPPROTO_TCP, TCP_NODELAY, 0, sizeof (int));
-      connection->sk_tcp_nodelay = false;
+      setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof (&optval)) && (connection->sk_tcp_nodelay = false);
     }
     // ...
   }
@@ -269,17 +280,18 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   vector[1].iov_base = buffer;
   vector[1].iov_len = strlen (buffer);
   iovcnt = sizeof (vector) / sizeof (struct iovec);
-  ret = writev (s, vector, iovcnt);
-#if HAVE_CORK
+  ret = writev (connection->socket_fd, vector, iovcnt);
+#if TCP_CORK
   {
     int eno;
 
     eno = errno;
     if ((ret == header_len + buffer_len) && have_cork)
     {
+      optval = 0;
       // response complete, definitely uncork!
       // setsockopt (cork-off);
-      setsockopt (s, IPPROTO_TCP, TCP_CORK, 0, sizeof (int));
+      setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_CORK, &optval, sizeof (&optval));
       // connection->sk_tcp_cork_nopush_on = true;
     }
     errno = eno;
