@@ -284,7 +284,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 #if HAVE_WRITEV
   MHD_socket s = connection->socket_fd;
   bool have_cork, have_more;
-  int iovcnt, optval;
+  int iovcnt, optval, eno;
   struct iovec vector[2];
 
   have_cork = ! connection->sk_tcp_nodelay_on;
@@ -322,7 +322,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   ret = writev (connection->socket_fd, vector, iovcnt);
 #if TCP_CORK
   {
-    int eno;
+    eno;
 
     eno = errno;
     if ((ret == header_len + buffer_len) && have_cork)
@@ -338,6 +338,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
     errno = eno;
   }
   return ret;
+#endif
 #else
   return MHD_send_on_connection_ (connection,
                                   header,
