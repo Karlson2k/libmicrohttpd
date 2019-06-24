@@ -150,8 +150,17 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     if (have_cork && ! want_cork)
     {
       optval = 1;
-      setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_CORK, &optval, sizeof (&optval)) ||
-        (setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof (&optval)) && (connection->sk_tcp_nodelay = true));
+      setsockopt (connection->socket_fd,
+                  IPPROTO_TCP,
+                  TCP_CORK,
+                  &optval,
+                  sizeof (&optval)) ||
+        (setsockopt (connection->socket_fd,
+                     IPPROTO_TCP,
+                     TCP_NODELAY,
+                     &optval,
+                     sizeof (&optval)) &&
+         (connection->sk_tcp_nodelay = true));
       //setsockopt (cork-on); // or nodelay on // + update connection->sk_tcp_nodelay_on
       // When we have CORK, we can have NODELAY on the same system,
       // at least since Linux 2.2 and both can be combined since
@@ -169,7 +178,11 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     if (have_cork && ! want_cork)
     {
       optval = 1;
-      setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NOPUSH, &optval, sizeof (&optval));
+      setsockopt (connection->socket_fd,
+                  IPPROTO_TCP,
+                  TCP_NOPUSH,
+                  &optval,
+                  sizeof (&optval));
       // TODO: set corknopush to true here?
       // connection->sk_tcp_cork_nopush_on = true;
     }
@@ -182,16 +195,27 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     {
       optval = 0;
       // setsockopt (nodelay-off);
-      setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof (&optval));
+      setsockopt (connection->socket_fd,
+                  IPPROTO_TCP,
+                  TCP_NODELAY,
+                  &optval,
+                  sizeof (&optval));
       connection->sk_tcp_nodelay_on = false;
     }
     // ...
   }
 #endif
 
-
-  ret = send (connection->socket_fd, buffer, buffer_size, want_cork ? MSG_MORE : 0);
+#if MSG_MORE
+  ret = send (connection->socket_fd,
+              buffer,
+              buffer_size,
+              (want_cork ? MSG_MORE : 0));
+#else
+  ret = send (connection->socket_fd, buffer, buffer_size, 0);
+#endif
   eno = errno;
+
 #if TCP_CORK
   if (use_corknopush)
   {
@@ -199,8 +223,17 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     {
       optval = 0;
       //setsockopt (cork-off); // or nodelay off // + update connection->sk_tcp_nodelay_on
-      setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_CORK, &optval, sizeof (&optval)) ||
-        (setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof (&optval)) && (connection->sk_tcp_nodelay_on = false));
+      setsockopt (connection->socket_fd,
+                  IPPROTO_TCP,
+                  TCP_CORK,
+                  &optval,
+                  sizeof (&optval)) ||
+        (setsockopt (connection->socket_fd,
+                     IPPROTO_TCP,
+                     TCP_NODELAY,
+                     &optval,
+                     sizeof (&optval)) &&
+         (connection->sk_tcp_nodelay_on = false));
     }
   }
 #elif TCP_NOPUSH
@@ -222,7 +255,8 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                   IPPROTO_TCP,
                   TCP_NODELAY,
                   &optval,
-                  sizeof (&optval)) && (connection->sk_tcp_nodelay_on = true);
+                  sizeof (&optval)) &&
+        (connection->sk_tcp_nodelay_on = true);
     }
     // ...
   }
@@ -269,7 +303,12 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
     {
       optval = 0;
       // setsockopt (nodelay-off);
-      setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof (&optval)) && (connection->sk_tcp_nodelay = false);
+      setsockopt (connection->socket_fd,
+                  IPPROTO_TCP,
+                  TCP_NODELAY,
+                  &optval,
+                  sizeof (&optval)) &&
+        (connection->sk_tcp_nodelay = false);
     }
     // ...
   }
@@ -288,11 +327,13 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
     eno = errno;
     if ((ret == header_len + buffer_len) && have_cork)
     {
-      optval = 0;
       // response complete, definitely uncork!
-      // setsockopt (cork-off);
-      setsockopt (connection->socket_fd, IPPROTO_TCP, TCP_CORK, &optval, sizeof (&optval));
-      // connection->sk_tcp_cork_nopush_on = true;
+      optval = 0;
+      setsockopt (connection->socket_fd,
+                  IPPROTO_TCP,
+                  TCP_CORK,
+                  &optval,
+                  sizeof (&optval));
     }
     errno = eno;
   }
