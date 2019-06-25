@@ -29,12 +29,11 @@
 
 #include "platform.h"
 #include "internal.h"
-
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #endif /* HAVE_STDBOOL_H */
-
 #include <errno.h>
+#include "mhd_sockets.h"
 
 enum MHD_SendSocketOptions
 {
