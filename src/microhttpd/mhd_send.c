@@ -29,14 +29,7 @@
 // are used.
 // TODO: sendfile() wrappers.
 
-#include "platform.h"
-#include "internal.h"
-
-#ifdef HAVE_STDBOOL_H
-#include <stdbool.h>
-#endif
-#include <errno.h>
-
+#include "mhd_send.h"
 
 // NOTE: TCP_CORK == TCP_NOPUSH in FreeBSD.
 //       TCP_CORK is Linux.
@@ -46,23 +39,6 @@
 // TODO: It is possible that Solaris/SunOS depending on
 // the linked library needs a different setsockopt usage:
 // https://stackoverflow.com/questions/48670299/setsockopt-usage-in-linux-and-solaris-invalid-argument-in-solaris
-
-enum MHD_SendSocketOptions
-{
-  /* definitely no corking (use NODELAY, or explicitly disable cork) */
-  MHD_SSO_NO_CORK = 0,
-  /* should enable corking (use MSG_MORE, or explicitly enable cork) */
-  MHD_SSO_MAY_CORK = 1,
-  /*
-   * consider tcpi_snd_mss and consider not corking for the header
-   * part if the size of the header is close to the MSS.
-   * Only used if we are NOT doing 100 Continue and are still
-   * sending the header (provided in full as the buffer to
-   * MHD_send_on_connection_ or as the header to
-   * MHD_send_on_connection2_).
-   */
-  MHD_SSO_HDR_CORK = 2
-};
 
 /*
  * https://svnweb.freebsd.org/base/head/sys/netinet/tcp_usrreq.c?view=markup&pathrev=346360
