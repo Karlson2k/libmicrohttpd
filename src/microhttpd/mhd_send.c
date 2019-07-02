@@ -85,6 +85,17 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
+  // error handling from send_param_adapter()
+  if ( (MHD_INVALID_SOCKET == s) ||
+       (MHD_CONNECTION_CLOSED == connection->state) )
+    {
+      return MHD_ERR_NOTCONN_;
+    }
+
+  // from send_param_adapter()
+  if (buffer_size > MHD_SCKT_SEND_MAX_SIZE_)
+    buffer_size = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
+
   // new code...
   /* Get socket options, change/set options if necessary. */
   switch (options)

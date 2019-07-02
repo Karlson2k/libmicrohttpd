@@ -34,6 +34,7 @@
 #endif /* HAVE_STDBOOL_H */
 #include <errno.h>
 #include "mhd_sockets.h"
+#include "connection.h"
 
 enum MHD_SendSocketOptions
 {
