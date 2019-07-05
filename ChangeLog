@@ -1,5 +1,8 @@
+Fri Jul 05 2019 22:30:40 MSK
+	Releasing libmicrohttpd 0.9.65. -EG
+
 Sun Jun 23 2019 21:27:43 MSK
-	Many fixes and improvments for connection-specific memory pool:
+	Many fixes and improvements for connection-specific memory pool:
 	* Added asserts;
 	* Added testing of reallocation;
 	* Reallocation code rewritten to avoid extra allocation, when
