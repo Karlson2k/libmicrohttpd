@@ -202,6 +202,22 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   ret = send (connection->socket_fd, buffer, buffer_size, 0);
 #endif
 
+  /*
+  // pseudo-code for gnutls corking
+  if (have_more_data && !corked)
+    gnutls_record_cork(connection->tls_session);
+  if (!have_more_data && corked)
+    gnutls_record_uncork(connection->tls_session);
+  */
+
+  /* for TLS*/
+  /*
+  if (0 != (daemon->options & MHD_USE_TLS))
+    TLS;
+  else
+    no-TLS;
+  */
+
   // shouldn't we return 0 or -1? Why re-use the _ERR_ functions?
   // error handling from send_param_adapter():
   if (0 > ret)
@@ -222,7 +238,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     return MHD_ERR_NOTCONN_;
   }
 #if EPOLL_SUPPORT
-  else if (i > (size_t) ret)
+  else if (buffer_size > (size_t) ret)
     connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
     //  return ret; // should be return at the end of the function?
