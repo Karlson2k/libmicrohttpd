@@ -78,10 +78,14 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   //size_t length, opt1, opt2;
   // ssize_t num_bytes;
   //int errno = 0;
-  bool want_cork, have_cork, have_more;
+  bool want_cork;
+  bool have_cork;
+  bool have_more;
   /* The socket. */
   MHD_socket s = connection->socket_fd;
-  int eno, ret, optval;
+  int eno;
+  int ret;
+  int optval;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
   const int err = MHD_socket_get_error_ ();
@@ -311,8 +315,10 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 {
 #if HAVE_WRITEV
   MHD_socket s = connection->socket_fd;
-  bool have_cork, have_more;
-  int iovcnt, eno;
+  bool have_cork;
+  bool have_more;
+  int iovcnt;
+  int eno;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   struct iovec vector[2];
 
