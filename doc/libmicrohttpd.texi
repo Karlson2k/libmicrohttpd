@@ -892,6 +892,19 @@ information provided.  The callback is expected to access the SNI data
 using gnutls_server_name_get().  Using this option requires GnuTLS 3.0
 or higher.
 
+@item MHD_OPTION_HTTPS_CERT_CALLBACK2
+@cindex SSL
+@cindex TLS
+@cindex SNI
+@cindex OCSP
+Use a callback to determine which X.509 certificate should be
+used for a given HTTPS connection.  This option should be
+followed by a argument of type `gnutls_certificate_retrieve_function3 *`.
+This option provides an
+alternative/extension to #MHD_OPTION_HTTPS_CERT_CALLBACK.
+You must use this version if you want to use OCSP stapling.
+Using this option requires GnuTLS 3.6.3 or higher.
+
 @item MHD_OPTION_GNUTLS_PSK_CRED_HANDLER
 @cindex SSL
 @cindex TLS
