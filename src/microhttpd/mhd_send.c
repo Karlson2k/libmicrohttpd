@@ -90,13 +90,13 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
   const int err = MHD_socket_get_error_ ();
 
-  // error handling from send_param_adapter()
+  /* error handling from send_param_adapter() */
   if ((MHD_INVALID_SOCKET == s) || (MHD_CONNECTION_CLOSED == connection->state))
   {
     return MHD_ERR_NOTCONN_;
   }
 
-  // from send_param_adapter()
+  /* from send_param_adapter() */
   if (buffer_size > MHD_SCKT_SEND_MAX_SIZE_)
     buffer_size = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
 
@@ -142,17 +142,18 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   {
     if (have_cork && ! want_cork)
     {
-      setsockopt (connection->socket_fd,
-                  IPPROTO_TCP,
-                  TCP_CORK,
-                  (const void *) &on_val,
-                  sizeof (on_val)) ||
-        (setsockopt (connection->socket_fd,
-                     IPPROTO_TCP,
-                     TCP_NODELAY,
-                     (const void *) &on_val,
-                     sizeof (on_val)) &&
-         (connection->sk_tcp_nodelay = true));
+      if (0 == setsockopt (connection->socket_fd,
+                           IPPROTO_TCP,
+                           TCP_CORK,
+                           (const void *) &on_val,
+                           sizeof (on_val)))
+      else if (0 == setsockopt (connection->socket_fd,
+                                IPPROTO_TCP,
+                                TCP_NODELAY,
+                                (const void *) &on_val,
+                                sizeof (on_val))) {
+        connection->sk_tcp_nodelay = true;
+      }
       //setsockopt (cork-on); // or nodelay on // + update connection->sk_tcp_nodelay_on
       // When we have CORK, we can have NODELAY on the same system,
       // at least since Linux 2.2 and both can be combined since
@@ -215,12 +216,11 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   */
 
   /* for TLS*/
-  /*
-  if (0 != (daemon->options & MHD_USE_TLS))
-    TLS;
+
+  if (0 != (connection->daemon->options & MHD_USE_TLS))
+    /* old TLS code here */;
   else
     no-TLS;
-  */
 
   // shouldn't we return 0 or -1? Why re-use the _ERR_ functions?
   // error handling from send_param_adapter():
@@ -256,17 +256,18 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     if (! have_cork && want_cork && ! have_more)
     {
       //setsockopt (cork-off); // or nodelay off // + update connection->sk_tcp_nodelay_on
-      setsockopt (connection->socket_fd,
-                  IPPROTO_TCP,
-                  TCP_CORK,
-                  (const void *) &off_val,
-                  sizeof (off_val)) ||
-        (setsockopt (connection->socket_fd,
-                     IPPROTO_TCP,
-                     TCP_NODELAY,
-                     (const void *) &off_val,
-                     sizeof (off_val)) &&
-         (connection->sk_tcp_nodelay_on = false));
+      if (0 == setsockopt (connection->socket_fd,
+                           IPPROTO_TCP,
+                           TCP_CORK,
+                           (const void *) &off_val,
+                           sizeof (off_val)))
+      else if (0 == setsockopt (connection->socket_fd,
+                                IPPROTO_TCP,
+                                TCP_NODELAY,
+                                (const void *) &off_val,
+                                sizeof (off_val))) {
+        connection->sk_tcp_nodelay_on = false;
+      }
     }
   }
 #elif TCP_NOPUSH
@@ -283,12 +284,13 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     if (have_cork && ! want_cork)
     {
       // setsockopt (nodelay - on);
-      setsockopt (connection->socket_fd,
-                  IPPROTO_TCP,
-                  TCP_NODELAY,
-                  (const void *) &on_val,
-                  sizeof (on_val)) &&
-        (connection->sk_tcp_nodelay_on = true);
+      if (0 == setsockopt (connection->socket_fd,
+                           IPPROTO_TCP,
+                           TCP_NODELAY,
+                           (const void *) &on_val,
+                           sizeof (on_val))) {
+        connection->sk_tcp_nodelay_on = true;
+      }
     }
     // ...
   }
@@ -337,12 +339,13 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
     if (! have_cork && want_cork)
     {
       // setsockopt (nodelay-off);
-      setsockopt (connection->socket_fd,
-                  IPPROTO_TCP,
-                  TCP_NODELAY,
-                  (const void *) &off_val,
-                  sizeof (off_val)) &&
-        (connection->sk_tcp_nodelay = false);
+      if (0 == setsockopt (connection->socket_fd,
+                           IPPROTO_TCP,
+                           TCP_NODELAY,
+                           (const void *) &off_val,
+                           sizeof (off_val))) {
+        connection->sk_tcp_nodelay = false;
+      }
     }
     // ...
   }
