@@ -35,6 +35,7 @@
 #include <errno.h>
 #include "mhd_sockets.h"
 #include "connection.h"
+#include "connection_https.h"
 
 enum MHD_SendSocketOptions
 {

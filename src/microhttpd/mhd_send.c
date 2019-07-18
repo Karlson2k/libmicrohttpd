@@ -218,9 +218,9 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   /* for TLS*/
 
   if (0 != (connection->daemon->options & MHD_USE_TLS))
-    /* old TLS code here */;
+    send_tls_adapter(connection, buffer, buffer_size);
   else
-    no-TLS;
+    ;
 
   // shouldn't we return 0 or -1? Why re-use the _ERR_ functions?
   // error handling from send_param_adapter():
