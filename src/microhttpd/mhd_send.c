@@ -130,7 +130,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 #endif
 
 #if TCP_CORK
-  if ((use_corknopush) && (have_cork && ! want_cork))
+  if ((! using_tls) && (use_corknopush) && (have_cork && ! want_cork))
     {
       if (0 == setsockopt (s,
                            IPPROTO_TCP,
@@ -156,7 +156,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   /* TCP_NOPUSH on FreeBSD is equal to cork on Linux, with the
    * exception that we know that TCP_NOPUSH will definitely
    * exist and we can disregard TCP_NODELAY unless requested. */
-  if ((use_corknopush) && (have_cork && ! want_cork))
+  if ((! using_tls) && (use_corknopush) && (have_cork && ! want_cork))
     {
       if (0 == setsockopt (s,
                            IPPROTO_TCP,
@@ -169,7 +169,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     }
 #endif
 #if TCP_NODELAY
-  if ((! use_corknopush) && (! have_cork && want_cork))
+  if ((! using_tls) && (! use_corknopush) && (! have_cork && want_cork))
     {
       if (0 == setsockopt (s,
                            IPPROTO_TCP,
@@ -250,9 +250,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 #endif /* EPOLL_SUPPORT */
   }
 #if TCP_CORK
-  if (use_corknopush)
-  {
-    if (! have_cork && want_cork && ! have_more)
+  if ((! using_tls) && (use_corknopush) && (! have_cork && want_cork && ! have_more))
     {
       if (0 == setsockopt (s,
                            IPPROTO_TCP,
@@ -271,19 +269,16 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
         connection->sk_tcp_nodelay_on = false;
       }
     }
-  }
 #elif TCP_NOPUSH
   // We don't have MSG_MORE.
   if (use_corknopush)
   {
-    // ...
+    if (! have_more && )// ...
   }
 #endif
 
 #if TCP_NODELAY
-  if (! use_corknopush)
-  {
-    if (have_cork && ! want_cork)
+  if ((! using_tls) && (! use_corknopush) && (have_cork && ! want_cork))
     {
       if (0 == setsockopt (s,
                            IPPROTO_TCP,
@@ -294,7 +289,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
         connection->sk_tcp_nodelay_on = true;
       }
     }
-  }
 #endif
 
   /*
