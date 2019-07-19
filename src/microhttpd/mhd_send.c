@@ -75,12 +75,10 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                          size_t buffer_size,
                          enum MHD_SendSocketOptions options)
 {
-  //size_t length, opt1, opt2;
-  // ssize_t num_bytes;
-  //int errno = 0;
   bool want_cork;
   bool have_cork;
   bool have_more;
+  bool use_corknopush;
   bool using_tls = false;
   /* The socket. */
   MHD_socket s = connection->socket_fd;
@@ -127,8 +125,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 #else
   have_more = false;
 #endif
-
-  bool use_corknopush;
 
 #if TCP_NODELAY
   use_corknopush = false;
@@ -180,8 +176,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                   TCP_NOPUSH,
                   (const void *) &on_val,
                   sizeof (on_val));
-      // TODO: set corknopush to true here?
-      // connection->sk_tcp_cork_nopush_on = true;
+      connection->sk_tcp_nodelay_on = false;
     }
   }
 #endif
@@ -275,13 +270,17 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
       if (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
                            TCP_CORK,
-                           (const void *) &off_val,
+                           (const void *) &off_val, // WHY OFF?
                            sizeof (off_val)))
+      {
+        connection->sk_tcp_nodelay_on = true; // ???
+      }
       else if (0 == setsockopt (connection->socket_fd,
                                 IPPROTO_TCP,
                                 TCP_NODELAY,
                                 (const void *) &off_val,
-                                sizeof (off_val))) {
+                                sizeof (off_val)))
+      {
         connection->sk_tcp_nodelay_on = false;
       }
     }
@@ -304,7 +303,8 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                            IPPROTO_TCP,
                            TCP_NODELAY,
                            (const void *) &on_val,
-                           sizeof (on_val))) {
+                           sizeof (on_val)))
+      {
         connection->sk_tcp_nodelay_on = true;
       }
     }
