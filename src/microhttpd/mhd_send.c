@@ -145,10 +145,10 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
       if (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
                            TCP_CORK,
-                           (const void *) &on_val,
-                           sizeof (on_val)))
+                           (const void *) &off_val,
+                           sizeof (off_val)))
       {
-        connection->sk_tcp_nodelay = false;
+        connection->sk_tcp_nodelay = true;
       }
       else if (0 == setsockopt (connection->socket_fd,
                                 IPPROTO_TCP,
