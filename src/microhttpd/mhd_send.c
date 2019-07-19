@@ -99,7 +99,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   if (buffer_size > MHD_SCKT_SEND_MAX_SIZE_)
     buffer_size = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
 
-  // new code...
   /* Get socket options, change/set options if necessary. */
   switch (options)
   {
@@ -148,11 +147,15 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                            TCP_CORK,
                            (const void *) &on_val,
                            sizeof (on_val)))
+      {
+        connection->sk_tcp_nodelay = false;
+      }
       else if (0 == setsockopt (connection->socket_fd,
                                 IPPROTO_TCP,
                                 TCP_NODELAY,
                                 (const void *) &on_val,
-                                sizeof (on_val))) {
+                                sizeof (on_val)))
+      {
         connection->sk_tcp_nodelay = true;
       }
       //setsockopt (cork-on); // or nodelay on // + update connection->sk_tcp_nodelay_on
@@ -266,14 +269,13 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   {
     if (! have_cork && want_cork && ! have_more)
     {
-      //setsockopt (cork-off); // or nodelay off // + update connection->sk_tcp_nodelay_on
       if (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
                            TCP_CORK,
-                           (const void *) &off_val, // WHY OFF?
-                           sizeof (off_val)))
+                           (const void *) &on_val,
+                           sizeof (on_val)))
       {
-        connection->sk_tcp_nodelay_on = true; // ???
+        connection->sk_tcp_nodelay_on = false;
       }
       else if (0 == setsockopt (connection->socket_fd,
                                 IPPROTO_TCP,
