@@ -207,49 +207,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   ret = send (connection->socket_fd, buffer, buffer_size, 0);
 #endif
 
-  /*
-  // pseudo-code for gnutls corking
-  if (have_more_data && !corked)
-    gnutls_record_cork(connection->tls_session);
-  if (!have_more_data && corked)
-    gnutls_record_uncork(connection->tls_session);
-  */
-
-  /* for TLS*/
-
-  if (0 != (connection->daemon->options & MHD_USE_TLS))
-    send_tls_adapter(connection, buffer, buffer_size);
-  else
-    ;
-
-  // shouldn't we return 0 or -1? Why re-use the _ERR_ functions?
-  // error handling from send_param_adapter():
-  if (0 > ret)
-  {
-    if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
-    {
-#if EPOLL_SUPPORT
-      /* EAGAIN, no longer write-ready */
-      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
-#endif /* EPOLL_SUPPORT */
-      return MHD_ERR_AGAIN_;
-    }
-    if (MHD_SCKT_ERR_IS_EINTR_ (err))
-      return MHD_ERR_AGAIN_;
-    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
-      return MHD_ERR_CONNRESET_;
-    /* Treat any other error as hard error. */
-    return MHD_ERR_NOTCONN_;
-  }
-#if EPOLL_SUPPORT
-  else if (buffer_size > (size_t) ret)
-    connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
-#endif /* EPOLL_SUPPORT */
-    //  return ret; // should be return at the end of the function?
-
-    // previous error save:
-    // eno = errno;
-
 #if TCP_CORK
   if (use_corknopush)
   {
@@ -295,6 +252,48 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     // ...
   }
 #endif
+
+  /*
+  // pseudo-code for gnutls corking
+  if (have_more_data && !corked)
+    gnutls_record_cork(connection->tls_session);
+  if (!have_more_data && corked)
+    gnutls_record_uncork(connection->tls_session);
+  */
+
+  /* for TLS*/
+
+  if (0 != (connection->daemon->options & MHD_USE_TLS))
+    send_tls_adapter(connection, buffer, buffer_size);
+  else {
+
+    // shouldn't we return 0 or -1? Why re-use the _ERR_ functions?
+    // error handling from send_param_adapter():
+    if (0 > ret)
+      {
+        if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
+          {
+#if EPOLL_SUPPORT
+            /* EAGAIN, no longer write-ready */
+            connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+            return MHD_ERR_AGAIN_;
+          }
+        if (MHD_SCKT_ERR_IS_EINTR_ (err))
+          return MHD_ERR_AGAIN_;
+        if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
+          return MHD_ERR_CONNRESET_;
+        /* Treat any other error as hard error. */
+        return MHD_ERR_NOTCONN_;
+      }
+#if EPOLL_SUPPORT
+    else if (buffer_size > (size_t) ret)
+      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+    // return ret; // should be return at the end of the function?
+    // previous error save:
+    // eno = errno;
+  }
   errno = eno;
   return ret;
 }

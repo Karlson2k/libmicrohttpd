@@ -98,7 +98,7 @@ recv_tls_adapter (struct MHD_Connection *connection,
  * @return positive value for number of bytes actually sent or
  *         negative value for error number MHD_ERR_xxx_
  */
-static ssize_t
+ssize_t
 send_tls_adapter (struct MHD_Connection *connection,
                   const void *other,
                   size_t i)
