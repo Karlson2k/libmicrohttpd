@@ -132,7 +132,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 #if TCP_CORK
   if ((use_corknopush) && (have_cork && ! want_cork))
     {
-      if (0 == setsockopt (connection->socket_fd,
+      if (0 == setsockopt (s,
                            IPPROTO_TCP,
                            TCP_CORK,
                            (const void *) &off_val,
@@ -140,7 +140,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
       {
         connection->sk_tcp_nodelay = true;
       }
-      else if (0 == setsockopt (connection->socket_fd,
+      else if (0 == setsockopt (s,
                                 IPPROTO_TCP,
                                 TCP_NODELAY,
                                 (const void *) &on_val,
@@ -158,7 +158,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
    * exist and we can disregard TCP_NODELAY unless requested. */
   if ((use_corknopush) && (have_cork && ! want_cork))
     {
-      if (0 == setsockopt (connection->socket_fd,
+      if (0 == setsockopt (s,
                            IPPROTO_TCP,
                            TCP_NOPUSH,
                            (const void *) &on_val,
@@ -171,7 +171,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 #if TCP_NODELAY
   if ((! use_corknopush) && (! have_cork && want_cork))
     {
-      if (0 == setsockopt (connection->socket_fd,
+      if (0 == setsockopt (s,
                            IPPROTO_TCP,
                            TCP_NODELAY,
                            (const void *) &off_val,
@@ -217,7 +217,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   {
     /* plaintext transmission */
 #if MSG_MORE
-    ret = send (connection->socket_fd,
+    ret = send (s,
                 buffer,
                 buffer_size,
                 (want_cork ? MSG_MORE : 0));
@@ -254,7 +254,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   {
     if (! have_cork && want_cork && ! have_more)
     {
-      if (0 == setsockopt (connection->socket_fd,
+      if (0 == setsockopt (s,
                            IPPROTO_TCP,
                            TCP_CORK,
                            (const void *) &on_val,
@@ -262,7 +262,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
       {
         connection->sk_tcp_nodelay_on = false;
       }
-      else if (0 == setsockopt (connection->socket_fd,
+      else if (0 == setsockopt (s,
                                 IPPROTO_TCP,
                                 TCP_NODELAY,
                                 (const void *) &off_val,
@@ -285,7 +285,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   {
     if (have_cork && ! want_cork)
     {
-      if (0 == setsockopt (connection->socket_fd,
+      if (0 == setsockopt (s,
                            IPPROTO_TCP,
                            TCP_NODELAY,
                            (const void *) &on_val,
@@ -346,7 +346,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   {
     if (! have_cork && want_cork)
     {
-      if (0 == setsockopt (connection->socket_fd,
+      if (0 == setsockopt (s,
                            IPPROTO_TCP,
                            TCP_NODELAY,
                            (const void *) &off_val,
@@ -371,7 +371,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
     if ((ret == header_len + buffer_len) && have_cork)
     {
       // response complete, definitely uncork!
-      setsockopt (connection->socket_fd,
+      setsockopt (s,
                   IPPROTO_TCP,
                   TCP_CORK,
                   (const void *) &off_val,
