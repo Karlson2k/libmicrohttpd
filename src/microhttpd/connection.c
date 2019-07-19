@@ -53,7 +53,7 @@
 /* For FreeBSD version identification */
 #include <sys/param.h>
 #endif /* HAVE_SYS_PARAM_H */
-
+#include "mhd_send.h"
 
 /**
  * Message to transmit when http 1.1 request is received
@@ -3303,11 +3303,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     case MHD_CONNECTION_HEADERS_PROCESSED:
       return;
     case MHD_CONNECTION_CONTINUE_SENDING:
-      ret = connection->send_cls (connection,
-                                  &HTTP_100_CONTINUE
-                                  [connection->continue_message_write_offset],
-                                  MHD_STATICSTR_LEN_ (HTTP_100_CONTINUE) -
-                                  connection->continue_message_write_offset);
+      ret = MHD_send_on_connection_ (connection,
+                                     &HTTP_100_CONTINUE
+                                     [connection->continue_message_write_offset],
+                                     MHD_STATICSTR_LEN_ (HTTP_100_CONTINUE) -
+                                     connection->continue_message_write_offset,
+                                     MHD_SSO_NO_CORK);
       if (ret < 0)
         {
           if (MHD_ERR_AGAIN_ == ret)
@@ -3337,11 +3338,13 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       mhd_assert (0);
       return;
     case MHD_CONNECTION_HEADERS_SENDING:
-      ret = connection->send_cls (connection,
-                                  &connection->write_buffer
-                                  [connection->write_buffer_send_offset],
-                                  connection->write_buffer_append_offset -
-                                    connection->write_buffer_send_offset);
+      /* TODO: Maybe use MHD_send_on_connection2_()?  */
+      ret = MHD_send_on_connection_ (connection,
+                                     &connection->write_buffer
+                                     [connection->write_buffer_send_offset],
+                                     connection->write_buffer_append_offset -
+                                     connection->write_buffer_send_offset,
+                                     MHD_SSO_MAY_CORK);
       if (ret < 0)
         {
           if (MHD_ERR_AGAIN_ == ret)
@@ -3389,11 +3392,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                   - response->data_start;
               if (data_write_offset > (uint64_t)SIZE_MAX)
                 MHD_PANIC (_("Data offset exceeds limit"));
-              ret = connection->send_cls (connection,
-                                          &response->data
-                                          [(size_t)data_write_offset],
-                                          response->data_size -
-                                          (size_t)data_write_offset);
+              ret = MHD_send_on_connection_ (connection,
+                                             &response->data
+                                             [(size_t)data_write_offset],
+                                             response->data_size -
+                                             (size_t)data_write_offset,
+                                             MHD_SSO_NO_CORK);
 #if DEBUG_SEND_DATA
               if (ret > 0)
                 fprintf (stderr,
@@ -3432,11 +3436,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       mhd_assert (0);
       return;
     case MHD_CONNECTION_CHUNKED_BODY_READY:
-      ret = connection->send_cls (connection,
-                                  &connection->write_buffer
-                                  [connection->write_buffer_send_offset],
-                                  connection->write_buffer_append_offset -
-                                    connection->write_buffer_send_offset);
+      ret = MHD_send_on_connection_ (connection,
+                                     &connection->write_buffer
+                                     [connection->write_buffer_send_offset],
+                                     connection->write_buffer_append_offset -
+                                     connection->write_buffer_send_offset,
+                                     MHD_SSO_NO_CORK);
       if (ret < 0)
         {
           if (MHD_ERR_AGAIN_ == ret)
@@ -3460,11 +3465,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       mhd_assert (0);
       return;
     case MHD_CONNECTION_FOOTERS_SENDING:
-      ret = connection->send_cls (connection,
-                                  &connection->write_buffer
-                                  [connection->write_buffer_send_offset],
-                                  connection->write_buffer_append_offset -
-                                    connection->write_buffer_send_offset);
+      ret = MHD_send_on_connection_ (connection,
+                                     &connection->write_buffer
+                                     [connection->write_buffer_send_offset],
+                                     connection->write_buffer_append_offset -
+                                     connection->write_buffer_send_offset,
+                                     MHD_SSO_HDR_CORK);
       if (ret < 0)
         {
           if (MHD_ERR_AGAIN_ == ret)

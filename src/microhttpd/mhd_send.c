@@ -24,37 +24,33 @@
  * @author ng0 <ng0@n0.is>
  */
 
-// to be used in: send_param_adapter, MHD_send_
-// and every place where sendfile(), sendfile64(), setsockopt()
-// are used.
-// TODO: sendfile() wrappers.
+/* TODO: sendfile() wrappers. */
 
 #include "mhd_send.h"
 
-// NOTE: TCP_CORK == TCP_NOPUSH in FreeBSD.
-//       TCP_CORK is Linux.
-//       TCP_CORK/TCP_NOPUSH: don't send out partial frames.
-//       TCP_NODELAY: disable Nagle (aggregate data based on
-//       buffer pressur).
-// TODO: It is possible that Solaris/SunOS depending on
-// the linked library needs a different setsockopt usage:
-// https://stackoverflow.com/questions/48670299/setsockopt-usage-in-linux-and-solaris-invalid-argument-in-solaris
-
 /*
- * https://svnweb.freebsd.org/base/head/sys/netinet/tcp_usrreq.c?view=markup&pathrev=346360
+ * NOTE:
+ * It might be possible that Solaris/SunOS depending on the linked library needs a different setsockopt usage:
+ * https://stackoverflow.com/questions/48670299/setsockopt-usage-in-linux-and-solaris-invalid-argument-in-solaris
+ *
  * Approximately in 2007 work began to make TCP_NOPUSH in FreeBSD
  * behave like TCP_CORK in Linux. Thus we define them to be one and
  * the same, which again could be platform dependent (NetBSD does
  * (so far) only provide a FreeBSD compatibility here, for example).
  * Since we only deal with IPPROTO_TCP flags in this file and nowhere
  * else, we don't have to move this elsewhere for now.
-*/
-/*
-#if ! defined(TCP_CORK) && defined(TCP_NOPUSH)
-#define TCP_CORK TCP_NOPUSH
-#endif
-*/
-/*
+ * https://svnweb.freebsd.org/base/head/sys/netinet/tcp_usrreq.c?view=markup&pathrev=346360
+ *
+ * verbose notes, remove when done:
+ * TCP_CORK == TCP_NOPUSH in FreeBSD.
+ * TCP_CORK is Linux.
+ * TCP_CORK/TCP_NOPUSH: don't send out partial frames.
+ * TCP_NODELAY: disable Nagle (aggregate data based on buffer pressur)
+ *
+ * to be used in: send_param_adapter, MHD_send_
+ * and every place where sendfile(), sendfile64(), setsockopt() are used.
+ *
+ * Fix this up in doxygen style:
  * -- OBJECTIVE:
  * connection: use member 'socket', and remember the
  * current state of the socket-options (cork/nocork/nodelay/whatever)
@@ -152,17 +148,14 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
       {
         connection->sk_tcp_nodelay = true;
       }
-      //setsockopt (cork-on); // or nodelay on // + update connection->sk_tcp_nodelay_on
-      // When we have CORK, we can have NODELAY on the same system,
-      // at least since Linux 2.2 and both can be combined since
-      // Linux 2.5.71. See tcp(7). No other system in 2019-06 has TCP_CORK.
+      /* When we have CORK, we can have NODELAY on the same system,
+       * at least since Linux 2.2 and both can be combined since
+       * Linux 2.5.71. See tcp(7). No other system in 2019-06 has TCP_CORK. */
     }
 #elif TCP_NOPUSH
-  /*
- * TCP_NOPUSH on FreeBSD is equal to cork on Linux, with the
- * exception that we know that TCP_NOPUSH will definitely
- * exist and we can disregard TCP_NODELAY unless requested.
- */
+  /* TCP_NOPUSH on FreeBSD is equal to cork on Linux, with the
+   * exception that we know that TCP_NOPUSH will definitely
+   * exist and we can disregard TCP_NODELAY unless requested. */
   if ((use_corknopush) && (have_cork && ! want_cork))
     {
       if (0 == setsockopt (connection->socket_fd,
