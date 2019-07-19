@@ -185,7 +185,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   {
     if (! have_cork && want_cork)
     {
-      // setsockopt (nodelay-off);
       setsockopt (connection->socket_fd,
                   IPPROTO_TCP,
                   TCP_NODELAY,
@@ -193,7 +192,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                   sizeof (off_val));
       connection->sk_tcp_nodelay_on = false;
     }
-    // ...
   }
 #endif
 
@@ -299,7 +297,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   {
     if (have_cork && ! want_cork)
     {
-      // setsockopt (nodelay - on);
       if (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
                            TCP_NODELAY,
@@ -309,7 +306,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
         connection->sk_tcp_nodelay_on = true;
       }
     }
-    // ...
   }
 #endif
 
@@ -362,7 +358,6 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   {
     if (! have_cork && want_cork)
     {
-      // setsockopt (nodelay-off);
       if (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
                            TCP_NODELAY,
@@ -371,7 +366,6 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
         connection->sk_tcp_nodelay = false;
       }
     }
-    // ...
   }
 #endif
 
