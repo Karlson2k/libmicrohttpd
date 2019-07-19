@@ -82,12 +82,9 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   bool using_tls = false;
   /* The socket. */
   MHD_socket s = connection->socket_fd;
-  int eno;
   ssize_t ret;
-  int optval;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
-  const int err = MHD_socket_get_error_ ();
 
   /* error handling from send_param_adapter() */
   if ((MHD_INVALID_SOCKET == s) || (MHD_CONNECTION_CLOSED == connection->state))
@@ -244,6 +241,8 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 
     if (0 > ret)
     {
+      const int err = MHD_socket_get_error_ ();
+
       if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
       {
 #if EPOLL_SUPPORT
@@ -321,8 +320,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   if (!have_more_data && corked)
     gnutls_record_uncork(connection->tls_session);
   */
-
-  errno = eno;
   return ret;
 }
 
