@@ -80,7 +80,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   bool have_more;
   bool use_corknopush;
   bool using_tls = false;
-  /* The socket. */
   MHD_socket s = connection->socket_fd;
   ssize_t ret;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
@@ -135,9 +134,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 #endif
 
 #if TCP_CORK
-  if (use_corknopush)
-  {
-    if (have_cork && ! want_cork)
+  if ((use_corknopush) && (have_cork && ! want_cork))
     {
       if (0 == setsockopt (connection->socket_fd,
                            IPPROTO_TCP,
@@ -160,16 +157,13 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
       // at least since Linux 2.2 and both can be combined since
       // Linux 2.5.71. See tcp(7). No other system in 2019-06 has TCP_CORK.
     }
-  }
 #elif TCP_NOPUSH
   /*
  * TCP_NOPUSH on FreeBSD is equal to cork on Linux, with the
  * exception that we know that TCP_NOPUSH will definitely
  * exist and we can disregard TCP_NODELAY unless requested.
  */
-  if (use_corknopush)
-  {
-    if (have_cork && ! want_cork)
+  if ((use_corknopush) && (have_cork && ! want_cork))
     {
       setsockopt (connection->socket_fd,
                   IPPROTO_TCP,
@@ -178,12 +172,9 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                   sizeof (on_val));
       connection->sk_tcp_nodelay_on = false;
     }
-  }
 #endif
 #if TCP_NODELAY
-  if (! use_corknopush)
-  {
-    if (! have_cork && want_cork)
+  if ((! use_corknopush) && (! have_cork && want_cork))
     {
       setsockopt (connection->socket_fd,
                   IPPROTO_TCP,
@@ -192,12 +183,12 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                   sizeof (off_val));
       connection->sk_tcp_nodelay_on = false;
     }
-  }
 #endif
 
 #ifdef HTTPS_SUPPORT
   if (using_tls)
   {
+    int i;
     if (i > SSIZE_MAX)
       i = SSIZE_MAX;
     ret = gnutls_record_send (connection->tls_session,
