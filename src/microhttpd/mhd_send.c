@@ -50,7 +50,6 @@
  * to be used in: send_param_adapter, MHD_send_
  * and every place where sendfile(), sendfile64(), setsockopt() are used.
  *
- * Fix this up in doxygen style:
  * -- OBJECTIVE:
  * connection: use member 'socket', and remember the
  * current state of the socket-options (cork/nocork/nodelay/whatever)
@@ -98,17 +97,17 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   case MHD_SSO_NO_CORK:
     want_cork = false;
     break;
-  /* Do corking, consider MSG_MORE instead if available */
+  /* Do corking, consider MSG_MORE instead if available. */
   case MHD_SSO_MAY_CORK:
     want_cork = true;
     break;
-    /* Cork the header */
+  /* Cork the header. */
   case MHD_SSO_HDR_CORK:
     want_cork = (buffer_size >= 1024) && (buffer_size <= 1220);
     break;
   }
 
-  // ! could be avoided by redefining the variable
+  /* ! could be avoided by redefining the variable. */
   have_cork = ! connection->sk_tcp_nodelay_on;
 
 #ifdef MSG_MORE
@@ -270,10 +269,20 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
       }
     }
 #elif TCP_NOPUSH
-  // We don't have MSG_MORE.
-  if (use_corknopush)
+  /* We don't have MSG_MORE. The OS which implement NOPUSH implement
+   * it in a similar way to TCP_CORK on Linux. This means we can just
+   * disregard the else branch for TCP_NODELAY which we had to use
+   * for the TCP_CORK case here. */
+  if ((! using_tls) && (use_corknopush) && (have_cork && ! want_cork))
   {
-    if (! have_more && )// ...
+    if (0 == setsockopt (s,
+                         IPPROTO_TCP,
+                         TCP_NOPUSH,
+                         (const void*) &on_val,
+                         sizeof (on_val)))
+      {
+        connection->sk_tcp_nodelay_on = false;
+      }
   }
 #endif
 
@@ -364,7 +373,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
     eno = errno;
     if ((ret == header_len + buffer_len) && have_cork)
     {
-      // response complete, definitely uncork!
+      // Response complete, definitely uncork!
       setsockopt (s,
                   IPPROTO_TCP,
                   TCP_CORK,
