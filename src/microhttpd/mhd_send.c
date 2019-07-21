@@ -373,11 +373,12 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
     if ((ret == header_len + buffer_len) && have_cork)
     {
       // Response complete, definitely uncork!
-      setsockopt (s,
-                  IPPROTO_TCP,
-                  TCP_CORK,
-                  (const void *) &off_val,
-                  sizeof (off_val));
+      if (0 == setsockopt (s,
+                           IPPROTO_TCP,
+                           TCP_CORK,
+                           (const void *) &off_val,
+                           sizeof (off_val)))
+        ;
     }
     errno = eno;
   }
@@ -393,11 +394,12 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
       if (ret == header_len + buffer_len)
         {
           /* Response complete, set NOPUSH to off */
-          setsockopt (s,
-                      IPPROTO_TCP,
-                      TCP_NOPUSH,
-                      (const void *) &off_val,
-                      sizeof (off_val));
+          if (0 == setsockopt (s,
+                               IPPROTO_TCP,
+                               TCP_NOPUSH,
+                               (const void *) &off_val,
+                               sizeof (off_val)))
+            ;
         }
       errno = eno;
     }
