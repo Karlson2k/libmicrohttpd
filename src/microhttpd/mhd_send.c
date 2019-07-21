@@ -311,14 +311,23 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 }
 
 
-// * Send header followed by buffer on connection;
-// * uses writev if possible to send both at once
-// * returns the sum of the number of bytes sent from
-// * both buffers, or -1 on error;
-// * if writev is
-// unavailable, this call MUST only send from 'header'
-// (as we cannot handle the case that the first write
-// succeeds and the 2nd fails!).
+/**
+ * Send header followed by buffer on connection.
+ * Uses writev if possible to send both at once
+ * and returns the sum of the number of bytes sent from
+ * both buffers, or -1 on error;
+ * if writev is unavailable, this call MUST only send from 'header'
+ * (as we cannot handle the case that the first write
+ * succeeds and the 2nd fails!).
+ *
+ * @param connection the MHD_Connection structure
+ * @param header content of header to send
+ * @param header_size the size of the header (in bytes)
+ * @param buffer content of the buffer to send
+ * @param buffer_size the size of the buffer (in bytes)
+ * @return sum of the number of bytes sent from both buffers or
+           -1 on error
+ */
 ssize_t
 MHD_send_on_connection2_ (struct MHD_Connection *connection,
                           const char *header,
@@ -364,6 +373,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   vector[1].iov_len = strlen (buffer);
   iovcnt = sizeof (vector) / sizeof (struct iovec);
   ret = writev (connection->socket_fd, vector, iovcnt);
+
 #if TCP_CORK
   if (use_corknopush)
   {
