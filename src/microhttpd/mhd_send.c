@@ -371,15 +371,15 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 
     eno = errno;
     if ((ret == header_len + buffer_len) && have_cork)
-    {
-      // Response complete, definitely uncork!
-      if (0 == setsockopt (s,
-                           IPPROTO_TCP,
-                           TCP_CORK,
-                           (const void *) &off_val,
-                           sizeof (off_val)))
-        ;
-    }
+      {
+        // Response complete, definitely uncork!
+        if (0 == setsockopt (s,
+                             IPPROTO_TCP,
+                             TCP_CORK,
+                             (const void *) &off_val,
+                             sizeof (off_val)))
+          ;
+      }
     errno = eno;
   }
   return ret;
