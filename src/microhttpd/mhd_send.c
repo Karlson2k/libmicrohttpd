@@ -64,6 +64,25 @@
  * MHD_socket is defined in lib/mhd_sockets.h and the type
  * depends on the platform. However it is always a socket.
  */
+/**
+ * Send buffer on connection, and remember the current state of
+ * the socket options; only call setsockopt when absolutely
+ * necessary.
+ *
+ * @param connection the MHD_Connection structure
+ * @param buffer content of the buffer to send
+ * @param buffer_size the size of the buffer (in bytes)
+ * @param options the MHD_SendSocketOptions enum,
+          MHD_SSO_NO_CORK: definitely no corking (use NODELAY, or explicitly disable cork),
+          MHD_SSO_MAY_CORK: should enable corking (use MSG_MORE, or explicitly enable cork),
+          MHD_SSO_HDR_CORK: consider tcpi_snd_mss and consider not corking for the header
+          part if the size of the header is close to the MSS.
+          Only used if we are NOT doing 100 Continue and are still sending the
+          header (provided in full as the buffer to MHD_send_on_connection_ or as
+          the header to MHD_send_on_connection2_).
+ * @return sum of the number of bytes sent from both buffers or
+           -1 on error
+ */
 ssize_t
 MHD_send_on_connection_ (struct MHD_Connection *connection,
                          const char *buffer,
