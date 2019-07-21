@@ -345,19 +345,17 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 #endif
 
 #if TCP_NODELAY
-  if (! use_corknopush)
-  {
-    if (! have_cork && want_cork)
+  if ((! use_corknopush) && (! have_cork && want_cork))
     {
       if (0 == setsockopt (s,
                            IPPROTO_TCP,
                            TCP_NODELAY,
                            (const void *) &off_val,
-                           sizeof (off_val))) {
-        connection->sk_tcp_nodelay = false;
-      }
+                           sizeof (off_val)))
+        {
+          connection->sk_tcp_nodelay = false;
+        }
     }
-  }
 #endif
 
   vector[0].iov_base = header;
@@ -367,6 +365,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   iovcnt = sizeof (vector) / sizeof (struct iovec);
   ret = writev (connection->socket_fd, vector, iovcnt);
 #if TCP_CORK
+  if (use_corknopush)
   {
     eno;
 
@@ -384,6 +383,27 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   }
   return ret;
 #endif
+
+#if TCP_NOPUSH
+  if (use_corknopush)
+    {
+      eno;
+
+      eno = errno;
+      if (ret == header_len + buffer_len)
+        {
+          /* Response complete, set NOPUSH to off */
+          setsockopt (s,
+                      IPPROTO_TCP,
+                      TCP_NOPUSH,
+                      (const void *) &off_val,
+                      sizeof (off_val));
+        }
+      errno = eno;
+    }
+  return ret;
+#endif
+
 #else
   return MHD_send_on_connection_ (connection,
                                   header,
