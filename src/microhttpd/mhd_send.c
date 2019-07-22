@@ -128,7 +128,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                            (const void *) &off_val,
                            sizeof (off_val)))
       {
-        connection->sk_tcp_nodelay = true;
+        connection->sk_tcp_nodelay_on = true;
       }
       else if (0 == setsockopt (s,
                                 IPPROTO_TCP,
@@ -136,7 +136,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                                 (const void *) &on_val,
                                 sizeof (on_val)))
       {
-        connection->sk_tcp_nodelay = true;
+        connection->sk_tcp_nodelay_on = true;
       }
     }
 #elif TCP_NOPUSH
@@ -350,7 +350,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                            (const void *) &off_val,
                            sizeof (off_val)))
         {
-          connection->sk_tcp_nodelay = false;
+          connection->sk_tcp_nodelay_on = false;
         }
     }
 #endif
