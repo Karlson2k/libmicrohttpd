@@ -501,6 +501,7 @@ _MHD_static_inline bool
 socket_start_extra_buffering (struct MHD_Connection *connection)
 {
   mhd_assert(NULL != connection);
+#if OLD_SOCKOPT
 #if defined(TCP_NODELAY)
   if (connection->sk_tcp_nodelay_on)
     {
@@ -517,7 +518,9 @@ socket_start_extra_buffering (struct MHD_Connection *connection)
         }
     }
 #endif /* TCP_NODELAY */
+#endif /* OLD_SOCKOPT */
 
+#if OLD_SOCKOPT
 #if defined(MHD_TCP_CORK_NOPUSH)
   if (!connection->sk_tcp_cork_nopush_on)
     {
@@ -534,12 +537,15 @@ socket_start_extra_buffering (struct MHD_Connection *connection)
         }
     }
 #endif /* MHD_TCP_CORK_NOPUSH */
+#endif /* OLD_SOCKOPT */
 
+#if OLD_SOCKOPT
 #if defined(TCP_NODELAY)
    return connection->sk_tcp_cork_nopush_on && !connection->sk_tcp_nodelay_on;
 #else  /* ! TCP_NODELAY */
    return connection->sk_tcp_cork_nopush_on;
 #endif /* ! TCP_NODELAY */
+#endif /* OLD_SOCKOPT */
 }
 
 
