@@ -170,11 +170,16 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 #endif
 
 #ifdef HTTPS_SUPPORT
+
   if (using_tls)
   {
-    int i;
-    if (i > SSIZE_MAX)
-      i = SSIZE_MAX;
+    if (want_cork && ! have_cork)
+    {
+      gnutls_record_cork (connection->tls_session);
+      connection->sk_tcp_nodelay_on = false;
+    }
+    if (buffer_size > SSIZE_MAX)
+      buffer_size = SSIZE_MAX;
     ret = gnutls_record_send (connection->tls_session,
                               buffer,
                               buffer_size);
@@ -198,6 +203,12 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
      * sent amount smaller than provided amount, as TLS
      * connections may break data into smaller parts for sending. */
 #endif /* EPOLL_SUPPORT */
+
+    if (! want_cork && have_cork)
+    {
+      (void) gnutls_record_uncork (connection->tls_session, 0);
+      connection->sk_tcp_nodelay_on = true;
+    }
   }
   else
 #endif
@@ -288,13 +299,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     }
 #endif
 
-  /*
-  // pseudo-code for gnutls corking
-  if (have_more_data && !corked)
-    gnutls_record_cork(connection->tls_session);
-  if (!have_more_data && corked)
-    gnutls_record_uncork(connection->tls_session);
-  */
   return ret;
 }
 
