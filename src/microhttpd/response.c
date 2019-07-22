@@ -400,6 +400,7 @@ MHD_create_response_from_callback (uint64_t size,
   return response;
 }
 
+
 /**
  * Set special flags and options for a response.
  *
@@ -424,15 +425,6 @@ MHD_set_response_options (struct MHD_Response *response,
   {
     switch (ro)
     {
-    case MHD_RO_FREE_FUNCTION:
-      va_start (ap, flags);
-      if (NULL != (response->crfc = va_arg (ap, MHD_ContentReaderFreeCallback))) {
-        ret = MHD_YES;
-      } else {
-        ret = MHD_NO;
-      }
-      va_end (ap);
-      break;
     default:
       ret = MHD_NO;
       break;
