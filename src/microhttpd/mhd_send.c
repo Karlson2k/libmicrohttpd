@@ -207,9 +207,9 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     ret = send (s,
                 buffer,
                 buffer_size,
-                (want_cork ? MSG_MORE : 0));
+                MAYBE_MSG_NOSIGNAL | (want_cork ? MSG_MORE : 0));
 #else
-    ret = send (connection->socket_fd, buffer, buffer_size, 0);
+    ret = send (connection->socket_fd, buffer, buffer_size, MAYBE_MSG_NOSIGNAL);
 #endif
 
     if (0 > ret)
