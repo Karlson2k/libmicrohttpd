@@ -37,13 +37,20 @@
 #include "connection.h"
 #include "connection_https.h"
 
+/**
+ * The enumeration of send socket options.
+ */
 enum MHD_SendSocketOptions
 {
-  /* definitely no corking (use NODELAY, or explicitly disable cork) */
+ /**
+  * definitely no corking (use NODELAY, or explicitly disable cork)
+  */
   MHD_SSO_NO_CORK = 0,
-  /* should enable corking (use MSG_MORE, or explicitly enable cork) */
+  /**
+   * should enable corking (use MSG_MORE, or explicitly enable cork)
+   */
   MHD_SSO_MAY_CORK = 1,
-  /*
+  /**
    * consider tcpi_snd_mss and consider not corking for the header
    * part if the size of the header is close to the MSS.
    * Only used if we are NOT doing 100 Continue and are still
