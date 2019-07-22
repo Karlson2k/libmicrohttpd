@@ -41,13 +41,13 @@
  * @param buffer content of the buffer to send
  * @param buffer_size the size of the buffer (in bytes)
  * @param options the MHD_SendSocketOptions enum,
-          MHD_SSO_NO_CORK: definitely no corking (use NODELAY, or explicitly disable cork),
-          MHD_SSO_MAY_CORK: should enable corking (use MSG_MORE, or explicitly enable cork),
-          MHD_SSO_HDR_CORK: consider tcpi_snd_mss and consider not corking for the header
-          part if the size of the header is close to the MSS.
-          Only used if we are NOT doing 100 Continue and are still sending the
-          header (provided in full as the buffer to MHD_send_on_connection_ or as
-          the header to MHD_send_on_connection2_).
+ *         #MHD_SSO_NO_CORK: definitely no corking (use NODELAY, or explicitly disable cork),
+ *         #MHD_SSO_MAY_CORK: should enable corking (use MSG_MORE, or explicitly enable cork),
+ *         #MHD_SSO_HDR_CORK: consider tcpi_snd_mss and consider not corking for the header
+ *         part if the size of the header is close to the MSS.
+ *         Only used if we are NOT doing 100 Continue and are still sending the
+ *         header (provided in full as the buffer to MHD_send_on_connection_ or as
+ *         the header to MHD_send_on_connection2_).
  * @return sum of the number of bytes sent from both buffers or
            -1 on error
  */
