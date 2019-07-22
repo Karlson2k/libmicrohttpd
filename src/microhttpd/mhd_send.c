@@ -364,6 +364,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   vector[1].iov_base = buffer;
   vector[1].iov_len = strlen (buffer);
   iovcnt = sizeof (vector) / sizeof (struct iovec);
+  // FIXME: maybe use sendmsg() if available instead!
   ret = writev (connection->socket_fd, vector, iovcnt);
 
 #if TCP_CORK
