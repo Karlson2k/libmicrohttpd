@@ -426,7 +426,7 @@ MHD_set_response_options (struct MHD_Response *response,
     {
     case MHD_RO_FREE_FUNCTION:
       va_start (ap, flags);
-      if (NULL != (response->crfc = va_arg (ap, MHD_free_ptr))) {
+      if (NULL != (response->crfc = va_arg (ap, MHD_ContentReaderFreeCallback))) {
         ret = MHD_YES;
       } else {
         ret = MHD_NO;

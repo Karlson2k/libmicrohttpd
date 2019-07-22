@@ -2256,10 +2256,12 @@ typedef ssize_t
 
 
 /**
- * This method is called by libmicrohttpd if we
- * are done with a content reader.  It should
- * be used to free resources associated with the
- * content reader.
+ * This method is called by libmicrohttpd if we are done with a content
+ * reader.  It should be used to free resources associated with the content
+ * reader.
+ *
+ * It is also used as a va_arg in #MHD_set_response_options() in combination
+ * with #MHD_RO_FREE_FUNCTION.
  *
  * @param cls closure
  * @ingroup response
@@ -2908,15 +2910,6 @@ enum MHD_ResponseOptions
  MHD_RO_FREE_FUNCTION = 1
 
 };
-
-
-/**
- * This typedef is defined to be able to pass a function pointer
- * as a va_arg in #MHD_set_response_options() in combination
- * with #MHD_RO_FREE_FUNCTION.
- */
-typedef void
-(*MHD_FreeFunction)(void *);
 
 
 /**

@@ -1226,7 +1226,7 @@ Use a custom function for freeing the memory passed when using
 @code{MHD_RESPMEM_MUST_FREE}. This replaces the use of libc's
 @code{free()} function to release the memory with an implementation
 provided by the application. The next argument must be of type
-@code{MHD_FreeFunction}.
+@code{MHD_ContentReaderFreeCallback}.
 @end table
 @end deftp
 
