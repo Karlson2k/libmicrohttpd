@@ -558,6 +558,7 @@ socket_start_extra_buffering (struct MHD_Connection *connection)
 _MHD_static_inline bool
 socket_start_no_buffering (struct MHD_Connection *connection)
 {
+#if OLD_SOCKOPT
 #if defined(MHD_TCP_CORK_NOPUSH)
   if (connection->sk_tcp_cork_nopush_on)
     {
@@ -590,6 +591,7 @@ socket_start_no_buffering (struct MHD_Connection *connection)
     }
 #endif /* TCP_NODELAY */
   return connection->sk_tcp_nodelay_on && !connection->sk_tcp_cork_nopush_on;
+#endif /* OLD_SOCKOPT */
 }
 
 
@@ -607,6 +609,7 @@ socket_start_no_buffering_flush (struct MHD_Connection *connection)
 #if defined(TCP_NOPUSH) && !defined(TCP_CORK)
   const int dummy = 0;
 #endif /* !TCP_CORK */
+#if OLD_SOCKOPT
 #if defined(TCP_CORK) || (defined(__FreeBSD__) &&  __FreeBSD__+0 >= 9)
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   /* Switching off TCP_CORK flush buffer even
@@ -620,7 +623,7 @@ socket_start_no_buffering_flush (struct MHD_Connection *connection)
       connection->sk_tcp_cork_nopush_on = false;
     }
 #endif /* MHD_TCP_CORK_NOPUSH */
-
+#endif /* OLD_SOCKOPT */
   res = socket_start_no_buffering (connection);
 #if defined(__FreeBSD__) &&  __FreeBSD__+0 >= 9
   /* FreeBSD do not need zero-send for flushing starting from version 9 */
@@ -646,6 +649,7 @@ _MHD_static_inline bool
 socket_start_normal_buffering (struct MHD_Connection *connection)
 {
   mhd_assert(NULL != connection);
+#if OLD_SOCKOPT
 #if defined(MHD_TCP_CORK_NOPUSH)
   if (connection->sk_tcp_cork_nopush_on)
     {
@@ -678,6 +682,7 @@ socket_start_normal_buffering (struct MHD_Connection *connection)
     }
 #endif /* TCP_NODELAY */
   return !connection->sk_tcp_nodelay_on && !connection->sk_tcp_cork_nopush_on;
+#endif
 }
 
 
