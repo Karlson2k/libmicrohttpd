@@ -381,14 +381,14 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                              TCP_CORK,
                              (const void *) &off_val,
                              sizeof (off_val)))
-          ;
+          {
+            connection->sk_tcp_nodelay_on = true;
+          }
       }
     errno = eno;
   }
   return ret;
-#endif
-
-#if TCP_NOPUSH
+#elif TCP_NOPUSH
   if (use_corknopush)
     {
       eno;
@@ -402,7 +402,9 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                                TCP_NOPUSH,
                                (const void *) &off_val,
                                sizeof (off_val)))
-            ;
+            {
+              connection->sk_tcp_nodelay_on = false;
+            }
         }
       errno = eno;
     }
