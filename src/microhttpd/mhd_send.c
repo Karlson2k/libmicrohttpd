@@ -26,44 +26,12 @@
 
 /* TODO: sendfile() wrappers. */
 
+/* Functions to be used in: send_param_adapter, MHD_send_
+ * and every place where sendfile(), sendfile64(), setsockopt()
+ * are used. */
+
 #include "mhd_send.h"
 
-/*
- * NOTE:
- * It might be possible that Solaris/SunOS depending on the linked library needs a different setsockopt usage:
- * https://stackoverflow.com/questions/48670299/setsockopt-usage-in-linux-and-solaris-invalid-argument-in-solaris
- *
- * Approximately in 2007 work began to make TCP_NOPUSH in FreeBSD
- * behave like TCP_CORK in Linux. Thus we define them to be one and
- * the same, which again could be platform dependent (NetBSD does
- * (so far) only provide a FreeBSD compatibility here, for example).
- * Since we only deal with IPPROTO_TCP flags in this file and nowhere
- * else, we don't have to move this elsewhere for now.
- * https://svnweb.freebsd.org/base/head/sys/netinet/tcp_usrreq.c?view=markup&pathrev=346360
- *
- * verbose notes, remove when done:
- * TCP_CORK == TCP_NOPUSH in FreeBSD.
- * TCP_CORK is Linux.
- * TCP_CORK/TCP_NOPUSH: don't send out partial frames.
- * TCP_NODELAY: disable Nagle (aggregate data based on buffer pressur)
- *
- * to be used in: send_param_adapter, MHD_send_
- * and every place where sendfile(), sendfile64(), setsockopt() are used.
- *
- * -- OBJECTIVE:
- * connection: use member 'socket', and remember the
- * current state of the socket-options (cork/nocork/nodelay/whatever)
- * and only call setsockopt when absolutely necessary.
- *
- * -- NOTES:
- * Send 'buffer' on connection;
- * change socket options as required,
- * return -1 on error, otherwise # bytes sent.
- *
- * MHD_Connection is defined in ./internal.h
- * MHD_socket is defined in lib/mhd_sockets.h and the type
- * depends on the platform. However it is always a socket.
- */
 /**
  * Send buffer on connection, and remember the current state of
  * the socket options; only call setsockopt when absolutely
