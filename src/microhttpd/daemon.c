@@ -546,6 +546,14 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
                                                  daemon->cert_callback);
     }
 #endif
+#if GNUTLS_VERSION_NUMBER >= 0x030603
+  else if (NULL != daemon->cert_callback2)
+    {
+      gnutls_certificate_set_retrieve_function3 (daemon->x509_cred,
+                                                 daemon->cert_callback2);
+    }
+#endif
+
   if (NULL != daemon->https_mem_trust)
     {
       size_t paramlen;
@@ -632,6 +640,10 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
     }
 #if GNUTLS_VERSION_MAJOR >= 3
   if (NULL != daemon->cert_callback)
+    return 0;
+#endif
+#if GNUTLS_VERSION_NUMBER >= 0x030603
+  else if (NULL != daemon->cert_callback2)
     return 0;
 #endif
 #ifdef HAVE_MESSAGES
@@ -2540,7 +2552,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #if (GNUTLS_VERSION_NUMBER+0 >= 0x030605)
       if (0 != (daemon->options & MHD_USE_INSECURE_TLS_EARLY_DATA))
 	flags |= GNUTLS_ENABLE_EARLY_DATA;
-#endif      
+#endif
       connection->tls_state = MHD_TLS_CONN_INIT;
       MHD_set_https_callbacks (connection);
       gnutls_init (&connection->tls_session,
@@ -4930,6 +4942,9 @@ parse_options_va (struct MHD_Daemon *daemon,
 #if GNUTLS_VERSION_MAJOR >= 3
   gnutls_certificate_retrieve_function2 *pgcrf;
 #endif
+#if GNUTLS_VERSION_NUMBER >= 0x030603
+  gnutls_certificate_retrieve_function3 *pgcrf2;
+#endif
 #endif /* HTTPS_SUPPORT */
 
   while (MHD_OPTION_END != (opt = (enum MHD_OPTION) va_arg (ap, int)))
@@ -5196,6 +5211,26 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
           break;
 #endif
+        case MHD_OPTION_HTTPS_CERT_CALLBACK2:
+#if GNUTLS_VERSION_NUMBER < 0x030603
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    _("MHD_OPTION_HTTPS_CERT_CALLBACK2 requires building MHD with GnuTLS >= 3.6.3\n"));
+#endif
+          return MHD_NO;
+#else
+          pgcrf2 = va_arg (ap,
+                          gnutls_certificate_retrieve_function3 *);
+          if (0 != (daemon->options & MHD_USE_TLS))
+            daemon->cert_callback2 = pgcrf2;
+          else
+#ifdef HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        _("MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
+                        opt);
+#endif
+          break;
+#endif
 #endif /* HTTPS_SUPPORT */
 #ifdef DAUTH_SUPPORT
 	case MHD_OPTION_DIGEST_AUTH_RANDOM:
@@ -5347,6 +5382,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 		case MHD_OPTION_HTTPS_PRIORITIES:
 		case MHD_OPTION_ARRAY:
                 case MHD_OPTION_HTTPS_CERT_CALLBACK:
+                case MHD_OPTION_HTTPS_CERT_CALLBACK2:
 		  if (MHD_YES != parse_options (daemon,
 						servaddr,
 						opt,
@@ -6960,6 +6996,12 @@ MHD_is_feature_supported(enum MHD_FEATURE feature)
 #else  /* !HTTPS_SUPPORT || GNUTLS_VERSION_MAJOR < 3 */
       return MHD_NO;
 #endif /* !HTTPS_SUPPORT || GNUTLS_VERSION_MAJOR < 3 */
+    case MHD_FEATURE_HTTPS_CERT_CALLBACK2:
+#if defined(HTTPS_SUPPORT) && GNUTLS_VERSION_NUMBER >= 0x030603
+      return MHD_YES;
+#else  /* !HTTPS_SUPPORT || GNUTLS_VERSION_NUMBER < 0x030603 */
+      return MHD_NO;
+#endif /* !HTTPS_SUPPORT || GNUTLS_VERSION_NUMBER < 0x030603 */
     case MHD_FEATURE_IPv6:
 #ifdef HAVE_INET6
       return MHD_YES;

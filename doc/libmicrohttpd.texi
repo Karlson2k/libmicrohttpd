@@ -622,7 +622,7 @@ Only useful in combination with @code{MHD_USE_TLS}.
 This option will only work if the underyling TLS library
 supports it (i.e. GnuTLS after 3.6.3). If the TLS library
 does not support it, MHD may ignore the option and proceed
-without supporting this features. 
+without supporting this features.
 
 @item MHD_USE_INSECURE_TLS_EARLY_DATA
 Tell the TLS library to support TLS v1.3 early data (0-RTT) with the
@@ -633,7 +633,7 @@ GET requests! You have been warned.
 This option will only work if the underyling TLS library
 supports it (i.e. GnuTLS after 3.6.3). If the TLS library
 does not support it, MHD may ignore the option and proceed
-without supporting this features. 
+without supporting this features.
 
 @end table
 @end deftp
@@ -891,6 +891,19 @@ expected to select the correct certificate based on the SNI
 information provided.  The callback is expected to access the SNI data
 using gnutls_server_name_get().  Using this option requires GnuTLS 3.0
 or higher.
+
+@item MHD_OPTION_HTTPS_CERT_CALLBACK2
+@cindex SSL
+@cindex TLS
+@cindex SNI
+@cindex OCSP
+Use a callback to determine which X.509 certificate should be
+used for a given HTTPS connection.  This option should be
+followed by a argument of type `gnutls_certificate_retrieve_function3 *`.
+This option provides an
+alternative/extension to #MHD_OPTION_HTTPS_CERT_CALLBACK.
+You must use this version if you want to use OCSP stapling.
+Using this option requires GnuTLS 3.6.3 or higher.
 
 @item MHD_OPTION_GNUTLS_PSK_CRED_HANDLER
 @cindex SSL
@@ -1206,6 +1219,14 @@ Response-specific options.  Passed in the varargs portion of
 @item MHD_RO_END
 No more options / last option.  This is used to terminate the VARARGs
 list.
+
+@item MHD_RO_FREE_FUNCTION
+Use a custom function for freeing the memory passed when using
+@code{MHD_create_response_from_buffer} with
+@code{MHD_RESPMEM_MUST_FREE}. This replaces the use of libc's
+@code{free()} function to release the memory with an implementation
+provided by the application. The next argument must be of type
+@code{MHD_ContentReaderFreeCallback}.
 @end table
 @end deftp
 
@@ -2956,7 +2977,7 @@ connections have been handled.
 @section Obtaining state information about a connection
 
 
-@deftypefun {const union MHD_ConnectionInfo *} MHD_get_connection_info (struct MHD_Connection *daemon, enum MHD_ConnectionInfoType infoType, ...)
+@deftypefun {const union MHD_ConnectionInfo *} MHD_get_connection_info (struct MHD_Connection *connection, enum MHD_ConnectionInfoType infoType, ...)
 Obtain information about the given connection.
 
 @table @var

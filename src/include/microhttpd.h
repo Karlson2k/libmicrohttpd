@@ -132,7 +132,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00096401
+#define MHD_VERSION 0x00096503
 
 /**
  * MHD-internal return code for "YES".
@@ -1646,7 +1646,18 @@ enum MHD_OPTION
    * gnutls_psk_set_server_credentials_function. It is used to
    * retrieve the shared key for a given username.
    */
-  MHD_OPTION_GNUTLS_PSK_CRED_HANDLER = 30
+  MHD_OPTION_GNUTLS_PSK_CRED_HANDLER = 30,
+
+  /**
+   * Use a callback to determine which X.509 certificate should be
+   * used for a given HTTPS connection.  This option should be
+   * followed by a argument of type `gnutls_certificate_retrieve_function3 *`.
+   * This option provides an
+   * alternative/extension to #MHD_OPTION_HTTPS_CERT_CALLBACK.
+	* You must use this version if you want to use OCSP stapling.
+   * Using this option requires GnuTLS 3.6.3 or higher.
+   */
+  MHD_OPTION_HTTPS_CERT_CALLBACK2 = 31
 };
 
 
@@ -2245,10 +2256,12 @@ typedef ssize_t
 
 
 /**
- * This method is called by libmicrohttpd if we
- * are done with a content reader.  It should
- * be used to free resources associated with the
- * content reader.
+ * This method is called by libmicrohttpd if we are done with a content
+ * reader.  It should be used to free resources associated with the content
+ * reader.
+ *
+ * It is also used as a va_arg in #MHD_set_response_options() in combination
+ * with #MHD_RO_FREE_FUNCTION.
  *
  * @param cls closure
  * @ingroup response
@@ -2667,7 +2680,7 @@ _MHD_EXTERN int
 MHD_set_connection_value (struct MHD_Connection *connection,
                           enum MHD_ValueKind kind,
                           const char *key,
-			  const char *value);
+                          const char *value);
 
 
 /**
@@ -2697,11 +2710,11 @@ MHD_set_connection_value (struct MHD_Connection *connection,
  */
 int
 MHD_set_connection_value_n (struct MHD_Connection *connection,
-			    enum MHD_ValueKind kind,
-			    const char *key,
+                            enum MHD_ValueKind kind,
+                            const char *key,
                             size_t key_size,
-			    const char *value,
-			    size_t value_size);
+                            const char *value,
+                            size_t value_size);
 
 
 /**
@@ -2795,7 +2808,7 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
 _MHD_EXTERN int
 MHD_queue_response (struct MHD_Connection *connection,
                     unsigned int status_code,
-		    struct MHD_Response *response);
+                    struct MHD_Response *response);
 
 
 /**
@@ -2884,10 +2897,18 @@ enum MHD_ResponseFlags
  */
 enum MHD_ResponseOptions
 {
-  /**
-   * End of the list of options.
-   */
-  MHD_RO_END = 0
+
+ /**
+  * End of the list of options.
+  */
+ MHD_RO_END = 0,
+
+ /**
+  * Set a specific free() function
+  * to free response buffer instead of libc void free(void * ptr)
+  */
+ MHD_RO_FREE_FUNCTION = 1
+
 };
 
 
@@ -3927,7 +3948,13 @@ enum MHD_FEATURE
   /**
    * Get whether MHD supports threads.
    */
-  MHD_FEATURE_THREADS
+  MHD_FEATURE_THREADS = 22,
+
+  /**
+   * Get whether option #MHD_OPTION_HTTPS_CERT_CALLBACK2 is
+   * supported.
+   */
+  MHD_FEATURE_HTTPS_CERT_CALLBACK2 = 23
 };
 
 
