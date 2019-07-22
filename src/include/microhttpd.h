@@ -132,7 +132,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00096502
+#define MHD_VERSION 0x00096503
 
 /**
  * MHD-internal return code for "YES".
@@ -2678,7 +2678,7 @@ _MHD_EXTERN int
 MHD_set_connection_value (struct MHD_Connection *connection,
                           enum MHD_ValueKind kind,
                           const char *key,
-			  const char *value);
+                          const char *value);
 
 
 /**
@@ -2708,11 +2708,11 @@ MHD_set_connection_value (struct MHD_Connection *connection,
  */
 int
 MHD_set_connection_value_n (struct MHD_Connection *connection,
-			    enum MHD_ValueKind kind,
-			    const char *key,
+                            enum MHD_ValueKind kind,
+                            const char *key,
                             size_t key_size,
-			    const char *value,
-			    size_t value_size);
+                            const char *value,
+                            size_t value_size);
 
 
 /**
@@ -2806,7 +2806,7 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
 _MHD_EXTERN int
 MHD_queue_response (struct MHD_Connection *connection,
                     unsigned int status_code,
-		    struct MHD_Response *response);
+                    struct MHD_Response *response);
 
 
 /**
@@ -2895,11 +2895,28 @@ enum MHD_ResponseFlags
  */
 enum MHD_ResponseOptions
 {
-  /**
-   * End of the list of options.
-   */
-  MHD_RO_END = 0
+
+ /**
+  * End of the list of options.
+  */
+ MHD_RO_END = 0,
+
+ /**
+  * Set a specific free() function
+  * to free response buffer instead of libc void free(void * ptr)
+  */
+ MHD_RO_FREE_FUNCTION = 1
+
 };
+
+
+/**
+ * This typedef is defined to be able to pass a function pointer
+ * as a va_arg in #MHD_set_response_options() in combination
+ * with #MHD_RO_FREE_FUNCTION.
+ */
+typedef void
+(*MHD_FreeFunction)(void *);
 
 
 /**
