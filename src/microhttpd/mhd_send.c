@@ -327,7 +327,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                           const char *buffer,
                           size_t buffer_size)
 {
-#if HAVE_WRITEV
+#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   MHD_socket s = connection->socket_fd;
   bool have_cork;
   bool have_more;
@@ -363,9 +363,16 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   vector[0].iov_len = strlen (header);
   vector[1].iov_base = buffer;
   vector[1].iov_len = strlen (buffer);
+
+#if HAVE_SENDMSG
+  struct msghdr msg;
+  msg.msg_iov = vector;
+  memset(&msg, 0, sizeof(buffer + header));
+  ret = sendmsg (s, vector, MAYBE_MSG_NOSIGNAL);
+#elif HAVE_WRITEV
   iovcnt = sizeof (vector) / sizeof (struct iovec);
-  // FIXME: maybe use sendmsg() if available instead!
-  ret = writev (connection->socket_fd, vector, iovcnt);
+  ret = writev (s, vector, iovcnt);
+#endif
 
 #if TCP_CORK
   if (use_corknopush)
@@ -417,4 +424,13 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                                   header_size,
                                   MHD_SSO_HDR_CORK);
 #endif
+}
+
+ssize_t
+MHD_sendfile_on_connection_ (struct MHD_Connection *connection,
+                             const char *buffer,
+                             size_t buffer_size,
+                             enum MHD_SendSocketOptions options)
+{
+  // TODO
 }
