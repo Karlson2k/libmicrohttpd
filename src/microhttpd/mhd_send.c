@@ -49,7 +49,7 @@
  *         header (provided in full as the buffer to #MHD_send_on_connection_ or as
  *         the header to #MHD_send_on_connection2_).
  * @return sum of the number of bytes sent from both buffers or
-           -1 on error
+ *         -1 on error
  */
 ssize_t
 MHD_send_on_connection_ (struct MHD_Connection *connection,
@@ -318,7 +318,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
  * @param buffer content of the buffer to send
  * @param buffer_size the size of the buffer (in bytes)
  * @return sum of the number of bytes sent from both buffers or
-           -1 on error
+ *         -1 on error
  */
 ssize_t
 MHD_send_on_connection2_ (struct MHD_Connection *connection,
