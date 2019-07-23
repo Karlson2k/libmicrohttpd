@@ -426,6 +426,11 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 #endif
 }
 
+/* Worth considering for future improvements and additions:
+ * NetBSD has no sendfile or sendfile64. The way to work
+ * with this seems to be to mmap the file and write(2) as
+ * large a chunk as possible to the socket. Alternatively,
+ * use madvise(..., MADV_SEQUENTIAL). */
 ssize_t
 MHD_sendfile_on_connection_ (struct MHD_Connection *connection,
                              const char *buffer,
