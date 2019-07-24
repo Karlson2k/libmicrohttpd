@@ -3409,7 +3409,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       return;
     case MHD_CONNECTION_HEADERS_SENDING:
       /* if the response body is not available, we use MHD_send_on_connection_() */
-      if (sizeof(connection->response->data) <= 1024) /* bad magic number */
+      if (NULL != connection->response->crc)
         {
           ret = MHD_send_on_connection_ (connection,
                                          &connection->write_buffer
