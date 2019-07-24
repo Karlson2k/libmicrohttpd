@@ -463,7 +463,7 @@ sendfile_adapter (struct MHD_Connection *connection)
 #endif /* HAVE_FREEBSD_SENDFILE */
 
   ret = lo_ret;
-  (if 0 > ret)
+  if (0 > ret)
     {
       /* ! could be avoided by redefining the variable. */
       have_cork = ! connection->sk_tcp_nodelay_on;
