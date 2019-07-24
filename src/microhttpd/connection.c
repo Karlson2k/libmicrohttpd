@@ -3425,8 +3425,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                             [connection->write_buffer_send_offset],
                                             connection->write_buffer_append_offset -
                                             connection->write_buffer_send_offset,
-                                            response_body,
-                                            response_size);
+                                            connection->response->data,
+                                            connection->response->data_buffer_size);
         }
 
       if (ret < 0)
