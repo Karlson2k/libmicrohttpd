@@ -209,7 +209,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     break;
   /* Cork the header. */
   case MHD_SSO_HDR_CORK:
-    want_cork = (buffer_size >= 1024) && (buffer_size <= 1220);
+    want_cork = (buffer_size <= 1024) // && (buffer_size <= 1220);
     break;
   }
 
