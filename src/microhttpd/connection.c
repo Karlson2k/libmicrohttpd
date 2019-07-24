@@ -3408,20 +3408,26 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       mhd_assert (0);
       return;
     case MHD_CONNECTION_HEADERS_SENDING:
-      /* TODO: Maybe use MHD_send_on_connection2_()?  */
-      /*
-      ret = MHD_send_on_connection2_ (struct MHD_Connection *connection,
-                                      const char *header,
-                                      size_t header_size,
-                                      const char *buffer,
-                                      size_t buffer_size);
-      */
-      ret = MHD_send_on_connection_ (connection,
-                                     &connection->write_buffer
-                                     [connection->write_buffer_send_offset],
-                                     connection->write_buffer_append_offset -
-                                     connection->write_buffer_send_offset,
-                                     MHD_SSO_MAY_CORK);
+      /* if the response body is not available, we use MHD_send_on_connection_() */
+      if (sizeof(connection->response->data) <= 1024) /* bad magic number */
+        {
+          ret = MHD_send_on_connection_ (connection,
+                                         &connection->write_buffer
+                                         [connection->write_buffer_send_offset],
+                                         connection->write_buffer_append_offset -
+                                         connection->write_buffer_send_offset,
+                                         MHD_SSO_MAY_CORK);
+        }
+      else
+        {
+            ret = MHD_send_on_connection2_ (connection,
+                                            &connection->write_buffer
+                                            [connection->write_buffer_send_offset],
+                                            connection->write_buffer_append_offset -
+                                            connection->write_buffer_send_offset,
+                                            response_body,
+                                            response_size);
+        }
 
       if (ret < 0)
         {
