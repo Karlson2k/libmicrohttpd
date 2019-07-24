@@ -3420,13 +3420,13 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         }
       else
         {
-            ret = MHD_send_on_connection2_ (connection,
-                                            &connection->write_buffer
-                                            [connection->write_buffer_send_offset],
-                                            connection->write_buffer_append_offset -
-                                            connection->write_buffer_send_offset,
-                                            connection->response->data,
-                                            connection->response->data_buffer_size);
+          ret = MHD_send_on_connection2_ (connection,
+                                          &connection->write_buffer
+                                          [connection->write_buffer_send_offset],
+                                          connection->write_buffer_append_offset -
+                                          connection->write_buffer_send_offset,
+                                          connection->response->data,
+                                          connection->response->data_buffer_size);
         }
 
       if (ret < 0)

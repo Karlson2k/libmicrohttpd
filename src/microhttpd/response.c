@@ -195,7 +195,7 @@ MHD_add_response_footer (struct MHD_Response *response,
 int
 MHD_del_response_header (struct MHD_Response *response,
                          const char *header,
-			 const char *content)
+                         const char *content)
 {
   struct MHD_HTTP_Header *pos;
   struct MHD_HTTP_Header *prev;
@@ -558,8 +558,8 @@ free_callback (void *cls)
  */
 struct MHD_Response *
 MHD_create_response_from_fd_at_offset (size_t size,
-				       int fd,
-				       off_t offset)
+                                       int fd,
+                                       off_t offset)
 {
   return MHD_create_response_from_fd_at_offset64 (size,
                                                   fd,
@@ -604,9 +604,9 @@ MHD_create_response_from_fd_at_offset64 (uint64_t size,
 
   response = MHD_create_response_from_callback (size,
                                                 MHD_FILE_READ_BLOCK_SIZE,
-						&file_reader,
-						NULL,
-						&free_callback);
+                                                &file_reader,
+                                                NULL,
+                                                &free_callback);
   if (NULL == response)
     return NULL;
   response->fd = fd;
@@ -627,7 +627,7 @@ MHD_create_response_from_fd_at_offset64 (uint64_t size,
  */
 struct MHD_Response *
 MHD_create_response_from_fd (size_t size,
-			     int fd)
+                             int fd)
 {
   return MHD_create_response_from_fd_at_offset64 (size,
                                                   fd,
