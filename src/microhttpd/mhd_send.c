@@ -63,8 +63,26 @@ MHD_send_socket_state_nodelay_ (struct MHD_Connection *connection,
 #endif
 }
 
+void
+MHD_setsockopt_ (struct MHD_Connection *connection,
+                 int optname,
+                 bool value,
+                 bool state_store)
+{
+  const MHD_SCKT_OPT_BOOL_ state_val = value ? 1 : 0;
+
+  if (0 == setsockopt (connection->socket_fd,
+                       IPPROTO_TCP,
+                       optname,
+                       (const void *) &state_val,
+                       sizeof (state_val)))
+    {
+      connection->sk_tcp_nodelay_on = state_store;
+    }
+}
+
 /**
- * Set TCP_NODELAY flag on socket and save the
+ * Set TCP_NOCORK or TCP_NODELAY flag on socket and save the
  * #sk_tcp_nodelay_on state.
  *
  * @param connection the MHD_Connection structure
@@ -241,7 +259,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 #if TCP_NODELAY
   if ((! using_tls) && (! use_corknopush) && (! have_cork && want_cork))
     {
-      MHD_send_socket_state_nodelay_ (connection, false);
+      MHD_setsockopt_ (connection, TCP_NODELAY, false, false);
     }
 #endif
 
@@ -348,7 +366,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 #if TCP_NODELAY
   if ((! using_tls) && (! use_corknopush) && (have_cork && ! want_cork))
     {
-      MHD_send_socket_state_nodelay_ (connection, true);
+      MHD_setsockopt_ (connection, TCP_NODELAY, true, true);
     }
 #endif
 
@@ -401,7 +419,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 #if TCP_NODELAY
   if ((! use_corknopush) && (! have_cork && want_cork))
     {
-      MHD_send_socket_state_nodelay_ (connection, false);
+      MHD_setsockopt_(connection, TCP_NODELAY, false, false);
     }
 #endif
 
@@ -429,14 +447,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
     if ((ret == header_len + buffer_len) && have_cork)
       {
         // Response complete, definitely uncork!
-        if (0 == setsockopt (s,
-                             IPPROTO_TCP,
-                             TCP_CORK,
-                             (const void *) &off_val,
-                             sizeof (off_val)))
-          {
-            connection->sk_tcp_nodelay_on = true;
-          }
+        MHD_setsockopt_(connection, TCP_CORK, false, true);
       }
     errno = eno;
   }
