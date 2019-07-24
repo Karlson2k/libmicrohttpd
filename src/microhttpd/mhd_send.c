@@ -419,7 +419,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 #if TCP_NODELAY
   if ((! use_corknopush) && (! have_cork && want_cork))
     {
-      MHD_setsockopt_(connection, TCP_NODELAY, false, false);
+      MHD_setsockopt_ (connection, TCP_NODELAY, false, false);
     }
 #endif
 
@@ -447,7 +447,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
     if ((ret == header_len + buffer_len) && have_cork)
       {
         // Response complete, definitely uncork!
-        MHD_setsockopt_(connection, TCP_CORK, false, true);
+        MHD_setsockopt_ (connection, TCP_CORK, false, true);
       }
     errno = eno;
   }
@@ -461,7 +461,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
       if (ret == header_len + buffer_len)
         {
           /* Response complete, set NOPUSH to off */
-          MHD_send_socket_state_nopush_ (connection, false, false);
+          MHD_setsockopt_ (connection, TCP_NOPUSH, false, false);
         }
       errno = eno;
     }
