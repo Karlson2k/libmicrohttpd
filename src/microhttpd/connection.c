@@ -489,22 +489,11 @@ sendfile_adapter (struct MHD_Connection *connection)
    * No other system in 2019-06 has TCP_CORK. */
   if ((! using_tls) && (use_corknopush) && (have_cork && ! want_cork))
     {
-      if (0 == setsockopt (connection->socket_fd,
-                           IPPROTO_TCP,
-                           TCP_CORK,
-                           (const void *) &off_val,
-                           sizeof (off_val)))
-      {
-        connection->sk_tcp_nodelay_on = true;
-      }
-      else if (0 == setsockopt (connection->socket_fd,
-                                IPPROTO_TCP,
-                                TCP_NODELAY,
-                                (const void *) &on_val,
-                                sizeof (on_val)))
-      {
-        connection->sk_tcp_nodelay_on = true;
-      }
+      MHD_send_socket_state_cork_nodelay_ (connection,
+                                           false,
+                                           true,
+                                           true,
+                                           true);
     }
 #elif TCP_NOPUSH
   /* TCP_NOPUSH on FreeBSD is equal to cork on Linux, with the
