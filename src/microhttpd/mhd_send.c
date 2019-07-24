@@ -26,6 +26,12 @@
 
 /* TODO: sendfile() wrapper, in connection.c */
 
+/* Worth considering for future improvements and additions:
+ * NetBSD has no sendfile or sendfile64. The way to work
+ * with this seems to be to mmap the file and write(2) as
+ * large a chunk as possible to the socket. Alternatively,
+ * use madvise(..., MADV_SEQUENTIAL). */
+
 /* Functions to be used in: send_param_adapter, MHD_send_
  * and every place where sendfile(), sendfile64(), setsockopt()
  * are used. */
@@ -201,31 +207,11 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   if ((! using_tls) && (use_corknopush) && (have_cork && ! want_cork))
     {
       MHD_send_socket_state_nopush_ (connection, true, false);
-      /*
-      if (0 == setsockopt (s,
-                           IPPROTO_TCP,
-                           TCP_NOPUSH,
-                           (const void *) &on_val,
-                           sizeof (on_val)))
-        {
-          connection->sk_tcp_nodelay_on = false;
-        }
-      */
     }
 #endif
 #if TCP_NODELAY
   if ((! using_tls) && (! use_corknopush) && (! have_cork && want_cork))
     {
-      /*
-      if (0 == setsockopt (s,
-                           IPPROTO_TCP,
-                           TCP_NODELAY,
-                           (const void *) &off_val,
-                           sizeof (off_val)))
-      {
-        connection->sk_tcp_nodelay_on = false;
-      }
-      */
       MHD_send_socket_state_nodelay_ (connection, false);
     }
 #endif
@@ -332,20 +318,12 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   /* We don't have MSG_MORE. The OS which implement NOPUSH implement
    * it in a similar way to TCP_CORK on Linux. This means we can just
    * disregard the else branch for TCP_NODELAY which we had to use
-   * for the TCP_CORK case here. */
+   * for the TCP_CORK case here.
+   * XXX: Verify this statement and finetune if necessary for
+   * other systems, as only FreeBSD was checked. */
   if ((! using_tls) && (use_corknopush) && (have_cork && ! want_cork))
   {
     MHD_send_socket_state_nopush_ (connection, true, false);
-    /*
-    if (0 == setsockopt (s,
-                         IPPROTO_TCP,
-                         TCP_NOPUSH,
-                         (const void*) &on_val,
-                         sizeof (on_val)))
-      {
-        connection->sk_tcp_nodelay_on = false;
-      }
-    */
   }
 #endif
 
@@ -353,16 +331,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   if ((! using_tls) && (! use_corknopush) && (have_cork && ! want_cork))
     {
       MHD_send_socket_state_nodelay_ (connection, true);
-      /*
-      if (0 == setsockopt (s,
-                           IPPROTO_TCP,
-                           TCP_NODELAY,
-                           (const void *) &on_val,
-                           sizeof (on_val)))
-      {
-        connection->sk_tcp_nodelay_on = true;
-      }
-      */
     }
 #endif
 
@@ -416,16 +384,6 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   if ((! use_corknopush) && (! have_cork && want_cork))
     {
       MHD_send_socket_state_nodelay_ (connection, false);
-      /*
-      if (0 == setsockopt (s,
-                           IPPROTO_TCP,
-                           TCP_NODELAY,
-                           (const void *) &off_val,
-                           sizeof (off_val)))
-        {
-          connection->sk_tcp_nodelay_on = false;
-        }
-      */
     }
 #endif
 
@@ -475,16 +433,6 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
         {
           /* Response complete, set NOPUSH to off */
           MHD_send_socket_state_nopush_ (connection, false, false);
-          /*
-          if (0 == setsockopt (s,
-                               IPPROTO_TCP,
-                               TCP_NOPUSH,
-                               (const void *) &off_val,
-                               sizeof (off_val)))
-            {
-              connection->sk_tcp_nodelay_on = false;
-            }
-          */
         }
       errno = eno;
     }
@@ -498,9 +446,3 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                                   MHD_SSO_HDR_CORK);
 #endif
 }
-
-/* Worth considering for future improvements and additions:
- * NetBSD has no sendfile or sendfile64. The way to work
- * with this seems to be to mmap the file and write(2) as
- * large a chunk as possible to the socket. Alternatively,
- * use madvise(..., MADV_SEQUENTIAL). */

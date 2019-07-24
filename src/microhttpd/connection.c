@@ -513,16 +513,6 @@ sendfile_adapter (struct MHD_Connection *connection)
   if ((! using_tls) && (use_corknopush) && (have_cork && ! want_cork))
     {
       MHD_send_socket_state_nopush_ (connection, true, false);
-      /*
-      if (0 == setsockopt (connection->socket_fd,
-                           IPPROTO_TCP,
-                           TCP_NOPUSH,
-                           (const void *) &on_val,
-                           sizeof (on_val)))
-        {
-          connection->sk_tcp_nodelay_on = false;
-        }
-      */
     }
 #endif
 
