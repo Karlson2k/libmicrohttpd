@@ -288,6 +288,12 @@ send_param_adapter (struct MHD_Connection *connection,
 static ssize_t
 sendfile_adapter (struct MHD_Connection *connection)
 {
+  bool want_cork = false;
+  bool have_cork;
+  bool have_more;
+  bool use_corknopush;
+  bool using_tls = false;
+
   ssize_t ret;
   const int file_fd = connection->response->fd;
   uint64_t left;
@@ -454,6 +460,72 @@ sendfile_adapter (struct MHD_Connection *connection)
   mhd_assert (send_size >= (size_t)len);
   ret = (ssize_t)len;
 #endif /* HAVE_FREEBSD_SENDFILE */
+
+  /* ! could be avoided by redefining the variable. */
+  have_cork = ! connection->sk_tcp_nodelay_on;
+
+#ifdef MSG_MORE
+  have_more = true;
+#else
+  have_more = false;
+#endif
+
+#if TCP_NODELAY
+  use_corknopush = false;
+#elif TCP_CORK
+  use_corknopush = true;
+#elif TCP_NOPUSH
+  use_corknopush = true;
+#endif
+
+#ifdef HTTPS_SUPPORT
+  using_tls = (0 != (connection->daemon->options & MHD_USE_TLS));
+#endif
+
+#if TCP_CORK
+  /* When we have CORK, we can have NODELAY on the same system,
+   * at least since Linux 2.2 and both can be combined since
+   * Linux 2.5.71. For more details refer to tcp(7) on Linux.
+   * No other system in 2019-06 has TCP_CORK. */
+  if ((! using_tls) && (use_corknopush) && (have_cork && ! want_cork))
+    {
+      if (0 == setsockopt (connection->socket_fd,
+                           IPPROTO_TCP,
+                           TCP_CORK,
+                           (const void *) &off_val,
+                           sizeof (off_val)))
+      {
+        connection->sk_tcp_nodelay_on = true;
+      }
+      else if (0 == setsockopt (connection->socket_fd,
+                                IPPROTO_TCP,
+                                TCP_NODELAY,
+                                (const void *) &on_val,
+                                sizeof (on_val)))
+      {
+        connection->sk_tcp_nodelay_on = true;
+      }
+    }
+#elif TCP_NOPUSH
+  /* TCP_NOPUSH on FreeBSD is equal to cork on Linux, with the
+   * exception that we know that TCP_NOPUSH will definitely
+   * exist and we can disregard TCP_NODELAY unless requested. */
+  if ((! using_tls) && (use_corknopush) && (have_cork && ! want_cork))
+    {
+      MHD_send_socket_state_nopush_ (connection, true, false);
+      /*
+      if (0 == setsockopt (connection->socket_fd,
+                           IPPROTO_TCP,
+                           TCP_NOPUSH,
+                           (const void *) &on_val,
+                           sizeof (on_val)))
+        {
+          connection->sk_tcp_nodelay_on = false;
+        }
+      */
+    }
+#endif
+
   return ret;
 }
 #endif /* _MHD_HAVE_SENDFILE */

@@ -77,4 +77,13 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 
 ssize_t
 MHD_sendfile_on_connection_ (struct MHD_Connection *connection);
+
+void
+MHD_send_socket_state_nopush_ (struct MHD_Connection *connection,
+                               bool value,
+                               bool state_store);
+
+void
+MHD_send_socket_state_nodelay_ (struct MHD_Connection *connection,
+                                bool value);
 #endif /* MHD_SEND_H */
