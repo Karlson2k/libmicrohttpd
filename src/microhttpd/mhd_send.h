@@ -74,4 +74,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                           size_t header_size,
                           const char *buffer,
                           size_t buffer_size);
+
+ssize_t
+MHD_sendfile_on_connection_ (struct MHD_Connection *connection);
 #endif /* MHD_SEND_H */

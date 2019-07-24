@@ -3350,12 +3350,20 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       return;
     case MHD_CONNECTION_HEADERS_SENDING:
       /* TODO: Maybe use MHD_send_on_connection2_()?  */
+      /*
+      ret = MHD_send_on_connection2_ (struct MHD_Connection *connection,
+                                      const char *header,
+                                      size_t header_size,
+                                      const char *buffer,
+                                      size_t buffer_size);
+      */
       ret = MHD_send_on_connection_ (connection,
                                      &connection->write_buffer
                                      [connection->write_buffer_send_offset],
                                      connection->write_buffer_append_offset -
                                      connection->write_buffer_send_offset,
                                      MHD_SSO_MAY_CORK);
+
       if (ret < 0)
         {
           if (MHD_ERR_AGAIN_ == ret)
@@ -3392,7 +3400,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #if defined(_MHD_HAVE_SENDFILE)
           if (MHD_resp_sender_sendfile == connection->resp_sender)
             {
-              ret = sendfile_adapter (connection);
+              // ret = sendfile_adapter (connection);
+              ret = MHD_sendfile_on_connection_ (connection);
             }
           else
 #else  /* ! _MHD_HAVE_SENDFILE */
