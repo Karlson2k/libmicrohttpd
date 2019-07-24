@@ -86,4 +86,11 @@ MHD_send_socket_state_nopush_ (struct MHD_Connection *connection,
 void
 MHD_send_socket_state_nodelay_ (struct MHD_Connection *connection,
                                 bool value);
+
+void
+MHD_send_socket_state_cork_nodelay_ (struct MHD_Connection *connection,
+                                     bool cork_value,
+                                     bool cork_state,
+                                     bool nodelay_value,
+                                     bool nodelay_state);
 #endif /* MHD_SEND_H */
