@@ -31,29 +31,7 @@
  * are used. */
 
 #include "mhd_send.h"
-
-/**
- * sendfile() chuck size
- */
-#define MHD_SENFILE_CHUNK_         (0x20000)
-
-/**
- * sendfile() chuck size for thread-per-connection
- */
-#define MHD_SENFILE_CHUNK_THR_P_C_ (0x200000)
-
-#ifdef HAVE_FREEBSD_SENDFILE
-#ifdef SF_FLAGS
-/**
- * FreeBSD sendfile() flags
- */
-static int freebsd_sendfile_flags_;
-
-/**
- * FreeBSD sendfile() flags for thread-per-connection
- */
-static int freebsd_sendfile_flags_thd_p_c_;
-#endif /* SF_FLAGS */
+#include "connection.h"
 
 /**
  * Set socket to nodelay, on or off.
