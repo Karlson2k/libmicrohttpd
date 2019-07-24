@@ -33,7 +33,8 @@
 #include "mhd_send.h"
 
 /**
- * Set socket to nodelay, on or off.
+ * Set TCP_NODELAY flag on socket and save the
+ * #sk_tcp_nodelay_on state.
  *
  * @param connection the MHD_Connection structure
  * @param value the state to set, boolean
@@ -56,6 +57,14 @@ MHD_send_socket_state_nodelay_ (struct MHD_Connection *connection,
 #endif
 }
 
+/**
+ * Set TCP_NOPUSH flag on socket and save the
+ * #sk_tcp_nodelay_on state.
+ *
+ * @param connection the #MHD_Connection structure
+ * @param value the state to set, boolean
+ * @param state_store the boolean value passed to #sk_tcp_nodelay_on
+ */
 void
 MHD_send_socket_state_nopush_ (struct MHD_Connection *connection,
                                bool value,
