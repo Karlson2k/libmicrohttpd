@@ -655,3 +655,291 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                                   MHD_SSO_HDR_CORK);
 #endif
 }
+
+/**
+ * sendfile() chuck size
+ */
+#define MHD_SENFILE_CHUNK_         (0x20000)
+
+/**
+ * sendfile() chuck size for thread-per-connection
+ */
+#define MHD_SENFILE_CHUNK_THR_P_C_ (0x200000)
+
+#ifdef HAVE_FREEBSD_SENDFILE
+#ifdef SF_FLAGS
+/**
+ * FreeBSD sendfile() flags
+ */
+static int freebsd_sendfile_flags_;
+
+/**
+ * FreeBSD sendfile() flags for thread-per-connection
+ */
+static int freebsd_sendfile_flags_thd_p_c_;
+#endif /* SF_FLAGS */
+/**
+ * Initialises static variables
+ */
+void
+MHD_conn_init_static_ (void)
+{
+/* FreeBSD 11 and later allow to specify read-ahead size
+ * and handles SF_NODISKIO differently.
+ * SF_FLAGS defined only on FreeBSD 11 and later. */
+#ifdef SF_FLAGS
+  long sys_page_size = sysconf (_SC_PAGESIZE);
+  if (0 > sys_page_size)
+    { /* Failed to get page size. */
+      freebsd_sendfile_flags_ = SF_NODISKIO;
+      freebsd_sendfile_flags_thd_p_c_ = SF_NODISKIO;
+    }
+  else
+    {
+      freebsd_sendfile_flags_ =
+          SF_FLAGS((uint16_t)(MHD_SENFILE_CHUNK_ / sys_page_size), SF_NODISKIO);
+      freebsd_sendfile_flags_thd_p_c_ =
+          SF_FLAGS((uint16_t)(MHD_SENFILE_CHUNK_THR_P_C_ / sys_page_size), SF_NODISKIO);
+    }
+#endif /* SF_FLAGS */
+}
+#endif /* HAVE_FREEBSD_SENDFILE */
+
+#if defined(_MHD_HAVE_SENDFILE)
+/**
+ * Function for sending responses backed by file FD.
+ *
+ * @param connection the MHD connection structure
+ * @return actual number of bytes sent
+ */
+static ssize_t
+sendfile_adapter (struct MHD_Connection *connection)
+{
+  bool want_cork = false;
+  bool have_cork;
+  bool have_more;
+  bool use_corknopush;
+  bool using_tls = false;
+
+  ssize_t ret;
+  ssize_t lo_ret;
+  const int file_fd = connection->response->fd;
+  uint64_t left;
+  uint64_t offsetu64;
+#ifndef HAVE_SENDFILE64
+  const uint64_t max_off_t = (uint64_t)OFF_T_MAX;
+#else  /* HAVE_SENDFILE64 */
+  const uint64_t max_off_t = (uint64_t)OFF64_T_MAX;
+#endif /* HAVE_SENDFILE64 */
+#ifdef MHD_LINUX_SOLARIS_SENDFILE
+#ifndef HAVE_SENDFILE64
+  off_t offset;
+#else  /* HAVE_SENDFILE64 */
+  off64_t offset;
+#endif /* HAVE_SENDFILE64 */
+#endif /* MHD_LINUX_SOLARIS_SENDFILE */
+#ifdef HAVE_FREEBSD_SENDFILE
+  off_t sent_bytes;
+  int flags = 0;
+#endif
+#ifdef HAVE_DARWIN_SENDFILE
+  off_t len;
+#endif /* HAVE_DARWIN_SENDFILE */
+  const bool used_thr_p_c = (0 != (connection->daemon->options & MHD_USE_THREAD_PER_CONNECTION));
+  const size_t chunk_size = used_thr_p_c ? MHD_SENFILE_CHUNK_THR_P_C_ : MHD_SENFILE_CHUNK_;
+  size_t send_size = 0;
+  mhd_assert (MHD_resp_sender_sendfile == connection->resp_sender);
+
+  offsetu64 = connection->response_write_position + connection->response->fd_off;
+  left = connection->response->total_size - connection->response_write_position;
+  /* Do not allow system to stick sending on single fast connection:
+   * use 128KiB chunks (2MiB for thread-per-connection). */
+  send_size = (left > chunk_size) ? chunk_size : (size_t) left;
+  if (max_off_t < offsetu64)
+    { /* Retry to send with standard 'send()'. */
+      connection->resp_sender = MHD_resp_sender_std;
+      return MHD_ERR_AGAIN_;
+    }
+#ifdef MHD_LINUX_SOLARIS_SENDFILE
+#ifndef HAVE_SENDFILE64
+  offset = (off_t) offsetu64;
+  ret = sendfile (connection->socket_fd,
+                  file_fd,
+                  &offset,
+                  send_size);
+#else  /* HAVE_SENDFILE64 */
+  offset = (off64_t) offsetu64;
+  ret = sendfile64 (connection->socket_fd,
+                    file_fd,
+                    &offset,
+                    send_size);
+#endif /* HAVE_SENDFILE64 */
+  if (0 > ret)
+    {
+      const int err = MHD_socket_get_error_();
+      if (MHD_SCKT_ERR_IS_EAGAIN_(err))
+        {
+#ifdef EPOLL_SUPPORT
+          /* EAGAIN --- no longer write-ready */
+          connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+          return MHD_ERR_AGAIN_;
+        }
+      if (MHD_SCKT_ERR_IS_EINTR_ (err))
+        return MHD_ERR_AGAIN_;
+#ifdef HAVE_LINUX_SENDFILE
+      if (MHD_SCKT_ERR_IS_(err,
+                           MHD_SCKT_EBADF_))
+        return MHD_ERR_BADF_;
+      /* sendfile() failed with EINVAL if mmap()-like operations are not
+         supported for FD or other 'unusual' errors occurred, so we should try
+         to fall back to 'SEND'; see also this thread for info on
+         odd libc/Linux behavior with sendfile:
+         http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
+      connection->resp_sender = MHD_resp_sender_std;
+      return MHD_ERR_AGAIN_;
+#else  /* HAVE_SOLARIS_SENDFILE */
+      if ( (EAFNOSUPPORT == err) ||
+           (EINVAL == err) ||
+           (EOPNOTSUPP == err) )
+        { /* Retry with standard file reader. */
+          connection->resp_sender = MHD_resp_sender_std;
+          return MHD_ERR_AGAIN_;
+        }
+      if ( (ENOTCONN == err) ||
+           (EPIPE == err) )
+        {
+          return MHD_ERR_CONNRESET_;
+        }
+      return MHD_ERR_BADF_; /* Fail hard */
+#endif /* HAVE_SOLARIS_SENDFILE */
+    }
+#ifdef EPOLL_SUPPORT
+  else if (send_size > (size_t)ret)
+        connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+#elif defined(HAVE_FREEBSD_SENDFILE)
+#ifdef SF_FLAGS
+  flags = used_thr_p_c ?
+      freebsd_sendfile_flags_thd_p_c_ : freebsd_sendfile_flags_;
+#endif /* SF_FLAGS */
+  if (0 != sendfile (file_fd,
+                     connection->socket_fd,
+                     (off_t) offsetu64,
+                     send_size,
+                     NULL,
+                     &sent_bytes,
+                     flags))
+    {
+      const int err = MHD_socket_get_error_();
+      if (MHD_SCKT_ERR_IS_EAGAIN_(err) ||
+          MHD_SCKT_ERR_IS_EINTR_(err) ||
+          EBUSY == err)
+        {
+          mhd_assert (SSIZE_MAX >= sent_bytes);
+          if (0 != sent_bytes)
+            return (ssize_t)sent_bytes;
+
+          return MHD_ERR_AGAIN_;
+        }
+      /* Some unrecoverable error. Possibly file FD is not suitable
+       * for sendfile(). Retry with standard send(). */
+      connection->resp_sender = MHD_resp_sender_std;
+      return MHD_ERR_AGAIN_;
+    }
+  mhd_assert (0 < sent_bytes);
+  mhd_assert (SSIZE_MAX >= sent_bytes);
+  ret = (ssize_t)sent_bytes;
+#elif defined(HAVE_DARWIN_SENDFILE)
+  len = (off_t)send_size; /* chunk always fit */
+  if (0 != sendfile (file_fd,
+                     connection->socket_fd,
+                     (off_t) offsetu64,
+                     &len,
+                     NULL,
+                     0))
+    {
+      const int err = MHD_socket_get_error_();
+      if (MHD_SCKT_ERR_IS_EAGAIN_(err) ||
+          MHD_SCKT_ERR_IS_EINTR_(err))
+        {
+          mhd_assert (0 <= len);
+          mhd_assert (SSIZE_MAX >= len);
+          mhd_assert (send_size >= (size_t)len);
+          if (0 != len)
+            return (ssize_t)len;
+
+          return MHD_ERR_AGAIN_;
+        }
+      if (ENOTCONN == err ||
+          EPIPE == err)
+        return MHD_ERR_CONNRESET_;
+      if (ENOTSUP == err ||
+          EOPNOTSUPP == err)
+        { /* This file FD is not suitable for sendfile().
+           * Retry with standard send(). */
+          connection->resp_sender = MHD_resp_sender_std;
+          return MHD_ERR_AGAIN_;
+        }
+      return MHD_ERR_BADF_; /* Return hard error. */
+    }
+  mhd_assert (0 <= len);
+  mhd_assert (SSIZE_MAX >= len);
+  mhd_assert (send_size >= (size_t)len);
+  ret = (ssize_t)len;
+#endif /* HAVE_FREEBSD_SENDFILE */
+
+  ret = lo_ret;
+  if (0 > ret)
+    {
+      /* ! could be avoided by redefining the variable. */
+      have_cork = ! connection->sk_tcp_nodelay_on;
+
+#ifdef MSG_MORE
+      have_more = true;
+#else
+      have_more = false;
+#endif
+
+#if TCP_NODELAY
+      use_corknopush = false;
+#elif TCP_CORK
+      use_corknopush = true;
+#elif TCP_NOPUSH
+      use_corknopush = true;
+#endif
+
+#ifdef HTTPS_SUPPORT
+      using_tls = (0 != (connection->daemon->options & MHD_USE_TLS));
+#endif
+
+#if TCP_CORK
+      /* When we have CORK, we can have NODELAY on the same system,
+       * at least since Linux 2.2 and both can be combined since
+       * Linux 2.5.71. For more details refer to tcp(7) on Linux.
+       * No other system in 2019-06 has TCP_CORK. */
+      if ((! using_tls) && (use_corknopush) && (have_cork && ! want_cork))
+        {
+          MHD_send_socket_state_cork_nodelay_ (connection,
+                                               false,
+                                               true,
+                                               true,
+                                               true);
+        }
+#elif TCP_NOPUSH
+      /* TCP_NOPUSH on FreeBSD is equal to cork on Linux, with the
+       * exception that we know that TCP_NOPUSH will definitely
+       * exist and we can disregard TCP_NODELAY unless requested. */
+      if ((! using_tls) && (use_corknopush) && (have_cork && ! want_cork))
+        {
+          MHD_send_socket_state_nopush_ (connection, true, false);
+        }
+#endif
+      return lo_ret;
+    }
+  else
+    {
+      return ret;
+    }
+}
+#endif /* _MHD_HAVE_SENDFILE */

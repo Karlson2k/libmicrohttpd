@@ -37,6 +37,20 @@
 #include "connection.h"
 #include "connection_https.h"
 
+#ifdef MHD_LINUX_SOLARIS_SENDFILE
+#include <sys/sendfile.h>
+#endif /* MHD_LINUX_SOLARIS_SENDFILE */
+#if defined(HAVE_FREEBSD_SENDFILE) || defined(HAVE_DARWIN_SENDFILE)
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/uio.h>
+#endif /* HAVE_FREEBSD_SENDFILE || HAVE_DARWIN_SENDFILE */
+
+#ifdef HAVE_SYS_PARAM_H
+/* For FreeBSD version identification */
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
+
 /**
  * The enumeration of send socket options.
  */
