@@ -38,6 +38,107 @@
 
 #include "mhd_send.h"
 
+int
+post_cork_setsockopt (struct MHD_Connection *connection,
+                      bool want_cork)
+{
+  int ret;
+  bool using_tls = false;
+  // const MHD_SCKT_OPT_BOOL_ state_val = val ? 1 : 0;
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
+  const MHD_SCKT_OPT_BOOL_ on_val = 1;
+#ifdef HTTPS_SUPPORT
+  using_tls = (0 != (connection->daemon->options & MHD_USE_TLS));
+#endif
+
+  if (using_tls)
+    {
+      // not sure.
+      return 0; // ? without a value I get a return type error.
+    }
+
+#if TCP_CORK
+  ret = setsockopt (connection->socket_fd,
+                    IPPROTO_TCP,
+                    TCP_CORK,
+                    (const void *) &on_val,
+                    sizeof (on_val));
+#elif TCP_NODELAY
+  ret = setsockopt (connection->socket_fd,
+                    IPPROTO_TCP,
+                    TCP_NODELAY,
+                    (const void *) &off_val,
+                    sizeof (off_val));
+#elif TCP_NOPUSH
+  ret = setsockopt (connection->socket_fd,
+                    IPPROTO_TCP,
+                    TCP_NOPUSH,
+                    (const void *) &on_val,
+                    sizeof (on_val));
+#else
+  ret = -1;
+#endif
+  if (0 == ret)
+    {
+      connection->sk_tcp_nodelay_on = false;
+    }
+  return ret;
+}
+
+int
+pre_cork_setsockopt (struct MHD_Connection *connection,
+                     bool want_cork,
+                     bool val)
+{
+  int ret;
+  bool using_tls = false;
+  const MHD_SCKT_OPT_BOOL_ state_val = val ? 1 : 0;
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
+  const MHD_SCKT_OPT_BOOL_ on_val = 1;
+#ifdef HTTPS_SUPPORT
+  using_tls = (0 != (connection->daemon->options & MHD_USE_TLS));
+#endif
+
+  if (using_tls)
+    {
+      // more gnutls work?
+      // or all of it because we want to somehow handle the tls and error handling for it here?
+      return 0; // return type error
+    }
+
+  // if sk_tcp_nodelay_on is already what we pass in, return.
+  if (connection->sk_tcp_nodelay_on == val)
+    {
+      return 0; // return type error
+    }
+
+#if TCP_CORK
+  ret = setsockopt (connection->socket_fd,
+                    IPPROTO_TCP,
+                    TCP_CORK,
+                    (const void *) &off_val,
+                    sizeof (off_val));
+#elif TCP_NODELAY
+  ret = setsockopt (connection->socket_fd,
+                    IPPROTO_TCP,
+                    TCP_NODELAY,
+                    (const void *) &on_val,
+                    sizeof (on_val));
+#elif TCP_NOPUSH
+  ret = setsockopt (connection->socket_fd,
+                    IPPROTO_TCP,
+                    TCP_NOPUSH,
+                    (const void *) &on_val,
+                    sizeof (on_val));
+#else
+  ret = -1;
+#endif
+  if (0 == ret)
+    {
+      connection->sk_tcp_nodelay_on = val;
+    }
+}
+
 /**
  * Set TCP_NODELAY flag on socket and save the
  * #sk_tcp_nodelay_on state.
@@ -63,6 +164,75 @@ MHD_send_socket_state_nodelay_ (struct MHD_Connection *connection,
 #endif
 }
 
+/*
+void
+MHD_setsockopt_pre_ (struct MHD_Connection *connection,
+                     bool value)
+{
+  bool using_tls = false;
+#ifdef HTTPS_SUPPORT
+  using_tls = (0 != (connection->daemon->options & MHD_USE_TLS));
+#endif
+  const MHD_SCKT_OPT_BOOL_ state_val = value ? 1 : 0;
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
+  const MHD_SCKT_OPT_BOOL_ on_val = 1;
+
+  if (connection->sk_tcp_nodelay_on == value)
+    {
+      return
+    }
+  if (0 == setsockopt (connection->socket_fd,
+                       IPPROTO_TCP,
+#if TCP_CORK && (! using_tls)
+                       TCP_CORK,
+                       (const void *) &off_val,
+                       sizeof (off_val)))
+    {
+      connection->sk_tcp_nodelay_on = on_val;
+    }
+#elif TCP_NODELAY
+  TCP_NODELAY,
+                         (const void *) &off_val,
+                         sizeof (off_val)))
+#endif
+#if TCP_NOPUSH
+#endif
+                       (const void *) &state_val,
+                       sizeof (state_val)))
+}
+*/
+/*
+void
+MHD_setsockopt_post_ (struct MHD_Connection *connection,
+                      bool value)
+{
+  if (connection->sk_tcp_nodelay_on == value)
+    {
+      return
+    }
+  if (0 == setsockopt (connection->socket_fd,
+                       IPPROTO_TCP,
+#if TCP_NODELAY
+                       TCP_NODELAY,
+#endif
+#if TCP_NOPUSH
+                       TCP_NOPUSH,
+#endif
+#if TCP_CORK
+                       TCP_CORK,
+#endif
+
+
+                       (const void *) &state_val,
+                       sizeof (state_val)))
+    {
+      // When TRUE above, this is usually FALSE, but
+      // not always. We can't use the negation of
+      // value for that reason.
+      connection->sk_tcp_nodelay_on = state_store;
+    }
+}
+*/
 void
 MHD_setsockopt_ (struct MHD_Connection *connection,
                  int optname,
@@ -264,7 +434,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 #endif
 
 #ifdef HTTPS_SUPPORT
-
   if (using_tls)
   {
     if (want_cork && ! have_cork)
@@ -341,6 +510,9 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
   }
+
+  post_cork_setsockopt (connection, want_cork);
+  /*
 #if TCP_CORK
   if ((! using_tls) && (use_corknopush) && (! have_cork && want_cork && ! have_more))
     {
@@ -351,12 +523,12 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                                            false);
     }
 #elif TCP_NOPUSH
-  /* We don't have MSG_MORE. The OS which implement NOPUSH implement
-   * it in a similar way to TCP_CORK on Linux. This means we can just
-   * disregard the else branch for TCP_NODELAY which we had to use
-   * for the TCP_CORK case here.
-   * XXX: Verify this statement and finetune if necessary for
-   * other systems, as only FreeBSD was checked. */
+  // We don't have MSG_MORE. The OS which implement NOPUSH implement
+  // it in a similar way to TCP_CORK on Linux. This means we can just
+  // disregard the else branch for TCP_NODELAY which we had to use
+  // for the TCP_CORK case here.
+  // XXX: Verify this statement and finetune if necessary for
+  // other systems, as only FreeBSD was checked.
   if ((! using_tls) && (use_corknopush) && (have_cork && ! want_cork))
   {
     MHD_send_socket_state_nopush_ (connection, true, false);
@@ -369,7 +541,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
       MHD_setsockopt_ (connection, TCP_NODELAY, true, true);
     }
 #endif
-
+  */
   return ret;
 }
 
@@ -431,7 +603,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 #if HAVE_SENDMSG
   struct msghdr msg;
   msg.msg_iov = vector;
-  memset(&msg, 0, sizeof(buffer + header));
+  memset(&msg, 0, sizeof(msg));
   ret = sendmsg (s, vector, MAYBE_MSG_NOSIGNAL);
 #elif HAVE_WRITEV
   iovcnt = sizeof (vector) / sizeof (struct iovec);
