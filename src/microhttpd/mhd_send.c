@@ -455,7 +455,7 @@ sendfile_adapter (struct MHD_Connection *connection)
   size_t send_size = 0;
   mhd_assert (MHD_resp_sender_sendfile == connection->resp_sender);
 
-  (void) pre_cork_setsockopt (connection, false);
+  pre_cork_setsockopt (connection, false);
 
   offsetu64 = connection->response_write_position + connection->response->fd_off;
   left = connection->response->total_size - connection->response_write_position;
@@ -596,7 +596,7 @@ sendfile_adapter (struct MHD_Connection *connection)
   ret = (ssize_t)len;
 #endif /* HAVE_FREEBSD_SENDFILE */
 
-  (void) post_cork_setsockopt (connection, false);
+  post_cork_setsockopt (connection, false);
 
   return ret;
 }
