@@ -119,6 +119,4 @@ ssize_t
 sendfile_adapter (struct MHD_Connection *connection);
 #endif
 
-void
-MHD_conn_init_static_ (void);
 #endif /* MHD_SEND_H */
