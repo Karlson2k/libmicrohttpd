@@ -43,19 +43,9 @@ post_cork_setsockopt (struct MHD_Connection *connection,
                       bool want_cork)
 {
   int ret;
-  bool using_tls = false;
   // const MHD_SCKT_OPT_BOOL_ state_val = val ? 1 : 0;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
-#ifdef HTTPS_SUPPORT
-  using_tls = (0 != (connection->daemon->options & MHD_USE_TLS));
-#endif
-
-  if (using_tls)
-    {
-      // not sure.
-      return 0; // ? without a value I get a return type error.
-    }
 
 #if TCP_CORK
   ret = setsockopt (connection->socket_fd,
@@ -90,20 +80,9 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
                      bool want_cork)
 {
   int ret;
-  bool using_tls = false;
   // const MHD_SCKT_OPT_BOOL_ state_val = val ? 1 : 0;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
-#ifdef HTTPS_SUPPORT
-  using_tls = (0 != (connection->daemon->options & MHD_USE_TLS));
-#endif
-
-  if (using_tls)
-    {
-      // more gnutls work?
-      // or all of it because we want to somehow handle the tls and error handling for it here?
-      return 0; // return type error
-    }
 
   // if sk_tcp_nodelay_on is already what we pass in, return.
   if (connection->sk_tcp_nodelay_on == want_cork)
