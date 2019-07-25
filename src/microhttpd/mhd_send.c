@@ -598,14 +598,7 @@ static int freebsd_sendfile_flags_thd_p_c_;
 ssize_t
 sendfile_adapter (struct MHD_Connection *connection)
 {
-  bool want_cork = false;
-  bool have_cork;
-  bool have_more;
-  bool use_corknopush;
-  bool using_tls = false;
-
   ssize_t ret;
-  ssize_t lo_ret;
   const int file_fd = connection->response->fd;
   uint64_t left;
   uint64_t offsetu64;
@@ -632,6 +625,8 @@ sendfile_adapter (struct MHD_Connection *connection)
   const size_t chunk_size = used_thr_p_c ? MHD_SENFILE_CHUNK_THR_P_C_ : MHD_SENFILE_CHUNK_;
   size_t send_size = 0;
   mhd_assert (MHD_resp_sender_sendfile == connection->resp_sender);
+
+  (void) pre_cork_setsockopt (connection, false);
 
   offsetu64 = connection->response_write_position + connection->response->fd_off;
   left = connection->response->total_size - connection->response_write_position;
@@ -772,57 +767,8 @@ sendfile_adapter (struct MHD_Connection *connection)
   ret = (ssize_t)len;
 #endif /* HAVE_FREEBSD_SENDFILE */
 
-  ret = lo_ret;
-  if (0 > ret)
-    {
-      /* ! could be avoided by redefining the variable. */
-      have_cork = ! connection->sk_tcp_nodelay_on;
+  (void) post_cork_setsockopt (connection, false);
 
-#ifdef MSG_MORE
-      have_more = true;
-#else
-      have_more = false;
-#endif
-
-#if TCP_NODELAY
-      use_corknopush = false;
-#elif TCP_CORK
-      use_corknopush = true;
-#elif TCP_NOPUSH
-      use_corknopush = true;
-#endif
-
-#ifdef HTTPS_SUPPORT
-      using_tls = (0 != (connection->daemon->options & MHD_USE_TLS));
-#endif
-
-#if TCP_CORK
-      /* When we have CORK, we can have NODELAY on the same system,
-       * at least since Linux 2.2 and both can be combined since
-       * Linux 2.5.71. For more details refer to tcp(7) on Linux.
-       * No other system in 2019-06 has TCP_CORK. */
-      if ((! using_tls) && (use_corknopush) && (have_cork && ! want_cork))
-        {
-          MHD_send_socket_state_cork_nodelay_ (connection,
-                                               false,
-                                               true,
-                                               true,
-                                               true);
-        }
-#elif TCP_NOPUSH
-      /* TCP_NOPUSH on FreeBSD is equal to cork on Linux, with the
-       * exception that we know that TCP_NOPUSH will definitely
-       * exist and we can disregard TCP_NODELAY unless requested. */
-      if ((! using_tls) && (use_corknopush) && (have_cork && ! want_cork))
-        {
-          MHD_send_socket_state_nopush_ (connection, true, false);
-        }
-#endif
-      return lo_ret;
-    }
-  else
-    {
-      return ret;
-    }
+  return ret;
 }
 #endif /* _MHD_HAVE_SENDFILE */
