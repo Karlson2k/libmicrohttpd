@@ -408,8 +408,8 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 #ifdef HTTPS_SUPPORT
   using_tls = (0 != (connection->daemon->options & MHD_USE_TLS));
 #endif
-
-  pre_cork_setsockopt (connection, want_cork);
+  if (! (have_more || using_tls))
+    pre_cork_setsockopt (connection, want_cork);
 
   /*
 #if TCP_CORK
