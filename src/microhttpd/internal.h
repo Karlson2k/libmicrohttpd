@@ -871,19 +871,13 @@ struct MHD_Connection
   /**
    * true if #socket_fd is non-blocking, false otherwise.
    */
-  bool sk_nonblck;
+  bool sk_nonblck; // FIXME: hopefully dead?
 
   /**
-   * Indicate whether connection socket has TCP_NODELAY turned on / Nagle’s algorithm turned off.
-   * TCP_NODELAY should not be turned on when TCP_CORK/TCP_NOPUSH is turned off.
+   * Indicate whether connection socket has TCP_CORK / Nagle’s algorithm turned on/off
+   * on this socket.
    */
-  bool sk_tcp_nodelay_on;
-
-  /**
-   * Indicate whether connection socket has TCP_CORK/TCP_NOPUSH turned on.
-   * TCP_CORK/TCP_NOPUSH should not be turned on when TCP_NODELAY is turned off.
-   */
-  bool sk_tcp_cork_nopush_on;
+  bool sk_cork_on;
 
   /**
    * Has this socket been closed for reading (i.e.  other side closed

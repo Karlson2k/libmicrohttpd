@@ -47,7 +47,19 @@ post_cork_setsockopt (struct MHD_Connection *connection,
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
+  if (connection->sk_cork_on == want_cork)
+    {
+      /* nothing to do, success! */
+      return 0;
+    }
+  ret = -1;
 #if TCP_CORK
+  if (! want_cork)
+    ret = setsockopt (connection->socket_fd,
+                      IPPROTO_TCP,
+                      TCP_CORK,
+                      &off_val,
+                      sizeof (off_val));
 #elif TCP_NODELAY
   ret = setsockopt (connection->socket_fd,
                     IPPROTO_TCP,
@@ -60,12 +72,10 @@ post_cork_setsockopt (struct MHD_Connection *connection,
                     TCP_NOPUSH,
                     (const void *) &on_val,
                     sizeof (on_val));
-#else
-  ret = -1;
 #endif
   if (0 == ret)
     {
-      connection->sk_tcp_nodelay_on = false;
+      connection->sk_cork_on = want_cork;
     }
   return ret;
 }
@@ -80,18 +90,20 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
   // if sk_tcp_nodelay_on is already what we pass in, return.
-  if (connection->sk_tcp_nodelay_on == want_cork)
+  if (connection->sk_cork_on == want_cork)
     {
-      return 0; // return type error
+      /* nothing to do, success! */
+      return 0;
     }
 
   ret = -1;
 #if TCP_CORK
-  ret = setsockopt (connection->socket_fd,
-                    IPPROTO_TCP,
-                    TCP_CORK,
-                    (const void *) want_cork ? &on_val : &off_val,
-                    sizeof (on_val));
+  if (want_cork)
+    ret = setsockopt (connection->socket_fd,
+                      IPPROTO_TCP,
+                      TCP_CORK,
+                      (const void *) &on_val,
+                      sizeof (on_val));
 #elif TCP_NODELAY
   ret = setsockopt (connection->socket_fd,
                     IPPROTO_TCP,
@@ -108,11 +120,7 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
 
   if (0 == ret)
     {
-#if TCP_CORK || TCP_NODELAY
-      connection->sk_tcp_nodelay_on = true;
-#elif TCP_NOPUSH
-      connection->sk_tcp_nodelay_on = false;
-#endif
+      connection->sk_cork_on = want_cork;
     }
   return ret;
 }
