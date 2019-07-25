@@ -970,7 +970,7 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
     {
       for (pos = connection->headers_received; NULL != pos; pos = pos->next)
         {
-          if ( (kind == pos->kind) &&
+          if ( (0 != (kind & pos->kind)) &&
                (NULL == pos->header) )
             break;
         }
@@ -979,7 +979,7 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
     {
       for (pos = connection->headers_received; NULL != pos; pos = pos->next)
         {
-          if ( (kind == pos->kind) &&
+          if ( (0 != (kind & pos->kind)) &&
                (key_size == pos->header_size) &&
                ( (key == pos->header) ||
                  (MHD_str_equal_caseless_bin_n_ (key,
