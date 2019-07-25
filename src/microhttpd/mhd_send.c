@@ -712,7 +712,7 @@ MHD_conn_init_static_ (void)
  * @param connection the MHD connection structure
  * @return actual number of bytes sent
  */
-static ssize_t
+ssize_t
 sendfile_adapter (struct MHD_Connection *connection)
 {
   bool want_cork = false;

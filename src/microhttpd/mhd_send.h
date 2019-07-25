@@ -114,6 +114,11 @@ MHD_send_socket_state_cork_nodelay_ (struct MHD_Connection *connection,
                                      bool nodelay_value,
                                      bool nodelay_state);
 
-static ssize_t
+#if defined(_MHD_HAVE_SENDFILE)
+ssize_t
 sendfile_adapter (struct MHD_Connection *connection);
+#endif
+
+void
+MHD_conn_init_static_ (void);
 #endif /* MHD_SEND_H */
