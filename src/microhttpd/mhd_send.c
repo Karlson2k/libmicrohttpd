@@ -24,8 +24,6 @@
  * @author ng0 <ng0@n0.is>
  */
 
-/* TODO: sendfile() wrapper, in connection.c */
-
 /* Worth considering for future improvements and additions:
  * NetBSD has no sendfile or sendfile64. The way to work
  * with this seems to be to mmap the file and write(2) as
@@ -38,7 +36,13 @@
 
 #include "mhd_send.h"
 
-int
+/**
+ * Handle setsockopt calls.
+ *
+ * @param connection the MHD_Connection structure
+ * @param want_cork cork state, boolean
+ */
+static void
 post_cork_setsockopt (struct MHD_Connection *connection,
                       bool want_cork)
 {
@@ -50,7 +54,7 @@ post_cork_setsockopt (struct MHD_Connection *connection,
   if (connection->sk_cork_on == want_cork)
     {
       /* nothing to do, success! */
-      return 0;
+      return;
     }
   ret = -1;
 #if TCP_CORK
@@ -76,20 +80,25 @@ post_cork_setsockopt (struct MHD_Connection *connection,
   return ret;
 }
 
-int
+/**
+ * Handle setsockopt calls.
+ *
+ * @param connection the MHD_Connection structure
+ * @param want_cork cork state, boolean
+ */
+static void
 pre_cork_setsockopt (struct MHD_Connection *connection,
                      bool want_cork)
 {
   int ret;
-  // const MHD_SCKT_OPT_BOOL_ state_val = val ? 1 : 0;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
-  // if sk_tcp_nodelay_on is already what we pass in, return.
+  /* if sk_tcp_nodelay_on is already what we pass in, return. */
   if (connection->sk_cork_on == want_cork)
     {
       /* nothing to do, success! */
-      return 0;
+      return;
     }
 
   ret = -1;
@@ -119,188 +128,6 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
       connection->sk_cork_on = want_cork;
     }
   return ret;
-}
-
-/**
- * Set TCP_NODELAY flag on socket and save the
- * #sk_tcp_nodelay_on state.
- *
- * @param connection the MHD_Connection structure
- * @param value the state to set, boolean
- */
-void
-MHD_send_socket_state_nodelay_ (struct MHD_Connection *connection,
-                                bool value)
-{
-#if TCP_NODELAY
-  const MHD_SCKT_OPT_BOOL_ state_val = value ? 1 : 0;
-
-  if (0 == setsockopt (connection->socket_fd,
-                       IPPROTO_TCP,
-                       TCP_NODELAY,
-                       (const void *) &state_val,
-                       sizeof (state_val)))
-    {
-      connection->sk_tcp_nodelay_on = value;
-    }
-#endif
-}
-
-/*
-void
-MHD_setsockopt_pre_ (struct MHD_Connection *connection,
-                     bool value)
-{
-  bool using_tls = false;
-#ifdef HTTPS_SUPPORT
-  using_tls = (0 != (connection->daemon->options & MHD_USE_TLS));
-#endif
-  const MHD_SCKT_OPT_BOOL_ state_val = value ? 1 : 0;
-  const MHD_SCKT_OPT_BOOL_ off_val = 0;
-  const MHD_SCKT_OPT_BOOL_ on_val = 1;
-
-  if (connection->sk_tcp_nodelay_on == value)
-    {
-      return
-    }
-  if (0 == setsockopt (connection->socket_fd,
-                       IPPROTO_TCP,
-#if TCP_CORK && (! using_tls)
-                       TCP_CORK,
-                       (const void *) &off_val,
-                       sizeof (off_val)))
-    {
-      connection->sk_tcp_nodelay_on = on_val;
-    }
-#elif TCP_NODELAY
-  TCP_NODELAY,
-                         (const void *) &off_val,
-                         sizeof (off_val)))
-#endif
-#if TCP_NOPUSH
-#endif
-                       (const void *) &state_val,
-                       sizeof (state_val)))
-}
-*/
-/*
-void
-MHD_setsockopt_post_ (struct MHD_Connection *connection,
-                      bool value)
-{
-  if (connection->sk_tcp_nodelay_on == value)
-    {
-      return
-    }
-  if (0 == setsockopt (connection->socket_fd,
-                       IPPROTO_TCP,
-#if TCP_NODELAY
-                       TCP_NODELAY,
-#endif
-#if TCP_NOPUSH
-                       TCP_NOPUSH,
-#endif
-#if TCP_CORK
-                       TCP_CORK,
-#endif
-
-
-                       (const void *) &state_val,
-                       sizeof (state_val)))
-    {
-      // When TRUE above, this is usually FALSE, but
-      // not always. We can't use the negation of
-      // value for that reason.
-      connection->sk_tcp_nodelay_on = state_store;
-    }
-}
-*/
-void
-MHD_setsockopt_ (struct MHD_Connection *connection,
-                 int optname,
-                 bool value,
-                 bool state_store)
-{
-  const MHD_SCKT_OPT_BOOL_ state_val = value ? 1 : 0;
-
-  if (0 == setsockopt (connection->socket_fd,
-                       IPPROTO_TCP,
-                       optname,
-                       (const void *) &state_val,
-                       sizeof (state_val)))
-    {
-      connection->sk_tcp_nodelay_on = state_store;
-    }
-}
-
-/**
- * Set TCP_NOCORK or TCP_NODELAY flag on socket and save the
- * #sk_tcp_nodelay_on state.
- *
- * @param connection the MHD_Connection structure
- * @param cork_value the state to set, boolean
- * @param cork_state the boolean value passed to #sk_tcp_nodelay_on
- * @param nodelay_value the state to set, boolean
- * @param nodelay_state the boolean value passed to #sk_tcp_nodelay_on
- */
-void
-MHD_send_socket_state_cork_nodelay_ (struct MHD_Connection *connection,
-                                     bool cork_value,
-                                     bool cork_state,
-                                     bool nodelay_value,
-                                     bool nodelay_state)
-{
-#if TCP_CORK && TCP_NODELAY
-  const MHD_SCKT_OPT_BOOL_ cork_state_val = cork_value ? 1 : 0;
-  const MHD_SCKT_OPT_BOOL_ nodelay_state_val = nodelay_value ? 1 : 0;
-
-  if (0 == setsockopt (connection->socket_fd,
-                       IPPROTO_TCP,
-                       TCP_CORK,
-                       (const void *) &cork_state_val,
-                       sizeof (cork_state_val)))
-    {
-      connection->sk_tcp_nodelay_on = cork_state;
-    }
-  else if (0 == setsockopt (connection->socket_fd,
-                            IPPROTO_TCP,
-                            TCP_NODELAY,
-                            (const void *) &nodelay_state_val,
-                            sizeof (nodelay_state_val)))
-    {
-      connection->sk_tcp_nodelay_on = nodelay_state;
-    }
-#endif
-}
-
-/**
- * Set TCP_NOPUSH flag on socket and save the
- * #sk_tcp_nodelay_on state.
- *
- * @param connection the #MHD_Connection structure
- * @param value the state to set, boolean
- * @param state_store the boolean value passed to #sk_tcp_nodelay_on
- */
-void
-MHD_send_socket_state_nopush_ (struct MHD_Connection *connection,
-                               bool value,
-                               bool state_store)
-{
-#if TCP_NOPUSH
-  const MHD_SCKT_OPT_BOOL_ state_val = value ? 1 : 0;
-
-  if (0 == setsockopt (connection->socket_fd,
-                       IPPROTO_TCP,
-                       TCP_NOPUSH,
-                       (const void *) &state_val,
-                       sizeof (state_val)))
-    {
-      /* When TRUE above, this is usually FALSE, but
-       * not always. We can't use the negation of
-       * value for that reason. */
-      connection->sk_tcp_nodelay_on = state_store;
-    }
-#endif
 }
 
 /**

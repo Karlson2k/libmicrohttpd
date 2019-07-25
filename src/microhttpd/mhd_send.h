@@ -92,28 +92,6 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 ssize_t
 MHD_sendfile_on_connection_ (struct MHD_Connection *connection);
 
-void
-MHD_setsockopt_ (struct MHD_Connection *connection,
-                 int optname,
-                 bool value,
-                 bool state_store);
-
-void
-MHD_send_socket_state_nopush_ (struct MHD_Connection *connection,
-                               bool value,
-                               bool state_store);
-
-void
-MHD_send_socket_state_nodelay_ (struct MHD_Connection *connection,
-                                bool value);
-
-void
-MHD_send_socket_state_cork_nodelay_ (struct MHD_Connection *connection,
-                                     bool cork_value,
-                                     bool cork_state,
-                                     bool nodelay_value,
-                                     bool nodelay_state);
-
 #if defined(_MHD_HAVE_SENDFILE)
 ssize_t
 sendfile_adapter (struct MHD_Connection *connection);
