@@ -70,14 +70,14 @@ post_cork_setsockopt (struct MHD_Connection *connection,
   ret = setsockopt (connection->socket_fd,
                     IPPROTO_TCP,
                     TCP_NOPUSH,
-                    (const void *) &on_val,
-                    sizeof (on_val));
+                    (const void *) &off_val,
+                    sizeof (off_val));
 #endif
   if (0 == ret)
     {
       connection->sk_cork_on = want_cork;
     }
-  return ret;
+  return;
 }
 
 /**
@@ -127,7 +127,7 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
     {
       connection->sk_cork_on = want_cork;
     }
-  return ret;
+  return;
 }
 
 /**
@@ -190,7 +190,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   }
 
   /* ! could be avoided by redefining the variable. */
-  have_cork = ! connection->sk_tcp_nodelay_on;
+  bool have_cork = ! connection->sk_tcp_nodelay_on;
 
 #ifdef MSG_MORE
   have_more = true;
@@ -208,7 +208,8 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     if (want_cork && ! have_cork)
     {
       gnutls_record_cork (connection->tls_session);
-      connection->sk_tcp_nodelay_on = false;
+      connection->sk_cork_on = false;
+      // connection->sk_tcp_nodelay_on = false;
     }
     if (buffer_size > SSIZE_MAX)
       buffer_size = SSIZE_MAX;
@@ -239,7 +240,8 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     if (! want_cork && have_cork)
     {
       (void) gnutls_record_uncork (connection->tls_session, 0);
-      connection->sk_tcp_nodelay_on = true;
+      connection->sk_cork_on = true;
+      // connection->sk_tcp_nodelay_on = true;
     }
   }
   else
