@@ -48,11 +48,6 @@ post_cork_setsockopt (struct MHD_Connection *connection,
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
 #if TCP_CORK
-  ret = setsockopt (connection->socket_fd,
-                    IPPROTO_TCP,
-                    TCP_CORK,
-                    (const void *) &on_val,
-                    sizeof (on_val));
 #elif TCP_NODELAY
   ret = setsockopt (connection->socket_fd,
                     IPPROTO_TCP,
@@ -92,18 +87,11 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
 
   ret = -1;
 #if TCP_CORK
-  if (want_cork)
-    ret = setsockopt (connection->socket_fd,
-                      IPPROTO_TCP,
-                      TCP_CORK,
-                      (const void *) &on_val,
-                      sizeof (on_val));
-  else
-    ret = setsockopt (connection->socket_fd,
-                      IPPROTO_TCP,
-                      TCP_CORK,
-                      (const void *) &off_val,
-                      sizeof (off_val));
+  ret = setsockopt (connection->socket_fd,
+                    IPPROTO_TCP,
+                    TCP_CORK,
+                    (const void *) want_cork ? &on_val : &off_val,
+                    sizeof (on_val));
 #elif TCP_NODELAY
   ret = setsockopt (connection->socket_fd,
                     IPPROTO_TCP,
