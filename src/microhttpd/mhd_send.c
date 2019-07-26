@@ -166,8 +166,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
-  connection->sk_cork_on = true;
-
   /* error handling from send_param_adapter() */
   if ((MHD_INVALID_SOCKET == s) || (MHD_CONNECTION_CLOSED == connection->state))
   {
@@ -319,8 +317,6 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   int eno;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   struct iovec vector[2];
-
-  connection->sk_cork_on = true;
 
   have_cork = ! connection->sk_cork_on;
   /*
