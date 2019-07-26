@@ -46,11 +46,12 @@ static void
 post_cork_setsockopt (struct MHD_Connection *connection,
                       bool want_cork)
 {
+#ifndef MSG_MORE
   int ret;
-  // const MHD_SCKT_OPT_BOOL_ state_val = val ? 1 : 0;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
+  /* If sk_cork_on is already what we pass in, return. */
   if (connection->sk_cork_on == want_cork)
     {
       /* nothing to do, success! */
@@ -78,6 +79,7 @@ post_cork_setsockopt (struct MHD_Connection *connection,
       connection->sk_cork_on = want_cork;
     }
   return;
+#endif /* HAVE_MORE */
 }
 
 /**
@@ -90,11 +92,12 @@ static void
 pre_cork_setsockopt (struct MHD_Connection *connection,
                      bool want_cork)
 {
+#ifndef MSG_MORE
   int ret;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
-  /* if sk_tcp_nodelay_on is already what we pass in, return. */
+  /* If sk_cork_on is already what we pass in, return. */
   if (connection->sk_cork_on == want_cork)
     {
       /* nothing to do, success! */
@@ -128,6 +131,7 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
       connection->sk_cork_on = want_cork;
     }
   return;
+#endif /* MSG_MORE */
 }
 
 /**
@@ -162,6 +166,8 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
+  connection->sk_cork_on = true;
+
   /* error handling from send_param_adapter() */
   if ((MHD_INVALID_SOCKET == s) || (MHD_CONNECTION_CLOSED == connection->state))
   {
@@ -190,13 +196,8 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   }
 
   /* ! could be avoided by redefining the variable. */
-  bool have_cork = ! connection->sk_tcp_nodelay_on;
-
-#ifdef MSG_MORE
-  have_more = true;
-#else
-  have_more = false;
-#endif
+  // bool have_cork = ! connection->sk_tcp_nodelay_on;
+  bool have_cork = ! connection->sk_cork_on;
 
 #ifdef HTTPS_SUPPORT
   using_tls = (0 != (connection->daemon->options & MHD_USE_TLS));
@@ -209,7 +210,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     {
       gnutls_record_cork (connection->tls_session);
       connection->sk_cork_on = false;
-      // connection->sk_tcp_nodelay_on = false;
     }
     if (buffer_size > SSIZE_MAX)
       buffer_size = SSIZE_MAX;
@@ -241,15 +241,13 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     {
       (void) gnutls_record_uncork (connection->tls_session, 0);
       connection->sk_cork_on = true;
-      // connection->sk_tcp_nodelay_on = true;
     }
   }
   else
 #endif
   {
     /* plaintext transmission */
-    if (! have_more)
-      pre_cork_setsockopt (connection, want_cork);
+    pre_cork_setsockopt (connection, want_cork);
 #if MSG_MORE
     ret = send (s,
                 buffer,
@@ -282,8 +280,8 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     else if (buffer_size > (size_t) ret)
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
-    if (! have_more)
-      post_cork_setsockopt (connection, want_cork);
+
+    post_cork_setsockopt (connection, want_cork);
   }
 
   return ret;
@@ -317,13 +315,15 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   MHD_socket s = connection->socket_fd;
   bool have_cork;
-  bool have_more;
   int iovcnt;
   int eno;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   struct iovec vector[2];
 
-  have_cork = ! connection->sk_tcp_nodelay_on;
+  connection->sk_cork_on = true;
+
+  have_cork = ! connection->sk_cork_on;
+  /*
 #if TCP_NODELAY
   use_corknopush = false;
 #elif TCP_CORK
@@ -331,13 +331,17 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 #elif TCP_NOPUSH
   use_corknopush = true;
 #endif
+  */
 
+  pre_cork_setsockopt (connection, want_cork);
+  /*
 #if TCP_NODELAY
-  if ((! use_corknopush) && (! have_cork && want_cork))
-    {
-      MHD_setsockopt_ (connection, TCP_NODELAY, false, false);
-    }
+    if ((! use_corknopush) && (! have_cork && want_cork))
+      {
+        MHD_setsockopt_ (connection, TCP_NODELAY, false, false);
+      }
 #endif
+  */
 
   vector[0].iov_base = header;
   vector[0].iov_len = strlen (header);
@@ -354,6 +358,9 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   ret = writev (s, vector, iovcnt);
 #endif
 
+  post_cork_setsockopt (connection, want_cork);
+
+  /*
 #if TCP_CORK
   if (use_corknopush)
   {
@@ -376,13 +383,15 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
       eno = errno;
       if (ret == header_len + buffer_len)
         {
-          /* Response complete, set NOPUSH to off */
+          // Response complete, set NOPUSH to off
           MHD_setsockopt_ (connection, TCP_NOPUSH, false, false);
         }
       errno = eno;
     }
   return ret;
 #endif
+  */
+  return ret;
 
 #else
   return MHD_send_on_connection_ (connection,
