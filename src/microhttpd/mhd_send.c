@@ -319,25 +319,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   struct iovec vector[2];
 
   have_cork = ! connection->sk_cork_on;
-  /*
-#if TCP_NODELAY
-  use_corknopush = false;
-#elif TCP_CORK
-  use_corknopush = true;
-#elif TCP_NOPUSH
-  use_corknopush = true;
-#endif
-  */
-
   pre_cork_setsockopt (connection, want_cork);
-  /*
-#if TCP_NODELAY
-    if ((! use_corknopush) && (! have_cork && want_cork))
-      {
-        MHD_setsockopt_ (connection, TCP_NODELAY, false, false);
-      }
-#endif
-  */
 
   vector[0].iov_base = header;
   vector[0].iov_len = strlen (header);
@@ -356,37 +338,6 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 
   post_cork_setsockopt (connection, want_cork);
 
-  /*
-#if TCP_CORK
-  if (use_corknopush)
-  {
-    eno;
-
-    eno = errno;
-    if ((ret == header_len + buffer_len) && have_cork)
-      {
-        // Response complete, definitely uncork!
-        MHD_setsockopt_ (connection, TCP_CORK, false, true);
-      }
-    errno = eno;
-  }
-  return ret;
-#elif TCP_NOPUSH
-  if (use_corknopush)
-    {
-      eno;
-
-      eno = errno;
-      if (ret == header_len + buffer_len)
-        {
-          // Response complete, set NOPUSH to off
-          MHD_setsockopt_ (connection, TCP_NOPUSH, false, false);
-        }
-      errno = eno;
-    }
-  return ret;
-#endif
-  */
   return ret;
 
 #else
