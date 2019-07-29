@@ -14,6 +14,7 @@ config.rpath
 /config.log
 /app.info
 /debug
+/build-aux
 /exclude
 /autom4te.cache
 /scripts
