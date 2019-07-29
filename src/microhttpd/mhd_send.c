@@ -22,6 +22,8 @@
  * @file microhttpd/mhd_send.c
  * @brief Implementation of send() wrappers.
  * @author ng0 <ng0@n0.is>
+ * @author Christian Grothoff
+ * @author Evgeny Grin
  */
 
 /* Worth considering for future improvements and additions:
