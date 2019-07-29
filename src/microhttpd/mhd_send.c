@@ -244,7 +244,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     }
   }
   else
-#endif
+#endif /* HTTPS_SUPPORT  */
   {
     /* plaintext transmission */
     pre_cork_setsockopt (connection, want_cork);
@@ -254,7 +254,10 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                 buffer_size,
                 MAYBE_MSG_NOSIGNAL | (want_cork ? MSG_MORE : 0));
 #else
-    ret = send (connection->socket_fd, buffer, buffer_size, MAYBE_MSG_NOSIGNAL);
+    ret = send (connection->socket_fd,
+                buffer,
+                buffer_size,
+                MAYBE_MSG_NOSIGNAL);
 #endif
 
     if (0 > ret)
