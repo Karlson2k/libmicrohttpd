@@ -317,10 +317,12 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   bool want_cork;
   int iovcnt;
   int eno;
+  ssize_t ret;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   struct iovec vector[2];
 
   want_cork = ! connection->sk_cork_on;
+
   pre_cork_setsockopt (connection, want_cork);
 
   vector[0].iov_base = header;
