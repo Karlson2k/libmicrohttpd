@@ -3041,12 +3041,12 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
     { /* Wake up suspended connections. */
       if (! MHD_itc_activate_(daemon->itc,
                               "w"))
-	{
+        {
 #ifdef HAVE_MESSAGES
-	  MHD_DLOG (daemon,
-		    _("Failed to signal resume of connection via inter-thread communication channel."));
+          MHD_DLOG (daemon,
+                    _("Failed to signal resume of connection via inter-thread communication channel."));
 #endif
-	}
+        }
     }
   return ret;
 }
@@ -3081,11 +3081,12 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
  */
 int
 MHD_add_connection (struct MHD_Daemon *daemon,
-		    MHD_socket client_socket,
-		    const struct sockaddr *addr,
-		    socklen_t addrlen)
+                    MHD_socket client_socket,
+                    const struct sockaddr *addr,
+                    socklen_t addrlen)
 {
   bool sk_nonbl;
+
   if (! MHD_socket_nonblocking_ (client_socket))
     {
 #ifdef HAVE_MESSAGES
@@ -3116,11 +3117,11 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 #endif
     }
   return internal_add_connection (daemon,
-				  client_socket,
-				  addr,
+                                  client_socket,
+                                  addr,
                                   addrlen,
-				  true,
-				  sk_nonbl);
+                                  true,
+                                  sk_nonbl);
 }
 
 
@@ -3253,9 +3254,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
   (void) internal_add_connection (daemon,
                                   s,
-				  addr,
+                                  addr,
                                   addrlen,
-				  false,
+                                  false,
                                   sk_nonbl);
   return MHD_YES;
 }
@@ -3381,7 +3382,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
  */
 int
 MHD_get_timeout (struct MHD_Daemon *daemon,
-		 MHD_UNSIGNED_LONG_LONG *timeout)
+                 MHD_UNSIGNED_LONG_LONG *timeout)
 {
   time_t earliest_deadline;
   time_t now;
