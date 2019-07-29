@@ -314,13 +314,13 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 {
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   MHD_socket s = connection->socket_fd;
-  bool have_cork;
+  bool want_cork;
   int iovcnt;
   int eno;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   struct iovec vector[2];
 
-  have_cork = ! connection->sk_cork_on;
+  want_cork = ! connection->sk_cork_on;
   pre_cork_setsockopt (connection, want_cork);
 
   vector[0].iov_base = header;
