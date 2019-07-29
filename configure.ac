@@ -642,6 +642,10 @@ AM_CONDITIONAL(USE_MS_LIB_TOOL, [test "x$ac_cv_use_ms_lib_tool" = "xyes"])
 MHD_CHECK_SOCKET_SHUTDOWN_TRIGGER([AC_DEFINE([HAVE_LISTEN_SHUTDOWN],[1],[can use shutdown on listen sockets])])
 AM_CONDITIONAL([HAVE_LISTEN_SHUTDOWN], [test "x$mhd_cv_host_shtdwn_trgr_select" = "xyes"])
 
+# SENDMSG. Should we check for SCM_RIGHTS instead?
+# https://lists.x.org/archives/xorg-devel/2013-November/038687.html
+AC_SEARCH_LIBS(sendmsg, socket, AC_DEFINE([HAVE_SENDMSG],1,[Define if your platform supports sendmsg]))
+
 # set GCC options
 # use '-fno-strict-aliasing', but only if the compiler
 # and linker can take it
