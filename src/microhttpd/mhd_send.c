@@ -43,52 +43,6 @@
  * @param want_cork cork state, boolean
  */
 static void
-post_cork_setsockopt (struct MHD_Connection *connection,
-                      bool want_cork)
-{
-#ifndef MSG_MORE
-  int ret;
-  const MHD_SCKT_OPT_BOOL_ off_val = 0;
-  const MHD_SCKT_OPT_BOOL_ on_val = 1;
-
-  /* If sk_cork_on is already what we pass in, return. */
-  if (connection->sk_cork_on == want_cork)
-    {
-      /* nothing to do, success! */
-      return;
-    }
-  ret = -1;
-#if TCP_CORK
-  if (! want_cork)
-    ret = setsockopt (connection->socket_fd,
-                      IPPROTO_TCP,
-                      TCP_CORK,
-                      &off_val,
-                      sizeof (off_val));
-#elif TCP_NODELAY
-  /* nothing to do */
-#elif TCP_NOPUSH
-  ret = setsockopt (connection->socket_fd,
-                    IPPROTO_TCP,
-                    TCP_NOPUSH,
-                    (const void *) &off_val,
-                    sizeof (off_val));
-#endif
-  if (0 == ret)
-    {
-      connection->sk_cork_on = want_cork;
-    }
-  return;
-#endif /* HAVE_MORE */
-}
-
-/**
- * Handle setsockopt calls.
- *
- * @param connection the MHD_Connection structure
- * @param want_cork cork state, boolean
- */
-static void
 pre_cork_setsockopt (struct MHD_Connection *connection,
                      bool want_cork)
 {
@@ -132,6 +86,52 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
     }
   return;
 #endif /* MSG_MORE */
+}
+
+/**
+ * Handle setsockopt calls.
+ *
+ * @param connection the MHD_Connection structure
+ * @param want_cork cork state, boolean
+ */
+static void
+post_cork_setsockopt (struct MHD_Connection *connection,
+                      bool want_cork)
+{
+#ifndef MSG_MORE
+  int ret;
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
+  const MHD_SCKT_OPT_BOOL_ on_val = 1;
+
+  /* If sk_cork_on is already what we pass in, return. */
+  if (connection->sk_cork_on == want_cork)
+    {
+      /* nothing to do, success! */
+      return;
+    }
+  ret = -1;
+#if TCP_CORK
+  if (! want_cork)
+    ret = setsockopt (connection->socket_fd,
+                      IPPROTO_TCP,
+                      TCP_CORK,
+                      &off_val,
+                      sizeof (off_val));
+#elif TCP_NODELAY
+  /* nothing to do */
+#elif TCP_NOPUSH
+  ret = setsockopt (connection->socket_fd,
+                    IPPROTO_TCP,
+                    TCP_NOPUSH,
+                    (const void *) &off_val,
+                    sizeof (off_val));
+#endif
+  if (0 == ret)
+    {
+      connection->sk_cork_on = want_cork;
+    }
+  return;
+#endif /* HAVE_MORE */
 }
 
 /**
