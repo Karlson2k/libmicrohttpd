@@ -67,6 +67,8 @@
 
 static int verbose = 0;
 
+static int kicker[2] = {-1, -1} ;
+
 enum tls_tool
 {
   TLS_CLI_NO_TOOL = 0,
@@ -570,7 +572,17 @@ make_blocking (MHD_socket fd)
 
   ioctlsocket (fd, FIONBIO, &flags);
 #endif /* MHD_WINSOCK_SOCKETS */
+}
 
+
+static void
+kick_select ()
+{
+  if (-1 != kicker[1])
+  {
+    write (kicker[1], "K", 1);
+    fprintf (stderr, "KICKING\n");
+  }
 }
 
 
@@ -588,6 +600,7 @@ send_all (struct wr_socket *sock,
       ret = wr_send (sock,
                      &text[off],
                      len - off);
+      kick_select ();
       if (0 > ret)
         {
           if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
@@ -621,6 +634,7 @@ recv_hdr (struct wr_socket *sock)
       ret = wr_recv (sock,
                        &c,
                        1);
+      kick_select ();
       if (0 > ret)
         {
           if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
@@ -889,7 +903,10 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
   MHD_socket max_fd;
   MHD_UNSIGNED_LONG_LONG to;
   struct timeval tv;
+  char drain[128];
 
+  if (0 != pipe (kicker))
+    abort ();
   while (! done)
     {
       FD_ZERO (&rs);
@@ -898,6 +915,7 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
       max_fd = -1;
       to = 1000;
 
+      FD_SET (kicker[0], &rs);
       if (MHD_YES !=
           MHD_get_fdset (daemon,
                          &rs,
@@ -917,11 +935,17 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
                                &es,
                                &tv))
         abort ();
+      if (FD_ISSET (kicker[0], &rs))
+        (void) read (kicker[0], drain, sizeof (drain));
       MHD_run_from_select (daemon,
                            &rs,
                            &ws,
                            &es);
     }
+  close (kicker[0]);
+  close (kicker[1]);
+  kicker[0] = -1;
+  kicker[1] = -1;
 }
 
 #ifdef HAVE_POLL
@@ -955,15 +979,18 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
   MHD_UNSIGNED_LONG_LONG to;
   struct timeval tv;
   int ret;
+  char drain[128];
 
   di = MHD_get_daemon_info (daemon,
                             MHD_DAEMON_INFO_EPOLL_FD);
   ep = di->listen_fd;
+  if (0 != pipe (kicker))
+    abort ();
   while (! done)
     {
       FD_ZERO (&rs);
       to = 1000;
-
+      FD_SET (kicker[0], &rs);
       FD_SET (ep, &rs);
       (void) MHD_get_timeout (daemon,
                               &to);
@@ -980,8 +1007,14 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
            (EAGAIN != errno) &&
            (EINTR != errno) )
         abort ();
+      if (FD_ISSET (kicker[0], &rs))
+        (void) read (kicker[0], drain, sizeof (drain));
       MHD_run (daemon);
     }
+  close (kicker[0]);
+  close (kicker[1]);
+  kicker[0] = -1;
+  kicker[1] = -1;
 }
 #endif /* EPOLL_SUPPORT */
 
@@ -1080,8 +1113,8 @@ test_upgrade (int flags,
       sa.sin_port = htons (dinfo->port);
       sa.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
       if (0 != wr_connect (sock,
-                        (struct sockaddr *) &sa,
-                        sizeof (sa)))
+                           (struct sockaddr *) &sa,
+                           sizeof (sa)))
         abort ();
     }
   else

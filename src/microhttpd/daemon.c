@@ -721,8 +721,8 @@ int
 MHD_get_fdset (struct MHD_Daemon *daemon,
                fd_set *read_fd_set,
                fd_set *write_fd_set,
-	       fd_set *except_fd_set,
-	       MHD_socket *max_fd)
+               fd_set *except_fd_set,
+               MHD_socket *max_fd)
 {
   return MHD_get_fdset2 (daemon,
                          read_fd_set,
@@ -2344,11 +2344,11 @@ psk_gnutls_adapter (gnutls_session_t session,
  */
 static int
 internal_add_connection (struct MHD_Daemon *daemon,
-			 MHD_socket client_socket,
-			 const struct sockaddr *addr,
-			 socklen_t addrlen,
-			 bool external_add,
-			 bool non_blck)
+                         MHD_socket client_socket,
+                         const struct sockaddr *addr,
+                         socklen_t addrlen,
+                         bool external_add,
+                         bool non_blck)
 {
   struct MHD_Connection *connection;
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
@@ -2362,8 +2362,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
   if ((external_add) && (NULL != daemon->worker_pool))
     {
       /* have a pool, try to find a pool with capacity; we use the
-	 socket as the initial offset into the pool for load
-	 balancing */
+         socket as the initial offset into the pool for load
+         balancing */
       for (i = 0; i < daemon->worker_pool_size; ++i)
         {
           struct MHD_Daemon * const worker =
@@ -2448,7 +2448,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
   /* apply connection acceptance policy if present */
   if ( (NULL != daemon->apc) &&
        (MHD_NO == daemon->apc (daemon->apc_cls,
-			       addr,
+                               addr,
                                addrlen)) )
     {
 #if DEBUG_CLOSE
@@ -2472,8 +2472,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
       eno = errno;
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-		"Error allocating memory: %s\n",
-		MHD_strerror_ (errno));
+                "Error allocating memory: %s\n",
+                MHD_strerror_ (errno));
 #endif
       MHD_socket_close_chk_ (client_socket);
       MHD_ip_limit_del (daemon,
@@ -2487,8 +2487,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-		_("Error allocating memory: %s\n"),
-		MHD_strerror_ (errno));
+                _("Error allocating memory: %s\n"),
+                MHD_strerror_ (errno));
 #endif
       MHD_socket_close_chk_ (client_socket);
       MHD_ip_limit_del (daemon,
@@ -2507,8 +2507,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
       eno = errno;
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-		_("Error allocating memory: %s\n"),
-		MHD_strerror_ (errno));
+                _("Error allocating memory: %s\n"),
+                MHD_strerror_ (errno));
 #endif
       MHD_socket_close_chk_ (client_socket);
       MHD_ip_limit_del (daemon,
@@ -2566,8 +2566,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
           /* set needed credentials for certificate authentication. */
         case GNUTLS_CRD_CERTIFICATE:
           gnutls_credentials_set (connection->tls_session,
-				  GNUTLS_CRD_CERTIFICATE,
-				  daemon->x509_cred);
+                                  GNUTLS_CRD_CERTIFICATE,
+                                  daemon->x509_cred);
 	  break;
         case GNUTLS_CRD_PSK:
           gnutls_credentials_set (connection->tls_session,
@@ -2596,18 +2596,18 @@ internal_add_connection (struct MHD_Daemon *daemon,
         }
 #if (GNUTLS_VERSION_NUMBER+0 >= 0x030109) && !defined(_WIN64)
       gnutls_transport_set_int (connection->tls_session,
-				(int)(client_socket));
+                                (int)(client_socket));
 #else  /* GnuTLS before 3.1.9 or Win x64 */
       gnutls_transport_set_ptr (connection->tls_session,
-				(gnutls_transport_ptr_t)(intptr_t)(client_socket));
+                                (gnutls_transport_ptr_t)(intptr_t)(client_socket));
 #endif /* GnuTLS before 3.1.9 */
 #ifdef MHD_TLSLIB_NEED_PUSH_FUNC
       gnutls_transport_set_push_function (connection->tls_session,
-					  MHD_tls_push_func_);
+                                          MHD_tls_push_func_);
 #endif /* MHD_TLSLIB_NEED_PUSH_FUNC */
       if (daemon->https_mem_trust)
 	  gnutls_certificate_server_set_request (connection->tls_session,
-						 GNUTLS_CERT_REQUEST);
+                                             GNUTLS_CERT_REQUEST);
 #else  /* ! HTTPS_SUPPORT */
       eno = EINVAL;
       goto cleanup;
@@ -2641,8 +2641,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
                    connection);
     }
   DLL_insert (daemon->connections_head,
-	      daemon->connections_tail,
-	      connection);
+              daemon->connections_tail,
+              connection);
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 #endif
@@ -2661,13 +2661,13 @@ internal_add_connection (struct MHD_Daemon *daemon,
                                       &thread_main_handle_connection,
                                       connection))
         {
-	  eno = errno;
+          eno = errno;
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
                     "Failed to create a thread: %s\n",
                     MHD_strerror_ (eno));
 #endif
-	  goto cleanup;
+          goto cleanup;
         }
     }
   else
@@ -2683,9 +2683,9 @@ internal_add_connection (struct MHD_Daemon *daemon,
 	  event.events = EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLET;
 	  event.data.ptr = connection;
 	  if (0 != epoll_ctl (daemon->epoll_fd,
-			      EPOLL_CTL_ADD,
-			      client_socket,
-			      &event))
+                          EPOLL_CTL_ADD,
+                          client_socket,
+                          &event))
 	    {
 	      eno = errno;
 #ifdef HAVE_MESSAGES
@@ -2702,8 +2702,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
 	  connection->epoll_state |= MHD_EPOLL_STATE_READ_READY | MHD_EPOLL_STATE_WRITE_READY
 	    | MHD_EPOLL_STATE_IN_EREADY_EDLL;
 	  EDLL_insert (daemon->eready_head,
-		       daemon->eready_tail,
-		       connection);
+                   daemon->eready_tail,
+                   connection);
 	}
     }
   else /* This 'else' is combined with next 'if'. */
@@ -4263,7 +4263,7 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
            * will be moved immediately to cleanup list. Otherwise
            * connection will stay in suspended list until 'pos' will
            * be marked with 'was_closed' by application. */
-          MHD_resume_connection(pos->connection);
+          MHD_resume_connection (pos->connection);
         }
     }
 
@@ -4346,8 +4346,8 @@ MHD_epoll (struct MHD_Daemon *daemon,
     }
 
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
-  if ( (! daemon->upgrade_fd_in_epoll) &&
-       (-1 != daemon->epoll_upgrade_fd) )
+  if ( ( (! daemon->upgrade_fd_in_epoll) &&
+         (-1 != daemon->epoll_upgrade_fd) ) )
     {
       event.events = EPOLLIN | EPOLLOUT;
       event.data.ptr = (void *) upgrade_marker;
@@ -4388,7 +4388,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
   if (MHD_YES == may_block)
     {
       if (MHD_YES == MHD_get_timeout (daemon,
-				      &timeout_ll))
+                                      &timeout_ll))
         {
           if (timeout_ll >= (MHD_UNSIGNED_LONG_LONG) INT_MAX)
             timeout_ms = INT_MAX;
@@ -4824,26 +4824,26 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
   if (NULL != daemon->worker_pool)
     for (i = 0; i < daemon->worker_pool_size; i++)
       {
-	daemon->worker_pool[i].was_quiesced = true;
+        daemon->worker_pool[i].was_quiesced = true;
 #ifdef EPOLL_SUPPORT
-	if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-	     (-1 != daemon->worker_pool[i].epoll_fd) &&
-	     (daemon->worker_pool[i].listen_socket_in_epoll) )
-	  {
-	    if (0 != epoll_ctl (daemon->worker_pool[i].epoll_fd,
-				EPOLL_CTL_DEL,
-				ret,
-				NULL))
-	      MHD_PANIC (_("Failed to remove listen FD from epoll set\n"));
-	    daemon->worker_pool[i].listen_socket_in_epoll = false;
-	  }
+        if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
+             (-1 != daemon->worker_pool[i].epoll_fd) &&
+             (daemon->worker_pool[i].listen_socket_in_epoll) )
+          {
+            if (0 != epoll_ctl (daemon->worker_pool[i].epoll_fd,
+                                EPOLL_CTL_DEL,
+                                ret,
+                                NULL))
+              MHD_PANIC (_("Failed to remove listen FD from epoll set\n"));
+            daemon->worker_pool[i].listen_socket_in_epoll = false;
+          }
         else
 #endif
-        if (MHD_ITC_IS_VALID_(daemon->worker_pool[i].itc))
-          {
-            if (! MHD_itc_activate_ (daemon->worker_pool[i].itc, "q"))
-              MHD_PANIC (_("Failed to signal quiesce via inter-thread communication channel"));
-          }
+          if (MHD_ITC_IS_VALID_(daemon->worker_pool[i].itc))
+            {
+              if (! MHD_itc_activate_ (daemon->worker_pool[i].itc, "q"))
+                MHD_PANIC (_("Failed to signal quiesce via inter-thread communication channel"));
+            }
       }
 #endif
   daemon->was_quiesced = true;
@@ -4858,7 +4858,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
                             NULL)) &&
            (ENOENT != errno) ) /* ENOENT can happen due to race with
                                   #MHD_epoll() */
-	MHD_PANIC ("Failed to remove listen FD from epoll set\n");
+        MHD_PANIC ("Failed to remove listen FD from epoll set\n");
       daemon->listen_socket_in_epoll = false;
     }
 #endif
@@ -4892,8 +4892,8 @@ typedef void
  */
 static int
 parse_options_va (struct MHD_Daemon *daemon,
-		  const struct sockaddr **servaddr,
-		  va_list ap);
+                  const struct sockaddr **servaddr,
+                  va_list ap);
 
 
 /**
@@ -4931,8 +4931,8 @@ parse_options (struct MHD_Daemon *daemon,
  */
 static int
 parse_options_va (struct MHD_Daemon *daemon,
-		  const struct sockaddr **servaddr,
-		  va_list ap)
+                  const struct sockaddr **servaddr,
+                  va_list ap)
 {
   enum MHD_OPTION opt;
   struct MHD_OptionItem *oa;
