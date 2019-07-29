@@ -340,6 +340,9 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   ret = writev (s, vector, iovcnt);
 #endif
 
+  if (ret == header_len + buffer_len)
+    want_cork = false;
+
   post_cork_setsockopt (connection, want_cork);
 
   return ret;
