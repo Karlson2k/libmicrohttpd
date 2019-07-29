@@ -4519,7 +4519,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
     }
 
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
-  if (run_upgraded)
+  if (run_upgraded || (NULL != daemon->eready_urh_head))
     run_epoll_for_upgrade (daemon);
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
