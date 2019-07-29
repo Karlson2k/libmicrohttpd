@@ -330,16 +330,16 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 
   pre_cork_setsockopt (connection, want_cork);
 
-  vector[0].iov_base = header;
+  vector[0].iov_base = (void *) header;
   vector[0].iov_len = strlen (header);
-  vector[1].iov_base = buffer;
+  vector[1].iov_base = (void *) buffer;
   vector[1].iov_len = strlen (buffer);
 
 #if HAVE_SENDMSG
   struct msghdr msg;
   msg.msg_iov = vector;
   memset(&msg, 0, sizeof(msg));
-  ret = sendmsg (s, vector, MAYBE_MSG_NOSIGNAL);
+  ret = sendmsg (s, &msg, MAYBE_MSG_NOSIGNAL);
 #elif HAVE_WRITEV
   iovcnt = sizeof (vector) / sizeof (struct iovec);
   ret = writev (s, vector, iovcnt);
