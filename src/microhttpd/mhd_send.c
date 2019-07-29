@@ -46,7 +46,8 @@ static void
 pre_cork_setsockopt (struct MHD_Connection *connection,
                      bool want_cork)
 {
-#ifndef MSG_MORE
+#if MSG_MORE
+#else
   int ret;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
@@ -98,7 +99,8 @@ static void
 post_cork_setsockopt (struct MHD_Connection *connection,
                       bool want_cork)
 {
-#ifndef MSG_MORE
+#if MSG_MORE
+#else
   int ret;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
@@ -131,7 +133,7 @@ post_cork_setsockopt (struct MHD_Connection *connection,
       connection->sk_cork_on = want_cork;
     }
   return;
-#endif /* HAVE_MORE */
+#endif /* MSG_MORE */
 }
 
 /**
