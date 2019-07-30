@@ -250,7 +250,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   {
     /* plaintext transmission */
     pre_cork_setsockopt (connection, want_cork);
-#if MSG_MORE
+#if HAVE_MSG_MORE
     ret = send (s,
                 buffer,
                 buffer_size,
