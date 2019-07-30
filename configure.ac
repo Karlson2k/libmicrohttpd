@@ -650,15 +650,11 @@ AC_MSG_CHECKING([whether writev is available])
 AC_CHECK_FUNCS([writev])
 
 # check MSG_MORE defined
-AC_MSG_CHECKING([whether MSG_MORE defined])
+AC_MSG_CHECKING([whether MSG_MORE is defined])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <sys/types.h>
 #include <sys/socket.h>
-
-int main(int argc, char **argv)
-{
-  return MSG_MORE;
-}
+return MSG_MORE;
     ])],
     [
       AC_MSG_RESULT(yes)
