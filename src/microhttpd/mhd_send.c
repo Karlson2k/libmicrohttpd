@@ -21,7 +21,7 @@
 /**
  * @file microhttpd/mhd_send.c
  * @brief Implementation of send() wrappers.
- * @author ng0 <ng0@n0.is>
+ * @author ng0 (N. Gillmann)
  * @author Christian Grothoff
  * @author Evgeny Grin
  */
@@ -48,7 +48,7 @@ static void
 pre_cork_setsockopt (struct MHD_Connection *connection,
                      bool want_cork)
 {
-#if MSG_MORE
+#if HAVE_MSG_MORE
 #else
   int ret;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
@@ -101,7 +101,7 @@ static void
 post_cork_setsockopt (struct MHD_Connection *connection,
                       bool want_cork)
 {
-#if MSG_MORE
+#if HAVE_MSG_MORE
 #else
   int ret;
   const MHD_SCKT_OPT_BOOL_ off_val = 0;

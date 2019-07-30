@@ -644,8 +644,29 @@ AM_CONDITIONAL([HAVE_LISTEN_SHUTDOWN], [test "x$mhd_cv_host_shtdwn_trgr_select" 
 
 # SENDMSG. Should we check for SCM_RIGHTS instead?
 # https://lists.x.org/archives/xorg-devel/2013-November/038687.html
+AC_MSG_CHECKING([whether sendmsg is available])
 AC_SEARCH_LIBS(sendmsg, socket, AC_DEFINE([HAVE_SENDMSG],1,[Define if your platform supports sendmsg]))
+AC_MSG_CHECKING([whether writev is available])
 AC_CHECK_FUNCS([writev])
+
+# check MSG_MORE defined
+AC_MSG_CHECKING([whether MSG_MORE defined])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <sys/types.h>
+#include <sys/socket.h>
+
+int main(int argc, char **argv)
+{
+  return MSG_MORE;
+}
+    ])],
+    [
+      AC_MSG_RESULT(yes)
+      AC_DEFINE(HAVE_MSG_MORE, [1], [have MSG_MORE])
+    ],
+    [
+      AC_MSG_RESULT(no)
+    ])
 
 # set GCC options
 # use '-fno-strict-aliasing', but only if the compiler
