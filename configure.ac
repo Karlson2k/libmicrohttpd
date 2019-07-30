@@ -651,11 +651,11 @@ AC_CHECK_FUNCS([writev])
 
 # check MSG_MORE defined
 AC_MSG_CHECKING([whether MSG_MORE is defined])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
 #include <sys/socket.h>
-return MSG_MORE;
-    ])],
+]],[[return MSG_MORE;]]
+    )],
     [
       AC_MSG_RESULT(yes)
       AC_DEFINE(HAVE_MSG_MORE, [1], [have MSG_MORE])
