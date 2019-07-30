@@ -337,7 +337,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 
 #if HAVE_SENDMSG
   struct msghdr msg;
-  memset(&msg, 0, sizeof(msg));
+  memset(&msg, 0, sizeof(struct msghdr));
 
   msg.msg_iov = vector;
   msg.msg_iovlen = 2;
