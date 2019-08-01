@@ -83,10 +83,21 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
                       sizeof (on_val));
   }
 #elif TCP_NOPUSH
+  if (want_cork)
   {
     const MHD_SCKT_OPT_BOOL_ on_val = 1;
+    /* TCP_NOPUSH has the same logic as MSG_MSG_MORE.
+     * The two are more or less equivalent by a source
+     * transformation (ie
+     * send(MSG_MORE) => "set TCP_NOPUSH + send() + clear TCP_NOPUSH".
+     * Both of them are really fairly "local", but TCP_NOPUSH has a
+     * _notion_ of persistency that is entirely lacking in MSG_MORE.
+     * ... with TCP_NOPUSH you basically have to know what your last
+     * write is, and clear the bit _before_ that write if you want
+     * to avoid bad latencies.
+     * https://yarchive.net/comp/linux/sendfile.html A thread from 2001,
+     * take with 18 grains of salt. */
 
-    // FIXME: this must be wrong, set unconditionally irrespective of 'want_cork'!
     ret = setsockopt (connection->socket_fd,
                       IPPROTO_TCP,
                       TCP_NOPUSH,
@@ -117,8 +128,8 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
           break;
         case ENOPROTOOPT:
           /* FIXME: optlen unknown, should at least log this */
-          break;
-        default:
+          break; 
+       default:
           /* any others? man page does not list more... */
           break;
         }
@@ -163,10 +174,9 @@ post_cork_setsockopt (struct MHD_Connection *connection,
 #elif TCP_NODELAY
   /* nothing to do */
 #elif TCP_NOPUSH
-  // FIXME: this must be wrong, set unconditionally irrespective of 'want_cork'!
+  if (! want_cork)
   {
     const MHD_SCKT_OPT_BOOL_ off_val = 0;
-    const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
     ret = setsockopt (connection->socket_fd,
                       IPPROTO_TCP,
