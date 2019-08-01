@@ -377,19 +377,6 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
     msg.msg_iov = vector;
     msg.msg_iovlen = 2;
 
-  /*
-   * questionable for this case, bus maybe worth considering for now:
-   * On at least NetBSD (and FreeBSD?) we need to set both msg_control and
-   * mgs_controllen to 0.
-   * If you set msg_control to nonnull, NetBSD expects you to have
-   * msg_controllen > 0. (sys/kern/uipc_syscalls.c in do_sys_sendmsg_so)
-   * for reference. Thanks to pDNS (for FreeBSD), Riastradh for NetBSD.
-   * FIXME: this is unnecessary, see the memset() above?
-   */
-  /*
-  msg.msg_control = 0;
-  msg.msg_controllen = 0;
-  */
     ret = sendmsg (s, &msg, MAYBE_MSG_NOSIGNAL);
   }
 #elif HAVE_WRITEV
