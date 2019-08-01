@@ -348,6 +348,13 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                           const char *buffer,
                           size_t buffer_size)
 {
+#ifdef HTTPS_SUPPORT
+  if (0 != (connection->daemon->options & MHD_USE_TLS))
+    return MHD_send_on_connection_ (connection,
+                                    header,
+                                    header_size,
+                                    MHD_SSO_HDR_CORK);
+#endif
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   MHD_socket s = connection->socket_fd;
   ssize_t ret;
