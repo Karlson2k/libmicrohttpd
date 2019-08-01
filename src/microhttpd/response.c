@@ -825,6 +825,44 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
      * be moved to cleanup list by MHD_resume_connection(). */
     MHD_resume_connection (connection);
     return MHD_YES;
+  case MHD_UPGRADE_ACTION_CORK_ON:
+    if (connection->sk_cork_on)
+      return MHD_YES;
+#ifdef HTTPS_SUPPORT
+    if (0 != (daemon->options & MHD_USE_TLS) )
+      {
+        gnutls_record_cork (connection->tls_session);
+        connection->sk_cork_on = true;
+        return MHD_YES;
+      }
+    else
+#else
+      {
+        if (0 ==
+            MHD_socket_cork_ (connection->socket_fd,
+                              true))
+          connection->sk_cork_on = true;
+      }
+#endif
+  case MHD_UPGRADE_ACTION_CORK_OFF:
+    if (! connection->sk_cork_on)
+      return MHD_YES;
+#ifdef HTTPS_SUPPORT
+    if (0 != (daemon->options & MHD_USE_TLS) )
+      {
+        gnutls_record_uncork (connection->tls_session, 0);
+        connection->sk_cork_on = false;
+        return MHD_YES;
+      }
+    else
+#else
+      {
+        if (0 ==
+            MHD_socket_cork_ (connection->socket_fd,
+                              false))
+          connection->sk_cork_on = false;
+      }
+#endif
   default:
     /* we don't understand this one */
     return MHD_NO;

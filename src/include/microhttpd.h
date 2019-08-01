@@ -3132,7 +3132,17 @@ enum MHD_UpgradeAction
    *
    * Takes no extra arguments.
    */
-  MHD_UPGRADE_ACTION_CLOSE = 0
+  MHD_UPGRADE_ACTION_CLOSE = 0,
+
+  /**
+   * Enable CORKing on the underlying socket.
+   */
+  MHD_UPGRADE_ACTION_CORK_ON = 1,
+
+  /**
+   * Disable CORKing on the underlying socket.
+   */
+  MHD_UPGRADE_ACTION_CORK_OFF = 2
 
 };
 

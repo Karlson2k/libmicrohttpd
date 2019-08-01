@@ -3181,7 +3181,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       return;
     case MHD_CONNECTION_HEADERS_SENDING:
       {
-        const size_t wb_ready  =connection->write_buffer_append_offset -
+        const size_t wb_ready = connection->write_buffer_append_offset -
           connection->write_buffer_send_offset;
 
         /* if the response body is not available, we use MHD_send_on_connection_() */
