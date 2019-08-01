@@ -705,6 +705,8 @@ run_usock (void *cls)
 {
   struct MHD_UpgradeResponseHandle *urh = cls;
 
+  MHD_upgrade_action (urh,
+                      MHD_UPGRADE_ACTION_CORK_OFF);
   send_all (usock,
             LARGE_STRING);
   recv_all (usock,
