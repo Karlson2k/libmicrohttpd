@@ -51,8 +51,6 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
 #if HAVE_MSG_MORE
 #else
   int ret;
-  const MHD_SCKT_OPT_BOOL_ off_val = 0;
-  const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
   /* If sk_cork_on is already what we pass in, return. */
   if (connection->sk_cork_on == want_cork)
@@ -64,32 +62,71 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
   ret = -1;
 #if TCP_CORK
   if (want_cork)
+  {
+    const MHD_SCKT_OPT_BOOL_ on_val = 1;
+
     ret = setsockopt (connection->socket_fd,
                       IPPROTO_TCP,
                       TCP_CORK,
                       (const void *) &on_val,
                       sizeof (on_val));
+  }
 #elif TCP_NODELAY
-  ret = setsockopt (connection->socket_fd,
-                    IPPROTO_TCP,
-                    TCP_NODELAY,
-                    (const void *) want_cork ? &off_val : &on_val,
-                    sizeof (on_val));
-#elif TCP_NOPUSH
-  ret = setsockopt (connection->socket_fd,
-                    IPPROTO_TCP,
-                    TCP_NOPUSH,
-                    (const void *) &on_val,
-                    sizeof (on_val));
-#endif
+  {
+    const MHD_SCKT_OPT_BOOL_ off_val = 0;
+    const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
+    ret = setsockopt (connection->socket_fd,
+                      IPPROTO_TCP,
+                      TCP_NODELAY,
+                      (const void *) want_cork ? &off_val : &on_val,
+                      sizeof (on_val));
+  }
+#elif TCP_NOPUSH
+  {
+    const MHD_SCKT_OPT_BOOL_ on_val = 1;
+
+    // FIXME: this must be wrong, set unconditionally irrespective of 'want_cork'!
+    ret = setsockopt (connection->socket_fd,
+                      IPPROTO_TCP,
+                      TCP_NOPUSH,
+                      (const void *) &on_val,
+                      sizeof (on_val));
+  }
+#endif
   if (0 == ret)
     {
       connection->sk_cork_on = want_cork;
     }
+  else
+    {
+      switch (errno)
+        {
+        case ENOTSOCK:
+          /* FIXME: Could be we are talking to a pipe, maybe remember this
+             and avoid all setsockopt() in the future? */
+          break;
+        case EBADF:
+          /* FIXME: should we die hard here? */
+          break;
+        case EINVAL:
+          /* FIXME: optlen invalid, should at least log this, maybe die */
+          break;
+        case EFAULT:
+          /* FIXME: wopsie, should at leats log this, maybe die */
+          break;
+        case ENOPROTOOPT:
+          /* FIXME: optlen unknown, should at least log this */
+          break;
+        default:
+          /* any others? man page does not list more... */
+          break;
+        }
+    }
   return;
 #endif /* MSG_MORE */
 }
+
 
 /**
  * Handle setsockopt calls.
@@ -104,8 +141,6 @@ post_cork_setsockopt (struct MHD_Connection *connection,
 #if HAVE_MSG_MORE
 #else
   int ret;
-  const MHD_SCKT_OPT_BOOL_ off_val = 0;
-  const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
   /* If sk_cork_on is already what we pass in, return. */
   if (connection->sk_cork_on == want_cork)
@@ -116,19 +151,29 @@ post_cork_setsockopt (struct MHD_Connection *connection,
   ret = -1;
 #if TCP_CORK
   if (! want_cork)
+  {
+    const MHD_SCKT_OPT_BOOL_ off_val = 0;
+
     ret = setsockopt (connection->socket_fd,
                       IPPROTO_TCP,
                       TCP_CORK,
                       &off_val,
                       sizeof (off_val));
+  }
 #elif TCP_NODELAY
   /* nothing to do */
 #elif TCP_NOPUSH
-  ret = setsockopt (connection->socket_fd,
-                    IPPROTO_TCP,
-                    TCP_NOPUSH,
-                    (const void *) &off_val,
-                    sizeof (off_val));
+  // FIXME: this must be wrong, set unconditionally irrespective of 'want_cork'!
+  {
+    const MHD_SCKT_OPT_BOOL_ off_val = 0;
+    const MHD_SCKT_OPT_BOOL_ on_val = 1;
+
+    ret = setsockopt (connection->socket_fd,
+                      IPPROTO_TCP,
+                      TCP_NOPUSH,
+                      (const void *) &off_val,
+                      sizeof (off_val));
+  }
 #endif
   if (0 == ret)
     {
@@ -137,6 +182,7 @@ post_cork_setsockopt (struct MHD_Connection *connection,
   return;
 #endif /* MSG_MORE */
 }
+
 
 /**
  * Send buffer on connection, and remember the current state of
@@ -164,11 +210,8 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                          enum MHD_SendSocketOptions options)
 {
   bool want_cork;
-  bool using_tls = false;
   MHD_socket s = connection->socket_fd;
   ssize_t ret;
-  const MHD_SCKT_OPT_BOOL_ off_val = 0;
-  const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
   /* error handling from send_param_adapter() */
   if ((MHD_INVALID_SOCKET == s) || (MHD_CONNECTION_CLOSED == connection->state))
@@ -197,21 +240,15 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     break;
   }
 
-  /* ! could be avoided by redefining the variable. */
-  // bool have_cork = ! connection->sk_tcp_nodelay_on;
-  bool have_cork = ! connection->sk_cork_on;
-
 #ifdef HTTPS_SUPPORT
-  using_tls = (0 != (connection->daemon->options & MHD_USE_TLS));
-#endif
-
-#ifdef HTTPS_SUPPORT
-  if (using_tls)
+  if (0 != (connection->daemon->options & MHD_USE_TLS))
   {
+    bool have_cork = connection->sk_cork_on;
+
     if (want_cork && ! have_cork)
     {
       gnutls_record_cork (connection->tls_session);
-      connection->sk_cork_on = false;
+      connection->sk_cork_on = true;
     }
     if (buffer_size > SSIZE_MAX)
       buffer_size = SSIZE_MAX;
@@ -242,7 +279,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     if (! want_cork && have_cork)
     {
       (void) gnutls_record_uncork (connection->tls_session, 0);
-      connection->sk_cork_on = true;
+      connection->sk_cork_on = false;
     }
   }
   else
@@ -285,8 +322,8 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     else if (buffer_size > (size_t) ret)
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
-
-    post_cork_setsockopt (connection, want_cork);
+    if (ret == buffer_size)
+      post_cork_setsockopt (connection, want_cork);
   }
 
   return ret;
@@ -319,28 +356,26 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 {
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   MHD_socket s = connection->socket_fd;
-  bool want_cork;
   int iovcnt;
-  int eno;
   ssize_t ret;
-  const MHD_SCKT_OPT_BOOL_ off_val = 0;
   struct iovec vector[2];
 
-  want_cork = ! connection->sk_cork_on;
-
-  pre_cork_setsockopt (connection, want_cork);
+  /* Since we generally give the fully answer, we do not want
+     corking to happen */
+  pre_cork_setsockopt (connection, false);
 
   vector[0].iov_base = (void *) header;
-  vector[0].iov_len = strlen (header);
+  vector[0].iov_len = header_size;
   vector[1].iov_base = (void *) buffer;
-  vector[1].iov_len = strlen (buffer);
+  vector[1].iov_len = buffer_size;
 
 #if HAVE_SENDMSG
-  struct msghdr msg;
-  memset(&msg, 0, sizeof(struct msghdr));
+  {
+    struct msghdr msg;
 
-  msg.msg_iov = vector;
-  msg.msg_iovlen = 2;
+    memset(&msg, 0, sizeof(struct msghdr));
+    msg.msg_iov = vector;
+    msg.msg_iovlen = 2;
 
   /*
    * questionable for this case, bus maybe worth considering for now:
@@ -349,21 +384,23 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
    * If you set msg_control to nonnull, NetBSD expects you to have
    * msg_controllen > 0. (sys/kern/uipc_syscalls.c in do_sys_sendmsg_so)
    * for reference. Thanks to pDNS (for FreeBSD), Riastradh for NetBSD.
+   * FIXME: this is unnecessary, see the memset() above?
    */
   /*
   msg.msg_control = 0;
   msg.msg_controllen = 0;
   */
-  ret = sendmsg (s, &msg, MAYBE_MSG_NOSIGNAL);
+    ret = sendmsg (s, &msg, MAYBE_MSG_NOSIGNAL);
+  }
 #elif HAVE_WRITEV
   iovcnt = sizeof (vector) / sizeof (struct iovec);
   ret = writev (s, vector, iovcnt);
 #endif
 
+  /* Only if we succeeded sending the full buffer, we need to make sure that
+     the OS flushes at the end */
   if (ret == header_size + buffer_size)
-    want_cork = false;
-
-  post_cork_setsockopt (connection, want_cork);
+    post_cork_setsockopt (connection, false);
 
   return ret;
 
@@ -407,6 +444,7 @@ static int freebsd_sendfile_flags_thd_p_c_;
  * @param connection the MHD connection structure
  * @return actual number of bytes sent
  */
+// FIXME: rename...
 ssize_t
 sendfile_adapter (struct MHD_Connection *connection)
 {
@@ -579,7 +617,10 @@ sendfile_adapter (struct MHD_Connection *connection)
   ret = (ssize_t)len;
 #endif /* HAVE_FREEBSD_SENDFILE */
 
-  post_cork_setsockopt (connection, false);
+  /* Make sure we send the data without delay ONLY if we
+     provided the complete response (not on partial write) */
+  if (ret == left)
+    post_cork_setsockopt (connection, false);
 
   return ret;
 }
