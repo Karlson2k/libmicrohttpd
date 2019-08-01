@@ -90,6 +90,19 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
       /* any others? man page does not list more... */
       break;
     }
+#else
+  /* CORK/NOPUSH/MSG_MORE do not exist on this platform,
+     so we must toggle Naggle's algorithm on/off instead
+     (otherwise we keep it always off) */
+  if (connection->sk_cork_on == want_cork)
+    {
+      /* nothing to do, success! */
+      return;
+    }
+  if ( (want_cork) &&
+       (0 == MHD_socket_set_nodelay (connection->socket_fd,
+                                     false)) )
+    connection->sk_cork_on = true;
 #endif
 }
 
@@ -148,6 +161,19 @@ post_cork_setsockopt (struct MHD_Connection *connection,
       /* any others? man page does not list more... */
       break;
     }
+#else
+  /* CORK/NOPUSH/MSG_MORE do not exist on this platform,
+     so we must toggle Naggle's algorithm on/off instead
+     (otherwise we keep it always off) */
+  if (connection->sk_cork_on == want_cork)
+    {
+      /* nothing to do, success! */
+      return;
+    }
+  if ( (! want_cork) &&
+       (0 == MHD_socket_set_nodelay (connection->socket_fd,
+                                     true)) )
+    connection->sk_cork_on = false;
 #endif
 }
 
