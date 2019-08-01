@@ -35,6 +35,7 @@
 #include "mhd_options.h"
 
 #include <errno.h>
+#include <stdbool.h>
 
 #if !defined(MHD_POSIX_SOCKETS) && !defined(MHD_WINSOCK_SOCKETS)
 #  if !defined(_WIN32) || defined(__CYGWIN__)
@@ -745,6 +746,19 @@ MHD_socket_nonblocking_ (MHD_socket sock);
 
 
 /**
+ * Disable Nagle's algorithm on @a sock.  This is what we do by default for
+ * all TCP sockets in MHD, unless the platform does not support the MSG_MORE
+ * or MSG_CORK or MSG_NOPUSH options.
+ *
+ * @param sock socket to manipulate
+ * @param on value to use
+ * @return 0 on success
+ */
+int
+MHD_socket_set_nodelay_ (MHD_socket sock,
+                         bool on);
+
+/**
  * Change socket options to be non-inheritable.
  *
  * @param sock socket to manipulate
@@ -753,6 +767,30 @@ MHD_socket_nonblocking_ (MHD_socket sock);
  */
 int
 MHD_socket_noninheritable_ (MHD_socket sock);
+
+
+/**
+ * Enable/disable the cork option.
+ *
+ * TCP_NOPUSH has the same logic as MSG_MSG_MORE.
+ * The two are more or less equivalent by a source
+ * transformation (ie
+ * send(MSG_MORE) => "set TCP_NOPUSH + send() + clear TCP_NOPUSH".
+ * Both of them are really fairly "local", but TCP_NOPUSH has a
+ * _notion_ of persistency that is entirely lacking in MSG_MORE.
+ * ... with TCP_NOPUSH you basically have to know what your last
+ * write is, and clear the bit _before_ that write if you want
+ * to avoid bad latencies.
+ *
+ * See also: https://yarchive.net/comp/linux/sendfile.html
+ *
+ * @param sock socket to manipulate
+ * @param on set to true to enable CORK, false to disable
+ * @return non-zero if succeeded, zero otherwise
+ */
+int
+MHD_socket_cork_ (MHD_socket sock,
+                  bool on);
 
 
 /**

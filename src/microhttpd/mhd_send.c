@@ -49,7 +49,8 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
                      bool want_cork)
 {
 #if HAVE_MSG_MORE
-#else
+  /* We use the MSG_MORE option for corking, no need for extra syscalls! */
+#elif defined(MHD_TCP_CORK_NOPUSH)
   int ret;
 
   /* If sk_cork_on is already what we pass in, return. */
@@ -58,84 +59,38 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
       /* nothing to do, success! */
       return;
     }
-
-  ret = -1;
-#if TCP_CORK
-  if (want_cork)
-  {
-    const MHD_SCKT_OPT_BOOL_ on_val = 1;
-
-    ret = setsockopt (connection->socket_fd,
-                      IPPROTO_TCP,
-                      TCP_CORK,
-                      (const void *) &on_val,
-                      sizeof (on_val));
-  }
-#elif TCP_NOPUSH
-  if (want_cork)
-  {
-    const MHD_SCKT_OPT_BOOL_ on_val = 1;
-    /* TCP_NOPUSH has the same logic as MSG_MSG_MORE.
-     * The two are more or less equivalent by a source
-     * transformation (ie
-     * send(MSG_MORE) => "set TCP_NOPUSH + send() + clear TCP_NOPUSH".
-     * Both of them are really fairly "local", but TCP_NOPUSH has a
-     * _notion_ of persistency that is entirely lacking in MSG_MORE.
-     * ... with TCP_NOPUSH you basically have to know what your last
-     * write is, and clear the bit _before_ that write if you want
-     * to avoid bad latencies.
-     * https://yarchive.net/comp/linux/sendfile.html A thread from 2001,
-     * take with 18 grains of salt. */
-
-    ret = setsockopt (connection->socket_fd,
-                      IPPROTO_TCP,
-                      TCP_NOPUSH,
-                      (const void *) &on_val,
-                      sizeof (on_val));
-  }
-#elif TCP_NODELAY
-  {
-    const MHD_SCKT_OPT_BOOL_ off_val = 0;
-    const MHD_SCKT_OPT_BOOL_ on_val = 1;
-
-    ret = setsockopt (connection->socket_fd,
-                      IPPROTO_TCP,
-                      TCP_NODELAY,
-                      (const void *) want_cork ? &off_val : &on_val,
-                      sizeof (on_val));
-  }
-#endif
+  if (! want_cork)
+    return; /* nothing to do *pre* syscall! */
+  ret = MHD_socket_cork_ (connection->socket_fd,
+                          true);
   if (0 == ret)
     {
-      connection->sk_cork_on = want_cork;
+      connection->sk_cork_on = true;
+      return;
     }
-  else
+  switch (errno)
     {
-      switch (errno)
-        {
-        case ENOTSOCK:
-          /* FIXME: Could be we are talking to a pipe, maybe remember this
-             and avoid all setsockopt() in the future? */
-          break;
-        case EBADF:
-          /* FIXME: should we die hard here? */
-          break;
-        case EINVAL:
-          /* FIXME: optlen invalid, should at least log this, maybe die */
-          break;
-        case EFAULT:
-          /* FIXME: wopsie, should at leats log this, maybe die */
-          break;
-        case ENOPROTOOPT:
-          /* FIXME: optlen unknown, should at least log this */
-          break; 
-       default:
-          /* any others? man page does not list more... */
-          break;
-        }
+    case ENOTSOCK:
+      /* FIXME: Could be we are talking to a pipe, maybe remember this
+         and avoid all setsockopt() in the future? */
+      break;
+    case EBADF:
+      /* FIXME: should we die hard here? */
+      break;
+    case EINVAL:
+      /* FIXME: optlen invalid, should at least log this, maybe die */
+      break;
+    case EFAULT:
+      /* FIXME: wopsie, should at leats log this, maybe die */
+      break;
+    case ENOPROTOOPT:
+      /* FIXME: optlen unknown, should at least log this */
+      break;
+    default:
+      /* any others? man page does not list more... */
+      break;
     }
-  return;
-#endif /* MSG_MORE */
+#endif
 }
 
 
@@ -150,7 +105,8 @@ post_cork_setsockopt (struct MHD_Connection *connection,
                       bool want_cork)
 {
 #if HAVE_MSG_MORE
-#else
+  /* We use the MSG_MORE option for corking, no need for extra syscalls! */
+#elif defined(MHD_TCP_CORK_NOPUSH)
   int ret;
 
   /* If sk_cork_on is already what we pass in, return. */
@@ -159,38 +115,40 @@ post_cork_setsockopt (struct MHD_Connection *connection,
       /* nothing to do, success! */
       return;
     }
-  ret = -1;
-#if TCP_CORK
-  if (! want_cork)
-  {
-    const MHD_SCKT_OPT_BOOL_ off_val = 0;
-
-    ret = setsockopt (connection->socket_fd,
-                      IPPROTO_TCP,
-                      TCP_CORK,
-                      &off_val,
-                      sizeof (off_val));
-  }
-#elif TCP_NOPUSH
-  if (! want_cork)
-  {
-    const MHD_SCKT_OPT_BOOL_ off_val = 0;
-
-    ret = setsockopt (connection->socket_fd,
-                      IPPROTO_TCP,
-                      TCP_NOPUSH,
-                      (const void *) &off_val,
-                      sizeof (off_val));
-  }
-#elif TCP_NODELAY
-  /* nothing to do */
-#endif
+  if (want_cork)
+    return; /* nothing to do *post* syscall (in fact, we should never
+               get here, as sk_cork_on should have succeeded in the
+               pre-syscall) */
+  ret = MHD_socket_cork_ (connection->socket_fd,
+                          false);
   if (0 == ret)
     {
-      connection->sk_cork_on = want_cork;
+      connection->sk_cork_on = false;
+      return;
     }
-  return;
-#endif /* MSG_MORE */
+  switch (errno)
+    {
+    case ENOTSOCK:
+      /* FIXME: Could be we are talking to a pipe, maybe remember this
+         and avoid all setsockopt() in the future? */
+      break;
+    case EBADF:
+      /* FIXME: should we die hard here? */
+      break;
+    case EINVAL:
+      /* FIXME: optlen invalid, should at least log this, maybe die */
+      break;
+    case EFAULT:
+      /* FIXME: wopsie, should at leats log this, maybe die */
+      break;
+    case ENOPROTOOPT:
+      /* FIXME: optlen unknown, should at least log this */
+      break;
+    default:
+      /* any others? man page does not list more... */
+      break;
+    }
+#endif
 }
 
 

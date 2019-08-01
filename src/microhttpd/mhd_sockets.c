@@ -462,6 +462,64 @@ MHD_socket_noninheritable_ (MHD_socket sock)
 
 
 /**
+ * Disable Nagle's algorithm on @a sock.  This is what we do by default for
+ * all TCP sockets in MHD, unless the platform does not support the MSG_MORE
+ * or MSG_CORK or MSG_NOPUSH options.
+ *
+ * @param sock socket to manipulate
+ * @param on value to use
+ * @return 0 on success
+ */
+int
+MHD_socket_set_nodelay_ (MHD_socket sock,
+                         bool on)
+{
+#ifdef TCP_NODELAY
+  {
+    const MHD_SCKT_OPT_BOOL_ off_val = 0;
+    const MHD_SCKT_OPT_BOOL_ on_val = 1;
+    /* Disable Nagle's algorithm for normal buffering */
+    return setsockopt (sock,
+                       IPPROTO_TCP,
+                       TCP_NODELAY,
+                       (const void *) (on) ? &on_val : &off_val,
+                       sizeof (on_val));
+  }
+#else
+  (void) sock;
+  return 0;
+#endif /* TCP_NODELAY */
+}
+
+
+/**
+ * Enable/disable the cork option.
+ *
+ * @param sock socket to manipulate
+ * @param on set to true to enable CORK, false to disable
+ * @return non-zero if succeeded, zero otherwise
+ */
+int
+MHD_socket_cork_ (MHD_socket sock,
+                  bool on)
+{
+#if defined(MHD_TCP_CORK_NOPUSH)
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
+  const MHD_SCKT_OPT_BOOL_ on_val = 1;
+
+  /* Disable extra buffering */
+  return (0 == setsockopt (sock,
+                           IPPROTO_TCP,
+                           MHD_TCP_CORK_NOPUSH,
+                           (const void *) (on ? &on_val : &off_val),
+                           sizeof (off_val)));
+#else
+  return 0;
+#endif /* MHD_TCP_CORK_NOPUSH */
+}
+
+
+/**
  * Change socket buffering mode to default.
  *
  * @param sock socket to manipulate
@@ -470,33 +528,19 @@ MHD_socket_noninheritable_ (MHD_socket sock)
 int
 MHD_socket_buffering_reset_ (MHD_socket sock)
 {
-  int res = !0;
-#if defined(TCP_NODELAY) || defined(MHD_TCP_CORK_NOPUSH)
-  const MHD_SCKT_OPT_BOOL_ off_val = 0;
 #if defined(MHD_TCP_CORK_NOPUSH)
-  //#if OLD_SOCKOPT
+  int res = ! MHD_socket_set_nodelay_ (sock,
+                                       true);
   /* Disable extra buffering */
-  res = (0 == setsockopt (sock,
-                          IPPROTO_TCP,
-                          MHD_TCP_CORK_NOPUSH,
-                          (const void *) &off_val,
-                          sizeof (off_val))) && res;
-  //#endif
+  return MHD_socket_cork_ (sock,
+                           false) && res;
+#elif defined(HAVE_MSG_MORE)
+  return ! MHD_socket_set_nodelay_ (sock,
+                                    true);
+#else
+  return ! MHD_socket_set_nodelay_ (sock,
+                                    false);
 #endif /* MHD_TCP_CORK_NOPUSH */
-#if defined(TCP_NODELAY)
-  //#if OLD_SOCKOPT
-  /* Enable Nagle's algorithm for normal buffering */
-  res = (0 == setsockopt (sock,
-                          IPPROTO_TCP,
-                          TCP_NODELAY,
-                          (const void *) &off_val,
-                          sizeof (off_val))) && res;
-  //#endif
-#endif /* TCP_NODELAY */
-#else  /* !TCP_NODELAY && !MHD_TCP_CORK_NOPUSH */
-  (void) sock;
-#endif /* !TCP_NODELAY && !MHD_TCP_CORK_NOPUSH */
-  return res;
 }
 
 
