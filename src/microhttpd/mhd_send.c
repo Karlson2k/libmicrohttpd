@@ -350,7 +350,6 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 {
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   MHD_socket s = connection->socket_fd;
-  int iovcnt;
   ssize_t ret;
   struct iovec vector[2];
 
@@ -374,8 +373,12 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
     ret = sendmsg (s, &msg, MAYBE_MSG_NOSIGNAL);
   }
 #elif HAVE_WRITEV
-  iovcnt = sizeof (vector) / sizeof (struct iovec);
-  ret = writev (s, vector, iovcnt);
+  {
+    int iovcnt;
+
+    iovcnt = sizeof (vector) / sizeof (struct iovec);
+    ret = writev (s, vector, iovcnt);
+  }
 #endif
 
   /* Only if we succeeded sending the full buffer, we need to make sure that
