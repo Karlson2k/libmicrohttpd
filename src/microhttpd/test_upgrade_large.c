@@ -581,7 +581,6 @@ kick_select ()
   if (-1 != kicker[1])
   {
     write (kicker[1], "K", 1);
-    fprintf (stderr, "KICKING\n");
   }
 }
 
