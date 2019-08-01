@@ -3180,42 +3180,55 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       mhd_assert (0);
       return;
     case MHD_CONNECTION_HEADERS_SENDING:
-      /* if the response body is not available, we use MHD_send_on_connection_() */
-      if (NULL != connection->response->crc)
-        {
-          ret = MHD_send_on_connection_ (connection,
-                                         &connection->write_buffer
-                                         [connection->write_buffer_send_offset],
-                                         connection->write_buffer_append_offset -
-                                         connection->write_buffer_send_offset,
-                                         MHD_SSO_MAY_CORK);
-        }
-      else
-        {
-          ret = MHD_send_on_connection2_ (connection,
-                                          &connection->write_buffer
-                                          [connection->write_buffer_send_offset],
-                                          connection->write_buffer_append_offset -
-                                          connection->write_buffer_send_offset,
-                                          connection->response->data,
-                                          connection->response->data_buffer_size);
-        }
+      {
+        const size_t wb_ready  =connection->write_buffer_append_offset -
+          connection->write_buffer_send_offset;
 
-      if (ret < 0)
-        {
-          if (MHD_ERR_AGAIN_ == ret)
+        /* if the response body is not available, we use MHD_send_on_connection_() */
+        if (NULL != connection->response->crc)
+          {
+            ret = MHD_send_on_connection_ (connection,
+                                           &connection->write_buffer
+                                           [connection->write_buffer_send_offset],
+                                           wb_ready,
+                                           MHD_SSO_MAY_CORK);
+          }
+        else
+          {
+            ret = MHD_send_on_connection2_ (connection,
+                                            &connection->write_buffer
+                                            [connection->write_buffer_send_offset],
+                                            wb_ready,
+                                            connection->response->data,
+                                            connection->response->data_buffer_size);
+          }
+
+        if (ret < 0)
+          {
+            if (MHD_ERR_AGAIN_ == ret)
+              return;
+            CONNECTION_CLOSE_ERROR (connection,
+                                    _("Connection was closed while sending response headers.\n"));
             return;
-          CONNECTION_CLOSE_ERROR (connection,
-                                  _("Connection was closed while sending response headers.\n"));
+          }
+        if (ret > wb_ready)
+          {
+            mhd_assert (NULL == connection->repsonse->crc);
+            /* We sent not just header data but also some response data,
+               update both offsets! */
+            connection->write_buffer_send_offset += wb_ready;
+            ret -= wb_ready;
+            connection->response_write_position += ret;
+          }
+        else
+          connection->write_buffer_send_offset += ret;
+        MHD_update_last_activity_ (connection);
+        if (MHD_CONNECTION_HEADERS_SENDING != connection->state)
           return;
-        }
-      connection->write_buffer_send_offset += ret;
-      MHD_update_last_activity_ (connection);
-      if (MHD_CONNECTION_HEADERS_SENDING != connection->state)
+        check_write_done (connection,
+                          MHD_CONNECTION_HEADERS_SENT);
         return;
-      check_write_done (connection,
-                        MHD_CONNECTION_HEADERS_SENT);
-      return;
+      }
     case MHD_CONNECTION_HEADERS_SENT:
       return;
     case MHD_CONNECTION_NORMAL_BODY_READY:
