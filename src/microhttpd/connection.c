@@ -324,19 +324,6 @@ socket_start_extra_buffering (struct MHD_Connection *connection)
 
 
 /**
- * Activate no buffering mode (no delay sending) on connection socket.
- *
- * @param connection connection to be processed
- * @return true on success, false otherwise
- */
-_MHD_static_inline bool
-socket_start_no_buffering (struct MHD_Connection *connection)
-{
-
-}
-
-
-/**
  * Activate no buffering mode (no delay sending) on connection socket
  * and push to client data pending in socket buffer.
  *
@@ -350,7 +337,7 @@ socket_start_no_buffering_flush (struct MHD_Connection *connection)
 #if defined(TCP_NOPUSH) && !defined(TCP_CORK)
   const int dummy = 0;
 #endif /* !TCP_CORK */
-  res = socket_start_no_buffering (connection);  /* REMOVE: Dead */
+
 #if defined(__FreeBSD__) &&  __FreeBSD__+0 >= 9
   /* FreeBSD do not need zero-send for flushing starting from version 9 */
 #elif defined(TCP_NOPUSH) && !defined(TCP_CORK)
@@ -3461,8 +3448,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               connection->state = MHD_CONNECTION_CONTINUE_SENDING;
               if (socket_flush_possible (connection))
                 socket_start_extra_buffering (connection); /* REMOVE: Dead */
-              else
-                socket_start_no_buffering (connection); /* REMOVE: Dead */
 
               break;
             }
@@ -3593,8 +3578,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           connection->state = MHD_CONNECTION_HEADERS_SENDING;
           if (socket_flush_possible (connection))
             socket_start_extra_buffering (connection); /* REMOVE: Dead */
-          else
-            socket_start_no_buffering (connection); /* REMOVE: Dead */
 
           break;
         case MHD_CONNECTION_HEADERS_SENDING:
@@ -3665,8 +3648,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #endif
               connection->state = MHD_CONNECTION_NORMAL_BODY_READY;
               /* Buffering for flushable socket was already enabled*/
-              if (socket_flush_possible (connection))
-                socket_start_no_buffering (connection); /* REMOVE: Dead */
+
               break;
             }
           /* mutex was already unlocked by "try_ready_normal_body */
@@ -3699,8 +3681,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #endif
               connection->state = MHD_CONNECTION_CHUNKED_BODY_READY;
               /* Buffering for flushable socket was already enabled */
-              if (socket_flush_possible (connection))
-                socket_start_no_buffering (connection); /* REMOVE: Dead */
+
               continue;
             }
           /* mutex was already unlocked by try_ready_chunked_body */
