@@ -350,7 +350,7 @@ socket_start_no_buffering_flush (struct MHD_Connection *connection)
 #if defined(TCP_NOPUSH) && !defined(TCP_CORK)
   const int dummy = 0;
 #endif /* !TCP_CORK */
-  res = socket_start_no_buffering (connection);
+  res = socket_start_no_buffering (connection);  /* REMOVE: Dead */
 #if defined(__FreeBSD__) &&  __FreeBSD__+0 >= 9
   /* FreeBSD do not need zero-send for flushing starting from version 9 */
 #elif defined(TCP_NOPUSH) && !defined(TCP_CORK)
@@ -3460,9 +3460,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             {
               connection->state = MHD_CONNECTION_CONTINUE_SENDING;
               if (socket_flush_possible (connection))
-                socket_start_extra_buffering (connection);
+                socket_start_extra_buffering (connection); /* REMOVE: Dead */
               else
-                socket_start_no_buffering (connection);
+                socket_start_no_buffering (connection); /* REMOVE: Dead */
 
               break;
             }
@@ -3488,9 +3488,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             {
               connection->state = MHD_CONNECTION_CONTINUE_SENT;
               if (socket_flush_possible (connection))
-                socket_start_no_buffering_flush (connection);
+                socket_start_no_buffering_flush (connection); /* REMOVE: Dead */
               else
-                socket_start_normal_buffering (connection);
+                socket_start_normal_buffering (connection); /* REMOVE: Dead */
 
               continue;
             }
@@ -3592,9 +3592,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
           connection->state = MHD_CONNECTION_HEADERS_SENDING;
           if (socket_flush_possible (connection))
-            socket_start_extra_buffering (connection);
+            socket_start_extra_buffering (connection); /* REMOVE: Dead */
           else
-            socket_start_no_buffering (connection);
+            socket_start_no_buffering (connection); /* REMOVE: Dead */
 
           break;
         case MHD_CONNECTION_HEADERS_SENDING:
@@ -3603,12 +3603,12 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         case MHD_CONNECTION_HEADERS_SENT:
           /* Some clients may take some actions right after header receive */
           if (socket_flush_possible (connection))
-            socket_start_no_buffering_flush (connection);
+            socket_start_no_buffering_flush (connection); /* REMOVE: Dead */
 
 #ifdef UPGRADE_SUPPORT
           if (NULL != connection->response->upgrade_handler)
             {
-              socket_start_normal_buffering (connection);
+              socket_start_normal_buffering (connection); /* REMOVE: Dead */
               connection->state = MHD_CONNECTION_UPGRADE;
               /* This connection is "upgraded".  Pass socket to application. */
               if (MHD_YES !=
@@ -3631,9 +3631,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             }
 #endif /* UPGRADE_SUPPORT */
           if (socket_flush_possible (connection))
-            socket_start_extra_buffering (connection);
+            socket_start_extra_buffering (connection);  /* REMOVE: Dead */
           else
-            socket_start_normal_buffering (connection);
+            socket_start_normal_buffering (connection); /* REMOVE: Dead */
 
           if (connection->have_chunked_upload)
             connection->state = MHD_CONNECTION_CHUNKED_BODY_UNREADY;
@@ -3666,7 +3666,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               connection->state = MHD_CONNECTION_NORMAL_BODY_READY;
               /* Buffering for flushable socket was already enabled*/
               if (socket_flush_possible (connection))
-                socket_start_no_buffering (connection);
+                socket_start_no_buffering (connection); /* REMOVE: Dead */
               break;
             }
           /* mutex was already unlocked by "try_ready_normal_body */
@@ -3700,7 +3700,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               connection->state = MHD_CONNECTION_CHUNKED_BODY_READY;
               /* Buffering for flushable socket was already enabled */
               if (socket_flush_possible (connection))
-                socket_start_no_buffering (connection);
+                socket_start_no_buffering (connection); /* REMOVE: Dead */
               continue;
             }
           /* mutex was already unlocked by try_ready_chunked_body */
@@ -3734,9 +3734,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 	    continue;
 	  }
           if (socket_flush_possible (connection))
-            socket_start_no_buffering_flush (connection);
+            socket_start_no_buffering_flush (connection); /* REMOVE: Dead */
           else
-            socket_start_normal_buffering (connection);
+            socket_start_normal_buffering (connection); /* REMOVE: Dead */
 
           MHD_destroy_response (connection->response);
           connection->response = NULL;
@@ -3765,7 +3765,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
             {
               /* can try to keep-alive */
               if (socket_flush_possible (connection))
-                socket_start_normal_buffering (connection);
+                socket_start_normal_buffering (connection); /* REMOVE: Dead */
               connection->version = NULL;
               connection->state = MHD_CONNECTION_INIT;
               connection->last = NULL;
