@@ -2536,7 +2536,12 @@ internal_add_connection (struct MHD_Daemon *daemon,
   else
     {
 #ifdef HTTPS_SUPPORT
-      gnutls_init_flags_t flags;
+#if (GNUTLS_VERSION_NUMBER+0 >= 0x030500)
+      gnutls_init_flags_t
+#else
+      unsigned int
+#endif
+        flags;
 
       flags = GNUTLS_SERVER;
 #if (GNUTLS_VERSION_NUMBER+0 >= 0x030402)
