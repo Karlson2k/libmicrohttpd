@@ -100,7 +100,7 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
       return;
     }
   if ( (want_cork) &&
-       (0 == MHD_socket_set_nodelay (connection->socket_fd,
+       (0 == MHD_socket_set_nodelay_ (connection->socket_fd,
                                      false)) )
     connection->sk_cork_on = true;
 #endif
@@ -171,7 +171,7 @@ post_cork_setsockopt (struct MHD_Connection *connection,
       return;
     }
   if ( (! want_cork) &&
-       (0 == MHD_socket_set_nodelay (connection->socket_fd,
+       (0 == MHD_socket_set_nodelay_ (connection->socket_fd,
                                      true)) )
     connection->sk_cork_on = false;
 #endif
