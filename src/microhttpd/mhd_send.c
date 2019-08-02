@@ -435,9 +435,8 @@ static int freebsd_sendfile_flags_thd_p_c_;
  * @param connection the MHD connection structure
  * @return actual number of bytes sent
  */
-// FIXME: rename...
 ssize_t
-sendfile_adapter (struct MHD_Connection *connection)
+MHD_send_sendfile_ (struct MHD_Connection *connection)
 {
   ssize_t ret;
   const int file_fd = connection->response->fd;

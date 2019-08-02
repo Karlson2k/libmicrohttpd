@@ -3123,7 +3123,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #if defined(_MHD_HAVE_SENDFILE)
           if (MHD_resp_sender_sendfile == connection->resp_sender)
             {
-              ret = sendfile_adapter (connection);
+              ret = MHD_send_sendfile_ (connection);
             }
           else
 #else  /* ! _MHD_HAVE_SENDFILE */
