@@ -3446,9 +3446,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (need_100_continue (connection))
             {
               connection->state = MHD_CONNECTION_CONTINUE_SENDING;
-              if (socket_flush_possible (connection))
-                socket_start_extra_buffering (connection); /* REMOVE: Dead */
-
               break;
             }
           if ( (NULL != connection->response) &&
@@ -3576,9 +3573,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               continue;
             }
           connection->state = MHD_CONNECTION_HEADERS_SENDING;
-          if (socket_flush_possible (connection))
-            socket_start_extra_buffering (connection); /* REMOVE: Dead */
-
           break;
         case MHD_CONNECTION_HEADERS_SENDING:
           /* no default action */
@@ -3613,10 +3607,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               continue;
             }
 #endif /* UPGRADE_SUPPORT */
-          if (socket_flush_possible (connection))
-            socket_start_extra_buffering (connection);  /* REMOVE: Dead */
-          else
-            socket_start_normal_buffering (connection); /* REMOVE: Dead */
+          socket_start_normal_buffering (connection); /* REMOVE: Dead */
 
           if (connection->have_chunked_upload)
             connection->state = MHD_CONNECTION_CHUNKED_BODY_UNREADY;
