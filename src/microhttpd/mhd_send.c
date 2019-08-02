@@ -81,10 +81,20 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
       /* FIXME: optlen invalid, should at least log this, maybe die */
       break;
     case EFAULT:
-      /* FIXME: wopsie, should at leats log this, maybe die */
+      /* wopsie, should at leats log this, FIXME: maybe die */
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("The addresss pointed to by optval is not a valid part of the process address space: %s\n"),
+                MHD_socket_last_strerr_());
+#endif
       break;
     case ENOPROTOOPT:
-      /* FIXME: optlen unknown, should at least log this */
+      /* optlen unknown, should at least log this */
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("The option is unknown: %s\n"),
+                MHD_socket_last_strerr_());
+#endif
       break;
     default:
       /* any others? man page does not list more... */
@@ -152,10 +162,20 @@ post_cork_setsockopt (struct MHD_Connection *connection,
       /* FIXME: optlen invalid, should at least log this, maybe die */
       break;
     case EFAULT:
-      /* FIXME: wopsie, should at leats log this, maybe die */
+      /* wopsie, should at leats log this, FIXME: maybe die */
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("The addresss pointed to by optval is not a valid part of the process address space: %s\n"),
+                MHD_socket_last_strerr_());
+#endif
       break;
     case ENOPROTOOPT:
-      /* FIXME: optlen unknown, should at least log this */
+      /* optlen unknown, should at least log this */
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("The option is unknown: %s\n"),
+                MHD_socket_last_strerr_());
+#endif
       break;
     default:
       /* any others? man page does not list more... */
