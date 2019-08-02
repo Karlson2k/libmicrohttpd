@@ -353,19 +353,6 @@ socket_start_no_buffering_flush (struct MHD_Connection *connection)
 
 
 /**
- * Activate normal buffering mode on connection socket.
- *
- * @param connection connection to be processed
- * @return true on success, false otherwise
- */
-_MHD_static_inline bool
-socket_start_normal_buffering (struct MHD_Connection *connection)
-{
-  mhd_assert(NULL != connection);
-}
-
-
-/**
  * Get all of the headers from the request.
  *
  * @param connection connection to get values from
@@ -3471,8 +3458,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               connection->state = MHD_CONNECTION_CONTINUE_SENT;
               if (socket_flush_possible (connection))
                 socket_start_no_buffering_flush (connection); /* REMOVE: Dead */
-              else
-                socket_start_normal_buffering (connection); /* REMOVE: Dead */
 
               continue;
             }
@@ -3585,7 +3570,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #ifdef UPGRADE_SUPPORT
           if (NULL != connection->response->upgrade_handler)
             {
-              socket_start_normal_buffering (connection); /* REMOVE: Dead */
               connection->state = MHD_CONNECTION_UPGRADE;
               /* This connection is "upgraded".  Pass socket to application. */
               if (MHD_YES !=
@@ -3607,7 +3591,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               continue;
             }
 #endif /* UPGRADE_SUPPORT */
-          socket_start_normal_buffering (connection); /* REMOVE: Dead */
 
           if (connection->have_chunked_upload)
             connection->state = MHD_CONNECTION_CHUNKED_BODY_UNREADY;
@@ -3707,8 +3690,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 	  }
           if (socket_flush_possible (connection))
             socket_start_no_buffering_flush (connection); /* REMOVE: Dead */
-          else
-            socket_start_normal_buffering (connection); /* REMOVE: Dead */
 
           MHD_destroy_response (connection->response);
           connection->response = NULL;
@@ -3736,8 +3717,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           else
             {
               /* can try to keep-alive */
-              if (socket_flush_possible (connection))
-                socket_start_normal_buffering (connection); /* REMOVE: Dead */
+
               connection->version = NULL;
               connection->state = MHD_CONNECTION_INIT;
               connection->last = NULL;
