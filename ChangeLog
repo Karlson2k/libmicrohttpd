@@ -1,3 +1,7 @@
+Fri 09 Aug 2019 10:07:27 AM CEST
+    Copy compiler and linker hardening flags from GNUnet (updating
+    configure.ac). -CG
+
 Thu 01 Aug 2019 01:23:36 PM CEST
     Releasing libmicrohttpd 0.9.66. -CG
 
