@@ -76,7 +76,6 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
       break;
     case EBADF:
       /* FIXME: should we die hard here? */
-      return MHD_ERR_BADF_; /* Fail hard */
       break;
     case EINVAL:
       /* FIXME: optlen invalid, should at least log this, maybe die */
@@ -85,7 +84,6 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
                 _("optlen invalid: %s\n"),
                 MHD_socket_last_strerr_());
 #endif
-      return MHD_ERR_INVAL_; /* Fail hard */
       break;
     case EFAULT:
       /* wopsie, should at leats log this, FIXME: maybe die */
@@ -164,7 +162,6 @@ post_cork_setsockopt (struct MHD_Connection *connection,
       break;
     case EBADF:
       /* FIXME: should we die hard here? */
-      return MHD_ERR_BADF_; /* Fail hard */
       break;
     case EINVAL:
       /* FIXME: optlen invalid, should at least log this, maybe die */
@@ -173,7 +170,6 @@ post_cork_setsockopt (struct MHD_Connection *connection,
                 _("optlen invalid: %s\n"),
                 MHD_socket_last_strerr_());
 #endif
-      return MHD_ERR_INVAL_; /* Fail hard */
       break;
     case EFAULT:
       /* wopsie, should at leats log this, FIXME: maybe die */
