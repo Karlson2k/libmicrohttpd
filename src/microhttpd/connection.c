@@ -3456,9 +3456,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
               MHD_STATICSTR_LEN_ (HTTP_100_CONTINUE))
             {
               connection->state = MHD_CONNECTION_CONTINUE_SENT;
-              if (socket_flush_possible (connection))
-                socket_start_no_buffering_flush (connection); /* REMOVE: Dead */
-
               continue;
             }
           break;
@@ -3688,9 +3685,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 	    /* FIXME: maybe partially reset memory pool? */
 	    continue;
 	  }
-          if (socket_flush_possible (connection))
-            socket_start_no_buffering_flush (connection); /* REMOVE: Dead */
-
           MHD_destroy_response (connection->response);
           connection->response = NULL;
           if ( (NULL != daemon->notify_completed) &&
