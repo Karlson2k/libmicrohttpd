@@ -79,6 +79,11 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
       break;
     case EINVAL:
       /* FIXME: optlen invalid, should at least log this, maybe die */
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("optlen invalid: %s\n"),
+                MHD_socket_last_strerr_());
+#endif
       break;
     case EFAULT:
       /* wopsie, should at leats log this, FIXME: maybe die */
@@ -160,6 +165,11 @@ post_cork_setsockopt (struct MHD_Connection *connection,
       break;
     case EINVAL:
       /* FIXME: optlen invalid, should at least log this, maybe die */
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _("optlen invalid: %s\n"),
+                MHD_socket_last_strerr_());
+#endif
       break;
     case EFAULT:
       /* wopsie, should at leats log this, FIXME: maybe die */
