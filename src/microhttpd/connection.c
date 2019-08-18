@@ -3560,9 +3560,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           /* no default action */
           break;
         case MHD_CONNECTION_HEADERS_SENT:
-          /* Some clients may take some actions right after header receive.
-           This is now handled by code in and around mhd_send.c. */
-          break;
+          /* Some clients may take some actions right after header receive */
+          if (socket_flush_possible (connection))
+            socket_start_no_buffering_flush (connection); /* REMOVE: Dead */
 
 #ifdef UPGRADE_SUPPORT
           if (NULL != connection->response->upgrade_handler)
