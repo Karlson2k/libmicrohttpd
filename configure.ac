@@ -81,6 +81,34 @@ AM_CONDITIONAL([HAVE_PO], [ test "$have_po" = yes ])
 
 
 
+
+# Adam shostack suggests the following for Windows:
+# -D_FORTIFY_SOURCE=2 -fstack-protector-all
+AC_ARG_ENABLE(gcc-hardening,
+   AS_HELP_STRING(--enable-gcc-hardening, enable compiler security checks),
+[AS_IF([test x$enableval = xyes],[
+    CFLAGS="$CFLAGS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all"
+    CFLAGS="$CFLAGS -fwrapv -fPIE -Wstack-protector"
+    CFLAGS="$CFLAGS --param ssp-buffer-size=1"
+    LDFLAGS="$LDFLAGS -pie"
+ ])])
+
+# Linker hardening options
+# Currently these options are ELF specific - you can't use this with MacOSX
+AC_ARG_ENABLE(linker-hardening,
+  AS_HELP_STRING(--enable-linker-hardening, enable linker security fixups),
+[AS_IF([test x$enableval = xyes],
+   [LDFLAGS="$LDFLAGS -z relro -z now"])])
+
+
+AC_ARG_ENABLE(sanitizer,
+  AS_HELP_STRING(--enable-sanitizer, enable Address Sanitizer and Undefined Behavior Sanitizer),
+[AS_IF([test x$enableval = xyes],[
+   LDFLAGS="$CFLAGS -fsanitize=address,undefined -fno-omit-frame-pointer"
+ ])])
+
+
+
 # Workaround for libgcrypt
 AS_IF([[test "x$lt_sysroot" != "x" && test "x$SYSROOT" = "x"]], [[SYSROOT="$lt_sysroot"]])
 
@@ -812,7 +840,7 @@ AC_INCLUDES_DEFAULT
   ]
 )
 
-AC_CHECK_MEMBERS([struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len, 
+AC_CHECK_MEMBERS([struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len,
                   struct sockaddr_storage.ss_len],
    [], [],
    [
