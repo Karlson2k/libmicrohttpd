@@ -78,7 +78,7 @@
 static size_t MHD_sys_page_size_ = MHD_DEF_PAGE_SIZE_; /* Default fallback value */
 
 /**
- * Initilise values for memory pools
+ * Initialise values for memory pools
  */
 void
 MHD_init_mem_pools_ (void)

@@ -185,6 +185,7 @@ bin2hex (const uint8_t *bin,
   *hex = 0;
 }
 
+
 static int
 check_result (const char *test_name,
               unsigned int check_num,
@@ -220,10 +221,12 @@ check_result (const char *test_name,
  */
 
 /* Calculated MD5 as one pass for whole data */
-int test1_str(void)
+static int
+test1_str(void)
 {
+  unsigned int i;
   int num_failed = 0;
-  for (unsigned int i = 0; i < units1_num; i++)
+  for (i = 0; i < units1_num; i++)
     {
       struct MD5Context ctx;
       uint8_t digest[MD5_DIGEST_SIZE];
@@ -237,10 +240,14 @@ int test1_str(void)
   return num_failed;
 }
 
-int test1_bin(void)
+
+static int
+test1_bin(void)
 {
+  unsigned int i;
   int num_failed = 0;
-  for (unsigned int i = 0; i < units2_num; i++)
+  
+  for (i = 0; i < units2_num; i++)
     {
       struct MD5Context ctx;
       uint8_t digest[MD5_DIGEST_SIZE];
@@ -254,11 +261,15 @@ int test1_bin(void)
   return num_failed;
 }
 
+
 /* Calculated MD5 as two iterations for whole data */
-int test2_str(void)
+static int
+test2_str(void)
 {
+  unsigned int i;
   int num_failed = 0;
-  for (unsigned int i = 0; i < units1_num; i++)
+
+  for (i = 0; i < units1_num; i++)
     {
       struct MD5Context ctx;
       uint8_t digest[MD5_DIGEST_SIZE];
@@ -274,10 +285,14 @@ int test2_str(void)
   return num_failed;
 }
 
-int test2_bin(void)
+
+static int
+test2_bin(void)
 {
+  unsigned int i;
   int num_failed = 0;
-  for (unsigned int i = 0; i < units2_num; i++)
+  
+  for (i = 0; i < units2_num; i++)
     {
       struct MD5Context ctx;
       uint8_t digest[MD5_DIGEST_SIZE];
@@ -293,7 +308,9 @@ int test2_bin(void)
   return num_failed;
 }
 
-int main(int argc, char * argv[])
+
+int
+main(int argc, char * argv[])
 {
   int num_failed = 0;
   (void)has_in_name; /* Mute compiler warning. */
