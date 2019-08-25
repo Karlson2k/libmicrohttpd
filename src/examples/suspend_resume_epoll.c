@@ -55,7 +55,9 @@ ahc_echo (void *cls,
   struct Request* req;
   struct itimerspec ts;
 
+  (void) cls;
   (void) url;               /* Unused. Silence compiler warning. */
+  (void) method;
   (void) version;           /* Unused. Silence compiler warning. */
   (void) upload_data;       /* Unused. Silence compiler warning. */
   (void) upload_data_size;  /* Unused. Silence compiler warning. */
@@ -122,6 +124,9 @@ connection_done (void *cls,
 {
   struct Request *req = *con_cls;
 
+  (void) cls;
+  (void) connection;
+  (void) toe;
   if (-1 != req->timerfd)
     if (0 != close (req->timerfd))
       abort ();
