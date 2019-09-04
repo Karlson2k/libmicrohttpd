@@ -72,8 +72,8 @@ Appendices
 
 * GNU-LGPL::                     The GNU Lesser General Public License says how you
                                  can copy and share almost all of `libmicrohttpd'.
-* GNU GPL with eCos Extension::  The GNU General Public License with eCos extension says how you
-                                 can copy and share some parts of `libmicrohttpd'.
+* eCos License::                 The eCos License says how you can copy and share some parts of `libmicrohttpd'.
+* GNU-GPL::                      The GNU General Public License (with eCos extension) says how you can copy and share some parts of `libmicrohttpd'.
 * GNU-FDL::                     The GNU Free Documentation License says how you
                                 can copy and share the documentation of `libmicrohttpd'.
 
@@ -3281,10 +3281,15 @@ shorter afterwards due to elimination of escape sequences).
 @cindex license
 @include lgpl.texi
 
-@node GNU GPL with eCos Extension
-@unnumbered GNU GPL with eCos Extension
+@node eCos License
+@unnumbered eCos License
 @cindex license
 @include ecos.texi
+
+@node GNU-GPL
+@unnumbered GNU General Public License
+@cindex license
+@include gpl-2.0.texi
 
 @node GNU-FDL
 @unnumbered GNU-FDL
