@@ -3087,7 +3087,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       }
       if (ret > wb_ready)
       {
-        mhd_assert (NULL == connection->repsonse->crc);
+        mhd_assert (NULL == connection->response->crc);
         /* We sent not just header data but also some response data,
            update both offsets! */
         connection->write_buffer_send_offset += wb_ready;
