@@ -639,15 +639,18 @@ recv_hdr (struct wr_socket *sock)
     ret = wr_recv (sock,
                    &c,
                    1);
-    kick_select ();
     if (0 > ret)
     {
       if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
         continue;
+      fprintf (stderr,
+               "recv failed unexpectedly: %s\n",
+               strerror (errno));
       abort ();
     }
     if (0 == ret)
       continue;
+    kick_select ();
     if (c == next)
     {
       i++;
