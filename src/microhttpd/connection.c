@@ -284,66 +284,6 @@ send_param_adapter (struct MHD_Connection *connection,
 
 
 /**
- * Check whether is possible to force push socket buffer content as
- * partial packet.
- * MHD use different buffering logic depending on whether flushing of
- * socket buffer is possible or not.
- * If flushing IS possible than MHD activates extra buffering before
- * sending data to prevent sending partial packets and flush pending
- * data in socket buffer to push last partial packet to client after
- * sending logical completed part of data (for example: after sending
- * full response header or full response message).
- * If flushing IS NOT possible than MHD activates no buffering (no
- * delay sending) when it going to send formed fully completed logical
- * part of data and activate normal buffering after sending.
- * For idled keep-alive connection MHD always activate normal
- * buffering.
- *
- * @param connection connection to check
- * @return true if force push is possible, false otherwise
- */
-_MHD_static_inline bool
-socket_flush_possible (struct MHD_Connection *connection)
-{
-  (void) connection; /* Mute compiler warning. */
-#if defined(TCP_CORK) || defined(TCP_PUSH)
-  return true;
-#else  /* !TCP_CORK && !TCP_PUSH */
-  return false;
-#endif /* !TCP_CORK && !TCP_PUSH */
-}
-
-
-/**
- * Activate no buffering mode (no delay sending) on connection socket
- * and push to client data pending in socket buffer.
- *
- * @param connection connection to be processed
- * @return true on success, false otherwise
- */
-_MHD_static_inline bool
-socket_start_no_buffering_flush (struct MHD_Connection *connection)
-{
-  bool res = false;
-#if defined(TCP_NOPUSH) && ! defined(TCP_CORK)
-  const int dummy = 0;
-#endif /* !TCP_CORK */
-
-#if defined(__FreeBSD__) &&  __FreeBSD__ + 0 >= 9
-  /* FreeBSD do not need zero-send for flushing starting from version 9 */
-#elif defined(TCP_NOPUSH) && ! defined(TCP_CORK)
-  /* Force flush data with zero send otherwise Darwin and some BSD systems
-     will add 5 seconds delay. Not required with TCP_CORK as switching off
-     TCP_CORK always flushes socket buffer. */
-  res = (0 <= MHD_send_ (connection->socket_fd,
-                         &dummy,
-                         0)) && res;
-#endif /* TCP_NOPUSH && !TCP_CORK*/
-  return res;
-}
-
-
-/**
  * Get all of the headers from the request.
  *
  * @param connection connection to get values from
@@ -3593,9 +3533,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       break;
     case MHD_CONNECTION_HEADERS_SENT:
       /* Some clients may take some actions right after header receive */
-      if (socket_flush_possible (connection))
-        socket_start_no_buffering_flush (connection);     /* REMOVE: Dead */
-
 #ifdef UPGRADE_SUPPORT
       if (NULL != connection->response->upgrade_handler)
       {
