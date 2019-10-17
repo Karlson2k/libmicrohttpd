@@ -1,0 +1,35 @@
+#!/bin/sh
+
+# use as .git/hooks/pre-commit
+
+exec 1>&2
+
+RET=0
+changed=$(git diff --cached --name-only)
+crustified=""
+
+for f in $changed;
+do
+ if echo $f | grep \\.[c,h]\$ > /dev/null
+ then
+    # compare result of uncrustify with changes
+    #
+    # only change any of the invocations here if
+    # they are portable across all cmp and shell
+    # implementations !
+    uncrustify -q -c uncrustify.cfg -f $f | cmp -s $f -
+    if test $? = 1 ;
+    then
+      crustified=" $crustified $f"
+      RET=1
+    fi
+  fi
+done
+
+if [ $RET = 1 ];
+then
+  echo "Run"
+  echo "uncrustify --no-backup -c uncrustify.cfg ${crustified}"
+  echo "before commiting."
+fi
+exit $RET

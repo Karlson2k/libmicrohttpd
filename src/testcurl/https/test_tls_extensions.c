@@ -69,20 +69,20 @@ test_hello_extension (gnutls_session_t session, int port, extensions_t exten_t,
   sd = -1;
   memset (&cbc, 0, sizeof (struct CBC));
   if (NULL == (cbc.buf = malloc (sizeof (char) * 256)))
-    {
-      fprintf (stderr, MHD_E_MEM);
-      ret = -1;
-      goto cleanup;
-    }
+  {
+    fprintf (stderr, MHD_E_MEM);
+    ret = -1;
+    goto cleanup;
+  }
   cbc.size = 256;
 
   sd = socket (AF_INET, SOCK_STREAM, 0);
   if (sd == -1)
-    {
-      fprintf(stderr, "Failed to create socket: %s\n", strerror(errno));
-      free (cbc.buf);
-      return -1;
-    }
+  {
+    fprintf (stderr, "Failed to create socket: %s\n", strerror (errno));
+    free (cbc.buf);
+    return -1;
+  }
   memset (&sa, '\0', sizeof (struct sockaddr_in));
   sa.sin_family = AF_INET;
   sa.sin_port = htons (port);
@@ -101,10 +101,10 @@ test_hello_extension (gnutls_session_t session, int port, extensions_t exten_t,
 
   data = MHD_gnutls_malloc (datalen);
   if (data == NULL)
-      {
-	 free (cbc.buf);
-	 return -1;
-      }
+  {
+    free (cbc.buf);
+    return -1;
+  }
   hver = MHD_gtls_version_max (session);
   data[pos++] = MHD_gtls_version_get_major (hver);
   data[pos++] = MHD_gtls_version_get_minor (hver);
@@ -119,7 +119,8 @@ test_hello_extension (gnutls_session_t session, int port, extensions_t exten_t,
   /* generate session client random */
   memset (session->security_parameters.client_random, 0, TLS_RANDOM_SIZE);
   gnutls_write_uint32 (time (NULL), rnd);
-  if (GC_OK != MHD_gc_nonce ((char *) &rnd[4], TLS_RANDOM_SIZE - 4)) abort ();
+  if (GC_OK != MHD_gc_nonce ((char *) &rnd[4], TLS_RANDOM_SIZE - 4))
+    abort ();
   memcpy (session->security_parameters.client_random, rnd, TLS_RANDOM_SIZE);
   memcpy (&data[pos], rnd, TLS_RANDOM_SIZE);
   pos += TLS_RANDOM_SIZE;
@@ -148,37 +149,37 @@ test_hello_extension (gnutls_session_t session, int port, extensions_t exten_t,
   gnutls_write_uint16 (exten_data_len, &data[pos]);
   pos += 2;
   for (i = 0; i < ext_count; ++i)
-    {
-      /* write extension type */
-      gnutls_write_uint16 (exten_t, &data[pos]);
-      pos += 2;
-      gnutls_write_uint16 (ext_length, &data[pos]);
-      pos += 2;
-      /* we might want to generate random data here */
-      memset (&data[pos], 0, ext_length);
-      pos += ext_length;
-    }
+  {
+    /* write extension type */
+    gnutls_write_uint16 (exten_t, &data[pos]);
+    pos += 2;
+    gnutls_write_uint16 (ext_length, &data[pos]);
+    pos += 2;
+    /* we might want to generate random data here */
+    memset (&data[pos], 0, ext_length);
+    pos += ext_length;
+  }
 
   if (connect (sd, &sa, sizeof (struct sockaddr_in)) < 0)
-    {
-      fprintf (stderr, "%s\n", MHD_E_FAILED_TO_CONNECT);
-      ret = -1;
-      goto cleanup;
-    }
+  {
+    fprintf (stderr, "%s\n", MHD_E_FAILED_TO_CONNECT);
+    ret = -1;
+    goto cleanup;
+  }
 
   gnutls_transport_set_ptr (session, (MHD_gnutls_transport_ptr_t) (long) sd);
 
   if (gen_test_file_url (url,
                          sizeof (url),
                          port))
-    {
-      ret = -1;
-      goto cleanup;
-    }
+  {
+    ret = -1;
+    goto cleanup;
+  }
 
   /* this should crash the server */
   ret = gnutls_send_handshake (session, data, datalen,
-			       GNUTLS_HANDSHAKE_CLIENT_HELLO);
+                               GNUTLS_HANDSHAKE_CLIENT_HELLO);
 
   /* advance to STATE2 */
   session->internals.handshake_state = STATE2;
@@ -190,10 +191,10 @@ test_hello_extension (gnutls_session_t session, int port, extensions_t exten_t,
   /* make sure daemon is still functioning */
   if (CURLE_OK != send_curl_req (url, &cbc, "AES128-SHA",
                                  MHD_GNUTLS_PROTOCOL_TLS1_2))
-    {
-      ret = -1;
-      goto cleanup;
-    }
+  {
+    ret = -1;
+    goto cleanup;
+  }
 
 cleanup:
   if (-1 != sd)
@@ -233,34 +234,37 @@ main (int argc, char *const *argv)
   MHD_gtls_global_set_log_level (11);
 
   if ((test_fd = setup_test_file ()) == NULL)
-    {
-      fprintf (stderr, MHD_E_TEST_FILE_CREAT);
-      return -1;
-    }
+  {
+    fprintf (stderr, MHD_E_TEST_FILE_CREAT);
+    return -1;
+  }
 
-  if (!testsuite_curl_global_init ())
+  if (! testsuite_curl_global_init ())
     return 99;
 
-  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS |
-                        MHD_USE_ERROR_LOG, port,
+  d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
+                        | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
+                        | MHD_USE_ERROR_LOG, port,
                         NULL, NULL, &http_ahc, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
 
   if (d == NULL)
-    {
-      fprintf (stderr, "%s\n", MHD_E_SERVER_INIT);
-      return -1;
-    }
+  {
+    fprintf (stderr, "%s\n", MHD_E_SERVER_INIT);
+    return -1;
+  }
   if (0 == port)
+  {
+    const union MHD_DaemonInfo *dinfo;
+    dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
+    if ((NULL == dinfo) ||(0 == dinfo->port) )
     {
-      const union MHD_DaemonInfo *dinfo;
-      dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
-      if (NULL == dinfo || 0 == dinfo->port)
-        { MHD_stop_daemon (d); return -1; }
-      port = (int)dinfo->port;
+      MHD_stop_daemon (d); return -1;
     }
+    port = (int) dinfo->port;
+  }
 
   i = 0;
   setup_session (&session, &key, &cert, &xcred);
@@ -269,21 +273,21 @@ main (int argc, char *const *argv)
 #if 1
   i = 0;
   while (ext_arr[i] != -1)
-    {
-      setup_session (&session, &key, &cert, &xcred);
-      errorCount += test_hello_extension (session, port, ext_arr[i], 1, 16);
-      teardown_session (session, &key, &cert, xcred);
+  {
+    setup_session (&session, &key, &cert, &xcred);
+    errorCount += test_hello_extension (session, port, ext_arr[i], 1, 16);
+    teardown_session (session, &key, &cert, xcred);
 
-      setup_session (&session, &key, &cert, &xcred);
-      errorCount += test_hello_extension (session, port, ext_arr[i], 3, 8);
-      teardown_session (session, &key, &cert, xcred);
+    setup_session (&session, &key, &cert, &xcred);
+    errorCount += test_hello_extension (session, port, ext_arr[i], 3, 8);
+    teardown_session (session, &key, &cert, xcred);
 
-      /* this test specifically tests the issue raised in CVE-2008-1948 */
-      setup_session (&session, &key, &cert, &xcred);
-      errorCount += test_hello_extension (session, port, ext_arr[i], 6, 0);
-      teardown_session (session, &key, &cert, xcred);
-      i++;
-    }
+    /* this test specifically tests the issue raised in CVE-2008-1948 */
+    setup_session (&session, &key, &cert, &xcred);
+    errorCount += test_hello_extension (session, port, ext_arr[i], 6, 0);
+    teardown_session (session, &key, &cert, xcred);
+    i++;
+  }
 #endif
 
   print_test_result (errorCount, argv[0]);

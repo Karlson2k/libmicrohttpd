@@ -56,9 +56,9 @@
  */
 enum MHD_SendSocketOptions
 {
- /**
-  * definitely no corking (use NODELAY, or explicitly disable cork)
-  */
+  /**
+   * definitely no corking (use NODELAY, or explicitly disable cork)
+   */
   MHD_SSO_NO_CORK = 0,
   /**
    * should enable corking (use MSG_MORE, or explicitly enable cork)

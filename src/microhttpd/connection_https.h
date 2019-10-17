@@ -35,7 +35,7 @@
  *
  * @param connection which callbacks should be modified
  */
-void 
+void
 MHD_set_https_callbacks (struct MHD_Connection *connection);
 
 

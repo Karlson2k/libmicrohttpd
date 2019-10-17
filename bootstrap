@@ -8,4 +8,27 @@ fi
 
 test -n "$bs_scrdir" && cd "$bs_scrdir" || echo "Warning: cannot get sources directory" 1>&2
 
-autoreconf -I m4 -i ${1+"$@"}
+# This is more portable than `which' but comes with
+# the caveat of not(?) properly working on busybox's ash:
+existence()
+{
+    command -v "$1" >/dev/null 2>&1
+}
+
+
+if existence uncrustify; then
+    echo "Installing uncrustify hook and configuration"
+    # Install uncrustify format symlink (if possible)
+    ln -s contrib/uncrustify.cfg uncrustify.cfg 2> /dev/null
+    # Install pre-commit hook (if possible)
+    ln -s ../../contrib/uncrustify_precommit .git/hooks/pre-commit 2> /dev/null
+else
+    echo "Uncrustify not detected, hook not installed. Please install uncrustify if you plan on doing development"
+fi
+
+if existence libtool || existence libtoolize || existence glibtoolize || existence slibtool; then
+    autoreconf -I m4 -i ${1+"$@"}
+else
+    echo "*** No libtoolize (libtool) or libtool found, please install it ***" >&2;
+    exit 1
+fi

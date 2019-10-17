@@ -55,68 +55,69 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
 
   /* If sk_cork_on is already what we pass in, return. */
   if (connection->sk_cork_on == want_cork)
-    {
-      /* nothing to do, success! */
-      return;
-    }
+  {
+    /* nothing to do, success! */
+    return;
+  }
   if (! want_cork)
     return; /* nothing to do *pre* syscall! */
   ret = MHD_socket_cork_ (connection->socket_fd,
                           true);
   if (0 == ret)
-    {
-      connection->sk_cork_on = true;
-      return;
-    }
+  {
+    connection->sk_cork_on = true;
+    return;
+  }
   switch (errno)
-    {
-    case ENOTSOCK:
-      /* FIXME: Could be we are talking to a pipe, maybe remember this
-         and avoid all setsockopt() in the future? */
-      break;
-    case EBADF:
-      /* FIXME: should we die hard here? */
-      break;
-    case EINVAL:
-      /* FIXME: optlen invalid, should at least log this, maybe die */
+  {
+  case ENOTSOCK:
+    /* FIXME: Could be we are talking to a pipe, maybe remember this
+       and avoid all setsockopt() in the future? */
+    break;
+  case EBADF:
+    /* FIXME: should we die hard here? */
+    break;
+  case EINVAL:
+    /* FIXME: optlen invalid, should at least log this, maybe die */
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("optlen invalid: %s\n"),
-                MHD_socket_last_strerr_());
+    MHD_DLOG (daemon,
+              _ ("optlen invalid: %s\n"),
+              MHD_socket_last_strerr_ ());
 #endif
-      break;
-    case EFAULT:
-      /* wopsie, should at leats log this, FIXME: maybe die */
+    break;
+  case EFAULT:
+    /* wopsie, should at leats log this, FIXME: maybe die */
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("The addresss pointed to by optval is not a valid part of the process address space: %s\n"),
-                MHD_socket_last_strerr_());
+    MHD_DLOG (daemon,
+              _ (
+                "The addresss pointed to by optval is not a valid part of the process address space: %s\n"),
+              MHD_socket_last_strerr_ ());
 #endif
-      break;
-    case ENOPROTOOPT:
-      /* optlen unknown, should at least log this */
+    break;
+  case ENOPROTOOPT:
+    /* optlen unknown, should at least log this */
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("The option is unknown: %s\n"),
-                MHD_socket_last_strerr_());
+    MHD_DLOG (daemon,
+              _ ("The option is unknown: %s\n"),
+              MHD_socket_last_strerr_ ());
 #endif
-      break;
-    default:
-      /* any others? man page does not list more... */
-      break;
-    }
+    break;
+  default:
+    /* any others? man page does not list more... */
+    break;
+  }
 #else
   /* CORK/NOPUSH/MSG_MORE do not exist on this platform,
      so we must toggle Naggle's algorithm on/off instead
      (otherwise we keep it always off) */
   if (connection->sk_cork_on == want_cork)
-    {
-      /* nothing to do, success! */
-      return;
-    }
+  {
+    /* nothing to do, success! */
+    return;
+  }
   if ( (want_cork) &&
        (0 == MHD_socket_set_nodelay_ (connection->socket_fd,
-                                     false)) )
+                                      false)) )
     connection->sk_cork_on = true;
 #endif
 }
@@ -139,10 +140,10 @@ post_cork_setsockopt (struct MHD_Connection *connection,
 
   /* If sk_cork_on is already what we pass in, return. */
   if (connection->sk_cork_on == want_cork)
-    {
-      /* nothing to do, success! */
-      return;
-    }
+  {
+    /* nothing to do, success! */
+    return;
+  }
   if (want_cork)
     return; /* nothing to do *post* syscall (in fact, we should never
                get here, as sk_cork_on should have succeeded in the
@@ -150,59 +151,60 @@ post_cork_setsockopt (struct MHD_Connection *connection,
   ret = MHD_socket_cork_ (connection->socket_fd,
                           false);
   if (0 == ret)
-    {
-      connection->sk_cork_on = false;
-      return;
-    }
+  {
+    connection->sk_cork_on = false;
+    return;
+  }
   switch (errno)
-    {
-    case ENOTSOCK:
-      /* FIXME: Could be we are talking to a pipe, maybe remember this
-         and avoid all setsockopt() in the future? */
-      break;
-    case EBADF:
-      /* FIXME: should we die hard here? */
-      break;
-    case EINVAL:
-      /* FIXME: optlen invalid, should at least log this, maybe die */
+  {
+  case ENOTSOCK:
+    /* FIXME: Could be we are talking to a pipe, maybe remember this
+       and avoid all setsockopt() in the future? */
+    break;
+  case EBADF:
+    /* FIXME: should we die hard here? */
+    break;
+  case EINVAL:
+    /* FIXME: optlen invalid, should at least log this, maybe die */
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("optlen invalid: %s\n"),
-                MHD_socket_last_strerr_());
+    MHD_DLOG (daemon,
+              _ ("optlen invalid: %s\n"),
+              MHD_socket_last_strerr_ ());
 #endif
-      break;
-    case EFAULT:
-      /* wopsie, should at leats log this, FIXME: maybe die */
+    break;
+  case EFAULT:
+    /* wopsie, should at leats log this, FIXME: maybe die */
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("The addresss pointed to by optval is not a valid part of the process address space: %s\n"),
-                MHD_socket_last_strerr_());
+    MHD_DLOG (daemon,
+              _ (
+                "The addresss pointed to by optval is not a valid part of the process address space: %s\n"),
+              MHD_socket_last_strerr_ ());
 #endif
-      break;
-    case ENOPROTOOPT:
-      /* optlen unknown, should at least log this */
+    break;
+  case ENOPROTOOPT:
+    /* optlen unknown, should at least log this */
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _("The option is unknown: %s\n"),
-                MHD_socket_last_strerr_());
+    MHD_DLOG (daemon,
+              _ ("The option is unknown: %s\n"),
+              MHD_socket_last_strerr_ ());
 #endif
-      break;
-    default:
-      /* any others? man page does not list more... */
-      break;
-    }
+    break;
+  default:
+    /* any others? man page does not list more... */
+    break;
+  }
 #else
   /* CORK/NOPUSH/MSG_MORE do not exist on this platform,
      so we must toggle Naggle's algorithm on/off instead
      (otherwise we keep it always off) */
   if (connection->sk_cork_on == want_cork)
-    {
-      /* nothing to do, success! */
-      return;
-    }
+  {
+    /* nothing to do, success! */
+    return;
+  }
   if ( (! want_cork) &&
        (0 == MHD_socket_set_nodelay_ (connection->socket_fd,
-                                     true)) )
+                                      true)) )
     connection->sk_cork_on = false;
 #endif
 }
@@ -403,7 +405,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   {
     struct msghdr msg;
 
-    memset(&msg, 0, sizeof(struct msghdr));
+    memset (&msg, 0, sizeof(struct msghdr));
     msg.msg_iov = vector;
     msg.msg_iovlen = 2;
 
@@ -473,9 +475,9 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
   uint64_t left;
   uint64_t offsetu64;
 #ifndef HAVE_SENDFILE64
-  const uint64_t max_off_t = (uint64_t)OFF_T_MAX;
+  const uint64_t max_off_t = (uint64_t) OFF_T_MAX;
 #else  /* HAVE_SENDFILE64 */
-  const uint64_t max_off_t = (uint64_t)OFF64_T_MAX;
+  const uint64_t max_off_t = (uint64_t) OFF64_T_MAX;
 #endif /* HAVE_SENDFILE64 */
 #ifdef MHD_LINUX_SOLARIS_SENDFILE
 #ifndef HAVE_SENDFILE64
@@ -491,23 +493,26 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
 #ifdef HAVE_DARWIN_SENDFILE
   off_t len;
 #endif /* HAVE_DARWIN_SENDFILE */
-  const bool used_thr_p_c = (0 != (connection->daemon->options & MHD_USE_THREAD_PER_CONNECTION));
-  const size_t chunk_size = used_thr_p_c ? MHD_SENFILE_CHUNK_THR_P_C_ : MHD_SENFILE_CHUNK_;
+  const bool used_thr_p_c = (0 != (connection->daemon->options
+                                   & MHD_USE_THREAD_PER_CONNECTION));
+  const size_t chunk_size = used_thr_p_c ? MHD_SENFILE_CHUNK_THR_P_C_ :
+                            MHD_SENFILE_CHUNK_;
   size_t send_size = 0;
   mhd_assert (MHD_resp_sender_sendfile == connection->resp_sender);
 
   pre_cork_setsockopt (connection, false);
 
-  offsetu64 = connection->response_write_position + connection->response->fd_off;
+  offsetu64 = connection->response_write_position
+              + connection->response->fd_off;
   left = connection->response->total_size - connection->response_write_position;
   /* Do not allow system to stick sending on single fast connection:
    * use 128KiB chunks (2MiB for thread-per-connection). */
   send_size = (left > chunk_size) ? chunk_size : (size_t) left;
   if (max_off_t < offsetu64)
-    { /* Retry to send with standard 'send()'. */
-      connection->resp_sender = MHD_resp_sender_std;
-      return MHD_ERR_AGAIN_;
-    }
+  {   /* Retry to send with standard 'send()'. */
+    connection->resp_sender = MHD_resp_sender_std;
+    return MHD_ERR_AGAIN_;
+  }
 #ifdef MHD_LINUX_SOLARIS_SENDFILE
 #ifndef HAVE_SENDFILE64
   offset = (off_t) offsetu64;
@@ -523,53 +528,53 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
                     send_size);
 #endif /* HAVE_SENDFILE64 */
   if (0 > ret)
+  {
+    const int err = MHD_socket_get_error_ ();
+    if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
     {
-      const int err = MHD_socket_get_error_();
-      if (MHD_SCKT_ERR_IS_EAGAIN_(err))
-        {
 #ifdef EPOLL_SUPPORT
-          /* EAGAIN --- no longer write-ready */
-          connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+      /* EAGAIN --- no longer write-ready */
+      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
-          return MHD_ERR_AGAIN_;
-        }
-      if (MHD_SCKT_ERR_IS_EINTR_ (err))
-        return MHD_ERR_AGAIN_;
+      return MHD_ERR_AGAIN_;
+    }
+    if (MHD_SCKT_ERR_IS_EINTR_ (err))
+      return MHD_ERR_AGAIN_;
 #ifdef HAVE_LINUX_SENDFILE
-      if (MHD_SCKT_ERR_IS_(err,
-                           MHD_SCKT_EBADF_))
-        return MHD_ERR_BADF_;
-      /* sendfile() failed with EINVAL if mmap()-like operations are not
-         supported for FD or other 'unusual' errors occurred, so we should try
-         to fall back to 'SEND'; see also this thread for info on
-         odd libc/Linux behavior with sendfile:
-         http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
+    if (MHD_SCKT_ERR_IS_ (err,
+                          MHD_SCKT_EBADF_))
+      return MHD_ERR_BADF_;
+    /* sendfile() failed with EINVAL if mmap()-like operations are not
+       supported for FD or other 'unusual' errors occurred, so we should try
+       to fall back to 'SEND'; see also this thread for info on
+       odd libc/Linux behavior with sendfile:
+       http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
+    connection->resp_sender = MHD_resp_sender_std;
+    return MHD_ERR_AGAIN_;
+#else  /* HAVE_SOLARIS_SENDFILE */
+    if ( (EAFNOSUPPORT == err) ||
+         (EINVAL == err) ||
+         (EOPNOTSUPP == err) )
+    {     /* Retry with standard file reader. */
       connection->resp_sender = MHD_resp_sender_std;
       return MHD_ERR_AGAIN_;
-#else  /* HAVE_SOLARIS_SENDFILE */
-      if ( (EAFNOSUPPORT == err) ||
-           (EINVAL == err) ||
-           (EOPNOTSUPP == err) )
-        { /* Retry with standard file reader. */
-          connection->resp_sender = MHD_resp_sender_std;
-          return MHD_ERR_AGAIN_;
-        }
-      if ( (ENOTCONN == err) ||
-           (EPIPE == err) )
-        {
-          return MHD_ERR_CONNRESET_;
-        }
-      return MHD_ERR_BADF_; /* Fail hard */
-#endif /* HAVE_SOLARIS_SENDFILE */
     }
+    if ( (ENOTCONN == err) ||
+         (EPIPE == err) )
+    {
+      return MHD_ERR_CONNRESET_;
+    }
+    return MHD_ERR_BADF_;   /* Fail hard */
+#endif /* HAVE_SOLARIS_SENDFILE */
+  }
 #ifdef EPOLL_SUPPORT
-  else if (send_size > (size_t)ret)
-        connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+  else if (send_size > (size_t) ret)
+    connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
 #elif defined(HAVE_FREEBSD_SENDFILE)
 #ifdef SF_FLAGS
   flags = used_thr_p_c ?
-      freebsd_sendfile_flags_thd_p_c_ : freebsd_sendfile_flags_;
+          freebsd_sendfile_flags_thd_p_c_ : freebsd_sendfile_flags_;
 #endif /* SF_FLAGS */
   if (0 != sendfile (file_fd,
                      connection->socket_fd,
@@ -578,63 +583,63 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
                      NULL,
                      &sent_bytes,
                      flags))
+  {
+    const int err = MHD_socket_get_error_ ();
+    if (MHD_SCKT_ERR_IS_EAGAIN_ (err) ||
+        MHD_SCKT_ERR_IS_EINTR_ (err) ||
+        (EBUSY == err) )
     {
-      const int err = MHD_socket_get_error_();
-      if (MHD_SCKT_ERR_IS_EAGAIN_(err) ||
-          MHD_SCKT_ERR_IS_EINTR_(err) ||
-          EBUSY == err)
-        {
-          mhd_assert (SSIZE_MAX >= sent_bytes);
-          if (0 != sent_bytes)
-            return (ssize_t)sent_bytes;
+      mhd_assert (SSIZE_MAX >= sent_bytes);
+      if (0 != sent_bytes)
+        return (ssize_t) sent_bytes;
 
-          return MHD_ERR_AGAIN_;
-        }
-      /* Some unrecoverable error. Possibly file FD is not suitable
-       * for sendfile(). Retry with standard send(). */
-      connection->resp_sender = MHD_resp_sender_std;
       return MHD_ERR_AGAIN_;
     }
+    /* Some unrecoverable error. Possibly file FD is not suitable
+     * for sendfile(). Retry with standard send(). */
+    connection->resp_sender = MHD_resp_sender_std;
+    return MHD_ERR_AGAIN_;
+  }
   mhd_assert (0 < sent_bytes);
   mhd_assert (SSIZE_MAX >= sent_bytes);
-  ret = (ssize_t)sent_bytes;
+  ret = (ssize_t) sent_bytes;
 #elif defined(HAVE_DARWIN_SENDFILE)
-  len = (off_t)send_size; /* chunk always fit */
+  len = (off_t) send_size; /* chunk always fit */
   if (0 != sendfile (file_fd,
                      connection->socket_fd,
                      (off_t) offsetu64,
                      &len,
                      NULL,
                      0))
+  {
+    const int err = MHD_socket_get_error_ ();
+    if (MHD_SCKT_ERR_IS_EAGAIN_ (err) ||
+        MHD_SCKT_ERR_IS_EINTR_ (err))
     {
-      const int err = MHD_socket_get_error_();
-      if (MHD_SCKT_ERR_IS_EAGAIN_(err) ||
-          MHD_SCKT_ERR_IS_EINTR_(err))
-        {
-          mhd_assert (0 <= len);
-          mhd_assert (SSIZE_MAX >= len);
-          mhd_assert (send_size >= (size_t)len);
-          if (0 != len)
-            return (ssize_t)len;
+      mhd_assert (0 <= len);
+      mhd_assert (SSIZE_MAX >= len);
+      mhd_assert (send_size >= (size_t) len);
+      if (0 != len)
+        return (ssize_t) len;
 
-          return MHD_ERR_AGAIN_;
-        }
-      if (ENOTCONN == err ||
-          EPIPE == err)
-        return MHD_ERR_CONNRESET_;
-      if (ENOTSUP == err ||
-          EOPNOTSUPP == err)
-        { /* This file FD is not suitable for sendfile().
-           * Retry with standard send(). */
-          connection->resp_sender = MHD_resp_sender_std;
-          return MHD_ERR_AGAIN_;
-        }
-      return MHD_ERR_BADF_; /* Return hard error. */
+      return MHD_ERR_AGAIN_;
     }
+    if ((ENOTCONN == err) ||
+        (EPIPE == err) )
+      return MHD_ERR_CONNRESET_;
+    if ((ENOTSUP == err) ||
+        (EOPNOTSUPP == err) )
+    {     /* This file FD is not suitable for sendfile().
+           * Retry with standard send(). */
+      connection->resp_sender = MHD_resp_sender_std;
+      return MHD_ERR_AGAIN_;
+    }
+    return MHD_ERR_BADF_;   /* Return hard error. */
+  }
   mhd_assert (0 <= len);
   mhd_assert (SSIZE_MAX >= len);
-  mhd_assert (send_size >= (size_t)len);
-  ret = (ssize_t)len;
+  mhd_assert (send_size >= (size_t) len);
+  ret = (ssize_t) len;
 #endif /* HAVE_FREEBSD_SENDFILE */
 
   /* Make sure we send the data without delay ONLY if we
