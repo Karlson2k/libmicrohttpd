@@ -530,10 +530,8 @@ MHD_socket_cork_ (MHD_socket sock,
       return 0; /* even force flush failed!? */
     return 1; /* success */
   }
-#else
-  return 0;
 #endif
-#elif
+#else
   /* do not have MHD_TCP_CORK_NOPUSH at all */
   return 0;
 #endif
