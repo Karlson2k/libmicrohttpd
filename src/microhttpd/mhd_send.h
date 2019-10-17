@@ -35,7 +35,9 @@
 #include <errno.h>
 #include "mhd_sockets.h"
 #include "connection.h"
+#ifdef HTTPS_SUPPORT
 #include "connection_https.h"
+#endif
 
 #ifdef MHD_LINUX_SOLARIS_SENDFILE
 #include <sys/sendfile.h>

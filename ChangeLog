@@ -1,6 +1,7 @@
 Thu 17 Oct 2019 04:50:52 PM CEST
     Integrate 0-byte send() method for uncorking for old FreeBSD/OS X
-    systems into new mhd_send.c logic for uncorking. -CG
+    systems into new mhd_send.c logic for uncorking.
+    Releasing libmicrohttpd 0.9.67. -CG
 
 Fri 18 Aug 2019 00:00:00 PM UTC
     Fixes and optimizations for the setsockopt handling:
