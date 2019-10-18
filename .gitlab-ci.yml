@@ -31,7 +31,7 @@ variables:
 
 # In this build we combine
 #  * gcc
-#  * check, distcheck
+#  * check
 gcc/Stretch:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$DEBIAN_BUILD
   script:
@@ -40,7 +40,6 @@ gcc/Stretch:
     - ./configure $CONFIGURE_BASE_FLAGS
     - make -j$(nproc)
     - make check
-    - make -j$(nproc) distcheck
   tags:
     - shared
   artifacts:
@@ -54,7 +53,7 @@ gcc/Stretch:
 # In this build we combine
 #  * clang
 #  * ASan, UBSan
-#  * check, distcheck
+#  * check
 Sanitizers/Stretch:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$DEBIAN_BUILD
   script:
@@ -65,7 +64,6 @@ Sanitizers/Stretch:
     - export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-3.8/bin/llvm-symbolizer
     - ./configure $CONFIGURE_BASE_FLAGS --disable-doc
     - make check
-    - make -j$(nproc) distcheck
   tags:
     - shared
   artifacts:
