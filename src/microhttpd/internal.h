@@ -874,7 +874,7 @@ struct MHD_Connection
   /**
    * true if #socket_fd is non-blocking, false otherwise.
    */
-  bool sk_nonblck; // FIXME: hopefully dead?
+  bool sk_nonblck;
 
   /**
    * Indicate whether connection socket has TCP_CORK / Nagle’s algorithm turned on/off

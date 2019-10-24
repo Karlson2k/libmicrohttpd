@@ -3124,10 +3124,10 @@ MHD_add_connection (struct MHD_Daemon *daemon,
               _ ("Failed to set nonblocking mode on new client socket: %s\n"),
               MHD_socket_last_strerr_ ());
 #endif
-    sk_nonbl = 0;
+    sk_nonbl = false;
   }
   else
-    sk_nonbl = ! 0;
+    sk_nonbl = true;
 
   if ( (0 != (daemon->options & MHD_USE_TURBO)) &&
        (! MHD_socket_noninheritable_ (client_socket)) )
@@ -3200,7 +3200,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   s = accept (fd,
               addr,
               &addrlen);
-  sk_nonbl = 0;
+  sk_nonbl = false;
 #endif /* ! USE_ACCEPT4 */
   if ( (MHD_INVALID_SOCKET == s) ||
        (addrlen <= 0) )
@@ -3281,7 +3281,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
   }
   else
-    sk_nonbl = ! 0;
+    sk_nonbl = true;
 #endif /* !USE_ACCEPT4 || !HAVE_SOCK_NONBLOCK */
 #if ! defined(USE_ACCEPT4) || ! defined(SOCK_CLOEXEC)
   if (! MHD_socket_noninheritable_ (s))
