@@ -1430,8 +1430,9 @@ build_header_response (struct MHD_Connection *connection)
          (MHD_HTTP_NO_CONTENT != rc) &&
          (MHD_HTTP_NOT_MODIFIED != rc) &&
          (MHD_HTTP_OK <= rc) &&
-         (NULL ==   /* this should always succeed due to check in
-                       MHD_add_response_header() */
+         (NULL ==   /* this COULD fail if the check in
+                       MHD_add_response_header() was bypassed
+                       via #MHD_RF_INSANITY_HEADER_CONTENT_LENGTH */
           MHD_get_response_header (response,
                                    MHD_HTTP_HEADER_CONTENT_LENGTH)) &&
          (may_add_content_length) &&

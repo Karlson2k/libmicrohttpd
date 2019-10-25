@@ -1,3 +1,6 @@
+Fri 25 Oct 2019 02:31:59 PM CEST
+    Introduce MHD_RF_INSANITY_HEADER_CONTENT_LENGTH. -CG
+
 Thu 17 Oct 2019 04:50:52 PM CEST
     Integrate 0-byte send() method for uncorking for old FreeBSD/OS X
     systems into new mhd_send.c logic for uncorking.

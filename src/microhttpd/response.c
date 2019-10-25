@@ -147,8 +147,10 @@ MHD_add_response_header (struct MHD_Response *response,
     /* NOTE: for compressed bodies, use the "Content-encoding" header */
     return MHD_NO;
   }
-  if (MHD_str_equal_caseless_ (header,
-                               MHD_HTTP_HEADER_CONTENT_LENGTH))
+  if ( (0 == (MHD_RF_INSANITY_HEADER_CONTENT_LENGTH
+              & response->flags)) &&
+       (MHD_str_equal_caseless_ (header,
+                                 MHD_HTTP_HEADER_CONTENT_LENGTH)) )
   {
     /* MHD will set Content-length if allowed and possible,
        reject attempt by application */
@@ -838,17 +840,20 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
       return MHD_YES;
     }
     else
-#else
+#endif
     {
       if (0 ==
           MHD_socket_cork_ (connection->socket_fd,
                             true))
+      {
         connection->sk_cork_on = true;
-    }
-#endif
-    case MHD_UPGRADE_ACTION_CORK_OFF:
-      if (! connection->sk_cork_on)
         return MHD_YES;
+      }
+      return MHD_NO;
+    }
+  case MHD_UPGRADE_ACTION_CORK_OFF:
+    if (! connection->sk_cork_on)
+      return MHD_YES;
 #ifdef HTTPS_SUPPORT
     if (0 != (daemon->options & MHD_USE_TLS) )
     {
@@ -857,17 +862,20 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
       return MHD_YES;
     }
     else
-#else
+#endif
     {
       if (0 ==
           MHD_socket_cork_ (connection->socket_fd,
                             false))
+      {
         connection->sk_cork_on = false;
-    }
-#endif
-    default:
-      /* we don't understand this one */
+        return MHD_YES;
+      }
       return MHD_NO;
+    }
+  default:
+    /* we don't understand this one */
+    return MHD_NO;
   }
 }
 

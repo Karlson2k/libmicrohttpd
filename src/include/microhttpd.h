@@ -132,7 +132,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00096701
+#define MHD_VERSION 0x00096702
 
 /**
  * MHD-internal return code for "YES".
@@ -1691,10 +1691,35 @@ enum MHD_OPTION
    * followed by a argument of type `gnutls_certificate_retrieve_function3 *`.
    * This option provides an
    * alternative/extension to #MHD_OPTION_HTTPS_CERT_CALLBACK.
-  * You must use this version if you want to use OCSP stapling.
+   * You must use this version if you want to use OCSP stapling.
    * Using this option requires GnuTLS 3.6.3 or higher.
    */
-  MHD_OPTION_HTTPS_CERT_CALLBACK2 = 31
+  MHD_OPTION_HTTPS_CERT_CALLBACK2 = 31,
+
+  /**
+   * Allows the application to disable certain sanity precautions
+   * in MHD. With these, the client can break the HTTP protocol,
+   * so this should never be used in production. The options are,
+   * however, useful for testing HTTP clients against "broken"
+   * server implementations.
+   * This argument must be followed by an "unsigned int", corresponding
+   * to an `enum MHD_DisableSanityCheck`.
+   */
+  MHD_OPTION_SERVER_INSANITY = 32
+};
+
+
+/**
+ * Bitfield for the #MHD_OPTION_SERVER_INSANITY specifying
+ * which santiy checks should be disabled.
+ */
+enum MHD_DisableSanityCheck
+{
+  /**
+   * All sanity checks are enabled.
+   */
+  MHD_DSC_SANE = 0
+
 };
 
 
@@ -2924,7 +2949,14 @@ enum MHD_ResponseFlags
    * #MHD_RF_HTTP_VERSION_1_0_ONLY flag, the response's HTTP version will
    * always be set to 1.0 and "Connection" headers are still supported.
    */
-  MHD_RF_HTTP_VERSION_1_0_RESPONSE = 2
+  MHD_RF_HTTP_VERSION_1_0_RESPONSE = 2,
+
+  /**
+   * Disable sanity check preventing clients from manually
+   * setting the HTTP content length option.
+   */
+  MHD_RF_INSANITY_HEADER_CONTENT_LENGTH = 4
+
 
 };
 

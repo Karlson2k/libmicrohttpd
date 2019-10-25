@@ -2182,7 +2182,7 @@ thread_main_handle_connection (void *data)
                            MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN :
                            MHD_REQUEST_TERMINATED_WITH_ERROR);
   MHD_connection_handle_idle (con);
-exit:
+  exit:
   if (NULL != con->response)
   {
     MHD_destroy_response (con->response);
@@ -2742,7 +2742,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #endif
   }
   return MHD_YES;
-cleanup:
+  cleanup:
   if (NULL != daemon->notify_connection)
     daemon->notify_connection (daemon->notify_connection_cls,
                                connection,
@@ -5062,6 +5062,11 @@ parse_options_va (struct MHD_Daemon *daemon,
       daemon->uri_log_callback_cls = va_arg (ap,
                                              void *);
       break;
+    case MHD_OPTION_SERVER_INSANITY:
+      daemon->insanity_level = (enum MHD_DisableSanityCheck)
+                               va_arg (ap,
+                                       unsigned int);
+      break;
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
     case MHD_OPTION_THREAD_POOL_SIZE:
       daemon->worker_pool_size = va_arg (ap,
@@ -5404,6 +5409,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_TCP_FASTOPEN_QUEUE_SIZE:
         case MHD_OPTION_LISTENING_ADDRESS_REUSE:
         case MHD_OPTION_LISTEN_BACKLOG_SIZE:
+        case MHD_OPTION_SERVER_INSANITY:
           if (MHD_YES != parse_options (daemon,
                                         servaddr,
                                         opt,
@@ -6547,7 +6553,7 @@ MHD_start_daemon_va (unsigned int flags,
   return daemon;
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-thread_failed:
+  thread_failed:
   /* If no worker threads created, then shut down normally. Calling
      MHD_stop_daemon (as we do below) doesn't work here since it
      assumes a 0-sized thread pool means we had been in the default
@@ -6571,7 +6577,7 @@ thread_failed:
   return NULL;
 #endif
 
-free_and_fail:
+  free_and_fail:
   /* clean up basic memory state in 'daemon' and return NULL to
      indicate failure */
 #ifdef EPOLL_SUPPORT

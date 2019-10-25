@@ -1461,6 +1461,12 @@ struct MHD_Daemon
   size_t thread_stack_size;
 
   /**
+   * Our #MHD_OPTION_SERVER_INSANITY level, bits indicating
+   * which sanity checks are off.
+   */
+  enum MHD_DisableSanityCheck insanity_level;
+
+  /**
    * Number of worker daemons
    */
   unsigned int worker_pool_size;
