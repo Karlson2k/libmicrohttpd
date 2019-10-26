@@ -62,7 +62,8 @@ setup_ca_cert ()
  */
 int
 test_daemon_get (void *cls,
-                 const char *cipher_suite, int proto_version,
+                 const char *cipher_suite,
+                 int proto_version,
                  int port,
                  int ver_peer)
 {
@@ -71,7 +72,7 @@ test_daemon_get (void *cls,
   CURLcode errornum;
   char url[255];
   size_t len;
-  (void) cls;    /* Unused. Silent compiler warning. */
+  (void) cls;    /* Unused. Silence compiler warning. */
 
   len = strlen (test_data);
   if (NULL == (cbc.buf = malloc (sizeof (char) * len)))
@@ -138,20 +139,29 @@ test_daemon_get (void *cls,
 
 
 void
-print_test_result (int test_outcome, char *test_name)
+print_test_result (int test_outcome,
+                   char *test_name)
 {
   if (test_outcome != 0)
-    fprintf (stderr, "running test: %s [fail: %u]\n", test_name, (unsigned
-                                                                  int)
+    fprintf (stderr,
+             "running test: %s [fail: %u]\n",
+             test_name, (unsigned
+                         int)
              test_outcome);
 #if 0
   else
-    fprintf (stdout, "running test: %s [pass]\n", test_name);
+    fprintf (stdout,
+             "running test: %s [pass]\n",
+             test_name);
 #endif
 }
 
+
 size_t
-copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
+copyBuffer (void *ptr,
+            size_t size,
+            size_t nmemb,
+            void *ctx)
 {
   struct CBC *cbc = ctx;
 
@@ -162,13 +172,19 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   return size * nmemb;
 }
 
+
 /**
  *  HTTP access handler call back
  */
 int
-http_ahc (void *cls, struct MHD_Connection *connection,
-          const char *url, const char *method, const char *version,
-          const char *upload_data, size_t *upload_data_size, void **ptr)
+http_ahc (void *cls,
+          struct MHD_Connection *connection,
+          const char *url,
+          const char *method,
+          const char *version,
+          const char *upload_data,
+          size_t *upload_data_size,
+          void **ptr)
 {
   static int aptr;
   struct MHD_Response *response;
@@ -193,15 +209,26 @@ http_ahc (void *cls, struct MHD_Connection *connection,
   return ret;
 }
 
+
 /* HTTP access handler call back */
 int
-http_dummy_ahc (void *cls, struct MHD_Connection *connection,
-                const char *url, const char *method, const char *version,
-                const char *upload_data, size_t *upload_data_size,
+http_dummy_ahc (void *cls,
+                struct MHD_Connection *connection,
+                const char *url,
+                const char *method,
+                const char *version,
+                const char *upload_data,
+                size_t *upload_data_size,
                 void **ptr)
 {
-  (void) cls; (void) connection; (void) url; (void) method; (void) version;      /* Unused. Silent compiler warning. */
-  (void) upload_data; (void) upload_data_size; (void) ptr;                   /* Unused. Silent compiler warning. */
+  (void) cls;
+  (void) connection;
+  (void) url;
+  (void) method;
+  (void) version;      /* Unused. Silent compiler warning. */
+  (void) upload_data;
+  (void) upload_data_size;
+  (void) ptr;                   /* Unused. Silent compiler warning. */
   return 0;
 }
 
@@ -215,7 +242,9 @@ http_dummy_ahc (void *cls, struct MHD_Connection *connection,
  */
 /* TODO have test wrap consider a NULL cbc */
 int
-send_curl_req (char *url, struct CBC *cbc, const char *cipher_suite,
+send_curl_req (char *url,
+               struct CBC *cbc,
+               const char *cipher_suite,
                int proto_version)
 {
   CURL *c;

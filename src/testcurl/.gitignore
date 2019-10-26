@@ -108,3 +108,4 @@ test_large_put_inc11
 test_delete
 test_digestauth_sha256
 perf_get_concurrent11
+test_get_empty

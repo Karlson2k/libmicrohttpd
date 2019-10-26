@@ -240,7 +240,8 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   ssize_t ret;
 
   /* error handling from send_param_adapter() */
-  if ((MHD_INVALID_SOCKET == s) || (MHD_CONNECTION_CLOSED == connection->state))
+  if ( (MHD_INVALID_SOCKET == s) ||
+       (MHD_CONNECTION_CLOSED == connection->state) )
   {
     return MHD_ERR_NOTCONN_;
   }
@@ -382,10 +383,22 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 {
 #ifdef HTTPS_SUPPORT
   if (0 != (connection->daemon->options & MHD_USE_TLS))
-    return MHD_send_on_connection_ (connection,
-                                    header,
-                                    header_size,
-                                    MHD_SSO_HDR_CORK);
+  {
+    ssize_t ret;
+
+    ret = MHD_send_on_connection_ (connection,
+                                   header,
+                                   header_size,
+                                   MHD_SSO_HDR_CORK);
+    if ( (ret == header_size) &&
+         (0 == buffer_size) &&
+         connection->sk_cork_on)
+    {
+      (void) gnutls_record_uncork (connection->tls_session, 0);
+      connection->sk_cork_on = false;
+    }
+    return ret;
+  }
 #endif
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   MHD_socket s = connection->socket_fd;

@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007, 2009, 2011 Christian Grothoff
+     Copyright (C) 2007, 2009, 2011, 2019 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -18,9 +18,8 @@
      Boston, MA 02110-1301, USA.
 */
 /**
- * @file test_get.c
- * @brief  Testcase for libmicrohttpd GET operations
- *         TODO: test parsing of query
+ * @file test_get_empty.c
+ * @brief  Testcase for libmicrohttpd GET operations returning an empty body
  * @author Christian Grothoff
  */
 #include "MHD_config.h"
@@ -111,7 +110,6 @@ ahc_echo (void *cls,
   const char *me = cls;
   struct MHD_Response *response;
   int ret;
-  const char *v;
   (void) version;
   (void) upload_data;
   (void) upload_data_size;       /* Unused. Silence compiler warning. */
@@ -124,41 +122,11 @@ ahc_echo (void *cls,
     return MHD_YES;
   }
   *unused = NULL;
-  v = MHD_lookup_connection_value (connection,
-                                   MHD_GET_ARGUMENT_KIND,
-                                   "a");
-  if ( (NULL == v) ||
-       (0 != strcmp ("&",
-                     v)) )
-  {
-    fprintf (stderr, "Found while looking for 'a=&': 'a=%s'\n",
-             NULL == v ? "NULL" : v);
-    _exit (17);
-  }
-  v = NULL;
-  if (MHD_YES != MHD_lookup_connection_value_n (connection,
-                                                MHD_GET_ARGUMENT_KIND,
-                                                "b",
-                                                1,
-                                                &v,
-                                                NULL))
-  {
-    fprintf (stderr, "Not found 'b' GET argument.\n");
-    _exit (18);
-  }
-  if ( (NULL == v) ||
-       (0 != strcmp ("c",
-                     v)) )
-  {
-    fprintf (stderr, "Found while looking for 'b=c': 'b=%s'\n",
-             NULL == v ? "NULL" : v);
-    _exit (19);
-  }
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer (0,
+                                              NULL,
+                                              MHD_RESPMEM_PERSISTENT);
   ret = MHD_queue_response (connection,
-                            MHD_HTTP_OK,
+                            MHD_HTTP_NO_CONTENT,
                             response);
   MHD_destroy_response (response);
   if (ret == MHD_NO)
@@ -235,10 +203,8 @@ testInternalGet (int poll_flag)
   }
   curl_easy_cleanup (c);
   MHD_stop_daemon (d);
-  if (cbc.pos != strlen ("/hello_world"))
+  if (cbc.pos != 0)
     return 4;
-  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
-    return 8;
   return 0;
 }
 
@@ -309,10 +275,8 @@ testMultithreadedGet (int poll_flag)
   }
   curl_easy_cleanup (c);
   MHD_stop_daemon (d);
-  if (cbc.pos != strlen ("/hello_world"))
+  if (cbc.pos != 0)
     return 64;
-  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
-    return 128;
   return 0;
 }
 
@@ -383,10 +347,8 @@ testMultithreadedPoolGet (int poll_flag)
   }
   curl_easy_cleanup (c);
   MHD_stop_daemon (d);
-  if (cbc.pos != strlen ("/hello_world"))
+  if (cbc.pos != 0)
     return 64;
-  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
-    return 128;
   return 0;
 }
 
@@ -546,10 +508,8 @@ testExternalGet ()
     curl_multi_cleanup (multi);
   }
   MHD_stop_daemon (d);
-  if (cbc.pos != strlen ("/hello_world"))
+  if (cbc.pos != 0)
     return 8192;
-  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
-    return 16384;
   return 0;
 }
 
@@ -637,10 +597,8 @@ testUnknownPortGet (int poll_flag)
   }
   curl_easy_cleanup (c);
   MHD_stop_daemon (d);
-  if (cbc.pos != strlen ("/hello_world"))
+  if (cbc.pos != 0)
     return 1048576;
-  if (0 != strncmp ("/hello_world", cbc.buf, strlen ("/hello_world")))
-    return 2097152;
   return 0;
 }
 
@@ -719,8 +677,7 @@ ahc_empty (void *cls,
            const char *url,
            const char *method,
            const char *version,
-           const char *upload_data,
-           size_t *upload_data_size,
+           const char *upload_data, size_t *upload_data_size,
            void **unused)
 {
   static int ptr;
@@ -729,7 +686,7 @@ ahc_empty (void *cls,
   (void) cls;
   (void) url;
   (void) url;
-  (void) version;  /* Unused. Silent compiler warning. */
+  (void) version;  /* Unused. Silence compiler warning. */
   (void) upload_data;
   (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
@@ -744,9 +701,7 @@ ahc_empty (void *cls,
   response = MHD_create_response_from_buffer (0,
                                               NULL,
                                               MHD_RESPMEM_PERSISTENT);
-  ret = MHD_queue_response (connection,
-                            MHD_HTTP_OK,
-                            response);
+  ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   if (ret == MHD_NO)
   {
@@ -758,10 +713,7 @@ ahc_empty (void *cls,
 
 
 static int
-curlExcessFound (CURL *c,
-                 curl_infotype type,
-                 char *data,
-                 size_t size,
+curlExcessFound (CURL *c, curl_infotype type, char *data, size_t size,
                  void *cls)
 {
   static const char *excess_found = "Excess found";
@@ -900,12 +852,6 @@ main (int argc, char *const *argv)
     else if (verbose)
       printf ("PASSED: testUnknownPortGet (0).\n");
     errorCount += test_result;
-    test_result += testStopRace (0);
-    if (test_result)
-      fprintf (stderr, "FAILED: testStopRace (0) - %u.\n", test_result);
-    else if (verbose)
-      printf ("PASSED: testStopRace (0).\n");
-    errorCount += test_result;
     test_result += testEmptyGet (0);
     if (test_result)
       fprintf (stderr, "FAILED: testEmptyGet (0) - %u.\n", test_result);
@@ -942,13 +888,6 @@ main (int argc, char *const *argv)
                  test_result);
       else if (verbose)
         printf ("PASSED: testUnknownPortGet (MHD_USE_POLL).\n");
-      errorCount += test_result;
-      test_result += testStopRace (MHD_USE_POLL);
-      if (test_result)
-        fprintf (stderr, "FAILED: testStopRace (MHD_USE_POLL) - %u.\n",
-                 test_result);
-      else if (verbose)
-        printf ("PASSED: testStopRace (MHD_USE_POLL).\n");
       errorCount += test_result;
       test_result += testEmptyGet (MHD_USE_POLL);
       if (test_result)
