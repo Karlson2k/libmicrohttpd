@@ -1,6 +1,7 @@
 Sat 26 Oct 2019 06:53:05 PM CEST
     Fix regression where MHD would fail to return an empty response
-    when used with HTTPS. -CG/TR
+    when used with HTTPS.
+    Releasing libmicrohttpd 0.9.68. -CG/TR
 
 Fri 25 Oct 2019 02:31:59 PM CEST
     Introduce MHD_RF_INSANITY_HEADER_CONTENT_LENGTH. -CG
