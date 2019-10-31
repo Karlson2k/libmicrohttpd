@@ -82,6 +82,7 @@ mismatch (const char *a, const char *b)
   return 0 != strcmp (a, b);
 }
 
+
 static int
 value_checker (void *cls,
                enum MHD_ValueKind kind,
@@ -345,8 +346,6 @@ test_empty_value (void)
     return 8;
   return 0;
 }
-
-
 
 
 int

@@ -67,6 +67,7 @@ putBuffer (void *stream, size_t size, size_t nmemb, void *ptr)
   return wrt;
 }
 
+
 static size_t
 copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
 {
@@ -78,6 +79,7 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   cbc->pos += size * nmemb;
   return size * nmemb;
 }
+
 
 static int
 ahc_echo (void *cls,
@@ -159,7 +161,7 @@ testInternalPut ()
   {
     const union MHD_DaemonInfo *dinfo;
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
-    if ((NULL == dinfo) ||(0 == dinfo->port) )
+    if ((NULL == dinfo) || (0 == dinfo->port) )
     {
       MHD_stop_daemon (d); return 32;
     }
@@ -203,6 +205,7 @@ testInternalPut ()
   return 0;
 }
 
+
 static int
 testMultithreadedPut ()
 {
@@ -233,7 +236,7 @@ testMultithreadedPut ()
   {
     const union MHD_DaemonInfo *dinfo;
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
-    if ((NULL == dinfo) ||(0 == dinfo->port) )
+    if ((NULL == dinfo) || (0 == dinfo->port) )
     {
       MHD_stop_daemon (d); return 32;
     }
@@ -278,6 +281,7 @@ testMultithreadedPut ()
   return 0;
 }
 
+
 static int
 testMultithreadedPoolPut ()
 {
@@ -308,7 +312,7 @@ testMultithreadedPoolPut ()
   {
     const union MHD_DaemonInfo *dinfo;
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
-    if ((NULL == dinfo) ||(0 == dinfo->port) )
+    if ((NULL == dinfo) || (0 == dinfo->port) )
     {
       MHD_stop_daemon (d); return 32;
     }
@@ -398,7 +402,7 @@ testExternalPut ()
   {
     const union MHD_DaemonInfo *dinfo;
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
-    if ((NULL == dinfo) ||(0 == dinfo->port) )
+    if ((NULL == dinfo) || (0 == dinfo->port) )
     {
       MHD_stop_daemon (d); return 32;
     }
@@ -475,9 +479,10 @@ testExternalPut ()
       if (EINTR != errno)
         abort ();
 #else
-      if ((WSAEINVAL != WSAGetLastError ()) ||(0 != rs.fd_count) ||(0 !=
-                                                                    ws.fd_count)
-          ||(0 != es.fd_count) )
+      if ((WSAEINVAL != WSAGetLastError ()) || (0 != rs.fd_count) || (0 !=
+                                                                      ws.
+                                                                      fd_count)
+          || (0 != es.fd_count) )
         abort ();
       Sleep (1000);
 #endif
@@ -518,7 +523,6 @@ testExternalPut ()
     return 16384;
   return 0;
 }
-
 
 
 int

@@ -132,8 +132,7 @@ test_hello_extension (gnutls_session_t session, int port, extensions_t exten_t,
    * len = ciphersuite data + 2 bytes ciphersuite length \
    *       1 byte compression length + 1 byte compression data + \
    * 2 bytes extension length, extensions data
-   */
-  ciphersuite_len = MHD__gnutls_copy_ciphersuites (session, extdata,
+   */ciphersuite_len = MHD__gnutls_copy_ciphersuites (session, extdata,
                                                    sizeof (extdata));
   exten_data_len = ext_count * (2 + 2 + ext_length);
   datalen += ciphersuite_len + 2 + 2 + exten_data_len;
@@ -259,7 +258,7 @@ main (int argc, char *const *argv)
   {
     const union MHD_DaemonInfo *dinfo;
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
-    if ((NULL == dinfo) ||(0 == dinfo->port) )
+    if ((NULL == dinfo) || (0 == dinfo->port) )
     {
       MHD_stop_daemon (d); return -1;
     }

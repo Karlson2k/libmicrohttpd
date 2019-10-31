@@ -157,6 +157,7 @@ MHD_TLS_fini (void)
   gnutls_global_deinit ();
 }
 
+
 #ifdef _AUTOINIT_FUNCS_ARE_SUPPORTED
 _SET_INIT_AND_DEINIT_FUNCS (MHD_TLS_init, MHD_TLS_fini);
 #endif /* _AUTOINIT_FUNCS_ARE_SUPPORTED */

@@ -3,7 +3,6 @@ enum MHD_Bool
              struct MHD_TLS_ConnectionState *cs) :
 
 
-
   if (MHD_TLS_CONN_NO_TLS != connection->tls_state)
 {     /* HTTPS connection. */
   if (MHD_TLS_CONN_CONNECTED > connection->tls_state)

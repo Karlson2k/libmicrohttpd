@@ -2670,8 +2670,6 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
                      const fd_set *except_fd_set);
 
 
-
-
 /* **************** Connection handling functions ***************** */
 
 /**
@@ -3083,8 +3081,6 @@ _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_buffer (size_t size,
                                  void *buffer,
                                  enum MHD_ResponseMemoryMode mode);
-
-
 
 
 /**

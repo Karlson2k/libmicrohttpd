@@ -59,6 +59,7 @@ MHD_MD5Init (struct MD5Context *ctx)
   ctx->state[3] = 0x10325476;
 }
 
+
 /*
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
@@ -103,6 +104,7 @@ MHD_MD5Update (struct MD5Context *ctx, const unsigned char *input, size_t len)
     memcpy (ctx->buffer + have, input, len);
 }
 
+
 /*
  * Pad pad to 64-byte boundary with the bit pattern
  * 1 0* (64-bit count of bits processed, MSB-first)
@@ -127,6 +129,7 @@ MD5Pad (struct MD5Context *ctx)
   MHD_MD5Update (ctx, PADDING, padlen - 8);    /* padlen - 8 <= 64 */
   MHD_MD5Update (ctx, count, 8);
 }
+
 
 /*
  * Final wrapup--call MD5Pad, fill in digest and zero out ctx.
@@ -260,5 +263,6 @@ MD5Transform (uint32_t state[4], const uint8_t block[MD5_BLOCK_SIZE])
   state[2] += c;
   state[3] += d;
 }
+
 
 /* end of md5.c */
