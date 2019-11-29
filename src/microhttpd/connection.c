@@ -3401,6 +3401,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       call_connection_handler (connection);     /* first call */
       if (MHD_CONNECTION_CLOSED == connection->state)
         continue;
+      if (connection->suspended)
+        continue;
       if (need_100_continue (connection))
       {
         connection->state = MHD_CONNECTION_CONTINUE_SENDING;
