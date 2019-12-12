@@ -480,9 +480,9 @@ lookup_sub_value (char *dest,
         if (size > len)
           size = len;
         size--;
-        strncpy (dest,
-                 q1,
-                 size);
+        memcpy (dest,
+                q1,
+                size);
         dest[size] = '\0';
         return size;
       }
