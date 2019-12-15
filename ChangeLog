@@ -1,5 +1,6 @@
 Sun 15 Dec 2019 02:12:02 PM CET
     Fix send() call (affects Mac OS X). #5977 -CG/fbrault
+    Releasing libmicrohttpd 0.9.69. -CG
 
 Fri 29 Nov 2019 11:22:25 PM CET
     If application suspends a connection before we could send 100 CONTINUE,

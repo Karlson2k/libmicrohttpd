@@ -22,7 +22,7 @@
 #
 AC_PREREQ([2.64])
 LT_PREREQ([2.4.0])
-AC_INIT([GNU Libmicrohttpd],[0.9.68],[libmicrohttpd@gnu.org])
+AC_INIT([GNU Libmicrohttpd],[0.9.69],[libmicrohttpd@gnu.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([silent-rules] [subdir-objects])
 AC_CONFIG_HEADERS([MHD_config.h])
