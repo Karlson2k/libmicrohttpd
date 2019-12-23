@@ -46,6 +46,9 @@ po/Makevars.template
 po/POTFILES
 po/configargs.stamp
 **~
+\#*\#
 doc/libmicrohttpd.log
 src/examples/suspend_resume_epoll
 uncrustify.cfg
+**.dvi
+**.t2d
