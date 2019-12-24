@@ -17,13 +17,11 @@
      Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
      Boston, MA 02110-1301, USA.
 */
-
 /**
  * @file test_postprocessor.c
  * @brief  Testcase for postprocessor
  * @author Christian Grothoff
  */
-
 #include "platform.h"
 #include "microhttpd.h"
 #include "internal.h"
@@ -42,8 +40,18 @@
  * five NULL-entries.
  */
 const char *want[] = {
+#define URL_NOVALUE1_DATA "abc&x=5"
+#define URL_NOVALUE1_START 0
+  "abc", NULL, NULL, NULL, NULL,
+  "x", NULL, NULL, NULL, "5",
+#define URL_NOVALUE1_END (URL_NOVALUE1_START + 10)
+#define URL_NOVALUE2_DATA "abc=&x=5"
+#define URL_NOVALUE2_START URL_NOVALUE1_END
+  "abc", NULL, NULL, NULL, "",
+  "x", NULL, NULL, NULL, "5",
+#define URL_NOVALUE2_END (URL_NOVALUE2_START + 10)
 #define URL_DATA "abc=def&x=5"
-#define URL_START 0
+#define URL_START URL_NOVALUE2_END
   "abc", NULL, NULL, NULL, "def",
   "x", NULL, NULL, NULL, "5",
 #define URL_END (URL_START + 10)
@@ -125,12 +133,14 @@ value_checker (void *cls,
 
 
 static int
-test_urlencoding (void)
+test_urlencoding_case (unsigned int want_start,
+                       unsigned int want_end,
+                       const char *url_data)
 {
   struct MHD_Connection connection;
   struct MHD_HTTP_Header header;
   struct MHD_PostProcessor *pp;
-  unsigned int want_off = URL_START;
+  unsigned int want_off = want_start;
   size_t i;
   size_t delta;
   size_t size;
@@ -147,17 +157,30 @@ test_urlencoding (void)
   pp = MHD_create_post_processor (&connection,
                                   1024, &value_checker, &want_off);
   i = 0;
-  size = strlen (URL_DATA);
+  size = strlen (url_data);
   while (i < size)
   {
     delta = 1 + MHD_random_ () % (size - i);
-    MHD_post_process (pp, &URL_DATA[i], delta);
+    MHD_post_process (pp, &url_data[i], delta);
     i += delta;
   }
   MHD_destroy_post_processor (pp);
-  if (want_off != URL_END)
+  if (want_off != want_end)
     return 1;
   return 0;
+}
+
+
+static int
+test_urlencoding (void)
+{
+  unsigned int errorCount = 0;
+  errorCount += test_urlencoding_case (URL_START, URL_END, URL_DATA);
+  errorCount += test_urlencoding_case (URL_NOVALUE1_START, URL_NOVALUE1_END,
+                                       URL_NOVALUE1_DATA);
+  errorCount += test_urlencoding_case (URL_NOVALUE2_START, URL_NOVALUE2_END,
+                                       URL_NOVALUE2_DATA);
+  return errorCount;
 }
 
 
