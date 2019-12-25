@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007,2013 Christian Grothoff
+     Copyright (C) 2007,2013,2019 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -104,7 +104,6 @@ value_checker (void *cls,
   int idx = *want_off;
   (void) kind;  /* Unused. Silent compiler warning. */
 
-
 #if 0
   fprintf (stderr,
            "VC: `%s' `%s' `%s' `%s' `%.*s'\n",
@@ -123,12 +122,26 @@ value_checker (void *cls,
       (0 != memcmp (data, &want[idx + 4][off], size)))
   {
     *want_off = -1;
+    fprintf (stderr,
+             "Failed with: `%s' `%s' `%s' `%s' `%.*s'\n",
+             key, filename, content_type, transfer_encoding,
+             (int) size,
+             data);
+    fprintf (stderr,
+             "Unexpected result: %d/%d/%d/%d/%d/%d/%d\n",
+             (idx < 0),
+             (want[idx] == NULL),
+             (0 != strcmp (key, want[idx])),
+             (mismatch (filename, want[idx + 1])),
+             (mismatch (content_type, want[idx + 2])),
+             (mismatch (transfer_encoding, want[idx + 3])),
+             (0 != memcmp (data, &want[idx + 4][off], size)));
+             
     return MHD_NO;
   }
   if (off + size == strlen (want[idx + 4]))
     *want_off = idx + 5;
   return MHD_YES;
-
 }
 
 
@@ -155,18 +168,27 @@ test_urlencoding_case (unsigned int want_start,
     MHD_HTTP_POST_ENCODING_FORM_URLENCODED);
   header.kind = MHD_HEADER_KIND;
   pp = MHD_create_post_processor (&connection,
-                                  1024, &value_checker, &want_off);
+                                  1024,
+                                  &value_checker,
+                                  &want_off);
   i = 0;
   size = strlen (url_data);
   while (i < size)
   {
     delta = 1 + MHD_random_ () % (size - i);
-    MHD_post_process (pp, &url_data[i], delta);
+    MHD_post_process (pp,
+                      &url_data[i],
+                      delta);
     i += delta;
   }
   MHD_destroy_post_processor (pp);
   if (want_off != want_end)
+  {
+    fprintf (stderr,
+             "Test failed in line %u\n",
+             (unsigned int) __LINE__);
     return 1;
+  }
   return 0;
 }
 
@@ -175,11 +197,18 @@ static int
 test_urlencoding (void)
 {
   unsigned int errorCount = 0;
+
   errorCount += test_urlencoding_case (URL_START, URL_END, URL_DATA);
-  errorCount += test_urlencoding_case (URL_NOVALUE1_START, URL_NOVALUE1_END,
+  errorCount += test_urlencoding_case (URL_NOVALUE1_START,
+                                       URL_NOVALUE1_END,
                                        URL_NOVALUE1_DATA);
-  errorCount += test_urlencoding_case (URL_NOVALUE2_START, URL_NOVALUE2_END,
+  errorCount += test_urlencoding_case (URL_NOVALUE2_START,
+                                       URL_NOVALUE2_END,
                                        URL_NOVALUE2_DATA);
+  fprintf (stderr,
+           "Test failed in line %u with %u errors\n",
+           (unsigned int) __LINE__,
+           errorCount);
   return errorCount;
 }
 
@@ -220,7 +249,13 @@ test_multipart_garbage (void)
     MHD_post_process (pp, &xdata[splitpoint], size - splitpoint);
     MHD_destroy_post_processor (pp);
     if (want_off != FORM_END)
+    {
+      fprintf (stderr,
+               "Test failed in line %u at point %d\n",
+               (unsigned int) __LINE__,
+               (int) splitpoint);
       return (int) splitpoint;
+    }
   }
   return 0;
 }
@@ -255,7 +290,13 @@ test_multipart_splits (void)
     MHD_post_process (pp, &FORM_DATA[splitpoint], size - splitpoint);
     MHD_destroy_post_processor (pp);
     if (want_off != FORM_END)
+    {
+      fprintf (stderr,
+               "Test failed in line %u at point %d\n",
+               (unsigned int) __LINE__,
+               (int) splitpoint);
       return (int) splitpoint;
+    }
   }
   return 0;
 }
@@ -293,7 +334,12 @@ test_multipart (void)
   }
   MHD_destroy_post_processor (pp);
   if (want_off != FORM_END)
+  {
+    fprintf (stderr,
+             "Test failed in line %u\n",
+             (unsigned int) __LINE__);
     return 2;
+  }
   return 0;
 }
 
@@ -330,7 +376,12 @@ test_nested_multipart (void)
   }
   MHD_destroy_post_processor (pp);
   if (want_off != FORM_NESTED_END)
+  {
+    fprintf (stderr,
+             "Test failed in line %u\n",
+             (unsigned int) __LINE__);
     return 4;
+  }
   return 0;
 }
 
@@ -366,7 +417,12 @@ test_empty_value (void)
   }
   MHD_destroy_post_processor (pp);
   if (want_off != URL_EMPTY_VALUE_END)
+  {
+    fprintf (stderr,
+             "Test failed in line %u\n",
+             (unsigned int) __LINE__);
     return 8;
+  }
   return 0;
 }
 
