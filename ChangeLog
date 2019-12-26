@@ -1,3 +1,7 @@
+Thu Dec 26 14:43:27 CET 2019
+    Adding fix for urlencoding of keys without values in
+    post-processor logic. -CG
+
 Tue 24 Dec 2019 03:32:18 PM CET
     Adding patch from Ethan Tuttle with test case for urlencoding
     in post-processor for keys without values. -CG/ET

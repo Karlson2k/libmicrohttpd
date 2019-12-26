@@ -215,8 +215,14 @@ struct MHD_PostProcessor
    * Used to ensure that we do always call 'ikvi' even if the
    * payload is empty (but not more than once).
    */
-  int must_ikvi;
+  bool must_ikvi;
 
+  /**
+   * Set if we still need to run the unescape logic
+   * on the key allocated at the end of this struct.
+   */ 
+  bool must_unescape_key;
+  
   /**
    * State of the parser.
    */
@@ -395,6 +401,7 @@ process_value (struct MHD_PostProcessor *pp,
     }
   }
   while ( (value_start != value_end) ||
+          (pp->must_ikvi) ||
           (xoff > 0) )
   {
     size_t delta = value_end - value_start;
@@ -425,6 +432,7 @@ process_value (struct MHD_PostProcessor *pp,
     MHD_unescape_plus (xbuf);
     xoff = MHD_http_unescape (xbuf);
     /* finally: call application! */
+    pp->must_ikvi = false;
     if (MHD_NO == pp->ikvi (pp->cls,
                             MHD_POSTDATA_KIND,
                             (const char *) &pp[1],        /* key */
@@ -466,7 +474,8 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
   const char *last_escape = NULL;
 
   poff = 0;
-  while ( (poff < post_data_len) &&
+  while ( ( (poff < post_data_len) ||
+            (pp->state == PP_Callback) ) &&
           (pp->state != PP_Error) )
   {
     switch (pp->state) {
@@ -478,6 +487,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       /* key phase */
       if (NULL == start_key)
         start_key = &post_data[poff];
+      pp->must_ikvi = true;
       switch (post_data[poff])
       {
       case '=':
@@ -519,13 +529,27 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
         /* case 'value&' */
         end_value = &post_data[poff];
         poff++;
-        pp->state = PP_Callback;
+        if ( pp->must_ikvi ||
+             (start_value != end_value) )
+        {
+          pp->state = PP_Callback;
+        }
+        else
+        {
+          pp->buffer_pos = 0;
+          pp->value_offset = 0;
+          pp->state = PP_Init; 
+        }
+        continue;
       case '\n':
       case '\r':
         /* Case: 'value\n' or 'value\r' */
         end_value = &post_data[poff];
         poff++;
-        pp->state = PP_Done;
+        if (pp->must_ikvi)
+          pp->state = PP_Callback;
+        else
+          pp->state = PP_Done;
         break;
       case '%':
         last_escape = &post_data[poff];
@@ -564,7 +588,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
     case PP_Callback:
       if ( (pp->buffer_pos + (end_key - start_key) >
             pp->buffer_size) ||
-           (pp->buffer_pos + (end_key - start_key) >
+           (pp->buffer_pos + (end_key - start_key) <
             pp->buffer_pos) )
       {
         /* key too long, cannot parse! */
@@ -580,9 +604,14 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
         pp->buffer_pos += end_key - start_key;
         start_key = NULL;
         end_key = NULL;
+        pp->must_unescape_key = true;
+      }
+      if (pp->must_unescape_key)
+      {
         kbuf[pp->buffer_pos] = '\0'; /* 0-terminate key */
         MHD_unescape_plus (kbuf);
         MHD_http_unescape (kbuf);
+        pp->must_unescape_key = false;
       }
       process_value (pp,
                      start_value,
@@ -591,6 +620,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       pp->value_offset = 0;
       start_value = NULL;
       end_value = NULL;
+      pp->buffer_pos = 0;
       pp->state = PP_Init;
       break;
     default:
@@ -602,8 +632,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
   }
 
   /* save remaining data for next iteration */
-  if ( (NULL != start_key) &&
-       (PP_Init == pp->state) )
+  if (NULL != start_key) 
   {
     if (NULL == end_key) 
       end_key = &post_data[poff];
@@ -611,22 +640,20 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
             start_key,
             end_key - start_key);
     pp->buffer_pos += end_key - start_key;
+    pp->must_unescape_key = true;
+    start_key = NULL;
+    end_key = NULL;
   }
   if ( (NULL != start_value) &&
        (PP_ProcessValue == pp->state) )
   {
     /* compute key, if we have not already */
-    if (NULL != start_key)
+    if (pp->must_unescape_key)
     {
-      memcpy (&kbuf[pp->buffer_pos],
-              start_key,
-              end_key - start_key);
-      pp->buffer_pos += end_key - start_key;
-      start_key = NULL;
-      end_key = NULL;
       kbuf[pp->buffer_pos] = '\0'; /* 0-terminate key */
       MHD_unescape_plus (kbuf);
       MHD_http_unescape (kbuf);
+      pp->must_unescape_key = false;
     }
     if (NULL == end_value)
       end_value = &post_data[poff];
@@ -634,8 +661,8 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
                    start_value,
                    end_value,
                    last_escape);
+    pp->must_ikvi = false;
   }
-  
   return MHD_YES;
 }
 
@@ -953,7 +980,7 @@ process_value_to_boundary (struct MHD_PostProcessor *pp,
   /* newline is either at beginning of boundary or
      at least at the last character that we are sure
      is not part of the boundary */
-  if ( ( (MHD_YES == pp->must_ikvi) ||
+  if ( ( (pp->must_ikvi) ||
          (0 != newline) ) &&
        (MHD_NO == pp->ikvi (pp->cls,
                             MHD_POSTDATA_KIND,
@@ -968,7 +995,7 @@ process_value_to_boundary (struct MHD_PostProcessor *pp,
     pp->state = PP_Error;
     return MHD_NO;
   }
-  pp->must_ikvi = MHD_NO;
+  pp->must_ikvi = false;
   pp->value_offset += newline;
   (*ioffptr) += newline;
   return MHD_YES;
@@ -1155,7 +1182,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
       }
       break;
     case PP_ProcessEntryHeaders:
-      pp->must_ikvi = MHD_YES;
+      pp->must_ikvi = true;
       if (MHD_NO ==
           process_multipart_headers (pp,
                                      &ioff,
