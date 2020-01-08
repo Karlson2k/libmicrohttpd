@@ -1414,6 +1414,12 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
                                        header);
       else
         ret = MHD_NO;
+#if 0
+      if ( (MHD_YES == ret) && (AND in state : 100 continue aborting ...))
+        ret = MHD_add_response_header (response,
+                                       MHD_HTTP_HEADER_CONNECTION,
+                                       "close");
+#endif
       free (header);
     }
     else
