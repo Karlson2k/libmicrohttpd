@@ -42,6 +42,7 @@ gcc/Stretch:
     - make check
   tags:
     - shared
+    - linux
   artifacts:
     expire_in: 2 weeks
     when: on_failure
@@ -66,6 +67,7 @@ Sanitizers/Stretch:
     - make check
   tags:
     - shared
+    - linux
   artifacts:
     expire_in: 2 weeks
     when: on_failure
@@ -84,6 +86,7 @@ Scan-Build/Debian:
     - scan-build -v -enable-checker security,nullability --status-bugs -o scan-build make check
   tags:
     - shared
+    - linux
   except:
     - tags
   artifacts:
@@ -99,6 +102,9 @@ MinGW/Debian:
     - ./bootstrap
     - ./configure $CONFIGURE_BASE_FLAGS --build=x86_64-pc-linux-gnu --host=$PREFIX
     - make -j$(nproc)
+  tags:
+    - shared
+    - linux
 
 dist/Stretch:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$DEBIAN_BUILD
@@ -109,6 +115,7 @@ dist/Stretch:
     - make -j$(nproc) dist
   tags:
     - shared
+    - linux
   artifacts:
     name: "$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
     expire_in: 2 weeks
