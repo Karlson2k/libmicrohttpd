@@ -109,3 +109,5 @@ test_delete
 test_digestauth_sha256
 perf_get_concurrent11
 test_get_empty
+test_patch
+test_patch11
