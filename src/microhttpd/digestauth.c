@@ -1237,6 +1237,7 @@ MHD_digest_auth_check2 (struct MHD_Connection *connection,
 {
   SETUP_DA (algo, da);
 
+  mhd_assert (NULL != password);
   return digest_auth_check_all (connection,
                                 &da,
                                 realm,
@@ -1275,6 +1276,7 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
 {
   SETUP_DA (algo, da);
 
+  mhd_assert (NULL != digest);
   if (da.digest_size != digest_size)
     MHD_PANIC (_ ("digest size missmatch")); /* API violation! */
   return digest_auth_check_all (connection,
