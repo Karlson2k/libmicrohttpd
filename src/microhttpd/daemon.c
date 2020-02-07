@@ -3281,8 +3281,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
     MHD_DLOG (daemon,
               _ ("Failed to disable TCP Nagle on socket: %s\n"),
               MHD_socket_last_strerr_ ());
-  }
 #endif
+  }
 #endif
 #if ! defined(USE_ACCEPT4) || ! defined(HAVE_SOCK_NONBLOCK)
   if (! MHD_socket_nonblocking_ (s))
