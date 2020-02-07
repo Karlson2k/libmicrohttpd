@@ -3131,6 +3131,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 {
   bool sk_nonbl;
 
+  MHD_cleanup_connections (daemon);
   if (! MHD_socket_nonblocking_ (client_socket))
   {
 #ifdef HAVE_MESSAGES
@@ -4814,9 +4815,9 @@ unescape_wrapper (void *cls,
  * @param flags combination of `enum MHD_FLAG` values
  * @param port port to bind to (in host byte order),
  *        use '0' to bind to random free port,
- *        ignored if MHD_OPTION_SOCK_ADDR or
- *        MHD_OPTION_LISTEN_SOCKET is provided
- *        or MHD_USE_NO_LISTEN_SOCKET is specified
+ *        ignored if #MHD_OPTION_SOCK_ADDR or
+ *        #MHD_OPTION_LISTEN_SOCKET is provided
+ *        or #MHD_USE_NO_LISTEN_SOCKET is specified
  * @param apc callback to call to check which clients
  *        will be allowed to connect; you can pass NULL
  *        in which case connections from any IP will be
@@ -5677,9 +5678,9 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
  * @param flags combination of `enum MHD_FLAG` values
  * @param port port to bind to (in host byte order),
  *        use '0' to bind to random free port,
- *        ignored if MHD_OPTION_SOCK_ADDR or
- *        MHD_OPTION_LISTEN_SOCKET is provided
- *        or MHD_USE_NO_LISTEN_SOCKET is specified
+ *        ignored if #MHD_OPTION_SOCK_ADDR or
+ *        #MHD_OPTION_LISTEN_SOCKET is provided
+ *        or #MHD_USE_NO_LISTEN_SOCKET is specified
  * @param apc callback to call to check which clients
  *        will be allowed to connect; you can pass NULL
  *        in which case connections from any IP will be
