@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007-2019 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2007-2020 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -24,7 +24,6 @@
  * @author Christian Grothoff
  * @author Karlson2k (Evgeny Grin)
  */
-
 #include "internal.h"
 #include "mhd_limits.h"
 #include "connection.h"
@@ -687,8 +686,7 @@ need_100_continue (struct MHD_Connection *connection)
 {
   const char *expect;
 
-  return ( (NULL == connection->response) &&
-           (NULL != connection->version) &&
+  return ( (NULL != connection->version) &&
            (MHD_str_equal_caseless_ (connection->version,
                                      MHD_HTTP_VERSION_1_1)) &&
            (MHD_NO != MHD_lookup_connection_value_n (connection,
@@ -699,9 +697,7 @@ need_100_continue (struct MHD_Connection *connection)
                                                      &expect,
                                                      NULL)) &&
            (MHD_str_equal_caseless_ (expect,
-                                     "100-continue")) &&
-           (connection->continue_message_write_offset <
-            MHD_STATICSTR_LEN_ (HTTP_100_CONTINUE)) );
+                                     "100-continue")) );
 }
 
 
@@ -3403,16 +3399,14 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         continue;
       if (connection->suspended)
         continue;
-      if (need_100_continue (connection))
+      if ( (NULL == connection->response) &&
+           (need_100_continue (connection)) )
       {
         connection->state = MHD_CONNECTION_CONTINUE_SENDING;
         break;
       }
       if ( (NULL != connection->response) &&
-           ( (MHD_str_equal_caseless_ (connection->method,
-                                       MHD_HTTP_METHOD_POST)) ||
-             (MHD_str_equal_caseless_ (connection->method,
-                                       MHD_HTTP_METHOD_PUT))) )
+           (0 != connection->remaining_upload_size) )
       {
         /* we refused (no upload allowed!) */
         connection->remaining_upload_size = 0;
@@ -3420,8 +3414,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         connection->read_closed = true;
       }
       connection->state = (0 == connection->remaining_upload_size)
-                          ? MHD_CONNECTION_FOOTERS_RECEIVED :
-                          MHD_CONNECTION_CONTINUE_SENT;
+                          ? MHD_CONNECTION_FOOTERS_RECEIVED
+                          : MHD_CONNECTION_CONTINUE_SENT;
       if (connection->suspended)
         break;
       continue;
@@ -4036,17 +4030,13 @@ MHD_queue_response (struct MHD_Connection *connection,
        have already sent the full message body. */
     connection->response_write_position = response->total_size;
   }
-  if ( (MHD_CONNECTION_HEADERS_PROCESSED == connection->state) &&
-       (NULL != connection->method) &&
-       ( (MHD_str_equal_caseless_ (connection->method,
-                                   MHD_HTTP_METHOD_POST)) ||
-         (MHD_str_equal_caseless_ (connection->method,
-                                   MHD_HTTP_METHOD_PUT))) )
+  if (MHD_CONNECTION_HEADERS_PROCESSED == connection->state)
   {
     /* response was queued "early", refuse to read body / footers or
        further requests! */
     connection->read_closed = true;
     connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
+    connection->remaining_upload_size = 0;
   }
   if (! connection->in_idle)
     (void) MHD_connection_handle_idle (connection);
