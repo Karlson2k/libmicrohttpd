@@ -1,3 +1,11 @@
+Sat 08 Feb 2020 09:12:54 PM CET
+    Fixed 100-continue handling for PATCH method (#6068).
+    Fixed FTBFS from wrong #endif position for certain builds (#6025).
+    Fixed connection overflow issue when combining MHD_USE_NO_LISTEN_SOCKET
+    with MHD_USE_THREAD_PER_CONNECTION (#6036).
+    Updated m4 script to fix FTBFS when using -Werror=unused-but-set-parameter (#6078).
+    Releasing libmicrohttpd 0.9.70. -CG
+
 Thu Dec 26 14:43:27 CET 2019
     Adding fix for urlencoding of keys without values in
     post-processor logic. -CG
