@@ -2000,6 +2000,7 @@ enum MHD_ConnectionInfoType
 
   /**
    * Request the file descriptor for the connection socket.
+   * MHD sockets are always in non-blocking mode.
    * No extra arguments should be passed.
    * @ingroup request
    */
