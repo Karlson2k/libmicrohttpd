@@ -488,7 +488,14 @@ testExternalGet ()
   }
   MHD_stop_daemon (d);
   if (cbc.pos != strlen (TESTSTR))
+  {
+    fprintf (stderr,
+             "Got %.*s instead of %S!\n",
+             (int) cbc.pos,
+             cbc.buf,
+             TESTSTR);
     return 8192;
+  }
   if (0 != strncmp (TESTSTR, cbc.buf, strlen (TESTSTR)))
     return 16384;
   return 0;

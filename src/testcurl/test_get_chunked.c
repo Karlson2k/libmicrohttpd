@@ -162,7 +162,12 @@ validate (struct CBC cbc, int ebase)
   char buf[128];
 
   if (cbc.pos != 128 * 10)
+  {
+    fprintf (stderr,
+             "Got %u bytes instead of 1280!\n",
+             (unsigned int) cbc.pos);
     return ebase;
+  }
 
   for (i = 0; i < 10; i++)
   {
