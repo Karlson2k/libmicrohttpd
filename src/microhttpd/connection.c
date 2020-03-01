@@ -1400,9 +1400,9 @@ build_header_response (struct MHD_Connection *connection)
       else
       {
         /* Keep alive or chunking not possible
-           => set close header if not present */
-        if (! response_has_close)
-          must_add_close = true;
+           => set close header (we know response_has_close
+           is false here) */
+        must_add_close = true;
       }
     }
 
