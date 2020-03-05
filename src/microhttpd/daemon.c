@@ -2510,6 +2510,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
     errno = eno;
     return MHD_NO;
   }
+  connection->sk_cork_on = true; /* default is usually ON */
   connection->pool = MHD_pool_create (daemon->pool_size);
   if (NULL == connection->pool)
   {
