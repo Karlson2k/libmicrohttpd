@@ -608,8 +608,8 @@ MHD_socket_create_listen_ (int pf)
     return MHD_INVALID_SOCKET;
 
 #if defined(MHD_socket_nosignal_)
-  if ( ( (! nosigpipe_set)
-         || (! MHD_socket_nosignal_ (fd)) ) &&
+  if ( (! nosigpipe_set) &&
+       (0 == MHD_socket_nosignal_ (fd)) &&
        (0 == MAYBE_MSG_NOSIGNAL) )
   {
     /* SIGPIPE disable is possible on this platform
