@@ -167,7 +167,7 @@ post_cork_setsockopt (struct MHD_Connection *connection,
   case EINVAL:
     /* FIXME: optlen invalid, should at least log this, maybe die */
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
+    MHD_DLOG (connection->daemon,
               _ ("optlen invalid: %s\n"),
               MHD_socket_last_strerr_ ());
 #endif
@@ -175,7 +175,7 @@ post_cork_setsockopt (struct MHD_Connection *connection,
   case EFAULT:
     /* wopsie, should at leats log this, FIXME: maybe die */
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
+    MHD_DLOG (connection->daemon,
               _ (
                 "The addresss pointed to by optval is not a valid part of the process address space: %s\n"),
               MHD_socket_last_strerr_ ());
@@ -184,7 +184,7 @@ post_cork_setsockopt (struct MHD_Connection *connection,
   case ENOPROTOOPT:
     /* optlen unknown, should at least log this */
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
+    MHD_DLOG (connection->daemon,
               _ ("The option is unknown: %s\n"),
               MHD_socket_last_strerr_ ());
 #endif
