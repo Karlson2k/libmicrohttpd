@@ -505,6 +505,11 @@ MHD_socket_cork_ (MHD_socket sock,
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
 
   /* Disable extra buffering */
+  if (MHD_INVALID_SOCKET == sock)
+  {
+    errno = EBADF;
+    return 0; /* failed */
+  }
   if (0 != setsockopt (sock,
                        IPPROTO_TCP,
                        MHD_TCP_CORK_NOPUSH,
