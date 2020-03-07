@@ -63,7 +63,7 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
     return; /* nothing to do *pre* syscall! */
   ret = MHD_socket_cork_ (connection->socket_fd,
                           true);
-  if (0 == ret)
+  if (0 != ret)
   {
     connection->sk_cork_on = true;
     return;
@@ -150,7 +150,7 @@ post_cork_setsockopt (struct MHD_Connection *connection,
                pre-syscall) */
   ret = MHD_socket_cork_ (connection->socket_fd,
                           false);
-  if (0 == ret)
+  if (0 != ret)
   {
     connection->sk_cork_on = false;
     return;
