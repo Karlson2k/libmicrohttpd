@@ -6404,22 +6404,18 @@ MHD_start_daemon_va (unsigned int flags,
       MHD_socket_close_chk_ (listen_fd);
     goto free_and_fail;
   }
-  if (0 == daemon->worker_pool_size)
-  {   /* Initialise connection mutex only if this daemon will handle
-       * any connections by itself. */
-    if (! MHD_mutex_init_ (&daemon->cleanup_connection_mutex))
-    {
+  if (! MHD_mutex_init_ (&daemon->cleanup_connection_mutex))
+  {
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("MHD failed to initialize IP connection limit mutex\n"));
+    MHD_DLOG (daemon,
+              _ ("MHD failed to initialize IP connection limit mutex\n"));
 #endif
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-      MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
 #endif
-      if (MHD_INVALID_SOCKET != listen_fd)
-        MHD_socket_close_chk_ (listen_fd);
-      goto free_and_fail;
-    }
+    if (MHD_INVALID_SOCKET != listen_fd)
+      MHD_socket_close_chk_ (listen_fd);
+    goto free_and_fail;
   }
 #endif
 
@@ -6435,8 +6431,7 @@ MHD_start_daemon_va (unsigned int flags,
     if (MHD_INVALID_SOCKET != listen_fd)
       MHD_socket_close_chk_ (listen_fd);
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-    if (0 == daemon->worker_pool_size)
-      MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
     MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
 #endif
     goto free_and_fail;
