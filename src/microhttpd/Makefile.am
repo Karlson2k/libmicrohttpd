@@ -150,7 +150,7 @@ libmicrohttpd_la_SOURCES += \
   connection_https.c connection_https.h
 endif
 
-
+.NOTPARALLEL:
 
 check_PROGRAMS = \
   test_str_compare \
