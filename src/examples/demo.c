@@ -204,7 +204,7 @@ static magic_t magic;
 
 
 /**
- * Mark the given response as HTML for the brower.
+ * Mark the given response as HTML for the browser.
  *
  * @param response response to mark
  */

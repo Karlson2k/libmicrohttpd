@@ -43,7 +43,7 @@
  *
  * MHD understands POST data and is able to decode certain formats
  * (at the moment only "application/x-www-form-urlencoded" and
- * "mulitpart/formdata"). Unsupported encodings and large POST
+ * "multipart/formdata"). Unsupported encodings and large POST
  * submissions may require the application to manually process
  * the stream, which is provided to the main application (and thus can be
  * processed, just not conveniently by MHD).
@@ -132,7 +132,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097001
+#define MHD_VERSION 0x00097002
 
 /**
  * MHD-internal return code for "YES".
@@ -522,7 +522,7 @@ MHD_get_reason_phrase_for (unsigned int code);
 /**
  * Flag to be or-ed with MHD_HTTP status code for
  * SHOUTcast.  This will cause the response to begin
- * with the SHOUTcast "ICY" line instad of "HTTP".
+ * with the SHOUTcast "ICY" line instead of "HTTP".
  * @ingroup specialized
  */
 #define MHD_ICY_FLAG ((uint32_t) (((uint32_t) 1) << 31))
@@ -1562,7 +1562,7 @@ enum MHD_OPTION
    * of the buffer pointed to by the second argument in bytes.
    * Note that the application must ensure that the buffer of the
    * second argument remains allocated and unmodified while the
-   * deamon is running.
+   * daemon is running.
    */
   MHD_OPTION_DIGEST_AUTH_RANDOM = 17,
 
@@ -1628,7 +1628,7 @@ enum MHD_OPTION
    * If present and set to true, allow reusing address:port socket
    * (by using SO_REUSEPORT on most platform, or platform-specific ways).
    * If present and set to false, disallow reusing address:port socket
-   * (does nothing on most plaform, but uses SO_EXCLUSIVEADDRUSE on Windows).
+   * (does nothing on most platform, but uses SO_EXCLUSIVEADDRUSE on Windows).
    * This option must be followed by a `unsigned int` argument.
    */
   MHD_OPTION_LISTENING_ADDRESS_REUSE = 25,
@@ -2038,7 +2038,7 @@ enum MHD_ConnectionInfoType
 
 /**
  * Values of this enum are used to specify what
- * information about a deamon is desired.
+ * information about a daemon is desired.
  */
 enum MHD_DaemonInfoType
 {
@@ -2099,8 +2099,8 @@ enum MHD_DaemonInfoType
  * an error message and `abort()`.
  *
  * @param cls user specified value
- * @param file where the error occured
- * @param line where the error occured
+ * @param file where the error occurred
+ * @param line where the error occurred
  * @param reason error detail, may be NULL
  * @ingroup logging
  */
@@ -2160,7 +2160,7 @@ typedef int
  *        can be set with the #MHD_OPTION_NOTIFY_COMPLETED).
  *        Initially, `*con_cls` will be NULL.
  * @return #MHD_YES if the connection was handled successfully,
- *         #MHD_NO if the socket must be closed due to a serios
+ *         #MHD_NO if the socket must be closed due to a serious
  *         error while handling the request
  */
 typedef int
@@ -3340,7 +3340,7 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
  * Destroy a response object and associated resources.  Note that
  * libmicrohttpd may keep some of the resources around if the response
  * is still in the queue for some clients, so the memory may not
- * necessarily be freed immediatley.
+ * necessarily be freed immediately.
  *
  * @param response response to destroy
  * @ingroup response
@@ -3576,7 +3576,7 @@ MHD_digest_auth_check2 (struct MHD_Connection *connection,
  * Uses #MHD_DIGEST_ALG_MD5 (for now, for backwards-compatibility).
  * Note that this MAY change to #MHD_DIGEST_ALG_AUTO in the future.
  * If you want to be sure you get MD5, use #MHD_digest_auth_check2()
- * and specifiy MD5 explicitly.
+ * and specify MD5 explicitly.
  *
  * @param connection The MHD connection structure
  * @param realm The realm presented to the client

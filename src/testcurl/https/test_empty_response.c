@@ -20,7 +20,7 @@
 
 /**
  * @file test_empty_response.c
- * @brief  Testcase for libmicrohttpd HTTPS GET operations with emtpy reply
+ * @brief  Testcase for libmicrohttpd HTTPS GET operations with empty reply
  * @author Christian Grothoff
  */
 #include "platform.h"

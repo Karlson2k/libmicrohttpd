@@ -1546,7 +1546,7 @@ struct MHD_Daemon
   volatile bool shutdown;
 
   /**
-   * Has this deamon been quiesced via #MHD_quiesce_daemon()?
+   * Has this daemon been quiesced via #MHD_quiesce_daemon()?
    * If so, we should no longer use the @e listen_fd (including
    * removing it from the @e epoll_fd when possible).
    */

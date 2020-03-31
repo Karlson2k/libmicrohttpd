@@ -539,7 +539,7 @@ connections).
 Enable optimizations to aggressively improve performance.
 
 Currently, the optimizations this option enables are based on
-opportunistic reads and writes.  Bascially, MHD will simply try to
+opportunistic reads and writes.  Basically, MHD will simply try to
 read or write or accept on a socket before checking that the socket is
 ready for IO using the event loop mechanism.  As the sockets are
 non-blocking, this may fail (at a loss of performance), but generally
@@ -1761,7 +1761,7 @@ will be set to the timeout (in milliseconds).
 @end table
 
 Return @code{MHD_YES} on success, @code{MHD_NO} if timeouts are not used
-(or no connections exist that would necessiate the use of a timeout
+(or no connections exist that would necessitate the use of a timeout
 right now).
 @end deftypefun
 

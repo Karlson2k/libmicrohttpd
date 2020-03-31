@@ -158,7 +158,7 @@ MHD_conn_init_static_ (void)
 
 
 /**
- * A serious error occured, close the
+ * A serious error occurred, close the
  * connection (and notify the application).
  *
  * @param connection connection to close with error

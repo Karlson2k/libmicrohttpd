@@ -289,7 +289,7 @@ wr_create_from_plain_sckt (MHD_socket plain_sk)
  * Connect socket to specified address.
  * @param s socket to use
  * @param addr address to connect
- * @param length of sturcture pointed by @a addr
+ * @param length of structure pointed by @a addr
  * @return zero on success, -1 otherwise.
  */
 static int
@@ -864,7 +864,7 @@ upgrade_cb (void *cls,
  *        can be set with the #MHD_OPTION_NOTIFY_COMPLETED).
  *        Initially, `*con_cls` will be NULL.
  * @return #MHD_YES if the connection was handled successfully,
- *         #MHD_NO if the socket must be closed due to a serios
+ *         #MHD_NO if the socket must be closed due to a serious
  *         error while handling the request
  */
 static int

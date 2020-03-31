@@ -401,7 +401,7 @@ test_https_transfer (void *cls,
     goto cleanup;
   }
 
-  /* compare test file & daemon responce */
+  /* compare test file & daemon response */
   if ( (len != strlen (test_data)) ||
        (memcmp (cbc.buf,
                 test_data,
