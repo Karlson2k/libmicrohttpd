@@ -1,3 +1,6 @@
+Tue 07 Apr 2020 02:58:39 PM BRT
+    Fixed #5501 (Added example for how to provide a tiny threaded websocket server). -SC
+
 Tue 31 Mar 2020 02:36:40 PM BRT
     Fixed #6142 (applied several spelling fixes). -DKG/-SC
 
