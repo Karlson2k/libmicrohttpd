@@ -24,6 +24,8 @@
  * @author Silvio Clecio (silvioprog)
  */
 
+/* TODO: allow to send large messages. */
+
 #include "platform.h"
 #include <pthread.h>
 #include <microhttpd.h>
@@ -109,7 +111,9 @@ struct WsData
   MHD_socket sock;
 };
 
+
 /********** begin SHA-1 **********/
+
 
 #define SHA1HashSize 20
 
@@ -341,17 +345,19 @@ SHA1Input (struct SHA1Context *context, const uint8_t *message_array,
 
 /********** end SHA-1 **********/
 
+
 /********** begin Base64 **********/
 
+
 ssize_t
-BASE64Encode (const void *in, size_t len, unsigned char **output)
+BASE64Encode (const void *in, size_t len, char **output)
 {
 #define FILLCHAR '='
-  const unsigned char *cvt = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                             "abcdefghijklmnopqrstuvwxyz"
-                             "0123456789+/";
-  const unsigned char *data = in;
-  unsigned char *opt;
+  const char *cvt = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                    "abcdefghijklmnopqrstuvwxyz"
+                    "0123456789+/";
+  const char *data = in;
+  char *opt;
   ssize_t ret;
   ssize_t i;
   char c;
@@ -364,13 +370,13 @@ BASE64Encode (const void *in, size_t len, unsigned char **output)
   for (i = 0; i < len; ++i)
   {
     c = (data[i] >> 2) & 0x3F;
-    opt[ret++] = cvt[(unsigned int) c];
+    opt[ret++] = cvt[(int) c];
     c = (data[i] << 4) & 0x3F;
     if (++i < len)
     {
       c |= (data[i] >> 4) & 0x0F;
     }
-    opt[ret++] = cvt[(unsigned int) c];
+    opt[ret++] = cvt[(int) c];
     if (i < len)
     {
       c = (data[i] << 2) & 0x3F;
@@ -378,7 +384,7 @@ BASE64Encode (const void *in, size_t len, unsigned char **output)
       {
         c |= (data[i] >> 6) & 0x03;
       }
-      opt[ret++] = cvt[(unsigned int) c];
+      opt[ret++] = cvt[(int) c];
     }
     else
     {
@@ -388,7 +394,7 @@ BASE64Encode (const void *in, size_t len, unsigned char **output)
     if (i < len)
     {
       c = data[i] & 0x3F;
-      opt[ret++] = cvt[(unsigned int) c];
+      opt[ret++] = cvt[(int) c];
     }
     else
     {
@@ -401,6 +407,7 @@ BASE64Encode (const void *in, size_t len, unsigned char **output)
 
 
 /********** end Base64 **********/
+
 
 static enum MHD_Result
 is_websocket_request (struct MHD_Connection *con, const char *upg_header,
@@ -458,10 +465,10 @@ send_upgrade_required (struct MHD_Connection *con)
 
 
 static enum MHD_Result
-ws_get_accept_value (char *key, unsigned char **val)
+ws_get_accept_value (const char *key, char **val)
 {
   struct SHA1Context ctx;
-  unsigned char hash[SHA1HashSize];
+  char hash[SHA1HashSize];
   char *str;
   ssize_t len;
   if (NULL == key)
@@ -731,7 +738,7 @@ run_usock (void *cls)
 }
 
 
-static enum MHD_Result
+static void
 uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
        const char *extra_in, size_t extra_in_size, MHD_socket sock,
        struct MHD_UpgradeResponseHandle *urh)
@@ -743,6 +750,8 @@ uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
   (void) cls;
   (void) con;
   (void) con_cls;
+  (void) extra_in;
+  (void) extra_in_size;
   sock_overflow = MHD_YES;
   ws = malloc (sizeof (struct WsData));
   if (NULL == ws)
@@ -764,7 +773,7 @@ uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
   {
     free (ws);
     MHD_upgrade_action (urh, MHD_UPGRADE_ACTION_CLOSE);
-    return MHD_YES;
+    return;
   }
   pthread_mutex_unlock (&MUTEX);
   if (0 != pthread_create (&pt, NULL, &run_usock, ws))
@@ -773,7 +782,6 @@ uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
      a clean shutdown, as the we stop the daemon even if a worker thread
      is still running. Alas, this is a simple example... */
   pthread_detach (pt);
-  return MHD_YES;
 }
 
 
