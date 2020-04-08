@@ -52,7 +52,7 @@ testStartError ()
 }
 
 
-static int
+static enum MHD_Result
 apc_nothing (void *cls,
              const struct sockaddr *addr,
              socklen_t addrlen)
@@ -63,7 +63,7 @@ apc_nothing (void *cls,
 }
 
 
-static int
+static enum MHD_Result
 apc_all (void *cls,
          const struct sockaddr *addr,
          socklen_t addrlen)
@@ -74,7 +74,7 @@ apc_all (void *cls,
 }
 
 
-static int
+static enum MHD_Result
 ahc_nothing (void *cls,
              struct MHD_Connection *connection,
              const char *url,

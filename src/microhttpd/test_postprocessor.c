@@ -92,7 +92,7 @@ mismatch (const char *a, const char *b)
 }
 
 
-static int
+static enum MHD_Result
 value_checker (void *cls,
                enum MHD_ValueKind kind,
                const char *key,
@@ -140,10 +140,10 @@ value_checker (void *cls,
     fprintf (stderr,
              "Wanted: `%s' `%s' `%s' `%s' `%s'\n",
              want[idx],
-             want[idx+1],
-             want[idx+2],
-             want[idx+3],
-             want[idx+4]);
+             want[idx + 1],
+             want[idx + 2],
+             want[idx + 3],
+             want[idx + 4]);
     fprintf (stderr,
              "Unexpected result: %d/%d/%d/%d/%d/%d/%d\n",
              (idx < 0),
@@ -155,7 +155,7 @@ value_checker (void *cls,
              (0 != memcmp (data, &want[idx + 4][off], size)));
     return MHD_NO;
   }
-  if ( ( (NULL == want[idx+4]) &&
+  if ( ( (NULL == want[idx + 4]) &&
          (0 == off + size) ) ||
        (off + size == strlen (want[idx + 4])) )
     *want_off = idx + 5;

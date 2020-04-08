@@ -106,7 +106,7 @@ crcf (void *ptr)
 }
 
 
-static int
+static enum MHD_Result
 ahc_echo (void *cls,
           struct MHD_Connection *connection,
           const char *url,
@@ -118,7 +118,7 @@ ahc_echo (void *cls,
   const char *me = cls;
   struct MHD_Response *response;
   struct MHD_Response **responseptr;
-  int ret;
+  enum MHD_Result ret;
 
   (void) url;
   (void) version;                      /* Unused. Silent compiler warning. */

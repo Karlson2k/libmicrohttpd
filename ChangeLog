@@ -1,5 +1,10 @@
 Wed 08 Apr 2020 10:53:01 PM CEST
-    Introduce `enum MHD_Result` for #MHD_YES/#MHD_NO to avoid using 'int' so much. -CG
+    Introduce `enum MHD_Result` for #MHD_YES/#MHD_NO to avoid using 'int' so much.
+    Note that this change WILL cause compiler warnings until (most) MHD callbacks
+    in application code change their return type from 'int' to 'enum MHD_Result'.
+    That said, avoiding possible confusions of different enums is going to make
+    the code more robust in the future. For conditional compilation, test
+    for "MHD_VERSION >= 0x00097002". -CG
 
 Sat 07 Mar 2020 05:20:33 PM CET
     Fixed #6090 (misc. severe socket handling bugs on OS X). -CG

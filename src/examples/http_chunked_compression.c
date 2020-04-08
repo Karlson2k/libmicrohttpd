@@ -51,13 +51,13 @@ struct Holder
   void *buf;
 };
 
-static int
+static enum MHD_Result
 compress_buf (z_stream *strm, const void *src, size_t src_size, size_t *offset,
               void **dest, size_t *dest_size,
               void *tmp)
 {
   unsigned int have;
-  int ret;
+  enum MHD_Result ret;
   int flush;
   void *tmp_dest;
   *dest = NULL;
@@ -152,14 +152,14 @@ free_cb (void *cls)
 }
 
 
-static int
+static enum MHD_Result
 ahc_echo (void *cls, struct MHD_Connection *con, const char *url, const
           char *method, const char *version,
           const char *upload_data, size_t *upload_size, void **ptr)
 {
   struct Holder *holder;
   struct MHD_Response *res;
-  int ret;
+  enum MHD_Result ret;
   (void) cls;
   (void) url;
   (void) method;

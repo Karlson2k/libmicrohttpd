@@ -205,10 +205,10 @@ get_session (struct MHD_Connection *connection)
  * @param connection connection to process
  * @param MHD_YES on success, MHD_NO on failure
  */
-typedef int (*PageHandler)(const void *cls,
-                           const char *mime,
-                           struct Session *session,
-                           struct MHD_Connection *connection);
+typedef enum MHD_Result (*PageHandler)(const void *cls,
+                                       const char *mime,
+                                       struct Session *session,
+                                       struct MHD_Connection *connection);
 
 
 /**
@@ -274,13 +274,13 @@ add_session_cookie (struct Session *session,
  * @param session session handle
  * @param connection connection to use
  */
-static int
+static enum MHD_Result
 serve_simple_form (const void *cls,
                    const char *mime,
                    struct Session *session,
                    struct MHD_Connection *connection)
 {
-  int ret;
+  enum MHD_Result ret;
   const char *form = cls;
   struct MHD_Response *response;
 
@@ -310,13 +310,13 @@ serve_simple_form (const void *cls,
  * @param session session handle
  * @param connection connection to use
  */
-static int
+static enum MHD_Result
 fill_v1_form (const void *cls,
               const char *mime,
               struct Session *session,
               struct MHD_Connection *connection)
 {
-  int ret;
+  enum MHD_Result ret;
   size_t slen;
   char *reply;
   struct MHD_Response *response;
@@ -359,13 +359,13 @@ fill_v1_form (const void *cls,
  * @param session session handle
  * @param connection connection to use
  */
-static int
+static enum MHD_Result
 fill_v1_v2_form (const void *cls,
                  const char *mime,
                  struct Session *session,
                  struct MHD_Connection *connection)
 {
-  int ret;
+  enum MHD_Result ret;
   char *reply;
   struct MHD_Response *response;
   size_t slen;
@@ -410,13 +410,13 @@ fill_v1_v2_form (const void *cls,
  * @param session session handle
  * @param connection connection to use
  */
-static int
+static enum MHD_Result
 not_found_page (const void *cls,
                 const char *mime,
                 struct Session *session,
                 struct MHD_Connection *connection)
 {
-  int ret;
+  enum MHD_Result ret;
   struct MHD_Response *response;
   (void) cls;     /* Unused. Silent compiler warning. */
   (void) session; /* Unused. Silent compiler warning. */
@@ -469,7 +469,7 @@ static struct Page pages[] = {
  * @return MHD_YES to continue iterating,
  *         MHD_NO to abort the iteration
  */
-static int
+static enum MHD_Result
 post_iterator (void *cls,
                enum MHD_ValueKind kind,
                const char *key,
@@ -554,7 +554,7 @@ post_iterator (void *cls,
  *         MHS_NO if the socket must be closed due to a serios
  *         error while handling the request
  */
-static int
+static enum MHD_Result
 create_response (void *cls,
                  struct MHD_Connection *connection,
                  const char *url,
@@ -567,7 +567,7 @@ create_response (void *cls,
   struct MHD_Response *response;
   struct Request *request;
   struct Session *session;
-  int ret;
+  enum MHD_Result ret;
   unsigned int i;
   (void) cls;               /* Unused. Silent compiler warning. */
   (void) version;           /* Unused. Silent compiler warning. */

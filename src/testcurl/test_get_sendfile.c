@@ -75,7 +75,7 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
 }
 
 
-static int
+static enum MHD_Result
 ahc_echo (void *cls,
           struct MHD_Connection *connection,
           const char *url,
@@ -87,7 +87,7 @@ ahc_echo (void *cls,
   static int ptr;
   const char *me = cls;
   struct MHD_Response *response;
-  int ret;
+  enum MHD_Result ret;
   int fd;
   (void) url; (void) version;                      /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
@@ -490,7 +490,7 @@ testExternalGet ()
   if (cbc.pos != strlen (TESTSTR))
   {
     fprintf (stderr,
-             "Got %.*s instead of %S!\n",
+             "Got %.*s instead of %s!\n",
              (int) cbc.pos,
              cbc.buf,
              TESTSTR);

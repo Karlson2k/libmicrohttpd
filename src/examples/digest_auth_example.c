@@ -34,7 +34,7 @@
 
 #define MY_OPAQUE_STR "11733b200778ce33060f31c9af70a870ba96ddd4"
 
-static int
+static enum MHD_Result
 ahc_echo (void *cls,
           struct MHD_Connection *connection,
           const char *url,
@@ -46,7 +46,7 @@ ahc_echo (void *cls,
   char *username;
   const char *password = "testpass";
   const char *realm = "test@example.com";
-  int ret;
+  enum MHD_Result ret;
   (void) cls;               /* Unused. Silent compiler warning. */
   (void) url;               /* Unused. Silent compiler warning. */
   (void) method;            /* Unused. Silent compiler warning. */

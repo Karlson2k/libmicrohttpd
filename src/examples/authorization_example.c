@@ -39,7 +39,7 @@
   "<html><head><title>Access denied</title></head><body>Access denied</body></html>"
 
 
-static int
+static enum MHD_Result
 ahc_echo (void *cls,
           struct MHD_Connection *connection,
           const char *url,
@@ -50,7 +50,7 @@ ahc_echo (void *cls,
   static int aptr;
   const char *me = cls;
   struct MHD_Response *response;
-  int ret;
+  enum MHD_Result ret;
   char *user;
   char *pass;
   int fail;

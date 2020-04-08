@@ -867,7 +867,7 @@ upgrade_cb (void *cls,
  *         #MHD_NO if the socket must be closed due to a serios
  *         error while handling the request
  */
-static int
+static enum MHD_Result
 ahc_upgrade (void *cls,
              struct MHD_Connection *connection,
              const char *url,
@@ -878,7 +878,7 @@ ahc_upgrade (void *cls,
              void **con_cls)
 {
   struct MHD_Response *resp;
-  int ret;
+  enum MHD_Result ret;
   (void) cls;
   (void) url;
   (void) method;                        /* Unused. Silent compiler warning. */
