@@ -402,7 +402,7 @@ BASE64Encode (const void *in, size_t len, unsigned char **output)
 
 /********** end Base64 **********/
 
-static int
+static enum MHD_Result
 is_websocket_request (struct MHD_Connection *con, const char *upg_header,
                       const char *con_header)
 {
@@ -414,11 +414,11 @@ is_websocket_request (struct MHD_Connection *con, const char *upg_header,
 }
 
 
-static int
+static enum MHD_Result
 send_chat_page (struct MHD_Connection *con, uint16_t port)
 {
   struct MHD_Response *res;
-  int ret;
+  enum MHD_Result ret;
   res = MHD_create_response_from_buffer (strlen (CHAT_PAGE), (void *) CHAT_PAGE,
                                          MHD_RESPMEM_PERSISTENT);
   ret = MHD_queue_response (con, MHD_HTTP_OK, res);
@@ -427,11 +427,11 @@ send_chat_page (struct MHD_Connection *con, uint16_t port)
 }
 
 
-static int
+static enum MHD_Result
 send_bad_request (struct MHD_Connection *con)
 {
   struct MHD_Response *res;
-  int ret;
+  enum MHD_Result ret;
   res = MHD_create_response_from_buffer (strlen (BAD_REQUEST_PAGE),
                                          (void *) BAD_REQUEST_PAGE,
                                          MHD_RESPMEM_PERSISTENT);
@@ -441,11 +441,11 @@ send_bad_request (struct MHD_Connection *con)
 }
 
 
-static int
+static enum MHD_Result
 send_upgrade_required (struct MHD_Connection *con)
 {
   struct MHD_Response *res;
-  int ret;
+  enum MHD_Result ret;
   res = MHD_create_response_from_buffer (strlen (UPGRADE_REQUIRED_PAGE),
                                          (void *) UPGRADE_REQUIRED_PAGE,
                                          MHD_RESPMEM_PERSISTENT);
@@ -457,7 +457,7 @@ send_upgrade_required (struct MHD_Connection *con)
 }
 
 
-static int
+static enum MHD_Result
 ws_get_accept_value (char *key, unsigned char **val)
 {
   struct SHA1Context ctx;
@@ -731,7 +731,7 @@ run_usock (void *cls)
 }
 
 
-static int
+static enum MHD_Result
 uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
        const char *extra_in, size_t extra_in_size, MHD_socket sock,
        struct MHD_UpgradeResponseHandle *urh)
@@ -764,7 +764,7 @@ uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
   {
     free (ws);
     MHD_upgrade_action (urh, MHD_UPGRADE_ACTION_CLOSE);
-    return;
+    return MHD_YES;
   }
   pthread_mutex_unlock (&MUTEX);
   if (0 != pthread_create (&pt, NULL, &run_usock, ws))
@@ -773,10 +773,11 @@ uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
      a clean shutdown, as the we stop the daemon even if a worker thread
      is still running. Alas, this is a simple example... */
   pthread_detach (pt);
+  return MHD_YES;
 }
 
 
-static int
+static enum MHD_Result
 ahc_cb (void *cls, struct MHD_Connection *con, const char *url,
         const char *method, const char *version, const char *upload_data,
         size_t *upload_data_size, void **ptr)
@@ -788,7 +789,7 @@ ahc_cb (void *cls, struct MHD_Connection *con, const char *url,
   const char *ws_key_header;
   char ws_ac_header[60];
   char *ws_ac_value;
-  int ret;
+  enum MHD_Result ret;
   (void) url;
   (void) upload_data;
   (void) upload_data_size;
