@@ -343,74 +343,60 @@ SHA1Input (struct SHA1Context *context, const uint8_t *message_array,
 
 /********** begin Base64 **********/
 
-static const unsigned char BASE64_TABLE[65]
-  = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-static unsigned char *
-BASE64Encode (const unsigned char *src, size_t len, size_t *out_len)
+ssize_t
+BASE64Encode (const void *in, size_t len, unsigned char **output)
 {
-  const unsigned char *end;
-  const unsigned char *in;
-  unsigned char *out;
-  unsigned char *pos;
-  size_t olen;
-  int line_len;
-  olen = len * 4 / 3 + 4;
-  olen += olen / 72;
-  olen++;
-  if (olen < len)
+#define FILLCHAR '='
+  const unsigned char *cvt = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                             "abcdefghijklmnopqrstuvwxyz"
+                             "0123456789+/";
+  const unsigned char *data = in;
+  unsigned char *opt;
+  ssize_t ret;
+  ssize_t i;
+  char c;
+  ret = 0;
+  opt = malloc (2 + (len * 4 / 3) + 8);
+  if (NULL == opt)
   {
-    return NULL;
+    return -1;
   }
-  out = malloc (olen);
-  if (NULL == out)
+  for (i = 0; i < len; ++i)
   {
-    return NULL;
-  }
-  end = src + len;
-  in = src;
-  pos = out;
-  line_len = 0;
-  while (end - in >= 3)
-  {
-    *pos++ = BASE64_TABLE[in[0] >> 2];
-    *pos++ = BASE64_TABLE[((in[0] & 0x03) << 4) | (in[1] >> 4)];
-    *pos++ = BASE64_TABLE[((in[1] & 0x0f) << 2) | (in[2] >> 6)];
-    *pos++ = BASE64_TABLE[in[2] & 0x3f];
-    in += 3;
-    line_len += 4;
-    if (line_len >= 72)
+    c = (data[i] >> 2) & 0x3F;
+    opt[ret++] = cvt[(unsigned int) c];
+    c = (data[i] << 4) & 0x3F;
+    if (++i < len)
     {
-      *pos++ = '\n';
-      line_len = 0;
+      c |= (data[i] >> 4) & 0x0F;
     }
-  }
-  if (end - in)
-  {
-    *pos++ = BASE64_TABLE[in[0] >> 2];
-    if (end - in == 1)
+    opt[ret++] = cvt[(unsigned int) c];
+    if (i < len)
     {
-      *pos++ = BASE64_TABLE[(in[0] & 0x03) << 4];
-      *pos++ = '=';
+      c = (data[i] << 2) & 0x3F;
+      if (++i < len)
+      {
+        c |= (data[i] >> 6) & 0x03;
+      }
+      opt[ret++] = cvt[(unsigned int) c];
     }
     else
     {
-      *pos++ = BASE64_TABLE[((in[0] & 0x03) << 4) | (in[1] >> 4)];
-      *pos++ = BASE64_TABLE[(in[1] & 0x0f) << 2];
+      ++i;
+      opt[ret++] = FILLCHAR;
     }
-    *pos++ = '=';
-    line_len += 4;
+    if (i < len)
+    {
+      c = data[i] & 0x3F;
+      opt[ret++] = cvt[(unsigned int) c];
+    }
+    else
+    {
+      opt[ret++] = FILLCHAR;
+    }
   }
-  if (line_len)
-  {
-    *pos++ = '\n';
-  }
-  *pos = '\0';
-  if (out_len)
-  {
-    *out_len = pos - out;
-  }
-  return out;
+  *output = opt;
+  return ret;
 }
 
 
@@ -477,6 +463,7 @@ ws_get_accept_value (char *key, unsigned char **val)
   struct SHA1Context ctx;
   unsigned char hash[SHA1HashSize];
   char *str;
+  ssize_t len;
   if (NULL == key)
   {
     return MHD_NO;
@@ -492,12 +479,12 @@ ws_get_accept_value (char *key, unsigned char **val)
   SHA1Input (&ctx, (const uint8_t *) str, WS_KEY_GUID_LEN);
   SHA1Result (&ctx, hash);
   free (str);
-  *val = BASE64Encode (hash, SHA1HashSize, NULL);
-  if (NULL == *val)
+  len = BASE64Encode (hash, SHA1HashSize, val);
+  if (-1 == len)
   {
     return MHD_NO;
   }
-  *(*val + strlen ((const char *) *val) - 1) = '\0';
+  (*val)[len] = '\0';
   return MHD_YES;
 }
 
