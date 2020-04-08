@@ -176,7 +176,7 @@ struct MHD_PostProcessor
    * Value data left over from previous iteration.
    */
   char xbuf[2];
-  
+
   /**
    * Size of our buffer for the key.
    */
@@ -220,9 +220,9 @@ struct MHD_PostProcessor
   /**
    * Set if we still need to run the unescape logic
    * on the key allocated at the end of this struct.
-   */ 
+   */
   bool must_unescape_key;
-  
+
   /**
    * State of the parser.
    */
@@ -478,7 +478,8 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
             (pp->state == PP_Callback) ) &&
           (pp->state != PP_Error) )
   {
-    switch (pp->state) {
+    switch (pp->state)
+    {
     case PP_Error:
       /* clearly impossible as per while loop invariant */
       abort ();
@@ -520,7 +521,8 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
     case PP_ProcessValue:
       if (NULL == start_value)
         start_value = &post_data[poff];
-      switch (post_data[poff]) {
+      switch (post_data[poff])
+      {
       case '=':
         /* case 'key==' */
         pp->state = PP_Error;
@@ -529,8 +531,8 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
         /* case 'value&' */
         end_value = &post_data[poff];
         poff++;
-        if ( pp->must_ikvi ||
-             (start_value != end_value) )
+        if (pp->must_ikvi ||
+            (start_value != end_value) )
         {
           pp->state = PP_Callback;
         }
@@ -538,7 +540,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
         {
           pp->buffer_pos = 0;
           pp->value_offset = 0;
-          pp->state = PP_Init; 
+          pp->state = PP_Init;
         }
         continue;
       case '\n':
@@ -576,7 +578,8 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       }
       break; /* end PP_ProcessValue */
     case PP_Done:
-      switch (post_data[poff]) {
+      switch (post_data[poff])
+      {
       case '\n':
       case '\r':
         poff++;
@@ -632,9 +635,9 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
   }
 
   /* save remaining data for next iteration */
-  if (NULL != start_key) 
+  if (NULL != start_key)
   {
-    if (NULL == end_key) 
+    if (NULL == end_key)
       end_key = &post_data[poff];
     memcpy (&kbuf[pp->buffer_pos],
             start_key,
@@ -1366,7 +1369,7 @@ END:
  *         (out-of-memory, iterator aborted, parse error)
  * @ingroup request
  */
-int
+enum MHD_Result
 MHD_post_process (struct MHD_PostProcessor *pp,
                   const char *post_data,
                   size_t post_data_len)
@@ -1404,10 +1407,10 @@ MHD_post_process (struct MHD_PostProcessor *pp,
  *                value of this function
  * @ingroup request
  */
-int
+enum MHD_Result
 MHD_destroy_post_processor (struct MHD_PostProcessor *pp)
 {
-  int ret;
+  enum MHD_Result ret;
 
   if (NULL == pp)
     return MHD_YES;

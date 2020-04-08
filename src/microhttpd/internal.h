@@ -1910,7 +1910,7 @@ MHD_unescape_plus (char *arg);
  * @return #MHD_YES on success (continue to iterate)
  *         #MHD_NO to signal failure (and abort iteration)
  */
-typedef int
+typedef enum MHD_Result
 (*MHD_ArgumentIterator_)(struct MHD_Connection *connection,
                          const char *key,
                          size_t key_size,
@@ -1933,7 +1933,7 @@ typedef int
  *         #MHD_YES for success (parsing succeeded, @a cb always
  *                               returned #MHD_YES)
  */
-int
+enum MHD_Result
 MHD_parse_arguments_ (struct MHD_Connection *connection,
                       enum MHD_ValueKind kind,
                       char *args,

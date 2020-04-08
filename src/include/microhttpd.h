@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2006--2019 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2006--2020 Christian Grothoff (and other contributing authors)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -135,14 +135,22 @@ typedef intptr_t ssize_t;
 #define MHD_VERSION 0x00097001
 
 /**
- * MHD-internal return code for "YES".
+ * Operational results from MHD calls.
  */
-#define MHD_YES 1
+enum MHD_Result
+{
+  /**
+   * MHD result code for "NO".
+   */
+  MHD_NO = 0,
 
-/**
- * MHD-internal return code for "NO".
- */
-#define MHD_NO 0
+  /**
+   * MHD result code for "YES".
+   */
+  MHD_YES = 1
+
+};
+
 
 /**
  * MHD digest auth internal code for an invalid nonce.
@@ -2118,10 +2126,10 @@ typedef void
  * @param addrlen length of @a addr
  * @return #MHD_YES if connection is allowed, #MHD_NO if not
  */
-typedef int
-(*MHD_AcceptPolicyCallback) (void *cls,
-                             const struct sockaddr *addr,
-                             socklen_t addrlen);
+typedef enum MHD_Result
+(*MHD_AcceptPolicyCallback)(void *cls,
+                            const struct sockaddr *addr,
+                            socklen_t addrlen);
 
 
 /**
@@ -2163,15 +2171,15 @@ typedef int
  *         #MHD_NO if the socket must be closed due to a serios
  *         error while handling the request
  */
-typedef int
-(*MHD_AccessHandlerCallback) (void *cls,
-                              struct MHD_Connection *connection,
-                              const char *url,
-                              const char *method,
-                              const char *version,
-                              const char *upload_data,
-                              size_t *upload_data_size,
-                              void **con_cls);
+typedef enum MHD_Result
+(*MHD_AccessHandlerCallback)(void *cls,
+                             struct MHD_Connection *connection,
+                             const char *url,
+                             const char *method,
+                             const char *version,
+                             const char *upload_data,
+                             size_t *upload_data_size,
+                             void **con_cls);
 
 
 /**
@@ -2234,11 +2242,11 @@ typedef void
  *         #MHD_NO to abort the iteration
  * @ingroup request
  */
-typedef int
-(*MHD_KeyValueIterator) (void *cls,
-                         enum MHD_ValueKind kind,
-                         const char *key,
-                         const char *value);
+typedef enum MHD_Result
+(*MHD_KeyValueIterator)(void *cls,
+                        enum MHD_ValueKind kind,
+                        const char *key,
+                        const char *value);
 
 
 /**
@@ -2259,13 +2267,13 @@ typedef int
  *         #MHD_NO to abort the iteration
  * @ingroup request
  */
-typedef int
-(*MHD_KeyValueIteratorN) (void *cls,
-                          enum MHD_ValueKind kind,
-                          const char *key,
-                          size_t key_size,
-                          const char *value,
-                          size_t value_size);
+typedef enum MHD_Result
+(*MHD_KeyValueIteratorN)(void *cls,
+                         enum MHD_ValueKind kind,
+                         const char *key,
+                         size_t key_size,
+                         const char *value,
+                         size_t value_size);
 
 
 /**
@@ -2351,16 +2359,16 @@ typedef void
  * @return #MHD_YES to continue iterating,
  *         #MHD_NO to abort the iteration
  */
-typedef int
-(*MHD_PostDataIterator) (void *cls,
-                         enum MHD_ValueKind kind,
-                         const char *key,
-                         const char *filename,
-                         const char *content_type,
-                         const char *transfer_encoding,
-                         const char *data,
-                         uint64_t off,
-                         size_t size);
+typedef enum MHD_Result
+(*MHD_PostDataIterator)(void *cls,
+                        enum MHD_ValueKind kind,
+                        const char *key,
+                        const char *filename,
+                        const char *content_type,
+                        const char *transfer_encoding,
+                        const char *data,
+                        uint64_t off,
+                        size_t size);
 
 /* **************** Daemon handling functions ***************** */
 
@@ -2481,7 +2489,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon);
  *        set to indicate further details about the error.
  * @ingroup specialized
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_add_connection (struct MHD_Daemon *daemon,
                     MHD_socket client_socket,
                     const struct sockaddr *addr,
@@ -2517,7 +2525,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  *         fit fd_set.
  * @ingroup event
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_get_fdset (struct MHD_Daemon *daemon,
                fd_set *read_fd_set,
                fd_set *write_fd_set,
@@ -2557,7 +2565,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  *         fit fd_set.
  * @ingroup event
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_get_fdset2 (struct MHD_Daemon *daemon,
                 fd_set *read_fd_set,
                 fd_set *write_fd_set,
@@ -2613,7 +2621,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  *        necessitate the use of a timeout right now).
  * @ingroup event
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_get_timeout (struct MHD_Daemon *daemon,
                  MHD_UNSIGNED_LONG_LONG *timeout);
 
@@ -2638,7 +2646,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
  *         options for this call.
  * @ingroup event
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_run (struct MHD_Daemon *daemon);
 
 
@@ -2664,7 +2672,7 @@ MHD_run (struct MHD_Daemon *daemon);
  * @return #MHD_NO on serious errors, #MHD_YES on success
  * @ingroup event
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_run_from_select (struct MHD_Daemon *daemon,
                      const fd_set *read_fd_set,
                      const fd_set *write_fd_set,
@@ -2737,7 +2745,7 @@ MHD_get_connection_values_n (struct MHD_Connection *connection,
  *         #MHD_YES on success
  * @ingroup request
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_set_connection_value (struct MHD_Connection *connection,
                           enum MHD_ValueKind kind,
                           const char *key,
@@ -2769,7 +2777,7 @@ MHD_set_connection_value (struct MHD_Connection *connection,
  *         #MHD_YES on success
  * @ingroup request
  */
-int
+_MHD_EXTERN enum MHD_Result
 MHD_set_connection_value_n (struct MHD_Connection *connection,
                             enum MHD_ValueKind kind,
                             const char *key,
@@ -2846,7 +2854,7 @@ MHD_lookup_connection_value (struct MHD_Connection *connection,
  *         #MHD_NO otherwise.
  * @ingroup request
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_lookup_connection_value_n (struct MHD_Connection *connection,
                                enum MHD_ValueKind kind,
                                const char *key,
@@ -2866,7 +2874,7 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
  *         #MHD_YES on success or if message has been queued
  * @ingroup response
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_queue_response (struct MHD_Connection *connection,
                     unsigned int status_code,
                     struct MHD_Response *response);
@@ -2980,7 +2988,7 @@ enum MHD_ResponseOptions
  * @param ... #MHD_RO_END terminated list of options
  * @return #MHD_YES on success, #MHD_NO on error
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_set_response_options (struct MHD_Response *response,
                           enum MHD_ResponseFlags flags,
                           ...);
@@ -3239,7 +3247,7 @@ struct MHD_UpgradeResponseHandle;
  * @param ... arguments to the action (depends on the action)
  * @return #MHD_NO on error, #MHD_YES on success
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
                     enum MHD_UpgradeAction action,
                     ...);
@@ -3359,7 +3367,7 @@ MHD_destroy_response (struct MHD_Response *response);
  *         or out of memory
  * @ingroup response
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_add_response_header (struct MHD_Response *response,
                          const char *header,
                          const char *content);
@@ -3374,7 +3382,7 @@ MHD_add_response_header (struct MHD_Response *response,
  * @return #MHD_NO on error (i.e. invalid footer or content format).
  * @ingroup response
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_add_response_footer (struct MHD_Response *response,
                          const char *footer,
                          const char *content);
@@ -3389,7 +3397,7 @@ MHD_add_response_footer (struct MHD_Response *response,
  * @return #MHD_NO on error (no such header known)
  * @ingroup response
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_del_response_header (struct MHD_Response *response,
                          const char *header,
                          const char *content);
@@ -3470,7 +3478,7 @@ MHD_create_post_processor (struct MHD_Connection *connection,
  *         (out-of-memory, iterator aborted, parse error)
  * @ingroup request
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_post_process (struct MHD_PostProcessor *pp,
                   const char *post_data, size_t post_data_len);
 
@@ -3485,7 +3493,7 @@ MHD_post_process (struct MHD_PostProcessor *pp,
  *                value of this function
  * @ingroup request
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
 
 
@@ -3665,7 +3673,7 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
                                const char *realm,
                                const char *opaque,
@@ -3691,7 +3699,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
  * @ingroup authentication
  * @deprecated use MHD_queue_auth_fail_response2()
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_queue_auth_fail_response (struct MHD_Connection *connection,
                               const char *realm,
                               const char *opaque,
@@ -3777,7 +3785,7 @@ enum MHD_CONNECTION_OPTION
  * @return #MHD_YES on success, #MHD_NO if setting the option failed
  * @ingroup specialized
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_set_connection_option (struct MHD_Connection *connection,
                            enum MHD_CONNECTION_OPTION option,
                            ...);
@@ -4042,7 +4050,7 @@ enum MHD_FEATURE
  * feature is not supported or feature is unknown.
  * @ingroup specialized
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_is_feature_supported (enum MHD_FEATURE feature);
 
 

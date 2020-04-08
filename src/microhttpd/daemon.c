@@ -113,7 +113,7 @@ close_all_connections (struct MHD_Daemon *daemon);
  * @param may_block #MHD_YES if blocking, #MHD_NO if non-blocking
  * @return #MHD_NO on serious errors, #MHD_YES on success
  */
-static int
+static enum MHD_Result
 MHD_epoll (struct MHD_Daemon *daemon,
            int may_block);
 
@@ -361,7 +361,7 @@ MHD_ip_addr_compare (const void *a1,
  * @param key where to store the parsed address
  * @return #MHD_YES on success and #MHD_NO otherwise (e.g., invalid address type)
  */
-static int
+static enum MHD_Result
 MHD_ip_addr_to_key (const struct sockaddr *addr,
                     socklen_t addrlen,
                     struct MHD_IPCount *key)
@@ -412,7 +412,7 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
  * @return Return #MHD_YES if IP below limit, #MHD_NO if IP has surpassed limit.
  *   Also returns #MHD_NO if fails to allocate memory.
  */
-static int
+static enum MHD_Result
 MHD_ip_limit_add (struct MHD_Daemon *daemon,
                   const struct sockaddr *addr,
                   socklen_t addrlen)
@@ -420,7 +420,7 @@ MHD_ip_limit_add (struct MHD_Daemon *daemon,
   struct MHD_IPCount *key;
   void **nodep;
   void *node;
-  int result;
+  enum MHD_Result result;
 
   daemon = MHD_get_master (daemon);
   /* Ignore if no connection limit assigned */
@@ -723,7 +723,7 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
  *         fit fd_set.
  * @ingroup event
  */
-int
+enum MHD_Result
 MHD_get_fdset (struct MHD_Daemon *daemon,
                fd_set *read_fd_set,
                fd_set *write_fd_set,
@@ -976,7 +976,7 @@ urh_from_pollfd (struct MHD_UpgradeResponseHandle *urh,
  *         fit fd_set.
  * @ingroup event
  */
-static int
+static enum MHD_Result
 internal_get_fdset2 (struct MHD_Daemon *daemon,
                      fd_set *read_fd_set,
                      fd_set *write_fd_set,
@@ -987,7 +987,7 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
 {
   struct MHD_Connection *pos;
   struct MHD_Connection *posn;
-  int result = MHD_YES;
+  enum MHD_Result result = MHD_YES;
   MHD_socket ls;
 
   if (daemon->shutdown)
@@ -1125,7 +1125,7 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
  *         fit fd_set.
  * @ingroup event
  */
-int
+enum MHD_Result
 MHD_get_fdset2 (struct MHD_Daemon *daemon,
                 fd_set *read_fd_set,
                 fd_set *write_fd_set,
@@ -1191,13 +1191,13 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  *         #MHD_NO if a serious error was encountered and the
  *         connection is to be closed.
  */
-static int
+static enum MHD_Result
 call_handlers (struct MHD_Connection *con,
                bool read_ready,
                bool write_ready,
                bool force_close)
 {
-  int ret;
+  enum MHD_Result ret;
   bool states_info_processed = false;
   /* Fast track flag */
   bool on_fasttrack = (con->state == MHD_CONNECTION_INIT);
@@ -2369,7 +2369,7 @@ psk_gnutls_adapter (gnutls_session_t session,
  *        The socket will be closed in any case; 'errno' is
  *        set to indicate further details about the error.
  */
-static int
+static enum MHD_Result
 internal_add_connection (struct MHD_Daemon *daemon,
                          MHD_socket client_socket,
                          const struct sockaddr *addr,
@@ -2969,12 +2969,12 @@ MHD_resume_connection (struct MHD_Connection *connection)
  * @param daemon daemon context
  * @return #MHD_YES if a connection was actually resumed
  */
-static int
+static enum MHD_Result
 resume_suspended_connections (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
   struct MHD_Connection *prev = NULL;
-  int ret;
+  enum MHD_Result ret;
   const bool used_thr_p_c = (0 != (daemon->options
                                    & MHD_USE_THREAD_PER_CONNECTION));
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
@@ -3124,7 +3124,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
  *        set to indicate further details about the error.
  * @ingroup specialized
  */
-int
+enum MHD_Result
 MHD_add_connection (struct MHD_Daemon *daemon,
                     MHD_socket client_socket,
                     const struct sockaddr *addr,
@@ -3185,7 +3185,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  *         a return code of #MHD_NO only refers to the actual
  *         accept() system call.
  */
-static int
+static enum MHD_Result
 MHD_accept_connection (struct MHD_Daemon *daemon)
 {
 #if HAVE_INET6
@@ -3443,7 +3443,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
  *        necessitate the use of a timeout right now).
  * @ingroup event
  */
-int
+enum MHD_Result
 MHD_get_timeout (struct MHD_Daemon *daemon,
                  MHD_UNSIGNED_LONG_LONG *timeout)
 {
@@ -3533,7 +3533,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
  * @return #MHD_NO on serious errors, #MHD_YES on success
  * @ingroup event
  */
-static int
+static enum MHD_Result
 internal_run_from_select (struct MHD_Daemon *daemon,
                           const fd_set *read_fd_set,
                           const fd_set *write_fd_set,
@@ -3637,7 +3637,7 @@ internal_run_from_select (struct MHD_Daemon *daemon,
  * @return #MHD_NO on serious errors, #MHD_YES on success
  * @ingroup event
  */
-int
+enum MHD_Result
 MHD_run_from_select (struct MHD_Daemon *daemon,
                      const fd_set *read_fd_set,
                      const fd_set *write_fd_set,
@@ -3662,8 +3662,8 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
   if (0 != (daemon->options & MHD_USE_EPOLL))
   {
 #ifdef EPOLL_SUPPORT
-    int ret = MHD_epoll (daemon,
-                         MHD_NO);
+    enum MHD_Result ret = MHD_epoll (daemon,
+                                     MHD_NO);
 
     MHD_cleanup_connections (daemon);
     return ret;
@@ -3691,7 +3691,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
  * @param may_block #MHD_YES if blocking, #MHD_NO if non-blocking
  * @return #MHD_NO on serious errors, #MHD_YES on success
  */
-static int
+static enum MHD_Result
 MHD_select (struct MHD_Daemon *daemon,
             int may_block)
 {
@@ -3860,7 +3860,7 @@ MHD_select (struct MHD_Daemon *daemon,
  * @param may_block #MHD_YES if blocking, #MHD_NO if non-blocking
  * @return #MHD_NO on serious errors, #MHD_YES on success
  */
-static int
+static enum MHD_Result
 MHD_poll_all (struct MHD_Daemon *daemon,
               int may_block)
 {
@@ -4075,7 +4075,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
  * @param may_block #MHD_YES if blocking, #MHD_NO if non-blocking
  * @return #MHD_NO on serious errors, #MHD_YES on success
  */
-static int
+static enum MHD_Result
 MHD_poll_listen_socket (struct MHD_Daemon *daemon,
                         int may_block)
 {
@@ -4159,7 +4159,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
  * @param may_block #MHD_YES if blocking, #MHD_NO if non-blocking
  * @return #MHD_NO on serious errors, #MHD_YES on success
  */
-static int
+static enum MHD_Result
 MHD_poll (struct MHD_Daemon *daemon,
           int may_block)
 {
@@ -4238,7 +4238,7 @@ is_urh_ready (struct MHD_UpgradeResponseHandle *const urh)
  * @remark To be called only from thread that process
  * daemon's select()/poll()/etc.
  */
-static int
+static enum MHD_Result
 run_epoll_for_upgrade (struct MHD_Daemon *daemon)
 {
   struct epoll_event events[MAX_EVENTS];
@@ -4357,7 +4357,7 @@ static const char *const epoll_itc_marker = "itc_marker";
  * @param may_block #MHD_YES if blocking, #MHD_NO if non-blocking
  * @return #MHD_NO on serious errors, #MHD_YES on success
  */
-static int
+static enum MHD_Result
 MHD_epoll (struct MHD_Daemon *daemon,
            int may_block)
 {
@@ -4673,7 +4673,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
  *         options for this call.
  * @ingroup event
  */
-int
+enum MHD_Result
 MHD_run (struct MHD_Daemon *daemon)
 {
   if ( (daemon->shutdown) ||
@@ -4967,7 +4967,7 @@ typedef void
  * @param ap the options
  * @return #MHD_YES on success, #MHD_NO on error
  */
-static int
+static enum MHD_Result
 parse_options_va (struct MHD_Daemon *daemon,
                   const struct sockaddr **servaddr,
                   va_list ap);
@@ -4981,13 +4981,13 @@ parse_options_va (struct MHD_Daemon *daemon,
  * @param ... the options
  * @return #MHD_YES on success, #MHD_NO on error
  */
-static int
+static enum MHD_Result
 parse_options (struct MHD_Daemon *daemon,
                const struct sockaddr **servaddr,
                ...)
 {
   va_list ap;
-  int ret;
+  enum MHD_Result ret;
 
   va_start (ap, servaddr);
   ret = parse_options_va (daemon,
@@ -5006,7 +5006,7 @@ parse_options (struct MHD_Daemon *daemon,
  * @param ap the options
  * @return #MHD_YES on success, #MHD_NO on error
  */
-static int
+static enum MHD_Result
 parse_options_va (struct MHD_Daemon *daemon,
                   const struct sockaddr **servaddr,
                   va_list ap)
@@ -5016,7 +5016,7 @@ parse_options_va (struct MHD_Daemon *daemon,
   unsigned int i;
   unsigned int uv;
 #ifdef HTTPS_SUPPORT
-  int ret;
+  enum MHD_Result ret;
   const char *pstr;
 #if GNUTLS_VERSION_MAJOR >= 3
   gnutls_certificate_retrieve_function2 *pgcrf;
@@ -5614,7 +5614,7 @@ setup_epoll_fd (struct MHD_Daemon *daemon)
  * @param daemon daemon to initialize for epoll()
  * @return #MHD_YES on success, #MHD_NO on failure
  */
-static int
+static enum MHD_Result
 setup_epoll_to_listen (struct MHD_Daemon *daemon)
 {
   struct epoll_event event;
@@ -7093,7 +7093,7 @@ MHD_get_version (void)
  * feature is not supported or feature is unknown.
  * @ingroup specialized
  */
-_MHD_EXTERN int
+enum MHD_Result
 MHD_is_feature_supported (enum MHD_FEATURE feature)
 {
   switch (feature)

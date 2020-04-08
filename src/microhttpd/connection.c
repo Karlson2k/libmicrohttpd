@@ -388,7 +388,7 @@ MHD_get_connection_values_n (struct MHD_Connection *connection,
  *         #MHD_YES on success
  * @ingroup request
  */
-static int
+static enum MHD_Result
 MHD_set_connection_value_n_nocheck_ (struct MHD_Connection *connection,
                                      enum MHD_ValueKind kind,
                                      const char *key,
@@ -449,7 +449,7 @@ MHD_set_connection_value_n_nocheck_ (struct MHD_Connection *connection,
  *         #MHD_YES on success
  * @ingroup request
  */
-int
+enum MHD_Result
 MHD_set_connection_value_n (struct MHD_Connection *connection,
                             enum MHD_ValueKind kind,
                             const char *key,
@@ -496,7 +496,7 @@ MHD_set_connection_value_n (struct MHD_Connection *connection,
  *         #MHD_YES on success
  * @ingroup request
  */
-int
+enum MHD_Result
 MHD_set_connection_value (struct MHD_Connection *connection,
                           enum MHD_ValueKind kind,
                           const char *key,
@@ -562,7 +562,7 @@ MHD_lookup_connection_value (struct MHD_Connection *connection,
  *         #MHD_NO otherwise.
  * @ingroup request
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_lookup_connection_value_n (struct MHD_Connection *connection,
                                enum MHD_ValueKind kind,
                                const char *key,
@@ -679,9 +679,9 @@ MHD_lookup_header_token_ci (const struct MHD_Connection *connection,
  * message for this connection?
  *
  * @param connection connection to test
- * @return 0 if we don't need 100 CONTINUE, 1 if we do
+ * @return false if we don't need 100 CONTINUE, true if we do
  */
-static int
+static bool
 need_100_continue (struct MHD_Connection *connection)
 {
   const char *expect;
@@ -880,7 +880,7 @@ connection_close_error (struct MHD_Connection *connection,
  *  lock on the response will have been released already
  *  in this case).
  */
-static int
+static enum MHD_Result
 try_ready_normal_body (struct MHD_Connection *connection)
 {
   ssize_t ret;
@@ -951,7 +951,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
  * @param connection the connection
  * @return #MHD_NO if readying the response failed
  */
-static int
+static enum MHD_Result
 try_ready_chunked_body (struct MHD_Connection *connection)
 {
   ssize_t ret;
@@ -1082,7 +1082,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
  * @return #MHD_YES if (based on the request), a keepalive is
  *        legal
  */
-static int
+static enum MHD_Result
 keepalive_possible (struct MHD_Connection *connection)
 {
   if (MHD_CONN_MUST_CLOSE == connection->keepalive)
@@ -1248,7 +1248,7 @@ try_grow_read_buffer (struct MHD_Connection *connection,
  * @param connection the connection
  * @return #MHD_YES on success, #MHD_NO on failure (out of memory)
  */
-static int
+static enum MHD_Result
 build_header_response (struct MHD_Connection *connection)
 {
   struct MHD_Response *response = connection->response;
@@ -1627,7 +1627,7 @@ transmit_error_response (struct MHD_Connection *connection,
                          const char *message)
 {
   struct MHD_Response *response;
-  int iret;
+  enum MHD_Result iret;
 
   if (NULL == connection->version)
   {
@@ -1933,7 +1933,7 @@ get_next_header_line (struct MHD_Connection *connection,
  * @param value_size number of bytes in @a value
  * @return #MHD_NO on failure (out of memory), #MHD_YES for success
  */
-static int
+static enum MHD_Result
 connection_add_header (struct MHD_Connection *connection,
                        const char *key,
                        size_t key_size,
@@ -1968,7 +1968,7 @@ connection_add_header (struct MHD_Connection *connection,
  * @param connection connection to parse header of
  * @return #MHD_YES for success, #MHD_NO for failure (malformed, out of memory)
  */
-static int
+static enum MHD_Result
 parse_cookie_header (struct MHD_Connection *connection)
 {
   const char *hdr;
@@ -2094,7 +2094,7 @@ parse_cookie_header (struct MHD_Connection *connection)
  * @param line_len length of the first @a line
  * @return #MHD_YES if the line is ok, #MHD_NO if it is malformed
  */
-static int
+static enum MHD_Result
 parse_initial_message_line (struct MHD_Connection *connection,
                             char *line,
                             size_t line_len)
@@ -2485,7 +2485,7 @@ process_request_body (struct MHD_Connection *connection)
  * @param next_state the next state to transition to
  * @return #MHD_NO if we are not done, #MHD_YES if we are
  */
-static int
+static enum MHD_Result
 check_write_done (struct MHD_Connection *connection,
                   enum MHD_CONNECTION_STATE next_state)
 {
@@ -2514,7 +2514,7 @@ check_write_done (struct MHD_Connection *connection,
  * @param line line from the header to process
  * @return #MHD_YES on success, #MHD_NO on error (malformed @a line)
  */
-static int
+static enum MHD_Result
 process_header_line (struct MHD_Connection *connection,
                      char *line)
 {
@@ -2573,7 +2573,7 @@ process_header_line (struct MHD_Connection *connection,
  *        of the given kind
  * @return #MHD_YES if the line was processed successfully
  */
-static int
+static enum MHD_Result
 process_broken_line (struct MHD_Connection *connection,
                      char *line,
                      enum MHD_ValueKind kind)
@@ -2681,7 +2681,7 @@ parse_connection_headers (struct MHD_Connection *connection)
                                        NULL,
                                        NULL)) )
   {
-    int iret;
+    enum MHD_Result iret;
 
     /* die, http 1.1 request without host and we are pedantic */
     connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
@@ -3272,13 +3272,13 @@ cleanup_connection (struct MHD_Connection *connection)
  * @return #MHD_YES if we should continue to process the
  *         connection (not dead yet), #MHD_NO if it died
  */
-int
+enum MHD_Result
 MHD_connection_handle_idle (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
   char *line;
   size_t line_len;
-  int ret;
+  enum MHD_Result ret;
 
   connection->in_idle = true;
   while (! connection->suspended)
@@ -3763,7 +3763,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
  * @return #MHD_YES if we should continue to process the
  *         connection (not dead yet), #MHD_NO if it died
  */
-int
+enum MHD_Result
 MHD_connection_epoll_update_ (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
@@ -3888,7 +3888,7 @@ MHD_get_connection_info (struct MHD_Connection *connection,
  * @return #MHD_YES on success, #MHD_NO if setting the option failed
  * @ingroup specialized
  */
-int
+enum MHD_Result
 MHD_set_connection_option (struct MHD_Connection *connection,
                            enum MHD_CONNECTION_OPTION option,
                            ...)
@@ -3954,7 +3954,7 @@ MHD_set_connection_option (struct MHD_Connection *connection,
  *         #MHD_YES on success or if message has been queued
  * @ingroup response
  */
-int
+enum MHD_Result
 MHD_queue_response (struct MHD_Connection *connection,
                     unsigned int status_code,
                     struct MHD_Response *response)

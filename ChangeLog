@@ -1,3 +1,6 @@
+Wed 08 Apr 2020 10:53:01 PM CEST
+    Introduce `enum MHD_Result` for #MHD_YES/#MHD_NO to avoid using 'int' so much. -CG
+
 Sat 07 Mar 2020 05:20:33 PM CET
     Fixed #6090 (misc. severe socket handling bugs on OS X). -CG
 

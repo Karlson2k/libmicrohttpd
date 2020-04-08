@@ -521,7 +521,7 @@ lookup_sub_value (char *dest,
  * @param nc The nonce counter, zero to add the nonce to the array
  * @return #MHD_YES if successful, #MHD_NO if invalid (or we have no NC array)
  */
-static int
+static enum MHD_Result
 check_nonce_nc (struct MHD_Connection *connection,
                 const char *nonce,
                 uint64_t nc)
@@ -743,7 +743,7 @@ calculate_nonce (uint32_t nonce_time,
  * @return #MHD_YES if the key-value pair is in the headers,
  *         #MHD_NO if not
  */
-static int
+static enum MHD_Result
 test_header (struct MHD_Connection *connection,
              const char *key,
              size_t key_size,
@@ -790,14 +790,14 @@ test_header (struct MHD_Connection *connection,
  * @return #MHD_YES if the arguments match,
  *         #MHD_NO if not
  */
-static int
+static enum MHD_Result
 check_argument_match (struct MHD_Connection *connection,
                       const char *args)
 {
   struct MHD_HTTP_Header *pos;
   char *argb;
   unsigned int num_headers;
-  int ret;
+  enum MHD_Result ret;
 
   argb = strdup (args);
   if (NULL == argb)
@@ -1338,7 +1338,7 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
  */
-int
+enum MHD_Result
 MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
                                const char *realm,
                                const char *opaque,
@@ -1461,7 +1461,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
  */
-int
+enum MHD_Result
 MHD_queue_auth_fail_response (struct MHD_Connection *connection,
                               const char *realm,
                               const char *opaque,
