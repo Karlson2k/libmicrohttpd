@@ -1140,7 +1140,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
  * Uses #MHD_DIGEST_ALG_MD5 (for now, for backwards-compatibility).
  * Note that this MAY change to #MHD_DIGEST_ALG_AUTO in the future.
  * If you want to be sure you get MD5, use #MHD_digest_auth_check2
- * and specifiy MD5 explicitly.
+ * and specify MD5 explicitly.
  *
  * @param connection The MHD connection structure
  * @param realm The realm presented to the client
@@ -1278,7 +1278,7 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
 
   mhd_assert (NULL != digest);
   if (da.digest_size != digest_size)
-    MHD_PANIC (_ ("digest size missmatch")); /* API violation! */
+    MHD_PANIC (_ ("digest size mismatch")); /* API violation! */
   return digest_auth_check_all (connection,
                                 &da,
                                 realm,

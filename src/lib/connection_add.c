@@ -1044,7 +1044,7 @@ MHD_accept_connection_ (struct MHD_Daemon *daemon)
   {
     const int err = MHD_socket_get_error_ ();
 
-    /* This could be a common occurance with multiple worker threads */
+    /* This could be a common occurrence with multiple worker threads */
     if (MHD_SCKT_ERR_IS_ (err,
                           MHD_SCKT_EINVAL_))
       return MHD_SC_DAEMON_ALREADY_SHUTDOWN;   /* can happen during shutdown, let's hope this is the cause... */

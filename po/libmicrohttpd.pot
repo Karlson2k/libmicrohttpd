@@ -72,7 +72,7 @@ msgid "Authentication failed, arguments do not match.\n"
 msgstr ""
 
 #: src/microhttpd/digestauth.c:1281
-msgid "digest size missmatch"
+msgid "digest size mismatch"
 msgstr ""
 
 #: src/microhttpd/digestauth.c:1374

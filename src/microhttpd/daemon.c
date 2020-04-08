@@ -3223,7 +3223,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   {
     const int err = MHD_socket_get_error_ ();
 
-    /* This could be a common occurance with multiple worker threads */
+    /* This could be a common occurrence with multiple worker threads */
     if (MHD_SCKT_ERR_IS_ (err,
                           MHD_SCKT_EINVAL_))
       return MHD_NO;   /* can happen during shutdown */

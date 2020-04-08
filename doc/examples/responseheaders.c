@@ -43,7 +43,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
        (0 != fstat (fd, &sbuf)) )
   {
     const char *errorstr =
-      "<html><body>An internal server error has occured!\
+      "<html><body>An internal server error has occurred!\
                               </body></html>";
     /* error accessing file */
     if (fd != -1)

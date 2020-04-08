@@ -835,7 +835,7 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
 
 
 /**
- * A serious error occured, close the
+ * A serious error occurred, close the
  * connection (and notify the application).
  *
  * @param connection connection to close with error

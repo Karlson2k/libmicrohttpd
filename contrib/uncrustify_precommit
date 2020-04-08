@@ -30,6 +30,6 @@ if [ $RET = 1 ];
 then
   echo "Run"
   echo "uncrustify --no-backup -c uncrustify.cfg ${crustified}"
-  echo "before commiting."
+  echo "before committing."
 fi
 exit $RET

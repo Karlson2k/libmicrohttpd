@@ -32,6 +32,7 @@
 /https_echo_client_example.c
 /authorization_example
 upgrade_example
+websocket_threaded_example
 /timeout
 http_chunked_compression
 http_compression

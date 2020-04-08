@@ -86,11 +86,11 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
 #endif
     break;
   case EFAULT:
-    /* wopsie, should at leats log this, FIXME: maybe die */
+    /* wopsie, should at least log this, FIXME: maybe die */
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
               _ (
-                "The addresss pointed to by optval is not a valid part of the process address space: %s\n"),
+                "The address pointed to by optval is not a valid part of the process address space: %s\n"),
               MHD_socket_last_strerr_ ());
 #endif
     break;
@@ -173,11 +173,11 @@ post_cork_setsockopt (struct MHD_Connection *connection,
 #endif
     break;
   case EFAULT:
-    /* wopsie, should at leats log this, FIXME: maybe die */
+    /* wopsie, should at least log this, FIXME: maybe die */
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
               _ (
-                "The addresss pointed to by optval is not a valid part of the process address space: %s\n"),
+                "The address pointed to by optval is not a valid part of the process address space: %s\n"),
               MHD_socket_last_strerr_ ());
 #endif
     break;

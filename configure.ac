@@ -243,7 +243,7 @@ AX_CHECK_COMPILE_FLAG([[-Werror=attributes]],
    CFLAGS="$save_CFLAGS"
   ],
                       [[errattr_CFLAGS=""]], [], [])
-AC_MSG_CHECKING([[for function inline keywords suppoted by $CC]])
+AC_MSG_CHECKING([[for function inline keywords supported by $CC]])
 save_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS $errattr_CFLAGS"
 inln_prfx="none"
@@ -319,7 +319,7 @@ AS_CASE(["$host_os"],
      AC_MSG_RESULT([[$mhd_host_os]])],
  [*solaris*],
  [AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
-     AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno doesnt work])
+     AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno does not work])
      mhd_host_os='Solaris'
      AC_MSG_RESULT([[$mhd_host_os]])
      AC_SEARCH_LIBS(gethostbyname, nsl)
@@ -525,7 +525,7 @@ AC_INCLUDES_DEFAULT
         )
     ])
 
-  # Try to find how to set thread name for started thread - less convinent
+  # Try to find how to set thread name for started thread - less convenient
   # than setting name by attributes.
   # If pthread_setname_np(3) is not declared, it's not possible to detect
   # form of pthread_setname_np(3) due to C "feature" "implicit declaration".
@@ -1095,7 +1095,7 @@ AC_INCLUDES_DEFAULT
   ])
 ])
 
-AS_IF([[test -z "$use_itc"]], [AC_MSG_ERROR([[cannot find useable type of inter-thread communication]])])
+AS_IF([[test -z "$use_itc"]], [AC_MSG_ERROR([[cannot find usable type of inter-thread communication]])])
 
 
 AC_CHECK_FUNCS_ONCE([accept4 gmtime_r memmem snprintf])

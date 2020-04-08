@@ -30,7 +30,7 @@
 /**
  * Stop all worker threads from the worker pool.
  *
- * @param daemon master daemon controling the workers
+ * @param daemon master daemon controlling the workers
  */
 static void
 stop_workers (struct MHD_Daemon *daemon)
