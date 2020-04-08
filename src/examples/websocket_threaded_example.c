@@ -34,7 +34,7 @@
   "<title>WebSocket chat</title>\n"                                           \
   "<script>\n"                                                                \
   "document.addEventListener('DOMContentLoaded', function() {\n"              \
-  "  const ws = new WebSocket('ws://localhost:%d');\n"                        \
+  "  const ws = new WebSocket('ws://' + window.location.host);\n"             \
   "  const btn = document.getElementById('send');\n"                          \
   "  const msg = document.getElementById('msg');\n"                           \
   "  const log = document.getElementById('log');\n"                           \
@@ -54,6 +54,7 @@
   "  msg.onkeyup = function(ev) {\n"                                          \
   "    if (ev.keyCode === 13) {\n"                                            \
   "      ev.preventDefault();\n"                                              \
+  "      ev.stopPropagation();\n"                                             \
   "      btn.click();\n"                                                      \
   "      msg.value = '';\n"                                                   \
   "    }\n"                                                                   \
@@ -91,7 +92,7 @@
 #define WS_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 #define WS_GUID_LEN 36
 #define WS_KEY_LEN 24
-#define WS_KEY_GUI_LEN ((WS_KEY_LEN) + (WS_GUID_LEN))
+#define WS_KEY_GUID_LEN ((WS_KEY_LEN) + (WS_GUID_LEN))
 #define WS_FIN 128
 #define WS_OPCODE_TEXT_FRAME 1
 #define WS_OPCODE_CON_CLOSE_FRAME 8
@@ -431,12 +432,9 @@ static int
 send_chat_page (struct MHD_Connection *con, uint16_t port)
 {
   struct MHD_Response *res;
-  char page[1024];
-  size_t page_len;
   int ret;
-  page_len = sprintf (page, CHAT_PAGE, port);
-  res = MHD_create_response_from_buffer (page_len, (void *) page,
-                                         MHD_RESPMEM_MUST_COPY);
+  res = MHD_create_response_from_buffer (strlen (CHAT_PAGE), (void *) CHAT_PAGE,
+                                         MHD_RESPMEM_PERSISTENT);
   ret = MHD_queue_response (con, MHD_HTTP_OK, res);
   MHD_destroy_response (res);
   return ret;
@@ -491,7 +489,7 @@ ws_get_accept_value (char *key, unsigned char **val)
   strcpy (str, key);
   strcat (str, WS_GUID);
   SHA1Reset (&ctx);
-  SHA1Input (&ctx, (const uint8_t *) str, WS_KEY_GUI_LEN);
+  SHA1Input (&ctx, (const uint8_t *) str, WS_KEY_GUID_LEN);
   SHA1Result (&ctx, hash);
   free (str);
   *val = BASE64Encode (hash, SHA1HashSize, NULL);
