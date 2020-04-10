@@ -735,20 +735,20 @@ run_usock (void *cls)
       if (type == WS_OPCODE_CON_CLOSE_FRAME)
       {
         free (msg);
-        pthread_mutex_lock (&MUTEX);
-        for (i = 0; i < MAX_CLIENTS; i++)
-        {
-          if (CLIENT_SOCKS[i] == ws->sock)
-          {
-            CLIENT_SOCKS[i] = -1;
-            break;
-          }
-        }
-        pthread_mutex_unlock (&MUTEX);
         break;
       }
     }
   }
+  pthread_mutex_lock (&MUTEX);
+  for (i = 0; i < MAX_CLIENTS; i++)
+  {
+    if (CLIENT_SOCKS[i] == ws->sock)
+    {
+      CLIENT_SOCKS[i] = -1;
+      break;
+    }
+  }
+  pthread_mutex_unlock (&MUTEX);
   free (ws);
   MHD_upgrade_action (urh, MHD_UPGRADE_ACTION_CLOSE);
   return NULL;
@@ -771,14 +771,13 @@ uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
   (void) extra_in;       /* Unused. Silent compiler warning. */
   (void) extra_in_size;  /* Unused. Silent compiler warning. */
 
-  sock_overflow = MHD_YES;
   ws = malloc (sizeof (struct WsData));
   if (NULL == ws)
     abort ();
   memset (ws, 0, sizeof (struct WsData));
   ws->sock = sock;
   ws->urh = urh;
-
+  sock_overflow = MHD_YES;
   pthread_mutex_lock (&MUTEX);
   for (i = 0; i < MAX_CLIENTS; i++)
   {
@@ -789,13 +788,13 @@ uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
       break;
     }
   }
+  pthread_mutex_unlock (&MUTEX);
   if (sock_overflow)
   {
     free (ws);
     MHD_upgrade_action (urh, MHD_UPGRADE_ACTION_CLOSE);
     return;
   }
-  pthread_mutex_unlock (&MUTEX);
   if (0 != pthread_create (&pt, NULL, &run_usock, ws))
     abort ();
   /* Note that by detaching like this we make it impossible to ensure
