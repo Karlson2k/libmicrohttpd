@@ -40,6 +40,7 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   enum MHD_Result ret;
 
+  (void) cls;               /* Unused. Silent compiler warning. */
   (void) url;               /* Unused. Silent compiler warning. */
   (void) version;           /* Unused. Silent compiler warning. */
   (void) upload_data;       /* Unused. Silent compiler warning. */

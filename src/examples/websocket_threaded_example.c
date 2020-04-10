@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2020 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2020 Christian Grothoff, Silvio Clecio (and other
+     contributing authors)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -14,8 +15,7 @@
 
      You should have received a copy of the GNU Lesser General Public
      License along with this library; if not, write to the Free Software
-     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
-   USA
+     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 /**
@@ -133,7 +133,7 @@ struct SHA1Context
   uint32_t length_low;
   uint32_t length_high;
   int_least16_t message_block_index;
-  uint8_t message_block[64];
+  char message_block[64];
   int computed;
   int corrupted;
 };
@@ -146,6 +146,7 @@ SHA1ProcessMessageBlock (struct SHA1Context *context)
   uint32_t temp;
   uint32_t W[80];
   uint32_t A, B, C, D, E;
+
   for (i = 0; i < 16; i++)
   {
     W[i] = context->message_block[i * 4] << 24;
@@ -268,9 +269,10 @@ SHA1Reset (struct SHA1Context *context)
 
 
 static enum SHA1_RESULT
-SHA1Result (struct SHA1Context *context, uint8_t Message_Digest[SHA1HashSize])
+SHA1Result (struct SHA1Context *context, char Message_Digest[SHA1HashSize])
 {
   int i;
+
   if (! context || ! Message_Digest)
   {
     return SHA1_RESULT_NULL;
@@ -300,7 +302,7 @@ SHA1Result (struct SHA1Context *context, uint8_t Message_Digest[SHA1HashSize])
 
 
 static enum SHA1_RESULT
-SHA1Input (struct SHA1Context *context, const uint8_t *message_array,
+SHA1Input (struct SHA1Context *context, const char *message_array,
            unsigned length)
 {
   if (! length)
@@ -359,9 +361,10 @@ BASE64Encode (const void *in, size_t len, char **output)
   const char *data = in;
   char *opt;
   ssize_t ret;
-  ssize_t i;
+  size_t i;
   char c;
   ret = 0;
+
   opt = malloc (2 + (len * 4 / 3) + 8);
   if (NULL == opt)
   {
@@ -413,6 +416,9 @@ static enum MHD_Result
 is_websocket_request (struct MHD_Connection *con, const char *upg_header,
                       const char *con_header)
 {
+
+  (void) con;  /* Unused. Silent compiler warning. */
+
   return (upg_header != NULL) && (con_header != NULL)
          && (0 == strcmp (upg_header, WS_UPGRADE_VALUE))
          && (NULL != strstr (con_header, "Upgrade"))
@@ -422,10 +428,11 @@ is_websocket_request (struct MHD_Connection *con, const char *upg_header,
 
 
 static enum MHD_Result
-send_chat_page (struct MHD_Connection *con, uint16_t port)
+send_chat_page (struct MHD_Connection *con)
 {
   struct MHD_Response *res;
   enum MHD_Result ret;
+
   res = MHD_create_response_from_buffer (strlen (CHAT_PAGE), (void *) CHAT_PAGE,
                                          MHD_RESPMEM_PERSISTENT);
   ret = MHD_queue_response (con, MHD_HTTP_OK, res);
@@ -439,6 +446,7 @@ send_bad_request (struct MHD_Connection *con)
 {
   struct MHD_Response *res;
   enum MHD_Result ret;
+
   res = MHD_create_response_from_buffer (strlen (BAD_REQUEST_PAGE),
                                          (void *) BAD_REQUEST_PAGE,
                                          MHD_RESPMEM_PERSISTENT);
@@ -453,6 +461,7 @@ send_upgrade_required (struct MHD_Connection *con)
 {
   struct MHD_Response *res;
   enum MHD_Result ret;
+
   res = MHD_create_response_from_buffer (strlen (UPGRADE_REQUIRED_PAGE),
                                          (void *) UPGRADE_REQUIRED_PAGE,
                                          MHD_RESPMEM_PERSISTENT);
@@ -471,6 +480,7 @@ ws_get_accept_value (const char *key, char **val)
   char hash[SHA1HashSize];
   char *str;
   ssize_t len;
+
   if (NULL == key)
   {
     return MHD_NO;
@@ -483,7 +493,7 @@ ws_get_accept_value (const char *key, char **val)
   strcpy (str, key);
   strcat (str, WS_GUID);
   SHA1Reset (&ctx);
-  SHA1Input (&ctx, (const uint8_t *) str, WS_KEY_GUID_LEN);
+  SHA1Input (&ctx, (const char *) str, WS_KEY_GUID_LEN);
   SHA1Result (&ctx, hash);
   free (str);
   len = BASE64Encode (hash, SHA1HashSize, val);
@@ -501,6 +511,7 @@ make_blocking (MHD_socket fd)
 {
 #if defined(MHD_POSIX_SOCKETS)
   int flags;
+
   flags = fcntl (fd, F_GETFL);
   if (-1 == flags)
     return;
@@ -509,6 +520,7 @@ make_blocking (MHD_socket fd)
       abort ();
 #elif defined(MHD_WINSOCK_SOCKETS)
   unsigned long flags = 1;
+
   ioctlsocket (fd, FIONBIO, &flags);
 #endif /* MHD_WINSOCK_SOCKETS */
 }
@@ -519,6 +531,7 @@ send_all (MHD_socket sock, const char *buf, size_t len)
 {
   ssize_t ret;
   size_t off;
+
   for (off = 0; off < len; off += ret)
   {
     ret = send (sock, &buf[off], len - off, 0);
@@ -543,13 +556,14 @@ send_all (MHD_socket sock, const char *buf, size_t len)
 static int
 ws_send_frame (int sock, const char *msg, size_t length)
 {
-  unsigned char *response;
-  unsigned char frame[10];
-  uint8_t idx_first_rdata;
+  char *response;
+  char frame[10];
+  unsigned char idx_first_rdata;
   int idx_response;
   int output;
   int isock;
-  int i;
+  size_t i;
+
   frame[0] = (WS_FIN | WS_OPCODE_TEXT_FRAME);
   if (length <= 125)
   {
@@ -566,14 +580,14 @@ ws_send_frame (int sock, const char *msg, size_t length)
   else
   {
     frame[1] = 127;
-    frame[2] = (unsigned char) ((length >> 56) & 0xFF);
-    frame[3] = (unsigned char) ((length >> 48) & 0xFF);
-    frame[4] = (unsigned char) ((length >> 40) & 0xFF);
-    frame[5] = (unsigned char) ((length >> 32) & 0xFF);
-    frame[6] = (unsigned char) ((length >> 24) & 0xFF);
-    frame[7] = (unsigned char) ((length >> 16) & 0xFF);
-    frame[8] = (unsigned char) ((length >> 8) & 0xFF);
-    frame[9] = (unsigned char) (length & 0xFF);
+    frame[2] = (char) ((length >> 56) & 0xFF);
+    frame[3] = (char) ((length >> 48) & 0xFF);
+    frame[4] = (char) ((length >> 40) & 0xFF);
+    frame[5] = (char) ((length >> 32) & 0xFF);
+    frame[6] = (char) ((length >> 24) & 0xFF);
+    frame[7] = (char) ((length >> 16) & 0xFF);
+    frame[8] = (char) ((length >> 8) & 0xFF);
+    frame[9] = (char) (length & 0xFF);
     idx_first_rdata = 10;
   }
   idx_response = 0;
@@ -613,14 +627,15 @@ static unsigned char *
 ws_receive_frame (unsigned char *frame, ssize_t *length, int *type)
 {
   unsigned char *msg;
-  uint8_t masks[4];
-  uint8_t mask;
-  uint8_t flength;
-  uint8_t idx_first_mask;
-  uint8_t idx_first_data;
+  char masks[4];
+  char mask;
+  char flength;
+  char idx_first_mask;
+  char idx_first_data;
   ssize_t data_length;
   int i;
   int j;
+
   msg = NULL;
   if (frame[0] == (WS_FIN | WS_OPCODE_TEXT_FRAME))
   {
@@ -670,15 +685,16 @@ run_usock (void *cls)
 {
   struct WsData *ws = cls;
   struct MHD_UpgradeResponseHandle *urh = ws->urh;
+  unsigned char buf[2048];
   unsigned char *msg;
-  unsigned char *text;
-  unsigned char client[20];
-  char buf[2048];
+  char client[20];
+  char *text;
   ssize_t got;
   size_t size;
   int type;
   int sent;
   int i;
+
   make_blocking (ws->sock);
   while (1)
   {
@@ -747,11 +763,13 @@ uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
   pthread_t pt;
   int sock_overflow;
   int i;
-  (void) cls;
-  (void) con;
-  (void) con_cls;
-  (void) extra_in;
-  (void) extra_in_size;
+
+  (void) cls;            /* Unused. Silent compiler warning. */
+  (void) con;            /* Unused. Silent compiler warning. */
+  (void) con_cls;        /* Unused. Silent compiler warning. */
+  (void) extra_in;       /* Unused. Silent compiler warning. */
+  (void) extra_in_size;  /* Unused. Silent compiler warning. */
+
   sock_overflow = MHD_YES;
   ws = malloc (sizeof (struct WsData));
   if (NULL == ws)
@@ -759,6 +777,7 @@ uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
   memset (ws, 0, sizeof (struct WsData));
   ws->sock = sock;
   ws->urh = urh;
+
   pthread_mutex_lock (&MUTEX);
   for (i = 0; i < MAX_CLIENTS; i++)
   {
@@ -795,12 +814,14 @@ ahc_cb (void *cls, struct MHD_Connection *con, const char *url,
   const char *con_header;
   const char *ws_version_header;
   const char *ws_key_header;
-  char ws_ac_header[60];
   char *ws_ac_value;
   enum MHD_Result ret;
-  (void) url;
-  (void) upload_data;
-  (void) upload_data_size;
+
+  (void) cls;               /* Unused. Silent compiler warning. */
+  (void) url;               /* Unused. Silent compiler warning. */
+  (void) upload_data;       /* Unused. Silent compiler warning. */
+  (void) upload_data_size;  /* Unused. Silent compiler warning. */
+
   if (NULL == *ptr)
   {
     *ptr = (void *) 1;
@@ -813,7 +834,7 @@ ahc_cb (void *cls, struct MHD_Connection *con, const char *url,
                                             MHD_HTTP_HEADER_CONNECTION);
   if (MHD_NO == is_websocket_request (con, upg_header, con_header))
   {
-    return send_chat_page (con, *(uint16_t *) cls);
+    return send_chat_page (con);
   }
   if ((0 != strcmp (method, MHD_HTTP_METHOD_GET))
       || (0 != strcmp (version, MHD_HTTP_VERSION_1_1)))
@@ -854,6 +875,7 @@ main (int argc, char *const *argv)
 {
   struct MHD_Daemon *d;
   uint16_t port;
+
   if (argc != 2)
   {
     printf ("%s PORT\n", argv[0]);
