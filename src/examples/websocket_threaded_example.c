@@ -133,7 +133,7 @@ struct SHA1Context
   uint32_t length_low;
   uint32_t length_high;
   int_least16_t message_block_index;
-  char message_block[64];
+  unsigned char message_block[64];
   int computed;
   int corrupted;
 };
@@ -269,7 +269,8 @@ SHA1Reset (struct SHA1Context *context)
 
 
 static enum SHA1_RESULT
-SHA1Result (struct SHA1Context *context, char Message_Digest[SHA1HashSize])
+SHA1Result (struct SHA1Context *context, unsigned char
+            Message_Digest[SHA1HashSize])
 {
   int i;
 
@@ -302,7 +303,7 @@ SHA1Result (struct SHA1Context *context, char Message_Digest[SHA1HashSize])
 
 
 static enum SHA1_RESULT
-SHA1Input (struct SHA1Context *context, const char *message_array,
+SHA1Input (struct SHA1Context *context, const unsigned char *message_array,
            unsigned length)
 {
   if (! length)
@@ -477,7 +478,7 @@ static enum MHD_Result
 ws_get_accept_value (const char *key, char **val)
 {
   struct SHA1Context ctx;
-  char hash[SHA1HashSize];
+  unsigned char hash[SHA1HashSize];
   char *str;
   ssize_t len;
 
@@ -493,7 +494,7 @@ ws_get_accept_value (const char *key, char **val)
   strcpy (str, key);
   strcat (str, WS_GUID);
   SHA1Reset (&ctx);
-  SHA1Input (&ctx, (const char *) str, WS_KEY_GUID_LEN);
+  SHA1Input (&ctx, (const unsigned char *) str, WS_KEY_GUID_LEN);
   SHA1Result (&ctx, hash);
   free (str);
   len = BASE64Encode (hash, SHA1HashSize, val);
@@ -527,7 +528,7 @@ make_blocking (MHD_socket fd)
 
 
 static size_t
-send_all (MHD_socket sock, const char *buf, size_t len)
+send_all (MHD_socket sock, const unsigned char *buf, size_t len)
 {
   ssize_t ret;
   size_t off;
@@ -556,8 +557,8 @@ send_all (MHD_socket sock, const char *buf, size_t len)
 static int
 ws_send_frame (int sock, const char *msg, size_t length)
 {
-  char *response;
-  char frame[10];
+  unsigned char *response;
+  unsigned char frame[10];
   unsigned char idx_first_rdata;
   int idx_response;
   int output;
@@ -580,14 +581,14 @@ ws_send_frame (int sock, const char *msg, size_t length)
   else
   {
     frame[1] = 127;
-    frame[2] = (char) ((length >> 56) & 0xFF);
-    frame[3] = (char) ((length >> 48) & 0xFF);
-    frame[4] = (char) ((length >> 40) & 0xFF);
-    frame[5] = (char) ((length >> 32) & 0xFF);
-    frame[6] = (char) ((length >> 24) & 0xFF);
-    frame[7] = (char) ((length >> 16) & 0xFF);
-    frame[8] = (char) ((length >> 8) & 0xFF);
-    frame[9] = (char) (length & 0xFF);
+    frame[2] = (unsigned char) ((length >> 56) & 0xFF);
+    frame[3] = (unsigned char) ((length >> 48) & 0xFF);
+    frame[4] = (unsigned char) ((length >> 40) & 0xFF);
+    frame[5] = (unsigned char) ((length >> 32) & 0xFF);
+    frame[6] = (unsigned char) ((length >> 24) & 0xFF);
+    frame[7] = (unsigned char) ((length >> 16) & 0xFF);
+    frame[8] = (unsigned char) ((length >> 8) & 0xFF);
+    frame[9] = (unsigned char) (length & 0xFF);
     idx_first_rdata = 10;
   }
   idx_response = 0;
@@ -626,12 +627,12 @@ ws_send_frame (int sock, const char *msg, size_t length)
 static unsigned char *
 ws_receive_frame (unsigned char *frame, ssize_t *length, int *type)
 {
+  unsigned char masks[4];
+  unsigned char mask;
   unsigned char *msg;
-  char masks[4];
-  char mask;
-  char flength;
-  char idx_first_mask;
-  char idx_first_data;
+  unsigned char flength;
+  unsigned char idx_first_mask;
+  unsigned char idx_first_data;
   ssize_t data_length;
   int i;
   int j;
