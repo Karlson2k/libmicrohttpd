@@ -50,6 +50,10 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
 {
 #if HAVE_MSG_MORE
   /* We use the MSG_MORE option for corking, no need for extra syscalls! */
+
+  (void) connection; /* Mute compiler warning. */
+  (void) want_cork;  /* Mute compiler warning. */
+
 #elif defined(MHD_TCP_CORK_NOPUSH)
   int ret;
 
@@ -135,6 +139,10 @@ post_cork_setsockopt (struct MHD_Connection *connection,
 {
 #if HAVE_MSG_MORE
   /* We use the MSG_MORE option for corking, no need for extra syscalls! */
+
+  (void) connection; /* Mute compiler warning. */
+  (void) want_cork;  /* Mute compiler warning. */
+
 #elif defined(MHD_TCP_CORK_NOPUSH)
   int ret;
 
