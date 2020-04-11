@@ -391,7 +391,7 @@ process_value (struct MHD_PostProcessor *pp,
   pp->xbuf_pos = 0;
   if (NULL != last_escape)
   {
-    if (value_end - last_escape < sizeof (pp->xbuf))
+    if (((size_t) (value_end - last_escape)) < sizeof (pp->xbuf))
     {
       pp->xbuf_pos = value_end - last_escape;
       memcpy (pp->xbuf,

@@ -357,7 +357,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     else if (buffer_size > (size_t) ret)
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
-    if (ret == buffer_size)
+    if (buffer_size == (size_t) ret)
       post_cork_setsockopt (connection, want_cork);
   }
 
@@ -398,7 +398,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                                    header,
                                    header_size,
                                    MHD_SSO_HDR_CORK);
-    if ( (ret == header_size) &&
+    if ( (header_size == (size_t) ret) &&
          (0 == buffer_size) &&
          connection->sk_cork_on)
     {
@@ -443,7 +443,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 
   /* Only if we succeeded sending the full buffer, we need to make sure that
      the OS flushes at the end */
-  if (ret == header_size + buffer_size)
+  if (header_size + buffer_size == (size_t) ret)
     post_cork_setsockopt (connection, false);
 
   return ret;
@@ -665,7 +665,7 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
 
   /* Make sure we send the data without delay ONLY if we
      provided the complete response (not on partial write) */
-  if (ret == left)
+  if (left == (uint64_t) ret)
     post_cork_setsockopt (connection, false);
 
   return ret;
