@@ -35,7 +35,7 @@ const int DEBUG_GNUTLS_LOG_LEVEL = 0;
 const char *test_file_name = "https_test_file";
 const char test_file_data[] = "Hello World\n";
 
-static int
+static enum MHD_Result
 ahc_echo (void *cls,
           struct MHD_Connection *connection,
           const char *url,
