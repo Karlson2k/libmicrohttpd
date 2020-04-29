@@ -19,7 +19,7 @@
  */
 
 /**
- * @file mhds_get_test.c
+ * @file test_options.c
  * @brief  Testcase for libmicrohttpd HTTPS GET operations
  * @author Sagie Amir
  */
