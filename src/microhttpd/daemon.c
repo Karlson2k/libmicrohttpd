@@ -5992,7 +5992,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
 #endif
 
-  /* Thread pooling currently works only with internal select thread mode */
+  /* Thread polling currently works only with internal select thread mode */
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if ( (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) &&
        (daemon->worker_pool_size > 0) )
@@ -6000,7 +6000,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ (
-                "MHD thread pooling only works with MHD_USE_INTERNAL_POLLING_THREAD\n"));
+                "MHD thread polling only works with MHD_USE_INTERNAL_POLLING_THREAD\n"));
 #endif
     goto free_and_fail;
   }
@@ -6488,7 +6488,7 @@ MHD_start_daemon_va (unsigned int flags,
         struct MHD_Daemon *d = &daemon->worker_pool[i];
 
         memcpy (d, daemon, sizeof (struct MHD_Daemon));
-        /* Adjust pooling params for worker daemons; note that memcpy()
+        /* Adjust polling params for worker daemons; note that memcpy()
            has already copied MHD_USE_INTERNAL_POLLING_THREAD thread mode into
            the worker threads. */
         d->master = daemon;
