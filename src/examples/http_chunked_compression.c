@@ -109,6 +109,7 @@ read_cb (void *cls, uint64_t pos, char *mem, size_t size)
   void *buf;
   ssize_t ret;
   size_t offset;
+
   if (pos > SSIZE_MAX)
     return MHD_CONTENT_READER_END_WITH_ERROR;
   offset = (size_t) pos;
@@ -121,7 +122,7 @@ read_cb (void *cls, uint64_t pos, char *mem, size_t size)
     ret = MHD_CONTENT_READER_END_WITH_ERROR;
     goto done;
   }
-  if (0 == size)
+  if (0 == ret)
   {
     ret = MHD_CONTENT_READER_END_OF_STREAM;
     goto done;
