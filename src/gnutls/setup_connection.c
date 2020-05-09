@@ -25,7 +25,7 @@ setup_connection ()
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
               _ (
-                "Failed to setup TLS credentials: unknown credential type %d\n"),
+                "Failed to setup TLS credentials: unknown credential type %d.\n"),
               daemon->cred_type);
 #endif
     MHD_socket_close_chk_ (client_socket);
@@ -33,7 +33,7 @@ setup_connection ()
                       addr,
                       addrlen);
     free (connection);
-    MHD_PANIC (_ ("Unknown credential type"));
+    MHD_PANIC (_ ("Unknown credential type.\n"));
 #if EINVAL
     errno = EINVAL;
 #endif

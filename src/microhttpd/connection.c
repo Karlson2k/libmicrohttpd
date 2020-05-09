@@ -798,7 +798,7 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
                         connection->socket_fd,
                         NULL)) )
   {
-    MHD_PANIC (_ ("Failed to remove FD from epoll set\n"));
+    MHD_PANIC (_ ("Failed to remove FD from epoll set.\n"));
   }
   if (urh->in_eready_list)
   {
@@ -817,7 +817,7 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
                           urh->mhd.socket,
                           NULL)) )
     {
-      MHD_PANIC (_ ("Failed to remove FD from epoll set\n"));
+      MHD_PANIC (_ ("Failed to remove FD from epoll set.\n"));
     }
 #endif /* EPOLL_SUPPORT */
     /* Reflect remote disconnect to application by breaking
@@ -925,7 +925,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
     else
       CONNECTION_CLOSE_ERROR (connection,
                               _ (
-                                "Closing connection (application reported error generating data)\n"));
+                                "Closing connection (application reported error generating data).\n"));
     return MHD_NO;
   }
   response->data_start = connection->response_write_position;
@@ -974,7 +974,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
 #endif
       /* not enough memory */
       CONNECTION_CLOSE_ERROR (connection,
-                              _ ("Closing connection (out of memory)\n"));
+                              _ ("Closing connection (out of memory).\n"));
       return MHD_NO;
     }
     if ( (2 * (0xFFFFFF + sizeof(cbuf) + 2)) < size)
@@ -1022,7 +1022,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
 #endif
     CONNECTION_CLOSE_ERROR (connection,
                             _ (
-                              "Closing connection (application error generating response)\n"));
+                              "Closing connection (application error generating response).\n"));
     return MHD_NO;
   }
   if ( (((ssize_t) MHD_CONTENT_READER_END_OF_STREAM) == ret) ||
@@ -1677,7 +1677,7 @@ transmit_error_response (struct MHD_Connection *connection,
     /* can't even send a reply, at least close the connection */
     CONNECTION_CLOSE_ERROR (connection,
                             _ (
-                              "Closing connection (failed to queue response)\n"));
+                              "Closing connection (failed to queue response).\n"));
     return;
   }
   mhd_assert (NULL != connection->response);
@@ -1688,7 +1688,7 @@ transmit_error_response (struct MHD_Connection *connection,
     /* oops - close! */
     CONNECTION_CLOSE_ERROR (connection,
                             _ (
-                              "Closing connection (failed to create response header)\n"));
+                              "Closing connection (failed to create response header).\n"));
   }
   else
   {
@@ -2439,7 +2439,7 @@ process_request_body (struct MHD_Connection *connection)
                  __FILE__,
                  __LINE__
 #ifdef HAVE_MESSAGES
-                 , _ ("libmicrohttpd API violation")
+                 , _ ("libmicrohttpd API violation.\n")
 #else
                  , NULL
 #endif
@@ -2700,7 +2700,7 @@ parse_connection_headers (struct MHD_Connection *connection)
       /* can't even send a reply, at least close the connection */
       CONNECTION_CLOSE_ERROR (connection,
                               _ (
-                                "Closing connection (failed to create response)\n"));
+                                "Closing connection (failed to create response).\n"));
       return;
     }
     iret = MHD_queue_response (connection,
@@ -2712,7 +2712,7 @@ parse_connection_headers (struct MHD_Connection *connection)
       /* can't even send a reply, at least close the connection */
       CONNECTION_CLOSE_ERROR (connection,
                               _ (
-                                "Closing connection (failed to queue response)\n"));
+                                "Closing connection (failed to queue response).\n"));
     }
     return;
   }
@@ -3071,7 +3071,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         data_write_offset = connection->response_write_position
                             - response->data_start;
         if (data_write_offset > (uint64_t) SIZE_MAX)
-          MHD_PANIC (_ ("Data offset exceeds limit"));
+          MHD_PANIC (_ ("Data offset exceeds limit.\n"));
         ret = MHD_send_on_connection_ (connection,
                                        &response->data
                                        [(size_t) data_write_offset],
@@ -3181,7 +3181,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
   default:
     mhd_assert (0);
     CONNECTION_CLOSE_ERROR (connection,
-                            _ ("Internal error\n"));
+                            _ ("Internal error.\n"));
     break;
   }
   return;
@@ -3255,7 +3255,7 @@ cleanup_connection (struct MHD_Connection *connection)
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ (
-                  "Failed to signal end of connection via inter-thread communication channel"));
+                  "Failed to signal end of connection via inter-thread communication channel.\n"));
 #endif
     }
   }
@@ -3520,7 +3520,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         /* oops - close! */
         CONNECTION_CLOSE_ERROR (connection,
                                 _ (
-                                  "Closing connection (failed to create response header)\n"));
+                                  "Closing connection (failed to create response header).\n"));
         continue;
       }
       connection->state = MHD_CONNECTION_HEADERS_SENDING;
@@ -3629,7 +3629,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         /* oops - close! */
         CONNECTION_CLOSE_ERROR (connection,
                                 _ (
-                                  "Closing connection (failed to create response header)\n"));
+                                  "Closing connection (failed to create response header).\n"));
         continue;
       }
       if ( (! connection->have_chunked_upload) ||

@@ -344,7 +344,7 @@ main ()
   if (NULL == daemon)
   {
     fprintf (stderr,
-             "Failed to start daemon\n");
+             "Failed to start daemon.\n");
     return 1;
   }
   (void) getchar ();

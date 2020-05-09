@@ -172,7 +172,7 @@ MHD_run_tls_handshake_ (struct MHD_Connection *connection)
     connection->tls_state = MHD_TLS_CONN_TLS_FAILED;
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
-              _ ("Error: received handshake message out of context\n"));
+              _ ("Error: received handshake message out of context.\n"));
 #endif
     MHD_connection_close_ (connection,
                            MHD_REQUEST_TERMINATED_WITH_ERROR);

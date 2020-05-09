@@ -1073,7 +1073,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                             EPOLL_CTL_DEL,
                             connection->socket_fd,
                             &event))
-          MHD_PANIC (_ ("Error cleaning up while handling epoll error"));
+          MHD_PANIC (_ ("Error cleaning up while handling epoll error.\n"));
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
                   _ ("Call to epoll_ctl failed: %s\n"),

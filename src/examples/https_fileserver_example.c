@@ -219,7 +219,7 @@ main (int argc, char *const *argv)
                       MHD_OPTION_END);
   if (NULL == TLS_daemon)
   {
-    fprintf (stderr, "Error: failed to start TLS_daemon\n");
+    fprintf (stderr, "Error: failed to start TLS_daemon.\n");
     return 1;
   }
   printf ("MHD daemon listening on port %u\n",
