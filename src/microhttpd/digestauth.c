@@ -83,8 +83,8 @@
  * Check that @a n is below #MAX_NONCE
  */
 #define VLA_CHECK_LEN_DIGEST(n) do { if ((n) > MAX_DIGEST) mhd_panic ( \
-                                         mhd_panic_cls, __FILE__, __LINE__, \
-                                         "VLA too big"); } while (0)
+                                       mhd_panic_cls, __FILE__, __LINE__, \
+                                       "VLA too big.\n"); } while (0)
 
 
 /**
@@ -804,7 +804,7 @@ check_argument_match (struct MHD_Connection *connection,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
-              _ ("Failed to allocate memory for copy of URI arguments\n"));
+              _ ("Failed to allocate memory for copy of URI arguments.\n"));
 #endif /* HAVE_MESSAGES */
     return MHD_NO;
   }
@@ -1041,7 +1041,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _ ("Failed to allocate memory for auth header processing\n"));
+                _ ("Failed to allocate memory for auth header processing.\n"));
 #endif /* HAVE_MESSAGES */
       return MHD_NO;
     }
@@ -1278,7 +1278,7 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
 
   mhd_assert (NULL != digest);
   if (da.digest_size != digest_size)
-    MHD_PANIC (_ ("digest size mismatch")); /* API violation! */
+    MHD_PANIC (_ ("Digest size mismatch.\n")); /* API violation! */
   return digest_auth_check_all (connection,
                                 &da,
                                 realm,
@@ -1396,7 +1396,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (connection->daemon,
-                  _ ("Failed to allocate memory for auth response header\n"));
+                  _ ("Failed to allocate memory for auth response header.\n"));
 #endif /* HAVE_MESSAGES */
         return MHD_NO;
       }
@@ -1438,7 +1438,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
-              _ ("Failed to add Digest auth header\n"));
+              _ ("Failed to add Digest auth header.\n"));
 #endif /* HAVE_MESSAGES */
   }
   return ret;

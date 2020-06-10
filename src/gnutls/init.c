@@ -134,17 +134,17 @@ MHD_TLS_init (void)
 #if defined(MHD_USE_POSIX_THREADS)
   if (0 != gcry_control (GCRYCTL_SET_THREAD_CBS,
                          &gcry_threads_pthread))
-    MHD_PANIC (_ ("Failed to initialise multithreading in libgcrypt\n"));
+    MHD_PANIC (_ ("Failed to initialise multithreading in libgcrypt.\n"));
 #elif defined(MHD_W32_MUTEX_)
   if (0 != gcry_control (GCRYCTL_SET_THREAD_CBS,
                          &gcry_threads_w32))
-    MHD_PANIC (_ ("Failed to initialise multithreading in libgcrypt\n"));
+    MHD_PANIC (_ ("Failed to initialise multithreading in libgcrypt.\n"));
 #endif /* defined(MHD_W32_MUTEX_) */
   gcry_check_version (NULL);
 #else
   if (NULL == gcry_check_version ("1.6.0"))
     MHD_PANIC (_ (
-                 "libgcrypt is too old. MHD was compiled for libgcrypt 1.6.0 or newer\n"));
+                 "libgcrypt is too old. MHD was compiled for libgcrypt 1.6.0 or newer.\n"));
 #endif
 #endif /* MHD_HTTPS_REQUIRE_GRYPT */
   gnutls_global_init ();

@@ -524,7 +524,7 @@ process_upload_data (void *cls,
   }
   if (NULL == filename)
   {
-    fprintf (stderr, "No filename, aborting upload\n");
+    fprintf (stderr, "No filename, aborting upload.\n");
     return MHD_NO;   /* no filename, error */
   }
   if ( (NULL == uc->category) ||
@@ -946,7 +946,7 @@ main (int argc, char *const *argv)
                         MHD_OPTION_END);
   if (NULL == d)
     return 1;
-  fprintf (stderr, "HTTP server running. Press ENTER to stop the server\n");
+  fprintf (stderr, "HTTP server running. Press ENTER to stop the server.\n");
   (void) getc (stdin);
   MHD_stop_daemon (d);
   MHD_destroy_response (file_not_found_response);

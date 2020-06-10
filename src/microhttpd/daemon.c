@@ -448,7 +448,7 @@ MHD_ip_limit_add (struct MHD_Daemon *daemon,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ ("Failed to add IP connection count node\n"));
+              _ ("Failed to add IP connection count node.\n"));
 #endif
     MHD_ip_count_unlock (daemon);
     free (key);
@@ -506,13 +506,13 @@ MHD_ip_limit_del (struct MHD_Daemon *daemon,
   {
     /* Something's wrong if we couldn't find an IP address
      * that was previously added */
-    MHD_PANIC (_ ("Failed to find previously-added IP address\n"));
+    MHD_PANIC (_ ("Failed to find previously-added IP address.\n"));
   }
   found_key = (struct MHD_IPCount *) *nodep;
   /* Validate existing count for IP address */
   if (0 == found_key->count)
   {
-    MHD_PANIC (_ ("Previously-added IP address had counter of zero\n"));
+    MHD_PANIC (_ ("Previously-added IP address had counter of zero.\n"));
   }
   /* Remove the node entirely if count reduces to 0 */
   if (0 == --found_key->count)
@@ -564,7 +564,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                "Too long trust certificate\n");
+                "Too long trust certificate.\n");
 #endif
       return -1;
     }
@@ -576,7 +576,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                "Bad trust certificate format\n");
+                "Bad trust certificate format.\n");
 #endif
       return -1;
     }
@@ -601,7 +601,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                "Too long key or certificate\n");
+                "Too long key or certificate.\n");
 #endif
       return -1;
     }
@@ -623,7 +623,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ ("Failed to setup x509 certificate/key: pre 3.X.X version " \
-                   "of GnuTLS does not support setting key password"));
+                   "of GnuTLS does not support setting key password.\n"));
 #endif
       return -1;
 #endif
@@ -651,7 +651,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 #endif
 #ifdef HAVE_MESSAGES
   MHD_DLOG (daemon,
-            "You need to specify a certificate and key location\n");
+            "You need to specify a certificate and key location.\n");
 #endif
   return -1;
 }
@@ -1370,7 +1370,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                 _ (
                   "Failed to forward to application "
                   MHD_UNSIGNED_LONG_LONG_PRINTF \
-                  " bytes of data received from remote side: application shut down socket\n"),
+                  " bytes of data received from remote side: application shut down socket.\n"),
                 (MHD_UNSIGNED_LONG_LONG) urh->in_buffer_used);
 #endif
 
@@ -1661,7 +1661,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                 _ (
                   "Failed to forward to remote client "
                   MHD_UNSIGNED_LONG_LONG_PRINTF \
-                  " bytes of data received from application: daemon shut down\n"),
+                  " bytes of data received from application: daemon shut down.\n"),
                 (MHD_UNSIGNED_LONG_LONG) urh->out_buffer_used);
 #endif
     /* Discard any data unsent to remote. */
@@ -1727,7 +1727,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (con->daemon,
-                  _ ("Error preparing select\n"));
+                  _ ("Error preparing select.\n"));
 #endif
         break;
       }
@@ -1899,7 +1899,7 @@ thread_main_handle_connection (void *data)
         {
   #ifdef HAVE_MESSAGES
           MHD_DLOG (con->daemon,
-                    _ ("Failed to add FD to fd_set\n"));
+                    _ ("Failed to add FD to fd_set.\n"));
   #endif
           goto exit;
         }
@@ -2041,7 +2041,7 @@ thread_main_handle_connection (void *data)
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (con->daemon,
-                  _ ("Failed to add FD to fd_set\n"));
+                  _ ("Failed to add FD to fd_set.\n"));
 #endif
         goto exit;
       }
@@ -2181,7 +2181,7 @@ thread_main_handle_connection (void *data)
 #if DEBUG_CLOSE
 #ifdef HAVE_MESSAGES
   MHD_DLOG (con->daemon,
-            _ ("Processing thread terminating. Closing connection\n"));
+            _ ("Processing thread terminating. Closing connection.\n"));
 #endif
 #endif
   if (MHD_CONNECTION_CLOSED != con->state)
@@ -2211,7 +2211,7 @@ exit:
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ (
-                "Failed to signal thread termination via inter-thread communication channel."));
+                "Failed to signal thread termination via inter-thread communication channel.\n"));
 #endif
   }
   return (MHD_THRD_RTRN_TYPE_) 0;
@@ -2311,7 +2311,7 @@ psk_gnutls_adapter (gnutls_session_t session,
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ (
-                "PSK authentication failed: gnutls_malloc failed to allocate memory\n"));
+                "PSK authentication failed: gnutls_malloc failed to allocate memory.\n"));
 #endif
     free (app_psk);
     return -1;
@@ -2320,7 +2320,7 @@ psk_gnutls_adapter (gnutls_session_t session,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ ("PSK authentication failed: PSK too long\n"));
+              _ ("PSK authentication failed: PSK too long.\n"));
 #endif
     free (app_psk);
     return -1;
@@ -2451,7 +2451,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #ifdef HAVE_MESSAGES
 #if DEBUG_CONNECT
   MHD_DLOG (daemon,
-            _ ("Accepted connection on socket %d\n"),
+            _ ("Accepted connection on socket %d.\n"),
             client_socket);
 #endif
 #endif
@@ -2614,7 +2614,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 _ (
-                  "Failed to setup TLS credentials: unknown credential type %d\n"),
+                  "Failed to setup TLS credentials: unknown credential type %d.\n"),
                 daemon->cred_type);
 #endif
       MHD_socket_close_chk_ (client_socket);
@@ -2623,7 +2623,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
                         addrlen);
       free (connection->addr);
       free (connection);
-      MHD_PANIC (_ ("Unknown credential type"));
+      MHD_PANIC (_ ("Unknown credential type.\n"));
 #if EINVAL
       errno = EINVAL;
 #endif
@@ -2753,7 +2753,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ (
-                "Failed to signal new connection via inter-thread communication channel."));
+                "Failed to signal new connection via inter-thread communication channel.\n"));
 #endif
   }
   return MHD_YES;
@@ -2858,7 +2858,7 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
                           EPOLL_CTL_DEL,
                           connection->socket_fd,
                           NULL))
-        MHD_PANIC (_ ("Failed to remove FD from epoll set\n"));
+        MHD_PANIC (_ ("Failed to remove FD from epoll set.\n"));
       connection->epoll_state &= ~MHD_EPOLL_STATE_IN_EPOLL_SET;
     }
     connection->epoll_state |= MHD_EPOLL_STATE_SUSPENDED;
@@ -2915,7 +2915,7 @@ MHD_suspend_connection (struct MHD_Connection *connection)
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ (
-                "Error: connection scheduled for \"upgrade\" cannot be suspended"));
+                "Error: connection scheduled for \"upgrade\" cannot be suspended.\n"));
 #endif /* HAVE_MESSAGES */
     return;
   }
@@ -2954,7 +2954,7 @@ MHD_resume_connection (struct MHD_Connection *connection)
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ (
-                "Failed to signal resume via inter-thread communication channel."));
+                "Failed to signal resume via inter-thread communication channel.\n"));
 #endif
   }
 }
@@ -3039,7 +3039,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
       if (0 != (daemon->options & MHD_USE_EPOLL))
       {
         if (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
-          MHD_PANIC ("Resumed connection was already in EREADY set\n");
+          MHD_PANIC ("Resumed connection was already in EREADY set.\n");
         /* we always mark resumed connections as ready, as we
            might have missed the edge poll event during suspension */
         EDLL_insert (daemon->eready_head,
@@ -3089,7 +3089,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ (
-                  "Failed to signal resume of connection via inter-thread communication channel."));
+                  "Failed to signal resume of connection via inter-thread communication channel.\n"));
 #endif
     }
   }
@@ -3353,7 +3353,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
     if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
          (! pos->thread_joined) &&
          (! MHD_join_thread_ (pos->pid.handle)) )
-      MHD_PANIC (_ ("Failed to join a thread\n"));
+      MHD_PANIC (_ ("Failed to join a thread.\n"));
 #endif
 #ifdef UPGRADE_SUPPORT
     cleanup_upgraded_connection (pos);
@@ -3395,7 +3395,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
                             EPOLL_CTL_DEL,
                             pos->socket_fd,
                             NULL))
-          MHD_PANIC (_ ("Failed to remove FD from epoll set\n"));
+          MHD_PANIC (_ ("Failed to remove FD from epoll set.\n"));
         pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EPOLL_SET;
       }
     }
@@ -3456,7 +3456,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ ("Illegal call to MHD_get_timeout\n"));
+              _ ("Illegal call to MHD_get_timeout.\n"));
 #endif
     return MHD_NO;
   }
@@ -3733,7 +3733,7 @@ MHD_select (struct MHD_Daemon *daemon,
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _ ("Could not obtain daemon fdsets"));
+                _ ("Could not obtain daemon fdsets.\n"));
 #endif
       err_state = MHD_YES;
     }
@@ -3750,7 +3750,7 @@ MHD_select (struct MHD_Daemon *daemon,
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _ ("Could not add listen socket to fdset"));
+                _ ("Could not add listen socket to fdset.\n"));
 #endif
       return MHD_NO;
     }
@@ -3779,7 +3779,7 @@ MHD_select (struct MHD_Daemon *daemon,
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ (
-                "Could not add control inter-thread communication channel FD to fdset"));
+                "Could not add control inter-thread communication channel FD to fdset.\n"));
 #endif
     err_state = MHD_YES;
 #if defined(MHD_WINSOCK_SOCKETS)
@@ -4412,7 +4412,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
                           NULL)) &&
          (ENOENT != errno) )   /* ENOENT can happen due to race with
                                   #MHD_quiesce_daemon() */
-      MHD_PANIC ("Failed to remove listen FD from epoll set\n");
+      MHD_PANIC ("Failed to remove listen FD from epoll set.\n");
     daemon->listen_socket_in_epoll = false;
   }
 
@@ -4448,7 +4448,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
                         EPOLL_CTL_DEL,
                         ls,
                         NULL))
-      MHD_PANIC (_ ("Failed to remove listen FD from epoll set\n"));
+      MHD_PANIC (_ ("Failed to remove listen FD from epoll set.\n"));
     daemon->listen_socket_in_epoll = false;
   }
 
@@ -4890,7 +4890,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              "Using MHD_quiesce_daemon in this mode requires MHD_USE_ITC\n");
+              "Using MHD_quiesce_daemon in this mode requires MHD_USE_ITC.\n");
 #endif
     return MHD_INVALID_SOCKET;
   }
@@ -4909,7 +4909,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
                             EPOLL_CTL_DEL,
                             ret,
                             NULL))
-          MHD_PANIC (_ ("Failed to remove listen FD from epoll set\n"));
+          MHD_PANIC (_ ("Failed to remove listen FD from epoll set.\n"));
         daemon->worker_pool[i].listen_socket_in_epoll = false;
       }
       else
@@ -4918,7 +4918,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
       {
         if (! MHD_itc_activate_ (daemon->worker_pool[i].itc, "q"))
           MHD_PANIC (_ (
-                       "Failed to signal quiesce via inter-thread communication channel"));
+                       "Failed to signal quiesce via inter-thread communication channel.\n"));
       }
     }
 #endif
@@ -4934,14 +4934,14 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
                           NULL)) &&
          (ENOENT != errno) )   /* ENOENT can happen due to race with
                                   #MHD_epoll() */
-      MHD_PANIC ("Failed to remove listen FD from epoll set\n");
+      MHD_PANIC ("Failed to remove listen FD from epoll set.\n");
     daemon->listen_socket_in_epoll = false;
   }
 #endif
   if ( (MHD_ITC_IS_VALID_ (daemon->itc)) &&
        (! MHD_itc_activate_ (daemon->itc, "q")) )
     MHD_PANIC (_ (
-                 "failed to signal quiesce via inter-thread communication channel"));
+                 "failed to signal quiesce via inter-thread communication channel.\n"));
   return ret;
 }
 
@@ -5122,7 +5122,7 @@ parse_options_va (struct MHD_Daemon *daemon,
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
-                  _ ("Specified thread pool size (%u) too big\n"),
+                  _ ("Specified thread pool size (%u) too big.\n"),
                   daemon->worker_pool_size);
 #endif
         return MHD_NO;
@@ -5160,7 +5160,7 @@ parse_options_va (struct MHD_Daemon *daemon,
       else
         MHD_DLOG (daemon,
                   _ (
-                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
+                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set.\n"),
                   opt);
 #endif
       break;
@@ -5173,7 +5173,7 @@ parse_options_va (struct MHD_Daemon *daemon,
       else
         MHD_DLOG (daemon,
                   _ (
-                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
+                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set.\n"),
                   opt);
 #endif
       break;
@@ -5186,7 +5186,7 @@ parse_options_va (struct MHD_Daemon *daemon,
       else
         MHD_DLOG (daemon,
                   _ (
-                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
+                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set.\n"),
                   opt);
 #endif
       break;
@@ -5199,7 +5199,7 @@ parse_options_va (struct MHD_Daemon *daemon,
       else
         MHD_DLOG (daemon,
                   _ (
-                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
+                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set.\n"),
                   opt);
 #endif
       break;
@@ -5219,7 +5219,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         {
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
-                    _ ("Error initializing DH parameters\n"));
+                    _ ("Error initializing DH parameters.\n"));
 #endif
           return MHD_NO;
         }
@@ -5229,7 +5229,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         {
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
-                    _ ("Diffie-Hellman parameters string too long\n"));
+                    _ ("Diffie-Hellman parameters string too long.\n"));
 #endif
           return MHD_NO;
         }
@@ -5240,7 +5240,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         {
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
-                    _ ("Bad Diffie-Hellman parameters format\n"));
+                    _ ("Bad Diffie-Hellman parameters format.\n"));
 #endif
           gnutls_dh_params_deinit (daemon->https_mem_dhparams);
           return MHD_NO;
@@ -5251,7 +5251,7 @@ parse_options_va (struct MHD_Daemon *daemon,
       else
         MHD_DLOG (daemon,
                   _ (
-                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
+                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set.\n"),
                   opt);
 #endif
       break;
@@ -5280,7 +5280,7 @@ parse_options_va (struct MHD_Daemon *daemon,
       else
         MHD_DLOG (daemon,
                   _ (
-                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
+                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set.\n"),
                   opt);
 #endif
       break;
@@ -5289,7 +5289,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ (
-                  "MHD_OPTION_HTTPS_CERT_CALLBACK requires building MHD with GnuTLS >= 3.0\n"));
+                  "MHD_OPTION_HTTPS_CERT_CALLBACK requires building MHD with GnuTLS >= 3.0.\n"));
 #endif
       return MHD_NO;
 #else
@@ -5301,7 +5301,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
                   _ (
-                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
+                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set.\n"),
                   opt);
 #endif
         break;
@@ -5311,7 +5311,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ (
-                  "MHD_OPTION_HTTPS_CERT_CALLBACK2 requires building MHD with GnuTLS >= 3.6.3\n"));
+                  "MHD_OPTION_HTTPS_CERT_CALLBACK2 requires building MHD with GnuTLS >= 3.6.3.\n"));
 #endif
       return MHD_NO;
 #else
@@ -5323,7 +5323,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
                   _ (
-                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set\n"),
+                    "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set.\n"),
                   opt);
 #endif
         break;
@@ -5382,7 +5382,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #else  /* ! TCP_FASTOPEN */
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _ ("TCP fastopen is not supported on this platform\n"));
+                _ ("TCP fastopen is not supported on this platform.\n"));
       return MHD_NO;
 #endif /* HAVE_MESSAGES */
 #endif /* ! TCP_FASTOPEN */
@@ -5536,7 +5536,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #else
       MHD_DLOG (daemon,
                 _ (
-                  "MHD HTTPS option %d passed to MHD compiled without GNUtls >= 3\n"),
+                  "MHD HTTPS option %d passed to MHD compiled without GNUtls >= 3.\n"),
                 opt);
       return MHD_NO;
 #endif
@@ -5550,14 +5550,14 @@ parse_options_va (struct MHD_Daemon *daemon,
       {
         MHD_DLOG (daemon,
                   _ (
-                    "MHD HTTPS option %d passed to MHD compiled without HTTPS support\n"),
+                    "MHD HTTPS option %d passed to MHD compiled without HTTPS support.\n"),
                   opt);
       }
       else
       {
         MHD_DLOG (daemon,
                   _ (
-                    "Invalid option %d! (Did you terminate the list with MHD_OPTION_END?)\n"),
+                    "Invalid option %d! (Did you terminate the list with MHD_OPTION_END?).\n"),
                   opt);
       }
 #endif
@@ -5928,7 +5928,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ (
-                  "file descriptor for inter-thread communication channel exceeds maximum value\n"));
+                  "file descriptor for inter-thread communication channel exceeds maximum value.\n"));
 #endif
       MHD_itc_destroy_chk_ (daemon->itc);
 #ifdef HTTPS_SUPPORT
@@ -5948,7 +5948,7 @@ MHD_start_daemon_va (unsigned int flags,
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _ ("Specified value for NC_SIZE too large\n"));
+                _ ("Specified value for NC_SIZE too large.\n"));
 #endif
 #ifdef HTTPS_SUPPORT
       if (0 != (*pflags & MHD_USE_TLS))
@@ -5979,7 +5979,7 @@ MHD_start_daemon_va (unsigned int flags,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ ("MHD failed to initialize nonce-nc mutex\n"));
+              _ ("MHD failed to initialize nonce-nc mutex.\n"));
 #endif
 #ifdef HTTPS_SUPPORT
     if (0 != (*pflags & MHD_USE_TLS))
@@ -6000,7 +6000,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ (
-                "MHD thread polling only works with MHD_USE_INTERNAL_POLLING_THREAD\n"));
+                "MHD thread polling only works with MHD_USE_INTERNAL_POLLING_THREAD.\n"));
 #endif
     goto free_and_fail;
   }
@@ -6098,7 +6098,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ (
-                  "Cannot allow listening address reuse: SO_REUSEPORT not defined\n"));
+                  "Cannot allow listening address reuse: SO_REUSEPORT not defined.\n"));
 #endif
       goto free_and_fail;
 #endif /* !MHD_WINSOCK_SOCKETS && !SO_REUSEPORT */
@@ -6134,7 +6134,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ (
-                  "Cannot disallow listening address reuse: SO_EXCLUSIVEADDRUSE not defined\n"));
+                  "Cannot disallow listening address reuse: SO_EXCLUSIVEADDRUSE not defined.\n"));
 #endif
       goto free_and_fail;
 #endif /* MHD_WINSOCK_SOCKETS */
@@ -6287,7 +6287,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ (
-                  "Failed to get listen port number (`struct sockaddr_storage` too small!?)\n"));
+                  "Failed to get listen port number (`struct sockaddr_storage` too small!?).\n"));
 #endif /* HAVE_MESSAGES */
     }
 #ifndef __linux__
@@ -6398,7 +6398,7 @@ MHD_start_daemon_va (unsigned int flags,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ ("MHD failed to initialize IP connection limit mutex\n"));
+              _ ("MHD failed to initialize IP connection limit mutex.\n"));
 #endif
     if (MHD_INVALID_SOCKET != listen_fd)
       MHD_socket_close_chk_ (listen_fd);
@@ -6408,7 +6408,7 @@ MHD_start_daemon_va (unsigned int flags,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ ("MHD failed to initialize IP connection limit mutex\n"));
+              _ ("MHD failed to initialize IP connection limit mutex.\n"));
 #endif
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
     MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
@@ -6426,7 +6426,7 @@ MHD_start_daemon_va (unsigned int flags,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ ("Failed to initialize TLS support\n"));
+              _ ("Failed to initialize TLS support.\n"));
 #endif
     if (MHD_INVALID_SOCKET != listen_fd)
       MHD_socket_close_chk_ (listen_fd);
@@ -6514,7 +6514,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
             MHD_DLOG (daemon,
                       _ (
-                        "File descriptor for worker inter-thread communication channel exceeds maximum value\n"));
+                        "File descriptor for worker inter-thread communication channel exceeds maximum value.\n"));
 #endif
             MHD_itc_destroy_chk_ (d->itc);
             goto thread_failed;
@@ -6539,7 +6539,7 @@ MHD_start_daemon_va (unsigned int flags,
         {
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
-                    _ ("MHD failed to initialize cleanup connection mutex\n"));
+                    _ ("MHD failed to initialize cleanup connection mutex.\n"));
 #endif
           goto thread_failed;
         }
@@ -6609,7 +6609,7 @@ free_and_fail:
                         EPOLL_CTL_DEL,
                         daemon->epoll_upgrade_fd,
                         NULL))
-      MHD_PANIC (_ ("Failed to remove FD from epoll set\n"));
+      MHD_PANIC (_ ("Failed to remove FD from epoll set.\n"));
     daemon->upgrade_fd_in_epoll = false;
   }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
@@ -6751,7 +6751,7 @@ close_all_connections (struct MHD_Daemon *daemon)
          (MHD_ITC_IS_VALID_ (daemon->itc)) &&
          (! MHD_itc_activate_ (daemon->itc, "e")) )
       MHD_PANIC (_ (
-                   "Failed to signal shutdown via inter-thread communication channel"));
+                   "Failed to signal shutdown via inter-thread communication channel.\n"));
 #endif
   }
 
@@ -6766,7 +6766,7 @@ close_all_connections (struct MHD_Daemon *daemon)
       {
         MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
         if (! MHD_join_thread_ (pos->pid.handle))
-          MHD_PANIC (_ ("Failed to join a thread\n"));
+          MHD_PANIC (_ ("Failed to join a thread.\n"));
         MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
         pos->thread_joined = true;
         /* The thread may have concurrently modified the DLL,
@@ -6798,7 +6798,7 @@ close_all_connections (struct MHD_Daemon *daemon)
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
     if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
          (! pos->thread_joined) )
-      MHD_PANIC (_ ("Failed to join a thread\n"));
+      MHD_PANIC (_ ("Failed to join a thread.\n"));
 #endif
     close_connection (pos);
   }
@@ -6844,7 +6844,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
         if (! MHD_itc_activate_ (daemon->worker_pool[i].itc,
                                  "e"))
           MHD_PANIC (_ (
-                       "Failed to signal shutdown via inter-thread communication channel."));
+                       "Failed to signal shutdown via inter-thread communication channel.\n"));
       }
       else
         mhd_assert (MHD_INVALID_SOCKET != fd);
@@ -6882,7 +6882,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
         if (! MHD_itc_activate_ (daemon->itc,
                                  "e"))
           MHD_PANIC (_ (
-                       "Failed to signal shutdown via inter-thread communication channel"));
+                       "Failed to signal shutdown via inter-thread communication channel.\n"));
       }
       else
       {
@@ -6900,7 +6900,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
       if (! MHD_join_thread_ (daemon->pid.handle))
       {
-        MHD_PANIC (_ ("Failed to join a thread\n"));
+        MHD_PANIC (_ ("Failed to join a thread.\n"));
       }
       /* close_all_connections() was called in daemon thread. */
     }
@@ -7320,10 +7320,10 @@ MHD_init (void)
 
 #if defined(MHD_WINSOCK_SOCKETS)
   if (0 != WSAStartup (MAKEWORD (2, 2), &wsd))
-    MHD_PANIC (_ ("Failed to initialize winsock\n"));
+    MHD_PANIC (_ ("Failed to initialize winsock.\n"));
   mhd_winsock_inited_ = 1;
   if ((2 != LOBYTE (wsd.wVersion)) && (2 != HIBYTE (wsd.wVersion)))
-    MHD_PANIC (_ ("Winsock version 2.2 is not available\n"));
+    MHD_PANIC (_ ("Winsock version 2.2 is not available.\n"));
 #endif /* MHD_WINSOCK_SOCKETS */
 #ifdef HTTPS_SUPPORT
 #ifdef MHD_HTTPS_REQUIRE_GRYPT
@@ -7331,17 +7331,17 @@ MHD_init (void)
 #if defined(MHD_USE_POSIX_THREADS)
   if (0 != gcry_control (GCRYCTL_SET_THREAD_CBS,
                          &gcry_threads_pthread))
-    MHD_PANIC (_ ("Failed to initialise multithreading in libgcrypt\n"));
+    MHD_PANIC (_ ("Failed to initialise multithreading in libgcrypt.\n"));
 #elif defined(MHD_W32_MUTEX_)
   if (0 != gcry_control (GCRYCTL_SET_THREAD_CBS,
                          &gcry_threads_w32))
-    MHD_PANIC (_ ("Failed to initialise multithreading in libgcrypt\n"));
+    MHD_PANIC (_ ("Failed to initialise multithreading in libgcrypt.\n"));
 #endif /* defined(MHD_W32_MUTEX_) */
   gcry_check_version (NULL);
 #else
   if (NULL == gcry_check_version ("1.6.0"))
     MHD_PANIC (_ (
-                 "libgcrypt is too old. MHD was compiled for libgcrypt 1.6.0 or newer\n"));
+                 "libgcrypt is too old. MHD was compiled for libgcrypt 1.6.0 or newer.\n"));
 #endif
 #endif /* MHD_HTTPS_REQUIRE_GRYPT */
   gnutls_global_init ();

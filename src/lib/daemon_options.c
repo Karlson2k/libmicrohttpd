@@ -620,7 +620,7 @@ MHD_daemon_connection_memory_limit (struct MHD_Daemon *daemon,
                                     size_t memory_increment_b)
 {
   if (memory_increment_b >= memory_limit_b)
-    MHD_PANIC ("sane memory increment must be below memory limit");
+    MHD_PANIC ("Sane memory increment must be below memory limit.\n");
   daemon->connection_memory_limit_b = memory_limit_b;
   daemon->connection_memory_increment_b = memory_increment_b;
 }
@@ -725,7 +725,7 @@ MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
   (void) daemon;
   (void) buf_size;
   (void) buf;
-  MHD_PANIC ("digest authentication not supported by this build");
+  MHD_PANIC ("Digest authentication not supported by this build.\n");
 #endif
 }
 
@@ -747,7 +747,7 @@ MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ ("Specified value for NC_SIZE too large\n"));
+              _ ("Specified value for NC_SIZE too large.\n"));
 #endif
     return MHD_SC_DIGEST_AUTH_NC_LENGTH_TOO_BIG;
   }

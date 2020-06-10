@@ -120,7 +120,7 @@ main (int argc, char *const *argv)
                         NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  fprintf (stderr, "HTTP server running. Press ENTER to stop the server\n");
+  fprintf (stderr, "HTTP server running. Press ENTER to stop the server.\n");
   (void) getc (stdin);
   MHD_stop_daemon (d);
   return 0;
