@@ -541,6 +541,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
           pp->buffer_pos = 0;
           pp->value_offset = 0;
           pp->state = PP_Init;
+          start_value = NULL;
         }
         continue;
       case '\n':

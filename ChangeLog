@@ -1,3 +1,7 @@
+Wed 10 Jun 2020 09:44:29 PM CEST
+    Fixed PostProcessor bug discovered by MD, which given certain parser
+    boundaries caused the returned values to be wrong. -CG/MD
+
 Wed 08 Apr 2020 10:53:01 PM CEST
     Introduce `enum MHD_Result` for #MHD_YES/#MHD_NO to avoid using 'int' so much.
     Note that this change WILL cause compiler warnings until (most) MHD callbacks
