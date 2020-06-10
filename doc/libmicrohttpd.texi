@@ -1837,12 +1837,18 @@ Get a particular header value.  If multiple values match the
 @var{kind}, return one of them (the ``first'', whatever that means).
 @var{key} must reference a zero-terminated ASCII-coded string
 representing the header to look for: it is compared against the
-headers using @code{strcasecmp()}, so case is ignored.  A value of
-@code{NULL} for @var{key} can be used to lookup 'trailing' values without a
-key, for example if a URI is of the form
-``http://example.com/?trailer'', a @var{key} of @code{NULL} can be used to
-access ``tailer" The function returns @code{NULL} if no matching item
-was found.
+headers using (basically) @code{strcasecmp()}, so case is ignored.
+@end deftypefun
+
+@deftypefun {const char *} MHD_lookup_connection_value_n (struct MHD_Connection *connection, enum MHD_ValueKind kind, const char *key, size_t key_size, const char **value_ptr, size_t *value_size_ptr)
+Get a particular header value.  If multiple values match the
+@var{kind}, return one of them (the ``first'', whatever that means).
+@var{key} must reference an ASCII-coded string
+representing the header to look for: it is compared against the
+headers using (basically) @code{strncasecmp()}, so case is ignored.
+The @var{value_ptr} is set to the address of the value found,
+and @var{value_size_ptr} is set to the number of bytes in the
+value.
 @end deftypefun
 
 
