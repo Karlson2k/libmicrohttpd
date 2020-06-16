@@ -231,60 +231,6 @@ recv_param_adapter (struct MHD_Connection *connection,
 
 
 /**
- * Callback for writing data to the socket.
- *
- * @param connection the MHD connection structure
- * @param other data to write
- * @param i number of bytes to write
- * @return positive value for number of bytes actually sent or
- *         negative value for error number MHD_ERR_xxx_
- */
-static ssize_t
-send_param_adapter (struct MHD_Connection *connection,
-                    const void *other,
-                    size_t i)
-{
-  ssize_t ret;
-
-  if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
-       (MHD_CONNECTION_CLOSED == connection->state) )
-  {
-    return MHD_ERR_NOTCONN_;
-  }
-  if (i > MHD_SCKT_SEND_MAX_SIZE_)
-    i = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
-
-  ret = MHD_send_ (connection->socket_fd,
-                   other,
-                   i);
-  if (0 > ret)
-  {
-    const int err = MHD_socket_get_error_ ();
-
-    if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
-    {
-#ifdef EPOLL_SUPPORT
-      /* EAGAIN --- no longer write-ready */
-      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
-#endif /* EPOLL_SUPPORT */
-      return MHD_ERR_AGAIN_;
-    }
-    if (MHD_SCKT_ERR_IS_EINTR_ (err))
-      return MHD_ERR_AGAIN_;
-    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
-      return MHD_ERR_CONNRESET_;
-    /* Treat any other error as hard error. */
-    return MHD_ERR_NOTCONN_;
-  }
-#ifdef EPOLL_SUPPORT
-  else if (i > (size_t) ret)
-    connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
-#endif /* EPOLL_SUPPORT */
-  return ret;
-}
-
-
-/**
  * Get all of the headers from the request.
  *
  * @param connection connection to get values from
@@ -3814,7 +3760,6 @@ void
 MHD_set_http_callbacks_ (struct MHD_Connection *connection)
 {
   connection->recv_cls = &recv_param_adapter;
-  connection->send_cls = &send_param_adapter;
 }
 
 

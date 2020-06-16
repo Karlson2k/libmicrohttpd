@@ -962,11 +962,6 @@ struct MHD_Connection
    */
   ReceiveCallback recv_cls;
 
-  /**
-   * Function used for writing HTTP response stream.
-   */
-  TransmitCallback send_cls;
-
 #ifdef UPGRADE_SUPPORT
   /**
    * If this connection was upgraded, this points to
