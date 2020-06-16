@@ -1,3 +1,6 @@
+Tue 16 Jun 2020 08:44:22 PM CEST
+    Add logic to try again if GNUtls uncork() fails. -CG
+
 Wed 10 Jun 2020 09:44:29 PM CEST
     Fixed PostProcessor bug discovered by MD, which given certain parser
     boundaries caused the returned values to be wrong. -CG/MD

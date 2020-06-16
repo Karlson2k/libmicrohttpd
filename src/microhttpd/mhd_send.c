@@ -313,7 +313,10 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 
     if (! want_cork && have_cork)
     {
-      (void) gnutls_record_uncork (connection->tls_session, 0);
+      int err = gnutls_record_uncork (connection->tls_session, 0);
+
+      if (0 > err)
+        return MHD_ERR_AGAIN_;
       connection->sk_cork_on = false;
     }
   }
