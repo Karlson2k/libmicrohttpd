@@ -1,3 +1,7 @@
+Sun 28 Jun 2020 09:36:01 PM CEST
+    Fix buffer overflow issue in URL parser.
+    Releasing libmicrohttpd 0.9.71. -CG
+
 Tue 16 Jun 2020 08:44:22 PM CEST
     Add logic to try again if GNUtls uncork() fails. -CG
 

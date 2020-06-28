@@ -137,8 +137,7 @@ struct MHD_PostProcessor
   void *cls;
 
   /**
-   * Encoding as given by the headers of the
-   * connection.
+   * Encoding as given by the headers of the connection.
    */
   const char *encoding;
 
@@ -590,7 +589,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       pp->state = PP_Error;
       break;
     case PP_Callback:
-      if ( (pp->buffer_pos + (end_key - start_key) >
+      if ( (pp->buffer_pos + (end_key - start_key) >=
             pp->buffer_size) ||
            (pp->buffer_pos + (end_key - start_key) <
             pp->buffer_pos) )
@@ -640,6 +639,11 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
   {
     if (NULL == end_key)
       end_key = &post_data[poff];
+    if (pp->buffer_pos + (end_key - start_key) >= pp->buffer_size)
+    {
+      pp->state = PP_Error;
+      return MHD_NO;
+    }
     memcpy (&kbuf[pp->buffer_pos],
             start_key,
             end_key - start_key);
@@ -666,6 +670,11 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
                    end_value,
                    last_escape);
     pp->must_ikvi = false;
+  }
+  if (PP_Error == pp->state)
+  {
+    /* State in error, returning failure */
+    return MHD_NO;
   }
   return MHD_YES;
 }
@@ -1428,7 +1437,8 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp)
      the post-processing may have been interrupted
      at any stage */
   if ( (pp->xbuf_pos > 0) ||
-       (pp->state != PP_Done) )
+       ( (pp->state != PP_Done) &&
+         (pp->state != PP_Init) ) )
     ret = MHD_NO;
   else
     ret = MHD_YES;
