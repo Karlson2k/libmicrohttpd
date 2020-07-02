@@ -1,3 +1,6 @@
+Thu 02 Jul 2020 09:56:23 PM CEST
+    Fixed return type of MHD_queue_basic_auth_fail_response. -CA/CG
+
 Sun 28 Jun 2020 09:36:01 PM CEST
     Fix buffer overflow issue in URL parser.
     Releasing libmicrohttpd 0.9.71. -CG

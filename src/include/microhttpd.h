@@ -3733,7 +3733,7 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_Result
 MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
                                     const char *realm,
                                     struct MHD_Response *response);
