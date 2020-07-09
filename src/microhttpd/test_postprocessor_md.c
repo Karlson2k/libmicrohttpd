@@ -103,6 +103,29 @@ post_data_iterator (void *cls,
 }
 
 
+static enum MHD_Result
+post_data_iterator2 (void *cls,
+                     enum MHD_ValueKind kind,
+                     const char *key,
+                     const char *filename,
+                     const char *content_type,
+                     const char *transfer_encoding,
+                     const char *data,
+                     uint64_t off,
+                     size_t size)
+{
+  printf ("%s\t%s\n", key, data);
+  if (0 == strcmp (key, "text"))
+  {
+    if ( (10 != size) ||
+         (0 != memcmp (data, "text, text", 10)) )
+      exit (5);
+    found |= 1;
+  }
+  return MHD_YES;
+}
+
+
 int
 main (int argc, char *argv[])
 {
@@ -128,5 +151,27 @@ main (int argc, char *argv[])
     exit (3);
   if (found != 15)
     exit (2);
+
+  found = 0;
+  postprocessor = malloc (sizeof (struct MHD_PostProcessor)
+                          + 0x1000 + 1);
+  if (NULL == postprocessor)
+    return 77;
+  memset (postprocessor,
+          0,
+          sizeof (struct MHD_PostProcessor) + 0x1000 + 1);
+  postprocessor->ikvi = post_data_iterator2;
+  postprocessor->encoding = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
+  postprocessor->buffer_size = 0x1000;
+  postprocessor->state = PP_Init;
+  postprocessor->skip_rn = RN_Inactive;
+  MHD_post_process (postprocessor, "text=text%2C+text", 11 + 6);
+  // MHD_post_process (postprocessor, "text=text%2", 11);
+  // MHD_post_process (postprocessor, "C+text", 6);
+  MHD_post_process (postprocessor, "", 0);
+  MHD_destroy_post_processor (postprocessor);
+  if (found != 1)
+    exit (4);
+
   return EXIT_SUCCESS;
 }
