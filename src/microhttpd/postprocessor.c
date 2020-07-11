@@ -379,6 +379,7 @@ process_value (struct MHD_PostProcessor *pp,
   size_t xoff;
 
   mhd_assert (pp->xbuf_pos < sizeof (xbuf));
+  /* move remaining input from previous round into processing buffer */
   memcpy (xbuf,
           pp->xbuf,
           pp->xbuf_pos);
@@ -401,60 +402,87 @@ process_value (struct MHD_PostProcessor *pp,
   {
     size_t delta = value_end - value_start;
     bool cut = false;
+    size_t clen = 0;
 
     if (delta > XBUF_SIZE - xoff)
       delta = XBUF_SIZE - xoff;
-    /* move input into processing buffer */
+    /* move (additional) input into processing buffer */
     memcpy (&xbuf[xoff],
             value_start,
             delta);
+    xoff += delta;
+    value_start += delta;
     /* find if escape sequence is at the end of the processing buffer;
        if so, exclude those from processing (reduce delta to point at
        end of processed region) */
-    if ( (xoff + delta > 0) &&
-         ('%' == xbuf[xoff + delta - 1]) )
+    if ( (xoff > 0) &&
+         ('%' == xbuf[xoff - 1]) )
     {
-      cut = (delta != XBUF_SIZE - xoff);
-      delta--;
-      pp->xbuf[0] = '%';
-      pp->xbuf_pos = 1;
+      cut = (xoff != XBUF_SIZE);
+      xoff--;
+      if (cut)
+      {
+        /* move escape sequence into buffer for next function invocation */
+        pp->xbuf[0] = '%';
+        pp->xbuf_pos = 1;
+      }
+      else
+      {
+        /* just skip escape sequence for next loop iteration */
+        delta = xoff;
+        clen = 1;
+      }
     }
-    else if ( (xoff + delta > 1) &&
-              ('%' == xbuf[xoff + delta - 2]) )
+    else if ( (xoff > 1) &&
+              ('%' == xbuf[xoff - 2]) )
     {
-      memcpy (pp->xbuf,
-              &xbuf[xoff + delta - 2],
-              2);
-      pp->xbuf_pos = 2;
-      cut = (delta != XBUF_SIZE - xoff);
-      delta -= 2;
+      cut = (xoff != XBUF_SIZE);
+      xoff -= 2;
+      if (cut)
+      {
+        /* move escape sequence into buffer for next function invocation */
+        memcpy (pp->xbuf,
+                &xbuf[xoff],
+                2);
+        pp->xbuf_pos = 2;
+      }
+      else
+      {
+        /* just skip escape sequence for next loop iteration */
+        delta = xoff;
+        clen = 2;
+      }
     }
-    xoff += delta;
-    value_start += delta;
     mhd_assert (xoff < sizeof (xbuf));
     /* unescape */
     xbuf[xoff] = '\0';        /* 0-terminate in preparation */
     MHD_unescape_plus (xbuf);
     xoff = MHD_http_unescape (xbuf);
     /* finally: call application! */
-    pp->must_ikvi = false;
-    if (MHD_NO == pp->ikvi (pp->cls,
-                            MHD_POSTDATA_KIND,
-                            (const char *) &pp[1],        /* key */
-                            NULL,
-                            NULL,
-                            NULL,
-                            xbuf,
-                            pp->value_offset,
-                            xoff))
+    if ( (pp->must_ikvi || (0 != xoff)) )
     {
-      pp->state = PP_Error;
-      return;
+      pp->must_ikvi = false;
+      if (MHD_NO == pp->ikvi (pp->cls,
+                              MHD_POSTDATA_KIND,
+                              (const char *) &pp[1],      /* key */
+                              NULL,
+                              NULL,
+                              NULL,
+                              xbuf,
+                              pp->value_offset,
+                              xoff))
+      {
+        pp->state = PP_Error;
+        return;
+      }
     }
     pp->value_offset += xoff;
-    xoff = 0;
     if (cut)
       break;
+    memmove (xbuf,
+             &xbuf[delta],
+             clen);
+    xoff = clen;
   }
 }
 
