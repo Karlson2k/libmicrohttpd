@@ -479,6 +479,7 @@ process_value (struct MHD_PostProcessor *pp,
     pp->value_offset += xoff;
     if (cut)
       break;
+    xbuf[delta] = '%';        /* undo 0-termination */
     memmove (xbuf,
              &xbuf[delta],
              clen);
