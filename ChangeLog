@@ -1,3 +1,6 @@
+Fri Jul 10 15:04:51 CEST 2020
+    Fixed Postprocessor URL-encoded parsing if '%' fell on boundary. -CG/MD
+
 Thu 02 Jul 2020 09:56:23 PM CEST
     Fixed return type of MHD_queue_basic_auth_fail_response. -CA/CG
 

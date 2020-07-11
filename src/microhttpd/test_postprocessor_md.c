@@ -114,13 +114,22 @@ post_data_iterator2 (void *cls,
                      uint64_t off,
                      size_t size)
 {
-  printf ("%s\t%s\n", key, data);
+  static char seen[16];
+
+  printf ("%s\t%s@ %llu\n",
+          key,
+          data,
+          (unsigned long long) off);
   if (0 == strcmp (key, "text"))
   {
-    if ( (10 != size) ||
-         (0 != memcmp (data, "text, text", 10)) )
-      exit (5);
-    found |= 1;
+    if (off + size > sizeof (seen))
+      exit (6);
+    memcpy (&seen[off],
+            data,
+            size);
+    if ( (10 == off + size) &&
+         (0 == memcmp (seen, "text, text", 10)) )
+      found |= 1;
   }
   return MHD_YES;
 }
@@ -177,7 +186,6 @@ main (int argc, char *argv[])
     exit (3);
   if (found != 15)
     exit (2);
-
   found = 0;
   postprocessor = malloc (sizeof (struct MHD_PostProcessor)
                           + 0x1000 + 1);
@@ -191,9 +199,8 @@ main (int argc, char *argv[])
   postprocessor->buffer_size = 0x1000;
   postprocessor->state = PP_Init;
   postprocessor->skip_rn = RN_Inactive;
-  MHD_post_process (postprocessor, "text=text%2C+text", 11 + 6);
-  // MHD_post_process (postprocessor, "text=text%2", 11);
-  // MHD_post_process (postprocessor, "C+text", 6);
+  MHD_post_process (postprocessor, "text=text%2", 11);
+  MHD_post_process (postprocessor, "C+text", 6);
   MHD_post_process (postprocessor, "", 0);
   MHD_destroy_post_processor (postprocessor);
   if (found != 1)

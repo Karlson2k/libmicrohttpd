@@ -353,21 +353,17 @@ MHD_create_post_processor (struct MHD_Connection *connection,
 
 
 /**
- * Give a (possibly partial) value to the
- * application callback.  We have some
- * part of the value in the 'pp->xbuf', the
- * rest is between @a value_start and @a value_end.
- * If @a last_escape is non-NULL, there may be
- * an incomplete escape sequence at at @a value_escape
- * between @a value_start and @a value_end which
- * we should preserve in 'pp->xbuf' for the future.
+ * Give a (possibly partial) value to the application callback.  We have some
+ * part of the value in the 'pp->xbuf', the rest is between @a value_start and
+ * @a value_end.  If @a last_escape is non-NULL, there may be an incomplete
+ * escape sequence at at @a value_escape between @a value_start and @a
+ * value_end which we should preserve in 'pp->xbuf' for the future.
  *
- * Unescapes the value and calls the iterator
- * together with the key.  The key must already
- * be in the key buffer allocated and 0-terminated
- * at the end of @a pp at the time of the call.
+ * Unescapes the value and calls the iterator together with the key.  The key
+ * must already be in the key buffer allocated and 0-terminated at the end of
+ * @a pp at the time of the call.
  *
- * @param pp post processor to act upon
+ * @param[in,out] pp post processor to act upon
  * @param value_start where in memory is the value
  * @param value_end where does the value end
  * @param last_escape last '%'-sign in value range,
@@ -404,6 +400,7 @@ process_value (struct MHD_PostProcessor *pp,
           (xoff > 0) )
   {
     size_t delta = value_end - value_start;
+    bool cut = false;
 
     if (delta > XBUF_SIZE - xoff)
       delta = XBUF_SIZE - xoff;
@@ -414,14 +411,23 @@ process_value (struct MHD_PostProcessor *pp,
     /* find if escape sequence is at the end of the processing buffer;
        if so, exclude those from processing (reduce delta to point at
        end of processed region) */
-    if (delta >= XBUF_SIZE - 2)
+    if ( (xoff + delta > 0) &&
+         ('%' == xbuf[xoff + delta - 1]) )
     {
-      if ((xoff + delta > 0) &&
-          ('%' == xbuf[xoff + delta - 1]))
-        delta--;
-      else if ((xoff + delta > 1) &&
-               ('%' == xbuf[xoff + delta - 2]))
-        delta -= 2;
+      cut = (delta != XBUF_SIZE - xoff);
+      delta--;
+      pp->xbuf[0] = '%';
+      pp->xbuf_pos = 1;
+    }
+    else if ( (xoff + delta > 1) &&
+              ('%' == xbuf[xoff + delta - 2]) )
+    {
+      memcpy (pp->xbuf,
+              &xbuf[xoff + delta - 2],
+              2);
+      pp->xbuf_pos = 2;
+      cut = (delta != XBUF_SIZE - xoff);
+      delta -= 2;
     }
     xoff += delta;
     value_start += delta;
@@ -447,6 +453,8 @@ process_value (struct MHD_PostProcessor *pp,
     }
     pp->value_offset += xoff;
     xoff = 0;
+    if (cut)
+      break;
   }
 }
 
