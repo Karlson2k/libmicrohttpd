@@ -2076,7 +2076,7 @@ parse_initial_message_line (struct MHD_Connection *connection,
   {
     size_t uri_len;
     curi = uri;
-    /* Search from back to accept misformed URI with space */
+    /* Search from back to accept malformed URI with space */
     http_version = line + line_len - 1;
     /* Skip any trailing spaces */
     while ( (' ' == http_version[0]) &&
