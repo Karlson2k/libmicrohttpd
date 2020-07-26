@@ -3957,11 +3957,14 @@ MHD_queue_response (struct MHD_Connection *connection,
   connection->responseCode = status_code;
 #if defined(_MHD_HAVE_SENDFILE)
   if ( (response->fd == -1) ||
+       (response->is_pipe) ||
        (0 != (connection->daemon->options & MHD_USE_TLS)) )
     connection->resp_sender = MHD_resp_sender_std;
   else
     connection->resp_sender = MHD_resp_sender_sendfile;
 #endif /* _MHD_HAVE_SENDFILE */
+  /* FIXME: if 'is_pipe' is set, TLS is off, and we have *splice*, we could use splice()
+     to avoid two user-space copies... */
 
   if ( ( (NULL != connection->method) &&
          (MHD_str_equal_caseless_ (connection->method,

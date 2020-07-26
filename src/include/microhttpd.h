@@ -180,7 +180,7 @@ enum MHD_Result
 #define _MHD_EXTERN extern
 #elif defined (_WIN32) && defined(MHD_W32DLL)
 /* Define MHD_W32DLL when using MHD as W32 .DLL to speed up linker a little */
-#define _MHD_EXTERN __declspec (dllimport)
+#define _MHD_EXTERN __declspec(dllimport)
 #else
 #define _MHD_EXTERN extern
 #endif
@@ -262,10 +262,10 @@ typedef SOCKET MHD_socket;
 #ifndef _MHD_DEPR_FUNC
 #if defined(_MSC_FULL_VER) && _MSC_VER + 0 >= 1400
 /* VS 2005 or later */
-#define _MHD_DEPR_FUNC(msg) __declspec (deprecated (msg))
+#define _MHD_DEPR_FUNC(msg) __declspec(deprecated (msg))
 #elif defined(_MSC_FULL_VER) && _MSC_VER + 0 >= 1310
 /* VS .NET 2003 deprecation do not support custom messages */
-#define _MHD_DEPR_FUNC(msg) __declspec (deprecated)
+#define _MHD_DEPR_FUNC(msg) __declspec(deprecated)
 #elif (__GNUC__ + 0 >= 5) || (defined (__clang__) && \
   (__clang_major__ + 0 > 2 || (__clang_major__ + 0 == 2 && __clang_minor__ >= \
                                9)))                                             /* FIXME: earlier versions not tested */
@@ -3123,6 +3123,20 @@ MHD_create_response_from_buffer_with_free_callback (size_t size,
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd (size_t size,
                              int fd);
+
+
+/**
+ * Create a response object.  The response object can be extended with
+ * header information and then be used ONLY ONCE.
+ *
+ * @param fd file descriptor referring to a read-end of a pipe with the
+ *        data; will be closed when response is destroyed;
+ *        fd should be in 'blocking' mode
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_from_pipe (int fd);
 
 
 /**

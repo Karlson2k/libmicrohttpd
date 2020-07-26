@@ -1,3 +1,7 @@
+Sun 26 Jul 2020 01:56:54 PM CEST
+    Add MHD_create_response_from_pipe() to allow creating a response based
+    on data read from a pipe. -CG
+
 Fri Jul 10 15:04:51 CEST 2020
     Fixed Postprocessor URL-encoded parsing if '%' fell on boundary. -CG/MD
 

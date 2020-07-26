@@ -400,6 +400,11 @@ struct MHD_Response
    */
   enum MHD_ResponseFlags flags;
 
+  /**
+   * If the @e fd is a pipe (no sendfile()).
+   */
+  bool is_pipe;
+
 };
 
 
