@@ -1187,7 +1187,8 @@ try_grow_read_buffer (struct MHD_Connection *connection,
        the right position in the pool, say because someone called
        MHD_pool_allocate() without 'from_end' set to 'true'? Anyway,
        should be investigated! (Ideally provide all data from
-       *pool and connection->read_buffer and new_size for debugging). */mhd_assert (0);
+       *pool and connection->read_buffer and new_size for debugging). *///
+    mhd_assert (0);
     return false;
   }
   connection->read_buffer = rb;
