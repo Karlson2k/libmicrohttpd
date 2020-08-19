@@ -1147,6 +1147,7 @@ try_grow_read_buffer (struct MHD_Connection *connection,
 {
   size_t new_size;
   size_t avail_size;
+  void *rb;
 
   avail_size = MHD_pool_get_free (connection->pool);
   if (0 == avail_size)
@@ -1175,10 +1176,21 @@ try_grow_read_buffer (struct MHD_Connection *connection,
     new_size = connection->read_buffer_size + grow_size;
   }
   /* we can actually grow the buffer, do it! */
-  connection->read_buffer = MHD_pool_reallocate (connection->pool,
-                                                 connection->read_buffer,
-                                                 connection->read_buffer_size,
-                                                 new_size);
+  rb = MHD_pool_reallocate (connection->pool,
+                            connection->read_buffer,
+                            connection->read_buffer_size,
+                            new_size);
+  if (NULL == rb)
+  {
+    /* This should NOT be possible: we just computed 'new_size' so that
+       it should fit. If it happens, somehow our read buffer is not in
+       the right position in the pool, say because someone called
+       MHD_pool_allocate() without 'from_end' set to 'true'? Anyway,
+       should be investigated! (Ideally provide all data from
+       *pool and connection->read_buffer and new_size for debugging). */mhd_assert (0);
+    return false;
+  }
+  connection->read_buffer = rb;
   mhd_assert (NULL != connection->read_buffer);
   connection->read_buffer_size = new_size;
   return true;

@@ -1,3 +1,7 @@
+Wed 19 Aug 2020 09:40:39 AM CEST
+    Add logic to check on MHD_pool_reallocate() failure reported on the
+    mailinglist (will NOT yet fix the issue). -CG
+
 Sun 26 Jul 2020 01:56:54 PM CEST
     Add MHD_create_response_from_pipe() to allow creating a response based
     on data read from a pipe. -CG
