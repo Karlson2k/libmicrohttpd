@@ -1,5 +1,6 @@
 Fri 11 Sep 2020 10:08:22 PM CEST
     Fix crash problem in PostProcessor reported by MD. -CG
+    Fix GnuTLS configure test to check for gnutls_record_uncork. -CG
 
 Wed 19 Aug 2020 09:40:39 AM CEST
     Add logic to check on MHD_pool_reallocate() failure reported on the
