@@ -262,7 +262,7 @@ MHD_get_response_headers (struct MHD_Response *response,
   {
     numHeaders++;
     if ((NULL != iterator) &&
-        (MHD_YES != iterator (iterator_cls,
+        (MHD_NO == iterator (iterator_cls,
                               pos->kind,
                               pos->header,
                               pos->value)))

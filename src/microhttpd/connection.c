@@ -259,7 +259,7 @@ MHD_get_connection_values (struct MHD_Connection *connection,
     {
       ret++;
       if ( (NULL != iterator) &&
-           (MHD_YES != iterator (iterator_cls,
+           (MHD_NO == iterator (iterator_cls,
                                  pos->kind,
                                  pos->header,
                                  pos->value)) )
@@ -1333,7 +1333,7 @@ build_header_response (struct MHD_Connection *connection)
          close the connection */
       /* 'close' header doesn't exist yet, see if we need to add one;
          if the client asked for a close, no need to start chunk'ing */
-      if ( (MHD_YES == keepalive_possible (connection)) &&
+      if ( (MHD_NO != keepalive_possible (connection)) &&
            (MHD_str_equal_caseless_ (MHD_HTTP_VERSION_1_1,
                                      connection->version) ) )
       {
@@ -1430,7 +1430,7 @@ build_header_response (struct MHD_Connection *connection)
 #ifdef UPGRADE_SUPPORT
          (NULL == response->upgrade_handler) &&
 #endif /* UPGRADE_SUPPORT */
-         (MHD_YES == keepalive_possible (connection)) )
+         (MHD_NO != keepalive_possible (connection)) )
       must_add_keep_alive = true;
     break;
   case MHD_CONNECTION_BODY_SENT:
@@ -1631,7 +1631,7 @@ transmit_error_response (struct MHD_Connection *connection,
                              status_code,
                              response);
   MHD_destroy_response (response);
-  if (MHD_YES != iret)
+  if (MHD_NO == iret)
   {
     /* can't even send a reply, at least close the connection */
     CONNECTION_CLOSE_ERROR (connection,
@@ -2426,7 +2426,7 @@ process_request_body (struct MHD_Connection *connection)
     if (MHD_SIZE_UNKNOWN != connection->remaining_upload_size)
       connection->remaining_upload_size -= processed_size;
   }
-  while (MHD_YES == instant_retry);
+  while (MHD_NO != instant_retry);
   if ( (available > 0) &&
        (buffer_head != connection->read_buffer) )
     memmove (connection->read_buffer,
@@ -2666,7 +2666,7 @@ parse_connection_headers (struct MHD_Connection *connection)
                                MHD_HTTP_BAD_REQUEST,
                                response);
     MHD_destroy_response (response);
-    if (MHD_YES != iret)
+    if (MHD_NO == iret)
     {
       /* can't even send a reply, at least close the connection */
       CONNECTION_CLOSE_ERROR (connection,
@@ -3012,7 +3012,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       if (NULL != response->crc)
         MHD_mutex_lock_chk_ (&response->mutex);
 #endif
-      if (MHD_YES != try_ready_normal_body (connection))
+      if (MHD_NO == try_ready_normal_body (connection))
       {
         /* mutex was already unlocked by try_ready_normal_body */
         return;
@@ -3494,7 +3494,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       {
         connection->state = MHD_CONNECTION_UPGRADE;
         /* This connection is "upgraded".  Pass socket to application. */
-        if (MHD_YES !=
+        if (MHD_NO ==
             MHD_response_execute_upgrade_ (connection->response,
                                            connection))
         {
@@ -3536,7 +3536,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         connection->state = MHD_CONNECTION_BODY_SENT;
         continue;
       }
-      if (MHD_YES == try_ready_normal_body (connection))
+      if (MHD_NO != try_ready_normal_body (connection))
       {
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
         if (NULL != connection->response->crc)
@@ -3569,7 +3569,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         connection->state = MHD_CONNECTION_BODY_SENT;
         continue;
       }
-      if (MHD_YES == try_ready_chunked_body (connection))
+      if (MHD_NO != try_ready_chunked_body (connection))
       {
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
         if (NULL != connection->response->crc)

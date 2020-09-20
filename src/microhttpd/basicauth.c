@@ -151,7 +151,7 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
     ret = MHD_NO;
 
   free (header);
-  if (MHD_YES == ret)
+  if (MHD_NO != ret)
   {
     ret = MHD_queue_response (connection,
                               MHD_HTTP_UNAUTHORIZED,
