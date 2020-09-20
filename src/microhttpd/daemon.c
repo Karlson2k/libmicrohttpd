@@ -77,18 +77,6 @@
  */
 #define MHD_POOL_SIZE_DEFAULT (32 * 1024)
 
-/**
- * Print extra messages with reasons for closing
- * sockets? (only adds non-error messages).
- */
-#define DEBUG_CLOSE MHD_NO
-
-/**
- * Print extra messages when establishing
- * connections? (only adds non-error messages).
- */
-#define DEBUG_CONNECT MHD_NO
-
 
 /* Forward declarations. */
 
@@ -1081,7 +1069,7 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
     }
   }
 #endif
-#if DEBUG_CONNECT
+#if _MHD_DEBUG_CONNECT
 #ifdef HAVE_MESSAGES
   if (NULL != max_fd)
     MHD_DLOG (daemon,
@@ -2178,7 +2166,7 @@ thread_main_handle_connection (void *data)
     }
 #endif /* UPGRADE_SUPPORT */
   }
-#if DEBUG_CLOSE
+#if _MHD_DEBUG_CLOSE
 #ifdef HAVE_MESSAGES
   MHD_DLOG (con->daemon,
             _ ("Processing thread terminating. Closing connection.\n"));
@@ -2449,7 +2437,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 
 
 #ifdef HAVE_MESSAGES
-#if DEBUG_CONNECT
+#if _MHD_DEBUG_CONNECT
   MHD_DLOG (daemon,
             _ ("Accepted connection on socket %d.\n"),
             client_socket);
@@ -2479,7 +2467,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
                                addr,
                                addrlen)) )
   {
-#if DEBUG_CLOSE
+#if _MHD_DEBUG_CLOSE
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ ("Connection rejected by application. Closing connection.\n"));
@@ -3310,7 +3298,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   }
 #endif /* !USE_ACCEPT4 || !SOCK_CLOEXEC */
 #ifdef HAVE_MESSAGES
-#if DEBUG_CONNECT
+#if _MHD_DEBUG_CONNECT
   MHD_DLOG (daemon,
             _ ("Accepted connection on socket %d\n"),
             s);

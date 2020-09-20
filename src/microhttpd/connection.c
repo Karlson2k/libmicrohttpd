@@ -114,16 +114,6 @@
 #define INTERNAL_ERROR ""
 #endif
 
-/**
- * Add extra debug messages with reasons for closing connections
- * (non-error reasons).
- */
-#define DEBUG_CLOSE MHD_NO
-
-/**
- * Should all data send be printed to stderr?
- */
-#define DEBUG_SEND_DATA MHD_NO
 
 
 /**
@@ -2933,7 +2923,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                               NULL);
       return;
     }
-#if DEBUG_SEND_DATA
+#if _MHD_DEBUG_SEND_DATA
     fprintf (stderr,
              _ ("Sent 100 continue response: `%.*s'\n"),
              (int) ret,
@@ -3037,7 +3027,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                        response->data_size
                                        - (size_t) data_write_offset,
                                        MHD_SSO_NO_CORK);
-#if DEBUG_SEND_DATA
+#if _MHD_DEBUG_SEND_DATA
         if (ret > 0)
           fprintf (stderr,
                    _ ("Sent %d-byte DATA response: `%.*s'\n"),
