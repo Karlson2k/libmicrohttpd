@@ -56,30 +56,45 @@ gawk -e 'BEGIN {
   hundreds[5]="five"
   hundreds[6]="six"
   prev_num=0
+  prev_reason=""
+  prev_desc=""
+  num=0
+  reason=""
+  desc=""
 }
 FNR > 1 {
   gsub(/^\[|^"\[|\]"$|\]$/, "", $3)
   gsub(/\]\[/, "; ", $3)
-  if ($1 % 100 == 0) {
-    if ($1 != 100) { printf("\n};\n\n") }
-    prev_num=$1 - 1;
+  num = $1
+  reason = $2
+  desc = $3
+  if (num % 100 == 0) {
+    if (num != 100) {
+      printf ("  /* %s */ %-24s /* %s */\n};\n\n", prev_num, "\""prev_reason"\"", prev_desc)
+    }
+    prev_num = num;
     print "static const char *const " hundreds[$1/100] "_hundred[] = {"
   }
-  if ($1 == 306) { 
-    $2 = "Switch Proxy" 
-    $3 = "Not used! " $3
+  if (num == 306) { 
+    reason = "Switch Proxy" 
+    desc = "Not used! " desc
   }
-  if ($2 == "Unassigned") next
-  while(++prev_num != $1) {
-    if (prev_num == 449) {reason="Reply With"; desc="MS IIS extension";}
-    else if (prev_num == 450) {reason="Blocked by Windows Parental Controls"; desc="MS extension";}
-    else if (prev_num == 509) {reason="Bandwidth Limit Exceeded"; desc="Apache extension";}
-    else {reason="Unknown"; desc="Not used";}
-    printf (",\n  /* %s */ %-24s /* %s */", prev_num, "\"" reason "\"", desc)
+  if (reason == "Unassigned") next
+  if (prev_num != num)
+    printf ("  /* %s */ %-24s /* %s */\n", prev_num, "\""prev_reason"\",", prev_desc)
+  while(++prev_num < num) {
+    if (prev_num == 449) {prev_reason="Reply With"; prev_desc="MS IIS extension";}
+    else if (prev_num == 450) {prev_reason="Blocked by Windows Parental Controls"; prev_desc="MS extension";}
+    else if (prev_num == 509) {prev_reason="Bandwidth Limit Exceeded"; prev_desc="Apache extension";}
+    else {prev_reason="Unknown"; prev_desc="Not used";}
+    printf ("  /* %s */ %-24s /* %s */\n", prev_num, "\""prev_reason"\",", prev_desc)
   }
-  if ($1 % 100 != 0) { print "," }
-  printf ("  /* %s */ %-24s /* %s */", $1, "\""$2"\"", $3)
+  prev_num = num
+  prev_reason = reason
+  prev_desc = desc
 }
-END {printf("\n};\n")}' http-status-codes-1.csv >> code_insert_statuses.c && \
+END {
+  printf ("  /* %s */ %-24s /* %s */\n};\n", prev_num, "\""prev_reason"\"", prev_desc)
+}' http-status-codes-1.csv > code_insert_statuses.c && \
 echo OK && \
 rm http-status-codes-1.csv || exit
