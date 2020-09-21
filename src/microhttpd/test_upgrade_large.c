@@ -589,7 +589,7 @@ make_blocking (MHD_socket fd)
 static void
 kick_select ()
 {
-  if (MHD_ITC_IS_VALID_(kicker))
+  if (MHD_ITC_IS_VALID_ (kicker))
   {
     MHD_itc_activate_ (kicker, "K");
   }
@@ -612,7 +612,7 @@ send_all (struct wr_socket *sock,
                    len - off);
     if (0 > ret)
     {
-      if (!MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_()))
+      if (! MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
         abort ();
       ret = 0;
     }
@@ -916,7 +916,7 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
   MHD_UNSIGNED_LONG_LONG to;
   struct timeval tv;
 
-  if (!MHD_itc_init_ (kicker))
+  if (! MHD_itc_init_ (kicker))
     abort ();
   while (! done)
   {
@@ -996,7 +996,7 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
   di = MHD_get_daemon_info (daemon,
                             MHD_DAEMON_INFO_EPOLL_FD);
   ep = di->listen_fd;
-  if (!MHD_itc_init_ (kicker))
+  if (! MHD_itc_init_ (kicker))
     abort ();
   while (! done)
   {
