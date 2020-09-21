@@ -610,16 +610,13 @@ send_all (struct wr_socket *sock,
     ret = wr_send (sock,
                    &text[off],
                    len - off);
-    kick_select ();
     if (0 > ret)
     {
-      if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
-      {
-        ret = 0;
-        continue;
-      }
-      abort ();
+      if (!MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_()))
+        abort ();
+      ret = 0;
     }
+    kick_select ();
   }
 }
 
