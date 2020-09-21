@@ -647,7 +647,7 @@ recv_hdr (struct wr_socket *sock)
         continue;
       fprintf (stderr,
                "recv failed unexpectedly: %s\n",
-               strerror (errno));
+               MHD_socket_last_strerr_ ());
       abort ();
     }
     if (0 == ret)
