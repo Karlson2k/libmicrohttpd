@@ -92,7 +92,7 @@ ahc_echo (void *cls,
   const char *password = "testpass";
   const char *realm = "test@example.com";
   enum MHD_Result ret;
-  (void) cls; (void) url;                          /* Unused. Silent compiler warning. */
+  (void) cls; (void) url;                         /* Unused. Silent compiler warning. */
   (void) method; (void) version; (void) upload_data; /* Unused. Silent compiler warning. */
   (void) upload_data_size; (void) unused;         /* Unused. Silent compiler warning. */
 
