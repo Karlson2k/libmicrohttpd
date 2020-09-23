@@ -296,6 +296,11 @@ main (int argc, char *const *argv)
   curl_version_info_data *d = curl_version_info (CURLVERSION_NOW);
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
 
+#ifdef CURL_VERSION_SSPI
+  if (0 != (d->features | CURL_VERSION_SSPI))
+    return 77; /* Skip test, W32 SSPI doesn't support sha256 digest */
+#endif /* CURL_VERSION_SSPI */
+
   /* curl added SHA256 support in 7.57 = 7.0x39 */
   if (d->version_num < 0x073900)
     return 77; /* skip test, curl is too old */
