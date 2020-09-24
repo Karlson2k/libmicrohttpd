@@ -25,14 +25,11 @@ THREAD_ONLY_TESTS = \
   test_termination \
   test_timeout
 
-.NOTPARALLEL:
-
 if HAVE_POSIX_THREADS
 THREAD_ONLY_TESTS += \
   perf_get_concurrent11 \
   test_quiesce \
-  test_concurrent_stop \
-  perf_get_concurrent
+  test_concurrent_stop
 
 if HAVE_CURL_BINARY
 THREAD_ONLY_TESTS += \
@@ -47,6 +44,11 @@ if ENABLE_DAUTH
     test_digestauth_with_arguments
 endif
 
+if HAVE_POSIX_THREADS
+THREAD_ONLY_TESTS += \
+  perf_get_concurrent
+endif
+  
 if HAVE_CURL
 check_PROGRAMS = \
   test_get \
