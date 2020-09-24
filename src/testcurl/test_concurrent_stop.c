@@ -142,9 +142,9 @@ ahc_echo (void *cls,
           const char *version,
           const char *upload_data,
           size_t *upload_data_size,
-          void **unused)
+          void **usr_data)
 {
-  static int ptr;
+  static int marker;
   const char *me = cls;
   enum MHD_Result ret;
   (void) url; (void) version;                      /* Unused. Silent compiler warning. */
@@ -152,12 +152,12 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&marker != *usr_data)
   {
-    *unused = &ptr;
+    *usr_data = &marker;
     return MHD_YES;
   }
-  *unused = NULL;
+  *usr_data = NULL;
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
