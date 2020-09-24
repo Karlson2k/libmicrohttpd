@@ -67,6 +67,11 @@ static volatile int watchdog_continue;
 
 static const char *watchdog_obj;
 
+/**
+ * Indicate that client detected error
+ */
+static volatile CURLcode client_error;
+
 static void *
 thread_watchdog (void *param)
 {
@@ -195,6 +200,7 @@ thread_gets (void *param)
     if (CURLE_OK != errornum)
     {
       curl_easy_cleanup (c);
+      client_error = errornum;
       return NULL;
     }
   }
@@ -258,7 +264,9 @@ testMultithreadedGet (int port,
 {
   struct MHD_Daemon *d;
   pthread_t p;
+  int result;
 
+  result = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
                         | poll_flag,
@@ -278,14 +286,21 @@ testMultithreadedGet (int port,
     }
     port = (int) dinfo->port;
   }
+  client_error = CURLE_OK; /* clear client error state */
   p = start_gets (port);
   (void) sleep (1);
   start_watchdog (10, "daemon_stop() in testMultithreadedGet");
+  if (CURLE_OK != client_error) /* poor sync, but enough for test */
+  {
+    result = 64;
+    fprintf (stderr, "libcurl reported at least one error: \"%s\"\n",
+             curl_easy_strerror (client_error));
+  }
   MHD_stop_daemon (d);
   stop_watchdog ();
   continue_requesting = 0;
   pthread_join (p, NULL);
-  return 0;
+  return result;
 }
 
 
@@ -295,7 +310,9 @@ testMultithreadedPoolGet (int port,
 {
   struct MHD_Daemon *d;
   pthread_t p;
+  int result;
 
+  result = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
                         | poll_flag,
                         port,
@@ -315,14 +332,21 @@ testMultithreadedPoolGet (int port,
     }
     port = (int) dinfo->port;
   }
+  client_error = CURLE_OK; /* clear client error state */
   p = start_gets (port);
   (void) sleep (1);
   start_watchdog (10, "daemon_stop() in testMultithreadedPoolGet");
+  if (CURLE_OK != client_error) /* poor sync, but enough for test */
+  {
+    result = 64;
+    fprintf (stderr, "libcurl reported at least one error: \"%s\"\n",
+             curl_easy_strerror (client_error));
+  }
   MHD_stop_daemon (d);
   stop_watchdog ();
   continue_requesting = 0;
   pthread_join (p, NULL);
-  return 0;
+  return result;
 }
 
 
