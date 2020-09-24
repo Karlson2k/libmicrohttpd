@@ -41,12 +41,6 @@
 #endif
 
 /**
- * How many rounds of operations do we do for each
- * test (total number of requests will be ROUNDS * PAR).
- */
-#define ROUNDS 50000
-
-/**
  * How many requests do we do in parallel?
  */
 #define PAR (CPU_COUNT * 4)
