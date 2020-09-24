@@ -56,7 +56,11 @@
  * Ensure that free ports are not exhausted during test.
  */
 #if CPU_COUNT > 8
+#ifndef _WIN32
 #define ROUNDS (1 + (30000 / 12) / CPU_COUNT)
+#else /* _WIN32 */
+#define ROUNDS (1 + (10000 / 12) / CPU_COUNT)
+#endif /* _WIN32 */
 #else
 #define ROUNDS 500
 #endif
