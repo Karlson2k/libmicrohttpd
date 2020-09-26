@@ -6427,7 +6427,8 @@ MHD_start_daemon_va (unsigned int flags,
 #endif /* HTTPS_SUPPORT */
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if ( (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) &&
-       (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
+       ( (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) ||
+         (MHD_ITC_IS_VALID_ (daemon->itc)) ) )
   {
     if (0 == daemon->worker_pool_size)
     {
