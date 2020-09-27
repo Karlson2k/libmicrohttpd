@@ -904,7 +904,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
     else
 #endif
     {
-      if (0 ==
+      if (0 !=
           MHD_socket_cork_ (connection->socket_fd,
                             true))
       {
@@ -930,7 +930,9 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
     else
 #endif
     {
-      if (0 ==
+      if (! connection->sk_cork_on)
+        return MHD_YES;
+      if (0 !=
           MHD_socket_cork_ (connection->socket_fd,
                             false))
       {

@@ -2441,7 +2441,10 @@ check_write_done (struct MHD_Connection *connection,
 {
   if ( (connection->write_buffer_append_offset !=
         connection->write_buffer_send_offset) ||
-       (connection->sk_cork_on) )
+       /* if we expected to turn cork off, and it is still on,
+          we are not finished sending (can happen with gnutls_record_uncork) */
+       ( (connection->sk_cork_on) &&
+         (MHD_CONNECTION_HEADERS_SENDING != connection->state) ) )
     return MHD_NO;
   connection->write_buffer_append_offset = 0;
   connection->write_buffer_send_offset = 0;
@@ -2555,7 +2558,8 @@ process_broken_line (struct MHD_Connection *connection,
  adjacency); also, in the case where these are not adjacent
  (not sure how it can happen!), we would want to allocate from
  the end of the pool, so as to not destroy the read-buffer's
- ability to grow nicely. */last = MHD_pool_reallocate (connection->pool,
+ ability to grow nicely. *///
+    last = MHD_pool_reallocate (connection->pool,
                                 last,
                                 last_len + 1,
                                 last_len + tmp_len + 1);

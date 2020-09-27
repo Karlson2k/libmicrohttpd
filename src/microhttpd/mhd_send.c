@@ -330,6 +330,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                 buffer,
                 buffer_size,
                 MAYBE_MSG_NOSIGNAL | (want_cork ? MSG_MORE : 0));
+    connection->sk_cork_on = want_cork; /* pretend corking happened as requested */
 #else
     ret = send (connection->socket_fd,
                 buffer,
