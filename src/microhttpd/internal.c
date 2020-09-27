@@ -214,11 +214,11 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
                                              connection,
                                              args);
         if (MHD_NO == cb (connection,
-                           args,
-                           key_len,
-                           NULL,
-                           0,
-                           kind))
+                          args,
+                          key_len,
+                          NULL,
+                          0,
+                          kind))
           return MHD_NO;
         (*num_headers)++;
         break;
@@ -235,11 +235,11 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
                                              connection,
                                              equals);
       if (MHD_NO == cb (connection,
-                         args,
-                         key_len,
-                         equals,
-                         value_len,
-                         kind))
+                        args,
+                        key_len,
+                        equals,
+                        value_len,
+                        kind))
         return MHD_NO;
       (*num_headers)++;
       break;
@@ -256,11 +256,11 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
                                            connection,
                                            args);
       if (MHD_NO == cb (connection,
-                         args,
-                         key_len,
-                         NULL,
-                         0,
-                         kind))
+                        args,
+                        key_len,
+                        NULL,
+                        0,
+                        kind))
         return MHD_NO;
       /* continue with 'bar' */
       (*num_headers)++;
@@ -280,11 +280,11 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
                                            connection,
                                            equals);
     if (MHD_NO == cb (connection,
-                       args,
-                       key_len,
-                       equals,
-                       value_len,
-                       kind))
+                      args,
+                      key_len,
+                      equals,
+                      value_len,
+                      kind))
       return MHD_NO;
     (*num_headers)++;
     args = amper;

@@ -96,7 +96,7 @@
       MHD_PANIC (_ ("Failed to close FD.\n"));            \
 } while (0)
 
-/* 
+/*
 #define EXTRA_CHECKS _MHD_MACRO_NO
  * Not used. Behaviour is controlled by _DEBUG/NDEBUG macros.
  */

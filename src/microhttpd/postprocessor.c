@@ -801,13 +801,13 @@ find_boundary (struct MHD_PostProcessor *pp,
                      '-',
                      pp->buffer_pos);
       if (NULL == dash)
-        (*ioffptr) += pp->buffer_pos;     /* skip entire buffer */
+        (*ioffptr) += pp->buffer_pos;  /* skip entire buffer */
       else if (dash == buf)
-        (*ioffptr)++;       /* at least skip one byte */
+        (*ioffptr)++;                  /* at least skip one byte */
       else
-        (*ioffptr) += dash - buf;       /* skip to first possible boundary */
+        (*ioffptr) += dash - buf;      /* skip to first possible boundary */
     }
-    return MHD_NO;              /* expected boundary */
+    return MHD_NO;                     /* expected boundary */
   }
   /* remove boundary from buffer */
   (*ioffptr) += 2 + blen;

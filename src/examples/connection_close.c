@@ -102,10 +102,10 @@ main (int argc, char *const *argv)
     return 1;
   }
   d = MHD_start_daemon (/* MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG, */
-                        /* MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG, */
-                        /* MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | MHD_USE_POLL, */
+    /* MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG, */
+    /* MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | MHD_USE_POLL, */
     MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD
-    | MHD_USE_ERROR_LOG | MHD_USE_POLL,                                                                   // | MHD_USE_ITC,
+    | MHD_USE_ERROR_LOG | MHD_USE_POLL, // | MHD_USE_ITC,
     /* MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG, */
     atoi (argv[1]),
     NULL, NULL, &ahc_echo, PAGE,

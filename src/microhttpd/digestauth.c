@@ -604,9 +604,9 @@ check_nonce_nc (struct MHD_Connection *connection,
   }
   /* Nonce is larger, shift bitmask and bump limit */
   if (64 > nc - nn->nc)
-    nn->nmask <<= (nc - nn->nc); /* small jump, less than mask width */
+    nn->nmask <<= (nc - nn->nc);  /* small jump, less than mask width */
   else
-    nn->nmask = 0; /* big jump, unset all bits in the mask */
+    nn->nmask = 0;                /* big jump, unset all bits in the mask */
   nn->nc = nc;
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_unlock_chk_ (&daemon->nnc_lock);

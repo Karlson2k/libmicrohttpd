@@ -405,7 +405,11 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
          (0 == buffer_size) &&
          connection->sk_cork_on)
     {
-      (void) gnutls_record_uncork (connection->tls_session, 0);
+      int err;
+
+      err = gnutls_record_uncork (connection->tls_session, 0);
+      if (0 > err)
+        return ret;
       connection->sk_cork_on = false;
     }
     return ret;
@@ -434,6 +438,9 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
     msg.msg_iovlen = 2;
 
     ret = sendmsg (s, &msg, MAYBE_MSG_NOSIGNAL);
+    if ( (-1 == ret) &&
+         (EAGAIN == errno) )
+      return MHD_ERR_AGAIN_;
   }
 #elif HAVE_WRITEV
   {
@@ -441,6 +448,9 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 
     iovcnt = sizeof (vector) / sizeof (struct iovec);
     ret = writev (s, vector, iovcnt);
+    if ( (-1 == ret) &&
+         (EAGAIN == errno) )
+      return MHD_ERR_AGAIN_;
   }
 #endif
 

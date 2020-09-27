@@ -1,3 +1,9 @@
+Sun 27 Sep 2020 10:08:03 PM CEST
+    Fixed incorrect triggering of epoll edge polling for
+    "upgraded" TLS connections.  Fixed a few cases where
+    gnutls_record_uncork() return value was still ignored,
+    possibly causing buffer to not be flushed correctly. -CG
+
 Sat 26 Sep 2020 08:18:02 PM CEST
     Make MHD_USE_NO_LISTEN_SOCKET work in conjunction with
     MHD internal threads. -CG/DE

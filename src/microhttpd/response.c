@@ -263,9 +263,9 @@ MHD_get_response_headers (struct MHD_Response *response,
     numHeaders++;
     if ((NULL != iterator) &&
         (MHD_NO == iterator (iterator_cls,
-                              pos->kind,
-                              pos->header,
-                              pos->value)))
+                             pos->kind,
+                             pos->header,
+                             pos->value)))
       break;
   }
   return numHeaders;
@@ -919,7 +919,11 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
 #ifdef HTTPS_SUPPORT
     if (0 != (daemon->options & MHD_USE_TLS) )
     {
-      gnutls_record_uncork (connection->tls_session, 0);
+      int err;
+
+      err = gnutls_record_uncork (connection->tls_session, 0);
+      if (0 > err)
+        return MHD_NO;
       connection->sk_cork_on = false;
       return MHD_YES;
     }

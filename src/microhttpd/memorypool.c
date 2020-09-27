@@ -336,10 +336,10 @@ MHD_pool_reallocate (struct MemoryPool *pool,
     {     /* "old" block is the last allocated block */
       const size_t new_apos = ROUND_TO_ALIGN (old_offset + new_size);
       if (! shrinking)
-      {       /* Grow in-place, check for enough space. */
+      {                               /* Grow in-place, check for enough space. */
         if ( (new_apos > pool->end) ||
-             (new_apos < pool->pos) )       /* Value wrap */
-          return NULL;       /* No space */
+             (new_apos < pool->pos) ) /* Value wrap */
+          return NULL;                /* No space */
       }
       /* Resized in-place */
       pool->pos = new_apos;

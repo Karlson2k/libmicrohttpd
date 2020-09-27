@@ -573,7 +573,7 @@ ahc_cancel (void *cls,
 {
   struct MHD_Response *response;
   enum MHD_Result ret;
-  (void) cls; (void) url; (void) version;            /* Unused. Silent compiler warning. */
+  (void) cls; (void) url; (void) version;          /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
   if (0 != strcasecmp ("POST", method))

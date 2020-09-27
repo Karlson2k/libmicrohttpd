@@ -1333,6 +1333,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
    * this function. If 'was_closed' changed externally in the middle
    * of processing - it will be processed on next iteration. */
   bool was_closed;
+
   if (daemon->shutdown)
   {
     /* Daemon shutting down, application will not receive any more data. */
@@ -1355,10 +1356,9 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _ (
-                  "Failed to forward to application "
-                  MHD_UNSIGNED_LONG_LONG_PRINTF \
-                  " bytes of data received from remote side: application shut down socket.\n"),
+                _ ("Failed to forward to application "
+                   MHD_UNSIGNED_LONG_LONG_PRINTF \
+                   " bytes of data received from remote side: application shut down socket.\n"),
                 (MHD_UNSIGNED_LONG_LONG) urh->in_buffer_used);
 #endif
 
@@ -1367,7 +1367,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
      * check for any pending data even if socket is not marked
      * as 'ready' (signal may arrive after poll()/select()).
      * Socketpair for forwarding is always in non-blocking mode
-     * so no risk that recv() will block the thread. */if (0 != urh->out_buffer_size)
+     * so no risk that recv() will block the thread. *///
+    if (0 != urh->out_buffer_size)
       urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
     /* Discard any data received form remote. */
     urh->in_buffer_used = 0;
@@ -1379,12 +1380,14 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     connection->tls_read_ready = false;
   }
 
-  /* On some platforms (W32, possibly Darwin) failed send() (send() will always
-   * fail after remote disconnect was detected) may discard data in system
-   * buffers received by system but not yet read by recv().
-   * So, before trying send() on any socket, recv() must be performed at first
-   * otherwise last part of incoming data may be lost. *//* If disconnect or error was detected - try to read from socket
-   * to dry data possibly pending is system buffers. */if (0 != (MHD_EPOLL_STATE_ERROR & urh->app.celi))
+  /* On some platforms (W32, possibly Darwin) failed send() (send() will
+   * always fail after remote disconnect was detected) may discard data in
+   * system buffers received by system but not yet read by recv().  So, before
+   * trying send() on any socket, recv() must be performed at first otherwise
+   * last part of incoming data may be lost.  If disconnect or error was
+   * detected - try to read from socket to dry data possibly pending is system
+   * buffers. *///
+  if (0 != (MHD_EPOLL_STATE_ERROR & urh->app.celi))
     urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
   if (0 != (MHD_EPOLL_STATE_ERROR & urh->mhd.celi))
     urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
@@ -1424,10 +1427,10 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     else   /* 0 < res */
     {
       urh->in_buffer_used += res;
-      if (buf_size > (size_t) res)
-        urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
-      else if (0 < gnutls_record_check_pending (connection->tls_session))
+      if (0 < gnutls_record_check_pending (connection->tls_session))
+      {
         connection->tls_read_ready = true;
+      }
     }
     if (MHD_EPOLL_STATE_ERROR ==
         ((MHD_EPOLL_STATE_ERROR | MHD_EPOLL_STATE_READ_READY) & urh->app.celi))
@@ -1932,8 +1935,8 @@ thread_main_handle_connection (void *data)
       }
 #endif /* HAVE_POLL */
       MHD_itc_clear_ (daemon->itc);
-      continue;     /* Check again for resume. */
-    }     /* End of "suspended" branch. */
+      continue; /* Check again for resume. */
+    }           /* End of "suspended" branch. */
 
     if (was_suspended)
     {
@@ -2228,7 +2231,8 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon);
  * and if possible.
  */
 #define MHD_TLSLIB_NEED_PUSH_FUNC 1
-#endif /* !MHD_WINSOCK_SOCKETS && !MHD_socket_nosignal_ && (GNUTLS_VERSION_NUMBER+0 < 0x030402) */
+#endif \
+  /* !MHD_WINSOCK_SOCKETS && !MHD_socket_nosignal_ && (GNUTLS_VERSION_NUMBER+0 < 0x030402) */
 
 #ifdef MHD_TLSLIB_NEED_PUSH_FUNC
 /**
@@ -3379,7 +3383,8 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
            this is not true as if we fail to do manually remove it,
            we are still seeing an event for this fd in epoll,
            causing grief (use-after-free...) --- at least on my
-           system. */if (0 != epoll_ctl (daemon->epoll_fd,
+           system. *///
+        if (0 != epoll_ctl (daemon->epoll_fd,
                             EPOLL_CTL_DEL,
                             pos->socket_fd,
                             NULL))
@@ -3831,9 +3836,9 @@ MHD_select (struct MHD_Daemon *daemon,
     return MHD_NO;
   }
   if (MHD_NO != internal_run_from_select (daemon,
-                                           &rs,
-                                           &ws,
-                                           &es))
+                                          &rs,
+                                          &ws,
+                                          &es))
     return (MHD_NO == err_state) ? MHD_YES : MHD_NO;
   return MHD_NO;
 }
@@ -3920,7 +3925,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       timeout = 0;
     else if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) ||
               (MHD_NO == MHD_get_timeout (daemon,
-                                           &ltimeout)) )
+                                          &ltimeout)) )
       timeout = -1;
     else
       timeout = (ltimeout > INT_MAX) ? INT_MAX : (int) ltimeout;
@@ -4000,9 +4005,9 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       prev = pos->prev;
       /* first, sanity checks */
       if (i >= num_connections)
-        break;   /* connection list changed somehow, retry later ... */
+        break;     /* connection list changed somehow, retry later ... */
       if (p[poll_server + i].fd != pos->socket_fd)
-        continue;   /* fd mismatch, something else happened, retry later ... */
+        continue;  /* fd mismatch, something else happened, retry later ... */
       call_handlers (pos,
                      0 != (p[poll_server + i].revents & POLLIN),
                      0 != (p[poll_server + i].revents & POLLOUT),
@@ -4267,22 +4272,26 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
 
       /* Update ueh state based on what is ready according to epoll() */
       if (0 != (events[i].events & EPOLLIN))
+      {
         ueh->celi |= MHD_EPOLL_STATE_READ_READY;
+      }
       if (0 != (events[i].events & EPOLLOUT))
+      {
         ueh->celi |= MHD_EPOLL_STATE_WRITE_READY;
+      }
       if (0 != (events[i].events & EPOLLHUP))
+      {
         ueh->celi |= MHD_EPOLL_STATE_READ_READY | MHD_EPOLL_STATE_WRITE_READY;
+      }
 
       if ( (0 == (ueh->celi & MHD_EPOLL_STATE_ERROR)) &&
            (0 != (events[i].events & (EPOLLERR | EPOLLPRI))) )
       {
-        /* Process new error state only one time
-         * and avoid continuously marking this connection
-         * as 'ready'. */
+        /* Process new error state only one time and avoid continuously
+         * marking this connection as 'ready'. */
         ueh->celi |= MHD_EPOLL_STATE_ERROR;
         new_err_state = true;
       }
-
       if (! urh->in_eready_list)
       {
         if (new_err_state ||
@@ -4447,7 +4456,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
   if (MHD_NO != may_block)
   {
     if (MHD_NO != MHD_get_timeout (daemon,
-                                    &timeout_ll))
+                                   &timeout_ll))
     {
       if (timeout_ll >= (MHD_UNSIGNED_LONG_LONG) INT_MAX)
         timeout_ms = INT_MAX;
@@ -5406,10 +5415,10 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_CONNECTION_MEMORY_INCREMENT:
         case MHD_OPTION_THREAD_STACK_SIZE:
           if (MHD_NO == parse_options (daemon,
-                                        servaddr,
-                                        opt,
-                                        (size_t) oa[i].value,
-                                        MHD_OPTION_END))
+                                       servaddr,
+                                       opt,
+                                       (size_t) oa[i].value,
+                                       MHD_OPTION_END))
             return MHD_NO;
           break;
         /* all options taking 'unsigned int' */
@@ -5423,39 +5432,39 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_LISTEN_BACKLOG_SIZE:
         case MHD_OPTION_SERVER_INSANITY:
           if (MHD_NO == parse_options (daemon,
-                                        servaddr,
-                                        opt,
-                                        (unsigned int) oa[i].value,
-                                        MHD_OPTION_END))
+                                       servaddr,
+                                       opt,
+                                       (unsigned int) oa[i].value,
+                                       MHD_OPTION_END))
             return MHD_NO;
           break;
           /* all options taking 'enum' */
 #ifdef HTTPS_SUPPORT
         case MHD_OPTION_HTTPS_CRED_TYPE:
           if (MHD_NO == parse_options (daemon,
-                                        servaddr,
-                                        opt,
-                                        (gnutls_credentials_type_t) oa[i].value,
-                                        MHD_OPTION_END))
+                                       servaddr,
+                                       opt,
+                                       (gnutls_credentials_type_t) oa[i].value,
+                                       MHD_OPTION_END))
             return MHD_NO;
           break;
 #endif /* HTTPS_SUPPORT */
         /* all options taking 'MHD_socket' */
         case MHD_OPTION_LISTEN_SOCKET:
           if (MHD_NO == parse_options (daemon,
-                                        servaddr,
-                                        opt,
-                                        (MHD_socket) oa[i].value,
-                                        MHD_OPTION_END))
+                                       servaddr,
+                                       opt,
+                                       (MHD_socket) oa[i].value,
+                                       MHD_OPTION_END))
             return MHD_NO;
           break;
         /* all options taking 'int' */
         case MHD_OPTION_STRICT_FOR_CLIENT:
           if (MHD_NO == parse_options (daemon,
-                                        servaddr,
-                                        opt,
-                                        (int) oa[i].value,
-                                        MHD_OPTION_END))
+                                       servaddr,
+                                       opt,
+                                       (int) oa[i].value,
+                                       MHD_OPTION_END))
             return MHD_NO;
           break;
         /* all options taking one pointer */
@@ -5470,10 +5479,10 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_HTTPS_CERT_CALLBACK:
         case MHD_OPTION_HTTPS_CERT_CALLBACK2:
           if (MHD_NO == parse_options (daemon,
-                                        servaddr,
-                                        opt,
-                                        oa[i].ptr_value,
-                                        MHD_OPTION_END))
+                                       servaddr,
+                                       opt,
+                                       oa[i].ptr_value,
+                                       MHD_OPTION_END))
             return MHD_NO;
           break;
         /* all options taking two pointers */
@@ -5484,21 +5493,21 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_UNESCAPE_CALLBACK:
         case MHD_OPTION_GNUTLS_PSK_CRED_HANDLER:
           if (MHD_NO == parse_options (daemon,
-                                        servaddr,
-                                        opt,
-                                        (void *) oa[i].value,
-                                        oa[i].ptr_value,
-                                        MHD_OPTION_END))
+                                       servaddr,
+                                       opt,
+                                       (void *) oa[i].value,
+                                       oa[i].ptr_value,
+                                       MHD_OPTION_END))
             return MHD_NO;
           break;
         /* options taking size_t-number followed by pointer */
         case MHD_OPTION_DIGEST_AUTH_RANDOM:
           if (MHD_NO == parse_options (daemon,
-                                        servaddr,
-                                        opt,
-                                        (size_t) oa[i].value,
-                                        oa[i].ptr_value,
-                                        MHD_OPTION_END))
+                                       servaddr,
+                                       opt,
+                                       (size_t) oa[i].value,
+                                       oa[i].ptr_value,
+                                       MHD_OPTION_END))
             return MHD_NO;
           break;
         default:
@@ -5761,7 +5770,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_POLL
       *pflags |= MHD_USE_POLL;
 #else  /* ! HAVE_POLL */
-       /* use select() - do not modify flags */
+      /* use select() - do not modify flags */
 #endif /* ! HAVE_POLL */
     }
     else if (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
@@ -5772,7 +5781,7 @@ MHD_start_daemon_va (unsigned int flags,
 #elif defined(HAVE_POLL)
       *pflags |= MHD_USE_POLL;
 #else  /* !HAVE_POLL && !EPOLL_SUPPORT */
-       /* use select() - do not modify flags */
+      /* use select() - do not modify flags */
 #endif /* !HAVE_POLL && !EPOLL_SUPPORT */
     }
     else
@@ -5781,7 +5790,7 @@ MHD_start_daemon_va (unsigned int flags,
 #if defined(EPOLL_SUPPORT)
       *pflags |= MHD_USE_EPOLL;
 #else  /* ! EPOLL_SUPPORT */
-       /* use select() - do not modify flags */
+      /* use select() - do not modify flags */
 #endif /* ! EPOLL_SUPPORT */
     }
   }
@@ -5866,8 +5875,8 @@ MHD_start_daemon_va (unsigned int flags,
 
 
   if (MHD_NO == parse_options_va (daemon,
-                                   &servaddr,
-                                   ap))
+                                  &servaddr,
+                                  ap))
   {
 #ifdef HTTPS_SUPPORT
     if ( (0 != (*pflags & MHD_USE_TLS)) &&
@@ -6057,11 +6066,11 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
       }
 #endif /* ! MHD_WINSOCK_SOCKETS */
-       /* Use SO_REUSEADDR on Windows and SO_REUSEPORT on most platforms.
-        * Fail if SO_REUSEPORT is not defined or setsockopt fails.
-        */
-       /* SO_REUSEADDR on W32 has the same semantics
-          as SO_REUSEPORT on BSD/Linux */
+      /* Use SO_REUSEADDR on Windows and SO_REUSEPORT on most platforms.
+       * Fail if SO_REUSEPORT is not defined or setsockopt fails.
+       */
+      /* SO_REUSEADDR on W32 has the same semantics
+         as SO_REUSEPORT on BSD/Linux */
 #if defined(MHD_WINSOCK_SOCKETS) || defined(SO_REUSEPORT)
       if (0 > setsockopt (listen_fd,
                           SOL_SOCKET,
@@ -6081,8 +6090,8 @@ MHD_start_daemon_va (unsigned int flags,
         goto free_and_fail;
       }
 #else  /* !MHD_WINSOCK_SOCKETS && !SO_REUSEPORT */
-       /* we're supposed to allow address:port re-use, but
-          on this platform we cannot; fail hard */
+      /* we're supposed to allow address:port re-use, but
+         on this platform we cannot; fail hard */
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ (

@@ -283,11 +283,11 @@ list_directory (struct ResponseDataContext *rdc,
         snprintf (fullname, sizeof (fullname),
                   "%s/%s",
                   dirname, de->d_name))
-      continue; /* ugh, file too long? how can this be!? */
+      continue;  /* ugh, file too long? how can this be!? */
     if (0 != stat (fullname, &sbuf))
-      continue; /* ugh, failed to 'stat' */
+      continue;  /* ugh, failed to 'stat' */
     if (! S_ISREG (sbuf.st_mode))
-      continue; /* not a regular file, skip */
+      continue;  /* not a regular file, skip */
     if (rdc->off + 1024 > rdc->buf_len)
     {
       void *r;

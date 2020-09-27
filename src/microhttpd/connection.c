@@ -115,7 +115,6 @@
 #endif
 
 
-
 /**
  * sendfile() chuck size
  */
@@ -250,9 +249,9 @@ MHD_get_connection_values (struct MHD_Connection *connection,
       ret++;
       if ( (NULL != iterator) &&
            (MHD_NO == iterator (iterator_cls,
-                                 pos->kind,
-                                 pos->header,
-                                 pos->value)) )
+                                pos->kind,
+                                pos->header,
+                                pos->value)) )
         return ret;
     }
   return ret;
@@ -764,7 +763,8 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
    * used with MHD_UPGRADE_ACTION_CLOSE. They will be
    * closed by MHD_cleanup_upgraded_connection_() during
    * connection's final cleanup.
-   */}
+   *///
+}
 
 
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT*/
@@ -1141,18 +1141,18 @@ try_grow_read_buffer (struct MHD_Connection *connection,
 
   avail_size = MHD_pool_get_free (connection->pool);
   if (0 == avail_size)
-    return false; /* No more space available */
+    return false;               /* No more space available */
   if (0 == connection->read_buffer_size)
-    new_size = avail_size / 2; /* Use half of available buffer for reading */
+    new_size = avail_size / 2;  /* Use half of available buffer for reading */
   else
   {
     size_t grow_size;
 
     grow_size = avail_size / 8;
     if (MHD_BUF_INC_SIZE > grow_size)
-    {     /* Shortage of space */
+    {                  /* Shortage of space */
       if (! required)
-        return false;     /* Grow is not mandatory, leave some space in pool */
+        return false;  /* Grow is not mandatory, leave some space in pool */
       else
       {
         /* Shortage of space, but grow is mandatory */
@@ -1403,7 +1403,8 @@ build_header_response (struct MHD_Connection *connection)
 
         Note that the change from 'SHOULD NOT' to 'MUST NOT' is
         a recent development of the HTTP 1.1 specification.
-      */content_length_len
+      *///
+      content_length_len
         = MHD_snprintf_ (content_length_buf,
                          sizeof (content_length_buf),
                          MHD_HTTP_HEADER_CONTENT_LENGTH ": "
@@ -2438,8 +2439,9 @@ static enum MHD_Result
 check_write_done (struct MHD_Connection *connection,
                   enum MHD_CONNECTION_STATE next_state)
 {
-  if (connection->write_buffer_append_offset !=
-      connection->write_buffer_send_offset)
+  if ( (connection->write_buffer_append_offset !=
+        connection->write_buffer_send_offset) ||
+       (connection->sk_cork_on) )
     return MHD_NO;
   connection->write_buffer_append_offset = 0;
   connection->write_buffer_send_offset = 0;
@@ -2722,10 +2724,10 @@ MHD_update_last_activity_ (struct MHD_Connection *connection)
   struct MHD_Daemon *daemon = connection->daemon;
 
   if (0 == connection->connection_timeout)
-    return; /* Skip update of activity for connections
+    return;  /* Skip update of activity for connections
                without timeout timer. */
   if (connection->suspended)
-    return; /* no activity on suspended connections */
+    return;  /* no activity on suspended connections */
 
   connection->last_activity = MHD_monotonic_sec_counter ();
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))

@@ -687,9 +687,9 @@ ahc_empty (void *cls,
   (void) cls;
   (void) url;
   (void) url;
-  (void) version;  /* Unused. Silence compiler warning. */
+  (void) version;          /* Unused. Silence compiler warning. */
   (void) upload_data;
-  (void) upload_data_size;     /* Unused. Silent compiler warning. */
+  (void) upload_data_size; /* Unused. Silent compiler warning. */
 
   if (0 != strcasecmp ("GET", method))
     return MHD_NO;              /* unexpected method */
