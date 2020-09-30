@@ -8,6 +8,16 @@ Sat 26 Sep 2020 08:18:02 PM CEST
     Make MHD_USE_NO_LISTEN_SOCKET work in conjunction with
     MHD internal threads. -CG/DE
 
+Thu 24 Sep 2020 16:55:00 MSK
+    Fixed compiler warnings on W32.
+    Minor optimisation of MHD_YES/MHD_NO internal usage.
+    Refactor and cleanup of internal debugging macros.
+    Updated HTTP status codes, header names and methods from 
+    the registries.
+    Fixed portability of test_upgrade_large.
+    Minor testsuite fixes.
+    Restored parallel build of libmicrohttpd (except tests).
+
 Fri 11 Sep 2020 10:08:22 PM CEST
     Fix crash problem in PostProcessor reported by MD. -CG
     Fix GnuTLS configure test to check for gnutls_record_uncork. -CG
