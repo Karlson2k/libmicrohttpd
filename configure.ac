@@ -376,6 +376,172 @@ AS_CASE(["$host_os"],
 AM_CONDITIONAL([CYGWIN_TARGET], [[test "x$os_is_windows" = "xyes" && \
                                   test "x${os_is_native_w32}" != "xyes"]])
 
+AS_VAR_IF([os_is_windows], ["yes"],
+  [
+    AC_MSG_CHECKING([[wheather target W32 version is specified by precomiler defines]])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+/* Note: check logic is reversed for easy log reading */
+#ifdef WINVER
+#error WINVER is defined
+choke me now;
+#endif
+#ifdef _WIN32_WINNT
+#error _WIN32_WINNT is defined
+choke me now;
+#endif
+#ifdef NTDDI
+#error NTDDI is defined
+choke me now;
+#endif
+        ]],[[(void)0]])
+      ], [[mhd_w32_ver_preselect=no]], [[mhd_w32_ver_preselect=yes]]
+    )
+    AC_MSG_RESULT([[${mhd_w32_ver_preselect}]])
+    AC_CHECK_HEADERS([windows.h sdkddkver.h], [], [], [AC_INCLUDES_DEFAULT])
+    AS_VAR_IF([mhd_w32_ver_preselect],["yes"],
+     [
+       AC_MSG_CHECKING([[for specified target W32 version]])
+       AS_UNSET([[mhd_w32_ver]])
+       AS_UNSET([[mhd_w32_ver_msg]])
+       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#if _WIN32_WINNT+0 < 0x0501
+/* Check before headers inclusion */
+#error _WIN32_WINNT is less than 0x0501
+choke me now;
+#endif
+
+#ifdef HAVE_SDKDDKVER_H
+#include <sdkddkver.h>
+#endif
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#endif
+
+#if _WIN32_WINNT+0 < 0x0501
+#error _WIN32_WINNT is less than 0x0501
+choke me now;
+#endif
+           ]],[[(void)0]])
+         ], [], [
+           AC_MSG_RESULT([[pre-WinXP]])
+           AC_MSG_ERROR([[libmicrohttpd cannot be compiled for Windows version before Windows XP]])
+         ]
+       )
+       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_SDKDDKVER_H
+#include <sdkddkver.h>
+#endif
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#endif
+
+#if _WIN32_WINNT+0 == 0x0501 
+#error _WIN32_WINNT is 0x0501
+choke me now;
+#endif
+#if _WIN32_WINNT+0 == 0x0502 
+#error _WIN32_WINNT is 0x0502
+choke me now;
+#endif
+           ]],[[(void)0]])
+         ], [], [
+           mhd_w32_ver="WinXP"
+           mhd_w32_ver_msg="WinXP (selected by precompiler flags)"
+         ]
+       )
+       AS_VAR_SET_IF([mhd_w32_ver], [],
+         [
+           AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_SDKDDKVER_H
+#include <sdkddkver.h>
+#endif
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#endif
+
+#if _WIN32_WINNT+0 < 0x0600 
+#error _WIN32_WINNT is less than 0x0600 but greater than 0x0502
+choke me now;
+#endif
+                ]],[[(void)0]])
+             ], [], [
+               AC_MSG_ERROR([[_WIN32_WINNT value is wrong (less than 0x0600 but greater than 0x0502)]])
+             ]
+           )
+
+           AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_SDKDDKVER_H
+#include <sdkddkver.h>
+#endif
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#endif
+
+#if _WIN32_WINNT+0 == 0x0600 
+#error _WIN32_WINNT is 0x0600
+choke me now;
+#endif
+                ]],[[(void)0]])
+             ], [], [
+               mhd_w32_ver="Vista"
+               mhd_w32_ver_msg="Vista (selected by precompiler flags)"
+             ]
+           )
+         ]
+       )
+       
+       AS_VAR_SET_IF([mhd_w32_ver], [],
+         [
+           AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_SDKDDKVER_H
+#include <sdkddkver.h>
+#endif
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#endif
+
+#if _WIN32_WINNT+0 > 0x0600 
+#error _WIN32_WINNT is greater than 0x0600
+choke me now;
+#endif
+                ]],[[(void)0]])
+             ], [
+               mhd_w32_ver="unknown"
+               mhd_w32_ver_msg="unknown (cannot be detected)"
+             ], [
+               mhd_w32_ver="newer than Vista"
+               mhd_w32_ver_msg="newer than Vista (selected by precompiler flags)"
+             ]
+           )
+         ]
+       )
+       AC_MSG_RESULT([[${mhd_w32_ver}]])
+     ], [
+       mhd_w32_ver="Vista"
+       mhd_w32_ver_msg="Vista (default, override by CPPFLAGS=-D_WIN32_WINNT=0xNNNN)"
+       CPPFLAGS="$CPPFLAGS -D_WIN32_WINNT=0x0600"
+       AC_MSG_CHECKING([[wheather headers accept _WIN32_WINNT=0x0600]])
+       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_SDKDDKVER_H
+#include <sdkddkver.h>
+#endif
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#endif
+#include <stdio.h>
+            ]],[[(void)0]])
+         ], [
+           AC_MSG_RESULT([[yes]])
+         ], [
+           AC_MSG_RESULT([[no]])
+           AC_MSG_ERROR([Headers do not accept _WIN32_WINNT=0x0600. Consider override target W32 version by CPPFLAGS=-D_WIN32_WINNT=0xNNNN])
+         ]
+       )
+     ]
+    )
+  ]
+)
+
 AC_ARG_WITH([threads],
    [AS_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, auto, none) [auto]])],
    [], [with_threads='auto'])
@@ -748,9 +914,6 @@ AS_IF([test "$enable_poll" != "no"],
 		[AC_INCLUDES_DEFAULT]),
              [AC_MSG_CHECKING([for WSAPoll()])
               AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#if defined(_WIN32) && ! defined(__CYGWIN__) && ! defined(_WIN32_WINNT)
-#define _WIN32_WINNT 0x0501
-#endif
 #include <winsock2.h>
               ]],[[
 WSAPOLLFD fda[2];
@@ -2137,10 +2300,15 @@ AS_IF([test "x$enable_curl" != "xyes"],
  [MSG_CURL="no, many unit tests will not run"],
  [MSG_CURL="yes"])
 
+AS_VAR_IF([os_is_windows], ["yes"],
+  [os_ver_msg="
+  Target W32 ver:    ${mhd_w32_ver_msg}"], [AS_UNSET([[os_ver_msg]])])
+
+
 AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Target directory:  ${prefix}
   Cross-compiling:   ${cross_compiling}
-  Operating System:  ${host_os}
+  Operating System:  ${host_os}${os_ver_msg}
   Shutdown of listening socket trigger select: ${mhd_cv_host_shtdwn_trgr_select}
   Inter-thread comm: ${use_itc}
   poll support:      ${enable_poll=no}

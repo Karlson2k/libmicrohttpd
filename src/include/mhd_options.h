@@ -87,7 +87,7 @@
 /* Do not warn about POSIX name usage */
 #define _CRT_NONSTDC_NO_WARNINGS 1
 #ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0501
+#define _WIN32_WINNT 0x0600
 #else /* _WIN32_WINNT */
 #if _WIN32_WINNT < 0x0501
 #error "Headers for Windows XP or later are required"
