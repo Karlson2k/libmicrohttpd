@@ -68,7 +68,7 @@
 #if defined(PAGE_SIZE)
 #define MHD_DEF_PAGE_SIZE_ PAGE_SIZE
 #elif defined(PAGESIZE)
-#define MHD_DEF_PAGE_SIZE_ PAGE_SIZE
+#define MHD_DEF_PAGE_SIZE_ PAGESIZE
 #else  /* ! PAGESIZE */
 #define MHD_DEF_PAGE_SIZE_ (4096)
 #endif /* ! PAGESIZE */
