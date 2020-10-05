@@ -65,9 +65,9 @@
 #define ROUND_TO_ALIGN(n) (((n) + (ALIGN_SIZE - 1)) \
                            / (ALIGN_SIZE) *(ALIGN_SIZE))
 
-#if defined(PAGE_SIZE)
+#if defined(PAGE_SIZE) && (0 < (PAGE_SIZE + 0))
 #define MHD_DEF_PAGE_SIZE_ PAGE_SIZE
-#elif defined(PAGESIZE)
+#elif defined(PAGESIZE) && (0 < (PAGESIZE + 0))
 #define MHD_DEF_PAGE_SIZE_ PAGESIZE
 #else  /* ! PAGESIZE */
 #define MHD_DEF_PAGE_SIZE_ (4096)
