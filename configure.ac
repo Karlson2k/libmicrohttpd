@@ -2129,6 +2129,99 @@ AC_CACHE_CHECK([[for calloc()]], [[mhd_cv_have_func_calloc]],
 AS_VAR_IF([[mhd_cv_have_func_calloc]], [["yes"]],
   [AC_DEFINE([[HAVE_CALLOC]], [[1]], [Define to 1 if you have the usable `calloc' function.])])
 
+# Some systems have IPv6 disabled in kernel at run-time
+AS_IF([[test "x${have_inet6}" = "xyes" && test "x${cross_compiling}" = "xno"]],
+ [
+   AC_CACHE_CHECK([whether IPv6 could be used for testing],[mhd_cv_ipv6_for_testing],
+     [
+       AC_RUN_IFELSE(
+         [
+           AC_LANG_SOURCE([[
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif
+#ifdef HAVE_WS2TCPIP_H
+#include <ws2tcpip.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+#ifdef HAVE_NETINET_IP_H
+#include <netinet/ip.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
+#ifdef HAVE_NETINET_TCP_H
+#include <netinet/tcp.h>
+#endif
+
+static void zr_mem(void *ptr, socklen_t size)
+{ char *mem = ptr; while(size--) {mem[0] = 0; mem++;} }
+
+int main(void)
+{
+  int ret = 30;
+  struct sockaddr_in6 sa;
+#if !defined(_WIN32) || defined(__CYGWIN__)
+  int sckt;
+  const int invld_sckt = -1;
+#else
+  SOCKET sckt;
+  const SOCKET invld_sckt = INVALID_SOCKET;
+  WSADATA wsa_data;
+
+  WSAStartup(MAKEWORD(2, 2), &wsa_data);
+#endif
+  zr_mem(&sa, sizeof(sa));
+  sa.sin6_family = AF_INET6;
+  sa.sin6_port = 0;
+  sa.sin6_addr = in6addr_loopback;
+#ifdef HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
+  sa.sin6_len = sizeof(sa);
+#endif
+  sckt = socket (PF_INET6, SOCK_STREAM, 0);
+  if (invld_sckt != sckt)
+  {
+    if (0 == bind (sckt, (struct sockaddr *)&sa, sizeof(sa)))
+    {
+      if (0 == listen (sckt, 1))
+        ret = 0;
+      else
+        ret = 1; /* listen() failed */
+    } else ret = 2; /* bind() failed */
+#if !defined(_WIN32) || defined(__CYGWIN__)
+    close (sckt);
+#else
+    closesocket (sckt);
+#endif
+  } else ret = 3; /* socket() failed */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+  WSACleanup();
+#endif
+  return ret;
+}
+           ]])
+         ], [[mhd_cv_ipv6_for_testing="yes"]], [[mhd_cv_ipv6_for_testing="no"]], [[mhd_cv_ipv6_for_testing="no"]]
+       )
+     ]
+   )
+ ]
+)
+AS_VAR_IF([mhd_cv_ipv6_for_testing],["yes"],
+	[AC_DEFINE([[USE_IPV6_TESTING]], [[1]], [Define to 1 if your kernel supports IPv6 and IPv6 is enabled and useful for testing.])]
+)
+
+
 # Check for fork() and waitpid(). They are used for tests.
 AC_MSG_CHECKING([[for fork()]])
 mhd_have_fork_waitpid='no'

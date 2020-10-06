@@ -1,3 +1,8 @@
+Wed 07 Oct 2020 11:07:00 MSK
+    W32 default target version changed to Vista, XP is still supported.
+    Minor fixes and additional asserts for memorypool.
+    IPv6 tests are not used if IPv6 is disabled at run-time. -EG
+
 Sun 27 Sep 2020 10:08:03 PM CEST
     Fixed incorrect triggering of epoll edge polling for
     "upgraded" TLS connections.  Fixed a few cases where
@@ -16,7 +21,7 @@ Thu 24 Sep 2020 16:55:00 MSK
     the registries.
     Fixed portability of test_upgrade_large.
     Minor testsuite fixes.
-    Restored parallel build of libmicrohttpd (except tests).
+    Restored parallel build of libmicrohttpd (except tests). -EG
 
 Fri 11 Sep 2020 10:08:22 PM CEST
     Fix crash problem in PostProcessor reported by MD. -CG
@@ -205,11 +210,11 @@ Mon May 20 15:39:35 MSK 2019
 	Compiler warning fixes. -EG/CG
 	Fixed example for non-64bits platforms. -EG
 
-Web May 15 23:51:49 MSK 2019
+Wed May 15 23:51:49 MSK 2019
 	Optimized and improved processing speed by using precalculated and
 	already calculated lengths of strings. -EG
 
-Web May 15 14:54:00 MSK 2019
+Wed May 15 14:54:00 MSK 2019
 	Fixed build from source on GNU Hurd. -EG
 
 Mon May  6 11:58:00 MSK 2019
