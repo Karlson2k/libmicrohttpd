@@ -98,6 +98,7 @@ MHD_init_mem_pools_ (void)
 #else
   MHD_sys_page_size_ = MHD_DEF_PAGE_SIZE_;
 #endif /* _WIN32 */
+  mhd_assert (0 == (MHD_sys_page_size_ % ALIGN_SIZE));
 }
 
 
@@ -147,6 +148,7 @@ MHD_pool_create (size_t max)
   struct MemoryPool *pool;
   size_t alloc_size;
 
+  mhd_assert (max > 0);
   pool = malloc (sizeof (struct MemoryPool));
   if (NULL == pool)
     return NULL;
@@ -195,6 +197,7 @@ MHD_pool_create (size_t max)
     pool->is_mmap = true;
   }
 #endif /* _WIN32 || MAP_ANONYMOUS */
+  mhd_assert (0 == (((uintptr_t) pool->memory) % ALIGN_SIZE));
   pool->pos = 0;
   pool->end = alloc_size;
   pool->size = alloc_size;
