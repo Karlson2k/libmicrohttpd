@@ -147,6 +147,7 @@ MHD_pool_create (size_t max)
   struct MemoryPool *pool;
   size_t alloc_size;
 
+  mhd_assert (max > 0);
   pool = malloc (sizeof (struct MemoryPool));
   if (NULL == pool)
     return NULL;
