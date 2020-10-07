@@ -4592,6 +4592,33 @@ MHD_epoll (struct MHD_Daemon *daemon,
       series_length++;
   }
 
+  /* Handle timed-out connections; we need to do this here
+     as the epoll mechanism won't call the 'MHD_connection_handle_idle()' on everything,
+     as the other event loops do.  As timeouts do not get an explicit
+     event, we need to find those connections that might have timed out
+     here.
+
+     Connections with custom timeouts must all be looked at, as we
+     do not bother to sort that (presumably very short) list. */
+  prev = daemon->manual_timeout_tail;
+  while (NULL != (pos = prev))
+  {
+    prev = pos->prevX;
+    MHD_connection_handle_idle (pos);
+  }
+  /* Connections with the default timeout are sorted by prepending
+     them to the head of the list whenever we touch the connection;
+     thus it suffices to iterate from the tail until the first
+     connection is NOT timed out */
+  prev = daemon->normal_timeout_tail;
+  while (NULL != (pos = prev))
+  {
+    prev = pos->prevX;
+    MHD_connection_handle_idle (pos);
+    if (MHD_CONNECTION_CLOSED != pos->state)
+      break; /* sorted by timeout, no need to visit the rest! */
+  }
+
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   if (run_upgraded || (NULL != daemon->eready_urh_head))
     run_epoll_for_upgrade (daemon);
@@ -4624,31 +4651,6 @@ MHD_epoll (struct MHD_Daemon *daemon,
     }
   }
 
-  /* Finally, handle timed-out connections; we need to do this here
-     as the epoll mechanism won't call the 'MHD_connection_handle_idle()' on everything,
-     as the other event loops do.  As timeouts do not get an explicit
-     event, we need to find those connections that might have timed out
-     here.
-
-     Connections with custom timeouts must all be looked at, as we
-     do not bother to sort that (presumably very short) list. */prev = daemon->manual_timeout_tail;
-  while (NULL != (pos = prev))
-  {
-    prev = pos->prevX;
-    MHD_connection_handle_idle (pos);
-  }
-  /* Connections with the default timeout are sorted by prepending
-     them to the head of the list whenever we touch the connection;
-     thus it suffices to iterate from the tail until the first
-     connection is NOT timed out */
-  prev = daemon->normal_timeout_tail;
-  while (NULL != (pos = prev))
-  {
-    prev = pos->prevX;
-    MHD_connection_handle_idle (pos);
-    if (MHD_CONNECTION_CLOSED != pos->state)
-      break; /* sorted by timeout, no need to visit the rest! */
-  }
   return MHD_YES;
 }
 
