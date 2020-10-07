@@ -4373,6 +4373,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   bool run_upgraded = false;
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
+  bool need_to_accept;
 
   if (-1 == daemon->epoll_fd)
     return MHD_NO; /* we're down! */
@@ -4474,6 +4475,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
    * signaled in epoll mode by non-empty eready DLL. */
   daemon->data_already_pending = false;
 
+  need_to_accept = false;
   /* drain 'epoll' event queue; need to iterate as we get at most
      MAX_EVENTS in one system call here; in practice this should
      pretty much mean only one round, but better an extra loop here
@@ -4525,18 +4527,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
         /* Check for error conditions on listen socket. */
         /* FIXME: Initiate MHD_quiesce_daemon() to prevent busy waiting? */
         if (0 == (events[i].events & (EPOLLERR | EPOLLHUP)))
-        {
-          unsigned int series_length = 0;
-          /* Run 'accept' until it fails or daemon at limit of connections.
-           * Do not accept more then 10 connections at once. The rest will
-           * be accepted on next turn (level trigger is used for listen
-           * socket). */
-          while ( (MHD_NO != MHD_accept_connection (daemon)) &&
-                  (series_length < 10) &&
-                  (daemon->connections < daemon->connection_limit) &&
-                  (! daemon->at_limit) )
-            series_length++;
-        }
+          need_to_accept = true;
         continue;
       }
       /* this is an event relating to a 'normal' connection,
@@ -4584,6 +4575,21 @@ MHD_epoll (struct MHD_Daemon *daemon,
         }
       }
     }
+  }
+
+  if (need_to_accept)
+  {
+    unsigned int series_length = 0;
+
+    /* Run 'accept' until it fails or daemon at limit of connections.
+     * Do not accept more then 10 connections at once. The rest will
+     * be accepted on next turn (level trigger is used for listen
+     * socket). */
+    while ( (MHD_NO != MHD_accept_connection (daemon)) &&
+            (series_length < 10) &&
+            (daemon->connections < daemon->connection_limit) &&
+            (! daemon->at_limit) )
+      series_length++;
   }
 
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
