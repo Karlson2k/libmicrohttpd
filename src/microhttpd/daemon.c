@@ -2404,15 +2404,28 @@ internal_add_connection (struct MHD_Daemon *daemon,
   }
 #endif
 
-  if ( (! MHD_SCKT_FD_FITS_FDSET_ (client_socket,
-                                   NULL)) &&
-       (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL))) )
+  if ( (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
+       (! MHD_SCKT_FD_FITS_FDSET_ (client_socket, NULL)) )
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ ("Socket descriptor larger than FD_SETSIZE: %d > %d\n"),
               (int) client_socket,
               (int) FD_SETSIZE);
+#endif
+    MHD_socket_close_chk_ (client_socket);
+#if ENFILE
+    errno = ENFILE;
+#endif
+    return MHD_NO;
+  }
+
+  if ( (0 == (daemon->options & MHD_USE_EPOLL)) &&
+       (! non_blck) )
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Epoll mode supports only non-blocking sockets\n"));
 #endif
     MHD_socket_close_chk_ (client_socket);
 #if EINVAL
