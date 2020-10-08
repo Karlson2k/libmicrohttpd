@@ -687,6 +687,9 @@ MHD_connection_close_ (struct MHD_Connection *connection,
   struct MHD_Daemon *daemon = connection->daemon;
   struct MHD_Response *resp = connection->response;
 
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               MHD_thread_ID_match_current_ (connection->pid) );
+
   MHD_connection_mark_closed_ (connection);
   if (NULL != resp)
   {
@@ -719,6 +722,10 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
   struct MHD_UpgradeResponseHandle *urh = connection->urh;
+
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
+               MHD_thread_ID_match_current_ (daemon->pid) );
 
   if (0 == (daemon->options & MHD_USE_TLS))
     return; /* Nothing to do with non-TLS connection. */
@@ -3158,6 +3165,8 @@ static void
 cleanup_connection (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               MHD_thread_ID_match_current_ (connection->pid) );
 
   if (connection->in_cleanup)
     return; /* Prevent double cleanup. */
@@ -3237,6 +3246,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   char *line;
   size_t line_len;
   enum MHD_Result ret;
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               MHD_thread_ID_match_current_ (connection->pid) );
 
   connection->in_idle = true;
   while (! connection->suspended)
@@ -3933,7 +3944,7 @@ MHD_queue_response (struct MHD_Connection *connection,
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if ( (! connection->suspended) &&
        (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
-       (! MHD_thread_ID_match_current_ (connection->pid.ID)) )
+       (! MHD_thread_ID_match_current_ (connection->pid)) )
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,

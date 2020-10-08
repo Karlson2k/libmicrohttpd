@@ -969,6 +969,9 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   struct MHD_UpgradeResponseHandle *urh;
   size_t rbo;
 
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               MHD_thread_ID_match_current_ (connection->pid) );
+
   if (0 == (daemon->options & MHD_ALLOW_UPGRADE))
     return MHD_NO;
 

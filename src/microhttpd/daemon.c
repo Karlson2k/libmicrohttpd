@@ -1336,6 +1336,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
    * of processing - it will be processed on next iteration. */
   bool was_closed;
 
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               MHD_thread_ID_match_current_ (connection->pid) );
   if (daemon->shutdown)
   {
     /* Daemon shutting down, application will not receive any more data. */
@@ -1687,6 +1689,8 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
   struct MHD_UpgradeResponseHandle *urh = con->urh;
   struct MHD_Daemon *daemon = con->daemon;
 
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               MHD_thread_ID_match_current_ (con->pid) );
   /* Here, we need to bi-directionally forward
      until the application tells us that it is done
      with the socket; */
@@ -2818,6 +2822,10 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
 
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
+               MHD_thread_ID_match_current_ (daemon->pid) );
+
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 #endif
@@ -2913,6 +2921,10 @@ MHD_suspend_connection (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *const daemon = connection->daemon;
 
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
+               MHD_thread_ID_match_current_ (daemon->pid) );
+
   if (0 == (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
     MHD_PANIC (_ (
                  "Cannot suspend connections without enabling MHD_ALLOW_SUSPEND_RESUME!\n"));
@@ -2991,6 +3003,9 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 #endif
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               MHD_thread_ID_match_current_ (daemon->pid) );
+
   if (daemon->resuming)
   {
     prev = daemon->suspended_connections_tail;
@@ -3206,6 +3221,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   MHD_socket fd;
   bool sk_nonbl;
 
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               MHD_thread_ID_match_current_ (daemon->pid) );
+
   addrlen = sizeof (addrstorage);
   memset (addr,
           0,
@@ -3346,6 +3364,8 @@ static void
 MHD_cleanup_connections (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               MHD_thread_ID_match_current_ (daemon->pid) );
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
@@ -3459,6 +3479,9 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   time_t now;
   struct MHD_Connection *pos;
   bool have_timeout;
+
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               MHD_thread_ID_match_current_ (daemon->pid) );
 
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
   {
@@ -4254,6 +4277,9 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
   struct MHD_UpgradeResponseHandle *pos;
   struct MHD_UpgradeResponseHandle *prev;
 
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               MHD_thread_ID_match_current_ (daemon->pid) );
+
   num_events = MAX_EVENTS;
   while (0 != num_events)
   {
@@ -4732,6 +4758,9 @@ static void
 close_connection (struct MHD_Connection *pos)
 {
   struct MHD_Daemon *daemon = pos->daemon;
+
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               MHD_thread_ID_match_current_ (daemon->pid) );
 
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
   {
@@ -5628,8 +5657,7 @@ setup_epoll_fd (struct MHD_Daemon *daemon)
 /**
  * Setup epoll() FD for the daemon and initialize it to listen
  * on the listen FD.
- * @remark To be called only from thread that process
- * daemon's select()/poll()/etc.
+ * @remark To be called only from MHD_start_daemon_va()
  *
  * @param daemon daemon to initialize for epoll()
  * @return #MHD_YES on success, #MHD_NO on failure
@@ -6693,6 +6721,10 @@ close_all_connections (struct MHD_Daemon *daemon)
   struct MHD_UpgradeResponseHandle *urhn;
   const bool used_tls = (0 != (daemon->options & MHD_USE_TLS));
 
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
+               MHD_thread_ID_match_current_ (daemon->pid) );
+
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   mhd_assert (NULL == daemon->worker_pool);
 #endif
@@ -6850,6 +6882,10 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
   if (NULL == daemon)
     return;
+  if ( (daemon->shutdown) && (NULL == daemon->master) )
+    MHD_PANIC (_ ("MHD_stop_daemon() was called twice."));
+  /* Slave daemons must be stopped by master daemon. */
+  mhd_assert ( (NULL == daemon->master) || (daemon->shutdown) );
 
   daemon->shutdown = true;
   if (daemon->was_quiesced)
