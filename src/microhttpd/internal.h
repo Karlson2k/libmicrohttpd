@@ -1053,7 +1053,7 @@ struct MHD_Connection
   /**
    * Is the connection wanting to resume?
    */
-  bool resuming;
+  volatile bool resuming;
 };
 
 
@@ -1248,7 +1248,7 @@ struct MHD_UpgradeResponseHandle
    * @remark This flag could be changed from thread that process
    * connection's recv(), send() and response.
    */
-  bool clean_ready;
+  volatile bool clean_ready;
 };
 #endif /* UPGRADE_SUPPORT */
 
@@ -1598,7 +1598,7 @@ struct MHD_Daemon
   /*
    * Do we need to process resuming connections?
    */
-  bool resuming;
+  volatile bool resuming;
 
   /**
    * 'True' if some data is already waiting to be processed.
