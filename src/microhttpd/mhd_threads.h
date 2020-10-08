@@ -96,11 +96,14 @@ typedef DWORD MHD_thread_ID_;
 
 /* Depending on implementation, pthread_create() MAY set thread ID into
  * provided pointer and after it start thread OR start thread and after
- * if set thread ID. In latter case, to avoid data races, additional
- * pthread_self() call is required in thread routine. Is some platform
+ * it set thread ID. In the latter case, to avoid data races, additional
+ * pthread_self() call is required in thread routine. If some platform
  * is known for setting thread ID BEFORE starting thread macro
  * MHD_PTHREAD_CREATE__SET_ID_BEFORE_START_THREAD could be defined
  * to save some resources. */
+/* * handle - must be valid when other thread knows that particular thread
+     is started.
+   * ID     - must be valid when code is executed inside thread */
 #if defined(MHD_USE_POSIX_THREADS)
 #  ifdef MHD_PTHREAD_CREATE__SET_ID_BEFORE_START_THREAD
 union _MHD_thread_handle_ID_
