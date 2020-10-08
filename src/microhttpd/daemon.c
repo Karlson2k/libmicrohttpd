@@ -5625,6 +5625,11 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   struct epoll_event event;
   MHD_socket ls;
 
+  mhd_assert (0 != (daemon->options & MHD_USE_EPOLL));
+  mhd_assert (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION));
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) || \
+               MHD_ITC_IS_VALID_ (daemon->itc) );
   daemon->epoll_fd = setup_epoll_fd (daemon);
   if (-1 == daemon->epoll_fd)
     return MHD_NO;
@@ -5636,24 +5641,26 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
       return MHD_NO;
   }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
-  if ( (MHD_INVALID_SOCKET == (ls = daemon->listen_fd)) ||
-       (daemon->was_quiesced) )
-    return MHD_YES; /* non-listening daemon */
-  event.events = EPOLLIN;
-  event.data.ptr = daemon;
-  if (0 != epoll_ctl (daemon->epoll_fd,
-                      EPOLL_CTL_ADD,
-                      ls,
-                      &event))
+  if ( (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) &&
+       (! daemon->was_quiesced) )
   {
+    event.events = EPOLLIN;
+    event.data.ptr = daemon;
+    if (0 != epoll_ctl (daemon->epoll_fd,
+                        EPOLL_CTL_ADD,
+                        ls,
+                        &event))
+    {
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Call to epoll_ctl failed: %s\n"),
-              MHD_socket_last_strerr_ ());
+      MHD_DLOG (daemon,
+                _ ("Call to epoll_ctl failed: %s\n"),
+                MHD_socket_last_strerr_ ());
 #endif
-    return MHD_NO;
+      return MHD_NO;
+    }
+    daemon->listen_socket_in_epoll = true;
   }
-  daemon->listen_socket_in_epoll = true;
+
   if (MHD_ITC_IS_VALID_ (daemon->itc))
   {
     event.events = EPOLLIN;
