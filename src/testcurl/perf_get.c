@@ -569,7 +569,8 @@ testExternalGet (int port)
          in actual runtime right now, even though the
          number of select calls is virtually cut in half
          (and 'select' is the most expensive of our system
-         calls according to 'strace') */if (0)
+         calls according to 'strace') */
+      if (0)
         MHD_run (d);
       else
         MHD_run_from_select (d, &rs, &ws, &es);

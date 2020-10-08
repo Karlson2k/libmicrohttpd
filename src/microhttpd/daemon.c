@@ -1232,8 +1232,10 @@ call_handlers (struct MHD_Connection *con,
      immediately.
      As writeability of socket was not checked and it may have
      some data pending in system buffers, use this optimization
-     only for non-blocking sockets. *//* No need to check 'ret' as connection is always in
-   * MHD_CONNECTION_CLOSED state if 'ret' is equal 'MHD_NO'. */else if (on_fasttrack && con->sk_nonblck)
+     only for non-blocking sockets. */
+  /* No need to check 'ret' as connection is always in
+   * MHD_CONNECTION_CLOSED state if 'ret' is equal 'MHD_NO'. */
+  else if (on_fasttrack && con->sk_nonblck)
   {
     if (MHD_CONNECTION_HEADERS_SENDING == con->state)
     {
@@ -1367,7 +1369,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
      * check for any pending data even if socket is not marked
      * as 'ready' (signal may arrive after poll()/select()).
      * Socketpair for forwarding is always in non-blocking mode
-     * so no risk that recv() will block the thread. *///
+     * so no risk that recv() will block the thread. */
     if (0 != urh->out_buffer_size)
       urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
     /* Discard any data received form remote. */
@@ -1386,7 +1388,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
    * trying send() on any socket, recv() must be performed at first otherwise
    * last part of incoming data may be lost.  If disconnect or error was
    * detected - try to read from socket to dry data possibly pending is system
-   * buffers. *///
+   * buffers. */
   if (0 != (MHD_EPOLL_STATE_ERROR & urh->app.celi))
     urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
   if (0 != (MHD_EPOLL_STATE_ERROR & urh->mhd.celi))
@@ -3396,7 +3398,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
            this is not true as if we fail to do manually remove it,
            we are still seeing an event for this fd in epoll,
            causing grief (use-after-free...) --- at least on my
-           system. *///
+           system. */
         if (0 != epoll_ctl (daemon->epoll_fd,
                             EPOLL_CTL_DEL,
                             pos->socket_fd,

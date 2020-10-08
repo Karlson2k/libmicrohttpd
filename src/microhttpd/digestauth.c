@@ -555,7 +555,8 @@ check_nonce_nc (struct MHD_Connection *connection,
    * Look for the nonce, if it does exist and its corresponding
    * nonce counter is less than the current nonce counter by 1,
    * then only increase the nonce counter by one.
-   */nn = &daemon->nnc[off];
+   */
+  nn = &daemon->nnc[off];
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&daemon->nnc_lock);
 #endif
@@ -955,7 +956,8 @@ digest_auth_check_all (struct MHD_Connection *connection,
    * First level vetting for the nonce validity: if the timestamp
    * attached to the nonce exceeds `nonce_timeout', then the nonce is
    * invalid.
-   */if ( (t > nonce_time + nonce_timeout) ||
+   */
+  if ( (t > nonce_time + nonce_timeout) ||
        (nonce_time + nonce_timeout < nonce_time) )
   {
     /* too old */
@@ -978,7 +980,8 @@ digest_auth_check_all (struct MHD_Connection *connection,
    * able to generate a "sane" nonce, which if he does
    * not, the nonce fabrication process going to be
    * very hard to achieve.
-   */if (0 != strcmp (nonce,
+   */
+  if (0 != strcmp (nonce,
                    noncehashexp))
   {
     return MHD_INVALID_NONCE;
@@ -1025,7 +1028,8 @@ digest_auth_check_all (struct MHD_Connection *connection,
    * Checking if that combination of nonce and nc is sound
    * and not a replay attack attempt. Also adds the nonce
    * to the nonce-nc map if it does not exist there.
-   */if (MHD_NO ==
+   */
+  if (MHD_NO ==
       check_nonce_nc (connection,
                       nonce,
                       nci))
@@ -1199,7 +1203,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
       da.digest = &MHD_MD5Final;                        \
       break;                                        \
     case MHD_DIGEST_ALG_AUTO:                             \
-    /* auto == SHA256, fall-though thus intentional! */ \
+  /* auto == SHA256, fall-though thus intentional! */ \
     case MHD_DIGEST_ALG_SHA256:                           \
       da.digest_size = SHA256_DIGEST_SIZE;                \
       da.ctx = &ctx.sha256;                               \

@@ -1212,7 +1212,8 @@ post_process_multipart (struct MHD_PostProcessor *pp,
        * > generally be left blank, and implementations must ignore
        * > anything that appears before the first boundary delimiter
        * > line or after the last one.
-       */(void) find_boundary (pp,
+       */
+      (void) find_boundary (pp,
                             pp->boundary,
                             pp->blen,
                             &ioff,
