@@ -2376,38 +2376,11 @@ internal_add_connection (struct MHD_Daemon *daemon,
                          bool non_blck)
 {
   struct MHD_Connection *connection;
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-  unsigned int i;
-#endif
   int eno = 0;
 
-  /* Direct add to master daemon could happen only with "external" add mode. */
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-  mhd_assert ((NULL == daemon->worker_pool) || (external_add));
-  if ((external_add) && (NULL != daemon->worker_pool))
-  {
-    /* have a pool, try to find a pool with capacity; we use the
-       socket as the initial offset into the pool for load
-       balancing */
-    for (i = 0; i < daemon->worker_pool_size; ++i)
-    {
-      struct MHD_Daemon *const worker =
-        &daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size];
-      if (worker->connections < worker->connection_limit)
-        return internal_add_connection (worker,
-                                        client_socket,
-                                        addr,
-                                        addrlen,
-                                        true,
-                                        non_blck);
-    }
-    /* all pools are at their connection limit, must refuse */
-    MHD_socket_close_chk_ (client_socket);
-#if ENFILE
-    errno = ENFILE;
-#endif
-    return MHD_NO;
-  }
+  /* Direct add to master daemon could never happen. */
+  mhd_assert ((NULL == daemon->worker_pool));
 #endif
 
   if ( (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
@@ -3184,6 +3157,34 @@ MHD_add_connection (struct MHD_Daemon *daemon,
               _ ("Failed to reset buffering mode on new client socket.\n"));
 #endif
   }
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
+  if (NULL != daemon->worker_pool)
+  {
+    unsigned int i;
+    /* have a pool, try to find a pool with capacity; we use the
+       socket as the initial offset into the pool for load
+       balancing */
+    for (i = 0; i < daemon->worker_pool_size; ++i)
+    {
+      struct MHD_Daemon *const worker =
+        &daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size];
+      if (worker->connections < worker->connection_limit)
+        return internal_add_connection (worker,
+                                        client_socket,
+                                        addr,
+                                        addrlen,
+                                        true,
+                                        sk_nonbl);
+    }
+    /* all pools are at their connection limit, must refuse */
+    MHD_socket_close_chk_ (client_socket);
+#if ENFILE
+    errno = ENFILE;
+#endif
+    return MHD_NO;
+  }
+#endif /* MHD_USE_POSIX_THREADS || MHD_USE_W32_THREADS */
+
   return internal_add_connection (daemon,
                                   client_socket,
                                   addr,
