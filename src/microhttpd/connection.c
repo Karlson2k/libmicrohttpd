@@ -2958,6 +2958,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     {
       const size_t wb_ready = connection->write_buffer_append_offset
                               - connection->write_buffer_send_offset;
+      mhd_assert (connection->write_buffer_append_offset > \
+                  connection->write_buffer_send_offset);
 
       /* if the response body is not available, we use MHD_send_on_connection_() */
       if (NULL != connection->response->crc)
@@ -2987,7 +2989,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                   "Connection was closed while sending response headers.\n"));
         return;
       }
-      if (ret > wb_ready)
+      /* 'ret' is not negative, it's safe to cast it to 'size_t'. */
+      if (((size_t) ret) > wb_ready)
       {
         mhd_assert (NULL == connection->response->crc);
         /* We sent not just header data but also some response data,
