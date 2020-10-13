@@ -2343,76 +2343,37 @@ psk_gnutls_adapter (gnutls_session_t session,
 
 
 /**
- * Add another client connection to the set of connections
- * managed by MHD.  This API is usually not needed (since
- * MHD will accept inbound connections on the server socket).
- * Use this API in special cases, for example if your HTTP
- * server is behind NAT and needs to connect out to the
- * HTTP client.
+ * Do basic preparation work on the new incoming connection.
  *
- * The given client socket will be managed (and closed!) by MHD after
- * this call and must no longer be used directly by the application
- * afterwards.
+ * This function do all preparation that is possible outside main daemon
+ * thread.
+ * @remark Could be called from any thread.
  *
  * @param daemon daemon that manages the connection
  * @param client_socket socket to manage (MHD will expect
  *        to receive an HTTP request from this socket next).
  * @param addr IP address of the client
  * @param addrlen number of bytes in @a addr
- * @param external_add perform additional operations needed due
- *        to the application calling us directly
  * @param non_blck indicate that socket in non-blocking mode
+ * @param pconnection pointer to variable that receive pointer to
+ *        the new connection structure.
  * @return #MHD_YES on success, #MHD_NO if this daemon could
  *        not handle the connection (i.e. malloc failed, etc).
- *        The socket will be closed in any case; 'errno' is
+ *        The socket will be closed in case of error; 'errno' is
  *        set to indicate further details about the error.
  */
 static enum MHD_Result
-internal_add_connection (struct MHD_Daemon *daemon,
+new_connection_prepare_ (struct MHD_Daemon *daemon,
                          MHD_socket client_socket,
                          const struct sockaddr *addr,
                          socklen_t addrlen,
-                         bool external_add,
-                         bool non_blck)
+                         bool non_blck,
+                         struct MHD_Connection **pconnection)
 {
   struct MHD_Connection *connection;
   int eno = 0;
 
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-  /* Direct add to master daemon could never happen. */
-  mhd_assert ((NULL == daemon->worker_pool));
-#endif
-
-  if ( (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
-       (! MHD_SCKT_FD_FITS_FDSET_ (client_socket, NULL)) )
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Socket descriptor larger than FD_SETSIZE: %d > %d\n"),
-              (int) client_socket,
-              (int) FD_SETSIZE);
-#endif
-    MHD_socket_close_chk_ (client_socket);
-#if ENFILE
-    errno = ENFILE;
-#endif
-    return MHD_NO;
-  }
-
-  if ( (0 == (daemon->options & MHD_USE_EPOLL)) &&
-       (! non_blck) )
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Epoll mode supports only non-blocking sockets\n"));
-#endif
-    MHD_socket_close_chk_ (client_socket);
-#if EINVAL
-    errno = EINVAL;
-#endif
-    return MHD_NO;
-  }
-
+  mhd_assert (NULL != pconnection);
 #ifdef MHD_socket_nosignal_
   if (! MHD_socket_nosignal_ (client_socket))
   {
@@ -2628,10 +2589,51 @@ internal_add_connection (struct MHD_Daemon *daemon,
       gnutls_certificate_server_set_request (connection->tls_session,
                                              GNUTLS_CERT_REQUEST);
 #else  /* ! HTTPS_SUPPORT */
+    MHD_socket_close_chk_ (client_socket);
+    MHD_ip_limit_del (daemon,
+                      addr,
+                      addrlen);
+    free (connection->addr);
+    free (connection);
+    MHD_PANIC (_ ("TLS connection on non-TLS daemon.\n"));
     eno = EINVAL;
-    goto cleanup;
+    return MHD_NO;
 #endif /* ! HTTPS_SUPPORT */
   }
+
+  *pconnection = connection;
+  return MHD_YES;
+}
+
+
+/**
+ * Finally insert the new connection to the list of connections
+ * served by the daemon.
+ * @remark To be called only from thread that process
+ * daemon's select()/poll()/etc.
+ *
+ * @param daemon daemon that manages the connection
+ * @param client_socket socket to manage (MHD will expect
+ *        to receive an HTTP request from this socket next).
+ * @param addr IP address of the client
+ * @param addrlen number of bytes in @a addr
+ * @param external_add perform additional operations needed due
+ *        to the application calling us directly
+ * @param connection the newly created connection
+ * @return #MHD_YES on success, #MHD_NO if this daemon could
+ *        not handle the connection (i.e. malloc failed, etc).
+ *        The socket will be closed in any case; 'errno' is
+ *        set to indicate further details about the error.
+ */
+static enum MHD_Result
+new_connection_insert_ (struct MHD_Daemon *daemon,
+                        MHD_socket client_socket,
+                        const struct sockaddr *addr,
+                        socklen_t addrlen,
+                        bool external_add,
+                        struct MHD_Connection *connection)
+{
+  int eno = 0;
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
@@ -2778,6 +2780,85 @@ cleanup:
   else
     errno  = EINVAL;
   return MHD_NO;
+}
+
+
+/**
+ * Add another client connection to the set of connections
+ * managed by MHD.  This API is usually not needed (since
+ * MHD will accept inbound connections on the server socket).
+ * Use this API in special cases, for example if your HTTP
+ * server is behind NAT and needs to connect out to the
+ * HTTP client.
+ *
+ * The given client socket will be managed (and closed!) by MHD after
+ * this call and must no longer be used directly by the application
+ * afterwards.
+ *
+ * @param daemon daemon that manages the connection
+ * @param client_socket socket to manage (MHD will expect
+ *        to receive an HTTP request from this socket next).
+ * @param addr IP address of the client
+ * @param addrlen number of bytes in @a addr
+ * @param external_add perform additional operations needed due
+ *        to the application calling us directly
+ * @param non_blck indicate that socket in non-blocking mode
+ * @return #MHD_YES on success, #MHD_NO if this daemon could
+ *        not handle the connection (i.e. malloc failed, etc).
+ *        The socket will be closed in any case; 'errno' is
+ *        set to indicate further details about the error.
+ */
+static enum MHD_Result
+internal_add_connection (struct MHD_Daemon *daemon,
+                         MHD_socket client_socket,
+                         const struct sockaddr *addr,
+                         socklen_t addrlen,
+                         bool external_add,
+                         bool non_blck)
+{
+  struct MHD_Connection *connection;
+
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
+  /* Direct add to master daemon could never happen. */
+  mhd_assert ((NULL == daemon->worker_pool));
+#endif
+
+  if ( (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
+       (! MHD_SCKT_FD_FITS_FDSET_ (client_socket, NULL)) )
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Socket descriptor larger than FD_SETSIZE: %d > %d\n"),
+              (int) client_socket,
+              (int) FD_SETSIZE);
+#endif
+    MHD_socket_close_chk_ (client_socket);
+#if ENFILE
+    errno = ENFILE;
+#endif
+    return MHD_NO;
+  }
+
+  if ( (0 == (daemon->options & MHD_USE_EPOLL)) &&
+       (! non_blck) )
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Epoll mode supports only non-blocking sockets\n"));
+#endif
+    MHD_socket_close_chk_ (client_socket);
+#if EINVAL
+    errno = EINVAL;
+#endif
+    return MHD_NO;
+  }
+
+  if (MHD_NO == new_connection_prepare_ (daemon, client_socket, addr, addrlen,
+                                         non_blck, &connection))
+    return MHD_NO;
+
+  return new_connection_insert_ (daemon, client_socket, addr, addrlen,
+                                 external_add, connection);
 }
 
 
