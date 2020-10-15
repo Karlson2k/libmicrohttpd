@@ -125,47 +125,6 @@
  */
 #define MHD_SENFILE_CHUNK_THR_P_C_ (0x200000)
 
-#ifdef HAVE_FREEBSD_SENDFILE
-#ifdef SF_FLAGS
-/**
- * FreeBSD sendfile() flags
- */
-static int freebsd_sendfile_flags_;
-
-/**
- * FreeBSD sendfile() flags for thread-per-connection
- */
-static int freebsd_sendfile_flags_thd_p_c_;
-#endif /* SF_FLAGS */
-/**
- * Initialises static variables
- */
-void
-MHD_conn_init_static_ (void)
-{
-/* FreeBSD 11 and later allow to specify read-ahead size
- * and handles SF_NODISKIO differently.
- * SF_FLAGS defined only on FreeBSD 11 and later. */
-#ifdef SF_FLAGS
-  long sys_page_size = sysconf (_SC_PAGESIZE);
-  if (0 > sys_page_size)
-  {   /* Failed to get page size. */
-    freebsd_sendfile_flags_ = SF_NODISKIO;
-    freebsd_sendfile_flags_thd_p_c_ = SF_NODISKIO;
-  }
-  else
-  {
-    freebsd_sendfile_flags_ =
-      SF_FLAGS ((uint16_t) (MHD_SENFILE_CHUNK_ / sys_page_size), SF_NODISKIO);
-    freebsd_sendfile_flags_thd_p_c_ =
-      SF_FLAGS ((uint16_t) (MHD_SENFILE_CHUNK_THR_P_C_ / sys_page_size),
-                SF_NODISKIO);
-  }
-#endif /* SF_FLAGS */
-}
-
-
-#endif /* HAVE_FREEBSD_SENDFILE */
 /**
  * Callback for receiving data from the socket.
  *
