@@ -84,7 +84,7 @@ MHD_send_init_static_vars_ (void)
  * SF_FLAGS defined only on FreeBSD 11 and later. */
 #ifdef SF_FLAGS
   long sys_page_size = sysconf (_SC_PAGESIZE);
-  if (0 > sys_page_size)
+  if (0 >= sys_page_size)
   {   /* Failed to get page size. */
     freebsd_sendfile_flags_ = SF_NODISKIO;
     freebsd_sendfile_flags_thd_p_c_ = SF_NODISKIO;
@@ -92,10 +92,11 @@ MHD_send_init_static_vars_ (void)
   else
   {
     freebsd_sendfile_flags_ =
-      SF_FLAGS ((uint16_t) (MHD_SENFILE_CHUNK_ / sys_page_size), SF_NODISKIO);
+      SF_FLAGS ((uint16_t) ((MHD_SENFILE_CHUNK_ + sys_page_size - 1)
+                            / sys_page_size), SF_NODISKIO);
     freebsd_sendfile_flags_thd_p_c_ =
-      SF_FLAGS ((uint16_t) (MHD_SENFILE_CHUNK_THR_P_C_ / sys_page_size),
-                SF_NODISKIO);
+      SF_FLAGS ((uint16_t) ((MHD_SENFILE_CHUNK_THR_P_C_ + sys_page_size - 1)
+                            / sys_page_size), SF_NODISKIO);
   }
 #endif /* SF_FLAGS */
 }
