@@ -36,7 +36,73 @@
  * and every place where sendfile(), sendfile64(), setsockopt()
  * are used. */
 
+#ifdef MHD_LINUX_SOLARIS_SENDFILE
+#include <sys/sendfile.h>
+#endif /* MHD_LINUX_SOLARIS_SENDFILE */
+#if defined(HAVE_FREEBSD_SENDFILE) || defined(HAVE_DARWIN_SENDFILE)
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/uio.h>
+#endif /* HAVE_FREEBSD_SENDFILE || HAVE_DARWIN_SENDFILE */
+#ifdef HAVE_SYS_PARAM_H
+/* For FreeBSD version identification */
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
 #include "mhd_send.h"
+
+
+/**
+ * sendfile() chuck size
+ */
+#define MHD_SENFILE_CHUNK_         (0x20000)
+
+/**
+ * sendfile() chuck size for thread-per-connection
+ */
+#define MHD_SENFILE_CHUNK_THR_P_C_ (0x200000)
+
+#ifdef HAVE_FREEBSD_SENDFILE
+#ifdef SF_FLAGS
+/**
+ * FreeBSD sendfile() flags
+ */
+static int freebsd_sendfile_flags_;
+
+/**
+ * FreeBSD sendfile() flags for thread-per-connection
+ */
+static int freebsd_sendfile_flags_thd_p_c_;
+#endif /* SF_FLAGS */
+/**
+ * Initialises static variables
+ */
+void
+MHD_send_init_static_vars_ (void)
+{
+/* FreeBSD 11 and later allow to specify read-ahead size
+ * and handles SF_NODISKIO differently.
+ * SF_FLAGS defined only on FreeBSD 11 and later. */
+#ifdef SF_FLAGS
+  long sys_page_size = sysconf (_SC_PAGESIZE);
+  if (0 > sys_page_size)
+  {   /* Failed to get page size. */
+    freebsd_sendfile_flags_ = SF_NODISKIO;
+    freebsd_sendfile_flags_thd_p_c_ = SF_NODISKIO;
+  }
+  else
+  {
+    freebsd_sendfile_flags_ =
+      SF_FLAGS ((uint16_t) (MHD_SENFILE_CHUNK_ / sys_page_size), SF_NODISKIO);
+    freebsd_sendfile_flags_thd_p_c_ =
+      SF_FLAGS ((uint16_t) (MHD_SENFILE_CHUNK_THR_P_C_ / sys_page_size),
+                SF_NODISKIO);
+  }
+#endif /* SF_FLAGS */
+}
+
+
+#endif /* HAVE_FREEBSD_SENDFILE */
+
 
 /**
  * Handle setsockopt calls.
@@ -470,31 +536,6 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 #endif
 }
 
-
-/**
- * sendfile() chuck size
- */
-#define MHD_SENFILE_CHUNK_         (0x20000)
-
-/**
- * sendfile() chuck size for thread-per-connection
- */
-#define MHD_SENFILE_CHUNK_THR_P_C_ (0x200000)
-
-#ifdef HAVE_FREEBSD_SENDFILE
-#ifdef SF_FLAGS
-/**
- * FreeBSD sendfile() flags
- */
-static int freebsd_sendfile_flags_;
-
-/**
- * FreeBSD sendfile() flags for thread-per-connection
- */
-static int freebsd_sendfile_flags_thd_p_c_;
-#endif /* SF_FLAGS */
-
-#endif /* HAVE_FREEBSD_SENDFILE */
 
 #if defined(_MHD_HAVE_SENDFILE)
 /**
