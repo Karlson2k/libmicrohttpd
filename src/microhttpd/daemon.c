@@ -42,6 +42,7 @@
 #include "mhd_sockets.h"
 #include "mhd_itc.h"
 #include "mhd_compat.h"
+#include "mhd_send.h"
 
 #if HAVE_SEARCH_H
 #include <search.h>
@@ -7496,7 +7497,7 @@ MHD_init (void)
 #endif /* HTTPS_SUPPORT */
   MHD_monotonic_sec_counter_init ();
 #ifdef HAVE_FREEBSD_SENDFILE
-  MHD_conn_init_static_ ();
+  MHD_send_init_static_vars_ ();
 #endif /* HAVE_FREEBSD_SENDFILE */
   MHD_init_mem_pools_ ();
 }
