@@ -111,3 +111,6 @@ perf_get_concurrent11
 test_get_empty
 test_patch
 test_patch11
+/test_add_conn
+/test_add_conn_nolisten
+core
