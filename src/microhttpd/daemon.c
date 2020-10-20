@@ -3219,10 +3219,10 @@ MHD_add_connection (struct MHD_Daemon *daemon,
       (0 == (daemon->options & MHD_USE_ITC)))
   {
     MHD_DLOG (daemon,
-              _ ("MHD_add_connection() has called for daemon started without"
-                 " MHD_USE_ITC flag.\nDaemon will not process newly added"
-                 " connection until any activity occurs in already added"
-                 " sockets.\n"));
+              _ ("MHD_add_connection() has been called for daemon started"
+                 " without MHD_USE_ITC flag.\nDaemon will not process newly"
+                 " added connection until any activity occurs in already"
+                 " added sockets.\n"));
   }
 #endif /* HAVE_MESSAGES */
 

@@ -2402,7 +2402,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Target directory:  ${prefix}
   Cross-compiling:   ${cross_compiling}
   Operating System:  ${host_os}${os_ver_msg}
-  Shutdown of listening socket trigger select: ${mhd_cv_host_shtdwn_trgr_select}
+  Shutdown of listening socket triggers select: ${mhd_cv_host_shtdwn_trgr_select}
   Inter-thread comm: ${use_itc}
   poll support:      ${enable_poll=no}
   epoll support:     ${enable_epoll=no}
