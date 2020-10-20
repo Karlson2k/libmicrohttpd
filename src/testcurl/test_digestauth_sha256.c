@@ -168,7 +168,7 @@ testDigestAuth ()
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
   else
-    port = 1165;
+    port = 1167;
 
   cbc.buf = buf;
   cbc.size = 2048;
