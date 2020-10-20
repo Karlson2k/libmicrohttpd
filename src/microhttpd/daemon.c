@@ -3214,6 +3214,18 @@ MHD_add_connection (struct MHD_Daemon *daemon,
       (daemon->connection_limit <= daemon->connections))
     MHD_cleanup_connections (daemon);
 
+#ifdef HAVE_MESSAGES
+  if ((0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
+      (0 == (daemon->options & MHD_USE_ITC)))
+  {
+    MHD_DLOG (daemon,
+              _ ("MHD_add_connection() has called for daemon started without"
+                 " MHD_USE_ITC flag.\nDaemon will not process newly added"
+                 " connection until any activity occurs in already added"
+                 " sockets.\n"));
+  }
+#endif /* HAVE_MESSAGES */
+
   if (! MHD_socket_nonblocking_ (client_socket))
   {
 #ifdef HAVE_MESSAGES
