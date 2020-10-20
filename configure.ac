@@ -866,6 +866,23 @@ AX_CHECK_LINK_FLAG([-fno-strict-aliasing],
 
 AC_C_BIGENDIAN
 AC_C_VARARRAYS
+
+AC_CACHE_CHECK([[whether __func__ magic-macro is available]],
+  [[mhd_cv_macro___func___avail]], [dnl
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stddef.h>]],[[const char *funcname = __func__ ; if (NULL == funcname) return 1;]])],
+    [[mhd_cv_macro___func___avail="yes"]],[[mhd_cv_macro___func___avail="no"]])
+])
+AS_VAR_IF([mhd_cv_macro___func___avail], ["yes"],
+  [AC_DEFINE([HAVE___FUNC__], [1], [Define to 1 if your compiler supports __func__ magic-macro.])],
+  [
+    AC_CACHE_CHECK([[whether __FUNCTION__ magic-macro is available]],
+      [[mhd_cv_macro___function___avail]], [dnl
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stddef.h>]],[[const char *funcname = __FUNCTION__ ; if (NULL == funcname) return 1;]])],
+        [[mhd_cv_macro___function___avail="yes"]],[[mhd_cv_macro___function___avail="no"]])
+    ])
+    AC_DEFINE([HAVE___FUNCTION__], [1], [Define to 1 if your compiler supports __FUNCTION__ magic-macro.])
+  ]
+)
 AC_CACHE_CHECK([[whether __builtin_bswap32() is available]],
   [[mhd_cv_func___builtin_bswap32_avail]], [dnl
   AC_TRY_LINK([#include<stdint.h>],[uint32_t a = 1; uint32_t b = __builtin_bswap32(a); a = b;],
