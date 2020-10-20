@@ -3209,7 +3209,11 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 {
   bool sk_nonbl;
 
-  MHD_cleanup_connections (daemon);
+  /* NOT thread safe with internal thread. TODO: fix thread safety. */
+  if ((0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
+      (daemon->connection_limit <= daemon->connections))
+    MHD_cleanup_connections (daemon);
+
   if (! MHD_socket_nonblocking_ (client_socket))
   {
 #ifdef HAVE_MESSAGES
