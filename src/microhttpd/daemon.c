@@ -6018,7 +6018,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_LISTEN_SHUTDOWN
     if (0 != (*pflags & MHD_USE_NO_LISTEN_SOCKET))
 #endif
-    *pflags |= MHD_USE_ITC;     /* yes, must use ITC to signal thread */
+    *pflags |= MHD_USE_ITC;       /* yes, must use ITC to signal thread */
   }
 #ifdef DAUTH_SUPPORT
   daemon->digest_auth_rand_size = 0;
@@ -6594,10 +6594,21 @@ MHD_start_daemon_va (unsigned int flags,
   }
 #endif /* HTTPS_SUPPORT */
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-  if ( (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) &&
-       ( (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) ||
-         (MHD_ITC_IS_VALID_ (daemon->itc)) ) )
+  /* Start threads if requested by parameters */
+  if (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
   {
+    /* Internal thread (or threads) is used.
+     * Make sure that MHD will be able to communicate with threads. */
+    /* If using a thread pool ITC will be initialised later
+     * for each individual worker thread. */
+#ifdef HAVE_LISTEN_SHUTDOWN
+    mhd_assert ((1 < daemon->worker_pool_size) || \
+                (MHD_ITC_IS_VALID_ (daemon->itc)) || \
+                (MHD_INVALID_SOCKET != daemon->listen_fd));
+#else  /* ! HAVE_LISTEN_SHUTDOWN */
+    mhd_assert ((1 < daemon->worker_pool_size) || \
+                (MHD_ITC_IS_VALID_ (daemon->itc)));
+#endif /* ! HAVE_LISTEN_SHUTDOWN */
     if (0 == daemon->worker_pool_size)
     {
       if (! MHD_create_named_thread_ (&daemon->pid,
@@ -6630,6 +6641,7 @@ MHD_start_daemon_va (unsigned int flags,
       unsigned int leftover_conns = daemon->connection_limit
                                     % daemon->worker_pool_size;
 
+      mhd_assert (2 <= daemon->worker_pool_size);
       i = 0;     /* we need this in case fcntl or malloc fails */
 
       /* Allocate memory for pooled objects */
@@ -6679,6 +6691,13 @@ MHD_start_daemon_va (unsigned int flags,
         }
         else
           MHD_itc_set_invalid_ (d->itc);
+
+#ifdef HAVE_LISTEN_SHUTDOWN
+        mhd_assert ((MHD_ITC_IS_VALID_ (d->itc)) || \
+                    (MHD_INVALID_SOCKET != d->listen_fd));
+#else  /* ! HAVE_LISTEN_SHUTDOWN */
+        mhd_assert (MHD_ITC_IS_VALID_ (d->itc));
+#endif /* ! HAVE_LISTEN_SHUTDOWN */
 
         /* Divide available connections evenly amongst the threads.
          * Thread indexes in [0, leftover_conns) each get one of the
