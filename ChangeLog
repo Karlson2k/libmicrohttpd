@@ -1,3 +1,6 @@
+Wed 21 Oct 2020 10:00:58 AM CEST
+    Corking should be OFF when sending the footer (#6610). -AP/CG
+
 Wed 07 Oct 2020 11:07:00 MSK
     W32 default target version changed to Vista, XP is still supported.
     Minor fixes and additional asserts for memorypool.
@@ -17,7 +20,7 @@ Thu 24 Sep 2020 16:55:00 MSK
     Fixed compiler warnings on W32.
     Minor optimisation of MHD_YES/MHD_NO internal usage.
     Refactor and cleanup of internal debugging macros.
-    Updated HTTP status codes, header names and methods from 
+    Updated HTTP status codes, header names and methods from
     the registries.
     Fixed portability of test_upgrade_large.
     Minor testsuite fixes.
