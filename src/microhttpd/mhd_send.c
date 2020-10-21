@@ -36,6 +36,7 @@
  * and every place where sendfile(), sendfile64(), setsockopt()
  * are used. */
 
+#include "mhd_send.h"
 #ifdef MHD_LINUX_SOLARIS_SENDFILE
 #include <sys/sendfile.h>
 #endif /* MHD_LINUX_SOLARIS_SENDFILE */
@@ -48,7 +49,6 @@
 /* For FreeBSD version identification */
 #include <sys/param.h>
 #endif /* HAVE_SYS_PARAM_H */
-#include "mhd_send.h"
 
 
 /**
