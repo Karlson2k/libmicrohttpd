@@ -615,7 +615,8 @@ MHD_connection_mark_closed_ (struct MHD_Connection *connection)
      * and do not shutdown TCP socket. This give more
      * chances to send TLS closure data to remote side.
      * Closure of TLS layer will be interpreted by
-     * remote side as end of transmission. */if (0 != (daemon->options & MHD_USE_TLS))
+     * remote side as end of transmission. */
+    if (0 != (daemon->options & MHD_USE_TLS))
     {
       if (! MHD_tls_connection_shutdown (connection))
         shutdown (connection->socket_fd,
@@ -729,7 +730,8 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
    * used with MHD_UPGRADE_ACTION_CLOSE. They will be
    * closed by MHD_cleanup_upgraded_connection_() during
    * connection's final cleanup.
-   */}
+   */
+}
 
 
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT*/
@@ -1142,7 +1144,8 @@ try_grow_read_buffer (struct MHD_Connection *connection,
        the right position in the pool, say because someone called
        MHD_pool_allocate() without 'from_end' set to 'true'? Anyway,
        should be investigated! (Ideally provide all data from
-       *pool and connection->read_buffer and new_size for debugging). */mhd_assert (0);
+       *pool and connection->read_buffer and new_size for debugging). */
+    mhd_assert (0);
     return false;
   }
   connection->read_buffer = rb;
@@ -1367,7 +1370,8 @@ build_header_response (struct MHD_Connection *connection)
 
         Note that the change from 'SHOULD NOT' to 'MUST NOT' is
         a recent development of the HTTP 1.1 specification.
-      */content_length_len
+      */
+      content_length_len
         = MHD_snprintf_ (content_length_buf,
                          sizeof (content_length_buf),
                          MHD_HTTP_HEADER_CONTENT_LENGTH ": "
@@ -1700,7 +1704,8 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
              or if we do nothing, we would just timeout
              on the connection (if a timeout is even
              set!).
-             Solution: we kill the connection with an error */transmit_error_response (connection,
+             Solution: we kill the connection with an error */
+          transmit_error_response (connection,
                                    MHD_HTTP_INTERNAL_SERVER_ERROR,
                                    INTERNAL_ERROR);
           continue;
@@ -2474,7 +2479,8 @@ process_header_line (struct MHD_Connection *connection,
      header at the beginning of the while
      loop since we need to be able to inspect
      the *next* header line (in case it starts
-     with a space...) */connection->last = line;
+     with a space...) */
+  connection->last = line;
   connection->colon = colon;
   return MHD_YES;
 }
@@ -2514,14 +2520,15 @@ process_broken_line (struct MHD_Connection *connection,
       tmp++;
     tmp_len = strlen (tmp);
     /* FIXME: we might be able to do this better (faster!), as most
- likely 'last' and 'line' should already be adjacent in
- memory; however, doing this right gets tricky if we have a
- value continued over multiple lines (in which case we need to
- record how often we have done this so we can check for
- adjacency); also, in the case where these are not adjacent
- (not sure how it can happen!), we would want to allocate from
- the end of the pool, so as to not destroy the read-buffer's
- ability to grow nicely. */last = MHD_pool_reallocate (connection->pool,
+       likely 'last' and 'line' should already be adjacent in
+       memory; however, doing this right gets tricky if we have a
+       value continued over multiple lines (in which case we need to
+       record how often we have done this so we can check for
+       adjacency); also, in the case where these are not adjacent
+       (not sure how it can happen!), we would want to allocate from
+       the end of the pool, so as to not destroy the read-buffer's
+       ability to grow nicely. */
+    last = MHD_pool_reallocate (connection->pool,
                                 last,
                                 last_len + 1,
                                 last_len + tmp_len + 1);
