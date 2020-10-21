@@ -275,13 +275,13 @@ test_put_chunked_LDADD = \
   @LIBCURL@
   
 test_add_conn_SOURCES = \
-  test_add_conn.c ../microhttpd/test_helpers.h
+  test_add_conn.c $(top_srcdir)/src/microhttpd/test_helpers.h
 test_add_conn_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_add_conn_nolisten_SOURCES = \
-  test_add_conn.c ../microhttpd/test_helpers.h
+  test_add_conn.c $(top_srcdir)/src/microhttpd/test_helpers.h
 test_add_conn_nolisten_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
