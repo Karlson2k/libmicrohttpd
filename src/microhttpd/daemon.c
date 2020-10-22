@@ -2535,10 +2535,26 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
 #endif
     connection->tls_state = MHD_TLS_CONN_INIT;
     MHD_set_https_callbacks (connection);
-    gnutls_init (&connection->tls_session,
-                 flags);
-    gnutls_priority_set (connection->tls_session,
-                         daemon->priority_cache);
+    if ((GNUTLS_E_SUCCESS != gnutls_init (&connection->tls_session, flags)) ||
+        (GNUTLS_E_SUCCESS != gnutls_priority_set (connection->tls_session,
+                                                  daemon->priority_cache)))
+    {
+      gnutls_deinit (connection->tls_session);
+      MHD_socket_close_chk_ (client_socket);
+      MHD_ip_limit_del (daemon,
+                        addr,
+                        addrlen);
+      free (connection->addr);
+      free (connection);
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+                _ ("Failed to initialise TLS session.\n"));
+#endif
+#if EPROTO
+      errno = EPROTO;
+#endif
+      return MHD_NO;
+    }
     gnutls_session_set_ptr (connection->tls_session,
                             connection);
     switch (daemon->cred_type)
