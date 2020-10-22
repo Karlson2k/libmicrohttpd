@@ -2457,24 +2457,6 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
     return MHD_NO;
   }
   connection->sk_cork_on = true; /* default is usually ON */
-  connection->pool = MHD_pool_create (daemon->pool_size);
-  if (NULL == connection->pool)
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Error allocating memory: %s\n"),
-              MHD_strerror_ (errno));
-#endif
-    MHD_socket_close_chk_ (client_socket);
-    MHD_ip_limit_del (daemon,
-                      addr,
-                      addrlen);
-    free (connection);
-#if ENOMEM
-    errno = ENOMEM;
-#endif
-    return MHD_NO;
-  }
 
   connection->connection_timeout = daemon->connection_timeout;
   if (NULL == (connection->addr = malloc (addrlen)))
@@ -2489,7 +2471,6 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
     MHD_ip_limit_del (daemon,
                       addr,
                       addrlen);
-    MHD_pool_destroy (connection->pool);
     free (connection);
     errno = eno;
     return MHD_NO;
@@ -2653,6 +2634,29 @@ new_connection_insert_ (struct MHD_Daemon *daemon,
                         struct MHD_Connection *connection)
 {
   int eno = 0;
+
+  /* Allocate memory pool in the processing thread so
+   * intensively used memory area is allocated in "good"
+   * (for the thread) memory region. It is important with
+   * NUMA and/or complex cache hierarchy. */
+  connection->pool = MHD_pool_create (daemon->pool_size);
+  if (NULL == connection->pool)
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Error allocating memory: %s\n"),
+              MHD_strerror_ (errno));
+#endif
+    MHD_socket_close_chk_ (client_socket);
+    MHD_ip_limit_del (daemon,
+                      addr,
+                      addrlen);
+    free (connection);
+#if ENOMEM
+    errno = ENOMEM;
+#endif
+    return MHD_NO;
+  }
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
