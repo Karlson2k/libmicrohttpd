@@ -2616,7 +2616,17 @@ new_connection_close_ (struct MHD_Daemon *daemon,
                        struct MHD_Connection *connection)
 {
   mhd_assert (connection->daemon == daemon);
+  mhd_assert (! connection->in_cleanup);
+  mhd_assert (NULL == connection->next);
+  mhd_assert (NULL == connection->nextX);
+#ifdef EPOLL_SUPPORT
+  mhd_assert (NULL == connection->nextE);
+#endif /* EPOLL_SUPPORT */
 
+#ifdef HTTPS_SUPPORT
+  if (NULL != connection->tls_session)
+    gnutls_deinit (connection->tls_session);
+#endif /* HTTPS_SUPPORT */
   MHD_socket_close_chk_ (connection->socket_fd);
   MHD_ip_limit_del (daemon,
                     connection->addr,
