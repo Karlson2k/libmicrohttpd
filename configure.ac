@@ -378,7 +378,7 @@ AM_CONDITIONAL([CYGWIN_TARGET], [[test "x$os_is_windows" = "xyes" && \
 
 AS_VAR_IF([os_is_windows], ["yes"],
   [
-    AC_MSG_CHECKING([[wheather target W32 version is specified by precomiler defines]])
+    AC_MSG_CHECKING([[whether target W32 version is specified by precomiler defines]])
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 /* Note: check logic is reversed for easy log reading */
 #ifdef WINVER
@@ -435,11 +435,11 @@ choke me now;
 #include <windows.h>
 #endif
 
-#if _WIN32_WINNT+0 == 0x0501 
+#if _WIN32_WINNT+0 == 0x0501
 #error _WIN32_WINNT is 0x0501
 choke me now;
 #endif
-#if _WIN32_WINNT+0 == 0x0502 
+#if _WIN32_WINNT+0 == 0x0502
 #error _WIN32_WINNT is 0x0502
 choke me now;
 #endif
@@ -459,7 +459,7 @@ choke me now;
 #include <windows.h>
 #endif
 
-#if _WIN32_WINNT+0 < 0x0600 
+#if _WIN32_WINNT+0 < 0x0600
 #error _WIN32_WINNT is less than 0x0600 but greater than 0x0502
 choke me now;
 #endif
@@ -477,7 +477,7 @@ choke me now;
 #include <windows.h>
 #endif
 
-#if _WIN32_WINNT+0 == 0x0600 
+#if _WIN32_WINNT+0 == 0x0600
 #error _WIN32_WINNT is 0x0600
 choke me now;
 #endif
@@ -489,7 +489,7 @@ choke me now;
            )
          ]
        )
-       
+
        AS_VAR_SET_IF([mhd_w32_ver], [],
          [
            AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -500,7 +500,7 @@ choke me now;
 #include <windows.h>
 #endif
 
-#if _WIN32_WINNT+0 > 0x0600 
+#if _WIN32_WINNT+0 > 0x0600
 #error _WIN32_WINNT is greater than 0x0600
 choke me now;
 #endif
@@ -520,7 +520,7 @@ choke me now;
        mhd_w32_ver="Vista"
        mhd_w32_ver_msg="Vista (default, override by CPPFLAGS=-D_WIN32_WINNT=0xNNNN)"
        CPPFLAGS="$CPPFLAGS -D_WIN32_WINNT=0x0600"
-       AC_MSG_CHECKING([[wheather headers accept _WIN32_WINNT=0x0600]])
+       AC_MSG_CHECKING([[whether headers accept _WIN32_WINNT=0x0600]])
        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #ifdef HAVE_SDKDDKVER_H
 #include <sdkddkver.h>
