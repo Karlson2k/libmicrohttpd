@@ -1302,6 +1302,16 @@ struct MHD_Daemon
   void *default_handler_cls;
 
   /**
+   * Head of doubly-linked list of new, externally added connections.
+   */
+  struct MHD_Connection *new_connections_head;
+
+  /**
+   * Tail of doubly-linked list of new, externally added connections.
+   */
+  struct MHD_Connection *new_connections_tail;
+
+  /**
    * Head of doubly-linked list of our current, active connections.
    */
   struct MHD_Connection *connections_head;
@@ -1516,6 +1526,11 @@ struct MHD_Daemon
    * "manual_timeout" DLLs.
    */
   MHD_mutex_ cleanup_connection_mutex;
+
+  /**
+   * Mutex for any access to the "new connections" DL-list.
+   */
+  MHD_mutex_ new_connections_mutex;
 #endif
 
   /**
@@ -1599,6 +1614,12 @@ struct MHD_Daemon
    * Do we need to process resuming connections?
    */
   volatile bool resuming;
+
+  /**
+   * Indicate that new connections in @e new_connections_head list
+   * need to be processed.
+   */
+  volatile bool have_new;
 
   /**
    * 'True' if some data is already waiting to be processed.
