@@ -56,6 +56,8 @@ check_PROGRAMS = \
   test_delete \
   test_patch \
   test_put \
+  test_add_conn \
+  test_add_conn_nolisten \
   test_process_headers \
   test_process_arguments \
   test_parse_cookies \
@@ -269,6 +271,18 @@ test_put_LDADD = \
 test_put_chunked_SOURCES = \
   test_put_chunked.c
 test_put_chunked_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+  
+test_add_conn_SOURCES = \
+  test_add_conn.c $(top_srcdir)/src/microhttpd/test_helpers.h
+test_add_conn_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_add_conn_nolisten_SOURCES = \
+  test_add_conn.c $(top_srcdir)/src/microhttpd/test_helpers.h
+test_add_conn_nolisten_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
