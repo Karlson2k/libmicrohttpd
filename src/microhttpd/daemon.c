@@ -2563,6 +2563,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
                   "Failed to setup TLS credentials: unknown credential type %d.\n"),
                 daemon->cred_type);
 #endif
+      gnutls_deinit (connection->tls_session);
       MHD_socket_close_chk_ (client_socket);
       MHD_ip_limit_del (daemon,
                         addr,
