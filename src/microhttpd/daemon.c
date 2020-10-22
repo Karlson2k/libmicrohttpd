@@ -2539,7 +2539,8 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
         (GNUTLS_E_SUCCESS != gnutls_priority_set (connection->tls_session,
                                                   daemon->priority_cache)))
     {
-      gnutls_deinit (connection->tls_session);
+      if (NULL != connection->tls_session)
+        gnutls_deinit (connection->tls_session);
       MHD_socket_close_chk_ (client_socket);
       MHD_ip_limit_del (daemon,
                         addr,
