@@ -2607,34 +2607,43 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
 
 
 /**
+ * Close prepared, but not yet processed connection.
+ * @param daemon     the daemon
+ * @param connection the connection to close
+ */
+static void
+new_connection_close_ (struct MHD_Daemon *daemon,
+                       struct MHD_Connection *connection)
+{
+  mhd_assert (connection->daemon == daemon);
+
+  MHD_socket_close_chk_ (connection->socket_fd);
+  MHD_ip_limit_del (daemon,
+                    connection->addr,
+                    connection->addr_len);
+  free (connection->addr);
+  free (connection);
+
+}
+
+
+/**
  * Finally insert the new connection to the list of connections
- * served by the daemon.
+ * served by the daemon and start processing.
  * @remark To be called only from thread that process
  * daemon's select()/poll()/etc.
  *
  * @param daemon daemon that manages the connection
- * @param client_socket socket to manage (MHD will expect
- *        to receive an HTTP request from this socket next).
- * @param addr IP address of the client
- * @param addrlen number of bytes in @a addr
- * @param external_add perform additional operations needed due
- *        to the application calling us directly
  * @param connection the newly created connection
- * @return #MHD_YES on success, #MHD_NO if this daemon could
- *        not handle the connection (i.e. malloc failed, etc).
- *        The socket will be closed in any case; 'errno' is
- *        set to indicate further details about the error.
+ * @return #MHD_YES on success, #MHD_NO on error
  */
 static enum MHD_Result
-new_connection_insert_ (struct MHD_Daemon *daemon,
-                        MHD_socket client_socket,
-                        const struct sockaddr *addr,
-                        socklen_t addrlen,
-                        bool external_add,
-                        struct MHD_Connection *connection)
+new_connection_process_ (struct MHD_Daemon *daemon,
+                         struct MHD_Connection *connection)
 {
   int eno = 0;
 
+  mhd_assert (connection->daemon == daemon);
   /* Allocate memory pool in the processing thread so
    * intensively used memory area is allocated in "good"
    * (for the thread) memory region. It is important with
@@ -2721,15 +2730,15 @@ new_connection_insert_ (struct MHD_Daemon *daemon,
 #ifdef EPOLL_SUPPORT
   if (0 != (daemon->options & MHD_USE_EPOLL))
   {
-    if ((0 == (daemon->options & MHD_USE_TURBO)) || (external_add))
-    { /* Do not manipulate EReady DL-list in 'external_add' mode. */
+    if (0 == (daemon->options & MHD_USE_TURBO))
+    {
       struct epoll_event event;
 
       event.events = EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLET;
       event.data.ptr = connection;
       if (0 != epoll_ctl (daemon->epoll_fd,
                           EPOLL_CTL_ADD,
-                          client_socket,
+                          connection->socket_fd,
                           &event))
       {
         eno = errno;
@@ -2752,20 +2761,10 @@ new_connection_insert_ (struct MHD_Daemon *daemon,
                    connection);
     }
   }
-  else /* This 'else' is combined with next 'if'. */
 #endif
-  if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (external_add) &&
-       (MHD_ITC_IS_VALID_ (daemon->itc)) &&
-       (! MHD_itc_activate_ (daemon->itc, "n")) )
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ (
-                "Failed to signal new connection via inter-thread communication channel.\n"));
-#endif
-  }
+
   return MHD_YES;
+
 cleanup:
   if (NULL != daemon->notify_connection)
     daemon->notify_connection (daemon->notify_connection_cls,
@@ -2776,10 +2775,10 @@ cleanup:
   if (NULL != connection->tls_session)
     gnutls_deinit (connection->tls_session);
 #endif /* HTTPS_SUPPORT */
-  MHD_socket_close_chk_ (client_socket);
+  MHD_socket_close_chk_ (connection->socket_fd);
   MHD_ip_limit_del (daemon,
-                    addr,
-                    addrlen);
+                    connection->addr,
+                    connection->addr_len);
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 #endif
@@ -2880,8 +2879,83 @@ internal_add_connection (struct MHD_Daemon *daemon,
                                          non_blck, &connection))
     return MHD_NO;
 
-  return new_connection_insert_ (daemon, client_socket, addr, addrlen,
-                                 external_add, connection);
+  if ((external_add) &&
+      (1 == (daemon->options | MHD_USE_INTERNAL_POLLING_THREAD)))
+  {
+    /* Connection is added externally and MHD is handling its own threads. */
+    MHD_mutex_lock_chk_ (&daemon->new_connections_mutex);
+    DLL_insert (daemon->new_connections_head,
+                daemon->new_connections_tail,
+                connection);
+    daemon->have_new = true;
+    MHD_mutex_unlock_chk_ (&daemon->new_connections_mutex);
+
+    /* The rest of connection processing must be handled in
+     * the daemon thread. */
+    if ((MHD_ITC_IS_VALID_ (daemon->itc)) &&
+        (! MHD_itc_activate_ (daemon->itc, "n")))
+    {
+ #ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Failed to signal new connection via inter-thread " \
+                   "communication channel.\n"));
+ #endif
+    }
+    return MHD_YES;
+  }
+
+  return new_connection_process_ (daemon, client_socket, addr, addrlen,
+                                  external_add, connection);
+}
+
+
+static void
+new_connections_list_process_ (struct MHD_Daemon *daemon)
+{
+  struct MHD_Connection *local_head;
+  struct MHD_Connection *local_tail;
+  struct MHD_Connection *c;   /**< Currently processed connection */
+  mhd_assert (daemon->have_new);
+  mhd_assert (0 != (daemon->options | MHD_USE_INTERNAL_POLLING_THREAD));
+
+  local_head = NULL;
+  local_tail = NULL;
+
+  /* Move all new connections to the local DL-list to release the mutex
+   * as quick as possible. */
+  MHD_mutex_lock_chk_ (&daemon->new_connections_mutex);
+  mhd_assert (NULL != daemon->new_connections_head);
+  do
+  { /* Move connection in FIFO order. */
+    c = daemon->new_connections_tail;
+    DLL_remove (daemon->new_connections_head,
+                daemon->new_connections_tail,
+                c);
+    DLL_insert (local_head,
+                local_tail,
+                c);
+  } while (NULL != daemon->new_connections_tail);
+  daemon->have_new = false;
+  MHD_mutex_unlock_chk_ (&daemon->new_connections_mutex);
+
+  /* Process new connections in FIFO order. */
+  do
+  {
+    c = local_tail;
+    DLL_remove (local_head,
+                local_tail,
+                c);
+    mhd_assert (daemon == c->daemon);
+    if (MHD_NO == new_connection_process_ (daemon, c))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Failed to start serving new connection.\n"));
+#endif
+      (void) 0;
+    }
+  } while (NULL != local_tail);
+
 }
 
 
@@ -3710,6 +3784,10 @@ internal_run_from_select (struct MHD_Daemon *daemon,
                   read_fd_set)) )
     MHD_itc_clear_ (daemon->itc);
 
+  /* Process externally added connection if any */
+  if (daemon->have_new)
+    new_connections_list_process_ (daemon);
+
   /* select connection thread handling type */
   if ( (MHD_INVALID_SOCKET != (ds = daemon->listen_fd)) &&
        (! daemon->was_quiesced) &&
@@ -4141,9 +4219,6 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       return MHD_NO;
     }
 
-    /* Reset. New value will be set when connections are processed. */
-    daemon->data_already_pending = false;
-
     /* handle ITC FD */
     /* do it before any other processing so
        new signals will be processed in next loop */
@@ -4157,6 +4232,19 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       free (p);
       return MHD_NO;
     }
+
+    /* Process externally added connection if any */
+    if (daemon->have_new)
+      new_connections_list_process_ (daemon);
+
+    /* handle 'listen' FD */
+    if ( (-1 != poll_listen) &&
+         (0 != (p[poll_listen].revents & POLLIN)) )
+      (void) MHD_accept_connection (daemon);
+
+    /* Reset. New value will be set when connections are processed. */
+    daemon->data_already_pending = false;
+
     i = 0;
     prev = daemon->connections_tail;
     while (NULL != (pos = prev))
@@ -4209,10 +4297,6 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       }
     }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
-    /* handle 'listen' FD */
-    if ( (-1 != poll_listen) &&
-         (0 != (p[poll_listen].revents & POLLIN)) )
-      (void) MHD_accept_connection (daemon);
 
     free (p);
   }
@@ -4294,6 +4378,11 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
   /* handle shutdown */
   if (daemon->shutdown)
     return MHD_NO;
+
+  /* Process externally added connection if any */
+  if (daemon->have_new)
+    new_connections_list_process_ (daemon);
+
   if ( (-1 != poll_listen) &&
        (0 != (p[poll_listen].revents & POLLIN)) )
     (void) MHD_accept_connection (daemon);
@@ -4738,6 +4827,10 @@ MHD_epoll (struct MHD_Daemon *daemon,
       }
     }
   }
+
+  /* Process externally added connection if any */
+  if (daemon->have_new)
+    new_connections_list_process_ (daemon);
 
   if (need_to_accept)
   {
