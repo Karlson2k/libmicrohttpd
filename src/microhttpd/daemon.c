@@ -6730,7 +6730,11 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef EPOLL_SUPPORT
         if ( (0 != (*pflags & MHD_USE_EPOLL)) &&
              (MHD_NO == setup_epoll_to_listen (d)) )
+        {
+          if (MHD_ITC_IS_VALID_ (d->itc))
+            MHD_itc_destroy_chk_ (d->itc);
           goto thread_failed;
+        }
 #endif
         /* Must init cleanup connection mutex for each worker */
         if (! MHD_mutex_init_ (&d->cleanup_connection_mutex))
@@ -6739,6 +6743,8 @@ MHD_start_daemon_va (unsigned int flags,
           MHD_DLOG (daemon,
                     _ ("MHD failed to initialize cleanup connection mutex.\n"));
 #endif
+          if (MHD_ITC_IS_VALID_ (d->itc))
+            MHD_itc_destroy_chk_ (d->itc);
           goto thread_failed;
         }
 
@@ -6757,6 +6763,8 @@ MHD_start_daemon_va (unsigned int flags,
           /* Free memory for this worker; cleanup below handles
            * all previously-created workers. */
           MHD_mutex_destroy_chk_ (&d->cleanup_connection_mutex);
+          if (MHD_ITC_IS_VALID_ (d->itc))
+            MHD_itc_destroy_chk_ (d->itc);
           goto thread_failed;
         }
       }
