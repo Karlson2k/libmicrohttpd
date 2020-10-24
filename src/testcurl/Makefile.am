@@ -23,6 +23,8 @@ THREAD_ONLY_TESTS = \
   test_long_header11 \
   test_iplimit11 \
   test_termination \
+  test_add_conn_cleanup \
+  test_add_conn_cleanup_nolisten \
   test_timeout
 
 if HAVE_POSIX_THREADS
@@ -276,13 +278,33 @@ test_put_chunked_LDADD = \
   
 test_add_conn_SOURCES = \
   test_add_conn.c $(top_srcdir)/src/microhttpd/test_helpers.h
+test_add_conn_CFLAGS = \
+  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_add_conn_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
 test_add_conn_nolisten_SOURCES = \
   test_add_conn.c $(top_srcdir)/src/microhttpd/test_helpers.h
+test_add_conn_nolisten_CFLAGS = \
+  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_add_conn_nolisten_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_add_conn_cleanup_SOURCES = \
+  test_add_conn.c $(top_srcdir)/src/microhttpd/test_helpers.h
+test_add_conn_cleanup_CFLAGS = \
+  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+test_add_conn_cleanup_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_add_conn_cleanup_nolisten_SOURCES = \
+  test_add_conn.c $(top_srcdir)/src/microhttpd/test_helpers.h
+test_add_conn_cleanup_nolisten_CFLAGS = \
+  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+test_add_conn_cleanup_nolisten_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 

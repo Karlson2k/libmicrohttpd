@@ -57,6 +57,11 @@
 #if ! defined(CPU_COUNT)
 #define CPU_COUNT 2
 #endif
+#if CPU_COUNT > 32
+#undef CPU_COUNT
+/* Limit to reasonable value */
+#define CPU_COUNT 32
+#endif /* CPU_COUNT > 32 */
 
 /* Could be increased to facilitate debugging */
 #define TIMEOUTS_VAL 5
@@ -65,9 +70,16 @@
 #define EXPECTED_URI_QUERY      "a=%26&b=c"
 #define EXPECTED_URI_FULL_PATH  EXPECTED_URI_BASE_PATH "?" EXPECTED_URI_QUERY
 
-static int oneone;
-static int no_listen;
-static int global_port;
+/* Global parameters */
+static int oneone;         /**< Use HTTP/1.1 instead of HTTP/1.0 */
+static int no_listen;      /**< Start MHD daemons without listen socket */
+static int global_port;    /**< MHD deamons listen port number */
+static int cleanup_test;   /**< Test for final cleanup */
+static int slow_reply = 0; /**< Slowdown MHD replies */
+static int ignore_response_errors = 0; /**< Do not fail test if CURL
+                                            returns error */
+static int response_timeout_val = TIMEOUTS_VAL;
+
 
 struct CBC
 {
@@ -165,6 +177,9 @@ ahc_echo (void *cls,
              NULL == v ? "NULL" : v);
     _exit (19);
   }
+  if (slow_reply)
+    usleep (200000);
+
   response = MHD_create_response_from_buffer (strlen (url),
                                               (void *) url,
                                               MHD_RESPMEM_MUST_COPY);
@@ -401,8 +416,8 @@ curlEasyInitForTest (const char *queryPath, int port, struct CBC *pcbc)
   curl_easy_setopt (c, CURLOPT_PORT, (long) port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, pcbc);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, (long) TIMEOUTS_VAL);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, (long) TIMEOUTS_VAL);
+  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, (long) response_timeout_val);
+  curl_easy_setopt (c, CURLOPT_TIMEOUT, (long) response_timeout_val);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
@@ -434,6 +449,11 @@ doCurlQueryInThread (struct curlQueryParams *p)
   c = curlEasyInitForTest (p->queryPath, p->queryPort, &cbc);
 
   errornum = curl_easy_perform (c);
+  if (ignore_response_errors)
+  {
+    p->queryError = 0;
+    return p->queryError;
+  }
   if (CURLE_OK != errornum)
   {
     fprintf (stderr,
@@ -511,11 +531,11 @@ performTestQueries (struct MHD_Daemon *d, int d_port)
 {
   struct curlQueryParams qParam;
   struct addConnParam aParam;
-  int a_port = 0;           /* Additional listening socket port */
-  int ret = 0;              /* Return value */
+  int a_port;           /* Additional listening socket port */
+  int ret = 0;          /* Return value */
 
   qParam.queryPath = "http://127.0.0.1" EXPECTED_URI_FULL_PATH;
-  qParam.queryPort = 0; /* autoassign */
+  a_port = 0; /* auto-assign */
 
   aParam.d = d;
   aParam.lstn_sk = createListeningSocket (&a_port); /* Sets a_port */
@@ -550,6 +570,59 @@ performTestQueries (struct MHD_Daemon *d, int d_port)
 }
 
 
+/* Perform test for cleanup and shutdown MHD daemon */
+static int
+performTestCleanup (struct MHD_Daemon *d, int num_queries)
+{
+  struct curlQueryParams *qParamList;
+  struct addConnParam aParam;
+  MHD_socket lstn_sk;   /* Additional listening socket */
+  int a_port;           /* Additional listening socket port */
+  int i;
+  int ret = 0;          /* Return value */
+
+  a_port = 0; /* auto-assign */
+
+  if (0 >= num_queries)
+    abort (); /* Test's API violation */
+
+  lstn_sk = createListeningSocket (&a_port); /* Sets a_port */
+
+  qParamList = malloc (sizeof(struct curlQueryParams) * num_queries);
+  if (NULL == qParamList)
+    externalErrorExitDesc ("malloc failed");
+
+  /* Start CURL queries */
+  for (i = 0; i < num_queries; i++)
+  {
+    qParamList[i].queryPath = "http://127.0.0.1" EXPECTED_URI_FULL_PATH;
+    qParamList[i].queryError = 0;
+    qParamList[i].queryPort = a_port;
+
+    startThreadCurlQuery (qParamList + i);
+  }
+
+  /* Accept and add required number of client sockets */
+  aParam.d = d;
+  aParam.lstn_sk = lstn_sk;
+  for (i = 0; i < num_queries; i++)
+    ret |= doAcceptAndAddConnInThread (&aParam);
+
+  /* Stop daemon while some of new connection are not yet
+   * processed because of slow response to the first queries. */
+  MHD_stop_daemon (d);
+  (void) MHD_socket_close_ (aParam.lstn_sk);
+
+  /* Wait for CURL threads to complete. */
+  /* Ignore soft CURL errors as many connection shouldn't get any response.
+   * Hard failures are detected in processing function. */
+  for (i = 0; i < num_queries; i++)
+    (void) finishThreadCurlQuery (qParamList + i);
+
+  return ret;
+}
+
+
 #endif /* HAVE_PTHREAD_H */
 
 enum testMhdThreadsType
@@ -578,7 +651,15 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
 
   if ( (0 == *pport) &&
        (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT)) )
-    *pport = oneone ? 1550 : 1570;
+  {
+    *pport = 1550;
+    if (oneone)
+      *pport += 1;
+    if (no_listen)
+      *pport += 2;
+    if (cleanup_test)
+      *pport += 4;
+  }
 
   if (testMhdThreadInternalPool != thrType)
     d = MHD_start_daemon (((int) thrType) | ((int) pollType)
@@ -655,6 +736,10 @@ testExternalGet (void)
   cbc_a.buf = buf_a;
   cbc_a.size = sizeof(buf_a);
   cbc_a.pos = 0;
+
+  if (cleanup_test)
+    abort (); /* Not possible with "external poll" as connections are directly
+                 added to the daemon processing in the mode. */
 
   if (! no_listen)
     c_d = curlEasyInitForTest ("http://127.0.0.1" EXPECTED_URI_FULL_PATH,
@@ -828,6 +913,8 @@ testInternalGet (enum testMhdPollType pollType)
 
   d = startTestMhdDaemon (testMhdThreadInternal, pollType,
                           &d_port);
+  if (cleanup_test)
+    return performTestCleanup (d, 10);
 
   return performTestQueries (d, d_port);
 }
@@ -841,6 +928,10 @@ testMultithreadedGet (enum testMhdPollType pollType)
 
   d = startTestMhdDaemon (testMhdThreadInternalPerConnection, pollType,
                           &d_port);
+  if (cleanup_test)
+    abort (); /* Cannot be tested as main daemon thread cannot be slowed down
+                 by slow responses, so it processes all new connections before
+                 daemon could be stopped. */
 
   return performTestQueries (d, d_port);
 }
@@ -854,6 +945,9 @@ testMultithreadedPoolGet (enum testMhdPollType pollType)
 
   d = startTestMhdDaemon (testMhdThreadInternalPool, pollType,
                           &d_port);
+
+  if (cleanup_test)
+    return performTestCleanup (d, 10 * CPU_COUNT);
 
   return performTestQueries (d, d_port);
 }
@@ -930,19 +1024,40 @@ main (int argc, char *const *argv)
   if ((NULL == argv) || (0 == argv[0]))
     return 99;
   oneone = has_in_name (argv[0], "11");
+  /* Whether to test MHD daemons without listening socket. */
   no_listen = has_in_name (argv[0], "_nolisten");
+  /* Whether to test for correct final cleanup instead of
+   * of test of normal processing. */
+  cleanup_test = has_in_name (argv[0], "_cleanup");
+  /* There are almost nothing that could be tested externally
+   * for final cleanup. Cleanup test actually just tests that
+   * nothing fails or crashes when final cleanup is performed.
+   * Mostly useful when configured with '--enable-asserts. */
+  slow_reply = cleanup_test;
+  ignore_response_errors = cleanup_test;
+  if (cleanup_test)
+    response_timeout_val /= 5;
+  if (0 == response_timeout_val)
+    response_timeout_val = 1;
+#ifndef HAVE_PTHREAD_H
+  if (cleanup_test)
+    return 77; /* Cannot run without threads */
+#endif /* HAVE_PTHREAD_H */
   verbose = ! has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   /* Could be set to non-zero value to enforce using specific port
    * in the test */
   global_port = 0;
-  test_result = testExternalGet ();
-  if (test_result)
-    fprintf (stderr, "FAILED: testExternalGet () - %u.\n", test_result);
-  else if (verbose)
-    printf ("PASSED: testExternalGet ().\n");
-  errorCount += test_result;
+  if (! cleanup_test)
+  {
+    test_result = testExternalGet ();
+    if (test_result)
+      fprintf (stderr, "FAILED: testExternalGet () - %u.\n", test_result);
+    else if (verbose)
+      printf ("PASSED: testExternalGet ().\n");
+    errorCount += test_result;
+  }
 #ifdef HAVE_PTHREAD_H
   if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_THREADS))
   {
@@ -953,14 +1068,6 @@ main (int argc, char *const *argv)
     else if (verbose)
       printf ("PASSED: testInternalGet (testMhdPollBySelect).\n");
     errorCount += test_result;
-    test_result = testMultithreadedGet (testMhdPollBySelect);
-    if (test_result)
-      fprintf (stderr,
-               "FAILED: testMultithreadedGet (testMhdPollBySelect) - %u.\n",
-               test_result);
-    else if (verbose)
-      printf ("PASSED: testMultithreadedGet (testMhdPollBySelect).\n");
-    errorCount += test_result;
     test_result = testMultithreadedPoolGet (testMhdPollBySelect);
     if (test_result)
       fprintf (stderr,
@@ -969,13 +1076,24 @@ main (int argc, char *const *argv)
     else if (verbose)
       printf ("PASSED: testMultithreadedPoolGet (testMhdPollBySelect).\n");
     errorCount += test_result;
-    test_result = testStopRace (testMhdPollBySelect);
-    if (test_result)
-      fprintf (stderr, "FAILED: testStopRace (testMhdPollBySelect) - %u.\n",
-               test_result);
-    else if (verbose)
-      printf ("PASSED: testStopRace (testMhdPollBySelect).\n");
-    errorCount += test_result;
+    if (! cleanup_test)
+    {
+      test_result = testMultithreadedGet (testMhdPollBySelect);
+      if (test_result)
+        fprintf (stderr,
+                 "FAILED: testMultithreadedGet (testMhdPollBySelect) - %u.\n",
+                 test_result);
+      else if (verbose)
+        printf ("PASSED: testMultithreadedGet (testMhdPollBySelect).\n");
+      errorCount += test_result;
+      test_result = testStopRace (testMhdPollBySelect);
+      if (test_result)
+        fprintf (stderr, "FAILED: testStopRace (testMhdPollBySelect) - %u.\n",
+                 test_result);
+      else if (verbose)
+        printf ("PASSED: testStopRace (testMhdPollBySelect).\n");
+      errorCount += test_result;
+    }
     if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_POLL))
     {
       test_result = testInternalGet (testMhdPollByPoll);
@@ -985,14 +1103,6 @@ main (int argc, char *const *argv)
       else if (verbose)
         printf ("PASSED: testInternalGet (testMhdPollByPoll).\n");
       errorCount += test_result;
-      test_result = testMultithreadedGet (testMhdPollByPoll);
-      if (test_result)
-        fprintf (stderr,
-                 "FAILED: testMultithreadedGet (testMhdPollByPoll) - %u.\n",
-                 test_result);
-      else if (verbose)
-        printf ("PASSED: testMultithreadedGet (testMhdPollByPoll).\n");
-      errorCount += test_result;
       test_result = testMultithreadedPoolGet (testMhdPollByPoll);
       if (test_result)
         fprintf (stderr,
@@ -1001,13 +1111,24 @@ main (int argc, char *const *argv)
       else if (verbose)
         printf ("PASSED: testMultithreadedPoolGet (testMhdPollByPoll).\n");
       errorCount += test_result;
-      test_result = testStopRace (testMhdPollByPoll);
-      if (test_result)
-        fprintf (stderr, "FAILED: testStopRace (testMhdPollByPoll) - %u.\n",
-                 test_result);
-      else if (verbose)
-        printf ("PASSED: testStopRace (testMhdPollByPoll).\n");
-      errorCount += test_result;
+      if (! cleanup_test)
+      {
+        test_result = testMultithreadedGet (testMhdPollByPoll);
+        if (test_result)
+          fprintf (stderr,
+                   "FAILED: testMultithreadedGet (testMhdPollByPoll) - %u.\n",
+                   test_result);
+        else if (verbose)
+          printf ("PASSED: testMultithreadedGet (testMhdPollByPoll).\n");
+        errorCount += test_result;
+        test_result = testStopRace (testMhdPollByPoll);
+        if (test_result)
+          fprintf (stderr, "FAILED: testStopRace (testMhdPollByPoll) - %u.\n",
+                   test_result);
+        else if (verbose)
+          printf ("PASSED: testStopRace (testMhdPollByPoll).\n");
+        errorCount += test_result;
+      }
     }
     if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_EPOLL))
     {

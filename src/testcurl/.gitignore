@@ -113,4 +113,6 @@ test_patch
 test_patch11
 /test_add_conn
 /test_add_conn_nolisten
+/test_add_conn_cleanup
+/test_add_conn_cleanup_nolisten
 core
