@@ -314,6 +314,7 @@ struct addConnParam
 
   MHD_socket lstn_sk;
 
+  MHD_socket clent_sk;
   /* Non-zero indicate error */
   volatile int result;
 
@@ -325,13 +326,13 @@ struct addConnParam
 static int
 doAcceptAndAddConnInThread (struct addConnParam *p)
 {
-  MHD_socket newConn;
   struct sockaddr addr;
   socklen_t addr_len = sizeof(addr);
 
-  newConn = acceptTimeLimited (p->lstn_sk, &addr, &addr_len);
+  p->clent_sk = acceptTimeLimited (p->lstn_sk, &addr, &addr_len);
 
-  p->result = (MHD_YES == MHD_add_connection (p->d, newConn, &addr, addr_len)) ?
+  p->result = (MHD_YES == MHD_add_connection (p->d, p->clent_sk,
+                                              &addr, addr_len)) ?
               0 : 1;
   if (p->result)
     fprintf (stderr, "MHD_add_connection() failed, errno=%d.\n", errno);
@@ -577,6 +578,7 @@ performTestCleanup (struct MHD_Daemon *d, int num_queries)
   struct curlQueryParams *qParamList;
   struct addConnParam aParam;
   MHD_socket lstn_sk;   /* Additional listening socket */
+  MHD_socket *clntSkList;
   int a_port;           /* Additional listening socket port */
   int i;
   int ret = 0;          /* Return value */
@@ -589,7 +591,8 @@ performTestCleanup (struct MHD_Daemon *d, int num_queries)
   lstn_sk = createListeningSocket (&a_port); /* Sets a_port */
 
   qParamList = malloc (sizeof(struct curlQueryParams) * num_queries);
-  if (NULL == qParamList)
+  clntSkList = malloc (sizeof(MHD_socket) * num_queries);
+  if ((NULL == qParamList) || (NULL == clntSkList))
     externalErrorExitDesc ("malloc failed");
 
   /* Start CURL queries */
@@ -606,12 +609,31 @@ performTestCleanup (struct MHD_Daemon *d, int num_queries)
   aParam.d = d;
   aParam.lstn_sk = lstn_sk;
   for (i = 0; i < num_queries; i++)
+  {
+    aParam.clent_sk = MHD_INVALID_SOCKET;
     ret |= doAcceptAndAddConnInThread (&aParam);
+    clntSkList[i] = aParam.clent_sk;
+  }
 
   /* Stop daemon while some of new connection are not yet
    * processed because of slow response to the first queries. */
   MHD_stop_daemon (d);
   (void) MHD_socket_close_ (aParam.lstn_sk);
+
+  /* Check whether all client sockets were closed by MHD.
+   * Closure of socket by MHD indicate valid cleanup performed. */
+  for (i = 0; i < num_queries; i++)
+  {
+    if (MHD_INVALID_SOCKET != clntSkList[i])
+    { /* Check whether socket could be closed one more time. */
+      if (MHD_socket_close_ (clntSkList[i]))
+      {
+        ret |= 2;
+        fprintf (stderr, "Client socket was not closed by MHD during" \
+                 "cleanup process.\n");
+      }
+    }
+  }
 
   /* Wait for CURL threads to complete. */
   /* Ignore soft CURL errors as many connection shouldn't get any response.
@@ -1031,6 +1053,7 @@ main (int argc, char *const *argv)
   cleanup_test = has_in_name (argv[0], "_cleanup");
   /* There are almost nothing that could be tested externally
    * for final cleanup. Cleanup test actually just tests that
+   * all added client connections were closed by MHD and
    * nothing fails or crashes when final cleanup is performed.
    * Mostly useful when configured with '--enable-asserts. */
   slow_reply = cleanup_test;
