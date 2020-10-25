@@ -2925,33 +2925,25 @@ new_connections_list_process_ (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *local_head;
   struct MHD_Connection *local_tail;
-  struct MHD_Connection *c;   /**< Currently processed connection */
   mhd_assert (daemon->have_new);
   mhd_assert (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD));
 
-  local_head = NULL;
-  local_tail = NULL;
-
-  /* Move all new connections to the local DL-list to release the mutex
-   * as quick as possible. */
+  /* Detach DL-list of new connections from the daemon for
+   * following local processing. */
   MHD_mutex_lock_chk_ (&daemon->new_connections_mutex);
   mhd_assert (NULL != daemon->new_connections_head);
-  do
-  { /* Move connection in FIFO order. */
-    c = daemon->new_connections_tail;
-    DLL_remove (daemon->new_connections_head,
-                daemon->new_connections_tail,
-                c);
-    DLL_insert (local_head,
-                local_tail,
-                c);
-  } while (NULL != daemon->new_connections_tail);
+  local_head = daemon->new_connections_head;
+  local_tail = daemon->new_connections_tail;
+  daemon->new_connections_head = NULL;
+  daemon->new_connections_tail = NULL;
   daemon->have_new = false;
   MHD_mutex_unlock_chk_ (&daemon->new_connections_mutex);
 
   /* Process new connections in FIFO order. */
   do
   {
+    struct MHD_Connection *c;   /**< Currently processed connection */
+
     c = local_tail;
     DLL_remove (local_head,
                 local_tail,
