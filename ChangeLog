@@ -1,3 +1,13 @@
+Sun 25 Oct 2020 19:31:00 MSK
+    Fixed epoll mode without listening socket.
+    Minor improvements of thread sync.
+    Fixed broken sendfile on FreeBSD.
+    Fixed broken MHD with thread-pool and without listening socket.
+    Added four tests for MHD_add_connection().
+    Fixed several resources leaks in error handlers.
+    Re-implemented scheme of handling of externally added connections,
+    fixed thread-safety. -EG
+
 Wed 21 Oct 2020 10:00:58 AM CEST
     Corking should be OFF when sending the footer (#6610). -AP/CG
 
