@@ -33,17 +33,17 @@
 #include <pthread.h>
 #include "gauger.h"
 
-#if defined(CPU_COUNT) && (CPU_COUNT + 0) < 2
-#undef CPU_COUNT
+#if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 2
+#undef MHD_CPU_COUNT
 #endif
-#if ! defined(CPU_COUNT)
-#define CPU_COUNT 2
+#if ! defined(MHD_CPU_COUNT)
+#define MHD_CPU_COUNT 2
 #endif
 
 /**
  * How many requests do we do in parallel?
  */
-#define PAR (CPU_COUNT * 4)
+#define PAR (MHD_CPU_COUNT * 4)
 
 /**
  * Do we use HTTP 1.1?
@@ -318,7 +318,7 @@ testMultithreadedPoolGet (int port,
                         port,
                         NULL, NULL,
                         &ahc_echo, "GET",
-                        MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT,
+                        MHD_OPTION_THREAD_POOL_SIZE, MHD_CPU_COUNT,
                         MHD_OPTION_END);
   if (d == NULL)
     return 16;

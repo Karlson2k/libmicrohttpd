@@ -51,17 +51,17 @@
 #include <pthread.h>
 #endif /* HAVE_PTHREAD_H */
 
-#if defined(CPU_COUNT) && (CPU_COUNT + 0) < 2
-#undef CPU_COUNT
+#if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 2
+#undef MHD_CPU_COUNT
 #endif
-#if ! defined(CPU_COUNT)
-#define CPU_COUNT 2
+#if ! defined(MHD_CPU_COUNT)
+#define MHD_CPU_COUNT 2
 #endif
-#if CPU_COUNT > 32
-#undef CPU_COUNT
+#if MHD_CPU_COUNT > 32
+#undef MHD_CPU_COUNT
 /* Limit to reasonable value */
-#define CPU_COUNT 32
-#endif /* CPU_COUNT > 32 */
+#define MHD_CPU_COUNT 32
+#endif /* MHD_CPU_COUNT > 32 */
 
 /* Could be increased to facilitate debugging */
 #define TIMEOUTS_VAL 5
@@ -700,7 +700,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           | MHD_USE_ERROR_LOG,
                           *pport, NULL, NULL,
                           &ahc_echo, "GET",
-                          MHD_OPTION_THREAD_POOL_SIZE, CPU_COUNT,
+                          MHD_OPTION_THREAD_POOL_SIZE, MHD_CPU_COUNT,
                           MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                           MHD_OPTION_END);
 
@@ -969,7 +969,7 @@ testMultithreadedPoolGet (enum testMhdPollType pollType)
                           &d_port);
 
   if (cleanup_test)
-    return performTestCleanup (d, 10 * CPU_COUNT);
+    return performTestCleanup (d, 10 * MHD_CPU_COUNT);
 
   return performTestQueries (d, d_port);
 }
