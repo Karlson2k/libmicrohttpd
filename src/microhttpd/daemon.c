@@ -2868,7 +2868,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ ("Socket descriptor larger than FD_SETSIZE: %d > %d\n"),
+              _ ("New connection socket descriptor (%d) is not less " \
+                 "than FD_SETSIZE (%d).\n"),
               (int) client_socket,
               (int) FD_SETSIZE);
 #endif
@@ -6644,9 +6645,10 @@ MHD_start_daemon_va (unsigned int flags,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ ("Socket descriptor larger than FD_SETSIZE: %d > %d\n"),
-              listen_fd,
-              FD_SETSIZE);
+              _ ("Listen socket descriptor (%d) is not " \
+                  "less than FD_SETSIZE (%d).\n"),
+              (int) listen_fd,
+              (int) FD_SETSIZE);
 #endif
     MHD_socket_close_chk_ (listen_fd);
     goto free_and_fail;
