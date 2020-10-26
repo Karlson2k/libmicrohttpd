@@ -208,7 +208,8 @@ _externalErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
   if (0 < lineNum)
     fprintf (stderr, " at line %d", lineNum);
 
-  fprintf (stderr, ".\nLast errno value: %d\n", (int) errno);
+  fprintf (stderr, ".\nLast errno value: %d (%s)\n", (int) errno,
+           strerror (errno));
 #ifdef MHD_WINSOCK_SOCKETS
   fprintf (stderr, "WSAGetLastError() value: %d\n", (int) WSAGetLastError ());
 #endif /* MHD_WINSOCK_SOCKETS */
@@ -700,7 +701,8 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           | MHD_USE_ERROR_LOG,
                           *pport, NULL, NULL,
                           &ahc_echo, "GET",
-                          MHD_OPTION_THREAD_POOL_SIZE, MHD_CPU_COUNT,
+                          MHD_OPTION_THREAD_POOL_SIZE, (unsigned
+                                                        int) MHD_CPU_COUNT,
                           MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                           MHD_OPTION_END);
 
@@ -1058,17 +1060,13 @@ main (int argc, char *const *argv)
    * Mostly useful when configured with '--enable-asserts. */
   slow_reply = cleanup_test;
   ignore_response_errors = cleanup_test;
-  if (cleanup_test)
-    response_timeout_val /= 5;
-  if (0 == response_timeout_val)
-    response_timeout_val = 1;
 #ifndef HAVE_PTHREAD_H
   if (cleanup_test)
     return 77; /* Cannot run without threads */
 #endif /* HAVE_PTHREAD_H */
   verbose = ! has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
-    return 2;
+    return 99;
   /* Could be set to non-zero value to enforce using specific port
    * in the test */
   global_port = 0;
