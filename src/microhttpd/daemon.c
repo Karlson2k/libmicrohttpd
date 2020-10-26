@@ -2656,6 +2656,12 @@ new_connection_process_ (struct MHD_Daemon *daemon,
   int eno = 0;
 
   mhd_assert (connection->daemon == daemon);
+
+  /* Function manipulate connection and timeout DL-lists,
+   * must be called only within daemon thread. */
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               MHD_thread_ID_match_current_ (daemon->pid) );
+
   /* Allocate memory pool in the processing thread so
    * intensively used memory area is allocated in "good"
    * (for the thread) memory region. It is important with
