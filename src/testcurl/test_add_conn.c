@@ -73,7 +73,7 @@
 /* Global parameters */
 static int oneone;         /**< Use HTTP/1.1 instead of HTTP/1.0 */
 static int no_listen;      /**< Start MHD daemons without listen socket */
-static int global_port;    /**< MHD deamons listen port number */
+static int global_port;    /**< MHD daemons listen port number */
 static int cleanup_test;   /**< Test for final cleanup */
 static int slow_reply = 0; /**< Slowdown MHD replies */
 static int ignore_response_errors = 0; /**< Do not fail test if CURL
