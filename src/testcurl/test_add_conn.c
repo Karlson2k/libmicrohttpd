@@ -47,6 +47,10 @@
 #include <sys/socket.h>
 #endif
 
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif /* HAVE_LIMITS_H */
+
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 #endif /* HAVE_PTHREAD_H */
@@ -66,6 +70,17 @@
 /* Could be increased to facilitate debugging */
 #define TIMEOUTS_VAL 5
 
+/* Number of requests per daemon in cleanup test,
+ * the number must be more than one as the first connection
+ * will be processed and the rest will stay in the list of unprocessed */
+#define CLEANUP_NUM_REQS_PER_DAEMON 6
+
+/* Cleanup test: max number of concurrent daemons depending on maximum number
+ * of open FDs. */
+#define CLEANUP_MAX_DAEMONS(max_fds) (((max_fds) - 10) / \
+                                      (CLEANUP_NUM_REQS_PER_DAEMON * 5 \
+                                       + 3))
+
 #define EXPECTED_URI_BASE_PATH  "/hello_world"
 #define EXPECTED_URI_QUERY      "a=%26&b=c"
 #define EXPECTED_URI_FULL_PATH  EXPECTED_URI_BASE_PATH "?" EXPECTED_URI_QUERY
@@ -79,6 +94,8 @@ static int slow_reply = 0; /**< Slowdown MHD replies */
 static int ignore_response_errors = 0; /**< Do not fail test if CURL
                                             returns error */
 static int response_timeout_val = TIMEOUTS_VAL;
+static int sys_max_fds;    /**< Current system limit for number of open
+                                files. */
 
 
 struct CBC
@@ -413,18 +430,26 @@ curlEasyInitForTest (const char *queryPath, int port, struct CBC *pcbc)
     fprintf (stderr, "curl_easy_init() failed.\n");
     _exit (99);
   }
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
-  curl_easy_setopt (c, CURLOPT_URL, queryPath);
-  curl_easy_setopt (c, CURLOPT_PORT, (long) port);
-  curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-  curl_easy_setopt (c, CURLOPT_WRITEDATA, pcbc);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, (long) response_timeout_val);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, (long) response_timeout_val);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
-  if (oneone)
-    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-  else
-    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+  if ((CURLE_OK != curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_URL, queryPath)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_PORT, (long) port)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_WRITEFUNCTION,
+                                     &copyBuffer)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_WRITEDATA, pcbc)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT,
+                                     (long) response_timeout_val)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_TIMEOUT,
+                                     (long) response_timeout_val)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
+      (oneone) ?
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     CURL_HTTP_VERSION_1_1)) :
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     CURL_HTTP_VERSION_1_0)))
+  {
+    fprintf (stderr, "curl_easy_setopt() failed.\n");
+    _exit (99);
+  }
 
   return c;
 }
@@ -454,6 +479,8 @@ doCurlQueryInThread (struct curlQueryParams *p)
   if (ignore_response_errors)
   {
     p->queryError = 0;
+    curl_easy_cleanup (c);
+
     return p->queryError;
   }
   if (CURLE_OK != errornum)
@@ -642,6 +669,9 @@ performTestCleanup (struct MHD_Daemon *d, int num_queries)
   for (i = 0; i < num_queries; i++)
     (void) finishThreadCurlQuery (qParamList + i);
 
+  free (clntSkList);
+  free (qParamList);
+
   return ret;
 }
 
@@ -664,6 +694,26 @@ enum testMhdPollType
   testMhdPollByEpoll  = MHD_USE_EPOLL,
   testMhdPollAuto     = MHD_USE_AUTO
 };
+
+/* Get number of threads for thread pool depending
+ * on used poll function and test type. */
+static unsigned int
+testNumThreadsForPool (enum testMhdPollType pollType)
+{
+  int numThreads = MHD_CPU_COUNT;
+  if (! cleanup_test)
+    return numThreads; /* No practical limit for non-cleanup test */
+  if (CLEANUP_MAX_DAEMONS (sys_max_fds) < numThreads)
+    numThreads = CLEANUP_MAX_DAEMONS (sys_max_fds);
+  if ((testMhdPollBySelect == pollType) &&
+      (CLEANUP_MAX_DAEMONS (FD_SETSIZE) < numThreads))
+    numThreads = CLEANUP_MAX_DAEMONS (FD_SETSIZE);
+
+  if (2 > numThreads)
+    abort ();
+  return (unsigned int) numThreads;
+}
+
 
 static struct MHD_Daemon *
 startTestMhdDaemon (enum testMhdThreadsType thrType,
@@ -701,8 +751,8 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           | MHD_USE_ERROR_LOG,
                           *pport, NULL, NULL,
                           &ahc_echo, "GET",
-                          MHD_OPTION_THREAD_POOL_SIZE, (unsigned
-                                                        int) MHD_CPU_COUNT,
+                          MHD_OPTION_THREAD_POOL_SIZE,
+                          testNumThreadsForPool (pollType),
                           MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                           MHD_OPTION_END);
 
@@ -938,7 +988,7 @@ testInternalGet (enum testMhdPollType pollType)
   d = startTestMhdDaemon (testMhdThreadInternal, pollType,
                           &d_port);
   if (cleanup_test)
-    return performTestCleanup (d, 10);
+    return performTestCleanup (d, CLEANUP_NUM_REQS_PER_DAEMON);
 
   return performTestQueries (d, d_port);
 }
@@ -971,8 +1021,8 @@ testMultithreadedPoolGet (enum testMhdPollType pollType)
                           &d_port);
 
   if (cleanup_test)
-    return performTestCleanup (d, 10 * MHD_CPU_COUNT);
-
+    return performTestCleanup (d, CLEANUP_NUM_REQS_PER_DAEMON
+                               * testNumThreadsForPool (pollType));
   return performTestQueries (d, d_port);
 }
 
@@ -1065,6 +1115,25 @@ main (int argc, char *const *argv)
     return 77; /* Cannot run without threads */
 #endif /* HAVE_PTHREAD_H */
   verbose = ! has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet");
+  if (cleanup_test)
+  {
+    /* Find system limit for number of open FDs. */
+#if defined(HAVE_SYSCONF) && defined(_SC_OPEN_MAX)
+    sys_max_fds = sysconf (_SC_OPEN_MAX);
+#else  /* ! HAVE_SYSCONF || ! _SC_OPEN_MAX */
+    sys_max_fds = -1;
+#endif /* ! HAVE_SYSCONF || ! _SC_OPEN_MAX */
+    if (0 > sys_max_fds)
+    {
+#if defined(OPEN_MAX) && (0 < ((OPEN_MAX) +1))
+      sys_max_fds = OPEN_MAX;
+#else  /* ! OPEN_MAX */
+      sys_max_fds = 256; /* Use reasonable value */
+#endif /* ! OPEN_MAX */
+      if (2 > CLEANUP_MAX_DAEMONS (sys_max_fds))
+        return 77; /* Multithreaded test cannot be run */
+    }
+  }
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 99;
   /* Could be set to non-zero value to enforce using specific port
