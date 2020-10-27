@@ -347,11 +347,13 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   {
     bool have_cork = connection->sk_cork_on;
 
+#if GNUTLS_VERSION_NUMBER >= 0x030109
     if (want_cork && ! have_cork)
     {
       gnutls_record_cork (connection->tls_session);
       connection->sk_cork_on = true;
     }
+#endif /* GNUTLS_VERSION_NUMBER >= 0x030109 */
     if (buffer_size > SSIZE_MAX)
       buffer_size = SSIZE_MAX;
     ret = gnutls_record_send (connection->tls_session,
@@ -378,6 +380,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
      * connections may break data into smaller parts for sending. */
 #endif /* EPOLL_SUPPORT */
 
+#if GNUTLS_VERSION_NUMBER >= 0x030109
     if (! want_cork && have_cork)
     {
       int err = gnutls_record_uncork (connection->tls_session, 0);
@@ -386,6 +389,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
         return MHD_ERR_AGAIN_;
       connection->sk_cork_on = false;
     }
+#endif /* GNUTLS_VERSION_NUMBER >= 0x030109 */
   }
   else
 #endif /* HTTPS_SUPPORT  */
@@ -469,6 +473,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                                    header,
                                    header_size,
                                    MHD_SSO_HDR_CORK);
+#if GNUTLS_VERSION_NUMBER >= 0x030109
     if ( (header_size == (size_t) ret) &&
          (0 == buffer_size) &&
          connection->sk_cork_on)
@@ -480,6 +485,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
         return ret;
       connection->sk_cork_on = false;
     }
+#endif /* GNUTLS_VERSION_NUMBER >= 0x030109 */
     return ret;
   }
 #endif
