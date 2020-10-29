@@ -1302,6 +1302,14 @@ struct MHD_Daemon
   void *default_handler_cls;
 
   /**
+   * Daemon's flags (bitfield).
+   *
+   * @remark Keep this member after pointer value to keep it
+   * properly aligned as it will be used as member of union MHD_DaemonInfo.
+   */
+  enum MHD_FLAG options;
+
+  /**
    * Head of doubly-linked list of new, externally added connections.
    */
   struct MHD_Connection *new_connections_head;
@@ -1352,7 +1360,35 @@ struct MHD_Daemon
    */
   struct MHD_Connection *eready_tail;
 
+  /**
+   * File descriptor associated with our epoll loop.
+   *
+   * @remark Keep this member after pointer value to keep it
+   * properly aligned as it will be used as member of union MHD_DaemonInfo.
+   */
+  int epoll_fd;
+
+  /**
+   * true if the listen socket is in the 'epoll' set,
+   * false if not.
+   */
+  bool listen_socket_in_epoll;
+
 #ifdef UPGRADE_SUPPORT
+#ifdef HTTPS_SUPPORT
+  /**
+   * File descriptor associated with the #run_epoll_for_upgrade() loop.
+   * Only available if #MHD_USE_HTTPS_EPOLL_UPGRADE is set.
+   */
+  int epoll_upgrade_fd;
+
+  /**
+   * true if @e epoll_upgrade_fd is in the 'epoll' set,
+   * false if not.
+   */
+  bool upgrade_fd_in_epoll;
+#endif /* HTTPS_SUPPORT */
+
   /**
    * Head of EDLL of upgraded connections ready for processing (in epoll mode).
    */
@@ -1460,6 +1496,14 @@ struct MHD_Daemon
    */
   void *unescape_callback_cls;
 
+  /**
+   * Listen port.
+   *
+   * @remark Keep this member after pointer value to keep it
+   * properly aligned as it will be used as member of union MHD_DaemonInfo.
+   */
+  uint16_t port;
+
 #ifdef HAVE_MESSAGES
   /**
    * Function for logging error messages (if we
@@ -1478,6 +1522,14 @@ struct MHD_Daemon
    */
   struct MHD_Daemon *master;
 
+  /**
+   * Listen socket.
+   *
+   * @remark Keep this member after pointer value to keep it
+   * properly aligned as it will be used as member of union MHD_DaemonInfo.
+   */
+  MHD_socket listen_fd;
+
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   /**
    * Worker daemons (one per thread)
@@ -1489,6 +1541,14 @@ struct MHD_Daemon
    * Table storing number of connections per IP
    */
   void *per_ip_connection_count;
+
+  /**
+   * Number of active parallel connections.
+   *
+   * @remark Keep this member after pointer value to keep it
+   * properly aligned as it will be used as member of union MHD_DaemonInfo.
+   */
+  unsigned int connections;
 
   /**
    * Size of the per-connection memory pools.
@@ -1540,11 +1600,6 @@ struct MHD_Daemon
   enum MHD_DisableSanityCheck insanity_level;
 
   /**
-   * Listen socket.
-   */
-  MHD_socket listen_fd;
-
-  /**
    * Whether to allow/disallow/ignore reuse of listening address.
    * The semantics is the following:
    * 0: ignore (user did not ask for neither allow/disallow, use SO_REUSEADDR
@@ -1555,33 +1610,6 @@ struct MHD_Daemon
    */
   int listening_address_reuse;
 
-#ifdef EPOLL_SUPPORT
-  /**
-   * File descriptor associated with our epoll loop.
-   */
-  int epoll_fd;
-
-  /**
-   * true if the listen socket is in the 'epoll' set,
-   * false if not.
-   */
-  bool listen_socket_in_epoll;
-
-#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
-  /**
-   * File descriptor associated with the #run_epoll_for_upgrade() loop.
-   * Only available if #MHD_USE_HTTPS_EPOLL_UPGRADE is set.
-   */
-  int epoll_upgrade_fd;
-
-  /**
-   * true if @e epoll_upgrade_fd is in the 'epoll' set,
-   * false if not.
-   */
-  bool upgrade_fd_in_epoll;
-#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
-
-#endif
 
   /**
    * Inter-thread communication channel (also used to unblock
@@ -1633,11 +1661,6 @@ struct MHD_Daemon
   bool data_already_pending;
 
   /**
-   * Number of active parallel connections.
-   */
-  unsigned int connections;
-
-  /**
    * Limit on the number of parallel connections.
    */
   unsigned int connection_limit;
@@ -1653,16 +1676,6 @@ struct MHD_Daemon
    * unlimited.
    */
   unsigned int per_ip_connection_limit;
-
-  /**
-   * Daemon's flags (bitfield).
-   */
-  enum MHD_FLAG options;
-
-  /**
-   * Listen port.
-   */
-  uint16_t port;
 
   /**
    * Be neutral (zero), strict (1) or permissive (-1) to client.
