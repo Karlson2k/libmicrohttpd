@@ -491,8 +491,8 @@ ws_get_accept_value (const char *key, char **val)
   {
     return MHD_NO;
   }
-  strcpy (str, key);
-  strcat (str, WS_GUID);
+  strncpy (str, key, (WS_KEY_LEN + WS_GUID_LEN + 1));
+  strncat (str, WS_GUID, (WS_GUID_LEN + 1));
   SHA1Reset (&ctx);
   SHA1Input (&ctx, (const unsigned char *) str, WS_KEY_GUID_LEN);
   SHA1Result (&ctx, hash);
@@ -816,6 +816,7 @@ ahc_cb (void *cls, struct MHD_Connection *con, const char *url,
   const char *ws_key_header;
   char *ws_ac_value;
   enum MHD_Result ret;
+  size_t key_size;
 
   (void) cls;               /* Unused. Silent compiler warning. */
   (void) url;               /* Unused. Silent compiler warning. */
@@ -848,9 +849,9 @@ ahc_cb (void *cls, struct MHD_Connection *con, const char *url,
   {
     return send_upgrade_required (con);
   }
-  ws_key_header = MHD_lookup_connection_value (
-    con, MHD_HEADER_KIND, MHD_HTTP_HEADER_SEC_WEBSOCKET_KEY);
-  if ((NULL == ws_key_header) || (strlen (ws_key_header) != 24))
+  ws_key_header = MHD_lookup_connection_value_n (
+    con, MHD_HEADER_KIND, MHD_HTTP_HEADER_SEC_WEBSOCKET_KEY, &key_size);
+  if ((NULL == ws_key_header) || (key_size != WS_KEY_LEN))
   {
     return send_bad_request (con);
   }
