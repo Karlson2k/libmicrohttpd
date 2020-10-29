@@ -26,6 +26,7 @@
 #include "internal.h"
 #include "mhd_str.h"
 #include "mhd_compat.h"
+#include "mhd_assert.h"
 
 /**
  * Size of on-stack buffer that we use for un-escaping of the value.
@@ -508,6 +509,8 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
   const char *start_value = NULL;
   const char *end_value = NULL;
   const char *last_escape = NULL;
+
+  mhd_assert (PP_Callback != pp->state);
 
   poff = 0;
   while ( ( (poff < post_data_len) ||
