@@ -797,6 +797,7 @@ testExternalGet (void)
   int a_port = 0;           /* Additional listening socket port */
   struct addConnParam aParam;
   int ret = 0;              /* Return value of the test */
+  const int c_no_listen = no_listen; /* Local const value to mute analyzer */
 
   d = startTestMhdDaemon (testMhdThreadExternal, testMhdPollBySelect, &d_port);
 
@@ -815,7 +816,7 @@ testExternalGet (void)
     abort (); /* Not possible with "external poll" as connections are directly
                  added to the daemon processing in the mode. */
 
-  if (! no_listen)
+  if (! c_no_listen)
     c_d = curlEasyInitForTest ("http://127.0.0.1" EXPECTED_URI_FULL_PATH,
                                d_port, &cbc_d);
 
@@ -828,7 +829,7 @@ testExternalGet (void)
     fprintf (stderr, "curl_multi_init() failed.\n");
     _exit (99);
   }
-  if (! no_listen)
+  if (! c_no_listen)
   {
     if (CURLM_OK != curl_multi_add_handle (multi, c_d))
     {
@@ -940,7 +941,7 @@ testExternalGet (void)
   MHD_stop_daemon (d);
   (void) MHD_socket_close_ (aParam.lstn_sk);
 
-  if (! no_listen)
+  if (! c_no_listen)
   {
     curl_multi_remove_handle (multi, c_d);
     curl_easy_cleanup (c_d);
@@ -1038,11 +1039,12 @@ testStopRace (enum testMhdPollType pollType)
   MHD_socket fd2;
   struct addConnParam aParam;
   int ret = 0;              /* Return value of the test */
+  const int c_no_listen = no_listen; /* Local const value to mute analyzer */
 
   d = startTestMhdDaemon (testMhdThreadInternal, pollType,
                           &d_port);
 
-  if (! no_listen)
+  if (! c_no_listen)
   {
     fd1 = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (MHD_INVALID_SOCKET == fd1)
@@ -1076,7 +1078,7 @@ testStopRace (enum testMhdPollType pollType)
 
   MHD_stop_daemon (d);
 
-  if (! no_listen)
+  if (! c_no_listen)
     (void) MHD_socket_close_ (fd1);
   (void) MHD_socket_close_ (aParam.lstn_sk);
   (void) MHD_socket_close_ (fd2);
