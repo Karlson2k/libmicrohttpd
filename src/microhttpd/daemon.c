@@ -3159,13 +3159,14 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
                                    & MHD_USE_THREAD_PER_CONNECTION));
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   mhd_assert (NULL == daemon->worker_pool);
+  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+               MHD_thread_ID_match_current_ (daemon->pid) );
 #endif
+
   ret = MHD_NO;
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 #endif
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
-               MHD_thread_ID_match_current_ (daemon->pid) );
 
   if (daemon->resuming)
   {
@@ -6646,7 +6647,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ ("Listen socket descriptor (%d) is not " \
-                  "less than FD_SETSIZE (%d).\n"),
+                 "less than FD_SETSIZE (%d).\n"),
               (int) listen_fd,
               (int) FD_SETSIZE);
 #endif
@@ -7264,6 +7265,12 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       /* No internal threads are used for polling sockets. */
       close_all_connections (daemon);
     }
+    mhd_assert (NULL == daemon->connections_head);
+    mhd_assert (NULL == daemon->cleanup_head);
+    mhd_assert (NULL == daemon->suspended_connections_head);
+    mhd_assert (NULL == daemon->new_connections_head);
+    mhd_assert (NULL == daemon->urh_head);
+
     if (MHD_ITC_IS_VALID_ (daemon->itc))
       MHD_itc_destroy_chk_ (daemon->itc);
     MHD_mutex_destroy_chk_ (&daemon->new_connections_mutex);
