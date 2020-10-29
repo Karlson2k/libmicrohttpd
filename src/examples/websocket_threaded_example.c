@@ -853,7 +853,7 @@ ahc_cb (void *cls, struct MHD_Connection *con, const char *url,
     con, MHD_HEADER_KIND,
     MHD_HTTP_HEADER_SEC_WEBSOCKET_KEY,
     strlen (MHD_HTTP_HEADER_SEC_WEBSOCKET_KEY),
-    ws_key_header, &key_size);
+    &ws_key_header, &key_size);
   if ((MHD_NO == ret) || (key_size != WS_KEY_LEN))
   {
     return send_bad_request (con);
