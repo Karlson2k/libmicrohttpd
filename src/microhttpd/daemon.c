@@ -2529,7 +2529,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
       free (connection->addr);
       free (connection);
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
+      MHD_DLOG (daemon,
                 _ ("Failed to initialise TLS session.\n"));
 #endif
 #if EPROTO
@@ -2556,7 +2556,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
       break;
     default:
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
+      MHD_DLOG (daemon,
                 _ (
                   "Failed to setup TLS credentials: unknown credential type %d.\n"),
                 daemon->cred_type);
