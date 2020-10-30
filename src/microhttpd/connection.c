@@ -728,7 +728,7 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
   }
   /* Socketpair sockets will remain open as they will be
    * used with MHD_UPGRADE_ACTION_CLOSE. They will be
-   * closed by MHD_cleanup_upgraded_connection_() during
+   * closed by cleanup_upgraded_connection() during
    * connection's final cleanup.
    */
 }

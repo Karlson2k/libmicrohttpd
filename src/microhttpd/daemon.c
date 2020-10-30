@@ -3172,7 +3172,8 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
   {
     prev = daemon->suspended_connections_tail;
     /* During shutdown check for resuming is forced. */
-    mhd_assert ((NULL != prev) || (daemon->shutdown));
+    mhd_assert ((NULL != prev) || (daemon->shutdown) || \
+                (0 != (daemon->options & MHD_ALLOW_UPGRADE)));
   }
 
   daemon->resuming = false;
@@ -7024,6 +7025,7 @@ close_all_connections (struct MHD_Daemon *daemon)
   /* 'daemon->urh_head' is not used in thread-per-connection mode. */
   for (urh = daemon->urh_tail; NULL != urh; urh = urhn)
   {
+    mhd_assert (! used_thr_p_c);
     urhn = urh->prev;
     /* call generic forwarding function for passing data
        with chance to detect that application is done. */
@@ -7093,6 +7095,29 @@ close_all_connections (struct MHD_Daemon *daemon)
   if (NULL != daemon->suspended_connections_head)
     MHD_PANIC (_ (
                  "MHD_stop_daemon() called while we have suspended connections.\n"));
+#if defined(UPGRADE_SUPPORT) && defined(HTTPS_SUPPORT)
+  if (upg_allowed && used_tls && used_thr_p_c)
+  {
+    /* "Upgraded" threads may be running in parallel. Connection will not be
+     * moved to the "cleanup list" until connection's thread finishes.
+     * We must ensure that all "upgraded" connections are finished otherwise
+     * connection may stay in "suspended" list and will not be cleaned. */
+    for (pos = daemon->suspended_connections_tail; NULL != pos; pos = pos->prev)
+    {
+      /* Any connection found here is "upgraded" connection, normal suspended
+       * connections are already removed from this list. */
+      mhd_assert (NULL != pos->urh);
+      if (! pos->thread_joined)
+      {
+        /* No need to unlock "cleanup" mutex as upgraded connection
+         * doesn't manipulate "cleanup" list. */
+        if (! MHD_join_thread_ (pos->pid.handle))
+          MHD_PANIC (_ ("Failed to join a thread.\n"));
+        pos->thread_joined = true;
+      }
+    }
+  }
+#endif
   for (pos = daemon->connections_tail; NULL != pos; pos = pos->prev)
   {
     shutdown (pos->socket_fd,
@@ -7143,6 +7168,7 @@ close_all_connections (struct MHD_Daemon *daemon)
   }
 #endif /* UPGRADE_SUPPORT */
 
+  mhd_assert (NULL == daemon->suspended_connections_head);
   /* now that we're alone, move everyone to cleanup */
   while (NULL != (pos = daemon->connections_tail))
   {
