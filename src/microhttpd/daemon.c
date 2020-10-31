@@ -7109,11 +7109,15 @@ close_all_connections (struct MHD_Daemon *daemon)
       mhd_assert (NULL != pos->urh);
       if (! pos->thread_joined)
       {
-        /* No need to unlock "cleanup" mutex as upgraded connection
-         * doesn't manipulate "cleanup" list. */
+        /* While "cleanup" list is not manipulated by "upgraded"
+         * connection, "cleanup" mutex is required for call of
+         * MHD_resume_connection() during finishing of "upgraded"
+         * thread. */
+        MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
         if (! MHD_join_thread_ (pos->pid.handle))
           MHD_PANIC (_ ("Failed to join a thread.\n"));
         pos->thread_joined = true;
+        MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
       }
     }
   }
