@@ -1734,8 +1734,9 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
       {
         struct timeval*tvp;
         struct timeval tv;
-        if ( (con->tls_read_ready) &&
-             (urh->in_buffer_used < urh->in_buffer_size))
+        if (((con->tls_read_ready) &&
+             (urh->in_buffer_used < urh->in_buffer_size)) ||
+            (daemon->shutdown))
         {         /* No need to wait if incoming data is already pending in TLS buffers. */
           tv.tv_sec = 0;
           tv.tv_usec = 0;
@@ -1792,8 +1793,9 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
 
       urh_update_pollfd (urh, p);
 
-      if ( (con->tls_read_ready) &&
-           (urh->in_buffer_used < urh->in_buffer_size))
+      if (((con->tls_read_ready) &&
+           (urh->in_buffer_used < urh->in_buffer_size)) ||
+          (daemon->shutdown))
         timeout = 0;     /* No need to wait if incoming data is already pending in TLS buffers. */
       else
         timeout = -1;
