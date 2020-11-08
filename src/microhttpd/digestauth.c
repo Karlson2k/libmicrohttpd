@@ -666,7 +666,7 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection)
  * @param uri HTTP URI (in MHD, without the arguments ("?k=v")
  * @param realm A string of characters that describes the realm of auth.
  * @param da digest algorithm to use
- * @param nonce A pointer to a character array for the nonce to put in,
+ * @param[out] nonce A pointer to a character array for the nonce to put in,
  *        must provide NONCE_STD_LEN(da->digest_size)+1 bytes
  */
 static void
@@ -938,7 +938,8 @@ digest_auth_check_all (struct MHD_Connection *connection,
        large, but of course in theory the
        #MHD_OPTION_CONNECTION_MEMORY_LIMIT might be very large
        and would thus permit sending a >32k authorization
-       header value. */return MHD_NO;
+       header value. */
+    return MHD_NO;
   }
   if (TIMESTAMP_BIN_SIZE * 2 !=
       MHD_strx_to_uint32_n_ (nonce + len - TIMESTAMP_BIN_SIZE * 2,
