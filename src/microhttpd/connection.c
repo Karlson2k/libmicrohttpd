@@ -2884,7 +2884,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                    [connection->continue_message_write_offset],
                                    MHD_STATICSTR_LEN_ (HTTP_100_CONTINUE)
                                    - connection->continue_message_write_offset,
-                                   MHD_SSO_NO_CORK);
+                                   MHD_SSO_PUSH_DATA);
     if (ret < 0)
     {
       if (MHD_ERR_AGAIN_ == ret)
@@ -2927,7 +2927,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                        &connection->write_buffer
                                        [connection->write_buffer_send_offset],
                                        wb_ready,
-                                       MHD_SSO_MAY_CORK);
+                                       MHD_SSO_PREFER_BUFF);
       }
       else
       {
@@ -3004,7 +3004,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                        [(size_t) data_write_offset],
                                        response->data_size
                                        - (size_t) data_write_offset,
-                                       MHD_SSO_NO_CORK);
+                                       MHD_SSO_PUSH_DATA);
 #if _MHD_DEBUG_SEND_DATA
         if (ret > 0)
           fprintf (stderr,
@@ -3048,7 +3048,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                    [connection->write_buffer_send_offset],
                                    connection->write_buffer_append_offset
                                    - connection->write_buffer_send_offset,
-                                   MHD_SSO_NO_CORK);
+                                   MHD_SSO_PUSH_DATA);
     if (ret < 0)
     {
       if (MHD_ERR_AGAIN_ == ret)
@@ -3078,7 +3078,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                    [connection->write_buffer_send_offset],
                                    connection->write_buffer_append_offset
                                    - connection->write_buffer_send_offset,
-                                   MHD_SSO_NO_CORK);
+                                   MHD_SSO_PUSH_DATA);
     if (ret < 0)
     {
       if (MHD_ERR_AGAIN_ == ret)

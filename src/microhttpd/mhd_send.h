@@ -54,13 +54,18 @@ MHD_send_init_static_vars_ (void);
 enum MHD_SendSocketOptions
 {
   /**
-   * definitely no corking (use NODELAY, or explicitly disable cork)
+   * Need to flush buffers after send to push data to the network.
+   * Used to avoid delay before the last part of data (which is usually
+   * incomplete IP packet / MSS) is pushed by kernel to the network.
    */
-  MHD_SSO_NO_CORK = 0,
+  MHD_SSO_PUSH_DATA = 0,
   /**
-   * should enable corking (use MSG_MORE, or explicitly enable cork)
+   * Buffer data if possible.
+   * If more response data is to be sent than try to buffer data in
+   * the local buffers so kernel able to send complete packets with
+   * lower overhead.
    */
-  MHD_SSO_MAY_CORK = 1,
+  MHD_SSO_PREFER_BUFF = 1,
   /**
    * consider tcpi_snd_mss and consider not corking for the header
    * part if the size of the header is close to the MSS.

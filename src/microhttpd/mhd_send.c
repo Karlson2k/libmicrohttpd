@@ -329,11 +329,11 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   switch (options)
   {
   /* No corking */
-  case MHD_SSO_NO_CORK:
+  case MHD_SSO_PUSH_DATA:
     want_cork = false;
     break;
   /* Do corking, consider MSG_MORE instead if available. */
-  case MHD_SSO_MAY_CORK:
+  case MHD_SSO_PREFER_BUFF:
     want_cork = true;
     break;
   /* Cork the header. */
