@@ -395,13 +395,14 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 #endif /* HTTPS_SUPPORT  */
   {
     /* plaintext transmission */
+    bool new_cork_state;
+
     pre_cork_setsockopt (connection, want_cork);
 #if HAVE_MSG_MORE
     ret = send (s,
                 buffer,
                 buffer_size,
                 MSG_NOSIGNAL_OR_ZERO | (want_cork ? MSG_MORE : 0));
-    connection->sk_cork_on = want_cork; /* pretend corking happened as requested */
 #else
     ret = send (connection->socket_fd,
                 buffer,
@@ -432,8 +433,9 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     else if (buffer_size > (size_t) ret)
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
-    post_cork_setsockopt (connection,
-                          want_cork ? (buffer_size == (size_t) ret) : false);
+    new_cork_state = want_cork ? (buffer_size == (size_t) ret) : false;
+    post_cork_setsockopt (connection, new_cork_state);
+    connection->sk_cork_on = new_cork_state;
   }
 
   return ret;
