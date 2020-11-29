@@ -843,21 +843,6 @@ AC_SEARCH_LIBS(sendmsg, socket, AC_DEFINE([HAVE_SENDMSG],1,[Define if your platf
 AC_MSG_CHECKING([whether writev is available])
 AC_CHECK_FUNCS([writev])
 
-# check MSG_MORE defined
-AC_MSG_CHECKING([whether MSG_MORE is defined])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <sys/types.h>
-#include <sys/socket.h>
-]],[[return MSG_MORE;]]
-    )],
-    [
-      AC_MSG_RESULT(yes)
-      AC_DEFINE(HAVE_MSG_MORE, [1], [have MSG_MORE])
-    ],
-    [
-      AC_MSG_RESULT(no)
-    ])
-
 # set GCC options
 # use '-fno-strict-aliasing', but only if the compiler
 # and linker can take it

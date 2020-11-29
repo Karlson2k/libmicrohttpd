@@ -3507,7 +3507,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
     }
     return MHD_NO;
   }
-#if defined(MHD_TCP_CORK_NOPUSH) || defined(HAVE_MSG_MORE)
+#if defined(MHD_TCP_CORK_NOPUSH) || defined(MHD_USE_MSG_MORE)
   /* We will use TCP_CORK or TCP_NOPUSH or MSG_MORE to control
      transmission, disable Nagle's algorithm (always) */
   if ( (0 != MHD_socket_set_nodelay_ (s,

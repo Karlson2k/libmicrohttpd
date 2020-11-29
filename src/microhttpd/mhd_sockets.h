@@ -219,6 +219,14 @@ typedef SOCKET MHD_socket;
 #define MHD_TCP_CORK_NOPUSH TCP_NOPUSH
 #endif /* TCP_NOPUSH */
 
+#ifdef MSG_MORE
+#ifdef __linux__
+/* MSG_MORE signal kernel to buffer outbond data and works like
+ * TCP_CORK per call without actually setting TCP_CORK value.
+ * It's known to work on Linux. Add more OSes if they are compatible. */
+#define MHD_USE_MSG_MORE 1
+#endif /* __linux__ */
+#endif /* MSG_MORE */
 
 /**
  * MHD_SCKT_OPT_BOOL_ is type for bool parameters for setsockopt()/getsockopt()

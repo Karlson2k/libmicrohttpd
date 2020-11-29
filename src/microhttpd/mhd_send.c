@@ -115,7 +115,7 @@ static void
 pre_cork_setsockopt (struct MHD_Connection *connection,
                      bool want_cork)
 {
-#if HAVE_MSG_MORE
+#ifdef MHD_USE_MSG_MORE
   /* We use the MSG_MORE option for corking, no need for extra syscalls! */
 
   (void) connection; /* Mute compiler warning. */
@@ -204,7 +204,7 @@ static void
 post_cork_setsockopt (struct MHD_Connection *connection,
                       bool want_cork)
 {
-#if HAVE_MSG_MORE
+#ifdef MHD_USE_MSG_MORE
   /* We use the MSG_MORE option for corking, no need for extra syscalls! */
 
   (void) connection; /* Mute compiler warning. */
@@ -398,7 +398,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     bool new_cork_state;
 
     pre_cork_setsockopt (connection, want_cork);
-#if HAVE_MSG_MORE
+#ifdef MHD_USE_MSG_MORE
     ret = send (s,
                 buffer,
                 buffer_size,
