@@ -49,6 +49,7 @@
 /* For FreeBSD version identification */
 #include <sys/param.h>
 #endif /* HAVE_SYS_PARAM_H */
+#include "mhd_assert.h"
 
 
 /**
@@ -109,21 +110,28 @@ MHD_send_init_static_vars_ (void)
  * Handle setsockopt calls.
  *
  * @param connection the MHD_Connection structure
+ * @param tls_conn indicate HTTPS connection
  * @param want_cork cork state, boolean
  */
 static void
 pre_cork_setsockopt (struct MHD_Connection *connection,
+                     bool tls_conn,
                      bool want_cork)
 {
-#ifdef MHD_USE_MSG_MORE
-  /* We use the MSG_MORE option for corking, no need for extra syscalls! */
-
-  (void) connection; /* Mute compiler warning. */
-  (void) want_cork;  /* Mute compiler warning. */
-
-#elif defined(MHD_TCP_CORK_NOPUSH)
   int ret;
 
+#ifdef MHD_USE_MSG_MORE
+  if (! tls_conn)
+  {
+    /* MSG_MORE is used, no need for extra syscalls! */
+
+    (void) connection; /* Mute compiler warning. */
+    (void) want_cork;  /* Mute compiler warning. */
+    return;
+  }
+#endif /* MHD_USE_MSG_MORE */
+
+#if defined(MHD_TCP_CORK_NOPUSH)
   /* If sk_cork_on is already what we pass in, return. */
   if (connection->sk_cork_on == want_cork)
   {
@@ -198,21 +206,28 @@ pre_cork_setsockopt (struct MHD_Connection *connection,
  * Handle setsockopt calls.
  *
  * @param connection the MHD_Connection structure
+ * @param tls_conn indicate HTTPS connection
  * @param want_cork cork state, boolean
  */
 static void
 post_cork_setsockopt (struct MHD_Connection *connection,
+                      bool tls_conn,
                       bool want_cork)
 {
-#ifdef MHD_USE_MSG_MORE
-  /* We use the MSG_MORE option for corking, no need for extra syscalls! */
-
-  (void) connection; /* Mute compiler warning. */
-  (void) want_cork;  /* Mute compiler warning. */
-
-#elif defined(MHD_TCP_CORK_NOPUSH)
   int ret;
 
+#ifdef MHD_USE_MSG_MORE
+  if (! tls_conn)
+  {
+    /* MSG_MORE is used, no need for extra syscalls! */
+
+    (void) connection; /* Mute compiler warning. */
+    (void) want_cork;  /* Mute compiler warning. */
+    return;
+  }
+#endif /* MHD_USE_MSG_MORE */
+
+#if defined(MHD_TCP_CORK_NOPUSH)
   /* If sk_cork_on is already what we pass in, return. */
   if (connection->sk_cork_on == want_cork)
   {
@@ -313,6 +328,11 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   bool want_cork;
   MHD_socket s = connection->socket_fd;
   ssize_t ret;
+#ifdef HTTPS_SUPPORT
+  const bool tls_conn = (connection->daemon->options & MHD_USE_TLS);
+#else  /* ! HTTPS_SUPPORT */
+  const bool tls_conn = false;
+#endif /* ! HTTPS_SUPPORT */
 
   /* error handling from send_param_adapter() */
   if ( (MHD_INVALID_SOCKET == s) ||
@@ -343,7 +363,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   }
 
 #ifdef HTTPS_SUPPORT
-  if (0 != (connection->daemon->options & MHD_USE_TLS))
+  if (tls_conn)
   {
     bool have_cork = connection->sk_cork_on;
 
@@ -397,7 +417,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     /* plaintext transmission */
     bool new_cork_state;
 
-    pre_cork_setsockopt (connection, want_cork);
+    pre_cork_setsockopt (connection, tls_conn, want_cork);
 #ifdef MHD_USE_MSG_MORE
     ret = send (s,
                 buffer,
@@ -434,7 +454,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
     new_cork_state = want_cork ? (buffer_size == (size_t) ret) : false;
-    post_cork_setsockopt (connection, new_cork_state);
+    post_cork_setsockopt (connection, tls_conn, new_cork_state);
     connection->sk_cork_on = new_cork_state;
   }
 
@@ -467,7 +487,13 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                           size_t buffer_size)
 {
 #ifdef HTTPS_SUPPORT
-  if (0 != (connection->daemon->options & MHD_USE_TLS))
+  const bool tls_conn = (connection->daemon->options & MHD_USE_TLS);
+#else  /* ! HTTPS_SUPPORT */
+  const bool tls_conn = false;
+#endif /* ! HTTPS_SUPPORT */
+
+#ifdef HTTPS_SUPPORT
+  if (tls_conn)
   {
     ssize_t ret;
 
@@ -498,7 +524,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 
   /* Since we generally give the fully answer, we do not want
      corking to happen */
-  pre_cork_setsockopt (connection, false);
+  pre_cork_setsockopt (connection, tls_conn, false);
 
   vector[0].iov_base = (void *) header;
   vector[0].iov_len = header_size;
@@ -533,7 +559,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   /* Only if we succeeded sending the full buffer, we need to make sure that
      the OS flushes at the end */
   if (header_size + buffer_size == (size_t) ret)
-    post_cork_setsockopt (connection, false);
+    post_cork_setsockopt (connection, tls_conn, false);
 
   return ret;
 
@@ -585,8 +611,9 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
                             MHD_SENFILE_CHUNK_;
   size_t send_size = 0;
   mhd_assert (MHD_resp_sender_sendfile == connection->resp_sender);
+  mhd_assert (0 == (connection->daemon->options & MHD_USE_TLS));
 
-  pre_cork_setsockopt (connection, false);
+  pre_cork_setsockopt (connection, false, false);
 
   offsetu64 = connection->response_write_position
               + connection->response->fd_off;
@@ -731,7 +758,7 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
   /* Make sure we send the data without delay ONLY if we
      provided the complete response (not on partial write) */
   if (left == (uint64_t) ret)
-    post_cork_setsockopt (connection, false);
+    post_cork_setsockopt (connection, false, false);
 
   return ret;
 }
