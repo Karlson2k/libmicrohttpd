@@ -2458,7 +2458,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
     errno = eno;
     return MHD_NO;
   }
-  connection->sk_cork_on = true; /* default is usually ON */
+  connection->sk_cork_on = false;
 
   connection->connection_timeout = daemon->connection_timeout;
   if (NULL == (connection->addr = malloc (addrlen)))
