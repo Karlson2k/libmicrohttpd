@@ -894,53 +894,25 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
   case MHD_UPGRADE_ACTION_CORK_ON:
     if (connection->sk_cork_on)
       return MHD_YES;
-#ifdef HTTPS_SUPPORT
-    if (0 != (daemon->options & MHD_USE_TLS) )
+    if (0 !=
+        MHD_socket_cork_ (connection->socket_fd,
+                          true))
     {
-      gnutls_record_cork (connection->tls_session);
       connection->sk_cork_on = true;
       return MHD_YES;
     }
-    else
-#endif
-    {
-      if (0 !=
-          MHD_socket_cork_ (connection->socket_fd,
-                            true))
-      {
-        connection->sk_cork_on = true;
-        return MHD_YES;
-      }
-      return MHD_NO;
-    }
+    return MHD_NO;
   case MHD_UPGRADE_ACTION_CORK_OFF:
     if (! connection->sk_cork_on)
       return MHD_YES;
-#ifdef HTTPS_SUPPORT
-    if (0 != (daemon->options & MHD_USE_TLS) )
+    if (0 !=
+        MHD_socket_cork_ (connection->socket_fd,
+                          false))
     {
-      int err;
-
-      err = gnutls_record_uncork (connection->tls_session, 0);
-      if (0 > err)
-        return MHD_NO;
       connection->sk_cork_on = false;
       return MHD_YES;
     }
-    else
-#endif
-    {
-      if (! connection->sk_cork_on)
-        return MHD_YES;
-      if (0 !=
-          MHD_socket_cork_ (connection->socket_fd,
-                            false))
-      {
-        connection->sk_cork_on = false;
-        return MHD_YES;
-      }
-      return MHD_NO;
-    }
+    return MHD_NO;
   default:
     /* we don't understand this one */
     return MHD_NO;

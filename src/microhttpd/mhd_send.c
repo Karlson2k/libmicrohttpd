@@ -349,18 +349,10 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     break;
   }
 
-#ifdef HTTPS_SUPPORT
+  pre_cork_setsockopt (connection, tls_conn, want_cork);
   if (tls_conn)
   {
-    bool have_cork = connection->sk_cork_on;
-
-#if GNUTLS_VERSION_NUMBER >= 0x030109
-    if (want_cork && ! have_cork)
-    {
-      gnutls_record_cork (connection->tls_session);
-      connection->sk_cork_on = true;
-    }
-#endif /* GNUTLS_VERSION_NUMBER >= 0x030109 */
+#ifdef HTTPS_SUPPORT
     if (buffer_size > SSIZE_MAX)
       buffer_size = SSIZE_MAX;
     ret = gnutls_record_send (connection->tls_session,
@@ -386,25 +378,12 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
      * sent amount smaller than provided amount, as TLS
      * connections may break data into smaller parts for sending. */
 #endif /* EPOLL_SUPPORT */
-
-#if GNUTLS_VERSION_NUMBER >= 0x030109
-    if (! want_cork && have_cork)
-    {
-      int err = gnutls_record_uncork (connection->tls_session, 0);
-
-      if (0 > err)
-        return MHD_ERR_AGAIN_;
-      connection->sk_cork_on = false;
-    }
-#endif /* GNUTLS_VERSION_NUMBER >= 0x030109 */
+#endif /* HTTPS_SUPPORT  */
+    (void) 0; /* Mute compiler warning for non-TLS builds. */
   }
   else
-#endif /* HTTPS_SUPPORT  */
   {
     /* plaintext transmission */
-    bool new_cork_state;
-
-    pre_cork_setsockopt (connection, tls_conn, want_cork);
 #ifdef MHD_USE_MSG_MORE
     ret = send (s,
                 buffer,
@@ -440,10 +419,10 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     else if (buffer_size > (size_t) ret)
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
-    new_cork_state = want_cork ? (buffer_size == (size_t) ret) : false;
-    post_cork_setsockopt (connection, tls_conn, new_cork_state);
-    connection->sk_cork_on = new_cork_state;
   }
+  post_cork_setsockopt (connection, tls_conn,
+                        (want_cork ? true :
+                         ((buffer_size == (size_t) ret) ? false : true)));
 
   return ret;
 }
@@ -488,19 +467,6 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                                    header,
                                    header_size,
                                    MHD_SSO_HDR_CORK);
-#if GNUTLS_VERSION_NUMBER >= 0x030109
-    if ( (header_size == (size_t) ret) &&
-         (0 == buffer_size) &&
-         connection->sk_cork_on)
-    {
-      int err;
-
-      err = gnutls_record_uncork (connection->tls_session, 0);
-      if (0 > err)
-        return ret;
-      connection->sk_cork_on = false;
-    }
-#endif /* GNUTLS_VERSION_NUMBER >= 0x030109 */
     return ret;
   }
 #endif
