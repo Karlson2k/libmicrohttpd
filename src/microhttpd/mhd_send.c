@@ -432,8 +432,8 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     else if (buffer_size > (size_t) ret)
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
-    if (buffer_size == (size_t) ret)
-      post_cork_setsockopt (connection, want_cork);
+    post_cork_setsockopt (connection,
+                          want_cork ? (buffer_size == (size_t) ret) : false);
   }
 
   return ret;
