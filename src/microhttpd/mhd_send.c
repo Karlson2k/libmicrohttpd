@@ -400,13 +400,13 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     ret = send (s,
                 buffer,
                 buffer_size,
-                MAYBE_MSG_NOSIGNAL | (want_cork ? MSG_MORE : 0));
+                MSG_NOSIGNAL_OR_ZERO | (want_cork ? MSG_MORE : 0));
     connection->sk_cork_on = want_cork; /* pretend corking happened as requested */
 #else
     ret = send (connection->socket_fd,
                 buffer,
                 buffer_size,
-                MAYBE_MSG_NOSIGNAL);
+                MSG_NOSIGNAL_OR_ZERO);
 #endif
 
     if (0 > ret)
@@ -511,7 +511,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
     msg.msg_iov = vector;
     msg.msg_iovlen = 2;
 
-    ret = sendmsg (s, &msg, MAYBE_MSG_NOSIGNAL);
+    ret = sendmsg (s, &msg, MSG_NOSIGNAL_OR_ZERO);
     if ( (-1 == ret) &&
          (EAGAIN == errno) )
       return MHD_ERR_AGAIN_;

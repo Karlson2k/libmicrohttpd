@@ -157,27 +157,27 @@ typedef SOCKET MHD_socket;
 #endif /* ! MHD_SOCKET_DEFINED */
 
 #ifdef SOCK_CLOEXEC
-#  define MAYBE_SOCK_CLOEXEC SOCK_CLOEXEC
+#  define SOCK_CLOEXEC_OR_ZERO SOCK_CLOEXEC
 #else  /* ! SOCK_CLOEXEC */
-#  define MAYBE_SOCK_CLOEXEC 0
+#  define SOCK_CLOEXEC_OR_ZERO 0
 #endif /* ! SOCK_CLOEXEC */
 
 #ifdef HAVE_SOCK_NONBLOCK
-#  define MAYBE_SOCK_NONBLOCK SOCK_NONBLOCK
+#  define SOCK_NONBLOCK_OR_ZERO SOCK_NONBLOCK
 #else  /* ! HAVE_SOCK_NONBLOCK */
-#  define MAYBE_SOCK_NONBLOCK 0
+#  define SOCK_NONBLOCK_OR_ZERO 0
 #endif /* ! HAVE_SOCK_NONBLOCK */
 
 #ifdef SOCK_NOSIGPIPE
-#  define MAYBE_SOCK_NOSIGPIPE SOCK_NOSIGPIPE
+#  define SOCK_NOSIGPIPE_OR_ZERO SOCK_NOSIGPIPE
 #else  /* ! HAVE_SOCK_NONBLOCK */
-#  define MAYBE_SOCK_NOSIGPIPE 0
+#  define SOCK_NOSIGPIPE_OR_ZERO 0
 #endif /* ! HAVE_SOCK_NONBLOCK */
 
 #ifdef MSG_NOSIGNAL
-#  define MAYBE_MSG_NOSIGNAL MSG_NOSIGNAL
+#  define MSG_NOSIGNAL_OR_ZERO MSG_NOSIGNAL
 #else  /* ! MSG_NOSIGNAL */
-#  define MAYBE_MSG_NOSIGNAL 0
+#  define MSG_NOSIGNAL_OR_ZERO 0
 #endif /* ! MSG_NOSIGNAL */
 
 #if ! defined(SHUT_WR) && defined(SD_SEND)
@@ -284,7 +284,7 @@ typedef int MHD_SCKT_SEND_SIZE_;
  */
 #define MHD_send_(s,b,l) \
   ((ssize_t) send ((s),(const void*) (b),(MHD_SCKT_SEND_SIZE_) (l), \
-                   MAYBE_MSG_NOSIGNAL))
+                   MSG_NOSIGNAL_OR_ZERO))
 
 
 /**

@@ -585,11 +585,11 @@ MHD_socket_create_listen_ (int pf)
 #if defined(MHD_POSIX_SOCKETS) && (defined(SOCK_CLOEXEC) || \
   defined(SOCK_NOSIGPIPE) )
   fd = socket (pf,
-               SOCK_STREAM | SOCK_CLOEXEC | MAYBE_SOCK_NOSIGPIPE,
+               SOCK_STREAM | SOCK_CLOEXEC | SOCK_NOSIGPIPE_OR_ZERO,
                0);
-  cloexec_set = (MAYBE_SOCK_CLOEXEC != 0);
+  cloexec_set = (SOCK_CLOEXEC_OR_ZERO != 0);
 #if defined(SOCK_NOSIGPIPE) || defined(MHD_socket_nosignal_)
-  nosigpipe_set = (MAYBE_SOCK_NOSIGPIPE != 0);
+  nosigpipe_set = (SOCK_NOSIGPIPE_OR_ZERO != 0);
 #endif /* SOCK_NOSIGPIPE ||  MHD_socket_nosignal_ */
 #elif defined(MHD_WINSOCK_SOCKETS) && defined (WSA_FLAG_NO_HANDLE_INHERIT)
   fd = WSASocketW (pf,
