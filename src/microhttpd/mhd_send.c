@@ -452,6 +452,9 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                           const char *buffer,
                           size_t buffer_size)
 {
+  MHD_socket s = connection->socket_fd;
+  ssize_t ret;
+  struct iovec vector[2];
 #ifdef HTTPS_SUPPORT
   const bool tls_conn = (connection->daemon->options & MHD_USE_TLS);
 #else  /* ! HTTPS_SUPPORT */
@@ -471,10 +474,6 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   }
 #endif
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
-  MHD_socket s = connection->socket_fd;
-  ssize_t ret;
-  struct iovec vector[2];
-
   /* Since we generally give the fully answer, we do not want
      corking to happen */
   pre_cork_setsockopt (connection, tls_conn, false);
