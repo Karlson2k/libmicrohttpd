@@ -2357,6 +2357,7 @@ psk_gnutls_adapter (gnutls_session_t session,
  *        to receive an HTTP request from this socket next).
  * @param addr IP address of the client
  * @param addrlen number of bytes in @a addr
+ * @param external_add indicate that socket has been added externally
  * @param non_blck indicate that socket in non-blocking mode
  * @param pconnection pointer to variable that receive pointer to
  *        the new connection structure.
@@ -2370,6 +2371,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
                          MHD_socket client_socket,
                          const struct sockaddr *addr,
                          socklen_t addrlen,
+                         bool external_add,
                          bool non_blck,
                          struct MHD_Connection **pconnection)
 {
@@ -2460,19 +2462,29 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
   }
   connection->sk_cork_on = false;
 #if defined(MHD_TCP_CORK_NOPUSH) || defined(MHD_USE_MSG_MORE)
+  (void) external_add; /* Mute compiler warning */
   /* We will use TCP_CORK or TCP_NOPUSH or MSG_MORE to control
      transmission, disable Nagle's algorithm (always) */
-  if ( (0 != MHD_socket_set_nodelay_ (client_socket,
-                                      true)) &&
-       (EOPNOTSUPP != errno) )
+  if (0 != MHD_socket_set_nodelay_ (client_socket, true))
   {
+    if (EOPNOTSUPP != MHD_socket_get_error_ ())
+    {
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Failed to disable TCP Nagle on socket: %s\n"),
-              MHD_socket_last_strerr_ ());
+      MHD_DLOG (daemon,
+                _ ("Failed to disable TCP Nagle on socket: %s\n"),
+                MHD_socket_last_strerr_ ());
 #endif
+    }
+    connection->sk_nodelay = _MHD_UNKNOWN;
   }
-#endif
+  else
+    connection->sk_nodelay = _MHD_ON;
+#else  /* !MHD_TCP_CORK_NOPUSH && !MHD_USE_MSG_MORE */
+  if (! external_add)
+    connection->sk_nodelay = _MHD_OFF;
+  else
+    connection->sk_nodelay = _MHD_UNKNOWN;
+#endif /* !MHD_TCP_CORK_NOPUSH && !MHD_USE_MSG_MORE */
 
   connection->connection_timeout = daemon->connection_timeout;
   if (NULL == (connection->addr = malloc (addrlen)))
@@ -2911,7 +2923,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
   }
 
   if (MHD_NO == new_connection_prepare_ (daemon, client_socket, addr, addrlen,
-                                         non_blck, &connection))
+                                         external_add, non_blck, &connection))
     return MHD_NO;
 
   if ((external_add) &&

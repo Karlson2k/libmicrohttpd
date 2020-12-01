@@ -194,14 +194,17 @@ pre_send_setopt (struct MHD_Connection *connection,
   /* CORK/NOPUSH do not exist on this platform,
      Turning on/off of Naggle's algorithm
      (otherwise we keep it always off) */
-  if (connection->sk_cork_on == buffer_data)
+  if (connection->sk_nodelay == push_data)
   {
     /* nothing to do, success! */
     return;
   }
   if (0 == MHD_socket_set_nodelay_ (connection->socket_fd,
                                     (push_data)))
-    connection->sk_cork_on = !push_data;
+  {
+    connection->sk_cork_on = ! push_data;
+    connection->sk_nodelay = push_data;
+  }
 #endif
 }
 
@@ -430,7 +433,7 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 #endif /* EPOLL_SUPPORT */
   }
   post_send_setopt (connection, tls_conn,
-                        (push_data && (buffer_size == (size_t) ret)) );
+                    (push_data && (buffer_size == (size_t) ret)) );
 
   return ret;
 }

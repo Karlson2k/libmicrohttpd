@@ -167,6 +167,17 @@ extern void *mhd_panic_cls;
 
 
 /**
+ * Tri-state on/off/unknown
+ */
+enum MHD_tristate
+{
+  _MHD_UNKNOWN = -1,    /**< State is not yet checked nor set */
+  _MHD_OFF     = false, /**< State is "off" / "disabled" */
+  _MHD_ON      = true   /**< State is "on"  / "enabled" */
+};
+
+
+/**
  * State of the socket with respect to epoll (bitmask).
  */
 enum MHD_EpollState
@@ -922,6 +933,11 @@ struct MHD_Connection
    * on this socket.
    */
   bool sk_cork_on;
+
+  /**
+   * Tracks TCP_NODELAY state of the connection socket.
+   */
+  enum MHD_tristate sk_nodelay;
 
   /**
    * Has this socket been closed for reading (i.e.  other side closed
