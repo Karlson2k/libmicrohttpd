@@ -2459,6 +2459,20 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
     return MHD_NO;
   }
   connection->sk_cork_on = false;
+#if defined(MHD_TCP_CORK_NOPUSH) || defined(MHD_USE_MSG_MORE)
+  /* We will use TCP_CORK or TCP_NOPUSH or MSG_MORE to control
+     transmission, disable Nagle's algorithm (always) */
+  if ( (0 != MHD_socket_set_nodelay_ (client_socket,
+                                      true)) &&
+       (EOPNOTSUPP != errno) )
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Failed to disable TCP Nagle on socket: %s\n"),
+              MHD_socket_last_strerr_ ());
+#endif
+  }
+#endif
 
   connection->connection_timeout = daemon->connection_timeout;
   if (NULL == (connection->addr = malloc (addrlen)))
@@ -3507,20 +3521,6 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
     }
     return MHD_NO;
   }
-#if defined(MHD_TCP_CORK_NOPUSH) || defined(MHD_USE_MSG_MORE)
-  /* We will use TCP_CORK or TCP_NOPUSH or MSG_MORE to control
-     transmission, disable Nagle's algorithm (always) */
-  if ( (0 != MHD_socket_set_nodelay_ (s,
-                                      true)) &&
-       (EOPNOTSUPP != errno) )
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Failed to disable TCP Nagle on socket: %s\n"),
-              MHD_socket_last_strerr_ ());
-#endif
-  }
-#endif
 #if ! defined(USE_ACCEPT4) || ! defined(HAVE_SOCK_NONBLOCK)
   if (! MHD_socket_nonblocking_ (s))
   {
