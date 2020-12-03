@@ -892,24 +892,24 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
     MHD_resume_connection (connection);
     return MHD_YES;
   case MHD_UPGRADE_ACTION_CORK_ON:
-    if (connection->sk_cork_on)
+    if (_MHD_ON == connection->sk_corked)
       return MHD_YES;
     if (0 !=
         MHD_socket_cork_ (connection->socket_fd,
                           true))
     {
-      connection->sk_cork_on = true;
+      connection->sk_corked = _MHD_ON;
       return MHD_YES;
     }
     return MHD_NO;
   case MHD_UPGRADE_ACTION_CORK_OFF:
-    if (! connection->sk_cork_on)
+    if (_MHD_OFF == connection->sk_corked)
       return MHD_YES;
     if (0 !=
         MHD_socket_cork_ (connection->socket_fd,
                           false))
     {
-      connection->sk_cork_on = false;
+      connection->sk_corked = _MHD_OFF;
       return MHD_YES;
     }
     return MHD_NO;

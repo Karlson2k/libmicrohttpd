@@ -2460,9 +2460,12 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
     errno = eno;
     return MHD_NO;
   }
-  connection->sk_cork_on = false;
 #if defined(MHD_TCP_CORK_NOPUSH) || defined(MHD_USE_MSG_MORE)
-  (void) external_add; /* Mute compiler warning */
+  if (! external_add)
+    connection->sk_corked = _MHD_OFF;
+  else
+    connection->sk_corked = _MHD_UNKNOWN;
+
   /* We will use TCP_CORK or TCP_NOPUSH or MSG_MORE to control
      transmission, disable Nagle's algorithm (always) */
   if (0 != MHD_socket_set_nodelay_ (client_socket, true))

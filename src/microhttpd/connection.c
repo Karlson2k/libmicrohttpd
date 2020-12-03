@@ -2408,11 +2408,9 @@ check_write_done (struct MHD_Connection *connection,
                   enum MHD_CONNECTION_STATE next_state)
 {
   if ( (connection->write_buffer_append_offset !=
-        connection->write_buffer_send_offset) ||
-       /* if we expected to turn cork off, and it is still on,
-          we are not finished sending (can happen with gnutls_record_uncork) */
-       ( (connection->sk_cork_on) &&
-         (MHD_CONNECTION_HEADERS_SENDING != connection->state) ) )
+        connection->write_buffer_send_offset)
+       /* || data_in_tls_buffers == true  */
+       )
     return MHD_NO;
   connection->write_buffer_append_offset = 0;
   connection->write_buffer_send_offset = 0;

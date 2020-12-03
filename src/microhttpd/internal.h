@@ -929,10 +929,9 @@ struct MHD_Connection
   bool sk_nonblck;
 
   /**
-   * Indicate whether connection socket has TCP_CORK / Nagle’s algorithm turned on/off
-   * on this socket.
+   * Tracks TCP_CORK / TCP_NOPUSH of the connection socket.
    */
-  bool sk_cork_on;
+  enum MHD_tristate sk_corked;
 
   /**
    * Tracks TCP_NODELAY state of the connection socket.

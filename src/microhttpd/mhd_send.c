@@ -137,19 +137,16 @@ pre_send_setopt (struct MHD_Connection *connection,
 #endif /* ! MHD_USE_MSG_MORE */
 
 #if defined(MHD_TCP_CORK_NOPUSH)
-  /* If sk_cork_on is already what we pass in, return. */
-  if (connection->sk_cork_on == buffer_data)
-  {
-    /* nothing to do, success! */
+  /* If connection is already in required corked state, do nothing. */
+  if (connection->sk_corked == buffer_data)
     return;
-  }
   if (push_data)
-    return; /* nothing to do *pre* syscall! */
+    return; /* nothing to do *pre* syscall! BUG: to be fixed */
   ret = MHD_socket_cork_ (connection->socket_fd,
-                          true);
+                          buffer_data);
   if (0 != ret)
   {
-    connection->sk_cork_on = true;
+    connection->sk_corked = buffer_data;
     return;
   }
   switch (errno)
@@ -201,10 +198,7 @@ pre_send_setopt (struct MHD_Connection *connection,
   }
   if (0 == MHD_socket_set_nodelay_ (connection->socket_fd,
                                     (push_data)))
-  {
-    connection->sk_cork_on = ! push_data;
     connection->sk_nodelay = push_data;
-  }
 #endif
 }
 
@@ -240,21 +234,18 @@ post_send_setopt (struct MHD_Connection *connection,
 #endif /* ! MHD_USE_MSG_MORE */
 
 #if defined(MHD_TCP_CORK_NOPUSH)
-  /* If sk_cork_on is already what we pass in, return. */
-  if (connection->sk_cork_on == buffer_data)
-  {
-    /* nothing to do, success! */
+  /* If connection is already in required corked state, do nothing. */
+  if (connection->sk_corked == buffer_data)
     return;
-  }
   if (buffer_data)
     return; /* nothing to do *post* syscall (in fact, we should never
-               get here, as sk_cork_on should have succeeded in the
+               get here, as sk_corked should have succeeded in the
                pre-syscall) */
   ret = MHD_socket_cork_ (connection->socket_fd,
-                          false);
+                          buffer_data);
   if (0 != ret)
   {
-    connection->sk_cork_on = false;
+    connection->sk_corked = buffer_data;
     return;
   }
   switch (errno)
