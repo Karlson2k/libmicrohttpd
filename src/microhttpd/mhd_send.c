@@ -331,10 +331,6 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     return MHD_ERR_NOTCONN_;
   }
 
-  /* from send_param_adapter() */
-  if (buffer_size > MHD_SCKT_SEND_MAX_SIZE_)
-    buffer_size = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
-
   /* Get socket options, change/set options if necessary. */
   switch (options)
   {
@@ -387,6 +383,9 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   else
   {
     /* plaintext transmission */
+    if (buffer_size > MHD_SCKT_SEND_MAX_SIZE_)
+      buffer_size = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
+
 #ifdef MHD_USE_MSG_MORE
     ret = send (s,
                 buffer,
