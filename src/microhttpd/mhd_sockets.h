@@ -284,15 +284,26 @@ typedef int MHD_SCKT_SEND_SIZE_;
 
 
 /**
- * MHD_send_ is wrapper for system's send()
+ * MHD_send4_ is a wrapper for system's send()
+ * @param s the socket to use
+ * @param b the buffer with data to send
+ * @param l the length of data in @a b
+ * @param f the additional flags
+ * @return ssize_t type value
+ */
+#define MHD_send4_(s,b,l,f) \
+  ((ssize_t) send ((s),(const void*) (b),(MHD_SCKT_SEND_SIZE_) (l), \
+                   ((MSG_NOSIGNAL_OR_ZERO) | (f))))
+
+
+/**
+ * MHD_send_ is a simple wrapper for system's send()
  * @param s the socket to use
  * @param b the buffer with data to send
  * @param l the length of data in @a b
  * @return ssize_t type value
  */
-#define MHD_send_(s,b,l) \
-  ((ssize_t) send ((s),(const void*) (b),(MHD_SCKT_SEND_SIZE_) (l), \
-                   MSG_NOSIGNAL_OR_ZERO))
+#define MHD_send_(s,b,l) MHD_send4_((s),(b),(l), 0)
 
 
 /**

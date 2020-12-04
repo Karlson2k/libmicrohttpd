@@ -387,15 +387,15 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
       buffer_size = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
 
 #ifdef MHD_USE_MSG_MORE
-    ret = send (s,
-                buffer,
-                buffer_size,
-                MSG_NOSIGNAL_OR_ZERO | (push_data ? 0 : MSG_MORE));
+    ret = MHD_send4_ (s,
+                      buffer,
+                      buffer_size,
+                      push_data ? 0 : MSG_MORE);
 #else
-    ret = send (connection->socket_fd,
-                buffer,
-                buffer_size,
-                MSG_NOSIGNAL_OR_ZERO);
+    ret = MHD_send4_ (s,
+                      buffer,
+                      buffer_size,
+                      0);
 #endif
 
     if (0 > ret)
