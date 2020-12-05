@@ -122,6 +122,10 @@
 typedef intptr_t ssize_t;
 #endif /* !_SSIZE_T_DEFINED */
 
+#ifdef __FreeBSD__
+#include <sys/param.h> /* For __FreeBSD_version */
+#endif /* __FreeBSD__ */
+
 #include "mhd_limits.h"
 
 #ifdef _MHD_FD_SETSIZE_IS_DEFAULT
@@ -219,14 +223,54 @@ typedef SOCKET MHD_socket;
 #define MHD_TCP_CORK_NOPUSH TCP_NOPUSH
 #endif /* TCP_NOPUSH */
 
+
+#ifdef MHD_TCP_CORK_NOPUSH
+#ifdef __linux__
+/**
+ * Indicate that reset of TCP_CORK / TCP_NOPUSH push data to the network
+ */
+#define _MHD_CORK_RESET_PUSH_DATA 1
+/**
+ * Indicate that reset of TCP_CORK / TCP_NOPUSH push data to the network
+ * even if TCP_CORK/TCP_NOPUSH was in switched off state.
+ */
+#define _MHD_CORK_RESET_PUSH_DATA_ALWAYS 1
+#endif /* __linux__ */
+#if defined(__FreeBSD__) && \
+  ((__FreeBSD__ + 0) >= 5 || (__FreeBSD_version + 0) >= 450000)
+/* FreeBSD pushes data to the network with reset of TCP_NOPUSH
+ * starting from version 4.5. */
+/**
+ * Indicate that reset of TCP_CORK / TCP_NOPUSH push data to the network
+ */
+#define _MHD_CORK_RESET_PUSH_DATA 1
+#endif /* __FreeBSD_version >= 450000 */
+#endif /* MHD_TCP_CORK_NOPUSH */
+
+#ifdef __linux__
+/**
+ * Indicate that set of TCP_NODELAY push data to the network
+ */
+#define _MHD_NODELAY_SET_PUSH_DATA 1
+/**
+ * Indicate that set of TCP_NODELAY push data to the network even
+ * if TCP_DELAY was already set and regardless of TCP_CORK / TCP_NOPUSH state
+ */
+#define _MHD_NODELAY_SET_PUSH_DATA_ALWAYS 1
+#endif /* __linux__ */
+
 #ifdef MSG_MORE
 #ifdef __linux__
 /* MSG_MORE signal kernel to buffer outbond data and works like
  * TCP_CORK per call without actually setting TCP_CORK value.
  * It's known to work on Linux. Add more OSes if they are compatible. */
+/**
+ * Indicate MSG_MORE is usable for buffered send().
+ */
 #define MHD_USE_MSG_MORE 1
 #endif /* __linux__ */
 #endif /* MSG_MORE */
+
 
 /**
  * MHD_SCKT_OPT_BOOL_ is type for bool parameters for setsockopt()/getsockopt()
