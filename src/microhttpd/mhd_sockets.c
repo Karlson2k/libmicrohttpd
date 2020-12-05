@@ -520,6 +520,7 @@ MHD_socket_cork_ (MHD_socket sock,
   /* FreeBSD do not need zero-send for flushing starting from version 9 */
   return 1;
 #elif defined(TCP_NOPUSH) && ! defined(TCP_CORK)
+  if (! on)
   {
     const int dummy = 0;
     /* Force flush data with zero send otherwise Darwin and some BSD systems
