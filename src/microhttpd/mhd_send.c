@@ -1,6 +1,8 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2019 ng0 <ng0@n0.is>
+  Copyright (C) 2017,2020 Karlson2k (Evgeny Grin), Full re-write of buffering and
+                     pushing, many bugs fixes, optimisations, sendfile() porting
+  Copyright (C) 2019 ng0 <ng0@n0.is>, Initial version of send() wrappers
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -21,9 +23,9 @@
 /**
  * @file microhttpd/mhd_send.c
  * @brief Implementation of send() wrappers.
+ * @author Karlson2k (Evgeny Grin)
  * @author ng0 (N. Gillmann)
  * @author Christian Grothoff
- * @author Evgeny Grin
  */
 
 /* Worth considering for future improvements and additions:
@@ -31,10 +33,6 @@
  * with this seems to be to mmap the file and write(2) as
  * large a chunk as possible to the socket. Alternatively,
  * use madvise(..., MADV_SEQUENTIAL). */
-
-/* Functions to be used in: send_param_adapter, MHD_send_
- * and every place where sendfile(), sendfile64(), setsockopt()
- * are used. */
 
 #include "mhd_send.h"
 #ifdef MHD_LINUX_SOLARIS_SENDFILE
@@ -51,6 +49,7 @@
 #endif /* HAVE_SYS_PARAM_H */
 #include "mhd_assert.h"
 
+#include "mhd_limits.h"
 
 /**
  * sendfile() chuck size
@@ -107,6 +106,121 @@ MHD_send_init_static_vars_ (void)
 
 
 /**
+ * Set required TCP_NODELAY state for connection socket
+ *
+ * The function automatically updates sk_nodelay state.
+ * @param connection the connection to manipulate
+ * @param nodelay_state the requested new state of socket
+ * @return true if succeed, false if failed
+ */
+static bool
+connection_set_nodelay_state_ (struct MHD_Connection *connection,
+                               bool nodelay_state)
+{
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
+  const MHD_SCKT_OPT_BOOL_ on_val = 1;
+  int err_code;
+
+  if (0 == setsockopt (connection->socket_fd,
+                       IPPROTO_TCP,
+                       TCP_NODELAY,
+                       (const void *) (nodelay_state ? &on_val : &off_val),
+                       sizeof (off_val)))
+  {
+    connection->sk_nodelay = nodelay_state;
+    return true;
+  }
+  err_code = MHD_socket_get_error_ ();
+  switch (err_code)
+  {
+  case ENOTSOCK:
+    /* FIXME: Could be we are talking to a pipe, maybe remember this
+       and avoid all setsockopt() in the future? */
+    break;
+  case EBADF:
+  /* FIXME: should we die hard here? */
+  case EINVAL:
+  /* FIXME: optlen invalid, should at least log this, maybe die */
+  case EFAULT:
+  /* wopsie, should at least log this, FIXME: maybe die */
+  case ENOPROTOOPT:
+  /* optlen unknown, should at least log this */
+  default:
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Setting %s option to %s state failed: %s\n"),
+              "TCP_NODELAY",
+              nodelay_state ? _ ("ON") : _ ("OFF"),
+              MHD_socket_strerr_ (err_code));
+#endif /* HAVE_MESSAGES */
+    break;
+  }
+  return false;
+}
+
+
+#if defined(MHD_TCP_CORK_NOPUSH)
+/**
+ * Set required cork state for connection socket
+ *
+ * The function automatically updates sk_corked state.
+ * @param connection the connection to manipulate
+ * @param cork_state the requested new state of socket
+ * @return true if succeed, false if failed
+ */
+static bool
+connection_set_cork_state_ (struct MHD_Connection *connection,
+                            bool cork_state)
+{
+  const MHD_SCKT_OPT_BOOL_ off_val = 0;
+  const MHD_SCKT_OPT_BOOL_ on_val = 1;
+  int err_code;
+
+  if (0 == setsockopt (connection->socket_fd,
+                       IPPROTO_TCP,
+                       MHD_TCP_CORK_NOPUSH,
+                       (const void *) (cork_state ? &on_val : &off_val),
+                       sizeof (off_val)))
+  {
+    connection->sk_corked = cork_state;
+    return true;
+  }
+  err_code = MHD_socket_get_error_ ();
+  switch (err_code)
+  {
+  case ENOTSOCK:
+    /* FIXME: Could be we are talking to a pipe, maybe remember this
+       and avoid all setsockopt() in the future? */
+    break;
+  case EBADF:
+  /* FIXME: should we die hard here? */
+  case EINVAL:
+  /* FIXME: optlen invalid, should at least log this, maybe die */
+  case EFAULT:
+  /* wopsie, should at least log this, FIXME: maybe die */
+  case ENOPROTOOPT:
+  /* optlen unknown, should at least log this */
+  default:
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Setting %s option to %s state failed: %s\n"),
+#ifdef TCP_CORK
+              "TCP_CORK",
+#else  /* ! TCP_CORK */
+              "TCP_NOPUSH",
+#endif /* ! TCP_CORK */
+              cork_state ? _ ("ON") : _ ("OFF"),
+              MHD_socket_strerr_ (err_code));
+#endif /* HAVE_MESSAGES */
+    break;
+  }
+  return false;
+}
+
+
+#endif /* MHD_TCP_CORK_NOPUSH */
+
+/**
  * Handle pre-send setsockopt calls.
  *
  * @param connection the MHD_Connection structure
@@ -126,96 +240,259 @@ pre_send_setopt (struct MHD_Connection *connection,
    * Final piece is indicated by push_data == true. */
   const bool buffer_data = (! push_data);
 
-#ifdef MHD_USE_MSG_MORE
-  if (plain_send)
+  /* The goal is to minimise the total number of additional sys-calls
+   * before and after send().
+   * The following tricky (over-)complicated algorithm typically use zero,
+   * one or two additional sys-calls (depending on OS) for each response. */
+
+  if (buffer_data)
   {
-    /* MSG_MORE is used, no need for extra syscalls! */
-    return;
-  }
+    /* Need to buffer data if possible. */
+#ifdef MHD_USE_MSG_MORE
+    if (plain_send)
+      return; /* Data is buffered by send() with MSG_MORE flag.
+               * No need to check or change anything. */
 #else  /* ! MHD_USE_MSG_MORE */
-  (void) plain_send; /* Mute compiler warning. */
+    (void) plain_send; /* Mute compiler warning. */
 #endif /* ! MHD_USE_MSG_MORE */
 
-#if defined(MHD_TCP_CORK_NOPUSH)
-  /* If connection is already in required corked state, do nothing. */
-  if (connection->sk_corked == buffer_data)
-    return;
-  if (push_data)
-    return; /* nothing to do *pre* syscall! BUG: to be fixed */
-  ret = MHD_socket_cork_ (connection->socket_fd,
-                          buffer_data);
-  if (0 != ret)
-  {
-    connection->sk_corked = buffer_data;
-    return;
-  }
-  switch (errno)
-  {
-  case ENOTSOCK:
-    /* FIXME: Could be we are talking to a pipe, maybe remember this
-       and avoid all setsockopt() in the future? */
-    break;
-  case EBADF:
-    /* FIXME: should we die hard here? */
-    break;
-  case EINVAL:
-    /* FIXME: optlen invalid, should at least log this, maybe die */
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("optlen invalid: %s\n"),
-              MHD_socket_last_strerr_ ());
-#endif
-    break;
-  case EFAULT:
-    /* wopsie, should at least log this, FIXME: maybe die */
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ (
-                "The address pointed to by optval is not a valid part of the process address space: %s\n"),
-              MHD_socket_last_strerr_ ());
-#endif
-    break;
-  case ENOPROTOOPT:
-    /* optlen unknown, should at least log this */
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("The option is unknown: %s\n"),
-              MHD_socket_last_strerr_ ());
-#endif
-    break;
-  default:
-    /* any others? man page does not list more... */
-    break;
-  }
-#else
-  /* CORK/NOPUSH do not exist on this platform,
-     Turning on/off of Naggle's algorithm
-     (otherwise we keep it always off) */
-  if (connection->sk_nodelay == push_data)
-  {
-    /* nothing to do, success! */
+#ifdef MHD_TCP_CORK_NOPUSH
+    if (_MHD_ON == connection->sk_corked)
+      return; /* The connection was already corked. */
+
+    if (connection_set_cork_state_ (connection, true))
+      return; /* The connection has been corked. */
+
+    /* Failed to cork the connection.
+     * Really unlikely to happen on TCP connections. */
+#endif /* MHD_TCP_CORK_NOPUSH */
+    if (_MHD_OFF == connection->sk_nodelay)
+      return; /* TCP_NODELAY was not set for the socket.
+               * Nagle's algorithm will buffer some data. */
+
+    /* Try to reset TCP_NODELAY state for the socket.
+     * Ignore possible error as no other options exist to
+     * buffer data. */
+    connection_set_nodelay_state_ (connection, false);
+    /* TCP_NODELAY has been (hopefully) reset for the socket.
+     * Nagle's algorithm will buffer some data. */
     return;
   }
-  if (0 == MHD_socket_set_nodelay_ (connection->socket_fd,
-                                    (push_data)))
-    connection->sk_nodelay = push_data;
-#endif
+
+  /* Need to push data after send() */
+  /* Prefer to make additional sys-call after the send()
+   * as the next send() may consume only part of the
+   * prepared data and additional send() may be required. */
+#ifdef MHD_TCP_CORK_NOPUSH
+#ifdef _MHD_CORK_RESET_PUSH_DATA
+#ifdef _MHD_CORK_RESET_PUSH_DATA_ALWAYS
+  /* Data can be pushed immediately by uncorking socket regardless of
+   * cork state before. */
+  /* This is typical for Linux, no other kernel with
+   * such behavior are known so far. */
+
+  /* No need to check the current state of TCP_CORK / TCP_NOPUSH
+   * as reset of cork will push the data anyway. */
+  return; /* Data may be pushed by resetting of
+           * TCP_CORK / TCP_NOPUSH after send() */
+#else  /* ! _MHD_CORK_RESET_PUSH_DATA_ALWAYS */
+  /* Reset of TCP_CORK / TCP_NOPUSH will push the data
+   * only if socket is corked. */
+
+#ifdef _MHD_NODELAY_SET_PUSH_DATA_ALWAYS
+  /* Data can be pushed immediately by setting TCP_NODELAY regardless
+   * of TCP_NODDELAY or corking state before. */
+
+  /* Dead code currently, no known kernels with such behavior. */
+  return; /* Data may be pushed by setting of TCP_NODELAY after send().
+             No need to make extra sys-calls before send().*/
+#else  /* ! _MHD_NODELAY_SET_PUSH_DATA_ALWAYS */
+
+#ifdef _MHD_NODELAY_SET_PUSH_DATA
+  /* Setting of TCP_NODELAY will push the data only if
+   * both TCP_NODELAY and TCP_CORK / TCP_NOPUSH were not set. */
+
+  /* Data can be pushed immediately by uncorking socket if
+   * socket was corked before or by setting TCP_NODELAY if
+   * socket was not corked and TCP_NODELAY was not set before. */
+
+  /* Dead code currently as Linux is the only kernel that push
+   * data by setting of TCP_NODELAY and Linux push data always. */
+#else  /* ! _MHD_NODELAY_SET_PUSH_DATA */
+  /* Data can be pushed immediately by uncorking socket or
+   * can be pushed by send() on uncorked socket if
+   * TCP_NODELAY was set *before*. */
+
+  /* This is typical FreeBSD behavior. */
+#endif /* ! _MHD_NODELAY_SET_PUSH_DATA */
+
+  if (_MHD_ON == connection->sk_corked)
+    return; /* Socket is corked. Data can be pushed by resetting of
+             * TCP_CORK / TCP_NOPUSH after send() */
+  else if (_MHD_OFF == connection->sk_corked)
+  {
+    /* The socket is not corked. */
+    if (_MHD_ON == connection->sk_nodelay)
+      return; /* TCP_NODELAY was already set,
+               * data will be pushed automatically by the next send() */
+#ifdef _MHD_NODELAY_SET_PUSH_DATA
+    else if (_MHD_UNKNOWN == connection->sk_nodelay)
+    {
+      /* Setting TCP_NODELAY may push data.
+       * Cork socket here and uncork after send(). */
+      if (connection_set_cork_state_ (connection, true))
+        return; /* The connection has been corked.
+                 * Data can be pushed by resetting of
+                 * TCP_CORK / TCP_NOPUSH after send() */
+      else
+      {
+        /* The socket cannot be corked.
+         * Really unlikely to happen on TCP connections */
+        /* Have to set TCP_NODELAY.
+         * If TCP_NODELAY real system state was OFF then
+         * already buffered data may be pushed here, but this is unlikely
+         * to happen as it is only a backup solution when corking has failed.
+         * Ignore possible error here as no other options exist to
+         * push data. */
+        connection_set_nodelay_state_ (connection, true);
+        /* TCP_NODELAY has been (hopefully) set for the socket.
+         * The data will be pushed by the next send(). */
+        return;
+      }
+    }
+#endif /* _MHD_NODELAY_SET_PUSH_DATA */
+    else
+    {
+#ifdef _MHD_NODELAY_SET_PUSH_DATA
+      /* TCP_NODELAY was switched off and
+       * the socket is not corked. */
+#else  /* ! _MHD_NODELAY_SET_PUSH_DATA */
+      /* Socket is not corked and TCP_NODELAY was not set or unknown. */
+#endif /* ! _MHD_NODELAY_SET_PUSH_DATA */
+
+      /* At least one additional sys-call is required. */
+      /* Setting TCP_NODELAY is optimal here as data will be pushed
+       * automatically by the next send() and no additional
+       * sys-call are needed after the send(). */
+      if (connection_set_nodelay_state_ (connection, true))
+        return;
+      else
+      {
+        /* Failed to set TCP_NODELAY for the socket.
+         * Really unlikely to happen on TCP connections. */
+        /* Cork the socket here and make additional sys-call
+         * to uncork the socket after send(). */
+        /* Ignore possible error here as no other options exist to
+         * push data. */
+        connection_set_cork_state_ (connection, true);
+        /* The connection has been (hopefully) corked.
+         * Data can be pushed by resetting of TCP_CORK / TCP_NOPUSH
+         * after send() */
+        return;
+      }
+    }
+  }
+  /* Corked state is unknown. Need to make sys-call here otherwise
+   * data may not be pushed. */
+  if (connection_set_cork_state_ (connection, true))
+    return; /* The connection has been corked.
+             * Data can be pushed by resetting of
+             * TCP_CORK / TCP_NOPUSH after send() */
+  /* The socket cannot be corked.
+   * Really unlikely to happen on TCP connections */
+  if (_MHD_ON == connection->sk_nodelay)
+    return; /* TCP_NODELAY was already set,
+             * data will be pushed by the next send() */
+  /* Have to set TCP_NODELAY. */
+#ifdef _MHD_NODELAY_SET_PUSH_DATA
+  /* If TCP_NODELAY state was unknown (external connection) then
+   * already buffered data may be pushed here, but this is unlikely
+   * to happen as it is only a backup solution when corking has failed. */
+#endif /* _MHD_NODELAY_SET_PUSH_DATA */
+  /* Ignore possible error here as no other options exist to
+   * push data. */
+  connection_set_nodelay_state_ (connection, true);
+  /* TCP_NODELAY has been (hopefully) set for the socket.
+   * The data will be pushed by the next send(). */
+  return;
+#endif /* ! _MHD_NODELAY_SET_PUSH_DATA_ALWAYS */
+#endif /* ! _MHD_CORK_RESET_PUSH_DATA_ALWAYS */
+#else  /* ! _MHD_CORK_RESET_PUSH_DATA */
+  /* Neither uncorking the socket or setting TCP_NODELAY
+   * push the data immediately. */
+  /* The only way to push the data is to use send() on uncorked
+   * socket with TCP_NODELAY switched on . */
+
+  /* This is a typical *BSD (except FreeBSD) and Darwin behavior. */
+
+  /* Uncork socket if socket wasn't uncorked. */
+  if (_MHD_OFF != connection->sk_corked)
+    connection_set_cork_state_ (connection, false);
+
+  /* Set TCP_NODELAY if it wasn't set. */
+  if (_MHD_ON != connection->sk_nodelay)
+    connection_set_nodelay_state_ (connection, true);
+
+  return;
+#endif /* ! _MHD_CORK_RESET_PUSH_DATA */
+#else  /* ! MHD_TCP_CORK_NOPUSH */
+  /* Buffering of data is controlled only by
+   * Nagel's algorithm. */
+  /* Set TCP_NODELAY if it wasn't set. */
+  if (_MHD_ON != connection->sk_nodelay)
+    connection_set_nodelay_state_ (connection, true);
+#endif /* ! MHD_TCP_CORK_NOPUSH */
 }
 
+
+#ifndef _MHD_CORK_RESET_PUSH_DATA_ALWAYS
+/**
+ * Send zero-sized data
+ *
+ * This function use send of zero-sized data to kick data from the socket
+ * buffers to the network. The socket must not be corked and must have
+ * TCP_NODELAY switched on.
+ * Used only as last resort option, when other options are failed due to
+ * some errors.
+ * Should not be called on typical data processing.
+ * @return true if succeed, false if failed
+ */
+static bool
+zero_send_ (struct MHD_Connection *connection)
+{
+  int dummy;
+  mhd_assert (_MHD_OFF == connection->sk_corked);
+  mhd_assert (_MHD_ON == connection->sk_nodelay);
+
+  dummy = 0; /* Mute compiler and analyzer warnings */
+
+  if (0 == MHD_send_ (connection->socket_fd, &dummy, 0))
+    return true;
+
+#ifdef HAVE_MESSAGES
+  MHD_DLOG (connection->daemon,
+            _ ("Zero-send failed: %s\n"),
+            MHD_socket_last_strerr_ () );
+#endif /* HAVE_MESSAGES */
+  return false;
+}
+
+
+#endif /* ! _MHD_CORK_RESET_PUSH_DATA_ALWAYS */
 
 /**
  * Handle post-send setsockopt calls.
  *
  * @param connection the MHD_Connection structure
- * @param plain_send set to true if plain send() or sendmsg() have been
- *                   called,
- *                   set to false if TLS socket send(), sendfile() or
- *                   writev() has been called.
+ * @param plain_send_next set to true if plain send() or sendmsg() will be
+ *                        called next,
+ *                        set to false if TLS socket send(), sendfile() or
+ *                        writev() will be called next.
  * @param push_data whether to push data to the network from buffers
  */
 static void
 post_send_setopt (struct MHD_Connection *connection,
-                  bool plain_send,
+                  bool plain_send_next,
                   bool push_data)
 {
   int ret;
@@ -223,70 +500,163 @@ post_send_setopt (struct MHD_Connection *connection,
    * Final piece is indicated by push_data == true. */
   const bool buffer_data = (! push_data);
 
-#ifdef MHD_USE_MSG_MORE
-  if (plain_send)
-  {
-    /* MSG_MORE is used, no need for extra syscalls! */
-    return;
-  }
-#else  /* ! MHD_USE_MSG_MORE */
-  (void) plain_send; /* Mute compiler warning. */
+  if (buffer_data)
+    return; /* Nothing to do after send(). */
+
+#ifndef MHD_USE_MSG_MORE
+  (void) plain_send_next; /* Mute compiler warning */
 #endif /* ! MHD_USE_MSG_MORE */
 
-#if defined(MHD_TCP_CORK_NOPUSH)
-  /* If connection is already in required corked state, do nothing. */
-  if (connection->sk_corked == buffer_data)
-    return;
-  if (buffer_data)
-    return; /* nothing to do *post* syscall (in fact, we should never
-               get here, as sk_corked should have succeeded in the
-               pre-syscall) */
-  ret = MHD_socket_cork_ (connection->socket_fd,
-                          buffer_data);
-  if (0 != ret)
+  /* Need to push data. */
+#ifdef MHD_TCP_CORK_NOPUSH
+#ifdef _MHD_CORK_RESET_PUSH_DATA_ALWAYS
+#ifdef _MHD_NODELAY_SET_PUSH_DATA_ALWAYS
+#ifdef MHD_USE_MSG_MORE
+  if (_MHD_OFF == connection->sk_corked)
   {
-    connection->sk_corked = buffer_data;
-    return;
+    if (_MHD_ON == connection->sk_nodelay)
+      return; /* Data was already pushed by send(). */
   }
-  switch (errno)
+  /* This is Linux kernel. There are options:
+   * * Push the data by setting of TCP_NODELAY (without change
+   *   of the cork on the socket),
+   * * Push the data by resetting of TCP_CORK.
+   * The optimal choice depends on the next final send functions
+   * used on the same socket. If TCP_NODELAY wasn't set then push
+   * data by setting TCP_NODELAY (TCP_NODELAY will not be removed
+   * and is needed to push the data by send() without MSG_MORE).
+   * If send()/sendmsg() will be used next than push data by
+   * reseting of TCP_CORK so next send without MSG_MORE will push
+   * data to the network (without additional sys-call to push data).
+   * If next final send function will not support MSG_MORE (like
+   * sendfile() or TLS-connection) than push data by setting
+   * TCP_NODELAY so socket will remain corked (no additional
+   * sys-call before next send()). */
+  if ((_MHD_ON != connection->sk_nodelay) ||
+      (! plain_send_next))
   {
-  case ENOTSOCK:
-    /* FIXME: Could be we are talking to a pipe, maybe remember this
-       and avoid all setsockopt() in the future? */
-    break;
-  case EBADF:
-    /* FIXME: should we die hard here? */
-    break;
-  case EINVAL:
-    /* FIXME: optlen invalid, should at least log this, maybe die */
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("optlen invalid: %s\n"),
-              MHD_socket_last_strerr_ ());
-#endif
-    break;
-  case EFAULT:
-    /* wopsie, should at least log this, FIXME: maybe die */
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ (
-                "The address pointed to by optval is not a valid part of the process address space: %s\n"),
-              MHD_socket_last_strerr_ ());
-#endif
-    break;
-  case ENOPROTOOPT:
-    /* optlen unknown, should at least log this */
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("The option is unknown: %s\n"),
-              MHD_socket_last_strerr_ ());
-#endif
-    break;
-  default:
-    /* any others? man page does not list more... */
-    break;
+    if (connection_set_nodelay_state_ (connection, true))
+      return; /* Data has been pushed by TCP_NODELAY. */
+    /* Failed to set TCP_NODELAY for the socket.
+     * Really unlikely to happen on TCP connections. */
+    if (connection_set_cork_state_ (connection, false))
+      return; /* Data has been pushed by uncorking the socket. */
+    /* Failed to uncork the socket.
+     * Really unlikely to happen on TCP connections. */
+
+    /* The socket cannot be uncorked, no way to push data */
   }
-#endif
+  else
+  {
+    if (connection_set_cork_state_ (connection, false))
+      return; /* Data has been pushed by uncorking the socket. */
+    /* Failed to uncork the socket.
+     * Really unlikely to happen on TCP connections. */
+    if (connection_set_nodelay_state_ (connection, true))
+      return; /* Data has been pushed by TCP_NODELAY. */
+    /* Failed to set TCP_NODELAY for the socket.
+     * Really unlikely to happen on TCP connections. */
+
+    /* The socket cannot be uncorked, no way to push data */
+  }
+#else  /* ! MHD_USE_MSG_MORE */
+  /* Use setting of TCP_NODELAY here to avoid sys-call
+   * for corking the socket during sending of the next response. */
+  if (connection_set_nodelay_state_ (connection, true))
+    return; /* Data was pushed by TCP_NODELAY. */
+  /* Failed to set TCP_NODELAY for the socket.
+   * Really unlikely to happen on TCP connections. */
+  if (connection_set_cork_state_ (connection, false))
+    return; /* Data was pushed by uncorking the socket. */
+  /* Failed to uncork the socket.
+   * Really unlikely to happen on TCP connections. */
+
+  /* The socket remains corked, no way to push data */
+#endif /* ! MHD_USE_MSG_MORE */
+#else  /* ! _MHD_NODELAY_SET_PUSH_DATA_ALWAYS */
+  if (connection_set_cork_state_ (connection, false))
+    return; /* Data was pushed by uncorking the socket. */
+  /* Failed to uncork the socket.
+   * Really unlikely to happen on TCP connections. */
+  return; /* Socket remains corked, no way to push data */
+#endif /* ! _MHD_NODELAY_SET_PUSH_DATA_ALWAYS */
+#else  /* ! _MHD_CORK_RESET_PUSH_DATA_ALWAYS */
+  /* This is a typical *BSD or Darwin kernel. */
+
+  if (_MHD_OFF == connection->sk_corked)
+  {
+    if (_MHD_ON == connection->sk_nodelay)
+      return; /* Data was already pushed by send(). */
+
+    /* Unlikely to reach this code.
+     * TCP_NODELAY should be turned on before send(). */
+    if (connection_set_nodelay_state_ (connection, true))
+    {
+      /* TCP_NODELAY has been set on uncorked socket.
+       * Use zero-send to push the data. */
+      if (zero_send_ (connection))
+        return; /* The data has been pushed by zero-send. */
+    }
+
+    /* Failed to push the data by all means. */
+    /* There is nothing left to try. */
+  }
+  else
+  {
+#ifdef _MHD_CORK_RESET_PUSH_DATA
+    enum MHD_tristate old_cork_state = connection->sk_corked;
+#endif /* _MHD_CORK_RESET_PUSH_DATA */
+    /* The socket is corked or cork state is unknown. */
+
+    if (connection_set_cork_state_ (connection, false))
+    {
+#ifdef _MHD_CORK_RESET_PUSH_DATA
+      /* FreeBSD kernel */
+      if (_MHD_OFF == old_cork_state)
+        return; /* Data has been pushed by uncorking the socket. */
+#endif /* _MHD_CORK_RESET_PUSH_DATA */
+
+      /* Unlikely to reach this code.
+       * The data should be pushed by uncorking (FreeBSD) or
+       * the socket should be uncorked before send(). */
+      if ((_MHD_ON == connection->sk_nodelay) ||
+          (connection_set_nodelay_state_ (connection, true)))
+      {
+        /* TCP_NODELAY is turned ON on uncorked socket.
+         * Use zero-send to push the data. */
+        if (zero_send_ (connection))
+          return; /* The data has been pushed by zero-send. */
+      }
+    }
+    /* The socket remains corked. Data cannot be pushed. */
+  }
+#endif /* ! _MHD_CORK_RESET_PUSH_DATA_ALWAYS */
+#else  /* ! MHD_TCP_CORK_NOPUSH */
+  /* Corking is not supported. Buffering is controlled
+   * by TCP_NODELAY only. */
+  mhd_assert (_MHD_ON != connection->sk_corked);
+  if (_MHD_ON == connection->sk_nodelay)
+    return; /* Data was already pushed by send(). */
+
+  /* Unlikely to reach this code.
+   * TCP_NODELAY should be turned on before send(). */
+  if (connection_set_nodelay_state_ (connection, true))
+  {
+    /* TCP_NODELAY has been set.
+     * Use zero-send to push the data. */
+    if (zero_send_ (connection))
+      return; /* The data has been pushed by zero-send. */
+  }
+
+  /* Failed to push the data. */
+#endif /* ! MHD_TCP_CORK_NOPUSH */
+#ifdef HAVE_MESSAGES
+  MHD_DLOG (connection->daemon,
+            _ ("Failed to put the data from buffers to the network. "
+               "Client may experience some delay "
+               "(usually in range 200ms - 5 sec).\n"));
+#endif /* HAVE_MESSAGES */
+  return;
 }
 
 
@@ -422,8 +792,16 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
       connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif /* EPOLL_SUPPORT */
   }
-  post_send_setopt (connection, tls_conn,
-                    (push_data && (buffer_size == (size_t) ret)) );
+
+  /* If there is a need to push the data from network buffers
+   * call post_send_setopt(). */
+  /* If TLS connection is used then next final send() will be
+   * without MSG_MORE support. If non-TLS connection is used
+   * it's unknown whether sendfile() will be used or not so
+   * assume that next call will be the same, like this call. */
+  if ( (push_data) &&
+       (buffer_size == (size_t) ret) )
+    post_send_setopt (connection, (! tls_conn), push_data);
 
   return ret;
 }
@@ -455,7 +833,9 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 {
   MHD_socket s = connection->socket_fd;
   ssize_t ret;
+#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   struct iovec vector[2];
+#endif /* HAVE_SENDMSG || HAVE_WRITEV */
 #ifdef HTTPS_SUPPORT
   const bool tls_conn = (connection->daemon->options & MHD_USE_TLS);
 #else  /* ! HTTPS_SUPPORT */
@@ -477,7 +857,13 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   /* Since we generally give the fully answer, we do not want
      corking to happen */
-  pre_send_setopt (connection, (! tls_conn), true);
+  pre_send_setopt (connection,
+#if HAVE_SENDMSG
+                   true,
+#elif HAVE_WRITEV
+                   false,
+#endif /* HAVE_WRITEV */
+                   true);
 
   vector[0].iov_base = (void *) header;
   vector[0].iov_len = header_size;
@@ -509,10 +895,21 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   }
 #endif
 
-  /* Only if we succeeded sending the full buffer, we need to make sure that
-     the OS flushes at the end */
-  post_send_setopt (connection, (! tls_conn),
-                    (header_size + buffer_size == (size_t) ret));
+  /* If there is a need to push the data from network buffers
+   * call post_send_setopt(). */
+  /* If TLS connection is used then next final send() will be
+   * without MSG_MORE support. If non-TLS connection is used
+   * it's unknown whether sendfile() will be used or not so
+   * assume that next final send() will be the same, like for
+   * this response. */
+  if ((header_size + buffer_size) == (size_t) ret)
+    post_send_setopt (connection,
+#if HAVE_SENDMSG
+                      true,
+#elif HAVE_WRITEV
+                      false,
+#endif /* HAVE_WRITEV */
+                      true);
 
   return ret;
 
@@ -563,22 +960,36 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
   const size_t chunk_size = used_thr_p_c ? MHD_SENFILE_CHUNK_THR_P_C_ :
                             MHD_SENFILE_CHUNK_;
   size_t send_size = 0;
+  bool push_data;
   mhd_assert (MHD_resp_sender_sendfile == connection->resp_sender);
   mhd_assert (0 == (connection->daemon->options & MHD_USE_TLS));
 
-  pre_send_setopt (connection, false, true);
-
   offsetu64 = connection->response_write_position
               + connection->response->fd_off;
-  left = connection->response->total_size - connection->response_write_position;
-  /* Do not allow system to stick sending on single fast connection:
-   * use 128KiB chunks (2MiB for thread-per-connection). */
-  send_size = (left > chunk_size) ? chunk_size : (size_t) left;
   if (max_off_t < offsetu64)
   {   /* Retry to send with standard 'send()'. */
     connection->resp_sender = MHD_resp_sender_std;
     return MHD_ERR_AGAIN_;
   }
+
+  left = connection->response->total_size - connection->response_write_position;
+
+  if ( (uint64_t) SSIZE_MAX > left)
+    left = SSIZE_MAX;
+  /* Do not allow system to stick sending on single fast connection:
+   * use 128KiB chunks (2MiB for thread-per-connection). */
+  if (chunk_size < left)
+  {
+    send_size = chunk_size;
+    push_data = false; /* No need to push data, there is more to send, */
+  }
+  else
+  {
+    send_size = (size_t) left;
+    push_data = true; /* Final piece of data, need to push to the network. */
+  }
+  pre_send_setopt (connection, false, push_data);
+
 #ifdef MHD_LINUX_SOLARIS_SENDFILE
 #ifndef HAVE_SENDFILE64
   offset = (off_t) offsetu64;
@@ -708,9 +1119,13 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
   ret = (ssize_t) len;
 #endif /* HAVE_FREEBSD_SENDFILE */
 
-  /* Make sure we send the data without delay ONLY if we
-     provided the complete response (not on partial write) */
-  post_send_setopt (connection, false, (left == (uint64_t) ret));
+  /* If there is a need to push the data from network buffers
+   * call post_send_setopt(). */
+  /* It's unknown whether sendfile() will be used in the next
+   * response so  assume that next response will be the same. */
+  if ( (push_data) &&
+       (send_size == (size_t) ret) )
+    post_send_setopt (connection, false, push_data);
 
   return ret;
 }

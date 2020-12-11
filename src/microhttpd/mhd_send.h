@@ -1,6 +1,7 @@
 /*
   This file is part of libmicrohttpd
   Copyright (C) 2019 ng0
+  Copyright (C) 2017 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -20,8 +21,9 @@
 
 /**
  * @file mhd_send.h
- * @brief Implementation of send() wrappers.
+ * @brief Declarations of send() wrappers.
  * @author ng0
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #ifndef MHD_SEND_H
