@@ -22,7 +22,7 @@
 
 /**
  * @file microhttpd/mhd_send.c
- * @brief Implementation of send() wrappers.
+ * @brief Implementation of send() wrappers and helper functions.
  * @author Karlson2k (Evgeny Grin)
  * @author ng0 (N. Gillmann)
  * @author Christian Grothoff
@@ -831,30 +831,39 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                           const char *buffer,
                           size_t buffer_size)
 {
+#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   MHD_socket s = connection->socket_fd;
   ssize_t ret;
-#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   struct iovec vector[2];
-#endif /* HAVE_SENDMSG || HAVE_WRITEV */
 #ifdef HTTPS_SUPPORT
-  const bool tls_conn = (connection->daemon->options & MHD_USE_TLS);
+  const bool no_vec = (connection->daemon->options & MHD_USE_TLS);
 #else  /* ! HTTPS_SUPPORT */
-  const bool tls_conn = false;
+  const bool no_vec = false;
 #endif /* ! HTTPS_SUPPORT */
+#endif /* HAVE_SENDMSG || HAVE_WRITEV */
 
-#ifdef HTTPS_SUPPORT
-  if (tls_conn)
-  {
-    ssize_t ret;
-
-    ret = MHD_send_on_connection_ (connection,
-                                   header,
-                                   header_size,
-                                   MHD_SSO_HDR_CORK);
-    return ret;
-  }
-#endif
+  if (
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
+    (no_vec) ||
+    (0 == buffer_size) ||
+    ((size_t) SSIZE_MAX <= header_size)
+#else  /* ! (HAVE_SENDMSG || HAVE_WRITEV) */
+    true
+#endif /* ! (HAVE_SENDMSG || HAVE_WRITEV) */
+    )
+  {
+    return MHD_send_on_connection_ (connection,
+                                    header,
+                                    header_size,
+                                    MHD_SSO_HDR_CORK);
+
+  }
+#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
+
+  if ( ((size_t) SSIZE_MAX <= buffer_size) ||
+       ((size_t) SSIZE_MAX < (header_size + buffer_size)) )
+    buffer_size = SSIZE_MAX - header_size;
+
   /* Since we generally give the fully answer, we do not want
      corking to happen */
   pre_send_setopt (connection,
@@ -912,13 +921,9 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                       true);
 
   return ret;
-
-#else
-  return MHD_send_on_connection_ (connection,
-                                  header,
-                                  header_size,
-                                  MHD_SSO_HDR_CORK);
-#endif
+#else  /* ! (HAVE_SENDMSG || HAVE_WRITEV) */
+  return 0; /* Unreachable. Mute warnings. */
+#endif /* ! (HAVE_SENDMSG || HAVE_WRITEV) */
 }
 
 
