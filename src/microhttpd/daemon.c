@@ -2460,34 +2460,17 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
     errno = eno;
     return MHD_NO;
   }
-#if defined(MHD_TCP_CORK_NOPUSH) || defined(MHD_USE_MSG_MORE)
-  if (! external_add)
-    connection->sk_corked = _MHD_OFF;
-  else
-    connection->sk_corked = _MHD_UNKNOWN;
 
-  /* We will use TCP_CORK or TCP_NOPUSH or MSG_MORE to control
-     transmission, disable Nagle's algorithm (always) */
-  if (0 != MHD_socket_set_nodelay_ (client_socket, true))
+  if (! external_add)
   {
-    if (EOPNOTSUPP != MHD_socket_get_error_ ())
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Failed to disable TCP Nagle on socket: %s\n"),
-                MHD_socket_last_strerr_ ());
-#endif
-    }
-    connection->sk_nodelay = _MHD_UNKNOWN;
+    connection->sk_corked = _MHD_OFF;
+    connection->sk_nodelay = _MHD_OFF;
   }
   else
-    connection->sk_nodelay = _MHD_ON;
-#else  /* !MHD_TCP_CORK_NOPUSH && !MHD_USE_MSG_MORE */
-  if (! external_add)
-    connection->sk_nodelay = _MHD_OFF;
-  else
+  {
+    connection->sk_corked = _MHD_UNKNOWN;
     connection->sk_nodelay = _MHD_UNKNOWN;
-#endif /* !MHD_TCP_CORK_NOPUSH && !MHD_USE_MSG_MORE */
+  }
 
   connection->connection_timeout = daemon->connection_timeout;
   if (NULL == (connection->addr = malloc (addrlen)))
