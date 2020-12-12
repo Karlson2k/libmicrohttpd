@@ -781,6 +781,8 @@ MHD_create_response_from_data (size_t size,
   response->total_size = size;
   response->data = data;
   response->data_size = size;
+  if (must_copy)
+    response->data_buffer_size = size;
   return response;
 }
 

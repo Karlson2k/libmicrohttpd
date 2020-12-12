@@ -425,7 +425,7 @@ struct MHD_Response
   size_t data_size;
 
   /**
-   * Size of the data buffer @e data.
+   * Size of the writable data buffer @e data.
    */
   size_t data_buffer_size;
 
