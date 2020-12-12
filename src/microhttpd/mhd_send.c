@@ -841,6 +841,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   const bool no_vec = false;
 #endif /* ! HTTPS_SUPPORT */
 #endif /* HAVE_SENDMSG || HAVE_WRITEV */
+  mhd_assert ( (NULL != buffer) || (0 == buffer_size) );
 
   if (
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
