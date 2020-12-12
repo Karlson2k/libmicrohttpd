@@ -2917,25 +2917,18 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                               - connection->write_buffer_send_offset;
       mhd_assert (connection->write_buffer_append_offset >= \
                   connection->write_buffer_send_offset);
+      mhd_assert (NULL != connection->response);
+      mhd_assert ( (0 == connection->response->data_size) || \
+                   (0 == connection->response->data_start) );
 
-      /* if the response body is not available, we use MHD_send_on_connection_() */
-      if (NULL != connection->response->crc)
-      {
-        ret = MHD_send_on_connection_ (connection,
-                                       &connection->write_buffer
-                                       [connection->write_buffer_send_offset],
-                                       wb_ready,
-                                       MHD_SSO_PREFER_BUFF);
-      }
-      else
-      {
-        ret = MHD_send_on_connection2_ (connection,
-                                        &connection->write_buffer
-                                        [connection->write_buffer_send_offset],
-                                        wb_ready,
-                                        connection->response->data,
-                                        connection->response->data_size);
-      }
+      /* Send response headers alongside the response body, if the body
+       * data is available. */
+      ret = MHD_send_on_connection2_ (connection,
+                                      &connection->write_buffer
+                                      [connection->write_buffer_send_offset],
+                                      wb_ready,
+                                      connection->response->data,
+                                      connection->response->data_size);
 
       if (ret < 0)
       {
@@ -2949,12 +2942,11 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       /* 'ret' is not negative, it's safe to cast it to 'size_t'. */
       if (((size_t) ret) > wb_ready)
       {
-        mhd_assert (NULL == connection->response->crc);
-        /* We sent not just header data but also some response data,
-           update both offsets! */
+        /* The complete header and some response data have been sent,
+         * update both offsets. */
+        mhd_assert (! connection->have_chunked_upload);
         connection->write_buffer_send_offset += wb_ready;
-        ret -= wb_ready;
-        connection->response_write_position += ret;
+        connection->response_write_position += ret - wb_ready;
       }
       else
         connection->write_buffer_send_offset += ret;
