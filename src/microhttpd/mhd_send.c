@@ -831,9 +831,9 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                           const char *buffer,
                           size_t buffer_size)
 {
+  ssize_t ret;
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   MHD_socket s = connection->socket_fd;
-  ssize_t ret;
   struct iovec vector[2];
 #ifdef HTTPS_SUPPORT
   const bool no_vec = (connection->daemon->options & MHD_USE_TLS);
@@ -852,11 +852,34 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 #endif /* ! (HAVE_SENDMSG || HAVE_WRITEV) */
     )
   {
-    return MHD_send_on_connection_ (connection,
-                                    header,
-                                    header_size,
-                                    MHD_SSO_HDR_CORK);
+    ret = MHD_send_on_connection_ (connection,
+                                   header,
+                                   header_size,
+                                   MHD_SSO_HDR_CORK);
+    if ( ((size_t) header_size == ret) &&
+         (((size_t) SSIZE_MAX > header_size)) &&
+         (0 != buffer_size) )
+    {
+      int ret2;
+      /* The header has been sent completely.
+       * Try to send the reply body without waiting for
+       * the next round. */
+      /* Make sure that sum of ret + ret2 will not exceed SSIZE_MAX. */
+      if ( (((size_t) SSIZE_MAX) - ((size_t) ret)) <  buffer_size)
+        buffer_size = (((size_t) SSIZE_MAX) - ((size_t) ret));
 
+      ret2 = MHD_send_on_connection_ (connection,
+                                      buffer,
+                                      buffer_size,
+                                      MHD_SSO_PUSH_DATA);
+      if (0 < ret2)
+        return ret + ret2; /* Total data sent */
+      if (MHD_ERR_AGAIN_ == ret2)
+        return ret;
+
+      return ret2; /* Error code */
+    }
+    return ret;
   }
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
 
@@ -922,7 +945,8 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 
   return ret;
 #else  /* ! (HAVE_SENDMSG || HAVE_WRITEV) */
-  return 0; /* Unreachable. Mute warnings. */
+  mhd_assert (false);
+  return MHD_ERR_CONNRESET_; /* Unreachable. Mute warnings. */
 #endif /* ! (HAVE_SENDMSG || HAVE_WRITEV) */
 }
 
