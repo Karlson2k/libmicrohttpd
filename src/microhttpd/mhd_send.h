@@ -84,7 +84,7 @@ ssize_t
 MHD_send_on_connection_ (struct MHD_Connection *connection,
                          const char *buffer,
                          size_t buffer_size,
-                         enum MHD_SendSocketOptions options);
+                         bool push_data);
 
 
 /**

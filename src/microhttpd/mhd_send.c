@@ -661,31 +661,25 @@ post_send_setopt (struct MHD_Connection *connection,
 
 
 /**
- * Send buffer on connection, and remember the current state of
- * the socket options; only call setsockopt when absolutely
- * necessary.
+ * Send buffer to the client, push data from network buffer if requested
+ * and full buffer is sent.
  *
  * @param connection the MHD_Connection structure
  * @param buffer content of the buffer to send
- * @param buffer_size the size of the buffer (in bytes)
- * @param options the #MHD_SendSocketOptions enum,
- *         #MHD_SSO_NO_CORK: definitely no corking (use NODELAY, or explicitly disable cork),
- *         #MHD_SSO_MAY_CORK: should enable corking (use MSG_MORE, or explicitly enable cork),
- *         #MHD_SSO_HDR_CORK: consider tcpi_snd_mss and consider not corking for the header
- *         part if the size of the header is close to the MSS.
- *         Only used if we are NOT doing 100 Continue and are still sending the
- *         header (provided in full as the buffer to #MHD_send_on_connection_ or as
- *         the header to #MHD_send_on_connection2_).
+ * @param buffer_size the size of the @a buffer (in bytes)
+ * @param push_data set to true to force push the data to the network from
+ *                  system buffers (usually set for the last piece of data),
+ *                  set to false to prefer holding incomplete network packets
+ *                  (more data will be send for the same reply).
  * @return sum of the number of bytes sent from both buffers or
- *         -1 on error
+ *         error code (negative)
  */
 ssize_t
 MHD_send_on_connection_ (struct MHD_Connection *connection,
                          const char *buffer,
                          size_t buffer_size,
-                         enum MHD_SendSocketOptions options)
+                         bool push_data)
 {
-  bool push_data;
   MHD_socket s = connection->socket_fd;
   ssize_t ret;
 #ifdef HTTPS_SUPPORT
@@ -701,29 +695,15 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     return MHD_ERR_NOTCONN_;
   }
 
-  /* Get socket options, change/set options if necessary. */
-  switch (options)
-  {
-  /* No corking */
-  case MHD_SSO_PUSH_DATA:
-    push_data = true;
-    break;
-  /* Do corking, consider MSG_MORE instead if available. */
-  case MHD_SSO_PREFER_BUFF:
-    push_data = false;
-    break;
-  /* Cork the header. */
-  case MHD_SSO_HDR_CORK:
-    push_data = (buffer_size > 1024);
-    break;
-  }
-
-  pre_send_setopt (connection, (! tls_conn), push_data);
   if (tls_conn)
   {
 #ifdef HTTPS_SUPPORT
     if (buffer_size > SSIZE_MAX)
+    {
       buffer_size = SSIZE_MAX;
+      push_data = false; /* Incomplete send */
+    }
+    pre_send_setopt (connection, (! tls_conn), push_data);
     ret = gnutls_record_send (connection->tls_session,
                               buffer,
                               buffer_size);
@@ -758,8 +738,12 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
   {
     /* plaintext transmission */
     if (buffer_size > MHD_SCKT_SEND_MAX_SIZE_)
+    {
       buffer_size = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
+      push_data = false; /* Incomplete send */
+    }
 
+    pre_send_setopt (connection, (! tls_conn), push_data);
 #ifdef MHD_USE_MSG_MORE
     ret = MHD_send4_ (s,
                       buffer,
@@ -884,8 +868,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     ret = MHD_send_on_connection_ (connection,
                                    header,
                                    header_size,
-                                   push_hdr ?
-                                   MHD_SSO_PUSH_DATA: MHD_SSO_PREFER_BUFF);
+                                   push_hdr);
     if ( ((size_t) header_size == ret) &&
          (((size_t) SSIZE_MAX > header_size)) &&
          (0 != body_size) )
@@ -905,8 +888,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
       ret2 = MHD_send_on_connection_ (connection,
                                       body,
                                       body_size,
-                                      push_body ?
-                                      MHD_SSO_PUSH_DATA: MHD_SSO_PREFER_BUFF);
+                                      push_body);
       if (0 < ret2)
         return ret + ret2; /* Total data sent */
       if (MHD_ERR_AGAIN_ == ret2)
@@ -1217,7 +1199,7 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
   /* If there is a need to push the data from network buffers
    * call post_send_setopt(). */
   /* It's unknown whether sendfile() will be used in the next
-   * response so  assume that next response will be the same. */
+   * response so assume that next response will be the same. */
   if ( (push_data) &&
        (send_size == (size_t) ret) )
     post_send_setopt (connection, false, push_data);
