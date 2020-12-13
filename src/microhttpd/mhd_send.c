@@ -727,19 +727,23 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
     ret = gnutls_record_send (connection->tls_session,
                               buffer,
                               buffer_size);
-    if ( (GNUTLS_E_AGAIN == ret) ||
-         (GNUTLS_E_INTERRUPTED == ret) )
+    if (GNUTLS_E_AGAIN == ret)
     {
 #ifdef EPOLL_SUPPORT
-      if (GNUTLS_E_AGAIN == ret)
-        connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
 #endif
       return MHD_ERR_AGAIN_;
     }
+    if (GNUTLS_E_INTERRUPTED == ret)
+      return MHD_ERR_AGAIN_;
+    if ( (GNUTLS_E_ENCRYPTION_FAILED == ret) ||
+         (GNUTLS_E_INVALID_SESSION == ret) )
+      return MHD_ERR_CONNRESET_;
+    if (GNUTLS_E_MEMORY_ERROR == ret)
+      return MHD_ERR_NOMEM_;
     if (ret < 0)
     {
-      /* Likely 'GNUTLS_E_INVALID_SESSION' (client communication
-         disrupted); interpret as a hard error */
+      /* Treat any other error as hard error. */
       return MHD_ERR_NOTCONN_;
     }
 #ifdef EPOLL_SUPPORT
@@ -784,6 +788,8 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
         return MHD_ERR_AGAIN_;
       if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
         return MHD_ERR_CONNRESET_;
+      if (MHD_SCKT_ERR_IS_LOW_RESOURCES_ (err))
+        return MHD_ERR_NOMEM_;
       /* Treat any other error as hard error. */
       return MHD_ERR_NOTCONN_;
     }
@@ -819,8 +825,8 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
   ssize_t ret;
   bool push_hdr;
   bool push_body;
-#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   MHD_socket s = connection->socket_fd;
+#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   struct iovec vector[2];
 #ifdef HAVE_SENDMSG
   struct msghdr msg;
@@ -832,6 +838,12 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 #endif /* ! HTTPS_SUPPORT */
 #endif /* HAVE_SENDMSG || HAVE_WRITEV */
   mhd_assert ( (NULL != body) || (0 == body_size) );
+
+  if ( (MHD_INVALID_SOCKET == s) ||
+       (MHD_CONNECTION_CLOSED == connection->state) )
+  {
+    return MHD_ERR_NOTCONN_;
+  }
 
   push_body = complete_response;
 
@@ -936,9 +948,31 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 #elif HAVE_WRITEV
   ret = writev (s, vector, 2);
 #endif
-  if ( (-1 == ret) &&
-       (EAGAIN == errno) )
-    return MHD_ERR_AGAIN_;
+  if (0 > ret)
+  {
+    const int err = MHD_socket_get_error_ ();
+
+    if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
+    {
+#if EPOLL_SUPPORT
+      /* EAGAIN, no longer write-ready */
+      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+      return MHD_ERR_AGAIN_;
+    }
+    if (MHD_SCKT_ERR_IS_EINTR_ (err))
+      return MHD_ERR_AGAIN_;
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
+      return MHD_ERR_CONNRESET_;
+    if (MHD_SCKT_ERR_IS_LOW_RESOURCES_ (err))
+      return MHD_ERR_NOMEM_;
+    /* Treat any other error as hard error. */
+    return MHD_ERR_NOTCONN_;
+  }
+#if EPOLL_SUPPORT
+  else if ((header_size + body_size) > (size_t) ret)
+    connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
 
   /* If there is a need to push the data from network buffers
    * call post_send_setopt(). */
