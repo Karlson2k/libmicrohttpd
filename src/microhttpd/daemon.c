@@ -2959,6 +2959,7 @@ new_connections_list_process_ (struct MHD_Daemon *daemon)
   daemon->new_connections_tail = NULL;
   daemon->have_new = false;
   MHD_mutex_unlock_chk_ (&daemon->new_connections_mutex);
+  (void) local_head; /* Mute compiler warning */
 
   /* Process new connections in FIFO order. */
   do

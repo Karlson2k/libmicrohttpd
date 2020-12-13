@@ -31,6 +31,7 @@
 #include "mhd_mono_clock.h"
 #include "mhd_str.h"
 #include "mhd_compat.h"
+#include "mhd_assert.h"
 
 #if defined(MHD_W32_MUTEX_)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -1213,6 +1214,9 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
       da.init = &MHD_SHA256_init;                             \
       da.update = &MHD_SHA256_update;                         \
       da.digest = &sha256_finish;                         \
+      break;                                              \
+    default:                                              \
+      mhd_assert (false);                                 \
       break;                                              \
     }                                                     \
   } while (0)
