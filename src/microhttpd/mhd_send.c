@@ -807,29 +807,12 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
 }
 
 
-/**
- * Send header followed by buffer on connection.
- * Uses writev if possible to send both at once
- * and returns the sum of the number of bytes sent from
- * both buffers, or -1 on error;
- * if writev is unavailable, this call MUST only send from 'header'
- * (as we cannot handle the case that the first write
- * succeeds and the 2nd fails!).
- *
- * @param connection the MHD_Connection structure
- * @param header content of header to send
- * @param header_size the size of the header (in bytes)
- * @param buffer content of the buffer to send
- * @param buffer_size the size of the buffer (in bytes)
- * @return sum of the number of bytes sent from both buffers or
- *         -1 on error
- */
 ssize_t
-MHD_send_on_connection2_ (struct MHD_Connection *connection,
-                          const char *header,
-                          size_t header_size,
-                          const char *buffer,
-                          size_t buffer_size)
+MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
+                        const char *header,
+                        size_t header_size,
+                        const char *body,
+                        size_t body_size)
 {
   ssize_t ret;
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
@@ -841,12 +824,12 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   const bool no_vec = false;
 #endif /* ! HTTPS_SUPPORT */
 #endif /* HAVE_SENDMSG || HAVE_WRITEV */
-  mhd_assert ( (NULL != buffer) || (0 == buffer_size) );
+  mhd_assert ( (NULL != body) || (0 == body_size) );
 
   if (
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
     (no_vec) ||
-    (0 == buffer_size) ||
+    (0 == body_size) ||
     ((size_t) SSIZE_MAX <= header_size)
 #else  /* ! (HAVE_SENDMSG || HAVE_WRITEV) */
     true
@@ -859,19 +842,19 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
                                    MHD_SSO_HDR_CORK);
     if ( ((size_t) header_size == ret) &&
          (((size_t) SSIZE_MAX > header_size)) &&
-         (0 != buffer_size) )
+         (0 != body_size) )
     {
       int ret2;
       /* The header has been sent completely.
        * Try to send the reply body without waiting for
        * the next round. */
       /* Make sure that sum of ret + ret2 will not exceed SSIZE_MAX. */
-      if ( (((size_t) SSIZE_MAX) - ((size_t) ret)) <  buffer_size)
-        buffer_size = (((size_t) SSIZE_MAX) - ((size_t) ret));
+      if ( (((size_t) SSIZE_MAX) - ((size_t) ret)) <  body_size)
+        body_size = (((size_t) SSIZE_MAX) - ((size_t) ret));
 
       ret2 = MHD_send_on_connection_ (connection,
-                                      buffer,
-                                      buffer_size,
+                                      body,
+                                      body_size,
                                       MHD_SSO_PUSH_DATA);
       if (0 < ret2)
         return ret + ret2; /* Total data sent */
@@ -884,9 +867,9 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
   }
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
 
-  if ( ((size_t) SSIZE_MAX <= buffer_size) ||
-       ((size_t) SSIZE_MAX < (header_size + buffer_size)) )
-    buffer_size = SSIZE_MAX - header_size;
+  if ( ((size_t) SSIZE_MAX <= body_size) ||
+       ((size_t) SSIZE_MAX < (header_size + body_size)) )
+    body_size = SSIZE_MAX - header_size;
 
   /* Since we generally give the fully answer, we do not want
      corking to happen */
@@ -900,8 +883,8 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
 
   vector[0].iov_base = (void *) header;
   vector[0].iov_len = header_size;
-  vector[1].iov_base = (void *) buffer;
-  vector[1].iov_len = buffer_size;
+  vector[1].iov_base = (void *) body;
+  vector[1].iov_len = body_size;
 
 #if HAVE_SENDMSG
   {
@@ -935,7 +918,7 @@ MHD_send_on_connection2_ (struct MHD_Connection *connection,
    * it's unknown whether sendfile() will be used or not so
    * assume that next final send() will be the same, like for
    * this response. */
-  if ((header_size + buffer_size) == (size_t) ret)
+  if ((header_size + body_size) == (size_t) ret)
     post_send_setopt (connection,
 #if HAVE_SENDMSG
                       true,

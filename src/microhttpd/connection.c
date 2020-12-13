@@ -2933,24 +2933,24 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       {
         /* Send response headers alongside the response body, if the body
          * data is available. */
-        ret = MHD_send_on_connection2_ (connection,
-                                        &connection->write_buffer
-                                        [connection->write_buffer_send_offset],
-                                        wb_ready,
-                                        resp->data,
-                                        resp->data_size);
+        ret = MHD_send_hdr_and_body_ (connection,
+                                      &connection->write_buffer
+                                      [connection->write_buffer_send_offset],
+                                      wb_ready,
+                                      resp->data,
+                                      resp->data_size);
       }
       else
       {
         /* This is response for HEAD request, reply body is not allowed
          * for any other reason or reply body is dynamically generated. */
         /* Do not send the body data even if it's available. */
-        ret = MHD_send_on_connection2_ (connection,
-                                        &connection->write_buffer
-                                        [connection->write_buffer_send_offset],
-                                        wb_ready,
-                                        NULL,
-                                        0);
+        ret = MHD_send_hdr_and_body_ (connection,
+                                      &connection->write_buffer
+                                      [connection->write_buffer_send_offset],
+                                      wb_ready,
+                                      NULL,
+                                      0);
       }
 
       if (ret < 0)

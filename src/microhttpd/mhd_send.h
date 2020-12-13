@@ -86,12 +86,24 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
                          size_t buffer_size,
                          enum MHD_SendSocketOptions options);
 
+
+/**
+ * Send reply header with optional reply body.
+ *
+ * @param connection the MHD_Connection structure
+ * @param header content of header to send
+ * @param header_size the size of the header (in bytes)
+ * @param body content of the body to send (optional, may be NULL)
+ * @param body_size the size of the body (in bytes)
+ * @return sum of the number of bytes sent from both buffers or
+ *         error code (negative)
+ */
 ssize_t
-MHD_send_on_connection2_ (struct MHD_Connection *connection,
-                          const char *header,
-                          size_t header_size,
-                          const char *buffer,
-                          size_t buffer_size);
+MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
+                        const char *header,
+                        size_t header_size,
+                        const char *body,
+                        size_t body_size);
 
 #if defined(_MHD_HAVE_SENDFILE)
 ssize_t
