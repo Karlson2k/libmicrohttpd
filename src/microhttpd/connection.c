@@ -2919,14 +2919,16 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                   connection->write_buffer_send_offset);
       mhd_assert (NULL != connection->response);
       mhd_assert ( (0 == connection->response->data_size) || \
-                   (0 == connection->response->data_start) );
+                   (0 == connection->response->data_start) || \
+                   (NULL != connection->response->crc) );
       mhd_assert ( (0 == connection->response_write_position) || \
                    (response->total_size ==
                     connection->response_write_position) || \
                    (MHD_SIZE_UNKNOWN ==
                     connection->response_write_position) );
 
-      if (0 == connection->response_write_position)
+      if ( (NULL == connection->response->crc) &&
+           (0 == connection->response_write_position) )
       {
         /* Send response headers alongside the response body, if the body
          * data is available. */
@@ -2939,8 +2941,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       }
       else
       {
-        /* This is response for HEAD request or reply body is not allowed
-         * for any other reason. */
+        /* This is response for HEAD request, reply body is not allowed
+         * for any other reason or reply body is dynamically generated. */
         /* Do not send the body data even if it's available. */
         ret = MHD_send_on_connection2_ (connection,
                                         &connection->write_buffer
