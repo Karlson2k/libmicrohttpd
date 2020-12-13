@@ -660,25 +660,11 @@ post_send_setopt (struct MHD_Connection *connection,
 }
 
 
-/**
- * Send buffer to the client, push data from network buffer if requested
- * and full buffer is sent.
- *
- * @param connection the MHD_Connection structure
- * @param buffer content of the buffer to send
- * @param buffer_size the size of the @a buffer (in bytes)
- * @param push_data set to true to force push the data to the network from
- *                  system buffers (usually set for the last piece of data),
- *                  set to false to prefer holding incomplete network packets
- *                  (more data will be send for the same reply).
- * @return sum of the number of bytes sent from both buffers or
- *         error code (negative)
- */
 ssize_t
-MHD_send_on_connection_ (struct MHD_Connection *connection,
-                         const char *buffer,
-                         size_t buffer_size,
-                         bool push_data)
+MHD_send_data_ (struct MHD_Connection *connection,
+                const char *buffer,
+                size_t buffer_size,
+                bool push_data)
 {
   MHD_socket s = connection->socket_fd;
   ssize_t ret;
@@ -865,10 +851,10 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 #endif /* ! (HAVE_SENDMSG || HAVE_WRITEV) */
     )
   {
-    ret = MHD_send_on_connection_ (connection,
-                                   header,
-                                   header_size,
-                                   push_hdr);
+    ret = MHD_send_data_ (connection,
+                          header,
+                          header_size,
+                          push_hdr);
     if ( ((size_t) header_size == ret) &&
          (((size_t) SSIZE_MAX > header_size)) &&
          (0 != body_size) )
@@ -885,10 +871,10 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
         push_body = complete_response;
       }
 
-      ret2 = MHD_send_on_connection_ (connection,
-                                      body,
-                                      body_size,
-                                      push_body);
+      ret2 = MHD_send_data_ (connection,
+                             body,
+                             body_size,
+                             push_body);
       if (0 < ret2)
         return ret + ret2; /* Total data sent */
       if (MHD_ERR_AGAIN_ == ret2)
@@ -1000,12 +986,6 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 
 
 #if defined(_MHD_HAVE_SENDFILE)
-/**
- * Function for sending responses backed by file FD.
- *
- * @param connection the MHD connection structure
- * @return actual number of bytes sent
- */
 ssize_t
 MHD_send_sendfile_ (struct MHD_Connection *connection)
 {

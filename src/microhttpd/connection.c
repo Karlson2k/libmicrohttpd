@@ -2877,12 +2877,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
   case MHD_CONNECTION_HEADERS_PROCESSED:
     return;
   case MHD_CONNECTION_CONTINUE_SENDING:
-    ret = MHD_send_on_connection_ (connection,
-                                   &HTTP_100_CONTINUE
-                                   [connection->continue_message_write_offset],
-                                   MHD_STATICSTR_LEN_ (HTTP_100_CONTINUE)
-                                   - connection->continue_message_write_offset,
-                                   true);
+    ret = MHD_send_data_ (connection,
+                          &HTTP_100_CONTINUE
+                          [connection->continue_message_write_offset],
+                          MHD_STATICSTR_LEN_ (HTTP_100_CONTINUE)
+                          - connection->continue_message_write_offset,
+                          true);
     if (ret < 0)
     {
       if (MHD_ERR_AGAIN_ == ret)
@@ -3020,12 +3020,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                             - response->data_start;
         if (data_write_offset > (uint64_t) SIZE_MAX)
           MHD_PANIC (_ ("Data offset exceeds limit.\n"));
-        ret = MHD_send_on_connection_ (connection,
-                                       &response->data
-                                       [(size_t) data_write_offset],
-                                       response->data_size
-                                       - (size_t) data_write_offset,
-                                       true);
+        ret = MHD_send_data_ (connection,
+                              &response->data
+                              [(size_t) data_write_offset],
+                              response->data_size
+                              - (size_t) data_write_offset,
+                              true);
 #if _MHD_DEBUG_SEND_DATA
         if (ret > 0)
           fprintf (stderr,
@@ -3064,12 +3064,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     mhd_assert (0);
     return;
   case MHD_CONNECTION_CHUNKED_BODY_READY:
-    ret = MHD_send_on_connection_ (connection,
-                                   &connection->write_buffer
-                                   [connection->write_buffer_send_offset],
-                                   connection->write_buffer_append_offset
-                                   - connection->write_buffer_send_offset,
-                                   true);
+    ret = MHD_send_data_ (connection,
+                          &connection->write_buffer
+                          [connection->write_buffer_send_offset],
+                          connection->write_buffer_append_offset
+                          - connection->write_buffer_send_offset,
+                          true);
     if (ret < 0)
     {
       if (MHD_ERR_AGAIN_ == ret)
@@ -3094,12 +3094,12 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     mhd_assert (0);
     return;
   case MHD_CONNECTION_FOOTERS_SENDING:
-    ret = MHD_send_on_connection_ (connection,
-                                   &connection->write_buffer
-                                   [connection->write_buffer_send_offset],
-                                   connection->write_buffer_append_offset
-                                   - connection->write_buffer_send_offset,
-                                   true);
+    ret = MHD_send_data_ (connection,
+                          &connection->write_buffer
+                          [connection->write_buffer_send_offset],
+                          connection->write_buffer_append_offset
+                          - connection->write_buffer_send_offset,
+                          true);
     if (ret < 0)
     {
       if (MHD_ERR_AGAIN_ == ret)

@@ -1,7 +1,7 @@
 /*
   This file is part of libmicrohttpd
+  Copyright (C) 2017, 2020 Karlson2k (Evgeny Grin)
   Copyright (C) 2019 ng0
-  Copyright (C) 2017 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -50,41 +50,26 @@ MHD_send_init_static_vars_ (void);
 
 #endif /* HAVE_FREEBSD_SENDFILE */
 
+
 /**
- * The enumeration of send socket options.
+ * Send buffer to the client, push data from network buffer if requested
+ * and full buffer is sent.
+ *
+ * @param connection the MHD_Connection structure
+ * @param buffer content of the buffer to send
+ * @param buffer_size the size of the @a buffer (in bytes)
+ * @param push_data set to true to force push the data to the network from
+ *                  system buffers (usually set for the last piece of data),
+ *                  set to false to prefer holding incomplete network packets
+ *                  (more data will be send for the same reply).
+ * @return sum of the number of bytes sent from both buffers or
+ *         error code (negative)
  */
-enum MHD_SendSocketOptions
-{
-  /**
-   * Need to flush buffers after send to push data to the network.
-   * Used to avoid delay before the last part of data (which is usually
-   * incomplete IP packet / MSS) is pushed by kernel to the network.
-   */
-  MHD_SSO_PUSH_DATA = 0,
-  /**
-   * Buffer data if possible.
-   * If more response data is to be sent than try to buffer data in
-   * the local buffers so kernel able to send complete packets with
-   * lower overhead.
-   */
-  MHD_SSO_PREFER_BUFF = 1,
-  /**
-   * consider tcpi_snd_mss and consider not corking for the header
-   * part if the size of the header is close to the MSS.
-   * Only used if we are NOT doing 100 Continue and are still
-   * sending the header (provided in full as the buffer to
-   * MHD_send_on_connection_ or as the header to
-   * MHD_send_on_connection2_).
-   */
-  MHD_SSO_HDR_CORK = 2
-};
-
-
 ssize_t
-MHD_send_on_connection_ (struct MHD_Connection *connection,
-                         const char *buffer,
-                         size_t buffer_size,
-                         bool push_data);
+MHD_send_data_ (struct MHD_Connection *connection,
+                const char *buffer,
+                size_t buffer_size,
+                bool push_data);
 
 
 /**
@@ -115,6 +100,12 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
                         bool complete_response);
 
 #if defined(_MHD_HAVE_SENDFILE)
+/**
+ * Function for sending responses backed by file FD.
+ *
+ * @param connection the MHD connection structure
+ * @return actual number of bytes sent
+ */
 ssize_t
 MHD_send_sendfile_ (struct MHD_Connection *connection);
 
