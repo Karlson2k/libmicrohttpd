@@ -235,7 +235,6 @@ pre_send_setopt (struct MHD_Connection *connection,
                  bool plain_send,
                  bool push_data)
 {
-  int ret;
   /* Try to buffer data if not sending the final piece.
    * Final piece is indicated by push_data == true. */
   const bool buffer_data = (! push_data);
@@ -495,7 +494,6 @@ post_send_setopt (struct MHD_Connection *connection,
                   bool plain_send_next,
                   bool push_data)
 {
-  int ret;
   /* Try to buffer data if not sending the final piece.
    * Final piece is indicated by push_data == true. */
   const bool buffer_data = (! push_data);
@@ -855,7 +853,8 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
                           header,
                           header_size,
                           push_hdr);
-    if ( ((size_t) header_size == ret) &&
+
+    if ( (header_size == (size_t) ret) &&
          (((size_t) SSIZE_MAX > header_size)) &&
          (0 != body_size) )
     {
