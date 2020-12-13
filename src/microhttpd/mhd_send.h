@@ -92,9 +92,16 @@ MHD_send_on_connection_ (struct MHD_Connection *connection,
  *
  * @param connection the MHD_Connection structure
  * @param header content of header to send
- * @param header_size the size of the header (in bytes)
+ * @param header_size the size of the @a header (in bytes)
+ * @param never_push_hdr set to true to disable internal algorithm
+ *                       that can push automatically header data
+ *                       alone to the network
  * @param body content of the body to send (optional, may be NULL)
- * @param body_size the size of the body (in bytes)
+ * @param body_size the size of the @a body (in bytes)
+ * @param complete_response set to true if complete response
+ *                          is provided by @a header and @a body,
+ *                          set to false if additional body data
+ *                          will be sent later
  * @return sum of the number of bytes sent from both buffers or
  *         error code (negative)
  */
@@ -102,8 +109,10 @@ ssize_t
 MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
                         const char *header,
                         size_t header_size,
+                        bool never_push_hdr,
                         const char *body,
-                        size_t body_size);
+                        size_t body_size,
+                        bool complete_response);
 
 #if defined(_MHD_HAVE_SENDFILE)
 ssize_t

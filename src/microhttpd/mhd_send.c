@@ -811,10 +811,14 @@ ssize_t
 MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
                         const char *header,
                         size_t header_size,
+                        bool never_push_hdr,
                         const char *body,
-                        size_t body_size)
+                        size_t body_size,
+                        bool complete_response)
 {
   ssize_t ret;
+  bool push_hdr;
+  bool push_body;
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   MHD_socket s = connection->socket_fd;
   struct iovec vector[2];
@@ -825,6 +829,32 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 #endif /* ! HTTPS_SUPPORT */
 #endif /* HAVE_SENDMSG || HAVE_WRITEV */
   mhd_assert ( (NULL != body) || (0 == body_size) );
+
+  push_body = complete_response;
+
+  if (! never_push_hdr)
+  {
+    if (! complete_response)
+      push_hdr = true; /* Push the header as the client may react
+                        * on header alone while the body data is
+                        * being prepared. */
+    else
+    {
+      if (1400 > (header_size + body_size))
+        push_hdr = false;  /* Do not push the header as complete
+                           * reply is already ready and the whole
+                           * reply most probably will fit into
+                           * the single IP packet. */
+      else
+        push_hdr = true;   /* Push header alone so client may react
+                           * on it while reply body is being delivered. */
+    }
+  }
+  else
+    push_hdr = false;
+
+  if (complete_response && (0 == body_size))
+    push_hdr = true; /* The header alone is equal to the whole response. */
 
   if (
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
@@ -839,7 +869,8 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     ret = MHD_send_on_connection_ (connection,
                                    header,
                                    header_size,
-                                   MHD_SSO_HDR_CORK);
+                                   push_hdr ?
+                                   MHD_SSO_PUSH_DATA: MHD_SSO_PREFER_BUFF);
     if ( ((size_t) header_size == ret) &&
          (((size_t) SSIZE_MAX > header_size)) &&
          (0 != body_size) )
@@ -850,12 +881,17 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
        * the next round. */
       /* Make sure that sum of ret + ret2 will not exceed SSIZE_MAX. */
       if ( (((size_t) SSIZE_MAX) - ((size_t) ret)) <  body_size)
+      {
         body_size = (((size_t) SSIZE_MAX) - ((size_t) ret));
+        complete_response = false;
+        push_body = complete_response;
+      }
 
       ret2 = MHD_send_on_connection_ (connection,
                                       body,
                                       body_size,
-                                      MHD_SSO_PUSH_DATA);
+                                      push_body ?
+                                      MHD_SSO_PUSH_DATA: MHD_SSO_PREFER_BUFF);
       if (0 < ret2)
         return ret + ret2; /* Total data sent */
       if (MHD_ERR_AGAIN_ == ret2)
@@ -869,17 +905,19 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 
   if ( ((size_t) SSIZE_MAX <= body_size) ||
        ((size_t) SSIZE_MAX < (header_size + body_size)) )
+  {
     body_size = SSIZE_MAX - header_size;
+    complete_response = false;
+    push_body = complete_response;
+  }
 
-  /* Since we generally give the fully answer, we do not want
-     corking to happen */
   pre_send_setopt (connection,
 #if HAVE_SENDMSG
                    true,
 #elif HAVE_WRITEV
                    false,
 #endif /* HAVE_WRITEV */
-                   true);
+                   push_hdr || push_body);
 
   vector[0].iov_base = (void *) header;
   vector[0].iov_len = header_size;
@@ -913,12 +951,15 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 
   /* If there is a need to push the data from network buffers
    * call post_send_setopt(). */
-  /* If TLS connection is used then next final send() will be
-   * without MSG_MORE support. If non-TLS connection is used
-   * it's unknown whether sendfile() will be used or not so
-   * assume that next final send() will be the same, like for
-   * this response. */
-  if ((header_size + body_size) == (size_t) ret)
+  if ( (push_body) &&
+       ((header_size + body_size) == (size_t) ret) )
+  {
+    /* Complete reply has been sent. */
+    /* If TLS connection is used then next final send() will be
+     * without MSG_MORE support. If non-TLS connection is used
+     * it's unknown whether next 'send' will be plain send() / sendmsg() or
+     * sendfile() will be used so assume that next final send() will be
+     * the same, like for this response. */
     post_send_setopt (connection,
 #if HAVE_SENDMSG
                       true,
@@ -926,6 +967,22 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
                       false,
 #endif /* HAVE_WRITEV */
                       true);
+  }
+  else if ( (push_hdr) &&
+            (header_size <= (size_t) ret))
+  {
+    /* The header has been sent completely and there is a
+     * need to push the header data. */
+    /* Luckily it is know what type of send function will be used
+     * next.  */
+    post_send_setopt (connection,
+#if defined(_MHD_HAVE_SENDFILE)
+                      MHD_resp_sender_std == connection->resp_sender,
+#else  /* ! _MHD_HAVE_SENDFILE */
+                      true,
+#endif /* ! _MHD_HAVE_SENDFILE */
+                      true);
+  }
 
   return ret;
 #else  /* ! (HAVE_SENDMSG || HAVE_WRITEV) */

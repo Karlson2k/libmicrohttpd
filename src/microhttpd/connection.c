@@ -2931,26 +2931,33 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       if ( (NULL == resp->crc) &&
            (0 == connection->response_write_position) )
       {
+        mhd_assert (resp->total_size >= resp->data_size);
         /* Send response headers alongside the response body, if the body
          * data is available. */
         ret = MHD_send_hdr_and_body_ (connection,
                                       &connection->write_buffer
                                       [connection->write_buffer_send_offset],
                                       wb_ready,
+                                      false,
                                       resp->data,
-                                      resp->data_size);
+                                      resp->data_size,
+                                      (resp->total_size == resp->data_size));
       }
       else
       {
-        /* This is response for HEAD request, reply body is not allowed
+        /* This is response for HEAD request or reply body is not allowed
          * for any other reason or reply body is dynamically generated. */
         /* Do not send the body data even if it's available. */
         ret = MHD_send_hdr_and_body_ (connection,
                                       &connection->write_buffer
                                       [connection->write_buffer_send_offset],
                                       wb_ready,
+                                      false,
                                       NULL,
-                                      0);
+                                      0,
+                                      ((0 == resp->total_size) ||
+                                       (resp->total_size ==
+                                        connection->response_write_position)));
       }
 
       if (ret < 0)
