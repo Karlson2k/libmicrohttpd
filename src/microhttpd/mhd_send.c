@@ -928,20 +928,17 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
   vector[1].iov_len = body_size;
 
 #if HAVE_SENDMSG
-  memset (&msg, 0, sizeof(struct msghdr));
+  memset (&msg, 0, sizeof(msg));
   msg.msg_iov = vector;
   msg.msg_iovlen = 2;
 
   ret = sendmsg (s, &msg, MSG_NOSIGNAL_OR_ZERO);
-  if ( (-1 == ret) &&
-       (EAGAIN == errno) )
-    return MHD_ERR_AGAIN_;
 #elif HAVE_WRITEV
   ret = writev (s, vector, 2);
+#endif
   if ( (-1 == ret) &&
        (EAGAIN == errno) )
     return MHD_ERR_AGAIN_;
-#endif
 
   /* If there is a need to push the data from network buffers
    * call post_send_setopt(). */
