@@ -2913,21 +2913,22 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     return;
   case MHD_CONNECTION_HEADERS_SENDING:
     {
+      struct MHD_Response *const resp = connection->response;
       const size_t wb_ready = connection->write_buffer_append_offset
                               - connection->write_buffer_send_offset;
       mhd_assert (connection->write_buffer_append_offset >= \
                   connection->write_buffer_send_offset);
-      mhd_assert (NULL != connection->response);
-      mhd_assert ( (0 == connection->response->data_size) || \
-                   (0 == connection->response->data_start) || \
-                   (NULL != connection->response->crc) );
+      mhd_assert (NULL != resp);
+      mhd_assert ( (0 == resp->data_size) || \
+                   (0 == resp->data_start) || \
+                   (NULL != resp->crc) );
       mhd_assert ( (0 == connection->response_write_position) || \
-                   (response->total_size ==
+                   (resp->total_size ==
                     connection->response_write_position) || \
                    (MHD_SIZE_UNKNOWN ==
                     connection->response_write_position) );
 
-      if ( (NULL == connection->response->crc) &&
+      if ( (NULL == resp->crc) &&
            (0 == connection->response_write_position) )
       {
         /* Send response headers alongside the response body, if the body
@@ -2936,8 +2937,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                         &connection->write_buffer
                                         [connection->write_buffer_send_offset],
                                         wb_ready,
-                                        connection->response->data,
-                                        connection->response->data_size);
+                                        resp->data,
+                                        resp->data_size);
       }
       else
       {
