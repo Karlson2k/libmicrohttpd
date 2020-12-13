@@ -822,6 +822,9 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   MHD_socket s = connection->socket_fd;
   struct iovec vector[2];
+#ifdef HAVE_SENDMSG
+  struct msghdr msg;
+#endif /* HAVE_SENDMSG */
 #ifdef HTTPS_SUPPORT
   const bool no_vec = (connection->daemon->options & MHD_USE_TLS);
 #else  /* ! HTTPS_SUPPORT */
@@ -925,28 +928,19 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
   vector[1].iov_len = body_size;
 
 #if HAVE_SENDMSG
-  {
-    struct msghdr msg;
+  memset (&msg, 0, sizeof(struct msghdr));
+  msg.msg_iov = vector;
+  msg.msg_iovlen = 2;
 
-    memset (&msg, 0, sizeof(struct msghdr));
-    msg.msg_iov = vector;
-    msg.msg_iovlen = 2;
-
-    ret = sendmsg (s, &msg, MSG_NOSIGNAL_OR_ZERO);
-    if ( (-1 == ret) &&
-         (EAGAIN == errno) )
-      return MHD_ERR_AGAIN_;
-  }
+  ret = sendmsg (s, &msg, MSG_NOSIGNAL_OR_ZERO);
+  if ( (-1 == ret) &&
+       (EAGAIN == errno) )
+    return MHD_ERR_AGAIN_;
 #elif HAVE_WRITEV
-  {
-    int iovcnt;
-
-    iovcnt = sizeof (vector) / sizeof (struct iovec);
-    ret = writev (s, vector, iovcnt);
-    if ( (-1 == ret) &&
-         (EAGAIN == errno) )
-      return MHD_ERR_AGAIN_;
-  }
+  ret = writev (s, vector, 2);
+  if ( (-1 == ret) &&
+       (EAGAIN == errno) )
+    return MHD_ERR_AGAIN_;
 #endif
 
   /* If there is a need to push the data from network buffers
