@@ -546,9 +546,17 @@ pipe_reader (void *cls,
   ssize_t n;
 
   (void) pos;
+#ifndef _WIN32
+  if (SSIZE_MAX < max)
+    max = SSIZE_MAX;
+#else  /* _WIN32 */
+  if (UINT_MAX < max)
+    max = UINT_MAX;
+#endif /* _WIN32 */
+
   n = read (response->fd,
             buf,
-            max);
+            (MHD_SCKT_SEND_SIZE_) max);
   if (0 == n)
     return MHD_CONTENT_READER_END_OF_STREAM;
   if (n < 0)

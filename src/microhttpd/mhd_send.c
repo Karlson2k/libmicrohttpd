@@ -858,7 +858,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
          (((size_t) SSIZE_MAX > header_size)) &&
          (0 != body_size) )
     {
-      int ret2;
+      ssize_t ret2;
       /* The header has been sent completely.
        * Try to send the reply body without waiting for
        * the next round. */
