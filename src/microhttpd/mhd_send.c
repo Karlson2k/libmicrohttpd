@@ -860,7 +860,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 #ifdef _MHD_USE_SEND_VEC
     (no_vec) ||
     (0 == body_size) ||
-    ((size_t) SSIZE_MAX < header_size) ||
+    ((size_t) SSIZE_MAX <= header_size) ||
     ((size_t) _MHD_SEND_VEC_MAX < header_size)
 #else  /* ! _MHD_USE_SEND_VEC */
     true
@@ -936,7 +936,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
   vector[1].iov_base = (void *) body;
   vector[1].iov_len = body_size;
 
-#if define (HAVE_SENDMSG)
+#if defined(HAVE_SENDMSG)
   memset (&msg, 0, sizeof(msg));
   msg.msg_iov = vector;
   msg.msg_iovlen = 2;
