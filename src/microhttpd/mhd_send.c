@@ -650,7 +650,7 @@ post_send_setopt (struct MHD_Connection *connection,
 #endif /* ! MHD_TCP_CORK_NOPUSH */
 #ifdef HAVE_MESSAGES
   MHD_DLOG (connection->daemon,
-            _ ("Failed to put the data from buffers to the network. "
+            _ ("Failed to push the data from buffers to the network. "
                "Client may experience some delay "
                "(usually in range 200ms - 5 sec).\n"));
 #endif /* HAVE_MESSAGES */
@@ -672,21 +672,21 @@ MHD_send_data_ (struct MHD_Connection *connection,
   const bool tls_conn = false;
 #endif /* ! HTTPS_SUPPORT */
 
-  /* error handling from send_param_adapter() */
   if ( (MHD_INVALID_SOCKET == s) ||
        (MHD_CONNECTION_CLOSED == connection->state) )
   {
     return MHD_ERR_NOTCONN_;
   }
 
+  if (buffer_size > SSIZE_MAX)
+  {
+    buffer_size = SSIZE_MAX; /* Max return value */
+    push_data = false; /* Incomplete send */
+  }
+
   if (tls_conn)
   {
 #ifdef HTTPS_SUPPORT
-    if (buffer_size > SSIZE_MAX)
-    {
-      buffer_size = SSIZE_MAX;
-      push_data = false; /* Incomplete send */
-    }
     pre_send_setopt (connection, (! tls_conn), push_data);
     ret = gnutls_record_send (connection->tls_session,
                               buffer,
@@ -723,7 +723,7 @@ MHD_send_data_ (struct MHD_Connection *connection,
     /* plaintext transmission */
     if (buffer_size > MHD_SCKT_SEND_MAX_SIZE_)
     {
-      buffer_size = MHD_SCKT_SEND_MAX_SIZE_; /* return value limit */
+      buffer_size = MHD_SCKT_SEND_MAX_SIZE_; /* send() return value limit */
       push_data = false; /* Incomplete send */
     }
 
@@ -855,14 +855,15 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
                           push_hdr);
 
     if ( (header_size == (size_t) ret) &&
-         (((size_t) SSIZE_MAX > header_size)) &&
+         ((size_t) SSIZE_MAX > header_size) &&
          (0 != body_size) )
     {
       ssize_t ret2;
       /* The header has been sent completely.
        * Try to send the reply body without waiting for
        * the next round. */
-      /* Make sure that sum of ret + ret2 will not exceed SSIZE_MAX. */
+      /* Make sure that sum of ret + ret2 will not exceed SSIZE_MAX as
+       * function needs to return positive value if succeed. */
       if ( (((size_t) SSIZE_MAX) - ((size_t) ret)) <  body_size)
       {
         body_size = (((size_t) SSIZE_MAX) - ((size_t) ret));
@@ -888,6 +889,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
   if ( ((size_t) SSIZE_MAX <= body_size) ||
        ((size_t) SSIZE_MAX < (header_size + body_size)) )
   {
+    /* Return value limit */
     body_size = SSIZE_MAX - header_size;
     complete_response = false;
     push_body = complete_response;
@@ -965,8 +967,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
   {
     /* The header has been sent completely and there is a
      * need to push the header data. */
-    /* Luckily it is know what type of send function will be used
-     * next.  */
+    /* Luckily the type of send function will be used next is known. */
     post_send_setopt (connection,
 #if defined(_MHD_HAVE_SENDFILE)
                       MHD_resp_sender_std == connection->resp_sender,
