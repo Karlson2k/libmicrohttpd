@@ -781,6 +781,10 @@ MHD_send_data_ (struct MHD_Connection *connection,
 }
 
 
+#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV) || defined(_WIN32)
+#define _MHD_USE_SEND_VEC          1
+#endif /* HAVE_SENDMSG || HAVE_WRITEV || _WIN32*/
+
 ssize_t
 MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
                         const char *header,
@@ -794,17 +798,30 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
   bool push_hdr;
   bool push_body;
   MHD_socket s = connection->socket_fd;
+#ifndef _WIN32
+#define _MHD_SEND_VEC_MAX   MHD_SCKT_SEND_MAX_SIZE_
+#else  /* ! _WIN32 */
+#define _MHD_SEND_VEC_MAX   UINT32_MAX
+#endif /* ! _WIN32 */
+#ifdef _MHD_USE_SEND_VEC
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   struct iovec vector[2];
 #ifdef HAVE_SENDMSG
   struct msghdr msg;
 #endif /* HAVE_SENDMSG */
+#endif /* HAVE_SENDMSG || HAVE_WRITEV */
+#ifdef _WIN32
+  WSABUF vector[2];
+  uint32_t vec_sent;
+  int err;
+#endif /* _WIN32 */
 #ifdef HTTPS_SUPPORT
   const bool no_vec = (connection->daemon->options & MHD_USE_TLS);
 #else  /* ! HTTPS_SUPPORT */
   const bool no_vec = false;
 #endif /* ! HTTPS_SUPPORT */
-#endif /* HAVE_SENDMSG || HAVE_WRITEV */
+#endif /* _MHD_USE_SEND_VEC */
+
   mhd_assert ( (NULL != body) || (0 == body_size) );
 
   if ( (MHD_INVALID_SOCKET == s) ||
@@ -840,13 +857,14 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     push_hdr = true; /* The header alone is equal to the whole response. */
 
   if (
-#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
+#ifdef _MHD_USE_SEND_VEC
     (no_vec) ||
     (0 == body_size) ||
-    ((size_t) SSIZE_MAX <= header_size)
-#else  /* ! (HAVE_SENDMSG || HAVE_WRITEV) */
+    ((size_t) SSIZE_MAX < header_size) ||
+    ((size_t) _MHD_SEND_VEC_MAX < header_size)
+#else  /* ! _MHD_USE_SEND_VEC */
     true
-#endif /* ! (HAVE_SENDMSG || HAVE_WRITEV) */
+#endif /* ! _MHD_USE_SEND_VEC */
     )
   {
     ret = MHD_send_data_ (connection,
@@ -884,7 +902,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     }
     return ret;
   }
-#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
+#ifdef _MHD_USE_SEND_VEC
 
   if ( ((size_t) SSIZE_MAX <= body_size) ||
        ((size_t) SSIZE_MAX < (header_size + body_size)) )
@@ -894,32 +912,59 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     complete_response = false;
     push_body = complete_response;
   }
+#if (SSIZE_MAX != _MHD_SEND_VEC_MAX) || (_MHD_SEND_VEC_MAX + 0 == 0)
+  if (((size_t) _MHD_SEND_VEC_MAX <= body_size) ||
+      ((size_t) _MHD_SEND_VEC_MAX < (header_size + body_size)))
+  {
+    /* Send value limit */
+    body_size = _MHD_SEND_VEC_MAX - header_size;
+    complete_response = false;
+    push_body = complete_response;
+  }
+#endif /* SSIZE_MAX != _MHD_SEND_VEC_MAX */
 
   pre_send_setopt (connection,
-#if HAVE_SENDMSG
+#ifdef HAVE_SENDMSG
                    true,
-#elif HAVE_WRITEV
+#else  /* ! HAVE_SENDMSG */
                    false,
-#endif /* HAVE_WRITEV */
+#endif /* ! HAVE_SENDMSG */
                    push_hdr || push_body);
-
+#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   vector[0].iov_base = (void *) header;
   vector[0].iov_len = header_size;
   vector[1].iov_base = (void *) body;
   vector[1].iov_len = body_size;
 
-#if HAVE_SENDMSG
+#if define (HAVE_SENDMSG)
   memset (&msg, 0, sizeof(msg));
   msg.msg_iov = vector;
   msg.msg_iovlen = 2;
 
   ret = sendmsg (s, &msg, MSG_NOSIGNAL_OR_ZERO);
-#elif HAVE_WRITEV
+#elif defined (HAVE_WRITEV)
   ret = writev (s, vector, 2);
-#endif
+#endif /* HAVE_WRITEV */
+#endif /* HAVE_SENDMSG || HAVE_WRITEV */
+#ifdef _WIN32
+  vector[0].buf = (char *) header;
+  vector[0].len = (unsigned long) header_size;
+  vector[1].buf = (char *) body;
+  vector[1].len = (unsigned long) body_size;
+
+  err = WSASend (s, vector, 2, &vec_sent, 0, NULL, NULL);
+
+  if (0 == err)
+    ret = (ssize_t) vec_sent;
+  else
+    ret = -1;
+#endif /* _WIN32 */
+
   if (0 > ret)
   {
+#ifndef _WIN32
     const int err = MHD_socket_get_error_ ();
+#endif /* _WIN32 */
 
     if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
     {
@@ -955,11 +1000,11 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
      * sendfile() will be used so assume that next final send() will be
      * the same, like for this response. */
     post_send_setopt (connection,
-#if HAVE_SENDMSG
+#ifdef HAVE_SENDMSG
                       true,
-#elif HAVE_WRITEV
+#else  /* ! HAVE_SENDMSG */
                       false,
-#endif /* HAVE_WRITEV */
+#endif /* ! HAVE_SENDMSG */
                       true);
   }
   else if ( (push_hdr) &&
@@ -978,10 +1023,10 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
   }
 
   return ret;
-#else  /* ! (HAVE_SENDMSG || HAVE_WRITEV) */
+#else  /* ! _MHD_USE_SEND_VEC */
   mhd_assert (false);
   return MHD_ERR_CONNRESET_; /* Unreachable. Mute warnings. */
-#endif /* ! (HAVE_SENDMSG || HAVE_WRITEV) */
+#endif /* ! _MHD_USE_SEND_VEC */
 }
 
 
