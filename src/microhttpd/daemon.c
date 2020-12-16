@@ -7301,7 +7301,9 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
     mhd_assert (NULL == daemon->cleanup_head);
     mhd_assert (NULL == daemon->suspended_connections_head);
     mhd_assert (NULL == daemon->new_connections_head);
+#if defined(UPGRADE_SUPPORT) && defined (HTTPS_SUPPORT)
     mhd_assert (NULL == daemon->urh_head);
+#endif /* UPGRADE_SUPPORT && HTTPS_SUPPORT */
 
     if (MHD_ITC_IS_VALID_ (daemon->itc))
       MHD_itc_destroy_chk_ (daemon->itc);
