@@ -862,6 +862,9 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     (0 == body_size) ||
     ((size_t) SSIZE_MAX <= header_size) ||
     ((size_t) _MHD_SEND_VEC_MAX < header_size)
+#ifdef _WIN32
+    || ((size_t) UINT_MAX < header_size)
+#endif /* _WIN32 */
 #else  /* ! _MHD_USE_SEND_VEC */
     true
 #endif /* ! _MHD_USE_SEND_VEC */
@@ -916,7 +919,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
   if (((size_t) _MHD_SEND_VEC_MAX <= body_size) ||
       ((size_t) _MHD_SEND_VEC_MAX < (header_size + body_size)))
   {
-    /* Send value limit */
+    /* Send total amount limit */
     body_size = _MHD_SEND_VEC_MAX - header_size;
     complete_response = false;
     push_body = complete_response;
@@ -947,6 +950,13 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 #endif /* HAVE_WRITEV */
 #endif /* HAVE_SENDMSG || HAVE_WRITEV */
 #ifdef _WIN32
+  if ((size_t) UINT_MAX < body_size)
+  {
+    /* Send item size limit */
+    body_size = UINT_MAX;
+    complete_response = false;
+    push_body = complete_response;
+  }
   vector[0].buf = (char *) header;
   vector[0].len = (unsigned long) header_size;
   vector[1].buf = (char *) body;
