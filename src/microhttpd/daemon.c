@@ -3370,14 +3370,6 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 #endif
   }
 
-  if ( (0 == (daemon->options & MHD_USE_TURBO)) &&
-       (! MHD_socket_buffering_reset_ (client_socket)) )
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Failed to reset buffering mode on new client socket.\n"));
-#endif
-  }
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if (NULL != daemon->worker_pool)
   {
