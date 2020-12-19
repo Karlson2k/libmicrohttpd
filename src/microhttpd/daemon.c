@@ -2359,21 +2359,18 @@ psk_gnutls_adapter (gnutls_session_t session,
  * @param addrlen number of bytes in @a addr
  * @param external_add indicate that socket has been added externally
  * @param non_blck indicate that socket in non-blocking mode
- * @param pconnection pointer to variable that receive pointer to
- *        the new connection structure.
- * @return #MHD_YES on success, #MHD_NO if this daemon could
+ * @return pointer to the connection on success, NULL if this daemon could
  *        not handle the connection (i.e. malloc failed, etc).
  *        The socket will be closed in case of error; 'errno' is
  *        set to indicate further details about the error.
  */
-static enum MHD_Result
+static struct MHD_Connection *
 new_connection_prepare_ (struct MHD_Daemon *daemon,
                          MHD_socket client_socket,
                          const struct sockaddr *addr,
                          socklen_t addrlen,
                          bool external_add,
-                         bool non_blck,
-                         struct MHD_Connection **pconnection)
+                         bool non_blck)
 {
   struct MHD_Connection *connection;
   int eno = 0;
@@ -2392,7 +2389,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
 #ifdef ENOTSOCK
     errno = ENOTSOCK;
 #endif /* ENOTSOCK */
-    return MHD_NO;
+    return NULL;
 #endif /* ! MSG_NOSIGNAL */
   }
 #endif /* MHD_socket_nosignal_ */
@@ -2420,7 +2417,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
 #if ENFILE
     errno = ENFILE;
 #endif
-    return MHD_NO;
+    return NULL;
   }
 
   /* apply connection acceptance policy if present */
@@ -2442,7 +2439,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
 #if EACCESS
     errno = EACCESS;
 #endif
-    return MHD_NO;
+    return NULL;
   }
 
   if (NULL == (connection = MHD_calloc_ (1, sizeof (struct MHD_Connection))))
@@ -2458,7 +2455,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
                       addr,
                       addrlen);
     errno = eno;
-    return MHD_NO;
+    return NULL;
   }
 
   if (! external_add)
@@ -2487,7 +2484,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
                       addrlen);
     free (connection);
     errno = eno;
-    return MHD_NO;
+    return NULL;
   }
   memcpy (connection->addr,
           addr,
@@ -2549,7 +2546,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
 #if EPROTO
       errno = EPROTO;
 #endif
-      return MHD_NO;
+      return NULL;
     }
     gnutls_session_set_ptr (connection->tls_session,
                             connection);
@@ -2586,7 +2583,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
 #if EINVAL
       errno = EINVAL;
 #endif
-      return MHD_NO;
+      return NULL;
     }
 #if (GNUTLS_VERSION_NUMBER + 0 >= 0x030109) && ! defined(_WIN64)
     gnutls_transport_set_int (connection->tls_session,
@@ -2611,12 +2608,11 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
     free (connection);
     MHD_PANIC (_ ("TLS connection on non-TLS daemon.\n"));
     eno = EINVAL;
-    return MHD_NO;
+    return NULL;
 #endif /* ! HTTPS_SUPPORT */
   }
 
-  *pconnection = connection;
-  return MHD_YES;
+  return connection;
 }
 
 
@@ -2908,8 +2904,9 @@ internal_add_connection (struct MHD_Daemon *daemon,
     return MHD_NO;
   }
 
-  if (MHD_NO == new_connection_prepare_ (daemon, client_socket, addr, addrlen,
-                                         external_add, non_blck, &connection))
+  connection = new_connection_prepare_ (daemon, client_socket, addr, addrlen,
+                                        external_add, non_blck);
+  if (NULL == connection)
     return MHD_NO;
 
   if ((external_add) &&
