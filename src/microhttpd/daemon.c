@@ -2375,7 +2375,6 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
   struct MHD_Connection *connection;
   int eno = 0;
 
-  mhd_assert (NULL != pconnection);
 #ifdef MHD_socket_nosignal_
   if (! MHD_socket_nosignal_ (client_socket))
   {
