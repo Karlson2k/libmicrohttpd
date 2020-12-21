@@ -3359,7 +3359,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   sk_spipe_supprs = true; /* Nothing to suppress on W32 */
 #endif /* MHD_WINSOCK_SOCKETS */
 #if defined(MHD_socket_nosignal_)
-  if (! sk_spipe_supprs && ! MHD_socket_nosignal_ (s))
+  if (! sk_spipe_supprs && ! MHD_socket_nosignal_ (client_socket))
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
@@ -3375,7 +3375,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
     if (! daemon->sigpipe_blocked)
     {
       int err = MHD_socket_get_error_ ();
-      MHD_socket_close_ (s);
+      MHD_socket_close_ (client_socket);
       MHD_socket_fset_error_ (err);
       return MHD_NO;
     }
