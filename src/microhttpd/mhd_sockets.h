@@ -924,9 +924,20 @@ static const int _MHD_socket_int_one = 1;
 #define MHD_socket_nosignal_(sock) \
   (! setsockopt ((sock),SOL_SOCKET,SO_NOSIGPIPE,&_MHD_socket_int_one, \
                  sizeof(_MHD_socket_int_one)))
-#elif defined(MHD_POSIX_SOCKETS) && defined(SOCK_NOSIGPIPE) && \
-  defined(SOCK_CLOEXEC)
-#endif
+#endif /* SOL_SOCKET && SO_NOSIGPIPE */
+
+
+#if defined(MHD_WINSOCK_SOCKETS) || defined(MHD_socket_nosignal_) || \
+  defined(MSG_NOSIGNAL)
+/**
+ * Indicate that SIGPIPE can be suppressed for normal send() by flags
+ * or socket options.
+ * If this macro is undefined, MHD cannot suppress SIGPIPE for normal
+ * processing so sendfile() or writev() calls is not avoided.
+ */
+#define HAVE_SEND_SIGPIPE_SUPPRESS      1
+#endif /* MHD_WINSOCK_SOCKETS || MHD_socket_nosignal_ || MSG_NOSIGNAL */
+
 
 /**
  * Create a listen socket, with noninheritable flag if possible.
@@ -936,5 +947,6 @@ static const int _MHD_socket_int_one = 1;
  */
 MHD_socket
 MHD_socket_create_listen_ (int pf);
+
 
 #endif /* ! MHD_SOCKETS_H */

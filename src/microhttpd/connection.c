@@ -3964,7 +3964,11 @@ MHD_queue_response (struct MHD_Connection *connection,
 #if defined(_MHD_HAVE_SENDFILE)
   if ( (response->fd == -1) ||
        (response->is_pipe) ||
-       (0 != (connection->daemon->options & MHD_USE_TLS)) )
+       (0 != (connection->daemon->options & MHD_USE_TLS))
+#if ! defined(MHD_WINSOCK_SOCKETS) && defined(HAVE_SEND_SIGPIPE_SUPPRESS)
+       || (! daemon->sigpipe_blocked && ! connection->sk_spipe_suppress)
+#endif /* ! MHD_WINSOCK_SOCKETS && ! HAVE_SEND_SIGPIPE_SUPPRESS */
+       )
     connection->resp_sender = MHD_resp_sender_std;
   else
     connection->resp_sender = MHD_resp_sender_sendfile;

@@ -815,11 +815,19 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
   uint32_t vec_sent;
   int err;
 #endif /* _WIN32 */
+  bool no_vec; /* Is vector-send() disallowed? */
+
+  no_vec = false;
 #ifdef HTTPS_SUPPORT
-  const bool no_vec = (connection->daemon->options & MHD_USE_TLS);
-#else  /* ! HTTPS_SUPPORT */
-  const bool no_vec = false;
-#endif /* ! HTTPS_SUPPORT */
+  no_vec = no_vec || (connection->daemon->options & MHD_USE_TLS);
+#endif /* HTTPS_SUPPORT */
+#if ! defined(MHD_WINSOCK_SOCKETS) && \
+  (! defined(HAVE_SENDMSG) || ! defined(MSG_NOSIGNAL)) && \
+  defined(HAVE_SEND_SIGPIPE_SUPPRESS)
+  no_vec = no_vec || (! connection->daemon->sigpipe_blocked &&
+                      ! connection->sk_spipe_suppress);
+#endif /* !MHD_WINSOCK_SOCKETS && (!HAVE_SENDMSG || ! MSG_NOSIGNAL)
+          && !HAVE_SEND_SIGPIPE_SUPPRESS */
 #endif /* _MHD_USE_SEND_VEC */
 
   mhd_assert ( (NULL != body) || (0 == body_size) );

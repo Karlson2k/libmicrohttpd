@@ -556,11 +556,30 @@ AS_CASE([[$with_threads]],
 )
 
 # Check for posix threads support, regardless of configure parameters as
-# testsuite use only posix threads.
+# testsuite uses only posix threads.
 AX_PTHREAD(
   [
     mhd_have_posix_threads='yes'
     AC_DEFINE([[HAVE_PTHREAD_H]],[[1]],[Define to 1 if you have the <pthread.h> header file.])
+	AC_CACHE_CHECK([[whether pthread_sigmask(3) is available]],
+	  [[mhd_cv_func_pthread_sigmask]], [dnl
+	  save_LIBS="$LIBS"
+	  save_CFLAGS="$CFLAGS"
+	  LIBS="$PTHREAD_LIBS $LIBS"
+  	  CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+	  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <signal.h>]],
+	    [[
+	      sigset_t nset, oset;
+	      sigemptyset (&nset);
+	      sigaddset (&nset, SIGPIPE);
+	      if (0 != pthread_sigmask(SIG_BLOCK, &nset, &oset)) return 1;
+	    ]])],
+	    [[mhd_cv_func_pthread_sigmask="yes"]],[[mhd_cv_func_pthread_sigmask="no"]])
+	  LIBS="${save_LIBS}"
+	  CFLAGS="${save_CFLAGS}"
+	])
+	AS_VAR_IF([mhd_cv_func_pthread_sigmask],["yes"],
+	  [AC_DEFINE([[HAVE_PTHREAD_SIGMASK]],[[1]],[Define to 1 if you have the pthread_sigmask(3) function.])])
   ],[[mhd_have_posix_threads='no']])
 AM_CONDITIONAL([HAVE_POSIX_THREADS],[test "x$mhd_have_posix_threads" = "xyes"])
 
@@ -966,6 +985,7 @@ AC_CHECK_HEADERS_ONCE([fcntl.h math.h errno.h limits.h stdio.h locale.h sys/stat
 AC_CHECK_HEADERS([sys/types.h sys/time.h sys/msg.h time.h sys/mman.h sys/ioctl.h \
   sys/socket.h sys/select.h netdb.h netinet/in.h netinet/ip.h netinet/tcp.h arpa/inet.h \
   endian.h machine/endian.h sys/endian.h sys/param.h sys/machine.h sys/byteorder.h machine/param.h sys/isa_defs.h \
+  signal.h \
   inttypes.h stddef.h unistd.h \
   sockLib.h inetLib.h net/if.h], [], [], [AC_INCLUDES_DEFAULT])
 

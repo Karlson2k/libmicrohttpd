@@ -929,6 +929,11 @@ struct MHD_Connection
   bool sk_nonblck;
 
   /**
+   * true if connection socket has set SIGPIPE suppression
+   */
+  bool sk_spipe_suppress;
+
+  /**
    * Tracks TCP_CORK / TCP_NOPUSH of the connection socket.
    */
   enum MHD_tristate sk_corked;
@@ -1696,6 +1701,11 @@ struct MHD_Daemon
    * Be neutral (zero), strict (1) or permissive (-1) to client.
    */
   int strict_for_client;
+
+  /**
+   * True if SIGPIPE is blocked
+   */
+  bool sigpipe_blocked;
 
 #ifdef HTTPS_SUPPORT
 #ifdef UPGRADE_SUPPORT

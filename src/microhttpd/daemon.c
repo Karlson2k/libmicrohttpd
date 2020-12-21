@@ -64,6 +64,12 @@
 #include <windows.h>
 #endif
 
+#ifdef MHD_USE_POSIX_THREADS
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif /* HAVE_SIGNAL_H */
+#endif /* MHD_USE_POSIX_THREADS */
+
 /**
  * Default connection limit.
  */
@@ -2359,6 +2365,8 @@ psk_gnutls_adapter (gnutls_session_t session,
  * @param addrlen number of bytes in @a addr
  * @param external_add indicate that socket has been added externally
  * @param non_blck indicate that socket in non-blocking mode
+ * @param sk_spipe_supprs indicate that the @a client_socket has
+ *                         set SIGPIPE suppression
  * @return pointer to the connection on success, NULL if this daemon could
  *        not handle the connection (i.e. malloc failed, etc).
  *        The socket will be closed in case of error; 'errno' is
@@ -2370,29 +2378,11 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
                          const struct sockaddr *addr,
                          socklen_t addrlen,
                          bool external_add,
-                         bool non_blck)
+                         bool non_blck,
+                         bool sk_spipe_supprs)
 {
   struct MHD_Connection *connection;
   int eno = 0;
-
-#ifdef MHD_socket_nosignal_
-  if (! MHD_socket_nosignal_ (client_socket))
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Failed to set SO_NOSIGPIPE on accepted socket: %s\n"),
-              MHD_socket_last_strerr_ ());
-#endif
-#ifndef MSG_NOSIGNAL
-    /* Cannot use socket as it can produce SIGPIPE. */
-#ifdef ENOTSOCK
-    errno = ENOTSOCK;
-#endif /* ENOTSOCK */
-    return NULL;
-#endif /* ! MSG_NOSIGNAL */
-  }
-#endif /* MHD_socket_nosignal_ */
-
 
 #ifdef HAVE_MESSAGES
 #if _MHD_DEBUG_CONNECT
@@ -2491,6 +2481,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
   connection->addr_len = addrlen;
   connection->socket_fd = client_socket;
   connection->sk_nonblck = non_blck;
+  connection->sk_spipe_suppress = sk_spipe_supprs;
   connection->daemon = daemon;
   connection->last_activity = MHD_monotonic_sec_counter ();
 
@@ -2852,6 +2843,8 @@ cleanup:
  * @param external_add perform additional operations needed due
  *        to the application calling us directly
  * @param non_blck indicate that socket in non-blocking mode
+ * @param sk_spipe_supprs indicate that the @a client_socket has
+ *                         set SIGPIPE suppression
  * @return #MHD_YES on success, #MHD_NO if this daemon could
  *        not handle the connection (i.e. malloc failed, etc).
  *        The socket will be closed in any case; 'errno' is
@@ -2863,7 +2856,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
                          const struct sockaddr *addr,
                          socklen_t addrlen,
                          bool external_add,
-                         bool non_blck)
+                         bool non_blck,
+                         bool sk_spipe_supprs)
 {
   struct MHD_Connection *connection;
 
@@ -2904,7 +2898,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
   }
 
   connection = new_connection_prepare_ (daemon, client_socket, addr, addrlen,
-                                        external_add, non_blck);
+                                        external_add, non_blck,
+                                        sk_spipe_supprs);
   if (NULL == connection)
     return MHD_NO;
 
@@ -3327,6 +3322,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
                     socklen_t addrlen)
 {
   bool sk_nonbl;
+  bool sk_spipe_supprs;
 
   /* NOT thread safe with internal thread. TODO: fix thread safety. */
   if ((0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
@@ -3357,6 +3353,38 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   else
     sk_nonbl = true;
 
+#ifndef MHD_WINSOCK_SOCKETS
+  sk_spipe_supprs = false;
+#else  /* MHD_WINSOCK_SOCKETS */
+  sk_spipe_supprs = true; /* Nothing to suppress on W32 */
+#endif /* MHD_WINSOCK_SOCKETS */
+#if defined(MHD_socket_nosignal_)
+  if (! sk_spipe_supprs && ! MHD_socket_nosignal_ (s))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ (
+                "Failed to suppress SIGPIPE on new client socket: %s\n"),
+              MHD_socket_last_strerr_ ());
+#else  /* ! HAVE_MESSAGES */
+    (void) 0; /* Mute compiler warning */
+#endif /* ! HAVE_MESSAGES */
+#ifndef MSG_NOSIGNAL
+    /* Application expects that SIGPIPE will be suppressed,
+     * but suppression failed and SIGPIPE cannot be suppressed with send(). */
+    if (! daemon->sigpipe_blocked)
+    {
+      int err = MHD_socket_get_error_ ();
+      MHD_socket_close_ (s);
+      MHD_socket_fset_error_ (err);
+      return MHD_NO;
+    }
+#endif /* MSG_NOSIGNAL */
+  }
+  else
+    sk_spipe_supprs = true;
+#endif /* MHD_socket_nosignal_ */
+
   if ( (0 != (daemon->options & MHD_USE_TURBO)) &&
        (! MHD_socket_noninheritable_ (client_socket)) )
   {
@@ -3383,7 +3411,8 @@ MHD_add_connection (struct MHD_Daemon *daemon,
                                         addr,
                                         addrlen,
                                         true,
-                                        sk_nonbl);
+                                        sk_nonbl,
+                                        sk_spipe_supprs);
     }
     /* all pools are at their connection limit, must refuse */
     MHD_socket_close_chk_ (client_socket);
@@ -3399,7 +3428,8 @@ MHD_add_connection (struct MHD_Daemon *daemon,
                                   addr,
                                   addrlen,
                                   true,
-                                  sk_nonbl);
+                                  sk_nonbl,
+                                  sk_spipe_supprs);
 }
 
 
@@ -3430,6 +3460,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   MHD_socket s;
   MHD_socket fd;
   bool sk_nonbl;
+  bool sk_spipe_supprs;
 
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (daemon->pid) );
@@ -3448,11 +3479,21 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                SOCK_CLOEXEC_OR_ZERO | SOCK_NONBLOCK_OR_ZERO
                | SOCK_NOSIGPIPE_OR_ZERO);
   sk_nonbl = (SOCK_NONBLOCK_OR_ZERO != 0);
+#ifndef MHD_WINSOCK_SOCKETS
+  sk_spipe_supprs = (SOCK_NOSIGPIPE_OR_ZERO != 0);
+#else  /* MHD_WINSOCK_SOCKETS */
+  sk_spipe_supprs = true; /* Nothing to suppress on W32 */
+#endif /* MHD_WINSOCK_SOCKETS */
 #else  /* ! USE_ACCEPT4 */
   s = accept (fd,
               addr,
               &addrlen);
   sk_nonbl = false;
+#ifndef MHD_WINSOCK_SOCKETS
+  sk_spipe_supprs = false;
+#else  /* MHD_WINSOCK_SOCKETS */
+  sk_spipe_supprs = true; /* Nothing to suppress on W32 */
+#endif /* MHD_WINSOCK_SOCKETS */
 #endif /* ! USE_ACCEPT4 */
   if ( (MHD_INVALID_SOCKET == s) ||
        (addrlen <= 0) )
@@ -3531,6 +3572,30 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
   }
 #endif /* !USE_ACCEPT4 || !SOCK_CLOEXEC */
+#if defined(MHD_socket_nosignal_)
+  if (! sk_spipe_supprs && ! MHD_socket_nosignal_ (s))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ (
+                "Failed to suppress SIGPIPE on incoming connection socket: %s\n"),
+              MHD_socket_last_strerr_ ());
+#else  /* ! HAVE_MESSAGES */
+    (void) 0; /* Mute compiler warning */
+#endif /* ! HAVE_MESSAGES */
+#ifndef MSG_NOSIGNAL
+    /* Application expects that SIGPIPE will be suppressed,
+     * but suppression failed and SIGPIPE cannot be suppressed with send(). */
+    if (! daemon->sigpipe_blocked)
+    {
+      MHD_socket_close_ (s);
+      return MHD_NO;
+    }
+#endif /* MSG_NOSIGNAL */
+  }
+  else
+    sk_spipe_supprs = true;
+#endif /* MHD_socket_nosignal_ */
 #ifdef HAVE_MESSAGES
 #if _MHD_DEBUG_CONNECT
   MHD_DLOG (daemon,
@@ -3543,7 +3608,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                                   addr,
                                   addrlen,
                                   false,
-                                  sk_nonbl);
+                                  sk_nonbl,
+                                  sk_spipe_supprs);
   return MHD_YES;
 }
 
@@ -5022,8 +5088,29 @@ static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
 MHD_polling_thread (void *cls)
 {
   struct MHD_Daemon *daemon = cls;
+#ifdef HAVE_PTHREAD_SIGMASK
+  sigset_t s_mask;
+  int err;
+#endif /* HAVE_PTHREAD_SIGMASK */
 
   MHD_thread_init_ (&(daemon->pid));
+#ifdef HAVE_PTHREAD_SIGMASK
+  if ((0 == sigemptyset (&s_mask)) &&
+      (0 == sigaddset (&s_mask, SIGPIPE)))
+  {
+    err = pthread_sigmask (SIG_BLOCK, &s_mask, NULL);
+  }
+  else
+    err = errno;
+  if (0 == err)
+    daemon->sigpipe_blocked = true;
+#ifdef HAVE_MESSAGES
+  else
+    MHD_DLOG (daemon,
+              _ ("Failed to block SIGPIPE on daemon thread: %s\n"),
+              MHD_strerror_ (errno));
+#endif /* HAVE_MESSAGES */
+#endif /* HAVE_PTHREAD_SIGMASK */
   while (! daemon->shutdown)
   {
     if (0 != (daemon->options & MHD_USE_POLL))
@@ -6116,6 +6203,13 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->custom_error_log = &MHD_default_logger_;
   daemon->custom_error_log_cls = stderr;
 #endif
+#ifndef MHD_WINSOCK_SOCKETS
+  daemon->sigpipe_blocked = false;
+#else  /* MHD_WINSOCK_SOCKETS */
+  /* There is no SIGPIPE on W32, nothing to block. */
+  daemon->sigpipe_blocked = true;
+#endif /* _WIN32 && ! __CYGWIN__ */
+
   if ( (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION)) &&
        (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) )
   {
