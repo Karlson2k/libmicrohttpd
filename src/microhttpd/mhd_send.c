@@ -1094,14 +1094,15 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
 
   left = connection->response->total_size - connection->response_write_position;
 
-  if ( (uint64_t) SSIZE_MAX > left)
+  if ( (uint64_t) SSIZE_MAX < left)
     left = SSIZE_MAX;
+
   /* Do not allow system to stick sending on single fast connection:
    * use 128KiB chunks (2MiB for thread-per-connection). */
   if (chunk_size < left)
   {
     send_size = chunk_size;
-    push_data = false; /* No need to push data, there is more to send, */
+    push_data = false; /* No need to push data, there is more to send. */
   }
   else
   {
