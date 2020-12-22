@@ -245,6 +245,13 @@ typedef SOCKET MHD_socket;
  */
 #define _MHD_CORK_RESET_PUSH_DATA 1
 #endif /* __FreeBSD_version >= 450000 */
+#ifdef __OpenBSD__
+/* OpenBSD took implementation from FreeBSD */
+/**
+ * Indicate that reset of TCP_CORK / TCP_NOPUSH push data to the network
+ */
+#define _MHD_CORK_RESET_PUSH_DATA 1
+#endif /* __OpenBSD__ */
 #endif /* MHD_TCP_CORK_NOPUSH */
 
 #ifdef __linux__
