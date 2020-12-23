@@ -812,8 +812,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 #endif /* HAVE_SENDMSG || HAVE_WRITEV */
 #ifdef _WIN32
   WSABUF vector[2];
-  uint32_t vec_sent;
-  int err;
+  DWORD vec_sent;
 #endif /* _WIN32 */
   bool no_vec; /* Is vector-send() disallowed? */
 
@@ -970,9 +969,8 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
   vector[1].buf = (char *) body;
   vector[1].len = (unsigned long) body_size;
 
-  err = WSASend (s, vector, 2, &vec_sent, 0, NULL, NULL);
-
-  if (0 == err)
+  ret = WSASend (s, vector, 2, &vec_sent, 0, NULL, NULL);
+  if (0 == ret)
     ret = (ssize_t) vec_sent;
   else
     ret = -1;
@@ -980,9 +978,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 
   if (0 > ret)
   {
-#ifndef _WIN32
     const int err = MHD_socket_get_error_ ();
-#endif /* _WIN32 */
 
     if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
     {
