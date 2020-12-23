@@ -1119,6 +1119,7 @@ main (int argc, char *const *argv)
   verbose = ! has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet");
   if (cleanup_test)
   {
+#ifndef _WIN32
     /* Find system limit for number of open FDs. */
 #if defined(HAVE_SYSCONF) && defined(_SC_OPEN_MAX)
     sys_max_fds = sysconf (_SC_OPEN_MAX);
@@ -1135,6 +1136,9 @@ main (int argc, char *const *argv)
       if (2 > CLEANUP_MAX_DAEMONS (sys_max_fds))
         return 77; /* Multithreaded test cannot be run */
     }
+#else  /* _WIN32 */
+    sys_max_fds = 120; /* W32 has problems with ports exhaust */
+#endif /* _WIN32 */
   }
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 99;

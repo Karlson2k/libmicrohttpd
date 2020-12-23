@@ -59,7 +59,7 @@
 #ifndef _WIN32
 #define ROUNDS (1 + (30000 / 12) / MHD_CPU_COUNT)
 #else /* _WIN32 */
-#define ROUNDS (1 + (10000 / 12) / MHD_CPU_COUNT)
+#define ROUNDS (1 + (3000 / 12) / MHD_CPU_COUNT)
 #endif /* _WIN32 */
 #else
 #define ROUNDS 500

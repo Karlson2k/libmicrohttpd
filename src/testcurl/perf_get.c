@@ -62,7 +62,15 @@
  * How many rounds of operations do we do for each
  * test?
  */
+#if MHD_CPU_COUNT > 8
+#ifndef _WIN32
+#define ROUNDS (1 + (30000 / 12) / MHD_CPU_COUNT)
+#else /* _WIN32 */
+#define ROUNDS (1 + (3000 / 12) / MHD_CPU_COUNT)
+#endif /* _WIN32 */
+#else
 #define ROUNDS 500
+#endif
 
 /**
  * Do we use HTTP 1.1?
