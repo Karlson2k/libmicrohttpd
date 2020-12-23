@@ -538,6 +538,7 @@ MHD_socket_cork_ (MHD_socket sock,
 #endif
 #else
   /* do not have MHD_TCP_CORK_NOPUSH at all */
+  (void) sock; (void) on; /* Mute compiler warnings */
   return 0;
 #endif
 }

@@ -462,6 +462,9 @@ value_checker2 (void *cls,
                 uint64_t off,
                 size_t size)
 {
+  (void) cls; (void) kind; (void) key; /* Mute compiler warnings */
+  (void) filename; (void) content_type; (void) transfer_encoding;
+  (void) data; (void) off; (void) size;
   return MHD_YES;
 }
 

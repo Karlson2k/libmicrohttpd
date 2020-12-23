@@ -67,7 +67,7 @@ struct MHD_itc_
 /**
  * Static initialiser for struct MHD_itc_
  */
-#define MHD_ITC_STATIC_INIT_INVALID { -1, -1 }
+#define MHD_ITC_STATIC_INIT_INVALID { { -1, -1 } }
 
 
 #elif defined(_MHD_ITC_SOCKETPAIR)
@@ -86,7 +86,8 @@ struct MHD_itc_
 /**
  * Static initialiser for struct MHD_itc_
  */
-#define MHD_ITC_STATIC_INIT_INVALID { MHD_INVALID_SOCKET, MHD_INVALID_SOCKET }
+#define MHD_ITC_STATIC_INIT_INVALID \
+  { { MHD_INVALID_SOCKET, MHD_INVALID_SOCKET } }
 
 #endif /* _MHD_ITC_SOCKETPAIR */
 

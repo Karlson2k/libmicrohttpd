@@ -50,6 +50,8 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
                                const char **value_ptr,
                                size_t *value_size_ptr)
 {
+  (void) connection; (void) kind; (void) key; /* Mute compiler warnings */
+  (void) key_size; (void) value_ptr; (void) value_size_ptr;
   return MHD_NO;
 }
 
@@ -73,6 +75,9 @@ post_data_iterator (void *cls,
                     uint64_t off,
                     size_t size)
 {
+  (void) cls; (void) kind; (void) filename; /* Mute compiler warnings */
+  (void) content_type; (void) transfer_encoding;
+  (void) off; /* FIXME: shoudn't be checked? */
 #if DEBUG
   fprintf (stderr,
            "%s\t%s\n",
@@ -120,6 +125,8 @@ post_data_iterator2 (void *cls,
                      uint64_t off,
                      size_t size)
 {
+  (void) cls; (void) kind; (void) filename; /* Mute compiler warnings */
+  (void) content_type; (void) transfer_encoding;
   static char seen[16];
 
 #if DEBUG
@@ -154,6 +161,9 @@ post_data_iterator3 (void *cls,
                      uint64_t off,
                      size_t size)
 {
+  (void) cls; (void) kind; (void) filename; /* Mute compiler warnings */
+  (void) content_type; (void) transfer_encoding;
+  (void) off; /* FIXME: shoudn't be checked? */
 #if DEBUG
   fprintf (stderr,
            "%s\t%s\n",
@@ -182,6 +192,9 @@ post_data_iterator4 (void *cls,
                      uint64_t off,
                      size_t size)
 {
+  (void) cls; (void) kind; (void) key; /* Mute compiler warnings */
+  (void) filename; (void) content_type; (void) transfer_encoding;
+  (void) off; /* FIXME: shoudn't be checked? */
 #if DEBUG
   fprintf (stderr,
            "%s\t%s\n",
@@ -207,6 +220,10 @@ post_data_iterator5 (void *cls,
                      uint64_t off,
                      size_t size)
 {
+  (void) cls; (void) kind; (void) key; /* Mute compiler warnings */
+  (void) filename; (void) content_type; (void) transfer_encoding;
+  (void) data; (void) off; (void) size;
+
   found++;
   return MHD_YES;
 }
@@ -215,6 +232,7 @@ post_data_iterator5 (void *cls,
 int
 main (int argc, char *argv[])
 {
+  (void) argc; (void) argv;
   struct MHD_PostProcessor *postprocessor;
 
   {

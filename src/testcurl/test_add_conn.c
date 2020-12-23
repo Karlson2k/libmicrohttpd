@@ -260,9 +260,11 @@ static MHD_socket
 createListeningSocket (int *pport)
 {
   MHD_socket skt;
-  static const int on = 1;
   struct sockaddr_in sin;
   socklen_t sin_len;
+#ifdef MHD_POSIX_SOCKETS
+  static const int on = 1;
+#endif /* MHD_POSIX_SOCKETS */
 
   skt = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (MHD_INVALID_SOCKET == skt)
@@ -286,11 +288,11 @@ createListeningSocket (int *pport)
   if (0 == *pport)
   {
     memset (&sin, 0, sizeof(sin));
-    sin_len = sizeof(sin);
+    sin_len = (socklen_t) sizeof(sin);
     if (0 != getsockname (skt, (struct sockaddr *) &sin, &sin_len))
       externalErrorExitDesc ("getsockname() failed");
 
-    if (sizeof(sin) < sin_len)
+    if (sizeof(sin) < (size_t) sin_len)
       externalErrorExitDesc ("getsockname() failed");
 
     if (AF_INET != sin.sin_family)
