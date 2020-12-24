@@ -36,40 +36,40 @@
   "<title>WebSocket chat</title>\n"                                           \
   "<script>\n"                                                                \
   "document.addEventListener('DOMContentLoaded', function() {\n"              \
-  "  const ws = new WebSocket('ws:// ' + window.location.host);\n"             \
-                                  //   "  const btn = document.getElementById('send');\n"                          \
-                                  //   "  const msg = document.getElementById('msg');\n"                           \
-                                  //   "  const log = document.getElementById('log');\n"                           \
-                                  //   "  ws.onopen = function() {\n"                                              \
-                                  //   "    log.value += 'Connected\\n';\n"                                        \
-                                  //   "  };\n"                                                                    \
-                                  //   "  ws.onclose = function() {\n"                                             \
-                                  //   "    log.value += 'Disconnected\\n';\n"                                     \
-                                  //   "  };\n"                                                                    \
-                                  //   "  ws.onmessage = function(ev) {\n"                                         \
-                                  //   "    log.value += ev.data + '\\n';\n"                                       \
-                                  //   "  };\n"                                                                    \
-                                  //   "  btn.onclick = function() {\n"                                            \
-                                  //   "    log.value += '<You>: ' + msg.value + '\\n';\n"                         \
-                                  //   "    ws.send(msg.value);\n"                                                 \
-                                  //   "  };\n"                                                                    \
-                                  //   "  msg.onkeyup = function(ev) {\n"                                          \
-                                  //   "    if (ev.keyCode === 13) {\n"                                            \
-                                  //   "      ev.preventDefault();\n"                                              \
-                                  //   "      ev.stopPropagation();\n"                                             \
-                                  //   "      btn.click();\n"                                                      \
-                                  //   "      msg.value = '';\n"                                                   \
-                                  //   "    }\n"                                                                   \
-                                  //   "  };\n"                                                                    \
-                                  //   "});\n"                                                                     \
-                                  //   "</script>\n"                                                               \
-                                  //   "</head>\n"                                                                 \
-                                  //   "<body>\n"                                                                  \
-                                  //   "<input type='text' id='msg' autofocus/>\n"                                 \
-                                  //   "<input type='button' id='send' value='Send' /><br /><br />\n"              \
-                                  //   "<textarea id='log' rows='20' cols='28'></textarea>\n"                      \
-                                  //   "</body>\n"                                                                 \
-                                  //   "</html>"
+  "  const ws = new WebSocket('ws:// ' + window.location.host);\n"        /*  \
+  "  const btn = document.getElementById('send');\n"                          \
+  "  const msg = document.getElementById('msg');\n"                           \
+  "  const log = document.getElementById('log');\n"                           \
+  "  ws.onopen = function() {\n"                                              \
+  "    log.value += 'Connected\\n';\n"                                        \
+  "  };\n"                                                                    \
+  "  ws.onclose = function() {\n"                                             \
+  "    log.value += 'Disconnected\\n';\n"                                     \
+  "  };\n"                                                                    \
+  "  ws.onmessage = function(ev) {\n"                                         \
+  "    log.value += ev.data + '\\n';\n"                                       \
+  "  };\n"                                                                    \
+  "  btn.onclick = function() {\n"                                            \
+  "    log.value += '<You>: ' + msg.value + '\\n';\n"                         \
+  "    ws.send(msg.value);\n"                                                 \
+  "  };\n"                                                                    \
+  "  msg.onkeyup = function(ev) {\n"                                          \
+  "    if (ev.keyCode === 13) {\n"                                            \
+  "      ev.preventDefault();\n"                                              \
+  "      ev.stopPropagation();\n"                                             \
+  "      btn.click();\n"                                                      \
+  "      msg.value = '';\n"                                                   \
+  "    }\n"                                                                   \
+  "  };\n"                                                                    \
+  "});\n"                                                                     \
+  "</script>\n"                                                               \
+  "</head>\n"                                                                 \
+  "<body>\n"                                                                  \
+  "<input type='text' id='msg' autofocus/>\n"                                 \
+  "<input type='button' id='send' value='Send' /><br /><br />\n"              \
+  "<textarea id='log' rows='20' cols='28'></textarea>\n"                      \
+  "</body>\n"                                                                 \
+  "</html>"                                                               */
 #define BAD_REQUEST_PAGE                                                      \
   "<html>\n"                                                                  \
   "<head>\n"                                                                  \
@@ -101,7 +101,7 @@
 
 #define MAX_CLIENTS 10
 
-static int CLIENT_SOCKS[MAX_CLIENTS];
+static MHD_socket CLIENT_SOCKS[MAX_CLIENTS];
 
 static pthread_mutex_t MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
@@ -535,7 +535,7 @@ send_all (MHD_socket sock, const unsigned char *buf, size_t len)
 
   for (off = 0; off < len; off += ret)
   {
-    ret = send (sock, &buf[off], len - off, 0);
+    ret = send (sock, (const void*)&buf[off], len - off, 0);
     if (0 > ret)
     {
       if (EAGAIN == errno)
@@ -555,14 +555,14 @@ send_all (MHD_socket sock, const unsigned char *buf, size_t len)
 
 
 static int
-ws_send_frame (int sock, const char *msg, size_t length)
+ws_send_frame (MHD_socket sock, const char *msg, size_t length)
 {
   unsigned char *response;
   unsigned char frame[10];
   unsigned char idx_first_rdata;
   int idx_response;
   int output;
-  int isock;
+  MHD_socket isock;
   size_t i;
 
   frame[0] = (WS_FIN | WS_OPCODE_TEXT_FRAME);
@@ -613,7 +613,7 @@ ws_send_frame (int sock, const char *msg, size_t length)
   for (i = 0; i < MAX_CLIENTS; i++)
   {
     isock = CLIENT_SOCKS[i];
-    if ((isock > -1) && (isock != sock))
+    if ((isock != MHD_INVALID_SOCKET) && (isock != sock))
     {
       output += send_all (isock, response, idx_response);
     }
@@ -699,7 +699,7 @@ run_usock (void *cls)
   make_blocking (ws->sock);
   while (1)
   {
-    got = recv (ws->sock, buf, sizeof (buf), 0);
+    got = recv (ws->sock, (void*) buf, sizeof (buf), 0);
     if (0 >= got)
     {
       break;
@@ -711,7 +711,7 @@ run_usock (void *cls)
     }
     if (type == WS_OPCODE_TEXT_FRAME)
     {
-      size = sprintf (client, "User#%d: ", ws->sock);
+      size = sprintf (client, "User#%d: ", (int)ws->sock);
       size += got;
       text = malloc (size);
       if (NULL != buf)
@@ -744,7 +744,7 @@ run_usock (void *cls)
   {
     if (CLIENT_SOCKS[i] == ws->sock)
     {
-      CLIENT_SOCKS[i] = -1;
+      CLIENT_SOCKS[i] = MHD_INVALID_SOCKET;
       break;
     }
   }
@@ -781,7 +781,7 @@ uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
   pthread_mutex_lock (&MUTEX);
   for (i = 0; i < MAX_CLIENTS; i++)
   {
-    if (-1 == CLIENT_SOCKS[i])
+    if (MHD_INVALID_SOCKET == CLIENT_SOCKS[i])
     {
       CLIENT_SOCKS[i] = ws->sock;
       sock_overflow = MHD_NO;
