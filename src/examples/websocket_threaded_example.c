@@ -879,6 +879,7 @@ main (int argc, char *const *argv)
 {
   struct MHD_Daemon *d;
   uint16_t port;
+  size_t i;
 
   if (argc != 2)
   {
@@ -891,7 +892,8 @@ main (int argc, char *const *argv)
                         port, NULL, NULL, &ahc_cb, &port, MHD_OPTION_END);
   if (NULL == d)
     return 1;
-  memset (CLIENT_SOCKS, -1, sizeof (CLIENT_SOCKS));
+  for (i = 0; i < sizeof(CLIENT_SOCKS) / sizeof(CLIENT_SOCKS[0]); ++i)
+    CLIENT_SOCKS[i] = MHD_INVALID_SOCKET;
   (void) getc (stdin);
   MHD_stop_daemon (d);
   return 0;
