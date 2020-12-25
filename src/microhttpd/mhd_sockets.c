@@ -516,10 +516,9 @@ MHD_socket_cork_ (MHD_socket sock,
                        (const void *) (on ? &on_val : &off_val),
                        sizeof (off_val)))
     return 0; /* failed */
-#if defined(__FreeBSD__) && __FreeBSD__ + 0 >= 9
-  /* FreeBSD do not need zero-send for flushing starting from version 9 */
+#if defined(_MHD_CORK_RESET_PUSH_DATA)
   return 1;
-#elif defined(TCP_NOPUSH) && ! defined(TCP_CORK)
+#else  /* ! _MHD_CORK_RESET_PUSH_DATA */
   if (! on)
   {
     const int dummy = 0;
@@ -533,14 +532,13 @@ MHD_socket_cork_ (MHD_socket sock,
       return 0; /* even force flush failed!? */
     return 1; /* success */
   }
-#else
-  return 1; /* success */
-#endif
-#else
+  return 1;
+#endif /* ! _MHD_CORK_RESET_PUSH_DATA */
+#else  /* ! MHD_TCP_CORK_NOPUSH */
   /* do not have MHD_TCP_CORK_NOPUSH at all */
   (void) sock; (void) on; /* Mute compiler warnings */
   return 0;
-#endif
+#endif /* ! MHD_TCP_CORK_NOPUSH */
 }
 
 
@@ -589,10 +587,13 @@ MHD_socket_create_listen_ (int pf)
   fd = socket (pf,
                SOCK_STREAM | SOCK_CLOEXEC | SOCK_NOSIGPIPE_OR_ZERO,
                0);
-  cloexec_set = (SOCK_CLOEXEC_OR_ZERO != 0);
+  if (MHD_INVALID_SOCKET != fd)
+  {
+    cloexec_set = (SOCK_CLOEXEC_OR_ZERO != 0);
 #if defined(SOCK_NOSIGPIPE) || defined(MHD_socket_nosignal_)
-  nosigpipe_set = (SOCK_NOSIGPIPE_OR_ZERO != 0);
+    nosigpipe_set = (SOCK_NOSIGPIPE_OR_ZERO != 0);
 #endif /* SOCK_NOSIGPIPE ||  MHD_socket_nosignal_ */
+  }
 #elif defined(MHD_WINSOCK_SOCKETS) && defined (WSA_FLAG_NO_HANDLE_INHERIT)
   fd = WSASocketW (pf,
                    SOCK_STREAM,
@@ -610,6 +611,9 @@ MHD_socket_create_listen_ (int pf)
                  SOCK_STREAM,
                  0);
     cloexec_set = 0;
+#if defined(SOCK_NOSIGPIPE) || defined(MHD_socket_nosignal_)
+    nosigpipe_set = 0;
+#endif /* SOCK_NOSIGPIPE ||  MHD_socket_nosignal_ */
   }
   if (MHD_INVALID_SOCKET == fd)
     return MHD_INVALID_SOCKET;
