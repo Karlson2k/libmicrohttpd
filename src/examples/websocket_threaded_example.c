@@ -714,16 +714,16 @@ run_usock (void *cls)
       size = sprintf (client, "User#%d: ", (int)ws->sock);
       size += got;
       text = malloc (size);
-      if (NULL != buf)
+      if (NULL != text)
       {
         sprintf (text, "%s%s", client, msg);
         sent = ws_send_frame (ws->sock, text, size);
+        free (text);
       }
       else
       {
         sent = -1;
       }
-      free (text);
       free (msg);
       if (-1 == sent)
       {
