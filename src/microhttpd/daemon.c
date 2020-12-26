@@ -6987,7 +6987,7 @@ MHD_start_daemon_va (unsigned int flags,
   }
   else
   { /* Daemon without internal threads */
-    if (! MHD_mutex_init_ (&d->new_connections_mutex))
+    if (! MHD_mutex_init_ (&daemon->new_connections_mutex))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
