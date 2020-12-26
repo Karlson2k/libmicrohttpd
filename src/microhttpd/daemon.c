@@ -6985,6 +6985,17 @@ MHD_start_daemon_va (unsigned int flags,
       }
     }
   }
+  else
+  { /* Daemon without internal threads */
+    if (! MHD_mutex_init_ (&d->new_connections_mutex))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Failed to initialise mutex.\n"));
+#endif
+      goto free_and_fail;
+    }
+  }
 #endif
 #ifdef HTTPS_SUPPORT
   /* API promises to never use the password after initialization,
@@ -7372,12 +7383,16 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
         MHD_PANIC (_ ("Failed to join a thread.\n"));
       }
       /* close_all_connections() was called in daemon thread. */
+      MHD_mutex_destroy_chk_ (&daemon->new_connections_mutex);
     }
     else
 #endif
     {
       /* No internal threads are used for polling sockets. */
       close_all_connections (daemon);
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
+      MHD_mutex_destroy_chk_ (&daemon->new_connections_mutex);
+#endif /* MHD_USE_POSIX_THREADS || MHD_USE_W32_THREADS */
     }
     mhd_assert (NULL == daemon->connections_head);
     mhd_assert (NULL == daemon->cleanup_head);
@@ -7389,7 +7404,6 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
     if (MHD_ITC_IS_VALID_ (daemon->itc))
       MHD_itc_destroy_chk_ (daemon->itc);
-    MHD_mutex_destroy_chk_ (&daemon->new_connections_mutex);
 
 #ifdef EPOLL_SUPPORT
     if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
