@@ -296,6 +296,13 @@ test_postprocessor_large_CFLAGS = \
 test_postprocessor_large_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
+test_postprocessor_md_SOURCES = \
+  test_postprocessor_md.c
+test_postprocessor_md_CPPFLAGS = \
+  $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
+test_postprocessor_md_CFLAGS = \
+  $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+
 test_shutdown_select_SOURCES = \
   test_shutdown_select.c
 if USE_POSIX_THREADS
@@ -340,9 +347,6 @@ test_str_to_value_SOURCES = \
 
 test_str_token_SOURCES = \
   test_str_token.c mhd_str.c
-
-test_postprocessor_md_SOURCES = \
-  test_postprocessor_md.c
 
 test_http_reasons_SOURCES = \
   test_http_reasons.c \
