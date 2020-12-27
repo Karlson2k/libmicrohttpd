@@ -7099,6 +7099,7 @@ close_all_connections (struct MHD_Daemon *daemon)
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
   const bool used_tls = (0 != (daemon->options & MHD_USE_TLS));
+#endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
@@ -7119,6 +7120,7 @@ close_all_connections (struct MHD_Daemon *daemon)
                 pos);
     new_connection_close_ (daemon, pos);
   }
+#if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   /* give upgraded HTTPS connections a chance to finish */
   /* 'daemon->urh_head' is not used in thread-per-connection mode. */
   for (urh = daemon->urh_tail; NULL != urh; urh = urhn)
