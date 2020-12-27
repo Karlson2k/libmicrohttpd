@@ -640,7 +640,7 @@ AM_CONDITIONAL([DISABLE_THREADS], [test "x$USE_THREADS" = "xnone"])
 AC_MSG_RESULT([$USE_THREADS])
 
 AC_ARG_ENABLE([[thread-names]],
-   [AS_HELP_STRING([--disable-thread-names [auto] ],[do not set names on MHD generated threads])],
+   [AS_HELP_STRING([--disable-thread-names],[do not set names on MHD generated threads [auto]])],
    [], [enable_thread_names='auto'])
 
 AS_IF([test "x$enable_thread_names" != "xno" && test "x$USE_THREADS" = "xposix"],[
@@ -1691,7 +1691,7 @@ ssize_t sendfile(int out_fd, int in_fd,
   ]
 )
 AS_IF([[test "x$found_sendfile" = "xno" && test "x$enable_sendfile" = "xyes"]],
-  AC_MSG_ERROR([[sendfile() usage was requested by configure parameter, but no usable sendfile() function is detected]])
+  [AC_MSG_ERROR([[sendfile() usage was requested by configure parameter, but no usable sendfile() function is detected]])]
 )
 
 # optional: have error messages ?
