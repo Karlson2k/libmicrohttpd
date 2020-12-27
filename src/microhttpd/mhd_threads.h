@@ -47,11 +47,17 @@
 #  undef HAVE_CONFIG_H
 #  include <pthread.h>
 #  define HAVE_CONFIG_H 1
+#  ifndef MHD_USE_THREADS
+#    define MHD_USE_THREADS 1
+#  endif
 #elif defined(MHD_USE_W32_THREADS)
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN 1
 #  endif /* !WIN32_LEAN_AND_MEAN */
 #  include <windows.h>
+#  ifndef MHD_USE_THREADS
+#    define MHD_USE_THREADS 1
+#  endif
 #else
 #  error No threading API is available.
 #endif

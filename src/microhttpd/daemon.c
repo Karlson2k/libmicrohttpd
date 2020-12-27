@@ -1346,8 +1346,10 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
    * of processing - it will be processed on next iteration. */
   bool was_closed;
 
+#ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (connection->pid) );
+#endif /* MHD_USE_THREADS */
   if (daemon->shutdown)
   {
     /* Daemon shutting down, application will not receive any more data. */
@@ -2609,6 +2611,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
 }
 
 
+#ifdef MHD_USE_THREADS
 /**
  * Close prepared, but not yet processed connection.
  * @param daemon     the daemon
@@ -2642,6 +2645,9 @@ new_connection_close_ (struct MHD_Daemon *daemon,
 }
 
 
+#endif /* MHD_USE_THREADS */
+
+
 /**
  * Finally insert the new connection to the list of connections
  * served by the daemon and start processing.
@@ -2660,10 +2666,12 @@ new_connection_process_ (struct MHD_Daemon *daemon,
 
   mhd_assert (connection->daemon == daemon);
 
+#ifdef MHD_USE_THREADS
   /* Function manipulate connection and timeout DL-lists,
    * must be called only within daemon thread. */
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (daemon->pid) );
+#endif /* MHD_USE_THREADS */
 
   /* Allocate memory pool in the processing thread so
    * intensively used memory area is allocated in "good"
@@ -2992,11 +3000,10 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
 
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
                MHD_thread_ID_match_current_ (daemon->pid) );
-
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 #endif
   if (connection->resuming)
@@ -3091,9 +3098,11 @@ MHD_suspend_connection (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *const daemon = connection->daemon;
 
+#ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
                MHD_thread_ID_match_current_ (daemon->pid) );
+#endif /* MHD_USE_THREADS */
 
   if (0 == (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
     MHD_PANIC (_ (
@@ -3465,8 +3474,10 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   bool sk_nonbl;
   bool sk_spipe_supprs;
 
+#ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (daemon->pid) );
+#endif /* MHD_USE_THREADS */
 
   addrlen = sizeof (addrstorage);
   memset (addr,
@@ -3630,10 +3641,10 @@ static void
 MHD_cleanup_connections (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (daemon->pid) );
 
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 #endif
   while (NULL != (pos = daemon->cleanup_tail))
@@ -3746,8 +3757,10 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   struct MHD_Connection *pos;
   bool have_timeout;
 
+#ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (daemon->pid) );
+#endif /* MHD_USE_THREADS */
 
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
   {
@@ -4558,8 +4571,10 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
   struct MHD_UpgradeResponseHandle *pos;
   struct MHD_UpgradeResponseHandle *prev;
 
+#ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (daemon->pid) );
+#endif /* MHD_USE_THREADS */
 
   num_events = MAX_EVENTS;
   while (0 != num_events)
@@ -5044,8 +5059,10 @@ close_connection (struct MHD_Connection *pos)
 {
   struct MHD_Daemon *daemon = pos->daemon;
 
+#ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (daemon->pid) );
+#endif /* MHD_USE_THREADS */
 
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
   {
@@ -7101,16 +7118,16 @@ close_all_connections (struct MHD_Daemon *daemon)
   const bool used_tls = (0 != (daemon->options & MHD_USE_TLS));
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
+#ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
                MHD_thread_ID_match_current_ (daemon->pid) );
-
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   mhd_assert (NULL == daemon->worker_pool);
-#endif
+#endif /* MHD_USE_THREADS */
   mhd_assert (daemon->shutdown);
 
-  /* Remove externally added new connections that are
+#ifdef MHD_USE_THREADS
+/* Remove externally added new connections that are
    * not processed by the daemon thread. */
   while (NULL != (pos = daemon->new_connections_tail))
   {
@@ -7120,6 +7137,8 @@ close_all_connections (struct MHD_Daemon *daemon)
                 pos);
     new_connection_close_ (daemon, pos);
   }
+#endif /* MHD_USE_THREADS */
+
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   /* give upgraded HTTPS connections a chance to finish */
   /* 'daemon->urh_head' is not used in thread-per-connection mode. */
@@ -7196,6 +7215,7 @@ close_all_connections (struct MHD_Daemon *daemon)
     MHD_PANIC (_ (
                  "MHD_stop_daemon() called while we have suspended connections.\n"));
 #if defined(UPGRADE_SUPPORT) && defined(HTTPS_SUPPORT)
+#ifdef MHD_USE_THREADS
   if (upg_allowed && used_tls && used_thr_p_c)
   {
     /* "Upgraded" threads may be running in parallel. Connection will not be
@@ -7221,6 +7241,7 @@ close_all_connections (struct MHD_Daemon *daemon)
       }
     }
   }
+#endif /* MHD_USE_THREADS */
 #endif
   for (pos = daemon->connections_tail; NULL != pos; pos = pos->prev)
   {

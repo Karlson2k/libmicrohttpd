@@ -69,8 +69,8 @@
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
 #include "mhd_threads.h"
-#include "mhd_locks.h"
 #endif
+#include "mhd_locks.h"
 #include "mhd_sockets.h"
 #include "mhd_itc_types.h"
 
