@@ -551,6 +551,7 @@ AS_CASE([[$with_threads]],
   [[posix]], [[:]],
   [[w32]], [[:]],
   [[none]], [[with_threads='none']],
+  [[no]], [[with_threads='none']],
   [[auto]], [[:]],
     [AC_MSG_ERROR([[incorrect parameter "$with_threads" specified for --with-threads]])]
 )
