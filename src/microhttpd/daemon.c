@@ -215,7 +215,7 @@ MHD_check_global_init_ (void)
 
 #endif /* ! _AUTOINIT_FUNCS_ARE_SUPPORTED */
 
-
+#ifdef HAVE_MESSAGES
 /**
  * Default logger function
  */
@@ -229,6 +229,9 @@ MHD_default_logger_ (void *cls,
   fflush ((FILE*) cls);
 #endif /* _DEBUG */
 }
+
+
+#endif /* HAVE_MESSAGES */
 
 
 /**
@@ -5651,14 +5654,14 @@ parse_options_va (struct MHD_Daemon *daemon,
                       gnutls_certificate_retrieve_function2 *);
       if (0 != (daemon->options & MHD_USE_TLS))
         daemon->cert_callback = pgcrf;
-      else
 #ifdef HAVE_MESSAGES
+      else
         MHD_DLOG (daemon,
                   _ (
                     "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set.\n"),
                   opt);
-#endif
-        break;
+#endif /*  HAVE_MESSAGES */
+      break;
 #endif
     case MHD_OPTION_HTTPS_CERT_CALLBACK2:
 #if GNUTLS_VERSION_NUMBER < 0x030603
@@ -5673,14 +5676,14 @@ parse_options_va (struct MHD_Daemon *daemon,
                        gnutls_certificate_retrieve_function3 *);
       if (0 != (daemon->options & MHD_USE_TLS))
         daemon->cert_callback2 = pgcrf2;
-      else
 #ifdef HAVE_MESSAGES
+      else
         MHD_DLOG (daemon,
                   _ (
                     "MHD HTTPS option %d passed to MHD but MHD_USE_TLS not set.\n"),
                   opt);
-#endif
-        break;
+#endif /* HAVE_MESSAGES */
+      break;
 #endif
 #endif /* HTTPS_SUPPORT */
 #ifdef DAUTH_SUPPORT
@@ -5737,8 +5740,8 @@ parse_options_va (struct MHD_Daemon *daemon,
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ ("TCP fastopen is not supported on this platform.\n"));
-      return MHD_NO;
 #endif /* HAVE_MESSAGES */
+      return MHD_NO;
 #endif /* ! TCP_FASTOPEN */
     case MHD_OPTION_LISTENING_ADDRESS_REUSE:
       daemon->listening_address_reuse = va_arg (ap,
