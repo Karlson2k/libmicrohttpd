@@ -482,7 +482,7 @@ ws_get_accept_value (const char *key, char **val)
   char *str;
   ssize_t len;
 
-  if (NULL == key)
+  if ( (NULL == key) || (WS_KEY_LEN != strlen (key)))
   {
     return MHD_NO;
   }
@@ -535,7 +535,7 @@ send_all (MHD_socket sock, const unsigned char *buf, size_t len)
 
   for (off = 0; off < len; off += ret)
   {
-    ret = send (sock, (const void*)&buf[off], len - off, 0);
+    ret = send (sock, (const void*) &buf[off], len - off, 0);
     if (0 > ret)
     {
       if (EAGAIN == errno)
@@ -711,7 +711,7 @@ run_usock (void *cls)
     }
     if (type == WS_OPCODE_TEXT_FRAME)
     {
-      size = sprintf (client, "User#%d: ", (int)ws->sock);
+      size = sprintf (client, "User#%d: ", (int) ws->sock);
       size += got;
       text = malloc (size);
       if (NULL != text)
