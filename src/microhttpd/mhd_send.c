@@ -884,7 +884,8 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 
     if ( (header_size == (size_t) ret) &&
          ((size_t) SSIZE_MAX > header_size) &&
-         (0 != body_size) )
+         (0 != body_size) &&
+         (connection->sk_nonblck) )
     {
       ssize_t ret2;
       /* The header has been sent completely.
