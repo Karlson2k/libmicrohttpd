@@ -279,9 +279,9 @@ pre_send_setopt (struct MHD_Connection *connection,
   }
 
   /* Need to push data after send() */
-  /* Prefer to make additional sys-call after the send()
-   * as the next send() may consume only part of the
-   * prepared data and additional send() may be required. */
+  /* If additional sys-call is required prefer to make it after the send()
+   * as the next send() may consume only part of the prepared data and
+   * more send() calls will be used. */
 #ifdef MHD_TCP_CORK_NOPUSH
 #ifdef _MHD_CORK_RESET_PUSH_DATA
 #ifdef _MHD_CORK_RESET_PUSH_DATA_ALWAYS
