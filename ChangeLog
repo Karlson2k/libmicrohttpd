@@ -1,3 +1,23 @@
+Mon 28 Dec 2020 09:37:00 MSK
+    Completely reworked and rewritten TCP_CORK, TCP_NOPUSH, TCP_NODELAY and
+    MSG_MORE handling. Reduced number of sys-calls, fixed portability for
+    FreeBSD, OpenBSD, NetBSD, Darwin, W32.
+    Removed usage of gnutls_record_cork() as it fully blocks stream until
+    final block is ready.
+    Fixed compatibility with C90 compilers.
+    Really started using sendmsg() for header + body combined single-call
+    response sending.
+    Fixed sending of response body by sendmsg() when it shouldn't be sent,
+    like responses for HEAD requests.
+    Improved error handling for gnutls_record_send().
+    Updated W32 resources for .DLLs.
+    Fixed building with various disabled features (like messages, HTTPS,
+    http-upgrade, authorization etc.)
+    Fixed possible SIGPIPE generation when sendfile() is used (it was always
+    possible on Linux that sendfile() produce SIGPIPE, now it's fixed).
+    Several compiler warnings muted and/or fixed in the lib code and in
+    the examples. -EG
+
 Sun 01 Nov 2020 17:17:00 MSK
     Fixed conflict with system CPU_COUNT macro.
     Minor improvements of error reporting in MHD daemon.
