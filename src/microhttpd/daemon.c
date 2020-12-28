@@ -148,7 +148,7 @@ mhd_panic_std (void *cls,
 /**
  * Handler for fatal errors.
  */
-MHD_PanicCallback mhd_panic = NULL;
+MHD_PanicCallback mhd_panic = (MHD_PanicCallback) NULL;
 
 /**
  * Closure argument for #mhd_panic.
