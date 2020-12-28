@@ -1,3 +1,6 @@
+Mon 28 Dec 2020 21:36:00 MSK
+    Releasing libmicrohttpd 0.9.72. -EG
+
 Mon 28 Dec 2020 09:37:00 MSK
     Completely reworked and rewritten TCP_CORK, TCP_NOPUSH, TCP_NODELAY and
     MSG_MORE handling. Reduced number of sys-calls, fixed portability for
