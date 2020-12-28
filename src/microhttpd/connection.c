@@ -2176,8 +2176,10 @@ process_request_body (struct MHD_Connection *connection)
   {
     /* already queued a response, discard remaining upload
        (but not more, there might be another request after it) */
-    uint64_t purge = MHD_MIN (connection->remaining_upload_size,
-                              connection->read_buffer_offset);
+    size_t purge;
+
+    purge = (size_t) MHD_MIN (connection->remaining_upload_size,
+                              (uint64_t) connection->read_buffer_offset);
     connection->remaining_upload_size -= purge;
     if (connection->read_buffer_offset > purge)
       memmove (connection->read_buffer,
