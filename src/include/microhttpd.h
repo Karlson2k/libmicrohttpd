@@ -133,7 +133,7 @@ typedef intptr_t ssize_t;
  * @note While it is a hexadecimal number, it is parsed as decimal number.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097200
+#define MHD_VERSION 0x00097201
 
 /**
  * Operational results from MHD calls.
