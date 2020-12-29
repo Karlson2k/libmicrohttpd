@@ -105,17 +105,9 @@ MHD_send_init_static_vars_ (void)
 #endif /* HAVE_FREEBSD_SENDFILE */
 
 
-/**
- * Set required TCP_NODELAY state for connection socket
- *
- * The function automatically updates sk_nodelay state.
- * @param connection the connection to manipulate
- * @param nodelay_state the requested new state of socket
- * @return true if succeed, false if failed
- */
-static bool
-connection_set_nodelay_state_ (struct MHD_Connection *connection,
-                               bool nodelay_state)
+bool
+MHD_connection_set_nodelay_state_ (struct MHD_Connection *connection,
+                                   bool nodelay_state)
 {
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
@@ -272,7 +264,7 @@ pre_send_setopt (struct MHD_Connection *connection,
     /* Try to reset TCP_NODELAY state for the socket.
      * Ignore possible error as no other options exist to
      * buffer data. */
-    connection_set_nodelay_state_ (connection, false);
+    MHD_connection_set_nodelay_state_ (connection, false);
     /* TCP_NODELAY has been (hopefully) reset for the socket.
      * Nagle's algorithm will buffer some data. */
     return;
@@ -353,7 +345,7 @@ pre_send_setopt (struct MHD_Connection *connection,
          * to happen as it is only a backup solution when corking has failed.
          * Ignore possible error here as no other options exist to
          * push data. */
-        connection_set_nodelay_state_ (connection, true);
+        MHD_connection_set_nodelay_state_ (connection, true);
         /* TCP_NODELAY has been (hopefully) set for the socket.
          * The data will be pushed by the next send(). */
         return;
@@ -373,7 +365,7 @@ pre_send_setopt (struct MHD_Connection *connection,
       /* Setting TCP_NODELAY is optimal here as data will be pushed
        * automatically by the next send() and no additional
        * sys-call are needed after the send(). */
-      if (connection_set_nodelay_state_ (connection, true))
+      if (MHD_connection_set_nodelay_state_ (connection, true))
         return;
       else
       {
@@ -410,7 +402,7 @@ pre_send_setopt (struct MHD_Connection *connection,
 #endif /* _MHD_NODELAY_SET_PUSH_DATA */
   /* Ignore possible error here as no other options exist to
    * push data. */
-  connection_set_nodelay_state_ (connection, true);
+  MHD_connection_set_nodelay_state_ (connection, true);
   /* TCP_NODELAY has been (hopefully) set for the socket.
    * The data will be pushed by the next send(). */
   return;
@@ -430,7 +422,7 @@ pre_send_setopt (struct MHD_Connection *connection,
 
   /* Set TCP_NODELAY if it wasn't set. */
   if (_MHD_ON != connection->sk_nodelay)
-    connection_set_nodelay_state_ (connection, true);
+    MHD_connection_set_nodelay_state_ (connection, true);
 
   return;
 #endif /* ! _MHD_CORK_RESET_PUSH_DATA */
@@ -439,7 +431,7 @@ pre_send_setopt (struct MHD_Connection *connection,
    * Nagel's algorithm. */
   /* Set TCP_NODELAY if it wasn't set. */
   if (_MHD_ON != connection->sk_nodelay)
-    connection_set_nodelay_state_ (connection, true);
+    MHD_connection_set_nodelay_state_ (connection, true);
 #endif /* ! MHD_TCP_CORK_NOPUSH */
 }
 
@@ -533,7 +525,7 @@ post_send_setopt (struct MHD_Connection *connection,
   if ((_MHD_ON != connection->sk_nodelay) ||
       (! plain_send_next))
   {
-    if (connection_set_nodelay_state_ (connection, true))
+    if (MHD_connection_set_nodelay_state_ (connection, true))
       return; /* Data has been pushed by TCP_NODELAY. */
     /* Failed to set TCP_NODELAY for the socket.
      * Really unlikely to happen on TCP connections. */
@@ -550,7 +542,7 @@ post_send_setopt (struct MHD_Connection *connection,
       return; /* Data has been pushed by uncorking the socket. */
     /* Failed to uncork the socket.
      * Really unlikely to happen on TCP connections. */
-    if (connection_set_nodelay_state_ (connection, true))
+    if (MHD_connection_set_nodelay_state_ (connection, true))
       return; /* Data has been pushed by TCP_NODELAY. */
     /* Failed to set TCP_NODELAY for the socket.
      * Really unlikely to happen on TCP connections. */
@@ -560,7 +552,7 @@ post_send_setopt (struct MHD_Connection *connection,
 #else  /* ! MHD_USE_MSG_MORE */
   /* Use setting of TCP_NODELAY here to avoid sys-call
    * for corking the socket during sending of the next response. */
-  if (connection_set_nodelay_state_ (connection, true))
+  if (MHD_connection_set_nodelay_state_ (connection, true))
     return; /* Data was pushed by TCP_NODELAY. */
   /* Failed to set TCP_NODELAY for the socket.
    * Really unlikely to happen on TCP connections. */
@@ -588,7 +580,7 @@ post_send_setopt (struct MHD_Connection *connection,
 
     /* Unlikely to reach this code.
      * TCP_NODELAY should be turned on before send(). */
-    if (connection_set_nodelay_state_ (connection, true))
+    if (MHD_connection_set_nodelay_state_ (connection, true))
     {
       /* TCP_NODELAY has been set on uncorked socket.
        * Use zero-send to push the data. */
@@ -618,7 +610,7 @@ post_send_setopt (struct MHD_Connection *connection,
        * The data should be pushed by uncorking (FreeBSD) or
        * the socket should be uncorked before send(). */
       if ((_MHD_ON == connection->sk_nodelay) ||
-          (connection_set_nodelay_state_ (connection, true)))
+          (MHD_connection_set_nodelay_state_ (connection, true)))
       {
         /* TCP_NODELAY is turned ON on uncorked socket.
          * Use zero-send to push the data. */
@@ -638,7 +630,7 @@ post_send_setopt (struct MHD_Connection *connection,
 
   /* Unlikely to reach this code.
    * TCP_NODELAY should be turned on before send(). */
-  if (connection_set_nodelay_state_ (connection, true))
+  if (MHD_connection_set_nodelay_state_ (connection, true))
   {
     /* TCP_NODELAY has been set.
      * Use zero-send to push the data. */

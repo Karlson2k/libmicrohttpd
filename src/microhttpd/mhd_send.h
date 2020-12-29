@@ -111,4 +111,18 @@ MHD_send_sendfile_ (struct MHD_Connection *connection);
 
 #endif
 
+
+/**
+ * Set required TCP_NODELAY state for connection socket
+ *
+ * The function automatically updates sk_nodelay state.
+ * @param connection the connection to manipulate
+ * @param nodelay_state the requested new state of socket
+ * @return true if succeed, false if failed
+ */
+bool
+MHD_connection_set_nodelay_state_ (struct MHD_Connection *connection,
+                                   bool nodelay_state);
+
+
 #endif /* MHD_SEND_H */
