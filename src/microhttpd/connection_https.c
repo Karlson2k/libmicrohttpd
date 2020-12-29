@@ -108,12 +108,13 @@ MHD_run_tls_handshake_ (struct MHD_Connection *connection)
   if ((MHD_TLS_CONN_INIT == connection->tls_state) ||
       (MHD_TLS_CONN_HANDSHAKING == connection->tls_state))
   {
-    /* GnuTLS uses sendmsg() (when available) to combine outgoing message
-     * into the single packet therefore there is no need to wait for
+    /* GnuTLS uses sendmsg() (when available) to send outgoing message
+     * by single system call therefore there is no need to wait for
      * additional data after sendmsg(). TLS handshake requires several packets
-     * exchange so set TCP_NODELAY here to avoid delay after each outgoing
-     * packet. As drawback it results in less more packet fragmentation
-     * on platforms without sendmsg() support, but luckily such platforms
+     * exchange so set TCP_NODELAY here to avoid delay before each outgoing
+     * packet is pushed to the network from kernel network buffers.
+     * As a drawback, this may result in a larger number of IP packet being
+     * send on platforms without sendmsg() support, but luckily such platforms
      * are now rare and they don't provide best performance anyway. */
     if (_MHD_ON != connection->sk_nodelay)
       MHD_connection_set_nodelay_state_ (connection, true);
