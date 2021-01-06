@@ -3275,7 +3275,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
       DLL_insert (daemon->cleanup_head,
                   daemon->cleanup_tail,
                   pos);
-
+      daemon->data_already_pending = true;
     }
 #endif /* UPGRADE_SUPPORT */
     pos->resuming = false;
@@ -3770,14 +3770,12 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 #endif
     return MHD_NO;
   }
-
   if (daemon->data_already_pending)
   {
     /* Some data already waiting to be processed. */
     *timeout = 0;
     return MHD_YES;
   }
-
 #ifdef EPOLL_SUPPORT
   if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
        ((NULL != daemon->eready_head)
@@ -5090,6 +5088,7 @@ close_connection (struct MHD_Connection *pos)
   DLL_insert (daemon->cleanup_head,
               daemon->cleanup_tail,
               pos);
+  daemon->data_already_pending = true;
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 #endif

@@ -133,7 +133,7 @@ typedef intptr_t ssize_t;
  * @note While it is a hexadecimal number, it is parsed as decimal number.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097201
+#define MHD_VERSION 0x00097202
 
 /**
  * Operational results from MHD calls.
@@ -222,12 +222,12 @@ typedef SOCKET MHD_socket;
 #define _MHD_INSTRMACRO(a) #a
 #define _MHD_STRMACRO(a) _MHD_INSTRMACRO (a)
 /* deprecation message */
-#define _MHD_DEPR_MACRO(msg) __pragma (message (__FILE__ "(" _MHD_STRMACRO ( \
-                                                  __LINE__) "): warning: " msg))
+#define _MHD_DEPR_MACRO(msg) __pragma(message (__FILE__ "(" _MHD_STRMACRO ( \
+  __LINE__) "): warning: " msg))
 #define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO (msg)
 #elif defined(__clang__) || defined (__GNUC_PATCHLEVEL__)
 /* clang or GCC since 3.0 */
-#define _MHD_GCC_PRAG(x) _Pragma (#x)
+#define _MHD_GCC_PRAG(x) _Pragma(#x)
 #if (defined(__clang__) && (__clang_major__ + 0 >= 5 ||     \
                             (! defined(__apple_build_version__) && \
   (__clang_major__ + 0  > 3 || (__clang_major__ + 0 == 3 && __clang_minor__ >= \

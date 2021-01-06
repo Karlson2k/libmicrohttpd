@@ -1,3 +1,6 @@
+Wed 06 Jan 2021 08:39:58 PM CET
+    Return timeout of zero also for connections awaiting cleanup. -CG
+
 Mon 28 Dec 2020 21:36:00 MSK
     Releasing libmicrohttpd 0.9.72. -EG
 
@@ -26,7 +29,7 @@ Sun 01 Nov 2020 17:17:00 MSK
     Minor improvements of error reporting in MHD daemon.
     Fixed FTBFS with GnuTLS versions before 3.1.9
     Fixed test_add_conn for multi-CPU machines.
-    Fixed analyzer warnings. 
+    Fixed analyzer warnings.
     Fixed use-after-free and resources leaks for upgraded connections
     in TLS mode with thread-per-connection. -EG
 
