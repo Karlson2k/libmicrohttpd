@@ -2963,6 +2963,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                       0,
                                       ((0 == resp->total_size) ||
                                        (resp->total_size ==
+                                        connection->response_write_position) ||
+                                       (MHD_SIZE_UNKNOWN ==
                                         connection->response_write_position)));
       }
 
