@@ -129,8 +129,10 @@ typedef intptr_t ssize_t;
 #endif
 
 /**
- * Current version of the library.
- * @note While it is a hexadecimal number, it is parsed as decimal number.
+ * Current version of the library in packed BCD form.
+ * @note Version number components are coded as Simple Binary-Coded Decimal
+ * (also called Natural BCD or BCD 8421). While they are hexadecimal numbers,
+ * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
 #define MHD_VERSION 0x00097202
