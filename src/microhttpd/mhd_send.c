@@ -51,6 +51,15 @@
 
 #include "mhd_limits.h"
 
+#ifdef MHD_VECT_SEND
+#if (! defined (HAVE_SENDMSG) || ! defined(MSG_NOSIGNAL)) && \
+  defined (MHD_SEND_SPIPE_SUPPRESS_POSSIBLE) && \
+  defined (MHD_SEND_SPIPE_SUPPRESS_NEEDED)
+#define _MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED 1
+#endif /* (!HAVE_SENDMSG || !MSG_NOSIGNAL) &&
+          MHD_SEND_SPIPE_SUPPRESS_POSSIBLE && MHD_SEND_SPIPE_SUPPRESS_NEEDED */
+#endif /* MHD_VECT_SEND */
+
 /**
  * sendfile() chuck size
  */
@@ -1243,3 +1252,237 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
 
 
 #endif /* _MHD_HAVE_SENDFILE */
+
+#if defined(MHD_VECT_SEND)
+
+
+/**
+ * Function sends iov data by system sendmsg or writev function.
+ *
+ * Connection must be in non-TLS (non-HTTPS) mode.
+ *
+ * @param connection the MHD connection structure
+ * @param r_iov the pointer to iov data structure with tracking
+ * @param push_data set to true to force push the data to the network from
+ *                  system buffers (usually set for the last piece of data),
+ *                  set to false to prefer holding incomplete network packets
+ *                  (more data will be send for the same reply).
+ * @return actual number of bytes sent
+ */
+static ssize_t
+send_iov_nontls (struct MHD_Connection *connection,
+                 struct MHD_iovec_track_ *const r_iov,
+                 bool push_data)
+{
+  ssize_t res;
+  ssize_t total_sent;
+  size_t items_to_send;
+#ifdef HAVE_SENDMSG
+  struct msghdr msg;
+#elif defined(MHD_WINSOCK_SOCKETS)
+  DWORD bytes_sent;
+  DWORD cnt_w;
+#endif /* MHD_WINSOCK_SOCKETS */
+
+  mhd_assert (0 == (connection->daemon->options & MHD_USE_TLS));
+
+  if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
+       (MHD_CONNECTION_CLOSED == connection->state) )
+  {
+    return MHD_ERR_NOTCONN_;
+  }
+
+  pre_send_setopt (connection, false, push_data);
+
+  items_to_send = r_iov->cnt - r_iov->sent;
+#ifdef HAVE_SENDMSG
+  memset (&msg, 0, sizeof(struct msghdr));
+  msg.msg_iov = r_iov->iov + r_iov->sent;
+  msg.msg_iovlen = items_to_send;
+
+  res = sendmsg (connection->socket_fd, &msg, MSG_NOSIGNAL_OR_ZERO);
+#elif defined(HAVE_WRITEV)
+  res = writev (connection->socket_fd, r_iov->iov + r_iov->sent,
+                items_to_send);
+#elif defined(MHD_WINSOCK_SOCKETS)
+#ifdef _WIN64
+  cnt_w = (items_to_send > UINT32_MAX) ? UINT32_MAX : (DWORD) items_to_send;
+#else  /* ! _WIN64 */
+  cnt_w = (DWORD) items_to_send;
+#endif /* ! _WIN64 */
+  if (0 == WSASend (connection->socket_fd,
+                    (LPWSABUF) (r_iov->iov + r_iov->sent),
+                    cnt_w,
+                    &bytes_sent, 0, NULL, NULL))
+    res = (ssize_t) bytes_sent;
+  else
+    res = -1;
+#else /* !HAVE_SENDMSG && !HAVE_WRITEV && !MHD_WINSOCK_SOCKETS */
+#error No vector-send function available
+#endif
+
+  if (0 > res)
+  {
+    const int err = MHD_socket_get_error_ ();
+
+    if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
+    {
+#ifdef EPOLL_SUPPORT
+      /* EAGAIN --- no longer write-ready */
+      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+      return MHD_ERR_AGAIN_;
+    }
+    if (MHD_SCKT_ERR_IS_EINTR_ (err))
+      return MHD_ERR_AGAIN_;
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
+      return MHD_ERR_CONNRESET_;
+    /* Treat any other error as hard error. */
+    return MHD_ERR_NOTCONN_;
+  }
+
+  /* Some data has been sent */
+  total_sent = res;
+  /* Adjust the internal tracking information for the iovec to
+   * take this last send into account. */
+  while ((0 != res) && (r_iov->iov[r_iov->sent].iov_len <= (size_t) res))
+  {
+    res -= r_iov->iov[r_iov->sent].iov_len;
+    r_iov->sent++; /* The iov element has been completely sent */
+    mhd_assert ((r_iov->cnt > r_iov->sent) || (0 == res));
+  }
+
+  if (r_iov->cnt == r_iov->sent)
+    post_send_setopt (connection, false, push_data);
+  else
+  {
+#ifdef EPOLL_SUPPORT
+    connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+    if (0 != res)
+    {
+      mhd_assert (r_iov->cnt > r_iov->sent);
+      /* The last iov element has been partially sent */
+      r_iov->iov[r_iov->sent].iov_base =
+        (void*) ((uint8_t*) r_iov->iov[r_iov->sent].iov_base + (size_t) res);
+      r_iov->iov[r_iov->sent].iov_len -= res;
+    }
+  }
+
+  return total_sent;
+}
+
+
+#endif /* MHD_VECT_SEND */
+
+#if ! defined(MHD_VECT_SEND) || defined(HTTPS_SUPPORT) || \
+  defined(_MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)
+
+
+/**
+ * Function sends iov data by sending buffers one-by-one by standard
+ * data send function.
+ *
+ * Connection could be in HTTPS or non-HTTPS mode.
+ *
+ * @param connection the MHD connection structure
+ * @param r_iov the pointer to iov data structure with tracking
+ * @param push_data set to true to force push the data to the network from
+ *                  system buffers (usually set for the last piece of data),
+ *                  set to false to prefer holding incomplete network packets
+ *                  (more data will be send for the same reply).
+ * @return actual number of bytes sent
+ */
+static ssize_t
+send_iov_emu (struct MHD_Connection *connection,
+              struct MHD_iovec_track_ *const r_iov,
+              bool push_data)
+{
+  const bool non_blk = connection->sk_nonblck;
+  size_t total_sent;
+  ssize_t res;
+
+  mhd_assert (NULL != r_iov->iov);
+  total_sent = 0;
+  do
+  {
+    if ((size_t) SSIZE_MAX - total_sent < r_iov->iov[r_iov->sent].iov_len)
+      return total_sent; /* return value would overflow */
+
+    res = MHD_send_data_ (connection,
+                          r_iov->iov[r_iov->sent].iov_base,
+                          r_iov->iov[r_iov->sent].iov_len,
+                          push_data && (r_iov->cnt == r_iov->sent + 1));
+    if (0 > res)
+    {
+      /* Result is an error */
+      if (0 == total_sent)
+        return res; /* Nothing was sent, return result as is */
+
+      if (MHD_ERR_AGAIN_ == res)
+        return total_sent; /* Some data has been sent, return the amount */
+
+      return res; /* Any kind of a hard error */
+    }
+
+    total_sent += (size_t) res;
+
+    if (r_iov->iov[r_iov->sent].iov_len != (size_t) res)
+    {
+      /* Incomplete buffer has been sent.
+       * Adjust buffer of the last element. */
+      r_iov->iov[r_iov->sent].iov_base =
+        (void*) ((uint8_t*) r_iov->iov[r_iov->sent].iov_base + (size_t) res);
+      r_iov->iov[r_iov->sent].iov_len -= res;
+
+      return total_sent;
+    }
+    /* The iov element has been completely sent */
+    r_iov->sent++;
+  } while ((r_iov->cnt > r_iov->sent) && (non_blk));
+
+  return (ssize_t) total_sent;
+}
+
+
+#endif /* !MHD_VECT_SEND || HTTPS_SUPPORT
+          || _MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
+
+
+ssize_t
+MHD_send_iovec_ (struct MHD_Connection *connection,
+                 struct MHD_iovec_track_ *const r_iov,
+                 bool push_data)
+{
+#ifdef MHD_VECT_SEND
+#if defined(HTTPS_SUPPORT) || \
+  defined(_MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)
+  bool use_iov_send = true;
+#endif /* HTTPS_SUPPORT || _MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
+#endif /* MHD_VECT_SEND */
+
+  mhd_assert (NULL != connection->resp_iov.iov);
+  mhd_assert (NULL != connection->response->data_iov);
+  mhd_assert (connection->resp_iov.cnt > connection->resp_iov.sent);
+#ifdef MHD_VECT_SEND
+#if defined(HTTPS_SUPPORT) || \
+  defined(_MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)
+#ifdef HTTPS_SUPPORT
+  use_iov_send = use_iov_send &&
+                 (0 == (connection->daemon->options & MHD_USE_TLS));
+#endif /* HTTPS_SUPPORT */
+#ifdef _MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED
+  use_iov_send = use_iov_send && (connection->daemon->sigpipe_blocked ||
+                                  connection->sk_spipe_suppress);
+#endif /* _MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
+  if (use_iov_send)
+#endif /* HTTPS_SUPPORT || _MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
+  return send_iov_nontls (connection, r_iov, push_data);
+#endif /* MHD_VECT_SEND */
+
+#if ! defined(MHD_VECT_SEND) || defined(HTTPS_SUPPORT) || \
+  defined(_MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)
+  return send_iov_emu (connection, r_iov, push_data);
+#endif /* !MHD_VECT_SEND || HTTPS_SUPPORT
+          || _MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
+}

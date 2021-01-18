@@ -116,3 +116,5 @@ test_patch11
 /test_add_conn_cleanup
 /test_add_conn_cleanup_nolisten
 core
+/test_get_iovec
+/test_get_iovec11

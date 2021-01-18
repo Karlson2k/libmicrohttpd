@@ -41,6 +41,11 @@
 #include "connection_https.h"
 #endif
 
+#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV) || \
+  defined(MHD_WINSOCK_SOCKETS)
+#define MHD_VECT_SEND 1
+#endif /* HAVE_SENDMSG || HAVE_WRITEV || MHD_WINSOCK_SOCKETS */
+
 #ifdef HAVE_FREEBSD_SENDFILE
 /**
  * Initialises static variables
@@ -123,6 +128,23 @@ MHD_send_sendfile_ (struct MHD_Connection *connection);
 bool
 MHD_connection_set_nodelay_state_ (struct MHD_Connection *connection,
                                    bool nodelay_state);
+
+
+/**
+ * Function for sending responses backed by a an array of memory buffers.
+ *
+ * @param connection the MHD connection structure
+ * @param r_iov the pointer to iov response structure with tracking
+ * @param push_data set to true to force push the data to the network from
+ *                  system buffers (usually set for the last piece of data),
+ *                  set to false to prefer holding incomplete network packets
+ *                  (more data will be send for the same reply).
+ * @return actual number of bytes sent
+ */
+ssize_t
+MHD_send_iovec_ (struct MHD_Connection *connection,
+                 struct MHD_iovec_track_ *r_iov,
+                 bool push_data);
 
 
 #endif /* MHD_SEND_H */

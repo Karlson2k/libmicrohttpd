@@ -53,4 +53,5 @@
 /mhds_multi_daemon_test
 /tls_authentication_test
 /tmp_ca_cert.pem
+/test_https_get_iovec
 *.exe

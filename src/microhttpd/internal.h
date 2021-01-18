@@ -343,6 +343,57 @@ struct MHD_HTTP_Header
 };
 
 
+#if defined(MHD_WINSOCK_SOCKETS)
+/**
+ * Internally used I/O vector type for use with winsock.
+ * Binary matches system "WSABUF".
+ */
+typedef struct _MHD_W32_iovec
+{
+  unsigned long iov_len;
+  char *iov_base;
+} MHD_iovec_;
+#define MHD_IOV_ELMN_MAX_SIZE    ULONG_MAX
+#elif defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
+/**
+ * Internally used I/O vector type for use when writev or sendmsg
+ * is available. Matches system "struct iovec".
+ */
+typedef struct iovec MHD_iovec_;
+#define MHD_IOV_ELMN_MAX_SIZE    SIZE_MAX
+#else
+/**
+ * Internally used I/O vector type for use when writev or sendmsg
+ * is not available.
+ */
+typedef struct MHD_IoVec MHD_iovec_;
+#define MHD_IOV_ELMN_MAX_SIZE    SIZE_MAX
+#endif
+
+
+struct MHD_iovec_track_
+{
+  /**
+   * The copy of array of iovec elements.
+   * The copy of elements are updated during sending.
+   * The number of elements is not changed during lifetime.
+   */
+  MHD_iovec_ *iov;
+
+  /**
+   * The number of elements in @iov.
+   * This value is not changed during lifetime.
+   */
+  size_t cnt;
+
+  /**
+   * The number of sent elements.
+   * At the same time, it is the index of the next (or current) element
+   * to send.
+   */
+  size_t sent;
+};
+
 /**
  * Representation of a response.
  */
@@ -450,6 +501,15 @@ struct MHD_Response
    */
   bool is_pipe;
 
+  /**
+   * I/O vector used with MHD_create_response_from_iovec.
+   */
+  MHD_iovec_ *data_iov;
+
+  /**
+   * Number of elements in data_iov.
+   */
+  size_t data_iovcnt;
 };
 
 
@@ -872,6 +932,15 @@ struct MHD_Connection
    * while sending headers).
    */
   uint64_t response_write_position;
+
+  /**
+   * The copy of iov response.
+   * Valid if iovec response is used.
+   * Updated during send.
+   * Members are allocated in the pool.
+   */
+  struct MHD_iovec_track_ resp_iov;
+
 
 #if defined(_MHD_HAVE_SENDFILE)
   enum MHD_resp_sender_
