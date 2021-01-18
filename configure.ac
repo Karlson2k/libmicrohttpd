@@ -60,7 +60,20 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_CANONICAL_HOST
+m4_version_prereq([2.70],
+  [
+# Find C compiler and compiler options to support
+# the latest C standard (C11). Fallback to C99 and C89
+# if later C versions are not supported.
+AC_PROG_CC
+  ],
+  [
+# Find C compiler and compiler options to support
+# the latest C standard (C99). Fallback to C89
+# if later C versions are not supported.
 AC_PROG_CC_STDC
+  ]
+)
 MHD_SYS_EXT
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
@@ -888,14 +901,14 @@ AS_VAR_IF([mhd_cv_macro___func___avail], ["yes"],
 )
 AC_CACHE_CHECK([[whether __builtin_bswap32() is available]],
   [[mhd_cv_func___builtin_bswap32_avail]], [dnl
-  AC_TRY_LINK([#include<stdint.h>],[uint32_t a = 1; uint32_t b = __builtin_bswap32(a); a = b;],
-    [[mhd_cv_func___builtin_bswap32_avail="yes"]], [[mhd_cv_func___builtin_bswap32_avail="no"]])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include<stdint.h>]], [[uint32_t a = 1; uint32_t b = __builtin_bswap32(a); a = b;]])],
+    [[mhd_cv_func___builtin_bswap32_avail="yes"]],[[mhd_cv_func___builtin_bswap32_avail="no"]])
 ])
 AS_IF([[test "x$mhd_cv_func___builtin_bswap32_avail" = "xyes"]],
   [AC_DEFINE([[MHD_HAVE___BUILTIN_BSWAP32]], [[1]], [Define to 1 if you have __builtin_bswap32() builtin function])])
 AC_CACHE_CHECK([[whether __builtin_bswap64() is available]],
   [[mhd_cv_func___builtin_bswap64_avail]], [dnl
-  AC_TRY_LINK([#include<stdint.h>],[uint64_t a = 1; uint32_t b = __builtin_bswap64(a); a = b;],
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include<stdint.h>]], [[uint64_t a = 1; uint32_t b = __builtin_bswap64(a); a = b;]])],
     [[mhd_cv_func___builtin_bswap64_avail="yes"]], [[mhd_cv_func___builtin_bswap64_avail="no"]])
 ])
 AS_IF([[test "x$mhd_cv_func___builtin_bswap64_avail" = "xyes"]],
