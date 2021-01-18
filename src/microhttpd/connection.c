@@ -794,11 +794,33 @@ try_ready_normal_body (struct MHD_Connection *connection)
   struct MHD_Response *response;
 
   response = connection->response;
-  if (NULL == response->crc)
-    return MHD_YES;
   if ( (0 == response->total_size) ||
        (connection->response_write_position == response->total_size) )
     return MHD_YES; /* 0-byte response is always ready */
+  if (NULL != response->data_iov)
+  {
+    size_t copy_size;
+    if (NULL != connection->resp_iov.iov)
+      return MHD_YES;
+
+    copy_size = response->data_iovcnt * sizeof(MHD_iovec_);
+    connection->resp_iov.iov = MHD_pool_allocate (connection->pool, copy_size,
+                                                  true);
+    if (NULL == connection->resp_iov.iov)
+    {
+      MHD_mutex_unlock_chk_ (&response->mutex);
+      /* not enough memory */
+      CONNECTION_CLOSE_ERROR (connection,
+                              _ ("Closing connection (out of memory).\n"));
+      return MHD_NO;
+    }
+    memcpy (connection->resp_iov.iov, response->data_iov, copy_size);
+    connection->resp_iov.cnt = response->data_iovcnt;
+    connection->resp_iov.sent = 0;
+    return MHD_YES;
+  }
+  if (NULL == response->crc)
+    return MHD_YES;
   if ( (response->data_start <=
         connection->response_write_position) &&
        (response->data_size + response->data_start >
@@ -2935,6 +2957,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                     connection->response_write_position) );
 
       if ( (NULL == resp->crc) &&
+           (NULL == resp->data_iov) &&
            (0 == connection->response_write_position) )
       {
         mhd_assert (resp->total_size >= resp->data_size);
@@ -3017,12 +3040,16 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #if defined(_MHD_HAVE_SENDFILE)
       if (MHD_resp_sender_sendfile == connection->resp_sender)
       {
+        mhd_assert (NULL == response->data_iov);
         ret = MHD_send_sendfile_ (connection);
       }
+      else /* combined with the next 'if' */
+#endif /* _MHD_HAVE_SENDFILE */
+      if (NULL != response->data_iov)
+      {
+        ret = MHD_send_iovec_ (connection);
+      }
       else
-#else  /* ! _MHD_HAVE_SENDFILE */
-      if (1)
-#endif /* ! _MHD_HAVE_SENDFILE */
       {
         data_write_offset = connection->response_write_position
                             - response->data_start;
@@ -3674,6 +3701,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       connection->write_buffer_size = 0;
       connection->write_buffer_send_offset = 0;
       connection->write_buffer_append_offset = 0;
+      /* iov (if any) was deallocated by MHD_pool_reset */
+      memset (&connection->resp_iov, 0, sizeof(connection->resp_iov));
       continue;
     case MHD_CONNECTION_CLOSED:
       cleanup_connection (connection);

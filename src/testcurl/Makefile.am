@@ -78,6 +78,7 @@ endif
 if HAVE_CURL
 check_PROGRAMS = \
   test_get \
+  test_get_iovec \
   test_get_sendfile \
   test_delete \
   test_patch \
@@ -89,6 +90,7 @@ check_PROGRAMS = \
   test_parse_cookies \
   test_large_put \
   test_get11 \
+  test_get_iovec11 \
   test_get_sendfile11 \
   test_patch11 \
   test_put11 \
@@ -218,6 +220,12 @@ test_digestauth_with_arguments_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBGCRYPT_LIBS@ @LIBCURL@
 
+test_get_iovec_SOURCES = \
+  test_get_iovec.c mhd_has_in_name.h
+test_get_iovec_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
 test_get_sendfile_SOURCES = \
   test_get_sendfile.c mhd_has_in_name.h
 test_get_sendfile_LDADD = \
@@ -306,7 +314,7 @@ test_put_chunked_SOURCES = \
 test_put_chunked_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
-  
+
 test_add_conn_SOURCES = \
   test_add_conn.c $(top_srcdir)/src/microhttpd/test_helpers.h
 test_add_conn_CFLAGS = \
@@ -342,6 +350,12 @@ test_add_conn_cleanup_nolisten_LDADD = \
 test_get11_SOURCES = \
   test_get.c
 test_get11_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_get_iovec11_SOURCES = \
+  test_get_iovec.c mhd_has_in_name.h
+test_get_iovec11_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 

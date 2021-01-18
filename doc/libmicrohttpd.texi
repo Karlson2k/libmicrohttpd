@@ -1270,6 +1270,11 @@ Handle for a response.
 @end deftp
 
 
+@deftp {C Struct} MHD_IoVec
+An element of an array of memory buffers.
+@end deftp
+
+
 @deftp {C Struct} MHD_PostProcessor
 @cindex POST method
 Handle for @code{POST} processing.
@@ -2168,6 +2173,28 @@ response = MHD_create_response_from_buffer (strlen(data), data,
 MHD_queue_response(connection, 404, response);
 MHD_destroy_response(response);
 @end example
+
+
+@deftypefun {struct MHD_Response *} MHD_create_response_from_iovec (const struct MHD_IoVec *iov, int iovcnt, MHD_ContentReaderFreeCallback crfc, void *cls)
+Create a response object from an array of memory buffers.
+The response object can be extended with header information and then be used
+any number of times.
+@table @var
+@item iov
+the array for response data buffers, an internal copy of this will be made;
+
+@item iovcnt
+the number of elements in @var{iov};
+
+@item crfc
+the callback to call to free resources associated with @var{iov};
+
+@item cls
+the argument to @var{crfc};
+@end table
+
+Return @code{NULL} on error (i.e. invalid arguments, out of memory).
+@end deftypefun
 
 
 

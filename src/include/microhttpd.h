@@ -1974,6 +1974,23 @@ union MHD_ConnectionInfo
 
 
 /**
+ * I/O vector type. Provided for use with MHD_create_response_from_iovec.
+ */
+struct MHD_IoVec
+{
+  /**
+   * The pointer to the memory region for I/O.
+   */
+  void *iov_base;
+
+  /**
+   * The size in bytes of the memory region for I/O.
+   */
+  size_t iov_len;
+};
+
+
+/**
  * Values of this enum are used to specify what
  * information about a connection is desired.
  * @ingroup request
@@ -3227,6 +3244,27 @@ _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd_at_offset64 (uint64_t size,
                                          int fd,
                                          uint64_t offset);
+
+
+/**
+ * Create a response object from an array of memory buffers.
+ * The response object can be extended with header information and then be used
+ * any number of times.
+ *
+ * @param iov the array for response data buffers, an internal copy of this
+ *        will be made
+ * @param iovcnt the number of elements in @a iov
+ * @param free_cb the callback to clean up any data associated with @a iov when
+ *        the response is destroyed.
+ * @param cls the argument passed to @a free_cb
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
+                                int iovcnt,
+                                MHD_ContentReaderFreeCallback free_cb,
+                                void *cls);
 
 
 /**

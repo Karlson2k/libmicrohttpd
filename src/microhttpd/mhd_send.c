@@ -1243,3 +1243,152 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
 
 
 #endif /* _MHD_HAVE_SENDFILE */
+
+
+#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
+
+static ssize_t
+send_iov_nontls (struct MHD_Connection *connection,
+                 MHD_iovec *iovp,
+                 int iovcnt)
+{
+  ssize_t ret;
+  struct iovec *iov = (struct iovec *) iovp;
+#ifdef HAVE_SENDMSG
+  struct msghdr msg;
+#endif
+
+  if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
+       (MHD_CONNECTION_CLOSED == connection->state) )
+  {
+    return MHD_ERR_NOTCONN_;
+  }
+
+#ifdef HAVE_SENDMSG
+  memset (&msg, 0, sizeof(struct msghdr));
+  msg.msg_iov = iov;
+  msg.msg_iovlen = iovcnt;
+  ret = sendmsg (connection->socket_fd, &msg, MSG_NOSIGNAL);
+#else
+  ret = writev (connection->socket_fd, iov, iovcnt);
+#endif
+
+  if (0 > ret)
+  {
+    const int err = MHD_socket_get_error_ ();
+
+    if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
+    {
+#ifdef EPOLL_SUPPORT
+      /* EAGAIN --- no longer write-ready */
+      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+      return MHD_ERR_AGAIN_;
+    }
+    if (MHD_SCKT_ERR_IS_EINTR_ (err))
+      return MHD_ERR_AGAIN_;
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
+      return MHD_ERR_CONNRESET_;
+    /* Treat any other error as hard error. */
+    return MHD_ERR_NOTCONN_;
+  }
+#ifdef EPOLL_SUPPORT
+  connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+#endif /* EPOLL_SUPPORT */
+  return ret;
+}
+
+
+#endif /* HAVE_SENDMSG || HAVE_WRITEV */
+
+
+ssize_t
+MHD_send_iovec_ (struct MHD_Connection *connection)
+{
+  struct MHD_Response *const response = connection->response;
+  struct MHD_iovec_track_ *const r_iov = &connection->resp_iov;
+  ssize_t res;
+  bool do_postsend = false;
+  size_t total_sent;
+
+  mhd_assert (NULL != r_iov->iov);
+  mhd_assert (NULL != response->data_iov);
+  total_sent = 0;
+#if defined(HTTPS_SUPPORT) && defined(MHD_VECT_SEND)
+  if (0 != (connection->daemon->options & MHD_USE_TLS))
+  {
+    pre_send_setopt (connection, true, false);
+    do_postsend = true;
+    res = send_iov_nontls (connection,
+                           response->data_iov_left,
+                           response->data_iovcnt_left);
+    if (0 < res)
+      total_sent = (size_t) res;
+  }
+  else
+#else  /* ! HTTPS_SUPPORT || ! MHD_VECT_SEND */
+  if (1)
+#endif /* ! HTTPS_SUPPORT || ! MHD_VECT_SEND */
+  {
+    res = MHD_send_data_ (connection,
+                          r_iov->iov[r_iov->sent].iov_base,
+                          r_iov->iov[r_iov->sent].iov_len,
+                          r_iov->cnt == r_iov->sent + 1);
+    if (0 < res)
+      total_sent = (size_t) res;
+
+    if (connection->sk_nonblck)
+    {
+      while ( (r_iov->cnt > r_iov->sent) &&
+              (0 < res) &&
+              (r_iov->iov[r_iov->sent].iov_len == (size_t) res) )
+      {
+        /* Data block has been fully consumed on non-blocking connection.
+         * Try to process the next block immediately. */
+        res = 0;
+        r_iov->sent++; /* iov element has been sent completely */
+
+        if ((size_t) SSIZE_MAX - total_sent < r_iov->iov[r_iov->sent].iov_len)
+          break; /* return value would overflow */
+
+        res = MHD_send_data_ (connection,
+                              r_iov->iov[r_iov->sent].iov_base,
+                              r_iov->iov[r_iov->sent].iov_len,
+                              r_iov->cnt == r_iov->sent + 1);
+        if (0 < res)
+          total_sent += (size_t) res;
+      }
+    }
+  }
+
+  if (0 > res)
+    return res; /* Result is an error */
+
+  /* Adjust the internal tracking information for the iovec to
+   * take this last send into account. */
+  mhd_assert (0 != total_sent);
+
+  mhd_assert ((0 == res) || (r_iov->cnt > r_iov->sent));
+  while ((0 != res) && (r_iov->iov[r_iov->sent].iov_len <= (size_t) res))
+  {
+    res -= r_iov->iov[r_iov->sent].iov_len;
+    r_iov->sent++;
+    mhd_assert ((0 == res) || (r_iov->cnt > r_iov->sent));
+  }
+
+  if (0 != res)
+  {
+    mhd_assert (r_iov->cnt > r_iov->sent);
+    r_iov->iov[r_iov->sent].iov_base =
+      (void*) ((uint8_t*) r_iov->iov[r_iov->sent].iov_base + (size_t) res);
+    r_iov->iov[r_iov->sent].iov_len -= res;
+  }
+
+  return total_sent;
+  if (do_postsend && (0 == response->data_iovcnt_left))
+  {
+    post_send_setopt (connection, true, true);
+  }
+
+  return res;
+}
