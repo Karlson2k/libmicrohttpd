@@ -1,14 +1,15 @@
-# longlong.m4 serial 17
-dnl Copyright (C) 1999-2007, 2009-2016 Free Software Foundation, Inc.
+# longlong.m4 serial 19
+dnl Copyright (C) 1999-2007, 2009-2021 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
 
 dnl From Paul Eggert.
 
+AC_PREREQ([2.62])
+
 # Define HAVE_LONG_LONG_INT if 'long long int' works.
-# This fixes a bug in Autoconf 2.61, and can be faster
-# than what's in Autoconf 2.62 through 2.68.
+# This can be faster than what's in Autoconf 2.62 through 2.68.
 
 # Note: If the type 'long long int' exists but is only 32 bits large
 # (as on some very old compilers), HAVE_LONG_LONG_INT will not be
@@ -27,12 +28,12 @@ AC_DEFUN([AC_TYPE_LONG_LONG_INT],
           dnl nobody cross compiles for this platform as far as we know.
           AC_RUN_IFELSE(
             [AC_LANG_PROGRAM(
-               [[@%:@include <limits.h>
-                 @%:@ifndef LLONG_MAX
-                 @%:@ define HALF \
+               [[#include <limits.h>
+                 #ifndef LLONG_MAX
+                 # define HALF \
                           (1LL << (sizeof (long long int) * CHAR_BIT - 2))
-                 @%:@ define LLONG_MAX (HALF - 1 + HALF)
-                 @%:@endif]],
+                 # define LLONG_MAX (HALF - 1 + HALF)
+                 #endif]],
                [[long long int n = 1;
                  int i;
                  for (i = 0; ; i++)
@@ -56,8 +57,7 @@ AC_DEFUN([AC_TYPE_LONG_LONG_INT],
 ])
 
 # Define HAVE_UNSIGNED_LONG_LONG_INT if 'unsigned long long int' works.
-# This fixes a bug in Autoconf 2.61, and can be faster
-# than what's in Autoconf 2.62 through 2.68.
+# This can be faster than what's in Autoconf 2.62 through 2.68.
 
 # Note: If the type 'unsigned long long int' exists but is only 32 bits
 # large (as on some very old compilers), AC_TYPE_UNSIGNED_LONG_LONG_INT
