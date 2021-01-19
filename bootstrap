@@ -37,6 +37,7 @@ if existence libtool || existence libtoolize || existence glibtoolize || existen
         echo "Autotools failed, retrying with autoreconf..."
         if ! autoreconf -i ${1+"$@"} ; then
             echo "Failed to autoreconf, retrying with force install..."
+            rm m4/po.m4 # Version of po.m4 should match installed po/* files
             if ! autoreconf -i -f ${1+"$@"} ; then
                 echo "*** Failed to create 'configure' and other autotools generated files. ***" >&2
                 exit 1
