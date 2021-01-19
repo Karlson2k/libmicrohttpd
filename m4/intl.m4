@@ -1,15 +1,15 @@
-# intl.m4 serial 29 (gettext-0.19)
-dnl Copyright (C) 1995-2014, 2016 Free Software Foundation, Inc.
+# intl.m4 serial 44 (gettext-0.21)
+dnl Copyright (C) 1995-2014, 2016-2020 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
 dnl
 dnl This file can be used in projects which are not available under
-dnl the GNU General Public License or the GNU Library General Public
+dnl the GNU General Public License or the GNU Lesser General Public
 dnl License but which still want to provide support for the GNU gettext
 dnl functionality.
 dnl Please note that the actual code of the GNU gettext library is covered
-dnl by the GNU Library General Public License, and the rest of the GNU
+dnl by the GNU Lesser General Public License, and the rest of the GNU
 dnl gettext package is covered by the GNU General Public License.
 dnl They are *not* in the public domain.
 
@@ -20,8 +20,7 @@ dnl   Bruno Haible <haible@clisp.cons.org>, 2000-2009.
 AC_PREREQ([2.60])
 
 dnl Checks for all prerequisites of the intl subdirectory,
-dnl except for INTL_LIBTOOL_SUFFIX_PREFIX (and possibly LIBTOOL), INTLOBJS,
-dnl            USE_INCLUDED_LIBINTL, BUILD_INCLUDED_LIBINTL.
+dnl except for LIBTOOL, USE_INCLUDED_LIBINTL, BUILD_INCLUDED_LIBINTL.
 AC_DEFUN([AM_INTL_SUBDIR],
 [
   AC_REQUIRE([AC_PROG_INSTALL])dnl
@@ -29,7 +28,6 @@ AC_DEFUN([AM_INTL_SUBDIR],
   AC_REQUIRE([AC_PROG_CC])dnl
   AC_REQUIRE([AC_CANONICAL_HOST])dnl
   AC_REQUIRE([gt_GLIBC2])dnl
-  AC_REQUIRE([AC_PROG_RANLIB])dnl
   AC_REQUIRE([gl_VISIBILITY])dnl
   AC_REQUIRE([gt_INTL_SUBDIR_CORE])dnl
   AC_REQUIRE([AC_TYPE_LONG_LONG_INT])dnl
@@ -41,9 +39,26 @@ AC_DEFUN([AM_INTL_SUBDIR],
   AC_REQUIRE([gl_GLIBC21])dnl
   AC_REQUIRE([gl_XSIZE])dnl
   AC_REQUIRE([gl_FCNTL_O_FLAGS])dnl
+  AC_REQUIRE([gt_INTL_THREAD_LOCALE_NAME])
   AC_REQUIRE([gt_INTL_MACOSX])dnl
   AC_REQUIRE([gl_EXTERN_INLINE])dnl
   AC_REQUIRE([gt_GL_ATTRIBUTE])dnl
+  AC_REQUIRE([AC_C_FLEXIBLE_ARRAY_MEMBER])dnl
+
+  dnl In projects that use gnulib, use gl_PROG_AR_RANLIB.
+  dnl The '][' hides this use from 'aclocal'.
+  m4_ifdef([g][l_PROG_AR_RANLIB],
+    [AC_REQUIRE([g][l_PROG_AR_RANLIB])],
+    [AC_REQUIRE([AC_PROG_RANLIB])
+     dnl Use Automake-documented default values for AR and ARFLAGS, but prefer
+     dnl ${host}-ar over ar (useful for cross-compiling).
+     AC_CHECK_TOOL([AR], [ar], [ar])
+     if test -z "$ARFLAGS"; then
+       ARFLAGS='cr'
+     fi
+     AC_SUBST([AR])
+     AC_SUBST([ARFLAGS])
+    ])
 
   dnl Support for automake's --enable-silent-rules.
   case "$enable_silent_rules" in
@@ -58,8 +73,8 @@ AC_DEFUN([AM_INTL_SUBDIR],
        [Define as the type of the result of subtracting two pointers, if the system doesn't define it.])
     ])
   AC_CHECK_HEADERS([features.h stddef.h stdlib.h string.h])
-  AC_CHECK_FUNCS([asprintf fwprintf newlocale putenv setenv setlocale \
-    snprintf strnlen wcslen wcsnlen mbrtowc wcrtomb])
+  AC_CHECK_FUNCS([asprintf wprintf newlocale putenv setenv \
+    snprintf strnlen uselocale wcslen wcsnlen mbrtowc wcrtomb])
 
   dnl Use the _snprintf function only if it is declared (because on NetBSD it
   dnl is defined as a weak alias of snprintf; we prefer to use the latter).
@@ -104,6 +119,13 @@ AC_DEFUN([AM_INTL_SUBDIR],
   AM_LANGINFO_CODESET
   gt_LC_MESSAGES
 
+  if test $gt_nameless_locales = yes; then
+    HAVE_NAMELESS_LOCALES=1
+  else
+    HAVE_NAMELESS_LOCALES=0
+  fi
+  AC_SUBST([HAVE_NAMELESS_LOCALES])
+
   dnl Compilation on mingw and Cygwin needs special Makefile rules, because
   dnl 1. when we install a shared library, we must arrange to export
   dnl    auxiliary pointer variables for every exported variable,
@@ -134,18 +156,6 @@ AC_DEFUN([AM_INTL_SUBDIR],
     dnl Check for a program that compiles Windows resource files.
     AC_CHECK_TOOL([WINDRES], [windres])
   fi
-
-  dnl Determine whether when creating a library, "-lc" should be passed to
-  dnl libtool or not. On many platforms, it is required for the libtool option
-  dnl -no-undefined to work. On HP-UX, however, the -lc - stored by libtool
-  dnl in the *.la files - makes it impossible to create multithreaded programs,
-  dnl because libtool also reorders the -lc to come before the -pthread, and
-  dnl this disables pthread_create() <http://docs.hp.com/en/1896/pthreads.html>.
-  case "$host_os" in
-    hpux*) LTLIBC="" ;;
-    *)     LTLIBC="-lc" ;;
-  esac
-  AC_SUBST([LTLIBC])
 
   dnl Rename some macros and functions used for locking.
   AH_BOTTOM([
@@ -217,7 +227,6 @@ AC_DEFUN([gt_INTL_SUBDIR_CORE],
   AC_REQUIRE([AC_FUNC_MMAP])dnl
   AC_REQUIRE([gt_INTDIV0])dnl
   AC_REQUIRE([gl_AC_TYPE_UINTMAX_T])dnl
-  AC_REQUIRE([gt_INTTYPES_PRI])dnl
   AC_REQUIRE([gl_LOCK])dnl
 
   AC_LINK_IFELSE(
@@ -227,16 +236,9 @@ AC_DEFUN([gt_INTL_SUBDIR_CORE],
     [AC_DEFINE([HAVE_BUILTIN_EXPECT], [1],
        [Define to 1 if the compiler understands __builtin_expect.])])
 
-  AC_CHECK_HEADERS([argz.h inttypes.h limits.h unistd.h sys/param.h])
+  AC_CHECK_HEADERS([inttypes.h limits.h unistd.h sys/param.h])
   AC_CHECK_FUNCS([getcwd getegid geteuid getgid getuid mempcpy munmap \
-    stpcpy strcasecmp strdup strtoul tsearch uselocale argz_count \
-    argz_stringify argz_next __fsetlocking])
-
-  dnl Solaris 12 provides getlocalename_l, while Illumos doesn't have
-  dnl it nor the equivalent.
-  if test $ac_cv_func_uselocale = yes; then
-    AC_CHECK_FUNCS([getlocalename_l])
-  fi
+    stpcpy strcasecmp strdup strtoul tsearch __fsetlocking])
 
   dnl Use the *_unlocked functions only if they are declared.
   dnl (because some of them were defined without being declared in Solaris
@@ -248,33 +250,14 @@ AC_DEFUN([gt_INTL_SUBDIR_CORE],
 
   dnl intl/plural.c is generated from intl/plural.y. It requires bison,
   dnl because plural.y uses bison specific features. It requires at least
-  dnl bison-2.7 for %define api.pure.
+  dnl bison-3.0 for %precedence.
   dnl bison is only needed for the maintainer (who touches plural.y). But in
   dnl order to avoid separate Makefiles or --enable-maintainer-mode, we put
   dnl the rule in general Makefile. Now, some people carelessly touch the
   dnl files or have a broken "make" program, hence the plural.c rule will
   dnl sometimes fire. To avoid an error, defines BISON to ":" if it is not
   dnl present or too old.
-  AC_CHECK_PROGS([INTLBISON], [bison])
-  if test -z "$INTLBISON"; then
-    ac_verc_fail=yes
-  else
-    dnl Found it, now check the version.
-    AC_MSG_CHECKING([version of bison])
-changequote(<<,>>)dnl
-    ac_prog_version=`$INTLBISON --version 2>&1 | sed -n 's/^.*GNU Bison.* \([0-9]*\.[0-9.]*\).*$/\1/p'`
-    case $ac_prog_version in
-      '') ac_prog_version="v. ?.??, bad"; ac_verc_fail=yes;;
-      2.[7-9]* | [3-9].*)
-changequote([,])dnl
-         ac_prog_version="$ac_prog_version, ok"; ac_verc_fail=no;;
-      *) ac_prog_version="$ac_prog_version, bad"; ac_verc_fail=yes;;
-    esac
-    AC_MSG_RESULT([$ac_prog_version])
-  fi
-  if test $ac_verc_fail = yes; then
-    INTLBISON=:
-  fi
+  gl_PROG_BISON([INTLBISON], [3.0])
 ])
 
 dnl Copies _GL_UNUSED and _GL_ATTRIBUTE_PURE definitions from
