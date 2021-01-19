@@ -28,9 +28,9 @@ fi
 
 if existence libtool || existence libtoolize || existence glibtoolize || existence slibtool; then
     echo "Running autoreconf..."
-    if ! autoreconf ${1+"$@"} -Werror ; then
-        echo "Failed to autoreconf without installing new files, retrying with installing missing files..."
-        if ! autoreconf -i ${1+"$@"} ; then
+    if ! autoreconf -i ${1+"$@"} ; then
+        echo "Failed to autoreconf, retrying without installing new files..."
+        if ! autoreconf  -Werror ${1+"$@"} ; then
             echo "Failed to autoreconf, retrying with force install..."
             if ! autoreconf -i -f ${1+"$@"} ; then
                 echo "*** Failed to create 'configure' and other autotools generated files. ***" >&2
