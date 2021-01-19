@@ -27,7 +27,23 @@ else
 fi
 
 if existence libtool || existence libtoolize || existence glibtoolize || existence slibtool; then
-    autoreconf -I m4 -i ${1+"$@"}
+    echo "Running autotools..."
+    aclocal -I m4 --install && \
+      libtoolize -c -i -v && \
+      autoconf && \
+      autoheader && \
+      automake -a -c --gnu
+    if test $? -ne 0 || ! test -x configure || ! test -f Makefile.in ; then
+        echo "Autotools failed, retrying with autoreconf..."
+        if ! autoreconf -i ${1+"$@"} ; then
+            echo "Failed to autoreconf, retrying with force install..."
+            if ! autoreconf -i -f ${1+"$@"} ; then
+                echo "*** Failed to create 'configure' and other autotools generated files. ***" >&2
+                exit 1
+            fi
+        fi
+    fi
+    echo "The ${bs_scrdir-.}/configure is ready to run."
 else
     echo "*** No libtoolize (libtool) or libtool found, please install it ***" >&2;
     exit 1

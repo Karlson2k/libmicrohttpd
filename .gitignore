@@ -14,7 +14,14 @@ config.rpath
 /config.log
 /app.info
 /debug
-/build-aux
+/build-aux/texinfo.tex
+/build-aux/config.sub
+/build-aux/depcomp
+/build-aux/install-sh
+/build-aux/ltmain.sh
+/build-aux/mdate-sh
+/build-aux/test-driver
+/build-aux/config.guess
 /exclude
 /autom4te.cache
 /scripts
