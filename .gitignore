@@ -22,6 +22,8 @@ config.rpath
 /build-aux/mdate-sh
 /build-aux/test-driver
 /build-aux/config.guess
+/build-aux/compile
+/build-aux/missing
 /exclude
 /autom4te.cache
 /scripts
@@ -31,6 +33,7 @@ config.rpath
 /.project
 /config.guess
 /.cproject
+/.tgitconfig
 /configure
 /libtool
 /install-sh
