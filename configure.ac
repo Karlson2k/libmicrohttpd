@@ -97,8 +97,8 @@ AM_CONDITIONAL([HAVE_PO], [ test "$have_po" = yes ])
 
 # Adam shostack suggests the following for Windows:
 # -D_FORTIFY_SOURCE=2 -fstack-protector-all
-AC_ARG_ENABLE(gcc-hardening,
-   AS_HELP_STRING(--enable-gcc-hardening, enable compiler security checks),
+AC_ARG_ENABLE([gcc-hardening],
+   [AS_HELP_STRING([--enable-gcc-hardening], [enable compiler security checks])],
 [AS_IF([test x$enableval = xyes],[
     CFLAGS="$CFLAGS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all"
     CFLAGS="$CFLAGS -fwrapv -fPIE -Wstack-protector"
@@ -108,14 +108,14 @@ AC_ARG_ENABLE(gcc-hardening,
 
 # Linker hardening options
 # Currently these options are ELF specific - you can't use this with MacOSX
-AC_ARG_ENABLE(linker-hardening,
-  AS_HELP_STRING(--enable-linker-hardening, enable linker security fixups),
+AC_ARG_ENABLE([linker-hardening],
+  [AS_HELP_STRING([--enable-linker-hardening], [enable linker security fixups])],
 [AS_IF([test x$enableval = xyes],
    [LDFLAGS="$LDFLAGS -z relro -z now"])])
 
 
-AC_ARG_ENABLE(sanitizer,
-  AS_HELP_STRING(--enable-sanitizer, enable Address Sanitizer and Undefined Behavior Sanitizer),
+AC_ARG_ENABLE([sanitizer],
+  [AS_HELP_STRING([--enable-sanitizer], [enable Address Sanitizer and Undefined Behavior Sanitizer])],
 [AS_IF([test x$enableval = xyes],[
    LDFLAGS="$CFLAGS -fsanitize=address,undefined -fno-omit-frame-pointer"
  ])])
