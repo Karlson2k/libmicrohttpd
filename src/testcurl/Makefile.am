@@ -1,5 +1,5 @@
 # This Makefile.am is in the public domain
-SUBDIRS  = .
+SUBDIRS = .
 
 if USE_COVERAGE
   AM_CFLAGS = -fprofile-arcs -ftest-coverage
@@ -40,10 +40,10 @@ endif
 endif
 
 if ENABLE_DAUTH
-  THREAD_ONLY_TESTS += \
-    test_digestauth \
-    test_digestauth_sha256 \
-    test_digestauth_with_arguments
+THREAD_ONLY_TESTS += \
+  test_digestauth \
+  test_digestauth_sha256 \
+  test_digestauth_with_arguments
 endif
 
 if HAVE_POSIX_THREADS
