@@ -933,6 +933,14 @@ AC_ARG_ENABLE([[examples]],
 test "x$enable_examples" = "xno" || enable_examples=yes
 AM_CONDITIONAL([BUILD_EXAMPLES], [test "x$enable_examples" = "xyes"])
 
+AC_ARG_ENABLE([[heavy-tests]],
+  [AS_HELP_STRING([[--enable-heavy-tests]], [use heavy tests in test-suite. WARNING:] 
+  [a dedicated host with minimal number of background processes and no network]
+  [activity is recommended to enable.])], [],
+    [enable_heavy_tests=no])
+AS_VAR_IF([enable_heavy_tests], ["yes"], [], [enable_heavy_tests=no])
+AM_CONDITIONAL([HEAVY_TESTS],[test "x$enable_heavy_tests" = "xyes"])
+
 AC_ARG_ENABLE([[poll]],
   [AS_HELP_STRING([[--enable-poll[=ARG]]], [enable poll support (yes, no, auto) [auto]])],
     [enable_poll=${enableval}],

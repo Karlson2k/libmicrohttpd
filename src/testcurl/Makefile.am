@@ -1,4 +1,6 @@
 # This Makefile.am is in the public domain
+EMPTY_ITEM =
+
 SUBDIRS = .
 
 if USE_COVERAGE
@@ -23,15 +25,35 @@ THREAD_ONLY_TESTS = \
   test_long_header11 \
   test_iplimit11 \
   test_termination \
+  $(EMPTY_ITEM)
+
+if HEAVY_TESTS
+THREAD_ONLY_TESTS += \
   test_add_conn_cleanup \
   test_add_conn_cleanup_nolisten \
-  test_timeout
+  $(EMPTY_ITEM)
+endif
+
+THREAD_ONLY_TESTS += \
+  test_timeout \
+  $(EMPTY_ITEM)
 
 if HAVE_POSIX_THREADS
+if HEAVY_TESTS
 THREAD_ONLY_TESTS += \
   perf_get_concurrent11 \
+  $(EMPTY_ITEM)
+endif
+
+THREAD_ONLY_TESTS += \
   test_quiesce \
-  test_concurrent_stop
+  $(EMPTY_ITEM)
+
+if HEAVY_TESTS
+THREAD_ONLY_TESTS += \
+  test_concurrent_stop \
+  $(EMPTY_ITEM)
+endif
 
 if HAVE_CURL_BINARY
 THREAD_ONLY_TESTS += \
@@ -46,11 +68,13 @@ THREAD_ONLY_TESTS += \
   test_digestauth_with_arguments
 endif
 
+if HEAVY_TESTS
 if HAVE_POSIX_THREADS
 THREAD_ONLY_TESTS += \
   perf_get_concurrent
 endif
-  
+endif
+
 if HAVE_CURL
 check_PROGRAMS = \
   test_get \
@@ -73,7 +97,12 @@ check_PROGRAMS = \
   test_get_chunked \
   test_put_chunked \
   test_callback \
+  $(EMPTY_ITEM)
+
+if HEAVY_TESTS
+check_PROGRAMS += \
   perf_get
+endif
 
 if HAVE_POSTPROCESSOR
  check_PROGRAMS += \
@@ -85,9 +114,11 @@ if HAVE_POSTPROCESSOR
   test_post_loop11
 endif
 
+if HEAVY_TESTS
 if HAVE_FORK_WAITPID
 if HAVE_CURL_BINARY
 check_PROGRAMS += test_get_response_cleanup
+endif
 endif
 endif
 
