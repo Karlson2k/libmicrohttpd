@@ -286,8 +286,17 @@ specifies path to libgcrypt installation
 @item ``--with-gnutls=PATH''
 specifies path to libgnutls installation
 
-
 @end table
+
+To cross-compile MHD for Android, install the Android NDK and use:
+@verbatim
+./configure --target=arm-linux-androideabi --host=arm-linux-androideabi --disable-doc --disable-examples
+make
+@end verbatim
+
+Similar build commands should work for cross-compilation to other platforms.
+Note that you may have to first cross-compile GnuTLS to get MHD with TLS support.
+
 
 @section Validity of pointers
 
