@@ -135,7 +135,7 @@ typedef intptr_t ssize_t;
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097202
+#define MHD_VERSION 0x00097203
 
 /**
  * Operational results from MHD calls.
@@ -3511,7 +3511,8 @@ MHD_create_post_processor (struct MHD_Connection *connection,
  */
 _MHD_EXTERN enum MHD_Result
 MHD_post_process (struct MHD_PostProcessor *pp,
-                  const char *post_data, size_t post_data_len);
+                  const char *post_data,
+                  size_t post_data_len);
 
 
 /**
