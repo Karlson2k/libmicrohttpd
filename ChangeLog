@@ -1,3 +1,7 @@
+Thu 04 Feb 2021 06:41:34 PM CET
+    Fix PostProcessor to always properly stop iteration when application callback
+    tells it to do so. -CG
+
 Wed 06 Jan 2021 08:39:58 PM CET
     Return timeout of zero also for connections awaiting cleanup. -CG
 
