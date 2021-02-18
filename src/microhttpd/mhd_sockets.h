@@ -934,17 +934,22 @@ static const int _MHD_socket_int_one = 1;
 #endif /* SOL_SOCKET && SO_NOSIGPIPE */
 
 
-#if defined(MHD_WINSOCK_SOCKETS) || defined(MHD_socket_nosignal_) || \
-  defined(MSG_NOSIGNAL)
+#if defined(MHD_socket_nosignal_) || defined(MSG_NOSIGNAL)
 /**
- * Indicate that SIGPIPE can be suppressed for normal send() by flags
+ * Indicate that SIGPIPE can be suppressed by MHD for normal send() by flags
  * or socket options.
  * If this macro is undefined, MHD cannot suppress SIGPIPE for normal
  * processing so sendfile() or writev() calls is not avoided.
  */
-#define HAVE_SEND_SIGPIPE_SUPPRESS      1
+#define MHD_SEND_SPIPE_SUPPRESS_POSSIBLE   1
 #endif /* MHD_WINSOCK_SOCKETS || MHD_socket_nosignal_ || MSG_NOSIGNAL */
 
+#if ! defined(MHD_WINSOCK_SOCKETS)
+/**
+ * Indicate that suppression of SIGPIPE is required.
+ */
+#define MHD_SEND_SPIPE_SUPPRESS_NEEDED     1
+#endif
 
 /**
  * Create a listen socket, with noninheritable flag if possible.

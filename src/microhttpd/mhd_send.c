@@ -812,13 +812,14 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 #ifdef HTTPS_SUPPORT
   no_vec = no_vec || (connection->daemon->options & MHD_USE_TLS);
 #endif /* HTTPS_SUPPORT */
-#if ! defined(MHD_WINSOCK_SOCKETS) && \
-  (! defined(HAVE_SENDMSG) || ! defined(MSG_NOSIGNAL)) && \
-  defined(HAVE_SEND_SIGPIPE_SUPPRESS)
+#if (! defined(HAVE_SENDMSG) || ! defined(MSG_NOSIGNAL) ) && \
+  defined(MHD_SEND_SPIPE_SEND_SUPPRESS_POSSIBLE) && \
+  defined(MHD_SEND_SPIPE_SUPPRESS_NEEDED)
   no_vec = no_vec || (! connection->daemon->sigpipe_blocked &&
                       ! connection->sk_spipe_suppress);
-#endif /* !MHD_WINSOCK_SOCKETS && (!HAVE_SENDMSG || ! MSG_NOSIGNAL)
-          && !HAVE_SEND_SIGPIPE_SUPPRESS */
+#endif /* (!HAVE_SENDMSG || ! MSG_NOSIGNAL) &&
+          MHD_SEND_SPIPE_SEND_SUPPRESS_POSSIBLE &&
+          MHD_SEND_SPIPE_SUPPRESS_NEEDED */
 #endif /* _MHD_USE_SEND_VEC */
 
   mhd_assert ( (NULL != body) || (0 == body_size) );

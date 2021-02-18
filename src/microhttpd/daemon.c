@@ -2243,7 +2243,9 @@ static void
 MHD_cleanup_connections (struct MHD_Daemon *daemon);
 
 #if defined(HTTPS_SUPPORT)
-#if ! defined(MHD_WINSOCK_SOCKETS) && ! defined(MHD_socket_nosignal_) && \
+#if defined(MHD_SEND_SPIPE_SUPPRESS_NEEDED) && \
+  defined(MHD_SEND_SPIPE_SUPPRESS_POSSIBLE) && \
+  ! defined(MHD_socket_nosignal_) && \
   (GNUTLS_VERSION_NUMBER + 0 < 0x030402) && defined(MSG_NOSIGNAL)
 /**
  * Older version of GnuTLS do not support suppressing of SIGPIPE signal.
@@ -2251,8 +2253,10 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon);
  * and if possible.
  */
 #define MHD_TLSLIB_NEED_PUSH_FUNC 1
-#endif \
-  /* !MHD_WINSOCK_SOCKETS && !MHD_socket_nosignal_ && (GNUTLS_VERSION_NUMBER+0 < 0x030402) */
+#endif /* MHD_SEND_SPIPE_SUPPRESS_NEEDED &&
+          MHD_SEND_SPIPE_SUPPRESS_POSSIBLE &&
+          ! MHD_socket_nosignal_ && (GNUTLS_VERSION_NUMBER+0 < 0x030402) &&
+          MSG_NOSIGNAL */
 
 #ifdef MHD_TLSLIB_NEED_PUSH_FUNC
 /**
@@ -7740,8 +7744,8 @@ MHD_is_feature_supported (enum MHD_FEATURE feature)
     return MHD_NO;
 #endif
   case MHD_FEATURE_AUTOSUPPRESS_SIGPIPE:
-#if defined(MHD_WINSOCK_SOCKETS) || defined(MHD_socket_nosignal_) || \
-    defined (MSG_NOSIGNAL)
+#if defined(MHD_SEND_SPIPE_SUPPRESS_POSSIBLE) && \
+    defined(MHD_SEND_SPIPE_SUPPRESS_NEEDED)
     return MHD_YES;
 #else
     return MHD_NO;
