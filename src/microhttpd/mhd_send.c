@@ -1245,18 +1245,19 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
 #endif /* _MHD_HAVE_SENDFILE */
 
 
-#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
+#if defined(MHD_VECT_SEND)
 
 static ssize_t
 send_iov_nontls (struct MHD_Connection *connection,
-                 MHD_iovec *iovp,
-                 int iovcnt)
+                 MHD_iovec_ *iov,
+                 size_t iovcnt)
 {
   ssize_t ret;
-  struct iovec *iov = (struct iovec *) iovp;
 #ifdef HAVE_SENDMSG
   struct msghdr msg;
-#endif
+#elif defined(MHD_WINSOCK_SOCKETS)
+  DWORD bytes_sent;
+#endif /* MHD_WINSOCK_SOCKETS */
 
   if ( (MHD_INVALID_SOCKET == connection->socket_fd) ||
        (MHD_CONNECTION_CLOSED == connection->state) )
@@ -1268,9 +1269,13 @@ send_iov_nontls (struct MHD_Connection *connection,
   memset (&msg, 0, sizeof(struct msghdr));
   msg.msg_iov = iov;
   msg.msg_iovlen = iovcnt;
+
   ret = sendmsg (connection->socket_fd, &msg, MSG_NOSIGNAL);
-#else
+#elif defined(HAVE_WRITEV)
   ret = writev (connection->socket_fd, iov, iovcnt);
+#elif defined(MHD_WINSOCK_SOCKETS)
+#else /* !HAVE_SENDMSG && !HAVE_WRITEV && !MHD_WINSOCK_SOCKETS */
+#error No vector-send function available
 #endif
 
   if (0 > ret)
@@ -1299,7 +1304,50 @@ send_iov_nontls (struct MHD_Connection *connection,
 }
 
 
-#endif /* HAVE_SENDMSG || HAVE_WRITEV */
+#endif /* MHD_VECT_SEND */
+
+
+static ssize_t
+send_iov_emu (struct MHD_Connection *connection,
+              MHD_iovec_ *iov,
+              size_t iovcnt)
+{
+  struct MHD_iovec_track_ *const r_iov = &connection->resp_iov;
+  const bool non_blk = connection->sk_nonblck;
+  size_t total_sent;
+  ssize_t res;
+
+  mhd_assert (NULL != r_iov->iov);
+  do
+  {
+    if ((size_t) SSIZE_MAX - total_sent < r_iov->iov[r_iov->sent].iov_len)
+      return total_sent; /* return value would overflow */
+
+    res = MHD_send_data_ (connection,
+                          r_iov->iov[r_iov->sent].iov_base,
+                          r_iov->iov[r_iov->sent].iov_len,
+                          r_iov->cnt == r_iov->sent + 1);
+    if (0 > res)
+      return res; /* Result is an error */
+
+    total_sent += (size_t) res;
+
+    if (r_iov->iov[r_iov->sent].iov_len != (size_t) res)
+    {
+      /* Incomplete buffer has been sent.
+       * Adjust buffer of the last element. */
+      r_iov->iov[r_iov->sent].iov_base =
+        (void*) ((uint8_t*) r_iov->iov[r_iov->sent].iov_base + (size_t) res);
+
+      return total_sent;
+    }
+    /* iov element has been completely sent */
+    r_iov->sent++;
+  } while ((r_iov->cnt > r_iov->sent) && (non_blk));
+
+  /* Whole response has been sent */
+  return (ssize_t) total_sent;
+}
 
 
 ssize_t
@@ -1310,18 +1358,30 @@ MHD_send_iovec_ (struct MHD_Connection *connection)
   ssize_t res;
   bool do_postsend = false;
   size_t total_sent;
+  bool use_iov_send;
 
   mhd_assert (NULL != r_iov->iov);
   mhd_assert (NULL != response->data_iov);
   total_sent = 0;
+#ifdef MHD_VECT_SEND
+#else  /* ! MHD_VECT_SEND */
+#endif /* ! MHD_VECT_SEND */
 #if defined(HTTPS_SUPPORT) && defined(MHD_VECT_SEND)
-  if (0 != (connection->daemon->options & MHD_USE_TLS))
+  if (0 != (connection->daemon->options & MHD_USE_TLS)
+#if ! defined (HAVE_SENDMSG) && \
+      defined (MHD_SIGPIPE_SUPPRESS_POSSIBLE) && \
+      defined (MHD_SIGPIPE_SUPPRESS_NEEDED)
+      && (connection->daemon->sigpipe_blocked ||
+          connection->sk_spipe_suppress)
+#endif /* ! HAVE_SENDMSG && MHD_SIGPIPE_SUPPRESS_POSSIBLE &&
+            MHD_SIGPIPE_SUPPRESS_NEEDED */
+      )
   {
     pre_send_setopt (connection, true, false);
     do_postsend = true;
     res = send_iov_nontls (connection,
-                           response->data_iov_left,
-                           response->data_iovcnt_left);
+                           r_iov->iov + r_iov->sent,
+                           r_iov->cnt - r_iov->sent);
     if (0 < res)
       total_sent = (size_t) res;
   }
@@ -1330,6 +1390,7 @@ MHD_send_iovec_ (struct MHD_Connection *connection)
   if (1)
 #endif /* ! HTTPS_SUPPORT || ! MHD_VECT_SEND */
   {
+    /* Use emulation of iov send function */
     res = MHD_send_data_ (connection,
                           r_iov->iov[r_iov->sent].iov_base,
                           r_iov->iov[r_iov->sent].iov_len,

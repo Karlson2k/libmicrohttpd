@@ -890,17 +890,14 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
         if (0 == iov[i])
           continue; /* skip zero-sized elements */
 
-        if (total_size > (total_size + iov[i].iov_len))
-        {
-          i_cp = -1; /* overflow */
-          break;
-        }
         if (NULL == iov[i].iov_base)
         {
           i_cp = -1; /* error */
           break;
         }
-        if (INT_MAX  == i_cp)
+        if ( (total_size > (total_size + iov[i].iov_len)) ||
+             (INT_MAX == i_cp) ||
+             (SSIZE_MAX < iov[i].iov_len) )
         {
           i_cp = -1; /* overflow */
           break;
