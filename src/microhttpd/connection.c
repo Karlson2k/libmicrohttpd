@@ -3047,7 +3047,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #endif /* _MHD_HAVE_SENDFILE */
       if (NULL != response->data_iov)
       {
-        ret = MHD_send_iovec_ (connection);
+        ret = MHD_send_iovec_ (connection, &connection->resp_iov, true);
       }
       else
       {
