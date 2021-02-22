@@ -93,7 +93,7 @@ iov_free_callback (void *cls)
 static void
 iovncont_free_callback (void *cls)
 {
-  struct MHD_Iovec *iov = (struct MHD_Iovec *) cls;
+  struct MHD_IoVec *iov = (struct MHD_IoVec *) cls;
   int i;
 
   for (i = 0; i < TESTSTR_IOVCNT; ++i)
@@ -118,7 +118,7 @@ check_read_data (const void *ptr, size_t len)
 
   for (i = 0; i < len / sizeof(int); ++i)
   {
-    if (buf[i] != i)
+    if (buf[i] != (int) i)
       return -1;
   }
 
@@ -140,7 +140,7 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   enum MHD_Result ret;
   int *data;
-  struct MHD_Iovec iov[TESTSTR_IOVCNT];
+  struct MHD_IoVec iov[TESTSTR_IOVCNT];
   int i;
   (void) url; (void) version;                      /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
@@ -158,7 +158,7 @@ ahc_echo (void *cls,
   if (NULL == (data = malloc (TESTSTR_SIZE)))
     return MHD_NO;
 
-  for (i = 0; i < TESTSTR_SIZE / sizeof(int); ++i)
+  for (i = 0; i < (int) (TESTSTR_SIZE / sizeof(int)); ++i)
   {
     data[i] = i;
   }
@@ -196,7 +196,7 @@ ncont_echo (void *cls,
   struct MHD_Response *response;
   enum MHD_Result ret;
   int *data;
-  struct MHD_Iovec *iov;
+  struct MHD_IoVec *iov;
   int i, j;
   (void) url; (void) version;                      /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
@@ -210,13 +210,13 @@ ncont_echo (void *cls,
   }
   *unused = NULL;
 
-  if (NULL == (iov = malloc (sizeof(struct MHD_Iovec) * TESTSTR_IOVCNT)))
+  if (NULL == (iov = malloc (sizeof(struct MHD_IoVec) * TESTSTR_IOVCNT)))
     return MHD_NO;
 
-  memset (iov, 0, sizeof(struct MHD_Iovec) * TESTSTR_IOVCNT);
+  memset (iov, 0, sizeof(struct MHD_IoVec) * TESTSTR_IOVCNT);
 
   /* Create some test data. */
-  for (j = 0; j < TESTSTR_IOVCNT; ++j)
+  for (j = TESTSTR_IOVCNT - 1; j >= 0; --j)
   {
     if (NULL == (data = malloc (TESTSTR_IOVLEN)))
       goto err_out;
@@ -224,7 +224,7 @@ ncont_echo (void *cls,
     iov[j].iov_base = data;
     iov[j].iov_len = TESTSTR_IOVLEN;
 
-    for (i = 0; i < TESTSTR_IOVLEN / sizeof(int); ++i)
+    for (i = 0; i < (int) (TESTSTR_IOVLEN / sizeof(int)); ++i)
     {
       data[i] = i + (j * TESTSTR_IOVLEN / sizeof(int));
     }
@@ -353,7 +353,8 @@ testMultithreadedGet ()
   cbc.size = TESTSTR_SIZE * 2;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
-                        | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
+                        | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
+                        | MHD_USE_AUTO,
                         port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
   if (d == NULL)
     return 16;
@@ -423,7 +424,8 @@ testMultithreadedPoolGet ()
   cbc.buf = readbuf;
   cbc.size = TESTSTR_SIZE * 2;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
+  d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
+                        | MHD_USE_AUTO,
                         port, NULL, NULL, &ahc_echo, "GET",
                         MHD_OPTION_THREAD_POOL_SIZE, MHD_CPU_COUNT,
                         MHD_OPTION_END);
@@ -729,8 +731,6 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  const char *tmp;
-  FILE *f;
   (void) argc;   /* Unused. Silent compiler warning. */
 
   if ((NULL == argv) || (0 == argv[0]))

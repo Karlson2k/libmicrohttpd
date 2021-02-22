@@ -881,13 +881,14 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
       void *last_valid_buffer;
 
       i_cp = 0;
+      total_size = 0;
       /* Calculate final size, number of valid elements, and check 'iov' */
       for (i = 0; iovcnt > i; ++i)
       {
 #if ! defined(MHD_POSIX_SOCKETS) && defined(_WIN64)
         int64_t i_add;
 #endif /* ! MHD_POSIX_SOCKETS && _WIN64 */
-        if (0 == iov[i])
+        if (0 == iov[i].iov_len)
           continue; /* skip zero-sized elements */
 
         if (NULL == iov[i].iov_base)
@@ -939,7 +940,7 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
               size_t element_size;
               uint8_t *buf;
 
-              if (0 == iov[i])
+              if (0 == iov[i].iov_len)
                 continue; /* skip zero-sized elements */
 
               buf = (uint8_t*) iov[i].iov_base;

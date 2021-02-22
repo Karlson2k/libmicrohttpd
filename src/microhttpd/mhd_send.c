@@ -1366,7 +1366,7 @@ send_iov_emu (struct MHD_Connection *connection,
     res = MHD_send_data_ (connection,
                           r_iov->iov[r_iov->sent].iov_base,
                           r_iov->iov[r_iov->sent].iov_len,
-                          r_iov->cnt == r_iov->sent + 1);
+                          push_data && (r_iov->cnt == r_iov->sent + 1));
     if (0 > res)
     {
       /* Result is an error */
@@ -1407,9 +1407,9 @@ MHD_send_iovec_ (struct MHD_Connection *connection,
   bool use_iov_send;
 #endif /* MHD_VECT_SEND */
 
-  mhd_assert (NULL != connection->resp_iov->iov);
+  mhd_assert (NULL != connection->resp_iov.iov);
   mhd_assert (NULL != connection->response->data_iov);
-  mhd_assert (connection->resp_iov->cnt > connection->resp_iov->sent);
+  mhd_assert (connection->resp_iov.cnt > connection->resp_iov.sent);
 #ifdef MHD_VECT_SEND
   use_iov_send = (0 == (connection->daemon->options & MHD_USE_TLS));
 #if ! defined (HAVE_SENDMSG) && \
