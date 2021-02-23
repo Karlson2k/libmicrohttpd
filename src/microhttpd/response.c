@@ -869,8 +869,7 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
 
   if ((NULL == iov) && (0 < iovcnt))
     return NULL;
-// #undef ULONG_MAX
-// #define ULONG_MAX 450
+
   response = MHD_calloc_ (1, sizeof (struct MHD_Response));
   if (NULL != response)
   {
