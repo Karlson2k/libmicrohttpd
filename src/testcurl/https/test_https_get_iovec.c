@@ -48,8 +48,10 @@ extern const char srv_signed_key_pem[];
 
 static int global_port;
 
-#define TESTSTR_IOVLEN 1024
-#define TESTSTR_IOVCNT 10
+/* Use large enough pieces (>16KB) to test partially consumed
+ * data as TLS doesn't take more than 16KB by a single call. */
+#define TESTSTR_IOVLEN 20480
+#define TESTSTR_IOVCNT 30
 #define TESTSTR_SIZE   (TESTSTR_IOVCNT * TESTSTR_IOVLEN)
 
 

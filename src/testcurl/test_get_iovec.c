@@ -56,8 +56,8 @@
 #define MHD_CPU_COUNT 2
 #endif
 
-#define TESTSTR_IOVLEN 1024
-#define TESTSTR_IOVCNT 10
+#define TESTSTR_IOVLEN 20480
+#define TESTSTR_IOVCNT 20
 #define TESTSTR_SIZE   (TESTSTR_IOVCNT * TESTSTR_IOVLEN)
 
 static int oneone;
@@ -66,7 +66,7 @@ static int readbuf[TESTSTR_SIZE * 2 / sizeof(int)];
 
 struct CBC
 {
-  int *buf;
+  char *buf;
   size_t pos;
   size_t size;
 };
@@ -78,7 +78,7 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx)
   struct CBC *cbc = ctx;
 
   if (cbc->pos + size * nmemb > cbc->size)
-    return 0;                   /* overflow */
+    _exit (7);                   /* overflow */
   memcpy (&cbc->buf[cbc->pos], ptr, size * nmemb);
   cbc->pos += size * nmemb;
   return size * nmemb;
@@ -271,8 +271,8 @@ testInternalGet (bool contiguous)
       port += 10;
   }
 
-  cbc.buf = readbuf;
-  cbc.size = TESTSTR_SIZE * 2;
+  cbc.buf = (char*) readbuf;
+  cbc.size = sizeof(readbuf);
   cbc.pos = 0;
 
   if (contiguous)
@@ -351,8 +351,8 @@ testMultithreadedGet ()
       port += 10;
   }
 
-  cbc.buf = readbuf;
-  cbc.size = TESTSTR_SIZE * 2;
+  cbc.buf = (char*) readbuf;
+  cbc.size = sizeof(readbuf);
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
@@ -423,8 +423,8 @@ testMultithreadedPoolGet ()
       port += 10;
   }
 
-  cbc.buf = readbuf;
-  cbc.size = TESTSTR_SIZE * 2;
+  cbc.buf = (char*) readbuf;
+  cbc.size = sizeof(readbuf);
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
                         | MHD_USE_AUTO,
@@ -511,8 +511,8 @@ testExternalGet ()
   }
 
   multi = NULL;
-  cbc.buf = readbuf;
-  cbc.size = TESTSTR_SIZE * 2;
+  cbc.buf = (char*) readbuf;
+  cbc.size = sizeof(readbuf);
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
@@ -658,8 +658,8 @@ testUnknownPortGet ()
   addr.sin_port = 0;
   addr.sin_addr.s_addr = INADDR_ANY;
 
-  cbc.buf = readbuf;
-  cbc.size = TESTSTR_SIZE * 2;
+  cbc.buf = (char*) readbuf;
+  cbc.size = sizeof(readbuf);
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         0, NULL, NULL, &ahc_echo, "GET",

@@ -1254,6 +1254,7 @@ send_iov_nontls (struct MHD_Connection *connection,
 {
   ssize_t res;
   ssize_t total_sent;
+  size_t items_to_send;
 #ifdef HAVE_SENDMSG
   struct msghdr msg;
 #elif defined(MHD_WINSOCK_SOCKETS)
@@ -1269,21 +1270,25 @@ send_iov_nontls (struct MHD_Connection *connection,
 
   pre_send_setopt (connection, false, push_data);
 
+  items_to_send = r_iov->cnt - r_iov->sent;
 #ifdef HAVE_SENDMSG
   memset (&msg, 0, sizeof(struct msghdr));
-  msg.msg_iov = iov;
-  msg.msg_iovlen = iovcnt;
+  msg.msg_iov = r_iov->iov + r_iov->sent;
+  msg.msg_iovlen = items_to_send;
 
-  ret = sendmsg (connection->socket_fd, &msg, MSG_NOSIGNAL);
+  res = sendmsg (connection->socket_fd, &msg, MSG_NOSIGNAL);
 #elif defined(HAVE_WRITEV)
-  ret = writev (connection->socket_fd, iov, iovcnt);
+  res = writev (connection->socket_fd, r_iov->iov + r_iov->sent,
+                items_to_send);
 #elif defined(MHD_WINSOCK_SOCKETS)
 #ifdef _WIN64
-  cnt_w = (r_iov->cnt > UINT32_MAX) ? UINT32_MAX : (DWORD) r_iov->cnt;
+  cnt_w = (items_to_send > UINT32_MAX) ? UINT32_MAX : (DWORD) items_to_send;
 #else  /* ! _WIN64 */
-  cnt_w = (DWORD) r_iov->cnt;
+  cnt_w = (DWORD) items_to_send;
 #endif /* ! _WIN64 */
-  if (0 == WSASend (connection->socket_fd, (LPWSABUF) r_iov->iov, cnt_w,
+  if (0 == WSASend (connection->socket_fd,
+                    (LPWSABUF) (r_iov->iov + r_iov->sent),
+                    cnt_w,
                     &bytes_sent, 0, NULL, NULL))
     res = (ssize_t) bytes_sent;
   else
@@ -1387,6 +1392,7 @@ send_iov_emu (struct MHD_Connection *connection,
        * Adjust buffer of the last element. */
       r_iov->iov[r_iov->sent].iov_base =
         (void*) ((uint8_t*) r_iov->iov[r_iov->sent].iov_base + (size_t) res);
+      r_iov->iov[r_iov->sent].iov_len -= res;
 
       return total_sent;
     }
