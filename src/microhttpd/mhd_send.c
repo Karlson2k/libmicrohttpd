@@ -1264,7 +1264,7 @@ send_iov_nontls (struct MHD_Connection *connection,
     return MHD_ERR_NOTCONN_;
   }
 
-  pre_send_setopt (connection, true, push_data);
+  pre_send_setopt (connection, false, push_data);
 
   items_to_send = r_iov->cnt - r_iov->sent;
 #ifdef HAVE_SENDMSG
@@ -1325,7 +1325,7 @@ send_iov_nontls (struct MHD_Connection *connection,
   }
 
   if (r_iov->cnt == r_iov->sent)
-    post_send_setopt (connection, true, push_data);
+    post_send_setopt (connection, false, push_data);
   else
   {
 #ifdef EPOLL_SUPPORT
