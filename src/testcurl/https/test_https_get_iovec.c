@@ -1,6 +1,7 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2007 Christian Grothoff
+  Copyright (C) 2007-2021 Christian Grothoff
+  Copyright (C) 2016-2021 Evgeny Grin
 
   libmicrohttpd is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
@@ -22,6 +23,7 @@
  * @file test_https_get_iovec.c
  * @brief  Testcase for libmicrohttpd HTTPS GET operations using an iovec
  * @author Sagie Amir
+ * @author Karlson2k (Evgeny Grin)
  * @author Lawrence Sebald
  */
 
@@ -71,7 +73,7 @@ check_read_data (const void *ptr, size_t len)
 
   for (i = 0; i < len / sizeof(int); ++i)
   {
-    if (buf[i] != i)
+    if (buf[i] != (int) i)
       return -1;
   }
 
@@ -93,9 +95,10 @@ iovec_ahc (void *cls,
   struct MHD_Response *response;
   enum MHD_Result ret;
   int *data;
-  struct MHD_Iovec iov[TESTSTR_IOVCNT];
+  struct MHD_IoVec iov[TESTSTR_IOVCNT];
   int i;
-  (void) url; (void) version;                      /* Unused. Silent compiler warning. */
+  int j;
+  (void) cls; (void) url; (void) version;          /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
@@ -112,16 +115,18 @@ iovec_ahc (void *cls,
   if (NULL == (data = malloc (TESTSTR_SIZE)))
     return MHD_NO;
 
-  for (i = 0; i < TESTSTR_SIZE / sizeof(int); ++i)
+  for (j = 0; j < TESTSTR_IOVCNT; ++j)
   {
-    data[i] = i;
-  }
+    /* Assign chunks of memory area in the reverse order
+     * to make non-continous set of data therefore
+     * possible buffer overruns could be detected */
+    iov[j].iov_base = data + (((TESTSTR_IOVCNT - 1) - j)
+                              * (TESTSTR_SIZE / TESTSTR_IOVCNT
+                                 / sizeof(int)));
+    iov[j].iov_len = TESTSTR_SIZE / TESTSTR_IOVCNT;
 
-  for (i = 0; i < TESTSTR_IOVCNT; ++i)
-  {
-    iov[i].iov_base = data + (i * (TESTSTR_SIZE / TESTSTR_IOVCNT
-                                   / sizeof(int)));
-    iov[i].iov_len = TESTSTR_SIZE / TESTSTR_IOVCNT;
+    for (i = 0; i < (int) (TESTSTR_IOVLEN / sizeof(int)); ++i)
+      ((int*) iov[j].iov_base)[i] = i + (j * TESTSTR_IOVLEN / sizeof(int));
   }
 
   response = MHD_create_response_from_iovec (iov,
@@ -246,7 +251,7 @@ ahc_empty (void *cls,
   static int ptr;
   struct MHD_Response *response;
   enum MHD_Result ret;
-  struct MHD_Iovec iov;
+  struct MHD_IoVec iov;
   (void) cls;
   (void) url;
   (void) url;

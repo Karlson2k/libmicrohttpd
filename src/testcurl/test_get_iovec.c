@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007, 2009 Christian Grothoff
+     Copyright (C) 2007-2021 Christian Grothoff
+     Copyright (C) 2014-2021 Evgeny Grin
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -22,6 +23,7 @@
  * @file test_get_iovec.c
  * @brief  Testcase for libmicrohttpd response from scatter/gather array
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  * @author Lawrence Sebald
  */
 
