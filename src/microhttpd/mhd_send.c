@@ -1264,7 +1264,7 @@ send_iov_nontls (struct MHD_Connection *connection,
     return MHD_ERR_NOTCONN_;
   }
 
-  pre_send_setopt (connection, false, push_data);
+  pre_send_setopt (connection, true, push_data);
 
   items_to_send = r_iov->cnt - r_iov->sent;
 #ifdef HAVE_SENDMSG
@@ -1272,7 +1272,7 @@ send_iov_nontls (struct MHD_Connection *connection,
   msg.msg_iov = r_iov->iov + r_iov->sent;
   msg.msg_iovlen = items_to_send;
 
-  res = sendmsg (connection->socket_fd, &msg, MSG_NOSIGNAL);
+  res = sendmsg (connection->socket_fd, &msg, MSG_NOSIGNAL_OR_ZERO);
 #elif defined(HAVE_WRITEV)
   res = writev (connection->socket_fd, r_iov->iov + r_iov->sent,
                 items_to_send);
@@ -1325,7 +1325,7 @@ send_iov_nontls (struct MHD_Connection *connection,
   }
 
   if (r_iov->cnt == r_iov->sent)
-    post_send_setopt (connection, false, push_data);
+    post_send_setopt (connection, true, push_data);
   else
   {
 #ifdef EPOLL_SUPPORT
