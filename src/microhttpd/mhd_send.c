@@ -773,10 +773,6 @@ MHD_send_data_ (struct MHD_Connection *connection,
 }
 
 
-#if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV) || defined(_WIN32)
-#define _MHD_USE_SEND_VEC          1
-#endif /* HAVE_SENDMSG || HAVE_WRITEV || _WIN32*/
-
 ssize_t
 MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
                         const char *header,
@@ -795,7 +791,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 #else  /* ! _WIN32 */
 #define _MHD_SEND_VEC_MAX   UINT32_MAX
 #endif /* ! _WIN32 */
-#ifdef _MHD_USE_SEND_VEC
+#ifdef MHD_VECT_SEND
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
   struct iovec vector[2];
 #ifdef HAVE_SENDMSG
@@ -820,7 +816,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 #endif /* (!HAVE_SENDMSG || ! MSG_NOSIGNAL) &&
           MHD_SEND_SPIPE_SEND_SUPPRESS_POSSIBLE &&
           MHD_SEND_SPIPE_SUPPRESS_NEEDED */
-#endif /* _MHD_USE_SEND_VEC */
+#endif /* MHD_VECT_SEND */
 
   mhd_assert ( (NULL != body) || (0 == body_size) );
 
@@ -857,7 +853,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     push_hdr = true; /* The header alone is equal to the whole response. */
 
   if (
-#ifdef _MHD_USE_SEND_VEC
+#ifdef MHD_VECT_SEND
     (no_vec) ||
     (0 == body_size) ||
     ((size_t) SSIZE_MAX <= header_size) ||
@@ -865,9 +861,9 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 #ifdef _WIN32
     || ((size_t) UINT_MAX < header_size)
 #endif /* _WIN32 */
-#else  /* ! _MHD_USE_SEND_VEC */
+#else  /* ! MHD_VECT_SEND */
     true
-#endif /* ! _MHD_USE_SEND_VEC */
+#endif /* ! MHD_VECT_SEND */
     )
   {
     ret = MHD_send_data_ (connection,
@@ -906,7 +902,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     }
     return ret;
   }
-#ifdef _MHD_USE_SEND_VEC
+#ifdef MHD_VECT_SEND
 
   if ( ((size_t) SSIZE_MAX <= body_size) ||
        ((size_t) SSIZE_MAX < (header_size + body_size)) )
@@ -1031,10 +1027,10 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
   }
 
   return ret;
-#else  /* ! _MHD_USE_SEND_VEC */
+#else  /* ! MHD_VECT_SEND */
   mhd_assert (false);
   return MHD_ERR_CONNRESET_; /* Unreachable. Mute warnings. */
-#endif /* ! _MHD_USE_SEND_VEC */
+#endif /* ! MHD_VECT_SEND */
 }
 
 
