@@ -1,9 +1,25 @@
+Wed 24 Feb 2021 19:23:00 MSK
+    SIGPIPE-related macro minor refactoring for readability.
+    Added new response iov function (and related framework), based on the patch
+    provided by Lawrence Sebald and Damon N. Earp from NASA. -EG
+
 Thu 04 Feb 2021 06:41:34 PM CET
     Fix PostProcessor to always properly stop iteration when application callback
     tells it to do so. -CG
 
+Sun 24 Jan 2021 21:30:00 MSK
+    Added '--enable-heavy-tests' configure parameter.
+    Minor configure.ac and Makefiles fixes. -EG
+
+Tue 19 Jan 2021 17:59:00 MSK
+    Fixed compatibility with autoconf. 2.70
+    Updated M4 macros. -EG
+
 Wed 06 Jan 2021 08:39:58 PM CET
     Return timeout of zero also for connections awaiting cleanup. -CG
+
+Tue 29 Dec 2020 15:39:00 MSK
+    Improved speed of TLS handshake by pre-enabling TCP_NODELAY. -EG
 
 Mon 28 Dec 2020 21:36:00 MSK
     Releasing libmicrohttpd 0.9.72. -EG
