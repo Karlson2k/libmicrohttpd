@@ -800,11 +800,12 @@ try_ready_normal_body (struct MHD_Connection *connection)
   if (NULL != response->data_iov)
   {
     size_t copy_size;
+
     if (NULL != connection->resp_iov.iov)
       return MHD_YES;
-
     copy_size = response->data_iovcnt * sizeof(MHD_iovec_);
-    connection->resp_iov.iov = MHD_pool_allocate (connection->pool, copy_size,
+    connection->resp_iov.iov = MHD_pool_allocate (connection->pool,
+                                                  copy_size,
                                                   true);
     if (NULL == connection->resp_iov.iov)
     {
@@ -814,7 +815,9 @@ try_ready_normal_body (struct MHD_Connection *connection)
                               _ ("Closing connection (out of memory).\n"));
       return MHD_NO;
     }
-    memcpy (connection->resp_iov.iov, response->data_iov, copy_size);
+    memcpy (connection->resp_iov.iov,
+            response->data_iov,
+            copy_size);
     connection->resp_iov.cnt = response->data_iovcnt;
     connection->resp_iov.sent = 0;
     return MHD_YES;
@@ -3047,7 +3050,9 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #endif /* _MHD_HAVE_SENDFILE */
       if (NULL != response->data_iov)
       {
-        ret = MHD_send_iovec_ (connection, &connection->resp_iov, true);
+        ret = MHD_send_iovec_ (connection,
+                               &connection->resp_iov,
+                               true);
       }
       else
       {

@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007, 2009, 2010, 2016, 2017 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2007-2021 Daniel Pittman and Christian Grothoff
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -861,135 +861,128 @@ MHD_create_response_from_buffer_with_free_callback (size_t size,
  */
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
-                                int iovcnt,
+                                unsigned int iovcnt,
                                 MHD_ContentReaderFreeCallback free_cb,
                                 void *cls)
 {
   struct MHD_Response *response;
+  unsigned int i;
+  int i_cp = 0;   /**< Index in the copy of iov */
+  uint64_t total_size = 0;
+  const void *last_valid_buffer = NULL;
 
   if ((NULL == iov) && (0 < iovcnt))
     return NULL;
 
   response = MHD_calloc_ (1, sizeof (struct MHD_Response));
-  if (NULL != response)
+  if (NULL == response)
+    return NULL;
+  if (! MHD_mutex_init_ (&response->mutex))
   {
-    if (MHD_mutex_init_ (&response->mutex))
-    {
-      int i;
-      int i_cp; /**< Index in the copy of iov */
-      uint64_t total_size;
-      void *last_valid_buffer;
-
-      i_cp = 0;
-      total_size = 0;
-      last_valid_buffer = NULL;
-      /* Calculate final size, number of valid elements, and check 'iov' */
-      for (i = 0; iovcnt > i; ++i)
-      {
-#if defined(MHD_WINSOCK_SOCKETS) && defined(_WIN64)
-        int64_t i_add;
-#endif /* ! MHD_WINSOCK_SOCKETS && _WIN64 */
-        if (0 == iov[i].iov_len)
-          continue; /* skip zero-sized elements */
-
-        if (NULL == iov[i].iov_base)
-        {
-          i_cp = -1; /* error */
-          break;
-        }
-        if ( (total_size > (total_size + iov[i].iov_len)) ||
-             (INT_MAX == i_cp) ||
-             (SSIZE_MAX < iov[i].iov_len) )
-        {
-          i_cp = -1; /* overflow */
-          break;
-        }
-        last_valid_buffer = iov[i].iov_base;
-        total_size += iov[i].iov_len;
-#if defined(MHD_POSIX_SOCKETS) || ! defined(_WIN64)
-        i_cp++;
-#else  /* ! MHD_POSIX_SOCKETS && _WIN64 */
-        i_add = iov[i].iov_len / ULONG_MAX;
-        if (0 != iov[i].iov_len % ULONG_MAX)
-          i_add++;
-        if (INT_MAX < (i_add + i_cp))
-        {
-          i_cp = -1; /* overflow */
-          break;
-        }
-        i_cp += (int) i_add;
-#endif /* ! MHD_POSIX_SOCKETS && _WIN64 */
-      }
-      if (0 <= i_cp)
-      {
-        response->fd = -1;
-        response->reference_count = 1;
-        response->total_size = total_size;
-        response->crc_cls = cls;
-        response->crfc = free_cb;
-        if (1 < i_cp)
-        {
-          MHD_iovec_ *iov_copy;
-          int num_copy_elements = i_cp;
-
-          iov_copy = MHD_calloc_ (num_copy_elements, sizeof(MHD_iovec_));
-          if (NULL != iov_copy)
-          {
-            i_cp = 0;
-            for (i = 0; iovcnt > i; ++i)
-            {
-              size_t element_size;
-              uint8_t *buf;
-
-              if (0 == iov[i].iov_len)
-                continue; /* skip zero-sized elements */
-
-              buf = (uint8_t*) iov[i].iov_base;
-              element_size = iov[i].iov_len;
-#if defined(MHD_WINSOCK_SOCKETS) && defined(_WIN64)
-              while (ULONG_MAX < element_size)
-              {
-                iov_copy[i_cp].iov_base = (void*) buf;
-                iov_copy[i_cp].iov_len = ULONG_MAX;
-                buf += ULONG_MAX;
-                element_size -= ULONG_MAX;
-                i_cp++;
-              }
-#endif /* MHD_WINSOCK_SOCKETS && _WIN64 */
-              iov_copy[i_cp].iov_base = (void*) buf;
-              iov_copy[i_cp].iov_len = element_size;
-              i_cp++;
-            }
-
-            mhd_assert (num_copy_elements == i_cp);
-            response->data_iov = iov_copy;
-            response->data_iovcnt = i_cp;
-
-            return response;
-          }
-
-        }
-        else if (1 == i_cp)
-        {
-          mhd_assert (NULL != last_valid_buffer);
-          response->data = last_valid_buffer;
-          response->data_size = total_size;
-
-          return response;
-        }
-        else /* if (0 == i_nz) */
-        {
-          mhd_assert (0 == total_size);
-
-          return response;
-        }
-      }
-      /* Some error condition */
-      MHD_mutex_destroy_chk_ (&response->mutex);
-    }
     free (response);
+    return NULL;
   }
-  return NULL;
+  /* Calculate final size, number of valid elements, and check 'iov' */
+  for (i = 0; i < iovcnt; ++i)
+  {
+    if (0 == iov[i].iov_len)
+      continue;     /* skip zero-sized elements */
+    if (NULL == iov[i].iov_base)
+    {
+      i_cp = -1;     /* error */
+      break;
+    }
+    if ( (total_size > (total_size + iov[i].iov_len)) ||
+         (INT_MAX == i_cp) ||
+         (SSIZE_MAX < iov[i].iov_len) )
+    {
+      i_cp = -1;     /* overflow */
+      break;
+    }
+    last_valid_buffer = iov[i].iov_base;
+    total_size += iov[i].iov_len;
+#if defined(MHD_POSIX_SOCKETS) || ! defined(_WIN64)
+    i_cp++;
+#else  /* ! MHD_POSIX_SOCKETS && _WIN64 */
+    {
+      int64_t i_add;
+
+      i_add = iov[i].iov_len / ULONG_MAX;
+      if (0 != iov[i].iov_len % ULONG_MAX)
+        i_add++;
+      if (INT_MAX < (i_add + i_cp))
+      {
+        i_cp = -1;   /* overflow */
+        break;
+      }
+      i_cp += (int) i_add;
+    }
+#endif /* ! MHD_POSIX_SOCKETS && _WIN64 */
+  }
+  if (-1 == i_cp)
+  {
+    /* Some error condition */
+    MHD_mutex_destroy_chk_ (&response->mutex);
+    free (response);
+    return NULL;
+  }
+  response->fd = -1;
+  response->reference_count = 1;
+  response->total_size = total_size;
+  response->crc_cls = cls;
+  response->crfc = free_cb;
+  if (0 == i_cp)
+  {
+    mhd_assert (0 == total_size);
+    return response;
+  }
+  if (1 == i_cp)
+  {
+    mhd_assert (NULL != last_valid_buffer);
+    response->data = (void *) last_valid_buffer;
+    response->data_size = total_size;
+    return response;
+  }
+  mhd_assert (1 < i_cp);
+  {
+    MHD_iovec_ *iov_copy;
+    int num_copy_elements = i_cp;
+
+    iov_copy = MHD_calloc_ (num_copy_elements,
+                            sizeof(MHD_iovec_));
+    if (NULL == iov_copy)
+    {
+      MHD_mutex_destroy_chk_ (&response->mutex);
+      free (response);
+      return NULL;
+    }
+    i_cp = 0;
+    for (i = 0; i < iovcnt; ++i)
+    {
+      size_t element_size = iov[i].iov_len;
+      const void *buf = iov[i].iov_base;
+
+      if (0 == element_size)
+        continue;         /* skip zero-sized elements */
+#if defined(MHD_WINSOCK_SOCKETS) && defined(_WIN64)
+      while (ULONG_MAX < element_size)
+      {
+        iov_copy[i_cp].iov_base = buf;
+        iov_copy[i_cp].iov_len = ULONG_MAX;
+        buf += ULONG_MAX;
+        element_size -= ULONG_MAX;
+        i_cp++;
+      }
+#endif /* MHD_WINSOCK_SOCKETS && _WIN64 */
+      iov_copy[i_cp].iov_base = (void *) buf;
+      iov_copy[i_cp].iov_len = element_size;
+      i_cp++;
+    }
+    mhd_assert (num_copy_elements == i_cp);
+    response->data_iov = iov_copy;
+    response->data_iovcnt = i_cp;
+    return response;
+  }
 }
 
 

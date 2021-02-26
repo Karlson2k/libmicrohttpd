@@ -2181,7 +2181,7 @@ The response object can be extended with header information and then be used
 any number of times.
 @table @var
 @item iov
-the array for response data buffers, an internal copy of this will be made;
+the array for response data buffers, an internal copy of this will be made; however, note that the data pointed to by the @var{iov} is not copied and must be preserved unchanged at the given locations until the response is no longer in use and the @var{crfc} is called;
 
 @item iovcnt
 the number of elements in @var{iov};

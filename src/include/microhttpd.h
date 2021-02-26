@@ -1974,14 +1974,14 @@ union MHD_ConnectionInfo
 
 
 /**
- * I/O vector type. Provided for use with MHD_create_response_from_iovec.
+ * I/O vector type. Provided for use with #MHD_create_response_from_iovec().
  */
 struct MHD_IoVec
 {
   /**
    * The pointer to the memory region for I/O.
    */
-  void *iov_base;
+  const void *iov_base;
 
   /**
    * The size in bytes of the memory region for I/O.
@@ -3262,7 +3262,7 @@ MHD_create_response_from_fd_at_offset64 (uint64_t size,
  */
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
-                                int iovcnt,
+                                unsigned int iovcnt,
                                 MHD_ContentReaderFreeCallback free_cb,
                                 void *cls);
 
