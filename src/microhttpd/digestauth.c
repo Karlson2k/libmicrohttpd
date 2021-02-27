@@ -629,7 +629,6 @@ check_nonce_nc (struct MHD_Connection *connection,
 char *
 MHD_digest_auth_get_username (struct MHD_Connection *connection)
 {
-  size_t len;
   char user[MAX_USERNAME_LENGTH];
   const char *header;
 
@@ -646,10 +645,10 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection)
                     MHD_STATICSTR_LEN_ (_BASE)))
     return NULL;
   header += MHD_STATICSTR_LEN_ (_BASE);
-  if (0 == (len = lookup_sub_value (user,
-                                    sizeof (user),
-                                    header,
-                                    "username")))
+  if (0 == lookup_sub_value (user,
+                             sizeof (user),
+                             header,
+                             "username"))
     return NULL;
   return strdup (user);
 }
