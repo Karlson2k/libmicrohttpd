@@ -361,16 +361,14 @@ process_value (struct MHD_PostProcessor *pp,
           pp->xbuf_pos);
   xoff = pp->xbuf_pos;
   pp->xbuf_pos = 0;
-  if (NULL != last_escape)
+  if ( (NULL != last_escape) &&
+       (((size_t) (value_end - last_escape)) < sizeof (pp->xbuf)) )
   {
-    if (((size_t) (value_end - last_escape)) < sizeof (pp->xbuf))
-    {
-      pp->xbuf_pos = value_end - last_escape;
-      memcpy (pp->xbuf,
-              last_escape,
-              value_end - last_escape);
-      value_end = last_escape;
-    }
+    pp->xbuf_pos = value_end - last_escape;
+    memcpy (pp->xbuf,
+            last_escape,
+            value_end - last_escape);
+    value_end = last_escape;
   }
   while ( (value_start != value_end) ||
           (pp->must_ikvi) ||
@@ -435,7 +433,7 @@ process_value (struct MHD_PostProcessor *pp,
     MHD_unescape_plus (xbuf);
     xoff = MHD_http_unescape (xbuf);
     /* finally: call application! */
-    if ( (pp->must_ikvi || (0 != xoff)) )
+    if (pp->must_ikvi || (0 != xoff) )
     {
       pp->must_ikvi = false;
       if (MHD_NO == pp->ikvi (pp->cls,
