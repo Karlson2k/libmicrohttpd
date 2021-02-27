@@ -95,14 +95,11 @@ iov_free_callback (void *cls)
 static void
 iovncont_free_callback (void *cls)
 {
-  struct MHD_IoVec *iov = (struct MHD_IoVec *) cls;
-  int i;
+  struct MHD_IoVec *iov = cls;
+  unsigned int i;
 
   for (i = 0; i < TESTSTR_IOVCNT; ++i)
-  {
     free (iov[i].iov_base);
-  }
-
   free (iov);
 }
 
@@ -236,7 +233,9 @@ ncont_echo (void *cls,
                                              TESTSTR_IOVCNT,
                                              &iovncont_free_callback,
                                              iov);
-  ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+  ret = MHD_queue_response (connection,
+                            MHD_HTTP_OK,
+                            response);
   MHD_destroy_response (response);
   if (ret == MHD_NO)
     abort ();
@@ -248,7 +247,7 @@ err_out:
     if (NULL != iov[j].iov_base)
       free (iov[j].iov_base);
   }
-
+  free (iov);
   return MHD_NO;
 }
 
