@@ -187,6 +187,13 @@ get_client_certificate (gnutls_session_t tls_session)
   if (gnutls_certificate_verify_peers2(tls_session,
 				       &client_cert_status))
     return NULL;
+  if (0 != client_cert_status)
+  {
+    fprintf (stderr,
+            "Failed client certificate invalid: %d\n",
+            client_cert_status);
+    return NULL;
+  }
   pcert = gnutls_certificate_get_peers(tls_session,
 				       &listsize);
   if ( (pcert == NULL) ||
