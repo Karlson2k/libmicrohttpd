@@ -1977,6 +1977,7 @@ union MHD_ConnectionInfo
 
 /**
  * I/O vector type. Provided for use with #MHD_create_response_from_iovec().
+ * @note Available since #MHD_VERSION 0x00097204
  */
 struct MHD_IoVec
 {
@@ -2746,6 +2747,7 @@ MHD_get_connection_values (struct MHD_Connection *connection,
  * @param iterator_cls extra argument to @a iterator
  * @return number of entries iterated over,
  *         -1 if connection is NULL.
+ * @note Available since #MHD_VERSION 0x00096400
  * @ingroup request
  */
 _MHD_EXTERN int
@@ -2811,6 +2813,7 @@ MHD_set_connection_value (struct MHD_Connection *connection,
  * @return #MHD_NO if the operation could not be
  *         performed due to insufficient memory;
  *         #MHD_YES on success
+ * @note Available since #MHD_VERSION 0x00096400
  * @ingroup request
  */
 _MHD_EXTERN enum MHD_Result
@@ -3136,6 +3139,7 @@ MHD_create_response_from_buffer (size_t size,
  * @param buffer size bytes containing the response's data portion
  * @param crfc function to call to free the @a buffer
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @note Available since #MHD_VERSION 0x00096000
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
@@ -3169,6 +3173,7 @@ MHD_create_response_from_fd (size_t size,
  *        data; will be closed when response is destroyed;
  *        fd should be in 'blocking' mode
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @note Available since #MHD_VERSION 0x00097102
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
@@ -3260,6 +3265,7 @@ MHD_create_response_from_fd_at_offset64 (uint64_t size,
  *        the response is destroyed.
  * @param cls the argument passed to @a free_cb
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @note Available since #MHD_VERSION 0x00097204
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
@@ -3596,7 +3602,7 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection);
  * Free the memory given by @a ptr. Calls "free(ptr)".  This function
  * should be used to free the username returned by
  * #MHD_digest_auth_get_username().
- * @note Since v0.9.56
+ * @note Available since #MHD_VERSION 0x00095600
  *
  * @param ptr pointer to free.
  */
@@ -3640,6 +3646,7 @@ enum MHD_DigestAuthAlgorithm
  * @param algo digest algorithms allowed for verification
  * @return #MHD_YES if authenticated, #MHD_NO if not,
  *      #MHD_INVALID_NONCE if nonce is invalid
+ * @note Available since #MHD_VERSION 0x00096200
  * @ingroup authentication
  */
 _MHD_EXTERN int
@@ -3692,6 +3699,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  * @param algo digest algorithms allowed for verification
  * @return #MHD_YES if authenticated, #MHD_NO if not,
  *      #MHD_INVALID_NONCE if nonce is invalid
+ * @note Available since #MHD_VERSION 0x00096200
  * @ingroup authentication
  */
 _MHD_EXTERN int
@@ -3719,6 +3727,7 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
  *      invalid in seconds
  * @return #MHD_YES if authenticated, #MHD_NO if not,
  *      #MHD_INVALID_NONCE if nonce is invalid
+ * @note Available since #MHD_VERSION 0x00096000
  * @ingroup authentication
  * @deprecated use #MHD_digest_auth_check_digest2()
  */
@@ -3743,6 +3752,7 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  *      'stale=true' to the authentication header
  * @param algo digest algorithm to use
  * @return #MHD_YES on success, #MHD_NO otherwise
+ * @note Available since #MHD_VERSION 0x00096200
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
