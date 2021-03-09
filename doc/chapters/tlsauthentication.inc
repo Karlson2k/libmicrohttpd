@@ -236,7 +236,7 @@ and alternative names:
  * 			to the dn if found
  */
 char *
-cert_auth_get_dn(gnutls_x509_crt_c client_cert)
+cert_auth_get_dn(gnutls_x509_crt_t client_cert)
 {
   char* buf;
   size_t lbuf;
