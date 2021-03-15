@@ -1920,6 +1920,15 @@ struct MHD_Daemon
    * The size of queue for listen socket.
    */
   unsigned int listen_backlog_size;
+
+  /**
+   * The number of user options used.
+   *
+   * Contains number of only meaningful options, i.e. #MHD_OPTION_END
+   * and #MHD_OPTION_ARRAY are not counted, while options inside
+   * #MHD_OPTION_ARRAY are counted.
+   */
+  size_t num_opts;
 };
 
 

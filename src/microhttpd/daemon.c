@@ -5403,6 +5403,9 @@ parse_options_va (struct MHD_Daemon *daemon,
 
   while (MHD_OPTION_END != (opt = (enum MHD_OPTION) va_arg (ap, int)))
   {
+    /* Increase counter at start, so resulting value is number of
+     * processed options, including any failed ones. */
+    daemon->num_opts++;
     switch (opt)
     {
     case MHD_OPTION_CONNECTION_MEMORY_LIMIT:
@@ -5784,6 +5787,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif /* HAVE_MESSAGES */
       break;
     case MHD_OPTION_ARRAY:
+      daemon->num_opts--; /* Do not count MHD_OPTION_ARRAY */
       oa = va_arg (ap, struct MHD_OptionItem*);
       i = 0;
       while (MHD_OPTION_END != (opt = oa[i].option))
