@@ -6236,13 +6236,7 @@ MHD_start_daemon_va (unsigned int flags,
   if ( (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION)) &&
        (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) )
   {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ (
-                "Warning: MHD_USE_THREAD_PER_CONNECTION must be used only with "
-                "MHD_USE_INTERNAL_POLLING_THREAD. Flag MHD_USE_INTERNAL_POLLING_THREAD "
-                "was added. Consider setting MHD_USE_INTERNAL_POLLING_THREAD explicitly.\n"));
-#endif
+    /* Log warning message later, when log parameters are processes */
     *pflags |= MHD_USE_INTERNAL_POLLING_THREAD;
   }
   if (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
@@ -6279,6 +6273,18 @@ MHD_start_daemon_va (unsigned int flags,
     free (daemon);
     return NULL;
   }
+
+#ifdef HAVE_MESSAGES
+  if ( (0 != (flags & MHD_USE_THREAD_PER_CONNECTION)) &&
+       (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD)) )
+  {
+    MHD_DLOG (daemon,
+              _ (
+                "Warning: MHD_USE_THREAD_PER_CONNECTION must be used only with "
+                "MHD_USE_INTERNAL_POLLING_THREAD. Flag MHD_USE_INTERNAL_POLLING_THREAD "
+                "was added. Consider setting MHD_USE_INTERNAL_POLLING_THREAD explicitly.\n"));
+  }
+#endif
 
   if ( (NULL != daemon->notify_completed) &&
        (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
