@@ -5741,6 +5741,12 @@ parse_options_va (struct MHD_Daemon *daemon,
                                          VfprintfFunctionPointerType);
       daemon->custom_error_log_cls = va_arg (ap,
                                              void *);
+      if (1 != daemon->num_opts)
+        MHD_DLOG (daemon,
+                  _ ("MHD_OPTION_EXTERNAL_LOGGER is not the first option "
+                     "specified for the daemon. Some messages may be "
+                     "printed by the standard MHD logger.\n"));
+
 #else
       va_arg (ap,
               VfprintfFunctionPointerType);

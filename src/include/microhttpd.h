@@ -1520,6 +1520,8 @@ enum MHD_OPTION
    * a function of type #MHD_LogCallback and the second a pointer
    * `void *` which will be passed as the first argument to the log
    * callback.
+   * Should be specified as the first option, otherwise some messages
+   * may be printed by standard MHD logger during daemon startup.
    *
    * Note that MHD will not generate any log messages
    * if it was compiled without the "--enable-messages"
