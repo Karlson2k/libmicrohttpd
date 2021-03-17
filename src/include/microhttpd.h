@@ -135,7 +135,7 @@ typedef intptr_t ssize_t;
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097204
+#define MHD_VERSION 0x00097205
 
 /**
  * Operational results from MHD calls.
@@ -1732,7 +1732,18 @@ enum MHD_OPTION
    * This argument must be followed by an "unsigned int", corresponding
    * to an `enum MHD_DisableSanityCheck`.
    */
-  MHD_OPTION_SERVER_INSANITY = 32
+  MHD_OPTION_SERVER_INSANITY = 32,
+
+  /**
+   * If followed by value '1' informs MHD that SIGPIPE is suppressed or
+   * handled by application. Allows MHD to use network functions that could
+   * generate SIGPIPE, like `sendfile()`.
+   * Valid only for daemons without #MHD_USE_INTERNAL_POLLING_THREAD as
+   * MHD automatically suppresses SIGPIPE for threads started by MHD.
+   * This option should be followed by an `int` argument.
+   * @note Available since #MHD_VERSION 0x00097205
+   */
+  MHD_OPTION_SIGPIPE_HANDLED_BY_APP = 33
 };
 
 

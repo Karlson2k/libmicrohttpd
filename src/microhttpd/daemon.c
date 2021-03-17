@@ -5849,6 +5849,7 @@ parse_options_va (struct MHD_Daemon *daemon,
           break;
         /* all options taking 'int' */
         case MHD_OPTION_STRICT_FOR_CLIENT:
+        case MHD_OPTION_SIGPIPE_HANDLED_BY_APP:
           if (MHD_NO == parse_options (daemon,
                                        servaddr,
                                        opt,
@@ -5927,6 +5928,16 @@ parse_options_va (struct MHD_Daemon *daemon,
       return MHD_NO;
 #endif
 #endif /* HTTPS_SUPPORT */
+    case MHD_OPTION_SIGPIPE_HANDLED_BY_APP:
+      if (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
+        daemon->sigpipe_blocked = ( (va_arg (ap,
+                                             int)) != 0);
+      else
+      {
+        (void) va_arg (ap,
+                       int);
+      }
+      break;
     default:
 #ifdef HAVE_MESSAGES
       if ( ( (opt >= MHD_OPTION_HTTPS_MEM_KEY) &&
