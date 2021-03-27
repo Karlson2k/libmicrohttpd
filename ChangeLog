@@ -1,3 +1,11 @@
+Wed 17 Mar 2021 20:53:33 MSK
+    Re-factored startup log parameters processing. Warn user if wrong logger
+    could be used potentially.
+    Added headers doxy with information about minimal MHD version when
+    particular symbols were introduced.
+    Added new daemon option to indicate SIGPIPE handling by application for
+    daemons being run in application thread. -EG
+
 Wed 24 Feb 2021 19:23:00 MSK
     SIGPIPE-related macro minor refactoring for readability.
     Added new response iov function (and related framework), based on the patch
