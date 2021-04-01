@@ -46,6 +46,8 @@ THREAD_ONLY_TESTS += \
 endif
 
 THREAD_ONLY_TESTS += \
+  test_get_wait \
+  test_get_wait11 \
   test_quiesce \
   $(EMPTY_ITEM)
 
@@ -231,6 +233,24 @@ test_get_sendfile_SOURCES = \
 test_get_sendfile_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
+
+test_get_wait_SOURCES = \
+  test_get_wait.c \
+  mhd_has_in_name.h
+test_get_wait_CFLAGS = \
+  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+test_get_wait_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  $(PTHREAD_LIBS) @LIBCURL@
+
+test_get_wait11_SOURCES = \
+  test_get_wait.c \
+  mhd_has_in_name.h
+test_get_wait11_CFLAGS = \
+  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+test_get_wait11_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  $(PTHREAD_LIBS) @LIBCURL@
 
 test_urlparse_SOURCES = \
   test_urlparse.c mhd_has_in_name.h

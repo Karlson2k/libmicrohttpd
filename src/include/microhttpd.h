@@ -135,7 +135,7 @@ typedef intptr_t ssize_t;
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097205
+#define MHD_VERSION 0x00097206
 
 /**
  * Operational results from MHD calls.
@@ -2696,6 +2696,39 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
  */
 _MHD_EXTERN enum MHD_Result
 MHD_run (struct MHD_Daemon *daemon);
+
+
+/**
+ * Run websever operation with possible blocking.
+ * This function do the following: waits for any network event not more than
+ * specified number of milliseconds, processes all incoming and outgoing
+ * data, processes new connections, processes any timed-out connection, and
+ * do other things required to run webserver.
+ * Once all connections are processed, function returns.
+ * This function is useful for quick and simple webserver implementation if
+ * application needs to run a single thread only and does not have any other
+ * network activity.
+ * @param daemon the daemon to run
+ * @param millisec the maximum time in milliseconds to wait for network and
+ *                 other events. Note: there is no guarantee that function
+ *                 blocks for specified amount of time. The real processing
+ *                 time can be shorter (if some data comes earlier) or
+ *                 longer (if data processing requires more time, especially
+ *                 in the user callbacks).
+ *                 If set to '0' then function does not block and processes
+ *                 only already available data (if any).
+ *                 If set to '-1' then function waits for events
+ *                 indefinitely (blocks until next network activity).
+ * @return #MHD_YES on success, #MHD_NO if this
+ *         daemon was not started with the right
+ *         options for this call or some serious
+ *         unrecoverable error occurs.
+ * @note Available since #MHD_VERSION 0x00097206
+ * @ingroup event
+ */
+enum MHD_Result
+MHD_run_wait (struct MHD_Daemon *daemon,
+              int32_t millisec);
 
 
 /**

@@ -1,3 +1,8 @@
+Thu 01 Apr 2021 17:46:00 MSK
+    Added new function MHD_run_wait() useful for single-threaded applications
+    without other network activity.
+    Added tests for the new function. -EG
+
 Wed 17 Mar 2021 20:53:33 MSK
     Re-factored startup log parameters processing. Warn user if wrong logger
     could be used potentially.

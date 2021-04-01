@@ -118,3 +118,5 @@ test_patch11
 core
 /test_get_iovec
 /test_get_iovec11
+/test_get_wait
+/test_get_wait11
