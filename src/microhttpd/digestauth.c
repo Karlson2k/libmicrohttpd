@@ -63,7 +63,7 @@
 /**
  * Macro to avoid using VLAs if the compiler does not support them.
  */
-#if __STDC_NO_VLA__
+#ifndef HAVE_C_VARARRAYS
 /**
  * Return #MAX_DIGEST.
  *
