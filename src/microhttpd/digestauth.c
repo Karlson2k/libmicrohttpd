@@ -684,7 +684,6 @@ calculate_nonce (uint32_t nonce_time,
   unsigned char timestamp[TIMESTAMP_BIN_SIZE];
   const unsigned int digest_size = da->digest_size;
   unsigned char tmpnonce[VLA_ARRAY_LEN_DIGEST (digest_size)];
-  char timestamphex[TIMESTAMP_BIN_SIZE * 2 + 1];
 
   VLA_CHECK_LEN_DIGEST (digest_size);
   da->init (da->ctx);
@@ -727,10 +726,7 @@ calculate_nonce (uint32_t nonce_time,
           nonce);
   cvthex (timestamp,
           sizeof (timestamp),
-          timestamphex);
-  strncat (nonce,
-           timestamphex,
-           8);
+          nonce + digest_size * 2);
 }
 
 
