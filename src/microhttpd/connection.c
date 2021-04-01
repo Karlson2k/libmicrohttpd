@@ -1277,6 +1277,7 @@ build_header_response (struct MHD_Connection *connection)
   must_add_chunked_encoding = false;
   must_add_keep_alive = false;
   must_add_content_length = false;
+  content_length_len = 0; /* Mute compiler warning only */
   response_has_close = false;
   switch (connection->state)
   {
