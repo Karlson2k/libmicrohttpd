@@ -99,7 +99,7 @@ iovncont_free_callback (void *cls)
   unsigned int i;
 
   for (i = 0; i < TESTSTR_IOVCNT; ++i)
-    free (iov[i].iov_base);
+    free ((void*) iov[i].iov_base);
   free (iov);
 }
 
@@ -245,7 +245,7 @@ err_out:
   for (j = 0; j < TESTSTR_IOVCNT; ++j)
   {
     if (NULL != iov[j].iov_base)
-      free (iov[j].iov_base);
+      free ((void*) iov[j].iov_base);
   }
   free (iov);
   return MHD_NO;
