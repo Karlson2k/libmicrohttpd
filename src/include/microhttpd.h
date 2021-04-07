@@ -2726,7 +2726,7 @@ MHD_run (struct MHD_Daemon *daemon);
  * @note Available since #MHD_VERSION 0x00097206
  * @ingroup event
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_run_wait (struct MHD_Daemon *daemon,
               int32_t millisec);
 

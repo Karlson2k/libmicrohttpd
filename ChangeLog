@@ -2,6 +2,7 @@ Thu 01 Apr 2021 21:29:46 MSK
     Fixed MD5 digest authorization broken when compiled without variable
     length arrays support (notably with MSVC).
     Fixed and muted compiler warning.
+    Deeper test with zzuf if configured with --enable-heavy-tests.
     Removed run-check of assert() in configure to avoid core dumps. -EG
 
 Thu 01 Apr 2021 17:46:00 MSK
