@@ -967,7 +967,7 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
 #if defined(MHD_WINSOCK_SOCKETS) && defined(_WIN64)
       while (ULONG_MAX < element_size)
       {
-        iov_copy[i_cp].iov_base = buf;
+        iov_copy[i_cp].iov_base = (char *) buf;
         iov_copy[i_cp].iov_len = ULONG_MAX;
         buf += ULONG_MAX;
         element_size -= ULONG_MAX;
