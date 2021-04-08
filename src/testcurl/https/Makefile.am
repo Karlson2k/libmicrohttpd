@@ -53,9 +53,10 @@ check_PROGRAMS += \
 endif
 
 EXTRA_DIST = \
-  cert.pem key.pem \
+  test-ca.crt test-ca.key \
   host1.crt host1.key \
   host2.crt host2.key
+
 
 TESTS = \
   $(check_PROGRAMS)
