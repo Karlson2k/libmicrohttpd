@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2008, 2010 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2015-2021 Karlson2k (Evgeny Grin)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -24,6 +25,7 @@
  *         compiled if ENABLE_HTTPS is set.
  * @author Sagie Amir
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "internal.h"
@@ -108,16 +110,16 @@ MHD_run_tls_handshake_ (struct MHD_Connection *connection)
   if ((MHD_TLS_CONN_INIT == connection->tls_state) ||
       (MHD_TLS_CONN_HANDSHAKING == connection->tls_state))
   {
-    /* GnuTLS uses sendmsg() (when available) to send outgoing message
-     * by single system call therefore there is no need to wait for
-     * additional data after sendmsg(). TLS handshake requires several packets
-     * exchange so set TCP_NODELAY here to avoid delay before each outgoing
-     * packet is pushed to the network from kernel network buffers.
-     * As a drawback, this may result in a larger number of IP packet being
-     * send on platforms without sendmsg() support, but luckily such platforms
-     * are now rare and they don't provide best performance anyway. */
+#if 0
+    /* According to real-live testing, Nagel's Algorithm is not blocking
+     * partial packets on just connected sockets on modern OSes. As TLS setup
+     * is performed as the fist action upon socket connection, the next
+     * optimisation typically is not required. If any specific OS will
+     * require this optimization, it could be enabled by allowing the next
+     * lines for this specific OS. */
     if (_MHD_ON != connection->sk_nodelay)
       MHD_connection_set_nodelay_state_ (connection, true);
+#endif
     ret = gnutls_handshake (connection->tls_session);
     if (ret == GNUTLS_E_SUCCESS)
     {

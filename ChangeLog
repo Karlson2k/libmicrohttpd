@@ -1,3 +1,9 @@
+Sun 11 Apr 2021 15:44:00 MSK
+    Updated test TLS certificates to not expired modern versions, restored
+    HTTPS examples compatibility with modern browsers.
+    TCP_NODELAY is not pre-enabled for HTTPS connection as it actually
+    does not speed-up TLS handshakes on moders OSes. -EG
+
 Thu 01 Apr 2021 21:29:46 MSK
     Fixed MD5 digest authorization broken when compiled without variable
     length arrays support (notably with MSVC).
