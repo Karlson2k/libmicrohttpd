@@ -77,9 +77,10 @@
 
 /* Cleanup test: max number of concurrent daemons depending on maximum number
  * of open FDs. */
-#define CLEANUP_MAX_DAEMONS(max_fds) (((max_fds) - 10) / \
-                                      (CLEANUP_NUM_REQS_PER_DAEMON * 5 \
-                                       + 3))
+#define CLEANUP_MAX_DAEMONS(max_fds) ( ((max_fds) < 10) ? 0 : \
+                                         ( (((max_fds) - 10) / \
+                                           (CLEANUP_NUM_REQS_PER_DAEMON * 5 \
+                                            + 3)) ) )
 
 #define EXPECTED_URI_BASE_PATH  "/hello_world"
 #define EXPECTED_URI_QUERY      "a=%26&b=c"

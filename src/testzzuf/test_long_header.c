@@ -239,8 +239,8 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  (void) argc;   /* Unused. Silent compiler warning. */
   const char *sl;
+  (void) argc;   /* Unused. Silent compiler warning. */
 
   sl = strrchr (argv[0], (int) '/');
   oneone = (NULL != sl) ? (NULL != strstr (sl, "11")) : 0;
