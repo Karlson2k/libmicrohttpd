@@ -1291,6 +1291,10 @@ send_iov_nontls (struct MHD_Connection *connection,
   pre_send_setopt (connection, true, push_data);
 
   items_to_send = r_iov->cnt - r_iov->sent;
+#ifdef IOV_MAX
+  if (IOV_MAX < items_to_send)
+    items_to_send = IOV_MAX;
+#endif /* IOV_MAX */
 #ifdef HAVE_SENDMSG
   memset (&msg, 0, sizeof(struct msghdr));
   msg.msg_iov = r_iov->iov + r_iov->sent;
