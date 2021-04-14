@@ -1085,8 +1085,6 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
   MHD_UNSIGNED_LONG_LONG to;
   struct timeval tv;
 
-  if (! MHD_itc_init_ (kicker))
-    abort ();
   while (! done)
   {
     FD_ZERO (&rs);
@@ -1122,8 +1120,6 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
                          &ws,
                          &es);
   }
-  (void) MHD_itc_destroy_ (kicker);
-  MHD_itc_set_invalid_ (kicker);
 }
 
 
@@ -1164,8 +1160,6 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
   di = MHD_get_daemon_info (daemon,
                             MHD_DAEMON_INFO_EPOLL_FD);
   ep = di->listen_fd;
-  if (! MHD_itc_init_ (kicker))
-    abort ();
   while (! done)
   {
     FD_ZERO (&rs);
@@ -1191,8 +1185,6 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
       MHD_itc_clear_ (kicker);
     MHD_run (daemon);
   }
-  (void) MHD_itc_destroy_ (kicker);
-  MHD_itc_set_invalid_ (kicker);
 }
 
 
@@ -1329,6 +1321,12 @@ test_upgrade (int flags,
 #endif /* !HTTPS_SUPPORT || !HAVE_FORK || !HAVE_WAITPID */
   }
 
+  if (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD) )
+  {
+    if (! MHD_itc_init_ (kicker))
+      abort ();
+  }
+
   if (0 != pthread_create (&pt_client,
                            NULL,
                            &run_usock_client,
@@ -1352,6 +1350,11 @@ test_upgrade (int flags,
   if (test_tls && (TLS_LIB_GNUTLS != use_tls_tool))
     waitpid (pid, NULL, 0);
 #endif /* HTTPS_SUPPORT && HAVE_FORK && HAVE_WAITPID */
+  if (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD) )
+  {
+    (void) MHD_itc_destroy_ (kicker);
+    MHD_itc_set_invalid_ (kicker);
+  }
   MHD_stop_daemon (d);
   return 0;
 }
