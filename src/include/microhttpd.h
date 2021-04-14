@@ -87,12 +87,7 @@ extern "C"
 #endif
 #endif
 
-/* While we generally would like users to use a configure-driven
-   build process which detects which headers are present and
-   hence works on any platform, we use "standard" includes here
-   to build out-of-the-box for beginning users on common systems.
-
-   If generic headers don't work on your platform, include headers
+/* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
    'uint16_t', 'uint32_t', 'uint64_t', 'off_t', 'struct sockaddr',
    'socklen_t', 'fd_set' and "#define MHD_PLATFORM_H" before
@@ -135,7 +130,7 @@ typedef intptr_t ssize_t;
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097207
+#define MHD_VERSION 0x00097300
 
 /**
  * Operational results from MHD calls.
