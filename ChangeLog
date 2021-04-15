@@ -1,3 +1,8 @@
+Thu 15 Apr 2021 18:56:00 MSK
+    Fixed configure '--enable-sanitizer' paramenter.
+    Stopped pushing of patrial responses when limited by system maximum size
+    for sendmsg(). -EG
+
 Web 14 Apr 2021 22:20:00 MSK
     Fixed: use sendmsg() in POSIX-compatible way, do not try to send more
     than IOV_MAX elements per single call. -EG
