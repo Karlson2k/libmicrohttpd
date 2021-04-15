@@ -1288,18 +1288,20 @@ send_iov_nontls (struct MHD_Connection *connection,
     return MHD_ERR_NOTCONN_;
   }
 
-  pre_send_setopt (connection, true, push_data);
-
   items_to_send = r_iov->cnt - r_iov->sent;
 #ifdef IOV_MAX
   if (IOV_MAX < items_to_send)
+  {
     items_to_send = IOV_MAX;
+    push_data = false; /* Incomplete response */
+  }
 #endif /* IOV_MAX */
 #ifdef HAVE_SENDMSG
   memset (&msg, 0, sizeof(struct msghdr));
   msg.msg_iov = r_iov->iov + r_iov->sent;
   msg.msg_iovlen = items_to_send;
 
+  pre_send_setopt (connection, true, push_data);
 #ifdef MHD_USE_MSG_MORE
   res = sendmsg (connection->socket_fd, &msg,
                  MSG_NOSIGNAL_OR_ZERO | (push_data ? 0 : MSG_MORE));
@@ -1307,14 +1309,22 @@ send_iov_nontls (struct MHD_Connection *connection,
   res = sendmsg (connection->socket_fd, &msg, MSG_NOSIGNAL_OR_ZERO);
 #endif /* ! MHD_USE_MSG_MORE */
 #elif defined(HAVE_WRITEV)
+  pre_send_setopt (connection, true, push_data);
   res = writev (connection->socket_fd, r_iov->iov + r_iov->sent,
                 items_to_send);
 #elif defined(MHD_WINSOCK_SOCKETS)
 #ifdef _WIN64
-  cnt_w = (items_to_send > UINT32_MAX) ? UINT32_MAX : (DWORD) items_to_send;
+  if (items_to_send > UINT32_MAX)
+  {
+    cnt_w = UINT32_MAX;
+    push_data = false; /* Incomplete response */
+  }
+  else
+    cnt_w = (DWORD) items_to_send;
 #else  /* ! _WIN64 */
   cnt_w = (DWORD) items_to_send;
 #endif /* ! _WIN64 */
+  pre_send_setopt (connection, true, push_data);
   if (0 == WSASend (connection->socket_fd,
                     (LPWSABUF) (r_iov->iov + r_iov->sent),
                     cnt_w,
