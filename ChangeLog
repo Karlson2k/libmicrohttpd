@@ -1,3 +1,13 @@
+Fri 16 Apr 2021 10:23:39 AM CEST
+Thu 15 Apr 2021 18:56:00 MSK
+    Fixed configure '--enable-sanitizer' paramenter.
+    Stopped pushing of patrial responses when limited by system maximum size
+    for sendmsg(). -EG
+Fri 16 Apr 2021 10:23:39 AM CEST
+    Detect if a socket is a UNIX domain socket and do not try to play
+    with TCP corking options in this case (avoids useless failed
+    syscalls). -CG
+
 Web 14 Apr 2021 22:20:00 MSK
     Fixed: use sendmsg() in POSIX-compatible way, do not try to send more
     than IOV_MAX elements per single call. -EG

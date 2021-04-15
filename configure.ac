@@ -117,7 +117,7 @@ AC_ARG_ENABLE([linker-hardening],
 AC_ARG_ENABLE([sanitizer],
   [AS_HELP_STRING([--enable-sanitizer], [enable Address Sanitizer and Undefined Behavior Sanitizer])],
 [AS_IF([test x$enableval = xyes],[
-   LDFLAGS="$CFLAGS -fsanitize=address,undefined -fno-omit-frame-pointer"
+   CFLAGS="$CFLAGS -fsanitize=address,undefined -fno-omit-frame-pointer"
  ])])
 
 

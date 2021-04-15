@@ -994,6 +994,11 @@ struct MHD_Connection
   MHD_socket socket_fd;
 
   /**
+   * true if #socket_fd is a UNIX domain socket, false (TCP) otherwise.
+   */
+  bool is_unix;
+
+  /**
    * true if #socket_fd is non-blocking, false otherwise.
    */
   bool sk_nonblck;
@@ -1459,10 +1464,16 @@ struct MHD_Daemon
   int epoll_fd;
 
   /**
-   * true if the listen socket is in the 'epoll' set,
+   * true if the @e listen_fd socket is in the 'epoll' set,
    * false if not.
    */
   bool listen_socket_in_epoll;
+
+  /**
+   * true if the @e listen_fd socket is a UNIX domain socket,
+   * false if not.
+   */
+  bool listen_is_unix;
 
 #ifdef UPGRADE_SUPPORT
 #ifdef HTTPS_SUPPORT

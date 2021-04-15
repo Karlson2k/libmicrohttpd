@@ -2376,6 +2376,7 @@ psk_gnutls_adapter (gnutls_session_t session,
  * @param non_blck indicate that socket in non-blocking mode
  * @param sk_spipe_supprs indicate that the @a client_socket has
  *                         set SIGPIPE suppression
+ * @param sk_is_unix true if this is a UNIX domain socket (AF_UNIX)
  * @return pointer to the connection on success, NULL if this daemon could
  *        not handle the connection (i.e. malloc failed, etc).
  *        The socket will be closed in case of error; 'errno' is
@@ -2388,7 +2389,8 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
                          socklen_t addrlen,
                          bool external_add,
                          bool non_blck,
-                         bool sk_spipe_supprs)
+                         bool sk_spipe_supprs,
+                         bool sk_is_unix)
 {
   struct MHD_Connection *connection;
   int eno = 0;
@@ -2490,6 +2492,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
   connection->addr_len = addrlen;
   connection->socket_fd = client_socket;
   connection->sk_nonblck = non_blck;
+  connection->is_unix = sk_is_unix;
   connection->sk_spipe_suppress = sk_spipe_supprs;
   connection->daemon = daemon;
   connection->last_activity = MHD_monotonic_sec_counter ();
@@ -2860,6 +2863,7 @@ cleanup:
  * @param non_blck indicate that socket in non-blocking mode
  * @param sk_spipe_supprs indicate that the @a client_socket has
  *                         set SIGPIPE suppression
+ * @param sk_is_unix true if this is a UNIX domain socket (AF_UNIX)
  * @return #MHD_YES on success, #MHD_NO if this daemon could
  *        not handle the connection (i.e. malloc failed, etc).
  *        The socket will be closed in any case; 'errno' is
@@ -2872,7 +2876,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
                          socklen_t addrlen,
                          bool external_add,
                          bool non_blck,
-                         bool sk_spipe_supprs)
+                         bool sk_spipe_supprs,
+                         bool sk_is_unix)
 {
   struct MHD_Connection *connection;
 
@@ -2912,9 +2917,13 @@ internal_add_connection (struct MHD_Daemon *daemon,
     return MHD_NO;
   }
 
-  connection = new_connection_prepare_ (daemon, client_socket, addr, addrlen,
-                                        external_add, non_blck,
-                                        sk_spipe_supprs);
+  connection = new_connection_prepare_ (daemon,
+                                        client_socket,
+                                        addr, addrlen,
+                                        external_add,
+                                        non_blck,
+                                        sk_spipe_supprs,
+                                        sk_is_unix);
   if (NULL == connection)
     return MHD_NO;
 
@@ -3339,6 +3348,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 {
   bool sk_nonbl;
   bool sk_spipe_supprs;
+  bool sk_is_unix = false;
 
   /* NOT thread safe with internal thread. TODO: fix thread safety. */
   if ((0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
@@ -3409,6 +3419,20 @@ MHD_add_connection (struct MHD_Daemon *daemon,
               _ ("Failed to set noninheritable mode on new client socket.\n"));
 #endif
   }
+#ifdef SO_DOMAIN
+  {
+    int af;
+    socklen_t len = sizeof (af);
+
+    if ( (0 == getsockopt (daemon->listen_fd,
+                           SOL_SOCKET,
+                           SO_DOMAIN,
+                           &af,
+                           &len)) &&
+         (AF_UNIX == af) )
+      sk_is_unix = true;
+  }
+#endif
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if (NULL != daemon->worker_pool)
@@ -3428,7 +3452,8 @@ MHD_add_connection (struct MHD_Daemon *daemon,
                                         addrlen,
                                         true,
                                         sk_nonbl,
-                                        sk_spipe_supprs);
+                                        sk_spipe_supprs,
+                                        sk_is_unix);
     }
     /* all pools are at their connection limit, must refuse */
     MHD_socket_close_chk_ (client_socket);
@@ -3445,7 +3470,8 @@ MHD_add_connection (struct MHD_Daemon *daemon,
                                   addrlen,
                                   true,
                                   sk_nonbl,
-                                  sk_spipe_supprs);
+                                  sk_spipe_supprs,
+                                  sk_is_unix);
 }
 
 
@@ -3627,7 +3653,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                                   addrlen,
                                   false,
                                   sk_nonbl,
-                                  sk_spipe_supprs);
+                                  sk_spipe_supprs,
+                                  daemon->listen_is_unix);
   return MHD_YES;
 }
 
@@ -5810,8 +5837,24 @@ parse_options_va (struct MHD_Daemon *daemon,
         return MHD_NO;
       }
       else
+      {
         daemon->listen_fd = va_arg (ap,
                                     MHD_socket);
+#ifdef SO_DOMAIN
+        {
+          int af;
+          socklen_t len = sizeof (af);
+
+          if ( (0 == getsockopt (daemon->listen_fd,
+                                 SOL_SOCKET,
+                                 SO_DOMAIN,
+                                 &af,
+                                 &len)) &&
+               (AF_UNIX == af) )
+            daemon->listen_is_unix = true;
+        }
+#endif
+      }
       break;
     case MHD_OPTION_EXTERNAL_LOGGER:
 #ifdef HAVE_MESSAGES
@@ -6680,7 +6723,6 @@ MHD_start_daemon_va (unsigned int flags,
       }
     }
     daemon->listen_fd = listen_fd;
-
     if (0 != (*pflags & MHD_USE_IPv6))
     {
 #ifdef IPPROTO_IPV6

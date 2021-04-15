@@ -165,6 +165,7 @@ MHD_connection_set_nodelay_state_ (struct MHD_Connection *connection,
  * Set required cork state for connection socket
  *
  * The function automatically updates sk_corked state.
+ *
  * @param connection the connection to manipulate
  * @param cork_state the requested new state of socket
  * @return true if succeed, false if failed
@@ -177,6 +178,8 @@ connection_set_cork_state_ (struct MHD_Connection *connection,
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
   int err_code;
 
+  if (connection->is_unix)
+    return true;
   if (0 == setsockopt (connection->socket_fd,
                        IPPROTO_TCP,
                        MHD_TCP_CORK_NOPUSH,
@@ -240,6 +243,8 @@ pre_send_setopt (struct MHD_Connection *connection,
    * Final piece is indicated by push_data == true. */
   const bool buffer_data = (! push_data);
 
+  if (connection->is_unix)
+    return;
   /* The goal is to minimise the total number of additional sys-calls
    * before and after send().
    * The following tricky (over-)complicated algorithm typically use zero,
@@ -461,14 +466,14 @@ static bool
 zero_send_ (struct MHD_Connection *connection)
 {
   int dummy;
+
+  if (connection->is_unix)
+    return;
   mhd_assert (_MHD_OFF == connection->sk_corked);
   mhd_assert (_MHD_ON == connection->sk_nodelay);
-
   dummy = 0; /* Mute compiler and analyzer warnings */
-
   if (0 == MHD_send_ (connection->socket_fd, &dummy, 0))
     return true;
-
 #ifdef HAVE_MESSAGES
   MHD_DLOG (connection->daemon,
             _ ("Zero-send failed: %s\n"),
@@ -499,6 +504,8 @@ post_send_setopt (struct MHD_Connection *connection,
    * Final piece is indicated by push_data == true. */
   const bool buffer_data = (! push_data);
 
+  if (connection->is_unix)
+    return;
   if (buffer_data)
     return; /* Nothing to do after send(). */
 
