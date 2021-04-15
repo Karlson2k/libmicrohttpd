@@ -8015,9 +8015,7 @@ MHD_init (void)
   gnutls_global_init ();
 #endif /* HTTPS_SUPPORT */
   MHD_monotonic_sec_counter_init ();
-#ifdef HAVE_FREEBSD_SENDFILE
   MHD_send_init_static_vars_ ();
-#endif /* HAVE_FREEBSD_SENDFILE */
   MHD_init_mem_pools_ ();
 }
 

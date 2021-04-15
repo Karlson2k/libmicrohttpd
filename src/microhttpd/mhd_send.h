@@ -46,14 +46,11 @@
 #define MHD_VECT_SEND 1
 #endif /* HAVE_SENDMSG || HAVE_WRITEV || MHD_WINSOCK_SOCKETS */
 
-#ifdef HAVE_FREEBSD_SENDFILE
 /**
  * Initialises static variables
  */
 void
 MHD_send_init_static_vars_ (void);
-
-#endif /* HAVE_FREEBSD_SENDFILE */
 
 
 /**

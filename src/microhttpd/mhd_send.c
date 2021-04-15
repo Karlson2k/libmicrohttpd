@@ -82,6 +82,9 @@ static int freebsd_sendfile_flags_;
  */
 static int freebsd_sendfile_flags_thd_p_c_;
 #endif /* SF_FLAGS */
+#endif /* HAVE_FREEBSD_SENDFILE */
+
+
 /**
  * Initialises static variables
  */
@@ -91,6 +94,7 @@ MHD_send_init_static_vars_ (void)
 /* FreeBSD 11 and later allow to specify read-ahead size
  * and handles SF_NODISKIO differently.
  * SF_FLAGS defined only on FreeBSD 11 and later. */
+#ifdef HAVE_FREEBSD_SENDFILE
 #ifdef SF_FLAGS
   long sys_page_size = sysconf (_SC_PAGESIZE);
   if (0 >= sys_page_size)
@@ -108,10 +112,8 @@ MHD_send_init_static_vars_ (void)
                             / sys_page_size), SF_NODISKIO);
   }
 #endif /* SF_FLAGS */
-}
-
-
 #endif /* HAVE_FREEBSD_SENDFILE */
+}
 
 
 bool
