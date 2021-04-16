@@ -2454,10 +2454,10 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
 
 AS_IF([test "x$enable_https" = "xyes"],
  [AC_MSG_NOTICE([HTTPS subsystem configuration:
-  License         :  LGPL only
+  License         :  LGPLv2.1+ only
  ])],
  [AC_MSG_NOTICE([
-  License         :  LGPL or eCos
+  License         :  LGPLv2.1+ or eCos
  ])])
 
 AS_IF([test "x$enable_bauth" != "xyes" || \
