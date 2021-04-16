@@ -6713,8 +6713,6 @@ MHD_start_daemon_va (unsigned int flags,
         servaddr = (struct sockaddr *) &servaddr4;
       }
     }
-    else
-      daemon->listen_is_unix = _MHD_UNKNOWN;
     daemon->listen_fd = listen_fd;
     if (0 != (*pflags & MHD_USE_IPv6))
     {

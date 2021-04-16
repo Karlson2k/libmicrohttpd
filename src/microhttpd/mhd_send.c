@@ -189,23 +189,23 @@ MHD_connection_set_nodelay_state_ (struct MHD_Connection *connection,
   err_code = MHD_socket_get_error_ ();
   switch (err_code)
   {
-    case EINVAL:
-    case ENOPROTOOPT:
-    case ENOTSOCK:
-      if (_MHD_NO == connection->is_nonip)
-      {
+  case EINVAL:
+  case ENOPROTOOPT:
+  case ENOTSOCK:
+    if (_MHD_NO == connection->is_nonip)
+    {
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("Setting %s option to %s state failed "
-                 "for TCP/IP socket %d: %s\n"),
-              "TCP_NODELAY",
-              nodelay_state ? _ ("ON") : _ ("OFF"),
-              (int) connection->socket_fd,
-              MHD_socket_strerr_ (err_code));
+      MHD_DLOG (connection->daemon,
+                _ ("Setting %s option to %s state failed "
+                   "for TCP/IP socket %d: %s\n"),
+                "TCP_NODELAY",
+                nodelay_state ? _ ("ON") : _ ("OFF"),
+                (int) connection->socket_fd,
+                MHD_socket_strerr_ (err_code));
 #endif /* HAVE_MESSAGES */
-      }
-      else
-        connection->is_nonip = _MHD_YES;
+    }
+    else
+      connection->is_nonip = _MHD_YES;
     break;
   case EBADF:
   case EFAULT:
@@ -258,23 +258,23 @@ connection_set_cork_state_ (struct MHD_Connection *connection,
   err_code = MHD_socket_get_error_ ();
   switch (err_code)
   {
-    case EINVAL:
-    case ENOPROTOOPT:
-    case ENOTSOCK:
-      if (_MHD_NO == connection->is_nonip)
-      {
+  case EINVAL:
+  case ENOPROTOOPT:
+  case ENOTSOCK:
+    if (_MHD_NO == connection->is_nonip)
+    {
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("Setting %s option to %s state failed "
-                 "for TCP/IP socket %d: %s\n"),
-              "TCP_NODELAY",
-              nodelay_state ? _ ("ON") : _ ("OFF"),
-              (int) connection->socket_fd,
-              MHD_socket_strerr_ (err_code));
+      MHD_DLOG (connection->daemon,
+                _ ("Setting %s option to %s state failed "
+                   "for TCP/IP socket %d: %s\n"),
+                "TCP_NODELAY",
+                nodelay_state ? _ ("ON") : _ ("OFF"),
+                (int) connection->socket_fd,
+                MHD_socket_strerr_ (err_code));
 #endif /* HAVE_MESSAGES */
-      }
-      else
-        connection->is_nonip = _MHD_YES;
+    }
+    else
+      connection->is_nonip = _MHD_YES;
     break;
   case EBADF:
   case EFAULT:
