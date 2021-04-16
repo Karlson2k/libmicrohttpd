@@ -47,6 +47,9 @@
 /* For FreeBSD version identification */
 #include <sys/param.h>
 #endif /* HAVE_SYS_PARAM_H */
+#ifdef HAVE_SYSCONF
+#include <unistd.h>
+#endif /* HAVE_SYSCONF */
 #include "mhd_assert.h"
 
 #include "mhd_limits.h"
@@ -81,21 +84,14 @@ static int freebsd_sendfile_flags_;
  * FreeBSD sendfile() flags for thread-per-connection
  */
 static int freebsd_sendfile_flags_thd_p_c_;
-#endif /* SF_FLAGS */
-#endif /* HAVE_FREEBSD_SENDFILE */
 
 
 /**
- * Initialises static variables
+ * Initialises variables for FreeBSD's sendfile()
  */
-void
-MHD_send_init_static_vars_ (void)
+static void
+freebsd_sendfile_init_ (void)
 {
-/* FreeBSD 11 and later allow to specify read-ahead size
- * and handles SF_NODISKIO differently.
- * SF_FLAGS defined only on FreeBSD 11 and later. */
-#ifdef HAVE_FREEBSD_SENDFILE
-#ifdef SF_FLAGS
   long sys_page_size = sysconf (_SC_PAGESIZE);
   if (0 >= sys_page_size)
   {   /* Failed to get page size. */
@@ -111,8 +107,62 @@ MHD_send_init_static_vars_ (void)
       SF_FLAGS ((uint16_t) ((MHD_SENFILE_CHUNK_THR_P_C_ + sys_page_size - 1)
                             / sys_page_size), SF_NODISKIO);
   }
+}
+
+
 #endif /* SF_FLAGS */
 #endif /* HAVE_FREEBSD_SENDFILE */
+
+
+#if defined(HAVE_SYSCONF) && defined(_SC_IOV_MAX)
+/**
+ * Current IOV_MAX system value
+ */
+static unsigned long mhd_iov_max_ = 0;
+
+static void
+iov_max_init_ (void)
+{
+  long res = sysconf (_SC_IOV_MAX);
+  if (res >= 0)
+    mhd_iov_max_ = res;
+#if defined(IOV_MAX)
+  else
+    mhd_iov_max_ = IOV_MAX;
+#endif /* IOV_MAX */
+}
+
+
+/**
+ * IOV_MAX (run-time) value
+ */
+#define _MHD_IOV_MAX    mhd_iov_max_
+#elif defined(IOV_MAX)
+
+/**
+ * IOV_MAX (static) value
+ */
+#define _MHD_IOV_MAX    IOV_MAX
+#endif /* HAVE_SYSCONF && _SC_IOV_MAX */
+
+
+/**
+ * Initialises static variables
+ */
+void
+MHD_send_init_static_vars_ (void)
+{
+#ifdef HAVE_FREEBSD_SENDFILE
+  /* FreeBSD 11 and later allow to specify read-ahead size
+   * and handles SF_NODISKIO differently.
+   * SF_FLAGS defined only on FreeBSD 11 and later. */
+#ifdef SF_FLAGS
+  freebsd_sendfile_init_ (void);
+#endif /* SF_FLAGS */
+#endif /* HAVE_FREEBSD_SENDFILE */
+#if defined(HAVE_SYSCONF) && defined(_SC_IOV_MAX)
+  iov_max_init_ ();
+#endif /* HAVE_SYSCONF && _SC_IOV_MAX */
 }
 
 
@@ -1298,13 +1348,16 @@ send_iov_nontls (struct MHD_Connection *connection,
   }
 
   items_to_send = r_iov->cnt - r_iov->sent;
-#ifdef IOV_MAX
-  if (IOV_MAX < items_to_send)
+#ifdef _MHD_IOV_MAX
+  if (_MHD_IOV_MAX < items_to_send)
   {
-    items_to_send = IOV_MAX;
+    mhd_assert (0 < _MHD_IOV_MAX);
+    if (0 == _MHD_IOV_MAX)
+      return MHD_ERR_NOTCONN_; /* Should never happen */
+    items_to_send = _MHD_IOV_MAX;
     push_data = false; /* Incomplete response */
   }
-#endif /* IOV_MAX */
+#endif /* _MHD_IOV_MAX */
 #ifdef HAVE_SENDMSG
   memset (&msg, 0, sizeof(struct msghdr));
   msg.msg_iov = r_iov->iov + r_iov->sent;
