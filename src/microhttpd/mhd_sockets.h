@@ -567,6 +567,11 @@ typedef int MHD_SCKT_SEND_SIZE_;
 #  else  /* ! ENOSYS */
 #    define MHD_SCKT_ENOSYS_      MHD_SCKT_MISSING_ERR_CODE_
 #  endif /* ! ENOSYS */
+#  ifdef ENOPROTOOPT
+#    define MHD_SCKT_ENOPROTOOPT_       ENOPROTOOPT
+#  else  /* ! ENOPROTOOPT */
+#    define MHD_SCKT_ENOSYS_      MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! ENOPROTOOPT */
 #  ifdef ENOTSUP
 #    define MHD_SCKT_ENOTSUP_     ENOTSUP
 #  else  /* ! ENOTSUP */
@@ -603,6 +608,7 @@ typedef int MHD_SCKT_SEND_SIZE_;
 #  define MHD_SCKT_EINVAL_        WSAEINVAL
 #  define MHD_SCKT_EFAUL_         WSAEFAULT
 #  define MHD_SCKT_ENOSYS_        MHD_SCKT_MISSING_ERR_CODE_
+#  define MHD_SCKT_ENOPROTOOPT_   WSAENOPROTOOPT
 #  define MHD_SCKT_ENOTSUP_       MHD_SCKT_MISSING_ERR_CODE_
 #  define MHD_SCKT_EOPNOTSUPP_    WSAEOPNOTSUPP
 #  define MHD_SCKT_EACCESS_       WSAEACCES

@@ -186,15 +186,17 @@ MHD_connection_set_nodelay_state_ (struct MHD_Connection *connection,
     connection->sk_nodelay = nodelay_state;
     return true;
   }
+
   err_code = MHD_socket_get_error_ ();
-  switch (err_code)
+  if (MHD_SCKT_ERR_IS_ (err_code, MHD_SCKT_EINVAL_) ||
+      MHD_SCKT_ERR_IS_ (err_code, MHD_SCKT_ENOPROTOOPT_) ||
+      MHD_SCKT_ERR_IS_ (err_code, MHD_SCKT_ENOTSOCK_))
   {
-  case EINVAL:
-  case ENOPROTOOPT:
-  case ENOTSOCK:
-    if (_MHD_NO == connection->is_nonip)
-    {
+    if (_MHD_UNKNOWN == connection->is_nonip)
+      connection->is_nonip = _MHD_YES;
 #ifdef HAVE_MESSAGES
+    else
+    {
       MHD_DLOG (connection->daemon,
                 _ ("Setting %s option to %s state failed "
                    "for TCP/IP socket %d: %s\n"),
@@ -202,26 +204,20 @@ MHD_connection_set_nodelay_state_ (struct MHD_Connection *connection,
                 nodelay_state ? _ ("ON") : _ ("OFF"),
                 (int) connection->socket_fd,
                 MHD_socket_strerr_ (err_code));
-#endif /* HAVE_MESSAGES */
     }
-    else
-      connection->is_nonip = _MHD_YES;
-    break;
-  case EBADF:
-  case EFAULT:
-  /* Hard errors, something is wrong. Too tricky to
-   * break connection here, just log the message.
-   * Shound't really happen too often. */
-  default:
+#endif /* HAVE_MESSAGES */
+  }
 #ifdef HAVE_MESSAGES
+  else
+  {
     MHD_DLOG (connection->daemon,
               _ ("Setting %s option to %s state failed: %s\n"),
               "TCP_NODELAY",
               nodelay_state ? _ ("ON") : _ ("OFF"),
               MHD_socket_strerr_ (err_code));
-#endif /* HAVE_MESSAGES */
-    break;
   }
+#endif /* HAVE_MESSAGES */
+
   return false;
 }
 
@@ -255,15 +251,17 @@ connection_set_cork_state_ (struct MHD_Connection *connection,
     connection->sk_corked = cork_state;
     return true;
   }
+
   err_code = MHD_socket_get_error_ ();
-  switch (err_code)
+  if (MHD_SCKT_ERR_IS_ (err_code, MHD_SCKT_EINVAL_) ||
+      MHD_SCKT_ERR_IS_ (err_code, MHD_SCKT_ENOPROTOOPT_) ||
+      MHD_SCKT_ERR_IS_ (err_code, MHD_SCKT_ENOTSOCK_))
   {
-  case EINVAL:
-  case ENOPROTOOPT:
-  case ENOTSOCK:
-    if (_MHD_NO == connection->is_nonip)
-    {
+    if (_MHD_UNKNOWN == connection->is_nonip)
+      connection->is_nonip = _MHD_YES;
 #ifdef HAVE_MESSAGES
+    else
+    {
       MHD_DLOG (connection->daemon,
                 _ ("Setting %s option to %s state failed "
                    "for TCP/IP socket %d: %s\n"),
@@ -271,30 +269,20 @@ connection_set_cork_state_ (struct MHD_Connection *connection,
                 nodelay_state ? _ ("ON") : _ ("OFF"),
                 (int) connection->socket_fd,
                 MHD_socket_strerr_ (err_code));
-#endif /* HAVE_MESSAGES */
     }
-    else
-      connection->is_nonip = _MHD_YES;
-    break;
-  case EBADF:
-  case EFAULT:
-  /* Hard errors, something is wrong. Too tricky to
-   * break connection here, just log the message.
-   * Shound't really happen too often. */
-  default:
+#endif /* HAVE_MESSAGES */
+  }
 #ifdef HAVE_MESSAGES
+  else
+  {
     MHD_DLOG (connection->daemon,
               _ ("Setting %s option to %s state failed: %s\n"),
-#ifdef TCP_CORK
-              "TCP_CORK",
-#else  /* ! TCP_CORK */
-              "TCP_NOPUSH",
-#endif /* ! TCP_CORK */
-              cork_state ? _ ("ON") : _ ("OFF"),
+              "TCP_NODELAY",
+              nodelay_state ? _ ("ON") : _ ("OFF"),
               MHD_socket_strerr_ (err_code));
-#endif /* HAVE_MESSAGES */
-    break;
   }
+#endif /* HAVE_MESSAGES */
+
   return false;
 }
 
