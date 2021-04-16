@@ -174,6 +174,9 @@ MHD_connection_set_nodelay_state_ (struct MHD_Connection *connection,
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
   int err_code;
 
+  if (_MHD_YES == connection->is_nonip)
+    return true;
+
   if (0 == setsockopt (connection->socket_fd,
                        IPPROTO_TCP,
                        TCP_NODELAY,
@@ -186,18 +189,29 @@ MHD_connection_set_nodelay_state_ (struct MHD_Connection *connection,
   err_code = MHD_socket_get_error_ ();
   switch (err_code)
   {
-  case ENOTSOCK:
-    /* FIXME: Could be we are talking to a pipe, maybe remember this
-       and avoid all setsockopt() in the future? */
+    case EINVAL:
+    case ENOPROTOOPT:
+    case ENOTSOCK:
+      if (_MHD_NO == connection->is_nonip)
+      {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Setting %s option to %s state failed "
+                 "for TCP/IP socket %d: %s\n"),
+              "TCP_NODELAY",
+              nodelay_state ? _ ("ON") : _ ("OFF"),
+              (int) connection->socket_fd,
+              MHD_socket_strerr_ (err_code));
+#endif /* HAVE_MESSAGES */
+      }
+      else
+        connection->is_nonip = _MHD_YES;
     break;
   case EBADF:
-  /* FIXME: should we die hard here? */
-  case EINVAL:
-  /* FIXME: optlen invalid, should at least log this, maybe die */
   case EFAULT:
-  /* wopsie, should at least log this, FIXME: maybe die */
-  case ENOPROTOOPT:
-  /* optlen unknown, should at least log this */
+  /* Hard errors, something is wrong. Too tricky to
+   * break connection here, just log the message.
+   * Shound't really happen too often. */
   default:
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
@@ -230,7 +244,7 @@ connection_set_cork_state_ (struct MHD_Connection *connection,
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
   int err_code;
 
-  if (connection->is_unix)
+  if (_MHD_YES == connection->is_nonip)
     return true;
   if (0 == setsockopt (connection->socket_fd,
                        IPPROTO_TCP,
@@ -244,18 +258,29 @@ connection_set_cork_state_ (struct MHD_Connection *connection,
   err_code = MHD_socket_get_error_ ();
   switch (err_code)
   {
-  case ENOTSOCK:
-    /* FIXME: Could be we are talking to a pipe, maybe remember this
-       and avoid all setsockopt() in the future? */
+    case EINVAL:
+    case ENOPROTOOPT:
+    case ENOTSOCK:
+      if (_MHD_NO == connection->is_nonip)
+      {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Setting %s option to %s state failed "
+                 "for TCP/IP socket %d: %s\n"),
+              "TCP_NODELAY",
+              nodelay_state ? _ ("ON") : _ ("OFF"),
+              (int) connection->socket_fd,
+              MHD_socket_strerr_ (err_code));
+#endif /* HAVE_MESSAGES */
+      }
+      else
+        connection->is_nonip = _MHD_YES;
     break;
   case EBADF:
-  /* FIXME: should we die hard here? */
-  case EINVAL:
-  /* FIXME: optlen invalid, should at least log this, maybe die */
   case EFAULT:
-  /* wopsie, should at least log this, FIXME: maybe die */
-  case ENOPROTOOPT:
-  /* optlen unknown, should at least log this */
+  /* Hard errors, something is wrong. Too tricky to
+   * break connection here, just log the message.
+   * Shound't really happen too often. */
   default:
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
@@ -295,7 +320,7 @@ pre_send_setopt (struct MHD_Connection *connection,
    * Final piece is indicated by push_data == true. */
   const bool buffer_data = (! push_data);
 
-  if (connection->is_unix)
+  if (_MHD_YES == connection->is_nonip)
     return;
   /* The goal is to minimise the total number of additional sys-calls
    * before and after send().
@@ -519,8 +544,8 @@ zero_send_ (struct MHD_Connection *connection)
 {
   int dummy;
 
-  if (connection->is_unix)
-    return;
+  if (_MHD_YES == connection->is_nonip)
+    return false;
   mhd_assert (_MHD_OFF == connection->sk_corked);
   mhd_assert (_MHD_ON == connection->sk_nodelay);
   dummy = 0; /* Mute compiler and analyzer warnings */
@@ -556,7 +581,7 @@ post_send_setopt (struct MHD_Connection *connection,
    * Final piece is indicated by push_data == true. */
   const bool buffer_data = (! push_data);
 
-  if (connection->is_unix)
+  if (_MHD_YES == connection->is_nonip)
     return;
   if (buffer_data)
     return; /* Nothing to do after send(). */

@@ -174,7 +174,9 @@ enum MHD_tristate
 {
   _MHD_UNKNOWN = -1,    /**< State is not yet checked nor set */
   _MHD_OFF     = false, /**< State is "off" / "disabled" */
-  _MHD_ON      = true   /**< State is "on"  / "enabled" */
+  _MHD_NO      = false, /**< State is "off" / "disabled" */
+  _MHD_ON      = true,  /**< State is "on"  / "enabled" */
+  _MHD_YES     = true   /**< State is "on"  / "enabled" */
 };
 
 
@@ -994,9 +996,10 @@ struct MHD_Connection
   MHD_socket socket_fd;
 
   /**
-   * true if #socket_fd is a UNIX domain socket, false (TCP) otherwise.
+   * true if @e socket_fd is not TCP/IP (a UNIX domain socket, a pipe),
+   * false (TCP/IP) otherwise.
    */
-  bool is_unix;
+  enum MHD_tristate is_nonip;
 
   /**
    * true if #socket_fd is non-blocking, false otherwise.
@@ -1444,6 +1447,11 @@ struct MHD_Daemon
    */
   struct MHD_Connection *cleanup_tail;
 
+  /**
+   * _MHD_YES if the @e listen_fd socket is a UNIX domain socket.
+   */
+  enum MHD_tristate listen_is_unix;
+
 #ifdef EPOLL_SUPPORT
   /**
    * Head of EDLL of connections ready for processing (in epoll mode).
@@ -1468,12 +1476,6 @@ struct MHD_Daemon
    * false if not.
    */
   bool listen_socket_in_epoll;
-
-  /**
-   * true if the @e listen_fd socket is a UNIX domain socket,
-   * false if not.
-   */
-  bool listen_is_unix;
 
 #ifdef UPGRADE_SUPPORT
 #ifdef HTTPS_SUPPORT
