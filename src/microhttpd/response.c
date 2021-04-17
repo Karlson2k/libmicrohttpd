@@ -42,6 +42,7 @@
 #include "mhd_str.h"
 #include "connection.h"
 #include "memorypool.h"
+#include "mhd_send.h"
 #include "mhd_compat.h"
 
 
@@ -1042,27 +1043,13 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
     MHD_resume_connection (connection);
     return MHD_YES;
   case MHD_UPGRADE_ACTION_CORK_ON:
-    if (_MHD_ON == connection->sk_corked)
-      return MHD_YES;
-    if (0 !=
-        MHD_socket_cork_ (connection->socket_fd,
-                          true))
-    {
-      connection->sk_corked = _MHD_ON;
-      return MHD_YES;
-    }
-    return MHD_NO;
+    /* Unportable API. TODO: replace with portable action. */
+    return MHD_connection_set_cork_state_ (connection,
+                                           true) ? MHD_YES : MHD_NO;
   case MHD_UPGRADE_ACTION_CORK_OFF:
-    if (_MHD_OFF == connection->sk_corked)
-      return MHD_YES;
-    if (0 !=
-        MHD_socket_cork_ (connection->socket_fd,
-                          false))
-    {
-      connection->sk_corked = _MHD_OFF;
-      return MHD_YES;
-    }
-    return MHD_NO;
+    /* Unportable API. TODO: replace with portable action. */
+    return MHD_connection_set_cork_state_ (connection,
+                                           false) ? MHD_YES : MHD_NO;
   default:
     /* we don't understand this one */
     return MHD_NO;
