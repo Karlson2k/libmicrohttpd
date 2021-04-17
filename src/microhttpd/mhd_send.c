@@ -275,7 +275,7 @@ MHD_connection_set_cork_state_ (struct MHD_Connection *connection,
 #else  /* ! TCP_CORK */
                 "TCP_NOPUSH",
 #endif /* ! TCP_CORK */
-                nodelay_state ? _ ("ON") : _ ("OFF"),
+                cork_state ? _ ("ON") : _ ("OFF"),
                 (int) connection->socket_fd,
                 MHD_socket_strerr_ (err_code));
     }
@@ -291,7 +291,7 @@ MHD_connection_set_cork_state_ (struct MHD_Connection *connection,
 #else  /* ! TCP_CORK */
               "TCP_NOPUSH",
 #endif /* ! TCP_CORK */
-              nodelay_state ? _ ("ON") : _ ("OFF"),
+              cork_state ? _ ("ON") : _ ("OFF"),
               MHD_socket_strerr_ (err_code));
   }
 #endif /* HAVE_MESSAGES */
