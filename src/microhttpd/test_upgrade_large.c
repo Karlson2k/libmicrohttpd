@@ -511,8 +511,7 @@ wr_send (struct wr_socket *s,
     ssize_t ret;
 
     ret = MHD_send_ (s->fd, buf, len);
-    (void) MHD_socket_cork_ (s->fd,
-                             false);
+
     return ret;
   }
 #ifdef HTTPS_SUPPORT
