@@ -176,7 +176,7 @@ MHD_connection_set_nodelay_state_ (struct MHD_Connection *connection,
   int err_code;
 
   if (_MHD_YES == connection->is_nonip)
-    return true;
+    return false;
 
   if (0 == setsockopt (connection->socket_fd,
                        IPPROTO_TCP,
@@ -246,7 +246,7 @@ MHD_connection_set_cork_state_ (struct MHD_Connection *connection,
   int err_code;
 
   if (_MHD_YES == connection->is_nonip)
-    return true;
+    return false;
   if (0 == setsockopt (connection->socket_fd,
                        IPPROTO_TCP,
                        MHD_TCP_CORK_NOPUSH,
