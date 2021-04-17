@@ -170,6 +170,7 @@ bool
 MHD_connection_set_nodelay_state_ (struct MHD_Connection *connection,
                                    bool nodelay_state)
 {
+#ifdef TCP_NODELAY
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
   int err_code;
@@ -218,11 +219,13 @@ MHD_connection_set_nodelay_state_ (struct MHD_Connection *connection,
   }
 #endif /* HAVE_MESSAGES */
 
+#else  /* ! TCP_NODELAY */
+  (void) connection; (void) nodelay_state; /* Mute compiler warnings */
+#endif /* ! TCP_NODELAY */
   return false;
 }
 
 
-#if defined(MHD_TCP_CORK_NOPUSH)
 /**
  * Set required cork state for connection socket
  *
@@ -230,12 +233,14 @@ MHD_connection_set_nodelay_state_ (struct MHD_Connection *connection,
  *
  * @param connection the connection to manipulate
  * @param cork_state the requested new state of socket
- * @return true if succeed, false if failed
+ * @return true if succeed, false if failed or not supported
+ *         by the current platform / kernel.
  */
-static bool
-connection_set_cork_state_ (struct MHD_Connection *connection,
-                            bool cork_state)
+bool
+MHD_connection_set_cork_state_ (struct MHD_Connection *connection,
+                                bool cork_state)
 {
+#if defined(MHD_TCP_CORK_NOPUSH)
   const MHD_SCKT_OPT_BOOL_ off_val = 0;
   const MHD_SCKT_OPT_BOOL_ on_val = 1;
   int err_code;
@@ -291,11 +296,12 @@ connection_set_cork_state_ (struct MHD_Connection *connection,
   }
 #endif /* HAVE_MESSAGES */
 
+#else  /* ! MHD_TCP_CORK_NOPUSH */
+  (void) connection; (void) cork_state; /* Mute compiler warnings. */
+#endif /* ! MHD_TCP_CORK_NOPUSH */
   return false;
 }
 
-
-#endif /* MHD_TCP_CORK_NOPUSH */
 
 /**
  * Handle pre-send setsockopt calls.
@@ -338,7 +344,7 @@ pre_send_setopt (struct MHD_Connection *connection,
     if (_MHD_ON == connection->sk_corked)
       return; /* The connection was already corked. */
 
-    if (connection_set_cork_state_ (connection, true))
+    if (MHD_connection_set_cork_state_ (connection, true))
       return; /* The connection has been corked. */
 
     /* Failed to cork the connection.
@@ -418,7 +424,7 @@ pre_send_setopt (struct MHD_Connection *connection,
     {
       /* Setting TCP_NODELAY may push data.
        * Cork socket here and uncork after send(). */
-      if (connection_set_cork_state_ (connection, true))
+      if (MHD_connection_set_cork_state_ (connection, true))
         return; /* The connection has been corked.
                  * Data can be pushed by resetting of
                  * TCP_CORK / TCP_NOPUSH after send() */
@@ -462,7 +468,7 @@ pre_send_setopt (struct MHD_Connection *connection,
          * to uncork the socket after send(). */
         /* Ignore possible error here as no other options exist to
          * push data. */
-        connection_set_cork_state_ (connection, true);
+        MHD_connection_set_cork_state_ (connection, true);
         /* The connection has been (hopefully) corked.
          * Data can be pushed by resetting of TCP_CORK / TCP_NOPUSH
          * after send() */
@@ -472,7 +478,7 @@ pre_send_setopt (struct MHD_Connection *connection,
   }
   /* Corked state is unknown. Need to make sys-call here otherwise
    * data may not be pushed. */
-  if (connection_set_cork_state_ (connection, true))
+  if (MHD_connection_set_cork_state_ (connection, true))
     return; /* The connection has been corked.
              * Data can be pushed by resetting of
              * TCP_CORK / TCP_NOPUSH after send() */
@@ -505,7 +511,7 @@ pre_send_setopt (struct MHD_Connection *connection,
 
   /* Uncork socket if socket wasn't uncorked. */
   if (_MHD_OFF != connection->sk_corked)
-    connection_set_cork_state_ (connection, false);
+    MHD_connection_set_cork_state_ (connection, false);
 
   /* Set TCP_NODELAY if it wasn't set. */
   if (_MHD_ON != connection->sk_nodelay)
@@ -618,7 +624,7 @@ post_send_setopt (struct MHD_Connection *connection,
       return; /* Data has been pushed by TCP_NODELAY. */
     /* Failed to set TCP_NODELAY for the socket.
      * Really unlikely to happen on TCP connections. */
-    if (connection_set_cork_state_ (connection, false))
+    if (MHD_connection_set_cork_state_ (connection, false))
       return; /* Data has been pushed by uncorking the socket. */
     /* Failed to uncork the socket.
      * Really unlikely to happen on TCP connections. */
@@ -627,7 +633,7 @@ post_send_setopt (struct MHD_Connection *connection,
   }
   else
   {
-    if (connection_set_cork_state_ (connection, false))
+    if (MHD_connection_set_cork_state_ (connection, false))
       return; /* Data has been pushed by uncorking the socket. */
     /* Failed to uncork the socket.
      * Really unlikely to happen on TCP connections. */
@@ -645,7 +651,7 @@ post_send_setopt (struct MHD_Connection *connection,
     return; /* Data was pushed by TCP_NODELAY. */
   /* Failed to set TCP_NODELAY for the socket.
    * Really unlikely to happen on TCP connections. */
-  if (connection_set_cork_state_ (connection, false))
+  if (MHD_connection_set_cork_state_ (connection, false))
     return; /* Data was pushed by uncorking the socket. */
   /* Failed to uncork the socket.
    * Really unlikely to happen on TCP connections. */
@@ -653,7 +659,7 @@ post_send_setopt (struct MHD_Connection *connection,
   /* The socket remains corked, no way to push data */
 #endif /* ! MHD_USE_MSG_MORE */
 #else  /* ! _MHD_NODELAY_SET_PUSH_DATA_ALWAYS */
-  if (connection_set_cork_state_ (connection, false))
+  if (MHD_connection_set_cork_state_ (connection, false))
     return; /* Data was pushed by uncorking the socket. */
   /* Failed to uncork the socket.
    * Really unlikely to happen on TCP connections. */
@@ -687,7 +693,7 @@ post_send_setopt (struct MHD_Connection *connection,
 #endif /* _MHD_CORK_RESET_PUSH_DATA */
     /* The socket is corked or cork state is unknown. */
 
-    if (connection_set_cork_state_ (connection, false))
+    if (MHD_connection_set_cork_state_ (connection, false))
     {
 #ifdef _MHD_CORK_RESET_PUSH_DATA
       /* FreeBSD kernel */
