@@ -265,7 +265,11 @@ connection_set_cork_state_ (struct MHD_Connection *connection,
       MHD_DLOG (connection->daemon,
                 _ ("Setting %s option to %s state failed "
                    "for TCP/IP socket %d: %s\n"),
-                "TCP_NODELAY",
+#ifdef TCP_CORK
+                "TCP_CORK",
+#else  /* ! TCP_CORK */
+                "TCP_NOPUSH",
+#endif /* ! TCP_CORK */
                 nodelay_state ? _ ("ON") : _ ("OFF"),
                 (int) connection->socket_fd,
                 MHD_socket_strerr_ (err_code));
@@ -277,7 +281,11 @@ connection_set_cork_state_ (struct MHD_Connection *connection,
   {
     MHD_DLOG (connection->daemon,
               _ ("Setting %s option to %s state failed: %s\n"),
-              "TCP_NODELAY",
+#ifdef TCP_CORK
+              "TCP_CORK",
+#else  /* ! TCP_CORK */
+              "TCP_NOPUSH",
+#endif /* ! TCP_CORK */
               nodelay_state ? _ ("ON") : _ ("OFF"),
               MHD_socket_strerr_ (err_code));
   }
