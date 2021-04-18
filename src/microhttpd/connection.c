@@ -126,6 +126,47 @@
 #define MHD_SENFILE_CHUNK_THR_P_C_ (0x200000)
 
 /**
+ * Return text description for MHD_ERR_*_ codes
+ * @param mhd_err_code the error code
+ * @return pointer to static string with error description
+ */
+static const char *
+str_conn_error_ (ssize_t mhd_err_code)
+{
+#ifdef HAVE_MESSAGES
+  switch (mhd_err_code)
+  {
+  case MHD_ERR_AGAIN_:
+    return _ ("The operation would block, retry later");
+  case MHD_ERR_CONNRESET_:
+    return _ ("The connection was forcibly closed by remote peer");
+  case MHD_ERR_NOTCONN_:
+    return _ ("The socket is not connected");
+  case MHD_ERR_NOMEM_:
+    return _ ("Not enough system resources to serve the request");
+  case MHD_ERR_BADF_:
+    return _ ("Bad FD value");
+  case MHD_ERR_INVAL_:
+    return _ ("Argument value is invalid");
+  case MHD_ERR_OPNOTSUPP_:
+    return _ ("Argument value is not supported");
+  case MHD_ERR_PIPE_:
+    return _ ("The socket is no longer available for sending");
+  default:
+    break;   /* Mute compiler warning */
+  }
+  if (0 <= mhd_err_code)
+    return _ ("Not an error code");
+
+  mhd_assert (0); /* Should never be reachable */
+  return _ ("Wrong error code value");
+#else  /* ! HAVE_MESSAGES */
+  return "";
+#endif /* ! HAVE_MESSAGES */
+}
+
+
+/**
  * Callback for receiving data from the socket.
  *
  * @param connection the MHD connection structure
@@ -2999,9 +3040,15 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       {
         if (MHD_ERR_AGAIN_ == ret)
           return;
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (connection->daemon,
+                  _ ("Failed to send the response headers for the " \
+                     "request for `%s'. Error: %s\n"),
+                  connection->url,
+                  str_conn_error_ (ret));
+#endif
         CONNECTION_CLOSE_ERROR (connection,
-                                _ (
-                                  "Connection was closed while sending response headers.\n"));
+                                NULL);
         return;
       }
       /* 'ret' is not negative, it's safe to cast it to 'size_t'. */
@@ -3087,8 +3134,10 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
           return;
 #ifdef HAVE_MESSAGES
         MHD_DLOG (connection->daemon,
-                  _ ("Failed to send data in request for `%s'.\n"),
-                  connection->url);
+                  _ ("Failed to send the response body for the " \
+                     "request for `%s'. Error: %s\n"),
+                  connection->url,
+                  str_conn_error_ (ret));
 #endif
         CONNECTION_CLOSE_ERROR (connection,
                                 NULL);
@@ -3115,9 +3164,15 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     {
       if (MHD_ERR_AGAIN_ == ret)
         return;
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+                _ ("Failed to send the chunked response body for the " \
+                   "request for `%s'. Error: %s\n"),
+                connection->url,
+                str_conn_error_ (ret));
+#endif
       CONNECTION_CLOSE_ERROR (connection,
-                              _ (
-                                "Connection was closed while sending response body.\n"));
+                              NULL);
       return;
     }
     connection->write_buffer_send_offset += ret;
@@ -3145,9 +3200,15 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     {
       if (MHD_ERR_AGAIN_ == ret)
         return;
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+                _ ("Failed to send the footers for the " \
+                   "request for `%s'. Error: %s\n"),
+                connection->url,
+                str_conn_error_ (ret));
+#endif
       CONNECTION_CLOSE_ERROR (connection,
-                              _ (
-                                "Connection was closed while sending response body.\n"));
+                              NULL);
       return;
     }
     connection->write_buffer_send_offset += ret;
