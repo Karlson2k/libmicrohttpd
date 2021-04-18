@@ -892,40 +892,6 @@ int
 MHD_socket_noninheritable_ (MHD_socket sock);
 
 
-/**
- * Enable/disable the cork option.
- *
- * TCP_NOPUSH has the same logic as MSG_MSG_MORE.
- * The two are more or less equivalent by a source
- * transformation (ie
- * send(MSG_MORE) => "set TCP_NOPUSH + send() + clear TCP_NOPUSH".
- * Both of them are really fairly "local", but TCP_NOPUSH has a
- * _notion_ of persistency that is entirely lacking in MSG_MORE.
- * ... with TCP_NOPUSH you basically have to know what your last
- * write is, and clear the bit _before_ that write if you want
- * to avoid bad latencies.
- *
- * See also: https://yarchive.net/comp/linux/sendfile.html
- *
- * @param sock socket to manipulate
- * @param on set to true to enable CORK, false to disable
- * @return non-zero if succeeded, zero otherwise
- */
-int
-MHD_socket_cork_ (MHD_socket sock,
-                  bool on);
-
-
-/**
- * Change socket buffering mode to default.
- *
- * @param sock socket to manipulate
- * @return non-zero if succeeded, zero otherwise
- */
-int
-MHD_socket_buffering_reset_ (MHD_socket sock);
-
-
 #if defined(SOL_SOCKET) && defined(SO_NOSIGPIPE)
 static const int _MHD_socket_int_one = 1;
 /**
