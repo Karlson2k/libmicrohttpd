@@ -557,6 +557,11 @@ typedef int MHD_SCKT_SEND_SIZE_;
 #  else  /* ! EINVAL */
 #    define MHD_SCKT_EINVAL_      MHD_SCKT_MISSING_ERR_CODE_
 #  endif /* ! EINVAL */
+#  ifdef EPIPE
+#    define MHD_SCKT_EPIPE_       EPIPE
+#  else  /* ! EPIPE */
+#    define MHD_SCKT_EPIPE_       MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! EPIPE */
 #  ifdef EFAULT
 #    define MHD_SCKT_EFAUL_       EFAULT
 #  else  /* ! EFAULT */
@@ -568,9 +573,9 @@ typedef int MHD_SCKT_SEND_SIZE_;
 #    define MHD_SCKT_ENOSYS_      MHD_SCKT_MISSING_ERR_CODE_
 #  endif /* ! ENOSYS */
 #  ifdef ENOPROTOOPT
-#    define MHD_SCKT_ENOPROTOOPT_       ENOPROTOOPT
+#    define MHD_SCKT_ENOPROTOOPT_      ENOPROTOOPT
 #  else  /* ! ENOPROTOOPT */
-#    define MHD_SCKT_ENOSYS_      MHD_SCKT_MISSING_ERR_CODE_
+#    define MHD_SCKT_ENOPROTOOPT_      MHD_SCKT_MISSING_ERR_CODE_
 #  endif /* ! ENOPROTOOPT */
 #  ifdef ENOTSUP
 #    define MHD_SCKT_ENOTSUP_     ENOTSUP
@@ -606,6 +611,7 @@ typedef int MHD_SCKT_SEND_SIZE_;
 #  define MHD_SCKT_EBADF_         WSAEBADF
 #  define MHD_SCKT_ENOTSOCK_      WSAENOTSOCK
 #  define MHD_SCKT_EINVAL_        WSAEINVAL
+#  define MHD_SCKT_EPIPE_         WSAESHUTDOWN
 #  define MHD_SCKT_EFAUL_         WSAEFAULT
 #  define MHD_SCKT_ENOSYS_        MHD_SCKT_MISSING_ERR_CODE_
 #  define MHD_SCKT_ENOPROTOOPT_   WSAENOPROTOOPT

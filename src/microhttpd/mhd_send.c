@@ -789,6 +789,8 @@ MHD_send_data_ (struct MHD_Connection *connection,
       return MHD_ERR_AGAIN_;
     if ( (GNUTLS_E_ENCRYPTION_FAILED == ret) ||
          (GNUTLS_E_INVALID_SESSION == ret) )
+      return MHD_ERR_INVAL_;
+    if (GNUTLS_E_PREMATURE_TERMINATION == ret)
       return MHD_ERR_CONNRESET_;
     if (GNUTLS_E_MEMORY_ERROR == ret)
       return MHD_ERR_NOMEM_;
@@ -841,11 +843,21 @@ MHD_send_data_ (struct MHD_Connection *connection,
       }
       if (MHD_SCKT_ERR_IS_EINTR_ (err))
         return MHD_ERR_AGAIN_;
-      if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
+      if (MHD_SCKT_ERR_IS_REMOTE_DISCNN_ (err))
         return MHD_ERR_CONNRESET_;
+      if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EPIPE_))
+        return MHD_ERR_PIPE_;
+      if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EOPNOTSUPP_))
+        return MHD_ERR_OPNOTSUPP_;
+      if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ENOTCONN_))
+        return MHD_ERR_NOTCONN_;
+      if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EINVAL_))
+        return MHD_ERR_INVAL_;
       if (MHD_SCKT_ERR_IS_LOW_RESOURCES_ (err))
         return MHD_ERR_NOMEM_;
-      /* Treat any other error as hard error. */
+      if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EBADF_))
+        return MHD_ERR_BADF_;
+      /* Treat any other error as a hard error. */
       return MHD_ERR_NOTCONN_;
     }
 #if EPOLL_SUPPORT
@@ -1075,11 +1087,21 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     }
     if (MHD_SCKT_ERR_IS_EINTR_ (err))
       return MHD_ERR_AGAIN_;
-    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
+    if (MHD_SCKT_ERR_IS_REMOTE_DISCNN_ (err))
       return MHD_ERR_CONNRESET_;
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EPIPE_))
+      return MHD_ERR_PIPE_;
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EOPNOTSUPP_))
+      return MHD_ERR_OPNOTSUPP_;
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ENOTCONN_))
+      return MHD_ERR_NOTCONN_;
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EINVAL_))
+      return MHD_ERR_INVAL_;
     if (MHD_SCKT_ERR_IS_LOW_RESOURCES_ (err))
       return MHD_ERR_NOMEM_;
-    /* Treat any other error as hard error. */
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EBADF_))
+      return MHD_ERR_BADF_;
+    /* Treat any other error as a hard error. */
     return MHD_ERR_NOTCONN_;
   }
 #if EPOLL_SUPPORT
@@ -1439,9 +1461,21 @@ send_iov_nontls (struct MHD_Connection *connection,
     }
     if (MHD_SCKT_ERR_IS_EINTR_ (err))
       return MHD_ERR_AGAIN_;
-    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
+    if (MHD_SCKT_ERR_IS_REMOTE_DISCNN_ (err))
       return MHD_ERR_CONNRESET_;
-    /* Treat any other error as hard error. */
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EPIPE_))
+      return MHD_ERR_PIPE_;
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EOPNOTSUPP_))
+      return MHD_ERR_OPNOTSUPP_;
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ENOTCONN_))
+      return MHD_ERR_NOTCONN_;
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EINVAL_))
+      return MHD_ERR_INVAL_;
+    if (MHD_SCKT_ERR_IS_LOW_RESOURCES_ (err))
+      return MHD_ERR_NOMEM_;
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EBADF_))
+      return MHD_ERR_BADF_;
+    /* Treat any other error as a hard error. */
     return MHD_ERR_NOTCONN_;
   }
 
