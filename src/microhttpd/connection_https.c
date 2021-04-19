@@ -73,9 +73,28 @@ recv_tls_adapter (struct MHD_Connection *connection,
   }
   if (res < 0)
   {
-    /* Likely 'GNUTLS_E_INVALID_SESSION' (client communication
-       disrupted); interpret as a hard error */
     connection->tls_read_ready = false;
+    if ( (GNUTLS_E_DECRYPTION_FAILED == res) ||
+         (GNUTLS_E_INVALID_SESSION == res) ||
+         (GNUTLS_E_DECOMPRESSION_FAILED == res) ||
+         (GNUTLS_E_RECEIVED_ILLEGAL_PARAMETER == res) ||
+         (GNUTLS_E_UNSUPPORTED_VERSION_PACKET == res) ||
+         (GNUTLS_E_UNEXPECTED_PACKET_LENGTH == res) ||
+         (GNUTLS_E_UNEXPECTED_PACKET == res) ||
+         (GNUTLS_E_UNEXPECTED_HANDSHAKE_PACKET == res) ||
+         (GNUTLS_E_EXPIRED == res) ||
+         (GNUTLS_E_REHANDSHAKE == res) )
+      return MHD_ERR_TLS_;
+    if ( (GNUTLS_E_PULL_ERROR == res) ||
+         (GNUTLS_E_INTERNAL_ERROR == res) ||
+         (GNUTLS_E_CRYPTODEV_IOCTL_ERROR == res) ||
+         (GNUTLS_E_CRYPTODEV_DEVICE_ERROR == res) )
+      return MHD_ERR_PIPE_;
+    if (GNUTLS_E_PREMATURE_TERMINATION == res)
+      return MHD_ERR_CONNRESET_;
+    if (GNUTLS_E_MEMORY_ERROR == res)
+      return MHD_ERR_NOMEM_;
+    /* Treat any other error as a hard error. */
     return MHD_ERR_NOTCONN_;
   }
 

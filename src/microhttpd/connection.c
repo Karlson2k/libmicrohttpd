@@ -208,9 +208,19 @@ recv_param_adapter (struct MHD_Connection *connection,
     }
     if (MHD_SCKT_ERR_IS_EINTR_ (err))
       return MHD_ERR_AGAIN_;
-    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ECONNRESET_))
+    if (MHD_SCKT_ERR_IS_REMOTE_DISCNN_ (err))
       return MHD_ERR_CONNRESET_;
-    /* Treat any other error as hard error. */
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EOPNOTSUPP_))
+      return MHD_ERR_OPNOTSUPP_;
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_ENOTCONN_))
+      return MHD_ERR_NOTCONN_;
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EINVAL_))
+      return MHD_ERR_INVAL_;
+    if (MHD_SCKT_ERR_IS_LOW_RESOURCES_ (err))
+      return MHD_ERR_NOMEM_;
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EBADF_))
+      return MHD_ERR_BADF_;
+    /* Treat any other error as a hard error. */
     return MHD_ERR_NOTCONN_;
   }
 #ifdef EPOLL_SUPPORT
@@ -2852,11 +2862,16 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
                                 "Socket disconnected while reading request."));
       return;
     }
+
+#ifdef HAVE_MESSAGES
+    if (MHD_CONNECTION_INIT != connection->state)
+      MHD_DLOG (connection->daemon,
+                _ ("Connection socket is closed when reading " \
+                   "request due to the error: %s\n"),
+                str_conn_error_ (bytes_read));
+#endif
     CONNECTION_CLOSE_ERROR (connection,
-                            (MHD_CONNECTION_INIT == connection->state) ?
-                            NULL :
-                            _ (
-                              "Connection socket is closed due to error when reading request."));
+                            NULL);
     return;
   }
 
