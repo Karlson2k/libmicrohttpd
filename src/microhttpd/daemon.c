@@ -562,7 +562,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                "Too long trust certificate.\n");
+                _ ("Too long trust certificate.\n"));
 #endif
       return -1;
     }
@@ -574,7 +574,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                "Bad trust certificate format.\n");
+                _ ("Bad trust certificate format.\n"));
 #endif
       return -1;
     }
@@ -599,7 +599,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                "Too long key or certificate.\n");
+                _ ("Too long key or certificate.\n"));
 #endif
       return -1;
     }
@@ -634,7 +634,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 #ifdef HAVE_MESSAGES
     if (0 != ret)
       MHD_DLOG (daemon,
-                "GnuTLS failed to setup x509 certificate/key: %s\n",
+                _ ("GnuTLS failed to setup x509 certificate/key: %s\n"),
                 gnutls_strerror (ret));
 #endif
     return ret;
@@ -649,7 +649,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 #endif
 #ifdef HAVE_MESSAGES
   MHD_DLOG (daemon,
-            "You need to specify a certificate and key location.\n");
+            _ ("You need to specify a certificate and key location.\n"));
 #endif
   return -1;
 }
@@ -2447,7 +2447,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
     eno = errno;
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              "Error allocating memory: %s\n",
+              _ ("Error allocating memory: %s\n"),
               MHD_strerror_ (errno));
 #endif
     MHD_socket_close_chk_ (client_socket);
@@ -2754,7 +2754,7 @@ new_connection_process_ (struct MHD_Daemon *daemon,
       eno = errno;
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                "Failed to create a thread: %s\n",
+                _ ("Failed to create a thread: %s\n"),
                 MHD_strerror_ (eno));
 #endif
       goto cleanup;
@@ -5355,7 +5355,8 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              "Using MHD_quiesce_daemon in this mode requires MHD_USE_ITC.\n");
+              _ (
+                "Using MHD_quiesce_daemon in this mode requires MHD_USE_ITC.\n"));
 #endif
     return MHD_INVALID_SOCKET;
   }
