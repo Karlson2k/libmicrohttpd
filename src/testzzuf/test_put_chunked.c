@@ -110,7 +110,11 @@ ahc_echo (void *cls,
     {
       return MHD_NO;
     }
-    if (0 == memcmp (upload_data, &"Hello123"[*done], have))
+    if (0 == have)
+    {
+      (void) 0; /* Do nothing - no data yet */
+    }
+    else if (0 == memcmp (upload_data, &"Hello123"[*done], have))
     {
       *done += have;
       *upload_data_size = 0;
@@ -156,6 +160,7 @@ testInternalPut ()
   for (i = 0; i < LOOP_COUNT; i++)
   {
     fprintf (stderr, ".");
+    done_flag = 0;
     c = curl_easy_init ();
     curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11080/hello_world");
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
@@ -284,6 +289,7 @@ testExternalPut ()
   for (i = 0; i < LOOP_COUNT; i++)
   {
     fprintf (stderr, ".");
+    done_flag = 0;
     c = curl_easy_init ();
     curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1:11082/hello_world");
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
