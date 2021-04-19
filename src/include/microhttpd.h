@@ -135,7 +135,7 @@ typedef intptr_t ssize_t;
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097206
+#define MHD_VERSION 0x00097207
 
 /**
  * Operational results from MHD calls.
@@ -1743,7 +1743,16 @@ enum MHD_OPTION
    * This option should be followed by an `int` argument.
    * @note Available since #MHD_VERSION 0x00097205
    */
-  MHD_OPTION_SIGPIPE_HANDLED_BY_APP = 33
+  MHD_OPTION_SIGPIPE_HANDLED_BY_APP = 33,
+
+  /**
+   * If followed by 'int' with value '1' disables usage of ALPN for TLS
+   * connections even if supported by TLS library.
+   * Valid only for daemons with #MHD_USE_TLS.
+   * This option should be followed by an `int` argument.
+   * @note Available since #MHD_VERSION 0x00097207
+   */
+  MHD_OPTION_TLS_NO_ALPN = 34
 };
 
 

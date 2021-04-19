@@ -2550,6 +2550,32 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
 #endif
       return NULL;
     }
+#if (GNUTLS_VERSION_NUMBER + 0 >= 0x030200)
+    if (!daemon->disable_alpn)
+    {
+      gnutls_datum_t prts[2];
+      const char prt1[] = "http/1.1";
+      const char prt2[] = "http/1.0";
+
+      prts[0].data = (void*) prt1;
+      prts[0].size = MHD_STATICSTR_LEN_ (prt1);
+      prts[1].data = (void*) prt2;
+      prts[1].size = MHD_STATICSTR_LEN_ (prt2);
+      if (GNUTLS_E_SUCCESS !=
+          gnutls_alpn_set_protocols(connection->tls_session,
+                                    prts,
+                                    sizeof(prts) / sizeof(prts[0]),
+                                    0 /* || GNUTLS_ALPN_SERVER_PRECEDENCE */))
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  _ ("Failed to set ALPN protocols.\n"));
+#else  /* ! HAVE_MESSAGES */
+        (void) 0; /* Mute compiler warning */
+#endif /* ! HAVE_MESSAGES */
+      }
+    }
+#endif /* GNUTLS_VERSION_NUMBER >= 0x030200 */
     gnutls_session_set_ptr (connection->tls_session,
                             connection);
     switch (daemon->cred_type)
@@ -5963,6 +5989,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         /* all options taking 'int' */
         case MHD_OPTION_STRICT_FOR_CLIENT:
         case MHD_OPTION_SIGPIPE_HANDLED_BY_APP:
+        case MHD_OPTION_TLS_NO_ALPN:
           if (MHD_NO == parse_options (daemon,
                                        servaddr,
                                        opt,
@@ -6050,6 +6077,17 @@ parse_options_va (struct MHD_Daemon *daemon,
         (void) va_arg (ap,
                        int);
       }
+      break;
+    case MHD_OPTION_TLS_NO_ALPN:
+      daemon->disable_alpn = (va_arg (ap,
+                                      int) != 0);
+#ifdef HAVE_MESSAGES
+      if (0 == (daemon->options & MHD_USE_TLS))
+        MHD_DLOG (daemon,
+                  _ ("MHD HTTPS option %d passed to MHD " \
+                     "but MHD_USE_TLS not set.\n"),
+                  (int) opt);
+#endif /* HAVE_MESSAGES */
       break;
     default:
 #ifdef HAVE_MESSAGES

@@ -1889,7 +1889,12 @@ struct MHD_Daemon
    */
   bool have_dhparams;
 
-#endif /* HTTPS_SUPPORT */
+  /**
+   * true if ALPN is disabled.
+   */
+  bool disable_alpn;
+
+  #endif /* HTTPS_SUPPORT */
 
 #ifdef DAUTH_SUPPORT
 
