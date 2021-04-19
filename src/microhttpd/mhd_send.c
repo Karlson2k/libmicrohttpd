@@ -788,8 +788,16 @@ MHD_send_data_ (struct MHD_Connection *connection,
     if (GNUTLS_E_INTERRUPTED == ret)
       return MHD_ERR_AGAIN_;
     if ( (GNUTLS_E_ENCRYPTION_FAILED == ret) ||
-         (GNUTLS_E_INVALID_SESSION == ret) )
-      return MHD_ERR_INVAL_;
+         (GNUTLS_E_INVALID_SESSION == ret) ||
+         (GNUTLS_E_COMPRESSION_FAILED == ret) ||
+         (GNUTLS_E_EXPIRED == ret) ||
+         (GNUTLS_E_HASH_FAILED == ret) )
+      return MHD_ERR_TLS_;
+    if ( (GNUTLS_E_PUSH_ERROR == ret) ||
+         (GNUTLS_E_INTERNAL_ERROR == ret) ||
+         (GNUTLS_E_CRYPTODEV_IOCTL_ERROR == ret) ||
+         (GNUTLS_E_CRYPTODEV_DEVICE_ERROR == ret) )
+      return MHD_ERR_PIPE_;
     if (GNUTLS_E_PREMATURE_TERMINATION == ret)
       return MHD_ERR_CONNRESET_;
     if (GNUTLS_E_MEMORY_ERROR == ret)

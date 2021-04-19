@@ -152,6 +152,8 @@ str_conn_error_ (ssize_t mhd_err_code)
     return _ ("Argument value is not supported");
   case MHD_ERR_PIPE_:
     return _ ("The socket is no longer available for sending");
+  case MHD_ERR_TLS_:
+    return _ ("TLS encryption or decryption error");
   default:
     break;   /* Mute compiler warning */
   }
