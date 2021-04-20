@@ -80,6 +80,7 @@ LT_LANG([Windows Resource])
 
 # Checks for gettext.
 m4_ifdef([AM_GNU_GETTEXT], [
+  AS_VAR_SET_IF([enable_nls], [], [[enable_nls=no]])
   AM_GNU_GETTEXT([external],[need-ngettext])
   AC_CONFIG_FILES([po/Makefile.in])
   have_po=yes
