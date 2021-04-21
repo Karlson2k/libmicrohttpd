@@ -34,8 +34,8 @@ Fri 16 Apr 2021 10:23:39 AM CEST
     syscalls). -CG
 
 Thu 15 Apr 2021 18:56:00 MSK
-    Fixed configure '--enable-sanitizer' paramenter.
-    Stopped pushing of patrial responses when limited by system maximum size
+    Fixed configure '--enable-sanitizer' parameter.
+    Stopped pushing of partial responses when limited by system maximum size
     for sendmsg(). -EG
 
 Web 14 Apr 2021 22:20:00 MSK
