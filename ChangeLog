@@ -1,3 +1,33 @@
+Tue 20 Apr 2021 17:11:00 MSK
+    Disabled NLS by default in configure. -EG
+
+Mon 19 Apr 2021 18:58:00 MSK
+    Fixed testzzuf/test_put_chanked to correctly use MHD.
+    Added internal error code for TLS errors.
+    Added all missing messages to the .pot file.
+    Detect more types of errors for receiving data and report
+    error description in the MHD log.
+    Added support for ALPN on TLS connections if supported by
+    used TLS library. -EG
+
+Sun 18 Apr 2021 20:47:00 MSK
+    Removed dead code.
+    Limited iov-backed responses size to SSIZE_MAX as limited by
+    system calls.
+    Report error message in MHD log for send errors. -EG
+
+Sat 17 Apr 2021 18:50:00 MSK
+    Unified upgrade test behavior for all platforms.
+    Some code simplification and unification.
+    Compiler warning (false positive) fixed. -EG
+
+Fri 16 Apr 2021 17:58:00 MSK
+    Used run-time value if IOV_MAX if available.
+    Fixed portability of error handling for sending functions.
+    Detect pipes/unix sockets on fly and do not use TCP/IP specific
+    functions with them.
+    Fixed support of UNIX sockets on non-Linux kernels. -EG
+
 Fri 16 Apr 2021 10:23:39 AM CEST
     Detect if a socket is a UNIX domain socket and do not try to play
     with TCP corking options in this case (avoids useless failed
