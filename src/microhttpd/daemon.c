@@ -6079,8 +6079,12 @@ parse_options_va (struct MHD_Daemon *daemon,
       }
       break;
     case MHD_OPTION_TLS_NO_ALPN:
+#ifdef HTTPS_SUPPORT
       daemon->disable_alpn = (va_arg (ap,
                                       int) != 0);
+#else  /* ! HTTPS_SUPPORT */
+      (void) va_arg (ap, int);
+#endif /* ! HTTPS_SUPPORT */
 #ifdef HAVE_MESSAGES
       if (0 == (daemon->options & MHD_USE_TLS))
         MHD_DLOG (daemon,
