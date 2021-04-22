@@ -1,3 +1,9 @@
+Thu 22 Apr 2021 12:32:00 MSK
+    Fixed some typos.
+    Force disable TCP_CORK, TCP_NOPUSH, and TCP_NODELAY before switching
+    connection to "upgraded" mode.
+    Improved portability of the test-suite for upgraded connections. -EG
+
 Tue 20 Apr 2021 17:11:00 MSK
     Disabled NLS by default in configure. -EG
 
