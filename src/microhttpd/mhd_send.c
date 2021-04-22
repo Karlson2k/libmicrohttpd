@@ -157,7 +157,7 @@ MHD_send_init_static_vars_ (void)
    * and handles SF_NODISKIO differently.
    * SF_FLAGS defined only on FreeBSD 11 and later. */
 #ifdef SF_FLAGS
-  freebsd_sendfile_init_ (void);
+  freebsd_sendfile_init_ ();
 #endif /* SF_FLAGS */
 #endif /* HAVE_FREEBSD_SENDFILE */
 #if defined(HAVE_SYSCONF) && defined(_SC_IOV_MAX)

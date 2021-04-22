@@ -5863,7 +5863,7 @@ parse_options_va (struct MHD_Daemon *daemon,
                                &af,
                                &len))
           {
-            daemon->listen_is_unix = (AF_UNIX == af) ? _MHD_YES : MHD_NO;
+            daemon->listen_is_unix = (AF_UNIX == af) ? _MHD_YES : _MHD_NO;
           }
           else
             daemon->listen_is_unix = _MHD_UNKNOWN;
