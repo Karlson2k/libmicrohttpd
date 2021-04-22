@@ -1104,6 +1104,8 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   urh->connection = connection;
   rbo = connection->read_buffer_offset;
   connection->read_buffer_offset = 0;
+  MHD_connection_set_nodelay_state_ (connection, false);
+  MHD_connection_set_cork_state_ (connection, false);
 #ifdef HTTPS_SUPPORT
   if (0 != (daemon->options & MHD_USE_TLS) )
   {
