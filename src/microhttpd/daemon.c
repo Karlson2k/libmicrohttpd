@@ -5143,11 +5143,17 @@ MHD_run_wait (struct MHD_Daemon *daemon,
 
   if (0 > millisec)
     millisec = -1;
-  if (0 != (daemon->options & MHD_USE_POLL))
+  if (false)
+  {
+    (void) 0; /* Mute compiler warning */
+  }
+#ifdef HAVE_POLL
+  else if (0 != (daemon->options & MHD_USE_POLL))
   {
     res = MHD_poll_all (daemon, millisec);
     MHD_cleanup_connections (daemon);
   }
+#endif /* HAVE_POLL */
 #ifdef EPOLL_SUPPORT
   else if (0 != (daemon->options & MHD_USE_EPOLL))
   {
