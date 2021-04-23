@@ -961,12 +961,12 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
     for (i = 0; i < iovcnt; ++i)
     {
       size_t element_size = iov[i].iov_len;
-      const void *buf = iov[i].iov_base;
+      const uint8_t *buf = (const uint8_t *) iov[i].iov_base;
 
       if (0 == element_size)
         continue;         /* skip zero-sized elements */
 #if defined(MHD_WINSOCK_SOCKETS) && defined(_WIN64)
-      while (ULONG_MAX < element_size)
+      while (MHD_IOV_ELMN_MAX_SIZE < element_size)
       {
         iov_copy[i_cp].iov_base = (char *) buf;
         iov_copy[i_cp].iov_len = ULONG_MAX;
@@ -976,7 +976,7 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
       }
 #endif /* MHD_WINSOCK_SOCKETS && _WIN64 */
       iov_copy[i_cp].iov_base = (void *) buf;
-      iov_copy[i_cp].iov_len = element_size;
+      iov_copy[i_cp].iov_len = (MHD_iov_size_) element_size;
       i_cp++;
     }
     mhd_assert (num_copy_elements == i_cp);

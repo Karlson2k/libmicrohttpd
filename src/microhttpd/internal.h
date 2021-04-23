@@ -357,6 +357,7 @@ typedef struct _MHD_W32_iovec
   char *iov_base;
 } MHD_iovec_;
 #define MHD_IOV_ELMN_MAX_SIZE    ULONG_MAX
+typedef unsigned long MHD_iov_size_;
 #elif defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
 /**
  * Internally used I/O vector type for use when writev or sendmsg
@@ -364,6 +365,7 @@ typedef struct _MHD_W32_iovec
  */
 typedef struct iovec MHD_iovec_;
 #define MHD_IOV_ELMN_MAX_SIZE    SIZE_MAX
+typedef size_t MHD_iov_size_;
 #else
 /**
  * Internally used I/O vector type for use when writev or sendmsg
@@ -371,6 +373,7 @@ typedef struct iovec MHD_iovec_;
  */
 typedef struct MHD_IoVec MHD_iovec_;
 #define MHD_IOV_ELMN_MAX_SIZE    SIZE_MAX
+typedef size_t MHD_iov_size_;
 #endif
 
 

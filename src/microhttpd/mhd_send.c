@@ -1511,7 +1511,7 @@ send_iov_nontls (struct MHD_Connection *connection,
       /* The last iov element has been partially sent */
       r_iov->iov[r_iov->sent].iov_base =
         (void*) ((uint8_t*) r_iov->iov[r_iov->sent].iov_base + (size_t) res);
-      r_iov->iov[r_iov->sent].iov_len -= res;
+      r_iov->iov[r_iov->sent].iov_len -= (MHD_iov_size_) res;
     }
   }
 
