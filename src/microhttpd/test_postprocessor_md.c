@@ -77,7 +77,7 @@ post_data_iterator (void *cls,
 {
   (void) cls; (void) kind; (void) filename; /* Mute compiler warnings */
   (void) content_type; (void) transfer_encoding;
-  (void) off; /* FIXME: shoudn't be checked? */
+  (void) off; /* FIXME: shouldn't be checked? */
 #if DEBUG
   fprintf (stderr,
            "%s\t%s\n",
@@ -163,7 +163,7 @@ post_data_iterator3 (void *cls,
 {
   (void) cls; (void) kind; (void) filename; /* Mute compiler warnings */
   (void) content_type; (void) transfer_encoding;
-  (void) off; /* FIXME: shoudn't be checked? */
+  (void) off; /* FIXME: shouldn't be checked? */
 #if DEBUG
   fprintf (stderr,
            "%s\t%s\n",
@@ -194,7 +194,7 @@ post_data_iterator4 (void *cls,
 {
   (void) cls; (void) kind; (void) key; /* Mute compiler warnings */
   (void) filename; (void) content_type; (void) transfer_encoding;
-  (void) off; /* FIXME: shoudn't be checked? */
+  (void) off; /* FIXME: shouldn't be checked? */
 #if DEBUG
   fprintf (stderr,
            "%s\t%s\n",

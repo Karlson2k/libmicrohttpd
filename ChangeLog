@@ -1414,7 +1414,7 @@ Sun Oct 25 23:05:32 CET 2015
 
 Sun Oct 25 15:29:23 CET 2015
 	Fixing transient resource leak affecting long-lived
-	connections with many keep-alives and HTTP request
+	connections with a lot of keep-alive and HTTP request
 	pipelining under certain circumstances (which reduced
 	the receive window).
 	Fixed assertion failure triggered by a race in
@@ -1489,7 +1489,7 @@ Sat Jun 27 22:16:27 CEST 2015
 Fri Jun 26 23:17:20 CEST 2015
 	Fix (automatic) handling of HEAD requests with
 	MHD_create_response_from_callback() and HTTP/1.1
-	connection keep-alives. Thanks to Cristian Klein
+	connection keep-alive. Thanks to Cristian Klein
 	for reporting. -CG
 
 Tue Jun 09 18:30:17 CEST 2015
@@ -2731,7 +2731,7 @@ Thu Jan 28 20:35:48 CET 2010
 	aligned (fixes bus errors on Sparc). -CG
 
 Thu Dec 17 20:26:52 CET 2009
-	poll.h is not stricly required anymore. -ND
+	poll.h is not strictly required anymore. -ND
 
 Fri Dec  4 13:17:50 CET 2009
 	Adding MHD_OPTION_ARRAY. -CG

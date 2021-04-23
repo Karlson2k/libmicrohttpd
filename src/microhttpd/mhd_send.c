@@ -611,7 +611,7 @@ post_send_setopt (struct MHD_Connection *connection,
    * data by setting TCP_NODELAY (TCP_NODELAY will not be removed
    * and is needed to push the data by send() without MSG_MORE).
    * If send()/sendmsg() will be used next than push data by
-   * reseting of TCP_CORK so next send without MSG_MORE will push
+   * resetting of TCP_CORK so next send without MSG_MORE will push
    * data to the network (without additional sys-call to push data).
    * If next final send function will not support MSG_MORE (like
    * sendfile() or TLS-connection) than push data by setting
