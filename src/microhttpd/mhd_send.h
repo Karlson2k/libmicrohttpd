@@ -156,7 +156,7 @@ MHD_connection_set_cork_state_ (struct MHD_Connection *connection,
  */
 ssize_t
 MHD_send_iovec_ (struct MHD_Connection *connection,
-                 struct MHD_iovec_track_ *r_iov,
+                 struct MHD_iovec_track_ *const r_iov,
                  bool push_data);
 
 
