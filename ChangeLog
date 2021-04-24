@@ -1,3 +1,9 @@
+Fri 23 Apr 2021 14:27:00 MSK
+    Fixed build without TLS lib.
+    Fixed build without system poll() function.
+    Fixed compiler warnings on 32-bit platforms.
+    Fixed various compiler warnings. -EG
+
 Thu 22 Apr 2021 12:32:00 MSK
     Fixed some typos.
     Force disable TCP_CORK, TCP_NOPUSH, and TCP_NODELAY before switching
