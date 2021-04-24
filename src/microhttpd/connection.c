@@ -125,6 +125,7 @@
  */
 #define MHD_SENFILE_CHUNK_THR_P_C_ (0x200000)
 
+#ifdef HAVE_MESSAGES
 /**
  * Return text description for MHD_ERR_*_ codes
  * @param mhd_err_code the error code
@@ -133,7 +134,6 @@
 static const char *
 str_conn_error_ (ssize_t mhd_err_code)
 {
-#ifdef HAVE_MESSAGES
   switch (mhd_err_code)
   {
   case MHD_ERR_AGAIN_:
@@ -162,11 +162,10 @@ str_conn_error_ (ssize_t mhd_err_code)
 
   mhd_assert (0); /* Should never be reachable */
   return _ ("Wrong error code value");
-#else  /* ! HAVE_MESSAGES */
-  return "";
-#endif /* ! HAVE_MESSAGES */
 }
 
+
+#endif /* HAVE_MESSAGES */
 
 /**
  * Callback for receiving data from the socket.
