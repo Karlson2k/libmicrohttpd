@@ -154,6 +154,7 @@ MHD_monotonic_sec_counter_init (void)
      various following ifdef's to work out nicely */
   if (0)
   {
+    (void) 0; /* Mute possible compiler warning */
   }
   else
 #ifdef HAVE_CLOCK_GETTIME
