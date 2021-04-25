@@ -1,3 +1,8 @@
+Sat 24 Apr 2021 23:00:00 MSK
+    Fixed build with Clang and Visual Studio.
+    MSVS project files updated.
+    Enabled bind port autodetection with MSVS builds. -EG
+
 Fri 23 Apr 2021 14:27:00 MSK
     Fixed build without TLS lib.
     Fixed build without system poll() function.
