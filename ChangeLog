@@ -1,3 +1,6 @@
+Sun 25 Apr 2021 14:00:00 MSK
+    Releasing GNU libmicrohttpd 0.9.73. -EG
+
 Sat 24 Apr 2021 23:00:00 MSK
     Fixed build with Clang and Visual Studio.
     MSVS project files updated.
