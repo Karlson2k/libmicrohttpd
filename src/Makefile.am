@@ -10,14 +10,15 @@ endif
 
 SUBDIRS = include microhttpd $(curltests) $(zzuftests) .
 
-if BUILD_EXAMPLES
-SUBDIRS += examples
-endif
-
 # Finally (last!) also build experimental lib...
 if HAVE_EXPERIMENTAL
 SUBDIRS += microhttpd_ws lib
 endif
+
+if BUILD_EXAMPLES
+SUBDIRS += examples
+endif
+
 
 EXTRA_DIST = \
  datadir/cert-and-key.pem \
