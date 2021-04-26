@@ -62,3 +62,4 @@ src/examples/suspend_resume_epoll
 uncrustify.cfg
 **.dvi
 **.t2d
+src/microhttpd_ws/test_websocket

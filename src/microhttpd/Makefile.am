@@ -80,6 +80,7 @@ libmicrohttpd_la_SOURCES += \
   mhd_locks.h
 endif
 
+
 libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS) \
   -DBUILDING_MHD_LIB=1
@@ -91,6 +92,9 @@ libmicrohttpd_la_LDFLAGS = \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
 libmicrohttpd_la_LIBADD = \
   $(MHD_LIBDEPS) $(MHD_TLS_LIBDEPS)
+
+
+
 
 if HAVE_W32
 MHD_DLL_RES_SRC = microhttpd_dll_res.rc

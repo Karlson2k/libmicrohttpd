@@ -1,5 +1,5 @@
 # This file is part of libmicrohttpd.
-# (C) 2006-2020 Christian Grothoff (and other contributing authors)
+# (C) 2006-2021 Christian Grothoff (and other contributing authors)
 #
 # libmicrohttpd is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -935,7 +935,7 @@ test "x$enable_examples" = "xno" || enable_examples=yes
 AM_CONDITIONAL([BUILD_EXAMPLES], [test "x$enable_examples" = "xyes"])
 
 AC_ARG_ENABLE([[heavy-tests]],
-  [AS_HELP_STRING([[--enable-heavy-tests]], [use heavy tests in test-suite. WARNING:] 
+  [AS_HELP_STRING([[--enable-heavy-tests]], [use heavy tests in test-suite. WARNING:]
   [a dedicated host with minimal number of background processes and no network]
   [activity is recommended to enable.])], [],
     [enable_heavy_tests=no])
@@ -2413,6 +2413,7 @@ src/Makefile
 src/include/Makefile
 src/lib/Makefile
 src/microhttpd/Makefile
+src/microhttpd_ws/Makefile
 src/examples/Makefile
 src/testcurl/Makefile
 src/testcurl/https/Makefile

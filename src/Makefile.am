@@ -16,11 +16,11 @@ endif
 
 # Finally (last!) also build experimental lib...
 if HAVE_EXPERIMENTAL
-SUBDIRS += lib
+SUBDIRS += microhttpd_ws lib
 endif
 
 EXTRA_DIST = \
  datadir/cert-and-key.pem \
- datadir/cert-and-key-for-wireshark.pem 
+ datadir/cert-and-key-for-wireshark.pem
 
 .NOTPARALLEL:
