@@ -6,7 +6,7 @@ Released GNU libmicrohttpd 0.9.73
     responses, based on the patch contributed by NASA engineers.
     Other changes include compatibility with autoconf 2.70+, improved
     testsuite compatibility with CI systems, fixed and improved MSVC
-    builds, and implemention of ALPN support.
+    builds, and implementation of ALPN support.
 
     More detailed list of notable changes:
 
