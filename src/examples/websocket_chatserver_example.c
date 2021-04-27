@@ -52,7 +52,7 @@
 
 
 /*
- * Specifiy with this constant whether or not to use HTTPS.
+ * Specify with this constant whether or not to use HTTPS.
  * 0 means HTTP, 1 means HTTPS.
  * Please note that you must enter a valid private key/certificate pair
  * in the main procedure to running this example with HTTPS.
@@ -505,7 +505,7 @@
        //   "\n" \
        //   "  /**\n" \
        //   "    This is the event when the socket has received a message.\n" \
-       //   "    This will parse the message and execute the corresponing command (or add the message).\n" \
+       //   "    This will parse the message and execute the corresponding command (or add the message).\n" \
        //   "  */\n" \
        //   "  function socket_onmessage(event)\n" \
        //   "  {\n" \
@@ -669,7 +669,7 @@ struct Message
   /* The data of the message. */
   char*data;
   size_t data_len;
-  /* Specifies wheter the data is UTF-8 encoded text (0) or binary data (1) */
+  /* Specifies whether the data is UTF-8 encoded text (0) or binary data (1) */
   int is_binary;
 };
 
@@ -2114,7 +2114,7 @@ upgrade_handler (void *cls,
 
 
 /**
- * Function called by the MHD_daemon when the client trys to access a page.
+ * Function called by the MHD_daemon when the client tries to access a page.
  *
  * This is used to provide the main page
  * (in this example HTML + CSS + JavaScript is all in the same file)
@@ -2281,7 +2281,7 @@ access_handler (void *cls,
      * 2. "Upgrade: websocket"
      * 3. "Sec-WebSocket-Accept: <base64value>"
      * The value for Sec-WebSocket-Accept can be generated with MHD_websocket_create_accept.
-     * It requires the value of the Sec-WebSocket-Key header of the reqeust.
+     * It requires the value of the Sec-WebSocket-Key header of the request.
      * See also: https://tools.ietf.org/html/rfc6455#section-4.2.2
      */
     MHD_add_response_header (response,
