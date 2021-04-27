@@ -64,7 +64,7 @@ enum MHD_WEBSOCKET_FLAG
    * All incoming payload must be unmasked.
    * Please note that this implementation doesn't use a strong random
    * number generator for the mask as suggested in RFC6455 10.3, because
-   * the main intention of this implemention is the use as server
+   * the main intention of this implementation is the use as server
    * with MHD, which doesn't need masking.
    * Instead a weak random number generator is used (`rand()`).
    * You can set the seed for the random number generator
@@ -470,7 +470,7 @@ enum MHD_WEBSOCKET_UTF8STEP
 * @brief Enumeration of validity values
 *
 * These values are used for #MHD_websocket_stream_is_valid()
-* and specifiy the validity status.
+* and specify the validity status.
 *
 * @ingroup websocket
 */
@@ -724,7 +724,7 @@ MHD_websocket_split_close_reason (const char*payload,
  *                     This can be NULL if payload_utf8_len is 0.
  * @param payload_utf8_len The length of the UTF-8 encoded text in bytes.
  * @param fragmentation A value of `enum MHD_WEBSOCKET_FRAGMENTATION`
- *                      to specifiy the fragmentation behavior.
+ *                      to specify the fragmentation behavior.
  *                      Specify MHD_WEBSOCKET_FRAGMENTATION_NONE
  *                      if you don't want to use fragmentation.
  * @param[out] frame This variable receives a buffer with the encoded frame.
@@ -767,7 +767,7 @@ MHD_websocket_encode_text (struct MHD_WebSocketStream*ws,
  * @param payload The binary data to send.
  * @param payload_len The length of the binary data in bytes.
  * @param fragmentation A value of `enum MHD_WEBSOCKET_FRAGMENTATION`
- *                      to specifiy the fragmentation behavior.
+ *                      to specify the fragmentation behavior.
  *                      Specify MHD_WEBSOCKET_FRAGMENTATION_NONE
  *                      if you don't want to use fragmentation.
  * @param[out] frame This variable receives a buffer with
