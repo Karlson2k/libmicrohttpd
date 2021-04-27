@@ -1055,7 +1055,7 @@ test_decodes ()
                                 MHD_WEBSOCKET_STATUS_BINARY_LAST_FRAGMENT,
                                 MHD_WEBSOCKET_VALIDITY_VALID,
                                 12);
-  /* Regular test: Fragmented binary frame wit payload */
+  /* Regular test: Fragmented binary frame with payload */
   failed += test_decode_single (__LINE__,
                                 MHD_WEBSOCKET_FLAG_SERVER
                                 | MHD_WEBSOCKET_FLAG_NO_FRAGMENTS,
@@ -2724,7 +2724,7 @@ test_decodes ()
                                 MHD_WEBSOCKET_STATUS_UTF8_ENCODING_ERROR,
                                 MHD_WEBSOCKET_VALIDITY_INVALID,
                                 7);
-  /* Edge test (success): The maxium allowed UTF-8 character */
+  /* Edge test (success): The maximum allowed UTF-8 character */
   failed += test_decode_single (__LINE__,
                                 MHD_WEBSOCKET_FLAG_SERVER
                                 | MHD_WEBSOCKET_FLAG_NO_FRAGMENTS,
@@ -2738,7 +2738,7 @@ test_decodes ()
                                 MHD_WEBSOCKET_STATUS_TEXT_FRAME,
                                 MHD_WEBSOCKET_VALIDITY_VALID,
                                 16);
-  /* Edge test (fail): The maxium allowed UTF-8 character + 1 */
+  /* Edge test (fail): The maximum allowed UTF-8 character + 1 */
   failed += test_decode_single (__LINE__,
                                 MHD_WEBSOCKET_FLAG_SERVER
                                 | MHD_WEBSOCKET_FLAG_NO_FRAGMENTS,

@@ -30,11 +30,11 @@
 
 struct MHD_WebSocketStream
 {
-  /* The function pointer to malloc for payload (can be used to use different memory managment) */
+  /* The function pointer to malloc for payload (can be used to use different memory management) */
   MHD_WebSocketMallocCallback malloc;
-  /* The function pointer to realloc for payload (can be used to use different memory managment) */
+  /* The function pointer to realloc for payload (can be used to use different memory management) */
   MHD_WebSocketReallocCallback realloc;
-  /* The function pointer to free for payload (can be used to use different memory managment) */
+  /* The function pointer to free for payload (can be used to use different memory management) */
   MHD_WebSocketFreeCallback free;
   /* The flags specified upon initialization. It may alter the behavior of decoding/encoding */
   int flags;
@@ -400,7 +400,7 @@ MHD_websocket_decode (struct MHD_WebSocketStream*ws,
           if (0 != (opcode & 0x70))
           {
             /* RFC 6455 5.2 RSV1-3: If a reserved flag is set */
-            /* (while it isn't specified by an extension) the communcation must fail. */
+            /* (while it isn't specified by an extension) the communication must fail. */
             ws->validity = MHD_WEBSOCKET_VALIDITY_INVALID;
             if (0 != (ws->flags
                       & MHD_WEBSOCKET_FLAG_GENERATE_CLOSE_FRAMES_ON_ERROR))
