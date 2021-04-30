@@ -350,11 +350,16 @@ MHD_str_equal_caseless_ (const char *str1,
   {
     const char c1 = *str1;
     const char c2 = *str2;
-    if ( (c1 != c2) &&
-         (toasciilower (c1) != toasciilower (c2)) )
+    if ( (c1 == c2) ||
+         (isasciiupper (c1) ?
+          ((c1 - 'A' + 'a') == c2) :
+          (isasciiupper (c2) && (c1 == (c2 - 'A' + 'a')))) )
+    {
+      str1++;
+      str2++;
+    }
+    else
       return 0;
-    str1++;
-    str2++;
   }
   return 0 == (*str2);
 }
@@ -387,8 +392,12 @@ MHD_str_equal_caseless_n_ (const char *const str1,
     const char c2 = str2[i];
     if (0 == c2)
       return 0 == c1;
-    if ( (c1 != c2) &&
-         (toasciilower (c1) != toasciilower (c2)) )
+    if ( (c1 == c2) ||
+         (isasciiupper (c1) ?
+          ((c1 - 'A' + 'a') == c2) :
+          (isasciiupper (c2) && (c1 == (c2 - 'A' + 'a')))) )
+      continue;
+    else
       return 0;
   }
   return ! 0;
@@ -415,8 +424,12 @@ MHD_str_equal_caseless_bin_n_ (const char *const str1,
   {
     const char c1 = str1[i];
     const char c2 = str2[i];
-    if ( (c1 != c2) &&
-         (toasciilower (c1) != toasciilower (c2)) )
+    if ( (c1 == c2) ||
+         (isasciiupper (c1) ?
+          ((c1 - 'A' + 'a') == c2) :
+          (isasciiupper (c2) && (c1 == (c2 - 'A' + 'a')))) )
+      continue;
+    else
       return 0;
   }
   return ! 0;
