@@ -137,6 +137,14 @@ ahc_echo (void *cls,
     free (callback_param);
     return MHD_NO;
   }
+  /* Enforce chunked response, even for non-keep-alive connection. */
+  if (MHD_NO == MHD_add_response_header (response,
+                                         MHD_HTTP_HEADER_TRANSFER_ENCODING,
+                                         "chunked"))
+  {
+    free (callback_param);
+    return MHD_NO;
+  }
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;
