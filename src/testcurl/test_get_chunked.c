@@ -40,12 +40,19 @@
 #include <unistd.h>
 #endif
 
+#include "mhd_has_in_name.h"
+
 #if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 2
 #undef MHD_CPU_COUNT
 #endif
 #if ! defined(MHD_CPU_COUNT)
 #define MHD_CPU_COUNT 2
 #endif
+
+/**
+ * Use "Connection: close" header?
+ */
+int conn_close;
 
 struct CBC
 {
@@ -135,17 +142,22 @@ ahc_echo (void *cls,
   }
   responseptr = malloc (sizeof (struct MHD_Response *));
   if (NULL == responseptr)
-    return MHD_NO;
+    _exit (99);
   response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
                                                 1024,
                                                 &crc,
                                                 responseptr,
                                                 &crcf);
   if (NULL == response)
-  {
-    free (responseptr);
-    return MHD_NO;
+    abort ();
+  if (conn_close)
+  { /* Enforce chunked response even for non-Keep-Alive */
+    if (MHD_NO == MHD_add_response_header (response,
+                                           MHD_HTTP_HEADER_TRANSFER_ENCODING,
+                                           "chunked"))
+      abort ();
   }
+
   *responseptr = response;
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
@@ -193,6 +205,7 @@ testInternalGet ()
   struct CBC cbc;
   CURLcode errornum;
   int port;
+  struct curl_slist *h_list = NULL;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -225,20 +238,26 @@ testInternalGet ()
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-  /* NOTE: use of CONNECTTIMEOUT without also
-   *   setting NOSIGNAL results in really weird
-   *   crashes on my system! */
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
+  if (conn_close)
+  {
+    h_list = curl_slist_append (h_list, "Connection: close");
+    if (NULL == h_list)
+      abort ();
+    curl_easy_setopt (c, CURLOPT_HTTPHEADER, h_list);
+  }
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
   {
     fprintf (stderr,
              "curl_easy_perform failed: `%s'\n",
              curl_easy_strerror (errornum));
     curl_easy_cleanup (c);
+    curl_slist_free_all (h_list);
     MHD_stop_daemon (d);
     return 2;
   }
   curl_easy_cleanup (c);
+  curl_slist_free_all (h_list);
   MHD_stop_daemon (d);
   return validate (cbc, 4);
 }
@@ -253,6 +272,7 @@ testMultithreadedGet ()
   struct CBC cbc;
   CURLcode errornum;
   int port;
+  struct curl_slist *h_list = NULL;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -286,20 +306,26 @@ testMultithreadedGet ()
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
-  /* NOTE: use of CONNECTTIMEOUT without also
-   *   setting NOSIGNAL results in really weird
-   *   crashes on my system! */
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
+  if (conn_close)
+  {
+    h_list = curl_slist_append (h_list, "Connection: close");
+    if (NULL == h_list)
+      abort ();
+    curl_easy_setopt (c, CURLOPT_HTTPHEADER, h_list);
+  }
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
   {
     fprintf (stderr,
              "curl_easy_perform failed: `%s'\n",
              curl_easy_strerror (errornum));
     curl_easy_cleanup (c);
+    curl_slist_free_all (h_list);
     MHD_stop_daemon (d);
     return 32;
   }
   curl_easy_cleanup (c);
+  curl_slist_free_all (h_list);
   MHD_stop_daemon (d);
   return validate (cbc, 64);
 }
@@ -314,6 +340,7 @@ testMultithreadedPoolGet ()
   struct CBC cbc;
   CURLcode errornum;
   int port;
+  struct curl_slist *h_list = NULL;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -348,20 +375,26 @@ testMultithreadedPoolGet ()
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
-  /* NOTE: use of CONNECTTIMEOUT without also
-   *   setting NOSIGNAL results in really weird
-   *   crashes on my system! */
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
+  if (conn_close)
+  {
+    h_list = curl_slist_append (h_list, "Connection: close");
+    if (NULL == h_list)
+      abort ();
+    curl_easy_setopt (c, CURLOPT_HTTPHEADER, h_list);
+  }
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
   {
     fprintf (stderr,
              "curl_easy_perform failed: `%s'\n",
              curl_easy_strerror (errornum));
     curl_easy_cleanup (c);
+    curl_slist_free_all (h_list);
     MHD_stop_daemon (d);
     return 32;
   }
   curl_easy_cleanup (c);
+  curl_slist_free_all (h_list);
   MHD_stop_daemon (d);
   return validate (cbc, 64);
 }
@@ -390,6 +423,7 @@ testExternalGet ()
   time_t start;
   struct timeval tv;
   int port;
+  struct curl_slist *h_list = NULL;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -423,16 +457,20 @@ testExternalGet ()
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 5L);
-  /* NOTE: use of CONNECTTIMEOUT without also
-   *   setting NOSIGNAL results in really weird
-   *   crashes on my system! */
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
-
+  if (conn_close)
+  {
+    h_list = curl_slist_append (h_list, "Connection: close");
+    if (NULL == h_list)
+      abort ();
+    curl_easy_setopt (c, CURLOPT_HTTPHEADER, h_list);
+  }
 
   multi = curl_multi_init ();
   if (multi == NULL)
   {
     curl_easy_cleanup (c);
+    curl_slist_free_all (h_list);
     MHD_stop_daemon (d);
     return 512;
   }
@@ -441,6 +479,7 @@ testExternalGet ()
   {
     curl_multi_cleanup (multi);
     curl_easy_cleanup (c);
+    curl_slist_free_all (h_list);
     MHD_stop_daemon (d);
     return 1024;
   }
@@ -459,6 +498,7 @@ testExternalGet ()
       curl_multi_remove_handle (multi, c);
       curl_multi_cleanup (multi);
       curl_easy_cleanup (c);
+      curl_slist_free_all (h_list);
       MHD_stop_daemon (d);
       return 2048;
     }
@@ -467,6 +507,7 @@ testExternalGet ()
       curl_multi_remove_handle (multi, c);
       curl_multi_cleanup (multi);
       curl_easy_cleanup (c);
+      curl_slist_free_all (h_list);
       MHD_stop_daemon (d);
       return 4096;
     }
@@ -513,6 +554,7 @@ testExternalGet ()
     curl_multi_remove_handle (multi, c);
     curl_easy_cleanup (c);
     curl_multi_cleanup (multi);
+    curl_slist_free_all (h_list);
   }
   MHD_stop_daemon (d);
   return validate (cbc, 8192);
@@ -527,6 +569,7 @@ main (int argc, char *const *argv)
 
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
+  conn_close = has_in_name (argv[0], "_close");
   if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_THREADS))
   {
     errorCount += testInternalGet ();
