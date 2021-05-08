@@ -130,7 +130,7 @@ typedef intptr_t ssize_t;
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097301
+#define MHD_VERSION 0x00097302
 
 /**
  * Operational results from MHD calls.
@@ -3239,6 +3239,28 @@ MHD_create_response_from_buffer_with_free_callback (size_t size,
                                                     void *buffer,
                                                     MHD_ContentReaderFreeCallback
                                                     crfc);
+
+
+/**
+ * Create a response object.
+ * The response object can be extended with header information and then be
+ * used any number of times.
+ *
+ * @param size size of the data portion of the response
+ * @param buffer size bytes containing the response's data portion
+ * @param crfc function to call to cleanup, if set to NULL then callback
+ *             is not called
+ * @param crfc_cls an argument for @a crfc
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @note Available since #MHD_VERSION 0x00097302
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_from_buffer_with_free_callback_cls (size_t size,
+                                                        void *buffer,
+                                                        MHD_ContentReaderFreeCallback
+                                                        crfc,
+                                                        void *crfc_cls);
 
 
 /**
