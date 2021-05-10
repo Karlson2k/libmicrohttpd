@@ -93,8 +93,10 @@ MHD_set_http_callbacks_ (struct MHD_Connection *connection);
  * call this function to handle reads.
  *
  * @param connection connection to handle
+ * @return number of bytes read from the connection.
+ *         or negative error code if any error occurred
  */
-void
+ssize_t
 MHD_connection_handle_read (struct MHD_Connection *connection);
 
 

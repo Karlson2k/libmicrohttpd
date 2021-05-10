@@ -1209,8 +1209,13 @@ call_handlers (struct MHD_Connection *con,
     if ( (MHD_EVENT_LOOP_INFO_READ == con->event_loop_info) &&
          read_ready)
     {
-      MHD_connection_handle_read (con);
-      ret = MHD_connection_handle_idle (con);
+      do
+      {
+        ssize_t bytes_read = MHD_connection_handle_read (con);
+        ret = MHD_connection_handle_idle (con);
+        if (bytes_read <= 0)
+          break;
+      } while (true);
       states_info_processed = true;
     }
     /* No need to check value of 'ret' here as closed connection

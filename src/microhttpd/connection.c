@@ -2814,7 +2814,7 @@ MHD_update_last_activity_ (struct MHD_Connection *connection)
  *
  * @param connection connection to handle
  */
-void
+ssize_t
 MHD_connection_handle_read (struct MHD_Connection *connection)
 {
   ssize_t bytes_read;
@@ -2851,7 +2851,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   if (bytes_read < 0)
   {
     if (MHD_ERR_AGAIN_ == bytes_read)
-      return;     /* No new data to process. */
+      return bytes_read;     /* No new data to process. */
     if (MHD_ERR_CONNRESET_ == bytes_read)
     {
       CONNECTION_CLOSE_ERROR (connection,
@@ -2859,7 +2859,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
                               NULL :
                               _ (
                                 "Socket disconnected while reading request."));
-      return;
+      return bytes_read;
     }
 
 #ifdef HAVE_MESSAGES
@@ -2871,7 +2871,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
 #endif
     CONNECTION_CLOSE_ERROR (connection,
                             NULL);
-    return;
+    return bytes_read;
   }
 
   if (0 == bytes_read)
@@ -2879,7 +2879,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
     connection->read_closed = true;
     MHD_connection_close_ (connection,
                            MHD_REQUEST_TERMINATED_CLIENT_ABORT);
-    return;
+    return bytes_read;
   }
   connection->read_buffer_offset += bytes_read;
   MHD_update_last_activity_ (connection);
@@ -2906,13 +2906,13 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
       MHD_connection_close_ (connection,
                              MHD_REQUEST_TERMINATED_READ_ERROR);
     }
-    return;
+    return bytes_read;
   case MHD_CONNECTION_CLOSED:
-    return;
+    return bytes_read;
 #ifdef UPGRADE_SUPPORT
   case MHD_CONNECTION_UPGRADE:
     mhd_assert (0);
-    return;
+    return bytes_read;
 #endif /* UPGRADE_SUPPORT */
   default:
     /* shrink read buffer to how much is actually used */
@@ -2922,7 +2922,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
                          connection->read_buffer_offset);
     break;
   }
-  return;
+  return bytes_read;
 }
 
 
