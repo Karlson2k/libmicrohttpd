@@ -2121,8 +2121,13 @@ enum MHD_DaemonInfoType
   /**
    * Request the file descriptor for the external epoll.
    * No extra arguments should be passed.
+   *
    * Waiting on epoll FD must not block longer than value
-   * returned by #MHD_get_timeout().
+   * returned by #MHD_get_timeout() otherwise connections
+   * will "hung" with unprocessed data in network buffers
+   * and timed-out connections will not be closed.
+   *
+   * @sa #MHD_get_timeout(), #MHD_run()
    */
   MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY,
   MHD_DAEMON_INFO_EPOLL_FD = MHD_DAEMON_INFO_EPOLL_FD_LINUX_ONLY,
@@ -2557,10 +2562,12 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  *
  * This function should only be called in when MHD is configured to
  * use external select with 'select()' or with 'epoll'.
- * In the latter case, it will only add the single 'epoll()' file
+ * In the latter case, it will only add the single 'epoll' file
  * descriptor used by MHD to the sets.
- * It's necessary to use #MHD_get_timeout() in combination with
- * this function.
+ * It's necessary to use #MHD_get_timeout() to get maximum timeout
+ * value for `select()`. Usage of `select()` with indefinite timeout
+ * (or timeout larger than returned by #MHD_get_timeout()) will
+ * violate MHD API and may results in pending unprocessed data.
  *
  * This function must be called only for daemon started
  * without #MHD_USE_INTERNAL_POLLING_THREAD flag.
@@ -2598,8 +2605,10 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  * use external select with 'select()' or with 'epoll'.
  * In the latter case, it will only add the single 'epoll' file
  * descriptor used by MHD to the sets.
- * It's necessary to use #MHD_get_timeout() in combination with
- * this function.
+ * It's necessary to use #MHD_get_timeout() to get maximum timeout
+ * value for `select()`. Usage of `select()` with indefinite timeout
+ * (or timeout larger than returned by #MHD_get_timeout()) will
+ * violate MHD API and may results in pending unprocessed data.
  *
  * This function must be called only for daemon started
  * without #MHD_USE_INTERNAL_POLLING_THREAD flag.
@@ -2632,10 +2641,17 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  * daemon FDs in fd_sets, call FD_ZERO for each fd_set
  * before calling this function. Size of fd_set is
  * determined by current value of FD_SETSIZE.
- * It's necessary to use #MHD_get_timeout() in combination with
- * this function.
  *
- * This function could be called only for daemon started
+ * This function should only be called in when MHD is configured to
+ * use external select with 'select()' or with 'epoll'.
+ * In the latter case, it will only add the single 'epoll' file
+ * descriptor used by MHD to the sets.
+ * It's necessary to use #MHD_get_timeout() to get maximum timeout
+ * value for `select()`. Usage of `select()` with indefinite timeout
+ * (or timeout larger than returned by #MHD_get_timeout()) will
+ * violate MHD API and may results in pending unprocessed data.
+ *
+ * This function must be called only for daemon started
  * without #MHD_USE_INTERNAL_POLLING_THREAD flag.
  *
  * @param daemon daemon to get sets from
@@ -2657,20 +2673,31 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 
 /**
  * Obtain timeout value for polling function for this daemon.
- * This function set value to amount of milliseconds for which polling
- * function (`select()` or `poll()`) should at most block, not the
+ *
+ * This function set value to the amount of milliseconds for which polling
+ * function (`select()`, `poll()` or epoll) should at most block, not the
  * timeout value set for connections.
- * It is important to always use this function, even if connection
- * timeout is not set, as in some cases MHD may already have more
- * data to process on next turn (data pending in TLS buffers,
- * connections are already ready with epoll etc.) and returned timeout
- * will be zero.
+ *
+ * Any external polling function must be called with the timeout value
+ * provided by this function. Smaller timeout values can be used for polling
+ * function if it is required for any reason, but using larger timeout value
+ * or no timeout (indefinite timeout) when this function return #MHD_YES
+ * will break MHD processing logic and result in "hung" connections with
+ * data pending in network buffers and other problems.
+ *
+ * It is important to always use this function when external polling is
+ * used. If this function returns #MHD_YES then #MHD_run() (or
+ * #MHD_run_from_select()) must be called right after return from polling
+ * function, regardless of the states of MHD fds.
+ *
+ * In practice, if #MHD_YES is returned then #MHD_run() (or
+ * #MHD_run_from_select()) must be called not later than @a timeout
+ * millisecond.
  *
  * @param daemon daemon to query for timeout
  * @param timeout set to the timeout (in milliseconds)
  * @return #MHD_YES on success, #MHD_NO if timeouts are
- *        not used (or no connections exist that would
- *        necessitate the use of a timeout right now).
+ *         not used and no data is pending.
  * @ingroup event
  */
 _MHD_EXTERN enum MHD_Result
@@ -2679,18 +2706,25 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 
 
 /**
- * Run webserver operations (without blocking unless in client
- * callbacks).  This method should be called by clients in combination
- * with #MHD_get_fdset if the client-controlled select method is used and
- * #MHD_get_timeout().
+ * Run webserver operations (without blocking unless in client callbacks).
+ *
+ * This method should be called by clients in combination with
+ * #MHD_get_fdset() (or #MHD_get_daemon_info() with MHD_DAEMON_INFO_EPOLL_FD
+ * if epoll is used) and #MHD_get_timeout() if the client-controlled
+ * connection polling method is used (i.e. daemon was started without
+ * #MHD_USE_INTERNAL_POLLING_THREAD flag).
  *
  * This function is a convenience method, which is useful if the
  * fd_sets from #MHD_get_fdset were not directly passed to `select()`;
  * with this function, MHD will internally do the appropriate `select()`
- * call itself again.  While it is always safe to call #MHD_run (if
- * #MHD_USE_INTERNAL_POLLING_THREAD is not set), you should call
- * #MHD_run_from_select if performance is important (as it saves an
+ * call itself again.  While it is acceptable to call #MHD_run (if
+ * #MHD_USE_INTERNAL_POLLING_THREAD is not set) at any moment, you should
+ * call #MHD_run_from_select() if performance is important (as it saves an
  * expensive call to `select()`).
+ *
+ * If #MHD_get_timeout() returned #MHD_YES, than this function must be called
+ * right after polling function returns regardless of detected activity on
+ * the daemon's FDs.
  *
  * @param daemon daemon to run
  * @return #MHD_YES on success, #MHD_NO if this
@@ -2704,14 +2738,20 @@ MHD_run (struct MHD_Daemon *daemon);
 
 /**
  * Run websever operation with possible blocking.
- * This function do the following: waits for any network event not more than
- * specified number of milliseconds, processes all incoming and outgoing
- * data, processes new connections, processes any timed-out connection, and
- * do other things required to run webserver.
+ *
+ * This function does the following: waits for any network event not more
+ * than specified number of milliseconds, processes all incoming and
+ * outgoing data, processes new connections, processes any timed-out
+ * connection, and does other things required to run webserver.
  * Once all connections are processed, function returns.
+ *
  * This function is useful for quick and simple webserver implementation if
  * application needs to run a single thread only and does not have any other
  * network activity.
+ *
+ * It is expected that the external socket polling function is not used in
+ * conjunction with this function unless the @a millisec is set to zero.
+ *
  * @param daemon the daemon to run
  * @param millisec the maximum time in milliseconds to wait for network and
  *                 other events. Note: there is no guarantee that function
@@ -2746,6 +2786,10 @@ MHD_run_wait (struct MHD_Daemon *daemon,
  * this function instead of #MHD_run is more efficient as MHD will
  * not have to call `select()` again to determine which operations are
  * ready.
+ *
+ * If #MHD_get_timeout() returned #MHD_YES, than this function must be
+ * called right after `select()` returns regardless of detected activity
+ * on the daemon's FDs.
  *
  * This function cannot be used with daemon started with
  * #MHD_USE_INTERNAL_POLLING_THREAD flag.
