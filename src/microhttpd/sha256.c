@@ -341,8 +341,8 @@ MHD_SHA256_finish (void *ctx_,
   if (SHA256_BLOCK_SIZE - bytes_have < SHA256_SIZE_OF_LEN_ADD)
   {   /* No space in current block to put total length of message.
          Pad current block with zeros and process it. */
-    while (bytes_have < SHA256_BLOCK_SIZE)
-      ctx->buffer[bytes_have++] = 0;
+    if (bytes_have < SHA256_BLOCK_SIZE)
+      memset (ctx->buffer + bytes_have, 0, SHA256_BLOCK_SIZE - bytes_have);
     /* Process full block. */
     sha256_transform (ctx->H, ctx->buffer);
     /* Start new block. */
