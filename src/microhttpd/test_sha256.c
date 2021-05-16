@@ -310,7 +310,7 @@ check_result (const char *test_name,
     char calc_str[SHA256_DIGEST_STRING_SIZE];
     bin2hex (calculated, SHA256_DIGEST_SIZE, calc_str);
     printf (
-      "PASSED: %s check %u: calculated digest %s match expected digest.\n",
+      "PASSED: %s check %u: calculated digest %s matches expected digest.\n",
       test_name, check_num, calc_str);
     fflush (stdout);
   }

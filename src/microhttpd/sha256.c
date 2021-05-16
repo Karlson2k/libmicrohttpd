@@ -1,8 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2019 Karlson2k (Evgeny Grin)
-     Some ideas are based on Libgcrypt implementation.
-     Copyright (C) 2003, 2006, 2008, 2009 Free Software Foundation, Inc.
+     Copyright (C) 2019-2021 Karlson2k (Evgeny Grin)
 
      libmicrohttpd is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -24,8 +22,6 @@
  * @brief  Calculation of SHA-256 digest as defined in FIPS PUB 180-4 (2015)
  * @author Karlson2k (Evgeny Grin)
  */
-
-/* Some tricks are based on Libgcrypt implementation. */
 
 #include "sha256.h"
 
@@ -100,17 +96,19 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
 #define Ch(x,y,z)     ( (z) ^ ((x) & ((y) ^ (z))) )
 #define Maj(x,y,z)    ( ((x) & (y)) ^ ((z) & ((x) ^ (y))) )
   /* Unoptimized (original) versions: */
-/* #define Ch(x,y,z)  ( ( (x) & (y) ) | ( ~(x) & (z) ) )          */
+/* #define Ch(x,y,z)  ( ( (x) & (y) ) ^ ( ~(x) & (z) ) )          */
 /* #define Maj(x,y,z) ( ((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)) ) */
 
   /* Four 'Sigma' macro functions.
      See FIPS PUB 180-4 formulae 4.4, 4.5, 4.6, 4.7. */
-#define SIG0(x)  (_MHD_ROTR32 ((x),2) ^ _MHD_ROTR32 ((x),13) ^ _MHD_ROTR32 ((x), \
-                                                                            22) )
-#define SIG1(x)  (_MHD_ROTR32 ((x),6) ^ _MHD_ROTR32 ((x),11) ^ _MHD_ROTR32 ((x), \
-                                                                            25) )
-#define sig0(x)  (_MHD_ROTR32 ((x),7)  ^ _MHD_ROTR32 ((x),18) ^ ((x) >> 3)  )
-#define sig1(x)  (_MHD_ROTR32 ((x),17) ^ _MHD_ROTR32 ((x),19) ^ ((x) >> 10) )
+#define SIG0(x)  (_MHD_ROTR32 ((x), 2) ^ _MHD_ROTR32 ((x), 13) ^ \
+                  _MHD_ROTR32 ((x), 22) )
+#define SIG1(x)  (_MHD_ROTR32 ((x), 6) ^ _MHD_ROTR32 ((x), 11) ^ \
+                  _MHD_ROTR32 ((x), 25) )
+#define sig0(x)  (_MHD_ROTR32 ((x), 7) ^ _MHD_ROTR32 ((x), 18) ^ \
+                  ((x) >> 3) )
+#define sig1(x)  (_MHD_ROTR32 ((x), 17) ^ _MHD_ROTR32 ((x),19) ^ \
+                  ((x) >> 10) )
 
   /* Single step of SHA-256 computation,
      see FIPS PUB 180-4 paragraph 6.2.2 step 3.
@@ -124,7 +122,7 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
            second (vH += SIG0(vA) + Maj(vE,vF,vC) equals T1 + T2 in FIPS PUB 180-4 paragraph 6.2.2 step 3.
    * Note: 'wt' must be used exactly one time in this macro as it change other data as well
            every time when used. */
-#define SHA2STEP32(vA,vB,vC,vD,vE,vF,vG,vH,kt,wt) do {                    \
+#define SHA2STEP32(vA,vB,vC,vD,vE,vF,vG,vH,kt,wt) do {                  \
     (vD) += ((vH) += SIG1 ((vE)) + Ch ((vE),(vF),(vG)) + (kt) + (wt));  \
     (vH) += SIG0 ((vA)) + Maj ((vA),(vB),(vC)); } while (0)
 
@@ -140,38 +138,38 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
      stored in array of W elements. */
   /* Note: instead of using K constants as array, all K values are specified
      individually for each step, see FIPS PUB 180-4 paragraph 4.2.2 for K values. */
-  SHA2STEP32 (a, b, c, d, e, f, g, h, 0x428a2f98UL, W[0]  = GET_W_FROM_DATA (
-                data,0));
-  SHA2STEP32 (h, a, b, c, d, e, f, g, 0x71374491UL, W[1]  = GET_W_FROM_DATA (
-                data,1));
-  SHA2STEP32 (g, h, a, b, c, d, e, f, 0xb5c0fbcfUL, W[2]  = GET_W_FROM_DATA (
-                data,2));
-  SHA2STEP32 (f, g, h, a, b, c, d, e, 0xe9b5dba5UL, W[3]  = GET_W_FROM_DATA (
-                data,3));
-  SHA2STEP32 (e, f, g, h, a, b, c, d, 0x3956c25bUL, W[4]  = GET_W_FROM_DATA (
-                data,4));
-  SHA2STEP32 (d, e, f, g, h, a, b, c, 0x59f111f1UL, W[5]  = GET_W_FROM_DATA (
-                data,5));
-  SHA2STEP32 (c, d, e, f, g, h, a, b, 0x923f82a4UL, W[6]  = GET_W_FROM_DATA (
-                data,6));
-  SHA2STEP32 (b, c, d, e, f, g, h, a, 0xab1c5ed5UL, W[7]  = GET_W_FROM_DATA (
-                data,7));
-  SHA2STEP32 (a, b, c, d, e, f, g, h, 0xd807aa98UL, W[8]  = GET_W_FROM_DATA (
-                data,8));
-  SHA2STEP32 (h, a, b, c, d, e, f, g, 0x12835b01UL, W[9]  = GET_W_FROM_DATA (
-                data,9));
-  SHA2STEP32 (g, h, a, b, c, d, e, f, 0x243185beUL, W[10] = GET_W_FROM_DATA (
-                data,10));
-  SHA2STEP32 (f, g, h, a, b, c, d, e, 0x550c7dc3UL, W[11] = GET_W_FROM_DATA (
-                data,11));
-  SHA2STEP32 (e, f, g, h, a, b, c, d, 0x72be5d74UL, W[12] = GET_W_FROM_DATA (
-                data,12));
-  SHA2STEP32 (d, e, f, g, h, a, b, c, 0x80deb1feUL, W[13] = GET_W_FROM_DATA (
-                data,13));
-  SHA2STEP32 (c, d, e, f, g, h, a, b, 0x9bdc06a7UL, W[14] = GET_W_FROM_DATA (
-                data,14));
-  SHA2STEP32 (b, c, d, e, f, g, h, a, 0xc19bf174UL, W[15] = GET_W_FROM_DATA (
-                data,15));
+  SHA2STEP32 (a, b, c, d, e, f, g, h, 0x428a2f98UL, W[0] = \
+                GET_W_FROM_DATA (data, 0));
+  SHA2STEP32 (h, a, b, c, d, e, f, g, 0x71374491UL, W[1] = \
+                GET_W_FROM_DATA (data, 1));
+  SHA2STEP32 (g, h, a, b, c, d, e, f, 0xb5c0fbcfUL, W[2] = \
+                GET_W_FROM_DATA (data, 2));
+  SHA2STEP32 (f, g, h, a, b, c, d, e, 0xe9b5dba5UL, W[3] = \
+                GET_W_FROM_DATA (data, 3));
+  SHA2STEP32 (e, f, g, h, a, b, c, d, 0x3956c25bUL, W[4] = \
+                GET_W_FROM_DATA (data, 4));
+  SHA2STEP32 (d, e, f, g, h, a, b, c, 0x59f111f1UL, W[5] = \
+                GET_W_FROM_DATA (data, 5));
+  SHA2STEP32 (c, d, e, f, g, h, a, b, 0x923f82a4UL, W[6] = \
+                GET_W_FROM_DATA (data, 6));
+  SHA2STEP32 (b, c, d, e, f, g, h, a, 0xab1c5ed5UL, W[7] = \
+                GET_W_FROM_DATA (data, 7));
+  SHA2STEP32 (a, b, c, d, e, f, g, h, 0xd807aa98UL, W[8] = \
+                GET_W_FROM_DATA (data, 8));
+  SHA2STEP32 (h, a, b, c, d, e, f, g, 0x12835b01UL, W[9] = \
+                GET_W_FROM_DATA (data, 9));
+  SHA2STEP32 (g, h, a, b, c, d, e, f, 0x243185beUL, W[10] = \
+                GET_W_FROM_DATA (data, 10));
+  SHA2STEP32 (f, g, h, a, b, c, d, e, 0x550c7dc3UL, W[11] = \
+                GET_W_FROM_DATA (data, 11));
+  SHA2STEP32 (e, f, g, h, a, b, c, d, 0x72be5d74UL, W[12] = \
+                GET_W_FROM_DATA (data, 12));
+  SHA2STEP32 (d, e, f, g, h, a, b, c, 0x80deb1feUL, W[13] = \
+                GET_W_FROM_DATA (data, 13));
+  SHA2STEP32 (c, d, e, f, g, h, a, b, 0x9bdc06a7UL, W[14] = \
+                GET_W_FROM_DATA (data, 14));
+  SHA2STEP32 (b, c, d, e, f, g, h, a, 0xc19bf174UL, W[15] = \
+                GET_W_FROM_DATA (data, 15));
 
   /* 'W' generation and assignment for 16 <= t <= 63.
      See FIPS PUB 180-4 paragraph 6.2.2.
@@ -236,7 +234,7 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
   SHA2STEP32 (b, c, d, e, f, g, h, a, 0xc67178f2UL, W[63 & 0xf] = Wgen (W,63));
 
   /* Compute intermediate hash.
-     See FIPS PUB 180-4 paragraph 4.2.2 step 4. */
+     See FIPS PUB 180-4 paragraph 6.2.2 step 4. */
   H[0] += a;
   H[1] += b;
   H[2] += c;

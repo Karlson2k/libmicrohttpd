@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2019 Karlson2k (Evgeny Grin)
+  Copyright (C) 2019-2021 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -56,8 +56,8 @@
 #define _MHD_BYTES_SWAP32(value32)  \
   ((uint32_t) __builtin_bswap32 ((uint32_t) value32))
 #else  /* ! __has_builtin(__builtin_bswap32) */
-#define _MHD_BYTES_SWAP32(value32)                              \
-  ( (((uint32_t) (value32)) << 24)    \
+#define _MHD_BYTES_SWAP32(value32)                                  \
+  ( (((uint32_t) (value32)) << 24)                                  \
     | ((((uint32_t) (value32)) & ((uint32_t) 0x0000FF00)) << 8)     \
     | ((((uint32_t) (value32)) & ((uint32_t) 0x00FF0000)) >> 8)     \
     | (((uint32_t) (value32))                           >> 24) )
@@ -78,8 +78,8 @@
 #define _MHD_BYTES_SWAP64(value64) \
   ((uint64_t) __builtin_bswap64 ((uint64_t) value64))
 #else  /* ! __has_builtin(__builtin_bswap64) */
-#define _MHD_BYTES_SWAP64(value64)                                     \
-  ( (((uint64_t) (value64)) << 56)    \
+#define _MHD_BYTES_SWAP64(value64)                                          \
+  ( (((uint64_t) (value64)) << 56)                                          \
     | ((((uint64_t) (value64)) & ((uint64_t) 0x000000000000FF00)) << 40)    \
     | ((((uint64_t) (value64)) & ((uint64_t) 0x0000000000FF0000)) << 24)    \
     | ((((uint64_t) (value64)) & ((uint64_t) 0x00000000FF000000)) << 8)     \
@@ -102,7 +102,7 @@
   ((*(uint64_t*) (addr)) = _MHD_BYTES_SWAP64 (value64))
 #else  /* _MHD_BYTE_ORDER != _MHD_BIG_ENDIAN */
 /* Endianness was not detected or non-standard like PDP-endian */
-#define _MHD_PUT_64BIT_LE(addr, value64) do {                             \
+#define _MHD_PUT_64BIT_LE(addr, value64) do {                            \
     ((uint8_t*) (addr))[0] = (uint8_t) ((uint64_t) (value64));           \
     ((uint8_t*) (addr))[1] = (uint8_t) (((uint64_t) (value64)) >> 8);    \
     ((uint8_t*) (addr))[2] = (uint8_t) (((uint64_t) (value64)) >> 16);   \
@@ -126,7 +126,7 @@
   ((*(uint32_t*) (addr)) = _MHD_BYTES_SWAP32 (value32))
 #else  /* _MHD_BYTE_ORDER != _MHD_BIG_ENDIAN */
 /* Endianness was not detected or non-standard like PDP-endian */
-#define _MHD_PUT_32BIT_LE(addr, value32) do {                             \
+#define _MHD_PUT_32BIT_LE(addr, value32) do {                            \
     ((uint8_t*) (addr))[0] = (uint8_t) ((uint32_t) (value32));           \
     ((uint8_t*) (addr))[1] = (uint8_t) (((uint32_t) (value32)) >> 8);    \
     ((uint8_t*) (addr))[2] = (uint8_t) (((uint32_t) (value32)) >> 16);   \
@@ -146,8 +146,8 @@
   _MHD_BYTES_SWAP32 (*(const uint32_t*) (addr))
 #else  /* _MHD_BYTE_ORDER != _MHD_BIG_ENDIAN */
 /* Endianness was not detected or non-standard like PDP-endian */
-#define _MHD_GET_32BIT_LE(addr)                       \
-  ( ( (uint32_t) (((const uint8_t*) addr)[0]))          \
+#define _MHD_GET_32BIT_LE(addr)                           \
+  ( ( (uint32_t) (((const uint8_t*) addr)[0]))            \
     | (((uint32_t) (((const uint8_t*) addr)[1])) << 8)    \
     | (((uint32_t) (((const uint8_t*) addr)[2])) << 16)   \
     | (((uint32_t) (((const uint8_t*) addr)[3])) << 24) )
@@ -166,7 +166,7 @@
   ((*(uint64_t*) (addr)) = _MHD_BYTES_SWAP64 (value64))
 #else  /* _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN */
 /* Endianness was not detected or non-standard like PDP-endian */
-#define _MHD_PUT_64BIT_BE(addr, value64) do {                             \
+#define _MHD_PUT_64BIT_BE(addr, value64) do {                            \
     ((uint8_t*) (addr))[7] = (uint8_t) ((uint64_t) (value64));           \
     ((uint8_t*) (addr))[6] = (uint8_t) (((uint64_t) (value64)) >> 8);    \
     ((uint8_t*) (addr))[5] = (uint8_t) (((uint64_t) (value64)) >> 16);   \
@@ -190,7 +190,7 @@
   ((*(uint32_t*) (addr)) = _MHD_BYTES_SWAP32 (value32))
 #else  /* _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN */
 /* Endianness was not detected or non-standard like PDP-endian */
-#define _MHD_PUT_32BIT_BE(addr, value32) do {                             \
+#define _MHD_PUT_32BIT_BE(addr, value32) do {                            \
     ((uint8_t*) (addr))[3] = (uint8_t) ((uint32_t) (value32));           \
     ((uint8_t*) (addr))[2] = (uint8_t) (((uint32_t) (value32)) >> 8);    \
     ((uint8_t*) (addr))[1] = (uint8_t) (((uint32_t) (value32)) >> 16);   \
@@ -210,8 +210,8 @@
   _MHD_BYTES_SWAP32 (*(const uint32_t*) (addr))
 #else  /* _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN */
 /* Endianness was not detected or non-standard like PDP-endian */
-#define _MHD_GET_32BIT_BE(addr)                       \
-  ( (((uint32_t) (((const uint8_t*) addr)[0])) << 24)   \
+#define _MHD_GET_32BIT_BE(addr)                           \
+  ( (((uint32_t) (((const uint8_t*) addr)[0])) << 24)     \
     | (((uint32_t) (((const uint8_t*) addr)[1])) << 16)   \
     | (((uint32_t) (((const uint8_t*) addr)[2])) << 8)    \
     | ((uint32_t) (((const uint8_t*) addr)[3])) )
