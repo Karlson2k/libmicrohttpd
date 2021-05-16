@@ -238,6 +238,33 @@ _MHD_ROTR32 (uint32_t value32, int bits)
   /* Defined in form which modern compiler could optimize. */
   return (value32 >> bits) | (value32 << (32 - bits));
 }
+
+
+#endif /* ! _MSC_FULL_VER */
+
+
+/**
+ * Rotate left 32-bit value by number of bits.
+ * bits parameter must be more than zero and must be less than 32.
+ */
+#if defined(_MSC_FULL_VER) && (! defined(__clang__) || (defined(__c2__) && \
+  defined(__OPTIMIZE__)))
+/* Clang/C2 do not inline this function if optimizations are turned off. */
+#ifndef __clang__
+#pragma intrinsic(_rotl)
+#endif /* ! __clang__ */
+#define _MHD_ROTL32(value32, bits) \
+  ((uint32_t) _rotl ((uint32_t) (value32),(bits)))
+#else  /* ! _MSC_FULL_VER */
+_MHD_static_inline uint32_t
+_MHD_ROTL32 (uint32_t value32, int bits)
+{
+  mhd_assert (bits < 32);
+  /* Defined in form which modern compiler could optimize. */
+  return (value32 << bits) | (value32 >> (32 - bits));
+}
+
+
 #endif /* ! _MSC_FULL_VER */
 
 
