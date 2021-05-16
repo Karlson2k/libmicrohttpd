@@ -356,7 +356,7 @@ test2_bin (void)
 }
 
 
-/* Use data set number 7 as it is the longest sequence */
+/* Use data set number 7 as it has the longest sequence */
 #define DATA_POS 6
 #define MAX_OFFSET 31
 
