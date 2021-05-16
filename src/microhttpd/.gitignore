@@ -57,6 +57,7 @@ test_shutdown_poll
 test_shutdown_select
 test_md5
 test_sha256
+/test_sha1
 test_upgrade_large
 test_upgrade_large_tls
 test_postprocessor_md
