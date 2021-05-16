@@ -373,7 +373,7 @@ test_unaligned (void)
   buf = malloc (tdata->bin_l.len + MAX_OFFSET);
   digest_buf = malloc (SHA1_DIGEST_SIZE + MAX_OFFSET);
   if ((NULL == buf) || (NULL == digest_buf))
-    _exit (99);
+    exit (99);
 
   for (offset = MAX_OFFSET; offset >= 1; --offset)
   {
@@ -392,6 +392,7 @@ test_unaligned (void)
     num_failed += check_result (__FUNCTION__, MAX_OFFSET - offset,
                                 unaligned_digest, tdata->digest);
   }
+  free (digest_buf);
   free (buf);
   return num_failed;
 }
