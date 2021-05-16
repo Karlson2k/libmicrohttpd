@@ -318,8 +318,8 @@ MHD_SHA256_update (void *ctx_,
  * @param[out] digest set to the hash, must be #SHA256_DIGEST_SIZE bytes
  */
 void
-sha256_finish (void *ctx_,
-               uint8_t digest[SHA256_DIGEST_SIZE])
+MHD_SHA256_finish (void *ctx_,
+                   uint8_t digest[SHA256_DIGEST_SIZE])
 {
   struct sha256_ctx *const ctx = ctx_;
   uint64_t num_bits;   /**< Number of processed bits */
