@@ -26,13 +26,14 @@
 #ifndef MHD_BITHELPERS_H
 #define MHD_BITHELPERS_H 1
 
-#include "mhd_byteorder.h"
 #include <stdint.h>
 #if defined(_MSC_FULL_VER) && (! defined(__clang__) || (defined(__c2__) && \
   defined(__OPTIMIZE__)))
 /* Declarations for VC & Clang/C2 built-ins */
 #include <intrin.h>
 #endif /* _MSC_FULL_VER  */
+#include "mhd_assert.h"
+#include "mhd_byteorder.h"
 
 #ifndef __has_builtin
 /* Avoid precompiler errors with non-clang */
@@ -230,9 +231,13 @@
 #define _MHD_ROTR32(value32, bits) \
   ((uint32_t) _rotr ((uint32_t) (value32),(bits)))
 #else  /* ! _MSC_FULL_VER */
-/* Defined in form which modern compiler could optimize. */
-#define _MHD_ROTR32(value32, bits) \
-  (((uint32_t) (value32)) >> (bits) | ((uint32_t) (value32)) << (32 - bits))
+_MHD_static_inline uint32_t
+_MHD_ROTR32 (uint32_t value32, int bits)
+{
+  mhd_assert (bits < 32);
+  /* Defined in form which modern compiler could optimize. */
+  return (value32 >> bits) | (value32 << (32 - bits));
+}
 #endif /* ! _MSC_FULL_VER */
 
 
