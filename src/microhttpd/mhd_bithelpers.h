@@ -32,8 +32,13 @@
 /* Declarations for VC & Clang/C2 built-ins */
 #include <intrin.h>
 #endif /* _MSC_FULL_VER  */
+#include "mhd_options.h"
 #include "mhd_assert.h"
 #include "mhd_byteorder.h"
+#if _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN || _MHD_BYTE_ORDER == _MHD_BIG_ENDIAN
+#include "mhd_align.h"
+#endif /* _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN ||
+          _MHD_BYTE_ORDER == _MHD_BIG_ENDIAN */
 
 #ifndef __has_builtin
 /* Avoid precompiler errors with non-clang */
@@ -158,15 +163,8 @@
  * put native-endian 64-bit value64 to addr
  * in big-endian mode.
  */
-#if _MHD_BYTE_ORDER == _MHD_BIG_ENDIAN
-#define _MHD_PUT_64BIT_BE(addr, value64)             \
-  ((*(uint64_t*) (addr)) = (uint64_t) (value64))
-#elif _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN
-#define _MHD_PUT_64BIT_BE(addr, value64)             \
-  ((*(uint64_t*) (addr)) = _MHD_BYTES_SWAP64 (value64))
-#else  /* _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN */
-/* Endianness was not detected or non-standard like PDP-endian */
-#define _MHD_PUT_64BIT_BE(addr, value64) do {                            \
+/* Slow version that works with unaligned addr and with any bytes order */
+#define _MHD_PUT_64BIT_BE_SLOW(addr, value64) do {                       \
     ((uint8_t*) (addr))[7] = (uint8_t) ((uint64_t) (value64));           \
     ((uint8_t*) (addr))[6] = (uint8_t) (((uint64_t) (value64)) >> 8);    \
     ((uint8_t*) (addr))[5] = (uint8_t) (((uint64_t) (value64)) >> 16);   \
@@ -176,7 +174,31 @@
     ((uint8_t*) (addr))[1] = (uint8_t) (((uint64_t) (value64)) >> 48);   \
     ((uint8_t*) (addr))[0] = (uint8_t) (((uint64_t) (value64)) >> 56);   \
 } while (0)
+#if _MHD_BYTE_ORDER == _MHD_BIG_ENDIAN
+#define _MHD_PUT_64BIT_BE(addr, value64)             \
+  ((*(uint64_t*) (addr)) = (uint64_t) (value64))
+#elif _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN
+#define _MHD_PUT_64BIT_BE(addr, value64)             \
+  ((*(uint64_t*) (addr)) = _MHD_BYTES_SWAP64 (value64))
+#else  /* _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN */
+/* Endianness was not detected or non-standard like PDP-endian */
+#define _MHD_PUT_64BIT_BE(addr, value64) _MHD_PUT_64BIT_BE_SLOW(addr, value64)
+/* Indicate that _MHD_PUT_64BIT_BE does not need aligned pointer */
+#define _MHD_PUT_64BIT_BE_UNALIGNED 1
 #endif /* _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN */
+
+/* Put result safely to unaligned address */
+_MHD_static_inline void
+_MHD_PUT_64BIT_BE_SAFE (void *dst, uint64_t value)
+{
+#ifndef _MHD_PUT_64BIT_BE_UNALIGNED
+  if (0 != ((uintptr_t) dst) % (_MHD_UINT64_ALIGN))
+    _MHD_PUT_64BIT_BE_SLOW (dst, value);
+  else
+#endif /* _MHD_BYTE_ORDER_IS_BIG_OR_LITTLE_ENDIAN */
+  _MHD_PUT_64BIT_BE (dst, value);
+}
+
 
 /* _MHD_PUT_32BIT_BE (addr, value32)
  * put native-endian 32-bit value32 to addr
@@ -196,6 +218,8 @@
     ((uint8_t*) (addr))[1] = (uint8_t) (((uint32_t) (value32)) >> 16);   \
     ((uint8_t*) (addr))[0] = (uint8_t) (((uint32_t) (value32)) >> 24);   \
 } while (0)
+/* Indicate that _MHD_PUT_32BIT_BE does not need aligned pointer */
+#define _MHD_PUT_32BIT_BE_UNALIGNED 1
 #endif /* _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN */
 
 /* _MHD_GET_32BIT_BE (addr)
@@ -215,6 +239,8 @@
     | (((uint32_t) (((const uint8_t*) addr)[1])) << 16)   \
     | (((uint32_t) (((const uint8_t*) addr)[2])) << 8)    \
     | ((uint32_t) (((const uint8_t*) addr)[3])) )
+/* Indicate that _MHD_GET_32BIT_BE does not need aligned pointer */
+#define _MHD_GET_32BIT_BE_UNALIGNED 1
 #endif /* _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN */
 
 

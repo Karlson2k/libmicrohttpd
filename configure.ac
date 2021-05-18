@@ -307,6 +307,56 @@ AS_IF([[test "x$inln_prfx" != "xnone"]],
 AC_MSG_RESULT([[$inln_prfx]])
 CFLAGS="$save_CFLAGS"
 
+AC_CHECK_HEADERS([stdalign.h], [], [], [AC_INCLUDES_DEFAULT])
+AC_CACHE_CHECK([[for C11 'alignof()' support]], [[mhd_cv_c_alignof]],
+  [AC_COMPILE_IFELSE(
+     [AC_LANG_PROGRAM(
+        [[
+#ifdef HAVE_STDALIGN_H
+#include <stdalign.h>
+#endif
+        ]], [[
+#if (defined (__GNUC__) && __GNUC__ < 4 && __GNUC_MINOR__ < 9 && ! defined(__clang__)) || \
+    (defined (__clang__) && __clang_major__ < 8)
+/* GCC before 4.9 and clang before 8.0 have incorrect implementation of 'alignof()'
+   which returns preferred alignment instead of minimal required alignment */    
+#error Compiler has incorrect implementation of alignof()
+choke me now
+#endif
+          int var1[(alignof(int) >= 2) ? 1 : -1];
+          int var2[alignof(unsigned int) - 1];
+          int var3[(alignof(char) > 0) ? 1 : -1];
+          int var4[(alignof(long) >= 4) ? 1 : -1];
+          
+          /* Mute compiler warnings */
+          var1[0] = var2[0] = var3[0] = 0;
+          var4[0] = 1;
+          if (var1[0] + var2[0] + var3[0] == var4[0])
+            return 1;
+        ]])
+     ], [
+          AC_COMPILE_IFELSE(
+		    [AC_LANG_PROGRAM(
+		        [[
+#ifdef HAVE_STDALIGN_H
+#include <stdalign.h>
+#endif
+		        ]], [[
+		          /* Should fail if 'alignof()' works */
+		          int var1[alignof(nonexisting_type) - 1];
+		          
+		          /* Mute compiler warnings */
+		          var1[0] = 1;
+		          if (var1[0] + 1 == 1)
+		            return 1;
+		        ]])
+		    ], [[mhd_cv_c_alignof='no']], [[mhd_cv_c_alignof='yes']])
+        ], [[mhd_cv_c_alignof='no']])
+  ])
+AS_VAR_IF([mhd_cv_c_alignof], ["yes"],
+  [AC_DEFINE([[HAVE_C_ALIGNOF]], [1], [Define to 1 if your compiler supports 'alignof()'])])
+
+
 # Check system type
 shutdown_trig_select='no'
 AC_MSG_CHECKING([[for target host OS]])

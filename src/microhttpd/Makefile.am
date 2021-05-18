@@ -59,7 +59,7 @@ libmicrohttpd_la_SOURCES = \
   internal.c internal.h \
   memorypool.c memorypool.h \
   mhd_mono_clock.c mhd_mono_clock.h \
-  mhd_limits.h mhd_byteorder.h \
+  mhd_limits.h \
   sysfdsetsize.c sysfdsetsize.h \
   mhd_str.c mhd_str.h \
   mhd_send.h mhd_send.c \
@@ -138,7 +138,7 @@ endif
 if ENABLE_DAUTH
 libmicrohttpd_la_SOURCES += \
   digestauth.c \
-  mhd_bithelpers.h \
+  mhd_bithelpers.h mhd_byteorder.h mhd_align.h \
   md5.c md5.h \
   sha256.c sha256.h
 endif
@@ -345,13 +345,13 @@ test_shutdown_poll_ignore_LDADD = \
 endif
 
 test_str_compare_SOURCES = \
-  test_str.c test_helpers.h mhd_str.c
+  test_str.c test_helpers.h mhd_str.c mhd_str.h
 
 test_str_to_value_SOURCES = \
-  test_str.c test_helpers.h mhd_str.c
+  test_str.c test_helpers.h mhd_str.c mhd_str.h
 
 test_str_token_SOURCES = \
-  test_str_token.c mhd_str.c
+  test_str_token.c mhd_str.c mhd_str.h
 
 test_http_reasons_SOURCES = \
   test_http_reasons.c \
@@ -359,15 +359,15 @@ test_http_reasons_SOURCES = \
 
 test_md5_SOURCES = \
   test_md5.c test_helpers.h \
-  md5.c md5.h mhd_bithelpers.h
+  md5.c md5.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
 
 test_sha256_SOURCES = \
   test_sha256.c test_helpers.h \
-  sha256.c sha256.h mhd_bithelpers.h
+  sha256.c sha256.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
 
 test_sha1_SOURCES = \
   test_sha1.c test_helpers.h \
-  sha1.c sha1.h mhd_bithelpers.h
+  sha1.c sha1.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
 
 test_options_SOURCES = \
   test_options.c
