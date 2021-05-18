@@ -113,6 +113,18 @@ sha1_transform (uint32_t H[_SHA1_DIGEST_LENGTH],
 #define GET_W_FROM_DATA(buf,t) \
   _MHD_GET_32BIT_BE (((const uint8_t*) (buf)) + (t) * SHA1_BYTES_IN_WORD)
 
+#ifndef _MHD_GET_32BIT_BE_UNALIGNED
+  if (0 != ((size_t) data % _MHD_UINT32_ALIGN))
+  {
+    /* Copy the unaligned input data to the aligned buffer */
+    memcpy (W, data, SHA1_BLOCK_SIZE);
+    /* The W[] buffer itself will be used as the source of the data,
+     * but data will be reloaded in correct bytes order during
+     * the next steps */
+    data = (uint8_t*) W;
+  }
+#endif /* _MHD_GET_32BIT_BE_UNALIGNED */
+
 /* SHA-1 values of Kt for t=0..19, see FIPS PUB 180-4 paragraph 4.2.1. */
 #define K00      0x5a827999UL
 /* SHA-1 values of Kt for t=20..39, see FIPS PUB 180-4 paragraph 4.2.1.*/
@@ -336,17 +348,35 @@ MHD_SHA1_finish (void *ctx_,
   memset (ctx->buffer + bytes_have, 0,
           SHA1_BLOCK_SIZE - SHA1_SIZE_OF_LEN_ADD - bytes_have);
   /* Put the number of bits in the processed message as a big-endian value. */
-  _MHD_PUT_64BIT_BE (ctx->buffer + SHA1_BLOCK_SIZE - SHA1_SIZE_OF_LEN_ADD,
-                     num_bits);
+  _MHD_PUT_64BIT_BE_SAFE (ctx->buffer + SHA1_BLOCK_SIZE - SHA1_SIZE_OF_LEN_ADD,
+                          num_bits);
   /* Process the full final block. */
   sha1_transform (ctx->H, ctx->buffer);
 
   /* Put final hash/digest in BE mode */
-  _MHD_PUT_32BIT_BE (digest + 0 * SHA1_BYTES_IN_WORD, ctx->H[0]);
-  _MHD_PUT_32BIT_BE (digest + 1 * SHA1_BYTES_IN_WORD, ctx->H[1]);
-  _MHD_PUT_32BIT_BE (digest + 2 * SHA1_BYTES_IN_WORD, ctx->H[2]);
-  _MHD_PUT_32BIT_BE (digest + 3 * SHA1_BYTES_IN_WORD, ctx->H[3]);
-  _MHD_PUT_32BIT_BE (digest + 4 * SHA1_BYTES_IN_WORD, ctx->H[4]);
+#ifndef _MHD_PUT_32BIT_BE_UNALIGNED
+  if (0 != ((uintptr_t) digest) % _MHD_UINT32_ALIGN)
+  {
+    uint32_t alig_dgst[_SHA1_DIGEST_LENGTH];
+    _MHD_PUT_32BIT_BE (alig_dgst + 0, ctx->H[0]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 1, ctx->H[1]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 2, ctx->H[2]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 3, ctx->H[3]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 4, ctx->H[4]);
+    /* Copy result to unaligned destination address */
+    memcpy (digest, alig_dgst, SHA1_DIGEST_SIZE);
+  }
+  else
+#else  /* _MHD_PUT_32BIT_BE_UNALIGNED */
+  if (1)
+#endif /* _MHD_PUT_32BIT_BE_UNALIGNED */
+  {
+    _MHD_PUT_32BIT_BE (digest + 0 * SHA1_BYTES_IN_WORD, ctx->H[0]);
+    _MHD_PUT_32BIT_BE (digest + 1 * SHA1_BYTES_IN_WORD, ctx->H[1]);
+    _MHD_PUT_32BIT_BE (digest + 2 * SHA1_BYTES_IN_WORD, ctx->H[2]);
+    _MHD_PUT_32BIT_BE (digest + 3 * SHA1_BYTES_IN_WORD, ctx->H[3]);
+    _MHD_PUT_32BIT_BE (digest + 4 * SHA1_BYTES_IN_WORD, ctx->H[4]);
+  }
 
   /* Erase potentially sensitive data. */
   memset (ctx, 0, sizeof(struct sha1_ctx));
