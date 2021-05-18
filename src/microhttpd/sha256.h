@@ -30,25 +30,42 @@
 #include <stdint.h>
 #include <stddef.h>
 
+
 /**
  *  Digest is kept internally as 8 32-bit words.
  */
 #define _SHA256_DIGEST_LENGTH 8
 
 /**
- * Size of SHA-256 digest in bytes
+ * Number of bits in single SHA-256 word
  */
-#define SHA256_DIGEST_SIZE (_SHA256_DIGEST_LENGTH * 4)
+#define SHA256_WORD_SIZE_BITS 32
 
 /**
- * Size of SHA-256 digest string in chars
+ * Number of bytes in single SHA-256 word
+ * used to process data
+ */
+#define SHA256_BYTES_IN_WORD (SHA256_WORD_SIZE_BITS / 8)
+
+/**
+ * Size of SHA-256 digest in bytes
+ */
+#define SHA256_DIGEST_SIZE (_SHA256_DIGEST_LENGTH * SHA256_BYTES_IN_WORD)
+
+/**
+ * Size of SHA-256 digest string in chars including termination NUL
  */
 #define SHA256_DIGEST_STRING_SIZE ((SHA256_DIGEST_SIZE) * 2 + 1)
 
 /**
+ * Size of single processing block in bits
+ */
+#define SHA256_BLOCK_SIZE_BITS 512
+
+/**
  * Size of single processing block in bytes
  */
-#define SHA256_BLOCK_SIZE 64
+#define SHA256_BLOCK_SIZE (SHA256_BLOCK_SIZE_BITS / 8)
 
 
 struct sha256_ctx

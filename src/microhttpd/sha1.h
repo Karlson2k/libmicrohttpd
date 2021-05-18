@@ -36,7 +36,7 @@
 #define _SHA1_DIGEST_LENGTH 5
 
 /**
- * Number of bytes in single SHA-1 word
+ * Number of bits in single SHA-1 word
  */
 #define SHA1_WORD_SIZE_BITS 32
 

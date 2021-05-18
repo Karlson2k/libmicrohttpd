@@ -109,7 +109,7 @@ sha1_transform (uint32_t H[_SHA1_DIGEST_LENGTH],
   _MHD_GET_32BIT_BE (((const uint8_t*) (buf)) + (t) * SHA1_BYTES_IN_WORD)
 
 #ifndef _MHD_GET_32BIT_BE_UNALIGNED
-  if (0 != ((size_t) data % _MHD_UINT32_ALIGN))
+  if (0 != (((uintptr_t) data) % _MHD_UINT32_ALIGN))
   {
     /* Copy the unaligned input data to the aligned buffer */
     memcpy (W, data, SHA1_BLOCK_SIZE);

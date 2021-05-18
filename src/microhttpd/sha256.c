@@ -60,12 +60,6 @@ MHD_SHA256_init (void *ctx_)
 
 
 /**
- * Number of bytes in single SHA-256 word
- * used to process data
- */
-#define SHA256_BYTES_IN_WORD 4
-
-/**
  * Base of SHA-256 transformation.
  * Gets full 64 bytes block of data and updates hash values;
  * @param H     hash values
@@ -125,6 +119,18 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
 #define SHA2STEP32(vA,vB,vC,vD,vE,vF,vG,vH,kt,wt) do {                  \
     (vD) += ((vH) += SIG1 ((vE)) + Ch ((vE),(vF),(vG)) + (kt) + (wt));  \
     (vH) += SIG0 ((vA)) + Maj ((vA),(vB),(vC)); } while (0)
+
+#ifndef _MHD_GET_32BIT_BE_UNALIGNED
+  if (0 != (((uintptr_t) data) % _MHD_UINT32_ALIGN))
+  {
+    /* Copy the unaligned input data to the aligned buffer */
+    memcpy (W, data, SHA256_BLOCK_SIZE);
+    /* The W[] buffer itself will be used as the source of the data,
+     * but data will be reloaded in correct bytes order during
+     * the next steps */
+    data = (uint8_t*) W;
+  }
+#endif /* _MHD_GET_32BIT_BE_UNALIGNED */
 
   /* Get value of W(t) from input data buffer,
      See FIPS PUB 180-4 paragraph 6.2.
@@ -267,7 +273,7 @@ MHD_SHA256_update (void *ctx_,
     return; /* Do nothing */
 
   /* Note: (count & (SHA256_BLOCK_SIZE-1))
-           equal (count % SHA256_BLOCK_SIZE) for this block size. */
+           equals (count % SHA256_BLOCK_SIZE) for this block size. */
   bytes_have = (unsigned) (ctx->count & (SHA256_BLOCK_SIZE - 1));
   ctx->count += length;
 
@@ -275,7 +281,7 @@ MHD_SHA256_update (void *ctx_,
   {
     unsigned bytes_left = SHA256_BLOCK_SIZE - bytes_have;
     if (length >= bytes_left)
-    {     /* Combine new data with data in buffer and
+    {     /* Combine new data with data in the buffer and
              process full block. */
       memcpy (ctx->buffer + bytes_have,
               data,
@@ -289,7 +295,7 @@ MHD_SHA256_update (void *ctx_,
 
   while (SHA256_BLOCK_SIZE <= length)
   {   /* Process any full blocks of new data directly,
-         without copying to buffer. */
+         without copying to the buffer. */
     sha256_transform (ctx->H, data);
     data += SHA256_BLOCK_SIZE;
     length -= SHA256_BLOCK_SIZE;
@@ -297,7 +303,7 @@ MHD_SHA256_update (void *ctx_,
 
   if (0 != length)
   {   /* Copy incomplete block of new data (if any)
-         to buffer. */
+         to the buffer. */
     memcpy (ctx->buffer + bytes_have, data, length);
   }
 }
@@ -351,20 +357,42 @@ MHD_SHA256_finish (void *ctx_,
   memset (ctx->buffer + bytes_have, 0,
           SHA256_BLOCK_SIZE - SHA256_SIZE_OF_LEN_ADD - bytes_have);
   /* Put number of bits in processed message as big-endian value. */
-  _MHD_PUT_64BIT_BE (ctx->buffer + SHA256_BLOCK_SIZE - SHA256_SIZE_OF_LEN_ADD,
-                     num_bits);
+  _MHD_PUT_64BIT_BE_SAFE (ctx->buffer + SHA256_BLOCK_SIZE
+                          - SHA256_SIZE_OF_LEN_ADD,
+                          num_bits);
   /* Process full final block. */
   sha256_transform (ctx->H, ctx->buffer);
 
   /* Put final hash/digest in BE mode */
-  _MHD_PUT_32BIT_BE (digest + 0 * SHA256_BYTES_IN_WORD, ctx->H[0]);
-  _MHD_PUT_32BIT_BE (digest + 1 * SHA256_BYTES_IN_WORD, ctx->H[1]);
-  _MHD_PUT_32BIT_BE (digest + 2 * SHA256_BYTES_IN_WORD, ctx->H[2]);
-  _MHD_PUT_32BIT_BE (digest + 3 * SHA256_BYTES_IN_WORD, ctx->H[3]);
-  _MHD_PUT_32BIT_BE (digest + 4 * SHA256_BYTES_IN_WORD, ctx->H[4]);
-  _MHD_PUT_32BIT_BE (digest + 5 * SHA256_BYTES_IN_WORD, ctx->H[5]);
-  _MHD_PUT_32BIT_BE (digest + 6 * SHA256_BYTES_IN_WORD, ctx->H[6]);
-  _MHD_PUT_32BIT_BE (digest + 7 * SHA256_BYTES_IN_WORD, ctx->H[7]);
+#ifndef _MHD_PUT_32BIT_BE_UNALIGNED
+  if (0 != ((uintptr_t) digest) % _MHD_UINT32_ALIGN)
+  {
+    uint32_t alig_dgst[_SHA256_DIGEST_LENGTH];
+    _MHD_PUT_32BIT_BE (alig_dgst + 0, ctx->H[0]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 1, ctx->H[1]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 2, ctx->H[2]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 3, ctx->H[3]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 4, ctx->H[4]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 5, ctx->H[5]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 6, ctx->H[6]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 7, ctx->H[7]);
+    /* Copy result to unaligned destination address */
+    memcpy (digest, alig_dgst, SHA256_DIGEST_SIZE);
+  }
+  else
+#else  /* _MHD_PUT_32BIT_BE_UNALIGNED */
+  if (1)
+#endif /* _MHD_PUT_32BIT_BE_UNALIGNED */
+  {
+    _MHD_PUT_32BIT_BE (digest + 0 * SHA256_BYTES_IN_WORD, ctx->H[0]);
+    _MHD_PUT_32BIT_BE (digest + 1 * SHA256_BYTES_IN_WORD, ctx->H[1]);
+    _MHD_PUT_32BIT_BE (digest + 2 * SHA256_BYTES_IN_WORD, ctx->H[2]);
+    _MHD_PUT_32BIT_BE (digest + 3 * SHA256_BYTES_IN_WORD, ctx->H[3]);
+    _MHD_PUT_32BIT_BE (digest + 4 * SHA256_BYTES_IN_WORD, ctx->H[4]);
+    _MHD_PUT_32BIT_BE (digest + 5 * SHA256_BYTES_IN_WORD, ctx->H[5]);
+    _MHD_PUT_32BIT_BE (digest + 6 * SHA256_BYTES_IN_WORD, ctx->H[6]);
+    _MHD_PUT_32BIT_BE (digest + 7 * SHA256_BYTES_IN_WORD, ctx->H[7]);
+  }
 
   /* Erase potentially sensitive data. */
   memset (ctx, 0, sizeof(struct sha256_ctx));

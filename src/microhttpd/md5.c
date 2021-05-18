@@ -26,6 +26,12 @@
 #include "mhd_bithelpers.h"
 #include "mhd_assert.h"
 
+/**
+ * Number of bytes in single MD5 word
+ * used to process data
+ */
+#define MD5_BYTES_IN_WORD (32 / 8)
+
 
 /**
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
@@ -87,25 +93,36 @@ MHD_MD5Final (void *ctx_,
 
   /* Put number of bits */
   count_bits = ctx->count << 3;
-  _MHD_PUT_64BIT_LE (ctx->buffer + 56, count_bits);
+  _MHD_PUT_64BIT_LE_SAFE (ctx->buffer + 56, count_bits);
   MD5Transform (ctx->state, ctx->buffer);
 
   /* Put digest in LE mode */
-  _MHD_PUT_32BIT_LE (digest, ctx->state[0]);
-  _MHD_PUT_32BIT_LE (digest + 4, ctx->state[1]);
-  _MHD_PUT_32BIT_LE (digest + 8, ctx->state[2]);
-  _MHD_PUT_32BIT_LE (digest + 12, ctx->state[3]);
+#ifndef _MHD_PUT_32BIT_LE_UNALIGNED
+  if (0 != ((uintptr_t) digest) % _MHD_UINT32_ALIGN)
+  {
+    uint32_t alig_dgst[MD5_DIGEST_SIZE / MD5_BYTES_IN_WORD];
+    _MHD_PUT_32BIT_LE (alig_dgst + 0, ctx->state[0]);
+    _MHD_PUT_32BIT_LE (alig_dgst + 1, ctx->state[1]);
+    _MHD_PUT_32BIT_LE (alig_dgst + 2, ctx->state[2]);
+    _MHD_PUT_32BIT_LE (alig_dgst + 3, ctx->state[3]);
+    /* Copy result to unaligned destination address */
+    memcpy (digest, alig_dgst, MD5_DIGEST_SIZE);
+  }
+  else
+#else  /* _MHD_PUT_32BIT_LE_UNALIGNED */
+  if (1)
+#endif /* _MHD_PUT_32BIT_LE_UNALIGNED */
+  {
+    _MHD_PUT_32BIT_LE (digest, ctx->state[0]);
+    _MHD_PUT_32BIT_LE (digest + 4, ctx->state[1]);
+    _MHD_PUT_32BIT_LE (digest + 8, ctx->state[2]);
+    _MHD_PUT_32BIT_LE (digest + 12, ctx->state[3]);
+  }
 
   /* Erase buffer */
   memset (ctx, 0, sizeof(*ctx));
 }
 
-
-/**
- * Number of bytes in single SHA-256 word
- * used to process data
- */
-#define MD5_BYTES_IN_WORD (32 / 8)
 
 /* The four core functions - F1 is optimized somewhat */
 
@@ -129,18 +146,40 @@ MD5Transform (uint32_t state[4],
               const uint8_t block[MD5_BLOCK_SIZE])
 {
   uint32_t a, b, c, d;
+  uint32_t data_buf[MD5_BLOCK_SIZE / MD5_BYTES_IN_WORD];
+  const uint32_t *in;
 
-#if _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN
-  const uint32_t *in = (const uint32_t *) block;
-#else
-  uint32_t in[MD5_BLOCK_SIZE / MD5_BYTES_IN_WORD];
-  int i;
-
-  for (i = 0; i < MD5_BLOCK_SIZE / MD5_BYTES_IN_WORD; i++)
+#if (_MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN) || \
+  ! defined (_MHD_GET_32BIT_LE_UNALIGNED)
+  if (0 != (((uintptr_t) block) % _MHD_UINT32_ALIGN))
   {
-    in[i] = _MHD_GET_32BIT_LE (block + i * MD5_BYTES_IN_WORD);
+    /* Copy data to the aligned buffer */
+    memcpy (data_buf, block, MD5_BLOCK_SIZE);
+    in = data_buf;
   }
-#endif
+  else
+    in = (const uint32_t *) block;
+#endif /* _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN) || \
+          ! _MHD_GET_32BIT_LE_UNALIGNED */
+#if _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN
+  data_buf[0] = _MHD_GET_32BIT_LE (in + 0);
+  data_buf[1] = _MHD_GET_32BIT_LE (in + 1);
+  data_buf[2] = _MHD_GET_32BIT_LE (in + 2);
+  data_buf[3] = _MHD_GET_32BIT_LE (in + 3);
+  data_buf[4] = _MHD_GET_32BIT_LE (in + 4);
+  data_buf[5] = _MHD_GET_32BIT_LE (in + 5);
+  data_buf[6] = _MHD_GET_32BIT_LE (in + 6);
+  data_buf[7] = _MHD_GET_32BIT_LE (in + 7);
+  data_buf[8] = _MHD_GET_32BIT_LE (in + 8);
+  data_buf[9] = _MHD_GET_32BIT_LE (in + 9);
+  data_buf[10] = _MHD_GET_32BIT_LE (in + 10);
+  data_buf[11] = _MHD_GET_32BIT_LE (in + 11);
+  data_buf[12] = _MHD_GET_32BIT_LE (in + 12);
+  data_buf[13] = _MHD_GET_32BIT_LE (in + 13);
+  data_buf[14] = _MHD_GET_32BIT_LE (in + 14);
+  data_buf[15] = _MHD_GET_32BIT_LE (in + 15);
+  in = data_buf;
+#endif /* _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN */
 
   a = state[0];
   b = state[1];
