@@ -55,11 +55,6 @@ MHD_SHA1_init (void *ctx_)
 
 
 /**
- * Number of bytes in single SHA-1 word
- */
-#define SHA1_BYTES_IN_WORD (32 / 8)
-
-/**
  * Base of SHA-1 transformation.
  * Gets full 512 bits / 64 bytes block of data and updates hash values;
  * @param H     hash values
@@ -322,7 +317,7 @@ MHD_SHA1_finish (void *ctx_,
 
   num_bits = ctx->count << 3;
   /* Note: (count & (SHA1_BLOCK_SIZE-1))
-           equal (count % SHA1_BLOCK_SIZE) for this block size. */
+           equals (count % SHA1_BLOCK_SIZE) for this block size. */
   bytes_have = (unsigned) (ctx->count & (SHA1_BLOCK_SIZE - 1));
 
   /* Input data must be padded with bit "1" and with length of data in bits.

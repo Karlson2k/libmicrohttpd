@@ -28,7 +28,7 @@
 
 #include "mhd_options.h"
 #include <stdint.h>
-#include <stddef.h>
+#include <stddef.h> /* for size_t */
 
 /**
  *  SHA-1 digest is kept internally as 5 32-bit words.
@@ -36,9 +36,19 @@
 #define _SHA1_DIGEST_LENGTH 5
 
 /**
+ * Number of bytes in single SHA-1 word
+ */
+#define SHA1_WORD_SIZE_BITS 32
+
+/**
+ * Number of bytes in single SHA-1 word
+ */
+#define SHA1_BYTES_IN_WORD (SHA1_WORD_SIZE_BITS / 8)
+
+/**
  * Size of SHA-1 digest in bytes
  */
-#define SHA1_DIGEST_SIZE (_SHA1_DIGEST_LENGTH * 4)
+#define SHA1_DIGEST_SIZE (_SHA1_DIGEST_LENGTH * SHA1_BYTES_IN_WORD)
 
 /**
  * Size of SHA-1 digest string in chars including termination NUL
