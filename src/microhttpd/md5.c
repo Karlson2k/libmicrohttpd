@@ -134,7 +134,7 @@ MHD_MD5Final (void *ctx_,
 
 /* This is the central step in the MD5 algorithm. */
 #define MD5STEP(f, w, x, y, z, data, s) \
-  (w += f (x, y, z) + data,  w = w << s | w >> (32 - s),  w += x)
+  (w += f (x, y, z) + data,  w = _MHD_ROTL32(w, s),  w += x)
 
 /**
  * The core of the MD5 algorithm, this alters an existing MD5 hash to
