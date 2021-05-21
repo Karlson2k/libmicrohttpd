@@ -114,6 +114,26 @@
 #define INTERNAL_ERROR ""
 #endif
 
+/**
+ * Response text used when the request HTTP version is too old.
+ */
+#ifdef HAVE_MESSAGES
+#define REQ_HTTP_VER_IS_TOO_OLD \
+  "<html><head><title>Requested HTTP version is not supported</title></head><body>Requested HTTP version is too old and not supported.</body></html>"
+#else
+#define REQ_HTTP_VER_IS_TOO_OLD ""
+#endif
+
+/**
+ * Response text used when the request HTTP version is too old.
+ */
+#ifdef HAVE_MESSAGES
+#define REQ_HTTP_VER_IS_NOT_SUPPORTED \
+  "<html><head><title>Requested HTTP version is not supported</title></head><body>Requested HTTP version is not supported.</body></html>"
+#else
+#define REQ_HTTP_VER_IS_NOT_SUPPORTED ""
+#endif
+
 
 /**
  * sendfile() chuck size
@@ -2088,6 +2108,69 @@ parse_cookie_header (struct MHD_Connection *connection)
 
 
 /**
+ * Detect HTTP version
+ *
+ * @param connection the connection
+ * @param http_string the pointer to HTTP version string
+ * @param len the length of @a http_string in bytes
+ * @return #MHD_YES if HTTP version is correct and supported,
+ *         #MHD_NO if HTTP version is not correct or unsupported.
+ */
+static enum MHD_Result
+parse_http_version (struct MHD_Connection *connection,
+                    const char*http_string,
+                    size_t len)
+{
+  const char *const h = http_string; /**< short alias */
+  mhd_assert (NULL != http_string);
+
+  /* String must starts with 'HTTP/d.d', case-sensetive match.
+   * See https://datatracker.ietf.org/doc/html/rfc7230#section-2.6 */
+  if ((len != 8) ||
+      (h[0] != 'H') || (h[1] != 'T') || (h[2] != 'T') || (h[3] != 'P') ||
+      (h[4] != '/')
+      || (h[6] != '.') ||
+      ((h[5] < '0') || (h[5] > '9')) ||
+      ((h[7] < '0') || (h[7] > '9')))
+  {
+    connection->http_ver = MHD_HTTP_VER_INVALID;
+    transmit_error_response (connection,
+                             MHD_HTTP_BAD_REQUEST,
+                             REQUEST_MALFORMED);
+    return MHD_NO;
+  }
+  if (1 == h[5] - '0')
+  {
+    /* HTTP/1.x */
+    if (1 == h[7] - '0')
+      connection->http_ver = MHD_HTTP_VER_1_1;
+    else if (0 == h[7] - '0')
+      connection->http_ver = MHD_HTTP_VER_1_0;
+    else
+      connection->http_ver = MHD_HTTP_VER_1_2__1_9;
+
+    return MHD_YES;
+  }
+
+  if (0 == h[5] - '0')
+  {
+    /* Too old major version */
+    connection->http_ver = MHD_HTTP_VER_TOO_OLD;
+    transmit_error_response (connection,
+                             MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED,
+                             REQ_HTTP_VER_IS_TOO_OLD);
+    return MHD_NO;
+  }
+
+  connection->http_ver = MHD_HTTP_VER_FUTURE;
+  transmit_error_response (connection,
+                           MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED,
+                           REQ_HTTP_VER_IS_NOT_SUPPORTED);
+  return MHD_NO;
+}
+
+
+/**
  * Parse the first line of the HTTP HEADER.
  *
  * @param connection the connection (updated)
@@ -2126,6 +2209,8 @@ parse_initial_message_line (struct MHD_Connection *connection,
     uri = NULL;
     connection->version = "";
     args = NULL;
+    if (MHD_NO == parse_http_version (connection, connection->version, 0))
+      return MHD_NO;
   }
   else
   {
@@ -2146,11 +2231,17 @@ parse_initial_message_line (struct MHD_Connection *connection,
       /* http_version points to character before HTTP version string */
       http_version[0] = '\0';
       connection->version = http_version + 1;
+      if (MHD_NO == parse_http_version (connection, connection->version,
+                                        line_len
+                                        - (connection->version - line)))
+        return MHD_NO;
       uri_len = http_version - uri;
     }
     else
     {
       connection->version = "";
+      if (MHD_NO == parse_http_version (connection, connection->version, 0))
+        return MHD_NO;
       uri_len = line_len - (uri - line);
     }
     /* check for spaces in URI if we are "strict" */
@@ -3756,6 +3847,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         /* can try to keep-alive */
 
         connection->version = NULL;
+        connection->http_ver = MHD_HTTP_VER_UNKNOWN;
         connection->state = MHD_CONNECTION_INIT;
         connection->last = NULL;
         connection->colon = NULL;
