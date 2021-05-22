@@ -652,18 +652,16 @@ need_100_continue (struct MHD_Connection *connection)
 {
   const char *expect;
 
-  return ( (NULL != connection->version) &&
-           (MHD_str_equal_caseless_ (connection->version,
-                                     MHD_HTTP_VERSION_1_1)) &&
-           (MHD_NO != MHD_lookup_connection_value_n (connection,
-                                                     MHD_HEADER_KIND,
-                                                     MHD_HTTP_HEADER_EXPECT,
-                                                     MHD_STATICSTR_LEN_ (
-                                                       MHD_HTTP_HEADER_EXPECT),
-                                                     &expect,
-                                                     NULL)) &&
-           (MHD_str_equal_caseless_ (expect,
-                                     "100-continue")) );
+  return (MHD_IS_HTTP_VER_1_1_COMPAT (connection->http_ver) &&
+          (MHD_NO != MHD_lookup_connection_value_n (connection,
+                                                    MHD_HEADER_KIND,
+                                                    MHD_HTTP_HEADER_EXPECT,
+                                                    MHD_STATICSTR_LEN_ (
+                                                      MHD_HTTP_HEADER_EXPECT),
+                                                    &expect,
+                                                    NULL)) &&
+          (MHD_str_equal_caseless_ (expect,
+                                    "100-continue")) );
 }
 
 
@@ -1092,14 +1090,11 @@ keepalive_possible (struct MHD_Connection *connection)
 {
   if (MHD_CONN_MUST_CLOSE == connection->keepalive)
     return MHD_NO;
-  if (NULL == connection->version)
-    return MHD_NO;
   if ( (NULL != connection->response) &&
        (0 != (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
     return MHD_NO;
 
-  if (MHD_str_equal_caseless_ (connection->version,
-                               MHD_HTTP_VERSION_1_1) &&
+  if (MHD_IS_HTTP_VER_1_1_COMPAT (connection->http_ver) &&
       ( (NULL == connection->response) ||
         (0 == (connection->response->flags
                & MHD_RF_HTTP_VERSION_1_0_RESPONSE) ) ) )
@@ -1116,8 +1111,7 @@ keepalive_possible (struct MHD_Connection *connection)
 
     return MHD_YES;
   }
-  if (MHD_str_equal_caseless_ (connection->version,
-                               MHD_HTTP_VERSION_1_0))
+  if (MHD_HTTP_VER_1_0 == connection->http_ver)
   {
     if (MHD_lookup_header_s_token_ci (connection,
                                       MHD_HTTP_HEADER_CONNECTION,
@@ -1292,9 +1286,10 @@ build_header_response (struct MHD_Connection *connection)
   bool must_add_content_length;
   bool may_add_content_length;
 
-  mhd_assert (NULL != connection->version);
-  if (0 == connection->version[0])
+  mhd_assert (MHD_HTTP_VER_UNKNOWN != connection->http_ver);
+  if (MHD_HTTP_VER_INVALID == connection->http_ver)
   {
+    /* TODO: allow error replies */
     data = MHD_pool_allocate (connection->pool,
                               0,
                               true);
@@ -1308,13 +1303,13 @@ build_header_response (struct MHD_Connection *connection)
   if (MHD_CONNECTION_FOOTERS_RECEIVED == connection->state)
   {
     reason_phrase = MHD_get_reason_phrase_for (rc);
+    /* TODO: reply as HTTP/1.1 for HTTP/1.0 requests */
     off = MHD_snprintf_ (code,
                          sizeof (code),
                          "%s %u %s\r\n",
                          (0 != (connection->responseCode & MHD_ICY_FLAG))
                          ? "ICY"
-                         : ( (MHD_str_equal_caseless_ (MHD_HTTP_VERSION_1_0,
-                                                       connection->version) ||
+                         : ( (MHD_HTTP_VER_1_0 == connection->http_ver ||
                               (0 != (connection->response->flags
                                      & MHD_RF_HTTP_VERSION_1_0_RESPONSE)) )
                              ? MHD_HTTP_VERSION_1_0
@@ -1394,8 +1389,7 @@ build_header_response (struct MHD_Connection *connection)
       /* 'close' header doesn't exist yet, see if we need to add one;
          if the client asked for a close, no need to start chunk'ing */
       if ( (MHD_NO != keepalive_possible (connection)) &&
-           (MHD_str_equal_caseless_ (MHD_HTTP_VERSION_1_1,
-                                     connection->version) ) )
+           (MHD_IS_HTTP_VER_1_1_COMPAT (connection->http_ver)) )
       {
         if (NULL == have_encoding)
         {
@@ -1649,11 +1643,14 @@ transmit_error_response (struct MHD_Connection *connection,
   struct MHD_Response *response;
   enum MHD_Result iret;
 
-  if (NULL == connection->version)
+  if (! MHD_IS_HTTP_VER_SUPPORTED (connection->http_ver))
   {
-    /* we were unable to process the full header line, so we don't
- really know what version the client speaks; assume 1.0 */
-    connection->version = MHD_HTTP_VERSION_1_0;
+    /* The header has not been processed yet or request HTTP version is
+     * not supported.
+     * Reply in mode compatible with HTTP/1.0 clients. */
+    /* TODO: remove substitution here and process incompatible versions
+     * directly in other functions.*/
+    connection->http_ver = MHD_HTTP_VER_1_0;
   }
   connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
   connection->read_closed = true;
@@ -2767,9 +2764,7 @@ parse_connection_headers (struct MHD_Connection *connection)
 
   parse_cookie_header (connection);
   if ( (1 <= connection->daemon->strict_for_client) &&
-       (NULL != connection->version) &&
-       (MHD_str_equal_caseless_ (MHD_HTTP_VERSION_1_1,
-                                 connection->version)) &&
+       (MHD_IS_HTTP_VER_1_1_COMPAT (connection->http_ver)) &&
        (MHD_NO ==
         MHD_lookup_connection_value_n (connection,
                                        MHD_HEADER_KIND,
