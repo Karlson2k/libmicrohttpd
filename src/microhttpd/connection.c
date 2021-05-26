@@ -1669,11 +1669,13 @@ build_header_response (struct MHD_Connection *connection)
  * @param connection the connection
  * @param status_code the response code to send (400, 413 or 414)
  * @param message the error message to send
+ * @param message_len the length of the @a message
  */
 static void
-transmit_error_response (struct MHD_Connection *connection,
-                         unsigned int status_code,
-                         const char *message)
+transmit_error_response_len (struct MHD_Connection *connection,
+                             unsigned int status_code,
+                             const char *message,
+                             size_t message_len)
 {
   struct MHD_Response *response;
   enum MHD_Result iret;
@@ -1702,7 +1704,7 @@ transmit_error_response (struct MHD_Connection *connection,
     MHD_destroy_response (connection->response);
     connection->response = NULL;
   }
-  response = MHD_create_response_from_buffer (strlen (message),
+  response = MHD_create_response_from_buffer (message_len,
                                               (void *) message,
                                               MHD_RESPMEM_PERSISTENT);
   if (NULL == response)
@@ -1739,6 +1741,12 @@ transmit_error_response (struct MHD_Connection *connection,
   }
 }
 
+
+/**
+ * Transmit static string as error response
+ */
+#define transmit_error_response_static(c, code, msg) \
+  transmit_error_response_len (c, code, msg, MHD_STATICSTR_LEN_(msg))
 
 /**
  * Update the 'event_loop_info' field of this connection based on the state
@@ -1791,11 +1799,14 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
       if ( (connection->read_buffer_offset == connection->read_buffer_size) &&
            (! try_grow_read_buffer (connection, true)) )
       {
-        transmit_error_response (connection,
-                                 (connection->url != NULL)
-                                 ? MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE
-                                 : MHD_HTTP_URI_TOO_LONG,
-                                 REQUEST_TOO_BIG);
+        if (connection->url != NULL)
+          transmit_error_response_static (connection,
+                                          MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
+                                          REQUEST_TOO_BIG);
+        else
+          transmit_error_response_static (connection,
+                                          MHD_HTTP_URI_TOO_LONG,
+                                          REQUEST_TOO_BIG);
         continue;
       }
       if (! connection->read_closed)
@@ -1831,9 +1842,9 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
              on the connection (if a timeout is even
              set!).
              Solution: we kill the connection with an error */
-          transmit_error_response (connection,
-                                   MHD_HTTP_INTERNAL_SERVER_ERROR,
-                                   INTERNAL_ERROR);
+          transmit_error_response_static (connection,
+                                          MHD_HTTP_INTERNAL_SERVER_ERROR,
+                                          INTERNAL_ERROR);
           continue;
         }
       }
@@ -1939,11 +1950,14 @@ get_next_header_line (struct MHD_Connection *connection,
     if ( (connection->read_buffer_offset == connection->read_buffer_size) &&
          (! try_grow_read_buffer (connection, true)) )
     {
-      transmit_error_response (connection,
-                               (NULL != connection->url)
-                               ? MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE
-                               : MHD_HTTP_URI_TOO_LONG,
-                               REQUEST_TOO_BIG);
+      if (NULL != connection->url)
+        transmit_error_response_static (connection,
+                                        MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
+                                        REQUEST_TOO_BIG);
+      else
+        transmit_error_response_static (connection,
+                                        MHD_HTTP_URI_TOO_LONG,
+                                        REQUEST_TOO_BIG);
     }
     if (line_len)
       *line_len = 0;
@@ -1997,9 +2011,9 @@ connection_add_header (struct MHD_Connection *connection,
     MHD_DLOG (connection->daemon,
               _ ("Not enough memory in pool to allocate header record!\n"));
 #endif
-    transmit_error_response (connection,
-                             MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                             REQUEST_TOO_BIG);
+    transmit_error_response_static (connection,
+                                    MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
+                                    REQUEST_TOO_BIG);
     return MHD_NO;
   }
   return MHD_YES;
@@ -2044,9 +2058,9 @@ parse_cookie_header (struct MHD_Connection *connection)
     MHD_DLOG (connection->daemon,
               _ ("Not enough memory in pool to parse cookies!\n"));
 #endif
-    transmit_error_response (connection,
-                             MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                             REQUEST_TOO_BIG);
+    transmit_error_response_static (connection,
+                                    MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
+                                    REQUEST_TOO_BIG);
     return MHD_NO;
   }
   memcpy (cpy,
@@ -2157,9 +2171,9 @@ parse_http_version (struct MHD_Connection *connection,
       ((h[7] < '0') || (h[7] > '9')))
   {
     connection->http_ver = MHD_HTTP_VER_INVALID;
-    transmit_error_response (connection,
-                             MHD_HTTP_BAD_REQUEST,
-                             REQUEST_MALFORMED);
+    transmit_error_response_static (connection,
+                                    MHD_HTTP_BAD_REQUEST,
+                                    REQUEST_MALFORMED);
     return MHD_NO;
   }
   if (1 == h[5] - '0')
@@ -2179,16 +2193,16 @@ parse_http_version (struct MHD_Connection *connection,
   {
     /* Too old major version */
     connection->http_ver = MHD_HTTP_VER_TOO_OLD;
-    transmit_error_response (connection,
-                             MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED,
-                             REQ_HTTP_VER_IS_TOO_OLD);
+    transmit_error_response_static (connection,
+                                    MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED,
+                                    REQ_HTTP_VER_IS_TOO_OLD);
     return MHD_NO;
   }
 
   connection->http_ver = MHD_HTTP_VER_FUTURE;
-  transmit_error_response (connection,
-                           MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED,
-                           REQ_HTTP_VER_IS_NOT_SUPPORTED);
+  transmit_error_response_static (connection,
+                                  MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED,
+                                  REQ_HTTP_VER_IS_NOT_SUPPORTED);
   return MHD_NO;
 }
 
@@ -2731,9 +2745,9 @@ process_broken_line (struct MHD_Connection *connection,
                                 last_len + tmp_len + 1);
     if (NULL == last)
     {
-      transmit_error_response (connection,
-                               MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                               REQUEST_TOO_BIG);
+      transmit_error_response_static (connection,
+                                      MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
+                                      REQUEST_TOO_BIG);
       return MHD_NO;
     }
     memcpy (&last[last_len],
@@ -2752,9 +2766,9 @@ process_broken_line (struct MHD_Connection *connection,
                              strlen (connection->colon),
                              kind))
   {
-    transmit_error_response (connection,
-                             MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                             REQUEST_TOO_BIG);
+    transmit_error_response_static (connection,
+                                    MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
+                                    REQUEST_TOO_BIG);
     return MHD_NO;
   }
   /* we still have the current line to deal with... */
@@ -2763,9 +2777,9 @@ process_broken_line (struct MHD_Connection *connection,
     if (MHD_NO == process_header_line (connection,
                                        line))
     {
-      transmit_error_response (connection,
-                               MHD_HTTP_BAD_REQUEST,
-                               REQUEST_MALFORMED);
+      transmit_error_response_static (connection,
+                                      MHD_HTTP_BAD_REQUEST,
+                                      REQUEST_MALFORMED);
       return MHD_NO;
     }
   }
@@ -3542,9 +3556,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       if (MHD_NO == process_header_line (connection,
                                          line))
       {
-        transmit_error_response (connection,
-                                 MHD_HTTP_BAD_REQUEST,
-                                 REQUEST_MALFORMED);
+        transmit_error_response_static (connection,
+                                        MHD_HTTP_BAD_REQUEST,
+                                        REQUEST_MALFORMED);
         break;
       }
       connection->state = MHD_CONNECTION_HEADER_PART_RECEIVED;
@@ -3665,9 +3679,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       if (MHD_NO == process_header_line (connection,
                                          line))
       {
-        transmit_error_response (connection,
-                                 MHD_HTTP_BAD_REQUEST,
-                                 REQUEST_MALFORMED);
+        transmit_error_response_static (connection,
+                                        MHD_HTTP_BAD_REQUEST,
+                                        REQUEST_MALFORMED);
         break;
       }
       connection->state = MHD_CONNECTION_FOOTER_PART_RECEIVED;
