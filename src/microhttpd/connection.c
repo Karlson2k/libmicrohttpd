@@ -847,6 +847,40 @@ connection_close_error (struct MHD_Connection *connection,
 
 
 /**
+ * A serious error occurred, check whether error response is already
+ * queued and close the connection if response wasn't queued.
+ *
+ * @param connection connection to close with error
+ * @param emsg error message (can be NULL)
+ */
+static void
+connection_close_error_check (struct MHD_Connection *connection,
+                              const char *emsg)
+{
+  if ( (NULL != connection->response) &&
+       (400 <= connection->responseCode) &&
+       (connection->read_closed) &&
+       (MHD_CONNECTION_HEADERS_SENDING == connection->state) )
+    return; /* An error response was already queued */
+
+  connection_close_error (connection, emsg);
+}
+
+
+/**
+ * Macro to only include error message in call to
+ * #connection_close_error_check() if we have HAVE_MESSAGES.
+ */
+#ifdef HAVE_MESSAGES
+#define CONNECTION_CLOSE_ERROR_CHECK(c, emsg) \
+  connection_close_error_check (c, emsg)
+#else
+#define CONNECTION_CLOSE_ERROR_CHECK(c, emsg) \
+  connection_close_error_check (c, NULL)
+#endif
+
+
+/**
  * Prepare the response buffer of this connection for
  * sending.  Assumes that the response mutex is
  * already held.  If the transmission is complete,
@@ -1286,19 +1320,20 @@ build_header_response (struct MHD_Connection *connection)
   bool must_add_content_length;
   bool may_add_content_length;
 
-  mhd_assert (MHD_HTTP_VER_UNKNOWN != connection->http_ver);
-  if (MHD_HTTP_VER_INVALID == connection->http_ver)
-  {
-    /* TODO: allow error replies */
-    data = MHD_pool_allocate (connection->pool,
-                              0,
-                              true);
-    connection->write_buffer = data;
-    connection->write_buffer_append_offset = 0;
-    connection->write_buffer_send_offset = 0;
-    connection->write_buffer_size = 0;
-    return MHD_YES;
-  }
+  /* HTTP version must be supported.
+   * Allow limited set of error replies for unsupported HTTP versions. */
+  mhd_assert (MHD_IS_HTTP_VER_SUPPORTED (connection->http_ver) || \
+              (MHD_HTTP_BAD_REQUEST == connection->responseCode) || \
+              (MHD_HTTP_REQUEST_TIMEOUT == connection->responseCode) || \
+              (MHD_HTTP_URI_TOO_LONG == connection->responseCode) || \
+              (MHD_HTTP_TOO_MANY_REQUESTS == connection->responseCode) || \
+              (MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE == \
+               connection->responseCode) || \
+              (MHD_HTTP_NOT_IMPLEMENTED == connection->responseCode) || \
+              (MHD_HTTP_SERVICE_UNAVAILABLE == connection->responseCode) || \
+              (MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED == \
+               connection->responseCode) );
+
   rc = connection->responseCode & (~MHD_ICY_FLAG);
   if (MHD_CONNECTION_FOOTERS_RECEIVED == connection->state)
   {
@@ -1643,15 +1678,6 @@ transmit_error_response (struct MHD_Connection *connection,
   struct MHD_Response *response;
   enum MHD_Result iret;
 
-  if (! MHD_IS_HTTP_VER_SUPPORTED (connection->http_ver))
-  {
-    /* The header has not been processed yet or request HTTP version is
-     * not supported.
-     * Reply in mode compatible with HTTP/1.0 clients. */
-    /* TODO: remove substitution here and process incompatible versions
-     * directly in other functions.*/
-    connection->http_ver = MHD_HTTP_VER_1_0;
-  }
   connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
   connection->read_closed = true;
   if (0 != connection->read_buffer_size)
@@ -3484,10 +3510,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       if (MHD_NO == parse_initial_message_line (connection,
                                                 line,
                                                 line_len))
-        CONNECTION_CLOSE_ERROR (connection,
-                                NULL);
+        CONNECTION_CLOSE_ERROR_CHECK (connection,
+                                      NULL);
       else
+      {
+        mhd_assert (MHD_IS_HTTP_VER_SUPPORTED (connection->http_ver));
         connection->state = MHD_CONNECTION_URL_RECEIVED;
+      }
       continue;
     case MHD_CONNECTION_URL_RECEIVED:
       line = get_next_header_line (connection,
