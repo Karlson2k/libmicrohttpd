@@ -2155,7 +2155,7 @@ parse_cookie_header (struct MHD_Connection *connection)
  */
 static enum MHD_Result
 parse_http_version (struct MHD_Connection *connection,
-                    const char*http_string,
+                    const char *http_string,
                     size_t len)
 {
   const char *const h = http_string; /**< short alias */

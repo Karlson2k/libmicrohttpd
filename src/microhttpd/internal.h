@@ -766,7 +766,6 @@ enum MHD_HTTP_version
 
   /**
    * HTTP future version. Unsupported.
-   * Reserved, not really detected.
    */
   MHD_HTTP_VER_FUTURE = 100
 };
