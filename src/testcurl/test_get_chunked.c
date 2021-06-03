@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007 Christian Grothoff
+     Copyright (C) 2015-2021 Karlson2k (Evgeny Grin)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -21,11 +22,8 @@
 /**
  * @file daemontest_get_chunked.c
  * @brief  Testcase for libmicrohttpd GET operations with chunked content encoding
- *         TODO:
- *         - how to test that chunking was actually used?
- *         - use CURLOPT_HEADERFUNCTION to validate
- *           footer was sent
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "MHD_config.h"
@@ -49,10 +47,40 @@
 #define MHD_CPU_COUNT 2
 #endif
 
+#define HDR_CHUNKED_ENCODING MHD_HTTP_HEADER_TRANSFER_ENCODING ": chunked"
+#define RESP_FOOTER_NAME "Footer"
+#define RESP_FOOTER_VALUE "working"
+#define RESP_FOOTER RESP_FOOTER_NAME ": " RESP_FOOTER_VALUE
+
 /**
  * Use "Connection: close" header?
  */
 int conn_close;
+
+struct headers_check_result
+{
+  int found_chunked;
+  int found_footer;
+};
+
+size_t
+lcurl_hdr_callback (char *buffer, size_t size, size_t nitems,
+                    void *userdata)
+{
+  const size_t data_size = size * nitems;
+  struct headers_check_result *check_res =
+    (struct headers_check_result *) userdata;
+
+  if ((data_size == strlen (HDR_CHUNKED_ENCODING) + 2) &&
+      (0 == memcmp (buffer, HDR_CHUNKED_ENCODING "\r\n", data_size)))
+    check_res->found_chunked = 1;
+  if ((data_size == strlen (RESP_FOOTER) + 2) &&
+      (0 == memcmp (buffer, RESP_FOOTER "\r\n", data_size)))
+    check_res->found_footer = 1;
+
+  return data_size;
+}
+
 
 struct CBC
 {
@@ -92,8 +120,8 @@ crc (void *cls,
   if (pos == 128 * 10)
   {
     MHD_add_response_footer (*responseptr,
-                             "Footer",
-                             "working");
+                             RESP_FOOTER_NAME,
+                             RESP_FOOTER_VALUE);
     return MHD_CONTENT_READER_END_OF_STREAM;
   }
   if (max < 128)
@@ -206,6 +234,7 @@ testInternalGet ()
   CURLcode errornum;
   int port;
   struct curl_slist *h_list = NULL;
+  struct headers_check_result hdr_check;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -229,6 +258,8 @@ testInternalGet ()
     }
     port = (int) dinfo->port;
   }
+  hdr_check.found_chunked = 0;
+  hdr_check.found_footer = 0;
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
   curl_easy_setopt (c, CURLOPT_PORT, (long) port);
@@ -238,6 +269,8 @@ testInternalGet ()
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+  curl_easy_setopt (c, CURLOPT_HEADERFUNCTION, lcurl_hdr_callback);
+  curl_easy_setopt (c, CURLOPT_HEADERDATA, &hdr_check);
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
   if (conn_close)
   {
@@ -259,6 +292,18 @@ testInternalGet ()
   curl_easy_cleanup (c);
   curl_slist_free_all (h_list);
   MHD_stop_daemon (d);
+  if (1 != hdr_check.found_chunked)
+  {
+    fprintf (stderr,
+             "Chunked encoding header was not found in the response\n");
+    return 8;
+  }
+  if (1 != hdr_check.found_footer)
+  {
+    fprintf (stderr,
+             "The specified footer was not found in the response\n");
+    return 16;
+  }
   return validate (cbc, 4);
 }
 
@@ -273,6 +318,7 @@ testMultithreadedGet ()
   CURLcode errornum;
   int port;
   struct curl_slist *h_list = NULL;
+  struct headers_check_result hdr_check;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -307,6 +353,10 @@ testMultithreadedGet ()
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
+  hdr_check.found_chunked = 0;
+  hdr_check.found_footer = 0;
+  curl_easy_setopt (c, CURLOPT_HEADERFUNCTION, lcurl_hdr_callback);
+  curl_easy_setopt (c, CURLOPT_HEADERDATA, &hdr_check);
   if (conn_close)
   {
     h_list = curl_slist_append (h_list, "Connection: close");
@@ -327,6 +377,18 @@ testMultithreadedGet ()
   curl_easy_cleanup (c);
   curl_slist_free_all (h_list);
   MHD_stop_daemon (d);
+  if (1 != hdr_check.found_chunked)
+  {
+    fprintf (stderr,
+             "Chunked encoding header was not found in the response\n");
+    return 8;
+  }
+  if (1 != hdr_check.found_footer)
+  {
+    fprintf (stderr,
+             "The specified footer was not found in the response\n");
+    return 16;
+  }
   return validate (cbc, 64);
 }
 
@@ -341,6 +403,7 @@ testMultithreadedPoolGet ()
   CURLcode errornum;
   int port;
   struct curl_slist *h_list = NULL;
+  struct headers_check_result hdr_check;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -376,6 +439,10 @@ testMultithreadedPoolGet ()
   curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
+  hdr_check.found_chunked = 0;
+  hdr_check.found_footer = 0;
+  curl_easy_setopt (c, CURLOPT_HEADERFUNCTION, lcurl_hdr_callback);
+  curl_easy_setopt (c, CURLOPT_HEADERDATA, &hdr_check);
   if (conn_close)
   {
     h_list = curl_slist_append (h_list, "Connection: close");
@@ -396,6 +463,18 @@ testMultithreadedPoolGet ()
   curl_easy_cleanup (c);
   curl_slist_free_all (h_list);
   MHD_stop_daemon (d);
+  if (1 != hdr_check.found_chunked)
+  {
+    fprintf (stderr,
+             "Chunked encoding header was not found in the response\n");
+    return 8;
+  }
+  if (1 != hdr_check.found_footer)
+  {
+    fprintf (stderr,
+             "The specified footer was not found in the response\n");
+    return 16;
+  }
   return validate (cbc, 64);
 }
 
@@ -424,6 +503,7 @@ testExternalGet ()
   struct timeval tv;
   int port;
   struct curl_slist *h_list = NULL;
+  struct headers_check_result hdr_check;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -458,6 +538,10 @@ testExternalGet ()
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 5L);
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
+  hdr_check.found_chunked = 0;
+  hdr_check.found_footer = 0;
+  curl_easy_setopt (c, CURLOPT_HEADERFUNCTION, lcurl_hdr_callback);
+  curl_easy_setopt (c, CURLOPT_HEADERDATA, &hdr_check);
   if (conn_close)
   {
     h_list = curl_slist_append (h_list, "Connection: close");
@@ -557,6 +641,18 @@ testExternalGet ()
     curl_slist_free_all (h_list);
   }
   MHD_stop_daemon (d);
+  if (1 != hdr_check.found_chunked)
+  {
+    fprintf (stderr,
+             "Chunked encoding header was not found in the response\n");
+    return 8;
+  }
+  if (1 != hdr_check.found_footer)
+  {
+    fprintf (stderr,
+             "The specified footer was not found in the response\n");
+    return 16;
+  }
   return validate (cbc, 8192);
 }
 
