@@ -143,6 +143,7 @@ ahc_echo (void *cls,
                                          "chunked"))
   {
     free (callback_param);
+    MHD_destroy_response (response);
     return MHD_NO;
   }
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
