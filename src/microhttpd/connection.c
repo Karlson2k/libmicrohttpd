@@ -3779,7 +3779,11 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         if (NULL != connection->response->crc)
           MHD_mutex_unlock_chk_ (&connection->response->mutex);
 #endif
-        connection->state = MHD_CONNECTION_BODY_SENT;
+        /* TODO: replace with 'use_chunked_send' */
+        if (connection->have_chunked_upload)
+          connection->state = MHD_CONNECTION_BODY_SENT;
+        else
+          connection->state = MHD_CONNECTION_FOOTERS_SENT;
         continue;
       }
       if (MHD_NO != try_ready_normal_body (connection))
