@@ -3044,7 +3044,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
     /* shrink read buffer to how much is actually used */
     MHD_pool_reallocate (connection->pool,
                          connection->read_buffer,
-                         connection->read_buffer_size + 1,
+                         connection->read_buffer_size,
                          connection->read_buffer_offset);
     break;
   }
