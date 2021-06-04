@@ -3887,6 +3887,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       else
       {
         /* can try to keep-alive */
+        size_t new_read_buf_size;
 
         connection->version = NULL;
         connection->http_ver = MHD_HTTP_VER_UNKNOWN;
@@ -3897,13 +3898,16 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         connection->keepalive = MHD_CONN_KEEPALIVE_UNKOWN;
         /* Reset the read buffer to the starting size,
            preserving the bytes we have already read. */
+        if (connection->read_buffer_offset > connection->daemon->pool_size / 2)
+          new_read_buf_size = connection->read_buffer_offset;
+        else
+          new_read_buf_size = connection->daemon->pool_size / 2;
         connection->read_buffer
           = MHD_pool_reset (connection->pool,
                             connection->read_buffer,
                             connection->read_buffer_offset,
-                            connection->daemon->pool_size / 2);
-        connection->read_buffer_size
-          = connection->daemon->pool_size / 2;
+                            new_read_buf_size);
+        connection->read_buffer_size = new_read_buf_size;
       }
       connection->client_context = NULL;
       connection->continue_message_write_offset = 0;
