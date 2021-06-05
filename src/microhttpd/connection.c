@@ -2381,6 +2381,8 @@ process_request_body (struct MHD_Connection *connection)
 
   if (NULL != connection->response)
   {
+    /* TODO: discard all read buffer as early response
+     * means that connection have to be closed. */
     /* already queued a response, discard remaining upload
        (but not more, there might be another request after it) */
     size_t purge;
@@ -2599,6 +2601,7 @@ process_request_body (struct MHD_Connection *connection)
       connection->remaining_upload_size -= processed_size;
   }
   while (MHD_NO != instant_retry);
+  /* TODO: zero out reused memory region */
   if ( (available > 0) &&
        (buffer_head != connection->read_buffer) )
     memmove (connection->read_buffer,
@@ -3840,7 +3843,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         /* oops - close! */
         CONNECTION_CLOSE_ERROR (connection,
                                 _ (
-                                  "Closing connection (failed to create response header)."));
+                                  "Closing connection (failed to create response footer)."));
         continue;
       }
       if ( (! connection->have_chunked_upload) ||
