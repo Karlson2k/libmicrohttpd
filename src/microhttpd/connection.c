@@ -3550,7 +3550,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       if (0 == line[0])
       {
         connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
-        connection->header_size = (size_t) (line - connection->read_buffer);
+        connection->header_size = (size_t) (connection->read_buffer
+                                            - connection->method);
         continue;
       }
       if (MHD_NO == process_header_line (connection,
@@ -3586,7 +3587,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       if (0 == line[0])
       {
         connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
-        connection->header_size = (size_t) (line - connection->read_buffer);
+        connection->header_size = (size_t) (connection->read_buffer
+                                            - connection->method);
         continue;
       }
       continue;
