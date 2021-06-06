@@ -1308,6 +1308,121 @@ try_grow_read_buffer (struct MHD_Connection *connection,
 
 
 /**
+ * Shrink connection read buffer to the zero of data in the buffer
+ * @param connection the connection whose read buffer is being manipulated
+ */
+static void
+connection_shrink_read_buffer (struct MHD_Connection *connection)
+{
+  struct MHD_Connection *const c = connection; /**< a short alias */
+  void *new_buf;
+
+  if (NULL == c->read_buffer)
+  {
+    mhd_assert (0 == c->read_buffer_size);
+    mhd_assert (0 == c->read_buffer_offset);
+    c->read_buffer = NULL;
+    return;
+  }
+
+  mhd_assert (c->read_buffer_offset <= c->read_buffer_size);
+  new_buf = MHD_pool_reallocate (c->pool, c->read_buffer, c->read_buffer_size,
+                                 c->read_buffer_offset);
+  mhd_assert (c->read_buffer == new_buf);
+  c->read_buffer_size = c->read_buffer_offset;
+  if (0 == c->read_buffer_size)
+    c->read_buffer = NULL;
+}
+
+
+/**
+ * Allocate the maximum available amount of memory from MemoryPool
+ * for write buffer.
+ * @param connection the connection whose write buffer is being manipulated
+ * @return the size of free space in write buffer, may be smaller
+ *         than requested size.
+ */
+static size_t
+connection_maximize_write_buffer (struct MHD_Connection *connection)
+{
+  struct MHD_Connection *const c = connection; /**< a short alias */
+  struct MemoryPool *const pool = connection->pool;
+  void *new_buf;
+  size_t new_size;
+
+  mhd_assert ((NULL != c->write_buffer) || (0 == c->write_buffer_size));
+  mhd_assert (c->write_buffer_append_offset >= c->write_buffer_send_offset);
+  mhd_assert (c->write_buffer_size >= c->write_buffer_append_offset);
+
+  new_size = c->write_buffer_size + MHD_pool_get_free (pool);
+  new_buf = MHD_pool_reallocate (pool,
+                                 c->write_buffer,
+                                 c->write_buffer_size,
+                                 new_size);
+  /* Buffer position must not be moved.
+   * Position could be moved only if buffer was allocated 'from_end',
+   * which cannot happen. */
+  mhd_assert ((c->write_buffer == new_buf) || (NULL == c->write_buffer));
+  c->write_buffer = new_buf;
+  c->write_buffer_size = new_size;
+  if (c->write_buffer_send_offset == c->write_buffer_append_offset)
+  {
+    /* All data have been sent, reset offsets to zero. */
+    c->write_buffer_send_offset = 0;
+    c->write_buffer_append_offset = 0;
+  }
+
+  return c->write_buffer_size - c->write_buffer_append_offset;
+}
+
+
+/**
+ * Shrink connection write buffer to the size of unsent data.
+ *
+ * @note: The number of calls of this function should be limited to avoid extra
+ * zeroing of the memory.
+ * @param connection the connection whose write buffer is being manipulated
+ * @param connection the connection to manipulate write buffer
+ */
+static void
+connection_shrink_write_buffer (struct MHD_Connection *connection)
+{
+  struct MHD_Connection *const c = connection; /**< a short alias */
+  struct MemoryPool *const pool = connection->pool;
+  void *new_buf;
+
+  mhd_assert ((NULL != c->write_buffer) || (0 == c->write_buffer_size));
+  mhd_assert (c->write_buffer_append_offset >= c->write_buffer_send_offset);
+  mhd_assert (c->write_buffer_size >= c->write_buffer_append_offset);
+
+  if (NULL == c->write_buffer)
+    return;
+  if (c->write_buffer_append_offset == c->write_buffer_size)
+    return;
+
+  new_buf = MHD_pool_reallocate (pool, c->write_buffer, c->write_buffer_size,
+                                 c->write_buffer_append_offset);
+  mhd_assert (c->write_buffer == new_buf);
+  c->write_buffer_size = c->write_buffer_append_offset;
+}
+
+
+/**
+ * Switch connection from recv mode to send mode.
+ *
+ * Current request header or body will not be read anymore,
+ * response must be assigned to connection.
+ * @param connection the connection to prepare for sending.
+ */
+static void
+connection_switch_from_recv_to_send (struct MHD_Connection *connection)
+{
+  /* Read buffer is not needed for this request, shrink it.*/
+  connection_shrink_read_buffer (connection);
+}
+
+
+/**
  * Allocate the connection's write buffer and fill it with all of the
  * headers (or footers, if we have already sent the body) from the
  * HTTPd's response.  If headers are missing in the response supplied
@@ -1677,6 +1792,72 @@ build_header_response (struct MHD_Connection *connection)
   connection->write_buffer_append_offset = size;
   connection->write_buffer_send_offset = 0;
   connection->write_buffer_size = size + 1;
+  return MHD_YES;
+}
+
+
+/**
+ * Allocate the connection's write buffer (if necessary) and fill it
+ * with response footers.
+ * Works only for chunked responses as other responses do not need
+ * and do not support any kind of footers.
+ *
+ * @param connection the connection
+ * @return #MHD_YES on success, #MHD_NO on failure (out of memory)
+ */
+static enum MHD_Result
+build_connection_chunked_response_footer (struct MHD_Connection *connection)
+{
+  char *buf;           /**< the buffer to write footers to */
+  size_t buf_size;     /**< the size of the @a buf */
+  size_t used_size;    /**< the used size of the @a buf */
+  struct MHD_Connection *const c = connection; /**< a short alias */
+  struct MHD_HTTP_Header *pos;
+
+  /* TODO: replace with 'use_chunked_send' */
+  mhd_assert (connection->have_chunked_upload);
+  /* TODO: allow combining of the final footer with the last chunk,
+   * modify the next assert. */
+  mhd_assert (MHD_CONNECTION_BODY_SENT == connection->state);
+  mhd_assert (NULL != c->response);
+
+  buf_size = connection_maximize_write_buffer (c);
+  /* '2' is the minimal size of chunked footer ("\r\n") */
+  if (buf_size < 2)
+    return MHD_NO;
+  buf = c->write_buffer + c->write_buffer_append_offset;
+  used_size = 0;
+
+  for (pos = c->response->first_header; NULL != pos; pos = pos->next)
+  {
+    if (MHD_FOOTER_KIND == pos->kind)
+    {
+      size_t new_used_size; /* resulting size with this header */
+      /* '4' is colon, space, linefeeds */
+      new_used_size = used_size + pos->header_size + pos->value_size + 4;
+      if (new_used_size > buf_size)
+        return MHD_NO;
+      memcpy (buf + used_size, pos->header, pos->header_size);
+      used_size += pos->header_size;
+      buf[used_size++] = ':';
+      buf[used_size++] = ' ';
+      memcpy (buf + used_size, pos->value, pos->value_size);
+      used_size += pos->value_size;
+      buf[used_size++] = '\r';
+      buf[used_size++] = '\n';
+      mhd_assert (used_size == new_used_size);
+    }
+  }
+  if (used_size + 2 > buf_size)
+    return MHD_NO;
+  memcpy (buf + used_size, "\r\n", 2);
+  used_size += 2;
+
+  c->write_buffer_append_offset += used_size;
+  mhd_assert (c->write_buffer_append_offset <= c->write_buffer_size);
+
+  /* TODO: remove shrink */
+  connection_shrink_write_buffer (c);
   return MHD_YES;
 }
 
@@ -3805,6 +3986,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         continue;
       if (NULL == connection->response)
         break;                  /* try again next time */
+
+      connection_switch_from_recv_to_send (connection);
       if (MHD_NO == build_header_response (connection))
       {
         /* oops - close! */
@@ -3918,7 +4101,10 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       /* mutex was already unlocked by try_ready_chunked_body */
       break;
     case MHD_CONNECTION_BODY_SENT:
-      if (MHD_NO == build_header_response (connection))
+      /* TODO: replace with 'use_chunked_send' */
+      mhd_assert (connection->have_chunked_upload);
+
+      if (MHD_NO == build_connection_chunked_response_footer (connection))
       {
         /* oops - close! */
         CONNECTION_CLOSE_ERROR (connection,
