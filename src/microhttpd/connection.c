@@ -993,7 +993,8 @@ try_ready_chunked_body (struct MHD_Connection *connection)
 {
   ssize_t ret;
   struct MHD_Response *response;
-  char cbuf[10];                /* 10: max strlen of "%x\r\n" */
+  static const size_t max_chunk = 0xFFFFFF;
+  char cbuf[10];                /* 10: max strlen of "FFFFFF\r\n" */
   int cblen;
 
   response = connection->response;
@@ -1014,8 +1015,8 @@ try_ready_chunked_body (struct MHD_Connection *connection)
                               _ ("Closing connection (out of memory)."));
       return MHD_NO;
     }
-    if ( (2 * (0xFFFFFF + sizeof(cbuf) + 2)) < size)
-      size = 2 * (0xFFFFFF + sizeof(cbuf) + 2);
+    if ( (max_chunk + sizeof(cbuf) + 2) < size)
+      size = max_chunk + sizeof(cbuf) + 2;
     connection->write_buffer = MHD_pool_allocate (connection->pool,
                                                   size,
                                                   false);
@@ -1045,10 +1046,15 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   else
   {
     /* buffer not in range, try to fill it */
+    size_t size_to_fill;
+
+    size_to_fill = connection->write_buffer_size - sizeof (cbuf) - 2;
+    if (max_chunk < size_to_fill)
+      size_to_fill = max_chunk;
     ret = response->crc (response->crc_cls,
                          connection->response_write_position,
                          &connection->write_buffer[sizeof (cbuf)],
-                         connection->write_buffer_size - sizeof (cbuf) - 2);
+                         size_to_fill);
   }
   if ( ((ssize_t) MHD_CONTENT_READER_END_WITH_ERROR) == ret)
   {
@@ -1082,8 +1088,6 @@ try_ready_chunked_body (struct MHD_Connection *connection)
 #endif
     return MHD_NO;
   }
-  if (ret > 0xFFFFFF)
-    ret = 0xFFFFFF;
   cblen = MHD_snprintf_ (cbuf,
                          sizeof (cbuf),
                          "%X\r\n",
