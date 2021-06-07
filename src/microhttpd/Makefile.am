@@ -157,6 +157,7 @@ endif
 check_PROGRAMS = \
   test_str_compare \
   test_str_to_value \
+  test_str_from_value \
   test_str_token \
   test_str_token_remove \
   test_str_tokens_remove \
@@ -356,6 +357,9 @@ test_str_compare_SOURCES = \
   test_str.c test_helpers.h mhd_str.c mhd_str.h
 
 test_str_to_value_SOURCES = \
+  test_str.c test_helpers.h mhd_str.c mhd_str.h
+
+test_str_from_value_SOURCES = \
   test_str.c test_helpers.h mhd_str.c mhd_str.h
 
 test_str_token_SOURCES = \

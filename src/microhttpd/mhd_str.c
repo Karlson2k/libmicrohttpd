@@ -32,6 +32,7 @@
 
 #include "mhd_assert.h"
 #include "mhd_limits.h"
+#include "mhd_assert.h"
 
 #ifdef MHD_FAVOR_SMALL_CODE
 #ifdef _MHD_static_inline
@@ -1184,3 +1185,70 @@ MHD_str_to_uvalue_n_ (const char *str,
 
 
 #endif /* MHD_FAVOR_SMALL_CODE */
+
+
+size_t
+MHD_uint32_to_strx (uint32_t val,
+                    char *buf,
+                    size_t buf_size)
+{
+  char *chr; /**< pointer to the current printed digit */
+  int digit_pos = 7; /** zero-based, digit position in @a 'val' */
+  int digit;
+
+  chr = buf;
+  digit = (int) (((val) >> (4 * digit_pos)) & 0xf);
+
+  /* Skip leading zeros */
+  while ((0 == digit) && (0 != digit_pos))
+    digit = (int) (((val) >> (4 * --digit_pos)) & 0xf);
+
+  while (0 != buf_size)
+  {
+    *chr = (digit <= 9) ? ('0' + (char) digit) : ('A' + (char) digit - 10);
+    chr++;
+    buf_size--;
+    if (0 == digit_pos)
+      return (size_t) (chr - buf);
+    digit = (int) (((val) >> (4 * --digit_pos)) & 0xf);
+  }
+  return 0; /* The buffer is too small */
+}
+
+
+size_t
+MHD_uint16_to_str (uint16_t val,
+                   char *buf,
+                   size_t buf_size)
+{
+  char *chr;  /**< pointer to the current printed digit */
+  /* The biggest printable number is 65535 */
+  uint16_t divisor = UINT16_C (10000);
+  int digit;
+
+  chr = buf;
+  digit = (int) (val / divisor);
+  mhd_assert (digit < 10);
+
+  /* Do not print leading zeros */
+  while ((0 == digit) && (1 < divisor))
+  {
+    divisor /= 10;
+    digit = (int) (val / divisor);
+    mhd_assert (digit < 10);
+  }
+
+  while (0 != buf_size)
+  {
+    *chr = (char) digit + '0';
+    chr++;
+    buf_size--;
+    if (1 == divisor)
+      return (size_t) (chr - buf);
+    val %= divisor;
+    divisor /= 10;
+    digit = (int) (val / divisor);
+    mhd_assert (digit < 10);
+  }
+  return 0; /* The buffer is too small */
+}

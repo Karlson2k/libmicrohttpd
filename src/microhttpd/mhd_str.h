@@ -361,4 +361,34 @@ MHD_str_to_uvalue_n_ (const char *str,
 
 #endif /* MHD_FAVOR_SMALL_CODE */
 
+
+/**
+ * Convert uint32_t value to hexdecimal US-ASCII string.
+ * @note: result is NOT zero-terminated.
+ * @param val the value to convert
+ * @param buf the buffer to result to
+ * @param buf_size size of the @a buffer
+ * @return number of charters has been put to the @a buf,
+ *         zero if buffer is too small (buffer may be modified).
+ */
+size_t
+MHD_uint32_to_strx (uint32_t val,
+                    char *buf,
+                    size_t buf_size);
+
+
+/**
+ * Convert uint16_t value to decimal US-ASCII string.
+ * @note: result is NOT zero-terminated.
+ * @param val the value to convert
+ * @param buf the buffer to result to
+ * @param buf_size size of the @a buffer
+ * @return number of charters has been put to the @a buf,
+ *         zero if buffer is too small (buffer may be modified).
+ */
+size_t
+MHD_uint16_to_str (uint16_t val,
+                   char *buf,
+                   size_t buf_size);
+
 #endif /* MHD_STR_H */
