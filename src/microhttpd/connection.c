@@ -1128,6 +1128,9 @@ keepalive_possible (struct MHD_Connection *connection)
 {
   if (MHD_CONN_MUST_CLOSE == connection->keepalive)
     return MHD_NO;
+  /* TODO: use additional flags, like "error_closure" */
+  if (connection->read_closed)
+    return MHD_NO;
   if ( (NULL != connection->response) &&
        (0 != (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
     return MHD_NO;
