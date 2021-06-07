@@ -994,18 +994,26 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   ssize_t ret;
   struct MHD_Response *response;
   static const size_t max_chunk = 0xFFFFFF;
-  char cbuf[10];                /* 10: max strlen of "FFFFFF\r\n" */
-  int cblen;
+  char chunk_hdr[6];            /* 6: max strlen of "FFFFFF" */
+  /* "FFFFFF" + "\r\n" */
+  static const size_t max_chunk_hdr_len = sizeof(chunk_hdr) + 2;
+  /* "FFFFFF" + "\r\n" + "\r\n" (chunk termination) */
+  static const size_t max_chunk_overhead = sizeof(chunk_hdr) + 2 + 2;
+  size_t chunk_hdr_len;
 
   response = connection->response;
   if (NULL == response->crc)
     return MHD_YES;
-  if (0 == connection->write_buffer_size)
+
+  mhd_assert (0 == connection->write_buffer_append_offset);
+
+  /* The buffer must reasonably large enough */
+  if (128 > connection->write_buffer_size)
   {
     size_t size;
 
-    size = MHD_pool_get_free (connection->pool);
-    if (size < 128)
+    size = connection->write_buffer_size + MHD_pool_get_free (connection->pool);
+    if (128 > size)
     {
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
       MHD_mutex_unlock_chk_ (&response->mutex);
@@ -1015,11 +1023,13 @@ try_ready_chunked_body (struct MHD_Connection *connection)
                               _ ("Closing connection (out of memory)."));
       return MHD_NO;
     }
-    if ( (max_chunk + sizeof(cbuf) + 2) < size)
-      size = max_chunk + sizeof(cbuf) + 2;
-    connection->write_buffer = MHD_pool_allocate (connection->pool,
-                                                  size,
-                                                  false);
+    /* Limit the buffer size to the large usable size for chunks */
+    if ( (max_chunk + max_chunk_overhead) < size)
+      size = max_chunk + max_chunk_overhead;
+    connection->write_buffer = MHD_pool_reallocate (connection->pool,
+                                                    connection->write_buffer,
+                                                    connection->
+                                                    write_buffer_size, size);
     mhd_assert (NULL != connection->write_buffer);
     connection->write_buffer_size = size;
   }
@@ -1037,9 +1047,9 @@ try_ready_chunked_body (struct MHD_Connection *connection)
       = (size_t) (connection->response_write_position - response->data_start);
     /* buffer already ready, use what is there for the chunk */
     ret = response->data_size - data_write_offset;
-    if ( ((size_t) ret) > connection->write_buffer_size - sizeof (cbuf) - 2)
-      ret = connection->write_buffer_size - sizeof (cbuf) - 2;
-    memcpy (&connection->write_buffer[sizeof (cbuf)],
+    if ( ((size_t) ret) > connection->write_buffer_size - max_chunk_overhead)
+      ret = connection->write_buffer_size - max_chunk_overhead;
+    memcpy (&connection->write_buffer[max_chunk_hdr_len],
             &response->data[data_write_offset],
             ret);
   }
@@ -1048,12 +1058,13 @@ try_ready_chunked_body (struct MHD_Connection *connection)
     /* buffer not in range, try to fill it */
     size_t size_to_fill;
 
-    size_to_fill = connection->write_buffer_size - sizeof (cbuf) - 2;
+    size_to_fill = connection->write_buffer_size - max_chunk_overhead;
+    /* Limit size for the callback to the max usable size */
     if (max_chunk < size_to_fill)
       size_to_fill = max_chunk;
     ret = response->crc (response->crc_cls,
                          connection->response_write_position,
-                         &connection->write_buffer[sizeof (cbuf)],
+                         &connection->write_buffer[max_chunk_hdr_len],
                          size_to_fill);
   }
   if ( ((ssize_t) MHD_CONTENT_READER_END_WITH_ERROR) == ret)
@@ -1072,11 +1083,12 @@ try_ready_chunked_body (struct MHD_Connection *connection)
        (0 == response->total_size) )
   {
     /* end of message, signal other side! */
-    memcpy (connection->write_buffer,
-            "0\r\n",
-            3);
+    connection->write_buffer[0] = '0';
+    connection->write_buffer[1] = '\r';
+    connection->write_buffer[2] = '\n';
     connection->write_buffer_append_offset = 3;
     connection->write_buffer_send_offset = 0;
+    /* TODO: remove update of the response size */
     response->total_size = connection->response_write_position;
     return MHD_YES;
   }
@@ -1088,21 +1100,20 @@ try_ready_chunked_body (struct MHD_Connection *connection)
 #endif
     return MHD_NO;
   }
-  cblen = MHD_snprintf_ (cbuf,
-                         sizeof (cbuf),
-                         "%X\r\n",
-                         (unsigned int) ret);
-  mhd_assert (cblen > 0);
-  mhd_assert ((size_t) cblen < sizeof(cbuf));
-  memcpy (&connection->write_buffer[sizeof (cbuf) - cblen],
-          cbuf,
-          cblen);
-  memcpy (&connection->write_buffer[sizeof (cbuf) + ret],
-          "\r\n",
-          2);
+  chunk_hdr_len = MHD_uint32_to_strx (ret, chunk_hdr, sizeof(chunk_hdr));
+  mhd_assert (chunk_hdr_len != 0);
+  mhd_assert (chunk_hdr_len < sizeof(chunk_hdr));
+  connection->write_buffer_send_offset =
+    (max_chunk_hdr_len - (chunk_hdr_len + 2));
+  memcpy (connection->write_buffer + connection->write_buffer_send_offset,
+          chunk_hdr,
+          chunk_hdr_len);
+  connection->write_buffer[max_chunk_hdr_len - 2] = '\r';
+  connection->write_buffer[max_chunk_hdr_len - 1] = '\n';
+  connection->write_buffer[max_chunk_hdr_len + ret] = '\r';
+  connection->write_buffer[max_chunk_hdr_len + ret + 1] = '\n';
   connection->response_write_position += ret;
-  connection->write_buffer_send_offset = sizeof (cbuf) - cblen;
-  connection->write_buffer_append_offset = sizeof (cbuf) + ret + 2;
+  connection->write_buffer_append_offset = max_chunk_hdr_len + ret + 2;
   return MHD_YES;
 }
 
