@@ -400,6 +400,42 @@ MHD_get_response_header (struct MHD_Response *response,
 
 
 /**
+ * Get a particular header (or footer) element from the response.
+ *
+ * Function returns the first found element.
+ * @param response response to query
+ * @param kind the kind of element: header or footer
+ * @param key the key which header to get
+ * @param key_len the length of the @a key
+ * @return NULL if header elemnt does not exist
+ * @ingroup response
+ */
+struct MHD_HTTP_Header *
+MHD_get_response_element_n_ (struct MHD_Response *response,
+                             enum MHD_ValueKind kind,
+                             const char *key,
+                             size_t key_len)
+{
+  struct MHD_HTTP_Header *pos;
+
+  mhd_assert (NULL != key);
+  mhd_assert (0 != key[0]);
+  mhd_assert (0 != key_len);
+
+  for (pos = response->first_header;
+       NULL != pos;
+       pos = pos->next)
+  {
+    if ((pos->header_size == key_len) &&
+        (kind == pos->kind) &&
+        (MHD_str_equal_caseless_bin_n_ (pos->header, key, pos->header_size)))
+      return pos;
+  }
+  return NULL;
+}
+
+
+/**
  * Check whether response header contains particular token.
  *
  * Token could be surrounded by spaces and tabs and delimited by comma.
