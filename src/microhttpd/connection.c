@@ -4243,7 +4243,7 @@ MHD_queue_response (struct MHD_Connection *connection,
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ ("Refused wrong status code (%u). " \
-                 "HTTP required three digits status code!\n"),
+                 "HTTP requires three digits status code!\n"),
               (status_code & (~MHD_ICY_FLAG)));
 #endif
     return MHD_NO;
