@@ -135,18 +135,21 @@ MHD_add_response_header (struct MHD_Response *response,
                          const char *header,
                          const char *content)
 {
-  if ( (MHD_str_equal_caseless_ (header,
-                                 MHD_HTTP_HEADER_TRANSFER_ENCODING)) &&
-       (! MHD_str_equal_caseless_ (content,
-                                   "identity")) &&
-       (! MHD_str_equal_caseless_ (content,
-                                   "chunked")) )
+  if (MHD_str_equal_caseless_ (header,
+                               MHD_HTTP_HEADER_TRANSFER_ENCODING))
   {
+    /* TODO: remove support for "identity" */
+    /* Only one "Transfer-Encoding" header is allowed */
+    if (NULL !=
+        MHD_get_response_header (response, MHD_HTTP_HEADER_TRANSFER_ENCODING) )
+      return MHD_NO;
     /* Setting transfer encodings other than "identity" or
        "chunked" is not allowed.  Note that MHD will set the
        correct transfer encoding if required automatically. */
     /* NOTE: for compressed bodies, use the "Content-encoding" header */
-    return MHD_NO;
+    if ( (! MHD_str_equal_caseless_ (content, "identity")) &&
+         (! MHD_str_equal_caseless_ (content, "chunked")) )
+      return MHD_NO;
   }
   if ( (0 == (MHD_RF_INSANITY_HEADER_CONTENT_LENGTH
               & response->flags)) &&
