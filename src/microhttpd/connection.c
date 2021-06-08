@@ -1145,6 +1145,10 @@ keepalive_possible (struct MHD_Connection *connection)
   if ( (NULL != connection->response) &&
        (0 != (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
     return MHD_NO;
+  if ( (NULL != connection->response) &&
+       (0 != (connection->response->flags_auto
+              & MHD_RAF_HAS_CONNECTION_CLOSE) ) )
+    return MHD_NO;
 
   if (MHD_IS_HTTP_VER_1_1_COMPAT (connection->http_ver) &&
       ( (NULL == connection->response) ||
