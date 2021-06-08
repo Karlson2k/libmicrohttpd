@@ -70,10 +70,10 @@ FNR > 1 {
   desc = $3
   if (num % 100 == 0) {
     if (num != 100) {
-      printf ("  /* %s */ %-24s /* %s */\n};\n\n", prev_num, "\""prev_reason"\"", prev_desc)
+      printf ("  /* %s */ %-36s /* %s */\n};\n\n", prev_num, "_MHD_S_STR_W_LEN (\""prev_reason"\")", prev_desc)
     }
     prev_num = num;
-    print "static const char *const " hundreds[$1/100] "_hundred[] = {"
+    print "static const struct _MHD_str_w_len " hundreds[$1/100] "_hundred[] = {"
   }
   if (num == 306) { 
     reason = "Switch Proxy" 
@@ -81,20 +81,21 @@ FNR > 1 {
   }
   if (reason == "Unassigned") next
   if (prev_num != num)
-    printf ("  /* %s */ %-24s /* %s */\n", prev_num, "\""prev_reason"\",", prev_desc)
+    printf ("  /* %s */ %-36s /* %s */\n", prev_num, "_MHD_S_STR_W_LEN (\""prev_reason"\"),", prev_desc)
   while(++prev_num < num) {
     if (prev_num == 449) {prev_reason="Reply With"; prev_desc="MS IIS extension";}
     else if (prev_num == 450) {prev_reason="Blocked by Windows Parental Controls"; prev_desc="MS extension";}
     else if (prev_num == 509) {prev_reason="Bandwidth Limit Exceeded"; prev_desc="Apache extension";}
     else {prev_reason="Unknown"; prev_desc="Not used";}
-    printf ("  /* %s */ %-24s /* %s */\n", prev_num, "\""prev_reason"\",", prev_desc)
+    if (prev_reason=="Unknown") printf ("  /* %s */ %-36s /* %s */\n", prev_num, "{\""prev_reason"\", 0},", prev_desc)
+    else printf ("  /* %s */ %-36s /* %s */\n", prev_num, "_MHD_S_STR_W_LEN (\""prev_reason"\"),", prev_desc)
   }
   prev_num = num
   prev_reason = reason
   prev_desc = desc
 }
 END {
-  printf ("  /* %s */ %-24s /* %s */\n};\n", prev_num, "\""prev_reason"\"", prev_desc)
+  printf ("  /* %s */ %-36s /* %s */\n};\n", prev_num, "_MHD_S_STR_W_LEN (\""prev_reason"\")", prev_desc)
 }' http-status-codes-1.csv > code_insert_statuses.c && \
 echo OK && \
 rm http-status-codes-1.csv || exit

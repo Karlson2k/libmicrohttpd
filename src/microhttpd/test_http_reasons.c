@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2017 Karlson2k (Evgeny Grin)
+  Copyright (C) 2017-2021 Karlson2k (Evgeny Grin)
 
   This test tool is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -25,18 +25,36 @@
 
 #include "mhd_options.h"
 #include <stdio.h>
+#include <string.h>
 #include "microhttpd.h"
 #include "mhd_str.h"
 
+static const char *const r_unknown = "unknown";
+
 static int
-expect_result (int code, const char*expected)
+expect_result (int code, const char *expected)
 {
-  const char*const reason = MHD_get_reason_phrase_for (code);
-  if (MHD_str_equal_caseless_ (reason, expected))
+  const char *const reason = MHD_get_reason_phrase_for (code);
+  const size_t len = MHD_get_reason_phrase_len_for (code);
+  size_t exp_len;
+  if (! MHD_str_equal_caseless_ (reason, expected))
+  {
+    fprintf (stderr,
+             "Incorrect reason returned for code %d:\n  Returned: \"%s\"  \tExpected: \"%s\"\n",
+             code, reason, expected);
     return 0;
-  fprintf (stderr,
-           "Incorrect reason returned for code %d:\n  Returned: \"%s\"  \tExpected: \"%s\"\n",
-           code, reason, expected);
+  }
+  if (r_unknown == expected)
+    exp_len = 0;
+  else
+    exp_len = strlen (expected);
+  if (exp_len != len)
+  {
+    fprintf (stderr,
+             "Incorrect reason length returned for code %d:\n  Returned: \"%u\"  \tExpected: \"%u\"\n",
+             code, (unsigned) len, (unsigned) exp_len);
+    return 0;
+  }
   return 1;
 }
 
@@ -44,7 +62,7 @@ expect_result (int code, const char*expected)
 static int
 expect_absent (int code)
 {
-  return expect_result (code, "unknown");
+  return expect_result (code, r_unknown);
 }
 
 

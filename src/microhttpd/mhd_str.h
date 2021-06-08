@@ -50,6 +50,18 @@ typedef intptr_t ssize_t;
 #define MHD_STATICSTR_LEN_(macro) (sizeof(macro) / sizeof(char) - 1)
 #endif /* ! MHD_STATICSTR_LEN_ */
 
+struct _MHD_str_w_len
+{
+  const char *str;
+  const size_t len;
+};
+
+/**
+ * Static string initialiser for struct _MHD_str_w_len
+ */
+#define _MHD_S_STR_W_LEN(str) { str, MHD_STATICSTR_LEN_(str) }
+
+
 /*
  * Block of functions/macros that use US-ASCII charset as required by HTTP
  * standards. Not affected by current locale settings.

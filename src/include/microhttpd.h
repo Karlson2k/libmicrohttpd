@@ -343,7 +343,7 @@ _MHD_DEPR_MACRO (
  * @defgroup httpcode HTTP response codes.
  * These are the status codes defined for HTTP responses.
  * See: https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
- * Registry export date: 2019-06-09
+ * Registry export date: 2021-06-08
  * @{
  */
 
@@ -543,6 +543,15 @@ _MHD_DEPR_MACRO (
 _MHD_EXTERN const char *
 MHD_get_reason_phrase_for (unsigned int code);
 
+
+/**
+ * Returns the length of the string reason phrase for a response code.
+ *
+ * If message string is not available for a status code,
+ * 0 is returned.
+ */
+_MHD_EXTERN size_t
+MHD_get_reason_phrase_len_for (unsigned int code);
 
 /**
  * Flag to be or-ed with MHD_HTTP status code for
