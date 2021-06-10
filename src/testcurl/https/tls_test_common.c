@@ -70,6 +70,7 @@ test_daemon_get (void *cls,
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
+  CURLcode e;
   char url[255];
   size_t len;
   (void) cls;    /* Unused. Silence compiler warning. */
@@ -92,29 +93,48 @@ test_daemon_get (void *cls,
 #if DEBUG_HTTPS_TEST
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1L);
 #endif
-  curl_easy_setopt (c, CURLOPT_URL, url);
-  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L);
-  curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-  curl_easy_setopt (c, CURLOPT_FILE, &cbc);
+  if ((CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_URL, url))) ||
+      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                          CURL_HTTP_VERSION_1_0))) ||
+      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L))) ||
+      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L))) ||
+      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_WRITEFUNCTION,
+                                          &copyBuffer))) ||
+      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_FILE, &cbc))) ||
+      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L))) ||
+      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L))))
+  {
+    fprintf (stderr, "curl_easy_setopt failed: `%s'\n",
+             curl_easy_strerror (e));
+    curl_easy_cleanup (c);
+    return e;
+  }
 
   /* TLS options */
-  curl_easy_setopt (c, CURLOPT_SSLVERSION, proto_version);
-  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, cipher_suite);
+  if ((CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_SSLVERSION,
+                                          proto_version))) ||
+      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST,
+                                          cipher_suite))) ||
 
-  /* perform peer authentication */
-  /* TODO merge into send_curl_req */
-  curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, ver_peer);
-  if (ver_peer)
-    curl_easy_setopt (c, CURLOPT_CAINFO, ca_cert_file_name);
-  curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L);
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
-
-  /* NOTE: use of CONNECTTIMEOUT without also
-     setting NOSIGNAL results in really weird
-     crashes on my system! */
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
+      /* perform peer authentication */
+      /* TODO merge into send_curl_req */
+      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER,
+                                          ver_peer))) ||
+      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L))))
+  {
+    fprintf (stderr, "HTTPS curl_easy_setopt failed: `%s'\n",
+             curl_easy_strerror (e));
+    curl_easy_cleanup (c);
+    return e;
+  }
+  if (ver_peer &&
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_CAINFO, ca_cert_file_name)))
+  {
+    fprintf (stderr, "HTTPS curl_easy_setopt failed: `%s'\n",
+             curl_easy_strerror (e));
+    curl_easy_cleanup (c);
+    return e;
+  }
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
   {
     fprintf (stderr, "curl_easy_perform failed: `%s'\n",
@@ -250,35 +270,54 @@ send_curl_req (char *url,
 {
   CURL *c;
   CURLcode errornum;
+  CURLcode e;
   c = curl_easy_init ();
 #if DEBUG_HTTPS_TEST
   curl_easy_setopt (c, CURLOPT_VERBOSE, CURL_VERBOS_LEVEL);
 #endif
-  curl_easy_setopt (c, CURLOPT_URL, url);
-  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 60L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 60L);
+  if ((CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_URL, url))) ||
+      (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                           CURL_HTTP_VERSION_1_0))) ||
+      (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_TIMEOUT, 60L))) ||
+      (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 60L))) ||
 
+      (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L))) ||
+
+      (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L))))
+  {
+    fprintf (stderr, "curl_easy_setopt failed: `%s'\n",
+             curl_easy_strerror (e));
+    curl_easy_cleanup (c);
+    return e;
+  }
   if (cbc != NULL)
   {
-    curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-    curl_easy_setopt (c, CURLOPT_FILE, cbc);
+    if ((CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_WRITEFUNCTION,
+                                             &copyBuffer))) ||
+        (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_FILE, cbc))))
+    {
+      fprintf (stderr, "curl_easy_setopt failed: `%s'\n",
+               curl_easy_strerror (e));
+      curl_easy_cleanup (c);
+      return e;
+    }
   }
 
   /* TLS options */
-  curl_easy_setopt (c, CURLOPT_SSLVERSION, proto_version);
-  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, cipher_suite);
+  if ((CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_SSLVERSION,
+                                           proto_version))) ||
+      (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST,
+                                           cipher_suite))) ||
+      /* currently skip any peer authentication */
+      (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L))) ||
+      (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L))))
+  {
+    fprintf (stderr, "HTTPS curl_easy_setopt failed: `%s'\n",
+             curl_easy_strerror (e));
+    curl_easy_cleanup (c);
+    return e;
+  }
 
-  /* currently skip any peer authentication */
-  curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L);
-  curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L);
-
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
-
-  /* NOTE: use of CONNECTTIMEOUT without also
-     setting NOSIGNAL results in really weird
-     crashes on my system! */
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
   {
     fprintf (stderr, "curl_easy_perform failed: `%s'\n",
