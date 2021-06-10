@@ -128,7 +128,7 @@ main (int argc, char *const *argv)
   if (! testsuite_curl_global_init ())
     return 99;
 
-  if (curl_uses_nss_ssl () == 0)
+  if (curl_tls_is_nss ())
   {
     aes128_sha = "rsa_aes_128_sha";
     aes256_sha = "rsa_aes_256_sha";

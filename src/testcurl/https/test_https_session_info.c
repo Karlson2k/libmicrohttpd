@@ -143,7 +143,7 @@ test_query_session ()
     port = (int) dinfo->port;
   }
 
-  if (curl_uses_nss_ssl () == 0)
+  if (curl_tls_is_nss ())
   {
     aes256_sha = "rsa_aes_256_sha";
   }
@@ -217,7 +217,7 @@ main (int argc, char *const *argv)
     curl_global_cleanup ();
     return 77;
   }
-  if (0 != strncmp (ssl_version, "GnuTLS", 6))
+  if (! curl_tls_is_gnutls ())
   {
     fprintf (stderr, "This test can be run only with libcurl-gnutls.\n");
     curl_global_cleanup ();

@@ -75,9 +75,6 @@ int
 curl_check_version (const char *req_version, ...);
 
 int
-curl_uses_nss_ssl (void);
-
-int
 curl_tls_is_gnutls (void);
 
 int

@@ -69,16 +69,6 @@ parse_version_string (const char *s, int *major, int *minor, int *micro)
 }
 
 
-#ifdef HTTPS_SUPPORT
-int
-curl_uses_nss_ssl ()
-{
-  return (strstr (curl_version (), " NSS/") != NULL) ? 0 : -1;
-}
-
-
-#endif /* HTTPS_SUPPORT */
-
 /*
  * check local libcurl version matches required version
  */

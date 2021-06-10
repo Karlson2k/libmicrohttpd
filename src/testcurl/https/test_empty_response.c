@@ -108,7 +108,7 @@ testInternalSelectGet ()
     }
     port = (int) dinfo->port;
   }
-  if (curl_uses_nss_ssl () == 0)
+  if (curl_tls_is_nss ())
   {
     aes256_sha = "rsa_aes_256_sha";
   }
