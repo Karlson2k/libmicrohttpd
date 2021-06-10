@@ -604,6 +604,100 @@ test_wrap (const char *test_name, int
 }
 
 
+static int inited_tls_is_gnutls = 0;
+static int inited_tls_is_openssl = 0;
+
+int
+curl_tls_is_gnutls (void)
+{
+  const char *tlslib;
+  if (inited_tls_is_gnutls)
+    return 1;
+  if (inited_tls_is_openssl)
+    return 0;
+
+  tlslib = curl_version_info (CURLVERSION_NOW)->ssl_version;
+  if (NULL == tlslib)
+    return 0;
+  if (0 == strncmp (tlslib, "GnuTLS/", 7))
+    return 1;
+
+  /* Multi-backends handled during initialization by setting variable */
+  return 0;
+}
+
+
+int
+curl_tls_is_nss (void)
+{
+  const char *tlslib;
+  if (inited_tls_is_gnutls)
+    return 0;
+  if (inited_tls_is_openssl)
+    return 0;
+
+  tlslib = curl_version_info (CURLVERSION_NOW)->ssl_version;
+  if (NULL == tlslib)
+    return 0;
+  if (0 == strncmp (tlslib, "NSS/", 4))
+    return 1;
+
+  /* Handle multi-backends with selected backend */
+  if (NULL != strstr (tlslib," NSS/"))
+    return 1;
+
+  return 0;
+}
+
+
+int
+curl_tls_is_schannel (void)
+{
+  const char *tlslib;
+  if (inited_tls_is_gnutls)
+    return 0;
+  if (inited_tls_is_openssl)
+    return 0;
+
+  tlslib = curl_version_info (CURLVERSION_NOW)->ssl_version;
+  if (NULL == tlslib)
+    return 0;
+  if ((0 == strncmp (tlslib, "Schannel", 8)) || (0 == strncmp (tlslib, "WinSSL",
+                                                               6)))
+    return 1;
+
+  /* Handle multi-backends with selected backend */
+  if ((NULL != strstr (tlslib," Schannel")) || (NULL != strstr (tlslib,
+                                                                " WinSSL")))
+    return 1;
+
+  return 0;
+}
+
+
+int
+curl_tls_is_sectransport (void)
+{
+  const char *tlslib;
+  if (inited_tls_is_gnutls)
+    return 0;
+  if (inited_tls_is_openssl)
+    return 0;
+
+  tlslib = curl_version_info (CURLVERSION_NOW)->ssl_version;
+  if (NULL == tlslib)
+    return 0;
+  if (0 == strncmp (tlslib, "SecureTransport", 15))
+    return 1;
+
+  /* Handle multi-backends with selected backend */
+  if (NULL != strstr (tlslib," SecureTransport"))
+    return 1;
+
+  return 0;
+}
+
+
 int
 testsuite_curl_global_init (void)
 {
@@ -611,10 +705,15 @@ testsuite_curl_global_init (void)
 #if LIBCURL_VERSION_NUM >= 0x073800
   if (CURLSSLSET_OK != curl_global_sslset (CURLSSLBACKEND_GNUTLS, NULL, NULL))
   {
-    if (CURLSSLSET_TOO_LATE == curl_global_sslset (CURLSSLBACKEND_OPENSSL, NULL,
-                                                   NULL))
+    CURLsslset e;
+    e = curl_global_sslset (CURLSSLBACKEND_OPENSSL, NULL, NULL);
+    if (CURLSSLSET_TOO_LATE == e)
       fprintf (stderr, "WARNING: libcurl was already initialised.\n");
+    else if (CURLSSLSET_OK == e)
+      inited_tls_is_openssl = 1;
   }
+  else
+    inited_tls_is_gnutls = 1;
 #endif /* LIBCURL_VERSION_NUM >= 0x07380 */
   res = curl_global_init (CURL_GLOBAL_ALL);
   if (CURLE_OK != res)

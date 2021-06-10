@@ -77,6 +77,17 @@ curl_check_version (const char *req_version, ...);
 int
 curl_uses_nss_ssl (void);
 
+int
+curl_tls_is_gnutls (void);
+
+int
+curl_tls_is_nss (void);
+
+int
+curl_tls_is_schannel (void);
+
+int
+curl_tls_is_sectransport (void);
 
 FILE *
 setup_ca_cert (void);
