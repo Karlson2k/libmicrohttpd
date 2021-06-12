@@ -732,7 +732,7 @@ enum MHD_ConnKeepAlive
   MHD_CONN_USE_KEEPALIVE = 1
 };
 
-enum MHD_HTTP_version
+enum MHD_HTTP_Version
 {
   /**
    * Not a HTTP protocol or HTTP version is invalid.
@@ -894,7 +894,7 @@ struct MHD_Connection
   /**
    * HTTP protocol version as enum.
    */
-  enum MHD_HTTP_version http_ver;
+  enum MHD_HTTP_Version http_ver;
 
   /**
    * Close connection after sending response?
