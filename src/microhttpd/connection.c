@@ -2215,6 +2215,58 @@ parse_http_version (struct MHD_Connection *connection,
 
 
 /**
+ * Detect standard HTTP request method
+ *
+ * @param connection the connection
+ * @param method the pointer to HTTP request method string
+ * @param len the length of @a method in bytes
+ * @return #MHD_YES if HTTP method is valid string,
+ *         #MHD_NO if HTTP method string is not valid.
+ */
+static enum MHD_Result
+parse_http_std_method (struct MHD_Connection *connection,
+                       const char *method,
+                       size_t len)
+{
+  const char *const m = method; /**< short alias */
+  mhd_assert (NULL != m);
+
+  if (0 == len)
+    return MHD_NO;
+
+  if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_GET) == len) &&
+      (0 == memcmp (m, MHD_HTTP_METHOD_GET, len)))
+    connection->http_mthd = MHD_HTTP_MTHD_GET;
+  else if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_HEAD) == len) &&
+           (0 == memcmp (m, MHD_HTTP_METHOD_HEAD, len)))
+    connection->http_mthd = MHD_HTTP_MTHD_HEAD;
+  else if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_POST) == len) &&
+           (0 == memcmp (m, MHD_HTTP_METHOD_POST, len)))
+    connection->http_mthd = MHD_HTTP_MTHD_POST;
+  else if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_PUT) == len) &&
+           (0 == memcmp (m, MHD_HTTP_METHOD_PUT, len)))
+    connection->http_mthd = MHD_HTTP_MTHD_PUT;
+  else if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_DELETE) == len) &&
+           (0 == memcmp (m, MHD_HTTP_METHOD_DELETE, len)))
+    connection->http_mthd = MHD_HTTP_MTHD_DELETE;
+  else if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_CONNECT) == len) &&
+           (0 == memcmp (m, MHD_HTTP_METHOD_CONNECT, len)))
+    connection->http_mthd = MHD_HTTP_MTHD_CONNECT;
+  else if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_OPTIONS) == len) &&
+           (0 == memcmp (m, MHD_HTTP_METHOD_OPTIONS, len)))
+    connection->http_mthd = MHD_HTTP_MTHD_OPTIONS;
+  else if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_TRACE) == len) &&
+           (0 == memcmp (m, MHD_HTTP_METHOD_TRACE, len)))
+    connection->http_mthd = MHD_HTTP_MTHD_TRACE;
+  else
+    connection->http_mthd = MHD_HTTP_MTHD_OTHER;
+
+  /* Any method string with non-zero length is valid */
+  return MHD_YES;
+}
+
+
+/**
  * Parse the first line of the HTTP HEADER.
  *
  * @param connection the connection (updated)
@@ -2240,9 +2292,13 @@ parse_initial_message_line (struct MHD_Connection *connection,
     return MHD_NO;              /* serious error */
   uri[0] = '\0';
   connection->method = line;
+  if (MHD_NO == parse_http_std_method (connection, connection->method,
+                                       (size_t) (uri - line)))
+    return MHD_NO;
   uri++;
   /* Skip any spaces. Not required by standard but allow
      to be more tolerant. */
+  /* TODO: do not skip them in standard mode */
   while ( (' ' == uri[0]) &&
           ( (size_t) (uri - line) < line_len) )
     uri++;
@@ -2263,6 +2319,7 @@ parse_initial_message_line (struct MHD_Connection *connection,
     /* Search from back to accept malformed URI with space */
     http_version = line + line_len - 1;
     /* Skip any trailing spaces */
+    /* TODO: do not skip them in standard mode */
     while ( (' ' == http_version[0]) &&
             (http_version > uri) )
       http_version--;
@@ -3934,6 +3991,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       connection->current_chunk_size = 0;
       connection->current_chunk_offset = 0;
       connection->method = NULL;
+      connection->http_mthd = MHD_HTTP_MTHD_NO_METHOD;
       connection->url = NULL;
       connection->write_buffer = NULL;
       connection->write_buffer_size = 0;

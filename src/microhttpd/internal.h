@@ -771,6 +771,55 @@ enum MHD_HTTP_Version
 };
 
 /**
+ * The HTTP method.
+ *
+ * Only primary methods (specified in RFC7231) defined here.
+ */
+enum MHD_HTTP_Method
+{
+  /**
+   * No request string has been received yet
+   */
+  MHD_HTTP_MTHD_NO_METHOD = 0,
+  /**
+   * HTTP method GET
+   */
+  MHD_HTTP_MTHD_GET = 1,
+  /**
+   * HTTP method HEAD
+   */
+  MHD_HTTP_MTHD_HEAD = 2,
+  /**
+   * HTTP method POST
+   */
+  MHD_HTTP_MTHD_POST = 3,
+  /**
+   * HTTP method PUT
+   */
+  MHD_HTTP_MTHD_PUT = 4,
+  /**
+   * HTTP method DELETE
+   */
+  MHD_HTTP_MTHD_DELETE = 5,
+  /**
+   * HTTP method CONNECT
+   */
+  MHD_HTTP_MTHD_CONNECT = 6,
+  /**
+   * HTTP method OPTIONS
+   */
+  MHD_HTTP_MTHD_OPTIONS = 7,
+  /**
+   * HTTP method TRACE
+   */
+  MHD_HTTP_MTHD_TRACE = 8,
+  /**
+   * Other HTTP method. Check the string value.
+   */
+  MHD_HTTP_MTHD_OTHER = 1000
+};
+
+/**
  * Returns boolean 'true' if HTTP version is supported by MHD
  */
 #define MHD_IS_HTTP_VER_SUPPORTED(ver) (MHD_HTTP_VER_1_0 <= (ver) && \
@@ -878,6 +927,11 @@ struct MHD_Connection
    * Request method.  Should be GET/POST/etc.  Allocated in pool.
    */
   char *method;
+
+  /**
+   * The request method as enum.
+   */
+  enum MHD_HTTP_Method http_mthd;
 
   /**
    * Requested URL (everything after "GET" only).  Allocated
