@@ -1491,9 +1491,7 @@ build_header_response (struct MHD_Connection *connection)
           MHD_get_response_header (response,
                                    MHD_HTTP_HEADER_CONTENT_LENGTH)) &&
          (may_add_content_length) &&
-         ( (NULL == connection->method) ||
-           (! MHD_str_equal_caseless_ (connection->method,
-                                       MHD_HTTP_METHOD_CONNECT)) ) )
+         (MHD_HTTP_MTHD_CONNECT != connection->http_mthd) )
     {
       /*
         Here we add a content-length if one is missing; however,
@@ -4326,9 +4324,7 @@ MHD_queue_response (struct MHD_Connection *connection,
   /* FIXME: if 'is_pipe' is set, TLS is off, and we have *splice*, we could use splice()
      to avoid two user-space copies... */
 
-  if ( ( (NULL != connection->method) &&
-         (MHD_str_equal_caseless_ (connection->method,
-                                   MHD_HTTP_METHOD_HEAD)) ) ||
+  if ( (MHD_HTTP_MTHD_HEAD == connection->http_mthd) ||
        (MHD_HTTP_OK > status_code) ||
        (MHD_HTTP_NO_CONTENT == status_code) ||
        (MHD_HTTP_NOT_MODIFIED == status_code) )
