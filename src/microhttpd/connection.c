@@ -4247,12 +4247,6 @@ MHD_queue_response (struct MHD_Connection *connection,
 {
   struct MHD_Daemon *daemon;
 
-  if ( (NULL == connection) ||
-       (NULL == response) ||
-       (NULL != connection->response) ||
-       ( (MHD_CONNECTION_HEADERS_PROCESSED != connection->state) &&
-         (MHD_CONNECTION_FOOTERS_RECEIVED != connection->state) ) )
-    return MHD_NO;
   daemon = connection->daemon;
 
   if (daemon->shutdown)
@@ -4271,6 +4265,14 @@ MHD_queue_response (struct MHD_Connection *connection,
     return MHD_NO;
   }
 #endif
+
+  if ( (NULL == connection) ||
+       (NULL == response) ||
+       (NULL != connection->response) ||
+       ( (MHD_CONNECTION_HEADERS_PROCESSED != connection->state) &&
+         (MHD_CONNECTION_FOOTERS_RECEIVED != connection->state) ) )
+    return MHD_NO;
+
 #ifdef UPGRADE_SUPPORT
   if ( (NULL != response->upgrade_handler) &&
        (0 == (daemon->options & MHD_ALLOW_UPGRADE)) )
@@ -4304,6 +4306,31 @@ MHD_queue_response (struct MHD_Connection *connection,
 #endif
     return MHD_NO;
   }
+  if (200 > (status_code & (~MHD_ICY_FLAG)))
+  {
+    if (MHD_HTTP_VER_1_0 == connection->http_ver)
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Wrong status code (%u) refused. " \
+                   "HTTP/1.0 clients do not support 1xx status codes!\n"),
+                (status_code & (~MHD_ICY_FLAG)));
+#endif
+      return MHD_NO;
+    }
+    if (0 != response->flags & (MHD_RF_HTTP_VERSION_1_0_ONLY
+                                | MHD_RF_HTTP_VERSION_1_0_RESPONSE))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Wrong status code (%u) refused. " \
+                   "HTTP/1.0 reply mode does not support 1xx status codes!\n"),
+                (status_code & (~MHD_ICY_FLAG)));
+#endif
+      return MHD_NO;
+    }
+  }
+
   MHD_increment_response_rc (response);
   connection->response = response;
   connection->responseCode = status_code;
