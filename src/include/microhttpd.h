@@ -3208,8 +3208,15 @@ enum MHD_ResponseMemoryMode
 
 
 /**
- * Create a response object.  The response object can be extended with
- * header information and then be used any number of times.
+ * Create a response object with the content of provided buffer used as
+ * the response body.
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
  *
  * @param size size of the data portion of the response
  * @param buffer size bytes containing the response's data portion
@@ -3224,8 +3231,15 @@ MHD_create_response_from_buffer (size_t size,
 
 
 /**
- * Create a response object.  The response object can be extended with
- * header information and then be used any number of times.
+ * Create a response object with the content of provided buffer used as
+ * the response body.
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
  *
  * @param size size of the data portion of the response
  * @param buffer size bytes containing the response's data portion
@@ -3242,9 +3256,15 @@ MHD_create_response_from_buffer_with_free_callback (size_t size,
 
 
 /**
- * Create a response object.
- * The response object can be extended with header information and then be
- * used any number of times.
+ * Create a response object with the content of provided buffer used as
+ * the response body.
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
  *
  * @param size size of the data portion of the response
  * @param buffer size bytes containing the response's data portion
@@ -3264,8 +3284,15 @@ MHD_create_response_from_buffer_with_free_callback_cls (size_t size,
 
 
 /**
- * Create a response object.  The response object can be extended with
- * header information and then be used any number of times.
+ * Create a response object with the content of provided file used as
+ * the response body.
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
  *
  * @param size size of the data portion of the response
  * @param fd file descriptor referring to a file on disk with the
@@ -3280,8 +3307,15 @@ MHD_create_response_from_fd (size_t size,
 
 
 /**
- * Create a response object.  The response object can be extended with
- * header information and then be used ONLY ONCE.
+ * Create a response object with the response body created by reading
+ * the provided pipe.
+ *
+ * The response object can be extended with header information and
+ * then be used ONLY ONCE.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
  *
  * @param fd file descriptor referring to a read-end of a pipe with the
  *        data; will be closed when response is destroyed;
@@ -3295,8 +3329,15 @@ MHD_create_response_from_pipe (int fd);
 
 
 /**
- * Create a response object.  The response object can be extended with
- * header information and then be used any number of times.
+ * Create a response object with the content of provided file used as
+ * the response body.
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
  *
  * @param size size of the data portion of the response;
  *        sizes larger than 2 GiB may be not supported by OS or
@@ -3313,8 +3354,15 @@ MHD_create_response_from_fd64 (uint64_t size,
 
 
 /**
- * Create a response object.  The response object can be extended with
- * header information and then be used any number of times.
+ * Create a response object with the content of provided file with
+ * specified offset used as the response body.
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
  *
  * @param size size of the data portion of the response
  * @param fd file descriptor referring to a file on disk with the
@@ -3346,8 +3394,15 @@ MHD_create_response_from_fd_at_offset (size_t size,
 
 
 /**
- * Create a response object.  The response object can be extended with
- * header information and then be used any number of times.
+ * Create a response object with the content of provided file with
+ * specified offset used as the response body.
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
  *
  * @param size size of the data portion of the response;
  *        sizes larger than 2 GiB may be not supported by OS or
@@ -3368,9 +3423,15 @@ MHD_create_response_from_fd_at_offset64 (uint64_t size,
 
 
 /**
- * Create a response object from an array of memory buffers.
- * The response object can be extended with header information and then be used
- * any number of times.
+ * Create a response object with an array of memory buffers
+ * used as the response body.
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
  *
  * @param iov the array for response data buffers, an internal copy of this
  *        will be made
