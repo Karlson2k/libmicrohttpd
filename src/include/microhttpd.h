@@ -3612,10 +3612,32 @@ MHD_destroy_response (struct MHD_Response *response);
 /**
  * Add a header line to the response.
  *
- * @param response response to add a header to
- * @param header the header to add
- * @param content value to add
- * @return #MHD_NO on error (i.e. invalid header or content format),
+ * When reply is generated with queued response, some headers are generated
+ * automatically. Automatically generated headers are only sent to the client,
+ * but not added back to the response.
+ *
+ * The list of automatic headers:
+ * + "Date" header is added automatically unless already set by
+ *   this function
+ * + "Content-Length" is added automatically when required, attempt to set
+ *   it manually by this function is ignored.
+ *   @see #MHD_RF_INSANITY_HEADER_CONTENT_LENGTH
+ * + "Transfer-Encoding" with value "chunked" is added automatically,
+ *   when chunked transfer encoding is used automatically. Same header with
+ *   the same value can be set manually by this function to enforce chunked
+ *   encoding, however for HTTP/1.0 clients chunked encoding will not be used
+ *   and manually set "Transfer-Encoding" header is automatically removed
+ *   for HTTP/1.0 clients
+ * + "Connection" is added automatically with value "Keep-Alive" or "Close".
+ *   The header "Connection" with value "Close" could be set by this function
+ *   to enforce closure of the connection after sending this response.
+ *   "Keep-Alive" cannot be enforced and will be removed automatically.
+ *
+ * @param response the response to add a header to
+ * @param header the header name to add
+ * @param content the header value to add
+ * @return #MHD_YES on success,
+ *         #MHD_NO on error (i.e. invalid header or content format),
  *         or out of memory
  * @ingroup response
  */
