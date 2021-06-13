@@ -52,7 +52,7 @@
 
 #ifndef MHD_FAVOR_SMALL_CODE
 /**
- * Check two string for equality, ignoring case of US-ASCII letters.
+ * Check two strings for equality, ignoring case of US-ASCII letters.
  * @param str1 first string to compare
  * @param str2 second string to compare
  * @return non-zero if two strings are equal, zero otherwise.
