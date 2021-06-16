@@ -27,8 +27,10 @@
 
 #ifdef HAVE_STDBOOL_H
 #include <stdbool.h>
-#endif
+#endif /* HAVE_STDBOOL_H */
+#include <string.h>
 
+#include "mhd_assert.h"
 #include "mhd_limits.h"
 
 #ifdef MHD_FAVOR_SMALL_CODE
@@ -518,6 +520,171 @@ MHD_str_has_token_caseless_ (const char *str,
       str++;
   }
   return false;
+}
+
+
+/**
+ * Remove case-insensitive @a token from the @a str and put result
+ * to the output @a buf.
+ *
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * The token match succeed if substring between start, end (of string) or
+ * comma contains only case-insensitive token and optional spaces and tabs.
+ * The quoted strings and comments are not supported by this function.
+ *
+ * The output string is normalised: empty tokens and repeated whitespaces
+ * are removed, no whitespaces before commas, exactly one space is used after
+ * each comma.
+ *
+ * @param str the string to process
+ * @param str_len the length of the @a str, not including optional
+ *                terminating null-character.
+ * @param token the token to find
+ * @param token_len the length of @a token, not including optional
+ *                  terminating null-character.
+ * @param[out] buf the output buffer, not null-terminated.
+ * @param[in,out] buf_size pointer to the size variable, at input it
+ *                         is the size of allocated buffer, at output
+ *                         it is the size of the resulting string (can
+ *                         be up to 50% larger than input) or negative value
+ *                         if there is not enough space for the result
+ * @return 'true' if token has been removed,
+ *         'false' otherwise.
+ */
+bool
+MHD_str_remove_token_caseless_ (const char *str,
+                                size_t str_len,
+                                const char *const token,
+                                const size_t token_len,
+                                char *buf,
+                                ssize_t *buf_size)
+{
+  const char *s1; /**< the "input" string / character */
+  char *s2;       /**< the "output" string / character */
+  size_t t_pos;   /**< position of matched character in the token */
+  bool token_removed;
+
+  mhd_assert (NULL == memchr (token, 0, token_len));
+  mhd_assert (NULL == memchr (token, ' ', token_len));
+  mhd_assert (NULL == memchr (token, '\t', token_len));
+  mhd_assert (NULL == memchr (token, ',', token_len));
+  mhd_assert (0 <= *buf_size);
+
+  s1 = str;
+  s2 = buf;
+  token_removed = false;
+
+  while ((size_t) (s1 - str) < str_len)
+  {
+    const char *cur_token; /**< the first char of current token */
+    size_t copy_size;
+
+    /* Skip any initial whitespaces and empty tokens */
+    while ( ((size_t) (s1 - str) < str_len) &&
+            ((' ' == *s1) || ('\t' == *s1) || (',' == *s1)) )
+      s1++;
+
+    /* 's1' points to the first char of token in the input string or
+     * points just beyond the end of the input string */
+
+    if ((size_t) (s1 - str) >= str_len)
+      break; /* Nothing to copy, end of the input string */
+
+    cur_token = s1; /* the first char of input token or
+                       the char after the input buffer */
+
+    /* Check the token with case-insensetive match */
+    t_pos = 0;
+    while ( ((size_t) (s1 - str) < str_len) && (token_len > t_pos) &&
+            (charsequalcaseless (*s1, token[t_pos])) )
+    {
+      s1++;
+      t_pos++;
+    }
+    if ( (token_len == t_pos) && (0 != token_len) )
+    {
+      /* 'token' matched, check that current input token does not have
+       * any suffixes */
+      while ( ((size_t) (s1 - str) < str_len) &&
+              ((' ' == *s1) || ('\t' == *s1)) )
+        s1++;
+      /* 's1' points to the first non-whitespace char after the token matched
+       * requested token or points just beyond the end of the input string after
+       * the requested token */
+      if (((size_t) (s1 - str) == str_len) || (',' == *s1))
+      {/* full token match, do not copy current token to the output */
+        token_removed = true;
+        continue;
+      }
+    }
+
+    /* 's1' points to some non-whitespace char in the token in the input
+     * string, to the ',', or just beyond the end of the input string */
+    /* The current token in the input string does not match excluded token,
+     * it must be copied to the output string */
+    /* the current token size excluding leading whitespaces and current char */
+    copy_size = (size_t) (s1 - cur_token);
+    if (buf == s2)
+    { /* The first token to copy to the output */
+      if (buf + *buf_size < s2 + copy_size)
+      { /* Not enough space in the output buffer */
+        *buf_size = (ssize_t) -1;
+        return false;
+      }
+    }
+    else
+    { /* Some token was already copied to the output buffer */
+      if (buf + *buf_size < s2 + copy_size + 2)
+      { /* Not enough space in the output buffer */
+        *buf_size = (ssize_t) -1;
+        return false;
+      }
+      *(s2++) = ',';
+      *(s2++) = ' ';
+    }
+    /* Copy non-matched token to the output */
+    if (0 != copy_size)
+    {
+      memcpy (s2, cur_token, copy_size);
+      s2 += copy_size;
+    }
+
+    while ( ((size_t) (s1 - str) < str_len) && (',' != *s1))
+    {
+      /* 's1' points to some non-whitespace char in the token */
+      while ( ((size_t) (s1 - str) < str_len) &&
+              (',' != *s1) && (' ' != *s1) && ('\t' != *s1) )
+      {
+        if (buf + *buf_size <= s2) /* '<= s2' equals '< s2 + 1' */
+        { /* Not enough space in the output buffer */
+          *buf_size = (ssize_t) -1;
+          return false;
+        }
+        *(s2++) = *(s1++);
+      }
+      /* 's1' points to some whitespace char in the token in the input
+       * string, to the ',', or just beyond the end of the input string */
+      /* Skip all whitespaces */
+      while ( ((size_t) (s1 - str) < str_len) &&
+              ((' ' == *s1) || ('\t' == *s1)) )
+        s1++;
+
+      /* 's1' points to the first non-whitespace char in the input string
+       * after whitespace chars or just beyond the end of the input string */
+      if (((size_t) (s1 - str) < str_len) && (',' != *s1))
+      { /* Not the end of the current token */
+        if (buf + *buf_size <= s2) /* '<= s2' equals '< s2 + 1' */
+        { /* Not enough space in the output buffer */
+          *buf_size = (ssize_t) -1;
+          return false;
+        }
+        *(s2++) = ' ';
+      }
+    }
+  }
+  mhd_assert (((ssize_t) (s2 - buf)) <= *buf_size);
+  *buf_size = (ssize_t) (s2 - buf);
+  return token_removed;
 }
 
 

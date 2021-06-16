@@ -130,6 +130,44 @@ MHD_str_has_token_caseless_ (const char *str,
 #define MHD_str_has_s_token_caseless_(str,tkn) \
   MHD_str_has_token_caseless_ ((str),(tkn),MHD_STATICSTR_LEN_ (tkn))
 
+
+/**
+ * Remove case-insensitive @a token from the @a str and put result
+ * to the output @a buf.
+ *
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * The token match succeed if substring between start, end (of string) or
+ * comma contains only case-insensitive token and optional spaces and tabs.
+ * The quoted strings and comments are not supported by this function.
+ *
+ * The output string is normalised: empty tokens and repeated whitespaces
+ * are removed, no whitespaces before commas, exactly one space is used after
+ * each comma.
+ *
+ * @param str the string to process
+ * @param str_len the length of the @a str, not including optional
+ *                terminating null-character.
+ * @param token the token to find
+ * @param token_len the length of @a token, not including optional
+ *                  terminating null-character.
+ * @param[out] buf the output buffer, not null-terminated.
+ * @param[in,out] buf_size pointer to the size variable, at input it
+ *                         is the size of allocated buffer, at output
+ *                         it is the size of the resulting string (can
+ *                         be up to 50% larger than input) or negative value
+ *                         if there is not enough space for the result
+ * @return 'true' if token has been removed,
+ *         'false' otherwise.
+ */
+bool
+MHD_str_remove_token_caseless_ (const char *str,
+                                size_t str_len,
+                                const char *const token,
+                                const size_t token_len,
+                                char *buf,
+                                ssize_t *buf_size);
+
+
 #ifndef MHD_FAVOR_SMALL_CODE
 /* Use individual function for each case to improve speed */
 

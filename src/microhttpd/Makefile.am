@@ -158,6 +158,7 @@ check_PROGRAMS = \
   test_str_compare \
   test_str_to_value \
   test_str_token \
+  test_str_token_remove \
   test_http_reasons \
   test_md5 \
   test_sha1 \
@@ -352,6 +353,9 @@ test_str_to_value_SOURCES = \
 
 test_str_token_SOURCES = \
   test_str_token.c mhd_str.c mhd_str.h
+
+test_str_token_remove_SOURCES = \
+  test_str_token_remove.c mhd_str.c mhd_str.h mhd_assert.h mhd_options.h
 
 test_http_reasons_SOURCES = \
   test_http_reasons.c \
