@@ -44,6 +44,7 @@
 #include "memorypool.h"
 #include "mhd_send.h"
 #include "mhd_compat.h"
+#include "mhd_assert.h"
 
 
 #if defined(MHD_W32_MUTEX_)
@@ -69,6 +70,78 @@
 #endif /* _WIN32 */
 #endif /* !MHD_FD_BLOCK_SIZE */
 
+/**
+ * Insert a new header at the first position of the response
+ */
+#define _MHD_insert_header_first(presponse, phdr) do { \
+  mhd_assert (NULL == phdr->next); \
+  mhd_assert (NULL == phdr->prev); \
+  if (NULL == presponse->first_header) \
+  { \
+    mhd_assert (NULL == presponse->last_header); \
+    presponse->first_header = phdr; \
+    presponse->last_header = phdr;  \
+  } \
+  else \
+  { \
+    mhd_assert (NULL != presponse->last_header);        \
+    presponse->first_header->prev = phdr; \
+    phdr->next = presponse->first_header; \
+    presponse->first_header = phdr;       \
+  } \
+} while (0)
+
+/**
+ * Insert a new header at the last position of the response
+ */
+#define _MHD_insert_header_last(presponse, phdr) do { \
+  mhd_assert (NULL == phdr->next); \
+  mhd_assert (NULL == phdr->prev); \
+  if (NULL == presponse->last_header) \
+  { \
+    mhd_assert (NULL == presponse->first_header); \
+    presponse->last_header = phdr;  \
+    presponse->first_header = phdr; \
+  } \
+  else \
+  { \
+    mhd_assert (NULL != presponse->first_header);      \
+    presponse->last_header->next = phdr; \
+    phdr->prev = presponse->last_header; \
+    presponse->last_header = phdr;       \
+  } \
+} while (0)
+
+
+/**
+ * Remove a header from the response
+ */
+#define _MHD_remove_header(presponse, phdr) do { \
+  mhd_assert (NULL != presponse->first_header); \
+  mhd_assert (NULL != presponse->last_header);  \
+  if (NULL == phdr->prev) \
+  { \
+    mhd_assert (phdr == presponse->first_header); \
+    presponse->first_header = phdr->next; \
+  } \
+  else \
+  { \
+    mhd_assert (phdr != presponse->first_header); \
+    mhd_assert (phdr == phdr->prev->next); \
+    phdr->prev->next = phdr->next; \
+  } \
+  if (NULL == phdr->next) \
+  { \
+    mhd_assert (phdr == presponse->last_header); \
+    presponse->last_header = phdr->prev; \
+  } \
+  else \
+  { \
+    mhd_assert (phdr != presponse->last_header); \
+    mhd_assert (phdr == phdr->next->prev); \
+    phdr->next->prev = phdr->prev; \
+  } \
+} while (0)
 
 /**
  * Add a header or footer line to the response.
@@ -99,7 +172,7 @@ add_response_entry (struct MHD_Response *response,
        (NULL != strchr (content, '\r')) ||
        (NULL != strchr (content, '\n')) )
     return MHD_NO;
-  if (NULL == (hdr = malloc (sizeof (struct MHD_HTTP_Header))))
+  if (NULL == (hdr = MHD_calloc_ (1, sizeof (struct MHD_HTTP_Header))))
     return MHD_NO;
   if (NULL == (hdr->header = strdup (header)))
   {
@@ -115,8 +188,7 @@ add_response_entry (struct MHD_Response *response,
   }
   hdr->value_size = strlen (content);
   hdr->kind = kind;
-  hdr->next = response->first_header;
-  response->first_header = hdr;
+  _MHD_insert_header_last (response, hdr);
   return MHD_YES;
 }
 
@@ -249,12 +321,9 @@ MHD_del_response_header (struct MHD_Response *response,
                       pos->value,
                       content_len)))
     {
+      _MHD_remove_header (response, pos);
       free (pos->header);
       free (pos->value);
-      if (NULL == prev)
-        response->first_header = pos->next;
-      else
-        prev->next = pos->next;
       free (pos);
       return MHD_YES;
     }

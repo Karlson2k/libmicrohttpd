@@ -313,9 +313,14 @@ MHD_DLOG (const struct MHD_Daemon *daemon,
 struct MHD_HTTP_Header
 {
   /**
-   * Headers are kept in a linked list.
+   * Headers are kept in a double-linked list.
    */
   struct MHD_HTTP_Header *next;
+
+  /**
+   * Headers are kept in a double-linked list.
+   */
+  struct MHD_HTTP_Header *prev;
 
   /**
    * The name of the header (key), without the colon.
@@ -407,11 +412,14 @@ struct MHD_Response
 {
 
   /**
-   * Headers to send for the response.  Initially
-   * the linked list is created in inverse order;
-   * the order should be inverted before sending!
+   * Head of double-linked list of headers to send for the response.
    */
   struct MHD_HTTP_Header *first_header;
+
+  /**
+   * Tail of double-linked list of headers to send for the response.
+   */
+  struct MHD_HTTP_Header *last_header;
 
   /**
    * Buffer pointing to data that we are supposed
