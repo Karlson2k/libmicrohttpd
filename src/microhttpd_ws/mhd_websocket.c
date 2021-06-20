@@ -133,7 +133,7 @@ static void
 MHD_websocket_copy_payload (char*dst,
                             const char*src,
                             size_t len,
-                            unsigned long mask,
+                            uint32_t mask,
                             unsigned long mask_offset);
 
 static int
@@ -175,7 +175,7 @@ MHD_websocket_encode_ping_pong (struct MHD_WebSocketStream*ws,
                                 size_t*frame_len,
                                 char opcode);
 
-static unsigned long
+static uint32_t
 MHD_websocket_generate_mask ();
 
 /**
@@ -684,7 +684,7 @@ MHD_websocket_decode (struct MHD_WebSocketStream*ws,
           else
           {
             /* without mask */
-            *((unsigned long *) ws->mask_key) = 0;
+            *((uint32_t *) ws->mask_key) = 0;
             ws->decode_step = MHD_WebSocket_DecodeStep_HeaderCompleted;
           }
         }
@@ -761,7 +761,7 @@ MHD_websocket_decode (struct MHD_WebSocketStream*ws,
         else
         {
           /* without mask */
-          *((unsigned long *) ws->mask_key) = 0;
+          *((uint32_t *) ws->mask_key) = 0;
           ws->decode_step = MHD_WebSocket_DecodeStep_HeaderCompleted;
         }
       }
@@ -838,7 +838,7 @@ MHD_websocket_decode (struct MHD_WebSocketStream*ws,
         else
         {
           /* without mask */
-          *((unsigned long *) ws->mask_key) = 0;
+          *((uint32_t *) ws->mask_key) = 0;
           ws->decode_step = MHD_WebSocket_DecodeStep_HeaderCompleted;
         }
       }
@@ -847,10 +847,9 @@ MHD_websocket_decode (struct MHD_WebSocketStream*ws,
     /* mask finished */
     case MHD_WebSocket_DecodeStep_Mask4Of4:
       ws->frame_header [ws->frame_header_size++] = streambuf [current++];
-      *((unsigned long *) ws->mask_key) = *((unsigned
-                                             long *) &ws->frame_header [ws->
-                                                                        frame_header_size
-                                                                        - 4]);
+      *((uint32_t *) ws->mask_key) = *((uint32_t *) &ws->frame_header [ws->
+                                                                       frame_header_size
+                                                                       - 4]);
       ws->decode_step = MHD_WebSocket_DecodeStep_HeaderCompleted;
       break;
 
@@ -889,7 +888,7 @@ MHD_websocket_decode (struct MHD_WebSocketStream*ws,
           MHD_websocket_copy_payload (decode_payload + ws->payload_index,
                                       &streambuf [current],
                                       bytes_to_take,
-                                      *((unsigned long *) ws->mask_key),
+                                      *((uint32_t *) ws->mask_key),
                                       (unsigned long) (ws->payload_index
                                                        & 0x03));
           current += bytes_to_take;
@@ -1434,7 +1433,7 @@ MHD_websocket_encode_data (struct MHD_WebSocketStream*ws,
   char is_masked      = MHD_websocket_encode_is_masked (ws);
   size_t overhead_len = MHD_websocket_encode_overhead_size (ws, payload_len);
   size_t total_len    = overhead_len + payload_len;
-  unsigned long mask  = 0 != is_masked ? MHD_websocket_generate_mask () : 0;
+  uint32_t mask       = 0 != is_masked ? MHD_websocket_generate_mask () : 0;
 
   /* allocate memory */
   char*result = ws->malloc (total_len + 1);
@@ -1577,7 +1576,7 @@ MHD_websocket_encode_ping_pong (struct MHD_WebSocketStream*ws,
   char is_masked      = MHD_websocket_encode_is_masked (ws);
   size_t overhead_len = MHD_websocket_encode_overhead_size (ws, payload_len);
   size_t total_len    = overhead_len + payload_len;
-  unsigned long mask  = is_masked != 0 ? MHD_websocket_generate_mask () : 0;
+  uint32_t mask       = is_masked != 0 ? MHD_websocket_generate_mask () : 0;
 
   /* allocate memory */
   char*result = ws->malloc (total_len + 1);
@@ -1669,7 +1668,7 @@ MHD_websocket_encode_close (struct MHD_WebSocketStream*ws,
                          2 + reason_utf8_len : 0);
   size_t overhead_len = MHD_websocket_encode_overhead_size (ws, payload_len);
   size_t total_len    = overhead_len + payload_len;
-  unsigned long mask  = is_masked != 0 ? MHD_websocket_generate_mask () : 0;
+  uint32_t mask       = is_masked != 0 ? MHD_websocket_generate_mask () : 0;
 
   /* allocate memory */
   char*result = ws->malloc (total_len + 1);
@@ -1754,7 +1753,7 @@ static void
 MHD_websocket_copy_payload (char*dst,
                             const char*src,
                             size_t len,
-                            unsigned long mask,
+                            uint32_t mask,
                             unsigned long mask_offset)
 {
   if (0 != len)
@@ -1768,7 +1767,7 @@ MHD_websocket_copy_payload (char*dst,
     {
       /* mask is used */
       char mask_[4];
-      *((unsigned long *) mask_) = mask;
+      *((uint32_t *) mask_) = mask;
       for (size_t i = 0; i < len; ++i)
       {
         dst[i] = src[i] ^ mask_[(i + mask_offset) & 3];
@@ -2008,7 +2007,7 @@ MHD_websocket_srand (unsigned long seed)
  * Generates a mask for masking by calling
  * a random number generator.
  */
-static unsigned long
+static uint32_t
 MHD_websocket_generate_mask ()
 {
   unsigned char mask_[4];
@@ -2017,7 +2016,7 @@ MHD_websocket_generate_mask ()
   mask_ [2] = (unsigned char) (rand () & 0xFF);
   mask_ [3] = (unsigned char) (rand () & 0xFF);
 
-  return *((unsigned long *) mask_);
+  return *((uint32_t *) mask_);
 }
 
 
