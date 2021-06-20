@@ -3614,7 +3614,7 @@ MHD_destroy_response (struct MHD_Response *response);
  *
  * When reply is generated with queued response, some headers are generated
  * automatically. Automatically generated headers are only sent to the client,
- * but not added back to the response.
+ * but not added back to the response object.
  *
  * The list of automatic headers:
  * + "Date" header is added automatically unless already set by
@@ -3632,6 +3632,8 @@ MHD_destroy_response (struct MHD_Response *response);
  *   The header "Connection" with value "Close" could be set by this function
  *   to enforce closure of the connection after sending this response.
  *   "Keep-Alive" cannot be enforced and will be removed automatically.
+ *
+ * Headers are used in order as they were added.
  *
  * @param response the response to add a header to
  * @param header the header name to add
