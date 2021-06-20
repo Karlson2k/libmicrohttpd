@@ -779,6 +779,21 @@ enum MHD_HTTP_Version
 };
 
 /**
+ * Returns boolean 'true' if HTTP version is supported by MHD
+ */
+#define MHD_IS_HTTP_VER_SUPPORTED(ver) (MHD_HTTP_VER_1_0 <= (ver) && \
+    MHD_HTTP_VER_1_2__1_9 >= (ver))
+
+/**
+ * Protocol should be used as HTTP/1.1 protocol.
+ *
+ * See the last paragraph of
+ * https://datatracker.ietf.org/doc/html/rfc7230#section-2.6
+ */
+#define MHD_IS_HTTP_VER_1_1_COMPAT(ver) (MHD_HTTP_VER_1_1 == (ver) || \
+    MHD_HTTP_VER_1_2__1_9 == (ver))
+
+/**
  * The HTTP method.
  *
  * Only primary methods (specified in RFC7231) defined here.
@@ -826,21 +841,6 @@ enum MHD_HTTP_Method
    */
   MHD_HTTP_MTHD_OTHER = 1000
 };
-
-/**
- * Returns boolean 'true' if HTTP version is supported by MHD
- */
-#define MHD_IS_HTTP_VER_SUPPORTED(ver) (MHD_HTTP_VER_1_0 <= (ver) && \
-    MHD_HTTP_VER_1_2__1_9 >= (ver))
-
-/**
- * Protocol should be used as HTTP/1.1 protocol.
- *
- * See the last paragraph of
- * https://datatracker.ietf.org/doc/html/rfc7230#section-2.6
- */
-#define MHD_IS_HTTP_VER_1_1_COMPAT(ver) (MHD_HTTP_VER_1_1 == (ver) || \
-    MHD_HTTP_VER_1_2__1_9 == (ver))
 
 /**
  * State kept for each HTTP request.
