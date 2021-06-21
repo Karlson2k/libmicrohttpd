@@ -286,7 +286,10 @@ _MHD_PUT_64BIT_BE_SAFE (void *dst, uint64_t value)
 #endif /* ! __clang__ */
 #define _MHD_ROTR32(value32, bits) \
   ((uint32_t) _rotr ((uint32_t) (value32),(bits)))
-#else  /* ! _MSC_FULL_VER */
+#elif __has_builtin (__builtin_rotateright32)
+#define _MHD_ROTR32(value32, bits) \
+  ((uint32_t) __builtin_rotateright32 ((value32), (bits)))
+#else  /* ! __builtin_rotateright32 */
 _MHD_static_inline uint32_t
 _MHD_ROTR32 (uint32_t value32, int bits)
 {
@@ -296,7 +299,7 @@ _MHD_ROTR32 (uint32_t value32, int bits)
 }
 
 
-#endif /* ! _MSC_FULL_VER */
+#endif /* ! __builtin_rotateright32 */
 
 
 /**
@@ -311,7 +314,10 @@ _MHD_ROTR32 (uint32_t value32, int bits)
 #endif /* ! __clang__ */
 #define _MHD_ROTL32(value32, bits) \
   ((uint32_t) _rotl ((uint32_t) (value32),(bits)))
-#else  /* ! _MSC_FULL_VER */
+#elif __has_builtin (__builtin_rotateleft32)
+#define _MHD_ROTL32(value32, bits) \
+  ((uint32_t) __builtin_rotateleft32 ((value32), (bits)))
+#else  /* ! __builtin_rotateleft32 */
 _MHD_static_inline uint32_t
 _MHD_ROTL32 (uint32_t value32, int bits)
 {
@@ -321,7 +327,7 @@ _MHD_ROTL32 (uint32_t value32, int bits)
 }
 
 
-#endif /* ! _MSC_FULL_VER */
+#endif /* ! __builtin_rotateleft32 */
 
 
 #endif /* ! MHD_BITHELPERS_H */
