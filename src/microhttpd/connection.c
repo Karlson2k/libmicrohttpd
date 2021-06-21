@@ -4318,8 +4318,8 @@ MHD_queue_response (struct MHD_Connection *connection,
 #endif
       return MHD_NO;
     }
-    if (0 != response->flags & (MHD_RF_HTTP_VERSION_1_0_ONLY
-                                | MHD_RF_HTTP_VERSION_1_0_RESPONSE))
+    if (0 != (response->flags & (MHD_RF_HTTP_VERSION_1_0_ONLY
+                                 | MHD_RF_HTTP_VERSION_1_0_RESPONSE)))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
