@@ -4930,7 +4930,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
 #endif
       return MHD_NO;
     }
-    for (i = 0; i<(unsigned int) num_events; i++)
+    for (i = 0; i < (unsigned int) num_events; i++)
     {
       /* First, check for the values of `ptr` that would indicate
          that this event is not about a normal connection. */
