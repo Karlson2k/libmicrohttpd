@@ -177,7 +177,7 @@ enum MHD_tristate
   _MHD_NO      = false, /**< State is "off" / "disabled" */
   _MHD_ON      = true,  /**< State is "on"  / "enabled" */
   _MHD_YES     = true   /**< State is "on"  / "enabled" */
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -223,7 +223,7 @@ enum MHD_EpollState
    * Is this connection in some error state?
    */
   MHD_EPOLL_STATE_ERROR = 128
-};
+} _MHD_FIXED_FLAGS_ENUM;
 
 
 /**
@@ -250,7 +250,7 @@ enum MHD_ConnectionEventLoopInfo
    * We are finished and are awaiting cleanup.
    */
   MHD_EVENT_LOOP_INFO_CLEANUP = 3
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -657,7 +657,7 @@ enum MHD_CONNECTION_STATE
   MHD_CONNECTION_UPGRADE
 #endif /* UPGRADE_SUPPORT */
 
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -675,7 +675,7 @@ enum MHD_TLS_CONN_STATE
   MHD_TLS_CONN_TLS_CLOSED,  /**< TLS session is terminated.             */
   MHD_TLS_CONN_TLS_FAILED,  /**< TLS session failed.                    */
   MHD_TLS_CONN_INVALID_STATE/**< Sentinel. Not a valid value.           */
-};
+} _MHD_FIXED_ENUM;
 
 /**
  * Should all state transitions be printed to stderr?
@@ -738,7 +738,7 @@ enum MHD_ConnKeepAlive
    * Connection can be used for serving next request
    */
   MHD_CONN_USE_KEEPALIVE = 1
-};
+} _MHD_FIXED_ENUM;
 
 enum MHD_HTTP_Version
 {
@@ -776,7 +776,7 @@ enum MHD_HTTP_Version
    * HTTP future version. Unsupported.
    */
   MHD_HTTP_VER_FUTURE = 100
-};
+} _MHD_FIXED_ENUM;
 
 /**
  * Returns boolean 'true' if HTTP version is supported by MHD
@@ -840,7 +840,7 @@ enum MHD_HTTP_Method
    * Other HTTP method. Check the string value.
    */
   MHD_HTTP_MTHD_OTHER = 1000
-};
+} _MHD_FIXED_ENUM;
 
 /**
  * State kept for each HTTP request.

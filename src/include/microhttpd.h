@@ -132,6 +132,25 @@ typedef intptr_t ssize_t;
  */
 #define MHD_VERSION 0x00097302
 
+
+#ifdef __has_attribute
+#if __has_attribute (flag_enum)
+#define _MHD_FLAGS_ENUM __attribute__((flag_enum))
+#endif /* flag_enum */
+#if __has_attribute (enum_extensibility)
+#define _MHD_FIXED_ENUM __attribute__((enum_extensibility(closed)))
+#endif /* enum_extensibility */
+#endif /* __has_attribute */
+
+#ifndef _MHD_FLAGS_ENUM
+#define _MHD_FLAGS_ENUM
+#endif /* _MHD_FLAGS_ENUM */
+#ifndef _MHD_FIXED_ENUM
+#define _MHD_FIXED_ENUM
+#endif /* _MHD_FIXED_ENUM */
+
+#define _MHD_FIXED_FLAGS_ENUM _MHD_FIXED_ENUM _MHD_FLAGS_ENUM
+
 /**
  * Operational results from MHD calls.
  */
@@ -147,7 +166,7 @@ enum MHD_Result
    */
   MHD_YES = 1
 
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -1748,7 +1767,7 @@ enum MHD_OPTION
    * @note Available since #MHD_VERSION 0x00097207
    */
   MHD_OPTION_TLS_NO_ALPN = 34
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -1762,7 +1781,7 @@ enum MHD_DisableSanityCheck
    */
   MHD_DSC_SANE = 0
 
-};
+} _MHD_FIXED_FLAGS_ENUM;
 
 
 /**
@@ -1839,7 +1858,7 @@ enum MHD_ValueKind
    * HTTP footer (only for HTTP 1.1 chunked encodings).
    */
   MHD_FOOTER_KIND = 16
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -1897,7 +1916,7 @@ enum MHD_RequestTerminationCode
    */
   MHD_REQUEST_TERMINATED_CLIENT_ABORT = 5
 
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -1920,7 +1939,7 @@ enum MHD_ConnectionNotificationCode
    */
   MHD_CONNECTION_NOTIFY_CLOSED = 1
 
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -2093,7 +2112,7 @@ enum MHD_ConnectionInfoType
    * @ingroup request
    */
   MHD_CONNECTION_INFO_REQUEST_HEADER_SIZE
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -2156,7 +2175,7 @@ enum MHD_DaemonInfoType
    * value will be real port number.
    */
   MHD_DAEMON_INFO_BIND_PORT
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -3096,7 +3115,7 @@ enum MHD_ResponseFlags
   MHD_RF_INSANITY_HEADER_CONTENT_LENGTH = 4
 
 
-};
+} _MHD_FIXED_FLAGS_ENUM;
 
 
 /**
@@ -3108,7 +3127,7 @@ enum MHD_ResponseOptions
    * End of the list of options.
    */
   MHD_RO_END = 0
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -3204,7 +3223,7 @@ enum MHD_ResponseMemoryMode
    */
   MHD_RESPMEM_MUST_COPY
 
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -3476,7 +3495,7 @@ enum MHD_UpgradeAction
    */
   MHD_UPGRADE_ACTION_CORK_OFF = 2
 
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -3830,7 +3849,7 @@ enum MHD_DigestAuthAlgorithm
    */
   MHD_DIGEST_ALG_SHA256
 
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -4054,7 +4073,7 @@ enum MHD_CONNECTION_OPTION
    */
   MHD_CONNECTION_OPTION_TIMEOUT
 
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -4317,7 +4336,7 @@ enum MHD_FEATURE
    * supported.
    */
   MHD_FEATURE_HTTPS_CERT_CALLBACK2 = 23
-};
+} _MHD_FIXED_ENUM;
 
 
 /**
@@ -4335,10 +4354,10 @@ _MHD_EXTERN enum MHD_Result
 MHD_is_feature_supported (enum MHD_FEATURE feature);
 
 
+#ifdef __cplusplus
 #if 0                           /* keep Emacsens' auto-indent happy */
 {
 #endif
-#ifdef __cplusplus
 }
 #endif
 

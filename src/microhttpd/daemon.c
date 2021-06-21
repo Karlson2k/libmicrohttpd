@@ -6455,7 +6455,7 @@ MHD_start_daemon_va (unsigned int flags,
     *pflags |= MHD_USE_INTERNAL_POLLING_THREAD;
   }
   if (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
-    *pflags &= ~MHD_USE_ITC; /* useless if we are using 'external' select */
+    *pflags = (*pflags & ~MHD_USE_ITC); /* useless if we are using 'external' select */
   else
   {
 #ifdef HAVE_LISTEN_SHUTDOWN
