@@ -143,6 +143,7 @@ isasciialnum (char c)
 #endif /* Disable unused functions. */
 
 
+#if 0 /* Disable unused functions. */
 /**
  * Convert US-ASCII character to lower case.
  * If character is upper case letter in US-ASCII than it's converted to lower
@@ -159,7 +160,6 @@ toasciilower (char c)
 }
 
 
-#if 0 /* Disable unused functions. */
 /**
  * Convert US-ASCII character to upper case.
  * If character is lower case letter in US-ASCII than it's converted to upper
@@ -216,6 +216,23 @@ toxdigitvalue (char c)
     return (unsigned char) (c - 'a' + 10);
 
   return -1;
+}
+
+
+/**
+ * Caseless compare two characters.
+ *
+ * @param c1 the first char to compare
+ * @param c1 the second char to compare
+ * @return boolean 'true' if chars are caseless equal, false otherwise
+ */
+_MHD_static_inline bool
+charsequalcaseless (const char c1, const char c2)
+{
+  return ( (c1 == c2) ||
+           (isasciiupper (c1) ?
+            ((c1 - 'A' + 'a') == c2) :
+            (isasciiupper (c2) && (c1 == (c2 - 'A' + 'a')))) );
 }
 
 
@@ -331,6 +348,20 @@ toxdigitvalue (char c)
                             ( (((char) (c)) >= 'a' && ((char) (c)) <= 'f') ? \
                               (int) (((unsigned char) (c)) - 'a' + 10) : \
                               (int) (-1) )))
+
+/**
+ * Caseless compare two characters.
+ *
+ * @param c1 the first char to compare
+ * @param c1 the second char to compare
+ * @return boolean 'true' if chars are caseless equal, false otherwise
+ */
+#define charsequalcaseless(c1, c2) \
+  ( ((c1) == (c2)) || \
+           (isasciiupper (c1) ? \
+             (((c1) - 'A' + 'a') == (c2)) : \
+             (isasciiupper (c2) && ((c1) == ((c2) - 'A' + 'a')))) )
+
 #endif /* !INLINE_FUNC */
 
 
@@ -392,10 +423,7 @@ MHD_str_equal_caseless_n_ (const char *const str1,
     const char c2 = str2[i];
     if (0 == c2)
       return 0 == c1;
-    if ( (c1 == c2) ||
-         (isasciiupper (c1) ?
-          ((c1 - 'A' + 'a') == c2) :
-          (isasciiupper (c2) && (c1 == (c2 - 'A' + 'a')))) )
+    if (charsequalcaseless (c1, c2))
       continue;
     else
       return 0;
@@ -424,10 +452,7 @@ MHD_str_equal_caseless_bin_n_ (const char *const str1,
   {
     const char c1 = str1[i];
     const char c2 = str2[i];
-    if ( (c1 == c2) ||
-         (isasciiupper (c1) ?
-          ((c1 - 'A' + 'a') == c2) :
-          (isasciiupper (c2) && (c1 == (c2 - 'A' + 'a')))) )
+    if (charsequalcaseless (c1, c2))
       continue;
     else
       return 0;
@@ -473,8 +498,7 @@ MHD_str_has_token_caseless_ (const char *str,
 
       if (0 == sc)
         return false;
-      if ( (sc != tc) &&
-           (toasciilower (sc) != toasciilower (tc)) )
+      if (! charsequalcaseless (sc, tc))
         break;
       if (i >= token_len)
       {
