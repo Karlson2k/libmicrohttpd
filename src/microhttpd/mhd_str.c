@@ -232,7 +232,7 @@ charsequalcaseless (const char c1, const char c2)
   return ( (c1 == c2) ||
            (isasciiupper (c1) ?
             ((c1 - 'A' + 'a') == c2) :
-            (isasciiupper (c2) && (c1 == (c2 - 'A' + 'a')))) );
+            ((c1 == (c2 - 'A' + 'a')) && isasciiupper (c2))) );
 }
 
 
@@ -360,7 +360,7 @@ charsequalcaseless (const char c1, const char c2)
   ( ((c1) == (c2)) || \
            (isasciiupper (c1) ? \
              (((c1) - 'A' + 'a') == (c2)) : \
-             (isasciiupper (c2) && ((c1) == ((c2) - 'A' + 'a')))) )
+             (((c1) == ((c2) - 'A' + 'a')) && isasciiupper (c2))) )
 
 #endif /* !INLINE_FUNC */
 
