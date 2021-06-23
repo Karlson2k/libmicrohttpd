@@ -54,6 +54,7 @@ test_http_reasons
 /test_start_stop
 /test_str_token
 /test_str_token_remove
+/test_str_tokens_remove
 test_shutdown_poll
 test_shutdown_select
 test_md5

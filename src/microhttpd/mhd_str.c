@@ -688,6 +688,172 @@ MHD_str_remove_token_caseless_ (const char *str,
 }
 
 
+/**
+ * Perform in-place case-insensitive removal of @a tokens from the @a str.
+ *
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * The token match succeed if substring between start, end (of string) or
+ * comma contains only case-insensitive token and optional spaces and tabs.
+ * The quoted strings and comments are not supported by this function.
+ *
+ * The input string must be normalised: empty tokens and repeated whitespaces
+ * are removed, no whitespaces before commas, exactly one space is used after
+ * each comma. The string is updated in-place.
+ *
+ * Behavior is undefined is input string in not normalised.
+ *
+ * @param[in,out] str the string to update
+ * @param[in,out] str_len the length of the @a str, not including optional
+ *                        terminating null-character, not null-terminated
+ * @param tokens the token to find
+ * @param tokens_len the length of @a tokens, not including optional
+ *                   terminating null-character.
+ * @return 'true' if any token has been removed,
+ *         'false' otherwise.
+ */
+bool
+MHD_str_remove_tokens_caseless_ (char *str,
+                                 size_t *str_len,
+                                 const char *const tokens,
+                                 const size_t tokens_len)
+{
+  const char *t;   /**< position in the @a tokens string */
+  bool token_removed;
+
+  mhd_assert (NULL == memchr (tokens, 0, tokens_len));
+
+  token_removed = false;
+  t = tokens;
+
+  while ((size_t) (t - tokens) < tokens_len && *str_len != 0)
+  {
+    const char *tkn; /**< the current token */
+    size_t tkn_len;
+
+    /* Skip any initial whitespaces and empty tokens in 'tokens' */
+    while ( ((size_t) (t - tokens) < tokens_len) &&
+            ((' ' == *t) || ('\t' == *t) || (',' == *t)) )
+      t++;
+
+    if ((size_t) (t - tokens) >= tokens_len)
+      break; /* No more tokens, nothing to remove */
+
+    /* Found non-whitespace char which is not a comma */
+    tkn = t;
+    do
+    {
+      do
+      {
+        t++;
+      } while ((size_t) (t - tokens) < tokens_len && (' ' != *t && '\t' != *t &&
+                                                      ',' != *t));
+      /* Found end of token string, space, tab, or comma */
+      tkn_len = t - tkn;
+
+      /* Skip all spaces and tabs */
+      while ((size_t) (t - tokens) < tokens_len && (' ' == *t || '\t' == *t))
+        t++;
+      /* Found end of token string or non-whitespace char */
+    } while((size_t) (t - tokens) < tokens_len && ',' != *t);
+
+    /* 'tkn' is the input token with 'tkn_len' chars */
+    mhd_assert (0 != tkn_len);
+
+    if (*str_len == tkn_len)
+    {
+      if (MHD_str_equal_caseless_bin_n_ (str, tkn, tkn_len))
+      {
+        *str_len = 0;
+        token_removed = true;
+      }
+      continue;
+    }
+    if (*str_len > tkn_len + 2)
+    { /* Remove 'tkn' from the input string */
+      const char *s1;  /**< the "input" string / character */
+      char *s2;        /**< the "output" string / character */
+
+      s1 = str;
+      s2 = str;
+
+      do
+      {
+        mhd_assert (s1 >= s2);
+        mhd_assert ((str + *str_len) >= (s1 + tkn_len));
+        if ( ( ((str + *str_len) == (s1 + tkn_len)) || (',' == s1[tkn_len]) ) &&
+             MHD_str_equal_caseless_bin_n_ (s1, tkn, tkn_len) )
+        {
+          /* current token in the input string matches the 'tkn', skip it */
+          mhd_assert ((str + *str_len == s1 + tkn_len) || \
+                      (',' == s1[tkn_len]));
+          mhd_assert ((str + *str_len == s1 + tkn_len) || \
+                      (' ' == s1[tkn_len + 1]));
+          token_removed = true;
+          /* Advance to the next token in the input string or beyond
+           * the end of the input string. */
+          s1 += tkn_len + 2;
+        }
+        else
+        {
+          /* current token in the input string does not match the 'tkn',
+           * copy to the output */
+          if (str != s2)
+          { /* not the first output token, add ", " to separate */
+            if (s1 != s2 + 2)
+            {
+              *(s2++) = ',';
+              *(s2++) = ' ';
+            }
+            else
+              s2 += 2;
+          }
+          do
+          {
+            if (s1 != s2)
+              *s2 = *s1;
+            s1++;
+            s2++;
+          } while (s1 < str + *str_len && ',' != *s1);
+          /* Advance to the next token in the input string or beyond
+           * the end of the input string. */
+          s1 += 2;
+        }
+        /* s1 should point to the next token in the input string or beyond
+         * the end of the input string */
+        if ((str + *str_len) < (s1 + tkn_len))
+        { /* The rest of the 's1' is too small to match 'tkn' */
+          if ((str + *str_len) > s1)
+          { /* Copy the rest of the string */
+            size_t copy_size;
+            copy_size = *str_len - (size_t) (s1 - str);
+            if (str != s2)
+            { /* not the first output token, add ", " to separate */
+              if (s1 != s2 + 2)
+              {
+                *(s2++) = ',';
+                *(s2++) = ' ';
+              }
+              else
+                s2 += 2;
+            }
+            if (s1 != s2)
+              memmove (s2, s1, copy_size);
+            s2 += copy_size;
+          }
+          *str_len = s2 - str;
+          break;
+        }
+        mhd_assert ((' ' != s1[0]) && ('\t' != s1[0]));
+        mhd_assert ((s1 == str) || (' ' == *(s1 - 1)));
+        mhd_assert ((s1 == str) || (',' == *(s1 - 2)));
+      } while (1);
+    }
+  }
+
+  return token_removed;
+}
+
+
 #ifndef MHD_FAVOR_SMALL_CODE
 /* Use individual function for each case */
 
