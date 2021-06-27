@@ -301,7 +301,6 @@ MHD_del_response_header (struct MHD_Response *response,
                          const char *content)
 {
   struct MHD_HTTP_Header *pos;
-  struct MHD_HTTP_Header *prev;
   size_t header_len;
   size_t content_len;
 
@@ -310,7 +309,6 @@ MHD_del_response_header (struct MHD_Response *response,
     return MHD_NO;
   header_len = strlen (header);
   content_len = strlen (content);
-  prev = NULL;
   pos = response->first_header;
   while (NULL != pos)
   {
@@ -329,7 +327,6 @@ MHD_del_response_header (struct MHD_Response *response,
       free (pos);
       return MHD_YES;
     }
-    prev = pos;
     pos = pos->next;
   }
   return MHD_NO;
