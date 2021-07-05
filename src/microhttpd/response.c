@@ -194,6 +194,227 @@ add_response_entry (struct MHD_Response *response,
 
 
 /**
+ * Add "Connection:" header to the response with special processing.
+ *
+ * "Connection:" header value will be combined with any existing "Connection:"
+ * header, "close" token (if any) will be de-duplicated and moved to the first
+ * position.
+ *
+ * @param response the response to add a header to
+ * @param value the value to add
+ * @return #MHD_NO on error (no memory).
+ */
+static enum MHD_Result
+add_response_header_connection (struct MHD_Response *response,
+                                const char *value)
+{
+  static const char *key = "Connection";
+  /** the length of the "Connection" key */
+  static const size_t key_len = MHD_STATICSTR_LEN_ ("Connection");
+  size_t value_len;  /**< the length of the @a value */
+  size_t old_value_len; /**< the length of the existing "Connection" value */
+  size_t buf_size;   /**< the size of the buffer */
+  ssize_t norm_len;  /**< the length of the normalised value */
+  char *buf;         /**< the temporal buffer */
+  struct MHD_HTTP_Header *hdr; /**< existing "Connection" header */
+  bool value_has_close; /**< the @a value has "close" token */
+  bool already_has_close; /**< existing "Connection" header has "close" token */
+  size_t pos = 0;   /**< position of addition in the @a buf */
+
+  if ( (NULL != strchr (value, '\r')) ||
+       (NULL != strchr (value, '\n')) )
+    return MHD_NO;
+
+  if (0 != (response->flags_auto & MHD_RAF_HAS_CONNECTION_HDR))
+  {
+    hdr = MHD_get_response_element_n_ (response, MHD_HEADER_KIND,
+                                       key, key_len);
+    already_has_close =
+      (0 != (response->flags_auto & MHD_RAF_HAS_CONNECTION_CLOSE));
+    mhd_assert (already_has_close == (0 == memcmp (hdr->value, "close", 5)));
+    mhd_assert (NULL != hdr);
+  }
+  else
+  {
+    hdr = NULL;
+    already_has_close = false;
+    mhd_assert (NULL == MHD_get_response_element_n_ (response,
+                                                     MHD_HEADER_KIND,
+                                                     key, key_len));
+    mhd_assert (0 == (response->flags_auto & MHD_RAF_HAS_CONNECTION_CLOSE));
+  }
+  if (NULL != hdr)
+    old_value_len = hdr->value_size + 2; /* additional size for ", " */
+  else
+    old_value_len = 0;
+
+  value_len = strlen (value);
+  /* Additional space for normalisation and zero-termination*/
+  norm_len = (ssize_t) (value_len + value_len / 2 + 1);
+  buf_size = old_value_len + (size_t) norm_len;
+
+  buf = malloc (buf_size);
+  if (NULL == buf)
+    return MHD_NO;
+  /* Move "close" token (if any) to the front */
+  value_has_close = MHD_str_remove_token_caseless_ (value, value_len, "close",
+                                                    MHD_STATICSTR_LEN_ ( \
+                                                      "close"),
+                                                    buf + old_value_len,
+                                                    &norm_len);
+  mhd_assert (0 <= norm_len);
+  if (0 > norm_len)
+    norm_len = 0; /* Must never happen */
+  if (0 == norm_len)
+  { /* New value is empty after normalisation */
+    if (! value_has_close)
+    { /* The new value had no tokens */
+      free (buf);
+      return MHD_NO;
+    }
+    if (already_has_close)
+    { /* The "close" token is already present, nothing to modify */
+      free (buf);
+      return MHD_YES;
+    }
+  }
+  /* Add "close" token if required */
+  if (value_has_close && ! already_has_close)
+  {
+    /* Need to insert "close" token at the first position */
+    mhd_assert (buf_size >= old_value_len + (size_t) norm_len   \
+                + MHD_STATICSTR_LEN_ ("close, ") + 1);
+    if (0 != norm_len)
+      memmove (buf + MHD_STATICSTR_LEN_ ("close, ") + old_value_len,
+               buf + old_value_len, norm_len + 1);
+    memcpy (buf, "close", MHD_STATICSTR_LEN_ ("close"));
+    pos += MHD_STATICSTR_LEN_ ("close");
+  }
+  /* Add old value tokens (if any) */
+  if (0 != old_value_len)
+  {
+    if (0 != pos)
+    {
+      buf[pos++] = ',';
+      buf[pos++] = ' ';
+    }
+    memcpy (buf + pos, hdr->value,
+            hdr->value_size);
+    pos += hdr->value_size;
+  }
+  /* Add new value token (if any) */
+  if (0 != norm_len)
+  {
+    if (0 != pos)
+    {
+      buf[pos++] = ',';
+      buf[pos++] = ' ';
+    }
+    /* The new value tokens must be already at the correct position */
+    mhd_assert ((value_has_close && ! already_has_close) ? \
+                (MHD_STATICSTR_LEN_ ("close, ") + old_value_len == pos) : \
+                (old_value_len == pos));
+    pos += (size_t) norm_len;
+  }
+  mhd_assert (buf_size > pos);
+  buf[pos] = 0; /* Null terminate the result */
+
+  if (NULL == hdr)
+  {
+    struct MHD_HTTP_Header *new_hdr; /**< new "Connection" header */
+    /* Create new response header entry */
+    new_hdr = MHD_calloc_ (1, sizeof (struct MHD_HTTP_Header));
+    if (NULL != new_hdr)
+    {
+      new_hdr->header = malloc (key_len + 1);
+      if (NULL != new_hdr->header)
+      {
+        memcpy (new_hdr->header, key, key_len + 1);
+        new_hdr->header_size = key_len;
+        new_hdr->value = buf;
+        new_hdr->value_size = pos;
+        new_hdr->kind = MHD_HEADER_KIND;
+        if (value_has_close)
+          response->flags_auto = (MHD_RAF_HAS_CONNECTION_HDR
+                                  | MHD_RAF_HAS_CONNECTION_CLOSE);
+        else
+          response->flags_auto = MHD_RAF_HAS_CONNECTION_HDR;
+        _MHD_insert_header_first (response, new_hdr);
+        return MHD_YES;
+      }
+      free (new_hdr);
+    }
+    free (buf);
+    return MHD_NO;
+  }
+
+  /* Update existing header entry */
+  free (hdr->value);
+  hdr->value = buf;
+  hdr->value_size = pos;
+  if (value_has_close && ! already_has_close)
+    response->flags_auto |= MHD_RAF_HAS_CONNECTION_CLOSE;
+  return MHD_YES;
+}
+
+
+/**
+ * Remove tokens from "Connection:" header of the response.
+ *
+ * Provided tokens will be removed from "Connection:" header value.
+ *
+ * @param response the response to manipulate "Connection:" header
+ * @param value the tokens to remove
+ * @return #MHD_NO on error (no headers or tokens found).
+ */
+static enum MHD_Result
+del_response_header_connection (struct MHD_Response *response,
+                                const char *value)
+{
+  struct MHD_HTTP_Header *hdr; /**< existing "Connection" header */
+
+  hdr = MHD_get_response_element_n_ (response, MHD_HEADER_KIND, "Connection",
+                                     MHD_STATICSTR_LEN_ ("Connection"));
+  if (NULL == hdr)
+    return MHD_NO;
+
+  if (! MHD_str_remove_tokens_caseless_ (hdr->value, &hdr->value_size, value,
+                                         strlen (value)))
+    return MHD_NO;
+  if (0 == hdr->value_size)
+  {
+    _MHD_remove_header (response, hdr);
+    free (hdr->value);
+    free (hdr->header);
+    free (hdr);
+    response->flags_auto &= ~(MHD_RAF_HAS_CONNECTION_HDR
+                              | MHD_RAF_HAS_CONNECTION_CLOSE);
+  }
+  else
+  {
+    hdr->value[hdr->value_size] = 0; /* Null-terminate the result */
+    if (0 != (response->flags_auto & ~(MHD_RAF_HAS_CONNECTION_CLOSE)))
+    {
+      if (MHD_STATICSTR_LEN_ ("close") == hdr->value_size)
+      {
+        if (0 != memcmp (hdr->value, "close", MHD_STATICSTR_LEN_ ("close")))
+          response->flags_auto &= ~(MHD_RAF_HAS_CONNECTION_CLOSE);
+      }
+      else if (MHD_STATICSTR_LEN_ ("close, ") < hdr->value_size)
+      {
+        if (0 != memcmp (hdr->value, "close, ",
+                         MHD_STATICSTR_LEN_ ("close, ")))
+          response->flags_auto &= ~(MHD_RAF_HAS_CONNECTION_CLOSE);
+      }
+      else
+        response->flags_auto &= ~(MHD_RAF_HAS_CONNECTION_CLOSE);
+    }
+  }
+  return MHD_YES;
+}
+
+
+/**
  * Add a header line to the response.
  *
  * When reply is generated with queued response, some headers are generated
@@ -232,6 +453,9 @@ MHD_add_response_header (struct MHD_Response *response,
                          const char *header,
                          const char *content)
 {
+  if (MHD_str_equal_caseless_ (header, MHD_HTTP_HEADER_CONNECTION))
+    return add_response_header_connection (response, content);
+
   if (MHD_str_equal_caseless_ (header,
                                MHD_HTTP_HEADER_TRANSFER_ENCODING))
   {
@@ -308,6 +532,12 @@ MHD_del_response_header (struct MHD_Response *response,
        (NULL == content) )
     return MHD_NO;
   header_len = strlen (header);
+
+  if ((0 != (response->flags_auto & MHD_RAF_HAS_CONNECTION_HDR)) &&
+      (MHD_STATICSTR_LEN_ ("Connection") == header_len) &&
+      MHD_str_equal_caseless_bin_n_ (header, "Connection", header_len))
+    return del_response_header_connection (response, content);
+
   content_len = strlen (content);
   pos = response->first_header;
   while (NULL != pos)

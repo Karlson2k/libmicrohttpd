@@ -351,6 +351,18 @@ struct MHD_HTTP_Header
 };
 
 
+/**
+ * Automatically assigned flags
+ */
+enum MHD_ResponseAutoFlags
+{
+  MHD_RAF_NO_FLAGS = 0,                  /**< No auto flags */
+  MHD_RAF_HAS_CONNECTION_HDR = 1 << 0,   /**< Has "Connection" header */
+  MHD_RAF_HAS_CONNECTION_CLOSE = 1 << 1, /**< Has "Connection: close" */
+  MHD_RAF_HAS_TRANS_ENC_CHUNKED = 2 << 2 /**< Has "Transfer-Encoding: chunked */
+} _MHD_FIXED_FLAGS_ENUM;
+
+
 #if defined(MHD_WINSOCK_SOCKETS)
 /**
  * Internally used I/O vector type for use with winsock.
@@ -509,6 +521,11 @@ struct MHD_Response
    * Flags set for the MHD response.
    */
   enum MHD_ResponseFlags flags;
+
+  /**
+   * Automatic flags set for the MHD response.
+   */
+  enum MHD_ResponseAutoFlags flags_auto;
 
   /**
    * If the @e fd is a pipe (no sendfile()).

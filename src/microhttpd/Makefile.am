@@ -166,6 +166,7 @@ check_PROGRAMS = \
   test_sha256 \
   test_start_stop \
   test_daemon \
+  test_response_entries \
   test_postprocessor_md \
   test_options
 
@@ -217,12 +218,17 @@ endif
 test_start_stop_SOURCES = \
   test_start_stop.c
 test_start_stop_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  libmicrohttpd.la
 
 test_daemon_SOURCES = \
   test_daemon.c
 test_daemon_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
+
+test_response_entries_SOURCES = \
+  test_response_entries.c
+test_response_entries_LDADD = \
+  libmicrohttpd.la
 
 test_upgrade_SOURCES = \
   test_upgrade.c test_helpers.h mhd_sockets.h
