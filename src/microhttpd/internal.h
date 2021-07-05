@@ -328,7 +328,7 @@ struct MHD_HTTP_Header
   char *header;
 
   /**
-   * Number of bytes in @a header.
+   * The length of the @a header, not including the final zero termination.
    */
   size_t header_size;
 
@@ -338,7 +338,7 @@ struct MHD_HTTP_Header
   char *value;
 
   /**
-   * Number of bytes in @a value.
+   * The length of the @a value, not including the final zero termination.
    */
   size_t value_size;
 
