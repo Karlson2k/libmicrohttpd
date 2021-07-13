@@ -27,7 +27,7 @@
 #define MHD_STR_H 1
 
 #include "mhd_options.h"
-
+#include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
 #ifdef HAVE_STDBOOL_H
