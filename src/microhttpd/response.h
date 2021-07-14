@@ -64,7 +64,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
  * @param kind the kind of element: header or footer
  * @param key the key which header to get
  * @param key_len the length of the @a key
- * @return NULL if header elemnt does not exist
+ * @return NULL if header element does not exist
  * @ingroup response
  */
 struct MHD_HTTP_Header *

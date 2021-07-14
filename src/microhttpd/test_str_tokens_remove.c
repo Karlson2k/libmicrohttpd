@@ -102,10 +102,10 @@ check_result (void)
   errcount += expect_result ("tOkEn", " \t toKEN  ", "", true);
   errcount += expect_result ("not-token, tOkEn", "token", "not-token",
                              true);
-  errcount += expect_result ("not-token, tOkEn, toke", "token",
-                             "not-token, toke",
+  errcount += expect_result ("not-token, tOkEn, took", "token",
+                             "not-token, took",
                              true);
-  errcount += expect_result ("toke, tOkEn", "token", "toke",
+  errcount += expect_result ("toll, tOkEn", "token", "toll",
                              true);
   errcount += expect_result ("not-token, tOkEn", " \t toKEN", "not-token",
                              true);
