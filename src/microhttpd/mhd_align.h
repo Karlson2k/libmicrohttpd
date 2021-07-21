@@ -42,6 +42,16 @@
 
 #endif /* HAVE_C_ALIGNOF */
 
+#ifndef _MHD_ALIGNOF
+#if defined(_MSC_VER) && ! defined(__clang__) && _MSC_VER >= 1900
+/* MSVC has the same problem as older GCC versions:
+   '__alignof()' may return "preferred" alignment instead of "required",
+   but it is related to floating point variables only. */
+#define _MHD_ALIGNOF(type) __alignof(type)
+#endif /* _MSC_VER >= 1900 */
+#endif /* !_MHD_ALIGNOF */
+
+
 #ifdef offsetof
 #define _MHD_OFFSETOF(strct, membr) offsetof(strct, membr)
 #else  /* ! offsetof */
