@@ -65,7 +65,7 @@
 
 #ifndef _WIN32_WINNT
 /* MHD supports Windows XP and later W32 systems*/
-#define _WIN32_WINNT 0x0501
+#define _WIN32_WINNT 0x0600
 #endif /* _WIN32_WINNT */
 
 /* winsock poll is available only on Vista and later */
