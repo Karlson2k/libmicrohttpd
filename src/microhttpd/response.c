@@ -468,9 +468,23 @@ MHD_add_response_header (struct MHD_Response *response,
        "chunked" is not allowed.  Note that MHD will set the
        correct transfer encoding if required automatically. */
     /* NOTE: for compressed bodies, use the "Content-encoding" header */
-    if ( (! MHD_str_equal_caseless_ (content, "identity")) &&
-         (! MHD_str_equal_caseless_ (content, "chunked")) )
-      return MHD_NO;
+    if (MHD_str_equal_caseless_ (content, "identity"))
+      return add_response_entry (response,
+                                 MHD_HEADER_KIND,
+                                 header,
+                                 content);
+    else if (MHD_str_equal_caseless_ (content, "chunked"))
+    {
+      if (MHD_NO != add_response_entry (response,
+                                        MHD_HEADER_KIND,
+                                        header,
+                                        content))
+      {
+        response->flags_auto |= MHD_RAF_HAS_TRANS_ENC_CHUNKED;
+        return MHD_YES;
+      }
+    }
+    return MHD_NO;
   }
   if ( (0 == (MHD_RF_INSANITY_HEADER_CONTENT_LENGTH
               & response->flags)) &&
@@ -555,6 +569,12 @@ MHD_del_response_header (struct MHD_Response *response,
       free (pos->header);
       free (pos->value);
       free (pos);
+      if ( (MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_TRANSFER_ENCODING) ==
+            header_len) &&
+           MHD_str_equal_caseless_bin_n_ (header,
+                                          MHD_HTTP_HEADER_TRANSFER_ENCODING,
+                                          header_len) )
+        response->flags_auto &= ~(MHD_RAF_HAS_TRANS_ENC_CHUNKED);
       return MHD_YES;
     }
     pos = pos->next;
