@@ -208,9 +208,10 @@ static enum MHD_Result
 add_response_header_connection (struct MHD_Response *response,
                                 const char *value)
 {
-  static const char *key = "Connection";
+  static const char *key = MHD_HTTP_HEADER_CONNECTION;
   /** the length of the "Connection" key */
-  static const size_t key_len = MHD_STATICSTR_LEN_ ("Connection");
+  static const size_t key_len =
+    MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONNECTION);
   size_t value_len;  /**< the length of the @a value */
   size_t old_value_len; /**< the length of the existing "Connection" value */
   size_t buf_size;   /**< the size of the buffer */
@@ -373,8 +374,10 @@ del_response_header_connection (struct MHD_Response *response,
 {
   struct MHD_HTTP_Header *hdr; /**< existing "Connection" header */
 
-  hdr = MHD_get_response_element_n_ (response, MHD_HEADER_KIND, "Connection",
-                                     MHD_STATICSTR_LEN_ ("Connection"));
+  hdr = MHD_get_response_element_n_ (response, MHD_HEADER_KIND,
+                                     MHD_HTTP_HEADER_CONNECTION,
+                                     MHD_STATICSTR_LEN_ ( \
+                                       MHD_HTTP_HEADER_CONNECTION));
   if (NULL == hdr)
     return MHD_NO;
 
@@ -548,8 +551,9 @@ MHD_del_response_header (struct MHD_Response *response,
   header_len = strlen (header);
 
   if ((0 != (response->flags_auto & MHD_RAF_HAS_CONNECTION_HDR)) &&
-      (MHD_STATICSTR_LEN_ ("Connection") == header_len) &&
-      MHD_str_equal_caseless_bin_n_ (header, "Connection", header_len))
+      (MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONNECTION) == header_len) &&
+      MHD_str_equal_caseless_bin_n_ (header, MHD_HTTP_HEADER_CONNECTION,
+                                     header_len))
     return del_response_header_connection (response, content);
 
   content_len = strlen (content);
