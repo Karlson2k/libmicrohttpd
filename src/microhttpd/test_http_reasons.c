@@ -31,6 +31,7 @@
 
 static const char *const r_unknown = "unknown";
 
+/* Return zero when no error is detected */
 static int
 expect_result (int code, const char *expected)
 {
@@ -42,7 +43,7 @@ expect_result (int code, const char *expected)
     fprintf (stderr,
              "Incorrect reason returned for code %d:\n  Returned: \"%s\"  \tExpected: \"%s\"\n",
              code, reason, expected);
-    return 0;
+    return 1;
   }
   if (r_unknown == expected)
     exp_len = 0;
@@ -53,9 +54,9 @@ expect_result (int code, const char *expected)
     fprintf (stderr,
              "Incorrect reason length returned for code %d:\n  Returned: \"%u\"  \tExpected: \"%u\"\n",
              code, (unsigned) len, (unsigned) exp_len);
-    return 0;
+    return 1;
   }
-  return 1;
+  return 0;
 }
 
 
