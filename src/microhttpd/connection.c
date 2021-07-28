@@ -1825,7 +1825,9 @@ build_connection_chunked_response_footer (struct MHD_Connection *connection)
   /* '2' is the minimal size of chunked footer ("\r\n") */
   if (buf_size < 2)
     return MHD_NO;
+  mhd_assert (NULL != c->write_buffer);
   buf = c->write_buffer + c->write_buffer_append_offset;
+  mhd_assert (NULL != buf);
   used_size = 0;
 
   for (pos = c->response->first_header; NULL != pos; pos = pos->next)
