@@ -57,6 +57,17 @@
  */
 int conn_close;
 
+/**
+ * Use static string response instead of callback-generated?
+ */
+int resp_string;
+
+/**
+ * Use empty (zero-sized) response?
+ */
+int resp_empty;
+
+
 struct headers_check_result
 {
   int found_chunked;
@@ -117,11 +128,12 @@ crc (void *cls,
 {
   struct MHD_Response **responseptr = cls;
 
-  if (pos == 128 * 10)
+  if (resp_empty || (pos == 128 * 10))
   {
-    MHD_add_response_footer (*responseptr,
-                             RESP_FOOTER_NAME,
-                             RESP_FOOTER_VALUE);
+    if (MHD_YES != MHD_add_response_footer (*responseptr,
+                                            RESP_FOOTER_NAME,
+                                            RESP_FOOTER_VALUE))
+      abort ();
     return MHD_CONTENT_READER_END_OF_STREAM;
   }
   if (max < 128)
@@ -171,18 +183,49 @@ ahc_echo (void *cls,
   responseptr = malloc (sizeof (struct MHD_Response *));
   if (NULL == responseptr)
     _exit (99);
-  response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
-                                                1024,
-                                                &crc,
-                                                responseptr,
-                                                &crcf);
+  if (! resp_string)
+  {
+    response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
+                                                  1024,
+                                                  &crc,
+                                                  responseptr,
+                                                  &crcf);
+  }
+  else
+  {
+    if (! resp_empty)
+    {
+      size_t pos;
+      static const size_t resp_size = 10 * 128;
+      char *buf = malloc (resp_size);
+      if (NULL == buf)
+        _exit (99);
+      for (pos = 0; pos < resp_size; pos += 128)
+        memset (buf + pos, 'A' + (pos / 128), 128);
+
+      response = MHD_create_response_from_buffer (resp_size, buf,
+                                                  MHD_RESPMEM_MUST_COPY);
+      free (buf);
+    }
+    else
+      response = MHD_create_response_from_buffer (0, NULL,
+                                                  MHD_RESPMEM_PERSISTENT);
+  }
   if (NULL == response)
     abort ();
-  if (conn_close)
-  { /* Enforce chunked response even for non-Keep-Alive */
+  if (conn_close || resp_string)
+  { /* Enforce chunked response even for non-Keep-Alive and static responses */
     if (MHD_NO == MHD_add_response_header (response,
                                            MHD_HTTP_HEADER_TRANSFER_ENCODING,
                                            "chunked"))
+      abort ();
+  }
+  if (resp_string)
+  {
+    /* There is no chance to add footer later */
+    if (MHD_YES != MHD_add_response_footer (response,
+                                            RESP_FOOTER_NAME,
+                                            RESP_FOOTER_VALUE))
       abort ();
   }
 
@@ -200,6 +243,18 @@ validate (struct CBC cbc, int ebase)
 {
   int i;
   char buf[128];
+
+  if (resp_empty)
+  {
+    if (0 != cbc.pos)
+    {
+      fprintf (stderr,
+               "Got %u bytes instead of zero!\n",
+               (unsigned int) cbc.pos);
+      return 1;
+    }
+    return 0;
+  }
 
   if (cbc.pos != 128 * 10)
   {
@@ -666,6 +721,8 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   conn_close = has_in_name (argv[0], "_close");
+  resp_string = has_in_name (argv[0], "_string");
+  resp_empty = has_in_name (argv[0], "_empty");
   if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_THREADS))
   {
     errorCount += testInternalGet ();

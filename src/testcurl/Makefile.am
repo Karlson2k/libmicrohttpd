@@ -100,6 +100,12 @@ check_PROGRAMS = \
   test_large_put_inc11 \
   test_get_chunked \
   test_get_chunked_close \
+  test_get_chunked_string \
+  test_get_chunked_close_string \
+  test_get_chunked_empty \
+  test_get_chunked_close_empty \
+  test_get_chunked_string_empty \
+  test_get_chunked_close_string_empty \
   test_put_chunked \
   test_callback \
   $(EMPTY_ITEM)
@@ -273,6 +279,42 @@ test_get_chunked_LDADD = \
 test_get_chunked_close_SOURCES = \
   test_get_chunked.c
 test_get_chunked_close_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_get_chunked_string_SOURCES = \
+  test_get_chunked.c
+test_get_chunked_string_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_get_chunked_close_string_SOURCES = \
+  test_get_chunked.c
+test_get_chunked_close_string_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_get_chunked_empty_SOURCES = \
+  test_get_chunked.c
+test_get_chunked_empty_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_get_chunked_close_empty_SOURCES = \
+  test_get_chunked.c
+test_get_chunked_close_empty_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_get_chunked_string_empty_SOURCES = \
+  test_get_chunked.c
+test_get_chunked_string_empty_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_get_chunked_close_string_empty_SOURCES = \
+  test_get_chunked.c
+test_get_chunked_close_string_empty_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
