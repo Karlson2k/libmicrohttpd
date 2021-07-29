@@ -3727,6 +3727,88 @@ cleanup_connection (struct MHD_Connection *connection)
 
 
 /**
+ * Reset connection after request-reply cycle.
+ * @param connection the connection to process
+ * @param reuse the flag to choose whether to close connection or
+ *              prepare connection for the next request processing
+ */
+static void
+connection_reset (struct MHD_Connection *connection,
+                  bool reuse)
+{
+  struct MHD_Connection *const c = connection; /**< a short alias */
+  struct MHD_Daemon *const d = connection->daemon;
+
+  if (! reuse)
+  {
+    /* Next function will destroy response, notify client,
+     * and set state "CLOSED" */
+    MHD_connection_close_ (connection,
+                           MHD_REQUEST_TERMINATED_COMPLETED_OK);
+    MHD_pool_destroy (connection->pool);
+    c->pool = NULL;
+    c->read_buffer = NULL;
+    c->read_buffer_size = 0;
+    c->read_buffer_offset = 0;
+  }
+  else
+  {
+    /* Reset connection to process the next request */
+    size_t new_read_buf_size;
+
+    if ( (NULL != d->notify_completed) &&
+         (c->client_aware) )
+      d->notify_completed (d->notify_completed_cls,
+                           c,
+                           &c->client_context,
+                           MHD_REQUEST_TERMINATED_COMPLETED_OK);
+    c->client_aware = false;
+
+    if (NULL != c->response)
+      MHD_destroy_response (c->response);
+    c->response = NULL;
+    c->version = NULL;
+    c->http_ver = MHD_HTTP_VER_UNKNOWN;
+    c->last = NULL;
+    c->colon = NULL;
+    c->header_size = 0;
+    c->keepalive = MHD_CONN_KEEPALIVE_UNKOWN;
+    /* Reset the read buffer to the starting size,
+       preserving the bytes we have already read. */
+    new_read_buf_size = c->daemon->pool_size / 2;
+    if (c->read_buffer_offset > new_read_buf_size)
+      new_read_buf_size = c->read_buffer_offset;
+
+    connection->read_buffer
+      = MHD_pool_reset (c->pool,
+                        c->read_buffer,
+                        c->read_buffer_offset,
+                        new_read_buf_size);
+    c->read_buffer_size = new_read_buf_size;
+    c->continue_message_write_offset = 0;
+    c->responseCode = 0;
+    c->headers_received = NULL;
+    c->headers_received_tail = NULL;
+    c->response_write_position = 0;
+    c->have_chunked_upload = false;
+    c->current_chunk_size = 0;
+    c->current_chunk_offset = 0;
+    c->method = NULL;
+    c->http_mthd = MHD_HTTP_MTHD_NO_METHOD;
+    c->url = NULL;
+    c->write_buffer = NULL;
+    c->write_buffer_size = 0;
+    c->write_buffer_send_offset = 0;
+    c->write_buffer_append_offset = 0;
+    /* iov (if any) was deallocated by MHD_pool_reset */
+    memset (&connection->resp_iov, 0, sizeof(connection->resp_iov));
+    c->state = MHD_CONNECTION_INIT;
+  }
+  connection->client_context = NULL;
+}
+
+
+/**
  * This function was created to handle per-connection processing that
  * has to happen even if the socket cannot be read or written to.
  * @remark To be called only from thread that process connection's
@@ -4134,72 +4216,10 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         /* FIXME: maybe partially reset memory pool? */
         continue;
       }
-      MHD_destroy_response (connection->response);
-      connection->response = NULL;
-      if ( (NULL != daemon->notify_completed) &&
-           (connection->client_aware) )
-      {
-        daemon->notify_completed (daemon->notify_completed_cls,
-                                  connection,
-                                  &connection->client_context,
-                                  MHD_REQUEST_TERMINATED_COMPLETED_OK);
-      }
-      connection->client_aware = false;
-      if ( (MHD_CONN_USE_KEEPALIVE != connection->keepalive) ||
-           (connection->read_closed) )
-      {
-        /* have to close for some reason */
-        MHD_connection_close_ (connection,
-                               MHD_REQUEST_TERMINATED_COMPLETED_OK);
-        MHD_pool_destroy (connection->pool);
-        connection->pool = NULL;
-        connection->read_buffer = NULL;
-        connection->read_buffer_size = 0;
-        connection->read_buffer_offset = 0;
-      }
-      else
-      {
-        /* can try to keep-alive */
-        size_t new_read_buf_size;
-
-        connection->version = NULL;
-        connection->http_ver = MHD_HTTP_VER_UNKNOWN;
-        connection->state = MHD_CONNECTION_INIT;
-        connection->last = NULL;
-        connection->colon = NULL;
-        connection->header_size = 0;
-        connection->keepalive = MHD_CONN_KEEPALIVE_UNKOWN;
-        /* Reset the read buffer to the starting size,
-           preserving the bytes we have already read. */
-        if (connection->read_buffer_offset > connection->daemon->pool_size / 2)
-          new_read_buf_size = connection->read_buffer_offset;
-        else
-          new_read_buf_size = connection->daemon->pool_size / 2;
-        connection->read_buffer
-          = MHD_pool_reset (connection->pool,
-                            connection->read_buffer,
-                            connection->read_buffer_offset,
-                            new_read_buf_size);
-        connection->read_buffer_size = new_read_buf_size;
-      }
-      connection->client_context = NULL;
-      connection->continue_message_write_offset = 0;
-      connection->responseCode = 0;
-      connection->headers_received = NULL;
-      connection->headers_received_tail = NULL;
-      connection->response_write_position = 0;
-      connection->have_chunked_upload = false;
-      connection->current_chunk_size = 0;
-      connection->current_chunk_offset = 0;
-      connection->method = NULL;
-      connection->http_mthd = MHD_HTTP_MTHD_NO_METHOD;
-      connection->url = NULL;
-      connection->write_buffer = NULL;
-      connection->write_buffer_size = 0;
-      connection->write_buffer_send_offset = 0;
-      connection->write_buffer_append_offset = 0;
-      /* iov (if any) was deallocated by MHD_pool_reset */
-      memset (&connection->resp_iov, 0, sizeof(connection->resp_iov));
+      /* Reset connection after complete reply */
+      connection_reset (connection,
+                        MHD_CONN_USE_KEEPALIVE == connection->keepalive &&
+                        ! connection->read_closed);
       continue;
     case MHD_CONNECTION_CLOSED:
       cleanup_connection (connection);
