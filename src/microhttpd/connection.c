@@ -720,13 +720,6 @@ MHD_connection_close_ (struct MHD_Connection *connection,
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (connection->pid) );
 #endif /* MHD_USE_THREADS */
-
-  MHD_connection_mark_closed_ (connection);
-  if (NULL != resp)
-  {
-    connection->response = NULL;
-    MHD_destroy_response (resp);
-  }
   if ( (NULL != daemon->notify_completed) &&
        (connection->client_aware) )
     daemon->notify_completed (daemon->notify_completed_cls,
@@ -734,6 +727,13 @@ MHD_connection_close_ (struct MHD_Connection *connection,
                               &connection->client_context,
                               termination_code);
   connection->client_aware = false;
+  if (NULL != resp)
+  {
+    connection->response = NULL;
+    MHD_destroy_response (resp);
+  }
+
+  MHD_connection_mark_closed_ (connection);
 }
 
 
