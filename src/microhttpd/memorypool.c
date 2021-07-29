@@ -396,7 +396,7 @@ MHD_pool_reset (struct MemoryPool *pool,
 {
   mhd_assert (pool->end >= pool->pos);
   mhd_assert (pool->size >= pool->end - pool->pos);
-  mhd_assert (copy_bytes < new_size);
+  mhd_assert (copy_bytes <= new_size);
   mhd_assert (keep != NULL || copy_bytes == 0);
   mhd_assert (keep == NULL || pool->memory <= (uint8_t*) keep);
   mhd_assert (keep == NULL || pool->memory + pool->size >= (uint8_t*) keep
