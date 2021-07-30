@@ -52,6 +52,10 @@
 #define RESP_FOOTER_VALUE "working"
 #define RESP_FOOTER RESP_FOOTER_NAME ": " RESP_FOOTER_VALUE
 
+#define RESP_BLOCK_SIZE 128
+#define RESP_BLOCK_QUANTIY 10
+#define RESP_SIZE (RESP_BLOCK_SIZE * RESP_BLOCK_QUANTIY)
+
 /**
  * Use "Connection: close" header?
  */
@@ -61,6 +65,11 @@ int conn_close;
  * Use static string response instead of callback-generated?
  */
 int resp_string;
+
+/**
+ * Use response with known size?
+ */
+int resp_sized;
 
 /**
  * Use empty (zero-sized) response?
@@ -128,7 +137,7 @@ crc (void *cls,
 {
   struct MHD_Response **responseptr = cls;
 
-  if (resp_empty || (pos == 128 * 10))
+  if (resp_empty || (pos == RESP_SIZE))
   {
     if (MHD_YES != MHD_add_response_footer (*responseptr,
                                             RESP_FOOTER_NAME,
@@ -136,10 +145,10 @@ crc (void *cls,
       abort ();
     return MHD_CONTENT_READER_END_OF_STREAM;
   }
-  if (max < 128)
+  if (max < RESP_BLOCK_SIZE)
     abort ();                   /* should not happen in this testcase... */
-  memset (buf, 'A' + (pos / 128), 128);
-  return 128;
+  memset (buf, 'A' + (pos / RESP_BLOCK_SIZE), RESP_BLOCK_SIZE);
+  return RESP_BLOCK_SIZE;
 }
 
 
@@ -185,7 +194,8 @@ ahc_echo (void *cls,
     _exit (99);
   if (! resp_string)
   {
-    response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
+    response = MHD_create_response_from_callback (resp_sized ?
+                                                  RESP_SIZE : MHD_SIZE_UNKNOWN,
                                                   1024,
                                                   &crc,
                                                   responseptr,
@@ -196,12 +206,12 @@ ahc_echo (void *cls,
     if (! resp_empty)
     {
       size_t pos;
-      static const size_t resp_size = 10 * 128;
+      static const size_t resp_size = RESP_SIZE;
       char *buf = malloc (resp_size);
       if (NULL == buf)
         _exit (99);
-      for (pos = 0; pos < resp_size; pos += 128)
-        memset (buf + pos, 'A' + (pos / 128), 128);
+      for (pos = 0; pos < resp_size; pos += RESP_BLOCK_SIZE)
+        memset (buf + pos, 'A' + (pos / RESP_BLOCK_SIZE), RESP_BLOCK_SIZE);
 
       response = MHD_create_response_from_buffer (resp_size, buf,
                                                   MHD_RESPMEM_MUST_COPY);
@@ -213,7 +223,7 @@ ahc_echo (void *cls,
   }
   if (NULL == response)
     abort ();
-  if (conn_close || resp_string)
+  if (conn_close || resp_sized)
   { /* Enforce chunked response even for non-Keep-Alive and static responses */
     if (MHD_NO == MHD_add_response_header (response,
                                            MHD_HTTP_HEADER_TRANSFER_ENCODING,
@@ -242,7 +252,7 @@ static int
 validate (struct CBC cbc, int ebase)
 {
   int i;
-  char buf[128];
+  char buf[RESP_BLOCK_SIZE];
 
   if (resp_empty)
   {
@@ -256,7 +266,7 @@ validate (struct CBC cbc, int ebase)
     return 0;
   }
 
-  if (cbc.pos != 128 * 10)
+  if (cbc.pos != RESP_SIZE)
   {
     fprintf (stderr,
              "Got %u bytes instead of 1280!\n",
@@ -264,14 +274,15 @@ validate (struct CBC cbc, int ebase)
     return ebase;
   }
 
-  for (i = 0; i < 10; i++)
+  for (i = 0; i < RESP_BLOCK_QUANTIY; i++)
   {
-    memset (buf, 'A' + i, 128);
-    if (0 != memcmp (buf, &cbc.buf[i * 128], 128))
+    memset (buf, 'A' + i, RESP_BLOCK_SIZE);
+    if (0 != memcmp (buf, &cbc.buf[i * RESP_BLOCK_SIZE], RESP_BLOCK_SIZE))
     {
       fprintf (stderr,
                "Got  `%.*s'\nWant `%.*s'\n",
-               128, buf, 128, &cbc.buf[i * 128]);
+               RESP_BLOCK_SIZE, buf, RESP_BLOCK_SIZE,
+               &cbc.buf[i * RESP_BLOCK_SIZE]);
       return ebase * 2;
     }
   }
@@ -722,7 +733,10 @@ main (int argc, char *const *argv)
     return 2;
   conn_close = has_in_name (argv[0], "_close");
   resp_string = has_in_name (argv[0], "_string");
+  resp_sized = has_in_name (argv[0], "_sized");
   resp_empty = has_in_name (argv[0], "_empty");
+  if (resp_string)
+    resp_sized = ! 0;
   if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_THREADS))
   {
     errorCount += testInternalGet ();

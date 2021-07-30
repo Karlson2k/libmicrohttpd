@@ -33,6 +33,10 @@
 /test_get_chunked_close_empty
 /test_get_chunked_string_empty
 /test_get_chunked_close_string_empty
+/test_get_chunked_sized
+/test_get_chunked_close_sized
+/test_get_chunked_empty_sized
+/test_get_chunked_close_empty_sized
 /test_get11
 /test_get
 /test_digestauth_with_arguments
