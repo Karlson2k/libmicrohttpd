@@ -1182,8 +1182,7 @@ struct MHD_Connection
   bool in_idle;
 
   /**
-   * Are we currently inside the "idle" handler (to avoid recursively
-   * invoking it).
+   * Connection is in the cleanup DL-linked list.
    */
   bool in_cleanup;
 

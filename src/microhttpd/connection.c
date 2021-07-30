@@ -677,8 +677,6 @@ MHD_connection_mark_closed_ (struct MHD_Connection *connection)
 {
   const struct MHD_Daemon *daemon = connection->daemon;
 
-  connection->state = MHD_CONNECTION_CLOSED;
-  connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
   if (0 == (daemon->options & MHD_USE_TURBO))
   {
 #ifdef HTTPS_SUPPORT
@@ -698,6 +696,8 @@ MHD_connection_mark_closed_ (struct MHD_Connection *connection)
     shutdown (connection->socket_fd,
               SHUT_WR);
   }
+  connection->state = MHD_CONNECTION_CLOSED;
+  connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
 }
 
 
@@ -732,6 +732,11 @@ MHD_connection_close_ (struct MHD_Connection *connection,
   {
     connection->response = NULL;
     MHD_destroy_response (resp);
+  }
+  if (NULL != connection->pool)
+  {
+    MHD_pool_destroy (connection->pool);
+    connection->pool = NULL;
   }
 
   MHD_connection_mark_closed_ (connection);
@@ -3743,14 +3748,16 @@ connection_reset (struct MHD_Connection *connection,
   if (! reuse)
   {
     /* Next function will destroy response, notify client,
-     * and set state "CLOSED" */
+     * destroy memory pool, and set connection state to "CLOSED" */
     MHD_connection_close_ (connection,
                            MHD_REQUEST_TERMINATED_COMPLETED_OK);
-    MHD_pool_destroy (connection->pool);
-    c->pool = NULL;
     c->read_buffer = NULL;
     c->read_buffer_size = 0;
     c->read_buffer_offset = 0;
+    c->write_buffer = NULL;
+    c->write_buffer_size = 0;
+    c->write_buffer_send_offset = 0;
+    c->write_buffer_append_offset = 0;
   }
   else
   {
