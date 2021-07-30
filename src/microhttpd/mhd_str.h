@@ -389,6 +389,7 @@ MHD_uint32_to_strx (uint32_t val,
                     size_t buf_size);
 
 
+#ifndef MHD_FAVOR_SMALL_CODE
 /**
  * Convert uint16_t value to decimal US-ASCII string.
  * @note: result is NOT zero-terminated.
@@ -402,5 +403,25 @@ size_t
 MHD_uint16_to_str (uint16_t val,
                    char *buf,
                    size_t buf_size);
+
+#else  /* MHD_FAVOR_SMALL_CODE */
+#define MHD_uint16_to_str(v,b,s) MHD_uint64_to_str(v,b,s)
+#endif /* MHD_FAVOR_SMALL_CODE */
+
+
+/**
+ * Convert uint64_t value to decimal US-ASCII string.
+ * @note: result is NOT zero-terminated.
+ * @param val the value to convert
+ * @param buf the buffer to result to
+ * @param buf_size size of the @a buffer
+ * @return number of charters has been put to the @a buf,
+ *         zero if buffer is too small (buffer may be modified).
+ */
+size_t
+MHD_uint64_to_str (uint64_t val,
+                   char *buf,
+                   size_t buf_size);
+
 
 #endif /* MHD_STR_H */

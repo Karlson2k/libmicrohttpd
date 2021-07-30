@@ -1216,6 +1216,7 @@ MHD_uint32_to_strx (uint32_t val,
 }
 
 
+#ifndef MHD_FAVOR_SMALL_CODE
 size_t
 MHD_uint16_to_str (uint16_t val,
                    char *buf,
@@ -1224,6 +1225,47 @@ MHD_uint16_to_str (uint16_t val,
   char *chr;  /**< pointer to the current printed digit */
   /* The biggest printable number is 65535 */
   uint16_t divisor = UINT16_C (10000);
+  int digit;
+
+  chr = buf;
+  digit = (int) (val / divisor);
+  mhd_assert (digit < 10);
+
+  /* Do not print leading zeros */
+  while ((0 == digit) && (1 < divisor))
+  {
+    divisor /= 10;
+    digit = (int) (val / divisor);
+    mhd_assert (digit < 10);
+  }
+
+  while (0 != buf_size)
+  {
+    *chr = (char) digit + '0';
+    chr++;
+    buf_size--;
+    if (1 == divisor)
+      return (size_t) (chr - buf);
+    val %= divisor;
+    divisor /= 10;
+    digit = (int) (val / divisor);
+    mhd_assert (digit < 10);
+  }
+  return 0; /* The buffer is too small */
+}
+
+
+#endif /* !MHD_FAVOR_SMALL_CODE */
+
+
+size_t
+MHD_uint64_to_str (uint64_t val,
+                   char *buf,
+                   size_t buf_size)
+{
+  char *chr;  /**< pointer to the current printed digit */
+  /* The biggest printable number is 18446744073709551615 */
+  uint64_t divisor = UINT64_C (10000000000000000000);
   int digit;
 
   chr = buf;

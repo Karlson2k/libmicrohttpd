@@ -3439,6 +3439,128 @@ check_str_from_uint16 (void)
 
 
 int
+check_str_from_uint64 (void)
+{
+  size_t t_failed = 0;
+  size_t i, j;
+  char buf[70];
+  const char *erase =
+    "-@=sd#+&(pdirenDSFGSe#@C&S!DAS*!AOIPUQWESAdFzxcvSs*()&#$%KH`"
+    "32452d098poiden45SADFFDA3S4D3SDFdfgsdfgsSADFzxdvs$*()&#2342`"
+    "adsf##$$@&*^%*^&56qwe#3C@S!DAScFAOIP$#%#$Ad1zs3v1$*()&#1228`";
+  static const size_t n_checks = sizeof(dstrs_w_values)
+                                 / sizeof(dstrs_w_values[0]);
+  int c_failed[n_checks];
+
+  memset (c_failed, 0, sizeof(c_failed));
+
+  for (j = 0; j < locale_name_count; j++)
+  {
+    set_test_locale (j);  /* setlocale() can be slow! */
+    for (i = 0; i < n_checks; i++)
+    {
+      const struct str_with_value *const t = dstrs_w_values + i;
+      size_t b_size;
+      size_t rs;
+
+      if (c_failed[i])
+        continue;     /* skip already failed checks */
+
+      if (t->str.len < t->num_of_digt)
+      {
+        fprintf (stderr,
+                 "ERROR: dstrs_w_values[%u] has wrong num_of_digt (%u): num_of_digt is expected"
+                 " to be less or equal to str.len (%u).\n",
+                 (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
+                                                                   int) t->str.
+                 len);
+        return -1;
+      }
+      if ('0' == t->str.str[0])
+        continue;  /* Skip strings prefixed with zeros */
+      if (t->num_of_digt != t->str.len)
+        continue;  /* Skip strings with suffixes */
+      if (sizeof(buf) < t->str.len + 1)
+      {
+        fprintf (stderr,
+                 "ERROR: dstrs_w_values[%u] has too long (%u) string, "
+                 "size of 'buf' should be increased.\n",
+                 (unsigned int) i, (unsigned int) t->str.len);
+        return -1;
+      }
+      for (b_size = 0; b_size <= t->str.len + 1; ++b_size)
+      {
+        /* fill buffer with pseudo-random values */
+        memcpy (buf, erase, sizeof(buf));
+
+        rs = MHD_uint64_to_str (t->val, buf, b_size);
+
+        if (t->num_of_digt > b_size)
+        {
+          /* Must fail, buffer is too small for result */
+          if (0 != rs)
+          {
+            if (0 == c_failed[i])
+              t_failed++;
+            c_failed[i] = ! 0;
+            fprintf (stderr,
+                     "FAILED: MHD_uint64_to_str(%" PRIu64 ", -> buf,"
+                     " %d) returned %" PRIuPTR
+                     ", while expecting 0."
+                     " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
+                     get_current_locale_str ());
+          }
+        }
+        else
+        {
+          if (t->num_of_digt != rs)
+          {
+            if (0 == c_failed[i])
+              t_failed++;
+            c_failed[i] = ! 0;
+            fprintf (stderr,
+                     "FAILED: MHD_uint64_to_str(%" PRIu64 ", -> buf,"
+                     " %d) returned %" PRIuPTR
+                     ", while expecting %d."
+                     " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
+                     (int) t->num_of_digt, get_current_locale_str ());
+          }
+          else if (0 != memcmp (buf, t->str.str, t->num_of_digt))
+          {
+            if (0 == c_failed[i])
+              t_failed++;
+            c_failed[i] = ! 0;
+            fprintf (stderr,
+                     "FAILED: MHD_uint64_to_str(%" PRIu64 ", -> \"%.*s\","
+                     " %d) returned %" PRIuPTR "."
+                     " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
+                     (intptr_t) rs,  get_current_locale_str ());
+          }
+          else if (0 != memcmp (buf + rs, erase + rs, sizeof(buf) - rs))
+          {
+            if (0 == c_failed[i])
+              t_failed++;
+            c_failed[i] = ! 0;
+            fprintf (stderr,
+                     "FAILED: MHD_uint64_to_str(%" PRIu64 ", -> \"%.*s\","
+                     " %d) returned %" PRIuPTR
+                     " and touched data after the resulting string."
+                     " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
+                     (intptr_t) rs,  get_current_locale_str ());
+          }
+        }
+      }
+      if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
+        printf ("PASSED: MHD_uint64_to_str(%" PRIu64 ", -> \"%.*s\", %d) "
+                "== %" PRIuPTR "\n",
+                t->val, (int) rs, buf, (int) b_size - 1, (intptr_t) rs);
+    }
+  }
+  return t_failed;
+}
+
+
+int
 check_strx_from_uint32 (void)
 {
   size_t t_failed = 0;
@@ -3567,6 +3689,7 @@ int
 run_str_from_X_tests (void)
 {
   int str_from_uint16;
+  int str_from_uint64;
   int strx_from_uint32;
   int failures;
 
@@ -3584,6 +3707,23 @@ run_str_from_X_tests (void)
     fprintf (stderr,
              "FAILED: testcase check_str_from_uint16() failed.\n\n");
     failures += str_from_uint16;
+  }
+  else if (verbose > 1)
+    printf (
+      "PASSED: testcase check_str_from_uint16() successfully passed.\n\n");
+
+  str_from_uint64 = check_str_from_uint64 ();
+  if (str_from_uint64 != 0)
+  {
+    if (str_from_uint64 < 0)
+    {
+      fprintf (stderr,
+               "ERROR: test internal error in check_str_from_uint16().\n");
+      return 99;
+    }
+    fprintf (stderr,
+             "FAILED: testcase check_str_from_uint16() failed.\n\n");
+    failures += str_from_uint64;
   }
   else if (verbose > 1)
     printf (
