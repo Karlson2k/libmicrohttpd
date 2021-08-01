@@ -356,10 +356,11 @@ struct MHD_HTTP_Header
  */
 enum MHD_ResponseAutoFlags
 {
-  MHD_RAF_NO_FLAGS = 0,                  /**< No auto flags */
-  MHD_RAF_HAS_CONNECTION_HDR = 1 << 0,   /**< Has "Connection" header */
-  MHD_RAF_HAS_CONNECTION_CLOSE = 1 << 1, /**< Has "Connection: close" */
-  MHD_RAF_HAS_TRANS_ENC_CHUNKED = 2 << 2 /**< Has "Transfer-Encoding: chunked */
+  MHD_RAF_NO_FLAGS = 0,                   /**< No auto flags */
+  MHD_RAF_HAS_CONNECTION_HDR = 1 << 0,    /**< Has "Connection" header */
+  MHD_RAF_HAS_CONNECTION_CLOSE = 1 << 1,  /**< Has "Connection: close" */
+  MHD_RAF_HAS_TRANS_ENC_CHUNKED = 1 << 2, /**< Has "Transfer-Encoding: chunked */
+  MHD_RAF_HAS_DATE_HDR = 1 << 3           /**< Has "Date" header */
 } _MHD_FIXED_FLAGS_ENUM;
 
 

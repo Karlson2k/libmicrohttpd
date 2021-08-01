@@ -438,6 +438,7 @@ del_response_header_connection (struct MHD_Response *response,
  * The list of automatic headers:
  * + "Date" header is added automatically unless already set by
  *   this function
+ *   @see #MHD_USE_SUPPRESS_DATE_NO_CLOCK
  * + "Content-Length" is added automatically when required, attempt to set
  *   it manually by this function is ignored.
  *   @see #MHD_RF_INSANITY_HEADER_CONTENT_LENGTH
@@ -451,6 +452,16 @@ del_response_header_connection (struct MHD_Response *response,
  *   The header "Connection" with value "Close" could be set by this function
  *   to enforce closure of the connection after sending this response.
  *   "Keep-Alive" cannot be enforced and will be removed automatically.
+ *
+ * Some headers are pre-processed by this function:
+ * * "Connection" headers are combined into single header entry, value is
+ *   normilised, "Keep-Alive" tokens are removed.
+ * * "Transfer-Encoding" header: the only one header is allowed, the only
+ *   allowed value is "chunked".
+ * * "Date" header: the only one header is allowed, the second added header
+ *   replaces the first one.
+ * * "Content-Length" manual header is now allowed.
+ *   @see #MHD_RF_INSANITY_HEADER_CONTENT_LENGTH
  *
  * Headers are used in order as they were added.
  *
@@ -473,30 +484,40 @@ MHD_add_response_header (struct MHD_Response *response,
   if (MHD_str_equal_caseless_ (header,
                                MHD_HTTP_HEADER_TRANSFER_ENCODING))
   {
-    /* TODO: remove support for "identity" */
-    /* Only one "Transfer-Encoding" header is allowed */
-    if (NULL !=
-        MHD_get_response_header (response, MHD_HTTP_HEADER_TRANSFER_ENCODING) )
+    if (! MHD_str_equal_caseless_ (content, "chunked"))
       return MHD_NO;
-    /* Setting transfer encodings other than "identity" or
-       "chunked" is not allowed.  Note that MHD will set the
-       correct transfer encoding if required automatically. */
-    /* NOTE: for compressed bodies, use the "Content-encoding" header */
-    if (MHD_str_equal_caseless_ (content, "identity"))
-      return add_response_entry (response,
-                                 MHD_HEADER_KIND,
-                                 header,
-                                 content);
-    else if (MHD_str_equal_caseless_ (content, "chunked"))
+    if (0 != (response->flags_auto & MHD_RAF_HAS_TRANS_ENC_CHUNKED))
+      return MHD_YES;
+    if (MHD_NO != add_response_entry (response,
+                                      MHD_HEADER_KIND,
+                                      header,
+                                      content))
     {
-      if (MHD_NO != add_response_entry (response,
-                                        MHD_HEADER_KIND,
-                                        header,
-                                        content))
-      {
-        response->flags_auto |= MHD_RAF_HAS_TRANS_ENC_CHUNKED;
-        return MHD_YES;
-      }
+      response->flags_auto |= MHD_RAF_HAS_TRANS_ENC_CHUNKED;
+      return MHD_YES;
+    }
+    return MHD_NO;
+  }
+  if (MHD_str_equal_caseless_ (header,
+                               MHD_HTTP_HEADER_DATE))
+  {
+    if (0 != (response->flags_auto & MHD_RAF_HAS_DATE_HDR))
+    {
+      struct MHD_HTTP_Header *hdr;
+      hdr = MHD_get_response_element_n_ (response, MHD_HEADER_KIND,
+                                         MHD_HTTP_HEADER_DATE,
+                                         MHD_STATICSTR_LEN_ ( \
+                                           MHD_HTTP_HEADER_DATE));
+      mhd_assert (NULL != hdr);
+      _MHD_remove_header (response, hdr);
+    }
+    if (MHD_NO != add_response_entry (response,
+                                      MHD_HEADER_KIND,
+                                      header,
+                                      content))
+    {
+      response->flags_auto |= MHD_RAF_HAS_DATE_HDR;
+      return MHD_YES;
     }
     return MHD_NO;
   }
@@ -590,6 +611,12 @@ MHD_del_response_header (struct MHD_Response *response,
                                           MHD_HTTP_HEADER_TRANSFER_ENCODING,
                                           header_len) )
         response->flags_auto &= ~(MHD_RAF_HAS_TRANS_ENC_CHUNKED);
+      else if ( (MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_DATE) ==
+                 header_len) &&
+                MHD_str_equal_caseless_bin_n_ (header,
+                                               MHD_HTTP_HEADER_DATE,
+                                               header_len) )
+        response->flags_auto &= ~(MHD_RAF_HAS_DATE_HDR);
       return MHD_YES;
     }
     pos = pos->next;

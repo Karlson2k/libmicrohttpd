@@ -775,6 +775,111 @@ main (int argc,
     return 4;
   }
 
+  if (MHD_YES != MHD_add_response_header (r, "Date",
+                                          "Wed, 01 Apr 2015 00:00:00 GMT"))
+  {
+    fprintf (stderr,
+             "Cannot add \"Date\" header with \"Wed, 01 Apr 2015 00:00:00 GMT\".\n");
+    MHD_destroy_response (r);
+    return 5;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Date"),
+                    "Wed, 01 Apr 2015 00:00:00 GMT"))
+  {
+    MHD_destroy_response (r);
+    return 5;
+  }
+  if (MHD_YES != MHD_add_response_header (r, "Date",
+                                          "Thu, 01 Apr 2021 00:00:00 GMT"))
+  {
+    fprintf (stderr,
+             "Cannot add \"Date\" header with \"Thu, 01 Apr 2021 00:00:00 GMT\".\n");
+    MHD_destroy_response (r);
+    return 5;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Date"),
+                    "Thu, 01 Apr 2021 00:00:00 GMT"))
+  {
+    MHD_destroy_response (r);
+    return 5;
+  }
+  if (MHD_YES != MHD_del_response_header (r, "Date",
+                                          "Thu, 01 Apr 2021 00:00:00 GMT"))
+  {
+    fprintf (stderr, "Cannot remove \"Date\" header.\n");
+    MHD_destroy_response (r);
+    return 5;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Date"), NULL))
+  {
+    MHD_destroy_response (r);
+    return 5;
+  }
+
+  if (MHD_YES != MHD_add_response_header (r, MHD_HTTP_HEADER_TRANSFER_ENCODING,
+                                          "chunked"))
+  {
+    fprintf (stderr,
+             "Cannot add \"" MHD_HTTP_HEADER_TRANSFER_ENCODING \
+             "\" header with \"chunked\".\n");
+    MHD_destroy_response (r);
+    return 6;
+  }
+  if (! expect_str (MHD_get_response_header (r,
+                                             MHD_HTTP_HEADER_TRANSFER_ENCODING),
+                    "chunked"))
+  {
+    MHD_destroy_response (r);
+    return 6;
+  }
+  if (MHD_YES != MHD_add_response_header (r, MHD_HTTP_HEADER_TRANSFER_ENCODING,
+                                          "chunked"))
+  {
+    fprintf (stderr,
+             "Cannot add \"" MHD_HTTP_HEADER_TRANSFER_ENCODING \
+             "\" second header with \"chunked\".\n");
+    MHD_destroy_response (r);
+    return 6;
+  }
+  if (! expect_str (MHD_get_response_header (r,
+                                             MHD_HTTP_HEADER_TRANSFER_ENCODING),
+                    "chunked"))
+  {
+    MHD_destroy_response (r);
+    return 6;
+  }
+  if (MHD_NO != MHD_add_response_header (r, MHD_HTTP_HEADER_TRANSFER_ENCODING,
+                                         "identity"))
+  {
+    fprintf (stderr,
+             "Successfully added \"" MHD_HTTP_HEADER_TRANSFER_ENCODING \
+             "\" header with \"identity\".\n");
+    MHD_destroy_response (r);
+    return 6;
+  }
+  if (! expect_str (MHD_get_response_header (r,
+                                             MHD_HTTP_HEADER_TRANSFER_ENCODING),
+                    "chunked"))
+  {
+    MHD_destroy_response (r);
+    return 6;
+  }
+  if (MHD_YES != MHD_del_response_header (r, MHD_HTTP_HEADER_TRANSFER_ENCODING,
+                                          "chunked"))
+  {
+    fprintf (stderr, "Cannot remove \"" MHD_HTTP_HEADER_TRANSFER_ENCODING \
+             "\" header.\n");
+    MHD_destroy_response (r);
+    return 6;
+  }
+  if (! expect_str (MHD_get_response_header (r,
+                                             MHD_HTTP_HEADER_TRANSFER_ENCODING),
+                    NULL))
+  {
+    MHD_destroy_response (r);
+    return 6;
+  }
+
   MHD_destroy_response (r);
   printf ("All tests has been successfully passed.\n");
   return 0;

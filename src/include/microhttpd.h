@@ -3648,6 +3648,7 @@ MHD_destroy_response (struct MHD_Response *response);
  * The list of automatic headers:
  * + "Date" header is added automatically unless already set by
  *   this function
+ *   @see #MHD_USE_SUPPRESS_DATE_NO_CLOCK
  * + "Content-Length" is added automatically when required, attempt to set
  *   it manually by this function is ignored.
  *   @see #MHD_RF_INSANITY_HEADER_CONTENT_LENGTH
@@ -3661,6 +3662,16 @@ MHD_destroy_response (struct MHD_Response *response);
  *   The header "Connection" with value "Close" could be set by this function
  *   to enforce closure of the connection after sending this response.
  *   "Keep-Alive" cannot be enforced and will be removed automatically.
+ *
+ * Some headers are pre-processed by this function:
+ * * "Connection" headers are combined into single header entry, value is
+ *   normilised, "Keep-Alive" tokens are removed.
+ * * "Transfer-Encoding" header: the only one header is allowed, the only
+ *   allowed value is "chunked".
+ * * "Date" header: the only one header is allowed, the second added header
+ *   replaces the first one.
+ * * "Content-Length" manual header is now allowed.
+ *   @see #MHD_RF_INSANITY_HEADER_CONTENT_LENGTH
  *
  * Headers are used in order as they were added.
  *
