@@ -1294,3 +1294,50 @@ MHD_uint64_to_str (uint64_t val,
   }
   return 0; /* The buffer is too small */
 }
+
+
+size_t
+MHD_uint8_to_str_pad (uint8_t val,
+                      uint8_t min_digits,
+                      char *buf,
+                      size_t buf_size)
+{
+  size_t pos; /**< the position of the current printed digit */
+  int digit;
+  mhd_assert (3 >= min_digits);
+  if (0 == buf_size)
+    return 0;
+
+  pos = 0;
+  digit = val / 100;
+  if (0 == digit)
+  {
+    if (3 <= min_digits)
+      buf[pos++] = '0';
+  }
+  else
+  {
+    buf[pos++] = '0' + digit;
+    val %= 100;
+    min_digits = 2;
+  }
+
+  if (buf_size <= pos)
+    return 0;
+  digit = val / 10;
+  if (0 == digit)
+  {
+    if (2 <= min_digits)
+      buf[pos++] = '0';
+  }
+  else
+  {
+    buf[pos++] = '0' + digit;
+    val %= 10;
+  }
+
+  if (buf_size <= pos)
+    return 0;
+  buf[pos++] = '0' + val;
+  return pos;
+}

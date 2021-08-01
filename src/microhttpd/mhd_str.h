@@ -424,4 +424,26 @@ MHD_uint64_to_str (uint64_t val,
                    size_t buf_size);
 
 
+/**
+ * Convert uint16_t value to decimal US-ASCII string padded with
+ * zeros on the left side.
+ *
+ * @note: result is NOT zero-terminated.
+ * @param val the value to convert
+ * @param min_digits the minimal number of digits to print,
+ *                   output padded with zeros on the left side,
+ *                   'zero' value is interpreted as 'one',
+ *                   valid values are 3, 2, 1, 0
+ * @param buf the buffer to result to
+ * @param buf_size size of the @a buffer
+ * @return number of charters has been put to the @a buf,
+ *         zero if buffer is too small (buffer may be modified).
+ */
+size_t
+MHD_uint8_to_str_pad (uint8_t val,
+                      uint8_t min_digits,
+                      char *buf,
+                      size_t buf_size);
+
+
 #endif /* MHD_STR_H */
