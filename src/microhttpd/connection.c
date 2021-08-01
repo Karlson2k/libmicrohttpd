@@ -1187,15 +1187,16 @@ keepalive_possible (struct MHD_Connection *connection)
 
 
 /**
- * Produce HTTP time stamp.
+ * Produce time stamp.
  *
- * @param date where to write the header, with
- *        at least 128 bytes available space.
- * @param date_len number of bytes in @a date
+ * Result is NOT null-terminated.
+ * Result is always 29 bytes long.
+ *
+ * @param[out] date where to write the time stamp, with
+ *             at least 29 bytes available space.
  */
-static void
-get_date_string (char *date,
-                 size_t date_len)
+static bool
+get_date_str (char *date)
 {
   static const char *const days[] = {
     "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
@@ -1204,43 +1205,96 @@ get_date_string (char *date,
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
   };
+  static const size_t buf_len = 29;
   struct tm now;
   time_t t;
+  const char *src;
 #if ! defined(HAVE_C11_GMTIME_S) && ! defined(HAVE_W32_GMTIME_S) && \
   ! defined(HAVE_GMTIME_R)
-  struct tm*pNow;
+  struct tm *pNow;
 #endif
 
-  date[0] = 0;
   time (&t);
 #if defined(HAVE_C11_GMTIME_S)
   if (NULL == gmtime_s (&t,
                         &now))
-    return;
+    return false;
 #elif defined(HAVE_W32_GMTIME_S)
   if (0 != gmtime_s (&now,
                      &t))
-    return;
+    return false;
 #elif defined(HAVE_GMTIME_R)
   if (NULL == gmtime_r (&t,
                         &now))
-    return;
+    return false;
 #else
   pNow = gmtime (&t);
   if (NULL == pNow)
-    return;
+    return false;
   now = *pNow;
 #endif
-  MHD_snprintf_ (date,
-                 date_len,
-                 "Date: %3s, %02u %3s %04u %02u:%02u:%02u GMT\r\n",
-                 days[now.tm_wday % 7],
-                 (unsigned int) now.tm_mday,
-                 mons[now.tm_mon % 12],
-                 (unsigned int) (1900 + now.tm_year),
-                 (unsigned int) now.tm_hour,
-                 (unsigned int) now.tm_min,
-                 (unsigned int) now.tm_sec);
+
+  /* Day of the week */
+  src = days[now.tm_wday % 7];
+  date[0] = src[0];
+  date[1] = src[1];
+  date[2] = src[2];
+  date[3] = ',';
+  date[4] = ' ';
+  /* Day of the month */
+  MHD_uint8_to_str_pad ((uint8_t) now.tm_mday, 2, date + 5, buf_len - 5);
+  date[7] = ' ';
+  /* Month */
+  src = mons[now.tm_mon % 12];
+  date[8] = src[0];
+  date[9] = src[1];
+  date[10] = src[2];
+  date[11] = ' ';
+  /* Year */
+  if (4 != MHD_uint16_to_str ((uint16_t) (1900 + now.tm_year), date + 12,
+                              buf_len - 12))
+    return false;
+  date[16] = ' ';
+  /* Time */
+  MHD_uint8_to_str_pad ((uint8_t) now.tm_hour, 2, date + 17, buf_len - 17);
+  date[19] = ':';
+  MHD_uint8_to_str_pad ((uint8_t) now.tm_min, 2, date + 20, buf_len - 20);
+  date[22] = ':';
+  MHD_uint8_to_str_pad ((uint8_t) now.tm_sec, 2, date + 23, buf_len - 23);
+  date[25] = ' ';
+  date[26] = 'G';
+  date[27] = 'M';
+  date[28] = 'T';
+
+  return true;
+}
+
+
+/**
+ * Produce HTTP DATE header.
+ * Result is always 37 bytes long (including terminating null).
+ *
+ * @param[out] header where to write the header, with
+ *             at least 38 bytes available space.
+ */
+static bool
+get_date_header (char *header)
+{
+  if (! get_date_str (header + 6))
+  {
+    header[0] = 0;
+    return false;
+  }
+  header[0] = 'D';
+  header[1] = 'a';
+  header[2] = 't';
+  header[3] = 'e';
+  header[4] = ':';
+  header[5] = ' ';
+  header[35] = '\r';
+  header[36] = '\n';
+  header[37] = 0;
+  return true;
 }
 
 
@@ -1501,8 +1555,7 @@ build_header_response (struct MHD_Connection *connection)
                 & MHD_USE_SUPPRESS_DATE_NO_CLOCK)) &&
          (NULL == MHD_get_response_header (response,
                                            MHD_HTTP_HEADER_DATE)) )
-      get_date_string (date,
-                       sizeof (date));
+      get_date_header (date);
     else
       date[0] = '\0';
     datelen = strlen (date);
