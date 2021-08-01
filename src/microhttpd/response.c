@@ -167,9 +167,9 @@ add_response_entry (struct MHD_Response *response,
        (0 == header[0]) ||
        (0 == content[0]) ||
        (NULL != strchr (header, '\t')) ||
+       (NULL != strchr (header, ' ')) ||
        (NULL != strchr (header, '\r')) ||
        (NULL != strchr (header, '\n')) ||
-       (NULL != strchr (content, '\t')) ||
        (NULL != strchr (content, '\r')) ||
        (NULL != strchr (content, '\n')) )
     return MHD_NO;
