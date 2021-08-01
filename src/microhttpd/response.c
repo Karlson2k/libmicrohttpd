@@ -251,6 +251,8 @@ add_response_header_connection (struct MHD_Response *response,
     old_value_len = 0;
 
   value_len = strlen (value);
+  if (value_len >= SSIZE_MAX)
+    return MHD_NO;
   /* Additional space for normalisation and zero-termination*/
   norm_len = (ssize_t) (value_len + value_len / 2 + 1);
   buf_size = old_value_len + (size_t) norm_len;
@@ -258,7 +260,7 @@ add_response_header_connection (struct MHD_Response *response,
   buf = malloc (buf_size);
   if (NULL == buf)
     return MHD_NO;
-  /* Move "close" token (if any) to the front */
+  /* Remove "close" token (if any), it will be moved to the front */
   value_has_close = MHD_str_remove_token_caseless_ (value, value_len, "close",
                                                     MHD_STATICSTR_LEN_ ( \
                                                       "close"),
@@ -267,6 +269,14 @@ add_response_header_connection (struct MHD_Response *response,
   mhd_assert (0 <= norm_len);
   if (0 > norm_len)
     norm_len = 0; /* Must never happen */
+  if (0 != norm_len)
+  {
+    size_t len = norm_len;
+    MHD_str_remove_tokens_caseless_ (buf + old_value_len, &len,
+                                     "keep-alive",
+                                     MHD_STATICSTR_LEN_ ("keep-alive"));
+    norm_len = (ssize_t) len;
+  }
   if (0 == norm_len)
   { /* New value is empty after normalisation */
     if (! value_has_close)

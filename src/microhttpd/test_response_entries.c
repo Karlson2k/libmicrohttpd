@@ -612,6 +612,169 @@ main (int argc,
     return 3;
   }
 
+  if (MHD_NO != MHD_add_response_header (r, "Connection", "keep-Alive"))
+  {
+    fprintf (stderr,
+             "Successfully added \"Connection\" header with \"keep-Alive\".\n");
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Connection"), NULL))
+  {
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (MHD_YES != MHD_add_response_header (r, "Connection", "keep-Alive, Close"))
+  {
+    fprintf (stderr,
+             "Cannot add \"Connection\" header with \"keep-Alive, Close\".\n");
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Connection"), "close"))
+  {
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (MHD_NO != MHD_add_response_header (r, "Connection", "keep-Alive"))
+  {
+    fprintf (stderr,
+             "Successfully added \"Connection\" header with \"keep-Alive\".\n");
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (MHD_YES != MHD_add_response_header (r, "Connection", "keep-Alive, Close"))
+  {
+    fprintf (stderr,
+             "Cannot add \"Connection\" header with \"keep-Alive, Close\".\n");
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Connection"), "close"))
+  {
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (MHD_YES != MHD_add_response_header (r, "Connection",
+                                          "close, additional-token"))
+  {
+    fprintf (stderr, "Cannot add \"Connection\" header with "
+             "\"close, additional-token\".\n");
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Connection"),
+                    "close, additional-token"))
+  {
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (MHD_NO != MHD_add_response_header (r, "Connection", "keep-Alive"))
+  {
+    fprintf (stderr,
+             "Successfully added \"Connection\" header with \"keep-Alive\".\n");
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Connection"),
+                    "close, additional-token"))
+  {
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (MHD_YES != MHD_del_response_header (r, "Connection",
+                                          "additional-token,close"))
+  {
+    fprintf (stderr, "Cannot remove tokens from \"Connection\".\n");
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Connection"), NULL))
+  {
+    MHD_destroy_response (r);
+    return 4;
+  }
+
+  if (MHD_YES != MHD_add_response_header (r, "Connection",
+                                          "Keep-aLive, token-1"))
+  {
+    fprintf (stderr,
+             "Cannot add \"Connection\" header with \"Keep-aLive, token-1\".\n");
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Connection"), "token-1"))
+  {
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (MHD_YES != MHD_add_response_header (r, "Connection",
+                                          "Keep-aLive, token-2"))
+  {
+    fprintf (stderr,
+             "Cannot add \"Connection\" header with \"Keep-aLive, token-2\".\n");
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Connection"),
+                    "token-1, token-2"))
+  {
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (MHD_YES != MHD_add_response_header (r, "Connection",
+                                          "Keep-aLive, token-3, close"))
+  {
+    fprintf (stderr,
+             "Cannot add \"Connection\" header with \"Keep-aLive, token-3, close\".\n");
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Connection"),
+                    "close, token-1, token-2, token-3"))
+  {
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (MHD_YES != MHD_del_response_header (r, "Connection",
+                                          "close"))
+  {
+    fprintf (stderr, "Cannot remove \"close\" tokens from \"Connection\".\n");
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Connection"),
+                    "token-1, token-2, token-3"))
+  {
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (MHD_YES != MHD_add_response_header (r, "Connection", "Keep-aLive, close"))
+  {
+    fprintf (stderr,
+             "Cannot add \"Connection\" header with \"Keep-aLive, token-3, close\".\n");
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Connection"),
+                    "close, token-1, token-2, token-3"))
+  {
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (MHD_YES != MHD_del_response_header (r, "Connection",
+                                          "close, token-1, Keep-Alive, token-2, token-3"))
+  {
+    fprintf (stderr, "Cannot remove \"close\" tokens from \"Connection\".\n");
+    MHD_destroy_response (r);
+    return 4;
+  }
+  if (! expect_str (MHD_get_response_header (r, "Connection"), NULL))
+  {
+    MHD_destroy_response (r);
+    return 4;
+  }
+
   MHD_destroy_response (r);
   printf ("All tests has been successfully passed.\n");
   return 0;
