@@ -1272,7 +1272,7 @@ get_date_str (char *date)
 
 /**
  * Produce HTTP DATE header.
- * Result is always 37 bytes long (including terminating null).
+ * Result is always 37 bytes long (plus one terminating null).
  *
  * @param[out] header where to write the header, with
  *             at least 38 bytes available space.
