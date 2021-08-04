@@ -3159,7 +3159,7 @@ to the access handler.
 
 Takes no extra arguments.
 
-@index MHD_CONNECTION_INFO_HTTP_STATUS
+@item MHD_CONNECTION_INFO_HTTP_STATUS
 Returns the HTTP status code of the response that was
 queued. Returns NULL if no response was queued yet.
 
