@@ -4564,25 +4564,60 @@ MHD_queue_response (struct MHD_Connection *connection,
     return MHD_NO;
 
 #ifdef UPGRADE_SUPPORT
-  if ( (NULL != response->upgrade_handler) &&
-       (0 == (daemon->options & MHD_ALLOW_UPGRADE)) )
+  if (NULL != response->upgrade_handler)
   {
+    struct MHD_HTTP_Header *conn_header;
+    if (0 == (daemon->options & MHD_ALLOW_UPGRADE))
+    {
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ (
-                "Attempted 'upgrade' connection on daemon without MHD_ALLOW_UPGRADE option!\n"));
+      MHD_DLOG (daemon,
+                _ ("Attempted 'upgrade' connection on daemon without" \
+                   " MHD_ALLOW_UPGRADE option!\n"));
 #endif
-    return MHD_NO;
-  }
-  if ( (MHD_HTTP_SWITCHING_PROTOCOLS != status_code) &&
-       (NULL != response->upgrade_handler) )
-  {
+      return MHD_NO;
+    }
+    if (MHD_HTTP_SWITCHING_PROTOCOLS != status_code)
+    {
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ (
-                "Application used invalid status code for 'upgrade' response!\n"));
+      MHD_DLOG (daemon,
+                _ ("Application used invalid status code for" \
+                   " 'upgrade' response!\n"));
 #endif
-    return MHD_NO;
+      return MHD_NO;
+    }
+    if (0 == (response->flags_auto & MHD_RAF_HAS_CONNECTION_HDR))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Application used invalid response" \
+                   " without \"Connection\" header!\n"));
+#endif
+      return MHD_NO;
+    }
+    conn_header = response->first_header;
+    mhd_assert (NULL != conn_header);
+    mhd_assert (MHD_str_equal_caseless_ (conn_header->header,
+                                         MHD_HTTP_HEADER_CONNECTION));
+    if (! MHD_str_has_s_token_caseless_ (conn_header->value,
+                                         "upgrade"))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Application used invalid response" \
+                   " without \"upgrade\" token in" \
+                   " \"Connection\" header!\n"));
+#endif
+      return MHD_NO;
+    }
+    if (! MHD_IS_HTTP_VER_1_1_COMPAT (connection->http_ver))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Connection \"Upgrade\" can be used " \
+                   "with HTTP/1.1 connections!\n"));
+#endif
+      return MHD_NO;
+    }
   }
 #endif /* UPGRADE_SUPPORT */
   if ( (100 > (status_code & (~MHD_ICY_FLAG))) ||
