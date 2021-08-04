@@ -1389,6 +1389,7 @@ connection_shrink_read_buffer (struct MHD_Connection *connection)
   new_buf = MHD_pool_reallocate (c->pool, c->read_buffer, c->read_buffer_size,
                                  c->read_buffer_offset);
   mhd_assert (c->read_buffer == new_buf);
+  (void) new_buf; /* squash compiler warning */
   c->read_buffer_size = c->read_buffer_offset;
   if (0 == c->read_buffer_size)
     c->read_buffer = NULL;
@@ -1463,6 +1464,7 @@ connection_shrink_write_buffer (struct MHD_Connection *connection)
   new_buf = MHD_pool_reallocate (pool, c->write_buffer, c->write_buffer_size,
                                  c->write_buffer_append_offset);
   mhd_assert (c->write_buffer == new_buf);
+  (void) new_buf; /* squash compiler warning */
   c->write_buffer_size = c->write_buffer_append_offset;
 }
 
@@ -2008,7 +2010,7 @@ transmit_error_response_len (struct MHD_Connection *connection,
  * Transmit static string as error response
  */
 #define transmit_error_response_static(c, code, msg) \
-  transmit_error_response_len (c, code, msg, MHD_STATICSTR_LEN_(msg))
+  transmit_error_response_len (c, code, msg, MHD_STATICSTR_LEN_ (msg))
 
 /**
  * Update the 'event_loop_info' field of this connection based on the state
@@ -4443,6 +4445,10 @@ MHD_get_connection_info (struct MHD_Connection *connection,
          (MHD_CONNECTION_CLOSED == connection->state) )
       return NULL;   /* invalid, too early! */
     return (const union MHD_ConnectionInfo *) &connection->header_size;
+  case MHD_CONNECTION_INFO_HTTP_STATUS:
+    if (NULL == connection->response)
+      return NULL;
+    return (const union MHD_ConnectionInfo *) &connection->responseCode;
   default:
     return NULL;
   }

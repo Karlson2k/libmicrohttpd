@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2006--2020 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2006-2021 Christian Grothoff (and other contributing authors)
      Copyright (C) 2015-2021 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
@@ -131,7 +131,7 @@ typedef intptr_t ssize_t;
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097302
+#define MHD_VERSION 0x00097303
 
 
 #ifdef __has_attribute
@@ -139,7 +139,7 @@ typedef intptr_t ssize_t;
 #define _MHD_FLAGS_ENUM __attribute__((flag_enum))
 #endif /* flag_enum */
 #if __has_attribute (enum_extensibility)
-#define _MHD_FIXED_ENUM __attribute__((enum_extensibility(closed)))
+#define _MHD_FIXED_ENUM __attribute__((enum_extensibility (closed)))
 #endif /* enum_extensibility */
 #endif /* __has_attribute */
 
@@ -1981,6 +1981,11 @@ union MHD_ConnectionInfo
   unsigned int connection_timeout;
 
   /**
+   * HTTP status queued with the response, for #MHD_CONNECTION_INFO_HTTP_STATUS.
+   */
+  unsigned int http_status;
+
+  /**
    * Connect socket
    */
   MHD_socket connect_fd;
@@ -2121,7 +2126,14 @@ enum MHD_ConnectionInfoType
    * Return length of the client's HTTP request header.
    * @ingroup request
    */
-  MHD_CONNECTION_INFO_REQUEST_HEADER_SIZE
+  MHD_CONNECTION_INFO_REQUEST_HEADER_SIZE,
+
+  /**
+   * Return HTTP status queued with the response. NULL
+   * if no HTTP response has been queued yet.
+   */
+  MHD_CONNECTION_INFO_HTTP_STATUS
+
 } _MHD_FIXED_ENUM;
 
 
