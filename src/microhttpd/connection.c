@@ -1389,7 +1389,9 @@ connection_shrink_read_buffer (struct MHD_Connection *connection)
   new_buf = MHD_pool_reallocate (c->pool, c->read_buffer, c->read_buffer_size,
                                  c->read_buffer_offset);
   mhd_assert (c->read_buffer == new_buf);
+#ifdef NDEBUG
   (void) new_buf; /* squash compiler warning */
+#endif /* NDEBUG */
   c->read_buffer_size = c->read_buffer_offset;
   if (0 == c->read_buffer_size)
     c->read_buffer = NULL;
