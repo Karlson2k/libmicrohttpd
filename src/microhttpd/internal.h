@@ -814,7 +814,7 @@ enum MHD_HTTP_Version
 /**
  * The HTTP method.
  *
- * Only primary methods (specified in RFC7231) defined here.
+ * Only primary methods (specified in RFC7231) are defined here.
  */
 enum MHD_HTTP_Method
 {
