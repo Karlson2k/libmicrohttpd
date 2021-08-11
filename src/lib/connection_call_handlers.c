@@ -3582,8 +3582,8 @@ MHD_request_handle_idle_ (struct MHD_Request *request)
     time_t timeout;
     timeout = connection->connection_timeout;
     if ( (0 != timeout) &&
-         (timeout < (MHD_monotonic_sec_counter ()
-                     - connection->last_activity)) )
+         (timeout <= (MHD_monotonic_sec_counter ()
+                      - connection->last_activity)) )
     {
       MHD_connection_close_ (connection,
                              MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
