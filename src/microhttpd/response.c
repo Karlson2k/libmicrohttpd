@@ -266,6 +266,13 @@ add_response_header_connection (struct MHD_Response *response,
                                                       "close"),
                                                     buf + old_value_len,
                                                     &norm_len);
+#ifdef UPGRADE_SUPPORT
+  if ( (NULL != response->upgrade_handler) && value_has_close)
+  { /* The "close" token cannot be used with connection "upgrade" */
+    free (buf);
+    return MHD_NO;
+  }
+#endif /* UPGRADE_SUPPORT */
   mhd_assert (0 <= norm_len);
   if (0 > norm_len)
     norm_len = 0; /* Must never happen */
