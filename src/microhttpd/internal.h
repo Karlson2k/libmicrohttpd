@@ -860,6 +860,18 @@ enum MHD_HTTP_Method
   MHD_HTTP_MTHD_OTHER = 1000
 } _MHD_FIXED_ENUM;
 
+
+/**
+ * Reply-specific properties.
+ */
+struct MHD_Reply_Properties
+{
+  bool set; /**< Indicates that other members are set and valid */
+  bool use_reply_body_headers; /**< Use reply body-specific headers */
+  bool send_reply_body; /**< Send reply body (can be zero-sized) */
+  bool chunked; /**< Use chunked encoding for reply */
+};
+
 /**
  * State kept for each HTTP request.
  */
@@ -1209,6 +1221,11 @@ struct MHD_Connection
    * is already set.
    */
   unsigned int responseCode;
+
+  /**
+   * Reply-specific properties
+   */
+  struct MHD_Reply_Properties rp_props;
 
   /**
    * Are we receiving with chunked encoding?  This will be set to
