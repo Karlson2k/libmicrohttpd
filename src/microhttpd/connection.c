@@ -992,10 +992,14 @@ try_ready_normal_body (struct MHD_Connection *connection)
  * return #MHD_NO).
  *
  * @param connection the connection
+ * @param[out] p_finished the pointer to variable that will be set to "true"
+ *                        when application returned indication of the end
+ *                        of the stream
  * @return #MHD_NO if readying the response failed
  */
 static enum MHD_Result
-try_ready_chunked_body (struct MHD_Connection *connection)
+try_ready_chunked_body (struct MHD_Connection *connection,
+                        bool *p_finished)
 {
   ssize_t ret;
   struct MHD_Response *response;
@@ -1013,7 +1017,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
 
   mhd_assert (0 == connection->write_buffer_append_offset);
 
-  /* The buffer must reasonably large enough */
+  /* The buffer must be reasonably large enough */
   if (128 > connection->write_buffer_size)
   {
     size_t size;
@@ -1041,7 +1045,8 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   }
 
   if (0 == response->total_size)
-    ret = 0; /* response must be empty, don't bother calling crc */
+    /* response must be empty, don't bother calling crc */
+    ret = MHD_CONTENT_READER_END_OF_STREAM;
   else if ( (response->data_start <=
              connection->response_write_position) &&
             (response->data_start + response->data_size >
@@ -1085,15 +1090,9 @@ try_ready_chunked_body (struct MHD_Connection *connection)
                               "Closing connection (application error generating response)."));
     return MHD_NO;
   }
-  if ( (((ssize_t) MHD_CONTENT_READER_END_OF_STREAM) == ret) ||
-       (0 == response->total_size) )
+  if (((ssize_t) MHD_CONTENT_READER_END_OF_STREAM) == ret)
   {
-    /* end of message, signal other side! */
-    connection->write_buffer[0] = '0';
-    connection->write_buffer[1] = '\r';
-    connection->write_buffer[2] = '\n';
-    connection->write_buffer_append_offset = 3;
-    connection->write_buffer_send_offset = 0;
+    *p_finished = true;
     /* TODO: remove update of the response size */
     response->total_size = connection->response_write_position;
     return MHD_YES;
@@ -1109,6 +1108,7 @@ try_ready_chunked_body (struct MHD_Connection *connection)
   chunk_hdr_len = MHD_uint32_to_strx (ret, chunk_hdr, sizeof(chunk_hdr));
   mhd_assert (chunk_hdr_len != 0);
   mhd_assert (chunk_hdr_len < sizeof(chunk_hdr));
+  *p_finished = false;
   connection->write_buffer_send_offset =
     (max_chunk_hdr_len - (chunk_hdr_len + 2));
   memcpy (connection->write_buffer + connection->write_buffer_send_offset,
@@ -1885,13 +1885,16 @@ build_connection_chunked_response_footer (struct MHD_Connection *connection)
   mhd_assert (NULL != c->response);
 
   buf_size = connection_maximize_write_buffer (c);
-  /* '2' is the minimal size of chunked footer ("\r\n") */
-  if (buf_size < 2)
+  /* '5' is the minimal size of chunked footer ("0\r\n\r\n") */
+  if (buf_size < 5)
     return MHD_NO;
   mhd_assert (NULL != c->write_buffer);
   buf = c->write_buffer + c->write_buffer_append_offset;
   mhd_assert (NULL != buf);
   used_size = 0;
+  buf[used_size++] = '0';
+  buf[used_size++] = '\r';
+  buf[used_size++] = '\n';
 
   for (pos = c->response->first_header; NULL != pos; pos = pos->next)
   {
@@ -1915,8 +1918,8 @@ build_connection_chunked_response_footer (struct MHD_Connection *connection)
   }
   if (used_size + 2 > buf_size)
     return MHD_NO;
-  memcpy (buf + used_size, "\r\n", 2);
-  used_size += 2;
+  buf[used_size++] = '\r';
+  buf[used_size++] = '\n';
 
   c->write_buffer_append_offset += used_size;
   mhd_assert (c->write_buffer_append_offset <= c->write_buffer_size);
@@ -3476,7 +3479,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 
       if ( (NULL == resp->crc) &&
            (NULL == resp->data_iov) &&
-           (0 == connection->response_write_position) )
+           (0 == connection->response_write_position) &&
+           (! connection->have_chunked_upload) )
       {
         mhd_assert (resp->total_size >= resp->data_size);
         /* Send response headers alongside the response body, if the body
@@ -4236,18 +4240,21 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         connection->state = MHD_CONNECTION_BODY_SENT;
         continue;
       }
-      if (MHD_NO != try_ready_chunked_body (connection))
-      {
+      if (1)
+      { /* pseudo-branch for local variables scope */
+        bool finished;
+        if (MHD_NO != try_ready_chunked_body (connection, &finished))
+        {
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-        if (NULL != connection->response->crc)
-          MHD_mutex_unlock_chk_ (&connection->response->mutex);
+          if (NULL != connection->response->crc)
+            MHD_mutex_unlock_chk_ (&connection->response->mutex);
 #endif
-        connection->state = MHD_CONNECTION_CHUNKED_BODY_READY;
-        /* Buffering for flushable socket was already enabled */
-
-        continue;
+          connection->state = finished ? MHD_CONNECTION_BODY_SENT :
+                              MHD_CONNECTION_CHUNKED_BODY_READY;
+          continue;
+        }
+        /* mutex was already unlocked by try_ready_chunked_body */
       }
-      /* mutex was already unlocked by try_ready_chunked_body */
       break;
     case MHD_CONNECTION_BODY_SENT:
       /* TODO: replace with 'use_chunked_send' */
