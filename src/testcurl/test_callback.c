@@ -219,10 +219,8 @@ main (int argc, char **argv)
       if (EINTR != errno)
         abort ();
 #else
-      if ((WSAEINVAL != WSAGetLastError ()) || (0 != rs.fd_count) || (0 !=
-                                                                      ws.
-                                                                      fd_count)
-          || (0 != es.fd_count) )
+      if ((WSAEINVAL != WSAGetLastError ()) ||
+          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
         abort ();
       Sleep (1000);
 #endif
