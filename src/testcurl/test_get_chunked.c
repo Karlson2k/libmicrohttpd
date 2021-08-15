@@ -137,14 +137,16 @@ crc (void *cls,
 {
   struct MHD_Response **responseptr = cls;
 
-  if (resp_empty || (pos == RESP_SIZE))
-  {
+  if (resp_empty || (pos == RESP_SIZE - RESP_BLOCK_SIZE))
+  { /* Add footer with the last block */
     if (MHD_YES != MHD_add_response_footer (*responseptr,
                                             RESP_FOOTER_NAME,
                                             RESP_FOOTER_VALUE))
       abort ();
-    return MHD_CONTENT_READER_END_OF_STREAM;
   }
+  if (resp_empty || (pos == RESP_SIZE))
+    return MHD_CONTENT_READER_END_OF_STREAM;
+
   if (max < RESP_BLOCK_SIZE)
     abort ();                   /* should not happen in this testcase... */
   memset (buf, 'A' + (pos / RESP_BLOCK_SIZE), RESP_BLOCK_SIZE);
