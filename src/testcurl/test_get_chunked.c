@@ -76,6 +76,11 @@ int resp_sized;
  */
 int resp_empty;
 
+/**
+ * Force chunked response by response header?
+ */
+int chunked_forced;
+
 
 struct headers_check_result
 {
@@ -225,14 +230,14 @@ ahc_echo (void *cls,
   }
   if (NULL == response)
     abort ();
-  if (conn_close || resp_sized)
-  { /* Enforce chunked response even for non-Keep-Alive and static responses */
+  if (chunked_forced)
+  {
     if (MHD_NO == MHD_add_response_header (response,
                                            MHD_HTTP_HEADER_TRANSFER_ENCODING,
                                            "chunked"))
       abort ();
   }
-  if (resp_string)
+  if (resp_string || (resp_sized && resp_empty))
   {
     /* There is no chance to add footer later */
     if (MHD_YES != MHD_add_response_footer (response,
@@ -737,8 +742,13 @@ main (int argc, char *const *argv)
   resp_string = has_in_name (argv[0], "_string");
   resp_sized = has_in_name (argv[0], "_sized");
   resp_empty = has_in_name (argv[0], "_empty");
+  chunked_forced = has_in_name (argv[0], "_forced");
   if (resp_string)
     resp_sized = ! 0;
+  if (resp_sized)
+    chunked_forced = ! 0;
+  if (conn_close) /* TODO: remove when supported by MHD */
+    chunked_forced = ! 0;
   if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_THREADS))
   {
     errorCount += testInternalGet ();
