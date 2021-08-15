@@ -1012,8 +1012,7 @@ try_ready_chunked_body (struct MHD_Connection *connection,
   size_t chunk_hdr_len;
 
   response = connection->response;
-  if (NULL == response->crc)
-    return MHD_YES;
+  mhd_assert (NULL != response->crc || NULL != response->data);
 
   mhd_assert (0 == connection->write_buffer_append_offset);
 
