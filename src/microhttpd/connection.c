@@ -1010,6 +1010,8 @@ try_ready_chunked_body (struct MHD_Connection *connection,
   /* "FFFFFF" + "\r\n" + "\r\n" (chunk termination) */
   static const size_t max_chunk_overhead = sizeof(chunk_hdr) + 2 + 2;
   size_t chunk_hdr_len;
+  uint64_t left_to_send;
+  size_t size_to_fill;
 
   response = connection->response;
   mhd_assert (NULL != response->crc || NULL != response->data);
@@ -1042,9 +1044,22 @@ try_ready_chunked_body (struct MHD_Connection *connection,
     mhd_assert (NULL != connection->write_buffer);
     connection->write_buffer_size = size;
   }
+  mhd_assert (max_chunk_overhead < connection->write_buffer_size);
 
-  if (0 == response->total_size)
-    /* response must be empty, don't bother calling crc */
+  if (MHD_SIZE_UNKNOWN == response->total_size)
+    left_to_send = MHD_SIZE_UNKNOWN;
+  else
+    left_to_send = MHD_SIZE_UNKNOWN - connection->response_write_position;
+
+  size_to_fill = connection->write_buffer_size - max_chunk_overhead;
+  /* Limit size for the callback to the max usable size */
+  if (max_chunk < size_to_fill)
+    size_to_fill = max_chunk;
+  if (left_to_send < size_to_fill)
+    size_to_fill = left_to_send;
+
+  if (0 == left_to_send)
+    /* nothing to send, don't bother calling crc */
     ret = MHD_CONTENT_READER_END_OF_STREAM;
   else if ( (response->data_start <=
              connection->response_write_position) &&
@@ -1057,21 +1072,14 @@ try_ready_chunked_body (struct MHD_Connection *connection,
       = (size_t) (connection->response_write_position - response->data_start);
     /* buffer already ready, use what is there for the chunk */
     ret = response->data_size - data_write_offset;
-    if ( ((size_t) ret) > connection->write_buffer_size - max_chunk_overhead)
-      ret = connection->write_buffer_size - max_chunk_overhead;
+    if ( ((size_t) ret) > size_to_fill)
+      ret = (ssize_t) size_to_fill;
     memcpy (&connection->write_buffer[max_chunk_hdr_len],
             &response->data[data_write_offset],
             ret);
   }
   else
   {
-    /* buffer not in range, try to fill it */
-    size_t size_to_fill;
-
-    size_to_fill = connection->write_buffer_size - max_chunk_overhead;
-    /* Limit size for the callback to the max usable size */
-    if (max_chunk < size_to_fill)
-      size_to_fill = max_chunk;
     ret = response->crc (response->crc_cls,
                          connection->response_write_position,
                          &connection->write_buffer[max_chunk_hdr_len],
