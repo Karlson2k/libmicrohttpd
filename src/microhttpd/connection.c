@@ -1669,6 +1669,7 @@ buffer_append (char *buf,
                const char *append,
                size_t append_size)
 {
+  mhd_assert (NULL != buf); /* Mute static analyzer */
   if (buf_size < *ppos + append_size)
     return false;
   memcpy (buf + *ppos, append, append_size);
