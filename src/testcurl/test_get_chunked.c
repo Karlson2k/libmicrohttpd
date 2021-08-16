@@ -701,20 +701,22 @@ testExternalGet ()
         curl_multi_remove_handle (multi, c);
         curl_multi_cleanup (multi);
         curl_easy_cleanup (c);
+        curl_slist_free_all (h_list);
+        h_list = NULL;
         c = NULL;
         multi = NULL;
       }
     }
     MHD_run (d);
   }
+  MHD_stop_daemon (d);
   if (multi != NULL)
   {
     curl_multi_remove_handle (multi, c);
     curl_easy_cleanup (c);
     curl_multi_cleanup (multi);
-    curl_slist_free_all (h_list);
   }
-  MHD_stop_daemon (d);
+  curl_slist_free_all (h_list);
   if (1 != hdr_check.found_chunked)
   {
     fprintf (stderr,
