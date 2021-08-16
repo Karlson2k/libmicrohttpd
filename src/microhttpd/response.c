@@ -517,6 +517,10 @@ MHD_add_response_header (struct MHD_Response *response,
                                            MHD_HTTP_HEADER_DATE));
       mhd_assert (NULL != hdr);
       _MHD_remove_header (response, hdr);
+      if (NULL != hdr->value)
+        free (hdr->value);
+      free (hdr->header);
+      free (hdr);
     }
     if (MHD_NO != add_response_entry (response,
                                       MHD_HEADER_KIND,
