@@ -107,6 +107,7 @@ test_daemon_get (void *cls,
     fprintf (stderr, "curl_easy_setopt failed: `%s'\n",
              curl_easy_strerror (e));
     curl_easy_cleanup (c);
+    free (cbc.buf);
     return e;
   }
 
@@ -125,6 +126,7 @@ test_daemon_get (void *cls,
     fprintf (stderr, "HTTPS curl_easy_setopt failed: `%s'\n",
              curl_easy_strerror (e));
     curl_easy_cleanup (c);
+    free (cbc.buf);
     return e;
   }
   if (ver_peer &&
@@ -133,6 +135,7 @@ test_daemon_get (void *cls,
     fprintf (stderr, "HTTPS curl_easy_setopt failed: `%s'\n",
              curl_easy_strerror (e));
     curl_easy_cleanup (c);
+    free (cbc.buf);
     return e;
   }
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
