@@ -288,8 +288,8 @@ validate (struct CBC cbc, int ebase)
     {
       fprintf (stderr,
                "Got  `%.*s'\nWant `%.*s'\n",
-               RESP_BLOCK_SIZE, buf, RESP_BLOCK_SIZE,
-               &cbc.buf[i * RESP_BLOCK_SIZE]);
+               RESP_BLOCK_SIZE, &cbc.buf[i * RESP_BLOCK_SIZE],
+               RESP_BLOCK_SIZE, buf);
       return ebase * 2;
     }
   }
