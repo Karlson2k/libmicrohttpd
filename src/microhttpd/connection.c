@@ -1080,6 +1080,12 @@ try_ready_chunked_body (struct MHD_Connection *connection,
   }
   else
   {
+    if (NULL == response->crc)
+    { /* There is no way to reach this code */
+      CONNECTION_CLOSE_ERROR (connection,
+                              _ ("No callback for the chunked data."));
+      return MHD_NO;
+    }
     ret = response->crc (response->crc_cls,
                          connection->response_write_position,
                          &connection->write_buffer[max_chunk_hdr_len],
