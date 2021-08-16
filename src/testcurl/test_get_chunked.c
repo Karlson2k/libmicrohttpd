@@ -180,7 +180,6 @@ ahc_echo (void *cls,
   static int aptr;
   const char *me = cls;
   struct MHD_Response *response;
-  struct MHD_Response **responseptr;
   enum MHD_Result ret;
 
   (void) url;
@@ -196,17 +195,20 @@ ahc_echo (void *cls,
     *ptr = &aptr;
     return MHD_YES;
   }
-  responseptr = malloc (sizeof (struct MHD_Response *));
-  if (NULL == responseptr)
-    _exit (99);
   if (! resp_string)
   {
+    struct MHD_Response **responseptr;
+    responseptr = malloc (sizeof (struct MHD_Response *));
+    if (NULL == responseptr)
+      _exit (99);
+
     response = MHD_create_response_from_callback (resp_sized ?
                                                   RESP_SIZE : MHD_SIZE_UNKNOWN,
                                                   1024,
                                                   &crc,
                                                   responseptr,
                                                   &crcf);
+    *responseptr = response;
   }
   else
   {
@@ -246,7 +248,6 @@ ahc_echo (void *cls,
       abort ();
   }
 
-  *responseptr = response;
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
