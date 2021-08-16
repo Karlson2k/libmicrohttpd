@@ -469,29 +469,40 @@ testExternalGet ()
       curl_multi_perform (multi, &running);
       if (0 == running)
       {
-        msg = curl_multi_info_read (multi, &running);
-        if (NULL == msg)
-          break;
-        if (msg->msg == CURLMSG_DONE)
+        int pending;
+        int curl_fine = 0;
+        while (NULL != (msg = curl_multi_info_read (multi, &pending)))
         {
-          if ((i == 0) && (msg->data.result != CURLE_OK) )
-            printf ("%s failed at %s:%d: `%s'\n",
-                    "curl_multi_perform",
-                    __FILE__,
-                    __LINE__,
-                    curl_easy_strerror (msg->data.result));
-          else if ( (i == 1) &&
-                    (msg->data.result == CURLE_OK) )
-            printf ("%s should have failed at %s:%d\n",
-                    "curl_multi_perform",
-                    __FILE__,
-                    __LINE__);
-          curl_multi_remove_handle (multi, c);
-          curl_multi_cleanup (multi);
-          curl_easy_cleanup (c);
-          c = NULL;
-          multi = NULL;
+          if (msg->msg == CURLMSG_DONE)
+          {
+            if (msg->data.result == CURLE_OK)
+              curl_fine = 1;
+            else if (i == 0)
+            {
+              fprintf (stderr,
+                       "%s failed at %s:%d: `%s'\n",
+                       "curl_multi_perform",
+                       __FILE__,
+                       __LINE__, curl_easy_strerror (msg->data.result));
+            }
+          }
         }
+        if ((i == 0) && (! curl_fine))
+        {
+          fprintf (stderr, "libcurl haven't returned OK code\n");
+          abort ();
+        }
+        else if ((i == 1) && (curl_fine))
+        {
+          fprintf (stderr, "libcurl returned OK code, while it shouldn't\n");
+          abort ();
+        }
+        curl_multi_remove_handle (multi, c);
+        curl_multi_cleanup (multi);
+        curl_easy_cleanup (c);
+        c = NULL;
+        multi = NULL;
+        break;
       }
       MHD_run (d);
     }

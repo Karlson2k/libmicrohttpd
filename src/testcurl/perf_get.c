@@ -225,7 +225,7 @@ testInternalGet (int port, int poll_flag)
             "http://127.0.0.1:%d/hello_world",
             port);
   start_timer ();
-  for (i = 0; i<ROUNDS; i++)
+  for (i = 0; i < ROUNDS; i++)
   {
     cbc.pos = 0;
     c = curl_easy_init ();
@@ -304,7 +304,7 @@ testMultithreadedGet (int port, int poll_flag)
             "http://127.0.0.1:%d/hello_world",
             port);
   start_timer ();
-  for (i = 0; i<ROUNDS; i++)
+  for (i = 0; i < ROUNDS; i++)
   {
     cbc.pos = 0;
     c = curl_easy_init ();
@@ -387,7 +387,7 @@ testMultithreadedPoolGet (int port, int poll_flag)
             "http://127.0.0.1:%d/hello_world",
             port);
   start_timer ();
-  for (i = 0; i<ROUNDS; i++)
+  for (i = 0; i < ROUNDS; i++)
   {
     cbc.pos = 0;
     c = curl_easy_init ();
@@ -487,7 +487,7 @@ testExternalGet (int port)
     MHD_stop_daemon (d);
     return 512;
   }
-  for (i = 0; i<ROUNDS; i++)
+  for (i = 0; i < ROUNDS; i++)
   {
     cbc.pos = 0;
     c = curl_easy_init ();
@@ -556,22 +556,36 @@ testExternalGet (int port)
 #endif
       }
       curl_multi_perform (multi, &running);
-      if (running == 0)
+      if (0 == running)
       {
-        msg = curl_multi_info_read (multi, &running);
-        if (msg == NULL)
-          break;
-        if (msg->msg == CURLMSG_DONE)
+        int pending;
+        int curl_fine = 0;
+        while (NULL != (msg = curl_multi_info_read (multi, &pending)))
         {
-          if (msg->data.result != CURLE_OK)
-            printf ("%s failed at %s:%d: `%s'\n",
-                    "curl_multi_perform",
-                    __FILE__,
-                    __LINE__, curl_easy_strerror (msg->data.result));
-          curl_multi_remove_handle (multi, c);
-          curl_easy_cleanup (c);
-          c = NULL;
+          if (msg->msg == CURLMSG_DONE)
+          {
+            if (msg->data.result == CURLE_OK)
+              curl_fine = 1;
+            else
+            {
+              fprintf (stderr,
+                       "%s failed at %s:%d: `%s'\n",
+                       "curl_multi_perform",
+                       __FILE__,
+                       __LINE__, curl_easy_strerror (msg->data.result));
+              abort ();
+            }
+          }
         }
+        if (! curl_fine)
+        {
+          fprintf (stderr, "libcurl haven't returned OK code\n");
+          abort ();
+        }
+        curl_multi_remove_handle (multi, c);
+        curl_easy_cleanup (c);
+        c = NULL;
+        break;
       }
       /* two possibilities here; as select sets are
          tiny, this makes virtually no difference

@@ -220,7 +220,7 @@ main (int argc, char **argv)
         abort ();
 #else
       if ((WSAEINVAL != WSAGetLastError ()) ||
-          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
+          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count))
         abort ();
       Sleep (1000);
 #endif
@@ -228,24 +228,26 @@ main (int argc, char **argv)
     if (NULL != multi)
     {
       curl_multi_perform (multi, &running);
-      if (running == 0)
+      if (0 == running)
       {
         int pending;
         int curl_fine = 0;
         while (NULL != (msg = curl_multi_info_read (multi, &pending)))
         {
-          if (msg->msg != CURLMSG_DONE)
+          if (msg->msg == CURLMSG_DONE)
           {
-            if (msg->data.result != CURLE_OK)
+            if (msg->data.result == CURLE_OK)
+              curl_fine = 1;
+            else
+            {
               fprintf (stderr,
                        "%s failed at %s:%d: `%s'\n",
                        "curl_multi_perform",
                        __FILE__,
                        __LINE__, curl_easy_strerror (msg->data.result));
-            abort ();
+              abort ();
+            }
           }
-          else
-            curl_fine = 1;
         }
         if (! curl_fine)
         {
