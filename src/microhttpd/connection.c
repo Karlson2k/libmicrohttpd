@@ -1617,31 +1617,33 @@ setup_reply_properties (struct MHD_Connection *connection)
   else
     c->rp_props.send_reply_body = false;
 
-  if ( (c->rp_props.use_reply_body_headers) &&
-       ((MHD_SIZE_UNKNOWN == r->total_size) ||
-        (0 != (r->flags_auto & MHD_RAF_HAS_TRANS_ENC_CHUNKED))) )
-  { /* Chunked reply encoding is needed if possible */
+  if (c->rp_props.use_reply_body_headers)
+  {
+    if ((MHD_SIZE_UNKNOWN == r->total_size) ||
+        (0 != (r->flags_auto & MHD_RAF_HAS_TRANS_ENC_CHUNKED)))
+    { /* Chunked reply encoding is needed if possible */
 
-    /* Check whether chunked encoding is supported by the client */
-    if (! MHD_IS_HTTP_VER_1_1_COMPAT (c->http_ver))
-      use_chunked = false;
-    /* Check whether chunked encoding is allowed for the reply */
-    else if (0 != (r->flags & (MHD_RF_HTTP_VERSION_1_0_ONLY
-                               | MHD_RF_HTTP_VERSION_1_0_RESPONSE)))
-      use_chunked = false;
-    /* TODO: Use chunked for HTTP/1.1 non-Keep-Alive */
-    else if (0 != (r->flags_auto & MHD_RAF_HAS_TRANS_ENC_CHUNKED))
-      use_chunked = true;
-    else if (! use_keepalive)
-      use_chunked = false;
+      /* Check whether chunked encoding is supported by the client */
+      if (! MHD_IS_HTTP_VER_1_1_COMPAT (c->http_ver))
+        use_chunked = false;
+      /* Check whether chunked encoding is allowed for the reply */
+      else if (0 != (r->flags & (MHD_RF_HTTP_VERSION_1_0_ONLY
+                                 | MHD_RF_HTTP_VERSION_1_0_RESPONSE)))
+        use_chunked = false;
+      /* TODO: Use chunked for HTTP/1.1 non-Keep-Alive */
+      else if (0 != (r->flags_auto & MHD_RAF_HAS_TRANS_ENC_CHUNKED))
+        use_chunked = true;
+      else if (! use_keepalive)
+        use_chunked = false;
+      else
+        use_chunked = true;
+    }
     else
-      use_chunked = true;
-  }
-  else
-    use_chunked = false;
+      use_chunked = false;
 
-  if ( (MHD_SIZE_UNKNOWN == r->total_size) && ! use_chunked)
-    use_keepalive = false; /* End of the stream is indicated by closure */
+    if ( (MHD_SIZE_UNKNOWN == r->total_size) && ! use_chunked)
+      use_keepalive = false; /* End of the stream is indicated by closure */
+  }
 
   c->rp_props.chunked = use_chunked;
   c->rp_props.set = true;
