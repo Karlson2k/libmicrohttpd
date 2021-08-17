@@ -24,6 +24,10 @@
 /test_iplimit11
 /test_get_sendfile11
 /test_get_sendfile
+/test_get_close
+/test_get_close10
+/test_get_keep_alive
+/test_get_keep_alive10
 /test_get_response_cleanup
 /test_get_chunked
 /test_get_chunked_close

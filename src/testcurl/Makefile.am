@@ -82,6 +82,10 @@ check_PROGRAMS = \
   test_get \
   test_get_iovec \
   test_get_sendfile \
+  test_get_close \
+  test_get_close10 \
+  test_get_keep_alive \
+  test_get_keep_alive10 \
   test_delete \
   test_patch \
   test_put \
@@ -473,6 +477,30 @@ test_get_iovec11_LDADD = \
 test_get_sendfile11_SOURCES = \
   test_get_sendfile.c mhd_has_in_name.h
 test_get_sendfile11_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_get_close_SOURCES = \
+  test_get_close_keep_alive.c $(top_srcdir)/src/microhttpd/test_helpers.h
+test_get_close_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_get_close10_SOURCES = \
+  test_get_close_keep_alive.c $(top_srcdir)/src/microhttpd/test_helpers.h
+test_get_close10_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_get_keep_alive_SOURCES = \
+  test_get_close_keep_alive.c $(top_srcdir)/src/microhttpd/test_helpers.h
+test_get_keep_alive_LDADD = \
+  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  @LIBCURL@
+
+test_get_keep_alive10_SOURCES = \
+  test_get_close_keep_alive.c $(top_srcdir)/src/microhttpd/test_helpers.h
+test_get_keep_alive10_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   @LIBCURL@
 
