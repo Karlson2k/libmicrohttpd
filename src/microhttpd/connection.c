@@ -1705,7 +1705,9 @@ buffer_append (char *buf,
  * @param kind the kind of objects (headers or footers)
  * @param filter_transf_enc skip "Transfer-Encoding" header
  * @param add_close add "close" token to the
- *                  "Connection:" header (if any)
+ *                  "Connection:" header (if any), ignored if no "Connection:"
+ *                  header was added by user or if "close" token is already
+ *                  present in "Connection:" header
  * @param add_keep_alive add "Keep-Alive" token to the
  *                       "Connection:" header (if any)
  * @return true if succeed,
@@ -1737,6 +1739,8 @@ add_user_headers (char *buf,
     add_close = false;          /* No such header */
     add_keep_alive = false;     /* No such header */
   }
+  else if (0 != (r->flags_auto & MHD_RAF_HAS_CONNECTION_CLOSE))
+    add_close = false;          /* "close" token was already set */
 
   for (hdr = r->first_header; NULL != hdr; hdr = hdr->next)
   {
