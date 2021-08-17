@@ -1182,6 +1182,11 @@ keepalive_possible (struct MHD_Connection *connection)
   if (! MHD_IS_HTTP_VER_SUPPORTED (connection->http_ver))
     return MHD_NO;
 
+  if (MHD_lookup_header_s_token_ci (connection,
+                                    MHD_HTTP_HEADER_CONNECTION,
+                                    "close"))
+    return MHD_NO;
+
   if (MHD_IS_HTTP_VER_1_1_COMPAT (connection->http_ver) &&
       ( (NULL == connection->response) ||
         (0 == (connection->response->flags
@@ -1190,11 +1195,6 @@ keepalive_possible (struct MHD_Connection *connection)
     if (MHD_lookup_header_s_token_ci (connection,
                                       MHD_HTTP_HEADER_CONNECTION,
                                       "upgrade"))
-      return MHD_NO;
-
-    if (MHD_lookup_header_s_token_ci (connection,
-                                      MHD_HTTP_HEADER_CONNECTION,
-                                      "close"))
       return MHD_NO;
 
     return MHD_YES;
