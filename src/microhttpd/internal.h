@@ -755,7 +755,12 @@ enum MHD_ConnKeepAlive
   /**
    * Connection can be used for serving next request
    */
-  MHD_CONN_USE_KEEPALIVE = 1
+  MHD_CONN_USE_KEEPALIVE = 1,
+
+  /**
+   * Connection will be upgraded
+   */
+  MHD_CONN_MUST_UPGRADE = 2
 } _MHD_FIXED_ENUM;
 
 enum MHD_HTTP_Version

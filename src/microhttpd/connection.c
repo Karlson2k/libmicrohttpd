@@ -1138,77 +1138,82 @@ try_ready_chunked_body (struct MHD_Connection *connection,
 
 
 /**
- * Are we allowed to keep the given connection alive?  We can use the
- * TCP stream for a second request if the connection is HTTP 1.1 and
- * the "Connection" header either does not exist or is not set to
- * "close", or if the connection is HTTP 1.0 and the "Connection"
- * header is explicitly set to "keep-alive".  If no HTTP version is
- * specified (or if it is not 1.0 or 1.1), we definitively close the
- * connection.  If the "Connection" header is not exactly "close" or
- * "keep-alive", we proceed to use the default for the respective HTTP
- * version (which is conservative for HTTP 1.0, but might be a bit
- * optimistic for HTTP 1.1).
+ * Are we allowed to keep the given connection alive?
+ * We can use the TCP stream for a second request if the connection
+ * is HTTP 1.1 and the "Connection" header either does not exist or
+ * is not set to "close", or if the connection is HTTP 1.0 and the
+ * "Connection" header is explicitly set to "keep-alive".
+ * If no HTTP version is specified (or if it is not 1.0 or 1.1), we
+ * definitively close the connection.  If the "Connection" header is
+ * not exactly "close" or "keep-alive", we proceed to use the default
+ * for the respective HTTP version.
+ * If response has HTTP/1.0 flag or has "Connection: close" header
+ * then connection must be closed.
+ * If full request has not been read then connection must be closed
+ * as well.
  *
  * @param connection the connection to check for keepalive
- * @return #MHD_YES if (based on the request), a keepalive is
- *        legal
+ * @return MHD_CONN_USE_KEEPALIVE if (based on the request and the response),
+ *         a keepalive is legal,
+ *         MHD_CONN_MUST_CLOSE if connection must be closed after sending
+ *         complete reply,
+ *         MHD_CONN_MUST_UPGRADE if connection must be upgraded.
  */
-static enum MHD_Result
-/* TODO: use 'bool' as result type */
+static enum MHD_ConnKeepAlive
 keepalive_possible (struct MHD_Connection *connection)
 {
-  if (MHD_CONN_MUST_CLOSE == connection->keepalive)
-    return MHD_NO;
-  /* TODO: use additional flags, like "error_closure" */
-  if (connection->read_closed)
-    return MHD_NO;
-  /* TODO: Remove check to response presence / replace with assert */
-  if ( (NULL != connection->response) &&
-       (0 != (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_ONLY) ) )
-    return MHD_NO;
-  if ( (NULL != connection->response) &&
-       (0 != (connection->response->flags_auto
-              & MHD_RAF_HAS_CONNECTION_CLOSE) ) )
-    return MHD_NO;
+  struct MHD_Connection *const c = connection; /**< a short alias */
+  struct MHD_Response *const r = c->response;  /**< a short alias */
+
+  mhd_assert (NULL != r);
+  if (MHD_CONN_MUST_CLOSE == c->keepalive)
+    return MHD_CONN_MUST_CLOSE;
 
 #ifdef UPGRADE_SUPPORT
-  /* TODO: use special value 'keep-alive' for upgrade */
-  if ( (NULL != connection->response)
-       && (NULL != connection->response->upgrade_handler) )
-    /* If this connection will not be "upgraded", it must be closed. */
-    return MHD_NO;
+  /* TODO: Move below the next check when MHD stops closing connections
+   * when response is queued in first callback */
+  if (NULL != r->upgrade_handler)
+  {
+    /* No "close" token is enforced by 'add_response_header_connection()' */
+    mhd_assert (0 == (r->flags_auto & MHD_RAF_HAS_CONNECTION_CLOSE));
+    /* Valid HTTP version is enforced by 'MHD_queue_response()' */
+    mhd_assert (MHD_IS_HTTP_VER_SUPPORTED (c->http_ver));
+    return MHD_CONN_MUST_UPGRADE;
+  }
 #endif /* UPGRADE_SUPPORT */
 
-  if (! MHD_IS_HTTP_VER_SUPPORTED (connection->http_ver))
-    return MHD_NO;
+  /* TODO: use additional flags, like "error_closure" or
+   * "! read_completed" */
+  if (c->read_closed)
+    return MHD_CONN_MUST_CLOSE;
 
-  if (MHD_lookup_header_s_token_ci (connection,
+  if (0 != (r->flags & MHD_RF_HTTP_VERSION_1_0_ONLY))
+    return MHD_CONN_MUST_CLOSE;
+  if (0 != (r->flags_auto & MHD_RAF_HAS_CONNECTION_CLOSE))
+    return MHD_CONN_MUST_CLOSE;
+
+  if (! MHD_IS_HTTP_VER_SUPPORTED (c->http_ver))
+    return MHD_CONN_MUST_CLOSE;
+
+  if (MHD_lookup_header_s_token_ci (c,
                                     MHD_HTTP_HEADER_CONNECTION,
                                     "close"))
-    return MHD_NO;
+    return MHD_CONN_MUST_CLOSE;
 
-  if (MHD_IS_HTTP_VER_1_1_COMPAT (connection->http_ver) &&
-      ( (NULL == connection->response) ||
-        (0 == (connection->response->flags
-               & MHD_RF_HTTP_VERSION_1_0_RESPONSE) ) ) )
-  {
-    if (MHD_lookup_header_s_token_ci (connection,
-                                      MHD_HTTP_HEADER_CONNECTION,
-                                      "upgrade"))
-      return MHD_NO;
+  if (MHD_IS_HTTP_VER_1_1_COMPAT (c->http_ver) &&
+      (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_RESPONSE)) )
+    return MHD_CONN_USE_KEEPALIVE;
 
-    return MHD_YES;
-  }
   if (MHD_HTTP_VER_1_0 == connection->http_ver)
   {
     if (MHD_lookup_header_s_token_ci (connection,
                                       MHD_HTTP_HEADER_CONNECTION,
                                       "Keep-Alive"))
-      return MHD_YES;
+      return MHD_CONN_USE_KEEPALIVE;
 
-    return MHD_NO;
+    return MHD_CONN_MUST_CLOSE;
   }
-  return MHD_NO;
+  return MHD_CONN_MUST_CLOSE;
 }
 
 
@@ -1604,13 +1609,12 @@ setup_reply_properties (struct MHD_Connection *connection)
   struct MHD_Connection *const c = connection; /**< a short alias */
   struct MHD_Response *const r = c->response;  /**< a short alias */
   bool use_chunked;
-  bool use_keepalive;
 
   mhd_assert (NULL != r);
 
   /* ** Adjust reply properties ** */
 
-  use_keepalive = keepalive_possible (c);
+  c->keepalive = keepalive_possible (c);
   c->rp_props.use_reply_body_headers = is_reply_body_headers_needed (c);
   if (c->rp_props.use_reply_body_headers)
     c->rp_props.send_reply_body = is_reply_body_needed (c);
@@ -1644,7 +1648,8 @@ setup_reply_properties (struct MHD_Connection *connection)
     if ( (MHD_SIZE_UNKNOWN == r->total_size) && ! use_chunked)
     {
       mhd_assert (! MHD_IS_HTTP_VER_1_1_COMPAT (c->http_ver));
-      use_keepalive = false; /* End of the stream is indicated by closure */
+      /* End of the stream is indicated by closure */
+      c->keepalive = MHD_CONN_MUST_CLOSE;
     }
   }
 
@@ -1652,7 +1657,6 @@ setup_reply_properties (struct MHD_Connection *connection)
   c->rp_props.set = true;
   /* TODO: remove 'have_chunked_upload' assignment, use 'rp_props.chunked' */
   c->have_chunked_upload = c->rp_props.chunked;
-  c->keepalive = use_keepalive ? MHD_CONN_USE_KEEPALIVE : MHD_CONN_MUST_CLOSE;
 }
 
 
@@ -1832,9 +1836,17 @@ build_header_response (struct MHD_Connection *connection)
   /* ** Adjust response properties ** */
 
   setup_reply_properties (c);
+
   mhd_assert (c->rp_props.set);
   mhd_assert ((MHD_CONN_MUST_CLOSE == c->keepalive) || \
-              (MHD_CONN_USE_KEEPALIVE == c->keepalive));
+              (MHD_CONN_USE_KEEPALIVE == c->keepalive) || \
+              (MHD_CONN_MUST_UPGRADE == c->keepalive));
+#ifdef UPGRADE_SUPPORT
+  mhd_assert ((NULL == r->upgrade_handler) || \
+              (MHD_CONN_MUST_UPGRADE == c->keepalive));
+#else  /* ! UPGRADE_SUPPORT */
+  mhd_assert (MHD_CONN_MUST_UPGRADE != c->keepalive);
+#endif /* ! UPGRADE_SUPPORT */
   mhd_assert ((! c->rp_props.chunked) || c->rp_props.use_reply_body_headers);
   mhd_assert ((! c->rp_props.send_reply_body) || \
               c->rp_props.use_reply_body_headers);
@@ -1842,6 +1854,7 @@ build_header_response (struct MHD_Connection *connection)
   mhd_assert (NULL == r->upgrade_handler || \
               ! c->rp_props.use_reply_body_headers);
 #endif /* UPGRADE_SUPPORT */
+
   rcode = (unsigned) (c->responseCode & (~MHD_ICY_FLAG));
 
   /* ** Actually build the response header ** */
@@ -1914,18 +1927,13 @@ build_header_response (struct MHD_Connection *connection)
   /* The "Connection:" header */
   if (0 == (r->flags_auto & MHD_RAF_HAS_CONNECTION_HDR))
   {
-    if ((MHD_CONN_MUST_CLOSE == c->keepalive)
-#ifdef UPGRADE_SUPPORT
-        /* TODO: don't mark as "close" upgraded connection */
-        && (NULL == r->upgrade_handler)
-#endif
-        )
+    if (MHD_CONN_MUST_CLOSE == c->keepalive)
     {
       if (! buffer_append_s (buf, &pos, buf_size,
                              MHD_HTTP_HEADER_CONNECTION ": close\r\n"))
         return MHD_NO;
     }
-    else /* Keep-Alive */
+    else if (MHD_CONN_USE_KEEPALIVE == c->keepalive)
     {
       if (MHD_HTTP_VER_1_0 == c->http_ver)
       {
@@ -1940,12 +1948,7 @@ build_header_response (struct MHD_Connection *connection)
 
   if (! add_user_headers (buf, &pos, buf_size, r, MHD_HEADER_KIND,
                           ! c->rp_props.chunked,
-                          ((MHD_CONN_MUST_CLOSE == c->keepalive)
-#ifdef UPGRADE_SUPPORT
-                           /* TODO: don't mark as "close" upgraded connection */
-                           && (NULL == r->upgrade_handler)
-#endif
-                          ),
+                          (MHD_CONN_MUST_CLOSE == c->keepalive),
                           (MHD_HTTP_VER_1_0 == c->http_ver) &&
                           (MHD_CONN_USE_KEEPALIVE == c->keepalive)))
     return MHD_NO;
