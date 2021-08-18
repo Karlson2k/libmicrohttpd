@@ -771,8 +771,6 @@ main (int argc, char *const *argv)
     resp_sized = ! 0;
   if (resp_sized)
     chunked_forced = ! 0;
-  if (conn_close) /* TODO: remove when supported by MHD */
-    chunked_forced = ! 0;
   if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_THREADS))
   {
     errorCount += testInternalGet ();

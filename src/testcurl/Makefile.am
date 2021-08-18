@@ -118,7 +118,9 @@ check_PROGRAMS = \
   test_get_chunked_empty_sized \
   test_get_chunked_close_empty_sized \
   test_get_chunked_forced \
+  test_get_chunked_close_forced \
   test_get_chunked_empty_forced \
+  test_get_chunked_close_empty_forced \
   test_put_chunked \
   test_callback \
   $(EMPTY_ITEM)
@@ -294,7 +296,13 @@ test_get_chunked_close_empty_sized_SOURCES = \
 test_get_chunked_forced_SOURCES = \
   test_get_chunked.c
 
+test_get_chunked_close_forced_SOURCES = \
+  test_get_chunked.c
+
 test_get_chunked_empty_forced_SOURCES = \
+  test_get_chunked.c
+
+test_get_chunked_close_empty_forced_SOURCES = \
   test_get_chunked.c
 
 test_post_SOURCES = \
