@@ -381,8 +381,6 @@ curlEasyInitForTest (const char *queryPath, int port, struct CBC *pcbc,
                                      lcurl_hdr_callback)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HEADERDATA,
                                      hdr_chk_result)) ||
-      (add_hdr_k_alive && (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTPHEADER,
-                                                         curl_k_alive_hdr))) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
       (oneone) ?
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
