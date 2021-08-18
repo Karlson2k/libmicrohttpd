@@ -1647,7 +1647,6 @@ setup_reply_properties (struct MHD_Connection *connection)
 
     if ( (MHD_SIZE_UNKNOWN == r->total_size) && ! use_chunked)
     {
-      mhd_assert (! MHD_IS_HTTP_VER_1_1_COMPAT (c->http_ver));
       /* End of the stream is indicated by closure */
       c->keepalive = MHD_CONN_MUST_CLOSE;
     }
