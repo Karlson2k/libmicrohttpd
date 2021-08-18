@@ -131,7 +131,7 @@ typedef intptr_t ssize_t;
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097303
+#define MHD_VERSION 0x00097304
 
 
 #ifdef __has_attribute
