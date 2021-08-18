@@ -669,8 +669,8 @@ doCurlQueryInThread (struct MHD_Daemon *d,
       if (0 != getMhdActiveConnections (d))
       {
         print_test_params (add_hdr_close, add_hdr_k_alive);
-        fprintf (stderr,
-                 "MHD still has active connection after response has been sent.\n");
+        fprintf (stderr, "MHD still has active connection "
+                 "after response has been sent.\n");
         p->queryError |= 2;
       }
     }
@@ -694,12 +694,21 @@ doCurlQueryInThread (struct MHD_Daemon *d,
     if (use_external_poll)
     { /* The number of MHD connection can be used only with external poll.
        * otherwise it creates a race condition. */
-      if (1 != getMhdActiveConnections (d))
+      unsigned int num_conn = getMhdActiveConnections (d);
+      if (0 == num_conn)
       {
         print_test_params (add_hdr_close, add_hdr_k_alive);
-        fprintf (stderr,
-                 "MHD has no active connection after response has been sent.\n");
+        fprintf (stderr, "MHD has no active connection "
+                 "after response has been sent.\n");
         p->queryError |= 2;
+      }
+      else if (1 != num_conn)
+      {
+        print_test_params (add_hdr_close, add_hdr_k_alive);
+        fprintf (stderr, "MHD has wrong number of active connection (%u) "
+                 "after response has been sent. Line: %d\n", num_conn,
+                 __LINE__);
+        _exit (23);
       }
     }
   }
