@@ -81,6 +81,11 @@ int resp_empty;
  */
 int chunked_forced;
 
+/**
+ * MHD port used for testing
+ */
+int port_global;
+
 
 struct headers_check_result
 {
@@ -310,11 +315,7 @@ testInternalGet ()
   struct curl_slist *h_list = NULL;
   struct headers_check_result hdr_check;
 
-  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-    port = 0;
-  else
-    port = 1170;
-
+  port = port_global;
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
@@ -331,6 +332,8 @@ testInternalGet ()
       MHD_stop_daemon (d); return 32;
     }
     port = (int) dinfo->port;
+    if (0 == port_global)
+      port_global = port; /* Re-use the same port for all checks */
   }
   hdr_check.found_chunked = 0;
   hdr_check.found_footer = 0;
@@ -394,11 +397,7 @@ testMultithreadedGet ()
   struct curl_slist *h_list = NULL;
   struct headers_check_result hdr_check;
 
-  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-    port = 0;
-  else
-    port = 1171;
-
+  port = port_global;
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
@@ -416,6 +415,8 @@ testMultithreadedGet ()
       MHD_stop_daemon (d); return 32;
     }
     port = (int) dinfo->port;
+    if (0 == port_global)
+      port_global = port; /* Re-use the same port for all checks */
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -479,11 +480,7 @@ testMultithreadedPoolGet ()
   struct curl_slist *h_list = NULL;
   struct headers_check_result hdr_check;
 
-  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-    port = 0;
-  else
-    port = 1172;
-
+  port = port_global;
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
@@ -502,6 +499,8 @@ testMultithreadedPoolGet ()
       MHD_stop_daemon (d); return 32;
     }
     port = (int) dinfo->port;
+    if (0 == port_global)
+      port_global = port; /* Re-use the same port for all checks */
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -579,11 +578,7 @@ testExternalGet ()
   struct curl_slist *h_list = NULL;
   struct headers_check_result hdr_check;
 
-  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-    port = 0;
-  else
-    port = 1173;
-
+  port = port_global;
   multi = NULL;
   cbc.buf = buf;
   cbc.size = 2048;
@@ -601,6 +596,8 @@ testExternalGet ()
       MHD_stop_daemon (d); return 32;
     }
     port = (int) dinfo->port;
+    if (0 == port_global)
+      port_global = port; /* Re-use the same port for all checks */
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -771,6 +768,24 @@ main (int argc, char *const *argv)
     resp_sized = ! 0;
   if (resp_sized)
     chunked_forced = ! 0;
+
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port_global = 0;
+  else
+  {
+    port_global = 4100;
+    if (conn_close)
+      port_global += 1 << 0;
+    if (resp_string)
+      port_global += 1 << 1;
+    if (resp_sized)
+      port_global += 1 << 2;
+    if (resp_empty)
+      port_global += 1 << 3;
+    if (chunked_forced)
+      port_global += 1 << 4;
+  }
+
   if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_THREADS))
   {
     errorCount += testInternalGet ();
