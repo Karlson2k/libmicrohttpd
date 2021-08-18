@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2009, 2011, 2015, 2016 Christian Grothoff
+     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -22,6 +23,7 @@
  * @file test_concurrent_stop.c
  * @brief test stopping server while concurrent GETs are ongoing
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 #include "MHD_config.h"
 #include "platform.h"
@@ -222,7 +224,7 @@ do_gets (void *param)
             "http://127.0.0.1:%d/hello_world",
             port);
 
-  for (j = 0; j<PAR; j++)
+  for (j = 0; j < PAR; j++)
   {
     if (0 != pthread_create (&par[j], NULL, &thread_gets, (void*) url))
     {
@@ -236,7 +238,7 @@ do_gets (void *param)
     }
   }
   (void) sleep (1);
-  for (j = 0; j<PAR; j++)
+  for (j = 0; j < PAR; j++)
   {
     pthread_join (par[j], NULL);
   }

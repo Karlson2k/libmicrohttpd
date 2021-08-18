@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007 Christian Grothoff
+     Copyright (C) 2016-2019 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -22,6 +23,7 @@
  * @file test_timeout.c
  * @brief  Testcase for libmicrohttpd PUT operations
  * @author Matthias Wachs
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "MHD_config.h"

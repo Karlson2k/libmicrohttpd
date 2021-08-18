@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2017-2021 Karlson2k (Evgeny Grin)
+     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
      Copyright (C) 2007, 2009, 2011 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
@@ -113,7 +113,7 @@ _externalErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
   fprintf (stderr, "WSAGetLastError() value: %d\n", (int) WSAGetLastError ());
 #endif /* MHD_WINSOCK_SOCKETS */
   fflush (stderr);
-  _exit (99);
+  exit (99);
 }
 
 
@@ -137,7 +137,7 @@ _libcurlErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
     fprintf (stderr, "Last libcurl error details: %s\n", libcurl_errbuf);
 
   fflush (stderr);
-  _exit (99);
+  exit (99);
 }
 
 
@@ -274,7 +274,7 @@ log_cb (void *cls,
     fprintf (stderr,
              "Wrong URI: `%s', line: %d\n",
              uri, __LINE__);
-    _exit (22);
+    exit (22);
   }
   return NULL;
 }
@@ -314,7 +314,7 @@ ahc_echo (void *cls,
   if (NULL == response)
   {
     fprintf (stderr, "Failed to create response. Line: %d\n", __LINE__);
-    _exit (19);
+    exit (19);
   }
   if (add_mhd_close)
   {
@@ -323,7 +323,7 @@ ahc_echo (void *cls,
                                            HDR_CONN_CLOSE_VALUE))
     {
       fprintf (stderr, "Failed to add header. Line: %d\n", __LINE__);
-      _exit (19);
+      exit (19);
     }
   }
   ret = MHD_queue_response (connection,
@@ -333,7 +333,7 @@ ahc_echo (void *cls,
   if (ret == MHD_NO)
   {
     fprintf (stderr, "Failed to queue response. Line: %d\n", __LINE__);
-    _exit (19);
+    exit (19);
   }
   return ret;
 }
@@ -523,11 +523,11 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c)
     if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &maxMhdSk))
     {
       fprintf (stderr, "MHD_get_fdset() failed. Line: %d\n", __LINE__);
-      _exit (11);
+      exit (11);
       break;
     }
     tv.tv_sec = 0;
-    tv.tv_usec = 10000;
+    tv.tv_usec = 1000;
 #ifdef MHD_POSIX_SOCKETS
     if (maxMhdSk > maxCurlSk)
       maxCurlSk = maxMhdSk;
@@ -536,18 +536,28 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c)
     {
 #ifdef MHD_POSIX_SOCKETS
       if (EINTR != errno)
-        externalErrorExitDesc ("select() failed");
+      {
+        fprintf (stderr, "Unexpected select() error: %d. Line: %d\n",
+                 (int) errno, __LINE__);
+        fflush (stderr);
+        exit (99);
+      }
 #else
       if ((WSAEINVAL != WSAGetLastError ()) ||
-          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count))
-        externalErrorExitDesc ("select() failed");
-      Sleep (10);
+          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
+      {
+        fprintf (stderr, "Unexpected select() error: %d. Line: %d\n",
+                 (int) WSAGetLastError (), __LINE__);
+        fflush (stderr);
+        exit (99);
+      }
+      Sleep (1);
 #endif
     }
     if (MHD_YES != MHD_run_from_select (d, &rs, &ws, &es))
     {
       fprintf (stderr, "MHD_run_from_select() failed. Line: %d\n", __LINE__);
-      _exit (11);
+      exit (11);
     }
   }
 
@@ -706,7 +716,7 @@ doCurlQueryInThread (struct MHD_Daemon *d,
         fprintf (stderr, "MHD has wrong number of active connection (%u) "
                  "after response has been sent. Line: %d\n", num_conn,
                  __LINE__);
-        _exit (23);
+        exit (23);
       }
     }
   }

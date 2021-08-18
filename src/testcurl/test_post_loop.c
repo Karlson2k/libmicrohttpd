@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007 Christian Grothoff
+     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -22,6 +23,7 @@
  * @file daemontest_post_loop.c
  * @brief  Testcase for libmicrohttpd POST operations using URL-encoding
  * @author Christian Grothoff (inspired by bug report #1296)
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "MHD_config.h"
@@ -525,12 +527,25 @@ testExternalPost ()
       tv.tv_usec = (timeout % 1000) * 1000;
       if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
       {
-        if (EINTR == errno)
-          continue;
-        fprintf (stderr,
-                 "select failed: %s\n",
-                 strerror (errno));
-        break;
+#ifdef MHD_POSIX_SOCKETS
+        if (EINTR != errno)
+        {
+          fprintf (stderr, "Unexpected select() error: %d. Line: %d\n",
+                   (int) errno, __LINE__);
+          fflush (stderr);
+          exit (99);
+        }
+#else
+        if ((WSAEINVAL != WSAGetLastError ()) ||
+            (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
+        {
+          fprintf (stderr, "Unexpected select() error: %d. Line: %d\n",
+                   (int) WSAGetLastError (), __LINE__);
+          fflush (stderr);
+          exit (99);
+        }
+        Sleep (1);
+#endif
       }
       while (CURLM_CALL_MULTI_PERFORM ==
              curl_multi_perform (multi, &running))

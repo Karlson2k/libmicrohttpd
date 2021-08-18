@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2009, 2011 Christian Grothoff
+     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -22,6 +23,7 @@
  * @brief Testcase for MHD not calling the callback too often
  * @author Jan Seeger
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 #include "MHD_config.h"
 #include "platform.h"
@@ -217,12 +219,22 @@ main (int argc, char **argv)
     {
 #ifdef MHD_POSIX_SOCKETS
       if (EINTR != errno)
-        abort ();
+      {
+        fprintf (stderr, "Unexpected select() error: %d. Line: %d\n",
+                 (int) errno, __LINE__);
+        fflush (stderr);
+        exit (99);
+      }
 #else
       if ((WSAEINVAL != WSAGetLastError ()) ||
-          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count))
-        abort ();
-      Sleep (1000);
+          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
+      {
+        fprintf (stderr, "Unexpected select() error: %d. Line: %d\n",
+                 (int) WSAGetLastError (), __LINE__);
+        fflush (stderr);
+        exit (99);
+      }
+      Sleep (1);
 #endif
     }
     if (NULL != multi)

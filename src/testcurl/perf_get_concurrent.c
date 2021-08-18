@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2009, 2011 Christian Grothoff
+     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -30,6 +31,7 @@
  *        (since MHD is actually better); only the relative
  *        scores between MHD versions are meaningful.
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "MHD_config.h"
@@ -203,7 +205,7 @@ thread_gets (void *param)
      setting NOSIGNAL results in really weird
      crashes on my system! */
   curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
-  for (i = 0; i<ROUNDS; i++)
+  for (i = 0; i < ROUNDS; i++)
   {
     if (CURLE_OK != (errornum = curl_easy_perform (c)))
     {
@@ -233,7 +235,7 @@ do_gets (void *param)
             sizeof (url),
             "http://127.0.0.1:%d/hello_world",
             port);
-  for (j = 0; j<PAR; j++)
+  for (j = 0; j < PAR; j++)
   {
     if (0 != pthread_create (&par[j], NULL, &thread_gets, (void*) url))
     {
@@ -242,7 +244,7 @@ do_gets (void *param)
       return "pthread_create error";
     }
   }
-  for (j = 0; j<PAR; j++)
+  for (j = 0; j < PAR; j++)
   {
     char *ret_val;
     if ((0 != pthread_join (par[j], (void**) &ret_val)) ||
@@ -461,23 +463,26 @@ testExternalGet (int port)
     if (-1 == select (max + 1, &rs, &ws, &es, &tv))
     {
 #ifdef MHD_POSIX_SOCKETS
-      if (EINTR == errno)
-        continue;
-      fprintf (stderr,
-               "select failed: %s\n",
-               strerror (errno));
-#else
-      if ((WSAEINVAL == WSAGetLastError ()) && (0 == rs.fd_count) && (0 ==
-                                                                      ws.
-                                                                      fd_count)
-          && (0 == es.fd_count) )
+      if (EINTR != errno)
       {
-        Sleep (1000);
-        continue;
+        fprintf (stderr, "Unexpected select() error: %d. Line: %d\n",
+                 (int) errno, __LINE__);
+        fflush (stderr);
+        exit (99);
       }
-#endif
       ret |= 1024;
       break;
+#else
+      if ((WSAEINVAL != WSAGetLastError ()) ||
+          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
+      {
+        fprintf (stderr, "Unexpected select() error: %d. Line: %d\n",
+                 (int) WSAGetLastError (), __LINE__);
+        fflush (stderr);
+        exit (99);
+      }
+      Sleep (1);
+#endif
     }
     MHD_run_from_select (d, &rs, &ws, &es);
   }

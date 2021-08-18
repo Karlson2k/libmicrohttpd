@@ -1,7 +1,8 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2009, 2011 Christian Grothoff
-     Copyright (C) 2020 Karlson2k (Evgeny Grin) - large rework, multithreading.
+     Copyright (C) 2014-2020 Evgeny Grin (Karlson2k) - large rework,
+                             multithreading.
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -922,14 +923,22 @@ testExternalGet (void)
     {
 #ifdef MHD_POSIX_SOCKETS
       if (EINTR != errno)
-        externalErrorExitDesc ("select() failed");
+      {
+        fprintf (stderr, "Unexpected select() error: %d. Line: %d\n",
+                 (int) errno, __LINE__);
+        fflush (stderr);
+        exit (99);
+      }
 #else
-      if ((WSAEINVAL != WSAGetLastError ()) || (0 != rs.fd_count) || (0 !=
-                                                                      ws.
-                                                                      fd_count)
-          || (0 != es.fd_count) )
-        externalErrorExitDesc ("select() failed");
-      Sleep (1000);
+      if ((WSAEINVAL != WSAGetLastError ()) ||
+          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
+      {
+        fprintf (stderr, "Unexpected select() error: %d. Line: %d\n",
+                 (int) WSAGetLastError (), __LINE__);
+        fflush (stderr);
+        exit (99);
+      }
+      Sleep (1);
 #endif
     }
     if (FD_ISSET (aParam.lstn_sk, &rs))

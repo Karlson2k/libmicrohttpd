@@ -2,6 +2,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2009 Christian Grothoff
+     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -23,6 +24,7 @@
  * @file daemontest_get_response_cleanup.c
  * @brief  Testcase for libmicrohttpd response cleanup
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "MHD_config.h"
@@ -375,8 +377,25 @@ testExternalGet ()
     tv.tv_usec = 1000;
     if (-1 == select (max + 1, &rs, &ws, &es, &tv))
     {
+#ifdef MHD_POSIX_SOCKETS
       if (EINTR != errno)
-        abort ();
+      {
+        fprintf (stderr, "Unexpected select() error: %d. Line: %d\n",
+                 (int) errno, __LINE__);
+        fflush (stderr);
+        exit (99);
+      }
+#else
+      if ((WSAEINVAL != WSAGetLastError ()) ||
+          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
+      {
+        fprintf (stderr, "Unexpected select() error: %d. Line: %d\n",
+                 (int) WSAGetLastError (), __LINE__);
+        fflush (stderr);
+        exit (99);
+      }
+      Sleep (1);
+#endif
     }
     MHD_run (d);
   }
@@ -397,8 +416,25 @@ testExternalGet ()
     tv.tv_usec = 1000;
     if (-1 == select (max + 1, &rs, &ws, &es, &tv))
     {
+#ifdef MHD_POSIX_SOCKETS
       if (EINTR != errno)
-        abort ();
+      {
+        fprintf (stderr, "Unexpected select() error: %d. Line: %d\n",
+                 (int) errno, __LINE__);
+        fflush (stderr);
+        exit (99);
+      }
+#else
+      if ((WSAEINVAL != WSAGetLastError ()) ||
+          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
+      {
+        fprintf (stderr, "Unexpected select() error: %d. Line: %d\n",
+                 (int) WSAGetLastError (), __LINE__);
+        fflush (stderr);
+        exit (99);
+      }
+      Sleep (1);
+#endif
     }
     MHD_run (d);
   }

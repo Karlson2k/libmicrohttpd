@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2010, 2018 Christian Grothoff
+     Copyright (C) 2019-2021 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -23,6 +24,7 @@
  * @brief  Testcase for libmicrohttpd Digest Auth with SHA256
  * @author Amr Ali
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "MHD_config.h"
