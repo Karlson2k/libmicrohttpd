@@ -1630,19 +1630,22 @@ setup_reply_properties (struct MHD_Connection *connection)
       else if (0 != (r->flags & (MHD_RF_HTTP_VERSION_1_0_ONLY
                                  | MHD_RF_HTTP_VERSION_1_0_RESPONSE)))
         use_chunked = false;
-      /* TODO: Use chunked for HTTP/1.1 non-Keep-Alive */
-      else if (0 != (r->flags_auto & MHD_RAF_HAS_TRANS_ENC_CHUNKED))
-        use_chunked = true;
-      else if (! use_keepalive)
-        use_chunked = false;
       else
+        /* If chunked encoding is supported and allowed, and response size
+         * is unknown, use chunked even for non-Keep-Alive connections.
+         * See https://datatracker.ietf.org/doc/html/rfc7230#section-3.3.3
+         * Also use chunked if it is enforced by application and supported by
+         * the client. */
         use_chunked = true;
     }
     else
       use_chunked = false;
 
     if ( (MHD_SIZE_UNKNOWN == r->total_size) && ! use_chunked)
+    {
+      mhd_assert (! MHD_IS_HTTP_VER_1_1_COMPAT (c->http_ver));
       use_keepalive = false; /* End of the stream is indicated by closure */
+    }
   }
 
   c->rp_props.chunked = use_chunked;
