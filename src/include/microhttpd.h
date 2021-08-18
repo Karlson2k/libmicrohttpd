@@ -131,7 +131,7 @@ typedef intptr_t ssize_t;
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097304
+#define MHD_VERSION 0x00097305
 
 
 #ifdef __has_attribute
@@ -245,10 +245,11 @@ typedef SOCKET MHD_socket;
 #elif defined(__clang__) || defined (__GNUC_PATCHLEVEL__)
 /* clang or GCC since 3.0 */
 #define _MHD_GCC_PRAG(x) _Pragma(#x)
-#if (defined(__clang__) && (__clang_major__ + 0 >= 5 ||     \
-                            (! defined(__apple_build_version__) && \
-  (__clang_major__ + 0  > 3 || (__clang_major__ + 0 == 3 && __clang_minor__ >= \
-                                3))))) || \
+#if (defined(__clang__) && \
+  (__clang_major__ + 0 >= 5 || \
+   (! defined(__apple_build_version__) && \
+  (__clang_major__ + 0  > 3 || \
+   (__clang_major__ + 0 == 3 && __clang_minor__ >=  3))))) || \
   __GNUC__ + 0 > 4 || (__GNUC__ + 0 == 4 && __GNUC_MINOR__ + 0 >= 8)
 /* clang >= 3.3 (or XCode's clang >= 5.0) or
    GCC >= 4.8 */
@@ -257,9 +258,9 @@ typedef SOCKET MHD_socket;
 #else /* older clang or GCC */
 /* clang < 3.3, XCode's clang < 5.0, 3.0 <= GCC < 4.8 */
 #define _MHD_DEPR_MACRO(msg) _MHD_GCC_PRAG (message msg)
-#if (defined(__clang__) && (__clang_major__ + 0  > 2 || (__clang_major__ + 0 == \
-                                                         2 && __clang_minor__ >= \
-                                                         9)))                                            /* FIXME: clang >= 2.9, earlier versions not tested */
+#if (defined(__clang__) && \
+  (__clang_major__ + 0  > 2 || \
+   (__clang_major__ + 0 == 2 && __clang_minor__ >= 9)))  /* clang >= 2.9 */
 /* clang handles inline pragmas better than GCC */
 #define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO (msg)
 #endif /* clang >= 2.9 */
@@ -285,12 +286,12 @@ typedef SOCKET MHD_socket;
 /* VS .NET 2003 deprecation do not support custom messages */
 #define _MHD_DEPR_FUNC(msg) __declspec(deprecated)
 #elif (__GNUC__ + 0 >= 5) || (defined (__clang__) && \
-  (__clang_major__ + 0 > 2 || (__clang_major__ + 0 == 2 && __clang_minor__ >= \
-                               9)))                                             /* FIXME: earlier versions not tested */
+  (__clang_major__ + 0 > 2 || \
+   (__clang_major__ + 0 == 2 && __clang_minor__ >=  9)))
 /* GCC >= 5.0 or clang >= 2.9 */
 #define _MHD_DEPR_FUNC(msg) __attribute__((deprecated (msg)))
-#elif defined (__clang__) || __GNUC__ + 0 > 3 || (__GNUC__ + 0 == 3 && \
-                                                  __GNUC_MINOR__ + 0 >= 1)
+#elif defined (__clang__) || __GNUC__ + 0 > 3 || \
+  (__GNUC__ + 0 == 3 && __GNUC_MINOR__ + 0 >= 1)
 /* 3.1 <= GCC < 5.0 or clang < 2.9 */
 /* old GCC-style deprecation do not support custom messages */
 #define _MHD_DEPR_FUNC(msg) __attribute__((__deprecated__))
