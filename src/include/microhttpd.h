@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097309
+#define MHD_VERSION 0x00097310
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
@@ -3126,12 +3126,12 @@ enum MHD_ResponseFlags
    * does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
    * @note Available since #MHD_VERSION 0x00097308
    */
-  MHD_RF_HTTP_1_0_COMPATIBLE_STRICT = 1,
+  MHD_RF_HTTP_1_0_COMPATIBLE_STRICT = 1 << 0,
   /**
    * The same as #MHD_RF_HTTP_1_0_COMPATIBLE_STRICT
    * @note Available since #MHD_VERSION 0x00093701
    */
-  MHD_RF_HTTP_VERSION_1_0_ONLY = 1,
+  MHD_RF_HTTP_VERSION_1_0_ONLY = 1 << 0,
 
   /**
    * Only respond in HTTP 1.0-mode.
@@ -3145,19 +3145,27 @@ enum MHD_ResponseFlags
    * as chunked encoding in requests will be supported still).
    * @note Available since #MHD_VERSION 0x00097308
    */
-  MHD_RF_HTTP_1_0_SERVER = 2,
+  MHD_RF_HTTP_1_0_SERVER = 1 << 1,
   /**
    * The same as #MHD_RF_HTTP_1_0_SERVER
    * @note Available since #MHD_VERSION 0x00096000
    */
-  MHD_RF_HTTP_VERSION_1_0_RESPONSE = 2,
+  MHD_RF_HTTP_VERSION_1_0_RESPONSE = 1 << 1,
 
   /**
    * Disable sanity check preventing clients from manually
    * setting the HTTP content length option.
    * @note Available since #MHD_VERSION 0x00096702
    */
-  MHD_RF_INSANITY_HEADER_CONTENT_LENGTH = 4
+  MHD_RF_INSANITY_HEADER_CONTENT_LENGTH = 1 << 2,
+
+  /**
+   * Enable sending of "Connection: keep-alive" header even for
+   * HTTP/1.1 clients when "Keep-Alive" connection is used.
+   * Disabled by default for HTTP/1.1 clients as per RFC.
+   * @note Available since #MHD_VERSION 0x00097310
+   */
+  MHD_RF_SEND_KEEP_ALIVE_HEADER = 1 << 3
 } _MHD_FIXED_FLAGS_ENUM;
 
 
