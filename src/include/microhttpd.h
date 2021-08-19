@@ -88,6 +88,16 @@ extern "C"
 #endif
 #endif
 
+
+/**
+ * Current version of the library in packed BCD form.
+ * @note Version number components are coded as Simple Binary-Coded Decimal
+ * (also called Natural BCD or BCD 8421). While they are hexadecimal numbers,
+ * they are parsed as decimal numbers.
+ * Example: 0x01093001 = 1.9.30-1.
+ */
+#define MHD_VERSION 0x00097309
+
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
    'uint16_t', 'uint32_t', 'uint64_t', 'off_t', 'struct sockaddr',
@@ -123,16 +133,6 @@ typedef intptr_t ssize_t;
 /* Do not define __USE_W32_SOCKETS under Cygwin! */
 #error Cygwin with winsock fd_set is not supported
 #endif
-
-/**
- * Current version of the library in packed BCD form.
- * @note Version number components are coded as Simple Binary-Coded Decimal
- * (also called Natural BCD or BCD 8421). While they are hexadecimal numbers,
- * they are parsed as decimal numbers.
- * Example: 0x01093001 = 1.9.30-1.
- */
-#define MHD_VERSION 0x00097308
-
 
 #ifdef __has_attribute
 #if __has_attribute (flag_enum)
