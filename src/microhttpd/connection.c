@@ -1868,20 +1868,25 @@ build_header_response (struct MHD_Connection *connection)
 
   /* The HTTP version */
   if (0 == (c->responseCode & MHD_ICY_FLAG))
-  {
-    if ((0 != (r->flags & MHD_RF_HTTP_VERSION_1_0_RESPONSE)) ||
-        (MHD_HTTP_VER_1_0 == c->http_ver) )
-    {
-      /* TODO: use HTTP/1.1 responses for HTTP/1.0 clients.
+  { /* HTTP reply */
+    if (0 != (r->flags & MHD_RF_HTTP_VERSION_1_0_RESPONSE))
+    { /* HTTP/1.1 reply */
+      /* Use HTTP/1.1 responses for HTTP/1.0 clients.
        * See https://datatracker.ietf.org/doc/html/rfc7230#section-2.6 */
       if (! buffer_append_s (buf, &pos, buf_size, MHD_HTTP_VERSION_1_0))
         return MHD_NO;
     }
-    else if (! buffer_append_s (buf, &pos, buf_size, MHD_HTTP_VERSION_1_1))
+    else
+    { /* HTTP/1.0 reply */
+      if (! buffer_append_s (buf, &pos, buf_size, MHD_HTTP_VERSION_1_1))
+        return MHD_NO;
+    }
+  }
+  else
+  { /* ICY reply */
+    if (! buffer_append_s (buf, &pos, buf_size, "ICY"))
       return MHD_NO;
   }
-  else if (! buffer_append_s (buf, &pos, buf_size, "ICY"))
-    return MHD_NO;
 
   /* The response code */
   if (buf_size < pos + 5) /* space + code + space */
