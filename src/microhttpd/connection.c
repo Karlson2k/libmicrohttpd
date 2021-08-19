@@ -1941,7 +1941,7 @@ build_header_response (struct MHD_Connection *connection)
     else if (MHD_CONN_USE_KEEPALIVE == c->keepalive)
     {
       if ((MHD_HTTP_VER_1_0 == c->http_ver) ||
-          (0 != (r->flags | MHD_RF_SEND_KEEP_ALIVE_HEADER)))
+          (0 != (r->flags & MHD_RF_SEND_KEEP_ALIVE_HEADER)))
       {
         if (! buffer_append_s (buf, &pos, buf_size,
                                MHD_HTTP_HEADER_CONNECTION ": Keep-Alive\r\n"))
@@ -1956,7 +1956,7 @@ build_header_response (struct MHD_Connection *connection)
                           ! c->rp_props.chunked,
                           (MHD_CONN_MUST_CLOSE == c->keepalive),
                           ((MHD_HTTP_VER_1_0 == c->http_ver) ||
-                           (0 != (r->flags | MHD_RF_SEND_KEEP_ALIVE_HEADER))) &&
+                           (0 != (r->flags & MHD_RF_SEND_KEEP_ALIVE_HEADER))) &&
                           (MHD_CONN_USE_KEEPALIVE == c->keepalive)))
     return MHD_NO;
 
