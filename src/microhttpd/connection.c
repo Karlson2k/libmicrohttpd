@@ -1187,7 +1187,7 @@ keepalive_possible (struct MHD_Connection *connection)
   if (c->read_closed)
     return MHD_CONN_MUST_CLOSE;
 
-  if (0 != (r->flags & MHD_RF_HTTP_VERSION_1_0_ONLY))
+  if (0 != (r->flags & MHD_RF_HTTP_1_0_COMPATIBLE_STRICT))
     return MHD_CONN_MUST_CLOSE;
   if (0 != (r->flags_auto & MHD_RAF_HAS_CONNECTION_CLOSE))
     return MHD_CONN_MUST_CLOSE;
@@ -1200,11 +1200,8 @@ keepalive_possible (struct MHD_Connection *connection)
                                     "close"))
     return MHD_CONN_MUST_CLOSE;
 
-  if (MHD_IS_HTTP_VER_1_1_COMPAT (c->http_ver) &&
-      (0 == (connection->response->flags & MHD_RF_HTTP_VERSION_1_0_RESPONSE)) )
-    return MHD_CONN_USE_KEEPALIVE;
-
-  if (MHD_HTTP_VER_1_0 == connection->http_ver)
+  if ((MHD_HTTP_VER_1_0 == connection->http_ver) ||
+      (0 != (connection->response->flags & MHD_RF_HTTP_1_0_SERVER)))
   {
     if (MHD_lookup_header_s_token_ci (connection,
                                       MHD_HTTP_HEADER_CONNECTION,
@@ -1213,6 +1210,10 @@ keepalive_possible (struct MHD_Connection *connection)
 
     return MHD_CONN_MUST_CLOSE;
   }
+
+  if (MHD_IS_HTTP_VER_1_1_COMPAT (c->http_ver))
+    return MHD_CONN_USE_KEEPALIVE;
+
   return MHD_CONN_MUST_CLOSE;
 }
 
@@ -1631,8 +1632,8 @@ setup_reply_properties (struct MHD_Connection *connection)
       if (! MHD_IS_HTTP_VER_1_1_COMPAT (c->http_ver))
         use_chunked = false;
       /* Check whether chunked encoding is allowed for the reply */
-      else if (0 != (r->flags & (MHD_RF_HTTP_VERSION_1_0_ONLY
-                                 | MHD_RF_HTTP_VERSION_1_0_RESPONSE)))
+      else if (0 != (r->flags & (MHD_RF_HTTP_1_0_COMPATIBLE_STRICT
+                                 | MHD_RF_HTTP_1_0_SERVER)))
         use_chunked = false;
       else
         /* If chunked encoding is supported and allowed, and response size
@@ -1869,16 +1870,16 @@ build_header_response (struct MHD_Connection *connection)
   /* The HTTP version */
   if (0 == (c->responseCode & MHD_ICY_FLAG))
   { /* HTTP reply */
-    if (0 != (r->flags & MHD_RF_HTTP_VERSION_1_0_RESPONSE))
+    if (0 == (r->flags & MHD_RF_HTTP_1_0_SERVER))
     { /* HTTP/1.1 reply */
       /* Use HTTP/1.1 responses for HTTP/1.0 clients.
        * See https://datatracker.ietf.org/doc/html/rfc7230#section-2.6 */
-      if (! buffer_append_s (buf, &pos, buf_size, MHD_HTTP_VERSION_1_0))
+      if (! buffer_append_s (buf, &pos, buf_size, MHD_HTTP_VERSION_1_1))
         return MHD_NO;
     }
     else
     { /* HTTP/1.0 reply */
-      if (! buffer_append_s (buf, &pos, buf_size, MHD_HTTP_VERSION_1_1))
+      if (! buffer_append_s (buf, &pos, buf_size, MHD_HTTP_VERSION_1_0))
         return MHD_NO;
     }
   }
@@ -4801,8 +4802,8 @@ MHD_queue_response (struct MHD_Connection *connection,
 #endif
       return MHD_NO;
     }
-    if (0 != (response->flags & (MHD_RF_HTTP_VERSION_1_0_ONLY
-                                 | MHD_RF_HTTP_VERSION_1_0_RESPONSE)))
+    if (0 != (response->flags & (MHD_RF_HTTP_1_0_COMPATIBLE_STRICT
+                                 | MHD_RF_HTTP_1_0_SERVER)))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,

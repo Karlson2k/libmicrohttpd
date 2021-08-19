@@ -131,7 +131,7 @@ typedef intptr_t ssize_t;
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097307
+#define MHD_VERSION 0x00097308
 
 
 #ifdef __has_attribute
@@ -3110,34 +3110,54 @@ enum MHD_ResponseFlags
 {
   /**
    * Default: no special flags.
+   * @note Available since #MHD_VERSION 0x00093701
    */
   MHD_RF_NONE = 0,
 
   /**
-   * Only respond in conservative HTTP 1.0-mode.   In particular,
-   * do not (automatically) sent "Connection" headers and always
-   * close the connection after generating the response.
-   * By default, MHD will respond using the same HTTP version which
-   * was set in the request. You can also set the
-   * #MHD_RF_HTTP_VERSION_1_0_RESPONSE flag to force version 1.0
-   * in the response.
+   * Only respond in conservative (dumb) HTTP/1.0-compatible mode.
+   * Response still use HTTP/1.1 version in header, but always close
+   * the connection after generating the response and do not use chunked
+   * encoding for the response.
+   * You can also set the #MHD_RF_HTTP_1_0_SERVER flag to force
+   * HTTP/1.0 version in the response.
+   * Responses are still compatible with HTTP/1.1.
+   * This option can be used to communicate with some broken client, which
+   * does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
+   * @note Available since #MHD_VERSION 0x00097308
+   */
+  MHD_RF_HTTP_1_0_COMPATIBLE_STRICT = 1,
+  /**
+   * The same as #MHD_RF_HTTP_1_0_COMPATIBLE_STRICT
+   * @note Available since #MHD_VERSION 0x00093701
    */
   MHD_RF_HTTP_VERSION_1_0_ONLY = 1,
 
   /**
-   * Only respond in HTTP 1.0-mode. Contrary to the
-   * #MHD_RF_HTTP_VERSION_1_0_ONLY flag, the response's HTTP version will
-   * always be set to 1.0 and "Connection" headers are still supported.
+   * Only respond in HTTP 1.0-mode.
+   * Contrary to the #MHD_RF_HTTP_1_0_COMPATIBLE_STRICT flag, the response's
+   * HTTP version will always be set to 1.0 and keep-alive connections
+   * will be used if explicitly requested by the client.
+   * Chunked encoding will not be used for the response.
+   * Due to backward compatibility, responses still can be used with
+   * HTTP/1.1 clients.
+   * This option can be used to emulate HTTP/1.0 server (for response only
+   * as chunked encoding in requests will be supported still).
+   * @note Available since #MHD_VERSION 0x00097308
+   */
+  MHD_RF_HTTP_1_0_SERVER = 2,
+  /**
+   * The same as #MHD_RF_HTTP_1_0_SERVER
+   * @note Available since #MHD_VERSION 0x00096000
    */
   MHD_RF_HTTP_VERSION_1_0_RESPONSE = 2,
 
   /**
    * Disable sanity check preventing clients from manually
    * setting the HTTP content length option.
+   * @note Available since #MHD_VERSION 0x00096702
    */
   MHD_RF_INSANITY_HEADER_CONTENT_LENGTH = 4
-
-
 } _MHD_FIXED_FLAGS_ENUM;
 
 
