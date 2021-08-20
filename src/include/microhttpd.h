@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2006-2021 Christian Grothoff (and other contributing authors)
-     Copyright (C) 2015-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -3138,6 +3138,8 @@ enum MHD_ResponseFlags
    * Contrary to the #MHD_RF_HTTP_1_0_COMPATIBLE_STRICT flag, the response's
    * HTTP version will always be set to 1.0 and keep-alive connections
    * will be used if explicitly requested by the client.
+   * The "Connection:" header will be added for both "close" and "keep-alive"
+   * connections.
    * Chunked encoding will not be used for the response.
    * Due to backward compatibility, responses still can be used with
    * HTTP/1.1 clients.

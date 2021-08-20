@@ -1830,6 +1830,8 @@ build_header_response (struct MHD_Connection *connection)
   size_t buf_size;                             /**< the size of the @a buf */
   size_t el_size;                              /**< the size of current element to be added to the @a buf */
   unsigned rcode;                              /**< the response code */
+  bool use_conn_close;                         /**< Use "Connection: close" header */
+  bool use_conn_k_alive;                       /**< Use "Connection: Keep-Alive" header */
 
   mhd_assert (NULL != r);
 
@@ -1856,6 +1858,32 @@ build_header_response (struct MHD_Connection *connection)
 #endif /* UPGRADE_SUPPORT */
 
   rcode = (unsigned) (c->responseCode & (~MHD_ICY_FLAG));
+  if (MHD_CONN_MUST_CLOSE == c->keepalive)
+  {
+    /* The closure of connection must be always indicated by header
+     * to avoid hung connections */
+    use_conn_close = true;
+    use_conn_k_alive = false;
+  }
+  else if (MHD_CONN_USE_KEEPALIVE == c->keepalive)
+  {
+    use_conn_close = false;
+    /* As "Keep-Alive" is default for HTTP/1.1, add "Connection: keep-alive"
+     * header only if explicitly requested by app (by using reponse flag),
+     * if request is HTTP/1.0 or if reply is HTTP/1.0. */
+    if ((0 != (r->flags & MHD_RF_SEND_KEEP_ALIVE_HEADER)) ||
+        (MHD_HTTP_VER_1_0 == c->http_ver) ||
+        (0 != (r->flags & MHD_RF_HTTP_1_0_SERVER)))
+      use_conn_k_alive = true;
+    else
+      use_conn_k_alive = false;
+  }
+  else
+  {
+    use_conn_close = false;
+    use_conn_k_alive = false;
+  }
+
 
   /* ** Actually build the response header ** */
 
@@ -1930,23 +1958,20 @@ build_header_response (struct MHD_Connection *connection)
       pos += 37;
   }
   /* The "Connection:" header */
+  mhd_assert (! use_conn_close || ! use_conn_k_alive);
   if (0 == (r->flags_auto & MHD_RAF_HAS_CONNECTION_HDR))
   {
-    if (MHD_CONN_MUST_CLOSE == c->keepalive)
+    if (use_conn_close)
     {
       if (! buffer_append_s (buf, &pos, buf_size,
                              MHD_HTTP_HEADER_CONNECTION ": close\r\n"))
         return MHD_NO;
     }
-    else if (MHD_CONN_USE_KEEPALIVE == c->keepalive)
+    else if (use_conn_k_alive)
     {
-      if ((MHD_HTTP_VER_1_0 == c->http_ver) ||
-          (0 != (r->flags & MHD_RF_SEND_KEEP_ALIVE_HEADER)))
-      {
-        if (! buffer_append_s (buf, &pos, buf_size,
-                               MHD_HTTP_HEADER_CONNECTION ": Keep-Alive\r\n"))
-          return MHD_NO;
-      }
+      if (! buffer_append_s (buf, &pos, buf_size,
+                             MHD_HTTP_HEADER_CONNECTION ": Keep-Alive\r\n"))
+        return MHD_NO;
     }
   }
 
@@ -1954,10 +1979,8 @@ build_header_response (struct MHD_Connection *connection)
 
   if (! add_user_headers (buf, &pos, buf_size, r, MHD_HEADER_KIND,
                           ! c->rp_props.chunked,
-                          (MHD_CONN_MUST_CLOSE == c->keepalive),
-                          ((MHD_HTTP_VER_1_0 == c->http_ver) ||
-                           (0 != (r->flags & MHD_RF_SEND_KEEP_ALIVE_HEADER))) &&
-                          (MHD_CONN_USE_KEEPALIVE == c->keepalive)))
+                          use_conn_close,
+                          use_conn_k_alive))
     return MHD_NO;
 
   /* Other automatic headers */
