@@ -20,7 +20,10 @@
 */
 /**
  * @file test_get_close_keep_alive.c
- * @brief  Testcase for libmicrohttpd "Close" and "Keep-Alive" connection
+ * @brief  Testcase for libmicrohttpd "Close" and "Keep-Alive" connection.
+ * @details Testcases for testing of MHD automatic choice between "Close" and
+ *          "Keep-Alive" connections. Also tested selected HTTP version and
+ *          "Connection:" headers.
  * @author Karlson2k (Evgeny Grin)
  * @author Christian Grothoff
  */
@@ -155,7 +158,7 @@ _libcurlErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
                                   HDR_CONN_KEEP_ALIVE_VALUE
 
 /* Global parameters */
-static int oneone;         /**< Use HTTP/1.1 instead of HTTP/1.0 */
+static int oneone;         /**< Use HTTP/1.1 instead of HTTP/1.0 for requests*/
 static int conn_close;     /**< Don't use Keep-Alive */
 static int global_port;    /**< MHD daemons listen port number */
 static int slow_reply = 0; /**< Slowdown MHD replies */
@@ -165,7 +168,10 @@ static int response_timeout_val = TIMEOUTS_VAL;
 
 /* Current test parameters */
 /* Poor thread sync, but enough for the testing */
-static volatile int add_mhd_close; /**< Add "Connection: close" header by MHD */
+static volatile int mhd_add_close; /**< Add "Connection: close" header by MHD */
+static volatile int mhd_set_10_cmptbl; /**< Set MHD_RF_HTTP_1_0_COMPATIBLE_STRICT response flag */
+static volatile int mhd_set_10_server; /**< Set MHD_RF_HTTP_1_0_SERVER response flag */
+static volatile int mhd_set_k_a_send; /**< Set MHD_RF_SEND_KEEP_ALIVE_HEADER response flag */
 
 /* Static helper variables */
 static struct curl_slist *curl_close_hdr;   /**< CURL "Connection: close" header */
@@ -217,6 +223,8 @@ test_global_cleanup (void)
 
 struct headers_check_result
 {
+  int found_http11;
+  int found_http10;
   int found_conn_close;
   int found_conn_keep_alive;
 };
@@ -229,8 +237,16 @@ lcurl_hdr_callback (char *buffer, size_t size, size_t nitems,
   struct headers_check_result *check_res =
     (struct headers_check_result *) userdata;
 
-  if ((data_size == strlen (HDR_CONN_CLOSE) + 2) &&
-      (0 == strncasecmp (buffer, HDR_CONN_CLOSE "\r\n", data_size)))
+  if ((strlen (MHD_HTTP_VERSION_1_1) < data_size) &&
+      (0 == memcmp (MHD_HTTP_VERSION_1_1, buffer,
+                    strlen (MHD_HTTP_VERSION_1_1))))
+    check_res->found_http11 = 1;
+  else if ((strlen (MHD_HTTP_VERSION_1_0) < data_size) &&
+           (0 == memcmp (MHD_HTTP_VERSION_1_0, buffer,
+                         strlen (MHD_HTTP_VERSION_1_0))))
+    check_res->found_http10 = 1;
+  else if ((data_size == strlen (HDR_CONN_CLOSE) + 2) &&
+           (0 == strncasecmp (buffer, HDR_CONN_CLOSE "\r\n", data_size)))
     check_res->found_conn_close = 1;
   else if ((data_size == strlen (HDR_CONN_KEEP_ALIVE) + 2) &&
            (0 == strncasecmp (buffer, HDR_CONN_KEEP_ALIVE "\r\n", data_size)))
@@ -316,21 +332,36 @@ ahc_echo (void *cls,
     fprintf (stderr, "Failed to create response. Line: %d\n", __LINE__);
     exit (19);
   }
-  if (add_mhd_close)
+  if (mhd_add_close)
   {
-    if (MHD_NO == MHD_add_response_header (response,
-                                           MHD_HTTP_HEADER_CONNECTION,
-                                           HDR_CONN_CLOSE_VALUE))
+    if (MHD_YES != MHD_add_response_header (response,
+                                            MHD_HTTP_HEADER_CONNECTION,
+                                            HDR_CONN_CLOSE_VALUE))
     {
       fprintf (stderr, "Failed to add header. Line: %d\n", __LINE__);
       exit (19);
     }
   }
+  if (MHD_YES != MHD_set_response_options (response,
+                                           (mhd_set_10_cmptbl ?
+                                            MHD_RF_HTTP_1_0_COMPATIBLE_STRICT
+                                               : 0)
+                                           | (mhd_set_10_server ?
+                                              MHD_RF_HTTP_1_0_SERVER
+                                               : 0)
+                                           | (mhd_set_k_a_send ?
+                                              MHD_RF_SEND_KEEP_ALIVE_HEADER
+                                               : 0), MHD_RO_END))
+  {
+    fprintf (stderr, "Failed to set response flags. Line: %d\n", __LINE__);
+    exit (19);
+  }
+
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
   MHD_destroy_response (response);
-  if (ret == MHD_NO)
+  if (MHD_YES != ret)
   {
     fprintf (stderr, "Failed to queue response. Line: %d\n", __LINE__);
     exit (19);
@@ -424,15 +455,22 @@ static void
 print_test_params (int add_hdr_close,
                    int add_hdr_k_alive)
 {
-  fprintf (stderr, "HTTP/%s; ", oneone ? "1.1" : "1.0");
-  fprintf (stderr, "Connection must be: %s; ",
+  fprintf (stderr, "Request HTTP/%s| ", oneone ? "1.1" : "1.0");
+  fprintf (stderr, "Connection must be: %s| ",
            conn_close ? "close" : "keep-alive");
-  fprintf (stderr, "Request \"close\": %s; ",
+  fprintf (stderr, "Request \"close\": %s| ",
            add_hdr_close ? "    used" : "NOT used");
-  fprintf (stderr, "Request \"keep-alive\": %s; ",
+  fprintf (stderr, "Request \"keep-alive\": %s| ",
            add_hdr_k_alive ? "    used" : "NOT used");
-  fprintf (stderr, "MHD response \"close\": %s. ",
-           add_mhd_close ? "    used" : "NOT used");
+  fprintf (stderr, "MHD response \"close\": %s| ",
+           mhd_add_close ? "    used" : "NOT used");
+  fprintf (stderr, "MHD response 1.0 strict compatible: %s| ",
+           mhd_set_10_cmptbl ? "yes" : " NO");
+  fprintf (stderr, "MHD response 1.0 server: %s| ",
+           mhd_set_10_server ? "yes" : " NO");
+  fprintf (stderr, "MHD response send \"Keep-Alive\": %s|",
+           mhd_set_k_a_send ? "yes" : " NO");
+  fprintf (stderr, "\n*** ");
 }
 
 
@@ -614,6 +652,8 @@ doCurlQueryInThread (struct MHD_Daemon *d,
   cbc.size = sizeof(buf);
   cbc.pos = 0;
 
+  hdr_res.found_http11 = 0;
+  hdr_res.found_http10 = 0;
   hdr_res.found_conn_close = 0;
   hdr_res.found_conn_keep_alive = 0;
 
@@ -655,24 +695,39 @@ doCurlQueryInThread (struct MHD_Daemon *d,
       p->queryError = 0;
   }
 
+  if (! hdr_res.found_http11 && ! hdr_res.found_http10)
+  {
+    print_test_params (add_hdr_close, add_hdr_k_alive);
+    fprintf (stderr, "No know HTTP versions were found in the "
+             "reply header. Line: %d\n", __LINE__);
+    exit (24);
+  }
+  else if (hdr_res.found_http11 && hdr_res.found_http10)
+  {
+    print_test_params (add_hdr_close, add_hdr_k_alive);
+    fprintf (stderr, "Both HTTP/1.1 and HTTP/1.0 were found in the "
+             "reply header. Line: %d\n", __LINE__);
+    exit (24);
+  }
+
   if (conn_close)
   {
     if (! hdr_res.found_conn_close)
     {
       print_test_params (add_hdr_close, add_hdr_k_alive);
       fprintf (stderr, "\"Connection: close\" was not found in"
-               " MHD headers.\n");
+               " MHD reply headers.\n");
       p->queryError |= 2;
     }
     if (hdr_res.found_conn_keep_alive)
     {
       print_test_params (add_hdr_close, add_hdr_k_alive);
       fprintf (stderr, "\"Connection: keep-alive\" was found in"
-               " MHD headers.\n");
+               " MHD reply headers.\n");
       p->queryError |= 2;
     }
     if (use_external_poll)
-    { /* The number of MHD connection can be used only with external poll.
+    { /* The number of MHD connection can queried only with external poll.
        * otherwise it creates a race condition. */
       if (0 != getMhdActiveConnections (d))
       {
@@ -685,22 +740,35 @@ doCurlQueryInThread (struct MHD_Daemon *d,
   }
   else
   { /* Keep-Alive */
-    if (! oneone && ! hdr_res.found_conn_keep_alive)
-    {
-      print_test_params (add_hdr_close, add_hdr_k_alive);
-      fprintf (stderr, "\"Connection: keep-alive\" was not found in"
-               " MHD headers.\n");
-      p->queryError |= 2;
+    if (! oneone || mhd_set_10_server || mhd_set_k_a_send)
+    { /* Should have "Connection: Keep-Alive" */
+      if (! hdr_res.found_conn_keep_alive)
+      {
+        print_test_params (add_hdr_close, add_hdr_k_alive);
+        fprintf (stderr, "\"Connection: keep-alive\" was not found in"
+                 " MHD reply headers.\n");
+        p->queryError |= 2;
+      }
+    }
+    else
+    { /* Should NOT have "Connection: Keep-Alive" */
+      if (hdr_res.found_conn_keep_alive)
+      {
+        print_test_params (add_hdr_close, add_hdr_k_alive);
+        fprintf (stderr, "\"Connection: keep-alive\" was found in"
+                 " MHD reply headers.\n");
+        p->queryError |= 2;
+      }
     }
     if (hdr_res.found_conn_close)
     {
       print_test_params (add_hdr_close, add_hdr_k_alive);
       fprintf (stderr, "\"Connection: close\" was found in"
-               " MHD headers.\n");
+               " MHD reply headers.\n");
       p->queryError |= 2;
     }
     if (use_external_poll)
-    { /* The number of MHD connection can be used only with external poll.
+    { /* The number of MHD connection can be queried only with external poll.
        * otherwise it creates a race condition. */
       unsigned int num_conn = getMhdActiveConnections (d);
       if (0 == num_conn)
@@ -720,6 +788,57 @@ doCurlQueryInThread (struct MHD_Daemon *d,
       }
     }
   }
+
+#if defined(CURL_AT_LEAST_VERSION) && CURL_AT_LEAST_VERSION (7, 45, 0)
+  if (! use_external_poll)
+  {
+    /* libcurl closes connection socket with curl_multi_remove_handle () /
+       curl_multi_cleanup() */
+    curl_socket_t curl_sckt;
+    if (CURLE_OK !=  curl_easy_getinfo (c, CURLINFO_ACTIVESOCKET, &curl_sckt))
+    {
+      fprintf (stderr,
+               "Failed to get libcurl active socket.\n");
+      libcurlErrorExit ();
+    }
+
+    if (conn_close && (CURL_SOCKET_BAD != curl_sckt))
+    {
+      print_test_params (add_hdr_close, add_hdr_k_alive);
+      fprintf (stderr, "libcurl still has active connection "
+               "after performing the test query.\n");
+      p->queryError |= 2;
+    }
+    else if (! conn_close && (CURL_SOCKET_BAD == curl_sckt))
+    {
+      print_test_params (add_hdr_close, add_hdr_k_alive);
+      fprintf (stderr, "libcurl has no active connection "
+               "after performing the test query.\n");
+      p->queryError |= 2;
+    }
+  }
+#endif
+
+  if (! mhd_set_10_server)
+  { /* Response must be HTTP/1.1 */
+    if (hdr_res.found_http10)
+    {
+      print_test_params (add_hdr_close, add_hdr_k_alive);
+      fprintf (stderr, "Reply has HTTP/1.0 version, while it "
+               "must be HTTP/1.1.\n");
+      p->queryError |= 4;
+    }
+  }
+  else
+  { /* Response must be HTTP/1.0 */
+    if (hdr_res.found_http11)
+    {
+      print_test_params (add_hdr_close, add_hdr_k_alive);
+      fprintf (stderr, "Reply has HTTP/1.1 version, while it "
+               "must be HTTP/1.0.\n");
+      p->queryError |= 4;
+    }
+  }
   curl_easy_cleanup (c);
 
   return p->queryError;
@@ -732,62 +851,50 @@ performTestQueries (struct MHD_Daemon *d, int d_port)
 {
   struct curlQueryParams qParam;
   int ret = 0;          /* Return value */
+  int i = 0;
+  /* masks */
+  const int m_mhd_close = 1 << (i++);
+  const int m_10_cmptbl = 1 << (i++);
+  const int m_10_server = 1 << (i++);
+  const int m_k_a_send = 1 << (i++);
+  const int m_client_close = 1 << (i++);
+  const int m_client_k_alive = 1 << (i++);
 
   qParam.queryPath = "http://127.0.0.1" EXPECTED_URI_FULL_PATH;
   qParam.queryPort = d_port;   /* Connect to the daemon */
 
-  if (conn_close)
+  for (i = (1 << i) - 1; 0 <= i; i--)
   {
-    if (! oneone)
-    {
-      /* Client without preferences, no MHD preferences. */
-      ret <<= 3;                   /* Remember errors for each step */
-      add_mhd_close = 0;
-      ret |= doCurlQueryInThread (d, &qParam, 0, 0);
-    }
-    /* Client requested "close", no MHD preferences. */
-    ret <<= 3;                   /* Remember errors for each step */
-    add_mhd_close = 0;
-    ret |= doCurlQueryInThread (d, &qParam, 1, 0);
+    const int f_mhd_close = (0 == (i & m_mhd_close)); /**< Use MHD "close" header */
+    const int f_10_cmptbl = (0 == (i & m_10_cmptbl)); /**< Use MHD MHD_RF_HTTP_1_0_COMPATIBLE_STRICT flag */
+    const int f_10_server = (0 == (i & m_10_server)); /**< Use MHD MHD_RF_HTTP_1_0_SERVER flag */
+    const int f_k_a_send = (0 == (i & m_k_a_send));   /**< Use MHD MHD_RF_SEND_KEEP_ALIVE_HEADER flag */
+    const int f_client_close = (0 == (i & m_client_close)); /**< Use libcurl "close" header */
+    const int f_client_k_alive = (0 == (i & m_client_k_alive)); /**< Use libcurl "Keep-Alive" header */
+    int res_close; /**< Indicate the result of the test query should be closed connection */
 
-    /* Client requested both "close" and "Keep-Alive", no MHD preferences. */
-    ret <<= 3;                   /* Remember errors for each step */
-    add_mhd_close = 0;
-    ret |= doCurlQueryInThread (d, &qParam, 1, 1);
+    if (f_mhd_close)         /* Connection with server's "close" header must be always closed */
+      res_close = 1;
+    else if (f_client_close) /* Connection with client's "close" header must be always closed */
+      res_close = 1;
+    else if (f_10_cmptbl)    /* Connection in strict HTTP/1.0 compatible mode must be always closed */
+      res_close = 1;
+    else if (! oneone || f_10_server)
+      /* With HTTP/1.0 client or server connection must be close unless client use "keep-alive" header */
+      res_close = ! f_client_k_alive;
+    else
+      res_close = 0; /* HTTP/1.1 is "keep-alive" by default */
 
-    /* Client without preferences, MHD set to "close". */
-    ret <<= 3;                   /* Remember errors for each step */
-    add_mhd_close = 1;
-    ret |= doCurlQueryInThread (d, &qParam, 0, 0);
+    if ((! ! res_close) != (! ! conn_close))
+      continue; /* Another mode is in test currently */
 
-    /* Client requested "close", MHD set to "close". */
-    ret <<= 3;                   /* Remember errors for each step */
-    add_mhd_close = 1;
-    ret |= doCurlQueryInThread (d, &qParam, 1, 0);
+    mhd_add_close = f_mhd_close;
+    mhd_set_10_cmptbl = f_10_cmptbl;
+    mhd_set_10_server = f_10_server;
+    mhd_set_k_a_send = f_k_a_send;
 
-    /* Client requested "Keep-Alive", MHD set to "close". */
     ret <<= 3;                   /* Remember errors for each step */
-    add_mhd_close = 1;
-    ret |= doCurlQueryInThread (d, &qParam, 0, 1);
-
-    /* Client requested both "close" and "Keep-Alive", MHD set to "close". */
-    ret <<= 3;                   /* Remember errors for each step */
-    add_mhd_close = 1;
-    ret |= doCurlQueryInThread (d, &qParam, 1, 1);
-  }
-  else
-  { /* Keep-Alive */
-    if (oneone)
-    {
-      /* Client without preferences, no MHD preferences. */
-      ret <<= 3;                   /* Remember errors for each step */
-      add_mhd_close = 0;
-      ret |= doCurlQueryInThread (d, &qParam, 0, 0);
-    }
-    /* Client requested "Keep-Alive", no MHD preferences. */
-    ret <<= 3;                   /* Remember errors for each step */
-    add_mhd_close = 0;
-    ret |= doCurlQueryInThread (d, &qParam, 0, 1);
+    ret |= doCurlQueryInThread (d, &qParam, f_client_close, f_client_k_alive);
   }
 
   MHD_stop_daemon (d);
