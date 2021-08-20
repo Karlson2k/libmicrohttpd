@@ -1873,7 +1873,7 @@ build_header_response (struct MHD_Connection *connection)
   {
     use_conn_close = false;
     /* As "Keep-Alive" is default for HTTP/1.1, add "Connection: keep-alive"
-     * header only if explicitly requested by app (by using reponse flag),
+     * header only if explicitly requested by app (by using response flag),
      * if request is HTTP/1.0 or if reply is HTTP/1.0. */
     if ((0 != (r->flags & MHD_RF_SEND_KEEP_ALIVE_HEADER)) ||
         (MHD_HTTP_VER_1_0 == c->http_ver) ||
