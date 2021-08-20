@@ -1233,11 +1233,14 @@ struct MHD_Connection
   struct MHD_Reply_Properties rp_props;
 
   /**
-   * Are we receiving with chunked encoding?  This will be set to
-   * #MHD_YES after we parse the headers and are processing the body
-   * with chunks.  After we are done with the body and we are
-   * processing the footers; once the footers are also done, this will
-   * be set to #MHD_NO again (before the final call to the handler).
+   * Are we receiving with chunked encoding?
+   * This will be set to #MHD_YES after we parse the headers and
+   * are processing the body with chunks.
+   * After we are done with the body and we are processing the footers;
+   * once the footers are also done, this will be set to #MHD_NO again
+   * (before the final call to the handler).
+   * It is used only for requests, chunked encoding for response is
+   * indicated by @a rp_props.
    */
   bool have_chunked_upload;
 

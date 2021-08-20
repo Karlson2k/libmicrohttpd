@@ -1655,8 +1655,6 @@ setup_reply_properties (struct MHD_Connection *connection)
 
   c->rp_props.chunked = use_chunked;
   c->rp_props.set = true;
-  /* TODO: remove 'have_chunked_upload' assignment, use 'rp_props.chunked' */
-  c->have_chunked_upload = c->rp_props.chunked;
 }
 
 
@@ -1884,7 +1882,6 @@ build_header_response (struct MHD_Connection *connection)
     use_conn_k_alive = false;
   }
 
-
   /* ** Actually build the response header ** */
 
   /* Get all space available */
@@ -2051,8 +2048,7 @@ build_connection_chunked_response_footer (struct MHD_Connection *connection)
   struct MHD_Connection *const c = connection; /**< a short alias */
   struct MHD_HTTP_Header *pos;
 
-  /* TODO: replace with 'use_chunked_send' */
-  mhd_assert (connection->have_chunked_upload);
+  mhd_assert (connection->rp_props.chunked);
   /* TODO: allow combining of the final footer with the last chunk,
    * modify the next assert. */
   mhd_assert (MHD_CONNECTION_BODY_SENT == connection->state);
@@ -3654,7 +3650,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       if ( (NULL == resp->crc) &&
            (NULL == resp->data_iov) &&
            (0 == connection->response_write_position) &&
-           (! connection->have_chunked_upload) )
+           (! connection->rp_props.chunked) )
       {
         mhd_assert (resp->total_size >= resp->data_size);
         /* Send response headers alongside the response body, if the body
@@ -3708,7 +3704,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         /* The complete header and some response data have been sent,
          * update both offsets. */
         mhd_assert (0 == connection->response_write_position);
-        mhd_assert (! connection->have_chunked_upload);
+        mhd_assert (! connection->rp_props.chunked);
         connection->write_buffer_send_offset += wb_ready;
         connection->response_write_position = ret - wb_ready;
       }
@@ -4029,13 +4025,13 @@ connection_reset (struct MHD_Connection *connection,
                         new_read_buf_size);
     c->read_buffer_size = new_read_buf_size;
     c->continue_message_write_offset = 0;
-    c->responseCode = 0;
     c->headers_received = NULL;
     c->headers_received_tail = NULL;
-    c->response_write_position = 0;
     c->have_chunked_upload = false;
     c->current_chunk_size = 0;
     c->current_chunk_offset = 0;
+    c->responseCode = 0;
+    c->response_write_position = 0;
     c->method = NULL;
     c->http_mthd = MHD_HTTP_MTHD_NO_METHOD;
     c->url = NULL;
@@ -4356,7 +4352,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       }
 #endif /* UPGRADE_SUPPORT */
 
-      if (connection->have_chunked_upload)
+      if (connection->rp_props.chunked)
         connection->state = MHD_CONNECTION_CHUNKED_BODY_UNREADY;
       else
         connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
@@ -4375,8 +4371,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         if (NULL != connection->response->crc)
           MHD_mutex_unlock_chk_ (&connection->response->mutex);
 #endif
-        /* TODO: replace with 'use_chunked_send' */
-        if (connection->have_chunked_upload)
+        if (connection->rp_props.chunked)
           connection->state = MHD_CONNECTION_BODY_SENT;
         else
           connection->state = MHD_CONNECTION_FOOTERS_SENT;
@@ -4432,8 +4427,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       }
       break;
     case MHD_CONNECTION_BODY_SENT:
-      /* TODO: replace with 'use_chunked_send' */
-      mhd_assert (connection->have_chunked_upload);
+      mhd_assert (connection->rp_props.chunked);
 
       if (MHD_NO == build_connection_chunked_response_footer (connection))
       {
@@ -4443,7 +4437,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                                   "Closing connection (failed to create response footer)."));
         continue;
       }
-      if ( (! connection->have_chunked_upload) ||
+      /* TODO: remove next 'if' */
+      if ( (! connection->rp_props.chunked) ||
            (connection->write_buffer_send_offset ==
             connection->write_buffer_append_offset) )
         connection->state = MHD_CONNECTION_FOOTERS_SENT;
