@@ -2238,6 +2238,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
     switch (connection->state)
     {
     case MHD_CONNECTION_INIT:
+    case MHD_CONNECTION_REQ_LINE_RECEIVING:
     case MHD_CONNECTION_URL_RECEIVED:
     case MHD_CONNECTION_HEADER_PART_RECEIVED:
       /* while reading headers, we always grow the
@@ -3529,6 +3530,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   switch (connection->state)
   {
   case MHD_CONNECTION_INIT:
+  case MHD_CONNECTION_REQ_LINE_RECEIVING:
   case MHD_CONNECTION_URL_RECEIVED:
   case MHD_CONNECTION_HEADER_PART_RECEIVED:
   case MHD_CONNECTION_HEADERS_RECEIVED:
@@ -3597,6 +3599,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
   switch (connection->state)
   {
   case MHD_CONNECTION_INIT:
+  case MHD_CONNECTION_REQ_LINE_RECEIVING:
   case MHD_CONNECTION_URL_RECEIVED:
   case MHD_CONNECTION_HEADER_PART_RECEIVED:
   case MHD_CONNECTION_HEADERS_RECEIVED:
@@ -4103,6 +4106,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     switch (connection->state)
     {
     case MHD_CONNECTION_INIT:
+    case MHD_CONNECTION_REQ_LINE_RECEIVING:
       line = get_next_header_line (connection,
                                    &line_len);
       if (NULL != line)
@@ -4110,8 +4114,11 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         /* Check for empty string, as we might want
            to tolerate 'spurious' empty lines */
         if (0 == line[0])
+        {
           /* TODO: Add MHD option to not tolerate it */
+          connection->state = MHD_CONNECTION_INIT;
           continue; /* Process the next line */
+        }
         if (MHD_NO == parse_initial_message_line (connection,
                                                   line,
                                                   line_len))
@@ -4130,6 +4137,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         mhd_assert (MHD_CONNECTION_INIT != connection->state);
         continue;
       }
+      if (0 < connection->read_buffer_offset)
+        connection->state = MHD_CONNECTION_REQ_LINE_RECEIVING;
       break;
     case MHD_CONNECTION_URL_RECEIVED:
       line = get_next_header_line (connection,

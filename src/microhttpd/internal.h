@@ -569,9 +569,15 @@ enum MHD_CONNECTION_STATE
   MHD_CONNECTION_INIT = 0,
 
   /**
+   * Part of the request line was received.
+   * Wait for complete line.
+   */
+  MHD_CONNECTION_REQ_LINE_RECEIVING = MHD_CONNECTION_INIT + 1,
+
+  /**
    * We got the URL (and request type and version).  Wait for a header line.
    */
-  MHD_CONNECTION_URL_RECEIVED = MHD_CONNECTION_INIT + 1,
+  MHD_CONNECTION_URL_RECEIVED = MHD_CONNECTION_REQ_LINE_RECEIVING + 1,
 
   /**
    * We got part of a multi-line request header.  Wait for the rest.
