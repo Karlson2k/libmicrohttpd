@@ -569,101 +569,101 @@ enum MHD_CONNECTION_STATE
   MHD_CONNECTION_INIT = 0,
 
   /**
-   * 1: We got the URL (and request type and version).  Wait for a header line.
+   * We got the URL (and request type and version).  Wait for a header line.
    */
   MHD_CONNECTION_URL_RECEIVED = MHD_CONNECTION_INIT + 1,
 
   /**
-   * 2: We got part of a multi-line request header.  Wait for the rest.
+   * We got part of a multi-line request header.  Wait for the rest.
    */
   MHD_CONNECTION_HEADER_PART_RECEIVED = MHD_CONNECTION_URL_RECEIVED + 1,
 
   /**
-   * 3: We got the request headers.  Process them.
+   * We got the request headers.  Process them.
    */
   MHD_CONNECTION_HEADERS_RECEIVED = MHD_CONNECTION_HEADER_PART_RECEIVED + 1,
 
   /**
-   * 4: We have processed the request headers.  Send 100 continue.
+   * We have processed the request headers.  Send 100 continue.
    */
   MHD_CONNECTION_HEADERS_PROCESSED = MHD_CONNECTION_HEADERS_RECEIVED + 1,
 
   /**
-   * 5: We have processed the headers and need to send 100 CONTINUE.
+   * We have processed the headers and need to send 100 CONTINUE.
    */
   MHD_CONNECTION_CONTINUE_SENDING = MHD_CONNECTION_HEADERS_PROCESSED + 1,
 
   /**
-   * 6: We have sent 100 CONTINUE (or do not need to).  Read the message body.
+   * We have sent 100 CONTINUE (or do not need to).  Read the message body.
    */
   MHD_CONNECTION_CONTINUE_SENT = MHD_CONNECTION_CONTINUE_SENDING + 1,
 
   /**
-   * 7: We got the request body.  Wait for a line of the footer.
+   * We got the request body.  Wait for a line of the footer.
    */
   MHD_CONNECTION_BODY_RECEIVED = MHD_CONNECTION_CONTINUE_SENT + 1,
 
   /**
-   * 8: We got part of a line of the footer.  Wait for the
+   * We got part of a line of the footer.  Wait for the
    * rest.
    */
   MHD_CONNECTION_FOOTER_PART_RECEIVED = MHD_CONNECTION_BODY_RECEIVED + 1,
 
   /**
-   * 9: We received the entire footer.  Wait for a response to be queued
+   * We received the entire footer.  Wait for a response to be queued
    * and prepare the response headers.
    */
   MHD_CONNECTION_FOOTERS_RECEIVED = MHD_CONNECTION_FOOTER_PART_RECEIVED + 1,
 
   /**
-   * 10: We have prepared the response headers in the writ buffer.
+   * We have prepared the response headers in the writ buffer.
    * Send the response headers.
    */
   MHD_CONNECTION_HEADERS_SENDING = MHD_CONNECTION_FOOTERS_RECEIVED + 1,
 
   /**
-   * 11: We have sent the response headers.  Get ready to send the body.
+   * We have sent the response headers.  Get ready to send the body.
    */
   MHD_CONNECTION_HEADERS_SENT = MHD_CONNECTION_HEADERS_SENDING + 1,
 
   /**
-   * 12: We are ready to send a part of a non-chunked body.  Send it.
+   * We are ready to send a part of a non-chunked body.  Send it.
    */
   MHD_CONNECTION_NORMAL_BODY_READY = MHD_CONNECTION_HEADERS_SENT + 1,
 
   /**
-   * 13: We are waiting for the client to provide more
+   * We are waiting for the client to provide more
    * data of a non-chunked body.
    */
   MHD_CONNECTION_NORMAL_BODY_UNREADY = MHD_CONNECTION_NORMAL_BODY_READY + 1,
 
   /**
-   * 14: We are ready to send a chunk.
+   * We are ready to send a chunk.
    */
   MHD_CONNECTION_CHUNKED_BODY_READY = MHD_CONNECTION_NORMAL_BODY_UNREADY + 1,
 
   /**
-   * 15: We are waiting for the client to provide a chunk of the body.
+   * We are waiting for the client to provide a chunk of the body.
    */
   MHD_CONNECTION_CHUNKED_BODY_UNREADY = MHD_CONNECTION_CHUNKED_BODY_READY + 1,
 
   /**
-   * 16: We have sent the response body. Prepare the footers.
+   * We have sent the response body. Prepare the footers.
    */
   MHD_CONNECTION_BODY_SENT = MHD_CONNECTION_CHUNKED_BODY_UNREADY + 1,
 
   /**
-   * 17: We have prepared the response footer.  Send it.
+   * We have prepared the response footer.  Send it.
    */
   MHD_CONNECTION_FOOTERS_SENDING = MHD_CONNECTION_BODY_SENT + 1,
 
   /**
-   * 18: We have sent the response footer.  Shutdown or restart.
+   * We have sent the response footer.  Shutdown or restart.
    */
   MHD_CONNECTION_FOOTERS_SENT = MHD_CONNECTION_FOOTERS_SENDING + 1,
 
   /**
-   * 19: This connection is to be closed.
+   * This connection is to be closed.
    */
   MHD_CONNECTION_CLOSED = MHD_CONNECTION_FOOTERS_SENT + 1,
 
