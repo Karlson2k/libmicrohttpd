@@ -905,9 +905,12 @@ try_ready_normal_body (struct MHD_Connection *connection)
   struct MHD_Response *response;
 
   response = connection->response;
+  mhd_assert (connection->rp_props.send_reply_body);
+
   if ( (0 == response->total_size) ||
+                     /* TODO: replace the next check with assert */
        (connection->response_write_position == response->total_size) )
-    return MHD_YES; /* 0-byte response is always ready */
+    return MHD_YES;  /* 0-byte response is always ready */
   if (NULL != response->data_iov)
   {
     size_t copy_size;
@@ -958,6 +961,8 @@ try_ready_normal_body (struct MHD_Connection *connection)
        (((ssize_t) MHD_CONTENT_READER_END_WITH_ERROR) == ret) )
   {
     /* either error or http 1.0 transfer, close socket! */
+    /* TODO: do not update total size, check whether response
+     * was really with unknown size */
     response->total_size = connection->response_write_position;
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
     MHD_mutex_unlock_chk_ (&response->mutex);
@@ -1094,6 +1099,7 @@ try_ready_chunked_body (struct MHD_Connection *connection,
   if ( ((ssize_t) MHD_CONTENT_READER_END_WITH_ERROR) == ret)
   {
     /* error, close socket! */
+    /* TODO: remove update of the response size */
     response->total_size = connection->response_write_position;
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
     MHD_mutex_unlock_chk_ (&response->mutex);
@@ -3646,13 +3652,18 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                     connection->response_write_position) || \
                    (MHD_SIZE_UNKNOWN ==
                     connection->response_write_position) );
+      mhd_assert ((MHD_CONN_MUST_UPGRADE != connection->keepalive) || \
+                  (! connection->rp_props.send_reply_body));
 
-      if ( (NULL == resp->crc) &&
+      if ( (connection->rp_props.send_reply_body) &&
+           (NULL == resp->crc) &&
            (NULL == resp->data_iov) &&
+           /* TODO: remove the next check as 'send_reply_body' is used */
            (0 == connection->response_write_position) &&
            (! connection->rp_props.chunked) )
       {
         mhd_assert (resp->total_size >= resp->data_size);
+        mhd_assert (0 == resp->data_start);
         /* Send response headers alongside the response body, if the body
          * data is available. */
         ret = MHD_send_hdr_and_body_ (connection,
@@ -3677,10 +3688,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                       NULL,
                                       0,
                                       ((0 == resp->total_size) ||
-                                       (resp->total_size ==
-                                        connection->response_write_position) ||
-                                       (MHD_SIZE_UNKNOWN ==
-                                        connection->response_write_position)));
+                                       (! connection->rp_props.send_reply_body)
+                                      ));
       }
 
       if (ret < 0)
@@ -3705,6 +3714,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
          * update both offsets. */
         mhd_assert (0 == connection->response_write_position);
         mhd_assert (! connection->rp_props.chunked);
+        mhd_assert (connection->rp_props.send_reply_body);
         connection->write_buffer_send_offset += wb_ready;
         connection->response_write_position = ret - wb_ready;
       }
@@ -4863,6 +4873,8 @@ MHD_queue_response (struct MHD_Connection *connection,
     /* if this is a "HEAD" request, or a status code for
        which a body is not allowed, pretend that we
        have already sent the full message body. */
+    /* TODO: remove the next assignment, use 'rp_props.send_reply_body' in
+     * checks */
     connection->response_write_position = response->total_size;
   }
   if (MHD_CONNECTION_HEADERS_PROCESSED == connection->state)
