@@ -1186,6 +1186,18 @@ struct MHD_Connection
    */
   bool read_closed;
 
+  /**
+   * Some error happens during processing the connection therefore this
+   * connection must be closed.
+   * The error may come from the client side (like wrong request format),
+   * from the application side (like data callback returned error), or from
+   * the OS side (like out-of-memory).
+   * The connection cannot be reused for additional requests as the current
+   * request may be incompletely read and it is unclear where is the initial
+   * byte of the next request.
+   */
+  bool stop_with_error;
+
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   /**
    * Set to `true` if the thread has been joined.

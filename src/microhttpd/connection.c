@@ -829,6 +829,7 @@ connection_close_error (struct MHD_Connection *connection,
                         const char *emsg)
 {
 #ifdef HAVE_MESSAGES
+  connection->stop_with_error = true;
   if (NULL != emsg)
     MHD_DLOG (connection->daemon,
               "%s\n",
@@ -865,7 +866,8 @@ connection_close_error_check (struct MHD_Connection *connection,
 {
   if ( (NULL != connection->response) &&
        (400 <= connection->responseCode) &&
-       (connection->read_closed) &&
+       (NULL == connection->response->crc) && /* Static response only! */
+       (connection->stop_with_error) &&
        (MHD_CONNECTION_HEADERS_SENDING == connection->state) )
     return; /* An error response was already queued */
 
@@ -1188,9 +1190,7 @@ keepalive_possible (struct MHD_Connection *connection)
   }
 #endif /* UPGRADE_SUPPORT */
 
-  /* TODO: use additional flags, like "error_closure" or
-   * "! read_completed" */
-  if (c->read_closed)
+  if ((c->read_closed) || (c->stop_with_error))
     return MHD_CONN_MUST_CLOSE;
 
   if (0 != (r->flags & MHD_RF_HTTP_1_0_COMPATIBLE_STRICT))
@@ -2126,7 +2126,7 @@ transmit_error_response_len (struct MHD_Connection *connection,
   enum MHD_Result iret;
 
   connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
-  connection->read_closed = true;
+  connection->stop_with_error = true;
   if (0 != connection->read_buffer_size)
   {
     /* Read buffer is not needed anymore, discard it
@@ -2254,7 +2254,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
                                           REQUEST_TOO_BIG);
         continue;
       }
-      if (! connection->read_closed)
+      if (! connection->stop_with_error)
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
       else
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
@@ -2294,7 +2294,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
         }
       }
       if ( (connection->read_buffer_offset < connection->read_buffer_size) &&
-           (! connection->read_closed) )
+           (! connection->stop_with_error) )
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
       else
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
@@ -2303,7 +2303,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
     case MHD_CONNECTION_FOOTER_PART_RECEIVED:
       /* while reading footers, we always grow the
          read buffer if needed, no size-check required */
-      if (connection->read_closed)
+      if (connection->stop_with_error)
       {
         CONNECTION_CLOSE_ERROR (connection,
                                 NULL);
@@ -2930,8 +2930,9 @@ process_request_body (struct MHD_Connection *connection)
         {
           /* malformed encoding */
           CONNECTION_CLOSE_ERROR (connection,
-                                  _ (
-                                    "Received malformed HTTP request (bad chunked encoding). Closing connection."));
+                                  _ ("Received malformed HTTP request " \
+                                     "(bad chunked encoding). " \
+                                     "Closing connection."));
           return;
         }
         available -= i;
@@ -3009,8 +3010,9 @@ process_request_body (struct MHD_Connection *connection)
         {
           /* malformed encoding */
           CONNECTION_CLOSE_ERROR (connection,
-                                  _ (
-                                    "Received malformed HTTP request (bad chunked encoding). Closing connection."));
+                                  _ ("Received malformed HTTP request " \
+                                     "(bad chunked encoding). " \
+                                     "Closing connection."));
           return;
         }
         /* skip 2nd part of line feed */
@@ -3065,8 +3067,8 @@ process_request_body (struct MHD_Connection *connection)
     {
       /* serious internal error, close connection */
       CONNECTION_CLOSE_ERROR (connection,
-                              _ (
-                                "Application reported internal error, closing connection."));
+                              _ ("Application reported internal error, " \
+                                 "closing connection."));
       return;
     }
     if (left_unprocessed > to_be_processed)
@@ -3089,8 +3091,8 @@ process_request_body (struct MHD_Connection *connection)
       if ( (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
            (! connection->suspended) )
         MHD_DLOG (daemon,
-                  _ (
-                    "WARNING: incomplete upload processing and connection not suspended may result in hung connection.\n"));
+                  _ ("WARNING: incomplete upload processing and connection " \
+                     "not suspended may result in hung connection.\n"));
 #endif
     }
     processed_size = to_be_processed - left_unprocessed;
@@ -3326,7 +3328,7 @@ parse_connection_headers (struct MHD_Connection *connection)
 
     /* die, http 1.1 request without host and we are pedantic */
     connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
-    connection->read_closed = true;
+    connection->stop_with_error = true;
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
               _ ("Received HTTP 1.1 request without `Host' header.\n"));
@@ -3535,7 +3537,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   case MHD_CONNECTION_BODY_RECEIVED:
   case MHD_CONNECTION_FOOTER_PART_RECEIVED:
     /* nothing to do but default action */
-    if (connection->read_closed)
+    if ((connection->read_closed) || (connection->stop_with_error))
     {
       MHD_connection_close_ (connection,
                              MHD_REQUEST_TERMINATED_READ_ERROR);
@@ -4111,7 +4113,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       {
         if (MHD_CONNECTION_INIT != connection->state)
           continue;
-        if (connection->read_closed)
+        if (connection->stop_with_error)
         {
           CONNECTION_CLOSE_ERROR (connection,
                                   NULL);
@@ -4137,7 +4139,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       {
         if (MHD_CONNECTION_URL_RECEIVED != connection->state)
           continue;
-        if (connection->read_closed)
+        if (connection->stop_with_error)
         {
           CONNECTION_CLOSE_ERROR (connection,
                                   NULL);
@@ -4169,7 +4171,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       {
         if (connection->state != MHD_CONNECTION_HEADER_PART_RECEIVED)
           continue;
-        if (connection->read_closed)
+        if (connection->stop_with_error)
         {
           CONNECTION_CLOSE_ERROR (connection,
                                   NULL);
@@ -4216,7 +4218,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         /* we refused (no upload allowed!) */
         connection->remaining_upload_size = 0;
         /* force close, in case client still tries to upload... */
-        connection->read_closed = true;
+        connection->stop_with_error = true;
       }
       connection->state = (0 == connection->remaining_upload_size)
                           ? MHD_CONNECTION_FOOTERS_RECEIVED
@@ -4242,10 +4244,10 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       if ( (0 == connection->remaining_upload_size) ||
            ( (MHD_SIZE_UNKNOWN == connection->remaining_upload_size) &&
              (0 == connection->read_buffer_offset) &&
-             (connection->read_closed) ) )
+             (connection->stop_with_error) ) )
       {
         if ( (connection->have_chunked_upload) &&
-             (! connection->read_closed) )
+             (! connection->stop_with_error) )
           connection->state = MHD_CONNECTION_BODY_RECEIVED;
         else
           connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
@@ -4261,7 +4263,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       {
         if (connection->state != MHD_CONNECTION_BODY_RECEIVED)
           continue;
-        if (connection->read_closed)
+        if (connection->stop_with_error)
         {
           CONNECTION_CLOSE_ERROR (connection,
                                   NULL);
@@ -4293,7 +4295,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       {
         if (connection->state != MHD_CONNECTION_FOOTER_PART_RECEIVED)
           continue;
-        if (connection->read_closed)
+        if (connection->stop_with_error)
         {
           CONNECTION_CLOSE_ERROR (connection,
                                   NULL);
@@ -4471,7 +4473,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       /* Reset connection after complete reply */
       connection_reset (connection,
                         MHD_CONN_USE_KEEPALIVE == connection->keepalive &&
-                        ! connection->read_closed);
+                        ! connection->read_closed &&
+                        ! connection->stop_with_error);
       continue;
     case MHD_CONNECTION_CLOSED:
       cleanup_connection (connection);
@@ -4881,7 +4884,7 @@ MHD_queue_response (struct MHD_Connection *connection,
   {
     /* response was queued "early", refuse to read body / footers or
        further requests! */
-    connection->read_closed = true;
+    connection->stop_with_error = true;
     connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
     connection->remaining_upload_size = 0;
   }
