@@ -616,16 +616,21 @@ enum MHD_CONNECTION_STATE
   MHD_CONNECTION_FOOTER_PART_RECEIVED = MHD_CONNECTION_BODY_RECEIVED + 1,
 
   /**
-   * We received the entire footer.  Wait for a response to be queued
-   * and prepare the response headers.
+   * We received the entire footer.
    */
   MHD_CONNECTION_FOOTERS_RECEIVED = MHD_CONNECTION_FOOTER_PART_RECEIVED + 1,
+
+  /**
+   * We received the entire request.
+   * Wait for a response to be queued and prepare the response headers.
+   */
+  MHD_CONNECTION_FULL_REQ_RECEIVED = MHD_CONNECTION_FOOTERS_RECEIVED + 1,
 
   /**
    * We have prepared the response headers in the writ buffer.
    * Send the response headers.
    */
-  MHD_CONNECTION_HEADERS_SENDING = MHD_CONNECTION_FOOTERS_RECEIVED + 1,
+  MHD_CONNECTION_HEADERS_SENDING = MHD_CONNECTION_FULL_REQ_RECEIVED + 1,
 
   /**
    * We have sent the response headers.  Get ready to send the body.

@@ -2126,7 +2126,7 @@ transmit_error_response_len (struct MHD_Connection *connection,
   struct MHD_Response *response;
   enum MHD_Result iret;
 
-  connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
+  connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
   connection->stop_with_error = true;
   if (0 != connection->read_buffer_size)
   {
@@ -2316,6 +2316,9 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
          happens in read handler */
       break;
     case MHD_CONNECTION_FOOTERS_RECEIVED:
+      mhd_assert (0);
+      break;
+    case MHD_CONNECTION_FULL_REQ_RECEIVED:
       connection->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
       break;
     case MHD_CONNECTION_HEADERS_SENDING:
@@ -3329,7 +3332,7 @@ parse_connection_headers (struct MHD_Connection *connection)
     enum MHD_Result iret;
 
     /* die, http 1.1 request without host and we are pedantic */
-    connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
+    connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
     connection->stop_with_error = true;
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
@@ -3640,6 +3643,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
   case MHD_CONNECTION_BODY_RECEIVED:
   case MHD_CONNECTION_FOOTER_PART_RECEIVED:
   case MHD_CONNECTION_FOOTERS_RECEIVED:
+  case MHD_CONNECTION_FULL_REQ_RECEIVED:
     mhd_assert (0);
     return;
   case MHD_CONNECTION_HEADERS_SENDING:
@@ -4229,7 +4233,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         connection->stop_with_error = true;
       }
       connection->state = (0 == connection->remaining_upload_size)
-                          ? MHD_CONNECTION_FOOTERS_RECEIVED
+                          ? MHD_CONNECTION_FULL_REQ_RECEIVED
                           : MHD_CONNECTION_CONTINUE_SENT;
       if (connection->suspended)
         break;
@@ -4258,7 +4262,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
              (! connection->stop_with_error) )
           connection->state = MHD_CONNECTION_BODY_RECEIVED;
         else
-          connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
+          connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
         if (connection->suspended)
           break;
         continue;
@@ -4277,6 +4281,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                                   NULL);
           continue;
         }
+        if (0 < connection->read_buffer_offset)
+          connection->state = MHD_CONNECTION_FOOTER_PART_RECEIVED;
         break;
       }
       if (0 == line[0])
@@ -4325,6 +4331,11 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       }
       continue;
     case MHD_CONNECTION_FOOTERS_RECEIVED:
+      /* The header, the body, and the footers of the request has been received,
+       * switch to the final processing of the request. */
+      connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+      continue;
+    case MHD_CONNECTION_FULL_REQ_RECEIVED:
       call_connection_handler (connection);     /* "final" call */
       if (connection->state == MHD_CONNECTION_CLOSED)
         continue;
@@ -4760,7 +4771,7 @@ MHD_queue_response (struct MHD_Connection *connection,
        (NULL == response) ||
        (NULL != connection->response) ||
        ( (MHD_CONNECTION_HEADERS_PROCESSED != connection->state) &&
-         (MHD_CONNECTION_FOOTERS_RECEIVED != connection->state) ) )
+         (MHD_CONNECTION_FULL_REQ_RECEIVED != connection->state) ) )
     return MHD_NO;
 
 #ifdef UPGRADE_SUPPORT
@@ -4893,7 +4904,7 @@ MHD_queue_response (struct MHD_Connection *connection,
     /* response was queued "early", refuse to read body / footers or
        further requests! */
     connection->stop_with_error = true;
-    connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
+    connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
     connection->remaining_upload_size = 0;
   }
   if (! connection->in_idle)
