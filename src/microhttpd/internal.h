@@ -627,30 +627,30 @@ enum MHD_CONNECTION_STATE
   MHD_CONNECTION_HEADERS_SENT = MHD_CONNECTION_HEADERS_SENDING + 1,
 
   /**
-   * We are ready to send a part of a non-chunked body.  Send it.
-   */
-  MHD_CONNECTION_NORMAL_BODY_READY = MHD_CONNECTION_HEADERS_SENT + 1,
-
-  /**
    * We are waiting for the client to provide more
    * data of a non-chunked body.
    */
-  MHD_CONNECTION_NORMAL_BODY_UNREADY = MHD_CONNECTION_NORMAL_BODY_READY + 1,
+  MHD_CONNECTION_NORMAL_BODY_UNREADY = MHD_CONNECTION_HEADERS_SENT + 1,
 
   /**
-   * We are ready to send a chunk.
+   * We are ready to send a part of a non-chunked body.  Send it.
    */
-  MHD_CONNECTION_CHUNKED_BODY_READY = MHD_CONNECTION_NORMAL_BODY_UNREADY + 1,
+  MHD_CONNECTION_NORMAL_BODY_READY = MHD_CONNECTION_NORMAL_BODY_UNREADY + 1,
 
   /**
    * We are waiting for the client to provide a chunk of the body.
    */
-  MHD_CONNECTION_CHUNKED_BODY_UNREADY = MHD_CONNECTION_CHUNKED_BODY_READY + 1,
+  MHD_CONNECTION_CHUNKED_BODY_UNREADY = MHD_CONNECTION_NORMAL_BODY_READY + 1,
+
+  /**
+   * We are ready to send a chunk.
+   */
+  MHD_CONNECTION_CHUNKED_BODY_READY = MHD_CONNECTION_CHUNKED_BODY_UNREADY + 1,
 
   /**
    * We have sent the response body. Prepare the footers.
    */
-  MHD_CONNECTION_BODY_SENT = MHD_CONNECTION_CHUNKED_BODY_UNREADY + 1,
+  MHD_CONNECTION_BODY_SENT = MHD_CONNECTION_CHUNKED_BODY_READY + 1,
 
   /**
    * We have prepared the response footer.  Send it.
