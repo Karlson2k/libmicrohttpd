@@ -4104,34 +4104,32 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     case MHD_CONNECTION_INIT:
       line = get_next_header_line (connection,
                                    &line_len);
-      /* Check for empty string, as we might want
-         to tolerate 'spurious' empty lines; also
-         NULL means we didn't get a full line yet;
-         line is not 0-terminated here. */
-      if ( (NULL == line) ||
-           (0 == line[0]) )
+      if (NULL != line)
       {
-        if (MHD_CONNECTION_INIT != connection->state)
-          continue;
-        if (connection->stop_with_error)
+        /* Check for empty string, as we might want
+           to tolerate 'spurious' empty lines */
+        if (0 == line[0])
+          /* TODO: Add MHD option to not tolerate it */
+          continue; /* Process the next line */
+        if (MHD_NO == parse_initial_message_line (connection,
+                                                  line,
+                                                  line_len))
+          CONNECTION_CLOSE_ERROR_CHECK (connection,
+                                        NULL);
+        else
         {
-          CONNECTION_CLOSE_ERROR (connection,
-                                  NULL);
-          continue;
+          mhd_assert (MHD_IS_HTTP_VER_SUPPORTED (connection->http_ver));
+          connection->state = MHD_CONNECTION_URL_RECEIVED;
         }
-        break;
+        continue;
       }
-      if (MHD_NO == parse_initial_message_line (connection,
-                                                line,
-                                                line_len))
-        CONNECTION_CLOSE_ERROR_CHECK (connection,
-                                      NULL);
-      else
+      /* NULL means we didn't get a full line yet */
+      if (connection->stop_with_error)
       {
-        mhd_assert (MHD_IS_HTTP_VER_SUPPORTED (connection->http_ver));
-        connection->state = MHD_CONNECTION_URL_RECEIVED;
+        mhd_assert (MHD_CONNECTION_INIT != connection->state);
+        continue;
       }
-      continue;
+      break;
     case MHD_CONNECTION_URL_RECEIVED:
       line = get_next_header_line (connection,
                                    NULL);
