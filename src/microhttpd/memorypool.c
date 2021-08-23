@@ -103,6 +103,22 @@ MHD_init_mem_pools_ (void)
 
 
 /**
+ * Get the real size that would be allocated by the memory pool when
+ * requested to allocate @a size.
+ * @param size the size of memory area that would be rounded up to the
+ *             allocation granularity
+ * @return the size that would be allocated by #MHD_pool_allocate() when
+ *         requested to allocate @a size. It is also minimal size of free
+ *         space in the pool required to #MHD_pool_allocate() succeed.
+ */
+size_t
+MHD_pool_alloc_size (size_t size)
+{
+  return ROUND_TO_ALIGN (size);
+}
+
+
+/**
  * Handle for a memory pool.  Pools are not reentrant and must not be
  * used by multiple threads.
  */
