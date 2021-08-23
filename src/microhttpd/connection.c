@@ -2126,8 +2126,9 @@ transmit_error_response_len (struct MHD_Connection *connection,
   struct MHD_Response *response;
   enum MHD_Result iret;
 
-  connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
   connection->stop_with_error = true;
+  /* TODO: remove when special error queue function is implemented */
+  connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
   if (0 != connection->read_buffer_size)
   {
     /* Read buffer is not needed anymore, discard it
@@ -2320,6 +2321,9 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
       break;
     case MHD_CONNECTION_FULL_REQ_RECEIVED:
       connection->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
+      break;
+    case MHD_CONNECTION_START_REPLY:
+      mhd_assert (0);
       break;
     case MHD_CONNECTION_HEADERS_SENDING:
       /* headers in buffer, keep writing */
@@ -3332,8 +3336,8 @@ parse_connection_headers (struct MHD_Connection *connection)
     enum MHD_Result iret;
 
     /* die, http 1.1 request without host and we are pedantic */
-    connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
     connection->stop_with_error = true;
+    connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
               _ ("Received HTTP 1.1 request without `Host' header.\n"));
@@ -3644,6 +3648,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
   case MHD_CONNECTION_FOOTER_PART_RECEIVED:
   case MHD_CONNECTION_FOOTERS_RECEIVED:
   case MHD_CONNECTION_FULL_REQ_RECEIVED:
+  case MHD_CONNECTION_START_REPLY:
     mhd_assert (0);
     return;
   case MHD_CONNECTION_HEADERS_SENDING:
@@ -4341,18 +4346,23 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         continue;
       if (NULL == connection->response)
         break;                  /* try again next time */
-
+      /* Response is ready, start reply */
+      connection->state = MHD_CONNECTION_START_REPLY;
+      continue;
+    case MHD_CONNECTION_START_REPLY:
+      mhd_assert (NULL != connection->response);
       connection_switch_from_recv_to_send (connection);
       if (MHD_NO == build_header_response (connection))
       {
         /* oops - close! */
         CONNECTION_CLOSE_ERROR (connection,
-                                _ (
-                                  "Closing connection (failed to create response header).\n"));
+                                _ ("Closing connection (failed to create "
+                                   "response header).\n"));
         continue;
       }
       connection->state = MHD_CONNECTION_HEADERS_SENDING;
       break;
+
     case MHD_CONNECTION_HEADERS_SENDING:
       /* no default action */
       break;
@@ -4904,7 +4914,7 @@ MHD_queue_response (struct MHD_Connection *connection,
     /* response was queued "early", refuse to read body / footers or
        further requests! */
     connection->stop_with_error = true;
-    connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+    connection->state = MHD_CONNECTION_START_REPLY;
     connection->remaining_upload_size = 0;
   }
   if (! connection->in_idle)

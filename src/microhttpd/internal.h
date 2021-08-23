@@ -622,15 +622,22 @@ enum MHD_CONNECTION_STATE
 
   /**
    * We received the entire request.
-   * Wait for a response to be queued and prepare the response headers.
+   * Wait for a response to be queued.
    */
   MHD_CONNECTION_FULL_REQ_RECEIVED = MHD_CONNECTION_FOOTERS_RECEIVED + 1,
 
   /**
-   * We have prepared the response headers in the writ buffer.
+   * Finished reading of the request and the response is ready.
+   * Switch internal logic from receiving to sending, prepare connection
+   * sending the reply and build the reply header.
+   */
+  MHD_CONNECTION_START_REPLY = MHD_CONNECTION_FULL_REQ_RECEIVED + 1,
+
+  /**
+   * We have prepared the response headers in the write buffer.
    * Send the response headers.
    */
-  MHD_CONNECTION_HEADERS_SENDING = MHD_CONNECTION_FULL_REQ_RECEIVED + 1,
+  MHD_CONNECTION_HEADERS_SENDING = MHD_CONNECTION_START_REPLY + 1,
 
   /**
    * We have sent the response headers.  Get ready to send the body.
