@@ -1546,6 +1546,7 @@ connection_maximize_write_buffer (struct MHD_Connection *connection)
 }
 
 
+#if 0 /* disable unused function */
 /**
  * Shrink connection write buffer to the size of unsent data.
  *
@@ -1576,6 +1577,9 @@ connection_shrink_write_buffer (struct MHD_Connection *connection)
   (void) new_buf; /* squash compiler warning */
   c->write_buffer_size = c->write_buffer_append_offset;
 }
+
+
+#endif /* unused function */
 
 
 /**
@@ -2099,9 +2103,6 @@ build_header_response (struct MHD_Connection *connection)
   buf[pos++] = '\n';
 
   c->write_buffer_append_offset = pos;
-  /* TODO: remove shrink of the buffer,
-   * handle maximized buffer in other functions */
-  connection_shrink_write_buffer (c);
   return MHD_YES;
 }
 
@@ -2170,8 +2171,6 @@ build_connection_chunked_response_footer (struct MHD_Connection *connection)
   c->write_buffer_append_offset += used_size;
   mhd_assert (c->write_buffer_append_offset <= c->write_buffer_size);
 
-  /* TODO: remove shrink */
-  connection_shrink_write_buffer (c);
   return MHD_YES;
 }
 
