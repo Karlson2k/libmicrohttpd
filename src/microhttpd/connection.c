@@ -3211,15 +3211,6 @@ check_write_done (struct MHD_Connection *connection,
   connection->write_buffer_append_offset = 0;
   connection->write_buffer_send_offset = 0;
   connection->state = next_state;
-  /* TODO: avoid deallocation of the buffer so
-   * it can be reused for chunked body sending when
-   * header has been sent */
-  MHD_pool_reallocate (connection->pool,
-                       connection->write_buffer,
-                       connection->write_buffer_size,
-                       0);
-  connection->write_buffer = NULL;
-  connection->write_buffer_size = 0;
   return MHD_YES;
 }
 
