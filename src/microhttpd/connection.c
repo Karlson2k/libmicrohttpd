@@ -186,6 +186,77 @@ str_conn_error_ (ssize_t mhd_err_code)
 }
 
 
+/**
+ * Allocate memory from connection's memory pool.
+ * If memory pool doesn't have enough free memory but read of write buffer
+ * have some unused memory, the size of the buffer will be reduced as needed.
+ * @param connection the connection to use
+ * @param size the size of allocated memory area
+ * @return pointer to allocated memory region in the pool or
+ *         NULL if no memory is available
+ */
+static void*
+connection_alloc_memory (struct MHD_Connection *connection,
+                         size_t size)
+{
+  struct MHD_Connection *const c = connection; /* a short alias */
+  struct MemoryPool *const pool = c->pool;     /* a short alias */
+  size_t required_free_size; /**< The required amount of free memory */
+  size_t pool_free; /**< The amount of free memory in the pool */
+  void *res;
+
+  required_free_size = MHD_pool_alloc_size (size);
+  pool_free = MHD_pool_get_free (pool);
+  if (pool_free < required_free_size)
+  {
+    size_t need_to_free = required_free_size - pool_free;
+    mhd_assert (MHD_pool_alloc_size (need_to_free) == need_to_free);
+    if (NULL != c->write_buffer)
+    {
+      /* The connection is in the sending phase */
+      mhd_assert (MHD_CONNECTION_START_REPLY <= c->state);
+      if (c->write_buffer_size - c->write_buffer_append_offset >= need_to_free)
+      {
+        char *buf;
+        buf = MHD_pool_reallocate (pool,
+                                   c->write_buffer,
+                                   c->write_buffer_size,
+                                   c->write_buffer_size - need_to_free);
+        mhd_assert (c->write_buffer == buf);
+#ifdef NDEBUG
+        (void) buf; /* mute compiler warning */
+#endif
+      }
+      else
+        return NULL;
+    }
+    else if (NULL != c->read_buffer)
+    {
+      /* The connection is in the receiving phase */
+      if (c->read_buffer_size - c->read_buffer_offset >= need_to_free)
+      {
+        char *buf;
+        buf = MHD_pool_reallocate (pool,
+                                   c->read_buffer,
+                                   c->read_buffer_size,
+                                   c->read_buffer_size - need_to_free);
+        mhd_assert (c->read_buffer == buf);
+#ifdef NDEBUG
+        (void) buf; /* mute compiler warning */
+#endif
+      }
+      else
+        return NULL;
+    }
+    else
+      return NULL;
+  }
+  res = MHD_pool_allocate (pool, size, true);
+  mhd_assert (NULL != res); /* It has been checked that pool has enough space */
+  return res;
+}
+
+
 #endif /* HAVE_MESSAGES */
 
 /**
@@ -365,9 +436,8 @@ MHD_set_connection_value_n_nocheck_ (struct MHD_Connection *connection,
 {
   struct MHD_HTTP_Header *pos;
 
-  pos = MHD_pool_allocate (connection->pool,
-                           sizeof (struct MHD_HTTP_Header),
-                           true);
+  pos = connection_alloc_memory (connection,
+                                 sizeof (struct MHD_HTTP_Header));
   if (NULL == pos)
     return MHD_NO;
   pos->header = (char *) key;
@@ -920,9 +990,8 @@ try_ready_normal_body (struct MHD_Connection *connection)
     if (NULL != connection->resp_iov.iov)
       return MHD_YES;
     copy_size = response->data_iovcnt * sizeof(MHD_iovec_);
-    connection->resp_iov.iov = MHD_pool_allocate (connection->pool,
-                                                  copy_size,
-                                                  true);
+    connection->resp_iov.iov = connection_alloc_memory (connection,
+                                                        copy_size);
     if (NULL == connection->resp_iov.iov)
     {
       MHD_mutex_unlock_chk_ (&response->mutex);
@@ -2503,9 +2572,8 @@ parse_cookie_header (struct MHD_Connection *connection)
                                                &hdr,
                                                &hdr_len))
     return MHD_YES;
-  cpy = MHD_pool_allocate (connection->pool,
-                           hdr_len + 1,
-                           true);
+  cpy = connection_alloc_memory (connection,
+                                 hdr_len + 1);
   if (NULL == cpy)
   {
 #ifdef HAVE_MESSAGES
