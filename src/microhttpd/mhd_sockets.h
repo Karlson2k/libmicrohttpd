@@ -199,6 +199,12 @@ typedef SOCKET MHD_socket;
 #  define USE_ACCEPT4 1
 #endif
 
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || \
+  defined(MHD_WINSOCK_SOCKETS) || defined(__MACH__) || defined(__sun)
+/* Most of OSes inherit nonblocking setting from the listen socket */
+#define MHD_ACCEPT_INHERIT_NONBLOCK 1
+#endif
+
 #if defined(HAVE_EPOLL_CREATE1) && defined(EPOLL_CLOEXEC)
 #  define USE_EPOLL_CREATE1 1
 #endif /* HAVE_EPOLL_CREATE1 && EPOLL_CLOEXEC */

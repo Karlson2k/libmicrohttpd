@@ -3550,7 +3550,11 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   s = accept (fd,
               addr,
               &addrlen);
+#ifdef MHD_ACCEPT_INHERIT_NONBLOCK
+  sk_nonbl = daemon->listen_nonblk;
+#else  /* ! MHD_ACCEPT_INHERIT_NONBLOCK */
   sk_nonbl = false;
+#endif /* ! MHD_ACCEPT_INHERIT_NONBLOCK */
 #ifndef MHD_WINSOCK_SOCKETS
   sk_spipe_supprs = false;
 #else  /* MHD_WINSOCK_SOCKETS */
@@ -3615,15 +3619,17 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
     }
     return MHD_NO;
   }
-#if ! defined(USE_ACCEPT4) || ! defined(HAVE_SOCK_NONBLOCK)
-  if (! MHD_socket_nonblocking_ (s))
+
+  if (! sk_nonbl && ! MHD_socket_nonblocking_ (s))
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ ("Failed to set nonblocking mode on incoming connection " \
                  "socket: %s\n"),
               MHD_socket_last_strerr_ ());
-#endif
+#else  /* ! HAVE_MESSAGES */
+    (void) 0; /* Mute compiler warning */
+#endif /* ! HAVE_MESSAGES */
   }
   else
     sk_nonbl = true;
