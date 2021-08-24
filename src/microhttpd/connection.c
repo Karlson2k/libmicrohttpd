@@ -54,6 +54,7 @@
 #include <sys/param.h>
 #endif /* HAVE_SYS_PARAM_H */
 #include "mhd_send.h"
+#include "mhd_assert.h"
 
 /**
  * Message to transmit when http 1.1 request is received
