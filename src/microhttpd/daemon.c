@@ -3519,6 +3519,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   MHD_socket fd;
   bool sk_nonbl;
   bool sk_spipe_supprs;
+  bool sk_cloexec;
 
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
@@ -3544,6 +3545,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #else  /* MHD_WINSOCK_SOCKETS */
   sk_spipe_supprs = true; /* Nothing to suppress on W32 */
 #endif /* MHD_WINSOCK_SOCKETS */
+  sk_cloexec = (SOCK_CLOEXEC_OR_ZERO != 0);
 #else  /* ! USE_ACCEPT4 */
   s = accept (fd,
               addr,
@@ -3554,6 +3556,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #else  /* MHD_WINSOCK_SOCKETS */
   sk_spipe_supprs = true; /* Nothing to suppress on W32 */
 #endif /* MHD_WINSOCK_SOCKETS */
+  sk_cloexec = false;
 #endif /* ! USE_ACCEPT4 */
   if ( (MHD_INVALID_SOCKET == s) ||
        (addrlen <= 0) )
@@ -3624,17 +3627,18 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   }
   else
     sk_nonbl = true;
-#endif /* !USE_ACCEPT4 || !HAVE_SOCK_NONBLOCK */
-#if ! defined(USE_ACCEPT4) || ! defined(SOCK_CLOEXEC)
-  if (! MHD_socket_noninheritable_ (s))
+
+  if (! sk_cloexec && ! MHD_socket_noninheritable_ (s))
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ ("Failed to set noninheritable mode on incoming connection " \
                  "socket.\n"));
-#endif
+#else  /* ! HAVE_MESSAGES */
+    (void) 0; /* Mute compiler warning */
+#endif /* ! HAVE_MESSAGES */
   }
-#endif /* !USE_ACCEPT4 || !SOCK_CLOEXEC */
+
 #if defined(MHD_socket_nosignal_)
   if (! sk_spipe_supprs && ! MHD_socket_nosignal_ (s))
   {
