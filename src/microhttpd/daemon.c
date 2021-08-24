@@ -3586,8 +3586,10 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
            would ever be cleared.  Instead trying to produce
            bit fat ugly warning. */
         MHD_DLOG (daemon,
-                  _ (
-                    "Hit process or system resource limit at FIRST connection. This is really bad as there is no sane way to proceed. Will try busy waiting for system resources to become magically available.\n"));
+                  _ ("Hit process or system resource limit at FIRST " \
+                     "connection. This is really bad as there is no sane " \
+                     "way to proceed. Will try busy waiting for system " \
+                     "resources to become magically available.\n"));
 #endif
       }
       else
@@ -3601,8 +3603,9 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
-                  _ (
-                    "Hit process or system resource limit at %u connections, temporarily suspending accept(). Consider setting a lower MHD_OPTION_CONNECTION_LIMIT.\n"),
+                  _ ("Hit process or system resource limit at %u " \
+                     "connections, temporarily suspending accept(). " \
+                     "Consider setting a lower MHD_OPTION_CONNECTION_LIMIT.\n"),
                   (unsigned int) daemon->connections);
 #endif
       }
@@ -3614,8 +3617,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ (
-                "Failed to set nonblocking mode on incoming connection socket: %s\n"),
+              _ ("Failed to set nonblocking mode on incoming connection " \
+                 "socket: %s\n"),
               MHD_socket_last_strerr_ ());
 #endif
   }
@@ -3627,8 +3630,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ (
-                "Failed to set noninheritable mode on incoming connection socket.\n"));
+              _ ("Failed to set noninheritable mode on incoming connection " \
+                 "socket.\n"));
 #endif
   }
 #endif /* !USE_ACCEPT4 || !SOCK_CLOEXEC */
@@ -3637,8 +3640,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ (
-                "Failed to suppress SIGPIPE on incoming connection socket: %s\n"),
+              _ ("Failed to suppress SIGPIPE on incoming connection " \
+                 "socket: %s\n"),
               MHD_socket_last_strerr_ ());
 #else  /* ! HAVE_MESSAGES */
     (void) 0; /* Mute compiler warning */
