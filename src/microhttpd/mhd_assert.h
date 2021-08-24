@@ -31,10 +31,10 @@
 
 #include "mhd_options.h"
 
-#if ! deifned(_DEBUG) && ! defined(NDEBUG)
+#if ! defined(_DEBUG) && ! defined(NDEBUG)
 #define NDEBUG 1 /* Use NDEBUG by default */
 #endif /* !_DEBUG && !NDEBUG */
-#if deifned(_DEBUG) && defined(NDEBUG)
+#if defined(_DEBUG) && defined(NDEBUG)
 #error Both _DEBUG and NDEBUG are defined
 #endif /* _DEBUG && NDEBUG */
 #ifdef NDEBUG
