@@ -25,7 +25,7 @@
 
 /* Unlike POSIX version of 'assert.h', MHD version of 'assert' header
  * does not allow multiple redefinition of 'mhd_assert' macro within single
- * souce file. */
+ * source file. */
 #ifndef MHD_ASSERT_H
 #define MHD_ASSERT_H 1
 
