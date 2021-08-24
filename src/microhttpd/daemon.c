@@ -6954,42 +6954,49 @@ MHD_start_daemon_va (unsigned int flags,
     }
   }
 #endif /* HAVE_GETSOCKNAME */
-  if ( (MHD_INVALID_SOCKET != listen_fd) &&
-       (! MHD_socket_nonblocking_ (listen_fd)) )
+
+  if (MHD_INVALID_SOCKET != listen_fd)
   {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Failed to set nonblocking mode on listening socket: %s\n"),
-              MHD_socket_last_strerr_ ());
-#endif
-    if (0 != (*pflags & MHD_USE_EPOLL)
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-        || (daemon->worker_pool_size > 0)
-#endif
-        )
+    if (! MHD_socket_nonblocking_ (listen_fd))
     {
-      /* Accept must be non-blocking. Multiple children may wake up
-       * to handle a new connection, but only one will win the race.
-       * The others must immediately return. */
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Failed to set nonblocking mode on listening socket: %s\n"),
+                MHD_socket_last_strerr_ ());
+#endif
+      if (0 != (*pflags & MHD_USE_EPOLL)
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
+          || (daemon->worker_pool_size > 0)
+#endif
+          )
+      {
+        /* Accept must be non-blocking. Multiple children may wake up
+         * to handle a new connection, but only one will win the race.
+         * The others must immediately return. */
+        MHD_socket_close_chk_ (listen_fd);
+        goto free_and_fail;
+      }
+      daemon->listen_nonblk = false;
+    }
+    else
+      daemon->listen_nonblk = true;
+    if ( (! MHD_SCKT_FD_FITS_FDSET_ (listen_fd,
+                                     NULL)) &&
+         (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL)) ) )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Listen socket descriptor (%d) is not " \
+                   "less than FD_SETSIZE (%d).\n"),
+                (int) listen_fd,
+                (int) FD_SETSIZE);
+#endif
       MHD_socket_close_chk_ (listen_fd);
       goto free_and_fail;
     }
   }
-  if ( (MHD_INVALID_SOCKET != listen_fd) &&
-       (! MHD_SCKT_FD_FITS_FDSET_ (listen_fd,
-                                   NULL)) &&
-       (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL)) ) )
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Listen socket descriptor (%d) is not " \
-                 "less than FD_SETSIZE (%d).\n"),
-              (int) listen_fd,
-              (int) FD_SETSIZE);
-#endif
-    MHD_socket_close_chk_ (listen_fd);
-    goto free_and_fail;
-  }
+  else
+    daemon->listen_nonblk = false; /* Actually listen socket does not exist */
 
 #ifdef EPOLL_SUPPORT
   if ( (0 != (*pflags & MHD_USE_EPOLL))

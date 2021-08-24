@@ -1827,6 +1827,11 @@ struct MHD_Daemon
    */
   MHD_socket listen_fd;
 
+  /**
+   * Listen socket is non-blocking.
+   */
+  bool listen_nonblk;
+
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   /**
    * Worker daemons (one per thread)
