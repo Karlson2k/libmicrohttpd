@@ -673,6 +673,7 @@ doCurlQueryInThread (struct MHD_Daemon *d,
   }
   if (CURLE_OK != errornum)
   {
+    p->queryError = 1;
     fprintf (stderr,
              "libcurl query failed: `%s'\n",
              curl_easy_strerror (errornum));
