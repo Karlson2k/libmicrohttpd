@@ -338,7 +338,7 @@ testGet (int type, int pool_count, int poll_flag)
   /* at this point, the forked server quit, and the new
    * server has quiesced, so new requests should fail
    */
-  if (CURLE_OK == (errornum = curl_easy_perform (c)))
+  if (CURLE_OK == curl_easy_perform (c))
   {
     fprintf (stderr, "curl_easy_perform should fail\n");
     curl_easy_cleanup (c);
