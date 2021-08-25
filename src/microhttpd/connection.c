@@ -1732,6 +1732,8 @@ setup_reply_properties (struct MHD_Connection *connection)
       c->keepalive = MHD_CONN_MUST_CLOSE;
     }
   }
+  else
+    use_chunked = false; /* Actually it must not be used without body */
 
   c->rp_props.chunked = use_chunked;
   c->rp_props.set = true;
