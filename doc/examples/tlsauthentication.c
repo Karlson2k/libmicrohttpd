@@ -53,8 +53,10 @@ string_to_base64 (const char *message)
       strncat (tmp, &lookup[l & 0x3F], 1);
   }
 
-  if (length % 3)
-    strncat (tmp, "==", 3 - length % 3);
+  if (2 == length % 3)
+    strncat (tmp, "=", 1);
+  else if (1 == length % 3)
+    strncat (tmp, "==", 2);
 
   return tmp;
 }
