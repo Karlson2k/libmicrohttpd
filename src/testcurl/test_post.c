@@ -782,8 +782,8 @@ testMultithreadedPostCancelPart (int flags)
   if (CURLE_OK != (cc = curl_easy_getinfo (c, CURLINFO_RESPONSE_CODE,
                                            &response_code)))
   {
-    fprintf (stderr, "curl_easy_getinfo failed: '%s'\n", curl_easy_strerror (
-               errornum));
+    fprintf (stderr, "curl_easy_getinfo failed: '%s'\n",
+             curl_easy_strerror (cc));
     result = 65536;
   }
 
