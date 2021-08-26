@@ -53,7 +53,7 @@ parse_version_number (const char **s)
 }
 
 
-const char *
+static const char *
 parse_version_string (const char *s, int *major, int *minor, int *micro)
 {
   if (! s)
