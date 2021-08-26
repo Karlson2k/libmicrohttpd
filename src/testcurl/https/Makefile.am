@@ -24,7 +24,6 @@ MHD_CPU_COUNT_DEF = -DMHD_CPU_COUNT=$(CPU_COUNT)
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/microhttpd \
-  -I$(top_srcdir)/src/platform \
   $(LIBCURL_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
 
 THREAD_ONLY_TESTS = \
