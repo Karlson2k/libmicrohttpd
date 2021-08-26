@@ -68,7 +68,6 @@ test_https_time_out_SOURCES = \
   tls_test_common.h \
   tls_test_common.c
 test_https_time_out_LDADD  = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
@@ -76,9 +75,9 @@ test_tls_options_SOURCES = \
   test_tls_options.c \
   tls_test_keys.h \
   tls_test_common.h \
-  tls_test_common.c
+  tls_test_common.c \
+  curl_version_check.c
 test_tls_options_LDADD = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
@@ -92,7 +91,6 @@ test_https_get_parallel_CPPFLAGS = \
 test_https_get_parallel_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_https_get_parallel_LDADD = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(PTHREAD_LIBS) $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
@@ -102,7 +100,6 @@ test_empty_response_SOURCES = \
   tls_test_common.h \
   tls_test_common.c
 test_empty_response_LDADD = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
@@ -116,7 +113,6 @@ test_https_get_parallel_threads_CPPFLAGS = \
 test_https_get_parallel_threads_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_https_get_parallel_threads_LDADD = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(PTHREAD_LIBS) $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
@@ -126,7 +122,6 @@ test_tls_authentication_SOURCES = \
   tls_test_common.h \
   tls_test_common.c
 test_tls_authentication_LDADD  = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
@@ -136,7 +131,6 @@ test_https_session_info_SOURCES = \
   tls_test_common.h \
   tls_test_common.c
 test_https_session_info_LDADD  = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
@@ -146,7 +140,6 @@ test_https_multi_daemon_SOURCES = \
   tls_test_common.h \
   tls_test_common.c
 test_https_multi_daemon_LDADD  = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
@@ -156,7 +149,6 @@ test_https_get_SOURCES = \
   tls_test_common.h \
   tls_test_common.c
 test_https_get_LDADD  = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
@@ -166,7 +158,6 @@ test_https_get_iovec_SOURCES = \
   tls_test_common.h \
   tls_test_common.c
 test_https_get_iovec_LDADD  = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 
@@ -180,7 +171,6 @@ test_https_sni_CPPFLAGS = \
   $(AM_CPPFLAGS) \
   -DABS_SRCDIR=\"$(abs_srcdir)\"
 test_https_sni_LDADD  = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@
 endif
@@ -191,6 +181,5 @@ test_https_get_select_SOURCES = \
   tls_test_common.h \
   tls_test_common.c
 test_https_get_select_LDADD  = \
-  $(top_builddir)/src/testcurl/libcurl_version_check.a \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
   $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) @LIBGCRYPT_LIBS@ @LIBCURL@

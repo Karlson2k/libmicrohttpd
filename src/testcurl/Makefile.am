@@ -158,12 +158,7 @@ check_PROGRAMS += \
 endif
 
 TESTS = $(check_PROGRAMS)
-
-noinst_LIBRARIES = libcurl_version_check.a
 endif
-
-libcurl_version_check_a_SOURCES = \
-  curl_version_check.c
 
 test_concurrent_stop_SOURCES = \
   test_concurrent_stop.c
