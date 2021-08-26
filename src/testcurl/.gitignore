@@ -42,7 +42,9 @@
 /test_get_chunked_empty_sized
 /test_get_chunked_close_empty_sized
 /test_get_chunked_forced
+/test_get_chunked_close_forced
 /test_get_chunked_empty_forced
+/test_get_chunked_close_empty_forced
 /test_get11
 /test_get
 /test_digestauth_with_arguments
