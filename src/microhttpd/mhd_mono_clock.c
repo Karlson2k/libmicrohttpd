@@ -183,9 +183,23 @@ MHD_monotonic_sec_counter_init (void)
   }
   else
 #endif /* CLOCK_MONOTONIC_COARSE */
+#ifdef CLOCK_MONOTONIC_RAW_APPROX
+  /* Darwin-specific clock */
+  /* Not affected by frequency adjustment, returns clock value cached at
+   * context switch. Can be "milliseconds old", but it's fast. */
+  if (0 == clock_gettime (CLOCK_MONOTONIC_RAW_APPROX,
+                          &ts))
+  {
+    mono_clock_id = CLOCK_MONOTONIC_RAW_APPROX;
+    mono_clock_start = ts.tv_sec;
+    mono_clock_source = _MHD_CLOCK_GETTIME;
+  }
+  else
+#endif /* CLOCK_MONOTONIC_RAW */
 #ifdef CLOCK_MONOTONIC_RAW
-  /* Linux-specific clock */
-  /* Not affected by frequency adjustment, but don't count time in suspend */
+  /* Linux and Darwin clock */
+  /* Not affected by frequency adjustment,
+   * on Linux don't count time in suspend */
   if (0 == clock_gettime (CLOCK_MONOTONIC_RAW,
                           &ts))
   {
@@ -216,6 +230,18 @@ MHD_monotonic_sec_counter_init (void)
                           &ts))
   {
     mono_clock_id = CLOCK_MONOTONIC;
+    mono_clock_start = ts.tv_sec;
+    mono_clock_source = _MHD_CLOCK_GETTIME;
+  }
+  else
+#endif /* CLOCK_BOOTTIME */
+#ifdef CLOCK_UPTIME
+  /* non-Linux clock */
+  /* Doesn't count time in suspend */
+  if (0 == clock_gettime (CLOCK_UPTIME,
+                          &ts))
+  {
+    mono_clock_id = CLOCK_UPTIME;
     mono_clock_start = ts.tv_sec;
     mono_clock_source = _MHD_CLOCK_GETTIME;
   }
