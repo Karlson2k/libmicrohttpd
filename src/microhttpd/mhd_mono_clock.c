@@ -354,7 +354,7 @@ MHD_monotonic_sec_counter_finish (void)
 
 
 /**
- * Monotonic seconds counter, useful for timeout calculation.
+ * Monotonic seconds counter.
  * Tries to be not affected by manually setting the system real time
  * clock or adjustments by NTP synchronization.
  *
@@ -399,6 +399,62 @@ MHD_monotonic_sec_counter (void)
 #ifdef HAVE_GETHRTIME
   if (1)
     return (time_t) (((uint64_t) (gethrtime () - hrtime_start)) / 1000000000);
+#endif /* HAVE_GETHRTIME */
+
+  return time (NULL) - sys_clock_start;
+}
+
+
+/**
+ * Monotonic milliseconds counter, useful for timeout calculation.
+ * Tries to be not affected by manually setting the system real time
+ * clock or adjustments by NTP synchronization.
+ *
+ * @return number of microseconds from some fixed moment
+ */
+uint64_t
+MHD_monotonic_msec_counter (void)
+{
+#ifdef HAVE_CLOCK_GETTIME
+  struct timespec ts;
+
+  if ( (_MHD_UNWANTED_CLOCK != mono_clock_id) &&
+       (0 == clock_gettime (mono_clock_id,
+                            &ts)) )
+    return (uint64_t) (((uint64_t) (ts.tv_sec - mono_clock_start)) * 1000
+                       + (ts.tv_nsec / 1000000));
+#endif /* HAVE_CLOCK_GETTIME */
+#ifdef HAVE_CLOCK_GET_TIME
+  if (_MHD_INVALID_CLOCK_SERV != mono_clock_service)
+  {
+    mach_timespec_t cur_time;
+
+    if (KERN_SUCCESS == clock_get_time (mono_clock_service,
+                                        &cur_time))
+      return (uint64_t) (((uint64_t) (cur_time.tv_sec - mono_clock_start))
+                         * 1000 + (cur_time.tv_nsec / 1000000));
+  }
+#endif /* HAVE_CLOCK_GET_TIME */
+#if defined(_WIN32)
+#if _WIN32_WINNT >= 0x0600
+  if (1)
+    return (uint64_t) (GetTickCount64 () - tick_start);
+#else  /* _WIN32_WINNT < 0x0600 */
+  if (0 != perf_freq)
+  {
+    LARGE_INTEGER perf_counter;
+    uint64_t num_ticks;
+
+    QueryPerformanceCounter (&perf_counter);   /* never fail on XP and later */
+    num_ticks = (uint64_t) (perf_counter.QuadPart - perf_start);
+    return ((num_ticks / perf_freq) * 1000)
+           + ((num_ticks % perf_freq) / (perf_freq / 1000));
+  }
+#endif /* _WIN32_WINNT < 0x0600 */
+#endif /* _WIN32 */
+#ifdef HAVE_GETHRTIME
+  if (1)
+    return ((uint64_t) (gethrtime () - hrtime_start)) / 1000000;
 #endif /* HAVE_GETHRTIME */
 
   return time (NULL) - sys_clock_start;

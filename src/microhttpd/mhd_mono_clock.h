@@ -32,6 +32,7 @@
 #elif defined(HAVE_SYS_TYPES_H)
 #include <sys/types.h>
 #endif
+#include <stdint.h>
 
 /**
  * Initialise monotonic seconds counter.
@@ -48,7 +49,7 @@ MHD_monotonic_sec_counter_finish (void);
 
 
 /**
- * Monotonic seconds counter, useful for timeout calculation.
+ * Monotonic seconds counter.
  * Tries to be not affected by manually setting the system real time
  * clock or adjustments by NTP synchronization.
  *
@@ -56,5 +57,16 @@ MHD_monotonic_sec_counter_finish (void);
  */
 time_t
 MHD_monotonic_sec_counter (void);
+
+
+/**
+ * Monotonic milliseconds counter, useful for timeout calculation.
+ * Tries to be not affected by manually setting the system real time
+ * clock or adjustments by NTP synchronization.
+ *
+ * @return number of microseconds from some fixed moment
+ */
+uint64_t
+MHD_monotonic_msec_counter (void);
 
 #endif /* MHD_MONO_CLOCK_H */
