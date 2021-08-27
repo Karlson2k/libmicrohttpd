@@ -1893,7 +1893,7 @@ thread_main_handle_connection (void *data)
   while ( (! daemon->shutdown) &&
           (MHD_CONNECTION_CLOSED != con->state) )
   {
-    const time_t timeout = daemon->connection_timeout;
+    const time_t timeout = con->connection_timeout;
 #ifdef UPGRADE_SUPPORT
     struct MHD_UpgradeResponseHandle *const urh = con->urh;
 #else  /* ! UPGRADE_SUPPORT */
