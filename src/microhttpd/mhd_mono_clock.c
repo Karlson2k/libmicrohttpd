@@ -88,8 +88,8 @@ static hrtime_t hrtime_start;
 #if _WIN32_WINNT >= 0x0600
 static uint64_t tick_start;
 #else  /* _WIN32_WINNT < 0x0600 */
-static int64_t perf_freq;
-static int64_t perf_start;
+static uint64_t perf_freq;
+static uint64_t perf_start;
 #endif /* _WIN32_WINNT < 0x0600 */
 #endif /* _WIN32 */
 
@@ -283,8 +283,8 @@ MHD_monotonic_sec_counter_init (void)
 
     QueryPerformanceFrequency (&freq);       /* never fail on XP and later */
     QueryPerformanceCounter (&perf_counter); /* never fail on XP and later */
-    perf_freq = freq.QuadPart;
-    perf_start = perf_counter.QuadPart;
+    perf_freq = (uint64_t) freq.QuadPart;
+    perf_start = (uint64_t) perf_counter.QuadPart;
     mono_clock_source = _MHD_CLOCK_PERFCOUNTER;
   }
   else
@@ -391,7 +391,7 @@ MHD_monotonic_sec_counter (void)
     LARGE_INTEGER perf_counter;
 
     QueryPerformanceCounter (&perf_counter);   /* never fail on XP and later */
-    return (time_t) (((uint64_t) (perf_counter.QuadPart - perf_start))
+    return (time_t) (((uint64_t) perf_counter.QuadPart - perf_start)
                      / perf_freq);
   }
 #endif /* _WIN32_WINNT < 0x0600 */
