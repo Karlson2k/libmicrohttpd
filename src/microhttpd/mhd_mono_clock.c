@@ -457,5 +457,5 @@ MHD_monotonic_msec_counter (void)
     return ((uint64_t) (gethrtime () - hrtime_start)) / 1000000;
 #endif /* HAVE_GETHRTIME */
 
-  return time (NULL) - sys_clock_start;
+  return (uint64_t) (time (NULL) - sys_clock_start) * 1000;
 }
