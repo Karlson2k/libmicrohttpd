@@ -30,20 +30,12 @@
 #undef HAVE_CLOCK_GETTIME
 #endif /* _WIN32 && ! __CYGWIN__ && HAVE_CLOCK_GETTIME */
 
-#ifdef HAVE_CLOCK_GETTIME
-#include <time.h>
-#endif /* HAVE_CLOCK_GETTIME */
-
-#ifdef HAVE_GETHRTIME
-#ifdef HAVE_SYS_TIME_H
-/* Solaris defines gethrtime() in sys/time.h */
-#include <sys/time.h>
-#endif /* HAVE_SYS_TIME_H */
 #ifdef HAVE_TIME_H
-/* HP-UX defines gethrtime() in time.h */
 #include <time.h>
 #endif /* HAVE_TIME_H */
-#endif /* HAVE_GETHRTIME */
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
 
 #ifdef HAVE_CLOCK_GET_TIME
 #include <mach/mach.h>
@@ -65,6 +57,10 @@ static clock_serv_t mono_clock_service = _MHD_INVALID_CLOCK_SERV;
 #include <stdint.h>
 #endif /* _WIN32 */
 
+#ifndef NULL
+#define NULL ((void*)0)
+#endif /* ! NULL */
+
 #ifdef HAVE_CLOCK_GETTIME
 #ifdef CLOCK_REALTIME
 #define _MHD_UNWANTED_CLOCK CLOCK_REALTIME
@@ -80,6 +76,10 @@ static clockid_t mono_clock_id = _MHD_UNWANTED_CLOCK;
   defined(HAVE_GETHRTIME)
 static time_t mono_clock_start;
 #endif /* HAVE_CLOCK_GETTIME || HAVE_CLOCK_GET_TIME || HAVE_GETHRTIME */
+#if defined(HAVE_TIMESPEC_GET) || defined(HAVE_GETTIMEOFDAY)
+/* The start value shared for timespec_get() and gettimeofday () */
+static time_t gettime_start;
+#endif /* HAVE_TIMESPEC_GET || HAVE_GETTIMEOFDAY */
 static time_t sys_clock_start;
 #ifdef HAVE_GETHRTIME
 static hrtime_t hrtime_start;
@@ -332,6 +332,25 @@ MHD_monotonic_sec_counter_init (void)
   (void) mono_clock_source; /* avoid compiler warning */
 #endif /* HAVE_CLOCK_GET_TIME */
 
+#ifdef HAVE_TIMESPEC_GET
+  if (1)
+  {
+    struct timespec tsg;
+    if (TIME_UTC == timespec_get (&tsg, TIME_UTC))
+      gettime_start = tsg.tv_sec;
+    else
+      gettime_start = 0;
+  }
+#elif defined (HAVE_GETTIMEOFDAY)
+  if (1)
+  {
+    struct timeval tv;
+    if (0 == gettimeofday (&tv, NULL))
+      gettime_start = tv.tv_sec;
+    else
+      gettime_start = 0;
+  }
+#endif /* HAVE_GETTIMEOFDAY */
   sys_clock_start = time (NULL);
 }
 
@@ -415,9 +434,11 @@ MHD_monotonic_sec_counter (void)
 uint64_t
 MHD_monotonic_msec_counter (void)
 {
-#ifdef HAVE_CLOCK_GETTIME
+#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_TIMESPEC_GET)
   struct timespec ts;
+#endif /* HAVE_CLOCK_GETTIME || HAVE_TIMESPEC_GET */
 
+#ifdef HAVE_CLOCK_GETTIME
   if ( (_MHD_UNWANTED_CLOCK != mono_clock_id) &&
        (0 == clock_gettime (mono_clock_id,
                             &ts)) )
@@ -457,5 +478,21 @@ MHD_monotonic_msec_counter (void)
     return ((uint64_t) (gethrtime () - hrtime_start)) / 1000000;
 #endif /* HAVE_GETHRTIME */
 
+  /* Fallbacks, affected by system time change */
+#ifdef HAVE_TIMESPEC_GET
+  if (TIME_UTC == timespec_get (&ts, TIME_UTC))
+    return (uint64_t) (((uint64_t) (ts.tv_sec - gettime_start)) * 1000
+                       + (ts.tv_nsec / 1000000));
+#elif defined (HAVE_GETTIMEOFDAY)
+  if (1)
+  {
+    struct timeval tv;
+    if (0 == gettimeofday (&tv, NULL))
+      return (uint64_t) (((uint64_t) (tv.tv_sec - gettime_start)) * 1000
+                         + (tv.tv_usec / 1000));
+  }
+#endif /* HAVE_GETTIMEOFDAY */
+
+  /* The last resort fallback with very low resolution */
   return (uint64_t) (time (NULL) - sys_clock_start) * 1000;
 }

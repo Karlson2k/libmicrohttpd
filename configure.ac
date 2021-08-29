@@ -1479,6 +1479,63 @@ AC_LINK_IFELSE(
   [AC_MSG_RESULT([[no]])
   ])
 
+AS_VAR_IF([ac_cv_header_time_h], ["yes"],
+  [
+    AC_CACHE_CHECK([[for C11 timespec_get()]], [mhd_cv_func_timespec_get],
+      [
+        AC_LINK_IFELSE(
+          [
+            AC_LANG_PROGRAM(
+              [[
+#include <time.h>
+
+#ifndef TIME_UTC
+#error TIME_UTC must be defined to use timespec_get()
+choke me now
+#endif
+              ]],
+              [[
+  struct timespec ts;
+  if (TIME_UTC != timespec_get (&ts, TIME_UTC))
+    return 1;
+              ]]
+            )
+          ], [[mhd_cv_func_timespec_get="yes"]], [[mhd_cv_func_timespec_get="no"]]
+        )
+      ]
+    )
+    AS_VAR_IF([mhd_cv_func_timespec_get], ["yes"],
+      [AC_DEFINE([HAVE_TIMESPEC_GET], [1], [Define to 1 if you have C11 `mhd_cv_func_timespec_get' function and TIME_UTC macro.])]
+    )
+  ]
+)
+
+AS_VAR_SET_IF([ac_cv_func_gettimeofday], [mhd_cv_func_gettimeofday="${ac_cv_func_gettimeofday}"])
+AC_CACHE_CHECK([[for gettimeofday(2)]], [mhd_cv_func_gettimeofday], [
+  AC_LINK_IFELSE(
+    [
+      AC_LANG_PROGRAM(
+        [[
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif /* HAVE_TIME_H */
+        ]],
+        [[
+  struct timeval tv;
+  if (0 != gettimeofday (&tv, (void*) 0))
+    return 1;
+        ]]
+      )
+    ], [[mhd_cv_func_gettimeofday="yes"]], [[mhd_cv_func_gettimeofday="no"]]
+  )
+])
+AS_VAR_IF([mhd_cv_func_gettimeofday], ["yes"],
+  [AC_DEFINE([HAVE_GETTIMEOFDAY], [1], [Define to 1 if you have `gettimeofday' function.])]
+)
+
 # IPv6
 AC_MSG_CHECKING(for IPv6)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
