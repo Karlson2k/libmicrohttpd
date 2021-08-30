@@ -43,6 +43,13 @@
 #include <stdbool.h>
 #endif
 
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif /* HAVE_INTTYPES_H */
+
+#ifndef PRIu64
+#define PRIu64  "llu"
+#endif /* ! PRIu64 */
 
 #ifdef MHD_PANIC
 /* Override any defined MHD_PANIC macro with proper one */
@@ -1143,13 +1150,14 @@ struct MHD_Connection
    * Last time this connection had any activity
    * (reading or writing).
    */
-  time_t last_activity;
+  uint64_t last_activity;
 
   /**
-   * After how many seconds of inactivity should
-   * this connection time out?  Zero for no timeout.
+   * After how many milliseconds of inactivity should
+   * this connection time out?
+   * Zero for no timeout.
    */
-  time_t connection_timeout;
+  uint64_t connection_timeout_ms;
 
   /**
    * Special member to be returned by #MHD_get_connection_info()
@@ -1707,7 +1715,7 @@ struct MHD_Daemon
    * moved back to the tail of the list.
    *
    * All connections by default start in this list; if a custom
-   * timeout that does not match @e connection_timeout is set, they
+   * timeout that does not match @e connection_timeout_ms is set, they
    * are moved to the @e manual_timeout_head-XDLL.
    * Not used in MHD_USE_THREAD_PER_CONNECTION mode as each thread
    * needs only one connection-specific timeout.
@@ -1968,10 +1976,11 @@ struct MHD_Daemon
   unsigned int connection_limit;
 
   /**
-   * After how many seconds of inactivity should
-   * connections time out?  Zero for no timeout.
+   * After how many milliseconds of inactivity should
+   * this connection time out?
+   * Zero for no timeout.
    */
-  time_t connection_timeout;
+  uint64_t connection_timeout_ms;
 
   /**
    * Maximum number of connections per IP, or 0 for

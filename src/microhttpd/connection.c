@@ -3487,17 +3487,17 @@ MHD_update_last_activity_ (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
 
-  if (0 == connection->connection_timeout)
+  if (0 == connection->connection_timeout_ms)
     return;  /* Skip update of activity for connections
                without timeout timer. */
   if (connection->suspended)
     return;  /* no activity on suspended connections */
 
-  connection->last_activity = MHD_monotonic_sec_counter ();
+  connection->last_activity = MHD_monotonic_msec_counter ();
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     return; /* each connection has personal timeout */
 
-  if (connection->connection_timeout != daemon->connection_timeout)
+  if (connection->connection_timeout_ms != daemon->connection_timeout_ms)
     return; /* custom timeout, no need to move it in "normal" DLL */
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
@@ -4011,7 +4011,7 @@ cleanup_connection (struct MHD_Connection *connection)
   {
     if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      if (connection->connection_timeout == daemon->connection_timeout)
+      if (connection->connection_timeout_ms == daemon->connection_timeout_ms)
         XDLL_remove (daemon->normal_timeout_head,
                      daemon->normal_timeout_tail,
                      connection);
@@ -4584,11 +4584,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   }
   if (! connection->suspended)
   {
-    time_t timeout;
-    timeout = connection->connection_timeout;
+    uint64_t timeout;
+    timeout = connection->connection_timeout_ms;
+    /* Keep the next lines in sync with #MHD_get_timeout() to avoid
+     * undesired side-effects like busy-waiting. */
     if ( (0 != timeout) &&
-         (timeout <= (MHD_monotonic_sec_counter ()
-                      - connection->last_activity)) )
+         (timeout < (MHD_monotonic_msec_counter ()
+                     - connection->last_activity)) )
     {
       MHD_connection_close_ (connection,
                              MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
@@ -4719,8 +4721,8 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     connection->suspended_dummy = connection->suspended ? MHD_YES : MHD_NO;
     return (const union MHD_ConnectionInfo *) &connection->suspended_dummy;
   case MHD_CONNECTION_INFO_CONNECTION_TIMEOUT:
-    connection->connection_timeout_dummy = (unsigned
-                                            int) connection->connection_timeout;
+    connection->connection_timeout_dummy =
+      (unsigned int) connection->connection_timeout_ms * 1000;
     return (const union MHD_ConnectionInfo *) &connection->
            connection_timeout_dummy;
   case MHD_CONNECTION_INFO_REQUEST_HEADER_SIZE:
@@ -4759,15 +4761,15 @@ MHD_set_connection_option (struct MHD_Connection *connection,
   switch (option)
   {
   case MHD_CONNECTION_OPTION_TIMEOUT:
-    if (0 == connection->connection_timeout)
-      connection->last_activity = MHD_monotonic_sec_counter ();
+    if (0 == connection->connection_timeout_ms)
+      connection->last_activity = MHD_monotonic_msec_counter ();
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
     MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 #endif
     if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
          (! connection->suspended) )
     {
-      if (connection->connection_timeout == daemon->connection_timeout)
+      if (connection->connection_timeout_ms == daemon->connection_timeout_ms)
         XDLL_remove (daemon->normal_timeout_head,
                      daemon->normal_timeout_tail,
                      connection);
@@ -4777,13 +4779,29 @@ MHD_set_connection_option (struct MHD_Connection *connection,
                      connection);
     }
     va_start (ap, option);
-    connection->connection_timeout = va_arg (ap,
-                                             unsigned int);
+    connection->connection_timeout_ms = va_arg (ap,
+                                                unsigned int);
     va_end (ap);
+#if (0 == (UINT64_MAX + 0)) || ((UINT_MAX + 0) >= (UINT64_MAX + 0))
+    if ((UINT64_MAX / 2000 - 1) < connection->connection_timeout_ms)
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+                _ ("The specified connection timeout (" PRIu64 ") is too " \
+                   "large. Maximum allowed value (" PRIu64 ") will be used " \
+                   "instead.\n"),
+                connection->connection_timeout_ms,
+                (UINT64_MAX / 2000 - 1));
+#endif
+      connection->connection_timeout_ms = UINT64_MAX / 2000 - 1;
+    }
+    else
+#endif /* UINTMAX_MAX >= UINT64_MAX */
+    connection->connection_timeout_ms *= 1000;
     if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
          (! connection->suspended) )
     {
-      if (connection->connection_timeout == daemon->connection_timeout)
+      if (connection->connection_timeout_ms == daemon->connection_timeout_ms)
         XDLL_insert (daemon->normal_timeout_head,
                      daemon->normal_timeout_tail,
                      connection);

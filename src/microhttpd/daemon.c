@@ -1869,7 +1869,6 @@ thread_main_handle_connection (void *data)
   MHD_socket maxsock;
   struct timeval tv;
   struct timeval *tvp;
-  time_t now;
 #if WINDOWS
 #ifdef HAVE_POLL
   int extra_slot;
@@ -1893,7 +1892,7 @@ thread_main_handle_connection (void *data)
   while ( (! daemon->shutdown) &&
           (MHD_CONNECTION_CLOSED != con->state) )
   {
-    const time_t timeout = con->connection_timeout;
+    uint64_t timeout = con->connection_timeout_ms;
 #ifdef UPGRADE_SUPPORT
     struct MHD_UpgradeResponseHandle *const urh = con->urh;
 #else  /* ! UPGRADE_SUPPORT */
@@ -1989,22 +1988,34 @@ thread_main_handle_connection (void *data)
     if ( (NULL == tvp) &&
          (timeout > 0) )
     {
-      now = MHD_monotonic_sec_counter ();
-      if (now - con->last_activity > timeout)
+      const uint64_t since_actv = MHD_monotonic_msec_counter ()
+                                  - con->last_activity;
+      if (since_actv > timeout)
+      {
         tv.tv_sec = 0;
+        tv.tv_usec = 0;
+      }
+      else if (since_actv == timeout)
+      {
+        /* Exact match for timeout and time from last activity.
+         * Maybe this is just a precise match or this happens because the timer
+         * resolution is too low.
+         * Set wait time to 0.1 seconds to avoid busy-waiting with low
+         * timer resolution as connection is not yet timed-out */
+        tv.tv_sec = 0;
+        tv.tv_usec = 100 * 1000;
+      }
       else
       {
-        const time_t seconds_left = timeout - (now - con->last_activity);
-#if ! defined(_WIN32) || defined(__CYGWIN__)
-        tv.tv_sec = seconds_left;
-#else  /* _WIN32 && !__CYGWIN__ */
-        if (seconds_left > TIMEVAL_TV_SEC_MAX)
+        const uint64_t mseconds_left = timeout - since_actv;
+#if UINT64_MAX != TIMEVAL_TV_SEC_MAX
+        if (mseconds_left / 1000 > TIMEVAL_TV_SEC_MAX)
           tv.tv_sec = TIMEVAL_TV_SEC_MAX;
         else
-          tv.tv_sec = (_MHD_TIMEVAL_TV_SEC_TYPE) seconds_left;
-#endif /* _WIN32 && ! __CYGWIN__  */
+          tv.tv_sec = (_MHD_TIMEVAL_TV_SEC_TYPE) mseconds_left / 1000;
+#endif /* UINT64_MAX != TIMEVAL_TV_SEC_MAX */
+        tv.tv_usec = (mseconds_left % 1000) * 1000;
       }
-      tv.tv_usec = 0;
       tvp = &tv;
     }
     if (! use_poll)
@@ -2474,7 +2485,6 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
     connection->sk_nodelay = _MHD_UNKNOWN;
   }
 
-  connection->connection_timeout = daemon->connection_timeout;
   if (NULL == (connection->addr = malloc (addrlen)))
   {
     eno = errno;
@@ -2500,7 +2510,9 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
   connection->is_nonip = sk_is_nonip;
   connection->sk_spipe_suppress = sk_spipe_supprs;
   connection->daemon = daemon;
-  connection->last_activity = MHD_monotonic_sec_counter ();
+  connection->connection_timeout_ms = daemon->connection_timeout_ms;
+  if (0 != connection->connection_timeout_ms)
+    connection->last_activity = MHD_monotonic_msec_counter ();
 
   if (0 == (daemon->options & MHD_USE_TLS))
   {
@@ -3061,7 +3073,7 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
   }
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
   {
-    if (connection->connection_timeout == daemon->connection_timeout)
+    if (connection->connection_timeout_ms == daemon->connection_timeout_ms)
       XDLL_remove (daemon->normal_timeout_head,
                    daemon->normal_timeout_tail,
                    connection);
@@ -3270,10 +3282,10 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
       if (! used_thr_p_c)
       {
         /* Reset timeout timer on resume. */
-        if (0 != pos->connection_timeout)
-          pos->last_activity = MHD_monotonic_sec_counter ();
+        if (0 != pos->connection_timeout_ms)
+          pos->last_activity = MHD_monotonic_msec_counter ();
 
-        if (pos->connection_timeout == daemon->connection_timeout)
+        if (pos->connection_timeout_ms == daemon->connection_timeout_ms)
           XDLL_insert (daemon->normal_timeout_head,
                        daemon->normal_timeout_tail,
                        pos);
@@ -3824,10 +3836,9 @@ enum MHD_Result
 MHD_get_timeout (struct MHD_Daemon *daemon,
                  MHD_UNSIGNED_LONG_LONG *timeout)
 {
-  time_t earliest_deadline;
-  time_t now;
+  uint64_t earliest_deadline;
   struct MHD_Connection *pos;
-  bool have_timeout;
+  struct MHD_Connection *earliest_tmot_conn; /**< the connection with earliest timeout */
 
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
@@ -3862,44 +3873,63 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   }
 #endif /* EPOLL_SUPPORT */
 
-  have_timeout = false;
-  earliest_deadline = 0; /* avoid compiler warnings */
-  for (pos = daemon->manual_timeout_tail; NULL != pos; pos = pos->prevX)
-  {
-    if (0 != pos->connection_timeout)
-    {
-      if ( (! have_timeout) ||
-           (earliest_deadline - pos->last_activity > pos->connection_timeout) )
-        earliest_deadline = pos->last_activity + pos->connection_timeout;
-      have_timeout = true;
-    }
-  }
+  earliest_tmot_conn = NULL;
+  earliest_deadline = 0; /* mute compiler warning */
   /* normal timeouts are sorted, so we only need to look at the 'tail' (oldest) */
   pos = daemon->normal_timeout_tail;
   if ( (NULL != pos) &&
-       (0 != pos->connection_timeout) )
+       (0 != pos->connection_timeout_ms) )
   {
-    if ( (! have_timeout) ||
-         (earliest_deadline - pos->connection_timeout > pos->last_activity) )
-      earliest_deadline = pos->last_activity + pos->connection_timeout;
-    have_timeout = true;
+    earliest_tmot_conn = pos;
+    earliest_deadline = pos->last_activity + pos->connection_timeout_ms;
   }
 
-  if (! have_timeout)
-    return MHD_NO;
-  now = MHD_monotonic_sec_counter ();
-  if (earliest_deadline < now)
-    *timeout = 0;
-  else
+  for (pos = daemon->manual_timeout_tail; NULL != pos; pos = pos->prevX)
   {
-    const time_t second_left = earliest_deadline - now;
+    if (0 != pos->connection_timeout_ms)
+    {
+      if ( (NULL == earliest_tmot_conn) ||
+           (earliest_deadline - pos->last_activity >
+            pos->connection_timeout_ms) )
+      {
+        earliest_tmot_conn = pos;
+        earliest_deadline = pos->last_activity + pos->connection_timeout_ms;
+      }
+    }
+  }
 
-    if (((unsigned long long) second_left) > ULLONG_MAX / 1000)
-      *timeout = ULLONG_MAX;
+  if (NULL != earliest_tmot_conn)
+  {
+    const uint64_t since_actv = MHD_monotonic_msec_counter ()
+                                - earliest_tmot_conn->last_activity;
+    /* Keep the next lines in sync with #MHD_connection_handle_idle() and
+     * with #thread_main_handle_connection(). */
+    if (since_actv > earliest_tmot_conn->connection_timeout_ms)
+      *timeout = 0;
+    else if (since_actv == earliest_tmot_conn->connection_timeout_ms)
+    {
+      /* Exact match for timeout and time from last activity.
+       * Maybe this is just a precise match or this happens because the timer
+       * resolution is too low.
+       * Set wait time to 0.1 seconds to avoid busy-waiting with low
+       * timer resolution as connection is not yet timed-out */
+      *timeout = 100;
+    }
     else
-      *timeout = 1000LLU * (unsigned long long) second_left;
+    {
+      const uint64_t mssecond_left = earliest_tmot_conn->connection_timeout_ms
+                                     - since_actv;
+
+#if UINT64_MAX != ULLONG_MAX
+      if (mssecond_left > ULLONG_MAX)
+        *timeout = ULLONG_MAX;
+      else
+#endif /* UINT64 != ULLONG_MAX */
+      *timeout = (unsigned long long) mssecond_left;
+    }
+    return MHD_YES;
   }
-  return MHD_YES;
+  return MHD_NO;
 }
 
 
@@ -5247,7 +5277,7 @@ close_connection (struct MHD_Connection *pos)
 #endif
   mhd_assert (! pos->suspended);
   mhd_assert (! pos->resuming);
-  if (pos->connection_timeout == daemon->connection_timeout)
+  if (pos->connection_timeout_ms == daemon->connection_timeout_ms)
     XDLL_remove (daemon->normal_timeout_head,
                  daemon->normal_timeout_tail,
                  pos);
@@ -5593,20 +5623,22 @@ parse_options_va (struct MHD_Daemon *daemon,
     case MHD_OPTION_CONNECTION_TIMEOUT:
       uv = va_arg (ap,
                    unsigned int);
-      daemon->connection_timeout = (time_t) uv;
-      /* Next comparison could be always false on some platforms and whole branch will
-       * be optimized out on those platforms. On others it will be compiled into real
-       * check. */
-      if ( ( (MHD_TYPE_IS_SIGNED_ (time_t)) &&
-             (daemon->connection_timeout < 0) ) ||     /* Compiler may warn on some platforms, ignore warning. */
-           (uv != (unsigned int) daemon->connection_timeout) )
+#if (0 == (UINT64_MAX + 0)) || ((UINT_MAX + 0) >= (UINT64_MAX + 0))
+      if ((UINT64_MAX / 2000 - 1) < uv)
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
-                  _ ("Warning: Too large timeout value, ignored.\n"));
+                  _ ("The specified connection timeout (%u) is too large. " \
+                     "Maximum allowed value (" PRIu64 ") will be used " \
+                     "instead.\n"),
+                  uv,
+                  (UINT64_MAX / 2000 - 1));
 #endif
-        daemon->connection_timeout = 0;
+        daemon->connection_timeout_ms = UINT64_MAX / 2000 - 1;
       }
+      else
+#endif /* UINTMAX_MAX >= UINT64_MAX */
+      daemon->connection_timeout_ms = uv * 1000;
       break;
     case MHD_OPTION_NOTIFY_COMPLETED:
       daemon->notify_completed = va_arg (ap,
@@ -6444,7 +6476,7 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->pool_size = MHD_POOL_SIZE_DEFAULT;
   daemon->pool_increment = MHD_BUF_INC_SIZE;
   daemon->unescape_callback = &unescape_wrapper;
-  daemon->connection_timeout = 0;       /* no timeout */
+  daemon->connection_timeout_ms = 0;       /* no timeout */
   MHD_itc_set_invalid_ (daemon->itc);
 #ifdef SOMAXCONN
   daemon->listen_backlog_size = SOMAXCONN;

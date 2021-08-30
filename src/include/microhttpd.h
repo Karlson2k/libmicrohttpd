@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097310
+#define MHD_VERSION 0x00097311
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
@@ -1432,6 +1432,8 @@ enum MHD_OPTION
    * After how many seconds of inactivity should a
    * connection automatically be timed out? (followed
    * by an `unsigned int`; use zero for no timeout).
+   * Values larger than (UINT64_MAX / 2000 - 1) will
+   * be clipped to this number.
    */
   MHD_OPTION_CONNECTION_TIMEOUT = 3,
 
@@ -4133,6 +4135,8 @@ enum MHD_CONNECTION_OPTION
    * zero for no timeout.
    * If timeout was set to zero (or unset) before, setup of new value by
    * MHD_set_connection_option() will reset timeout timer.
+   * Values larger than (UINT64_MAX / 2000 - 1) will
+   * be clipped to this number.
    */
   MHD_CONNECTION_OPTION_TIMEOUT
 
