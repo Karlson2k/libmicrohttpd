@@ -109,6 +109,7 @@ extern "C"
 #ifndef MHD_PLATFORM_H
 #if defined(_WIN32) && ! defined(__CYGWIN__) && \
   ! defined(_CRT_DECLARE_NONSTDC_NAMES)
+/* Declare POSIX-compatible names */
 #define _CRT_DECLARE_NONSTDC_NAMES 1
 #endif /* _WIN32 && ! __CYGWIN__ && ! _CRT_DECLARE_NONSTDC_NAMES */
 #include <stdarg.h>
@@ -119,8 +120,6 @@ extern "C"
 #include <sys/time.h>
 #include <sys/socket.h>
 #else  /* _WIN32 && ! __CYGWIN__ */
-/* Declare POSIX-compatible names */
-#define _CRT_DECLARE_NONSTDC_NAMES 1
 #include <ws2tcpip.h>
 #if defined(_MSC_FULL_VER) && ! defined (_SSIZE_T_DEFINED)
 #define _SSIZE_T_DEFINED
