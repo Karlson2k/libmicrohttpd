@@ -1322,7 +1322,8 @@ get_date_str (char *date)
   struct tm *pNow;
 #endif
 
-  time (&t);
+  if ((time_t) -1 == time (&t))
+    return false;
 #if defined(HAVE_C11_GMTIME_S)
   if (NULL == gmtime_s (&t,
                         &now))
