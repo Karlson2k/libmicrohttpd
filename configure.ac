@@ -1102,6 +1102,7 @@ static struct timeval test_var;
 AC_DEFINE_UNQUOTED([SIZEOF_STRUCT_TIMEVAL_TV_SEC], [$mhd_cv_size_timeval_tv_sec],
   [The size of `tv_sec' member of `struct timeval', as computed by sizeof])
 AC_CHECK_SIZEOF([uint64_t], [], [[#include <stdint.h>]])
+AC_CHECK_SIZEOF([unsigned int], [], [[#include <stdint.h>]])
 
 AC_CHECK_HEADERS([dlfcn.h],[have_tlsplugin=yes],[have_tlsplugin=no], [AC_INCLUDES_DEFAULT])
 AM_CONDITIONAL([MHD_HAVE_TLS_PLUGIN], [[test "x$have_tlsplugin" = xyes]])

@@ -4782,7 +4782,7 @@ MHD_set_connection_option (struct MHD_Connection *connection,
     connection->connection_timeout_ms = va_arg (ap,
                                                 unsigned int);
     va_end (ap);
-#if (0 == (UINT64_MAX + 0)) || ((UINT_MAX + 0) >= (UINT64_MAX + 0))
+#if (SIZEOF_UINT64_T - 1) <= SIZEOF_UNSIGNED_INT
     if ((UINT64_MAX / 2000 - 1) < connection->connection_timeout_ms)
     {
 #ifdef HAVE_MESSAGES
@@ -4796,7 +4796,7 @@ MHD_set_connection_option (struct MHD_Connection *connection,
       connection->connection_timeout_ms = UINT64_MAX / 2000 - 1;
     }
     else
-#endif /* UINTMAX_MAX >= UINT64_MAX */
+#endif /* (SIZEOF_UINT64_T - 1) <= SIZEOF_UNSIGNED_INT */
     connection->connection_timeout_ms *= 1000;
     if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
          (! connection->suspended) )
