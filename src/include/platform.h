@@ -37,7 +37,9 @@
 #include "mhd_options.h"
 
 #include <stdio.h>
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
 #include <stdint.h>
 #include <string.h>
 #ifdef HAVE_UNISTD_H

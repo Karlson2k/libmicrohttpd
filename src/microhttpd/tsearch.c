@@ -10,7 +10,9 @@
  */
 
 #include "tsearch.h"
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
 
 
 typedef struct node

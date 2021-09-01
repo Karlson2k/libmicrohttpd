@@ -30,7 +30,9 @@
 #include <process.h>
 #endif
 #ifdef MHD_USE_THREAD_NAME_
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
 #ifdef HAVE_PTHREAD_NP_H
 #include <pthread_np.h>
 #endif /* HAVE_PTHREAD_NP_H */

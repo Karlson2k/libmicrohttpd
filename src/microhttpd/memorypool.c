@@ -25,7 +25,9 @@
  * @author Karlson2k (Evgeny Grin)
  */
 #include "memorypool.h"
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
 #include <string.h>
 #include <stdint.h>
 #include "mhd_assert.h"

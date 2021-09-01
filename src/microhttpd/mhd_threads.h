@@ -39,9 +39,11 @@
 #include "mhd_options.h"
 #ifdef HAVE_STDDEF_H
 #  include <stddef.h> /* for size_t */
-#else  /* ! HAVE_STDDEF_H */
+#elif defined(HAVE_STDLIB_H)
 #  include <stdlib.h> /* for size_t */
-#endif /* ! HAVE_STDDEF_H */
+#else /* ! HAVE_STDLIB_H */
+#  include <stdio.h>  /* for size_t */
+#endif /* ! HAVE_STDLIB_H */
 
 #if defined(MHD_USE_POSIX_THREADS)
 #  undef HAVE_CONFIG_H
