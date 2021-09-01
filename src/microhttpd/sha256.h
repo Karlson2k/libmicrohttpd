@@ -28,7 +28,9 @@
 
 #include "mhd_options.h"
 #include <stdint.h>
-#include <stddef.h>
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>  /* for size_t */
+#endif /* HAVE_STDDEF_H */
 
 
 /**

@@ -49,7 +49,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#ifdef HAVE_STDDEF_H
 #include <stddef.h>
+#endif /* HAVE_STDDEF_H */
 
 /* different OSes have fd_set in
    a broad range of header files;

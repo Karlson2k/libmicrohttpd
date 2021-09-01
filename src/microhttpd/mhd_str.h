@@ -28,7 +28,9 @@
 
 #include "mhd_options.h"
 #include <stdint.h>
+#ifdef HAVE_STDDEF_H
 #include <stddef.h>
+#endif /* HAVE_STDDEF_H */
 #include <sys/types.h>
 #ifdef HAVE_STDBOOL_H
 #include <stdbool.h>

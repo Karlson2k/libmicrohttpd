@@ -115,7 +115,9 @@
 #  include <poll.h>
 #endif
 
+#ifdef HAVE_STDDEF_H
 #include <stddef.h>
+#endif /* HAVE_STDDEF_H */
 #if defined(_MSC_FULL_VER) && ! defined (_SSIZE_T_DEFINED)
 #  include <stdint.h>
 #  define _SSIZE_T_DEFINED

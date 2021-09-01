@@ -28,7 +28,9 @@
 
 #include "mhd_options.h"
 #include <stdint.h>
-#include <stddef.h> /* for size_t */
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>  /* for size_t */
+#endif /* HAVE_STDDEF_H */
 
 /**
  *  SHA-1 digest is kept internally as 5 32-bit words.
