@@ -1072,6 +1072,37 @@ AC_CHECK_HEADER([[search.h]],
 
 AM_CONDITIONAL([MHD_HAVE_TSEARCH], [[test "x$ac_cv_header_search_h" = xyes && test "x$HAVE_TSEARCH" = "x1" && test "x$REPLACE_TSEARCH" != "x1"]])
 
+# Check for types sizes
+AC_CACHE_CHECK([size of tv_sec member of struct timeval], [mhd_cv_size_timeval_tv_sec],
+  [
+    AC_COMPUTE_INT([mhd_cv_size_timeval_tv_sec], [((long int)sizeof(test_var.tv_sec))],
+      [[
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif /* HAVE_TIME_H */
+#if HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+static struct timeval test_var;
+      ]],
+      [
+        # The size is used only to exclude additional checks/comparision in code
+        # to avoid compiler warnings. With larger size MHD code will use
+        # additional checks which ensure that value will fit but it may produce
+        # a harmless compiler warning.
+        AC_MSG_WARN([The size cannot be determined, assuming 8.])
+        mhd_cv_size_timeval_tv_sec=8
+      ]
+    )
+  ]
+)
+AC_DEFINE_UNQUOTED([SIZEOF_STRUCT_TIMEVAL_TV_SEC], [$mhd_cv_size_timeval_tv_sec],
+  [The size of `tv_sec' member of `struct timeval', as computed by sizeof])
+AC_CHECK_SIZEOF([uint64_t], [], [[#include <stdint.h>]])
+
 AC_CHECK_HEADERS([dlfcn.h],[have_tlsplugin=yes],[have_tlsplugin=no], [AC_INCLUDES_DEFAULT])
 AM_CONDITIONAL([MHD_HAVE_TLS_PLUGIN], [[test "x$have_tlsplugin" = xyes]])
 

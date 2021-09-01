@@ -2008,12 +2008,13 @@ thread_main_handle_connection (void *data)
       else
       {
         const uint64_t mseconds_left = timeout - since_actv;
-#if UINT64_MAX != TIMEVAL_TV_SEC_MAX
+#if (SIZEOF_UINT64_T - 1) >= SIZEOF_STRUCT_TIMEVAL_TV_SEC
         if (mseconds_left / 1000 > TIMEVAL_TV_SEC_MAX)
           tv.tv_sec = TIMEVAL_TV_SEC_MAX;
         else
-          tv.tv_sec = (_MHD_TIMEVAL_TV_SEC_TYPE) mseconds_left / 1000;
-#endif /* UINT64_MAX != TIMEVAL_TV_SEC_MAX */
+#endif /* (SIZEOF_UINT64_T - 1) >= SIZEOF_STRUCT_TIMEVAL_TV_SEC */
+        tv.tv_sec = (_MHD_TIMEVAL_TV_SEC_TYPE) mseconds_left / 1000;
+
         tv.tv_usec = (mseconds_left % 1000) * 1000;
       }
       tvp = &tv;
@@ -8143,6 +8144,15 @@ MHD_init (void)
   MHD_monotonic_sec_counter_init ();
   MHD_send_init_static_vars_ ();
   MHD_init_mem_pools_ ();
+  /* Check whether sizes were correctly detected by configure */
+#ifdef _DEBUG
+  if (1)
+  {
+    struct timeval tv;
+    mhd_assert (sizeof(tv.tv_sec) == SIZEOF_STRUCT_TIMEVAL_TV_SEC);
+  }
+#endif /* _DEBUG */
+  mhd_assert (sizeof(uint64_t) == SIZEOF_UINT64_T);
 }
 
 
