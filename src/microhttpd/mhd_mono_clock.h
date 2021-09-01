@@ -35,14 +35,15 @@
 #include <stdint.h>
 
 /**
- * Initialise monotonic seconds counter.
+ * Initialise monotonic seconds and milliseconds counters.
  */
 void
 MHD_monotonic_sec_counter_init (void);
 
 
 /**
- * Deinitialise monotonic seconds counter by freeing any allocated resources
+ * Deinitialise monotonic seconds  and milliseconds counters by freeing
+ * any allocated resources
  */
 void
 MHD_monotonic_sec_counter_finish (void);
