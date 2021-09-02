@@ -1117,6 +1117,7 @@ AC_CHECK_SIZEOF([size_t], [],
 #include <stdio.h>
   ]]
 )
+AC_CHECK_SIZEOF([unsigned long long], [], [[#include <stdint.h>]])
 
 AC_CHECK_HEADERS([dlfcn.h],[have_tlsplugin=yes],[have_tlsplugin=no], [AC_INCLUDES_DEFAULT])
 AM_CONDITIONAL([MHD_HAVE_TLS_PLUGIN], [[test "x$have_tlsplugin" = xyes]])

@@ -3921,7 +3921,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
       const uint64_t mssecond_left = earliest_tmot_conn->connection_timeout_ms
                                      - since_actv;
 
-#if UINT64_MAX != ULLONG_MAX
+#if SIZEOF_UINT64_T > SIZEOF_UNSIGNED_LONG_LONG
       if (mssecond_left > ULLONG_MAX)
         *timeout = ULLONG_MAX;
       else
