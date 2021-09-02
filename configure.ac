@@ -2496,7 +2496,7 @@ AS_VAR_IF([enable_heavy_tests], ["yes"],
     AS_IF([[test "$CPU_COUNT" -lt "2"]], [[CPU_COUNT="2"]])
   ]
 )
-AC_MSG_RESULT(["$CPU_COUNT"])
+AC_MSG_RESULT([$CPU_COUNT])
 
 
 AC_MSG_CHECKING([[whether to enable debug asserts]])
