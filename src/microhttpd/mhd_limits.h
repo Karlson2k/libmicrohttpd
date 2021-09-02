@@ -55,7 +55,11 @@
 #endif /* !OFF_T_MAX */
 
 #ifndef ULLONG_MAX
+#ifdef ULONGLONG_MAX
+#define ULLONG_MAX ULONGLONG_MAX
+#else  /* ! ULONGLONG_MAX */
 #define ULLONG_MAX MHD_UNSIGNED_TYPE_MAX_ (MHD_UNSIGNED_LONG_LONG)
+#endif /* ! ULONGLONG_MAX */
 #endif /* !ULLONG_MAX */
 
 #ifndef INT32_MAX
