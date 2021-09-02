@@ -107,8 +107,6 @@
 #ifndef SSIZE_MAX
 #ifdef __SSIZE_MAX__
 #define SSIZE_MAX __SSIZE_MAX__
-#elif defined(PTRDIFF_MAX)
-#define SSIZE_MAX PTRDIFF_MAX
 #elif defined(INTPTR_MAX)
 #define SSIZE_MAX INTPTR_MAX
 #else
