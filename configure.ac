@@ -1073,6 +1073,9 @@ AC_CHECK_HEADER([[search.h]],
 AM_CONDITIONAL([MHD_HAVE_TSEARCH], [[test "x$ac_cv_header_search_h" = xyes && test "x$HAVE_TSEARCH" = "x1" && test "x$REPLACE_TSEARCH" != "x1"]])
 
 # Check for types sizes
+# Types sizes are used as an indirect indication of maximum allowed values for types
+# which is used to exclude by preprocessor some compiler checks for values clips
+# Assuming no staffing or uniform staffing for integer types
 AC_CACHE_CHECK([size of tv_sec member of struct timeval], [mhd_cv_size_timeval_tv_sec],
   [
     AC_COMPUTE_INT([mhd_cv_size_timeval_tv_sec], [((long int)sizeof(test_var.tv_sec))],
@@ -1103,6 +1106,17 @@ AC_DEFINE_UNQUOTED([SIZEOF_STRUCT_TIMEVAL_TV_SEC], [$mhd_cv_size_timeval_tv_sec]
   [The size of `tv_sec' member of `struct timeval', as computed by sizeof])
 AC_CHECK_SIZEOF([uint64_t], [], [[#include <stdint.h>]])
 AC_CHECK_SIZEOF([unsigned int], [], [[#include <stdint.h>]])
+AC_CHECK_SIZEOF([size_t], [],
+  [[
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>
+#endif /* HAVE_STDDEF_H */
+#include <stdio.h>
+  ]]
+)
 
 AC_CHECK_HEADERS([dlfcn.h],[have_tlsplugin=yes],[have_tlsplugin=no], [AC_INCLUDES_DEFAULT])
 AM_CONDITIONAL([MHD_HAVE_TLS_PLUGIN], [[test "x$have_tlsplugin" = xyes]])

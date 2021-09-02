@@ -5695,7 +5695,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
         daemon->worker_pool_size = 0;
       }
-#if (0 == (UINT_MAX + 0)) || (UINT_MAX >= (SIZE_MAX / (64 * 1024)))
+#if SIZEOF_UNSIGNED_INT >= (SIZEOF_SIZE_T - 2)
       /* Next comparison could be always false on some platforms and whole branch will
        * be optimized out on these platforms. On others it will be compiled into real
        * check. */
@@ -5709,7 +5709,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
         return MHD_NO;
       }
-#endif /* (UINT_MAX >= (SIZE_MAX/(64*1024))) */
+#endif /* SIZEOF_UNSIGNED_INT >= (SIZEOF_SIZE_T - 2) */
       else
       {
         if (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))

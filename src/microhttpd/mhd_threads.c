@@ -215,13 +215,13 @@ MHD_create_thread_ (MHD_thread_handle_ID_ *thread,
 
   return ! res;
 #elif defined(MHD_USE_W32_THREADS)
-#if SIZE_MAX != UINT_MAX
+#if SIZEOF_SIZE_T != SIZEOF_UNSIGNED_INT
   if (stack_size > UINT_MAX)
   {
     errno = EINVAL;
     return 0;
   }
-#endif /* SIZE_MAX != UINT_MAX */
+#endif /* SIZEOF_SIZE_T != SIZEOF_UNSIGNED_INT */
 
   thread->handle = (MHD_thread_handle_)
                    _beginthreadex (NULL,
