@@ -52,7 +52,7 @@
 #else  /* ! __LONG_MAX__ */
 #define LONG_MAX MHD_SIGNED_TYPE_MAX (long)
 #endif /* ! __LONG_MAX__ */
-#endif /* !OFF_T_MAX */
+#endif /* !LONG_MAX */
 
 #ifndef ULLONG_MAX
 #ifdef ULONGLONG_MAX
