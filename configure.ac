@@ -2478,8 +2478,20 @@ AC_MSG_RESULT($use_gcov)
 AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
 AX_COUNT_CPUS
-AS_IF([[test "$CPU_COUNT" -gt "32"]], [[CPU_COUNT="32"]])dnl Limit resource usage
-AC_SUBST([CPU_COUNT])
+AC_MSG_CHECKING([for number of CPU cores to use in tests])
+AS_VAR_IF([enable_heavy_tests], ["yes"],
+  [ 
+    # Enable usage of many core if heavy tests are enabled
+    AS_IF([[test "$CPU_COUNT" -gt "32"]], [[CPU_COUNT="32"]])dnl Limit resource usage
+  ],
+  [
+    # Limit usage to just a few cores if heavy tests are not enabled
+    AS_IF([[test "$CPU_COUNT" -gt "6"]], [[CPU_COUNT="6"]])
+    AS_IF([[test "$CPU_COUNT" -lt "2"]], [[CPU_COUNT="2"]])
+  ]
+)
+AC_MSG_RESULT(["$CPU_COUNT"])
+
 
 AC_MSG_CHECKING([[whether to enable debug asserts]])
 AC_ARG_ENABLE([[asserts]],
