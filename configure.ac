@@ -989,7 +989,13 @@ AC_ARG_ENABLE([[heavy-tests]],
   [a dedicated host with minimal number of background processes and no network]
   [activity is recommended to enable.])], [],
     [enable_heavy_tests=no])
-AS_VAR_IF([enable_heavy_tests], ["yes"], [], [enable_heavy_tests=no])
+AS_VAR_IF([enable_heavy_tests], ["yes"],
+  [HEAVY_TESTS_NOTPARALLEL='.NOTPARALLEL:'],
+  [
+    enable_heavy_tests=no
+    HEAVY_TESTS_NOTPARALLEL=" "
+  ]
+)
 AM_CONDITIONAL([HEAVY_TESTS],[test "x$enable_heavy_tests" = "xyes"])
 
 AC_ARG_ENABLE([[poll]],
@@ -2529,6 +2535,8 @@ AS_VAR_IF([[enable_asserts]], [["yes"]],
 
 MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-dynamic -no-undefined"
 
+AC_SUBST([CPU_COUNT])
+AC_SUBST([HEAVY_TESTS_NOTPARALLEL])
 AC_SUBST(MHD_LIB_CPPFLAGS)
 AC_SUBST(MHD_LIB_CFLAGS)
 AC_SUBST(MHD_LIB_LDFLAGS)
