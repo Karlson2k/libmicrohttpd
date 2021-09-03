@@ -1215,6 +1215,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
       da.digest = &MHD_SHA256_finish;                         \
       break;                                              \
     default:                                              \
+      da.digest_size = 0;                                 \
       mhd_assert (false);                                 \
       break;                                              \
     }                                                     \
