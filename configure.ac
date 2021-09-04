@@ -115,14 +115,6 @@ AC_ARG_ENABLE([linker-hardening],
    [LDFLAGS="$LDFLAGS -z relro -z now"])])
 
 
-AC_ARG_ENABLE([sanitizer],
-  [AS_HELP_STRING([--enable-sanitizer], [enable Address Sanitizer and Undefined Behavior Sanitizer])],
-[AS_IF([test x$enableval = xyes],[
-   CFLAGS="$CFLAGS -fsanitize=address,undefined -fno-omit-frame-pointer"
- ])])
-
-
-
 # Workaround for libgcrypt
 AS_IF([[test "x$lt_sysroot" != "x" && test "x$SYSROOT" = "x"]], [[SYSROOT="$lt_sysroot"]])
 
@@ -2533,6 +2525,130 @@ AS_VAR_IF([[enable_asserts]], [["yes"]],
   [AC_DEFINE([[NDEBUG]], [[1]], [Define to disable usage of debug asserts.])]
 )
 
+AS_UNSET([enabled_sanitizers])
+AM_TESTS_ENVIRONMENT=""
+AM_ASAN_OPTIONS=""
+AM_UBSAN_OPTIONS=""
+AM_LSAN_OPTIONS=""
+AC_ARG_ENABLE([sanitizers],
+  [AS_HELP_STRING([--enable-sanitizers], [enable run-time sanitizers])],
+  [], [enable_sanitizers=no])
+AS_VAR_IF([enable_sanitizers], ["yes"],
+ [
+   new_CFLAGS="$CFLAGS"
+   AC_CACHE_CHECK([whether sanitizer parameter works for $CC],
+     [mhd_cv_cc_sanitizer_works],
+     [
+       CFLAGS="${new_CFLAGS} -fsanitize=wrongFeatureName"
+       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
+         [mhd_cv_cc_sanitizer_works=no], [mhd_cv_cc_sanitizer_works=yes])
+     ]
+   )
+   AS_VAR_IF([mhd_cv_cc_sanitizer_works], ["yes"],
+     [
+       AC_CACHE_CHECK([for address sanitizer], [mhd_cv_cc_sanitizer_address],
+         [
+           CFLAGS="${saved_CFLAGS} -fsanitize=address"
+           AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+            [mhd_cv_cc_sanitizer_address=yes], [mhd_cv_cc_sanitizer_address=no])
+         ]
+       )
+       AS_VAR_IF([mhd_cv_cc_sanitizer_address],["yes"],
+         [
+           new_CFLAGS="${new_CFLAGS} -fsanitize=address"
+           enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }address"
+           AC_CACHE_CHECK([for pointer compare sanitizer], [mhd_cv_cc_sanitizer_pointer_compare],
+             [
+               CFLAGS="${new_CFLAGS} -fsanitize=pointer-compare"
+               AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+                [mhd_cv_cc_sanitizer_pointer_compare=yes], [mhd_cv_cc_sanitizer_pointer_compare=no])
+             ]
+           )
+           AS_VAR_IF([mhd_cv_cc_sanitizer_pointer_compare],["yes"],
+             [
+               new_CFLAGS="${new_CFLAGS} -fsanitize=pointer-compare"
+               enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }pointer compare"
+             ]
+           )
+           AC_CACHE_CHECK([for pointer subtract sanitizer], [mhd_cv_cc_sanitizer_pointer_subtract],
+             [
+               CFLAGS="${new_CFLAGS} -fsanitize=pointer-subtract"
+               AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+                [mhd_cv_cc_sanitizer_pointer_subtract=yes], [mhd_cv_cc_sanitizer_pointer_subtract=no])
+             ]
+           )
+           AS_VAR_IF([mhd_cv_cc_sanitizer_pointer_subtract],["yes"],
+             [
+               new_CFLAGS="${new_CFLAGS} -fsanitize=pointer-subtract"
+               enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }pointer subtract"
+             ]
+           )
+         ]
+       )
+       AC_CACHE_CHECK([for undefined behavior sanitizer], [mhd_cv_cc_sanitizer_undefined],
+         [
+           CFLAGS="${new_CFLAGS} -fsanitize=undefined"
+           AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+            [mhd_cv_cc_sanitizer_undefined=yes], [mhd_cv_cc_sanitizer_undefined=no])
+         ]
+       )
+       AS_VAR_IF([mhd_cv_cc_sanitizer_undefined],["yes"],
+         [
+           new_CFLAGS="${new_CFLAGS} -fsanitize=undefined"
+           enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
+         ]
+       )
+       AC_CACHE_CHECK([for leak sanitizer], [mhd_cv_cc_sanitizer_leak],
+         [
+           CFLAGS="${new_CFLAGS} -fsanitize=leak"
+           AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+            [mhd_cv_cc_sanitizer_leak=yes], [mhd_cv_cc_sanitizer_leak=no])
+         ]
+       )
+       AS_VAR_IF([mhd_cv_cc_sanitizer_leak],["yes"],
+         [
+           new_CFLAGS="${new_CFLAGS} -fsanitize=leak"
+           enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }leak"
+         ]
+       )
+
+       AS_IF([test -z "${enabled_sanitizers}"],
+         [AC_MSG_ERROR([cannot find any sanitizer supported by $CC])])
+       AS_VAR_IF([mhd_cv_cc_sanitizer_address],["yes"],
+         [
+           new_CFLAGS="${new_CFLAGS} -D_FORTIFY_SOURCE=0"
+           AX_APPEND_COMPILE_FLAGS([-Wp,-U_FORTIFY_SOURCE], [new_CFLAGS])
+         ],
+         [AC_MSG_WARN([$CC does not support address sanitizer])]
+       )
+       # Always stop on error
+       AX_APPEND_COMPILE_FLAGS([-fno-sanitize-recover=all], [new_CFLAGS])
+       # Get better output for sanitizers error reporting
+       AX_APPEND_COMPILE_FLAGS([-fno-omit-frame-pointer -fno-common -fno-optimize-sibling-calls],
+         [new_CFLAGS])
+       AM_ASAN_OPTIONS="exitcode=88:detect_leaks=1:strict_string_checks=1:detect_stack_use_after_return=1"
+       AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:check_initialization_order=1:strict_init_order=1:redzone=64"
+       AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:max_free_fill_size=1024:detect_invalid_pointer_pairs=3"
+       AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:handle_ioctl=1:halt_on_error=1"
+       AM_UBSAN_OPTIONS="exitcode=87:print_stacktrace=1:halt_on_error=1"
+       AM_LSAN_OPTIONS="use_unaligned=1"
+       AM_TESTS_ENVIRONMENT='\
+ASAN_OPTIONS="$(AM_ASAN_OPTIONS)" ; export ASAN_OPTIONS ; \
+UBSAN_OPTIONS="$(AM_UBSAN_OPTIONS)" ; export UBSAN_OPTIONS ; \
+LSAN_OPTIONS="$(AM_LSAN_OPTIONS)" ; export LSAN_OPTIONS ;'
+     ]
+   )
+   CFLAGS="$new_CFLAGS"
+   AS_UNSET([new_CFLAGS])
+ ]
+)
+AM_CONDITIONAL([USE_SANITIZERS],
+  [test -n "$enabled_sanitizers" && test "x$mhd_cv_cc_sanitizer_works" = "xyes"])
+AC_SUBST([AM_ASAN_OPTIONS])
+AC_SUBST([AM_UBSAN_OPTIONS])
+AC_SUBST([AM_LSAN_OPTIONS])
+AC_SUBST([AM_TESTS_ENVIRONMENT])
+
 MHD_LIB_LDFLAGS="$MHD_LIB_LDFLAGS -export-dynamic -no-undefined"
 
 AC_SUBST([CPU_COUNT])
@@ -2618,6 +2734,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Threading lib:     ${USE_THREADS}
   Use thread names:  ${enable_thread_names}
   Use debug asserts: ${enable_asserts}
+  Use sanitizers:    ${enabled_sanitizers:=no}
   Messages:          ${enable_messages}
   Gettext:           ${have_po}
   Basic auth.:       ${enable_bauth}
