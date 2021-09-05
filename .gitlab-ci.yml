@@ -58,12 +58,11 @@ gcc/Stretch:
 Sanitizers/Stretch:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$DEBIAN_BUILD
   script:
-    - export CFLAGS="$CFLAGS_DEFAULT -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address"
+    - export CFLAGS="$CFLAGS_DEFAULT"
     - ./bootstrap
     - export CC="ccache clang"
-    - export UBSAN_OPTIONS=print_stacktrace=1
     - export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-3.8/bin/llvm-symbolizer
-    - ./configure $CONFIGURE_BASE_FLAGS --disable-doc
+    - ./configure $CONFIGURE_BASE_FLAGS --disable-doc --enable-sanitizers
     - make check
   tags:
     - shared
