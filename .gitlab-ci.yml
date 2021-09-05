@@ -38,8 +38,7 @@ gcc/Stretch:
     - export CFLAGS="$CFLAGS_DEFAULT"
     - ./bootstrap
     - ./configure $CONFIGURE_BASE_FLAGS
-    - make -j$(nproc)
-    - make check
+    - make -j$(nproc) && make -k check
   tags:
     - shared
     - linux
@@ -63,7 +62,7 @@ Sanitizers/Stretch:
     - export CC="ccache clang"
     - export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-3.8/bin/llvm-symbolizer
     - ./configure $CONFIGURE_BASE_FLAGS --disable-doc --enable-sanitizers
-    - make check
+    - make -j$(nproc) && make -k check
   tags:
     - shared
     - linux
@@ -82,7 +81,7 @@ Scan-Build/Debian:
     - ./bootstrap
     - scan-build ./configure $CONFIGURE_BASE_FLAGS
     - scan-build -v -enable-checker security,nullability --status-bugs -o scan-build make -j$(nproc)
-    - scan-build -v -enable-checker security,nullability --status-bugs -o scan-build make check
+    - scan-build -v -enable-checker security,nullability --status-bugs -o scan-build make -k check
   tags:
     - shared
     - linux
