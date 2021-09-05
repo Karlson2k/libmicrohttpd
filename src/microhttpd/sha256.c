@@ -45,14 +45,14 @@ MHD_SHA256_init (void *ctx_)
   /* First thirty-two bits of the fractional parts of the square
    * roots of the first eight prime numbers: 2, 3, 5, 7, 11, 13,
    * 17, 19." */
-  ctx->H[0] = 0x6a09e667UL;
-  ctx->H[1] = 0xbb67ae85UL;
-  ctx->H[2] = 0x3c6ef372UL;
-  ctx->H[3] = 0xa54ff53aUL;
-  ctx->H[4] = 0x510e527fUL;
-  ctx->H[5] = 0x9b05688cUL;
-  ctx->H[6] = 0x1f83d9abUL;
-  ctx->H[7] = 0x5be0cd19UL;
+  ctx->H[0] = UINT32_C (0x6a09e667);
+  ctx->H[1] = UINT32_C (0xbb67ae85);
+  ctx->H[2] = UINT32_C (0x3c6ef372);
+  ctx->H[3] = UINT32_C (0xa54ff53a);
+  ctx->H[4] = UINT32_C (0x510e527f);
+  ctx->H[5] = UINT32_C (0x9b05688c);
+  ctx->H[6] = UINT32_C (0x1f83d9ab);
+  ctx->H[7] = UINT32_C (0x5be0cd19);
 
   /* Initialise number of bytes. */
   ctx->count = 0;
@@ -144,37 +144,37 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
      stored in array of W elements. */
   /* Note: instead of using K constants as array, all K values are specified
      individually for each step, see FIPS PUB 180-4 paragraph 4.2.2 for K values. */
-  SHA2STEP32 (a, b, c, d, e, f, g, h, 0x428a2f98UL, W[0] = \
+  SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0x428a2f98), W[0] = \
                 GET_W_FROM_DATA (data, 0));
-  SHA2STEP32 (h, a, b, c, d, e, f, g, 0x71374491UL, W[1] = \
+  SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0x71374491), W[1] = \
                 GET_W_FROM_DATA (data, 1));
-  SHA2STEP32 (g, h, a, b, c, d, e, f, 0xb5c0fbcfUL, W[2] = \
+  SHA2STEP32 (g, h, a, b, c, d, e, f, UINT32_C (0xb5c0fbcf), W[2] = \
                 GET_W_FROM_DATA (data, 2));
-  SHA2STEP32 (f, g, h, a, b, c, d, e, 0xe9b5dba5UL, W[3] = \
+  SHA2STEP32 (f, g, h, a, b, c, d, e, UINT32_C (0xe9b5dba5), W[3] = \
                 GET_W_FROM_DATA (data, 3));
-  SHA2STEP32 (e, f, g, h, a, b, c, d, 0x3956c25bUL, W[4] = \
+  SHA2STEP32 (e, f, g, h, a, b, c, d, UINT32_C (0x3956c25b), W[4] = \
                 GET_W_FROM_DATA (data, 4));
-  SHA2STEP32 (d, e, f, g, h, a, b, c, 0x59f111f1UL, W[5] = \
+  SHA2STEP32 (d, e, f, g, h, a, b, c, UINT32_C (0x59f111f1), W[5] = \
                 GET_W_FROM_DATA (data, 5));
-  SHA2STEP32 (c, d, e, f, g, h, a, b, 0x923f82a4UL, W[6] = \
+  SHA2STEP32 (c, d, e, f, g, h, a, b, UINT32_C (0x923f82a4), W[6] = \
                 GET_W_FROM_DATA (data, 6));
-  SHA2STEP32 (b, c, d, e, f, g, h, a, 0xab1c5ed5UL, W[7] = \
+  SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0xab1c5ed5), W[7] = \
                 GET_W_FROM_DATA (data, 7));
-  SHA2STEP32 (a, b, c, d, e, f, g, h, 0xd807aa98UL, W[8] = \
+  SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0xd807aa98), W[8] = \
                 GET_W_FROM_DATA (data, 8));
-  SHA2STEP32 (h, a, b, c, d, e, f, g, 0x12835b01UL, W[9] = \
+  SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0x12835b01), W[9] = \
                 GET_W_FROM_DATA (data, 9));
-  SHA2STEP32 (g, h, a, b, c, d, e, f, 0x243185beUL, W[10] = \
+  SHA2STEP32 (g, h, a, b, c, d, e, f, UINT32_C (0x243185be), W[10] = \
                 GET_W_FROM_DATA (data, 10));
-  SHA2STEP32 (f, g, h, a, b, c, d, e, 0x550c7dc3UL, W[11] = \
+  SHA2STEP32 (f, g, h, a, b, c, d, e, UINT32_C (0x550c7dc3), W[11] = \
                 GET_W_FROM_DATA (data, 11));
-  SHA2STEP32 (e, f, g, h, a, b, c, d, 0x72be5d74UL, W[12] = \
+  SHA2STEP32 (e, f, g, h, a, b, c, d, UINT32_C (0x72be5d74), W[12] = \
                 GET_W_FROM_DATA (data, 12));
-  SHA2STEP32 (d, e, f, g, h, a, b, c, 0x80deb1feUL, W[13] = \
+  SHA2STEP32 (d, e, f, g, h, a, b, c, UINT32_C (0x80deb1fe), W[13] = \
                 GET_W_FROM_DATA (data, 13));
-  SHA2STEP32 (c, d, e, f, g, h, a, b, 0x9bdc06a7UL, W[14] = \
+  SHA2STEP32 (c, d, e, f, g, h, a, b, UINT32_C (0x9bdc06a7), W[14] = \
                 GET_W_FROM_DATA (data, 14));
-  SHA2STEP32 (b, c, d, e, f, g, h, a, 0xc19bf174UL, W[15] = \
+  SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0xc19bf174), W[15] = \
                 GET_W_FROM_DATA (data, 15));
 
   /* 'W' generation and assignment for 16 <= t <= 63.
@@ -190,54 +190,102 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
      stored back in cyclic buffer. */
   /* Note: instead of using K constants as array, all K values are specified
      individually for each step, see FIPS PUB 180-4 paragraph 4.2.2 for K values. */
-  SHA2STEP32 (a, b, c, d, e, f, g, h, 0xe49b69c1UL, W[16 & 0xf] = Wgen (W,16));
-  SHA2STEP32 (h, a, b, c, d, e, f, g, 0xefbe4786UL, W[17 & 0xf] = Wgen (W,17));
-  SHA2STEP32 (g, h, a, b, c, d, e, f, 0x0fc19dc6UL, W[18 & 0xf] = Wgen (W,18));
-  SHA2STEP32 (f, g, h, a, b, c, d, e, 0x240ca1ccUL, W[19 & 0xf] = Wgen (W,19));
-  SHA2STEP32 (e, f, g, h, a, b, c, d, 0x2de92c6fUL, W[20 & 0xf] = Wgen (W,20));
-  SHA2STEP32 (d, e, f, g, h, a, b, c, 0x4a7484aaUL, W[21 & 0xf] = Wgen (W,21));
-  SHA2STEP32 (c, d, e, f, g, h, a, b, 0x5cb0a9dcUL, W[22 & 0xf] = Wgen (W,22));
-  SHA2STEP32 (b, c, d, e, f, g, h, a, 0x76f988daUL, W[23 & 0xf] = Wgen (W,23));
-  SHA2STEP32 (a, b, c, d, e, f, g, h, 0x983e5152UL, W[24 & 0xf] = Wgen (W,24));
-  SHA2STEP32 (h, a, b, c, d, e, f, g, 0xa831c66dUL, W[25 & 0xf] = Wgen (W,25));
-  SHA2STEP32 (g, h, a, b, c, d, e, f, 0xb00327c8UL, W[26 & 0xf] = Wgen (W,26));
-  SHA2STEP32 (f, g, h, a, b, c, d, e, 0xbf597fc7UL, W[27 & 0xf] = Wgen (W,27));
-  SHA2STEP32 (e, f, g, h, a, b, c, d, 0xc6e00bf3UL, W[28 & 0xf] = Wgen (W,28));
-  SHA2STEP32 (d, e, f, g, h, a, b, c, 0xd5a79147UL, W[29 & 0xf] = Wgen (W,29));
-  SHA2STEP32 (c, d, e, f, g, h, a, b, 0x06ca6351UL, W[30 & 0xf] = Wgen (W,30));
-  SHA2STEP32 (b, c, d, e, f, g, h, a, 0x14292967UL, W[31 & 0xf] = Wgen (W,31));
-  SHA2STEP32 (a, b, c, d, e, f, g, h, 0x27b70a85UL, W[32 & 0xf] = Wgen (W,32));
-  SHA2STEP32 (h, a, b, c, d, e, f, g, 0x2e1b2138UL, W[33 & 0xf] = Wgen (W,33));
-  SHA2STEP32 (g, h, a, b, c, d, e, f, 0x4d2c6dfcUL, W[34 & 0xf] = Wgen (W,34));
-  SHA2STEP32 (f, g, h, a, b, c, d, e, 0x53380d13UL, W[35 & 0xf] = Wgen (W,35));
-  SHA2STEP32 (e, f, g, h, a, b, c, d, 0x650a7354UL, W[36 & 0xf] = Wgen (W,36));
-  SHA2STEP32 (d, e, f, g, h, a, b, c, 0x766a0abbUL, W[37 & 0xf] = Wgen (W,37));
-  SHA2STEP32 (c, d, e, f, g, h, a, b, 0x81c2c92eUL, W[38 & 0xf] = Wgen (W,38));
-  SHA2STEP32 (b, c, d, e, f, g, h, a, 0x92722c85UL, W[39 & 0xf] = Wgen (W,39));
-  SHA2STEP32 (a, b, c, d, e, f, g, h, 0xa2bfe8a1UL, W[40 & 0xf] = Wgen (W,40));
-  SHA2STEP32 (h, a, b, c, d, e, f, g, 0xa81a664bUL, W[41 & 0xf] = Wgen (W,41));
-  SHA2STEP32 (g, h, a, b, c, d, e, f, 0xc24b8b70UL, W[42 & 0xf] = Wgen (W,42));
-  SHA2STEP32 (f, g, h, a, b, c, d, e, 0xc76c51a3UL, W[43 & 0xf] = Wgen (W,43));
-  SHA2STEP32 (e, f, g, h, a, b, c, d, 0xd192e819UL, W[44 & 0xf] = Wgen (W,44));
-  SHA2STEP32 (d, e, f, g, h, a, b, c, 0xd6990624UL, W[45 & 0xf] = Wgen (W,45));
-  SHA2STEP32 (c, d, e, f, g, h, a, b, 0xf40e3585UL, W[46 & 0xf] = Wgen (W,46));
-  SHA2STEP32 (b, c, d, e, f, g, h, a, 0x106aa070UL, W[47 & 0xf] = Wgen (W,47));
-  SHA2STEP32 (a, b, c, d, e, f, g, h, 0x19a4c116UL, W[48 & 0xf] = Wgen (W,48));
-  SHA2STEP32 (h, a, b, c, d, e, f, g, 0x1e376c08UL, W[49 & 0xf] = Wgen (W,49));
-  SHA2STEP32 (g, h, a, b, c, d, e, f, 0x2748774cUL, W[50 & 0xf] = Wgen (W,50));
-  SHA2STEP32 (f, g, h, a, b, c, d, e, 0x34b0bcb5UL, W[51 & 0xf] = Wgen (W,51));
-  SHA2STEP32 (e, f, g, h, a, b, c, d, 0x391c0cb3UL, W[52 & 0xf] = Wgen (W,52));
-  SHA2STEP32 (d, e, f, g, h, a, b, c, 0x4ed8aa4aUL, W[53 & 0xf] = Wgen (W,53));
-  SHA2STEP32 (c, d, e, f, g, h, a, b, 0x5b9cca4fUL, W[54 & 0xf] = Wgen (W,54));
-  SHA2STEP32 (b, c, d, e, f, g, h, a, 0x682e6ff3UL, W[55 & 0xf] = Wgen (W,55));
-  SHA2STEP32 (a, b, c, d, e, f, g, h, 0x748f82eeUL, W[56 & 0xf] = Wgen (W,56));
-  SHA2STEP32 (h, a, b, c, d, e, f, g, 0x78a5636fUL, W[57 & 0xf] = Wgen (W,57));
-  SHA2STEP32 (g, h, a, b, c, d, e, f, 0x84c87814UL, W[58 & 0xf] = Wgen (W,58));
-  SHA2STEP32 (f, g, h, a, b, c, d, e, 0x8cc70208UL, W[59 & 0xf] = Wgen (W,59));
-  SHA2STEP32 (e, f, g, h, a, b, c, d, 0x90befffaUL, W[60 & 0xf] = Wgen (W,60));
-  SHA2STEP32 (d, e, f, g, h, a, b, c, 0xa4506cebUL, W[61 & 0xf] = Wgen (W,61));
-  SHA2STEP32 (c, d, e, f, g, h, a, b, 0xbef9a3f7UL, W[62 & 0xf] = Wgen (W,62));
-  SHA2STEP32 (b, c, d, e, f, g, h, a, 0xc67178f2UL, W[63 & 0xf] = Wgen (W,63));
+  SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0xe49b69c1), W[16 & 0xf] = \
+                Wgen (W,16));
+  SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0xefbe4786), W[17 & 0xf] = \
+                Wgen (W,17));
+  SHA2STEP32 (g, h, a, b, c, d, e, f, UINT32_C (0x0fc19dc6), W[18 & 0xf] = \
+                Wgen (W,18));
+  SHA2STEP32 (f, g, h, a, b, c, d, e, UINT32_C (0x240ca1cc), W[19 & 0xf] = \
+                Wgen (W,19));
+  SHA2STEP32 (e, f, g, h, a, b, c, d, UINT32_C (0x2de92c6f), W[20 & 0xf] = \
+                Wgen (W,20));
+  SHA2STEP32 (d, e, f, g, h, a, b, c, UINT32_C (0x4a7484aa), W[21 & 0xf] = \
+                Wgen (W,21));
+  SHA2STEP32 (c, d, e, f, g, h, a, b, UINT32_C (0x5cb0a9dc), W[22 & 0xf] = \
+                Wgen (W,22));
+  SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0x76f988da), W[23 & 0xf] = \
+                Wgen (W,23));
+  SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0x983e5152), W[24 & 0xf] = \
+                Wgen (W,24));
+  SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0xa831c66d), W[25 & 0xf] = \
+                Wgen (W,25));
+  SHA2STEP32 (g, h, a, b, c, d, e, f, UINT32_C (0xb00327c8), W[26 & 0xf] = \
+                Wgen (W,26));
+  SHA2STEP32 (f, g, h, a, b, c, d, e, UINT32_C (0xbf597fc7), W[27 & 0xf] = \
+                Wgen (W,27));
+  SHA2STEP32 (e, f, g, h, a, b, c, d, UINT32_C (0xc6e00bf3), W[28 & 0xf] = \
+                Wgen (W,28));
+  SHA2STEP32 (d, e, f, g, h, a, b, c, UINT32_C (0xd5a79147), W[29 & 0xf] = \
+                Wgen (W,29));
+  SHA2STEP32 (c, d, e, f, g, h, a, b, UINT32_C (0x06ca6351), W[30 & 0xf] = \
+                Wgen (W,30));
+  SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0x14292967), W[31 & 0xf] = \
+                Wgen (W,31));
+  SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0x27b70a85), W[32 & 0xf] = \
+                Wgen (W,32));
+  SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0x2e1b2138), W[33 & 0xf] = \
+                Wgen (W,33));
+  SHA2STEP32 (g, h, a, b, c, d, e, f, UINT32_C (0x4d2c6dfc), W[34 & 0xf] = \
+                Wgen (W,34));
+  SHA2STEP32 (f, g, h, a, b, c, d, e, UINT32_C (0x53380d13), W[35 & 0xf] = \
+                Wgen (W,35));
+  SHA2STEP32 (e, f, g, h, a, b, c, d, UINT32_C (0x650a7354), W[36 & 0xf] = \
+                Wgen (W,36));
+  SHA2STEP32 (d, e, f, g, h, a, b, c, UINT32_C (0x766a0abb), W[37 & 0xf] = \
+                Wgen (W,37));
+  SHA2STEP32 (c, d, e, f, g, h, a, b, UINT32_C (0x81c2c92e), W[38 & 0xf] = \
+                Wgen (W,38));
+  SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0x92722c85), W[39 & 0xf] = \
+                Wgen (W,39));
+  SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0xa2bfe8a1), W[40 & 0xf] = \
+                Wgen (W,40));
+  SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0xa81a664b), W[41 & 0xf] = \
+                Wgen (W,41));
+  SHA2STEP32 (g, h, a, b, c, d, e, f, UINT32_C (0xc24b8b70), W[42 & 0xf] = \
+                Wgen (W,42));
+  SHA2STEP32 (f, g, h, a, b, c, d, e, UINT32_C (0xc76c51a3), W[43 & 0xf] = \
+                Wgen (W,43));
+  SHA2STEP32 (e, f, g, h, a, b, c, d, UINT32_C (0xd192e819), W[44 & 0xf] = \
+                Wgen (W,44));
+  SHA2STEP32 (d, e, f, g, h, a, b, c, UINT32_C (0xd6990624), W[45 & 0xf] = \
+                Wgen (W,45));
+  SHA2STEP32 (c, d, e, f, g, h, a, b, UINT32_C (0xf40e3585), W[46 & 0xf] = \
+                Wgen (W,46));
+  SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0x106aa070), W[47 & 0xf] = \
+                Wgen (W,47));
+  SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0x19a4c116), W[48 & 0xf] = \
+                Wgen (W,48));
+  SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0x1e376c08), W[49 & 0xf] = \
+                Wgen (W,49));
+  SHA2STEP32 (g, h, a, b, c, d, e, f, UINT32_C (0x2748774c), W[50 & 0xf] = \
+                Wgen (W,50));
+  SHA2STEP32 (f, g, h, a, b, c, d, e, UINT32_C (0x34b0bcb5), W[51 & 0xf] = \
+                Wgen (W,51));
+  SHA2STEP32 (e, f, g, h, a, b, c, d, UINT32_C (0x391c0cb3), W[52 & 0xf] = \
+                Wgen (W,52));
+  SHA2STEP32 (d, e, f, g, h, a, b, c, UINT32_C (0x4ed8aa4a), W[53 & 0xf] = \
+                Wgen (W,53));
+  SHA2STEP32 (c, d, e, f, g, h, a, b, UINT32_C (0x5b9cca4f), W[54 & 0xf] = \
+                Wgen (W,54));
+  SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0x682e6ff3), W[55 & 0xf] = \
+                Wgen (W,55));
+  SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0x748f82ee), W[56 & 0xf] = \
+                Wgen (W,56));
+  SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0x78a5636f), W[57 & 0xf] = \
+                Wgen (W,57));
+  SHA2STEP32 (g, h, a, b, c, d, e, f, UINT32_C (0x84c87814), W[58 & 0xf] = \
+                Wgen (W,58));
+  SHA2STEP32 (f, g, h, a, b, c, d, e, UINT32_C (0x8cc70208), W[59 & 0xf] = \
+                Wgen (W,59));
+  SHA2STEP32 (e, f, g, h, a, b, c, d, UINT32_C (0x90befffa), W[60 & 0xf] = \
+                Wgen (W,60));
+  SHA2STEP32 (d, e, f, g, h, a, b, c, UINT32_C (0xa4506ceb), W[61 & 0xf] = \
+                Wgen (W,61));
+  SHA2STEP32 (c, d, e, f, g, h, a, b, UINT32_C (0xbef9a3f7), W[62 & 0xf] = \
+                Wgen (W,62));
+  SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0xc67178f2), W[63 & 0xf] = \
+                Wgen (W,63));
 
   /* Compute intermediate hash.
      See FIPS PUB 180-4 paragraph 6.2.2 step 4. */

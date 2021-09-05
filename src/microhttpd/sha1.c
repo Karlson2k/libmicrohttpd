@@ -43,11 +43,11 @@ MHD_SHA1_init (void *ctx_)
   struct sha1_ctx *const ctx = ctx_;
   /* Initial hash values, see FIPS PUB 180-4 paragraph 5.3.1 */
   /* Just some "magic" numbers defined by standard */
-  ctx->H[0] = 0x67452301UL;
-  ctx->H[1] = 0xefcdab89UL;
-  ctx->H[2] = 0x98badcfeUL;
-  ctx->H[3] = 0x10325476UL;
-  ctx->H[4] = 0xc3d2e1f0UL;
+  ctx->H[0] = UINT32_C (0x67452301);
+  ctx->H[1] = UINT32_C (0xefcdab89);
+  ctx->H[2] = UINT32_C (0x98badcfe);
+  ctx->H[3] = UINT32_C (0x10325476);
+  ctx->H[4] = UINT32_C (0xc3d2e1f0);
 
   /* Initialise number of bytes. */
   ctx->count = 0;
@@ -121,13 +121,13 @@ sha1_transform (uint32_t H[_SHA1_DIGEST_LENGTH],
 #endif /* _MHD_GET_32BIT_BE_UNALIGNED */
 
 /* SHA-1 values of Kt for t=0..19, see FIPS PUB 180-4 paragraph 4.2.1. */
-#define K00      0x5a827999UL
+#define K00      UINT32_C(0x5a827999)
 /* SHA-1 values of Kt for t=20..39, see FIPS PUB 180-4 paragraph 4.2.1.*/
-#define K20      0x6ed9eba1UL
+#define K20      UINT32_C(0x6ed9eba1)
 /* SHA-1 values of Kt for t=40..59, see FIPS PUB 180-4 paragraph 4.2.1.*/
-#define K40      0x8f1bbcdcUL
+#define K40      UINT32_C(0x8f1bbcdc)
 /* SHA-1 values of Kt for t=60..79, see FIPS PUB 180-4 paragraph 4.2.1.*/
-#define K60      0xca62c1d6UL
+#define K60      UINT32_C(0xca62c1d6)
 
   /* During first 16 steps, before making any calculations on each step,
      the W element is read from input data buffer as big-endian value and
