@@ -2596,6 +2596,49 @@ AS_VAR_IF([enable_sanitizers], ["yes"],
          [
            new_CFLAGS="${new_CFLAGS} -fsanitize=undefined"
            enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
+         ],
+         [
+           AC_CACHE_CHECK([for undefined behavior sanitizer with '-fsanitize-undefined-trap-on-error'], [mhd_cv_cc_sanitizer_undefined_trap],
+             [
+               CFLAGS="${new_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error"
+               AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+                [mhd_cv_cc_sanitizer_undefined_trap=yes], [mhd_cv_cc_sanitizer_undefined_trap=no])
+             ]
+           )
+           AS_VAR_IF([mhd_cv_cc_sanitizer_undefined_trap], ["yes"],
+             [
+               new_CFLAGS="${new_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error"
+               enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
+               AC_MSG_WARN([Enabled sanitizer without run-time library, error reporting will be limited])
+             ],
+             [
+               AS_IF([test -z "${enabled_sanitizers}"],
+                 [
+                   # Last resort
+                   AC_CACHE_CHECK([for undefined behavior sanitizer with '-fsanitize-trap=all'], [mhd_cv_cc_sanitizer_undefined_trap_all],
+                     [
+                       CFLAGS="${new_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error"
+                       AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+                        [mhd_cv_cc_sanitizer_undefined_trap_all=yes], [mhd_cv_cc_sanitizer_undefined_trap_all=no])
+                     ]
+                   )
+                   AS_VAR_IF([mhd_cv_cc_sanitizer_undefined_trap_all],["yes"],
+                     [
+                       new_CFLAGS="${new_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error"
+                       enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
+                       AC_MSG_WARN([Enabled sanitizer without run-time library, error reporting will be limited])
+                     ]
+                   )
+                 ]
+               )
+             ]
+           )
+         ]
+       )
+       AS_CASE(["$enabled_sanitizers"], [*undefined],
+         [
+           AX_APPEND_COMPILE_FLAGS([-fsanitize=bounds-strict -fsanitize=local-bounds -fsanitize=implicit-conversion -fsanitize=nullability-arg],
+             [new_CFLAGS], [${new_CFLAGS}])
          ]
        )
        AC_CACHE_CHECK([for leak sanitizer], [mhd_cv_cc_sanitizer_leak],
