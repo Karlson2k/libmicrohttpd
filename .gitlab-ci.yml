@@ -11,14 +11,14 @@ cache:
 before_script:
   # CCache Config
   - mkdir -p cache
-  - export CCACHE_BASEDIR=${PWD}
-  - export CCACHE_DIR=${PWD}/cache
+  - export CCACHE_BASEDIR="${PWD}"
+  - export CCACHE_DIR="${PWD}/cache"
   - export CC="ccache gcc"
 
 after_script:
   # somehow after_script looses environment
-  - export CCACHE_BASEDIR=${PWD}
-  - export CCACHE_DIR=${PWD}/cache
+  - export CCACHE_BASEDIR="${PWD}"
+  - export CCACHE_DIR="${PWD}/cache"
   - ccache -s
 
 variables:
@@ -35,7 +35,7 @@ variables:
 gcc/Stretch:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$DEBIAN_BUILD
   script:
-    - export CFLAGS=$CFLAGS_DEFAULT
+    - export CFLAGS="$CFLAGS_DEFAULT"
     - ./bootstrap
     - ./configure $CONFIGURE_BASE_FLAGS
     - make -j$(nproc)
@@ -79,7 +79,7 @@ Sanitizers/Stretch:
 Scan-Build/Debian:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$DEBIAN_BUILD
   script:
-    - export CFLAGS=$CFLAGS_DEFAULT
+    - export CFLAGS="$CFLAGS_DEFAULT"
     - ./bootstrap
     - scan-build ./configure $CONFIGURE_BASE_FLAGS
     - scan-build -v -enable-checker security,nullability --status-bugs -o scan-build make -j$(nproc)
@@ -109,7 +109,7 @@ MinGW/Debian:
 dist/Stretch:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$DEBIAN_BUILD
   script:
-    - export CFLAGS=$CFLAGS_DEFAULT
+    - export CFLAGS="$CFLAGS_DEFAULT"
     - ./bootstrap
     - ./configure $CONFIGURE_BASE_FLAGS
     - make -j$(nproc) dist
