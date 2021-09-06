@@ -2637,8 +2637,9 @@ AS_VAR_IF([enable_sanitizers], ["yes"],
        )
        AS_CASE(["$enabled_sanitizers"], [*undefined],
          [
+           CFLAGS="${new_CFLAGS}"
            AX_APPEND_COMPILE_FLAGS([-fsanitize=bounds-strict -fsanitize=local-bounds -fsanitize=implicit-conversion -fsanitize=nullability-arg],
-             [new_CFLAGS], [${new_CFLAGS}])
+             [new_CFLAGS], [])
          ]
        )
        AC_CACHE_CHECK([for leak sanitizer], [mhd_cv_cc_sanitizer_leak],
