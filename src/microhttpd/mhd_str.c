@@ -821,9 +821,7 @@ MHD_str_remove_tokens_caseless_ (char *str,
         }
         /* s1 should point to the next token in the input string or beyond
          * the end of the input string */
-        /* The next comparison is modified version of
-         * ((str + *str_len) < (s1 + tkn_len)) to silent analyzer error */
-        if (*str_len < ((size_t) (s1 - str) + tkn_len))
+        if ((str + *str_len) < (s1 + tkn_len))
         { /* The rest of the 's1' is too small to match 'tkn' */
           if ((str + *str_len) > s1)
           { /* Copy the rest of the string */
