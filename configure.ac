@@ -2638,7 +2638,7 @@ AS_VAR_IF([enable_sanitizers], ["yes"],
        AS_CASE(["$enabled_sanitizers"], [*undefined],
          [
            CFLAGS="${new_CFLAGS}"
-           AX_APPEND_COMPILE_FLAGS([-fsanitize=bounds-strict -fsanitize=local-bounds -fsanitize=implicit-conversion -fsanitize=nullability-arg],
+           AX_APPEND_LINK_FLAGS([-fsanitize=bounds-strict -fsanitize=local-bounds -fsanitize=implicit-conversion -fsanitize=nullability-arg],
              [new_CFLAGS], [])
          ]
        )
@@ -2655,17 +2655,18 @@ AS_VAR_IF([enable_sanitizers], ["yes"],
            enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }leak"
          ]
        )
-
        AS_IF([test -z "${enabled_sanitizers}"],
          [AC_MSG_ERROR([cannot find any sanitizer supported by $CC])])
        AS_VAR_IF([mhd_cv_cc_sanitizer_address],["yes"],
          [
            new_CFLAGS="${new_CFLAGS} -D_FORTIFY_SOURCE=0"
+           CFLAGS="${new_CFLAGS}"
            AX_APPEND_COMPILE_FLAGS([-Wp,-U_FORTIFY_SOURCE], [new_CFLAGS])
          ],
          [AC_MSG_WARN([$CC does not support address sanitizer])]
        )
        # Always stop on error
+       CFLAGS="${new_CFLAGS}"
        AX_APPEND_COMPILE_FLAGS([-fno-sanitize-recover=all], [new_CFLAGS])
        # Get better output for sanitizers error reporting
        AX_APPEND_COMPILE_FLAGS([-fno-omit-frame-pointer -fno-common -fno-optimize-sibling-calls],
