@@ -718,44 +718,45 @@ MHD_str_remove_tokens_caseless_ (char *str,
                                  const char *const tokens,
                                  const size_t tokens_len)
 {
-  const char *t;   /**< position in the @a tokens string */
+  const char *const t = tokens;   /**< a short alias for @a tokens */
+  size_t pt;                      /**< position in @a tokens */
   bool token_removed;
 
   mhd_assert (NULL == memchr (tokens, 0, tokens_len));
 
   token_removed = false;
-  t = tokens;
+  pt = 0;
 
-  while ((size_t) (t - tokens) < tokens_len && *str_len != 0)
+  while (pt < tokens_len && *str_len != 0)
   {
     const char *tkn; /**< the current token */
     size_t tkn_len;
 
     /* Skip any initial whitespaces and empty tokens in 'tokens' */
-    while ( ((size_t) (t - tokens) < tokens_len) &&
-            ((' ' == *t) || ('\t' == *t) || (',' == *t)) )
-      t++;
+    while ( (pt < tokens_len) &&
+            ((' ' == t[pt]) || ('\t' == t[pt]) || (',' == t[pt])) )
+      pt++;
 
-    if ((size_t) (t - tokens) >= tokens_len)
+    if (pt >= tokens_len)
       break; /* No more tokens, nothing to remove */
 
     /* Found non-whitespace char which is not a comma */
-    tkn = t;
+    tkn = t + pt;
     do
     {
       do
       {
-        t++;
-      } while ((size_t) (t - tokens) < tokens_len && (' ' != *t && '\t' != *t &&
-                                                      ',' != *t));
+        pt++;
+      } while (pt < tokens_len &&
+               (' ' != t[pt] && '\t' != t[pt] && ',' != t[pt]));
       /* Found end of token string, space, tab, or comma */
-      tkn_len = t - tkn;
+      tkn_len = pt - (size_t) (tkn - t);
 
       /* Skip all spaces and tabs */
-      while ((size_t) (t - tokens) < tokens_len && (' ' == *t || '\t' == *t))
-        t++;
+      while (pt < tokens_len && (' ' == t[pt] || '\t' == t[pt]))
+        pt++;
       /* Found end of token string or non-whitespace char */
-    } while((size_t) (t - tokens) < tokens_len && ',' != *t);
+    } while(pt < tokens_len && ',' != t[pt]);
 
     /* 'tkn' is the input token with 'tkn_len' chars */
     mhd_assert (0 != tkn_len);
@@ -769,84 +770,90 @@ MHD_str_remove_tokens_caseless_ (char *str,
       }
       continue;
     }
+    /* 'tkn' cannot match part of 'str' if length of 'tkn' is larger
+     * than length of 'str'.
+     * It's know that 'tkn' is not equal to the 'str' (was checked previously).
+     * As 'str' is normalized when 'tkn' is not equal to the 'str'
+     * it is required that 'str' to be at least 3 chars larger then 'tkn'
+     * (the comma, the space and at least one additional character)
+     * to remove 'tkn' from the 'str'. */
     if (*str_len > tkn_len + 2)
     { /* Remove 'tkn' from the input string */
-      const char *s1;  /**< the "input" string / character */
-      char *s2;        /**< the "output" string / character */
+      size_t pr;    /**< the 'read' position in the @a str */
+      size_t pw;    /**< the 'write' position in the @a str */
 
-      s1 = str;
-      s2 = str;
+      pr = 0;
+      pw = 0;
 
       do
       {
-        mhd_assert (s1 >= s2);
-        mhd_assert ((str + *str_len) >= (s1 + tkn_len));
-        if ( ( ((str + *str_len) == (s1 + tkn_len)) || (',' == s1[tkn_len]) ) &&
-             MHD_str_equal_caseless_bin_n_ (s1, tkn, tkn_len) )
+        mhd_assert (pr >= pw);
+        mhd_assert ((*str_len) >= (pr + tkn_len));
+        if ( ( ((*str_len) == (pr + tkn_len)) || (',' == str[pr + tkn_len]) ) &&
+             MHD_str_equal_caseless_bin_n_ (str + pr, tkn, tkn_len) )
         {
           /* current token in the input string matches the 'tkn', skip it */
-          mhd_assert ((str + *str_len == s1 + tkn_len) || \
-                      (',' == s1[tkn_len]));
-          mhd_assert ((str + *str_len == s1 + tkn_len) || \
-                      (' ' == s1[tkn_len + 1]));
+          mhd_assert ((*str_len == pr + tkn_len) || \
+                      (' ' == str[pr + tkn_len + 1])); /* 'str' must be normalized */
           token_removed = true;
           /* Advance to the next token in the input string or beyond
            * the end of the input string. */
-          s1 += tkn_len + 2;
+          pr += tkn_len + 2;
         }
         else
         {
           /* current token in the input string does not match the 'tkn',
            * copy to the output */
-          if (str != s2)
+          if (0 != pw)
           { /* not the first output token, add ", " to separate */
-            if (s1 != s2 + 2)
+            if (pr != pw + 2)
             {
-              *(s2++) = ',';
-              *(s2++) = ' ';
+              str[pw++] = ',';
+              str[pw++] = ' ';
             }
             else
-              s2 += 2;
+              pw += 2; /* 'str' is not yet modified in this round */
           }
           do
           {
-            if (s1 != s2)
-              *s2 = *s1;
-            s1++;
-            s2++;
-          } while (s1 < str + *str_len && ',' != *s1);
+            if (pr != pw)
+              str[pw] = str[pr];
+            pr++;
+            pw++;
+          } while (pr < *str_len && ',' != str[pr]);
           /* Advance to the next token in the input string or beyond
            * the end of the input string. */
-          s1 += 2;
+          pr += 2;
         }
-        /* s1 should point to the next token in the input string or beyond
+        /* 'pr' should point to the next token in the input string or beyond
          * the end of the input string */
-        if ((str + *str_len) < (s1 + tkn_len))
-        { /* The rest of the 's1' is too small to match 'tkn' */
-          if ((str + *str_len) > s1)
+        if ((*str_len) < (pr + tkn_len))
+        { /* The rest of the 'str + pr' is too small to match 'tkn' */
+          if ((*str_len) > pr)
           { /* Copy the rest of the string */
             size_t copy_size;
-            copy_size = *str_len - (size_t) (s1 - str);
-            if (str != s2)
+            copy_size = *str_len - pr;
+            if (0 != pw)
             { /* not the first output token, add ", " to separate */
-              if (s1 != s2 + 2)
+              if (pr != pw + 2)
               {
-                *(s2++) = ',';
-                *(s2++) = ' ';
+                str[pw++] = ',';
+                str[pw++] = ' ';
               }
               else
-                s2 += 2;
+                pw += 2; /* 'str' is not yet modified in this round */
             }
-            if (s1 != s2)
-              memmove (s2, s1, copy_size);
-            s2 += copy_size;
+            if (pr != pw)
+              memmove (str + pw, str + pr, copy_size);
+            pw += copy_size;
           }
-          *str_len = s2 - str;
+          *str_len = pw;
           break;
         }
-        mhd_assert ((' ' != s1[0]) && ('\t' != s1[0]));
-        mhd_assert ((s1 == str) || (' ' == *(s1 - 1)));
-        mhd_assert ((s1 == str) || (',' == *(s1 - 2)));
+        mhd_assert ((' ' != str[0]) && ('\t' != str[0]));
+        mhd_assert ((0 == pr) || (3 <= pr));
+        mhd_assert ((0 == pr) || (' ' == str[pr - 1]));
+        mhd_assert ((0 == pr) || (',' == str[pr - 2]));
       } while (1);
     }
   }
