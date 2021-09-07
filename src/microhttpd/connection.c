@@ -294,7 +294,8 @@ recv_param_adapter (struct MHD_Connection *connection,
     {
 #ifdef EPOLL_SUPPORT
       /* Got EAGAIN --- no longer read-ready */
-      connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+      connection->epoll_state &=
+        ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
 #endif /* EPOLL_SUPPORT */
       return MHD_ERR_AGAIN_;
     }
@@ -317,7 +318,8 @@ recv_param_adapter (struct MHD_Connection *connection,
   }
 #ifdef EPOLL_SUPPORT
   else if (i > (size_t) ret)
-    connection->epoll_state &= ~MHD_EPOLL_STATE_READ_READY;
+    connection->epoll_state &=
+      ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
 #endif /* EPOLL_SUPPORT */
   return ret;
 }

@@ -781,7 +781,8 @@ MHD_send_data_ (struct MHD_Connection *connection,
     if (GNUTLS_E_AGAIN == ret)
     {
 #ifdef EPOLL_SUPPORT
-      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+      connection->epoll_state &=
+        ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
 #endif
       return MHD_ERR_AGAIN_;
     }
@@ -845,7 +846,8 @@ MHD_send_data_ (struct MHD_Connection *connection,
       {
 #if EPOLL_SUPPORT
         /* EAGAIN, no longer write-ready */
-        connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+        connection->epoll_state &=
+          ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
 #endif /* EPOLL_SUPPORT */
         return MHD_ERR_AGAIN_;
       }
@@ -870,7 +872,8 @@ MHD_send_data_ (struct MHD_Connection *connection,
     }
 #if EPOLL_SUPPORT
     else if (buffer_size > (size_t) ret)
-      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+      connection->epoll_state &=
+        ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
 #endif /* EPOLL_SUPPORT */
   }
 
@@ -1089,7 +1092,8 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     {
 #if EPOLL_SUPPORT
       /* EAGAIN, no longer write-ready */
-      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+      connection->epoll_state &=
+        ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
 #endif /* EPOLL_SUPPORT */
       return MHD_ERR_AGAIN_;
     }
@@ -1114,7 +1118,8 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
   }
 #if EPOLL_SUPPORT
   else if ((header_size + body_size) > (size_t) ret)
-    connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+    connection->epoll_state &=
+      ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
 #endif /* EPOLL_SUPPORT */
 
   /* If there is a need to push the data from network buffers
@@ -1243,7 +1248,8 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
     {
 #ifdef EPOLL_SUPPORT
       /* EAGAIN --- no longer write-ready */
-      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+      connection->epoll_state &=
+        ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
 #endif /* EPOLL_SUPPORT */
       return MHD_ERR_AGAIN_;
     }
@@ -1278,7 +1284,8 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
   }
 #ifdef EPOLL_SUPPORT
   else if (send_size > (size_t) ret)
-    connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+    connection->epoll_state &=
+      ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
 #endif /* EPOLL_SUPPORT */
 #elif defined(HAVE_FREEBSD_SENDFILE)
 #ifdef SF_FLAGS
@@ -1463,7 +1470,8 @@ send_iov_nontls (struct MHD_Connection *connection,
     {
 #ifdef EPOLL_SUPPORT
       /* EAGAIN --- no longer write-ready */
-      connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+      connection->epoll_state &=
+        ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
 #endif /* EPOLL_SUPPORT */
       return MHD_ERR_AGAIN_;
     }
@@ -1503,7 +1511,8 @@ send_iov_nontls (struct MHD_Connection *connection,
   else
   {
 #ifdef EPOLL_SUPPORT
-    connection->epoll_state &= ~MHD_EPOLL_STATE_WRITE_READY;
+    connection->epoll_state &=
+      ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
 #endif /* EPOLL_SUPPORT */
     if (0 != res)
     {

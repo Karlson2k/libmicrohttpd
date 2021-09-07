@@ -841,8 +841,10 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
   const MHD_socket mhd_sckt = urh->mhd.socket;
 
   /* Reset read/write ready, preserve error state. */
-  urh->app.celi &= (~MHD_EPOLL_STATE_READ_READY & ~MHD_EPOLL_STATE_WRITE_READY);
-  urh->mhd.celi &= (~MHD_EPOLL_STATE_READ_READY & ~MHD_EPOLL_STATE_WRITE_READY);
+  urh->app.celi &= (~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY)
+                    & ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY));
+  urh->mhd.celi &= (~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY)
+                    & ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY));
 
   if (MHD_INVALID_SOCKET != conn_sckt)
   {
@@ -937,8 +939,10 @@ urh_from_pollfd (struct MHD_UpgradeResponseHandle *urh,
                  struct pollfd p[2])
 {
   /* Reset read/write ready, preserve error state. */
-  urh->app.celi &= (~MHD_EPOLL_STATE_READ_READY & ~MHD_EPOLL_STATE_WRITE_READY);
-  urh->mhd.celi &= (~MHD_EPOLL_STATE_READ_READY & ~MHD_EPOLL_STATE_WRITE_READY);
+  urh->app.celi &= (~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY)
+                    & ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY));
+  urh->mhd.celi &= (~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY)
+                    & ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY));
 
   if (0 != (p[0].revents & POLLIN))
     urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
@@ -1394,10 +1398,10 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     /* Discard any data received form remote. */
     urh->in_buffer_used = 0;
     /* Do not try to push data to application. */
-    urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+    urh->mhd.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
     /* Reading from remote client is not required anymore. */
     urh->in_buffer_size = 0;
-    urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
+    urh->app.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
     connection->tls_read_ready = false;
   }
 
@@ -1435,7 +1439,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     {
       if (GNUTLS_E_INTERRUPTED != res)
       {
-        urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
+        urh->app.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
         if (GNUTLS_E_AGAIN != res)
         {
           /* Unrecoverable error on socket was detected or
@@ -1486,7 +1490,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           ((! MHD_SCKT_ERR_IS_EINTR_ (err)) &&
            (! MHD_SCKT_ERR_IS_LOW_RESOURCES_ (err))))
       {
-        urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
+        urh->mhd.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
         if ((0 == res) ||
             (was_closed) ||
             (0 != (MHD_EPOLL_STATE_ERROR & urh->mhd.celi)) ||
@@ -1504,7 +1508,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     {
       urh->out_buffer_used += res;
       if (buf_size > (size_t) res)
-        urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
+        urh->mhd.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
     }
     if ( (0 == (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) &&
          ( (0 != (MHD_EPOLL_STATE_ERROR & urh->mhd.celi)) ||
@@ -1537,7 +1541,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     {
       if (GNUTLS_E_INTERRUPTED != res)
       {
-        urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+        urh->app.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
         if (GNUTLS_E_AGAIN != res)
         {
           /* TLS connection shut down or
@@ -1555,7 +1559,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           urh->out_buffer_used = 0;
           /* Do not try to pull more data from application. */
           urh->out_buffer_size = 0;
-          urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
+          urh->mhd.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
         }
       }
     }
@@ -1568,7 +1572,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                  &urh->out_buffer[res],
                  next_out_buffer_used);
         if (data_size > (size_t) res)
-          urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+          urh->app.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
       }
       urh->out_buffer_used = next_out_buffer_used;
     }
@@ -1578,10 +1582,10 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       /* Unrecoverable error on socket was detected and all
        * pending data was sent to remote. */
       /* Do not try to send to remote anymore. */
-      urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+      urh->app.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
       /* Do not try to pull more data from application. */
       urh->out_buffer_size = 0;
-      urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
+      urh->mhd.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
     }
   }
 
@@ -1607,7 +1611,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       if ( (! MHD_SCKT_ERR_IS_EINTR_ (err)) &&
            (! MHD_SCKT_ERR_IS_LOW_RESOURCES_ (err)) )
       {
-        urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+        urh->mhd.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
         if (! MHD_SCKT_ERR_IS_EAGAIN_ (err))
         {
           /* Socketpair connection shut down or
@@ -1625,7 +1629,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           urh->in_buffer_used = 0;
           /* Reading from remote client is not required anymore. */
           urh->in_buffer_size = 0;
-          urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
+          urh->app.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
           connection->tls_read_ready = false;
         }
       }
@@ -1639,7 +1643,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                  &urh->in_buffer[res],
                  next_in_buffer_used);
         if (data_size > (size_t) res)
-          urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+          urh->mhd.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
       }
       urh->in_buffer_used = next_in_buffer_used;
     }
@@ -1647,10 +1651,10 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
          (0 != (MHD_EPOLL_STATE_ERROR & urh->mhd.celi)) )
     {
       /* Do not try to push data to application. */
-      urh->mhd.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+      urh->mhd.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
       /* Reading from remote client is not required anymore. */
       urh->in_buffer_size = 0;
-      urh->app.celi &= ~MHD_EPOLL_STATE_READ_READY;
+      urh->app.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
       connection->tls_read_ready = false;
     }
   }
@@ -1679,10 +1683,10 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     /* Discard any data unsent to remote. */
     urh->out_buffer_used = 0;
     /* Do not try to sent to remote anymore. */
-    urh->app.celi &= ~MHD_EPOLL_STATE_WRITE_READY;
+    urh->app.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
     /* Do not try to pull more data from application. */
     urh->out_buffer_size = 0;
-    urh->mhd.celi &= ~MHD_EPOLL_STATE_READ_READY;
+    urh->mhd.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
   }
 }
 
@@ -3099,7 +3103,8 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
       EDLL_remove (daemon->eready_head,
                    daemon->eready_tail,
                    connection);
-      connection->epoll_state &= ~MHD_EPOLL_STATE_IN_EREADY_EDLL;
+      connection->epoll_state &=
+        ~((enum MHD_EpollState) MHD_EPOLL_STATE_IN_EREADY_EDLL);
     }
     if (0 != (connection->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET))
     {
@@ -3108,7 +3113,8 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
                           connection->socket_fd,
                           NULL))
         MHD_PANIC (_ ("Failed to remove FD from epoll set.\n"));
-      connection->epoll_state &= ~MHD_EPOLL_STATE_IN_EPOLL_SET;
+      connection->epoll_state &=
+        ~((enum MHD_EpollState) MHD_EPOLL_STATE_IN_EPOLL_SET);
     }
     connection->epoll_state |= MHD_EPOLL_STATE_SUSPENDED;
   }
@@ -3308,7 +3314,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
         pos->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL   \
                             | MHD_EPOLL_STATE_READ_READY
                             | MHD_EPOLL_STATE_WRITE_READY;
-        pos->epoll_state &= ~MHD_EPOLL_STATE_SUSPENDED;
+        pos->epoll_state &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_SUSPENDED);
       }
 #endif
     }
@@ -3758,7 +3764,8 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
         EDLL_remove (daemon->eready_head,
                      daemon->eready_tail,
                      pos);
-        pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EREADY_EDLL;
+        pos->epoll_state &=
+          ~((enum MHD_EpollState) MHD_EPOLL_STATE_IN_EREADY_EDLL);
       }
       if ( (-1 != daemon->epoll_fd) &&
            (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) )
@@ -3773,8 +3780,11 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
                             EPOLL_CTL_DEL,
                             pos->socket_fd,
                             NULL))
-          MHD_PANIC (_ ("Failed to remove FD from epoll set.\n"));
-        pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EPOLL_SET;
+          MHD_PANIC (_ (
+                       "Failed to remove FD from epoll set.\n"));
+        pos->epoll_state &=
+          ~((enum MHD_EpollState)
+            MHD_EPOLL_STATE_IN_EPOLL_SET);
       }
     }
 #endif
@@ -5125,7 +5135,8 @@ MHD_epoll (struct MHD_Daemon *daemon,
         EDLL_remove (daemon->eready_head,
                      daemon->eready_tail,
                      pos);
-        pos->epoll_state &= ~MHD_EPOLL_STATE_IN_EREADY_EDLL;
+        pos->epoll_state &=
+          ~((enum MHD_EpollState) MHD_EPOLL_STATE_IN_EREADY_EDLL);
       }
     }
   }
@@ -6502,7 +6513,7 @@ MHD_start_daemon_va (unsigned int flags,
     *pflags |= MHD_USE_INTERNAL_POLLING_THREAD;
   }
   if (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
-    *pflags = (*pflags & ((enum MHD_FLAG) ~MHD_USE_ITC)); /* useless if we are using 'external' select */
+    *pflags = (*pflags & ~((enum MHD_FLAG) MHD_USE_ITC)); /* useless if we are using 'external' select */
   else
   {
 #ifdef HAVE_LISTEN_SHUTDOWN

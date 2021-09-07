@@ -408,27 +408,32 @@ del_response_header_connection (struct MHD_Response *response,
     free (hdr->value);
     free (hdr->header);
     free (hdr);
-    response->flags_auto &= ~(MHD_RAF_HAS_CONNECTION_HDR
-                              | MHD_RAF_HAS_CONNECTION_CLOSE);
+    response->flags_auto &=
+      ~((enum MHD_ResponseAutoFlags) MHD_RAF_HAS_CONNECTION_HDR
+        | (enum MHD_ResponseAutoFlags) MHD_RAF_HAS_CONNECTION_CLOSE);
   }
   else
   {
     hdr->value[hdr->value_size] = 0; /* Null-terminate the result */
-    if (0 != (response->flags_auto & ~(MHD_RAF_HAS_CONNECTION_CLOSE)))
+    if (0 != (response->flags_auto
+              & ~((enum MHD_ResponseAutoFlags) MHD_RAF_HAS_CONNECTION_CLOSE)))
     {
       if (MHD_STATICSTR_LEN_ ("close") == hdr->value_size)
       {
         if (0 != memcmp (hdr->value, "close", MHD_STATICSTR_LEN_ ("close")))
-          response->flags_auto &= ~(MHD_RAF_HAS_CONNECTION_CLOSE);
+          response->flags_auto &=
+            ~((enum MHD_ResponseAutoFlags) MHD_RAF_HAS_CONNECTION_CLOSE);
       }
       else if (MHD_STATICSTR_LEN_ ("close, ") < hdr->value_size)
       {
         if (0 != memcmp (hdr->value, "close, ",
                          MHD_STATICSTR_LEN_ ("close, ")))
-          response->flags_auto &= ~(MHD_RAF_HAS_CONNECTION_CLOSE);
+          response->flags_auto &=
+            ~((enum MHD_ResponseAutoFlags) MHD_RAF_HAS_CONNECTION_CLOSE);
       }
       else
-        response->flags_auto &= ~(MHD_RAF_HAS_CONNECTION_CLOSE);
+        response->flags_auto &=
+          ~((enum MHD_ResponseAutoFlags) MHD_RAF_HAS_CONNECTION_CLOSE);
     }
   }
   return MHD_YES;
@@ -621,13 +626,15 @@ MHD_del_response_header (struct MHD_Response *response,
            MHD_str_equal_caseless_bin_n_ (header,
                                           MHD_HTTP_HEADER_TRANSFER_ENCODING,
                                           header_len) )
-        response->flags_auto &= ~(MHD_RAF_HAS_TRANS_ENC_CHUNKED);
+        response->flags_auto &=
+          ~((enum MHD_ResponseAutoFlags) MHD_RAF_HAS_TRANS_ENC_CHUNKED);
       else if ( (MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_DATE) ==
                  header_len) &&
                 MHD_str_equal_caseless_bin_n_ (header,
                                                MHD_HTTP_HEADER_DATE,
                                                header_len) )
-        response->flags_auto &= ~(MHD_RAF_HAS_DATE_HDR);
+        response->flags_auto &=
+          ~((enum MHD_ResponseAutoFlags) MHD_RAF_HAS_DATE_HDR);
       return MHD_YES;
     }
     pos = pos->next;
