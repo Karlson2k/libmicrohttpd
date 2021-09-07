@@ -170,7 +170,7 @@ http_AccessHandlerCallback (void *cls,
 
   /* Second call: create response */
   response
-    = MHD_create_response_from_callback (-1,
+    = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
                                          32 * 1024,
                                          &http_ContentReaderCallback,
                                          *con_cls,
