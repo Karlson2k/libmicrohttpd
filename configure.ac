@@ -2535,11 +2535,13 @@ AC_ARG_ENABLE([sanitizers],
   [], [enable_sanitizers=no])
 AS_VAR_IF([enable_sanitizers], ["yes"],
  [
-   new_CFLAGS="$CFLAGS"
+   AS_UNSET([san_FLAGS]) # the sanitizer flags to be added to both CFLAGS and LDFLAGS
+   AS_UNSET([san_CFLAGS]) # the sanitizer flags to be added to CFLAGS
+   saved_CFLAGS="$CFLAGS"
    AC_CACHE_CHECK([whether sanitizer parameter works for $CC],
      [mhd_cv_cc_sanitizer_works],
      [
-       CFLAGS="${new_CFLAGS} -fsanitize=wrongFeatureName"
+       CFLAGS="${saved_CFLAGS} -fsanitize=wrongFeatureName"
        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
          [mhd_cv_cc_sanitizer_works=no], [mhd_cv_cc_sanitizer_works=yes])
      ]
@@ -2548,66 +2550,100 @@ AS_VAR_IF([enable_sanitizers], ["yes"],
      [
        AC_CACHE_CHECK([for address sanitizer], [mhd_cv_cc_sanitizer_address],
          [
-           CFLAGS="${saved_CFLAGS} -fsanitize=address"
+           CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} -fsanitize=address"
            AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
             [mhd_cv_cc_sanitizer_address=yes], [mhd_cv_cc_sanitizer_address=no])
          ]
        )
        AS_VAR_IF([mhd_cv_cc_sanitizer_address],["yes"],
          [
-           new_CFLAGS="${new_CFLAGS} -fsanitize=address"
+           AX_APPEND_FLAG([-fsanitize=address], [san_FLAGS])
            enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }address"
            AC_CACHE_CHECK([for pointer compare sanitizer], [mhd_cv_cc_sanitizer_pointer_compare],
              [
-               CFLAGS="${new_CFLAGS} -fsanitize=pointer-compare"
+               CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} -fsanitize=pointer-compare"
                AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
                 [mhd_cv_cc_sanitizer_pointer_compare=yes], [mhd_cv_cc_sanitizer_pointer_compare=no])
              ]
            )
            AS_VAR_IF([mhd_cv_cc_sanitizer_pointer_compare],["yes"],
              [
-               new_CFLAGS="${new_CFLAGS} -fsanitize=pointer-compare"
+               AX_APPEND_FLAG([-fsanitize=pointer-compare], [san_FLAGS])
                enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }pointer compare"
              ]
            )
            AC_CACHE_CHECK([for pointer subtract sanitizer], [mhd_cv_cc_sanitizer_pointer_subtract],
              [
-               CFLAGS="${new_CFLAGS} -fsanitize=pointer-subtract"
+               CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} -fsanitize=pointer-subtract"
                AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
                 [mhd_cv_cc_sanitizer_pointer_subtract=yes], [mhd_cv_cc_sanitizer_pointer_subtract=no])
              ]
            )
            AS_VAR_IF([mhd_cv_cc_sanitizer_pointer_subtract],["yes"],
              [
-               new_CFLAGS="${new_CFLAGS} -fsanitize=pointer-subtract"
+               AX_APPEND_FLAG([-fsanitize=pointer-subtract], [san_FLAGS])
                enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }pointer subtract"
              ]
            )
          ]
        )
+       [dnl Ensure that '#' will be processed correctly
+        test_undf_prog='
+#include <stdio.h>
+
+void func_out_b(char *arr)
+{
+  arr[0] = 0;
+  arr[16] = 2;
+}
+
+unsigned int int_deref(void *ptr)
+{
+  return (*((int*)ptr)) + 2;
+}
+
+int func1(void)
+{
+  char chr[16];
+  func_out_b (chr);
+  return int_deref(chr + 1) + int_deref(chr + 2);
+}
+
+int main(void)
+{
+  unsigned long ulvar;
+  signed char ch1;
+  ulvar = -1 * func1();
+  ch1 = ulvar * 6UL;
+  printf("%lu\n", ulvar + ch1);
+  return 0;
+}
+        '
+       ]
        AC_CACHE_CHECK([for undefined behavior sanitizer], [mhd_cv_cc_sanitizer_undefined],
          [
-           CFLAGS="${new_CFLAGS} -fsanitize=undefined"
-           AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+           CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined"
+           AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
             [mhd_cv_cc_sanitizer_undefined=yes], [mhd_cv_cc_sanitizer_undefined=no])
          ]
        )
        AS_VAR_IF([mhd_cv_cc_sanitizer_undefined],["yes"],
          [
-           new_CFLAGS="${new_CFLAGS} -fsanitize=undefined"
+           AX_APPEND_FLAG([-fsanitize=undefined], [san_FLAGS])
            enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
          ],
          [
            AC_CACHE_CHECK([for undefined behavior sanitizer with '-fsanitize-undefined-trap-on-error'], [mhd_cv_cc_sanitizer_undefined_trap],
              [
-               CFLAGS="${new_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error"
-               AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+               CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error"
+               AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
                 [mhd_cv_cc_sanitizer_undefined_trap=yes], [mhd_cv_cc_sanitizer_undefined_trap=no])
              ]
            )
            AS_VAR_IF([mhd_cv_cc_sanitizer_undefined_trap], ["yes"],
              [
-               new_CFLAGS="${new_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error"
+               AX_APPEND_FLAG([-fsanitize=undefined], [san_FLAGS])
+               AX_APPEND_FLAG([-fsanitize-undefined-trap-on-error], [san_FLAGS])
                enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
                AC_MSG_WARN([Enabled sanitizer without run-time library, error reporting will be limited])
              ],
@@ -2617,14 +2653,16 @@ AS_VAR_IF([enable_sanitizers], ["yes"],
                    # Last resort
                    AC_CACHE_CHECK([for undefined behavior sanitizer with '-fsanitize-trap=all'], [mhd_cv_cc_sanitizer_undefined_trap_all],
                      [
-                       CFLAGS="${new_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error"
-                       AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+                       CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-trap=all"
+                       AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
                         [mhd_cv_cc_sanitizer_undefined_trap_all=yes], [mhd_cv_cc_sanitizer_undefined_trap_all=no])
                      ]
                    )
                    AS_VAR_IF([mhd_cv_cc_sanitizer_undefined_trap_all],["yes"],
                      [
-                       new_CFLAGS="${new_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error"
+                       AX_APPEND_FLAG([-fsanitize=undefined], [san_FLAGS])
+                       AX_APPEND_FLAG([-fsanitize-trap=all], [san_FLAGS])
+                       CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-trap=all"
                        enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
                        AC_MSG_WARN([Enabled sanitizer without run-time library, error reporting will be limited])
                      ]
@@ -2637,21 +2675,31 @@ AS_VAR_IF([enable_sanitizers], ["yes"],
        )
        AS_CASE(["$enabled_sanitizers"], [*undefined],
          [
-           CFLAGS="${new_CFLAGS}"
+           AS_VAR_IF([mhd_cv_cc_sanitizer_undefined], ["yes"],[],
+             [
+               # A workaround for broken clang which is trying to use UBSan lib
+               # even when instructed to not use it
+               CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
+               AX_APPEND_LINK_FLAGS([-fsanitize-trap=implicit-conversion],
+                 [san_FLAGS], [], [AC_LANG_SOURCE([${test_undf_prog}])])
+             ]
+           )
+           CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
            AX_APPEND_LINK_FLAGS([-fsanitize=bounds-strict -fsanitize=local-bounds -fsanitize=implicit-conversion -fsanitize=nullability-arg],
-             [new_CFLAGS], [])
+             [san_CFLAGS], [], [AC_LANG_SOURCE([${test_undf_prog}])])
          ]
        )
+       AS_UNSET([test_undf_prog])
        AC_CACHE_CHECK([for leak sanitizer], [mhd_cv_cc_sanitizer_leak],
          [
-           CFLAGS="${new_CFLAGS} -fsanitize=leak"
+           CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=leak"
            AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
             [mhd_cv_cc_sanitizer_leak=yes], [mhd_cv_cc_sanitizer_leak=no])
          ]
        )
        AS_VAR_IF([mhd_cv_cc_sanitizer_leak],["yes"],
          [
-           new_CFLAGS="${new_CFLAGS} -fsanitize=leak"
+           AX_APPEND_FLAG([-fsanitize=leak], [san_FLAGS])
            enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }leak"
          ]
        )
@@ -2659,18 +2707,18 @@ AS_VAR_IF([enable_sanitizers], ["yes"],
          [AC_MSG_ERROR([cannot find any sanitizer supported by $CC])])
        AS_VAR_IF([mhd_cv_cc_sanitizer_address],["yes"],
          [
-           new_CFLAGS="${new_CFLAGS} -D_FORTIFY_SOURCE=0"
-           CFLAGS="${new_CFLAGS}"
-           AX_APPEND_COMPILE_FLAGS([-Wp,-U_FORTIFY_SOURCE], [new_CFLAGS])
+           AX_APPEND_FLAG([-D_FORTIFY_SOURCE=0], [san_CFLAGS])
+           CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
+           AX_APPEND_COMPILE_FLAGS([-Wp,-U_FORTIFY_SOURCE], [san_CFLAGS])
          ],
          [AC_MSG_WARN([$CC does not support address sanitizer])]
        )
        # Always stop on error
-       CFLAGS="${new_CFLAGS}"
-       AX_APPEND_COMPILE_FLAGS([-fno-sanitize-recover=all], [new_CFLAGS])
+       CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
+       AX_APPEND_COMPILE_FLAGS([-fno-sanitize-recover=all], [san_CFLAGS])
        # Get better output for sanitizers error reporting
        AX_APPEND_COMPILE_FLAGS([-fno-omit-frame-pointer -fno-common -fno-optimize-sibling-calls],
-         [new_CFLAGS])
+         [san_CFLAGS])
        AM_ASAN_OPTIONS="exitcode=88:detect_leaks=1:strict_string_checks=1:detect_stack_use_after_return=1"
        AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:check_initialization_order=1:strict_init_order=1:redzone=64"
        AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:max_free_fill_size=1024:detect_invalid_pointer_pairs=3"
@@ -2683,8 +2731,8 @@ UBSAN_OPTIONS="$(AM_UBSAN_OPTIONS)" ; export UBSAN_OPTIONS ; \
 LSAN_OPTIONS="$(AM_LSAN_OPTIONS)" ; export LSAN_OPTIONS ;'
      ]
    )
-   CFLAGS="$new_CFLAGS"
-   AS_UNSET([new_CFLAGS])
+   CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
+   AS_UNSET([saved_CFLAGS])
  ]
 )
 AM_CONDITIONAL([USE_SANITIZERS],
