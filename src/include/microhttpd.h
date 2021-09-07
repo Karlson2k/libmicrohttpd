@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097311
+#define MHD_VERSION 0x00097312
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
@@ -184,13 +184,8 @@ enum MHD_Result
 #define MHD_SIZE_UNKNOWN  ((uint64_t) -1LL)
 #endif
 
-#ifdef SIZE_MAX
-#define MHD_CONTENT_READER_END_OF_STREAM SIZE_MAX
-#define MHD_CONTENT_READER_END_WITH_ERROR (SIZE_MAX - 1)
-#else
-#define MHD_CONTENT_READER_END_OF_STREAM ((size_t) -1LL)
-#define MHD_CONTENT_READER_END_WITH_ERROR (((size_t) -1LL) - 1)
-#endif
+#define MHD_CONTENT_READER_END_OF_STREAM ((ssize_t) -1)
+#define MHD_CONTENT_READER_END_WITH_ERROR ((ssize_t) -2)
 
 #ifndef _MHD_EXTERN
 #if defined(_WIN32) && defined(MHD_W32LIB)
