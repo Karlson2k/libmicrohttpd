@@ -29,7 +29,7 @@ AC_DEFUN([MHD_CHECK_SOCKET_SHUTDOWN_TRIGGER],[dnl
   AC_CHECK_HEADERS([time.h],[AC_CHECK_FUNCS([nanosleep])],[], [AC_INCLUDES_DEFAULT])
   AC_CHECK_HEADERS([unistd.h],[AC_CHECK_FUNCS([usleep])],[], [AC_INCLUDES_DEFAULT])
   AC_CHECK_HEADERS([string.h sys/types.h sys/socket.h netinet/in.h time.h sys/select.h netinet/tcp.h],[],[], [AC_INCLUDES_DEFAULT])
-  AC_CACHE_CHECK([[whether shutdown of listen socket trigger select()]],
+  AC_CACHE_CHECK([[whether shutdown of listen socket triggers select()]],
     [[mhd_cv_host_shtdwn_trgr_select]], [dnl
     _MHD_OS_KNOWN_SOCKET_SHUTDOWN_TRIGGER([[mhd_cv_host_shtdwn_trgr_select]])
     AS_VAR_IF([mhd_cv_host_shtdwn_trgr_select], [["maybe"]],

@@ -434,7 +434,7 @@ AM_CONDITIONAL([CYGWIN_TARGET], [[test "x$os_is_windows" = "xyes" && \
 
 AS_VAR_IF([os_is_windows], ["yes"],
   [
-    AC_MSG_CHECKING([[whether target W32 version is specified by precomiler defines]])
+    AC_MSG_CHECKING([[whether target W32 version is specified by precompiler defines]])
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 /* Note: check logic is reversed for easy log reading */
 #ifdef WINVER
