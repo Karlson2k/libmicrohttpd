@@ -2587,7 +2587,8 @@ AS_VAR_IF([enable_sanitizers], ["yes"],
            )
          ]
        )
-       [dnl Ensure that '#' will be processed correctly
+       dnl Ensure that '#' will be processed correctly
+       [
         test_undf_prog='
 #include <stdio.h>
 
