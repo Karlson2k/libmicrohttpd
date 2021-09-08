@@ -341,11 +341,15 @@ MHD_pool_reallocate (struct MemoryPool *pool,
   mhd_assert (pool->size >= pool->end - pool->pos);
   mhd_assert (old != NULL || old_size == 0);
   mhd_assert (old == NULL || pool->memory <= (uint8_t*) old);
-  mhd_assert (old == NULL || pool->memory + pool->size >= (uint8_t*) old
-              + old_size);
+  mhd_assert (pool->size >= old_size);
+  /* (old == NULL || pool->memory + pool->size >= (uint8_t*) old + old_size) */
+  mhd_assert (old == NULL || \
+              (pool->size) >= \
+              (((size_t) (((uint8_t*) old) - pool->memory)) + old_size));
   /* Blocks "from the end" must not be reallocated */
+  /* (old == NULL || old_size == 0 || pool->memory + pool->pos > (uint8_t*) old) */
   mhd_assert (old == NULL || old_size == 0 || \
-              pool->memory + pool->pos > (uint8_t*) old);
+              pool->pos > (size_t) ((uint8_t*) old - pool->memory));
 
   if (0 != old_size)
   {   /* Need to save some data */
@@ -415,10 +419,13 @@ MHD_pool_reset (struct MemoryPool *pool,
   mhd_assert (pool->end >= pool->pos);
   mhd_assert (pool->size >= pool->end - pool->pos);
   mhd_assert (copy_bytes <= new_size);
+  mhd_assert (copy_bytes <= pool->size);
   mhd_assert (keep != NULL || copy_bytes == 0);
   mhd_assert (keep == NULL || pool->memory <= (uint8_t*) keep);
-  mhd_assert (keep == NULL || pool->memory + pool->size >= (uint8_t*) keep
-              + copy_bytes);
+  /* (keep == NULL || pool->memory + pool->size >= (uint8_t*) keep + copy_bytes) */
+  mhd_assert (keep == NULL || \
+              pool->size >= \
+              ((size_t) ((uint8_t*) keep - pool->memory)) + copy_bytes);
   if ( (NULL != keep) &&
        (keep != pool->memory) )
   {
