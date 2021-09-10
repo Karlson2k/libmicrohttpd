@@ -34,6 +34,10 @@
 #include <unistd.h>
 #endif
 
+#ifndef MHD_DEBUG_PP
+#define MHD_DEBUG_PP 0
+#endif /* MHD_DEBUG_PP */
+
 /**
  * Array of values that the value checker "wants".
  * Each series of checks should be terminated by
@@ -107,7 +111,7 @@ value_checker (void *cls,
   int idx = *want_off;
   (void) kind;  /* Unused. Silent compiler warning. */
 
-#if 0
+#if MHD_DEBUG_PP
   fprintf (stderr,
            "VC: `%s' `%s' `%s' `%s' `%.*s' (%d)\n",
            key, filename, content_type, transfer_encoding,
@@ -189,14 +193,27 @@ test_urlencoding_case (unsigned int want_start,
                                   1024,
                                   &value_checker,
                                   &want_off);
+  if (NULL == pp)
+  {
+    fprintf (stderr, "Failed to create post processor.\n"
+             "Line: %u\n", (unsigned int) __LINE__);
+    exit (50);
+  }
   i = 0;
   size = strlen (url_data);
   while (i < size)
   {
     delta = 1 + MHD_random_ () % (size - i);
-    MHD_post_process (pp,
-                      &url_data[i],
-                      delta);
+    if (MHD_YES != MHD_post_process (pp,
+                                     &url_data[i],
+                                     delta))
+    {
+      fprintf (stderr, "Failed to process the data.\n"
+               "i: %u. delta: %u.\n"
+               "Line: %u\n", (unsigned) i, (unsigned) delta,
+               (unsigned int) __LINE__);
+      exit (49);
+    }
     i += delta;
   }
   MHD_destroy_post_processor (pp);
@@ -243,9 +260,9 @@ test_multipart_garbage (void)
   struct MHD_HTTP_Header header;
   struct MHD_PostProcessor *pp;
   unsigned int want_off;
-  size_t size = strlen (FORM_DATA);
+  size_t size = MHD_STATICSTR_LEN_ (FORM_DATA);
   size_t splitpoint;
-  char xdata[size + 3];
+  char xdata[MHD_STATICSTR_LEN_ (FORM_DATA) + 3];
 
   /* fill in evil garbage at the beginning */
   xdata[0] = '-';
@@ -268,8 +285,28 @@ test_multipart_garbage (void)
     header.kind = MHD_HEADER_KIND;
     pp = MHD_create_post_processor (&connection,
                                     1024, &value_checker, &want_off);
-    MHD_post_process (pp, xdata, splitpoint);
-    MHD_post_process (pp, &xdata[splitpoint], size - splitpoint);
+    if (NULL == pp)
+    {
+      fprintf (stderr, "Failed to create post processor.\n"
+               "Line: %u\n", (unsigned int) __LINE__);
+      exit (50);
+    }
+    if (MHD_YES != MHD_post_process (pp, xdata, splitpoint))
+    {
+      fprintf (stderr,
+               "Test failed in line %u at point %d\n",
+               (unsigned int) __LINE__,
+               (int) splitpoint);
+      exit (49);
+    }
+    if (MHD_YES != MHD_post_process (pp, &xdata[splitpoint], size - splitpoint))
+    {
+      fprintf (stderr,
+               "Test failed in line %u at point %d\n",
+               (unsigned int) __LINE__,
+               (int) splitpoint);
+      exit (49);
+    }
     MHD_destroy_post_processor (pp);
     if (want_off != FORM_END)
     {
@@ -309,8 +346,29 @@ test_multipart_splits (void)
     header.kind = MHD_HEADER_KIND;
     pp = MHD_create_post_processor (&connection,
                                     1024, &value_checker, &want_off);
-    MHD_post_process (pp, FORM_DATA, splitpoint);
-    MHD_post_process (pp, &FORM_DATA[splitpoint], size - splitpoint);
+    if (NULL == pp)
+    {
+      fprintf (stderr, "Failed to create post processor.\n"
+               "Line: %u\n", (unsigned int) __LINE__);
+      exit (50);
+    }
+    if (MHD_YES != MHD_post_process (pp, FORM_DATA, splitpoint))
+    {
+      fprintf (stderr,
+               "Test failed in line %u at point %d\n",
+               (unsigned int) __LINE__,
+               (int) splitpoint);
+      exit (49);
+    }
+    if (MHD_YES != MHD_post_process (pp, &FORM_DATA[splitpoint],
+                                     size - splitpoint))
+    {
+      fprintf (stderr,
+               "Test failed in line %u at point %d\n",
+               (unsigned int) __LINE__,
+               (int) splitpoint);
+      exit (49);
+    }
     MHD_destroy_post_processor (pp);
     if (want_off != FORM_END)
     {
@@ -347,12 +405,27 @@ test_multipart (void)
   header.value_size = strlen (header.value);
   pp = MHD_create_post_processor (&connection,
                                   1024, &value_checker, &want_off);
+  if (NULL == pp)
+  {
+    fprintf (stderr, "Failed to create post processor.\n"
+             "Line: %u\n", (unsigned int) __LINE__);
+    exit (50);
+  }
   i = 0;
   size = strlen (FORM_DATA);
   while (i < size)
   {
     delta = 1 + MHD_random_ () % (size - i);
-    MHD_post_process (pp, &FORM_DATA[i], delta);
+    if (MHD_YES != MHD_post_process (pp,
+                                     &FORM_DATA[i],
+                                     delta))
+    {
+      fprintf (stderr, "Failed to process the data.\n"
+               "i: %u. delta: %u.\n"
+               "Line: %u\n", (unsigned) i, (unsigned) delta,
+               (unsigned int) __LINE__);
+      exit (49);
+    }
     i += delta;
   }
   MHD_destroy_post_processor (pp);
@@ -389,12 +462,27 @@ test_nested_multipart (void)
   header.value_size = strlen (header.value);
   pp = MHD_create_post_processor (&connection,
                                   1024, &value_checker, &want_off);
+  if (NULL == pp)
+  {
+    fprintf (stderr, "Failed to create post processor.\n"
+             "Line: %u\n", (unsigned int) __LINE__);
+    exit (50);
+  }
   i = 0;
   size = strlen (FORM_NESTED_DATA);
   while (i < size)
   {
     delta = 1 + MHD_random_ () % (size - i);
-    MHD_post_process (pp, &FORM_NESTED_DATA[i], delta);
+    if (MHD_YES != MHD_post_process (pp,
+                                     &FORM_NESTED_DATA[i],
+                                     delta))
+    {
+      fprintf (stderr, "Failed to process the data.\n"
+               "i: %u. delta: %u.\n"
+               "Line: %u\n", (unsigned) i, (unsigned) delta,
+               (unsigned int) __LINE__);
+      exit (49);
+    }
     i += delta;
   }
   MHD_destroy_post_processor (pp);
@@ -430,12 +518,27 @@ test_empty_value (void)
   header.kind = MHD_HEADER_KIND;
   pp = MHD_create_post_processor (&connection,
                                   1024, &value_checker, &want_off);
+  if (NULL == pp)
+  {
+    fprintf (stderr, "Failed to create post processor.\n"
+             "Line: %u\n", (unsigned int) __LINE__);
+    exit (50);
+  }
   i = 0;
   size = strlen (URL_EMPTY_VALUE_DATA);
   while (i < size)
   {
     delta = 1 + MHD_random_ () % (size - i);
-    MHD_post_process (pp, &URL_EMPTY_VALUE_DATA[i], delta);
+    if (MHD_YES != MHD_post_process (pp,
+                                     &URL_EMPTY_VALUE_DATA[i],
+                                     delta))
+    {
+      fprintf (stderr, "Failed to process the data.\n"
+               "i: %u. delta: %u.\n"
+               "Line: %u\n", (unsigned) i, (unsigned) delta,
+               (unsigned int) __LINE__);
+      exit (49);
+    }
     i += delta;
   }
   MHD_destroy_post_processor (pp);
@@ -494,6 +597,12 @@ test_overflow ()
                                     1024,
                                     &value_checker2,
                                     NULL);
+    if (NULL == pp)
+    {
+      fprintf (stderr, "Failed to create post processor.\n"
+               "Line: %u\n", (unsigned int) __LINE__);
+      exit (50);
+    }
     buf = malloc (i);
     if (NULL == buf)
       return 1;
