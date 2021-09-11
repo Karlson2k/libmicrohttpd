@@ -131,6 +131,8 @@ value_checker (void *cls,
            data ? data : "(NULL)",
            (int) size);
 #endif
+  if (*idxp == (unsigned int) -1)
+    exit (99);
   if ( (0 != off) && (0 == size) )
   {
     if (NULL == expct->data)
