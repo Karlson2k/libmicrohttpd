@@ -114,9 +114,12 @@ value_checker (void *cls,
 #if MHD_DEBUG_PP
   fprintf (stderr,
            "VC: `%s' `%s' `%s' `%s' `%.*s' (%d)\n",
-           key, filename, content_type, transfer_encoding,
-           (int) size,
-           data,
+           key ? key : "(NULL)",
+           filename ? filename : "(NULL)",
+           content_type ? content_type : "(NULL)",
+           transfer_encoding ? transfer_encoding : "(NULL)",
+           (int) (data ? size : 6),
+           data ? data : "(NULL)",
            (int) size);
 #endif
   if ( (0 != off) && (0 == size) )
@@ -138,16 +141,19 @@ value_checker (void *cls,
     *want_off = -1;
     fprintf (stderr,
              "Failed with: `%s' `%s' `%s' `%s' `%.*s'\n",
-             key, filename, content_type, transfer_encoding,
-             (int) size,
-             data);
+             key ? key : "(NULL)",
+             filename ? filename : "(NULL)",
+             content_type ? content_type : "(NULL)",
+             transfer_encoding ? transfer_encoding : "(NULL)",
+             (int) (data ? size : 6),
+             data ? data : "(NULL)");
     fprintf (stderr,
              "Wanted: `%s' `%s' `%s' `%s' `%s'\n",
-             want[idx],
-             want[idx + 1],
-             want[idx + 2],
-             want[idx + 3],
-             want[idx + 4]);
+             want[idx] ? want[idx] : "(NULL)",
+             want[idx + 1] ? want[idx + 1] : "(NULL)",
+             want[idx + 2] ? want[idx + 2] : "(NULL)",
+             want[idx + 3] ? want[idx + 3] : "(NULL)",
+             want[idx + 4] ? want[idx + 4] : "(NULL)");
     fprintf (stderr,
              "Unexpected result: %d/%d/%d/%d/%d/%d/%d\n",
              (idx < 0),
