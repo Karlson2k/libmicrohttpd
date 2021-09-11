@@ -38,50 +38,59 @@
 #define MHD_DEBUG_PP 0
 #endif /* MHD_DEBUG_PP */
 
+struct expResult
+{
+  const char *key;
+  const char *fname;
+  const char *cnt_type;
+  const char *tr_enc;
+  const char *data;
+};
+
 /**
  * Array of values that the value checker "wants".
  * Each series of checks should be terminated by
  * five NULL-entries.
  */
-const char *want[] = {
+struct expResult exp_results[] = {
 #define URL_NOVALUE1_DATA "abc&x=5"
 #define URL_NOVALUE1_START 0
-  "abc", NULL, NULL, NULL, NULL,
-  "x", NULL, NULL, NULL, "5",
-#define URL_NOVALUE1_END (URL_NOVALUE1_START + 10)
+  {"abc", NULL, NULL, NULL, NULL},
+  {"x", NULL, NULL, NULL, "5"},
+#define URL_NOVALUE1_END (URL_NOVALUE1_START + 2)
 #define URL_NOVALUE2_DATA "abc=&x=5"
 #define URL_NOVALUE2_START URL_NOVALUE1_END
-  "abc", NULL, NULL, NULL, "",
-  "x", NULL, NULL, NULL, "5",
-#define URL_NOVALUE2_END (URL_NOVALUE2_START + 10)
+  {"abc", NULL, NULL, NULL, ""},
+  {"x", NULL, NULL, NULL, "5"},
+#define URL_NOVALUE2_END (URL_NOVALUE2_START + 2)
 #define URL_DATA "abc=def&x=5"
 #define URL_START URL_NOVALUE2_END
-  "abc", NULL, NULL, NULL, "def",
-  "x", NULL, NULL, NULL, "5",
-#define URL_END (URL_START + 10)
-  NULL, NULL, NULL, NULL, NULL,
+  {"abc", NULL, NULL, NULL, "def"},
+  {"x", NULL, NULL, NULL, "5"},
+#define URL_END (URL_START + 2)
+  {NULL, NULL, NULL, NULL, NULL},
 #define FORM_DATA \
   "--AaB03x\r\ncontent-disposition: form-data; name=\"field1\"\r\n\r\nJoe Blow\r\n--AaB03x\r\ncontent-disposition: form-data; name=\"pics\"; filename=\"file1.txt\"\r\nContent-Type: text/plain\r\nContent-Transfer-Encoding: binary\r\n\r\nfiledata\r\n--AaB03x--\r\n"
-#define FORM_START (URL_END + 5)
-  "field1", NULL, NULL, NULL, "Joe Blow",
-  "pics", "file1.txt", "text/plain", "binary", "filedata",
-#define FORM_END (FORM_START + 10)
-  NULL, NULL, NULL, NULL, NULL,
+#define FORM_START (URL_END + 1)
+  {"field1", NULL, NULL, NULL, "Joe Blow"},
+  {"pics", "file1.txt", "text/plain", "binary", "filedata"},
+#define FORM_END (FORM_START + 2)
+  {NULL, NULL, NULL, NULL, NULL},
 #define FORM_NESTED_DATA \
   "--AaB03x\r\ncontent-disposition: form-data; name=\"field1\"\r\n\r\nJane Blow\r\n--AaB03x\r\ncontent-disposition: form-data; name=\"pics\"\r\nContent-type: multipart/mixed, boundary=BbC04y\r\n\r\n--BbC04y\r\nContent-disposition: attachment; filename=\"file1.txt\"\r\nContent-Type: text/plain\r\n\r\nfiledata1\r\n--BbC04y\r\nContent-disposition: attachment; filename=\"file2.gif\"\r\nContent-type: image/gif\r\nContent-Transfer-Encoding: binary\r\n\r\nfiledata2\r\n--BbC04y--\r\n--AaB03x--"
-#define FORM_NESTED_START (FORM_END + 5)
-  "field1", NULL, NULL, NULL, "Jane Blow",
-  "pics", "file1.txt", "text/plain", NULL, "filedata1",
-  "pics", "file2.gif", "image/gif", "binary", "filedata2",
-#define FORM_NESTED_END (FORM_NESTED_START + 15)
-  NULL, NULL, NULL, NULL, NULL,
+#define FORM_NESTED_START (FORM_END + 1)
+  {"field1", NULL, NULL, NULL, "Jane Blow"},
+  {"pics", "file1.txt", "text/plain", NULL, "filedata1"},
+  {"pics", "file2.gif", "image/gif", "binary", "filedata2"},
+#define FORM_NESTED_END (FORM_NESTED_START + 3)
+  {NULL, NULL, NULL, NULL, NULL},
 #define URL_EMPTY_VALUE_DATA "key1=value1&key2=&key3="
-#define URL_EMPTY_VALUE_START (FORM_NESTED_END + 5)
-  "key1", NULL, NULL, NULL, "value1",
-  "key2", NULL, NULL, NULL, "",
-  "key3", NULL, NULL, NULL, "",
-#define URL_EMPTY_VALUE_END (URL_EMPTY_VALUE_START + 15)
-  NULL, NULL, NULL, NULL, NULL
+#define URL_EMPTY_VALUE_START (FORM_NESTED_END + 1)
+  {"key1", NULL, NULL, NULL, "value1"},
+  {"key2", NULL, NULL, NULL, ""},
+  {"key3", NULL, NULL, NULL, ""},
+#define URL_EMPTY_VALUE_END (URL_EMPTY_VALUE_START + 3)
+  {NULL, NULL, NULL, NULL, NULL}
 };
 
 
@@ -107,8 +116,8 @@ value_checker (void *cls,
                uint64_t off,
                size_t size)
 {
-  int *want_off = cls;
-  int idx = *want_off;
+  unsigned int *idxp = cls;
+  struct expResult *expct = exp_results + *idxp;
   (void) kind;  /* Unused. Silent compiler warning. */
 
 #if MHD_DEBUG_PP
@@ -124,21 +133,20 @@ value_checker (void *cls,
 #endif
   if ( (0 != off) && (0 == size) )
   {
-    if (NULL == want[idx + 4])
-      *want_off = idx + 5;
+    if (NULL == expct->data)
+      *idxp += 1;
     return MHD_YES;
   }
-  if ((idx < 0) ||
-      (want[idx] == NULL) ||
-      (0 != strcmp (key, want[idx])) ||
-      (mismatch (filename, want[idx + 1])) ||
-      (mismatch (content_type, want[idx + 2])) ||
-      (mismatch (transfer_encoding, want[idx + 3])) ||
+  if ((expct->key == NULL) ||
+      (0 != strcmp (key, expct->key)) ||
+      (mismatch (filename, expct->fname)) ||
+      (mismatch (content_type, expct->cnt_type)) ||
+      (mismatch (transfer_encoding, expct->tr_enc)) ||
       (0 != memcmp (data,
-                    &want[idx + 4][off],
+                    &expct->data[off],
                     size)))
   {
-    *want_off = -1;
+    *idxp = (unsigned int) -1;
     fprintf (stderr,
              "Failed with: `%s' `%s' `%s' `%s' `%.*s'\n",
              key ? key : "(NULL)",
@@ -149,26 +157,25 @@ value_checker (void *cls,
              data ? data : "(NULL)");
     fprintf (stderr,
              "Wanted: `%s' `%s' `%s' `%s' `%s'\n",
-             want[idx] ? want[idx] : "(NULL)",
-             want[idx + 1] ? want[idx + 1] : "(NULL)",
-             want[idx + 2] ? want[idx + 2] : "(NULL)",
-             want[idx + 3] ? want[idx + 3] : "(NULL)",
-             want[idx + 4] ? want[idx + 4] : "(NULL)");
+             expct->key ? expct->key : "(NULL)",
+             expct->fname ? expct->fname : "(NULL)",
+             expct->cnt_type ? expct->cnt_type : "(NULL)",
+             expct->tr_enc ? expct->tr_enc : "(NULL)",
+             expct->data ? expct->data : "(NULL)");
     fprintf (stderr,
-             "Unexpected result: %d/%d/%d/%d/%d/%d/%d\n",
-             (idx < 0),
-             (want[idx] == NULL),
-             (NULL != want[idx]) && (0 != strcmp (key, want[idx])),
-             (mismatch (filename, want[idx + 1])),
-             (mismatch (content_type, want[idx + 2])),
-             (mismatch (transfer_encoding, want[idx + 3])),
-             (0 != memcmp (data, &want[idx + 4][off], size)));
+             "Unexpected result: %d/%d/%d/%d/%d/%d\n",
+             (expct->key == NULL),
+             (NULL != expct->key) && (0 != strcmp (key, expct->key)),
+             (mismatch (filename, expct->fname)),
+             (mismatch (content_type, expct->cnt_type)),
+             (mismatch (transfer_encoding, expct->tr_enc)),
+             (0 != memcmp (data, &expct->data[off], size)));
     return MHD_NO;
   }
-  if ( ( (NULL == want[idx + 4]) &&
+  if ( ( (NULL == expct->data) &&
          (0 == off + size) ) ||
-       (off + size == strlen (want[idx + 4])) )
-    *want_off = idx + 5;
+       (off + size == strlen (expct->data)) )
+    *idxp += 1;
   return MHD_YES;
 }
 
