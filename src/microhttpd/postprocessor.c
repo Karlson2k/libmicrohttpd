@@ -355,6 +355,10 @@ process_value (struct MHD_PostProcessor *pp,
   size_t xoff;
 
   mhd_assert (pp->xbuf_pos < sizeof (xbuf));
+  /* 'value_start' and 'value_end' must be either both non-NULL or both NULL */
+  mhd_assert ( (NULL == value_start) || (NULL != value_end) );
+  mhd_assert ( (NULL != value_start) || (NULL == value_end) );
+  mhd_assert ( (NULL == last_escape) || (NULL != value_start) );
   /* move remaining input from previous round into processing buffer */
   memcpy (xbuf,
           pp->xbuf,
