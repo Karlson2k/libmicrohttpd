@@ -185,7 +185,8 @@ value_checker (void *cls,
   }
   if ( ( (NULL == expct->data) &&
          (0 == off + size) ) ||
-       (off + size == strlen (expct->data)) )
+       ( (NULL != expct->data) &&
+         (off + size == strlen (expct->data)) ) )
     *idxp += 1;
   return MHD_YES;
 }
