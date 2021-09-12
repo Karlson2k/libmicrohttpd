@@ -360,9 +360,10 @@ process_value (struct MHD_PostProcessor *pp,
   mhd_assert ( (NULL != value_start) || (NULL == value_end) );
   mhd_assert ( (NULL == last_escape) || (NULL != value_start) );
   /* move remaining input from previous round into processing buffer */
-  memcpy (xbuf,
-          pp->xbuf,
-          pp->xbuf_pos);
+  if (0 != pp->xbuf_pos)
+    memcpy (xbuf,
+            pp->xbuf,
+            pp->xbuf_pos);
   xoff = pp->xbuf_pos;
   pp->xbuf_pos = 0;
   if ( (NULL != last_escape) &&
@@ -460,10 +461,13 @@ process_value (struct MHD_PostProcessor *pp,
     pp->value_offset += xoff;
     if (cut)
       break;
-    xbuf[delta] = '%';        /* undo 0-termination */
-    memmove (xbuf,
-             &xbuf[delta],
-             clen);
+    if (0 != clen)
+    {
+      xbuf[delta] = '%';        /* undo 0-termination */
+      memmove (xbuf,
+               &xbuf[delta],
+               clen);
+    }
     xoff = clen;
   }
 }
