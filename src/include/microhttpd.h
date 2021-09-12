@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097312
+#define MHD_VERSION 0x00097313
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
@@ -2448,7 +2448,7 @@ typedef void
  * @param content_type mime-type of the data, NULL if not known
  * @param transfer_encoding encoding of the data, NULL if not known
  * @param data pointer to @a size bytes of data at the
- *              specified offset
+ *              specified offset, NULL if no value is present
  * @param off offset of data in the overall value
  * @param size number of bytes in @a data available
  * @return #MHD_YES to continue iterating,
