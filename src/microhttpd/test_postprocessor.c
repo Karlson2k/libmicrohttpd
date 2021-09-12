@@ -105,6 +105,17 @@ mismatch (const char *a, const char *b)
 }
 
 
+static int
+mismatch2 (const char *data, const char *expected, size_t offset, size_t size)
+{
+  if (data == expected)
+    return 0;
+  if ((data == NULL) || (expected == NULL))
+    return 1;
+  return 0 != memcmp (data, expected + offset, size);
+}
+
+
 static enum MHD_Result
 value_checker (void *cls,
                enum MHD_ValueKind kind,
@@ -144,9 +155,7 @@ value_checker (void *cls,
       (mismatch (filename, expct->fname)) ||
       (mismatch (content_type, expct->cnt_type)) ||
       (mismatch (transfer_encoding, expct->tr_enc)) ||
-      (0 != memcmp (data,
-                    &expct->data[off],
-                    size)))
+      (mismatch2 (data, expct->data, off, size)))
   {
     *idxp = (unsigned int) -1;
     fprintf (stderr,
@@ -171,7 +180,7 @@ value_checker (void *cls,
              (mismatch (filename, expct->fname)),
              (mismatch (content_type, expct->cnt_type)),
              (mismatch (transfer_encoding, expct->tr_enc)),
-             (0 != memcmp (data, &expct->data[off], size)));
+             (mismatch2 (data, expct->data, off, size)));
     return MHD_NO;
   }
   if ( ( (NULL == expct->data) &&
