@@ -438,8 +438,11 @@ process_value (struct MHD_PostProcessor *pp,
     mhd_assert (xoff < sizeof (xbuf));
     /* unescape */
     xbuf[xoff] = '\0';        /* 0-terminate in preparation */
-    MHD_unescape_plus (xbuf);
-    xoff = MHD_http_unescape (xbuf);
+    if (0 != xoff)
+    {
+      MHD_unescape_plus (xbuf);
+      xoff = MHD_http_unescape (xbuf);
+    }
     /* finally: call application! */
     if (pp->must_ikvi || (0 != xoff) )
     {
