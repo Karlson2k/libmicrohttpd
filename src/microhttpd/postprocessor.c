@@ -385,11 +385,14 @@ process_value (struct MHD_PostProcessor *pp,
     if (delta > XBUF_SIZE - xoff)
       delta = XBUF_SIZE - xoff;
     /* move (additional) input into processing buffer */
-    memcpy (&xbuf[xoff],
-            value_start,
-            delta);
-    xoff += delta;
-    value_start += delta;
+    if (0 != delta)
+    {
+      memcpy (&xbuf[xoff],
+              value_start,
+              delta);
+      xoff += delta;
+      value_start += delta;
+    }
     /* find if escape sequence is at the end of the processing buffer;
        if so, exclude those from processing (reduce delta to point at
        end of processed region) */
