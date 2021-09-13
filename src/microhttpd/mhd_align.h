@@ -76,7 +76,7 @@ struct _mhd_dummy_uint32_offset_test
 struct _mhd_dummy_uint64_offset_test
 {
   char dummy;
-  uint32_t ui64;
+  uint64_t ui64;
 };
 #define _MHD_UINT64_ALIGN \
   _MHD_OFFSETOF(struct _mhd_dummy_uint64_offset_test, ui64)
