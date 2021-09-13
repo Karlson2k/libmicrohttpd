@@ -33,23 +33,35 @@
 #endif
 
 #ifdef HAVE_C_ALIGNOF
-
 #ifdef HAVE_STDALIGN_H
 #include <stdalign.h>
-#endif
-
+#endif /* HAVE_STDALIGN_H */
 #define _MHD_ALIGNOF(type) alignof(type)
-
 #endif /* HAVE_C_ALIGNOF */
 
 #ifndef _MHD_ALIGNOF
-#if defined(_MSC_VER) && ! defined(__clang__) && _MSC_VER >= 1900
-/* MSVC has the same problem as older GCC versions:
-   '__alignof()' may return "preferred" alignment instead of "required",
-   but it is related to floating point variables only. */
+#if defined(_MSC_VER) && ! defined(__clang__) && _MSC_VER >= 1700
 #define _MHD_ALIGNOF(type) __alignof(type)
 #endif /* _MSC_VER >= 1900 */
 #endif /* !_MHD_ALIGNOF */
+
+#ifdef _MHD_ALIGNOF
+#if (defined (__GNUC__) && __GNUC__ < 4 && __GNUC_MINOR__ < 9 && \
+  ! defined(__clang__)) || \
+  (defined (__clang__) && __clang_major__ < 8) || \
+  (defined (__clang__) && __clang_major__ < 11 && \
+  defined(__apple_build_version__))
+/* GCC before 4.9 and clang before 8.0 have incorrect implementation of 'alignof()'
+   which returns preferred alignment instead of minimal required alignment */
+#define _MHD_ALIGNOF_UNRELIABLE 1
+#endif
+
+#if defined(_MSC_VER) && ! defined(__clang__) && _MSC_VER < 1900
+/* MSVC has the same problem as old GCC versions:
+   '__alignof()' may return "preferred" alignment instead of "required". */
+#define _MHD_ALIGNOF_UNRELIABLE 1
+#endif /* _MSC_VER < 1900 */
+#endif /* _MHD_ALIGNOF */
 
 
 #ifdef offsetof
@@ -61,7 +73,7 @@
 
 /* Provide a limited set of alignment macros */
 /* The set could be extended as needed */
-#ifdef _MHD_ALIGNOF
+#if defined(_MHD_ALIGNOF) && ! defined(_MHD_ALIGNOF_UNRELIABLE)
 #define _MHD_UINT32_ALIGN _MHD_ALIGNOF(uint32_t)
 #define _MHD_UINT64_ALIGN _MHD_ALIGNOF(uint64_t)
 #else  /* ! _MHD_ALIGNOF */

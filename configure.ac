@@ -308,13 +308,6 @@ AC_CACHE_CHECK([[for C11 'alignof()' support]], [[mhd_cv_c_alignof]],
 #include <stdalign.h>
 #endif
         ]], [[
-#if (defined (__GNUC__) && __GNUC__ < 4 && __GNUC_MINOR__ < 9 && ! defined(__clang__)) || \
-    (defined (__clang__) && __clang_major__ < 8)
-/* GCC before 4.9 and clang before 8.0 have incorrect implementation of 'alignof()'
-   which returns preferred alignment instead of minimal required alignment */
-#error Compiler has incorrect implementation of alignof()
-choke me now
-#endif
           int var1[(alignof(int) >= 2) ? 1 : -1];
           int var2[alignof(unsigned int) - 1];
           int var3[(alignof(char) > 0) ? 1 : -1];
