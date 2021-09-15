@@ -209,6 +209,7 @@ test_urlencoding_case (unsigned int want_start,
                        const char *url_data)
 {
   size_t step;
+  int errors = 0;
   const size_t size = strlen (url_data);
 
   for (step = 1; size >= step; ++step)
@@ -256,15 +257,17 @@ test_urlencoding_case (unsigned int want_start,
     if (want_off != want_end)
     {
       fprintf (stderr,
-               "Test failed in line %u.\tStep:%u\n Got: %u\tExpected: %u\n",
+               "Test failed in line %u.\tStep: %u.\tData: \"%s\"\n" \
+               " Got: %u\tExpected: %u\n",
                (unsigned int) __LINE__,
                (unsigned int) step,
+               url_data,
                want_off,
                want_end);
-      return 1;
+      errors++;
     }
   }
-  return 0;
+  return errors;
 }
 
 
