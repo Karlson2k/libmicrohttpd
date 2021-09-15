@@ -646,25 +646,27 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       break;
     case PP_Callback:
       mhd_assert ((NULL != end_key) || (NULL == start_key));
-      if ( (pp->buffer_pos + (end_key - start_key) >=
-            pp->buffer_size) ||
-           (pp->buffer_pos + (end_key - start_key) <
-            pp->buffer_pos) )
+      if (1)
       {
-        /* key too long, cannot parse! */
-        pp->state = PP_Error;
-        continue;
-      }
-      /* compute key, if we have not already */
-      if (NULL != start_key)
-      {
-        memcpy (&kbuf[pp->buffer_pos],
-                start_key,
-                end_key - start_key);
-        pp->buffer_pos += end_key - start_key;
-        start_key = NULL;
-        end_key = NULL;
-        pp->must_unescape_key = true;
+        const size_t key_len = end_key - start_key;
+        if (0 != key_len)
+        {
+          if ( (pp->buffer_pos + key_len >= pp->buffer_size) ||
+               (pp->buffer_pos + key_len < pp->buffer_pos) )
+          {
+            /* key too long, cannot parse! */
+            pp->state = PP_Error;
+            continue;
+          }
+          /* compute key, if we have not already */
+          memcpy (&kbuf[pp->buffer_pos],
+                  start_key,
+                  key_len);
+          pp->buffer_pos += key_len;
+          start_key = NULL;
+          end_key = NULL;
+          pp->must_unescape_key = true;
+        }
       }
       if (pp->must_unescape_key)
       {
@@ -706,18 +708,21 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
   /* save remaining data for next iteration */
   if (NULL != start_key)
   {
+    size_t key_len;
     mhd_assert ((PP_Init == pp->state) || (NULL != end_key));
     if (NULL == end_key)
       end_key = &post_data[poff];
-    if (pp->buffer_pos + (end_key - start_key) >= pp->buffer_size)
+    key_len = end_key - start_key;
+    mhd_assert (0 != key_len); /* it must be always non-zero here */
+    if (pp->buffer_pos + key_len >= pp->buffer_size)
     {
       pp->state = PP_Error;
       return MHD_NO;
     }
     memcpy (&kbuf[pp->buffer_pos],
             start_key,
-            end_key - start_key);
-    pp->buffer_pos += end_key - start_key;
+            key_len);
+    pp->buffer_pos += key_len;
     pp->must_unescape_key = true;
     start_key = NULL;
     end_key = NULL;
