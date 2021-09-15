@@ -665,6 +665,12 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
     }
   }
 
+  if (PP_Error == pp->state)
+  {
+    /* State in error, returning failure */
+    return MHD_NO;
+  }
+
   /* save remaining data for next iteration */
   if (NULL != start_key)
   {
