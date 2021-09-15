@@ -65,8 +65,16 @@ struct expResult exp_results[] = {
   {"abc", NULL, NULL, NULL, ""},
   {"x", NULL, NULL, NULL, "5"},
 #define URL_NOVALUE2_END (URL_NOVALUE2_START + 2)
+#define URL_NOVALUE3_DATA "xyz="
+#define URL_NOVALUE3_START URL_NOVALUE2_END
+  {"xyz", NULL, NULL, NULL, ""},
+#define URL_NOVALUE3_END (URL_NOVALUE3_START + 1)
+#define URL_NOVALUE4_DATA "xyz"
+#define URL_NOVALUE4_START URL_NOVALUE3_END
+  {"xyz", NULL, NULL, NULL, NULL},
+#define URL_NOVALUE4_END (URL_NOVALUE4_START + 1)
 #define URL_DATA "abc=def&x=5"
-#define URL_START URL_NOVALUE2_END
+#define URL_START URL_NOVALUE4_END
   {"abc", NULL, NULL, NULL, "def"},
   {"x", NULL, NULL, NULL, "5"},
 #define URL_END (URL_START + 2)
@@ -272,6 +280,12 @@ test_urlencoding (void)
   errorCount += test_urlencoding_case (URL_NOVALUE2_START,
                                        URL_NOVALUE2_END,
                                        URL_NOVALUE2_DATA);
+  errorCount += test_urlencoding_case (URL_NOVALUE3_START,
+                                       URL_NOVALUE3_END,
+                                       URL_NOVALUE3_DATA);
+  errorCount += test_urlencoding_case (URL_NOVALUE4_START,
+                                       URL_NOVALUE4_START, /* No advance */
+                                       URL_NOVALUE4_DATA);
   errorCount += test_urlencoding_case (URL_EMPTY_VALUE_START,
                                        URL_EMPTY_VALUE_END,
                                        URL_EMPTY_VALUE_DATA);
