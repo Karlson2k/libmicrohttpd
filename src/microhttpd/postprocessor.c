@@ -618,6 +618,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       pp->state = PP_Error;
       break;
     case PP_Callback:
+      mhd_assert ((NULL != end_key) || (NULL == start_key));
       if ( (pp->buffer_pos + (end_key - start_key) >=
             pp->buffer_size) ||
            (pp->buffer_pos + (end_key - start_key) <
@@ -674,6 +675,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
   /* save remaining data for next iteration */
   if (NULL != start_key)
   {
+    mhd_assert ((PP_Init == pp->state) || (NULL != end_key));
     if (NULL == end_key)
       end_key = &post_data[poff];
     if (pp->buffer_pos + (end_key - start_key) >= pp->buffer_size)
