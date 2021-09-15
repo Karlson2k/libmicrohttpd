@@ -255,8 +255,9 @@ test_urlencoding_case (unsigned int want_start,
     if (want_off != want_end)
     {
       fprintf (stderr,
-               "Test failed in line %u: %u != %u\n",
+               "Test failed in line %u.\tStep:%u\n Got: %u\tExpected: %u\n",
                (unsigned int) __LINE__,
+               (unsigned int) step,
                want_off,
                want_end);
       return 1;
