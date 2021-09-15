@@ -680,7 +680,7 @@ test_empty_key (void)
       MHD_STATICSTR_LEN_ (MHD_HTTP_POST_ENCODING_FORM_URLENCODED);
     header.kind = MHD_HEADER_KIND;
     pp = MHD_create_post_processor (&connection,
-                                    1024, &value_checker, NULL);
+                                    1024, &value_checker2, NULL);
     if (NULL == pp)
     {
       fprintf (stderr, "Failed to create post processor.\n"
