@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007-2021 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2007-2021 Daniel Pittman, Christian Grothoff, and Evgeny Grin
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,7 @@
  * @file postprocessor.c
  * @brief  Methods for parsing POST data
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "internal.h"
@@ -513,46 +514,60 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       break;
     case PP_Init:
       /* key phase */
-      if (NULL == start_key)
-        start_key = &post_data[poff];
-      pp->must_ikvi = true;
       switch (post_data[poff])
       {
       case '=':
         /* Case: 'key=' */
-        end_key = &post_data[poff];
-        if ((start_key == end_key) && (0 == pp->buffer_pos))
+        if (NULL == start_key)
         {
-          /* Empty key with value */
-          pp->state = PP_Error;
-          continue;
+          if (0 == pp->buffer_pos)
+          {
+            /* Empty key with value */
+            pp->state = PP_Error;
+            continue;
+          }
         }
+        else
+          end_key = &post_data[poff];
         poff++;
         pp->state = PP_ProcessValue;
         break;
       case '&':
         /* Case: 'key&' */
-        end_key = &post_data[poff];
         mhd_assert (NULL == start_value);
         mhd_assert (NULL == end_value);
-        poff++;
-        if ((start_key == end_key) && (0 == pp->buffer_pos))
+        if (NULL == start_key)
         {
-          /* Empty key without value */
-          start_key = NULL;
-          continue;
+          if (0 == pp->buffer_pos)
+          {
+            /* Empty key without value */
+            poff++;
+            continue;
+          }
         }
+        else
+          end_key = &post_data[poff];
+        poff++;
         pp->state = PP_Callback;
         break;
       case '\n':
       case '\r':
         /* Case: 'key\n' or 'key\r' */
-        end_key = &post_data[poff];
+        if (NULL != start_key)
+          end_key = &post_data[poff];
         poff++;
-        pp->state = PP_Done;
+        if (pp->must_ikvi)
+          pp->state = PP_Callback;
+        else
+          pp->state = PP_Done;
         break;
       default:
         /* normal character, advance! */
+        if (NULL == start_key)
+        {
+          start_key = &post_data[poff];
+          pp->must_ikvi = true;
+        }
         poff++;
         continue;
       }
@@ -676,7 +691,11 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
                  __LINE__,
                  NULL);              /* should never happen! */
     }
+    mhd_assert ((end_key == NULL) || (start_key != NULL));
+    mhd_assert ((end_value == NULL) || (start_value != NULL));
   }
+
+  mhd_assert (PP_Callback != pp->state);
 
   if (PP_Error == pp->state)
   {
