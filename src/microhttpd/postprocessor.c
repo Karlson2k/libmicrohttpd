@@ -521,6 +521,12 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       case '=':
         /* Case: 'key=' */
         end_key = &post_data[poff];
+        if ((start_key == end_key) && (0 == pp->buffer_pos))
+        {
+          /* Empty key with value */
+          pp->state = PP_Error;
+          continue;
+        }
         poff++;
         pp->state = PP_ProcessValue;
         break;
@@ -530,6 +536,12 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
         mhd_assert (NULL == start_value);
         mhd_assert (NULL == end_value);
         poff++;
+        if ((start_key == end_key) && (0 == pp->buffer_pos))
+        {
+          /* Empty key without value */
+          start_key = NULL;
+          continue;
+        }
         pp->state = PP_Callback;
         break;
       case '\n':
