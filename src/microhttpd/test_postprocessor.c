@@ -143,11 +143,12 @@ value_checker (void *cls,
 
 #if MHD_DEBUG_PP
   fprintf (stderr,
-           "VC: `%s' `%s' `%s' `%s' `%.*s' (%d)\n",
+           "VC: `%s' `%s' `%s' `%s' (+%u)`%.*s' (%d)\n",
            key ? key : "(NULL)",
            filename ? filename : "(NULL)",
            content_type ? content_type : "(NULL)",
            transfer_encoding ? transfer_encoding : "(NULL)",
+           (unsigned int) off,
            (int) (data ? size : 6),
            data ? data : "(NULL)",
            (int) size);
