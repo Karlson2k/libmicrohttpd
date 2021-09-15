@@ -653,6 +653,57 @@ test_overflow ()
 }
 
 
+static int
+test_empty_key (void)
+{
+  const char form_data[] = "=abcdef";
+  size_t step;
+  const size_t size = MHD_STATICSTR_LEN_ (form_data);
+
+  for (step = 1; size >= step; ++step)
+  {
+    size_t i;
+    struct MHD_Connection connection;
+    struct MHD_HTTP_Header header;
+    struct MHD_PostProcessor *pp;
+    memset (&connection, 0, sizeof (struct MHD_Connection));
+    memset (&header, 0, sizeof (struct MHD_HTTP_Header));
+
+    connection.headers_received = &header;
+    connection.headers_received_tail = &header;
+    header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
+    header.header_size = MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_TYPE);
+    header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
+    header.value_size =
+      MHD_STATICSTR_LEN_ (MHD_HTTP_POST_ENCODING_FORM_URLENCODED);
+    header.kind = MHD_HEADER_KIND;
+    pp = MHD_create_post_processor (&connection,
+                                    1024, &value_checker, NULL);
+    if (NULL == pp)
+    {
+      fprintf (stderr, "Failed to create post processor.\n"
+               "Line: %u\n", (unsigned int) __LINE__);
+      exit (50);
+    }
+    for (i = 0; size > i; i += step)
+    {
+      if (MHD_NO != MHD_post_process (pp,
+                                      form_data + i,
+                                      (step > size - i) ? (size - i) : step))
+      {
+        fprintf (stderr, "Succeed to process the broken data.\n"
+                 "i: %u. step: %u.\n"
+                 "Line: %u\n", (unsigned) i, (unsigned) step,
+                 (unsigned int) __LINE__);
+        exit (49);
+      }
+    }
+    MHD_destroy_post_processor (pp);
+  }
+  return 0;
+}
+
+
 int
 main (int argc, char *const *argv)
 {
@@ -665,6 +716,7 @@ main (int argc, char *const *argv)
   errorCount += test_multipart ();
   errorCount += test_nested_multipart ();
   errorCount += test_empty_value ();
+  errorCount += test_empty_key ();
   errorCount += test_overflow ();
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
