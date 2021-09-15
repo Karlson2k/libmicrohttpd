@@ -664,7 +664,6 @@ main (int argc, char *const *argv)
   errorCount += test_urlencoding ();
   errorCount += test_multipart ();
   errorCount += test_nested_multipart ();
-  errorCount += test_empty_value ();
   errorCount += test_empty_key ();
   errorCount += test_overflow ();
   if (errorCount != 0)
