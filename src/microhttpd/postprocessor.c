@@ -604,7 +604,8 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
         /* Case: 'value\n' or 'value\r' */
         end_value = &post_data[poff];
         poff++;
-        if (pp->must_ikvi)
+        if (pp->must_ikvi ||
+            (start_value != end_value) )
           pp->state = PP_Callback;
         else
           pp->state = PP_Done;
