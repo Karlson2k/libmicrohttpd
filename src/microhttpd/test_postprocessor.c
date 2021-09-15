@@ -78,10 +78,17 @@ struct expResult exp_results[] = {
   {"abc", NULL, NULL, NULL, "def"},
   {"x", NULL, NULL, NULL, "5"},
 #define URL_END (URL_START + 2)
+#define URL_ENC_DATA "space=%20&key%201=&crlf=%0D%0a&mix%09ed=%2001%0d%0A"
+#define URL_ENC_START URL_END
+  {"space", NULL, NULL, NULL, " "},
+  {"key 1", NULL, NULL, NULL, ""},
+  {"crlf", NULL, NULL, NULL, "\r\n"},
+  {"mix\ted", NULL, NULL, NULL, " 01\r\n"},
+#define URL_ENC_END (URL_ENC_START + 4)
   {NULL, NULL, NULL, NULL, NULL},
 #define FORM_DATA \
   "--AaB03x\r\ncontent-disposition: form-data; name=\"field1\"\r\n\r\nJoe Blow\r\n--AaB03x\r\ncontent-disposition: form-data; name=\"pics\"; filename=\"file1.txt\"\r\nContent-Type: text/plain\r\nContent-Transfer-Encoding: binary\r\n\r\nfiledata\r\n--AaB03x--\r\n"
-#define FORM_START (URL_END + 1)
+#define FORM_START (URL_ENC_END + 1)
   {"field1", NULL, NULL, NULL, "Joe Blow"},
   {"pics", "file1.txt", "text/plain", "binary", "filedata"},
 #define FORM_END (FORM_START + 2)
@@ -279,6 +286,9 @@ test_urlencoding (void)
   errorCount += test_urlencoding_case (URL_START,
                                        URL_END,
                                        URL_DATA);
+  errorCount += test_urlencoding_case (URL_ENC_START,
+                                       URL_ENC_END,
+                                       URL_ENC_DATA);
   errorCount += test_urlencoding_case (URL_NOVALUE1_START,
                                        URL_NOVALUE1_END,
                                        URL_NOVALUE1_DATA);
@@ -298,6 +308,9 @@ test_urlencoding (void)
   errorCount += test_urlencoding_case (URL_START,
                                        URL_END,
                                        URL_DATA "\n");
+  errorCount += test_urlencoding_case (URL_ENC_START,
+                                       URL_ENC_END,
+                                       URL_ENC_DATA "\n");
   errorCount += test_urlencoding_case (URL_NOVALUE1_START,
                                        URL_NOVALUE1_END,
                                        URL_NOVALUE1_DATA "\n");
@@ -317,6 +330,9 @@ test_urlencoding (void)
   errorCount += test_urlencoding_case (URL_START,
                                        URL_END,
                                        "&&" URL_DATA);
+  errorCount += test_urlencoding_case (URL_ENC_START,
+                                       URL_ENC_END,
+                                       "&&" URL_ENC_DATA);
   errorCount += test_urlencoding_case (URL_NOVALUE1_START,
                                        URL_NOVALUE1_END,
                                        "&&" URL_NOVALUE1_DATA);
