@@ -309,6 +309,25 @@ test_urlencoding (void)
   errorCount += test_urlencoding_case (URL_EMPTY_VALUE_START,
                                        URL_EMPTY_VALUE_END,
                                        URL_EMPTY_VALUE_DATA "\n");
+
+  errorCount += test_urlencoding_case (URL_START,
+                                       URL_END,
+                                       "&&" URL_DATA);
+  errorCount += test_urlencoding_case (URL_NOVALUE1_START,
+                                       URL_NOVALUE1_END,
+                                       "&&" URL_NOVALUE1_DATA);
+  errorCount += test_urlencoding_case (URL_NOVALUE2_START,
+                                       URL_NOVALUE2_END,
+                                       "&&" URL_NOVALUE2_DATA);
+  errorCount += test_urlencoding_case (URL_NOVALUE3_START,
+                                       URL_NOVALUE3_END,
+                                       "&&" URL_NOVALUE3_DATA);
+  errorCount += test_urlencoding_case (URL_NOVALUE4_START,
+                                       URL_NOVALUE4_START, /* No advance */
+                                       "&&" URL_NOVALUE4_DATA);
+  errorCount += test_urlencoding_case (URL_EMPTY_VALUE_START,
+                                       URL_EMPTY_VALUE_END,
+                                       "&&" URL_EMPTY_VALUE_DATA);
   if (0 != errorCount)
     fprintf (stderr,
              "Test failed in line %u with %u errors\n",
