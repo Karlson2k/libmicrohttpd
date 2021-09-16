@@ -145,7 +145,7 @@ value_checker (void *cls,
                size_t size)
 {
   unsigned int *idxp = cls;
-  struct expResult *expct = exp_results + *idxp;
+  struct expResult *expect = exp_results + *idxp;
   (void) kind;  /* Unused. Silent compiler warning. */
 
 #if MHD_DEBUG_PP
@@ -164,16 +164,16 @@ value_checker (void *cls,
     exit (99);
   if ( (0 != off) && (0 == size) )
   {
-    if (NULL == expct->data)
+    if (NULL == expect->data)
       *idxp += 1;
     return MHD_YES;
   }
-  if ((expct->key == NULL) ||
-      (0 != strcmp (key, expct->key)) ||
-      (mismatch (filename, expct->fname)) ||
-      (mismatch (content_type, expct->cnt_type)) ||
-      (mismatch (transfer_encoding, expct->tr_enc)) ||
-      (mismatch2 (data, expct->data, off, size)))
+  if ((expect->key == NULL) ||
+      (0 != strcmp (key, expect->key)) ||
+      (mismatch (filename, expect->fname)) ||
+      (mismatch (content_type, expect->cnt_type)) ||
+      (mismatch (transfer_encoding, expect->tr_enc)) ||
+      (mismatch2 (data, expect->data, off, size)))
   {
     *idxp = (unsigned int) -1;
     fprintf (stderr,
@@ -186,25 +186,25 @@ value_checker (void *cls,
              data ? data : "(NULL)");
     fprintf (stderr,
              "Wanted: `%s' `%s' `%s' `%s' `%s'\n",
-             expct->key ? expct->key : "(NULL)",
-             expct->fname ? expct->fname : "(NULL)",
-             expct->cnt_type ? expct->cnt_type : "(NULL)",
-             expct->tr_enc ? expct->tr_enc : "(NULL)",
-             expct->data ? expct->data : "(NULL)");
+             expect->key ? expect->key : "(NULL)",
+             expect->fname ? expect->fname : "(NULL)",
+             expect->cnt_type ? expect->cnt_type : "(NULL)",
+             expect->tr_enc ? expect->tr_enc : "(NULL)",
+             expect->data ? expect->data : "(NULL)");
     fprintf (stderr,
              "Unexpected result: %d/%d/%d/%d/%d/%d\n",
-             (expct->key == NULL),
-             (NULL != expct->key) && (0 != strcmp (key, expct->key)),
-             (mismatch (filename, expct->fname)),
-             (mismatch (content_type, expct->cnt_type)),
-             (mismatch (transfer_encoding, expct->tr_enc)),
-             (mismatch2 (data, expct->data, off, size)));
+             (expect->key == NULL),
+             (NULL != expect->key) && (0 != strcmp (key, expect->key)),
+             (mismatch (filename, expect->fname)),
+             (mismatch (content_type, expect->cnt_type)),
+             (mismatch (transfer_encoding, expect->tr_enc)),
+             (mismatch2 (data, expect->data, off, size)));
     return MHD_NO;
   }
-  if ( ( (NULL == expct->data) &&
+  if ( ( (NULL == expect->data) &&
          (0 == off + size) ) ||
-       ( (NULL != expct->data) &&
-         (off + size == strlen (expct->data)) ) )
+       ( (NULL != expect->data) &&
+         (off + size == strlen (expect->data)) ) )
     *idxp += 1;
   return MHD_YES;
 }
