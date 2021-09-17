@@ -741,6 +741,9 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
     }
     if (NULL == end_value)
       end_value = &post_data[poff];
+    if ( (NULL != last_escape) &&
+         (2 < (end_value - last_escape)) )
+      last_escape = NULL;
     process_value (pp,
                    start_value,
                    end_value,
