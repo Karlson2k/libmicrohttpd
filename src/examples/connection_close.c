@@ -25,6 +25,13 @@
 #include "platform.h"
 #include <microhttpd.h>
 
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif /* HAVE_INTTYPES_H */
+#ifndef PRIu64
+#define PRIu64  "llu"
+#endif /* ! PRIu64 */
+
 #define PAGE \
   "<html><head><title>libmicrohttpd demo</title></head><body>libmicrohttpd demo</body></html>"
 
@@ -72,8 +79,8 @@ request_completed (void *cls,
                    enum MHD_RequestTerminationCode toe)
 {
   fprintf (stderr,
-           "%llu - RC: %d\n",
-           (unsigned long long) __rdtsc (),
+           "%" PRIu64 " - RC: %d\n",
+           (uint64_t) __rdtsc (),
            toe);
 }
 
@@ -85,8 +92,8 @@ connection_completed (void *cls,
                       enum MHD_ConnectionNotificationCode toe)
 {
   fprintf (stderr,
-           "%llu - CC: %d\n",
-           (unsigned long long) __rdtsc (),
+           "%" PRIu64 " - CC: %d\n",
+           (uint64_t) __rdtsc (),
            toe);
 }
 

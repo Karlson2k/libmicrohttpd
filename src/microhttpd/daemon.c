@@ -1382,9 +1382,9 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ ("Failed to forward to application "
-                   MHD_UNSIGNED_LONG_LONG_PRINTF \
+                   "%" PRIu64 \
                    " bytes of data received from remote side: application shut down socket.\n"),
-                (MHD_UNSIGNED_LONG_LONG) urh->in_buffer_used);
+                (uint64_t) urh->in_buffer_used);
 #endif
 
     }
@@ -1550,9 +1550,9 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           MHD_DLOG (daemon,
                     _ (
                       "Failed to forward to remote client "
-                      MHD_UNSIGNED_LONG_LONG_PRINTF \
+                      "%" PRIu64 \
                       " bytes of data received from application: %s\n"),
-                    (MHD_UNSIGNED_LONG_LONG) urh->out_buffer_used,
+                    (uint64_t) urh->out_buffer_used,
                     gnutls_strerror (res));
 #endif
           /* Discard any data unsent to remote. */
@@ -1620,9 +1620,9 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
           MHD_DLOG (daemon,
                     _ (
                       "Failed to forward to application "
-                      MHD_UNSIGNED_LONG_LONG_PRINTF \
+                      "%" PRIu64 \
                       " bytes of data received from remote side: %s\n"),
-                    (MHD_UNSIGNED_LONG_LONG) urh->in_buffer_used,
+                    (uint64_t) urh->in_buffer_used,
                     MHD_socket_strerr_ (err));
 #endif
           /* Discard any data received form remote. */
@@ -1676,9 +1676,9 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       MHD_DLOG (daemon,
                 _ (
                   "Failed to forward to remote client "
-                  MHD_UNSIGNED_LONG_LONG_PRINTF \
+                  "%" PRIu64 \
                   " bytes of data received from application: daemon shut down.\n"),
-                (MHD_UNSIGNED_LONG_LONG) urh->out_buffer_used);
+                (uint64_t) urh->out_buffer_used);
 #endif
     /* Discard any data unsent to remote. */
     urh->out_buffer_used = 0;

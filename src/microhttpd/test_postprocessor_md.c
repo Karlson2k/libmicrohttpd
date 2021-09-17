@@ -130,10 +130,10 @@ post_data_iterator2 (void *cls,
   (void) content_type; (void) transfer_encoding;
 
 #if DEBUG
-  printf ("%s\t%s@ %llu\n",
+  printf ("%s\t%s@ %" PRIu64 "\n",
           key,
           data,
-          (unsigned long long) off);
+          off);
 #endif
   if (0 == strcmp (key, "text"))
   {
