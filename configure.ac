@@ -384,13 +384,14 @@ AS_CASE(["$host_os"],
      AC_MSG_RESULT([[$mhd_host_os]])],
   [*cygwin*],
   [AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
-     mhd_host_os='Windows (Cygwin)'
+     mhd_host_os='Windows/Cygwin'
      AC_MSG_RESULT([[$mhd_host_os]])
      os_is_windows=yes],
   [*mingw*],
-  [AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
-     AC_DEFINE_UNQUOTED(WINDOWS,1,[This is a Windows system])
-     mhd_host_os='Windows (MinGW)'
+  [
+    AC_DEFINE([MINGW],[1],[This is a MinGW system])
+     AC_DEFINE([WINDOWS],[1],[This is a Windows system])
+     mhd_host_os='Windows/MinGW'
      AC_MSG_RESULT([[$mhd_host_os]])
      LIBS="$LIBS -lws2_32"
      AC_CHECK_HEADERS([winsock2.h ws2tcpip.h], [], [AC_MSG_ERROR([[Winsock2 headers are required for W32]])], [AC_INCLUDES_DEFAULT])
@@ -416,8 +417,8 @@ AS_CASE(["$host_os"],
      AC_MSG_RESULT([[$mhd_host_os]])
     ],
     [
-     mhd_host_os='unrecognised OS'
-     AC_MSG_RESULT([[$mhd_host_os]])
+     AC_MSG_RESULT([unrecognised OS])
+     mhd_host_os="${host_os}"
      AC_MSG_WARN([Unrecognised OS $host_os])
      AC_DEFINE_UNQUOTED(OTHEROS,1,[Some strange OS])
  ])
@@ -590,6 +591,49 @@ choke me now;
     )
   ]
 )
+
+AS_IF([test "x${os_is_windows}" = "xyes" && test "x${os_is_native_w32}" = "xyes"],
+  [
+    AC_CACHE_CHECK([W32 run-time library type], [mhd_cv_wctr_type],
+      [
+        AC_EGREP_CPP([MHDMARKER: UCRT run-time library in use!], [
+#include <stdio.h>
+#if defined(_UCRT)
+#define CRT_STR "MHDMARKER: UCRT run-time library in use!"
+#endif
+#if defined(__MSVCRT_VERSION__)
+#if (__MSVCRT_VERSION__ >= 0xE00) && (__MSVCRT_VERSION__ < 0x1000)
+#define CRT_STR "MHDMARKER: UCRT run-time library in use!"
+#endif
+#if (__MSVCRT_VERSION__ > 0x1400)
+#define CRT_STR "MHDMARKER: UCRT run-time library in use!"
+#endif
+#endif
+
+#ifndef CRT_STR
+#define CRT_STR "MHDMARKER: MSVCRT run-time library in use!"
+#endif
+
+int main(void)
+{
+  printf ("%\n", CRT_STR);
+  return 0;
+}
+          ],
+          [mhd_cv_wctr_type="ucrt"], [mhd_cv_wctr_type="msvcrt"])
+      ]
+    )
+    mhd_host_os="${mhd_host_os}-${mhd_cv_wctr_type}"
+    AS_VAR_IF([mhd_cv_wctr_type], ["msvcrt"],
+      [
+        AX_APPEND_COMPILE_FLAGS([-D__USE_MINGW_ANSI_STDIO=0], [CPPFLAGS])
+        AC_SUBST([W32CRT], [MSVCRT])
+      ], [AC_SUBST([W32CRT], [UCRT])]
+    )
+  ]
+)
+
+
 
 AC_ARG_WITH([threads],
    [AS_HELP_STRING([--with-threads=LIB],[choose threading library (posix, w32, auto, none) [auto]])],
@@ -2811,7 +2855,7 @@ AS_VAR_IF([os_is_windows], ["yes"],
 AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Target directory:  ${prefix}
   Cross-compiling:   ${cross_compiling}
-  Operating System:  ${host_os}${os_ver_msg}
+  Operating System:  ${mhd_host_os}${os_ver_msg}
   Shutdown of listening socket triggers select: ${mhd_cv_host_shtdwn_trgr_select}
   Inter-thread comm: ${use_itc}
   poll support:      ${enable_poll=no}
