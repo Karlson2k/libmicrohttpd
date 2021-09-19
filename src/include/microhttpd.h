@@ -2448,7 +2448,7 @@ typedef void
  * @param content_type mime-type of the data, NULL if not known
  * @param transfer_encoding encoding of the data, NULL if not known
  * @param data pointer to @a size bytes of data at the
- *              specified offset, NULL if no value is present
+ *              specified offset
  * @param off offset of data in the overall value
  * @param size number of bytes in @a data available
  * @return #MHD_YES to continue iterating,

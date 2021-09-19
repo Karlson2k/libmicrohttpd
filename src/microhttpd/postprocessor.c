@@ -454,8 +454,7 @@ process_value (struct MHD_PostProcessor *pp,
                               NULL,
                               NULL,
                               NULL,
-                              ((0 != xoff) || (0 != pp->value_offset) ||
-                               (NULL != value_end)) ? xbuf : NULL,
+                              xbuf,
                               pp->value_offset,
                               xoff))
       {
