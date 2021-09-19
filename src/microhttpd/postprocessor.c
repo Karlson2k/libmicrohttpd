@@ -48,6 +48,7 @@ enum PP_State
   PP_NextBoundary,
 
   /* url encoding-states */
+  PP_ProcessKey,
   PP_ProcessValue,
   PP_Callback,
 
@@ -512,39 +513,57 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       abort ();
       break;
     case PP_Init:
+      /* initial phase */
+      mhd_assert (NULL == start_key);
+      mhd_assert (NULL == end_key);
+      mhd_assert (NULL == start_value);
+      mhd_assert (NULL == end_value);
+      switch (post_data[poff])
+      {
+      case '=':
+        /* Case: (no key)'=' */
+        /* Empty key with value */
+        pp->state = PP_Error;
+        continue;
+      case '&':
+        /* Case: (no key)'&' */
+        /* Empty key without value */
+        poff++;
+        continue;
+      case '\n':
+      case '\r':
+        /* Case: (no key)'\n' or (no key)'\r' */
+        pp->state = PP_Done;
+        poff++;
+        break;
+      default:
+        /* normal character, key start, advance! */
+        pp->state = PP_ProcessKey;
+        start_key = &post_data[poff];
+        pp->must_ikvi = true;
+        poff++;
+        continue;
+      }
+      break; /* end PP_Init */
+    case PP_ProcessKey:
       /* key phase */
+      mhd_assert (NULL == start_value);
+      mhd_assert (NULL == end_value);
+      mhd_assert (NULL != start_key || 0 == poff);
+      mhd_assert (0 != poff || NULL == start_key);
+      mhd_assert (NULL == end_key);
       switch (post_data[poff])
       {
       case '=':
         /* Case: 'key=' */
-        if (NULL == start_key)
-        {
-          if (0 == pp->buffer_pos)
-          {
-            /* Empty key with value */
-            pp->state = PP_Error;
-            continue;
-          }
-        }
-        else
+        if (0 != poff)
           end_key = &post_data[poff];
         poff++;
         pp->state = PP_ProcessValue;
         break;
       case '&':
         /* Case: 'key&' */
-        mhd_assert (NULL == start_value);
-        mhd_assert (NULL == end_value);
-        if (NULL == start_key)
-        {
-          if (0 == pp->buffer_pos)
-          {
-            /* Empty key without value */
-            poff++;
-            continue;
-          }
-        }
-        else
+        if (0 != poff)
           end_key = &post_data[poff];
         poff++;
         pp->state = PP_Callback;
@@ -552,25 +571,20 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       case '\n':
       case '\r':
         /* Case: 'key\n' or 'key\r' */
-        if (NULL != start_key)
+        if (0 != poff)
           end_key = &post_data[poff];
-        poff++;
-        if (pp->must_ikvi)
-          pp->state = PP_Callback;
-        else
-          pp->state = PP_Done;
+        /* No advance here, 'PP_Done' will be selected by next 'PP_Init' phase */
+        pp->state = PP_Callback;
         break;
       default:
         /* normal character, advance! */
-        if (NULL == start_key)
-        {
-          start_key = &post_data[poff];
-          pp->must_ikvi = true;
-        }
+        if (0 == poff)
+          start_key = post_data;
         poff++;
-        continue;
+        break;
       }
-      break; /* end PP_Init */
+      mhd_assert (NULL == end_key || NULL != start_key);
+      break; /* end PP_ProcessKey */
     case PP_ProcessValue:
       if (NULL == start_value)
         start_value = &post_data[poff];
@@ -602,12 +616,14 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       case '\r':
         /* Case: 'value\n' or 'value\r' */
         end_value = &post_data[poff];
-        poff++;
         if (pp->must_ikvi ||
             (start_value != end_value) )
-          pp->state = PP_Callback;
+          pp->state = PP_Callback; /* No poff advance here to set PP_Done in the next iteration */
         else
+        {
+          poff++;
           pp->state = PP_Done;
+        }
         break;
       case '%':
         last_escape = &post_data[poff];
@@ -668,6 +684,10 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
           pp->must_unescape_key = true;
         }
       }
+#ifdef _DEBUG
+      else
+        mhd_assert (0 != pp->buffer_pos);
+#endif /* _DEBUG */
       if (pp->must_unescape_key)
       {
         kbuf[pp->buffer_pos] = '\0'; /* 0-terminate key */
@@ -709,7 +729,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
   if (NULL != start_key)
   {
     size_t key_len;
-    mhd_assert ((PP_Init == pp->state) || (NULL != end_key));
+    mhd_assert ((PP_ProcessKey == pp->state) || (NULL != end_key));
     if (NULL == end_key)
       end_key = &post_data[poff];
     key_len = end_key - start_key;
