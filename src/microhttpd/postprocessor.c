@@ -50,7 +50,6 @@ enum PP_State
   /* url encoding-states */
   PP_ProcessValue,
   PP_Callback,
-  PP_ExpectNewLine,
 
   /* post encoding-states  */
   PP_ProcessEntryHeaders,
