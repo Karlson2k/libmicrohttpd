@@ -57,7 +57,7 @@ struct expResult
 struct expResult exp_results[] = {
 #define URL_NOVALUE1_DATA "abc&x=5"
 #define URL_NOVALUE1_START 0
-  {"abc", NULL, NULL, NULL, NULL},
+  {"abc", NULL, NULL, NULL, /* NULL */ ""}, /* change after API update */
   {"x", NULL, NULL, NULL, "5"},
 #define URL_NOVALUE1_END (URL_NOVALUE1_START + 2)
 #define URL_NOVALUE2_DATA "abc=&x=5"
@@ -71,7 +71,7 @@ struct expResult exp_results[] = {
 #define URL_NOVALUE3_END (URL_NOVALUE3_START + 1)
 #define URL_NOVALUE4_DATA "xyz"
 #define URL_NOVALUE4_START URL_NOVALUE3_END
-  {"xyz", NULL, NULL, NULL, NULL},
+  {"xyz", NULL, NULL, NULL, /* NULL */ ""}, /* change after API update */
 #define URL_NOVALUE4_END (URL_NOVALUE4_START + 1)
 #define URL_DATA "abc=def&x=5"
 #define URL_START URL_NOVALUE4_END
