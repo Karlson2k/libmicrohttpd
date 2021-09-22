@@ -116,7 +116,7 @@ ahc_echo (void *cls,
   (void) upload_data;
   (void) upload_data_size;       /* Unused. Silence compiler warning. */
 
-  if (0 != strcasecmp (me, method))
+  if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *unused)
   {
@@ -714,7 +714,7 @@ ahc_empty (void *cls,
   (void) upload_data;
   (void) upload_data_size; /* Unused. Silent compiler warning. */
 
-  if (0 != strcasecmp ("GET", method))
+  if (0 != strcmp ("GET", method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *unused)
   {

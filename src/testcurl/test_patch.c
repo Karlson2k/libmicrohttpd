@@ -97,7 +97,7 @@ ahc_echo (void *cls,
   enum MHD_Result ret;
   (void) version; (void) unused;   /* Unused. Silent compiler warning. */
 
-  if (0 != strcasecmp ("PATCH", method))
+  if (0 != strcmp ("PATCH", method))
     return MHD_NO;              /* unexpected method */
   if ((*done) == 0)
   {

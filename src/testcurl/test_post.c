@@ -137,7 +137,7 @@ ahc_echo (void *cls,
   enum MHD_Result ret;
   (void) cls; (void) version;      /* Unused. Silent compiler warning. */
 
-  if (0 != strcasecmp ("POST", method))
+  if (0 != strcmp ("POST", method))
   {
     printf ("METHOD: %s\n", method);
     return MHD_NO;              /* unexpected method */
@@ -599,7 +599,7 @@ ahc_cancel (void *cls,
   (void) cls; (void) url; (void) version;          /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
-  if (0 != strcasecmp ("POST", method))
+  if (0 != strcmp ("POST", method))
   {
     fprintf (stderr,
              "Unexpected method `%s'\n", method);
