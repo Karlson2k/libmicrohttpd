@@ -5190,15 +5190,18 @@ MHD_run (struct MHD_Daemon *daemon)
 /**
  * Run websever operation with possible blocking.
  *
- * This function does the following: waits for any network event not more
- * than specified number of milliseconds, processes all incoming and
- * outgoing data, processes new connections, processes any timed-out
- * connection, and does other things required to run webserver.
+ * This function does the following: waits for any network event not more than
+ * specified number of milliseconds, processes all incoming and outgoing data,
+ * processes new connections, processes any timed-out connection, and does
+ * other things required to run webserver.
  * Once all connections are processed, function returns.
  *
- * This function is useful for quick and simple webserver implementation if
- * application needs to run a single thread only and does not have any other
+ * This function is useful for quick and simple (lazy) webserver implementation
+ * if application needs to run a single thread only and does not have any other
  * network activity.
+ *
+ * This function calls MHD_get_timeout() internally and use returned value as
+ * maximum wait time if it less than value of @a millisec parameter.
  *
  * It is expected that the external socket polling function is not used in
  * conjunction with this function unless the @a millisec is set to zero.
@@ -5206,14 +5209,15 @@ MHD_run (struct MHD_Daemon *daemon)
  * @param daemon the daemon to run
  * @param millisec the maximum time in milliseconds to wait for network and
  *                 other events. Note: there is no guarantee that function
- *                 blocks for specified amount of time. The real processing
- *                 time can be shorter (if some data comes earlier) or
- *                 longer (if data processing requires more time, especially
- *                 in the user callbacks).
+ *                 blocks for the specified amount of time. The real processing
+ *                 time can be shorter (if some data or connection timeout
+ *                 comes earlier) or longer (if data processing requires more
+ *                 time, especially in user callbacks).
  *                 If set to '0' then function does not block and processes
  *                 only already available data (if any).
  *                 If set to '-1' then function waits for events
- *                 indefinitely (blocks until next network activity).
+ *                 indefinitely (blocks until next network activity or
+ *                 connection timeout).
  * @return #MHD_YES on success, #MHD_NO if this
  *         daemon was not started with the right
  *         options for this call or some serious
