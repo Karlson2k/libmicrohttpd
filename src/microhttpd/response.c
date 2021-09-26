@@ -472,14 +472,16 @@ del_response_header_connection (struct MHD_Response *response,
  *   allowed value is "chunked".
  * * "Date" header: the only one header is allowed, the second added header
  *   replaces the first one.
- * * "Content-Length" manual header is now allowed.
+ * * "Content-Length" application-defined header is not allowed.
  *   @see #MHD_RF_INSANITY_HEADER_CONTENT_LENGTH
  *
  * Headers are used in order as they were added.
  *
  * @param response the response to add a header to
- * @param header the header name to add
- * @param content the header value to add
+ * @param header the header name to add, no need to be static, an internal copy
+ *               will be created automatically
+ * @param content the header value to add, no need to be static, an internal
+ *                copy will be created automatically
  * @return #MHD_YES on success,
  *         #MHD_NO on error (i.e. invalid header or content format),
  *         or out of memory
