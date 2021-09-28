@@ -2356,7 +2356,7 @@ typedef enum MHD_Result
  * @param kind kind of the header we are looking at
  * @param key key for the value, can be an empty string
  * @param value corresponding value, can be NULL
- * @param value_size number of bytes in @a value, NEW since #MHD_VERSION 0x00096301;
+ * @param value_size number of bytes in @a value;
  *                   for C-strings, the length excludes the 0-terminator
  * @return #MHD_YES to continue iterating,
  *         #MHD_NO to abort the iteration
