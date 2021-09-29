@@ -350,6 +350,9 @@ MHD_pool_reallocate (struct MemoryPool *pool,
   /* (old == NULL || old_size == 0 || pool->memory + pool->pos > (uint8_t*) old) */
   mhd_assert (old == NULL || old_size == 0 || \
               pool->pos > (size_t) ((uint8_t*) old - pool->memory));
+  mhd_assert (old == NULL || old_size == 0 || \
+              (size_t) (((uint8_t*) old) - pool->memory) + old_size <= \
+              pool->end);
 
   if (0 != old_size)
   {   /* Need to save some data */
