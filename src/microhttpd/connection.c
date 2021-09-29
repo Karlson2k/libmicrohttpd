@@ -2293,15 +2293,35 @@ transmit_error_response_len (struct MHD_Connection *connection,
   connection->keepalive = MHD_CONN_MUST_CLOSE;
   if (MHD_NO == build_header_response (connection))
   {
-    /* oops - close! */
-    CONNECTION_CLOSE_ERROR (connection,
-                            _ ("Closing connection " \
-                               "(failed to create error response header)."));
+    /* No memory. Release everything. */
+    connection->version = NULL;
+    connection->method = NULL;
+    connection->url = NULL;
+    connection->last = NULL;
+    connection->colon = NULL;
+    connection->headers_received = NULL;
+    connection->headers_received_tail = NULL;
+    connection->write_buffer = NULL;
+    connection->write_buffer_size = 0;
+    connection->write_buffer_send_offset = 0;
+    connection->write_buffer_append_offset = 0;
+    connection->read_buffer
+      = MHD_pool_reset (connection->pool,
+                        NULL,
+                        0,
+                        0);
+    connection->read_buffer_size = 0;
+
+    /* Retry with empty buffer */
+    if (MHD_NO == build_header_response (connection))
+    {
+      CONNECTION_CLOSE_ERROR (connection,
+                              _ ("Closing connection " \
+                                 "(failed to create error response header)."));
+      return;
+    }
   }
-  else
-  {
-    connection->state = MHD_CONNECTION_HEADERS_SENDING;
-  }
+  connection->state = MHD_CONNECTION_HEADERS_SENDING;
 }
 
 
