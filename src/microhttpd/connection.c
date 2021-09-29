@@ -2200,6 +2200,14 @@ transmit_error_response_len (struct MHD_Connection *connection,
   struct MHD_Response *response;
   enum MHD_Result iret;
 
+  mhd_assert (! connection->stop_with_error); /* Send error one time only */
+  if (connection->stop_with_error)
+  { /* Should not happen */
+    if (MHD_CONNECTION_CLOSED > connection->state)
+      connection->state = MHD_CONNECTION_CLOSED;
+
+    return;
+  }
   connection->stop_with_error = true;
   /* TODO: remove when special error queue function is implemented */
   connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
