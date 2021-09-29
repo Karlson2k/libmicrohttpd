@@ -221,14 +221,18 @@ connection_alloc_memory (struct MHD_Connection *connection,
       if (c->write_buffer_size - c->write_buffer_append_offset >= need_to_free)
       {
         char *buf;
+        const size_t new_buf_size = c->write_buffer_size - need_to_free;
         buf = MHD_pool_reallocate (pool,
                                    c->write_buffer,
                                    c->write_buffer_size,
-                                   c->write_buffer_size - need_to_free);
+                                   new_buf_size);
         mhd_assert (c->write_buffer == buf);
 #ifdef NDEBUG
         (void) buf; /* mute compiler warning */
 #endif
+        mhd_assert (c->write_buffer_append_offset <= new_buf_size);
+        mhd_assert (c->write_buffer_send_offset <= new_buf_size);
+        c->write_buffer_size = new_buf_size;
       }
       else
         return NULL;
@@ -239,14 +243,17 @@ connection_alloc_memory (struct MHD_Connection *connection,
       if (c->read_buffer_size - c->read_buffer_offset >= need_to_free)
       {
         char *buf;
+        const size_t new_buf_size = c->read_buffer_size - need_to_free;
         buf = MHD_pool_reallocate (pool,
                                    c->read_buffer,
                                    c->read_buffer_size,
-                                   c->read_buffer_size - need_to_free);
+                                   new_buf_size);
         mhd_assert (c->read_buffer == buf);
 #ifdef NDEBUG
         (void) buf; /* mute compiler warning */
 #endif
+        mhd_assert (c->read_buffer_offset <= new_buf_size);
+        c->read_buffer_size = new_buf_size;
       }
       else
         return NULL;
