@@ -187,6 +187,8 @@ str_conn_error_ (ssize_t mhd_err_code)
 }
 
 
+#endif /* HAVE_MESSAGES */
+
 /**
  * Allocate memory from connection's memory pool.
  * If memory pool doesn't have enough free memory but read of write buffer
@@ -257,8 +259,6 @@ connection_alloc_memory (struct MHD_Connection *connection,
   return res;
 }
 
-
-#endif /* HAVE_MESSAGES */
 
 /**
  * Callback for receiving data from the socket.
