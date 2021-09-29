@@ -3384,9 +3384,7 @@ process_broken_line (struct MHD_Connection *connection,
                              strlen (connection->colon),
                              kind))
   {
-    transmit_error_response_static (connection,
-                                    MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                    REQUEST_TOO_BIG);
+    /* Error has been queued by connection_add_header() */
     return MHD_NO;
   }
   /* we still have the current line to deal with... */
