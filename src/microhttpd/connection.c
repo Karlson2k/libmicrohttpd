@@ -2251,6 +2251,12 @@ transmit_error_response_len (struct MHD_Connection *connection,
                                               MHD_RESPMEM_PERSISTENT);
   if (NULL == response)
   {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Cannot create error response.\n"),
+              status_code,
+              message);
+#endif
     /* can't even send a reply, at least close the connection */
     connection->state = MHD_CONNECTION_CLOSED;
     return;
