@@ -1523,27 +1523,32 @@ connection_maximize_write_buffer (struct MHD_Connection *connection)
   struct MemoryPool *const pool = connection->pool;
   void *new_buf;
   size_t new_size;
+  size_t free_size;
 
   mhd_assert ((NULL != c->write_buffer) || (0 == c->write_buffer_size));
   mhd_assert (c->write_buffer_append_offset >= c->write_buffer_send_offset);
   mhd_assert (c->write_buffer_size >= c->write_buffer_append_offset);
 
-  new_size = c->write_buffer_size + MHD_pool_get_free (pool);
-  new_buf = MHD_pool_reallocate (pool,
-                                 c->write_buffer,
-                                 c->write_buffer_size,
-                                 new_size);
-  /* Buffer position must not be moved.
-   * Position could be moved only if buffer was allocated 'from_end',
-   * which cannot happen. */
-  mhd_assert ((c->write_buffer == new_buf) || (NULL == c->write_buffer));
-  c->write_buffer = new_buf;
-  c->write_buffer_size = new_size;
-  if (c->write_buffer_send_offset == c->write_buffer_append_offset)
+  free_size = MHD_pool_get_free (pool);
+  if (0 != free_size)
   {
-    /* All data have been sent, reset offsets to zero. */
-    c->write_buffer_send_offset = 0;
-    c->write_buffer_append_offset = 0;
+    new_size = c->write_buffer_size + free_size;
+    new_buf = MHD_pool_reallocate (pool,
+                                   c->write_buffer,
+                                   c->write_buffer_size,
+                                   new_size);
+    /* Buffer position must not be moved.
+     * Position could be moved only if buffer was allocated 'from_end',
+     * which cannot happen. */
+    mhd_assert ((c->write_buffer == new_buf) || (NULL == c->write_buffer));
+    c->write_buffer = new_buf;
+    c->write_buffer_size = new_size;
+    if (c->write_buffer_send_offset == c->write_buffer_append_offset)
+    {
+      /* All data have been sent, reset offsets to zero. */
+      c->write_buffer_send_offset = 0;
+      c->write_buffer_append_offset = 0;
+    }
   }
 
   return c->write_buffer_size - c->write_buffer_append_offset;
