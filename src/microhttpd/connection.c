@@ -901,8 +901,8 @@ static void
 connection_close_error (struct MHD_Connection *connection,
                         const char *emsg)
 {
-#ifdef HAVE_MESSAGES
   connection->stop_with_error = true;
+#ifdef HAVE_MESSAGES
   if (NULL != emsg)
     MHD_DLOG (connection->daemon,
               "%s\n",
