@@ -4078,6 +4078,8 @@ connection_reset (struct MHD_Connection *connection,
     /* Next function will destroy response, notify client,
      * destroy memory pool, and set connection state to "CLOSED" */
     MHD_connection_close_ (connection,
+                           c->stop_with_error ?
+                           MHD_REQUEST_TERMINATED_WITH_ERROR :
                            MHD_REQUEST_TERMINATED_COMPLETED_OK);
     c->read_buffer = NULL;
     c->read_buffer_size = 0;
@@ -4091,6 +4093,7 @@ connection_reset (struct MHD_Connection *connection,
   {
     /* Reset connection to process the next request */
     size_t new_read_buf_size;
+    mhd_assert (! c->stop_with_error);
 
     if ( (NULL != d->notify_completed) &&
          (c->client_aware) )
