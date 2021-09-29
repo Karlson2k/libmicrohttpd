@@ -2253,7 +2253,7 @@ transmit_error_response_len (struct MHD_Connection *connection,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
-              _ ("Cannot create error response.\n"),
+              _ ("Failed to create error response.\n"),
               status_code,
               message);
 #endif
@@ -2269,8 +2269,8 @@ transmit_error_response_len (struct MHD_Connection *connection,
   {
     /* can't even send a reply, at least close the connection */
     CONNECTION_CLOSE_ERROR (connection,
-                            _ (
-                              "Closing connection (failed to queue response)."));
+                            _ ("Closing connection " \
+                               "(failed to queue error response)."));
     return;
   }
   mhd_assert (NULL != connection->response);
@@ -2280,8 +2280,8 @@ transmit_error_response_len (struct MHD_Connection *connection,
   {
     /* oops - close! */
     CONNECTION_CLOSE_ERROR (connection,
-                            _ (
-                              "Closing connection (failed to create response header)."));
+                            _ ("Closing connection " \
+                               "(failed to create error response header)."));
   }
   else
   {
