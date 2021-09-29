@@ -2240,6 +2240,7 @@ transmit_error_response_len (struct MHD_Connection *connection,
                                                    connection->read_buffer_size,
                                                    0);
     connection->read_buffer_size = 0;
+    connection->read_buffer_offset = 0;
   }
   if (NULL != connection->response)
   {
