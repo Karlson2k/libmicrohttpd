@@ -1980,6 +1980,8 @@ build_header_response (struct MHD_Connection *connection)
   buf = c->write_buffer;
   pos = c->write_buffer_append_offset;
   buf_size = c->write_buffer_size;
+  if ((NULL == buf) || (0 == buf_size))
+    return MHD_NO;
 
   /* * The status line * */
 
