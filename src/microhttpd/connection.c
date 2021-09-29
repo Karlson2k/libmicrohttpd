@@ -2209,6 +2209,26 @@ transmit_error_response_len (struct MHD_Connection *connection,
     return;
   }
   connection->stop_with_error = true;
+#ifdef HAVE_MESSAGES
+  MHD_DLOG (connection->daemon,
+            _ ("Error processing request (HTTP response code is %u ('%s')). " \
+               "Closing connection.\n"),
+            status_code,
+            message);
+#endif
+  if (MHD_CONNECTION_START_REPLY < connection->state)
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Too late to send an error response, " \
+                 "response is being sent already.\n"),
+              status_code,
+              message);
+#endif
+    CONNECTION_CLOSE_ERROR (connection,
+                            _ ("Too late for error response."));
+    return;
+  }
   /* TODO: remove when special error queue function is implemented */
   connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
   if (0 != connection->read_buffer_size)
@@ -2221,13 +2241,6 @@ transmit_error_response_len (struct MHD_Connection *connection,
                                                    0);
     connection->read_buffer_size = 0;
   }
-#ifdef HAVE_MESSAGES
-  MHD_DLOG (connection->daemon,
-            _ (
-              "Error processing request (HTTP response code is %u (`%s')). Closing connection.\n"),
-            status_code,
-            message);
-#endif
   if (NULL != connection->response)
   {
     MHD_destroy_response (connection->response);
