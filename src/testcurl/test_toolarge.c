@@ -519,7 +519,8 @@ ahcCheck (void *cls,
     large_hrd_name[large_hdr_name_size] = 0;
     for (i = 0; i < large_hdr_value_size; i++)
       large_hrd_value[i] = 'Z' - i % ('Z' - 'A' + 1);
-    large_hrd_value[large_hdr_value_size] = 0;
+    if (NULL != large_hrd_value)
+      large_hrd_value[large_hdr_value_size] = 0;
     if (MHD_YES != MHD_add_response_header (response,
                                             large_hrd_name,
                                             large_hrd_value))
