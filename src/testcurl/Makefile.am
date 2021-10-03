@@ -99,6 +99,14 @@ check_PROGRAMS = \
   test_process_headers \
   test_process_arguments \
   test_parse_cookies \
+  test_toolarge_method \
+  test_toolarge_url \
+  test_toolarge_request_header_name \
+  test_toolarge_request_header_value \
+  test_toolarge_request_headers \
+  test_toolarge_reply_header_name \
+  test_toolarge_reply_header_value \
+  test_toolarge_reply_headers \
   test_large_put \
   test_get11 \
   test_get_iovec11 \
@@ -423,3 +431,27 @@ test_termination_SOURCES = \
 
 test_timeout_SOURCES = \
   test_timeout.c mhd_has_in_name.h
+
+test_toolarge_method_SOURCES = \
+  test_toolarge.c ../microhttpd/test_helpers.h
+
+test_toolarge_url_SOURCES = \
+  test_toolarge.c ../microhttpd/test_helpers.h
+
+test_toolarge_request_header_name_SOURCES = \
+  test_toolarge.c ../microhttpd/test_helpers.h
+
+test_toolarge_request_header_value_SOURCES = \
+  test_toolarge.c ../microhttpd/test_helpers.h
+
+test_toolarge_request_headers_SOURCES = \
+  test_toolarge.c ../microhttpd/test_helpers.h
+
+test_toolarge_reply_header_name_SOURCES = \
+  test_toolarge.c ../microhttpd/test_helpers.h
+
+test_toolarge_reply_header_value_SOURCES = \
+  test_toolarge.c ../microhttpd/test_helpers.h
+
+test_toolarge_reply_headers_SOURCES = \
+  test_toolarge.c ../microhttpd/test_helpers.h
