@@ -786,17 +786,17 @@ doCurlQueryInThread (struct MHD_Daemon *d,
                resp_code);
       mhdErrorExit ();
     }
-
-    return p->queryError;
   }
-
-  if (dcbp.pos != expected_data_size)
-    mhdErrorExit ("libcurl reports wrong size of MHD reply body data");
-  else if (0 != memcmp (expected_data, dcbp.buf,
-                        expected_data_size))
-    mhdErrorExit ("libcurl reports wrong MHD reply body data");
   else
-    p->queryError = 0;
+  {
+    if (dcbp.pos != expected_data_size)
+      mhdErrorExit ("libcurl reports wrong size of MHD reply body data");
+    else if (0 != memcmp (expected_data, dcbp.buf,
+                          expected_data_size))
+      mhdErrorExit ("libcurl reports wrong MHD reply body data");
+    else
+      p->queryError = 0;
+  }
 
   curl_easy_cleanup (c);
   free (dcbp.buf);
