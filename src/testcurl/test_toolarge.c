@@ -23,7 +23,7 @@
  * @brief  Testcase for handling of data larger then buffers.
  * @details Testcases for handling of various situations when data cannot fit
  *          the buffers. Address sanitizers and debug asserts should increase
- *          number of problems detected by this test.
+ *          number of problems detected by this test (detect actual overrun).
  *          Tests start with valid sizes to ensure that normal data is processed
  *          correctly and then sizes are monotonically increased to ensure that
  *          overflow is handled correctly at all stages in all codepaths.
