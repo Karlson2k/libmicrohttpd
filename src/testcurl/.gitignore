@@ -139,3 +139,11 @@ core
 /test_get_iovec11
 /test_get_wait
 /test_get_wait11
+/test_toolarge_method
+/test_toolarge_url
+/test_toolarge_request_header_name
+/test_toolarge_request_header_value
+/test_toolarge_request_headers
+/test_toolarge_reply_header_name
+/test_toolarge_reply_header_value
+/test_toolarge_reply_headers
