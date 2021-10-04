@@ -1,5 +1,6 @@
 # This file is part of libmicrohttpd.
 # (C) 2006-2021 Christian Grothoff (and other contributing authors)
+# (C) 2014-2021 Evgeny Grin (Karlson2k)
 #
 # libmicrohttpd is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -1106,6 +1107,47 @@ AC_CHECK_HEADER([[search.h]],
   [], [AC_INCLUDES_DEFAULT])
 
 AM_CONDITIONAL([MHD_HAVE_TSEARCH], [[test "x$ac_cv_header_search_h" = xyes && test "x$HAVE_TSEARCH" = "x1" && test "x$REPLACE_TSEARCH" != "x1"]])
+
+AC_CACHE_CHECK([for suported 'noreturn' keyword], [mhd_cv_decl_noreturn],
+  [
+    mhd_cv_decl_noreturn="none"
+    save_CFLAGS="${CFLAGS}"
+    CFLAGS="${CFLAGS} ${errattr_CFLAGS}"
+    for decl_noret in '_Noreturn' '__attribute__((__noreturn__))' '__declspec(noreturn)'; do
+      AC_LINK_IFELSE([AC_LANG_SOURCE(
+          [[
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+
+${decl_noret} void myexitfunc(int code)
+{
+#ifdef HAVE_STDLIB_H
+  exit (code);
+#else
+  (void)code;
+#endif
+}
+
+int main (int argc, char *const *argv)
+{
+  (void) argv;
+  if (argc > 2)
+    myexitfunc (2);
+  return 0;
+}
+          ]]
+        )], [mhd_cv_decl_noreturn="${decl_noret}"]
+      )
+      AS_IF([test "x${mhd_cv_decl_noreturn}" != "xnone"], [break])
+    done
+    CFLAGS="${save_CFLAGS}"
+  ]
+)
+AS_VAR_IF([mhd_cv_decl_noreturn], ["none"],
+  [AC_DEFINE([_MHD_NORETURN], [], [Define to supported 'noreturn' function declaration])],
+  [AC_DEFINE_UNQUOTED([_MHD_NORETURN], [${mhd_cv_decl_noreturn}], [Define to supported 'noreturn' function declaration])]
+)
 
 # Check for types sizes
 # Types sizes are used as an indirect indication of maximum allowed values for types

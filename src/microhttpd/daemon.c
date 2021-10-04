@@ -125,7 +125,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
  * @param line line number with the problem
  * @param reason error message with details
  */
-static void
+_MHD_NORETURN static void
 mhd_panic_std (void *cls,
                const char *file,
                unsigned int line,
