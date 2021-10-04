@@ -1,6 +1,7 @@
 /*
   This file is part of libmicrohttpd
   Copyright (C) 2007-2018 Daniel Pittman and Christian Grothoff
+  Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -19,9 +20,10 @@
 
 /**
  * @file microhttpd/internal.h
- * @brief  internal shared structures
+ * @brief  MHD internal shared structures
  * @author Daniel Pittman
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #ifndef INTERNAL_H
@@ -156,9 +158,9 @@ extern MHD_PanicCallback mhd_panic;
  */
 extern void *mhd_panic_cls;
 
-/* If we have Clang or gcc >= 4.5, use __buildin_unreachable() */
-#if defined(__clang__) || (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= \
-                                             5)
+/* If we have Clang or gcc >= 4.5, use __builtin_unreachable() */
+#if defined(__clang__) || (__GNUC__ > 4) || \
+  (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)
 #define BUILTIN_NOT_REACHED __builtin_unreachable ()
 #elif defined(_MSC_FULL_VER)
 #define BUILTIN_NOT_REACHED __assume (0)
