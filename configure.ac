@@ -2815,7 +2815,7 @@ int main(void)
        CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
        AX_APPEND_COMPILE_FLAGS([-fno-sanitize-recover=all], [san_CFLAGS])
        # Get better output for sanitizers error reporting
-       AX_APPEND_COMPILE_FLAGS([-fno-omit-frame-pointer -fno-common -fno-optimize-sibling-calls],
+       AX_APPEND_COMPILE_FLAGS([-fno-omit-frame-pointer -fno-optimize-sibling-calls],
          [san_CFLAGS])
        AM_ASAN_OPTIONS="exitcode=88:strict_string_checks=1:detect_stack_use_after_return=1"
        AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:check_initialization_order=1:strict_init_order=1:redzone=64"
