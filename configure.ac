@@ -2609,6 +2609,9 @@ AM_TESTS_ENVIRONMENT=""
 AM_ASAN_OPTIONS=""
 AM_UBSAN_OPTIONS=""
 AM_LSAN_OPTIONS=""
+AS_UNSET([ASAN_OPTIONS])
+AS_UNSET([UBSAN_OPTIONS])
+AS_UNSET([LSAN_OPTIONS])
 AC_ARG_ENABLE([sanitizers],
   [AS_HELP_STRING([--enable-sanitizers], [enable run-time sanitizers])],
   [], [enable_sanitizers=no])
@@ -2638,6 +2641,21 @@ AS_VAR_IF([enable_sanitizers], ["yes"],
          [
            AX_APPEND_FLAG([-fsanitize=address], [san_FLAGS])
            enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }address"
+           AC_CACHE_CHECK([whether leak detect is supported], [mhd_cv_cc_sanitizer_address_leak],
+             [
+               CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS}"
+               ASAN_OPTIONS="exitcode=88:detect_leaks=1:halt_on_error=1"
+               export ASAN_OPTIONS
+               AC_RUN_IFELSE([AC_LANG_PROGRAM([],[])],
+                 [mhd_cv_cc_sanitizer_address_leak=yes], [mhd_cv_cc_sanitizer_address_leak=no],
+                 [
+                   # Cross-compiling with sanitizers?
+                   mhd_cv_cc_sanitizer_address_leak=yes
+                 ]
+               )
+               AS_UNSET([ASAN_OPTIONS])
+             ]
+           )
            AC_CACHE_CHECK([for pointer compare sanitizer], [mhd_cv_cc_sanitizer_pointer_compare],
              [
                CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} -fsanitize=pointer-compare"
@@ -2799,10 +2817,12 @@ int main(void)
        # Get better output for sanitizers error reporting
        AX_APPEND_COMPILE_FLAGS([-fno-omit-frame-pointer -fno-common -fno-optimize-sibling-calls],
          [san_CFLAGS])
-       AM_ASAN_OPTIONS="exitcode=88:detect_leaks=1:strict_string_checks=1:detect_stack_use_after_return=1"
+       AM_ASAN_OPTIONS="exitcode=88:strict_string_checks=1:detect_stack_use_after_return=1"
        AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:check_initialization_order=1:strict_init_order=1:redzone=64"
        AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:max_free_fill_size=1024:detect_invalid_pointer_pairs=3"
        AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:handle_ioctl=1:halt_on_error=1"
+       AS_VAR_IF([mhd_cv_cc_sanitizer_address_leak], ["yes"],
+         [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:detect_leaks=1"])
        AM_UBSAN_OPTIONS="exitcode=87:print_stacktrace=1:halt_on_error=1"
        AM_LSAN_OPTIONS="use_unaligned=1"
        AM_TESTS_ENVIRONMENT='\
