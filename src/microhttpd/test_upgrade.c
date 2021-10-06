@@ -898,7 +898,7 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
     FD_ZERO (&rs);
     FD_ZERO (&ws);
     FD_ZERO (&es);
-    max_fd = -1;
+    max_fd = MHD_INVALID_SOCKET;
     to = 1000;
 
     if (MHD_YES !=
