@@ -294,7 +294,7 @@ MHD_W32_socket_pair_ (SOCKET sockets_pair[2], int non_blk)
       }
 
       if ( (0 != ioctlsocket (client_s,
-                              FIONBIO,
+                              (int) FIONBIO,
                               &on_val)) ||
            ( (0 != connect (client_s,
                             (struct sockaddr*) &listen_addr,
@@ -329,10 +329,10 @@ MHD_W32_socket_pair_ (SOCKET sockets_pair[2], int non_blk)
             client_addr.sin_addr.s_addr) &&
            ( (0 != non_blk) ?
              (0 == ioctlsocket (server_s,
-                                FIONBIO,
+                                (int) FIONBIO,
                                 &on_val)) :
              (0 == ioctlsocket (client_s,
-                                FIONBIO,
+                                (int) FIONBIO,
                                 &off_val)) ) )
       {
         closesocket (listen_s);
@@ -417,7 +417,7 @@ MHD_socket_nonblocking_ (MHD_socket sock)
   unsigned long flags = 1;
 
   if (0 != ioctlsocket (sock,
-                        FIONBIO,
+                        (int) FIONBIO,
                         &flags))
     return 0;
 #endif /* MHD_WINSOCK_SOCKETS */

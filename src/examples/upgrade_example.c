@@ -57,7 +57,7 @@ make_blocking (MHD_socket fd)
 #elif defined(MHD_WINSOCK_SOCKETS)
   unsigned long flags = 1;
 
-  ioctlsocket (fd, FIONBIO, &flags);
+  ioctlsocket (fd, (int) FIONBIO, &flags);
 #endif /* MHD_WINSOCK_SOCKETS */
 
 }

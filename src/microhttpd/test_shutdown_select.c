@@ -187,7 +187,7 @@ start_socket_listen (int domain)
   }
 
 #ifdef MHD_WINSOCK_SOCKETS
-  if (0 != ioctlsocket (fd, FIONBIO, &flags))
+  if (0 != ioctlsocket (fd, (int) FIONBIO, &flags))
   {
     fprintf (stderr, "Failed to make socket non-blocking: %u\n",
              (unsigned) sock_errno);
