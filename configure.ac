@@ -1061,13 +1061,22 @@ AC_ARG_ENABLE([[epoll]],
   )
 
 AS_IF([test "$enable_epoll" != "no"],
-      [AX_HAVE_EPOLL
-       AS_IF([test "${ax_cv_have_epoll}" = "yes"],
-          [AC_DEFINE([[EPOLL_SUPPORT]],[[1]],[Define to 1 to enable epoll support])
-           enable_epoll='yes'],
-       [AS_IF([test "$enable_epoll" = "yes"],
-              AC_MSG_ERROR([[Support for epoll was explicitly requested but cannot be enabled on this platform.]]))
-        enable_epoll='no'])])
+  [
+    AX_HAVE_EPOLL
+    AS_IF([test "${ax_cv_have_epoll}" = "yes"],
+      [
+        AC_DEFINE([[EPOLL_SUPPORT]],[[1]],[Define to 1 to enable epoll support])
+        enable_epoll='yes'
+      ],
+      [
+        AS_IF([test "$enable_epoll" = "yes"],
+          [AC_MSG_ERROR([[Support for epoll was explicitly requested but cannot be enabled on this platform.]])]
+        )
+        enable_epoll='no'
+      ]
+    )
+  ]
+)
 
 AM_CONDITIONAL([MHD_HAVE_EPOLL], [[test "x$enable_epoll" = xyes]])
 
