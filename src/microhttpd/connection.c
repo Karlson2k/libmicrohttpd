@@ -3683,10 +3683,17 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
 #endif /* UPGRADE_SUPPORT */
   default:
     /* shrink read buffer to how much is actually used */
-    MHD_pool_reallocate (connection->pool,
-                         connection->read_buffer,
-                         connection->read_buffer_size,
-                         connection->read_buffer_offset);
+    if ((0 != connection->read_buffer_size) &&
+        (connection->read_buffer_size != connection->read_buffer_offset))
+    {
+      mhd_assert (NULL != connection->read_buffer);
+      connection->read_buffer =
+        MHD_pool_reallocate (connection->pool,
+                             connection->read_buffer,
+                             connection->read_buffer_size,
+                             connection->read_buffer_offset);
+      connection->read_buffer_size = connection->read_buffer_offset;
+    }
     break;
   }
   return;
