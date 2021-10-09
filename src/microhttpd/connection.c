@@ -204,16 +204,12 @@ connection_alloc_memory (struct MHD_Connection *connection,
 {
   struct MHD_Connection *const c = connection; /* a short alias */
   struct MemoryPool *const pool = c->pool;     /* a short alias */
-  size_t required_free_size; /**< The required amount of free memory */
-  size_t pool_free; /**< The amount of free memory in the pool */
+  size_t need_to_free; /**< The required amount of free memory */
   void *res;
 
-  required_free_size = MHD_pool_alloc_size (size);
-  pool_free = MHD_pool_get_free (pool);
-  if (pool_free < required_free_size)
+  res = MHD_pool_try_alloc (pool, size, &need_to_free);
+  if (NULL == res)
   {
-    size_t need_to_free = required_free_size - pool_free;
-    mhd_assert (MHD_pool_alloc_size (need_to_free) == need_to_free);
     if (NULL != c->write_buffer)
     {
       /* The connection is in the sending phase */
@@ -227,12 +223,10 @@ connection_alloc_memory (struct MHD_Connection *connection,
                                    c->write_buffer_size,
                                    new_buf_size);
         mhd_assert (c->write_buffer == buf);
-#ifdef NDEBUG
-        (void) buf; /* mute compiler warning */
-#endif
         mhd_assert (c->write_buffer_append_offset <= new_buf_size);
         mhd_assert (c->write_buffer_send_offset <= new_buf_size);
         c->write_buffer_size = new_buf_size;
+        c->write_buffer = buf;
       }
       else
         return NULL;
@@ -249,20 +243,18 @@ connection_alloc_memory (struct MHD_Connection *connection,
                                    c->read_buffer_size,
                                    new_buf_size);
         mhd_assert (c->read_buffer == buf);
-#ifdef NDEBUG
-        (void) buf; /* mute compiler warning */
-#endif
         mhd_assert (c->read_buffer_offset <= new_buf_size);
         c->read_buffer_size = new_buf_size;
+        c->read_buffer = buf;
       }
       else
         return NULL;
     }
     else
       return NULL;
+    res = MHD_pool_allocate (pool, size, true);
+    mhd_assert (NULL != res); /* It has been checked that pool has enough space */
   }
-  res = MHD_pool_allocate (pool, size, true);
-  mhd_assert (NULL != res); /* It has been checked that pool has enough space */
   return res;
 }
 
@@ -1486,7 +1478,7 @@ try_grow_read_buffer (struct MHD_Connection *connection,
 
 
 /**
- * Shrink connection read buffer to the zero of data in the buffer
+ * Shrink connection read buffer to the zero size of free space in the buffer
  * @param connection the connection whose read buffer is being manipulated
  */
 static void
@@ -1495,11 +1487,10 @@ connection_shrink_read_buffer (struct MHD_Connection *connection)
   struct MHD_Connection *const c = connection; /**< a short alias */
   void *new_buf;
 
-  if (NULL == c->read_buffer)
+  if ((NULL == c->read_buffer) || (0 == c->read_buffer_size))
   {
     mhd_assert (0 == c->read_buffer_size);
     mhd_assert (0 == c->read_buffer_offset);
-    c->read_buffer = NULL;
     return;
   }
 
@@ -1507,12 +1498,8 @@ connection_shrink_read_buffer (struct MHD_Connection *connection)
   new_buf = MHD_pool_reallocate (c->pool, c->read_buffer, c->read_buffer_size,
                                  c->read_buffer_offset);
   mhd_assert (c->read_buffer == new_buf);
-#ifdef NDEBUG
-  (void) new_buf; /* squash compiler warning */
-#endif /* NDEBUG */
+  c->read_buffer = new_buf;
   c->read_buffer_size = c->read_buffer_offset;
-  if (0 == c->read_buffer_size)
-    c->read_buffer = NULL;
 }
 
 
@@ -1582,16 +1569,25 @@ connection_shrink_write_buffer (struct MHD_Connection *connection)
   mhd_assert (c->write_buffer_append_offset >= c->write_buffer_send_offset);
   mhd_assert (c->write_buffer_size >= c->write_buffer_append_offset);
 
-  if (NULL == c->write_buffer)
+  if ( (NULL == c->write_buffer) || (0 == c->write_buffer_size))
+  {
+    mhd_assert (0 == c->write_buffer_append_offset);
+    mhd_assert (0 == c->write_buffer_send_offset);
+    c->write_buffer = NULL;
     return;
+  }
   if (c->write_buffer_append_offset == c->write_buffer_size)
     return;
 
   new_buf = MHD_pool_reallocate (pool, c->write_buffer, c->write_buffer_size,
                                  c->write_buffer_append_offset);
-  mhd_assert (c->write_buffer == new_buf);
-  (void) new_buf; /* squash compiler warning */
+  mhd_assert ((c->write_buffer == new_buf) || \
+              (0 == c->write_buffer_append_offset));
   c->write_buffer_size = c->write_buffer_append_offset;
+  if (0 == c->write_buffer_size)
+    c->write_buffer = NULL;
+  else
+    c->write_buffer = new_buf;
 }
 
 
@@ -1987,8 +1983,9 @@ build_header_response (struct MHD_Connection *connection)
   buf = c->write_buffer;
   pos = c->write_buffer_append_offset;
   buf_size = c->write_buffer_size;
-  if ((NULL == buf) || (0 == buf_size))
+  if (0 == buf_size)
     return MHD_NO;
+  mhd_assert (NULL != buf);
 
   /* * The status line * */
 
