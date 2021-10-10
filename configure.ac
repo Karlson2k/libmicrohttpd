@@ -2648,6 +2648,8 @@ AS_VAR_IF([enable_sanitizers], ["yes"],
        )
        AS_VAR_IF([mhd_cv_cc_sanitizer_address],["yes"],
          [
+           AC_DEFINE([MHD_ASAN_ACTIVE], [1], [Define to '1' if you have address sanitizer enabled])
+           AC_CHECK_HEADERS([sanitizer/asan_interface.h], [], [], [AC_INCLUDES_DEFAULT])
            AX_APPEND_FLAG([-fsanitize=address], [san_FLAGS])
            enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }address"
            AC_CACHE_CHECK([whether leak detect is supported], [mhd_cv_cc_sanitizer_address_leak],
@@ -2689,6 +2691,104 @@ AS_VAR_IF([enable_sanitizers], ["yes"],
              [
                AX_APPEND_FLAG([-fsanitize=pointer-subtract], [san_FLAGS])
                enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }pointer subtract"
+             ]
+           )
+           AS_VAR_IF([ac_cv_header_sanitizer_asan_interface_h],["yes"],
+             [
+               AC_CACHE_CHECK([whether '__attribute__((no_sanitize("pointer-compare","pointer-subtract")))' works], [mhd_cv_func_attribute_nosanitize_ptr],
+                 [
+                   ASAN_OPTIONS="exitcode=88:detect_invalid_pointer_pairs=3:halt_on_error=1"
+                   export ASAN_OPTIONS
+                   CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS}"
+                   AC_RUN_IFELSE(
+                     [
+                       AC_LANG_PROGRAM(
+                         [[
+#include <stdlib.h>
+
+__attribute__((no_sanitize("pointer-compare","pointer-subtract")))
+int ptr_process(void *ptr1, void *ptr2)
+{
+  if ((char*)ptr1 <= (char*)ptr2)
+    return (int) ((char*)ptr2 - (char*)ptr1);
+  return (int) ((char*)ptr1 - (char*)ptr2);
+}
+                         ]],
+                         [[
+  int *a = (int*) malloc (sizeof(int)*4);
+  int *b = (int*) malloc (sizeof(long)*6);
+  int c = ptr_process(a, b);
+  if (c)
+  {
+    free (b);
+    free (a);
+    return 0;
+  }
+  free (a);
+  free (b);
+                         ]]
+                       )
+                     ],
+                     [mhd_cv_func_attribute_nosanitize_ptr=yes], [mhd_cv_func_attribute_nosanitize_ptr=no],
+                     [
+                       # Cross-compiling with sanitizers??
+                       mhd_cv_func_attribute_nosanitize_ptr=no
+                     ]
+                   )
+                   AS_UNSET([ASAN_OPTIONS])
+                 ]
+               )
+               AS_VAR_IF([mhd_cv_func_attribute_nosanitize_ptr], ["yes"],
+                 [AC_DEFINE([FUNC_ATTR_PTRCOMPARE_WOKRS],[1],[Define to '1' if '__attribute__((no_sanitize("pointer-compare","pointer-subtract")))' works])],
+                 [
+                   AC_CACHE_CHECK([whether '__attribute__((no_sanitize("address")))' works for pointers compare], [mhd_cv_func_attribute_nosanitize_addr],
+                     [
+                       ASAN_OPTIONS="exitcode=88:detect_invalid_pointer_pairs=3:halt_on_error=1"
+                       export ASAN_OPTIONS
+                       CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS}"
+                       AC_RUN_IFELSE(
+                         [
+                           AC_LANG_PROGRAM(
+                             [[
+#include <stdlib.h>
+
+__attribute__((no_sanitize("address")))
+int ptr_process(void *ptr1, void *ptr2)
+{
+  if ((char*)ptr1 <= (char*)ptr2)
+    return (int) ((char*)ptr2 - (char*)ptr1);
+  return (int) ((char*)ptr1 - (char*)ptr2);
+}
+                         ]],
+                         [[
+  int *a = (int*) malloc (sizeof(int)*4);
+  int *b = (int*) malloc (sizeof(long)*6);
+  int c = ptr_process(a, b);
+  if (c)
+  {
+    free (b);
+    free (a);
+    return 0;
+  }
+  free (a);
+  free (b);
+                             ]]
+                           )
+                         ],
+                         [mhd_cv_func_attribute_nosanitize_addr=yes], [mhd_cv_func_attribute_nosanitize_addr=no],
+                         [
+                           # Cross-compiling with sanitizers??
+                           mhd_cv_func_attribute_nosanitize_addr=no
+                         ]
+                       )
+                       AS_UNSET([ASAN_OPTIONS])
+                     ]
+                   )
+                   AS_VAR_IF([mhd_cv_func_attribute_nosanitize_addr], ["yes"],
+                     [AC_DEFINE([FUNC_ATTR_NOSANITIZE_WORKS],[1],[Define to '1' if '__attribute__((no_sanitize("address")))' works for pointers compare])]
+                   )
+                 ]
+               )
              ]
            )
          ]
@@ -2812,6 +2912,15 @@ int main(void)
        )
        AS_IF([test -z "${enabled_sanitizers}"],
          [AC_MSG_ERROR([cannot find any sanitizer supported by $CC])])
+       AC_MSG_CHECKING([whether to enable user memory poisoning])
+       AS_IF([test "x${mhd_cv_cc_sanitizer_address}" = "xyes" && test "x${ac_cv_header_sanitizer_asan_interface_h}" = "xyes" && \
+         (test "x${mhd_cv_func_attribute_nosanitize_ptr}" = "xyes" || test "x${mhd_cv_func_attribute_nosanitize_addr}" = "xyes")],
+         [
+           AC_DEFINE([MHD_ASAN_POISON_ACTIVE], [1], [Define to '1' if user memory poison is used])
+           enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }user-poison"
+           AC_MSG_RESULT([yes])
+         ], [AC_MSG_RESULT([no])]
+       )
        AS_VAR_IF([mhd_cv_cc_sanitizer_address],["yes"],
          [
            AX_APPEND_FLAG([-D_FORTIFY_SOURCE=0], [san_CFLAGS])
@@ -2829,7 +2938,7 @@ int main(void)
        AM_ASAN_OPTIONS="exitcode=88:strict_string_checks=1:detect_stack_use_after_return=1"
        AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:check_initialization_order=1:strict_init_order=1:redzone=64"
        AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:max_free_fill_size=1024:detect_invalid_pointer_pairs=3"
-       AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:handle_ioctl=1:halt_on_error=1"
+       AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:handle_ioctl=1:allow_user_poisoning=1:halt_on_error=1"
        AS_VAR_IF([mhd_cv_cc_sanitizer_address_leak], ["yes"],
          [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:detect_leaks=1"])
        AM_UBSAN_OPTIONS="exitcode=87:print_stacktrace=1:halt_on_error=1"

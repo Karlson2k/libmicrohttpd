@@ -193,8 +193,14 @@ _mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 
 #define BUFFER_SIZE 1024
 
+#define MHD_ASAN_ACTIVE 1
+
 /* The size of the test element that must pass the test */
+#ifndef MHD_ASAN_POISON_ACTIVE
 #define TEST_OK_SIZE (BUFFER_SIZE - 384)
+#else  /* MHD_ASAN_POISON_ACTIVE */
+#define TEST_OK_SIZE (BUFFER_SIZE - 384 - 80)
+#endif /* MHD_ASAN_POISON_ACTIVE */
 
 /* The size of the test element where tests are started */
 #define TEST_START_SIZE (TEST_OK_SIZE - 16)
