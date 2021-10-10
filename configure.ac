@@ -2913,7 +2913,8 @@ int main(void)
        AS_IF([test -z "${enabled_sanitizers}"],
          [AC_MSG_ERROR([cannot find any sanitizer supported by $CC])])
        AC_MSG_CHECKING([whether to enable user memory poisoning])
-       AS_IF([test "x${mhd_cv_cc_sanitizer_address}" = "xyes" && test "x${ac_cv_header_sanitizer_asan_interface_h}" = "xyes" && \
+       AS_IF([test "x${mhd_cv_cc_sanitizer_address}" = "xyes" && test "x${mhd_cv_cc_sanitizer_pointer_compare}" = "xyes" && \
+         test "x${ac_cv_header_sanitizer_asan_interface_h}" = "xyes" && \
          (test "x${mhd_cv_func_attribute_nosanitize_ptr}" = "xyes" || test "x${mhd_cv_func_attribute_nosanitize_addr}" = "xyes")],
          [
            AC_DEFINE([MHD_ASAN_POISON_ACTIVE], [1], [Define to '1' if user memory poison is used])
