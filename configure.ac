@@ -2820,8 +2820,8 @@ int main(void)
          ],
          [AC_MSG_WARN([$CC does not support address sanitizer])]
        )
-       # Always stop on error
        CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
+       # Always stop on sanitizer error
        AX_APPEND_COMPILE_FLAGS([-fno-sanitize-recover=all], [san_CFLAGS])
        # Get better output for sanitizers error reporting
        AX_APPEND_COMPILE_FLAGS([-fno-omit-frame-pointer -fno-optimize-sibling-calls],
