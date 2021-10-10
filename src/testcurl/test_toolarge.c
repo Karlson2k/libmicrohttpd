@@ -180,7 +180,7 @@ _mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 
 
 /* Could be increased to facilitate debugging */
-#define TIMEOUTS_VAL 500
+#define TIMEOUTS_VAL 5
 
 #define EXPECTED_URI_BASE_PATH  "/a"
 
