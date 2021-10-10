@@ -2693,7 +2693,7 @@ AS_VAR_IF([enable_sanitizers], ["yes"],
                enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }pointer subtract"
              ]
            )
-           AS_VAR_IF([ac_cv_header_sanitizer_asan_interface_h],["yes"],
+           AS_IF([test "x${mhd_cv_cc_sanitizer_pointer_compare}" = "xyes" && test "x${ac_cv_header_sanitizer_asan_interface_h}" = "xyes"],
              [
                AC_CACHE_CHECK([whether '__attribute__((no_sanitize("pointer-compare","pointer-subtract")))' works], [mhd_cv_func_attribute_nosanitize_ptr],
                  [
