@@ -580,6 +580,11 @@ MHD_add_response_footer (struct MHD_Response *response,
 /**
  * Delete a header (or footer) line from the response.
  *
+ * For "Connection" headers this function remove all tokens from existing
+ * value. Successful result means that at least one token has been removed.
+ * If all tokens are removed from "Connection" header, the empty "Connection"
+ * header removed.
+ *
  * @param response response to remove a header from
  * @param header the header to delete
  * @param content value to delete
