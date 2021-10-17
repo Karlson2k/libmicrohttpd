@@ -753,9 +753,11 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
   if (tricky_url)
   {
 #if CURL_AT_LEAST_VERSION (7, 62, 0)
-    qParam.url = curl_url ();
-    if (NULL == qParam.url)
+    CURLU *url;
+    url = curl_url ();
+    if (NULL == url)
       externalErrorExit ();
+    qParam.url = url;
 
     if ((CURLUE_OK != curl_url_set (qParam.url, CURLUPART_SCHEME, "http", 0)) ||
         (CURLUE_OK != curl_url_set (qParam.url, CURLUPART_HOST, URL_HOST,
@@ -811,7 +813,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
       if (! ahc_param->header_check_param.found_header4)
         mhdErrorExitDesc ("Required header4 was not detected in request");
     }
-
+    curl_url_cleanup (url);
 #else
     fprintf (stderr, "This test requires libcurl version 7.62.0 or newer.\n");
     abort ();
