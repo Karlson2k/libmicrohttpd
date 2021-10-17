@@ -147,3 +147,5 @@ core
 /test_toolarge_reply_header_name
 /test_toolarge_reply_header_value
 /test_toolarge_reply_headers
+/test_tricky_url
+/test_tricky_header2

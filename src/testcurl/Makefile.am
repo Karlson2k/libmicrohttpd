@@ -107,6 +107,8 @@ check_PROGRAMS = \
   test_toolarge_reply_header_name \
   test_toolarge_reply_header_value \
   test_toolarge_reply_headers \
+  test_tricky_url \
+  test_tricky_header2 \
   test_large_put \
   test_get11 \
   test_get_iovec11 \
@@ -455,3 +457,10 @@ test_toolarge_reply_header_value_SOURCES = \
 
 test_toolarge_reply_headers_SOURCES = \
   test_toolarge.c ../microhttpd/test_helpers.h
+
+test_tricky_url_SOURCES = \
+  test_tricky.c ../microhttpd/test_helpers.h
+
+test_tricky_header2_SOURCES = \
+  test_tricky.c ../microhttpd/test_helpers.h
+  
