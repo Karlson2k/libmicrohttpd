@@ -115,6 +115,18 @@
 #endif
 
 /**
+ * Response text used when the request HTTP chunked encoding is
+ * malformed.
+ */
+#ifdef HAVE_MESSAGES
+#define REQUEST_CONTENTLENGTH_MALFORMED \
+  "<html><head><title>Request malformed</title></head>" \
+  "<body>Your HTTP request has wrong value for <b>Content-Length</b> header.</body></html>"
+#else
+#define REQUEST_CHUNKED_MALFORMED ""
+#endif
+
+/**
  * Response text used when there is an internal server error.
  *
  * Intentionally empty here to keep our memory footprint
@@ -3505,8 +3517,9 @@ parse_connection_headers (struct MHD_Connection *connection)
                   _ (
                     "Failed to parse `Content-Length' header. Closing connection.\n"));
 #endif
-        CONNECTION_CLOSE_ERROR (connection,
-                                NULL);
+        transmit_error_response_static (connection,
+                                        MHD_HTTP_BAD_REQUEST,
+                                        REQUEST_CONTENTLENGTH_MALFORMED);
         return;
       }
     }
