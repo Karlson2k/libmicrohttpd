@@ -3096,12 +3096,11 @@ process_request_body (struct MHD_Connection *connection)
         size_t i;
         /* skip new line at the *end* of a chunk */
         i = 0;
-        if ( ('\r' == buffer_head[i]) ||
-             ('\n' == buffer_head[i]) )
-          i++;                  /* skip 1st part of line feed */
-        if ( ('\r' == buffer_head[i]) ||
-             ('\n' == buffer_head[i]) )
-          i++;                  /* skip 2nd part of line feed */
+        if ( ('\r' == buffer_head[i]) &&
+             ('\n' == buffer_head[i + 1]) )
+          i += 2;                        /* skip CRLF */
+        else if ('\n' == buffer_head[i]) /* TODO: Add MHD option to disallow */
+          i++;                           /* skip bare LF */
         if (0 == i)
         {
           /* malformed encoding */
