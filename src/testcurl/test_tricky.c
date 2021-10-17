@@ -759,7 +759,11 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
 
     if ((CURLUE_OK != curl_url_set (qParam.url, CURLUPART_SCHEME, "http", 0)) ||
         (CURLUE_OK != curl_url_set (qParam.url, CURLUPART_HOST, URL_HOST,
-                                    CURLU_PATH_AS_IS | CURLU_ALLOW_SPACE)) ||
+                                    CURLU_PATH_AS_IS
+#ifdef CURLU_ALLOW_SPACE
+                                    | CURLU_ALLOW_SPACE
+#endif /* CURLU_ALLOW_SPACE */
+                                    )) ||
         (CURLUE_OK != curl_url_set (qParam.url, CURLUPART_PATH,
                                     EXPECTED_URI_BASE_PATH_TRICKY, 0)))
       libcurlErrorExit ();
