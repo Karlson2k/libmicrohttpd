@@ -2549,42 +2549,54 @@ get_next_header_line (struct MHD_Connection *connection,
     return NULL;
   pos = 0;
   rbuf = connection->read_buffer;
-  while ( (pos < connection->read_buffer_offset - 1) &&
-          ('\r' != rbuf[pos]) &&
-          ('\n' != rbuf[pos]) )
-    pos++;
-  if ( (pos == connection->read_buffer_offset - 1) &&
-       ('\n' != rbuf[pos]) )
-  {
-    /* not found, consider growing... */
-    if ( (connection->read_buffer_offset == connection->read_buffer_size) &&
-         (! try_grow_read_buffer (connection, true)) )
-    {
-      if (NULL != connection->url)
-        transmit_error_response_static (connection,
-                                        MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                        REQUEST_TOO_BIG);
-      else
-        transmit_error_response_static (connection,
-                                        MHD_HTTP_URI_TOO_LONG,
-                                        REQUEST_TOO_BIG);
-    }
-    if (line_len)
-      *line_len = 0;
-    return NULL;
-  }
+  mhd_assert (NULL != rbuf);
 
+  do
+  {
+    const char c = rbuf[pos];
+    bool found;
+    found = false;
+    if ( ('\r' == c) && (pos < connection->read_buffer_offset - 1) &&
+         ('\n' == rbuf[pos + 1]) )
+    { /* Found CRLF */
+      found = true;
+      if (line_len)
+        *line_len = pos;
+      rbuf[pos++] = 0; /* Replace CR with zero */
+      rbuf[pos++] = 0; /* Replace LF with zero */
+    }
+    else if ('\n' == c) /* TODO: Add MHD option to disallow */
+    { /* Found bare LF */
+      found = true;
+      if (line_len)
+        *line_len = pos;
+      rbuf[pos++] = 0; /* Replace LF with zero */
+    }
+    if (found)
+    {
+      connection->read_buffer += pos;
+      connection->read_buffer_size -= pos;
+      connection->read_buffer_offset -= pos;
+      return rbuf;
+    }
+  } while (++pos < connection->read_buffer_offset);
+
+  /* not found, consider growing... */
+  if ( (connection->read_buffer_offset == connection->read_buffer_size) &&
+       (! try_grow_read_buffer (connection, true)) )
+  {
+    if (NULL != connection->url)
+      transmit_error_response_static (connection,
+                                      MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
+                                      REQUEST_TOO_BIG);
+    else
+      transmit_error_response_static (connection,
+                                      MHD_HTTP_URI_TOO_LONG,
+                                      REQUEST_TOO_BIG);
+  }
   if (line_len)
-    *line_len = pos;
-  /* found, check if we have proper CRLF */
-  if ( ('\r' == rbuf[pos]) &&
-       ('\n' == rbuf[pos + 1]) )
-    rbuf[pos++] = '\0';         /* skip CR if any */
-  rbuf[pos++] = '\0';           /* skip LF */
-  connection->read_buffer += pos;
-  connection->read_buffer_size -= pos;
-  connection->read_buffer_offset -= pos;
-  return rbuf;
+    *line_len = 0;
+  return NULL;
 }
 
 
