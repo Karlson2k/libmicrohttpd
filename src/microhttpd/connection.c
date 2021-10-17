@@ -3300,9 +3300,6 @@ process_header_line (struct MHD_Connection *connection,
   if (NULL == colon)
   {
     /* error in header line, die hard */
-    CONNECTION_CLOSE_ERROR (connection,
-                            _ (
-                              "Received malformed line (no colon). Closing connection."));
     return MHD_NO;
   }
   if (-1 >= connection->daemon->strict_for_client)
