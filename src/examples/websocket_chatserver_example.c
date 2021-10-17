@@ -43,6 +43,12 @@
   See: https://github.com/coapp-packages/pthreads/issues/2
 */
 #include "pthread_windows.h"
+
+/*
+  On Windows we will use stricmp instead of strcasecmp (strcasecmp is undefined there).
+*/
+#define strcasecmp stricmp
+
 #else
 /*
   On Unix systems we can use pthread.
@@ -180,429 +186,429 @@
   "  function window_onload(event)\n" \
   "  {\n" \
   "    // Determine the base url (for http:// this is ws:// for https:// this must be wss://)\n" \
-       //   "    baseUrl = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + '://' + window.location.host + '/ChatServerWebSocket';\n" \
-       //   "    chat_generate();\n" \
-       //   "    chat_connect();\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This function generates the chat using DOM\n" \
-       //   "  */\n" \
-       //   "  function chat_generate()\n" \
-       //   "  {\n" \
-       //   "    document.body.innerHTML = '';\n" \
-       //   "    let chat = document.createElement('div');\n" \
-       //   "    document.body.appendChild(chat);\n" \
-       //   "    chat.id = 'Chat';\n" \
-       //   "    let messagesAndInput = document.createElement('div');\n" \
-       //   "    chat.appendChild(messagesAndInput);\n" \
-       //   "    messagesAndInput.classList.add('MessagesAndInput');\n" \
-       //   "    let messages = document.createElement('div');\n" \
-       //   "    messagesAndInput.appendChild(messages);\n" \
-       //   "    messages.id = 'Messages';\n" \
-       //   "    let input = document.createElement('div');\n" \
-       //   "    messagesAndInput.appendChild(input);\n" \
-       //   "    input.classList.add('Input');\n" \
-       //   "    let inputMessage = document.createElement('input');\n" \
-       //   "    input.appendChild(inputMessage);\n" \
-       //   "    inputMessage.type = 'text';\n" \
-       //   "    inputMessage.id = 'InputMessage';\n" \
-       //   "    inputMessage.disabled = true;\n" \
-       //   "    inputMessage.addEventListener('keydown', chat_onKeyDown);\n" \
-       //   "    let inputMessageSend = document.createElement('button');\n" \
-       //   "    input.appendChild(inputMessageSend);\n" \
-       //   "    inputMessageSend.id = 'InputMessageButton';\n" \
-       //   "    inputMessageSend.disabled = true;\n" \
-       //   "    inputMessageSend.innerText = 'send';\n" \
-       //   "    inputMessageSend.addEventListener('click', chat_onSendClicked);\n" \
-       //   "    let inputImage = document.createElement('input');\n" \
-       //   "    input.appendChild(inputImage);\n" \
-       //   "    inputImage.id = 'InputImage';\n" \
-       //   "    inputImage.type = 'file';\n" \
-       //   "    inputImage.accept = 'image/*';\n" \
-       //   "    inputImage.style.display = 'none';\n" \
-       //   "    inputImage.addEventListener('change', chat_onImageSelected);\n" \
-       //   "    let inputImageButton = document.createElement('button');\n" \
-       //   "    input.appendChild(inputImageButton);\n" \
-       //   "    inputImageButton.id = 'InputImageButton';\n" \
-       //   "    inputImageButton.disabled = true;\n" \
-       //   "    inputImageButton.innerText = 'image';\n" \
-       //   "    inputImageButton.addEventListener('click', chat_onImageClicked);\n" \
-       //   "    let users = document.createElement('div');\n" \
-       //   "    chat.appendChild(users);\n" \
-       //   "    users.id = 'Users';\n" \
-       //   "    users.addEventListener('click', chat_onUserClicked);\n" \
-       //   "    let allUsers = document.createElement('div');\n" \
-       //   "    users.appendChild(allUsers);\n" \
-       //   "    allUsers.classList.add('selected');\n" \
-       //   "    allUsers.innerText = '<everyone>';\n" \
-       //   "    allUsers.setAttribute('data-user', '0');\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This function creates and connects a WebSocket\n" \
-       //   "  */\n" \
-       //   "  function chat_connect()\n" \
-       //   "  {\n" \
-       //   "    chat_addMessage(`Connecting to libmicrohttpd chat server demo (${baseUrl})...`, { type: 'system' });\n" \
-       //   "    socket = new WebSocket(baseUrl);\n" \
-       //   "    socket.binaryType = 'arraybuffer';\n" \
-       //   "    socket.onopen    = socket_onopen;\n" \
-       //   "    socket.onclose   = socket_onclose;\n" \
-       //   "    socket.onerror   = socket_onerror;\n" \
-       //   "    socket.onmessage = socket_onmessage;\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This function adds new text to the chat list\n" \
-       //   "  */\n" \
-       //   "  function chat_addMessage(text, options)\n" \
-       //   "  {\n" \
-       //   "    let type = options && options.type || 'regular';\n" \
-       //   "    if(!/^(?:regular|system|error|private|moderator)$/.test(type))\n" \
-       //   "      type = 'regular';\n" \
-       //   "    let message = document.createElement('div');\n" \
-       //   "    message.classList.add('Message');\n" \
-       //   "    message.classList.add(type);\n" \
-       //   "    if(typeof(text) === 'string')\n" \
-       //   "    {\n" \
-       //   "      let content = document.createElement('span');\n" \
-       //   "      message.appendChild(content);\n" \
-       //   "      if(options && options.from)\n" \
-       //   "        content.innerText = `${options.from}: ${text}`;\n" \
-       //   "      else\n" \
-       //   "        content.innerText = text;\n" \
-       //   "      if(options && options.reconnect)\n" \
-       //   "      {\n" \
-       //   "        let span = document.createElement('span');\n" \
-       //   "        span.appendChild(document.createTextNode(' ('));\n" \
-       //   "        let reconnect = document.createElement('a');\n" \
-       //   "        reconnect.href = 'javascript:chat_connect()';\n" \
-       //   "        reconnect.innerText = 'reconnect';\n" \
-       //   "        span.appendChild(reconnect);\n" \
-       //   "        span.appendChild(document.createTextNode(')'));\n" \
-       //   "        message.appendChild(span);\n" \
-       //   "      }\n" \
-       //   "    }\n" \
-       //   "    else\n" \
-       //   "    {\n" \
-       //   "      let content = document.createElement('span');\n" \
-       //   "      message.appendChild(content);\n" \
-       //   "      if(options && options.from)\n" \
-       //   "      {\n" \
-       //   "        content.innerText = `${options.from}:\\n`;\n" \
-       //   "      }\n" \
-       //   "      if(options && options.pictureType && text instanceof Uint8Array)\n" \
-       //   "      {\n" \
-       //   "        let img = document.createElement('img');\n" \
-       //   "        content.appendChild(img);\n" \
-       //   "        img.src = URL.createObjectURL(new Blob([ text.buffer ], { type: options.pictureType }));\n" \
-       //   "      }\n" \
-       //   "    }\n" \
-       //   "    document.getElementById('Messages').appendChild(message);\n" \
-       //   "    message.scrollIntoView();\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This is a keydown event handler, which allows that you can just press enter instead of clicking the 'send' button\n" \
-       //   "  */\n" \
-       //   "  function chat_onKeyDown(event)\n" \
-       //   "  {\n" \
-       //   "    if(event.key == 'Enter')\n" \
-       //   "      chat_onSendClicked();\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This is the code to send a message or command, when clicking the 'send' button\n" \
-       //   "  */\n" \
-       //   "  function chat_onSendClicked(event)\n" \
-       //   "  {\n" \
-       //   "    let message = document.getElementById('InputMessage').value;\n" \
-       //   "    if(message.length == 0)\n" \
-       //   "      return;\n" \
-       //   "    if(message.substr(0, 1) == '/')\n" \
-       //   "    {\n" \
-       //   "      // command\n" \
-       //   "      let match;\n" \
-       //   "      if(/^\\/disconnect\\s*$/.test(message))\n" \
-       //   "      {\n" \
-       //   "        socket.close(1000);\n" \
-       //   "      }\n" \
-       //   "      else if((match = /^\\/m\\s+(\\S+)\\s+/.exec(message)))\n" \
-       //   "      {\n" \
-       //   "        message = message.substr(match[0].length);\n" \
-       //   "        let userId = chat_getUserIdByName(match[1]);\n" \
-       //   "        if(userId !== null)\n" \
-       //   "        {\n" \
-       //   "          socket.send(`private|${userId}|${message}`);\n" \
-       //   "        }\n" \
-       //   "        else\n" \
-       //   "        {\n" \
-       //   "          chat_addMessage(`Unknown user \"${match[1]}\" for private message: ${message}`, { type: 'error' });\n" \
-       //   "        }\n" \
-       //   "      }\n" \
-       //   "      else if((match = /^\\/ping\\s+(\\S+)\\s*$/.exec(message)))\n" \
-       //   "      {\n" \
-       //   "        let userId = chat_getUserIdByName(match[1]);\n" \
-       //   "        if(userId !== null)\n" \
-       //   "        {\n" \
-       //   "          socket.send(`ping|${userId}|`);\n" \
-       //   "        }\n" \
-       //   "        else\n" \
-       //   "        {\n" \
-       //   "          chat_addMessage(`Unknown user \"${match[1]}\" for ping`, { type: 'error' });\n" \
-       //   "        }\n" \
-       //   "      }\n" \
-       //   "      else if((match = /^\\/name\\s+(\\S+)\\s*$/.exec(message)))\n" \
-       //   "      {\n" \
-       //   "        socket.send(`name||${match[1]}`);\n" \
-       //   "      }\n" \
-       //   "      else\n" \
-       //   "      {\n" \
-       //   "        chat_addMessage(`Unsupported command or invalid syntax: ${message}`, { type: 'error' });\n" \
-       //   "      }\n" \
-       //   "    }\n" \
-       //   "    else\n" \
-       //   "    {\n" \
-       //   "      // regular chat message to the selected user\n" \
-       //   "      let selectedUser = document.querySelector('div#Users > div.selected');\n" \
-       //   "      let selectedUserId = parseInt(selectedUser.getAttribute('data-user') || '0', 10);\n" \
-       //   "      if(selectedUserId == 0)\n" \
-       //   "        socket.send(`||${message}`);\n" \
-       //   "      else\n" \
-       //   "        socket.send(`private|${selectedUserId}|${message}`);\n" \
-       //   "    }\n" \
-       //   "    document.getElementById('InputMessage').value = '';\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This is the event when the user hits the 'image' button\n" \
-       //   "  */\n" \
-       //   "  function chat_onImageClicked(event)\n" \
-       //   "  {\n" \
-       //   "    document.getElementById('InputImage').click();\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This is the event when the user selected an image.\n" \
-       //   "    The image will be read with the FileReader (allowed in web, because the user selected the file).\n" \
-       //   "  */\n" \
-       //   "  function chat_onImageSelected(event)\n" \
-       //   "  {\n" \
-       //   "    let file = event.target.files[0];\n" \
-       //   "    if(!file || !/^image\\//.test(file.type))\n" \
-       //   "      return;\n" \
-       //   "    let selectedUser = document.querySelector('div#Users > div.selected');\n" \
-       //   "    let selectedUserId = parseInt(selectedUser.getAttribute('data-user') || '0', 10);\n" \
-       //   "    let reader = new FileReader();\n" \
-       //   "    reader.onload = function(event) {\n" \
-       //   "      chat_onImageRead(event, file.type, selectedUserId);\n" \
-       //   "    };\n" \
-       //   "    reader.readAsArrayBuffer(file);\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This is the event when the user selected image has been read.\n" \
-       //   "    This will add our chat protocol prefix and send it via the websocket.\n" \
-       //   "  */\n" \
-       //   "  function chat_onImageRead(event, fileType, selectedUserId)\n" \
-       //   "  {\n" \
-       //   "    let encoder = new TextEncoder();\n" \
-       //   "    let prefix = ((selectedUserId == 0 ? '||' : `private|${selectedUserId}|`) + fileType + '|');\n" \
-       //   "    prefix = encoder.encode(prefix);\n" \
-       //   "    let byteData = new Uint8Array(event.target.result);\n" \
-       //   "    let totalLength = prefix.length + byteData.length;\n" \
-       //   "    let resultByteData = new Uint8Array(totalLength);\n" \
-       //   "    resultByteData.set(prefix, 0);\n" \
-       //   "    resultByteData.set(byteData, prefix.length);\n" \
-       //   "    socket.send(resultByteData);\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This is the event when the user clicked a name in the user list.\n" \
-       //   "    This is useful to send private messages or images without needing to add the /m prefix.\n" \
-       //   "  */\n" \
-       //   "  function chat_onUserClicked(event, selectedUserId)\n" \
-       //   "  {\n" \
-       //   "    let newSelected = event.target.closest('div#Users > div');\n" \
-       //   "    if(newSelected === null)\n" \
-       //   "      return;\n" \
-       //   "    for(let div of this.querySelectorAll(':scope > div.selected'))\n" \
-       //   "      div.classList.remove('selected');\n" \
-       //   "    newSelected.classList.add('selected');\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This functions returns the current id of a user identified by its name.\n" \
-       //   "  */\n" \
-       //   "  function chat_getUserIdByName(name)\n" \
-       //   "  {\n" \
-       //   "    let nameUpper = name.toUpperCase();\n" \
-       //   "    for(let pair of connectedUsers)\n" \
-       //   "    {\n" \
-       //   "      if(pair[1].toUpperCase() == nameUpper)\n" \
-       //   "        return pair[0];\n" \
-       //   "    }\n" \
-       //   "    return null;\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This functions clears the entire user list (needed for reconnecting).\n" \
-       //   "  */\n" \
-       //   "  function chat_clearUserList()\n" \
-       //   "  {\n" \
-       //   "    let users = document.getElementById('Users');\n" \
-       //   "    for(let div of users.querySelectorAll(':scope > div'))\n" \
-       //   "    {\n" \
-       //   "      if(div.getAttribute('data-user') === '0')\n" \
-       //   "      {\n" \
-       //   "        div.classList.add('selected');\n" \
-       //   "      }\n" \
-       //   "      else\n" \
-       //   "      {\n" \
-       //   "        div.parentNode.removeChild(div);\n" \
-       //   "      }\n" \
-       //   "    }\n" \
-       //   "    return null;\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This is the event when the socket has established a connection.\n" \
-       //   "    This will initialize an empty chat and enable the controls.\n" \
-       //   "  */\n" \
-       //   "  function socket_onopen(event)\n" \
-       //   "  {\n" \
-       //   "    connectedUsers.clear();\n" \
-       //   "    chat_clearUserList();\n" \
-       //   "    chat_addMessage('Connected!', { type: 'system' });\n" \
-       //   "    document.getElementById('InputMessage').disabled       = false;\n" \
-       //   "    document.getElementById('InputMessageButton').disabled = false;\n" \
-       //   "    document.getElementById('InputImageButton').disabled   = false;\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This is the event when the socket has been closed.\n" \
-       //   "    This will lock the controls.\n" \
-       //   "  */\n" \
-       //   "  function socket_onclose(event)\n" \
-       //   "  {\n" \
-       //   "    chat_addMessage('Connection closed!', { type: 'system', reconnect: true });\n" \
-       //   "    document.getElementById('InputMessage').disabled       = true;\n" \
-       //   "    document.getElementById('InputMessageButton').disabled = true;\n" \
-       //   "    document.getElementById('InputImageButton').disabled   = true;\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This is the event when the socket reported an error.\n" \
-       //   "    This will just make an output.\n" \
-       //   "    In the web browser console (F12 on many browsers) will show you more detailed error information.\n" \
-       //   "  */\n" \
-       //   "  function socket_onerror(event)\n" \
-       //   "  {\n" \
-       //   "    console.error('WebSocket error reported: ', event);\n" \
-       //   "    chat_addMessage('The socket reported an error!', { type: 'error' });\n" \
-       //   "  }\n" \
-       //   "\n" \
-       //   "  /**\n" \
-       //   "    This is the event when the socket has received a message.\n" \
-       //   "    This will parse the message and execute the corresponding command (or add the message).\n" \
-       //   "  */\n" \
-       //   "  function socket_onmessage(event)\n" \
-       //   "  {\n" \
-       //   "    if(typeof(event.data) === 'string')\n" \
-       //   "    {\n" \
-       //   "      // text message or command\n" \
-       //   "      let message = event.data.split('|', 3);\n" \
-       //   "      switch(message[0])\n" \
-       //   "      {\n" \
-       //   "      case 'userinit':\n" \
-       //   "        connectedUsers.set(message[1], message[2]);\n" \
-       //   "        {\n" \
-       //   "          let users = document.getElementById('Users');\n" \
-       //   "          let div = document.createElement('div');\n" \
-       //   "          users.appendChild(div);\n" \
-       //   "          div.innerText = message[2];\n" \
-       //   "          div.setAttribute('data-user', message[1]);\n" \
-       //   "        }\n" \
-       //   "        break;\n" \
-       //   "      case 'useradd':\n" \
-       //   "        connectedUsers.set(message[1], message[2]);\n" \
-       //   "        chat_addMessage(`The user '${message[2]}' has joined our lovely chatroom.`, { type: 'moderator' });\n" \
-       //   "        {\n" \
-       //   "          let users = document.getElementById('Users');\n" \
-       //   "          let div = document.createElement('div');\n" \
-       //   "          users.appendChild(div);\n" \
-       //   "          div.innerText = message[2];\n" \
-       //   "          div.setAttribute('data-user', message[1]);\n" \
-       //   "        }\n" \
-       //   "        break;\n" \
-       //   "      case 'userdel':\n" \
-       //   "        chat_addMessage(`The user '${connectedUsers.get(message[1])}' has left our chatroom. We will miss you.`, { type: 'moderator' });\n" \
-       //   "        connectedUsers.delete(message[1]);\n" \
-       //   "        {\n" \
-       //   "          let users = document.getElementById('Users');\n" \
-       //   "          let div = users.querySelector(`div[data-user='${message[1]}']`);\n" \
-       //   "          if(div !== null)\n" \
-       //   "          {\n" \
-       //   "            users.removeChild(div);\n" \
-       //   "            if(div.classList.contains('selected'))\n" \
-       //   "              users.querySelector('div[data-user=\\'0\\']').classList.add('selected');\n" \
-       //   "          }\n" \
-       //   "        }\n" \
-       //   "        break;\n" \
-       //   "      case 'username':\n" \
-       //   "        chat_addMessage(`The user '${connectedUsers.get(message[1])}' has changed his name to '${message[2]}'.`, { type: 'moderator' });\n" \
-       //   "        connectedUsers.set(message[1], message[2]);\n" \
-       //   "        {\n" \
-       //   "          let users = document.getElementById('Users');\n" \
-       //   "          let div = users.querySelector(`div[data-user='${message[1]}']`);\n" \
-       //   "          if(div !== null)\n" \
-       //   "          {\n" \
-       //   "            div.innerText = message[2];\n" \
-       //   "          }\n" \
-       //   "        }\n" \
-       //   "        break;\n" \
-       //   "      case 'ping':\n" \
-       //   "        chat_addMessage(`The user '${connectedUsers.get(message[1])}' has a ping of ${message[2]} ms.`, { type: 'moderator' });\n" \
-       //   "        break;\n" \
-       //   "      default:\n" \
-       //   "        chat_addMessage(message[2], { type: message[0], from: connectedUsers.get(message[1]) });\n" \
-       //   "        break;\n" \
-       //   "      }\n" \
-       //   "    }\n" \
-       //   "    else\n" \
-       //   "    {\n" \
-       //   "      // We received a binary frame, which means a picture here\n" \
-       //   "      let byteData = new Uint8Array(event.data);\n" \
-       //   "      let decoder = new TextDecoder();\n" \
-       //   "      let message  = [ ];\n" \
-       //   "      // message type\n" \
-       //   "      let j = 0;\n" \
-       //   "      let i = byteData.indexOf(0x7C, j); // | = 0x7C;\n" \
-       //   "      if(i < 0)\n" \
-       //   "        return;\n" \
-       //   "      message.push(decoder.decode(byteData.slice(0, i)));\n" \
-       //   "      // picture from\n" \
-       //   "      j = i + 1;\n" \
-       //   "      i = byteData.indexOf(0x7C, j);\n" \
-       //   "      if(i < 0)\n" \
-       //   "        return;\n" \
-       //   "      message.push(decoder.decode(byteData.slice(j, i)));\n" \
-       //   "      // picture encoding\n" \
-       //   "      j = i + 1;\n" \
-       //   "      i = byteData.indexOf(0x7C, j);\n" \
-       //   "      if(i < 0)\n" \
-       //   "        return;\n" \
-       //   "      message.push(decoder.decode(byteData.slice(j, i)));\n" \
-       //   "      // picture\n" \
-       //   "      byteData = byteData.slice(i + 1);\n" \
-       //   "      chat_addMessage(byteData, { type: message[0], from: connectedUsers.get(message[1]), pictureType: message[2] });\n" \
-       //   "    }\n" \
-       //   "  }\n" \
-       //   "</script>" \
-       //   "</head>" \
-       //   "<body><noscript>Please enable JavaScript to test the libmicrohttpd Websocket chatserver demo!</noscript></body>" \
-       //   "</html>"
+  "    baseUrl = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + '://' + window.location.host + '/ChatServerWebSocket';\n" \
+  "    chat_generate();\n" \
+  "    chat_connect();\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This function generates the chat using DOM\n" \
+  "  */\n" \
+  "  function chat_generate()\n" \
+  "  {\n" \
+  "    document.body.innerHTML = '';\n" \
+  "    let chat = document.createElement('div');\n" \
+  "    document.body.appendChild(chat);\n" \
+  "    chat.id = 'Chat';\n" \
+  "    let messagesAndInput = document.createElement('div');\n" \
+  "    chat.appendChild(messagesAndInput);\n" \
+  "    messagesAndInput.classList.add('MessagesAndInput');\n" \
+  "    let messages = document.createElement('div');\n" \
+  "    messagesAndInput.appendChild(messages);\n" \
+  "    messages.id = 'Messages';\n" \
+  "    let input = document.createElement('div');\n" \
+  "    messagesAndInput.appendChild(input);\n" \
+  "    input.classList.add('Input');\n" \
+  "    let inputMessage = document.createElement('input');\n" \
+  "    input.appendChild(inputMessage);\n" \
+  "    inputMessage.type = 'text';\n" \
+  "    inputMessage.id = 'InputMessage';\n" \
+  "    inputMessage.disabled = true;\n" \
+  "    inputMessage.addEventListener('keydown', chat_onKeyDown);\n" \
+  "    let inputMessageSend = document.createElement('button');\n" \
+  "    input.appendChild(inputMessageSend);\n" \
+  "    inputMessageSend.id = 'InputMessageButton';\n" \
+  "    inputMessageSend.disabled = true;\n" \
+  "    inputMessageSend.innerText = 'send';\n" \
+  "    inputMessageSend.addEventListener('click', chat_onSendClicked);\n" \
+  "    let inputImage = document.createElement('input');\n" \
+  "    input.appendChild(inputImage);\n" \
+  "    inputImage.id = 'InputImage';\n" \
+  "    inputImage.type = 'file';\n" \
+  "    inputImage.accept = 'image/*';\n" \
+  "    inputImage.style.display = 'none';\n" \
+  "    inputImage.addEventListener('change', chat_onImageSelected);\n" \
+  "    let inputImageButton = document.createElement('button');\n" \
+  "    input.appendChild(inputImageButton);\n" \
+  "    inputImageButton.id = 'InputImageButton';\n" \
+  "    inputImageButton.disabled = true;\n" \
+  "    inputImageButton.innerText = 'image';\n" \
+  "    inputImageButton.addEventListener('click', chat_onImageClicked);\n" \
+  "    let users = document.createElement('div');\n" \
+  "    chat.appendChild(users);\n" \
+  "    users.id = 'Users';\n" \
+  "    users.addEventListener('click', chat_onUserClicked);\n" \
+  "    let allUsers = document.createElement('div');\n" \
+  "    users.appendChild(allUsers);\n" \
+  "    allUsers.classList.add('selected');\n" \
+  "    allUsers.innerText = '<everyone>';\n" \
+  "    allUsers.setAttribute('data-user', '0');\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This function creates and connects a WebSocket\n" \
+  "  */\n" \
+  "  function chat_connect()\n" \
+  "  {\n" \
+  "    chat_addMessage(`Connecting to libmicrohttpd chat server demo (${baseUrl})...`, { type: 'system' });\n" \
+  "    socket = new WebSocket(baseUrl);\n" \
+  "    socket.binaryType = 'arraybuffer';\n" \
+  "    socket.onopen    = socket_onopen;\n" \
+  "    socket.onclose   = socket_onclose;\n" \
+  "    socket.onerror   = socket_onerror;\n" \
+  "    socket.onmessage = socket_onmessage;\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This function adds new text to the chat list\n" \
+  "  */\n" \
+  "  function chat_addMessage(text, options)\n" \
+  "  {\n" \
+  "    let type = options && options.type || 'regular';\n" \
+  "    if(!/^(?:regular|system|error|private|moderator)$/.test(type))\n" \
+  "      type = 'regular';\n" \
+  "    let message = document.createElement('div');\n" \
+  "    message.classList.add('Message');\n" \
+  "    message.classList.add(type);\n" \
+  "    if(typeof(text) === 'string')\n" \
+  "    {\n" \
+  "      let content = document.createElement('span');\n" \
+  "      message.appendChild(content);\n" \
+  "      if(options && options.from)\n" \
+  "        content.innerText = `${options.from}: ${text}`;\n" \
+  "      else\n" \
+  "        content.innerText = text;\n" \
+  "      if(options && options.reconnect)\n" \
+  "      {\n" \
+  "        let span = document.createElement('span');\n" \
+  "        span.appendChild(document.createTextNode(' ('));\n" \
+  "        let reconnect = document.createElement('a');\n" \
+  "        reconnect.href = 'javascript:chat_connect()';\n" \
+  "        reconnect.innerText = 'reconnect';\n" \
+  "        span.appendChild(reconnect);\n" \
+  "        span.appendChild(document.createTextNode(')'));\n" \
+  "        message.appendChild(span);\n" \
+  "      }\n" \
+  "    }\n" \
+  "    else\n" \
+  "    {\n" \
+  "      let content = document.createElement('span');\n" \
+  "      message.appendChild(content);\n" \
+  "      if(options && options.from)\n" \
+  "      {\n" \
+  "        content.innerText = `${options.from}:\\n`;\n" \
+  "      }\n" \
+  "      if(options && options.pictureType && text instanceof Uint8Array)\n" \
+  "      {\n" \
+  "        let img = document.createElement('img');\n" \
+  "        content.appendChild(img);\n" \
+  "        img.src = URL.createObjectURL(new Blob([ text.buffer ], { type: options.pictureType }));\n" \
+  "      }\n" \
+  "    }\n" \
+  "    document.getElementById('Messages').appendChild(message);\n" \
+  "    message.scrollIntoView();\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This is a keydown event handler, which allows that you can just press enter instead of clicking the 'send' button\n" \
+  "  */\n" \
+  "  function chat_onKeyDown(event)\n" \
+  "  {\n" \
+  "    if(event.key == 'Enter')\n" \
+  "      chat_onSendClicked();\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This is the code to send a message or command, when clicking the 'send' button\n" \
+  "  */\n" \
+  "  function chat_onSendClicked(event)\n" \
+  "  {\n" \
+  "    let message = document.getElementById('InputMessage').value;\n" \
+  "    if(message.length == 0)\n" \
+  "      return;\n" \
+  "    if(message.substr(0, 1) == '/')\n" \
+  "    {\n" \
+  "      // command\n" \
+  "      let match;\n" \
+  "      if(/^\\/disconnect\\s*$/.test(message))\n" \
+  "      {\n" \
+  "        socket.close(1000);\n" \
+  "      }\n" \
+  "      else if((match = /^\\/m\\s+(\\S+)\\s+/.exec(message)))\n" \
+  "      {\n" \
+  "        message = message.substr(match[0].length);\n" \
+  "        let userId = chat_getUserIdByName(match[1]);\n" \
+  "        if(userId !== null)\n" \
+  "        {\n" \
+  "          socket.send(`private|${userId}|${message}`);\n" \
+  "        }\n" \
+  "        else\n" \
+  "        {\n" \
+  "          chat_addMessage(`Unknown user \"${match[1]}\" for private message: ${message}`, { type: 'error' });\n" \
+  "        }\n" \
+  "      }\n" \
+  "      else if((match = /^\\/ping\\s+(\\S+)\\s*$/.exec(message)))\n" \
+  "      {\n" \
+  "        let userId = chat_getUserIdByName(match[1]);\n" \
+  "        if(userId !== null)\n" \
+  "        {\n" \
+  "          socket.send(`ping|${userId}|`);\n" \
+  "        }\n" \
+  "        else\n" \
+  "        {\n" \
+  "          chat_addMessage(`Unknown user \"${match[1]}\" for ping`, { type: 'error' });\n" \
+  "        }\n" \
+  "      }\n" \
+  "      else if((match = /^\\/name\\s+(\\S+)\\s*$/.exec(message)))\n" \
+  "      {\n" \
+  "        socket.send(`name||${match[1]}`);\n" \
+  "      }\n" \
+  "      else\n" \
+  "      {\n" \
+  "        chat_addMessage(`Unsupported command or invalid syntax: ${message}`, { type: 'error' });\n" \
+  "      }\n" \
+  "    }\n" \
+  "    else\n" \
+  "    {\n" \
+  "      // regular chat message to the selected user\n" \
+  "      let selectedUser = document.querySelector('div#Users > div.selected');\n" \
+  "      let selectedUserId = parseInt(selectedUser.getAttribute('data-user') || '0', 10);\n" \
+  "      if(selectedUserId == 0)\n" \
+  "        socket.send(`||${message}`);\n" \
+  "      else\n" \
+  "        socket.send(`private|${selectedUserId}|${message}`);\n" \
+  "    }\n" \
+  "    document.getElementById('InputMessage').value = '';\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This is the event when the user hits the 'image' button\n" \
+  "  */\n" \
+  "  function chat_onImageClicked(event)\n" \
+  "  {\n" \
+  "    document.getElementById('InputImage').click();\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This is the event when the user selected an image.\n" \
+  "    The image will be read with the FileReader (allowed in web, because the user selected the file).\n" \
+  "  */\n" \
+  "  function chat_onImageSelected(event)\n" \
+  "  {\n" \
+  "    let file = event.target.files[0];\n" \
+  "    if(!file || !/^image\\//.test(file.type))\n" \
+  "      return;\n" \
+  "    let selectedUser = document.querySelector('div#Users > div.selected');\n" \
+  "    let selectedUserId = parseInt(selectedUser.getAttribute('data-user') || '0', 10);\n" \
+  "    let reader = new FileReader();\n" \
+  "    reader.onload = function(event) {\n" \
+  "      chat_onImageRead(event, file.type, selectedUserId);\n" \
+  "    };\n" \
+  "    reader.readAsArrayBuffer(file);\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This is the event when the user selected image has been read.\n" \
+  "    This will add our chat protocol prefix and send it via the websocket.\n" \
+  "  */\n" \
+  "  function chat_onImageRead(event, fileType, selectedUserId)\n" \
+  "  {\n" \
+  "    let encoder = new TextEncoder();\n" \
+  "    let prefix = ((selectedUserId == 0 ? '||' : `private|${selectedUserId}|`) + fileType + '|');\n" \
+  "    prefix = encoder.encode(prefix);\n" \
+  "    let byteData = new Uint8Array(event.target.result);\n" \
+  "    let totalLength = prefix.length + byteData.length;\n" \
+  "    let resultByteData = new Uint8Array(totalLength);\n" \
+  "    resultByteData.set(prefix, 0);\n" \
+  "    resultByteData.set(byteData, prefix.length);\n" \
+  "    socket.send(resultByteData);\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This is the event when the user clicked a name in the user list.\n" \
+  "    This is useful to send private messages or images without needing to add the /m prefix.\n" \
+  "  */\n" \
+  "  function chat_onUserClicked(event, selectedUserId)\n" \
+  "  {\n" \
+  "    let newSelected = event.target.closest('div#Users > div');\n" \
+  "    if(newSelected === null)\n" \
+  "      return;\n" \
+  "    for(let div of this.querySelectorAll(':scope > div.selected'))\n" \
+  "      div.classList.remove('selected');\n" \
+  "    newSelected.classList.add('selected');\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This functions returns the current id of a user identified by its name.\n" \
+  "  */\n" \
+  "  function chat_getUserIdByName(name)\n" \
+  "  {\n" \
+  "    let nameUpper = name.toUpperCase();\n" \
+  "    for(let pair of connectedUsers)\n" \
+  "    {\n" \
+  "      if(pair[1].toUpperCase() == nameUpper)\n" \
+  "        return pair[0];\n" \
+  "    }\n" \
+  "    return null;\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This functions clears the entire user list (needed for reconnecting).\n" \
+  "  */\n" \
+  "  function chat_clearUserList()\n" \
+  "  {\n" \
+  "    let users = document.getElementById('Users');\n" \
+  "    for(let div of users.querySelectorAll(':scope > div'))\n" \
+  "    {\n" \
+  "      if(div.getAttribute('data-user') === '0')\n" \
+  "      {\n" \
+  "        div.classList.add('selected');\n" \
+  "      }\n" \
+  "      else\n" \
+  "      {\n" \
+  "        div.parentNode.removeChild(div);\n" \
+  "      }\n" \
+  "    }\n" \
+  "    return null;\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This is the event when the socket has established a connection.\n" \
+  "    This will initialize an empty chat and enable the controls.\n" \
+  "  */\n" \
+  "  function socket_onopen(event)\n" \
+  "  {\n" \
+  "    connectedUsers.clear();\n" \
+  "    chat_clearUserList();\n" \
+  "    chat_addMessage('Connected!', { type: 'system' });\n" \
+  "    document.getElementById('InputMessage').disabled       = false;\n" \
+  "    document.getElementById('InputMessageButton').disabled = false;\n" \
+  "    document.getElementById('InputImageButton').disabled   = false;\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This is the event when the socket has been closed.\n" \
+  "    This will lock the controls.\n" \
+  "  */\n" \
+  "  function socket_onclose(event)\n" \
+  "  {\n" \
+  "    chat_addMessage('Connection closed!', { type: 'system', reconnect: true });\n" \
+  "    document.getElementById('InputMessage').disabled       = true;\n" \
+  "    document.getElementById('InputMessageButton').disabled = true;\n" \
+  "    document.getElementById('InputImageButton').disabled   = true;\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This is the event when the socket reported an error.\n" \
+  "    This will just make an output.\n" \
+  "    In the web browser console (F12 on many browsers) will show you more detailed error information.\n" \
+  "  */\n" \
+  "  function socket_onerror(event)\n" \
+  "  {\n" \
+  "    console.error('WebSocket error reported: ', event);\n" \
+  "    chat_addMessage('The socket reported an error!', { type: 'error' });\n" \
+  "  }\n" \
+  "\n" \
+  "  /**\n" \
+  "    This is the event when the socket has received a message.\n" \
+  "    This will parse the message and execute the corresponding command (or add the message).\n" \
+  "  */\n" \
+  "  function socket_onmessage(event)\n" \
+  "  {\n" \
+  "    if(typeof(event.data) === 'string')\n" \
+  "    {\n" \
+  "      // text message or command\n" \
+  "      let message = event.data.split('|', 3);\n" \
+  "      switch(message[0])\n" \
+  "      {\n" \
+  "      case 'userinit':\n" \
+  "        connectedUsers.set(message[1], message[2]);\n" \
+  "        {\n" \
+  "          let users = document.getElementById('Users');\n" \
+  "          let div = document.createElement('div');\n" \
+  "          users.appendChild(div);\n" \
+  "          div.innerText = message[2];\n" \
+  "          div.setAttribute('data-user', message[1]);\n" \
+  "        }\n" \
+  "        break;\n" \
+  "      case 'useradd':\n" \
+  "        connectedUsers.set(message[1], message[2]);\n" \
+  "        chat_addMessage(`The user '${message[2]}' has joined our lovely chatroom.`, { type: 'moderator' });\n" \
+  "        {\n" \
+  "          let users = document.getElementById('Users');\n" \
+  "          let div = document.createElement('div');\n" \
+  "          users.appendChild(div);\n" \
+  "          div.innerText = message[2];\n" \
+  "          div.setAttribute('data-user', message[1]);\n" \
+  "        }\n" \
+  "        break;\n" \
+  "      case 'userdel':\n" \
+  "        chat_addMessage(`The user '${connectedUsers.get(message[1])}' has left our chatroom. We will miss you.`, { type: 'moderator' });\n" \
+  "        connectedUsers.delete(message[1]);\n" \
+  "        {\n" \
+  "          let users = document.getElementById('Users');\n" \
+  "          let div = users.querySelector(`div[data-user='${message[1]}']`);\n" \
+  "          if(div !== null)\n" \
+  "          {\n" \
+  "            users.removeChild(div);\n" \
+  "            if(div.classList.contains('selected'))\n" \
+  "              users.querySelector('div[data-user=\\'0\\']').classList.add('selected');\n" \
+  "          }\n" \
+  "        }\n" \
+  "        break;\n" \
+  "      case 'username':\n" \
+  "        chat_addMessage(`The user '${connectedUsers.get(message[1])}' has changed his name to '${message[2]}'.`, { type: 'moderator' });\n" \
+  "        connectedUsers.set(message[1], message[2]);\n" \
+  "        {\n" \
+  "          let users = document.getElementById('Users');\n" \
+  "          let div = users.querySelector(`div[data-user='${message[1]}']`);\n" \
+  "          if(div !== null)\n" \
+  "          {\n" \
+  "            div.innerText = message[2];\n" \
+  "          }\n" \
+  "        }\n" \
+  "        break;\n" \
+  "      case 'ping':\n" \
+  "        chat_addMessage(`The user '${connectedUsers.get(message[1])}' has a ping of ${message[2]} ms.`, { type: 'moderator' });\n" \
+  "        break;\n" \
+  "      default:\n" \
+  "        chat_addMessage(message[2], { type: message[0], from: connectedUsers.get(message[1]) });\n" \
+  "        break;\n" \
+  "      }\n" \
+  "    }\n" \
+  "    else\n" \
+  "    {\n" \
+  "      // We received a binary frame, which means a picture here\n" \
+  "      let byteData = new Uint8Array(event.data);\n" \
+  "      let decoder = new TextDecoder();\n" \
+  "      let message  = [ ];\n" \
+  "      // message type\n" \
+  "      let j = 0;\n" \
+  "      let i = byteData.indexOf(0x7C, j); // | = 0x7C;\n" \
+  "      if(i < 0)\n" \
+  "        return;\n" \
+  "      message.push(decoder.decode(byteData.slice(0, i)));\n" \
+  "      // picture from\n" \
+  "      j = i + 1;\n" \
+  "      i = byteData.indexOf(0x7C, j);\n" \
+  "      if(i < 0)\n" \
+  "        return;\n" \
+  "      message.push(decoder.decode(byteData.slice(j, i)));\n" \
+  "      // picture encoding\n" \
+  "      j = i + 1;\n" \
+  "      i = byteData.indexOf(0x7C, j);\n" \
+  "      if(i < 0)\n" \
+  "        return;\n" \
+  "      message.push(decoder.decode(byteData.slice(j, i)));\n" \
+  "      // picture\n" \
+  "      byteData = byteData.slice(i + 1);\n" \
+  "      chat_addMessage(byteData, { type: message[0], from: connectedUsers.get(message[1]), pictureType: message[2] });\n" \
+  "    }\n" \
+  "  }\n" \
+  "</script>" \
+  "</head>" \
+  "<body><noscript>Please enable JavaScript to test the libmicrohttpd Websocket chatserver demo!</noscript></body>" \
+  "</html>"
 
 #define PAGE_NOT_FOUND \
   "404 Not Found"
@@ -708,7 +714,7 @@ make_blocking (MHD_socket fd)
 #elif defined(MHD_WINSOCK_SOCKETS)
   unsigned long flags = 0;
 
-  ioctlsocket (fd, (int) FIONBIO, &flags);
+  ioctlsocket (fd, FIONBIO, &flags);
 #endif /* MHD_WINSOCK_SOCKETS */
 
 }
@@ -739,7 +745,6 @@ send_all (struct ConnectedUser*cu,
                   0);
       if (0 > ret)
       {
-        int err = errno;
         if (EAGAIN == errno)
         {
           ret = 0;
@@ -927,7 +932,7 @@ chat_adduser (struct ConnectedUser*cu)
 {
   /* initialize the notification message of the new user */
   char user_index[32];
-  itoa ((int) cu->user_id, user_index, 10);
+  snprintf (user_index, 32, "%d", (int) cu->user_id);
   size_t user_index_len = strlen (user_index);
   size_t data_len = user_index_len + cu->user_name_len + 9;
   char*data = (char*) malloc (data_len + 1);
@@ -998,7 +1003,7 @@ chat_removeuser (struct ConnectedUser*cu)
   char user_index[32];
 
   /* initialize the chat message for the removed user */
-  itoa ((int) cu->user_id, user_index, 10);
+  snprintf (user_index, 32, "%d", (int) cu->user_id);
   size_t user_index_len = strlen (user_index);
   size_t data_len = user_index_len + 9;
   char*data = (char*) malloc (data_len + 1);
@@ -1071,9 +1076,8 @@ chat_renameuser (struct ConnectedUser*cu,
   {
     if (cu != users[i])
     {
-      if ((users[i]->user_name_len == new_name_len) && (0 == stricmp (
-                                                          users[i]->user_name,
-                                                          new_name)))
+      if ((users[i]->user_name_len == new_name_len) &&
+          (0 == strcasecmp (users[i]->user_name, new_name)))
       {
         pthread_mutex_unlock (&chat_mutex);
         return 2;
@@ -1083,7 +1087,7 @@ chat_renameuser (struct ConnectedUser*cu,
 
   /* generate the notification message */
   char user_index[32];
-  itoa ((int) cu->user_id, user_index, 10);
+  snprintf (user_index, 32, "%d", (int) cu->user_id);
   size_t user_index_len = strlen (user_index);
   size_t data_len = user_index_len + new_name_len + 10;
   char*data = (char*) malloc (data_len + 1);
@@ -1202,17 +1206,17 @@ connecteduser_parse_received_websocket_stream (struct ConnectedUser*cu,
                 /* no command means regular message */
                 command = 0;
               }
-              else if (0 == stricmp (frame_data, "private"))
+              else if (0 == strcasecmp (frame_data, "private"))
               {
                 /* private means private message */
                 command = 1;
               }
-              else if (0 == stricmp (frame_data, "name"))
+              else if (0 == strcasecmp (frame_data, "name"))
               {
                 /* name means chat user rename */
                 command = 2;
               }
-              else if (0 == stricmp (frame_data, "ping"))
+              else if (0 == strcasecmp (frame_data, "ping"))
               {
                 /* ping means a ping request */
                 command = 3;
@@ -1263,7 +1267,7 @@ connecteduser_parse_received_websocket_stream (struct ConnectedUser*cu,
                   * This is useful for debugging with an IDE.
                   */
                   char user_index[32];
-                  itoa ((int) from_user_id, user_index, 10);
+                  snprintf (user_index, 32, "%d", (int) cu->user_id);
                   size_t user_index_len = strlen (user_index);
                   size_t data_len = user_index_len + frame_len - j + 9;
                   char*data = (char*) malloc (data_len + 1);
@@ -1300,7 +1304,7 @@ connecteduser_parse_received_websocket_stream (struct ConnectedUser*cu,
                    * The difference is the prefix "private"
                   */
                   char user_index[32];
-                  itoa ((int) from_user_id, user_index, 10);
+                  snprintf (user_index, 32, "%d", (int) cu->user_id);
                   size_t user_index_len = strlen (user_index);
                   size_t data_len = user_index_len + frame_len - j + 9;
                   char*data = (char*) malloc (data_len + 1);
@@ -1538,14 +1542,10 @@ connecteduser_parse_received_websocket_stream (struct ConnectedUser*cu,
               char result_text[240];
               strcpy (result_text,
                       "ping|");
-              itoa ((int) cu->user_id,
-                    result_text + 5,
-                    10);
+              snprintf (result_text + 5, 235, "%d", (int) cu->user_id);
               strcat (result_text,
                       "|");
-              itoa (ping,
-                    result_text + strlen (result_text),
-                    10);
+              snprintf (result_text + strlen (result_text), 240 - strlen (result_text), "%d", (int) ping);
               chat_addmessage (0,
                                0,
                                result_text,
@@ -1627,9 +1627,7 @@ connecteduser_send_messages (void*cls)
           ++cu->ping_counter;
           strcpy (cu->ping_message,
                   "libmicrohttpdchatserverpingdata");
-          itoa (cu->ping_counter,
-                cu->ping_message + 31,
-                10);
+          snprintf (cu->ping_message + 31, 97, "%d", (int) cu->ping_counter);
           cu->ping_message_len = strlen (cu->ping_message);
           char*frame_data = NULL;
           size_t frame_len = 0;
@@ -1750,7 +1748,7 @@ connecteduser_receive_messages (void *cls)
   {
     char user_name[32];
     strcpy (user_name, "User");
-    itoa ((int) cu->user_id, user_name + 4, 10);
+    snprintf (user_name + 4, 28, "%d", (int) cu->user_id);
     cu->user_name_len = strlen (user_name);
     cu->user_name = malloc (cu->user_name_len + 1);
     if (NULL == cu->user_name)
@@ -1831,7 +1829,7 @@ connecteduser_receive_messages (void *cls)
           for (size_t i = 0; i < user_count; ++i)
           {
             char user_index[32];
-            itoa ((int) users[i]->user_id, user_index, 10);
+            snprintf (user_index, 32, "%d", (int) users[i]->user_id);
             size_t user_index_len = strlen (user_index);
             struct UserInit iu;
             iu.user_init_len = user_index_len + users[i]->user_name_len + 10;
@@ -1891,15 +1889,16 @@ connecteduser_receive_messages (void *cls)
                               "  /ping <user> - sends a ping to the specified user\n" \
                               "  /name <name> - changes your name to the specified name\n" \
                               "  /disconnect - disconnects your websocket\n\n" \
-                              "All messages, which does not start a slash, are regular messages, which will be sent to selected user.\n\n" \
+                              "All messages, which does not start with a slash, " \
+                              "are regular messages and will be sent to the selected user.\n\n" \
                               "Have fun!";
-    int r = MHD_websocket_encode_text (cu->ws,
-                                       welcome_msg,
-                                       strlen (welcome_msg),
-                                       MHD_WEBSOCKET_FRAGMENTATION_NONE,
-                                       &frame_data,
-                                       &frame_len,
-                                       NULL);
+    MHD_websocket_encode_text (cu->ws,
+                               welcome_msg,
+                               strlen (welcome_msg),
+                               MHD_WEBSOCKET_FRAGMENTATION_NONE,
+                               &frame_data,
+                               &frame_len,
+                               NULL);
     send_all (cu,
               frame_data,
               frame_len);
@@ -2132,7 +2131,7 @@ upgrade_handler (void *cls,
  * @param ptr A pointer for request specific data
  * @return MHD_YES on success or MHD_NO on error.
  */
-static int
+static enum MHD_Result
 access_handler (void *cls,
                 struct MHD_Connection *connection,
                 const char *url,
@@ -2185,52 +2184,79 @@ access_handler (void *cls,
      * Furthermore it must be a HTTP/1.1 or higher GET request.
      * See: https://tools.ietf.org/html/rfc6455#section-4.2.1
      *
-     * To ease this example we skip the following checks:
-     * - Whether the HTTP version is 1.1 or newer
-     * - Whether Connection is Upgrade, because this header may
-     *   contain multiple values.
-     * - The requested Host (because we don't know)
+     * To make this example portable we skip the Host check
      */
 
-    /* check whether an websocket upgrade is requested */
-    const char*value = MHD_lookup_connection_value (connection,
-                                                    MHD_HEADER_KIND,
-                                                    MHD_HTTP_HEADER_UPGRADE);
-    if ((0 == value) || (0 != stricmp (value, "websocket")))
-    {
-      struct MHD_Response*response = MHD_create_response_from_buffer (strlen (
-                                                                        PAGE_INVALID_WEBSOCKET_REQUEST),
-                                                                      PAGE_INVALID_WEBSOCKET_REQUEST,
-                                                                      MHD_RESPMEM_PERSISTENT);
-      ret = MHD_queue_response (connection,
-                                MHD_HTTP_BAD_REQUEST,
-                                response);
-      MHD_destroy_response (response);
-      return ret;
-    }
+    char is_valid = 1;
+    const char* value = NULL;
+    char sec_websocket_accept[29];
 
-    /* check the protocol version */
+    /* check whether an websocket upgrade is requested */
+    if (0 != MHD_websocket_check_http_version (version))
+    {
+      is_valid = 0;
+    }
+    value = MHD_lookup_connection_value (connection,
+                                         MHD_HEADER_KIND,
+                                         MHD_HTTP_HEADER_CONNECTION);
+    if (0 != MHD_websocket_check_connection_header (value))
+    {
+      is_valid = 0;
+    }
+    value = MHD_lookup_connection_value (connection,
+                                         MHD_HEADER_KIND,
+                                         MHD_HTTP_HEADER_UPGRADE);
+    if (0 != MHD_websocket_check_upgrade_header (value))
+    {
+      is_valid = 0;
+    }
     value = MHD_lookup_connection_value (connection,
                                          MHD_HEADER_KIND,
                                          MHD_HTTP_HEADER_SEC_WEBSOCKET_VERSION);
-    if ((0 == value) || (0 != stricmp (value, "13")))
+    if (0 != MHD_websocket_check_version_header (value))
     {
-      struct MHD_Response*response = MHD_create_response_from_buffer (strlen (
-                                                                        PAGE_INVALID_WEBSOCKET_REQUEST),
-                                                                      PAGE_INVALID_WEBSOCKET_REQUEST,
-                                                                      MHD_RESPMEM_PERSISTENT);
-      ret = MHD_queue_response (connection,
-                                MHD_HTTP_BAD_REQUEST,
-                                response);
-      MHD_destroy_response (response);
-      return ret;
+      is_valid = 0;
     }
-
-    /* read the websocket key (required for the response) */
-    value = MHD_lookup_connection_value (connection, MHD_HEADER_KIND,
+    value = MHD_lookup_connection_value (connection,
+                                         MHD_HEADER_KIND,
                                          MHD_HTTP_HEADER_SEC_WEBSOCKET_KEY);
-    if (0 == value)
+    if (0 != MHD_websocket_create_accept_header (value, sec_websocket_accept))
     {
+      is_valid = 0;
+    }
+
+    if (1 == is_valid)
+    {
+      /* create the response for upgrade */
+      response = MHD_create_response_for_upgrade (&upgrade_handler,
+                                                  NULL);
+
+      /**
+       * For the response we need at least the following headers:
+       * 1. "Connection: Upgrade"
+       * 2. "Upgrade: websocket"
+       * 3. "Sec-WebSocket-Accept: <base64value>"
+       * The value for Sec-WebSocket-Accept can be generated with MHD_websocket_create_accept_header.
+       * It requires the value of the Sec-WebSocket-Key header of the request.
+       * See also: https://tools.ietf.org/html/rfc6455#section-4.2.2
+       */
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONNECTION,
+                               "Upgrade");
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_UPGRADE,
+                               "websocket");
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_SEC_WEBSOCKET_ACCEPT,
+                               sec_websocket_accept);
+      ret = MHD_queue_response (connection,
+                                MHD_HTTP_SWITCHING_PROTOCOLS,
+                                response);
+      MHD_destroy_response (response);
+    }
+    else
+    {
+      /* return error page */
       struct MHD_Response*response = MHD_create_response_from_buffer (strlen (
                                                                         PAGE_INVALID_WEBSOCKET_REQUEST),
                                                                       PAGE_INVALID_WEBSOCKET_REQUEST,
@@ -2239,64 +2265,7 @@ access_handler (void *cls,
                                 MHD_HTTP_BAD_REQUEST,
                                 response);
       MHD_destroy_response (response);
-      return ret;
     }
-
-    /* generate the response accept header */
-    char sec_websocket_accept[29];
-    if (0 != MHD_websocket_create_accept (value, sec_websocket_accept))
-    {
-      struct MHD_Response*response = MHD_create_response_from_buffer (strlen (
-                                                                        PAGE_INVALID_WEBSOCKET_REQUEST),
-                                                                      PAGE_INVALID_WEBSOCKET_REQUEST,
-                                                                      MHD_RESPMEM_PERSISTENT);
-      ret = MHD_queue_response (connection,
-                                MHD_HTTP_BAD_REQUEST,
-                                response);
-      MHD_destroy_response (response);
-      return ret;
-    }
-
-    /* only for this example: don't accept incoming connection when we are already shutting down */
-    if (0 != disconnect_all)
-    {
-      struct MHD_Response*response = MHD_create_response_from_buffer (strlen (
-                                                                        PAGE_INVALID_WEBSOCKET_REQUEST),
-                                                                      PAGE_INVALID_WEBSOCKET_REQUEST,
-                                                                      MHD_RESPMEM_PERSISTENT);
-      ret = MHD_queue_response (connection,
-                                MHD_HTTP_SERVICE_UNAVAILABLE,
-                                response);
-      MHD_destroy_response (response);
-      return ret;
-    }
-
-    /* create the response for upgrade */
-    response = MHD_create_response_for_upgrade (&upgrade_handler,
-                                                NULL);
-
-    /**
-     * For the response we need at least the following headers:
-     * 1. "Connection: Upgrade"
-     * 2. "Upgrade: websocket"
-     * 3. "Sec-WebSocket-Accept: <base64value>"
-     * The value for Sec-WebSocket-Accept can be generated with MHD_websocket_create_accept.
-     * It requires the value of the Sec-WebSocket-Key header of the request.
-     * See also: https://tools.ietf.org/html/rfc6455#section-4.2.2
-     */
-    MHD_add_response_header (response,
-                             MHD_HTTP_HEADER_CONNECTION,
-                             "Upgrade");
-    MHD_add_response_header (response,
-                             MHD_HTTP_HEADER_UPGRADE,
-                             "websocket");
-    MHD_add_response_header (response,
-                             MHD_HTTP_HEADER_SEC_WEBSOCKET_ACCEPT,
-                             sec_websocket_accept);
-    ret = MHD_queue_response (connection,
-                              MHD_HTTP_SWITCHING_PROTOCOLS,
-                              response);
-    MHD_destroy_response (response);
   }
   else
   {
@@ -2353,7 +2322,7 @@ main (int argc,
                         MHD_OPTION_END);
 #endif
 
-  if (d == NULL)
+  if (NULL == d)
     return 1;
   (void) getc (stdin);
 

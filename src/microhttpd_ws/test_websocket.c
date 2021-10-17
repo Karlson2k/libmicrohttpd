@@ -27,7 +27,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <time.h>
+
+#if SIZE_MAX >= 0x100000000
+  #define ENABLE_64BIT_TESTS 1
+#endif
 
 int disable_alloc = 0;
 size_t open_allocs = 0;
@@ -71,6 +76,20 @@ test_free (void*buf)
   if (NULL != buf)
     --open_allocs;
   free (buf);
+}
+
+/**
+ * Custom `rng()` function used for client mode tests
+ */
+static size_t
+test_rng (void*cls, void*buf, size_t buf_len)
+{
+  for (size_t i = 0; i < buf_len; ++i)
+  {
+    ((char*) buf) [i] = (char) (rand () % 0xFF);
+  }
+
+  return buf_len;
 }
 
 
@@ -126,7 +145,14 @@ test_decode_single (unsigned int test_line,
   int ret = MHD_WEBSOCKET_STATUS_OK;
 
   /* initialize stream */
-  ret = MHD_websocket_stream_init (&ws, flags, max_payload_size);
+  ret = MHD_websocket_stream_init2 (&ws,
+                                    flags,
+                                    max_payload_size,
+                                    malloc,
+                                    realloc,
+                                    free,
+                                    NULL,
+                                    test_rng);
   if (MHD_WEBSOCKET_STATUS_OK != ret)
   {
     fprintf (stderr,
@@ -267,7 +293,7 @@ test_decode_single (unsigned int test_line,
 
 /**
  * Test procedure for `MHD_websocket_stream_init()` and
- * `MHD_websocket_stream_init()2`
+ * `MHD_websocket_stream_init2()`
  */
 int
 test_inits ()
@@ -281,15 +307,19 @@ test_inits ()
     All valid flags
   ------------------------------------------------------------------------------
   */
-  /* Regular test: all valid flags for init */
+  /* Regular test: all valid flags for init (only the even ones work) */
   for (int i = 0; i < 7; ++i)
   {
     ws = NULL;
     ret = MHD_websocket_stream_init (&ws,
                                      i,
                                      0);
-    if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
-        (NULL == ws) )
+    if (((0 == (i & MHD_WEBSOCKET_FLAG_CLIENT)) &&
+        ((MHD_WEBSOCKET_STATUS_OK != ret) ||
+        (NULL == ws))) ||
+        ((0 != (i & MHD_WEBSOCKET_FLAG_CLIENT)) &&
+        ((MHD_WEBSOCKET_STATUS_OK == ret) ||
+        (NULL != ws))))
     {
       fprintf (stderr,
                "Init test failed in line %u for flags %d.\n",
@@ -312,7 +342,9 @@ test_inits ()
                                       0,
                                       test_malloc,
                                       test_realloc,
-                                      test_free);
+                                      test_free,
+                                      NULL,
+                                      test_rng);
     if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
         (NULL == ws) )
     {
@@ -361,7 +393,9 @@ test_inits ()
                                       0,
                                       test_malloc,
                                       test_realloc,
-                                      test_free);
+                                      test_free,
+                                      NULL,
+                                      NULL);
     if ((MHD_WEBSOCKET_STATUS_PARAMETER_ERROR != ret) ||
         (NULL != ws) )
     {
@@ -410,7 +444,9 @@ test_inits ()
                                     0,
                                     test_malloc,
                                     test_realloc,
-                                    test_free);
+                                    test_free,
+                                    NULL,
+                                    NULL);
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (NULL == ws) )
   {
@@ -451,7 +487,9 @@ test_inits ()
                                     1,
                                     test_malloc,
                                     test_realloc,
-                                    test_free);
+                                    test_free,
+                                    NULL,
+                                    NULL);
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (NULL == ws) )
   {
@@ -492,7 +530,9 @@ test_inits ()
                                     1000,
                                     test_malloc,
                                     test_realloc,
-                                    test_free);
+                                    test_free,
+                                    NULL,
+                                    NULL);
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (NULL == ws) )
   {
@@ -506,6 +546,7 @@ test_inits ()
     MHD_websocket_stream_free (ws);
     ws = NULL;
   }
+#ifdef ENABLE_64BIT_TESTS
   /* Edge test (success): max_payload_size = 0x7FFFFFFFFFFFFFFF for init */
   ws = NULL;
   ret = MHD_websocket_stream_init (&ws,
@@ -533,7 +574,9 @@ test_inits ()
                                     (uint64_t) 0x7FFFFFFFFFFFFFFF,
                                     test_malloc,
                                     test_realloc,
-                                    test_free);
+                                    test_free,
+                                    NULL,
+                                    NULL);
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (NULL == ws) )
   {
@@ -574,7 +617,9 @@ test_inits ()
                                     (uint64_t) 0x8000000000000000,
                                     test_malloc,
                                     test_realloc,
-                                    test_free);
+                                    test_free,
+                                    NULL,
+                                    NULL);
   if ((MHD_WEBSOCKET_STATUS_PARAMETER_ERROR != ret) ||
       (NULL != ws) )
   {
@@ -588,6 +633,7 @@ test_inits ()
     MHD_websocket_stream_free (ws);
     ws = NULL;
   }
+#endif
 
   /*
   ------------------------------------------------------------------------------
@@ -621,7 +667,9 @@ test_inits ()
                                     0,
                                     test_malloc,
                                     test_realloc,
-                                    test_free);
+                                    test_free,
+                                    NULL,
+                                    NULL);
   if ((MHD_WEBSOCKET_STATUS_PARAMETER_ERROR != ret) ||
       (NULL != ws) )
   {
@@ -643,7 +691,9 @@ test_inits ()
                                     0,
                                     NULL,
                                     test_realloc,
-                                    test_free);
+                                    test_free,
+                                    NULL,
+                                    NULL);
   if ((MHD_WEBSOCKET_STATUS_PARAMETER_ERROR != ret) ||
       (NULL != ws) )
   {
@@ -665,7 +715,9 @@ test_inits ()
                                     0,
                                     test_malloc,
                                     NULL,
-                                    test_free);
+                                    test_free,
+                                    NULL,
+                                    NULL);
   if ((MHD_WEBSOCKET_STATUS_PARAMETER_ERROR != ret) ||
       (NULL != ws) )
   {
@@ -687,6 +739,8 @@ test_inits ()
                                     0,
                                     test_malloc,
                                     test_realloc,
+                                    NULL,
+                                    NULL,
                                     NULL);
   if ((MHD_WEBSOCKET_STATUS_PARAMETER_ERROR != ret) ||
       (NULL != ws) )
@@ -701,13 +755,109 @@ test_inits ()
     MHD_websocket_stream_free (ws);
     ws = NULL;
   }
+  /* Regular test: rng given for server mode (will be ignored) */
+  ws = NULL;
+  ret = MHD_websocket_stream_init2 (&ws,
+                                    MHD_WEBSOCKET_FLAG_SERVER
+                                    | MHD_WEBSOCKET_FLAG_NO_FRAGMENTS,
+                                    0,
+                                    test_malloc,
+                                    test_realloc,
+                                    test_free,
+                                    NULL,
+                                    test_rng);
+  if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
+      (NULL == ws) )
+  {
+    fprintf (stderr,
+             "Init test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  if (NULL != ws)
+  {
+    MHD_websocket_stream_free (ws);
+    ws = NULL;
+  }
+  /* Regular test: cls_rng given for server mode (will be ignored) */
+  ws = NULL;
+  ret = MHD_websocket_stream_init2 (&ws,
+                                    MHD_WEBSOCKET_FLAG_SERVER
+                                    | MHD_WEBSOCKET_FLAG_NO_FRAGMENTS,
+                                    0,
+                                    test_malloc,
+                                    test_realloc,
+                                    test_free,
+                                    (void*) 12345,
+                                    test_rng);
+  if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
+      (NULL == ws) )
+  {
+    fprintf (stderr,
+             "Init test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  if (NULL != ws)
+  {
+    MHD_websocket_stream_free (ws);
+    ws = NULL;
+  }
+  /* Regular test: rng given for client mode */
+  ws = NULL;
+  ret = MHD_websocket_stream_init2 (&ws,
+                                    MHD_WEBSOCKET_FLAG_CLIENT
+                                    | MHD_WEBSOCKET_FLAG_NO_FRAGMENTS,
+                                    0,
+                                    test_malloc,
+                                    test_realloc,
+                                    test_free,
+                                    NULL,
+                                    test_rng);
+  if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
+      (NULL == ws) )
+  {
+    fprintf (stderr,
+             "Init test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  if (NULL != ws)
+  {
+    MHD_websocket_stream_free (ws);
+    ws = NULL;
+  }
+  /* Fail test: rng not given for client mode */
+  ws = NULL;
+  ret = MHD_websocket_stream_init2 (&ws,
+                                    MHD_WEBSOCKET_FLAG_CLIENT
+                                    | MHD_WEBSOCKET_FLAG_NO_FRAGMENTS,
+                                    0,
+                                    test_malloc,
+                                    test_realloc,
+                                    test_free,
+                                    NULL,
+                                    NULL);
+  if ((MHD_WEBSOCKET_STATUS_PARAMETER_ERROR != ret) ||
+      (NULL != ws) )
+  {
+    fprintf (stderr,
+             "Init test failed in line %u %u.\n",
+             (unsigned int) __LINE__, ret);
+    ++failed;
+  }
+  if (NULL != ws)
+  {
+    MHD_websocket_stream_free (ws);
+    ws = NULL;
+  }
 
   return failed != 0 ? 0x01 : 0x00;
 }
 
 
 /**
- * Test procedure for `MHD_websocket_create_accept()`
+ * Test procedure for `MHD_websocket_create_accept_header()`
  */
 int
 test_accept ()
@@ -723,8 +873,8 @@ test_accept ()
   */
   /* Regular test: Test case from RFC6455 4.2.2 */
   memset (accept_key, 0, 29);
-  ret = MHD_websocket_create_accept ("dGhlIHNhbXBsZSBub25jZQ==",
-                                     accept_key);
+  ret = MHD_websocket_create_accept_header ("dGhlIHNhbXBsZSBub25jZQ==",
+                                            accept_key);
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (0 != memcmp (accept_key, "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=", 29)))
   {
@@ -741,9 +891,9 @@ test_accept ()
   */
   /* Fail test: missing sec-key value */
   memset (accept_key, 0, 29);
-  ret = MHD_websocket_create_accept (NULL,
-                                     accept_key);
-  if (MHD_WEBSOCKET_STATUS_PARAMETER_ERROR != ret)
+  ret = MHD_websocket_create_accept_header (NULL,
+                                            accept_key);
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
   {
     fprintf (stderr,
              "Accept test failed in line %u.\n",
@@ -752,8 +902,8 @@ test_accept ()
   }
   /* Fail test: missing accept variable */
   memset (accept_key, 0, 29);
-  ret = MHD_websocket_create_accept ("dGhlIHNhbXBsZSBub25jZQ==",
-                                     NULL);
+  ret = MHD_websocket_create_accept_header ("dGhlIHNhbXBsZSBub25jZQ==",
+                                            NULL);
   if (MHD_WEBSOCKET_STATUS_PARAMETER_ERROR != ret)
   {
     fprintf (stderr,
@@ -1038,7 +1188,7 @@ test_decodes ()
                                 12,
                                 NULL,
                                 0,
-                                MHD_WEBSOCKET_STATUS_BINARY_FRAGMENT,
+                                MHD_WEBSOCKET_STATUS_BINARY_FIRST_FRAGMENT,
                                 MHD_WEBSOCKET_VALIDITY_VALID,
                                 6);
   /* Regular test: Fragmented binary frame without payload, fragments to the caller, 2nd call */
@@ -1080,7 +1230,7 @@ test_decodes ()
                                 18,
                                 "\x01\x02\x03",
                                 3,
-                                MHD_WEBSOCKET_STATUS_BINARY_FRAGMENT,
+                                MHD_WEBSOCKET_STATUS_BINARY_FIRST_FRAGMENT,
                                 MHD_WEBSOCKET_VALIDITY_VALID,
                                 9);
   /* Regular test: Fragmented binary frame without payload, fragments to the caller, 2nd call */
@@ -1097,6 +1247,62 @@ test_decodes ()
                                 MHD_WEBSOCKET_STATUS_BINARY_LAST_FRAGMENT,
                                 MHD_WEBSOCKET_VALIDITY_VALID,
                                 18);
+  /* Regular test: Fragmented binary frame with payload, fragments to the caller, 1st call */
+  failed += test_decode_single (__LINE__,
+                                MHD_WEBSOCKET_FLAG_SERVER
+                                | MHD_WEBSOCKET_FLAG_WANT_FRAGMENTS,
+                                0,
+                                1,
+                                0,
+                                "\x02\x83\x00\x00\x00\x00\x01\x02\x03\x00\x83\x00\x00\x00\x00\x04\x05\x06\x00\x83\x00\x00\x00\x00\x07\x08\x09\x80\x83\x00\x00\x00\x00\x0A\x0B\x0C",
+                                36,
+                                "\x01\x02\x03",
+                                3,
+                                MHD_WEBSOCKET_STATUS_BINARY_FIRST_FRAGMENT,
+                                MHD_WEBSOCKET_VALIDITY_VALID,
+                                9);
+  /* Regular test: Fragmented binary frame without payload, fragments to the caller, 2nd call */
+  failed += test_decode_single (__LINE__,
+                                MHD_WEBSOCKET_FLAG_SERVER
+                                | MHD_WEBSOCKET_FLAG_WANT_FRAGMENTS,
+                                0,
+                                2,
+                                0,
+                                "\x02\x83\x00\x00\x00\x00\x01\x02\x03\x00\x83\x00\x00\x00\x00\x04\x05\x06\x00\x83\x00\x00\x00\x00\x07\x08\x09\x80\x83\x00\x00\x00\x00\x0A\x0B\x0C",
+                                36,
+                                "\x04\x05\x06",
+                                3,
+                                MHD_WEBSOCKET_STATUS_BINARY_NEXT_FRAGMENT,
+                                MHD_WEBSOCKET_VALIDITY_VALID,
+                                18);
+  /* Regular test: Fragmented binary frame without payload, fragments to the caller, 3rd call */
+  failed += test_decode_single (__LINE__,
+                                MHD_WEBSOCKET_FLAG_SERVER
+                                | MHD_WEBSOCKET_FLAG_WANT_FRAGMENTS,
+                                0,
+                                3,
+                                0,
+                                "\x02\x83\x00\x00\x00\x00\x01\x02\x03\x00\x83\x00\x00\x00\x00\x04\x05\x06\x00\x83\x00\x00\x00\x00\x07\x08\x09\x80\x83\x00\x00\x00\x00\x0A\x0B\x0C",
+                                36,
+                                "\x07\x08\x09",
+                                3,
+                                MHD_WEBSOCKET_STATUS_BINARY_NEXT_FRAGMENT,
+                                MHD_WEBSOCKET_VALIDITY_VALID,
+                                27);
+  /* Regular test: Fragmented binary frame without payload, fragments to the caller, 4th call */
+  failed += test_decode_single (__LINE__,
+                                MHD_WEBSOCKET_FLAG_SERVER
+                                | MHD_WEBSOCKET_FLAG_WANT_FRAGMENTS,
+                                0,
+                                4,
+                                0,
+                                "\x02\x83\x00\x00\x00\x00\x01\x02\x03\x00\x83\x00\x00\x00\x00\x04\x05\x06\x00\x83\x00\x00\x00\x00\x07\x08\x09\x80\x83\x00\x00\x00\x00\x0A\x0B\x0C",
+                                36,
+                                "\x0A\x0B\x0C",
+                                3,
+                                MHD_WEBSOCKET_STATUS_BINARY_LAST_FRAGMENT,
+                                MHD_WEBSOCKET_VALIDITY_VALID,
+                                36);
   /* Regular test: Binary frame with bytes which look like invalid UTF-8 character */
   failed += test_decode_single (__LINE__,
                                 MHD_WEBSOCKET_FLAG_SERVER
@@ -1167,7 +1373,7 @@ test_decodes ()
                                 17,
                                 "H\xC3",
                                 2,
-                                MHD_WEBSOCKET_STATUS_BINARY_FRAGMENT,
+                                MHD_WEBSOCKET_STATUS_BINARY_FIRST_FRAGMENT,
                                 MHD_WEBSOCKET_VALIDITY_VALID,
                                 8);
   /* Regular test: Fragmented binary frame with bytes which look like valid UTF-8 sequence,
@@ -1802,7 +2008,7 @@ test_decodes ()
                                 17,
                                 "Hel",
                                 3,
-                                MHD_WEBSOCKET_STATUS_TEXT_FRAGMENT,
+                                MHD_WEBSOCKET_STATUS_TEXT_FIRST_FRAGMENT,
                                 MHD_WEBSOCKET_VALIDITY_VALID,
                                 9);
   /* Regular test: Fragmented, masked text frame, we are the server and want fragments, second call */
@@ -1833,6 +2039,48 @@ test_decodes ()
                                 MHD_WEBSOCKET_STATUS_OK,
                                 MHD_WEBSOCKET_VALIDITY_VALID,
                                 17);
+  /* Regular test: Fragmented, masked text frame, we are the server and want fragments, 1st call */
+  failed += test_decode_single (__LINE__,
+                                MHD_WEBSOCKET_FLAG_SERVER
+                                | MHD_WEBSOCKET_FLAG_WANT_FRAGMENTS,
+                                0,
+                                1,
+                                0,
+                                "\x01\x83\x37\xfa\x21\x3d\x7f\x9f\x4d\x00\x81\x3d\x37\xfa\x21\x51\x80\x81\x37\x37\xfa\x21\x58",
+                                23,
+                                "Hel",
+                                3,
+                                MHD_WEBSOCKET_STATUS_TEXT_FIRST_FRAGMENT,
+                                MHD_WEBSOCKET_VALIDITY_VALID,
+                                9);
+  /* Regular test: Fragmented, masked text frame, we are the server and want fragments, 2nd call */
+  failed += test_decode_single (__LINE__,
+                                MHD_WEBSOCKET_FLAG_SERVER
+                                | MHD_WEBSOCKET_FLAG_WANT_FRAGMENTS,
+                                0,
+                                2,
+                                0,
+                                "\x01\x83\x37\xfa\x21\x3d\x7f\x9f\x4d\x00\x81\x3d\x37\xfa\x21\x51\x80\x81\x37\x37\xfa\x21\x58",
+                                23,
+                                "l",
+                                1,
+                                MHD_WEBSOCKET_STATUS_TEXT_NEXT_FRAGMENT,
+                                MHD_WEBSOCKET_VALIDITY_VALID,
+                                16);
+  /* Regular test: Fragmented, masked text frame, we are the server and want fragments, 3rd call */
+  failed += test_decode_single (__LINE__,
+                                MHD_WEBSOCKET_FLAG_SERVER
+                                | MHD_WEBSOCKET_FLAG_WANT_FRAGMENTS,
+                                0,
+                                3,
+                                0,
+                                "\x01\x83\x37\xfa\x21\x3d\x7f\x9f\x4d\x00\x81\x3d\x37\xfa\x21\x51\x80\x81\x37\x37\xfa\x21\x58",
+                                23,
+                                "o",
+                                1,
+                                MHD_WEBSOCKET_STATUS_TEXT_LAST_FRAGMENT,
+                                MHD_WEBSOCKET_VALIDITY_VALID,
+                                23);
 
 
   /*
@@ -2255,6 +2503,7 @@ test_decodes ()
     free (buf2);
     buf2 = NULL;
   }
+#ifdef ENABLE_64BIT_TESTS
   /* Edge test (success): Maximum allowed length (here is only the header checked) */
   failed += test_decode_single (__LINE__,
                                 MHD_WEBSOCKET_FLAG_SERVER
@@ -2269,6 +2518,23 @@ test_decodes ()
                                 MHD_WEBSOCKET_STATUS_OK,
                                 MHD_WEBSOCKET_VALIDITY_VALID,
                                 10);
+#else
+  /* Edge test (fail): Maximum allowed length
+     (the size is allowed, but the system cannot handle this amount of memory) */
+  failed += test_decode_single (__LINE__,
+                                MHD_WEBSOCKET_FLAG_SERVER
+                                | MHD_WEBSOCKET_FLAG_NO_FRAGMENTS,
+                                0,
+                                1,
+                                0,
+                                "\x81\xff\x7f\xff\xff\xff\xff\xff\xff\xff",
+                                10,
+                                NULL,
+                                0,
+                                MHD_WEBSOCKET_STATUS_MAXIMUM_SIZE_EXCEEDED,
+                                MHD_WEBSOCKET_VALIDITY_INVALID,
+                                10);
+#endif
   /* Edge test (fail): Too big payload length */
   failed += test_decode_single (__LINE__,
                                 MHD_WEBSOCKET_FLAG_SERVER
@@ -2447,7 +2713,7 @@ test_decodes ()
                                 17,
                                 "Hel",
                                 3,
-                                MHD_WEBSOCKET_STATUS_TEXT_FRAGMENT,
+                                MHD_WEBSOCKET_STATUS_TEXT_FIRST_FRAGMENT,
                                 MHD_WEBSOCKET_VALIDITY_VALID,
                                 9);
   /* Edge test (success): Fragmented frames with the sum of payload greater than
@@ -3247,7 +3513,7 @@ test_decodes ()
                                 28,
                                 "This is my n",
                                 12,
-                                MHD_WEBSOCKET_STATUS_TEXT_FRAGMENT,
+                                MHD_WEBSOCKET_STATUS_TEXT_FIRST_FRAGMENT,
                                 MHD_WEBSOCKET_VALIDITY_VALID,
                                 19);
   /* Regular test: UTF-8 sequence between fragments, fragmentation for the caller, 2nd call */
@@ -3276,7 +3542,7 @@ test_decodes ()
                                 14,
                                 NULL,
                                 0,
-                                MHD_WEBSOCKET_STATUS_TEXT_FRAGMENT,
+                                MHD_WEBSOCKET_STATUS_TEXT_FIRST_FRAGMENT,
                                 MHD_WEBSOCKET_VALIDITY_VALID,
                                 7);
   /* Edge test (success): UTF-8 sequence between fragments, but nothing before, fragmentation for the caller, 2nd call */
@@ -3664,7 +3930,7 @@ test_decodes ()
                                 35,
                                 "This ",
                                 5,
-                                MHD_WEBSOCKET_STATUS_TEXT_FRAGMENT,
+                                MHD_WEBSOCKET_STATUS_TEXT_FIRST_FRAGMENT,
                                 MHD_WEBSOCKET_VALIDITY_VALID,
                                 11);
   /* Regular test: Fragmented text frame mixed with one ping frame, the caller wants fragments (2nd call) */
@@ -3734,7 +4000,7 @@ test_decodes ()
                                 36,
                                 "This ",
                                 5,
-                                MHD_WEBSOCKET_STATUS_TEXT_FRAGMENT,
+                                MHD_WEBSOCKET_STATUS_TEXT_FIRST_FRAGMENT,
                                 MHD_WEBSOCKET_VALIDITY_VALID,
                                 11);
   /* Fail test: Fragmented text frame mixed with one non-fragmented binary frame; the caller wants fragments; 2nd call */
@@ -4106,7 +4372,7 @@ test_decodes ()
                                   &streambuf_read_len,
                                   &payload,
                                   &payload_len);
-      if ((MHD_WEBSOCKET_STATUS_TEXT_FRAGMENT != ret) ||
+      if ((MHD_WEBSOCKET_STATUS_TEXT_FIRST_FRAGMENT != ret) ||
           (3 != payload_len) ||
           (NULL == payload) ||
           (0 != memcmp ("Hel", payload, 3 + 1)))
@@ -4155,7 +4421,7 @@ test_decodes ()
                                   &streambuf_read_len,
                                   &payload,
                                   &payload_len);
-      if ((MHD_WEBSOCKET_STATUS_TEXT_FRAGMENT != ret) ||
+      if ((MHD_WEBSOCKET_STATUS_TEXT_FIRST_FRAGMENT != ret) ||
           (2 != payload_len) ||
           (NULL == payload) ||
           (0 != memcmp ("He", payload, 2 + 1)))
@@ -4195,6 +4461,8 @@ test_decodes ()
         MHD_websocket_free (ws, payload);
         payload = NULL;
       }
+
+      MHD_websocket_stream_free (ws);
     }
     else
     {
@@ -4439,7 +4707,9 @@ test_decodes ()
                                                                0,
                                                                test_malloc,
                                                                test_realloc,
-                                                               test_free))
+                                                               test_free,
+                                                               NULL,
+                                                               NULL))
     {
       size_t streambuf_read_len = 0;
       char*payload = NULL;
@@ -4484,7 +4754,9 @@ test_decodes ()
                                                                  0,
                                                                  test_malloc,
                                                                  test_realloc,
-                                                                 test_free))
+                                                                 test_free,
+                                                                 NULL,
+                                                                 NULL))
       {
         /* Failure test: No memory allocation after fragmented frame */
         disable_alloc = 0;
@@ -4623,7 +4895,9 @@ test_decodes ()
                                                                0,
                                                                test_malloc,
                                                                test_realloc,
-                                                               test_free))
+                                                               test_free,
+                                                               NULL,
+                                                               NULL))
     {
       ret = MHD_websocket_decode (ws,
                                   "\x81\x85\x00\x00\x00\x00Hel",
@@ -4674,7 +4948,9 @@ test_decodes ()
                                                                0,
                                                                test_malloc,
                                                                test_realloc,
-                                                               test_free))
+                                                               test_free,
+                                                               NULL,
+                                                               NULL))
     {
       ret = MHD_websocket_decode (ws,
                                   "\x88\x85\x00\x00\x00\x00Hel",
@@ -4725,7 +5001,9 @@ test_decodes ()
                                                                0,
                                                                test_malloc,
                                                                test_realloc,
-                                                               test_free))
+                                                               test_free,
+                                                               NULL,
+                                                               NULL))
     {
       ret = MHD_websocket_decode (ws,
                                   "\x01\x85\x00\x00\x00\x00Hello",
@@ -4775,7 +5053,9 @@ test_decodes ()
                                                                0,
                                                                test_malloc,
                                                                test_realloc,
-                                                               test_free))
+                                                               test_free,
+                                                               NULL,
+                                                               NULL))
     {
       ret = MHD_websocket_decode (ws,
                                   "\x01\x85\x00\x00\x00\x00Hello",
@@ -4841,7 +5121,9 @@ test_decodes ()
                                                                0,
                                                                test_malloc,
                                                                test_realloc,
-                                                               test_free))
+                                                               test_free,
+                                                               NULL,
+                                                               NULL))
     {
       ret = MHD_websocket_decode (ws,
                                   "\x01\x85\x00\x00\x00\x00Hello",
@@ -4929,9 +5211,14 @@ test_encodes_text ()
   size_t frame_len = 0;
   int utf8_step = 0;
 
-  if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init (&wsc,
-                                                            MHD_WEBSOCKET_FLAG_CLIENT,
-                                                            0))
+  if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init2 (&wsc,
+                                                             MHD_WEBSOCKET_FLAG_CLIENT,
+                                                             0,
+                                                             malloc,
+                                                             realloc,
+                                                             free,
+                                                             NULL,
+                                                             test_rng))
   {
     fprintf (stderr,
              "No encode text tests possible due to failed stream init in line %u\n",
@@ -5742,6 +6029,7 @@ test_encodes_text ()
     free (buf2);
     buf2 = NULL;
   }
+#ifdef ENABLE_64BIT_TESTS
   /* Fail test: frame_len is greater than 0x7FFFFFFFFFFFFFFF
      (this is the maximum allowed payload size) */
   frame_len = 0;
@@ -5766,6 +6054,7 @@ test_encodes_text ()
     MHD_websocket_free (wss, frame);
     frame = NULL;
   }
+#endif
 
   /*
   ------------------------------------------------------------------------------
@@ -6188,7 +6477,9 @@ test_encodes_text ()
                                                                0,
                                                                test_malloc,
                                                                test_realloc,
-                                                               test_free))
+                                                               test_free,
+                                                               NULL,
+                                                               NULL))
     {
       /* Fail test: allocation while no memory available */
       disable_alloc = 1;
@@ -6276,9 +6567,14 @@ test_encodes_binary ()
   char*frame = NULL;
   size_t frame_len = 0;
 
-  if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init (&wsc,
-                                                            MHD_WEBSOCKET_FLAG_CLIENT,
-                                                            0))
+  if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init2 (&wsc,
+                                                             MHD_WEBSOCKET_FLAG_CLIENT,
+                                                             0,
+                                                             malloc,
+                                                             realloc,
+                                                             free,
+                                                             NULL,
+                                                             test_rng))
   {
     fprintf (stderr,
              "No encode binary tests possible due to failed stream init in line %u\n",
@@ -6688,6 +6984,7 @@ test_encodes_binary ()
     free (buf2);
     buf2 = NULL;
   }
+#ifdef ENABLE_64BIT_TESTS
   /* Fail test: `frame_len` is greater than 0x7FFFFFFFFFFFFFFF
      (this is the maximum allowed payload size) */
   frame_len = 0;
@@ -6711,6 +7008,7 @@ test_encodes_binary ()
     MHD_websocket_free (wss, frame);
     frame = NULL;
   }
+#endif
 
   /*
   ------------------------------------------------------------------------------
@@ -6882,7 +7180,9 @@ test_encodes_binary ()
                                                                0,
                                                                test_malloc,
                                                                test_realloc,
-                                                               test_free))
+                                                               test_free,
+                                                               NULL,
+                                                               NULL))
     {
       /* Fail test: allocation while no memory available */
       disable_alloc = 1;
@@ -6968,18 +7268,28 @@ test_encodes_close ()
   char*frame = NULL;
   size_t frame_len = 0;
 
-  if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init (&wsc,
-                                                            MHD_WEBSOCKET_FLAG_CLIENT,
-                                                            0))
+  if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init2 (&wsc,
+                                                             MHD_WEBSOCKET_FLAG_CLIENT,
+                                                             0,
+                                                             malloc,
+                                                             realloc,
+                                                             free,
+                                                             NULL,
+                                                             test_rng))
   {
     fprintf (stderr,
              "No encode close tests possible due to failed stream init in line %u\n",
              (unsigned int) __LINE__);
     return 0x10;
   }
-  if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init (&wss,
-                                                            MHD_WEBSOCKET_FLAG_SERVER,
-                                                            0))
+  if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init2 (&wss,
+                                                             MHD_WEBSOCKET_FLAG_SERVER,
+                                                             0,
+                                                             malloc,
+                                                             realloc,
+                                                             free,
+                                                             NULL,
+                                                             test_rng))
   {
     fprintf (stderr,
              "No encode close tests possible due to failed stream init in line %u\n",
@@ -7623,7 +7933,9 @@ test_encodes_close ()
                                                                0,
                                                                test_malloc,
                                                                test_realloc,
-                                                               test_free))
+                                                               test_free,
+                                                               NULL,
+                                                               NULL))
     {
       /* Fail test: allocation while no memory available */
       disable_alloc = 1;
@@ -7709,9 +8021,14 @@ test_encodes_ping ()
   char*frame = NULL;
   size_t frame_len = 0;
 
-  if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init (&wsc,
-                                                            MHD_WEBSOCKET_FLAG_CLIENT,
-                                                            0))
+  if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init2 (&wsc,
+                                                             MHD_WEBSOCKET_FLAG_CLIENT,
+                                                             0,
+                                                             malloc,
+                                                             realloc,
+                                                             free,
+                                                             NULL,
+                                                             test_rng))
   {
     fprintf (stderr,
              "No encode ping tests possible due to failed stream init in line %u\n",
@@ -8156,7 +8473,9 @@ test_encodes_ping ()
                                                                0,
                                                                test_malloc,
                                                                test_realloc,
-                                                               test_free))
+                                                               test_free,
+                                                               NULL,
+                                                               NULL))
     {
       /* Fail test: allocation while no memory available */
       disable_alloc = 1;
@@ -8240,9 +8559,14 @@ test_encodes_pong ()
   char*frame = NULL;
   size_t frame_len = 0;
 
-  if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init (&wsc,
-                                                            MHD_WEBSOCKET_FLAG_CLIENT,
-                                                            0))
+  if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init2 (&wsc,
+                                                             MHD_WEBSOCKET_FLAG_CLIENT,
+                                                             0,
+                                                             malloc,
+                                                             realloc,
+                                                             free,
+                                                             NULL,
+                                                             test_rng))
   {
     fprintf (stderr,
              "No encode pong tests possible due to failed stream init in line %u\n",
@@ -8687,7 +9011,9 @@ test_encodes_pong ()
                                                                0,
                                                                test_malloc,
                                                                test_realloc,
-                                                               test_free))
+                                                               test_free,
+                                                               NULL,
+                                                               NULL))
     {
       /* Fail test: allocation while no memory available */
       disable_alloc = 1;
@@ -8955,6 +9281,793 @@ test_split_close_reason ()
 }
 
 
+/**
+ * Test procedure for `MHD_websocket_check_http_version()`
+ */
+int
+test_check_http_version ()
+{
+  int failed = 0;
+  int ret;
+
+  /*
+  ------------------------------------------------------------------------------
+    Version check with valid HTTP version syntax
+  ------------------------------------------------------------------------------
+  */
+  /* Regular test: HTTP/1.1 */
+  ret = MHD_websocket_check_http_version ("HTTP/1.1");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Regular test: HTTP/1.2 */
+  ret = MHD_websocket_check_http_version ("HTTP/1.2");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Regular test: HTTP/1.10 */
+  ret = MHD_websocket_check_http_version ("HTTP/1.10");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Regular test: HTTP/2.0 */
+  ret = MHD_websocket_check_http_version ("HTTP/2.0");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Regular test: HTTP/3.0 */
+  ret = MHD_websocket_check_http_version ("HTTP/3.0");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Fail test: HTTP/1.0 */
+  ret = MHD_websocket_check_http_version ("HTTP/1.0");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Fail test: HTTP/0.9 */
+  ret = MHD_websocket_check_http_version ("HTTP/0.9");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  /*
+  ------------------------------------------------------------------------------
+    Version check edge cases
+  ------------------------------------------------------------------------------
+  */
+  /* Edge test (success): HTTP/123.45 */
+  ret = MHD_websocket_check_http_version ("HTTP/123.45");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): HTTP/1.45 */
+  ret = MHD_websocket_check_http_version ("HTTP/1.45");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): HTTP/01.1 */
+  ret = MHD_websocket_check_http_version ("HTTP/01.1");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): HTTP/0001.1 */
+  ret = MHD_websocket_check_http_version ("HTTP/0001.1");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): HTTP/1.01 */
+  ret = MHD_websocket_check_http_version ("HTTP/1.01");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): HTTP/1.0001 */
+  ret = MHD_websocket_check_http_version ("HTTP/1.0001");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): HTTP/0001.0001 */
+  ret = MHD_websocket_check_http_version ("HTTP/0001.0001");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): HTTP/2.000 */
+  ret = MHD_websocket_check_http_version ("HTTP/2.000");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): HTTP/0.0 */
+  ret = MHD_websocket_check_http_version ("HTTP/0.0");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): HTTP/00.0 */
+  ret = MHD_websocket_check_http_version ("HTTP/00.0");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): HTTP/00.0 */
+  ret = MHD_websocket_check_http_version ("HTTP/0.00");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  /*
+  ------------------------------------------------------------------------------
+    Invalid version syntax
+  ------------------------------------------------------------------------------
+  */
+  /* Fail test: (empty string) */
+  ret = MHD_websocket_check_http_version ("");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Fail test: http/1.1 */
+  ret = MHD_websocket_check_http_version ("http/1.1");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Fail test: "HTTP / 1.1" */
+  ret = MHD_websocket_check_http_version ("HTTP / 1.1");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  /*
+  ------------------------------------------------------------------------------
+    Missing parameters
+  ------------------------------------------------------------------------------
+  */
+  /* Fail test: NULL as version */
+  ret = MHD_websocket_check_http_version (NULL);
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_http_version test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  return failed != 0 ? 0x200 : 0x00;
+}
+
+
+/**
+ * Test procedure for `MHD_websocket_check_connection_header()`
+ */
+int
+test_check_connection_header ()
+{
+  int failed = 0;
+  int ret;
+
+  /*
+  ------------------------------------------------------------------------------
+    Check with valid Connection header syntax
+  ------------------------------------------------------------------------------
+  */
+  /* Regular test: Upgrade */
+  ret = MHD_websocket_check_connection_header ("Upgrade");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Regular test: keep-alive, Upgrade */
+  ret = MHD_websocket_check_connection_header ("keep-alive, Upgrade");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Fail test: keep-alive */
+  ret = MHD_websocket_check_connection_header ("keep-alive");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Fail test: close */
+  ret = MHD_websocket_check_connection_header ("close");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  /*
+  ------------------------------------------------------------------------------
+    Connection check edge cases
+  ------------------------------------------------------------------------------
+  */
+  /* Edge test (success): keep-alive,Upgrade */
+  ret = MHD_websocket_check_connection_header ("keep-alive,Upgrade");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): Upgrade, keep-alive */
+  ret = MHD_websocket_check_connection_header ("Upgrade, keep-alive");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): Upgrade,keep-alive */
+  ret = MHD_websocket_check_connection_header ("Upgrade,keep-alive");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): Transfer-Encoding,Upgrade,keep-alive */
+  ret = MHD_websocket_check_connection_header ("Transfer-Encoding,Upgrade,keep-alive");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): Transfer-Encoding  ,  Upgrade  ,  keep-alive */
+  ret = MHD_websocket_check_connection_header ("Transfer-Encoding  ,  Upgrade  ,  keep-alive");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): upgrade */
+  ret = MHD_websocket_check_connection_header ("upgrade");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): UPGRADE */
+  ret = MHD_websocket_check_connection_header ("UPGRADE");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): All allowed token characters, then upgrade token */
+  ret = MHD_websocket_check_connection_header ("!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,Upgrade");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): Different, allowed whitespaces */
+  ret = MHD_websocket_check_connection_header (" \tUpgrade \t");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): Different, disallowed whitespaces */
+  ret = MHD_websocket_check_connection_header ("\rUpgrade");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): Different, disallowed whitespaces */
+  ret = MHD_websocket_check_connection_header ("\nUpgrade");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): Different, disallowed whitespaces */
+  ret = MHD_websocket_check_connection_header ("\vUpgrade");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): Different, disallowed whitespaces */
+  ret = MHD_websocket_check_connection_header ("\fUpgrade");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  /*
+  ------------------------------------------------------------------------------
+    Invalid header syntax
+  ------------------------------------------------------------------------------
+  */
+  /* Fail test: (empty string) */
+  ret = MHD_websocket_check_connection_header ("");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Fail test: (Disallowed) multiple word token with the term "Upgrade" in it */
+  ret = MHD_websocket_check_connection_header ("Upgrade or Downgrade");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Fail test: Invalid characters */
+  ret = MHD_websocket_check_connection_header ("\"Upgrade\"");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  /*
+  ------------------------------------------------------------------------------
+    Missing parameters
+  ------------------------------------------------------------------------------
+  */
+  /* Fail test: NULL as connection */
+  ret = MHD_websocket_check_connection_header (NULL);
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_connection_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  return failed != 0 ? 0x400 : 0x00;
+}
+
+
+/**
+ * Test procedure for `MHD_websocket_check_upgrade_header()`
+ */
+int
+test_check_upgrade_header ()
+{
+  int failed = 0;
+  int ret;
+
+  /*
+  ------------------------------------------------------------------------------
+    Check with valid Upgrade header syntax
+  ------------------------------------------------------------------------------
+  */
+  /* Regular test: websocket */
+  ret = MHD_websocket_check_upgrade_header ("websocket");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Fail test: HTTP/2.0 */
+  ret = MHD_websocket_check_upgrade_header ("HTTP/2.0");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  /*
+  ------------------------------------------------------------------------------
+    Upgrade check edge cases
+  ------------------------------------------------------------------------------
+  */
+  /* Edge test (success): websocket,HTTP/2.0 */
+  ret = MHD_websocket_check_upgrade_header ("websocket,HTTP/2.0");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): websocket ,HTTP/2.0 */
+  ret = MHD_websocket_check_upgrade_header (" websocket ,HTTP/2.0");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): HTTP/2.0, websocket */
+  ret = MHD_websocket_check_upgrade_header ("HTTP/2.0, websocket ");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): websocket/13 */
+  ret = MHD_websocket_check_upgrade_header ("websocket/13");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): WeBsOcKeT */
+  ret = MHD_websocket_check_upgrade_header ("WeBsOcKeT");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): WEBSOCKET */
+  ret = MHD_websocket_check_upgrade_header ("WEBSOCKET");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): All allowed token characters plus /, then websocket keyowrd */
+  ret = MHD_websocket_check_upgrade_header ("!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/,websocket");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (success): Different, allowed whitespaces */
+  ret = MHD_websocket_check_upgrade_header (" \twebsocket \t");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): Different, disallowed whitespaces */
+  ret = MHD_websocket_check_upgrade_header ("\rwebsocket");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): Different, disallowed whitespaces */
+  ret = MHD_websocket_check_upgrade_header ("\nwebsocket");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): Different, disallowed whitespaces */
+  ret = MHD_websocket_check_upgrade_header ("\vwebsocket");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): Different, disallowed whitespaces */
+  ret = MHD_websocket_check_upgrade_header ("\fwebsocket");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  /*
+  ------------------------------------------------------------------------------
+    Invalid header syntax
+  ------------------------------------------------------------------------------
+  */
+  /* Fail test: (empty string) */
+  ret = MHD_websocket_check_upgrade_header ("");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Fail test: (Disallowed) multiple word token with the term "websocket" in it */
+  ret = MHD_websocket_check_upgrade_header ("websocket or something");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Fail test: Invalid characters */
+  ret = MHD_websocket_check_upgrade_header ("\"websocket\"");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  /*
+  ------------------------------------------------------------------------------
+    Missing parameters
+  ------------------------------------------------------------------------------
+  */
+  /* Fail test: NULL as upgrade */
+  ret = MHD_websocket_check_upgrade_header (NULL);
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_upgrade_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  return failed != 0 ? 0x800 : 0x00;
+}
+
+
+/**
+ * Test procedure for `MHD_websocket_check_version_header()`
+ */
+int
+test_check_version_header ()
+{
+  int failed = 0;
+  int ret;
+
+  /*
+  ------------------------------------------------------------------------------
+    Check with valid Upgrade header syntax
+  ------------------------------------------------------------------------------
+  */
+  /* Regular test: 13 */
+  ret = MHD_websocket_check_version_header ("13");
+  if (MHD_WEBSOCKET_STATUS_OK != ret)
+  {
+    fprintf (stderr,
+             "check_version_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  /*
+  ------------------------------------------------------------------------------
+    Version check edge cases
+  ------------------------------------------------------------------------------
+  */
+  /* Edge test (fail): 14 */
+  ret = MHD_websocket_check_version_header ("14");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_version_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): 12 */
+  ret = MHD_websocket_check_version_header ("12");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_version_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): 0 */
+  ret = MHD_websocket_check_version_header ("1");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_version_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): 1 */
+  ret = MHD_websocket_check_version_header ("1");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_version_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): 130 */
+  ret = MHD_websocket_check_version_header ("130");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_version_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Edge test (fail): " 13" */
+  ret = MHD_websocket_check_version_header (" 13");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_version_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  /*
+  ------------------------------------------------------------------------------
+    Invalid header syntax
+  ------------------------------------------------------------------------------
+  */
+  /* Fail test: (empty string) */
+  ret = MHD_websocket_check_version_header ("");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_version_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+  /* Fail test: Invalid characters */
+  ret = MHD_websocket_check_version_header ("abc");
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_version_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  /*
+  ------------------------------------------------------------------------------
+    Missing parameters
+  ------------------------------------------------------------------------------
+  */
+  /* Fail test: NULL as version */
+  ret = MHD_websocket_check_version_header (NULL);
+  if (MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER != ret)
+  {
+    fprintf (stderr,
+             "check_version_header test failed in line %u.\n",
+             (unsigned int) __LINE__);
+    ++failed;
+  }
+
+  return failed != 0 ? 0x1000 : 0x00;
+}
+
+
 int
 main (int argc, char *const *argv)
 {
@@ -8962,7 +10075,7 @@ main (int argc, char *const *argv)
   (void) argc; (void) argv;  /* Unused. Silent compiler warning. */
 
   /* seed random number generator */
-  MHD_websocket_srand ((unsigned long) time (NULL));
+  srand ((unsigned long) time (NULL));
 
   /* perform tests */
   errorCount += test_inits ();
@@ -8974,6 +10087,10 @@ main (int argc, char *const *argv)
   errorCount += test_encodes_ping ();
   errorCount += test_encodes_pong ();
   errorCount += test_split_close_reason ();
+  errorCount += test_check_http_version ();
+  errorCount += test_check_connection_header ();
+  errorCount += test_check_upgrade_header ();
+  errorCount += test_check_version_header ();
 
   /* output result */
   if (errorCount != 0)

@@ -1,420 +1,378 @@
-/* sha1.c - Functions to compute SHA1 message digest of files or
-   memory blocks according to the NIST specification FIPS-180-1.
+/*
+     This file is part of libmicrohttpd
+     Copyright (C) 2019-2021 Karlson2k (Evgeny Grin)
 
-   Copyright (C) 2000-2021 Free Software Foundation, Inc.
+     libmicrohttpd is free software; you can redistribute it and/or
+     modify it under the terms of the GNU Lesser General Public
+     License as published by the Free Software Foundation; either
+     version 2.1 of the License, or (at your option) any later version.
 
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the
-   Free Software Foundation; either version 2, or (at your option) any
-   later version.
+     This library is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     Lesser General Public License for more details.
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software Foundation,
-   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
-
-/* Written by Scott G. Miller
-   Credits:
-      Robert Klep <robert@ilse.nl>  -- Expansion function fix
+     You should have received a copy of the GNU Lesser General Public
+     License along with this library.
+     If not, see <http://www.gnu.org/licenses/>.
 */
 
-/*#include <config.h>*/
+/**
+ * @file microhttpd/sha1.c
+ * @brief  Calculation of SHA-1 digest as defined in FIPS PUB 180-4 (2015)
+ * @author Karlson2k (Evgeny Grin)
+ */
 
 #include "sha1.h"
 
-#include <stddef.h>
 #include <string.h>
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif /* HAVE_MEMORY_H */
+#include "mhd_bithelpers.h"
+#include "mhd_assert.h"
 
-#if USE_UNLOCKED_IO
-# include "unlocked-io.h"
-#endif
-
-#ifdef WORDS_BIGENDIAN
-# define SWAP(n) (n)
-#else
-# define SWAP(n) \
-    (((n) << 24) | (((n) & 0xff00) << 8) | (((n) >> 8) & 0xff00) | ((n) >> 24))
-#endif
-
-#define BLOCKSIZE 4096
-#if BLOCKSIZE % 64 != 0
-# error "invalid BLOCKSIZE"
-#endif
-
-/* This array contains the bytes used to pad the buffer to the next
-   64-byte boundary.  (RFC 1321, 3.1: Step 1)  */
-static const unsigned char fillbuf[64] = { 0x80, 0 /* , 0, 0, ...  */ };
-
-
-/* Take a pointer to a 160 bit block of data (five 32 bit ints) and
-   initialize it to the start constants of the SHA1 algorithm.  This
-   must be called before using hash in the call to sha1_hash.  */
+/**
+ * Initialise structure for SHA-1 calculation.
+ *
+ * @param ctx_ must be a `struct sha1_ctx *`
+ */
 void
-sha1_init_ctx (struct sha1_ctx *ctx)
+MHD_SHA1_init (void *ctx_)
 {
-  ctx->A = 0x67452301;
-  ctx->B = 0xefcdab89;
-  ctx->C = 0x98badcfe;
-  ctx->D = 0x10325476;
-  ctx->E = 0xc3d2e1f0;
+  struct sha1_ctx *const ctx = ctx_;
+  /* Initial hash values, see FIPS PUB 180-4 paragraph 5.3.1 */
+  /* Just some "magic" numbers defined by standard */
+  ctx->H[0] = UINT32_C (0x67452301);
+  ctx->H[1] = UINT32_C (0xefcdab89);
+  ctx->H[2] = UINT32_C (0x98badcfe);
+  ctx->H[3] = UINT32_C (0x10325476);
+  ctx->H[4] = UINT32_C (0xc3d2e1f0);
 
-  ctx->total[0] = ctx->total[1] = 0;
-  ctx->buflen = 0;
+  /* Initialise number of bytes. */
+  ctx->count = 0;
 }
 
 
-/* Put result from CTX in first 20 bytes following RESBUF.  The result
-   must be in little endian byte order.
-
-   IMPORTANT: On some systems it is required that RESBUF is correctly
-   aligned for a 32-bit value.  */
-void *
-sha1_read_ctx (const struct sha1_ctx *ctx, void *resbuf)
+/**
+ * Base of SHA-1 transformation.
+ * Gets full 512 bits / 64 bytes block of data and updates hash values;
+ * @param H     hash values
+ * @param data  data, must be exactly 64 bytes long
+ */
+static void
+sha1_transform (uint32_t H[_SHA1_DIGEST_LENGTH],
+                const uint8_t data[SHA1_BLOCK_SIZE])
 {
-  ((sha1_uint32 *) resbuf)[0] = SWAP (ctx->A);
-  ((sha1_uint32 *) resbuf)[1] = SWAP (ctx->B);
-  ((sha1_uint32 *) resbuf)[2] = SWAP (ctx->C);
-  ((sha1_uint32 *) resbuf)[3] = SWAP (ctx->D);
-  ((sha1_uint32 *) resbuf)[4] = SWAP (ctx->E);
+  /* Working variables,
+     see FIPS PUB 180-4 paragraph 6.1.3 */
+  uint32_t a = H[0];
+  uint32_t b = H[1];
+  uint32_t c = H[2];
+  uint32_t d = H[3];
+  uint32_t e = H[4];
 
-  return resbuf;
-}
+  /* Data buffer, used as cyclic buffer.
+     See FIPS PUB 180-4 paragraphs 5.2.1, 6.1.3 */
+  uint32_t W[16];
 
+  /* 'Ch' and 'Maj' macro functions are defined with
+     widely-used optimization.
+     See FIPS PUB 180-4 formulae 4.1. */
+#define Ch(x,y,z)     ( (z) ^ ((x) & ((y) ^ (z))) )
+#define Maj(x,y,z)    ( ((x) & (y)) ^ ((z) & ((x) ^ (y))) )
+  /* Unoptimized (original) versions: */
+/* #define Ch(x,y,z)  ( ( (x) & (y) ) ^ ( ~(x) & (z) ) )          */
+/* #define Maj(x,y,z) ( ((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)) ) */
+#define Par(x,y,z)    ( (x) ^ (y) ^ (z) )
 
-/* Process the remaining bytes in the internal buffer and the usual
-   prolog according to the standard and write the result to RESBUF.
+  /* Single step of SHA-1 computation,
+     see FIPS PUB 180-4 paragraph 6.1.3 step 3.
+   * Note: instead of reassigning all working variables on each step,
+           variables are rotated for each step:
+             SHA1STEP32 (a, b, c, d, e, func, K00, W[0]);
+             SHA1STEP32 (e, a, b, c, d, func, K00, W[1]);
+           so current 'vC' will be used as 'vD' on the next step,
+           current 'vE' will be used as 'vA' on the next step.
+   * Note: 'wt' must be used exactly one time in this macro as it change other data as well
+           every time when used. */
 
-   IMPORTANT: On some systems it is required that RESBUF is correctly
-   aligned for a 32-bit value.  */
-void *
-sha1_finish_ctx (struct sha1_ctx *ctx, void *resbuf)
-{
-  /* Take yet unprocessed bytes into account.  */
-  sha1_uint32 bytes = ctx->buflen;
-  size_t size = (bytes < 56) ? 64 / 4 : 64 * 2 / 4;
+#define SHA1STEP32(vA,vB,vC,vD,vE,ft,kt,wt) do {                         \
+    (vE) += _MHD_ROTL32 ((vA), 5) + ft ((vB), (vC), (vD)) + (kt) + (wt); \
+    (vB) = _MHD_ROTL32 ((vB), 30); } while (0)
 
-  /* Now count remaining bytes.  */
-  ctx->total[0] += bytes;
-  if (ctx->total[0] < bytes)
-    ++ctx->total[1];
+  /* Get value of W(t) from input data buffer,
+     See FIPS PUB 180-4 paragraph 6.1.3.
+     Input data must be read in big-endian bytes order,
+     see FIPS PUB 180-4 paragraph 3.1.2. */
+#define GET_W_FROM_DATA(buf,t) \
+  _MHD_GET_32BIT_BE (((const uint8_t*) (buf)) + (t) * SHA1_BYTES_IN_WORD)
 
-  /* Put the 64-bit file length in *bits* at the end of the buffer.  */
-  ctx->buffer[size - 2] = SWAP ((ctx->total[1] << 3) | (ctx->total[0] >> 29));
-  ctx->buffer[size - 1] = SWAP (ctx->total[0] << 3);
-
-  memcpy (&((char *) ctx->buffer)[bytes], fillbuf, (size - 2) * 4 - bytes);
-
-  /* Process last bytes.  */
-  sha1_process_block (ctx->buffer, size * 4, ctx);
-
-  return sha1_read_ctx (ctx, resbuf);
-}
-
-
-/* Compute SHA1 message digest for bytes read from STREAM.  The
-   resulting message digest number will be written into the 16 bytes
-   beginning at RESBLOCK.  */
-int
-sha1_stream (FILE *stream, void *resblock)
-{
-  struct sha1_ctx ctx;
-  char buffer[BLOCKSIZE + 72];
-  size_t sum;
-
-  /* Initialize the computation context.  */
-  sha1_init_ctx (&ctx);
-
-  /* Iterate over full file contents.  */
-  while (1)
+#ifndef _MHD_GET_32BIT_BE_UNALIGNED
+  if (0 != (((uintptr_t) data) % _MHD_UINT32_ALIGN))
   {
-    /* We read the file in blocks of BLOCKSIZE bytes.  One call of the
- computation function processes the whole buffer so that with the
- next round of the loop another block can be read.  */
-    size_t n;
-    sum = 0;
-
-    /* Read block.  Take care for partial reads.  */
-    while (1)
-    {
-      n = fread (buffer + sum, 1, BLOCKSIZE - sum, stream);
-
-      sum += n;
-
-      if (sum == BLOCKSIZE)
-        break;
-
-      if (n == 0)
-      {
-        /* Check for the error flag IFF N == 0, so that we don't
-     exit the loop after a partial read due to e.g., EAGAIN
-     or EWOULDBLOCK.  */
-        if (ferror (stream))
-          return 1;
-        goto process_partial_block;
-      }
-
-      /* We've read at least one byte, so ignore errors.  But always
-         check for EOF, since feof may be true even though N > 0.
-         Otherwise, we could end up calling fread after EOF.  */
-      if (feof (stream))
-        goto process_partial_block;
-    }
-
-    /* Process buffer with BLOCKSIZE bytes.  Note that
-    BLOCKSIZE % 64 == 0
-     */
-    sha1_process_block (buffer, BLOCKSIZE, &ctx);
+    /* Copy the unaligned input data to the aligned buffer */
+    memcpy (W, data, SHA1_BLOCK_SIZE);
+    /* The W[] buffer itself will be used as the source of the data,
+     * but data will be reloaded in correct bytes order during
+     * the next steps */
+    data = (uint8_t*) W;
   }
+#endif /* _MHD_GET_32BIT_BE_UNALIGNED */
 
-process_partial_block:;
+/* SHA-1 values of Kt for t=0..19, see FIPS PUB 180-4 paragraph 4.2.1. */
+#define K00      UINT32_C(0x5a827999)
+/* SHA-1 values of Kt for t=20..39, see FIPS PUB 180-4 paragraph 4.2.1.*/
+#define K20      UINT32_C(0x6ed9eba1)
+/* SHA-1 values of Kt for t=40..59, see FIPS PUB 180-4 paragraph 4.2.1.*/
+#define K40      UINT32_C(0x8f1bbcdc)
+/* SHA-1 values of Kt for t=60..79, see FIPS PUB 180-4 paragraph 4.2.1.*/
+#define K60      UINT32_C(0xca62c1d6)
 
-  /* Process any remaining bytes.  */
-  if (sum > 0)
-    sha1_process_bytes (buffer, sum, &ctx);
+  /* During first 16 steps, before making any calculations on each step,
+     the W element is read from input data buffer as big-endian value and
+     stored in array of W elements. */
+  /* Note: instead of using K constants as array, all K values are specified
+     individually for each step. */
+  SHA1STEP32 (a, b, c, d, e, Ch, K00, W[0] = GET_W_FROM_DATA (data, 0));
+  SHA1STEP32 (e, a, b, c, d, Ch, K00, W[1] = GET_W_FROM_DATA (data, 1));
+  SHA1STEP32 (d, e, a, b, c, Ch, K00, W[2] = GET_W_FROM_DATA (data, 2));
+  SHA1STEP32 (c, d, e, a, b, Ch, K00, W[3] = GET_W_FROM_DATA (data, 3));
+  SHA1STEP32 (b, c, d, e, a, Ch, K00, W[4] = GET_W_FROM_DATA (data, 4));
+  SHA1STEP32 (a, b, c, d, e, Ch, K00, W[5] = GET_W_FROM_DATA (data, 5));
+  SHA1STEP32 (e, a, b, c, d, Ch, K00, W[6] = GET_W_FROM_DATA (data, 6));
+  SHA1STEP32 (d, e, a, b, c, Ch, K00, W[7] = GET_W_FROM_DATA (data, 7));
+  SHA1STEP32 (c, d, e, a, b, Ch, K00, W[8] = GET_W_FROM_DATA (data, 8));
+  SHA1STEP32 (b, c, d, e, a, Ch, K00, W[9] = GET_W_FROM_DATA (data, 9));
+  SHA1STEP32 (a, b, c, d, e, Ch, K00, W[10] = GET_W_FROM_DATA (data, 10));
+  SHA1STEP32 (e, a, b, c, d, Ch, K00, W[11] = GET_W_FROM_DATA (data, 11));
+  SHA1STEP32 (d, e, a, b, c, Ch, K00, W[12] = GET_W_FROM_DATA (data, 12));
+  SHA1STEP32 (c, d, e, a, b, Ch, K00, W[13] = GET_W_FROM_DATA (data, 13));
+  SHA1STEP32 (b, c, d, e, a, Ch, K00, W[14] = GET_W_FROM_DATA (data, 14));
+  SHA1STEP32 (a, b, c, d, e, Ch, K00, W[15] = GET_W_FROM_DATA (data, 15));
 
-  /* Construct result in desired memory.  */
-  sha1_finish_ctx (&ctx, resblock);
-  return 0;
+  /* 'W' generation and assignment for 16 <= t <= 79.
+     See FIPS PUB 180-4 paragraph 6.1.3.
+     As only last 16 'W' are used in calculations, it is possible to
+     use 16 elements array of W as cyclic buffer. */
+#define Wgen(w,t) _MHD_ROTL32((w)[(t + 13) & 0xf] ^ (w)[(t + 8) & 0xf] \
+                              ^ (w)[(t + 2) & 0xf] ^ (w)[t & 0xf], 1)
+
+  /* During last 60 steps, before making any calculations on each step,
+     W element is generated from W elements of cyclic buffer and generated value
+     stored back in cyclic buffer. */
+  /* Note: instead of using K constants as array, all K values are specified
+     individually for each step, see FIPS PUB 180-4 paragraph 4.2.1. */
+  SHA1STEP32 (e, a, b, c, d, Ch, K00, W[16 & 0xf] = Wgen (W, 16));
+  SHA1STEP32 (d, e, a, b, c, Ch, K00, W[17 & 0xf] = Wgen (W, 17));
+  SHA1STEP32 (c, d, e, a, b, Ch, K00, W[18 & 0xf] = Wgen (W, 18));
+  SHA1STEP32 (b, c, d, e, a, Ch, K00, W[19 & 0xf] = Wgen (W, 19));
+  SHA1STEP32 (a, b, c, d, e, Par, K20, W[20 & 0xf] = Wgen (W, 20));
+  SHA1STEP32 (e, a, b, c, d, Par, K20, W[21 & 0xf] = Wgen (W, 21));
+  SHA1STEP32 (d, e, a, b, c, Par, K20, W[22 & 0xf] = Wgen (W, 22));
+  SHA1STEP32 (c, d, e, a, b, Par, K20, W[23 & 0xf] = Wgen (W, 23));
+  SHA1STEP32 (b, c, d, e, a, Par, K20, W[24 & 0xf] = Wgen (W, 24));
+  SHA1STEP32 (a, b, c, d, e, Par, K20, W[25 & 0xf] = Wgen (W, 25));
+  SHA1STEP32 (e, a, b, c, d, Par, K20, W[26 & 0xf] = Wgen (W, 26));
+  SHA1STEP32 (d, e, a, b, c, Par, K20, W[27 & 0xf] = Wgen (W, 27));
+  SHA1STEP32 (c, d, e, a, b, Par, K20, W[28 & 0xf] = Wgen (W, 28));
+  SHA1STEP32 (b, c, d, e, a, Par, K20, W[29 & 0xf] = Wgen (W, 29));
+  SHA1STEP32 (a, b, c, d, e, Par, K20, W[30 & 0xf] = Wgen (W, 30));
+  SHA1STEP32 (e, a, b, c, d, Par, K20, W[31 & 0xf] = Wgen (W, 31));
+  SHA1STEP32 (d, e, a, b, c, Par, K20, W[32 & 0xf] = Wgen (W, 32));
+  SHA1STEP32 (c, d, e, a, b, Par, K20, W[33 & 0xf] = Wgen (W, 33));
+  SHA1STEP32 (b, c, d, e, a, Par, K20, W[34 & 0xf] = Wgen (W, 34));
+  SHA1STEP32 (a, b, c, d, e, Par, K20, W[35 & 0xf] = Wgen (W, 35));
+  SHA1STEP32 (e, a, b, c, d, Par, K20, W[36 & 0xf] = Wgen (W, 36));
+  SHA1STEP32 (d, e, a, b, c, Par, K20, W[37 & 0xf] = Wgen (W, 37));
+  SHA1STEP32 (c, d, e, a, b, Par, K20, W[38 & 0xf] = Wgen (W, 38));
+  SHA1STEP32 (b, c, d, e, a, Par, K20, W[39 & 0xf] = Wgen (W, 39));
+  SHA1STEP32 (a, b, c, d, e, Maj, K40, W[40 & 0xf] = Wgen (W, 40));
+  SHA1STEP32 (e, a, b, c, d, Maj, K40, W[41 & 0xf] = Wgen (W, 41));
+  SHA1STEP32 (d, e, a, b, c, Maj, K40, W[42 & 0xf] = Wgen (W, 42));
+  SHA1STEP32 (c, d, e, a, b, Maj, K40, W[43 & 0xf] = Wgen (W, 43));
+  SHA1STEP32 (b, c, d, e, a, Maj, K40, W[44 & 0xf] = Wgen (W, 44));
+  SHA1STEP32 (a, b, c, d, e, Maj, K40, W[45 & 0xf] = Wgen (W, 45));
+  SHA1STEP32 (e, a, b, c, d, Maj, K40, W[46 & 0xf] = Wgen (W, 46));
+  SHA1STEP32 (d, e, a, b, c, Maj, K40, W[47 & 0xf] = Wgen (W, 47));
+  SHA1STEP32 (c, d, e, a, b, Maj, K40, W[48 & 0xf] = Wgen (W, 48));
+  SHA1STEP32 (b, c, d, e, a, Maj, K40, W[49 & 0xf] = Wgen (W, 49));
+  SHA1STEP32 (a, b, c, d, e, Maj, K40, W[50 & 0xf] = Wgen (W, 50));
+  SHA1STEP32 (e, a, b, c, d, Maj, K40, W[51 & 0xf] = Wgen (W, 51));
+  SHA1STEP32 (d, e, a, b, c, Maj, K40, W[52 & 0xf] = Wgen (W, 52));
+  SHA1STEP32 (c, d, e, a, b, Maj, K40, W[53 & 0xf] = Wgen (W, 53));
+  SHA1STEP32 (b, c, d, e, a, Maj, K40, W[54 & 0xf] = Wgen (W, 54));
+  SHA1STEP32 (a, b, c, d, e, Maj, K40, W[55 & 0xf] = Wgen (W, 55));
+  SHA1STEP32 (e, a, b, c, d, Maj, K40, W[56 & 0xf] = Wgen (W, 56));
+  SHA1STEP32 (d, e, a, b, c, Maj, K40, W[57 & 0xf] = Wgen (W, 57));
+  SHA1STEP32 (c, d, e, a, b, Maj, K40, W[58 & 0xf] = Wgen (W, 58));
+  SHA1STEP32 (b, c, d, e, a, Maj, K40, W[59 & 0xf] = Wgen (W, 59));
+  SHA1STEP32 (a, b, c, d, e, Par, K60, W[60 & 0xf] = Wgen (W, 60));
+  SHA1STEP32 (e, a, b, c, d, Par, K60, W[61 & 0xf] = Wgen (W, 61));
+  SHA1STEP32 (d, e, a, b, c, Par, K60, W[62 & 0xf] = Wgen (W, 62));
+  SHA1STEP32 (c, d, e, a, b, Par, K60, W[63 & 0xf] = Wgen (W, 63));
+  SHA1STEP32 (b, c, d, e, a, Par, K60, W[64 & 0xf] = Wgen (W, 64));
+  SHA1STEP32 (a, b, c, d, e, Par, K60, W[65 & 0xf] = Wgen (W, 65));
+  SHA1STEP32 (e, a, b, c, d, Par, K60, W[66 & 0xf] = Wgen (W, 66));
+  SHA1STEP32 (d, e, a, b, c, Par, K60, W[67 & 0xf] = Wgen (W, 67));
+  SHA1STEP32 (c, d, e, a, b, Par, K60, W[68 & 0xf] = Wgen (W, 68));
+  SHA1STEP32 (b, c, d, e, a, Par, K60, W[69 & 0xf] = Wgen (W, 69));
+  SHA1STEP32 (a, b, c, d, e, Par, K60, W[70 & 0xf] = Wgen (W, 70));
+  SHA1STEP32 (e, a, b, c, d, Par, K60, W[71 & 0xf] = Wgen (W, 71));
+  SHA1STEP32 (d, e, a, b, c, Par, K60, W[72 & 0xf] = Wgen (W, 72));
+  SHA1STEP32 (c, d, e, a, b, Par, K60, W[73 & 0xf] = Wgen (W, 73));
+  SHA1STEP32 (b, c, d, e, a, Par, K60, W[74 & 0xf] = Wgen (W, 74));
+  SHA1STEP32 (a, b, c, d, e, Par, K60, W[75 & 0xf] = Wgen (W, 75));
+  SHA1STEP32 (e, a, b, c, d, Par, K60, W[76 & 0xf] = Wgen (W, 76));
+  SHA1STEP32 (d, e, a, b, c, Par, K60, W[77 & 0xf] = Wgen (W, 77));
+  SHA1STEP32 (c, d, e, a, b, Par, K60, W[78 & 0xf] = Wgen (W, 78));
+  SHA1STEP32 (b, c, d, e, a, Par, K60, W[79 & 0xf] = Wgen (W, 79));
+
+  /* Compute intermediate hash.
+     See FIPS PUB 180-4 paragraph 6.1.3 step 4. */
+  H[0] += a;
+  H[1] += b;
+  H[2] += c;
+  H[3] += d;
+  H[4] += e;
 }
 
 
-/* Compute SHA1 message digest for LEN bytes beginning at BUFFER.  The
-   result is always in little endian byte order, so that a byte-wise
-   output yields to the wanted ASCII representation of the message
-   digest.  */
-void *
-sha1_buffer (const char *buffer, size_t len, void *resblock)
-{
-  struct sha1_ctx ctx;
-
-  /* Initialize the computation context.  */
-  sha1_init_ctx (&ctx);
-
-  /* Process whole buffer but last len % 64 bytes.  */
-  sha1_process_bytes (buffer, len, &ctx);
-
-  /* Put result in desired memory area.  */
-  return sha1_finish_ctx (&ctx, resblock);
-}
-
-
+/**
+ * Process portion of bytes.
+ *
+ * @param ctx_ must be a `struct sha1_ctx *`
+ * @param data bytes to add to hash
+ * @param length number of bytes in @a data
+ */
 void
-sha1_process_bytes (const void *buffer, size_t len, struct sha1_ctx *ctx)
+MHD_SHA1_update (void *ctx_,
+                 const uint8_t *data,
+                 size_t length)
 {
-  /* When we already have some bits in our internal buffer concatenate
-     both inputs first.  */
-  if (ctx->buflen != 0)
+  struct sha1_ctx *const ctx = ctx_;
+  unsigned bytes_have; /**< Number of bytes in buffer */
+
+  mhd_assert ((data != NULL) || (length == 0));
+
+  if (0 == length)
+    return; /* Do nothing */
+
+  /* Note: (count & (SHA1_BLOCK_SIZE-1))
+           equal (count % SHA1_BLOCK_SIZE) for this block size. */
+  bytes_have = (unsigned) (ctx->count & (SHA1_BLOCK_SIZE - 1));
+  ctx->count += length;
+
+  if (0 != bytes_have)
   {
-    size_t left_over = ctx->buflen;
-    size_t add = 128 - left_over > len ? len : 128 - left_over;
-
-    memcpy (&((char *) ctx->buffer)[left_over], buffer, add);
-    ctx->buflen += add;
-
-    if (ctx->buflen > 64)
-    {
-      sha1_process_block (ctx->buffer, ctx->buflen & ~63, ctx);
-
-      ctx->buflen &= 63;
-      /* The regions in the following copy operation cannot overlap.  */
-      memcpy (ctx->buffer,
-              &((char *) ctx->buffer)[(left_over + add) & ~63],
-              ctx->buflen);
-    }
-
-    buffer = (const char *) buffer + add;
-    len -= add;
-  }
-
-  /* Process available complete blocks.  */
-  if (len >= 64)
-  {
-#if ! _STRING_ARCH_unaligned
-# define alignof(type) offsetof (struct { char c; type x; }, x)
-# define UNALIGNED_P(p) (((size_t) p) % alignof (sha1_uint32) != 0)
-    if (UNALIGNED_P (buffer))
-      while (len > 64)
-      {
-        sha1_process_block (memcpy (ctx->buffer, buffer, 64), 64, ctx);
-        buffer = (const char *) buffer + 64;
-        len -= 64;
-      }
-    else
-#endif
-    {
-      sha1_process_block (buffer, len & ~63, ctx);
-      buffer = (const char *) buffer + (len & ~63);
-      len &= 63;
+    unsigned bytes_left = SHA1_BLOCK_SIZE - bytes_have;
+    if (length >= bytes_left)
+    {     /* Combine new data with the data in the buffer and
+             process the full block. */
+      memcpy (ctx->buffer + bytes_have,
+              data,
+              bytes_left);
+      data += bytes_left;
+      length -= bytes_left;
+      sha1_transform (ctx->H, ctx->buffer);
+      bytes_have = 0;
     }
   }
 
-  /* Move remaining bytes in internal buffer.  */
-  if (len > 0)
-  {
-    size_t left_over = ctx->buflen;
+  while (SHA1_BLOCK_SIZE <= length)
+  {   /* Process any full blocks of new data directly,
+         without copying to the buffer. */
+    sha1_transform (ctx->H, data);
+    data += SHA1_BLOCK_SIZE;
+    length -= SHA1_BLOCK_SIZE;
+  }
 
-    memcpy (&((char *) ctx->buffer)[left_over], buffer, len);
-    left_over += len;
-    if (left_over >= 64)
-    {
-      sha1_process_block (ctx->buffer, 64, ctx);
-      left_over -= 64;
-      memmove (ctx->buffer, &ctx->buffer[16], left_over);
-    }
-    ctx->buflen = left_over;
+  if (0 != length)
+  {   /* Copy incomplete block of new data (if any)
+         to the buffer. */
+    memcpy (ctx->buffer + bytes_have, data, length);
   }
 }
 
 
-/* --- Code below is the primary difference between md5.c and sha1.c --- */
+/**
+ * Size of "length" padding addition in bytes.
+ * See FIPS PUB 180-4 paragraph 5.1.1.
+ */
+#define SHA1_SIZE_OF_LEN_ADD (64 / 8)
 
-/* SHA1 round constants */
-#define K1 0x5a827999
-#define K2 0x6ed9eba1
-#define K3 0x8f1bbcdc
-#define K4 0xca62c1d6
-
-/* Round functions.  Note that F2 is the same as F4.  */
-#define F1(B,C,D) ( D ^ ( B & ( C ^ D ) ) )
-#define F2(B,C,D) (B ^ C ^ D)
-#define F3(B,C,D) ( ( B & C ) | ( D & ( B | C ) ) )
-#define F4(B,C,D) (B ^ C ^ D)
-
-/* Process LEN bytes of BUFFER, accumulating context into CTX.
-   It is assumed that LEN % 64 == 0.
-   Most of this code comes from GnuPG's cipher/sha1.c.  */
-
+/**
+ * Finalise SHA-1 calculation, return digest.
+ *
+ * @param ctx_ must be a `struct sha1_ctx *`
+ * @param[out] digest set to the hash, must be #SHA1_DIGEST_SIZE bytes
+ */
 void
-sha1_process_block (const void *buffer, size_t len, struct sha1_ctx *ctx)
+MHD_SHA1_finish (void *ctx_,
+                 uint8_t digest[SHA1_DIGEST_SIZE])
 {
-  const sha1_uint32 *words = (const sha1_uint32*) buffer;
-  size_t nwords = len / sizeof (sha1_uint32);
-  const sha1_uint32 *endp = words + nwords;
-  sha1_uint32 x[16];
-  sha1_uint32 a = ctx->A;
-  sha1_uint32 b = ctx->B;
-  sha1_uint32 c = ctx->C;
-  sha1_uint32 d = ctx->D;
-  sha1_uint32 e = ctx->E;
+  struct sha1_ctx *const ctx = ctx_;
+  uint64_t num_bits;   /**< Number of processed bits */
+  unsigned bytes_have; /**< Number of bytes in buffer */
 
-  /* First increment the byte count.  RFC 1321 specifies the possible
-     length of the file up to 2^64 bits.  Here we only compute the
-     number of bytes.  Do a double word increment.  */
-  ctx->total[0] += len;
-  ctx->total[1] += ((len >> 31) >> 1) + (ctx->total[0] < len);
+  num_bits = ctx->count << 3;
+  /* Note: (count & (SHA1_BLOCK_SIZE-1))
+           equals (count % SHA1_BLOCK_SIZE) for this block size. */
+  bytes_have = (unsigned) (ctx->count & (SHA1_BLOCK_SIZE - 1));
 
-#define rol(x, n) (((x) << (n)) | ((sha1_uint32) (x) >> (32 - (n))))
+  /* Input data must be padded with bit "1" and with length of data in bits.
+     See FIPS PUB 180-4 paragraph 5.1.1. */
+  /* Data is always processed in form of bytes (not by individual bits),
+     therefore position of first padding bit in byte is always predefined (0x80). */
+  /* Buffer always have space at least for one byte (as full buffers are
+     processed immediately). */
+  ctx->buffer[bytes_have++] = 0x80;
 
-#define M(I) ( tm =   x[I&0x0f] ^ x[(I-14)&0x0f] \
-        ^ x[(I-8)&0x0f] ^ x[(I-3)&0x0f] \
-         , (x[I&0x0f] = rol(tm, 1)) )
-
-#define R(A,B,C,D,E,F,K,M)  do { E += rol( A, 5 )     \
-              + F( B, C, D )  \
-              + K       \
-              + M;        \
-         B = rol( B, 30 );    \
-             } while(0)
-
-  while (words < endp)
-  {
-    sha1_uint32 tm;
-    int t;
-    for (t = 0; t < 16; t++)
-    {
-      x[t] = SWAP (*words);
-      words++;
-    }
-
-    R (a, b, c, d, e, F1, K1, x[ 0]);
-    R (e, a, b, c, d, F1, K1, x[ 1]);
-    R (d, e, a, b, c, F1, K1, x[ 2]);
-    R (c, d, e, a, b, F1, K1, x[ 3]);
-    R (b, c, d, e, a, F1, K1, x[ 4]);
-    R (a, b, c, d, e, F1, K1, x[ 5]);
-    R (e, a, b, c, d, F1, K1, x[ 6]);
-    R (d, e, a, b, c, F1, K1, x[ 7]);
-    R (c, d, e, a, b, F1, K1, x[ 8]);
-    R (b, c, d, e, a, F1, K1, x[ 9]);
-    R (a, b, c, d, e, F1, K1, x[10]);
-    R (e, a, b, c, d, F1, K1, x[11]);
-    R (d, e, a, b, c, F1, K1, x[12]);
-    R (c, d, e, a, b, F1, K1, x[13]);
-    R (b, c, d, e, a, F1, K1, x[14]);
-    R (a, b, c, d, e, F1, K1, x[15]);
-    R (e, a, b, c, d, F1, K1, M (16) );
-    R (d, e, a, b, c, F1, K1, M (17) );
-    R (c, d, e, a, b, F1, K1, M (18) );
-    R (b, c, d, e, a, F1, K1, M (19) );
-    R (a, b, c, d, e, F2, K2, M (20) );
-    R (e, a, b, c, d, F2, K2, M (21) );
-    R (d, e, a, b, c, F2, K2, M (22) );
-    R (c, d, e, a, b, F2, K2, M (23) );
-    R (b, c, d, e, a, F2, K2, M (24) );
-    R (a, b, c, d, e, F2, K2, M (25) );
-    R (e, a, b, c, d, F2, K2, M (26) );
-    R (d, e, a, b, c, F2, K2, M (27) );
-    R (c, d, e, a, b, F2, K2, M (28) );
-    R (b, c, d, e, a, F2, K2, M (29) );
-    R (a, b, c, d, e, F2, K2, M (30) );
-    R (e, a, b, c, d, F2, K2, M (31) );
-    R (d, e, a, b, c, F2, K2, M (32) );
-    R (c, d, e, a, b, F2, K2, M (33) );
-    R (b, c, d, e, a, F2, K2, M (34) );
-    R (a, b, c, d, e, F2, K2, M (35) );
-    R (e, a, b, c, d, F2, K2, M (36) );
-    R (d, e, a, b, c, F2, K2, M (37) );
-    R (c, d, e, a, b, F2, K2, M (38) );
-    R (b, c, d, e, a, F2, K2, M (39) );
-    R (a, b, c, d, e, F3, K3, M (40) );
-    R (e, a, b, c, d, F3, K3, M (41) );
-    R (d, e, a, b, c, F3, K3, M (42) );
-    R (c, d, e, a, b, F3, K3, M (43) );
-    R (b, c, d, e, a, F3, K3, M (44) );
-    R (a, b, c, d, e, F3, K3, M (45) );
-    R (e, a, b, c, d, F3, K3, M (46) );
-    R (d, e, a, b, c, F3, K3, M (47) );
-    R (c, d, e, a, b, F3, K3, M (48) );
-    R (b, c, d, e, a, F3, K3, M (49) );
-    R (a, b, c, d, e, F3, K3, M (50) );
-    R (e, a, b, c, d, F3, K3, M (51) );
-    R (d, e, a, b, c, F3, K3, M (52) );
-    R (c, d, e, a, b, F3, K3, M (53) );
-    R (b, c, d, e, a, F3, K3, M (54) );
-    R (a, b, c, d, e, F3, K3, M (55) );
-    R (e, a, b, c, d, F3, K3, M (56) );
-    R (d, e, a, b, c, F3, K3, M (57) );
-    R (c, d, e, a, b, F3, K3, M (58) );
-    R (b, c, d, e, a, F3, K3, M (59) );
-    R (a, b, c, d, e, F4, K4, M (60) );
-    R (e, a, b, c, d, F4, K4, M (61) );
-    R (d, e, a, b, c, F4, K4, M (62) );
-    R (c, d, e, a, b, F4, K4, M (63) );
-    R (b, c, d, e, a, F4, K4, M (64) );
-    R (a, b, c, d, e, F4, K4, M (65) );
-    R (e, a, b, c, d, F4, K4, M (66) );
-    R (d, e, a, b, c, F4, K4, M (67) );
-    R (c, d, e, a, b, F4, K4, M (68) );
-    R (b, c, d, e, a, F4, K4, M (69) );
-    R (a, b, c, d, e, F4, K4, M (70) );
-    R (e, a, b, c, d, F4, K4, M (71) );
-    R (d, e, a, b, c, F4, K4, M (72) );
-    R (c, d, e, a, b, F4, K4, M (73) );
-    R (b, c, d, e, a, F4, K4, M (74) );
-    R (a, b, c, d, e, F4, K4, M (75) );
-    R (e, a, b, c, d, F4, K4, M (76) );
-    R (d, e, a, b, c, F4, K4, M (77) );
-    R (c, d, e, a, b, F4, K4, M (78) );
-    R (b, c, d, e, a, F4, K4, M (79) );
-
-    a = ctx->A += a;
-    b = ctx->B += b;
-    c = ctx->C += c;
-    d = ctx->D += d;
-    e = ctx->E += e;
+  if (SHA1_BLOCK_SIZE - bytes_have < SHA1_SIZE_OF_LEN_ADD)
+  {   /* No space in current block to put total length of message.
+         Pad current block with zeros and process it. */
+    if (SHA1_BLOCK_SIZE > bytes_have)
+      memset (ctx->buffer + bytes_have, 0, SHA1_BLOCK_SIZE - bytes_have);
+    /* Process full block. */
+    sha1_transform (ctx->H, ctx->buffer);
+    /* Start new block. */
+    bytes_have = 0;
   }
+
+  /* Pad the rest of the buffer with zeros. */
+  memset (ctx->buffer + bytes_have, 0,
+          SHA1_BLOCK_SIZE - SHA1_SIZE_OF_LEN_ADD - bytes_have);
+  /* Put the number of bits in the processed message as a big-endian value. */
+  _MHD_PUT_64BIT_BE_SAFE (ctx->buffer + SHA1_BLOCK_SIZE - SHA1_SIZE_OF_LEN_ADD,
+                          num_bits);
+  /* Process the full final block. */
+  sha1_transform (ctx->H, ctx->buffer);
+
+  /* Put final hash/digest in BE mode */
+#ifndef _MHD_PUT_32BIT_BE_UNALIGNED
+  if (0 != ((uintptr_t) digest) % _MHD_UINT32_ALIGN)
+  {
+    uint32_t alig_dgst[_SHA1_DIGEST_LENGTH];
+    _MHD_PUT_32BIT_BE (alig_dgst + 0, ctx->H[0]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 1, ctx->H[1]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 2, ctx->H[2]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 3, ctx->H[3]);
+    _MHD_PUT_32BIT_BE (alig_dgst + 4, ctx->H[4]);
+    /* Copy result to unaligned destination address */
+    memcpy (digest, alig_dgst, SHA1_DIGEST_SIZE);
+  }
+  else
+#else  /* _MHD_PUT_32BIT_BE_UNALIGNED */
+  if (1)
+#endif /* _MHD_PUT_32BIT_BE_UNALIGNED */
+  {
+    _MHD_PUT_32BIT_BE (digest + 0 * SHA1_BYTES_IN_WORD, ctx->H[0]);
+    _MHD_PUT_32BIT_BE (digest + 1 * SHA1_BYTES_IN_WORD, ctx->H[1]);
+    _MHD_PUT_32BIT_BE (digest + 2 * SHA1_BYTES_IN_WORD, ctx->H[2]);
+    _MHD_PUT_32BIT_BE (digest + 3 * SHA1_BYTES_IN_WORD, ctx->H[3]);
+    _MHD_PUT_32BIT_BE (digest + 4 * SHA1_BYTES_IN_WORD, ctx->H[4]);
+  }
+
+  /* Erase potentially sensitive data. */
+  memset (ctx, 0, sizeof(struct sha1_ctx));
 }

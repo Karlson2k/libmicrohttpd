@@ -36,6 +36,10 @@ struct MHD_WebSocketStream
   MHD_WebSocketReallocCallback realloc;
   /* The function pointer to free for payload (can be used to use different memory management) */
   MHD_WebSocketFreeCallback free;
+  /* A closure for the random number generator (only used for client mode; usually not required) */
+  void* cls_rng;
+  /* The random number generator (only used for client mode; usually not required) */
+  MHD_WebSocketRandomNumberGenerator rng;
   /* The flags specified upon initialization. It may alter the behavior of decoding/encoding */
   int flags;
   /* The current step for the decoder. 0 means start of a frame. */
@@ -122,13 +126,6 @@ enum MHD_WebSocket_UTF8Result
   MHD_WebSocket_UTF8Result_Incomplete = 2
 };
 
-#define htonll(x) \
-  ((1 == htonl (1)) ? (x) : ((uint64_t) htonl ((x) & 0xFFFFFFFF) << 32) \
-   | htonl ((x) >> 32))
-#define ntohll(x) \
-  ((1 == ntohl (1)) ? (x) : ((uint64_t) ntohl ((x) & 0xFFFFFFFF) << 32) \
-   | ntohl ((x) >> 32))
-
 static void
 MHD_websocket_copy_payload (char*dst,
                             const char*src,
@@ -142,12 +139,12 @@ MHD_websocket_check_utf8 (const char*buf,
                           int*utf8_step,
                           size_t*buf_offset);
 
-static int
+static enum MHD_WEBSOCKET_STATUS
 MHD_websocket_decode_header_complete (struct MHD_WebSocketStream*ws,
                                       char**payload,
                                       size_t*payload_len);
 
-static int
+static enum MHD_WEBSOCKET_STATUS
 MHD_websocket_decode_payload_complete (struct MHD_WebSocketStream*ws,
                                        char**payload,
                                        size_t*payload_len);
@@ -158,7 +155,7 @@ static char
 MHD_websocket_encode_overhead_size (struct MHD_WebSocketStream *ws,
                                     size_t payload_len);
 
-static int
+static enum MHD_WEBSOCKET_STATUS
 MHD_websocket_encode_data (struct MHD_WebSocketStream*ws,
                            const char*payload,
                            size_t payload_len,
@@ -167,7 +164,7 @@ MHD_websocket_encode_data (struct MHD_WebSocketStream*ws,
                            size_t*frame_len,
                            char opcode);
 
-static int
+static enum MHD_WEBSOCKET_STATUS
 MHD_websocket_encode_ping_pong (struct MHD_WebSocketStream*ws,
                                 const char*payload,
                                 size_t payload_len,
@@ -176,24 +173,327 @@ MHD_websocket_encode_ping_pong (struct MHD_WebSocketStream*ws,
                                 char opcode);
 
 static uint32_t
-MHD_websocket_generate_mask ();
+MHD_websocket_generate_mask (struct MHD_WebSocketStream*ws);
+
+static uint16_t
+MHD_htons (uint16_t value);
+
+static uint64_t
+MHD_htonll (uint64_t value);
+
+
+/**
+ * Checks whether the HTTP version is 1.1 or above.
+ */
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
+MHD_websocket_check_http_version (const char* http_version)
+{
+  /* validate parameters */
+  if (NULL == http_version)
+  {
+    /* Like with the other check routines, */
+    /* NULL is threated as "value not given" and not as parameter error */
+    return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
+  }
+
+  /* Check whether the version has a valid format */
+  /* RFC 1945 3.1: The format must be "HTTP/x.x" where x is */
+  /* any digit and must appear at least once */
+  if ('H' != http_version[0] ||
+      'T' != http_version[1] ||
+      'T' != http_version[2] ||
+      'P' != http_version[3] ||
+      '/' != http_version[4])
+  {
+    return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
+  }
+
+  /* Find the major and minor part of the version */
+  /* RFC 1945 3.1: Both numbers must be threated as separate integers. */
+  /* Leading zeros must be ignored and both integers may have multiple digits */
+  const char* major = NULL;
+  const char* dot   = NULL;
+  size_t i = 5;
+  for (;;)
+  {
+    char c = http_version[i];
+    if ('0' <= c && '9' >= c)
+    {
+      if (NULL == major ||
+          (http_version + i == major + 1 && '0' == *major) )
+      {
+        major = http_version + i;
+      }
+      ++i;
+    }
+    else if ('.' == http_version[i])
+    {
+      dot = http_version + i;
+      ++i;
+      break;
+    }
+    else
+    {
+      return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
+    }
+  }
+  const char* minor = NULL;
+  const char* end   = NULL;
+  for (;;)
+  {
+    char c = http_version[i];
+    if ('0' <= c && '9' >= c)
+    {
+      if (NULL == minor ||
+          (http_version + i == minor + 1 && '0' == *minor) )
+      {
+        minor = http_version + i;
+      }
+      ++i;
+    }
+    else if (0 == c)
+    {
+      end = http_version + i;
+      break;
+    }
+    else
+    {
+      return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
+    }
+  }
+  if (NULL == major || NULL == dot || NULL == minor || NULL == end)
+  {
+    return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
+  }
+  if (2 <= dot - major || '2' <= *major ||
+      ('1' == *major && (2 <= end - minor || '1' <= *minor)) )
+  {
+    return MHD_WEBSOCKET_STATUS_OK;
+  }
+
+  return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
+}
+
+
+/**
+ * Checks whether the "Connection" request header has the 'Upgrade' token.
+ */
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
+MHD_websocket_check_connection_header (const char* connection_header)
+{
+  /* validate parameters */
+  if (NULL == connection_header)
+  {
+    /* To be compatible with the return value */
+    /* of MHD_lookup_connection_value, */
+    /* NULL is threated as "value not given" and not as parameter error */
+    return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
+  }
+
+  /* Check whether the Connection includes an Upgrade token */
+  /* RFC 7230 6.1: Multiple tokens may appear. */
+  /* RFC 7230 3.2.6: Tokens are comma separated */
+  const char* token_start = NULL;
+  const char* token_end   = NULL;
+  for(size_t i = 0; ; ++i)
+  {
+    char c = connection_header[i];
+
+    /* RFC 7230 3.2.6: The list of allowed characters is a token is: */
+    /* "!" / "#" / "$" / "%" / "&" / "'" / "*" / */
+    /* "+" / "-" / "." / "^" / "_" / "`" / "|" / "~" */
+    /* DIGIT / ALPHA */
+    if ('!' == c || '#' == c || '$' == c || '%' == c ||
+        '&' == c || '\'' == c || '*' == c ||
+        '+' == c || '-' == c || '.' == c || '^' == c ||
+        '_' == c || '`' == c || '|' == c || '~' == c ||
+        ('0' <= c && '9' >= c) ||
+        ('A' <= c && 'Z' >= c) || ('a' <= c && 'z' >= c) )
+    {
+      /* This is a valid token character */
+      if (NULL == token_start)
+      {
+        token_start = connection_header + i;
+      }
+      token_end = connection_header + i + 1;
+    }
+    else if (' ' == c || '\t' == c)
+    {
+      /* White-spaces around tokens will be ignored */
+    }
+    else if (',' == c || 0 == c)
+    {
+      /* Check the token (case-insensitive) */
+      if (NULL != token_start)
+      {
+        if ( 7 == (token_end - token_start) )
+        {
+          if ( ('U' == token_start[0] || 'u' == token_start[0]) &&
+               ('P' == token_start[1] || 'p' == token_start[1]) &&
+               ('G' == token_start[2] || 'g' == token_start[2]) &&
+               ('R' == token_start[3] || 'r' == token_start[3]) &&
+               ('A' == token_start[4] || 'a' == token_start[4]) &&
+               ('D' == token_start[5] || 'd' == token_start[5]) &&
+               ('E' == token_start[6] || 'e' == token_start[6]) )
+          {
+            /* The token equals to "Upgrade" */
+            return MHD_WEBSOCKET_STATUS_OK;
+          }
+        }
+      }
+      if (0 == c)
+      {
+        break;
+      }
+      token_start = NULL;
+      token_end   = NULL;
+    }
+    else
+    {
+      /* RFC 7230 3.2.6: Other characters are not allowed */
+      return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
+    }
+  }
+  return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
+}
+
+
+/**
+ * Checks whether the "Upgrade" request header has the "websocket" keyword.
+ */
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
+MHD_websocket_check_upgrade_header (const char* upgrade_header)
+{
+  /* validate parameters */
+  if (NULL == upgrade_header)
+  {
+    /* To be compatible with the return value */
+    /* of MHD_lookup_connection_value, */
+    /* NULL is threated as "value not given" and not as parameter error */
+    return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
+  }
+
+  /* Check whether the Connection includes an Upgrade token */
+  /* RFC 7230 6.1: Multiple tokens may appear. */
+  /* RFC 7230 3.2.6: Tokens are comma separated */
+  const char* keyword_start = NULL;
+  const char* keyword_end   = NULL;
+  for(size_t i = 0; ; ++i)
+  {
+    char c = upgrade_header[i];
+
+    /* RFC 7230 3.2.6: The list of allowed characters is a token is: */
+    /* "!" / "#" / "$" / "%" / "&" / "'" / "*" / */
+    /* "+" / "-" / "." / "^" / "_" / "`" / "|" / "~" */
+    /* DIGIT / ALPHA */
+    /* We also allow "/" here as the sub-delimiter for the protocol version */
+    if ('!' == c || '#' == c || '$' == c || '%' == c ||
+        '&' == c || '\'' == c || '*' == c ||
+        '+' == c || '-' == c || '.' == c || '^' == c ||
+        '_' == c || '`' == c || '|' == c || '~' == c ||
+        '/' == c ||
+        ('0' <= c && '9' >= c) ||
+        ('A' <= c && 'Z' >= c) || ('a' <= c && 'z' >= c) )
+    {
+      /* This is a valid token character */
+      if (NULL == keyword_start)
+      {
+        keyword_start = upgrade_header + i;
+      }
+      keyword_end = upgrade_header + i + 1;
+    }
+    else if (' ' == c || '\t' == c)
+    {
+      /* White-spaces around tokens will be ignored */
+    }
+    else if (',' == c || 0 == c)
+    {
+      /* Check the token (case-insensitive) */
+      if (NULL != keyword_start)
+      {
+        if ( 9 == (keyword_end - keyword_start) )
+        {
+          if ( ('W' == keyword_start[0] || 'w' == keyword_start[0]) &&
+               ('E' == keyword_start[1] || 'e' == keyword_start[1]) &&
+               ('B' == keyword_start[2] || 'b' == keyword_start[2]) &&
+               ('S' == keyword_start[3] || 's' == keyword_start[3]) &&
+               ('O' == keyword_start[4] || 'o' == keyword_start[4]) &&
+               ('C' == keyword_start[5] || 'c' == keyword_start[5]) &&
+               ('K' == keyword_start[6] || 'k' == keyword_start[6]) &&
+               ('E' == keyword_start[7] || 'e' == keyword_start[7]) &&
+               ('T' == keyword_start[8] || 't' == keyword_start[8]) )
+          {
+            /* The keyword equals to "websocket" */
+            return MHD_WEBSOCKET_STATUS_OK;
+          }
+        }
+      }
+      if (0 == c)
+      {
+        break;
+      }
+      keyword_start = NULL;
+      keyword_end   = NULL;
+    }
+    else
+    {
+      /* RFC 7230 3.2.6: Other characters are not allowed */
+      return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
+    }
+  }
+  return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
+}
+
+
+/**
+ * Checks whether the "Sec-WebSocket-Version" request header
+ * equals to "13"
+ */
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
+MHD_websocket_check_version_header (const char* version_header)
+{
+  /* validate parameters */
+  if (NULL == version_header)
+  {
+    /* To be compatible with the return value */
+    /* of MHD_lookup_connection_value, */
+    /* NULL is threated as "value not given" and not as parameter error */
+    return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
+  }
+
+  if ('1' == version_header[0] &&
+      '3' == version_header[1] &&
+      0   == version_header[2])
+  {
+    /* The version equals to "13" */
+    return MHD_WEBSOCKET_STATUS_OK;
+  }
+  return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
+}
+
 
 /**
  * Creates the response for the Sec-WebSocket-Accept header
  */
-_MHD_EXTERN int
-MHD_websocket_create_accept (const char*sec_websocket_key,
-                             char*sec_websocket_accept)
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
+MHD_websocket_create_accept_header (const char*sec_websocket_key,
+                                    char*sec_websocket_accept)
 {
   /* initialize output variables for errors cases */
   if (NULL != sec_websocket_accept)
     *sec_websocket_accept = 0;
 
   /* validate parameters */
-  if ((NULL == sec_websocket_key) ||
-      (NULL == sec_websocket_accept) )
+  if (NULL == sec_websocket_accept)
   {
     return MHD_WEBSOCKET_STATUS_PARAMETER_ERROR;
+  }
+  if (NULL == sec_websocket_key)
+  {
+    /* NULL is not a parameter error, */
+    /* because MHD_lookup_connection_value returns NULL */
+    /* if the header wasn't found */
+    return MHD_WEBSOCKET_STATUS_NO_WEBSOCKET_HANDSHAKE_HEADER;
   }
 
   /* build SHA1 hash of the given key and the UUID appended */
@@ -201,10 +501,10 @@ MHD_websocket_create_accept (const char*sec_websocket_key,
   const char*suffix = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
   int length = (int) strlen (sec_websocket_key);
   struct sha1_ctx ctx;
-  sha1_init_ctx (&ctx);
-  sha1_process_bytes (sec_websocket_key, length, &ctx);
-  sha1_process_bytes (suffix, 36, &ctx);
-  sha1_finish_ctx (&ctx, sha1);
+  MHD_SHA1_init (&ctx);
+  MHD_SHA1_update (&ctx, (const uint8_t*) sec_websocket_key, length);
+  MHD_SHA1_update (&ctx, (const uint8_t*) suffix, 36);
+  MHD_SHA1_finish (&ctx, (uint8_t*) sha1);
 
   /* base64 encode that SHA1 hash */
   /* (simple algorithm here; SHA1 has always 20 bytes, */
@@ -234,7 +534,7 @@ MHD_websocket_create_accept (const char*sec_websocket_key,
 /**
  * Initializes a new websocket stream
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
 MHD_websocket_stream_init (struct MHD_WebSocketStream**ws,
                            int flags,
                            size_t max_payload_size)
@@ -244,7 +544,9 @@ MHD_websocket_stream_init (struct MHD_WebSocketStream**ws,
                                      max_payload_size,
                                      malloc,
                                      realloc,
-                                     free);
+                                     free,
+                                     NULL,
+                                     NULL);
 }
 
 
@@ -252,13 +554,15 @@ MHD_websocket_stream_init (struct MHD_WebSocketStream**ws,
  * Initializes a new websocket stream with
  * additional parameters for allocation functions
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
 MHD_websocket_stream_init2 (struct MHD_WebSocketStream**ws,
                             int flags,
                             size_t max_payload_size,
                             MHD_WebSocketMallocCallback callback_malloc,
                             MHD_WebSocketReallocCallback callback_realloc,
-                            MHD_WebSocketFreeCallback callback_free)
+                            MHD_WebSocketFreeCallback callback_free,
+                            void* cls_rng,
+                            MHD_WebSocketRandomNumberGenerator callback_rng)
 {
   /* initialize output variables for errors cases */
   if (NULL != ws)
@@ -270,7 +574,9 @@ MHD_websocket_stream_init2 (struct MHD_WebSocketStream**ws,
       ((uint64_t) 0x7FFFFFFFFFFFFFFF < max_payload_size) ||
       (NULL == callback_malloc) ||
       (NULL == callback_realloc) ||
-      (NULL == callback_free) )
+      (NULL == callback_free) ||
+      ((0 != (flags & MHD_WEBSOCKET_FLAG_CLIENT)) &&
+      (NULL == callback_rng)))
   {
     return MHD_WEBSOCKET_STATUS_PARAMETER_ERROR;
   }
@@ -288,6 +594,8 @@ MHD_websocket_stream_init2 (struct MHD_WebSocketStream**ws,
   ws_->malloc   = callback_malloc;
   ws_->realloc  = callback_realloc;
   ws_->free     = callback_free;
+  ws_->cls_rng  = cls_rng;
+  ws_->rng      = callback_rng;
   ws_->validity = MHD_WEBSOCKET_VALIDITY_VALID;
 
   /* return stream */
@@ -300,7 +608,7 @@ MHD_websocket_stream_init2 (struct MHD_WebSocketStream**ws,
 /**
  * Frees a previously allocated websocket stream
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
 MHD_websocket_stream_free (struct MHD_WebSocketStream*ws)
 {
   /* validate parameters */
@@ -323,7 +631,7 @@ MHD_websocket_stream_free (struct MHD_WebSocketStream*ws)
 /**
  * Invalidates a websocket stream (no more decoding possible)
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
 MHD_websocket_stream_invalidate (struct MHD_WebSocketStream*ws)
 {
   /* validate parameters */
@@ -340,7 +648,7 @@ MHD_websocket_stream_invalidate (struct MHD_WebSocketStream*ws)
 /**
  * Returns whether a websocket stream is valid
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_WEBSOCKET_VALIDITY
 MHD_websocket_stream_is_valid (struct MHD_WebSocketStream*ws)
 {
   /* validate parameters */
@@ -354,7 +662,7 @@ MHD_websocket_stream_is_valid (struct MHD_WebSocketStream*ws)
 /**
  * Decodes incoming data to a websocket frame
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
 MHD_websocket_decode (struct MHD_WebSocketStream*ws,
                       const char*streambuf,
                       size_t streambuf_len,
@@ -372,7 +680,7 @@ MHD_websocket_decode (struct MHD_WebSocketStream*ws,
 
   /* validate parameters */
   if ((NULL == ws) ||
-      (NULL == streambuf) && (0 != streambuf_len) ||
+      ((NULL == streambuf) && (0 != streambuf_len)) ||
       (NULL == streambuf_read_len) ||
       (NULL == payload) ||
       (NULL == payload_len) )
@@ -657,8 +965,8 @@ MHD_websocket_decode (struct MHD_WebSocketStream*ws,
         else
         {
           size_t size = (size_t) frame_len;
-          if ((SIZE_MAX < size) || ws->max_payload_size &&
-              (ws->max_payload_size < size) )
+          if ((SIZE_MAX < size) ||
+              (ws->max_payload_size && (ws->max_payload_size < size)) )
           {
             /* RFC 6455 7.4.1 1009: If the message is too big to process, we may close the connection */
             ws->validity = MHD_WEBSOCKET_VALIDITY_INVALID;
@@ -713,8 +1021,7 @@ MHD_websocket_decode (struct MHD_WebSocketStream*ws,
     case MHD_WebSocket_DecodeStep_Length2of2:
       {
         ws->frame_header [ws->frame_header_size++] = streambuf [current++];
-        size_t size = (size_t) htons (*((unsigned
-                                         short*) &ws->frame_header [2]));
+        size_t size = (size_t) MHD_htons (*((uint16_t*) &ws->frame_header [2]));
         if (125 >= size)
         {
           /* RFC 6455 5.2 Payload length: The minimal number of bytes */
@@ -733,8 +1040,8 @@ MHD_websocket_decode (struct MHD_WebSocketStream*ws,
           *streambuf_read_len = current;
           return MHD_WEBSOCKET_STATUS_PROTOCOL_ERROR;
         }
-        if ((SIZE_MAX < size) || ws->max_payload_size && (ws->max_payload_size <
-                                                          size) )
+        if ((SIZE_MAX < size) ||
+            (ws->max_payload_size && (ws->max_payload_size < size)) )
         {
           /* RFC 6455 7.4.1 1009: If the message is too big to process, */
           /* we may close the connection */
@@ -771,7 +1078,7 @@ MHD_websocket_decode (struct MHD_WebSocketStream*ws,
     case MHD_WebSocket_DecodeStep_Length8of8:
       {
         ws->frame_header [ws->frame_header_size++] = streambuf [current++];
-        uint64_t size = htonll (*((uint64_t*) &ws->frame_header [2]));
+        uint64_t size = MHD_htonll (*((uint64_t*) &ws->frame_header [2]));
         if (0x7fffffffffffffff < size)
         {
           /* RFC 6455 5.2 frame-payload-length-63: The length may */
@@ -809,8 +1116,8 @@ MHD_websocket_decode (struct MHD_WebSocketStream*ws,
           *streambuf_read_len = current;
           return MHD_WEBSOCKET_STATUS_PROTOCOL_ERROR;
         }
-        if ((SIZE_MAX < size) || ws->max_payload_size && (ws->max_payload_size <
-                                                          size) )
+        if ((SIZE_MAX < size) ||
+            (ws->max_payload_size && (ws->max_payload_size < size)) )
         {
           /* RFC 6455 7.4.1 1009: If the message is too big to process, */
           /* we may close the connection */
@@ -893,13 +1200,13 @@ MHD_websocket_decode (struct MHD_WebSocketStream*ws,
                                                        & 0x03));
           current += bytes_to_take;
           ws->payload_index += bytes_to_take;
-          if ((MHD_WebSocket_DecodeStep_PayloadOfDataFrame ==
+          if (((MHD_WebSocket_DecodeStep_PayloadOfDataFrame ==
                ws->decode_step) &&
-              (MHD_WebSocket_Opcode_Text == ws->data_type) ||
-              (MHD_WebSocket_DecodeStep_PayloadOfControlFrame ==
+              (MHD_WebSocket_Opcode_Text == ws->data_type)) ||
+              ((MHD_WebSocket_DecodeStep_PayloadOfControlFrame ==
                ws->decode_step) &&
               (MHD_WebSocket_Opcode_Close == (ws->frame_header [0] & 0x0f)) &&
-              (2 < ws->payload_index) )
+              (2 < ws->payload_index)) )
           {
             /* RFC 6455 8.1: We need to check the UTF-8 validity */
             int utf8_step;
@@ -1016,7 +1323,7 @@ MHD_websocket_decode (struct MHD_WebSocketStream*ws,
 }
 
 
-static int
+static enum MHD_WEBSOCKET_STATUS
 MHD_websocket_decode_header_complete (struct MHD_WebSocketStream*ws,
                                       char**payload,
                                       size_t*payload_len)
@@ -1119,13 +1426,15 @@ MHD_websocket_decode_header_complete (struct MHD_WebSocketStream*ws,
 }
 
 
-static int
+static enum MHD_WEBSOCKET_STATUS
 MHD_websocket_decode_payload_complete (struct MHD_WebSocketStream*ws,
                                        char**payload,
                                        size_t*payload_len)
 {
   /* all payload data of the current frame has been received */
-  char is_fin = ws->frame_header [0] & 0x80;
+  char is_continue = MHD_WebSocket_Opcode_Continuation ==
+                      (ws->frame_header [0] & 0x0F);
+  char is_fin      = ws->frame_header [0] & 0x80;
   if (0 != is_fin)
   {
     /* the frame is complete */
@@ -1134,9 +1443,9 @@ MHD_websocket_decode_payload_complete (struct MHD_WebSocketStream*ws,
       /* data frame */
       char data_type = ws->data_type;
       if ((0 != (ws->flags & MHD_WEBSOCKET_FLAG_WANT_FRAGMENTS)) &&
-          (MHD_WebSocket_Opcode_Continuation == (ws->frame_header [0] & 0x0F)))
+          (0 != is_continue))
       {
-        data_type |= 0x20;   /* mark as last fragment */
+        data_type |= 0x40;   /* mark as last fragment */
       }
       *payload     = ws->data_payload;
       *payload_len = ws->data_payload_size;
@@ -1170,7 +1479,7 @@ MHD_websocket_decode_payload_complete (struct MHD_WebSocketStream*ws,
     {
       /* the last UTF-8 sequence is incomplete, so we keep the start of
       that and only return the part before */
-      size_t given_utf8;
+      size_t given_utf8 = 0;
       switch (ws->data_utf8_step)
       {
       /* one byte given */
@@ -1220,7 +1529,10 @@ MHD_websocket_decode_payload_complete (struct MHD_WebSocketStream*ws,
       ws->decode_step       = MHD_WebSocket_DecodeStep_Start;
       ws->payload_index     = 0;
       ws->frame_header_size = 0;
-      return ws->data_type | 0x10;    /* mark as fragment */
+      if (0 != is_continue)
+        return ws->data_type | 0x20;    /* mark as middle fragment */
+      else
+        return ws->data_type | 0x10;    /* mark as first fragment */
     }
     else
     {
@@ -1233,7 +1545,10 @@ MHD_websocket_decode_payload_complete (struct MHD_WebSocketStream*ws,
       ws->decode_step        = MHD_WebSocket_DecodeStep_Start;
       ws->payload_index      = 0;
       ws->frame_header_size  = 0;
-      return ws->data_type | 0x10;    /* mark as fragment */
+      if (0 != is_continue)
+        return ws->data_type | 0x20;    /* mark as middle fragment */
+      else
+        return ws->data_type | 0x10;    /* mark as first fragment */
     }
   }
   else
@@ -1251,7 +1566,7 @@ MHD_websocket_decode_payload_complete (struct MHD_WebSocketStream*ws,
 /**
  * Splits the received close reason
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
 MHD_websocket_split_close_reason (const char*payload,
                                   size_t payload_len,
                                   unsigned short*reason_code,
@@ -1283,7 +1598,7 @@ MHD_websocket_split_close_reason (const char*payload,
   else
   {
     if (NULL != reason_code)
-      *reason_code = htons (*((unsigned short*) payload));
+      *reason_code = MHD_htons (*((uint16_t*) payload));
   }
 
   /* decode reason text */
@@ -1309,7 +1624,7 @@ MHD_websocket_split_close_reason (const char*payload,
 /**
  * Encodes a text into a websocket text frame
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
 MHD_websocket_encode_text (struct MHD_WebSocketStream*ws,
                            const char*payload_utf8,
                            size_t payload_utf8_len,
@@ -1333,13 +1648,13 @@ MHD_websocket_encode_text (struct MHD_WebSocketStream*ws,
 
   /* validate parameters */
   if ((NULL == ws) ||
-      (0 != payload_utf8_len) && (NULL == payload_utf8) ||
+      ((0 != payload_utf8_len) && (NULL == payload_utf8)) ||
       (NULL == frame) ||
       (NULL == frame_len) ||
       (MHD_WEBSOCKET_FRAGMENTATION_NONE > fragmentation) ||
       (MHD_WEBSOCKET_FRAGMENTATION_LAST < fragmentation) ||
-      (MHD_WEBSOCKET_FRAGMENTATION_NONE != fragmentation) && (NULL ==
-                                                              utf8_step) )
+      ((MHD_WEBSOCKET_FRAGMENTATION_NONE != fragmentation) &&
+      (NULL == utf8_step)) )
   {
     return MHD_WEBSOCKET_STATUS_PARAMETER_ERROR;
   }
@@ -1356,8 +1671,8 @@ MHD_websocket_encode_text (struct MHD_WebSocketStream*ws,
                                               utf8_step,
                                               NULL);
   if ((MHD_WebSocket_UTF8Result_Invalid == utf8_result) ||
-      (MHD_WebSocket_UTF8Result_Incomplete == utf8_result) &&
-      (MHD_WEBSOCKET_FRAGMENTATION_NONE == fragmentation) )
+      ((MHD_WebSocket_UTF8Result_Incomplete == utf8_result) &&
+      (MHD_WEBSOCKET_FRAGMENTATION_NONE == fragmentation)) )
   {
     return MHD_WEBSOCKET_STATUS_UTF8_ENCODING_ERROR;
   }
@@ -1376,7 +1691,7 @@ MHD_websocket_encode_text (struct MHD_WebSocketStream*ws,
 /**
  * Encodes binary data into a websocket binary frame
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
 MHD_websocket_encode_binary (struct MHD_WebSocketStream*ws,
                              const char*payload,
                              size_t payload_len,
@@ -1392,7 +1707,7 @@ MHD_websocket_encode_binary (struct MHD_WebSocketStream*ws,
 
   /* validate parameters */
   if ((NULL == ws) ||
-      (0 != payload_len) && (NULL == payload) ||
+      ((0 != payload_len) && (NULL == payload)) ||
       (NULL == frame) ||
       (NULL == frame_len) ||
       (MHD_WEBSOCKET_FRAGMENTATION_NONE > fragmentation) ||
@@ -1420,7 +1735,7 @@ MHD_websocket_encode_binary (struct MHD_WebSocketStream*ws,
 /**
  * Internal function for encoding text/binary data into a websocket frame
  */
-static int
+static enum MHD_WEBSOCKET_STATUS
 MHD_websocket_encode_data (struct MHD_WebSocketStream*ws,
                            const char*payload,
                            size_t payload_len,
@@ -1433,7 +1748,7 @@ MHD_websocket_encode_data (struct MHD_WebSocketStream*ws,
   char is_masked      = MHD_websocket_encode_is_masked (ws);
   size_t overhead_len = MHD_websocket_encode_overhead_size (ws, payload_len);
   size_t total_len    = overhead_len + payload_len;
-  uint32_t mask       = 0 != is_masked ? MHD_websocket_generate_mask () : 0;
+  uint32_t mask       = 0 != is_masked ? MHD_websocket_generate_mask (ws) : 0;
 
   /* allocate memory */
   char*result = ws->malloc (total_len + 1);
@@ -1468,13 +1783,13 @@ MHD_websocket_encode_data (struct MHD_WebSocketStream*ws,
   else if (65536 > payload_len)
   {
     *(result++) = is_masked | 126;
-    *((unsigned short *) result) = htons ((unsigned short) payload_len);
+    *((uint16_t *) result) = MHD_htons ((uint16_t) payload_len);
     result += 2;
   }
   else
   {
     *(result++) = is_masked | 127;
-    *((uint64_t *) result) = htonll ((uint64_t) payload_len);
+    *((uint64_t *) result) = MHD_htonll ((uint64_t) payload_len);
     result += 8;
 
   }
@@ -1505,7 +1820,7 @@ MHD_websocket_encode_data (struct MHD_WebSocketStream*ws,
 /**
  * Encodes a websocket ping frame
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
 MHD_websocket_encode_ping (struct MHD_WebSocketStream*ws,
                            const char*payload,
                            size_t payload_len,
@@ -1525,7 +1840,7 @@ MHD_websocket_encode_ping (struct MHD_WebSocketStream*ws,
 /**
  * Encodes a websocket pong frame
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
 MHD_websocket_encode_pong (struct MHD_WebSocketStream*ws,
                            const char*payload,
                            size_t payload_len,
@@ -1545,7 +1860,7 @@ MHD_websocket_encode_pong (struct MHD_WebSocketStream*ws,
 /**
  * Internal function for encoding ping/pong frames
  */
-static int
+static enum MHD_WEBSOCKET_STATUS
 MHD_websocket_encode_ping_pong (struct MHD_WebSocketStream*ws,
                                 const char*payload,
                                 size_t payload_len,
@@ -1561,7 +1876,7 @@ MHD_websocket_encode_ping_pong (struct MHD_WebSocketStream*ws,
 
   /* validate the parameters */
   if ((NULL == ws) ||
-      (0 != payload_len) && (NULL == payload) ||
+      ((0 != payload_len) && (NULL == payload)) ||
       (NULL == frame) ||
       (NULL == frame_len) )
   {
@@ -1576,7 +1891,7 @@ MHD_websocket_encode_ping_pong (struct MHD_WebSocketStream*ws,
   char is_masked      = MHD_websocket_encode_is_masked (ws);
   size_t overhead_len = MHD_websocket_encode_overhead_size (ws, payload_len);
   size_t total_len    = overhead_len + payload_len;
-  uint32_t mask       = is_masked != 0 ? MHD_websocket_generate_mask () : 0;
+  uint32_t mask       = is_masked != 0 ? MHD_websocket_generate_mask (ws) : 0;
 
   /* allocate memory */
   char*result = ws->malloc (total_len + 1);
@@ -1618,7 +1933,7 @@ MHD_websocket_encode_ping_pong (struct MHD_WebSocketStream*ws,
 /**
  * Encodes a websocket close frame
  */
-_MHD_EXTERN int
+_MHD_EXTERN enum MHD_WEBSOCKET_STATUS
 MHD_websocket_encode_close (struct MHD_WebSocketStream*ws,
                             unsigned short reason_code,
                             const char*reason_utf8,
@@ -1634,13 +1949,13 @@ MHD_websocket_encode_close (struct MHD_WebSocketStream*ws,
 
   /* validate the parameters */
   if ((NULL == ws) ||
-      (0 != reason_utf8_len) && (NULL == reason_utf8) ||
+      ((0 != reason_utf8_len) && (NULL == reason_utf8)) ||
       (NULL == frame) ||
       (NULL == frame_len) ||
-      (MHD_WEBSOCKET_CLOSEREASON_NO_REASON != reason_code) && (1000 >
-                                                               reason_code) ||
-      (0 != reason_utf8_len) && (MHD_WEBSOCKET_CLOSEREASON_NO_REASON ==
-                                 reason_code) )
+      ((MHD_WEBSOCKET_CLOSEREASON_NO_REASON != reason_code) &&
+      (1000 > reason_code)) ||
+      ((0 != reason_utf8_len) &&
+      (MHD_WEBSOCKET_CLOSEREASON_NO_REASON == reason_code)) )
   {
     return MHD_WEBSOCKET_STATUS_PARAMETER_ERROR;
   }
@@ -1668,7 +1983,7 @@ MHD_websocket_encode_close (struct MHD_WebSocketStream*ws,
                          2 + reason_utf8_len : 0);
   size_t overhead_len = MHD_websocket_encode_overhead_size (ws, payload_len);
   size_t total_len    = overhead_len + payload_len;
-  uint32_t mask       = is_masked != 0 ? MHD_websocket_generate_mask () : 0;
+  uint32_t mask       = is_masked != 0 ? MHD_websocket_generate_mask (ws) : 0;
 
   /* allocate memory */
   char*result = ws->malloc (total_len + 1);
@@ -1697,7 +2012,7 @@ MHD_websocket_encode_close (struct MHD_WebSocketStream*ws,
   if (0 != reason_code)
   {
     /* close reason code */
-    unsigned short reason_code_nb = htons (reason_code);
+    uint16_t reason_code_nb = MHD_htons (reason_code);
     MHD_websocket_copy_payload (result,
                                 (const char*) &reason_code_nb,
                                 2,
@@ -1815,8 +2130,8 @@ MHD_websocket_check_utf8 (const char*buf,
         /* RFC 3629 4: three byte UTF-8 sequence, but the second byte must be 0x80-0x9F */
         utf8_step_ = MHD_WEBSOCKET_UTF8STEP_UTF3TAIL2_1OF2;
       }
-      else if ((0xE1 <= character) && (0xEC >= character) ||
-               (0xEE <= character) && (0xEF >= character) )
+      else if (((0xE1 <= character) && (0xEC >= character)) ||
+               ((0xEE <= character) && (0xEF >= character)) )
       {
         /* RFC 3629 4: three byte UTF-8 sequence, both tail bytes must be 0x80-0xBF */
         utf8_step_ = MHD_WEBSOCKET_UTF8STEP_UTF3TAIL_1OF2;
@@ -1991,30 +2306,32 @@ MHD_websocket_check_utf8 (const char*buf,
 
 
 /**
- * Calls srand in the scope of MHD to set the seed
- * for the random number generator used for masking.
- */
-_MHD_EXTERN int
-MHD_websocket_srand (unsigned long seed)
-{
-  srand (seed);
-
-  return MHD_WEBSOCKET_STATUS_OK;
-}
-
-
-/**
  * Generates a mask for masking by calling
  * a random number generator.
  */
 static uint32_t
-MHD_websocket_generate_mask ()
+MHD_websocket_generate_mask (struct MHD_WebSocketStream*ws)
 {
   unsigned char mask_[4];
-  mask_ [0] = (unsigned char) (rand () & 0xFF);
-  mask_ [1] = (unsigned char) (rand () & 0xFF);
-  mask_ [2] = (unsigned char) (rand () & 0xFF);
-  mask_ [3] = (unsigned char) (rand () & 0xFF);
+  if (NULL != ws->rng)
+  {
+    size_t offset = 0;
+    while (offset < 4)
+    {
+      size_t encoded = ws->rng (ws->cls_rng,
+                                mask_ + offset,
+                                4 - offset);
+      offset += encoded;
+    }
+  }
+  else
+  {
+    /* this case should never happen */
+    mask_ [0] = 0;
+    mask_ [1] = 0;
+    mask_ [2] = 0;
+    mask_ [3] = 0;
+  }
 
   return *((uint32_t *) mask_);
 }
@@ -2024,15 +2341,15 @@ MHD_websocket_generate_mask ()
  * Calls the malloc function associated with the websocket steam
  */
 _MHD_EXTERN void*
-MHD_websocket_malloc (struct MHD_WebSocketStream*ws,
-                      size_t len)
+MHD_websocket_malloc (struct MHD_WebSocketStream* ws,
+                      size_t buf_len)
 {
   if (NULL == ws)
   {
     return NULL;
   }
 
-  return ws->malloc (len);
+  return ws->malloc (buf_len);
 }
 
 
@@ -2040,16 +2357,16 @@ MHD_websocket_malloc (struct MHD_WebSocketStream*ws,
  * Calls the realloc function associated with the websocket steam
  */
 _MHD_EXTERN void*
-MHD_websocket_realloc (struct MHD_WebSocketStream*ws,
-                       void*cls,
-                       size_t len)
+MHD_websocket_realloc (struct MHD_WebSocketStream* ws,
+                       void* buf,
+                       size_t new_buf_len)
 {
   if (NULL == ws)
   {
     return NULL;
   }
 
-  return ws->realloc (cls, len);
+  return ws->realloc (buf, new_buf_len);
 }
 
 
@@ -2057,15 +2374,67 @@ MHD_websocket_realloc (struct MHD_WebSocketStream*ws,
  * Calls the free function associated with the websocket steam
  */
 _MHD_EXTERN int
-MHD_websocket_free (struct MHD_WebSocketStream*ws,
-                    void*cls)
+MHD_websocket_free (struct MHD_WebSocketStream* ws,
+                    void* buf)
 {
   if (NULL == ws)
   {
     return MHD_WEBSOCKET_STATUS_PARAMETER_ERROR;
   }
 
-  ws->free (cls);
+  ws->free (buf);
 
   return MHD_WEBSOCKET_STATUS_OK;
+}
+
+/**
+ * Converts a 16 bit value into network byte order (MSB first)
+ * in dependence of the host system
+ */
+static uint16_t
+MHD_htons (uint16_t value)
+{
+  uint16_t endian = 0x0001;
+
+  if (((char *) &endian)[0] == 0x01)
+  {
+    /* least significant byte first */
+    ((char *) &endian)[0] = ((char *) &value)[1];
+    ((char *) &endian)[1] = ((char *) &value)[0];
+    return endian;
+  }
+  else
+  {
+    /* most significant byte first */
+    return value;
+  }
+}
+
+/**
+ * Converts a 64 bit value into network byte order (MSB first)
+ * in dependence of the host system
+ */
+static uint64_t
+MHD_htonll (uint64_t value)
+{
+  uint64_t endian = 0x0000000000000001;
+
+  if (((char *) &endian)[0] == 0x01)
+  {
+    /* least significant byte first */
+    ((char *) &endian)[0] = ((char *) &value)[7];
+    ((char *) &endian)[1] = ((char *) &value)[6];
+    ((char *) &endian)[2] = ((char *) &value)[5];
+    ((char *) &endian)[3] = ((char *) &value)[4];
+    ((char *) &endian)[4] = ((char *) &value)[3];
+    ((char *) &endian)[5] = ((char *) &value)[2];
+    ((char *) &endian)[6] = ((char *) &value)[1];
+    ((char *) &endian)[7] = ((char *) &value)[0];
+    return endian;
+  }
+  else
+  {
+    /* most significant byte first */
+    return value;
+  }
 }
