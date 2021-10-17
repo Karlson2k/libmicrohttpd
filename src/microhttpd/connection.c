@@ -3467,32 +3467,11 @@ parse_connection_headers (struct MHD_Connection *connection)
     connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
-              _ ("Received HTTP 1.1 request without `Host' header.\n"));
+              _ ("Received HTTP/1.1 request without `Host' header.\n"));
 #endif
-    mhd_assert (NULL == connection->response);
-    response =
-      MHD_create_response_from_buffer (MHD_STATICSTR_LEN_ (REQUEST_LACKS_HOST),
-                                       REQUEST_LACKS_HOST,
-                                       MHD_RESPMEM_PERSISTENT);
-    if (NULL == response)
-    {
-      /* can't even send a reply, at least close the connection */
-      CONNECTION_CLOSE_ERROR (connection,
-                              _ (
-                                "Closing connection (failed to create response)."));
-      return;
-    }
-    iret = MHD_queue_response (connection,
-                               MHD_HTTP_BAD_REQUEST,
-                               response);
-    MHD_destroy_response (response);
-    if (MHD_NO == iret)
-    {
-      /* can't even send a reply, at least close the connection */
-      CONNECTION_CLOSE_ERROR (connection,
-                              _ (
-                                "Closing connection (failed to queue response)."));
-    }
+    transmit_error_response_static (connection,
+                                    MHD_HTTP_BAD_REQUEST,
+                                    REQUEST_LACKS_HOST);
     return;
   }
 
