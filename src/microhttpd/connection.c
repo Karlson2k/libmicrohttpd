@@ -3456,7 +3456,6 @@ static void
 parse_connection_headers (struct MHD_Connection *connection)
 {
   const char *clen;
-  struct MHD_Response *response;
   const char *enc;
   const char *end;
 
