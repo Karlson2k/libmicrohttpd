@@ -104,6 +104,17 @@
 #endif
 
 /**
+ * Response text used when the request HTTP chunked encoding is
+ * malformed.
+ */
+#ifdef HAVE_MESSAGES
+#define REQUEST_CHUNKED_MALFORMED \
+  "<html><head><title>Request malformed</title></head><body>Your HTTP chunked encoding was syntactically incorrect.</body></html>"
+#else
+#define REQUEST_CHUNKED_MALFORMED ""
+#endif
+
+/**
  * Response text used when there is an internal server error.
  *
  * Intentionally empty here to keep our memory footprint
@@ -3070,10 +3081,9 @@ process_request_body (struct MHD_Connection *connection)
         if (0 == i)
         {
           /* malformed encoding */
-          CONNECTION_CLOSE_ERROR (connection,
-                                  _ ("Received malformed HTTP request " \
-                                     "(bad chunked encoding). " \
-                                     "Closing connection."));
+          transmit_error_response_static (connection,
+                                          MHD_HTTP_BAD_REQUEST,
+                                          REQUEST_CHUNKED_MALFORMED);
           return;
         }
         available -= i;
@@ -3150,10 +3160,9 @@ process_request_body (struct MHD_Connection *connection)
         if (malformed)
         {
           /* malformed encoding */
-          CONNECTION_CLOSE_ERROR (connection,
-                                  _ ("Received malformed HTTP request " \
-                                     "(bad chunked encoding). " \
-                                     "Closing connection."));
+          transmit_error_response_static (connection,
+                                          MHD_HTTP_BAD_REQUEST,
+                                          REQUEST_CHUNKED_MALFORMED);
           return;
         }
         /* skip 2nd part of line feed */
@@ -4383,7 +4392,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       if (0 != connection->read_buffer_offset)
       {
         process_request_body (connection);           /* loop call */
-        if (MHD_CONNECTION_CLOSED == connection->state)
+        if (connection->stop_with_error)
           continue;
       }
       if ( (0 == connection->remaining_upload_size) ||
