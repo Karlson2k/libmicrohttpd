@@ -3460,11 +3460,6 @@ parse_connection_headers (struct MHD_Connection *connection)
                                        NULL,
                                        NULL)) )
   {
-    enum MHD_Result iret;
-
-    /* die, http 1.1 request without host and we are pedantic */
-    connection->stop_with_error = true;
-    connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
               _ ("Received HTTP/1.1 request without `Host' header.\n"));
