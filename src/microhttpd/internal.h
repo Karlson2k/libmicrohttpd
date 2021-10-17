@@ -1072,16 +1072,15 @@ struct MHD_Connection
 #endif
 
   /**
-   * Size of @e read_buffer (in bytes).  This value indicates
-   * how many bytes we're willing to read into the buffer;
-   * the real buffer is one byte longer to allow for
-   * adding zero-termination (when needed).
+   * Size of @e read_buffer (in bytes).
+   * This value indicates how many bytes we're willing to read
+   * into the buffer.
    */
   size_t read_buffer_size;
 
   /**
-   * Position where we currently append data in
-   * @e read_buffer (last valid position).
+   * Position where we currently append data in @e read_buffer (the
+   * next char after the last valid position).
    */
   size_t read_buffer_offset;
 
