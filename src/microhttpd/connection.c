@@ -2576,11 +2576,11 @@ get_next_header_line (struct MHD_Connection *connection,
 
   if (line_len)
     *line_len = pos;
-  /* found, check if we have proper LFCR */
+  /* found, check if we have proper CRLF */
   if ( ('\r' == rbuf[pos]) &&
        ('\n' == rbuf[pos + 1]) )
-    rbuf[pos++] = '\0';         /* skip both r and n */
-  rbuf[pos++] = '\0';
+    rbuf[pos++] = '\0';         /* skip CR if any */
+  rbuf[pos++] = '\0';           /* skip LF */
   connection->read_buffer += pos;
   connection->read_buffer_size -= pos;
   connection->read_buffer_offset -= pos;
