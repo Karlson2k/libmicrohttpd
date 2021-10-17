@@ -809,7 +809,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
     }
 
 #else
-    fprintf ("This test requires libcurl version 7.62.0 or newer.\n");
+    fprintf (stderr, "This test requires libcurl version 7.62.0 or newer.\n");
     abort ();
 #endif /* CURL_AT_LEAST_VERSION(7, 62, 0) */
   }
@@ -1068,7 +1068,7 @@ main (int argc, char *const *argv)
 #if ! CURL_AT_LEAST_VERSION (7, 62, 0)
   if (tricky_url)
   {
-    fprintf ("This test requires libcurl version 7.62.0 or newer.\n");
+    fprintf (stderr, "This test requires libcurl version 7.62.0 or newer.\n");
     return 77;
   }
 #endif /* ! CURL_AT_LEAST_VERSION(7, 62, 0) */
