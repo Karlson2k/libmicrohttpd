@@ -1053,12 +1053,11 @@ testStopRace (enum testMhdPollType pollType)
   MHD_socket fd2;
   struct addConnParam aParam;
   int ret = 0;              /* Return value of the test */
-  const int c_no_listen = no_listen; /* Local const value to mute analyzer */
 
   d = startTestMhdDaemon (testMhdThreadInternal, pollType,
                           &d_port);
 
-  if (! c_no_listen)
+  if (! no_listen)
   {
     fd1 = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (MHD_INVALID_SOCKET == fd1)
@@ -1071,6 +1070,8 @@ testStopRace (enum testMhdPollType pollType)
     if (connect (fd1, (struct sockaddr *) (&sin), sizeof(sin)) < 0)
       externalErrorExitDesc ("socket() failed");
   }
+  else
+    fd1 = MHD_INVALID_SOCKET;
 
   aParam.d = d;
   aParam.lstn_sk = createListeningSocket (&a_port); /* Sets a_port */
@@ -1092,7 +1093,7 @@ testStopRace (enum testMhdPollType pollType)
 
   MHD_stop_daemon (d);
 
-  if (! c_no_listen)
+  if (MHD_INVALID_SOCKET != fd1)
     (void) MHD_socket_close_ (fd1);
   (void) MHD_socket_close_ (aParam.lstn_sk);
   (void) MHD_socket_close_ (fd2);
