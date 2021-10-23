@@ -785,7 +785,7 @@ AC_INCLUDES_DEFAULT
     ])
 
   AS_IF([[test "x$HAVE_THREAD_NAME_FUNC" != "xyes" && test "x$ac_cv_have_decl_pthread_attr_setname_np" = "xyes"]],
-    [AC_MSG_CHECKING([[for pthread_attr_setname_np(3) in IBM i form]])
+    [AC_MSG_CHECKING([[for pthread_attr_setname_np(3) in IBM i or Solaris form]])
      AC_LINK_IFELSE(
       [AC_LANG_PROGRAM([[
 #include <pthread.h>
@@ -798,7 +798,7 @@ AC_INCLUDES_DEFAULT
       pthread_attr_setname_np(&thr_attr, "name");
       pthread_attr_destroy(&thr_attr);
         ]])],
-        [AC_DEFINE([[HAVE_PTHREAD_ATTR_SETNAME_NP_IBMI]], [[1]], [Define if you have IBM i form of pthread_attr_setname_np(3) function.])
+        [AC_DEFINE([[HAVE_PTHREAD_ATTR_SETNAME_NP_IBMI]], [[1]], [Define if you have IBM i form (or Solaris form) of pthread_attr_setname_np(3) function.])
          HAVE_THREAD_NAME_FUNC="yes"
          AC_MSG_RESULT([[yes]])],
         [AC_MSG_RESULT([[no]])]
