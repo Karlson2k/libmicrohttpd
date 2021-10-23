@@ -3628,7 +3628,7 @@ check_strx_from_uint32 (void)
               t_failed++;
             c_failed[i] = ! 0;
             fprintf (stderr,
-                     "FAILED: MHD_uint32_to_strx(0x%" PRIXPTR ", -> buf,"
+                     "FAILED: MHD_uint32_to_strx(0x%" PRIX64 ", -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting 0."
                      " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
@@ -3643,7 +3643,7 @@ check_strx_from_uint32 (void)
               t_failed++;
             c_failed[i] = ! 0;
             fprintf (stderr,
-                     "FAILED: MHD_uint32_to_strx(0x%" PRIXPTR ", -> buf,"
+                     "FAILED: MHD_uint32_to_strx(0x%" PRIX64 ", -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting %d."
                      " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
@@ -3656,7 +3656,7 @@ check_strx_from_uint32 (void)
               t_failed++;
             c_failed[i] = ! 0;
             fprintf (stderr,
-                     "FAILED: MHD_uint32_to_strx(0x%" PRIXPTR ", -> \"%.*s\","
+                     "FAILED: MHD_uint32_to_strx(0x%" PRIX64 ", -> \"%.*s\","
                      " %d) returned %" PRIuPTR "."
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
                      (intptr_t) rs,  get_current_locale_str ());
@@ -3667,7 +3667,7 @@ check_strx_from_uint32 (void)
               t_failed++;
             c_failed[i] = ! 0;
             fprintf (stderr,
-                     "FAILED: MHD_uint32_to_strx(0x%" PRIXPTR ", -> \"%.*s\","
+                     "FAILED: MHD_uint32_to_strx(0x%" PRIX64 ", -> \"%.*s\","
                      " %d) returned %" PRIuPTR
                      " and touched data after the resulting string."
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
@@ -3676,7 +3676,7 @@ check_strx_from_uint32 (void)
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
-        printf ("PASSED: MHD_uint32_to_strx(0x%" PRIXPTR ", -> \"%.*s\", %d) "
+        printf ("PASSED: MHD_uint32_to_strx(0x%" PRIX64 ", -> \"%.*s\", %d) "
                 "== %" PRIuPTR "\n",
                 t->val, (int) rs, buf, (int) b_size - 1, (intptr_t) rs);
     }
