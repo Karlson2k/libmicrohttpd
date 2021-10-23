@@ -45,7 +45,30 @@
 #define MHD_SC_PAGESIZE _SC_PAGESIZE
 #endif /* _SC_PAGESIZE */
 #endif /* HAVE_SYSCONF */
-#include "mhd_limits.h" /* for SIZE_MAX */
+#include "mhd_limits.h" /* for SIZE_MAX, PAGESIZE / PAGE_SIZE */
+
+#if defined(MHD_USE_PAGESIZE_MACRO) || defined (MHD_USE_PAGE_SIZE_MACRO)
+#ifndef HAVE_SYSCONF /* Avoid duplicate include */
+#include <unistd.h>
+#endif /* HAVE_SYSCONF */
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
+#endif /* MHD_USE_PAGESIZE_MACRO || MHD_USE_PAGE_SIZE_MACRO */
+
+/**
+ * Fallback value of page size
+ */
+#define _MHD_FALLBACK_PAGE_SIZE (4096)
+
+#if defined(MHD_USE_PAGESIZE_MACRO)
+#define MHD_DEF_PAGE_SIZE_ PAGESIZE
+#elif defined(MHD_USE_PAGE_SIZE_MACRO)
+#define MHD_DEF_PAGE_SIZE_ PAGE_SIZE
+#else  /* ! PAGESIZE */
+#define MHD_DEF_PAGE_SIZE_ _MHD_FALLBACK_PAGE_SIZE
+#endif /* ! PAGESIZE */
+
 
 #ifdef MHD_ASAN_POISON_ACTIVE
 #include <sanitizer/asan_interface.h>
@@ -94,18 +117,10 @@
   ASAN_UNPOISON_MEMORY_REGION ((pointer), (size))
 #endif /* MHD_ASAN_POISON_ACTIVE */
 
-#if defined(PAGE_SIZE) && (0 < (PAGE_SIZE + 0))
-#define MHD_DEF_PAGE_SIZE_ PAGE_SIZE
-#elif defined(PAGESIZE) && (0 < (PAGESIZE + 0))
-#define MHD_DEF_PAGE_SIZE_ PAGESIZE
-#else  /* ! PAGESIZE */
-#define MHD_DEF_PAGE_SIZE_ (4096)
-#endif /* ! PAGESIZE */
-
 /**
  * Size of memory page
  */
-static size_t MHD_sys_page_size_ = MHD_DEF_PAGE_SIZE_; /* Default fallback value */
+static size_t MHD_sys_page_size_ = _MHD_FALLBACK_PAGE_SIZE; /* Default fallback value */
 
 /**
  * Initialise values for memory pools
