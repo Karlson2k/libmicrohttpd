@@ -1262,7 +1262,7 @@ MHD_CHECK_FUNC([getsockname],
     (void)getsockname(socket(0,0,0),(struct sockaddr *)&ss,(void*)0);
   ],
   [
-    AC_CACHE_CHECK([[whether getsockname() is usable]], [[mhc_cv_getsockname_usable]],
+    AC_CACHE_CHECK([[whether getsockname() is usable]], [[mhd_cv_getsockname_usable]],
       [
          AC_RUN_IFELSE(
            [
@@ -1351,13 +1351,13 @@ int main(void)
              ]]
             )
            ],
-           [[mhc_cv_getsockname_usable='yes']],
-           [[mhc_cv_getsockname_usable='no']],
-           [[mhc_cv_getsockname_usable='assuming yes']]
+           [[mhd_cv_getsockname_usable='yes']],
+           [[mhd_cv_getsockname_usable='no']],
+           [[mhd_cv_getsockname_usable='assuming yes']]
          )
         ]
       )
-    AS_VAR_IF([[mhc_cv_getsockname_usable]], [["no"]], [:],
+    AS_VAR_IF([[mhd_cv_getsockname_usable]], [["no"]], [:],
         [AC_DEFINE([[MHD_USE_GETSOCKNAME]], [[1]], [Define if you have usable `getsockname' function.])])
   ]
 )
