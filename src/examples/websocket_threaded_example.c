@@ -575,14 +575,8 @@ ws_send_frame (MHD_socket sock, const char *msg, size_t length)
     frame[1] = length & 0x7F;
     idx_first_rdata = 2;
   }
-  else if ((length >= 126) && (length <= 0xFFFF))
-  {
-    frame[1] = 126;
-    frame[2] = (length >> 8) & 0xFF;
-    frame[3] = length & 0xFF;
-    idx_first_rdata = 4;
-  }
-  else
+#if SIZEOF_SIZE_T > 4
+  else if (0xFFFF < length)
   {
     frame[1] = 127;
     frame[2] = (unsigned char) ((length >> 56) & 0xFF);
@@ -594,6 +588,14 @@ ws_send_frame (MHD_socket sock, const char *msg, size_t length)
     frame[8] = (unsigned char) ((length >> 8) & 0xFF);
     frame[9] = (unsigned char) (length & 0xFF);
     idx_first_rdata = 10;
+  }
+#endif /* SIZEOF_SIZE_T > 4 */
+  else
+  {
+    frame[1] = 126;
+    frame[2] = (length >> 8) & 0xFF;
+    frame[3] = length & 0xFF;
+    idx_first_rdata = 4;
   }
   idx_response = 0;
   response = malloc (idx_first_rdata + length + 1);
