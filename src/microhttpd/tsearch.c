@@ -9,8 +9,8 @@
  * Totally public domain.
  */
 
-#include "tsearch.h"
 #include "mhd_options.h"
+#include "tsearch.h"
 #ifdef HAVE_STDDEF_H
 #include <stddef.h>
 #else  /* ! HAVE_STDDEF_H */

@@ -23,9 +23,9 @@
  * @author Karlson2k (Evgeny Grin)
  */
 
+#include "mhd_options.h"
 #include <string.h>
 #include <stdio.h>
-#include "mhd_options.h"
 #include "mhd_str.h"
 #include "mhd_assert.h"
 

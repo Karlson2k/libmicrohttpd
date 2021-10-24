@@ -26,13 +26,13 @@
 #ifndef MHD_BITHELPERS_H
 #define MHD_BITHELPERS_H 1
 
+#include "mhd_options.h"
 #include <stdint.h>
 #if defined(_MSC_FULL_VER) && (! defined(__clang__) || (defined(__c2__) && \
   defined(__OPTIMIZE__)))
 /* Declarations for VC & Clang/C2 built-ins */
 #include <intrin.h>
 #endif /* _MSC_FULL_VER  */
-#include "mhd_options.h"
 #include "mhd_assert.h"
 #include "mhd_byteorder.h"
 #if _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN || _MHD_BYTE_ORDER == _MHD_BIG_ENDIAN

@@ -26,8 +26,8 @@
 #ifndef MHD_ALIGN_H
 #define MHD_ALIGN_H 1
 
-#include <stdint.h>
 #include "mhd_options.h"
+#include <stdint.h>
 #ifdef HAVE_STDDEF_H
 #include <stddef.h>
 #endif
