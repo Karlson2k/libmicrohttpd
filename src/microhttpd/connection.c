@@ -150,7 +150,7 @@
 #endif
 
 /**
- * Response text used when the request HTTP version is too old.
+ * Response text used when the request HTTP version is not supported.
  */
 #ifdef HAVE_MESSAGES
 #define REQ_HTTP_VER_IS_NOT_SUPPORTED \
