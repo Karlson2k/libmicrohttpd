@@ -1053,8 +1053,8 @@ try_ready_normal_body (struct MHD_Connection *connection)
                        (size_t) MHD_MIN ((uint64_t) response->data_buffer_size,
                                          response->total_size
                                          - connection->response_write_position));
-  if ( (((ssize_t) MHD_CONTENT_READER_END_OF_STREAM) == ret) ||
-       (((ssize_t) MHD_CONTENT_READER_END_WITH_ERROR) == ret) )
+  if ( (MHD_CONTENT_READER_END_OF_STREAM == ret) ||
+       (MHD_CONTENT_READER_END_WITH_ERROR == ret) )
   {
     /* either error or http 1.0 transfer, close socket! */
     /* TODO: do not update total size, check whether response
@@ -1063,7 +1063,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
     MHD_mutex_unlock_chk_ (&response->mutex);
 #endif
-    if ( ((ssize_t) MHD_CONTENT_READER_END_OF_STREAM) == ret)
+    if (MHD_CONTENT_READER_END_OF_STREAM == ret)
       MHD_connection_close_ (connection,
                              MHD_REQUEST_TERMINATED_COMPLETED_OK);
     else
@@ -1192,7 +1192,7 @@ try_ready_chunked_body (struct MHD_Connection *connection,
                          &connection->write_buffer[max_chunk_hdr_len],
                          size_to_fill);
   }
-  if ( ((ssize_t) MHD_CONTENT_READER_END_WITH_ERROR) == ret)
+  if (MHD_CONTENT_READER_END_WITH_ERROR == ret)
   {
     /* error, close socket! */
     /* TODO: remove update of the response size */
@@ -1205,7 +1205,7 @@ try_ready_chunked_body (struct MHD_Connection *connection,
                               "Closing connection (application error generating response)."));
     return MHD_NO;
   }
-  if (((ssize_t) MHD_CONTENT_READER_END_OF_STREAM) == ret)
+  if (MHD_CONTENT_READER_END_OF_STREAM == ret)
   {
     *p_finished = true;
     /* TODO: remove update of the response size */
