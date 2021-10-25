@@ -13,9 +13,10 @@
 #include "tsearch.h"
 #ifdef HAVE_STDDEF_H
 #include <stddef.h>
-#else  /* ! HAVE_STDDEF_H */
-#define NULL ((void*)0)
-#endif /* ! HAVE_STDDEF_H */
+#endif /* HAVE_STDDEF_H */
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
 
 
 typedef struct node
