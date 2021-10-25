@@ -1609,8 +1609,8 @@ errno_t gmtime_s(struct tm* _tm, const time_t* time);
 #include <time.h>]])
 
 
-AC_CHECK_DECLS([SOCK_NONBLOCK], [AC_DEFINE([HAVE_SOCK_NONBLOCK], [1], [SOCK_NONBLOCK is defined in a socket header])], [],
-                   [
+AC_CHECK_DECL([SOCK_NONBLOCK], [AC_DEFINE([HAVE_SOCK_NONBLOCK], [1], [SOCK_NONBLOCK is defined in a socket header])], [],
+  [[
 #if defined(HAVE_SYS_TYPES_H)
 #  include <sys/types.h>
 #endif
@@ -1619,7 +1619,8 @@ AC_CHECK_DECLS([SOCK_NONBLOCK], [AC_DEFINE([HAVE_SOCK_NONBLOCK], [1], [SOCK_NONB
 #elif defined(HAVE_WINSOCK2_H)
 #  include <winsock2.h>
 #endif
-                   ])
+  ]]
+)
 
 
 AC_CHECK_DECL([[clock_gettime]],
