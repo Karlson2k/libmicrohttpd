@@ -25,10 +25,15 @@
 
 #include "mhd_mono_clock.h"
 
-#if defined(_WIN32) && ! defined(__CYGWIN__) && defined(HAVE_CLOCK_GETTIME)
+#if defined(_WIN32) && ! defined(__CYGWIN__)
 /* Prefer native clock source over wrappers */
+#ifdef HAVE_CLOCK_GETTIME
 #undef HAVE_CLOCK_GETTIME
-#endif /* _WIN32 && ! __CYGWIN__ && HAVE_CLOCK_GETTIME */
+#endif /* HAVE_CLOCK_GETTIME */
+#ifdef HAVE_GETTIMEOFDAY
+#undef HAVE_GETTIMEOFDAY
+#endif /* HAVE_GETTIMEOFDAY */
+#endif /* _WIN32 && ! __CYGWIN__ */
 
 #ifdef HAVE_TIME_H
 #include <time.h>
