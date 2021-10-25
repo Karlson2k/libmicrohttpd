@@ -1227,7 +1227,8 @@ try_ready_chunked_body (struct MHD_Connection *connection,
                                "more data than requested)."));
     return MHD_NO;
   }
-  chunk_hdr_len = MHD_uint32_to_strx (ret, chunk_hdr, sizeof(chunk_hdr));
+  chunk_hdr_len = MHD_uint32_to_strx ((uint32_t) ret, chunk_hdr,
+                                      sizeof(chunk_hdr));
   mhd_assert (chunk_hdr_len != 0);
   mhd_assert (chunk_hdr_len < sizeof(chunk_hdr));
   *p_finished = false;
