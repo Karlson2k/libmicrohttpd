@@ -42,7 +42,7 @@
 #ifndef _MHD_ALIGNOF
 #if defined(_MSC_VER) && ! defined(__clang__) && _MSC_VER >= 1700
 #define _MHD_ALIGNOF(type) __alignof(type)
-#endif /* _MSC_VER >= 1900 */
+#endif /* _MSC_VER >= 1700 */
 #endif /* !_MHD_ALIGNOF */
 
 #ifdef _MHD_ALIGNOF
