@@ -469,7 +469,7 @@ MHD_str_equal_caseless_bin_n_ (const char *const str1,
  * Token could be surrounded by spaces and tabs and delimited by comma.
  * Match succeed if substring between start, end (of string) or comma
  * contains only case-insensitive token and optional spaces and tabs.
- * @warning token must not contain null-charters except optional
+ * @warning token must not contain null-characters except optional
  *          terminating null-character.
  * @param str the string to check
  * @param token the token to find

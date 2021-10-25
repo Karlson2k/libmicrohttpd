@@ -125,7 +125,7 @@ MHD_str_equal_caseless_bin_n_ (const char *const str1,
  * Token could be surrounded by spaces and tabs and delimited by comma.
  * Match succeed if substring between start, end of string or comma
  * contains only case-insensitive token and optional spaces and tabs.
- * @warning token must not contain null-charters except optional
+ * @warning token must not contain null-characters except optional
  *          terminating null-character.
  * @param str the string to check
  * @param token the token to find
@@ -384,7 +384,7 @@ MHD_str_to_uvalue_n_ (const char *str,
  * @param val the value to convert
  * @param buf the buffer to result to
  * @param buf_size size of the @a buffer
- * @return number of charters has been put to the @a buf,
+ * @return number of characters has been put to the @a buf,
  *         zero if buffer is too small (buffer may be modified).
  */
 size_t
@@ -400,7 +400,7 @@ MHD_uint32_to_strx (uint32_t val,
  * @param val the value to convert
  * @param buf the buffer to result to
  * @param buf_size size of the @a buffer
- * @return number of charters has been put to the @a buf,
+ * @return number of characters has been put to the @a buf,
  *         zero if buffer is too small (buffer may be modified).
  */
 size_t
@@ -419,7 +419,7 @@ MHD_uint16_to_str (uint16_t val,
  * @param val the value to convert
  * @param buf the buffer to result to
  * @param buf_size size of the @a buffer
- * @return number of charters has been put to the @a buf,
+ * @return number of characters has been put to the @a buf,
  *         zero if buffer is too small (buffer may be modified).
  */
 size_t
@@ -440,7 +440,7 @@ MHD_uint64_to_str (uint64_t val,
  *                   valid values are 3, 2, 1, 0
  * @param buf the buffer to result to
  * @param buf_size size of the @a buffer
- * @return number of charters has been put to the @a buf,
+ * @return number of characters has been put to the @a buf,
  *         zero if buffer is too small (buffer may be modified).
  */
 size_t
