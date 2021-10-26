@@ -490,6 +490,7 @@ struct MHD_Response
 #endif
 
   /**
+   * The size of the response body.
    * Set to #MHD_SIZE_UNKNOWN if size is not known.
    */
   uint64_t total_size;
