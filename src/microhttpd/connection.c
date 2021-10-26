@@ -1150,7 +1150,7 @@ try_ready_chunked_body (struct MHD_Connection *connection,
   if (MHD_SIZE_UNKNOWN == response->total_size)
     left_to_send = MHD_SIZE_UNKNOWN;
   else
-    left_to_send = MHD_SIZE_UNKNOWN - connection->response_write_position;
+    left_to_send = response->total_size - connection->response_write_position;
 
   size_to_fill = connection->write_buffer_size - max_chunk_overhead;
   /* Limit size for the callback to the max usable size */
