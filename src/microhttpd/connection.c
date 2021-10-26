@@ -1135,7 +1135,7 @@ try_ready_chunked_body (struct MHD_Connection *connection,
                               _ ("Closing connection (out of memory)."));
       return MHD_NO;
     }
-    /* Limit the buffer size to the large usable size for chunks */
+    /* Limit the buffer size to the largest usable size for chunks */
     if ( (max_chunk + max_chunk_overhead) < size)
       size = max_chunk + max_chunk_overhead;
     connection->write_buffer = MHD_pool_reallocate (connection->pool,
@@ -1183,6 +1183,9 @@ try_ready_chunked_body (struct MHD_Connection *connection,
   {
     if (NULL == response->crc)
     { /* There is no way to reach this code */
+#if defined(MHD_USE_THREADS)
+      MHD_mutex_unlock_chk_ (&response->mutex);
+#endif
       CONNECTION_CLOSE_ERROR (connection,
                               _ ("No callback for the chunked data."));
       return MHD_NO;
@@ -1222,6 +1225,9 @@ try_ready_chunked_body (struct MHD_Connection *connection,
   }
   if (size_to_fill < (size_t) ret)
   {
+#if defined(MHD_USE_THREADS)
+    MHD_mutex_unlock_chk_ (&response->mutex);
+#endif
     CONNECTION_CLOSE_ERROR (connection,
                             _ ("Closing connection (application returned " \
                                "more data than requested)."));
