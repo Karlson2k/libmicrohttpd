@@ -1157,7 +1157,7 @@ try_ready_chunked_body (struct MHD_Connection *connection,
   if (max_chunk < size_to_fill)
     size_to_fill = max_chunk;
   if (left_to_send < size_to_fill)
-    size_to_fill = left_to_send;
+    size_to_fill = (size_t) left_to_send;
 
   if (0 == left_to_send)
     /* nothing to send, don't bother calling crc */
