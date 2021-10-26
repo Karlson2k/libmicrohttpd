@@ -197,8 +197,6 @@ check_PROGRAMS += \
   test_postprocessor_amp
 endif
 
-TESTS = $(check_PROGRAMS)
-
 # Do not test trigger of select by shutdown of listen socket
 # on Cygwin as this ability is deliberately ignored on Cygwin
 # to improve compatibility with core OS.
@@ -215,6 +213,8 @@ check_PROGRAMS += \
 endif
 endif
 endif
+
+TESTS = $(check_PROGRAMS)
 
 test_start_stop_SOURCES = \
   test_start_stop.c
