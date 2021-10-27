@@ -1393,7 +1393,42 @@ choke me now
   ]
 )
 AS_VAR_IF([[mhd_cv_macro_pagesize_usable]], [["yes"]],
-  [AC_DEFINE([[MHD_USE_PAGESIZE_MACRO]],[[1]],[Define if you have usable PAGESIZE macro])],
+  [
+    AC_DEFINE([[MHD_USE_PAGESIZE_MACRO]],[[1]],[Define if you have usable PAGESIZE macro])
+    AC_CACHE_CHECK([whether PAGESIZE macro could be used for static init], [mhd_cv_macro_pagesize_usable_static],
+      [
+        AC_LINK_IFELSE(
+          [
+            AC_LANG_PROGRAM(
+              [[
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#ifndef PAGESIZE
+#error No PAGESIZE macro defined
+choke me now
+#endif
+static long ac_pgsz = PAGESIZE + 0;
+              ]],
+              [[
+                if (1 > ac_pgsz) return 1;
+              ]]
+            )
+          ],
+          [[mhd_cv_macro_pagesize_usable_static="yes"]], [[mhd_cv_macro_pagesize_usable_static="no"]]
+        )
+      ]
+    )
+    AS_VAR_IF([[mhd_cv_macro_pagesize_usable_static]], [["yes"]],
+      [AC_DEFINE([[MHD_USE_PAGESIZE_MACRO_STATIC]],[[1]],[Define if you have PAGESIZE macro usable for static init])]
+    )
+  ],
   [
     AC_CACHE_CHECK([for usable PAGE_SIZE macro], [mhd_cv_macro_page_size_usable],
       [
@@ -1426,7 +1461,42 @@ choke me now
       ]
     )
     AS_VAR_IF([[mhd_cv_macro_page_size_usable]], [["yes"]],
-      [AC_DEFINE([[MHD_USE_PAGE_SIZE_MACRO]],[[1]],[Define if you have usable PAGE_SIZE macro])]
+      [
+        AC_DEFINE([[MHD_USE_PAGE_SIZE_MACRO]],[[1]],[Define if you have usable PAGE_SIZE macro])
+        AC_CACHE_CHECK([whether PAGE_SIZE macro could be used for static init], [mhd_cv_macro_page_size_usable_static],
+          [
+            AC_LINK_IFELSE(
+              [
+                AC_LANG_PROGRAM(
+                  [[
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#ifndef PAGE_SIZE
+#error No PAGE_SIZE macro defined
+choke me now
+#endif
+static long ac_pgsz = PAGE_SIZE + 0;
+                  ]],
+                  [[
+                    if (1 > ac_pgsz) return 1;
+                  ]]
+                )
+              ],
+              [[mhd_cv_macro_page_size_usable_static="yes"]], [[mhd_cv_macro_page_size_usable_static="no"]]
+            )
+          ]
+        )
+        AS_VAR_IF([[mhd_cv_macro_page_size_usable_static]], [["yes"]],
+          [AC_DEFINE([[MHD_USE_PAGE_SIZE_MACRO_STATIC]],[[1]],[Define if you have PAGE_SIZE macro usable for static init])]
+        )
+      ]
     )
   ]
 )

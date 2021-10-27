@@ -120,7 +120,14 @@
 /**
  * Size of memory page
  */
-static size_t MHD_sys_page_size_ = _MHD_FALLBACK_PAGE_SIZE; /* Default fallback value */
+static size_t MHD_sys_page_size_ =
+#if defined(MHD_USE_PAGESIZE_MACRO_STATIC)
+  PAGESIZE;
+#elif defined(MHD_USE_PAGE_SIZE_MACRO_STATIC)
+  PAGE_SIZE;
+#else  /* ! MHD_USE_PAGE_SIZE_MACRO_STATIC */
+  _MHD_FALLBACK_PAGE_SIZE;   /* Default fallback value */
+#endif /* ! MHD_USE_PAGE_SIZE_MACRO_STATIC */
 
 /**
  * Initialise values for memory pools
