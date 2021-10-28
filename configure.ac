@@ -2801,7 +2801,7 @@ AS_VAR_IF([enable_sanitizers], ["yes"],
                  [mhd_cv_cc_sanitizer_address_leak=yes], [mhd_cv_cc_sanitizer_address_leak=no],
                  [
                    # Cross-compiling with sanitizers?
-                   mhd_cv_cc_sanitizer_address_leak=yes
+                   mhd_cv_cc_sanitizer_address_leak='assuming no'
                  ]
                )
                AS_UNSET([ASAN_OPTIONS])
@@ -2872,7 +2872,7 @@ int ptr_process(void *ptr1, void *ptr2)
                      [mhd_cv_func_attribute_nosanitize_ptr=yes], [mhd_cv_func_attribute_nosanitize_ptr=no],
                      [
                        # Cross-compiling with sanitizers??
-                       mhd_cv_func_attribute_nosanitize_ptr=no
+                       mhd_cv_func_attribute_nosanitize_ptr='assuming no'
                      ]
                    )
                    AS_UNSET([ASAN_OPTIONS])
@@ -2918,7 +2918,7 @@ int ptr_process(void *ptr1, void *ptr2)
                          [mhd_cv_func_attribute_nosanitize_addr=yes], [mhd_cv_func_attribute_nosanitize_addr=no],
                          [
                            # Cross-compiling with sanitizers??
-                           mhd_cv_func_attribute_nosanitize_addr=no
+                           mhd_cv_func_attribute_nosanitize_addr='assuming no'
                          ]
                        )
                        AS_UNSET([ASAN_OPTIONS])
