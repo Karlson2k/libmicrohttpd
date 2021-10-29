@@ -158,7 +158,6 @@
 /* Manual ASAN poisoning could be used */
 #warning User memory poisoning is not active
 #endif /* ! MHD_ASAN_POISON_ACTIVE */
-#define _MHD_USE_ASAN_POISON 1
 #else  /* ! (MHD_ASAN_ACTIVE && HAVE_SANITIZER_ASAN_INTERFACE_H &&
            (FUNC_ATTR_PTRCOMPARE_WOKRS || FUNC_ATTR_NOSANITIZE_WORKS))   */
 #ifdef MHD_ASAN_POISON_ACTIVE

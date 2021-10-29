@@ -72,7 +72,7 @@
 
 #ifdef MHD_ASAN_POISON_ACTIVE
 #include <sanitizer/asan_interface.h>
-#endif /* _MHD_USE_ASAN_POISON */
+#endif /* MHD_ASAN_POISON_ACTIVE */
 
 /* define MAP_ANONYMOUS for Mac OS X */
 #if defined(MAP_ANON) && ! defined(MAP_ANONYMOUS)
@@ -304,7 +304,7 @@ MHD_pool_get_free (struct MemoryPool *pool)
 #ifdef MHD_ASAN_POISON_ACTIVE
   if ((pool->end - pool->pos) <= _MHD_RED_ZONE_SIZE)
     return 0;
-#endif /* _MHD_USE_ASAN_POISON */
+#endif /* MHD_ASAN_POISON_ACTIVE */
   return (pool->end - pool->pos) - _MHD_RED_ZONE_SIZE;
 }
 
