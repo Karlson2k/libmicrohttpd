@@ -1118,6 +1118,7 @@ enum MHD_FLAG
    * be used.
    * This flag is set explicitly by #MHD_USE_POLL_INTERNAL_THREAD and
    * by #MHD_USE_EPOLL_INTERNAL_THREAD.
+   * When this flag is not set, MHD run in "external" polling mode.
    */
   MHD_USE_INTERNAL_POLLING_THREAD = 8,
 
@@ -1157,11 +1158,12 @@ enum MHD_FLAG
 #endif /* 0 */
 
   /**
-   * Use `poll()` instead of `select()`. This allows sockets with `fd >=
-   * FD_SETSIZE`.  This option is not compatible with using an
-   * 'external' polling mode (as there is no API to get the file
-   * descriptors for the external poll() from MHD) and must also not
-   * be used in combination with #MHD_USE_EPOLL.
+   * Use `poll()` instead of `select()` for polling sockets.
+   * This allows sockets with `fd >= FD_SETSIZE`.
+   * This option is not compatible with an "external" polling mode
+   * (as there is no API to get the file descriptors for the external
+   * poll() from MHD) and must also not be used in combination
+   * with #MHD_USE_EPOLL.
    * @sa ::MHD_FEATURE_POLL, #MHD_USE_POLL_INTERNAL_THREAD
    */
   MHD_USE_POLL = 64,
@@ -1226,7 +1228,7 @@ enum MHD_FLAG
 #endif /* 0 */
 
   /**
-   * Run using an internal thread (or thread pool) doing `epoll()`.
+   * Run using an internal thread (or thread pool) doing `epoll` polling.
    * This option is only available on certain platforms; using the option on
    * platform without `epoll` support will cause #MHD_start_daemon to fail.
    * @sa ::MHD_FEATURE_EPOLL, #MHD_USE_EPOLL, #MHD_USE_INTERNAL_POLLING_THREAD
@@ -1254,7 +1256,7 @@ enum MHD_FLAG
   /**
    * Use inter-thread communication channel.
    * #MHD_USE_ITC can be used with #MHD_USE_INTERNAL_POLLING_THREAD
-   * and is ignored with any "external" mode.
+   * and is ignored with any "external" sockets polling.
    * It's required for use of #MHD_quiesce_daemon
    * or #MHD_add_connection.
    * This option is enforced by #MHD_ALLOW_SUSPEND_RESUME or
@@ -2157,7 +2159,8 @@ enum MHD_DaemonInfoType
   MHD_DAEMON_INFO_LISTEN_FD,
 
   /**
-   * Request the file descriptor for the external epoll.
+   * Request the file descriptor for the "external" sockets polling
+   * when 'epoll' mode is used.
    * No extra arguments should be passed.
    *
    * Waiting on epoll FD must not block longer than value
@@ -2173,7 +2176,7 @@ enum MHD_DaemonInfoType
   /**
    * Request the number of current connections handled by the daemon.
    * No extra arguments should be passed.
-   * Note: when using MHD in external polling mode, this type of request
+   * Note: when using MHD in "external" polling mode, this type of request
    * could be used only when #MHD_run()/#MHD_run_from_select is not
    * working in other thread at the same time.
    */
@@ -2372,9 +2375,10 @@ typedef enum MHD_Result
 
 
 /**
- * Callback used by libmicrohttpd in order to obtain content.  The
- * callback is to copy at most @a max bytes of content into @a buf.  The
- * total number of bytes that has been placed into @a buf should be
+ * Callback used by libmicrohttpd in order to obtain content.
+ *
+ * The callback is to copy at most @a max bytes of content into @a buf.
+ * The total number of bytes that has been placed into @a buf should be
  * returned.
  *
  * Note that returning zero will cause libmicrohttpd to try again.
@@ -2393,10 +2397,10 @@ typedef enum MHD_Result
  * @param buf where to copy the data
  * @param max maximum number of bytes to copy to @a buf (size of @a buf)
  * @return number of bytes written to @a buf;
- *  0 is legal unless we are running in internal select mode (since
- *    this would cause busy-waiting); 0 in external select mode
- *    will cause this function to be called again once the external
- *    select calls MHD again;
+ *  0 is legal unless MHD is started in "internal" sockets polling mode
+ *    (since this would cause busy-waiting); 0 in "external" sockets
+ *    polling mode will cause this function to be called again once
+ *    any MHD_run*() function is called;
  *  #MHD_CONTENT_READER_END_OF_STREAM (-1) for the regular
  *    end of transmission (with chunked encoding, MHD will then
  *    terminate the chunk and send any HTTP footers that might be
@@ -2529,7 +2533,7 @@ MHD_start_daemon (unsigned int flags,
  * clients to continue processing, but stops accepting new
  * connections.  Note that the caller is responsible for closing the
  * returned socket; however, if MHD is run using threads (anything but
- * external select mode), it must not be closed until AFTER
+ * "external" sockets polling mode), it must not be closed until AFTER
  * #MHD_stop_daemon has been called (as it is theoretically possible
  * that an existing thread is still using it).
  *
@@ -2564,9 +2568,8 @@ MHD_stop_daemon (struct MHD_Daemon *daemon);
  * for example if your HTTP server is behind NAT and needs to connect
  * out to the HTTP client, or if you are building a proxy.
  *
- * If you use this API in conjunction with a internal select or a
- * thread pool, you must set the option
- * #MHD_USE_ITC to ensure that the freshly added
+ * If you use this API in conjunction with an "internal" socket polling,
+ * you must set the option #MHD_USE_ITC to ensure that the freshly added
  * connection is immediately processed by MHD.
  *
  * The given client socket will be managed (and closed!) by MHD after
@@ -2599,7 +2602,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  * to be platform's default.
  *
  * This function should only be called in when MHD is configured to
- * use external select with 'select()' or with 'epoll'.
+ * use "external" sockets polling with 'select()' or with 'epoll'.
  * In the latter case, it will only add the single 'epoll' file
  * descriptor used by MHD to the sets.
  * It's necessary to use #MHD_get_timeout() to get maximum timeout
@@ -2640,7 +2643,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  * larger/smaller than platform's default fd_sets.
  *
  * This function should only be called in when MHD is configured to
- * use external select with 'select()' or with 'epoll'.
+ * use "external" sockets polling with 'select()' or with 'epoll'.
  * In the latter case, it will only add the single 'epoll' file
  * descriptor used by MHD to the sets.
  * It's necessary to use #MHD_get_timeout() to get maximum timeout
@@ -2681,7 +2684,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  * determined by current value of FD_SETSIZE.
  *
  * This function should only be called in when MHD is configured to
- * use external select with 'select()' or with 'epoll'.
+ * use "external" sockets polling with 'select()' or with 'epoll'.
  * In the latter case, it will only add the single 'epoll' file
  * descriptor used by MHD to the sets.
  * It's necessary to use #MHD_get_timeout() to get maximum timeout
@@ -2716,14 +2719,14 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  * function (`select()`, `poll()` or epoll) should at most block, not the
  * timeout value set for connections.
  *
- * Any external polling function must be called with the timeout value
- * provided by this function. Smaller timeout values can be used for polling
- * function if it is required for any reason, but using larger timeout value
- * or no timeout (indefinite timeout) when this function return #MHD_YES
- * will break MHD processing logic and result in "hung" connections with
- * data pending in network buffers and other problems.
+ * Any "external" sockets polling function must be called with the timeout
+ * value provided by this function. Smaller timeout values can be used for
+ * polling function if it is required for any reason, but using larger
+ * timeout value or no timeout (indefinite timeout) when this function
+ * return #MHD_YES will break MHD processing logic and result in "hung"
+ * connections with data pending in network buffers and other problems.
  *
- * It is important to always use this function when external polling is
+ * It is important to always use this function when "external" polling is
  * used. If this function returns #MHD_YES then #MHD_run() (or
  * #MHD_run_from_select()) must be called right after return from polling
  * function, regardless of the states of MHD fds.
@@ -2790,7 +2793,7 @@ MHD_run (struct MHD_Daemon *daemon);
  * This function calls MHD_get_timeout() internally and use returned value as
  * maximum wait time if it less than value of @a millisec parameter.
  *
- * It is expected that the external socket polling function is not used in
+ * It is expected that the "external" socket polling function is not used in
  * conjunction with this function unless the @a millisec is set to zero.
  *
  * @param daemon the daemon to run
@@ -3057,9 +3060,9 @@ MHD_queue_response (struct MHD_Connection *connection,
  * Suspend handling of network data for a given connection.  This can
  * be used to dequeue a connection from MHD's event loop for a while.
  *
- * If you use this API in conjunction with a internal select or a
- * thread pool, you must set the option #MHD_USE_ITC to
- * ensure that a resumed connection is immediately processed by MHD.
+ * If you use this API in conjunction with an "internal" socket polling,
+ * you must set the option #MHD_USE_ITC to ensure that a resumed
+ * connection is immediately processed by MHD.
  *
  * Suspended connections continue to count against the total number of
  * connections allowed (per daemon, as well as per IP, if such limits
@@ -3088,7 +3091,7 @@ MHD_suspend_connection (struct MHD_Connection *connection);
  * function on a connection that was not previously suspended will
  * result in undefined behavior.
  *
- * If you are using this function in ``external'' select mode, you must
+ * If you are using this function in "external" sockets polling mode, you must
  * make sure to run #MHD_run() and #MHD_get_timeout() afterwards (before
  * again calling #MHD_get_fdset()), as otherwise the change may not be
  * reflected in the set returned by #MHD_get_fdset() and you may end up
