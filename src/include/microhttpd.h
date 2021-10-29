@@ -233,8 +233,8 @@ typedef SOCKET MHD_socket;
 #define _MHD_INSTRMACRO(a) #a
 #define _MHD_STRMACRO(a) _MHD_INSTRMACRO (a)
 /* deprecation message */
-#define _MHD_DEPR_MACRO(msg) __pragma(message (__FILE__ "(" _MHD_STRMACRO ( \
-  __LINE__) "): warning: " msg))
+#define _MHD_DEPR_MACRO(msg) \
+  __pragma(message (__FILE__ "(" _MHD_STRMACRO ( __LINE__) "): warning: " msg))
 #define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO (msg)
 #elif defined(__clang__) || defined (__GNUC_PATCHLEVEL__)
 /* clang or GCC since 3.0 */
@@ -277,7 +277,7 @@ typedef SOCKET MHD_socket;
 /* VS 2005 or later */
 #define _MHD_DEPR_FUNC(msg) __declspec(deprecated (msg))
 #elif defined(_MSC_FULL_VER) && _MSC_VER + 0 >= 1310
-/* VS .NET 2003 deprecation do not support custom messages */
+/* VS .NET 2003 deprecation does not support custom messages */
 #define _MHD_DEPR_FUNC(msg) __declspec(deprecated)
 #elif (__GNUC__ + 0 >= 5) || (defined (__clang__) && \
   (__clang_major__ + 0 > 2 || \
@@ -287,7 +287,7 @@ typedef SOCKET MHD_socket;
 #elif defined (__clang__) || __GNUC__ + 0 > 3 || \
   (__GNUC__ + 0 == 3 && __GNUC_MINOR__ + 0 >= 1)
 /* 3.1 <= GCC < 5.0 or clang < 2.9 */
-/* old GCC-style deprecation do not support custom messages */
+/* old GCC-style deprecation does not support custom messages */
 #define _MHD_DEPR_FUNC(msg) __attribute__((__deprecated__))
 /* #elif defined(SOMEMACRO) */ /* add compiler-specific macros here if required */
 #endif /* clang < 2.9 || GCC >= 3.1 */
@@ -310,7 +310,7 @@ typedef SOCKET MHD_socket;
 #define MHD_LONG_LONG long long
 #define MHD_UNSIGNED_LONG_LONG unsigned long long
 #else /* MHD_LONG_LONG */
-_MHD_DEPR_MACRO (
+_MHD_DEPR_MACRO ( \
   "Macro MHD_LONG_LONG is deprecated, use MHD_UNSIGNED_LONG_LONG")
 #endif
 /**
@@ -324,7 +324,7 @@ _MHD_DEPR_MACRO (
 #define MHD_LONG_LONG_PRINTF "ll"
 #define MHD_UNSIGNED_LONG_LONG_PRINTF "%llu"
 #else /* MHD_LONG_LONG_PRINTF */
-_MHD_DEPR_MACRO (
+_MHD_DEPR_MACRO ( \
   "Macro MHD_LONG_LONG_PRINTF is deprecated, use MHD_UNSIGNED_LONG_LONG_PRINTF")
 #endif
 
