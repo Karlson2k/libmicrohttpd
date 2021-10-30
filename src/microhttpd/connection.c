@@ -1844,7 +1844,7 @@ buffer_append (char *buf,
  * @param buf_size the size of the @a buf
  * @param response the response
  * @param kind the kind of objects (headers or footers)
- * @param filter_transf_enc skip "Transfer-Encoding" header
+ * @param filter_transf_enc skip "Transfer-Encoding" header if any
  * @param add_close add "close" token to the
  *                  "Connection:" header (if any), ignored if no "Connection:"
  *                  header was added by user or if "close" token is already
@@ -1909,7 +1909,8 @@ add_user_headers (char *buf,
     buf[(*ppos)++] = ':';
     buf[(*ppos)++] = ' ';
     if (add_close || add_keep_alive)
-    { /* "Connection:" header must be always the first one */
+    {
+      /* "Connection:" header must be always the first one */
       mhd_assert (MHD_str_equal_caseless_n_ (hdr->header, \
                                              MHD_HTTP_HEADER_CONNECTION, \
                                              hdr->header_size));
