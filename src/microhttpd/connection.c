@@ -2097,6 +2097,7 @@ build_header_response (struct MHD_Connection *connection)
   }
   /* The "Connection:" header */
   mhd_assert (! use_conn_close || ! use_conn_k_alive);
+  mhd_assert (! use_conn_k_alive || ! use_conn_close);
   if (0 == (r->flags_auto & MHD_RAF_HAS_CONNECTION_HDR))
   {
     if (use_conn_close)
