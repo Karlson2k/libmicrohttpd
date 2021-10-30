@@ -1569,13 +1569,14 @@ connection_maximize_write_buffer (struct MHD_Connection *connection)
   if (0 != free_size)
   {
     new_size = c->write_buffer_size + free_size;
+    /* This function must not move the buffer position.
+     * MHD_pool_reallocate () may return the new position only if buffer was
+     * allocated 'from_end' or is not the last allocation,
+     * which should not happen. */
     new_buf = MHD_pool_reallocate (pool,
                                    c->write_buffer,
                                    c->write_buffer_size,
                                    new_size);
-    /* Buffer position must not be moved.
-     * Position could be moved only if buffer was allocated 'from_end',
-     * which cannot happen. */
     mhd_assert ((c->write_buffer == new_buf) || (NULL == c->write_buffer));
     c->write_buffer = new_buf;
     c->write_buffer_size = new_size;
