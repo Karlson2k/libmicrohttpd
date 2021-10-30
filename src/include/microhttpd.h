@@ -3238,7 +3238,7 @@ enum MHD_ResponseFlags
   /**
    * Only respond in conservative (dumb) HTTP/1.0-compatible mode.
    * Response still use HTTP/1.1 version in header, but always close
-   * the connection after generating the response and do not use chunked
+   * the connection after sending the response and do not use chunked
    * encoding for the response.
    * You can also set the #MHD_RF_HTTP_1_0_SERVER flag to force
    * HTTP/1.0 version in the response.
@@ -3264,8 +3264,8 @@ enum MHD_ResponseFlags
    * Chunked encoding will not be used for the response.
    * Due to backward compatibility, responses still can be used with
    * HTTP/1.1 clients.
-   * This option can be used to emulate HTTP/1.0 server (for response only
-   * as chunked encoding in requests will be supported still).
+   * This option can be used to emulate HTTP/1.0 server (for response part
+   * only as chunked encoding in requests (if any) is processed by MHD).
    * @note Available since #MHD_VERSION 0x00097308
    */
   MHD_RF_HTTP_1_0_SERVER = 1 << 1,
