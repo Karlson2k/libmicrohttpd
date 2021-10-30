@@ -1760,7 +1760,7 @@ setup_reply_properties (struct MHD_Connection *connection)
   {
     if ((MHD_SIZE_UNKNOWN == r->total_size) ||
         (0 != (r->flags_auto & MHD_RAF_HAS_TRANS_ENC_CHUNKED)))
-    { /* Chunked reply encoding is needed if possible */
+    { /* Use chunked reply encoding if possible */
 
       /* Check whether chunked encoding is supported by the client */
       if (! MHD_IS_HTTP_VER_1_1_COMPAT (c->http_ver))
@@ -1787,7 +1787,7 @@ setup_reply_properties (struct MHD_Connection *connection)
     }
   }
   else
-    use_chunked = false; /* Actually it must not be used without body */
+    use_chunked = false; /* chunked encoding cannot be used without body */
 
   c->rp_props.chunked = use_chunked;
   c->rp_props.set = true;
