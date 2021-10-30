@@ -94,8 +94,6 @@ libmicrohttpd_la_LIBADD = \
   $(MHD_LIBDEPS) $(MHD_TLS_LIBDEPS)
 
 
-
-
 if HAVE_W32
 MHD_DLL_RES_SRC = microhttpd_dll_res.rc
 MHD_DLL_RES_LO = libmicrohttpd_la-$(MHD_DLL_RES_SRC:.rc=.lo)
