@@ -1294,6 +1294,9 @@ keepalive_possible (struct MHD_Connection *connection)
     mhd_assert (0 == (r->flags_auto & MHD_RAF_HAS_CONNECTION_CLOSE));
     /* Valid HTTP version is enforced by 'MHD_queue_response()' */
     mhd_assert (MHD_IS_HTTP_VER_SUPPORTED (c->http_ver));
+    /* TODO: Enable assert when MHD will allow early response */
+    /* TODO: Add 'early_response' */
+    /* mhd_assert (! c->stop_with_error); */
     return MHD_CONN_MUST_UPGRADE;
   }
 #endif /* UPGRADE_SUPPORT */
