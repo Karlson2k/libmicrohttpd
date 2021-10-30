@@ -1392,7 +1392,9 @@ get_date_str (char *date)
   date[3] = ',';
   date[4] = ' ';
   /* Day of the month */
-  MHD_uint8_to_str_pad ((uint8_t) now.tm_mday, 2, date + 5, buf_len - 5);
+  if (2 != MHD_uint8_to_str_pad ((uint8_t) now.tm_mday, 2,
+                                 date + 5, buf_len - 5))
+    return false;
   date[7] = ' ';
   /* Month */
   src = mons[now.tm_mon % 12];
