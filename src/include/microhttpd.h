@@ -3822,10 +3822,12 @@ MHD_destroy_response (struct MHD_Response *response);
  *   encoding, however for HTTP/1.0 clients chunked encoding will not be used
  *   and manually set "Transfer-Encoding" header is automatically removed
  *   for HTTP/1.0 clients
- * + "Connection" is added automatically with value "Keep-Alive" or "Close".
- *   The header "Connection" with value "Close" could be set by this function
- *   to enforce closure of the connection after sending this response.
- *   "Keep-Alive" cannot be enforced and will be removed automatically.
+ * + "Connection" may be added automatically with value "Keep-Alive" (only
+ *   for HTTP/1.0 clients) or "Close". The header "Connection" with value
+ *   "Close" could be set by this function to enforce closure of
+ *   the connection after sending this response. "Keep-Alive" cannot be
+ *   enforced and will be removed automatically.
+ *   @see #MHD_RF_SEND_KEEP_ALIVE_HEADER
  *
  * Some headers are pre-processed by this function:
  * * "Connection" headers are combined into single header entry, value is
