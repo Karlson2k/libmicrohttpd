@@ -573,354 +573,457 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 /**
  * @defgroup headers HTTP headers
  * These are the standard headers found in HTTP requests and responses.
- * See: http://www.iana.org/assignments/message-headers/message-headers.xml
- * Registry export date: 2020-09-20
+ * See: https://www.iana.org/assignments/http-fields/http-fields.xhtml
+ * Registry export date: 2021-10-30
  * @{
  */
 
 /* Main HTTP headers. */
-/* Standard.      RFC7231, Section 5.3.2 */
-#define MHD_HTTP_HEADER_ACCEPT "Accept"
-/* Standard.      RFC7231, Section 5.3.3 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 12.5.1 */
+#define MHD_HTTP_HEADER_ACCEPT       "Accept"
+/* Deprecated.    RFC-ietf-httpbis-semantics-19, Section 12.5.2 */
 #define MHD_HTTP_HEADER_ACCEPT_CHARSET "Accept-Charset"
-/* Standard.      RFC7231, Section 5.3.4; RFC7694, Section 3 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 12.5.3 */
 #define MHD_HTTP_HEADER_ACCEPT_ENCODING "Accept-Encoding"
-/* Standard.      RFC7231, Section 5.3.5 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 12.5.4 */
 #define MHD_HTTP_HEADER_ACCEPT_LANGUAGE "Accept-Language"
-/* Standard.      RFC7233, Section 2.3 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 14.3 */
 #define MHD_HTTP_HEADER_ACCEPT_RANGES "Accept-Ranges"
-/* Standard.      RFC7234, Section 5.1 */
-#define MHD_HTTP_HEADER_AGE "Age"
-/* Standard.      RFC7231, Section 7.4.1 */
-#define MHD_HTTP_HEADER_ALLOW "Allow"
-/* Standard.      RFC7235, Section 4.2 */
+/* Permanent.     RFC-ietf-httpbis-cache-19, Section 5.1 */
+#define MHD_HTTP_HEADER_AGE          "Age"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.2.1 */
+#define MHD_HTTP_HEADER_ALLOW        "Allow"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 11.6.3 */
+#define MHD_HTTP_HEADER_AUTHENTICATION_INFO "Authentication-Info"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 11.6.2 */
 #define MHD_HTTP_HEADER_AUTHORIZATION "Authorization"
-/* Standard.      RFC7234, Section 5.2 */
+/* Permanent.     RFC-ietf-httpbis-cache-19, Section 5.2 */
 #define MHD_HTTP_HEADER_CACHE_CONTROL "Cache-Control"
-/* Reserved.      RFC7230, Section 8.1 */
-#define MHD_HTTP_HEADER_CLOSE "Close"
-/* Standard.      RFC7230, Section 6.1 */
-#define MHD_HTTP_HEADER_CONNECTION "Connection"
-/* Standard.      RFC7231, Section 3.1.2.2 */
+/* Permanent.     RFC-ietf-httpbis-cache-header-10 */
+#define MHD_HTTP_HEADER_CACHE_STATUS "Cache-Status"
+/* Permanent.     RFC-ietf-httpbis-messaging-19, Section 9.6 */
+#define MHD_HTTP_HEADER_CLOSE        "Close"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 7.6.1 */
+#define MHD_HTTP_HEADER_CONNECTION   "Connection"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 8.4 */
 #define MHD_HTTP_HEADER_CONTENT_ENCODING "Content-Encoding"
-/* Standard.      RFC7231, Section 3.1.3.2 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 8.5 */
 #define MHD_HTTP_HEADER_CONTENT_LANGUAGE "Content-Language"
-/* Standard.      RFC7230, Section 3.3.2 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 8.6 */
 #define MHD_HTTP_HEADER_CONTENT_LENGTH "Content-Length"
-/* Standard.      RFC7231, Section 3.1.4.2 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 8.7 */
 #define MHD_HTTP_HEADER_CONTENT_LOCATION "Content-Location"
-/* Standard.      RFC7233, Section 4.2 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 14.4 */
 #define MHD_HTTP_HEADER_CONTENT_RANGE "Content-Range"
-/* Standard.      RFC7231, Section 3.1.1.5 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 8.3 */
 #define MHD_HTTP_HEADER_CONTENT_TYPE "Content-Type"
-/* Standard.      RFC7231, Section 7.1.1.2 */
-#define MHD_HTTP_HEADER_DATE "Date"
-/* Standard.      RFC7232, Section 2.3 */
-#define MHD_HTTP_HEADER_ETAG "ETag"
-/* Standard.      RFC7231, Section 5.1.1 */
-#define MHD_HTTP_HEADER_EXPECT "Expect"
-/* Standard.      RFC7234, Section 5.3 */
-#define MHD_HTTP_HEADER_EXPIRES "Expires"
-/* Standard.      RFC7231, Section 5.5.1 */
-#define MHD_HTTP_HEADER_FROM "From"
-/* Standard.      RFC7230, Section 5.4 */
-#define MHD_HTTP_HEADER_HOST "Host"
-/* Standard.      RFC7232, Section 3.1 */
-#define MHD_HTTP_HEADER_IF_MATCH "If-Match"
-/* Standard.      RFC7232, Section 3.3 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 6.6.1 */
+#define MHD_HTTP_HEADER_DATE         "Date"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 8.8.3 */
+#define MHD_HTTP_HEADER_ETAG         "ETag"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.1.1 */
+#define MHD_HTTP_HEADER_EXPECT       "Expect"
+/* Permanent.     RFC-ietf-httpbis-expect-ct-08 */
+#define MHD_HTTP_HEADER_EXPECT_CT    "Expect-CT"
+/* Permanent.     RFC-ietf-httpbis-cache-19, Section 5.3 */
+#define MHD_HTTP_HEADER_EXPIRES      "Expires"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.1.2 */
+#define MHD_HTTP_HEADER_FROM         "From"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 7.2 */
+#define MHD_HTTP_HEADER_HOST         "Host"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 13.1.1 */
+#define MHD_HTTP_HEADER_IF_MATCH     "If-Match"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 13.1.3 */
 #define MHD_HTTP_HEADER_IF_MODIFIED_SINCE "If-Modified-Since"
-/* Standard.      RFC7232, Section 3.2 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 13.1.2 */
 #define MHD_HTTP_HEADER_IF_NONE_MATCH "If-None-Match"
-/* Standard.      RFC7233, Section 3.2 */
-#define MHD_HTTP_HEADER_IF_RANGE "If-Range"
-/* Standard.      RFC7232, Section 3.4 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 13.1.5 */
+#define MHD_HTTP_HEADER_IF_RANGE     "If-Range"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 13.1.4 */
 #define MHD_HTTP_HEADER_IF_UNMODIFIED_SINCE "If-Unmodified-Since"
-/* Standard.      RFC7232, Section 2.2 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 8.8.2 */
 #define MHD_HTTP_HEADER_LAST_MODIFIED "Last-Modified"
-/* Standard.      RFC7231, Section 7.1.2 */
-#define MHD_HTTP_HEADER_LOCATION "Location"
-/* Standard.      RFC7231, Section 5.1.2 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.2.2 */
+#define MHD_HTTP_HEADER_LOCATION     "Location"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 7.6.2 */
 #define MHD_HTTP_HEADER_MAX_FORWARDS "Max-Forwards"
-/* Standard.      RFC7231, Appendix A.1 */
+/* Permanent.     RFC-ietf-httpbis-messaging-19, Appendix B.1 */
 #define MHD_HTTP_HEADER_MIME_VERSION "MIME-Version"
-/* Standard.      RFC7234, Section 5.4 */
-#define MHD_HTTP_HEADER_PRAGMA "Pragma"
-/* Standard.      RFC7235, Section 4.3 */
+/* Permanent.     RFC-ietf-httpbis-cache-19, Section 5.4 */
+#define MHD_HTTP_HEADER_PRAGMA       "Pragma"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 11.7.1 */
 #define MHD_HTTP_HEADER_PROXY_AUTHENTICATE "Proxy-Authenticate"
-/* Standard.      RFC7235, Section 4.4 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 11.7.3 */
+#define MHD_HTTP_HEADER_PROXY_AUTHENTICATION_INFO "Proxy-Authentication-Info"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 11.7.2 */
 #define MHD_HTTP_HEADER_PROXY_AUTHORIZATION "Proxy-Authorization"
-/* Standard.      RFC7233, Section 3.1 */
-#define MHD_HTTP_HEADER_RANGE "Range"
-/* Standard.      RFC7231, Section 5.5.2 */
-#define MHD_HTTP_HEADER_REFERER "Referer"
-/* Standard.      RFC7231, Section 7.1.3 */
-#define MHD_HTTP_HEADER_RETRY_AFTER "Retry-After"
-/* Standard.      RFC7231, Section 7.4.2 */
-#define MHD_HTTP_HEADER_SERVER "Server"
-/* Standard.      RFC7230, Section 4.3 */
-#define MHD_HTTP_HEADER_TE "TE"
-/* Standard.      RFC7230, Section 4.4 */
-#define MHD_HTTP_HEADER_TRAILER "Trailer"
-/* Standard.      RFC7230, Section 3.3.1 */
+/* Permanent.     RFC-ietf-httpbis-proxy-status-08 */
+#define MHD_HTTP_HEADER_PROXY_STATUS "Proxy-Status"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 14.2 */
+#define MHD_HTTP_HEADER_RANGE        "Range"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.1.3 */
+#define MHD_HTTP_HEADER_REFERER      "Referer"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.2.3 */
+#define MHD_HTTP_HEADER_RETRY_AFTER  "Retry-After"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.2.4 */
+#define MHD_HTTP_HEADER_SERVER       "Server"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.1.4 */
+#define MHD_HTTP_HEADER_TE           "TE"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 6.6.2 */
+#define MHD_HTTP_HEADER_TRAILER      "Trailer"
+/* Permanent.     RFC-ietf-httpbis-messaging-19, Section 6.1 */
 #define MHD_HTTP_HEADER_TRANSFER_ENCODING "Transfer-Encoding"
-/* Standard.      RFC7230, Section 6.7 */
-#define MHD_HTTP_HEADER_UPGRADE "Upgrade"
-/* Standard.      RFC7231, Section 5.5.3 */
-#define MHD_HTTP_HEADER_USER_AGENT "User-Agent"
-/* Standard.      RFC7231, Section 7.1.4 */
-#define MHD_HTTP_HEADER_VARY "Vary"
-/* Standard.      RFC7230, Section 5.7.1 */
-#define MHD_HTTP_HEADER_VIA "Via"
-/* Standard.      RFC7235, Section 4.1 */
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 7.8 */
+#define MHD_HTTP_HEADER_UPGRADE      "Upgrade"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.1.5 */
+#define MHD_HTTP_HEADER_USER_AGENT   "User-Agent"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 12.5.5 */
+#define MHD_HTTP_HEADER_VARY         "Vary"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 7.6.3 */
+#define MHD_HTTP_HEADER_VIA          "Via"
+/* Obsoleted.     RFC-ietf-httpbis-cache-19, Section 5.5 */
+#define MHD_HTTP_HEADER_WARNING      "Warning"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 11.6.1 */
 #define MHD_HTTP_HEADER_WWW_AUTHENTICATE "WWW-Authenticate"
-/* Standard.      RFC7234, Section 5.5 */
-#define MHD_HTTP_HEADER_WARNING "Warning"
+/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 12.5.5 */
+#define MHD_HTTP_HEADER_ASTERISK     "*"
 
 /* Additional HTTP headers. */
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_A_IM "A-IM"
-/* No category.   RFC4229 */
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_A_IM         "A-IM"
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_ACCEPT_ADDITIONS "Accept-Additions"
-/* Experimental.  RFC-ietf-httpbis-client-hints-15, Section 3.1 */
-#define MHD_HTTP_HEADER_ACCEPT_CH "Accept-CH"
-/* Informational. RFC7089 */
+/* Permanent.     RFC8942, Section 3.1 */
+#define MHD_HTTP_HEADER_ACCEPT_CH    "Accept-CH"
+/* Permanent.     RFC7089 */
 #define MHD_HTTP_HEADER_ACCEPT_DATETIME "Accept-Datetime"
-/* No category.   RFC4229 */
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_ACCEPT_FEATURES "Accept-Features"
-/* No category.   RFC5789 */
-#define MHD_HTTP_HEADER_ACCEPT_PATCH "Accept-Patch"
-/* Standard.      https://www.w3.org/TR/ldp/ */
-#define MHD_HTTP_HEADER_ACCEPT_POST "Accept-Post"
-/* Standard.      RFC7639, Section 2 */
-#define MHD_HTTP_HEADER_ALPN "ALPN"
-/* Standard.      RFC7838 */
-#define MHD_HTTP_HEADER_ALT_SVC "Alt-Svc"
-/* Standard.      RFC7838 */
-#define MHD_HTTP_HEADER_ALT_USED "Alt-Used"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_ALTERNATES "Alternates"
-/* No category.   RFC4437 */
+/* Permanent.     https://www.w3.org/TR/ldp/ */
+#define MHD_HTTP_HEADER_ACCEPT_POST  "Accept-Post"
+/* Permanent.     RFC7639, Section 2 */
+#define MHD_HTTP_HEADER_ALPN         "ALPN"
+/* Permanent.     RFC7838 */
+#define MHD_HTTP_HEADER_ALT_SVC      "Alt-Svc"
+/* Permanent.     RFC7838 */
+#define MHD_HTTP_HEADER_ALT_USED     "Alt-Used"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_ALTERNATES   "Alternates"
+/* Permanent.     RFC4437 */
 #define MHD_HTTP_HEADER_APPLY_TO_REDIRECT_REF "Apply-To-Redirect-Ref"
-/* Experimental.  RFC8053, Section 4 */
+/* Permanent.     RFC8053, Section 4 */
 #define MHD_HTTP_HEADER_AUTHENTICATION_CONTROL "Authentication-Control"
-/* Standard.      RFC7615, Section 3 */
-#define MHD_HTTP_HEADER_AUTHENTICATION_INFO "Authentication-Info"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_C_EXT "C-Ext"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_C_MAN "C-Man"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_C_OPT "C-Opt"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_C_PEP "C-PEP"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_C_PEP_INFO "C-PEP-Info"
-/* Standard.      RFC8607, Section 5.1 */
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_C_EXT        "C-Ext"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_C_MAN        "C-Man"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_C_OPT        "C-Opt"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_C_PEP        "C-PEP"
+/* Permanent.     RFC8607, Section 5.1 */
 #define MHD_HTTP_HEADER_CAL_MANAGED_ID "Cal-Managed-ID"
-/* Standard.      RFC7809, Section 7.1 */
+/* Permanent.     RFC7809, Section 7.1 */
 #define MHD_HTTP_HEADER_CALDAV_TIMEZONES "CalDAV-Timezones"
-/* Standard.      RFC8586 */
-#define MHD_HTTP_HEADER_CDN_LOOP "CDN-Loop"
-/* Standard.      RFC8739, Section 3.3 */
+/* Permanent.     RFC8586 */
+#define MHD_HTTP_HEADER_CDN_LOOP     "CDN-Loop"
+/* Permanent.     RFC8739, Section 3.3 */
 #define MHD_HTTP_HEADER_CERT_NOT_AFTER "Cert-Not-After"
-/* Standard.      RFC8739, Section 3.3 */
+/* Permanent.     RFC8739, Section 3.3 */
 #define MHD_HTTP_HEADER_CERT_NOT_BEFORE "Cert-Not-Before"
-/* Obsoleted.     RFC2068; RFC2616 */
-#define MHD_HTTP_HEADER_CONTENT_BASE "Content-Base"
-/* Standard.      RFC6266 */
+/* Permanent.     RFC6266 */
 #define MHD_HTTP_HEADER_CONTENT_DISPOSITION "Content-Disposition"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_CONTENT_ID "Content-ID"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_CONTENT_MD5 "Content-MD5"
-/* No category.   RFC4229 */
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_CONTENT_ID   "Content-ID"
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_CONTENT_SCRIPT_TYPE "Content-Script-Type"
-/* No category.   RFC4229 */
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_CONTENT_STYLE_TYPE "Content-Style-Type"
-/* No category.   RFC4229 */
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_CONTENT_VERSION "Content-Version"
-/* Standard.      RFC6265 */
-#define MHD_HTTP_HEADER_COOKIE "Cookie"
-/* Obsoleted.     RFC2965; RFC6265 */
-#define MHD_HTTP_HEADER_COOKIE2 "Cookie2"
-/* Standard.      RFC5323 */
-#define MHD_HTTP_HEADER_DASL "DASL"
-/* Standard.      RFC4918 */
-#define MHD_HTTP_HEADER_DAV "DAV"
-/* No category.   RFC4229 */
+/* Permanent.     RFC6265 */
+#define MHD_HTTP_HEADER_COOKIE       "Cookie"
+/* Permanent.     https://fetch.spec.whatwg.org/#cross-origin-resource-policy-header */
+#define MHD_HTTP_HEADER_CROSS_ORIGIN_RESOURCE_POLICY \
+  "Cross-Origin-Resource-Policy"
+/* Permanent.     RFC5323 */
+#define MHD_HTTP_HEADER_DASL         "DASL"
+/* Permanent.     RFC4918 */
+#define MHD_HTTP_HEADER_DAV          "DAV"
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_DEFAULT_STYLE "Default-Style"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_DELTA_BASE "Delta-Base"
-/* Standard.      RFC4918 */
-#define MHD_HTTP_HEADER_DEPTH "Depth"
-/* No category.   RFC4229 */
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_DELTA_BASE   "Delta-Base"
+/* Permanent.     RFC4918 */
+#define MHD_HTTP_HEADER_DEPTH        "Depth"
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_DERIVED_FROM "Derived-From"
-/* Standard.      RFC4918 */
-#define MHD_HTTP_HEADER_DESTINATION "Destination"
-/* No category.   RFC4229 */
+/* Permanent.     RFC4918 */
+#define MHD_HTTP_HEADER_DESTINATION  "Destination"
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_DIFFERENTIAL_ID "Differential-ID"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_DIGEST "Digest"
-/* Standard.      RFC8470 */
-#define MHD_HTTP_HEADER_EARLY_DATA "Early-Data"
-/* Experimental.  RFC-ietf-httpbis-expect-ct-08 */
-#define MHD_HTTP_HEADER_EXPECT_CT "Expect-CT"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_EXT "Ext"
-/* Standard.      RFC7239 */
-#define MHD_HTTP_HEADER_FORWARDED "Forwarded"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_GETPROFILE "GetProfile"
-/* Experimental.  RFC7486, Section 6.1.1 */
-#define MHD_HTTP_HEADER_HOBAREG "Hobareg"
-/* Standard.      RFC7540, Section 3.2.1 */
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_DIGEST       "Digest"
+/* Permanent.     RFC8470 */
+#define MHD_HTTP_HEADER_EARLY_DATA   "Early-Data"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_EXT          "Ext"
+/* Permanent.     RFC7239 */
+#define MHD_HTTP_HEADER_FORWARDED    "Forwarded"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_GETPROFILE   "GetProfile"
+/* Permanent.     RFC7486, Section 6.1.1 */
+#define MHD_HTTP_HEADER_HOBAREG      "Hobareg"
+/* Permanent.     RFC7540, Section 3.2.1 */
 #define MHD_HTTP_HEADER_HTTP2_SETTINGS "HTTP2-Settings"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_IM "IM"
-/* Standard.      RFC4918 */
-#define MHD_HTTP_HEADER_IF "If"
-/* Standard.      RFC6638 */
+/* Permanent.     RFC4918 */
+#define MHD_HTTP_HEADER_IF           "If"
+/* Permanent.     RFC6638 */
 #define MHD_HTTP_HEADER_IF_SCHEDULE_TAG_MATCH "If-Schedule-Tag-Match"
-/* Standard.      RFC8473 */
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_IM           "IM"
+/* Permanent.     RFC8473 */
 #define MHD_HTTP_HEADER_INCLUDE_REFERRED_TOKEN_BINDING_ID \
   "Include-Referred-Token-Binding-ID"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_KEEP_ALIVE "Keep-Alive"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_LABEL "Label"
-/* Standard.      RFC8288 */
-#define MHD_HTTP_HEADER_LINK "Link"
-/* Standard.      RFC4918 */
-#define MHD_HTTP_HEADER_LOCK_TOKEN "Lock-Token"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_MAN "Man"
-/* Informational. RFC7089 */
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_KEEP_ALIVE   "Keep-Alive"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_LABEL        "Label"
+/* Permanent.     RFC8288 */
+#define MHD_HTTP_HEADER_LINK         "Link"
+/* Permanent.     RFC4918 */
+#define MHD_HTTP_HEADER_LOCK_TOKEN   "Lock-Token"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_MAN          "Man"
+/* Permanent.     RFC7089 */
 #define MHD_HTTP_HEADER_MEMENTO_DATETIME "Memento-Datetime"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_METER "Meter"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_NEGOTIATE "Negotiate"
-/* Standard.      OData Version 4.01 Part 1: Protocol; OASIS; Chet_Ensign */
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_METER        "Meter"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_NEGOTIATE    "Negotiate"
+/* Permanent.     OData Version 4.01 Part 1: Protocol; OASIS; Chet_Ensign */
 #define MHD_HTTP_HEADER_ODATA_ENTITYID "OData-EntityId"
-/* Standard.      OData Version 4.01 Part 1: Protocol; OASIS; Chet_Ensign */
+/* Permanent.     OData Version 4.01 Part 1: Protocol; OASIS; Chet_Ensign */
 #define MHD_HTTP_HEADER_ODATA_ISOLATION "OData-Isolation"
-/* Standard.      OData Version 4.01 Part 1: Protocol; OASIS; Chet_Ensign */
+/* Permanent.     OData Version 4.01 Part 1: Protocol; OASIS; Chet_Ensign */
 #define MHD_HTTP_HEADER_ODATA_MAXVERSION "OData-MaxVersion"
-/* Standard.      OData Version 4.01 Part 1: Protocol; OASIS; Chet_Ensign */
+/* Permanent.     OData Version 4.01 Part 1: Protocol; OASIS; Chet_Ensign */
 #define MHD_HTTP_HEADER_ODATA_VERSION "OData-Version"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_OPT "Opt"
-/* Experimental.  RFC8053, Section 3 */
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_OPT          "Opt"
+/* Permanent.     RFC8053, Section 3 */
 #define MHD_HTTP_HEADER_OPTIONAL_WWW_AUTHENTICATE "Optional-WWW-Authenticate"
-/* Standard.      RFC4229 */
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_ORDERING_TYPE "Ordering-Type"
-/* Standard.      RFC6454 */
-#define MHD_HTTP_HEADER_ORIGIN "Origin"
-/* Standard.      RFC8613, Section 11.1 */
-#define MHD_HTTP_HEADER_OSCORE "OSCORE"
-/* Standard.      RFC4918 */
-#define MHD_HTTP_HEADER_OVERWRITE "Overwrite"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_P3P "P3P"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_PEP "PEP"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_PICS_LABEL "PICS-Label"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_PEP_INFO "Pep-Info"
-/* Standard.      RFC4229 */
-#define MHD_HTTP_HEADER_POSITION "Position"
-/* Standard.      RFC7240 */
-#define MHD_HTTP_HEADER_PREFER "Prefer"
-/* Standard.      RFC7240 */
+/* Permanent.     RFC6454 */
+#define MHD_HTTP_HEADER_ORIGIN       "Origin"
+/* Permanent.     RFC8613, Section 11.1 */
+#define MHD_HTTP_HEADER_OSCORE       "OSCORE"
+/* Permanent.     RFC4918 */
+#define MHD_HTTP_HEADER_OVERWRITE    "Overwrite"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_P3P          "P3P"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_PEP          "PEP"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_PEP_INFO     "Pep-Info"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_PICS_LABEL   "PICS-Label"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_POSITION     "Position"
+/* Permanent.     RFC7240 */
+#define MHD_HTTP_HEADER_PREFER       "Prefer"
+/* Permanent.     RFC7240 */
 #define MHD_HTTP_HEADER_PREFERENCE_APPLIED "Preference-Applied"
-/* No category.   RFC4229 */
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_PROFILEOBJECT "ProfileObject"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_PROTOCOL "Protocol"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_PROTOCOL_INFO "Protocol-Info"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_PROTOCOL_QUERY "Protocol-Query"
-/* No category.   RFC4229 */
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_PROTOCOL     "Protocol"
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_PROTOCOL_REQUEST "Protocol-Request"
-/* Standard.      RFC7615, Section 4 */
-#define MHD_HTTP_HEADER_PROXY_AUTHENTICATION_INFO "Proxy-Authentication-Info"
-/* No category.   RFC4229 */
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_PROXY_FEATURES "Proxy-Features"
-/* No category.   RFC4229 */
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_PROXY_INSTRUCTION "Proxy-Instruction"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_PUBLIC "Public"
-/* Standard.      RFC7469 */
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_PUBLIC       "Public"
+/* Permanent.     RFC7469 */
 #define MHD_HTTP_HEADER_PUBLIC_KEY_PINS "Public-Key-Pins"
-/* Standard.      RFC7469 */
+/* Permanent.     RFC7469 */
 #define MHD_HTTP_HEADER_PUBLIC_KEY_PINS_REPORT_ONLY \
   "Public-Key-Pins-Report-Only"
-/* No category.   RFC4437 */
+/* Permanent.     RFC4437 */
 #define MHD_HTTP_HEADER_REDIRECT_REF "Redirect-Ref"
-/* Standard.      RFC8555, Section 6.5.1 */
+/* Permanent.     RFC8555, Section 6.5.1 */
 #define MHD_HTTP_HEADER_REPLAY_NONCE "Replay-Nonce"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_SAFE "Safe"
-/* Standard.      RFC6638 */
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_SAFE         "Safe"
+/* Permanent.     RFC6638 */
 #define MHD_HTTP_HEADER_SCHEDULE_REPLY "Schedule-Reply"
-/* Standard.      RFC6638 */
+/* Permanent.     RFC6638 */
 #define MHD_HTTP_HEADER_SCHEDULE_TAG "Schedule-Tag"
-/* Standard.      RFC8473 */
+/* Permanent.     RFC8473 */
 #define MHD_HTTP_HEADER_SEC_TOKEN_BINDING "Sec-Token-Binding"
-/* Standard.      RFC6455 */
+/* Permanent.     RFC6455 */
 #define MHD_HTTP_HEADER_SEC_WEBSOCKET_ACCEPT "Sec-WebSocket-Accept"
-/* Standard.      RFC6455 */
+/* Permanent.     RFC6455 */
 #define MHD_HTTP_HEADER_SEC_WEBSOCKET_EXTENSIONS "Sec-WebSocket-Extensions"
-/* Standard.      RFC6455 */
+/* Permanent.     RFC6455 */
 #define MHD_HTTP_HEADER_SEC_WEBSOCKET_KEY "Sec-WebSocket-Key"
-/* Standard.      RFC6455 */
+/* Permanent.     RFC6455 */
 #define MHD_HTTP_HEADER_SEC_WEBSOCKET_PROTOCOL "Sec-WebSocket-Protocol"
-/* Standard.      RFC6455 */
+/* Permanent.     RFC6455 */
 #define MHD_HTTP_HEADER_SEC_WEBSOCKET_VERSION "Sec-WebSocket-Version"
-/* No category.   RFC4229 */
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_SECURITY_SCHEME "Security-Scheme"
-/* Standard.      RFC6265 */
-#define MHD_HTTP_HEADER_SET_COOKIE "Set-Cookie"
-/* Obsoleted.     RFC2965; RFC6265 */
-#define MHD_HTTP_HEADER_SET_COOKIE2 "Set-Cookie2"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_SETPROFILE "SetProfile"
-/* Standard.      RFC5023 */
-#define MHD_HTTP_HEADER_SLUG "SLUG"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_SOAPACTION "SoapAction"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_STATUS_URI "Status-URI"
-/* Standard.      RFC6797 */
+/* Permanent.     RFC6265 */
+#define MHD_HTTP_HEADER_SET_COOKIE   "Set-Cookie"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_SETPROFILE   "SetProfile"
+/* Permanent.     RFC5023 */
+#define MHD_HTTP_HEADER_SLUG         "SLUG"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_SOAPACTION   "SoapAction"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_STATUS_URI   "Status-URI"
+/* Permanent.     RFC6797 */
 #define MHD_HTTP_HEADER_STRICT_TRANSPORT_SECURITY "Strict-Transport-Security"
-/* Informational. RFC8594 */
-#define MHD_HTTP_HEADER_SUNSET "Sunset"
-/* No category.   RFC4229 */
+/* Permanent.     RFC8594 */
+#define MHD_HTTP_HEADER_SUNSET       "Sunset"
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_SURROGATE_CAPABILITY "Surrogate-Capability"
-/* No category.   RFC4229 */
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_SURROGATE_CONTROL "Surrogate-Control"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_TCN "TCN"
-/* Standard.      RFC4918 */
-#define MHD_HTTP_HEADER_TIMEOUT "Timeout"
-/* Standard.      RFC8030, Section 5.4 */
-#define MHD_HTTP_HEADER_TOPIC "Topic"
-/* Standard.      RFC8030, Section 5.2 */
-#define MHD_HTTP_HEADER_TTL "TTL"
-/* Standard.      RFC8030, Section 5.3 */
-#define MHD_HTTP_HEADER_URGENCY "Urgency"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_URI "URI"
-/* No category.   RFC4229 */
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_TCN          "TCN"
+/* Permanent.     RFC4918 */
+#define MHD_HTTP_HEADER_TIMEOUT      "Timeout"
+/* Permanent.     RFC8030, Section 5.4 */
+#define MHD_HTTP_HEADER_TOPIC        "Topic"
+/* Permanent.     RFC8030, Section 5.2 */
+#define MHD_HTTP_HEADER_TTL          "TTL"
+/* Permanent.     RFC8030, Section 5.3 */
+#define MHD_HTTP_HEADER_URGENCY      "Urgency"
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_URI          "URI"
+/* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_VARIANT_VARY "Variant-Vary"
-/* No category.   RFC4229 */
-#define MHD_HTTP_HEADER_WANT_DIGEST "Want-Digest"
-/* Standard.      https://fetch.spec.whatwg.org/#x-content-type-options-header */
+/* Permanent.     RFC4229 */
+#define MHD_HTTP_HEADER_WANT_DIGEST  "Want-Digest"
+/* Permanent.     https://fetch.spec.whatwg.org/#x-content-type-options-header */
 #define MHD_HTTP_HEADER_X_CONTENT_TYPE_OPTIONS "X-Content-Type-Options"
-/* Informational. RFC7034 */
+/* Permanent.     RFC7034 */
 #define MHD_HTTP_HEADER_X_FRAME_OPTIONS "X-Frame-Options"
+/* Provisional.   RFC5789 */
+#define MHD_HTTP_HEADER_ACCEPT_PATCH "Accept-Patch"
+/* Provisional.   W3C Web Application Formats Working Group */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_CREDENTIALS \
+  "Access-Control-Allow-Credentials"
+/* Provisional.   W3C Web Application Formats Working Group */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_HEADERS \
+  "Access-Control-Allow-Headers"
+/* Provisional.   W3C Web Application Formats Working Group */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_METHODS \
+  "Access-Control-Allow-Methods"
+/* Provisional.   W3C Web Application Formats Working Group */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN \
+  "Access-Control-Allow-Origin"
+/* Provisional.   W3C Web Application Formats Working Group */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_MAX_AGE "Access-Control-Max-Age"
+/* Provisional.   W3C Web Application Formats Working Group */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_REQUEST_HEADERS \
+  "Access-Control-Request-Headers"
+/* Provisional.   W3C Web Application Formats Working Group */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_REQUEST_METHOD \
+  "Access-Control-Request-Method"
+/* Provisional.   https://github.com/ampproject/amphtml/blob/master/spec/amp-cache-transform.md */
+#define MHD_HTTP_HEADER_AMP_CACHE_TRANSFORM "AMP-Cache-Transform"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_COMPLIANCE   "Compliance"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_CONTENT_TRANSFER_ENCODING "Content-Transfer-Encoding"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_COST         "Cost"
+/* Provisional.   RFC6017 */
+#define MHD_HTTP_HEADER_EDIINT_FEATURES "EDIINT-Features"
+/* Provisional.   OData Version 4.01 Part 1: Protocol; OASIS; Chet_Ensign */
+#define MHD_HTTP_HEADER_ISOLATION    "Isolation"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_MESSAGE_ID   "Message-ID"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_NON_COMPLIANCE "Non-Compliance"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_OPTIONAL     "Optional"
+/* Provisional.   OASIS Project Specification 01; OASIS; Chet_Ensign */
+#define MHD_HTTP_HEADER_OSLC_CORE_VERSION "OSLC-Core-Version"
+/* Provisional.   Repeatable Requests Version 1.0; OASIS; Chet_Ensign */
+#define MHD_HTTP_HEADER_REPEATABILITY_CLIENT_ID "Repeatability-Client-ID"
+/* Provisional.   Repeatable Requests Version 1.0; OASIS; Chet_Ensign */
+#define MHD_HTTP_HEADER_REPEATABILITY_FIRST_SENT "Repeatability-First-Sent"
+/* Provisional.   Repeatable Requests Version 1.0; OASIS; Chet_Ensign */
+#define MHD_HTTP_HEADER_REPEATABILITY_REQUEST_ID "Repeatability-Request-ID"
+/* Provisional.   Repeatable Requests Version 1.0; OASIS; Chet_Ensign */
+#define MHD_HTTP_HEADER_REPEATABILITY_RESULT "Repeatability-Result"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_RESOLUTION_HINT "Resolution-Hint"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_RESOLVER_LOCATION "Resolver-Location"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_SUBOK        "SubOK"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_SUBST        "Subst"
+/* Provisional.   https://www.w3.org/TR/resource-timing-1/#timing-allow-origin */
+#define MHD_HTTP_HEADER_TIMING_ALLOW_ORIGIN "Timing-Allow-Origin"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_TITLE        "Title"
+/* Provisional.   https://www.w3.org/TR/trace-context/#traceparent-field */
+#define MHD_HTTP_HEADER_TRACEPARENT  "Traceparent"
+/* Provisional.   https://www.w3.org/TR/trace-context/#tracestate-field */
+#define MHD_HTTP_HEADER_TRACESTATE   "Tracestate"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_UA_COLOR     "UA-Color"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_UA_MEDIA     "UA-Media"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_UA_PIXELS    "UA-Pixels"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_UA_RESOLUTION "UA-Resolution"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_UA_WINDOWPIXELS "UA-Windowpixels"
+/* Provisional.   RFC4229 */
+#define MHD_HTTP_HEADER_VERSION      "Version"
+/* Provisional.   W3C Mobile Web Best Practices Working Group */
+#define MHD_HTTP_HEADER_X_DEVICE_ACCEPT "X-Device-Accept"
+/* Provisional.   W3C Mobile Web Best Practices Working Group */
+#define MHD_HTTP_HEADER_X_DEVICE_ACCEPT_CHARSET "X-Device-Accept-Charset"
+/* Provisional.   W3C Mobile Web Best Practices Working Group */
+#define MHD_HTTP_HEADER_X_DEVICE_ACCEPT_ENCODING "X-Device-Accept-Encoding"
+/* Provisional.   W3C Mobile Web Best Practices Working Group */
+#define MHD_HTTP_HEADER_X_DEVICE_ACCEPT_LANGUAGE "X-Device-Accept-Language"
+/* Provisional.   W3C Mobile Web Best Practices Working Group */
+#define MHD_HTTP_HEADER_X_DEVICE_USER_AGENT "X-Device-User-Agent"
+/* Deprecated.    W3C Web Application Formats Working Group */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL "Access-Control"
+/* Deprecated.    RFC4229 */
+#define MHD_HTTP_HEADER_C_PEP_INFO   "C-PEP-Info"
+/* Deprecated.    W3C Web Application Formats Working Group */
+#define MHD_HTTP_HEADER_METHOD_CHECK "Method-Check"
+/* Deprecated.    W3C Web Application Formats Working Group */
+#define MHD_HTTP_HEADER_METHOD_CHECK_EXPIRES "Method-Check-Expires"
+/* Deprecated.    RFC4229 */
+#define MHD_HTTP_HEADER_PROTOCOL_INFO "Protocol-Info"
+/* Deprecated.    RFC4229 */
+#define MHD_HTTP_HEADER_PROTOCOL_QUERY "Protocol-Query"
+/* Deprecated.    W3C Web Application Formats Working Group */
+#define MHD_HTTP_HEADER_REFERER_ROOT "Referer-Root"
+/* Obsoleted.     RFC2068; RFC2616 */
+#define MHD_HTTP_HEADER_CONTENT_BASE "Content-Base"
+/* Obsoleted.     RFC2616, Section 14.15; RFC7231, Appendix B */
+#define MHD_HTTP_HEADER_CONTENT_MD5  "Content-MD5"
+/* Obsoleted.     RFC2965; RFC6265 */
+#define MHD_HTTP_HEADER_COOKIE2      "Cookie2"
+/* Obsoleted.     RFC2965; RFC6265 */
+#define MHD_HTTP_HEADER_SET_COOKIE2  "Set-Cookie2"
 
 /* Some provisional headers. */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN \
