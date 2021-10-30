@@ -4,7 +4,7 @@
 #   Generate code and header inserts for HTTP statues
 #
 
-#   Copyright (c) 2019 Karlson2k (Evgeny Grin) <k2k@yandex.ru>
+#   Copyright (c) 2019-2021 Karlson2k (Evgeny Grin) <k2k@yandex.ru>
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
@@ -13,25 +13,25 @@
 
 wget -nv https://www.iana.org/assignments/http-status-codes/http-status-codes-1.csv -O http-status-codes-1.csv || exit
 echo Generating...
-echo "/**
+echo '/**
  * @defgroup httpcode HTTP response codes.
  * These are the status codes defined for HTTP responses.
  * See: https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
- * Registry export date: $(date -u +%Y-%m-%d)
+ * Registry export date: '"$(date -u +%Y-%m-%d)"'
  * @{
  */
-" > header_insert_statuses.h && \
+' > header_insert_statuses.h && \
 gawk -e 'BEGIN {FPAT = "([^,]*)|(\"[^\"]+\")"}
 FNR > 1 {
   gsub(/^\[|^"\[|\]"$|\]$/, "", $3)
   gsub(/\]\[/, "; ", $3)
-  if ($1 == 306) { 
-    $2 = "Switch Proxy" 
+  if ($1 == 306) {
+    $2 = "Switch Proxy"
     $3 = "Not used! " $3
   }
-  if ($2 != "Unassigned") {
-    print "/* " $1 sprintf("%-24s", " \"" $2 "\". ") $3 ". */"
-    print "#define MHD_HTTP_" toupper(gensub(/[^A-Za-z0-0]/, "_", "g", $2)) " "$1""
+  if ($2 != "Unassigned" && $2 != "(Unused)") {
+    printf ("/* %s %-22s %s. */\n", $1, "\"" $2 "\".", $3)
+    printf ("#define MHD_HTTP_%-27s %s\n", toupper(gensub(/[^A-Za-z0-0]/, "_", "g", $2)), $1)
   } else {
     print ""
   }
@@ -39,13 +39,13 @@ FNR > 1 {
 echo '
 /* Not registered non-standard codes */
 /* 449 "Reply With".          MS IIS extension. */
-#define MHD_HTTP_RETRY_WITH 449
+#define MHD_HTTP_RETRY_WITH                  449
 
 /* 450 "Blocked by Windows Parental Controls". MS extension. */
 #define MHD_HTTP_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS 450
 
 /* 509 "Bandwidth Limit Exceeded". Apache extension. */
-#define MHD_HTTP_BANDWIDTH_LIMIT_EXCEEDED 509
+#define MHD_HTTP_BANDWIDTH_LIMIT_EXCEEDED    509
 ' >> header_insert_statuses.h && \
 gawk -e 'BEGIN {
   FPAT = "([^,]*)|(\"[^\"]+\")"
@@ -76,10 +76,10 @@ FNR > 1 {
     print "static const struct _MHD_str_w_len " hundreds[$1/100] "_hundred[] = {"
   }
   if (num == 306) { 
-    reason = "Switch Proxy" 
+    reason = "Switch Proxy"
     desc = "Not used! " desc
   }
-  if (reason == "Unassigned") next
+  if (reason == "Unassigned" || reason == "(Unused)") next
   if (prev_num != num)
     printf ("  /* %s */ %-36s /* %s */\n", prev_num, "_MHD_S_STR_W_LEN (\""prev_reason"\"),", prev_desc)
   while(++prev_num < num) {

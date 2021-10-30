@@ -339,114 +339,115 @@ _MHD_DEPR_MACRO ( \
  * @defgroup httpcode HTTP response codes.
  * These are the status codes defined for HTTP responses.
  * See: https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
- * Registry export date: 2021-06-08
+ * Registry export date: 2021-10-30
  * @{
  */
 
-/* 100 "Continue".            RFC7231, Section 6.2.1. */
-#define MHD_HTTP_CONTINUE 100
-/* 101 "Switching Protocols". RFC7231, Section 6.2.2. */
-#define MHD_HTTP_SWITCHING_PROTOCOLS 101
+/* 100 "Continue".            RFC-ietf-httpbis-semantics, Section 15.2.1. */
+#define MHD_HTTP_CONTINUE                    100
+/* 101 "Switching Protocols". RFC-ietf-httpbis-semantics, Section 15.2.2. */
+#define MHD_HTTP_SWITCHING_PROTOCOLS         101
 /* 102 "Processing".          RFC2518. */
-#define MHD_HTTP_PROCESSING 102
+#define MHD_HTTP_PROCESSING                  102
 /* 103 "Early Hints".         RFC8297. */
-#define MHD_HTTP_EARLY_HINTS 103
+#define MHD_HTTP_EARLY_HINTS                 103
 
-/* 200 "OK".                  RFC7231, Section 6.3.1. */
-#define MHD_HTTP_OK 200
-/* 201 "Created".             RFC7231, Section 6.3.2. */
-#define MHD_HTTP_CREATED 201
-/* 202 "Accepted".            RFC7231, Section 6.3.3. */
-#define MHD_HTTP_ACCEPTED 202
-/* 203 "Non-Authoritative Information". RFC7231, Section 6.3.4. */
+/* 200 "OK".                  RFC-ietf-httpbis-semantics, Section 15.3.1. */
+#define MHD_HTTP_OK                          200
+/* 201 "Created".             RFC-ietf-httpbis-semantics, Section 15.3.2. */
+#define MHD_HTTP_CREATED                     201
+/* 202 "Accepted".            RFC-ietf-httpbis-semantics, Section 15.3.3. */
+#define MHD_HTTP_ACCEPTED                    202
+/* 203 "Non-Authoritative Information". RFC-ietf-httpbis-semantics, Section 15.3.4. */
 #define MHD_HTTP_NON_AUTHORITATIVE_INFORMATION 203
-/* 204 "No Content".          RFC7231, Section 6.3.5. */
-#define MHD_HTTP_NO_CONTENT 204
-/* 205 "Reset Content".       RFC7231, Section 6.3.6. */
-#define MHD_HTTP_RESET_CONTENT 205
-/* 206 "Partial Content".     RFC7233, Section 4.1. */
-#define MHD_HTTP_PARTIAL_CONTENT 206
+/* 204 "No Content".          RFC-ietf-httpbis-semantics, Section 15.3.5. */
+#define MHD_HTTP_NO_CONTENT                  204
+/* 205 "Reset Content".       RFC-ietf-httpbis-semantics, Section 15.3.6. */
+#define MHD_HTTP_RESET_CONTENT               205
+/* 206 "Partial Content".     RFC-ietf-httpbis-semantics, Section 15.3.7. */
+#define MHD_HTTP_PARTIAL_CONTENT             206
 /* 207 "Multi-Status".        RFC4918. */
-#define MHD_HTTP_MULTI_STATUS 207
+#define MHD_HTTP_MULTI_STATUS                207
 /* 208 "Already Reported".    RFC5842. */
-#define MHD_HTTP_ALREADY_REPORTED 208
+#define MHD_HTTP_ALREADY_REPORTED            208
 
 /* 226 "IM Used".             RFC3229. */
-#define MHD_HTTP_IM_USED 226
+#define MHD_HTTP_IM_USED                     226
 
-/* 300 "Multiple Choices".    RFC7231, Section 6.4.1. */
-#define MHD_HTTP_MULTIPLE_CHOICES 300
-/* 301 "Moved Permanently".   RFC7231, Section 6.4.2. */
-#define MHD_HTTP_MOVED_PERMANENTLY 301
-/* 302 "Found".               RFC7231, Section 6.4.3. */
-#define MHD_HTTP_FOUND 302
-/* 303 "See Other".           RFC7231, Section 6.4.4. */
-#define MHD_HTTP_SEE_OTHER 303
-/* 304 "Not Modified".        RFC7232, Section 4.1. */
-#define MHD_HTTP_NOT_MODIFIED 304
-/* 305 "Use Proxy".           RFC7231, Section 6.4.5. */
-#define MHD_HTTP_USE_PROXY 305
-/* 306 "Switch Proxy".        Not used! RFC7231, Section 6.4.6. */
-#define MHD_HTTP_SWITCH_PROXY 306
-/* 307 "Temporary Redirect".  RFC7231, Section 6.4.7. */
-#define MHD_HTTP_TEMPORARY_REDIRECT 307
-/* 308 "Permanent Redirect".  RFC7538. */
-#define MHD_HTTP_PERMANENT_REDIRECT 308
+/* 300 "Multiple Choices".    RFC-ietf-httpbis-semantics, Section 15.4.1. */
+#define MHD_HTTP_MULTIPLE_CHOICES            300
+/* 301 "Moved Permanently".   RFC-ietf-httpbis-semantics, Section 15.4.2. */
+#define MHD_HTTP_MOVED_PERMANENTLY           301
+/* 302 "Found".               RFC-ietf-httpbis-semantics, Section 15.4.3. */
+#define MHD_HTTP_FOUND                       302
+/* 303 "See Other".           RFC-ietf-httpbis-semantics, Section 15.4.4. */
+#define MHD_HTTP_SEE_OTHER                   303
+/* 304 "Not Modified".        RFC-ietf-httpbis-semantics, Section 15.4.5. */
+#define MHD_HTTP_NOT_MODIFIED                304
+/* 305 "Use Proxy".           RFC-ietf-httpbis-semantics, Section 15.4.6. */
+#define MHD_HTTP_USE_PROXY                   305
+/* 306 "Switch Proxy".        Not used! RFC-ietf-httpbis-semantics, Section 15.4.7. */
+#define MHD_HTTP_SWITCH_PROXY                306
+/* 307 "Temporary Redirect".  RFC-ietf-httpbis-semantics, Section 15.4.8. */
+#define MHD_HTTP_TEMPORARY_REDIRECT          307
+/* 308 "Permanent Redirect".  RFC-ietf-httpbis-semantics, Section 15.4.9. */
+#define MHD_HTTP_PERMANENT_REDIRECT          308
 
-/* 400 "Bad Request".         RFC7231, Section 6.5.1. */
-#define MHD_HTTP_BAD_REQUEST 400
-/* 401 "Unauthorized".        RFC7235, Section 3.1. */
-#define MHD_HTTP_UNAUTHORIZED 401
-/* 402 "Payment Required".    RFC7231, Section 6.5.2. */
-#define MHD_HTTP_PAYMENT_REQUIRED 402
-/* 403 "Forbidden".           RFC7231, Section 6.5.3. */
-#define MHD_HTTP_FORBIDDEN 403
-/* 404 "Not Found".           RFC7231, Section 6.5.4. */
-#define MHD_HTTP_NOT_FOUND 404
-/* 405 "Method Not Allowed".  RFC7231, Section 6.5.5. */
-#define MHD_HTTP_METHOD_NOT_ALLOWED 405
-/* 406 "Not Acceptable".      RFC7231, Section 6.5.6. */
-#define MHD_HTTP_NOT_ACCEPTABLE 406
-/* 407 "Proxy Authentication Required". RFC7235, Section 3.2. */
+/* 400 "Bad Request".         RFC-ietf-httpbis-semantics, Section 15.5.1. */
+#define MHD_HTTP_BAD_REQUEST                 400
+/* 401 "Unauthorized".        RFC-ietf-httpbis-semantics, Section 15.5.2. */
+#define MHD_HTTP_UNAUTHORIZED                401
+/* 402 "Payment Required".    RFC-ietf-httpbis-semantics, Section 15.5.3. */
+#define MHD_HTTP_PAYMENT_REQUIRED            402
+/* 403 "Forbidden".           RFC-ietf-httpbis-semantics, Section 15.5.4. */
+#define MHD_HTTP_FORBIDDEN                   403
+/* 404 "Not Found".           RFC-ietf-httpbis-semantics, Section 15.5.5. */
+#define MHD_HTTP_NOT_FOUND                   404
+/* 405 "Method Not Allowed".  RFC-ietf-httpbis-semantics, Section 15.5.6. */
+#define MHD_HTTP_METHOD_NOT_ALLOWED          405
+/* 406 "Not Acceptable".      RFC-ietf-httpbis-semantics, Section 15.5.7. */
+#define MHD_HTTP_NOT_ACCEPTABLE              406
+/* 407 "Proxy Authentication Required". RFC-ietf-httpbis-semantics, Section 15.5.8. */
 #define MHD_HTTP_PROXY_AUTHENTICATION_REQUIRED 407
-/* 408 "Request Timeout".     RFC7231, Section 6.5.7. */
-#define MHD_HTTP_REQUEST_TIMEOUT 408
-/* 409 "Conflict".            RFC7231, Section 6.5.8. */
-#define MHD_HTTP_CONFLICT 409
-/* 410 "Gone".                RFC7231, Section 6.5.9. */
-#define MHD_HTTP_GONE 410
-/* 411 "Length Required".     RFC7231, Section 6.5.10. */
-#define MHD_HTTP_LENGTH_REQUIRED 411
-/* 412 "Precondition Failed". RFC7232, Section 4.2; RFC8144, Section 3.2. */
-#define MHD_HTTP_PRECONDITION_FAILED 412
-/* 413 "Payload Too Large".   RFC7231, Section 6.5.11. */
-#define MHD_HTTP_PAYLOAD_TOO_LARGE 413
-/* 414 "URI Too Long".        RFC7231, Section 6.5.12. */
-#define MHD_HTTP_URI_TOO_LONG 414
-/* 415 "Unsupported Media Type". RFC7231, Section 6.5.13; RFC7694, Section 3. */
-#define MHD_HTTP_UNSUPPORTED_MEDIA_TYPE 415
-/* 416 "Range Not Satisfiable". RFC7233, Section 4.4. */
-#define MHD_HTTP_RANGE_NOT_SATISFIABLE 416
-/* 417 "Expectation Failed".  RFC7231, Section 6.5.14. */
-#define MHD_HTTP_EXPECTATION_FAILED 417
+/* 408 "Request Timeout".     RFC-ietf-httpbis-semantics, Section 15.5.9. */
+#define MHD_HTTP_REQUEST_TIMEOUT             408
+/* 409 "Conflict".            RFC-ietf-httpbis-semantics, Section 15.5.10. */
+#define MHD_HTTP_CONFLICT                    409
+/* 410 "Gone".                RFC-ietf-httpbis-semantics, Section 15.5.11. */
+#define MHD_HTTP_GONE                        410
+/* 411 "Length Required".     RFC-ietf-httpbis-semantics, Section 15.5.12. */
+#define MHD_HTTP_LENGTH_REQUIRED             411
+/* 412 "Precondition Failed". RFC-ietf-httpbis-semantics, Section 15.5.13. */
+#define MHD_HTTP_PRECONDITION_FAILED         412
+/* 413 "Content Too Large".   RFC-ietf-httpbis-semantics, Section 15.5.14. */
+#define MHD_HTTP_CONTENT_TOO_LARGE           413
+/* 414 "URI Too Long".        RFC-ietf-httpbis-semantics, Section 15.5.15. */
+#define MHD_HTTP_URI_TOO_LONG                414
+/* 415 "Unsupported Media Type". RFC-ietf-httpbis-semantics, Section 15.5.16. */
+#define MHD_HTTP_UNSUPPORTED_MEDIA_TYPE      415
+/* 416 "Range Not Satisfiable". RFC-ietf-httpbis-semantics, Section 15.5.17. */
+#define MHD_HTTP_RANGE_NOT_SATISFIABLE       416
+/* 417 "Expectation Failed".  RFC-ietf-httpbis-semantics, Section 15.5.18. */
+#define MHD_HTTP_EXPECTATION_FAILED          417
 
-/* 421 "Misdirected Request". RFC7540, Section 9.1.2. */
-#define MHD_HTTP_MISDIRECTED_REQUEST 421
-/* 422 "Unprocessable Entity". RFC4918. */
-#define MHD_HTTP_UNPROCESSABLE_ENTITY 422
+
+/* 421 "Misdirected Request". RFC-ietf-httpbis-semantics, Section 15.5.20. */
+#define MHD_HTTP_MISDIRECTED_REQUEST         421
+/* 422 "Unprocessable Content". RFC-ietf-httpbis-semantics, Section 15.5.21. */
+#define MHD_HTTP_UNPROCESSABLE_CONTENT       422
 /* 423 "Locked".              RFC4918. */
-#define MHD_HTTP_LOCKED 423
+#define MHD_HTTP_LOCKED                      423
 /* 424 "Failed Dependency".   RFC4918. */
-#define MHD_HTTP_FAILED_DEPENDENCY 424
+#define MHD_HTTP_FAILED_DEPENDENCY           424
 /* 425 "Too Early".           RFC8470. */
-#define MHD_HTTP_TOO_EARLY 425
-/* 426 "Upgrade Required".    RFC7231, Section 6.5.15. */
-#define MHD_HTTP_UPGRADE_REQUIRED 426
+#define MHD_HTTP_TOO_EARLY                   425
+/* 426 "Upgrade Required".    RFC-ietf-httpbis-semantics, Section 15.5.22. */
+#define MHD_HTTP_UPGRADE_REQUIRED            426
 
 /* 428 "Precondition Required". RFC6585. */
-#define MHD_HTTP_PRECONDITION_REQUIRED 428
+#define MHD_HTTP_PRECONDITION_REQUIRED       428
 /* 429 "Too Many Requests".   RFC6585. */
-#define MHD_HTTP_TOO_MANY_REQUESTS 429
+#define MHD_HTTP_TOO_MANY_REQUESTS           429
 
 /* 431 "Request Header Fields Too Large". RFC6585. */
 #define MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE 431
@@ -454,43 +455,43 @@ _MHD_DEPR_MACRO ( \
 /* 451 "Unavailable For Legal Reasons". RFC7725. */
 #define MHD_HTTP_UNAVAILABLE_FOR_LEGAL_REASONS 451
 
-/* 500 "Internal Server Error". RFC7231, Section 6.6.1. */
-#define MHD_HTTP_INTERNAL_SERVER_ERROR 500
-/* 501 "Not Implemented".     RFC7231, Section 6.6.2. */
-#define MHD_HTTP_NOT_IMPLEMENTED 501
-/* 502 "Bad Gateway".         RFC7231, Section 6.6.3. */
-#define MHD_HTTP_BAD_GATEWAY 502
-/* 503 "Service Unavailable". RFC7231, Section 6.6.4. */
-#define MHD_HTTP_SERVICE_UNAVAILABLE 503
-/* 504 "Gateway Timeout".     RFC7231, Section 6.6.5. */
-#define MHD_HTTP_GATEWAY_TIMEOUT 504
-/* 505 "HTTP Version Not Supported". RFC7231, Section 6.6.6. */
-#define MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED 505
+/* 500 "Internal Server Error". RFC-ietf-httpbis-semantics, Section 15.6.1. */
+#define MHD_HTTP_INTERNAL_SERVER_ERROR       500
+/* 501 "Not Implemented".     RFC-ietf-httpbis-semantics, Section 15.6.2. */
+#define MHD_HTTP_NOT_IMPLEMENTED             501
+/* 502 "Bad Gateway".         RFC-ietf-httpbis-semantics, Section 15.6.3. */
+#define MHD_HTTP_BAD_GATEWAY                 502
+/* 503 "Service Unavailable". RFC-ietf-httpbis-semantics, Section 15.6.4. */
+#define MHD_HTTP_SERVICE_UNAVAILABLE         503
+/* 504 "Gateway Timeout".     RFC-ietf-httpbis-semantics, Section 15.6.5. */
+#define MHD_HTTP_GATEWAY_TIMEOUT             504
+/* 505 "HTTP Version Not Supported". RFC-ietf-httpbis-semantics, Section 15.6.6. */
+#define MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED  505
 /* 506 "Variant Also Negotiates". RFC2295. */
-#define MHD_HTTP_VARIANT_ALSO_NEGOTIATES 506
+#define MHD_HTTP_VARIANT_ALSO_NEGOTIATES     506
 /* 507 "Insufficient Storage". RFC4918. */
-#define MHD_HTTP_INSUFFICIENT_STORAGE 507
+#define MHD_HTTP_INSUFFICIENT_STORAGE        507
 /* 508 "Loop Detected".       RFC5842. */
-#define MHD_HTTP_LOOP_DETECTED 508
+#define MHD_HTTP_LOOP_DETECTED               508
 
 /* 510 "Not Extended".        RFC2774. */
-#define MHD_HTTP_NOT_EXTENDED 510
+#define MHD_HTTP_NOT_EXTENDED                510
 /* 511 "Network Authentication Required". RFC6585. */
 #define MHD_HTTP_NETWORK_AUTHENTICATION_REQUIRED 511
 
 
 /* Not registered non-standard codes */
 /* 449 "Reply With".          MS IIS extension. */
-#define MHD_HTTP_RETRY_WITH 449
+#define MHD_HTTP_RETRY_WITH                  449
 
 /* 450 "Blocked by Windows Parental Controls". MS extension. */
 #define MHD_HTTP_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS 450
 
 /* 509 "Bandwidth Limit Exceeded". Apache extension. */
-#define MHD_HTTP_BANDWIDTH_LIMIT_EXCEEDED 509
+#define MHD_HTTP_BANDWIDTH_LIMIT_EXCEEDED    509
 
 
-/* Deprecated codes */
+/* Deprecated names and codes */
 /** @deprecated */
 #define MHD_HTTP_METHOD_NOT_ACCEPTABLE \
   _MHD_DEPR_IN_MACRO ( \
@@ -500,7 +501,13 @@ _MHD_DEPR_MACRO ( \
 /** @deprecated */
 #define MHD_HTTP_REQUEST_ENTITY_TOO_LARGE \
   _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_HTTP_REQUEST_ENTITY_TOO_LARGE is deprecated, use MHD_HTTP_PAYLOAD_TOO_LARGE") \
+    "Value MHD_HTTP_REQUEST_ENTITY_TOO_LARGE is deprecated, use MHD_HTTP_CONTENT_TOO_LARGE") \
+  413
+
+/** @deprecated */
+#define MHD_HTTP_PAYLOAD_TOO_LARGE \
+    _MHD_DEPR_IN_MACRO ( \
+      "Value MHD_HTTP_PAYLOAD_TOO_LARGE is deprecated, use MHD_HTTP_CONTENT_TOO_LARGE") \
   413
 
 /** @deprecated */
@@ -514,6 +521,12 @@ _MHD_DEPR_MACRO ( \
   _MHD_DEPR_IN_MACRO ( \
     "Value MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE is deprecated, use MHD_HTTP_RANGE_NOT_SATISFIABLE") \
   416
+
+/** @deprecated */
+#define MHD_HTTP_UNPROCESSABLE_ENTITY \
+  _MHD_DEPR_IN_MACRO ( \
+    "Value MHD_HTTP_UNPROCESSABLE_ENTITY is deprecated, use MHD_HTTP_UNPROCESSABLE_CONTENT") \
+  422
 
 /** @deprecated */
 #define MHD_HTTP_UNORDERED_COLLECTION \
