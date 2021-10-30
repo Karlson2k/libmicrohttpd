@@ -4,7 +4,7 @@
 #   Generate header insert for HTTP methods
 #
 
-#   Copyright (c) 2015-2019 Karlson2k (Evgeny Grin) <k2k@yandex.ru>
+#   Copyright (c) 2015-2021 Karlson2k (Evgeny Grin) <k2k@yandex.ru>
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
@@ -17,7 +17,7 @@ echo '/**
  * @defgroup methods HTTP methods
  * HTTP methods (as strings).
  * See: http://www.iana.org/assignments/http-methods/http-methods.xml
- * Registry export date: '$(date -u +%Y-%m-%d)'
+ * Registry export date: '"$(date -u +%Y-%m-%d)"'
  * @{
  */
 
@@ -26,7 +26,7 @@ gawk -e 'BEGIN {FPAT = "([^,]*)|(\"[^\"]+\")"}
 FNR > 1 {
   gsub(/^\[|^"\[|\]"$|\]$/, "", $4)
   gsub(/\]\[/, "; ", $4)
-  if (substr($4, 1, 7) == "RFC7231") {
+  if (substr($4, 1, 26) == "RFC-ietf-httpbis-semantics") {
     if ($2 == "yes")
     { safe_m = "Safe.    " }
     else
@@ -36,7 +36,9 @@ FNR > 1 {
     else
     { indem_m = "Not idempotent." }
     print "/* " safe_m " " indem_m " " $4 ". */"
-    print "#define MHD_HTTP_METHOD_" toupper(gensub(/-/, "_", "g", $1)) " \""$1"\""
+    mthd = gensub(/\*/, "ASTERISK", "g", $1)
+    mthd = gensub(/[^a-zA-Z0-9_]/, "_", "g", mthd)
+    printf ("%-32s \"%s\"\n", "#define MHD_HTTP_METHOD_" toupper(mthd), $1)
   }
 }' methods.csv >> header_insert_methods.h && \
 echo '
@@ -45,7 +47,7 @@ gawk -e 'BEGIN {FPAT = "([^,]*)|(\"[^\"]+\")"}
 FNR > 1 {
   gsub(/^\[|^"\[|\]"$|\]$/, "", $4)
   gsub(/\]\[/, "; ", $4)
-  if (substr($4, 1, 7) != "RFC7231") {
+  if (substr($4, 1, 26) != "RFC-ietf-httpbis-semantics") {
     if ($2 == "yes")
     { safe_m = "Safe.    " }
     else
@@ -55,7 +57,9 @@ FNR > 1 {
     else
     { indem_m = "Not idempotent." }
     print "/* " safe_m " " indem_m " " $4 ". */"
-    print "#define MHD_HTTP_METHOD_" toupper(gensub(/-/, "_", "g", $1)) " \""$1"\""
+    mthd = gensub(/\*/, "ASTERISK", "g", $1)
+    mthd = gensub(/[^a-zA-Z0-9_]/, "_", "g", mthd)
+    printf ("%-38s \"%s\"\n", "#define MHD_HTTP_METHOD_" toupper(mthd), $1)
   }
 }' methods.csv >> header_insert_methods.h && \
 echo OK && \
