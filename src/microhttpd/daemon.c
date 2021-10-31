@@ -226,9 +226,9 @@ MHD_default_logger_ (void *cls,
                      const char *fm,
                      va_list ap)
 {
-  vfprintf ((FILE*) cls, fm, ap);
+  vfprintf ((FILE *) cls, fm, ap);
 #ifdef _DEBUG
-  fflush ((FILE*) cls);
+  fflush ((FILE *) cls);
 #endif /* _DEBUG */
 }
 
@@ -257,7 +257,7 @@ MHD_free (void *ptr)
  * @param daemon handle to a daemon
  * @return master daemon handle
  */
-static struct MHD_Daemon*
+static struct MHD_Daemon *
 MHD_get_master (struct MHD_Daemon *daemon)
 {
   while (NULL != daemon->master)
@@ -372,7 +372,7 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
   /* IPv4 addresses */
   if (sizeof (struct sockaddr_in) == addrlen)
   {
-    const struct sockaddr_in *addr4 = (const struct sockaddr_in*) addr;
+    const struct sockaddr_in *addr4 = (const struct sockaddr_in *) addr;
 
     key->family = AF_INET;
     memcpy (&key->addr.ipv4,
@@ -385,7 +385,7 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
   /* IPv6 addresses */
   if (sizeof (struct sockaddr_in6) == addrlen)
   {
-    const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6*) addr;
+    const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *) addr;
 
     key->family = AF_INET6;
     memcpy (&key->addr.ipv6,
@@ -1752,7 +1752,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
       /* FIXME: does this check really needed? */
       if (MHD_INVALID_SOCKET != max_fd)
       {
-        struct timeval*tvp;
+        struct timeval *tvp;
         struct timeval tv;
         if (((con->tls_read_ready) &&
              (urh->in_buffer_used < urh->in_buffer_size)) ||
@@ -2579,9 +2579,9 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
       const char prt1[] = "http/1.1"; /* Registered code for HTTP/1.1 */
       const char prt2[] = "http/1.0"; /* Registered code for HTTP/1.0 */
 
-      prts[0].data = (void*) prt1;
+      prts[0].data = (void *) prt1;
       prts[0].size = MHD_STATICSTR_LEN_ (prt1);
-      prts[1].data = (void*) prt2;
+      prts[1].data = (void *) prt2;
       prts[1].size = MHD_STATICSTR_LEN_ (prt2);
       if (GNUTLS_E_SUCCESS !=
           gnutls_alpn_set_protocols (connection->tls_session,
@@ -6032,7 +6032,7 @@ parse_options_va (struct MHD_Daemon *daemon,
       break;
     case MHD_OPTION_ARRAY:
       daemon->num_opts--; /* Do not count MHD_OPTION_ARRAY */
-      oa = va_arg (ap, struct MHD_OptionItem*);
+      oa = va_arg (ap, struct MHD_OptionItem *);
       i = 0;
       while (MHD_OPTION_END != (opt = oa[i].option))
       {
@@ -6713,7 +6713,7 @@ MHD_start_daemon_va (unsigned int flags,
       if (0 > setsockopt (listen_fd,
                           SOL_SOCKET,
                           SO_REUSEADDR,
-                          (void*) &on, sizeof (on)))
+                          (void *) &on, sizeof (on)))
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
@@ -6732,7 +6732,7 @@ MHD_start_daemon_va (unsigned int flags,
       if (0 > setsockopt (listen_fd,
                           SOL_SOCKET,
                           SO_REUSEADDR,
-                          (void*) &on, sizeof (on)))
+                          (void *) &on, sizeof (on)))
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
@@ -6900,7 +6900,7 @@ MHD_start_daemon_va (unsigned int flags,
       if (0 != setsockopt (listen_fd,
                            IPPROTO_TCP,
                            TCP_FASTOPEN,
-                           (const void*) &daemon->fastopen_queue_size,
+                           (const void *) &daemon->fastopen_queue_size,
                            sizeof (daemon->fastopen_queue_size)))
       {
 #ifdef HAVE_MESSAGES
@@ -8069,7 +8069,7 @@ gcry_w32_mutex_init (void **ppmtx)
 
   if (NULL == *ppmtx)
     return ENOMEM;
-  if (! MHD_mutex_init_ ((MHD_mutex_*) *ppmtx))
+  if (! MHD_mutex_init_ ((MHD_mutex_ *) *ppmtx))
   {
     free (*ppmtx);
     *ppmtx = NULL;
@@ -8083,7 +8083,7 @@ gcry_w32_mutex_init (void **ppmtx)
 static int
 gcry_w32_mutex_destroy (void **ppmtx)
 {
-  int res = (MHD_mutex_destroy_ ((MHD_mutex_*) *ppmtx)) ? 0 : EINVAL;
+  int res = (MHD_mutex_destroy_ ((MHD_mutex_ *) *ppmtx)) ? 0 : EINVAL;
   free (*ppmtx);
   return res;
 }
@@ -8092,14 +8092,14 @@ gcry_w32_mutex_destroy (void **ppmtx)
 static int
 gcry_w32_mutex_lock (void **ppmtx)
 {
-  return MHD_mutex_lock_ ((MHD_mutex_*) *ppmtx) ? 0 : EINVAL;
+  return MHD_mutex_lock_ ((MHD_mutex_ *) *ppmtx) ? 0 : EINVAL;
 }
 
 
 static int
 gcry_w32_mutex_unlock (void **ppmtx)
 {
-  return MHD_mutex_unlock_ ((MHD_mutex_*) *ppmtx) ? 0 : EINVAL;
+  return MHD_mutex_unlock_ ((MHD_mutex_ *) *ppmtx) ? 0 : EINVAL;
 }
 
 
