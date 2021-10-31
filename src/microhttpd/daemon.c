@@ -5645,14 +5645,13 @@ parse_options_va (struct MHD_Daemon *daemon,
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
                   _ ("The specified connection timeout (%u) is too large. " \
-                     "Maximum allowed value (" PRIu64 ") will be used " \
+                     "Maximum allowed value (%" PRIu64 ") will be used " \
                      "instead.\n"),
                   uv,
                   (UINT64_MAX / 2000 - 1));
 #endif
-        daemon->connection_timeout_ms = UINT64_MAX / 2000 - 1;
+        uv = UINT64_MAX / 2000 - 1;
       }
-      else
 #endif /* (SIZEOF_UINT64_T - 1) <= SIZEOF_UNSIGNED_INT */
       daemon->connection_timeout_ms = uv * 1000;
       break;
