@@ -33,7 +33,6 @@
 /* Declarations for VC & Clang/C2 built-ins */
 #include <intrin.h>
 #endif /* _MSC_FULL_VER  */
-#include "mhd_assert.h"
 #include "mhd_byteorder.h"
 #if _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN || _MHD_BYTE_ORDER == _MHD_BIG_ENDIAN
 #include "mhd_align.h"
@@ -293,7 +292,7 @@ _MHD_PUT_64BIT_BE_SAFE (void *dst, uint64_t value)
 _MHD_static_inline uint32_t
 _MHD_ROTR32 (uint32_t value32, int bits)
 {
-  mhd_assert (bits < 32);
+  bits %= 32;
   /* Defined in form which modern compiler could optimize. */
   return (value32 >> bits) | (value32 << (32 - bits));
 }
@@ -321,7 +320,7 @@ _MHD_ROTR32 (uint32_t value32, int bits)
 _MHD_static_inline uint32_t
 _MHD_ROTL32 (uint32_t value32, int bits)
 {
-  mhd_assert (bits < 32);
+  bits %= 32;
   /* Defined in form which modern compiler could optimize. */
   return (value32 << bits) | (value32 >> (32 - bits));
 }
