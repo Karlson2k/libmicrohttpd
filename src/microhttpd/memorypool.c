@@ -333,8 +333,7 @@ MHD_pool_allocate (struct MemoryPool *pool,
   asize = ROUND_TO_ALIGN_PLUS_RED_ZONE (size);
   if ( (0 == asize) && (0 != size) )
     return NULL; /* size too close to SIZE_MAX */
-  if ( (pool->pos + asize > pool->end) ||
-       (pool->pos + asize < pool->pos))
+  if (asize > pool->end - pool->pos)
     return NULL;
   if (from_end)
   {
@@ -386,8 +385,7 @@ MHD_pool_try_alloc (struct MemoryPool *pool,
     *required_bytes = SIZE_MAX;
     return NULL;
   }
-  if ( (pool->pos + asize > pool->end) ||
-       (pool->pos + asize < pool->pos))
+  if (asize > pool->end - pool->pos)
   {
     mhd_assert ((pool->end - pool->pos) == \
                 ROUND_TO_ALIGN (pool->end - pool->pos));
