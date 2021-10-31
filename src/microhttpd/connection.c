@@ -4934,11 +4934,10 @@ MHD_queue_response (struct MHD_Connection *connection,
 {
   struct MHD_Daemon *daemon;
 
-  daemon = connection->daemon;
+  if ((NULL == connection) || (NULL == response))
+    return MHD_NO;
 
-  if (daemon->shutdown)
-    return MHD_YES; /* If daemon was shut down in parallel,
-                     * response will be aborted now or on later stage. */
+  daemon = connection->daemon;
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if ( (! connection->suspended) &&
@@ -4953,9 +4952,11 @@ MHD_queue_response (struct MHD_Connection *connection,
   }
 #endif
 
-  if ( (NULL == connection) ||
-       (NULL == response) ||
-       (NULL != connection->response) ||
+  if (daemon->shutdown)
+    return MHD_YES; /* If daemon was shut down in parallel,
+                     * response will be aborted now or on later stage. */
+
+  if ( (NULL != connection->response) ||
        ( (MHD_CONNECTION_HEADERS_PROCESSED != connection->state) &&
          (MHD_CONNECTION_FULL_REQ_RECEIVED != connection->state) ) )
     return MHD_NO;
