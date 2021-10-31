@@ -5203,7 +5203,7 @@ MHD_run (struct MHD_Daemon *daemon)
  * This function calls MHD_get_timeout() internally and use returned value as
  * maximum wait time if it less than value of @a millisec parameter.
  *
- * It is expected that the external socket polling function is not used in
+ * It is expected that the "external" socket polling function is not used in
  * conjunction with this function unless the @a millisec is set to zero.
  *
  * @param daemon the daemon to run
