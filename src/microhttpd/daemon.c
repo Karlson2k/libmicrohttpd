@@ -3818,29 +3818,29 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
  * function (`select()`, `poll()` or epoll) should at most block, not the
  * timeout value set for connections.
  *
- * Any external polling function must be called with the timeout value
- * provided by this function. Smaller timeout values can be used for polling
- * function if it is required for any reason, but using larger timeout value
- * or no timeout (indefinite timeout) when this function return #MHD_YES
- * will break MHD processing logic and result in "hung" connections with
- * data pending in network buffers and other problems.
+ * Any "external" sockets polling function must be called with the timeout
+ * value provided by this function. Smaller timeout values can be used for
+ * polling function if it is required for any reason, but using larger
+ * timeout value or no timeout (indefinite timeout) when this function
+ * return #MHD_YES will break MHD processing logic and result in "hung"
+ * connections with data pending in network buffers and other problems.
  *
- * It is important to always use this function when external polling is
+ * It is important to always use this function when "external" polling is
  * used. If this function returns #MHD_YES then #MHD_run() (or
  * #MHD_run_from_select()) must be called right after return from polling
  * function, regardless of the states of MHD fds.
  *
  * In practice, if #MHD_YES is returned then #MHD_run() (or
  * #MHD_run_from_select()) must be called not later than @a timeout
- * millisecond.
+ * millisecond even if not activity is detected on sockets by
+ * sockets polling function.
  * @remark To be called only from thread that process
  * daemon's select()/poll()/etc.
  *
  * @param daemon daemon to query for timeout
  * @param timeout set to the timeout (in milliseconds)
  * @return #MHD_YES on success, #MHD_NO if timeouts are
- *        not used (or no connections exist that would
- *        necessitate the use of a timeout right now).
+ *         not used and no data processing is pending.
  * @ingroup event
  */
 enum MHD_Result

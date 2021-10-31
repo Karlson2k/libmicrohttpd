@@ -2851,12 +2851,13 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  *
  * In practice, if #MHD_YES is returned then #MHD_run() (or
  * #MHD_run_from_select()) must be called not later than @a timeout
- * millisecond.
+ * millisecond even if not activity is detected on sockets by
+ * sockets polling function.
  *
  * @param daemon daemon to query for timeout
  * @param timeout set to the timeout (in milliseconds)
  * @return #MHD_YES on success, #MHD_NO if timeouts are
- *         not used and no data is pending.
+ *         not used and no data processing is pending.
  * @ingroup event
  */
 _MHD_EXTERN enum MHD_Result
