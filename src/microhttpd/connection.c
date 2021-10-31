@@ -924,6 +924,7 @@ connection_close_error (struct MHD_Connection *connection,
                         const char *emsg)
 {
   connection->stop_with_error = true;
+  connection->early_response = true;
 #ifdef HAVE_MESSAGES
   if (NULL != emsg)
     MHD_DLOG (connection->daemon,
@@ -1294,14 +1295,13 @@ keepalive_possible (struct MHD_Connection *connection)
     mhd_assert (0 == (r->flags_auto & MHD_RAF_HAS_CONNECTION_CLOSE));
     /* Valid HTTP version is enforced by 'MHD_queue_response()' */
     mhd_assert (MHD_IS_HTTP_VER_SUPPORTED (c->http_ver));
-    /* TODO: Enable assert when MHD will allow early response */
-    /* TODO: Add 'early_response' */
-    /* mhd_assert (! c->stop_with_error); */
+    mhd_assert (! c->stop_with_error);
     return MHD_CONN_MUST_UPGRADE;
   }
 #endif /* UPGRADE_SUPPORT */
 
-  if ((c->read_closed) || (c->stop_with_error))
+  mhd_assert ( (! c->stop_with_error) || (c->early_response));
+  if ((c->read_closed) || (c->early_response))
     return MHD_CONN_MUST_CLOSE;
 
   if (0 != (r->flags & MHD_RF_HTTP_1_0_COMPATIBLE_STRICT))
@@ -2256,7 +2256,7 @@ transmit_error_response_len (struct MHD_Connection *connection,
   struct MHD_Response *response;
   enum MHD_Result iret;
 
-  mhd_assert (! connection->stop_with_error); /* Send error one time only */
+  mhd_assert (! connection->stop_with_error); /* Do not send error twice */
   if (connection->stop_with_error)
   { /* Should not happen */
     if (MHD_CONNECTION_CLOSED > connection->state)
@@ -2265,6 +2265,7 @@ transmit_error_response_len (struct MHD_Connection *connection,
     return;
   }
   connection->stop_with_error = true;
+  connection->early_response = true;
 #ifdef HAVE_MESSAGES
   MHD_DLOG (connection->daemon,
             _ ("Error processing request (HTTP response code is %u ('%s')). " \
@@ -2435,7 +2436,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
                                           REQUEST_TOO_BIG);
         continue;
       }
-      if (! connection->stop_with_error)
+      if (! connection->early_response)
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
       else
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
@@ -2475,7 +2476,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
         }
       }
       if ( (connection->read_buffer_offset < connection->read_buffer_size) &&
-           (! connection->stop_with_error) )
+           (! connection->early_response) )
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
       else
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
@@ -4175,6 +4176,7 @@ connection_reset (struct MHD_Connection *connection,
     /* Reset connection to process the next request */
     size_t new_read_buf_size;
     mhd_assert (! c->stop_with_error);
+    mhd_assert (! c->early_response);
 
     if ( (NULL != d->notify_completed) &&
          (c->client_aware) )
@@ -4391,7 +4393,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         /* we refused (no upload allowed!) */
         connection->remaining_upload_size = 0;
         /* force close, in case client still tries to upload... */
-        connection->stop_with_error = true;
+        connection->early_response = true;
       }
       connection->state = (0 == connection->remaining_upload_size)
                           ? MHD_CONNECTION_FULL_REQ_RECEIVED
@@ -4417,10 +4419,10 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       if ( (0 == connection->remaining_upload_size) ||
            ( (MHD_SIZE_UNKNOWN == connection->remaining_upload_size) &&
              (0 == connection->read_buffer_offset) &&
-             (connection->stop_with_error) ) )
+             (connection->early_response) ) )
       {
         if ( (connection->have_chunked_upload) &&
-             (! connection->stop_with_error) )
+             (! connection->early_response) )
           connection->state = MHD_CONNECTION_BODY_RECEIVED;
         else
           connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
@@ -4659,7 +4661,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       connection_reset (connection,
                         MHD_CONN_USE_KEEPALIVE == connection->keepalive &&
                         ! connection->read_closed &&
-                        ! connection->stop_with_error);
+                        ! connection->early_response);
       continue;
     case MHD_CONNECTION_CLOSED:
       cleanup_connection (connection);
@@ -5087,7 +5089,7 @@ MHD_queue_response (struct MHD_Connection *connection,
   {
     /* response was queued "early", refuse to read body / footers or
        further requests! */
-    connection->stop_with_error = true;
+    connection->early_response = true;
     connection->state = MHD_CONNECTION_START_REPLY;
     connection->remaining_upload_size = 0;
   }
