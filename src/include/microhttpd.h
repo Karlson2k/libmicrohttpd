@@ -4213,7 +4213,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
  */
 _MHD_EXTERN char *
 MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
-                                      char**password);
+                                      char **password);
 
 
 /**
@@ -4358,7 +4358,7 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
  * @return static version string, e.g. "0.9.9"
  * @ingroup specialized
  */
-_MHD_EXTERN const char*
+_MHD_EXTERN const char *
 MHD_get_version (void);
 
 
