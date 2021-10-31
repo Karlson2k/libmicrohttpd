@@ -100,8 +100,8 @@
 #define _MHD_NOSANITIZE_PTRS /**/
 #define _MHD_RED_ZONE_SIZE (0)
 #define ROUND_TO_ALIGN_PLUS_RED_ZONE(n) ROUND_TO_ALIGN(n)
-#define _MHD_POISON_MEMORY(pointer, size) /**/
-#define _MHD_UNPOISON_MEMORY(pointer, size) /**/
+#define _MHD_POISON_MEMORY(pointer, size) (void)0
+#define _MHD_UNPOISON_MEMORY(pointer, size) (void)0
 #else  /* MHD_ASAN_POISON_ACTIVE */
 #if defined(FUNC_ATTR_PTRCOMPARE_WOKRS)
 #define _MHD_NOSANITIZE_PTRS \
