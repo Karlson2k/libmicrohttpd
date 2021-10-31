@@ -221,7 +221,7 @@ str_conn_error_ (ssize_t mhd_err_code)
  * @return pointer to allocated memory region in the pool or
  *         NULL if no memory is available
  */
-static void*
+static void *
 connection_alloc_memory (struct MHD_Connection *connection,
                          size_t size)
 {
