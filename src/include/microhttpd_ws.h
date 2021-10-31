@@ -21,6 +21,13 @@
  * @brief interface for experimental web socket extension to libmicrohttpd
  * @author David Gausmann
  */
+/*
+ *                            *** WARNING! ***
+ * *   The websockets interface is currenly in "experimental" stage.   *
+ * * It does not work on architectures with endianness different from  *
+ * * big endian and little endian and may have some portability issues.*
+ * * API and ABI are not yet stable.                                   *
+ */
 #ifndef MHD_MICROHTTPD_WS_H
 #define MHD_MICROHTTPD_WS_H
 
