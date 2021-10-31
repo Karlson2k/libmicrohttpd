@@ -629,14 +629,14 @@ struct ConnectedUser
   /* the UpgradeResponseHandle of libmicrohttpd (needed for closing the socket) */
   struct MHD_UpgradeResponseHandle *urh;
   /* the websocket encode/decode stream */
-  struct MHD_WebSocketStream*ws;
+  struct MHD_WebSocketStream *ws;
   /* the possibly read data at the start (only used once) */
   char *extra_in;
   size_t extra_in_size;
   /* the unique user id (counting from 1, ids will never be re-used) */
   size_t user_id;
   /* the current user name */
-  char*user_name;
+  char *user_name;
   size_t user_name_len;
   /* the zero-based index of the next message;
      may be decremented when old messages are deleted */
@@ -673,7 +673,7 @@ struct Message
   /* The user id of the recipient. This is 0 if every connected user shall receive it */
   size_t to_user_id;
   /* The data of the message. */
-  char*data;
+  char *data;
   size_t data_len;
   /* Specifies whether the data is UTF-8 encoded text (0) or binary data (1) */
   int is_binary;
@@ -684,9 +684,9 @@ size_t unique_user_id = 0;
 
 /* the chat data (users and messages; may be accessed by all threads, but is protected by mutex) */
 pthread_mutex_t chat_mutex;
-struct ConnectedUser**users = NULL;
+struct ConnectedUser **users = NULL;
 size_t user_count = 0;
-struct Message**messages = NULL;
+struct Message **messages = NULL;
 size_t message_count = 0;
 /* specifies whether all websockets must close (1) or not (0) */
 volatile int disconnect_all = 0;
@@ -728,7 +728,7 @@ make_blocking (MHD_socket fd)
  * @param len The length in bytes of the data in the buffer
  */
 static void
-send_all (struct ConnectedUser*cu,
+send_all (struct ConnectedUser *cu,
           const char *buf,
           size_t len)
 {
@@ -776,13 +776,13 @@ send_all (struct ConnectedUser*cu,
 static int
 chat_addmessage (size_t from_user_id,
                  size_t to_user_id,
-                 char*data,
+                 char *data,
                  size_t data_len,
                  int is_binary,
                  int needs_lock)
 {
   /* allocate the buffer and fill it with data */
-  struct Message*message = (struct Message*) malloc (sizeof (struct Message));
+  struct Message *message = (struct Message *) malloc (sizeof (struct Message));
   if (NULL == message)
     return 1;
 
@@ -809,10 +809,10 @@ chat_addmessage (size_t from_user_id,
 
   /* add the new message to the global message list */
   size_t message_count_ = message_count + 1;
-  struct Message**messages_ = (struct Message**) realloc (messages,
-                                                          message_count_
-                                                          * sizeof (struct
-                                                                    Message*));
+  struct Message **messages_ = (struct Message **) realloc (messages,
+                                                            message_count_
+                                                            * sizeof (struct
+                                                                      Message *));
   if (NULL == messages_)
   {
     free (message);
@@ -928,14 +928,14 @@ chat_clearmessages (int needs_lock)
  * @return   0 on success, other values on error
  */
 static int
-chat_adduser (struct ConnectedUser*cu)
+chat_adduser (struct ConnectedUser *cu)
 {
   /* initialize the notification message of the new user */
   char user_index[32];
   snprintf (user_index, 32, "%d", (int) cu->user_id);
   size_t user_index_len = strlen (user_index);
   size_t data_len = user_index_len + cu->user_name_len + 9;
-  char*data = (char*) malloc (data_len + 1);
+  char *data = (char *) malloc (data_len + 1);
   if (NULL == data)
     return 1;
   strcpy (data, "useradd|");
@@ -965,12 +965,12 @@ chat_adduser (struct ConnectedUser*cu)
 
   /* add the new user to the list */
   size_t user_count_ = user_count + 1;
-  struct ConnectedUser**users_ = (struct ConnectedUser**) realloc (users,
-                                                                   user_count_
-                                                                   * sizeof (
-                                                                     struct
-                                                                     ConnectedUser
-                                                                     *));
+  struct ConnectedUser **users_ = (struct ConnectedUser **) realloc (users,
+                                                                     user_count_
+                                                                     * sizeof (
+                                                                       struct
+                                                                       ConnectedUser
+                                                                       *));
   if (NULL == users_)
   {
     /* realloc failed */
@@ -998,7 +998,7 @@ chat_adduser (struct ConnectedUser*cu)
  * @return   0 on success, other values on error
  */
 static int
-chat_removeuser (struct ConnectedUser*cu)
+chat_removeuser (struct ConnectedUser *cu)
 {
   char user_index[32];
 
@@ -1006,7 +1006,7 @@ chat_removeuser (struct ConnectedUser*cu)
   snprintf (user_index, 32, "%d", (int) cu->user_id);
   size_t user_index_len = strlen (user_index);
   size_t data_len = user_index_len + 9;
-  char*data = (char*) malloc (data_len + 1);
+  char *data = (char *) malloc (data_len + 1);
   if (NULL == data)
     return 1;
   strcpy (data, "userdel|");
@@ -1061,8 +1061,8 @@ chat_removeuser (struct ConnectedUser*cu)
  * @return             0 on success, other values on error. 2 means name already in use.
  */
 static int
-chat_renameuser (struct ConnectedUser*cu,
-                 char*new_name,
+chat_renameuser (struct ConnectedUser *cu,
+                 char *new_name,
                  size_t new_name_len)
 {
   /* lock the mutex */
@@ -1090,7 +1090,7 @@ chat_renameuser (struct ConnectedUser*cu,
   snprintf (user_index, 32, "%d", (int) cu->user_id);
   size_t user_index_len = strlen (user_index);
   size_t data_len = user_index_len + new_name_len + 10;
-  char*data = (char*) malloc (data_len + 1);
+  char *data = (char *) malloc (data_len + 1);
   if (NULL == data)
     return 1;
   strcpy (data, "username|");
@@ -1128,8 +1128,8 @@ chat_renameuser (struct ConnectedUser*cu,
 * @return             0 on success, other values on error
 */
 static int
-connecteduser_parse_received_websocket_stream (struct ConnectedUser*cu,
-                                               char*buf,
+connecteduser_parse_received_websocket_stream (struct ConnectedUser *cu,
+                                               char *buf,
                                                size_t buf_len)
 {
   size_t buf_offset = 0;
@@ -1270,7 +1270,7 @@ connecteduser_parse_received_websocket_stream (struct ConnectedUser*cu,
                   snprintf (user_index, 32, "%d", (int) cu->user_id);
                   size_t user_index_len = strlen (user_index);
                   size_t data_len = user_index_len + frame_len - j + 9;
-                  char*data = (char*) malloc (data_len + 1);
+                  char *data = (char *) malloc (data_len + 1);
                   if (NULL != data)
                   {
                     strcpy (data, "regular|");
@@ -1307,7 +1307,7 @@ connecteduser_parse_received_websocket_stream (struct ConnectedUser*cu,
                   snprintf (user_index, 32, "%d", (int) cu->user_id);
                   size_t user_index_len = strlen (user_index);
                   size_t data_len = user_index_len + frame_len - j + 9;
-                  char*data = (char*) malloc (data_len + 1);
+                  char *data = (char *) malloc (data_len + 1);
                   if (NULL != data)
                   {
 
@@ -1347,7 +1347,7 @@ connecteduser_parse_received_websocket_stream (struct ConnectedUser*cu,
                                      1);
                     break;
                   }
-                  char*new_name = (char*) malloc (new_name_len + 1);
+                  char *new_name = (char *) malloc (new_name_len + 1);
                   if (NULL == new_name)
                   {
                     chat_addmessage (0,
@@ -1415,7 +1415,7 @@ connecteduser_parse_received_websocket_stream (struct ConnectedUser*cu,
                   if (0 == pthread_mutex_lock (&chat_mutex))
                   {
                     /* check whether the to_user exists */
-                    struct ConnectedUser*ping_user = NULL;
+                    struct ConnectedUser *ping_user = NULL;
                     for (size_t k = 0; k < user_count; ++k)
                     {
                       if (users[k]->user_id == to_user_id)
@@ -1478,7 +1478,7 @@ connecteduser_parse_received_websocket_stream (struct ConnectedUser*cu,
           MHD_websocket_free (cu->ws,
                               frame_data);
           {
-            char*result = NULL;
+            char *result = NULL;
             size_t result_len = 0;
             int er = MHD_websocket_encode_close (cu->ws,
                                                  MHD_WEBSOCKET_CLOSEREASON_REGULAR,
@@ -1545,7 +1545,8 @@ connecteduser_parse_received_websocket_stream (struct ConnectedUser*cu,
               snprintf (result_text + 5, 235, "%d", (int) cu->user_id);
               strcat (result_text,
                       "|");
-              snprintf (result_text + strlen (result_text), 240 - strlen (result_text), "%d", (int) ping);
+              snprintf (result_text + strlen (result_text), 240 - strlen (
+                          result_text), "%d", (int) ping);
               chat_addmessage (0,
                                0,
                                result_text,
@@ -1586,7 +1587,7 @@ connecteduser_parse_received_websocket_stream (struct ConnectedUser*cu,
  * @return             Always NULL
  */
 static void *
-connecteduser_send_messages (void*cls)
+connecteduser_send_messages (void *cls)
 {
   struct ConnectedUser *cu = cls;
 
@@ -1602,7 +1603,7 @@ connecteduser_send_messages (void*cls)
         if (1 == disconnect_all)
         {
           /* the application closes and want that we disconnect all users */
-          struct MHD_UpgradeResponseHandle*urh = cu->urh;
+          struct MHD_UpgradeResponseHandle *urh = cu->urh;
           if (NULL != urh)
           {
             /* Close the TCP/IP socket. */
@@ -1629,7 +1630,7 @@ connecteduser_send_messages (void*cls)
                   "libmicrohttpdchatserverpingdata");
           snprintf (cu->ping_message + 31, 97, "%d", (int) cu->ping_counter);
           cu->ping_message_len = strlen (cu->ping_message);
-          char*frame_data = NULL;
+          char *frame_data = NULL;
           size_t frame_len = 0;
           int er = MHD_websocket_encode_ping (cu->ws,
                                               cu->ping_message,
@@ -1657,11 +1658,11 @@ connecteduser_send_messages (void*cls)
         else if (cu->next_message_index < message_count)
         {
           /* a chat message or command is pending */
-          char*frame_data = NULL;
+          char *frame_data = NULL;
           size_t frame_len = 0;
           int er = 0;
           {
-            struct Message*msg = messages[cu->next_message_index];
+            struct Message *msg = messages[cu->next_message_index];
             if ((0 == msg->to_user_id) ||
                 (cu->user_id == msg->to_user_id) ||
                 (cu->user_id == msg->from_user_id) )
@@ -1810,10 +1811,10 @@ connecteduser_receive_messages (void *cls)
   {
     struct UserInit
     {
-      char*user_init;
+      char *user_init;
       size_t user_init_len;
     };
-    struct UserInit*init_users = NULL;
+    struct UserInit *init_users = NULL;
     size_t init_users_len = 0;
 
     /* first collect all users without sending (so the mutex isn't locked too long) */
@@ -1821,8 +1822,8 @@ connecteduser_receive_messages (void *cls)
     {
       if (0 < user_count)
       {
-        init_users = (struct UserInit*) malloc (user_count * sizeof (struct
-                                                                     UserInit));
+        init_users = (struct UserInit *) malloc (user_count * sizeof (struct
+                                                                      UserInit));
         if (NULL != init_users)
         {
           init_users_len = user_count;
@@ -1833,7 +1834,7 @@ connecteduser_receive_messages (void *cls)
             size_t user_index_len = strlen (user_index);
             struct UserInit iu;
             iu.user_init_len = user_index_len + users[i]->user_name_len + 10;
-            iu.user_init = (char*) malloc (iu.user_init_len + 1);
+            iu.user_init = (char *) malloc (iu.user_init_len + 1);
             if (NULL != iu.user_init)
             {
               strcpy (iu.user_init, "userinit|");
@@ -1929,7 +1930,7 @@ connecteduser_receive_messages (void *cls)
         pthread_mutex_unlock (&chat_mutex);
         pthread_join (pt, NULL);
       }
-      struct MHD_UpgradeResponseHandle*urh = cu->urh;
+      struct MHD_UpgradeResponseHandle *urh = cu->urh;
       if (NULL != urh)
       {
         cu->urh = NULL;
@@ -1974,7 +1975,7 @@ connecteduser_receive_messages (void *cls)
           pthread_mutex_unlock (&chat_mutex);
           pthread_join (pt, NULL);
         }
-        struct MHD_UpgradeResponseHandle*urh = cu->urh;
+        struct MHD_UpgradeResponseHandle *urh = cu->urh;
         if (NULL != urh)
         {
           cu->urh = NULL;
@@ -2000,7 +2001,7 @@ connecteduser_receive_messages (void *cls)
     pthread_mutex_unlock (&chat_mutex);
     pthread_join (pt, NULL);
   }
-  struct MHD_UpgradeResponseHandle*urh = cu->urh;
+  struct MHD_UpgradeResponseHandle *urh = cu->urh;
   if (NULL != urh)
   {
     cu->urh = NULL;
@@ -2161,10 +2162,10 @@ access_handler (void *cls,
   if (0 == strcmp (url, "/"))
   {
     /* Default page for visiting the server */
-    struct MHD_Response*response = MHD_create_response_from_buffer (strlen (
-                                                                      PAGE),
-                                                                    PAGE,
-                                                                    MHD_RESPMEM_PERSISTENT);
+    struct MHD_Response *response = MHD_create_response_from_buffer (strlen (
+                                                                       PAGE),
+                                                                     PAGE,
+                                                                     MHD_RESPMEM_PERSISTENT);
     ret = MHD_queue_response (connection,
                               MHD_HTTP_OK,
                               response);
@@ -2188,7 +2189,7 @@ access_handler (void *cls,
      */
 
     char is_valid = 1;
-    const char* value = NULL;
+    const char *value = NULL;
     char sec_websocket_accept[29];
 
     /* check whether an websocket upgrade is requested */
@@ -2257,10 +2258,10 @@ access_handler (void *cls,
     else
     {
       /* return error page */
-      struct MHD_Response*response = MHD_create_response_from_buffer (strlen (
-                                                                        PAGE_INVALID_WEBSOCKET_REQUEST),
-                                                                      PAGE_INVALID_WEBSOCKET_REQUEST,
-                                                                      MHD_RESPMEM_PERSISTENT);
+      struct MHD_Response *response = MHD_create_response_from_buffer (strlen (
+                                                                         PAGE_INVALID_WEBSOCKET_REQUEST),
+                                                                       PAGE_INVALID_WEBSOCKET_REQUEST,
+                                                                       MHD_RESPMEM_PERSISTENT);
       ret = MHD_queue_response (connection,
                                 MHD_HTTP_BAD_REQUEST,
                                 response);
@@ -2269,10 +2270,10 @@ access_handler (void *cls,
   }
   else
   {
-    struct MHD_Response*response = MHD_create_response_from_buffer (strlen (
-                                                                      PAGE_NOT_FOUND),
-                                                                    PAGE_NOT_FOUND,
-                                                                    MHD_RESPMEM_PERSISTENT);
+    struct MHD_Response *response = MHD_create_response_from_buffer (strlen (
+                                                                       PAGE_NOT_FOUND),
+                                                                     PAGE_NOT_FOUND,
+                                                                     MHD_RESPMEM_PERSISTENT);
     ret = MHD_queue_response (connection,
                               MHD_HTTP_NOT_FOUND,
                               response);
@@ -2338,7 +2339,7 @@ main (int argc,
   {
     for (size_t i = 0; i < user_count; ++i)
     {
-      struct MHD_UpgradeResponseHandle*urh = users[i]->urh;
+      struct MHD_UpgradeResponseHandle *urh = users[i]->urh;
       if (NULL != urh)
       {
         users[i]->urh = NULL;

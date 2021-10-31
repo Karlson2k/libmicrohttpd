@@ -73,6 +73,7 @@ static void
 send_all (MHD_socket fd,
           const char *buf,
           size_t len);
+
 static void
 make_blocking (MHD_socket fd);
 
@@ -89,7 +90,7 @@ upgrade_handler (void *cls,
   make_blocking (fd);
 
   /* create a websocket stream for this connection */
-  struct MHD_WebSocketStream* ws;
+  struct MHD_WebSocketStream *ws;
   int result = MHD_websocket_stream_init (&ws,
                                           0,
                                           0);
@@ -241,6 +242,7 @@ upgrade_handler (void *cls,
                       MHD_UPGRADE_ACTION_CLOSE);
 }
 
+
 /* This helper function is used for the case that
  * we need to resend some data
  */
@@ -272,6 +274,7 @@ send_all (MHD_socket fd,
   }
 }
 
+
 /* This helper function contains operating-system-dependent code and
  * is used to make a socket blocking.
  */
@@ -293,6 +296,7 @@ make_blocking (MHD_socket fd)
   ioctlsocket (fd, FIONBIO, &flags);
 #endif
 }
+
 
 static enum MHD_Result
 access_handler (void *cls,
@@ -326,9 +330,9 @@ access_handler (void *cls,
   {
     /* Default page for visiting the server */
     struct MHD_Response *response = MHD_create_response_from_buffer (
-                                      strlen (PAGE),
-                                      PAGE,
-                                      MHD_RESPMEM_PERSISTENT);
+      strlen (PAGE),
+      PAGE,
+      MHD_RESPMEM_PERSISTENT);
     ret = MHD_queue_response (connection,
                               MHD_HTTP_OK,
                               response);
@@ -337,7 +341,7 @@ access_handler (void *cls,
   else if (0 == strcmp (url, "/chat"))
   {
     char is_valid = 1;
-    const char* value = NULL;
+    const char *value = NULL;
     char sec_websocket_accept[29];
 
     if (0 != MHD_websocket_check_http_version (version))
@@ -395,10 +399,10 @@ access_handler (void *cls,
     else
     {
       /* return error page */
-      struct MHD_Response*response = MHD_create_response_from_buffer (
-                                       strlen (PAGE_INVALID_WEBSOCKET_REQUEST),
-                                       PAGE_INVALID_WEBSOCKET_REQUEST,
-                                       MHD_RESPMEM_PERSISTENT);
+      struct MHD_Response *response = MHD_create_response_from_buffer (
+        strlen (PAGE_INVALID_WEBSOCKET_REQUEST),
+        PAGE_INVALID_WEBSOCKET_REQUEST,
+        MHD_RESPMEM_PERSISTENT);
       ret = MHD_queue_response (connection,
                                 MHD_HTTP_BAD_REQUEST,
                                 response);
@@ -407,10 +411,10 @@ access_handler (void *cls,
   }
   else
   {
-    struct MHD_Response*response = MHD_create_response_from_buffer (
-                                     strlen (PAGE_NOT_FOUND),
-                                     PAGE_NOT_FOUND,
-                                     MHD_RESPMEM_PERSISTENT);
+    struct MHD_Response *response = MHD_create_response_from_buffer (
+      strlen (PAGE_NOT_FOUND),
+      PAGE_NOT_FOUND,
+      MHD_RESPMEM_PERSISTENT);
     ret = MHD_queue_response (connection,
                               MHD_HTTP_NOT_FOUND,
                               response);
@@ -420,6 +424,7 @@ access_handler (void *cls,
   return ret;
 }
 
+
 int
 main (int argc,
       char *const *argv)
@@ -428,10 +433,10 @@ main (int argc,
   (void) argv;               /* Unused. Silent compiler warning. */
   struct MHD_Daemon *daemon;
 
-  daemon = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD |
-                             MHD_USE_THREAD_PER_CONNECTION |
-                             MHD_ALLOW_UPGRADE |
-                             MHD_USE_ERROR_LOG,
+  daemon = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD
+                             | MHD_USE_THREAD_PER_CONNECTION
+                             | MHD_ALLOW_UPGRADE
+                             | MHD_USE_ERROR_LOG,
                              PORT, NULL, NULL,
                              &access_handler, NULL,
                              MHD_OPTION_END);

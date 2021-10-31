@@ -547,7 +547,7 @@ enum MHD_WEBSOCKET_VALIDITY
  * @return allocated memory
  * @ingroup websocket
  */
-typedef void*
+typedef void *
 (*MHD_WebSocketMallocCallback) (size_t buf_len);
 /**
  * This callback function is used internally by many websocket
@@ -565,7 +565,7 @@ typedef void*
  * @return reallocated memory
  * @ingroup websocket
  */
-typedef void*
+typedef void *
 (*MHD_WebSocketReallocCallback) (void *buf, size_t new_buf_len);
 /**
  * This callback function is used internally by many websocket
@@ -600,7 +600,7 @@ typedef void
  * @ingroup websocket
  */
 typedef size_t
-(*MHD_WebSocketRandomNumberGenerator) (void *cls, void* buf, size_t buf_len);
+(*MHD_WebSocketRandomNumberGenerator) (void *cls, void *buf, size_t buf_len);
 
 /**
  * Checks the HTTP version of the incoming request.
@@ -615,7 +615,7 @@ typedef size_t
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_check_http_version (const char* http_version);
+MHD_websocket_check_http_version (const char *http_version);
 
 /**
  * Checks the value of the 'Connection' HTTP request header.
@@ -634,7 +634,7 @@ MHD_websocket_check_http_version (const char* http_version);
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_check_connection_header (const char* connection_header);
+MHD_websocket_check_connection_header (const char *connection_header);
 
 /**
  * Checks the value of the 'Upgrade' HTTP request header.
@@ -653,7 +653,7 @@ MHD_websocket_check_connection_header (const char* connection_header);
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_check_upgrade_header (const char* upgrade_header);
+MHD_websocket_check_upgrade_header (const char *upgrade_header);
 
 /**
  * Checks the value of the 'Sec-WebSocket-Version' HTTP request header.
@@ -673,7 +673,7 @@ MHD_websocket_check_upgrade_header (const char* upgrade_header);
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_check_version_header (const char* version_header);
+MHD_websocket_check_version_header (const char *version_header);
 
 /**
  * Creates the response value for the 'Sec-WebSocket-Key' HTTP request header.
@@ -695,8 +695,8 @@ MHD_websocket_check_version_header (const char* version_header);
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_create_accept_header (const char* sec_websocket_key,
-                                    char* sec_websocket_accept);
+MHD_websocket_create_accept_header (const char *sec_websocket_key,
+                                    char *sec_websocket_accept);
 
 /**
  * Creates a new websocket stream, used for decoding/encoding.
@@ -711,7 +711,7 @@ MHD_websocket_create_accept_header (const char* sec_websocket_key,
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_stream_init (struct MHD_WebSocketStream**ws,
+MHD_websocket_stream_init (struct MHD_WebSocketStream **ws,
                            int flags,
                            size_t max_payload_size);
 
@@ -746,13 +746,13 @@ MHD_websocket_stream_init (struct MHD_WebSocketStream**ws,
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_stream_init2 (struct MHD_WebSocketStream**ws,
+MHD_websocket_stream_init2 (struct MHD_WebSocketStream **ws,
                             int flags,
                             size_t max_payload_size,
                             MHD_WebSocketMallocCallback callback_malloc,
                             MHD_WebSocketReallocCallback callback_realloc,
                             MHD_WebSocketFreeCallback callback_free,
-                            void* cls_rng,
+                            void *cls_rng,
                             MHD_WebSocketRandomNumberGenerator callback_rng);
 
 /**
@@ -764,7 +764,7 @@ MHD_websocket_stream_init2 (struct MHD_WebSocketStream**ws,
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_stream_free (struct MHD_WebSocketStream*ws);
+MHD_websocket_stream_free (struct MHD_WebSocketStream *ws);
 
 /**
  * Invalidates a websocket stream.
@@ -777,7 +777,7 @@ MHD_websocket_stream_free (struct MHD_WebSocketStream*ws);
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_stream_invalidate (struct MHD_WebSocketStream*ws);
+MHD_websocket_stream_invalidate (struct MHD_WebSocketStream *ws);
 
 /**
  * Queries whether a websocket stream is valid.
@@ -789,7 +789,7 @@ MHD_websocket_stream_invalidate (struct MHD_WebSocketStream*ws);
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_VALIDITY
-MHD_websocket_stream_is_valid (struct MHD_WebSocketStream*ws);
+MHD_websocket_stream_is_valid (struct MHD_WebSocketStream *ws);
 
 /**
  * Decodes a byte sequence for a websocket stream.
@@ -836,12 +836,12 @@ MHD_websocket_stream_is_valid (struct MHD_WebSocketStream*ws);
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_decode (struct MHD_WebSocketStream* ws,
-                      const char* streambuf,
+MHD_websocket_decode (struct MHD_WebSocketStream *ws,
+                      const char *streambuf,
                       size_t streambuf_len,
-                      size_t* streambuf_read_len,
-                      char** payload,
-                      size_t* payload_len);
+                      size_t *streambuf_read_len,
+                      char **payload,
+                      size_t *payload_len);
 
 /**
  * Splits the payload of a decoded close frame.
@@ -871,11 +871,11 @@ MHD_websocket_decode (struct MHD_WebSocketStream* ws,
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_split_close_reason (const char* payload,
+MHD_websocket_split_close_reason (const char *payload,
                                   size_t payload_len,
-                                  unsigned short* reason_code,
-                                  const char** reason_utf8,
-                                  size_t* reason_utf8_len);
+                                  unsigned short *reason_code,
+                                  const char **reason_utf8,
+                                  size_t *reason_utf8_len);
 
 /**
  * Encodes an UTF-8 encoded text into websocket text frame.
@@ -913,13 +913,13 @@ MHD_websocket_split_close_reason (const char* payload,
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_encode_text (struct MHD_WebSocketStream* ws,
-                           const char* payload_utf8,
+MHD_websocket_encode_text (struct MHD_WebSocketStream *ws,
+                           const char *payload_utf8,
                            size_t payload_utf8_len,
                            int fragmentation,
-                           char** frame,
-                           size_t* frame_len,
-                           int* utf8_step);
+                           char **frame,
+                           size_t *frame_len,
+                           int *utf8_step);
 
 /**
  * Encodes binary data into websocket binary frame.
@@ -948,12 +948,12 @@ MHD_websocket_encode_text (struct MHD_WebSocketStream* ws,
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_encode_binary (struct MHD_WebSocketStream* ws,
-                             const char* payload,
+MHD_websocket_encode_binary (struct MHD_WebSocketStream *ws,
+                             const char *payload,
                              size_t payload_len,
                              int fragmentation,
-                             char** frame,
-                             size_t* frame_len);
+                             char **frame,
+                             size_t *frame_len);
 
 /**
  * Encodes a websocket ping frame
@@ -977,11 +977,11 @@ MHD_websocket_encode_binary (struct MHD_WebSocketStream* ws,
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_encode_ping (struct MHD_WebSocketStream* ws,
-                           const char* payload,
+MHD_websocket_encode_ping (struct MHD_WebSocketStream *ws,
+                           const char *payload,
                            size_t payload_len,
-                           char** frame,
-                           size_t* frame_len);
+                           char **frame,
+                           size_t *frame_len);
 
 /**
  * Encodes a websocket pong frame
@@ -1010,11 +1010,11 @@ MHD_websocket_encode_ping (struct MHD_WebSocketStream* ws,
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_encode_pong (struct MHD_WebSocketStream* ws,
-                           const char* payload,
-                           size_t  payload_len,
-                           char** frame,
-                           size_t* frame_len);
+MHD_websocket_encode_pong (struct MHD_WebSocketStream *ws,
+                           const char *payload,
+                           size_t payload_len,
+                           char **frame,
+                           size_t *frame_len);
 
 /**
  * Encodes a websocket close frame
@@ -1052,12 +1052,12 @@ MHD_websocket_encode_pong (struct MHD_WebSocketStream* ws,
  * @ingroup websocket
  */
 _MHD_EXTERN enum MHD_WEBSOCKET_STATUS
-MHD_websocket_encode_close (struct MHD_WebSocketStream* ws,
+MHD_websocket_encode_close (struct MHD_WebSocketStream *ws,
                             unsigned short reason_code,
-                            const char* reason_utf8,
+                            const char *reason_utf8,
                             size_t reason_utf8_len,
-                            char** frame,
-                            size_t* frame_len);
+                            char **frame,
+                            size_t *frame_len);
 
 /**
  * Allocates memory with the associated 'malloc' function
@@ -1069,8 +1069,8 @@ MHD_websocket_encode_close (struct MHD_WebSocketStream* ws,
  * @return The allocated memory on success or NULL on failure.
  * @ingroup websocket
  */
-_MHD_EXTERN void*
-MHD_websocket_malloc (struct MHD_WebSocketStream* ws,
+_MHD_EXTERN void *
+MHD_websocket_malloc (struct MHD_WebSocketStream *ws,
                       size_t buf_len);
 
 /**
@@ -1086,9 +1086,9 @@ MHD_websocket_malloc (struct MHD_WebSocketStream* ws,
  *         remains valid.
  * @ingroup websocket
  */
-_MHD_EXTERN void*
-MHD_websocket_realloc (struct MHD_WebSocketStream* ws,
-                       void* buf,
+_MHD_EXTERN void *
+MHD_websocket_realloc (struct MHD_WebSocketStream *ws,
+                       void *buf,
                        size_t new_buf_len);
 
 /**
@@ -1104,8 +1104,8 @@ MHD_websocket_realloc (struct MHD_WebSocketStream* ws,
  * @ingroup websocket
  */
 _MHD_EXTERN int
-MHD_websocket_free (struct MHD_WebSocketStream* ws,
-                    void* buf);
+MHD_websocket_free (struct MHD_WebSocketStream *ws,
+                    void *buf);
 
 #if 0                           /* keep Emacsens' auto-indent happy */
 {

@@ -539,7 +539,7 @@ send_all (MHD_socket sock, const unsigned char *buf, size_t len)
 
   for (off = 0; off < len; off += ret)
   {
-    ret = send (sock, (const void*) &buf[off], len - off, 0);
+    ret = send (sock, (const void *) &buf[off], len - off, 0);
     if (0 > ret)
     {
       if (EAGAIN == errno)
@@ -705,7 +705,7 @@ run_usock (void *cls)
   make_blocking (ws->sock);
   while (1)
   {
-    got = recv (ws->sock, (void*) buf, sizeof (buf), 0);
+    got = recv (ws->sock, (void *) buf, sizeof (buf), 0);
     if (0 >= got)
     {
       break;

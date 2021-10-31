@@ -40,12 +40,12 @@ size_t open_allocs = 0;
 /**
  * Custom `malloc()` function used for memory tests
  */
-static void*
+static void *
 test_malloc (size_t buf_len)
 {
   if (0 != disable_alloc)
     return NULL;
-  void*result = malloc (buf_len);
+  void *result = malloc (buf_len);
   if (NULL != result)
     ++open_allocs;
   return result;
@@ -55,12 +55,12 @@ test_malloc (size_t buf_len)
 /**
  * Custom `realloc()` function used for memory tests
  */
-static void*
-test_realloc (void*buf, size_t buf_len)
+static void *
+test_realloc (void *buf, size_t buf_len)
 {
   if (0 != disable_alloc)
     return NULL;
-  void*result = realloc (buf, buf_len);
+  void *result = realloc (buf, buf_len);
   if ((NULL != result) && (NULL == buf))
     ++open_allocs;
   return result;
@@ -71,22 +71,23 @@ test_realloc (void*buf, size_t buf_len)
  * Custom `free()` function used for memory tests
  */
 static void
-test_free (void*buf)
+test_free (void *buf)
 {
   if (NULL != buf)
     --open_allocs;
   free (buf);
 }
 
+
 /**
  * Custom `rng()` function used for client mode tests
  */
 static size_t
-test_rng (void*cls, void*buf, size_t buf_len)
+test_rng (void *cls, void *buf, size_t buf_len)
 {
   for (size_t i = 0; i < buf_len; ++i)
   {
-    ((char*) buf) [i] = (char) (rand () % 0xFF);
+    ((char *) buf) [i] = (char) (rand () % 0xFF);
   }
 
   return buf_len;
@@ -97,18 +98,18 @@ test_rng (void*cls, void*buf, size_t buf_len)
  * Helper function which allocates a big amount of data
  */
 static void
-allocate_length_test_data (char**buf1,
-                           char**buf2,
+allocate_length_test_data (char **buf1,
+                           char **buf2,
                            size_t buf_len,
-                           const char*buf1_prefix,
+                           const char *buf1_prefix,
                            size_t buf1_prefix_len)
 {
   if (NULL != *buf1)
     free (*buf1);
   if (NULL != *buf2)
     free (*buf2);
-  *buf1 = (char*) malloc (buf_len + buf1_prefix_len);
-  *buf2 = (char*) malloc (buf_len);
+  *buf1 = (char *) malloc (buf_len + buf1_prefix_len);
+  *buf2 = (char *) malloc (buf_len);
   if ((NULL == buf1) || (NULL == buf2))
     return;
   memcpy (*buf1,
@@ -136,8 +137,8 @@ static int
 test_decode_single (unsigned int test_line,
                     int flags, size_t max_payload_size, size_t decode_count,
                     size_t buf_step,
-                    const char*buf, size_t buf_len,
-                    const char*expected_payload, size_t expected_payload_len,
+                    const char *buf, size_t buf_len,
+                    const char *expected_payload, size_t expected_payload_len,
                     int expected_return, int expected_valid, size_t
                     expected_streambuf_read_len)
 {
@@ -164,7 +165,7 @@ test_decode_single (unsigned int test_line,
   /* perform decoding in a loop */
   size_t streambuf_read_len = 0;
   size_t payload_len = 0;
-  char*payload = NULL;
+  char *payload = NULL;
   for (size_t i = 0; i < decode_count; ++i)
   {
     size_t streambuf_read_len_ = 0;
@@ -299,7 +300,7 @@ int
 test_inits ()
 {
   int failed = 0;
-  struct MHD_WebSocketStream*ws;
+  struct MHD_WebSocketStream *ws;
   int ret;
 
   /*
@@ -315,11 +316,11 @@ test_inits ()
                                      i,
                                      0);
     if (((0 == (i & MHD_WEBSOCKET_FLAG_CLIENT)) &&
-        ((MHD_WEBSOCKET_STATUS_OK != ret) ||
-        (NULL == ws))) ||
+         ((MHD_WEBSOCKET_STATUS_OK != ret) ||
+          (NULL == ws))) ||
         ((0 != (i & MHD_WEBSOCKET_FLAG_CLIENT)) &&
-        ((MHD_WEBSOCKET_STATUS_OK == ret) ||
-        (NULL != ws))))
+         ((MHD_WEBSOCKET_STATUS_OK == ret) ||
+          (NULL != ws))))
     {
       fprintf (stderr,
                "Init test failed in line %u for flags %d.\n",
@@ -788,7 +789,7 @@ test_inits ()
                                     test_malloc,
                                     test_realloc,
                                     test_free,
-                                    (void*) 12345,
+                                    (void *) 12345,
                                     test_rng);
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (NULL == ws) )
@@ -3595,7 +3596,7 @@ test_decodes ()
                                 0);
   /* Failure test: Call after invalidated stream (but with different buffer) */
   {
-    struct MHD_WebSocketStream*ws;
+    struct MHD_WebSocketStream *ws;
     if (MHD_WEBSOCKET_STATUS_OK == MHD_websocket_stream_init (&ws,
                                                               MHD_WEBSOCKET_FLAG_SERVER
                                                               |
@@ -3603,7 +3604,7 @@ test_decodes ()
                                                               0))
     {
       size_t streambuf_read_len = 0;
-      char*payload = NULL;
+      char *payload = NULL;
       size_t payload_len = 0;
       int ret = 0;
       ret = MHD_websocket_decode (ws,
@@ -4235,7 +4236,7 @@ test_decodes ()
   ------------------------------------------------------------------------------
   */
   {
-    struct MHD_WebSocketStream*ws;
+    struct MHD_WebSocketStream *ws;
     if (MHD_WEBSOCKET_STATUS_OK == MHD_websocket_stream_init (&ws,
                                                               MHD_WEBSOCKET_FLAG_SERVER
                                                               |
@@ -4243,7 +4244,7 @@ test_decodes ()
                                                               0))
     {
       size_t streambuf_read_len = 0;
-      char*payload = NULL;
+      char *payload = NULL;
       size_t payload_len = 0;
       int ret = 0;
 
@@ -4352,7 +4353,7 @@ test_decodes ()
     }
   }
   {
-    struct MHD_WebSocketStream*ws;
+    struct MHD_WebSocketStream *ws;
     if (MHD_WEBSOCKET_STATUS_OK == MHD_websocket_stream_init (&ws,
                                                               MHD_WEBSOCKET_FLAG_SERVER
                                                               |
@@ -4360,7 +4361,7 @@ test_decodes ()
                                                               0))
     {
       size_t streambuf_read_len = 0;
-      char*payload = NULL;
+      char *payload = NULL;
       size_t payload_len = 0;
       int ret = 0;
 
@@ -4480,7 +4481,7 @@ test_decodes ()
   ------------------------------------------------------------------------------
   */
   {
-    struct MHD_WebSocketStream*ws;
+    struct MHD_WebSocketStream *ws;
     if (MHD_WEBSOCKET_STATUS_OK == MHD_websocket_stream_init (&ws,
                                                               MHD_WEBSOCKET_FLAG_SERVER
                                                               |
@@ -4488,7 +4489,7 @@ test_decodes ()
                                                               0))
     {
       size_t streambuf_read_len = 0;
-      char*payload = NULL;
+      char *payload = NULL;
       size_t payload_len = 0;
       int ret = 0;
 
@@ -4699,7 +4700,7 @@ test_decodes ()
   ------------------------------------------------------------------------------
   */
   {
-    struct MHD_WebSocketStream*ws;
+    struct MHD_WebSocketStream *ws;
     if (MHD_WEBSOCKET_STATUS_OK == MHD_websocket_stream_init2 (&ws,
                                                                MHD_WEBSOCKET_FLAG_SERVER
                                                                |
@@ -4712,7 +4713,7 @@ test_decodes ()
                                                                NULL))
     {
       size_t streambuf_read_len = 0;
-      char*payload = NULL;
+      char *payload = NULL;
       size_t payload_len = 0;
       int ret = 0;
 
@@ -4880,9 +4881,9 @@ test_decodes ()
   */
   {
     disable_alloc = 0;
-    struct MHD_WebSocketStream*ws;
+    struct MHD_WebSocketStream *ws;
     size_t streambuf_read_len = 0;
-    char*payload = NULL;
+    char *payload = NULL;
     size_t payload_len = 0;
     int ret = 0;
 
@@ -5203,11 +5204,11 @@ int
 test_encodes_text ()
 {
   int failed = 0;
-  struct MHD_WebSocketStream*wss;
-  struct MHD_WebSocketStream*wsc;
+  struct MHD_WebSocketStream *wss;
+  struct MHD_WebSocketStream *wsc;
   int ret;
   char *buf1 = NULL, *buf2 = NULL;
-  char*frame = NULL;
+  char *frame = NULL;
   size_t frame_len = 0;
   int utf8_step = 0;
 
@@ -6062,7 +6063,7 @@ test_encodes_text ()
   ------------------------------------------------------------------------------
   */
   /* Fail test: `ws` not passed */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_text (NULL,
                                    "abc",
@@ -6080,7 +6081,7 @@ test_encodes_text ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -6090,7 +6091,7 @@ test_encodes_text ()
     frame = NULL;
   }
   /* Fail test: `payload_utf8` not passed, but `payload_utf8_len` != 0 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_text (wss,
                                    NULL,
@@ -6108,7 +6109,7 @@ test_encodes_text ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -6118,7 +6119,7 @@ test_encodes_text ()
     frame = NULL;
   }
   /* Regular test: `payload_utf8` passed, but `payload_utf8_len` == 0 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_text (wss,
                                    "abc",
@@ -6130,7 +6131,7 @@ test_encodes_text ()
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (2 != frame_len) ||
       (NULL == frame) ||
-      (((char*) (uintptr_t) 0xBAADF00D) == frame) ||
+      (((char *) (uintptr_t) 0xBAADF00D) == frame) ||
       (0 != memcmp (frame, "\x81\x00", 2)))
   {
     fprintf (stderr,
@@ -6138,7 +6139,7 @@ test_encodes_text ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -6165,7 +6166,7 @@ test_encodes_text ()
     ++failed;
   }
   /* Fail test: `frame_len` not passed */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   ret = MHD_websocket_encode_text (wss,
                                    "abc",
                                    3,
@@ -6181,7 +6182,7 @@ test_encodes_text ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -6192,7 +6193,7 @@ test_encodes_text ()
   }
   /* Regular test: `utf8_step` passed for non-fragmentation
      (is allowed and `utf8_step` will be filled then) */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   utf8_step = -99;
   ret = MHD_websocket_encode_text (wss,
@@ -6205,7 +6206,7 @@ test_encodes_text ()
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (5 != frame_len) ||
       (NULL == frame) ||
-      (((char*) (uintptr_t) 0xBAADF00D) == frame) ||
+      (((char *) (uintptr_t) 0xBAADF00D) == frame) ||
       (MHD_WEBSOCKET_UTF8STEP_NORMAL != utf8_step) ||
       (0 != memcmp (frame, "\x81\x03" "abc", 5)))
   {
@@ -6214,7 +6215,7 @@ test_encodes_text ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -6225,7 +6226,7 @@ test_encodes_text ()
   }
   /* Fail test: `utf8_step` passed for non-fragmentation with invalid UTF-8
      (is allowed and `utf8_step` will be filled then) */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   utf8_step = -99;
   ret = MHD_websocket_encode_text (wss,
@@ -6245,7 +6246,7 @@ test_encodes_text ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -6255,7 +6256,7 @@ test_encodes_text ()
     frame = NULL;
   }
   /* Fail test: `utf8_step` not passed for fragmentation #1 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_text (wss,
                                    "abc",
@@ -6273,7 +6274,7 @@ test_encodes_text ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -6283,7 +6284,7 @@ test_encodes_text ()
     frame = NULL;
   }
   /* Fail test: `utf8_step` not passed for fragmentation #2 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_text (wss,
                                    "abc",
@@ -6301,7 +6302,7 @@ test_encodes_text ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -6311,7 +6312,7 @@ test_encodes_text ()
     frame = NULL;
   }
   /* Fail test: `utf8_step` not passed for fragmentation #3 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_text (wss,
                                    "abc",
@@ -6329,7 +6330,7 @@ test_encodes_text ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -6339,7 +6340,7 @@ test_encodes_text ()
     frame = NULL;
   }
   /* Regular test: `utf8_step` passed for fragmentation #1 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   utf8_step = -99;
   ret = MHD_websocket_encode_text (wss,
@@ -6352,7 +6353,7 @@ test_encodes_text ()
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (5 != frame_len) ||
       (NULL == frame) ||
-      (((char*) (uintptr_t) 0xBAADF00D) == frame) ||
+      (((char *) (uintptr_t) 0xBAADF00D) == frame) ||
       (MHD_WEBSOCKET_UTF8STEP_NORMAL != utf8_step) ||
       (0 != memcmp (frame, "\x01\x03" "abc", 5)))
   {
@@ -6361,7 +6362,7 @@ test_encodes_text ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -6371,7 +6372,7 @@ test_encodes_text ()
     frame = NULL;
   }
   /* Regular test: `utf8_step` passed for fragmentation #2 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   utf8_step = MHD_WEBSOCKET_UTF8STEP_NORMAL;
   ret = MHD_websocket_encode_text (wss,
@@ -6384,7 +6385,7 @@ test_encodes_text ()
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (5 != frame_len) ||
       (NULL == frame) ||
-      (((char*) (uintptr_t) 0xBAADF00D) == frame) ||
+      (((char *) (uintptr_t) 0xBAADF00D) == frame) ||
       (MHD_WEBSOCKET_UTF8STEP_NORMAL != utf8_step) ||
       (0 != memcmp (frame, "\x00\x03" "abc", 5)))
   {
@@ -6393,7 +6394,7 @@ test_encodes_text ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -6403,7 +6404,7 @@ test_encodes_text ()
     frame = NULL;
   }
   /* Regular test: `utf8_step` passed for fragmentation #3 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   utf8_step = MHD_WEBSOCKET_UTF8STEP_NORMAL;
   ret = MHD_websocket_encode_text (wss,
@@ -6416,7 +6417,7 @@ test_encodes_text ()
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (5 != frame_len) ||
       (NULL == frame) ||
-      (((char*) (uintptr_t) 0xBAADF00D) == frame) ||
+      (((char *) (uintptr_t) 0xBAADF00D) == frame) ||
       (MHD_WEBSOCKET_UTF8STEP_NORMAL != utf8_step) ||
       (0 != memcmp (frame, "\x80\x03" "abc", 5)))
   {
@@ -6425,7 +6426,7 @@ test_encodes_text ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -6435,7 +6436,7 @@ test_encodes_text ()
     frame = NULL;
   }
   /* Fail test: `fragmentation` has an invalid value */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   utf8_step = -99;
   ret = MHD_websocket_encode_text (wss,
@@ -6455,7 +6456,7 @@ test_encodes_text ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -6471,7 +6472,7 @@ test_encodes_text ()
   ------------------------------------------------------------------------------
   */
   {
-    struct MHD_WebSocketStream*wsx;
+    struct MHD_WebSocketStream *wsx;
     if (MHD_WEBSOCKET_STATUS_OK == MHD_websocket_stream_init2 (&wsx,
                                                                MHD_WEBSOCKET_FLAG_SERVER,
                                                                0,
@@ -6560,11 +6561,11 @@ int
 test_encodes_binary ()
 {
   int failed = 0;
-  struct MHD_WebSocketStream*wss;
-  struct MHD_WebSocketStream*wsc;
+  struct MHD_WebSocketStream *wss;
+  struct MHD_WebSocketStream *wsc;
   int ret;
   char *buf1 = NULL, *buf2 = NULL;
-  char*frame = NULL;
+  char *frame = NULL;
   size_t frame_len = 0;
 
   if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init2 (&wsc,
@@ -7016,7 +7017,7 @@ test_encodes_binary ()
   ------------------------------------------------------------------------------
   */
   /* Fail test: `ws` not passed */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_binary (NULL,
                                      "abc",
@@ -7033,7 +7034,7 @@ test_encodes_binary ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -7043,7 +7044,7 @@ test_encodes_binary ()
     frame = NULL;
   }
   /* Fail test: `payload` not passed, but `payload_len` != 0 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_binary (wss,
                                      NULL,
@@ -7060,7 +7061,7 @@ test_encodes_binary ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -7070,7 +7071,7 @@ test_encodes_binary ()
     frame = NULL;
   }
   /* Regular test: `payload` passed, but `payload_len` == 0 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_binary (wss,
                                      "abc",
@@ -7081,7 +7082,7 @@ test_encodes_binary ()
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (2 != frame_len) ||
       (NULL == frame) ||
-      (((char*) (uintptr_t) 0xBAADF00D) == frame) ||
+      (((char *) (uintptr_t) 0xBAADF00D) == frame) ||
       (0 != memcmp (frame, "\x82\x00", 2)))
   {
     fprintf (stderr,
@@ -7089,7 +7090,7 @@ test_encodes_binary ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -7116,7 +7117,7 @@ test_encodes_binary ()
     ++failed;
   }
   /* Fail test: `frame_len` not passed */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   ret = MHD_websocket_encode_binary (wss,
                                      "abc",
                                      3,
@@ -7131,7 +7132,7 @@ test_encodes_binary ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -7141,7 +7142,7 @@ test_encodes_binary ()
     frame = NULL;
   }
   /* Fail test: `fragmentation` has an invalid value */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_binary (wss,
                                      "abc",
@@ -7158,7 +7159,7 @@ test_encodes_binary ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -7174,7 +7175,7 @@ test_encodes_binary ()
   ------------------------------------------------------------------------------
   */
   {
-    struct MHD_WebSocketStream*wsx;
+    struct MHD_WebSocketStream *wsx;
     if (MHD_WEBSOCKET_STATUS_OK == MHD_websocket_stream_init2 (&wsx,
                                                                MHD_WEBSOCKET_FLAG_SERVER,
                                                                0,
@@ -7261,11 +7262,11 @@ int
 test_encodes_close ()
 {
   int failed = 0;
-  struct MHD_WebSocketStream*wss;
-  struct MHD_WebSocketStream*wsc;
+  struct MHD_WebSocketStream *wss;
+  struct MHD_WebSocketStream *wsc;
   int ret;
   char *buf1 = NULL, *buf2 = NULL;
-  char*frame = NULL;
+  char *frame = NULL;
   size_t frame_len = 0;
 
   if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init2 (&wsc,
@@ -7685,7 +7686,7 @@ test_encodes_close ()
   ------------------------------------------------------------------------------
   */
   /* Fail test: `ws` not passed */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_close (NULL,
                                     MHD_WEBSOCKET_CLOSEREASON_REGULAR,
@@ -7702,7 +7703,7 @@ test_encodes_close ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -7712,7 +7713,7 @@ test_encodes_close ()
     frame = NULL;
   }
   /* Fail test: `payload` not passed, but `payload_len` != 0 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_close (wss,
                                     MHD_WEBSOCKET_CLOSEREASON_REGULAR,
@@ -7729,7 +7730,7 @@ test_encodes_close ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -7739,7 +7740,7 @@ test_encodes_close ()
     frame = NULL;
   }
   /* Regular test: `payload` passed, but `payload_len` == 0 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_close (wss,
                                     MHD_WEBSOCKET_CLOSEREASON_REGULAR,
@@ -7750,7 +7751,7 @@ test_encodes_close ()
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (4 != frame_len) ||
       (NULL == frame) ||
-      (((char*) (uintptr_t) 0xBAADF00D) == frame) ||
+      (((char *) (uintptr_t) 0xBAADF00D) == frame) ||
       (0 != memcmp (frame, "\x88\x02\x03\xE8", 4)))
   {
     fprintf (stderr,
@@ -7758,7 +7759,7 @@ test_encodes_close ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -7785,7 +7786,7 @@ test_encodes_close ()
     ++failed;
   }
   /* Fail test: `frame_len` not passed */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   ret = MHD_websocket_encode_close (wss,
                                     MHD_WEBSOCKET_CLOSEREASON_REGULAR,
                                     "abc",
@@ -7801,7 +7802,7 @@ test_encodes_close ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -7811,7 +7812,7 @@ test_encodes_close ()
     frame = NULL;
   }
   /* Fail test: no reason code passed, but reason text */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_close (wss,
                                     MHD_WEBSOCKET_CLOSEREASON_NO_REASON,
@@ -7828,7 +7829,7 @@ test_encodes_close ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -7838,7 +7839,7 @@ test_encodes_close ()
     frame = NULL;
   }
   /* Edge test (fail): Invalid reason code */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_close (wss,
                                     1,
@@ -7855,7 +7856,7 @@ test_encodes_close ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -7865,7 +7866,7 @@ test_encodes_close ()
     frame = NULL;
   }
   /* Edge test (fail): Invalid reason code */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_close (wss,
                                     999,
@@ -7882,7 +7883,7 @@ test_encodes_close ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -7892,7 +7893,7 @@ test_encodes_close ()
     frame = NULL;
   }
   /* Regular test: Custom reason code */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_close (wss,
                                     2000,
@@ -7903,7 +7904,7 @@ test_encodes_close ()
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (7 != frame_len) ||
       (NULL == frame) ||
-      (((char*) (uintptr_t) 0xBAADF00D) == frame) ||
+      (((char *) (uintptr_t) 0xBAADF00D) == frame) ||
       (0 != memcmp (frame, "\x88\x05\x07\xD0" "abc", 7)))
   {
     fprintf (stderr,
@@ -7911,7 +7912,7 @@ test_encodes_close ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -7927,7 +7928,7 @@ test_encodes_close ()
   ------------------------------------------------------------------------------
   */
   {
-    struct MHD_WebSocketStream*wsx;
+    struct MHD_WebSocketStream *wsx;
     if (MHD_WEBSOCKET_STATUS_OK == MHD_websocket_stream_init2 (&wsx,
                                                                MHD_WEBSOCKET_FLAG_SERVER,
                                                                0,
@@ -8014,11 +8015,11 @@ int
 test_encodes_ping ()
 {
   int failed = 0;
-  struct MHD_WebSocketStream*wss;
-  struct MHD_WebSocketStream*wsc;
+  struct MHD_WebSocketStream *wss;
+  struct MHD_WebSocketStream *wsc;
   int ret;
   char *buf1 = NULL, *buf2 = NULL;
-  char*frame = NULL;
+  char *frame = NULL;
   size_t frame_len = 0;
 
   if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init2 (&wsc,
@@ -8342,7 +8343,7 @@ test_encodes_ping ()
   ------------------------------------------------------------------------------
   */
   /* Fail test: `ws` not passed */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_ping (NULL,
                                    "abc",
@@ -8358,7 +8359,7 @@ test_encodes_ping ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -8368,7 +8369,7 @@ test_encodes_ping ()
     frame = NULL;
   }
   /* Fail test: `payload` not passed, but `payload_len` != 0 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_ping (wss,
                                    NULL,
@@ -8384,7 +8385,7 @@ test_encodes_ping ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -8394,7 +8395,7 @@ test_encodes_ping ()
     frame = NULL;
   }
   /* Regular test: `payload` passed, but `payload_len` == 0 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_ping (wss,
                                    "abc",
@@ -8404,7 +8405,7 @@ test_encodes_ping ()
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (2 != frame_len) ||
       (NULL == frame) ||
-      (((char*) (uintptr_t) 0xBAADF00D) == frame) ||
+      (((char *) (uintptr_t) 0xBAADF00D) == frame) ||
       (0 != memcmp (frame, "\x89\x00", 2)))
   {
     fprintf (stderr,
@@ -8412,7 +8413,7 @@ test_encodes_ping ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -8437,7 +8438,7 @@ test_encodes_ping ()
     ++failed;
   }
   /* Fail test: `frame_len` not passed */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   ret = MHD_websocket_encode_ping (wss,
                                    "abc",
                                    3,
@@ -8451,7 +8452,7 @@ test_encodes_ping ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -8467,7 +8468,7 @@ test_encodes_ping ()
   ------------------------------------------------------------------------------
   */
   {
-    struct MHD_WebSocketStream*wsx;
+    struct MHD_WebSocketStream *wsx;
     if (MHD_WEBSOCKET_STATUS_OK == MHD_websocket_stream_init2 (&wsx,
                                                                MHD_WEBSOCKET_FLAG_SERVER,
                                                                0,
@@ -8552,11 +8553,11 @@ int
 test_encodes_pong ()
 {
   int failed = 0;
-  struct MHD_WebSocketStream*wss;
-  struct MHD_WebSocketStream*wsc;
+  struct MHD_WebSocketStream *wss;
+  struct MHD_WebSocketStream *wsc;
   int ret;
   char *buf1 = NULL, *buf2 = NULL;
-  char*frame = NULL;
+  char *frame = NULL;
   size_t frame_len = 0;
 
   if (MHD_WEBSOCKET_STATUS_OK != MHD_websocket_stream_init2 (&wsc,
@@ -8880,7 +8881,7 @@ test_encodes_pong ()
   ------------------------------------------------------------------------------
   */
   /* Fail test: `ws` not passed */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_pong (NULL,
                                    "abc",
@@ -8896,7 +8897,7 @@ test_encodes_pong ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -8906,7 +8907,7 @@ test_encodes_pong ()
     frame = NULL;
   }
   /* Fail test: `payload` not passed, but `payload_len` != 0 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_pong (wss,
                                    NULL,
@@ -8922,7 +8923,7 @@ test_encodes_pong ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -8932,7 +8933,7 @@ test_encodes_pong ()
     frame = NULL;
   }
   /* Regular test: `payload` passed, but `payload_len` == 0 */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   frame_len = 0x87654321;
   ret = MHD_websocket_encode_pong (wss,
                                    "abc",
@@ -8942,7 +8943,7 @@ test_encodes_pong ()
   if ((MHD_WEBSOCKET_STATUS_OK != ret) ||
       (2 != frame_len) ||
       (NULL == frame) ||
-      (((char*) (uintptr_t) 0xBAADF00D) == frame) ||
+      (((char *) (uintptr_t) 0xBAADF00D) == frame) ||
       (0 != memcmp (frame, "\x8A\x00", 2)))
   {
     fprintf (stderr,
@@ -8950,7 +8951,7 @@ test_encodes_pong ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -8975,7 +8976,7 @@ test_encodes_pong ()
     ++failed;
   }
   /* Fail test: `frame_len` not passed */
-  frame = (char*) (uintptr_t) 0xBAADF00D;
+  frame = (char *) (uintptr_t) 0xBAADF00D;
   ret = MHD_websocket_encode_pong (wss,
                                    "abc",
                                    3,
@@ -8989,7 +8990,7 @@ test_encodes_pong ()
              (unsigned int) __LINE__);
     ++failed;
   }
-  if (((char*) (uintptr_t) 0xBAADF00D) == frame)
+  if (((char *) (uintptr_t) 0xBAADF00D) == frame)
   {
     frame = NULL;
   }
@@ -9005,7 +9006,7 @@ test_encodes_pong ()
   ------------------------------------------------------------------------------
   */
   {
-    struct MHD_WebSocketStream*wsx;
+    struct MHD_WebSocketStream *wsx;
     if (MHD_WEBSOCKET_STATUS_OK == MHD_websocket_stream_init2 (&wsx,
                                                                MHD_WEBSOCKET_FLAG_SERVER,
                                                                0,
@@ -9090,9 +9091,9 @@ int
 test_split_close_reason ()
 {
   int failed = 0;
-  const char*payload;
+  const char *payload;
   unsigned short reason_code;
-  const char*reason_utf8;
+  const char *reason_utf8;
   size_t reason_utf8_len;
   int ret;
 
@@ -9103,7 +9104,7 @@ test_split_close_reason ()
   */
   /* Regular test: Reason code + Reason text */
   reason_code = 9999;
-  reason_utf8 = (const char*) (intptr_t) 0xBAADF00D;
+  reason_utf8 = (const char *) (intptr_t) 0xBAADF00D;
   reason_utf8_len = 12345;
   payload = "\x03\xE8" "abc";
   ret = MHD_websocket_split_close_reason (payload,
@@ -9123,7 +9124,7 @@ test_split_close_reason ()
   }
   /* Regular test: Reason code */
   reason_code = 9999;
-  reason_utf8 = (const char*) (intptr_t) 0xBAADF00D;
+  reason_utf8 = (const char *) (intptr_t) 0xBAADF00D;
   reason_utf8_len = 12345;
   payload = "\x03\xE8";
   ret = MHD_websocket_split_close_reason (payload,
@@ -9143,7 +9144,7 @@ test_split_close_reason ()
   }
   /* Regular test: No payload */
   reason_code = 9999;
-  reason_utf8 = (const char*) (intptr_t) 0xBAADF00D;
+  reason_utf8 = (const char *) (intptr_t) 0xBAADF00D;
   reason_utf8_len = 12345;
   payload = NULL;
   ret = MHD_websocket_split_close_reason (payload,
@@ -9163,7 +9164,7 @@ test_split_close_reason ()
   }
   /* Regular test: `payload` is not NULL given, but `payload_len` == 0 */
   reason_code = 9999;
-  reason_utf8 = (const char*) (intptr_t) 0xBAADF00D;
+  reason_utf8 = (const char *) (intptr_t) 0xBAADF00D;
   reason_utf8_len = 12345;
   payload = "abc";
   ret = MHD_websocket_split_close_reason (payload,
@@ -9189,7 +9190,7 @@ test_split_close_reason ()
   */
   /* Fail test: `payload` not passed, but `payload_len` != 0 */
   reason_code = 9999;
-  reason_utf8 = (const char*) (intptr_t) 0xBAADF00D;
+  reason_utf8 = (const char *) (intptr_t) 0xBAADF00D;
   reason_utf8_len = 12345;
   payload = NULL;
   ret = MHD_websocket_split_close_reason (payload,
@@ -9208,7 +9209,7 @@ test_split_close_reason ()
     ++failed;
   }
   /* Regular test: `reason_code` not passed */
-  reason_utf8 = (const char*) (intptr_t) 0xBAADF00D;
+  reason_utf8 = (const char *) (intptr_t) 0xBAADF00D;
   reason_utf8_len = 12345;
   payload = "\x03\xE8" "abc";
   ret = MHD_websocket_split_close_reason (payload,
@@ -9245,7 +9246,7 @@ test_split_close_reason ()
   }
   /* Regular test: `reason_utf8_len` not passed */
   reason_code = 9999;
-  reason_utf8 = (const char*) (intptr_t) 0xBAADF00D;
+  reason_utf8 = (const char *) (intptr_t) 0xBAADF00D;
   payload = "\x03\xE8" "abc";
   ret = MHD_websocket_split_close_reason (payload,
                                           5,
@@ -9600,7 +9601,8 @@ test_check_connection_header ()
     ++failed;
   }
   /* Edge test (success): Transfer-Encoding,Upgrade,keep-alive */
-  ret = MHD_websocket_check_connection_header ("Transfer-Encoding,Upgrade,keep-alive");
+  ret = MHD_websocket_check_connection_header (
+    "Transfer-Encoding,Upgrade,keep-alive");
   if (MHD_WEBSOCKET_STATUS_OK != ret)
   {
     fprintf (stderr,
@@ -9609,7 +9611,8 @@ test_check_connection_header ()
     ++failed;
   }
   /* Edge test (success): Transfer-Encoding  ,  Upgrade  ,  keep-alive */
-  ret = MHD_websocket_check_connection_header ("Transfer-Encoding  ,  Upgrade  ,  keep-alive");
+  ret = MHD_websocket_check_connection_header (
+    "Transfer-Encoding  ,  Upgrade  ,  keep-alive");
   if (MHD_WEBSOCKET_STATUS_OK != ret)
   {
     fprintf (stderr,
@@ -9636,7 +9639,8 @@ test_check_connection_header ()
     ++failed;
   }
   /* Edge test (success): All allowed token characters, then upgrade token */
-  ret = MHD_websocket_check_connection_header ("!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,Upgrade");
+  ret = MHD_websocket_check_connection_header (
+    "!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,Upgrade");
   if (MHD_WEBSOCKET_STATUS_OK != ret)
   {
     fprintf (stderr,
@@ -9835,7 +9839,8 @@ test_check_upgrade_header ()
     ++failed;
   }
   /* Edge test (success): All allowed token characters plus /, then websocket keyowrd */
-  ret = MHD_websocket_check_upgrade_header ("!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/,websocket");
+  ret = MHD_websocket_check_upgrade_header (
+    "!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/,websocket");
   if (MHD_WEBSOCKET_STATUS_OK != ret)
   {
     fprintf (stderr,
