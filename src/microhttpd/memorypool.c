@@ -434,28 +434,28 @@ MHD_pool_reallocate (struct MemoryPool *pool,
   mhd_assert (pool->size >= pool->end - pool->pos);
   mhd_assert (old != NULL || old_size == 0);
   mhd_assert (pool->size >= old_size);
-  mhd_assert (old == NULL || pool->memory <= (uint8_t*) old);
+  mhd_assert (old == NULL || pool->memory <= (uint8_t *) old);
   /* (old == NULL || pool->memory + pool->size >= (uint8_t*) old + old_size) */
   mhd_assert (old == NULL || \
               (pool->size - _MHD_RED_ZONE_SIZE) >= \
-              (((size_t) (((uint8_t*) old) - pool->memory)) + old_size));
+              (((size_t) (((uint8_t *) old) - pool->memory)) + old_size));
   /* Blocks "from the end" must not be reallocated */
   /* (old == NULL || old_size == 0 || pool->memory + pool->pos > (uint8_t*) old) */
   mhd_assert (old == NULL || old_size == 0 || \
-              pool->pos > (size_t) ((uint8_t*) old - pool->memory));
+              pool->pos > (size_t) ((uint8_t *) old - pool->memory));
   mhd_assert (old == NULL || old_size == 0 || \
-              (size_t) (((uint8_t*) old) - pool->memory) + old_size <= \
+              (size_t) (((uint8_t *) old) - pool->memory) + old_size <= \
               pool->end - _MHD_RED_ZONE_SIZE);
 
   if (NULL != old)
   {   /* Have previously allocated data */
-    const size_t old_offset = (uint8_t*) old - pool->memory;
+    const size_t old_offset = (uint8_t *) old - pool->memory;
     const bool shrinking = (old_size > new_size);
     /* Try resizing in-place */
     if (shrinking)
     {     /* Shrinking in-place, zero-out freed part */
-      memset ((uint8_t*) old + new_size, 0, old_size - new_size);
-      _MHD_POISON_MEMORY ((uint8_t*) old + new_size, old_size - new_size);
+      memset ((uint8_t *) old + new_size, 0, old_size - new_size);
+      _MHD_POISON_MEMORY ((uint8_t *) old + new_size, old_size - new_size);
     }
     if (pool->pos ==
         ROUND_TO_ALIGN_PLUS_RED_ZONE (old_offset + old_size))
@@ -523,11 +523,11 @@ MHD_pool_reset (struct MemoryPool *pool,
   mhd_assert (copy_bytes <= new_size);
   mhd_assert (copy_bytes <= pool->size);
   mhd_assert (keep != NULL || copy_bytes == 0);
-  mhd_assert (keep == NULL || pool->memory <= (uint8_t*) keep);
+  mhd_assert (keep == NULL || pool->memory <= (uint8_t *) keep);
   /* (keep == NULL || pool->memory + pool->size >= (uint8_t*) keep + copy_bytes) */
   mhd_assert (keep == NULL || \
               pool->size >= \
-              ((size_t) ((uint8_t*) keep - pool->memory)) + copy_bytes);
+              ((size_t) ((uint8_t *) keep - pool->memory)) + copy_bytes);
   _MHD_UNPOISON_MEMORY (pool->memory, new_size);
   if ( (NULL != keep) &&
        (keep != pool->memory) )
@@ -575,7 +575,7 @@ MHD_pool_reset (struct MemoryPool *pool,
   }
   pool->pos = ROUND_TO_ALIGN_PLUS_RED_ZONE (new_size);
   pool->end = pool->size;
-  _MHD_POISON_MEMORY (((uint8_t*) pool->memory) + new_size, \
+  _MHD_POISON_MEMORY (((uint8_t *) pool->memory) + new_size, \
                       pool->size - new_size);
   return pool->memory;
 }
