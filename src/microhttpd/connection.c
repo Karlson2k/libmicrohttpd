@@ -4818,7 +4818,7 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     return (const union MHD_ConnectionInfo *) &connection->suspended_dummy;
   case MHD_CONNECTION_INFO_CONNECTION_TIMEOUT:
     connection->connection_timeout_dummy =
-      (unsigned int) connection->connection_timeout_ms * 1000;
+      (unsigned int) connection->connection_timeout_ms / 1000;
     return (const union MHD_ConnectionInfo *) &connection->
            connection_timeout_dummy;
   case MHD_CONNECTION_INFO_REQUEST_HEADER_SIZE:
