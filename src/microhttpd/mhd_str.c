@@ -384,10 +384,7 @@ MHD_str_equal_caseless_ (const char *str1,
   {
     const char c1 = *str1;
     const char c2 = *str2;
-    if ( (c1 == c2) ||
-         (isasciiupper (c1) ?
-          ((c1 - 'A' + 'a') == c2) :
-          (isasciiupper (c2) && (c1 == (c2 - 'A' + 'a')))) )
+    if (charsequalcaseless (c1, c2))
     {
       str1++;
       str2++;
