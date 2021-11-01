@@ -156,9 +156,9 @@ MHD_str_has_token_caseless_ (const char *str,
  * Remove case-insensitive @a token from the @a str and put result
  * to the output @a buf.
  *
- * Token could be surrounded by spaces and tabs and delimited by comma.
- * The token match succeed if substring between start, end (of string) or
- * comma contains only case-insensitive token and optional spaces and tabs.
+ * Tokens in @a str could be surrounded by spaces and tabs and delimited by
+ * comma. The token match succeed if substring between start, end (of string)
+ * or comma contains only case-insensitive token and optional spaces and tabs.
  * The quoted strings and comments are not supported by this function.
  *
  * The output string is normalised: empty tokens and repeated whitespaces
