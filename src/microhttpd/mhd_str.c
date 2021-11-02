@@ -588,8 +588,9 @@ MHD_str_remove_token_caseless_ (const char *str,
     if ((size_t) (s1 - str) >= str_len)
       break; /* Nothing to copy, end of the input string */
 
-    cur_token = s1; /* the first char of input token or
-                       the char after the input buffer */
+    /* 's1' points to the first char of token in the input string */
+
+    cur_token = s1; /* the first char of input token */
 
     /* Check the token with case-insensetive match */
     t_pos = 0;
@@ -599,6 +600,7 @@ MHD_str_remove_token_caseless_ (const char *str,
       s1++;
       t_pos++;
     }
+    /* s1 may point just beyond the end of the input string */
     if ( (token_len == t_pos) && (0 != token_len) )
     {
       /* 'token' matched, check that current input token does not have
@@ -616,10 +618,11 @@ MHD_str_remove_token_caseless_ (const char *str,
       }
     }
 
-    /* 's1' points to some non-whitespace char in the token in the input
-     * string, to the ',', or just beyond the end of the input string */
-    /* The current token in the input string does not match excluded token,
-     * it must be copied to the output string */
+    /* 's1' points to first non-whitespace char, to some char after
+     * first non-whitespace char in the token in the input string, to
+     * the ',', or just beyond the end of the input string */
+    /* The current token in the input string does not match the token
+     * to exclude, it must be copied to the output string */
     /* the current token size excluding leading whitespaces and current char */
     copy_size = (size_t) (s1 - cur_token);
     if (buf == s2)
@@ -649,7 +652,10 @@ MHD_str_remove_token_caseless_ (const char *str,
 
     while ( ((size_t) (s1 - str) < str_len) && (',' != *s1))
     {
-      /* 's1' points to some non-whitespace char in the token */
+      /* 's1' points to first non-whitespace char, to some char after
+       * first non-whitespace char in the token in the input string */
+      /* Copy all non-whitespace chars from the current token in
+       * the input string */
       while ( ((size_t) (s1 - str) < str_len) &&
               (',' != *s1) && (' ' != *s1) && ('\t' != *s1) )
       {
@@ -668,7 +674,8 @@ MHD_str_remove_token_caseless_ (const char *str,
         s1++;
 
       /* 's1' points to the first non-whitespace char in the input string
-       * after whitespace chars or just beyond the end of the input string */
+       * after whitespace chars, to the ',', or just beyond the end of
+       * the input string */
       if (((size_t) (s1 - str) < str_len) && (',' != *s1))
       { /* Not the end of the current token */
         if (buf + *buf_size <= s2) /* '<= s2' equals '< s2 + 1' */
