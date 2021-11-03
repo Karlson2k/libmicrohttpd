@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2017 Karlson2k (Evgeny Grin)
+  Copyright (C) 2017-2021 Karlson2k (Evgeny Grin)
 
   This test tool is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
 
 /**
  * @file microhttpd/test_str_token.c
- * @brief  Unit tests for some mhd_str functions
+ * @brief  Unit tests for MHD_str_remove_token_caseless_() function
  * @author Karlson2k (Evgeny Grin)
  */
 
