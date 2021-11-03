@@ -193,7 +193,7 @@ MHD_str_remove_token_caseless_ (const char *str,
  * Perform in-place case-insensitive removal of @a tokens from the @a str.
  *
  * Token could be surrounded by spaces and tabs and delimited by comma.
- * The token match succeed if substring between start, end (of string) or
+ * The token match succeed if substring between start, end (of the string), or
  * comma contains only case-insensitive token and optional spaces and tabs.
  * The quoted strings and comments are not supported by this function.
  *
@@ -201,7 +201,7 @@ MHD_str_remove_token_caseless_ (const char *str,
  * are removed, no whitespaces before commas, exactly one space is used after
  * each comma. The string is updated in-place.
  *
- * Behavior is undefined is input string in not normalised.
+ * Behavior is undefined is the input string in not normalised.
  *
  * @param[in,out] str the string to update
  * @param[in,out] str_len the length of the @a str, not including optional

@@ -697,7 +697,7 @@ MHD_str_remove_token_caseless_ (const char *str,
  * Perform in-place case-insensitive removal of @a tokens from the @a str.
  *
  * Token could be surrounded by spaces and tabs and delimited by comma.
- * The token match succeed if substring between start, end (of string) or
+ * The token match succeed if substring between start, end (of the string), or
  * comma contains only case-insensitive token and optional spaces and tabs.
  * The quoted strings and comments are not supported by this function.
  *
@@ -705,7 +705,7 @@ MHD_str_remove_token_caseless_ (const char *str,
  * are removed, no whitespaces before commas, exactly one space is used after
  * each comma. The string is updated in-place.
  *
- * Behavior is undefined is input string in not normalised.
+ * Behavior is undefined is the input string in not normalised.
  *
  * @param[in,out] str the string to update
  * @param[in,out] str_len the length of the @a str, not including optional
@@ -753,13 +753,13 @@ MHD_str_remove_tokens_caseless_ (char *str,
         pt++;
       } while (pt < tokens_len &&
                (' ' != t[pt] && '\t' != t[pt] && ',' != t[pt]));
-      /* Found end of token string, space, tab, or comma */
+      /* Found end of the token string, space, tab, or comma */
       tkn_len = pt - (size_t) (tkn - t);
 
       /* Skip all spaces and tabs */
       while (pt < tokens_len && (' ' == t[pt] || '\t' == t[pt]))
         pt++;
-      /* Found end of token string or non-whitespace char */
+      /* Found end of the token string or non-whitespace char */
     } while(pt < tokens_len && ',' != t[pt]);
 
     /* 'tkn' is the input token with 'tkn_len' chars */
@@ -779,8 +779,8 @@ MHD_str_remove_tokens_caseless_ (char *str,
      * It's know that 'tkn' is not equal to the 'str' (was checked previously).
      * As 'str' is normalized when 'tkn' is not equal to the 'str'
      * it is required that 'str' to be at least 3 chars larger then 'tkn'
-     * (the comma, the space and at least one additional character)
-     * to remove 'tkn' from the 'str'. */
+     * (the comma, the space and at least one additional character for the next
+     * token) to remove 'tkn' from the 'str'. */
     if (*str_len > tkn_len + 2)
     { /* Remove 'tkn' from the input string */
       size_t pr;    /**< the 'read' position in the @a str */
