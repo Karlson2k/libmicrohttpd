@@ -1203,25 +1203,27 @@ MHD_uint32_to_strx (uint32_t val,
                     char *buf,
                     size_t buf_size)
 {
-  char *chr; /**< pointer to the current printed digit */
-  int digit_pos = 7; /** zero-based, digit position in @a 'val' */
+  size_t o_pos = 0; /**< position of the output character */
+  int digit_pos = 8; /** zero-based, digit position in @a 'val' */
   int digit;
 
-  chr = buf;
-  digit = (int) (((val) >> (4 * digit_pos)) & 0xf);
-
   /* Skip leading zeros */
-  while ((0 == digit) && (0 != digit_pos))
-    digit = (int) (((val) >> (4 * --digit_pos)) & 0xf);
-
-  while (0 != buf_size)
+  do
   {
-    *chr = (digit <= 9) ? ('0' + (char) digit) : ('A' + (char) digit - 10);
-    chr++;
-    buf_size--;
+    digit_pos--;
+    digit = (int) (val >> 28);
+    val <<= 4;
+  } while ((0 == digit) && (0 != digit_pos));
+
+  while (o_pos < buf_size)
+  {
+    buf[o_pos++] = (digit <= 9) ? ('0' + (char) digit) :
+                   ('A' + (char) digit - 10);
     if (0 == digit_pos)
-      return (size_t) (chr - buf);
-    digit = (int) (((val) >> (4 * --digit_pos)) & 0xf);
+      return o_pos;
+    digit_pos--;
+    digit = (int) (val >> 28);
+    val <<= 4;
   }
   return 0; /* The buffer is too small */
 }
