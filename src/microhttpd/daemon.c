@@ -3126,14 +3126,13 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
 
 
 /**
- * Suspend handling of network data for a given connection.  This can
- * be used to dequeue a connection from MHD's event loop (external
- * select, internal select or thread pool; not applicable to
- * thread-per-connection!) for a while.
+ * Suspend handling of network data for a given connection.
+ * This can be used to dequeue a connection from MHD's event loop
+ * (not applicable to thread-per-connection!) for a while.
  *
- * If you use this API in conjunction with a internal select or a
- * thread pool, you must set the option #MHD_USE_ITC to
- * ensure that a resumed connection is immediately processed by MHD.
+ * If you use this API in conjunction with an "internal" socket polling,
+ * you must set the option #MHD_USE_ITC to ensure that a resumed
+ * connection is immediately processed by MHD.
  *
  * Suspended connections continue to count against the total number of
  * connections allowed (per daemon, as well as per IP, if such limits
@@ -3155,6 +3154,8 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
  * daemon's select()/poll()/etc.
  *
  * @param connection the connection to suspend
+ *
+ * @sa #MHD_AccessHandlerCallback
  */
 void
 MHD_suspend_connection (struct MHD_Connection *connection)

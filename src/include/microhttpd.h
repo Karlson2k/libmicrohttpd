@@ -2349,12 +2349,27 @@ typedef enum MHD_Result
 
 
 /**
- * A client has requested the given url using the given method
- * (#MHD_HTTP_METHOD_GET, #MHD_HTTP_METHOD_PUT,
- * #MHD_HTTP_METHOD_DELETE, #MHD_HTTP_METHOD_POST, etc).  The callback
- * must call MHD callbacks to provide content to give back to the
- * client and return an HTTP status code (i.e. #MHD_HTTP_OK,
- * #MHD_HTTP_NOT_FOUND, etc.).
+ * A client has requested the given @a url using the given @a method
+ * (#MHD_HTTP_METHOD_GET, #MHD_HTTP_METHOD_PUT, #MHD_HTTP_METHOD_DELETE,
+ * #MHD_HTTP_METHOD_POST, etc).
+ *
+ * The callback must call MHD function MHD_queue_response() to provide content
+ * to give back to the client and return an HTTP status code
+ * (i.e. #MHD_HTTP_OK, #MHD_HTTP_NOT_FOUND, etc.). The response can be created
+ * in this callback or prepared in advance.
+ * As soon as response is provided this callback will not be called anymore
+ * for the current request.
+ * Alternatively, callback may call MHD_suspend_connection() to temporarily
+ * suspend data processing for this connection.
+ * For each HTTP request this callback is called several times:
+ * * after request headers are fully received and decoded,
+ * * for each received part of request body (optional, if request has body),
+ * * when request is fully received.
+ * If response is provided before request is fully received, the rest
+ * of the request is discarded and connection is automatically closed
+ * after sending response.
+ * If the request is fully received, but response hasn't been provided and
+ * connection is not suspended, the callback can be called again immediately.
  *
  * @param cls argument given together with the function
  *        pointer when the handler was registered with MHD
@@ -2386,6 +2401,8 @@ typedef enum MHD_Result
  * @return #MHD_YES if the connection was handled successfully,
  *         #MHD_NO if the socket must be closed due to a serious
  *         error while handling the request
+ *
+ * @sa #MHD_queue_response()
  */
 typedef enum MHD_Result
 (*MHD_AccessHandlerCallback)(void *cls,
@@ -3162,12 +3179,18 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
  * Queue a response to be transmitted to the client (as soon as
  * possible but after #MHD_AccessHandlerCallback returns).
  *
+ * For any active connection this function must be called
+ * only by #MHD_AccessHandlerCallback callback.
+ * For suspended connection this function can be called at any moment. Response
+ * will be sent as soon as connection is resumed.
+ *
  * @param connection the connection identifying the client
  * @param status_code HTTP status code (i.e. #MHD_HTTP_OK)
  * @param response response to transmit
  * @return #MHD_NO on error (i.e. reply already sent),
  *         #MHD_YES on success or if message has been queued
  * @ingroup response
+ * @sa #MHD_AccessHandlerCallback
  */
 _MHD_EXTERN enum MHD_Result
 MHD_queue_response (struct MHD_Connection *connection,
@@ -3176,8 +3199,9 @@ MHD_queue_response (struct MHD_Connection *connection,
 
 
 /**
- * Suspend handling of network data for a given connection.  This can
- * be used to dequeue a connection from MHD's event loop for a while.
+ * Suspend handling of network data for a given connection.
+ * This can be used to dequeue a connection from MHD's event loop
+ * (not applicable to thread-per-connection!) for a while.
  *
  * If you use this API in conjunction with an "internal" socket polling,
  * you must set the option #MHD_USE_ITC to ensure that a resumed
@@ -3199,6 +3223,8 @@ MHD_queue_response (struct MHD_Connection *connection,
  * resume all connections before stopping the daemon.
  *
  * @param connection the connection to suspend
+ *
+ * @sa #MHD_AccessHandlerCallback
  */
 _MHD_EXTERN void
 MHD_suspend_connection (struct MHD_Connection *connection);

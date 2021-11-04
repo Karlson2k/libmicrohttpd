@@ -4920,12 +4920,18 @@ MHD_set_connection_option (struct MHD_Connection *connection,
  * Queue a response to be transmitted to the client (as soon as
  * possible but after #MHD_AccessHandlerCallback returns).
  *
+ * For any active connection this function must be called
+ * only by #MHD_AccessHandlerCallback callback.
+ * For suspended connection this function can be called at any moment. Response
+ * will be sent as soon as connection is resumed.
+ *
  * @param connection the connection identifying the client
  * @param status_code HTTP status code (i.e. #MHD_HTTP_OK)
  * @param response response to transmit
  * @return #MHD_NO on error (i.e. reply already sent),
  *         #MHD_YES on success or if message has been queued
  * @ingroup response
+ * @sa #MHD_AccessHandlerCallback
  */
 enum MHD_Result
 MHD_queue_response (struct MHD_Connection *connection,
