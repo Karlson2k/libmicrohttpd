@@ -383,6 +383,9 @@ ahcCheck (void *cls,
   enum MHD_Result ret;
   struct ahc_cls_type *const param = (struct ahc_cls_type *) cls;
 
+  if (NULL == param)
+    mhdErrorExitDesc ("cls parameter is NULL");
+
   if (0 != strcmp (version, MHD_HTTP_VERSION_1_1))
     mhdErrorExitDesc ("Unexpected HTTP version");
 
@@ -397,9 +400,6 @@ ahcCheck (void *cls,
 
   if (0 != *upload_data_size)
     mhdErrorExitDesc ("'*upload_data_size' value is not zero");
-
-  if (NULL == param)
-    mhdErrorExitDesc ("cls parameter is NULL");
 
   if (0 != strcmp (param->rq_method, method))
     mhdErrorExitDesc ("Unexpected request method");
