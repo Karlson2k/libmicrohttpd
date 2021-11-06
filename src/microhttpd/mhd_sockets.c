@@ -323,17 +323,27 @@ MHD_W32_socket_pair_ (SOCKET sockets_pair[2], int non_blk)
       if ( (0 == getsockname (client_s,
                               (struct sockaddr*) &client_addr,
                               &addr_len)) &&
-           (accepted_from_addr.sin_family == client_addr.sin_family) &&
            (accepted_from_addr.sin_port == client_addr.sin_port) &&
            (accepted_from_addr.sin_addr.s_addr ==
             client_addr.sin_addr.s_addr) &&
+           (accepted_from_addr.sin_family == client_addr.sin_family) &&
            ( (0 != non_blk) ?
              (0 == ioctlsocket (server_s,
                                 (int) FIONBIO,
                                 &on_val)) :
              (0 == ioctlsocket (client_s,
                                 (int) FIONBIO,
-                                &off_val)) ) )
+                                &off_val)) ) &&
+           (0 == setsockopt (server_s,
+                             IPPROTO_TCP,
+                             TCP_NODELAY,
+                             (const void *) (&on_val),
+                             sizeof (on_val))) &&
+           (0 == setsockopt (client_s,
+                             IPPROTO_TCP,
+                             TCP_NODELAY,
+                             (const void *) (&on_val),
+                             sizeof (on_val))) )
       {
         closesocket (listen_s);
         sockets_pair[0] = server_s;
