@@ -489,7 +489,7 @@ ahcCheck (void *cls,
     mhdErrorExitDesc ("Wrong number of headers in the request");
 
   response = MHD_create_response_from_buffer (param->rp_data_size,
-                                              (void*) param->rp_data,
+                                              (void *) param->rp_data,
                                               MHD_RESPMEM_MUST_COPY);
   if (NULL == response)
     mhdErrorExitDesc ("Failed to create response");
