@@ -393,7 +393,7 @@ ahcCheck (void *cls,
     mhdErrorExitDesc ("'upload_data' is not NULL");
 
   if (NULL == upload_data_size)
-    mhdErrorExitDesc ("'upload_data_size' pointer is not NULL");
+    mhdErrorExitDesc ("'upload_data_size' pointer is NULL");
 
   if (0 != *upload_data_size)
     mhdErrorExitDesc ("'*upload_data_size' value is not zero");
