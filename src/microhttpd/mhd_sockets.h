@@ -605,6 +605,21 @@ typedef int MHD_SCKT_SEND_SIZE_;
 #  else  /* ! ENETDOWN */
 #    define MHD_SCKT_ENETDOWN_    MHD_SCKT_MISSING_ERR_CODE_
 #  endif /* ! ENETDOWN */
+#  ifdef EALREADY
+#    define MHD_SCKT_EALREADY_    EALREADY
+#  else  /* ! EALREADY */
+#    define MHD_SCKT_EALREADY_    MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! EALREADY */
+#  ifdef EINPROGRESS
+#    define MHD_SCKT_EINPROGRESS_ EINPROGRESS
+#  else  /* ! EINPROGRESS */
+#    define MHD_SCKT_EINPROGRESS_ MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! EINPROGRESS */
+#  ifdef EISCONN
+#    define MHD_SCKT_EISCONN_     EISCONN
+#  else  /* ! EISCONN */
+#    define MHD_SCKT_EISCONN_     MHD_SCKT_MISSING_ERR_CODE_
+#  endif /* ! EISCONN */
 #elif defined(MHD_WINSOCK_SOCKETS)
 #  define MHD_SCKT_EAGAIN_        WSAEWOULDBLOCK
 #  define MHD_SCKT_EWOULDBLOCK_   WSAEWOULDBLOCK
@@ -627,6 +642,9 @@ typedef int MHD_SCKT_SEND_SIZE_;
 #  define MHD_SCKT_EOPNOTSUPP_    WSAEOPNOTSUPP
 #  define MHD_SCKT_EACCESS_       WSAEACCES
 #  define MHD_SCKT_ENETDOWN_      WSAENETDOWN
+#  define MHD_SCKT_EALREADY_      WSAEALREADY
+#  define MHD_SCKT_EINPROGRESS_   WSAEACCES
+#  define MHD_SCKT_EISCONN_       WSAEISCONN
 #endif
 
 /**
