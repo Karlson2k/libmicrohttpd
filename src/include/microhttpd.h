@@ -2354,22 +2354,29 @@ typedef enum MHD_Result
  * #MHD_HTTP_METHOD_POST, etc).
  *
  * The callback must call MHD function MHD_queue_response() to provide content
- * to give back to the client and return an HTTP status code
- * (i.e. #MHD_HTTP_OK, #MHD_HTTP_NOT_FOUND, etc.). The response can be created
+ * to give back to the client and return an HTTP status code (i.e.
+ * #MHD_HTTP_OK, #MHD_HTTP_NOT_FOUND, etc.). The response can be created
  * in this callback or prepared in advance.
- * As soon as response is provided this callback will not be called anymore
- * for the current request.
  * Alternatively, callback may call MHD_suspend_connection() to temporarily
  * suspend data processing for this connection.
+ *
+ * As soon as response is provided this callback will not be called anymore
+ * for the current request.
+ *
  * For each HTTP request this callback is called several times:
  * * after request headers are fully received and decoded,
  * * for each received part of request body (optional, if request has body),
  * * when request is fully received.
+ *
  * If response is provided before request is fully received, the rest
  * of the request is discarded and connection is automatically closed
  * after sending response.
+ *
  * If the request is fully received, but response hasn't been provided and
  * connection is not suspended, the callback can be called again immediately.
+ *
+ * The response cannot be queued when this callback is called to process
+ * the client upload data (when @a upload_data is not NULL).
  *
  * @param cls argument given together with the function
  *        pointer when the handler was registered with MHD
