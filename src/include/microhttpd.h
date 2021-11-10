@@ -1562,7 +1562,7 @@ enum MHD_OPTION
    * This option should be followed by TWO pointers.  First a pointer
    * to a function of type #MHD_RequestCompletedCallback and second a
    * pointer to a closure to pass to the request completed callback.
-   * The second pointer maybe NULL.
+   * The second pointer may be NULL.
    */
   MHD_OPTION_NOTIFY_COMPLETED = 4,
 
@@ -1817,7 +1817,7 @@ enum MHD_OPTION
    * This option should be followed by TWO pointers.  First a pointer
    * to a function of type #MHD_NotifyConnectionCallback and second a
    * pointer to a closure to pass to the request completed callback.
-   * The second pointer maybe NULL.
+   * The second pointer may be NULL.
    */
   MHD_OPTION_NOTIFY_CONNECTION = 27,
 
@@ -2583,7 +2583,7 @@ typedef void
 
 /**
  * Iterator over key-value pairs where the value
- * maybe made available in increments and/or may
+ * may be made available in increments and/or may
  * not be zero-terminated.  Used for processing
  * POST data.
  *
@@ -3004,7 +3004,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
  * @param connection connection to get values from
  * @param kind types of values to iterate over, can be a bitmask
  * @param iterator callback to call on each header;
- *        maybe NULL (then just count headers)
+ *        may be NULL (then just count headers)
  * @param iterator_cls extra argument to @a iterator
  * @return number of entries iterated over,
  *         -1 if connection is NULL.
@@ -3023,7 +3023,7 @@ MHD_get_connection_values (struct MHD_Connection *connection,
  * @param connection connection to get values from
  * @param kind types of values to iterate over, can be a bitmask
  * @param iterator callback to call on each header;
- *        maybe NULL (then just count headers)
+ *        may be NULL (then just count headers)
  * @param iterator_cls extra argument to @a iterator
  * @return number of entries iterated over,
  *         -1 if connection is NULL.
@@ -3383,7 +3383,7 @@ MHD_create_response_from_callback (uint64_t size,
  * @param data the data itself
  * @param must_free libmicrohttpd should free data when done
  * @param must_copy libmicrohttpd must make a copy of @a data
- *        right away, the data maybe released anytime after
+ *        right away, the data may be released anytime after
  *        this call returns
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @deprecated use #MHD_create_response_from_buffer instead
@@ -3931,7 +3931,7 @@ MHD_del_response_header (struct MHD_Response *response,
  *
  * @param response response to query
  * @param iterator callback to call on each header;
- *        maybe NULL (then just count headers)
+ *        may be NULL (then just count headers)
  * @param iterator_cls extra argument to @a iterator
  * @return number of entries iterated over
  * @ingroup response
