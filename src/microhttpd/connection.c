@@ -3646,11 +3646,17 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
       return;     /* No new data to process. */
     if (MHD_ERR_CONNRESET_ == bytes_read)
     {
-      CONNECTION_CLOSE_ERROR (connection,
-                              (MHD_CONNECTION_INIT == connection->state) ?
-                              NULL :
-                              _ (
-                                "Socket disconnected while reading request."));
+      if ( (MHD_CONNECTION_INIT < connection->state) &&
+           (MHD_CONNECTION_FULL_REQ_RECEIVED > connection->state) )
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (connection->daemon,
+                  _ ("Socket has been disconnected when reading request.\n"));
+#endif
+        connection->discard_request = true;
+      }
+      MHD_connection_close_ (connection,
+                             MHD_REQUEST_TERMINATED_READ_ERROR);
       return;
     }
 
@@ -3669,8 +3675,26 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
   if (0 == bytes_read)
   {   /* Remote side closed connection. */
     connection->read_closed = true;
-    MHD_connection_close_ (connection,
-                           MHD_REQUEST_TERMINATED_CLIENT_ABORT);
+    if ( (MHD_CONNECTION_INIT < connection->state) &&
+         (MHD_CONNECTION_FULL_REQ_RECEIVED > connection->state) )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+                _ ("Connection was closed by remote side with incomplete "
+                   "request.\n"));
+#endif
+      connection->discard_request = true;
+      MHD_connection_close_ (connection,
+                             MHD_REQUEST_TERMINATED_CLIENT_ABORT);
+    }
+    else if (MHD_CONNECTION_INIT == connection->state)
+      /* This termination code cannot be reported to the application
+       * because application has not been informed yet about this request */
+      MHD_connection_close_ (connection,
+                             MHD_REQUEST_TERMINATED_COMPLETED_OK);
+    else
+      MHD_connection_close_ (connection,
+                             MHD_REQUEST_TERMINATED_WITH_ERROR);
     return;
   }
   connection->read_buffer_offset += bytes_read;

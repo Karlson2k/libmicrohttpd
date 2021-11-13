@@ -2004,8 +2004,9 @@ enum MHD_RequestTerminationCode
 
   /**
    * Error handling the connection (resources
-   * exhausted, other side closed connection,
-   * application error accepting request, etc.)
+   * exhausted, application error accepting request,
+   * decrypt error (for HTTPS), connection died when
+   * sending the response etc.)
    * @ingroup request
    */
   MHD_REQUEST_TERMINATED_WITH_ERROR = 1,
@@ -2026,19 +2027,18 @@ enum MHD_RequestTerminationCode
   MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3,
 
   /**
-   * We tried to read additional data, but the other side closed the
-   * connection.  This error is similar to
-   * #MHD_REQUEST_TERMINATED_WITH_ERROR, but specific to the case where
-   * the connection died because the other side did not send expected
-   * data.
+   * We tried to read additional data, but the connection became broken or
+   * the other side hard closed the connection.
+   * This error is similar to #MHD_REQUEST_TERMINATED_WITH_ERROR, but
+   * specific to the case where the connection died before request completely
+   * received.
    * @ingroup request
    */
   MHD_REQUEST_TERMINATED_READ_ERROR = 4,
 
   /**
    * The client terminated the connection by closing the socket
-   * for writing (TCP half-closed); MHD aborted sending the
-   * response according to RFC 2616, section 8.1.4.
+   * for writing (TCP half-closed) while still sending request.
    * @ingroup request
    */
   MHD_REQUEST_TERMINATED_CLIENT_ABORT = 5
