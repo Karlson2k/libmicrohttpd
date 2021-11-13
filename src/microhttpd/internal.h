@@ -1230,7 +1230,7 @@ struct MHD_Connection
    * request is incompletely read and it is unclear where is the initial
    * byte of the next request.
    */
-  bool early_response;
+  bool discard_request;
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   /**
