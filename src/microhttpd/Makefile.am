@@ -167,6 +167,12 @@ check_PROGRAMS = \
   test_daemon \
   test_response_entries \
   test_postprocessor_md \
+  test_client_put_shutdown \
+  test_client_put_close \
+  test_client_put_hard_close \
+  test_client_put_steps_shutdown \
+  test_client_put_steps_close \
+  test_client_put_steps_hard_close \
   test_options
 
 if HAVE_POSIX_THREADS
@@ -389,3 +395,33 @@ test_options_SOURCES = \
   test_options.c
 test_options_LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la
+
+test_client_put_shutdown_SOURCES = \
+  test_client_put_stop.c
+test_client_put_shutdown_LDADD = \
+  libmicrohttpd.la
+
+test_client_put_close_SOURCES = \
+  test_client_put_stop.c
+test_client_put_close_LDADD = \
+  libmicrohttpd.la
+
+test_client_put_hard_close_SOURCES = \
+  test_client_put_stop.c
+test_client_put_hard_close_LDADD = \
+  libmicrohttpd.la
+
+test_client_put_steps_shutdown_SOURCES = \
+  test_client_put_stop.c
+test_client_put_steps_shutdown_LDADD = \
+  libmicrohttpd.la
+
+test_client_put_steps_close_SOURCES = \
+  test_client_put_stop.c
+test_client_put_steps_close_LDADD = \
+  libmicrohttpd.la
+
+test_client_put_steps_hard_close_SOURCES = \
+  test_client_put_stop.c
+test_client_put_steps_hard_close_LDADD = \
+  libmicrohttpd.la
