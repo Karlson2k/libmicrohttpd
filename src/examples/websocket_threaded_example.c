@@ -524,7 +524,7 @@ make_blocking (MHD_socket fd)
     if (-1 == fcntl (fd, F_SETFL, flags & ~O_NONBLOCK))
       abort ();
 #elif defined(MHD_WINSOCK_SOCKETS)
-  unsigned long flags = 1;
+  unsigned long flags = 0;
 
   ioctlsocket (fd, (int) FIONBIO, &flags);
 #endif /* MHD_WINSOCK_SOCKETS */
