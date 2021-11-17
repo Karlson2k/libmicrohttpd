@@ -286,15 +286,16 @@ make_blocking (MHD_socket fd)
 
   flags = fcntl (fd, F_GETFL);
   if (-1 == flags)
-    return;
+    abort ();
   if ((flags & ~O_NONBLOCK) != flags)
     if (-1 == fcntl (fd, F_SETFL, flags & ~O_NONBLOCK))
       abort ();
-#else
+#else  /* _WIN32 */
   unsigned long flags = 0;
 
-  ioctlsocket (fd, FIONBIO, &flags);
-#endif
+  if (0 != ioctlsocket (fd, (int) FIONBIO, &flags))
+    abort ();
+#endif /* _WIN32 */
 }
 
 
