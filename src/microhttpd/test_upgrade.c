@@ -456,7 +456,7 @@ notify_completed_cb (void *cls,
                      void **con_cls,
                      enum MHD_RequestTerminationCode toe)
 {
-  pthread_t*ppth = *con_cls;
+  pthread_t *ppth = *con_cls;
 
   (void) cls;
   (void) connection;  /* Unused. Silent compiler warning. */
@@ -464,7 +464,7 @@ notify_completed_cb (void *cls,
        (toe != MHD_REQUEST_TERMINATED_CLIENT_ABORT) &&
        (toe != MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN) )
     abort ();
-  if (! pthread_equal (**((pthread_t**) con_cls),
+  if (! pthread_equal (**((pthread_t **) con_cls),
                        pthread_self ()))
     abort ();
   if (NULL != ppth)
@@ -864,7 +864,7 @@ ahc_upgrade (void *cls,
 
   if (NULL == *con_cls)
     abort ();
-  if (! pthread_equal (**((pthread_t**) con_cls), pthread_self ()))
+  if (! pthread_equal (**((pthread_t **) con_cls), pthread_self ()))
     abort ();
   resp = MHD_create_response_for_upgrade (&upgrade_cb,
                                           NULL);
