@@ -40,7 +40,6 @@
  * Change socket to blocking.
  *
  * @param fd the socket to manipulate
- * @return non-zero if succeeded, zero otherwise
  */
 static void
 make_blocking (MHD_socket fd)
