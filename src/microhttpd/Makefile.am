@@ -173,6 +173,12 @@ check_PROGRAMS = \
   test_client_put_steps_shutdown \
   test_client_put_steps_close \
   test_client_put_steps_hard_close \
+  test_client_put_chunked_shutdown \
+  test_client_put_chunked_close \
+  test_client_put_chunked_hard_close \
+  test_client_put_chunked_steps_shutdown \
+  test_client_put_chunked_steps_close \
+  test_client_put_chunked_steps_hard_close \
   test_options
 
 if HAVE_POSIX_THREADS
@@ -424,4 +430,34 @@ test_client_put_steps_close_LDADD = \
 test_client_put_steps_hard_close_SOURCES = \
   test_client_put_stop.c
 test_client_put_steps_hard_close_LDADD = \
+  libmicrohttpd.la
+
+test_client_put_chunked_shutdown_SOURCES = \
+  test_client_put_stop.c
+test_client_put_chunked_shutdown_LDADD = \
+  libmicrohttpd.la
+
+test_client_put_chunked_close_SOURCES = \
+  test_client_put_stop.c
+test_client_put_chunked_close_LDADD = \
+  libmicrohttpd.la
+
+test_client_put_chunked_hard_close_SOURCES = \
+  test_client_put_stop.c
+test_client_put_chunked_hard_close_LDADD = \
+  libmicrohttpd.la
+
+test_client_put_chunked_steps_shutdown_SOURCES = \
+  test_client_put_stop.c
+test_client_put_chunked_steps_shutdown_LDADD = \
+  libmicrohttpd.la
+
+test_client_put_chunked_steps_close_SOURCES = \
+  test_client_put_stop.c
+test_client_put_chunked_steps_close_LDADD = \
+  libmicrohttpd.la
+
+test_client_put_chunked_steps_hard_close_SOURCES = \
+  test_client_put_stop.c
+test_client_put_chunked_steps_hard_close_LDADD = \
   libmicrohttpd.la

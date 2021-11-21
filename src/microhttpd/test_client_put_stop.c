@@ -84,7 +84,7 @@
 
 
 /* Could be increased to facilitate debugging */
-#define TIMEOUTS_VAL 5000
+#define TIMEOUTS_VAL 5
 
 #define EXPECTED_URI_BASE_PATH  "/a"
 
@@ -308,7 +308,6 @@ _MHD_dumbClient_create (unsigned int port, const char *method, const char *url,
   size_t add_hdrs_size;
   size_t buf_alloc_size;
   char *send_buf;
-  int use_non_blk_sckt;
   mhd_assert (0 != port);
   mhd_assert (NULL != req_body || 0 == req_body);
   mhd_assert (0 == req_body || NULL != req_body);
@@ -454,8 +453,8 @@ _MHD_dumbClient_create (unsigned int port, const char *method, const char *url,
 
 
 void
-_MHD_dumbClient_send_limits (struct _MHD_dumbClient *clnt,
-                             size_t step_size, size_t max_total_send)
+_MHD_dumbClient_set_send_limits (struct _MHD_dumbClient *clnt,
+                                 size_t step_size, size_t max_total_send)
 {
   clnt->single_send_size = step_size;
   clnt->send_size_limit = max_total_send;
@@ -497,7 +496,7 @@ _MHD_dumbClient_start_connect (struct _MHD_dumbClient *clnt)
 
 /* internal */
 static void
-_MHD_dumbClient_start_connect_finish (struct _MHD_dumbClient *clnt)
+_MHD_dumbClient_connect_finish (struct _MHD_dumbClient *clnt)
 {
   int err = 0;
   socklen_t err_size = sizeof(err);
@@ -561,6 +560,13 @@ _MHD_dumbClient_recv_reply (struct _MHD_dumbClient *clnt)
 {
   (void) clnt;
   externalErrorExitDesc ("Not implemented for this test");
+}
+
+
+int
+_MHD_dumbClient_is_req_sent (struct _MHD_dumbClient *clnt)
+{
+  return DUMB_CLIENT_REQ_SENT <= clnt->stage;
 }
 
 
@@ -676,7 +682,7 @@ _MHD_dumbClient_process (struct _MHD_dumbClient *clnt)
       _MHD_dumbClient_connect_init (clnt);
       break;
     case DUMB_CLIENT_CONNECTING:
-      _MHD_dumbClient_start_connect_finish (clnt);
+      _MHD_dumbClient_connect_finish (clnt);
       break;
     case DUMB_CLIENT_CONNECTED:
     case DUMB_CLIENT_REQ_SENDING:
@@ -833,8 +839,8 @@ _MHD_dumbClient_close (struct _MHD_dumbClient *clnt)
 
 struct sckt_notif_cb_param
 {
-  volatile int num_started;
-  volatile int num_finished;
+  volatile unsigned int num_started;
+  volatile unsigned int num_finished;
 };
 
 void
@@ -923,17 +929,17 @@ check_uri_cb (void *cls,
               struct MHD_Connection *con)
 {
   struct check_uri_cls *param = (struct check_uri_cls *) cls;
-  (void) con;
+
+  if (NULL == con)
+    mhdErrorExitDesc ("The 'con' pointer is NULL");
 
   param->cb_called++;
 
   if (0 != strcmp (param->uri,
                    uri))
   {
-    fprintf (stderr,
-             "Wrong URI: `%s', line: %d\n",
-             uri, __LINE__);
-    exit (22);
+    fprintf (stderr, "Wrong URI: '%s'\n", uri);
+    mhdErrorExit ();
   }
   return NULL;
 }
@@ -941,11 +947,11 @@ check_uri_cb (void *cls,
 
 struct mhd_header_checker_param
 {
-  int found_header_host;
-  int found_header_ua;
-  int found_header_ct;
-  int found_header_cl;
-  int found_header_ce;
+  int found_header_host; /**< the number of 'Host' headers */
+  int found_header_ua;   /**< the number of 'User-Agent' headers */
+  int found_header_ct;   /**< the number of 'Content-Type' headers */
+  int found_header_cl;   /**< the number of 'Content-Length' headers */
+  int found_header_te;   /**< the number of 'Transfer-Encoding' headers */
 };
 
 enum MHD_Result
@@ -973,7 +979,7 @@ headerCheckerInterator (void *cls,
   {
     if ((strlen (REQ_HEADER_HOST_VALUE) == value_size) &&
         (0 == memcmp (value, REQ_HEADER_HOST_VALUE, value_size)))
-      param->found_header_host = 1;
+      param->found_header_host++;
     else
       fprintf (stderr, "Unexpected header value: '%.*s', expected: '%s'\n",
                (int) value_size, value, REQ_HEADER_HOST_VALUE);
@@ -983,7 +989,7 @@ headerCheckerInterator (void *cls,
   {
     if ((strlen (REQ_HEADER_UA_VALUE) == value_size) &&
         (0 == memcmp (value, REQ_HEADER_UA_VALUE, value_size)))
-      param->found_header_ua = 1;
+      param->found_header_ua++;
     else
       fprintf (stderr, "Unexpected header value: '%.*s', expected: '%s'\n",
                (int) value_size, value, REQ_HEADER_UA_VALUE);
@@ -993,7 +999,7 @@ headerCheckerInterator (void *cls,
   {
     if ((strlen (REQ_HEADER_CT_VALUE) == value_size) &&
         (0 == memcmp (value, REQ_HEADER_CT_VALUE, value_size)))
-      param->found_header_ct = 1;
+      param->found_header_ct++;
     else
       fprintf (stderr, "Unexpected header value: '%.*s', expected: '%s'\n",
                (int) value_size, value, REQ_HEADER_CT_VALUE);
@@ -1002,14 +1008,14 @@ headerCheckerInterator (void *cls,
            (0 == memcmp (key, MHD_HTTP_HEADER_CONTENT_LENGTH, key_size)))
   {
     /* do not check value of the header here for simplicity */
-    param->found_header_cl = 1;
+    param->found_header_cl++;
   }
-  else if ((strlen (MHD_HTTP_HEADER_CONTENT_ENCODING) == key_size) &&
-           (0 == memcmp (key, MHD_HTTP_HEADER_CONTENT_ENCODING, key_size)))
+  else if ((strlen (MHD_HTTP_HEADER_TRANSFER_ENCODING) == key_size) &&
+           (0 == memcmp (key, MHD_HTTP_HEADER_TRANSFER_ENCODING, key_size)))
   {
     if ((strlen ("chunked") == value_size) &&
         (0 == memcmp (value, "chunked", value_size)))
-      param->found_header_ce = 1;
+      param->found_header_te++;
     else
       fprintf (stderr, "Unexpected header value: '%.*s', expected: '%s'\n",
                (int) value_size, value, "chunked");
@@ -1022,7 +1028,6 @@ struct ahc_cls_type
 {
   const char *volatile rp_data;
   volatile size_t rp_data_size;
-  struct mhd_header_checker_param header_check_param;
   const char *volatile rq_method;
   const char *volatile rq_url;
   const char *volatile req_body;
@@ -1042,8 +1047,8 @@ ahcCheck (void *cls,
           void **con_cls)
 {
   static int marker;
-  struct MHD_Response *response;
   enum MHD_Result ret;
+  struct mhd_header_checker_param header_check_param;
   struct ahc_cls_type *const param = (struct ahc_cls_type *) cls;
 
   if (NULL == param)
@@ -1102,15 +1107,29 @@ ahcCheck (void *cls,
     return MHD_YES;
   }
 
+  memset (&header_check_param, 0, sizeof(header_check_param));
+  if (1 > MHD_get_connection_values_n (connection, MHD_HEADER_KIND,
+                                       &headerCheckerInterator,
+                                       &header_check_param))
+    mhdErrorExitDesc ("Wrong number of headers in the request");
+  if (1 != header_check_param.found_header_host)
+    mhdErrorExitDesc ("'Host' header has not been detected in request");
+  if (1 != header_check_param.found_header_ua)
+    mhdErrorExitDesc ("'User-Agent' header has not been detected in request");
+  if (1 != header_check_param.found_header_ct)
+    mhdErrorExitDesc ("'Content-Type' header has not been detected in request");
+  if (! upl_chunked && (1 != header_check_param.found_header_cl))
+    mhdErrorExitDesc ("'Content-Length' header has not been detected "
+                      "in request");
+  if (upl_chunked && (1 != header_check_param.found_header_te))
+    mhdErrorExitDesc ("'Transfer-Encoding' header has not been detected "
+                      "in request");
+
   if (NULL != upload_data)
     return MHD_YES; /* Full request has not been received so far */
 
 #if 0 /* Code unused in this test */
-  if (1 > MHD_get_connection_values_n (connection, MHD_HEADER_KIND,
-                                       &headerCheckerInterator,
-                                       &param->header_check_param))
-    mhdErrorExitDesc ("Wrong number of headers in the request");
-
+  struct MHD_Response *response;
   response = MHD_create_response_from_buffer (param->rp_data_size,
                                               (void *) param->rp_data,
                                               MHD_RESPMEM_MUST_COPY);
@@ -1239,16 +1258,20 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
       Sleep (1);
 #endif
     }
-    printf ("Calling MHD_run_from_select()...\n");
     if (MHD_YES != MHD_run_from_select (d, &rs, &ws, &es))
       mhdErrorExitDesc ("MHD_run_from_select() failed");
     if (! client_accepted)
       client_accepted = FD_ISSET (lstn_sk, &rs);
     if (NULL != clnt)
     {
-      printf ("_MHD_dumbClient_process_from_fdsets()...\n");
-      if (_MHD_dumbClient_process_from_fdsets (clnt, &rs, &ws, &es))
-        clnt = NULL;
+      /* Do not close the socket on client side until
+       * MHD is accepted and processed the socket. */
+      if (! _MHD_dumbClient_is_req_sent (clnt) ||
+          (client_accepted && ! FD_ISSET (lstn_sk, &rs)))
+      {
+        if (_MHD_dumbClient_process_from_fdsets (clnt, &rs, &ws, &es))
+          clnt = NULL;
+      }
     }
     now = time (NULL);
     /* Use double timeout value here so MHD would be able to catch timeout
@@ -1262,8 +1285,7 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
 /* Returns zero for successful response and non-zero for failed response */
 static int
 doClientQueryInThread (struct MHD_Daemon *d,
-                       struct simpleQueryParams *p,
-                       struct term_notif_cb_param *term_result)
+                       struct simpleQueryParams *p)
 {
   const union MHD_DaemonInfo *dinfo;
   struct _MHD_dumbClient *c;
@@ -1279,12 +1301,10 @@ doClientQueryInThread (struct MHD_Daemon *d,
   if (0 == p->queryPort)
     abort ();
 
-  term_result->term_reason = -1; /* To be updated by callback */
-
   c = _MHD_dumbClient_create (p->queryPort, p->method, p->queryPath,
                               p->headers, p->req_body, p->req_body_size,
                               p->chunked);
-  _MHD_dumbClient_send_limits (c, p->step_size, p->total_send_max);
+  _MHD_dumbClient_set_send_limits (c, p->step_size, p->total_send_max);
 
   /* 'internal' polling should not be used in this test */
   mhd_assert (use_external_poll);
@@ -1307,11 +1327,22 @@ printTestResults (FILE *stream,
                   struct simpleQueryParams *qParam,
                   struct ahc_cls_type *ahc_param,
                   struct check_uri_cls *uri_cb_param,
-                  struct term_notif_cb_param *term_result)
+                  struct term_notif_cb_param *term_result,
+                  struct sckt_notif_cb_param *sckt_result)
 {
+  if (stderr != stream)
+    fflush (stderr);
   fprintf (stream, " Request aborted at %u byte%s.",
            (unsigned int) qParam->total_send_max,
            1 == qParam->total_send_max ? "" : "s");
+  if ((1 == sckt_result->num_started) && (1 == sckt_result->num_finished))
+    fprintf (stream, " One socket has been accepted and then closed.");
+  else
+    fprintf (stream, " Sockets have been accepted %u time%s"
+             " and closed %u time%s.", sckt_result->num_started,
+             (1 == sckt_result->num_started) ? "" : "s",
+             sckt_result->num_finished,
+             (1 == sckt_result->num_finished) ? "" : "s");
   if (0 == uri_cb_param->cb_called)
     fprintf (stream, " URI callback has NOT been called.");
   else
@@ -1324,13 +1355,14 @@ printTestResults (FILE *stream,
     fprintf (stream, " Access handler callback has been called %u time%s.",
              ahc_param->cb_called,
              1 == ahc_param->cb_called ? "" : "s");
-  if (-1 == term_result->term_reason)
+  if (0 == term_result->num_called)
     fprintf (stream, " Final notification callback has NOT been called.");
   else
-    fprintf (stream, " Final notification callback has been called with "
-             "%s code.", term_reason_str (term_result->term_reason));
+    fprintf (stream, " Final notification callback has been called %u time%s "
+             "with %s code.", term_result->num_called,
+             (1 == term_result->num_called) ? "" : "s",
+             term_reason_str (term_result->term_reason));
   fprintf (stream, "\n");
-  fflush (stdout);
   fflush (stream);
 }
 
@@ -1340,7 +1372,8 @@ static int
 performTestQueries (struct MHD_Daemon *d, int d_port,
                     struct ahc_cls_type *ahc_param,
                     struct check_uri_cls *uri_cb_param,
-                    struct term_notif_cb_param *term_result)
+                    struct term_notif_cb_param *term_result,
+                    struct sckt_notif_cb_param *sckt_result)
 {
   struct simpleQueryParams qParam;
   int ret = 0;          /* Return value */
@@ -1366,8 +1399,6 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
   ahc_param->req_body = (const char *) qParam.req_body;
   ahc_param->req_body_size = qParam.req_body_size;
 
-  memset (&ahc_param->header_check_param, 0,
-          sizeof (ahc_param->header_check_param));
   do
   {
     struct _MHD_dumbClient *test_c;
@@ -1381,49 +1412,57 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
 
   for (limit_send_size = 1; limit_send_size < req_total_size; limit_send_size++)
   {
+    int test_succeed;
+    test_succeed = 0;
     qParam.total_send_max = limit_send_size;
+    /* To be updated by callbacks */
     ahc_param->cb_called = 0;
     uri_cb_param->cb_called = 0;
-    if (0 != doClientQueryInThread (d, &qParam, term_result))
-    {
+    term_result->num_called = 0;
+    term_result->term_reason = -1;
+    sckt_result->num_started = 0;
+    sckt_result->num_finished = 0;
+
+    if (0 != doClientQueryInThread (d, &qParam))
       fprintf (stderr, "FAILED: connection has NOT been closed by MHD.");
-      printTestResults (stderr,
-                        &qParam, ahc_param, uri_cb_param, term_result);
-      ret = 1;
-    }
     else
     {
       if ((-1 != term_result->term_reason) &&
           (MHD_REQUEST_TERMINATED_READ_ERROR != term_result->term_reason) &&
           (MHD_REQUEST_TERMINATED_CLIENT_ABORT != term_result->term_reason) )
-      {
         fprintf (stderr, "FAILED: Wrong termination code.");
-        printTestResults (stderr,
-                          &qParam, ahc_param, uri_cb_param, term_result);
-        ret = 1;
-      }
-      else if ((-1 == term_result->term_reason) &&
+      else if ((0 == term_result->num_called) &&
                ((0 != uri_cb_param->cb_called) || (0 != ahc_param->cb_called)))
-      {
         fprintf (stderr, "FAILED: Missing required call of final notification "
                  "callback.");
-        printTestResults (stderr,
-                          &qParam, ahc_param, uri_cb_param, term_result);
-        ret = 1;
-      }
       else if (1 < uri_cb_param->cb_called)
-      {
         fprintf (stderr, "FAILED: Too many URI callbacks.");
-        printTestResults (stderr,
-                          &qParam, ahc_param, uri_cb_param, term_result);
-        ret = 1;
-      }
-      else if (verbose)
-      {
-        printf ("SUCCEED:");
-        printTestResults (stdout,
-                          &qParam, ahc_param, uri_cb_param, term_result);
-      }
+      else if ((0 != ahc_param->cb_called) && (0 == uri_cb_param->cb_called))
+        fprintf (stderr, "FAILED: URI callback has NOT been called "
+                 "while Access Handler callback has been called.");
+      else if (1 < term_result->num_called)
+        fprintf (stderr, "FAILED: Too many final callbacks.");
+      else if (1 != sckt_result->num_started)
+        fprintf (stderr, "FAILED: Wrong number of sockets accepted.");
+      else if (1 != sckt_result->num_finished)
+        fprintf (stderr, "FAILED: Wrong number of sockets closed.");
+      else
+        test_succeed = 1;
+    }
+
+    if (! test_succeed)
+    {
+      ret = 1;
+      printTestResults (stderr,
+                        &qParam, ahc_param, uri_cb_param,
+                        term_result, sckt_result);
+    }
+    else if (verbose)
+    {
+      printf ("SUCCEED:");
+      printTestResults (stdout,
+                        &qParam, ahc_param, uri_cb_param,
+                        term_result, sckt_result);
     }
   }
 
@@ -1431,6 +1470,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
   free (uri_cb_param);
   free (ahc_param);
   free (term_result);
+  free (sckt_result);
 
   return ret;
 }
@@ -1469,7 +1509,8 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                     enum testMhdPollType pollType, int *pport,
                     struct ahc_cls_type **ahc_param,
                     struct check_uri_cls **uri_cb_param,
-                    struct term_notif_cb_param **term_result)
+                    struct term_notif_cb_param **term_result,
+                    struct sckt_notif_cb_param **sckt_result)
 {
   struct MHD_Daemon *d;
   const union MHD_DaemonInfo *dinfo;
@@ -1487,6 +1528,10 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
   *term_result =
     (struct term_notif_cb_param *) malloc (sizeof(struct term_notif_cb_param));
   if (NULL == *term_result)
+    externalErrorExit ();
+  *sckt_result =
+    (struct sckt_notif_cb_param *) malloc (sizeof(struct sckt_notif_cb_param));
+  if (NULL == *sckt_result)
     externalErrorExit ();
 
   if ( (0 == *pport) &&
@@ -1515,7 +1560,8 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           MHD_OPTION_URI_LOG_CALLBACK, &check_uri_cb,
                           *uri_cb_param,
                           MHD_OPTION_NOTIFY_COMPLETED, &term_cb, *term_result,
-                          MHD_OPTION_NOTIFY_CONNECTION, &socket_cb, NULL,
+                          MHD_OPTION_NOTIFY_CONNECTION, &socket_cb,
+                          *sckt_result,
                           MHD_OPTION_CONNECTION_TIMEOUT,
                           (unsigned) TIMEOUTS_VAL,
                           MHD_OPTION_END);
@@ -1529,7 +1575,8 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           MHD_OPTION_URI_LOG_CALLBACK, &check_uri_cb,
                           *uri_cb_param,
                           MHD_OPTION_NOTIFY_COMPLETED, &term_cb, *term_result,
-                          MHD_OPTION_NOTIFY_CONNECTION, &socket_cb, NULL,
+                          MHD_OPTION_NOTIFY_CONNECTION, &socket_cb,
+                          *sckt_result,
                           MHD_OPTION_CONNECTION_TIMEOUT,
                           (unsigned) TIMEOUTS_VAL,
                           MHD_OPTION_END);
@@ -1568,11 +1615,14 @@ testExternalGet (void)
   struct ahc_cls_type *ahc_param;
   struct check_uri_cls *uri_cb_param;
   struct term_notif_cb_param *term_result;
+  struct sckt_notif_cb_param *sckt_result;
 
   d = startTestMhdDaemon (testMhdThreadExternal, testMhdPollBySelect, &d_port,
-                          &ahc_param, &uri_cb_param, &term_result);
+                          &ahc_param, &uri_cb_param, &term_result,
+                          &sckt_result);
 
-  return performTestQueries (d, d_port, ahc_param, uri_cb_param, term_result);
+  return performTestQueries (d, d_port, ahc_param, uri_cb_param, term_result,
+                             sckt_result);
 }
 
 
