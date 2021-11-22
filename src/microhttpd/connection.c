@@ -3077,7 +3077,7 @@ process_request_body (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
   size_t available;
-  int instant_retry;
+  bool instant_retry;
   char *buffer_head;
 
   if (NULL != connection->response)
@@ -3107,7 +3107,7 @@ process_request_body (struct MHD_Connection *connection)
     size_t left_unprocessed;
     size_t processed_size;
 
-    instant_retry = MHD_NO;
+    instant_retry = false;
     if ( (connection->have_chunked_upload) &&
          (MHD_SIZE_UNKNOWN == connection->remaining_upload_size) )
     {
@@ -3152,7 +3152,7 @@ process_request_body (struct MHD_Connection *connection)
         {         /* cur_chunk_left <= (size_t)available */
           to_be_processed = (size_t) cur_chunk_left;
           if (available > to_be_processed)
-            instant_retry = MHD_YES;
+            instant_retry = true;
         }
       }
       else
@@ -3222,7 +3222,7 @@ process_request_body (struct MHD_Connection *connection)
         connection->current_chunk_offset = 0;
 
         if (available > 0)
-          instant_retry = MHD_YES;
+          instant_retry = true;
         if (0LLU == connection->current_chunk_size)
         {
           connection->remaining_upload_size = 0;
@@ -3279,7 +3279,7 @@ process_request_body (struct MHD_Connection *connection)
                  );
     if (0 != left_unprocessed)
     {
-      instant_retry = MHD_NO; /* client did not process everything */
+      instant_retry = false; /* client did not process everything */
 #ifdef HAVE_MESSAGES
       /* client did not process all upload data, complain if
          the setup was incorrect, which may prevent us from
@@ -3299,8 +3299,7 @@ process_request_body (struct MHD_Connection *connection)
     available -= processed_size;
     if (MHD_SIZE_UNKNOWN != connection->remaining_upload_size)
       connection->remaining_upload_size -= processed_size;
-  }
-  while (MHD_NO != instant_retry);
+  } while (instant_retry);
   /* TODO: zero out reused memory region */
   if ( (available > 0) &&
        (buffer_head != connection->read_buffer) )
