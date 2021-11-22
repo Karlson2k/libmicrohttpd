@@ -3234,8 +3234,8 @@ process_request_body (struct MHD_Connection *connection)
     else
     {
       /* no chunked encoding, give all to the client */
+      mhd_assert (MHD_SIZE_UNKNOWN != connection->remaining_upload_size);
       if ( (0 != connection->remaining_upload_size) &&
-           (MHD_SIZE_UNKNOWN != connection->remaining_upload_size) &&
            (connection->remaining_upload_size < available) )
       {
         to_be_processed = (size_t) connection->remaining_upload_size;
