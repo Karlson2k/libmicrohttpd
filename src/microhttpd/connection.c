@@ -3113,17 +3113,20 @@ process_request_body (struct MHD_Connection *connection)
       mhd_assert (MHD_SIZE_UNKNOWN == connection->remaining_upload_size);
       if ( (connection->current_chunk_offset ==
             connection->current_chunk_size) &&
-           (0LLU != connection->current_chunk_offset) &&
-           (available >= 2) )
+           (0 != connection->current_chunk_size) )
       {
         size_t i;
+        mhd_assert (0 != available);
         /* skip new line at the *end* of a chunk */
         i = 0;
-        if ( ('\r' == buffer_head[i]) &&
-             ('\n' == buffer_head[i + 1]) )
+        if ( (2 <= available) &&
+             ('\r' == buffer_head[0]) &&
+             ('\n' == buffer_head[1]) )
           i += 2;                        /* skip CRLF */
-        else if ('\n' == buffer_head[i]) /* TODO: Add MHD option to disallow */
+        else if ('\n' == buffer_head[0]) /* TODO: Add MHD option to disallow */
           i++;                           /* skip bare LF */
+        else if (2 > available)
+          break;                         /* need more upload data */
         if (0 == i)
         {
           /* malformed encoding */
