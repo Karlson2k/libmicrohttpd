@@ -3297,8 +3297,13 @@ process_request_body (struct MHD_Connection *connection)
     /* dh left "processed" bytes in buffer for next time... */
     buffer_head += processed_size;
     available -= processed_size;
-    if (MHD_SIZE_UNKNOWN != connection->remaining_upload_size)
+    if (! connection->have_chunked_upload)
+    {
+      mhd_assert (MHD_SIZE_UNKNOWN != connection->remaining_upload_size);
       connection->remaining_upload_size -= processed_size;
+    }
+    else
+      mhd_assert (MHD_SIZE_UNKNOWN == connection->remaining_upload_size);
   } while (instant_retry);
   /* TODO: zero out reused memory region */
   if ( (available > 0) &&
