@@ -3108,9 +3108,9 @@ process_request_body (struct MHD_Connection *connection)
     size_t processed_size;
 
     instant_retry = false;
-    if ( (connection->have_chunked_upload) &&
-         (MHD_SIZE_UNKNOWN == connection->remaining_upload_size) )
+    if (connection->have_chunked_upload)
     {
+      mhd_assert (MHD_SIZE_UNKNOWN == connection->remaining_upload_size);
       if ( (connection->current_chunk_offset ==
             connection->current_chunk_size) &&
            (0LLU != connection->current_chunk_offset) &&
