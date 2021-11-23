@@ -3176,8 +3176,6 @@ process_request_body (struct MHD_Connection *connection)
                (';' == buffer_head[i]) )
             break;
           i++;
-          if (i >= 16)
-            break;
         }
         if (i >= available)
           break;
@@ -3199,7 +3197,6 @@ process_request_body (struct MHD_Connection *connection)
         if (i + 1 >= available)
           break;                /* need more data... */
         i++;
-        malformed = (end_size >= 16);
         if (! malformed)
         {
           size_t num_dig = MHD_strx_to_uint64_n_ (buffer_head,
