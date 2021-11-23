@@ -296,5 +296,5 @@ main (int argc, char *const *argv)
   curl_global_cleanup ();
   fclose (test_fd);
 
-  return errorCount;
+  return (0 == errorCount) ? 0 : 1;       /* 0 == pass */
 }

@@ -1021,5 +1021,5 @@ main (int argc, char *const *argv)
   else if (verbose)
     printf ("All tests passed.\n");
   curl_global_cleanup ();
-  return errorCount != 0;       /* 0 == pass */
+  return (0 == errorCount) ? 0 : 1;       /* 0 == pass */
 }

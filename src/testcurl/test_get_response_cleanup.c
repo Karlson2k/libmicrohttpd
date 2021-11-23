@@ -475,5 +475,5 @@ main (int argc, char *const *argv)
   errorCount += testExternalGet ();
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
-  return errorCount != 0;       /* 0 == pass */
+  return (0 == errorCount) ? 0 : 1;       /* 0 == pass */
 }

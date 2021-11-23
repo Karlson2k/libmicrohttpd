@@ -664,5 +664,5 @@ main (int argc, char *const *argv)
   curl_global_cleanup ();
   unlink (sourcefile);
   free (sourcefile);
-  return errorCount != 0;       /* 0 == pass */
+  return (0 == errorCount) ? 0 : 1;       /* 0 == pass */
 }

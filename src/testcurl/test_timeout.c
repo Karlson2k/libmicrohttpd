@@ -378,5 +378,5 @@ main (int argc, char *const *argv)
              "Error during test execution (code: %u)\n",
              errorCount);
   curl_global_cleanup ();
-  return errorCount;       /* 0 == pass */
+  return (0 == errorCount) ? 0 : 1;       /* 0 == pass */
 }
