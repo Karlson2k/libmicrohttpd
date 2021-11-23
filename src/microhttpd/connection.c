@@ -3179,6 +3179,8 @@ process_request_body (struct MHD_Connection *connection)
           if (i >= 16)
             break;
         }
+        if (i >= available)
+          break;
         end_size = i;
         /* find beginning of CRLF (skip over chunk extensions) */
         if (';' == buffer_head[i])
