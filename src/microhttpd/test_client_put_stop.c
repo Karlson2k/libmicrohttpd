@@ -326,6 +326,15 @@ _MHD_dumbClient_create (unsigned int port, const char *method, const char *url,
   else
     make_blocking (clnt->sckt);
 
+  if (1)
+  { /* Always set TCP NODELAY */
+    const MHD_SCKT_OPT_BOOL_ on_val = 1;
+
+    if (0 != setsockopt (clnt->sckt, IPPROTO_TCP, TCP_NODELAY,
+                         (const void *) &on_val, sizeof (on_val)))
+      externalErrorExitDesc ("Cannot set TCP_NODELAY option");
+  }
+
   clnt->port = port;
 
   if (NULL != method)
