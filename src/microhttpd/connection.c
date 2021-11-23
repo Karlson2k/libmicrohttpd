@@ -3306,6 +3306,9 @@ process_request_body (struct MHD_Connection *connection)
     memmove (connection->read_buffer,
              buffer_head,
              available);
+  else
+    mhd_assert ((0 == available) || \
+                (connection->read_buffer_offset == available));
   connection->read_buffer_offset = available;
 }
 
