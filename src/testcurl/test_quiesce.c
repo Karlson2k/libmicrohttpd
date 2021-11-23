@@ -284,7 +284,7 @@ testGet (int type, int pool_count, int poll_flag)
     return 2;
   }
   if (0 != pthread_create (&thrd, NULL, &ServeOneRequest,
-                           (void*) (intptr_t) fd))
+                           (void *) (intptr_t) fd))
   {
     fprintf (stderr, "pthread_create failed\n");
     curl_easy_cleanup (c);
@@ -303,7 +303,7 @@ testGet (int type, int pool_count, int poll_flag)
     return 2;
   }
 
-  if (0 != pthread_join (thrd, (void**) &thrdRet))
+  if (0 != pthread_join (thrd, (void **) &thrdRet))
   {
     fprintf (stderr, "pthread_join failed\n");
     curl_easy_cleanup (c);

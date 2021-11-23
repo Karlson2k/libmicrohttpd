@@ -221,7 +221,7 @@ testDigestAuth ()
                GetLastError ());
       return 1;
     }
-    b = CryptGenRandom (cc, 8, (BYTE*) rnd);
+    b = CryptGenRandom (cc, 8, (BYTE *) rnd);
     if (b == 0)
     {
       fprintf (stderr,

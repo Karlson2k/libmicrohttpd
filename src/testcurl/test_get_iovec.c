@@ -99,7 +99,7 @@ iovncont_free_callback (void *cls)
   unsigned int i;
 
   for (i = 0; i < TESTSTR_IOVCNT; ++i)
-    free ((void*) iov[i].iov_base);
+    free ((void *) iov[i].iov_base);
   free (iov);
 }
 
@@ -245,7 +245,7 @@ err_out:
   for (j = 0; j < TESTSTR_IOVCNT; ++j)
   {
     if (NULL != iov[j].iov_base)
-      free ((void*) iov[j].iov_base);
+      free ((void *) iov[j].iov_base);
   }
   free (iov);
   return MHD_NO;
@@ -270,7 +270,7 @@ testInternalGet (bool contiguous)
       port += 10;
   }
 
-  cbc.buf = (char*) readbuf;
+  cbc.buf = (char *) readbuf;
   cbc.size = sizeof(readbuf);
   cbc.pos = 0;
 
@@ -350,7 +350,7 @@ testMultithreadedGet ()
       port += 10;
   }
 
-  cbc.buf = (char*) readbuf;
+  cbc.buf = (char *) readbuf;
   cbc.size = sizeof(readbuf);
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
@@ -422,7 +422,7 @@ testMultithreadedPoolGet ()
       port += 10;
   }
 
-  cbc.buf = (char*) readbuf;
+  cbc.buf = (char *) readbuf;
   cbc.size = sizeof(readbuf);
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
@@ -510,7 +510,7 @@ testExternalGet ()
   }
 
   multi = NULL;
-  cbc.buf = (char*) readbuf;
+  cbc.buf = (char *) readbuf;
   cbc.size = sizeof(readbuf);
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
@@ -678,7 +678,7 @@ testUnknownPortGet ()
   addr.sin_port = 0;
   addr.sin_addr.s_addr = INADDR_ANY;
 
-  cbc.buf = (char*) readbuf;
+  cbc.buf = (char *) readbuf;
   cbc.size = sizeof(readbuf);
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,

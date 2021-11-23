@@ -105,7 +105,7 @@ start_watchdog (int timeout, const char *obj_name)
   watchdog_continue = 1;
   watchdog_obj = obj_name;
   if (0 != pthread_create (&watchdog_tid, NULL, &thread_watchdog,
-                           (void*) (intptr_t) timeout))
+                           (void *) (intptr_t) timeout))
   {
     fprintf (stderr, "Failed to start watchdog.\n");
     _exit (99);
@@ -173,7 +173,7 @@ thread_gets (void *param)
 {
   CURL *c;
   CURLcode errornum;
-  char *const url = (char*) param;
+  char *const url = (char *) param;
 
   c = NULL;
   c = curl_easy_init ();
@@ -226,7 +226,7 @@ do_gets (void *param)
 
   for (j = 0; j < PAR; j++)
   {
-    if (0 != pthread_create (&par[j], NULL, &thread_gets, (void*) url))
+    if (0 != pthread_create (&par[j], NULL, &thread_gets, (void *) url))
     {
       fprintf (stderr, "pthread_create failed.\n");
       continue_requesting = 0;
@@ -251,7 +251,7 @@ start_gets (int port)
 {
   pthread_t tid;
   continue_requesting = 1;
-  if (0 != pthread_create (&tid, NULL, &do_gets, (void*) (intptr_t) port))
+  if (0 != pthread_create (&tid, NULL, &do_gets, (void *) (intptr_t) port))
   {
     fprintf (stderr, "pthread_create failed.\n");
     _exit (99);
