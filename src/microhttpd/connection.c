@@ -3194,10 +3194,7 @@ process_request_body (struct MHD_Connection *connection)
         /* take '\n' into account; if '\n' is the unavailable
            character, we will need to wait until we have it
            before going further */
-        if ( (i + 1 >= available) &&
-             ! ( (1 == i) &&
-                 (2 == available) &&
-                 ('0' == buffer_head[0]) ) )
+        if (i + 1 >= available)
           break;                /* need more data... */
         i++;
         malformed = (end_size >= 16);
