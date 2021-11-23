@@ -3139,6 +3139,8 @@ process_request_body (struct MHD_Connection *connection)
         buffer_head += i;
         connection->current_chunk_offset = 0;
         connection->current_chunk_size = 0;
+        if (0 == available)
+          break;
       }
       if (connection->current_chunk_offset <
           connection->current_chunk_size)
