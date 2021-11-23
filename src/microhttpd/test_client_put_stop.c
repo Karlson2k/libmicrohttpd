@@ -92,7 +92,7 @@
 
 #define REQ_METHOD "PUT"
 
-#define REQ_BODY "Some data."
+#define REQ_BODY "Some content data."
 
 #define REQ_LINE_END "\r\n"
 
