@@ -1292,9 +1292,10 @@ struct MHD_Connection
 
   /**
    * If we are receiving with chunked encoding, where are we right
-   * now?  Set to 0 if we are waiting to receive the chunk size;
-   * otherwise, this is the size of the current chunk.  A value of
-   * zero is also used when we're at the end of the chunks.
+   * now?
+   * Set to 0 if we are waiting to receive the chunk size;
+   * otherwise, this is the size of the current chunk.
+   * A value of zero is also used when we're at the end of the chunks.
    */
   uint64_t current_chunk_size;
 

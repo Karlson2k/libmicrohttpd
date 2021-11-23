@@ -3142,10 +3142,11 @@ process_request_body (struct MHD_Connection *connection)
         if (0 == available)
           break;
       }
-      if (connection->current_chunk_offset <
-          connection->current_chunk_size)
+      if (0 != connection->current_chunk_size)
       {
         uint64_t cur_chunk_left;
+        mhd_assert (connection->current_chunk_offset < \
+                    connection->current_chunk_size);
         /* we are in the middle of a chunk, give
            as much as possible to the client (without
            crossing chunk boundaries) */
