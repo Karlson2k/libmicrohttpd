@@ -115,6 +115,16 @@
 #endif
 
 /**
+ * Response text used when the request HTTP chunk is too large.
+ */
+#ifdef HAVE_MESSAGES
+#define REQUEST_CHUNK_TOO_LARGE \
+  "<html><head><title>Request content too large</title></head><body>The chunk size used in your HTTP chunked encoded request is too large.</body></html>"
+#else
+#define REQUEST_CHUNK_TOO_LARGE ""
+#endif
+
+/**
  * Response text used when the request HTTP chunked encoding is
  * malformed.
  */
@@ -3164,73 +3174,114 @@ process_request_body (struct MHD_Connection *connection)
       else
       {
         size_t i;
-        size_t end_size;
+        /** The length of the string with the number of the chunk size */
+        size_t chunk_size_len;
+        bool found_chunk_size_str;
         bool malformed;
 
         /* we need to read chunk boundaries */
         i = 0;
-        while (i < available)
+        found_chunk_size_str = false;
+        chunk_size_len = 0;
+        mhd_assert (0 != available);
+        do
         {
-          if ( ('\r' == buffer_head[i]) ||
-               ('\n' == buffer_head[i]) ||
-               (';' == buffer_head[i]) )
-            break;
-          i++;
-        }
-        if (i >= available)
-          break;
-        end_size = i;
-        /* find beginning of CRLF (skip over chunk extensions) */
-        if (';' == buffer_head[i])
-        {
-          while (i < available)
+          if ('\n' == buffer_head[i])
           {
-            if ( ('\r' == buffer_head[i]) ||
-                 ('\n' == buffer_head[i]) )
-              break;
-            i++;
+            if ((0 < i) && ('\r' == buffer_head[i - 1]))
+            { /* CRLF */
+              if (! found_chunk_size_str)
+                chunk_size_len = i - 1;
+            }
+            else
+            { /* bare LF */
+              /* TODO: Add an option to disallow bare LF */
+              if (! found_chunk_size_str)
+                chunk_size_len = i;
+            }
+            found_chunk_size_str = true;
+            break; /* Found the end of the string */
           }
-        }
-        /* take '\n' into account; if '\n' is the unavailable
-           character, we will need to wait until we have it
-           before going further */
-        if (i + 1 >= available)
-          break;                /* need more data... */
-        i++;
+          else if (! found_chunk_size_str && (';' == buffer_head[i]))
+          { /* Found chunk extension */
+            chunk_size_len = i;
+            found_chunk_size_str = true;
+          }
+        } while (available > ++i);
+        mhd_assert ((i == available) || found_chunk_size_str);
+        mhd_assert ((0 == chunk_size_len) || found_chunk_size_str);
+        malformed = ((0 == chunk_size_len) && found_chunk_size_str);
         if (! malformed)
         {
-          size_t num_dig = MHD_strx_to_uint64_n_ (buffer_head,
-                                                  end_size,
-                                                  &connection->
-                                                  current_chunk_size);
-          malformed = (end_size != num_dig);
+          /* Check whether size is valid hexadecimal number
+           * even if end of the string is not found yet. */
+          size_t num_dig;
+          uint64_t chunk_size;
+          mhd_assert (0 < i);
+          if (! found_chunk_size_str)
+          {
+            mhd_assert (i == available);
+            /* Check already available part of the size string for valid
+             * hexadecimal digits. */
+            chunk_size_len = i;
+            if ('\r' == buffer_head[i - 1])
+            {
+              chunk_size_len--;
+              malformed = (0 == chunk_size_len);
+            }
+          }
+          num_dig = MHD_strx_to_uint64_n_ (buffer_head,
+                                           chunk_size_len,
+                                           &chunk_size);
+          malformed = malformed || (chunk_size_len != num_dig);
+
+          if ((available != i) && ! malformed)
+          {
+            /* Found end of the string and the size of the chunk is valid */
+
+            mhd_assert (found_chunk_size_str);
+            /* Start reading payload data of the chunk */
+            connection->current_chunk_offset = 0;
+            connection->current_chunk_size = chunk_size;
+            i++; /* Consume the last checked char */
+            available -= i;
+            buffer_head += i;
+
+            if (0 == connection->current_chunk_size)
+            { /* The final (termination) chunk */
+              connection->remaining_upload_size = 0;
+              break;
+            }
+            if (available > 0)
+              instant_retry = true;
+            continue;
+          }
+
+          if ((0 == num_dig) && (0 != chunk_size_len))
+          { /* Check whether result is invalid due to uint64_t overflow */
+            /* At least one byte is always available
+             * in the input buffer here. */
+            const char d = buffer_head[0]; /**< first digit */
+            if ((('0' <= d) && ('9' >= d)) ||
+                (('A' <= d) && ('F' >= d)) ||
+                (('a' <= d) && ('f' >= d)))
+            { /* The first char is a valid hexadecimal digit */
+              transmit_error_response_static (connection,
+                                              MHD_HTTP_CONTENT_TOO_LARGE,
+                                              REQUEST_CHUNK_TOO_LARGE);
+              return;
+            }
+          }
         }
         if (malformed)
         {
-          /* malformed encoding */
           transmit_error_response_static (connection,
                                           MHD_HTTP_BAD_REQUEST,
                                           REQUEST_CHUNKED_MALFORMED);
           return;
         }
-        /* skip 2nd part of line feed */
-        if ( (i < available) &&
-             ( ('\r' == buffer_head[i]) ||
-               ('\n' == buffer_head[i]) ) )
-          i++;
-
-        buffer_head += i;
-        available -= i;
-        connection->current_chunk_offset = 0;
-
-        if (available > 0)
-          instant_retry = true;
-        if (0LLU == connection->current_chunk_size)
-        {
-          connection->remaining_upload_size = 0;
-          break;
-        }
-        continue;
+        mhd_assert (available == i);
+        break; /* The end of the string not found, need more upload data */
       }
     }
     else
