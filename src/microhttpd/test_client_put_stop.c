@@ -1227,10 +1227,8 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
     fd_set ws;
     fd_set es;
     MHD_socket maxMhdSk;
-    int maxCurlSk;
 
     maxMhdSk = MHD_INVALID_SOCKET;
-    maxCurlSk = -1;
     FD_ZERO (&rs);
     FD_ZERO (&ws);
     FD_ZERO (&es);
@@ -1251,11 +1249,7 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
       mhdErrorExitDesc ("MHD_get_fdset() failed");
     tv.tv_sec = 1;
     tv.tv_usec = 100000;
-#ifdef MHD_POSIX_SOCKETS
-    if (maxMhdSk > maxCurlSk)
-      maxCurlSk = maxMhdSk;
-#endif /* MHD_POSIX_SOCKETS */
-    if (-1 == select (maxCurlSk + 1, &rs, &ws, &es, &tv))
+    if (-1 == select (maxMhdSk + 1, &rs, &ws, &es, &tv))
     {
 #ifdef MHD_POSIX_SOCKETS
       if (EINTR != errno)
