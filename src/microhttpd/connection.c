@@ -3543,7 +3543,7 @@ parse_connection_headers (struct MHD_Connection *connection)
 {
   const char *clen;
   const char *enc;
-  const char *end;
+  size_t val_len;
 
   parse_cookie_header (connection);
   if ( (1 <= connection->daemon->strict_for_client) &&
@@ -3589,12 +3589,15 @@ parse_connection_headers (struct MHD_Connection *connection)
                                                  MHD_STATICSTR_LEN_ (
                                                    MHD_HTTP_HEADER_CONTENT_LENGTH),
                                                  &clen,
-                                                 NULL))
+                                                 &val_len))
     {
-      end = clen + MHD_str_to_uint64_ (clen,
-                                       &connection->remaining_upload_size);
-      if ( (clen == end) ||
-           ('\0' != *end) )
+      size_t num_digits;
+
+      num_digits = MHD_str_to_uint64_n_ (clen,
+                                         val_len,
+                                         &connection->remaining_upload_size);
+      if ( (val_len != num_digits) ||
+           (0 == num_digits) )
       {
         connection->remaining_upload_size = 0;
 #ifdef HAVE_MESSAGES
