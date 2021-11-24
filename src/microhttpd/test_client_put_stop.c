@@ -1220,7 +1220,6 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
   _MHD_dumbClient_start_connect (clnt);
 
   start = time (NULL);
-  now = start;
   do
   {
     fd_set rs;
