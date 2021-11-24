@@ -125,6 +125,17 @@
 #endif
 
 /**
+ * Response text used when the request HTTP content is too large.
+ */
+#ifdef HAVE_MESSAGES
+#define REQUEST_CONTENTLENGTH_TOOLARGE \
+  "<html><head><title>Request content too large</title></head>" \
+  "<body>Your HTTP request has too large value for <b>Content-Length</b> header.</body></html>"
+#else
+#define REQUEST_CONTENTLENGTH_TOOLARGE ""
+#endif
+
+/**
  * Response text used when the request HTTP chunked encoding is
  * malformed.
  */
@@ -3600,15 +3611,30 @@ parse_connection_headers (struct MHD_Connection *connection)
            (0 == num_digits) )
       {
         connection->remaining_upload_size = 0;
+        if ((0 == num_digits) &&
+            (0 != val_len) &&
+            ('0' <= clen[0]) && ('9' >= clen[0]))
+        {
 #ifdef HAVE_MESSAGES
-        MHD_DLOG (connection->daemon,
-                  _ (
-                    "Failed to parse `Content-Length' header. Closing connection.\n"));
+          MHD_DLOG (connection->daemon,
+                    _ ("Too large value of 'Content-Length' header. " \
+                       "Closing connection.\n"));
 #endif
-        transmit_error_response_static (connection,
-                                        MHD_HTTP_BAD_REQUEST,
-                                        REQUEST_CONTENTLENGTH_MALFORMED);
-        return;
+          transmit_error_response_static (connection,
+                                          MHD_HTTP_CONTENT_TOO_LARGE,
+                                          REQUEST_CONTENTLENGTH_TOOLARGE);
+        }
+        else
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (connection->daemon,
+                    _ ("Failed to parse `Content-Length' header. " \
+                       "Closing connection.\n"));
+#endif
+          transmit_error_response_static (connection,
+                                          MHD_HTTP_BAD_REQUEST,
+                                          REQUEST_CONTENTLENGTH_MALFORMED);
+        }
       }
     }
   }
