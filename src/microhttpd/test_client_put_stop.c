@@ -309,8 +309,8 @@ _MHD_dumbClient_create (unsigned int port, const char *method, const char *url,
   size_t buf_alloc_size;
   char *send_buf;
   mhd_assert (0 != port);
-  mhd_assert (NULL != req_body || 0 == req_body);
-  mhd_assert (0 == req_body || NULL != req_body);
+  mhd_assert (NULL != req_body || 0 == req_body_size);
+  mhd_assert (0 == req_body_size || NULL != req_body);
 
   clnt = (struct _MHD_dumbClient *) malloc (sizeof(struct _MHD_dumbClient));
   if (NULL == clnt)
