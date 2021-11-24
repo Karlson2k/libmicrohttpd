@@ -133,7 +133,7 @@
   "<html><head><title>Request malformed</title></head>" \
   "<body>Your HTTP request has wrong value for <b>Content-Length</b> header.</body></html>"
 #else
-#define REQUEST_CHUNKED_MALFORMED ""
+#define REQUEST_CONTENTLENGTH_MALFORMED ""
 #endif
 
 /**
