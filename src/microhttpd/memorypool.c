@@ -408,7 +408,7 @@ MHD_pool_try_alloc (struct MemoryPool *pool,
  * shrinking the block that was last (re)allocated.
  * If the given block is not the most recently
  * (re)allocated block, the memory of the previous
- * allocation may be leaked until the pool is
+ * allocation may be not released until the pool is
  * destroyed or reset.
  *
  * @param pool memory pool to use for the operation
