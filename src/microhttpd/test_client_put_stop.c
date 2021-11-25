@@ -763,12 +763,15 @@ _MHD_dumbClient_process_from_fdsets (struct _MHD_dumbClient *clnt,
 {
   if (_MHD_dumbClient_needs_process (clnt))
     return _MHD_dumbClient_process (clnt);
-  else if (_MHD_dumbClient_needs_recv (clnt) && FD_ISSET (clnt->sckt, rs))
-    return _MHD_dumbClient_process (clnt);
-  else if (_MHD_dumbClient_needs_send (clnt) && FD_ISSET (clnt->sckt, ws))
-    return _MHD_dumbClient_process (clnt);
-  else if (FD_ISSET (clnt->sckt, es))
-    return _MHD_dumbClient_process (clnt);
+  else if (MHD_INVALID_SOCKET != clnt->sckt)
+  {
+    if (_MHD_dumbClient_needs_recv (clnt) && FD_ISSET (clnt->sckt, rs))
+      return _MHD_dumbClient_process (clnt);
+    else if (_MHD_dumbClient_needs_send (clnt) && FD_ISSET (clnt->sckt, ws))
+      return _MHD_dumbClient_process (clnt);
+    else if (FD_ISSET (clnt->sckt, es))
+      return _MHD_dumbClient_process (clnt);
+  }
   return DUMB_CLIENT_FINISHED == clnt->stage;
 }
 
