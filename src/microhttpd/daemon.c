@@ -2176,8 +2176,7 @@ thread_main_handle_connection (void *data)
           call_handlers (con,
                          (0 != (p[0].revents & POLLIN)),
                          (0 != (p[0].revents & POLLOUT)),
-                         (0 != (p[0].revents & (POLLERR
-                                                | MHD_POLL_REVENTS_ERR_DISC))) ))
+                         (0 != (p[0].revents & MHD_POLL_REVENTS_ERR_DISC)) ))
         goto exit;
     }
 #endif
