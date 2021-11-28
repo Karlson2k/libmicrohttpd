@@ -926,8 +926,8 @@ static const int _MHD_socket_int_one = 1;
 /**
  * Indicate that SIGPIPE can be suppressed by MHD for normal send() by flags
  * or socket options.
- * If this macro is undefined, MHD cannot suppress SIGPIPE for normal
- * processing so sendfile() or writev() calls is not avoided.
+ * If this macro is undefined, MHD cannot suppress SIGPIPE for socket functions
+ * so sendfile() or writev() calls are avoided in application threads.
  */
 #define MHD_SEND_SPIPE_SUPPRESS_POSSIBLE   1
 #endif /* MHD_WINSOCK_SOCKETS || MHD_socket_nosignal_ || MSG_NOSIGNAL */

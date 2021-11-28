@@ -4543,7 +4543,7 @@ enum MHD_FEATURE
   MHD_FEATURE_AUTODETECT_BIND_PORT = 19,
 
   /**
-   * Get whether MHD support SIGPIPE suppression.
+   * Get whether MHD supports automatic SIGPIPE suppression.
    * If SIGPIPE suppression is not supported, application must handle
    * SIGPIPE signal by itself.
    */

@@ -8035,8 +8035,8 @@ MHD_is_feature_supported (enum MHD_FEATURE feature)
     return MHD_NO;
 #endif
   case MHD_FEATURE_AUTOSUPPRESS_SIGPIPE:
-#if defined(MHD_SEND_SPIPE_SUPPRESS_POSSIBLE) && \
-    defined(MHD_SEND_SPIPE_SUPPRESS_NEEDED)
+#if defined(MHD_SEND_SPIPE_SUPPRESS_POSSIBLE) || \
+    ! defined(MHD_SEND_SPIPE_SUPPRESS_NEEDED)
     return MHD_YES;
 #else
     return MHD_NO;
