@@ -1384,8 +1384,11 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
   int ret = 0;          /* Return value */
   size_t req_total_size;
   size_t limit_send_size;
+  int expected_reason;
+  int found_right_reason;
 
-  /* Common parameters, to be individually overridden by specific test cases */
+  /* Common parameters, to be individually overridden by specific test cases
+   * if needed */
   qParam.queryPort = d_port;
   qParam.method = MHD_HTTP_METHOD_PUT;
   qParam.queryPath = EXPECTED_URI_BASE_PATH;
@@ -1415,6 +1418,10 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
     _MHD_dumbClient_close (test_c);
   } while (0);
 
+  expected_reason = use_hard_close ?
+                    MHD_REQUEST_TERMINATED_READ_ERROR :
+                    MHD_REQUEST_TERMINATED_CLIENT_ABORT;
+  found_right_reason = 0;
   for (limit_send_size = 1; limit_send_size < req_total_size; limit_send_size++)
   {
     int test_succeed;
@@ -1452,7 +1459,11 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
       else if (1 != sckt_result->num_finished)
         fprintf (stderr, "FAILED: Wrong number of sockets closed.");
       else
+      {
         test_succeed = 1;
+        if (expected_reason == term_result->term_reason)
+          found_right_reason = 1;
+      }
     }
 
     if (! test_succeed)
@@ -1476,6 +1487,14 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
   free (ahc_param);
   free (term_result);
   free (sckt_result);
+
+  if (! found_right_reason)
+  {
+    fprintf (stderr, "FAILED: termination callback was not called with "
+             "expected (%s) reason.\n", term_reason_str (expected_reason));
+    fflush (stderr);
+    ret |= 1 << 1;
+  }
 
   return ret;
 }
