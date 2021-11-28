@@ -50,6 +50,10 @@
 #include <limits.h>
 #endif /* HAVE_LIMITS_H */
 
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif /* HAVE_SIGNAL_H */
+
 #include "mhd_sockets.h" /* only macros used */
 #include "test_helpers.h"
 #include "mhd_assert.h"
@@ -194,6 +198,16 @@ static int upl_chunked;             /**< Use chunked encoding for request body *
 static void
 test_global_init (void)
 {
+  if (MHD_YES != MHD_is_feature_supported (MHD_FEATURE_AUTOSUPPRESS_SIGPIPE))
+  {
+#if defined(HAVE_SIGNAL_H) && defined(SIGPIPE)
+    if (SIG_ERR == signal (SIGPIPE, SIG_IGN))
+      externalErrorExitDesc ("Error suppressing SIGPIPE signal");
+#else /* ! HAVE_SIGNAL_H || ! SIGPIPE */
+    fprintf (stderr, "Cannot suppress SIGPIPE signal.\n");
+    /* exit (77); */
+#endif
+  }
 }
 
 
@@ -319,8 +333,13 @@ _MHD_dumbClient_create (unsigned int port, const char *method, const char *url,
   clnt->sckt = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (MHD_INVALID_SOCKET == clnt->sckt)
     externalErrorExitDesc ("Cannot create the client socket");
-  clnt->sckt_nonblock = 0;
 
+#ifdef MHD_socket_nosignal_
+  if (! MHD_socket_nosignal_ (clnt->sckt))
+    externalErrorExitDesc ("Cannot suppress SIGPIPE on the client socket");
+#endif /* MHD_socket_nosignal_ */
+
+  clnt->sckt_nonblock = 0;
   if (clnt->sckt_nonblock)
     make_nonblocking (clnt->sckt);
   else
@@ -537,8 +556,7 @@ _MHD_dumbClient_send_req (struct _MHD_dumbClient *clnt)
       (clnt->single_send_size < send_size))
     send_size = clnt->single_send_size;
 
-  res = send (clnt->sckt, (const void *) (clnt->send_buf + clnt->send_off),
-              send_size, 0);
+  res = MHD_send_ (clnt->sckt, clnt->send_buf + clnt->send_off, send_size);
 
   if (res < 0)
   {
@@ -1723,7 +1741,8 @@ main (int argc, char *const *argv)
 #endif /* ! SO_LINGER */
   if (1 != use_shutdown + use_close)
     return 99;
-  verbose = ! has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet");
+  verbose =
+    ! (has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet"));
 
   test_global_init ();
 
