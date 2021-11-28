@@ -1213,15 +1213,18 @@ call_handlers (struct MHD_Connection *con,
   if (con->tls_read_ready)
     read_ready = true;
 #endif /* HTTPS_SUPPORT */
+  if ( (MHD_EVENT_LOOP_INFO_READ == con->event_loop_info) &&
+       (read_ready || (force_close && con->sk_nonblck)) )
+  {
+    MHD_connection_handle_read (con, force_close);
+    mhd_assert (! force_close || MHD_CONNECTION_CLOSED == con->state);
+    ret = MHD_connection_handle_idle (con);
+    if (force_close)
+      return ret;
+    states_info_processed = true;
+  }
   if (! force_close)
   {
-    if ( (MHD_EVENT_LOOP_INFO_READ == con->event_loop_info) &&
-         read_ready)
-    {
-      MHD_connection_handle_read (con);
-      ret = MHD_connection_handle_idle (con);
-      states_info_processed = true;
-    }
     /* No need to check value of 'ret' here as closed connection
      * cannot be in MHD_EVENT_LOOP_INFO_WRITE state. */
     if ( (MHD_EVENT_LOOP_INFO_WRITE == con->event_loop_info) &&

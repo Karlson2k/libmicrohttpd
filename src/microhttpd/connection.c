@@ -3683,12 +3683,16 @@ MHD_update_last_activity_ (struct MHD_Connection *connection)
 
 /**
  * This function handles a particular connection when it has been
- * determined that there is data to be read off a socket.
+ * determined that there is data to be read off a socket. All
+ * implementations (multithreaded, external polling, internal polling)
+ * call this function to handle reads.
  *
  * @param connection connection to handle
+ * @param socket_error set to true if socket error was detected
  */
 void
-MHD_connection_handle_read (struct MHD_Connection *connection)
+MHD_connection_handle_read (struct MHD_Connection *connection,
+                            bool socket_error)
 {
   ssize_t bytes_read;
 
@@ -3721,10 +3725,15 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
                                      [connection->read_buffer_offset],
                                      connection->read_buffer_size
                                      - connection->read_buffer_offset);
-  if (bytes_read < 0)
+  if ((bytes_read < 0) || socket_error)
   {
-    if (MHD_ERR_AGAIN_ == bytes_read)
+    if ((MHD_ERR_AGAIN_ == bytes_read) && ! socket_error)
       return;     /* No new data to process. */
+    if ((bytes_read > 0) && connection->sk_nonblck)
+    { /* Try to detect the socket error */
+      int dummy;
+      bytes_read = connection->recv_cls (connection, &dummy, sizeof (dummy));
+    }
     if (MHD_ERR_CONNRESET_ == bytes_read)
     {
       if ( (MHD_CONNECTION_INIT < connection->state) &&
@@ -3746,7 +3755,8 @@ MHD_connection_handle_read (struct MHD_Connection *connection)
       MHD_DLOG (connection->daemon,
                 _ ("Connection socket is closed when reading " \
                    "request due to the error: %s\n"),
-                str_conn_error_ (bytes_read));
+                (bytes_read < 0) ? str_conn_error_ (bytes_read) :
+                "detected connection closure");
 #endif
     CONNECTION_CLOSE_ERROR (connection,
                             NULL);
