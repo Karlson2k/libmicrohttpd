@@ -1399,6 +1399,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
                     struct sckt_notif_cb_param *sckt_result)
 {
   struct simpleQueryParams qParam;
+  time_t start;
   int ret = 0;          /* Return value */
   size_t req_total_size;
   size_t limit_send_size;
@@ -1440,6 +1441,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
                     MHD_REQUEST_TERMINATED_READ_ERROR :
                     MHD_REQUEST_TERMINATED_CLIENT_ABORT;
   found_right_reason = 0;
+  start = time (NULL);
   for (limit_send_size = 1; limit_send_size < req_total_size; limit_send_size++)
   {
     int test_succeed;
@@ -1497,6 +1499,12 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
       printTestResults (stdout,
                         &qParam, ahc_param, uri_cb_param,
                         term_result, sckt_result);
+    }
+
+    if (time (NULL) - start > TIMEOUTS_VAL * 25)
+    {
+      ret |= 1 << 2;
+      fprintf (stderr, "FAILED: Test total time exceeded.\n");
     }
   }
 
