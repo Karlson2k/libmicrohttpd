@@ -825,7 +825,7 @@ _MHD_dumbClient_perform (struct _MHD_dumbClient *clnt)
       _MHD_dumbClient_get_fdsets (clnt, &maxMhdSk, &rs, &ws, &es);
       mhd_assert (now >= start);
       tv.tv_sec = TIMEOUTS_VAL - (now - start) + 1;
-      tv.tv_usec = 700 * 1000;
+      tv.tv_usec = 250 * 1000;
       if (-1 == select (maxMhdSk + 1, &rs, &ws, &es, &tv))
       {
 #ifdef MHD_POSIX_SOCKETS
@@ -1268,7 +1268,7 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
     if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &maxMhdSk))
       mhdErrorExitDesc ("MHD_get_fdset() failed");
     tv.tv_sec = 1;
-    tv.tv_usec = 800 * 1000;
+    tv.tv_usec = 250 * 1000;
     if (-1 == select (maxMhdSk + 1, &rs, &ws, &es, &tv))
     {
 #ifdef MHD_POSIX_SOCKETS
