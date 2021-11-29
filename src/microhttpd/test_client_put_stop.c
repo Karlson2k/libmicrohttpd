@@ -1322,7 +1322,7 @@ doClientQueryInThread (struct MHD_Daemon *d,
                              & MHD_USE_INTERNAL_POLLING_THREAD));
 
   if (0 == p->queryPort)
-    abort ();
+    externalErrorExit ();
 
   c = _MHD_dumbClient_create (p->queryPort, p->method, p->queryPath,
                               p->headers, p->req_body, p->req_body_size,
@@ -1566,7 +1566,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
   const union MHD_DaemonInfo *dinfo;
 
   if ((NULL == ahc_param) || (NULL == uri_cb_param) || (NULL == term_result))
-    abort ();
+    externalErrorExit ();
 
   *ahc_param = (struct ahc_cls_type *) malloc (sizeof(struct ahc_cls_type));
   if (NULL == *ahc_param)
@@ -1632,19 +1632,13 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           MHD_OPTION_END);
 
   if (NULL == d)
-  {
-    fprintf (stderr, "Failed to start MHD daemon, errno=%d.\n", errno);
-    abort ();
-  }
+    mhdErrorExitDesc ("Failed to start MHD daemon");
 
   if (0 == *pport)
   {
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
-    if ((NULL == dinfo) || (0 == dinfo->port) )
-    {
-      fprintf (stderr, "MHD_get_daemon_info() failed.\n");
-      abort ();
-    }
+    if ((NULL == dinfo) || (0 == dinfo->port))
+      mhdErrorExitDesc ("MHD_get_daemon_info() failed");
     *pport = (int) dinfo->port;
     if (0 == global_port)
       global_port = *pport; /* Reuse the same port for all tests */
