@@ -1751,7 +1751,7 @@ main (int argc, char *const *argv)
   global_port = 0;
   test_result = testExternalGet ();
   if (test_result)
-    fprintf (stderr, "FAILED: testExternalGet () - %u.\n", test_result);
+    fprintf (stderr, "FAILED: testExternalGet (). Result: %u.\n", test_result);
   else if (verbose)
     printf ("PASSED: testExternalGet ().\n");
   errorCount += test_result;
@@ -1760,7 +1760,8 @@ main (int argc, char *const *argv)
   {
     test_result = testInternalGet (testMhdPollAuto);
     if (test_result)
-      fprintf (stderr, "FAILED: testInternalGet (testMhdPollAuto) - %u.\n",
+      fprintf (stderr, "FAILED: testInternalGet (testMhdPollAuto). "
+               "Result: %u.\n",
                test_result);
     else if (verbose)
       printf ("PASSED: testInternalGet (testMhdPollBySelect).\n");
@@ -1770,7 +1771,8 @@ main (int argc, char *const *argv)
      * not really provide any additional results. */
     test_result = testInternalGet (testMhdPollBySelect);
     if (test_result)
-      fprintf (stderr, "FAILED: testInternalGet (testMhdPollBySelect) - %u.\n",
+      fprintf (stderr, "FAILED: testInternalGet (testMhdPollBySelect). "
+               "Result: %u.\n",
                test_result);
     else if (verbose)
       printf ("PASSED: testInternalGet (testMhdPollBySelect).\n");
@@ -1778,7 +1780,8 @@ main (int argc, char *const *argv)
     test_result = testMultithreadedPoolGet (testMhdPollBySelect);
     if (test_result)
       fprintf (stderr,
-               "FAILED: testMultithreadedPoolGet (testMhdPollBySelect) - %u.\n",
+               "FAILED: testMultithreadedPoolGet (testMhdPollBySelect). "
+               "Result: %u.\n",
                test_result);
     else if (verbose)
       printf ("PASSED: testMultithreadedPoolGet (testMhdPollBySelect).\n");
@@ -1786,7 +1789,8 @@ main (int argc, char *const *argv)
     test_result = testMultithreadedGet (testMhdPollBySelect);
     if (test_result)
       fprintf (stderr,
-               "FAILED: testMultithreadedGet (testMhdPollBySelect) - %u.\n",
+               "FAILED: testMultithreadedGet (testMhdPollBySelect). "
+               "Result: %u.\n",
                test_result);
     else if (verbose)
       printf ("PASSED: testMultithreadedGet (testMhdPollBySelect).\n");
@@ -1795,7 +1799,8 @@ main (int argc, char *const *argv)
     {
       test_result = testInternalGet (testMhdPollByPoll);
       if (test_result)
-        fprintf (stderr, "FAILED: testInternalGet (testMhdPollByPoll) - %u.\n",
+        fprintf (stderr, "FAILED: testInternalGet (testMhdPollByPoll). "
+                 "Result: %u.\n",
                  test_result);
       else if (verbose)
         printf ("PASSED: testInternalGet (testMhdPollByPoll).\n");
@@ -1805,7 +1810,8 @@ main (int argc, char *const *argv)
     {
       test_result = testInternalGet (testMhdPollByEpoll);
       if (test_result)
-        fprintf (stderr, "FAILED: testInternalGet (testMhdPollByEpoll) - %u.\n",
+        fprintf (stderr, "FAILED: testInternalGet (testMhdPollByEpoll). "
+                 "Result: %u.\n",
                  test_result);
       else if (verbose)
         printf ("PASSED: testInternalGet (testMhdPollByEpoll).\n");
