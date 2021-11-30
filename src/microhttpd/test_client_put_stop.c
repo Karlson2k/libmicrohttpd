@@ -54,6 +54,32 @@
 #include <signal.h>
 #endif /* HAVE_SIGNAL_H */
 
+#ifdef HAVE_SYSCTL
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#ifdef HAVE_SYS_SYSCTL_H
+#include <sys/sysctl.h>
+#endif /* HAVE_SYS_SYSCTL_H */
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif /* HAVE_SYS_SOCKET_H */
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif /* HAVE_NETINET_IN_H */
+#ifdef HAVE_NETINET_IP_H
+#include <netinet/ip.h>
+#endif /* HAVE_NETINET_IP_H */
+#ifdef HAVE_NETINET_IP_ICMP_H
+#include <netinet/ip_icmp.h>
+#endif /* HAVE_NETINET_IP_ICMP_H */
+#ifdef HAVE_NETINET_ICMP_VAR_H
+#include <netinet/icmp_var.h>
+#endif /* HAVE_NETINET_ICMP_VAR_H */
+#endif /* HAVE_SYSCTL */
+
+#include <stdio.h>
+
 #include "mhd_sockets.h" /* only macros used */
 #include "test_helpers.h"
 #include "mhd_assert.h"
@@ -89,6 +115,9 @@
 
 /* Could be increased to facilitate debugging */
 #define TIMEOUTS_VAL 5
+
+/* Time in ms to wait for final packets to be delivered */
+#define FINAL_PACKETS_MS 20
 
 #define EXPECTED_URI_BASE_PATH  "/a"
 
@@ -184,6 +213,46 @@ _mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 }
 
 
+/**
+ * Pause execution for specified number of milliseconds.
+ * @param ms the number of milliseconds to sleep
+ */
+void
+_MHD_sleep (uint32_t ms)
+{
+#if defined(_WIN32)
+  Sleep (ms);
+#elif defined(HAVE_NANOSLEEP)
+  struct timespec slp = {ms / 1000, (ms % 1000) * 1000000};
+  struct timespec rmn;
+  int num_retries = 0;
+  while (0 != nanosleep (&slp, &rmn))
+  {
+    if (EINTR != errno)
+      externalErrorExit ();
+    if (num_retries++ > 8)
+      break;
+    slp = rmn;
+  }
+#elif defined(HAVE_USLEEP)
+  uint64_t us = ms * 1000;
+  do
+  {
+    uint64_t this_sleep;
+    if (999999 < us)
+      this_sleep = 999999;
+    else
+      this_sleep = us;
+    /* Ignore return value as it could be void */
+    usleep (this_sleep);
+    us -= this_sleep;
+  } while (us > 0);
+#else
+  externalErrorExitDesc ("No sleep function available on this system");
+#endif
+}
+
+
 /* Global parameters */
 static int verbose;                 /**< Be verbose */
 static int oneone;                  /**< If false use HTTP/1.0 for requests*/
@@ -194,6 +263,8 @@ static int use_close;               /**< Use socket close at client side */
 static int use_hard_close;          /**< Use socket close with RST at client side */
 static int by_step;                 /**< Send request byte-by-byte */
 static int upl_chunked;             /**< Use chunked encoding for request body */
+
+static unsigned int rate_limiter;   /**< Maximum number of checks per second */
 
 static void
 test_global_init (void)
@@ -208,6 +279,57 @@ test_global_init (void)
     /* exit (77); */
 #endif
   }
+  rate_limiter = 0;
+#if defined(HAVE_SYSCTL) && defined(CTL_NET) && defined(PF_INET) && \
+  defined(IPPROTO_ICMP) && defined(ICMPCTL_ICMPLIM)
+  if (use_hard_close)
+  {
+    int mib[4];
+    int limit;
+    size_t limit_size = sizeof(limit);
+    mib[0] = CTL_NET;
+    mib[1] = PF_INET;
+    mib[2] = IPPROTO_ICMP;
+    mib[3] = ICMPCTL_ICMPLIM;
+    if ((0 != sysctl (mib, 4, &limit, &limit_size, NULL, 0)) ||
+        (sizeof(limit) != limit_size) )
+      externalErrorExitDesc ("Cannot get RST rate limit value");
+    if (limit > 0)
+    {
+#ifndef _MHD_HEAVY_TESTS
+      fprintf (stderr, "This system has limits on number of RST packet"
+               " per second (%d).\nThis test will be used only if configured "
+               "with '--enable-heavy-test'.\n", limit);
+      exit (77);
+#else  /* _MHD_HEAVY_TESTS */
+      int test_limit; /**< Maximum number of checks per second */
+      test_limit = limit - limit / 10; /* Add some space to not hit the limiter */
+      test_limit /= 4;   /* Assume that all four tests with 'hard_close' run in parallel */
+      test_limit -= 5;   /* Add some more space to not hit the limiter */
+      test_limit /= 3;   /* Use only one third of available limit */
+      if (test_limit <= 0)
+      {
+        fprintf (stderr, "System limit for 'net.inet.icmp.icmplim' is "
+                 "too strict for this test (value: %d).\n", limit);
+        exit (77);
+      }
+      if (verbose)
+      {
+        printf ("Limiting number of checks to %d checks/second.\n", test_limit);
+        fflush (stdout);
+      }
+      rate_limiter = (unsigned int) test_limit;
+#if ! defined(HAVE_USLEEP) && ! defined(HAVE_NANOSLEEP) && ! defined(_WIN32)
+      fprintf (stderr, "Sleep function is required for this test, "
+               "but not available on this system.\n");
+      exit (77);
+#endif
+#endif /* _MHD_HEAVY_TESTS */
+    }
+  }
+#endif /* HAVE_SYSCTL && CTL_NET && PF_INET &&
+          IPPROTO_ICMP && ICMPCTL_ICMPLIM */
+
 }
 
 
@@ -1229,6 +1351,8 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
   const union MHD_DaemonInfo *di;
   MHD_socket lstn_sk;
   int client_accepted;
+  int full_req_recieved;
+  int full_req_sent;
 
   di = MHD_get_daemon_info (d, MHD_DAEMON_INFO_LISTEN_FD);
   if (NULL == di)
@@ -1240,6 +1364,7 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
 
   _MHD_dumbClient_start_connect (clnt);
 
+  full_req_recieved = 0;
   start = time (NULL);
   do
   {
@@ -1247,6 +1372,7 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
     fd_set ws;
     fd_set es;
     MHD_socket maxMhdSk;
+    int num_ready;
 
     maxMhdSk = MHD_INVALID_SOCKET;
     FD_ZERO (&rs);
@@ -1257,6 +1383,7 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
       /* client has finished, check whether MHD is still
        * processing any connections */
       unsigned long long to;
+      full_req_sent = 1;
       if (client_accepted && (MHD_YES != MHD_get_timeout (d, &to)))
       {
         ret = 0;
@@ -1264,12 +1391,25 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
       }
     }
     else
-      _MHD_dumbClient_get_fdsets (clnt, &maxMhdSk, &rs, &ws, &es);
+    {
+      full_req_sent = _MHD_dumbClient_is_req_sent (clnt);
+      if ((! full_req_sent) || full_req_recieved || (0 == rate_limiter))
+        _MHD_dumbClient_get_fdsets (clnt, &maxMhdSk, &rs, &ws, &es);
+    }
     if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &maxMhdSk))
       mhdErrorExitDesc ("MHD_get_fdset() failed");
-    tv.tv_sec = 1;
-    tv.tv_usec = 250 * 1000;
-    if (-1 == select (maxMhdSk + 1, &rs, &ws, &es, &tv))
+    if ((! full_req_sent) || full_req_recieved || (0 == rate_limiter))
+    {
+      tv.tv_sec = 1;
+      tv.tv_usec = 250 * 1000;
+    }
+    else
+    { /* Request completely sent but not yet fully received */
+      tv.tv_sec = 0;
+      tv.tv_usec = FINAL_PACKETS_MS * 1000;
+    }
+    num_ready = select (maxMhdSk + 1, &rs, &ws, &es, &tv);
+    if (-1 == num_ready)
     {
 #ifdef MHD_POSIX_SOCKETS
       if (EINTR != errno)
@@ -1282,6 +1422,11 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
 #endif
       continue;
     }
+    if (0 == num_ready)
+    { /* select() finished by timeout, looks like no more packets are pending */
+      if (full_req_sent && (! full_req_recieved))
+        full_req_recieved = 1;
+    }
     if (MHD_YES != MHD_run_from_select (d, &rs, &ws, &es))
       mhdErrorExitDesc ("MHD_run_from_select() failed");
     if (! client_accepted)
@@ -1290,11 +1435,15 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
     {
       /* Do not close the socket on client side until
        * MHD is accepted and processed the socket. */
-      if (! _MHD_dumbClient_is_req_sent (clnt) ||
-          (client_accepted && ! FD_ISSET (lstn_sk, &rs)))
+      if (! full_req_sent || (client_accepted && ! FD_ISSET (lstn_sk, &rs)))
       {
-        if (_MHD_dumbClient_process_from_fdsets (clnt, &rs, &ws, &es))
-          clnt = NULL;
+        if ((! full_req_sent) || full_req_recieved || (0 == rate_limiter))
+        {
+          /* When rate limiter is enabled, all sent packets must be received
+           * before client close connection to avoid RST for every ACK. */
+          if (_MHD_dumbClient_process_from_fdsets (clnt, &rs, &ws, &es))
+            clnt = NULL;
+        }
       }
     }
     /* Use double timeout value here so MHD would be able to catch timeout
@@ -1403,6 +1552,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
   int ret = 0;          /* Return value */
   size_t req_total_size;
   size_t limit_send_size;
+  size_t inc_size;
   int expected_reason;
   int found_right_reason;
 
@@ -1441,11 +1591,35 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
                     MHD_REQUEST_TERMINATED_READ_ERROR :
                     MHD_REQUEST_TERMINATED_CLIENT_ABORT;
   found_right_reason = 0;
+  if (0 != rate_limiter)
+  {
+    if (verbose)
+    {
+      printf ("Pausing for rate limiter...");
+      fflush (stdout);
+    }
+    _MHD_sleep (1150); /* Just a bit more than one second */
+    if (verbose)
+    {
+      printf (" OK\n");
+      fflush (stdout);
+    }
+    inc_size = ((req_total_size - 1) + (rate_limiter - 1)) / rate_limiter;
+    if (0 == inc_size)
+      inc_size = 1;
+  }
+  else
+    inc_size = 1;
+
   start = time (NULL);
-  for (limit_send_size = 1; limit_send_size < req_total_size; limit_send_size++)
+  for (limit_send_size = 1; limit_send_size < req_total_size;
+       limit_send_size += inc_size)
   {
     int test_succeed;
     test_succeed = 0;
+    /* Make sure that maximum size is tested */
+    if (req_total_size - inc_size < limit_send_size)
+      limit_send_size = req_total_size - 1;
     qParam.total_send_max = limit_send_size;
     /* To be updated by callbacks */
     ahc_param->cb_called = 0;
@@ -1501,7 +1675,9 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
                         term_result, sckt_result);
     }
 
-    if (time (NULL) - start > TIMEOUTS_VAL * 25)
+    if (time (NULL) - start >
+        (time_t) ((TIMEOUTS_VAL * 25)
+                  + (rate_limiter * FINAL_PACKETS_MS) / 1000 + 1))
     {
       ret |= 1 << 2;
       fprintf (stderr, "FAILED: Test total time exceeded.\n");
