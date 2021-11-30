@@ -150,10 +150,9 @@ typedef struct _MHD_thread_handle_ID_ MHD_thread_handle_ID_;
  * @param thread handle to watch
  * @return nonzero on success, zero otherwise
  */
-#define MHD_join_thread_(thread) (WAIT_OBJECT_0 == WaitForSingleObject ( \
-                                    (thread), INFINITE) ? (CloseHandle ( \
-                                                             (thread)), ! 0) : \
-                                  0)
+#define MHD_join_thread_(thread) \
+  ( (WAIT_OBJECT_0 == WaitForSingleObject ( (thread), INFINITE)) ? \
+    (CloseHandle ( (thread)), ! 0) : 0 )
 #endif
 
 #if defined(MHD_USE_POSIX_THREADS)
@@ -239,7 +238,7 @@ MHD_create_thread_ (MHD_thread_handle_ID_ *thread,
  */
 int
 MHD_create_named_thread_ (MHD_thread_handle_ID_ *thread,
-                          const char*thread_name,
+                          const char *thread_name,
                           size_t stack_size,
                           MHD_THREAD_START_ROUTINE_ start_routine,
                           void *arg);

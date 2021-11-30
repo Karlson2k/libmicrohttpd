@@ -2157,7 +2157,7 @@ thread_main_handle_connection (void *data)
 #else
                          1,
 #endif
-                         (NULL == tvp) ? -1 : tv.tv_sec * 1000) < 0)
+                         (NULL == tvp) ? -1 : (tv.tv_sec * 1000)) < 0)
       {
         if (MHD_SCKT_LAST_ERR_IS_ (MHD_SCKT_EINTR_))
           continue;

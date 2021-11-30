@@ -420,9 +420,9 @@ is_websocket_request (struct MHD_Connection *con, const char *upg_header,
 
   (void) con;  /* Unused. Silent compiler warning. */
 
-  return (upg_header != NULL) && (con_header != NULL)
-         && (0 == strcmp (upg_header, WS_UPGRADE_VALUE))
-         && (NULL != strstr (con_header, "Upgrade"))
+  return ((upg_header != NULL) && (con_header != NULL)
+          && (0 == strcmp (upg_header, WS_UPGRADE_VALUE))
+          && (NULL != strstr (con_header, "Upgrade")))
          ? MHD_YES
          : MHD_NO;
 }
