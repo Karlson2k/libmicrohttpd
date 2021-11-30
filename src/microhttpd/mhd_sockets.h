@@ -42,6 +42,14 @@
 #include <unistd.h>
 #endif /* HAVE_UNISTD_H */
 #include <fcntl.h>
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>
+#endif /* HAVE_STDDEF_H */
+#if defined(_MSC_FULL_VER) && ! defined (_SSIZE_T_DEFINED)
+#  include <stdint.h>
+#  define _SSIZE_T_DEFINED
+typedef intptr_t ssize_t;
+#endif /* !_SSIZE_T_DEFINED */
 
 #if ! defined(MHD_POSIX_SOCKETS) && ! defined(MHD_WINSOCK_SOCKETS)
 #  if ! defined(_WIN32) || defined(__CYGWIN__)
@@ -62,17 +70,26 @@
 #  ifdef HAVE_SYS_TYPES_H
 #    include <sys/types.h> /* required on old platforms */
 #  endif
+#  ifdef HAVE_SYS_TIME_H
+#    include <sys/time.h>
+#  endif
+#  ifdef HAVE_TIME_H
+#    include <time.h>
+#  endif
+#  ifdef HAVE_STRING_H
+#    include <string.h> /* for strerror() */
+#  endif
 #  ifdef HAVE_SYS_SOCKET_H
 #    include <sys/socket.h>
 #  endif
 #  if defined(__VXWORKS__) || defined(__vxworks) || defined(OS_VXWORKS)
+#    include <strings.h>  /* required for FD_SET (bzero() function) */
 #    ifdef HAVE_SOCKLIB_H
 #      include <sockLib.h>
 #    endif /* HAVE_SOCKLIB_H */
 #    ifdef HAVE_INETLIB_H
 #      include <inetLib.h>
 #    endif /* HAVE_INETLIB_H */
-#    include <strings.h>  /* required for FD_SET (bzero() function) */
 #  endif /* __VXWORKS__ || __vxworks || OS_VXWORKS */
 #  ifdef HAVE_NETINET_IN_H
 #    include <netinet/in.h>
@@ -82,12 +99,6 @@
 #  endif
 #  ifdef HAVE_NET_IF_H
 #    include <net/if.h>
-#  endif
-#  ifdef HAVE_SYS_TIME_H
-#    include <sys/time.h>
-#  endif
-#  ifdef HAVE_TIME_H
-#    include <time.h>
 #  endif
 #  ifdef HAVE_NETDB_H
 #    include <netdb.h>
@@ -102,9 +113,6 @@
 /* for TCP_FASTOPEN and TCP_CORK */
 #    include <netinet/tcp.h>
 #  endif
-#  ifdef HAVE_STRING_H
-#    include <string.h> /* for strerror() */
-#  endif
 #elif defined(MHD_WINSOCK_SOCKETS)
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN 1
@@ -117,14 +125,6 @@
 #  include <poll.h>
 #endif
 
-#ifdef HAVE_STDDEF_H
-#include <stddef.h>
-#endif /* HAVE_STDDEF_H */
-#if defined(_MSC_FULL_VER) && ! defined (_SSIZE_T_DEFINED)
-#  include <stdint.h>
-#  define _SSIZE_T_DEFINED
-typedef intptr_t ssize_t;
-#endif /* !_SSIZE_T_DEFINED */
 
 #ifdef __FreeBSD__
 #include <sys/param.h> /* For __FreeBSD_version */
