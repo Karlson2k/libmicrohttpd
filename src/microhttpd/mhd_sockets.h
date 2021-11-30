@@ -35,7 +35,9 @@
 #include "mhd_options.h"
 
 #include <errno.h>
+#ifdef HAVE_STDBOOL_H
 #include <stdbool.h>
+#endif /* HAVE_STDBOOL_H */
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif /* HAVE_UNISTD_H */
