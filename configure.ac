@@ -79,6 +79,62 @@ MHD_SYS_EXT
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
 
+# Check for headers that are ALWAYS required
+AC_CHECK_HEADERS_ONCE([stdio.h string.h stdint.h errno.h limits.h fcntl.h], [],
+  [AC_MSG_ERROR([Compiling libmicrohttpd requires standard POSIX headers files])], [AC_INCLUDES_DEFAULT])
+
+# Check for basic optional headers
+AC_CHECK_HEADERS([stddef.h stdlib.h inttypes.h sys/types.h sys/stat.h unistd.h], [], [], [AC_INCLUDES_DEFAULT])
+
+# Check for clock-specific optional headers
+AC_CHECK_HEADERS([sys/time.h time.h], [], [], [AC_INCLUDES_DEFAULT])
+
+# Check for system information and parameters optional headers
+AC_CHECK_HEADERS([endian.h machine/endian.h sys/endian.h sys/byteorder.h \
+                  sys/machine.h machine/param.h sys/param.h sys/isa_defs.h \
+                  sys/ioctl.h], [], [], [AC_INCLUDES_DEFAULT])
+
+# Check for network and sockets optional headers
+AC_CHECK_HEADERS([sys/socket.h sys/select.h netinet/in.h arpa/inet.h \
+                  netinet/ip.h netinet/tcp.h net/if.h \
+                  netdb.h sockLib.h inetLib.h], [], [],
+  [AC_INCLUDES_DEFAULT
+   [
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif /* HAVE_INTTYPES_H */
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif /* HAVE_SYS_SOCKET_H */
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif /* HAVE_NETINET_IN_H */
+#ifdef HAVE_NETINET_IP_H
+#include <netinet/ip.h>
+#endif /* HAVE_NETINET_IP_H */
+#ifdef HAVE_NETINET_TCP_H
+#include <netinet/tcp.h>
+#endif /* HAVE_NETINET_TCP_H */
+  ]]
+)
+
+# Check for other optional headers
+AC_CHECK_HEADERS([sys/msg.h sys/mman.h signal.h], [], [], [AC_INCLUDES_DEFAULT])
+
+AC_CHECK_HEADER([[search.h]],
+  [
+   gl_FUNC_TSEARCH
+   AS_IF([[test "x$HAVE_TSEARCH" = "x1" && test "x$REPLACE_TSEARCH" != "x1"]],
+     [AC_DEFINE([[HAVE_SEARCH_H]], [[1]],
+       [Define to 1 if you have the <search.h> header file and your system have properly functioning tsearch(), tfind() and tdelete() functions])])
+  ],
+  [], [AC_INCLUDES_DEFAULT])
+
+AM_CONDITIONAL([MHD_HAVE_TSEARCH], [[test "x$ac_cv_header_search_h" = xyes && test "x$HAVE_TSEARCH" = "x1" && test "x$REPLACE_TSEARCH" != "x1"]])
+
 # Checks for gettext.
 m4_ifdef([AM_GNU_GETTEXT], [
   AS_VAR_SET_IF([enable_nls], [], [[enable_nls=no]])
@@ -1093,62 +1149,6 @@ fd = epoll_create1(EPOLL_CLOEXEC);]])],
       [mhd_cv_have_epoll_create1=no])])
   AS_IF([test "x$mhd_cv_have_epoll_create1" = "xyes"],[
     AC_DEFINE([[HAVE_EPOLL_CREATE1]], [[1]], [Define if you have epoll_create1 function.])]))
-
-# Check for headers that are ALWAYS required
-AC_CHECK_HEADERS_ONCE([stdio.h string.h stdint.h errno.h limits.h fcntl.h], [],
-  [AC_MSG_ERROR([Compiling libmicrohttpd requires standard POSIX headers files])], [AC_INCLUDES_DEFAULT])
-
-# Check for basic optional headers
-AC_CHECK_HEADERS([stddef.h stdlib.h inttypes.h sys/types.h sys/stat.h unistd.h], [], [], [AC_INCLUDES_DEFAULT])
-
-# Check for clock-specific optional headers
-AC_CHECK_HEADERS([sys/time.h time.h], [], [], [AC_INCLUDES_DEFAULT])
-
-# Check for system information and parameters optional headers
-AC_CHECK_HEADERS([endian.h machine/endian.h sys/endian.h sys/byteorder.h \
-                  sys/machine.h machine/param.h sys/param.h sys/isa_defs.h \
-                  sys/ioctl.h], [], [], [AC_INCLUDES_DEFAULT])
-
-# Check for network and sockets optional headers
-AC_CHECK_HEADERS([sys/socket.h sys/select.h netinet/in.h arpa/inet.h \
-                  netinet/ip.h netinet/tcp.h net/if.h \
-                  netdb.h sockLib.h inetLib.h], [], [],
-  [AC_INCLUDES_DEFAULT
-   [
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif /* HAVE_SYS_TYPES_H */
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#endif /* HAVE_INTTYPES_H */
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif /* HAVE_SYS_SOCKET_H */
-#ifdef HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif /* HAVE_NETINET_IN_H */
-#ifdef HAVE_NETINET_IP_H
-#include <netinet/ip.h>
-#endif /* HAVE_NETINET_IP_H */
-#ifdef HAVE_NETINET_TCP_H
-#include <netinet/tcp.h>
-#endif /* HAVE_NETINET_TCP_H */
-  ]]
-)
-
-# Check for other optional headers
-AC_CHECK_HEADERS([sys/msg.h sys/mman.h signal.h], [], [], [AC_INCLUDES_DEFAULT])
-
-AC_CHECK_HEADER([[search.h]],
-  [
-   gl_FUNC_TSEARCH
-   AS_IF([[test "x$HAVE_TSEARCH" = "x1" && test "x$REPLACE_TSEARCH" != "x1"]],
-     [AC_DEFINE([[HAVE_SEARCH_H]], [[1]],
-       [Define to 1 if you have the <search.h> header file and your system have properly functioning tsearch(), tfind() and tdelete() functions])])
-  ],
-  [], [AC_INCLUDES_DEFAULT])
-
-AM_CONDITIONAL([MHD_HAVE_TSEARCH], [[test "x$ac_cv_header_search_h" = xyes && test "x$HAVE_TSEARCH" = "x1" && test "x$REPLACE_TSEARCH" != "x1"]])
 
 AC_CACHE_CHECK([for suported 'noreturn' keyword], [mhd_cv_decl_noreturn],
   [
