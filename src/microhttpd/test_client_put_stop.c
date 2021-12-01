@@ -824,7 +824,7 @@ _MHD_dumbClient_perform (struct _MHD_dumbClient *clnt)
       maxMhdSk = MHD_INVALID_SOCKET;
       _MHD_dumbClient_get_fdsets (clnt, &maxMhdSk, &rs, &ws, &es);
       mhd_assert (now >= start);
-      tv.tv_sec = TIMEOUTS_VAL - (now - start) + 1;
+      tv.tv_sec = TIMEOUTS_VAL * 2 - (now - start) + 1;
       tv.tv_usec = 250 * 1000;
       if (-1 == select (maxMhdSk + 1, &rs, &ws, &es, &tv))
       {
@@ -836,14 +836,14 @@ _MHD_dumbClient_perform (struct _MHD_dumbClient *clnt)
                     (0 != es.fd_count));
         externalErrorExitDesc ("Unexpected select() error");
 #endif /* ! MHD_POSIX_SOCKETS */
+        continue;
       }
       if (_MHD_dumbClient_process_from_fdsets (clnt, &rs, &ws, &es))
         return 0;
     }
-    now = time (NULL);
     /* Use double timeout value here as MHD must catch timeout situations
      * in this test. Timeout in client as a last resort. */
-  } while (now - start <= (TIMEOUTS_VAL * 2));
+  } while ((now = time (NULL)) - start <= (TIMEOUTS_VAL * 2));
   return 1;
 }
 
@@ -1223,7 +1223,6 @@ static int
 performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
 {
   time_t start;
-  time_t now;
   struct timeval tv;
   int ret;
   const union MHD_DaemonInfo *di;
@@ -1280,6 +1279,7 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
         externalErrorExitDesc ("Unexpected select() error");
       Sleep (1);
 #endif
+      continue;
     }
     if (MHD_YES != MHD_run_from_select (d, &rs, &ws, &es))
       mhdErrorExitDesc ("MHD_run_from_select() failed");
@@ -1296,10 +1296,9 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
           clnt = NULL;
       }
     }
-    now = time (NULL);
     /* Use double timeout value here so MHD would be able to catch timeout
      * internally */
-  } while (now - start <= (TIMEOUTS_VAL * 2));
+  } while (time (NULL) - start <= (TIMEOUTS_VAL * 2));
 
   return ret;
 }
