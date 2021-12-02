@@ -1504,6 +1504,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
     {
       ret |= 1 << 2;
       fprintf (stderr, "FAILED: Test total time exceeded.\n");
+      break;
     }
   }
 
