@@ -3143,8 +3143,8 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
  * connection is suspended, MHD will not detect disconnects by the
  * client.
  *
- * The only safe time to suspend a connection is from the
- * #MHD_AccessHandlerCallback.
+ * The only safe way to call this function is to call it from the
+ * #MHD_AccessHandlerCallback or #MHD_ContentReaderCallback.
  *
  * Finally, it is an API violation to call #MHD_stop_daemon while
  * having suspended connections (this will at least create memory and
