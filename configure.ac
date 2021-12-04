@@ -1076,7 +1076,10 @@ AC_ARG_ENABLE([[heavy-tests]],
   [activity is recommended to enable.])], [],
     [enable_heavy_tests=no])
 AS_VAR_IF([enable_heavy_tests], ["yes"],
-  [HEAVY_TESTS_NOTPARALLEL='.NOTPARALLEL:'],
+  [
+    HEAVY_TESTS_NOTPARALLEL='.NOTPARALLEL:'
+    AC_DEFINE([_MHD_HEAVY_TESTS], [1], [Define to 1 to enable "heavy" test paths.])
+  ],
   [
     enable_heavy_tests=no
     HEAVY_TESTS_NOTPARALLEL=" "
