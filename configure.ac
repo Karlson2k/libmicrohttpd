@@ -1110,7 +1110,7 @@ WSAPoll(fda, 2, 0);]])],
               ],[have_poll='no'])
               AC_MSG_RESULT([$have_poll])])
        AS_IF([test "$enable_poll" = "yes" && test "$have_poll" != "yes"],
-             AC_MSG_ERROR([[Support for poll was explicitly requested but cannot be enabled on this platform.]]))
+             [AC_MSG_ERROR([[Support for poll was explicitly requested but cannot be enabled on this platform.]])])
        enable_poll="$have_poll"])
 
 AC_ARG_ENABLE([[epoll]],
