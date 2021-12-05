@@ -2803,10 +2803,18 @@ new_connection_process_ (struct MHD_Daemon *daemon,
     {
       eno = errno;
 #ifdef HAVE_MESSAGES
+#ifdef EAGAIN
+      if (EAGAIN == eno)
+        MHD_DLOG (daemon,
+                  _ ("Failed to create a new thread because it would have " \
+                     "exceeded the system limit on the number of threads or " \
+                     "no system resources available.\n"));
+      else
+#endif /* EAGAIN */
       MHD_DLOG (daemon,
                 _ ("Failed to create a thread: %s\n"),
                 MHD_strerror_ (eno));
-#endif
+#endif /* HAVE_MESSAGES */
       goto cleanup;
     }
   }
@@ -7158,10 +7166,18 @@ MHD_start_daemon_va (unsigned int flags,
                                       daemon) )
       {
 #ifdef HAVE_MESSAGES
+#ifdef EAGAIN
+        if (EAGAIN == errno)
+          MHD_DLOG (daemon,
+                    _ ("Failed to create a new thread because it would have " \
+                       "exceeded the system limit on the number of threads or " \
+                       "no system resources available.\n"));
+        else
+#endif /* EAGAIN */
         MHD_DLOG (daemon,
                   _ ("Failed to create listen thread: %s\n"),
                   MHD_strerror_ (errno));
-#endif
+#endif /* HAVE_MESSAGES */
         MHD_mutex_destroy_chk_ (&daemon->new_connections_mutex);
         MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
         MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
@@ -7284,6 +7300,14 @@ MHD_start_daemon_va (unsigned int flags,
                                         d))
         {
 #ifdef HAVE_MESSAGES
+#ifdef EAGAIN
+          if (EAGAIN == errno)
+            MHD_DLOG (daemon,
+                      _ ("Failed to create a new pool thread because it would " \
+                         "have exceeded the system limit on the number of " \
+                         "threads or no system resources available.\n"));
+          else
+#endif /* EAGAIN */
           MHD_DLOG (daemon,
                     _ ("Failed to create pool thread: %s\n"),
                     MHD_strerror_ (errno));
