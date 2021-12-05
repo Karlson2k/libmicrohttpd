@@ -2736,166 +2736,171 @@ new_connection_process_ (struct MHD_Daemon *daemon,
    * NUMA and/or complex cache hierarchy. */
   connection->pool = MHD_pool_create (daemon->pool_size);
   if (NULL == connection->pool)
-  {
+  { /* 'pool' creation failed */
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ ("Error allocating memory: %s\n"),
               MHD_strerror_ (errno));
 #endif
-    MHD_socket_close_chk_ (connection->socket_fd);
-    MHD_ip_limit_del (daemon,
-                      connection->addr,
-                      connection->addr_len);
-    free (connection);
 #if ENOMEM
-    errno = ENOMEM;
+    eno = ENOMEM;
 #endif
-    return MHD_NO;
-  }
-
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
-#endif
-  /* Firm check under lock. */
-  if (daemon->connections >= daemon->connection_limit)
-  {
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
-#endif
-    /* above connection limit - reject */
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ (
-                "Server reached connection limit. Closing inbound connection.\n"));
-#endif
-#if ENFILE
-    eno = ENFILE;
-#endif
-    goto cleanup;
-  }
-  daemon->connections++;
-  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-  {
-    XDLL_insert (daemon->normal_timeout_head,
-                 daemon->normal_timeout_tail,
-                 connection);
-  }
-  DLL_insert (daemon->connections_head,
-              daemon->connections_tail,
-              connection);
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
-#endif
-  if (NULL != daemon->notify_connection)
-    daemon->notify_connection (daemon->notify_connection_cls,
-                               connection,
-                               &connection->socket_context,
-                               MHD_CONNECTION_NOTIFY_STARTED);
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-  /* attempt to create handler thread */
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-  {
-    if (! MHD_create_named_thread_ (&connection->pid,
-                                    "MHD-connection",
-                                    daemon->thread_stack_size,
-                                    &thread_main_handle_connection,
-                                    connection))
-    {
-      eno = errno;
-#ifdef HAVE_MESSAGES
-#ifdef EAGAIN
-      if (EAGAIN == eno)
-        MHD_DLOG (daemon,
-                  _ ("Failed to create a new thread because it would have " \
-                     "exceeded the system limit on the number of threads or " \
-                     "no system resources available.\n"));
-      else
-#endif /* EAGAIN */
-      MHD_DLOG (daemon,
-                _ ("Failed to create a thread: %s\n"),
-                MHD_strerror_ (eno));
-#endif /* HAVE_MESSAGES */
-      goto cleanup;
-    }
+    (void) 0; /* Mute possible compiler warning */
   }
   else
-    connection->pid = daemon->pid;
-#endif
-#ifdef EPOLL_SUPPORT
-  if (0 != (daemon->options & MHD_USE_EPOLL))
-  {
-    if (0 == (daemon->options & MHD_USE_TURBO))
-    {
-      struct epoll_event event;
-
-      event.events = EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLET;
-      event.data.ptr = connection;
-      if (0 != epoll_ctl (daemon->epoll_fd,
-                          EPOLL_CTL_ADD,
-                          connection->socket_fd,
-                          &event))
-      {
-        eno = errno;
+  { /* 'pool' creation succeed */
+    MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+    /* Firm check under lock. */
+    if (daemon->connections >= daemon->connection_limit)
+    { /* Connections limit */
 #ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _ ("Call to epoll_ctl failed: %s\n"),
-                  MHD_socket_last_strerr_ ());
+      MHD_DLOG (daemon,
+                _ ("Server reached connection limit. "
+                   "Closing inbound connection.\n"));
 #endif
-        goto cleanup;
-      }
-      connection->epoll_state |= MHD_EPOLL_STATE_IN_EPOLL_SET;
+#if ENFILE
+      eno = ENFILE;
+#endif
+      (void) 0; /* Mute possible compiler warning */
     }
     else
-    {
-      connection->epoll_state |= MHD_EPOLL_STATE_READ_READY
-                                 | MHD_EPOLL_STATE_WRITE_READY
-                                 | MHD_EPOLL_STATE_IN_EREADY_EDLL;
-      EDLL_insert (daemon->eready_head,
-                   daemon->eready_tail,
-                   connection);
-    }
-  }
+    { /* Have space for new connection */
+      daemon->connections++;
+      DLL_insert (daemon->connections_head,
+                  daemon->connections_tail,
+                  connection);
+      if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+      {
+        XDLL_insert (daemon->normal_timeout_head,
+                     daemon->normal_timeout_tail,
+                     connection);
+      }
+      MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+      if (NULL != daemon->notify_connection)
+        daemon->notify_connection (daemon->notify_connection_cls,
+                                   connection,
+                                   &connection->socket_context,
+                                   MHD_CONNECTION_NOTIFY_STARTED);
+#ifdef MHD_USE_THREADS
+      if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+      {
+        mhd_assert (0 == (daemon->options & MHD_USE_EPOLL));
+        if (! MHD_create_named_thread_ (&connection->pid,
+                                        "MHD-connection",
+                                        daemon->thread_stack_size,
+                                        &thread_main_handle_connection,
+                                        connection))
+        {
+          eno = errno;
+#ifdef HAVE_MESSAGES
+#ifdef EAGAIN
+          if (EAGAIN == eno)
+            MHD_DLOG (daemon,
+                      _ ("Failed to create a new thread because it would "
+                         "have exceeded the system limit on the number of "
+                         "threads or no system resources available.\n"));
+          else
+#endif /* EAGAIN */
+          MHD_DLOG (daemon,
+                    _ ("Failed to create a thread: %s\n"),
+                    MHD_strerror_ (eno));
+#endif /* HAVE_MESSAGES */
+        }
+        else               /* New thread has been created successfully */
+          return MHD_YES;  /* *** Function success exit point *** */
+      }
+      else
+#else  /* ! MHD_USE_THREADS */
+      if (1)
+#endif /* ! MHD_USE_THREADS */
+      { /* No 'thread-per-connection' */
+#ifdef MHD_USE_THREADS
+        connection->pid = daemon->pid;
+#endif /* MHD_USE_THREADS */
+#ifdef EPOLL_SUPPORT
+        if (0 != (daemon->options & MHD_USE_EPOLL))
+        {
+          if (0 == (daemon->options & MHD_USE_TURBO))
+          {
+            struct epoll_event event;
+
+            event.events = EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLET;
+            event.data.ptr = connection;
+            if (0 != epoll_ctl (daemon->epoll_fd,
+                                EPOLL_CTL_ADD,
+                                connection->socket_fd,
+                                &event))
+            {
+              eno = errno;
+#ifdef HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        _ ("Call to epoll_ctl failed: %s\n"),
+                        MHD_socket_last_strerr_ ());
 #endif
+            }
+            else
+            { /* 'socket_fd' has been added to 'epool' */
+              connection->epoll_state |= MHD_EPOLL_STATE_IN_EPOLL_SET;
 
-  return MHD_YES;
+              return MHD_YES;  /* *** Function success exit point *** */
+            }
+          }
+          else
+          {
+            connection->epoll_state |= MHD_EPOLL_STATE_READ_READY
+                                       | MHD_EPOLL_STATE_WRITE_READY
+                                       | MHD_EPOLL_STATE_IN_EREADY_EDLL;
+            EDLL_insert (daemon->eready_head,
+                         daemon->eready_tail,
+                         connection);
 
-cleanup:
-  if (NULL != daemon->notify_connection)
-    daemon->notify_connection (daemon->notify_connection_cls,
-                               connection,
-                               &connection->socket_context,
-                               MHD_CONNECTION_NOTIFY_CLOSED);
+            return MHD_YES;  /* *** Function success exit point *** */
+          }
+        }
+        else /* No 'epoll' */
+#endif /* EPOLL_SUPPORT */
+        return MHD_YES;    /* *** Function success exit point *** */
+      }
+
+      /* ** Below is a cleanup path ** */
+      if (NULL != daemon->notify_connection)
+        daemon->notify_connection (daemon->notify_connection_cls,
+                                   connection,
+                                   &connection->socket_context,
+                                   MHD_CONNECTION_NOTIFY_CLOSED);
+      MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+      if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+      {
+        XDLL_remove (daemon->normal_timeout_head,
+                     daemon->normal_timeout_tail,
+                     connection);
+      }
+      DLL_remove (daemon->connections_head,
+                  daemon->connections_tail,
+                  connection);
+      daemon->connections--;
+      MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+    }
+    MHD_pool_destroy (connection->pool);
+  }
+  /* Free resources allocated before the call of this functions */
 #ifdef HTTPS_SUPPORT
   if (NULL != connection->tls_session)
     gnutls_deinit (connection->tls_session);
 #endif /* HTTPS_SUPPORT */
-  MHD_socket_close_chk_ (connection->socket_fd);
   MHD_ip_limit_del (daemon,
                     connection->addr,
                     connection->addr_len);
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
-#endif
-  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-  {
-    XDLL_remove (daemon->normal_timeout_head,
-                 daemon->normal_timeout_tail,
-                 connection);
-  }
-  DLL_remove (daemon->connections_head,
-              daemon->connections_tail,
-              connection);
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
-#endif
-  MHD_pool_destroy (connection->pool);
   free (connection->addr);
+  MHD_socket_close_chk_ (connection->socket_fd);
   free (connection);
   if (0 != eno)
     errno = eno;
+#ifdef EINVAL
   else
-    errno  = EINVAL;
-  return MHD_NO;
+    errno = EINVAL;
+#endif /* EINVAL */
+  return MHD_NO;  /* *** Function failure exit point *** */
 }
 
 
