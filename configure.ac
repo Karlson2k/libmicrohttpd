@@ -1918,6 +1918,19 @@ MHD_CHECK_FUNC([[sysctl]], [[
   ]], [[int mib[2] = {CTL_KERN, KERN_MAXPROC}; if (sysctl(mib, 2, NULL, NULL, NULL, 0)) return 1;]]
 )
 
+MHD_CHECK_FUNC([[sysctlbyname]], [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SYSCTL_H
+#include <sys/sysctl.h>
+#endif
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>
+#endif
+  ]], [[sysctlbyname("test", NULL, NULL, NULL, 0);]]
+)
+
 MHD_CHECK_FUNC([[usleep]], [[#include <unistd.h>]], [[usleep(100000);]])
 MHD_CHECK_FUNC([[nanosleep]], [[#include <time.h>]], [[struct timespec ts2, ts1 = {0, 0}; nanosleep(&ts1, &ts2);]])
 

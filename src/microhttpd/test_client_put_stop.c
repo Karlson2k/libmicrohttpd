@@ -269,17 +269,29 @@ static unsigned int rate_limiter;   /**< Maximum number of checks per second */
 static void
 test_global_init (void)
 {
-  if (MHD_YES != MHD_is_feature_supported (MHD_FEATURE_AUTOSUPPRESS_SIGPIPE))
-  {
-#if defined(HAVE_SIGNAL_H) && defined(SIGPIPE)
-    if (SIG_ERR == signal (SIGPIPE, SIG_IGN))
-      externalErrorExitDesc ("Error suppressing SIGPIPE signal");
-#else /* ! HAVE_SIGNAL_H || ! SIGPIPE */
-    fprintf (stderr, "Cannot suppress SIGPIPE signal.\n");
-    /* exit (77); */
-#endif
-  }
   rate_limiter = 0;
+#ifdef HAVE_SYSCTLBYNAME
+  if (use_hard_close)
+  {
+    int blck_hl;
+    size_t blck_hl_size = sizeof (blck_hl);
+    if (0 == sysctlbyname ("net.inet.tcp.blackhole", &blck_hl, &blck_hl_size,
+                           NULL, 0))
+    {
+      if (2 <= blck_hl)
+      {
+        fprintf (stderr, "'sysctl net.inet.tcp.blackhole = %d', test is "
+                 "unreliable with this system setting, skipping.\n", blck_hl);
+        exit (77);
+      }
+    }
+    else
+    {
+      if (ENOENT != errno)
+        externalErrorExitDesc ("Cannot get 'net.inet.tcp.blackhole' value");
+    }
+  }
+#endif
 #if defined(HAVE_SYSCTL) && defined(CTL_NET) && defined(PF_INET) && \
   defined(IPPROTO_ICMP) && defined(ICMPCTL_ICMPLIM)
   if (use_hard_close)
@@ -329,7 +341,16 @@ test_global_init (void)
   }
 #endif /* HAVE_SYSCTL && CTL_NET && PF_INET &&
           IPPROTO_ICMP && ICMPCTL_ICMPLIM */
-
+  if (MHD_YES != MHD_is_feature_supported (MHD_FEATURE_AUTOSUPPRESS_SIGPIPE))
+  {
+#if defined(HAVE_SIGNAL_H) && defined(SIGPIPE)
+    if (SIG_ERR == signal (SIGPIPE, SIG_IGN))
+      externalErrorExitDesc ("Error suppressing SIGPIPE signal");
+#else /* ! HAVE_SIGNAL_H || ! SIGPIPE */
+    fprintf (stderr, "Cannot suppress SIGPIPE signal.\n");
+    /* exit (77); */
+#endif
+  }
 }
 
 
