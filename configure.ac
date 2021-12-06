@@ -341,6 +341,8 @@ choke me
          c = sumfn(a, b);
        else
          c = 0 - sumfn(a, b);
+       if (c)
+         return 0;
        ]])
     ],
     [[ inln_prfx="$inln_prfx_chk" ]])
@@ -882,7 +884,7 @@ AC_INCLUDES_DEFAULT
 #ifdef HAVE_PTHREAD_NP_H
 #include <pthread_np.h>
 #endif
-]], [[int res = pthread_setname_np(pthread_self(), "name", 0);]])],
+]], [[int res = pthread_setname_np(pthread_self(), "name", 0); if (res) return res;]])],
         [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP_NETBSD]], [[1]], [Define if you have NetBSD form (or OSF1 form) of pthread_setname_np(3) function.])
          HAVE_THREAD_NAME_FUNC="yes"
          AC_MSG_RESULT([[yes]])],
@@ -898,7 +900,7 @@ AC_INCLUDES_DEFAULT
 #ifdef HAVE_PTHREAD_NP_H
 #include <pthread_np.h>
 #endif
-]], [[int res = pthread_setname_np(pthread_self(), "name");]])],
+]], [[int res = pthread_setname_np(pthread_self(), "name"); if (res) return res;]])],
         [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP_GNU]], [[1]], [Define if you have GNU/Linux form of pthread_setname_np(3) function.])
          HAVE_THREAD_NAME_FUNC="yes"
          AC_MSG_RESULT([[yes]])],
@@ -914,7 +916,7 @@ AC_INCLUDES_DEFAULT
 #ifdef HAVE_PTHREAD_NP_H
 #include <pthread_np.h>
 #endif
-]], [[int res = pthread_setname_np("name");]])],
+]], [[int res = pthread_setname_np("name"); if (res) return res;]])],
         [AC_DEFINE([[HAVE_PTHREAD_SETNAME_NP_DARWIN]], [[1]], [Define if you have Darwin form of pthread_setname_np(3) function.])
          HAVE_THREAD_NAME_FUNC="yes"
          AC_MSG_RESULT([[yes]])],
@@ -966,9 +968,9 @@ choke me
 #if defined(MHD_USE_POSIX_THREADS) && (defined(HAVE_PTHREAD_ATTR_SETNAME_NP_NETBSD) || defined(HAVE_PTHREAD_ATTR_SETNAME_NP_IBMI) || \
     defined(HAVE_PTHREAD_SETNAME_NP_GNU) || defined(HAVE_PTHREAD_SET_NAME_NP_FREEBSD) || defined(HAVE_PTHREAD_SETNAME_NP_DARWIN) || \
     defined(HAVE_PTHREAD_SETNAME_NP_NETBSD) )
-int a = 1;
+(void) 0; /* no-op */
 #elif defined(MHD_USE_W32_THREADS) && defined(_MSC_FULL_VER)
-int b = 2;
+(void) 0; /* no-op */
 #else
 #error No thread name function is available.
 choke me
@@ -1211,7 +1213,7 @@ AC_CACHE_CHECK([size of tv_sec member of struct timeval], [mhd_cv_size_timeval_t
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
-static struct timeval test_var;
+struct timeval test_var;
       ]],
       [
         # The size is used only to exclude additional checks/comparison in code
@@ -1563,7 +1565,9 @@ AS_IF([[test "x$enable_itc" = "xeventfd" || test "x$enable_itc" = "xauto"]], [
         AC_LINK_IFELSE([
           AC_LANG_PROGRAM([[
 #include <sys/eventfd.h>
-          ]], [[int ef = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK)
+          ]], [[
+          int ef = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+          if (ef) return ef - 1;
           ]])
         ], [[mhd_cv_eventfd_usable='yes']], [[mhd_cv_eventfd_usable='no']])
       ])
@@ -1923,7 +1927,8 @@ LIBS="$LIBS -lmagic"
 AC_MSG_CHECKING([[for suitable libmagic]])
 AC_LINK_IFELSE(
   [AC_LANG_PROGRAM(
-    [[
+    [AC_INCLUDES_DEFAULT
+     [
 #include <magic.h>
     ]],
     [[
@@ -2579,7 +2584,7 @@ AC_CACHE_CHECK([[for calloc()]], [[mhd_cv_have_func_calloc]],
   [
    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <stdlib.h>
-       ]],[[void * ptr = calloc(1, 2)]])
+       ]],[[void * ptr = calloc(1, 2); if (ptr) return 1;]])
      ],
      [[mhd_cv_have_func_calloc='yes']],
      [[mhd_cv_have_func_calloc='no']]
