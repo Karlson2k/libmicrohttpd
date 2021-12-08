@@ -62,7 +62,7 @@
 #define MHD_CPU_COUNT 2
 #endif
 
-#define TESTSTR "/* DO NOT CHANGE THIS LINE */"
+#define TESTSTR " /* DO NOT CHANGE THIS LINE */ "
 
 static int oneone;
 

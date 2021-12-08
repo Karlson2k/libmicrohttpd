@@ -61,5 +61,5 @@ has_in_name (const char *prog_name, const char *marker)
   }
   if (name_pos == pos)
     return 0;
-  return strstr (prog_name + name_pos, marker) != (char*) 0;
+  return strstr (prog_name + name_pos, marker) != (char *) 0;
 }

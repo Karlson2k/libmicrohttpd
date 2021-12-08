@@ -55,7 +55,7 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
 
   if (NULL == *ptr)
   {
-    *ptr = (void*) &query_session_ahc;
+    *ptr = (void *) &query_session_ahc;
     return MHD_YES;
   }
 

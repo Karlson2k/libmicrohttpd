@@ -62,7 +62,7 @@ struct CBC
   size_t size;
 };
 
-char*
+char *
 alloc_init (size_t buf_size)
 {
   static const char template[] =
@@ -145,7 +145,7 @@ ahc_echo (void *cls,
       processed = 0;
       *pparam = &processed;     /* Safe as long as only one parallel request served. */
     }
-    pproc = (size_t*) *pparam;
+    pproc = (size_t *) *pparam;
 
     if (0 == *upload_data_size)
       return MHD_YES;   /* No data to process. */

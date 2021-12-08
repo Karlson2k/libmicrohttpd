@@ -25,7 +25,7 @@ struct StdCallThread
 DWORD WINAPI
 ThreadProc (LPVOID lpParameter)
 {
-  struct StdCallThread st = *((struct StdCallThread*) lpParameter);
+  struct StdCallThread st = *((struct StdCallThread *) lpParameter);
   free (lpParameter);
   st.start (st.arg);
   return 0;
@@ -42,7 +42,7 @@ pthread_create (pthread_t *pt,
   if (NULL == pt_)
     return 1;
   struct StdCallThread *sct;
-  sct = (struct StdCallThread*) malloc (sizeof(struct StdCallThread));
+  sct = (struct StdCallThread *) malloc (sizeof(struct StdCallThread));
   if (NULL == sct)
   {
     free (pt_);

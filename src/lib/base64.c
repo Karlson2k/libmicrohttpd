@@ -24,11 +24,11 @@ static const char base64_digits[] =
 
 
 char *
-BASE64Decode (const char*src)
+BASE64Decode (const char *src)
 {
   size_t in_len = strlen (src);
-  char*dest;
-  char*result;
+  char *dest;
+  char *result;
 
   if (in_len % 4)
   {

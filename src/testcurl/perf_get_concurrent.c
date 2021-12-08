@@ -188,7 +188,7 @@ thread_gets (void *param)
   CURL *c;
   CURLcode errornum;
   unsigned int i;
-  char *const url = (char*) param;
+  char *const url = (char *) param;
 
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, url);
@@ -237,7 +237,7 @@ do_gets (void *param)
             port);
   for (j = 0; j < PAR; j++)
   {
-    if (0 != pthread_create (&par[j], NULL, &thread_gets, (void*) url))
+    if (0 != pthread_create (&par[j], NULL, &thread_gets, (void *) url))
     {
       for (j--; j >= 0; j--)
         pthread_join (par[j], NULL);
@@ -247,7 +247,7 @@ do_gets (void *param)
   for (j = 0; j < PAR; j++)
   {
     char *ret_val;
-    if ((0 != pthread_join (par[j], (void**) &ret_val)) ||
+    if ((0 != pthread_join (par[j], (void **) &ret_val)) ||
         (NULL != ret_val) )
       err = ret_val;
   }
@@ -289,7 +289,7 @@ testInternalGet (int port, int poll_flag)
     port = (int) dinfo->port;
   }
   start_timer ();
-  ret_val = do_gets ((void*) (intptr_t) port);
+  ret_val = do_gets ((void *) (intptr_t) port);
   if (! ret_val)
     stop (test_desc);
   MHD_stop_daemon (d);
@@ -340,7 +340,7 @@ testMultithreadedGet (int port, int poll_flag)
     port = (int) dinfo->port;
   }
   start_timer ();
-  ret_val = do_gets ((void*) (intptr_t) port);
+  ret_val = do_gets ((void *) (intptr_t) port);
   if (! ret_val)
     stop (test_desc);
   MHD_stop_daemon (d);
@@ -389,7 +389,7 @@ testMultithreadedPoolGet (int port, int poll_flag)
     port = (int) dinfo->port;
   }
   start_timer ();
-  ret_val = do_gets ((void*) (intptr_t) port);
+  ret_val = do_gets ((void *) (intptr_t) port);
   if (! ret_val)
     stop (test_desc);
   MHD_stop_daemon (d);
@@ -437,7 +437,7 @@ testExternalGet (int port)
     port = (int) dinfo->port;
   }
   if (0 != pthread_create (&pid, NULL,
-                           &do_gets, (void*) (intptr_t) port))
+                           &do_gets, (void *) (intptr_t) port))
   {
     MHD_stop_daemon (d);
     return 512;
@@ -489,7 +489,7 @@ testExternalGet (int port)
 
   stop ("external select");
   MHD_stop_daemon (d);
-  if ((0 != pthread_join (pid, (void**) &ret_val)) ||
+  if ((0 != pthread_join (pid, (void **) &ret_val)) ||
       (NULL != ret_val) )
   {
     fprintf (stderr,

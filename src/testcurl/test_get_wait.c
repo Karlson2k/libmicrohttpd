@@ -189,7 +189,7 @@ testRunWaitGet (int port, int poll_flag)
   }
 
   if (0 != pthread_create (&get_tid, NULL,
-                           &thread_gets, (void*) (intptr_t) port))
+                           &thread_gets, (void *) (intptr_t) port))
     _exit (99);
 
   /* As another thread sets "done" flag after ending of network

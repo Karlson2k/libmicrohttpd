@@ -273,7 +273,7 @@ createListeningSocket (int *pport)
     externalErrorExitDesc ("socket() failed");
 
 #ifdef MHD_POSIX_SOCKETS
-  setsockopt (skt, SOL_SOCKET, SO_REUSEADDR, (void*) &on, sizeof (on));
+  setsockopt (skt, SOL_SOCKET, SO_REUSEADDR, (void *) &on, sizeof (on));
   /* Ignore possible error */
 #endif /* MHD_POSIX_SOCKETS */
 
@@ -281,7 +281,7 @@ createListeningSocket (int *pport)
   sin.sin_family = AF_INET;
   sin.sin_port = htons (*pport);
   sin.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
-  if (0 != bind (skt, (struct sockaddr*) &sin, sizeof(sin)))
+  if (0 != bind (skt, (struct sockaddr *) &sin, sizeof(sin)))
     externalErrorExitDesc ("bind() failed");
 
   if (0 != listen (skt, SOMAXCONN))
@@ -370,7 +370,7 @@ doAcceptAndAddConn (void *param)
 
   (void) doAcceptAndAddConnInThread (p);
 
-  return (void*) p;
+  return (void *) p;
 }
 
 
@@ -381,7 +381,7 @@ startThreadAddConn (struct addConnParam *param)
   param->result = eMarker;
 
   if (0 != pthread_create (&param->addConnThread, NULL, &doAcceptAndAddConn,
-                           (void*) param))
+                           (void *) param))
     externalErrorExitDesc ("pthread_create() failed");
 }
 
@@ -391,7 +391,7 @@ finishThreadAddConn (struct addConnParam *param)
 {
   struct addConnParam *result;
 
-  if (0 != pthread_join (param->addConnThread, (void**) &result))
+  if (0 != pthread_join (param->addConnThread, (void **) &result))
     externalErrorExitDesc ("pthread_join() failed");
 
   if (param != result)
@@ -520,7 +520,7 @@ doCurlQueryInThread (struct curlQueryParams *p)
 static void *
 doCurlQuery (void *param)
 {
-  struct curlQueryParams *p = (struct curlQueryParams*) param;
+  struct curlQueryParams *p = (struct curlQueryParams *) param;
 
   (void) doCurlQueryInThread (p);
 
@@ -535,7 +535,7 @@ startThreadCurlQuery (struct curlQueryParams *param)
   param->queryError = eMarker;
 
   if (0 != pthread_create (&param->queryThread, NULL, &doCurlQuery,
-                           (void*) param))
+                           (void *) param))
     externalErrorExitDesc ("pthread_create() failed");
 }
 
@@ -545,7 +545,7 @@ finishThreadCurlQuery (struct curlQueryParams *param)
 {
   struct curlQueryParams *result;
 
-  if (0 != pthread_join (param->queryThread, (void**) &result))
+  if (0 != pthread_join (param->queryThread, (void **) &result))
     externalErrorExitDesc ("pthread_join() failed");
 
   if (param != result)

@@ -143,7 +143,7 @@ demo_CPPFLAGS = \
 demo_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la  \
  $(PTHREAD_LIBS)
-if HAVE_LIBMAGIC
+if MHD_HAVE_LIBMAGIC
 demo_LDADD += -lmagic
 endif
 
@@ -156,7 +156,7 @@ demo_https_CPPFLAGS = \
 demo_https_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la  \
  $(PTHREAD_LIBS)
-if HAVE_LIBMAGIC
+if MHD_HAVE_LIBMAGIC
 demo_https_LDADD += -lmagic
 endif
 

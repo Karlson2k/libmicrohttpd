@@ -1134,7 +1134,7 @@ get_date_string (char *date,
   time_t t;
 #if ! defined(HAVE_C11_GMTIME_S) && ! defined(HAVE_W32_GMTIME_S) && \
   ! defined(HAVE_GMTIME_R)
-  struct tm*pNow;
+  struct tm *pNow;
 #endif
 
   date[0] = 0;
@@ -2283,7 +2283,7 @@ socket_start_normal_buffering (struct MHD_Connection *connection)
   if ( (0 != getsockopt (connection->socket_fd,
                          IPPROTO_TCP,
                          TCP_CORK,
-                         (void*) &cork_val,
+                         (void *) &cork_val,
                          &param_size)) ||
        (0 != cork_val))
     res &= (0 == setsockopt (connection->socket_fd,

@@ -1996,7 +1996,7 @@ AC_LINK_IFELSE(
    )
   ],
   [
-    AC_DEFINE([HAVE_LIBMAGIC], [1], [Define to 1 if you have suitable libmagic.])
+    AC_DEFINE([MHD_HAVE_LIBMAGIC], [1], [Define to 1 if you have suitable libmagic.])
     mhd_have_libmagic="yes"
     AC_MSG_RESULT([[yes]])
   ],
@@ -2004,7 +2004,7 @@ AC_LINK_IFELSE(
   ]
 )
 LIBS="$SAVE_LIBS"
-AM_CONDITIONAL([HAVE_LIBMAGIC], [[test "x$mhd_have_libmagic" = "xyes"]])
+AM_CONDITIONAL([MHD_HAVE_LIBMAGIC], [[test "x$mhd_have_libmagic" = "xyes"]])
 
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
@@ -2800,7 +2800,7 @@ AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 AX_COUNT_CPUS
 AC_MSG_CHECKING([for number of CPU cores to use in tests])
 AS_VAR_IF([enable_heavy_tests], ["yes"],
-  [ 
+  [
     # Enable usage of many core if heavy tests are enabled
     AS_IF([[test "$CPU_COUNT" -gt "32"]], [[CPU_COUNT="32"]])dnl Limit resource usage
   ],

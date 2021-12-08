@@ -128,7 +128,7 @@ iovec_ahc (void *cls,
     iov[j].iov_len = TESTSTR_SIZE / TESTSTR_IOVCNT;
 
     for (i = 0; i < (int) (TESTSTR_IOVLEN / sizeof(int)); ++i)
-      ((int*) iov[j].iov_base)[i] = i + (j * TESTSTR_IOVLEN / sizeof(int));
+      ((int *) iov[j].iov_base)[i] = i + (j * TESTSTR_IOVLEN / sizeof(int));
   }
 
   response = MHD_create_response_from_iovec (iov,
