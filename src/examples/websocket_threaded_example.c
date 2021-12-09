@@ -37,39 +37,39 @@
   "<script>\n"                                                                \
   "document.addEventListener('DOMContentLoaded', function() {\n"              \
   "  const ws = new WebSocket('ws:// ' + window.location.host);\n"        /*  \
-                                  //   "  const btn = document.getElementById('send');\n"                          \
-                                  //   "  const msg = document.getElementById('msg');\n"                           \
-                                  //   "  const log = document.getElementById('log');\n"                           \
-                                  //   "  ws.onopen = function() {\n"                                              \
-                                  //   "    log.value += 'Connected\\n';\n"                                        \
-                                  //   "  };\n"                                                                    \
-                                  //   "  ws.onclose = function() {\n"                                             \
-                                  //   "    log.value += 'Disconnected\\n';\n"                                     \
-                                  //   "  };\n"                                                                    \
-                                  //   "  ws.onmessage = function(ev) {\n"                                         \
-                                  //   "    log.value += ev.data + '\\n';\n"                                       \
-                                  //   "  };\n"                                                                    \
-                                  //   "  btn.onclick = function() {\n"                                            \
-                                  //   "    log.value += '<You>: ' + msg.value + '\\n';\n"                         \
-                                  //   "    ws.send(msg.value);\n"                                                 \
-                                  //   "  };\n"                                                                    \
-                                  //   "  msg.onkeyup = function(ev) {\n"                                          \
-                                  //   "    if (ev.keyCode === 13) {\n"                                            \
-                                  //   "      ev.preventDefault();\n"                                              \
-                                  //   "      ev.stopPropagation();\n"                                             \
-                                  //   "      btn.click();\n"                                                      \
-                                  //   "      msg.value = '';\n"                                                   \
-                                  //   "    }\n"                                                                   \
-                                  //   "  };\n"                                                                    \
-                                  //   "});\n"                                                                     \
-                                  //   "</script>\n"                                                               \
-                                  //   "</head>\n"                                                                 \
-                                  //   "<body>\n"                                                                  \
-                                  //   "<input type='text' id='msg' autofocus/>\n"                                 \
-                                  //   "<input type='button' id='send' value='Send' /><br /><br />\n"              \
-                                  //   "<textarea id='log' rows='20' cols='28'></textarea>\n"                      \
-                                  //   "</body>\n"                                                                 \
-                                  //   "</html>"                                                               */
+  "  const btn = document.getElementById('send');\n"                          \
+  "  const msg = document.getElementById('msg');\n"                           \
+  "  const log = document.getElementById('log');\n"                           \
+  "  ws.onopen = function() {\n"                                              \
+  "    log.value += 'Connected\\n';\n"                                        \
+  "  };\n"                                                                    \
+  "  ws.onclose = function() {\n"                                             \
+  "    log.value += 'Disconnected\\n';\n"                                     \
+  "  };\n"                                                                    \
+  "  ws.onmessage = function(ev) {\n"                                         \
+  "    log.value += ev.data + '\\n';\n"                                       \
+  "  };\n"                                                                    \
+  "  btn.onclick = function() {\n"                                            \
+  "    log.value += '<You>: ' + msg.value + '\\n';\n"                         \
+  "    ws.send(msg.value);\n"                                                 \
+  "  };\n"                                                                    \
+  "  msg.onkeyup = function(ev) {\n"                                          \
+  "    if (ev.keyCode === 13) {\n"                                            \
+  "      ev.preventDefault();\n"                                              \
+  "      ev.stopPropagation();\n"                                             \
+  "      btn.click();\n"                                                      \
+  "      msg.value = '';\n"                                                   \
+  "    }\n"                                                                   \
+  "  };\n"                                                                    \
+  "});\n"                                                                     \
+  "</script>\n"                                                               \
+  "</head>\n"                                                                 \
+  "<body>\n"                                                                  \
+  "<input type='text' id='msg' autofocus/>\n"                                 \
+  "<input type='button' id='send' value='Send' /><br /><br />\n"              \
+  "<textarea id='log' rows='20' cols='28'></textarea>\n"                      \
+  "</body>\n"                                                                 \
+  "</html>"                                                               */
 #define BAD_REQUEST_PAGE                                                      \
   "<html>\n"                                                                  \
   "<head>\n"                                                                  \
