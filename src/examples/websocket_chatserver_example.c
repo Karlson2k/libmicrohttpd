@@ -185,13 +185,14 @@
   "  */\n" \
   "  function window_onload(event)\n" \
   "  {\n" \
-  "    // Determine the base url (for http:// this is ws:// for https:// this must be wss://)\n" \
-  "    baseUrl = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + '://' + window.location.host + '/ChatServerWebSocket';\n" \
+  " /* Determine the base url (for http:/" "/ this is ws:/" "/ for https:/" \
+                                  "/ this must be wss:/" "/) */\n" \
+  "    baseUrl = 'ws' + (window.location.protocol === 'https:' ? 's' : '') + ':/" "/' + window.location.host + '/ChatServerWebSocket';\n" \
   "    chat_generate();\n" \
   "    chat_connect();\n" \
   "  }\n" \
   "\n" \
-  "  /**\n" \
+  " /**\n" \
   "    This function generates the chat using DOM\n" \
   "  */\n" \
   "  function chat_generate()\n" \
@@ -225,7 +226,7 @@
   "    input.appendChild(inputImage);\n" \
   "    inputImage.id = 'InputImage';\n" \
   "    inputImage.type = 'file';\n" \
-  "    inputImage.accept = 'image/*';\n" \
+  "    inputImage.accept = 'image /*';\n" \
   "    inputImage.style.display = 'none';\n" \
   "    inputImage.addEventListener('change', chat_onImageSelected);\n" \
   "    let inputImageButton = document.createElement('button');\n" \
@@ -259,7 +260,7 @@
   "    socket.onmessage = socket_onmessage;\n" \
   "  }\n" \
   "\n" \
-  "  /**\n" \
+  " /**\n" \
   "    This function adds new text to the chat list\n" \
   "  */\n" \
   "  function chat_addMessage(text, options)\n" \
@@ -309,7 +310,7 @@
   "    message.scrollIntoView();\n" \
   "  }\n" \
   "\n" \
-  "  /**\n" \
+  " /**\n" \
   "    This is a keydown event handler, which allows that you can just press enter instead of clicking the 'send' button\n" \
   "  */\n" \
   "  function chat_onKeyDown(event)\n" \
@@ -318,7 +319,7 @@
   "      chat_onSendClicked();\n" \
   "  }\n" \
   "\n" \
-  "  /**\n" \
+  " /**\n" \
   "    This is the code to send a message or command, when clicking the 'send' button\n" \
   "  */\n" \
   "  function chat_onSendClicked(event)\n" \
@@ -328,7 +329,7 @@
   "      return;\n" \
   "    if(message.substr(0, 1) == '/')\n" \
   "    {\n" \
-  "      // command\n" \
+  " /* command */ \n"     \
   "      let match;\n" \
   "      if(/^\\/disconnect\\s*$/.test(message))\n" \
   "      {\n" \
@@ -370,7 +371,7 @@
   "    }\n" \
   "    else\n" \
   "    {\n" \
-  "      // regular chat message to the selected user\n" \
+  " /* regular chat message to the selected user */ \n"     \
   "      let selectedUser = document.querySelector('div#Users > div.selected');\n" \
   "      let selectedUserId = parseInt(selectedUser.getAttribute('data-user') || '0', 10);\n" \
   "      if(selectedUserId == 0)\n" \
@@ -381,7 +382,7 @@
   "    document.getElementById('InputMessage').value = '';\n" \
   "  }\n" \
   "\n" \
-  "  /**\n" \
+  " /**\n" \
   "    This is the event when the user hits the 'image' button\n" \
   "  */\n" \
   "  function chat_onImageClicked(event)\n" \
@@ -389,14 +390,14 @@
   "    document.getElementById('InputImage').click();\n" \
   "  }\n" \
   "\n" \
-  "  /**\n" \
+  " /**\n" \
   "    This is the event when the user selected an image.\n" \
   "    The image will be read with the FileReader (allowed in web, because the user selected the file).\n" \
   "  */\n" \
   "  function chat_onImageSelected(event)\n" \
   "  {\n" \
   "    let file = event.target.files[0];\n" \
-  "    if(!file || !/^image\\//.test(file.type))\n" \
+  "    if(!file || !/^image\\/" "/.test(file.type))\n" \
   "      return;\n" \
   "    let selectedUser = document.querySelector('div#Users > div.selected');\n" \
   "    let selectedUserId = parseInt(selectedUser.getAttribute('data-user') || '0', 10);\n" \
@@ -407,7 +408,7 @@
   "    reader.readAsArrayBuffer(file);\n" \
   "  }\n" \
   "\n" \
-  "  /**\n" \
+  " /**\n" \
   "    This is the event when the user selected image has been read.\n" \
   "    This will add our chat protocol prefix and send it via the websocket.\n" \
   "  */\n" \
@@ -424,7 +425,7 @@
   "    socket.send(resultByteData);\n" \
   "  }\n" \
   "\n" \
-  "  /**\n" \
+  " /**\n" \
   "    This is the event when the user clicked a name in the user list.\n" \
   "    This is useful to send private messages or images without needing to add the /m prefix.\n" \
   "  */\n" \
@@ -438,7 +439,7 @@
   "    newSelected.classList.add('selected');\n" \
   "  }\n" \
   "\n" \
-  "  /**\n" \
+  " /**\n" \
   "    This functions returns the current id of a user identified by its name.\n" \
   "  */\n" \
   "  function chat_getUserIdByName(name)\n" \
@@ -452,7 +453,7 @@
   "    return null;\n" \
   "  }\n" \
   "\n" \
-  "  /**\n" \
+  " /**\n" \
   "    This functions clears the entire user list (needed for reconnecting).\n" \
   "  */\n" \
   "  function chat_clearUserList()\n" \
@@ -472,7 +473,7 @@
   "    return null;\n" \
   "  }\n" \
   "\n" \
-  "  /**\n" \
+  " /**\n" \
   "    This is the event when the socket has established a connection.\n" \
   "    This will initialize an empty chat and enable the controls.\n" \
   "  */\n" \
@@ -486,7 +487,7 @@
   "    document.getElementById('InputImageButton').disabled   = false;\n" \
   "  }\n" \
   "\n" \
-  "  /**\n" \
+  " /**\n" \
   "    This is the event when the socket has been closed.\n" \
   "    This will lock the controls.\n" \
   "  */\n" \
@@ -498,7 +499,7 @@
   "    document.getElementById('InputImageButton').disabled   = true;\n" \
   "  }\n" \
   "\n" \
-  "  /**\n" \
+  " /**\n" \
   "    This is the event when the socket reported an error.\n" \
   "    This will just make an output.\n" \
   "    In the web browser console (F12 on many browsers) will show you more detailed error information.\n" \
@@ -509,7 +510,7 @@
   "    chat_addMessage('The socket reported an error!', { type: 'error' });\n" \
   "  }\n" \
   "\n" \
-  "  /**\n" \
+  " /**\n" \
   "    This is the event when the socket has received a message.\n" \
   "    This will parse the message and execute the corresponding command (or add the message).\n" \
   "  */\n" \
@@ -517,7 +518,7 @@
   "  {\n" \
   "    if(typeof(event.data) === 'string')\n" \
   "    {\n" \
-  "      // text message or command\n" \
+  " /* text message or command */ \n"     \
   "      let message = event.data.split('|', 3);\n" \
   "      switch(message[0])\n" \
   "      {\n" \
@@ -578,29 +579,29 @@
   "    }\n" \
   "    else\n" \
   "    {\n" \
-  "      // We received a binary frame, which means a picture here\n" \
+  " /* We received a binary frame, which means a picture here */ \n"     \
   "      let byteData = new Uint8Array(event.data);\n" \
   "      let decoder = new TextDecoder();\n" \
   "      let message  = [ ];\n" \
-  "      // message type\n" \
+  " /* message type */ \n"     \
   "      let j = 0;\n" \
-  "      let i = byteData.indexOf(0x7C, j); // | = 0x7C;\n" \
+  "      let i = byteData.indexOf(0x7C, j); /* | = 0x7C;*/ \n"\
   "      if(i < 0)\n" \
   "        return;\n" \
   "      message.push(decoder.decode(byteData.slice(0, i)));\n" \
-  "      // picture from\n" \
+  " /* picture from */ \n"     \
   "      j = i + 1;\n" \
   "      i = byteData.indexOf(0x7C, j);\n" \
   "      if(i < 0)\n" \
   "        return;\n" \
   "      message.push(decoder.decode(byteData.slice(j, i)));\n" \
-  "      // picture encoding\n" \
+  " /* picture encoding */ \n"     \
   "      j = i + 1;\n" \
   "      i = byteData.indexOf(0x7C, j);\n" \
   "      if(i < 0)\n" \
   "        return;\n" \
   "      message.push(decoder.decode(byteData.slice(j, i)));\n" \
-  "      // picture\n" \
+  " /* picture */ \n"     \
   "      byteData = byteData.slice(i + 1);\n" \
   "      chat_addMessage(byteData, { type: message[0], from: connectedUsers.get(message[1]), pictureType: message[2] });\n" \
   "    }\n" \
