@@ -1,4 +1,3 @@
-/* DO NOT CHANGE THIS LINE */
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2009 Christian Grothoff
@@ -61,8 +60,6 @@
 #if ! defined(MHD_CPU_COUNT)
 #define MHD_CPU_COUNT 2
 #endif
-
-#define TESTSTR " /* DO NOT CHANGE THIS LINE */ "
 
 static int oneone;
 
