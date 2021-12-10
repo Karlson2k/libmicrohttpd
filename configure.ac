@@ -335,7 +335,8 @@ save_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS $errattr_CFLAGS"
 inln_prfx="none"
 # Prefer always inline functions
-for inln_prfx_chk in InlineWithAttr __forceinline inline __inline__ __inline _inline _Inline; do
+for inln_prfx_chk in InlineWithAttr __forceinline inline __inline__ __inline _inline _Inline
+do
   # Try to link to avoid "symbol undefined" problems at build time
   AS_IF([[test "x$inln_prfx_chk" = "xInlineWithAttr"]],
     [
@@ -1184,7 +1185,8 @@ AC_CACHE_CHECK([for suported 'noreturn' keyword], [mhd_cv_decl_noreturn],
     mhd_cv_decl_noreturn="none"
     save_CFLAGS="${CFLAGS}"
     CFLAGS="${CFLAGS} ${errattr_CFLAGS}"
-    for decl_noret in '_Noreturn' '__attribute__((__noreturn__))' '__declspec(noreturn)'; do
+    for decl_noret in '_Noreturn' '__attribute__((__noreturn__))' '__declspec(noreturn)'
+    do
       AC_LINK_IFELSE([AC_LANG_SOURCE(
           [[
 #ifdef HAVE_STDLIB_H
