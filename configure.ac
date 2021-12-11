@@ -2940,7 +2940,7 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
                enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }address"
                AS_VAR_IF([enable_san_leak], ["no"], [:],
                  [
-                   AC_CACHE_CHECK([whether leak detect is supported by address sanitizer], [mhd_cv_cc_sanitizer_address_leak],
+                   AC_CACHE_CHECK([whether leak detect is not rejected by address sanitizer], [mhd_cv_cc_sanitizer_address_leak],
                      [
                        CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS}"
                        ASAN_OPTIONS="exitcode=88:detect_leaks=1:halt_on_error=1"
@@ -3278,19 +3278,17 @@ int main(void)
            AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:max_free_fill_size=1024:detect_invalid_pointer_pairs=3"
            AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:handle_ioctl=1:halt_on_error=1"
            AS_VAR_IF([enable_san_upoison], ["yes"], [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:allow_user_poisoning=1"])
+           AS_VAR_IF([enable_san_leak], ["yes"],
+             [AS_VAR_IF([mhd_cv_cc_sanitizer_address_leak], ["yes"],
+               [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:detect_leaks=1"])
+             ], [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:detect_leaks=0"]
+           )
          ]
        )
        AS_VAR_IF([enable_san_undef], [yes],
          [AM_UBSAN_OPTIONS="exitcode=87:print_stacktrace=1:halt_on_error=1"])
        AS_VAR_IF([enable_san_leak], ["yes"],
-         [
-           AS_VAR_IF([enable_san_address], ["yes"],
-             [AS_VAR_IF([mhd_cv_cc_sanitizer_address_leak], ["yes"],
-               [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:detect_leaks=1"])
-             ]
-           )
-           AM_LSAN_OPTIONS="use_unaligned=1"
-         ]
+         [AM_LSAN_OPTIONS="use_unaligned=1"]
        )
        AM_TESTS_ENVIRONMENT='\
 ASAN_OPTIONS="$(AM_ASAN_OPTIONS)" ; export ASAN_OPTIONS ; \
