@@ -1,6 +1,7 @@
 /*
  This file is part of libmicrohttpd
  Copyright (C) 2007, 2016 Christian Grothoff
+ Copyright (C) 2016-2021 Evgeny Grin (Karlson2k)
 
  libmicrohttpd is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published
@@ -22,6 +23,7 @@
  * @file mhds_session_info_test.c
  * @brief  Testcase for libmicrohttpd HTTPS connection querying operations
  * @author Sagie Amir
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -228,6 +230,7 @@ main (int argc, char *const *argv)
   curl_global_cleanup ();
   return errorCount != 0 ? 1 : 0;
 #else  /* LIBCURL_VERSION_NUM < 0x072200 */
+  (void) argc; (void) argv;   /* Unused. Silent compiler warning. */
   return 77;
 #endif /* LIBCURL_VERSION_NUM < 0x072200 */
 }
