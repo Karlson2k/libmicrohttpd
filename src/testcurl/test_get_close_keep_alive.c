@@ -57,6 +57,14 @@
 #include <limits.h>
 #endif /* HAVE_LIMITS_H */
 
+#ifndef CURL_VERSION_BITS
+#define CURL_VERSION_BITS(x,y,z) ((x)<<16|(y)<<8|(z))
+#endif /* ! CURL_VERSION_BITS */
+#ifndef CURL_AT_LEAST_VERSION
+#define CURL_AT_LEAST_VERSION(x,y,z) \
+  (LIBCURL_VERSION_NUM >= CURL_VERSION_BITS(x, y, z))
+#endif /* ! CURL_AT_LEAST_VERSION */
+
 #if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 2
 #undef MHD_CPU_COUNT
 #endif
