@@ -44,7 +44,33 @@
 extern const char srv_key_pem[];
 extern const char srv_self_signed_cert_pem[];
 
-static const int TIME_OUT = 3;
+static const int TIME_OUT = 2;
+
+static unsigned int num_connects = 0;
+static unsigned int num_disconnects = 0;
+
+void
+socket_cb (void *cls,
+           struct MHD_Connection *c,
+           void **socket_context,
+           enum MHD_ConnectionNotificationCode toe)
+{
+  struct sckt_notif_cb_param *param = (struct sckt_notif_cb_param *) cls;
+  if (NULL == socket_context)
+    abort ();
+  if (NULL == c)
+    abort ();
+  if (NULL == param)
+    abort ();
+
+  if (MHD_CONNECTION_NOTIFY_STARTED == toe)
+    num_connects++;
+  else if (MHD_CONNECTION_NOTIFY_CLOSED == toe)
+    num_disconnects++;
+  else
+    abort ();
+}
+
 
 static int
 test_tls_session_time_out (gnutls_session_t session, int port)
@@ -87,13 +113,14 @@ test_tls_session_time_out (gnutls_session_t session, int port)
   (void) sleep (TIME_OUT + 1);
 
   /* check that server has closed the connection */
-  /* TODO better RST trigger */
-  if (send (sd, "", 1, 0) >= 0)
+  if (1 == num_disconnects)
   {
     fprintf (stderr, "Connection failed to time-out\n");
     MHD_socket_close_chk_ (sd);
     return -1;
   }
+  else if (0 != num_disconnects)
+    abort ();
 
   MHD_socket_close_chk_ (sd);
   return 0;
