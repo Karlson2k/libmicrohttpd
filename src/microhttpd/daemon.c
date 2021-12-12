@@ -2317,8 +2317,10 @@ psk_gnutls_adapter (gnutls_session_t session,
 {
   struct MHD_Connection *connection;
   struct MHD_Daemon *daemon;
+#if GNUTLS_VERSION_MAJOR >= 3
   void *app_psk;
   size_t app_psk_size;
+#endif /* GNUTLS_VERSION_MAJOR >= 3 */
 
   connection = gnutls_session_get_ptr (session);
   if (NULL == connection)
@@ -2371,6 +2373,7 @@ psk_gnutls_adapter (gnutls_session_t session,
   free (app_psk);
   return 0;
 #else
+  (void) username; (void) key; /* Mute compiler warning */
 #ifdef HAVE_MESSAGES
   MHD_DLOG (daemon,
             _ ("PSK not supported by this server.\n"));

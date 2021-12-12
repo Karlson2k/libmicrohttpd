@@ -799,8 +799,13 @@ MHD_send_data_ (struct MHD_Connection *connection,
          (GNUTLS_E_CRYPTODEV_IOCTL_ERROR == ret) ||
          (GNUTLS_E_CRYPTODEV_DEVICE_ERROR == ret) )
       return MHD_ERR_PIPE_;
+#if defined(GNUTLS_E_PREMATURE_TERMINATION)
     if (GNUTLS_E_PREMATURE_TERMINATION == ret)
       return MHD_ERR_CONNRESET_;
+#elif defined(GNUTLS_E_UNEXPECTED_PACKET_LENGTH)
+    if (GNUTLS_E_UNEXPECTED_PACKET_LENGTH == ret)
+      return MHD_ERR_CONNRESET_;
+#endif /* GNUTLS_E_UNEXPECTED_PACKET_LENGTH */
     if (GNUTLS_E_MEMORY_ERROR == ret)
       return MHD_ERR_NOMEM_;
     if (ret < 0)
