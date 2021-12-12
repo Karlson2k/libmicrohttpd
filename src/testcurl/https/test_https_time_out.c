@@ -36,6 +36,13 @@
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif /* HAVE_SIGNAL_H */
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif /* HAVE_TIME_H */
+
 #include "mhd_sockets.h" /* only macros used */
 
 
@@ -53,6 +60,45 @@ static const int TIME_OUT = 2;
 
 static unsigned int num_connects = 0;
 static unsigned int num_disconnects = 0;
+
+
+/**
+ * Pause execution for specified number of milliseconds.
+ * @param ms the number of milliseconds to sleep
+ */
+void
+_MHD_sleep (uint32_t ms)
+{
+#if defined(_WIN32)
+  Sleep (ms);
+#elif defined(HAVE_NANOSLEEP)
+  struct timespec slp = {ms / 1000, (ms % 1000) * 1000000};
+  struct timespec rmn;
+  int num_retries = 0;
+  while (0 != nanosleep (&slp, &rmn))
+  {
+    if (num_retries++ > 8)
+      break;
+    slp = rmn;
+  }
+#elif defined(HAVE_USLEEP)
+  uint64_t us = ms * 1000;
+  do
+  {
+    uint64_t this_sleep;
+    if (999999 < us)
+      this_sleep = 999999;
+    else
+      this_sleep = us;
+    /* Ignore return value as it could be void */
+    usleep (this_sleep);
+    us -= this_sleep;
+  } while (us > 0);
+#else
+  sleep ((ms + 999) / 1000);
+#endif
+}
+
 
 void
 socket_cb (void *cls,
@@ -119,7 +165,7 @@ test_tls_session_time_out (gnutls_session_t session, int port)
     return 2;
   }
 
-  (void) sleep (TIME_OUT + 2);
+  _MHD_sleep (TIME_OUT * 1000 + 1200);
 
   /* check that server has closed the connection */
   if (1 == num_disconnects)
