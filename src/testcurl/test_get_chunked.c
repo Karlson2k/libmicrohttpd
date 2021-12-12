@@ -20,7 +20,7 @@
 */
 
 /**
- * @file daemontest_get_chunked.c
+ * @file test_get_chunked.c
  * @brief  Testcase for libmicrohttpd GET operations with chunked content encoding
  * @author Christian Grothoff
  * @author Karlson2k (Evgeny Grin)
@@ -244,6 +244,11 @@ ahc_echo (void *cls,
                                            "chunked"))
       abort ();
   }
+  if (MHD_NO == MHD_add_response_header (response,
+                                         MHD_HTTP_HEADER_TRAILER,
+                                         RESP_FOOTER_NAME))
+    abort ();
+
   if (resp_string || (resp_sized && resp_empty))
   {
     /* There is no chance to add footer later */
