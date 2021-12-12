@@ -88,7 +88,7 @@ test_tls_session_time_out (gnutls_session_t session, int port)
 
   /* check that server has closed the connection */
   /* TODO better RST trigger */
-  if (send (sd, "", 1, 0) == 0)
+  if (send (sd, "", 1, 0) >= 0)
   {
     fprintf (stderr, "Connection failed to time-out\n");
     MHD_socket_close_chk_ (sd);
