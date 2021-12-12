@@ -146,14 +146,10 @@ teardown_testcase (struct MHD_Daemon *d);
 
 int
 setup_session (gnutls_session_t *session,
-               gnutls_datum_t *key,
-               gnutls_datum_t *cert,
                gnutls_certificate_credentials_t *xcred);
 
 int
 teardown_session (gnutls_session_t session,
-                  gnutls_datum_t *key,
-                  gnutls_datum_t *cert,
                   gnutls_certificate_credentials_t xcred);
 
 int

@@ -504,62 +504,33 @@ teardown_testcase (struct MHD_Daemon *d)
 
 int
 setup_session (gnutls_session_t *session,
-               gnutls_datum_t *key,
-               gnutls_datum_t *cert,
                gnutls_certificate_credentials_t *xcred)
 {
-  int ret;
-  const char *err_pos;
-
-  gnutls_certificate_allocate_credentials (xcred);
-  key->size = strlen (srv_key_pem) + 1;
-  key->data = malloc (key->size);
-  if (NULL == key->data)
+  if (GNUTLS_E_SUCCESS == gnutls_init (session, GNUTLS_CLIENT))
   {
-    gnutls_certificate_free_credentials (*xcred);
-    return -1;
-  }
-  memcpy (key->data, srv_key_pem, key->size);
-  cert->size = strlen (srv_self_signed_cert_pem) + 1;
-  cert->data = malloc (cert->size);
-  if (NULL == cert->data)
-  {
-    gnutls_certificate_free_credentials (*xcred);
-    free (key->data);
-    return -1;
-  }
-  memcpy (cert->data, srv_self_signed_cert_pem, cert->size);
-  gnutls_certificate_set_x509_key_mem (*xcred, cert, key,
-                                       GNUTLS_X509_FMT_PEM);
-  gnutls_init (session, GNUTLS_CLIENT);
-  ret = gnutls_priority_set_direct (*session,
-                                    "NORMAL", &err_pos);
-  if (ret < 0)
-  {
+    if (GNUTLS_E_SUCCESS == gnutls_set_default_priority (*session))
+    {
+      if (GNUTLS_E_SUCCESS == gnutls_certificate_allocate_credentials (xcred))
+      {
+        if (GNUTLS_E_SUCCESS == gnutls_credentials_set (*session,
+                                                        GNUTLS_CRD_CERTIFICATE,
+                                                        *xcred))
+        {
+          return 0;
+        }
+        gnutls_certificate_free_credentials (*xcred);
+      }
+    }
     gnutls_deinit (*session);
-    gnutls_certificate_free_credentials (*xcred);
-    free (key->data);
-    return -1;
   }
-  gnutls_credentials_set (*session,
-                          GNUTLS_CRD_CERTIFICATE,
-                          *xcred);
-  return 0;
+  return -1;
 }
 
 
 int
 teardown_session (gnutls_session_t session,
-                  gnutls_datum_t *key,
-                  gnutls_datum_t *cert,
                   gnutls_certificate_credentials_t xcred)
 {
-  free (key->data);
-  key->data = NULL;
-  key->size = 0;
-  free (cert->data);
-  cert->data = NULL;
-  cert->size = 0;
   gnutls_deinit (session);
   gnutls_certificate_free_credentials (xcred);
   return 0;

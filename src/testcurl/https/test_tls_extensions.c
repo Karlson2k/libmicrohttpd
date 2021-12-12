@@ -210,8 +210,6 @@ main (int argc, char *const *argv)
   FILE *test_fd;
   struct MHD_Daemon *d;
   gnutls_session_t session;
-  gnutls_datum_t key;
-  gnutls_datum_t cert;
   gnutls_certificate_credentials_t xcred;
   const int ext_arr[] = {
     GNUTLS_EXTENSION_SERVER_NAME,
@@ -266,25 +264,25 @@ main (int argc, char *const *argv)
   }
 
   i = 0;
-  setup_session (&session, &key, &cert, &xcred);
+  setup_session (&session, &xcred);
   errorCount += test_hello_extension (session, port, ext_arr[i], 1, 16);
-  teardown_session (session, &key, &cert, xcred);
+  teardown_session (session, xcred);
 #if 1
   i = 0;
   while (ext_arr[i] != -1)
   {
-    setup_session (&session, &key, &cert, &xcred);
+    setup_session (&session, &xcred);
     errorCount += test_hello_extension (session, port, ext_arr[i], 1, 16);
-    teardown_session (session, &key, &cert, xcred);
+    teardown_session (session, xcred);
 
-    setup_session (&session, &key, &cert, &xcred);
+    setup_session (&session, &xcred);
     errorCount += test_hello_extension (session, port, ext_arr[i], 3, 8);
-    teardown_session (session, &key, &cert, xcred);
+    teardown_session (session, xcred);
 
     /* this test specifically tests the issue raised in CVE-2008-1948 */
-    setup_session (&session, &key, &cert, &xcred);
+    setup_session (&session, &xcred);
     errorCount += test_hello_extension (session, port, ext_arr[i], 6, 0);
-    teardown_session (session, &key, &cert, xcred);
+    teardown_session (session, xcred);
     i++;
   }
 #endif
