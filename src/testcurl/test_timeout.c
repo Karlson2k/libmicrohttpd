@@ -39,6 +39,47 @@
 #include <unistd.h>
 #endif
 
+
+/**
+ * Pause execution for specified number of milliseconds.
+ * @param ms the number of milliseconds to sleep
+ */
+void
+_MHD_sleep (uint32_t ms)
+{
+#if defined(_WIN32)
+  Sleep (ms);
+#elif defined(HAVE_NANOSLEEP)
+  struct timespec slp = {ms / 1000, (ms % 1000) * 1000000};
+  struct timespec rmn;
+  int num_retries = 0;
+  while (0 != nanosleep (&slp, &rmn))
+  {
+    if (EINTR != errno)
+      externalErrorExit ();
+    if (num_retries++ > 8)
+      break;
+    slp = rmn;
+  }
+#elif defined(HAVE_USLEEP)
+  uint64_t us = ms * 1000;
+  do
+  {
+    uint64_t this_sleep;
+    if (999999 < us)
+      this_sleep = 999999;
+    else
+      this_sleep = us;
+    /* Ignore return value as it could be void */
+    usleep (this_sleep);
+    us -= this_sleep;
+  } while (us > 0);
+#else
+  fprintf (stderr, "No sleep function available on this system.\n");
+#endif
+}
+
+
 static int oneone;
 
 static int withTimeout = 0;
@@ -125,6 +166,7 @@ static size_t
 putBuffer_fail (void *stream, size_t size, size_t nmemb, void *ptr)
 {
   (void) stream; (void) size; (void) nmemb; (void) ptr;        /* Unused. Silent compiler warning. */
+  _MHD_sleep (100); /* Avoid busy-waiting */
   return 0;
 }
 
