@@ -235,12 +235,12 @@ wr_create_tls_sckt (void)
                                                           GNUTLS_CRD_CERTIFICATE,
                                                           s->tls_crd))
           {
-#if GNUTLS_VERSION_NUMBER + 0 >= 0x030109
+#if (GNUTLS_VERSION_NUMBER + 0 >= 0x030109) && ! defined(_WIN64)
             gnutls_transport_set_int (s->tls_s, (int) (s->fd));
-#else  /* GnuTLS before 3.1.9 */
+#else  /* GnuTLS before 3.1.9 or Win x64 */
             gnutls_transport_set_ptr (s->tls_s,
                                       (gnutls_transport_ptr_t) (intptr_t) (s->fd));
-#endif /* GnuTLS before 3.1.9 */
+#endif /* GnuTLS before 3.1.9 or Win x64 */
             return s;
           }
           gnutls_certificate_free_credentials (s->tls_crd);

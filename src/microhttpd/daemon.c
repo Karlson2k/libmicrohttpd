@@ -2646,7 +2646,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
 #else  /* GnuTLS before 3.1.9 or Win x64 */
     gnutls_transport_set_ptr (connection->tls_session,
                               (gnutls_transport_ptr_t) (intptr_t) (client_socket));
-#endif /* GnuTLS before 3.1.9 */
+#endif /* GnuTLS before 3.1.9 or Win x64 */
 #ifdef MHD_TLSLIB_NEED_PUSH_FUNC
     gnutls_transport_set_push_function (connection->tls_session,
                                         MHD_tls_push_func_);
