@@ -1524,7 +1524,7 @@ send_iov_nontls (struct MHD_Connection *connection,
       mhd_assert (r_iov->cnt > r_iov->sent);
       /* The last iov element has been partially sent */
       r_iov->iov[r_iov->sent].iov_base =
-        (void*) ((uint8_t*) r_iov->iov[r_iov->sent].iov_base + (size_t) res);
+        (void *) ((uint8_t *) r_iov->iov[r_iov->sent].iov_base + (size_t) res);
       r_iov->iov[r_iov->sent].iov_len -= (MHD_iov_size_) res;
     }
   }
@@ -1592,7 +1592,7 @@ send_iov_emu (struct MHD_Connection *connection,
       /* Incomplete buffer has been sent.
        * Adjust buffer of the last element. */
       r_iov->iov[r_iov->sent].iov_base =
-        (void*) ((uint8_t*) r_iov->iov[r_iov->sent].iov_base + (size_t) res);
+        (void *) ((uint8_t *) r_iov->iov[r_iov->sent].iov_base + (size_t) res);
       r_iov->iov[r_iov->sent].iov_len -= res;
 
       return total_sent;
