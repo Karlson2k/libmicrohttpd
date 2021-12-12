@@ -510,7 +510,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
     case PP_Error:
       /* clearly impossible as per while loop invariant */
       abort ();
-      break;
+      break; /* Unreachable */
     case PP_Init:
       /* initial phase */
       mhd_assert (NULL == start_key);
