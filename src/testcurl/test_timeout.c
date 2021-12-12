@@ -32,12 +32,13 @@
 #include <microhttpd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include "mhd_has_in_name.h"
-
-#ifndef WINDOWS
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
+#endif /* HAVE_UNISTD_H */
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif /* HAVE_TIME_H */
+#include "mhd_has_in_name.h"
 
 
 /**
@@ -55,8 +56,6 @@ _MHD_sleep (uint32_t ms)
   int num_retries = 0;
   while (0 != nanosleep (&slp, &rmn))
   {
-    if (EINTR != errno)
-      externalErrorExit ();
     if (num_retries++ > 8)
       break;
     slp = rmn;
