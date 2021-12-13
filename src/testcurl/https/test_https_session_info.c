@@ -231,6 +231,7 @@ main (int argc, char *const *argv)
   return errorCount != 0 ? 1 : 0;
 #else  /* LIBCURL_VERSION_NUM < 0x072200 */
   (void) argc; (void) argv;   /* Unused. Silent compiler warning. */
+  (void) query_session_ahc; /* Mute compiler warning */
   return 77;
 #endif /* LIBCURL_VERSION_NUM < 0x072200 */
 }
