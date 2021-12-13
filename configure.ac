@@ -814,6 +814,7 @@ AS_IF([test "x$USE_THREADS" = "xposix"],
    [AC_DEFINE([MHD_USE_W32_THREADS],[1],[define to use W32 threads])])])
 AM_CONDITIONAL([USE_POSIX_THREADS], [test "x$USE_THREADS" = "xposix"])
 AM_CONDITIONAL([USE_W32_THREADS], [test "x$USE_THREADS" = "xw32"])
+AM_CONDITIONAL([USE_THREADS], [test "x$USE_THREADS" != "xnone"])
 AM_CONDITIONAL([DISABLE_THREADS], [test "x$USE_THREADS" = "xnone"])
 AC_MSG_RESULT([$USE_THREADS])
 
