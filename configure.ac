@@ -57,6 +57,7 @@ AS_IF([test `uname -s` = "OS/390"],
 # Checks for programs.
 AC_PROG_AWK
 AC_PROG_GREP
+AC_PROG_FGREP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
@@ -2596,6 +2597,35 @@ AC_SUBST([GNUTLS_CPPFLAGS])
 AC_SUBST([GNUTLS_CFLAGS])
 AC_SUBST([GNUTLS_LDFLAGS])
 AC_SUBST([GNUTLS_LIBS])
+
+AS_VAR_IF([have_gnutls], ["yes"],
+  [
+    AC_CACHE_CHECK([for GnuTLS quirks], [mhd_cv_gnutls_mthread_broken],
+      [
+        mhd_cv_gnutls_mthread_broken="no"
+        AS_IF([test -r /etc/redhat-release],
+          [
+            AS_IF([$FGREP ' release 6.' /etc/redhat-release >/dev/null || $FGREP '(Santiago)' /etc/redhat-release >/dev/null],
+              [mhd_cv_gnutls_mthread_broken="found"],
+            )
+          ]
+        )
+        AS_VAR_IF([mhd_cv_gnutls_mthread_broken], ["no"],
+          [
+            AS_IF([command -v rpm >/dev/null],
+              [
+                AS_IF([test r`rpm -E '%{rhel} 2>/dev/null'` = "r6"],
+                  [mhd_cv_gnutls_mthread_broken="found"],
+                )
+              ]
+            )
+          ]
+        )
+      ]
+    )
+  ]
+)
+AM_CONDITIONAL([HAVE_GNUTLS_MTHREAD_BROKEN], [[test "x${mhd_cv_gnutls_mthread_broken}" = "xfound"]])
 
 # optional: HTTP Basic Auth support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP basic authentication]])
