@@ -1024,7 +1024,25 @@ w32_shared_lib_exp=no
 AS_IF([test "x$enable_shared" = "xyes" && test "x$os_is_native_w32" = "xyes"],
   [
     AS_IF([test "x$ac_cv_use_ms_lib_tool" = "xyes" || test -n "$DLLTOOL"],
-      [w32_shared_lib_exp=yes],
+      [
+        w32_shared_lib_exp=yes
+        use_expfile="no"
+        AS_VAR_IF([ac_cv_use_ms_lib_tool], ["yes"], [use_expfile="yes"],
+          [
+            AC_CACHE_CHECK([whether $DLLTOOL supports export file generation], [mhd_cv_dlltool_expfile],
+              [
+                AS_IF([AC_RUN_LOG([$DLLTOOL -e conftest.exp >&2 ])],
+                  [
+                    AS_IF([test -f conftest.exp], [mhd_cv_dlltool_expfile="yes"], [mhd_cv_dlltool_expfile="no"])
+                  ], [mhd_cv_dlltool_expfile="no"]
+                )
+                rm -f conftest.exp
+              ]
+            )
+            use_expfile="${mhd_cv_dlltool_expfile}"
+          ]
+        )
+      ],
       [
         AC_MSG_WARN([[GNU dlltool or MS lib.exe is required for creating shared library export on W32]])
         AC_MSG_WARN([[Export library libmicrohttpd.lib will not be created]])
@@ -1032,8 +1050,9 @@ AS_IF([test "x$enable_shared" = "xyes" && test "x$os_is_native_w32" = "xyes"],
     )
   ]
 )
-AM_CONDITIONAL(W32_SHARED_LIB_EXP, [test "x$w32_shared_lib_exp" = "xyes"])
-AM_CONDITIONAL(USE_MS_LIB_TOOL, [test "x$ac_cv_use_ms_lib_tool" = "xyes"])
+AM_CONDITIONAL([W32_SHARED_LIB_EXP], [test "x$w32_shared_lib_exp" = "xyes"])
+AM_CONDITIONAL([USE_MS_LIB_TOOL], [test "x$ac_cv_use_ms_lib_tool" = "xyes"])
+AM_CONDITIONAL([USE_EXPORT_FILE], [test "x$use_expfile" = "xyes"])
 
 MHD_CHECK_SOCKET_SHUTDOWN_TRIGGER([AC_DEFINE([HAVE_LISTEN_SHUTDOWN],[1],[can use shutdown on listen sockets])])
 AM_CONDITIONAL([HAVE_LISTEN_SHUTDOWN], [test "x$mhd_cv_host_shtdwn_trgr_select" = "xyes"])

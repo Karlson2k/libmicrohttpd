@@ -1,4 +1,5 @@
 # This Makefile.am is in the public domain
+
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/microhttpd
@@ -12,28 +13,46 @@ noinst_DATA =
 MOSTLYCLEANFILES =
 
 if W32_SHARED_LIB_EXP
+AM_V_DLLTOOL = $(am__v_DLLTOOL_$(V))
+am__v_DLLTOOL_ = $(am__v_DLLTOOL_$(AM_DEFAULT_VERBOSITY))
+am__v_DLLTOOL_0 = @echo "  DLLTOOL " $@;
+am__v_DLLTOOL_1 = 
+
+AM_V_LIB = $(am__v_LIB_$(V))
+am__v_LIB_ = $(am__v_LIB_$(AM_DEFAULT_VERBOSITY))
+am__v_LIB_0 = @echo "  LIB     " $@;
+am__v_LIB_1 = 
+
 W32_MHD_LIB_LDFLAGS = -Wl,--output-def,$(lt_cv_objdir)/libmicrohttpd.def -XCClinker -static-libgcc
-noinst_DATA += $(lt_cv_objdir)/libmicrohttpd.lib $(lt_cv_objdir)/libmicrohttpd.def $(lt_cv_objdir)/libmicrohttpd.exp
+noinst_DATA += $(lt_cv_objdir)/libmicrohttpd.lib $(lt_cv_objdir)/libmicrohttpd.def
 MOSTLYCLEANFILES += $(lt_cv_objdir)/libmicrohttpd.lib $(lt_cv_objdir)/libmicrohttpd.def $(lt_cv_objdir)/libmicrohttpd.exp
 
 $(lt_cv_objdir)/libmicrohttpd.def: libmicrohttpd.la
+	$(AM_V_at)test -f $@ && touch $@ || \
+	  ( rm -f libmicrohttpd.la ; $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd.la && touch $@ )
+
+if USE_EXPORT_FILE
+noinst_DATA += $(lt_cv_objdir)/libmicrohttpd.exp
 
 $(lt_cv_objdir)/libmicrohttpd.exp: $(lt_cv_objdir)/libmicrohttpd.lib
+	$(AM_V_at)test -f $@ && touch $@ || \
+	  ( rm -f $(lt_cv_objdir)/libmicrohttpd.lib ; $(MAKE) $(AM_MAKEFLAGS) $(lt_cv_objdir)/libmicrohttpd.lib  && touch $@ )
+endif
 
-$(lt_cv_objdir)/libmicrohttpd.lib: $(lt_cv_objdir)/libmicrohttpd.def libmicrohttpd.la $(libmicrohttpd_la_OBJECTS)
 if USE_MS_LIB_TOOL
-	@echo Creating $@ and libmicrohttpd.exp by $(MS_LIB_TOOL)... && \
-	dll_name=`$(EGREP) -o dlname=\'.+\' libmicrohttpd.la` && \
-	dll_name=$${dll_name#*\'} && dll_name=$${dll_name%\'} && test -n "$$dll_name" && \
-	echo Creating $$dll_name by $(MS_LIB_TOOL).. && cd "$(lt_cv_objdir)" && \
-	$(MS_LIB_TOOL) -def:libmicrohttpd.def -name:$$dll_name -out:libmicrohttpd.lib $(libmicrohttpd_la_OBJECTS:.lo=.o) && cd ..
+$(lt_cv_objdir)/libmicrohttpd.lib: $(lt_cv_objdir)/libmicrohttpd.def libmicrohttpd.la $(libmicrohttpd_la_OBJECTS)
+	$(AM_V_at)$(AM_V_LIB) cd "$(lt_cv_objdir)" && dll_name=`$(SED) -n -e "s/^dlname='\(.*\)'/\1/p" libmicrohttpd.la` && test -n "$$dll_name" && \
+	$(MS_LIB_TOOL) -nologo -def:libmicrohttpd.def -name:$$dll_name -out:libmicrohttpd.lib $(libmicrohttpd_la_OBJECTS:.lo=.o) -ignore:4221
 else
-	@echo Creating $@ and libmicrohttpd.exp by $(DLLTOOL)... && \
-	dll_name=`$(EGREP) -o dlname=\'.+\' libmicrohttpd.la` && \
-	dll_name=$${dll_name#*\'} && dll_name=$${dll_name%\'} && test -n "$$dll_name" && \
-	echo Creating $$dll_name by $(DLLTOOL).. && cd "$(lt_cv_objdir)" && \
-	$(DLLTOOL) -d ./libmicrohttpd.def -D $$dll_name -l libmicrohttpd.lib $(libmicrohttpd_la_OBJECTS:.lo=.o) -e ./libmicrohttpd.exp && cd .. &&\
-	echo Created libmicrohttpd.exp and libmicrohttpd.lib.
+if USE_EXPORT_FILE
+$(lt_cv_objdir)/libmicrohttpd.lib $(lt_cv_objdir)/libmicrohttpd.exp: $(lt_cv_objdir)/libmicrohttpd.def libmicrohttpd.la $(libmicrohttpd_la_OBJECTS)
+	$(AM_V_at)$(AM_V_DLLTOOL) cd "$(lt_cv_objdir)" && dll_name=`$(SED) -n -e "s/^dlname='\(.*\)'/\1/p" libmicrohttpd.la` && test -n "$$dll_name" && \
+	$(DLLTOOL) -d libmicrohttpd.def -D $$dll_name -l libmicrohttpd.lib $(libmicrohttpd_la_OBJECTS:.lo=.o) -e ./libmicrohttpd.exp
+else
+$(lt_cv_objdir)/libmicrohttpd.lib: $(lt_cv_objdir)/libmicrohttpd.def libmicrohttpd.la
+	$(AM_V_at)$(AM_V_DLLTOOL) cd "$(lt_cv_objdir)" && dll_name=`$(SED) -n -e "s/^dlname='\(.*\)'/\1/p" libmicrohttpd.la` && test -n "$$dll_name" && \
+	$(DLLTOOL) -d libmicrohttpd.def -D $$dll_name -l libmicrohttpd.lib
+endif
 endif
 else
   W32_MHD_LIB_LDFLAGS =
