@@ -120,9 +120,14 @@ MHD_DLL_RES_LO = libmicrohttpd_la-$(MHD_DLL_RES_SRC:.rc=.lo)
 EXTRA_libmicrohttpd_la_DEPENDENCIES = $(MHD_DLL_RES_LO)
 libmicrohttpd_la_LIBADD += $(MHD_DLL_RES_LO)
 
+AM_V_RC = $(am__v_RC_$(V))
+am__v_RC_ = $(am__v_RC_$(AM_DEFAULT_VERBOSITY))
+am__v_RC_0 = @echo "  RC      " $@;
+am__v_RC_1 = 
+
 # General rule is not required, but keep it just in case
 .rc.lo:
-	$(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(RCFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $< -o $@
+	$(AM_V_RC) $(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(RCFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $< -o $@
 
 # To add dll resource only to .dll file and exclude it form static
 # lib, a little trick was used. Allow libtool to create file.lo,
@@ -133,9 +138,9 @@ libmicrohttpd_la_LIBADD += $(MHD_DLL_RES_LO)
 # Note: windres does not understand '-isystem' flag, so all
 # possible '-isystem' flags are replaced by simple '-I' flags.
 $(MHD_DLL_RES_LO): $(MHD_DLL_RES_SRC)
-	RC_CPP_FLAGS=" $(DEFAULT_INCLUDES) $(INCLUDES) $(libmicrohttpd_la_CPPFLAGS) $(CPPFLAGS) " && \
-	$(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(RCFLAGS) $(DEFS) $${RC_CPP_FLAGS// -isystem / -I } $< -o $@ && \
-	echo > $@-empty.c && $(CC) $(AM_CFLAGS) $(CFLAGS) -c $@-empty.c -o $(@:.lo=.o) && rm -f $@-empty.c
+	$(AM_V_RC) RC_CPP_FLAGS=" $(DEFAULT_INCLUDES) $(INCLUDES) $(libmicrohttpd_la_CPPFLAGS) $(CPPFLAGS) " && \
+	$(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(RCFLAGS) $(DEFS) $${RC_CPP_FLAGS// -isystem / -I} $< -o $@ && \
+	echo > $@-empty.c && $(CC) $(DEFS) $(AM_CFLAGS) $(CFLAGS) -c $@-empty.c -o $(@:.lo=.o) && rm -f $@-empty.c
 endif
 
 if USE_COVERAGE
