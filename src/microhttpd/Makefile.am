@@ -12,16 +12,16 @@ lib_LTLIBRARIES = \
 noinst_DATA =
 MOSTLYCLEANFILES =
 
+AM_V_LIB = $(am__v_LIB_$(V))
+am__v_LIB_ = $(am__v_LIB_$(AM_DEFAULT_VERBOSITY))
+am__v_LIB_0 = @echo "  LIB     " $@;
+am__v_LIB_1 = 
+
 if W32_SHARED_LIB_EXP
 AM_V_DLLTOOL = $(am__v_DLLTOOL_$(V))
 am__v_DLLTOOL_ = $(am__v_DLLTOOL_$(AM_DEFAULT_VERBOSITY))
 am__v_DLLTOOL_0 = @echo "  DLLTOOL " $@;
 am__v_DLLTOOL_1 = 
-
-AM_V_LIB = $(am__v_LIB_$(V))
-am__v_LIB_ = $(am__v_LIB_$(AM_DEFAULT_VERBOSITY))
-am__v_LIB_0 = @echo "  LIB     " $@;
-am__v_LIB_1 = 
 
 W32_MHD_LIB_LDFLAGS = -Wl,--output-def,$(lt_cv_objdir)/libmicrohttpd.def -XCClinker -static-libgcc
 noinst_DATA += $(lt_cv_objdir)/libmicrohttpd.lib $(lt_cv_objdir)/libmicrohttpd.def
@@ -55,7 +55,7 @@ $(lt_cv_objdir)/libmicrohttpd.lib: $(lt_cv_objdir)/libmicrohttpd.def libmicrohtt
 endif
 endif
 else
-  W32_MHD_LIB_LDFLAGS =
+W32_MHD_LIB_LDFLAGS =
 endif
 
 if W32_STATIC_LIB
@@ -64,9 +64,9 @@ MOSTLYCLEANFILES += $(lt_cv_objdir)/libmicrohttpd-static.lib
 
 $(lt_cv_objdir)/libmicrohttpd-static.lib: libmicrohttpd.la $(libmicrohttpd_la_OBJECTS)
 if USE_MS_LIB_TOOL
-	$(MS_LIB_TOOL) -out:$@ $(libmicrohttpd_la_OBJECTS:.lo=.o)
+	$(AM_V_LIB) $(MS_LIB_TOOL) -nologo -out:$@ $(libmicrohttpd_la_OBJECTS:.lo=.o)
 else
-	cp $(lt_cv_objdir)/libmicrohttpd.a $@
+	$(AM_V_at)cp $(lt_cv_objdir)/libmicrohttpd.a $@
 endif
 endif
 
