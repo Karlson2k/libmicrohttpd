@@ -1,0 +1,12 @@
+diff --git a/build-aux/ltmain.sh b/build-aux/ltmain.sh
+index 0418007..91276c2 100644
+--- a/build-aux/ltmain.sh
++++ b/build-aux/ltmain.sh
+@@ -4163,6 +4163,7 @@
+ # include <unistd.h>
+ # include <stdint.h>
+ # ifdef __CYGWIN__
++#  include <process.h>
+ #  include <io.h>
+ # endif
+ #endif
