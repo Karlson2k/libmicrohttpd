@@ -2645,9 +2645,18 @@ AS_VAR_IF([have_gnutls], ["yes"],
         )
       ]
     )
+    AC_CACHE_CHECK([for gnutls-cli binary], [mhd_cv_gnutls_cli],
+      [
+        mhd_cv_gnutls_cli="no"
+        AS_IF([command -v gnutls-cli >/dev/null 2>&1],
+          [AS_IF([AC_RUN_LOG([gnutls-cli --version >&2])], [mhd_cv_gnutls_cli="yes"])]
+        )
+      ]
+    )
   ]
 )
 AM_CONDITIONAL([HAVE_GNUTLS_MTHREAD_BROKEN], [[test "x${mhd_cv_gnutls_mthread_broken}" = "xfound"]])
+AM_CONDITIONAL([USE_UPGRADE_TLS_TESTS], [[test "x${mhd_cv_gnutls_mthread_broken}" = "xno" || test "x${mhd_cv_gnutls_cli}" == "xyes"]])
 
 # optional: HTTP Basic Auth support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP basic authentication]])

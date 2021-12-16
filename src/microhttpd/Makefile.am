@@ -214,11 +214,10 @@ if USE_W32_THREADS
   check_PROGRAMS += test_upgrade test_upgrade_large
 endif
 if ENABLE_HTTPS
-if USE_POSIX_THREADS
+if USE_THREADS
+if USE_UPGRADE_TLS_TESTS
 check_PROGRAMS += test_upgrade_tls test_upgrade_large_tls
 endif
-if USE_W32_THREADS
-check_PROGRAMS += test_upgrade_tls test_upgrade_large_tls
 endif
 endif
 endif
