@@ -2743,7 +2743,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  * before calling this function. FD_SETSIZE is assumed
  * to be platform's default.
  *
- * This function should only be called only when MHD is configured to
+ * This function should be called only when MHD is configured to
  * use "external" sockets polling with 'select()' or with 'epoll'.
  * In the latter case, it will only add the single 'epoll' file
  * descriptor used by MHD to the sets.
@@ -2784,7 +2784,7 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
  * Passing custom FD_SETSIZE as @a fd_setsize allow usage of
  * larger/smaller than platform's default fd_sets.
  *
- * This function should only be called only when MHD is configured to
+ * This function should be called only when MHD is configured to
  * use "external" sockets polling with 'select()' or with 'epoll'.
  * In the latter case, it will only add the single 'epoll' file
  * descriptor used by MHD to the sets.
@@ -2825,7 +2825,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  * before calling this function. Size of fd_set is
  * determined by current value of FD_SETSIZE.
  *
- * This function should only be called only when MHD is configured to
+ * This function should be called only when MHD is configured to
  * use "external" sockets polling with 'select()' or with 'epoll'.
  * In the latter case, it will only add the single 'epoll' file
  * descriptor used by MHD to the sets.
