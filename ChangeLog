@@ -1,3 +1,6 @@
+Web 19 Dec 2021 18:30:00 MSK
+    Releasing GNU libmicrohttpd 0.9.74 -EG
+
 December 2021
     Fixed doxy for MHD_suspend_connection().
     Some code improvements for new test test_client_put_stop.
