@@ -339,7 +339,7 @@ _MHD_DEPR_MACRO ( \
  * @defgroup httpcode HTTP response codes.
  * These are the status codes defined for HTTP responses.
  * See: https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
- * Registry export date: 2021-10-30
+ * Registry export date: 2021-12-19
  * @{
  */
 
@@ -490,7 +490,6 @@ _MHD_DEPR_MACRO ( \
 /* 509 "Bandwidth Limit Exceeded". Apache extension. */
 #define MHD_HTTP_BANDWIDTH_LIMIT_EXCEEDED    509
 
-
 /* Deprecated names and codes */
 /** @deprecated */
 #define MHD_HTTP_METHOD_NOT_ACCEPTABLE \
@@ -574,7 +573,7 @@ MHD_get_reason_phrase_len_for (unsigned int code);
  * @defgroup headers HTTP headers
  * These are the standard headers found in HTTP requests and responses.
  * See: https://www.iana.org/assignments/http-fields/http-fields.xhtml
- * Registry export date: 2021-10-30
+ * Registry export date: 2021-12-19
  * @{
  */
 
@@ -701,6 +700,29 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_ACCEPT_FEATURES "Accept-Features"
 /* Permanent.     https://www.w3.org/TR/ldp/ */
 #define MHD_HTTP_HEADER_ACCEPT_POST  "Accept-Post"
+/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-allow-credentials */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_CREDENTIALS \
+  "Access-Control-Allow-Credentials"
+/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-allow-headers */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_HEADERS \
+  "Access-Control-Allow-Headers"
+/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-allow-methods */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_METHODS \
+  "Access-Control-Allow-Methods"
+/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-allow-origin */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN \
+  "Access-Control-Allow-Origin"
+/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-expose-headers */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_EXPOSE_HEADERS \
+  "Access-Control-Expose-Headers"
+/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-max-age */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_MAX_AGE "Access-Control-Max-Age"
+/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-request-headers */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_REQUEST_HEADERS \
+  "Access-Control-Request-Headers"
+/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-request-method */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL_REQUEST_METHOD \
+  "Access-Control-Request-Method"
 /* Permanent.     RFC7639, Section 2 */
 #define MHD_HTTP_HEADER_ALPN         "ALPN"
 /* Permanent.     RFC7838 */
@@ -737,12 +759,28 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_CONTENT_ID   "Content-ID"
 /* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_CONTENT_SCRIPT_TYPE "Content-Script-Type"
+/* Permanent.     https://www.w3.org/TR/CSP/#csp-header */
+#define MHD_HTTP_HEADER_CONTENT_SECURITY_POLICY "Content-Security-Policy"
+/* Permanent.     https://www.w3.org/TR/CSP/#cspro-header */
+#define MHD_HTTP_HEADER_CONTENT_SECURITY_POLICY_REPORT_ONLY \
+  "Content-Security-Policy-Report-Only"
 /* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_CONTENT_STYLE_TYPE "Content-Style-Type"
 /* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_CONTENT_VERSION "Content-Version"
 /* Permanent.     RFC6265 */
 #define MHD_HTTP_HEADER_COOKIE       "Cookie"
+/* Permanent.     https://html.spec.whatwg.org/multipage/origin.html#cross-origin-embedder-policy */
+#define MHD_HTTP_HEADER_CROSS_ORIGIN_EMBEDDER_POLICY \
+  "Cross-Origin-Embedder-Policy"
+/* Permanent.     https://html.spec.whatwg.org/multipage/origin.html#cross-origin-embedder-policy-report-only */
+#define MHD_HTTP_HEADER_CROSS_ORIGIN_EMBEDDER_POLICY_REPORT_ONLY \
+  "Cross-Origin-Embedder-Policy-Report-Only"
+/* Permanent.     https://html.spec.whatwg.org/multipage/origin.html#cross-origin-opener-policy-2 */
+#define MHD_HTTP_HEADER_CROSS_ORIGIN_OPENER_POLICY "Cross-Origin-Opener-Policy"
+/* Permanent.     https://html.spec.whatwg.org/multipage/origin.html#cross-origin-opener-policy-report-only */
+#define MHD_HTTP_HEADER_CROSS_ORIGIN_OPENER_POLICY_REPORT_ONLY \
+  "Cross-Origin-Opener-Policy-Report-Only"
 /* Permanent.     https://fetch.spec.whatwg.org/#cross-origin-resource-policy-header */
 #define MHD_HTTP_HEADER_CROSS_ORIGIN_RESOURCE_POLICY \
   "Cross-Origin-Resource-Policy"
@@ -789,6 +827,8 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_KEEP_ALIVE   "Keep-Alive"
 /* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_LABEL        "Label"
+/* Permanent.     https://html.spec.whatwg.org/multipage/server-sent-events.html#last-event-id */
+#define MHD_HTTP_HEADER_LAST_EVENT_ID "Last-Event-ID"
 /* Permanent.     RFC8288 */
 #define MHD_HTTP_HEADER_LINK         "Link"
 /* Permanent.     RFC4918 */
@@ -817,8 +857,12 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_ORDERING_TYPE "Ordering-Type"
 /* Permanent.     RFC6454 */
 #define MHD_HTTP_HEADER_ORIGIN       "Origin"
+/* Permanent.     https://html.spec.whatwg.org/multipage/origin.html#origin-agent-cluster */
+#define MHD_HTTP_HEADER_ORIGIN_AGENT_CLUSTER "Origin-Agent-Cluster"
 /* Permanent.     RFC8613, Section 11.1 */
 #define MHD_HTTP_HEADER_OSCORE       "OSCORE"
+/* Permanent.     OASIS Project Specification 01; OASIS; Chet_Ensign */
+#define MHD_HTTP_HEADER_OSLC_CORE_VERSION "OSLC-Core-Version"
 /* Permanent.     RFC4918 */
 #define MHD_HTTP_HEADER_OVERWRITE    "Overwrite"
 /* Permanent.     RFC4229 */
@@ -829,6 +873,10 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_PEP_INFO     "Pep-Info"
 /* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_PICS_LABEL   "PICS-Label"
+/* Permanent.     https://html.spec.whatwg.org/multipage/links.html#ping-from */
+#define MHD_HTTP_HEADER_PING_FROM    "Ping-From"
+/* Permanent.     https://html.spec.whatwg.org/multipage/links.html#ping-to */
+#define MHD_HTTP_HEADER_PING_TO      "Ping-To"
 /* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_POSITION     "Position"
 /* Permanent.     RFC7240 */
@@ -854,6 +902,8 @@ MHD_get_reason_phrase_len_for (unsigned int code);
   "Public-Key-Pins-Report-Only"
 /* Permanent.     RFC4437 */
 #define MHD_HTTP_HEADER_REDIRECT_REF "Redirect-Ref"
+/* Permanent.     https://html.spec.whatwg.org/multipage/browsing-the-web.html#refresh */
+#define MHD_HTTP_HEADER_REFRESH      "Refresh"
 /* Permanent.     RFC8555, Section 6.5.1 */
 #define MHD_HTTP_HEADER_REPLAY_NONCE "Replay-Nonce"
 /* Permanent.     RFC4229 */
@@ -876,6 +926,8 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_SEC_WEBSOCKET_VERSION "Sec-WebSocket-Version"
 /* Permanent.     RFC4229 */
 #define MHD_HTTP_HEADER_SECURITY_SCHEME "Security-Scheme"
+/* Permanent.     https://www.w3.org/TR/server-timing/ */
+#define MHD_HTTP_HEADER_SERVER_TIMING "Server-Timing"
 /* Permanent.     RFC6265 */
 #define MHD_HTTP_HEADER_SET_COOKIE   "Set-Cookie"
 /* Permanent.     RFC4229 */
@@ -912,34 +964,16 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_WANT_DIGEST  "Want-Digest"
 /* Permanent.     https://fetch.spec.whatwg.org/#x-content-type-options-header */
 #define MHD_HTTP_HEADER_X_CONTENT_TYPE_OPTIONS "X-Content-Type-Options"
-/* Permanent.     RFC7034 */
+/* Permanent.     https://html.spec.whatwg.org/multipage/browsing-the-web.html#x-frame-options */
 #define MHD_HTTP_HEADER_X_FRAME_OPTIONS "X-Frame-Options"
 /* Provisional.   RFC5789 */
 #define MHD_HTTP_HEADER_ACCEPT_PATCH "Accept-Patch"
-/* Provisional.   W3C Web Application Formats Working Group */
-#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_CREDENTIALS \
-  "Access-Control-Allow-Credentials"
-/* Provisional.   W3C Web Application Formats Working Group */
-#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_HEADERS \
-  "Access-Control-Allow-Headers"
-/* Provisional.   W3C Web Application Formats Working Group */
-#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_METHODS \
-  "Access-Control-Allow-Methods"
-/* Provisional.   W3C Web Application Formats Working Group */
-#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN \
-  "Access-Control-Allow-Origin"
-/* Provisional.   W3C Web Application Formats Working Group */
-#define MHD_HTTP_HEADER_ACCESS_CONTROL_MAX_AGE "Access-Control-Max-Age"
-/* Provisional.   W3C Web Application Formats Working Group */
-#define MHD_HTTP_HEADER_ACCESS_CONTROL_REQUEST_HEADERS \
-  "Access-Control-Request-Headers"
-/* Provisional.   W3C Web Application Formats Working Group */
-#define MHD_HTTP_HEADER_ACCESS_CONTROL_REQUEST_METHOD \
-  "Access-Control-Request-Method"
 /* Provisional.   https://github.com/ampproject/amphtml/blob/master/spec/amp-cache-transform.md */
 #define MHD_HTTP_HEADER_AMP_CACHE_TRANSFORM "AMP-Cache-Transform"
 /* Provisional.   RFC4229 */
 #define MHD_HTTP_HEADER_COMPLIANCE   "Compliance"
+/* Provisional.   https://docs.oasis-open-projects.org/oslc-op/config/v1.0/psd01/config-resources.html#configcontext */
+#define MHD_HTTP_HEADER_CONFIGURATION_CONTEXT "Configuration-Context"
 /* Provisional.   RFC4229 */
 #define MHD_HTTP_HEADER_CONTENT_TRANSFER_ENCODING "Content-Transfer-Encoding"
 /* Provisional.   RFC4229 */
@@ -954,8 +988,6 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_NON_COMPLIANCE "Non-Compliance"
 /* Provisional.   RFC4229 */
 #define MHD_HTTP_HEADER_OPTIONAL     "Optional"
-/* Provisional.   OASIS Project Specification 01; OASIS; Chet_Ensign */
-#define MHD_HTTP_HEADER_OSLC_CORE_VERSION "OSLC-Core-Version"
 /* Provisional.   Repeatable Requests Version 1.0; OASIS; Chet_Ensign */
 #define MHD_HTTP_HEADER_REPEATABILITY_CLIENT_ID "Repeatability-Client-ID"
 /* Provisional.   Repeatable Requests Version 1.0; OASIS; Chet_Ensign */
@@ -1002,26 +1034,26 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_X_DEVICE_ACCEPT_LANGUAGE "X-Device-Accept-Language"
 /* Provisional.   W3C Mobile Web Best Practices Working Group */
 #define MHD_HTTP_HEADER_X_DEVICE_USER_AGENT "X-Device-User-Agent"
-/* Deprecated.    W3C Web Application Formats Working Group */
-#define MHD_HTTP_HEADER_ACCESS_CONTROL "Access-Control"
 /* Deprecated.    RFC4229 */
 #define MHD_HTTP_HEADER_C_PEP_INFO   "C-PEP-Info"
-/* Deprecated.    W3C Web Application Formats Working Group */
-#define MHD_HTTP_HEADER_METHOD_CHECK "Method-Check"
-/* Deprecated.    W3C Web Application Formats Working Group */
-#define MHD_HTTP_HEADER_METHOD_CHECK_EXPIRES "Method-Check-Expires"
 /* Deprecated.    RFC4229 */
 #define MHD_HTTP_HEADER_PROTOCOL_INFO "Protocol-Info"
 /* Deprecated.    RFC4229 */
 #define MHD_HTTP_HEADER_PROTOCOL_QUERY "Protocol-Query"
-/* Deprecated.    W3C Web Application Formats Working Group */
-#define MHD_HTTP_HEADER_REFERER_ROOT "Referer-Root"
+/* Obsoleted.     https://www.w3.org/TR/2007/WD-access-control-20071126/#access-control0 */
+#define MHD_HTTP_HEADER_ACCESS_CONTROL "Access-Control"
 /* Obsoleted.     RFC2068; RFC2616 */
 #define MHD_HTTP_HEADER_CONTENT_BASE "Content-Base"
 /* Obsoleted.     RFC2616, Section 14.15; RFC7231, Appendix B */
 #define MHD_HTTP_HEADER_CONTENT_MD5  "Content-MD5"
 /* Obsoleted.     RFC2965; RFC6265 */
 #define MHD_HTTP_HEADER_COOKIE2      "Cookie2"
+/* Obsoleted.     https://www.w3.org/TR/2007/WD-access-control-20071126/#method-check */
+#define MHD_HTTP_HEADER_METHOD_CHECK "Method-Check"
+/* Obsoleted.     https://www.w3.org/TR/2007/WD-access-control-20071126/#method-check-expires */
+#define MHD_HTTP_HEADER_METHOD_CHECK_EXPIRES "Method-Check-Expires"
+/* Obsoleted.     https://www.w3.org/TR/2007/WD-access-control-20071126/#referer-root */
+#define MHD_HTTP_HEADER_REFERER_ROOT "Referer-Root"
 /* Obsoleted.     RFC2965; RFC6265 */
 #define MHD_HTTP_HEADER_SET_COOKIE2  "Set-Cookie2"
 
@@ -1045,7 +1077,7 @@ MHD_get_reason_phrase_len_for (unsigned int code);
  * @defgroup methods HTTP methods
  * HTTP methods (as strings).
  * See: http://www.iana.org/assignments/http-methods/http-methods.xml
- * Registry export date: 2021-10-30
+ * Registry export date: 2021-12-19
  * @{
  */
 

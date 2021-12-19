@@ -30,7 +30,8 @@ December 2021
     anything is missing.
     Added Makefile silent rules support for W32 RC and W32 static libs.
     Added local patches for autotools (mainly for libtool) to build MHD
-    correctly on modern MinGW64/Clang. -EG
+    correctly on modern MinGW64/Clang.
+    Updated HTTP headers macros from registry. -EG
 
 November 2021
     Clarified comments and doxy for MHD_str* and related tests.
