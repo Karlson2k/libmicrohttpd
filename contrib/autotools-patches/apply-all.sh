@@ -8,7 +8,8 @@
 # Based on Debian SID baseline files as of December 2021.
 #
 
-patchesdir="$(pwd)"
+patchesdir="$(dirname "$BASH_SOURCE")" || exit 2
+test -n "$patchesdir" || exit 2
 
 patches=(
   0003-Pass-various-flags-to-GCC.patch
@@ -23,7 +24,7 @@ patches=(
 
 failed=( )
 
-cd ../.. || exit 1
+cd "${patchesdir}/../.." || exit 1
 
 for patch in ${patches[@]}; do
   patch -N -p1 --no-backup-if-mismatch -r - -i "${patchesdir}/${patch}" || failed+=("$patch")
