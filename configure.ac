@@ -711,7 +711,7 @@ int main(void)
     mhd_host_os="${mhd_host_os}-${mhd_cv_wctr_type}"
     AS_VAR_IF([mhd_cv_wctr_type], ["msvcrt"],
       [
-        AX_APPEND_COMPILE_FLAGS([-D__USE_MINGW_ANSI_STDIO=0], [CPPFLAGS])
+        AX_APPEND_COMPILE_FLAGS([-U__USE_MINGW_ANSI_STDIO -D__USE_MINGW_ANSI_STDIO=0], [CPPFLAGS])
         AC_SUBST([W32CRT], [MSVCRT])
       ], [AC_SUBST([W32CRT], [UCRT])]
     )
