@@ -2656,7 +2656,7 @@ AS_VAR_IF([have_gnutls], ["yes"],
   ]
 )
 AM_CONDITIONAL([HAVE_GNUTLS_MTHREAD_BROKEN], [[test "x${mhd_cv_gnutls_mthread_broken}" = "xfound"]])
-AM_CONDITIONAL([USE_UPGRADE_TLS_TESTS], [[test "x${mhd_cv_gnutls_mthread_broken}" = "xno" || test "x${mhd_cv_gnutls_cli}" == "xyes"]])
+AM_CONDITIONAL([USE_UPGRADE_TLS_TESTS], [[test "x${mhd_cv_gnutls_mthread_broken}" = "xno" || test "x${mhd_cv_gnutls_cli}" = "xyes"]])
 
 # optional: HTTP Basic Auth support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP basic authentication]])
