@@ -4368,6 +4368,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (connection->pid) );
 #endif /* MHD_USE_THREADS */
+  /* 'daemon' is not used if epoll is not available and asserts are disabled */
+  (void) daemon; /* Mute compiler warning */
 
   connection->in_idle = true;
   while (! connection->suspended)
