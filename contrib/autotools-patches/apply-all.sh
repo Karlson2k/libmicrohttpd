@@ -30,5 +30,9 @@ for patch in ${patches[@]}; do
   patch -N -p1 --no-backup-if-mismatch -r - -i "${patchesdir}/${patch}" || failed+=("$patch")
 done
 
-[[ -n "${failed[@]}" ]] && printf 'Failed patch: %s\n' "${failed[@]}" >&2
+if [[ -n "${failed[@]}" ]]; then
+  printf 'Failed patch: %s\n' "${failed[@]}" >&2
+  exit 2
+fi
 
+exit 0
