@@ -715,8 +715,13 @@ testPutExternal (void)
     FD_ZERO (&rs);
     FD_ZERO (&ws);
     FD_ZERO (&es);
-    if (CURLM_OK != curl_multi_perform (multi, &running))
-      libcurlErrorExitDesc ("curl_multi_perform() failed");
+    mret = curl_multi_perform (multi, &running);
+    if ((CURLM_OK != mret) && (CURLM_CALL_MULTI_PERFORM != mret))
+    {
+      fprintf (stderr, "curl_multi_perform() failed. Error: '%s'. ",
+               curl_multi_strerror (mret));
+      libcurlErrorExit ();
+    }
     if (CURLM_OK != curl_multi_fdset (multi, &rs, &ws, &es, &maxcurlsock))
       libcurlErrorExitDesc ("curl_multi_fdset() failed");
     if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &maxMHDsock))
@@ -741,8 +746,13 @@ testPutExternal (void)
 #endif
     }
 
-    if (CURLM_OK != curl_multi_perform (multi, &running))
-      libcurlErrorExitDesc ("curl_multi_perform() failed");
+    mret = curl_multi_perform (multi, &running);
+    if ((CURLM_OK != mret) && (CURLM_CALL_MULTI_PERFORM != mret))
+    {
+      fprintf (stderr, "curl_multi_perform() failed. Error: '%s'. ",
+               curl_multi_strerror (mret));
+      libcurlErrorExit ();
+    }
     if (0 == running)
     {
       int pending;
