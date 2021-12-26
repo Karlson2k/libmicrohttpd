@@ -4181,6 +4181,56 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 
 
 /**
+ * Check whether connection has timed out.
+ * @param c the connection to check
+ * @return true if connection has timeout and needs to be closed,
+ *         false otherwise.
+ */
+static bool
+connection_check_timedout (struct MHD_Connection *c)
+{
+  const uint64_t timeout = c->connection_timeout_ms;
+  uint64_t now;
+  uint64_t since_actv;
+
+  if (c->suspended)
+    return false;
+  if (0 == timeout)
+    return false;
+  now = MHD_monotonic_msec_counter ();
+  since_actv = now - c->last_activity;
+  /* Keep the next lines in sync with #connection_get_wait() to avoid
+   * undesired side-effects like busy-waiting. */
+  if (timeout < since_actv)
+  {
+    if (UINT64_MAX / 2 < since_actv)
+    {
+      const uint64_t jump_back = c->last_activity - now;
+      /* Very unlikely that it is more than quarter-million years pause.
+       * More likely that system clock jumps back. */
+      if (5000 >= jump_back)
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (c->daemon,
+                  _ ("Detected system clock %u milliseconds jump back.\n"),
+                  (unsigned int) jump_back);
+#endif
+        return false;
+      }
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (c->daemon,
+                _ ("Detected too large system clock %" PRIu64 " milliseconds "
+                   "jump back.\n"),
+                jump_back);
+#endif
+    }
+    return true;
+  }
+  return false;
+}
+
+
+/**
  * Clean up the state of the given connection and move it into the
  * clean up queue for final disposal.
  * @remark To be called only from thread that process connection's
@@ -4799,21 +4849,12 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     }
     break;
   }
-  if (! connection->suspended)
+  if (connection_check_timedout (connection))
   {
-    uint64_t timeout;
-    timeout = connection->connection_timeout_ms;
-    /* Keep the next lines in sync with #MHD_get_timeout() to avoid
-     * undesired side-effects like busy-waiting. */
-    if ( (0 != timeout) &&
-         (timeout < (MHD_monotonic_msec_counter ()
-                     - connection->last_activity)) )
-    {
-      MHD_connection_close_ (connection,
-                             MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
-      connection->in_idle = false;
-      return MHD_YES;
-    }
+    MHD_connection_close_ (connection,
+                           MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
+    connection->in_idle = false;
+    return MHD_YES;
   }
   MHD_connection_update_event_loop_info (connection);
   ret = MHD_YES;
