@@ -706,7 +706,7 @@ testPutExternal (void)
     libcurlErrorExit ();
 
   start = time (NULL);
-  while ((time (NULL) - start < 5) && (multi != NULL))
+  while ((time (NULL) - start < 45) && (multi != NULL))
   {
     MHD_socket maxMHDsock;
     int maxcurlsock;
