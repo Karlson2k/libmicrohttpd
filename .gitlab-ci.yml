@@ -96,6 +96,7 @@ Scan-Build/Debian:
 MinGW/Debian:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$MINGW_BUILD
   script:
+    - export CFLAGS="$CFLAGS_DEFAULT"
     - export CC="ccache $PREFIX-gcc"
     - ./bootstrap
     - ./configure $CONFIGURE_BASE_FLAGS --build=x86_64-pc-linux-gnu --host=$PREFIX
