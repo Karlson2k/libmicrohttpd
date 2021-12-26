@@ -776,11 +776,8 @@ testPutExternal (void)
     MHD_run (d);
   }
   if (multi != NULL)
-  {
-    curl_multi_remove_handle (multi, c);
-    curl_easy_cleanup (c);
-    curl_multi_cleanup (multi);
-  }
+    mhdErrorExitDesc ("Request has been aborted by timeout");
+
   MHD_stop_daemon (d);
   if (cbc.pos != strlen ("/hello_world"))
   {
