@@ -710,6 +710,8 @@ _MHD_dumbClient_send_req (struct _MHD_dumbClient *clnt)
       return;
     if (MHD_SCKT_ERR_IS_REMOTE_DISCNN_ (err))
       mhdErrorExitDesc ("The connection was aborted by MHD");
+    if (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EPIPE_))
+      mhdErrorExitDesc ("The connection was shut down on MHD side");
     externalErrorExitDesc ("Unexpected network error");
   }
   clnt->send_off += (size_t) res;
