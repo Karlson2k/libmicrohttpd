@@ -1,3 +1,6 @@
+Sun 26 Dec 2021 20:30:00 MSK
+    Releasing GNU libmicrohttpd 0.9.75 -EG
+
 December 2021
     Fixed Makefile warning on MinGW.
     Fixed compiler warning on MinGW.
@@ -12,7 +15,7 @@ December 2021
     Added more checks in test_large_put, increased timeout (was too small for
     this test). -EG
 
-Web 19 Dec 2021 18:30:00 MSK
+Sun 19 Dec 2021 18:30:00 MSK
     Releasing GNU libmicrohttpd 0.9.74 -EG
 
 December 2021
