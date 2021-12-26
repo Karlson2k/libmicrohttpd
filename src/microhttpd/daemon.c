@@ -5658,8 +5658,8 @@ parse_options_va (struct MHD_Daemon *daemon,
     case MHD_OPTION_CONNECTION_TIMEOUT:
       uv = va_arg (ap,
                    unsigned int);
-#if (SIZEOF_UINT64_T - 1) <= SIZEOF_UNSIGNED_INT
-      if ((UINT64_MAX / 2000 - 1) < uv)
+#if (SIZEOF_UINT64_T - 2) <= SIZEOF_UNSIGNED_INT
+      if ((UINT64_MAX / 4000 - 1) < uv)
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
@@ -5667,11 +5667,11 @@ parse_options_va (struct MHD_Daemon *daemon,
                      "Maximum allowed value (%" PRIu64 ") will be used " \
                      "instead.\n"),
                   uv,
-                  (UINT64_MAX / 2000 - 1));
+                  (UINT64_MAX / 4000 - 1));
 #endif
-        uv = UINT64_MAX / 2000 - 1;
+        uv = UINT64_MAX / 4000 - 1;
       }
-#endif /* (SIZEOF_UINT64_T - 1) <= SIZEOF_UNSIGNED_INT */
+#endif /* (SIZEOF_UINT64_T - 2) <= SIZEOF_UNSIGNED_INT */
       daemon->connection_timeout_ms = uv * 1000;
       break;
     case MHD_OPTION_NOTIFY_COMPLETED:

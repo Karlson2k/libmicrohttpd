@@ -4999,8 +4999,8 @@ MHD_set_connection_option (struct MHD_Connection *connection,
     va_start (ap, option);
     ui_val = va_arg (ap, unsigned int);
     va_end (ap);
-#if (SIZEOF_UINT64_T - 1) <= SIZEOF_UNSIGNED_INT
-    if ((UINT64_MAX / 2000 - 1) < ui_val)
+#if (SIZEOF_UINT64_T - 2) <= SIZEOF_UNSIGNED_INT
+    if ((UINT64_MAX / 4000 - 1) < ui_val)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
@@ -5008,12 +5008,12 @@ MHD_set_connection_option (struct MHD_Connection *connection,
                    "large. Maximum allowed value (%" PRIu64 ") will be used " \
                    "instead.\n"),
                 ui_val,
-                (UINT64_MAX / 2000 - 1));
+                (UINT64_MAX / 4000 - 1));
 #endif
-      ui_val = UINT64_MAX / 2000 - 1;
+      ui_val = UINT64_MAX / 4000 - 1;
     }
     else
-#endif /* (SIZEOF_UINT64_T - 1) <= SIZEOF_UNSIGNED_INT */
+#endif /* (SIZEOF_UINT64_T - 2) <= SIZEOF_UNSIGNED_INT */
     connection->connection_timeout_ms = ui_val * 1000;
     if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
          (! connection->suspended) )
