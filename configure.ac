@@ -3468,7 +3468,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
 
 AS_IF([test "x$enable_https" = "xyes"],
  [AC_MSG_NOTICE([HTTPS subsystem configuration:
-  License         :  LGPLv2.1+ only
+  License         :  LGPL version 2.1 or any later version
  ])],
  [AC_MSG_NOTICE([
   License         :  LGPLv2.1+ or eCos
