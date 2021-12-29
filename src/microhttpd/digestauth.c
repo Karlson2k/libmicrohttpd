@@ -383,7 +383,7 @@ digest_calc_response (const char *ha1,
               (const unsigned char *) nonce,
               strlen (nonce));
   da->update (da->ctx,
-              (const unsigned char*) ":",
+              (const unsigned char *) ":",
               1);
   if ('\0' != *qop)
   {
