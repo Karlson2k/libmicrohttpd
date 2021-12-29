@@ -2636,7 +2636,7 @@ AS_VAR_IF([have_gnutls], ["yes"],
           [
             AS_IF([command -v rpm >/dev/null],
               [
-                AS_IF([test r`rpm -E '%{rhel} 2>/dev/null'` = "r6"],
+                AS_IF([test "r`rpm -E '%{rhel}' 2>/dev/null`" = "r6"],
                   [mhd_cv_gnutls_mthread_broken="found"],
                 )
               ]
