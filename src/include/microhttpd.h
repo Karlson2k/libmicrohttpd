@@ -2412,6 +2412,7 @@ typedef enum MHD_Result
  *
  * @param cls argument given together with the function
  *        pointer when the handler was registered with MHD
+ * @param connection the connection handle
  * @param url the requested url
  * @param method the HTTP method used (#MHD_HTTP_METHOD_GET,
  *        #MHD_HTTP_METHOD_PUT, etc.)
@@ -4243,12 +4244,12 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
 
 
 /**
- * Queues a response to request authentication from the client
+ * Queues a response to request authentication from the client.
  * For now uses MD5 (for backwards-compatibility). Still, if you
- * need to be sure, use #MHD_queue_fail_auth_response2().
+ * need to be sure, use #MHD_queue_auth_fail_response2().
  *
  * @param connection The MHD connection structure
- * @param realm The realm presented to the client
+ * @param realm the realm presented to the client
  * @param opaque string to user for opaque value
  * @param response reply to send; should contain the "access denied"
  *        body; note that this function will set the "WWW Authenticate"

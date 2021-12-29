@@ -173,11 +173,13 @@ MHD_set_thread_name_ (const MHD_thread_ID_ thread_id,
 /**
  * Create a thread and set the attributes according to our options.
  *
+ * If thread is created, thread handle must be freed by MHD_join_thread_().
+ *
  * @param thread        handle to initialize
  * @param stack_size    size of stack for new thread, 0 for default
  * @param start_routine main function of thread
  * @param arg argument  for start_routine
- * @return non-zero on success; zero otherwise (with errno set)
+ * @return non-zero on success; zero otherwise
  */
 int
 MHD_create_thread_ (MHD_thread_handle_ID_ *thread,

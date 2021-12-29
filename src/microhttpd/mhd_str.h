@@ -74,6 +74,7 @@ struct _MHD_str_w_len
 #ifndef MHD_FAVOR_SMALL_CODE
 /**
  * Check two strings for equality, ignoring case of US-ASCII letters.
+ *
  * @param str1 first string to compare
  * @param str2 second string to compare
  * @return non-zero if two strings are equal, zero otherwise.
@@ -123,7 +124,7 @@ MHD_str_equal_caseless_bin_n_ (const char *const str1,
 /**
  * Check whether @a str has case-insensitive @a token.
  * Token could be surrounded by spaces and tabs and delimited by comma.
- * Match succeed if substring between start, end of string or comma
+ * Match succeed if substring between start, end (of string) or comma
  * contains only case-insensitive token and optional spaces and tabs.
  * @warning token must not contain null-characters except optional
  *          terminating null-character.
@@ -225,8 +226,9 @@ MHD_str_remove_tokens_caseless_ (char *str,
 /**
  * Convert decimal US-ASCII digits in string to number in uint64_t.
  * Conversion stopped at first non-digit character.
+ *
  * @param str string to convert
- * @param out_val pointer to uint64_t to store result of conversion
+ * @param[out] out_val pointer to uint64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint64_t or @a out_val is NULL
@@ -240,9 +242,10 @@ MHD_str_to_uint64_ (const char *str,
  * number in uint64_t.
  * Conversion stopped at first non-digit character or after @a maxlen
  * digits.
+ *
  * @param str string to convert
  * @param maxlen maximum number of characters to process
- * @param out_val pointer to uint64_t to store result of conversion
+ * @param[out] out_val pointer to uint64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint64_t or @a out_val is NULL
@@ -256,8 +259,9 @@ MHD_str_to_uint64_n_ (const char *str,
 /**
  * Convert hexadecimal US-ASCII digits in string to number in uint32_t.
  * Conversion stopped at first non-digit character.
+ *
  * @param str string to convert
- * @param out_val pointer to uint32_t to store result of conversion
+ * @param[out] out_val pointer to uint32_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint32_t or @a out_val is NULL
@@ -272,9 +276,10 @@ MHD_strx_to_uint32_ (const char *str,
  * to number in uint32_t.
  * Conversion stopped at first non-digit character or after @a maxlen
  * digits.
+ *
  * @param str string to convert
  * @param maxlen maximum number of characters to process
- * @param out_val pointer to uint32_t to store result of conversion
+ * @param[out] out_val pointer to uint32_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint32_t or @a out_val is NULL
@@ -288,8 +293,9 @@ MHD_strx_to_uint32_n_ (const char *str,
 /**
  * Convert hexadecimal US-ASCII digits in string to number in uint64_t.
  * Conversion stopped at first non-digit character.
+ *
  * @param str string to convert
- * @param out_val pointer to uint64_t to store result of conversion
+ * @param[out] out_val pointer to uint64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint64_t or @a out_val is NULL
@@ -304,9 +310,10 @@ MHD_strx_to_uint64_ (const char *str,
  * to number in uint64_t.
  * Conversion stopped at first non-digit character or after @a maxlen
  * digits.
+ *
  * @param str string to convert
  * @param maxlen maximum number of characters to process
- * @param out_val pointer to uint64_t to store result of conversion
+ * @param[out] out_val pointer to uint64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint64_t or @a out_val is NULL
@@ -325,15 +332,16 @@ MHD_strx_to_uint64_n_ (const char *str,
  * Conversion stopped at first non-digit character or after @a maxlen
  * digits.
  * To be used only within macro.
+ *
  * @param str the string to convert
  * @param maxlen the maximum number of characters to process
- * @param out_val the pointer to uint64_t to store result of conversion
- * @param val_size the size of variable pointed by @a out_val
+ * @param out_val the pointer to variable to store result of conversion
+ * @param val_size the size of variable pointed by @a out_val, in bytes, 4 or 8
  * @param max_val the maximum decoded number
  * @param base the numeric base, 10 or 16
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
- *         then @ max_val or @a out_val is NULL
+ *         then @max_val, @val_size is not 16/32 or @a out_val is NULL
  */
 size_t
 MHD_str_to_uvalue_n_ (const char *str,

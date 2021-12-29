@@ -114,8 +114,8 @@ MHD_connection_handle_write (struct MHD_Connection *connection);
 
 /**
  * This function was created to handle per-connection processing that
- * has to happen even if the socket cannot be read or written to.  All
- * implementations (multithreaded, external select, internal select)
+ * has to happen even if the socket cannot be read or written to.
+ * All implementations (multithreaded, external select, internal select)
  * call this function.
  * @remark To be called only from thread that process connection's
  * recv(), send() and response.

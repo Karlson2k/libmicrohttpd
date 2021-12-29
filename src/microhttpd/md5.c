@@ -37,7 +37,7 @@
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
  *
- * @param ctx must be a `struct MD5Context *`
+ * @param ctx_ must be a `struct MD5Context *`
  */
 void
 MHD_MD5Init (void *ctx_)
@@ -59,9 +59,9 @@ MD5Transform (uint32_t state[4],
 
 
 /**
- * Final wrapup, fill in digest and zero out ctx.
+ * Final wrapup--call MD5Pad, fill in digest and zero out ctx.
  *
- * @param ctx must be a `struct MD5Context *`
+ * @param ctx_ must be a `struct MD5Context *`
  */
 void
 MHD_MD5Final (void *ctx_,
@@ -264,6 +264,10 @@ MD5Transform (uint32_t state[4],
 /**
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
+ *
+ * @param ctx_ must be a `struct MD5Context *`
+ * @param input bytes to add to hash
+ * @param len the number of bytes in @a data
  */
 void
 MHD_MD5Update (void *ctx_,

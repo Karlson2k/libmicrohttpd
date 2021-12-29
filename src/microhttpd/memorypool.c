@@ -499,7 +499,7 @@ MHD_pool_reallocate (struct MemoryPool *pool,
 
 /**
  * Clear all entries from the memory pool except
- * for @a keep of the given @a size. The pointer
+ * for @a keep of the given @a copy_bytes.  The pointer
  * returned should be a buffer of @a new_size where
  * the first @a copy_bytes are from @a keep.
  *

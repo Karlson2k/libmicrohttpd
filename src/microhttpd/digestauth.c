@@ -81,7 +81,7 @@
 #endif
 
 /**
- * Check that @a n is below #MAX_NONCE
+ * Check that @a n is below #MAX_DIGEST
  */
 #define VLA_CHECK_LEN_DIGEST(n) do { if ((n) > MAX_DIGEST) mhd_panic ( \
                                        mhd_panic_cls, __FILE__, __LINE__, \
@@ -205,7 +205,7 @@ cvthex (const unsigned char *bin,
  *          da->sessionkey will be initialized to the digest in HEX
  * @param digest An `unsigned char *' pointer to the binary MD5 sum
  *      for the precalculated hash value "username:realm:password"
- *      of #MHD_MD5_DIGEST_SIZE or #MHD_SHA256_DIGEST_SIZE bytes
+ *      of #MHD_MD5_DIGEST_SIZE or #SHA256_DIGEST_SIZE bytes
  * @param nonce A `char *' pointer to the nonce value
  * @param cnonce A `char *' pointer to the cnonce value
  */
@@ -1457,7 +1457,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
 /**
  * Queues a response to request authentication from the client.
  * For now uses MD5 (for backwards-compatibility). Still, if you
- * need to be sure, use #MHD_queue_fail_auth_response2().
+ * need to be sure, use #MHD_queue_auth_fail_response2().
  *
  * @param connection The MHD connection structure
  * @param realm the realm presented to the client
@@ -1469,6 +1469,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
  *      'stale=true' to the authentication header
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
+ * @deprecated use MHD_queue_auth_fail_response2()
  */
 enum MHD_Result
 MHD_queue_auth_fail_response (struct MHD_Connection *connection,

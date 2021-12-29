@@ -1757,7 +1757,6 @@ is_reply_body_needed (struct MHD_Connection *connection)
  * type and other.
  *
  * @param connection to connection to process
- * @param reply_body_allowed
  */
 static void
 setup_reply_properties (struct MHD_Connection *connection)
@@ -3844,7 +3843,9 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
 
 /**
  * This function was created to handle writes to sockets when it has
- * been determined that the socket can be written to.
+ * been determined that the socket can be written to. All
+ * implementations (multithreaded, external select, internal select)
+ * call this function
  *
  * @param connection connection to handle
  */
@@ -4400,6 +4401,8 @@ connection_reset (struct MHD_Connection *connection,
 /**
  * This function was created to handle per-connection processing that
  * has to happen even if the socket cannot be read or written to.
+ * All implementations (multithreaded, external select, internal select)
+ * call this function.
  * @remark To be called only from thread that process connection's
  * recv(), send() and response.
  *

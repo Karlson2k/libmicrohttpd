@@ -51,6 +51,8 @@ MHD_MD5Init (void *ctx_);
  * of bytes.
  *
  * @param ctx_ must be a `struct MD5Context *`
+ * @param input bytes to add to hash
+ * @param len the number of bytes in @a data
  */
 void
 MHD_MD5Update (void *ctx_,

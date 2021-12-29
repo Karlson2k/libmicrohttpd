@@ -226,7 +226,7 @@ toxdigitvalue (char c)
  * Caseless compare two characters.
  *
  * @param c1 the first char to compare
- * @param c1 the second char to compare
+ * @param c2 the second char to compare
  * @return boolean 'true' if chars are caseless equal, false otherwise
  */
 _MHD_static_inline bool
@@ -356,7 +356,7 @@ charsequalcaseless (const char c1, const char c2)
  * Caseless compare two characters.
  *
  * @param c1 the first char to compare
- * @param c1 the second char to compare
+ * @param c2 the second char to compare
  * @return boolean 'true' if chars are caseless equal, false otherwise
  */
 #define charsequalcaseless(c1, c2) \

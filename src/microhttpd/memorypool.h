@@ -92,7 +92,7 @@ MHD_pool_allocate (struct MemoryPool *pool,
  * Try to allocate @a size bytes memory area from the @a pool.
  *
  * If allocation fails, @a required_bytes is updated with size required to be
- * freed in the @a pool from relocatable area to allocate requested number
+ * freed in the @a pool from rellocatable area to allocate requested number
  * of bytes.
  * Allocated memory area is always not rellocatable ("from end").
  *
@@ -104,7 +104,7 @@ MHD_pool_allocate (struct MemoryPool *pool,
  *                            Cannot be NULL.
  * @return the pointer to allocated memory area if succeed,
  *         NULL if the pool doesn't have enough space, required_bytes is updated
- *         with amount of space needed to be freed in relocatable area or
+ *         with amount of space needed to be freed in rellocatable area or
  *         set to SIZE_MAX if requested size is too large for the pool.
  */
 void *

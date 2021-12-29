@@ -139,7 +139,7 @@ MHD_unescape_plus (char *arg)
  * The result must also still be 0-terminated.
  *
  * @param val value to unescape (modified in the process)
- * @return length of the resulting val (strlen(val) maybe
+ * @return length of the resulting val (`strlen(val)` may be
  *  shorter afterwards due to elimination of escape sequences)
  */
 size_t

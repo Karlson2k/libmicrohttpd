@@ -90,7 +90,7 @@
 
 /**
  * Close all connections for the daemon.
- * Must only be called when MHD_Daemon::shutdown was set to #MHD_YES.
+ * Must only be called when MHD_Daemon::shutdown was set to true.
  * @remark To be called only from thread that process
  * daemon's select()/poll()/etc.
  *
@@ -240,6 +240,7 @@ MHD_default_logger_ (void *cls,
  * Free the memory given by @a ptr. Calls "free(ptr)".  This function
  * should be used to free the username returned by
  * #MHD_digest_auth_get_username().
+ * @note Available since #MHD_VERSION 0x00095600
  *
  * @param ptr pointer to free.
  */
@@ -3235,9 +3236,15 @@ MHD_suspend_connection (struct MHD_Connection *connection)
 
 /**
  * Resume handling of network data for suspended connection.  It is
- * safe to resume a suspended connection at any time.  Calling this function
- * on a connection that was not previously suspended will result
- * in undefined behavior.
+ * safe to resume a suspended connection at any time.  Calling this
+ * function on a connection that was not previously suspended will
+ * result in undefined behavior.
+ *
+ * If you are using this function in "external" sockets polling mode, you must
+ * make sure to run #MHD_run() and #MHD_get_timeout() afterwards (before
+ * again calling #MHD_get_fdset()), as otherwise the change may not be
+ * reflected in the set returned by #MHD_get_fdset() and you may end up
+ * with a connection that is stuck until the next network activity.
  *
  * @param connection the connection to resume
  */
