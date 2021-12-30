@@ -1146,7 +1146,7 @@ MHD_strx_to_uint64_n_ (const char *str,
  * @param base the numeric base, 10 or 16
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
- *         then @max_val, @val_size is not 16/32 or @a out_val is NULL
+ *         then @a max_val, @a val_size is not 4/8 or @a out_val is NULL
  */
 size_t
 MHD_str_to_uvalue_n_ (const char *str,
