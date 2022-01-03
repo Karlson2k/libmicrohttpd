@@ -58,4 +58,9 @@ uninstall-local:
 	  rm -f "$(DESTDIR)$(infodir)/libmicrohttpd_performance_data.png" \
 	else : ; fi
 
-# end of 'if BUILD_DOC'
+update-stamp:
+	@rm -f '$(srcdir)/stamp-vti' '$(srcdir)/version.texi' && \
+	  $(MAKE) $(AM_MAKEFLAGS) '$(srcdir)/version.texi'
+
+.PHONY: update-stamp
+
