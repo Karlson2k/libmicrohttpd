@@ -1,5 +1,5 @@
 # This Makefile.am is in the public domain
-man_MANS = libmicrohttpd.3
+dist_man_MANS = libmicrohttpd.3
 
 SUBDIRS = . doxygen
 
@@ -17,6 +17,11 @@ info_TEXINFOS = \
   libmicrohttpd.texi \
   libmicrohttpd-tutorial.texi
 microhttpd_TEXINFOS = \
+  lgpl.texi \
+  ecos.texi \
+  gpl-2.0.texi \
+  fdl-1.3.texi
+microhttpd_tutorial_TEXINFOS = \
   chapters/basicauthentication.inc \
   chapters/bibliography.inc \
   chapters/exploringrequests.inc \
@@ -26,15 +31,10 @@ microhttpd_TEXINFOS = \
   chapters/processingpost.inc \
   chapters/responseheaders.inc \
   chapters/tlsauthentication.inc \
-  chapters/sessions.inc \
-  fdl-1.3.texi \
-  gpl-2.0.texi \
-  lgpl.texi \
-  ecos.texi
+  chapters/sessions.inc
 
 EXTRA_DIST = \
-  $(man_MANS) \
-  $(microhttpd_TEXINFOS) \
+  $(microhttpd_TEXINFOS) $(microhttpd_tutorial_TEXINFOS) \
   libmicrohttpd_performance_data.png \
   libmicrohttpd_performance_data.eps
 
