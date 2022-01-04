@@ -42,14 +42,14 @@ install-info-local:
 	@echo " $(MKDIR_P) '$(DESTDIR)$(infodir)'"; \
 	$(MKDIR_P) "$(DESTDIR)$(infodir)" || exit 1; \
 	echo " $(INSTALL_DATA) libmicrohttpd_performance_data.png '$(DESTDIR)$(infodir)'"; \
-	$(INSTALL_DATA) $(srcdir)/libmicrohttpd_performance_data.png "$(DESTDIR)$(infodir)" || exit 1;
+	$(INSTALL_DATA) '$(srcdir)/libmicrohttpd_performance_data.png' "$(DESTDIR)$(infodir)" || exit 1;
 
 install-html-local:
 	@if test -n "$(htmldir)"; then \
 	  echo " $(MKDIR_P) '$(DESTDIR)$(htmldir)/libmicrohttpd.html'"; \
 	  $(MKDIR_P) "$(DESTDIR)$(htmldir)/libmicrohttpd.html" || exit 1; \
 	  echo " $(INSTALL_DATA) libmicrohttpd_performance_data.png '$(DESTDIR)$(htmldir)/libmicrohttpd.html'"; \
-	  $(INSTALL_DATA) $(srcdir)/libmicrohttpd_performance_data.png "$(DESTDIR)$(htmldir)/libmicrohttpd.html" || exit 1; \
+	  $(INSTALL_DATA) '$(srcdir)/libmicrohttpd_performance_data.png' "$(DESTDIR)$(htmldir)/libmicrohttpd.html" || exit 1; \
 	else : ; fi
 
 uninstall-local:
