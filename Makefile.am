@@ -42,7 +42,6 @@ W32VSAV = w32/VS-Any-Version/libmicrohttpd.vcxproj w32/VS-Any-Version/libmicroht
   w32/VS-Any-Version/libmicrohttpd.sln
 
 EXTRA_DIST = \
-  acinclude.m4 \
   libmicrohttpd.pc.in \
   $(W32COMMON) $(W32VS2013) $(W32VS2015) $(W32VS2017) $(W32VS2019) $(W32VS2022) $(W32VSAV)
 
