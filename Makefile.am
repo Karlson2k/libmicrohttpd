@@ -43,7 +43,24 @@ W32VSAV = w32/VS-Any-Version/libmicrohttpd.vcxproj w32/VS-Any-Version/libmicroht
 
 EXTRA_DIST = \
   libmicrohttpd.pc.in \
-  $(W32COMMON) $(W32VS2013) $(W32VS2015) $(W32VS2017) $(W32VS2019) $(W32VS2022) $(W32VSAV)
+  $(W32COMMON) $(W32VS2013) $(W32VS2015) $(W32VS2017) \
+  $(W32VS2019) $(W32VS2022) $(W32VSAV)
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libmicrohttpd.pc
+
+EXTRA_DIST += pre-dist-hook-dummy
+MOSTLYCLEANFILES = pre-dist-hook-dummy
+
+pre-dist-hook-dummy: pre-dist-hook Makefile
+	@echo "dummy" > $@
+
+dist-hook:
+	@chmod u+w '$(distdir)/pre-dist-hook-dummy' && \
+	  rm -f '$(distdir)/pre-dist-hook-dummy'
+	@rm -f pre-dist-hook-dummy
+
+pre-dist-hook:
+	@echo "Preparing to make dist"
+
+.PHONY: pre-dist-hook
