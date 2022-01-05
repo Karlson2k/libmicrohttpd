@@ -55,3 +55,4 @@ uncrustify.cfg
 **.t2d
 src/microhttpd_ws/test_websocket
 .texlipse
+/po/remove-potcdate.sed
