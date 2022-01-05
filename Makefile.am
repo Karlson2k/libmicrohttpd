@@ -62,5 +62,6 @@ dist-hook:
 
 pre-dist-hook:
 	@echo "Preparing to make dist"
+	@$(am__cd) doc && $(MAKE) $(AM_MAKEFLAGS) update-stamp
 
 .PHONY: pre-dist-hook
