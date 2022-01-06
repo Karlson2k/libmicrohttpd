@@ -76,7 +76,17 @@ AC_PROG_CC
 AC_PROG_CC_STDC
   ]
 )
-MHD_SYS_EXT
+
+user_CFLAGS="$CFLAGS"
+user_LDFLAGS="$LDFLAGS"
+user_CPPFLAGS="$CPPFLAGS"
+
+CFLAGS_ac=""
+LDFLAGS_ac=""
+CPPFLAGS_ac=""
+
+MHD_SYS_EXT([CPPFLAGS_ac])
+CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
 
@@ -183,10 +193,12 @@ AM_CONDITIONAL([HAVE_PO], [ test "$have_po" = yes ])
 AC_ARG_ENABLE([gcc-hardening],
    [AS_HELP_STRING([--enable-gcc-hardening], [enable compiler security checks])],
 [AS_IF([test x$enableval = xyes],[
-    CFLAGS="$CFLAGS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all"
-    CFLAGS="$CFLAGS -fwrapv -fPIE -Wstack-protector"
-    CFLAGS="$CFLAGS --param ssp-buffer-size=1"
-    LDFLAGS="$LDFLAGS -pie"
+    CFLAGS_ac="${CFLAGS_ac} -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all"
+    CFLAGS_ac="${CFLAGS_ac} -fwrapv -fPIE -Wstack-protector"
+    CFLAGS_ac="${CFLAGS_ac} --param ssp-buffer-size=1"
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    LDFLAGS_ac="${LDFLAGS_ac} -pie"
+    LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
  ])])
 
 # Linker hardening options
@@ -194,7 +206,8 @@ AC_ARG_ENABLE([gcc-hardening],
 AC_ARG_ENABLE([linker-hardening],
   [AS_HELP_STRING([--enable-linker-hardening], [enable linker security fixups])],
 [AS_IF([test x$enableval = xyes],
-   [LDFLAGS="$LDFLAGS -z relro -z now"])])
+   [LDFLAGS_ac="${LDFLAGS_ac} -z relro -z now"])])
+LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
 
 
 # Workaround for libgcrypt
@@ -316,9 +329,8 @@ AS_VAR_IF([[mhd_cv_macro_true_false_valid]], [["yes"]], [[:]],
 
 AX_CHECK_COMPILE_FLAG([[-Werror=attributes]],
   [
-   save_CFLAGS="$CFLAGS"
-   CFLAGS="$CFLAGS -Werror=attributes"
    AC_MSG_CHECKING([[whether -Werror=attributes actually works]])
+   CFLAGS="${CFLAGS_ac} ${user_CFLAGS} -Werror=attributes"
    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
        [[__attribute__((non_existing_attrb_dummy)) int SimpleFunc(void) {return 3;}]], [[int r = SimpleFunc(); if (r) return r;]])],
      [
@@ -328,12 +340,11 @@ AX_CHECK_COMPILE_FLAG([[-Werror=attributes]],
        AC_MSG_RESULT([[yes]])
        errattr_CFLAGS="-Werror=attributes"
      ])
-   CFLAGS="$save_CFLAGS"
+   CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
   ],
                       [[errattr_CFLAGS=""]], [], [])
 AC_MSG_CHECKING([[for function inline keywords supported by $CC]])
-save_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS $errattr_CFLAGS"
+CFLAGS="${CFLAGS_ac} ${user_CFLAGS} $errattr_CFLAGS"
 inln_prfx="none"
 # Prefer always inline functions
 for inln_prfx_chk in InlineWithAttr __forceinline inline __inline__ __inline _inline _Inline
@@ -382,7 +393,7 @@ AS_IF([[test "x$inln_prfx" != "xnone"]],
        AC_DEFINE([_MHD_static_inline],[static],[Define to prefix which will be used with MHD static inline functions.])
       ])
 AC_MSG_RESULT([[$inln_prfx]])
-CFLAGS="$save_CFLAGS"
+CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 
 AC_CHECK_HEADERS([stdalign.h], [], [], [AC_INCLUDES_DEFAULT])
 AC_CACHE_CHECK([[for C11 'alignof()' support]], [[mhd_cv_c_alignof]],
@@ -433,7 +444,7 @@ AC_MSG_CHECKING([[for target host OS]])
 AS_CASE(["$host_os"],
  [*darwin* | *rhapsody* | *macosx*],
  [AC_DEFINE_UNQUOTED(OSX,1,[This is an OS X system])
-     CFLAGS="-no-cpp-precomp -fno-common $CFLAGS"
+     CFLAGS_ac="-no-cpp-precomp -fno-common $CFLAGS_ac"
      mhd_host_os='Darwin'
      AC_MSG_RESULT([[$mhd_host_os]])],
  [freebsd*],
@@ -456,13 +467,13 @@ AS_CASE(["$host_os"],
      AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno does not work])
      mhd_host_os='Solaris'
      AC_MSG_RESULT([[$mhd_host_os]])
-     AC_SEARCH_LIBS(gethostbyname, nsl)
-     AC_SEARCH_LIBS(socket, socket)],
+     AC_SEARCH_LIBS([gethostbyname], [nsl])
+     AC_SEARCH_LIBS([socket], [socket])],
   [*arm-linux*],
   [AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      mhd_host_os='ARM Linux'
      AC_MSG_RESULT([[$mhd_host_os]])
-     CFLAGS="-fPIC -pipe $CFLAGS"],
+     CFLAGS_ac="-fPIC -pipe $CFLAGS_ac"],
   [*linux*],
   [AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
      mhd_host_os='Linux'
@@ -478,7 +489,7 @@ AS_CASE(["$host_os"],
      AC_DEFINE([WINDOWS],[1],[This is a Windows system])
      mhd_host_os='Windows/MinGW'
      AC_MSG_RESULT([[$mhd_host_os]])
-     LIBS="$LIBS -lws2_32"
+     LIBS="-lws2_32 ${LIBS}"
      AC_CHECK_HEADERS([winsock2.h ws2tcpip.h], [], [AC_MSG_ERROR([[Winsock2 headers are required for W32]])], [AC_INCLUDES_DEFAULT])
      AC_CACHE_CHECK([for MS lib utility], [ac_cv_use_ms_lib_tool],
        [mslibcheck=`lib 2>&1`
@@ -654,7 +665,8 @@ choke me now;
      ], [
        mhd_w32_ver="Vista"
        mhd_w32_ver_msg="Vista (default, override by CPPFLAGS=-D_WIN32_WINNT=0xNNNN)"
-       CPPFLAGS="$CPPFLAGS -D_WIN32_WINNT=0x0600"
+       CPPFLAGS_ac="${CPPFLAGS_ac} -D_WIN32_WINNT=0x0600"
+       CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
        AC_MSG_CHECKING([[whether headers accept _WIN32_WINNT=0x0600]])
        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #ifdef HAVE_SDKDDKVER_H
@@ -711,13 +723,14 @@ int main(void)
     mhd_host_os="${mhd_host_os}-${mhd_cv_wctr_type}"
     AS_VAR_IF([mhd_cv_wctr_type], ["msvcrt"],
       [
-        AX_APPEND_COMPILE_FLAGS([-U__USE_MINGW_ANSI_STDIO -D__USE_MINGW_ANSI_STDIO=0], [CPPFLAGS])
+        # Use CFLAGS here to override user-supplied wrong CPPFLAGS. Durty trick, but choice is limited.
+        AX_APPEND_COMPILE_FLAGS([-U__USE_MINGW_ANSI_STDIO -D__USE_MINGW_ANSI_STDIO=0], [CFLAGS_ac])
         AC_SUBST([W32CRT], [MSVCRT])
       ], [AC_SUBST([W32CRT], [UCRT])]
     )
   ]
 )
-
+CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 
 
 AC_ARG_WITH([threads],
@@ -743,9 +756,8 @@ AX_PTHREAD(
 	AC_CACHE_CHECK([[whether pthread_sigmask(3) is available]],
 	  [[mhd_cv_func_pthread_sigmask]], [dnl
 	  save_LIBS="$LIBS"
-	  save_CFLAGS="$CFLAGS"
 	  LIBS="$PTHREAD_LIBS $LIBS"
-  	  CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+  	  CFLAGS="${CFLAGS_ac} ${PTHREAD_CFLAGS} ${user_CFLAGS}"
 	  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <signal.h>]],
 	    [[
 	      sigset_t nset, oset;
@@ -755,7 +767,7 @@ AX_PTHREAD(
 	    ]])],
 	    [[mhd_cv_func_pthread_sigmask="yes"]],[[mhd_cv_func_pthread_sigmask="no"]])
 	  LIBS="${save_LIBS}"
-	  CFLAGS="${save_CFLAGS}"
+      CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 	])
 	AS_VAR_IF([mhd_cv_func_pthread_sigmask],["yes"],
 	  [AC_DEFINE([[HAVE_PTHREAD_SIGMASK]],[[1]],[Define to 1 if you have the pthread_sigmask(3) function.])])
@@ -827,9 +839,8 @@ AS_IF([test "x$enable_thread_names" != "xno" && test "x$USE_THREADS" = "xposix"]
   # Check for thread name function
   HAVE_THREAD_NAME_FUNC="no"
   SAVE_LIBS="$LIBS"
-  SAVE_CFLAGS="$CFLAGS"
   LIBS="$PTHREAD_LIBS $LIBS"
-  CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+  CFLAGS="${CFLAGS_ac} $PTHREAD_CFLAGS ${user_CFLAGS}"
   AC_CHECK_HEADERS([pthread_np.h],[],[],
     [
 AC_INCLUDES_DEFAULT
@@ -978,7 +989,7 @@ AC_INCLUDES_DEFAULT
     ])
 
   LIBS="$SAVE_LIBS"
-  CFLAGS="$SAVE_CFLAGS"
+  CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 ])
 
 AS_IF([[test "x$enable_thread_names" != "xno"]],
@@ -1066,7 +1077,8 @@ AC_CHECK_FUNCS([writev])
 # use '-fno-strict-aliasing', but only if the compiler
 # and linker can take it
 AX_CHECK_LINK_FLAG([-fno-strict-aliasing],
-  [AX_APPEND_COMPILE_FLAGS([-fno-strict-aliasing])])
+  [AX_APPEND_COMPILE_FLAGS([-fno-strict-aliasing], [CFLAGS_ac])])
+CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 
 AC_C_BIGENDIAN
 AC_C_VARARRAYS
@@ -1207,8 +1219,7 @@ fd = epoll_create1(EPOLL_CLOEXEC);]])],
 AC_CACHE_CHECK([for suported 'noreturn' keyword], [mhd_cv_decl_noreturn],
   [
     mhd_cv_decl_noreturn="none"
-    save_CFLAGS="${CFLAGS}"
-    CFLAGS="${CFLAGS} ${errattr_CFLAGS}"
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS} ${errattr_CFLAGS}"
     for decl_noret in '_Noreturn' '__attribute__((__noreturn__))' '__declspec(noreturn)'
     do
       AC_LINK_IFELSE([AC_LANG_SOURCE(
@@ -1238,7 +1249,7 @@ int main (int argc, char *const *argv)
       )
       AS_IF([test "x${mhd_cv_decl_noreturn}" != "xnone"], [break])
     done
-    CFLAGS="${save_CFLAGS}"
+   CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
   ]
 )
 AS_VAR_IF([mhd_cv_decl_noreturn], ["none"],
@@ -1975,7 +1986,7 @@ AS_CASE(["$host"],
                                        [defines how to decorate public symbols while building])
                             HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"])])
    ])
-AC_SUBST(HIDDEN_VISIBILITY_CFLAGS)
+AC_SUBST([HIDDEN_VISIBILITY_CFLAGS])
 
 # libcurl (required for testing)
 AC_ARG_ENABLE([curl],
@@ -2002,7 +2013,7 @@ AM_CONDITIONAL([HAVE_CURL], [test "x$enable_curl" = "xyes"])
 
 mhd_have_libmagic="no"
 SAVE_LIBS="$LIBS"
-LIBS="$LIBS -lmagic"
+LIBS="-lmagic $LIBS"
 AC_MSG_CHECKING([[for suitable libmagic]])
 AC_LINK_IFELSE(
   [AC_LANG_PROGRAM(
@@ -2172,7 +2183,7 @@ AS_VAR_IF([[found_sendfile]], [["no"]],
   [
    AC_MSG_CHECKING([[for Solaris-style sendfile(3)]])
    SAVE_LIBS="$LIBS"
-   LIBS="$LIBS -lsendfile"
+   LIBS="-lsendfile $LIBS"
    AC_LINK_IFELSE(
      [AC_LANG_PROGRAM(
        [[
@@ -2286,12 +2297,9 @@ AC_ARG_WITH([[gnutls]],
       ],
       [
         AC_MSG_RESULT([[-I$with_gnutls/include -L$with_gnutls/lib -lgnutls]])
-        SAVE_LDFLAGS="$LDFLAGS"
-        SAVE_CPPFLAGS="$CPPFLAGS"
-        SAVE_CFLAGS="$CFLAGS"
         SAVE_LIBS="$LIBS"
-        LDFLAGS="-L$with_gnutls/lib $LDFLAGS"
-        CPPFLAGS="-I$with_gnutls/include $CPPFLAGS"
+        LDFLAGS="${LDFLAGS_ac} -L$with_gnutls/lib ${user_LDFLAGS}"
+        CPPFLAGS="${CPPFLAGS_ac} -I$with_gnutls/include ${user_CPPFLAGS}"
         have_gnutls_pkgcfg=no
           AC_CHECK_HEADERS([gnutls/gnutls.h],
             [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
@@ -2302,9 +2310,9 @@ AC_ARG_WITH([[gnutls]],
                 have_gnutls=yes
               ])], [], [AC_INCLUDES_DEFAULT])
         AS_IF([test "x$have_gnutls" != "xyes"], [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])])
-        CPPFLAGS="$SAVE_CPPFLAGS"
-        CFLAGS="$SAVE_CFLAGS"
-        LDFLAGS="$SAVE_LDFLAGS"
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+        CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+        LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
         LIBS="$SAVE_LIBS"
       ])
    ],
@@ -2357,12 +2365,9 @@ choke me now
     PKG_CHECK_MODULES(GNUTLS, [[gnutls]],
       [
        have_gnutls_pkgcfg='yes'
-       SAVE_CPPFLAGS="$CPPFLAGS"
-       SAVE_CFLAGS="$CFLAGS"
-       SAVE_LDFLAGS="$LDFLAGS"
        SAVE_LIBS="$LIBS"
-       CFLAGS="$GNUTLS_CFLAGS $CFLAGS"
-       LIBS="$LIBS $GNUTLS_LIBS"
+       CFLAGS="${CFLAGS_ac} $GNUTLS_CFLAGS ${user_CFLAGS}"
+       LIBS="$GNUTLS_LIBS $LIBS"
        AC_MSG_CHECKING([[whether GnuTLS is usable]])
        AC_LINK_IFELSE([
          AC_LANG_PROGRAM([[
@@ -2380,7 +2385,7 @@ choke me now
            have_gnutls=yes
            # GNUTLS_CFLAGS is actually CPPFLAGS
            GNUTLS_CPPFLAGS="$GNUTLS_CFLAGS"
-           # GNUTLS_CFLAGS is combination of LDFLAGS and LIBS
+           # GNUTLS_LDFLAGS is a combination of LDFLAGS and LIBS
            GNUTLS_LDFLAGS="$GNUTLS_LIBS"
           ],
           [
@@ -2397,9 +2402,9 @@ choke me now
           AS_UNSET([GNUTLS_LIBS])
          ]
        )
-       CPPFLAGS="$SAVE_CPPFLAGS"
-       CFLAGS="$SAVE_CFLAGS"
-       LDFLAGS="$SAVE_LDFLAGS"
+       CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+       CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+       LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
        LIBS="$SAVE_LIBS"
       ],
       [
@@ -2420,16 +2425,13 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
    AM_PATH_LIBGCRYPT([1.2.2], [have_gcrypt=yes], [have_gcrypt=no])
    AS_IF([[test "x$have_gcrypt" = "xyes"]],
      [
-       SAVE_CPPFLAGS="$CPPFLAGS"
-       SAVE_CFLAGS="$CFLAGS"
        SAVE_LIBS="$LIBS"
-       SAVE_LDFLAGS="$LDFLAGS"
-       CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
+       CFLAGS="${CFLAGS_ac} $LIBGCRYPT_CFLAGS ${user_CFLAGS}"
        # LIBGCRYPT_CFLAGS can be actually a CPPFLAGS, so check them both
-       CPPFLAGS="$CPPFLAGS $LIBGCRYPT_CFLAGS"
+       CPPFLAGS="${CPPFLAGS_ac} $LIBGCRYPT_CFLAGS ${user_CPPFLAGS}"
        AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no], [AC_INCLUDES_DEFAULT])
        # Check for GnuTLS with gcrypt flags
-       LDFLAGS="$LDFLAGS $LIBGCRYPT_LIBS"
+       LDFLAGS="${LDFLAGS_ac} ${LIBGCRYPT_LIBS} ${user_LDFLAGS}"
        # A bit of hack: unset cache variable to force recheck
        AS_UNSET([ac_cv_header_gnutls_gnutls_h])
        AC_CHECK_HEADERS([gnutls/gnutls.h],
@@ -2442,9 +2444,9 @@ AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
             GNUTLS_LIBS="-lgnutls"
             have_gnutls=yes
           ])], [], [AC_INCLUDES_DEFAULT])
-       CPPFLAGS="$SAVE_CPPFLAGS"
-       CFLAGS="$SAVE_CFLAGS"
-       LDFLAGS="$SAVE_LDFLAGS"
+       CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+       CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+       LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
        LIBS="$SAVE_LIBS"
      ]
    )
@@ -2455,14 +2457,11 @@ AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"],
 
   AS_IF([test "x$have_gnutls" = "xyes"],
     [
-     SAVE_CPPFLAGS="$CPPFLAGS"
-     SAVE_CFLAGS="$CFLAGS"
-     SAVE_LDFLAGS="$LDFLAGS"
      SAVE_LIBS="$LIBS"
-     CPPFLAGS="$GNUTLS_CPPFLAGS $CPPFLAGS"
-     CFLAGS="$GNUTLS_CFLAGS $CFLAGS"
-     LDFLAGS="$GNUTLS_LDFLAGS $LDFLAGS"
-     LIBS="$LIBS $GNUTLS_LIBS"
+     CPPFLAGS="${CPPFLAGS_ac} ${GNUTLS_CPPFLAGS} ${user_CPPFLAGS}"
+     CFLAGS="${CFLAGS_ac} ${GNUTLS_CFLAGS} ${user_CFLAGS}"
+     LDFLAGS="${LDFLAGS_ac} ${GNUTLS_LDFLAGS} ${user_LDFLAGS}"
+     LIBS="$GNUTLS_LIBS $LIBS"
      AC_MSG_CHECKING([[for gnutls_privkey_import_x509_raw()]])
      AC_LINK_IFELSE([
        AC_LANG_PROGRAM([[
@@ -2502,9 +2501,9 @@ choke me now
         )
        ]
      )
-     CPPFLAGS="$SAVE_CPPFLAGS"
-     CFLAGS="$SAVE_CFLAGS"
-     LDFLAGS="$SAVE_LDFLAGS"
+     CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+     CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+     LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
      LIBS="$SAVE_LIBS"
     ],
     [
@@ -2518,14 +2517,12 @@ choke me now
      AM_PATH_LIBGCRYPT([1.2.2], [have_gcrypt=yes], [have_gcrypt=no])
      AS_IF([[test "x$have_gcrypt" = "xyes"]],
        [
-         SAVE_CPPFLAGS="$CPPFLAGS"
-         SAVE_CFLAGS="$CFLAGS"
-         CFLAGS="$CFLAGS $LIBGCRYPT_CFLAGS"
+         CFLAGS="${CFLAGS_ac} ${LIBGCRYPT_CFLAGS} ${user_CFLAGS}"
          # LIBGCRYPT_CFLAGS can be actually a CPPFLAGS, so check them both
-         CPPFLAGS="$CPPFLAGS $LIBGCRYPT_CFLAGS"
+         CPPFLAGS="${CPPFLAGS_ac} ${LIBGCRYPT_CFLAGS} ${user_CPPFLAGS}"
          AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no], [AC_INCLUDES_DEFAULT])
-         CPPFLAGS="$SAVE_CPPFLAGS"
-         CFLAGS="$SAVE_CFLAGS"
+         CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+         CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
        ]
      )
     ]
@@ -2975,11 +2972,10 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
  [
    AS_UNSET([san_FLAGS]) # the sanitizer flags to be added to both CFLAGS and LDFLAGS
    AS_UNSET([san_CFLAGS]) # the sanitizer flags to be added to CFLAGS
-   saved_CFLAGS="$CFLAGS"
    AC_CACHE_CHECK([whether '-fsanitize=' works for $CC],
      [mhd_cv_cc_sanitizer_works],
      [
-       CFLAGS="${saved_CFLAGS} -fsanitize=wrongFeatureName"
+       CFLAGS="${CFLAGS_ac} -fsanitize=wrongFeatureName ${user_CFLAGS}"
        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
          [mhd_cv_cc_sanitizer_works=no], [mhd_cv_cc_sanitizer_works=yes])
      ]
@@ -2990,7 +2986,7 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
          [
            AC_CACHE_CHECK([for address sanitizer], [mhd_cv_cc_sanitizer_address],
              [
-               CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} -fsanitize=address"
+               CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} -fsanitize=address ${user_CFLAGS}"
                AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
                 [mhd_cv_cc_sanitizer_address=yes], [mhd_cv_cc_sanitizer_address=no])
              ]
@@ -3004,7 +3000,7 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
                  [
                    AC_CACHE_CHECK([whether leak detect is not rejected by address sanitizer], [mhd_cv_cc_sanitizer_address_leak],
                      [
-                       CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS}"
+                       CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} ${user_CFLAGS}"
                        ASAN_OPTIONS="exitcode=88:detect_leaks=1:halt_on_error=1"
                        export ASAN_OPTIONS
                        AC_RUN_IFELSE([AC_LANG_PROGRAM([],[])],
@@ -3021,7 +3017,7 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
                )
                AC_CACHE_CHECK([for pointer compare sanitizer], [mhd_cv_cc_sanitizer_pointer_compare],
                  [
-                   CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} -fsanitize=pointer-compare"
+                   CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} -fsanitize=pointer-compare ${user_CFLAGS}"
                    AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
                     [mhd_cv_cc_sanitizer_pointer_compare=yes], [mhd_cv_cc_sanitizer_pointer_compare=no])
                  ]
@@ -3034,7 +3030,7 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
                )
                AC_CACHE_CHECK([for pointer subtract sanitizer], [mhd_cv_cc_sanitizer_pointer_subtract],
                  [
-                   CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} -fsanitize=pointer-subtract"
+                   CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} -fsanitize=pointer-subtract ${user_CFLAGS}"
                    AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
                     [mhd_cv_cc_sanitizer_pointer_subtract=yes], [mhd_cv_cc_sanitizer_pointer_subtract=no])
                  ]
@@ -3054,7 +3050,7 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
                          [
                            ASAN_OPTIONS="exitcode=88:detect_invalid_pointer_pairs=3:halt_on_error=1"
                            export ASAN_OPTIONS
-                           CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS}"
+                           CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS} ${user_CFLAGS}"
                            AC_RUN_IFELSE(
                              [
                                AC_LANG_PROGRAM(
@@ -3100,7 +3096,7 @@ int ptr_process(void *ptr1, void *ptr2)
                              [
                                ASAN_OPTIONS="exitcode=88:detect_invalid_pointer_pairs=3:halt_on_error=1"
                                export ASAN_OPTIONS
-                               CFLAGS="${saved_CFLAGS} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS}"
+                               CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS} ${user_CFLAGS}"
                                AC_RUN_IFELSE(
                                  [
                                    AC_LANG_PROGRAM(
@@ -3194,7 +3190,7 @@ int main(void)
            ]
            AC_CACHE_CHECK([for undefined behavior sanitizer], [mhd_cv_cc_sanitizer_undefined],
              [
-               CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined"
+               CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined ${user_CFLAGS}"
                AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
                 [mhd_cv_cc_sanitizer_undefined=yes], [mhd_cv_cc_sanitizer_undefined=no])
              ]
@@ -3207,7 +3203,7 @@ int main(void)
              [
                AC_CACHE_CHECK([for undefined behavior sanitizer with '-fsanitize-undefined-trap-on-error'], [mhd_cv_cc_sanitizer_undefined_trap],
                  [
-                   CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error"
+                   CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error ${user_CFLAGS}"
                    AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
                     [mhd_cv_cc_sanitizer_undefined_trap=yes], [mhd_cv_cc_sanitizer_undefined_trap=no])
                  ]
@@ -3225,7 +3221,7 @@ int main(void)
                        # Last resort
                        AC_CACHE_CHECK([for undefined behavior sanitizer with '-fsanitize-trap=all'], [mhd_cv_cc_sanitizer_undefined_trap_all],
                          [
-                           CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-trap=all"
+                           CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-trap=all ${user_CFLAGS}"
                            AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
                             [mhd_cv_cc_sanitizer_undefined_trap_all=yes], [mhd_cv_cc_sanitizer_undefined_trap_all=no])
                          ]
@@ -3234,7 +3230,7 @@ int main(void)
                          [
                            AX_APPEND_FLAG([-fsanitize=undefined], [san_FLAGS])
                            AX_APPEND_FLAG([-fsanitize-trap=all], [san_FLAGS])
-                           CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-trap=all"
+                           CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-trap=all ${user_CFLAGS}"
                            enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
                            AC_MSG_WARN([Enabled sanitizer without run-time library, error reporting will be limited])
                          ]
@@ -3251,12 +3247,12 @@ int main(void)
                  [
                    # A workaround for broken clang which is trying to use UBSan lib
                    # even when instructed to not use it
-                   CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
+                   CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
                    AX_APPEND_LINK_FLAGS([-fsanitize-trap=implicit-conversion],
                      [san_FLAGS], [], [AC_LANG_SOURCE([${test_undf_prog}])])
                  ]
                )
-               CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
+               CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
                AX_APPEND_LINK_FLAGS([-fsanitize=bounds-strict -fsanitize=local-bounds -fsanitize=implicit-conversion -fsanitize=nullability-arg],
                  [san_CFLAGS], [], [AC_LANG_SOURCE([${test_undf_prog}])])
              ]
@@ -3275,7 +3271,7 @@ int main(void)
          [
            AC_CACHE_CHECK([for leak sanitizer], [mhd_cv_cc_sanitizer_leak],
              [
-               CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS} -fsanitize=leak"
+               CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=leak ${user_CFLAGS}"
                AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
                 [mhd_cv_cc_sanitizer_leak=yes], [mhd_cv_cc_sanitizer_leak=no])
              ]
@@ -3320,14 +3316,14 @@ int main(void)
            AS_VAR_IF([mhd_cv_cc_sanitizer_address],["yes"],
              [
                AX_APPEND_FLAG([-D_FORTIFY_SOURCE=0], [san_CFLAGS])
-               CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
+               CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
                AX_APPEND_COMPILE_FLAGS([-Wp,-U_FORTIFY_SOURCE], [san_CFLAGS])
              ],
              [AC_MSG_WARN([$CC does not support address sanitizer])]
            )
          ]
        )
-       CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
+       CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
        # Always stop on sanitizer error
        AX_APPEND_COMPILE_FLAGS([-fno-sanitize-recover=all], [san_CFLAGS])
        # Get a better output for sanitizers error reporting
@@ -3358,8 +3354,8 @@ UBSAN_OPTIONS="$(AM_UBSAN_OPTIONS)" ; export UBSAN_OPTIONS ; \
 LSAN_OPTIONS="$(AM_LSAN_OPTIONS)" ; export LSAN_OPTIONS ;'
      ]
    )
-   CFLAGS="${saved_CFLAGS} ${san_FLAGS} ${san_CFLAGS}"
-   AS_UNSET([saved_CFLAGS])
+   CFLAGS_ac="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS}"
+   CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
  ]
 )
 AM_CONDITIONAL([USE_SANITIZERS],
@@ -3387,9 +3383,19 @@ AC_SUBST(MHD_TLS_LIBDEPS)
 AC_SUBST([MHD_REQ_PRIVATE])
 AC_SUBST([MHD_LIBDEPS_PKGCFG])
 
-AC_SUBST(CPPFLAGS)
-AC_SUBST(LIBS)
-AC_SUBST(LDFLAGS)
+# Restore flags as set by the user
+CFLAGS="${user_CFLAGS}"
+LDFLAGS="${user_LDFLAGS}"
+CPPFLAGS="${user_CPPFLAGS}"
+AC_SUBST([CFLAGS])
+AC_SUBST([LDFLAGS])
+AC_SUBST([CPPFLAGS])
+AC_SUBST([LIBS])
+
+# Configure-defined flags
+AC_SUBST([CFLAGS_ac])
+AC_SUBST([LDFLAGS_ac])
+AC_SUBST([CPPFLAGS_ac])
 
 # Used for 'po' directory staff
 AC_SUBST([ac_configure_args])

@@ -3,18 +3,21 @@ EMPTY_ITEM =
 
 SUBDIRS = .
 
-if USE_COVERAGE
-  AM_CFLAGS = --coverage
-endif
-
 .NOTPARALLEL:
-
-MHD_CPU_COUNT_DEF = -DMHD_CPU_COUNT=$(CPU_COUNT)
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/microhttpd \
-  $(LIBCURL_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
+  -DMHD_CPU_COUNT=$(CPU_COUNT) \
+  $(CPPFLAGS_ac) $(LIBCURL_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
+
+AM_CFLAGS = $(CFLAGS_ac) @LIBGCRYPT_CFLAGS@
+
+AM_LDFLAGS = $(LDFLAGS_ac)
+
+if USE_COVERAGE
+  AM_CFLAGS += --coverage
+endif
 
 LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
@@ -83,8 +86,6 @@ test_https_get_parallel_SOURCES = \
   tls_test_keys.h \
   tls_test_common.h \
   tls_test_common.c
-test_https_get_parallel_CPPFLAGS = \
-  $(AM_CPPFLAGS) $(MHD_CPU_COUNT_DEF)
 test_https_get_parallel_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_https_get_parallel_LDADD = \
@@ -101,8 +102,6 @@ test_https_get_parallel_threads_SOURCES = \
   tls_test_keys.h \
   tls_test_common.h \
   tls_test_common.c
-test_https_get_parallel_threads_CPPFLAGS = \
-  $(AM_CPPFLAGS) $(MHD_CPU_COUNT_DEF)
 test_https_get_parallel_threads_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_https_get_parallel_threads_LDADD = \

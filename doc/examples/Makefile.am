@@ -2,9 +2,12 @@
 SUBDIRS  = .
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/src/include
+  -I$(top_srcdir)/src/include \
+  $(CPPFLAGS_ac)
 
-AM_CFLAGS = @LIBGCRYPT_CFLAGS@
+AM_CFLAGS = $(CFLAGS_ac) @LIBGCRYPT_CFLAGS@
+
+AM_LDFLAGS = $(LDFLAGS_ac)
 
 if USE_COVERAGE
   AM_CFLAGS += --coverage

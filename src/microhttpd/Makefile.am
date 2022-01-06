@@ -2,9 +2,11 @@
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
-  -I$(top_srcdir)/src/microhttpd
+  $(CPPFLAGS_ac)
 
-AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS)
+AM_CFLAGS = $(CFLAGS_ac) $(HIDDEN_VISIBILITY_CFLAGS)
+
+AM_LDFLAGS = $(LDFLAGS_ac)
 
 lib_LTLIBRARIES = \
   libmicrohttpd.la

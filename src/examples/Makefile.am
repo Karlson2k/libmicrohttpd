@@ -3,9 +3,12 @@ SUBDIRS  = .
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
+  $(CPPFLAGS_ac) \
   -DDATA_DIR=\"$(top_srcdir)/src/datadir/\"
 
-AM_CFLAGS = @LIBGCRYPT_CFLAGS@
+AM_CFLAGS = $(CFLAGS_ac) @LIBGCRYPT_CFLAGS@
+
+AM_LDFLAGS = $(LDFLAGS_ac)
 
 MHD_CPU_COUNT_DEF = -DMHD_CPU_COUNT=$(CPU_COUNT)
 

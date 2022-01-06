@@ -5,20 +5,23 @@ EMPTY_ITEM =
 
 SUBDIRS = .
 
+AM_CPPFLAGS = \
+  -I$(top_srcdir)/src/include \
+  -I$(top_srcdir)/src/microhttpd \
+  -DMHD_CPU_COUNT=$(CPU_COUNT) \
+  $(CPPFLAGS_ac) $(LIBCURL_CPPFLAGS)
+
+AM_CFLAGS = $(CFLAGS_ac) @LIBGCRYPT_CFLAGS@
+
+AM_LDFLAGS = $(LDFLAGS_ac)
+
 if USE_COVERAGE
-  AM_CFLAGS = -fprofile-arcs -ftest-coverage
+  AM_CFLAGS += -fprofile-arcs -ftest-coverage
 endif
 
 if ENABLE_HTTPS
   SUBDIRS += https
 endif
-
-AM_CPPFLAGS = \
--DMHD_CPU_COUNT=$(CPU_COUNT) \
--I$(top_srcdir) \
--I$(top_srcdir)/src/microhttpd \
--I$(top_srcdir)/src/include \
-$(LIBCURL_CPPFLAGS)
 
 LDADD = \
   $(top_builddir)/src/microhttpd/libmicrohttpd.la \
