@@ -2,7 +2,9 @@
    you see fit (Public Domain) */
 
 /* needed for asprintf */
-#define _GNU_SOURCE
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
 
 #include <stdlib.h>
 #include <string.h>
