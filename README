@@ -27,7 +27,7 @@ Installation
 
 See INSTALL for generic installation instructions.
 
-If you are using Git, run "autoreconf -fi" to create configure.
+If you are using Git, run "./bootstrap" to create configure.
 
 In order to run the testcases, you need a recent version of libcurl.
 libcurl is not required if you just want to install the library.
