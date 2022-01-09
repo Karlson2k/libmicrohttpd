@@ -36,6 +36,10 @@ if HAVE_W32
 AM_CPPFLAGS += -DWINDOWS
 endif
 
+if HAVE_EXPERIMENTAL
+noinst_PROGRAMS += websocket
+endif
+
 basicauthentication_SOURCES = \
  basicauthentication.c 
 basicauthentication_LDADD = \
@@ -76,3 +80,8 @@ largepost_SOURCES = \
 largepost_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la 
 
+websocket_SOURCES = \
+ websocket.c
+websocket_LDADD = \
+ $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+ $(top_builddir)/src/microhttpd_ws/libmicrohttpd_ws.la
