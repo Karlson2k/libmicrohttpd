@@ -31,7 +31,8 @@ microhttpd_tutorial_TEXINFOS = \
   chapters/processingpost.inc \
   chapters/responseheaders.inc \
   chapters/tlsauthentication.inc \
-  chapters/sessions.inc
+  chapters/sessions.inc \
+  chapters/websocket.inc
 
 EXTRA_DIST = \
   $(microhttpd_TEXINFOS) $(microhttpd_tutorial_TEXINFOS) \
