@@ -170,23 +170,6 @@ AC_CHECK_HEADERS([sys/sysctl.h netinet/ip_icmp.h netinet/icmp_var.h], [], [],
   ]]
 )
 
-# Checks for gettext.
-m4_ifdef([AM_GNU_GETTEXT], [
-  AS_VAR_SET_IF([enable_nls], [], [[enable_nls=no]])
-  AM_GNU_GETTEXT([external],[need-ngettext])
-  AC_CONFIG_FILES([po/Makefile.in])
-  have_po=yes
-], [
-  have_po=no
-])
-m4_ifdef([AM_GNU_GETTEXT_VERSION], [
-#do not indent here
-AM_GNU_GETTEXT_VERSION([0.20.2])
-])
-AM_CONDITIONAL([HAVE_PO], [ test "$have_po" = yes ])
-
-
-
 
 # Adam shostack suggests the following for Windows:
 # -D_FORTIFY_SOURCE=2 -fstack-protector-all
@@ -3421,6 +3404,7 @@ AM_CONDITIONAL([HAVE_EXPERIMENTAL], [test "x$enable_experimental" = "xyes"])
 AC_CONFIG_FILES([libmicrohttpd.pc
 w32/common/microhttpd_dll_res_vc.rc
 Makefile
+po/po-configure.ac
 contrib/Makefile
 doc/Makefile
 doc/doxygen/libmicrohttpd.doxy
@@ -3463,7 +3447,6 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Use debug asserts: ${enable_asserts}
   Use sanitizers:    ${enabled_sanitizers:=no}
   Messages:          ${enable_messages}
-  Gettext:           ${have_po}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
   HTTP "Upgrade":    ${enable_httpupgrade}

@@ -2,10 +2,6 @@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = contrib m4 src .
 
-if HAVE_PO
-SUBDIRS += po
-endif
-
 if BUILD_DOC
 SUBDIRS += doc
 endif
@@ -51,11 +47,13 @@ pkgconfig_DATA = libmicrohttpd.pc
 
 EXTRA_DIST += pre-dist-hook-dummy
 MOSTLYCLEANFILES = pre-dist-hook-dummy
+DISTCLEANFILES = 
+MAINTAINERCLEANFILES = 
 
 pre-dist-hook-dummy: pre-dist-hook Makefile
 	@echo "dummy" > $@
 
-dist-hook:
+dist-hook: dist-po
 	@chmod u+w '$(distdir)/pre-dist-hook-dummy' && \
 	  rm -f '$(distdir)/pre-dist-hook-dummy'
 	@rm -f pre-dist-hook-dummy
@@ -65,3 +63,81 @@ pre-dist-hook:
 	@$(am__cd) doc && $(MAKE) $(AM_MAKEFLAGS) update-stamp
 
 .PHONY: pre-dist-hook
+
+distclean-local: distclean-po
+
+maintainer-clean-local: maintainer-clean-po
+
+PO_ACLOCAL_M4 = $(top_srcdir)/po/aclocal.m4
+
+PO_M4_FILES = $(top_srcdir)/po/m4/gettext.m4 $(top_srcdir)/po/m4/host-cpu-c-abi.m4 \
+  $(top_srcdir)/po/m4/iconv.m4 $(top_srcdir)/po/m4/intlmacosx.m4 \
+  $(top_srcdir)/po/m4/lib-ld.m4 $(top_srcdir)/po/m4/lib-link.m4 \
+  $(top_srcdir)/po/m4/lib-prefix.m4 $(top_srcdir)/po/m4/nls.m4 \
+  $(top_srcdir)/po/m4/po.m4 $(top_srcdir)/po/m4/progtest.m4
+
+am__po_aclocal_m4_deps = $(PO_M4_FILES) $(top_srcdir)/po/configure.ac
+am__po_configure_deps = $(am__po_aclocal_m4_deps) $(PO_ACLOCAL_M4)
+
+$(PO_ACLOCAL_M4): $(am__po_aclocal_m4_deps)
+	@echo "Building $@"
+	$(am__cd) '$(top_srcdir)/po' && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+
+# Do update po/configure.ac only if template files updated
+$(top_srcdir)/po/configure.ac: $(top_srcdir)/po/po-configure.ac.in $(top_srcdir)/configure.ac
+	@echo "Building $@"
+	@$(am__cd) '$(top_builddir)' && $(MAKE) $(AM_MAKEFLAGS) po/po-configure.ac
+	@rm -f '$@' && cp -f po/po-configure.ac '$@'
+
+$(top_srcdir)/po-configure: $(top_srcdir)/po/configure.ac $(PO_ACLOCAL_M4)
+	@echo "Building $@"
+	@$(am__cd) '$(top_srcdir)/po' && $(AUTOCONF)
+	@mv -f '$(top_srcdir)/po/configure' '$@'
+
+po-config.status: $(top_srcdir)/po-configure
+	@if test -f config.log; then \
+	  mv -f config.log config.main.log; \
+	else \
+	  true; \
+	fi
+	@SHELL@ '$(top_srcdir)/po-configure' $(ac_configure_args) --silent --no-create --no-recursion --disable-option-checking
+	@mv -f config.log po-config.log
+	@if test -f config.main.log; then \
+	  mv -f config.main.log config.log; \
+	else \
+	  true; \
+	fi
+
+po/Makefile: $(top_srcdir)/po/Makefile.in.in $(top_srcdir)/po/Makevars $(top_builddir)/po-config.status $(top_srcdir)/po/POTFILES.in
+	@$(am__cd) $(top_builddir) \
+	  && @SHELL@ ./po-config.status po/Makefile.in po-directories
+
+dist-po: po/Makefile
+	@dir1="po"; dir2="$(distdir)/po"; \
+	$(am__relativize); \
+	rel_distsubdir=$$reldir; \
+	echo "cd po && $(MAKE) $(AM_MAKEFLAGS) distdir='$$rel_distsubdir' distdir" && \
+	$(am__cd) po && $(MAKE) $(AM_MAKEFLAGS) distdir="$$rel_distsubdir" distdir
+
+EXTRA_DIST += $(am__po_configure_deps) $(top_srcdir)/po/po-configure.ac.in $(top_srcdir)/po-configure
+DISTCLEANFILES += config.main.log po-config.log
+
+distclean-po:
+	@if test -f po/Makefile; then \
+	  $(am__cd) po && $(MAKE) $(AM_MAKEFLAGS) distclean; \
+	else \
+	  true; \
+	fi
+	-rm -f po-config.status po/Makefile
+	-rm -f po/POTFILES po/remove-potcdate.sed po/Makefile.in
+
+maintainer-clean-po:
+	@if test -f po/Makefile; then \
+	  $(am__cd) po && $(MAKE) $(AM_MAKEFLAGS) maintainer-clean; \
+	else \
+	  true; \
+	fi
+	-rm -f po/$(PACKAGE_TARNAME).pot po/stamp-po
+	-rm -rf $(top_srcdir)/po/autom4te.cache
+
+.PHONY: distclean-po maintainer-clean-po

@@ -1,0 +1,39 @@
+AC_INIT([@PACKAGE_NAME@],[@PACKAGE_VERSION@],[@PACKAGE_BUGREPORT@])
+CONFIG_STATUS='./po-config.status'
+
+AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_MACRO_DIR([m4])
+AC_PRESERVE_HELP_ORDER
+
+AC_MSG_NOTICE([
+This special $as_me is designed to be run only internally as part of distribution tarball building process.
+The only purpose of the $as_me is a preparion of the files to update ${PACKAGE_TARNAME}.pot
+
+$as_me is not meant to be started by the user and is not needed to build ${PACKAGE_NAME} library.
+])
+AC_MSG_NOTICE([Check src/examples/msgs_i18n.c for inspiration how to use ${PACKAGE_TARNAME}.pot])
+AS_VAR_SET_IF([enable_nls], [], [[enable_nls=no]])
+AM_GNU_GETTEXT([external],[need-ngettext])
+
+m4_divert_text([HELP_ENABLE], [[
+###############################################################################
+This special po-configure is designed to be run only internally as part of
+distribution tarball building process.
+The only purpose of the po-configure is a preparion of the files to update
+libmicrohttpd.pot
+
+po-configure is not meant to be started by the user and is not needed to build
+@PACKAGE_NAME@ library.
+###############################################################################
+]])
+
+AC_CONFIG_FILES([po/Makefile.in])
+
+AS_IF([test -z "${XGETTEXT}" || test "x${XGETTEXT}" = "x:"], [AC_MSG_ERROR([Cannot find xgettext. xgettext is required to update distribution tarball files.])])
+AC_SUBST([PACKAGE],["${PACKAGE_TARNAME}"])
+AC_SUBST([VERSION],["${PACKAGE_VERSION}"])
+AC_SUBST([CROSS_COMPILING],["${cross_compiling}"])
+AC_SUBST([mkdir_p],['$(MKDIR_P)'])
+AC_SUBST([install_sh],['false'])
+
+AC_OUTPUT

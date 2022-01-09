@@ -495,13 +495,20 @@ $(DUMMYPOFILES):
 update-gmo: Makefile $(GMOFILES)
 	@:
 
+#
+# The next two targets are customized for MHD
+#
+
 # Recreate Makefile by invoking config.status. Explicitly invoke the shell,
 # because execution permission bits may not work on the current file system.
 # Use @SHELL@, which is the shell determined by autoconf for the use by its
 # scripts, not $(SHELL) which is hardwired to /bin/sh and may be deficient.
-Makefile: Makefile.in.in Makevars $(top_builddir)/config.status @POMAKEFILEDEPS@
+Makefile: Makefile.in.in Makevars $(top_builddir)/po-config.status @POMAKEFILEDEPS@
 	cd $(top_builddir) \
-	  && @SHELL@ ./config.status $(subdir)/$@.in po-directories
+	  && @SHELL@ ./po-config.status $(subdir)/$@.in po-directories
+
+$(top_builddir)/po-config.status: $(srcdir)/po-configure.ac.in $(top_srcdir)/configure.ac
+	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) po-config.status
 
 force:
 

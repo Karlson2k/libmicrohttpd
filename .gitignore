@@ -56,3 +56,11 @@ uncrustify.cfg
 src/microhttpd_ws/test_websocket
 .texlipse
 /po/remove-potcdate.sed
+/po/autom4te.cache
+/po-config.log
+/po-config.status
+/po-configure
+/po/configure
+/po/aclocal.m4
+/po/po-configure.ac
+/po/configure.ac
