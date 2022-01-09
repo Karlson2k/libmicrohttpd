@@ -58,11 +58,18 @@ dist-hook: dist-po
 	  rm -f '$(distdir)/pre-dist-hook-dummy'
 	@rm -f pre-dist-hook-dummy
 
-pre-dist-hook:
+pre-dist-hook: pre-dist-hook-doc
 	@echo "Preparing to make dist"
-	@$(am__cd) doc && $(MAKE) $(AM_MAKEFLAGS) update-stamp
 
-.PHONY: pre-dist-hook
+pre-dist-hook-doc:
+	@echo "Preparing to make dist in doc"
+	@if test -w '$(top_srcdir)/doc' ; then \
+	  $(am__cd) doc && $(MAKE) $(AM_MAKEFLAGS) update-stamp; \
+	else \
+	  echo "Source tree is read-only, skipping force doc update"; \
+	fi;
+
+.PHONY: pre-dist-hook pre-dist-hook-doc
 
 distclean-local: distclean-po
 
