@@ -496,7 +496,7 @@ update-gmo: Makefile $(GMOFILES)
 	@:
 
 #
-# The next two targets are customized for MHD
+# The next three targets are customized for MHD
 #
 
 # Recreate Makefile by invoking config.status. Explicitly invoke the shell,
@@ -509,6 +509,10 @@ Makefile: Makefile.in.in Makevars $(top_builddir)/po-config.status @POMAKEFILEDE
 
 $(top_builddir)/po-config.status: $(srcdir)/po-configure.ac.in $(top_srcdir)/configure.ac
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) po-config.status
+
+remove-potcdate.sed: $(srcdir)/remove-potcdate.sin
+	$(SED) -e '/^#/d' '$(srcdir)/remove-potcdate.sin' > t-$@
+	mv t-$@ $@
 
 force:
 
