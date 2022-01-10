@@ -126,7 +126,7 @@ typedef intptr_t ssize_t;
 #endif
 
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 #include <sys/param.h> /* For __FreeBSD_version */
 #endif /* __FreeBSD__ */
 
@@ -204,7 +204,8 @@ typedef SOCKET MHD_socket;
 #  define USE_ACCEPT4 1
 #endif
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || \
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || \
+  defined(__OpenBSD__) || defined(__NetBSD__) || \
   defined(MHD_WINSOCK_SOCKETS) || defined(__MACH__) || defined(__sun) || \
   defined(SOMEBSD)
 /* Most of OSes inherit nonblocking setting from the listen socket */
@@ -248,8 +249,10 @@ typedef SOCKET MHD_socket;
  */
 #define _MHD_CORK_RESET_PUSH_DATA_ALWAYS 1
 #endif /* __linux__ */
-#if defined(__FreeBSD__) && \
-  ((__FreeBSD__ + 0) >= 5 || (__FreeBSD_version + 0) >= 450000)
+#if (defined(__FreeBSD__) && \
+  ((__FreeBSD__ + 0) >= 5 || (__FreeBSD_version + 0) >= 450000)) || \
+  (defined(__FreeBSD_kernel_version) && \
+  (__FreeBSD_kernel_version + 0) >= 450000)
 /* FreeBSD pushes data to the network with reset of TCP_NOPUSH
  * starting from version 4.5. */
 /**
