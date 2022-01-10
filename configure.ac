@@ -1599,7 +1599,7 @@ AS_CASE([[$enable_itc]],
   [[no]], [AC_MSG_ERROR([[inter-thread communication cannot be disabled]])],
     [AC_MSG_ERROR([[unrecognized type "$enable_itc" of inter-thread communication specified by "--enable-itc=$enable_itc"]])]
 )
-# AS_UNSET([[use_itc]])
+AS_UNSET([[use_itc]])
 
 AS_IF([[test "x$enable_itc" = "xeventfd" || test "x$enable_itc" = "xauto"]], [
   AS_VAR_IF([[os_is_native_w32]], [["yes"]], [], [
@@ -1611,7 +1611,8 @@ AS_IF([[test "x$enable_itc" = "xeventfd" || test "x$enable_itc" = "xauto"]], [
 #include <sys/eventfd.h>
           ]], [[
           int ef = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-          if (ef) return ef - 1;
+          if (ef < 0) return 1;
+          close (ef);
           ]])
         ], [[mhd_cv_eventfd_usable='yes']], [[mhd_cv_eventfd_usable='no']])
       ])
@@ -1638,18 +1639,20 @@ AC_INCLUDES_DEFAULT
         ], [[
           int arr[2];
           int res;
-          res = pipe(arr)
+          res = pipe(arr);
+          if (res != 0) return 1;
+          close (arr[0]);
+          close (arr[1]);
         ]])
       ], [[mhd_cv_pipe_usable='yes']], [[mhd_cv_pipe_usable='no']])
     ])
-  ])
-  AS_VAR_IF([[mhd_cv_pipe_usable]], [["yes"]], [
-    use_itc='pipe'
-    enable_itc="$use_itc"
-    AC_DEFINE([[_MHD_ITC_PIPE]], [[1]], [Define to use pipe for inter-thread communication])
-    AC_CACHE_CHECK([[whether pipe2(2) is usable]], [[mhd_cv_pipe2_usable]], [
-      AC_LINK_IFELSE([
-        AC_LANG_PROGRAM([
+    AS_VAR_IF([[mhd_cv_pipe_usable]], [["yes"]], [
+      use_itc='pipe'
+      enable_itc="$use_itc"
+      AC_DEFINE([[_MHD_ITC_PIPE]], [[1]], [Define to use pipe for inter-thread communication])
+      AC_CACHE_CHECK([[whether pipe2(2) is usable]], [[mhd_cv_pipe2_usable]], [
+        AC_LINK_IFELSE([
+          AC_LANG_PROGRAM([
 AC_INCLUDES_DEFAULT
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -1657,17 +1660,21 @@ AC_INCLUDES_DEFAULT
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-        ], [[
-          int arr[2];
-          int res;
-          res = pipe2(arr, O_CLOEXEC | O_NONBLOCK)
-        ]])
-      ], [[mhd_cv_pipe2_usable='yes']], [[mhd_cv_pipe2_usable='no']])
+          ], [[
+            int arr[2];
+            int res;
+            res = pipe2(arr, O_CLOEXEC | O_NONBLOCK);
+            if (res != 0) return 1;
+            close (arr[0]);
+            close (arr[1]);
+          ]])
+        ], [[mhd_cv_pipe2_usable='yes']], [[mhd_cv_pipe2_usable='no']])
+      ])
+      AS_VAR_IF([[mhd_cv_pipe2_usable]], [["yes"]],
+        [AC_DEFINE([[HAVE_PIPE2_FUNC]], [[1]], [Define if you have usable pipe2(2) function])])
+    ], [
+      AS_VAR_IF([[enable_itc]], [["pipe"]], [AC_MSG_ERROR([[pipe(3) is not usable, consider using other type of inter-thread communication]])])
     ])
-    AS_VAR_IF([[mhd_cv_pipe2_usable]], [["yes"]],
-      [AC_DEFINE([[HAVE_PIPE2_FUNC]], [[1]], [Define if you have usable pipe2(2) function])])
-  ], [
-    AS_VAR_IF([[enable_itc]], [["pipe"]], [AC_MSG_ERROR([[pipe(3) is not usable, consider using other type of inter-thread communication]])])
   ])
 ])
 
