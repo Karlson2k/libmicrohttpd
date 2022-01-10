@@ -576,11 +576,11 @@ curlEasyInitForTest (const char *queryPath, const char *method,
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HEADERDATA,
                                      hdr_chk_result)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
-      (oneone) ?
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                     CURL_HTTP_VERSION_1_1)) :
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                     CURL_HTTP_VERSION_1_0)))
+      ((oneone) ?
+       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                      CURL_HTTP_VERSION_1_1)) :
+       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                      CURL_HTTP_VERSION_1_0))))
     libcurlErrorExitDesc ("curl_easy_setopt() failed");
 
   if (CURLE_OK != curl_easy_setopt (c, CURLOPT_CUSTOMREQUEST, method))

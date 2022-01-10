@@ -421,11 +421,11 @@ curlEasyInitForTest (const char *queryPath, int port, struct CBC *pcbc,
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HEADERDATA,
                                      hdr_chk_result)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
-      (oneone) ?
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                     CURL_HTTP_VERSION_1_1)) :
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                     CURL_HTTP_VERSION_1_0)))
+      ((oneone) ?
+       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                      CURL_HTTP_VERSION_1_1)) :
+       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                      CURL_HTTP_VERSION_1_0))))
   {
     fprintf (stderr, "curl_easy_setopt() failed.\n");
     externalErrorExit ();
