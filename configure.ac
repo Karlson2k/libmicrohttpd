@@ -430,6 +430,11 @@ AS_CASE(["$host_os"],
      CFLAGS_ac="-no-cpp-precomp -fno-common $CFLAGS_ac"
      mhd_host_os='Darwin'
      AC_MSG_RESULT([[$mhd_host_os]])],
+ [kfreebsd*-gnu],
+ [AC_DEFINE([SOMEBSD],[1],[This is a BSD system])
+     AC_DEFINE_UNQUOTED([FREEBSD],[1],[This is a FreeBSD system])
+     mhd_host_os='FreeBSD kernel with GNU userland'
+     AC_MSG_RESULT([[$mhd_host_os]])],
  [freebsd*],
  [AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
      AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
@@ -1640,7 +1645,7 @@ AC_INCLUDES_DEFAULT
           int arr[2];
           int res;
           res = pipe(arr);
-          if (res != 0) return 1;
+          if (res != 0) return 33;
           close (arr[0]);
           close (arr[1]);
         ]])
@@ -1651,7 +1656,7 @@ AC_INCLUDES_DEFAULT
       enable_itc="$use_itc"
       AC_DEFINE([[_MHD_ITC_PIPE]], [[1]], [Define to use pipe for inter-thread communication])
       AC_CACHE_CHECK([[whether pipe2(2) is usable]], [[mhd_cv_pipe2_usable]], [
-        AC_LINK_IFELSE([
+        AC_RUN_IFELSE([
           AC_LANG_PROGRAM([
 AC_INCLUDES_DEFAULT
 #ifdef HAVE_FCNTL_H
@@ -1664,13 +1669,17 @@ AC_INCLUDES_DEFAULT
             int arr[2];
             int res;
             res = pipe2(arr, O_CLOEXEC | O_NONBLOCK);
-            if (res != 0) return 1;
+            if (res != 0) return 33;
             close (arr[0]);
             close (arr[1]);
           ]])
-        ], [[mhd_cv_pipe2_usable='yes']], [[mhd_cv_pipe2_usable='no']])
+        ], [[mhd_cv_pipe2_usable='yes']], [[mhd_cv_pipe2_usable='no']], [
+          # Cross-compiling
+          AS_CASE([${host_os}], [kfreebsd*-gnu], [[mhd_cv_pipe2_usable='assuming no']],
+            [[mhd_cv_pipe2_usable='assuming yes']])
+        ])
       ])
-      AS_VAR_IF([[mhd_cv_pipe2_usable]], [["yes"]],
+      AS_CASE([["X-${mhd_cv_pipe2_usable}"]], [[X*yes]],
         [AC_DEFINE([[HAVE_PIPE2_FUNC]], [[1]], [Define if you have usable pipe2(2) function])])
     ], [
       AS_VAR_IF([[enable_itc]], [["pipe"]], [AC_MSG_ERROR([[pipe(3) is not usable, consider using other type of inter-thread communication]])])
