@@ -186,7 +186,7 @@ test_get_SOURCES = \
   test_get.c
 
 test_quiesce_SOURCES = \
-  test_quiesce.c
+  test_quiesce.c mhd_has_param.h mhd_has_in_name.h
 test_quiesce_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_quiesce_LDADD = \
