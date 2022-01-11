@@ -183,7 +183,7 @@ test_concurrent_stop_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
 
 test_get_SOURCES = \
-  test_get.c
+  test_get.c mhd_has_in_name.h mhd_has_param.h
 
 test_quiesce_SOURCES = \
   test_quiesce.c mhd_has_param.h mhd_has_in_name.h
@@ -264,56 +264,54 @@ test_urlparse_SOURCES = \
 
 test_get_response_cleanup_SOURCES = \
   test_get_response_cleanup.c mhd_has_in_name.h
-test_get_response_cleanup_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 test_get_chunked_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_close_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_string_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_close_string_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_empty_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_close_empty_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_string_empty_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_close_string_empty_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_sized_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_close_sized_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_empty_sized_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_close_empty_sized_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_forced_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_close_forced_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_empty_forced_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_get_chunked_close_empty_forced_SOURCES = \
-  test_get_chunked.c
+  test_get_chunked.c mhd_has_in_name.h
 
 test_post_SOURCES = \
   test_post.c mhd_has_in_name.h
@@ -351,35 +349,35 @@ test_put_chunked_SOURCES = \
   test_put_chunked.c
 
 test_add_conn_SOURCES = \
-  test_add_conn.c $(top_srcdir)/src/microhttpd/test_helpers.h
+  test_add_conn.c mhd_has_in_name.h mhd_has_param.h
 test_add_conn_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_add_conn_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
 
 test_add_conn_nolisten_SOURCES = \
-  test_add_conn.c $(top_srcdir)/src/microhttpd/test_helpers.h
+  test_add_conn.c mhd_has_in_name.h mhd_has_param.h
 test_add_conn_nolisten_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_add_conn_nolisten_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
 
 test_add_conn_cleanup_SOURCES = \
-  test_add_conn.c $(top_srcdir)/src/microhttpd/test_helpers.h
+  test_add_conn.c mhd_has_in_name.h mhd_has_param.h
 test_add_conn_cleanup_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_add_conn_cleanup_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
 
 test_add_conn_cleanup_nolisten_SOURCES = \
-  test_add_conn.c $(top_srcdir)/src/microhttpd/test_helpers.h
+  test_add_conn.c mhd_has_in_name.h mhd_has_param.h
 test_add_conn_cleanup_nolisten_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_add_conn_cleanup_nolisten_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
 
 test_get11_SOURCES = \
-  test_get.c
+  test_get.c mhd_has_in_name.h mhd_has_param.h
 
 test_get_iovec11_SOURCES = \
   test_get_iovec.c mhd_has_in_name.h
@@ -388,16 +386,16 @@ test_get_sendfile11_SOURCES = \
   test_get_sendfile.c mhd_has_in_name.h
 
 test_get_close_SOURCES = \
-  test_get_close_keep_alive.c $(top_srcdir)/src/microhttpd/test_helpers.h
+  test_get_close_keep_alive.c mhd_has_in_name.h mhd_has_param.h
 
 test_get_close10_SOURCES = \
-  test_get_close_keep_alive.c $(top_srcdir)/src/microhttpd/test_helpers.h
+  test_get_close_keep_alive.c mhd_has_in_name.h mhd_has_param.h
 
 test_get_keep_alive_SOURCES = \
-  test_get_close_keep_alive.c $(top_srcdir)/src/microhttpd/test_helpers.h
+  test_get_close_keep_alive.c mhd_has_in_name.h mhd_has_param.h
 
 test_get_keep_alive10_SOURCES = \
-  test_get_close_keep_alive.c $(top_srcdir)/src/microhttpd/test_helpers.h
+  test_get_close_keep_alive.c mhd_has_in_name.h mhd_has_param.h
 
 test_post11_SOURCES = \
   test_post.c mhd_has_in_name.h
@@ -414,13 +412,13 @@ test_put11_SOURCES = \
   test_put.c mhd_has_in_name.h
 
 test_large_put_SOURCES = \
-  test_large_put.c
+  test_large_put.c mhd_has_in_name.h mhd_has_param.h
 
 test_large_put11_SOURCES = \
-  test_large_put.c
+  test_large_put.c mhd_has_in_name.h mhd_has_param.h
 
 test_large_put_inc11_SOURCES = \
-  test_large_put.c
+  test_large_put.c mhd_has_in_name.h mhd_has_param.h
 
 test_long_header_SOURCES = \
   test_long_header.c mhd_has_in_name.h
@@ -438,32 +436,32 @@ test_timeout_SOURCES = \
   test_timeout.c mhd_has_in_name.h
 
 test_toolarge_method_SOURCES = \
-  test_toolarge.c ../microhttpd/test_helpers.h
+  test_toolarge.c mhd_has_in_name.h mhd_has_param.h
 
 test_toolarge_url_SOURCES = \
-  test_toolarge.c ../microhttpd/test_helpers.h
+  test_toolarge.c mhd_has_in_name.h mhd_has_param.h
 
 test_toolarge_request_header_name_SOURCES = \
-  test_toolarge.c ../microhttpd/test_helpers.h
+  test_toolarge.c mhd_has_in_name.h mhd_has_param.h
 
 test_toolarge_request_header_value_SOURCES = \
-  test_toolarge.c ../microhttpd/test_helpers.h
+  test_toolarge.c mhd_has_in_name.h mhd_has_param.h
 
 test_toolarge_request_headers_SOURCES = \
-  test_toolarge.c ../microhttpd/test_helpers.h
+  test_toolarge.c mhd_has_in_name.h mhd_has_param.h
 
 test_toolarge_reply_header_name_SOURCES = \
-  test_toolarge.c ../microhttpd/test_helpers.h
+  test_toolarge.c mhd_has_in_name.h mhd_has_param.h
 
 test_toolarge_reply_header_value_SOURCES = \
-  test_toolarge.c ../microhttpd/test_helpers.h
+  test_toolarge.c mhd_has_in_name.h mhd_has_param.h
 
 test_toolarge_reply_headers_SOURCES = \
-  test_toolarge.c ../microhttpd/test_helpers.h
+  test_toolarge.c mhd_has_in_name.h mhd_has_param.h
 
 test_tricky_url_SOURCES = \
-  test_tricky.c ../microhttpd/test_helpers.h
+  test_tricky.c mhd_has_in_name.h mhd_has_param.h
 
 test_tricky_header2_SOURCES = \
-  test_tricky.c ../microhttpd/test_helpers.h
+  test_tricky.c mhd_has_in_name.h mhd_has_param.h
   

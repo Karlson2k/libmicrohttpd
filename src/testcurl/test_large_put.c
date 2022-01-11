@@ -38,7 +38,8 @@
 #include <unistd.h>
 #endif
 
-#include "test_helpers.h"
+#include "mhd_has_in_name.h"
+#include "mhd_has_param.h"
 
 #if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 2
 #undef MHD_CPU_COUNT
