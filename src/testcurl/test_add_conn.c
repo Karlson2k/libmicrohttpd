@@ -446,11 +446,10 @@ curlEasyInitForTest (const char *queryPath, int port, struct CBC *pcbc)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_TIMEOUT,
                                      (long) response_timeout_val)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
-      ((oneone) ?
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_1)) :
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_0))))
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     (oneone) ?
+                                     CURL_HTTP_VERSION_1_1 :
+                                     CURL_HTTP_VERSION_1_0)))
   {
     fprintf (stderr, "curl_easy_setopt() failed.\n");
     _exit (99);

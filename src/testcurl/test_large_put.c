@@ -365,11 +365,11 @@ testPutInternalThread (unsigned int add_flag)
                                      (long) 150)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_TIMEOUT,
                                      (long) 150)) ||
-      ((oneone) ?
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_1)) :
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_0))))
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     (oneone) ?
+                                     CURL_HTTP_VERSION_1_1 :
+                                     CURL_HTTP_VERSION_1_0)))
+
   {
     fprintf (stderr, "curl_easy_setopt() failed.\n");
     externalErrorExit ();
@@ -471,11 +471,10 @@ testPutThreadPerConn (unsigned int add_flag)
                                      (long) 150)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_TIMEOUT,
                                      (long) 150)) ||
-      ((oneone) ?
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_1)) :
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_0))))
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     (oneone) ?
+                                     CURL_HTTP_VERSION_1_1 :
+                                     CURL_HTTP_VERSION_1_0)))
   {
     fprintf (stderr, "curl_easy_setopt() failed.\n");
     externalErrorExit ();
@@ -577,11 +576,10 @@ testPutThreadPool (unsigned int add_flag)
                                      (long) 150)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_TIMEOUT,
                                      (long) 150)) ||
-      ((oneone) ?
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_1)) :
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_0))))
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     (oneone) ?
+                                     CURL_HTTP_VERSION_1_1 :
+                                     CURL_HTTP_VERSION_1_0)))
   {
     fprintf (stderr, "curl_easy_setopt() failed.\n");
     externalErrorExit ();
@@ -689,11 +687,10 @@ testPutExternal (void)
                                      (long) 150)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_TIMEOUT,
                                      (long) 150)) ||
-      ((oneone) ?
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_1)) :
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_0))))
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     (oneone) ?
+                                     CURL_HTTP_VERSION_1_1 :
+                                     CURL_HTTP_VERSION_1_0)))
   {
     fprintf (stderr, "curl_easy_setopt() failed.\n");
     externalErrorExit ();
