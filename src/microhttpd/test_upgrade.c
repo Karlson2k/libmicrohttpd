@@ -526,7 +526,7 @@ notify_connection_cb (void *cls,
                       void **socket_context,
                       enum MHD_ConnectionNotificationCode toe)
 {
-  static int started;
+  static int started = MHD_NO;
 
   (void) cls;
   (void) connection;  /* Unused. Silent compiler warning. */
