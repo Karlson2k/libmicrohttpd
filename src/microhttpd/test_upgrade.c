@@ -196,7 +196,10 @@ gnutlscli_connect (int *sock,
                        SOCK_STREAM,
                        0,
                        sp))
-    return -1;
+  {
+    testErrorLogDesc ("socketpair() failed");
+    return (pid_t) -1;
+  }
   chld = fork ();
   if (0 != chld)
   {
@@ -208,9 +211,9 @@ gnutlscli_connect (int *sock,
   (void) close (0);
   (void) close (1);
   if (-1 == dup2 (sp[0], 0))
-    abort ();
+    externalErrorExitDesc ("dup2() failed");
   if (-1 == dup2 (sp[0], 1))
-    abort ();
+    externalErrorExitDesc ("dup2() failed");
   MHD_socket_close_chk_ (sp[0]);
   if (TLS_CLI_GNUTLS == use_tls_tool)
   {
@@ -1200,7 +1203,7 @@ run_mhd_loop (struct MHD_Daemon *daemon,
     run_mhd_epoll_loop (daemon);
 #endif
   else
-    abort ();
+    externalErrorExitDesc ("Wrong 'flags' value");
 }
 
 
