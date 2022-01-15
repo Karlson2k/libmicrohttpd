@@ -338,6 +338,8 @@ fflush_allstd (void)
 
 static int verbose = 0;
 
+static uint16_t global_port;
+
 static struct MHD_itc_ kicker = MHD_ITC_STATIC_INIT_INVALID;
 
 enum tls_tool
@@ -1453,9 +1455,7 @@ test_upgrade (int flags,
 
   if (! test_tls)
     d = MHD_start_daemon (flags | MHD_USE_ERROR_LOG | MHD_ALLOW_UPGRADE,
-                          MHD_is_feature_supported (
-                            MHD_FEATURE_AUTODETECT_BIND_PORT) ?
-                          0 : 1090,
+                          global_port,
                           NULL, NULL,
                           &ahc_upgrade, NULL,
                           MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) 512,
@@ -1470,9 +1470,7 @@ test_upgrade (int flags,
   else
     d = MHD_start_daemon (flags | MHD_USE_ERROR_LOG | MHD_ALLOW_UPGRADE
                           | MHD_USE_TLS,
-                          MHD_is_feature_supported (
-                            MHD_FEATURE_AUTODETECT_BIND_PORT) ?
-                          0 : 1090,
+                          global_port,
                           NULL, NULL,
                           &ahc_upgrade, NULL,
                           MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) 512,
@@ -1497,6 +1495,7 @@ test_upgrade (int flags,
   if ( (NULL == dinfo) ||
        (0 == dinfo->port) )
     mhdErrorExitDesc ("MHD_get_daemon_info() failed");
+  global_port = dinfo->port; /* Re-use the same port for the next checks */
   if (! test_tls || (TLS_LIB_GNUTLS == use_tls_tool))
   {
     sock = test_tls ? wr_create_tls_sckt () : wr_create_plain_sckt ();
@@ -1633,6 +1632,9 @@ main (int argc,
     return 77;
 #endif /* ! HTTPS_SUPPORT */
   }
+
+  global_port = MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT) ?
+                0 : (test_tls ? 1093 : 1092);
 
   /* run tests */
   if (verbose)
