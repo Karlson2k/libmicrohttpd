@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2016, 2019 Christian Grothoff
+     Copyright (C) 2016-2020 Christian Grothoff
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -46,11 +47,22 @@
 #include <netinet/ip.h>
 #endif /* HAVE_NETINET_IP_H */
 
+#ifdef HTTPS_SUPPORT
+#include <gnutls/gnutls.h>
+#include "../testcurl/https/tls_test_keys.h"
+
+#if defined(HAVE_FORK) && defined(HAVE_WAITPID)
+#include <sys/types.h>
+#include <sys/wait.h>
+#endif /* HAVE_FORK && HAVE_WAITPID */
+#endif /* HTTPS_SUPPORT */
+
 #include "platform.h"
 #include "microhttpd.h"
 #include "mhd_itc.h"
 
 #include "test_helpers.h"
+
 
 #define LARGE_STRING \
   "HelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHello" \
@@ -212,15 +224,109 @@
   "WorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorld" \
   "WorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorldWorld\n"
 
-#ifdef HTTPS_SUPPORT
-#include <gnutls/gnutls.h>
-#include "../testcurl/https/tls_test_keys.h"
 
-#if defined(HAVE_FORK) && defined(HAVE_WAITPID)
-#include <sys/types.h>
-#include <sys/wait.h>
-#endif /* HAVE_FORK && HAVE_WAITPID */
-#endif /* HTTPS_SUPPORT */
+_MHD_NORETURN static void
+_externalErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
+{
+  fflush (stdout);
+  if ((NULL != errDesc) && (0 != errDesc[0]))
+    fprintf (stderr, "%s", errDesc);
+  else
+    fprintf (stderr, "System or external library call failed");
+  if ((NULL != funcName) && (0 != funcName[0]))
+    fprintf (stderr, " in %s", funcName);
+  if (0 < lineNum)
+    fprintf (stderr, " at line %d", lineNum);
+
+  fprintf (stderr, ".\nLast errno value: %d (%s)\n", (int) errno,
+           strerror (errno));
+#ifdef MHD_WINSOCK_SOCKETS
+  fprintf (stderr, "WSAGetLastError() value: %d\n", (int) WSAGetLastError ());
+#endif /* MHD_WINSOCK_SOCKETS */
+  fflush (stderr);
+  exit (99);
+}
+
+
+_MHD_NORETURN static void
+_mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
+{
+  fflush (stdout);
+  if ((NULL != errDesc) && (0 != errDesc[0]))
+    fprintf (stderr, "%s", errDesc);
+  else
+    fprintf (stderr, "MHD unexpected error");
+  if ((NULL != funcName) && (0 != funcName[0]))
+    fprintf (stderr, " in %s", funcName);
+  if (0 < lineNum)
+    fprintf (stderr, " at line %d", lineNum);
+
+  fprintf (stderr, ".\nLast errno value: %d (%s)\n", (int) errno,
+           strerror (errno));
+
+  fflush (stderr);
+  exit (8);
+}
+
+
+static void
+_testErrorLog_func (const char *errDesc, const char *funcName, int lineNum)
+{
+  fflush (stdout);
+  if ((NULL != errDesc) && (0 != errDesc[0]))
+    fprintf (stderr, "%s", errDesc);
+  else
+    fprintf (stderr, "System or external library call resulted in error");
+  if ((NULL != funcName) && (0 != funcName[0]))
+    fprintf (stderr, " in %s", funcName);
+  if (0 < lineNum)
+    fprintf (stderr, " at line %d", lineNum);
+
+  fprintf (stderr, ".\nLast errno value: %d (%s)\n", (int) errno,
+           strerror (errno));
+#ifdef MHD_WINSOCK_SOCKETS
+  fprintf (stderr, "WSAGetLastError() value: %d\n", (int) WSAGetLastError ());
+#endif /* MHD_WINSOCK_SOCKETS */
+  fflush (stderr);
+}
+
+
+#if defined(HAVE___FUNC__)
+#define externalErrorExit(ignore) \
+    _externalErrorExit_func(NULL, __func__, __LINE__)
+#define externalErrorExitDesc(errDesc) \
+    _externalErrorExit_func(errDesc, __func__, __LINE__)
+#define mhdErrorExit(ignore) \
+    _mhdErrorExit_func(NULL, __func__, __LINE__)
+#define mhdErrorExitDesc(errDesc) \
+    _mhdErrorExit_func(errDesc, __func__, __LINE__)
+#define testErrorLog(ignore) \
+    _testErrorLog_func(NULL, __func__, __LINE__)
+#define testErrorLogDesc(errDesc) \
+    _testErrorLog_func(errDesc, __func__, __LINE__)
+#elif defined(HAVE___FUNCTION__)
+#define externalErrorExit(ignore) \
+    _externalErrorExit_func(NULL, __FUNCTION__, __LINE__)
+#define externalErrorExitDesc(errDesc) \
+    _externalErrorExit_func(errDesc, __FUNCTION__, __LINE__)
+#define mhdErrorExit(ignore) \
+    _mhdErrorExit_func(NULL, __FUNCTION__, __LINE__)
+#define mhdErrorExitDesc(errDesc) \
+    _mhdErrorExit_func(errDesc, __FUNCTION__, __LINE__)
+#define testErrorLog(ignore) \
+    _testErrorLog_func(NULL, __FUNCTION__, __LINE__)
+#define testErrorLogDesc(errDesc) \
+    _testErrorLog_func(errDesc, __FUNCTION__, __LINE__)
+#else
+#define externalErrorExit(ignore) _externalErrorExit_func(NULL, NULL, __LINE__)
+#define externalErrorExitDesc(errDesc) \
+  _externalErrorExit_func(errDesc, NULL, __LINE__)
+#define mhdErrorExit(ignore) _mhdErrorExit_func(NULL, NULL, __LINE__)
+#define mhdErrorExitDesc(errDesc) _mhdErrorExit_func(errDesc, NULL, __LINE__)
+#define testErrorLog(ignore) _testErrorLog_func(NULL, NULL, __LINE__)
+#define testErrorLogDesc(errDesc) _testErrorLog_func(errDesc, NULL, __LINE__)
+#endif
+
 
 static int verbose = 0;
 
@@ -257,7 +363,10 @@ gnutlscli_connect (int *sock,
                        SOCK_STREAM,
                        0,
                        sp))
-    return -1;
+  {
+    testErrorLogDesc ("socketpair() failed");
+    return (pid_t) -1;
+  }
   chld = fork ();
   if (0 != chld)
   {
@@ -269,9 +378,9 @@ gnutlscli_connect (int *sock,
   (void) close (0);
   (void) close (1);
   if (-1 == dup2 (sp[0], 0))
-    abort ();
+    externalErrorExitDesc ("dup2() failed");
   if (-1 == dup2 (sp[0], 1))
-    abort ();
+    externalErrorExitDesc ("dup2() failed");
   MHD_socket_close_chk_ (sp[0]);
   if (TLS_CLI_GNUTLS == use_tls_tool)
   {
@@ -363,11 +472,15 @@ wr_create_plain_sckt (void)
 {
   struct wr_socket *s = malloc (sizeof(struct wr_socket));
   if (NULL == s)
+  {
+    testErrorLogDesc ("malloc() failed");
     return NULL;
+  }
   s->t = wr_plain;
   s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (MHD_INVALID_SOCKET != s->fd)
-    return s;
+    return s; /* Success */
+  testErrorLogDesc ("socket() failed");
   free (s);
   return NULL;
 }
@@ -383,7 +496,10 @@ wr_create_tls_sckt (void)
 #ifdef HTTPS_SUPPORT
   struct wr_socket *s = malloc (sizeof(struct wr_socket));
   if (NULL == s)
+  {
+    testErrorLogDesc ("malloc() failed");
     return NULL;
+  }
   s->t = wr_tls;
   s->tls_connected = 0;
   s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -408,13 +524,23 @@ wr_create_tls_sckt (void)
 #endif /* GnuTLS before 3.1.9 or Win x64 */
             return s;
           }
+          else
+            testErrorLogDesc ("gnutls_credentials_set() failed");
           gnutls_certificate_free_credentials (s->tls_crd);
         }
+        else
+          testErrorLogDesc ("gnutls_certificate_allocate_credentials() failed");
       }
+      else
+        testErrorLogDesc ("gnutls_set_default_priority() failed");
       gnutls_deinit (s->tls_s);
     }
+    else
+      testErrorLogDesc ("gnutls_init() failed");
     (void) MHD_socket_close_ (s->fd);
   }
+  else
+    testErrorLogDesc ("socket() failed");
   free (s);
 #endif /* HTTPS_SUPPORT */
   return NULL;
@@ -433,7 +559,10 @@ wr_create_from_plain_sckt (MHD_socket plain_sk)
   struct wr_socket *s = malloc (sizeof(struct wr_socket));
 
   if (NULL == s)
+  {
+    testErrorLogDesc ("malloc() failed");
     return NULL;
+  }
   s->t = wr_plain;
   s->fd = plain_sk;
   return s;
@@ -453,7 +582,10 @@ wr_connect (struct wr_socket *s,
             int length)
 {
   if (0 != connect (s->fd, addr, length))
+  {
+    testErrorLogDesc ("connect() failed");
     return -1;
+  }
   if (wr_plain == s->t)
     return 0;
 #ifdef HTTPS_SUPPORT
@@ -468,6 +600,8 @@ wr_connect (struct wr_socket *s,
     return 0;
   }
 #endif /* HTTPS_SUPPORT */
+  testErrorLogDesc ("HTTPS socket connect called, but code does not support" \
+                    " HTTPS sockets");
   return -1;
 }
 
@@ -483,7 +617,10 @@ wr_handshake (struct wr_socket *s)
   else if (GNUTLS_E_AGAIN == res)
     MHD_socket_set_error_ (MHD_SCKT_EAGAIN_);
   else
+  {
+    testErrorLogDesc ("gnutls_handshake() failed with hard error");
     MHD_socket_set_error_ (MHD_SCKT_ECONNABORTED_); /* hard error */
+  }
   return s->tls_connected;
 }
 
@@ -507,13 +644,7 @@ wr_send (struct wr_socket *s,
          size_t len)
 {
   if (wr_plain == s->t)
-  {
-    ssize_t ret;
-
-    ret = MHD_send_ (s->fd, buf, len);
-
-    return ret;
-  }
+    return MHD_send_ (s->fd, buf, len);
 #ifdef HTTPS_SUPPORT
   if (wr_tls == s->t)
   {
@@ -521,17 +652,22 @@ wr_send (struct wr_socket *s,
 
     if (! s->tls_connected && ! wr_handshake (s))
       return -1;
-    ret = gnutls_record_send (s->tls_s,
-                              buf,
-                              len);
+
+    ret = gnutls_record_send (s->tls_s, buf, len);
     if (ret > 0)
       return ret;
     if (GNUTLS_E_AGAIN == ret)
       MHD_socket_set_error_ (MHD_SCKT_EAGAIN_);
     else
-      MHD_socket_set_error_ (MHD_SCKT_ECONNABORTED_);   /* hard error */
+    {
+      testErrorLogDesc ("gnutls_record_send() failed with hard error");
+      MHD_socket_set_error_ (MHD_SCKT_ECONNABORTED_);  /* hard error */
+      return -1;
+    }
   }
 #endif /* HTTPS_SUPPORT */
+  testErrorLogDesc ("HTTPS socket send called, but code does not support" \
+                    " HTTPS sockets");
   return -1;
 }
 
@@ -565,7 +701,11 @@ wr_recv (struct wr_socket *s,
     if (GNUTLS_E_AGAIN == ret)
       MHD_socket_set_error_ (MHD_SCKT_EAGAIN_);
     else
-      MHD_socket_set_error_ (MHD_SCKT_ECONNABORTED_);   /* hard error */
+    {
+      testErrorLogDesc ("gnutls_record_recv() failed with hard error");
+      MHD_socket_set_error_ (MHD_SCKT_ECONNABORTED_);  /* hard error */
+      return -1;
+    }
   }
 #endif /* HTTPS_SUPPORT */
   return -1;
@@ -601,7 +741,7 @@ static pthread_t pt;
 /**
  * Will be set to the upgraded socket.
  */
-static struct wr_socket *usock;
+static struct wr_socket *volatile usock;
 
 /**
  * Thread we use to run the interaction with the upgraded socket.
@@ -612,6 +752,32 @@ static pthread_t pt_client;
  * Flag set to 1 once the test is finished.
  */
 static volatile bool done;
+
+
+const char *
+term_reason_str (enum MHD_RequestTerminationCode term_code)
+{
+  switch ((int) term_code)
+  {
+  case MHD_REQUEST_TERMINATED_COMPLETED_OK:
+    return "COMPLETED_OK";
+  case MHD_REQUEST_TERMINATED_WITH_ERROR:
+    return "TERMINATED_WITH_ERROR";
+  case MHD_REQUEST_TERMINATED_TIMEOUT_REACHED:
+    return "TIMEOUT_REACHED";
+  case MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN:
+    return "DAEMON_SHUTDOWN";
+  case MHD_REQUEST_TERMINATED_READ_ERROR:
+    return "READ_ERROR";
+  case MHD_REQUEST_TERMINATED_CLIENT_ABORT:
+    return "CLIENT_ABORT";
+  case -1:
+    return "(not called)";
+  default:
+    return "(unknown code)";
+  }
+  return "(problem)"; /* unreachable */
+}
 
 
 /**
@@ -630,19 +796,23 @@ notify_completed_cb (void *cls,
                      void **con_cls,
                      enum MHD_RequestTerminationCode toe)
 {
-  pthread_t *ppth = *con_cls;
-
   (void) cls;
   (void) connection;  /* Unused. Silent compiler warning. */
+  if (verbose)
+    printf ("notify_completed_cb() has been called with '%s' code.\n",
+            term_reason_str (toe));
   if ( (toe != MHD_REQUEST_TERMINATED_COMPLETED_OK) &&
        (toe != MHD_REQUEST_TERMINATED_CLIENT_ABORT) &&
        (toe != MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN) )
-    abort ();
+    mhdErrorExitDesc ("notify_completed_cb() called with wrong code");
+  if (NULL == con_cls)
+    mhdErrorExitDesc ("'con_cls' parameter is NULL");
+  if (NULL == *con_cls)
+    mhdErrorExitDesc ("'*con_cls' pointer is NULL");
   if (! pthread_equal (**((pthread_t **) con_cls),
                        pthread_self ()))
-    abort ();
-  if (NULL != ppth)
-    free (*con_cls);
+    mhdErrorExitDesc ("notify_completed_cb() is called in wrong thread");
+  free (*con_cls);
   *con_cls = NULL;
 }
 
@@ -664,12 +834,16 @@ log_cb (void *cls,
 
   (void) cls;
   (void) connection;  /* Unused. Silent compiler warning. */
-  if (0 != strcmp (uri,
-                   "/"))
-    abort ();
+  if (NULL == uri)
+    mhdErrorExitDesc ("The 'uri' parameter is NULL");
+  if (0 != strcmp (uri, "/"))
+  {
+    fprintf (stderr, "Wrong 'uri' value: '%s'. ", uri);
+    mhdErrorExit ();
+  }
   ppth = malloc (sizeof (pthread_t));
   if (NULL == ppth)
-    abort ();
+    externalErrorExitDesc ("malloc() failed");
   *ppth = pthread_self ();
   return (void *) ppth;
 }
@@ -708,15 +882,15 @@ notify_connection_cb (void *cls,
   {
   case MHD_CONNECTION_NOTIFY_STARTED:
     if (MHD_NO != started)
-      abort ();
+      mhdErrorExitDesc ("The connection has been already started");
     started = MHD_YES;
     *socket_context = &started;
     break;
   case MHD_CONNECTION_NOTIFY_CLOSED:
     if (MHD_YES != started)
-      abort ();
+      mhdErrorExitDesc ("The connection has not been started before");
     if (&started != *socket_context)
-      abort ();
+      mhdErrorExitDesc ("Wrong '*socket_context' value");
     *socket_context = NULL;
     started = MHD_NO;
     break;
@@ -737,15 +911,15 @@ make_blocking (MHD_socket fd)
 
   flags = fcntl (fd, F_GETFL);
   if (-1 == flags)
-    abort ();
+    externalErrorExitDesc ("fcntl() failed");
   if ((flags & ~O_NONBLOCK) != flags)
     if (-1 == fcntl (fd, F_SETFL, flags & ~O_NONBLOCK))
-      abort ();
+      externalErrorExitDesc ("fcntl() failed");
 #elif defined(MHD_WINSOCK_SOCKETS)
   unsigned long flags = 0;
 
   if (0 != ioctlsocket (fd, (int) FIONBIO, &flags))
-    abort ();
+    externalErrorExitDesc ("ioctlsocket() failed");
 #endif /* MHD_WINSOCK_SOCKETS */
 }
 
@@ -776,9 +950,11 @@ send_all (struct wr_socket *sock,
                    len - off);
     if (0 > ret)
     {
-      if (! MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
-        abort ();
-      ret = 0;
+      if (! MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()) &&
+          ! MHD_SCKT_ERR_IS_EINTR_ (MHD_socket_get_error_ ()))
+        externalErrorExitDesc ("send() failed");
+      else
+        ret = 0;
     }
     kick_select ();
   }
@@ -809,13 +985,12 @@ recv_hdr (struct wr_socket *sock)
     {
       if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
         continue;
-      fprintf (stderr,
-               "recv failed unexpectedly: %s\n",
-               MHD_socket_last_strerr_ ());
-      abort ();
+      if (MHD_SCKT_ERR_IS_EINTR_ (MHD_socket_get_error_ ()))
+        continue;
+      externalErrorExitDesc ("recv() failed");
     }
     if (0 == ret)
-      continue;
+      mhdErrorExitDesc ("The server unexpectedly closed connection");
     kick_select ();
     if (c == next)
     {
@@ -855,18 +1030,29 @@ recv_all (struct wr_socket *sock,
                    len - off);
     if (0 > ret)
     {
-      if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
+      if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()) ||
+          MHD_SCKT_ERR_IS_EINTR_ (MHD_socket_get_error_ ()))
       {
         ret = 0;
         continue;
       }
-      abort ();
+      externalErrorExitDesc ("recv() failed");
     }
+    if (0 == ret)
+      mhdErrorExitDesc ("The server unexpectedly closed connection");
     if (0 != strncmp (text, buf, off + ret))
-      abort ();
+    {
+      fprintf (stderr, "Wrong received text. Expected: '%s' ."
+               "Got: '%.*s'. ", text, (int) (off + ret), buf);
+      mhdErrorExit ();
+    }
   }
   if (0 != strncmp (text, buf, len))
-    abort ();
+  {
+    fprintf (stderr, "Wrong received text. Expected: '%s' ."
+             "Got: '%.*s'. ", text, (int) len, buf);
+    mhdErrorExit ();
+  }
 }
 
 
@@ -981,12 +1167,12 @@ upgrade_cb (void *cls,
 
   usock = wr_create_from_plain_sckt (sock);
   if (0 != extra_in_size)
-    abort ();
+    mhdErrorExitDesc ("'extra_in_size' is not zero");
   if (0 != pthread_create (&pt,
                            NULL,
                            &run_usock,
                            urh))
-    abort ();
+    externalErrorExitDesc ("pthread_create() failed");
 }
 
 
@@ -1040,7 +1226,6 @@ ahc_upgrade (void *cls,
              void **con_cls)
 {
   struct MHD_Response *resp;
-  enum MHD_Result ret;
   (void) cls;
   (void) url;
   (void) method;                        /* Unused. Silent compiler warning. */
@@ -1048,20 +1233,26 @@ ahc_upgrade (void *cls,
   (void) upload_data;
   (void) upload_data_size;  /* Unused. Silent compiler warning. */
 
+  if (NULL == con_cls)
+    mhdErrorExitDesc ("'con_cls' is NULL");
   if (NULL == *con_cls)
-    abort ();
+    mhdErrorExitDesc ("'*con_cls' value is NULL");
   if (! pthread_equal (**((pthread_t **) con_cls), pthread_self ()))
-    abort ();
+    mhdErrorExitDesc ("ahc_upgrade() is called in wrong thread");
   resp = MHD_create_response_for_upgrade (&upgrade_cb,
                                           NULL);
-  MHD_add_response_header (resp,
-                           MHD_HTTP_HEADER_UPGRADE,
-                           "Hello World Protocol");
-  ret = MHD_queue_response (connection,
-                            MHD_HTTP_SWITCHING_PROTOCOLS,
-                            resp);
+  if (NULL == resp)
+    mhdErrorExitDesc ("MHD_create_response_for_upgrade() failed");
+  if (MHD_YES != MHD_add_response_header (resp,
+                                          MHD_HTTP_HEADER_UPGRADE,
+                                          "Hello World Protocol"))
+    mhdErrorExitDesc ("MHD_add_response_header() failed");
+  if (MHD_YES != MHD_queue_response (connection,
+                                     MHD_HTTP_SWITCHING_PROTOCOLS,
+                                     resp))
+    mhdErrorExitDesc ("MHD_queue_response() failed");
   MHD_destroy_response (resp);
-  return ret;
+  return MHD_YES;
 }
 
 
@@ -1095,7 +1286,7 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
                        &ws,
                        &es,
                        &max_fd))
-      abort ();
+      mhdErrorExitDesc ("MHD_get_fdset() failed");
     (void) MHD_get_timeout (daemon,
                             &to);
     if (1000 < to)
@@ -1107,7 +1298,17 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
                              &ws,
                              &es,
                              &tv))
-      abort ();
+    {
+#ifdef MHD_POSIX_SOCKETS
+      if (EINTR != errno)
+        externalErrorExitDesc ("Unexpected select() error");
+#else
+      if ((WSAEINVAL != WSAGetLastError ()) ||
+          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
+        externalErrorExitDesc ("Unexpected select() error");
+      Sleep (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+#endif
+    }
     if (FD_ISSET (MHD_itc_r_fd_ (kicker), &rs))
       MHD_itc_clear_ (kicker);
     MHD_run_from_select (daemon,
@@ -1129,7 +1330,7 @@ static void
 run_mhd_poll_loop (struct MHD_Daemon *daemon)
 {
   (void) daemon; /* Unused. Silent compiler warning. */
-  abort (); /* currently not implementable with existing MHD API */
+  externalErrorExitDesc ("Not implementable with MHD API");
 }
 
 
@@ -1154,6 +1355,8 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
 
   di = MHD_get_daemon_info (daemon,
                             MHD_DAEMON_INFO_EPOLL_FD);
+  if (NULL == di)
+    mhdErrorExitDesc ("MHD_get_daemon_info() failed");
   ep = di->listen_fd;
   while (! done)
   {
@@ -1172,10 +1375,18 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
                   NULL,
                   NULL,
                   &tv);
-    if ( (-1 == ret) &&
-         (EAGAIN != errno) &&
-         (EINTR != errno) )
-      abort ();
+    if (0 > ret)
+    {
+#ifdef MHD_POSIX_SOCKETS
+      if (EINTR != errno)
+        externalErrorExitDesc ("Unexpected select() error");
+#else
+      if ((WSAEINVAL != WSAGetLastError ()) ||
+          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
+        externalErrorExitDesc ("Unexpected select() error");
+      Sleep (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+#endif
+    }
     if (FD_ISSET (MHD_itc_r_fd_ (kicker), &rs))
       MHD_itc_clear_ (kicker);
     MHD_run (daemon);
@@ -1205,7 +1416,7 @@ run_mhd_loop (struct MHD_Daemon *daemon,
     run_mhd_epoll_loop (daemon);
 #endif
   else
-    abort ();
+    externalErrorExitDesc ("Wrong 'flags' value");
 }
 
 
@@ -1268,28 +1479,28 @@ test_upgrade (int flags,
                           MHD_OPTION_END);
 #endif /* HTTPS_SUPPORT */
   if (NULL == d)
-    return 2;
+    mhdErrorExitDesc ("MHD_start_daemon() failed");
   real_flags = MHD_get_daemon_info (d,
                                     MHD_DAEMON_INFO_FLAGS);
   if (NULL == real_flags)
-    abort ();
+    mhdErrorExitDesc ("MHD_get_daemon_info() failed");
   dinfo = MHD_get_daemon_info (d,
                                MHD_DAEMON_INFO_BIND_PORT);
   if ( (NULL == dinfo) ||
        (0 == dinfo->port) )
-    abort ();
+    mhdErrorExitDesc ("MHD_get_daemon_info() failed");
   if (! test_tls || (TLS_LIB_GNUTLS == use_tls_tool))
   {
     sock = test_tls ? wr_create_tls_sckt () : wr_create_plain_sckt ();
     if (NULL == sock)
-      abort ();
+      externalErrorExitDesc ("Create socket failed");
     sa.sin_family = AF_INET;
     sa.sin_port = htons (dinfo->port);
     sa.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
     if (0 != wr_connect (sock,
                          (struct sockaddr *) &sa,
                          sizeof (sa)))
-      abort ();
+      externalErrorExitDesc ("Connect socket failed");
   }
   else
   {
@@ -1303,30 +1514,27 @@ test_upgrade (int flags,
             sizeof (port));
     if (-1 == (pid = gnutlscli_connect (&tls_fork_sock,
                                         port)))
-    {
-      MHD_stop_daemon (d);
-      return 4;
-    }
+      externalErrorExitDesc ("gnutlscli_connect() failed");
 
     sock =  wr_create_from_plain_sckt (tls_fork_sock);
     if (NULL == sock)
-      abort ();
+      externalErrorExitDesc ("wr_create_from_plain_sckt() failed");
 #else  /* !HTTPS_SUPPORT || !HAVE_FORK || !HAVE_WAITPID */
-    abort ();
+    externalErrorExitDesc ("Unsupported 'use_tls_tool' value");
 #endif /* !HTTPS_SUPPORT || !HAVE_FORK || !HAVE_WAITPID */
   }
 
   if (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD) )
   {
     if (! MHD_itc_init_ (kicker))
-      abort ();
+      externalErrorExitDesc ("MHD_itc_init_() failed");
   }
 
   if (0 != pthread_create (&pt_client,
                            NULL,
                            &run_usock_client,
                            sock))
-    abort ();
+    externalErrorExitDesc ("pthread_create() failed");
   if (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD) )
   {
     enum MHD_FLAG used_flags;
@@ -1337,13 +1545,18 @@ test_upgrade (int flags,
             sizeof (used_flags));
     run_mhd_loop (d, used_flags);
   }
-  pthread_join (pt_client,
-                NULL);
-  pthread_join (pt,
-                NULL);
+  if (0 != pthread_join (pt_client,
+                         NULL))
+    externalErrorExitDesc ("pthread_join() failed");
+  if (0 != pthread_join (pt,
+                         NULL))
+    externalErrorExitDesc ("pthread_join() failed");
 #if defined(HTTPS_SUPPORT) && defined(HAVE_FORK) && defined(HAVE_WAITPID)
   if (test_tls && (TLS_LIB_GNUTLS != use_tls_tool))
-    waitpid (pid, NULL, 0);
+  {
+    if ((pid_t) -1 == waitpid (pid, NULL, 0))
+      externalErrorExitDesc ("waitpid() failed");
+  }
 #endif /* HTTPS_SUPPORT && HAVE_FORK && HAVE_WAITPID */
   if (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD) )
   {
@@ -1400,12 +1613,12 @@ main (int argc,
         printf ("GnuTLS library will be used for testing.\n");
         break;
       default:
-        abort ();
+        externalErrorExitDesc ("Wrong 'use_tls_tool' value");
       }
     }
     if ( (TLS_LIB_GNUTLS == use_tls_tool) &&
          (GNUTLS_E_SUCCESS != gnutls_global_init ()) )
-      abort ();
+      externalErrorExitDesc ("gnutls_global_init() failed");
 
 #else  /* ! HTTPS_SUPPORT */
     fprintf (stderr, "HTTPS support was disabled by configure.\n");
