@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2016 Christian Grothoff
+     Copyright (C) 2016-2020 Christian Grothoff
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -1188,10 +1189,18 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
                   NULL,
                   NULL,
                   &tv);
-    if ( (-1 == ret) &&
-         (EAGAIN != errno) &&
-         (EINTR != errno) )
-      mhdErrorExitDesc ("MHD_get_fdset() failed"); /* TODO: handle errors */
+    if (0 > ret)
+    {
+#ifdef MHD_POSIX_SOCKETS
+      if (EINTR != errno)
+        externalErrorExitDesc ("Unexpected select() error");
+#else
+      if ((WSAEINVAL != WSAGetLastError ()) ||
+          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
+        externalErrorExitDesc ("Unexpected select() error");
+      Sleep (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+#endif
+    }
     MHD_run (daemon);
   }
 }
