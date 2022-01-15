@@ -328,6 +328,14 @@ _testErrorLog_func (const char *errDesc, const char *funcName, int lineNum)
 #endif
 
 
+static void
+fflush_allstd (void)
+{
+  fflush (stderr);
+  fflush (stdout);
+}
+
+
 static int verbose = 0;
 
 static struct MHD_itc_ kicker = MHD_ITC_STATIC_INIT_INVALID;
@@ -1625,6 +1633,7 @@ main (int argc,
     return 77;
 #endif /* ! HTTPS_SUPPORT */
   }
+
   /* run tests */
   if (verbose)
     printf ("Starting HTTP \"Upgrade\" tests with %s connections.\n",
@@ -1632,6 +1641,7 @@ main (int argc,
   /* try external select */
   res = test_upgrade (0,
                       0);
+  fflush_allstd ();
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1639,9 +1649,11 @@ main (int argc,
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with external select.\n");
+
   /* Try external auto */
   res = test_upgrade (MHD_USE_AUTO,
                       0);
+  fflush_allstd ();
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1653,6 +1665,7 @@ main (int argc,
 #ifdef EPOLL_SUPPORT
   res = test_upgrade (MHD_USE_EPOLL,
                       0);
+  fflush_allstd ();
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1666,6 +1679,7 @@ main (int argc,
   res = test_upgrade (MHD_USE_INTERNAL_POLLING_THREAD
                       | MHD_USE_THREAD_PER_CONNECTION,
                       0);
+  fflush_allstd ();
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1677,6 +1691,7 @@ main (int argc,
   res = test_upgrade (MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD
                       | MHD_USE_THREAD_PER_CONNECTION,
                       0);
+  fflush_allstd ();
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1688,6 +1703,7 @@ main (int argc,
   res = test_upgrade (MHD_USE_INTERNAL_POLLING_THREAD
                       | MHD_USE_THREAD_PER_CONNECTION | MHD_USE_POLL,
                       0);
+  fflush_allstd ();
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1700,6 +1716,7 @@ main (int argc,
   /* Test different event loops, with and without thread pool */
   res = test_upgrade (MHD_USE_INTERNAL_POLLING_THREAD,
                       0);
+  fflush_allstd ();
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1709,6 +1726,7 @@ main (int argc,
     printf ("PASSED: Upgrade with internal select.\n");
   res = test_upgrade (MHD_USE_INTERNAL_POLLING_THREAD,
                       2);
+  fflush_allstd ();
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1718,6 +1736,7 @@ main (int argc,
     printf ("PASSED: Upgrade with internal select with thread pool.\n");
   res = test_upgrade (MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD,
                       0);
+  fflush_allstd ();
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1727,6 +1746,7 @@ main (int argc,
     printf ("PASSED: Upgrade with internal 'auto'.\n");
   res = test_upgrade (MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD,
                       2);
+  fflush_allstd ();
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1737,6 +1757,7 @@ main (int argc,
 #ifdef HAVE_POLL
   res = test_upgrade (MHD_USE_POLL_INTERNAL_THREAD,
                       0);
+  fflush_allstd ();
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1746,6 +1767,7 @@ main (int argc,
     printf ("PASSED: Upgrade with internal poll.\n");
   res = test_upgrade (MHD_USE_POLL_INTERNAL_THREAD,
                       2);
+  fflush_allstd ();
   if (res)
     fprintf (stderr,
              "FAILED: Upgrade with internal poll with thread pool, return code %d.\n",
@@ -1756,6 +1778,7 @@ main (int argc,
 #ifdef EPOLL_SUPPORT
   res = test_upgrade (MHD_USE_EPOLL_INTERNAL_THREAD,
                       0);
+  fflush_allstd ();
   if (res)
     fprintf (stderr,
              "FAILED: Upgrade with internal epoll, return code %d.\n",
@@ -1764,6 +1787,7 @@ main (int argc,
     printf ("PASSED: Upgrade with internal epoll.\n");
   res = test_upgrade (MHD_USE_EPOLL_INTERNAL_THREAD,
                       2);
+  fflush_allstd ();
   if (res)
     fprintf (stderr,
              "FAILED: Upgrade with internal epoll, return code %d.\n",
