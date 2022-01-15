@@ -572,7 +572,7 @@ static pthread_t pt;
 /**
  * Will be set to the upgraded socket.
  */
-static struct wr_socket *usock;
+static struct wr_socket *volatile usock;
 
 /**
  * Thread we use to run the interaction with the upgraded socket.
