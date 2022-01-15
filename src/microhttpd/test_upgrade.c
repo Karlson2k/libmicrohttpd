@@ -1433,6 +1433,8 @@ main (int argc,
   /* try external select */
   res = test_upgrade (0,
                       0);
+  fflush (stderr);
+  fflush (stdout);
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1444,6 +1446,8 @@ main (int argc,
   /* Try external auto */
   res = test_upgrade (MHD_USE_AUTO,
                       0);
+  fflush (stderr);
+  fflush (stdout);
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1455,6 +1459,8 @@ main (int argc,
 #ifdef EPOLL_SUPPORT
   res = test_upgrade (MHD_USE_EPOLL,
                       0);
+  fflush (stderr);
+  fflush (stdout);
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1468,6 +1474,8 @@ main (int argc,
   res = test_upgrade (MHD_USE_INTERNAL_POLLING_THREAD
                       | MHD_USE_THREAD_PER_CONNECTION,
                       0);
+  fflush (stderr);
+  fflush (stdout);
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1479,6 +1487,8 @@ main (int argc,
   res = test_upgrade (MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD
                       | MHD_USE_THREAD_PER_CONNECTION,
                       0);
+  fflush (stderr);
+  fflush (stdout);
   error_count += res;
   if (res)
     fprintf (stderr,
@@ -1490,6 +1500,8 @@ main (int argc,
   res = test_upgrade (MHD_USE_INTERNAL_POLLING_THREAD
                       | MHD_USE_THREAD_PER_CONNECTION | MHD_USE_POLL,
                       0);
+  fflush (stderr);
+  fflush (stdout);
   error_count += res;
   if (res)
     fprintf (stderr,
