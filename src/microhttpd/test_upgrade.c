@@ -813,7 +813,7 @@ recv_hdr (struct wr_socket *sock)
       externalErrorExitDesc ("recv() failed");
     }
     if (0 == ret)
-      continue; /* TODO: replace with error exit! */
+      mhdErrorExitDesc ("The server unexpectedly closed connection");
     if (c == next)
     {
       i++;
@@ -860,6 +860,8 @@ recv_all (struct wr_socket *sock,
       }
       externalErrorExitDesc ("recv() failed");
     }
+    if (0 == ret)
+      mhdErrorExitDesc ("The server unexpectedly closed connection");
   }
   if (0 != strncmp (text, buf, len))
   {
