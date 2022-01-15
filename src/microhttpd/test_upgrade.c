@@ -772,7 +772,8 @@ send_all (struct wr_socket *sock,
                    len - off);
     if (0 > ret)
     {
-      if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
+      if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()) ||
+          MHD_SCKT_ERR_IS_EINTR_ (MHD_socket_get_error_ ()))
       {
         ret = 0;
         continue;
@@ -806,6 +807,8 @@ recv_hdr (struct wr_socket *sock)
     if (0 > ret)
     {
       if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
+        continue;
+      if (MHD_SCKT_ERR_IS_EINTR_ (MHD_socket_get_error_ ()))
         continue;
       externalErrorExitDesc ("recv() failed");
     }
@@ -849,7 +852,8 @@ recv_all (struct wr_socket *sock,
                    len - off);
     if (0 > ret)
     {
-      if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()))
+      if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()) ||
+          MHD_SCKT_ERR_IS_EINTR_ (MHD_socket_get_error_ ()))
       {
         ret = 0;
         continue;
@@ -1107,7 +1111,17 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
                              &ws,
                              &es,
                              &tv))
-      mhdErrorExitDesc ("MHD_get_fdset() failed"); /* TODO: handle errors */
+    {
+#ifdef MHD_POSIX_SOCKETS
+      if (EINTR != errno)
+        externalErrorExitDesc ("Unexpected select() error");
+#else
+      if ((WSAEINVAL != WSAGetLastError ()) ||
+          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
+        externalErrorExitDesc ("Unexpected select() error");
+      Sleep (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+#endif
+    }
     MHD_run_from_select (daemon,
                          &rs,
                          &ws,
