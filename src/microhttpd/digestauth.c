@@ -524,7 +524,10 @@ check_nonce_nc (struct MHD_Connection *connection,
   uint32_t mod;
   const char *np;
   size_t noncelen;
+  enum MHD_Result ret;
+  bool stale;
 
+  stale = false;
   noncelen = strlen (nonce) + 1;
   if (MAX_NONCE_LENGTH < noncelen)
     return MHD_NO; /* This should be impossible, but static analysis
@@ -549,9 +552,8 @@ check_nonce_nc (struct MHD_Connection *connection,
    * then only increase the nonce counter by one.
    */
   nn = &daemon->nnc[off];
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
+
   MHD_mutex_lock_chk_ (&daemon->nnc_lock);
-#endif
   if (0 == nc)
   {
     /* Fresh nonce, reinitialize array */
@@ -560,51 +562,47 @@ check_nonce_nc (struct MHD_Connection *connection,
             noncelen);
     nn->nc = 0;
     nn->nmask = 0;
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-    MHD_mutex_unlock_chk_ (&daemon->nnc_lock);
-#endif
-    return MHD_YES;
+    ret = MHD_YES;
   }
   /* Note that we use 64 here, as we do not store the
      bit for 'nn->nc' itself in 'nn->nmask' */
-  if ( (nc < nn->nc) &&
-       (nc + 64 > nc /* checking for overflow */) &&
-       (nc + 64 >= nn->nc) &&
-       (0 == ((1LLU << (nn->nc - nc - 1)) & nn->nmask)) )
+  else if ( (nc < nn->nc) &&
+            (nc + 64 > nc /* checking for overflow */) &&
+            (nc + 64 >= nn->nc) &&
+            (0 == ((1LLU << (nn->nc - nc - 1)) & nn->nmask)) )
   {
     /* Out-of-order nonce, but within 64-bit bitmask, set bit */
     nn->nmask |= (1LLU << (nn->nc - nc - 1));
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-    MHD_mutex_unlock_chk_ (&daemon->nnc_lock);
-#endif
-    return MHD_YES;
+    ret = MHD_YES;
   }
-
-  if ( (nc <= nn->nc) ||
-       (0 != strcmp (nn->nonce,
-                     nonce)) )
+  else if ( (nc <= nn->nc) ||
+            (0 != strcmp (nn->nonce,
+                          nonce)) )
   {
     /* Nonce does not match, fail */
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-    MHD_mutex_unlock_chk_ (&daemon->nnc_lock);
-#endif
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ (
-                "Stale nonce received.  If this happens a lot, you should probably increase the size of the nonce array.\n"));
-#endif
-    return MHD_NO;
+    stale = true;
+    ret = MHD_NO;
   }
-  /* Nonce is larger, shift bitmask and bump limit */
-  if (64 > nc - nn->nc)
-    nn->nmask <<= (nc - nn->nc);  /* small jump, less than mask width */
   else
-    nn->nmask = 0;                /* big jump, unset all bits in the mask */
-  nn->nc = nc;
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
+  {
+    /* Nonce is larger, shift bitmask and bump limit */
+    if (64 > nc - nn->nc)
+      nn->nmask <<= (nc - nn->nc);  /* small jump, less than mask width */
+    else
+      nn->nmask = 0;                /* big jump, unset all bits in the mask */
+    nn->nc = nc;
+    ret = MHD_YES;
+  }
   MHD_mutex_unlock_chk_ (&daemon->nnc_lock);
+#ifdef HAVE_MESSAGES
+  if (stale)
+    MHD_DLOG (daemon,
+              _ ("Stale nonce received. If this happens a lot, you should "
+                 "probably increase the size of the nonce array.\n"));
+#else
+  (void) stale; /* Mute compiler warning */
 #endif
-  return MHD_YES;
+  return ret;
 }
 
 
