@@ -41,7 +41,7 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, size_t *upload_data_size, void **ptr)
+          const char *upload_data, size_t *upload_data_size, void **req_cls)
 {
   static int aptr;
   const char *me = cls;
@@ -56,9 +56,9 @@ ahc_echo (void *cls,
   if ((0 != strcmp (method, "GET")) && (0 != strcmp (method, "POST")))
     return MHD_NO;              /* unexpected method */
 
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
-    *ptr = &aptr;
+    *req_cls = &aptr;
 
     /* always to busy for POST requests */
     if (0 == strcmp (method, "POST"))
@@ -74,7 +74,7 @@ ahc_echo (void *cls,
     }
   }
 
-  *ptr = NULL;                  /* reset when done */
+  *req_cls = NULL;                  /* reset when done */
   response = MHD_create_response_from_buffer (strlen (me),
                                               (void *) me,
                                               MHD_RESPMEM_PERSISTENT);

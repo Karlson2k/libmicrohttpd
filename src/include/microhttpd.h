@@ -1629,12 +1629,12 @@ enum MHD_OPTION
    *     void * my_logger(void *cls, const char *uri, struct MHD_Connection *con)
    *
    * where the return value will be passed as
-   * (`* con_cls`) in calls to the #MHD_AccessHandlerCallback
+   * (`* req_cls`) in calls to the #MHD_AccessHandlerCallback
    * when this request is processed later; returning a
    * value of NULL has no special significance (however,
    * note that if you return non-NULL, you can no longer
    * rely on the first call to the access handler having
-   * `NULL == *con_cls` on entry;)
+   * `NULL == *req_cls` on entry;)
    * "cls" will be set to the second argument following
    * #MHD_OPTION_URI_LOG_CALLBACK.  Finally, uri will
    * be the 0-terminated URI of the request.
@@ -2252,10 +2252,10 @@ enum MHD_ConnectionInfoType
   /**
    * Returns the client-specific pointer to a `void *` that was (possibly)
    * set during a #MHD_NotifyConnectionCallback when the socket was
-   * first accepted.  Note that this is NOT the same as the "con_cls"
-   * argument of the #MHD_AccessHandlerCallback.  The "con_cls" is
-   * fresh for each HTTP request, while the "socket_context" is fresh
-   * for each socket.
+   * first accepted.
+   * Note that this is NOT the same as the "req_cls" argument of
+   * the #MHD_AccessHandlerCallback. The "req_cls" is fresh for each
+   * HTTP request, while the "socket_context" is fresh for each socket.
    */
   MHD_CONNECTION_INFO_SOCKET_CONTEXT,
 
@@ -2428,7 +2428,7 @@ typedef enum MHD_Result
  * @param[in,out] upload_data_size set initially to the size of the
  *        @a upload_data provided; the method must update this
  *        value to the number of bytes NOT processed;
- * @param[in,out] con_cls pointer that the callback can set to some
+ * @param[in,out] req_cls pointer that the callback can set to some
  *        address and that will be preserved by MHD for future
  *        calls for this request; since the access handler may
  *        be called many times (i.e., for a PUT/POST operation
@@ -2437,7 +2437,7 @@ typedef enum MHD_Result
  *        If necessary, this state can be cleaned up in the
  *        global #MHD_RequestCompletedCallback (which
  *        can be set with the #MHD_OPTION_NOTIFY_COMPLETED).
- *        Initially, `*con_cls` will be NULL.
+ *        Initially, `*req_cls` will be NULL.
  * @return #MHD_YES if the connection was handled successfully,
  *         #MHD_NO if the socket must be closed due to a serious
  *         error while handling the request
@@ -2452,7 +2452,7 @@ typedef enum MHD_Result
                              const char *version,
                              const char *upload_data,
                              size_t *upload_data_size,
-                             void **con_cls);
+                             void **req_cls);
 
 
 /**
@@ -2461,7 +2461,7 @@ typedef enum MHD_Result
  *
  * @param cls client-defined closure
  * @param connection connection handle
- * @param con_cls value as set by the last call to
+ * @param req_cls value as set by the last call to
  *        the #MHD_AccessHandlerCallback
  * @param toe reason for request termination
  * @see #MHD_OPTION_NOTIFY_COMPLETED
@@ -2470,7 +2470,7 @@ typedef enum MHD_Result
 typedef void
 (*MHD_RequestCompletedCallback) (void *cls,
                                  struct MHD_Connection *connection,
-                                 void **con_cls,
+                                 void **req_cls,
                                  enum MHD_RequestTerminationCode toe);
 
 
@@ -2483,7 +2483,7 @@ typedef void
  * @param socket_context socket-specific pointer where the
  *                       client can associate some state specific
  *                       to the TCP connection; note that this is
- *                       different from the "con_cls" which is per
+ *                       different from the "req_cls" which is per
  *                       HTTP request.  The client can initialize
  *                       during #MHD_CONNECTION_NOTIFY_STARTED and
  *                       cleanup during #MHD_CONNECTION_NOTIFY_CLOSED
@@ -3790,7 +3790,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
- * @param con_cls last value left in `con_cls` of the `MHD_AccessHandlerCallback`
+ * @param req_cls last value left in `req_cls` of the `MHD_AccessHandlerCallback`
  * @param extra_in if we happened to have read bytes after the
  *                 HTTP header already (because the client sent
  *                 more than the HTTP header of the request before
@@ -3815,7 +3815,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
 typedef void
 (*MHD_UpgradeHandler)(void *cls,
                       struct MHD_Connection *connection,
-                      void *con_cls,
+                      void *req_cls,
                       const char *extra_in,
                       size_t extra_in_size,
                       MHD_socket sock,

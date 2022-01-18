@@ -41,7 +41,7 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, size_t *upload_data_size, void **ptr)
+          const char *upload_data, size_t *upload_data_size, void **req_cls)
 {
   static int aptr;
   const char *me = cls;
@@ -54,13 +54,13 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
     /* do never respond on first call */
-    *ptr = &aptr;
+    *req_cls = &aptr;
     return MHD_YES;
   }
-  *ptr = NULL;                  /* reset when done */
+  *req_cls = NULL;                  /* reset when done */
   response = MHD_create_response_from_buffer (strlen (me),
                                               (void *) me,
                                               MHD_RESPMEM_PERSISTENT);
@@ -75,7 +75,7 @@ ahc_echo (void *cls,
 static void
 request_completed (void *cls,
                    struct MHD_Connection *connection,
-                   void **con_cls,
+                   void **req_cls,
                    enum MHD_RequestTerminationCode toe)
 {
   fprintf (stderr,

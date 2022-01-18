@@ -122,7 +122,7 @@ per connection, could look like this:
 static void
 upgrade_handler (void *cls,
                  struct MHD_Connection *connection,
-                 void *con_cls,
+                 void *req_cls,
                  const char *extra_in,
                  size_t extra_in_size,
                  MHD_socket fd,
@@ -501,7 +501,7 @@ callback function from an earlier example to a working websocket:
 static void
 upgrade_handler (void *cls,
                  struct MHD_Connection *connection,
-                 void *con_cls,
+                 void *req_cls,
                  const char *extra_in,
                  size_t extra_in_size,
                  MHD_socket fd,

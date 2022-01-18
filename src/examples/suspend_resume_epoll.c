@@ -49,7 +49,7 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, size_t *upload_data_size, void **ptr)
+          const char *upload_data, size_t *upload_data_size, void **req_cls)
 {
   struct MHD_Response *response;
   enum MHD_Result ret;
@@ -62,7 +62,7 @@ ahc_echo (void *cls,
   (void) version;           /* Unused. Silence compiler warning. */
   (void) upload_data;       /* Unused. Silence compiler warning. */
   (void) upload_data_size;  /* Unused. Silence compiler warning. */
-  req = *ptr;
+  req = *req_cls;
   if (NULL == req)
   {
 
@@ -71,7 +71,7 @@ ahc_echo (void *cls,
       return MHD_NO;
     req->connection = connection;
     req->timerfd = -1;
-    *ptr = req;
+    *req_cls = req;
     return MHD_YES;
   }
 
@@ -120,10 +120,10 @@ ahc_echo (void *cls,
 static void
 connection_done (void *cls,
                  struct MHD_Connection *connection,
-                 void **con_cls,
+                 void **req_cls,
                  enum MHD_RequestTerminationCode toe)
 {
-  struct Request *req = *con_cls;
+  struct Request *req = *req_cls;
 
   (void) cls;
   (void) connection;

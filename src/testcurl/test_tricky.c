@@ -385,7 +385,7 @@ ahcCheck (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **con_cls)
+          void **req_cls)
 {
   static int ptr;
   struct MHD_Response *response;
@@ -413,12 +413,12 @@ ahcCheck (void *cls,
   if (0 != strcmp (param->rq_method, method))
     mhdErrorExitDesc ("Unexpected request method");
 
-  if (&ptr != *con_cls)
+  if (&ptr != *req_cls)
   {
-    *con_cls = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *con_cls = NULL;
+  *req_cls = NULL;
 
   if (1 > MHD_get_connection_values_n (connection, MHD_HEADER_KIND,
                                        &headerCheckerInterator,

@@ -233,7 +233,7 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **pparam)
+          void **req_cls)
 {
   int *done = cls;
   struct MHD_Response *response;
@@ -259,13 +259,13 @@ ahc_echo (void *cls,
   if ((*done) == 0)
   {
     size_t *pproc;
-    if (NULL == *pparam)
+    if (NULL == *req_cls)
     {
       processed = 0;
       /* Safe as long as only one parallel request served. */
-      *pparam = &processed;
+      *req_cls = &processed;
     }
-    pproc = (size_t *) *pparam;
+    pproc = (size_t *) *req_cls;
 
     if (0 == *upload_data_size)
       return MHD_YES;   /* No data to process. */

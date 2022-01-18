@@ -82,7 +82,7 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   static int ptr;
   const char *me = cls;
@@ -92,12 +92,12 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
+  *req_cls = NULL;
   response = MHD_create_response_from_buffer (strlen (url),
                                               (void *) url,
                                               MHD_RESPMEM_MUST_COPY);

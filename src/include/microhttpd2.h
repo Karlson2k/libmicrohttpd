@@ -2429,7 +2429,7 @@ enum MHD_ConnectionNotificationCode
  * @param socket_context socket-specific pointer where the
  *                       client can associate some state specific
  *                       to the TCP connection; note that this is
- *                       different from the "con_cls" which is per
+ *                       different from the "req_cls" which is per
  *                       HTTP request.  The client can initialize
  *                       during #MHD_CONNECTION_NOTIFY_STARTED and
  *                       cleanup during #MHD_CONNECTION_NOTIFY_CLOSED
@@ -3303,7 +3303,7 @@ MHD_NONNULL (1);
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
- * @param con_cls last value left in `con_cls` of the `MHD_AccessHandlerCallback`
+ * @param req_cls last value left in `req_cls` of the `MHD_AccessHandlerCallback`
  * @param extra_in if we happened to have read bytes after the
  *                 HTTP header already (because the client sent
  *                 more than the HTTP header of the request before
@@ -3328,7 +3328,7 @@ MHD_NONNULL (1);
 typedef void
 (*MHD_UpgradeHandler)(void *cls,
                       struct MHD_Connection *connection,
-                      void *con_cls,
+                      void *req_cls,
                       const char *extra_in,
                       size_t extra_in_size,
                       MHD_socket sock,
@@ -3644,8 +3644,8 @@ enum MHD_ConnectionInformationType
   /**
    * Returns the client-specific pointer to a `void *` that was (possibly)
    * set during a #MHD_NotifyConnectionCallback when the socket was
-   * first accepted.  Note that this is NOT the same as the "con_cls"
-   * argument of the #MHD_AccessHandlerCallback.  The "con_cls" is
+   * first accepted.  Note that this is NOT the same as the "req_cls"
+   * argument of the #MHD_AccessHandlerCallback.  The "req_cls" is
    * fresh for each HTTP request, while the "socket_context" is fresh
    * for each socket.
    */

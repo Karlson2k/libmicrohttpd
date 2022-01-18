@@ -156,7 +156,7 @@ free_cb (void *cls)
 static enum MHD_Result
 ahc_echo (void *cls, struct MHD_Connection *con, const char *url, const
           char *method, const char *version,
-          const char *upload_data, size_t *upload_size, void **ptr)
+          const char *upload_data, size_t *upload_size, void **req_cls)
 {
   struct Holder *holder;
   struct MHD_Response *res;
@@ -167,12 +167,12 @@ ahc_echo (void *cls, struct MHD_Connection *con, const char *url, const
   (void) version;
   (void) upload_data;
   (void) upload_size;
-  if (NULL == *ptr)
+  if (NULL == *req_cls)
   {
-    *ptr = (void *) 1;
+    *req_cls = (void *) 1;
     return MHD_YES;
   }
-  *ptr = NULL;
+  *req_cls = NULL;
   holder = calloc (1, sizeof (struct Holder));
   if (! holder)
     return MHD_NO;

@@ -2044,7 +2044,7 @@ connecteduser_receive_messages (void *cls)
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
- * @param con_cls last value left in `con_cls` of the `MHD_AccessHandlerCallback`
+ * @param req_cls last value left in `req_cls` of the `MHD_AccessHandlerCallback`
  * @param extra_in if we happened to have read bytes after the
  *                 HTTP header already (because the client sent
  *                 more than the HTTP header of the request before
@@ -2069,7 +2069,7 @@ connecteduser_receive_messages (void *cls)
 static void
 upgrade_handler (void *cls,
                  struct MHD_Connection *connection,
-                 void *con_cls,
+                 void *req_cls,
                  const char *extra_in,
                  size_t extra_in_size,
                  MHD_socket fd,
@@ -2079,7 +2079,7 @@ upgrade_handler (void *cls,
   pthread_t pt;
   (void) cls;         /* Unused. Silent compiler warning. */
   (void) connection;  /* Unused. Silent compiler warning. */
-  (void) con_cls;     /* Unused. Silent compiler warning. */
+  (void) req_cls;     /* Unused. Silent compiler warning. */
 
   /* This callback must return as soon as possible. */
 
@@ -2130,7 +2130,7 @@ upgrade_handler (void *cls,
  * @param version The HTTP version
  * @param upload_data Given upload data for POST requests
  * @param upload_data_size The size of the upload data
- * @param ptr A pointer for request specific data
+ * @param req_cls A pointer for request specific data
  * @return MHD_YES on success or MHD_NO on error.
  */
 static enum MHD_Result
@@ -2141,7 +2141,7 @@ access_handler (void *cls,
                 const char *version,
                 const char *upload_data,
                 size_t *upload_data_size,
-                void **ptr)
+                void **req_cls)
 {
   static int aptr;
   struct MHD_Response *response;
@@ -2153,13 +2153,13 @@ access_handler (void *cls,
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
     /* do never respond on first call */
-    *ptr = &aptr;
+    *req_cls = &aptr;
     return MHD_YES;
   }
-  *ptr = NULL;                  /* reset when done */
+  *req_cls = NULL;                  /* reset when done */
   if (0 == strcmp (url, "/"))
   {
     /* Default page for visiting the server */

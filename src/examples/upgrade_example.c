@@ -169,7 +169,7 @@ run_usock (void *cls)
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
- * @param con_cls last value left in `con_cls` of the `MHD_AccessHandlerCallback`
+ * @param req_cls last value left in `req_cls` of the `MHD_AccessHandlerCallback`
  * @param extra_in if we happened to have read bytes after the
  *                 HTTP header already (because the client sent
  *                 more than the HTTP header of the request before
@@ -194,7 +194,7 @@ run_usock (void *cls)
 static void
 uh_cb (void *cls,
        struct MHD_Connection *connection,
-       void *con_cls,
+       void *req_cls,
        const char *extra_in,
        size_t extra_in_size,
        MHD_socket sock,
@@ -204,7 +204,7 @@ uh_cb (void *cls,
   pthread_t pt;
   (void) cls;         /* Unused. Silent compiler warning. */
   (void) connection;  /* Unused. Silent compiler warning. */
-  (void) con_cls;     /* Unused. Silent compiler warning. */
+  (void) req_cls;     /* Unused. Silent compiler warning. */
 
   md = malloc (sizeof (struct MyData));
   if (NULL == md)
@@ -247,7 +247,7 @@ ahc_echo (void *cls,
           const char *version,
           const char *upload_data,
           size_t *upload_data_size,
-          void **ptr)
+          void **req_cls)
 {
   static int aptr;
   struct MHD_Response *response;
@@ -260,13 +260,13 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
     /* do never respond on first call */
-    *ptr = &aptr;
+    *req_cls = &aptr;
     return MHD_YES;
   }
-  *ptr = NULL;                  /* reset when done */
+  *req_cls = NULL;                  /* reset when done */
   response = MHD_create_response_for_upgrade (&uh_cb,
                                               NULL);
 

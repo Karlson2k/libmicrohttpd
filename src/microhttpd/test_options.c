@@ -42,7 +42,7 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   (void) cls;
   (void) connection;
@@ -51,7 +51,7 @@ ahc_echo (void *cls,
   (void) version;
   (void) upload_data;
   (void) upload_data_size;
-  (void) unused;
+  (void) req_cls;
 
   return 0;
 }

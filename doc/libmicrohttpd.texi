@@ -734,18 +734,15 @@ callback.  The second pointer maybe @code{NULL}.
 
 @item MHD_OPTION_NOTIFY_CONNECTION
 Register a function that should be called when the TCP connection to a
-client is opened or closed.  Note that
-@code{MHD_OPTION_NOTIFY_COMPLETED} and the @code{con_cls} argument to
-the @code{MHD_AccessHandlerCallback} are per HTTP request (and there
-can be multiple HTTP requests per TCP connection).  The registered
-callback is called twice per TCP connection, with
-@code{MHD_CONNECTION_NOTIFY_STARTED} and
-@code{MHD_CONNECTION_NOTIFY_CLOSED} respectively.  An additional
+client is opened or closed. The registered callback is called twice per
+TCP connection, with @code{MHD_CONNECTION_NOTIFY_STARTED} and
+@code{MHD_CONNECTION_NOTIFY_CLOSED} respectively. An additional
 argument can be used to store TCP connection specific information,
 which can be retrieved using @code{MHD_CONNECTION_INFO_SOCKET_CONTEXT}
-during the lifetime of the TCP connection.  The respective location is
-not the same as the HTTP-request-specific @code{con_cls} from the
-@code{MHD_AccessHandlerCallback}.
+during the lifetime of the TCP connection. 
+Note @code{MHD_OPTION_NOTIFY_COMPLETED} and the @code{req_cls} argument
+to the @code{MHD_AccessHandlerCallback} are per HTTP request (and there
+can be multiple HTTP requests per TCP connection). 
 
 This option should be followed by @strong{TWO} pointers.  First a
 pointer to a function of type @code{MHD_NotifyConnectionCallback()}
@@ -820,12 +817,12 @@ one must be of the form
  void * my_logger(void * cls, const char * uri, struct MHD_Connection *con)
 @end example
 where the return value will be passed as
-@code{*con_cls} in calls to the @code{MHD_AccessHandlerCallback}
+@code{*req_cls} in calls to the @code{MHD_AccessHandlerCallback}
 when this request is processed later; returning a
 value of @code{NULL} has no special significance; (however,
 note that if you return non-@code{NULL}, you can no longer
 rely on the first call to the access handler having
-@code{NULL == *con_cls} on entry)
+@code{NULL == *req_cls} on entry)
 @code{cls} will be set to the second argument following
 MHD_OPTION_URI_LOG_CALLBACK.  Finally, @code{uri} will
 be the 0-terminated URI of the request.
@@ -1808,7 +1805,7 @@ length of the address information.
 @end deftypefn
 
 
-@deftypefn {Function Pointer} enum MHD_Result {*MHD_AccessHandlerCallback} (void *cls, struct MHD_Connection * connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **con_cls)
+@deftypefn {Function Pointer} enum MHD_Result {*MHD_AccessHandlerCallback} (void *cls, struct MHD_Connection * connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **req_cls)
 Invoked in the context of a connection to answer a request from the
 client.  This callback must call MHD functions (example: the
 @code{MHD_Response} ones) to provide content to give back to the client
@@ -1874,7 +1871,7 @@ and return an internal server error to the client.  In order to
 avoid this, clients must be able to process upload data incrementally
 and reduce the value of @code{upload_data_size}.
 
-@item con_cls
+@item req_cls
 reference to a pointer, initially set to @code{NULL}, that this callback can
 set to some address and that will be preserved by MHD for future
 calls for this request;
@@ -1890,7 +1887,7 @@ if necessary, this state can be cleaned up in the global
 @end deftypefn
 
 
-@deftypefn {Function Pointer} void {*MHD_RequestCompletedCallback} (void *cls, struct MHD_Connectionconnection, void **con_cls, enum MHD_RequestTerminationCode toe)
+@deftypefn {Function Pointer} void {*MHD_RequestCompletedCallback} (void *cls, struct MHD_Connectionconnection, void **req_cls, enum MHD_RequestTerminationCode toe)
 Signature of the callback used by MHD to notify the application about
 completed requests.
 
@@ -1901,7 +1898,7 @@ custom value selected at callback registration time;
 @item connection
 connection handle;
 
-@item con_cls
+@item req_cls
 value as set by the last call to the
 @code{MHD_AccessHandlerCallback};
 
@@ -2944,8 +2941,8 @@ matches the @code{upgrade_handler_cls} that was given to @code{MHD_create_respon
 @item connection
 identifies the connection that is being upgraded;
 
-@item con_cls
-last value left in `*con_cls` in the `MHD_AccessHandlerCallback`
+@item req_cls
+last value left in `*req_cls` in the `MHD_AccessHandlerCallback`
 
 @item extra_in
 buffer of bytes MHD read ``by accident'' from the socket already.  This can happen if the client eagerly transmits more than just the HTTP request.   The application should treat these as if it had read them from the socket.
@@ -3377,15 +3374,15 @@ process data as it arrives; at each invocation a new chunk of data must
 be processed. The arguments @var{upload_data} and @var{upload_data_size}
 are used to reference the chunk of data.
 
-When @code{MHD_AccessHandlerCallback} is invoked for a new connection:
-its @code{*@var{con_cls}} argument is set to @code{NULL}. When @code{POST}
+When @code{MHD_AccessHandlerCallback} is invoked for a new request:
+its @code{*@var{req_cls}} argument is set to @code{NULL}. When @code{POST}
 data comes in the upload buffer it is @strong{mandatory} to use the
-@var{con_cls} to store a reference to per-connection data.  The fact
+@var{req_cls} to store a reference to per-request data.  The fact
 that the pointer was initially @code{NULL} can be used to detect that
 this is a new request.
 
-One method to detect that a new connection was established is
-to set @code{*con_cls} to an unused integer:
+One method to detect that a new request was started is
+to set @code{*req_cls} to an unused integer:
 
 @example
 int
@@ -3394,15 +3391,15 @@ access_handler (void *cls,
                 const char *url,
                 const char *method, const char *version,
                 const char *upload_data, size_t *upload_data_size,
-                void **con_cls)
+                void **req_cls)
 @{
   static int old_connection_marker;
-  int new_connection = (NULL == *con_cls);
+  int new_connection = (NULL == *req_cls);
 
   if (new_connection)
     @{
       /* new connection with POST */
-      *con_cls = &old_connection_marker;
+      *req_cls = &old_connection_marker;
     @}
 
   ...
@@ -3411,7 +3408,7 @@ access_handler (void *cls,
 
 @noindent
 In contrast to the previous example, for @code{POST} requests in particular,
-it is more common to use the value of @code{*con_cls} to keep track of
+it is more common to use the value of @code{*req_cls} to keep track of
 actual state used during processing, such as the post processor (or a
 struct containing a post processor):
 
@@ -3422,14 +3419,14 @@ access_handler (void *cls,
                 const char *url,
                 const char *method, const char *version,
                 const char *upload_data, size_t *upload_data_size,
-                void **con_cls)
+                void **req_cls)
 @{
-  struct MHD_PostProcessor * pp = *con_cls;
+  struct MHD_PostProcessor * pp = *req_cls;
 
   if (pp == NULL)
     @{
       pp = MHD_create_post_processor(connection, ...);
-      *con_cls = pp;
+      *req_cls = pp;
       return MHD_YES;
     @}
   if (*upload_data_size)
@@ -3719,8 +3716,8 @@ Takes no extra arguments.
 Returns the client-specific pointer to a @code{void *} that was
 (possibly) set during a @code{MHD_NotifyConnectionCallback} when the
 socket was first accepted.  Note that this is NOT the same as the
-@code{con_cls} argument of the @code{MHD_AccessHandlerCallback}.  The
-@code{con_cls} is fresh for each HTTP request, while the
+@code{req_cls} argument of the @code{MHD_AccessHandlerCallback}.  The
+@code{req_cls} is fresh for each HTTP request, while the
 @code{socket_context} is fresh for each socket.
 
 Takes no extra arguments.

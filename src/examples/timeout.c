@@ -37,7 +37,7 @@ answer_to_connection (void *cls,
                       const char *version,
                       const char *upload_data,
                       size_t *upload_data_size,
-                      void **con_cls)
+                      void **req_cls)
 {
   const char *page = "<html><body>Hello timeout!</body></html>";
   struct MHD_Response *response;
@@ -48,7 +48,7 @@ answer_to_connection (void *cls,
   (void) method;            /* Unused. Silent compiler warning. */
   (void) upload_data;       /* Unused. Silent compiler warning. */
   (void) upload_data_size;  /* Unused. Silent compiler warning. */
-  (void) con_cls;           /* Unused. Silent compiler warning. */
+  (void) req_cls;           /* Unused. Silent compiler warning. */
 
   response = MHD_create_response_from_buffer (strlen (page),
                                               (void *) page,

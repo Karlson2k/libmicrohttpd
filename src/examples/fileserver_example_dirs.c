@@ -88,7 +88,7 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data,
-          size_t *upload_data_size, void **ptr)
+          size_t *upload_data_size, void **req_cls)
 {
   static int aptr;
   struct MHD_Response *response;
@@ -105,13 +105,13 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
     /* do never respond on first call */
-    *ptr = &aptr;
+    *req_cls = &aptr;
     return MHD_YES;
   }
-  *ptr = NULL;                  /* reset when done */
+  *req_cls = NULL;                  /* reset when done */
 
   file = fopen (&url[1], "rb");
   if (NULL != file)

@@ -106,13 +106,13 @@ copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx);
 enum MHD_Result
 http_ahc (void *cls, struct MHD_Connection *connection,
           const char *url, const char *method, const char *upload_data,
-          const char *version, size_t *upload_data_size, void **ptr);
+          const char *version, size_t *upload_data_size, void **req_cls);
 
 enum MHD_Result
 http_dummy_ahc (void *cls, struct MHD_Connection *connection,
                 const char *url, const char *method, const char *upload_data,
                 const char *version, size_t *upload_data_size,
-                void **ptr);
+                void **req_cls);
 
 
 /**

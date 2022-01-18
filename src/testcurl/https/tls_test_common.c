@@ -207,7 +207,7 @@ http_ahc (void *cls,
           const char *version,
           const char *upload_data,
           size_t *upload_data_size,
-          void **ptr)
+          void **req_cls)
 {
   static int aptr;
   struct MHD_Response *response;
@@ -217,13 +217,13 @@ http_ahc (void *cls,
 
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
     /* do never respond on first call */
-    *ptr = &aptr;
+    *req_cls = &aptr;
     return MHD_YES;
   }
-  *ptr = NULL;                  /* reset when done */
+  *req_cls = NULL;                  /* reset when done */
   response = MHD_create_response_from_buffer (strlen (test_data),
                                               (void *) test_data,
                                               MHD_RESPMEM_PERSISTENT);
@@ -242,7 +242,7 @@ http_dummy_ahc (void *cls,
                 const char *version,
                 const char *upload_data,
                 size_t *upload_data_size,
-                void **ptr)
+                void **req_cls)
 {
   (void) cls;
   (void) connection;
@@ -251,7 +251,7 @@ http_dummy_ahc (void *cls,
   (void) version;      /* Unused. Silent compiler warning. */
   (void) upload_data;
   (void) upload_data_size;
-  (void) ptr;                   /* Unused. Silent compiler warning. */
+  (void) req_cls;                   /* Unused. Silent compiler warning. */
   return 0;
 }
 

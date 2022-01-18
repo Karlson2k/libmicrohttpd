@@ -142,7 +142,7 @@ http_AccessHandlerCallback (void *cls,
                             const char *version,
                             const char *upload_data,
                             size_t *upload_data_size,
-                            void **con_cls)
+                            void **req_cls)
 {
   enum MHD_Result ret;
   struct MHD_Response *response;
@@ -151,7 +151,7 @@ http_AccessHandlerCallback (void *cls,
   (void) upload_data_size;                       /* Unused. Silent compiler warning. */
 
   /* Never respond on first call */
-  if (NULL == *con_cls)
+  if (NULL == *req_cls)
   {
     struct ContentReaderUserdata *userdata;
     fprintf (stderr,
@@ -164,7 +164,7 @@ http_AccessHandlerCallback (void *cls,
       return MHD_NO;
     userdata->bytes_written = 0;
     userdata->connection = connection;
-    *con_cls = userdata;
+    *req_cls = userdata;
     return MHD_YES;
   }
 
@@ -173,7 +173,7 @@ http_AccessHandlerCallback (void *cls,
     = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
                                          32 * 1024,
                                          &http_ContentReaderCallback,
-                                         *con_cls,
+                                         *req_cls,
                                          &free_crc_data);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,

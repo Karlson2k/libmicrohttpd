@@ -107,7 +107,7 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   static int ptr;
   const char *me = cls;
@@ -120,12 +120,12 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
+  *req_cls = NULL;
   v = MHD_lookup_connection_value (connection,
                                    MHD_GET_ARGUMENT_KIND,
                                    "a");
@@ -745,7 +745,7 @@ ahc_empty (void *cls,
            const char *version,
            const char *upload_data,
            size_t *upload_data_size,
-           void **unused)
+           void **req_cls)
 {
   static int ptr;
   struct MHD_Response *response;
@@ -759,12 +759,12 @@ ahc_empty (void *cls,
 
   if (0 != strcmp ("GET", method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
+  *req_cls = NULL;
   response = MHD_create_response_from_buffer (0,
                                               NULL,
                                               MHD_RESPMEM_PERSISTENT);

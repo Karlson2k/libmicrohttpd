@@ -96,11 +96,11 @@ struct CBC
 static void
 termination_cb (void *cls,
                 struct MHD_Connection *connection,
-                void **con_cls,
+                void **req_cls,
                 enum MHD_RequestTerminationCode toe)
 {
   int *test = cls;
-  (void) connection; (void) con_cls;       /* Unused. Silent compiler warning. */
+  (void) connection; (void) req_cls;       /* Unused. Silent compiler warning. */
 
   switch (toe)
   {
@@ -190,12 +190,12 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   int *done = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
-  (void) version; (void) unused;   /* Unused. Silent compiler warning. */
+  (void) version; (void) req_cls;   /* Unused. Silent compiler warning. */
 
   if (0 != strcmp ("PUT", method))
     return MHD_NO;              /* unexpected method */

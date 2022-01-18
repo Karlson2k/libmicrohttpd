@@ -69,7 +69,7 @@ callback (void *cls,
           const char *version,
           const char *upload_data,
           size_t *upload_data_size,
-          void **con_cls)
+          void **req_cls)
 {
   struct callback_closure *cbc = calloc (1, sizeof(struct callback_closure));
   struct MHD_Response *r;
@@ -81,7 +81,7 @@ callback (void *cls,
   (void) version;
   (void) upload_data; /* Unused. Silent compiler warning. */
   (void) upload_data_size;
-  (void) con_cls;         /* Unused. Silent compiler warning. */
+  (void) req_cls;         /* Unused. Silent compiler warning. */
 
   if (NULL == cbc)
     return MHD_NO;

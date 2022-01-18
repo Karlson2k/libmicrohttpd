@@ -45,12 +45,12 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   struct MHD_Response *response;
   enum MHD_Result ret;
   (void) cls; (void) url; (void) method; (void) version;             /* Unused. Silent compiler warning. */
-  (void) upload_data; (void) upload_data_size; (void) unused;        /* Unused. Silent compiler warning. */
+  (void) upload_data; (void) upload_data_size; (void) req_cls;       /* Unused. Silent compiler warning. */
 
   response = MHD_create_response_from_buffer (0, NULL,
                                               MHD_RESPMEM_PERSISTENT);

@@ -548,7 +548,7 @@ post_iterator (void *cls,
  * @param upload_data_size set initially to the size of the
  *        upload_data provided; the method must update this
  *        value to the number of bytes NOT processed;
- * @param ptr pointer that the callback can set to some
+ * @param req_cls pointer that the callback can set to some
  *        address and that will be preserved by MHD for future
  *        calls for this request; since the access handler may
  *        be called many times (i.e., for a PUT/POST operation
@@ -557,7 +557,7 @@ post_iterator (void *cls,
  *        If necessary, this state can be cleaned up in the
  *        global "MHD_RequestCompleted" callback (which
  *        can be set with the MHD_OPTION_NOTIFY_COMPLETED).
- *        Initially, <tt>*con_cls</tt> will be NULL.
+ *        Initially, <tt>*req_cls</tt> will be NULL.
  * @return MHS_YES if the connection was handled successfully,
  *         MHS_NO if the socket must be closed due to a serious
  *         error while handling the request
@@ -570,7 +570,7 @@ create_response (void *cls,
                  const char *version,
                  const char *upload_data,
                  size_t *upload_data_size,
-                 void **ptr)
+                 void **req_cls)
 {
   struct MHD_Response *response;
   struct Request *request;
@@ -580,7 +580,7 @@ create_response (void *cls,
   (void) cls;               /* Unused. Silent compiler warning. */
   (void) version;           /* Unused. Silent compiler warning. */
 
-  request = *ptr;
+  request = *req_cls;
   if (NULL == request)
   {
     request = calloc (1, sizeof (struct Request));
@@ -589,7 +589,7 @@ create_response (void *cls,
       fprintf (stderr, "calloc error: %s\n", strerror (errno));
       return MHD_NO;
     }
-    *ptr = request;
+    *req_cls = request;
     if (0 == strcmp (method, MHD_HTTP_METHOD_POST))
     {
       request->pp = MHD_create_post_processor (connection, 1024,
@@ -668,16 +668,16 @@ create_response (void *cls,
  *
  * @param cls not used
  * @param connection connection that completed
- * @param con_cls session handle
+ * @param req_cls session handle
  * @param toe status code
  */
 static void
 request_completed_callback (void *cls,
                             struct MHD_Connection *connection,
-                            void **con_cls,
+                            void **req_cls,
                             enum MHD_RequestTerminationCode toe)
 {
-  struct Request *request = *con_cls;
+  struct Request *request = *req_cls;
   (void) cls;         /* Unused. Silent compiler warning. */
   (void) connection;  /* Unused. Silent compiler warning. */
   (void) toe;         /* Unused. Silent compiler warning. */

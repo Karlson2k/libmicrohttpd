@@ -1052,12 +1052,12 @@ struct term_notif_cb_param
 static void
 term_cb (void *cls,
          struct MHD_Connection *c,
-         void **con_cls,
+         void **req_cls,
          enum MHD_RequestTerminationCode term_code)
 {
   struct term_notif_cb_param *param = (struct term_notif_cb_param *) cls;
-  if (NULL == con_cls)
-    mhdErrorExitDesc ("'con_cls' pointer is NULL");
+  if (NULL == req_cls)
+    mhdErrorExitDesc ("'req_cls' pointer is NULL");
   if (NULL == c)
     mhdErrorExitDesc ("'connection' pointer is NULL");
   if (NULL == param)
@@ -1220,7 +1220,7 @@ ahcCheck (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **con_cls)
+          void **req_cls)
 {
   static int marker;
   enum MHD_Result ret;
@@ -1273,13 +1273,13 @@ ahcCheck (void *cls,
     *upload_data_size = 0;
   }
 
-  if (&marker != *con_cls)
+  if (&marker != *req_cls)
   {
     /* The first call of the callback for this connection */
     mhd_assert (NULL == upload_data);
     param->req_body_uploaded = 0;
 
-    *con_cls = &marker;
+    *req_cls = &marker;
     return MHD_YES;
   }
 

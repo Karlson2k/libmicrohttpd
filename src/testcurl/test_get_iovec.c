@@ -132,7 +132,7 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   static int ptr;
   const char *me = cls;
@@ -146,12 +146,12 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
+  *req_cls = NULL;
 
   /* Create some test data. */
   if (NULL == (data = malloc (TESTSTR_SIZE)))
@@ -188,7 +188,7 @@ ncont_echo (void *cls,
             const char *method,
             const char *version,
             const char *upload_data, size_t *upload_data_size,
-            void **unused)
+            void **req_cls)
 {
   static int ptr;
   const char *me = cls;
@@ -202,12 +202,12 @@ ncont_echo (void *cls,
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
+  *req_cls = NULL;
 
   if (NULL == (iov = malloc (sizeof(struct MHD_IoVec) * TESTSTR_IOVCNT)))
     return MHD_NO;

@@ -621,7 +621,7 @@ process_upload_data (void *cls,
  *
  * @param cls client-defined closure, NULL
  * @param connection connection handle
- * @param con_cls value as set by the last call to
+ * @param req_cls value as set by the last call to
  *        the MHD_AccessHandlerCallback, points to NULL if this was
  *            not an upload
  * @param toe reason for request termination
@@ -629,10 +629,10 @@ process_upload_data (void *cls,
 static void
 response_completed_callback (void *cls,
                              struct MHD_Connection *connection,
-                             void **con_cls,
+                             void **req_cls,
                              enum MHD_RequestTerminationCode toe)
 {
-  struct UploadContext *uc = *con_cls;
+  struct UploadContext *uc = *req_cls;
   (void) cls;         /* Unused. Silent compiler warning. */
   (void) connection;  /* Unused. Silent compiler warning. */
   (void) toe;         /* Unused. Silent compiler warning. */
@@ -696,7 +696,7 @@ return_directory_response (struct MHD_Connection *connection)
  * @param version HTTP version
  * @param upload_data data from upload (PUT/POST)
  * @param upload_data_size number of bytes in "upload_data"
- * @param ptr our context
+ * @param req_cls our context
  * @return #MHD_YES on success, #MHD_NO to drop connection
  */
 static enum MHD_Result
@@ -706,7 +706,7 @@ generate_page (void *cls,
                const char *method,
                const char *version,
                const char *upload_data,
-               size_t *upload_data_size, void **ptr)
+               size_t *upload_data_size, void **req_cls)
 {
   struct MHD_Response *response;
   enum MHD_Result ret;
@@ -776,7 +776,7 @@ generate_page (void *cls,
   if (0 == strcmp (method, MHD_HTTP_METHOD_POST))
   {
     /* upload! */
-    struct UploadContext *uc = *ptr;
+    struct UploadContext *uc = *req_cls;
 
     if (NULL == uc)
     {
@@ -794,7 +794,7 @@ generate_page (void *cls,
         free (uc);
         return MHD_NO;
       }
-      *ptr = uc;
+      *req_cls = uc;
       return MHD_YES;
     }
     if (0 != *upload_data_size)

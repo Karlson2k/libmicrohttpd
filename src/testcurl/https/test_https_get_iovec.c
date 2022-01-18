@@ -91,7 +91,7 @@ iovec_ahc (void *cls,
            const char *version,
            const char *upload_data,
            size_t *upload_data_size,
-           void **ptr)
+           void **req_cls)
 {
   static int aptr;
   struct MHD_Response *response;
@@ -105,13 +105,13 @@ iovec_ahc (void *cls,
 
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
     /* do never respond on first call */
-    *ptr = &aptr;
+    *req_cls = &aptr;
     return MHD_YES;
   }
-  *ptr = NULL;                  /* reset when done */
+  *req_cls = NULL;                  /* reset when done */
 
   /* Create some test data. */
   if (NULL == (data = malloc (TESTSTR_SIZE)))
@@ -248,7 +248,7 @@ ahc_empty (void *cls,
            const char *version,
            const char *upload_data,
            size_t *upload_data_size,
-           void **unused)
+           void **req_cls)
 {
   static int ptr;
   struct MHD_Response *response;
@@ -264,12 +264,12 @@ ahc_empty (void *cls,
   if (0 != strcmp ("GET",
                    method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
+  *req_cls = NULL;
 
   iov.iov_base = NULL;
   iov.iov_len = 0;

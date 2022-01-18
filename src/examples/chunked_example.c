@@ -97,7 +97,7 @@ ahc_echo (void *cls,
           const char *version,
           const char *upload_data,
           size_t *upload_data_size,
-          void **ptr)
+          void **req_cls)
 {
   static int aptr;
   struct ResponseContentCallbackParam *callback_param;
@@ -111,10 +111,10 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;              /* unexpected method */
-  if (&aptr != *ptr)
+  if (&aptr != *req_cls)
   {
     /* do never respond on first call */
-    *ptr = &aptr;
+    *req_cls = &aptr;
     return MHD_YES;
   }
 
@@ -126,7 +126,7 @@ ahc_echo (void *cls,
   callback_param->response_size = (sizeof(simple_response_text)
                                    / sizeof(char)) - 1;
 
-  *ptr = NULL;                  /* reset when done */
+  *req_cls = NULL;                  /* reset when done */
   response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
                                                 1024,
                                                 &callback,

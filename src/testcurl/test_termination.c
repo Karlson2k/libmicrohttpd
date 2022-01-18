@@ -56,7 +56,7 @@ connection_handler (void *cls,
                     const char *method,
                     const char *version,
                     const char *upload_data, size_t *upload_data_size,
-                    void **ptr)
+                    void **req_cls)
 {
   static int i;
   struct MHD_Response *response;
@@ -65,9 +65,9 @@ connection_handler (void *cls,
   (void) method; (void) version; (void) upload_data; /* Unused. Silent compiler warning. */
   (void) upload_data_size;                       /* Unused. Silent compiler warning. */
 
-  if (*ptr == NULL)
+  if (*req_cls == NULL)
   {
-    *ptr = &i;
+    *req_cls = &i;
     return MHD_YES;
   }
 

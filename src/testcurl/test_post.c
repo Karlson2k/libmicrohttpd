@@ -69,15 +69,15 @@ struct CBC
 static void
 completed_cb (void *cls,
               struct MHD_Connection *connection,
-              void **con_cls,
+              void **req_cls,
               enum MHD_RequestTerminationCode toe)
 {
-  struct MHD_PostProcessor *pp = *con_cls;
+  struct MHD_PostProcessor *pp = *req_cls;
   (void) cls; (void) connection; (void) toe; /* Unused. Silent compiler warning. */
 
   if (NULL != pp)
     MHD_destroy_post_processor (pp);
-  *con_cls = NULL;
+  *req_cls = NULL;
 }
 
 
@@ -129,7 +129,7 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   static int eok;
   struct MHD_Response *response;
@@ -142,12 +142,12 @@ ahc_echo (void *cls,
     printf ("METHOD: %s\n", method);
     return MHD_NO;              /* unexpected method */
   }
-  pp = *unused;
+  pp = *req_cls;
   if (pp == NULL)
   {
     eok = 0;
     pp = MHD_create_post_processor (connection, 1024, &post_iterator, &eok);
-    *unused = pp;
+    *req_cls = pp;
   }
   MHD_post_process (pp, upload_data, *upload_data_size);
   if ((eok == 3) && (0 == *upload_data_size))
@@ -158,7 +158,7 @@ ahc_echo (void *cls,
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     MHD_destroy_response (response);
     MHD_destroy_post_processor (pp);
-    *unused = NULL;
+    *req_cls = NULL;
     return ret;
   }
   *upload_data_size = 0;
@@ -592,7 +592,7 @@ ahc_cancel (void *cls,
             const char *method,
             const char *version,
             const char *upload_data, size_t *upload_data_size,
-            void **unused)
+            void **req_cls)
 {
   struct MHD_Response *response;
   enum MHD_Result ret;
@@ -606,9 +606,9 @@ ahc_cancel (void *cls,
     return MHD_NO;
   }
 
-  if (*unused == NULL)
+  if (*req_cls == NULL)
   {
-    *unused = "wibble";
+    *req_cls = "wibble";
     /* We don't want the body. Send a 500. */
     response = MHD_create_response_from_buffer (0, NULL,
                                                 MHD_RESPMEM_PERSISTENT);

@@ -105,9 +105,9 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
 
 static void
 request_completed (void *cls, struct MHD_Connection *connection,
-                   void **con_cls, enum MHD_RequestTerminationCode toe)
+                   void **req_cls, enum MHD_RequestTerminationCode toe)
 {
-  struct connection_info_struct *con_info = *con_cls;
+  struct connection_info_struct *con_info = *req_cls;
   (void) cls;         /* Unused. Silent compiler warning. */
   (void) connection;  /* Unused. Silent compiler warning. */
   (void) toe;         /* Unused. Silent compiler warning. */
@@ -123,7 +123,7 @@ request_completed (void *cls, struct MHD_Connection *connection,
   }
 
   free (con_info);
-  *con_cls = NULL;
+  *req_cls = NULL;
 }
 
 
@@ -131,13 +131,13 @@ static enum MHD_Result
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
-                      size_t *upload_data_size, void **con_cls)
+                      size_t *upload_data_size, void **req_cls)
 {
   (void) cls;               /* Unused. Silent compiler warning. */
   (void) url;               /* Unused. Silent compiler warning. */
   (void) version;           /* Unused. Silent compiler warning. */
 
-  if (NULL == *con_cls)
+  if (NULL == *req_cls)
   {
     struct connection_info_struct *con_info;
 
@@ -163,7 +163,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     else
       con_info->connectiontype = GET;
 
-    *con_cls = (void *) con_info;
+    *req_cls = (void *) con_info;
 
     return MHD_YES;
   }
@@ -175,7 +175,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
   if (0 == strcmp (method, "POST"))
   {
-    struct connection_info_struct *con_info = *con_cls;
+    struct connection_info_struct *con_info = *req_cls;
 
     if (*upload_data_size != 0)
     {

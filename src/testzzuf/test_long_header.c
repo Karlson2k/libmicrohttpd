@@ -77,13 +77,13 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
   (void) version; (void) upload_data;      /* Unused. Silent compiler warning. */
-  (void) upload_data_size; (void) unused;  /* Unused. Silent compiler warning. */
+  (void) upload_data_size; (void) req_cls; /* Unused. Silent compiler warning. */
 
   if (NULL == url)
     fprintf (stderr, "The \"url\" parameter is NULL.\n");

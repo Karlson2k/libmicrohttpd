@@ -64,10 +64,10 @@ application should suspend the connection).
 @end enumerate
 
 But how can we tell whether the callback has been called before for the
-particular connection?  Initially, the pointer this parameter references is
+particular request?  Initially, the pointer this parameter references is
 set by @emph{MHD} in the callback. But it will also be "remembered" on the
-next call (for the same connection).  Thus, we can use the @code{con_cls}
-location to keep track of the connection state.  For now, we will simply
+next call (for the same request).  Thus, we can use the @code{req_cls}
+location to keep track of the request state.  For now, we will simply
 generate no response until the parameter is non-null---implying the callback
 was called before at least once. We do not need to share information between
 different calls of the callback, so we can set the parameter to any address
@@ -81,10 +81,10 @@ static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method, const char *version,
                       const char *upload_data, size_t *upload_data_size,
-                      void **con_cls)
+                      void **req_cls)
 {
   if (0 != strcmp(method, "GET")) return MHD_NO;
-  if (NULL == *con_cls) {*con_cls = connection; return MHD_YES;}
+  if (NULL == *req_cls) {*req_cls = connection; return MHD_YES;}
 
   ...
   /* else respond accordingly */
@@ -116,7 +116,7 @@ static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
-                      size_t *upload_data_size, void **con_cls)
+                      size_t *upload_data_size, void **req_cls)
 {
   char *user;
   char *pass;
@@ -126,9 +126,9 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     return MHD_NO;
-  if (NULL == *con_cls)
+  if (NULL == *req_cls)
     {
-      *con_cls = connection;
+      *req_cls = connection;
       return MHD_YES;
     }
   pass = NULL;

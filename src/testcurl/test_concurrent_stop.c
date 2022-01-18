@@ -143,7 +143,7 @@ ahc_echo (void *cls,
           const char *version,
           const char *upload_data,
           size_t *upload_data_size,
-          void **usr_data)
+          void **req_cls)
 {
   static int marker;
   const char *me = cls;
@@ -153,12 +153,12 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (me, method))
     return MHD_NO;              /* unexpected method */
-  if (&marker != *usr_data)
+  if (&marker != *req_cls)
   {
-    *usr_data = &marker;
+    *req_cls = &marker;
     return MHD_YES;
   }
-  *usr_data = NULL;
+  *req_cls = NULL;
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);

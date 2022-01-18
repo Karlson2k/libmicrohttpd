@@ -763,7 +763,7 @@ run_usock (void *cls)
 
 
 static void
-uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
+uh_cb (void *cls, struct MHD_Connection *con, void *req_cls,
        const char *extra_in, size_t extra_in_size, MHD_socket sock,
        struct MHD_UpgradeResponseHandle *urh)
 {
@@ -774,7 +774,7 @@ uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
 
   (void) cls;            /* Unused. Silent compiler warning. */
   (void) con;            /* Unused. Silent compiler warning. */
-  (void) con_cls;        /* Unused. Silent compiler warning. */
+  (void) req_cls;        /* Unused. Silent compiler warning. */
   (void) extra_in;       /* Unused. Silent compiler warning. */
   (void) extra_in_size;  /* Unused. Silent compiler warning. */
 
@@ -814,7 +814,7 @@ uh_cb (void *cls, struct MHD_Connection *con, void *con_cls,
 static enum MHD_Result
 ahc_cb (void *cls, struct MHD_Connection *con, const char *url,
         const char *method, const char *version, const char *upload_data,
-        size_t *upload_data_size, void **ptr)
+        size_t *upload_data_size, void **req_cls)
 {
   struct MHD_Response *res;
   const char *upg_header;
@@ -830,12 +830,12 @@ ahc_cb (void *cls, struct MHD_Connection *con, const char *url,
   (void) upload_data;       /* Unused. Silent compiler warning. */
   (void) upload_data_size;  /* Unused. Silent compiler warning. */
 
-  if (NULL == *ptr)
+  if (NULL == *req_cls)
   {
-    *ptr = (void *) 1;
+    *req_cls = (void *) 1;
     return MHD_YES;
   }
-  *ptr = NULL;
+  *req_cls = NULL;
   upg_header = MHD_lookup_connection_value (con, MHD_HEADER_KIND,
                                             MHD_HTTP_HEADER_UPGRADE);
   con_header = MHD_lookup_connection_value (con, MHD_HEADER_KIND,

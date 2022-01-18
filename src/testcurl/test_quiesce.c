@@ -193,7 +193,7 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   static int ptr;
   const char *me = cls;
@@ -205,12 +205,12 @@ ahc_echo (void *cls,
     fprintf (stderr, "Unexpected HTTP method '%s'. ", method);
     externalErrorExit ();
   }
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
+  *req_cls = NULL;
   response = MHD_create_response_from_buffer (strlen (url),
                                               (void *) url,
                                               MHD_RESPMEM_MUST_COPY);
@@ -229,10 +229,10 @@ ahc_echo (void *cls,
 
 static void
 request_completed (void *cls, struct MHD_Connection *connection,
-                   void **con_cls, enum MHD_RequestTerminationCode code)
+                   void **req_cls, enum MHD_RequestTerminationCode code)
 {
   int *done = (int *) cls;
-  (void) connection; (void) con_cls; (void) code;    /* Unused. Silent compiler warning. */
+  (void) connection; (void) req_cls; (void) code;    /* Unused. Silent compiler warning. */
   if (MHD_REQUEST_TERMINATED_COMPLETED_OK != code)
   {
     fprintf (stderr, "Unexpected termination code: %d. ", (int) code);

@@ -90,13 +90,13 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   int *done = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
   int have;
-  (void) version; (void) unused;   /* Unused. Silent compiler warning. */
+  (void) version; (void) req_cls;   /* Unused. Silent compiler warning. */
 
   if (0 != strcmp ("PUT", method))
     return MHD_NO;              /* unexpected method */

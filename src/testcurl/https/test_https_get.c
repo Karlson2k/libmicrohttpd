@@ -99,7 +99,7 @@ ahc_empty (void *cls,
            const char *version,
            const char *upload_data,
            size_t *upload_data_size,
-           void **unused)
+           void **req_cls)
 {
   static int ptr;
   struct MHD_Response *response;
@@ -114,12 +114,12 @@ ahc_empty (void *cls,
   if (0 != strcmp ("GET",
                    method))
     return MHD_NO;              /* unexpected method */
-  if (&ptr != *unused)
+  if (&ptr != *req_cls)
   {
-    *unused = &ptr;
+    *req_cls = &ptr;
     return MHD_YES;
   }
-  *unused = NULL;
+  *req_cls = NULL;
   response = MHD_create_response_from_buffer (0,
                                               NULL,
                                               MHD_RESPMEM_PERSISTENT);

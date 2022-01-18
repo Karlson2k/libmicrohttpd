@@ -86,7 +86,7 @@ ahc_echo (void *cls,
           const char *method,
           const char *version,
           const char *upload_data, size_t *upload_data_size,
-          void **mptr)
+          void **req_cls)
 {
   static int marker;
   struct MHD_Response *response;
@@ -99,21 +99,21 @@ ahc_echo (void *cls,
     printf ("METHOD: %s\n", method);
     return MHD_NO;              /* unexpected method */
   }
-  if ((*mptr != NULL) && (0 == *upload_data_size))
+  if ((*req_cls != NULL) && (0 == *upload_data_size))
   {
-    if (*mptr != &marker)
+    if (*req_cls != &marker)
       abort ();
     response = MHD_create_response_from_buffer (2, "OK",
                                                 MHD_RESPMEM_PERSISTENT);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     MHD_destroy_response (response);
-    *mptr = NULL;
+    *req_cls = NULL;
     return ret;
   }
   if (strlen (POST_DATA) != *upload_data_size)
     return MHD_YES;
   *upload_data_size = 0;
-  *mptr = &marker;
+  *req_cls = &marker;
   return MHD_YES;
 }
 

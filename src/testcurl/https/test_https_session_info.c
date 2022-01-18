@@ -47,7 +47,7 @@ static enum MHD_Result
 query_session_ahc (void *cls, struct MHD_Connection *connection,
                    const char *url, const char *method,
                    const char *version, const char *upload_data,
-                   size_t *upload_data_size, void **ptr)
+                   size_t *upload_data_size, void **req_cls)
 {
   struct MHD_Response *response;
   enum MHD_Result ret;
@@ -55,9 +55,9 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
   (void) cls; (void) url; (void) method; (void) version;   /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;             /* Unused. Silent compiler warning. */
 
-  if (NULL == *ptr)
+  if (NULL == *req_cls)
   {
-    *ptr = (void *) &query_session_ahc;
+    *req_cls = (void *) &query_session_ahc;
     return MHD_YES;
   }
 

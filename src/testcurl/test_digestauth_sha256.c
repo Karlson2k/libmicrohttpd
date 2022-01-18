@@ -87,7 +87,7 @@ ahc_echo (void *cls,
           const char *version,
           const char *upload_data,
           size_t *upload_data_size,
-          void **unused)
+          void **req_cls)
 {
   struct MHD_Response *response;
   char *username;
@@ -97,7 +97,7 @@ ahc_echo (void *cls,
   int ret_i;
   (void) cls; (void) url;                         /* Unused. Silent compiler warning. */
   (void) method; (void) version; (void) upload_data; /* Unused. Silent compiler warning. */
-  (void) upload_data_size; (void) unused;         /* Unused. Silent compiler warning. */
+  (void) upload_data_size; (void) req_cls;        /* Unused. Silent compiler warning. */
 
   username = MHD_digest_auth_get_username (connection);
   if ( (username == NULL) ||

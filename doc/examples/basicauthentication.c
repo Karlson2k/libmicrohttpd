@@ -21,7 +21,7 @@ static enum MHD_Result
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
-                      size_t *upload_data_size, void **con_cls)
+                      size_t *upload_data_size, void **req_cls)
 {
   char *user;
   char *pass;
@@ -36,9 +36,9 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;
-  if (NULL == *con_cls)
+  if (NULL == *req_cls)
   {
-    *con_cls = connection;
+    *req_cls = connection;
     return MHD_YES;
   }
   pass = NULL;

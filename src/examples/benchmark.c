@@ -62,7 +62,7 @@ static struct MHD_Response *response;
  *
  * @param cls client-defined closure
  * @param connection connection handle
- * @param con_cls value as set by the last call to
+ * @param req_cls value as set by the last call to
  *        the MHD_AccessHandlerCallback
  * @param toe reason for request termination
  * @see MHD_OPTION_NOTIFY_COMPLETED
@@ -70,10 +70,10 @@ static struct MHD_Response *response;
 static void
 completed_callback (void *cls,
                     struct MHD_Connection *connection,
-                    void **con_cls,
+                    void **req_cls,
                     enum MHD_RequestTerminationCode toe)
 {
-  struct timeval *tv = *con_cls;
+  struct timeval *tv = *req_cls;
   struct timeval tve;
   uint64_t delta;
   (void) cls;         /* Unused. Silent compiler warning. */
@@ -119,14 +119,14 @@ ahc_echo (void *cls,
           const char *url,
           const char *method,
           const char *version,
-          const char *upload_data, size_t *upload_data_size, void **ptr)
+          const char *upload_data, size_t *upload_data_size, void **req_cls)
 {
   (void) cls;               /* Unused. Silent compiler warning. */
   (void) url;               /* Unused. Silent compiler warning. */
   (void) version;           /* Unused. Silent compiler warning. */
   (void) upload_data;       /* Unused. Silent compiler warning. */
   (void) upload_data_size;  /* Unused. Silent compiler warning. */
-  (void) ptr;               /* Unused. Silent compiler warning. */
+  (void) req_cls;           /* Unused. Silent compiler warning. */
 
   if (0 != strcmp (method, "GET"))
     return MHD_NO;              /* unexpected method */

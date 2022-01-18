@@ -796,14 +796,14 @@ term_reason_str (enum MHD_RequestTerminationCode term_code)
  *
  * @param cls client-defined closure
  * @param connection connection handle
- * @param con_cls value as set by the last call to
+ * @param req_cls value as set by the last call to
  *        the #MHD_AccessHandlerCallback
  * @param toe reason for request termination
  */
 static void
 notify_completed_cb (void *cls,
                      struct MHD_Connection *connection,
-                     void **con_cls,
+                     void **req_cls,
                      enum MHD_RequestTerminationCode toe)
 {
   (void) cls;
@@ -815,15 +815,15 @@ notify_completed_cb (void *cls,
        (toe != MHD_REQUEST_TERMINATED_CLIENT_ABORT) &&
        (toe != MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN) )
     mhdErrorExitDesc ("notify_completed_cb() called with wrong code");
-  if (NULL == con_cls)
-    mhdErrorExitDesc ("'con_cls' parameter is NULL");
-  if (NULL == *con_cls)
-    mhdErrorExitDesc ("'*con_cls' pointer is NULL");
-  if (! pthread_equal (**((pthread_t **) con_cls),
+  if (NULL == req_cls)
+    mhdErrorExitDesc ("'req_cls' parameter is NULL");
+  if (NULL == *req_cls)
+    mhdErrorExitDesc ("'*req_cls' pointer is NULL");
+  if (! pthread_equal (**((pthread_t **) req_cls),
                        pthread_self ()))
     mhdErrorExitDesc ("notify_completed_cb() is called in wrong thread");
-  free (*con_cls);
-  *con_cls = NULL;
+  free (*req_cls);
+  *req_cls = NULL;
 }
 
 
@@ -868,7 +868,7 @@ log_cb (void *cls,
  * @param socket_context socket-specific pointer where the
  *                       client can associate some state specific
  *                       to the TCP connection; note that this is
- *                       different from the "con_cls" which is per
+ *                       different from the "req_cls" which is per
  *                       HTTP request.  The client can initialize
  *                       during #MHD_CONNECTION_NOTIFY_STARTED and
  *                       cleanup during #MHD_CONNECTION_NOTIFY_CLOSED
@@ -1139,7 +1139,7 @@ run_usock_client (void *cls)
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
- * @param con_cls last value left in `con_cls` of the `MHD_AccessHandlerCallback`
+ * @param req_cls last value left in `req_cls` of the `MHD_AccessHandlerCallback`
  * @param extra_in if we happened to have read bytes after the
  *                 HTTP header already (because the client sent
  *                 more than the HTTP header of the request before
@@ -1164,7 +1164,7 @@ run_usock_client (void *cls)
 static void
 upgrade_cb (void *cls,
             struct MHD_Connection *connection,
-            void *con_cls,
+            void *req_cls,
             const char *extra_in,
             size_t extra_in_size,
             MHD_socket sock,
@@ -1172,7 +1172,7 @@ upgrade_cb (void *cls,
 {
   (void) cls;
   (void) connection;
-  (void) con_cls;
+  (void) req_cls;
   (void) extra_in; /* Unused. Silent compiler warning. */
 
   usock = wr_create_from_plain_sckt (sock);
@@ -1211,7 +1211,7 @@ upgrade_cb (void *cls,
  * @param upload_data_size set initially to the size of the
  *        @a upload_data provided; the method must update this
  *        value to the number of bytes NOT processed;
- * @param con_cls pointer that the callback can set to some
+ * @param req_cls pointer that the callback can set to some
  *        address and that will be preserved by MHD for future
  *        calls for this request; since the access handler may
  *        be called many times (i.e., for a PUT/POST operation
@@ -1220,7 +1220,7 @@ upgrade_cb (void *cls,
  *        If necessary, this state can be cleaned up in the
  *        global #MHD_RequestCompletedCallback (which
  *        can be set with the #MHD_OPTION_NOTIFY_COMPLETED).
- *        Initially, `*con_cls` will be NULL.
+ *        Initially, `*req_cls` will be NULL.
  * @return #MHD_YES if the connection was handled successfully,
  *         #MHD_NO if the socket must be closed due to a serious
  *         error while handling the request
@@ -1233,7 +1233,7 @@ ahc_upgrade (void *cls,
              const char *version,
              const char *upload_data,
              size_t *upload_data_size,
-             void **con_cls)
+             void **req_cls)
 {
   struct MHD_Response *resp;
   (void) cls;
@@ -1243,11 +1243,11 @@ ahc_upgrade (void *cls,
   (void) upload_data;
   (void) upload_data_size;  /* Unused. Silent compiler warning. */
 
-  if (NULL == con_cls)
-    mhdErrorExitDesc ("'con_cls' is NULL");
-  if (NULL == *con_cls)
-    mhdErrorExitDesc ("'*con_cls' value is NULL");
-  if (! pthread_equal (**((pthread_t **) con_cls), pthread_self ()))
+  if (NULL == req_cls)
+    mhdErrorExitDesc ("'req_cls' is NULL");
+  if (NULL == *req_cls)
+    mhdErrorExitDesc ("'*req_cls' value is NULL");
+  if (! pthread_equal (**((pthread_t **) req_cls), pthread_self ()))
     mhdErrorExitDesc ("ahc_upgrade() is called in wrong thread");
   resp = MHD_create_response_for_upgrade (&upgrade_cb,
                                           NULL);
