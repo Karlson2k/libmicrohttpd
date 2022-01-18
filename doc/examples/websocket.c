@@ -28,7 +28,7 @@
   "<script>\n" \
   "\n" \
   "let url = 'ws' + (window.location.protocol === 'https:' ? 's' : '')" \
-    "  + '://' +\n" \
+    "  + ':/" "/' +\n" \
   "          window.location.host + '/chat';\n" \
   "let socket = null;\n" \
   "\n" \
@@ -38,7 +38,7 @@
   "    document.write('The websocket connection has been " \
     "established.<br>');\n" \
   "\n" \
-  "    // Send some text\n" \
+  "    /" "/ Send some text\n" \
   "    socket.send('Hello from JavaScript!');\n" \
   "  }\n" \
   "\n" \

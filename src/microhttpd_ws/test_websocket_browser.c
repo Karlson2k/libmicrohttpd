@@ -55,7 +55,7 @@
   "let charset       = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_!@%&/\\\\';\n" \
   "let step_to_bytes = [ 0, 1, 2, 3, 122, 123, 124, 125, 126, 127, 128, 32766, 32767, 32768, 65534, 65535, 65536, 65537, 1048576, 10485760 ];\n" \
   "let url = 'ws' + (window.location.protocol === 'https:' ? 's' : '')" \
-    "  + '://' +\n" \
+    "  + ':/" "/' +\n" \
   "          window.location.host + '/websocket';\n" \
   "let socket = null;\n" \
   "\n" \
