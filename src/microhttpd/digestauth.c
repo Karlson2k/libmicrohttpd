@@ -108,6 +108,20 @@
  */
 #define MAX_AUTH_RESPONSE_LENGTH 256
 
+/**
+ * The token for MD5 algorithm.
+ */
+#define _MHD_MD5_TOKEN "MD5"
+
+/**
+ * The token for SHA-256 algorithm.
+ */
+#define _MHD_SHA256_TOKEN "SHA-256"
+
+/**
+ * The postfix token for "session" algorithms.
+ */
+#define _MHD_SESS_TOKEN "-sess"
 
 /**
  * Context passed to functions that need to calculate
@@ -128,7 +142,8 @@ struct DigestAlgorithm
   void *ctx;
 
   /**
-   * Name of the algorithm, "MD5" or "SHA-256"
+   * Name of the algorithm, "MD5" or "SHA-256".
+   * @sa #_MHD_MD5_TOKEN, #_MHD_SHA256_TOKEN
    */
   const char *alg;
 
@@ -218,9 +233,9 @@ digest_calc_ha1_from_digest (const char *alg,
 {
   const unsigned int digest_size = da->digest_size;
   if ( (MHD_str_equal_caseless_ (alg,
-                                 "MD5-sess")) ||
+                                 _MHD_MD5_TOKEN _MHD_SESS_TOKEN)) ||
        (MHD_str_equal_caseless_ (alg,
-                                 "SHA-256-sess")) )
+                                 _MHD_SHA256_TOKEN _MHD_SESS_TOKEN)) )
   {
     uint8_t dig[VLA_ARRAY_LEN_DIGEST (digest_size)];
 
@@ -1197,7 +1212,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
     case MHD_DIGEST_ALG_MD5:                        \
       da.digest_size = MD5_DIGEST_SIZE;             \
       da.ctx = &ctx.md5;                            \
-      da.alg = "MD5";                               \
+      da.alg = _MHD_MD5_TOKEN;                               \
       da.sessionkey = skey.md5;                     \
       da.init = &MHD_MD5Init;                           \
       da.update = &MHD_MD5Update;                       \
@@ -1208,7 +1223,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
     case MHD_DIGEST_ALG_SHA256:                           \
       da.digest_size = SHA256_DIGEST_SIZE;                \
       da.ctx = &ctx.sha256;                               \
-      da.alg = "SHA-256";                                 \
+      da.alg = _MHD_SHA256_TOKEN;                                 \
       da.sessionkey = skey.sha256;                        \
       da.init = &MHD_SHA256_init;                             \
       da.update = &MHD_SHA256_update;                         \
