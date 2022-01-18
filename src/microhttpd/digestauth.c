@@ -184,32 +184,6 @@ struct DigestAlgorithm
 
 
 /**
- * convert bin to hex
- *
- * @param bin binary data
- * @param len number of bytes in bin
- * @param hex pointer to len*2+1 bytes
- */
-static void
-cvthex (const unsigned char *bin,
-        size_t len,
-        char *hex)
-{
-  size_t i;
-  unsigned int j;
-
-  for (i = 0; i < len; ++i)
-  {
-    j = (bin[i] >> 4) & 0x0f;
-    hex[i * 2] = (char) ((j <= 9) ? (j + '0') : (j - 10 + 'a'));
-    j = bin[i] & 0x0f;
-    hex[i * 2 + 1] = (char) ((j <= 9) ? (j + '0') : (j - 10 + 'a'));
-  }
-  hex[len * 2] = '\0';
-}
-
-
-/**
  * calculate H(A1) from given hash as per RFC2617 spec
  * and store the * result in 'sessionkey'.
  *
@@ -258,15 +232,15 @@ digest_calc_ha1_from_digest (const char *alg,
                 strlen (cnonce));
     da->digest (da->ctx,
                 dig);
-    cvthex (dig,
-            digest_size,
-            da->sessionkey);
+    MHD_bin_to_hex (dig,
+                    digest_size,
+                    da->sessionkey);
   }
   else
   {
-    cvthex (digest,
-            digest_size,
-            da->sessionkey);
+    MHD_bin_to_hex (digest,
+                    digest_size,
+                    da->sessionkey);
   }
 }
 
@@ -383,9 +357,9 @@ digest_calc_response (const char *ha1,
 #endif
   da->digest (da->ctx,
               ha2);
-  cvthex (ha2,
-          digest_size,
-          da->sessionkey);
+  MHD_bin_to_hex (ha2,
+                  digest_size,
+                  da->sessionkey);
   da->init (da->ctx);
   /* calculate response */
   da->update (da->ctx,
@@ -426,9 +400,9 @@ digest_calc_response (const char *ha1,
               digest_size * 2);
   da->digest (da->ctx,
               resphash);
-  cvthex (resphash,
-          digest_size,
-          da->sessionkey);
+  MHD_bin_to_hex (resphash,
+                  digest_size,
+                  da->sessionkey);
 }
 
 
@@ -736,12 +710,12 @@ calculate_nonce (uint32_t nonce_time,
               strlen (realm));
   da->digest (da->ctx,
               tmpnonce);
-  cvthex (tmpnonce,
-          digest_size,
-          nonce);
-  cvthex (timestamp,
-          sizeof (timestamp),
-          nonce + digest_size * 2);
+  MHD_bin_to_hex (tmpnonce,
+                  digest_size,
+                  nonce);
+  MHD_bin_to_hex (timestamp,
+                  sizeof (timestamp),
+                  nonce + digest_size * 2);
 }
 
 

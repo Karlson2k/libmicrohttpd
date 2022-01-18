@@ -1354,3 +1354,24 @@ MHD_uint8_to_str_pad (uint8_t val,
   buf[pos++] = '0' + val;
   return pos;
 }
+
+
+size_t
+MHD_bin_to_hex (const void *bin,
+                size_t size,
+                char *hex)
+{
+  size_t i;
+
+  for (i = 0; i < size; ++i)
+  {
+    uint8_t j;
+    const uint8_t b = ((uint8_t *) bin)[i];
+    j = b >> 4;
+    hex[i * 2] = (char) ((j < 10) ? (j + '0') : (j - 10 + 'a'));
+    j = b & 0x0f;
+    hex[i * 2 + 1] = (char) ((j < 10) ? (j + '0') : (j - 10 + 'a'));
+  }
+  hex[i * 2] = 0;
+  return i;
+}

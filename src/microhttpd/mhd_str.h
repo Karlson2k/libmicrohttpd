@@ -457,5 +457,18 @@ MHD_uint8_to_str_pad (uint8_t val,
                       char *buf,
                       size_t buf_size);
 
+/**
+ * Convert @a size bytes from input binary data to lower case
+ * hexadecimal digits, zero-terminate the result.
+ * @param bin the pointer to the binary data to convert
+ * @param size the size in bytes of the binary data to convert
+ * @param hex the output buffer, but be at least 2 * @a size + 1
+ * @return The number of characters written to the output buffer,
+ *         not including terminating zero.
+ */
+size_t
+MHD_bin_to_hex (const void *bin,
+                size_t size,
+                char *hex);
 
 #endif /* MHD_STR_H */
