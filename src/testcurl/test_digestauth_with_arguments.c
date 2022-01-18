@@ -88,9 +88,17 @@ ahc_echo (void *cls,
   const char *realm = "test@example.com";
   enum MHD_Result ret;
   int ret_i;
+  static int already_called_marker;
   (void) cls; (void) url;                         /* Unused. Silent compiler warning. */
   (void) method; (void) version; (void) upload_data; /* Unused. Silent compiler warning. */
   (void) upload_data_size; (void) req_cls;        /* Unused. Silent compiler warning. */
+
+  if (&already_called_marker != *req_cls)
+  { /* Called for the first time, request not fully read yet */
+    *req_cls = &already_called_marker;
+    /* Wait for complete request */
+    return MHD_YES;
+  }
 
   username = MHD_digest_auth_get_username (connection);
   if ( (username == NULL) ||

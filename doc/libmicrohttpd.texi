@@ -3302,6 +3302,14 @@ ahc_echo (void *cls,
   const char *password = "testpass";
   const char *realm = "test@@example.com";
   int ret;
+  static int already_called_marker;
+
+  if (&already_called_marker != *req_cls)
+    @{ /* Called for the first time, request not fully read yet */
+      *req_cls = &already_called_marker;
+      /* Wait for complete request */
+      return MHD_YES;
+    @}
 
   username = MHD_digest_auth_get_username (connection);
   if (username == NULL)
