@@ -37,24 +37,24 @@
 #
 # LICENSE
 #
-#   Copyright (c) 2019 Karlson2k (Evgeny Grin) <k2k@narod.ru>
+#   Copyright (c) 2019-2022 Karlson2k (Evgeny Grin) <k2k@narod.ru>
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 2
+#serial 3
 
 AC_DEFUN([MHD_CHECK_FUNC],[dnl
   AC_PREREQ([2.64])dnl for AS_VAR_IF, m4_ifblank, m4_ifnblank
-  m4_ifblank(m4_translit([$1],[()],[  ]), [m4_fatal([First macro argument must not be empty])])dnl
-  m4_ifblank([$3], [m4_fatal([Third macro argument must not be empty])])dnl
-  m4_bmatch(m4_normalize([$1]), [\s],dnl
+  m4_ifblank(m4_translit($1,[()],[  ]), [m4_fatal([First macro argument must not be empty])])dnl
+  m4_ifblank($3, [m4_fatal([Third macro argument must not be empty])])dnl
+  m4_bmatch(m4_normalize($1), [\s],dnl
             [m4_fatal([First macro argument must not contain whitespaces])])dnl
-  m4_if(m4_index([$3], m4_normalize(m4_translit([$1],[()],[  ]))), [-1], dnl
-        [m4_fatal([CHECK_CODE parameter (third macro argument) does not contain ']m4_normalize([$1])[' token])])dnl
-  AS_VAR_PUSHDEF([cv_Var], [mhd_cv_func_]m4_bpatsubst(m4_normalize(m4_translit([$1],[()],[  ])),[[^a-zA-Z0-9]],[_]))dnl
+  m4_if(m4_index($3, m4_normalize(m4_translit($1,[()],[  ]))), [-1], dnl
+        [m4_fatal([CHECK_CODE parameter (third macro argument) does not contain ']m4_normalize($1)[' token])])dnl
+  AS_VAR_PUSHDEF([cv_Var], [mhd_cv_func_]m4_bpatsubst(m4_normalize(m4_translit($1,[()],[  ])),[[^a-zA-Z0-9]],[_]))dnl
   dnl
   AC_CACHE_CHECK([for function $1], [cv_Var],
     [dnl
@@ -71,8 +71,8 @@ AC_DEFUN([MHD_CHECK_FUNC],[dnl
       ])dnl
     ])
   AS_VAR_IF([cv_Var], ["yes"],
-            [AC_DEFINE([[HAVE_]]m4_bpatsubst(m4_toupper(m4_normalize(m4_translit([$1],[()],[  ]))),[[^A-Z0-9]],[_]),
-                       [1], [Define to 1 if you have the `]m4_normalize(m4_translit([$1],[()],[  ]))[' function.])
+            [AC_DEFINE([[HAVE_]]m4_bpatsubst(m4_toupper(m4_normalize(m4_translit($1,[()],[  ]))),[[^A-Z0-9]],[_]),
+                       [1], [Define to 1 if you have the `]m4_normalize(m4_translit($1,[()],[  ]))[' function.])
             m4_n([$4])dnl
             ], [$5])
   AS_VAR_POPDEF([cv_Var])dnl
