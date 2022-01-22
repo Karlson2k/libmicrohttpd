@@ -44,7 +44,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 1
+#serial 2
 
 AC_DEFUN([MHD_CHECK_FUNC],[dnl
   AC_PREREQ([2.64])dnl for AS_VAR_IF, m4_ifblank, m4_ifnblank
@@ -53,7 +53,7 @@ AC_DEFUN([MHD_CHECK_FUNC],[dnl
   m4_bmatch(m4_normalize([$1]), [\s],dnl
             [m4_fatal([First macro argument must not contain whitespaces])])dnl
   m4_if(m4_index([$3], m4_normalize(m4_translit([$1],[()],[  ]))), [-1], dnl
-        [m4_fatal([CHECK_CODE parameter (third macro argument) do not contain ']m4_normalize([$1])[' token])])dnl
+        [m4_fatal([CHECK_CODE parameter (third macro argument) does not contain ']m4_normalize([$1])[' token])])dnl
   AS_VAR_PUSHDEF([cv_Var], [mhd_cv_func_]m4_bpatsubst(m4_normalize(m4_translit([$1],[()],[  ])),[[^a-zA-Z0-9]],[_]))dnl
   dnl
   AC_CACHE_CHECK([for function $1], [cv_Var],
@@ -77,4 +77,3 @@ AC_DEFUN([MHD_CHECK_FUNC],[dnl
             ], [$5])
   AS_VAR_POPDEF([cv_Var])dnl
 ])
-
