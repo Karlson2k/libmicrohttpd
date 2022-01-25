@@ -3323,15 +3323,7 @@ process_request_body (struct MHD_Connection *connection)
       return;
     }
     if (left_unprocessed > to_be_processed)
-      mhd_panic (mhd_panic_cls,
-                 __FILE__,
-                 __LINE__
-#ifdef HAVE_MESSAGES
-                 , _ ("libmicrohttpd API violation.\n")
-#else
-                 , NULL
-#endif
-                 );
+      MHD_PANIC (_ ("libmicrohttpd API violation.\n"));
     if (0 != left_unprocessed)
     {
       instant_retry = false; /* client did not process everything */

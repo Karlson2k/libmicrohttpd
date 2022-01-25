@@ -266,10 +266,7 @@ MHD_create_post_processor (struct MHD_Connection *connection,
   if ( (buffer_size < 256) ||
        (NULL == connection) ||
        (NULL == iter))
-    mhd_panic (mhd_panic_cls,
-               __FILE__,
-               __LINE__,
-               NULL);
+    MHD_PANIC (_ ("libmicrohttpd API violation.\n"));
   if (MHD_NO == MHD_lookup_connection_value_n (connection,
                                                MHD_HEADER_KIND,
                                                MHD_HTTP_HEADER_CONTENT_TYPE,
@@ -707,10 +704,7 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       pp->state = PP_Init;
       break;
     default:
-      mhd_panic (mhd_panic_cls,
-                 __FILE__,
-                 __LINE__,
-                 NULL);              /* should never happen! */
+      MHD_PANIC (_ ("internal error.\n")); /* should never happen! */
     }
     mhd_assert ((end_key == NULL) || (start_key != NULL));
     mhd_assert ((end_value == NULL) || (start_value != NULL));
@@ -1431,10 +1425,7 @@ post_process_multipart (struct MHD_PostProcessor *pp,
       state_changed = 1;
       break;
     default:
-      mhd_panic (mhd_panic_cls,
-                 __FILE__,
-                 __LINE__,
-                 NULL);              /* should never happen! */
+      MHD_PANIC (_ ("internal error.\n")); /* should never happen! */
     }
 AGAIN:
     if (ioff > 0)

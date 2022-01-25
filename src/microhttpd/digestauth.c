@@ -83,9 +83,8 @@
 /**
  * Check that @a n is below #MAX_DIGEST
  */
-#define VLA_CHECK_LEN_DIGEST(n) do { if ((n) > MAX_DIGEST) mhd_panic ( \
-                                       mhd_panic_cls, __FILE__, __LINE__, \
-                                       "VLA too big.\n"); } while (0)
+#define VLA_CHECK_LEN_DIGEST(n) \
+  do { if ((n) > MAX_DIGEST) MHD_PANIC (_ ("VLA too big.\n")); } while (0)
 
 
 /**
