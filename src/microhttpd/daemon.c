@@ -117,47 +117,6 @@ MHD_epoll (struct MHD_Daemon *daemon,
 #endif /* EPOLL_SUPPORT */
 
 /**
- * Default implementation of the panic function,
- * prints an error message and aborts.
- *
- * @param cls unused
- * @param file name of the file with the problem
- * @param line line number with the problem
- * @param reason error message with details
- */
-_MHD_NORETURN static void
-mhd_panic_std (void *cls,
-               const char *file,
-               unsigned int line,
-               const char *reason)
-{
-  (void) cls; /* Mute compiler warning. */
-#ifdef HAVE_MESSAGES
-  fprintf (stderr,
-           _ ("Fatal error in GNU libmicrohttpd %s:%u: %s\n"),
-           file,
-           line,
-           reason);
-#else  /* ! HAVE_MESSAGES */
-  (void) file;   /* Mute compiler warning. */
-  (void) line;   /* Mute compiler warning. */
-  (void) reason; /* Mute compiler warning. */
-#endif
-  abort ();
-}
-
-
-/**
- * Handler for fatal errors.
- */
-MHD_PanicCallback mhd_panic = (MHD_PanicCallback) NULL;
-
-/**
- * Closure argument for #mhd_panic.
- */
-void *mhd_panic_cls = NULL;
-
-/**
  * Globally initialise library.
  */
 void
@@ -7889,31 +7848,6 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
 
 
 /**
- * Sets the global error handler to a different implementation.  @a cb
- * will only be called in the case of typically fatal, serious
- * internal consistency issues.  These issues should only arise in the
- * case of serious memory corruption or similar problems with the
- * architecture.  While @a cb is allowed to return and MHD will then
- * try to continue, this is never safe.
- *
- * The default implementation that is used if no panic function is set
- * simply prints an error message and calls `abort()`.  Alternative
- * implementations might call `exit()` or other similar functions.
- *
- * @param cb new error handler
- * @param cls passed to @a cb
- * @ingroup logging
- */
-void
-MHD_set_panic_func (MHD_PanicCallback cb,
-                    void *cls)
-{
-  mhd_panic = cb;
-  mhd_panic_cls = cls;
-}
-
-
-/**
  * Obtain the version of this library
  *
  * @return static version string, e.g. "0.9.9"
@@ -8175,8 +8109,7 @@ MHD_init (void)
   WSADATA wsd;
 #endif /* MHD_WINSOCK_SOCKETS */
 
-  if (NULL == mhd_panic)
-    mhd_panic = &mhd_panic_std;
+  MHD_set_panic_func (NULL, NULL);
 
 #if defined(MHD_WINSOCK_SOCKETS)
   if (0 != WSAStartup (MAKEWORD (2, 2), &wsd))

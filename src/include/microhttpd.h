@@ -3150,7 +3150,7 @@ MHD_set_connection_value_n (struct MHD_Connection *connection,
  * simply prints an error message and calls `abort()`.  Alternative
  * implementations might call `exit()` or other similar functions.
  *
- * @param cb new error handler
+ * @param cb new error handler or NULL to use default handler
  * @param cls passed to @a cb
  * @ingroup logging
  */

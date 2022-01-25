@@ -88,6 +88,7 @@ libmicrohttpd_la_SOURCES = \
   mhd_sockets.c mhd_sockets.h \
   mhd_itc.c mhd_itc.h mhd_itc_types.h \
   mhd_compat.c mhd_compat.h \
+  mhd_panic.c mhd_panic.h \
   response.c response.h
 
 if USE_POSIX_THREADS

@@ -109,6 +109,9 @@
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_compat.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_panic.h">
+      <Filter>Internal Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MhdSrc)microhttpd\base64.c">
@@ -172,6 +175,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_compat.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MhdSrc)microhttpd\mhd_panic.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

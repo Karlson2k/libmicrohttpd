@@ -24,6 +24,7 @@
     <ClCompile Include="$(MhdSrc)microhttpd\mhd_compat.c">
       <ExcludedFromBuild Condition="'$(PlatformToolsetVersion)'&gt;='140'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="$(MhdSrc)microhttpd\mhd_panic.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MhdSrc)include\autoinit_funcs.h" />
@@ -53,6 +54,7 @@
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_itc.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_itc_types.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_compat.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_panic.h" />
     <ClInclude Include="$(MhdW32Common)MHD_config.h" />
   </ItemGroup>
   <ItemGroup>
