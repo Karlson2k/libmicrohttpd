@@ -31,17 +31,6 @@
 
 #define ARRAY_LENGTH(array)     (sizeof(array) / sizeof(array[0]))
 
-/**
- * Handler for fatal errors.
- */
-MHD_PanicCallback mhd_panic;
-
-/**
- * Closure argument for #mhd_panic.
- */
-void *mhd_panic_cls;
-
-
 enum MHD_Result
 MHD_lookup_connection_value_n (struct MHD_Connection *connection,
                                enum MHD_ValueKind kind,
@@ -56,6 +45,7 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
 }
 
 
+#include "mhd_panic.c"
 #include "mhd_str.c"
 #include "internal.c"
 #include "postprocessor.c"
