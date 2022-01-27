@@ -45,7 +45,7 @@
  */
 char *
 MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
-                                      char**password)
+                                      char **password)
 {
   const char *header;
   char *decode;
