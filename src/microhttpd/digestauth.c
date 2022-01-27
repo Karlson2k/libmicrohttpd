@@ -1326,11 +1326,12 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  * @param opaque string to user for opaque value
  * @param response reply to send; should contain the "access denied"
  *        body; note that this function will set the "WWW Authenticate"
- *        header and that the caller should not do this
+ *        header and that the caller should not do this; the NULL is tolerated
  * @param signal_stale #MHD_YES if the nonce is invalid to add
  *      'stale=true' to the authentication header
  * @param algo digest algorithm to use
  * @return #MHD_YES on success, #MHD_NO otherwise
+ * @note Available since #MHD_VERSION 0x00096200
  * @ingroup authentication
  */
 enum MHD_Result
@@ -1345,6 +1346,10 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
   int hlen;
   SETUP_DA (algo, da);
 
+  if (NULL == response)
+    return MHD_NO;
+
+  if (1)
   {
     char nonce[NONCE_STD_LEN (VLA_ARRAY_LEN_DIGEST (da.digest_size)) + 1];
 

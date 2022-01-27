@@ -5084,8 +5084,8 @@ MHD_set_connection_option (struct MHD_Connection *connection,
  *
  * @param connection the connection identifying the client
  * @param status_code HTTP status code (i.e. #MHD_HTTP_OK)
- * @param response response to transmit
- * @return #MHD_NO on error (i.e. reply already sent),
+ * @param response response to transmit, the NULL is tolerated
+ * @return #MHD_NO on error (reply already sent, response is NULL),
  *         #MHD_YES on success or if message has been queued
  * @ingroup response
  * @sa #MHD_AccessHandlerCallback

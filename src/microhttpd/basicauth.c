@@ -109,14 +109,14 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
 
 
 /**
- * Queues a response to request basic authentication from the client.
+ * Queues a response to request basic authentication from the client
  * The given response object is expected to include the payload for
  * the response; the "WWW-Authenticate" header will be added and the
  * response queued with the 'UNAUTHORIZED' status code.
  *
  * @param connection The MHD connection structure
  * @param realm the realm presented to the client
- * @param response response object to modify and queue
+ * @param response response object to modify and queue; the NULL is tolerated
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
  */
@@ -129,6 +129,9 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
   int res;
   size_t hlen = strlen (realm) + strlen ("Basic realm=\"\"") + 1;
   char *header;
+
+  if (NULL == response)
+    return MHD_NO;
 
   header = (char *) malloc (hlen);
   if (NULL == header)

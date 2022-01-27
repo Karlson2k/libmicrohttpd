@@ -3226,8 +3226,8 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
  *
  * @param connection the connection identifying the client
  * @param status_code HTTP status code (i.e. #MHD_HTTP_OK)
- * @param response response to transmit
- * @return #MHD_NO on error (i.e. reply already sent),
+ * @param response response to transmit, the NULL is tolerated
+ * @return #MHD_NO on error (reply already sent, response is NULL),
  *         #MHD_YES on success or if message has been queued
  * @ingroup response
  * @sa #MHD_AccessHandlerCallback
@@ -4226,7 +4226,7 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  * @param opaque string to user for opaque value
  * @param response reply to send; should contain the "access denied"
  *        body; note that this function will set the "WWW Authenticate"
- *        header and that the caller should not do this
+ *        header and that the caller should not do this; the NULL is tolerated
  * @param signal_stale #MHD_YES if the nonce is invalid to add
  *      'stale=true' to the authentication header
  * @param algo digest algorithm to use
@@ -4253,7 +4253,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
  * @param opaque string to user for opaque value
  * @param response reply to send; should contain the "access denied"
  *        body; note that this function will set the "WWW Authenticate"
- *        header and that the caller should not do this
+ *        header and that the caller should not do this; the NULL is tolerated
  * @param signal_stale #MHD_YES if the nonce is invalid to add
  *      'stale=true' to the authentication header
  * @return #MHD_YES on success, #MHD_NO otherwise
@@ -4290,7 +4290,7 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
  *
  * @param connection The MHD connection structure
  * @param realm the realm presented to the client
- * @param response response object to modify and queue
+ * @param response response object to modify and queue; the NULL is tolerated
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
  */
