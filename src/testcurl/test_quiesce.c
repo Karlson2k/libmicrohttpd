@@ -331,11 +331,10 @@ setupCURL (void *cbc)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_ERRORBUFFER,
                                      libcurl_errbuf)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
-      ((oneone) ?
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_1)) :
-       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                      CURL_HTTP_VERSION_1_0))))
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     (oneone) ?
+                                     CURL_HTTP_VERSION_1_1 :
+                                     CURL_HTTP_VERSION_1_0)))
     libcurlErrorExitDesc ("curl_easy_setopt() failed");
   return c;
 }
