@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2010 Christian Grothoff
-     Copyright (C) 2016-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -46,6 +46,119 @@
 #include <wincrypt.h>
 #endif
 
+
+#if defined(HAVE___FUNC__)
+#define externalErrorExit(ignore) \
+    _externalErrorExit_func(NULL, __func__, __LINE__)
+#define externalErrorExitDesc(errDesc) \
+    _externalErrorExit_func(errDesc, __func__, __LINE__)
+#define libcurlErrorExit(ignore) \
+    _libcurlErrorExit_func(NULL, __func__, __LINE__)
+#define libcurlErrorExitDesc(errDesc) \
+    _libcurlErrorExit_func(errDesc, __func__, __LINE__)
+#define mhdErrorExit(ignore) \
+    _mhdErrorExit_func(NULL, __func__, __LINE__)
+#define mhdErrorExitDesc(errDesc) \
+    _mhdErrorExit_func(errDesc, __func__, __LINE__)
+#elif defined(HAVE___FUNCTION__)
+#define externalErrorExit(ignore) \
+    _externalErrorExit_func(NULL, __FUNCTION__, __LINE__)
+#define externalErrorExitDesc(errDesc) \
+    _externalErrorExit_func(errDesc, __FUNCTION__, __LINE__)
+#define libcurlErrorExit(ignore) \
+    _libcurlErrorExit_func(NULL, __FUNCTION__, __LINE__)
+#define libcurlErrorExitDesc(errDesc) \
+    _libcurlErrorExit_func(errDesc, __FUNCTION__, __LINE__)
+#define mhdErrorExit(ignore) \
+    _mhdErrorExit_func(NULL, __FUNCTION__, __LINE__)
+#define mhdErrorExitDesc(errDesc) \
+    _mhdErrorExit_func(errDesc, __FUNCTION__, __LINE__)
+#else
+#define externalErrorExit(ignore) _externalErrorExit_func(NULL, NULL, __LINE__)
+#define externalErrorExitDesc(errDesc) \
+  _externalErrorExit_func(errDesc, NULL, __LINE__)
+#define libcurlErrorExit(ignore) _libcurlErrorExit_func(NULL, NULL, __LINE__)
+#define libcurlErrorExitDesc(errDesc) \
+  _libcurlErrorExit_func(errDesc, NULL, __LINE__)
+#define mhdErrorExit(ignore) _mhdErrorExit_func(NULL, NULL, __LINE__)
+#define mhdErrorExitDesc(errDesc) _mhdErrorExit_func(errDesc, NULL, __LINE__)
+#endif
+
+
+_MHD_NORETURN static void
+_externalErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
+{
+  fflush (stdout);
+  if ((NULL != errDesc) && (0 != errDesc[0]))
+    fprintf (stderr, "%s", errDesc);
+  else
+    fprintf (stderr, "System or external library call failed");
+  if ((NULL != funcName) && (0 != funcName[0]))
+    fprintf (stderr, " in %s", funcName);
+  if (0 < lineNum)
+    fprintf (stderr, " at line %d", lineNum);
+
+  fprintf (stderr, ".\nLast errno value: %d (%s)\n", (int) errno,
+           strerror (errno));
+#ifdef MHD_WINSOCK_SOCKETS
+  fprintf (stderr, "WSAGetLastError() value: %d\n", (int) WSAGetLastError ());
+#endif /* MHD_WINSOCK_SOCKETS */
+  fflush (stderr);
+  exit (99);
+}
+
+
+static char libcurl_errbuf[CURL_ERROR_SIZE] = "";
+
+_MHD_NORETURN static void
+_libcurlErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
+{
+  fflush (stdout);
+  if ((NULL != errDesc) && (0 != errDesc[0]))
+    fprintf (stderr, "%s", errDesc);
+  else
+    fprintf (stderr, "CURL library call failed");
+  if ((NULL != funcName) && (0 != funcName[0]))
+    fprintf (stderr, " in %s", funcName);
+  if (0 < lineNum)
+    fprintf (stderr, " at line %d", lineNum);
+
+  fprintf (stderr, ".\nLast errno value: %d (%s)\n", (int) errno,
+           strerror (errno));
+  if (0 != libcurl_errbuf[0])
+    fprintf (stderr, "Last libcurl error details: %s\n", libcurl_errbuf);
+
+  fflush (stderr);
+  exit (99);
+}
+
+
+_MHD_NORETURN static void
+_mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
+{
+  fflush (stdout);
+  if ((NULL != errDesc) && (0 != errDesc[0]))
+    fprintf (stderr, "%s", errDesc);
+  else
+    fprintf (stderr, "MHD unexpected error");
+  if ((NULL != funcName) && (0 != funcName[0]))
+    fprintf (stderr, " in %s", funcName);
+  if (0 < lineNum)
+    fprintf (stderr, " at line %d", lineNum);
+
+  fprintf (stderr, ".\nLast errno value: %d (%s)\n", (int) errno,
+           strerror (errno));
+
+  fflush (stderr);
+  exit (8);
+}
+
+
+/* Could be increased to facilitate debugging */
+#define TIMEOUTS_VAL 5
+
+#define MHD_URI_BASE_PATH "/bar%%20foo%%3Fkey%%3Dvalue"
+
 #define PAGE \
   "<html><head><title>libmicrohttpd demo</title></head><body>Access granted</body></html>"
 
@@ -71,7 +184,7 @@ copyBuffer (void *ptr,
   struct CBC *cbc = ctx;
 
   if (cbc->pos + size * nmemb > cbc->size)
-    return 0;                   /* overflow */
+    mhdErrorExitDesc ("Wrong too large data");       /* overflow */
   memcpy (&cbc->buf[cbc->pos], ptr, size * nmemb);
   cbc->pos += size * nmemb;
   return size * nmemb;
@@ -113,12 +226,16 @@ ahc_echo (void *cls,
     response = MHD_create_response_from_buffer (strlen (DENIED),
                                                 DENIED,
                                                 MHD_RESPMEM_PERSISTENT);
+    if (NULL == response)
+      mhdErrorExitDesc ("MHD_create_response_from_buffer failed");
     ret = MHD_queue_auth_fail_response2 (connection,
                                          realm,
                                          MY_OPAQUE,
                                          response,
                                          MHD_NO,
                                          MHD_DIGEST_ALG_MD5);
+    if (MHD_YES != ret)
+      mhdErrorExitDesc ("MHD_queue_auth_fail_response2 failed");
     MHD_destroy_response (response);
     return ret;
   }
@@ -136,7 +253,7 @@ ahc_echo (void *cls,
                                                 DENIED,
                                                 MHD_RESPMEM_PERSISTENT);
     if (NULL == response)
-      return MHD_NO;
+      mhdErrorExitDesc ("MHD_create_response_from_buffer() failed");
     ret = MHD_queue_auth_fail_response2 (connection,
                                          realm,
                                          MY_OPAQUE,
@@ -144,17 +261,57 @@ ahc_echo (void *cls,
                                          (MHD_INVALID_NONCE == ret_i) ?
                                          MHD_YES : MHD_NO,
                                          MHD_DIGEST_ALG_MD5);
+    if (MHD_YES != ret)
+      mhdErrorExitDesc ("MHD_queue_auth_fail_response2() failed");
     MHD_destroy_response (response);
     return ret;
   }
   response = MHD_create_response_from_buffer (strlen (PAGE),
                                               PAGE,
                                               MHD_RESPMEM_PERSISTENT);
+  if (NULL == response)
+    mhdErrorExitDesc ("MHD_create_response_from_buffer() failed");
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
+  if (MHD_YES != ret)
+    mhdErrorExitDesc ("MHD_queue_auth_fail_response2() failed");
   MHD_destroy_response (response);
   return ret;
+}
+
+
+static CURL *
+setupCURL (void *cbc, int port)
+{
+  CURL *c;
+
+  c = curl_easy_init ();
+  if (NULL == c)
+    libcurlErrorExitDesc ("curl_easy_init() failed");
+
+  if ((CURLE_OK != curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_URL,
+                                     "http://127.0.0.1" MHD_URI_BASE_PATH)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_PORT, (long) port)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_WRITEFUNCTION,
+                                     &copyBuffer)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_WRITEDATA, cbc)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT,
+                                     (long) TIMEOUTS_VAL)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_TIMEOUT,
+                                     (long) TIMEOUTS_VAL)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_ERRORBUFFER,
+                                     libcurl_errbuf)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                     CURL_HTTP_VERSION_1_1)))
+    libcurlErrorExitDesc ("curl_easy_setopt() failed");
+  if ((CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_USERPWD,
+                                     "testuser:testpass")))
+    libcurlErrorExitDesc ("curl_easy_setopt() authorization options failed");
+  return c;
 }
 
 
@@ -168,7 +325,6 @@ testDigestAuth ()
   char buf[2048];
   char rnd[8];
   int port;
-  char url[128];
 #ifndef WINDOWS
   int fd;
   size_t len;
@@ -187,27 +343,15 @@ testDigestAuth ()
   fd = open ("/dev/urandom",
              O_RDONLY);
   if (-1 == fd)
-  {
-    fprintf (stderr,
-             "Failed to open `%s': %s\n",
-             "/dev/urandom",
-             strerror (errno));
-    return 1;
-  }
+    externalErrorExitDesc ("Failed to open '/dev/urandom'");
+
   while (off < 8)
   {
     len = read (fd,
                 rnd,
                 8);
     if (len == (size_t) -1)
-    {
-      fprintf (stderr,
-               "Failed to read `%s': %s\n",
-               "/dev/urandom",
-               strerror (errno));
-      (void) close (fd);
-      return 1;
-    }
+      externalErrorExitDesc ("Failed to read '/dev/urandom'");
     off += len;
   }
   (void) close (fd);
@@ -222,22 +366,11 @@ testDigestAuth ()
                              PROV_RSA_FULL,
                              CRYPT_VERIFYCONTEXT);
     if (b == 0)
-    {
-      fprintf (stderr,
-               "Failed to acquire crypto provider context: %lu\n",
-               GetLastError ());
-      return 1;
-    }
+      externalErrorExitDesc ("CryptAcquireContext() failed");
     b = CryptGenRandom (cc, 8, (BYTE *) rnd);
     if (b == 0)
-    {
-      fprintf (stderr,
-               "Failed to generate 8 random bytes: %lu\n",
-               GetLastError ());
-    }
+      externalErrorExitDesc ("CryptGenRandom() failed");
     CryptReleaseContext (cc, 0);
-    if (b == 0)
-      return 1;
   }
 #endif
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
@@ -256,45 +389,26 @@ testDigestAuth ()
                                  MHD_DAEMON_INFO_BIND_PORT);
     if ( (NULL == dinfo) ||
          (0 == dinfo->port) )
-    {
-      MHD_stop_daemon (d);
-      return 32;
-    }
+      mhdErrorExitDesc ("MHD_get_daemon_info() failed");
     port = (int) dinfo->port;
   }
-  snprintf (url,
-            sizeof (url),
-            "http://127.0.0.1:%d/bar%%20foo%%3Fkey%%3Dvalue",
-            port);
-  c = curl_easy_init ();
-  curl_easy_setopt (c, CURLOPT_URL, url);
-  curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
-  curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
-  curl_easy_setopt (c, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
-  curl_easy_setopt (c, CURLOPT_USERPWD, "testuser:testpass");
-  curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
-  curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
-  curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
-  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-  /* NOTE: use of CONNECTTIMEOUT without also
-     setting NOSIGNAL results in really weird
-     crashes on my system!*/
-  curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L);
+  c = setupCURL (&cbc, port);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
-  {
-    fprintf (stderr,
-             "curl_easy_perform failed: `%s'\n",
-             curl_easy_strerror (errornum));
-    curl_easy_cleanup (c);
-    MHD_stop_daemon (d);
-    return 2;
-  }
+    mhdErrorExitDesc ("curl_easy_perform() failed");
   curl_easy_cleanup (c);
   MHD_stop_daemon (d);
   if (cbc.pos != strlen (PAGE))
-    return 4;
+  {
+    fprintf (stderr, "Got %u bytes ('%.*s'), expected %u bytes. ",
+             (unsigned) cbc.pos, (int) cbc.pos, cbc.buf,
+             (unsigned) strlen (MHD_URI_BASE_PATH));
+    mhdErrorExitDesc ("Wrong returned data length");
+  }
   if (0 != strncmp (PAGE, cbc.buf, strlen (PAGE)))
-    return 8;
+  {
+    fprintf (stderr, "Got invalid response '%.*s'. ", (int) cbc.pos, cbc.buf);
+    mhdErrorExitDesc ("Wrong returned data");
+  }
   return 0;
 }
 
