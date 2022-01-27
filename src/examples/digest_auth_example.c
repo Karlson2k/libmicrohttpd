@@ -70,10 +70,11 @@ ahc_echo (void *cls,
     response = MHD_create_response_from_buffer (strlen (DENIED),
                                                 DENIED,
                                                 MHD_RESPMEM_PERSISTENT);
-    ret = MHD_queue_auth_fail_response (connection, realm,
-                                        MY_OPAQUE_STR,
-                                        response,
-                                        MHD_NO);
+    ret = MHD_queue_auth_fail_response2 (connection, realm,
+                                         MY_OPAQUE_STR,
+                                         response,
+                                         MHD_NO,
+                                         MHD_DIGEST_ALG_MD5);
     MHD_destroy_response (response);
     return ret;
   }
@@ -90,11 +91,12 @@ ahc_echo (void *cls,
                                                 MHD_RESPMEM_PERSISTENT);
     if (NULL == response)
       return MHD_NO;
-    ret = MHD_queue_auth_fail_response (connection, realm,
-                                        MY_OPAQUE_STR,
-                                        response,
-                                        (res == MHD_INVALID_NONCE) ? MHD_YES :
-                                        MHD_NO);
+    ret = MHD_queue_auth_fail_response2 (connection, realm,
+                                         MY_OPAQUE_STR,
+                                         response,
+                                         (res == MHD_INVALID_NONCE) ? MHD_YES :
+                                         MHD_NO,
+                                         MHD_DIGEST_ALG_MD5);
     MHD_destroy_response (response);
     return ret;
   }

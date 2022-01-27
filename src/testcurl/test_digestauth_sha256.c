@@ -129,7 +129,7 @@ ahc_echo (void *cls,
                                   password,
                                   300,
                                   MHD_DIGEST_ALG_SHA256);
-  free (username);
+  MHD_free (username);
   if ( (ret_i == MHD_INVALID_NONCE) ||
        (ret_i == MHD_NO) )
   {
