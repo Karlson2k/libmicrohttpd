@@ -181,7 +181,7 @@ testDigestAuth ()
   }
   while (off < 8)
   {
-    len = read (fd, rnd, 8);
+    len = read (fd, rnd + off, 8 - off);
     if (len == (size_t) -1)
     {
       fprintf (stderr,
