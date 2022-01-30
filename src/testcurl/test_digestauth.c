@@ -46,6 +46,14 @@
 #include <wincrypt.h>
 #endif
 
+#ifndef CURL_VERSION_BITS
+#define CURL_VERSION_BITS(x,y,z) ((x)<<16|(y)<<8|(z))
+#endif /* ! CURL_VERSION_BITS */
+#ifndef CURL_AT_LEAST_VERSION
+#define CURL_AT_LEAST_VERSION(x,y,z) \
+  (LIBCURL_VERSION_NUM >= CURL_VERSION_BITS(x, y, z))
+#endif /* ! CURL_AT_LEAST_VERSION */
+
 #ifndef _MHD_INSTRMACRO
 /* Quoted macro parameter */
 #define _MHD_INSTRMACRO(a) #a
@@ -336,27 +344,44 @@ static CURL *
 setupCURL (void *cbc, int port)
 {
   CURL *c;
+  char url[512];
+
+  if (1)
+  {
+    int res;
+    /* A workaround for some old libcurl versions, which ignore the specified
+     * port by CURLOPT_PORT when digest authorisation is used. */
+    res = snprintf (url, (sizeof(url) / sizeof(url[0])),
+                    "http://127.0.0.1:%d%s", port, MHD_URI_BASE_PATH);
+    if ((0 >= res) || ((sizeof(url) / sizeof(url[0])) <= (size_t) res))
+      externalErrorExitDesc ("Cannot form request URL");
+  }
 
   c = curl_easy_init ();
   if (NULL == c)
     libcurlErrorExitDesc ("curl_easy_init() failed");
 
   if ((CURLE_OK != curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L)) ||
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_URL,
-                                     "http://127.0.0.1" MHD_URI_BASE_PATH)) ||
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_PORT, (long) port)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_ERRORBUFFER,
+                                     libcurl_errbuf)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_WRITEFUNCTION,
                                      &copyBuffer)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_WRITEDATA, cbc)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT,
-                                     (long) TIMEOUTS_VAL)) ||
+                                     ((long) TIMEOUTS_VAL))) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_TIMEOUT,
-                                     (long) TIMEOUTS_VAL)) ||
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_ERRORBUFFER,
-                                     libcurl_errbuf)) ||
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
+                                     ((long) TIMEOUTS_VAL))) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                     CURL_HTTP_VERSION_1_1)))
+                                     CURL_HTTP_VERSION_1_1)) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
+#if CURL_AT_LEAST_VERSION (7, 19, 4)
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_PROTOCOLS, CURLPROTO_HTTP)) ||
+#endif /* CURL_AT_LEAST_VERSION (7, 19, 4) */
+#if CURL_AT_LEAST_VERSION (7, 45, 0)
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_DEFAULT_PROTOCOL, "http")) ||
+#endif /* CURL_AT_LEAST_VERSION (7, 45, 0) */
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_PORT, ((long) port))) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_URL, url)))
     libcurlErrorExitDesc ("curl_easy_setopt() failed");
   if ((CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_USERPWD,
