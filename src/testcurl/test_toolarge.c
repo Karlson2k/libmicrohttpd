@@ -1537,7 +1537,10 @@ main (int argc, char *const *argv)
       + large_req_header_value + large_req_headers + large_rsp_header_name
       + large_rsp_header_value + large_rsp_headers != 1)
     return 99;
-  verbose = ! has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet");
+  verbose = ! (has_param (argc, argv, "-q") ||
+               has_param (argc, argv, "--quiet") ||
+               has_param (argc, argv, "-s") ||
+               has_param (argc, argv, "--silent"));
 
   test_global_init ();
 

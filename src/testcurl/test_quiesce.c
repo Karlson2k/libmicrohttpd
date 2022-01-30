@@ -721,7 +721,10 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
   oneone = ! has_in_name (argv[0], "10");
-  verbose = ! has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet");
+  verbose = ! (has_param (argc, argv, "-q") ||
+               has_param (argc, argv, "--quiet") ||
+               has_param (argc, argv, "-s") ||
+               has_param (argc, argv, "--silent"));
 
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;

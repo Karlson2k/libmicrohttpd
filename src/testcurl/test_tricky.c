@@ -1079,7 +1079,10 @@ main (int argc, char *const *argv)
   tricky_header2 = has_in_name (argv[0], "_header2") ? 1 : 0;
   if (1 != tricky_url + tricky_header2)
     return 99;
-  verbose = ! has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet");
+  verbose = ! (has_param (argc, argv, "-q") ||
+               has_param (argc, argv, "--quiet") ||
+               has_param (argc, argv, "-s") ||
+               has_param (argc, argv, "--silent"));
 
 #if ! CURL_AT_LEAST_VERSION (7, 62, 0)
   if (tricky_url)

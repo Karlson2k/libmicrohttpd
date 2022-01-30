@@ -1985,8 +1985,10 @@ main (int argc, char *const *argv)
 #endif /* ! SO_LINGER */
   if (1 != use_shutdown + use_close)
     return 99;
-  verbose =
-    ! (has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet"));
+  verbose = ! (has_param (argc, argv, "-q") ||
+               has_param (argc, argv, "--quiet") ||
+               has_param (argc, argv, "-s") ||
+               has_param (argc, argv, "--silent"));
 
   test_global_init ();
 

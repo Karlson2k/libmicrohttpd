@@ -1131,7 +1131,10 @@ main (int argc, char *const *argv)
   if (cleanup_test)
     return 77; /* Cannot run without threads */
 #endif /* HAVE_PTHREAD_H */
-  verbose = ! has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet");
+  verbose = ! (has_param (argc, argv, "-q") ||
+               has_param (argc, argv, "--quiet") ||
+               has_param (argc, argv, "-s") ||
+               has_param (argc, argv, "--silent"));
   if (cleanup_test)
   {
 #ifndef _WIN32

@@ -1585,10 +1585,10 @@ main (int argc,
   use_tls_tool = TLS_CLI_NO_TOOL;
   test_tls = has_in_name (argv[0], "_tls");
 
-  verbose = 1;
-  if (has_param (argc, argv, "-q") ||
-      has_param (argc, argv, "--quiet"))
-    verbose = 0;
+  verbose = ! (has_param (argc, argv, "-q") ||
+               has_param (argc, argv, "--quiet") ||
+               has_param (argc, argv, "-s") ||
+               has_param (argc, argv, "--silent"));
   if (test_tls)
   {
 #ifdef HTTPS_SUPPORT

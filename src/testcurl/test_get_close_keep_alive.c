@@ -1062,7 +1062,10 @@ main (int argc, char *const *argv)
   conn_close = has_in_name (argv[0], "_close");
   if (! conn_close && ! has_in_name (argv[0], "_keep_alive"))
     return 99;
-  verbose = ! has_param (argc, argv, "-q") || has_param (argc, argv, "--quiet");
+  verbose = ! (has_param (argc, argv, "-q") ||
+               has_param (argc, argv, "--quiet") ||
+               has_param (argc, argv, "-s") ||
+               has_param (argc, argv, "--silent"));
 
   test_global_init ();
 
