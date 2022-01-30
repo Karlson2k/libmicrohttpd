@@ -75,7 +75,8 @@ if ENABLE_DAUTH
 THREAD_ONLY_TESTS += \
   test_digestauth \
   test_digestauth_sha256 \
-  test_digestauth_with_arguments
+  test_digestauth_with_arguments \
+  test_digestauth_concurrent
 endif
 
 if HEAVY_TESTS
@@ -236,6 +237,13 @@ test_digestauth_with_arguments_SOURCES = \
   test_digestauth_with_arguments.c
 test_digestauth_with_arguments_LDADD = \
   @LIBGCRYPT_LIBS@ $(LDADD)
+
+test_digestauth_concurrent_SOURCES = \
+  test_digestauth_concurrent.c
+test_digestauth_concurrent_CFLAGS = \
+  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+test_digestauth_concurrent_LDADD = \
+  @LIBGCRYPT_LIBS@ $(LDADD) $(PTHREAD_LIBS) $(LDADD)
 
 test_get_iovec_SOURCES = \
   test_get_iovec.c mhd_has_in_name.h
