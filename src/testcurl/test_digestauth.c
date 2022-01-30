@@ -46,6 +46,14 @@
 #include <wincrypt.h>
 #endif
 
+#ifndef _MHD_INSTRMACRO
+/* Quoted macro parameter */
+#define _MHD_INSTRMACRO(a) #a
+#endif /* ! _MHD_INSTRMACRO */
+#ifndef _MHD_STRMACRO
+/* Quoted expanded macro parameter */
+#define _MHD_STRMACRO(a) _MHD_INSTRMACRO (a)
+#endif /* ! _MHD_STRMACRO */
 
 #if defined(HAVE___FUNC__)
 #define externalErrorExit(ignore) \
@@ -60,6 +68,9 @@
     _mhdErrorExit_func(NULL, __func__, __LINE__)
 #define mhdErrorExitDesc(errDesc) \
     _mhdErrorExit_func(errDesc, __func__, __LINE__)
+#define checkCURLE_OK(libcurlcall) \
+    _checkCURLE_OK_func((libcurlcall), _MHD_STRMACRO(libcurlcall), \
+                        __func__, __LINE__)
 #elif defined(HAVE___FUNCTION__)
 #define externalErrorExit(ignore) \
     _externalErrorExit_func(NULL, __FUNCTION__, __LINE__)
@@ -73,6 +84,9 @@
     _mhdErrorExit_func(NULL, __FUNCTION__, __LINE__)
 #define mhdErrorExitDesc(errDesc) \
     _mhdErrorExit_func(errDesc, __FUNCTION__, __LINE__)
+#define checkCURLE_OK(libcurlcall) \
+    _checkCURLE_OK_func((libcurlcall), _MHD_STRMACRO(libcurlcall), \
+                        __FUNCTION__, __LINE__)
 #else
 #define externalErrorExit(ignore) _externalErrorExit_func(NULL, NULL, __LINE__)
 #define externalErrorExitDesc(errDesc) \
@@ -82,6 +96,8 @@
   _libcurlErrorExit_func(errDesc, NULL, __LINE__)
 #define mhdErrorExit(ignore) _mhdErrorExit_func(NULL, NULL, __LINE__)
 #define mhdErrorExitDesc(errDesc) _mhdErrorExit_func(errDesc, NULL, __LINE__)
+#define checkCURLE_OK(libcurlcall) \
+  _checkCURLE_OK_func((libcurlcall), _MHD_STRMACRO(libcurlcall), NULL, __LINE__)
 #endif
 
 
@@ -125,8 +141,11 @@ _libcurlErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 
   fprintf (stderr, ".\nLast errno value: %d (%s)\n", (int) errno,
            strerror (errno));
+#ifdef MHD_WINSOCK_SOCKETS
+  fprintf (stderr, "WSAGetLastError() value: %d\n", (int) WSAGetLastError ());
+#endif /* MHD_WINSOCK_SOCKETS */
   if (0 != libcurl_errbuf[0])
-    fprintf (stderr, "Last libcurl error details: %s\n", libcurl_errbuf);
+    fprintf (stderr, "Last libcurl error description: %s\n", libcurl_errbuf);
 
   fflush (stderr);
   exit (99);
@@ -148,9 +167,41 @@ _mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 
   fprintf (stderr, ".\nLast errno value: %d (%s)\n", (int) errno,
            strerror (errno));
+#ifdef MHD_WINSOCK_SOCKETS
+  fprintf (stderr, "WSAGetLastError() value: %d\n", (int) WSAGetLastError ());
+#endif /* MHD_WINSOCK_SOCKETS */
 
   fflush (stderr);
   exit (8);
+}
+
+
+static void
+_checkCURLE_OK_func (CURLcode code, const char *curlFunc,
+                     const char *funcName, int lineNum)
+{
+  if (CURLE_OK == code)
+    return;
+
+  fflush (stdout);
+  if ((NULL != curlFunc) && (0 != curlFunc[0]))
+    fprintf (stderr, "'%s' resulted in '%s'", curlFunc,
+             curl_easy_strerror (code));
+  else
+    fprintf (stderr, "libcurl function call resulted in '%s'",
+             curl_easy_strerror (code));
+  if ((NULL != funcName) && (0 != funcName[0]))
+    fprintf (stderr, " in %s", funcName);
+  if (0 < lineNum)
+    fprintf (stderr, " at line %d", lineNum);
+
+  fprintf (stderr, ".\nLast errno value: %d (%s)\n", (int) errno,
+           strerror (errno));
+  if (0 != libcurl_errbuf[0])
+    fprintf (stderr, "Last libcurl error description: %s\n", libcurl_errbuf);
+
+  fflush (stderr);
+  exit (9);
 }
 
 
@@ -319,7 +370,6 @@ static int
 testDigestAuth ()
 {
   CURL *c;
-  CURLcode errornum;
   struct MHD_Daemon *d;
   struct CBC cbc;
   char buf[2048];
@@ -393,8 +443,9 @@ testDigestAuth ()
     port = (int) dinfo->port;
   }
   c = setupCURL (&cbc, port);
-  if (CURLE_OK != (errornum = curl_easy_perform (c)))
-    mhdErrorExitDesc ("curl_easy_perform() failed");
+
+  checkCURLE_OK (curl_easy_perform (c));
+
   curl_easy_cleanup (c);
   MHD_stop_daemon (d);
   if (cbc.pos != strlen (PAGE))
