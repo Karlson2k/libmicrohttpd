@@ -136,6 +136,7 @@ _externalErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 }
 
 
+/* Not actually used in this test */
 static char libcurl_errbuf[CURL_ERROR_SIZE] = "";
 
 _MHD_NORETURN static void
@@ -188,6 +189,8 @@ _mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 }
 
 
+#if 0
+/* Function unused in this test */
 static void
 _checkCURLE_OK_func (CURLcode code, const char *curlFunc,
                      const char *funcName, int lineNum)
@@ -215,6 +218,9 @@ _checkCURLE_OK_func (CURLcode code, const char *curlFunc,
   fflush (stderr);
   exit (9);
 }
+
+
+#endif
 
 
 /* Could be increased to facilitate debugging */
@@ -346,7 +352,7 @@ ahc_echo (void *cls,
 
 
 static CURL *
-setupCURL (void *cbc, int port)
+setupCURL (void *cbc, int port, char *errbuf)
 {
   CURL *c;
   char url[512];
@@ -368,7 +374,7 @@ setupCURL (void *cbc, int port)
 
   if ((CURLE_OK != curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_ERRORBUFFER,
-                                     libcurl_errbuf)) ||
+                                     errbuf)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_WRITEFUNCTION,
                                      &copyBuffer)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_WRITEDATA, cbc)) ||
@@ -445,12 +451,13 @@ struct curlWokerInfo
    * The libcurl handle to run in thread
    */
   CURL *c;
+  char *libcurl_errbuf;
   /**
    * Non-zero if worker is finished
    */
   volatile int finished;
   /**
-   * Non-zero if worker result is success
+   * The number of successful worker results
    */
   volatile int success;
 };
@@ -467,54 +474,81 @@ worker_func (void *param)
   req_result = curl_easy_perform (w->c);
   if (CURLE_OK != req_result)
   {
-    fprintf (stderr, "Worker %d: first request failed. ", w->workerNumber);
-    checkCURLE_OK (req_result);
+    fflush (stdout);
+    if (0 != w->libcurl_errbuf[0])
+      fprintf (stderr, "Worker %d: first request failed. "
+               "libcurl error: '%s'.\n"
+               "libcurl error description: '%s'.\n",
+               w->workerNumber, curl_easy_strerror (req_result),
+               w->libcurl_errbuf);
+    else
+      fprintf (stderr, "Worker %d: first request failed. "
+               "libcurl error: '%s'.\n",
+               w->workerNumber, curl_easy_strerror (req_result));
+    fflush (stderr);
   }
-  if (w->cbc.pos != strlen (PAGE))
+  else
   {
-    fprintf (stderr, "Worker %d: Got %u bytes ('%.*s'), expected %u bytes. ",
-             w->workerNumber,
-             (unsigned) w->cbc.pos, (int) w->cbc.pos, w->cbc.buf,
-             (unsigned) strlen (MHD_URI_BASE_PATH));
-    mhdErrorExitDesc ("Wrong returned data length");
+    if (w->cbc.pos != strlen (PAGE))
+    {
+      fprintf (stderr, "Worker %d: Got %u bytes ('%.*s'), expected %u bytes. ",
+               w->workerNumber,
+               (unsigned) w->cbc.pos, (int) w->cbc.pos, w->cbc.buf,
+               (unsigned) strlen (MHD_URI_BASE_PATH));
+      mhdErrorExitDesc ("Wrong returned data length");
+    }
+    if (0 != strncmp (PAGE, w->cbc.buf, strlen (PAGE)))
+    {
+      fprintf (stderr, "Worker %d: Got invalid response '%.*s'. ",
+               w->workerNumber,
+               (int) w->cbc.pos, w->cbc.buf);
+      mhdErrorExitDesc ("Wrong returned data");
+    }
+    if (verbose)
+      printf ("Worker %d: first request successful.\n", w->workerNumber);
+    w->success++;
   }
-  if (0 != strncmp (PAGE, w->cbc.buf, strlen (PAGE)))
-  {
-    fprintf (stderr, "Worker %d: Got invalid response '%.*s'. ",
-             w->workerNumber,
-             (int) w->cbc.pos, w->cbc.buf);
-    mhdErrorExitDesc ("Wrong returned data");
-  }
-  if (verbose)
-    printf ("Worker %d: first request successful.\n", w->workerNumber);
 
   /* Second request */
   w->cbc.pos = 0;
   req_result = curl_easy_perform (w->c);
   if (CURLE_OK != req_result)
   {
-    fprintf (stderr, "Worker %d: second request failed. ", w->workerNumber);
-    checkCURLE_OK (req_result);
+    fflush (stdout);
+    if (0 != w->libcurl_errbuf[0])
+      fprintf (stderr, "Worker %d: second request failed. "
+               "libcurl error: '%s'.\n"
+               "libcurl error description: '%s'.\n",
+               w->workerNumber, curl_easy_strerror (req_result),
+               w->libcurl_errbuf);
+    else
+      fprintf (stderr, "Worker %d: second request failed. "
+               "libcurl error: '%s'.\n",
+               w->workerNumber, curl_easy_strerror (req_result));
+    fflush (stderr);
   }
-  if (w->cbc.pos != strlen (PAGE))
+  else
   {
-    fprintf (stderr, "Worker %d: Got %u bytes ('%.*s'), expected %u bytes. ",
-             w->workerNumber,
-             (unsigned) w->cbc.pos, (int) w->cbc.pos, w->cbc.buf,
-             (unsigned) strlen (MHD_URI_BASE_PATH));
-    mhdErrorExitDesc ("Wrong returned data length");
+    if (w->cbc.pos != strlen (PAGE))
+    {
+      fprintf (stderr, "Worker %d: Got %u bytes ('%.*s'), expected %u bytes. ",
+               w->workerNumber,
+               (unsigned) w->cbc.pos, (int) w->cbc.pos, w->cbc.buf,
+               (unsigned) strlen (MHD_URI_BASE_PATH));
+      mhdErrorExitDesc ("Wrong returned data length");
+    }
+    if (0 != strncmp (PAGE, w->cbc.buf, strlen (PAGE)))
+    {
+      fprintf (stderr, "Worker %d: Got invalid response '%.*s'. ",
+               w->workerNumber,
+               (int) w->cbc.pos, w->cbc.buf);
+      mhdErrorExitDesc ("Wrong returned data");
+    }
+    if (verbose)
+      printf ("Worker %d: second request successful.\n", w->workerNumber);
+    w->success++;
   }
-  if (0 != strncmp (PAGE, w->cbc.buf, strlen (PAGE)))
-  {
-    fprintf (stderr, "Worker %d: Got invalid response '%.*s'. ",
-             w->workerNumber,
-             (int) w->cbc.pos, w->cbc.buf);
-    mhdErrorExitDesc ("Wrong returned data");
-  }
-  if (verbose)
-    printf ("Worker %d: second request successful.\n", w->workerNumber);
 
-  w->success = ! 0;
   w->finished = ! 0;
   return NULL;
 }
@@ -573,7 +607,11 @@ testDigestAuth (void)
       externalErrorExitDesc ("malloc() failed");
     w->cbc.size = CLIENT_BUF_SIZE;
     w->cbc.pos = 0;
-    w->c = setupCURL (&w->cbc, port);
+    w->libcurl_errbuf = malloc (CURL_ERROR_SIZE);
+    if (NULL == w->libcurl_errbuf)
+      externalErrorExitDesc ("malloc() failed");
+    w->libcurl_errbuf[0] = 0;
+    w->c = setupCURL (&w->cbc, port, w->libcurl_errbuf);
     w->finished = 0;
     w->success = 0;
   }
@@ -594,10 +632,11 @@ testDigestAuth (void)
     if (0 != pthread_join (w->pid, NULL))
       externalErrorExitDesc ("pthread_join() failed");
     curl_easy_cleanup (w->c);
+    free (w->libcurl_errbuf);
     free (w->cbc.buf);
     if (! w->finished)
       externalErrorExitDesc ("The worker thread did't signal 'finished' state");
-    ret += ! w->success;
+    ret += 2 - w->success;
   }
 
   MHD_stop_daemon (d);
