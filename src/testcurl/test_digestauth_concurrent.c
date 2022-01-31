@@ -420,7 +420,7 @@ getRnd (void *buf, size_t size)
     res = read (fd, ((uint8_t *) buf) + off, size - off);
     if (0 > res)
       externalErrorExitDesc ("Failed to read '/dev/urandom'");
-    off += (size_t) len;
+    off += (size_t) res;
   } while (off < size);
   (void) close (fd);
 #else
