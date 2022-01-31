@@ -330,9 +330,10 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
           sizeof(*key));
 
   /* IPv4 addresses */
-  if (sizeof (struct sockaddr_in) == addrlen)
+  if (AF_INET == addr->sa_family)
   {
     const struct sockaddr_in *addr4 = (const struct sockaddr_in *) addr;
+    mhd_assert (sizeof (struct sockaddr_in) <= addrlen);
 
     key->family = AF_INET;
     memcpy (&key->addr.ipv4,
@@ -343,9 +344,10 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
 
 #if HAVE_INET6
   /* IPv6 addresses */
-  if (sizeof (struct sockaddr_in6) == addrlen)
+  if (AF_INET6 == addr->sa_family)
   {
     const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *) addr;
+    mhd_assert (sizeof (struct sockaddr_in6) <= addrlen);
 
     key->family = AF_INET6;
     memcpy (&key->addr.ipv6,
