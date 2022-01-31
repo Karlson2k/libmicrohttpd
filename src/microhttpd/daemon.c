@@ -3429,6 +3429,35 @@ MHD_add_connection (struct MHD_Daemon *daemon,
                  " added sockets.\n"));
   }
 #endif /* HAVE_MESSAGES */
+  if (0 != addrlen)
+  {
+    if (AF_INET == addr->sa_family)
+    {
+      if (sizeof(struct sockaddr_in) > addrlen)
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  _ ("MHD_add_connection() has been called with "
+                     "incorrect 'addrlen' value.\n"));
+#endif /* HAVE_MESSAGES */
+        return MHD_NO;
+      }
+    }
+#ifdef HAVE_INET6
+    if (AF_INET6 == addr->sa_family)
+    {
+      if (sizeof(struct sockaddr_in6) > addrlen)
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  _ ("MHD_add_connection() has been called with "
+                     "incorrect 'addrlen' value.\n"));
+#endif /* HAVE_MESSAGES */
+        return MHD_NO;
+      }
+    }
+#endif /* HAVE_INET6 */
+  }
 
   if (! MHD_socket_nonblocking_ (client_socket))
   {
