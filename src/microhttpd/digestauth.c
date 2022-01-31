@@ -1010,6 +1010,14 @@ digest_auth_check_all (struct MHD_Connection *connection,
 #endif
     return MHD_NO;   /* invalid nonce format */
   }
+  if (0 == nci)
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Authentication failed, invalid 'nc' value.\n"));
+#endif
+    return MHD_NO;   /* invalid nc value */
+  }
 
   /*
    * Checking if that combination of nonce and nc is sound
