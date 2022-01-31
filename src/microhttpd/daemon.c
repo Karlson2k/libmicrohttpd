@@ -333,7 +333,7 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
   if (AF_INET == addr->sa_family)
   {
     const struct sockaddr_in *addr4 = (const struct sockaddr_in *) addr;
-    mhd_assert (sizeof (struct sockaddr_in) <= addrlen);
+    mhd_assert (sizeof (struct sockaddr_in) <= (size_t) addrlen);
 
     key->family = AF_INET;
     memcpy (&key->addr.ipv4,
@@ -347,7 +347,7 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
   if (AF_INET6 == addr->sa_family)
   {
     const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *) addr;
-    mhd_assert (sizeof (struct sockaddr_in6) <= addrlen);
+    mhd_assert (sizeof (struct sockaddr_in6) <= (size_t) addrlen);
 
     key->family = AF_INET6;
     memcpy (&key->addr.ipv6,
@@ -3437,7 +3437,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   {
     if (AF_INET == addr->sa_family)
     {
-      if (sizeof(struct sockaddr_in) > addrlen)
+      if (sizeof(struct sockaddr_in) > (size_t) addrlen)
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
@@ -3450,7 +3450,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 #ifdef HAVE_INET6
     if (AF_INET6 == addr->sa_family)
     {
-      if (sizeof(struct sockaddr_in6) > addrlen)
+      if (sizeof(struct sockaddr_in6) > (size_t) addrlen)
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
