@@ -378,9 +378,9 @@ MHD_ip_limit_add (struct MHD_Daemon *daemon,
                   const struct sockaddr *addr,
                   socklen_t addrlen)
 {
-  struct MHD_IPCount *key;
-  void **nodep;
-  void *node;
+  struct MHD_IPCount *newkeyp;
+  struct MHD_IPCount *keyp;
+  struct MHD_IPCount **nodep;
   enum MHD_Result result;
 
   daemon = MHD_get_master (daemon);
@@ -388,45 +388,47 @@ MHD_ip_limit_add (struct MHD_Daemon *daemon,
   if (0 == daemon->per_ip_connection_limit)
     return MHD_YES;
 
-  if (NULL == (key = malloc (sizeof(*key))))
+  newkeyp = (struct MHD_IPCount *) malloc (sizeof(struct MHD_IPCount));
+  if (NULL == newkeyp)
     return MHD_NO;
 
   /* Initialize key */
   if (MHD_NO == MHD_ip_addr_to_key (addr,
                                     addrlen,
-                                    key))
+                                    newkeyp))
   {
-    /* Allow unhandled address types through */
-    free (key);
-    return MHD_YES;
+    free (newkeyp);
+    return MHD_YES; /* Allow unhandled address types through */
   }
+
   MHD_ip_count_lock (daemon);
 
   /* Search for the IP address */
-  if (NULL == (nodep = tsearch (key,
-                                &daemon->per_ip_connection_count,
-                                &MHD_ip_addr_compare)))
+  nodep = (struct MHD_IPCount **) tsearch (newkeyp,
+                                           &daemon->per_ip_connection_count,
+                                           &MHD_ip_addr_compare);
+  if (NULL == nodep)
   {
+    MHD_ip_count_unlock (daemon);
+    free (newkeyp);
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ ("Failed to add IP connection count node.\n"));
 #endif
-    MHD_ip_count_unlock (daemon);
-    free (key);
     return MHD_NO;
   }
-  node = *nodep;
-  /* If we got an existing node back, free the one we created */
-  if (node != key)
-    free (key);
-  key = (struct MHD_IPCount *) node;
+  keyp = *nodep;
   /* Test if there is room for another connection; if so,
    * increment count */
-  result = (key->count < daemon->per_ip_connection_limit) ? MHD_YES : MHD_NO;
+  result = (keyp->count < daemon->per_ip_connection_limit) ? MHD_YES : MHD_NO;
   if (MHD_NO != result)
-    ++key->count;
-
+    ++keyp->count;
   MHD_ip_count_unlock (daemon);
+
+  /* If we got an existing node back, free the one we created */
+  if (keyp != newkeyp)
+    free (newkeyp);
+
   return result;
 }
 
