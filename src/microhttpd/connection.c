@@ -1815,6 +1815,32 @@ setup_reply_properties (struct MHD_Connection *connection)
 
 
 /**
+ * Check whether queued response is suitable for @a connection.
+ * @param connection to connection to check
+ */
+static void
+check_connection_reply (struct MHD_Connection *connection)
+{
+  struct MHD_Connection *const c = connection; /**< a short alias */
+  struct MHD_Response *const r = c->response;  /**< a short alias */
+  mhd_assert (c->rp_props.set);
+
+#ifdef HAVE_MESSAGES
+  if ((! c->rp_props.use_reply_body_headers) && (0 != r->total_size))
+  {
+    MHD_DLOG (c->daemon,
+              _ ("This reply with response code %u cannot use reply body. "
+                 "Non-empty response body is ignored and not used.\n"),
+              (unsigned) (c->responseCode & (~MHD_ICY_FLAG)));
+  }
+#else
+  (void) c; /* Mute compiler warning */
+  (void) r; /* Mute compiler warning */
+#endif
+}
+
+
+/**
  * Append data to the buffer if enough space is available,
  * update position.
  * @param[out] buf the buffer to append data to
@@ -2011,6 +2037,8 @@ build_header_response (struct MHD_Connection *connection)
   mhd_assert (NULL == r->upgrade_handler || \
               ! c->rp_props.use_reply_body_headers);
 #endif /* UPGRADE_SUPPORT */
+
+  check_connection_reply (c);
 
   rcode = (unsigned) (c->responseCode & (~MHD_ICY_FLAG));
   if (MHD_CONN_MUST_CLOSE == c->keepalive)
