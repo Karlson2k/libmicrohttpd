@@ -541,13 +541,24 @@ MHD_add_response_header (struct MHD_Response *response,
     }
     return MHD_NO;
   }
-  if ( (0 == (MHD_RF_INSANITY_HEADER_CONTENT_LENGTH
-              & response->flags)) &&
-       (MHD_str_equal_caseless_ (header,
-                                 MHD_HTTP_HEADER_CONTENT_LENGTH)) )
+
+  if (MHD_str_equal_caseless_ (header,
+                               MHD_HTTP_HEADER_CONTENT_LENGTH))
   {
-    /* MHD will set Content-length if allowed and possible,
-       reject attempt by application */
+    if (0 == (MHD_RF_INSANITY_HEADER_CONTENT_LENGTH & response->flags))
+    {
+      /* MHD sets automatically correct Content-Length always when needed,
+         reject attempt to manually override it */
+      return MHD_NO;
+    }
+    if (MHD_NO != add_response_entry (response,
+                                      MHD_HEADER_KIND,
+                                      header,
+                                      content))
+    {
+      response->flags_auto |= MHD_RAF_HAS_CONTENT_LENGTH;
+      return MHD_YES;
+    }
     return MHD_NO;
   }
 
@@ -644,6 +655,19 @@ MHD_del_response_header (struct MHD_Response *response,
                                                header_len) )
         response->flags_auto &=
           ~((enum MHD_ResponseAutoFlags) MHD_RAF_HAS_DATE_HDR);
+      else if ( (MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_LENGTH) ==
+                 header_len) &&
+                MHD_str_equal_caseless_bin_n_ (header,
+                                               MHD_HTTP_HEADER_CONTENT_LENGTH,
+                                               header_len) )
+      {
+        if (NULL == MHD_get_response_element_n_ (response,
+                                                 MHD_HEADER_KIND,
+                                                 MHD_HTTP_HEADER_CONTENT_LENGTH,
+                                                 header_len))
+          response->flags_auto &=
+            ~((enum MHD_ResponseAutoFlags) MHD_RAF_HAS_CONTENT_LENGTH);
+      }
       return MHD_YES;
     }
     pos = pos->next;
