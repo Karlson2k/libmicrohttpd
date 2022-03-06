@@ -5110,6 +5110,11 @@ MHD_set_connection_option (struct MHD_Connection *connection,
  * For suspended connection this function can be called at any moment. Response
  * will be sent as soon as connection is resumed.
  *
+ * If response object is used to answer HEAD request then the body of
+ * the response is not used, while all headers (including automatic headers)
+ * are used. In practice, the same response object can be used to respond to
+ * both HEAD and GET requests.
+ *
  * @param connection the connection identifying the client
  * @param status_code HTTP status code (i.e. #MHD_HTTP_OK)
  * @param response response to transmit, the NULL is tolerated
