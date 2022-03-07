@@ -1833,6 +1833,15 @@ check_connection_reply (struct MHD_Connection *connection)
                  "Non-empty response body is ignored and not used.\n"),
               (unsigned) (c->responseCode & (~MHD_ICY_FLAG)));
   }
+  if ( (! c->rp_props.use_reply_body_headers) &&
+       (0 != (r->flags_auto & MHD_RAF_HAS_CONTENT_LENGTH)) )
+  {
+    MHD_DLOG (c->daemon,
+              _ ("This reply with response code %u cannot use reply body. "
+                 "Application defined \"Content-Length\" header violates"
+                 "HTTP specification.\n"),
+              (unsigned) (c->responseCode & (~MHD_ICY_FLAG)));
+  }
 #else
   (void) c; /* Mute compiler warning */
   (void) r; /* Mute compiler warning */
