@@ -2175,6 +2175,7 @@ build_header_response (struct MHD_Connection *connection)
   if (c->rp_props.use_reply_body_headers)
   {
     /* Body-specific headers */
+
     if (c->rp_props.chunked)
     { /* Chunked encoding is used */
       if (0 == (r->flags_auto & MHD_RAF_HAS_TRANS_ENC_CHUNKED))
@@ -2185,23 +2186,26 @@ build_header_response (struct MHD_Connection *connection)
           return MHD_NO;
       }
     }
-    else
-    { /* Chunked encoding is not used */
+    else /* Chunked encoding is not used */
+    {
       if (MHD_SIZE_UNKNOWN != r->total_size)
-      {
-        if (! buffer_append_s (buf, &pos, buf_size,
-                               MHD_HTTP_HEADER_CONTENT_LENGTH ": "))
-          return MHD_NO;
-        el_size = MHD_uint64_to_str (r->total_size, buf + pos,
-                                     buf_size - pos);
-        if (0 == el_size)
-          return MHD_NO;
-        pos += el_size;
+      { /* The size is known */
+        if (0 == (r->flags_auto & MHD_RAF_HAS_CONTENT_LENGTH))
+        { /* The response does not have "Content-Length" header */
+          if (! buffer_append_s (buf, &pos, buf_size,
+                                 MHD_HTTP_HEADER_CONTENT_LENGTH ": "))
+            return MHD_NO;
+          el_size = MHD_uint64_to_str (r->total_size, buf + pos,
+                                       buf_size - pos);
+          if (0 == el_size)
+            return MHD_NO;
+          pos += el_size;
 
-        if (buf_size < pos + 2)
-          return MHD_NO;
-        buf[pos++] = '\r';
-        buf[pos++] = '\n';
+          if (buf_size < pos + 2)
+            return MHD_NO;
+          buf[pos++] = '\r';
+          buf[pos++] = '\n';
+        }
       }
     }
   }
