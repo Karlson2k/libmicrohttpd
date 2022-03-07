@@ -272,7 +272,7 @@ MHD_pool_destroy (struct MemoryPool *pool)
 
   mhd_assert (pool->end >= pool->pos);
   mhd_assert (pool->size >= pool->end - pool->pos);
-  _MHD_POISON_MEMORY (pool->memory, pool->size);
+  _MHD_UNPOISON_MEMORY (pool->memory, pool->size);
   if (! pool->is_mmap)
     free (pool->memory);
   else
