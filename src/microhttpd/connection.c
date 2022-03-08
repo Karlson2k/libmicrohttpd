@@ -3968,8 +3968,6 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                    (NULL != resp->crc) );
       mhd_assert ( (0 == connection->response_write_position) || \
                    (resp->total_size ==
-                    connection->response_write_position) || \
-                   (MHD_SIZE_UNKNOWN ==
                     connection->response_write_position) );
       mhd_assert ((MHD_CONN_MUST_UPGRADE != connection->keepalive) || \
                   (! connection->rp_props.send_reply_body));

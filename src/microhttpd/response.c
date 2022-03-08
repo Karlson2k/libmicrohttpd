@@ -1942,7 +1942,7 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
 #endif
   response->upgrade_handler = upgrade_handler;
   response->upgrade_handler_cls = upgrade_handler_cls;
-  response->total_size = MHD_SIZE_UNKNOWN;
+  response->total_size = 0;
   response->reference_count = 1;
   if (MHD_NO ==
       MHD_add_response_header (response,
