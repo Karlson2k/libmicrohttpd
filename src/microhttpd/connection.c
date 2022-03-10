@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007-2020 Daniel Pittman and Christian Grothoff
-     Copyright (C) 2015-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2015-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -5264,6 +5264,18 @@ MHD_queue_response (struct MHD_Connection *connection,
       return MHD_NO;
     }
   }
+
+#ifdef HAVE_MESSAGES
+  if ( (0 != (MHD_RF_INSANITY_HEADER_CONTENT_LENGTH & response->flags)) &&
+       (0 != (MHD_RAF_HAS_CONTENT_LENGTH & response->flags_auto)) )
+  {
+    MHD_DLOG (daemon,
+              _ ("The response has application-defined \"Content-Length\" " \
+                 "header. The reply to the request will be not " \
+                 "HTTP-compliant and may result in hung connection or " \
+                 "other problems!\n"));
+  }
+#endif
 
   MHD_increment_response_rc (response);
   connection->response = response;
