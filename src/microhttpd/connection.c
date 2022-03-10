@@ -1693,10 +1693,10 @@ is_reply_body_headers_needed (struct MHD_Connection *connection)
   struct MHD_Connection *const c = connection; /**< a short alias */
   unsigned rcode;  /**< the response code */
 
-  mhd_assert (100 <= (c->responseCode & (~MHD_ICY_FLAG)) && \
-              999 >= (c->responseCode & (~MHD_ICY_FLAG)));
+  mhd_assert (100 <= c->responseCode);
+  mhd_assert (999 >= c->responseCode);
 
-  rcode = (unsigned) (c->responseCode & (~MHD_ICY_FLAG));
+  rcode = (unsigned) c->responseCode;
 
   if (199 >= rcode)
     return false;
@@ -1733,8 +1733,8 @@ is_reply_body_needed (struct MHD_Connection *connection)
   struct MHD_Connection *const c = connection; /**< a short alias */
   unsigned rcode;  /**< the response code */
 
-  mhd_assert (100 <= (c->responseCode & (~MHD_ICY_FLAG)) && \
-              999 >= (c->responseCode & (~MHD_ICY_FLAG)));
+  mhd_assert (100 <= c->responseCode);
+  mhd_assert (999 >= c->responseCode);
 
   if (! is_reply_body_headers_needed (c))
     return false;
@@ -1742,7 +1742,7 @@ is_reply_body_needed (struct MHD_Connection *connection)
   if (MHD_HTTP_MTHD_HEAD == c->http_mthd)
     return false;
 
-  rcode = (unsigned) (c->responseCode & (~MHD_ICY_FLAG));
+  rcode = (unsigned) c->responseCode;
   if (MHD_HTTP_NOT_MODIFIED == rcode)
     return false;
 
@@ -1831,7 +1831,7 @@ check_connection_reply (struct MHD_Connection *connection)
     MHD_DLOG (c->daemon,
               _ ("This reply with response code %u cannot use reply body. "
                  "Non-empty response body is ignored and not used.\n"),
-              (unsigned) (c->responseCode & (~MHD_ICY_FLAG)));
+              (unsigned) (c->responseCode));
   }
   if ( (! c->rp_props.use_reply_body_headers) &&
        (0 != (r->flags_auto & MHD_RAF_HAS_CONTENT_LENGTH)) )
@@ -1840,7 +1840,7 @@ check_connection_reply (struct MHD_Connection *connection)
               _ ("This reply with response code %u cannot use reply body. "
                  "Application defined \"Content-Length\" header violates"
                  "HTTP specification.\n"),
-              (unsigned) (c->responseCode & (~MHD_ICY_FLAG)));
+              (unsigned) (c->responseCode));
   }
 #else
   (void) c; /* Mute compiler warning */
@@ -2049,7 +2049,7 @@ build_header_response (struct MHD_Connection *connection)
 
   check_connection_reply (c);
 
-  rcode = (unsigned) (c->responseCode & (~MHD_ICY_FLAG));
+  rcode = (unsigned) c->responseCode;
   if (MHD_CONN_MUST_CLOSE == c->keepalive)
   {
     /* The closure of connection must be always indicated by header
@@ -2091,7 +2091,7 @@ build_header_response (struct MHD_Connection *connection)
   /* * The status line * */
 
   /* The HTTP version */
-  if (0 == (c->responseCode & MHD_ICY_FLAG))
+  if (! c->responseIcy)
   { /* HTTP reply */
     if (0 == (r->flags & MHD_RF_HTTP_1_0_SERVER))
     { /* HTTP/1.1 reply */
@@ -4412,6 +4412,7 @@ connection_reset (struct MHD_Connection *connection,
     c->current_chunk_size = 0;
     c->current_chunk_offset = 0;
     c->responseCode = 0;
+    c->responseIcy = false;
     c->response_write_position = 0;
     c->method = NULL;
     c->http_mthd = MHD_HTTP_MTHD_NO_METHOD;
@@ -5140,7 +5141,10 @@ MHD_queue_response (struct MHD_Connection *connection,
                     struct MHD_Response *response)
 {
   struct MHD_Daemon *daemon;
+  bool reply_icy;
 
+  reply_icy = (0 != (status_code & MHD_ICY_FLAG));
+  status_code &= ~MHD_ICY_FLAG;
   if ((NULL == connection) || (NULL == response))
     return MHD_NO;
 
@@ -5225,18 +5229,18 @@ MHD_queue_response (struct MHD_Connection *connection,
     }
   }
 #endif /* UPGRADE_SUPPORT */
-  if ( (100 > (status_code & (~MHD_ICY_FLAG))) ||
-       (999 < (status_code & (~MHD_ICY_FLAG))) )
+  if ( (100 > status_code) ||
+       (999 < status_code) )
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ ("Refused wrong status code (%u). " \
                  "HTTP requires three digits status code!\n"),
-              (status_code & (~MHD_ICY_FLAG)));
+              status_code);
 #endif
     return MHD_NO;
   }
-  if (200 > (status_code & (~MHD_ICY_FLAG)))
+  if (200 > status_code)
   {
     if (MHD_HTTP_VER_1_0 == connection->http_ver)
     {
@@ -5244,7 +5248,7 @@ MHD_queue_response (struct MHD_Connection *connection,
       MHD_DLOG (daemon,
                 _ ("Wrong status code (%u) refused. " \
                    "HTTP/1.0 clients do not support 1xx status codes!\n"),
-                (status_code & (~MHD_ICY_FLAG)));
+                (status_code));
 #endif
       return MHD_NO;
     }
@@ -5255,7 +5259,7 @@ MHD_queue_response (struct MHD_Connection *connection,
       MHD_DLOG (daemon,
                 _ ("Wrong status code (%u) refused. " \
                    "HTTP/1.0 reply mode does not support 1xx status codes!\n"),
-                (status_code & (~MHD_ICY_FLAG)));
+                (status_code));
 #endif
       return MHD_NO;
     }
@@ -5264,6 +5268,7 @@ MHD_queue_response (struct MHD_Connection *connection,
   MHD_increment_response_rc (response);
   connection->response = response;
   connection->responseCode = status_code;
+  connection->responseIcy = reply_icy;
 #if defined(_MHD_HAVE_SENDFILE)
   if ( (response->fd == -1) ||
        (response->is_pipe) ||

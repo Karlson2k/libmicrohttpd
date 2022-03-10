@@ -1234,6 +1234,12 @@ struct MHD_Connection
   unsigned int responseCode;
 
   /**
+   * The "ICY" response.
+   * Reply begins with the SHOUTcast "ICY" line instead of "HTTP".
+   */
+  bool responseIcy;
+
+  /**
    * Reply-specific properties
    */
   struct MHD_Reply_Properties rp_props;
