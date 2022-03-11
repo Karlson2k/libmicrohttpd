@@ -5264,6 +5264,17 @@ MHD_queue_response (struct MHD_Connection *connection,
       return MHD_NO;
     }
   }
+  if ( (MHD_HTTP_MTHD_CONNECT == connection->http_mthd) &&
+       (2 == status_code / 100) )
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Successful (%u) response code cannot be used to answer " \
+                 "\"CONNECT\" request!\n"),
+              (status_code));
+#endif
+    return MHD_NO;
+  }
 
 #ifdef HAVE_MESSAGES
   if ( (0 != (MHD_RF_INSANITY_HEADER_CONTENT_LENGTH & response->flags)) &&
