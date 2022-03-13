@@ -1674,47 +1674,32 @@ connection_switch_from_recv_to_send (struct MHD_Connection *connection)
 
 
 /**
- * Check whether reply body-specific headers (namely Content-Length,
- * Transfer-Encoding) are needed.
- *
- * If reply body-specific headers are not needed then body itself
- * is not allowed as well.
- * When reply body-specific headers are needed, the body itself
- * can be present or not, depending on other conditions.
- *
- * @param connection the connection to check
- * @return true if reply body-specific headers are needed,
- *         false otherwise.
- * @sa is_reply_body_needed()
+ * This enum type describes requirements for reply body and reply bode-specific
+ * headers (namely Content-Length, Transfer-Encoding).
  */
-static bool
-is_reply_body_headers_needed (struct MHD_Connection *connection)
+enum replyBodyUse
 {
-  struct MHD_Connection *const c = connection; /**< a short alias */
-  unsigned rcode;  /**< the response code */
+  /**
+   * No reply body allowed.
+   * Reply body headers 'Content-Length:' or 'Transfer-Encoding: chunked' are
+   * not allowed as well.
+   */
+  RP_BODY_NONE = 0,
 
-  mhd_assert (100 <= c->responseCode);
-  mhd_assert (999 >= c->responseCode);
+  /**
+   * Do not send reply body.
+   * Reply body headers 'Content-Length:' or 'Transfer-Encoding: chunked' are
+   * allowed, but optional.
+   */
+  RP_BODY_HEADERS_ONLY = 1,
 
-  rcode = (unsigned) c->responseCode;
-
-  if (199 >= rcode)
-    return false;
-
-  if (MHD_HTTP_NO_CONTENT == rcode)
-    return false;
-
-#ifdef UPGRADE_SUPPORT
-  if (NULL != c->response->upgrade_handler)
-    return false;
-#endif /* UPGRADE_SUPPORT */
-
-  if ( (MHD_HTTP_MTHD_CONNECT == c->http_mthd) &&
-       (2 == rcode / 100) )
-    return false; /* Actually pass-through CONNECT is not supported by MHD */
-
-  return true;
-}
+  /**
+   * Send reply body and
+   * reply body headers 'Content-Length:' or 'Transfer-Encoding: chunked'.
+   * Reply body headers are required.
+   */
+  RP_BODY_SEND = 2
+};
 
 
 /**
@@ -1723,30 +1708,56 @@ is_reply_body_headers_needed (struct MHD_Connection *connection)
  * If reply body is needed, it could be zero-sized.
  *
  * @param connection the connection to check
- * @return true if reply body must be used,
- *         false otherwise
+ * @param rcode the response code
+ * @return enum value indicating whether response body can be used and
+ *         whether response body length headers are allowed or required.
  * @sa is_reply_body_header_needed()
  */
-static bool
-is_reply_body_needed (struct MHD_Connection *connection)
+static enum replyBodyUse
+is_reply_body_needed (struct MHD_Connection *connection,
+                      unsigned int rcode)
 {
   struct MHD_Connection *const c = connection; /**< a short alias */
-  unsigned rcode;  /**< the response code */
 
-  mhd_assert (100 <= c->responseCode);
-  mhd_assert (999 >= c->responseCode);
+  mhd_assert (100 <= rcode);
+  mhd_assert (999 >= rcode);
 
-  if (! is_reply_body_headers_needed (c))
-    return false;
+  if (199 >= rcode)
+    return RP_BODY_NONE;
+
+  if (MHD_HTTP_NO_CONTENT == rcode)
+    return RP_BODY_NONE;
+
+#if 0
+  /* This check is not needed as upgrade handler is used only with code 101 */
+#ifdef UPGRADE_SUPPORT
+  if (NULL != response->upgrade_handler)
+    return RP_BODY_NONE;
+#endif /* UPGRADE_SUPPORT */
+#endif
+
+#if 0
+  /* CONNECT is not supported by MHD */
+  /* Successful responses for connect requests are filtered by
+   * MHD_queue_response() */
+  if ( (MHD_HTTP_MTHD_CONNECT == c->http_mthd) &&
+       (2 == rcode / 100) )
+    return false; /* Actually pass-through CONNECT is not supported by MHD */
+#endif
+
+  /* Reply body headers could be used.
+   * Check whether reply body itself must be used. */
 
   if (MHD_HTTP_MTHD_HEAD == c->http_mthd)
-    return false;
+    return RP_BODY_HEADERS_ONLY;
 
-  rcode = (unsigned) c->responseCode;
   if (MHD_HTTP_NOT_MODIFIED == rcode)
-    return false;
+    return RP_BODY_HEADERS_ONLY;
 
-  return true;
+  /* Reply body must be sent. The body may have zero length, but body size
+   * must be indicated by headers ('Content-Length:' or
+   * 'Transfer-Encoding: chunked'). */
+  return RP_BODY_SEND;
 }
 
 
@@ -1763,6 +1774,7 @@ setup_reply_properties (struct MHD_Connection *connection)
 {
   struct MHD_Connection *const c = connection; /**< a short alias */
   struct MHD_Response *const r = c->response;  /**< a short alias */
+  enum replyBodyUse use_rp_body;
   bool use_chunked;
 
   mhd_assert (NULL != r);
@@ -1770,11 +1782,13 @@ setup_reply_properties (struct MHD_Connection *connection)
   /* ** Adjust reply properties ** */
 
   c->keepalive = keepalive_possible (c);
-  c->rp_props.use_reply_body_headers = is_reply_body_headers_needed (c);
-  if (c->rp_props.use_reply_body_headers)
-    c->rp_props.send_reply_body = is_reply_body_needed (c);
-  else
-    c->rp_props.send_reply_body = false;
+  use_rp_body = is_reply_body_needed (c, c->responseCode);
+  c->rp_props.send_reply_body = (use_rp_body > RP_BODY_HEADERS_ONLY);
+  c->rp_props.use_reply_body_headers = (use_rp_body >= RP_BODY_HEADERS_ONLY);
+
+#ifdef UPGRADE_SUPPORT
+  mhd_assert ((NULL == r->upgrade_handler) || (RP_BODY_NONE == use_rp_body));
+#endif /* UPGRADE_SUPPORT */
 
   if (c->rp_props.use_reply_body_headers)
   {
