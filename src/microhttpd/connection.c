@@ -5229,6 +5229,27 @@ MHD_queue_response (struct MHD_Connection *connection,
     }
   }
 #endif /* UPGRADE_SUPPORT */
+  if (MHD_HTTP_SWITCHING_PROTOCOLS == status_code)
+  {
+#ifdef UPGRADE_SUPPORT
+    if (NULL == response->upgrade_handler)
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Application used status code 101 \"Switching Protocols\" " \
+                   "with non-'upgrade' response!\n"));
+#endif /* HAVE_MESSAGES */
+      return MHD_NO;
+    }
+#else  /* ! UPGRADE_SUPPORT */
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Application used status code 101 \"Switching Protocols\", " \
+                 "but this MHD was built without \"Upgrade\" support!\n"));
+#endif /* HAVE_MESSAGES */
+    return MHD_NO;
+#endif /* ! UPGRADE_SUPPORT */
+  }
   if ( (100 > status_code) ||
        (999 < status_code) )
   {
