@@ -5222,7 +5222,7 @@ MHD_queue_response (struct MHD_Connection *connection,
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _ ("Connection \"Upgrade\" can be used " \
+                _ ("Connection \"Upgrade\" can be used only " \
                    "with HTTP/1.1 connections!\n"));
 #endif
       return MHD_NO;
