@@ -895,8 +895,15 @@ MHD_set_response_options (struct MHD_Response *response,
   enum MHD_Result ret;
   enum MHD_ResponseOptions ro;
 
+  if ( (0 != (response->flags & MHD_RF_INSANITY_HEADER_CONTENT_LENGTH)) &&
+       (0 == (flags & MHD_RF_INSANITY_HEADER_CONTENT_LENGTH)))
+  { /* Request to remove MHD_RF_INSANITY_HEADER_CONTENT_LENGTH flag */
+    if (0 != (response->flags_auto & MHD_RAF_HAS_CONTENT_LENGTH))
+      return MHD_NO;
+  }
   ret = MHD_YES;
   response->flags = flags;
+
   va_start (ap, flags);
   while (MHD_RO_END != (ro = va_arg (ap, enum MHD_ResponseOptions)))
   {
