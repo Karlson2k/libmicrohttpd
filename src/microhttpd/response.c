@@ -1279,6 +1279,8 @@ MHD_create_response_from_data (size_t size,
 
   if ((NULL == data) && (size > 0))
     return NULL;
+  if (MHD_SIZE_UNKNOWN == size)
+    return NULL;
   if (NULL == (response = MHD_calloc_ (1, sizeof (struct MHD_Response))))
     return NULL;
   response->fd = -1;
