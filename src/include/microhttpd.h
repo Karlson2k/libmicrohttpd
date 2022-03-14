@@ -3224,10 +3224,24 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
  * For suspended connection this function can be called at any moment. Response
  * will be sent as soon as connection is resumed.
  *
- * If response object is used to answer HEAD request then the body of
- * the response is not used, while all headers (including automatic headers)
- * are used. In practice, the same response object can be used to respond to
- * both HEAD and GET requests.
+ * If HTTP specifications require use no body in reply, like @a status_code with
+ * value 1xx, the response body is automatically not sent even if it is present
+ * in the response. No "Content-Length" or "Transfer-Encoding" headers are
+ * generated and added.
+ *
+ * When the response is used to respond HEAD request or used with @a status_code
+ * #MHD_HTTP_NOT_MODIFIED, then response body is not sent, but "Content-Length"
+ * header is added automatically based the size of the body in the response.
+ * If body size it set to #MHD_SIZE_UNKNOWN or chunked encoding is enforced
+ * then "Transfer-Encoding: chunked" header (for HTTP/1.1 only) is added instead
+ * of "Content-Length" header.
+ *
+ * In situations, where reply body is required, like answer for the GET request
+ * with @a status_code #MHD_HTTP_OK, headers "Content-Length" (for known body
+ * size) or "Transfer-Encoding: chunked" (for #MHD_SIZE_UNKNOWN with HTTP/1.1)
+ * are added automatically.
+ * In practice, the same response object can be used to respond to both HEAD and
+ * GET requests.
  *
  * @param connection the connection identifying the client
  * @param status_code HTTP status code (i.e. #MHD_HTTP_OK)
