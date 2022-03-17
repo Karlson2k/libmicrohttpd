@@ -501,9 +501,12 @@ MHD_add_response_header (struct MHD_Response *response,
                                MHD_HTTP_HEADER_TRANSFER_ENCODING))
   {
     if (! MHD_str_equal_caseless_ (content, "chunked"))
-      return MHD_NO;
+      return MHD_NO;   /* Only "chunked" encoding is allowed */
     if (0 != (response->flags_auto & MHD_RAF_HAS_TRANS_ENC_CHUNKED))
-      return MHD_YES;
+      return MHD_YES;  /* Already has "chunked" encoding header */
+    if ( (0 != (response->flags_auto & MHD_RAF_HAS_CONTENT_LENGTH)) &&
+         (0 == (MHD_RF_INSANITY_HEADER_CONTENT_LENGTH & response->flags)) )
+      return MHD_NO; /* Has "Content-Length" header and no "Insanity" flag */
     if (MHD_NO != add_response_entry (response,
                                       MHD_HEADER_KIND,
                                       header,
@@ -545,19 +548,22 @@ MHD_add_response_header (struct MHD_Response *response,
   if (MHD_str_equal_caseless_ (header,
                                MHD_HTTP_HEADER_CONTENT_LENGTH))
   {
-    if (0 == (MHD_RF_INSANITY_HEADER_CONTENT_LENGTH & response->flags))
+    /* Generally MHD sets automatically correct "Content-Length" always when
+     * needed.
+     * Custom "Content-Length" header is allowed only in special cases. */
+    if ( (0 != (MHD_RF_INSANITY_HEADER_CONTENT_LENGTH & response->flags)) ||
+         ((0 != (MHD_RF_HEAD_ONLY_RESPONSE & response->flags)) &&
+          (0 == (response->flags_auto & (MHD_RAF_HAS_TRANS_ENC_CHUNKED
+                                         | MHD_RAF_HAS_CONTENT_LENGTH)))) )
     {
-      /* MHD sets automatically correct Content-Length always when needed,
-         reject attempt to manually override it */
-      return MHD_NO;
-    }
-    if (MHD_NO != add_response_entry (response,
-                                      MHD_HEADER_KIND,
-                                      header,
-                                      content))
-    {
-      response->flags_auto |= MHD_RAF_HAS_CONTENT_LENGTH;
-      return MHD_YES;
+      if (MHD_NO != add_response_entry (response,
+                                        MHD_HEADER_KIND,
+                                        header,
+                                        content))
+      {
+        response->flags_auto |= MHD_RAF_HAS_CONTENT_LENGTH;
+        return MHD_YES;
+      }
     }
     return MHD_NO;
   }
@@ -895,12 +901,25 @@ MHD_set_response_options (struct MHD_Response *response,
   enum MHD_Result ret;
   enum MHD_ResponseOptions ro;
 
-  if ( (0 != (response->flags & MHD_RF_INSANITY_HEADER_CONTENT_LENGTH)) &&
-       (0 == (flags & MHD_RF_INSANITY_HEADER_CONTENT_LENGTH)))
-  { /* Request to remove MHD_RF_INSANITY_HEADER_CONTENT_LENGTH flag */
-    if (0 != (response->flags_auto & MHD_RAF_HAS_CONTENT_LENGTH))
+  if (0 != (response->flags_auto & MHD_RAF_HAS_CONTENT_LENGTH))
+  { /* Response has custom "Content-Lengh" header */
+    if ( (0 != (response->flags & MHD_RF_INSANITY_HEADER_CONTENT_LENGTH)) &&
+         (0 == (flags & MHD_RF_INSANITY_HEADER_CONTENT_LENGTH)))
+    { /* Request to remove MHD_RF_INSANITY_HEADER_CONTENT_LENGTH flag */
       return MHD_NO;
+    }
+    if ( (0 != (response->flags & MHD_RF_HEAD_ONLY_RESPONSE)) &&
+         (0 == (flags & MHD_RF_HEAD_ONLY_RESPONSE)))
+    { /* Request to remove MHD_RF_HEAD_ONLY_RESPONSE flag */
+      if (0 == (flags & MHD_RF_INSANITY_HEADER_CONTENT_LENGTH))
+        return MHD_NO;
+    }
   }
+
+  if ( (0 != (flags & MHD_RF_HEAD_ONLY_RESPONSE)) &&
+       (0 != response->total_size) )
+    return MHD_NO;
+
   ret = MHD_YES;
   response->flags = flags;
 

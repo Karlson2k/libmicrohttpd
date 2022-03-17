@@ -1913,6 +1913,7 @@ buffer_append (char *buf,
  * @param buf_size the size of the @a buf
  * @param response the response
  * @param filter_transf_enc skip "Transfer-Encoding" header if any
+ * @param filter_content_len skip "Content-Length" header if any
  * @param add_close add "close" token to the
  *                  "Connection:" header (if any), ignored if no "Connection:"
  *                  header was added by user or if "close" token is already
@@ -1928,6 +1929,7 @@ add_user_headers (char *buf,
                   size_t buf_size,
                   struct MHD_Response *response,
                   bool filter_transf_enc,
+                  bool filter_content_len,
                   bool add_close,
                   bool add_keep_alive)
 {
@@ -1938,7 +1940,9 @@ add_user_headers (char *buf,
   mhd_assert (! add_close || ! add_keep_alive);
 
   if (0 == (r->flags_auto & MHD_RAF_HAS_TRANS_ENC_CHUNKED))
-    filter_transf_enc = false;  /* No such header */
+    filter_transf_enc = false;   /* No such header */
+  if (0 == (r->flags_auto & MHD_RAF_HAS_CONTENT_LENGTH))
+    filter_content_len = false;  /* No such header */
   if (0 == (r->flags_auto & MHD_RAF_HAS_CONNECTION_HDR))
   {
     add_close = false;          /* No such header */
@@ -1961,6 +1965,19 @@ add_user_headers (char *buf,
       {
         filter_transf_enc = false; /* There is the only one such header */
         continue; /* Skip "Transfer-Encoding" header */
+      }
+    }
+    if (filter_content_len)
+    { /* Need to filter-out "Content-Length" */
+      if ((MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_LENGTH) ==
+           hdr->header_size) &&
+          (MHD_str_equal_caseless_bin_n_ (MHD_HTTP_HEADER_CONTENT_LENGTH,
+                                          hdr->header, hdr->header_size)) )
+      {
+        /* Reset filter flag if only one header is allowed */
+        filter_transf_enc =
+          (0 == (r->flags & MHD_RF_INSANITY_HEADER_CONTENT_LENGTH));
+        continue; /* Skip "Content-Length" header */
       }
     }
 
@@ -2184,13 +2201,17 @@ build_header_response (struct MHD_Connection *connection)
 
   if (! add_user_headers (buf, &pos, buf_size, r,
                           ! c->rp_props.chunked,
+                          (! c->rp_props.use_reply_body_headers) &&
+                          (0 ==
+                           (r->flags & MHD_RF_INSANITY_HEADER_CONTENT_LENGTH)),
                           use_conn_close,
                           use_conn_k_alive))
     return MHD_NO;
 
   /* Other automatic headers */
 
-  if (c->rp_props.use_reply_body_headers)
+  if ( (c->rp_props.use_reply_body_headers) &&
+       (0 == (r->flags & MHD_RF_HEAD_ONLY_RESPONSE)) )
   {
     /* Body-specific headers */
 
@@ -5316,6 +5337,17 @@ MHD_queue_response (struct MHD_Connection *connection,
               _ ("Successful (%u) response code cannot be used to answer " \
                  "\"CONNECT\" request!\n"),
               (status_code));
+#endif
+    return MHD_NO;
+  }
+
+  if ( (0 != (MHD_RF_HEAD_ONLY_RESPONSE & response->flags)) &&
+       (RP_BODY_HEADERS_ONLY < is_reply_body_needed (connection, status_code)) )
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("HEAD-only response cannot be used when the request requires "
+                 "reply body to be sent!\n"));
 #endif
     return MHD_NO;
   }

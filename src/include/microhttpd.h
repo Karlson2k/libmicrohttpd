@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2006-2021 Christian Grothoff (and other contributing authors)
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097501
+#define MHD_VERSION 0x00097502
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
@@ -3234,7 +3234,10 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
  * header is added automatically based the size of the body in the response.
  * If body size it set to #MHD_SIZE_UNKNOWN or chunked encoding is enforced
  * then "Transfer-Encoding: chunked" header (for HTTP/1.1 only) is added instead
- * of "Content-Length" header.
+ * of "Content-Length" header. For example, if response with zero-size body is
+ * used for HEAD request, then "Content-Length: 0" is added automatically to
+ * reply headers.
+ * @sa #MHD_RF_HEAD_ONLY_RESPONSE
  *
  * In situations, where reply body is required, like answer for the GET request
  * with @a status_code #MHD_HTTP_OK, headers "Content-Length" (for known body
@@ -3364,6 +3367,8 @@ enum MHD_ResponseFlags
   /**
    * Disable sanity check preventing clients from manually
    * setting the HTTP content length option.
+   * Allow to set several "Content-Length" headers. These headers will
+   * be used even with replies without body.
    * @note Available since #MHD_VERSION 0x00096702
    */
   MHD_RF_INSANITY_HEADER_CONTENT_LENGTH = 1 << 2,
@@ -3374,7 +3379,22 @@ enum MHD_ResponseFlags
    * Disabled by default for HTTP/1.1 clients as per RFC.
    * @note Available since #MHD_VERSION 0x00097310
    */
-  MHD_RF_SEND_KEEP_ALIVE_HEADER = 1 << 3
+  MHD_RF_SEND_KEEP_ALIVE_HEADER = 1 << 3,
+
+  /**
+   * Enable special processing of the response as body-less (with undefined
+   * body size). No automatic "Content-Length" or "Transfer-Encoding: chunked"
+   * headers are added when the response is used with #MHD_HTTP_NOT_MODIFIED
+   * code or to respond to HEAD request.
+   * The flag also allow to set arbitrary "Content-Length" by
+   * MHD_add_response_header() function.
+   * This flag value can be used only with responses created without body
+   * (zero-size body).
+   * Responses with this flag enabled cannot be used in situations where
+   * reply body must be sent to the client.
+   * @note Available since #MHD_VERSION 0x00097502
+   */
+  MHD_RF_HEAD_ONLY_RESPONSE = 1 << 4
 } _MHD_FIXED_FLAGS_ENUM;
 
 
