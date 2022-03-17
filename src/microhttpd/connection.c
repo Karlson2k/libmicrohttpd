@@ -1912,7 +1912,6 @@ buffer_append (char *buf,
  * @param ppos the pointer to the position in the @a buf
  * @param buf_size the size of the @a buf
  * @param response the response
- * @param kind the kind of objects (headers or footers)
  * @param filter_transf_enc skip "Transfer-Encoding" header if any
  * @param add_close add "close" token to the
  *                  "Connection:" header (if any), ignored if no "Connection:"
@@ -1928,7 +1927,6 @@ add_user_headers (char *buf,
                   size_t *ppos,
                   size_t buf_size,
                   struct MHD_Response *response,
-                  enum MHD_ValueKind kind,
                   bool filter_transf_enc,
                   bool add_close,
                   bool add_keep_alive)
@@ -1937,9 +1935,6 @@ add_user_headers (char *buf,
   struct MHD_HTTP_Header *hdr; /**< Iterates through User-specified headers */
   size_t el_size; /**< the size of current element to be added to the @a buf */
 
-  mhd_assert ((! filter_transf_enc) || MHD_HEADER_KIND == kind);
-  mhd_assert ((! add_close) || MHD_HEADER_KIND == kind);
-  mhd_assert ((! add_keep_alive) || MHD_HEADER_KIND == kind);
   mhd_assert (! add_close || ! add_keep_alive);
 
   if (0 == (r->flags_auto & MHD_RAF_HAS_TRANS_ENC_CHUNKED))
@@ -1955,7 +1950,7 @@ add_user_headers (char *buf,
   for (hdr = r->first_header; NULL != hdr; hdr = hdr->next)
   {
     size_t initial_pos = *ppos;
-    if (kind != hdr->kind)
+    if (MHD_HEADER_KIND != hdr->kind)
       continue;
     if (filter_transf_enc)
     { /* Need to filter-out "Transfer-Encoding" */
@@ -2187,7 +2182,7 @@ build_header_response (struct MHD_Connection *connection)
 
   /* User-defined headers */
 
-  if (! add_user_headers (buf, &pos, buf_size, r, MHD_HEADER_KIND,
+  if (! add_user_headers (buf, &pos, buf_size, r,
                           ! c->rp_props.chunked,
                           use_conn_close,
                           use_conn_k_alive))
