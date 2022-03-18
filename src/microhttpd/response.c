@@ -836,8 +836,13 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
 
 
 /**
- * Create a response object.  The response object can be extended with
- * header information and then be used any number of times.
+ * Create a response object.
+ * The response object can be extended with header information and then be used
+ * any number of times.
+ *
+ * If response object is used to answer HEAD request then the body of the
+ * response is not used, while all headers (including automatic headers) are
+ * used.
  *
  * @param size size of the data portion of the response, #MHD_SIZE_UNKNOWN for unknown
  * @param block_size preferred block size for querying crc (advisory only,
@@ -1267,21 +1272,19 @@ MHD_create_response_from_fd64 (uint64_t size,
 
 
 /**
- * Create a response object with the content of provided buffer used as
- * the response body.
+ * Create a response object.
+ * The response object can be extended with header information and then be used
+ * any number of times.
  *
- * The response object can be extended with header information and then
- * be used any number of times.
- *
- * If response object is used to answer HEAD request then the body
- * of the response is not used, while all headers (including automatic
- * headers) are used.
+ * If response object is used to answer HEAD request then the body of the
+ * response is not used, while all headers (including automatic headers) are
+ * used.
  *
  * @param size size of the @a data portion of the response
  * @param data the data itself
  * @param must_free libmicrohttpd should free data when done
  * @param must_copy libmicrohttpd must make a copy of @a data
- *        right away, the data maybe released anytime after
+ *        right away, the data may be released anytime after
  *        this call returns
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @deprecated use #MHD_create_response_from_buffer instead

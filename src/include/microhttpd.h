@@ -3425,8 +3425,13 @@ MHD_set_response_options (struct MHD_Response *response,
 
 
 /**
- * Create a response object.  The response object can be extended with
- * header information and then be used any number of times.
+ * Create a response object.
+ * The response object can be extended with header information and then be used
+ * any number of times.
+ *
+ * If response object is used to answer HEAD request then the body of the
+ * response is not used, while all headers (including automatic headers) are
+ * used.
  *
  * @param size size of the data portion of the response, #MHD_SIZE_UNKNOWN for unknown
  * @param block_size preferred block size for querying crc (advisory only,
@@ -3448,8 +3453,13 @@ MHD_create_response_from_callback (uint64_t size,
 
 
 /**
- * Create a response object.  The response object can be extended with
- * header information and then be used any number of times.
+ * Create a response object.
+ * The response object can be extended with header information and then be used
+ * any number of times.
+ *
+ * If response object is used to answer HEAD request then the body of the
+ * response is not used, while all headers (including automatic headers) are
+ * used.
  *
  * @param size size of the @a data portion of the response
  * @param data the data itself
