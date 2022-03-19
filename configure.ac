@@ -3238,19 +3238,23 @@ int main(void)
                    )
                  ]
                )
+               AS_CASE(["$enabled_sanitizers"], [*undefined],
+                 [
+                   AS_VAR_IF([mhd_cv_cc_sanitizer_undefined], ["yes"],[],
+                     [
+                       # A workaround for broken clang which is trying to use UBSan lib
+                       # even when instructed to not use it
+                       CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
+                       AX_APPEND_LINK_FLAGS([-fsanitize-trap=implicit-conversion],
+                         [san_FLAGS], [], [AC_LANG_SOURCE([${test_undf_prog}])])
+                     ]
+                   )
+                 ]
+               )
              ]
            )
            AS_CASE(["$enabled_sanitizers"], [*undefined],
              [
-               AS_VAR_IF([mhd_cv_cc_sanitizer_undefined], ["yes"],[],
-                 [
-                   # A workaround for broken clang which is trying to use UBSan lib
-                   # even when instructed to not use it
-                   CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
-                   AX_APPEND_LINK_FLAGS([-fsanitize-trap=implicit-conversion],
-                     [san_FLAGS], [], [AC_LANG_SOURCE([${test_undf_prog}])])
-                 ]
-               )
                CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
                AX_APPEND_LINK_FLAGS([-fsanitize=bounds-strict -fsanitize=local-bounds -fsanitize=implicit-conversion -fsanitize=nullability-arg],
                  [san_CFLAGS], [], [AC_LANG_SOURCE([${test_undf_prog}])])
