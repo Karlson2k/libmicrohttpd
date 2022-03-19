@@ -1549,7 +1549,8 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
     return response;
   }
   mhd_assert (1 < i_cp);
-  {
+  if (1)
+  { /* for local variables local scope only */
     MHD_iovec_ *iov_copy;
     int num_copy_elements = i_cp;
 
@@ -1586,8 +1587,8 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
     mhd_assert (num_copy_elements == i_cp);
     response->data_iov = iov_copy;
     response->data_iovcnt = i_cp;
-    return response;
   }
+  return response;
 }
 
 
