@@ -3316,14 +3316,13 @@ int main(void)
        )
        AS_VAR_IF([enable_san_address], ["yes"],
          [
-           AS_VAR_IF([mhd_cv_cc_sanitizer_address],["yes"],
-             [
-               AX_APPEND_FLAG([-D_FORTIFY_SOURCE=0], [san_CFLAGS])
-               CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
-               AX_APPEND_COMPILE_FLAGS([-Wp,-U_FORTIFY_SOURCE], [san_CFLAGS])
-             ],
-             [AC_MSG_WARN([$CC does not support address sanitizer])]
-           )
+           CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
+           AX_APPEND_COMPILE_FLAGS([-Wp,-U_FORTIFY_SOURCE], [san_CFLAGS])
+           AX_APPEND_FLAG([-D_FORTIFY_SOURCE=0], [san_CFLAGS])
+         ],
+         [
+           AS_CASE([$enable_sanitizers], [auto|auto-fallback],
+             [AC_MSG_WARN([$CC does not support address sanitizer])])
          ]
        )
        CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
