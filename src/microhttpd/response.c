@@ -1592,6 +1592,44 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
 }
 
 
+/**
+ * Create a response object with empty (zero size) body.
+ *
+ * The response object can be extended with header information and then be used
+ * any number of times.
+ *
+ * This function is a faster equivalent of #MHD_create_response_from_buffer call
+ * with zero size combined with call of #MHD_set_response_options.
+ *
+ * @param flags the flags for the new response object
+ * @return NULL on error (i.e. invalid arguments, out of memory),
+ *         the pointer to the created response object otherwise
+ * @note Available since #MHD_VERSION 0x00097503
+ * @ingroup response
+ */
+struct MHD_Response *
+MHD_create_response_empty (enum MHD_ResponseFlags flags)
+{
+  struct MHD_Response *r;
+  r = (struct MHD_Response *) MHD_calloc_ (1, sizeof (struct MHD_Response));
+  if (NULL != r)
+  {
+    if (! MHD_mutex_init_ (&r->mutex))
+    {
+      r->fd = -1;
+      r->reference_count = 1;
+      /* If any flags combination will be not allowed, replace the next
+       * assignment with MHD_set_response_options() call. */
+      r->flags = flags;
+
+      return r; /* Successful result */
+    }
+    free (r);
+  }
+  return NULL; /* Something failed */
+}
+
+
 #ifdef UPGRADE_SUPPORT
 /**
  * This connection-specific callback is provided by MHD to

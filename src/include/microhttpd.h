@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097502
+#define MHD_VERSION 0x00097503
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
@@ -3757,6 +3757,25 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
                                 unsigned int iovcnt,
                                 MHD_ContentReaderFreeCallback free_cb,
                                 void *cls);
+
+
+/**
+ * Create a response object with empty (zero size) body.
+ *
+ * The response object can be extended with header information and then be used
+ * any number of times.
+ *
+ * This function is a faster equivalent of #MHD_create_response_from_buffer call
+ * with zero size combined with call of #MHD_set_response_options.
+ *
+ * @param flags the flags for the new response object
+ * @return NULL on error (i.e. invalid arguments, out of memory),
+ *         the pointer to the created response object otherwise
+ * @note Available since #MHD_VERSION 0x00097503
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_empty (enum MHD_ResponseFlags flags);
 
 
 /**
