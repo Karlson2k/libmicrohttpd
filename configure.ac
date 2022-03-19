@@ -2919,11 +2919,14 @@ AS_UNSET([LSAN_OPTIONS])
 AC_MSG_CHECKING([whether to enable run-time sanitizers])
 AC_ARG_ENABLE([sanitizers],
   [AS_HELP_STRING([[--enable-sanitizers[=address,undefined,leak,user-poison]]],
-  [enable run-time sanitizers, specify the list of types of sanitizers to enable or ]
-  [leave the list empty to enable all suppoted and availabe sanitizers])],
+  [enable run-time sanitizers, specify the list of types of sanitizers to enable, ]
+  [leave the list empty (or set to "auto") to enable all suppoted and availabe ]
+  [sanitizers, or specify "auto-fallback" to use sanitizers even without ]
+  [installed sanitizer run-time library])],
   [], [enable_sanitizers=no])
 AS_IF([test "x${enable_sanitizers}" = "x"], [enable_sanitizers="auto"])
 AS_VAR_IF([enable_sanitizers], ["yes"], [enable_sanitizers="auto"])
+AS_VAR_IF([enable_sanitizers], ["autofallback"], [enable_sanitizers="auto-fallback"])
 AS_IF([test "x${enable_sanitizers}" = "xno"],
   [
     enable_sanitizers="no"
@@ -2936,6 +2939,13 @@ AS_IF([test "x${enable_sanitizers}" = "xno"],
   [
     enable_san_address="auto"
     enable_san_undef="auto"
+    enable_san_leak="auto"
+    enable_san_upoison="auto"
+  ],
+  [test "x${enable_sanitizers}" = "xauto-fallback"],
+  [
+    enable_san_address="auto"
+    enable_san_undef="auto-fallback"
     enable_san_leak="auto"
     enable_san_upoison="auto"
   ],
@@ -2952,7 +2962,7 @@ AS_IF([test "x${enable_sanitizers}" = "xno"],
         [undefined], [enable_san_undef="yes"],
         [leak], [enable_san_leak="yes"],
         [user-poison|user_poison], [enable_san_upoison="yes"],
-        [no|yes|auto], [AC_MSG_ERROR(["$san" cannot be used with other options for --enable-sanitizers=])],
+        [no|yes|auto|auto-fallback|autofallback], [AC_MSG_ERROR(["$san" cannot be used with other options for --enable-sanitizers=])],
         [AC_MSG_ERROR([Unknown parameter "$san" for --enable-sanitizers=])]
       )
     done
@@ -2965,6 +2975,7 @@ AS_IF([test "x${enable_sanitizers}" = "xno"],
 AS_CASE([${enable_sanitizers}],
   [selected], [AC_MSG_RESULT([selected])],
   [auto], [AC_MSG_RESULT([yes, detect and use supported sanitizers])],
+  [auto-fallback], [AC_MSG_RESULT([yes, detect and use supported sanitizers even without run-time lib])],
   [AC_MSG_RESULT([no])]
 )
 AS_VAR_IF([enable_sanitizers], ["no"], [:],
@@ -3200,53 +3211,57 @@ int main(void)
                enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
              ],
              [
-               AC_CACHE_CHECK([for undefined behavior sanitizer with '-fsanitize-undefined-trap-on-error'], [mhd_cv_cc_sanitizer_undefined_trap],
+               AS_CASE([${enable_san_undef}], [yes|auto-fallback],
                  [
-                   CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error ${user_CFLAGS}"
-                   AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
-                    [mhd_cv_cc_sanitizer_undefined_trap=yes], [mhd_cv_cc_sanitizer_undefined_trap=no])
-                 ]
-               )
-               AS_VAR_IF([mhd_cv_cc_sanitizer_undefined_trap], ["yes"],
-                 [
-                   AX_APPEND_FLAG([-fsanitize=undefined], [san_FLAGS])
-                   AX_APPEND_FLAG([-fsanitize-undefined-trap-on-error], [san_FLAGS])
-                   enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
-                   AC_MSG_WARN([Enabled sanitizer without run-time library, error reporting will be limited])
-                 ],
-                 [
-                   AS_IF([test -z "${enabled_sanitizers}"],
+                   AC_CACHE_CHECK([for undefined behavior sanitizer with '-fsanitize-undefined-trap-on-error'], [mhd_cv_cc_sanitizer_undefined_trap],
                      [
-                       # Last resort
-                       AC_CACHE_CHECK([for undefined behavior sanitizer with '-fsanitize-trap=all'], [mhd_cv_cc_sanitizer_undefined_trap_all],
+                       CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-undefined-trap-on-error ${user_CFLAGS}"
+                       AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
+                        [mhd_cv_cc_sanitizer_undefined_trap=yes], [mhd_cv_cc_sanitizer_undefined_trap=no])
+                     ]
+                   )
+                   AS_VAR_IF([mhd_cv_cc_sanitizer_undefined_trap], ["yes"],
+                     [
+                       AX_APPEND_FLAG([-fsanitize=undefined], [san_FLAGS])
+                       AX_APPEND_FLAG([-fsanitize-undefined-trap-on-error], [san_FLAGS])
+                       enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
+                       AC_MSG_WARN([Enabled sanitizer without run-time library, error reporting will be limited])
+                     ],
+                     [
+                       AS_IF([test -z "${enabled_sanitizers}"],
                          [
-                           CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-trap=all ${user_CFLAGS}"
-                           AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
-                            [mhd_cv_cc_sanitizer_undefined_trap_all=yes], [mhd_cv_cc_sanitizer_undefined_trap_all=no])
-                         ]
-                       )
-                       AS_VAR_IF([mhd_cv_cc_sanitizer_undefined_trap_all],["yes"],
-                         [
-                           AX_APPEND_FLAG([-fsanitize=undefined], [san_FLAGS])
-                           AX_APPEND_FLAG([-fsanitize-trap=all], [san_FLAGS])
-                           CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-trap=all ${user_CFLAGS}"
-                           enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
-                           AC_MSG_WARN([Enabled sanitizer without run-time library, error reporting will be limited])
+                           # Last resort
+                           AC_CACHE_CHECK([for undefined behavior sanitizer with '-fsanitize-trap=all'], [mhd_cv_cc_sanitizer_undefined_trap_all],
+                             [
+                               CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-trap=all ${user_CFLAGS}"
+                               AC_LINK_IFELSE([AC_LANG_SOURCE([${test_undf_prog}])],
+                                [mhd_cv_cc_sanitizer_undefined_trap_all=yes], [mhd_cv_cc_sanitizer_undefined_trap_all=no])
+                             ]
+                           )
+                           AS_VAR_IF([mhd_cv_cc_sanitizer_undefined_trap_all],["yes"],
+                             [
+                               AX_APPEND_FLAG([-fsanitize=undefined], [san_FLAGS])
+                               AX_APPEND_FLAG([-fsanitize-trap=all], [san_FLAGS])
+                               CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} -fsanitize=undefined -fsanitize-trap=all ${user_CFLAGS}"
+                               enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }undefined"
+                               AC_MSG_WARN([Enabled sanitizer without run-time library, error reporting will be limited])
+                             ]
+                           )
                          ]
                        )
                      ]
                    )
-                 ]
-               )
-               AS_CASE(["$enabled_sanitizers"], [*undefined],
-                 [
-                   AS_VAR_IF([mhd_cv_cc_sanitizer_undefined], ["yes"],[],
+                   AS_CASE(["$enabled_sanitizers"], [*undefined],
                      [
-                       # A workaround for broken clang which is trying to use UBSan lib
-                       # even when instructed to not use it
-                       CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
-                       AX_APPEND_LINK_FLAGS([-fsanitize-trap=implicit-conversion],
-                         [san_FLAGS], [], [AC_LANG_SOURCE([${test_undf_prog}])])
+                       AS_VAR_IF([mhd_cv_cc_sanitizer_undefined], ["yes"],[],
+                         [
+                           # A workaround for broken clang which is trying to use UBSan lib
+                           # even when instructed to not use it
+                           CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
+                           AX_APPEND_LINK_FLAGS([-fsanitize-trap=implicit-conversion],
+                             [san_FLAGS], [], [AC_LANG_SOURCE([${test_undf_prog}])])
+                         ]
+                       )
                      ]
                    )
                  ]
