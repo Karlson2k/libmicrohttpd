@@ -1,6 +1,6 @@
 # This file is part of libmicrohttpd.
 # (C) 2006-2021 Christian Grothoff (and other contributing authors)
-# (C) 2014-2021 Evgeny Grin (Karlson2k)
+# (C) 2014-2022 Evgeny Grin (Karlson2k)
 #
 # libmicrohttpd is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -35,6 +35,25 @@ LIB_VERSION_AGE=60
 AC_SUBST(LIB_VERSION_CURRENT)
 AC_SUBST(LIB_VERSION_REVISION)
 AC_SUBST(LIB_VERSION_AGE)
+
+
+PACKAGE_VERSION_MAJOR='m4_car(m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
+PACKAGE_VERSION_MINOR='m4_argn(2, m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
+PACKAGE_VERSION_SUBMINOR='m4_argn(3, m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
+AS_VAR_ARITH([MHD_W32_DLL_SUFF],[[$LIB_VERSION_CURRENT - $LIB_VERSION_AGE]])
+AC_SUBST([PACKAGE_VERSION_MAJOR])
+AC_SUBST([PACKAGE_VERSION_MINOR])
+AC_SUBST([PACKAGE_VERSION_SUBMINOR])
+AC_SUBST([MHD_W32_DLL_SUFF])
+AC_CONFIG_FILES([src/microhttpd/microhttpd_dll_res.rc])
+
+MHD_LIB_CPPFLAGS=""
+MHD_LIB_CFLAGS=""
+MHD_LIB_LDFLAGS=""
+MHD_LIBDEPS=""
+# for pkg-config
+MHD_REQ_PRIVATE=''
+MHD_LIBDEPS_PKGCFG=''
 
 AC_MSG_CHECKING([[whether z/OS special settings are required]])
 AS_IF([test `uname -s` = "OS/390"],
@@ -77,6 +96,8 @@ AC_PROG_CC_STDC
   ]
 )
 
+# Workaround for libgcrypt
+AS_IF([[test "x$lt_sysroot" != "x" && test "x$SYSROOT" = "x"]], [[SYSROOT="$lt_sysroot"]])
 user_CFLAGS="$CFLAGS"
 user_LDFLAGS="$LDFLAGS"
 user_CPPFLAGS="$CPPFLAGS"
@@ -170,7 +191,6 @@ AC_CHECK_HEADERS([sys/sysctl.h netinet/ip_icmp.h netinet/icmp_var.h], [], [],
   ]]
 )
 
-
 # Adam shostack suggests the following for Windows:
 # -D_FORTIFY_SOURCE=2 -fstack-protector-all
 AC_ARG_ENABLE([gcc-hardening],
@@ -192,27 +212,6 @@ AC_ARG_ENABLE([linker-hardening],
    [LDFLAGS_ac="${LDFLAGS_ac} -z relro -z now"])])
 LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
 
-
-# Workaround for libgcrypt
-AS_IF([[test "x$lt_sysroot" != "x" && test "x$SYSROOT" = "x"]], [[SYSROOT="$lt_sysroot"]])
-
-PACKAGE_VERSION_MAJOR='m4_car(m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
-PACKAGE_VERSION_MINOR='m4_argn(2, m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
-PACKAGE_VERSION_SUBMINOR='m4_argn(3, m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
-AS_VAR_ARITH([MHD_W32_DLL_SUFF],[[$LIB_VERSION_CURRENT - $LIB_VERSION_AGE]])
-AC_SUBST([PACKAGE_VERSION_MAJOR])
-AC_SUBST([PACKAGE_VERSION_MINOR])
-AC_SUBST([PACKAGE_VERSION_SUBMINOR])
-AC_SUBST([MHD_W32_DLL_SUFF])
-AC_CONFIG_FILES([src/microhttpd/microhttpd_dll_res.rc])
-
-MHD_LIB_CPPFLAGS=""
-MHD_LIB_CFLAGS=""
-MHD_LIB_LDFLAGS=""
-MHD_LIBDEPS=""
-# for pkg-config
-MHD_REQ_PRIVATE=''
-MHD_LIBDEPS_PKGCFG=''
 
 AH_TEMPLATE([[HAVE_STDBOOL_H]], [Define to 1 if you have the <stdbool.h> header file and <stdbool.h> defines 'bool' type.])
 AH_TEMPLATE([[HAVE_REAL_BOOL]], [Define to 1 if you have the real boolean type.])
