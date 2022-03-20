@@ -2920,13 +2920,14 @@ AC_MSG_CHECKING([whether to enable run-time sanitizers])
 AC_ARG_ENABLE([sanitizers],
   [AS_HELP_STRING([[--enable-sanitizers[=address,undefined,leak,user-poison]]],
   [enable run-time sanitizers, specify the list of types of sanitizers to enable, ]
-  [leave the list empty (or set to "auto") to enable all suppoted and availabe ]
+  [leave the list empty (or set to "auto") to enable all suppoted and available ]
   [sanitizers, or specify "auto-fallback" to use sanitizers even without ]
   [installed sanitizer run-time library])],
   [], [enable_sanitizers=no])
 AS_IF([test "x${enable_sanitizers}" = "x"], [enable_sanitizers="auto"])
 AS_VAR_IF([enable_sanitizers], ["yes"], [enable_sanitizers="auto"])
 AS_VAR_IF([enable_sanitizers], ["autofallback"], [enable_sanitizers="auto-fallback"])
+AS_VAR_IF([enable_sanitizers], ["autooptional"], [enable_sanitizers="auto-optional"])
 AS_IF([test "x${enable_sanitizers}" = "xno"],
   [
     enable_sanitizers="no"
@@ -2935,7 +2936,7 @@ AS_IF([test "x${enable_sanitizers}" = "xno"],
     enable_san_leak="no"
     enable_san_upoison="no"
   ],
-  [test "x${enable_sanitizers}" = "xauto"],
+  [test "x${enable_sanitizers}" = "xauto" || test "x${enable_sanitizers}" = "xauto-optional"],
   [
     enable_san_address="auto"
     enable_san_undef="auto"
@@ -2976,6 +2977,7 @@ AS_CASE([${enable_sanitizers}],
   [selected], [AC_MSG_RESULT([selected])],
   [auto], [AC_MSG_RESULT([yes, detect and use supported sanitizers])],
   [auto-fallback], [AC_MSG_RESULT([yes, detect and use supported sanitizers even without run-time lib])],
+  [auto-optional], [AC_MSG_RESULT([yes, detect and use supported sanitizers if any])],
   [AC_MSG_RESULT([no])]
 )
 AS_VAR_IF([enable_sanitizers], ["no"], [:],
@@ -3307,68 +3309,81 @@ int main(void)
          ]
        )
        AS_IF([test -z "${enabled_sanitizers}"],
-         [AC_MSG_ERROR([cannot find any sanitizer supported by $CC])])
-       AS_VAR_IF([enable_san_upoison], ["no"], [:],
          [
-           AC_MSG_CHECKING([whether to enable user memory poisoning])
-           AS_IF([test "x${mhd_cv_cc_sanitizer_address}" = "xyes" && test "x${mhd_cv_cc_sanitizer_pointer_compare}" = "xyes" && \
-             test "x${ac_cv_header_sanitizer_asan_interface_h}" = "xyes" && \
-             (test "x${mhd_cv_func_attribute_nosanitize_ptr}" = "xyes" || test "x${mhd_cv_func_attribute_nosanitize_addr}" = "xyes")],
+           AS_VAR_IF([enable_sanitizers], ["auto-optional"],
              [
-               AC_DEFINE([MHD_ASAN_POISON_ACTIVE], [1], [Define to '1' if user memory poison is used])
-               enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }user-poison"
-               enable_san_upoison="yes"
-               AC_MSG_RESULT([yes])
+               san_FLAGS=""
+               san_CFLAGS=""
              ],
              [
-               AC_MSG_RESULT([no])
-               AS_VAR_IF([enable_san_upoison], ["yes"],
-                 [AC_MSG_ERROR([User memory poisoning cannot be enabled])])
-               enable_san_upoison="no"
+               AC_MSG_ERROR([cannot find any sanitizer supported by $CC])
              ]
            )
-         ]
-       )
-       AS_VAR_IF([enable_san_address], ["yes"],
-         [
-           CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
-           AX_APPEND_COMPILE_FLAGS([-Wp,-U_FORTIFY_SOURCE], [san_CFLAGS])
-           AX_APPEND_FLAG([-D_FORTIFY_SOURCE=0], [san_CFLAGS])
          ],
          [
-           AS_CASE([$enable_sanitizers], [auto|auto-fallback],
-             [AC_MSG_WARN([$CC does not support address sanitizer])])
-         ]
-       )
-       CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
-       # Always stop on sanitizer error
-       AX_APPEND_COMPILE_FLAGS([-fno-sanitize-recover=all], [san_CFLAGS])
-       # Get a better output for sanitizers error reporting
-       AX_APPEND_COMPILE_FLAGS([-fno-omit-frame-pointer -fno-optimize-sibling-calls],
-         [san_CFLAGS])
-       AS_VAR_IF([enable_san_address], ["yes"],
-         [
-           AM_ASAN_OPTIONS="exitcode=88:strict_string_checks=1:detect_stack_use_after_return=1"
-           AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:check_initialization_order=1:strict_init_order=1:redzone=64"
-           AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:max_free_fill_size=1024:detect_invalid_pointer_pairs=3"
-           AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:handle_ioctl=1:halt_on_error=1"
-           AS_VAR_IF([enable_san_upoison], ["yes"], [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:allow_user_poisoning=1"])
-           AS_VAR_IF([enable_san_leak], ["yes"],
-             [AS_VAR_IF([mhd_cv_cc_sanitizer_address_leak], ["yes"],
-               [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:detect_leaks=1"])
-             ], [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:detect_leaks=0"]
+           AS_VAR_IF([enable_san_upoison], ["no"], [:],
+             [
+               AC_MSG_CHECKING([whether to enable user memory poisoning])
+               AS_IF([test "x${mhd_cv_cc_sanitizer_address}" = "xyes" && test "x${mhd_cv_cc_sanitizer_pointer_compare}" = "xyes" && \
+                 test "x${ac_cv_header_sanitizer_asan_interface_h}" = "xyes" && \
+                 (test "x${mhd_cv_func_attribute_nosanitize_ptr}" = "xyes" || test "x${mhd_cv_func_attribute_nosanitize_addr}" = "xyes")],
+                 [
+                   AC_DEFINE([MHD_ASAN_POISON_ACTIVE], [1], [Define to '1' if user memory poison is used])
+                   enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }user-poison"
+                   enable_san_upoison="yes"
+                   AC_MSG_RESULT([yes])
+                 ],
+                 [
+                   AC_MSG_RESULT([no])
+                   AS_VAR_IF([enable_san_upoison], ["yes"],
+                     [AC_MSG_ERROR([User memory poisoning cannot be enabled])])
+                   enable_san_upoison="no"
+                 ]
+               )
+             ]
            )
+           AS_VAR_IF([enable_san_address], ["yes"],
+             [
+               CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
+               AX_APPEND_COMPILE_FLAGS([-Wp,-U_FORTIFY_SOURCE], [san_CFLAGS])
+               AX_APPEND_FLAG([-D_FORTIFY_SOURCE=0], [san_CFLAGS])
+             ],
+             [
+               AS_CASE([$enable_sanitizers], [auto|auto-fallback],
+                 [AC_MSG_WARN([$CC does not support address sanitizer])])
+             ]
+           )
+           CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
+           # Always stop on sanitizer error
+           AX_APPEND_COMPILE_FLAGS([-fno-sanitize-recover=all], [san_CFLAGS])
+           # Get a better output for sanitizers error reporting
+           AX_APPEND_COMPILE_FLAGS([-fno-omit-frame-pointer -fno-optimize-sibling-calls],
+             [san_CFLAGS])
+           AS_VAR_IF([enable_san_address], ["yes"],
+             [
+               AM_ASAN_OPTIONS="exitcode=88:strict_string_checks=1:detect_stack_use_after_return=1"
+               AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:check_initialization_order=1:strict_init_order=1:redzone=64"
+               AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:max_free_fill_size=1024:detect_invalid_pointer_pairs=3"
+               AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:handle_ioctl=1:halt_on_error=1"
+               AS_VAR_IF([enable_san_upoison], ["yes"], [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:allow_user_poisoning=1"])
+               AS_VAR_IF([enable_san_leak], ["yes"],
+                 [AS_VAR_IF([mhd_cv_cc_sanitizer_address_leak], ["yes"],
+                   [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:detect_leaks=1"])
+                 ], [AM_ASAN_OPTIONS="${AM_ASAN_OPTIONS}:detect_leaks=0"]
+               )
+             ]
+           )
+           AS_VAR_IF([enable_san_undef], [yes],
+             [AM_UBSAN_OPTIONS="exitcode=87:print_stacktrace=1:halt_on_error=1"])
+           AS_VAR_IF([enable_san_leak], ["yes"],
+             [AM_LSAN_OPTIONS="use_unaligned=1"]
+           )
+           AM_TESTS_ENVIRONMENT='\
+    ASAN_OPTIONS="$(AM_ASAN_OPTIONS)" ; export ASAN_OPTIONS ; \
+    UBSAN_OPTIONS="$(AM_UBSAN_OPTIONS)" ; export UBSAN_OPTIONS ; \
+    LSAN_OPTIONS="$(AM_LSAN_OPTIONS)" ; export LSAN_OPTIONS ;'
          ]
        )
-       AS_VAR_IF([enable_san_undef], [yes],
-         [AM_UBSAN_OPTIONS="exitcode=87:print_stacktrace=1:halt_on_error=1"])
-       AS_VAR_IF([enable_san_leak], ["yes"],
-         [AM_LSAN_OPTIONS="use_unaligned=1"]
-       )
-       AM_TESTS_ENVIRONMENT='\
-ASAN_OPTIONS="$(AM_ASAN_OPTIONS)" ; export ASAN_OPTIONS ; \
-UBSAN_OPTIONS="$(AM_UBSAN_OPTIONS)" ; export UBSAN_OPTIONS ; \
-LSAN_OPTIONS="$(AM_LSAN_OPTIONS)" ; export LSAN_OPTIONS ;'
      ]
    )
    CFLAGS_ac="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS}"
