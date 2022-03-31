@@ -55,23 +55,21 @@ MHD_LIBDEPS=""
 MHD_REQ_PRIVATE=''
 MHD_LIBDEPS_PKGCFG=''
 
-AC_MSG_CHECKING([[whether z/OS special settings are required]])
-AS_IF([test `uname -s` = "OS/390"],
-[
-# configure binaries for z/OS
-  AS_IF([test -z "$CC"],
-        [CC=`pwd`"/contrib/xcc"
-         chmod +x $CC || true])
-  AS_IF([test -z "$CPP"],
-        CPP="c89 -E")
-  AS_IF([test -z "$CXXCPP"],
-        CXXCPP="c++ -E -+")
-  AC_MSG_RESULT([[yes]])
-#  _CCC_CCMODE=1
-#  _C89_CCMODE=1
-],
-  AC_MSG_RESULT([[no]])
-)
+AS_IF([test -z "$CC" && test -z "$CPP"], [
+  AC_MSG_CHECKING([[whether z/OS special settings are required]])
+  AS_IF([test `uname -s` = "OS/390"],
+    [
+      # configure binaries for z/OS
+      AS_IF([test -z "$CC"],
+            [CC=`pwd`"/contrib/xcc"
+             chmod +x $CC || true])
+      AS_IF([test -z "$CPP"],
+            CPP="c89 -E")
+      AC_MSG_RESULT([[yes]])
+    ],
+    [AC_MSG_RESULT([[no]])]
+  )
+])
 
 # Checks for programs.
 AC_PROG_AWK
