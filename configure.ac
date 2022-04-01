@@ -323,6 +323,7 @@ AX_CHECK_COMPILE_FLAG([[-Werror=attributes]],
    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
   ],
                       [[errattr_CFLAGS=""]], [], [])
+
 AC_MSG_CHECKING([[for function inline keywords supported by $CC]])
 CFLAGS="${CFLAGS_ac} ${user_CFLAGS} $errattr_CFLAGS"
 inln_prfx="none"
@@ -1968,20 +1969,40 @@ MHD_CHECK_FUNC([[usleep]], [[#include <unistd.h>]], [[usleep(100000);]])
 MHD_CHECK_FUNC([[nanosleep]], [[#include <time.h>]], [[struct timespec ts2, ts1 = {0, 0}; nanosleep(&ts1, &ts2);]])
 
 HIDDEN_VISIBILITY_CFLAGS=""
-AS_CASE(["$host"],
-  [*-*-mingw*],[
-    dnl on mingw32 we do -fvisibility=hidden and __declspec(dllexport)
-    AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) __declspec(dllexport) extern],
-              [defines how to decorate public symbols while building])
-    HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"
-  ],[
-    dnl on other compilers, check if we can do -fvisibility=hidden
-    AX_CHECK_LINK_FLAG([-fvisibility=hidden],
-      [AX_CHECK_COMPILE_FLAG([-fvisibility=hidden],
-                           [AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) extern],
-                                       [defines how to decorate public symbols while building])
-                            HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"])])
-   ])
+AH_TEMPLATE([_MHD_EXTERN],[defines how to decorate public symbols w][hile building the library])
+CFLAGS="${user_CFLAGS}"
+MHD_CHECK_CC_FLAG([-fvisibility=hidden],[CFLAGS_ac],
+  [
+    # NOTE: require setting of errattr_CFLAGS above
+    CFLAGS="${CFLAGS_ac} -fvisibility=hidden ${user_CFLAGS} ${errattr_CFLAGS}"
+    AC_CACHE_CHECK([whether $CC supports __attribute__((visibility("default")))],[mhd_cv_cc_attr_visibility],
+      [
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+extern __attribute__((visibility("default"))) int test_extrn_func(void);
+
+int test_extrn_func(void) {return 0;}
+              ]])
+          ],
+          [mhd_cv_cc_attr_visibility="yes"],[mhd_cv_cc_attr_visibility="no"]
+        )
+      ]
+    )
+    AS_VAR_IF([mhd_cv_cc_attr_visibility],["yes"],
+      [
+        HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"
+        AS_IF([test "x$os_is_native_w32" = "xyes" && test "x$enable_shared" = "xyes"],
+          [AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) __declspec(dllexport) extern])],
+          [AC_DEFINE([_MHD_EXTERN], [__attribute__((visibility("default"))) extern])]
+        )
+      ],
+      [
+        AC_MSG_WARN([$CC supports -fvisibility, but does not support __attribute__((visibility("default"))). Check compiler and compiler flags.])
+        AC_DEFINE([_MHD_EXTERN], [extern])
+      ]
+    )
+  ],[AC_DEFINE([_MHD_EXTERN], [extern])]
+)
+CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 AC_SUBST([HIDDEN_VISIBILITY_CFLAGS])
 
 # libcurl (required for testing)
