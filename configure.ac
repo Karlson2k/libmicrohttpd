@@ -3490,6 +3490,22 @@ src/testzzuf/Makefile])
 AC_OUTPUT
 
 # Finally: summary
+AC_MSG_NOTICE([Toolchain flags:
+  CC=$CC
+  User/system flags:
+    CPPFLAGS="$user_CPPFLAGS"
+    CFLAGS="$user_CFLAGS"
+    LDFLAGS="$user_LDFLAGS"
+  Final set of the flags for tests and examples:
+    CPPFLAGS="$CPPFLAGS_ac $user_CPPFLAGS"
+    CFLAGS="$CFLAGS_ac $user_CFLAGS"
+    LDFLAGS="$LDFLAGS_ac $user_LDFLAGS"
+  Final set of the flags for ${PACKAGE_NAME} library:
+    CPPFLAGS="$CPPFLAGS_ac $MHD_LIB_CPPFLAGS $user_CPPFLAGS"
+    CFLAGS="$CFLAGS_ac $MHD_LIB_CFLAGS $user_CFLAGS"
+    LDFLAGS="$LDFLAGS_ac $MHD_LIB_LDFLAGS $user_LDFLAGS"
+])
+
 AS_IF([test "x$enable_curl" != "xyes"],
  [MSG_CURL="no, many unit tests will not run"],
  [MSG_CURL="yes"])
