@@ -111,6 +111,7 @@ libmicrohttpd_la_CFLAGS = \
 libmicrohttpd_la_LDFLAGS = \
   $(MHD_LIB_LDFLAGS) $(MHD_TLS_LIB_LDFLAGS) \
   $(W32_MHD_LIB_LDFLAGS) \
+  -export-dynamic -no-undefined \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
 libmicrohttpd_la_LIBADD = \
   $(MHD_LIBDEPS) $(MHD_TLS_LIBDEPS)
