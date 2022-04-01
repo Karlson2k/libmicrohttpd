@@ -211,8 +211,8 @@ AC_ARG_ENABLE([linker-hardening],
 LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
 
 
-AH_TEMPLATE([[HAVE_STDBOOL_H]], [Define to 1 if you have the <stdbool.h> header file and <stdbool.h> defines 'bool' type.])
-AH_TEMPLATE([[HAVE_REAL_BOOL]], [Define to 1 if you have the real boolean type.])
+AH_TEMPLATE([[HAVE_STDBOOL_H]], [Define to 1 i][f you have the <stdbool.h> header file and <stdbool.h> defines 'bool' type.])
+AH_TEMPLATE([[HAVE_REAL_BOOL]], [Define to 1 i][f you have the real boolean type.])
 AH_TEMPLATE([[bool]], [Define to type name which will be used as boolean type.])
 AC_CHECK_HEADER([stdbool.h],
   [
@@ -1948,7 +1948,7 @@ MHD_CHECK_FUNC([[sysctl]], [[
 #ifdef HAVE_STDDEF_H
 #include <stddef.h>
 #endif
-  ]], [[int mib[2] = {CTL_KERN, KERN_MAXPROC}; if (sysctl(mib, 2, NULL, NULL, NULL, 0)) return 1;]]
+  ]], [[int mib[2] = {CTL_KERN, KERN_MAXPROC}; i][f (sysctl(mib, 2, NULL, NULL, NULL, 0)) return 1;]]
 )
 
 MHD_CHECK_FUNC([[sysctlbyname]], [[
