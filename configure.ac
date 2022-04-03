@@ -3490,6 +3490,22 @@ src/testzzuf/Makefile])
 AC_OUTPUT
 
 # Finally: summary
+# Format flags without extra spaces for visual beauty
+fin_CPPFLAGS="$user_CPPFLAGS"
+fin_CFLAGS="$user_CFLAGS"
+fin_LDFLAGS="$user_LDFLAGS"
+MHD_PREPEND_FLAG_TO_VAR([fin_CPPFLAGS],[$CPPFLAGS_ac])
+MHD_PREPEND_FLAG_TO_VAR([fin_CFLAGS],[$CFLAGS_ac])
+MHD_PREPEND_FLAG_TO_VAR([fin_LDFLAGS],[$LDFLAGS_ac])
+fin_lib_CPPFLAGS="$user_CPPFLAGS"
+fin_lib_CFLAGS="$user_CFLAGS"
+fin_lib_LDFLAGS="$user_LDFLAGS"
+MHD_PREPEND_FLAG_TO_VAR([fin_lib_CPPFLAGS],[$MHD_LIB_CPPFLAGS])
+MHD_PREPEND_FLAG_TO_VAR([fin_lib_CFLAGS],[$MHD_LIB_CFLAGS])
+MHD_PREPEND_FLAG_TO_VAR([fin_lib_LDFLAGS],[$MHD_LIB_LDFLAGS])
+MHD_PREPEND_FLAG_TO_VAR([fin_lib_CPPFLAGS],[$CPPFLAGS_ac])
+MHD_PREPEND_FLAG_TO_VAR([fin_lib_CFLAGS],[$CFLAGS_ac])
+MHD_PREPEND_FLAG_TO_VAR([fin_lib_LDFLAGS],[$LDFLAGS_ac])
 AC_MSG_NOTICE([Toolchain flags:
   CC=$CC
   User/system flags:
@@ -3497,14 +3513,20 @@ AC_MSG_NOTICE([Toolchain flags:
     CFLAGS="$user_CFLAGS"
     LDFLAGS="$user_LDFLAGS"
   Final set of the flags for tests and examples:
-    CPPFLAGS="$CPPFLAGS_ac $user_CPPFLAGS"
-    CFLAGS="$CFLAGS_ac $user_CFLAGS"
-    LDFLAGS="$LDFLAGS_ac $user_LDFLAGS"
+    CPPFLAGS="$fin_CPPFLAGS"
+    CFLAGS="$fin_CFLAGS"
+    LDFLAGS="$fin_LDFLAGS"
   Final set of the flags for ${PACKAGE_NAME} library:
-    CPPFLAGS="$CPPFLAGS_ac $MHD_LIB_CPPFLAGS $user_CPPFLAGS"
-    CFLAGS="$CFLAGS_ac $MHD_LIB_CFLAGS $user_CFLAGS"
-    LDFLAGS="$LDFLAGS_ac $MHD_LIB_LDFLAGS $user_LDFLAGS"
+    CPPFLAGS="$fin_lib_CPPFLAGS"
+    CFLAGS="$fin_lib_CFLAGS"
+    LDFLAGS="$fin_lib_LDFLAGS"
 ])
+AS_UNSET([fin_CPPFLAGS])
+AS_UNSET([fin_CFLAGS])
+AS_UNSET([fin_LDFLAGS])
+AS_UNSET([fin_lib_CPPFLAGS])
+AS_UNSET([fin_lib_CFLAGS])
+AS_UNSET([fin_lib_LDFLAGS])
 
 AS_IF([test "x$enable_curl" != "xyes"],
  [MSG_CURL="no, many unit tests will not run"],
