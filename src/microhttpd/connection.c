@@ -1901,7 +1901,7 @@ buffer_append (char *buf,
  *         false if not enough space is available
  */
 #define buffer_append_s(buf,ppos,buf_size,str) \
-  buffer_append(buf,ppos,buf_size,str, MHD_STATICSTR_LEN_(str))
+  buffer_append (buf,ppos,buf_size,str, MHD_STATICSTR_LEN_ (str))
 
 
 /**
