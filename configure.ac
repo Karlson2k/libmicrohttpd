@@ -3510,16 +3510,16 @@ AC_MSG_NOTICE([Toolchain flags:
   CC=$CC
   User/system flags:
     CPPFLAGS="$user_CPPFLAGS"
-    CFLAGS="$user_CFLAGS"
-    LDFLAGS="$user_LDFLAGS"
+    CFLAGS=  "$user_CFLAGS"
+    LDFLAGS= "$user_LDFLAGS"
   Final set of the flags for tests and examples:
     CPPFLAGS="$fin_CPPFLAGS"
-    CFLAGS="$fin_CFLAGS"
-    LDFLAGS="$fin_LDFLAGS"
+    CFLAGS=  "$fin_CFLAGS"
+    LDFLAGS= "$fin_LDFLAGS"
   Final set of the flags for ${PACKAGE_NAME} library:
     CPPFLAGS="$fin_lib_CPPFLAGS"
-    CFLAGS="$fin_lib_CFLAGS"
-    LDFLAGS="$fin_lib_LDFLAGS"
+    CFLAGS=  "$fin_lib_CFLAGS"
+    LDFLAGS= "$fin_lib_LDFLAGS"
 ])
 AS_UNSET([fin_CPPFLAGS])
 AS_UNSET([fin_CFLAGS])
