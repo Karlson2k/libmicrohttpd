@@ -876,6 +876,16 @@ int main(void)
         AC_SUBST([W32CRT], [MSVCRT])
       ], [AC_SUBST([W32CRT], [UCRT])]
     )
+
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    LDFLAGS="${user_LDFLAGS}"
+    AS_CASE([$mhd_w32_ver],
+      [WinXP],
+      [MHD_CHECK_ADD_CC_LDFLAG([-Wl,--major-subsystem-version,5,--minor-subsystem-version,1],[LDFLAGS_ac])],
+      [Vista],
+      [MHD_CHECK_ADD_CC_LDFLAG([-Wl,--major-subsystem-version,6,--minor-subsystem-version,0],[LDFLAGS_ac])]
+    )
+    LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
   ]
 )
 CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
