@@ -22,7 +22,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 1
+#serial 2
 
 AC_DEFUN([MHD_APPEND_FLAG_TO_VAR],[dnl
 m4_ifblank([$1],[m4_fatal([$0: First macro argument must not be empty])])dnl
@@ -35,7 +35,9 @@ m4_bmatch([$2],[\$],dnl
 [dnl The second parameter is a variable value
 AS_IF([test -z "_mhd_norm_expd([$2])"],dnl
 [varExtd="${varExtd}"],dnl
-[AS_IF([test -z "${varExtd}"],[varExtd="_mhd_norm_expd([$2])"],[varExtd="${varExtd} _mhd_norm_expd([$2])"])])
+[test -z "${varExtd}"],dnl
+[varExtd="_mhd_norm_expd([$2])"],dnl
+[varExtd="${varExtd} _mhd_norm_expd([$2])"])
 ],dnl
 [dnl The second parameter is not a variable value
 m4_ifnblank(_mhd_norm_expd([$2]),dnl
