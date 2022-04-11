@@ -109,7 +109,7 @@ libmicrohttpd_la_CPPFLAGS = \
 libmicrohttpd_la_CFLAGS = \
   $(AM_CFLAGS) $(MHD_LIB_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 libmicrohttpd_la_LDFLAGS = \
-  $(MHD_LIB_LDFLAGS) $(MHD_TLS_LIB_LDFLAGS) \
+  $(AM_LDFLAGS) $(MHD_LIB_LDFLAGS) $(MHD_TLS_LIB_LDFLAGS) \
   $(W32_MHD_LIB_LDFLAGS) \
   -export-dynamic -no-undefined \
   -version-info @LIB_VERSION_CURRENT@:@LIB_VERSION_REVISION@:@LIB_VERSION_AGE@
