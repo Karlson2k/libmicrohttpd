@@ -28,6 +28,7 @@ AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([gnu] [check-news] [filename-length-max=99] [tar-v7] [silent-rules] [subdir-objects])
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
+m4_pattern_forbid([^_?MHD_[A-Z_]+_CC_])dnl
 
 LIB_VERSION_CURRENT=72
 LIB_VERSION_REVISION=0
@@ -71,6 +72,33 @@ AS_IF([test -z "$CC" && test -z "$CPP"], [
   )
 ])
 
+
+AC_MSG_CHECKING([for build type])
+AC_ARG_ENABLE([build-type],
+  [AS_HELP_STRING([[--enable-build-type=TYPE]],
+  [enable build TYPE, a set of configuration parameters; individual settings ]
+  [(asserts, sanitizers, compiler and linker flags) can be overriden by ]
+  [additional configure parameters (debug, neutral, release, release-compact, ]
+  [release-hardened) [neutral]])],
+  [], [enable_build_type=neutral])
+AS_IF([test "x${enable_build_type}" = "x"], [enable_build_type="neutral"])
+AS_VAR_IF([enable_build_type], ["no"], [enable_build_type="neutral"])
+AS_VAR_IF([enable_build_type], ["yes"], [AC_MSG_ERROR([[Missing TYPE for --enable-build-type=]])])
+AS_CASE([${enable_build_type}],
+  [debug], [AC_MSG_RESULT([debug: enable asserts, sanitizers (if any supported), debug information, compiler optimisation for debugging])],
+  [neutral], [AC_MSG_RESULT([neutral: use only user-specified compiler and linker flags])],
+  [release], [AC_MSG_RESULT([release: disable asserts, enable compiler optimisations])],
+  [release-compact], [AC_MSG_RESULT([release-compact: disable asserts, enable compiler optimisations for size, enable compact code])],
+  [release-hardened], [AC_MSG_RESULT([release-hardened: disable asserts, enable compiler optimisations, enable linker and compiler hardening])],
+  [AC_MSG_ERROR([[Unknown build type: ${enable_build_type}]])]
+)
+AS_VAR_IF([enable_build_type], ["neutral"], [:],
+  [
+    # For all non-neutreal build types do not use automatic "-g -O2" for CFLAGS
+    AS_IF([test -z "${CFLAGS}"], [CFLAGS=""])
+  ]
+)
+
 # Checks for programs.
 AC_PROG_AWK
 AC_PROG_GREP
@@ -108,6 +136,86 @@ MHD_SYS_EXT([CPPFLAGS_ac])
 CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
+
+
+CFLAGS="${user_CFLAGS}"
+# Compiler options to always enable (if supported)
+MHD_CHECK_ADD_CC_CFLAG([-fno-strict-aliasing], [CFLAGS_ac])
+
+AS_VAR_IF([enable_build_type],["neutral"],[],
+  [ # Any non-neutral build types
+    MHD_CHECK_ADD_CC_CFLAGS([-Wall -Wnull-dereference -Wdeclaration-after-statement], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wredundant-decls -Wtrampolines -Wunsafe-loop-optimizations], [CFLAGS_ac])
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    LDFLAGS="${user_LDFLAGS}"
+    MHD_CHECK_ADD_CC_LDFLAG([-Wl,--warn-common], [LDFLAGS_ac])
+    LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+  ]
+)
+AS_VAR_IF([enable_build_type],["debug"],
+  [ # Debug build
+    CFLAGS="${user_CFLAGS}"
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Og], [-O0])
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-ggdb3], [-g3], [-ggdb], [-g])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wextra -Wdouble-promotion -Wformat=2 -Wformat-overflow=2 -Wformat-truncation=2], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wmissing-include-dirs -Wshift-overflow=2 -Wstringop-overflow=4 -Walloc-zero], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wduplicated-branches -Wduplicated-cond -Wfloat-equal -Wshadow -Wpointer-arith], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wbad-function-cast -Wcast-qual -Wcast-align=strict -Wwrite-strings -Wconversion], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wjump-misses-init -Wlogical-op -Waggregate-return -Wstrict-prototypes], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wold-style-definition -Wmissing-prototypes -Wformat-security -Wshift-negative-value], [CFLAGS_ac])
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    LDFLAGS="${user_LDFLAGS}"
+    MHD_CHECK_ADD_CC_LDFLAG([-Wl,--enable-long-section-names], [LDFLAGS_ac])
+    LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+  ]
+)
+AS_CASE([${enable_build_type}],[release|release-*],
+  [ # All release types
+    CFLAGS="${user_CFLAGS}"
+    AS_VAR_IF([enable_build_type],
+      [release-compact],
+      [
+        AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],[],
+          [AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],[],
+            [MHD_APPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-DMHD_FAVOR_SMALL_CODE=1])],
+            [/* no includes */])],[/* no includes */])
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+        MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Oz], [-Os], [-O])
+      ],
+      [ # All non-compact release types
+        AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],[],
+          [AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],[],
+            [MHD_APPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-DMHD_FAVOR_FAST_CODE=1])],
+            [/* no includes */])],[/* no includes */])
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+        MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-O2], [-O])
+        MHD_CHECK_ADD_CC_CFLAGS([-fsched-pressure -fira-loop-pressure -fmerge-all-constants], [CFLAGS_ac]) # These flags may improve size, recheck with LTO and linker garbage collection
+        MHD_CHECK_ADD_CC_CFLAGS([-ftree-partial-pre -fgcse-after-reload -fipa-pta], [CFLAGS_ac])
+        MHD_CHECK_ADD_CC_CFLAGS([-fisolate-erroneous-paths-attribute -ffinite-loops -floop-nest-optimize], [CFLAGS_ac])
+        MHD_CHECK_ADD_CC_CFLAGS([-fpredictive-commoning -frename-registers], [CFLAGS_ac])
+        MHD_CHECK_ADD_CC_CFLAGS([-ftree-loop-distribute-patterns -fpeel-loops -fsplit-loops -ftree-vectorize], [CFLAGS_ac])
+      ]
+    )
+
+    AS_VAR_IF([enable_build_type],
+      [release-hardened],
+      [
+        MHD_CHECK_ADD_CC_CFLAGS([-Wformat-security -Wstack-protector], [CFLAGS_ac])
+      ]
+    )
+    AS_VAR_IF([enable_build_type],
+      [ # Flags are not suitable for 'compact' and for 'hardened'
+        MHD_CHECK_ADD_CC_CFLAGS([-ffast-math -fno-trapping-math], [CFLAGS_ac])
+      ]
+    )
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    # W32-specific
+    LDFLAGS="${user_LDFLAGS}"
+    MHD_CHECK_ADD_CC_LDFLAG([-Wl,--disable-long-section-names], [LDFLAGS_ac])
+    LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+  ]
+)
+CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 
 # Check for headers that are ALWAYS required
 AC_CHECK_HEADERS_ONCE([stdio.h string.h stdint.h errno.h limits.h fcntl.h], [],
@@ -189,26 +297,80 @@ AC_CHECK_HEADERS([sys/sysctl.h netinet/ip_icmp.h netinet/icmp_var.h], [], [],
   ]]
 )
 
-# Adam shostack suggests the following for Windows:
-# -D_FORTIFY_SOURCE=2 -fstack-protector-all
-AC_ARG_ENABLE([gcc-hardening],
-   [AS_HELP_STRING([--enable-gcc-hardening], [enable compiler security checks])],
-[AS_IF([test x$enableval = xyes],[
-    CFLAGS_ac="${CFLAGS_ac} -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all"
-    CFLAGS_ac="${CFLAGS_ac} -fwrapv -fPIE -Wstack-protector"
-    CFLAGS_ac="${CFLAGS_ac} --param ssp-buffer-size=1"
+AC_ARG_ENABLE([compiler-hardening],
+  [AS_HELP_STRING([--enable-compiler-hardening], [enable compiler security checks])],
+  [],
+  [AS_CASE([${enable_build_type}],[*-hardened],
+    [enable_compiler_hardening='yes'],[enable_compiler_hardening='no'])]
+)
+AS_VAR_IF([enable_compiler_hardening],["yes"],
+  [
+    CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+    AC_CHECK_DECL([_FORTIFY_SOURCE],
+      [MHD_APPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-U_FORTIFY_SOURCE])],
+      [],[/* no includes */])
+    MHD_APPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-D_FORTIFY_SOURCE=2])
+    CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+    CFLAGS="${user_CFLAGS}"
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac],[-fstack-protector-strong],[-fstack-protector-all],[-fstack-protector])
+    MHD_CHECK_ADD_CC_CFLAGS([-fstack-clash-protection -ftrivial-auto-var-init=pattern],[CFLAGS_ac])
     CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
-    LDFLAGS_ac="${LDFLAGS_ac} -pie"
+    AS_VAR_IF([pic_mode],["no"],[],
+      [
+        AS_VAR_IF([enable_shared],["yes"],[],
+          [
+            # PIE cannot be used for shared lib
+            # PIE static lib can be used within non-PIE application, but
+            # PIE static lib cannot be used in non-PIE shared lib. Let's assume
+            # that static lib will not be used in shared lib
+            CFLAGS="${user_CFLAGS}"
+            # Perform tests with "-pie" enabled
+            LDFLAGS="${LDFLAGS_ac} -pie ${user_LDFLAGS}"
+            MHD_CHECK_ADD_CC_CFLAG([-fPIE],[CFLAGS_ac],
+              [
+                MHD_APPEND_FLAG_TO_VAR([LDFLAGS_ac],[-pie])
+              ],
+              [
+                MHD_CHECK_CC_CFLAG([-fpie],[CFLAGS_ac],
+                  [
+                    MHD_APPEND_FLAG_TO_VAR([LDFLAGS_ac],[-pie])
+                  ]
+                )
+              ]
+            )
+            CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+            LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+          ]
+        )
+      ]
+    )
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
     LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
- ])])
+  ]
+)
 
 # Linker hardening options
-# Currently these options are ELF specific - you can't use this with MacOSX
+# Currently these options are ELF specific, they don't work on Darwin and W32
 AC_ARG_ENABLE([linker-hardening],
   [AS_HELP_STRING([--enable-linker-hardening], [enable linker security fixups])],
-[AS_IF([test x$enableval = xyes],
-   [LDFLAGS_ac="${LDFLAGS_ac} -z relro -z now"])])
-LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+  [],
+  [AS_CASE([${enable_build_type}],[*-hardened],
+    [enable_linker_hardening='yes'],[enable_linker_hardening='no'])]
+)
+AS_VAR_IF([enable_linker_hardening],["yes"],
+  [
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    LDFLAGS="${user_LDFLAGS}"
+    MHD_CHECK_ADD_CC_LDFLAG([-Wl,-z,relro],[LDFLAGS_ac],
+      [MHD_CHECK_ADD_CC_LDFLAG([-Wl,-z,now],[LDFLAGS_ac])])
+    # Actually should be "noexec" by default, but let's try to enforce it.
+    MHD_CHECK_ADD_CC_LDFLAG([-Wl,-z,noexecstack],[LDFLAGS_ac])
+    # W32-specific. Some are enabled by default, but they will be enfored to be sure.
+    MHD_CHECK_ADD_CC_LDFLAGS([-Wl,--large-address-aware -Wl,--enable-auto-image-base],[LDFLAGS_ac])
+    MHD_CHECK_ADD_CC_LDFLAGS([-Wl,--dynamicbase -Wl,--nxcompat -Wl,--high-entropy-va],[LDFLAGS_ac])
+    LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+  ]
+)
 
 
 AH_TEMPLATE([[HAVE_STDBOOL_H]], [Define to 1 i][f you have the <stdbool.h> header file and <stdbool.h> defines 'bool' type.])
@@ -1058,13 +1220,6 @@ AM_CONDITIONAL([HAVE_LISTEN_SHUTDOWN], [test "x$mhd_cv_host_shtdwn_trgr_select" 
 # https://lists.x.org/archives/xorg-devel/2013-November/038687.html
 AC_SEARCH_LIBS([sendmsg], [socket], [AC_DEFINE([HAVE_SENDMSG],[1],[Define if your platform supports sendmsg])])
 AC_CHECK_FUNCS([writev])
-
-# set GCC options
-# use '-fno-strict-aliasing', but only if the compiler
-# and linker can take it
-AX_CHECK_LINK_FLAG([-fno-strict-aliasing],
-  [AX_APPEND_COMPILE_FLAGS([-fno-strict-aliasing], [CFLAGS_ac])])
-CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 
 AC_C_BIGENDIAN
 AC_C_VARARRAYS
@@ -1971,7 +2126,7 @@ MHD_CHECK_FUNC([[nanosleep]], [[#include <time.h>]], [[struct timespec ts2, ts1 
 HIDDEN_VISIBILITY_CFLAGS=""
 AH_TEMPLATE([_MHD_EXTERN],[defines how to decorate public symbols w][hile building the library])
 CFLAGS="${user_CFLAGS}"
-MHD_CHECK_CC_FLAG([-fvisibility=hidden],[CFLAGS_ac],
+MHD_CHECK_CC_CFLAG([-fvisibility=hidden],[CFLAGS_ac],
   [
     # NOTE: require setting of errattr_CFLAGS above
     CFLAGS="${CFLAGS_ac} -fvisibility=hidden ${user_CFLAGS} ${errattr_CFLAGS}"
@@ -2893,9 +3048,12 @@ AC_MSG_RESULT([$CPU_COUNT])
 
 AC_MSG_CHECKING([[whether to enable debug asserts]])
 AC_ARG_ENABLE([[asserts]],
-              AS_HELP_STRING([[--enable-asserts]],
-                             [enable test build with debug asserts]),
-              [], [[enable_asserts='no']])
+  [AS_HELP_STRING([[--enable-asserts]],
+    [enable test build with debug asserts])],
+  [],
+  [AS_CASE([${enable_build_type}],[*-hardened],
+    [enable_compiler_hardening='yes'],[enable_compiler_hardening='no'])]
+)
 AS_CASE([[$enable_asserts]], [[yes]], [[:]], [[no]], [[:]], [[enable_asserts='no']])
 AC_MSG_RESULT([[$enable_asserts]])
 
@@ -2956,10 +3114,25 @@ AS_IF([test "x${enable_sanitizers}" = "xno"],
   ],
   [test "x${enable_sanitizers}" = "xauto" || test "x${enable_sanitizers}" = "xauto-optional"],
   [
-    enable_san_address="auto"
-    enable_san_undef="auto"
-    enable_san_leak="auto"
-    enable_san_upoison="auto"
+    AS_VAR_IF([enable_compiler_hardening],["yes"],
+      [
+        AS_VAR_IF([enable_sanitizers],["auto"],
+          [AC_MSG_ERROR([sanitizers cannot be enabled with compiler hardnening])],
+          [AC_MSG_WARN([sanitizers cannot be enabled with compiler hardnening])]
+        )
+        enable_sanitizers="no"
+        enable_san_address="no"
+        enable_san_undef="no"
+        enable_san_leak="no"
+        enable_san_upoison="no"
+      ],
+      [
+        enable_san_address="auto"
+        enable_san_undef="auto"
+        enable_san_leak="auto"
+        enable_san_upoison="auto"
+      ]
+    )
   ],
   [test "x${enable_sanitizers}" = "xauto-fallback"],
   [

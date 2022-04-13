@@ -1,7 +1,7 @@
 # SYNOPSIS
 #
-#   MHD_CHECK_CC_FLAG([FLAG-TO-TEST], [VARIABLE-TO-PREPEND-CFLAGS],
-#                     [ACTION-IF-SUPPORTED], [ACTION-IF-NOT-SUPPORTED])
+#   MHD_CHECK_CC_CFLAG([FLAG-TO-TEST], [VARIABLE-TO-PREPEND-CFLAGS],
+#                      [ACTION-IF-SUPPORTED], [ACTION-IF-NOT-SUPPORTED])
 #
 # DESCRIPTION
 #
@@ -15,14 +15,14 @@
 #
 #   Example usage:
 #
-#     MHD_CHECK_CC_FLAG([-Wshadow], [additional_CFLAGS],
-#                       [additional_CFLAGS="${additional_CFLAGS} -Wshadow"])
+#     MHD_CHECK_CC_CFLAG([-Wshadow], [additional_CFLAGS],
+#                        [additional_CFLAGS="${additional_CFLAGS} -Wshadow"])
 #
 #   Defined cache variable used in check so if any test will not work
 #   correctly on some platform, user may simply fix it by giving cache
 #   variable in configure parameters, for example:
 #
-#     ./configure mhd_cv_cc_fl_supp__wshadow=no
+#     ./configure mhd_cv_cc_fl_supp__Wshadow=no
 #
 #   This simplify building from source on exotic platforms as patching
 #   of configure.ac is not required to change results of tests.
@@ -36,9 +36,19 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 1
+#serial 2
 
-AC_DEFUN([MHD_CHECK_CC_FLAG],[dnl
+AC_DEFUN([MHD_CHECK_CC_CFLAG],[dnl
+_MHD_CHECK_CC_XFLAG([$1],[$2],[$3],[$4],[[CFLAGS]])dnl
+])
+
+# SYNOPSIS
+#
+#   _MHD_CHECK_CC_XFLAG([FLAG-TO-TEST], [VARIABLE-TO-PREPEND-CFLAGS],
+#                       [ACTION-IF-SUPPORTED], [ACTION-IF-NOT-SUPPORTED],
+#                       [CFLAGS|LDFLAGS])
+#
+AC_DEFUN([_MHD_CHECK_CC_XFLAG],[dnl
   AC_PREREQ([2.64])dnl for AS_VAR_IF, m4_ifnblank
   AC_LANG_ASSERT([C])dnl
   AC_REQUIRE([AC_PROG_CC])dnl
@@ -49,18 +59,20 @@ AC_DEFUN([MHD_CHECK_CC_FLAG],[dnl
             [m4_fatal([$0: Second macro argument must not contain whitespaces])])dnl
   m4_bmatch([$1], [\$], [m4_fatal([$0: First macro argument must not contain '$'])])dnl
   m4_bmatch([$2], [\$], [m4_fatal([$0: Second macro argument must not contain '$'])])dnl
-  AC_REQUIRE([MHD_FIND_CC_FLAG_WARNPARAMS])dnl sets 'mhd_CFLAGS_params_warn' variable
-  _MHD_CHECK_CC_FLAG_BODY([$1],[$2],[$3],[$4],[mhd_CFLAGS_params_warn])dnl
+  AC_REQUIRE([MHD_FIND_CC_XFLAG_WARNPARAMS])dnl sets 'mhd_xFLAGS_params_warn' variable
+  m4_bmatch(_mhd_norm_expd([$5]), [^\(CFLAGS\|LDFLAGS\)$],[],dnl
+   [m4_fatal([$0: Fifth macro argument must be either 'CFLAGS' or 'LDFLAGS; ']_mhd_norm_expd([$5])[' is not supported])])dnl
+  _MHD_CHECK_CC_XFLAG_BODY([$1],[$2],[$3],[$4],[mhd_xFLAGS_params_warn],[$5])dnl
 ])
 
 
 # SYNOPSIS
 #
-#   _MHD_CHECK_CC_FLAG_BODY([FLAG-TO-TEST], [VARIABLE-TO-PREPEND-CFLAGS],
-#                           [ACTION-IF-SUPPORTED], [ACTION-IF-NOT-SUPPORTED],
-#                           [VARIABLE-TO-ENABLE-WARNS])
+#   _MHD_CHECK_CC_XFLAG_BODY([FLAG-TO-TEST], [VARIABLE-TO-PREPEND-CFLAGS],
+#                            [ACTION-IF-SUPPORTED], [ACTION-IF-NOT-SUPPORTED],
+#                            [VARIABLE-TO-ENABLE-WARNS], [CFLAGS|LDFLAGS])
 #
-AC_DEFUN([_MHD_CHECK_CC_FLAG_BODY],[dnl
+AC_DEFUN([_MHD_CHECK_CC_XFLAG_BODY],[dnl
   AC_LANG_ASSERT([C])dnl
   m4_ifblank([$1], [m4_fatal([$0: First macro argument must not be empty])])dnl
   m4_bmatch(_mhd_norm_expd([$1]), [\s],dnl
@@ -71,18 +83,22 @@ AC_DEFUN([_MHD_CHECK_CC_FLAG_BODY],[dnl
   m4_bmatch([$2], [\$], [m4_fatal([$0: Second macro argument must not contain '$'])])dnl
   m4_ifblank([$5], [m4_fatal([$0: Fifth macro argument must not be empty])])dnl
   m4_bmatch([$5], [\$], [m4_fatal([$0: Fifth macro argument must not contain '$'])])dnl
-  AS_VAR_PUSHDEF([cv_Var], [mhd_cv_cc_fl_supp_]m4_bpatsubst(m4_tolower(_mhd_norm_expd([$1])),[[^a-z0-9]],[_]))dnl
-  dnl
+  m4_bmatch(_mhd_norm_expd([$6]), [^\(CFLAGS\|LDFLAGS\)$],[],dnl
+   [m4_fatal([$0: Sixth macro argument must be either 'CFLAGS' or 'LDFLAGS; ']_mhd_norm_expd([$6])[' is not supported])])dnl
+  m4_pushdef([XFLAGS],_mhd_norm_expd([$6]))dnl
+  dnl Keep uppercase letters to avoid clashes for parameters like -fPIE and -fpie
+  AS_VAR_PUSHDEF([cv_Var],[mhd_cv_cc_]m4_tolower(m4_substr(_mhd_norm_expd([$6]),0,1))[fl_supp_]m4_bpatsubst(_mhd_norm_expd([$1]),[[^a-zA-Z0-9]],[_]))dnl
+
   AC_CACHE_CHECK([whether $[]CC supports _mhd_norm_expd([$1]) flag], cv_Var,
     [dnl
-      AS_VAR_PUSHDEF([save_CFLAGS_Var], [mhd_check_cc_flag_save_CFLAGS])dnl
-      AS_VAR_SET([save_CFLAGS_Var],["${CFLAGS}"])
+      AS_VAR_PUSHDEF([save_xFLAGS_Var], [mhd_check_cc_flag_save_]XFLAGS)dnl
+      AS_VAR_SET([save_xFLAGS_Var],["${XFLAGS}"])
       m4_ifnblank([$2],[dnl
-        m4_if(_mhd_norm_expd([$2]),[CFLAGS],
-          [CFLAGS="${save_CFLAGS_Var} _mhd_norm_expd([$1]) $[]{_mhd_norm_expd([$5])}"],
-          [CFLAGS="$[]{_mhd_norm_expd([$2])} _mhd_norm_expd([$1]) ${save_CFLAGS_Var} $[]{_mhd_norm_expd([$5])}"])
+        m4_if(_mhd_norm_expd([$2]),[XFLAGS],
+          [XFLAGS="${save_xFLAGS_Var} _mhd_norm_expd([$1]) $[]{_mhd_norm_expd([$5])}"],
+          [XFLAGS="$[]{_mhd_norm_expd([$2])} _mhd_norm_expd([$1]) ${save_xFLAGS_Var} $[]{_mhd_norm_expd([$5])}"])
       ],[dnl
-        CFLAGS="_mhd_norm_expd([$1]) $[]CFLAGS $[]{_mhd_norm_expd([$5])}"
+        XFLAGS="_mhd_norm_expd([$1]) $[]XFLAGS $[]{_mhd_norm_expd([$5])}"
       ])dnl
       mhd_check_cc_flag_save_c_werror_flag="$ac_c_werror_flag"
       ac_c_werror_flag=yes
@@ -95,23 +111,23 @@ int main(void)
       ]])])
       AC_LINK_IFELSE([],
         [AS_VAR_SET([cv_Var],["yes"])],
-        [ [#] Compile and link failed if test flag added
+        [ [#] Compile and link failed with test flag added
           m4_ifnblank([$2],[dnl
-            m4_if(_mhd_norm_expd([$2]),[CFLAGS],
-              [CFLAGS="${save_CFLAGS_Var} $[]{_mhd_norm_expd([$5])}"],
-              [CFLAGS="$[]{_mhd_norm_expd([$2])} ${save_CFLAGS_Var} $[]{_mhd_norm_expd([$5])}"])
+            m4_if(_mhd_norm_expd([$2]),[XFLAGS],
+              [XFLAGS="${save_xFLAGS_Var} $[]{_mhd_norm_expd([$5])}"],
+              [XFLAGS="$[]{_mhd_norm_expd([$2])} ${save_xFLAGS_Var} $[]{_mhd_norm_expd([$5])}"])
           ],[dnl
-            CFLAGS="${save_CFLAGS_Var} $[]{_mhd_norm_expd([$5])}"
+            XFLAGS="${save_xFLAGS_Var} $[]{_mhd_norm_expd([$5])}"
             ])dnl
           AC_LINK_IFELSE([],
             [AS_VAR_SET([cv_Var],["no"])],
-            [ [#] Compile and link failed if test flag removed as well
+            [ [#] Compile and link failed with test flag removed as well
               m4_ifnblank([$2],[dnl
-                m4_if(_mhd_norm_expd([$2]),[CFLAGS],
-                  [CFLAGS="${save_CFLAGS_Var} _mhd_norm_expd([$1])"],
-                  [CFLAGS="$[]{_mhd_norm_expd([$2])} _mhd_norm_expd([$1]) ${save_CFLAGS_Var}"])
+                m4_if(_mhd_norm_expd([$2]),[XFLAGS],
+                  [XFLAGS="${save_xFLAGS_Var} _mhd_norm_expd([$1])"],
+                  [XFLAGS="$[]{_mhd_norm_expd([$2])} _mhd_norm_expd([$1]) ${save_xFLAGS_Var}"])
               ],[dnl
-                CFLAGS="_mhd_norm_expd([$1]) ${save_CFLAGS_Var}"
+                XFLAGS="_mhd_norm_expd([$1]) ${save_xFLAGS_Var}"
               ])dnl
               ac_c_werror_flag="$mhd_check_cc_flag_save_c_werror_flag"
               AC_LINK_IFELSE([],
@@ -123,72 +139,58 @@ int main(void)
         ]
       )
       ac_c_werror_flag="$mhd_check_cc_flag_save_c_werror_flag"
-      AS_VAR_SET([CFLAGS],["${save_CFLAGS_Var}"])
-      AS_UNSET(save_CFLAGS_Var)
-      AS_VAR_POPDEF([save_CFLAGS_Var])dnl
+      AS_VAR_SET([XFLAGS],["${save_xFLAGS_Var}"])
+      AS_UNSET(save_xFLAGS_Var)
+      AS_VAR_POPDEF([save_xFLAGS_Var])dnl
     ]
   )
   m4_ifnblank([$3$4],[dnl
     AS_VAR_IF([cv_Var], ["yes"], [$3], m4_default_nblank([$4]))
     ])dnl
   AS_VAR_POPDEF([cv_Var])dnl
+  m4_popdef([XFLAGS])dnl
 ])
 
 
 #
 # SYNOPSIS
 #
-#   MHD_FIND_CC_FLAG_WARNPARAMS()
+#   MHD_FIND_CC_XFLAG_WARNPARAMS()
 #
-AC_DEFUN([MHD_FIND_CC_FLAG_WARNPARAMS],[dnl
+AC_DEFUN([MHD_FIND_CC_XFLAG_WARNPARAMS],[dnl
   AC_LANG_ASSERT([C])dnl
-  AC_REQUIRE([MHD_FIND_CC_FLAG_WWARN])dnl
-  mhd_CFLAGS_params_warn=''
-  _MHD_CHECK_CC_FLAG_BODY([-Wunused-command-line-argument],[],
+  AC_REQUIRE([MHD_FIND_CC_CFLAG_WWARN])dnl
+  mhd_xFLAGS_params_warn=''
+  _MHD_CHECK_CC_XFLAG_BODY([-Wunused-command-line-argument],[],
     [
-      AS_IF([test -z "$mhd_CFLAGS_params_warn"],
-        [mhd_CFLAGS_params_warn='-Wunused-command-line-argument'],
-        [mhd_CFLAGS_params_warn="$mhd_CFLAGS_params_warn -Wunused-command-line-argument"]
-      )
-    ],[],[mhd_cv_cc_flag_Wwarn]
+      MHD_APPEND_FLAG_TO_VAR([mhd_xFLAGS_params_warn],[-Wunused-command-line-argument])
+    ],[],[mhd_cv_cc_flag_Wwarn],[[CFLAGS]]
   )
-  _MHD_CHECK_CC_FLAG_BODY([-Wignored-optimization-argument],[],
+  _MHD_CHECK_CC_XFLAG_BODY([-Wignored-optimization-argument],[],
     [
-      AS_IF([test -z "$mhd_CFLAGS_params_warn"],
-        [mhd_CFLAGS_params_warn='-Wignored-optimization-argument'],
-        [mhd_CFLAGS_params_warn="$mhd_CFLAGS_params_warn -Wignored-optimization-argument"]
-      )
-    ],[],[mhd_cv_cc_flag_Wwarn]
+      MHD_APPEND_FLAG_TO_VAR([mhd_xFLAGS_params_warn],[-Wignored-optimization-argument])
+    ],[],[mhd_cv_cc_flag_Wwarn],[[CFLAGS]]
   )
-  _MHD_CHECK_CC_FLAG_BODY([-Winvalid-command-line-argument],[],
+  _MHD_CHECK_CC_XFLAG_BODY([-Winvalid-command-line-argument],[],
     [
-      AS_IF([test -z "$mhd_CFLAGS_params_warn"],
-        [mhd_CFLAGS_params_warn='-Winvalid-command-line-argument'],
-        [mhd_CFLAGS_params_warn="$mhd_CFLAGS_params_warn -Winvalid-command-line-argument"]
-      )
-    ],[],[mhd_cv_cc_flag_Wwarn]
+      MHD_APPEND_FLAG_TO_VAR([mhd_xFLAGS_params_warn],[-Winvalid-command-line-argument])
+    ],[],[mhd_cv_cc_flag_Wwarn],[[CFLAGS]]
   )
-  _MHD_CHECK_CC_FLAG_BODY([-Wunknown-argument],[],
+  _MHD_CHECK_CC_XFLAG_BODY([-Wunknown-argument],[],
     [
-      AS_IF([test -z "$mhd_CFLAGS_params_warn"],
-        [mhd_CFLAGS_params_warn='-Wunknown-argument'],
-        [mhd_CFLAGS_params_warn="$mhd_CFLAGS_params_warn -Wunknown-argument"]
-      )
-    ],[],[mhd_cv_cc_flag_Wwarn]
+      MHD_APPEND_FLAG_TO_VAR([mhd_xFLAGS_params_warn],[-Wunknown-argument])
+    ],[],[mhd_cv_cc_flag_Wwarn],[[CFLAGS]]
   )
-  AS_IF([test -z "$mhd_CFLAGS_params_warn"],
-    [mhd_CFLAGS_params_warn="$mhd_cv_cc_flag_Wwarn"],
-    [mhd_CFLAGS_params_warn="$mhd_cv_cc_flag_Wwarn $mhd_CFLAGS_params_warn"]
-  )
+  MHD_PREPEND_FLAG_TO_VAR([mhd_xFLAGS_params_warn],[$mhd_cv_cc_flag_Wwarn])
 ])
 
 
 #
 # SYNOPSIS
 #
-#   MHD_FIND_CC_FLAG_WWARN()
+#   MHD_FIND_CC_CFLAG_WWARN()
 #
-AC_DEFUN([MHD_FIND_CC_FLAG_WWARN],[dnl
+AC_DEFUN([MHD_FIND_CC_CFLAG_WWARN],[dnl
   AC_PREREQ([2.64])dnl for AS_VAR_IF, m4_ifnblank
   AC_REQUIRE([AC_PROG_CC])dnl
   AC_LANG_ASSERT([C])dnl
