@@ -486,9 +486,9 @@ MHD_set_connection_value_n_nocheck_ (struct MHD_Connection *connection,
                                  sizeof (struct MHD_HTTP_Res_Header));
   if (NULL == pos)
     return MHD_NO;
-  pos->header = (char *) key;
+  pos->header = key;
   pos->header_size = key_size;
-  pos->value = (char *) value;
+  pos->value = value;
   pos->value_size = value_size;
   pos->kind = kind;
   pos->next = NULL;
