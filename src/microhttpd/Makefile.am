@@ -261,7 +261,7 @@ test_start_stop_LDADD = \
 test_daemon_SOURCES = \
   test_daemon.c
 test_daemon_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  $(builddir)/libmicrohttpd.la
 
 test_response_entries_SOURCES = \
   test_response_entries.c
@@ -277,7 +277,7 @@ test_upgrade_CFLAGS = \
 test_upgrade_LDFLAGS = \
   $(MHD_TLS_LIB_LDFLAGS)
 test_upgrade_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  $(builddir)/libmicrohttpd.la \
   $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) \
   $(PTHREAD_LIBS)
 
@@ -290,7 +290,7 @@ test_upgrade_large_CFLAGS = \
 test_upgrade_large_LDFLAGS = \
   $(MHD_TLS_LIB_LDFLAGS)
 test_upgrade_large_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  $(builddir)/libmicrohttpd.la \
   $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) \
   $(PTHREAD_LIBS)
 
@@ -303,7 +303,7 @@ test_upgrade_tls_CFLAGS = \
 test_upgrade_tls_LDFLAGS = \
   $(MHD_TLS_LIB_LDFLAGS)
 test_upgrade_tls_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  $(builddir)/libmicrohttpd.la \
   $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) \
   $(PTHREAD_LIBS)
 
@@ -316,7 +316,7 @@ test_upgrade_large_tls_CFLAGS = \
 test_upgrade_large_tls_LDFLAGS = \
   $(MHD_TLS_LIB_LDFLAGS)
 test_upgrade_large_tls_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+  $(builddir)/libmicrohttpd.la \
   $(MHD_TLS_LIB_LDFLAGS) $(MHD_TLS_LIBDEPS) \
   $(PTHREAD_LIBS)
 
@@ -327,7 +327,7 @@ test_postprocessor_CPPFLAGS = \
 test_postprocessor_CFLAGS = \
   $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 test_postprocessor_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  $(builddir)/libmicrohttpd.la
 
 test_postprocessor_amp_SOURCES = \
   test_postprocessor_amp.c
@@ -336,7 +336,7 @@ test_postprocessor_amp_CPPFLAGS = \
 test_postprocessor_amp_CFLAGS = \
   $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 test_postprocessor_amp_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  $(builddir)/libmicrohttpd.la
 
 test_postprocessor_large_SOURCES = \
   test_postprocessor_large.c
@@ -345,7 +345,7 @@ test_postprocessor_large_CPPFLAGS = \
 test_postprocessor_large_CFLAGS = \
   $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
 test_postprocessor_large_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  $(builddir)/libmicrohttpd.la
 
 test_postprocessor_md_SOURCES = \
   test_postprocessor_md.c
@@ -427,7 +427,7 @@ test_sha1_SOURCES = \
 test_options_SOURCES = \
   test_options.c
 test_options_LDADD = \
-  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+  $(builddir)/libmicrohttpd.la
 
 test_client_put_shutdown_SOURCES = \
   test_client_put_stop.c
