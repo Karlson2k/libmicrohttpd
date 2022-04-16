@@ -325,6 +325,9 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
                     socklen_t addrlen,
                     struct MHD_IPCount *key)
 {
+#ifndef DEBUG
+  (void) addrlen; /* Mute compiler warning */
+#endif /* DEBUG */
   memset (key,
           0,
           sizeof(*key));
