@@ -222,13 +222,13 @@ test_urlencoding_case (unsigned int want_start,
   for (step = 1; size >= step; ++step)
   {
     struct MHD_Connection connection;
-    struct MHD_HTTP_Header header;
+    struct MHD_HTTP_Req_Header header;
     struct MHD_PostProcessor *pp;
     unsigned int want_off = want_start;
     size_t i;
 
     memset (&connection, 0, sizeof (struct MHD_Connection));
-    memset (&header, 0, sizeof (struct MHD_HTTP_Header));
+    memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
     connection.headers_received = &header;
     header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
     header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
@@ -361,7 +361,7 @@ static int
 test_multipart_garbage (void)
 {
   struct MHD_Connection connection;
-  struct MHD_HTTP_Header header;
+  struct MHD_HTTP_Req_Header header;
   struct MHD_PostProcessor *pp;
   unsigned int want_off;
   size_t size = MHD_STATICSTR_LEN_ (FORM_DATA);
@@ -378,7 +378,7 @@ test_multipart_garbage (void)
   {
     want_off = FORM_START;
     memset (&connection, 0, sizeof (struct MHD_Connection));
-    memset (&header, 0, sizeof (struct MHD_HTTP_Header));
+    memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
     connection.headers_received = &header;
     header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
     header.value =
@@ -429,7 +429,7 @@ static int
 test_multipart_splits (void)
 {
   struct MHD_Connection connection;
-  struct MHD_HTTP_Header header;
+  struct MHD_HTTP_Req_Header header;
   struct MHD_PostProcessor *pp;
   unsigned int want_off;
   size_t size;
@@ -440,7 +440,7 @@ test_multipart_splits (void)
   {
     want_off = FORM_START;
     memset (&connection, 0, sizeof (struct MHD_Connection));
-    memset (&header, 0, sizeof (struct MHD_HTTP_Header));
+    memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
     connection.headers_received = &header;
     header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
     header.value =
@@ -491,7 +491,7 @@ static int
 test_multipart (void)
 {
   struct MHD_Connection connection;
-  struct MHD_HTTP_Header header;
+  struct MHD_HTTP_Req_Header header;
   struct MHD_PostProcessor *pp;
   unsigned int want_off = FORM_START;
   size_t i;
@@ -499,7 +499,7 @@ test_multipart (void)
   size_t size;
 
   memset (&connection, 0, sizeof (struct MHD_Connection));
-  memset (&header, 0, sizeof (struct MHD_HTTP_Header));
+  memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
   connection.headers_received = &header;
   header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
   header.value =
@@ -548,7 +548,7 @@ static int
 test_nested_multipart (void)
 {
   struct MHD_Connection connection;
-  struct MHD_HTTP_Header header;
+  struct MHD_HTTP_Res_Header header;
   struct MHD_PostProcessor *pp;
   unsigned int want_off = FORM_NESTED_START;
   size_t i;
@@ -556,7 +556,7 @@ test_nested_multipart (void)
   size_t size;
 
   memset (&connection, 0, sizeof (struct MHD_Connection));
-  memset (&header, 0, sizeof (struct MHD_HTTP_Header));
+  memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
   connection.headers_received = &header;
   header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
   header.value =
@@ -623,7 +623,7 @@ static int
 test_overflow ()
 {
   struct MHD_Connection connection;
-  struct MHD_HTTP_Header header;
+  struct MHD_HTTP_Req_Header header;
   struct MHD_PostProcessor *pp;
   size_t i;
   size_t j;
@@ -631,7 +631,7 @@ test_overflow ()
   char *buf;
 
   memset (&connection, 0, sizeof (struct MHD_Connection));
-  memset (&header, 0, sizeof (struct MHD_HTTP_Header));
+  memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
   connection.headers_received = &header;
   header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
   header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
@@ -686,10 +686,10 @@ test_empty_key (void)
   {
     size_t i;
     struct MHD_Connection connection;
-    struct MHD_HTTP_Header header;
+    struct MHD_HTTP_Req_Header header;
     struct MHD_PostProcessor *pp;
     memset (&connection, 0, sizeof (struct MHD_Connection));
-    memset (&header, 0, sizeof (struct MHD_HTTP_Header));
+    memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
 
     connection.headers_received = &header;
     connection.headers_received_tail = &header;
@@ -738,12 +738,12 @@ test_double_value (void)
   {
     size_t i;
     struct MHD_Connection connection;
-    struct MHD_HTTP_Header header;
+    struct MHD_HTTP_Req_Header header;
     struct MHD_PostProcessor *pp;
     unsigned int results_off = URL_START;
     unsigned int results_final = results_off + 1; /* First value is correct */
     memset (&connection, 0, sizeof (struct MHD_Connection));
-    memset (&header, 0, sizeof (struct MHD_HTTP_Header));
+    memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
 
     connection.headers_received = &header;
     connection.headers_received_tail = &header;

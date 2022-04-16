@@ -737,7 +737,7 @@ test_header (struct MHD_Connection *connection,
              size_t value_size,
              enum MHD_ValueKind kind)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Req_Header *pos;
 
   for (pos = connection->headers_received; NULL != pos; pos = pos->next)
   {
@@ -780,7 +780,7 @@ static enum MHD_Result
 check_argument_match (struct MHD_Connection *connection,
                       const char *args)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Req_Header *pos;
   char *argb;
   unsigned int num_headers;
   enum MHD_Result ret;

@@ -387,7 +387,7 @@ MHD_get_connection_values (struct MHD_Connection *connection,
                            void *iterator_cls)
 {
   int ret;
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Req_Header *pos;
 
   if (NULL == connection)
     return -1;
@@ -426,7 +426,7 @@ MHD_get_connection_values_n (struct MHD_Connection *connection,
                              void *iterator_cls)
 {
   int ret;
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Req_Header *pos;
 
   if (NULL == connection)
     return -1;
@@ -480,10 +480,10 @@ MHD_set_connection_value_n_nocheck_ (struct MHD_Connection *connection,
                                      const char *value,
                                      size_t value_size)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Req_Header *pos;
 
   pos = connection_alloc_memory (connection,
-                                 sizeof (struct MHD_HTTP_Header));
+                                 sizeof (struct MHD_HTTP_Res_Header));
   if (NULL == pos)
     return MHD_NO;
   pos->header = (char *) key;
@@ -653,7 +653,7 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
                                const char **value_ptr,
                                size_t *value_size_ptr)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Req_Header *pos;
 
   if (NULL == connection)
     return MHD_NO;
@@ -716,14 +716,10 @@ MHD_lookup_header_token_ci (const struct MHD_Connection *connection,
                             const char *token,
                             size_t token_len)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Req_Header *pos;
 
-  if ((NULL == connection) || (NULL == header) || (0 == header[0]) || (NULL ==
-                                                                       token) ||
-      (0 ==
-       token
-       [
-         0]) )
+  if ((NULL == connection) || (NULL == header) || (0 == header[0]) ||
+      (NULL == token) || (0 == token[0]))
     return false;
 
   for (pos = connection->headers_received; NULL != pos; pos = pos->next)
@@ -1934,7 +1930,7 @@ add_user_headers (char *buf,
                   bool add_keep_alive)
 {
   struct MHD_Response *const r = response; /**< a short alias */
-  struct MHD_HTTP_Header *hdr; /**< Iterates through User-specified headers */
+  struct MHD_HTTP_Res_Header *hdr; /**< Iterates through User-specified headers */
   size_t el_size; /**< the size of current element to be added to the @a buf */
 
   mhd_assert (! add_close || ! add_keep_alive);
@@ -2276,7 +2272,7 @@ build_connection_chunked_response_footer (struct MHD_Connection *connection)
   size_t buf_size;     /**< the size of the @a buf */
   size_t used_size;    /**< the used size of the @a buf */
   struct MHD_Connection *const c = connection; /**< a short alias */
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Res_Header *pos;
 
   mhd_assert (connection->rp_props.chunked);
   /* TODO: allow combining of the final footer with the last chunk,
@@ -5219,7 +5215,7 @@ MHD_queue_response (struct MHD_Connection *connection,
 #ifdef UPGRADE_SUPPORT
   if (NULL != response->upgrade_handler)
   {
-    struct MHD_HTTP_Header *conn_header;
+    struct MHD_HTTP_Res_Header *conn_header;
     if (0 == (daemon->options & MHD_ALLOW_UPGRADE))
     {
 #ifdef HAVE_MESSAGES

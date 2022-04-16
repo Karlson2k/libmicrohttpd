@@ -276,19 +276,19 @@ MHD_DLOG (const struct MHD_Daemon *daemon,
 
 
 /**
- * Header or cookie in HTTP request or response.
+ * Header or footer for HTTP response.
  */
-struct MHD_HTTP_Header
+struct MHD_HTTP_Res_Header
 {
   /**
    * Headers are kept in a double-linked list.
    */
-  struct MHD_HTTP_Header *next;
+  struct MHD_HTTP_Res_Header *next;
 
   /**
    * Headers are kept in a double-linked list.
    */
-  struct MHD_HTTP_Header *prev;
+  struct MHD_HTTP_Res_Header *prev;
 
   /**
    * The name of the header (key), without the colon.
@@ -311,8 +311,50 @@ struct MHD_HTTP_Header
   size_t value_size;
 
   /**
-   * Type of the header (where in the HTTP protocol is this header
-   * from).
+   * Type of the value.
+   */
+  enum MHD_ValueKind kind;
+
+};
+
+
+/**
+ * Header, footer, or cookie for HTTP request.
+ */
+struct MHD_HTTP_Req_Header
+{
+  /**
+   * Headers are kept in a double-linked list.
+   */
+  struct MHD_HTTP_Req_Header *next;
+
+  /**
+   * Headers are kept in a double-linked list.
+   */
+  struct MHD_HTTP_Req_Header *prev;
+
+  /**
+   * The name of the header (key), without the colon.
+   */
+  const char *header;
+
+  /**
+   * The length of the @a header, not including the final zero termination.
+   */
+  size_t header_size;
+
+  /**
+   * The value of the header.
+   */
+  const char *value;
+
+  /**
+   * The length of the @a value, not including the final zero termination.
+   */
+  size_t value_size;
+
+  /**
+   * Type of the value.
    */
   enum MHD_ValueKind kind;
 
@@ -396,12 +438,12 @@ struct MHD_Response
   /**
    * Head of double-linked list of headers to send for the response.
    */
-  struct MHD_HTTP_Header *first_header;
+  struct MHD_HTTP_Res_Header *first_header;
 
   /**
    * Tail of double-linked list of headers to send for the response.
    */
-  struct MHD_HTTP_Header *last_header;
+  struct MHD_HTTP_Res_Header *last_header;
 
   /**
    * Buffer pointing to data that we are supposed
@@ -915,12 +957,12 @@ struct MHD_Connection
   /**
    * Linked list of parsed headers.
    */
-  struct MHD_HTTP_Header *headers_received;
+  struct MHD_HTTP_Req_Header *headers_received;
 
   /**
    * Tail of linked list of parsed headers.
    */
-  struct MHD_HTTP_Header *headers_received_tail;
+  struct MHD_HTTP_Req_Header *headers_received_tail;
 
   /**
    * Response to transmit (initially NULL).

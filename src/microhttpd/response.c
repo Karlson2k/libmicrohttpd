@@ -159,7 +159,7 @@ add_response_entry (struct MHD_Response *response,
                     const char *header,
                     const char *content)
 {
-  struct MHD_HTTP_Header *hdr;
+  struct MHD_HTTP_Res_Header *hdr;
 
   if ( (NULL == response) ||
        (NULL == header) ||
@@ -173,7 +173,7 @@ add_response_entry (struct MHD_Response *response,
        (NULL != strchr (content, '\r')) ||
        (NULL != strchr (content, '\n')) )
     return MHD_NO;
-  if (NULL == (hdr = MHD_calloc_ (1, sizeof (struct MHD_HTTP_Header))))
+  if (NULL == (hdr = MHD_calloc_ (1, sizeof (struct MHD_HTTP_Res_Header))))
     return MHD_NO;
   if (NULL == (hdr->header = strdup (header)))
   {
@@ -218,7 +218,7 @@ add_response_header_connection (struct MHD_Response *response,
   size_t buf_size;   /**< the size of the buffer */
   ssize_t norm_len;  /**< the length of the normalised value */
   char *buf;         /**< the temporal buffer */
-  struct MHD_HTTP_Header *hdr; /**< existing "Connection" header */
+  struct MHD_HTTP_Res_Header *hdr; /**< existing "Connection" header */
   bool value_has_close; /**< the @a value has "close" token */
   bool already_has_close; /**< existing "Connection" header has "close" token */
   size_t pos = 0;   /**< position of addition in the @a buf */
@@ -340,9 +340,9 @@ add_response_header_connection (struct MHD_Response *response,
 
   if (NULL == hdr)
   {
-    struct MHD_HTTP_Header *new_hdr; /**< new "Connection" header */
+    struct MHD_HTTP_Res_Header *new_hdr; /**< new "Connection" header */
     /* Create new response header entry */
-    new_hdr = MHD_calloc_ (1, sizeof (struct MHD_HTTP_Header));
+    new_hdr = MHD_calloc_ (1, sizeof (struct MHD_HTTP_Res_Header));
     if (NULL != new_hdr)
     {
       new_hdr->header = malloc (key_len + 1);
@@ -390,7 +390,7 @@ static enum MHD_Result
 del_response_header_connection (struct MHD_Response *response,
                                 const char *value)
 {
-  struct MHD_HTTP_Header *hdr; /**< existing "Connection" header */
+  struct MHD_HTTP_Res_Header *hdr; /**< existing "Connection" header */
 
   hdr = MHD_get_response_element_n_ (response, MHD_HEADER_KIND,
                                      MHD_HTTP_HEADER_CONNECTION,
@@ -522,7 +522,7 @@ MHD_add_response_header (struct MHD_Response *response,
   {
     if (0 != (response->flags_auto & MHD_RAF_HAS_DATE_HDR))
     {
-      struct MHD_HTTP_Header *hdr;
+      struct MHD_HTTP_Res_Header *hdr;
       hdr = MHD_get_response_element_n_ (response, MHD_HEADER_KIND,
                                          MHD_HTTP_HEADER_DATE,
                                          MHD_STATICSTR_LEN_ ( \
@@ -615,7 +615,7 @@ MHD_del_response_header (struct MHD_Response *response,
                          const char *header,
                          const char *content)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Res_Header *pos;
   size_t header_len;
   size_t content_len;
 
@@ -698,7 +698,7 @@ MHD_get_response_headers (struct MHD_Response *response,
                           void *iterator_cls)
 {
   int numHeaders = 0;
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Res_Header *pos;
 
   for (pos = response->first_header;
        NULL != pos;
@@ -728,7 +728,7 @@ const char *
 MHD_get_response_header (struct MHD_Response *response,
                          const char *key)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Res_Header *pos;
   size_t key_size;
 
   if (NULL == key)
@@ -758,13 +758,13 @@ MHD_get_response_header (struct MHD_Response *response,
  * @return NULL if header element does not exist
  * @ingroup response
  */
-struct MHD_HTTP_Header *
+struct MHD_HTTP_Res_Header *
 MHD_get_response_element_n_ (struct MHD_Response *response,
                              enum MHD_ValueKind kind,
                              const char *key,
                              size_t key_len)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Res_Header *pos;
 
   mhd_assert (NULL != key);
   mhd_assert (0 != key[0]);
@@ -806,7 +806,7 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
                                     const char *token,
                                     size_t token_len)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Res_Header *pos;
 
   if ( (NULL == key) ||
        ('\0' == key[0]) ||
@@ -2041,7 +2041,7 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
 void
 MHD_destroy_response (struct MHD_Response *response)
 {
-  struct MHD_HTTP_Header *pos;
+  struct MHD_HTTP_Res_Header *pos;
 
   if (NULL == response)
     return;

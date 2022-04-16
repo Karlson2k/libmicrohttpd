@@ -63,7 +63,7 @@ static int
 test_simple_large ()
 {
   struct MHD_Connection connection;
-  struct MHD_HTTP_Header header;
+  struct MHD_HTTP_Req_Header header;
   struct MHD_PostProcessor *pp;
   size_t i;
   size_t delta;
@@ -76,7 +76,7 @@ test_simple_large ()
   memcpy (data, "key=", 4);
   data[sizeof (data) - 1] = '\0';
   memset (&connection, 0, sizeof (struct MHD_Connection));
-  memset (&header, 0, sizeof (struct MHD_HTTP_Header));
+  memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
   connection.headers_received = &header;
   header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
   header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;

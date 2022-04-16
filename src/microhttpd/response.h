@@ -67,7 +67,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
  * @return NULL if header element does not exist
  * @ingroup response
  */
-struct MHD_HTTP_Header *
+struct MHD_HTTP_Res_Header *
 MHD_get_response_element_n_ (struct MHD_Response *response,
                              enum MHD_ValueKind kind,
                              const char *key,
