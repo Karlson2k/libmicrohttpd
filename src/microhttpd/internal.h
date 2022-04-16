@@ -999,7 +999,7 @@ struct MHD_Connection
   /**
    * Request method.  Should be GET/POST/etc.  Allocated in pool.
    */
-  char *method;
+  const char *method;
 
   /**
    * The request method as enum.
@@ -1016,7 +1016,7 @@ struct MHD_Connection
    * HTTP version string (i.e. http/1.1).  Allocated
    * in pool.
    */
-  char *version;
+  const char *version;
 
   /**
    * HTTP protocol version as enum.
