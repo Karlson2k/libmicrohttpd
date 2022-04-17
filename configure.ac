@@ -3689,7 +3689,7 @@ MHD_PREPEND_FLAG_TO_VAR([fin_lib_CFLAGS],[$CFLAGS_ac])
 MHD_PREPEND_FLAG_TO_VAR([fin_lib_LDFLAGS],[$LDFLAGS_ac])
 AC_MSG_NOTICE([Toolchain flags:
   CC=$CC
-  User/system flags:
+  User/system/default flags:
     CPPFLAGS="$user_CPPFLAGS"
     CFLAGS=  "$user_CFLAGS"
     LDFLAGS= "$user_LDFLAGS"
