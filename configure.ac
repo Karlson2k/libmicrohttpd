@@ -313,33 +313,30 @@ AS_VAR_IF([enable_compiler_hardening],["yes"],
     MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac],[-fstack-protector-strong],[-fstack-protector-all],[-fstack-protector])
     MHD_CHECK_ADD_CC_CFLAGS([-fstack-clash-protection -ftrivial-auto-var-init=pattern],[CFLAGS_ac])
     CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
-    AS_VAR_IF([pic_mode],["no"],[],
+    AS_IF([test "x${enable_static}" = "xyes" && test "x${pic_mode}" != "xyes"],
       [
-        AS_VAR_IF([enable_shared],["yes"],[],
+        # PIE static lib can be used within non-PIE application, but
+        # PIE static lib cannot be used in non-PIE shared lib. Let's assume
+        # that static lib will not be used in shared lib
+        # All "pie" flags will be used automatically by libtool only
+        # for static library objects.
+        CFLAGS="${user_CFLAGS}"
+        # Perform tests here with "-pie" enabled
+        LDFLAGS="${LDFLAGS_ac} -pie ${user_LDFLAGS}"
+        MHD_CHECK_ADD_CC_CFLAG([-fPIE],[CFLAGS_ac],
           [
-            # PIE cannot be used for shared lib
-            # PIE static lib can be used within non-PIE application, but
-            # PIE static lib cannot be used in non-PIE shared lib. Let's assume
-            # that static lib will not be used in shared lib
-            CFLAGS="${user_CFLAGS}"
-            # Perform tests with "-pie" enabled
-            LDFLAGS="${LDFLAGS_ac} -pie ${user_LDFLAGS}"
-            MHD_CHECK_ADD_CC_CFLAG([-fPIE],[CFLAGS_ac],
+            MHD_APPEND_FLAG_TO_VAR([LDFLAGS_ac],[-pie])
+          ],
+          [
+            MHD_CHECK_ADD_CC_CFLAG([-fpie],[CFLAGS_ac],
               [
                 MHD_APPEND_FLAG_TO_VAR([LDFLAGS_ac],[-pie])
-              ],
-              [
-                MHD_CHECK_CC_CFLAG([-fpie],[CFLAGS_ac],
-                  [
-                    MHD_APPEND_FLAG_TO_VAR([LDFLAGS_ac],[-pie])
-                  ]
-                )
               ]
             )
-            CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
-            LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
           ]
         )
+        CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+        LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
       ]
     )
     CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
