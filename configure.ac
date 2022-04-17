@@ -203,7 +203,7 @@ AS_CASE([${enable_build_type}],[release|release-*],
         MHD_CHECK_ADD_CC_CFLAGS([-Wformat-security -Wstack-protector], [CFLAGS_ac])
       ]
     )
-    AS_VAR_IF([enable_build_type],
+    AS_VAR_IF([enable_build_type],["release"],
       [ # Flags are not suitable for 'compact' and for 'hardened'
         MHD_CHECK_ADD_CC_CFLAGS([-ffast-math -fno-trapping-math], [CFLAGS_ac])
       ]
