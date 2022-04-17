@@ -1297,45 +1297,34 @@ MHD_create_response_from_data (size_t size,
                                int must_copy)
 {
   struct MHD_Response *response;
-  void *tmp;
+  void *mhd_copy;
 
-  if ((NULL == data) && (size > 0))
-    return NULL;
-  if (MHD_SIZE_UNKNOWN == size)
-    return NULL;
-  if (NULL == (response = MHD_calloc_ (1, sizeof (struct MHD_Response))))
-    return NULL;
-  response->fd = -1;
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-  if (! MHD_mutex_init_ (&response->mutex))
-  {
-    free (response);
-    return NULL;
-  }
-#endif
   if ((must_copy) && (size > 0))
   {
-    if (NULL == (tmp = malloc (size)))
-    {
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-      MHD_mutex_destroy_chk_ (&response->mutex);
-#endif
-      free (response);
+    if (NULL == data)
       return NULL;
-    }
-    memcpy (tmp, data, size);
+    mhd_copy = malloc (size);
+    if (NULL == mhd_copy)
+      return NULL;
+    memcpy (mhd_copy, data, size);
     must_free = MHD_YES;
-    data = tmp;
+    data = mhd_copy;
   }
-  if (must_free)
+  else
+    mhd_copy = NULL;
+
+  response =
+    MHD_create_response_from_buffer_with_free_callback_cls (size,
+                                                            data,
+                                                            must_free ?
+                                                            &free : NULL,
+                                                            data);
+  if (NULL == response)
   {
-    response->crfc = &free;
-    response->crc_cls = data;
+    if (NULL != mhd_copy)
+      free (mhd_copy);
+    return NULL;
   }
-  response->reference_count = 1;
-  response->total_size = size;
-  response->data = data;
-  response->data_size = size;
   if (must_copy)
     response->data_buffer_size = size;
   return response;
@@ -1425,22 +1414,39 @@ MHD_create_response_from_buffer_with_free_callback (size_t size,
  * @param crfc_cls an argument for @a crfc
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @note Available since #MHD_VERSION 0x00097302
+ * @note 'const' qualifier is used for @a buffer since #MHD_VERSION 0x00097504
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_buffer_with_free_callback_cls (size_t size,
-                                                        void *buffer,
+                                                        const void *buffer,
                                                         MHD_ContentReaderFreeCallback
                                                         crfc,
                                                         void *crfc_cls)
 {
   struct MHD_Response *r;
 
-  r = MHD_create_response_from_buffer_with_free_callback (size,
-                                                          buffer,
-                                                          crfc);
-  if (NULL != r)
-    r->crc_cls = crfc_cls;
+  if ((NULL == buffer) && (size > 0))
+    return NULL;
+  if (MHD_SIZE_UNKNOWN == size)
+    return NULL;
+  r = MHD_calloc_ (1, sizeof (struct MHD_Response));
+  if (NULL == r)
+    return NULL;
+#if defined(MHD_USE_THREADS)
+  if (! MHD_mutex_init_ (&r->mutex))
+  {
+    free (r);
+    return NULL;
+  }
+#endif
+  r->fd = -1;
+  r->reference_count = 1;
+  r->total_size = size;
+  r->data = buffer;
+  r->data_size = size;
+  r->crfc = crfc;
+  r->crc_cls = crfc_cls;
   return r;
 }
 

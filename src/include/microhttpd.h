@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097503
+#define MHD_VERSION 0x00097504
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
@@ -3582,11 +3582,12 @@ MHD_create_response_from_buffer_with_free_callback (size_t size,
  * @param crfc_cls an argument for @a crfc
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @note Available since #MHD_VERSION 0x00097302
+ * @note 'const' qualifier is used for @a buffer since #MHD_VERSION 0x00097504
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_buffer_with_free_callback_cls (size_t size,
-                                                        void *buffer,
+                                                        const void *buffer,
                                                         MHD_ContentReaderFreeCallback
                                                         crfc,
                                                         void *crfc_cls);

@@ -449,7 +449,7 @@ struct MHD_Response
    * Buffer pointing to data that we are supposed
    * to send as a response.
    */
-  char *data;
+  const char *data;
 
   /**
    * Closure to give to the content reader @e crc
