@@ -172,8 +172,7 @@ AS_VAR_IF([enable_build_type],["debug"],
 AS_CASE([${enable_build_type}],[release|release-*],
   [ # All release types
     CFLAGS="${user_CFLAGS}"
-    AS_VAR_IF([enable_build_type],
-      [release-compact],
+    AS_VAR_IF([enable_build_type],["release-compact"],
       [
         AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],[],
           [AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],[],
@@ -197,8 +196,7 @@ AS_CASE([${enable_build_type}],[release|release-*],
       ]
     )
 
-    AS_VAR_IF([enable_build_type],
-      [release-hardened],
+    AS_VAR_IF([enable_build_type],["release-hardened"],
       [
         MHD_CHECK_ADD_CC_CFLAGS([-Wformat-security -Wstack-protector], [CFLAGS_ac])
       ]
