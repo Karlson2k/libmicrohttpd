@@ -1366,7 +1366,7 @@ MHD_bin_to_hex (const void *bin,
   for (i = 0; i < size; ++i)
   {
     uint8_t j;
-    const uint8_t b = ((uint8_t *) bin)[i];
+    const uint8_t b = ((const uint8_t *) bin)[i];
     j = b >> 4;
     hex[i * 2] = (char) ((j < 10) ? (j + '0') : (j - 10 + 'a'));
     j = b & 0x0f;

@@ -1594,7 +1594,7 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
   if (1 == i_cp)
   {
     mhd_assert (NULL != last_valid_buffer);
-    response->data = (void *) last_valid_buffer;
+    response->data = last_valid_buffer;
     response->data_size = (size_t) total_size;
     return response;
   }

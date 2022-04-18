@@ -6743,7 +6743,7 @@ MHD_start_daemon_va (unsigned int flags,
       if (0 > setsockopt (listen_fd,
                           SOL_SOCKET,
                           SO_REUSEADDR,
-                          (void *) &on, sizeof (on)))
+                          (const void *) &on, sizeof (on)))
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
@@ -6762,7 +6762,7 @@ MHD_start_daemon_va (unsigned int flags,
       if (0 > setsockopt (listen_fd,
                           SOL_SOCKET,
                           SO_REUSEADDR,
-                          (void *) &on, sizeof (on)))
+                          (const void *) &on, sizeof (on)))
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
@@ -6784,7 +6784,7 @@ MHD_start_daemon_va (unsigned int flags,
 #else  /* MHD_WINSOCK_SOCKETS */
                           SO_REUSEADDR,
 #endif /* MHD_WINSOCK_SOCKETS */
-                          (void *) &on,
+                          (const void *) &on,
                           sizeof (on)))
       {
 #ifdef HAVE_MESSAGES
