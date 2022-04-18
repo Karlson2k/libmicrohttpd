@@ -2391,9 +2391,8 @@ transmit_error_response_len (struct MHD_Connection *connection,
     MHD_destroy_response (connection->response);
     connection->response = NULL;
   }
-  response = MHD_create_response_from_buffer (message_len,
-                                              (void *) message,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer_static (message_len,
+                                                     message);
   if (NULL == response)
   {
 #ifdef HAVE_MESSAGES
