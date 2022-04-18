@@ -142,7 +142,7 @@ MHD_unescape_plus (char *arg)
  * @return length of the resulting val (`strlen(val)` may be
  *  shorter afterwards due to elimination of escape sequences)
  */
-size_t
+_MHD_EXTERN size_t
 MHD_http_unescape (char *val)
 {
   char *rpos = val;

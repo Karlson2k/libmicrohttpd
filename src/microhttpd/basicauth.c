@@ -43,7 +43,7 @@
  *      to the username if found
  * @ingroup authentication
  */
-char *
+_MHD_EXTERN char *
 MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
                                       char **password)
 {
@@ -120,7 +120,7 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
                                     const char *realm,
                                     struct MHD_Response *response)

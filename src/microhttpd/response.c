@@ -489,7 +489,7 @@ del_response_header_connection (struct MHD_Response *response,
  *         or out of memory
  * @ingroup response
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_add_response_header (struct MHD_Response *response,
                          const char *header,
                          const char *content)
@@ -584,7 +584,7 @@ MHD_add_response_header (struct MHD_Response *response,
  * @return #MHD_NO on error (i.e. invalid footer or content format).
  * @ingroup response
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_add_response_footer (struct MHD_Response *response,
                          const char *footer,
                          const char *content)
@@ -610,7 +610,7 @@ MHD_add_response_footer (struct MHD_Response *response,
  * @return #MHD_NO on error (no such header known)
  * @ingroup response
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_del_response_header (struct MHD_Response *response,
                          const char *header,
                          const char *content)
@@ -692,7 +692,7 @@ MHD_del_response_header (struct MHD_Response *response,
  * @return number of entries iterated over
  * @ingroup response
  */
-int
+_MHD_EXTERN int
 MHD_get_response_headers (struct MHD_Response *response,
                           MHD_KeyValueIterator iterator,
                           void *iterator_cls)
@@ -724,7 +724,7 @@ MHD_get_response_headers (struct MHD_Response *response,
  * @return NULL if header does not exist
  * @ingroup response
  */
-const char *
+_MHD_EXTERN const char *
 MHD_get_response_header (struct MHD_Response *response,
                          const char *key)
 {
@@ -856,7 +856,7 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_callback (uint64_t size,
                                    size_t block_size,
                                    MHD_ContentReaderCallback crc,
@@ -897,7 +897,7 @@ MHD_create_response_from_callback (uint64_t size,
  * @param ... #MHD_RO_END terminated list of options
  * @return #MHD_YES on success, #MHD_NO on error
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_set_response_options (struct MHD_Response *response,
                           enum MHD_ResponseFlags flags,
                           ...)
@@ -1111,7 +1111,7 @@ free_callback (void *cls)
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd_at_offset (size_t size,
                                        int fd,
                                        off_t offset)
@@ -1231,7 +1231,7 @@ MHD_create_response_from_pipe (int fd)
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd (size_t size,
                              int fd)
 {
@@ -1290,7 +1290,7 @@ MHD_create_response_from_fd64 (uint64_t size,
  * @deprecated use #MHD_create_response_from_buffer instead
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_data (size_t size,
                                void *data,
                                int must_free,
@@ -1348,7 +1348,7 @@ MHD_create_response_from_data (size_t size,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_buffer (size_t size,
                                  void *buffer,
                                  enum MHD_ResponseMemoryMode mode)
@@ -1613,7 +1613,7 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
  * @note Available since #MHD_VERSION 0x00097503
  * @ingroup response
  */
-struct MHD_Response *
+_MHD_EXTERN struct MHD_Response *
 MHD_create_response_empty (enum MHD_ResponseFlags flags)
 {
   struct MHD_Response *r;
@@ -2044,7 +2044,7 @@ MHD_create_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
  * @param response response to destroy
  * @ingroup response
  */
-void
+_MHD_EXTERN void
 MHD_destroy_response (struct MHD_Response *response)
 {
   struct MHD_HTTP_Res_Header *pos;

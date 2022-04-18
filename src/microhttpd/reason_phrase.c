@@ -174,7 +174,7 @@ static const struct MHD_Reason_Block reasons[] = {
 };
 
 
-const char *
+_MHD_EXTERN const char *
 MHD_get_reason_phrase_for (unsigned int code)
 {
   if ( (code >= 100) &&
@@ -185,7 +185,7 @@ MHD_get_reason_phrase_for (unsigned int code)
 }
 
 
-size_t
+_MHD_EXTERN size_t
 MHD_get_reason_phrase_len_for (unsigned int code)
 {
   if ( (code >= 100) &&

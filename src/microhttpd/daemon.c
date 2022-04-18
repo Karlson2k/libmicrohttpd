@@ -691,7 +691,7 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
  *         fit fd_set.
  * @ingroup event
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_get_fdset (struct MHD_Daemon *daemon,
                fd_set *read_fd_set,
                fd_set *write_fd_set,
@@ -1099,7 +1099,7 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
  *         fit fd_set.
  * @ingroup event
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_get_fdset2 (struct MHD_Daemon *daemon,
                 fd_set *read_fd_set,
                 fd_set *write_fd_set,
@@ -3171,7 +3171,7 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
  *
  * @sa #MHD_AccessHandlerCallback
  */
-void
+_MHD_EXTERN void
 MHD_suspend_connection (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *const daemon = connection->daemon;
@@ -3214,7 +3214,7 @@ MHD_suspend_connection (struct MHD_Connection *connection)
  *
  * @param connection the connection to resume
  */
-void
+_MHD_EXTERN void
 MHD_resume_connection (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
@@ -3411,7 +3411,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
  *        set to indicate further details about the error.
  * @ingroup specialized
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_add_connection (struct MHD_Daemon *daemon,
                     MHD_socket client_socket,
                     const struct sockaddr *addr,
@@ -3893,7 +3893,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
  *         not used and no data processing is pending.
  * @ingroup event
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_get_timeout (struct MHD_Daemon *daemon,
                  MHD_UNSIGNED_LONG_LONG *timeout)
 {
@@ -4125,7 +4125,7 @@ internal_run_from_select (struct MHD_Daemon *daemon,
  * @return #MHD_NO on serious errors, #MHD_YES on success
  * @ingroup event
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_run_from_select (struct MHD_Daemon *daemon,
                      const fd_set *read_fd_set,
                      const fd_set *write_fd_set,
@@ -5205,7 +5205,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
  *         options for this call.
  * @ingroup event
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_run (struct MHD_Daemon *daemon)
 {
   if ( (daemon->shutdown) ||
@@ -5449,7 +5449,7 @@ unescape_wrapper (void *cls,
  * @return NULL on error, handle to daemon on success
  * @ingroup event
  */
-struct MHD_Daemon *
+_MHD_EXTERN struct MHD_Daemon *
 MHD_start_daemon (unsigned int flags,
                   uint16_t port,
                   MHD_AcceptPolicyCallback apc,
@@ -5494,7 +5494,7 @@ MHD_start_daemon (unsigned int flags,
  *         the daemon was already not listening anymore
  * @ingroup specialized
  */
-MHD_socket
+_MHD_EXTERN MHD_socket
 MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 {
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
@@ -6382,7 +6382,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
  * @return NULL on error, handle to daemon on success
  * @ingroup event
  */
-struct MHD_Daemon *
+_MHD_EXTERN struct MHD_Daemon *
 MHD_start_daemon_va (unsigned int flags,
                      uint16_t port,
                      MHD_AcceptPolicyCallback apc,
@@ -7651,7 +7651,7 @@ close_all_connections (struct MHD_Daemon *daemon)
  * @param daemon daemon to stop
  * @ingroup event
  */
-void
+_MHD_EXTERN void
 MHD_stop_daemon (struct MHD_Daemon *daemon)
 {
   MHD_socket fd;
@@ -7833,7 +7833,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
  *         (or if the @a info_type is unknown)
  * @ingroup specialized
  */
-const union MHD_DaemonInfo *
+_MHD_EXTERN const union MHD_DaemonInfo *
 MHD_get_daemon_info (struct MHD_Daemon *daemon,
                      enum MHD_DaemonInfoType info_type,
                      ...)
@@ -7889,7 +7889,7 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
  * @return static version string, e.g. "0.9.9"
  * @ingroup specialized
  */
-const char *
+_MHD_EXTERN const char *
 MHD_get_version (void)
 {
 #ifdef PACKAGE_VERSION
@@ -7923,7 +7923,7 @@ MHD_get_version (void)
  * feature is not supported or feature is unknown.
  * @ingroup specialized
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_is_feature_supported (enum MHD_FEATURE feature)
 {
   switch (feature)

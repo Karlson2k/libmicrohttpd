@@ -252,7 +252,7 @@ struct MHD_PostProcessor
 };
 
 
-struct MHD_PostProcessor *
+_MHD_EXTERN struct MHD_PostProcessor *
 MHD_create_post_processor (struct MHD_Connection *connection,
                            size_t buffer_size,
                            MHD_PostDataIterator iter,
@@ -1455,7 +1455,7 @@ END:
 }
 
 
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_post_process (struct MHD_PostProcessor *pp,
                   const char *post_data,
                   size_t post_data_len)
@@ -1483,7 +1483,7 @@ MHD_post_process (struct MHD_PostProcessor *pp,
 }
 
 
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_destroy_post_processor (struct MHD_PostProcessor *pp)
 {
   enum MHD_Result ret;

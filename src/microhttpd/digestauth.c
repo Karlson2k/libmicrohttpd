@@ -614,7 +614,7 @@ check_nonce_nc (struct MHD_Connection *connection,
  * @warning Returned value must be freed by #MHD_free().
  * @ingroup authentication
  */
-char *
+_MHD_EXTERN char *
 MHD_digest_auth_get_username (struct MHD_Connection *connection)
 {
   char user[MAX_USERNAME_LENGTH];
@@ -1342,7 +1342,7 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  * @note Available since #MHD_VERSION 0x00096200
  * @ingroup authentication
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
                                const char *realm,
                                const char *opaque,
@@ -1470,7 +1470,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
  * @ingroup authentication
  * @deprecated use MHD_queue_auth_fail_response2()
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_queue_auth_fail_response (struct MHD_Connection *connection,
                               const char *realm,
                               const char *opaque,

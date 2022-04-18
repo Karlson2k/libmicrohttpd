@@ -88,7 +88,7 @@ mhd_panic_std (void *cls,
  * @param cls passed to @a cb
  * @ingroup logging
  */
-void
+_MHD_EXTERN void
 MHD_set_panic_func (MHD_PanicCallback cb,
                     void *cls)
 {

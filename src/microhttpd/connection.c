@@ -380,7 +380,7 @@ recv_param_adapter (struct MHD_Connection *connection,
  *         -1 if connection is NULL.
  * @ingroup request
  */
-int
+_MHD_EXTERN int
 MHD_get_connection_values (struct MHD_Connection *connection,
                            enum MHD_ValueKind kind,
                            MHD_KeyValueIterator iterator,
@@ -419,7 +419,7 @@ MHD_get_connection_values (struct MHD_Connection *connection,
  *         -1 if connection is NULL.
  * @ingroup request
  */
-int
+_MHD_EXTERN int
 MHD_get_connection_values_n (struct MHD_Connection *connection,
                              enum MHD_ValueKind kind,
                              MHD_KeyValueIteratorN iterator,
@@ -532,7 +532,7 @@ MHD_set_connection_value_n_nocheck_ (struct MHD_Connection *connection,
  *         #MHD_YES on success
  * @ingroup request
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_set_connection_value_n (struct MHD_Connection *connection,
                             enum MHD_ValueKind kind,
                             const char *key,
@@ -579,7 +579,7 @@ MHD_set_connection_value_n (struct MHD_Connection *connection,
  *         #MHD_YES on success
  * @ingroup request
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_set_connection_value (struct MHD_Connection *connection,
                           enum MHD_ValueKind kind,
                           const char *key,
@@ -608,7 +608,7 @@ MHD_set_connection_value (struct MHD_Connection *connection,
  * @return NULL if no such item was found
  * @ingroup request
  */
-const char *
+_MHD_EXTERN const char *
 MHD_lookup_connection_value (struct MHD_Connection *connection,
                              enum MHD_ValueKind kind,
                              const char *key)
@@ -5004,7 +5004,7 @@ MHD_set_http_callbacks_ (struct MHD_Connection *connection)
  *         (or if the @a info_type is unknown)
  * @ingroup specialized
  */
-const union MHD_ConnectionInfo *
+_MHD_EXTERN const union MHD_ConnectionInfo *
 MHD_get_connection_info (struct MHD_Connection *connection,
                          enum MHD_ConnectionInfoType info_type,
                          ...)
@@ -5068,7 +5068,7 @@ MHD_get_connection_info (struct MHD_Connection *connection,
  * @return #MHD_YES on success, #MHD_NO if setting the option failed
  * @ingroup specialized
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_set_connection_option (struct MHD_Connection *connection,
                            enum MHD_CONNECTION_OPTION option,
                            ...)
@@ -5175,7 +5175,7 @@ MHD_set_connection_option (struct MHD_Connection *connection,
  * @ingroup response
  * @sa #MHD_AccessHandlerCallback
  */
-enum MHD_Result
+_MHD_EXTERN enum MHD_Result
 MHD_queue_response (struct MHD_Connection *connection,
                     unsigned int status_code,
                     struct MHD_Response *response)
