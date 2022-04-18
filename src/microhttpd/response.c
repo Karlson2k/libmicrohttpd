@@ -1379,6 +1379,38 @@ MHD_create_response_from_buffer (size_t size,
 
 
 /**
+ * Create a response object with the content of provided statically allocated
+ * buffer used as the response body.
+ *
+ * The buffer must be valid for the lifetime of the response. The easiest way
+ * to achieve this is to use a statically allocated buffer.
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
+ *
+ * @param size the size of the data in @a buffer, can be zero
+ * @param buffer the buffer with the data for the response body, can be NULL
+ *               if @a size is zero
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @note Available since #MHD_VERSION 0x00097506
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_from_buffer_static (size_t size,
+                                        const void *buffer)
+{
+  return MHD_create_response_from_buffer_with_free_callback_cls (size,
+                                                                 buffer,
+                                                                 NULL,
+                                                                 NULL);
+}
+
+
+/**
  * Create a response object with the content of provided buffer used as
  * the response body.
  *
