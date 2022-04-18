@@ -3076,7 +3076,6 @@ MHD_get_connection_values_n (struct MHD_Connection *connection,
  * return them -- and the `struct MHD_PostProcessor` will also see
  * them).  This maybe required in certain situations (see Mantis
  * #1399) where (broken) HTTP implementations fail to supply values
-
  * needed by the post processor (or other parts of the application).
  *
  * This function MUST only be called from within the
