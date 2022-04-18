@@ -2576,19 +2576,17 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
 #if (GNUTLS_VERSION_NUMBER + 0 >= 0x030200)
     if (! daemon->disable_alpn)
     {
-      gnutls_datum_t prts[2];
-      const char prt1[] = "http/1.1"; /* Registered code for HTTP/1.1 */
-      const char prt2[] = "http/1.0"; /* Registered code for HTTP/1.0 */
+      static const char prt1[] = "http/1.1"; /* Registered code for HTTP/1.1 */
+      static const char prt2[] = "http/1.0"; /* Registered code for HTTP/1.0 */
+      static const gnutls_datum_t prts[2] =
+      { {_MHD_DROP_CONST (prt1), MHD_STATICSTR_LEN_ (prt1)},
+        {_MHD_DROP_CONST (prt2), MHD_STATICSTR_LEN_ (prt2)} };
 
-      prts[0].data = (void *) prt1;
-      prts[0].size = MHD_STATICSTR_LEN_ (prt1);
-      prts[1].data = (void *) prt2;
-      prts[1].size = MHD_STATICSTR_LEN_ (prt2);
       if (GNUTLS_E_SUCCESS !=
           gnutls_alpn_set_protocols (connection->tls_session,
                                      prts,
                                      sizeof(prts) / sizeof(prts[0]),
-                                     0 /* || GNUTLS_ALPN_SERVER_PRECEDENCE */))
+                                     0 /* | GNUTLS_ALPN_SERVER_PRECEDENCE */))
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
