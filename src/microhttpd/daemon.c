@@ -7924,11 +7924,11 @@ MHD_get_version (void)
     int res = MHD_snprintf_ (ver,
                              sizeof(ver),
                              "%x.%x.%x",
-                             (((int) MHD_VERSION >> 24) & 0xFF),
-                             (((int) MHD_VERSION >> 16) & 0xFF),
-                             (((int) MHD_VERSION >> 8) & 0xFF));
+                             (int) (((uint32_t) MHD_VERSION >> 24) & 0xFF),
+                             (int) (((uint32_t) MHD_VERSION >> 16) & 0xFF),
+                             (int) (((uint32_t) MHD_VERSION >> 8) & 0xFF));
     if ((0 >= res) || (sizeof(ver) <= res))
-      return "0.0.0"; /* Can't return real version*/
+      return "0.0.0"; /* Can't return real version */
   }
   return ver;
 #endif /* !PACKAGE_VERSION */
