@@ -1623,14 +1623,14 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
 #if defined(MHD_WINSOCK_SOCKETS) && defined(_WIN64)
       while (MHD_IOV_ELMN_MAX_SIZE < element_size)
       {
-        iov_copy[i_cp].iov_base = (char *) buf;
+        iov_copy[i_cp].iov_base = (char *) _MHD_DROP_CONST (buf);
         iov_copy[i_cp].iov_len = ULONG_MAX;
         buf += ULONG_MAX;
         element_size -= ULONG_MAX;
         i_cp++;
       }
 #endif /* MHD_WINSOCK_SOCKETS && _WIN64 */
-      iov_copy[i_cp].iov_base = (void *) buf;
+      iov_copy[i_cp].iov_base = _MHD_DROP_CONST (buf);
       iov_copy[i_cp].iov_len = (MHD_iov_size_) element_size;
       i_cp++;
     }

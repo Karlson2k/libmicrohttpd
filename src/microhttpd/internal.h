@@ -63,6 +63,13 @@
 #include "mhd_sockets.h"
 #include "mhd_itc_types.h"
 
+/**
+ * Macro to drop 'const' qualifier from pointer without compiler warning.
+ * To be used *only* to deal with broken external APIs, which require non-const
+ * pointer to unmodifiable data.
+ * Must not be used to transform pointers for MHD needs.
+ */
+#define _MHD_DROP_CONST(ptr)    ((void *)((uintptr_t)((const void *)(ptr))))
 
 /**
  * @def _MHD_MACRO_NO

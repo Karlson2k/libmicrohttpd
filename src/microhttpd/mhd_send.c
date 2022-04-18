@@ -1054,9 +1054,9 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 #endif /* ! HAVE_SENDMSG */
                    push_hdr || push_body);
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
-  vector[0].iov_base = (void *) header;
+  vector[0].iov_base = _MHD_DROP_CONST (header);
   vector[0].iov_len = header_size;
-  vector[1].iov_base = (void *) body;
+  vector[1].iov_base = _MHD_DROP_CONST (body);
   vector[1].iov_len = body_size;
 
 #if defined(HAVE_SENDMSG)

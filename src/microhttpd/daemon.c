@@ -534,7 +534,7 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 #endif
       return -1;
     }
-    cert.data = (unsigned char *) daemon->https_mem_trust;
+    cert.data = (unsigned char *) _MHD_DROP_CONST (daemon->https_mem_trust);
     cert.size = (unsigned int) paramlen;
     if (gnutls_certificate_set_x509_trust_mem (daemon->x509_cred,
                                                &cert,
@@ -571,9 +571,9 @@ MHD_init_daemon_certificate (struct MHD_Daemon *daemon)
 #endif
       return -1;
     }
-    key.data = (unsigned char *) daemon->https_mem_key;
+    key.data = (unsigned char *) _MHD_DROP_CONST (daemon->https_mem_key);
     key.size = (unsigned int) param1len;
-    cert.data = (unsigned char *) daemon->https_mem_cert;
+    cert.data = (unsigned char *) _MHD_DROP_CONST (daemon->https_mem_cert);
     cert.size = (unsigned int) param2len;
 
     if (NULL != daemon->https_key_password)
@@ -4948,7 +4948,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
          (-1 != daemon->epoll_upgrade_fd) ) )
   {
     event.events = EPOLLIN | EPOLLOUT;
-    event.data.ptr = (void *) upgrade_marker;
+    event.data.ptr = _MHD_DROP_CONST (upgrade_marker);
     if (0 != epoll_ctl (daemon->epoll_fd,
                         EPOLL_CTL_ADD,
                         daemon->epoll_upgrade_fd,
@@ -5850,7 +5850,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
           return MHD_NO;
         }
-        dhpar.data = (unsigned char *) pstr;
+        dhpar.data = (unsigned char *) _MHD_DROP_CONST (pstr);
         pstr_len = strlen (pstr);
         if (UINT_MAX < pstr_len)
         {
@@ -6340,7 +6340,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   if (MHD_ITC_IS_VALID_ (daemon->itc))
   {
     event.events = EPOLLIN;
-    event.data.ptr = (void *) epoll_itc_marker;
+    event.data.ptr = _MHD_DROP_CONST (epoll_itc_marker);
     if (0 != epoll_ctl (daemon->epoll_fd,
                         EPOLL_CTL_ADD,
                         MHD_itc_r_fd_ (daemon->itc),
