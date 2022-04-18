@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007-2021 Daniel Pittman and Christian Grothoff
-     Copyright (C) 2015-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2015-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -1296,38 +1296,16 @@ MHD_create_response_from_data (size_t size,
                                int must_free,
                                int must_copy)
 {
-  struct MHD_Response *response;
-  void *mhd_copy;
+  enum MHD_ResponseMemoryMode mode;
 
-  if ((must_copy) && (size > 0))
-  {
-    if (NULL == data)
-      return NULL;
-    mhd_copy = malloc (size);
-    if (NULL == mhd_copy)
-      return NULL;
-    memcpy (mhd_copy, data, size);
-    must_free = MHD_YES;
-    data = mhd_copy;
-  }
+  if (0 != must_copy)
+    mode = MHD_RESPMEM_MUST_COPY;
+  else if (0 != must_free)
+    mode = MHD_RESPMEM_MUST_FREE;
   else
-    mhd_copy = NULL;
+    mode = MHD_RESPMEM_PERSISTENT;
 
-  response =
-    MHD_create_response_from_buffer_with_free_callback_cls (size,
-                                                            data,
-                                                            must_free ?
-                                                            &free : NULL,
-                                                            data);
-  if (NULL == response)
-  {
-    if (NULL != mhd_copy)
-      free (mhd_copy);
-    return NULL;
-  }
-  if (must_copy)
-    response->data_buffer_size = size;
-  return response;
+  return MHD_create_response_from_buffer (size, data, mode);
 }
 
 
@@ -1353,10 +1331,50 @@ MHD_create_response_from_buffer (size_t size,
                                  void *buffer,
                                  enum MHD_ResponseMemoryMode mode)
 {
-  return MHD_create_response_from_data (size,
-                                        buffer,
-                                        mode == MHD_RESPMEM_MUST_FREE,
-                                        mode == MHD_RESPMEM_MUST_COPY);
+  struct MHD_Response *r;
+  void *mhd_copy;
+  MHD_ContentReaderFreeCallback crfc;
+  void *crfc_cls;
+
+  if ((MHD_RESPMEM_MUST_COPY == mode) && (size > 0))
+  {
+    if (NULL == buffer)
+      return NULL;
+    mhd_copy = malloc (size);
+    if (NULL == mhd_copy)
+      return NULL;
+    crfc = &free;
+    crfc_cls = mhd_copy;
+    memcpy (mhd_copy, buffer, size);
+    buffer = mhd_copy;
+  }
+  else if (MHD_RESPMEM_MUST_FREE == mode)
+  {
+    mhd_copy = NULL;
+    crfc = &free;
+    crfc_cls = buffer;
+  }
+  else
+  {
+    mhd_copy = NULL;
+    crfc = NULL;
+    crfc_cls = NULL;
+  }
+
+  r = MHD_create_response_from_buffer_with_free_callback_cls (size,
+                                                              buffer,
+                                                              crfc,
+                                                              crfc_cls);
+  if (NULL == r)
+  {
+    if (NULL != mhd_copy)
+      free (mhd_copy);
+    return NULL;
+  }
+  /* TODO: remove the next check, the buffer should not be modifiable */
+  if (MHD_RESPMEM_MUST_COPY == mode)
+    r->data_buffer_size = size;
+  return r;
 }
 
 
@@ -1383,16 +1401,10 @@ MHD_create_response_from_buffer_with_free_callback (size_t size,
                                                     MHD_ContentReaderFreeCallback
                                                     crfc)
 {
-  struct MHD_Response *r;
-
-  r = MHD_create_response_from_data (size,
-                                     buffer,
-                                     MHD_YES,
-                                     MHD_NO);
-  if (NULL == r)
-    return r;
-  r->crfc = crfc;
-  return r;
+  return MHD_create_response_from_buffer_with_free_callback_cls (size,
+                                                                 buffer,
+                                                                 crfc,
+                                                                 buffer);
 }
 
 
