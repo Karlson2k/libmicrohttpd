@@ -1331,50 +1331,19 @@ MHD_create_response_from_buffer (size_t size,
                                  void *buffer,
                                  enum MHD_ResponseMemoryMode mode)
 {
-  struct MHD_Response *r;
-  void *mhd_copy;
-  MHD_ContentReaderFreeCallback crfc;
-  void *crfc_cls;
-
-  if ((MHD_RESPMEM_MUST_COPY == mode) && (size > 0))
-  {
-    if (NULL == buffer)
-      return NULL;
-    mhd_copy = malloc (size);
-    if (NULL == mhd_copy)
-      return NULL;
-    crfc = &free;
-    crfc_cls = mhd_copy;
-    memcpy (mhd_copy, buffer, size);
-    buffer = mhd_copy;
-  }
-  else if (MHD_RESPMEM_MUST_FREE == mode)
-  {
-    mhd_copy = NULL;
-    crfc = &free;
-    crfc_cls = buffer;
-  }
-  else
-  {
-    mhd_copy = NULL;
-    crfc = NULL;
-    crfc_cls = NULL;
-  }
-
-  r = MHD_create_response_from_buffer_with_free_callback_cls (size,
-                                                              buffer,
-                                                              crfc,
-                                                              crfc_cls);
-  if (NULL == r)
-  {
-    if (NULL != mhd_copy)
-      free (mhd_copy);
-    return NULL;
-  }
-  /* TODO: remove the next check, the buffer should not be modifiable */
+  if (MHD_RESPMEM_MUST_FREE == mode)
+    return MHD_create_response_from_buffer_with_free_callback_cls (size,
+                                                                   buffer,
+                                                                   &free,
+                                                                   buffer);
   if (MHD_RESPMEM_MUST_COPY == mode)
-    r->data_buffer_size = size;
-  return r;
+    return MHD_create_response_from_buffer_copy (size,
+                                                 buffer);
+
+  return MHD_create_response_from_buffer_with_free_callback_cls (size,
+                                                                 buffer,
+                                                                 NULL,
+                                                                 NULL);
 }
 
 
@@ -1407,6 +1376,64 @@ MHD_create_response_from_buffer_static (size_t size,
                                                                  buffer,
                                                                  NULL,
                                                                  NULL);
+}
+
+
+/**
+ * Create a response object with the content of provided statically allocated
+ * buffer used as the response body.
+ *
+ * An internal copy of the buffer will be made automatically, so buffer have
+ * to be valid only during the call of this function (as a typical example:
+ * buffer is a local (non-static) array).
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
+ *
+ * @param size the size of the data in @a buffer, can be zero
+ * @param buffer the buffer with the data for the response body, can be NULL
+ *               if @a size is zero
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @note Available since #MHD_VERSION 0x00097507
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_from_buffer_copy (size_t size,
+                                      const void *buffer)
+{
+  struct MHD_Response *r;
+  void *mhd_copy;
+
+  if (0 == size)
+    return MHD_create_response_from_buffer_with_free_callback_cls (0,
+                                                                   NULL,
+                                                                   NULL,
+                                                                   NULL);
+  if (NULL == buffer)
+    return NULL;
+
+  mhd_copy = malloc (size);
+  if (NULL == mhd_copy)
+    return NULL;
+  memcpy (mhd_copy, buffer, size);
+
+  r = MHD_create_response_from_buffer_with_free_callback_cls (size,
+                                                              mhd_copy,
+                                                              &free,
+                                                              mhd_copy);
+  if (NULL == r)
+    free (mhd_copy);
+  else
+  {
+    /* TODO: remove the next assignment, the buffer should not be modifiable */
+    r->data_buffer_size = size;
+  }
+
+  return r;
 }
 
 

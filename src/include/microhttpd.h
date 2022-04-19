@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097506
+#define MHD_VERSION 0x00097507
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
@@ -3562,6 +3562,33 @@ MHD_create_response_from_buffer (size_t size,
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_buffer_static (size_t size,
                                         const void *buffer);
+
+
+/**
+ * Create a response object with the content of provided statically allocated
+ * buffer used as the response body.
+ *
+ * An internal copy of the buffer will be made automatically, so buffer have
+ * to be valid only during the call of this function (as a typical example:
+ * buffer is a local (non-static) array).
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
+ *
+ * @param size the size of the data in @a buffer, can be zero
+ * @param buffer the buffer with the data for the response body, can be NULL
+ *               if @a size is zero
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @note Available since #MHD_VERSION 0x00097507
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_from_buffer_copy (size_t size,
+                                      const void *buffer);
 
 
 /**
