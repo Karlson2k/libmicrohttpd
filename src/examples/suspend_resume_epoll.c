@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2018 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -22,6 +23,7 @@
  *        resume a suspended connection
  * @author Robert D Kocisko
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 #include "platform.h"
 #include <microhttpd.h>
@@ -57,7 +59,6 @@ ahc_echo (void *cls,
   struct itimerspec ts;
 
   (void) cls;
-  (void) url;               /* Unused. Silence compiler warning. */
   (void) method;
   (void) version;           /* Unused. Silence compiler warning. */
   (void) upload_data;       /* Unused. Silence compiler warning. */
@@ -78,9 +79,8 @@ ahc_echo (void *cls,
   if (-1 != req->timerfd)
   {
     /* send response (echo request url) */
-    response = MHD_create_response_from_buffer (strlen (url),
-                                                (void *) url,
-                                                MHD_RESPMEM_MUST_COPY);
+    response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                     (const void *) url);
     if (NULL == response)
       return MHD_NO;
     ret = MHD_queue_response (connection,

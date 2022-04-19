@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -20,6 +21,7 @@
  * @file fileserver_example.c
  * @brief minimal example for how to use libmicrohttpd to serve files
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -91,9 +93,8 @@ ahc_echo (void *cls,
   }
   if (-1 == fd)
   {
-    response = MHD_create_response_from_buffer (strlen (PAGE),
-                                                (void *) PAGE,
-                                                MHD_RESPMEM_PERSISTENT);
+    response = MHD_create_response_from_buffer_static (strlen (PAGE),
+                                                       PAGE);
     ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
     MHD_destroy_response (response);
   }
@@ -126,7 +127,7 @@ main (int argc, char *const *argv)
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         atoi (argv[1]),
-                        NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
+                        NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 1;
   (void) getc (stdin);

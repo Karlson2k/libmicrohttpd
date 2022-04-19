@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -21,15 +22,13 @@
  * @file fileserver_example_dirs.c
  * @brief example for how to use libmicrohttpd to serve files (with directory support)
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
 #include <dirent.h>
 #include <microhttpd.h>
 #include <unistd.h>
-
-#define PAGE \
-  "<html><head><title>File not found</title></head><body>File not found</body></html>"
 
 
 static ssize_t
@@ -199,7 +198,7 @@ main (int argc, char *const *argv)
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         atoi (argv[1]),
-                        NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
+                        NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (NULL == d)
     return 1;
   (void) getc (stdin);

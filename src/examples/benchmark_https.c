@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2013 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -20,6 +21,7 @@
  * @file benchmark_https.c
  * @brief minimal code to benchmark MHD GET performance with HTTPS
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -211,9 +213,8 @@ main (int argc, char *const *argv)
     printf ("%s PORT\n", argv[0]);
     return 1;
   }
-  response = MHD_create_response_from_buffer (strlen (PAGE),
-                                              (void *) PAGE,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer_static (strlen (PAGE),
+                                                     (const void *) PAGE);
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
 #ifdef EPOLL_SUPPORT
                         | MHD_USE_EPOLL | MHD_USE_TURBO

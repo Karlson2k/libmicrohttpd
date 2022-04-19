@@ -2,6 +2,7 @@
      This file is part of libmicrohttpd
      Copyright (C) 2020 Christian Grothoff, Silvio Clecio (and other
      contributing authors)
+     Copyright (C) 2020-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -22,6 +23,7 @@
  * @file websocket_threaded_example.c
  * @brief example for how to provide a tiny threaded websocket server
  * @author Silvio Clecio (silvioprog)
+ * @author Karlson2k (Evgeny Grin)
  */
 
 /* TODO: allow to send large messages. */
@@ -434,8 +436,8 @@ send_chat_page (struct MHD_Connection *con)
   struct MHD_Response *res;
   enum MHD_Result ret;
 
-  res = MHD_create_response_from_buffer (strlen (CHAT_PAGE), (void *) CHAT_PAGE,
-                                         MHD_RESPMEM_PERSISTENT);
+  res = MHD_create_response_from_buffer_static (strlen (CHAT_PAGE),
+                                                (const void *) CHAT_PAGE);
   ret = MHD_queue_response (con, MHD_HTTP_OK, res);
   MHD_destroy_response (res);
   return ret;
@@ -448,9 +450,9 @@ send_bad_request (struct MHD_Connection *con)
   struct MHD_Response *res;
   enum MHD_Result ret;
 
-  res = MHD_create_response_from_buffer (strlen (BAD_REQUEST_PAGE),
-                                         (void *) BAD_REQUEST_PAGE,
-                                         MHD_RESPMEM_PERSISTENT);
+  res =
+    MHD_create_response_from_buffer_static (strlen (BAD_REQUEST_PAGE),
+                                            (const void *) BAD_REQUEST_PAGE);
   ret = MHD_queue_response (con, MHD_HTTP_BAD_REQUEST, res);
   MHD_destroy_response (res);
   return ret;
@@ -463,9 +465,10 @@ send_upgrade_required (struct MHD_Connection *con)
   struct MHD_Response *res;
   enum MHD_Result ret;
 
-  res = MHD_create_response_from_buffer (strlen (UPGRADE_REQUIRED_PAGE),
-                                         (void *) UPGRADE_REQUIRED_PAGE,
-                                         MHD_RESPMEM_PERSISTENT);
+  res =
+    MHD_create_response_from_buffer_static (strlen (UPGRADE_REQUIRED_PAGE),
+                                            (const void *)
+                                            UPGRADE_REQUIRED_PAGE);
   MHD_add_response_header (res, MHD_HTTP_HEADER_SEC_WEBSOCKET_VERSION,
                            WS_SEC_WEBSOCKET_VERSION);
   ret = MHD_queue_response (con, MHD_HTTP_UPGRADE_REQUIRED, res);

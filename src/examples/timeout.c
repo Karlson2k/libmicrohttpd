@@ -1,7 +1,8 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2016, 2017 Christian Grothoff,
-     Silvio Clecio (silvioprog), Karlson2k (Evgeny Grin)
+     Copyright (C) 2016-2017 Christian Grothoff,
+     Silvio Clecio (silvioprog), Evgeny Grin (Karlson2k)
+     Copyright (C) 2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -50,9 +51,8 @@ answer_to_connection (void *cls,
   (void) upload_data_size;  /* Unused. Silent compiler warning. */
   (void) req_cls;           /* Unused. Silent compiler warning. */
 
-  response = MHD_create_response_from_buffer (strlen (page),
-                                              (void *) page,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer_static (strlen (page),
+                                                     (const void *) page);
   MHD_add_response_header (response,
                            MHD_HTTP_HEADER_CONTENT_TYPE,
                            "text/html");

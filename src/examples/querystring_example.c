@@ -38,12 +38,12 @@ ahc_echo (void *cls,
           const char *upload_data, size_t *upload_data_size, void **req_cls)
 {
   static int aptr;
-  const char *fmt = cls;
   const char *val;
   char *me;
   struct MHD_Response *response;
   enum MHD_Result ret;
   int resp_len;
+  (void) cls;               /* Unused. Silent compiler warning. */
   (void) url;               /* Unused. Silent compiler warning. */
   (void) version;           /* Unused. Silent compiler warning. */
   (void) upload_data;       /* Unused. Silent compiler warning. */
@@ -58,18 +58,16 @@ ahc_echo (void *cls,
     return MHD_YES;
   }
   *req_cls = NULL;  /* reset when done */
-  if (NULL == fmt)
-    return MHD_NO;  /* The cls must not be NULL */
   val = MHD_lookup_connection_value (connection, MHD_GET_ARGUMENT_KIND, "q");
   if (NULL == val)
     return MHD_NO;  /* No "q" argument was found */
-  resp_len = snprintf (NULL, 0, fmt, "q", val);
+  resp_len = snprintf (NULL, 0, PAGE, "q", val);
   if (0 > resp_len)
     return MHD_NO;  /* Error calculating response size */
   me = malloc (resp_len + 1);
   if (me == NULL)
     return MHD_NO;  /* Error allocating memory */
-  if (resp_len != snprintf (me, resp_len + 1, fmt, "q", val))
+  if (resp_len != snprintf (me, resp_len + 1, PAGE, "q", val))
   {
     free (me);
     return MHD_NO;  /* Error forming the response body */
@@ -108,7 +106,7 @@ main (int argc, char *const *argv)
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         (uint16_t) port,
-                        NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
+                        NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (NULL == d)
     return 1;
   (void) getc (stdin);

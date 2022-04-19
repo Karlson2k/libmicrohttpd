@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2008 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -21,6 +22,7 @@
  * @file authorization_example.c
  * @brief example for how to use libmicrohttpd with HTTP authentication
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -48,12 +50,12 @@ ahc_echo (void *cls,
           const char *upload_data, size_t *upload_data_size, void **req_cls)
 {
   static int aptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
   char *user;
   char *pass;
   int fail;
+  (void) cls;               /* Unused. Silent compiler warning. */
   (void) url;               /* Unused. Silent compiler warning. */
   (void) version;           /* Unused. Silent compiler warning. */
   (void) upload_data;       /* Unused. Silent compiler warning. */
@@ -78,16 +80,16 @@ ahc_echo (void *cls,
            (0 != strcmp (pass, "open sesame") ) );
   if (fail)
   {
-    response = MHD_create_response_from_buffer (strlen (DENIED),
-                                                (void *) DENIED,
-                                                MHD_RESPMEM_PERSISTENT);
+    response =
+      MHD_create_response_from_buffer_static (strlen (DENIED),
+                                              (const void *) DENIED);
     ret = MHD_queue_basic_auth_fail_response (connection,"TestRealm",response);
   }
   else
   {
-    response = MHD_create_response_from_buffer (strlen (me),
-                                                (void *) me,
-                                                MHD_RESPMEM_PERSISTENT);
+    response =
+      MHD_create_response_from_buffer_static (strlen (PAGE),
+                                              (const void *) PAGE);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   }
   if (NULL != user)
@@ -117,7 +119,7 @@ main (int argc, char *const *argv)
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         atoi (argv[1]),
-                        NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
+                        NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 1;
   fprintf (stderr, "HTTP server running. Press ENTER to stop the server.\n");

@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2011 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -20,6 +21,7 @@
  * @file post_example.c
  * @brief example for processing POST requests using libmicrohttpd
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include <stdlib.h>
@@ -285,9 +287,8 @@ serve_simple_form (const void *cls,
   struct MHD_Response *response;
 
   /* return static form */
-  response = MHD_create_response_from_buffer (strlen (form),
-                                              (void *) form,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer_static (strlen (form),
+                                                     (const void *) form);
   if (NULL == response)
     return MHD_NO;
   add_session_cookie (session, response);
@@ -422,9 +423,9 @@ not_found_page (const void *cls,
   (void) session; /* Unused. Silent compiler warning. */
 
   /* unsupported HTTP method */
-  response = MHD_create_response_from_buffer (strlen (NOT_FOUND_ERROR),
-                                              (void *) NOT_FOUND_ERROR,
-                                              MHD_RESPMEM_PERSISTENT);
+  response =
+    MHD_create_response_from_buffer_static (strlen (NOT_FOUND_ERROR),
+                                            (const void *) NOT_FOUND_ERROR);
   if (NULL == response)
     return MHD_NO;
   ret = MHD_queue_response (connection,
@@ -643,9 +644,9 @@ create_response (void *cls,
     return ret;
   }
   /* unsupported HTTP method */
-  response = MHD_create_response_from_buffer (strlen (METHOD_ERROR),
-                                              (void *) METHOD_ERROR,
-                                              MHD_RESPMEM_PERSISTENT);
+  response =
+    MHD_create_response_from_buffer_static (strlen (METHOD_ERROR),
+                                            (const void *) METHOD_ERROR);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_NOT_ACCEPTABLE,
                             response);

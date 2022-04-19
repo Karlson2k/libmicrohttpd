@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2010 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -20,6 +21,7 @@
  * @file digest_auth_example.c
  * @brief minimal example for how to use digest auth with libmicrohttpd
  * @author Amr Ali
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -67,9 +69,9 @@ ahc_echo (void *cls,
   username = MHD_digest_auth_get_username (connection);
   if (NULL == username)
   {
-    response = MHD_create_response_from_buffer (strlen (DENIED),
-                                                DENIED,
-                                                MHD_RESPMEM_PERSISTENT);
+    response =
+      MHD_create_response_from_buffer_static (strlen (DENIED),
+                                              DENIED);
     ret = MHD_queue_auth_fail_response2 (connection, realm,
                                          MY_OPAQUE_STR,
                                          response,
@@ -86,9 +88,9 @@ ahc_echo (void *cls,
   if ( (res == MHD_INVALID_NONCE) ||
        (res == MHD_NO) )
   {
-    response = MHD_create_response_from_buffer (strlen (DENIED),
-                                                DENIED,
-                                                MHD_RESPMEM_PERSISTENT);
+    response =
+      MHD_create_response_from_buffer_static (strlen (DENIED),
+                                              DENIED);
     if (NULL == response)
       return MHD_NO;
     ret = MHD_queue_auth_fail_response2 (connection, realm,
@@ -100,8 +102,7 @@ ahc_echo (void *cls,
     MHD_destroy_response (response);
     return ret;
   }
-  response = MHD_create_response_from_buffer (strlen (PAGE), PAGE,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer_static (strlen (PAGE), PAGE);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;
@@ -148,7 +149,7 @@ main (int argc, char *const *argv)
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         atoi (argv[1]),
-                        NULL, NULL, &ahc_echo, PAGE,
+                        NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof(rnd), rnd,
                         MHD_OPTION_NONCE_NC_SIZE, 300,
                         MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,

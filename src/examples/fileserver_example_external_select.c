@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2008 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -20,6 +21,7 @@
  * @file fileserver_example_external_select.c
  * @brief minimal example for how to use libmicrohttpd to server files
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -98,9 +100,8 @@ ahc_echo (void *cls,
 
   if (NULL == file)
   {
-    response = MHD_create_response_from_buffer (strlen (PAGE),
-                                                (void *) PAGE,
-                                                MHD_RESPMEM_PERSISTENT);
+    response = MHD_create_response_from_buffer_static (strlen (PAGE),
+                                                       PAGE);
     ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
     MHD_destroy_response (response);
   }
@@ -142,7 +143,7 @@ main (int argc, char *const *argv)
   }
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         atoi (argv[1]),
-                        NULL, NULL, &ahc_echo, PAGE, MHD_OPTION_END);
+                        NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 1;
   end = time (NULL) + atoi (argv[2]);

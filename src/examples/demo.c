@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2013 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -27,6 +28,7 @@
  *        run tests against.  Note that the number of threads may need
  *        to be adjusted depending on the number of available cores.
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 #include "MHD_config.h"
 #include "platform.h"
@@ -909,23 +911,18 @@ main (int argc, char *const *argv)
 #endif /* MHD_HAVE_LIBMAGIC */
 
   (void) pthread_mutex_init (&mutex, NULL);
-  file_not_found_response = MHD_create_response_from_buffer (strlen (
-                                                               FILE_NOT_FOUND_PAGE),
-                                                             (void *)
-                                                             FILE_NOT_FOUND_PAGE,
-                                                             MHD_RESPMEM_PERSISTENT);
+  file_not_found_response =
+    MHD_create_response_from_buffer_static (strlen (FILE_NOT_FOUND_PAGE),
+                                            (const void *) FILE_NOT_FOUND_PAGE);
   mark_as_html (file_not_found_response);
-  request_refused_response = MHD_create_response_from_buffer (strlen (
-                                                                REQUEST_REFUSED_PAGE),
-                                                              (void *)
-                                                              REQUEST_REFUSED_PAGE,
-                                                              MHD_RESPMEM_PERSISTENT);
+  request_refused_response =
+    MHD_create_response_from_buffer_static (strlen (REQUEST_REFUSED_PAGE),
+                                            (const void *)
+                                            REQUEST_REFUSED_PAGE);
   mark_as_html (request_refused_response);
-  internal_error_response = MHD_create_response_from_buffer (strlen (
-                                                               INTERNAL_ERROR_PAGE),
-                                                             (void *)
-                                                             INTERNAL_ERROR_PAGE,
-                                                             MHD_RESPMEM_PERSISTENT);
+  internal_error_response =
+    MHD_create_response_from_buffer_static (strlen (INTERNAL_ERROR_PAGE),
+                                            (const void *) INTERNAL_ERROR_PAGE);
   mark_as_html (internal_error_response);
   update_directory ();
   d = MHD_start_daemon (MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD

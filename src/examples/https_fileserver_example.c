@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2008 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -30,6 +31,7 @@
  * 'certtool' may be used to generate these if required.
  *
  * @author Sagie Amir
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -180,9 +182,9 @@ http_ahc (void *cls,
 
   if (NULL == file)
   {
-    response = MHD_create_response_from_buffer (strlen (EMPTY_PAGE),
-                                                (void *) EMPTY_PAGE,
-                                                MHD_RESPMEM_PERSISTENT);
+    response =
+      MHD_create_response_from_buffer_static (strlen (EMPTY_PAGE),
+                                              (const void *) EMPTY_PAGE);
     ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
     MHD_destroy_response (response);
   }
