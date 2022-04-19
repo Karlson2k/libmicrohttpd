@@ -311,9 +311,7 @@ serve_simple_form (const void *cls,
   struct MHD_Response *response;
 
   /* return static form */
-  response = MHD_create_response_from_buffer (strlen (form),
-                                              (void *) form,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer_static (strlen (form), form);
   add_session_cookie (session, response);
   MHD_add_response_header (response,
                            MHD_HTTP_HEADER_CONTENT_ENCODING,
@@ -431,9 +429,8 @@ not_found_page (const void *cls,
   (void) session; /* Unused. Silent compiler warning. */
 
   /* unsupported HTTP method */
-  response = MHD_create_response_from_buffer (strlen (NOT_FOUND_ERROR),
-                                              (void *) NOT_FOUND_ERROR,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer_static (strlen (NOT_FOUND_ERROR),
+                                                     NOT_FOUND_ERROR);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_NOT_FOUND,
                             response);
@@ -651,9 +648,8 @@ create_response (void *cls,
     return ret;
   }
   /* unsupported HTTP method */
-  response = MHD_create_response_from_buffer (strlen (METHOD_ERROR),
-                                              (void *) METHOD_ERROR,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer_static (strlen (METHOD_ERROR),
+                                                     METHOD_ERROR);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_NOT_ACCEPTABLE,
                             response);

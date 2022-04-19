@@ -49,9 +49,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     if (fd != -1)
       (void) close (fd);
     response =
-      MHD_create_response_from_buffer (strlen (errorstr),
-                                       (void *) errorstr,
-                                       MHD_RESPMEM_PERSISTENT);
+      MHD_create_response_from_buffer_static (strlen (errorstr), errorstr);
     if (NULL != response)
     {
       ret =

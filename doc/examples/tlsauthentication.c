@@ -208,9 +208,7 @@ secret_page (struct MHD_Connection *connection)
   struct MHD_Response *response;
   const char *page = "<html><body>A secret.</body></html>";
 
-  response =
-    MHD_create_response_from_buffer (strlen (page), (void *) page,
-                                     MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer_static (strlen (page), page);
   if (! response)
     return MHD_NO;
 

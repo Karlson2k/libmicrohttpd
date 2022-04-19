@@ -54,9 +54,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   if (fail)
   {
     const char *page = "<html><body>Go away.</body></html>";
-    response =
-      MHD_create_response_from_buffer (strlen (page), (void *) page,
-                                       MHD_RESPMEM_PERSISTENT);
+    response = MHD_create_response_from_buffer_static (strlen (page), page);
     ret = MHD_queue_basic_auth_fail_response (connection,
                                               "my realm",
                                               response);
@@ -64,9 +62,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   else
   {
     const char *page = "<html><body>A secret.</body></html>";
-    response =
-      MHD_create_response_from_buffer (strlen (page), (void *) page,
-                                       MHD_RESPMEM_PERSISTENT);
+    response = MHD_create_response_from_buffer_static (strlen (page), page);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   }
   MHD_destroy_response (response);
