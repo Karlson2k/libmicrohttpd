@@ -3499,6 +3499,10 @@ enum MHD_ResponseMemoryMode
    * Buffer is heap-allocated with `malloc()` (or equivalent) and
    * should be freed by MHD after processing the response has
    * concluded (response reference counter reaches zero).
+   * @warning Make sure that your application and MHD are using the same
+   *          C-runtime library (especially important for W32). if in doubt,
+   *          use function MHD_create_response_from_buffer_with_free_callback()
+   *          with '&free' as crfc parameter.
    * @ingroup response
    */
   MHD_RESPMEM_MUST_FREE,
