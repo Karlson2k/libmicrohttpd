@@ -95,7 +95,7 @@ test_daemon_get (void *cls,
 #endif
   if ((CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_URL, url))) ||
       (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                          CURL_HTTP_VERSION_1_0))) ||
+                                          CURL_HTTP_VERSION_1_1))) ||
       (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L))) ||
       (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L))) ||
       (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_WRITEFUNCTION,
@@ -280,7 +280,7 @@ send_curl_req (char *url,
 #endif
   if ((CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_URL, url))) ||
       (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                           CURL_HTTP_VERSION_1_0))) ||
+                                           CURL_HTTP_VERSION_1_1))) ||
       (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_TIMEOUT, 60L))) ||
       (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 60L))) ||
 

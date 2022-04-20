@@ -204,7 +204,7 @@ do_get (const char *url, int port)
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_PORT, (long) port);
-  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 10L);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
