@@ -214,9 +214,9 @@ do_get (const char *url, int port)
   /* TODO merge into send_curl_req */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 2L);
-  sprintf (buf, "host1:%d:127.0.0.1", port);
+  sprintf (buf, "mhdhost1:%d:127.0.0.1", port);
   dns_info = curl_slist_append (NULL, buf);
-  sprintf (buf, "host2:%d:127.0.0.1", port);
+  sprintf (buf, "mhdhost2:%d:127.0.0.1", port);
   dns_info = curl_slist_append (dns_info, buf);
   curl_easy_setopt (c, CURLOPT_RESOLVE, dns_info);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
@@ -277,8 +277,10 @@ main (int argc, char *const *argv)
     return 77;
   }
 
-  load_keys ("host1", ABS_SRCDIR "/host1.crt", ABS_SRCDIR "/host1.key");
-  load_keys ("host2", ABS_SRCDIR "/host2.crt", ABS_SRCDIR "/host2.key");
+  load_keys ("mhdhost1", ABS_SRCDIR "/mhdhost1.crt",
+             ABS_SRCDIR "/mhdhost1.key");
+  load_keys ("mhdhost2", ABS_SRCDIR "/mhdhost2.crt",
+             ABS_SRCDIR "/mhdhost2.key");
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                         | MHD_USE_ERROR_LOG,
@@ -302,9 +304,9 @@ main (int argc, char *const *argv)
     }
     port = (int) dinfo->port;
   }
-  if (0 != do_get ("https://host1/", port))
+  if (0 != do_get ("https://mhdhost1/", port))
     error_count++;
-  if (0 != do_get ("https://host2/", port))
+  if (0 != do_get ("https://mhdhost2/", port))
     error_count++;
 
   MHD_stop_daemon (d);
