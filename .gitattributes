@@ -3,3 +3,6 @@
 configure.ac	eol=lf
 makefile.am	eol=lf
 .gitattributes	eol=lf
+*.key	eol=lf
+*.crt	eol=lf
+*.pem	eol=lf
