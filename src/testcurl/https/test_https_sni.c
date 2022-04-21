@@ -257,6 +257,7 @@ main (int argc, char *const *argv)
   struct MHD_Daemon *d;
   int port;
   (void) argc;   /* Unused. Silent compiler warning. */
+  const char *tls_backend;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -271,9 +272,18 @@ main (int argc, char *const *argv)
 #endif /* MHD_HTTPS_REQUIRE_GRYPT */
   if (! testsuite_curl_global_init ())
     return 99;
-  if (NULL == curl_version_info (CURLVERSION_NOW)->ssl_version)
+  tls_backend = curl_version_info (CURLVERSION_NOW)->ssl_version;
+  if (NULL == tls_backend)
   {
     fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
+    curl_global_cleanup ();
+    return 77;
+  }
+  if (! curl_tls_is_gnutls () && ! curl_tls_is_openssl ())
+  {
+    fprintf (stderr, "This test is reliable only with libcurl with GnuTLS or "
+             "OpenSSL backends.\nSkipping the test as libcurl has '%s' "
+             "backend.\n", tls_backend);
     curl_global_cleanup ();
     return 77;
   }

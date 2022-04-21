@@ -602,6 +602,26 @@ curl_tls_is_gnutls (void)
 
 
 int
+curl_tls_is_openssl (void)
+{
+  const char *tlslib;
+  if (inited_tls_is_gnutls)
+    return 0;
+  if (inited_tls_is_openssl)
+    return 1;
+
+  tlslib = curl_version_info (CURLVERSION_NOW)->ssl_version;
+  if (NULL == tlslib)
+    return 0;
+  if (0 == strncmp (tlslib, "OpenSSL/", 8))
+    return 1;
+
+  /* Multi-backends handled during initialization by setting variable */
+  return 0;
+}
+
+
+int
 curl_tls_is_nss (void)
 {
   const char *tlslib;
