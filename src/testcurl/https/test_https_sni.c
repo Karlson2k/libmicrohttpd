@@ -209,6 +209,7 @@ do_get (const char *url, int port)
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_FILE, &cbc);
+  curl_easy_setopt (c, CURLOPT_CAINFO, ABS_SRCDIR "/test-ca.crt");
 
   /* perform peer authentication */
   /* TODO merge into send_curl_req */
