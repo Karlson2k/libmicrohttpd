@@ -1,6 +1,6 @@
 /*
  *  AutoinitFuncs: Automatic Initialization and Deinitialization Functions
- *  Copyright(C) 2014-2017  Karlson2k (Evgeny Grin)
+ *  Copyright(C) 2014-2022 Karlson2k (Evgeny Grin)
  *
  *  This header is free software; you can redistribute it and / or
  *  modify it under the terms of the GNU Lesser General Public
@@ -139,8 +139,8 @@
 
 /* Internal variable prefix (can be any) */
 #define W32_INITHELPERVARNAME(f) _initHelperDummy_ ## f
-#define W32_INITHELPERVARNAMEDECORSTR(f) W32_VARDECORPEFIXSTR _STRMACRO ( \
-    W32_INITHELPERVARNAME (f))
+#define W32_INITHELPERVARNAMEDECORSTR(f) \
+  W32_VARDECORPEFIXSTR _STRMACRO (W32_INITHELPERVARNAME (f))
 
 /* Declare section (segment), put variable pointing to init function to chosen segment,
    force linker to include variable to avoid omitting by optimizer */
@@ -151,8 +151,8 @@
 #define W32_FPTR_IN_SEG(S,F) \
   __pragma (section (S,long,read)) \
   __pragma (comment (linker, "/INCLUDE:" W32_INITHELPERVARNAMEDECORSTR (F))) \
-  W32_INITVARDECL __declspec(allocate (S))int (__cdecl * W32_INITHELPERVARNAME ( \
-                                                 F))(void) = &F
+  W32_INITVARDECL __declspec(allocate (S))int \
+    (__cdecl * W32_INITHELPERVARNAME (F))(void) = &F
 
 /* Section (segment) names for pointers to initializers */
 #define W32_SEG_INIT_C_USER   ".CRT$XCU"
