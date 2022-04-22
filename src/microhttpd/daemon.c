@@ -6453,35 +6453,19 @@ MHD_start_daemon_va (unsigned int flags,
 
   if (0 != (*pflags & MHD_USE_AUTO))
   {
+#if defined(EPOLL_SUPPORT) && defined(HAVE_POLL)
     if (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION))
-    {
-      /* Thread per connection with internal polling thread. */
-#ifdef HAVE_POLL
       *pflags |= MHD_USE_POLL;
-#else  /* ! HAVE_POLL */
-      /* use select() - do not modify flags */
-#endif /* ! HAVE_POLL */
-    }
-    else if (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
-    {
-      /* Internal polling thread. */
-#if defined(EPOLL_SUPPORT)
-      *pflags |= MHD_USE_EPOLL;
-#elif defined(HAVE_POLL)
-      *pflags |= MHD_USE_POLL;
-#else  /* !HAVE_POLL && !EPOLL_SUPPORT */
-      /* use select() - do not modify flags */
-#endif /* !HAVE_POLL && !EPOLL_SUPPORT */
-    }
     else
-    {
-      /* Internal threads are not used - "external" polling mode. */
-#if defined(EPOLL_SUPPORT)
-      *pflags |= MHD_USE_EPOLL;
-#else  /* ! EPOLL_SUPPORT */
-      /* use select() - do not modify flags */
-#endif /* ! EPOLL_SUPPORT */
-    }
+      *pflags |= MHD_USE_EPOLL; /* Including "external select" mode */
+#elif defined(HAVE_POLL)
+    if (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
+      *pflags |= MHD_USE_POLL; /* Including thread-per-connection */
+#elif defined(EPOLL_SUPPORT)
+#warning 'epoll' enabled, while 'poll' not detected. Check configure.
+#else
+    /* No choice: use select() for any mode - do not modify flags */
+#endif
   }
 
   if (NULL == (daemon = MHD_calloc_ (1, sizeof (struct MHD_Daemon))))
