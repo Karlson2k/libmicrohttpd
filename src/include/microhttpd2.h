@@ -260,7 +260,7 @@ typedef SOCKET MHD_socket;
 /* GCC >= 5.0 or clang >= 2.9 */
 #define _MHD_DEPR_FUNC(msg) __attribute__((deprecated (msg)))
 #elif defined(__clang__) || __GNUC__ + 0 > 3 || (__GNUC__ + 0 == 3 && \
-                                                  __GNUC_MINOR__ + 0 >= 1)
+                                                 __GNUC_MINOR__ + 0 >= 1)
 /* 3.1 <= GCC < 5.0 or clang < 2.9 */
 /* old GCC-style deprecation do not support custom messages */
 #define _MHD_DEPR_FUNC(msg) __attribute__((__deprecated__))
