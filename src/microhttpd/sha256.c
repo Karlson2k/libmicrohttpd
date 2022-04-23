@@ -136,8 +136,11 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
      See FIPS PUB 180-4 paragraph 6.2.
      Input data must be read in big-endian bytes order,
      see FIPS PUB 180-4 paragraph 3.1.2. */
+  /* Use cast to (const void*) to mute compiler alignment warning,
+   * data was already aligned in previous step */
 #define GET_W_FROM_DATA(buf,t) \
-  _MHD_GET_32BIT_BE (((const uint8_t*) (buf)) + (t) * SHA256_BYTES_IN_WORD)
+  _MHD_GET_32BIT_BE ((const void*)(((const uint8_t*) (buf)) + \
+                                   (t) * SHA256_BYTES_IN_WORD))
 
   /* During first 16 steps, before making any calculations on each step,
      the W element is read from input data buffer as big-endian value and
@@ -432,14 +435,16 @@ MHD_SHA256_finish (void *ctx_,
   if (1)
 #endif /* _MHD_PUT_32BIT_BE_UNALIGNED */
   {
-    _MHD_PUT_32BIT_BE (digest + 0 * SHA256_BYTES_IN_WORD, ctx->H[0]);
-    _MHD_PUT_32BIT_BE (digest + 1 * SHA256_BYTES_IN_WORD, ctx->H[1]);
-    _MHD_PUT_32BIT_BE (digest + 2 * SHA256_BYTES_IN_WORD, ctx->H[2]);
-    _MHD_PUT_32BIT_BE (digest + 3 * SHA256_BYTES_IN_WORD, ctx->H[3]);
-    _MHD_PUT_32BIT_BE (digest + 4 * SHA256_BYTES_IN_WORD, ctx->H[4]);
-    _MHD_PUT_32BIT_BE (digest + 5 * SHA256_BYTES_IN_WORD, ctx->H[5]);
-    _MHD_PUT_32BIT_BE (digest + 6 * SHA256_BYTES_IN_WORD, ctx->H[6]);
-    _MHD_PUT_32BIT_BE (digest + 7 * SHA256_BYTES_IN_WORD, ctx->H[7]);
+    /* Use cast to (void*) here to mute compiler alignment warnings.
+     * Compilers are not smart enough to see that alignment has been checked. */
+    _MHD_PUT_32BIT_BE ((void *) (digest + 0 * SHA256_BYTES_IN_WORD), ctx->H[0]);
+    _MHD_PUT_32BIT_BE ((void *) (digest + 1 * SHA256_BYTES_IN_WORD), ctx->H[1]);
+    _MHD_PUT_32BIT_BE ((void *) (digest + 2 * SHA256_BYTES_IN_WORD), ctx->H[2]);
+    _MHD_PUT_32BIT_BE ((void *) (digest + 3 * SHA256_BYTES_IN_WORD), ctx->H[3]);
+    _MHD_PUT_32BIT_BE ((void *) (digest + 4 * SHA256_BYTES_IN_WORD), ctx->H[4]);
+    _MHD_PUT_32BIT_BE ((void *) (digest + 5 * SHA256_BYTES_IN_WORD), ctx->H[5]);
+    _MHD_PUT_32BIT_BE ((void *) (digest + 6 * SHA256_BYTES_IN_WORD), ctx->H[6]);
+    _MHD_PUT_32BIT_BE ((void *) (digest + 7 * SHA256_BYTES_IN_WORD), ctx->H[7]);
   }
 
   /* Erase potentially sensitive data. */
