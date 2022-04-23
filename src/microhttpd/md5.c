@@ -113,10 +113,12 @@ MHD_MD5Final (void *ctx_,
   if (1)
 #endif /* _MHD_PUT_32BIT_LE_UNALIGNED */
   {
-    _MHD_PUT_32BIT_LE (digest, ctx->state[0]);
-    _MHD_PUT_32BIT_LE (digest + 4, ctx->state[1]);
-    _MHD_PUT_32BIT_LE (digest + 8, ctx->state[2]);
-    _MHD_PUT_32BIT_LE (digest + 12, ctx->state[3]);
+    /* Use cast to (void*) here to mute compiler alignment warnings.
+     * Compilers are not smart enough to see that alignment has been checked. */
+    _MHD_PUT_32BIT_LE ((void *) (digest + 0), ctx->state[0]);
+    _MHD_PUT_32BIT_LE ((void *) (digest + 4), ctx->state[1]);
+    _MHD_PUT_32BIT_LE ((void *) (digest + 8), ctx->state[2]);
+    _MHD_PUT_32BIT_LE ((void *) (digest + 12), ctx->state[3]);
   }
 
   /* Erase buffer */
@@ -158,7 +160,7 @@ MD5Transform (uint32_t state[4],
     in = data_buf;
   }
   else
-    in = (const uint32_t *) block;
+    in = (const uint32_t *) ((const void *) block);
 #endif /* _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN) || \
           ! _MHD_GET_32BIT_LE_UNALIGNED */
 #if _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN
