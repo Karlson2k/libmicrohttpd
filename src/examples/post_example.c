@@ -690,7 +690,7 @@ request_completed_callback (void *cls,
  * too long.
  */
 static void
-expire_sessions ()
+expire_sessions (void)
 {
   struct Session *pos;
   struct Session *prev;

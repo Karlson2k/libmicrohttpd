@@ -319,7 +319,7 @@ list_directory (struct ResponseDataContext *rdc,
  * Re-scan our local directory and re-build the index.
  */
 static void
-update_directory ()
+update_directory (void)
 {
   static size_t initial_allocation = 32 * 1024; /* initial size for response buffer */
   struct MHD_Response *response;

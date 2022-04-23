@@ -46,7 +46,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
 
 int
-main ()
+main (void)
 {
   struct MHD_Daemon *daemon;
 

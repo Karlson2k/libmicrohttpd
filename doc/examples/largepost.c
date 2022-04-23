@@ -328,7 +328,7 @@ answer_to_connection (void *cls,
 
 
 int
-main ()
+main (void)
 {
   struct MHD_Daemon *daemon;
 
