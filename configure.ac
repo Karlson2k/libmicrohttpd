@@ -157,12 +157,14 @@ AS_VAR_IF([enable_build_type],["debug"],
     CFLAGS="${user_CFLAGS}"
     MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Og], [-O0])
     MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-ggdb3], [-g3], [-ggdb], [-g])
-    MHD_CHECK_ADD_CC_CFLAGS([-Wextra -Wdouble-promotion -Wformat=2 -Wformat-overflow=2 -Wformat-truncation=2], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wextra -Wdouble-promotion], [CFLAGS_ac])
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Wformat=2], [-Wformat])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wformat-overflow -Wformat-truncation -Wformat-security -Wformat-signedness], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wmissing-include-dirs -Wshift-overflow=2 -Wstringop-overflow=4 -Walloc-zero], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wduplicated-branches -Wduplicated-cond -Wfloat-equal -Wshadow -Wpointer-arith], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wbad-function-cast -Wcast-qual -Wcast-align=strict -Wwrite-strings -Wconversion], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wjump-misses-init -Wlogical-op -Waggregate-return -Wstrict-prototypes], [CFLAGS_ac])
-    MHD_CHECK_ADD_CC_CFLAGS([-Wold-style-definition -Wmissing-prototypes -Wformat-security -Wshift-negative-value], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wold-style-definition -Wmissing-declarations -Wmissing-prototypes -Wshift-negative-value], [CFLAGS_ac])
     CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
     LDFLAGS="${user_LDFLAGS}"
     MHD_CHECK_ADD_CC_LDFLAG([-Wl,--enable-long-section-names], [LDFLAGS_ac])
