@@ -34,12 +34,12 @@ struct connection_info_struct
 };
 
 const char *askpage =
-  "<html><body>\
-                       What's your name, Sir?<br>\
-                       <form action=\"/namepost\" method=\"post\">\
-                       <input name=\"name\" type=\"text\">\
-                       <input type=\"submit\" value=\" Send \"></form>\
-                       </body></html>";
+  "<html><body>\n"
+  "What's your name, Sir?<br>\n"
+  "<form action=\"/namepost\" method=\"post\">\n"
+  "<input name=\"name\" type=\"text\">\n"
+  "<input type=\"submit\" value=\" Send \"></form>\n"
+  "</body></html>";
 
 #define GREETINGPAGE \
   "<html><body><h1>Welcome, %s!</center></h1></body></html>"
