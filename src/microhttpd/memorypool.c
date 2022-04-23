@@ -47,7 +47,7 @@
 #endif /* HAVE_SYSCONF */
 #include "mhd_limits.h" /* for SIZE_MAX, PAGESIZE / PAGE_SIZE */
 
-#if defined(MHD_USE_PAGESIZE_MACRO) || defined (MHD_USE_PAGE_SIZE_MACRO)
+#if defined(MHD_USE_PAGESIZE_MACRO) || defined(MHD_USE_PAGE_SIZE_MACRO)
 #ifndef HAVE_SYSCONF /* Avoid duplicate include */
 #include <unistd.h>
 #endif /* HAVE_SYSCONF */

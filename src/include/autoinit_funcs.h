@@ -67,7 +67,7 @@
 * Current version of the header in packed BCD form.
 * 0x01093001 = 1.9.30-1.
 */
-#define AUTOINIT_FUNCS_VERSION 0x01000300
+#define AUTOINIT_FUNCS_VERSION 0x01000400
 
 #if defined(__GNUC__) || defined(__clang__)
 /* if possible - check for supported attribute */
@@ -96,7 +96,7 @@
 #define _SET_INIT_AND_DEINIT_FUNCS(FI,FD) GNUC_SET_INIT_AND_DEINIT (FI,FD)
 #define _AUTOINIT_FUNCS_ARE_SUPPORTED 1
 
-#elif defined (_MSC_FULL_VER) && _MSC_VER + 0 >= 1600
+#elif defined(_MSC_FULL_VER) && _MSC_VER + 0 >= 1600
 
 /* Make sure that your project/sources define:
    _LIB if building a static library (_LIB is ignored if _CONSOLE is defined);
