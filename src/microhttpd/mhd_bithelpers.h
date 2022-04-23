@@ -42,6 +42,7 @@
 #ifndef __has_builtin
 /* Avoid precompiler errors with non-clang */
 #  define __has_builtin(x) 0
+#  define _MHD_has_builtin_dummy 1
 #endif
 
 
@@ -328,5 +329,10 @@ _MHD_ROTL32 (uint32_t value32, int bits)
 
 #endif /* ! __builtin_rotateleft32 */
 
+#ifdef _MHD_has_builtin_dummy
+/* Remove macro function replacement to avoid misdetection in files which
+ * include this header */
+#  undef __has_builtin
+#endif
 
 #endif /* ! MHD_BITHELPERS_H */
