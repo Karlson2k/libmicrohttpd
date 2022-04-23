@@ -354,7 +354,7 @@ SHA1Input (struct SHA1Context *context, const unsigned char *message_array,
 /********** begin Base64 **********/
 
 
-ssize_t
+static ssize_t
 BASE64Encode (const void *in, size_t len, char **output)
 {
 #define FILLCHAR '='
