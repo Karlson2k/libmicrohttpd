@@ -88,6 +88,19 @@
 
 /* Forward declarations. */
 
+
+/**
+ * Global initialisation function.
+ */
+void
+MHD_init (void);
+
+/**
+ * Global deinitialisation function.
+ */
+void
+MHD_fini (void);
+
 /**
  * Close all connections for the daemon.
  * Must only be called when MHD_Daemon::shutdown was set to true.
@@ -115,12 +128,6 @@ MHD_epoll (struct MHD_Daemon *daemon,
            int32_t millisec);
 
 #endif /* EPOLL_SUPPORT */
-
-/**
- * Globally initialise library.
- */
-void
-MHD_init (void);
 
 
 #if defined(MHD_WINSOCK_SOCKETS)
