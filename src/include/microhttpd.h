@@ -4429,6 +4429,8 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
 
 /**
  * Obtain information about the given connection.
+ * The returned pointer is invalidated with the next call of this function or
+ * when the connection is closed.
  *
  * @param connection what connection to get information about
  * @param info_type what information is desired?

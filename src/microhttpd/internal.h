@@ -1171,11 +1171,6 @@ struct MHD_Connection
   uint64_t connection_timeout_ms;
 
   /**
-   * Special member to be returned by #MHD_get_connection_info()
-   */
-  unsigned int connection_timeout_dummy;
-
-  /**
    * Did we ever call the "default_handler" on this connection?  (this
    * flag will determine if we call the #MHD_OPTION_NOTIFY_COMPLETED
    * handler when the connection closes down).
@@ -1343,16 +1338,6 @@ struct MHD_Connection
   gnutls_session_t tls_session;
 
   /**
-   * Memory location to return for protocol session info.
-   */
-  int protocol;
-
-  /**
-   * Memory location to return for protocol session info.
-   */
-  int cipher;
-
-  /**
    * State of connection's TLS layer
    */
   enum MHD_TLS_CONN_STATE tls_state;
@@ -1370,14 +1355,14 @@ struct MHD_Connection
   bool suspended;
 
   /**
-   * Special member to be returned by #MHD_get_connection_info()
-   */
-  int suspended_dummy;
-
-  /**
    * Is the connection wanting to resume?
    */
   volatile bool resuming;
+
+  /**
+   * Special member to be returned by #MHD_get_connection_info()
+   */
+  union MHD_ConnectionInfo connection_info_dummy;
 };
 
 

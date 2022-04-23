@@ -4995,6 +4995,8 @@ MHD_set_http_callbacks_ (struct MHD_Connection *connection)
 
 /**
  * Obtain information about the given connection.
+ * The returned pointer is invalidated with the next call of this function or
+ * when the connection is closed.
  *
  * @param connection what connection to get information about
  * @param info_type what information is desired?
@@ -5014,44 +5016,62 @@ MHD_get_connection_info (struct MHD_Connection *connection,
   case MHD_CONNECTION_INFO_CIPHER_ALGO:
     if (NULL == connection->tls_session)
       return NULL;
-    connection->cipher = gnutls_cipher_get (connection->tls_session);
-    return (const union MHD_ConnectionInfo *) &connection->cipher;
+    connection->connection_info_dummy.cipher_algorithm =
+      gnutls_cipher_get (connection->tls_session);
+    return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_PROTOCOL:
     if (NULL == connection->tls_session)
       return NULL;
-    connection->protocol = gnutls_protocol_get_version (
-      connection->tls_session);
-    return (const union MHD_ConnectionInfo *) &connection->protocol;
+    connection->connection_info_dummy.protocol =
+      gnutls_protocol_get_version (connection->tls_session);
+    return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_GNUTLS_SESSION:
     if (NULL == connection->tls_session)
       return NULL;
-    return (const union MHD_ConnectionInfo *) &connection->tls_session;
+    connection->connection_info_dummy.tls_session = connection->tls_session;
+    return &connection->connection_info_dummy;
 #endif /* HTTPS_SUPPORT */
   case MHD_CONNECTION_INFO_CLIENT_ADDRESS:
-    return (const union MHD_ConnectionInfo *) &connection->addr;
+    memset (&connection->connection_info_dummy.client_addr, 0,
+            sizeof (connection->connection_info_dummy.client_addr));
+    memcpy (&connection->connection_info_dummy.client_addr,
+            &connection->addr,
+            connection->addr_len);
+    return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_DAEMON:
-    return (const union MHD_ConnectionInfo *) &connection->daemon;
+    connection->connection_info_dummy.daemon = connection->daemon;
+    return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_CONNECTION_FD:
-    return (const union MHD_ConnectionInfo *) &connection->socket_fd;
+    connection->connection_info_dummy.connect_fd = connection->socket_fd;
+    return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_SOCKET_CONTEXT:
-    return (const union MHD_ConnectionInfo *) &connection->socket_context;
+    connection->connection_info_dummy.socket_context =
+      connection->socket_context;
+    return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_CONNECTION_SUSPENDED:
-    connection->suspended_dummy = connection->suspended ? MHD_YES : MHD_NO;
-    return (const union MHD_ConnectionInfo *) &connection->suspended_dummy;
+    connection->connection_info_dummy.suspended =
+      connection->suspended ? MHD_YES : MHD_NO;
+    return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_CONNECTION_TIMEOUT:
-    connection->connection_timeout_dummy =
-      (unsigned int) connection->connection_timeout_ms / 1000;
-    return (const union MHD_ConnectionInfo *) &connection->
-           connection_timeout_dummy;
+#if SIZEOF_UNSIGNED_INT <= (SIZEOF_UINT64_T - 2)
+    if (UINT_MAX < connection->connection_timeout_ms / 1000)
+      connection->connection_info_dummy.connection_timeout = UINT_MAX;
+    else
+#endif /* SIZEOF_UNSIGNED_INT <=(SIZEOF_UINT64_T - 2) */
+    connection->connection_info_dummy.connection_timeout =
+      (unsigned int) (connection->connection_timeout_ms / 1000);
+    return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_REQUEST_HEADER_SIZE:
     if ( (MHD_CONNECTION_HEADERS_RECEIVED > connection->state) ||
          (MHD_CONNECTION_CLOSED == connection->state) )
       return NULL;   /* invalid, too early! */
-    return (const union MHD_ConnectionInfo *) &connection->header_size;
+    connection->connection_info_dummy.header_size = connection->header_size;
+    return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_HTTP_STATUS:
     if (NULL == connection->response)
       return NULL;
-    return (const union MHD_ConnectionInfo *) &connection->responseCode;
+    connection->connection_info_dummy.http_status = connection->responseCode;
+    return &connection->connection_info_dummy;
   default:
     return NULL;
   }
