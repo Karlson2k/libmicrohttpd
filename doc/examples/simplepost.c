@@ -41,8 +41,8 @@ const char *askpage =
                        <input type=\"submit\" value=\" Send \"></form>\
                        </body></html>";
 
-const char *greetingpage =
-  "<html><body><h1>Welcome, %s!</center></h1></body></html>";
+#define GREETINGPAGE \
+  "<html><body><h1>Welcome, %s!</center></h1></body></html>"
 
 const char *errorpage =
   "<html><body>This doesn't seem to be right.</body></html>";
@@ -88,7 +88,7 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
       if (! answerstring)
         return MHD_NO;
 
-      snprintf (answerstring, MAXANSWERSIZE, greetingpage, data);
+      snprintf (answerstring, MAXANSWERSIZE, GREETINGPAGE, data);
       con_info->answerstring = answerstring;
     }
     else

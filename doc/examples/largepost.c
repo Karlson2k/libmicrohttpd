@@ -66,14 +66,14 @@ struct connection_info_struct
 };
 
 
-const char *askpage =
-  "<html><body>\n\
-                       Upload a file, please!<br>\n\
-                       There are %u clients uploading at the moment.<br>\n\
-                       <form action=\"/filepost\" method=\"post\" enctype=\"multipart/form-data\">\n\
-                       <input name=\"file\" type=\"file\">\n\
-                       <input type=\"submit\" value=\" Send \"></form>\n\
-                       </body></html>";
+#define ASKPAGE \
+  "<html><body>\n" \
+  "Upload a file, please!<br>\n" \
+  "There are %u clients uploading at the moment.<br>\n" \
+  "<form action=\"/filepost\" method=\"post\" enctype=\"multipart/form-data\">\n" \
+  "<input name=\"file\" type=\"file\">\n" \
+  "<input type=\"submit\" value=\" Send \"></form>\n" \
+  "</body></html>"
 const char *busypage =
   "<html><body>This server is busy, please try again later.</body></html>";
 const char *completepage =
@@ -271,7 +271,7 @@ answer_to_connection (void *cls,
 
     snprintf (buffer,
               sizeof (buffer),
-              askpage,
+              ASKPAGE,
               nr_of_uploading_clients);
     return send_page (connection,
                       buffer,

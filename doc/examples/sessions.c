@@ -339,12 +339,12 @@ fill_v1_form (const void *cls,
               struct MHD_Connection *connection)
 {
   enum MHD_Result ret;
-  const char *form = cls;
   char *reply;
   struct MHD_Response *response;
+  (void) cls; /* Unused */
 
   if (-1 == asprintf (&reply,
-                      form,
+                      MAIN_PAGE,
                       session->value_1))
   {
     /* oops */
@@ -381,12 +381,12 @@ fill_v1_v2_form (const void *cls,
                  struct MHD_Connection *connection)
 {
   enum MHD_Result ret;
-  const char *form = cls;
   char *reply;
   struct MHD_Response *response;
+  (void) cls; /* Unused */
 
   if (-1 == asprintf (&reply,
-                      form,
+                      SECOND_PAGE,
                       session->value_1,
                       session->value_2))
   {
@@ -446,8 +446,8 @@ not_found_page (const void *cls,
  * List of all pages served by this HTTP server.
  */
 static struct Page pages[] = {
-  { "/", "text/html",  &fill_v1_form, MAIN_PAGE },
-  { "/2", "text/html", &fill_v1_v2_form, SECOND_PAGE },
+  { "/", "text/html",  &fill_v1_form, NULL },
+  { "/2", "text/html", &fill_v1_v2_form, NULL },
   { "/S", "text/html", &serve_simple_form, SUBMIT_PAGE },
   { "/F", "text/html", &serve_simple_form, LAST_PAGE },
   { NULL, NULL, &not_found_page, NULL }   /* 404 */
