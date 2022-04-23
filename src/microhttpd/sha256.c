@@ -128,7 +128,7 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
     /* The W[] buffer itself will be used as the source of the data,
      * but data will be reloaded in correct bytes order during
      * the next steps */
-    data = (uint8_t*) W;
+    data = (uint8_t *) W;
   }
 #endif /* _MHD_GET_32BIT_BE_UNALIGNED */
 
