@@ -44,6 +44,7 @@
 #include "mhd_itc.h"
 #include "mhd_compat.h"
 #include "mhd_send.h"
+#include "mhd_align.h"
 
 #if HAVE_SEARCH_H
 #include <search.h>
@@ -342,13 +343,13 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
   /* IPv4 addresses */
   if (AF_INET == addr->sa_family)
   {
-    const struct sockaddr_in *addr4 = (const struct sockaddr_in *) addr;
     mhd_assert (sizeof (struct sockaddr_in) <= (size_t) addrlen);
 
     key->family = AF_INET;
     memcpy (&key->addr.ipv4,
-            &addr4->sin_addr,
-            sizeof(addr4->sin_addr));
+            ((const uint8_t *) addr)
+            + _MHD_OFFSETOF (struct sockaddr_in, sin_addr),
+            sizeof(((struct sockaddr_in *) NULL)->sin_addr));
     return MHD_YES;
   }
 
@@ -356,13 +357,13 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
   /* IPv6 addresses */
   if (AF_INET6 == addr->sa_family)
   {
-    const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *) addr;
     mhd_assert (sizeof (struct sockaddr_in6) <= (size_t) addrlen);
 
     key->family = AF_INET6;
     memcpy (&key->addr.ipv6,
-            &addr6->sin6_addr,
-            sizeof(addr6->sin6_addr));
+            ((const uint8_t *) addr)
+            + _MHD_OFFSETOF (struct sockaddr_in6, sin6_addr),
+            sizeof(((struct sockaddr_in6 *) NULL)->sin6_addr));
     return MHD_YES;
   }
 #endif
