@@ -127,7 +127,7 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
 {
   enum MHD_Result ret;
   int res;
-  size_t hlen = strlen (realm) + strlen ("Basic realm=\"\"") + 1;
+  size_t hlen = strlen (realm) + MHD_STATICSTR_LEN_ ("Basic realm=\"\"") + 1;
   char *header;
 
   if (NULL == response)
