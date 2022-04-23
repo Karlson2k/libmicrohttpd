@@ -1,59 +1,65 @@
 /* Feel free to use this example code in any way
    you see fit (Public Domain) */
 
-/* needed for asprintf */
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE 1
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
+#include <stdarg.h>
 #include <microhttpd.h>
 
-#if defined _WIN32 && ! defined(__MINGW64_VERSION_MAJOR)
+/* Emulate 'asprintf()', as it is not portable */
 static int
-asprintf (char **resultp, const char *format, ...)
+MHD_asprintf (char **resultp, const char *format, ...)
 {
   va_list argptr;
-  char *result = NULL;
-  int len = 0;
+  va_list argcopy;
+  int len;
+  int ret;
 
-  if (format == NULL)
-    return -1;
-
+  ret = -1;
   va_start (argptr, format);
 
-  len = _vscprintf ((char *) format, argptr);
-  if (len >= 0)
+  va_copy (argcopy, argptr);
+#ifndef _WIN32
+  len = vsnprintf (NULL, 0, format, argcopy);
+#else
+  len = _vscprintf (format, argcopy);
+#endif
+  va_end (argcopy);
+  if (0 < len)
   {
-    len += 1;
-    result = (char *) malloc (sizeof (char *) * len);
-    if (result != NULL)
+    size_t buf_size;
+    char *buf;
+
+    buf_size = len + 1;
+    buf = (char *) malloc (buf_size * sizeof(char));
+    if (NULL != buf)
     {
-      int len2 = _vscprintf ((char *) format, argptr);
-      if ((len2 != len - 1) || (len2 <= 0))
+      int res;
+
+#ifndef _WIN32
+      res = vsnprintf (buf, buf_size, format, argptr);
+#else
+      res = _vsnprintf (buf, buf_size, format, argptr);
+#endif
+      if (len == res)
       {
-        free (result);
-        result = NULL;
-        len = -1;
+        *resultp = buf;
+        ret = res;
       }
       else
       {
-        len = len2;
-        if (resultp)
-          *resultp = result;
+        free (buf);
+        *resultp = NULL;
       }
     }
   }
   va_end (argptr);
-  return len;
+  return ret;
 }
 
-
-#endif
 
 /**
  * Invalid method page.
@@ -343,9 +349,9 @@ fill_v1_form (const void *cls,
   struct MHD_Response *response;
   (void) cls; /* Unused */
 
-  if (-1 == asprintf (&reply,
-                      MAIN_PAGE,
-                      session->value_1))
+  if (-1 == MHD_asprintf (&reply,
+                          MAIN_PAGE,
+                          session->value_1))
   {
     /* oops */
     return MHD_NO;
@@ -385,10 +391,10 @@ fill_v1_v2_form (const void *cls,
   struct MHD_Response *response;
   (void) cls; /* Unused */
 
-  if (-1 == asprintf (&reply,
-                      SECOND_PAGE,
-                      session->value_1,
-                      session->value_2))
+  if (-1 == MHD_asprintf (&reply,
+                          SECOND_PAGE,
+                          session->value_1,
+                          session->value_2))
   {
     /* oops */
     return MHD_NO;
