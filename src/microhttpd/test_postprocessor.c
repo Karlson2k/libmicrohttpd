@@ -548,7 +548,7 @@ static int
 test_nested_multipart (void)
 {
   struct MHD_Connection connection;
-  struct MHD_HTTP_Res_Header header;
+  struct MHD_HTTP_Req_Header header;
   struct MHD_PostProcessor *pp;
   unsigned int want_off = FORM_NESTED_START;
   size_t i;
