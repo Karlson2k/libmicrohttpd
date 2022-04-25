@@ -3543,7 +3543,9 @@ int main(void)
            AS_VAR_IF([enable_san_address], ["yes"],
              [
                CFLAGS="${CFLAGS_ac} ${san_FLAGS} ${san_CFLAGS} ${user_CFLAGS}"
-               AX_APPEND_COMPILE_FLAGS([-Wp,-U_FORTIFY_SOURCE], [san_CFLAGS])
+               AC_CHECK_DECL([_FORTIFY_SOURCE],
+                 [MHD_APPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-U_FORTIFY_SOURCE])],
+                 [],[/* no includes */])
                AX_APPEND_FLAG([-D_FORTIFY_SOURCE=0], [san_CFLAGS])
              ],
              [
