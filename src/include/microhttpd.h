@@ -4529,8 +4529,9 @@ union MHD_DaemonInfo
 
 
 /**
- * Obtain information about the given daemon
- * (not fully implemented!).
+ * Obtain information about the given daemon.
+ * The returned pointer is invalidated with the next call of this function or
+ * when the daemon is stopped.
  *
  * @param daemon what daemon to get information about
  * @param info_type what information is desired?

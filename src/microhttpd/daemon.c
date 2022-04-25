@@ -7813,8 +7813,9 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
 
 /**
- * Obtain information about the given daemon
- * (not fully implemented!).
+ * Obtain information about the given daemon.
+ * The returned pointer is invalidated with the next call of this function or
+ * when the daemon is stopped.
  *
  * @param daemon what daemon to get information about
  * @param info_type what information is desired?
@@ -7837,10 +7838,12 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
   case MHD_DAEMON_INFO_MAC_KEY_SIZE:
     return NULL;   /* no longer supported */
   case MHD_DAEMON_INFO_LISTEN_FD:
-    return (const union MHD_DaemonInfo *) &daemon->listen_fd;
+    daemon->daemon_info_dummy_listen_fd.listen_fd = daemon->listen_fd;
+    return &daemon->daemon_info_dummy_listen_fd;
 #ifdef EPOLL_SUPPORT
   case MHD_DAEMON_INFO_EPOLL_FD:
-    return (const union MHD_DaemonInfo *) &daemon->epoll_fd;
+    daemon->daemon_info_dummy_epoll_fd.epoll_fd = daemon->epoll_fd;
+    return &daemon->daemon_info_dummy_epoll_fd;
 #endif
   case MHD_DAEMON_INFO_CURRENT_CONNECTIONS:
     if (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
@@ -7862,11 +7865,15 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
       }
     }
 #endif
-    return (const union MHD_DaemonInfo *) &daemon->connections;
+    daemon->daemon_info_dummy_num_connections.num_connections
+      = daemon->connections;
+    return &daemon->daemon_info_dummy_num_connections;
   case MHD_DAEMON_INFO_FLAGS:
-    return (const union MHD_DaemonInfo *) &daemon->options;
+    daemon->daemon_info_dummy_flags.flags = daemon->options;
+    return &daemon->daemon_info_dummy_flags;
   case MHD_DAEMON_INFO_BIND_PORT:
-    return (const union MHD_DaemonInfo *) &daemon->port;
+    daemon->daemon_info_dummy_port.port = daemon->port;
+    return &daemon->daemon_info_dummy_port;
   default:
     return NULL;
   }

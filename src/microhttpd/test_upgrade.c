@@ -1257,7 +1257,7 @@ test_upgrade (int flags,
   struct MHD_Daemon *d = NULL;
   struct wr_socket *sock;
   struct sockaddr_in sa;
-  const union MHD_DaemonInfo *real_flags;
+  enum MHD_FLAG used_flags;
   const union MHD_DaemonInfo *dinfo;
 #if defined(HTTPS_SUPPORT) && defined(HAVE_FORK) && defined(HAVE_WAITPID)
   pid_t pid = -1;
@@ -1296,10 +1296,11 @@ test_upgrade (int flags,
 #endif /* HTTPS_SUPPORT */
   if (NULL == d)
     mhdErrorExitDesc ("MHD_start_daemon() failed");
-  real_flags = MHD_get_daemon_info (d,
-                                    MHD_DAEMON_INFO_FLAGS);
-  if (NULL == real_flags)
+  dinfo = MHD_get_daemon_info (d,
+                               MHD_DAEMON_INFO_FLAGS);
+  if (NULL == dinfo)
     mhdErrorExitDesc ("MHD_get_daemon_info() failed");
+  used_flags = dinfo->flags;
   dinfo = MHD_get_daemon_info (d,
                                MHD_DAEMON_INFO_BIND_PORT);
   if ( (NULL == dinfo) ||
@@ -1347,15 +1348,7 @@ test_upgrade (int flags,
                            sock))
     externalErrorExitDesc ("pthread_create() failed");
   if (0 == (flags & MHD_USE_INTERNAL_POLLING_THREAD) )
-  {
-    enum MHD_FLAG used_flags;
-
-    /* make address sanitizer happy */
-    memcpy (&used_flags,
-            real_flags /* ->flags */,
-            sizeof (used_flags));
     run_mhd_loop (d, used_flags);
-  }
   if (0 != pthread_join (pt_client,
                          NULL))
     externalErrorExitDesc ("pthread_join() failed");

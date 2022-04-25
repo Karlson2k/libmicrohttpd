@@ -2164,6 +2164,34 @@ struct MHD_Daemon
    * #MHD_OPTION_ARRAY are counted.
    */
   size_t num_opts;
+
+  /* TODO: replace with a single member */
+  /**
+   * The value to be returned by #MHD_get_daemon_info()
+   */
+  union MHD_DaemonInfo daemon_info_dummy_listen_fd;
+
+#ifdef EPOLL_SUPPORT
+  /**
+   * The value to be returned by #MHD_get_daemon_info()
+   */
+  union MHD_DaemonInfo daemon_info_dummy_epoll_fd;
+#endif /* EPOLL_SUPPORT */
+
+  /**
+   * The value to be returned by #MHD_get_daemon_info()
+   */
+  union MHD_DaemonInfo daemon_info_dummy_num_connections;
+
+  /**
+   * The value to be returned by #MHD_get_daemon_info()
+   */
+  union MHD_DaemonInfo daemon_info_dummy_flags;
+
+  /**
+   * The value to be returned by #MHD_get_daemon_info()
+   */
+  union MHD_DaemonInfo daemon_info_dummy_port;
 };
 
 
