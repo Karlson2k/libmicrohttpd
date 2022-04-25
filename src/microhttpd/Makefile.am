@@ -207,7 +207,8 @@ check_PROGRAMS = \
   test_client_put_chunked_steps_shutdown \
   test_client_put_chunked_steps_close \
   test_client_put_chunked_steps_hard_close \
-  test_options
+  test_options \
+  test_set_panic
 
 if HAVE_POSIX_THREADS
 if ENABLE_UPGRADE
@@ -487,4 +488,9 @@ test_client_put_chunked_steps_close_LDADD = \
 test_client_put_chunked_steps_hard_close_SOURCES = \
   test_client_put_stop.c
 test_client_put_chunked_steps_hard_close_LDADD = \
+  libmicrohttpd.la
+
+test_set_panic_SOURCES = \
+  test_set_panic.c
+test_set_panic_LDADD = \
   libmicrohttpd.la
