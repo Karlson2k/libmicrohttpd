@@ -1326,10 +1326,7 @@ test_upgrade (int flags,
     MHD_socket tls_fork_sock;
     uint16_t port;
 
-    /* make address sanitizer happy */
-    memcpy (&port,
-            dinfo /* ->port */,
-            sizeof (port));
+    port = dinfo->port;
     if (-1 == (pid = gnutlscli_connect (&tls_fork_sock,
                                         port)))
       externalErrorExitDesc ("gnutlscli_connect() failed");
