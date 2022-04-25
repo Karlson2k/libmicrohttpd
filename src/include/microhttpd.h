@@ -2355,7 +2355,8 @@ enum MHD_DaemonInfoType
  * an error message and `abort()`.
  *
  * @param cls user specified value
- * @param file where the error occurred
+ * @param file where the error occurred, may be NULL if MHD was built without
+ *             messages support
  * @param line where the error occurred
  * @param reason error detail, may be NULL
  * @ingroup logging
@@ -3138,16 +3139,18 @@ MHD_set_connection_value_n (struct MHD_Connection *connection,
 
 
 /**
- * Sets the global error handler to a different implementation.  @a cb
- * will only be called in the case of typically fatal, serious
- * internal consistency issues.  These issues should only arise in the
- * case of serious memory corruption or similar problems with the
- * architecture.  While @a cb is allowed to return and MHD will then
- * try to continue, this is never safe.
+ * Sets the global error handler to a different implementation.
  *
- * The default implementation that is used if no panic function is set
- * simply prints an error message and calls `abort()`.  Alternative
- * implementations might call `exit()` or other similar functions.
+ * @a cb will only be called in the case of typically fatal, serious internal
+ * consistency issues or serious system failures like failed lock of mutex.
+ *
+ * These issues should only arise in the case of serious memory corruption or
+ * similar problems with the architecture, there is no safe way to continue
+ * even for closing of the application.
+ *
+ * The default implementation that is used if no panic function is set simply
+ * prints an error message and calls `abort()`.
+ * Alternative implementations might call `exit()` or other similar functions.
  *
  * @param cb new error handler or NULL to use default handler
  * @param cls passed to @a cb
