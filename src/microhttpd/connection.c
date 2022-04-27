@@ -1075,8 +1075,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
                        (size_t) MHD_MIN ((uint64_t) response->data_buffer_size,
                                          response->total_size
                                          - connection->response_write_position));
-  if ( (MHD_CONTENT_READER_END_OF_STREAM == ret) ||
-       (MHD_CONTENT_READER_END_WITH_ERROR == ret) )
+  if (0 > ret)
   {
     /* either error or http 1.0 transfer, close socket! */
     /* TODO: do not update total size, check whether response
