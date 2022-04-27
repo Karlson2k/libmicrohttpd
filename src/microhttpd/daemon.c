@@ -4390,7 +4390,13 @@ MHD_select (struct MHD_Daemon *daemon,
                               &maxsock,
                               FD_SETSIZE)) )
   {
-#if defined(MHD_WINSOCK_SOCKETS)
+#if ! defined(MHD_WINSOCK_SOCKETS)
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon, _ ("Could not add control inter-thread " \
+                         "communication channel FD to fdset.\n"));
+#endif
+    err_state = MHD_YES;
+#else  /* MHD_WINSOCK_SOCKETS */
     /* fdset limit reached, new connections
        cannot be handled. Remove listen socket FD
        from fdset and retry to add ITC FD. */
@@ -4404,18 +4410,13 @@ MHD_select (struct MHD_Daemon *daemon,
                                 &maxsock,
                                 FD_SETSIZE))
       {
-#endif /* MHD_WINSOCK_SOCKETS */
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ (
-                "Could not add control inter-thread communication channel FD to fdset.\n"));
+        MHD_DLOG (daemon, _ ("Could not add control inter-thread " \
+                             "communication channel FD to fdset.\n"));
 #endif
-    err_state = MHD_YES;
-#if defined(MHD_WINSOCK_SOCKETS)
-  }
-}
-
-
+        err_state = MHD_YES;
+      }
+    }
 #endif /* MHD_WINSOCK_SOCKETS */
   }
   /* Stop listening if we are at the configured connection limit */
