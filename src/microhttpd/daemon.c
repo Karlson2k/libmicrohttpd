@@ -4445,34 +4445,32 @@ MHD_select (struct MHD_Daemon *daemon,
   }
   else
   {
-    MHD_UNSIGNED_LONG_LONG ltimeout;
+    uint64_t timeout64;
 
     if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-         (MHD_NO != MHD_get_timeout (daemon, &ltimeout)) )
+         (MHD_NO != MHD_get_timeout64 (daemon, &timeout64)) )
     {
       tv = &timeout; /* have timeout value */
       if ( (0 < millisec) &&
-           (ltimeout > (MHD_UNSIGNED_LONG_LONG) millisec) )
-        ltimeout = (MHD_UNSIGNED_LONG_LONG) millisec;
+           (timeout64 > (uint64_t) millisec) )
+        timeout64 = (uint64_t) millisec;
     }
     else if (0 < millisec)
     {
       tv = &timeout; /* have timeout value */
-      ltimeout = (MHD_UNSIGNED_LONG_LONG) millisec;
+      timeout64 = (uint64_t) millisec;
     }
 
     if (NULL != tv)
     { /* have timeout value */
-      if (ltimeout / 1000 > TIMEVAL_TV_SEC_MAX)
-      {
+#if (SIZEOF_UINT64_T - 2) >= SIZEOF_STRUCT_TIMEVAL_TV_SEC
+      if (timeout64 / 1000 > TIMEVAL_TV_SEC_MAX)
         timeout.tv_sec = TIMEVAL_TV_SEC_MAX;
-        timeout.tv_usec = 0;
-      }
       else
-      {
-        timeout.tv_sec = (_MHD_TIMEVAL_TV_SEC_TYPE) (ltimeout / 1000);
-        timeout.tv_usec = (ltimeout % 1000) * 1000;
-      }
+#endif /* (SIZEOF_UINT64_T - 2) >= SIZEOF_STRUCT_TIMEVAL_TV_SEC */
+      timeout.tv_sec = (_MHD_TIMEVAL_TV_SEC_TYPE) (timeout64 / 1000);
+
+      timeout.tv_usec = ((uint16_t) (timeout64 % 1000)) * ((int32_t) 1000);
     }
   }
   num_ready = MHD_SYS_select_ (maxsock + 1,
