@@ -4048,22 +4048,51 @@ MHD_get_timeout64 (struct MHD_Daemon *daemon,
  *                    ignored if set to '-1'
  * @return timeout value in milliseconds or -1 if no timeout is expected.
  */
-static int
+static int64_t
 get_timeout_millisec_ (struct MHD_Daemon *daemon,
                        int32_t max_timeout)
 {
-  MHD_UNSIGNED_LONG_LONG ulltimeout;
+  uint64_t d_timeout;
+  mhd_assert (0 <= max_timeout || -1 == max_timeout);
   if (0 == max_timeout)
     return 0;
 
-  if (MHD_NO == MHD_get_timeout (daemon, &ulltimeout))
-    return (INT_MAX < max_timeout) ? INT_MAX : (int) max_timeout;
+  if (MHD_NO == MHD_get_timeout64 (daemon, &d_timeout))
+    return max_timeout;
 
-  if ( (0 > max_timeout) ||
-       ((uint32_t) max_timeout > ulltimeout) )
-    return (INT_MAX < ulltimeout) ? INT_MAX : (int) ulltimeout;
+  if ((0 < max_timeout) && ((uint64_t) max_timeout < d_timeout))
+    return max_timeout;
 
-  return (INT_MAX < max_timeout) ? INT_MAX : (int) max_timeout;
+  if (INT64_MAX < d_timeout)
+    return INT64_MAX;
+
+  return (int64_t) d_timeout;
+}
+
+
+/**
+ * Obtain timeout value for polling function for this daemon.
+ * @remark To be called only from the thread that processes
+ * daemon's select()/poll()/etc.
+ *
+ * @param daemon the daemon to query for timeout
+ * @param max_timeout the maximum return value (in milliseconds),
+ *                    ignored if set to '-1'
+ * @return timeout value in milliseconds, capped to INT_MAX, or
+ *         -1 if no timeout is expected.
+ */
+static int
+get_timeout_millisec_int (struct MHD_Daemon *daemon,
+                          int32_t max_timeout)
+{
+  int64_t res;
+
+  res = get_timeout_millisec_ (daemon, max_timeout);
+#if SIZEOF_INT < SIZEOF_INT64_T
+  if (INT_MAX <= res)
+    return INT_MAX;
+#endif /* SIZEOF_INT < SIZEOF_INT64_T */
+  return (int) res;
 }
 
 
@@ -4505,7 +4534,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       poll_server++;
     }
 
-    timeout = get_timeout_millisec_ (daemon, millisec);
+    timeout = get_timeout_millisec_int (daemon, millisec);
 
     i = 0;
     for (pos = daemon->connections_tail; NULL != pos; pos = pos->prev)
@@ -5047,7 +5076,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
        (MHD_NO != resume_suspended_connections (daemon)) )
     millisec = 0;
 
-  timeout_ms = get_timeout_millisec_ (daemon, millisec);
+  timeout_ms = get_timeout_millisec_int (daemon, millisec);
 
   /* Reset. New value will be set when connections are processed. */
   /* Note: Used mostly for uniformity here as same situation is

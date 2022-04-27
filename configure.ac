@@ -1437,6 +1437,7 @@ struct timeval test_var;
 )
 AC_DEFINE_UNQUOTED([SIZEOF_STRUCT_TIMEVAL_TV_SEC], [$mhd_cv_size_timeval_tv_sec],
   [The size of `tv_sec' member of `struct timeval', as computed by sizeof])
+AC_CHECK_SIZEOF([int64_t], [], [[#include <stdint.h>]])
 AC_CHECK_SIZEOF([uint64_t], [], [[#include <stdint.h>]])
 AC_CHECK_SIZEOF([int], [], [[#include <stdint.h>]])
 AC_CHECK_SIZEOF([unsigned int], [], [[#include <stdint.h>]])
