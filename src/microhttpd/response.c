@@ -255,6 +255,8 @@ add_response_header_connection (struct MHD_Response *response,
     return MHD_NO;
   /* Additional space for normalisation and zero-termination */
   norm_len = value_len + value_len / 2 + 1;
+  if (norm_len >= SSIZE_MAX)
+    return MHD_NO;
   buf_size = old_value_len + (size_t) norm_len;
 
   buf = malloc (buf_size);
@@ -1117,6 +1119,8 @@ MHD_create_response_from_fd_at_offset (size_t size,
                                        int fd,
                                        off_t offset)
 {
+  if (0 > offset)
+    return NULL;
   return MHD_create_response_from_fd_at_offset64 (size,
                                                   fd,
                                                   (uint64_t) offset);
