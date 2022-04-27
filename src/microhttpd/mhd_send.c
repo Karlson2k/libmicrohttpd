@@ -126,10 +126,14 @@ iov_max_init_ (void)
   long res = sysconf (_SC_IOV_MAX);
   if (res >= 0)
     mhd_iov_max_ = (unsigned long) res;
-#if defined(IOV_MAX)
   else
+  {
+#if defined(IOV_MAX)
     mhd_iov_max_ = IOV_MAX;
-#endif /* IOV_MAX */
+#else  /* ! IOV_MAX */
+    mhd_iov_max_ = 8; /* Should be the safe limit */
+#endif /* ! IOV_MAX */
+  }
 }
 
 
