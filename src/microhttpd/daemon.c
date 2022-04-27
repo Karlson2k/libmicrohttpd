@@ -2027,7 +2027,7 @@ thread_main_handle_connection (void *data)
 #endif /* (SIZEOF_UINT64_T - 2) >= SIZEOF_STRUCT_TIMEVAL_TV_SEC */
         tv.tv_sec = (_MHD_TIMEVAL_TV_SEC_TYPE) mseconds_left / 1000;
 
-        tv.tv_usec = ((uint16_t) (mseconds_left % 1000)) * 1000;
+        tv.tv_usec = ((uint16_t) (mseconds_left % 1000)) * ((int32_t) 1000);
         tvp = &tv;
       }
       else
@@ -3917,6 +3917,56 @@ _MHD_EXTERN enum MHD_Result
 MHD_get_timeout (struct MHD_Daemon *daemon,
                  MHD_UNSIGNED_LONG_LONG *timeout)
 {
+  uint64_t t64;
+  if (MHD_NO == MHD_get_timeout64 (daemon, &t64))
+    return MHD_NO;
+
+#if SIZEOF_UINT64_T > SIZEOF_UNSIGNED_LONG_LONG
+  if (ULLONG_MAX <= t64)
+    *timeout = ULLONG_MAX;
+  else
+#endif /* SIZEOF_UINT64_T > SIZEOF_UNSIGNED_LONG_LONG */
+  *timeout = (MHD_UNSIGNED_LONG_LONG) t64;
+  return MHD_YES;
+}
+
+
+/**
+ * Obtain timeout value for external polling function for this daemon.
+ *
+ * This function set value to the amount of milliseconds for which polling
+ * function (`select()`, `poll()` or epoll) should at most block, not the
+ * timeout value set for connections.
+ *
+ * Any "external" sockets polling function must be called with the timeout
+ * value provided by this function. Smaller timeout values can be used for
+ * polling function if it is required for any reason, but using larger
+ * timeout value or no timeout (indefinite timeout) when this function
+ * return #MHD_YES will break MHD processing logic and result in "hung"
+ * connections with data pending in network buffers and other problems.
+ *
+ * It is important to always use this function when "external" polling is
+ * used. If this function returns #MHD_YES then #MHD_run() (or
+ * #MHD_run_from_select()) must be called right after return from polling
+ * function, regardless of the states of MHD fds.
+ *
+ * In practice, if #MHD_YES is returned then #MHD_run() (or
+ * #MHD_run_from_select()) must be called not later than @a timeout
+ * millisecond even if not activity is detected on sockets by
+ * sockets polling function.
+ *
+ * @param daemon daemon to query for timeout
+ * @param timeout64 the pointer to the variable to be set to the
+ *                  timeout (in milliseconds)
+ * @return #MHD_YES if timeout value has been set,
+ *         #MHD_NO if timeouts are not used and no data processing is pending.
+ * @note Available since #MHD_VERSION 0x00097508
+ * @ingroup event
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_get_timeout64 (struct MHD_Daemon *daemon,
+                   uint64_t *timeout64)
+{
   uint64_t earliest_deadline;
   struct MHD_Connection *pos;
   struct MHD_Connection *earliest_tmot_conn; /**< the connection with earliest timeout */
@@ -3937,7 +3987,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
   if (daemon->data_already_pending)
   {
     /* Some data already waiting to be processed. */
-    *timeout = 0;
+    *timeout64 = 0;
     return MHD_YES;
   }
 #ifdef EPOLL_SUPPORT
@@ -3949,7 +3999,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
        ) )
   {
     /* Some connection(s) already have some data pending. */
-    *timeout = 0;
+    *timeout64 = 0;
     return MHD_YES;
   }
 #endif /* EPOLL_SUPPORT */
@@ -3981,13 +4031,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 
   if (NULL != earliest_tmot_conn)
   {
-    const uint64_t mssecond_left = connection_get_wait (earliest_tmot_conn);
-#if SIZEOF_UINT64_T > SIZEOF_UNSIGNED_LONG_LONG
-    if (mssecond_left > ULLONG_MAX)
-      *timeout = ULLONG_MAX;
-    else
-#endif /* UINT64 != ULLONG_MAX */
-    *timeout = (unsigned long long) mssecond_left;
+    *timeout64 = connection_get_wait (earliest_tmot_conn);
     return MHD_YES;
   }
   return MHD_NO;
