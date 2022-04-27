@@ -480,7 +480,7 @@ lookup_sub_value (char *dest,
       else
       {
         if (size > (size_t) ((q2 - q1) + 1))
-          size = (q2 - q1) + 1;
+          size = (size_t) (q2 - q1) + 1;
         size--;
         memcpy (dest,
                 q1,
@@ -541,7 +541,7 @@ check_nonce_nc (struct MHD_Connection *connection,
   np = nonce;
   while ('\0' != *np)
   {
-    off = (off << 8) | (*np ^ (off >> 24));
+    off = (off << 8) | (((uint8_t) *np) ^ (off >> 24));
     np++;
   }
   off = off % mod;
@@ -1399,7 +1399,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
       char *header;
 
       header = MHD_calloc_ (1,
-                            hlen + 1);
+                            (size_t) hlen + 1);
       if (NULL == header)
       {
 #ifdef HAVE_MESSAGES
@@ -1410,7 +1410,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
       }
 
       if (MHD_snprintf_ (header,
-                         hlen + 1,
+                         (size_t) hlen + 1,
                          "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\",algorithm=%s%s",
                          realm,
                          nonce,

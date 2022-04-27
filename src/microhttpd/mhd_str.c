@@ -899,12 +899,12 @@ MHD_str_to_uint64_ (const char *str,
       return 0;
 
     res *= 10;
-    res += digit;
+    res += (unsigned int) digit;
     str++;
   } while (isasciidigit (*str));
 
   *out_val = res;
-  return str - start;
+  return (size_t) (str - start);
 }
 
 
@@ -944,7 +944,7 @@ MHD_str_to_uint64_n_ (const char *str,
       return 0;
 
     res *= 10;
-    res += digit;
+    res += (unsigned int) digit;
     i++;
   } while ( (i < maxlen) &&
             isasciidigit (str[i]) );
@@ -984,7 +984,7 @@ MHD_strx_to_uint32_ (const char *str,
                                                                % 16)) ) )
     {
       res *= 16;
-      res += digit;
+      res += (unsigned int) digit;
     }
     else
       return 0;
@@ -994,7 +994,7 @@ MHD_strx_to_uint32_ (const char *str,
 
   if (str - start > 0)
     *out_val = res;
-  return str - start;
+  return (size_t) (str - start);
 }
 
 
@@ -1032,7 +1032,7 @@ MHD_strx_to_uint32_n_ (const char *str,
       return 0;
 
     res *= 16;
-    res += digit;
+    res += (unsigned int) digit;
     i++;
   }
 
@@ -1071,7 +1071,7 @@ MHD_strx_to_uint64_ (const char *str,
                                                                % 16)) ) )
     {
       res *= 16;
-      res += digit;
+      res += (unsigned int) digit;
     }
     else
       return 0;
@@ -1081,7 +1081,7 @@ MHD_strx_to_uint64_ (const char *str,
 
   if (str - start > 0)
     *out_val = res;
-  return str - start;
+  return (size_t) (str - start);
 }
 
 
@@ -1119,7 +1119,7 @@ MHD_strx_to_uint64_n_ (const char *str,
       return 0;
 
     res *= 16;
-    res += digit;
+    res += (unsigned int) digit;
     i++;
   }
 
@@ -1178,7 +1178,7 @@ MHD_str_to_uvalue_n_ (const char *str,
       return 0;
 
     res *= base;
-    res += digit;
+    res += (unsigned int) digit;
     i++;
   }
 
@@ -1330,7 +1330,7 @@ MHD_uint8_to_str_pad (uint8_t val,
   }
   else
   {
-    buf[pos++] = '0' + digit;
+    buf[pos++] = '0' + (char) digit;
     val %= 100;
     min_digits = 2;
   }
@@ -1345,13 +1345,13 @@ MHD_uint8_to_str_pad (uint8_t val,
   }
   else
   {
-    buf[pos++] = '0' + digit;
+    buf[pos++] = '0' + (char) digit;
     val %= 10;
   }
 
   if (buf_size <= pos)
     return 0;
-  buf[pos++] = '0' + val;
+  buf[pos++] = '0' + (char) val;
   return pos;
 }
 

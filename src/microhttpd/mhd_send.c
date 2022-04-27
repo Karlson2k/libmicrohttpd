@@ -125,7 +125,7 @@ iov_max_init_ (void)
 {
   long res = sysconf (_SC_IOV_MAX);
   if (res >= 0)
-    mhd_iov_max_ = res;
+    mhd_iov_max_ = (unsigned long) res;
 #if defined(IOV_MAX)
   else
     mhd_iov_max_ = IOV_MAX;
@@ -1399,7 +1399,6 @@ send_iov_nontls (struct MHD_Connection *connection,
                  bool push_data)
 {
   ssize_t res;
-  ssize_t total_sent;
   size_t items_to_send;
 #ifdef HAVE_SENDMSG
   struct msghdr msg;
@@ -1501,35 +1500,38 @@ send_iov_nontls (struct MHD_Connection *connection,
   }
 
   /* Some data has been sent */
-  total_sent = res;
-  /* Adjust the internal tracking information for the iovec to
-   * take this last send into account. */
-  while ((0 != res) && (r_iov->iov[r_iov->sent].iov_len <= (size_t) res))
+  if (1)
   {
-    res -= r_iov->iov[r_iov->sent].iov_len;
-    r_iov->sent++; /* The iov element has been completely sent */
-    mhd_assert ((r_iov->cnt > r_iov->sent) || (0 == res));
-  }
-
-  if (r_iov->cnt == r_iov->sent)
-    post_send_setopt (connection, true, push_data);
-  else
-  {
-#ifdef EPOLL_SUPPORT
-    connection->epoll_state &=
-      ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
-#endif /* EPOLL_SUPPORT */
-    if (0 != res)
+    size_t track_sent = (size_t) res;
+    /* Adjust the internal tracking information for the iovec to
+     * take this last send into account. */
+    while ((0 != track_sent) && (r_iov->iov[r_iov->sent].iov_len <= track_sent))
     {
-      mhd_assert (r_iov->cnt > r_iov->sent);
-      /* The last iov element has been partially sent */
-      r_iov->iov[r_iov->sent].iov_base =
-        (void *) ((uint8_t *) r_iov->iov[r_iov->sent].iov_base + (size_t) res);
-      r_iov->iov[r_iov->sent].iov_len -= (MHD_iov_size_) res;
+      track_sent -= r_iov->iov[r_iov->sent].iov_len;
+      r_iov->sent++; /* The iov element has been completely sent */
+      mhd_assert ((r_iov->cnt > r_iov->sent) || (0 == track_sent));
+    }
+
+    if (r_iov->cnt == r_iov->sent)
+      post_send_setopt (connection, true, push_data);
+    else
+    {
+#ifdef EPOLL_SUPPORT
+      connection->epoll_state &=
+        ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
+#endif /* EPOLL_SUPPORT */
+      if (0 != track_sent)
+      {
+        mhd_assert (r_iov->cnt > r_iov->sent);
+        /* The last iov element has been partially sent */
+        r_iov->iov[r_iov->sent].iov_base =
+          (void *) ((uint8_t *) r_iov->iov[r_iov->sent].iov_base + track_sent);
+        r_iov->iov[r_iov->sent].iov_len -= (MHD_iov_size_) track_sent;
+      }
     }
   }
 
-  return total_sent;
+  return res;
 }
 
 
@@ -1567,7 +1569,7 @@ send_iov_emu (struct MHD_Connection *connection,
   do
   {
     if ((size_t) SSIZE_MAX - total_sent < r_iov->iov[r_iov->sent].iov_len)
-      return total_sent; /* return value would overflow */
+      return (ssize_t) total_sent; /* return value would overflow */
 
     res = MHD_send_data_ (connection,
                           r_iov->iov[r_iov->sent].iov_base,
@@ -1580,7 +1582,7 @@ send_iov_emu (struct MHD_Connection *connection,
         return res; /* Nothing was sent, return result as is */
 
       if (MHD_ERR_AGAIN_ == res)
-        return total_sent; /* Some data has been sent, return the amount */
+        return (ssize_t) total_sent; /* Return the amount of the sent data */
 
       return res; /* Any kind of a hard error */
     }
@@ -1589,13 +1591,14 @@ send_iov_emu (struct MHD_Connection *connection,
 
     if (r_iov->iov[r_iov->sent].iov_len != (size_t) res)
     {
+      const size_t sent = (size_t) res;
       /* Incomplete buffer has been sent.
        * Adjust buffer of the last element. */
       r_iov->iov[r_iov->sent].iov_base =
-        (void *) ((uint8_t *) r_iov->iov[r_iov->sent].iov_base + (size_t) res);
-      r_iov->iov[r_iov->sent].iov_len -= res;
+        (void *) ((uint8_t *) r_iov->iov[r_iov->sent].iov_base + sent);
+      r_iov->iov[r_iov->sent].iov_len -= sent;
 
-      return total_sent;
+      return (ssize_t) total_sent;
     }
     /* The iov element has been completely sent */
     r_iov->sent++;

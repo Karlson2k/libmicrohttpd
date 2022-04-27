@@ -172,7 +172,8 @@ MHD_http_unescape (char *val)
     }
   }
   *wpos = '\0'; /* add 0-terminator */
-  return wpos - val;
+  mhd_assert (wpos >= val);
+  return (size_t) (wpos - val);
 }
 
 

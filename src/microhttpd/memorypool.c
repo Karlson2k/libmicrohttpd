@@ -447,7 +447,7 @@ MHD_pool_reallocate (struct MemoryPool *pool,
 
   if (NULL != old)
   {   /* Have previously allocated data */
-    const size_t old_offset = (uint8_t *) old - pool->memory;
+    const size_t old_offset = (size_t) (((uint8_t *) old) - pool->memory);
     const bool shrinking = (old_size > new_size);
     /* Try resizing in-place */
     if (shrinking)

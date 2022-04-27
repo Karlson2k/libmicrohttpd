@@ -1429,7 +1429,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     }
     else   /* 0 < res */
     {
-      urh->in_buffer_used += res;
+      urh->in_buffer_used += (size_t) res;
       if (0 < gnutls_record_check_pending (connection->tls_session))
       {
         connection->tls_read_ready = true;
@@ -1484,7 +1484,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     }
     else   /* 0 < res */
     {
-      urh->out_buffer_used += res;
+      urh->out_buffer_used += (size_t) res;
       if (buf_size > (size_t) res)
         urh->mhd.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
     }
@@ -1531,7 +1531,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                       "%" PRIu64 \
                       " bytes of data received from application: %s\n"),
                     (uint64_t) urh->out_buffer_used,
-                    gnutls_strerror (res));
+                    gnutls_strerror ((int) res));
 #endif
           /* Discard any data unsent to remote. */
           urh->out_buffer_used = 0;
@@ -1543,7 +1543,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     }
     else   /* 0 < res */
     {
-      const size_t next_out_buffer_used = urh->out_buffer_used - res;
+      const size_t next_out_buffer_used = urh->out_buffer_used - (size_t) res;
       if (0 != next_out_buffer_used)
       {
         memmove (urh->out_buffer,
@@ -1614,7 +1614,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     }
     else   /* 0 < res */
     {
-      const size_t next_in_buffer_used = urh->in_buffer_used - res;
+      const size_t next_in_buffer_used = urh->in_buffer_used - (size_t) res;
       if (0 != next_in_buffer_used)
       {
         memmove (urh->in_buffer,
@@ -3535,7 +3535,8 @@ MHD_add_connection (struct MHD_Daemon *daemon,
     for (i = 0; i < daemon->worker_pool_size; ++i)
     {
       struct MHD_Daemon *const worker =
-        &daemon->worker_pool[(i + client_socket) % daemon->worker_pool_size];
+        &daemon->worker_pool[(i + (unsigned int) client_socket)
+                             % daemon->worker_pool_size];
       if (worker->connections < worker->connection_limit)
         return internal_add_connection (worker,
                                         client_socket,

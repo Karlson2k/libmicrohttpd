@@ -213,11 +213,11 @@ add_response_header_connection (struct MHD_Response *response,
   /** the length of the "Connection" key */
   static const size_t key_len =
     MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONNECTION);
-  size_t value_len;  /**< the length of the @a value */
+  size_t value_len; /**< the length of the @a value */
   size_t old_value_len; /**< the length of the existing "Connection" value */
-  size_t buf_size;   /**< the size of the buffer */
-  ssize_t norm_len;  /**< the length of the normalised value */
-  char *buf;         /**< the temporal buffer */
+  size_t buf_size;  /**< the size of the buffer */
+  size_t norm_len;  /**< the length of the normalised value */
+  char *buf;        /**< the temporal buffer */
   struct MHD_HTTP_Res_Header *hdr; /**< existing "Connection" header */
   bool value_has_close; /**< the @a value has "close" token */
   bool already_has_close; /**< existing "Connection" header has "close" token */
@@ -253,19 +253,27 @@ add_response_header_connection (struct MHD_Response *response,
   value_len = strlen (value);
   if (value_len >= SSIZE_MAX)
     return MHD_NO;
-  /* Additional space for normalisation and zero-termination*/
-  norm_len = (ssize_t) (value_len + value_len / 2 + 1);
+  /* Additional space for normalisation and zero-termination */
+  norm_len = value_len + value_len / 2 + 1;
   buf_size = old_value_len + (size_t) norm_len;
 
   buf = malloc (buf_size);
   if (NULL == buf)
     return MHD_NO;
-  /* Remove "close" token (if any), it will be moved to the front */
-  value_has_close = MHD_str_remove_token_caseless_ (value, value_len, "close",
-                                                    MHD_STATICSTR_LEN_ ( \
-                                                      "close"),
-                                                    buf + old_value_len,
-                                                    &norm_len);
+  if (1)
+  { /* local scope */
+    ssize_t norm_len_s = (ssize_t) norm_len;
+    /* Remove "close" token (if any), it will be moved to the front */
+    value_has_close = MHD_str_remove_token_caseless_ (value, value_len, "close",
+                                                      MHD_STATICSTR_LEN_ ( \
+                                                        "close"),
+                                                      buf + old_value_len,
+                                                      &norm_len_s);
+    mhd_assert (0 <= norm_len_s);
+    if (0 > norm_len_s)
+      norm_len = 0; /* Must never happen */
+    norm_len = (size_t) norm_len;
+  }
 #ifdef UPGRADE_SUPPORT
   if ( (NULL != response->upgrade_handler) && value_has_close)
   { /* The "close" token cannot be used with connection "upgrade" */
@@ -273,17 +281,10 @@ add_response_header_connection (struct MHD_Response *response,
     return MHD_NO;
   }
 #endif /* UPGRADE_SUPPORT */
-  mhd_assert (0 <= norm_len);
-  if (0 > norm_len)
-    norm_len = 0; /* Must never happen */
   if (0 != norm_len)
-  {
-    size_t len = norm_len;
-    MHD_str_remove_tokens_caseless_ (buf + old_value_len, &len,
+    MHD_str_remove_tokens_caseless_ (buf + old_value_len, &norm_len,
                                      "keep-alive",
                                      MHD_STATICSTR_LEN_ ("keep-alive"));
-    norm_len = (ssize_t) len;
-  }
   if (0 == norm_len)
   { /* New value is empty after normalisation */
     if (! value_has_close)
@@ -301,7 +302,7 @@ add_response_header_connection (struct MHD_Response *response,
   if (value_has_close && ! already_has_close)
   {
     /* Need to insert "close" token at the first position */
-    mhd_assert (buf_size >= old_value_len + (size_t) norm_len   \
+    mhd_assert (buf_size >= old_value_len + norm_len   \
                 + MHD_STATICSTR_LEN_ ("close, ") + 1);
     if (0 != norm_len)
       memmove (buf + MHD_STATICSTR_LEN_ ("close, ") + old_value_len,
@@ -333,7 +334,7 @@ add_response_header_connection (struct MHD_Response *response,
     mhd_assert ((value_has_close && ! already_has_close) ? \
                 (MHD_STATICSTR_LEN_ ("close, ") + old_value_len == pos) : \
                 (old_value_len == pos));
-    pos += (size_t) norm_len;
+    pos += norm_len;
   }
   mhd_assert (buf_size > pos);
   buf[pos] = 0; /* Null terminate the result */
@@ -1118,7 +1119,7 @@ MHD_create_response_from_fd_at_offset (size_t size,
 {
   return MHD_create_response_from_fd_at_offset64 (size,
                                                   fd,
-                                                  offset);
+                                                  (uint64_t) offset);
 }
 
 
@@ -1631,7 +1632,7 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
     MHD_iovec_ *iov_copy;
     int num_copy_elements = i_cp;
 
-    iov_copy = MHD_calloc_ (num_copy_elements,
+    iov_copy = MHD_calloc_ ((size_t) num_copy_elements, \
                             sizeof(MHD_iovec_));
     if (NULL == iov_copy)
     {
@@ -1662,8 +1663,9 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
       i_cp++;
     }
     mhd_assert (num_copy_elements == i_cp);
+    mhd_assert (0 <= i_cp);
     response->data_iov = iov_copy;
-    response->data_iovcnt = i_cp;
+    response->data_iovcnt = (unsigned int) i_cp;
   }
   return response;
 }

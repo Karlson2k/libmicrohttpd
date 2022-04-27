@@ -1091,7 +1091,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
     return MHD_NO;
   }
   response->data_start = connection->response_write_position;
-  response->data_size = ret;
+  response->data_size = (size_t) ret;
   if (0 == ret)
   {
     connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
@@ -1190,12 +1190,14 @@ try_ready_chunked_body (struct MHD_Connection *connection,
     const size_t data_write_offset
       = (size_t) (connection->response_write_position - response->data_start);
     /* buffer already ready, use what is there for the chunk */
-    ret = response->data_size - data_write_offset;
+    mhd_assert (SSIZE_MAX < (response->data_size - data_write_offset));
+    mhd_assert (response->data_size >= data_write_offset);
+    ret = (ssize_t) (response->data_size - data_write_offset);
     if ( ((size_t) ret) > size_to_fill)
       ret = (ssize_t) size_to_fill;
     memcpy (&connection->write_buffer[max_chunk_hdr_len],
             &response->data[data_write_offset],
-            ret);
+            (size_t) ret);
   }
   else
   {
@@ -1263,10 +1265,10 @@ try_ready_chunked_body (struct MHD_Connection *connection,
           chunk_hdr_len);
   connection->write_buffer[max_chunk_hdr_len - 2] = '\r';
   connection->write_buffer[max_chunk_hdr_len - 1] = '\n';
-  connection->write_buffer[max_chunk_hdr_len + ret] = '\r';
-  connection->write_buffer[max_chunk_hdr_len + ret + 1] = '\n';
-  connection->response_write_position += ret;
-  connection->write_buffer_append_offset = max_chunk_hdr_len + ret + 2;
+  connection->write_buffer[max_chunk_hdr_len + (size_t) ret] = '\r';
+  connection->write_buffer[max_chunk_hdr_len + (size_t) ret + 1] = '\n';
+  connection->response_write_position += (size_t) ret;
+  connection->write_buffer_append_offset = max_chunk_hdr_len + (size_t) ret + 2;
   return MHD_YES;
 }
 
@@ -2138,7 +2140,7 @@ build_header_response (struct MHD_Connection *connection)
   if (buf_size < pos + 5) /* space + code + space */
     return MHD_NO;
   buf[pos++] = ' ';
-  pos += MHD_uint16_to_str (rcode, buf + pos,
+  pos += MHD_uint16_to_str ((uint16_t) rcode, buf + pos,
                             buf_size - pos);
   buf[pos++] = ' ';
 
@@ -2819,10 +2821,11 @@ parse_cookie_header (struct MHD_Connection *connection)
     if (old != '=')
     {
       /* value part omitted, use empty string... */
+      mhd_assert (ekill >= pos);
       if (MHD_NO ==
           connection_add_header (connection,
                                  pos,
-                                 ekill - pos + 1,
+                                 (size_t) (ekill - pos + 1),
                                  "",
                                  0,
                                  MHD_COOKIE_KIND))
@@ -2860,12 +2863,14 @@ parse_cookie_header (struct MHD_Connection *connection)
       end--;
       *end = '\0';
     }
+    mhd_assert (ekill >= pos);
+    mhd_assert (end >= equals);
     if (MHD_NO ==
         connection_add_header (connection,
                                pos,
-                               ekill - pos + 1,
+                               (size_t) (ekill - pos + 1),
                                equals,
-                               end - equals,
+                               (size_t) (end - equals),
                                MHD_COOKIE_KIND))
       return MHD_NO;
     pos = semicolon;
@@ -3057,16 +3062,17 @@ parse_initial_message_line (struct MHD_Connection *connection,
       connection->version = http_version + 1;
       if (MHD_NO == parse_http_version (connection, connection->version,
                                         line_len
-                                        - (connection->version - line)))
+                                        - (size_t)
+                                        (connection->version - line)))
         return MHD_NO;
-      uri_len = http_version - uri;
+      uri_len = (size_t) (http_version - uri);
     }
     else
     {
       connection->version = "";
       if (MHD_NO == parse_http_version (connection, connection->version, 0))
         return MHD_NO;
-      uri_len = line_len - (uri - line);
+      uri_len = line_len - (size_t) (uri - line);
     }
     /* check for spaces in URI if we are "strict" */
     if ( (1 <= daemon->strict_for_client) &&
@@ -3845,7 +3851,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
                              MHD_REQUEST_TERMINATED_WITH_ERROR);
     return;
   }
-  connection->read_buffer_offset += bytes_read;
+  connection->read_buffer_offset += (size_t) bytes_read;
   MHD_update_last_activity_ (connection);
 #if DEBUG_STATES
   MHD_DLOG (connection->daemon,
@@ -3969,7 +3975,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
              (int) ret,
              &HTTP_100_CONTINUE[connection->continue_message_write_offset]);
 #endif
-    connection->continue_message_write_offset += ret;
+    connection->continue_message_write_offset += (size_t) ret;
     MHD_update_last_activity_ (connection);
     return;
   case MHD_CONNECTION_CONTINUE_SENT:
@@ -4058,10 +4064,10 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         mhd_assert (! connection->rp_props.chunked);
         mhd_assert (connection->rp_props.send_reply_body);
         connection->write_buffer_send_offset += wb_ready;
-        connection->response_write_position = ret - wb_ready;
+        connection->response_write_position = ((size_t) ret) - wb_ready;
       }
       else
-        connection->write_buffer_send_offset += ret;
+        connection->write_buffer_send_offset += (size_t) ret;
       MHD_update_last_activity_ (connection);
       if (MHD_CONNECTION_HEADERS_SENDING != connection->state)
         return;
@@ -4142,7 +4148,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                                 NULL);
         return;
       }
-      connection->response_write_position += ret;
+      connection->response_write_position += (size_t) ret;
       MHD_update_last_activity_ (connection);
     }
     if (connection->response_write_position ==
@@ -4174,7 +4180,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                               NULL);
       return;
     }
-    connection->write_buffer_send_offset += ret;
+    connection->write_buffer_send_offset += (size_t) ret;
     MHD_update_last_activity_ (connection);
     if (MHD_CONNECTION_CHUNKED_BODY_READY != connection->state)
       return;
@@ -4210,7 +4216,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
                               NULL);
       return;
     }
-    connection->write_buffer_send_offset += ret;
+    connection->write_buffer_send_offset += (size_t) ret;
     MHD_update_last_activity_ (connection);
     if (MHD_CONNECTION_FOOTERS_SENDING != connection->state)
       return;

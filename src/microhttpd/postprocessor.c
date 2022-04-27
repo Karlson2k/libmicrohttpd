@@ -367,19 +367,22 @@ process_value (struct MHD_PostProcessor *pp,
   if ( (NULL != last_escape) &&
        (((size_t) (value_end - last_escape)) < sizeof (pp->xbuf)) )
   {
-    pp->xbuf_pos = value_end - last_escape;
+    mhd_assert (value_end >= last_escape);
+    pp->xbuf_pos = (size_t) (value_end - last_escape);
     memcpy (pp->xbuf,
             last_escape,
-            value_end - last_escape);
+            (size_t) (value_end - last_escape));
     value_end = last_escape;
   }
   while ( (value_start != value_end) ||
           (pp->must_ikvi) ||
           (xoff > 0) )
   {
-    size_t delta = value_end - value_start;
+    size_t delta = (size_t) (value_end - value_start);
     bool cut = false;
     size_t clen = 0;
+
+    mhd_assert (value_end >= value_start);
 
     if (delta > XBUF_SIZE - xoff)
       delta = XBUF_SIZE - xoff;
@@ -660,7 +663,8 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       mhd_assert ((NULL != end_key) || (NULL == start_key));
       if (1)
       {
-        const size_t key_len = end_key - start_key;
+        const size_t key_len = (size_t) (end_key - start_key);
+        mhd_assert (end_key >= start_key);
         if (0 != key_len)
         {
           if ( (pp->buffer_pos + key_len >= pp->buffer_size) ||
@@ -725,7 +729,8 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
     mhd_assert ((PP_ProcessKey == pp->state) || (NULL != end_key));
     if (NULL == end_key)
       end_key = &post_data[poff];
-    key_len = end_key - start_key;
+    mhd_assert (end_key >= start_key);
+    key_len = (size_t) (end_key - start_key);
     mhd_assert (0 != key_len); /* it must be always non-zero here */
     if (pp->buffer_pos + key_len >= pp->buffer_size)
     {
@@ -854,13 +859,13 @@ find_boundary (struct MHD_PostProcessor *pp,
                      '-',
                      pp->buffer_pos);
       if (NULL == dash)
-        (*ioffptr) += pp->buffer_pos;  /* skip entire buffer */
+        (*ioffptr) += pp->buffer_pos;         /* skip entire buffer */
       else if (dash == buf)
-        (*ioffptr)++;                  /* at least skip one byte */
+        (*ioffptr)++;                         /* at least skip one byte */
       else
-        (*ioffptr) += dash - buf;      /* skip to first possible boundary */
+        (*ioffptr) += (size_t) (dash - buf);  /* skip to first possible boundary */
     }
-    return MHD_NO;                     /* expected boundary */
+    return MHD_NO;                            /* expected boundary */
   }
   /* remove boundary from buffer */
   (*ioffptr) += 2 + blen;
@@ -908,7 +913,7 @@ try_get_value (const char *buf,
     if (NULL == (endv = strchr (&spos[klen + 2],
                                 '\"')))
       return;                   /* no end-quote */
-    vlen = endv - spos - klen - 1;
+    vlen = (size_t) (endv - spos) - klen - 1;
     *destination = malloc (vlen);
     if (NULL == *destination)
       return;                   /* out of memory */
@@ -1037,7 +1042,7 @@ process_value_to_boundary (struct MHD_PostProcessor *pp,
         newline = pp->buffer_pos - 4;
         break;
       }
-      newline = r - buf;
+      newline = (size_t) (r - buf);
       if (0 == memcmp ("\r\n--",
                        &buf[newline],
                        4))
