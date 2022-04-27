@@ -96,11 +96,11 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097508
+#define MHD_VERSION 0x00097509
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
-   'uint16_t', 'uint32_t', 'uint64_t', 'off_t', 'struct sockaddr',
+   'uint16_t', 'uint32_t', 'uint64_t', 'int64_t', 'off_t', 'struct sockaddr',
    'socklen_t', 'fd_set' and "#define MHD_PLATFORM_H" before
    including "microhttpd.h". Then the following "standard"
    includes won't be used (which might be a good idea, especially
@@ -2958,6 +2958,44 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 _MHD_EXTERN enum MHD_Result
 MHD_get_timeout64 (struct MHD_Daemon *daemon,
                    uint64_t *timeout);
+
+
+/**
+ * Obtain timeout value for external polling function for this daemon.
+ *
+ * This function set value to the amount of milliseconds for which polling
+ * function (`select()`, `poll()` or epoll) should at most block, not the
+ * timeout value set for connections.
+ *
+ * Any "external" sockets polling function must be called with the timeout
+ * value provided by this function (if returned value is non-negative).
+ * Smaller timeout values can be used for polling function if it is required
+ * for any reason, but using larger timeout value or no timeout (indefinite
+ * timeout) when this function returns non-negative value will break MHD
+ * processing logic and result in "hung" connections with data pending in
+ * network buffers and other problems.
+ *
+ * It is important to always use this function when "external" polling is
+ * used. If this function returns non-negative value then #MHD_run() (or
+ * #MHD_run_from_select()) must be called right after return from polling
+ * function, regardless of the states of MHD FDs.
+ *
+ * In practice, if zero or positive value is returned then #MHD_run() (or
+ * #MHD_run_from_select()) must be called not later than returned amount of
+ * millisecond even if no activity is detected on sockets by sockets
+ * polling function.
+ *
+ * @param daemon the daemon to query for timeout
+ * @return -1 if connections' timeouts are not set and no data processing
+ *         is pending, so external polling function may wait for sockets
+ *         activity for indefinite amount of time,
+ *         otherwise returned value is the the maximum amount of millisecond
+ *         that external polling function must wait for the activity of FDs.
+ * @note Available since #MHD_VERSION 0x00097509
+ * @ingroup event
+ */
+_MHD_EXTERN int64_t
+MHD_get_timeout64s (struct MHD_Daemon *daemon);
 
 
 /**
