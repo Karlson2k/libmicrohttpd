@@ -107,10 +107,10 @@ static const uint64_t _MHD_itc_wr_data = 1;
  * Clear signaled state on @a itc
  * @param itc the itc to clear
  */
-#define MHD_itc_clear_(itc)                  \
-  do { uint64_t __b; int __r;                \
-       __r = read ((itc).fd, &__b, sizeof(__b)); \
-       (void) __r; } while (0)
+#define MHD_itc_clear_(itc)                       \
+  do { uint64_t __b;                              \
+       (void) read ((itc).fd, &__b, sizeof(__b)); \
+     } while (0)
 
 /**
  * Destroy previously initialised ITC.  Note that close()
