@@ -38,6 +38,14 @@
   ( (type) ((( ((type) 1) << (sizeof(type) * 8 - 2)) - 1) * 2 + 1) )
 #define MHD_TYPE_IS_SIGNED_(type) (((type) 0)>((type) - 1))
 
+#ifndef INT_MAX
+#ifdef __INT_MAX__
+#define INT_MAX __INT_MAX__
+#else  /* ! __UINT_MAX__ */
+#define INT_MAX MHD_SIGNED_TYPE_MAX_ (int)
+#endif /* ! __UINT_MAX__ */
+#endif /* !UINT_MAX */
+
 #ifndef UINT_MAX
 #ifdef __UINT_MAX__
 #define UINT_MAX __UINT_MAX__

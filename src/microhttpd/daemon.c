@@ -1836,8 +1836,8 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
  * Get maximum wait period for the connection (the amount of time left before
  * connection time out)
  * @param c the connection to check
- * @return the maximum wait period before the connection must be processed
- *         again.
+ * @return the maximum number of millisecond before the connection must be
+ *         processed again.
  */
 static uint64_t
 connection_get_wait (struct MHD_Connection *c)
@@ -1897,8 +1897,6 @@ thread_main_handle_connection (void *data)
   fd_set ws;
   fd_set es;
   MHD_socket maxsock;
-  struct timeval tv;
-  struct timeval *tvp;
 #if WINDOWS
 #ifdef HAVE_POLL
   int extra_slot;
@@ -1922,6 +1920,7 @@ thread_main_handle_connection (void *data)
   while ( (! daemon->shutdown) &&
           (MHD_CONNECTION_CLOSED != con->state) )
   {
+    bool use_zero_timeout;
 #ifdef UPGRADE_SUPPORT
     struct MHD_UpgradeResponseHandle *const urh = con->urh;
 #else  /* ! UPGRADE_SUPPORT */
@@ -1999,40 +1998,40 @@ thread_main_handle_connection (void *data)
       was_suspended = false;
     }
 
-    tvp = NULL;
-
-    if ( (MHD_EVENT_LOOP_INFO_BLOCK == con->event_loop_info)
+    use_zero_timeout = ( (MHD_EVENT_LOOP_INFO_BLOCK == con->event_loop_info)
 #ifdef HTTPS_SUPPORT
-         || ( (con->tls_read_ready) &&
-              (MHD_EVENT_LOOP_INFO_READ == con->event_loop_info) )
+                         || ( (con->tls_read_ready) && \
+                              (MHD_EVENT_LOOP_INFO_READ ==
+                               con->event_loop_info) )
 #endif /* HTTPS_SUPPORT */
-         )
-    {
-      /* do not block: more data may be inside of TLS buffers waiting or
-       * application must provide response data */
-      tv.tv_sec = 0;
-      tv.tv_usec = 0;
-      tvp = &tv;
-    }
-    if ( (NULL == tvp) &&
-         (con->connection_timeout_ms > 0) )
-    {
-      const uint64_t mseconds_left = connection_get_wait (con);
-#if (SIZEOF_UINT64_T - 2) >= SIZEOF_STRUCT_TIMEVAL_TV_SEC
-      if (mseconds_left / 1000 > TIMEVAL_TV_SEC_MAX)
-        tv.tv_sec = TIMEVAL_TV_SEC_MAX;
-      else
-#endif /* (SIZEOF_UINT64_T - 2) >= SIZEOF_STRUCT_TIMEVAL_TV_SEC */
-      tv.tv_sec = (_MHD_TIMEVAL_TV_SEC_TYPE) mseconds_left / 1000;
-
-      tv.tv_usec = (mseconds_left % 1000) * 1000;
-
-      tvp = &tv;
-    }
+                         );
     if (! use_poll)
     {
       /* use select */
       bool err_state = false;
+      struct timeval tv;
+      struct timeval *tvp;
+      if (use_zero_timeout)
+      {
+        tv.tv_sec = 0;
+        tv.tv_usec = 0;
+        tvp = &tv;
+      }
+      else if (con->connection_timeout_ms > 0)
+      {
+        const uint64_t mseconds_left = connection_get_wait (con);
+#if (SIZEOF_UINT64_T - 2) >= SIZEOF_STRUCT_TIMEVAL_TV_SEC
+        if (mseconds_left / 1000 > TIMEVAL_TV_SEC_MAX)
+          tv.tv_sec = TIMEVAL_TV_SEC_MAX;
+        else
+#endif /* (SIZEOF_UINT64_T - 2) >= SIZEOF_STRUCT_TIMEVAL_TV_SEC */
+        tv.tv_sec = (_MHD_TIMEVAL_TV_SEC_TYPE) mseconds_left / 1000;
+
+        tv.tv_usec = ((uint16_t) (mseconds_left % 1000)) * 1000;
+        tvp = &tv;
+      }
+      else
+        tvp = NULL;
 
       FD_ZERO (&rs);
       FD_ZERO (&ws);
@@ -2124,7 +2123,22 @@ thread_main_handle_connection (void *data)
 #ifdef HAVE_POLL
     else
     {
+      int timeout_val;
       /* use poll */
+      if (use_zero_timeout)
+        timeout_val = 0;
+      else if (con->connection_timeout_ms > 0)
+      {
+        const uint64_t mseconds_left = connection_get_wait (con);
+#if SIZEOF_UINT64_T >= SIZEOF_INT
+        if (mseconds_left >= INT_MAX)
+          timeout_val = INT_MAX;
+        else
+#endif /* SIZEOF_UINT64_T >= SIZEOF_INT */
+        timeout_val = (int) mseconds_left;
+      }
+      else
+        timeout_val = -1;
       memset (&p,
               0,
               sizeof (p));
@@ -2160,7 +2174,7 @@ thread_main_handle_connection (void *data)
 #else
                          1,
 #endif
-                         (NULL == tvp) ? -1 : (tv.tv_sec * 1000)) < 0)
+                         timeout_val) < 0)
       {
         if (MHD_SCKT_LAST_ERR_IS_ (MHD_SCKT_EINTR_))
           continue;
@@ -4617,7 +4631,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
     p[poll_count].fd = ls;
     p[poll_count].events = POLLIN;
     p[poll_count].revents = 0;
-    poll_listen = poll_count;
+    poll_listen = (int) poll_count;
     poll_count++;
   }
   if (MHD_ITC_IS_VALID_ (daemon->itc))
@@ -4625,7 +4639,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
     p[poll_count].fd = MHD_itc_r_fd_ (daemon->itc);
     p[poll_count].events = POLLIN;
     p[poll_count].revents = 0;
-    poll_itc_idx = poll_count;
+    poll_itc_idx = (int) poll_count;
     poll_count++;
   }
 
@@ -4653,7 +4667,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
 #endif
     return MHD_NO;
   }
-  if ( (-1 != poll_itc_idx) &&
+  if ( (0 <= poll_itc_idx) &&
        (0 != (p[poll_itc_idx].revents & POLLIN)) )
     MHD_itc_clear_ (daemon->itc);
 
@@ -4665,7 +4679,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
   if (daemon->have_new)
     new_connections_list_process_ (daemon);
 
-  if ( (-1 != poll_listen) &&
+  if ( (0 <= poll_listen) &&
        (0 != (p[poll_listen].revents & POLLIN)) )
     (void) MHD_accept_connection (daemon);
   return MHD_YES;
@@ -6932,7 +6946,7 @@ MHD_start_daemon_va (unsigned int flags,
     }
 #endif
     if (listen (listen_fd,
-                daemon->listen_backlog_size) < 0)
+                (int) daemon->listen_backlog_size) < 0)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
