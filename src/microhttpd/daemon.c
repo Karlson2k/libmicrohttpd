@@ -1922,7 +1922,6 @@ thread_main_handle_connection (void *data)
   while ( (! daemon->shutdown) &&
           (MHD_CONNECTION_CLOSED != con->state) )
   {
-    uint64_t timeout = con->connection_timeout_ms;
 #ifdef UPGRADE_SUPPORT
     struct MHD_UpgradeResponseHandle *const urh = con->urh;
 #else  /* ! UPGRADE_SUPPORT */
@@ -2016,7 +2015,7 @@ thread_main_handle_connection (void *data)
       tvp = &tv;
     }
     if ( (NULL == tvp) &&
-         (timeout > 0) )
+         (con->connection_timeout_ms > 0) )
     {
       const uint64_t mseconds_left = connection_get_wait (con);
 #if (SIZEOF_UINT64_T - 2) >= SIZEOF_STRUCT_TIMEVAL_TV_SEC
