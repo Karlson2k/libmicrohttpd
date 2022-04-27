@@ -2902,10 +2902,11 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  * return #MHD_YES will break MHD processing logic and result in "hung"
  * connections with data pending in network buffers and other problems.
  *
- * It is important to always use this function when "external" polling is
- * used. If this function returns #MHD_YES then #MHD_run() (or
- * #MHD_run_from_select()) must be called right after return from polling
- * function, regardless of the states of MHD fds.
+ * It is important to always use this function (or #MHD_get_timeout64(),
+ * #MHD_get_timeout64s() functions) when "external" polling is used.
+ * If this function returns #MHD_YES then #MHD_run() (or #MHD_run_from_select())
+ * must be called right after return from polling function, regardless of
+ * the states of MHD FDs.
  *
  * In practice, if #MHD_YES is returned then #MHD_run() (or
  * #MHD_run_from_select()) must be called not later than @a timeout
@@ -2937,10 +2938,11 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
  * return #MHD_YES will break MHD processing logic and result in "hung"
  * connections with data pending in network buffers and other problems.
  *
- * It is important to always use this function when "external" polling is
- * used. If this function returns #MHD_YES then #MHD_run() (or
- * #MHD_run_from_select()) must be called right after return from polling
- * function, regardless of the states of MHD fds.
+ * It is important to always use this function (or #MHD_get_timeout(),
+ * #MHD_get_timeout64s() functions) when "external" polling is used.
+ * If this function returns #MHD_YES then #MHD_run() (or #MHD_run_from_select())
+ * must be called right after return from polling function, regardless of
+ * the states of MHD FDs.
  *
  * In practice, if #MHD_YES is returned then #MHD_run() (or
  * #MHD_run_from_select()) must be called not later than @a timeout
@@ -2975,8 +2977,9 @@ MHD_get_timeout64 (struct MHD_Daemon *daemon,
  * processing logic and result in "hung" connections with data pending in
  * network buffers and other problems.
  *
- * It is important to always use this function when "external" polling is
- * used. If this function returns non-negative value then #MHD_run() (or
+ * It is important to always use this function (or #MHD_get_timeout(),
+ * #MHD_get_timeout64() functions) when "external" polling is used.
+ * If this function returns non-negative value then #MHD_run() (or
  * #MHD_run_from_select()) must be called right after return from polling
  * function, regardless of the states of MHD FDs.
  *
