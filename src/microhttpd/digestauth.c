@@ -31,6 +31,7 @@
 #include "mhd_mono_clock.h"
 #include "mhd_str.h"
 #include "mhd_compat.h"
+#include "mhd_bithelpers.h"
 #include "mhd_assert.h"
 
 #if defined(MHD_W32_MUTEX_)
@@ -504,6 +505,33 @@ lookup_sub_value (char *dest,
 
 
 /**
+ * Super-fast xor-based "hash" function
+ *
+ * @param data the data to calculate hash for
+ * @param data_size the size of the data in bytes
+ * @return the "hash"
+ */
+static uint32_t
+fast_simple_hash (const uint8_t *data,
+                  size_t data_size)
+{
+  uint32_t hash;
+
+  if (0 != data_size)
+  {
+    size_t i;
+    hash = data[0];
+    for (i = 1; i < data_size; i++)
+      hash = _MHD_ROTL32 (hash, 8) ^ data[i];
+  }
+  else
+    hash = 0;
+
+  return hash;
+}
+
+
+/**
  * Check nonce-nc map array with either new nonce counter
  * or a whole new nonce.
  *
@@ -521,7 +549,6 @@ check_nonce_nc (struct MHD_Connection *connection,
   struct MHD_NonceNc *nn;
   uint32_t off;
   uint32_t mod;
-  const char *np;
   size_t noncelen;
   enum MHD_Result ret;
   bool stale;
@@ -536,15 +563,8 @@ check_nonce_nc (struct MHD_Connection *connection,
   mod = daemon->nonce_nc_size;
   if (0 == mod)
     return MHD_NO; /* no array! */
-  /* super-fast xor-based "hash" function for HT lookup in nonce array */
-  off = 0;
-  np = nonce;
-  while ('\0' != *np)
-  {
-    off = (off << 8) | (((uint8_t) *np) ^ (off >> 24));
-    np++;
-  }
-  off = off % mod;
+  /* HT lookup in nonce array */
+  off = fast_simple_hash ((const uint8_t *) nonce, noncelen) % mod;
   /*
    * Look for the nonce, if it does exist and its corresponding
    * nonce counter is less than the current nonce counter by 1,
