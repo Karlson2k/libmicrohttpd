@@ -134,7 +134,7 @@ main (int argc, char *const *argv)
   fd_set ws;
   fd_set es;
   MHD_socket max;
-  MHD_UNSIGNED_LONG_LONG mhd_timeout;
+  uint64_t mhd_timeout;
 
   if (argc != 3)
   {
@@ -157,9 +157,9 @@ main (int argc, char *const *argv)
     FD_ZERO (&es);
     if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &max))
       break; /* fatal internal error */
-    if (MHD_get_timeout (d, &mhd_timeout) == MHD_YES)
+    if (MHD_get_timeout64 (d, &mhd_timeout) == MHD_YES)
     {
-      if (((MHD_UNSIGNED_LONG_LONG) tv.tv_sec) < mhd_timeout / 1000LL)
+      if (((uint64_t) tv.tv_sec) < mhd_timeout / 1000LL)
       {
         tv.tv_sec = mhd_timeout / 1000LL;
         tv.tv_usec = (mhd_timeout - (tv.tv_sec * 1000LL)) * 1000LL;

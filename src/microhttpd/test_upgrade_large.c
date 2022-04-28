@@ -1278,7 +1278,7 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
   fd_set ws;
   fd_set es;
   MHD_socket max_fd;
-  MHD_UNSIGNED_LONG_LONG to;
+  uint64_t to64;
   struct timeval tv;
 
   while (! done)
@@ -1287,7 +1287,7 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
     FD_ZERO (&ws);
     FD_ZERO (&es);
     max_fd = MHD_INVALID_SOCKET;
-    to = 1000;
+    to64 = 1000;
 
     FD_SET (MHD_itc_r_fd_ (kicker), &rs);
     if (MHD_YES !=
@@ -1297,12 +1297,12 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
                        &es,
                        &max_fd))
       mhdErrorExitDesc ("MHD_get_fdset() failed");
-    (void) MHD_get_timeout (daemon,
-                            &to);
-    if (1000 < to)
-      to = 1000;
-    tv.tv_sec = to / 1000;
-    tv.tv_usec = 1000 * (to % 1000);
+    (void) MHD_get_timeout64 (daemon,
+                              &to64);
+    if (1000 < to64)
+      to64 = 1000;
+    tv.tv_sec = to64 / 1000;
+    tv.tv_usec = 1000 * (to64 % 1000);
     if (0 > MHD_SYS_select_ (max_fd + 1,
                              &rs,
                              &ws,
@@ -1359,7 +1359,7 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
   const union MHD_DaemonInfo *di;
   MHD_socket ep;
   fd_set rs;
-  MHD_UNSIGNED_LONG_LONG to;
+  uint64_t to64;
   struct timeval tv;
   int ret;
 
@@ -1371,15 +1371,15 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
   while (! done)
   {
     FD_ZERO (&rs);
-    to = 1000;
+    to64 = 1000;
     FD_SET (MHD_itc_r_fd_ (kicker), &rs);
     FD_SET (ep, &rs);
-    (void) MHD_get_timeout (daemon,
-                            &to);
-    if (1000 < to)
-      to = 1000;
-    tv.tv_sec = to / 1000;
-    tv.tv_usec = 1000 * (to % 1000);
+    (void) MHD_get_timeout64 (daemon,
+                              &to64);
+    if (1000 < to64)
+      to64 = 1000;
+    tv.tv_sec = to64 / 1000;
+    tv.tv_usec = 1000 * (to64 % 1000);
     ret = select (ep + 1,
                   &rs,
                   NULL,

@@ -413,7 +413,7 @@ testExternalPost ()
   time_t start;
   struct timeval tv;
   int i;
-  unsigned long long timeout;
+  uint64_t timeout64;
   long ctimeout;
   char url[1024];
   int port;
@@ -516,15 +516,15 @@ testExternalPost ()
         MHD_stop_daemon (d);
         return 4096;
       }
-      if (MHD_NO == MHD_get_timeout (d, &timeout))
-        timeout = 100;          /* 100ms == INFTY -- CURL bug... */
+      if (MHD_NO == MHD_get_timeout64 (d, &timeout64))
+        timeout64 = 100;          /* 100ms == INFTY -- CURL bug... */
       if ((CURLM_OK == curl_multi_timeout (multi, &ctimeout)) &&
-          (ctimeout < (long long) timeout) && (ctimeout >= 0))
-        timeout = ctimeout;
+          (ctimeout >= 0) && ((uint64_t) ctimeout < timeout64))
+        timeout64 = (uint64_t) ctimeout;
       if ( (c == NULL) || (0 == running) )
-        timeout = 0; /* terminate quickly... */
-      tv.tv_sec = timeout / 1000;
-      tv.tv_usec = (timeout % 1000) * 1000;
+        timeout64 = 0; /* terminate quickly... */
+      tv.tv_sec = timeout64 / 1000;
+      tv.tv_usec = (timeout64 % 1000) * 1000;
       if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
       {
 #ifdef MHD_POSIX_SOCKETS

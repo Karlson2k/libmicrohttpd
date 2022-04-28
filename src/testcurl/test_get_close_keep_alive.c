@@ -562,8 +562,7 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c)
     }
     if (NULL == multi)
     { /* libcurl has finished, check whether MHD still needs to perform cleanup */
-      unsigned long long to;
-      if ((MHD_YES != MHD_get_timeout (d, &to)) || (0 != to))
+      if (0 != MHD_get_timeout64s (d))
         break; /* MHD finished as well */
     }
     if (MHD_YES != MHD_get_fdset (d, &rs, &ws, &es, &maxMhdSk))

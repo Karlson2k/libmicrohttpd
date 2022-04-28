@@ -174,16 +174,8 @@ main (int argc,
 
   while (1)
   {
-    int timeout;
-    MHD_UNSIGNED_LONG_LONG to;
-
-    if (MHD_YES !=
-        MHD_get_timeout (d,
-                         &to))
-      timeout = TIMEOUT_INFINITE;
-    else
-      timeout = (to < INT_MAX - 1) ? (int) to : (INT_MAX - 1);
-    current_event_count = epoll_wait (epfd, events_list, 1, timeout);
+    current_event_count = epoll_wait (epfd, events_list, 1,
+                                      MHD_get_timeout_i (d));
 
     if (1 == current_event_count)
     {

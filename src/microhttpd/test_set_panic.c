@@ -1179,10 +1179,9 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
     {
       /* client has finished, check whether MHD is still
        * processing any connections */
-      unsigned long long to;
       full_req_sent = 1;
       do_client = 0;
-      if (client_accepted && (MHD_YES != MHD_get_timeout (d, &to)))
+      if (client_accepted && (0 > MHD_get_timeout64s (d)))
       {
         ret = 0;
         break; /* MHD finished as well */

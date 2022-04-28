@@ -413,7 +413,7 @@ testExternalGet (int port)
   fd_set es;
   MHD_socket max;
   struct timeval tv;
-  MHD_UNSIGNED_LONG_LONG tt;
+  uint64_t tt64;
   int tret;
   char *ret_val;
   int ret = 0;
@@ -455,11 +455,11 @@ testExternalGet (int port)
       MHD_stop_daemon (d);
       return 4096;
     }
-    tret = MHD_get_timeout (d, &tt);
+    tret = MHD_get_timeout64 (d, &tt64);
     if (MHD_YES != tret)
-      tt = 1;
-    tv.tv_sec = tt / 1000;
-    tv.tv_usec = 1000 * (tt % 1000);
+      tt64 = 1;
+    tv.tv_sec = tt64 / 1000;
+    tv.tv_usec = 1000 * (tt64 % 1000);
     if (-1 == select (max + 1, &rs, &ws, &es, &tv))
     {
 #ifdef MHD_POSIX_SOCKETS
