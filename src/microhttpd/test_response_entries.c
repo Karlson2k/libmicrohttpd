@@ -24,21 +24,21 @@ expect_str (const char *actual, const char *expected)
   if (NULL == actual)
   {
     fprintf (stderr, "FAILED: result: NULL\n" \
-             "        expected: \"%s\"",
+             "        expected: \"%s\"\n",
              expected);
     return 0;
   }
   if (NULL == expected)
   {
     fprintf (stderr, "FAILED: result: \"%s\"\n" \
-             "        expected: NULL",
+             "        expected: NULL\n",
              actual);
     return 0;
   }
   if (0 != strcmp (actual, expected))
   {
     fprintf (stderr, "FAILED: result: \"%s\"\n" \
-             "        expected: \"%s\"",
+             "        expected: \"%s\"\n",
              actual, expected);
     return 0;
   }
