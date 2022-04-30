@@ -592,6 +592,7 @@ check_nonce_nc (struct MHD_Connection *connection,
 
   stale = false;
   mhd_assert (noncelen != strlen (nonce));
+  mhd_assert (0 != nc);
   if (MAX_NONCE_LENGTH < noncelen)
     return MHD_NO; /* This should be impossible, but static analysis
                       tools have a hard time with it *and* this also
@@ -610,22 +611,13 @@ check_nonce_nc (struct MHD_Connection *connection,
   nn = &daemon->nnc[off];
 
   MHD_mutex_lock_chk_ (&daemon->nnc_lock);
-  if (0 == nc)
-  {
-    /* Fresh nonce, reinitialize array */
-    memcpy (nn->nonce,
-            nonce,
-            noncelen + 1);
-    nn->nc = 0;
-    nn->nmask = 0;
-    ret = MHD_YES;
-  }
+
   /* Note that we use 64 here, as we do not store the
      bit for 'nn->nc' itself in 'nn->nmask' */
-  else if ( (nc < nn->nc) &&
-            (nc + 64 > nc /* checking for overflow */) &&
-            (nc + 64 >= nn->nc) &&
-            (0 == ((1LLU << (nn->nc - nc - 1)) & nn->nmask)) )
+  if ( (nc < nn->nc) &&
+       (nc + 64 > nc /* checking for overflow */) &&
+       (nc + 64 >= nn->nc) &&
+       (0 == ((1LLU << (nn->nc - nc - 1)) & nn->nmask)) )
   {
     /* Out-of-order nonce, but within 64-bit bitmask, set bit */
     nn->nmask |= (1LLU << (nn->nc - nc - 1));
@@ -1080,8 +1072,8 @@ digest_auth_check_all (struct MHD_Connection *connection,
 
   /*
    * Checking if that combination of nonce and nc is sound
-   * and not a replay attack attempt. Also adds the nonce
-   * to the nonce-nc map if it does not exist there.
+   * and not a replay attack attempt. Refuse if nonce was not
+   * generated previously.
    */
   if (MHD_NO ==
       check_nonce_nc (connection,
