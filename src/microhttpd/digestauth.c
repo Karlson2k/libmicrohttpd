@@ -537,24 +537,25 @@ fast_simple_hash (const uint8_t *data,
  *
  * @param connection The MHD connection structure
  * @param nonce A pointer that referenced a zero-terminated array of nonce
+ * @param noncelen the lenth of @a nonce, in characters
  * @param nc The nonce counter, zero to add the nonce to the array
  * @return #MHD_YES if successful, #MHD_NO if invalid (or we have no NC array)
  */
 static enum MHD_Result
 check_nonce_nc (struct MHD_Connection *connection,
                 const char *nonce,
+                size_t noncelen,
                 uint64_t nc)
 {
   struct MHD_Daemon *daemon = connection->daemon;
   struct MHD_NonceNc *nn;
   uint32_t off;
   uint32_t mod;
-  size_t noncelen;
   enum MHD_Result ret;
   bool stale;
 
   stale = false;
-  noncelen = strlen (nonce) + 1;
+  mhd_assert (noncelen != strlen (nonce));
   if (MAX_NONCE_LENGTH < noncelen)
     return MHD_NO; /* This should be impossible, but static analysis
                       tools have a hard time with it *and* this also
@@ -578,7 +579,7 @@ check_nonce_nc (struct MHD_Connection *connection,
     /* Fresh nonce, reinitialize array */
     memcpy (nn->nonce,
             nonce,
-            noncelen);
+            noncelen + 1);
     nn->nc = 0;
     nn->nmask = 0;
     ret = MHD_YES;
@@ -872,6 +873,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
   size_t len;
   const char *header;
   char nonce[MAX_NONCE_LENGTH];
+  size_t nonce_len;
   char cnonce[MAX_NONCE_LENGTH];
   const unsigned int digest_size = da->digest_size;
   char ha1[VLA_ARRAY_LEN_DIGEST (digest_size) * 2 + 1];
@@ -935,6 +937,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
                                     header,
                                     "nonce")))
     return MHD_NO;
+  nonce_len = len;
   left -= strlen ("nonce") + len;
   if (left > 32 * 1024)
   {
@@ -1047,6 +1050,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
   if (MHD_NO ==
       check_nonce_nc (connection,
                       nonce,
+                      nonce_len,
                       nci))
   {
     return MHD_NO;
@@ -1394,6 +1398,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
     if (MHD_NO ==
         check_nonce_nc (connection,
                         nonce,
+                        NONCE_STD_LEN (da.digest_size),
                         0))
     {
 #ifdef HAVE_MESSAGES
