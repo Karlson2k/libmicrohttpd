@@ -532,6 +532,42 @@ fast_simple_hash (const uint8_t *data,
 
 
 /**
+ * Add the new nonce to the nonce-nc map array.
+ *
+ * @param connection The MHD connection structure
+ * @param nonce A pointer that referenced a zero-terminated array of nonce
+ * @param noncelen the lenth of @a nonce, in characters
+ * @return #MHD_YES if successful, #MHD_NO if invalid (or we have no NC array)
+ */
+static bool
+add_nonce (struct MHD_Connection *connection,
+           const char *nonce,
+           size_t noncelen)
+{
+  struct MHD_Daemon *const daemon = connection->daemon;
+  unsigned int arr_size;
+  struct MHD_NonceNc *nn;
+
+  mhd_assert (MAX_NONCE_LENGTH >= noncelen);
+  arr_size = daemon->nonce_nc_size;
+  if (0 == arr_size)
+    return false;
+
+  nn = &daemon->nnc[fast_simple_hash ((const uint8_t *) nonce, noncelen)
+                    % arr_size];
+
+  MHD_mutex_lock_chk_ (&daemon->nnc_lock);
+  memcpy (nn->nonce,
+          nonce,
+          noncelen + 1);
+  nn->nc = 0;
+  nn->nmask = 0;
+  MHD_mutex_unlock_chk_ (&daemon->nnc_lock);
+  return true;
+}
+
+
+/**
  * Check nonce-nc map array with either new nonce counter
  * or a whole new nonce.
  *
@@ -1395,11 +1431,9 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
                      realm,
                      &da,
                      nonce);
-    if (MHD_NO ==
-        check_nonce_nc (connection,
-                        nonce,
-                        NONCE_STD_LEN (da.digest_size),
-                        0))
+    if (! add_nonce (connection,
+                     nonce,
+                     NONCE_STD_LEN (da.digest_size)))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
