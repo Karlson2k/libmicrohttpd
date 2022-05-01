@@ -252,13 +252,17 @@ struct MHD_NonceNc
 
   /**
    * Nonce counter, a value that increases for each subsequent
-   * request for the same nonce.
+   * request for the same nonce. Matches the largest last received
+   * 'nc' value.
+   * This 'nc' value was already used by the client.
    */
   uint64_t nc;
 
   /**
-   * Bitmask over the nc-64 previous nonce values.  Used to
+   * Bitmask over the the previous 64 nonce values (down to to nc-64).  Used to
    * allow out-of-order nonces.
+   * If bit in the bitmask is set to one, then this 'nc' value was already used
+   * by the client.
    */
   uint64_t nmask;
 
