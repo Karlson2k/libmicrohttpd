@@ -599,7 +599,10 @@ check_nonce_nc (struct MHD_Connection *connection,
                       happen in the future... */
   mod = daemon->nonce_nc_size;
   if (0 == mod)
-    return false; /* no array! */
+    return false;  /* no array! */
+  if (nc + 64 < nc)
+    return false;  /* Overflow, unrealistically high value */
+
   /* HT lookup in nonce array */
   off = fast_simple_hash ((const uint8_t *) nonce, noncelen) % mod;
   /*
@@ -619,7 +622,6 @@ check_nonce_nc (struct MHD_Connection *connection,
   /* Note that we use 64 here, as we do not store the
      bit for 'nn->nc' itself in 'nn->nmask' */
   else if ( (nc < nn->nc) &&
-            (nc + 64 > nc /* checking for overflow */) &&
             (nc + 64 >= nn->nc) &&
             (0 == ((1LLU << (nn->nc - nc - 1)) & nn->nmask)) )
   {
