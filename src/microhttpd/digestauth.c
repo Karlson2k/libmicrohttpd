@@ -559,7 +559,8 @@ add_nonce (struct MHD_Connection *connection,
   MHD_mutex_lock_chk_ (&daemon->nnc_lock);
   memcpy (nn->nonce,
           nonce,
-          noncelen + 1);
+          noncelen);
+  nn->nonce[noncelen] = 0;
   nn->nc = 0;
   nn->nmask = 0;
   MHD_mutex_unlock_chk_ (&daemon->nnc_lock);
@@ -612,20 +613,25 @@ check_nonce_nc (struct MHD_Connection *connection,
 
   MHD_mutex_lock_chk_ (&daemon->nnc_lock);
 
+  if ( (0 != memcmp (nn->nonce, nonce, noncelen)) ||
+       (0 != nn->nonce[noncelen]) )
+  {
+    /* Nonce does not match, fail */
+    stale = true;
+    ret = MHD_NO;
+  }
   /* Note that we use 64 here, as we do not store the
      bit for 'nn->nc' itself in 'nn->nmask' */
-  if ( (nc < nn->nc) &&
-       (nc + 64 > nc /* checking for overflow */) &&
-       (nc + 64 >= nn->nc) &&
-       (0 == ((1LLU << (nn->nc - nc - 1)) & nn->nmask)) )
+  else if ( (nc < nn->nc) &&
+            (nc + 64 > nc /* checking for overflow */) &&
+            (nc + 64 >= nn->nc) &&
+            (0 == ((1LLU << (nn->nc - nc - 1)) & nn->nmask)) )
   {
     /* Out-of-order nonce, but within 64-bit bitmask, set bit */
     nn->nmask |= (1LLU << (nn->nc - nc - 1));
     ret = MHD_YES;
   }
-  else if ( (nc <= nn->nc) ||
-            (0 != strcmp (nn->nonce,
-                          nonce)) )
+  else if (nc <= nn->nc)
   {
     /* Nonce does not match, fail */
     stale = true;
