@@ -617,24 +617,7 @@ check_nonce_nc (struct MHD_Connection *connection,
   if ( (0 != memcmp (nn->nonce, nonce, noncelen)) ||
        (0 != nn->nonce[noncelen]) )
     ret = false;     /* Nonce does not match, fail */
-  else if (nc == nn->nc)
-    ret = false;     /* 'nc' was already used */
-  else if (nc < nn->nc)
-  {
-    /* Note that we use 64 here, as we do not store the
-       bit for 'nn->nc' itself in 'nn->nmask' */
-    if ( (nc + 64 >= nn->nc) &&
-         (0 == ((1LLU << (nn->nc - nc - 1)) & nn->nmask)) )
-    {
-      /* Out-of-order nonce, but within 64-bit bitmask, set bit */
-      nn->nmask |= (1LLU << (nn->nc - nc - 1));
-      ret = true;
-    }
-    else
-      /* 'nc' was already used or too old (more then 64 values ago) */
-      ret = false;
-  }
-  else
+  else if (nc > nn->nc)
   {
     /* 'nc' is larger, shift bitmask and bump limit */
     const uint64_t jump_size = nc - nn->nc;
@@ -652,6 +635,25 @@ check_nonce_nc (struct MHD_Connection *connection,
     nn->nc = nc;
     ret = true;
   }
+  else if (nc < nn->nc)
+  {
+    /* Note that we use 64 here, as we do not store the
+       bit for 'nn->nc' itself in 'nn->nmask' */
+    if ( (nc + 64 >= nn->nc) &&
+         (0 == ((UINT64_C (1) << (nn->nc - nc - 1)) & nn->nmask)) )
+    {
+      /* Out-of-order nonce, but within 64-bit bitmask, set bit */
+      nn->nmask |= (UINT64_C (1) << (nn->nc - nc - 1));
+      ret = true;
+    }
+    else
+      /* 'nc' was already used or too old (more then 64 values ago) */
+      ret = false;
+  }
+  else /* if (nc == nn->nc) */
+    /* 'nc' was already used */
+    ret = false;
+
   MHD_mutex_unlock_chk_ (&daemon->nnc_lock);
 #ifdef HAVE_MESSAGES
   if (! ret)
