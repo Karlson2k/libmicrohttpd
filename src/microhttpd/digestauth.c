@@ -578,7 +578,7 @@ add_nonce (struct MHD_Connection *connection,
  * @param nc The nonce counter, zero to add the nonce to the array
  * @return #MHD_YES if successful, #MHD_NO if invalid (or we have no NC array)
  */
-static enum MHD_Result
+static bool
 check_nonce_nc (struct MHD_Connection *connection,
                 const char *nonce,
                 size_t noncelen,
@@ -588,20 +588,18 @@ check_nonce_nc (struct MHD_Connection *connection,
   struct MHD_NonceNc *nn;
   uint32_t off;
   uint32_t mod;
-  enum MHD_Result ret;
-  bool stale;
+  bool ret;
 
-  stale = false;
   mhd_assert (noncelen != strlen (nonce));
   mhd_assert (0 != nc);
   if (MAX_NONCE_LENGTH < noncelen)
-    return MHD_NO; /* This should be impossible, but static analysis
+    return false; /* This should be impossible, but static analysis
                       tools have a hard time with it *and* this also
                       protects against unsafe modifications that may
                       happen in the future... */
   mod = daemon->nonce_nc_size;
   if (0 == mod)
-    return MHD_NO; /* no array! */
+    return false; /* no array! */
   /* HT lookup in nonce array */
   off = fast_simple_hash ((const uint8_t *) nonce, noncelen) % mod;
   /*
@@ -615,11 +613,7 @@ check_nonce_nc (struct MHD_Connection *connection,
 
   if ( (0 != memcmp (nn->nonce, nonce, noncelen)) ||
        (0 != nn->nonce[noncelen]) )
-  {
-    /* Nonce does not match, fail */
-    stale = true;
-    ret = MHD_NO;
-  }
+    ret = false;     /* Nonce does not match, fail */
   /* Note that we use 64 here, as we do not store the
      bit for 'nn->nc' itself in 'nn->nmask' */
   else if ( (nc < nn->nc) &&
@@ -629,14 +623,10 @@ check_nonce_nc (struct MHD_Connection *connection,
   {
     /* Out-of-order nonce, but within 64-bit bitmask, set bit */
     nn->nmask |= (1LLU << (nn->nc - nc - 1));
-    ret = MHD_YES;
+    ret = true;
   }
   else if (nc <= nn->nc)
-  {
-    /* Nonce does not match, fail */
-    stale = true;
-    ret = MHD_NO;
-  }
+    ret = false; /* Nonce does not match, fail */
   else
   {
     /* Nonce is larger, shift bitmask and bump limit */
@@ -645,16 +635,14 @@ check_nonce_nc (struct MHD_Connection *connection,
     else
       nn->nmask = 0;                /* big jump, unset all bits in the mask */
     nn->nc = nc;
-    ret = MHD_YES;
+    ret = true;
   }
   MHD_mutex_unlock_chk_ (&daemon->nnc_lock);
 #ifdef HAVE_MESSAGES
-  if (stale)
+  if (! ret)
     MHD_DLOG (daemon,
               _ ("Stale nonce received. If this happens a lot, you should "
                  "probably increase the size of the nonce array.\n"));
-#else
-  (void) stale; /* Mute compiler warning */
 #endif
   return ret;
 }
@@ -1081,11 +1069,10 @@ digest_auth_check_all (struct MHD_Connection *connection,
    * and not a replay attack attempt. Refuse if nonce was not
    * generated previously.
    */
-  if (MHD_NO ==
-      check_nonce_nc (connection,
-                      nonce,
-                      nonce_len,
-                      nci))
+  if (! check_nonce_nc (connection,
+                        nonce,
+                        nonce_len,
+                        nci))
   {
     return MHD_NO;
   }
