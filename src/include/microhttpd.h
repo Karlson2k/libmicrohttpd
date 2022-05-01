@@ -96,12 +96,12 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097510
+#define MHD_VERSION 0x00097511
 
 /* If generic headers don't work on your platform, include headers
-   which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
-   'uint16_t', 'uint32_t', 'uint64_t', 'int64_t', 'off_t', 'struct sockaddr',
-   'socklen_t', 'fd_set' and "#define MHD_PLATFORM_H" before
+   which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
+   'uint8_t', 'uint16_t', 'int32_t', 'uint32_t', 'int64_t', 'uint64_t',
+   'struct sockaddr', 'socklen_t', 'fd_set' and "#define MHD_PLATFORM_H" before
    including "microhttpd.h". Then the following "standard"
    includes won't be used (which might be a good idea, especially
    on platforms where they do not exist).
