@@ -614,6 +614,8 @@ check_nonce_nc (struct MHD_Connection *connection,
   if ( (0 != memcmp (nn->nonce, nonce, noncelen)) ||
        (0 != nn->nonce[noncelen]) )
     ret = false;     /* Nonce does not match, fail */
+  else if (nc == nn->nc)
+    ret = false;     /* 'nc' was already used */
   /* Note that we use 64 here, as we do not store the
      bit for 'nn->nc' itself in 'nn->nmask' */
   else if ( (nc < nn->nc) &&
@@ -625,11 +627,11 @@ check_nonce_nc (struct MHD_Connection *connection,
     nn->nmask |= (1LLU << (nn->nc - nc - 1));
     ret = true;
   }
-  else if (nc <= nn->nc)
-    ret = false; /* Nonce does not match, fail */
+  else if (nc < nn->nc)
+    ret = false; /* 'nc' does not match, fail */
   else
   {
-    /* Nonce is larger, shift bitmask and bump limit */
+    /* 'nc' is larger, shift bitmask and bump limit */
     if (64 > nc - nn->nc)
       nn->nmask <<= (nc - nn->nc);  /* small jump, less than mask width */
     else
