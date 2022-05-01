@@ -634,8 +634,16 @@ check_nonce_nc (struct MHD_Connection *connection,
   else
   {
     /* 'nc' is larger, shift bitmask and bump limit */
-    if (64 > nc - nn->nc)
-      nn->nmask <<= (nc - nn->nc);  /* small jump, less than mask width */
+    const uint64_t jump_size = nc - nn->nc;
+    if (64 > jump_size)
+    {
+      /* small jump, less than mask width */
+      nn->nmask <<= jump_size;
+      /* Set bit for the old 'nc' value */
+      nn->nmask |= (UINT64_C (1) << (jump_size - 1));
+    }
+    else if (64 == jump_size)
+      nn->nmask = (UINT64_C (1) << 63);
     else
       nn->nmask = 0;                /* big jump, unset all bits in the mask */
     nn->nc = nc;
