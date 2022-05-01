@@ -619,18 +619,21 @@ check_nonce_nc (struct MHD_Connection *connection,
     ret = false;     /* Nonce does not match, fail */
   else if (nc == nn->nc)
     ret = false;     /* 'nc' was already used */
-  /* Note that we use 64 here, as we do not store the
-     bit for 'nn->nc' itself in 'nn->nmask' */
-  else if ( (nc < nn->nc) &&
-            (nc + 64 >= nn->nc) &&
-            (0 == ((1LLU << (nn->nc - nc - 1)) & nn->nmask)) )
-  {
-    /* Out-of-order nonce, but within 64-bit bitmask, set bit */
-    nn->nmask |= (1LLU << (nn->nc - nc - 1));
-    ret = true;
-  }
   else if (nc < nn->nc)
-    ret = false; /* 'nc' does not match, fail */
+  {
+    /* Note that we use 64 here, as we do not store the
+       bit for 'nn->nc' itself in 'nn->nmask' */
+    if ( (nc + 64 >= nn->nc) &&
+         (0 == ((1LLU << (nn->nc - nc - 1)) & nn->nmask)) )
+    {
+      /* Out-of-order nonce, but within 64-bit bitmask, set bit */
+      nn->nmask |= (1LLU << (nn->nc - nc - 1));
+      ret = true;
+    }
+    else
+      /* 'nc' was already used or too old (more then 64 values ago) */
+      ret = false;
+  }
   else
   {
     /* 'nc' is larger, shift bitmask and bump limit */
