@@ -546,10 +546,28 @@ fast_simple_hash (const uint8_t *data,
 
 
 /**
+ * Get index of the nonce in the nonce-nc map array.
+ *
+ * @param arr_size the size of nonce_nc array
+ * @param nonce the pointer that referenced a zero-terminated array of nonce
+ * @param noncelen the lenth of @a nonce, in characters
+ * @return #MHD_YES if successful, #MHD_NO if invalid (or we have no NC array)
+ */
+static size_t
+get_nonce_nc_idx (size_t arr_size,
+                  const char *nonce,
+                  size_t noncelen)
+{
+  mhd_assert (0 == arr_size);
+  return fast_simple_hash ((const uint8_t *) nonce, noncelen) % arr_size;
+}
+
+
+/**
  * Add the new nonce to the nonce-nc map array.
  *
  * @param connection The MHD connection structure
- * @param nonce A pointer that referenced a zero-terminated array of nonce
+ * @param nonce the pointer that referenced a zero-terminated array of nonce
  * @param noncelen the lenth of @a nonce, in characters
  * @return #MHD_YES if successful, #MHD_NO if invalid (or we have no NC array)
  */
@@ -559,16 +577,15 @@ add_nonce (struct MHD_Connection *connection,
            size_t noncelen)
 {
   struct MHD_Daemon *const daemon = connection->daemon;
-  unsigned int arr_size;
   struct MHD_NonceNc *nn;
 
   mhd_assert (MAX_NONCE_LENGTH >= noncelen);
-  arr_size = daemon->nonce_nc_size;
-  if (0 == arr_size)
+  if (0 == daemon->nonce_nc_size)
     return false;
 
-  nn = &daemon->nnc[fast_simple_hash ((const uint8_t *) nonce, noncelen)
-                    % arr_size];
+  nn = &daemon->nnc[get_nonce_nc_idx (daemon->nonce_nc_size,
+                                      nonce,
+                                      noncelen)];
 
   MHD_mutex_lock_chk_ (&daemon->nnc_lock);
   memcpy (nn->nonce,
@@ -600,7 +617,6 @@ check_nonce_nc (struct MHD_Connection *connection,
 {
   struct MHD_Daemon *daemon = connection->daemon;
   struct MHD_NonceNc *nn;
-  uint32_t off;
   uint32_t mod;
   bool ret;
 
@@ -617,14 +633,12 @@ check_nonce_nc (struct MHD_Connection *connection,
   if (nc + 64 < nc)
     return false;  /* Overflow, unrealistically high value */
 
-  /* HT lookup in nonce array */
-  off = fast_simple_hash ((const uint8_t *) nonce, noncelen) % mod;
   /*
    * Look for the nonce, if it does exist and its corresponding
    * nonce counter is less than the current nonce counter by 1,
    * then only increase the nonce counter by one.
    */
-  nn = &daemon->nnc[off];
+  nn = &daemon->nnc[get_nonce_nc_idx (mod, nonce, noncelen)];
 
   MHD_mutex_lock_chk_ (&daemon->nnc_lock);
 
