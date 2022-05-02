@@ -236,7 +236,7 @@ enum MHD_ConnectionEventLoopInfo
 
 /**
  * Maximum length of a nonce in digest authentication.  64(SHA-256 Hex) +
- * 8(Timestamp Hex) + 1(NULL); hence 73 should suffice, but Opera
+ * 12(Timestamp Hex) + 1(NULL); hence 77 should suffice, but Opera
  * (already) takes more (see Mantis #1633), so we've increased the
  * value to support something longer...
  */

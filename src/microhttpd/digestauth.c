@@ -1018,13 +1018,13 @@ digest_auth_check_all (struct MHD_Connection *connection,
     return MHD_NO;
   }
 
-  t = (uint64_t) MHD_monotonic_sec_counter ();
+  t = MHD_monotonic_msec_counter ();
   /*
    * First level vetting for the nonce validity: if the timestamp
    * attached to the nonce exceeds `nonce_timeout', then the nonce is
    * invalid.
    */
-  if (TRIM_TO_TIMESTAMP (t - nonce_time) > nonce_timeout)
+  if (TRIM_TO_TIMESTAMP (t - nonce_time) > (nonce_timeout * 1000))
   {
     /* too old */
     return MHD_INVALID_NONCE;
@@ -1447,7 +1447,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
 
     VLA_CHECK_LEN_DIGEST (da.digest_size);
     /* Generating the server nonce */
-    calculate_nonce ((uint64_t) MHD_monotonic_sec_counter (),
+    calculate_nonce (MHD_monotonic_msec_counter (),
                      connection->method,
                      connection->daemon->digest_auth_random,
                      connection->daemon->digest_auth_rand_size,
