@@ -42,9 +42,17 @@
 #endif /* MHD_W32_MUTEX_ */
 
 /**
- * 32 bit value is 4 bytes
+ * 48 bit value in bytes
  */
-#define TIMESTAMP_BIN_SIZE 4
+#define TIMESTAMP_BIN_SIZE (48 / 8)
+
+
+/**
+ * Trim value to the TIMESTAMP_BIN_SIZE size
+ */
+#define TRIM_TO_TIMESTAMP(value) \
+  ((value) & ((UINT64_C(1) << (TIMESTAMP_BIN_SIZE * 8)) - 1))
+
 
 /**
  * Standard server nonce length, not including terminating null,
@@ -718,7 +726,7 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection)
  *        must provide NONCE_STD_LEN(da->digest_size)+1 bytes
  */
 static void
-calculate_nonce (uint32_t nonce_time,
+calculate_nonce (uint64_t nonce_time,
                  const char *method,
                  const char *rnd,
                  size_t rnd_size,
@@ -727,7 +735,7 @@ calculate_nonce (uint32_t nonce_time,
                  struct DigestAlgorithm *da,
                  char *nonce)
 {
-  unsigned char timestamp[TIMESTAMP_BIN_SIZE];
+  uint8_t timestamp[TIMESTAMP_BIN_SIZE];
   const unsigned int digest_size = da->digest_size;
   char tmpnonce[VLA_ARRAY_LEN_DIGEST (digest_size)];
 
@@ -735,10 +743,17 @@ calculate_nonce (uint32_t nonce_time,
   mhd_assert (0 != digest_size);
   VLA_CHECK_LEN_DIGEST (digest_size);
   da->init (da->ctx);
-  timestamp[0] = (unsigned char) ((nonce_time & 0xff000000) >> 0x18);
-  timestamp[1] = (unsigned char) ((nonce_time & 0x00ff0000) >> 0x10);
-  timestamp[2] = (unsigned char) ((nonce_time & 0x0000ff00) >> 0x08);
-  timestamp[3] = (unsigned char) ((nonce_time & 0x000000ff));
+  /* If the nonce_time is milliseconds, then the same 48 bit value will repeat
+   * every 8 925 years, which is more than enough to mitigate a replay attack */
+#if TIMESTAMP_BIN_SIZE != 6
+#error The code needs to be updated here
+#endif
+  timestamp[0] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 0)));
+  timestamp[1] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 1)));
+  timestamp[2] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 2)));
+  timestamp[3] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 3)));
+  timestamp[4] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 4)));
+  timestamp[5] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 5)));
   da->update (da->ctx,
               timestamp,
               sizeof (timestamp));
@@ -923,8 +938,8 @@ digest_auth_check_all (struct MHD_Connection *connection,
   char response[MAX_AUTH_RESPONSE_LENGTH];
   const char *hentity = NULL; /* "auth-int" is not supported */
   char noncehashexp[NONCE_STD_LEN (VLA_ARRAY_LEN_DIGEST (digest_size)) + 1];
-  uint32_t nonce_time;
-  uint32_t t;
+  uint64_t nonce_time;
+  uint64_t t;
   size_t left; /* number of characters left in 'header' for 'uri' */
   uint64_t nci;
   char *qmark;
@@ -992,7 +1007,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
     return MHD_NO;
   }
   if (TIMESTAMP_BIN_SIZE * 2 !=
-      MHD_strx_to_uint32_n_ (nonce + len - TIMESTAMP_BIN_SIZE * 2,
+      MHD_strx_to_uint64_n_ (nonce + len - TIMESTAMP_BIN_SIZE * 2,
                              TIMESTAMP_BIN_SIZE * 2,
                              &nonce_time))
   {
@@ -1002,14 +1017,14 @@ digest_auth_check_all (struct MHD_Connection *connection,
 #endif
     return MHD_NO;
   }
-  t = (uint32_t) MHD_monotonic_sec_counter ();
+
+  t = (uint64_t) MHD_monotonic_sec_counter ();
   /*
    * First level vetting for the nonce validity: if the timestamp
    * attached to the nonce exceeds `nonce_timeout', then the nonce is
    * invalid.
    */
-  if ( (t > nonce_time + nonce_timeout) ||
-       (nonce_time + nonce_timeout < nonce_time) )
+  if (TRIM_TO_TIMESTAMP (t - nonce_time) > nonce_timeout)
   {
     /* too old */
     return MHD_INVALID_NONCE;
@@ -1432,7 +1447,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
 
     VLA_CHECK_LEN_DIGEST (da.digest_size);
     /* Generating the server nonce */
-    calculate_nonce ((uint32_t) MHD_monotonic_sec_counter (),
+    calculate_nonce ((uint64_t) MHD_monotonic_sec_counter (),
                      connection->method,
                      connection->daemon->digest_auth_random,
                      connection->daemon->digest_auth_rand_size,
