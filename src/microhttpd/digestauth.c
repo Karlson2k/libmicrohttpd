@@ -41,6 +41,16 @@
 #include <windows.h>
 #endif /* MHD_W32_MUTEX_ */
 
+
+/**
+ * Allow re-use of the nonce-nc map array slot after #REUSE_TIMEOUT seconds,
+ * if this slot is needed for the new nonce, while the old nonce was not used
+ * even one time by the client.
+ * Typically clients immediately use generated nonce for new request.
+ */
+#define REUSE_TIMEOUT 30
+
+
 /**
  * 48 bit value in bytes
  */
@@ -564,42 +574,6 @@ get_nonce_nc_idx (size_t arr_size,
 
 
 /**
- * Add the new nonce to the nonce-nc map array.
- *
- * @param connection The MHD connection structure
- * @param nonce the pointer that referenced a zero-terminated array of nonce
- * @param noncelen the lenth of @a nonce, in characters
- * @return #MHD_YES if successful, #MHD_NO if invalid (or we have no NC array)
- */
-static bool
-add_nonce (struct MHD_Connection *connection,
-           const char *nonce,
-           size_t noncelen)
-{
-  struct MHD_Daemon *const daemon = connection->daemon;
-  struct MHD_NonceNc *nn;
-
-  mhd_assert (MAX_NONCE_LENGTH >= noncelen);
-  if (0 == daemon->nonce_nc_size)
-    return false;
-
-  nn = &daemon->nnc[get_nonce_nc_idx (daemon->nonce_nc_size,
-                                      nonce,
-                                      noncelen)];
-
-  MHD_mutex_lock_chk_ (&daemon->nnc_lock);
-  memcpy (nn->nonce,
-          nonce,
-          noncelen);
-  nn->nonce[noncelen] = 0;
-  nn->nc = 0;
-  nn->nmask = 0;
-  MHD_mutex_unlock_chk_ (&daemon->nnc_lock);
-  return true;
-}
-
-
-/**
  * Check nonce-nc map array with either new nonce counter
  * or a whole new nonce.
  *
@@ -810,6 +784,219 @@ calculate_nonce (uint64_t nonce_time,
   MHD_bin_to_hex (timestamp,
                   sizeof (timestamp),
                   nonce + digest_size * 2);
+}
+
+
+/**
+ * Extract timestamp from the given nonce.
+ * @param nonce the nonce to check
+ * @param noncelen the lenght of the nonce, zero for autodetect
+ * @param[out] ptimestamp the pointer to store extracted timestamp
+ * @return true if timestamp was extracted,
+ *         false if nonce does not have valid timestamp.
+ */
+static bool
+get_nonce_timestamp (const char *const nonce,
+                     size_t noncelen,
+                     uint64_t *const ptimestamp)
+{
+  mhd_assert ((0 == noncelen) || (strlen (nonce) == noncelen));
+  if (0 == noncelen)
+    noncelen = strlen (nonce);
+
+  if ( (NONCE_STD_LEN (SHA256_DIGEST_SIZE) != noncelen) &&
+       (NONCE_STD_LEN (MD5_DIGEST_SIZE) != noncelen) )
+    return false;
+
+  if (TIMESTAMP_CHARS_LEN !=
+      MHD_strx_to_uint64_n_ (nonce + noncelen - TIMESTAMP_CHARS_LEN,
+                             TIMESTAMP_CHARS_LEN,
+                             ptimestamp))
+    return false;
+  return true;
+}
+
+
+/**
+ * Check whether it is possible to use slot in nonce-nc map array.
+ *
+ * Should be called with mutex held to avoid external modification of
+ * the slot data.
+ *
+ * @param nn the pointer to the nonce-nc slot
+ * @param now the current time
+ * @param new_nonce the new nonce supposed to be stored in this slot,
+ *                  zero-terminated
+ * @param new_nonce_len the length of the @a new_nonce in chars, not including
+ *                      the terminating zero.
+ * @return true if the slot can be used to store the new nonce,
+ *         false otherwise.
+ */
+static bool
+is_slot_available (const struct MHD_NonceNc *const nn,
+                   const uint64_t now,
+                   const char *const new_nonce,
+                   size_t new_nonce_len)
+{
+  uint64_t timestamp;
+  bool timestamp_valid;
+  mhd_assert (new_nonce_len <= NONCE_STD_LEN (MAX_DIGEST));
+  mhd_assert (NONCE_STD_LEN (MAX_DIGEST) < MAX_NONCE_LENGTH);
+  if (0 == nn->nonce[0])
+    return true; /* The slot is empty */
+
+  if (0 != nn->nc)
+    return true; /* Client already used the nonce in this slot at least
+                    one time, re-use the slot */
+
+  if (0 == memcmp (nn->nonce, new_nonce, new_nonce_len + 1))
+  {
+    /* The slot has the same nonce already, the same nonce was already generated
+     * and used, this slot cannot be used with the same nonce as it would
+     * just reset received 'nc' values. */
+    return false;
+  }
+
+  timestamp_valid = get_nonce_timestamp (nn->nonce, 0, &timestamp);
+  mhd_assert (timestamp_valid);
+  if (! timestamp_valid)
+    return true; /* Invalid timestamp in nonce-nc, should not be possible */
+
+  if ((REUSE_TIMEOUT * 1000) < TRIM_TO_TIMESTAMP (now - timestamp))
+    return true;
+
+  return false;
+}
+
+
+/**
+ * Calculate the server nonce so that it mitigates replay attacks and add
+ * the new nonce to the nonce-nc map array.
+ *
+ * @param connection the MHD connection structure
+ * @param timestamp the current timestamp
+ * @param realm the string of characters that describes the realm of auth
+ * @param da the digest algorithm to use
+ * @param[out] nonce the pointer to a character array for the nonce to put in,
+ *        must provide NONCE_STD_LEN(da->digest_size)+1 bytes
+ * @return true if the new nonce has been added to the nonce-nc map array,
+ *         false otherwise.
+ */
+static bool
+calculate_add_nonce (struct MHD_Connection *const connection,
+                     uint64_t timestamp,
+                     const char *realm,
+                     struct DigestAlgorithm *da,
+                     char *nonce)
+{
+  struct MHD_Daemon *const daemon = connection->daemon;
+  struct MHD_NonceNc *nn;
+  const size_t nonce_size = NONCE_STD_LEN (da->digest_size);
+  bool ret;
+
+  mhd_assert (MAX_NONCE_LENGTH >= nonce_size);
+  mhd_assert (0 != nonce_size);
+
+  calculate_nonce (timestamp,
+                   connection->method,
+                   connection->daemon->digest_auth_random,
+                   connection->daemon->digest_auth_rand_size,
+                   connection->url,
+                   realm,
+                   da,
+                   nonce);
+
+  if (0 == daemon->nonce_nc_size)
+    return false;
+
+  nn = daemon->nnc + get_nonce_nc_idx (daemon->nonce_nc_size,
+                                       nonce,
+                                       nonce_size);
+
+  MHD_mutex_lock_chk_ (&daemon->nnc_lock);
+  if (is_slot_available (nn, timestamp, nonce, nonce_size))
+  {
+    memcpy (nn->nonce,
+            nonce,
+            nonce_size);
+    nn->nonce[nonce_size] = 0;  /* With terminating zero */
+    nn->nc = 0;
+    nn->nmask = 0;
+    ret = true;
+  }
+  else
+    ret = false;
+  MHD_mutex_unlock_chk_ (&daemon->nnc_lock);
+
+  return ret;
+}
+
+
+/**
+ * Calculate the server nonce so that it mitigates replay attacks and add
+ * the new nonce to the nonce-nc map array.
+ *
+ * @param connection the MHD connection structure
+ * @param realm A string of characters that describes the realm of auth.
+ * @param da digest algorithm to use
+ * @param[out] nonce A pointer to a character array for the nonce to put in,
+ *        must provide NONCE_STD_LEN(da->digest_size)+1 bytes
+ */
+static bool
+calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
+                                const char *realm,
+                                struct DigestAlgorithm *da,
+                                char *nonce)
+{
+  const uint64_t timestamp1 = MHD_monotonic_msec_counter ();
+
+  if (! calculate_add_nonce (connection, timestamp1, realm, da, nonce))
+  {
+    /* Either:
+     * 1. The same nonce was already generated. If it will be used then one
+     * of the clients will fail (as no initial 'nc' value could be given to
+     * the client, the second client which will use 'nc=00000001' will fail).
+     * 2. Another nonce uses the same slot, and this nonce never has been
+     * used by the client and this nonce is still fresh enough.
+     */
+    const size_t digest_size = da->digest_size;
+    char nonce2[NONCE_STD_LEN (VLA_ARRAY_LEN_DIGEST (digest_size)) + 1];
+    uint64_t timestamp2;
+    if (0 == connection->daemon->nonce_nc_size)
+      return false; /* No need to re-try */
+
+    timestamp2 = MHD_monotonic_msec_counter ();
+    if (timestamp1 == timestamp2)
+    {
+      /* The timestamps are equal, need to generate some arbitrary
+       * difference for nonce. */
+      uint64_t base1;
+      uint32_t base2;
+      uint16_t base3;
+      uint8_t base4;
+      base1 = (uint64_t) (uintptr_t) nonce2;
+      base2 = ((uint32_t) (base1 >> 32)) ^ ((uint32_t) base1);
+      base2 = _MHD_ROTL32 (base2, 4);
+      base3 = ((uint16_t) (base2 >> 16)) ^ ((uint16_t) base2);
+      base4 = ((uint8_t) (base3 >> 8)) ^ ((uint8_t) base3);
+      base1 = (uint64_t) (uintptr_t) connection;
+      base2 = ((uint32_t) (base1 >> 32)) ^ ((uint32_t) base1);
+      base2 = _MHD_ROTL32 (base2, (((base1 >> 4) ^ base1) % 32));
+      base3 = ((uint16_t) (base2 >> 16)) ^ ((uint16_t) base2);
+      base4 = ((uint8_t) (base3 >> 8)) ^ ((uint8_t) base3);
+      timestamp2 -= (base4 & 0x7f); /* Use up to 127 ms difference */
+    }
+    if (! calculate_add_nonce (connection, timestamp2, realm, da, nonce2))
+    {
+      /* No free slot has been found. Re-tries are expensive, just use
+       * the generated nonce. As it is not stored in nonce-nc map array,
+       * the next request of the client will be recognized as valid, but 'stale'
+       * so client should re-try automatically. */
+      return false;
+    }
+    memcpy (nonce, nonce2, NONCE_STD_LEN (digest_size) + 1);
+  }
+  return true;
 }
 
 
@@ -1461,30 +1648,30 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
   if (NULL == response)
     return MHD_NO;
 
+  if (0 == connection->daemon->nonce_nc_size)
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The nonce array size is zero.\n"));
+#endif /* HAVE_MESSAGES */
+    return MHD_NO;
+  }
+
   if (1)
   {
     char nonce[NONCE_STD_LEN (VLA_ARRAY_LEN_DIGEST (da.digest_size)) + 1];
 
     VLA_CHECK_LEN_DIGEST (da.digest_size);
-    /* Generating the server nonce */
-    calculate_nonce (MHD_monotonic_msec_counter (),
-                     connection->method,
-                     connection->daemon->digest_auth_random,
-                     connection->daemon->digest_auth_rand_size,
-                     connection->url,
-                     realm,
-                     &da,
-                     nonce);
-    if (! add_nonce (connection,
-                     nonce,
-                     NONCE_STD_LEN (da.digest_size)))
+    if (! calculate_add_nonce_with_retry (connection, realm, &da, nonce))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
-                _ (
-                  "Could not register nonce (is the nonce array size zero?).\n"));
-#endif
-      return MHD_NO;
+                _ ("Could not register nonce. Client's requests with this "
+                   "nonce will be always 'stale'. Probably clients' requests "
+                   "are too intensive.\n"));
+#else  /* ! HAVE_MESSAGES */
+      (void) 0;
+#endif /* ! HAVE_MESSAGES */
     }
     /* Building the authentication header */
     hlen = MHD_snprintf_ (NULL,
