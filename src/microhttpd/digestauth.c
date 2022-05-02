@@ -522,7 +522,7 @@ fast_simple_hash (const uint8_t *data,
     size_t i;
     hash = data[0];
     for (i = 1; i < data_size; i++)
-      hash = _MHD_ROTL32 (hash, 8) ^ data[i];
+      hash = _MHD_ROTL32 (hash, 7) ^ data[i];
   }
   else
     hash = 0;
