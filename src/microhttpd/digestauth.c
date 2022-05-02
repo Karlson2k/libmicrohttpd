@@ -55,12 +55,18 @@
 
 
 /**
+ * The printed timestamp size in chars
+ */
+#define TIMESTAMP_CHARS_LEN (TIMESTAMP_BIN_SIZE * 2)
+
+
+/**
  * Standard server nonce length, not including terminating null,
  *
  * @param digest_size digest size
  */
 #define NONCE_STD_LEN(digest_size) \
-  ((digest_size) * 2 + TIMESTAMP_BIN_SIZE * 2)
+  ((digest_size) * 2 + TIMESTAMP_CHARS_LEN)
 
 
 /**
@@ -1006,9 +1012,9 @@ digest_auth_check_all (struct MHD_Connection *connection,
        header value. */
     return MHD_NO;
   }
-  if (TIMESTAMP_BIN_SIZE * 2 !=
-      MHD_strx_to_uint64_n_ (nonce + len - TIMESTAMP_BIN_SIZE * 2,
-                             TIMESTAMP_BIN_SIZE * 2,
+  if (TIMESTAMP_CHARS_LEN !=
+      MHD_strx_to_uint64_n_ (nonce + len - TIMESTAMP_CHARS_LEN,
+                             TIMESTAMP_CHARS_LEN,
                              &nonce_time))
   {
 #ifdef HAVE_MESSAGES
