@@ -259,8 +259,8 @@ struct MHD_NonceNc
   uint64_t nc;
 
   /**
-   * Bitmask over the the previous 64 nonce values (down to to nc-64).  Used to
-   * allow out-of-order nonces.
+   * Bitmask over the previous 64 nonce counter values (down to to nc-64).
+   * Used to allow out-of-order 'nc'.
    * If bit in the bitmask is set to one, then this 'nc' value was already used
    * by the client.
    */
