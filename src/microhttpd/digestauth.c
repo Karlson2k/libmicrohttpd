@@ -1213,10 +1213,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
        header value. */
     return MHD_NO;
   }
-  if (TIMESTAMP_CHARS_LEN !=
-      MHD_strx_to_uint64_n_ (nonce + len - TIMESTAMP_CHARS_LEN,
-                             TIMESTAMP_CHARS_LEN,
-                             &nonce_time))
+  if (! get_nonce_timestamp (nonce, nonce_len, &nonce_time))
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
