@@ -729,7 +729,7 @@ calculate_nonce (uint32_t nonce_time,
 {
   unsigned char timestamp[TIMESTAMP_BIN_SIZE];
   const unsigned int digest_size = da->digest_size;
-  unsigned char tmpnonce[VLA_ARRAY_LEN_DIGEST (digest_size)];
+  char tmpnonce[VLA_ARRAY_LEN_DIGEST (digest_size)];
 
   VLA_CHECK_LEN_DIGEST (digest_size);
   da->init (da->ctx);
@@ -766,7 +766,7 @@ calculate_nonce (uint32_t nonce_time,
               (const unsigned char *) realm,
               strlen (realm));
   da->digest (da->ctx,
-              tmpnonce);
+              (uint8_t *) tmpnonce);
   MHD_bin_to_hex (tmpnonce,
                   digest_size,
                   nonce);
