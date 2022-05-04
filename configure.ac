@@ -3093,7 +3093,7 @@ AS_VAR_IF([[enable_asserts]], [["yes"]],
   [
     MHD_PREPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-DNDEBUG=1])
     CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
-  ])]
+  ]
 )
 
 AS_UNSET([enabled_sanitizers])
