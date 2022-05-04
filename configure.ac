@@ -78,7 +78,7 @@ AC_ARG_ENABLE([build-type],
   [AS_HELP_STRING([[--enable-build-type=TYPE]],
   [enable build TYPE, a set of configuration parameters; individual settings ]
   [(asserts, sanitizers, compiler and linker flags) can be overriden by ]
-  [additional configure parameters (debug, neutral, release, release-compact, ]
+  [additional configure parameters (debug, debugger, neutral, release, release-compact, ]
   [release-hardened) [neutral]])],
   [], [enable_build_type=neutral])
 AS_IF([test "x${enable_build_type}" = "x"], [enable_build_type="neutral"])
@@ -86,6 +86,7 @@ AS_VAR_IF([enable_build_type], ["no"], [enable_build_type="neutral"])
 AS_VAR_IF([enable_build_type], ["yes"], [AC_MSG_ERROR([[Missing TYPE for --enable-build-type=]])])
 AS_CASE([${enable_build_type}],
   [debug], [AC_MSG_RESULT([debug: enable asserts, sanitizers (if any supported), debug information, compiler optimisation for debugging])],
+  [debugger], [AC_MSG_RESULT([debuger: enable asserts, disable sanitizers, debug information, no compiler optimisation])],
   [neutral], [AC_MSG_RESULT([neutral: use only user-specified compiler and linker flags])],
   [release], [AC_MSG_RESULT([release: disable asserts, enable compiler optimisations])],
   [release-compact], [AC_MSG_RESULT([release-compact: disable asserts, enable compiler optimisations for size, enable compact code])],
@@ -152,10 +153,13 @@ AS_VAR_IF([enable_build_type],["neutral"],[],
     LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
   ]
 )
-AS_VAR_IF([enable_build_type],["debug"],
-  [ # Debug build
+AS_CASE([${enable_build_type}],[debug|debugger],
+  [ # Debug build or build for walking with debugger
     CFLAGS="${user_CFLAGS}"
-    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Og], [-O0])
+    AS_VAR_IF([enable_build_type],["debug"],
+      [MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Og], [-O0])],
+      [MHD_CHECK_ADD_CC_CFLAG([-O0], [CFLAGS_ac])]
+    )
     MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-ggdb3], [-g3], [-ggdb], [-g])
     MHD_CHECK_ADD_CC_CFLAGS([-Wextra -Wdouble-promotion], [CFLAGS_ac])
     MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Wformat=2], [-Wformat])
@@ -3060,7 +3064,7 @@ AC_ARG_ENABLE([[asserts]],
   [AS_HELP_STRING([[--enable-asserts]],
     [enable test build with debug asserts])],
   [],
-  [AS_CASE([${enable_build_type}],[debug],
+  [AS_CASE([${enable_build_type}],[debug|debugger],
     [enable_asserts='yes'],[enable_asserts='no'])]
 )
 AS_CASE([[$enable_asserts]], [[yes]], [[:]], [[no]], [[:]], [[enable_asserts='no']])
