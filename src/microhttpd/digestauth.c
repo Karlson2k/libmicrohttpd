@@ -1305,6 +1305,8 @@ MHD_digest_auth_check2 (struct MHD_Connection *connection,
   SETUP_DA (algo, da);
 
   mhd_assert (NULL != password);
+  if (0 == da.digest_size)
+    MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */
   return digest_auth_check_all (connection,
                                 &da,
                                 realm,
@@ -1344,7 +1346,7 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
   SETUP_DA (algo, da);
 
   mhd_assert (NULL != digest);
-  if (da.digest_size != digest_size)
+  if ((da.digest_size != digest_size) || (0 == digest_size))
     MHD_PANIC (_ ("Digest size mismatch.\n")); /* API violation! */
   return digest_auth_check_all (connection,
                                 &da,
@@ -1417,6 +1419,9 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
   int ret;
   int hlen;
   SETUP_DA (algo, da);
+
+  if (0 == da.digest_size)
+    MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */
 
   if (NULL == response)
     return MHD_NO;
