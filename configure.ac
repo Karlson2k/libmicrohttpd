@@ -3068,7 +3068,8 @@ AC_MSG_RESULT([[$enable_asserts]])
 
 AS_VAR_IF([[enable_asserts]], [["yes"]],
   [
-   AC_DEFINE([[_DEBUG]], [[1]], [Define to use debug asserts.])
+   MHD_PREPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-D_DEBUG=1])
+   CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
    [mhd_assert_test_prg="#include <assert.h>
    int pos_val(void) {return 5;}
    int neg_val(void) {return -5;}
@@ -3089,7 +3090,10 @@ AS_VAR_IF([[enable_asserts]], [["yes"]],
      [AC_DEFINE([[HAVE_ASSERT]], [[1]], [Define if you have usable assert() and assert.h])])
    AS_UNSET([mhd_assert_test_prg])
   ],
-  [AC_DEFINE([[NDEBUG]], [[1]], [Define to disable usage of debug asserts.])]
+  [
+    MHD_PREPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-DNDEBUG=1])
+    CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+  ])]
 )
 
 AS_UNSET([enabled_sanitizers])
