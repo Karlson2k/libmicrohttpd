@@ -235,7 +235,7 @@ str_conn_error_ (ssize_t mhd_err_code)
 
 /**
  * Allocate memory from connection's memory pool.
- * If memory pool doesn't have enough free memory but read of write buffer
+ * If memory pool doesn't have enough free memory but read or write buffer
  * have some unused memory, the size of the buffer will be reduced as needed.
  * @param connection the connection to use
  * @param size the size of allocated memory area
