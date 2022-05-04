@@ -3060,8 +3060,8 @@ AC_ARG_ENABLE([[asserts]],
   [AS_HELP_STRING([[--enable-asserts]],
     [enable test build with debug asserts])],
   [],
-  [AS_CASE([${enable_build_type}],[*-hardened],
-    [enable_compiler_hardening='yes'],[enable_compiler_hardening='no'])]
+  [AS_CASE([${enable_build_type}],[debug],
+    [enable_asserts='yes'],[enable_asserts='no'])]
 )
 AS_CASE([[$enable_asserts]], [[yes]], [[:]], [[no]], [[:]], [[enable_asserts='no']])
 AC_MSG_RESULT([[$enable_asserts]])
@@ -3108,7 +3108,9 @@ AC_ARG_ENABLE([sanitizers],
   [leave the list empty (or set to "auto") to enable all suppoted and available ]
   [sanitizers, or specify "auto-fallback" to use sanitizers even without ]
   [installed sanitizer run-time library])],
-  [], [enable_sanitizers=no])
+  [], [AS_CASE([${enable_build_type}],[debug],
+    [enable_sanitizers='auto-optional'],[enable_sanitizers='no'])]
+)
 AS_IF([test "x${enable_sanitizers}" = "x"], [enable_sanitizers="auto"])
 AS_VAR_IF([enable_sanitizers], ["yes"], [enable_sanitizers="auto"])
 AS_VAR_IF([enable_sanitizers], ["autofallback"], [enable_sanitizers="auto-fallback"])
