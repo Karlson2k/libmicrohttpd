@@ -731,6 +731,8 @@ calculate_nonce (uint32_t nonce_time,
   const unsigned int digest_size = da->digest_size;
   char tmpnonce[VLA_ARRAY_LEN_DIGEST (digest_size)];
 
+  mhd_assert (0 == (digest_size % 2));
+  mhd_assert (0 != digest_size);
   VLA_CHECK_LEN_DIGEST (digest_size);
   da->init (da->ctx);
   timestamp[0] = (unsigned char) ((nonce_time & 0xff000000) >> 0x18);
