@@ -4142,7 +4142,7 @@ MHD_get_timeout_i (struct MHD_Daemon *daemon)
 #else  /* SIZEOF_INT < SIZEOF_INT64_T */
   const int64_t to64 = MHD_get_timeout64s (daemon);
   if (INT_MAX >= to64)
-    return to64;
+    return (int) to64;
   return INT_MAX;
 #endif /* SIZEOF_INT < SIZEOF_INT64_T */
 }
