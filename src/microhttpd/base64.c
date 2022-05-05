@@ -5,7 +5,20 @@
  * @file base64.c
  * @brief This code implements the BASE64 algorithm
  * @author Matthieu Speder
+ * @author Karlson2k (Evgeny Grin): fixes and improvements
  */
+#include "mhd_options.h"
+#include <stdio.h>
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+#include <string.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>
+#endif /* HAVE_STDDEF_H */
 #include "base64.h"
 
 static const char base64_digits[] =
@@ -24,18 +37,19 @@ static const char base64_digits[] =
 
 
 char *
-BASE64Decode (const char*src)
+BASE64Decode (const char *src)
 {
   size_t in_len = strlen (src);
-  char*dest;
-  char*result;
+  unsigned char *dest;
+  char *result;
 
   if (in_len % 4)
   {
     /* Wrong base64 string length */
     return NULL;
   }
-  result = dest = malloc (in_len / 4 * 3 + 1);
+  dest = (unsigned char *) malloc (in_len / 4 * 3 + 1);
+  result = (char *) dest;
   if (NULL == result)
     return NULL; /* out of memory */
   while (*src)
@@ -44,13 +58,21 @@ BASE64Decode (const char*src)
     char b = base64_digits[(unsigned char) *(src++)];
     char c = base64_digits[(unsigned char) *(src++)];
     char d = base64_digits[(unsigned char) *(src++)];
-    *(dest++) = (a << 2) | ((b & 0x30) >> 4);
+    if (((char) -1 == a) || (0 == a) || (0 == b) || (0 == c) || (0 == d))
+    {
+      free (result);
+      return NULL;
+    }
+    *(dest++) = (unsigned char) (((unsigned char) a) << 2)
+                | (unsigned char) ((((unsigned char) b) & 0x30) >> 4);
     if (c == (char) -1)
       break;
-    *(dest++) = ((b & 0x0f) << 4) | ((c & 0x3c) >> 2);
+    *(dest++) = (unsigned char) ((((unsigned char) b) & 0x0f) << 4)
+                | (unsigned char) ((((unsigned char) c) & 0x3c) >> 2);
     if (d == (char) -1)
       break;
-    *(dest++) = ((c & 0x03) << 6) | d;
+    *(dest++) = (unsigned char) ((((unsigned char) c) & 0x03) << 6)
+                | ((unsigned char) d);
   }
   *dest = 0;
   return result;
