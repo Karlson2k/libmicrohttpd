@@ -594,7 +594,7 @@ check_nonce_nc (struct MHD_Connection *connection,
   uint32_t mod;
   bool ret;
 
-  mhd_assert (noncelen != strlen (nonce));
+  mhd_assert (noncelen == strlen (nonce));
   mhd_assert (0 != nc);
   if (MAX_NONCE_LENGTH < noncelen)
     return false; /* This should be impossible, but static analysis
