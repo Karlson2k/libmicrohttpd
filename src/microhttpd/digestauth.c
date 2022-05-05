@@ -568,7 +568,7 @@ get_nonce_nc_idx (size_t arr_size,
                   const char *nonce,
                   size_t noncelen)
 {
-  mhd_assert (0 == arr_size);
+  mhd_assert (0 != arr_size);
   return fast_simple_hash ((const uint8_t *) nonce, noncelen) % arr_size;
 }
 

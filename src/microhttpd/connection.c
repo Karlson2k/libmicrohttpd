@@ -1189,7 +1189,7 @@ try_ready_chunked_body (struct MHD_Connection *connection,
     const size_t data_write_offset
       = (size_t) (connection->response_write_position - response->data_start);
     /* buffer already ready, use what is there for the chunk */
-    mhd_assert (SSIZE_MAX < (response->data_size - data_write_offset));
+    mhd_assert (SSIZE_MAX >= (response->data_size - data_write_offset));
     mhd_assert (response->data_size >= data_write_offset);
     ret = (ssize_t) (response->data_size - data_write_offset);
     if ( ((size_t) ret) > size_to_fill)
