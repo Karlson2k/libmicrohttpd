@@ -31,6 +31,7 @@
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include "mhd_has_in_name.h"
@@ -71,13 +72,13 @@ ahc_echo (void *cls,
           void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
+  const int *puse_invalid = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
   const char *hdr;
   (void) version; (void) upload_data; (void) upload_data_size;       /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *req_cls)
   {
@@ -86,21 +87,50 @@ ahc_echo (void *cls,
   }
   *req_cls = NULL;
 
-  hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name1");
-  if ((hdr == NULL) || (0 != strcmp (hdr, "var1")))
-    abort ();
-  hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name2");
-  if ((hdr == NULL) || (0 != strcmp (hdr, "var2")))
-    abort ();
-  hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name3");
-  if ((hdr == NULL) || (0 != strcmp (hdr, "")))
-    abort ();
-  hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name4");
-  if ((hdr == NULL) || (0 != strcmp (hdr, "var4 with spaces")))
-    abort ();
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_PERSISTENT);
+  if (! *puse_invalid)
+  {
+    hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name1");
+    if ((hdr == NULL) || (0 != strcmp (hdr, "var1")))
+    {
+      fprintf (stderr, "'name1' cookie decoded incorrectly.\n");
+      exit (11);
+    }
+    hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name2");
+    if ((hdr == NULL) || (0 != strcmp (hdr, "var2")))
+    {
+      fprintf (stderr, "'name2' cookie decoded incorrectly.\n");
+      exit (11);
+    }
+    hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name3");
+    if ((hdr == NULL) || (0 != strcmp (hdr, "")))
+    {
+      fprintf (stderr, "'name3' cookie decoded incorrectly.\n");
+      exit (11);
+    }
+    hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name4");
+    if ((hdr == NULL) || (0 != strcmp (hdr, "var4 with spaces")))
+    {
+      fprintf (stderr, "'name4' cookie decoded incorrectly.\n");
+      exit (11);
+    }
+    if (4 != MHD_get_connection_values_n (connection, MHD_COOKIE_KIND,
+                                          NULL, NULL))
+    {
+      fprintf (stderr, "The total number of cookie is not four.\n");
+      exit (12);
+    }
+  }
+  else
+  {
+    if (0 != MHD_get_connection_values_n (connection, MHD_COOKIE_KIND,
+                                          NULL, NULL))
+    {
+      fprintf (stderr, "The total number of cookie is not zero.\n");
+      exit (12);
+    }
+  }
+  response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                   url);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   if (ret == MHD_NO)
@@ -109,8 +139,11 @@ ahc_echo (void *cls,
 }
 
 
-static int
-testExternalGet ()
+/* Re-use the same port for all checks */
+static unsigned int port;
+
+static unsigned int
+testExternalGet (int use_invalid)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -131,23 +164,14 @@ testExternalGet ()
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  int port;
-
-  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-    port = 0;
-  else
-  {
-    port = 1340;
-    if (oneone)
-      port += 5;
-  }
 
   multi = NULL;
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, &use_invalid,
+                        MHD_OPTION_END);
   if (d == NULL)
     return 256;
   if (0 == port)
@@ -166,11 +190,44 @@ testExternalGet ()
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
-  /* note that the string below intentionally uses the
-     various ways cookies can be specified to exercise the
-     parser! Do not change! */
-  curl_easy_setopt (c, CURLOPT_COOKIE,
-                    "name1=var1; name2=var2,name3 ;name4=\"var4 with spaces\";");
+  if (0 == use_invalid)
+  {
+    curl_easy_setopt (c, CURLOPT_COOKIE,
+                      "name1=var1; name2=var2,name3 ;" \
+                      "name4=\"var4 with spaces\";" \
+                      " ;   ;; ;");
+  }
+  else if (1 == use_invalid)
+  {
+    curl_easy_setopt (c, CURLOPT_COOKIE,
+                      "var1=value1=");
+  }
+  else if (2 == use_invalid)
+  {
+    curl_easy_setopt (c, CURLOPT_COOKIE,
+                      "var1=value1;=;");
+  }
+  else if (3 == use_invalid)
+  {
+    curl_easy_setopt (c, CURLOPT_COOKIE,
+                      "=");
+  }
+  else if (4 == use_invalid)
+  {
+    curl_easy_setopt (c, CURLOPT_COOKIE,
+                      ";=");
+  }
+  else if (5 == use_invalid)
+  {
+    curl_easy_setopt (c, CURLOPT_COOKIE,
+                      "=;");
+  }
+  else if (6 == use_invalid)
+  {
+    curl_easy_setopt (c, CURLOPT_COOKIE,
+                      "a=b,d=c");
+  }
+
   if (oneone)
     curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   else
@@ -309,7 +366,21 @@ main (int argc, char *const *argv)
   oneone = has_in_name (argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
-  errorCount += testExternalGet ();
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    port = 0;
+  else
+  {
+    port = 1340;
+    if (oneone)
+      port += 5;
+  }
+  errorCount += testExternalGet (0);
+  errorCount += testExternalGet (1);
+  errorCount += testExternalGet (2);
+  errorCount += testExternalGet (3);
+  errorCount += testExternalGet (4);
+  errorCount += testExternalGet (5);
+  errorCount += testExternalGet (6);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();
