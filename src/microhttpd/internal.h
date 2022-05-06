@@ -2440,8 +2440,6 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
 void
 internal_suspend_connection_ (struct MHD_Connection *connection);
 
-#endif
-
 
 /**
  * Trace up to and return master daemon. If the supplied daemon
@@ -2463,3 +2461,6 @@ MHD_get_master (struct MHD_Daemon *const daemon)
 
   return ret;
 }
+
+
+#endif
