@@ -590,7 +590,7 @@ check_nonce_nc (struct MHD_Connection *connection,
                 size_t noncelen,
                 uint64_t nc)
 {
-  struct MHD_Daemon *daemon = connection->daemon;
+  struct MHD_Daemon *daemon = MHD_get_master (connection->daemon);
   struct MHD_NonceNc *nn;
   uint32_t mod;
   bool ret;
@@ -896,7 +896,7 @@ calculate_add_nonce (struct MHD_Connection *const connection,
                      struct DigestAlgorithm *da,
                      char *nonce)
 {
-  struct MHD_Daemon *const daemon = connection->daemon;
+  struct MHD_Daemon *const daemon = MHD_get_master (connection->daemon);
   struct MHD_NonceNc *nn;
   const size_t nonce_size = NONCE_STD_LEN (da->digest_size);
   bool ret;
@@ -906,8 +906,8 @@ calculate_add_nonce (struct MHD_Connection *const connection,
 
   calculate_nonce (timestamp,
                    connection->method,
-                   connection->daemon->digest_auth_random,
-                   connection->daemon->digest_auth_rand_size,
+                   daemon->digest_auth_random,
+                   daemon->digest_auth_rand_size,
                    connection->url,
                    realm,
                    da,
@@ -969,7 +969,7 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
     const size_t digest_size = da->digest_size;
     char nonce2[NONCE_STD_LEN (VLA_ARRAY_LEN_DIGEST (digest_size)) + 1];
     uint64_t timestamp2;
-    if (0 == connection->daemon->nonce_nc_size)
+    if (0 == MHD_get_master (connection->daemon)->nonce_nc_size)
       return false; /* No need to re-try */
 
     timestamp2 = MHD_monotonic_msec_counter ();
@@ -1142,7 +1142,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
                        const uint8_t *digest,
                        unsigned int nonce_timeout)
 {
-  struct MHD_Daemon *daemon = connection->daemon;
+  struct MHD_Daemon *daemon = MHD_get_master (connection->daemon);
   size_t len;
   const char *header;
   char nonce[MAX_NONCE_LENGTH];
@@ -1655,7 +1655,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
   if (NULL == response)
     return MHD_NO;
 
-  if (0 == connection->daemon->nonce_nc_size)
+  if (0 == MHD_get_master (connection->daemon)->nonce_nc_size)
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,

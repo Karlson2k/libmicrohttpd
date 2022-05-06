@@ -7481,6 +7481,15 @@ MHD_start_daemon_va (unsigned int flags,
           MHD_mutex_destroy_chk_ (&d->new_connections_mutex);
           goto thread_failed;
         }
+        /* Some members must be used only in master daemon */
+#ifdef DAUTH_SUPPORT
+        d->nnc = NULL;
+        d->nonce_nc_size = 0;
+#if defined(MHD_USE_THREADS)
+        memset (d->nnc_lock, 1, sizeof(daemon->nnc_lock));
+#endif /* MHD_USE_THREADS */
+#endif /* DAUTH_SUPPORT */
+
 
         /* Spawn the worker thread */
         if (! MHD_create_named_thread_ (&d->pid,
