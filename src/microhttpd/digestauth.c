@@ -845,17 +845,18 @@ is_slot_available (const struct MHD_NonceNc *const nn,
   if (0 == nn->nonce[0])
     return true; /* The slot is empty */
 
-  if (0 != nn->nc)
-    return true; /* Client already used the nonce in this slot at least
-                    one time, re-use the slot */
-
-  if (0 == memcmp (nn->nonce, new_nonce, new_nonce_len + 1))
+  if ((0 == memcmp (nn->nonce, new_nonce, new_nonce_len)) &&
+      (0 == nn->nonce[new_nonce_len]))
   {
     /* The slot has the same nonce already, the same nonce was already generated
      * and used, this slot cannot be used with the same nonce as it would
      * just reset received 'nc' values. */
     return false;
   }
+
+  if (0 != nn->nc)
+    return true; /* Client already used the nonce in this slot at least
+                    one time, re-use the slot */
 
   timestamp_valid = get_nonce_timestamp (nn->nonce, 0, &timestamp);
   mhd_assert (timestamp_valid);
