@@ -294,6 +294,8 @@ _MHD_static_inline uint32_t
 _MHD_ROTR32 (uint32_t value32, int bits)
 {
   bits %= 32;
+  if (0 == bits)
+    return value32;
   /* Defined in form which modern compiler could optimize. */
   return (value32 >> bits) | (value32 << (32 - bits));
 }
@@ -322,6 +324,8 @@ _MHD_static_inline uint32_t
 _MHD_ROTL32 (uint32_t value32, int bits)
 {
   bits %= 32;
+  if (0 == bits)
+    return value32;
   /* Defined in form which modern compiler could optimize. */
   return (value32 << bits) | (value32 >> (32 - bits));
 }
