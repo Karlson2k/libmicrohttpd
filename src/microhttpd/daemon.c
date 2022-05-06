@@ -7486,7 +7486,7 @@ MHD_start_daemon_va (unsigned int flags,
         d->nnc = NULL;
         d->nonce_nc_size = 0;
 #if defined(MHD_USE_THREADS)
-        memset (d->nnc_lock, 1, sizeof(daemon->nnc_lock));
+        memset (&d->nnc_lock, 1, sizeof(daemon->nnc_lock));
 #endif /* MHD_USE_THREADS */
 #endif /* DAUTH_SUPPORT */
 
