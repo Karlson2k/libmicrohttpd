@@ -859,6 +859,11 @@ is_slot_available (const struct MHD_NonceNc *const nn,
     return true; /* Client already used the nonce in this slot at least
                     one time, re-use the slot */
 
+  /* The nonce must be zero-terminated */
+  mhd_assert (0 == nn->nonce[sizeof(nn->nonce) - 1]);
+  if (0 != nn->nonce[sizeof(nn->nonce) - 1])
+    return true; /* Wrong nonce format in the slot */
+
   timestamp_valid = get_nonce_timestamp (nn->nonce, 0, &timestamp);
   mhd_assert (timestamp_valid);
   if (! timestamp_valid)
