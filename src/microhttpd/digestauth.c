@@ -569,6 +569,7 @@ get_nonce_nc_idx (size_t arr_size,
                   size_t noncelen)
 {
   mhd_assert (0 != arr_size);
+  mhd_assert (0 != noncelen);
   return fast_simple_hash ((const uint8_t *) nonce, noncelen) % arr_size;
 }
 
@@ -982,7 +983,7 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
       base4 = ((uint8_t) (base3 >> 8)) ^ ((uint8_t) base3);
       base1 = (uint64_t) (uintptr_t) connection;
       base2 = ((uint32_t) (base1 >> 32)) ^ ((uint32_t) base1);
-      base2 = _MHD_ROTL32 (base2, (((base1 >> 4) ^ base1) % 32));
+      base2 = _MHD_ROTL32 (base2, (((base4 >> 4) ^ base4) % 32));
       base3 = ((uint16_t) (base2 >> 16)) ^ ((uint16_t) base2);
       base4 = ((uint8_t) (base3 >> 8)) ^ ((uint8_t) base3);
       timestamp2 -= (base4 & 0x7f); /* Use up to 127 ms difference */
@@ -995,7 +996,8 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
        * so client should re-try automatically. */
       return false;
     }
-    memcpy (nonce, nonce2, NONCE_STD_LEN (digest_size) + 1);
+    memcpy (nonce, nonce2, NONCE_STD_LEN (digest_size));
+    mhd_assert (0 == nonce[NONCE_STD_LEN (digest_size)]);
   }
   return true;
 }
