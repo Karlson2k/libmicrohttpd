@@ -6845,7 +6845,8 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
-    daemon->nnc = malloc (daemon->nonce_nc_size * sizeof (struct MHD_NonceNc));
+    daemon->nnc = MHD_calloc_ (daemon->nonce_nc_size,
+                               sizeof (struct MHD_NonceNc));
     if (NULL == daemon->nnc)
     {
 #ifdef HAVE_MESSAGES
