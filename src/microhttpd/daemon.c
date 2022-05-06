@@ -219,22 +219,6 @@ MHD_free (void *ptr)
 
 
 /**
- * Trace up to and return master daemon. If the supplied daemon
- * is a master, then return the daemon itself.
- *
- * @param daemon handle to a daemon
- * @return master daemon handle
- */
-static struct MHD_Daemon *
-MHD_get_master (struct MHD_Daemon *daemon)
-{
-  while (NULL != daemon->master)
-    daemon = daemon->master;
-  return daemon;
-}
-
-
-/**
  * Maintain connection count for single address.
  */
 struct MHD_IPCount

@@ -2441,3 +2441,25 @@ void
 internal_suspend_connection_ (struct MHD_Connection *connection);
 
 #endif
+
+
+/**
+ * Trace up to and return master daemon. If the supplied daemon
+ * is a master, then return the daemon itself.
+ *
+ * @param daemon handle to a daemon
+ * @return master daemon handle
+ */
+_MHD_static_inline struct MHD_Daemon *
+MHD_get_master (struct MHD_Daemon *const daemon)
+{
+  struct MHD_Daemon *ret;
+
+  if (NULL != daemon->master)
+    ret = daemon->master;
+  else
+    ret = daemon;
+  mhd_assert (NULL == ret->master);
+
+  return ret;
+}
