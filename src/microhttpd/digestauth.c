@@ -992,6 +992,8 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
       base3 = ((uint16_t) (base2 >> 16)) ^ ((uint16_t) base2);
       base4 = ((uint8_t) (base3 >> 8)) ^ ((uint8_t) base3);
       timestamp2 -= (base4 & 0x7f); /* Use up to 127 ms difference */
+      if (timestamp1 == timestamp2)
+        timestamp2 -= 2;
     }
     if (! calculate_add_nonce (connection, timestamp2, realm, da, nonce2))
     {
