@@ -260,6 +260,7 @@ struct MHD_IPCount
 static void
 MHD_ip_count_lock (struct MHD_Daemon *daemon)
 {
+  mhd_assert (NULL == daemon->master);
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_lock_chk_ (&daemon->per_ip_connection_mutex);
 #else
@@ -276,6 +277,7 @@ MHD_ip_count_lock (struct MHD_Daemon *daemon)
 static void
 MHD_ip_count_unlock (struct MHD_Daemon *daemon)
 {
+  mhd_assert (NULL == daemon->master);
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_unlock_chk_ (&daemon->per_ip_connection_mutex);
 #else
@@ -7482,6 +7484,10 @@ MHD_start_daemon_va (unsigned int flags,
           goto thread_failed;
         }
         /* Some members must be used only in master daemon */
+#if defined(MHD_USE_THREADS)
+        memset (&d->per_ip_connection_mutex, 1,
+                sizeof(d->per_ip_connection_mutex));
+#endif /* MHD_USE_THREADS */
 #ifdef DAUTH_SUPPORT
         d->nnc = NULL;
         d->nonce_nc_size = 0;
