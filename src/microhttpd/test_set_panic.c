@@ -213,6 +213,8 @@ _mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 }
 
 
+#ifndef MHD_POSIX_SOCKETS
+
 /**
  * Pause execution for specified number of milliseconds.
  * @param ms the number of milliseconds to sleep
@@ -252,6 +254,8 @@ _MHD_sleep (uint32_t ms)
 #endif
 }
 
+
+#endif /* ! MHD_POSIX_SOCKETS */
 
 /* Global parameters */
 static int verbose;                 /**< Be verbose */
@@ -1121,12 +1125,6 @@ struct simpleQueryParams
   /* Non-zero to use chunked encoding for request body */
   int chunked;
 
-  /* Max size of data for single 'send()' call */
-  size_t step_size;
-
-  /* Limit for total amount of sent data */
-  size_t total_send_max;
-
   /* HTTP query result error flag */
   volatile int queryError;
 
@@ -1311,7 +1309,7 @@ doClientQueryInThread (struct MHD_Daemon *d,
   c = _MHD_dumbClient_create (p->queryPort, p->method, p->queryPath,
                               p->headers, p->req_body, p->req_body_size,
                               p->chunked);
-  _MHD_dumbClient_set_send_limits (c, p->step_size, p->total_send_max);
+  _MHD_dumbClient_set_send_limits (c, 1, 0);
 
   /* 'internal' polling should not be used in this test */
   mhd_assert (use_external_poll);
@@ -1347,7 +1345,6 @@ performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
   qParam.req_body = (const uint8_t *) REQ_BODY;
   qParam.req_body_size = MHD_STATICSTR_LEN_ (REQ_BODY);
   qParam.chunked = 0;
-  qParam.step_size = 0;
 
   ahc_param->rq_url = EXPECTED_URI_BASE_PATH;
   ahc_param->rq_method = MHD_HTTP_METHOD_PUT;
