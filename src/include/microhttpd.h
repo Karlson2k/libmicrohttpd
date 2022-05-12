@@ -4374,7 +4374,7 @@ enum MHD_DigestAuthAlgorithm
  *      invalid in seconds
  * @param algo digest algorithms allowed for verification
  * @return #MHD_YES if authenticated, #MHD_NO if not,
- *      #MHD_INVALID_NONCE if nonce is invalid
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
  * @note Available since #MHD_VERSION 0x00096200
  * @ingroup authentication
  */
@@ -4401,7 +4401,7 @@ MHD_digest_auth_check2 (struct MHD_Connection *connection,
  * @param nonce_timeout The amount of time for a nonce to be
  *      invalid in seconds
  * @return #MHD_YES if authenticated, #MHD_NO if not,
- *      #MHD_INVALID_NONCE if nonce is invalid
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
  * @ingroup authentication
  * @deprecated use MHD_digest_auth_check2()
  */
@@ -4427,7 +4427,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  *      invalid in seconds
  * @param algo digest algorithms allowed for verification
  * @return #MHD_YES if authenticated, #MHD_NO if not,
- *      #MHD_INVALID_NONCE if nonce is invalid
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
  * @note Available since #MHD_VERSION 0x00096200
  * @ingroup authentication
  */
@@ -4455,7 +4455,7 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
  * @param nonce_timeout The amount of time for a nonce to be
  *      invalid in seconds
  * @return #MHD_YES if authenticated, #MHD_NO if not,
- *      #MHD_INVALID_NONCE if nonce is invalid
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
  * @note Available since #MHD_VERSION 0x00096000
  * @ingroup authentication
  * @deprecated use #MHD_digest_auth_check_digest2()

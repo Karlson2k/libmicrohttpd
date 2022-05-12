@@ -147,6 +147,63 @@
  */
 #define _MHD_SESS_TOKEN "-sess"
 
+
+/**
+ * The result of digest authentication of the client.
+ */
+enum MHD_DigestAuthResult
+{
+  /**
+   * Authentication OK
+   */
+  MHD_DAUTH_OK = 1,
+
+  /**
+   * General error, like "out of memory"
+   */
+  MHD_DAUTH_ERROR = 0,
+
+  /**
+   * No "Authorization" header or wrong format of the header.
+   */
+  MHD_DAUTH_WRONG_HEADER = -1,
+
+  /**
+   * Wrong 'username'.
+   */
+  MHD_DAUTH_WRONG_USERNAME = -2,
+
+  /**
+   * Wrong 'realm'.
+   */
+  MHD_DAUTH_WRONG_REALM = -3,
+
+  /**
+   * Wrong 'URI' (or URI parameters).
+   */
+  MHD_DAUTH_WRONG_URI = -4,
+
+  /* The different form of naming is intentionally used for the results below,
+   * as they are more important */
+
+  /**
+   * The 'nonce' is too old. Suggest the client to retry with the same
+   * username and password to get the fresh 'nonce'.
+   * The validity of the 'nonce' may not be checked.
+   */
+  MHD_DAUTH_NONCE_STALE = -16,
+
+  /**
+   * The 'nonce' is wrong. May indicate an attack attempt.
+   */
+  MHD_DAUTH_NONCE_WRONG = -32,
+
+  /**
+   * The 'response' is wrong. May indicate an attack attempt.
+   */
+  MHD_DAUTH_RESPONSE_WRONG = -33,
+};
+
 /**
  * Context passed to functions that need to calculate
  * a digest but are orthogonal to the specific
@@ -1129,11 +1186,11 @@ check_argument_match (struct MHD_Connection *connection,
  *     (must contain "da->digest_size" bytes or be NULL)
  * @param nonce_timeout The amount of time for a nonce to be
  *      invalid in seconds
- * @return #MHD_YES if authenticated, #MHD_NO if not,
- *      #MHD_INVALID_NONCE if nonce is invalid
+ * @return #MHD_DAUTH_OK if authenticated,
+ *         error code otherwise.
  * @ingroup authentication
  */
-static int
+static enum MHD_DigestAuthResult
 digest_auth_check_all (struct MHD_Connection *connection,
                        struct DigestAlgorithm *da,
                        const char *realm,
@@ -1169,14 +1226,15 @@ digest_auth_check_all (struct MHD_Connection *connection,
                                                  MHD_HTTP_HEADER_AUTHORIZATION),
                                                &header,
                                                NULL))
-    return MHD_NO;
+    return MHD_DAUTH_WRONG_HEADER;
   if (0 != strncmp (header,
                     _BASE,
                     MHD_STATICSTR_LEN_ (_BASE)))
-    return MHD_NO;
+    return MHD_DAUTH_WRONG_HEADER;
   header += MHD_STATICSTR_LEN_ (_BASE);
   left = strlen (header);
 
+  if (1)
   {
     char un[MAX_USERNAME_LENGTH];
 
@@ -1184,13 +1242,15 @@ digest_auth_check_all (struct MHD_Connection *connection,
                             sizeof (un),
                             header,
                             "username");
-    if ( (0 == len) ||
-         (0 != strcmp (username,
-                       un)) )
-      return MHD_NO;
+    if (0 == len)
+      return MHD_DAUTH_WRONG_HEADER;
+    if (0 != strcmp (username,
+                     un))
+      return MHD_DAUTH_WRONG_USERNAME;
     left -= strlen ("username") + len;
   }
 
+  if (1)
   {
     char r[MAX_REALM_LENGTH];
 
@@ -1198,10 +1258,11 @@ digest_auth_check_all (struct MHD_Connection *connection,
                             sizeof (r),
                             header,
                             "realm");
-    if ( (0 == len) ||
-         (0 != strcmp (realm,
-                       r)) )
-      return MHD_NO;
+    if (0 == len)
+      return MHD_DAUTH_WRONG_HEADER;
+    if (0 != strcmp (realm,
+                     r))
+      return MHD_DAUTH_WRONG_REALM;
     left -= strlen ("realm") + len;
   }
 
@@ -1209,7 +1270,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
                                     sizeof (nonce),
                                     header,
                                     "nonce")))
-    return MHD_NO;
+    return MHD_DAUTH_WRONG_HEADER;
   nonce_len = len;
   left -= strlen ("nonce") + len;
   if (left > 32 * 1024)
@@ -1221,7 +1282,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
        #MHD_OPTION_CONNECTION_MEMORY_LIMIT might be very large
        and would thus permit sending a >32k authorization
        header value. */
-    return MHD_NO;
+    return MHD_DAUTH_WRONG_HEADER;
   }
   if (! get_nonce_timestamp (nonce, nonce_len, &nonce_time))
   {
@@ -1229,7 +1290,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
     MHD_DLOG (daemon,
               _ ("Authentication failed, invalid timestamp format.\n"));
 #endif
-    return MHD_NO;
+    return MHD_DAUTH_WRONG_HEADER;
   }
 
   t = MHD_monotonic_msec_counter ();
@@ -1241,7 +1302,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
   if (TRIM_TO_TIMESTAMP (t - nonce_time) > (nonce_timeout * 1000))
   {
     /* too old */
-    return MHD_INVALID_NONCE;
+    return MHD_DAUTH_NONCE_STALE;
   }
 
   calculate_nonce (nonce_time,
@@ -1264,7 +1325,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
   if (0 != strcmp (nonce,
                    noncehashexp))
   {
-    return MHD_INVALID_NONCE;
+    return MHD_DAUTH_NONCE_WRONG;
   }
   if ( (0 == lookup_sub_value (cnonce,
                                sizeof (cnonce),
@@ -1291,7 +1352,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
     MHD_DLOG (daemon,
               _ ("Authentication failed, invalid format.\n"));
 #endif
-    return MHD_NO;
+    return MHD_DAUTH_WRONG_HEADER;
   }
   if (len != MHD_strx_to_uint64_n_ (nc,
                                     len,
@@ -1301,7 +1362,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
     MHD_DLOG (daemon,
               _ ("Authentication failed, invalid nc format.\n"));
 #endif
-    return MHD_NO;   /* invalid nonce format */
+    return MHD_DAUTH_WRONG_HEADER;   /* invalid nonce format */
   }
   if (0 == nci)
   {
@@ -1309,7 +1370,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
     MHD_DLOG (daemon,
               _ ("Authentication failed, invalid 'nc' value.\n"));
 #endif
-    return MHD_NO;   /* invalid nc value */
+    return MHD_DAUTH_WRONG_HEADER;   /* invalid nc value */
   }
 
   /*
@@ -1322,9 +1383,10 @@ digest_auth_check_all (struct MHD_Connection *connection,
                         nonce_len,
                         nci))
   {
-    return MHD_NO;
+    return MHD_DAUTH_NONCE_STALE;
   }
 
+  if (1)
   {
     char *uri;
 
@@ -1335,7 +1397,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
       MHD_DLOG (daemon,
                 _ ("Failed to allocate memory for auth header processing.\n"));
 #endif /* HAVE_MESSAGES */
-      return MHD_NO;
+      return MHD_DAUTH_ERROR;
     }
     if (0 == lookup_sub_value (uri,
                                left + 1,
@@ -1343,7 +1405,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
                                "uri"))
     {
       free (uri);
-      return MHD_NO;
+      return MHD_DAUTH_WRONG_HEADER;
     }
     if (NULL != digest)
     {
@@ -1396,9 +1458,10 @@ digest_auth_check_all (struct MHD_Connection *connection,
                 _ ("Authentication failed, URI does not match.\n"));
 #endif
       free (uri);
-      return MHD_NO;
+      return MHD_DAUTH_WRONG_URI;
     }
 
+    if (1)
     {
       const char *args = qmark;
 
@@ -1415,15 +1478,15 @@ digest_auth_check_all (struct MHD_Connection *connection,
                   _ ("Authentication failed, arguments do not match.\n"));
 #endif
         free (uri);
-        return MHD_NO;
+        return MHD_DAUTH_WRONG_URI;
       }
     }
     free (uri);
-    return (0 == strcmp (response,
-                         da->sessionkey))
-           ? MHD_YES
-           : MHD_NO;
   }
+  return (0 == strcmp (response,
+                       da->sessionkey))
+         ? MHD_DAUTH_OK
+         : MHD_DAUTH_RESPONSE_WRONG;
 }
 
 
@@ -1441,7 +1504,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
  * @param nonce_timeout The amount of time for a nonce to be
  *      invalid in seconds
  * @return #MHD_YES if authenticated, #MHD_NO if not,
- *      #MHD_INVALID_NONCE if nonce is invalid
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
  * @ingroup authentication
  */
 _MHD_EXTERN int
@@ -1520,7 +1583,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  *      invalid in seconds
  * @param algo digest algorithms allowed for verification
  * @return #MHD_YES if authenticated, #MHD_NO if not,
- *      #MHD_INVALID_NONCE if nonce is invalid
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
  * @ingroup authentication
  */
 _MHD_EXTERN int
@@ -1531,18 +1594,25 @@ MHD_digest_auth_check2 (struct MHD_Connection *connection,
                         unsigned int nonce_timeout,
                         enum MHD_DigestAuthAlgorithm algo)
 {
+  enum MHD_DigestAuthResult res;
   SETUP_DA (algo, da);
 
   mhd_assert (NULL != password);
   if (0 == da.digest_size)
     MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */
-  return digest_auth_check_all (connection,
-                                &da,
-                                realm,
-                                username,
-                                password,
-                                NULL,
-                                nonce_timeout);
+  res = digest_auth_check_all (connection,
+                               &da,
+                               realm,
+                               username,
+                               password,
+                               NULL,
+                               nonce_timeout);
+  if (MHD_DAUTH_OK == res)
+    return MHD_YES;
+  else if ((MHD_DAUTH_NONCE_STALE == res) || (MHD_DAUTH_NONCE_WRONG == res))
+    return MHD_INVALID_NONCE;
+  return MHD_NO;
+
 }
 
 
@@ -1560,7 +1630,7 @@ MHD_digest_auth_check2 (struct MHD_Connection *connection,
  *      invalid in seconds
  * @param algo digest algorithms allowed for verification
  * @return #MHD_YES if authenticated, #MHD_NO if not,
- *      #MHD_INVALID_NONCE if nonce is invalid
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
  * @ingroup authentication
  */
 _MHD_EXTERN int
@@ -1572,18 +1642,24 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
                                unsigned int nonce_timeout,
                                enum MHD_DigestAuthAlgorithm algo)
 {
+  enum MHD_DigestAuthResult res;
   SETUP_DA (algo, da);
 
   mhd_assert (NULL != digest);
   if ((da.digest_size != digest_size) || (0 == digest_size))
     MHD_PANIC (_ ("Digest size mismatch.\n")); /* API violation! */
-  return digest_auth_check_all (connection,
-                                &da,
-                                realm,
-                                username,
-                                NULL,
-                                digest,
-                                nonce_timeout);
+  res = digest_auth_check_all (connection,
+                               &da,
+                               realm,
+                               username,
+                               NULL,
+                               digest,
+                               nonce_timeout);
+  if (MHD_DAUTH_OK == res)
+    return MHD_YES;
+  else if ((MHD_DAUTH_NONCE_STALE == res) || (MHD_DAUTH_NONCE_WRONG == res))
+    return MHD_INVALID_NONCE;
+  return MHD_NO;
 }
 
 
@@ -1601,7 +1677,7 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
  * @param nonce_timeout The amount of time for a nonce to be
  *      invalid in seconds
  * @return #MHD_YES if authenticated, #MHD_NO if not,
- *      #MHD_INVALID_NONCE if nonce is invalid
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
  * @ingroup authentication
  */
 _MHD_EXTERN int
