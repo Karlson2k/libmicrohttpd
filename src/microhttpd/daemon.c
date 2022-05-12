@@ -7294,19 +7294,6 @@ MHD_start_daemon_va (unsigned int flags,
       MHD_socket_close_chk_ (listen_fd);
     goto free_and_fail;
   }
-  if (! MHD_mutex_init_ (&daemon->cleanup_connection_mutex))
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("MHD failed to initialize IP connection limit mutex.\n"));
-#endif
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-    MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
-#endif
-    if (MHD_INVALID_SOCKET != listen_fd)
-      MHD_socket_close_chk_ (listen_fd);
-    goto free_and_fail;
-  }
 #endif
 
 #ifdef HTTPS_SUPPORT
@@ -7321,7 +7308,6 @@ MHD_start_daemon_va (unsigned int flags,
     if (MHD_INVALID_SOCKET != listen_fd)
       MHD_socket_close_chk_ (listen_fd);
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-    MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
     MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
 #endif
     goto free_and_fail;
@@ -7345,14 +7331,25 @@ MHD_start_daemon_va (unsigned int flags,
 #endif /* ! HAVE_LISTEN_SHUTDOWN */
     if (0 == daemon->worker_pool_size)
     {
+      if (! MHD_mutex_init_ (&daemon->cleanup_connection_mutex))
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  _ ("Failed to initialise internal lists mutex.\n"));
+#endif
+        MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
+        if (MHD_INVALID_SOCKET != listen_fd)
+          MHD_socket_close_chk_ (listen_fd);
+        goto free_and_fail;
+      }
       if (! MHD_mutex_init_ (&daemon->new_connections_mutex))
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
                   _ ("Failed to initialise mutex.\n"));
 #endif
-        MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
         MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
+        MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
         if (MHD_INVALID_SOCKET != listen_fd)
           MHD_socket_close_chk_ (listen_fd);
         goto free_and_fail;
@@ -7379,8 +7376,8 @@ MHD_start_daemon_va (unsigned int flags,
                   MHD_strerror_ (errno));
 #endif /* HAVE_MESSAGES */
         MHD_mutex_destroy_chk_ (&daemon->new_connections_mutex);
-        MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
         MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
+        MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
         if (MHD_INVALID_SOCKET != listen_fd)
           MHD_socket_close_chk_ (listen_fd);
         goto free_and_fail;
@@ -7418,12 +7415,21 @@ MHD_start_daemon_va (unsigned int flags,
         d->master = daemon;
         d->worker_pool_size = 0;
         d->worker_pool = NULL;
+        if (! MHD_mutex_init_ (&d->cleanup_connection_mutex))
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    _ ("Failed to initialise internal lists mutex.\n"));
+#endif
+          goto thread_failed;
+        }
         if (! MHD_mutex_init_ (&d->new_connections_mutex))
         {
-  #ifdef HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
                     _ ("Failed to initialise mutex.\n"));
-  #endif
+#endif
+          MHD_mutex_destroy_chk_ (&d->cleanup_connection_mutex);
           goto thread_failed;
         }
         if (0 != (*pflags & MHD_USE_ITC))
@@ -7437,6 +7443,7 @@ MHD_start_daemon_va (unsigned int flags,
                       MHD_itc_last_strerror_ () );
 #endif
             MHD_mutex_destroy_chk_ (&d->new_connections_mutex);
+            MHD_mutex_destroy_chk_ (&d->cleanup_connection_mutex);
             goto thread_failed;
           }
           if ( (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
@@ -7448,8 +7455,9 @@ MHD_start_daemon_va (unsigned int flags,
                       _ (
                         "File descriptor for worker inter-thread communication channel exceeds maximum value.\n"));
 #endif
-            MHD_mutex_destroy_chk_ (&d->new_connections_mutex);
             MHD_itc_destroy_chk_ (d->itc);
+            MHD_mutex_destroy_chk_ (&d->new_connections_mutex);
+            MHD_mutex_destroy_chk_ (&d->cleanup_connection_mutex);
             goto thread_failed;
           }
         }
@@ -7476,21 +7484,10 @@ MHD_start_daemon_va (unsigned int flags,
           if (MHD_ITC_IS_VALID_ (d->itc))
             MHD_itc_destroy_chk_ (d->itc);
           MHD_mutex_destroy_chk_ (&d->new_connections_mutex);
+          MHD_mutex_destroy_chk_ (&d->cleanup_connection_mutex);
           goto thread_failed;
         }
 #endif
-        /* Must init cleanup connection mutex for each worker */
-        if (! MHD_mutex_init_ (&d->cleanup_connection_mutex))
-        {
-#ifdef HAVE_MESSAGES
-          MHD_DLOG (daemon,
-                    _ ("MHD failed to initialize cleanup connection mutex.\n"));
-#endif
-          if (MHD_ITC_IS_VALID_ (d->itc))
-            MHD_itc_destroy_chk_ (d->itc);
-          MHD_mutex_destroy_chk_ (&d->new_connections_mutex);
-          goto thread_failed;
-        }
         /* Some members must be used only in master daemon */
 #if defined(MHD_USE_THREADS)
         memset (&d->per_ip_connection_mutex, 1,
@@ -7530,6 +7527,7 @@ MHD_start_daemon_va (unsigned int flags,
           if (MHD_ITC_IS_VALID_ (d->itc))
             MHD_itc_destroy_chk_ (d->itc);
           MHD_mutex_destroy_chk_ (&d->new_connections_mutex);
+          MHD_mutex_destroy_chk_ (&d->cleanup_connection_mutex);
           goto thread_failed;
         }
       }
@@ -7537,12 +7535,27 @@ MHD_start_daemon_va (unsigned int flags,
   }
   else
   { /* Daemon without internal threads */
+    if (! MHD_mutex_init_ (&daemon->cleanup_connection_mutex))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Failed to initialise internal lists mutex.\n"));
+#endif
+      MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
+      if (MHD_INVALID_SOCKET != listen_fd)
+        MHD_socket_close_chk_ (listen_fd);
+      goto free_and_fail;
+    }
     if (! MHD_mutex_init_ (&daemon->new_connections_mutex))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ ("Failed to initialise mutex.\n"));
 #endif
+      MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
+      MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
+      if (MHD_INVALID_SOCKET != listen_fd)
+        MHD_socket_close_chk_ (listen_fd);
       goto free_and_fail;
     }
   }
@@ -7939,16 +7952,12 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
         MHD_PANIC (_ ("Failed to join a thread.\n"));
       }
       /* close_all_connections() was called in daemon thread. */
-      MHD_mutex_destroy_chk_ (&daemon->new_connections_mutex);
     }
     else
 #endif
     {
       /* No internal threads are used for polling sockets. */
       close_all_connections (daemon);
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-      MHD_mutex_destroy_chk_ (&daemon->new_connections_mutex);
-#endif /* MHD_USE_POSIX_THREADS || MHD_USE_W32_THREADS */
     }
     mhd_assert (NULL == daemon->connections_head);
     mhd_assert (NULL == daemon->cleanup_head);
@@ -7974,6 +7983,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
     MHD_mutex_destroy_chk_ (&daemon->cleanup_connection_mutex);
+    MHD_mutex_destroy_chk_ (&daemon->new_connections_mutex);
 #endif
   }
 
