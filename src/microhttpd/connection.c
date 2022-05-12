@@ -3714,6 +3714,9 @@ void
 MHD_update_last_activity_ (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
+#if defined(MHD_USE_THREADS)
+  mhd_assert (NULL == daemon->worker_pool);
+#endif /* MHD_USE_THREADS */
 
   if (0 == connection->connection_timeout_ms)
     return;  /* Skip update of activity for connections
@@ -4307,6 +4310,7 @@ cleanup_connection (struct MHD_Connection *connection)
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (connection->pid) );
+  mhd_assert (NULL == daemon->worker_pool);
 #endif /* MHD_USE_THREADS */
 
   if (connection->in_cleanup)

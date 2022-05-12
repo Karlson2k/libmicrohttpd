@@ -2732,6 +2732,7 @@ new_connection_process_ (struct MHD_Daemon *daemon,
    * must be called only within daemon thread. */
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (daemon->pid) );
+  mhd_assert (NULL == daemon->worker_pool);
 #endif /* MHD_USE_THREADS */
 
   /* Allocate memory pool in the processing thread so
@@ -3079,6 +3080,7 @@ void
 internal_suspend_connection_ (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
+  mhd_assert (NULL == daemon->worker_pool);
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
@@ -3223,6 +3225,9 @@ _MHD_EXTERN void
 MHD_resume_connection (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
+#if defined(MHD_USE_THREADS)
+  mhd_assert (NULL == daemon->worker_pool);
+#endif /* MHD_USE_THREADS */
 
   if (0 == (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
     MHD_PANIC (_ (
@@ -3599,6 +3604,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (daemon->pid) );
+  mhd_assert (NULL == daemon->worker_pool);
 #endif /* MHD_USE_THREADS */
 
   addrlen = sizeof (addrstorage);
@@ -3779,6 +3785,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (daemon->pid) );
+  mhd_assert (NULL == daemon->worker_pool);
 
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 #endif
@@ -5497,6 +5504,7 @@ close_connection (struct MHD_Connection *pos)
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (daemon->pid) );
+  mhd_assert (NULL == daemon->worker_pool);
 #endif /* MHD_USE_THREADS */
 
   if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
