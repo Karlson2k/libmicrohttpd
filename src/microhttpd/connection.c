@@ -5107,21 +5107,6 @@ MHD_set_connection_option (struct MHD_Connection *connection,
   case MHD_CONNECTION_OPTION_TIMEOUT:
     if (0 == connection->connection_timeout_ms)
       connection->last_activity = MHD_monotonic_msec_counter ();
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-    MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
-#endif
-    if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-         (! connection->suspended) )
-    {
-      if (connection->connection_timeout_ms == daemon->connection_timeout_ms)
-        XDLL_remove (daemon->normal_timeout_head,
-                     daemon->normal_timeout_tail,
-                     connection);
-      else
-        XDLL_remove (daemon->manual_timeout_head,
-                     daemon->manual_timeout_tail,
-                     connection);
-    }
     va_start (ap, option);
     ui_val = va_arg (ap, unsigned int);
     va_end (ap);
@@ -5138,24 +5123,36 @@ MHD_set_connection_option (struct MHD_Connection *connection,
 #endif
       ui_val = UINT64_MAX / 4000 - 1;
     }
-    else
 #endif /* (SIZEOF_UINT64_T - 2) <= SIZEOF_UNSIGNED_INT */
-    connection->connection_timeout_ms = ui_val * 1000;
-    if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-         (! connection->suspended) )
+    if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     {
-      if (connection->connection_timeout_ms == daemon->connection_timeout_ms)
-        XDLL_insert (daemon->normal_timeout_head,
-                     daemon->normal_timeout_tail,
-                     connection);
-      else
-        XDLL_insert (daemon->manual_timeout_head,
-                     daemon->manual_timeout_tail,
-                     connection);
-    }
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-    MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+#if defined(MHD_USE_THREADS)
+      MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 #endif
+      if (! connection->suspended)
+      {
+        if (connection->connection_timeout_ms == daemon->connection_timeout_ms)
+          XDLL_remove (daemon->normal_timeout_head,
+                       daemon->normal_timeout_tail,
+                       connection);
+        else
+          XDLL_remove (daemon->manual_timeout_head,
+                       daemon->manual_timeout_tail,
+                       connection);
+        connection->connection_timeout_ms = ui_val * 1000;
+        if (connection->connection_timeout_ms == daemon->connection_timeout_ms)
+          XDLL_insert (daemon->normal_timeout_head,
+                       daemon->normal_timeout_tail,
+                       connection);
+        else
+          XDLL_insert (daemon->manual_timeout_head,
+                       daemon->manual_timeout_tail,
+                       connection);
+      }
+#if defined(MHD_USE_THREADS)
+      MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+#endif
+    }
     return MHD_YES;
   default:
     return MHD_NO;
