@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2010, 2011, 2012, 2015, 2018 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -22,6 +23,7 @@
  * @author Amr Ali
  * @author Matthieu Speder
  * @author Christian Grothoff (RFC 7616 support)
+ * @author Karlson2k (Evgeny Grin)
  */
 #include "platform.h"
 #include "mhd_limits.h"
@@ -152,63 +154,6 @@
  * The postfix token for "session" algorithms.
  */
 #define _MHD_SESS_TOKEN "-sess"
-
-
-/**
- * The result of digest authentication of the client.
- */
-enum MHD_DigestAuthResult
-{
-  /**
-   * Authentication OK
-   */
-  MHD_DAUTH_OK = 1,
-
-  /**
-   * General error, like "out of memory"
-   */
-  MHD_DAUTH_ERROR = 0,
-
-  /**
-   * No "Authorization" header or wrong format of the header.
-   */
-  MHD_DAUTH_WRONG_HEADER = -1,
-
-  /**
-   * Wrong 'username'.
-   */
-  MHD_DAUTH_WRONG_USERNAME = -2,
-
-  /**
-   * Wrong 'realm'.
-   */
-  MHD_DAUTH_WRONG_REALM = -3,
-
-  /**
-   * Wrong 'URI' (or URI parameters).
-   */
-  MHD_DAUTH_WRONG_URI = -4,
-
-  /* The different form of naming is intentionally used for the results below,
-   * as they are more important */
-
-  /**
-   * The 'nonce' is too old. Suggest the client to retry with the same
-   * username and password to get the fresh 'nonce'.
-   * The validity of the 'nonce' may not be checked.
-   */
-  MHD_DAUTH_NONCE_STALE = -16,
-
-  /**
-   * The 'nonce' is wrong. May indicate an attack attempt.
-   */
-  MHD_DAUTH_NONCE_WRONG = -32,
-
-  /**
-   * The 'response' is wrong. May indicate an attack attempt.
-   */
-  MHD_DAUTH_RESPONSE_WRONG = -33,
-};
 
 /**
  * The result of nonce-nc map array check.
@@ -1586,7 +1531,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
  * Authenticates the authorization header sent by the client.
  * Uses #MHD_DIGEST_ALG_MD5 (for now, for backwards-compatibility).
  * Note that this MAY change to #MHD_DIGEST_ALG_AUTO in the future.
- * If you want to be sure you get MD5, use #MHD_digest_auth_check2
+ * If you want to be sure you get MD5, use #MHD_digest_auth_check2()
  * and specify MD5 explicitly.
  *
  * @param connection The MHD connection structure
@@ -1597,6 +1542,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
  *      invalid in seconds
  * @return #MHD_YES if authenticated, #MHD_NO if not,
  *         #MHD_INVALID_NONCE if nonce is invalid or stale
+ * @deprecated use MHD_digest_auth_check3()
  * @ingroup authentication
  */
 _MHD_EXTERN int
@@ -1667,6 +1613,86 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 /**
  * Authenticates the authorization header sent by the client.
  *
+ * @param connection the MHD connection structure
+ * @param realm the realm to be used for authorization of the client
+ * @param username the username needs to be authenticated
+ * @param password the password used in the authentication
+ * @param nonce_timeout the nonce validity duration in seconds
+ * @param algo the digest algorithms allowed for verification
+ * @return #MHD_DAUTH_OK if authenticated,
+ *         the error code otherwise
+ * @note Available since #MHD_VERSION 0x00097513
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_DigestAuthResult
+MHD_digest_auth_check3 (struct MHD_Connection *connection,
+                        const char *realm,
+                        const char *username,
+                        const char *password,
+                        unsigned int nonce_timeout,
+                        enum MHD_DigestAuthAlgorithm algo)
+{
+  SETUP_DA (algo, da);
+
+  mhd_assert (NULL != password);
+  if (0 == da.digest_size)
+    MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */
+
+  return digest_auth_check_all (connection,
+                                &da,
+                                realm,
+                                username,
+                                password,
+                                NULL,
+                                nonce_timeout);
+}
+
+
+/**
+ * Authenticates the authorization header sent by the client.
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm to be used for authorization of the client
+ * @param username the username needs to be authenticated
+ * @param digest the pointer to the binary digest for the precalculated hash
+ *        value "username:realm:password" with specified @a algo
+ * @param digest_size the number of bytes in @a digest (the size must match
+ *        @a algo!)
+ * @param nonce_timeout the nonce validity duration in seconds
+ * @param algo digest algorithms allowed for verification
+ * @return #MHD_DAUTH_OK if authenticated,
+ *         the error code otherwise
+ * @note Available since #MHD_VERSION 0x00097513
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_DigestAuthResult
+MHD_digest_auth_check_digest3 (struct MHD_Connection *connection,
+                               const char *realm,
+                               const char *username,
+                               const uint8_t *digest,
+                               size_t digest_size,
+                               unsigned int nonce_timeout,
+                               enum MHD_DigestAuthAlgorithm algo)
+{
+  SETUP_DA (algo, da);
+
+  mhd_assert (NULL != digest);
+  if ((da.digest_size != digest_size) || (0 == digest_size))
+    MHD_PANIC (_ ("Digest size mismatch.\n")); /* API violation! */
+
+  return digest_auth_check_all (connection,
+                                &da,
+                                realm,
+                                username,
+                                NULL,
+                                digest,
+                                nonce_timeout);
+}
+
+
+/**
+ * Authenticates the authorization header sent by the client.
+ *
  * @param connection The MHD connection structure
  * @param realm The realm presented to the client
  * @param username The username needs to be authenticated
@@ -1676,6 +1702,8 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  * @param algo digest algorithms allowed for verification
  * @return #MHD_YES if authenticated, #MHD_NO if not,
  *         #MHD_INVALID_NONCE if nonce is invalid or stale
+ * @note Available since #MHD_VERSION 0x00096200
+ * @deprecated use MHD_digest_auth_check3()
  * @ingroup authentication
  */
 _MHD_EXTERN int
@@ -1687,18 +1715,12 @@ MHD_digest_auth_check2 (struct MHD_Connection *connection,
                         enum MHD_DigestAuthAlgorithm algo)
 {
   enum MHD_DigestAuthResult res;
-  SETUP_DA (algo, da);
-
-  mhd_assert (NULL != password);
-  if (0 == da.digest_size)
-    MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */
-  res = digest_auth_check_all (connection,
-                               &da,
-                               realm,
-                               username,
-                               password,
-                               NULL,
-                               nonce_timeout);
+  res = MHD_digest_auth_check3 (connection,
+                                realm,
+                                username,
+                                password,
+                                nonce_timeout,
+                                algo);
   if (MHD_DAUTH_OK == res)
     return MHD_YES;
   else if ((MHD_DAUTH_NONCE_STALE == res) || (MHD_DAUTH_NONCE_WRONG == res))
@@ -1716,13 +1738,15 @@ MHD_digest_auth_check2 (struct MHD_Connection *connection,
  * @param username The username needs to be authenticated
  * @param digest An `unsigned char *' pointer to the binary MD5 sum
  *      for the precalculated hash value "username:realm:password"
- *      of #MHD_MD5_DIGEST_SIZE bytes
- * @param digest_size number of bytes in @a digest
+ *      of @a digest_size bytes
+ * @param digest_size number of bytes in @a digest (size must match @a algo!)
  * @param nonce_timeout The amount of time for a nonce to be
  *      invalid in seconds
  * @param algo digest algorithms allowed for verification
  * @return #MHD_YES if authenticated, #MHD_NO if not,
  *         #MHD_INVALID_NONCE if nonce is invalid or stale
+ * @note Available since #MHD_VERSION 0x00096200
+ * @deprecated use MHD_digest_auth_check_digest3()
  * @ingroup authentication
  */
 _MHD_EXTERN int
@@ -1735,18 +1759,14 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
                                enum MHD_DigestAuthAlgorithm algo)
 {
   enum MHD_DigestAuthResult res;
-  SETUP_DA (algo, da);
 
-  mhd_assert (NULL != digest);
-  if ((da.digest_size != digest_size) || (0 == digest_size))
-    MHD_PANIC (_ ("Digest size mismatch.\n")); /* API violation! */
-  res = digest_auth_check_all (connection,
-                               &da,
-                               realm,
-                               username,
-                               NULL,
-                               digest,
-                               nonce_timeout);
+  res = MHD_digest_auth_check_digest3 (connection,
+                                       realm,
+                                       username,
+                                       digest,
+                                       digest_size,
+                                       nonce_timeout,
+                                       algo);
   if (MHD_DAUTH_OK == res)
     return MHD_YES;
   else if ((MHD_DAUTH_NONCE_STALE == res) || (MHD_DAUTH_NONCE_WRONG == res))
@@ -1756,20 +1776,22 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
 
 
 /**
- * Authenticates the authorization header sent by the client.
+ * Authenticates the authorization header sent by the client
  * Uses #MHD_DIGEST_ALG_MD5 (required, as @a digest is of fixed
  * size).
  *
  * @param connection The MHD connection structure
  * @param realm The realm presented to the client
  * @param username The username needs to be authenticated
- * @param digest An `unsigned char *' pointer to the binary digest
- *      for the precalculated hash value "username:realm:password"
- *      of @a digest_size bytes
+ * @param digest An `unsigned char *' pointer to the binary hash
+ *    for the precalculated hash value "username:realm:password";
+ *    length must be #MHD_MD5_DIGEST_SIZE bytes
  * @param nonce_timeout The amount of time for a nonce to be
  *      invalid in seconds
  * @return #MHD_YES if authenticated, #MHD_NO if not,
  *         #MHD_INVALID_NONCE if nonce is invalid or stale
+ * @note Available since #MHD_VERSION 0x00096000
+ * @deprecated use #MHD_digest_auth_check_digest3()
  * @ingroup authentication
  */
 _MHD_EXTERN int
@@ -1798,8 +1820,8 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  * @param response reply to send; should contain the "access denied"
  *        body; note that this function will set the "WWW Authenticate"
  *        header and that the caller should not do this; the NULL is tolerated
- * @param signal_stale #MHD_YES if the nonce is invalid to add
- *      'stale=true' to the authentication header
+ * @param signal_stale #MHD_YES if the nonce is stale to add
+ *        'stale=true' to the authentication header
  * @param algo digest algorithm to use
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @note Available since #MHD_VERSION 0x00096200
@@ -1928,9 +1950,9 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
  * @param opaque string to user for opaque value
  * @param response reply to send; should contain the "access denied"
  *        body; note that this function will set the "WWW Authenticate"
- *        header and that the caller should not do this
- * @param signal_stale #MHD_YES if the nonce is invalid to add
- *      'stale=true' to the authentication header
+ *        header and that the caller should not do this; the NULL is tolerated
+ * @param signal_stale #MHD_YES if the nonce is stale to add
+ *        'stale=true' to the authentication header
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
  * @deprecated use MHD_queue_auth_fail_response2()

@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097512
+#define MHD_VERSION 0x00097513
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4364,6 +4364,115 @@ enum MHD_DigestAuthAlgorithm
 
 
 /**
+ * The result of digest authentication of the client.
+ *
+ * @note Available since #MHD_VERSION 0x00097513
+ */
+enum MHD_DigestAuthResult
+{
+  /**
+   * Authentication OK.
+   */
+  MHD_DAUTH_OK = 1,
+
+  /**
+   * General error, like "out of memory".
+   */
+  MHD_DAUTH_ERROR = 0,
+
+  /**
+   * No "Authorization" header or wrong format of the header.
+   */
+  MHD_DAUTH_WRONG_HEADER = -1,
+
+  /**
+   * Wrong 'username'.
+   */
+  MHD_DAUTH_WRONG_USERNAME = -2,
+
+  /**
+   * Wrong 'realm'.
+   */
+  MHD_DAUTH_WRONG_REALM = -3,
+
+  /**
+   * Wrong 'URI' (or URI parameters).
+   */
+  MHD_DAUTH_WRONG_URI = -4,
+
+  /* The different form of naming is intentionally used for the results below,
+   * as they are more important */
+
+  /**
+   * The 'nonce' is too old. Suggest the client to retry with the same
+   * username and password to get the fresh 'nonce'.
+   * The validity of the 'nonce' may not be checked.
+   */
+  MHD_DAUTH_NONCE_STALE = -16,
+
+  /**
+   * The 'nonce' is wrong. May indicate an attack attempt.
+   */
+  MHD_DAUTH_NONCE_WRONG = -32,
+
+  /**
+   * The 'response' is wrong. May indicate an attack attempt.
+   */
+  MHD_DAUTH_RESPONSE_WRONG = -33,
+};
+
+
+/**
+ * Authenticates the authorization header sent by the client.
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm to be used for authorization of the client
+ * @param username the username needs to be authenticated
+ * @param password the password used in the authentication
+ * @param nonce_timeout the nonce validity duration in seconds
+ * @param algo the digest algorithms allowed for verification
+ * @return #MHD_DAUTH_OK if authenticated,
+ *         the error code otherwise
+ * @note Available since #MHD_VERSION 0x00097513
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_DigestAuthResult
+MHD_digest_auth_check3 (struct MHD_Connection *connection,
+                        const char *realm,
+                        const char *username,
+                        const char *password,
+                        unsigned int nonce_timeout,
+                        enum MHD_DigestAuthAlgorithm algo);
+
+
+/**
+ * Authenticates the authorization header sent by the client.
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm to be used for authorization of the client
+ * @param username the username needs to be authenticated
+ * @param digest the pointer to the binary digest for the precalculated hash
+ *        value "username:realm:password" with specified @a algo
+ * @param digest_size the number of bytes in @a digest (the size must match
+ *        @a algo!)
+ * @param nonce_timeout the nonce validity duration in seconds
+ * @param algo digest algorithms allowed for verification
+ * @return #MHD_DAUTH_OK if authenticated,
+ *         the error code otherwise
+ * @note Available since #MHD_VERSION 0x00097513
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_DigestAuthResult
+MHD_digest_auth_check_digest3 (struct MHD_Connection *connection,
+                               const char *realm,
+                               const char *username,
+                               const uint8_t *digest,
+                               size_t digest_size,
+                               unsigned int nonce_timeout,
+                               enum MHD_DigestAuthAlgorithm algo);
+
+
+/**
  * Authenticates the authorization header sent by the client.
  *
  * @param connection The MHD connection structure
@@ -4376,6 +4485,7 @@ enum MHD_DigestAuthAlgorithm
  * @return #MHD_YES if authenticated, #MHD_NO if not,
  *         #MHD_INVALID_NONCE if nonce is invalid or stale
  * @note Available since #MHD_VERSION 0x00096200
+ * @deprecated use MHD_digest_auth_check3()
  * @ingroup authentication
  */
 _MHD_EXTERN int
@@ -4402,8 +4512,8 @@ MHD_digest_auth_check2 (struct MHD_Connection *connection,
  *      invalid in seconds
  * @return #MHD_YES if authenticated, #MHD_NO if not,
  *         #MHD_INVALID_NONCE if nonce is invalid or stale
+ * @deprecated use MHD_digest_auth_check3()
  * @ingroup authentication
- * @deprecated use MHD_digest_auth_check2()
  */
 _MHD_EXTERN int
 MHD_digest_auth_check (struct MHD_Connection *connection,
@@ -4429,6 +4539,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  * @return #MHD_YES if authenticated, #MHD_NO if not,
  *         #MHD_INVALID_NONCE if nonce is invalid or stale
  * @note Available since #MHD_VERSION 0x00096200
+ * @deprecated use MHD_digest_auth_check_digest3()
  * @ingroup authentication
  */
 _MHD_EXTERN int
@@ -4457,8 +4568,8 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
  * @return #MHD_YES if authenticated, #MHD_NO if not,
  *         #MHD_INVALID_NONCE if nonce is invalid or stale
  * @note Available since #MHD_VERSION 0x00096000
+ * @deprecated use #MHD_digest_auth_check_digest3()
  * @ingroup authentication
- * @deprecated use #MHD_digest_auth_check_digest2()
  */
 _MHD_EXTERN int
 MHD_digest_auth_check_digest (struct MHD_Connection *connection,
@@ -4477,8 +4588,8 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  * @param response reply to send; should contain the "access denied"
  *        body; note that this function will set the "WWW Authenticate"
  *        header and that the caller should not do this; the NULL is tolerated
- * @param signal_stale #MHD_YES if the nonce is invalid to add
- *      'stale=true' to the authentication header
+ * @param signal_stale #MHD_YES if the nonce is stale to add
+ *        'stale=true' to the authentication header
  * @param algo digest algorithm to use
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @note Available since #MHD_VERSION 0x00096200
@@ -4504,8 +4615,8 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
  * @param response reply to send; should contain the "access denied"
  *        body; note that this function will set the "WWW Authenticate"
  *        header and that the caller should not do this; the NULL is tolerated
- * @param signal_stale #MHD_YES if the nonce is invalid to add
- *      'stale=true' to the authentication header
+ * @param signal_stale #MHD_YES if the nonce is stale to add
+ *        'stale=true' to the authentication header
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @ingroup authentication
  * @deprecated use MHD_queue_auth_fail_response2()
