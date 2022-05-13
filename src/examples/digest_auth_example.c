@@ -48,7 +48,7 @@ ahc_echo (void *cls,
   char *username;
   const char *password = "testpass";
   const char *realm = "test@example.com";
-  int res;
+  enum MHD_DigestAuthResult res_e;
   enum MHD_Result ret;
   static int already_called_marker;
   (void) cls;               /* Unused. Silent compiler warning. */
@@ -57,7 +57,6 @@ ahc_echo (void *cls,
   (void) version;           /* Unused. Silent compiler warning. */
   (void) upload_data;       /* Unused. Silent compiler warning. */
   (void) upload_data_size;  /* Unused. Silent compiler warning. */
-  (void) req_cls;           /* Unused. Silent compiler warning. */
 
   if (&already_called_marker != *req_cls)
   { /* Called for the first time, request not fully read yet */
@@ -80,13 +79,13 @@ ahc_echo (void *cls,
     MHD_destroy_response (response);
     return ret;
   }
-  res = MHD_digest_auth_check (connection, realm,
-                               username,
-                               password,
-                               300);
+  res_e = MHD_digest_auth_check3 (connection, realm,
+                                  username,
+                                  password,
+                                  300,
+                                  MHD_DIGEST_ALG_MD5);
   MHD_free (username);
-  if ( (res == MHD_INVALID_NONCE) ||
-       (res == MHD_NO) )
+  if (res_e != MHD_DAUTH_OK)
   {
     response =
       MHD_create_response_from_buffer_static (strlen (DENIED),
@@ -96,8 +95,8 @@ ahc_echo (void *cls,
     ret = MHD_queue_auth_fail_response2 (connection, realm,
                                          MY_OPAQUE_STR,
                                          response,
-                                         (res == MHD_INVALID_NONCE) ? MHD_YES :
-                                         MHD_NO,
+                                         (res_e == MHD_DAUTH_NONCE_STALE) ?
+                                         MHD_YES : MHD_NO,
                                          MHD_DIGEST_ALG_MD5);
     MHD_destroy_response (response);
     return ret;
