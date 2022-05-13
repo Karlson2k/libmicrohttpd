@@ -50,6 +50,12 @@
  */
 #define REUSE_TIMEOUT 30
 
+/**
+ * The maximum value of artificial timestamp difference to avoid clashes.
+ * The value must be suitable for bitwise AND operation.
+ */
+#define DAUTH_JUMPBACK_MAX (0x7F)
+
 
 /**
  * 48 bit value in bytes
@@ -1048,7 +1054,8 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
       base2 = _MHD_ROTL32 (base2, (((base4 >> 4) ^ base4) % 32));
       base3 = ((uint16_t) (base2 >> 16)) ^ ((uint16_t) base2);
       base4 = ((uint8_t) (base3 >> 8)) ^ ((uint8_t) base3);
-      timestamp2 -= (base4 & 0x7f); /* Use up to 127 ms difference */
+      /* Use up to 127 ms difference */
+      timestamp2 -= (base4 & DAUTH_JUMPBACK_MAX);
       if (timestamp1 == timestamp2)
         timestamp2 -= 2;
     }
