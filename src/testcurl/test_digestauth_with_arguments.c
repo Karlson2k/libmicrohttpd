@@ -87,7 +87,7 @@ ahc_echo (void *cls,
   const char *password = "testpass";
   const char *realm = "test@example.com";
   enum MHD_Result ret;
-  int ret_i;
+  enum MHD_DigestAuthResult ret_e;
   static int already_called_marker;
   (void) cls; (void) url;                         /* Unused. Silent compiler warning. */
   (void) method; (void) version; (void) upload_data; /* Unused. Silent compiler warning. */
@@ -115,13 +115,13 @@ ahc_echo (void *cls,
     MHD_destroy_response (response);
     return ret;
   }
-  ret_i = MHD_digest_auth_check (connection, realm,
-                                 username,
-                                 password,
-                                 300);
+  ret_e = MHD_digest_auth_check3 (connection, realm,
+                                  username,
+                                  password,
+                                  300,
+                                  MHD_DIGEST_ALG_MD5);
   MHD_free (username);
-  if ( (ret_i == MHD_INVALID_NONCE) ||
-       (ret_i == MHD_NO) )
+  if (ret_e != MHD_DAUTH_OK)
   {
     response = MHD_create_response_from_buffer (strlen (DENIED),
                                                 DENIED,
@@ -131,7 +131,7 @@ ahc_echo (void *cls,
     ret = MHD_queue_auth_fail_response2 (connection, realm,
                                          MY_OPAQUE,
                                          response,
-                                         (ret_i == MHD_INVALID_NONCE) ?
+                                         (ret_e == MHD_DAUTH_NONCE_STALE) ?
                                          MHD_YES : MHD_NO,
                                          MHD_DIGEST_ALG_MD5);
     MHD_destroy_response (response);
