@@ -3184,7 +3184,7 @@ Wrong ``URI'' (or URI parameters).
 @item MHD_DAUTH_NONCE_STALE
 The ``nonce'' is too old. Suggest the client to retry with the same username and
 password to get the fresh ``nonce''.
-The validity of the 'nonce' may not be checked.
+The validity of the ``nonce'' may not be checked.
 
 @item MHD_DAUTH_NONCE_WRONG
 The ``nonce'' is wrong. May indicate an attack attempt.
