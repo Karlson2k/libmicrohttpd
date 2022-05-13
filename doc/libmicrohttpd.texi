@@ -71,10 +71,10 @@ Free Documentation License".
 
 Appendices
 
-* GNU-LGPL::                     The GNU Lesser General Public License says how you
+* GNU-LGPL::                    The GNU Lesser General Public License says how you
                                  can copy and share almost all of `libmicrohttpd'.
-* eCos License::                 The eCos License says how you can copy and share some parts of `libmicrohttpd'.
-* GNU-GPL::                      The GNU General Public License (with eCos extension) says how you can copy and share some parts of `libmicrohttpd'.
+* eCos License::                The eCos License says how you can copy and share some parts of `libmicrohttpd'.
+* GNU-GPL::                     The GNU General Public License (with eCos extension) says how you can copy and share some parts of `libmicrohttpd'.
 * GNU-FDL::                     The GNU Free Documentation License says how you
                                 can copy and share the documentation of `libmicrohttpd'.
 
@@ -3100,8 +3100,8 @@ machine and user authentication).  A code example for using
 client certificates is presented in the MHD tutorial.
 
 @menu
-* microhttpd-dauth basic:: Using Basic Authentication.
-* microhttpd-dauth digest:: Using Digest Authentication.
+* microhttpd-dauth basic::      Using Basic Authentication.
+* microhttpd-dauth digest::     Using Digest Authentication.
 @end menu
 
 @c ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -3159,11 +3159,65 @@ Force use of SHA-256.
 @end table
 @end deftp
 
+@deftp {Enumeration} MHD_DigestAuthResult
+The result of digest authentication of the client.
+
+@table @code
+@item MHD_DAUTH_OK
+Authentication OK.
+
+@item MHD_DAUTH_ERROR
+General error, like ``out of memory''.
+
+@item MHD_DAUTH_WRONG_HEADER
+No ``Authorization'' header or wrong format of the header.
+
+@item MHD_DAUTH_WRONG_USERNAME
+Wrong ``username''.
+
+@item MHD_DAUTH_WRONG_REALM
+Wrong ``realm''.
+
+@item MHD_DAUTH_WRONG_URI
+Wrong ``URI'' (or URI parameters).
+
+@item MHD_DAUTH_NONCE_STALE
+The ``nonce'' is too old. Suggest the client to retry with the same username and
+password to get the fresh ``nonce''.
+The validity of the 'nonce' may not be checked.
+
+@item MHD_DAUTH_NONCE_WRONG
+The ``nonce'' is wrong. May indicate an attack attempt.
+
+@item MHD_DAUTH_RESPONSE_WRONG
+The ``response'' is wrong. May indicate an attack attempt.
+
+@end table
+@end deftp
+
 
 @deftypefun {char *} MHD_digest_auth_get_username (struct MHD_Connection *connection)
 Find and return a pointer to the username value from the request header.
 Return @code{NULL} if the value is not found or header does not exist.
 If returned value is not @code{NULL}, the value must be @code{MHD_free()}'ed.
+@end deftypefun
+
+@deftypefun enum MHD_DigestAuthResult MHD_digest_auth_check3 (struct MHD_Connection *connection, const char *realm, const char *username, const char *password, unsigned int nonce_timeout, enum MHD_DigestAuthAlgorithm algo)
+Checks if the provided values in the WWW-Authenticate header are valid
+and sound according to RFC7616. If valid return @code{MHD_DAUTH_OK}, otherwise return the error code.
+
+@var{realm} must reference to a zero-terminated string representing the realm.
+
+@var{username} must reference to a zero-terminated string representing the username,
+it is usually the returned value from MHD_digest_auth_get_username.
+
+@var{password} must reference to a zero-terminated string representing the password,
+most probably it will be the result of a lookup of the username against a local database.
+
+@var{nonce_timeout} the nonce validity duration in seconds.
+Most of the time it is sound to specify 300 seconds as its values.
+
+@var{algo} which digest algorithm should we use.
 @end deftypefun
 
 @deftypefun int MHD_digest_auth_check2 (struct MHD_Connection *connection, const char *realm, const char *username, const char *password, unsigned int nonce_timeout, enum MHD_DigestAuthAlgorithm algo)
@@ -3204,6 +3258,25 @@ Most of the time it is sound to specify 300 seconds as its values.
 @end deftypefun
 
 
+
+@deftypefun enum MHD_DigestAuthResult MHD_digest_auth_check_digest3 (struct MHD_Connection *connection, const char *realm, const char *username, const uint8_t *digest, unsigned int nonce_timeout, enum MHD_DigestAuthAlgorithm algo)
+Checks if the provided values in the WWW-Authenticate header are valid
+and sound according to RFC7616. If valid return @code{MHD_DAUTH_OK}, otherwise return the error code.
+
+@var{realm} must reference to a zero-terminated string representing the realm.
+
+@var{username} must reference to a zero-terminated string representing the username,
+it is usually the returned value from MHD_digest_auth_get_username.
+
+@var{digest} the pointer to the binary digest for the precalculated hash value ``username:realm:password'' with specified @var{algo}.
+
+@var{digest_size} the number of bytes in @var{digest} (the size must match @var{algo}!)
+
+@var{nonce_timeout} the nonce validity duration in seconds.
+Most of the time it is sound to specify 300 seconds as its values.
+
+@var{algo} digest authentication algorithm to use.
+@end deftypefun
 
 @deftypefun int MHD_digest_auth_check_digest2 (struct MHD_Connection *connection, const char *realm, const char *username, const uint8_t *digest, unsigned int nonce_timeout, enum MHD_DigestAuthAlgorithm algo)
 Checks if the provided values in the WWW-Authenticate header are valid
@@ -3540,9 +3613,9 @@ of this function.
 
 
 @menu
-* microhttpd-info daemon::        State information about an MHD daemon
-* microhttpd-info conn::          State information about a connection
-* microhttpd-option conn::        Modify per-connection options
+* microhttpd-info daemon::      State information about an MHD daemon
+* microhttpd-info conn::        State information about a connection
+* microhttpd-option conn::      Modify per-connection options
 @end menu
 
 
@@ -3808,8 +3881,8 @@ zero for no timeout.
 
 
 @menu
-* microhttpd-util feature::       Test supported MHD features
-* microhttpd-util unescape::      Unescape strings
+* microhttpd-util feature::     Test supported MHD features
+* microhttpd-util unescape::    Unescape strings
 @end menu
 
 
