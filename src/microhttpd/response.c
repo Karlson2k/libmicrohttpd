@@ -1386,8 +1386,8 @@ MHD_create_response_from_buffer_static (size_t size,
 
 
 /**
- * Create a response object with the content of provided statically allocated
- * buffer used as the response body.
+ * Create a response object with the content of provided temporal buffer
+ * used as the response body.
  *
  * An internal copy of the buffer will be made automatically, so buffer have
  * to be valid only during the call of this function (as a typical example:
