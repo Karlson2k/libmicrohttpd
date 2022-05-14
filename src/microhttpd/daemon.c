@@ -319,38 +319,37 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
                     socklen_t addrlen,
                     struct MHD_IPCount *key)
 {
-#ifndef DEBUG
-  (void) addrlen; /* Mute compiler warning */
-#endif /* DEBUG */
   memset (key,
           0,
           sizeof(*key));
 
   /* IPv4 addresses */
-  if (AF_INET == addr->sa_family)
+  if (sizeof (struct sockaddr_in) <= (size_t) addrlen)
   {
-    mhd_assert (sizeof (struct sockaddr_in) <= (size_t) addrlen);
-
-    key->family = AF_INET;
-    memcpy (&key->addr.ipv4,
-            ((const uint8_t *) addr)
-            + _MHD_OFFSETOF (struct sockaddr_in, sin_addr),
-            sizeof(((struct sockaddr_in *) NULL)->sin_addr));
-    return MHD_YES;
+    if (AF_INET == addr->sa_family)
+    {
+      key->family = AF_INET;
+      memcpy (&key->addr.ipv4,
+              ((const uint8_t *) addr)
+              + _MHD_OFFSETOF (struct sockaddr_in, sin_addr),
+              sizeof(((struct sockaddr_in *) NULL)->sin_addr));
+      return MHD_YES;
+    }
   }
 
 #if HAVE_INET6
-  /* IPv6 addresses */
-  if (AF_INET6 == addr->sa_family)
+  if (sizeof (struct sockaddr_in6) <= (size_t) addrlen)
   {
-    mhd_assert (sizeof (struct sockaddr_in6) <= (size_t) addrlen);
-
-    key->family = AF_INET6;
-    memcpy (&key->addr.ipv6,
-            ((const uint8_t *) addr)
-            + _MHD_OFFSETOF (struct sockaddr_in6, sin6_addr),
-            sizeof(((struct sockaddr_in6 *) NULL)->sin6_addr));
-    return MHD_YES;
+    /* IPv6 addresses */
+    if (AF_INET6 == addr->sa_family)
+    {
+      key->family = AF_INET6;
+      memcpy (&key->addr.ipv6,
+              ((const uint8_t *) addr)
+              + _MHD_OFFSETOF (struct sockaddr_in6, sin6_addr),
+              sizeof(((struct sockaddr_in6 *) NULL)->sin6_addr));
+      return MHD_YES;
+    }
   }
 #endif
 
@@ -2498,25 +2497,30 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
     connection->sk_nodelay = _MHD_UNKNOWN;
   }
 
-  if (NULL == (connection->addr = malloc (addrlen)))
+  if (0 < addrlen)
   {
-    eno = errno;
+    if (NULL == (connection->addr = malloc ((size_t) addrlen)))
+    {
+      eno = errno;
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Error allocating memory: %s\n"),
-              MHD_strerror_ (errno));
+      MHD_DLOG (daemon,
+                _ ("Error allocating memory: %s\n"),
+                MHD_strerror_ (errno));
 #endif
-    MHD_socket_close_chk_ (client_socket);
-    MHD_ip_limit_del (daemon,
-                      addr,
-                      addrlen);
-    free (connection);
-    errno = eno;
-    return NULL;
+      MHD_socket_close_chk_ (client_socket);
+      MHD_ip_limit_del (daemon,
+                        addr,
+                        addrlen);
+      free (connection);
+      errno = eno;
+      return NULL;
+    }
+    memcpy (connection->addr,
+            addr,
+            (size_t) addrlen);
   }
-  memcpy (connection->addr,
-          addr,
-          addrlen);
+  else
+    connection->addr = NULL;
   connection->addr_len = addrlen;
   connection->socket_fd = client_socket;
   connection->sk_nonblck = non_blck;
@@ -2569,7 +2573,8 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
       MHD_ip_limit_del (daemon,
                         addr,
                         addrlen);
-      free (connection->addr);
+      if (NULL != connection->addr)
+        free (connection->addr);
       free (connection);
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -2633,7 +2638,8 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
       MHD_ip_limit_del (daemon,
                         addr,
                         addrlen);
-      free (connection->addr);
+      if (NULL != connection->addr)
+        free (connection->addr);
       free (connection);
       MHD_PANIC (_ ("Unknown credential type.\n"));
 #if EINVAL
@@ -2701,7 +2707,8 @@ new_connection_close_ (struct MHD_Daemon *daemon,
   MHD_ip_limit_del (daemon,
                     connection->addr,
                     connection->addr_len);
-  free (connection->addr);
+  if (NULL != connection->addr)
+    free (connection->addr);
   free (connection);
 }
 
@@ -2896,7 +2903,8 @@ new_connection_process_ (struct MHD_Daemon *daemon,
   MHD_ip_limit_del (daemon,
                     connection->addr,
                     connection->addr_len);
-  free (connection->addr);
+  if (NULL != connection->addr)
+    free (connection->addr);
   MHD_socket_close_chk_ (connection->socket_fd);
   free (connection);
   if (0 != eno)
