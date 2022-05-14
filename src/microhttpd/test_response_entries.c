@@ -54,7 +54,7 @@ main (int argc,
   (void) argv; /* Unused. Silence compiler warning. */
   struct MHD_Response *r;
 
-  r = MHD_create_response_from_buffer (0, "", MHD_RESPMEM_PERSISTENT);
+  r = MHD_create_response_empty (MHD_RF_NONE);
   if (NULL == r)
   {
     fprintf (stderr, "Cannot create a response.\n");

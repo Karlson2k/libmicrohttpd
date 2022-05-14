@@ -55,9 +55,7 @@ ahc_echo (void *cls,
     return MHD_YES;
   }
   *req_cls = NULL;                  /* reset when done */
-  response = MHD_create_response_from_buffer (0,
-                                              NULL,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_empty (MHD_RF_NONE);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_NO_CONTENT,
                             response);

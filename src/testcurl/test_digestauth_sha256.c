@@ -111,9 +111,8 @@ ahc_echo (void *cls,
   if ( (username == NULL) ||
        (0 != strcmp (username, "testuser")) )
   {
-    response = MHD_create_response_from_buffer (strlen (DENIED),
-                                                DENIED,
-                                                MHD_RESPMEM_PERSISTENT);
+    response = MHD_create_response_from_buffer_static (strlen (DENIED),
+                                                       DENIED);
     ret = MHD_queue_auth_fail_response2 (connection,
                                          realm,
                                          MY_OPAQUE,
@@ -132,9 +131,8 @@ ahc_echo (void *cls,
   MHD_free (username);
   if (ret_e != MHD_DAUTH_OK)
   {
-    response = MHD_create_response_from_buffer (strlen (DENIED),
-                                                DENIED,
-                                                MHD_RESPMEM_PERSISTENT);
+    response = MHD_create_response_from_buffer_static (strlen (DENIED),
+                                                       DENIED);
     if (NULL == response)
       return MHD_NO;
     ret = MHD_queue_auth_fail_response2 (connection,
@@ -147,9 +145,8 @@ ahc_echo (void *cls,
     MHD_destroy_response (response);
     return ret;
   }
-  response = MHD_create_response_from_buffer (strlen (PAGE),
-                                              PAGE,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer_static (strlen (PAGE),
+                                                     PAGE);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);

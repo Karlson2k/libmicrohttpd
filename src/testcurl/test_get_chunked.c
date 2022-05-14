@@ -232,8 +232,7 @@ ahc_echo (void *cls,
       free (buf);
     }
     else
-      response = MHD_create_response_from_buffer (0, NULL,
-                                                  MHD_RESPMEM_PERSISTENT);
+      response = MHD_create_response_empty (MHD_RF_NONE);
   }
   if (NULL == response)
     abort ();

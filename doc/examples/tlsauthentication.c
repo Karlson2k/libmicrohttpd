@@ -130,8 +130,7 @@ ask_for_authentication (struct MHD_Connection *connection, const char *realm)
   size_t slen;
   const char *strbase = "Basic realm=";
 
-  response = MHD_create_response_from_buffer (0, NULL,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_empty (MHD_RF_NONE);
   if (! response)
     return MHD_NO;
 

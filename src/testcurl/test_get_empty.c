@@ -125,9 +125,7 @@ ahc_echo (void *cls,
     return MHD_YES;
   }
   *req_cls = NULL;
-  response = MHD_create_response_from_buffer (0,
-                                              NULL,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_empty (MHD_RF_NONE);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_NO_CONTENT,
                             response);
@@ -723,9 +721,7 @@ ahc_empty (void *cls,
     return MHD_YES;
   }
   *req_cls = NULL;
-  response = MHD_create_response_from_buffer (0,
-                                              NULL,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_empty (MHD_RF_NONE);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   if (ret == MHD_NO)

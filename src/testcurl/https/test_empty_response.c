@@ -52,8 +52,7 @@ ahc_echo (void *cls,
   (void) cls; (void) url; (void) method; (void) version;             /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size; (void) req_cls;       /* Unused. Silent compiler warning. */
 
-  response = MHD_create_response_from_buffer (0, NULL,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_empty (MHD_RF_NONE);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;

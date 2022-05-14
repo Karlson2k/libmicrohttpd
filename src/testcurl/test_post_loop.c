@@ -103,8 +103,8 @@ ahc_echo (void *cls,
   {
     if (*req_cls != &marker)
       abort ();
-    response = MHD_create_response_from_buffer (2, "OK",
-                                                MHD_RESPMEM_PERSISTENT);
+    response = MHD_create_response_from_buffer_static (2,
+                                                       "OK");
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     MHD_destroy_response (response);
     *req_cls = NULL;

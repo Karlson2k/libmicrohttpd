@@ -224,9 +224,8 @@ http_ahc (void *cls,
     return MHD_YES;
   }
   *req_cls = NULL;                  /* reset when done */
-  response = MHD_create_response_from_buffer (strlen (test_data),
-                                              (void *) test_data,
-                                              MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer_static (strlen (test_data),
+                                                     test_data);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;

@@ -610,8 +610,7 @@ ahc_cancel (void *cls,
   {
     *req_cls = "wibble";
     /* We don't want the body. Send a 500. */
-    response = MHD_create_response_from_buffer (0, NULL,
-                                                MHD_RESPMEM_PERSISTENT);
+    response = MHD_create_response_empty (MHD_RF_NONE);
     ret = MHD_queue_response (connection, 500, response);
     if (ret != MHD_YES)
       fprintf (stderr, "Failed to queue response\n");

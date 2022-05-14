@@ -78,8 +78,7 @@ connection_handler (void *cls,
   }
 
   response =
-    MHD_create_response_from_buffer (strlen ("Response"), "Response",
-                                     MHD_RESPMEM_PERSISTENT);
+    MHD_create_response_from_buffer_static (strlen ("Response"), "Response");
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
 

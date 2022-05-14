@@ -330,10 +330,9 @@ access_handler (void *cls,
   if (0 == strcmp (url, "/"))
   {
     /* Default page for visiting the server */
-    struct MHD_Response *response = MHD_create_response_from_buffer (
-      strlen (PAGE),
-      PAGE,
-      MHD_RESPMEM_PERSISTENT);
+    struct MHD_Response *response;
+    response = MHD_create_response_from_buffer_static (strlen (PAGE),
+                                                       PAGE);
     ret = MHD_queue_response (connection,
                               MHD_HTTP_OK,
                               response);
@@ -400,10 +399,11 @@ access_handler (void *cls,
     else
     {
       /* return error page */
-      struct MHD_Response *response = MHD_create_response_from_buffer (
-        strlen (PAGE_INVALID_WEBSOCKET_REQUEST),
-        PAGE_INVALID_WEBSOCKET_REQUEST,
-        MHD_RESPMEM_PERSISTENT);
+      struct MHD_Response *response;
+      response =
+        MHD_create_response_from_buffer_static (strlen (
+                                                  PAGE_INVALID_WEBSOCKET_REQUEST),
+                                                PAGE_INVALID_WEBSOCKET_REQUEST);
       ret = MHD_queue_response (connection,
                                 MHD_HTTP_BAD_REQUEST,
                                 response);
@@ -412,10 +412,11 @@ access_handler (void *cls,
   }
   else
   {
-    struct MHD_Response *response = MHD_create_response_from_buffer (
-      strlen (PAGE_NOT_FOUND),
-      PAGE_NOT_FOUND,
-      MHD_RESPMEM_PERSISTENT);
+    struct MHD_Response *response;
+    response =
+      MHD_create_response_from_buffer_static (strlen (
+                                                PAGE_NOT_FOUND),
+                                              PAGE_NOT_FOUND);
     ret = MHD_queue_response (connection,
                               MHD_HTTP_NOT_FOUND,
                               response);
