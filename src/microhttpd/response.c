@@ -1702,7 +1702,7 @@ MHD_create_response_empty (enum MHD_ResponseFlags flags)
   r = (struct MHD_Response *) MHD_calloc_ (1, sizeof (struct MHD_Response));
   if (NULL != r)
   {
-    if (! MHD_mutex_init_ (&r->mutex))
+    if (MHD_mutex_init_ (&r->mutex))
     {
       r->fd = -1;
       r->reference_count = 1;
