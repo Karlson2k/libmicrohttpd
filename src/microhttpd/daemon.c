@@ -1884,7 +1884,7 @@ thread_main_handle_connection (void *data)
   MHD_socket maxsock;
 #if WINDOWS
 #ifdef HAVE_POLL
-  int extra_slot;
+  unsigned int extra_slot;
 #endif /* HAVE_POLL */
 #define EXTRA_SLOTS 1
 #else  /* !WINDOWS */
