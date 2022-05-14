@@ -50,9 +50,9 @@ int
 main (int argc,
       char *const *argv)
 {
+  struct MHD_Response *r;
   (void) argc;
   (void) argv; /* Unused. Silence compiler warning. */
-  struct MHD_Response *r;
 
   r = MHD_create_response_empty (MHD_RF_NONE);
   if (NULL == r)
