@@ -347,19 +347,22 @@ fill_v1_form (const void *cls,
   enum MHD_Result ret;
   char *reply;
   struct MHD_Response *response;
+  int reply_len;
   (void) cls; /* Unused */
 
-  if (-1 == MHD_asprintf (&reply,
-                          MAIN_PAGE,
-                          session->value_1))
+  reply_len = MHD_asprintf (&reply,
+                            MAIN_PAGE,
+                            session->value_1);
+  if (0 > reply_len)
   {
     /* oops */
     return MHD_NO;
   }
   /* return static form */
-  response = MHD_create_response_from_buffer (strlen (reply),
-                                              (void *) reply,
-                                              MHD_RESPMEM_MUST_FREE);
+  response =
+    MHD_create_response_from_buffer_with_free_callback ((size_t) reply_len,
+                                                        (void *) reply,
+                                                        &free);
   add_session_cookie (session, response);
   MHD_add_response_header (response,
                            MHD_HTTP_HEADER_CONTENT_ENCODING,
@@ -389,20 +392,23 @@ fill_v1_v2_form (const void *cls,
   enum MHD_Result ret;
   char *reply;
   struct MHD_Response *response;
+  int reply_len;
   (void) cls; /* Unused */
 
-  if (-1 == MHD_asprintf (&reply,
-                          SECOND_PAGE,
-                          session->value_1,
-                          session->value_2))
+  reply_len = MHD_asprintf (&reply,
+                            SECOND_PAGE,
+                            session->value_1,
+                            session->value_2);
+  if (0 > reply_len)
   {
     /* oops */
     return MHD_NO;
   }
   /* return static form */
-  response = MHD_create_response_from_buffer (strlen (reply),
-                                              (void *) reply,
-                                              MHD_RESPMEM_MUST_FREE);
+  response =
+    MHD_create_response_from_buffer_with_free_callback (reply_len,
+                                                        (void *) reply,
+                                                        &free);
   add_session_cookie (session, response);
   MHD_add_response_header (response,
                            MHD_HTTP_HEADER_CONTENT_ENCODING,

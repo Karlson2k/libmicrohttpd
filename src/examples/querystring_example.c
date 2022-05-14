@@ -72,8 +72,10 @@ ahc_echo (void *cls,
     free (me);
     return MHD_NO;  /* Error forming the response body */
   }
-  response = MHD_create_response_from_buffer (resp_len, me,
-                                              MHD_RESPMEM_MUST_FREE);
+  response =
+    MHD_create_response_from_buffer_with_free_callback (resp_len,
+                                                        (void *) me,
+                                                        &free);
   if (response == NULL)
   {
     free (me);

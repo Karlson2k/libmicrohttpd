@@ -332,9 +332,10 @@ fill_v1_form (const void *cls,
             MAIN_PAGE,
             session->value_1);
   /* return static form */
-  response = MHD_create_response_from_buffer (slen,
-                                              (void *) reply,
-                                              MHD_RESPMEM_MUST_FREE);
+  response =
+    MHD_create_response_from_buffer_with_free_callback (slen,
+                                                        (void *) reply,
+                                                        &free);
   if (NULL == response)
   {
     free (reply);
@@ -383,9 +384,10 @@ fill_v1_v2_form (const void *cls,
             session->value_1,
             session->value_2);
   /* return static form */
-  response = MHD_create_response_from_buffer (slen,
-                                              (void *) reply,
-                                              MHD_RESPMEM_MUST_FREE);
+  response =
+    MHD_create_response_from_buffer_with_free_callback (slen,
+                                                        (void *) reply,
+                                                        &free);
   if (NULL == response)
   {
     free (reply);

@@ -130,9 +130,11 @@ ahc_echo (void *cls,
       can_compress (connection))
     comp = body_compress ((void **) &body_str,
                           &body_len);
-  response = MHD_create_response_from_buffer (body_len,
-                                              body_str,
-                                              MHD_RESPMEM_MUST_FREE);
+  response =
+    MHD_create_response_from_buffer_with_free_callback (body_len,
+                                                        body_str,
+                                                        &free);
+
   if (NULL == response)
   {
     free (body_str);

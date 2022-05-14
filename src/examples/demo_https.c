@@ -385,9 +385,10 @@ update_directory (void)
                        "%s",
                        INDEX_PAGE_FOOTER);
   initial_allocation = rdc.buf_len; /* remember for next time */
-  response = MHD_create_response_from_buffer (rdc.off,
-                                              rdc.buf,
-                                              MHD_RESPMEM_MUST_FREE);
+  response =
+    MHD_create_response_from_buffer_with_free_callback (rdc.off,
+                                                        rdc.buf,
+                                                        &free);
   mark_as_html (response);
 #if FORCE_CLOSE
   (void) MHD_add_response_header (response,
