@@ -5041,12 +5041,16 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     return &connection->connection_info_dummy;
 #endif /* HTTPS_SUPPORT */
   case MHD_CONNECTION_INFO_CLIENT_ADDRESS:
-    memset (&connection->connection_info_dummy.client_addr, 0,
-            sizeof (connection->connection_info_dummy.client_addr));
-    memcpy (&connection->connection_info_dummy.client_addr,
-            &connection->addr,
-            connection->addr_len);
-    return &connection->connection_info_dummy;
+    if (0 < connection->addr_len)
+    {
+      memset (&connection->connection_info_dummy.client_addr, 0,
+              sizeof (connection->connection_info_dummy.client_addr));
+      memcpy (&connection->connection_info_dummy.client_addr,
+              &connection->addr,
+              (size_t) connection->addr_len);
+      return &connection->connection_info_dummy;
+    }
+    return NULL;
   case MHD_CONNECTION_INFO_DAEMON:
     connection->connection_info_dummy.daemon = connection->daemon;
     return &connection->connection_info_dummy;
