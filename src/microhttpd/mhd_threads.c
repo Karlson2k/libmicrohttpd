@@ -225,7 +225,7 @@ MHD_create_thread_ (MHD_thread_handle_ID_ *thread,
   }
 #endif /* SIZEOF_SIZE_T != SIZEOF_UNSIGNED_INT */
 
-  thread->handle = (MHD_thread_handle_)
+  thread->handle = (MHD_thread_handle_) (uintptr_t)
                    _beginthreadex (NULL,
                                    (unsigned int) stack_size,
                                    start_routine,

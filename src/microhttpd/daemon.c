@@ -7011,7 +7011,7 @@ MHD_start_daemon_va (unsigned int flags,
 #else  /* SO_EXCLBIND */
                           SO_EXCLBIND,
 #endif /* SO_EXCLBIND */
-                          (void *) &on,
+                          (const void *) &on,
                           sizeof (on)))
       {
 #ifdef HAVE_MESSAGES

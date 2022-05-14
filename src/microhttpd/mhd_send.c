@@ -1081,9 +1081,9 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     complete_response = false;
     push_body = complete_response;
   }
-  vector[0].buf = (char *) header;
+  vector[0].buf = (char *) _MHD_DROP_CONST (header);
   vector[0].len = (unsigned long) header_size;
-  vector[1].buf = (char *) body;
+  vector[1].buf = (char *) _MHD_DROP_CONST (body);
   vector[1].len = (unsigned long) body_size;
 
   ret = WSASend (s, vector, 2, &vec_sent, 0, NULL, NULL);
@@ -1600,7 +1600,7 @@ send_iov_emu (struct MHD_Connection *connection,
        * Adjust buffer of the last element. */
       r_iov->iov[r_iov->sent].iov_base =
         (void *) ((uint8_t *) r_iov->iov[r_iov->sent].iov_base + sent);
-      r_iov->iov[r_iov->sent].iov_len -= sent;
+      r_iov->iov[r_iov->sent].iov_len -= (MHD_iov_size_) sent;
 
       return (ssize_t) total_sent;
     }

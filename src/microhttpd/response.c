@@ -967,7 +967,7 @@ file_reader (void *cls,
 #if ! defined(_WIN32) || defined(__CYGWIN__)
   ssize_t n;
 #else  /* _WIN32 && !__CYGWIN__ */
-  const HANDLE fh = (HANDLE) _get_osfhandle (response->fd);
+  const HANDLE fh = (HANDLE) (uintptr_t) _get_osfhandle (response->fd);
 #endif /* _WIN32 && !__CYGWIN__ */
   const int64_t offset64 = (int64_t) (pos + response->fd_off);
 
@@ -1055,17 +1055,21 @@ pipe_reader (void *cls,
   ssize_t n;
 
   (void) pos;
+
 #ifndef _WIN32
   if (SSIZE_MAX < max)
     max = SSIZE_MAX;
-#else  /* _WIN32 */
-  if (UINT_MAX < max)
-    max = UINT_MAX;
-#endif /* _WIN32 */
-
   n = read (response->fd,
             buf,
             (MHD_SCKT_SEND_SIZE_) max);
+#else  /* _WIN32 */
+  if (UINT_MAX < max)
+    max = INT_MAX;
+  n = read (response->fd,
+            buf,
+            (unsigned int) max);
+#endif /* _WIN32 */
+
   if (0 == n)
     return MHD_CONTENT_READER_END_OF_STREAM;
   if (n < 0)
@@ -1595,7 +1599,7 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
     {
       int64_t i_add;
 
-      i_add = iov[i].iov_len / ULONG_MAX;
+      i_add = (int64_t) (iov[i].iov_len / ULONG_MAX);
       if (0 != iov[i].iov_len % ULONG_MAX)
         i_add++;
       if (INT_MAX < (i_add + i_cp))
