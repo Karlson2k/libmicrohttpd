@@ -58,8 +58,8 @@ endif
 
 EXTRA_DIST = \
   test-ca.crt test-ca.key \
-  host1.crt host1.key \
-  host2.crt host2.key
+  mhdhost1.crt mhdhost1.key \
+  mhdhost2.crt mhdhost2.key
 
 TESTS = \
   $(check_PROGRAMS)
