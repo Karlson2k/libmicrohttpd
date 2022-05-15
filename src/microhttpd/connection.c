@@ -2753,12 +2753,22 @@ connection_add_header (struct MHD_Connection *connection,
 
 
 /**
+ * Cookie parsing result
+ */
+enum _MHD_ParseCookie
+{
+  MHD_PARSE_COOKIE_OK = MHD_YES,      /**< Success or no cookies in headers */
+  MHD_PARSE_COOKIE_MALFORMED = -1,    /**< Invalid cookie header */
+  MHD_PARSE_COOKIE_NO_MEMORY = MHD_NO /**< Not enough memory in the pool */
+};
+
+/**
  * Parse the cookie header (see RFC 2109).
  *
  * @param connection connection to parse header of
  * @return #MHD_YES for success, #MHD_NO for failure (malformed, out of memory)
  */
-static enum MHD_Result
+static enum _MHD_ParseCookie
 parse_cookie_header (struct MHD_Connection *connection)
 {
   const char *hdr;
@@ -2780,20 +2790,12 @@ parse_cookie_header (struct MHD_Connection *connection)
                                                  MHD_HTTP_HEADER_COOKIE),
                                                &hdr,
                                                &hdr_len))
-    return MHD_YES;
+    return MHD_PARSE_COOKIE_OK;
   cpy = connection_alloc_memory (connection,
                                  hdr_len + 1);
   if (NULL == cpy)
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("Not enough memory in pool to parse cookies!\n"));
-#endif
-    transmit_error_response_static (connection,
-                                    MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                    REQUEST_TOO_BIG);
-    return MHD_NO;
-  }
+    return MHD_PARSE_COOKIE_NO_MEMORY;
+
   memcpy (cpy,
           hdr,
           hdr_len);
@@ -2822,13 +2824,13 @@ parse_cookie_header (struct MHD_Connection *connection)
       /* value part omitted, use empty string... */
       mhd_assert (ekill >= pos);
       if (MHD_NO ==
-          connection_add_header (connection,
-                                 pos,
-                                 (size_t) (ekill - pos + 1),
-                                 "",
-                                 0,
-                                 MHD_COOKIE_KIND))
-        return MHD_NO;
+          MHD_set_connection_value_n_nocheck_ (connection,
+                                               MHD_COOKIE_KIND,
+                                               pos,
+                                               (size_t) (ekill - pos + 1),
+                                               "",
+                                               0))
+        return MHD_PARSE_COOKIE_NO_MEMORY;
       if (old == '\0')
         break;
       pos = sce + 1;
@@ -2865,16 +2867,16 @@ parse_cookie_header (struct MHD_Connection *connection)
     mhd_assert (ekill >= pos);
     mhd_assert (end >= equals);
     if (MHD_NO ==
-        connection_add_header (connection,
-                               pos,
-                               (size_t) (ekill - pos + 1),
-                               equals,
-                               (size_t) (end - equals),
-                               MHD_COOKIE_KIND))
-      return MHD_NO;
+        MHD_set_connection_value_n_nocheck_ (connection,
+                                             MHD_COOKIE_KIND,
+                                             pos,
+                                             (size_t) (ekill - pos + 1),
+                                             equals,
+                                             (size_t) (end - equals)))
+      return MHD_PARSE_COOKIE_NO_MEMORY;
     pos = semicolon;
   }
-  return MHD_YES;
+  return MHD_PARSE_COOKIE_OK;
 }
 
 
@@ -3618,7 +3620,17 @@ parse_connection_headers (struct MHD_Connection *connection)
   const char *enc;
   size_t val_len;
 
-  parse_cookie_header (connection);
+  if (MHD_PARSE_COOKIE_NO_MEMORY == parse_cookie_header (connection))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Not enough memory in pool to parse cookies!\n"));
+#endif
+    transmit_error_response_static (connection,
+                                    MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
+                                    REQUEST_TOO_BIG);
+    return;
+  }
   if ( (1 <= connection->daemon->strict_for_client) &&
        (MHD_IS_HTTP_VER_1_1_COMPAT (connection->http_ver)) &&
        (MHD_NO ==
