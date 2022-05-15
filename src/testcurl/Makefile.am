@@ -103,6 +103,7 @@ check_PROGRAMS = \
   test_process_headers \
   test_process_arguments \
   test_parse_cookies \
+  test_parse_cookies_invalid \
   test_toolarge_method \
   test_toolarge_url \
   test_toolarge_request_header_name \
@@ -328,6 +329,9 @@ test_process_headers_SOURCES = \
   test_process_headers.c mhd_has_in_name.h
 
 test_parse_cookies_SOURCES = \
+  test_parse_cookies.c mhd_has_in_name.h
+
+test_parse_cookies_invalid_SOURCES = \
   test_parse_cookies.c mhd_has_in_name.h
 
 test_process_arguments_SOURCES = \

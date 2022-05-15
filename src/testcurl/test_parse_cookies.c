@@ -40,7 +40,7 @@
 #include <unistd.h>
 #endif
 
-static int oneone;
+static int use_invalid;
 
 struct CBC
 {
@@ -119,10 +119,10 @@ ahc_echo (void *cls,
       fprintf (stderr, "'name5' cookie decoded incorrectly.\n");
       exit (11);
     }
-    if (4 != MHD_get_connection_values_n (connection, MHD_COOKIE_KIND,
+    if (5 != MHD_get_connection_values_n (connection, MHD_COOKIE_KIND,
                                           NULL, NULL))
     {
-      fprintf (stderr, "The total number of cookie is not four.\n");
+      fprintf (stderr, "The total number of cookie is not five.\n");
       exit (12);
     }
   }
@@ -149,7 +149,7 @@ ahc_echo (void *cls,
 static unsigned int port;
 
 static unsigned int
-testExternalGet (int use_invalid)
+testExternalGet (int test_number)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -196,44 +196,192 @@ testExternalGet (int use_invalid)
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
-  if (0 == use_invalid)
+  if (! use_invalid)
   {
-    curl_easy_setopt (c, CURLOPT_COOKIE,
-                      "name1=var1; name2=var2; name3=; " \
-                      "name4=\"var4 with spaces\"; " \
-                      "name5=var_with_=_char" \
-                      " ;   ;; ;");
+    if (0 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "name1=var1; name2=var2; name3=; " \
+                        "name4=\"var4 with spaces\"; " \
+                        "name5=var_with_=_char");
+    }
+    else if (1 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "name1=var1;name2=var2;name3=;" \
+                        "name4=\"var4 with spaces\";" \
+                        "name5=var_with_=_char");
+    }
+    else if (2 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "name1=var1;  name2=var2;  name3=;  " \
+                        "name4=\"var4 with spaces\";  " \
+                        "name5=var_with_=_char\t \t");
+    }
+    else if (3 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "name1=var1;;name2=var2;;name3=;;" \
+                        "name4=\"var4 with spaces\";;" \
+                        "name5=var_with_=_char;\t \t");
+    }
+    else if (4 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "name1=var1 ;name2=var2 ;name3= ;" \
+                        "name4=\"var4 with spaces\" ;" \
+                        "name5=var_with_=_char ;");
+    }
+    else if (5 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "name3=; name1=var1; name2=var2; " \
+                        "name5=var_with_=_char;" \
+                        "name4=\"var4 with spaces\"");
+    }
+    else if (6 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "name2=var2; name1=var1; " \
+                        "name5=var_with_=_char; name3=; " \
+                        "name4=\"var4 with spaces\";");
+    }
+    else if (7 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "name2=var2; name1=var1; " \
+                        "name5=var_with_=_char; " \
+                        "name4=\"var4 with spaces\"; name3=");
+    }
+    else if (8 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "name2=var2; name1=var1; " \
+                        "name4=\"var4 with spaces\"; " \
+                        "name5=var_with_=_char; name3=;");
+    }
+    else if (9 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        ";;;;;;;;name1=var1; name2=var2; name3=; " \
+                        "name4=\"var4 with spaces\"; " \
+                        "name5=var_with_=_char");
+    }
+    else if (10 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "name1=var1; name2=var2; name3=; " \
+                        "name4=\"var4 with spaces\"; ; ; ; ; " \
+                        "name5=var_with_=_char");
+    }
+    else if (11 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "name1=var1; name2=var2; name3=; " \
+                        "name4=\"var4 with spaces\"; " \
+                        "name5=var_with_=_char;;;;;;;;");
+    }
+    else if (12 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "name1=var1; name2=var2; " \
+                        "name4=\"var4 with spaces\"" \
+                        "name5=var_with_=_char; ; ; ; ; name3=");
+    }
+    else if (13 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "name5=var_with_=_char ;" \
+                        "name1=var1; name2=var2; name3=; " \
+                        "name4=\"var4 with spaces\" ");
+    }
+    else if (14 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "name5=var_with_=_char; name4=\"var4 with spaces\";" \
+                        "name1=var1; name2=var2; name3=");
+    }
   }
-  else if (1 == use_invalid)
+  else
   {
-    curl_easy_setopt (c, CURLOPT_COOKIE,
-                      "var1=value1;=;");
-  }
-  else if (2 == use_invalid)
-  {
-    curl_easy_setopt (c, CURLOPT_COOKIE,
-                      "=");
-  }
-  else if (3 == use_invalid)
-  {
-    curl_easy_setopt (c, CURLOPT_COOKIE,
-                      ";=");
-  }
-  else if (4 == use_invalid)
-  {
-    curl_easy_setopt (c, CURLOPT_COOKIE,
-                      "=;");
-  }
-  else if (5 == use_invalid)
-  {
-    curl_easy_setopt (c, CURLOPT_COOKIE,
-                      "a=b,d=c");
+    if (0 == test_number)
+    {
+      (void) 0; /* No cookie */
+    }
+    else if (1 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "");
+    }
+    else if (2 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "      ");
+    }
+    else if (3 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "\t");
+    }
+    else if (4 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "var=,");
+    }
+    else if (5 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "var=\"\\ \"");
+    }
+    else if (6 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "var=value  space");
+    }
+    else if (7 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "var=value\ttab");
+    }
+    else if (8 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "=");
+    }
+    else if (9 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "====");
+    }
+    else if (10 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        ";=");
+    }
+    else if (11 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "var");
+    }
+    else if (12 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "=;");
+    }
+    else if (13 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        "= ;");
+    }
+    else if (14 == test_number)
+    {
+      curl_easy_setopt (c, CURLOPT_COOKIE,
+                        ";= ;");
+    }
   }
 
-  if (oneone)
-    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-  else
-    curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   curl_easy_setopt (c, CURLOPT_TIMEOUT, 150L);
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 150L);
   /* NOTE: use of CONNECTTIMEOUT without also
@@ -365,7 +513,7 @@ main (int argc, char *const *argv)
 
   if ((NULL == argv) || (0 == argv[0]))
     return 99;
-  oneone = has_in_name (argv[0], "11");
+  use_invalid = has_in_name (argv[0], "_invalid");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -373,7 +521,7 @@ main (int argc, char *const *argv)
   else
   {
     port = 1340;
-    if (oneone)
+    if (use_invalid)
       port += 5;
   }
   errorCount += testExternalGet (0);
@@ -383,6 +531,11 @@ main (int argc, char *const *argv)
   errorCount += testExternalGet (4);
   errorCount += testExternalGet (5);
   errorCount += testExternalGet (6);
+  errorCount += testExternalGet (7);
+  errorCount += testExternalGet (8);
+  errorCount += testExternalGet (9);
+  errorCount += testExternalGet (10);
+  errorCount += testExternalGet (11);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();
