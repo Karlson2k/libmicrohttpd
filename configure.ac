@@ -2879,6 +2879,19 @@ AS_VAR_IF([[enable_httpupgrade]],[["yes"]],
 AM_CONDITIONAL([ENABLE_UPGRADE], [[test "x$enable_httpupgrade" = "xyes"]])
 AC_MSG_RESULT([[$enable_httpupgrade]])
 
+# optional: HTTP cookie parsing support. Enabled by default
+AC_MSG_CHECKING([[whether to support HTTP cookie parsing]])
+AC_ARG_ENABLE([[cookie]],
+    AS_HELP_STRING([[--disable-cookie]],
+      [disable HTTP cookie parsing support]),
+    [AS_VAR_IF([[enable_cookie]],[["no"]],[],[[enable_cookie='yes']])],
+    [[enable_cookie='yes']])
+AS_VAR_IF([[enable_cookie]],[["yes"]],
+  [
+   AC_DEFINE([[COOKIE_SUPPORT]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTP cookie parsing support.]) ])
+AM_CONDITIONAL([ENABLE_COOKIE], [[test "x$enable_cookie" = "xyes"]])
+AC_MSG_RESULT([[$enable_cookie]])
+
 AC_CACHE_CHECK([[for calloc()]], [[mhd_cv_have_func_calloc]],
   [
    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
@@ -3749,6 +3762,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
   HTTP "Upgrade":    ${enable_httpupgrade}
+  Cookie parsing:    ${enable_cookie}
   Postproc:          ${enable_postprocessor}
   Build docs:        ${enable_doc}
   Build examples:    ${enable_examples}
@@ -3766,5 +3780,6 @@ AS_IF([test "x$enable_https" = "xyes"],
 AS_IF([test "x$enable_bauth" != "xyes" || \
    test "x$enable_dauth" != "xyes" || \
    test "x$enable_httpupgrade" != "xyes" || \
+   test "x$enable_cookie" != "xyes" || \
    test "x$enable_postprocessor" != "xyes"],
    [AC_MSG_NOTICE([WARNING: This will be a custom build with missing symbols. Do NOT use this build in a distribution. Building with these kinds of configure options is only for custom builds for embedded systems.])])

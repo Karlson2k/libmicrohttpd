@@ -102,8 +102,6 @@ check_PROGRAMS = \
   test_add_conn_nolisten \
   test_process_headers \
   test_process_arguments \
-  test_parse_cookies \
-  test_parse_cookies_invalid \
   test_toolarge_method \
   test_toolarge_url \
   test_toolarge_request_header_name \
@@ -141,6 +139,12 @@ check_PROGRAMS = \
   test_put_chunked \
   test_callback \
   $(EMPTY_ITEM)
+
+if ENABLE_COOKIE
+check_PROGRAMS += \
+  test_parse_cookies \
+  test_parse_cookies_invalid
+endif
 
 if HEAVY_TESTS
 check_PROGRAMS += \

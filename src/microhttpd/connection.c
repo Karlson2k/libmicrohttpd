@@ -2752,6 +2752,8 @@ connection_add_header (struct MHD_Connection *connection,
 }
 
 
+#ifdef COOKIE_SUPPORT
+
 /**
  * Cookie parsing result
  */
@@ -3110,6 +3112,8 @@ parse_cookie_header (struct MHD_Connection *connection)
   return parse_cookies_string_lenient (cpy + i, hdr_len - i, connection);
 }
 
+
+#endif /* COOKIE_SUPPORT */
 
 /**
  * Detect HTTP version
@@ -3850,6 +3854,8 @@ parse_connection_headers (struct MHD_Connection *connection)
   const char *clen;
   const char *enc;
   size_t val_len;
+
+#ifdef COOKIE_SUPPORT
   enum _MHD_ParseCookie cookie_res;
 
   cookie_res = parse_cookie_header (connection);
@@ -3881,6 +3887,7 @@ parse_connection_headers (struct MHD_Connection *connection)
 #endif
     (void) 0; /* Mute compiler warning */
   }
+#endif /* COOKIE_SUPPORT */
   if ( (1 <= connection->daemon->strict_for_client) &&
        (MHD_IS_HTTP_VER_1_1_COMPAT (connection->http_ver)) &&
        (MHD_NO ==
