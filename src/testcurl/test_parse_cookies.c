@@ -113,6 +113,12 @@ ahc_echo (void *cls,
       fprintf (stderr, "'name4' cookie decoded incorrectly.\n");
       exit (11);
     }
+    hdr = MHD_lookup_connection_value (connection, MHD_COOKIE_KIND, "name5");
+    if ((hdr == NULL) || (0 != strcmp (hdr, "var_with_=_char")))
+    {
+      fprintf (stderr, "'name5' cookie decoded incorrectly.\n");
+      exit (11);
+    }
     if (4 != MHD_get_connection_values_n (connection, MHD_COOKIE_KIND,
                                           NULL, NULL))
     {
@@ -193,36 +199,32 @@ testExternalGet (int use_invalid)
   if (0 == use_invalid)
   {
     curl_easy_setopt (c, CURLOPT_COOKIE,
-                      "name1=var1; name2=var2,name3 ;" \
-                      "name4=\"var4 with spaces\";" \
+                      "name1=var1; name2=var2; name3=; " \
+                      "name4=\"var4 with spaces\"; " \
+                      "name5=var_with_=_char" \
                       " ;   ;; ;");
   }
   else if (1 == use_invalid)
   {
     curl_easy_setopt (c, CURLOPT_COOKIE,
-                      "var1=value1=");
+                      "var1=value1;=;");
   }
   else if (2 == use_invalid)
   {
     curl_easy_setopt (c, CURLOPT_COOKIE,
-                      "var1=value1;=;");
+                      "=");
   }
   else if (3 == use_invalid)
   {
     curl_easy_setopt (c, CURLOPT_COOKIE,
-                      "=");
+                      ";=");
   }
   else if (4 == use_invalid)
   {
     curl_easy_setopt (c, CURLOPT_COOKIE,
-                      ";=");
-  }
-  else if (5 == use_invalid)
-  {
-    curl_easy_setopt (c, CURLOPT_COOKIE,
                       "=;");
   }
-  else if (6 == use_invalid)
+  else if (5 == use_invalid)
   {
     curl_easy_setopt (c, CURLOPT_COOKIE,
                       "a=b,d=c");
