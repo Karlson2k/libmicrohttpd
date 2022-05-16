@@ -2484,13 +2484,24 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
       connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
       return;
     case MHD_TLS_CONN_HANDSHAKING:
+    case MHD_TLS_CONN_WR_CLOSING:
       if (0 == gnutls_record_get_direction (connection->tls_session))
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
       else
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
       return;
+    case MHD_TLS_CONN_CONNECTED:
+      break; /* Do normal processing */
+    case MHD_TLS_CONN_WR_CLOSED:
+    case MHD_TLS_CONN_TLS_FAILED:
+      connection->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
+      return;
+    case MHD_TLS_CONN_TLS_CLOSING:  /* Not implemented yet */
+    case MHD_TLS_CONN_TLS_CLOSED:   /* Not implemented yet */
+    case MHD_TLS_CONN_INVALID_STATE:
+    case MHD_TLS_CONN_NO_TLS: /* Not possible */
     default:
-      break;
+      MHD_PANIC (_ ("Invalid TLS state value.\n"));
     }
   }
 #endif /* HTTPS_SUPPORT */
