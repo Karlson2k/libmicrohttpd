@@ -145,8 +145,10 @@ MHD_CHECK_ADD_CC_CFLAG([-fno-strict-aliasing], [CFLAGS_ac])
 
 AS_VAR_IF([enable_build_type],["neutral"],[],
   [ # Any non-neutral build types
-    MHD_CHECK_ADD_CC_CFLAGS([-Wall -Wnull-dereference -Wdeclaration-after-statement], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wall -fdelete-null-pointer-checks -Wnull-dereference], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wdeclaration-after-statement -Wimplicit -Wnested-externs], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wredundant-decls -Wtrampolines -Wunsafe-loop-optimizations], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wpoison-system-directories], [CFLAGS_ac])
     CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
     LDFLAGS="${user_LDFLAGS}"
     MHD_CHECK_ADD_CC_LDFLAG([-Wl,--warn-common], [LDFLAGS_ac])
@@ -166,9 +168,34 @@ AS_CASE([${enable_build_type}],[debug|debugger],
     MHD_CHECK_ADD_CC_CFLAGS([-Wformat-overflow -Wformat-truncation -Wformat-security -Wformat-signedness], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wmissing-include-dirs -Wshift-overflow=2 -Wstringop-overflow=4 -Walloc-zero], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wduplicated-branches -Wduplicated-cond -Wfloat-equal -Wshadow -Wpointer-arith], [CFLAGS_ac])
-    MHD_CHECK_ADD_CC_CFLAGS([-Wbad-function-cast -Wcast-qual -Wcast-align=strict -Wwrite-strings -Wconversion], [CFLAGS_ac])
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Wshadow-all], [-Wshadow])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wbad-function-cast -Wcast-qual -Wwrite-strings -Wconversion], [CFLAGS_ac])
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Wcast-align=strict], [-Wcast-align])
     MHD_CHECK_ADD_CC_CFLAGS([-Wjump-misses-init -Wlogical-op -Waggregate-return -Wstrict-prototypes], [CFLAGS_ac])
-    MHD_CHECK_ADD_CC_CFLAGS([-Wold-style-definition -Wmissing-declarations -Wmissing-prototypes -Wshift-negative-value], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wold-style-definition -Wmissing-declarations -Wmissing-prototypes], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wuninitialized -Winit-self -Wshift-negative-value -Wswitch-enum], [CFLAGS_ac])
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Wstrict-overflow=4], [-Wstrict-overflow])
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Wnormalized=nfkc], [-Wnormalized])
+    MHD_CHECK_ADD_CC_CFLAGS([-Walloca -Wbidi-chars=any -Warray-bounds -Wpacked -Wvariadic-macros], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wundef], [CFLAGS_ac])
+
+    MHD_CHECK_ADD_CC_CFLAGS([-Wanon-enum-enum-conversion -Warray-bounds-pointer-arithmetic -Wassign-enum], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wbit-int-extension -Wbitfield-enum-conversion -Wparentheses -Wbool-operation], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wcast-function-type -Wcomma -Wcomment -Wcompound-token-split], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wconditional-uninitialized -Wdeprecated -Wdisabled-macro-expansion], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wdocumentation-pedantic -Wempty-init-stmt -Wenum-conversion -Wexpansion-to-defined], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wflexible-array-extensions -Wloop-analysis -Wformat-pedantic], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wformat-type-confusion -Wfour-char-constants], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wgcc-compat -Wgnu-anonymous-struct -Wgnu-compound-literal-initializer], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wgnu-conditional-omitted-operand -Wgnu-designator -Wgnu-empty-initializer], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wgnu-empty-struct -Wgnu-flexible-array-initializer -Wgnu-folding-constant], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wgnu-null-pointer-arithmetic -Wgnu-pointer-arith -Wgnu-redeclared-enum], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wgnu-union-cast -Wgnu-variable-sized-type-not-at-end -Widiomatic-parentheses], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wmissing-noreturn -Wmissing-variable-declarations -Wnested-anon-types], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wnewline-eof -Wover-aligned -Wredundant-parens -Wreserved-macro-identifier], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wshift-sign-overflow -Wtautological-compare -Wunaligned-access], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wunused -Wused-but-marked-unused -Wzero-as-null-pointer-constant -Wzero-length-array], [CFLAGS_ac])
+
     CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
     LDFLAGS="${user_LDFLAGS}"
     MHD_CHECK_ADD_CC_LDFLAG([-Wl,--enable-long-section-names], [LDFLAGS_ac])
@@ -205,6 +232,7 @@ AS_CASE([${enable_build_type}],[release|release-*],
     AS_VAR_IF([enable_build_type],["release-hardened"],
       [
         MHD_CHECK_ADD_CC_CFLAGS([-Wformat-security -Wstack-protector], [CFLAGS_ac])
+        MHD_CHECK_ADD_CC_CFLAGS([-Wuninitialized -Winit-self -Walloc-zero -Wbidi-chars=any], [CFLAGS_ac])
       ]
     )
     AS_VAR_IF([enable_build_type],["release"],
@@ -220,6 +248,7 @@ AS_CASE([${enable_build_type}],[release|release-*],
   ]
 )
 CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+# Additional flags are checked and added at the end of 'configure'
 
 # Check for headers that are ALWAYS required
 AC_CHECK_HEADERS_ONCE([stdio.h string.h stdint.h errno.h limits.h fcntl.h], [],
@@ -317,7 +346,8 @@ AS_VAR_IF([enable_compiler_hardening],["yes"],
     CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
     CFLAGS="${user_CFLAGS}"
     MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac],[-fstack-protector-strong],[-fstack-protector-all],[-fstack-protector])
-    MHD_CHECK_ADD_CC_CFLAGS([-fstack-clash-protection -ftrivial-auto-var-init=pattern],[CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-fstack-clash-protection],[CFLAGS_ac])
+    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac],[-ftrivial-auto-var-init=pattern],[-ftrivial-auto-var-init=zero])
     CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
     AS_IF([test "x${enable_static}" = "xyes" && test "x${pic_mode}" != "xyes"],
       [
@@ -3615,6 +3645,16 @@ int main(void)
    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
  ]
 )
+
+# Final flags that may interfere with autoconf detections
+AS_CASE([${enable_build_type}],[debug|debugger],
+  [ # Debug build or build for walking with debugger
+    CFLAGS="${user_CFLAGS}"
+    MHD_CHECK_ADD_CC_CFLAGS([-Wextra-semi -Wextra-semi-stmt], [CFLAGS_ac])
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+  ]
+)
+
 AM_CONDITIONAL([USE_SANITIZERS],
   [test -n "$enabled_sanitizers" && test "x$mhd_cv_cc_sanitizer_works" = "xyes"])
 AC_SUBST([AM_ASAN_OPTIONS])
