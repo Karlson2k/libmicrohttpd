@@ -648,11 +648,6 @@ AS_CASE(["$host_os"],
      AC_MSG_RESULT([[$mhd_host_os]])
      AC_SEARCH_LIBS([gethostbyname], [nsl])
      AC_SEARCH_LIBS([socket], [socket])],
-  [*arm-linux*],
-  [AC_DEFINE([LINUX],[1],[This is a Linux kernel])
-     mhd_host_os='ARM Linux'
-     AC_MSG_RESULT([[$mhd_host_os]])
-     CFLAGS_ac="-fPIC -pipe $CFLAGS_ac"],
   [*linux*],
   [AC_DEFINE([LINUX],[1],[This is a Linux kernel])
      mhd_host_os='Linux'
