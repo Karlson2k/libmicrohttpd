@@ -617,48 +617,48 @@ shutdown_trig_select='no'
 AC_MSG_CHECKING([[for target host OS]])
 AS_CASE(["$host_os"],
  [*darwin* | *rhapsody* | *macosx*],
- [AC_DEFINE_UNQUOTED(OSX,1,[This is an OS X system])
+ [AC_DEFINE([OSX],[1],[This is an OS X system])
      CFLAGS_ac="-no-cpp-precomp -fno-common $CFLAGS_ac"
      mhd_host_os='Darwin'
      AC_MSG_RESULT([[$mhd_host_os]])],
  [kfreebsd*-gnu],
  [AC_DEFINE([SOMEBSD],[1],[This is a BSD system])
-     AC_DEFINE_UNQUOTED([FREEBSD],[1],[This is a FreeBSD system])
+     AC_DEFINE([FREEBSD],[1],[This is a FreeBSD system])
      mhd_host_os='FreeBSD kernel with GNU userland'
      AC_MSG_RESULT([[$mhd_host_os]])],
  [freebsd*],
- [AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
-     AC_DEFINE_UNQUOTED(FREEBSD,1,[This is a FreeBSD system])
+ [AC_DEFINE([SOMEBSD],[1],[This is a BSD system])
+     AC_DEFINE([FREEBSD],[1],[This is a FreeBSD system])
      mhd_host_os='FreeBSD'
      AC_MSG_RESULT([[$mhd_host_os]])],
  [openbsd*],
- [AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
-     AC_DEFINE_UNQUOTED(OPENBSD,1,[This is an OpenBSD system])
+ [AC_DEFINE([SOMEBSD],[1],[This is a BSD system])
+     AC_DEFINE([OPENBSD],[1],[This is an OpenBSD system])
      mhd_host_os='OpenBSD'
      AC_MSG_RESULT([[$mhd_host_os]])],
  [netbsd*],
- [AC_DEFINE_UNQUOTED(SOMEBSD,1,[This is a BSD system])
-     AC_DEFINE_UNQUOTED(NETBSD,1,[This is a NetBSD system])
+ [AC_DEFINE([SOMEBSD],[1],[This is a BSD system])
+     AC_DEFINE([NETBSD],[1],[This is a NetBSD system])
      mhd_host_os='NetBSD'
      AC_MSG_RESULT([[$mhd_host_os]])],
  [*solaris*],
- [AC_DEFINE_UNQUOTED(SOLARIS,1,[This is a Solaris system])
-     AC_DEFINE_UNQUOTED(_REENTRANT,1,[Need with solaris or errno does not work])
+ [AC_DEFINE([SOLARIS],[1],[This is a Solaris system])
+     AC_DEFINE([_REENTRANT],[1],[Need with solaris or errno does not work])
      mhd_host_os='Solaris'
      AC_MSG_RESULT([[$mhd_host_os]])
      AC_SEARCH_LIBS([gethostbyname], [nsl])
      AC_SEARCH_LIBS([socket], [socket])],
   [*arm-linux*],
-  [AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
+  [AC_DEFINE([LINUX],[1],[This is a Linux kernel])
      mhd_host_os='ARM Linux'
      AC_MSG_RESULT([[$mhd_host_os]])
      CFLAGS_ac="-fPIC -pipe $CFLAGS_ac"],
   [*linux*],
-  [AC_DEFINE_UNQUOTED(LINUX,1,[This is a Linux kernel])
+  [AC_DEFINE([LINUX],[1],[This is a Linux kernel])
      mhd_host_os='Linux'
      AC_MSG_RESULT([[$mhd_host_os]])],
   [*cygwin*],
-  [AC_DEFINE_UNQUOTED(CYGWIN,1,[This is a Cygwin system])
+  [AC_DEFINE([CYGWIN],[1],[This is a Cygwin system])
      mhd_host_os='Windows/Cygwin'
      AC_MSG_RESULT([[$mhd_host_os]])
      os_is_windows=yes],
@@ -683,7 +683,7 @@ AS_CASE(["$host_os"],
      os_is_native_w32=yes
    ],
    [*openedition*],
-   [AC_DEFINE_UNQUOTED(OS390,1,[This is a OS/390 system])
+   [AC_DEFINE([OS390],[1],[This is a OS/390 system])
      mhd_host_os='OS/390'
      AC_MSG_RESULT([[$mhd_host_os]])],
    [gnu*],
@@ -695,7 +695,7 @@ AS_CASE(["$host_os"],
      AC_MSG_RESULT([unrecognised OS])
      mhd_host_os="${host_os}"
      AC_MSG_WARN([Unrecognised OS $host_os])
-     AC_DEFINE_UNQUOTED(OTHEROS,1,[Some strange OS])
+     AC_DEFINE([OTHEROS],1,[Some strange OS])
  ])
 
 AM_CONDITIONAL([CYGWIN_TARGET], [[test "x$os_is_windows" = "xyes" && \
