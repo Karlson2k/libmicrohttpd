@@ -707,6 +707,16 @@ post_process_urlencoded (struct MHD_PostProcessor *pp,
       pp->buffer_pos = 0;
       pp->state = PP_Init;
       break;
+    case PP_NextBoundary:
+    case PP_ProcessEntryHeaders:
+    case PP_PerformCheckMultipart:
+    case PP_ProcessValueToBoundary:
+    case PP_PerformCleanup:
+    case PP_Nested_Init:
+    case PP_Nested_PerformMarking:
+    case PP_Nested_ProcessEntryHeaders:
+    case PP_Nested_ProcessValueToBoundary:
+    case PP_Nested_PerformCleanup:
     default:
       MHD_PANIC (_ ("internal error.\n")); /* should never happen! */
     }
@@ -1429,6 +1439,9 @@ post_process_multipart (struct MHD_PostProcessor *pp,
       pp->state = PP_Nested_ProcessEntryHeaders;
       state_changed = 1;
       break;
+    case PP_ProcessKey:
+    case PP_ProcessValue:
+    case PP_Callback:
     default:
       MHD_PANIC (_ ("internal error.\n")); /* should never happen! */
     }

@@ -4145,6 +4145,8 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
   case MHD_CONNECTION_CONTINUE_SENT:
   case MHD_CONNECTION_BODY_RECEIVED:
   case MHD_CONNECTION_FOOTER_PART_RECEIVED:
+  case MHD_CONNECTION_FOOTERS_RECEIVED:
+  case MHD_CONNECTION_FULL_REQ_RECEIVED:
     /* nothing to do but default action */
     if (connection->read_closed)
     {
@@ -5311,7 +5313,13 @@ MHD_get_connection_info (struct MHD_Connection *connection,
       return NULL;
     connection->connection_info_dummy.tls_session = connection->tls_session;
     return &connection->connection_info_dummy;
-#endif /* HTTPS_SUPPORT */
+#else  /* ! HTTPS_SUPPORT */
+  case MHD_CONNECTION_INFO_CIPHER_ALGO:
+  case MHD_CONNECTION_INFO_PROTOCOL:
+  case MHD_CONNECTION_INFO_GNUTLS_SESSION:
+#endif /* ! HTTPS_SUPPORT */
+  case MHD_CONNECTION_INFO_GNUTLS_CLIENT_CERT:
+    return NULL; /* Not implemented */
   case MHD_CONNECTION_INFO_CLIENT_ADDRESS:
     if (0 < connection->addr_len)
     {

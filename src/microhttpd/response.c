@@ -937,6 +937,8 @@ MHD_set_response_options (struct MHD_Response *response,
   {
     switch (ro)
     {
+    case MHD_RO_END: /* Not possible */
+      break;
     default:
       ret = MHD_NO;
       break;

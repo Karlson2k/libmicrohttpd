@@ -637,6 +637,9 @@ MHD_TLS_init (struct MHD_Daemon *daemon)
         gnutls_psk_allocate_server_credentials (&daemon->psk_cred))
       return GNUTLS_E_MEMORY_ERROR;
     return 0;
+  case GNUTLS_CRD_ANON:
+  case GNUTLS_CRD_SRP:
+  case GNUTLS_CRD_IA:
   default:
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
@@ -2626,6 +2629,9 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
       gnutls_psk_set_server_credentials_function (daemon->psk_cred,
                                                   &psk_gnutls_adapter);
       break;
+    case GNUTLS_CRD_ANON:
+    case GNUTLS_CRD_SRP:
+    case GNUTLS_CRD_IA:
     default:
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -6374,6 +6380,7 @@ parse_options_va (struct MHD_Daemon *daemon,
                                        MHD_OPTION_END))
             return MHD_NO;
           break;
+        case MHD_OPTION_END: /* Not possible */
         default:
           return MHD_NO;
         }
@@ -8061,11 +8068,13 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
   case MHD_DAEMON_INFO_LISTEN_FD:
     daemon->daemon_info_dummy_listen_fd.listen_fd = daemon->listen_fd;
     return &daemon->daemon_info_dummy_listen_fd;
-#ifdef EPOLL_SUPPORT
   case MHD_DAEMON_INFO_EPOLL_FD:
+#ifdef EPOLL_SUPPORT
     daemon->daemon_info_dummy_epoll_fd.epoll_fd = daemon->epoll_fd;
     return &daemon->daemon_info_dummy_epoll_fd;
-#endif
+#else  /* ! EPOLL_SUPPORT */
+    return NULL;
+#endif /* ! EPOLL_SUPPORT */
   case MHD_DAEMON_INFO_CURRENT_CONNECTIONS:
     if (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
     {
