@@ -6306,17 +6306,17 @@ parse_options_va (struct MHD_Daemon *daemon,
                                        MHD_OPTION_END))
             return MHD_NO;
           break;
-          /* all options taking 'enum' */
-#ifdef HTTPS_SUPPORT
+        /* all options taking 'enum' */
         case MHD_OPTION_HTTPS_CRED_TYPE:
+#ifdef HTTPS_SUPPORT
           if (MHD_NO == parse_options (daemon,
                                        servaddr,
                                        opt,
                                        (gnutls_credentials_type_t) oa[i].value,
                                        MHD_OPTION_END))
-            return MHD_NO;
-          break;
 #endif /* HTTPS_SUPPORT */
+          return MHD_NO;
+          break;
         /* all options taking 'MHD_socket' */
         case MHD_OPTION_LISTEN_SOCKET:
           if (MHD_NO == parse_options (daemon,
@@ -6434,25 +6434,32 @@ parse_options_va (struct MHD_Daemon *daemon,
                   (int) opt);
 #endif /* HAVE_MESSAGES */
       break;
+#ifndef HTTPS_SUPPORT
+    case MHD_OPTION_HTTPS_MEM_KEY:
+    case MHD_OPTION_HTTPS_MEM_CERT:
+    case MHD_OPTION_HTTPS_CRED_TYPE:
+    case MHD_OPTION_HTTPS_PRIORITIES:
+    case MHD_OPTION_HTTPS_MEM_TRUST:
+    case MHD_OPTION_HTTPS_CERT_CALLBACK:
+    case MHD_OPTION_HTTPS_MEM_DHPARAMS:
+    case MHD_OPTION_HTTPS_KEY_PASSWORD:
+    case MHD_OPTION_GNUTLS_PSK_CRED_HANDLER:
+    case MHD_OPTION_HTTPS_CERT_CALLBACK2:
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("MHD HTTPS option %d passed to MHD "
+                   "compiled without HTTPS support.\n"),
+                opt);
+#endif
+      return MHD_NO;
+#endif /* HTTPS_SUPPORT */
+    case MHD_OPTION_END: /* Not possible */
     default:
 #ifdef HAVE_MESSAGES
-      if ( ( (opt >= MHD_OPTION_HTTPS_MEM_KEY) &&
-             (opt <= MHD_OPTION_HTTPS_PRIORITIES) ) ||
-           (opt == MHD_OPTION_HTTPS_MEM_TRUST) ||
-           (opt == MHD_OPTION_GNUTLS_PSK_CRED_HANDLER) )
-      {
-        MHD_DLOG (daemon,
-                  _ (
-                    "MHD HTTPS option %d passed to MHD compiled without HTTPS support.\n"),
-                  opt);
-      }
-      else
-      {
-        MHD_DLOG (daemon,
-                  _ (
-                    "Invalid option %d! (Did you terminate the list with MHD_OPTION_END?).\n"),
-                  opt);
-      }
+      MHD_DLOG (daemon,
+                _ ("Invalid option %d! (Did you terminate "
+                   "the list with MHD_OPTION_END?).\n"),
+                opt);
 #endif
       return MHD_NO;
     }
