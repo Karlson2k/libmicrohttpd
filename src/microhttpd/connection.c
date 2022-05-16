@@ -4133,6 +4133,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
             __FUNCTION__,
             MHD_state_to_string (connection->state));
 #endif
+  /* TODO: check whether the next 'switch()' really needed */
   switch (connection->state)
   {
   case MHD_CONNECTION_INIT:
@@ -4162,8 +4163,9 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
     mhd_assert (0);
     return;
 #endif /* UPGRADE_SUPPORT */
-  default:
+  case MHD_CONNECTION_START_REPLY:
     /* shrink read buffer to how much is actually used */
+    /* TODO: remove shrink as it handled in special function */
     if ((0 != connection->read_buffer_size) &&
         (connection->read_buffer_size != connection->read_buffer_offset))
     {
@@ -4176,6 +4178,17 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
       connection->read_buffer_size = connection->read_buffer_offset;
     }
     break;
+  case MHD_CONNECTION_HEADERS_SENDING:
+  case MHD_CONNECTION_HEADERS_SENT:
+  case MHD_CONNECTION_NORMAL_BODY_UNREADY:
+  case MHD_CONNECTION_NORMAL_BODY_READY:
+  case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
+  case MHD_CONNECTION_CHUNKED_BODY_READY:
+  case MHD_CONNECTION_BODY_SENT:
+  case MHD_CONNECTION_FOOTERS_SENDING:
+  case MHD_CONNECTION_FOOTERS_SENT:
+  default:
+    mhd_assert (0); /* Should not be possible */
   }
   return;
 }
