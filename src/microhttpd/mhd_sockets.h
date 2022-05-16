@@ -199,7 +199,7 @@ typedef SOCKET MHD_socket;
 #  define SHUT_RDWR SD_BOTH
 #endif
 
-#if HAVE_ACCEPT4 + 0 != 0 && (defined(HAVE_SOCK_NONBLOCK) || \
+#if defined(HAVE_ACCEPT4) && (defined(HAVE_SOCK_NONBLOCK) || \
   defined(SOCK_CLOEXEC) || defined(SOCK_NOSIGPIPE))
 #  define USE_ACCEPT4 1
 #endif

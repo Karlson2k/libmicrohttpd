@@ -1233,7 +1233,7 @@ run_mhd_loop (struct MHD_Daemon *daemon,
   else if (0 != (flags & MHD_USE_POLL))
     run_mhd_poll_loop (daemon);
 #endif /* HAVE_POLL */
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   else if (0 != (flags & MHD_USE_EPOLL))
     run_mhd_epoll_loop (daemon);
 #endif

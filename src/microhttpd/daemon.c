@@ -46,7 +46,7 @@
 #include "mhd_send.h"
 #include "mhd_align.h"
 
-#if HAVE_SEARCH_H
+#ifdef HAVE_SEARCH_H
 #include <search.h>
 #else
 #include "tsearch.h"
@@ -237,7 +237,7 @@ struct MHD_IPCount
      * IPv4 address.
      */
     struct in_addr ipv4;
-#if HAVE_INET6
+#ifdef HAVE_INET6
     /**
      * IPv6 address.
      */
@@ -337,7 +337,7 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
     }
   }
 
-#if HAVE_INET6
+#ifdef HAVE_INET6
   if (sizeof (struct sockaddr_in6) <= (size_t) addrlen)
   {
     /* IPv6 addresses */
@@ -1882,7 +1882,7 @@ thread_main_handle_connection (void *data)
   fd_set ws;
   fd_set es;
   MHD_socket maxsock;
-#if WINDOWS
+#ifdef WINDOWS
 #ifdef HAVE_POLL
   unsigned int extra_slot;
 #endif /* HAVE_POLL */
@@ -2049,7 +2049,7 @@ thread_main_handle_connection (void *data)
         /* how did we get here!? */
         goto exit;
       }
-#if WINDOWS
+#ifdef WINDOWS
       if (MHD_ITC_IS_VALID_ (daemon->itc) )
       {
         if (! MHD_add_to_fd_set_ (MHD_itc_r_fd_ (daemon->itc),
@@ -2087,7 +2087,7 @@ thread_main_handle_connection (void *data)
 #endif
         break;
       }
-#if WINDOWS
+#ifdef WINDOWS
       /* Clear ITC before other processing so additional
        * signals will trigger select() again */
       if ( (MHD_ITC_IS_VALID_ (daemon->itc)) &&
@@ -2143,7 +2143,7 @@ thread_main_handle_connection (void *data)
         /* how did we get here!? */
         goto exit;
       }
-#if WINDOWS
+#ifdef WINDOWS
       extra_slot = 0;
       if (MHD_ITC_IS_VALID_ (daemon->itc))
       {
@@ -2154,7 +2154,7 @@ thread_main_handle_connection (void *data)
       }
 #endif
       if (MHD_sys_poll_ (p,
-#if WINDOWS
+#ifdef WINDOWS
                          1 + extra_slot,
 #else
                          1,
@@ -2170,7 +2170,7 @@ thread_main_handle_connection (void *data)
 #endif
         break;
       }
-#if WINDOWS
+#ifdef WINDOWS
       /* Clear ITC before other processing so additional
        * signals will trigger poll() again */
       if ( (MHD_ITC_IS_VALID_ (daemon->itc)) &&
@@ -2442,7 +2442,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
                 "Server reached connection limit. Closing inbound connection.\n"));
 #endif
     MHD_socket_close_chk_ (client_socket);
-#if ENFILE
+#if defined(ENFILE) && (ENFILE + 0 != 0)
     errno = ENFILE;
 #endif
     return NULL;
@@ -2464,7 +2464,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
     MHD_ip_limit_del (daemon,
                       addr,
                       addrlen);
-#if EACCESS
+#if defined(EACCESS) && (EACCESS + 0 != 0)
     errno = EACCESS;
 #endif
     return NULL;
@@ -2580,7 +2580,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
       MHD_DLOG (daemon,
                 _ ("Failed to initialise TLS session.\n"));
 #endif
-#if EPROTO
+#if defined(EPROTO) && (EPROTO + 0 != 0)
       errno = EPROTO;
 #endif
       return NULL;
@@ -2642,7 +2642,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
         free (connection->addr);
       free (connection);
       MHD_PANIC (_ ("Unknown credential type.\n"));
-#if EINVAL
+#if defined(EINVAL) && (EINVAL + 0 != 0)
       errno = EINVAL;
 #endif
       return NULL;
@@ -2754,7 +2754,7 @@ new_connection_process_ (struct MHD_Daemon *daemon,
               _ ("Error allocating memory: %s\n"),
               MHD_strerror_ (errno));
 #endif
-#if ENOMEM
+#if defined(ENOMEM) && (ENOMEM + 0 != 0)
     eno = ENOMEM;
 #endif
     (void) 0; /* Mute possible compiler warning */
@@ -2770,7 +2770,7 @@ new_connection_process_ (struct MHD_Daemon *daemon,
                 _ ("Server reached connection limit. "
                    "Closing inbound connection.\n"));
 #endif
-#if ENFILE
+#if defined(ENFILE) && (ENFILE + 0 != 0)
       eno = ENFILE;
 #endif
       (void) 0; /* Mute possible compiler warning */
@@ -2973,7 +2973,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
               (int) FD_SETSIZE);
 #endif
     MHD_socket_close_chk_ (client_socket);
-#if ENFILE
+#if defined(ENFILE) && (ENFILE + 0 != 0)
     errno = ENFILE;
 #endif
     return MHD_NO;
@@ -2987,7 +2987,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
               _ ("Epoll mode supports only non-blocking sockets\n"));
 #endif
     MHD_socket_close_chk_ (client_socket);
-#if EINVAL
+#if defined(EINVAL) && (EINVAL + 0 != 0)
     errno = EINVAL;
 #endif
     return MHD_NO;
@@ -3561,7 +3561,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
     }
     /* all pools are at their connection limit, must refuse */
     MHD_socket_close_chk_ (client_socket);
-#if ENFILE
+#if defined(ENFILE) && (ENFILE + 0 != 0)
     errno = ENFILE;
 #endif
     return MHD_NO;
@@ -3596,7 +3596,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 static enum MHD_Result
 MHD_accept_connection (struct MHD_Daemon *daemon)
 {
-#if HAVE_INET6
+#ifdef HAVE_INET6
   struct sockaddr_in6 addrstorage;
 #else
   struct sockaddr_in addrstorage;
@@ -6599,7 +6599,7 @@ MHD_start_daemon_va (unsigned int flags,
   struct MHD_Daemon *daemon;
   MHD_socket listen_fd;
   struct sockaddr_in servaddr4;
-#if HAVE_INET6
+#ifdef HAVE_INET6
   struct sockaddr_in6 servaddr6;
 #endif
   const struct sockaddr *servaddr = NULL;
@@ -7032,7 +7032,7 @@ MHD_start_daemon_va (unsigned int flags,
     }
 
     /* check for user supplied sockaddr */
-#if HAVE_INET6
+#ifdef HAVE_INET6
     if (0 != (*pflags & MHD_USE_IPv6))
       addrlen = sizeof (struct sockaddr_in6);
     else
@@ -7040,7 +7040,7 @@ MHD_start_daemon_va (unsigned int flags,
     addrlen = sizeof (struct sockaddr_in);
     if (NULL == servaddr)
     {
-#if HAVE_INET6
+#ifdef HAVE_INET6
       if (0 != (*pflags & MHD_USE_IPv6))
       {
 #ifdef IN6ADDR_ANY_INIT
@@ -7054,7 +7054,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef IN6ADDR_ANY_INIT
         servaddr6.sin6_addr = static_in6any;
 #endif
-#if HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
+#ifdef HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
         servaddr6.sin6_len = sizeof (struct sockaddr_in6);
 #endif
         servaddr = (struct sockaddr *) &servaddr6;
@@ -7069,7 +7069,7 @@ MHD_start_daemon_va (unsigned int flags,
         servaddr4.sin_port = htons (port);
         if (0 != INADDR_ANY)
           servaddr4.sin_addr.s_addr = htonl (INADDR_ANY);
-#if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
+#ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
         servaddr4.sin_len = sizeof (struct sockaddr_in);
 #endif
         servaddr = (struct sockaddr *) &servaddr4;
@@ -7798,7 +7798,7 @@ close_all_connections (struct MHD_Daemon *daemon)
   {
     shutdown (pos->socket_fd,
               SHUT_RDWR);
-#if MHD_WINSOCK_SOCKETS
+#ifdef MHD_WINSOCK_SOCKETS
     if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
          (MHD_ITC_IS_VALID_ (daemon->itc)) &&
          (! MHD_itc_activate_ (daemon->itc, "e")) )

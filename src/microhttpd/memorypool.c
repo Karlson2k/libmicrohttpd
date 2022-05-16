@@ -31,7 +31,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "mhd_assert.h"
-#if HAVE_SYS_MMAN_H
+#ifdef HAVE_SYS_MMAN_H
 #include <sys/mman.h>
 #endif
 #ifdef _WIN32

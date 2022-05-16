@@ -885,7 +885,7 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
     DLL_remove (daemon->urh_head,
                 daemon->urh_tail,
                 urh);
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
        (0 != epoll_ctl (daemon->epoll_upgrade_fd,
                         EPOLL_CTL_DEL,
@@ -904,7 +904,7 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
 #endif /* EPOLL_SUPPORT */
   if (MHD_INVALID_SOCKET != urh->mhd.socket)
   {
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
     if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
          (0 != epoll_ctl (daemon->epoll_upgrade_fd,
                           EPOLL_CTL_DEL,

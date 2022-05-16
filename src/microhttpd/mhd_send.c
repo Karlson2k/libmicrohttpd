@@ -853,7 +853,7 @@ MHD_send_data_ (struct MHD_Connection *connection,
 
       if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
       {
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
         /* EAGAIN, no longer write-ready */
         connection->epoll_state &=
           ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
@@ -879,7 +879,7 @@ MHD_send_data_ (struct MHD_Connection *connection,
       /* Treat any other error as a hard error. */
       return MHD_ERR_NOTCONN_;
     }
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
     else if (buffer_size > (size_t) ret)
       connection->epoll_state &=
         ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
@@ -1099,7 +1099,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
 
     if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
     {
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
       /* EAGAIN, no longer write-ready */
       connection->epoll_state &=
         ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
@@ -1125,7 +1125,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     /* Treat any other error as a hard error. */
     return MHD_ERR_NOTCONN_;
   }
-#if EPOLL_SUPPORT
+#ifdef EPOLL_SUPPORT
   else if ((header_size + body_size) > (size_t) ret)
     connection->epoll_state &=
       ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);

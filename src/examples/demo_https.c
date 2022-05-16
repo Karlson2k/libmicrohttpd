@@ -390,7 +390,7 @@ update_directory (void)
                                                         rdc.buf,
                                                         &free);
   mark_as_html (response);
-#if FORCE_CLOSE
+#ifdef FORCE_CLOSE
   (void) MHD_add_response_header (response,
                                   MHD_HTTP_HEADER_CONNECTION,
                                   "close");
@@ -579,7 +579,7 @@ process_upload_data (void *cls,
         fn[i] = '_';
     uc->fd = open (fn,
                    O_CREAT | O_EXCL
-#if O_LARGEFILE
+#ifdef O_LARGEFILE
                    | O_LARGEFILE
 #endif
                    | O_WRONLY,
@@ -998,7 +998,7 @@ main (int argc, char *const *argv)
                         &generate_page, NULL,
                         MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (256
                                                                       * 1024),
-#if PRODUCTION
+#ifdef PRODUCTION
                         MHD_OPTION_PER_IP_CONNECTION_LIMIT, (unsigned int) (64),
 #endif
                         MHD_OPTION_CONNECTION_TIMEOUT, (unsigned

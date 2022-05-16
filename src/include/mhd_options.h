@@ -80,7 +80,7 @@
 #  endif
 #endif /* MHD_USE_POSIX_THREADS || MHD_USE_W32_THREADS */
 
-#if OS390
+#if defined(OS390)
 #define _OPEN_THREADS
 #define _OPEN_SYS_SOCK_IPV6
 #define _OPEN_MSGQ_EXT
@@ -109,7 +109,7 @@
 #define RESTRICT __restrict__
 #endif /* __VXWORKS__ || __vxworks || OS_VXWORKS */
 
-#if LINUX + 0 && (defined(HAVE_SENDFILE64) || defined(HAVE_LSEEK64)) && \
+#if defined(LINUX) && (defined(HAVE_SENDFILE64) || defined(HAVE_LSEEK64)) && \
   ! defined(_LARGEFILE64_SOURCE)
 /* On Linux, special macro is required to enable definitions of some xxx64 functions */
 #define _LARGEFILE64_SOURCE 1
