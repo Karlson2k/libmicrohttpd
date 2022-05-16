@@ -671,7 +671,7 @@ check_nonce_nc (struct MHD_Connection *connection,
   mod = daemon->nonce_nc_size;
   if (0 == mod)
     return MHD_DAUTH_NONCENC_STALE;  /* no array! */
-  if (nc + 64 < nc)
+  if (nc >= UINT64_MAX - 64)
     return MHD_DAUTH_NONCENC_STALE;  /* Overflow, unrealistically high value */
 
   nn = &daemon->nnc[get_nonce_nc_idx (mod, nonce, noncelen)];
