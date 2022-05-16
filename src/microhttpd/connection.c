@@ -2973,6 +2973,9 @@ parse_cookies_string_lenient (char *str,
     {
       value_start = 0;
       value_len = 0;
+#ifdef _DEBUG
+      val_quoted = false; /* This assignment used in assert */
+#endif
     }
     else
     {
