@@ -43,8 +43,14 @@
 /* The size of `tv_sec' member of `struct timeval', as computed by sizeof */
 #define SIZEOF_STRUCT_TIMEVAL_TV_SEC 4
 
+/* The size of `int64_t', as computed by sizeof. */
+#define SIZEOF_INT64_T 8
+
 /* The size of `uint64_t', as computed by sizeof. */
 #define SIZEOF_UINT64_T 8
+
+/* The size of `int', as computed by sizeof. */
+#define SIZEOF_INT 4
 
 /* The size of `unsigned int', as computed by sizeof. */
 #define SIZEOF_UNSIGNED_INT 4
@@ -76,6 +82,9 @@
 
 /* Enable HTTP Upgrade support. */
 #define UPGRADE_SUPPORT 1
+
+/* Enable HTTP cookie parsing support. */
+#define COOKIE_SUPPORT 1
 
 /* *** OS features *** */
 
