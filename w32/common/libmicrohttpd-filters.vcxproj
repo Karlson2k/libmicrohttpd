@@ -49,6 +49,9 @@
     <ClInclude Include="$(MhdSrc)microhttpd\connection.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MhdSrc)microhttpd\digestauth.h">
+      <Filter>Internal Headers</Filter>
+    </ClInclude>
     <ClInclude Include="$(MhdSrc)microhttpd\internal.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>

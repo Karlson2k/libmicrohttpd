@@ -25,6 +25,7 @@
  * @author Christian Grothoff (RFC 7616 support)
  * @author Karlson2k (Evgeny Grin)
  */
+#include "digestauth.h"
 #include "platform.h"
 #include "mhd_limits.h"
 #include "internal.h"
@@ -118,12 +119,6 @@
  */
 #define VLA_CHECK_LEN_DIGEST(n) \
   do { if ((n) > MAX_DIGEST) MHD_PANIC (_ ("VLA too big.\n")); } while (0)
-
-
-/**
- * Beginning string for any valid Digest authentication header.
- */
-#define _BASE   "Digest "
 
 /**
  * Maximum length of a username for digest authentication.
@@ -794,10 +789,10 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection)
                                                NULL))
     return NULL;
   if (0 != strncmp (header,
-                    _BASE,
-                    MHD_STATICSTR_LEN_ (_BASE)))
+                    _MHD_AUTH_DIGEST_BASE,
+                    MHD_STATICSTR_LEN_ (_MHD_AUTH_DIGEST_BASE)))
     return NULL;
-  header += MHD_STATICSTR_LEN_ (_BASE);
+  header += MHD_STATICSTR_LEN_ (_MHD_AUTH_DIGEST_BASE);
   if (0 == lookup_sub_value (user,
                              sizeof (user),
                              header,
@@ -1244,10 +1239,10 @@ digest_auth_check_all (struct MHD_Connection *connection,
                                                NULL))
     return MHD_DAUTH_WRONG_HEADER;
   if (0 != strncmp (header,
-                    _BASE,
-                    MHD_STATICSTR_LEN_ (_BASE)))
+                    _MHD_AUTH_DIGEST_BASE,
+                    MHD_STATICSTR_LEN_ (_MHD_AUTH_DIGEST_BASE)))
     return MHD_DAUTH_WRONG_HEADER;
-  header += MHD_STATICSTR_LEN_ (_BASE);
+  header += MHD_STATICSTR_LEN_ (_MHD_AUTH_DIGEST_BASE);
   left = strlen (header);
 
   if (1)

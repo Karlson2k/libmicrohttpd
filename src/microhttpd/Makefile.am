@@ -163,7 +163,7 @@ endif
 
 if ENABLE_DAUTH
 libmicrohttpd_la_SOURCES += \
-  digestauth.c \
+  digestauth.c digestauth.h \
   mhd_bithelpers.h mhd_byteorder.h mhd_align.h \
   md5.c md5.h \
   sha256.c sha256.h
