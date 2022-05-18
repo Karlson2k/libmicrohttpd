@@ -2997,7 +2997,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
     return MHD_NO;
   }
 
-  if ( (0 == (daemon->options & MHD_USE_EPOLL)) &&
+  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
        (! non_blck) )
   {
 #ifdef HAVE_MESSAGES
