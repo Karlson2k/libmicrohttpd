@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2010, 2011, 2012 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -21,17 +22,14 @@
  * @brief Implements HTTP basic authentication methods
  * @author Amr Ali
  * @author Matthieu Speder
+ * @author Karlson2k (Evgeny Grin)
  */
+#include "basicauth.h"
 #include "platform.h"
 #include "mhd_limits.h"
 #include "internal.h"
 #include "base64.h"
 #include "mhd_compat.h"
-
-/**
- * Beginning string for any valid Basic authentication header.
- */
-#define _BASIC_BASE   "Basic "
 
 
 /**
@@ -60,10 +58,10 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
                                                  &header,
                                                  NULL)) ||
        (0 != strncmp (header,
-                      _BASIC_BASE,
-                      MHD_STATICSTR_LEN_ (_BASIC_BASE))) )
+                      _MHD_AUTH_BASIC_BASE,
+                      MHD_STATICSTR_LEN_ (_MHD_AUTH_BASIC_BASE))) )
     return NULL;
-  header += MHD_STATICSTR_LEN_ (_BASIC_BASE);
+  header += MHD_STATICSTR_LEN_ (_MHD_AUTH_BASIC_BASE);
   if (NULL == (decode = BASE64Decode (header)))
   {
 #ifdef HAVE_MESSAGES

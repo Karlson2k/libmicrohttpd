@@ -32,6 +32,7 @@
     <ClInclude Include="$(MhdSrc)include\mhd_options.h" />
     <ClInclude Include="$(MhdSrc)include\platform.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\base64.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\basicauth.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\connection.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\internal.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\md5.h" />

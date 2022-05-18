@@ -43,6 +43,9 @@
     <ClInclude Include="$(MhdSrc)microhttpd\base64.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MhdSrc)microhttpd\basicauth.h">
+      <Filter>Internal Headers</Filter>
+    </ClInclude>
     <ClInclude Include="$(MhdSrc)microhttpd\connection.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>
