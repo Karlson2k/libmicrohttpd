@@ -242,9 +242,9 @@ str_conn_error_ (ssize_t mhd_err_code)
  * @return pointer to allocated memory region in the pool or
  *         NULL if no memory is available
  */
-static void *
-connection_alloc_memory (struct MHD_Connection *connection,
-                         size_t size)
+void *
+MHD_connection_alloc_memory_ (struct MHD_Connection *connection,
+                              size_t size)
 {
   struct MHD_Connection *const c = connection; /* a short alias */
   struct MemoryPool *const pool = c->pool;     /* a short alias */
@@ -482,8 +482,8 @@ MHD_set_connection_value_n_nocheck_ (struct MHD_Connection *connection,
 {
   struct MHD_HTTP_Req_Header *pos;
 
-  pos = connection_alloc_memory (connection,
-                                 sizeof (struct MHD_HTTP_Res_Header));
+  pos = MHD_connection_alloc_memory_ (connection,
+                                      sizeof (struct MHD_HTTP_Res_Header));
   if (NULL == pos)
     return MHD_NO;
   pos->header = key;
@@ -1033,8 +1033,8 @@ try_ready_normal_body (struct MHD_Connection *connection)
     if (NULL != connection->resp_iov.iov)
       return MHD_YES;
     copy_size = response->data_iovcnt * sizeof(MHD_iovec_);
-    connection->resp_iov.iov = connection_alloc_memory (connection,
-                                                        copy_size);
+    connection->resp_iov.iov = MHD_connection_alloc_memory_ (connection,
+                                                             copy_size);
     if (NULL == connection->resp_iov.iov)
     {
       MHD_mutex_unlock_chk_ (&response->mutex);
@@ -3103,8 +3103,8 @@ parse_cookie_header (struct MHD_Connection *connection)
   if (0 == hdr_len)
     return MHD_PARSE_COOKIE_OK;
 
-  cpy = connection_alloc_memory (connection,
-                                 hdr_len + 1);
+  cpy = MHD_connection_alloc_memory_ (connection,
+                                      hdr_len + 1);
   if (NULL == cpy)
     return MHD_PARSE_COOKIE_NO_MEMORY;
 

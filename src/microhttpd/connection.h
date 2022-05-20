@@ -190,4 +190,18 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection);
 void
 MHD_update_last_activity_ (struct MHD_Connection *connection);
 
+
+/**
+ * Allocate memory from connection's memory pool.
+ * If memory pool doesn't have enough free memory but read or write buffer
+ * have some unused memory, the size of the buffer will be reduced as needed.
+ * @param connection the connection to use
+ * @param size the size of allocated memory area
+ * @return pointer to allocated memory region in the pool or
+ *         NULL if no memory is available
+ */
+void *
+MHD_connection_alloc_memory_ (struct MHD_Connection *connection,
+                              size_t size);
+
 #endif
