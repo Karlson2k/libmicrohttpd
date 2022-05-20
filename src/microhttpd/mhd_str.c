@@ -1375,3 +1375,28 @@ MHD_bin_to_hex (const void *bin,
   hex[i * 2] = 0;
   return i;
 }
+
+
+size_t
+MHD_str_unquote (const char *quoted,
+                 size_t quoted_len,
+                 char *result)
+{
+  size_t r;
+  size_t w;
+
+  r = 0;
+  w = 0;
+
+  while (quoted_len > r)
+  {
+    if ('\\' == quoted[r])
+    {
+      ++r;
+      if (quoted_len == r)
+        return 0; /* Last backslash is not followed by char to unescape */
+    }
+    result[w++] = quoted[r++];
+  }
+  return w;
+}

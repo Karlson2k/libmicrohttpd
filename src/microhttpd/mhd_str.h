@@ -471,4 +471,23 @@ MHD_bin_to_hex (const void *bin,
                 size_t size,
                 char *hex);
 
+/**
+ * Convert string from quoted to unquoted form as specified by
+ * RFC7230#section-3.2.6 and RFC7694#quoted.strings.
+ *
+ * @param quoted the quoted string, must NOT include leading and closing
+ *               DQUOTE chars, does not need to be zero-terminated
+ * @param size the size in chars of the @a quited string
+ * @param[out] result the pointer to the buffer to put the result, must
+ *                    be at least @a size character long. The result is NOT
+ *                    zero-terminated.
+ * @return The number of characters written to the output buffer,
+ *         zero if last backslash is not followed by any character (or
+ *         @a size is zero).
+ */
+size_t
+MHD_str_unquote (const char *quoted,
+                 size_t quoted_len,
+                 char *result);
+
 #endif /* MHD_STR_H */
