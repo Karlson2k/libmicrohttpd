@@ -70,7 +70,7 @@
 #define SHA256_BLOCK_SIZE (SHA256_BLOCK_SIZE_BITS / 8)
 
 
-struct sha256_ctx
+struct Sha256Ctx
 {
   uint32_t H[_SHA256_DIGEST_LENGTH];    /**< Intermediate hash value / digest at end of calculation */
   uint8_t buffer[SHA256_BLOCK_SIZE];    /**< SHA256 input data buffer */
@@ -80,21 +80,21 @@ struct sha256_ctx
 /**
  * Initialise structure for SHA256 calculation.
  *
- * @param ctx_ must be a `struct sha256_ctx *`
+ * @param ctx must be a `struct Sha256Ctx *`
  */
 void
-MHD_SHA256_init (void *ctx_);
+MHD_SHA256_init (struct Sha256Ctx *ctx);
 
 
 /**
  * Process portion of bytes.
  *
- * @param ctx_ must be a `struct sha256_ctx *`
+ * @param ctx must be a `struct Sha256Ctx *`
  * @param data bytes to add to hash
  * @param length number of bytes in @a data
  */
 void
-MHD_SHA256_update (void *ctx_,
+MHD_SHA256_update (struct Sha256Ctx *ctx,
                    const uint8_t *data,
                    size_t length);
 
@@ -102,11 +102,11 @@ MHD_SHA256_update (void *ctx_,
 /**
  * Finalise SHA256 calculation, return digest.
  *
- * @param ctx_ must be a `struct sha256_ctx *`
+ * @param ctx must be a `struct Sha256Ctx *`
  * @param[out] digest set to the hash, must be #SHA256_DIGEST_SIZE bytes
  */
 void
-MHD_SHA256_finish (void *ctx_,
+MHD_SHA256_finish (struct Sha256Ctx *ctx,
                    uint8_t digest[SHA256_DIGEST_SIZE]);
 
 #endif /* MHD_SHA256_H */

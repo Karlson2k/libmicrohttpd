@@ -37,13 +37,11 @@
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
  *
- * @param ctx_ must be a `struct MD5Context *`
+ * @param ctx must be a `struct MD5Context *`
  */
 void
-MHD_MD5Init (void *ctx_)
+MHD_MD5Init (struct MD5Context *ctx)
 {
-  struct MD5Context *ctx = ctx_;
-
   mhd_assert (ctx != NULL);
   ctx->count = 0;
   ctx->state[0] = UINT32_C (0x67452301);
@@ -61,13 +59,12 @@ MD5Transform (uint32_t state[4],
 /**
  * Final wrapup--call MD5Pad, fill in digest and zero out ctx.
  *
- * @param ctx_ must be a `struct MD5Context *`
+ * @param ctx must be a `struct MD5Context *`
  */
 void
-MHD_MD5Final (void *ctx_,
+MHD_MD5Final (struct MD5Context *ctx,
               uint8_t digest[MD5_DIGEST_SIZE])
 {
-  struct MD5Context *ctx = ctx_;
   uint64_t count_bits;
   size_t have_bytes;
 
@@ -267,16 +264,15 @@ MD5Transform (uint32_t state[4],
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  *
- * @param ctx_ must be a `struct MD5Context *`
+ * @param ctx must be a `struct MD5Context *`
  * @param input bytes to add to hash
  * @param len the number of bytes in @a data
  */
 void
-MHD_MD5Update (void *ctx_,
+MHD_MD5Update (struct MD5Context *ctx,
                const uint8_t *input,
                size_t len)
 {
-  struct MD5Context *ctx = ctx_;
   size_t have, need;
 
   mhd_assert (ctx != NULL);

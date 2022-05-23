@@ -35,12 +35,11 @@
 /**
  * Initialise structure for SHA256 calculation.
  *
- * @param ctx_ must be a `struct sha256_ctx *`
+ * @param ctx must be a `struct Sha256Ctx *`
  */
 void
-MHD_SHA256_init (void *ctx_)
+MHD_SHA256_init (struct Sha256Ctx *ctx)
 {
-  struct sha256_ctx *const ctx = ctx_;
   /* Initial hash values, see FIPS PUB 180-4 paragraph 5.3.3 */
   /* First thirty-two bits of the fractional parts of the square
    * roots of the first eight prime numbers: 2, 3, 5, 7, 11, 13,
@@ -306,16 +305,15 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
 /**
  * Process portion of bytes.
  *
- * @param ctx_ must be a `struct sha256_ctx *`
+ * @param ctx_ must be a `struct Sha256Ctx *`
  * @param data bytes to add to hash
  * @param length number of bytes in @a data
  */
 void
-MHD_SHA256_update (void *ctx_,
+MHD_SHA256_update (struct Sha256Ctx *ctx,
                    const uint8_t *data,
                    size_t length)
 {
-  struct sha256_ctx *const ctx = ctx_;
   unsigned bytes_have; /**< Number of bytes in buffer */
 
   mhd_assert ((data != NULL) || (length == 0));
@@ -369,14 +367,13 @@ MHD_SHA256_update (void *ctx_,
 /**
  * Finalise SHA256 calculation, return digest.
  *
- * @param ctx_ must be a `struct sha256_ctx *`
+ * @param ctx_ must be a `struct Sha256Ctx *`
  * @param[out] digest set to the hash, must be #SHA256_DIGEST_SIZE bytes
  */
 void
-MHD_SHA256_finish (void *ctx_,
+MHD_SHA256_finish (struct Sha256Ctx *ctx,
                    uint8_t digest[SHA256_DIGEST_SIZE])
 {
-  struct sha256_ctx *const ctx = ctx_;
   uint64_t num_bits;   /**< Number of processed bits */
   unsigned bytes_have; /**< Number of bytes in buffer */
 
@@ -448,5 +445,5 @@ MHD_SHA256_finish (void *ctx_,
   }
 
   /* Erase potentially sensitive data. */
-  memset (ctx, 0, sizeof(struct sha256_ctx));
+  memset (ctx, 0, sizeof(struct Sha256Ctx));
 }

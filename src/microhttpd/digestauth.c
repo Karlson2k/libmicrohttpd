@@ -175,74 +175,261 @@ enum MHD_CheckNonceNC_
 
 
 /**
- * Context passed to functions that need to calculate
- * a digest but are orthogonal to the specific
- * algorithm.
+ * Digest context data
+ */
+union DigestCtx
+{
+  struct MD5Context md5_ctx;
+  struct Sha256Ctx sha256_ctx;
+};
+
+/**
+ * Digest printed as hex digits.
+ */
+union DigestHex
+{
+  char md5[MD5_DIGEST_STRING_LENGTH];
+  char sha256[SHA256_DIGEST_STRING_SIZE];
+};
+
+/**
+ * Digest in binary form.
+ */
+union DigestBin
+{
+  uint8_t md5[MD5_DIGEST_SIZE];
+  uint8_t sha256[SHA256_DIGEST_SIZE];
+};
+
+/**
+ * The digest calculation structure.
  */
 struct DigestAlgorithm
 {
   /**
-   * Size of the final digest returned by @e digest.
-   */
-  unsigned int digest_size;
-
-  /**
    * A context for the digest algorithm, already initialized to be
    * useful for @e init, @e update and @e digest.
    */
-  void *ctx;
+  union DigestCtx ctx;
 
   /**
-   * Name of the algorithm, "MD5" or "SHA-256".
-   * @sa #_MHD_MD5_TOKEN, #_MHD_SHA256_TOKEN
+   * Digest in binary form.
    */
-  const char *alg;
+  union DigestBin digest;
+  /**
+   * The digest algorithm.
+   */
+  enum MHD_DigestAuthAlgorithm algo;
 
   /**
-   * Buffer of @e digest_size * 2 + 1 bytes.
+   * Buffer for hex-print of the final digest.
    */
-  char *sessionkey;
-
-  /**
-   * Call to initialize @e ctx.
-   */
-  void
-  (*init)(void *ctx);
-
-  /**
-   * Feed more data into the digest function.
-   *
-   * @param ctx context to feed
-   * @param length number of bytes in @a data
-   * @param data data to add
-   */
-  void
-  (*update)(void *ctx,
-            const uint8_t *data,
-            size_t length);
-
-  /**
-   * Compute final @a digest.
-   *
-   * @param ctx context to use
-   * @param[out] digest where to write the result,
-   *        must be @e digest_length bytes long
-   */
-  void
-  (*digest)(void *ctx,
-            uint8_t *digest);
+  union DigestHex digest_hex;
+#if _DEBUG
+  bool setup; /**< The structure was set-up */
+  bool inited; /**< The calculation was initialised */
+  bool digest_calculated; /**< The digest was calculated */
+#endif /* _DEBUG */
 };
 
 
 /**
+ * Return name of the algorithm as a string.
+ * @param da the digest calculation structure to identify
+ * @return the name of the @a algo as a string.
+ */
+_MHD_static_inline const char *
+digest_get_algo_name (struct DigestAlgorithm *da)
+{
+  mhd_assert (da->setup);
+  if (MHD_DIGEST_ALG_MD5 == da->algo)
+    return _MHD_MD5_TOKEN;
+  if (MHD_DIGEST_ALG_SHA256 == da->algo)
+    return _MHD_SHA256_TOKEN;
+  mhd_assert (0); /* May not happen */
+  return "";
+}
+
+
+/**
+ * Return the size of the digest.
+ * @param da the digest calculation structure to identify
+ * @return the size of the digest.
+ */
+_MHD_static_inline unsigned int
+digest_get_size (struct DigestAlgorithm *da)
+{
+  mhd_assert (da->setup);
+  if (MHD_DIGEST_ALG_MD5 == da->algo)
+    return MD5_DIGEST_SIZE;
+  if (MHD_DIGEST_ALG_SHA256 == da->algo)
+    return SHA256_DIGEST_SIZE;
+  mhd_assert (0); /* May not happen */
+  return 0;
+}
+
+
+/**
+ * Set-up the digest calculation structure.
+ * @param da the structure to set-up
+ * @param algo the algorithm to use for digest calculation
+ * @return boolean 'true' if successfully set-up,
+ *         false otherwise.
+ */
+_MHD_static_inline bool
+digest_setup (struct DigestAlgorithm *da,
+              enum MHD_DigestAuthAlgorithm algo)
+{
+#ifdef _DEBUG
+  da->setup = false;
+  da->inited = false;
+  da->digest_calculated = false;
+#endif /* _DEBUG */
+  if (MHD_DIGEST_ALG_AUTO == algo)
+    algo = MHD_DIGEST_ALG_SHA256;
+
+  if ((MHD_DIGEST_ALG_MD5 == algo) ||
+      (MHD_DIGEST_ALG_SHA256 == algo))
+  {
+    da->algo = algo;
+#ifdef _DEBUG
+    da->setup = true;
+#endif /* _DEBUG */
+    return true;
+  }
+  mhd_assert (0); /* Bad parameter */
+  return false;
+}
+
+
+/**
+ * Initialise/reset the digest calculation structure.
+ * @param da the structure to initialise/reset
+ */
+_MHD_static_inline void
+digest_init (struct DigestAlgorithm *da)
+{
+  mhd_assert (da->setup);
+#ifdef _DEBUG
+  da->digest_calculated = false;
+#endif
+  if (MHD_DIGEST_ALG_MD5 == da->algo)
+  {
+    MHD_MD5Init (&da->ctx.md5_ctx);
+#ifdef _DEBUG
+    da->inited = true;
+#endif
+  }
+  else if (MHD_DIGEST_ALG_SHA256 == da->algo)
+  {
+    MHD_SHA256_init (&da->ctx.sha256_ctx);
+#ifdef _DEBUG
+    da->inited = true;
+#endif
+  }
+  else
+  {
+#ifdef _DEBUG
+    da->inited = false;
+#endif
+    mhd_assert (0); /* Bad algorithm */
+  }
+}
+
+
+/**
+ * Feed digest calculation with more data.
+ * @param da the digest calculation
+ * @param data the data to process
+ * @param length the size of the @a data in bytes
+ */
+_MHD_static_inline void
+digest_update (struct DigestAlgorithm *da,
+               const uint8_t *data,
+               size_t length)
+{
+  mhd_assert (da->inited);
+  mhd_assert (! da->digest_calculated);
+  if (MHD_DIGEST_ALG_MD5 == da->algo)
+    MHD_MD5Update (&da->ctx.md5_ctx, data, length);
+  else if (MHD_DIGEST_ALG_SHA256 == da->algo)
+    MHD_SHA256_update (&da->ctx.sha256_ctx, data, length);
+  else
+    mhd_assert (0); /* May not happen */
+}
+
+
+/**
+ * Finally calculate hash (the digest).
+ * @param da the digest calculation
+ */
+_MHD_static_inline void
+digest_calc_hash (struct DigestAlgorithm *da)
+{
+  mhd_assert (da->inited);
+  mhd_assert (! da->digest_calculated);
+  if (MHD_DIGEST_ALG_MD5 == da->algo)
+    MHD_MD5Final (&da->ctx.md5_ctx, da->digest.md5);
+  else if (MHD_DIGEST_ALG_SHA256 == da->algo)
+    MHD_SHA256_finish (&da->ctx.sha256_ctx, da->digest.sha256);
+  else
+    mhd_assert (0); /* May not happen */
+#ifdef _DEBUG
+  da->digest_calculated = true;
+#endif
+}
+
+
+/**
+ * Get pointer to the calculated digest in binary form.
+ * @param da the digest calculation
+ * @return the pointer to the calculated digest
+ */
+_MHD_static_inline const uint8_t *
+digest_get_bin (struct DigestAlgorithm *da)
+{
+  mhd_assert (da->inited);
+  mhd_assert (da->digest_calculated);
+  mhd_assert (da->digest.md5 == da->digest.sha256);
+  return da->digest.sha256;
+}
+
+
+/**
+ * Get pointer to the buffer for the printed digest.
+ * @param da the digest calculation
+ * @return the pointer to the buffer
+ */
+_MHD_static_inline char *
+digest_get_hex_buffer (struct DigestAlgorithm *da)
+{
+  return da->digest_hex.sha256;
+}
+
+
+/**
+ * Put calculated digest to the buffer as hex digits.
+ * @param da the digest calculation
+ * @return the pointer to the calculated digest
+ */
+_MHD_static_inline void
+digest_make_hex (struct DigestAlgorithm *da)
+{
+  MHD_bin_to_hex (digest_get_bin (da),
+                  digest_get_size (da),
+                  digest_get_hex_buffer (da));
+}
+
+
+/**
  * calculate H(A1) from given hash as per RFC2617 spec
- * and store the * result in 'sessionkey'.
+ * and store the result in 'digest_hex'.
  *
  * @param alg The hash algorithm used, can be "MD5" or "MD5-sess"
  *            or "SHA-256" or "SHA-256-sess"
  *    Note that the rest of the code does not support the the "-sess" variants!
  * @param[in,out] da digest implementation, must match @a alg; the
- *          da->sessionkey will be initialized to the digest in HEX
+ *          da->digest_hex will be initialized to the digest in HEX
  * @param digest An `unsigned char *' pointer to the binary MD5 sum
  *      for the precalculated hash value "username:realm:password"
  *      of #MHD_MD5_DIGEST_SIZE or #SHA256_DIGEST_SIZE bytes
@@ -256,49 +443,43 @@ digest_calc_ha1_from_digest (const char *alg,
                              const char *nonce,
                              const char *cnonce)
 {
-  const unsigned int digest_size = da->digest_size;
+  /* TODO: disable unsupported code paths */
   if ( (MHD_str_equal_caseless_ (alg,
                                  _MHD_MD5_TOKEN _MHD_SESS_TOKEN)) ||
        (MHD_str_equal_caseless_ (alg,
                                  _MHD_SHA256_TOKEN _MHD_SESS_TOKEN)) )
   {
-    uint8_t dig[VLA_ARRAY_LEN_DIGEST (digest_size)];
-
-    VLA_CHECK_LEN_DIGEST (digest_size);
-    da->init (da->ctx);
-    da->update (da->ctx,
-                digest,
-                MHD_MD5_DIGEST_SIZE);
-    da->update (da->ctx,
-                (const unsigned char *) ":",
-                1);
-    da->update (da->ctx,
-                (const unsigned char *) nonce,
-                strlen (nonce));
-    da->update (da->ctx,
-                (const unsigned char *) ":",
-                1);
-    da->update (da->ctx,
-                (const unsigned char *) cnonce,
-                strlen (cnonce));
-    da->digest (da->ctx,
-                dig);
-    MHD_bin_to_hex (dig,
-                    digest_size,
-                    da->sessionkey);
+    digest_init (da);
+    digest_update (da,
+                   digest,
+                   digest_get_size (da));
+    digest_update (da,
+                   (const unsigned char *) ":",
+                   1);
+    digest_update (da,
+                   (const unsigned char *) nonce,
+                   strlen (nonce));
+    digest_update (da,
+                   (const unsigned char *) ":",
+                   1);
+    digest_update (da,
+                   (const unsigned char *) cnonce,
+                   strlen (cnonce));
+    digest_calc_hash (da);
+    digest_make_hex (da);
   }
   else
   {
     MHD_bin_to_hex (digest,
-                    digest_size,
-                    da->sessionkey);
+                    digest_get_size (da),
+                    digest_get_hex_buffer (da));
   }
 }
 
 
 /**
  * calculate H(A1) from username, realm and password as per RFC2617 spec
- * and store the result in 'sessionkey'.
+ * and store the result in 'digest_hex'.
  *
  * @param alg The hash algorithm used, can be "MD5" or "MD5-sess"
  *             or "SHA-256" or "SHA-256-sess"
@@ -319,30 +500,26 @@ digest_calc_ha1_from_user (const char *alg,
                            const char *cnonce,
                            struct DigestAlgorithm *da)
 {
-  unsigned char ha1[VLA_ARRAY_LEN_DIGEST (da->digest_size)];
-
-  VLA_CHECK_LEN_DIGEST (da->digest_size);
-  da->init (da->ctx);
-  da->update (da->ctx,
-              (const unsigned char *) username,
-              strlen (username));
-  da->update (da->ctx,
-              (const unsigned char *) ":",
-              1);
-  da->update (da->ctx,
-              (const unsigned char *) realm,
-              strlen (realm));
-  da->update (da->ctx,
-              (const unsigned char *) ":",
-              1);
-  da->update (da->ctx,
-              (const unsigned char *) password,
-              strlen (password));
-  da->digest (da->ctx,
-              ha1);
+  digest_init (da);
+  digest_update (da,
+                 (const unsigned char *) username,
+                 strlen (username));
+  digest_update (da,
+                 (const unsigned char *) ":",
+                 1);
+  digest_update (da,
+                 (const unsigned char *) realm,
+                 strlen (realm));
+  digest_update (da,
+                 (const unsigned char *) ":",
+                 1);
+  digest_update (da,
+                 (const unsigned char *) password,
+                 strlen (password));
+  digest_calc_hash (da);
   digest_calc_ha1_from_digest (alg,
                                da,
-                               ha1,
+                               digest_get_bin (da),
                                nonce,
                                cnonce);
 }
@@ -375,85 +552,78 @@ digest_calc_response (const char *ha1,
                       const char *hentity,
                       struct DigestAlgorithm *da)
 {
-  const unsigned int digest_size = da->digest_size;
-  unsigned char ha2[VLA_ARRAY_LEN_DIGEST (digest_size)];
-  unsigned char resphash[VLA_ARRAY_LEN_DIGEST (digest_size)];
   (void) hentity; /* Unused. Silence compiler warning. */
 
-  VLA_CHECK_LEN_DIGEST (digest_size);
-  da->init (da->ctx);
-  da->update (da->ctx,
-              (const unsigned char *) method,
-              strlen (method));
-  da->update (da->ctx,
-              (const unsigned char *) ":",
-              1);
-  da->update (da->ctx,
-              (const unsigned char *) uri,
-              strlen (uri));
+  /* Calculate h(a2) */
+  digest_init (da);
+  digest_update (da,
+                 (const unsigned char *) method,
+                 strlen (method));
+  digest_update (da,
+                 (const unsigned char *) ":",
+                 1);
+  digest_update (da,
+                 (const unsigned char *) uri,
+                 strlen (uri));
 #if 0
   if (0 == strcasecmp (qop,
                        "auth-int"))
   {
     /* This is dead code since the rest of this module does
  not support auth-int. */
-    da->update (da->ctx,
-                ":",
-                1);
+    digest_update (da,
+                   ":",
+                   1);
     if (NULL != hentity)
       da->update (da->ctx,
                   hentity,
                   strlen (hentity));
   }
 #endif
-  da->digest (da->ctx,
-              ha2);
-  MHD_bin_to_hex (ha2,
-                  digest_size,
-                  da->sessionkey);
-  da->init (da->ctx);
+  digest_calc_hash (da);
+  digest_make_hex (da);
+
   /* calculate response */
-  da->update (da->ctx,
-              (const unsigned char *) ha1,
-              digest_size * 2);
-  da->update (da->ctx,
-              (const unsigned char *) ":",
-              1);
-  da->update (da->ctx,
-              (const unsigned char *) nonce,
-              strlen (nonce));
-  da->update (da->ctx,
-              (const unsigned char *) ":",
-              1);
+  digest_init (da);
+  digest_update (da,
+                 (const unsigned char *) ha1,
+                 digest_get_size (da) * 2);
+  digest_update (da,
+                 (const unsigned char *) ":",
+                 1);
+  digest_update (da,
+                 (const unsigned char *) nonce,
+                 strlen (nonce));
+  digest_update (da,
+                 (const unsigned char *) ":",
+                 1);
   if ('\0' != *qop)
   {
-    da->update (da->ctx,
-                (const unsigned char *) noncecount,
-                strlen (noncecount));
-    da->update (da->ctx,
-                (const unsigned char *) ":",
-                1);
-    da->update (da->ctx,
-                (const unsigned char *) cnonce,
-                strlen (cnonce));
-    da->update (da->ctx,
-                (const unsigned char *) ":",
-                1);
-    da->update (da->ctx,
-                (const unsigned char *) qop,
-                strlen (qop));
-    da->update (da->ctx,
-                (const unsigned char *) ":",
-                1);
+    digest_update (da,
+                   (const unsigned char *) noncecount,
+                   strlen (noncecount));
+    digest_update (da,
+                   (const unsigned char *) ":",
+                   1);
+    digest_update (da,
+                   (const unsigned char *) cnonce,
+                   strlen (cnonce));
+    digest_update (da,
+                   (const unsigned char *) ":",
+                   1);
+    digest_update (da,
+                   (const unsigned char *) qop,
+                   strlen (qop));
+    digest_update (da,
+                   (const unsigned char *) ":",
+                   1);
   }
-  da->update (da->ctx,
-              (const unsigned char *) da->sessionkey,
-              digest_size * 2);
-  da->digest (da->ctx,
-              resphash);
-  MHD_bin_to_hex (resphash,
-                  digest_size,
-                  da->sessionkey);
+  digest_update (da,
+                 (const unsigned char *) digest_get_hex_buffer (da),
+                 digest_get_size (da) * 2);
+
+  digest_calc_hash (da);
+  digest_make_hex (da);
 }
 
 
@@ -828,13 +998,8 @@ calculate_nonce (uint64_t nonce_time,
                  char *nonce)
 {
   uint8_t timestamp[TIMESTAMP_BIN_SIZE];
-  const unsigned int digest_size = da->digest_size;
-  char tmpnonce[VLA_ARRAY_LEN_DIGEST (digest_size)];
 
-  mhd_assert (0 == (digest_size % 2));
-  mhd_assert (0 != digest_size);
-  VLA_CHECK_LEN_DIGEST (digest_size);
-  da->init (da->ctx);
+  digest_init (da);
   /* If the nonce_time is milliseconds, then the same 48 bit value will repeat
    * every 8 925 years, which is more than enough to mitigate a replay attack */
 #if TIMESTAMP_BIN_SIZE != 6
@@ -846,42 +1011,41 @@ calculate_nonce (uint64_t nonce_time,
   timestamp[3] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 3)));
   timestamp[4] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 4)));
   timestamp[5] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 5)));
-  da->update (da->ctx,
-              timestamp,
-              sizeof (timestamp));
-  da->update (da->ctx,
-              (const unsigned char *) ":",
-              1);
-  da->update (da->ctx,
-              (const unsigned char *) method,
-              strlen (method));
-  da->update (da->ctx,
-              (const unsigned char *) ":",
-              1);
+  digest_update (da,
+                 timestamp,
+                 sizeof (timestamp));
+  digest_update (da,
+                 (const unsigned char *) ":",
+                 1);
+  digest_update (da,
+                 (const unsigned char *) method,
+                 strlen (method));
+  digest_update (da,
+                 (const unsigned char *) ":",
+                 1);
   if (rnd_size > 0)
-    da->update (da->ctx,
-                (const unsigned char *) rnd,
-                rnd_size);
-  da->update (da->ctx,
-              (const unsigned char *) ":",
-              1);
-  da->update (da->ctx,
-              (const unsigned char *) uri,
-              strlen (uri));
-  da->update (da->ctx,
-              (const unsigned char *) ":",
-              1);
-  da->update (da->ctx,
-              (const unsigned char *) realm,
-              strlen (realm));
-  da->digest (da->ctx,
-              (uint8_t *) tmpnonce);
-  MHD_bin_to_hex (tmpnonce,
-                  digest_size,
+    digest_update (da,
+                   (const unsigned char *) rnd,
+                   rnd_size);
+  digest_update (da,
+                 (const unsigned char *) ":",
+                 1);
+  digest_update (da,
+                 (const unsigned char *) uri,
+                 strlen (uri));
+  digest_update (da,
+                 (const unsigned char *) ":",
+                 1);
+  digest_update (da,
+                 (const unsigned char *) realm,
+                 strlen (realm));
+  digest_calc_hash (da);
+  MHD_bin_to_hex (digest_get_bin (da),
+                  digest_get_size (da),
                   nonce);
   MHD_bin_to_hex (timestamp,
                   sizeof (timestamp),
-                  nonce + digest_size * 2);
+                  nonce + digest_get_size (da) * 2);
 }
 
 
@@ -965,7 +1129,7 @@ calculate_add_nonce (struct MHD_Connection *const connection,
 {
   struct MHD_Daemon *const daemon = MHD_get_master (connection->daemon);
   struct MHD_NonceNc *nn;
-  const size_t nonce_size = NONCE_STD_LEN (da->digest_size);
+  const size_t nonce_size = NONCE_STD_LEN (digest_get_size (da));
   bool ret;
 
   mhd_assert (MAX_NONCE_LENGTH >= nonce_size);
@@ -1033,7 +1197,7 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
      * 2. Another nonce uses the same slot, and this nonce never has been
      * used by the client and this nonce is still fresh enough.
      */
-    const size_t digest_size = da->digest_size;
+    const size_t digest_size = digest_get_size (da);
     char nonce2[NONCE_STD_LEN (VLA_ARRAY_LEN_DIGEST (digest_size)) + 1];
     uint64_t timestamp2;
     if (0 == MHD_get_master (connection->daemon)->nonce_nc_size)
@@ -1216,7 +1380,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
   char nonce[MAX_NONCE_LENGTH];
   size_t nonce_len;
   char cnonce[MAX_NONCE_LENGTH];
-  const unsigned int digest_size = da->digest_size;
+  const unsigned int digest_size = digest_get_size (da);
   char ha1[VLA_ARRAY_LEN_DIGEST (digest_size) * 2 + 1];
   char qop[15]; /* auth,auth-int */
   char nc[20];
@@ -1441,8 +1605,8 @@ digest_auth_check_all (struct MHD_Connection *connection,
     }
     if (NULL != digest)
     {
-      /* This will initialize da->sessionkey (ha1) */
-      digest_calc_ha1_from_digest (da->alg,
+      /* This will initialize da->digest_hex (ha1) */
+      digest_calc_ha1_from_digest (digest_get_algo_name (da),
                                    da,
                                    digest,
                                    nonce,
@@ -1450,9 +1614,9 @@ digest_auth_check_all (struct MHD_Connection *connection,
     }
     else
     {
-      /* This will initialize da->sessionkey (ha1) */
+      /* This will initialize da->digest_hex (ha1) */
       mhd_assert (NULL != password);   /* NULL == digest => password != NULL */
-      digest_calc_ha1_from_user (da->alg,
+      digest_calc_ha1_from_user (digest_get_algo_name (da),
                                  username,
                                  realm,
                                  password,
@@ -1461,7 +1625,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
                                  da);
     }
     memcpy (ha1,
-            da->sessionkey,
+            digest_get_hex_buffer (da),
             digest_size * 2 + 1);
     /* This will initialize da->sessionkey (respexp) */
     digest_calc_response (ha1,
@@ -1516,7 +1680,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
     free (uri);
   }
   return (0 == strcmp (response,
-                       da->sessionkey))
+                       digest_get_hex_buffer (da)))
          ? MHD_DAUTH_OK
          : MHD_DAUTH_RESPONSE_WRONG;
 }
@@ -1557,55 +1721,6 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 
 
 /**
- * Setup digest authentication data structures (on the
- * stack, hence must be done inline!).  Initializes a
- * "struct DigestAlgorithm da" for algorithm @a algo.
- *
- * @param algo digest algorithm to provide
- * @param da data structure to setup
- */
-#define SETUP_DA(algo,da)                         \
-  union {                                         \
-    struct MD5Context md5;                        \
-    struct sha256_ctx sha256;                     \
-  } ctx;                                          \
-  union {                                         \
-    char md5[MD5_DIGEST_SIZE * 2 + 1];            \
-    char sha256[SHA256_DIGEST_SIZE * 2 + 1];      \
-  } skey;                                         \
-  struct DigestAlgorithm da;                      \
-                                                  \
-  do {                                            \
-    switch (algo) {                                 \
-    case MHD_DIGEST_ALG_MD5:                        \
-      da.digest_size = MD5_DIGEST_SIZE;             \
-      da.ctx = &ctx.md5;                            \
-      da.alg = _MHD_MD5_TOKEN;                               \
-      da.sessionkey = skey.md5;                     \
-      da.init = &MHD_MD5Init;                           \
-      da.update = &MHD_MD5Update;                       \
-      da.digest = &MHD_MD5Final;                        \
-      break;                                        \
-    case MHD_DIGEST_ALG_AUTO:                             \
-  /* auto == SHA256, fall-though thus intentional! */ \
-    case MHD_DIGEST_ALG_SHA256:                           \
-      da.digest_size = SHA256_DIGEST_SIZE;                \
-      da.ctx = &ctx.sha256;                               \
-      da.alg = _MHD_SHA256_TOKEN;                                 \
-      da.sessionkey = skey.sha256;                        \
-      da.init = &MHD_SHA256_init;                             \
-      da.update = &MHD_SHA256_update;                         \
-      da.digest = &MHD_SHA256_finish;                         \
-      break;                                              \
-    default:                                              \
-      da.digest_size = 0;                                 \
-      mhd_assert (false);                                 \
-      break;                                              \
-    }                                                     \
-  } while (0)
-
-
-/**
  * Authenticates the authorization header sent by the client.
  *
  * @param connection the MHD connection structure
@@ -1627,10 +1742,11 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
                         unsigned int nonce_timeout,
                         enum MHD_DigestAuthAlgorithm algo)
 {
-  SETUP_DA (algo, da);
+  struct DigestAlgorithm da;
 
   mhd_assert (NULL != password);
-  if (0 == da.digest_size)
+
+  if (! digest_setup (&da, algo))
     MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */
 
   return digest_auth_check_all (connection,
@@ -1669,10 +1785,13 @@ MHD_digest_auth_check_digest3 (struct MHD_Connection *connection,
                                unsigned int nonce_timeout,
                                enum MHD_DigestAuthAlgorithm algo)
 {
-  SETUP_DA (algo, da);
+  struct DigestAlgorithm da;
 
   mhd_assert (NULL != digest);
-  if ((da.digest_size != digest_size) || (0 == digest_size))
+  if (! digest_setup (&da, algo))
+    MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */
+
+  if (digest_get_size (&da) != digest_size)
     MHD_PANIC (_ ("Digest size mismatch.\n")); /* API violation! */
 
   return digest_auth_check_all (connection,
@@ -1832,9 +1951,10 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
 {
   int ret;
   int hlen;
-  SETUP_DA (algo, da);
 
-  if (0 == da.digest_size)
+  struct DigestAlgorithm da;
+
+  if (! digest_setup (&da, algo))
     MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */
 
   if (NULL == response)
@@ -1851,9 +1971,10 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
 
   if (1)
   {
-    char nonce[NONCE_STD_LEN (VLA_ARRAY_LEN_DIGEST (da.digest_size)) + 1];
+    char nonce[NONCE_STD_LEN (VLA_ARRAY_LEN_DIGEST (digest_get_size (&da)))
+               + 1];
 
-    VLA_CHECK_LEN_DIGEST (da.digest_size);
+    VLA_CHECK_LEN_DIGEST (digest_get_size (&da));
     if (! calculate_add_nonce_with_retry (connection, realm, &da, nonce))
     {
 #ifdef HAVE_MESSAGES
@@ -1872,7 +1993,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
                           realm,
                           nonce,
                           opaque,
-                          da.alg,
+                          digest_get_algo_name (&da),
                           signal_stale
                           ? ",stale=\"true\""
                           : "");
@@ -1897,7 +2018,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
                          realm,
                          nonce,
                          opaque,
-                         da.alg,
+                         digest_get_algo_name (&da),
                          signal_stale
                          ? ",stale=\"true\""
                          : "") == hlen)
