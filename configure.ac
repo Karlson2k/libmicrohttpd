@@ -192,7 +192,7 @@ AS_CASE([${enable_build_type}],[debug|debugger],
     MHD_CHECK_ADD_CC_CFLAGS([-Wgnu-null-pointer-arithmetic -Wgnu-pointer-arith -Wgnu-redeclared-enum], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wgnu-union-cast -Wgnu-variable-sized-type-not-at-end -Widiomatic-parentheses], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wmissing-noreturn -Wmissing-variable-declarations -Wnested-anon-types], [CFLAGS_ac])
-    MHD_CHECK_ADD_CC_CFLAGS([-Wnewline-eof -Wover-aligned -Wredundant-parens -Wreserved-macro-identifier], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wnewline-eof -Wover-aligned -Wredundant-parens], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wshift-sign-overflow -Wtautological-compare -Wunaligned-access], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wunused -Wused-but-marked-unused -Wzero-as-null-pointer-constant -Wzero-length-array], [CFLAGS_ac])
 
@@ -245,6 +245,12 @@ AS_CASE([${enable_build_type}],[release|release-*],
     LDFLAGS="${user_LDFLAGS}"
     MHD_CHECK_ADD_CC_LDFLAG([-Wl,--disable-long-section-names], [LDFLAGS_ac])
     LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+  ]
+)
+AS_VAR_IF([enable_build_type],["neutral"],[],
+  [ # Any non-neutral build types, final additional flags
+    CFLAGS="${user_CFLAGS}"
+    MHD_CHECK_ADD_CC_CFLAGS([-Wno-reserved-macro-identifier], [CFLAGS_ac])
   ]
 )
 CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
