@@ -54,9 +54,12 @@ typedef intptr_t ssize_t;
 #define MHD_STATICSTR_LEN_(macro) (sizeof(macro) / sizeof(char) - 1)
 #endif /* ! MHD_STATICSTR_LEN_ */
 
-struct _MHD_str_w_len
+/**
+ * Constant string with length
+ */
+struct _MHD_cstr_w_len
 {
-  const char *str;
+  const char *const str;
   const size_t len;
 };
 

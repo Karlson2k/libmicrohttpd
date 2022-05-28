@@ -32,18 +32,18 @@
 #define NULL ((void*) 0)
 #endif
 
-static const struct _MHD_str_w_len invalid_hundred[] = {
+static const struct _MHD_cstr_w_len invalid_hundred[] = {
   { NULL, 0 }
 };
 
-static const struct _MHD_str_w_len one_hundred[] = {
+static const struct _MHD_cstr_w_len one_hundred[] = {
   /* 100 */ _MHD_S_STR_W_LEN ("Continue"),       /* RFC-ietf-httpbis-semantics, Section 15.2.1 */
   /* 101 */ _MHD_S_STR_W_LEN ("Switching Protocols"), /* RFC-ietf-httpbis-semantics, Section 15.2.2 */
   /* 102 */ _MHD_S_STR_W_LEN ("Processing"),     /* RFC2518 */
   /* 103 */ _MHD_S_STR_W_LEN ("Early Hints")     /* RFC8297 */
 };
 
-static const struct _MHD_str_w_len two_hundred[] = {
+static const struct _MHD_cstr_w_len two_hundred[] = {
   /* 200 */ _MHD_S_STR_W_LEN ("OK"),             /* RFC-ietf-httpbis-semantics, Section 15.3.1 */
   /* 201 */ _MHD_S_STR_W_LEN ("Created"),        /* RFC-ietf-httpbis-semantics, Section 15.3.2 */
   /* 202 */ _MHD_S_STR_W_LEN ("Accepted"),       /* RFC-ietf-httpbis-semantics, Section 15.3.3 */
@@ -73,7 +73,7 @@ static const struct _MHD_str_w_len two_hundred[] = {
   /* 226 */ _MHD_S_STR_W_LEN ("IM Used")         /* RFC3229 */
 };
 
-static const struct _MHD_str_w_len three_hundred[] = {
+static const struct _MHD_cstr_w_len three_hundred[] = {
   /* 300 */ _MHD_S_STR_W_LEN ("Multiple Choices"), /* RFC-ietf-httpbis-semantics, Section 15.4.1 */
   /* 301 */ _MHD_S_STR_W_LEN ("Moved Permanently"), /* RFC-ietf-httpbis-semantics, Section 15.4.2 */
   /* 302 */ _MHD_S_STR_W_LEN ("Found"),          /* RFC-ietf-httpbis-semantics, Section 15.4.3 */
@@ -85,7 +85,7 @@ static const struct _MHD_str_w_len three_hundred[] = {
   /* 308 */ _MHD_S_STR_W_LEN ("Permanent Redirect") /* RFC-ietf-httpbis-semantics, Section 15.4.9 */
 };
 
-static const struct _MHD_str_w_len four_hundred[] = {
+static const struct _MHD_cstr_w_len four_hundred[] = {
   /* 400 */ _MHD_S_STR_W_LEN ("Bad Request"),    /* RFC-ietf-httpbis-semantics, Section 15.5.1 */
   /* 401 */ _MHD_S_STR_W_LEN ("Unauthorized"),   /* RFC-ietf-httpbis-semantics, Section 15.5.2 */
   /* 402 */ _MHD_S_STR_W_LEN ("Payment Required"), /* RFC-ietf-httpbis-semantics, Section 15.5.3 */
@@ -140,7 +140,7 @@ static const struct _MHD_str_w_len four_hundred[] = {
   /* 451 */ _MHD_S_STR_W_LEN ("Unavailable For Legal Reasons") /* RFC7725 */
 };
 
-static const struct _MHD_str_w_len five_hundred[] = {
+static const struct _MHD_cstr_w_len five_hundred[] = {
   /* 500 */ _MHD_S_STR_W_LEN ("Internal Server Error"), /* RFC-ietf-httpbis-semantics, Section 15.6.1 */
   /* 501 */ _MHD_S_STR_W_LEN ("Not Implemented"), /* RFC-ietf-httpbis-semantics, Section 15.6.2 */
   /* 502 */ _MHD_S_STR_W_LEN ("Bad Gateway"),    /* RFC-ietf-httpbis-semantics, Section 15.6.3 */
@@ -159,7 +159,7 @@ static const struct _MHD_str_w_len five_hundred[] = {
 struct MHD_Reason_Block
 {
   size_t max;
-  const struct _MHD_str_w_len *const data;
+  const struct _MHD_cstr_w_len *const data;
 };
 
 #define BLOCK(m) { (sizeof(m) / sizeof(m[0])), m }
