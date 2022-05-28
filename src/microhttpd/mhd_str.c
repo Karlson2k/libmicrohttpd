@@ -434,12 +434,13 @@ MHD_str_equal_caseless_n_ (const char *const str1,
 
 /**
  * Check two string for equality, ignoring case of US-ASCII letters and
- * checking exactly @a len characters.
- * Compares exactly @a len characters, including binary zero characters.
+ * checking not more than @a len bytes.
+ * Compares not more first than @a len bytes, including binary zero characters.
+ * Comparison stops at first unmatched byte.
  * @param str1 first string to compare
  * @param str2 second string to compare
  * @param len number of characters to compare
- * @return non-zero if two strings are equal, zero otherwise.
+ * @return non-zero if @a len bytes are equal, zero otherwise.
  */
 bool
 MHD_str_equal_caseless_bin_n_ (const char *const str1,
