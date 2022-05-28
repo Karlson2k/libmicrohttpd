@@ -627,7 +627,7 @@ MHD_str_remove_token_caseless_ (const char *str,
     copy_size = (size_t) (s1 - cur_token);
     if (buf == s2)
     { /* The first token to copy to the output */
-      if (buf + *buf_size < s2 + copy_size)
+      if (*buf_size < copy_size)
       { /* Not enough space in the output buffer */
         *buf_size = (ssize_t) -1;
         return false;
@@ -635,7 +635,8 @@ MHD_str_remove_token_caseless_ (const char *str,
     }
     else
     { /* Some token was already copied to the output buffer */
-      if (buf + *buf_size < s2 + copy_size + 2)
+      mhd_assert (s2 > buf);
+      if (*buf_size < ((size_t) (s2 - buf)) + copy_size + 2)
       { /* Not enough space in the output buffer */
         *buf_size = (ssize_t) -1;
         return false;
@@ -659,7 +660,8 @@ MHD_str_remove_token_caseless_ (const char *str,
       while ( ((size_t) (s1 - str) < str_len) &&
               (',' != *s1) && (' ' != *s1) && ('\t' != *s1) )
       {
-        if (buf + *buf_size <= s2) /* '<= s2' equals '< s2 + 1' */
+        mhd_assert (s2 >= buf);
+        if (*buf_size <= (size_t) (s2 - buf)) /* '<= s2' equals '< s2 + 1' */
         { /* Not enough space in the output buffer */
           *buf_size = (ssize_t) -1;
           return false;
@@ -678,7 +680,8 @@ MHD_str_remove_token_caseless_ (const char *str,
        * the input string */
       if (((size_t) (s1 - str) < str_len) && (',' != *s1))
       { /* Not the end of the current token */
-        if (buf + *buf_size <= s2) /* '<= s2' equals '< s2 + 1' */
+        mhd_assert (s2 >= buf);
+        if (*buf_size <= (size_t) (s2 - buf)) /* '<= s2' equals '< s2 + 1' */
         { /* Not enough space in the output buffer */
           *buf_size = (ssize_t) -1;
           return false;
