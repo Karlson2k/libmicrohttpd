@@ -149,6 +149,11 @@ check_PROGRAMS += \
   perf_get
 endif
 
+if ENABLE_BAUTH
+check_PROGRAMS += \
+  test_basicauth
+endif
+
 if HAVE_POSTPROCESSOR
  check_PROGRAMS += \
   test_post \
@@ -225,6 +230,9 @@ perf_get_concurrent11_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 perf_get_concurrent11_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
+
+test_basicauth_SOURCES = \
+  test_basicauth.c
 
 test_digestauth_SOURCES = \
   test_digestauth.c
