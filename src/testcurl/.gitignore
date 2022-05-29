@@ -150,3 +150,5 @@ core
 /test_tricky_url
 /test_tricky_header2
 /test_digestauth_concurrent
+/test_basicauth
+/test_parse_cookies_invalid
