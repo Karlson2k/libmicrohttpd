@@ -273,7 +273,11 @@ add_response_header_connection (struct MHD_Response *response,
                                                       &norm_len_s);
     mhd_assert (0 <= norm_len_s);
     if (0 > norm_len_s)
-      norm_len = 0; /* Must never happen */
+    {
+      /* Must never happen with realistic sizes */
+      free (buf);
+      return MHD_NO;
+    }
     else
       norm_len = (size_t) norm_len_s;
   }
