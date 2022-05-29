@@ -568,6 +568,12 @@ MHD_str_remove_token_caseless_ (const char *str,
   mhd_assert (NULL == memchr (token, ',', token_len));
   mhd_assert (0 <= *buf_size);
 
+  if (SSIZE_MAX <= ((str_len / 2) * 3 + 3))
+  {
+    /* The return value may overflow, refuse */
+    *buf_size = (ssize_t) -1;
+    return false;
+  }
   s1 = str;
   s2 = buf;
   token_removed = false;
@@ -627,7 +633,7 @@ MHD_str_remove_token_caseless_ (const char *str,
     copy_size = (size_t) (s1 - cur_token);
     if (buf == s2)
     { /* The first token to copy to the output */
-      if (*buf_size < copy_size)
+      if ((size_t) *buf_size < copy_size)
       { /* Not enough space in the output buffer */
         *buf_size = (ssize_t) -1;
         return false;
@@ -636,7 +642,7 @@ MHD_str_remove_token_caseless_ (const char *str,
     else
     { /* Some token was already copied to the output buffer */
       mhd_assert (s2 > buf);
-      if (*buf_size < ((size_t) (s2 - buf)) + copy_size + 2)
+      if ((size_t) *buf_size < ((size_t) (s2 - buf)) + copy_size + 2)
       { /* Not enough space in the output buffer */
         *buf_size = (ssize_t) -1;
         return false;
@@ -661,7 +667,7 @@ MHD_str_remove_token_caseless_ (const char *str,
               (',' != *s1) && (' ' != *s1) && ('\t' != *s1) )
       {
         mhd_assert (s2 >= buf);
-        if (*buf_size <= (size_t) (s2 - buf)) /* '<= s2' equals '< s2 + 1' */
+        if ((size_t) *buf_size <= (size_t) (s2 - buf)) /* '<= s2' equals '< s2 + 1' */
         { /* Not enough space in the output buffer */
           *buf_size = (ssize_t) -1;
           return false;
@@ -681,7 +687,7 @@ MHD_str_remove_token_caseless_ (const char *str,
       if (((size_t) (s1 - str) < str_len) && (',' != *s1))
       { /* Not the end of the current token */
         mhd_assert (s2 >= buf);
-        if (*buf_size <= (size_t) (s2 - buf)) /* '<= s2' equals '< s2 + 1' */
+        if ((size_t) *buf_size <= (size_t) (s2 - buf)) /* '<= s2' equals '< s2 + 1' */
         { /* Not enough space in the output buffer */
           *buf_size = (ssize_t) -1;
           return false;
