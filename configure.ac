@@ -272,12 +272,6 @@ AS_CASE([${enable_build_type}],[release|release-*],
     LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
   ]
 )
-AS_VAR_IF([enable_build_type],["neutral"],[],
-  [ # Any non-neutral build types, final additional flags
-    CFLAGS="${user_CFLAGS}"
-    MHD_CHECK_ADD_CC_CFLAGS([-Wno-reserved-macro-identifier], [CFLAGS_ac])
-  ]
-)
 CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 # Additional flags are checked and added at the end of 'configure'
 
