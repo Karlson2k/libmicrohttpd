@@ -159,7 +159,32 @@ AS_CASE([${enable_build_type}],[debug|debugger],
   [ # Debug build or build for walking with debugger
     CFLAGS="${user_CFLAGS}"
     AS_VAR_IF([enable_build_type],["debug"],
-      [MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Og], [-O0])],
+      [
+        AS_IF([test "x${enable_sanitizers}" != "xno"],
+          [
+            AC_CACHE_CHECK([whether workarounds for clang are required],
+              [mhd_cv_cc_clang_based],
+              [
+                AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#if ! defined(__clang__) && ! defined(__llvm__)
+#error Compiler is not clang-based
+choke me now
+#endif
+                      ]]
+                    )
+                  ],
+                  [mhd_cv_cc_clang_based="yes"],[mhd_cv_cc_clang_based="no"]
+                )
+              ]
+            )
+          ]
+        )
+        # Clang has ASAN (pointer compare) broken when '-Og' optimisations are used
+        AS_IF([test "x${enable_sanitizers}" != "xno" && test "x${mhd_cv_cc_clang_based}" = "xyes"],
+          [MHD_CHECK_ADD_CC_CFLAG([-O0], [CFLAGS_ac])],
+          [MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Og], [-O0])]
+        )
+      ],
       [MHD_CHECK_ADD_CC_CFLAG([-O0], [CFLAGS_ac])]
     )
     MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-ggdb3], [-g3], [-ggdb], [-g])
