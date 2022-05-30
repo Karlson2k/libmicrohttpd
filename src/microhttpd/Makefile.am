@@ -161,6 +161,10 @@ libmicrohttpd_la_SOURCES += \
   postprocessor.c
 endif
 
+if HAVE_ANYAUTH
+libmicrohttpd_la_SOURCES += \
+  gen_auth.c gen_auth.h
+endif
 if ENABLE_DAUTH
 libmicrohttpd_la_SOURCES += \
   digestauth.c digestauth.h \

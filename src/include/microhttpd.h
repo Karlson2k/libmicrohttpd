@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097514
+#define MHD_VERSION 0x00097515
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4367,6 +4367,8 @@ enum MHD_DigestAuthAlgorithm
 
 /**
  * The result of digest authentication of the client.
+ *
+ * All error values are zero or negative.
  *
  * @note Available since #MHD_VERSION 0x00097513
  */

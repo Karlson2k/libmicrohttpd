@@ -778,6 +778,8 @@ typedef ssize_t
                      size_t max_bytes);
 
 
+struct MHD_AuthRqHeader; /* Forward declaration only */
+
 /**
  * Ability to use same connection for next request
  */
@@ -1033,6 +1035,15 @@ struct MHD_Connection
    * HTTP protocol version as enum.
    */
   enum MHD_HTTP_Version http_ver;
+
+#if defined(BAUTH_SUPPORT) || defined(DAUTH_SUPPORT)
+  /**
+   * Pointer to request authorization structure.
+   * Allocated in pool.
+   */
+  const struct MHD_AuthRqHeader *rq_auth;
+#endif
+
 
   /**
    * Close connection after sending response?

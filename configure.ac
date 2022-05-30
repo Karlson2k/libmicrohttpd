@@ -2916,6 +2916,8 @@ AS_IF([[test "x$enable_dauth" != "xno"]],
 AM_CONDITIONAL([ENABLE_DAUTH], [test "x$enable_dauth" != "xno"])
 AC_MSG_RESULT([[$enable_dauth]])
 
+AM_CONDITIONAL([HAVE_ANYAUTH],[test "x$enable_bauth" != "xno" || test "x$enable_dauth" != "xno"])
+
 # optional: HTTP "Upgrade" support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP "Upgrade"]])
 AC_ARG_ENABLE([[httpupgrade]],

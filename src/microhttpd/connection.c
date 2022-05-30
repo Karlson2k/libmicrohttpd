@@ -4724,6 +4724,9 @@ connection_reset (struct MHD_Connection *connection,
     c->last = NULL;
     c->colon = NULL;
     c->header_size = 0;
+#if defined(BAUTH_SUPPORT) || defined(DAUTH_SUPPORT)
+    c->rq_auth = NULL;
+#endif
     c->keepalive = MHD_CONN_KEEPALIVE_UNKOWN;
     /* Reset the read buffer to the starting size,
        preserving the bytes we have already read. */

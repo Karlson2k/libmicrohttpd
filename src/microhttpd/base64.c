@@ -37,9 +37,10 @@ static const char base64_digits[] =
 
 
 char *
-BASE64Decode (const char *src)
+BASE64Decode (const char *src,
+              size_t in_len,
+              size_t *out_len)
 {
-  size_t in_len = strlen (src);
   unsigned char *dest;
   char *result;
 
@@ -52,7 +53,7 @@ BASE64Decode (const char *src)
   result = (char *) dest;
   if (NULL == result)
     return NULL; /* out of memory */
-  while (*src)
+  for (; 0 < in_len && 0 != *src; in_len -= 4)
   {
     char a = base64_digits[(unsigned char) *(src++)];
     char b = base64_digits[(unsigned char) *(src++)];
@@ -75,6 +76,8 @@ BASE64Decode (const char *src)
                 | ((unsigned char) d);
   }
   *dest = 0;
+  if (NULL != out_len)
+    *out_len = (size_t) (dest - (unsigned char *) result);
   return result;
 }
 

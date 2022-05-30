@@ -28,10 +28,17 @@
 #ifndef MHD_BASICAUTH_H
 #define MHD_BASICAUTH_H 1
 
+#include "mhd_str.h"
+
 /**
  * Beginning string for any valid Basic authentication header.
  */
-#define _MHD_AUTH_BASIC_BASE   "Basic "
+#define _MHD_AUTH_BASIC_BASE   "Basic"
+
+struct MHD_RqBAuth
+{
+  struct _MHD_cstr_w_len token68;
+};
 
 #endif /* ! MHD_BASICAUTH_H */
 

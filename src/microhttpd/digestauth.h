@@ -28,10 +28,48 @@
 
 #ifndef MHD_DIGESTAUTH_H
 #define MHD_DIGESTAUTH_H 1
+
+#include "mhd_options.h"
+#include "mhd_str.h"
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif /* HAVE_STDBOOL_H */
+
+
 /**
- * Beginning string for any valid Digest authentication header.
+ * The maximum supported size for Digest Auth parameters, like "real",
+ * "username" etc. This limitation is used only for quoted parameters.
+ * Parameters without quoted backslash character will be processed as long
+ * as they fit connection pool (buffer) size.
  */
-#define _MHD_AUTH_DIGEST_BASE   "Digest "
+#define _MHD_AUTH_DIGEST_MAX_PARAM_SIZE (65535)
+
+/**
+ * Beginning string for any valid Digest Authentication header.
+ */
+#define _MHD_AUTH_DIGEST_BASE   "Digest"
+
+struct MHD_RqDAuthParam
+{
+  struct _MHD_cstr_w_len value;
+  bool quoted;
+};
+
+struct MHD_RqDAuth
+{
+  struct MHD_RqDAuthParam nonce;
+  struct MHD_RqDAuthParam opaque;
+  struct MHD_RqDAuthParam algorithm;
+  struct MHD_RqDAuthParam response;
+  struct MHD_RqDAuthParam username;
+  struct MHD_RqDAuthParam username_ext;
+  struct MHD_RqDAuthParam realm;
+  struct MHD_RqDAuthParam uri;
+  struct MHD_RqDAuthParam qop;
+  struct MHD_RqDAuthParam cnonce;
+  struct MHD_RqDAuthParam nc;
+  bool userhash;
+};
 
 #endif /* ! MHD_DIGESTAUTH_H */
 

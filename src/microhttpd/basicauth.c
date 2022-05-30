@@ -25,6 +25,7 @@
  * @author Karlson2k (Evgeny Grin)
  */
 #include "basicauth.h"
+#include "gen_auth.h"
 #include "platform.h"
 #include "mhd_limits.h"
 #include "internal.h"
@@ -33,76 +34,102 @@
 
 
 /**
+ * Get request's Basic Authorisation parameters.
+ * @param connection the connection to process
+ * @return pointer to request Basic Authorisation parameters structure if
+ *         request has such header (allocated in connection's pool),
+ *         NULL otherwise.
+ */
+static const struct MHD_RqBAuth *
+get_rq_bauth_params (struct MHD_Connection *connection)
+{
+  const struct MHD_AuthRqHeader *rq_params;
+
+  rq_params = MHD_get_auth_rq_params_ (connection);
+  if ( (NULL == rq_params) ||
+       (MHD_AUTHTYPE_BASIC != rq_params->auth_type) )
+    return NULL;
+
+  return rq_params->params.bauth;
+}
+
+
+/**
  * Get the username and password from the basic authorization header sent by the client
  *
  * @param connection The MHD connection structure
- * @param password a pointer for the password
+ * @param[out] password a pointer for the password, free using #MHD_free().
  * @return NULL if no username could be found, a pointer
- *      to the username if found
+ *      to the username if found, free using #MHD_free().
  * @ingroup authentication
  */
 _MHD_EXTERN char *
 MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
                                       char **password)
 {
-  const char *header;
+  const struct MHD_RqBAuth *params;
   char *decode;
+  size_t decode_len;
   const char *separator;
-  char *user;
 
-  if ( (MHD_NO == MHD_lookup_connection_value_n (connection,
-                                                 MHD_HEADER_KIND,
-                                                 MHD_HTTP_HEADER_AUTHORIZATION,
-                                                 MHD_STATICSTR_LEN_ (
-                                                   MHD_HTTP_HEADER_AUTHORIZATION),
-                                                 &header,
-                                                 NULL)) ||
-       (0 != strncmp (header,
-                      _MHD_AUTH_BASIC_BASE,
-                      MHD_STATICSTR_LEN_ (_MHD_AUTH_BASIC_BASE))) )
+  params = get_rq_bauth_params (connection);
+
+  if (NULL == params)
     return NULL;
-  header += MHD_STATICSTR_LEN_ (_MHD_AUTH_BASIC_BASE);
-  if (NULL == (decode = BASE64Decode (header)))
+
+  if ((NULL == params->token68.str) || (0 == params->token68.len))
+    return NULL;
+
+  decode = BASE64Decode (params->token68.str, params->token68.len, &decode_len);
+  if ((NULL == decode) || (0 == decode_len))
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
               _ ("Error decoding basic authentication.\n"));
 #endif
+    if (NULL != decode)
+      free (decode);
     return NULL;
   }
   /* Find user:password pattern */
-  if (NULL == (separator = strchr (decode,
-                                   ':')))
+  if (NULL != (separator = memchr (decode,
+                                   ':',
+                                   decode_len)))
   {
+    char *user;
+    size_t user_len;
+    size_t password_len;
+
+    user = decode; /* Reuse already allocated buffer */
+    user_len = (size_t) (separator - decode);
+    user[user_len] = 0;
+
+    if (NULL == password)
+      return user;
+
+    password_len = decode_len - user_len - 1;
+    *password = (char *) malloc (password_len + 1);
+    if (NULL != *password)
+    {
+      if (0 != password_len)
+        memcpy (*password, decode + user_len + 1, password_len);
+      (*password)[password_len] = 0;
+
+      return user;
+    }
 #ifdef HAVE_MESSAGES
+    else
+      MHD_DLOG (connection->daemon,
+                _ ("Failed to allocate memory.\n"));
+#endif /* HAVE_MESSAGES */
+  }
+#ifdef HAVE_MESSAGES
+  else
     MHD_DLOG (connection->daemon,
               _ ("Basic authentication doesn't contain ':' separator.\n"));
 #endif
-    free (decode);
-    return NULL;
-  }
-  if (NULL == (user = strdup (decode)))
-  {
-    free (decode);
-    return NULL;
-  }
-  user[separator - decode] = '\0'; /* cut off at ':' */
-  if (NULL != password)
-  {
-    *password = strdup (separator + 1);
-    if (NULL == *password)
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
-                _ ("Failed to allocate memory for password.\n"));
-#endif
-      free (decode);
-      free (user);
-      return NULL;
-    }
-  }
   free (decode);
-  return user;
+  return NULL;
 }
 
 

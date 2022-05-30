@@ -52,6 +52,9 @@
     <ClInclude Include="$(MhdSrc)microhttpd\digestauth.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MhdSrc)microhttpd\gen_auth.h">
+      <Filter>Internal Headers</Filter>
+    </ClInclude>
     <ClInclude Include="$(MhdSrc)microhttpd\internal.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>
@@ -133,6 +136,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="$(MhdSrc)microhttpd\digestauth.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MhdSrc)microhttpd\gen_auth.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="$(MhdSrc)microhttpd\internal.c">
