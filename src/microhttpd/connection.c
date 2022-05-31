@@ -2824,6 +2824,9 @@ parse_cookies_string_strict (char *str,
     {
       value_start = 0;
       value_len = 0;
+#ifdef _DEBUG
+      val_quoted = false; /* This assignment used in assert */
+#endif
     }
     else
     {
@@ -5327,13 +5330,13 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     if (NULL == connection->tls_session)
       return NULL;
     connection->connection_info_dummy.cipher_algorithm =
-      gnutls_cipher_get (connection->tls_session);
+      (int) gnutls_cipher_get (connection->tls_session);
     return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_PROTOCOL:
     if (NULL == connection->tls_session)
       return NULL;
     connection->connection_info_dummy.protocol =
-      gnutls_protocol_get_version (connection->tls_session);
+      (int) gnutls_protocol_get_version (connection->tls_session);
     return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_GNUTLS_SESSION:
     if (NULL == connection->tls_session)
