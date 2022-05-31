@@ -2161,7 +2161,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
                                int signal_stale,
                                enum MHD_DigestAuthAlgorithm algo)
 {
-  int ret;
+  enum MHD_Result ret;
   int hlen;
 
   struct DigestAlgorithm da;
