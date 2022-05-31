@@ -78,6 +78,9 @@ int
 curl_tls_is_gnutls (void);
 
 int
+curl_tls_is_openssl (void);
+
+int
 curl_tls_is_nss (void);
 
 int
