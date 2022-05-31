@@ -1,7 +1,8 @@
 # SYNOPSIS
 #
-#   MHD_FIND_ADD_CC_LDFLAG([VARIABLE-TO-EXTEND],
-#                         [FLAG1-TO-TEST], [FLAG2-TO-TEST], ...)
+#   MHD_FIND_ADD_CC_LDFLAG_IFELSE([ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND],
+#                                 [VARIABLE-TO-EXTEND],
+#                                 [FLAG1-TO-TEST], [FLAG2-TO-TEST], ...)
 #
 # DESCRIPTION
 #
@@ -15,10 +16,14 @@
 #   VARIABLE-TO-EXTEND and next flags are not checked. If compile-link cycle
 #   cannot be performed without warning with all tested flags, no flag is
 #   added to the VARIABLE-TO-EXTEND.
+#   If any suitable flag is found, ACTION-IF-FOUND is executed otherwise
+#   ACTION-IF-NOT-FOUND is executed. Found flag (if any) is available as
+#   value of shell variable $mhd_cc_found_flag during action execution.
 #
 #   Example usage:
 #
-#     MHD_CHECK_CC_LDFLAG([additional_LDFLAGS],
+#     MHD_CHECK_CC_LDFLAG([],[AC_MSG_WARN([Stripping is not supported]),
+#                         [additional_LDFLAGS],
 #                         [-Wl,--strip-all], [-Wl,--strip-debug])
 #
 #   Note: Unlike others MHD_CHECK_*CC_LDFLAG* macro, this macro uses another
@@ -33,7 +38,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 2
+#serial 1
 
-AC_DEFUN([MHD_FIND_ADD_CC_LDFLAG],[dnl
-_MHD_FIND_ADD_CC_XFLAG([[LDFLAGS]],[],[],$@)])
+AC_DEFUN([MHD_FIND_ADD_CC_LDFLAG_IFELSE],[dnl
+_MHD_FIND_ADD_CC_XFLAG([[LDFLAGS]],$@)])
