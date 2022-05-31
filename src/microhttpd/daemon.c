@@ -1208,6 +1208,7 @@ call_handlers (struct MHD_Connection *con,
   bool states_info_processed = false;
   /* Fast track flag */
   bool on_fasttrack = (con->state == MHD_CONNECTION_INIT);
+  ret = MHD_YES;
 
 #ifdef HTTPS_SUPPORT
   if (con->tls_read_ready)
