@@ -209,7 +209,7 @@ AS_CASE([${enable_build_type}],[debug|debugger],
     MHD_CHECK_ADD_CC_CFLAGS([-Wanon-enum-enum-conversion -Warray-bounds-pointer-arithmetic -Wassign-enum], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wbit-int-extension -Wbitfield-enum-conversion -Wparentheses -Wbool-operation], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wcast-function-type -Wcomma -Wcomment -Wcompound-token-split], [CFLAGS_ac])
-    MHD_CHECK_ADD_CC_CFLAGS([-Wconditional-uninitialized -Wdeprecated -Wdisabled-macro-expansion], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wconditional-uninitialized -Wdeprecated], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wdocumentation-pedantic -Wempty-init-stmt -Wenum-conversion -Wexpansion-to-defined], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wflexible-array-extensions -Wloop-analysis -Wformat-pedantic], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wformat-type-confusion -Wfour-char-constants], [CFLAGS_ac])
@@ -222,6 +222,10 @@ AS_CASE([${enable_build_type}],[debug|debugger],
     MHD_CHECK_ADD_CC_CFLAGS([-Wnewline-eof -Wover-aligned -Wredundant-parens], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wshift-sign-overflow -Wtautological-compare -Wunaligned-access], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wunused -Wused-but-marked-unused -Wzero-as-null-pointer-constant -Wzero-length-array], [CFLAGS_ac])
+    #
+    # Removed flags:
+    #
+    # -Wdisabled-macro-expansion - warns about macros from system headers
 
     CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
     LDFLAGS="${user_LDFLAGS}"
