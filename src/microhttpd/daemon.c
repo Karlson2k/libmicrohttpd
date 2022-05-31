@@ -3917,7 +3917,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
  * daemon's select()/poll()/etc.
  *
  * @param daemon daemon to query for timeout
- * @param timeout set to the timeout (in milliseconds)
+ * @param[out] timeout set to the timeout (in milliseconds)
  * @return #MHD_YES on success, #MHD_NO if timeouts are
  *         not used and no data processing is pending.
  * @ingroup event
@@ -3969,7 +3969,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
  * daemon's select()/poll()/etc.
  *
  * @param daemon daemon to query for timeout
- * @param timeout64 the pointer to the variable to be set to the
+ * @param[out] timeout64 the pointer to the variable to be set to the
  *                  timeout (in milliseconds)
  * @return #MHD_YES if timeout value has been set,
  *         #MHD_NO if timeouts are not used and no data processing is pending.
