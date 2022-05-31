@@ -5634,7 +5634,6 @@ parse_options_va (struct MHD_Daemon *daemon,
   unsigned int i;
   unsigned int uv;
 #ifdef HTTPS_SUPPORT
-  enum MHD_Result ret;
   const char *pstr;
 #if GNUTLS_VERSION_MAJOR >= 3
   gnutls_certificate_retrieve_function2 *pgcrf;
@@ -5884,17 +5883,18 @@ parse_options_va (struct MHD_Daemon *daemon,
                      const char *);
       if (0 != (daemon->options & MHD_USE_TLS))
       {
+        int init_res;
         gnutls_priority_deinit (daemon->priority_cache);
-        ret = gnutls_priority_init (&daemon->priority_cache,
-                                    pstr,
-                                    NULL);
-        if (GNUTLS_E_SUCCESS != ret)
+        init_res = gnutls_priority_init (&daemon->priority_cache,
+                                         pstr,
+                                         NULL);
+        if (GNUTLS_E_SUCCESS != init_res)
         {
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
                     _ ("Setting priorities to `%s' failed: %s\n"),
                     pstr,
-                    gnutls_strerror (ret));
+                    gnutls_strerror (init_res));
 #endif
           daemon->priority_cache = NULL;
           return MHD_NO;
