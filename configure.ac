@@ -145,6 +145,21 @@ MHD_CHECK_ADD_CC_CFLAG([-fno-strict-aliasing], [CFLAGS_ac])
 
 AS_VAR_IF([enable_build_type],["neutral"],[],
   [ # Any non-neutral build types
+    AC_CACHE_CHECK([whether workarounds for clang or clang-based compiler are required],
+      [mhd_cv_cc_clang_based],
+      [
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#if ! defined(__clang__) && ! defined(__llvm__)
+#error Compiler is not clang-based
+choke me now
+#endif
+              ]]
+            )
+          ],
+          [mhd_cv_cc_clang_based="yes"],[mhd_cv_cc_clang_based="no"]
+        )
+      ]
+    )
     MHD_CHECK_ADD_CC_CFLAGS([-Wall -fdelete-null-pointer-checks -Wnull-dereference], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wdeclaration-after-statement -Wimplicit -Wnested-externs], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wredundant-decls -Wtrampolines -Wunsafe-loop-optimizations], [CFLAGS_ac])
@@ -160,25 +175,6 @@ AS_CASE([${enable_build_type}],[debug|debugger],
     CFLAGS="${user_CFLAGS}"
     AS_VAR_IF([enable_build_type],["debug"],
       [
-        AS_IF([test "x${enable_sanitizers}" != "xno"],
-          [
-            AC_CACHE_CHECK([whether workarounds for clang are required],
-              [mhd_cv_cc_clang_based],
-              [
-                AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-#if ! defined(__clang__) && ! defined(__llvm__)
-#error Compiler is not clang-based
-choke me now
-#endif
-                      ]]
-                    )
-                  ],
-                  [mhd_cv_cc_clang_based="yes"],[mhd_cv_cc_clang_based="no"]
-                )
-              ]
-            )
-          ]
-        )
         # Clang has ASAN (pointer compare) broken when '-Og' optimisations are used
         AS_IF([test "x${enable_sanitizers}" != "xno" && test "x${mhd_cv_cc_clang_based}" = "xyes"],
           [MHD_CHECK_ADD_CC_CFLAG([-O0], [CFLAGS_ac])],
@@ -189,7 +185,13 @@ choke me now
     )
     MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-ggdb3], [-g3], [-ggdb], [-g])
     MHD_CHECK_ADD_CC_CFLAGS([-Wextra -Wdouble-promotion], [CFLAGS_ac])
-    MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Wformat=2], [-Wformat])
+    MHD_FIND_ADD_CC_CFLAG_IFELSE(
+      [
+        # clang produce warning when string pointer is used as a formar for v*printf() function
+        AS_VAR_IF([mhd_cv_cc_clang_based],["yes"],[MHD_CHECK_ADD_CC_CFLAG([-Wno-format-nonliteral], [CFLAGS_ac])])
+      ],[],
+      [CFLAGS_ac], [-Wformat=2], [-Wformat]
+    )
     MHD_CHECK_ADD_CC_CFLAGS([-Wformat-overflow -Wformat-truncation -Wformat-security -Wformat-signedness], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wmissing-include-dirs -Wshift-overflow=2 -Wstringop-overflow=4 -Walloc-zero], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wduplicated-branches -Wduplicated-cond -Wfloat-equal -Wshadow -Wpointer-arith], [CFLAGS_ac])
