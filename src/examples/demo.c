@@ -280,6 +280,7 @@ list_directory (struct ResponseDataContext *rdc,
     return MHD_NO;
   while (NULL != (de = readdir (dir)))
   {
+    int res;
     if ('.' == de->d_name[0])
       continue;
     if (sizeof (fullname) <= (unsigned int)
@@ -302,11 +303,16 @@ list_directory (struct ResponseDataContext *rdc,
         break; /* out of memory */
       rdc->buf = r;
     }
-    rdc->off += snprintf (&rdc->buf[rdc->off],
-                          rdc->buf_len - rdc->off,
-                          "<li><a href=\"/%s\">%s</a></li>\n",
-                          fullname,
-                          de->d_name);
+    res = snprintf (&rdc->buf[rdc->off],
+                    rdc->buf_len - rdc->off,
+                    "<li><a href=\"/%s\">%s</a></li>\n",
+                    fullname,
+                    de->d_name);
+    if (0 >= res)
+      continue;  /* snprintf() error */
+    if (rdc->buf_len - rdc->off <= (size_t) res)
+      continue;  /* buffer too small?? */
+    rdc->off += (size_t) res;
   }
   (void) closedir (dir);
   return MHD_YES;
@@ -328,6 +334,8 @@ update_directory (void)
   const char *category;
   char dir_name[128];
   struct stat sbuf;
+  int res;
+  size_t len;
 
   rdc.buf_len = initial_allocation;
   if (NULL == (rdc.buf = malloc (rdc.buf_len)))
@@ -335,9 +343,15 @@ update_directory (void)
     update_cached_response (NULL);
     return;
   }
-  rdc.off = snprintf (rdc.buf, rdc.buf_len,
-                      "%s",
-                      INDEX_PAGE_HEADER);
+  len = strlen (INDEX_PAGE_HEADER);
+  if (rdc.buf_len <= len)
+  { /* buffer too small */
+    free (rdc.buf);
+    update_cached_response (NULL);
+    return;
+  }
+  memcpy (rdc.buf, INDEX_PAGE_HEADER, len);
+  rdc.off = len;
   for (language_idx = 0; NULL != languages[language_idx].dirname;
        language_idx++)
   {
@@ -346,27 +360,39 @@ update_directory (void)
     if (0 != stat (language->dirname, &sbuf))
       continue; /* empty */
     /* we ensured always +1k room, filenames are ~256 bytes,
- so there is always still enough space for the header
- without need for an additional reallocation check. */
-    rdc.off += snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
-                         "<h2>%s</h2>\n",
-                         language->longname);
+       so there is always still enough space for the header
+       without need for an additional reallocation check. */
+    res = snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
+                    "<h2>%s</h2>\n",
+                    language->longname);
+    if (0 >= res)
+      continue;  /* snprintf() error */
+    if (rdc.buf_len - rdc.off <= (size_t) res)
+      continue;  /* buffer too small?? */
+    rdc.off += (size_t) res;
     for (category_idx = 0; NULL != categories[category_idx]; category_idx++)
     {
       category = categories[category_idx];
-      snprintf (dir_name, sizeof (dir_name),
-                "%s/%s",
-                language->dirname,
-                category);
+      res = snprintf (dir_name, sizeof (dir_name),
+                      "%s/%s",
+                      language->dirname,
+                      category);
+      if ((0 >= res) || (sizeof (dir_name) <= (size_t) res))
+        continue;  /* cannot print dir name */
       if (0 != stat (dir_name, &sbuf))
-        continue; /* empty */
+        continue;  /* empty */
 
       /* we ensured always +1k room, filenames are ~256 bytes,
          so there is always still enough space for the header
          without need for an additional reallocation check. */
-      rdc.off += snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
-                           "<h3>%s</h3>\n",
-                           category);
+      res = snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
+                      "<h3>%s</h3>\n",
+                      category);
+      if (0 >= res)
+        continue;  /* snprintf() error */
+      if (rdc.buf_len - rdc.off <= (size_t) res)
+        continue;  /* buffer too small?? */
+      rdc.off += (size_t) res;
 
       if (MHD_NO == list_directory (&rdc, dir_name))
       {
@@ -379,9 +405,15 @@ update_directory (void)
   /* we ensured always +1k room, filenames are ~256 bytes,
      so there is always still enough space for the footer
      without need for a final reallocation check. */
-  rdc.off += snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
-                       "%s",
-                       INDEX_PAGE_FOOTER);
+  len = strlen (INDEX_PAGE_FOOTER);
+  if (rdc.buf_len - rdc.off <= len)
+  { /* buffer too small */
+    free (rdc.buf);
+    update_cached_response (NULL);
+    return;
+  }
+  memcpy (rdc.buf, INDEX_PAGE_FOOTER, len);
+  rdc.off += len;
   initial_allocation = rdc.buf_len; /* remember for next time */
   response =
     MHD_create_response_from_buffer_with_free_callback (rdc.off,
@@ -509,7 +541,8 @@ process_upload_data (void *cls,
                      size_t size)
 {
   struct UploadContext *uc = cls;
-  int i;
+  size_t i;
+  int res;
   (void) kind;              /* Unused. Silent compiler warning. */
   (void) content_type;      /* Unused. Silent compiler warning. */
   (void) transfer_encoding; /* Unused. Silent compiler warning. */
@@ -567,12 +600,17 @@ process_upload_data (void *cls,
     (void) mkdir (fn, S_IRWXU);
 #endif
     /* open file */
-    snprintf (fn, sizeof (fn),
-              "%s/%s/%s",
-              uc->language,
-              uc->category,
-              filename);
-    for (i = strlen (fn) - 1; i >= 0; i--)
+    res = snprintf (fn, sizeof (fn),
+                    "%s/%s/%s",
+                    uc->language,
+                    uc->category,
+                    filename);
+    if ((0 >= res) || (sizeof (fn) <= (size_t) res))
+    {
+      uc->response = request_refused_response;
+      return MHD_NO;
+    }
+    for (i = 0; i < (size_t) res; i++)
       if (! isprint ((unsigned char) fn[i]))
         fn[i] = '_';
     uc->fd = open (fn,
@@ -594,7 +632,12 @@ process_upload_data (void *cls,
     uc->filename = strdup (fn);
   }
   if ( (0 != size) &&
-       (size != (size_t) write (uc->fd, data, size)) )
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+       (size != (size_t) write (uc->fd, data, size))
+#else  /* Native W32 */
+       (size != (size_t) write (uc->fd, data, (unsigned int) size))
+#endif /* Native W32 */
+       )
   {
     /* write failed; likely: disk full */
     fprintf (stderr,
@@ -755,7 +798,7 @@ generate_page (void *cls,
 #endif /* MHD_HAVE_LIBMAGIC */
     mime = NULL;
 
-    if (NULL == (response = MHD_create_response_from_fd (buf.st_size,
+    if (NULL == (response = MHD_create_response_from_fd ((size_t) buf.st_size,
                                                          fd)))
     {
       /* internal error (i.e. out of memory) */
@@ -928,7 +971,7 @@ main (int argc, char *const *argv)
   update_directory ();
   d = MHD_start_daemon (MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD
                         | MHD_USE_ERROR_LOG,
-                        port,
+                        (uint16_t) port,
                         NULL, NULL,
                         &generate_page, NULL,
                         MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (256
