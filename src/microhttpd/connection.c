@@ -5329,14 +5329,22 @@ MHD_get_connection_info (struct MHD_Connection *connection,
   case MHD_CONNECTION_INFO_CIPHER_ALGO:
     if (NULL == connection->tls_session)
       return NULL;
-    connection->connection_info_dummy.cipher_algorithm =
-      (int) gnutls_cipher_get (connection->tls_session);
+    if (1)
+    { /* Workaround to mute compiler warning */
+      gnutls_cipher_algorithm_t res;
+      res = gnutls_cipher_get (connection->tls_session);
+      connection->connection_info_dummy.cipher_algorithm = (int) res;
+    }
     return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_PROTOCOL:
     if (NULL == connection->tls_session)
       return NULL;
-    connection->connection_info_dummy.protocol =
-      (int) gnutls_protocol_get_version (connection->tls_session);
+    if (1)
+    { /* Workaround to mute compiler warning */
+      gnutls_protocol_t res;
+      res = gnutls_protocol_get_version (connection->tls_session);
+      connection->connection_info_dummy.protocol = (int) res;
+    }
     return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_GNUTLS_SESSION:
     if (NULL == connection->tls_session)
