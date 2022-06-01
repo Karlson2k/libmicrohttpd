@@ -29,10 +29,12 @@
 #include <stdlib.h>
 
 #define PAGE \
-  "<html><head><title>libmicrohttpd demo</title></head><body>Access granted</body></html>"
+  "<html><head><title>libmicrohttpd demo</title></head>" \
+  "<body>Access granted</body></html>"
 
 #define DENIED \
-  "<html><head><title>libmicrohttpd demo</title></head><body>Access denied</body></html>"
+  "<html><head><title>libmicrohttpd demo</title></head>" \
+  "<body>Access denied</body></html>"
 
 #define MY_OPAQUE_STR "11733b200778ce33060f31c9af70a870ba96ddd4"
 
@@ -116,12 +118,16 @@ main (int argc, char *const *argv)
   ssize_t len;
   size_t off;
   struct MHD_Daemon *d;
+  unsigned int port;
 
-  if (argc != 2)
+  if ( (argc != 2) ||
+       (1 != sscanf (argv[1], "%u", &port)) ||
+       (65535 < port) )
   {
     printf ("%s PORT\n", argv[0]);
     return 1;
   }
+
   fd = open ("/dev/urandom", O_RDONLY);
   if (-1 == fd)
   {
@@ -134,7 +140,7 @@ main (int argc, char *const *argv)
   while (off < 8)
   {
     len = read (fd, rnd, 8);
-    if (len == -1)
+    if (0 > len)
     {
       fprintf (stderr, "Failed to read `%s': %s\n",
                "/dev/urandom",
@@ -142,12 +148,12 @@ main (int argc, char *const *argv)
       (void) close (fd);
       return 1;
     }
-    off += len;
+    off += (size_t) len;
   }
   (void) close (fd);
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        atoi (argv[1]),
+                        (uint16_t) port,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof(rnd), rnd,
                         MHD_OPTION_NONCE_NC_SIZE, 300,

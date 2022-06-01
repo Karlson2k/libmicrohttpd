@@ -82,10 +82,18 @@ main (int argc,
 {
   struct MHD_Daemon *d;
   struct handler_param data_for_handler;
+  int port;
 
   if (argc != 2)
   {
     printf ("%s PORT\n", argv[0]);
+    return 1;
+  }
+  port = atoi (argv[1]);
+  if ( (1 > port) || (port > 65535) )
+  {
+    fprintf (stderr,
+             "Port must be a number between 1 and 65535.\n");
     return 1;
   }
   data_for_handler.response_page = PAGE;
@@ -94,7 +102,7 @@ main (int argc,
     /* MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | MHD_USE_POLL, */
     /* MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG | MHD_USE_POLL, */
     /* MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG, */
-    atoi (argv[1]),
+    (uint16_t) port,
     NULL, NULL, &ahc_echo, &data_for_handler,
     MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
     MHD_OPTION_STRICT_FOR_CLIENT, (int) 1,

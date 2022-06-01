@@ -109,7 +109,7 @@ main (int argc, char *const *argv)
 
   if ( (argc != 2) ||
        (1 != sscanf (argv[1], "%u", &port)) ||
-       (UINT16_MAX < port) )
+       (65535 < port) )
   {
     fprintf (stderr,
              "%s PORT\n", argv[0]);
@@ -118,7 +118,7 @@ main (int argc, char *const *argv)
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        atoi (argv[1]),
+                        (uint16_t) port,
                         NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 1;

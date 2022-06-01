@@ -107,7 +107,8 @@ ahc_echo (void *cls,
   }
   else
   {
-    response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,       /* 32k page size */
+    response = MHD_create_response_from_callback ((size_t) buf.st_size,
+                                                  32 * 1024, /* 32k page size */
                                                   &file_reader,
                                                   file,
                                                   &free_callback);
@@ -135,21 +136,34 @@ main (int argc, char *const *argv)
   fd_set es;
   MHD_socket max;
   uint64_t mhd_timeout;
+  int port;
 
   if (argc != 3)
   {
     printf ("%s PORT SECONDS-TO-RUN\n", argv[0]);
     return 1;
   }
+  port = atoi (argv[1]);
+  if ( (1 > port) || (port > 65535) )
+  {
+    fprintf (stderr,
+             "Port must be a number between 1 and 65535.\n");
+    return 1;
+  }
+
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        atoi (argv[1]),
+                        (uint16_t) port,
                         NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 1;
   end = time (NULL) + atoi (argv[2]);
   while ((t = time (NULL)) < end)
   {
+#if ! defined(_WIN32) || defined(__CYGWIN__)
     tv.tv_sec = end - t;
+#else  /* Native W32 */
+    tv.tv_sec = (long) (end - t);
+#endif /* Native W32 */
     tv.tv_usec = 0;
     max = 0;
     FD_ZERO (&rs);
@@ -161,11 +175,15 @@ main (int argc, char *const *argv)
     {
       if (((uint64_t) tv.tv_sec) < mhd_timeout / 1000LL)
       {
-        tv.tv_sec = mhd_timeout / 1000LL;
-        tv.tv_usec = (mhd_timeout - (tv.tv_sec * 1000LL)) * 1000LL;
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+        tv.tv_sec = (time_t) (mhd_timeout / 1000LL);
+#else  /* Native W32 */
+        tv.tv_sec = (long) (mhd_timeout / 1000LL);
+#endif /* Native W32 */
+        tv.tv_usec = ((long) (mhd_timeout % 1000)) * 1000;
       }
     }
-    if (-1 == select (max + 1, &rs, &ws, &es, &tv))
+    if (-1 == select ((int) max + 1, &rs, &ws, &es, &tv))
     {
       if (EINTR != errno)
         abort ();

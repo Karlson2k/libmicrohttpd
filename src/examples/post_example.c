@@ -736,16 +736,24 @@ main (int argc, char *const *argv)
   fd_set es;
   MHD_socket max;
   uint64_t mhd_timeout;
+  int port;
 
   if (argc != 2)
   {
     printf ("%s PORT\n", argv[0]);
     return 1;
   }
+  port = atoi (argv[1]);
+  if ( (1 > port) || (port > 65535) )
+  {
+    fprintf (stderr,
+             "Port must be a number between 1 and 65535.\n");
+    return 1;
+  }
   /* initialize PRNG */
   srand ((unsigned int) time (NULL));
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        atoi (argv[1]),
+                        (uint16_t) port,
                         NULL, NULL,
                         &create_response, NULL,
                         MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 15,
@@ -765,13 +773,17 @@ main (int argc, char *const *argv)
       break; /* fatal internal error */
     if (MHD_get_timeout64 (d, &mhd_timeout) == MHD_YES)
     {
-      tv.tv_sec = mhd_timeout / 1000;
-      tv.tv_usec = (mhd_timeout - (tv.tv_sec * 1000)) * 1000;
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+      tv.tv_sec = (time_t) (mhd_timeout / 1000LL);
+#else  /* Native W32 */
+      tv.tv_sec = (long) (mhd_timeout / 1000LL);
+#endif /* Native W32 */
+      tv.tv_usec = ((long) (mhd_timeout % 1000)) * 1000;
       tvp = &tv;
     }
     else
       tvp = NULL;
-    if (-1 == select (max + 1, &rs, &ws, &es, tvp))
+    if (-1 == select ((int) max + 1, &rs, &ws, &es, tvp))
     {
       if (EINTR != errno)
         abort ();

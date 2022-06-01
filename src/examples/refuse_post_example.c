@@ -33,14 +33,15 @@ struct handler_param
 
 const char *askpage =
   "<html><body>\n\
-                       Upload a file, please!<br>\n\
-                       <form action=\"/filepost\" method=\"post\" enctype=\"multipart/form-data\">\n\
-                       <input name=\"file\" type=\"file\">\n\
-                       <input type=\"submit\" value=\" Send \"></form>\n\
-                       </body></html>";
+ Upload a file, please!<br>\n\
+ <form action=\"/filepost\" method=\"post\" enctype=\"multipart/form-data\">\n\
+ <input name=\"file\" type=\"file\">\n\
+ <input type=\"submit\" value=\" Send \"></form>\n\
+ </body></html>";
 
 #define BUSYPAGE \
-  "<html><head><title>Webserver busy</title></head><body>We are too busy to process POSTs right now.</body></html>"
+  "<html><head><title>Webserver busy</title></head>" \
+  "<body>We are too busy to process POSTs right now.</body></html>"
 
 static enum MHD_Result
 ahc_echo (void *cls,
@@ -96,18 +97,25 @@ int
 main (int argc, char *const *argv)
 {
   struct MHD_Daemon *d;
-
   struct handler_param data_for_handler;
+  int port;
 
   if (argc != 2)
   {
     printf ("%s PORT\n", argv[0]);
     return 1;
   }
+  port = atoi (argv[1]);
+  if ( (1 > port) || (port > 65535) )
+  {
+    fprintf (stderr,
+             "Port must be a number between 1 and 65535.\n");
+    return 1;
+  }
   data_for_handler.response_page = askpage;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        atoi (argv[1]),
+                        (uint16_t) port,
                         NULL, NULL, &ahc_echo, &data_for_handler,
                         MHD_OPTION_END);
   if (d == NULL)

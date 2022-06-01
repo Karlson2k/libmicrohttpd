@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2015 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -73,7 +74,10 @@ callback (void *cls,
     }
    * End of pseudo code. */
   /* Return amount of data copied to buffer. */
-  return size_to_copy;
+  /* The 'buf_size' is always smaller than SSIZE_MAX therefore it's safe
+   * to cast 'size_to_copy' to 'ssize_t'. */
+  /* assert (size_to_copy <= buf_size); */
+  return (ssize_t) size_to_copy;
 }
 
 

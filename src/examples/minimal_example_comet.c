@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2008 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -20,6 +21,7 @@
  * @file minimal_example.c
  * @brief minimal example for how to generate an infinite stream with libmicrohttpd
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -77,15 +79,23 @@ int
 main (int argc, char *const *argv)
 {
   struct MHD_Daemon *d;
+  int port;
 
   if (argc != 2)
   {
     printf ("%s PORT\n", argv[0]);
     return 1;
   }
+  port = atoi (argv[1]);
+  if ( (1 > port) || (port > 65535) )
+  {
+    fprintf (stderr,
+             "Port must be a number between 1 and 65535.\n");
+    return 1;
+  }
   d = MHD_start_daemon (MHD_USE_AUTO | MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        atoi (argv[1]),
+                        (uint16_t) port,
                         NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 1;

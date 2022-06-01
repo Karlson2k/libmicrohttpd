@@ -141,10 +141,18 @@ main (int argc, char *const *argv)
 {
   struct MHD_Daemon *d;
   unsigned int i;
+  int port;
 
   if (argc != 2)
   {
     printf ("%s PORT\n", argv[0]);
+    return 1;
+  }
+  port = atoi (argv[1]);
+  if ( (1 > port) || (port > 65535) )
+  {
+    fprintf (stderr,
+             "Port must be a number between 1 and 65535.\n");
     return 1;
   }
   response = MHD_create_response_from_buffer_static (strlen (PAGE),
@@ -160,7 +168,7 @@ main (int argc, char *const *argv)
                         | MHD_USE_EPOLL | MHD_USE_TURBO
 #endif
                         ,
-                        atoi (argv[1]),
+                        (uint16_t) port,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
                         MHD_OPTION_THREAD_POOL_SIZE, (unsigned

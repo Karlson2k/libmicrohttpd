@@ -186,7 +186,8 @@ http_ahc (void *cls,
   }
   else
   {
-    response = MHD_create_response_from_callback (buf.st_size, 32 * 1024,       /* 32k PAGE_NOT_FOUND size */
+    response = MHD_create_response_from_callback ((size_t) buf.st_size,
+                                                  32 * 1024,   /* 32k page size */
                                                   &file_reader, file,
                                                   &file_free_callback);
     if (NULL == response)

@@ -145,14 +145,22 @@ main (int argc,
   struct epoll_event events_list[1];
   struct Request *req;
   uint64_t timer_expirations;
+  int port;
 
   if (argc != 2)
   {
     printf ("%s PORT\n", argv[0]);
     return 1;
   }
+  port = atoi (argv[1]);
+  if ( (1 > port) || (port > 65535) )
+  {
+    fprintf (stderr,
+             "Port must be a number between 1 and 65535.\n");
+    return 1;
+  }
   d = MHD_start_daemon (MHD_USE_EPOLL | MHD_ALLOW_SUSPEND_RESUME,
-                        atoi (argv[1]),
+                        (uint16_t) port,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_NOTIFY_COMPLETED, &connection_done, NULL,
                         MHD_OPTION_END);

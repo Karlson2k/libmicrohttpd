@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2008 Christian Grothoff (and other contributing authors)
+     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -21,6 +22,7 @@
  * @brief example for how to get the query string from libmicrohttpd
  *        Call with an URI ending with something like "?q=QUERY"
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -43,6 +45,7 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   enum MHD_Result ret;
   int resp_len;
+  size_t buf_size;
   (void) cls;               /* Unused. Silent compiler warning. */
   (void) url;               /* Unused. Silent compiler warning. */
   (void) version;           /* Unused. Silent compiler warning. */
@@ -62,18 +65,19 @@ ahc_echo (void *cls,
   if (NULL == val)
     return MHD_NO;  /* No "q" argument was found */
   resp_len = snprintf (NULL, 0, PAGE, "q", val);
-  if (0 > resp_len)
+  if (0 >= resp_len)
     return MHD_NO;  /* Error calculating response size */
-  me = malloc (resp_len + 1);
+  buf_size = (size_t) resp_len + 1; /* Add one byte for zero-termination */
+  me = malloc (buf_size);
   if (me == NULL)
     return MHD_NO;  /* Error allocating memory */
-  if (resp_len != snprintf (me, resp_len + 1, PAGE, "q", val))
+  if (resp_len != snprintf (me, buf_size, PAGE, "q", val))
   {
     free (me);
     return MHD_NO;  /* Error forming the response body */
   }
   response =
-    MHD_create_response_from_buffer_with_free_callback (resp_len,
+    MHD_create_response_from_buffer_with_free_callback (buf_size - 1,
                                                         (void *) me,
                                                         &free);
   if (response == NULL)

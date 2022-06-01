@@ -778,8 +778,8 @@ main (int argc, char *const *argv)
       break; /* fatal internal error */
     if (MHD_get_timeout64 (d, &mhd_timeout) == MHD_YES)
     {
-      tv.tv_sec = mhd_timeout / 1000;
-      tv.tv_usec = (mhd_timeout - (tv.tv_sec * 1000)) * 1000;
+      tv.tv_sec = (time_t) mhd_timeout / 1000;
+      tv.tv_usec = ((long) (mhd_timeout % 1000)) * 1000;
       tvp = &tv;
     }
     else
