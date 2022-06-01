@@ -28,16 +28,27 @@
 #include "platform.h"
 #include <dirent.h>
 #include <microhttpd.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 
 static ssize_t
 file_reader (void *cls, uint64_t pos, char *buf, size_t max)
 {
-  FILE *file = cls;
+  FILE *file = (FILE *) cls;
+  size_t bytes_read;
 
-  (void) fseek (file, pos, SEEK_SET);
-  return fread (buf, 1, max, file);
+  /* 'fseek' may not support files larger 2GiB, depending on platform.
+   * For production code, make sure that 'pos' has valid values, supported by
+   * 'fseek', or use 'fseeko' or similar function. */
+  if (0 != fseek (file, (long) pos, SEEK_SET))
+    return MHD_CONTENT_READER_END_WITH_ERROR;
+  bytes_read = fread (buf, 1, max, file);
+  if (0 == bytes_read)
+    return (0 != ferror (file)) ? MHD_CONTENT_READER_END_WITH_ERROR :
+           MHD_CONTENT_READER_END_OF_STREAM;
+  return (ssize_t) bytes_read;
 }
 
 
@@ -63,6 +74,7 @@ dir_reader (void *cls, uint64_t pos, char *buf, size_t max)
 {
   DIR *dir = cls;
   struct dirent *e;
+  int res;
 
   if (max < 512)
     return 0;
@@ -73,10 +85,15 @@ dir_reader (void *cls, uint64_t pos, char *buf, size_t max)
     if (e == NULL)
       return MHD_CONTENT_READER_END_OF_STREAM;
   } while (e->d_name[0] == '.');
-  return snprintf (buf, max,
-                   "<a href=\"/%s\">%s</a><br>",
-                   e->d_name,
-                   e->d_name);
+  res = snprintf (buf, max,
+                  "<a href=\"/%s\">%s</a><br>",
+                  e->d_name,
+                  e->d_name);
+  if (0 >= res)
+    return MHD_CONTENT_READER_END_WITH_ERROR;
+  if (max < (size_t) res)
+    return MHD_CONTENT_READER_END_WITH_ERROR;
+  return (ssize_t) res;
 }
 
 

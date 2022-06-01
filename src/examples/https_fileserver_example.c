@@ -112,10 +112,19 @@ OT1qAbIblaRuWqCsid8BzP7ZQiAnAWgMRSUg1gzDwSwRhrYQRRWAyn/Qipzec+27\n\
 static ssize_t
 file_reader (void *cls, uint64_t pos, char *buf, size_t max)
 {
-  FILE *file = cls;
+  FILE *file = (FILE *) cls;
+  size_t bytes_read;
 
-  (void) fseek (file, pos, SEEK_SET);
-  return fread (buf, 1, max, file);
+  /* 'fseek' may not support files larger 2GiB, depending on platform.
+   * For production code, make sure that 'pos' has valid values, supported by
+   * 'fseek', or use 'fseeko' or similar function. */
+  if (0 != fseek (file, (long) pos, SEEK_SET))
+    return MHD_CONTENT_READER_END_WITH_ERROR;
+  bytes_read = fread (buf, 1, max, file);
+  if (0 == bytes_read)
+    return (0 != ferror (file)) ? MHD_CONTENT_READER_END_WITH_ERROR :
+           MHD_CONTENT_READER_END_OF_STREAM;
+  return (ssize_t) bytes_read;
 }
 
 
