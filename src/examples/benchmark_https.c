@@ -86,13 +86,8 @@ completed_callback (void *cls,
     return;
   gettimeofday (&tve, NULL);
 
-  delta = 0;
-  if (tve.tv_usec >= tv->tv_usec)
-    delta += (tve.tv_sec - tv->tv_sec) * 1000000LL
-             + (tve.tv_usec - tv->tv_usec);
-  else
-    delta += (tve.tv_sec - tv->tv_sec) * 1000000LL
-             - tv->tv_usec + tve.tv_usec;
+  delta = ((uint64_t) (tve.tv_sec - tv->tv_sec)) * 1000000LL
+          + (uint64_t) tve.tv_usec - (uint64_t) tv->tv_usec;
   if (delta < SMALL)
     small_deltas[delta]++;
   else
