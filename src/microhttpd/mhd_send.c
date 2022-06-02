@@ -818,8 +818,9 @@ MHD_send_data_ (struct MHD_Connection *connection,
      * sent amount smaller than provided amount, as TLS
      * connections may break data into smaller parts for sending. */
 #endif /* EPOLL_SUPPORT */
-#endif /* HTTPS_SUPPORT  */
-    (void) 0; /* Mute compiler warning for non-TLS builds. */
+#else  /* ! HTTPS_SUPPORT  */
+    ret = MHD_ERR_NOTCONN_;
+#endif /* ! HTTPS_SUPPORT  */
   }
   else
   {

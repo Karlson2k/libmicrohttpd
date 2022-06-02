@@ -2691,8 +2691,11 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
     free (connection->addr);
     free (connection);
     MHD_PANIC (_ ("TLS connection on non-TLS daemon.\n"));
+#if 0
+    /* Unreachable code */
     eno = EINVAL;
     return NULL;
+#endif
 #endif /* ! HTTPS_SUPPORT */
   }
 
