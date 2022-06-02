@@ -93,7 +93,7 @@ static const char *const postprocerror =
 static enum MHD_Result
 send_page (struct MHD_Connection *connection,
            const char *page,
-           int status_code)
+           unsigned int status_code)
 {
   enum MHD_Result ret;
   struct MHD_Response *response;

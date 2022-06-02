@@ -65,7 +65,7 @@ string_to_base64 (const char *message)
 }
 
 
-static long
+static size_t
 get_file_size (const char *filename)
 {
   FILE *fp;
@@ -80,7 +80,7 @@ get_file_size (const char *filename)
 
     fclose (fp);
 
-    return size;
+    return (size_t) size;
   }
   else
     return 0;
@@ -92,7 +92,7 @@ load_file (const char *filename)
 {
   FILE *fp;
   char *buffer;
-  long size;
+  size_t size;
 
   size = get_file_size (filename);
   if (0 == size)
@@ -110,7 +110,7 @@ load_file (const char *filename)
   }
   buffer[size] = '\0';
 
-  if (size != (long) fread (buffer, 1, size, fp))
+  if (size != fread (buffer, 1, size, fp))
   {
     free (buffer);
     buffer = NULL;
