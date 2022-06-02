@@ -33,7 +33,7 @@ struct connection_info_struct
   struct MHD_PostProcessor *postprocessor;
 };
 
-const char *askpage =
+static const char *askpage =
   "<html><body>\n"
   "What's your name, Sir?<br>\n"
   "<form action=\"/namepost\" method=\"post\">\n"
@@ -44,7 +44,7 @@ const char *askpage =
 #define GREETINGPAGE \
   "<html><body><h1>Welcome, %s!</center></h1></body></html>"
 
-const char *errorpage =
+static const char *errorpage =
   "<html><body>This doesn't seem to be right.</body></html>";
 
 

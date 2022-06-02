@@ -132,7 +132,7 @@ ahc_echo (void *cls,
 
 
 /* test server key */
-const char srv_signed_key_pem[] =
+static const char srv_signed_key_pem[] =
   "-----BEGIN PRIVATE KEY-----\n\
 MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCff7amw9zNSE+h\n\
 rOMhBrzbbsJluUP3gmd8nOKY5MUimoPkxmAXfp2L0il+MPZT/ZEmo11q0k6J2jfG\n\
@@ -163,7 +163,7 @@ qdJNJ1DkyUc9dN2cliX4R+rG\n\
 -----END PRIVATE KEY-----";
 
 /* test server CA signed certificates */
-const char srv_signed_cert_pem[] =
+static const char srv_signed_cert_pem[] =
   "-----BEGIN CERTIFICATE-----\n\
 MIIFSzCCAzOgAwIBAgIBBDANBgkqhkiG9w0BAQsFADCBgTELMAkGA1UEBhMCUlUx\n\
 DzANBgNVBAgMBk1vc2NvdzEPMA0GA1UEBwwGTW9zY293MRswGQYDVQQKDBJ0ZXN0\n\

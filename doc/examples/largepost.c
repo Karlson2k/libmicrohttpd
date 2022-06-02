@@ -74,19 +74,19 @@ struct connection_info_struct
   "<input name=\"file\" type=\"file\">\n" \
   "<input type=\"submit\" value=\" Send \"></form>\n" \
   "</body></html>"
-const char *busypage =
+static const char *busypage =
   "<html><body>This server is busy, please try again later.</body></html>";
-const char *completepage =
+static const char *completepage =
   "<html><body>The upload has been completed.</body></html>";
-const char *errorpage =
+static const char *errorpage =
   "<html><body>This doesn't seem to be right.</body></html>";
-const char *servererrorpage =
+static const char *servererrorpage =
   "<html><body>Invalid request.</body></html>";
-const char *fileexistspage =
+static const char *fileexistspage =
   "<html><body>This file already exists.</body></html>";
-const char *fileioerror =
+static const char *fileioerror =
   "<html><body>IO error writing to disk.</body></html>";
-const char *const postprocerror =
+static const char *const postprocerror =
   "<html><head><title>Error</title></head><body>Error processing POST data</body></html>";
 
 

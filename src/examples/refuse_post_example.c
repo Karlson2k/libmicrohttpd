@@ -31,7 +31,7 @@ struct handler_param
   const char *response_page;
 };
 
-const char *askpage =
+static const char *askpage =
   "<html><body>\n\
  Upload a file, please!<br>\n\
  <form action=\"/filepost\" method=\"post\" enctype=\"multipart/form-data\">\n\
