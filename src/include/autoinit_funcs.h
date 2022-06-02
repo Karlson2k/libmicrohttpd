@@ -67,7 +67,7 @@
 * Current version of the header in packed BCD form.
 * 0x01093001 = 1.9.30-1.
 */
-#define AUTOINIT_FUNCS_VERSION 0x01000400
+#define AUTOINIT_FUNCS_VERSION 0x01000500
 
 #if defined(__GNUC__) || defined(__clang__)
 /* if possible - check for supported attribute */
@@ -221,7 +221,8 @@
 #define W32_SET_INIT_AND_DEINIT(FI,FD) \
   BOOL WINAPI DllMain (HINSTANCE hinst,DWORD reason,LPVOID unused); \
   BOOL WINAPI DllMain (HINSTANCE hinst,DWORD reason,LPVOID unused)  \
-  { if (DLL_PROCESS_ATTACH==reason) {(void) (FI) ();} \
+  { (void) hinst; (void) unused; \
+    if (DLL_PROCESS_ATTACH==reason) {(void) (FI) ();} \
     else if (DLL_PROCESS_DETACH==reason) {(void) (FD) ();} \
     return TRUE; \
   } struct _W32_dummy_strc_ ## FI {int i;}

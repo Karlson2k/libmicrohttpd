@@ -298,7 +298,10 @@ parse_dauth_params (const char *str,
         param_str = buf;
       }
       else
+      {
         param_len = 0;
+        param_str = NULL; /* Actually not used */
+      }
     }
     if ((param_len == 4) && MHD_str_equal_caseless_bin_n_ (param_str, "true",
                                                            4))
