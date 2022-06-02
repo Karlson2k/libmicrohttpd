@@ -151,9 +151,9 @@ SHA1ProcessMessageBlock (struct SHA1Context *context)
 
   for (i = 0; i < 16; i++)
   {
-    W[i] = context->message_block[i * 4] << 24;
-    W[i] |= context->message_block[i * 4 + 1] << 16;
-    W[i] |= context->message_block[i * 4 + 2] << 8;
+    W[i] = ((uint32_t) context->message_block[i * 4]) << 24;
+    W[i] |= ((uint32_t) context->message_block[i * 4 + 1]) << 16;
+    W[i] |= ((uint32_t) context->message_block[i * 4 + 2]) << 8;
     W[i] |= context->message_block[i * 4 + 3];
   }
   for (i = 16; i < 80; i++)
@@ -237,14 +237,14 @@ SHA1PadMessage (struct SHA1Context *context)
       context->message_block[context->message_block_index++] = 0;
     }
   }
-  context->message_block[56] = context->length_high >> 24;
-  context->message_block[57] = context->length_high >> 16;
-  context->message_block[58] = context->length_high >> 8;
-  context->message_block[59] = context->length_high;
-  context->message_block[60] = context->length_low >> 24;
-  context->message_block[61] = context->length_low >> 16;
-  context->message_block[62] = context->length_low >> 8;
-  context->message_block[63] = context->length_low;
+  context->message_block[56] = (unsigned char) (context->length_high >> 24);
+  context->message_block[57] = (unsigned char) (context->length_high >> 16);
+  context->message_block[58] = (unsigned char) (context->length_high >> 8);
+  context->message_block[59] = (unsigned char) (context->length_high);
+  context->message_block[60] = (unsigned char) (context->length_low >> 24);
+  context->message_block[61] = (unsigned char) (context->length_low >> 16);
+  context->message_block[62] = (unsigned char) (context->length_low >> 8);
+  context->message_block[63] = (unsigned char) (context->length_low);
   SHA1ProcessMessageBlock (context);
 }
 
@@ -298,7 +298,8 @@ SHA1Result (struct SHA1Context *context, unsigned char
   for (i = 0; i < SHA1HashSize; ++i)
   {
     Message_Digest[i]
-      = context->intermediate_hash[i >> 2] >> 8 * (3 - (i & 0x03));
+      = (unsigned char) (context->intermediate_hash[i >> 2]
+                         >> 8 * (3 - (i & 0x03)));
   }
   return SHA1_RESULT_SUCCESS;
 }
@@ -541,9 +542,13 @@ send_all (MHD_socket sock, const unsigned char *buf, size_t len)
   ssize_t ret;
   size_t off;
 
-  for (off = 0; off < len; off += ret)
+  for (off = 0; off < len; off += (size_t) ret)
   {
+#if ! defined(_WIN32) || defined(__CYGWIN__)
     ret = send (sock, (const void *) &buf[off], len - off, 0);
+#else  /* Native W32 */
+    ret = send (sock, (const void *) &buf[off], (int) (len - off), 0);
+#endif /* Native W32 */
     if (0 > ret)
     {
       if (EAGAIN == errno)
@@ -562,14 +567,14 @@ send_all (MHD_socket sock, const unsigned char *buf, size_t len)
 }
 
 
-static int
+static ssize_t
 ws_send_frame (MHD_socket sock, const char *msg, size_t length)
 {
   unsigned char *response;
   unsigned char frame[10];
   unsigned char idx_first_rdata;
-  int idx_response;
-  int output;
+  size_t idx_response;
+  size_t output;
   MHD_socket isock;
   size_t i;
 
@@ -614,7 +619,7 @@ ws_send_frame (MHD_socket sock, const char *msg, size_t length)
   }
   for (i = 0; i < length; i++)
   {
-    response[idx_response] = msg[i];
+    response[idx_response] = (unsigned char) msg[i];
     idx_response++;
   }
   response[idx_response] = '\0';
@@ -630,7 +635,7 @@ ws_send_frame (MHD_socket sock, const char *msg, size_t length)
   }
   pthread_mutex_unlock (&MUTEX);
   free (response);
-  return output;
+  return (ssize_t) output;
 }
 
 
@@ -643,7 +648,7 @@ ws_receive_frame (unsigned char *frame, ssize_t *length, int *type)
   unsigned char flength;
   unsigned char idx_first_mask;
   unsigned char idx_first_data;
-  ssize_t data_length;
+  size_t data_length;
   int i;
   int j;
 
@@ -663,7 +668,7 @@ ws_receive_frame (unsigned char *frame, ssize_t *length, int *type)
       idx_first_mask = 10;
     }
     idx_first_data = idx_first_mask + 4;
-    data_length = *length - idx_first_data;
+    data_length = (size_t) *length - idx_first_data;
     masks[0] = frame[idx_first_mask + 0];
     masks[1] = frame[idx_first_mask + 1];
     masks[2] = frame[idx_first_mask + 2];
@@ -675,7 +680,7 @@ ws_receive_frame (unsigned char *frame, ssize_t *length, int *type)
       {
         msg[j] = frame[i] ^ masks[j % 4];
       }
-      *length = data_length;
+      *length = (ssize_t) data_length;
       msg[j] = '\0';
     }
   }
@@ -698,12 +703,9 @@ run_usock (void *cls)
   struct MHD_UpgradeResponseHandle *urh = ws->urh;
   unsigned char buf[2048];
   unsigned char *msg;
-  char client[20];
   char *text;
   ssize_t got;
-  size_t size;
   int type;
-  int sent;
   int i;
 
   make_blocking (ws->sock);
@@ -721,19 +723,26 @@ run_usock (void *cls)
     }
     if (type == WS_OPCODE_TEXT_FRAME)
     {
-      size = sprintf (client, "User#%d: ", (int) ws->sock);
-      size += got;
-      text = malloc (size);
-      if (NULL != text)
+      ssize_t sent;
+      int buf_size;
+      buf_size = snprintf (NULL, 0, "User#%d: %s", (int) ws->sock, msg);
+      if (0 < buf_size)
       {
-        sprintf (text, "%s%s", client, msg);
-        sent = ws_send_frame (ws->sock, text, size);
-        free (text);
+        text = malloc ((size_t) buf_size + 1);
+        if (NULL != text)
+        {
+          if (snprintf (text, (size_t) buf_size + 1,
+                        "User#%d: %s", (int) ws->sock, msg) == buf_size)
+            sent = ws_send_frame (ws->sock, text, (size_t) buf_size);
+          else
+            sent = -1;
+          free (text);
+        }
+        else
+          sent = -1;
       }
       else
-      {
         sent = -1;
-      }
       free (msg);
       if (-1 == sent)
       {
@@ -888,18 +897,19 @@ int
 main (int argc, char *const *argv)
 {
   struct MHD_Daemon *d;
-  uint16_t port;
+  unsigned int port;
   size_t i;
-
-  if (argc != 2)
+  if ( (argc != 2) ||
+       (1 != sscanf (argv[1], "%u", &port)) ||
+       (65535 < port) )
   {
     printf ("%s PORT\n", argv[0]);
     return 1;
   }
-  port = atoi (argv[1]);
   d = MHD_start_daemon (MHD_ALLOW_UPGRADE | MHD_USE_AUTO_INTERNAL_THREAD
                         | MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_cb, &port, MHD_OPTION_END);
+                        (uint16_t) port, NULL, NULL,
+                        &ahc_cb, NULL, MHD_OPTION_END);
   if (NULL == d)
     return 1;
   for (i = 0; i < sizeof(CLIENT_SOCKS) / sizeof(CLIENT_SOCKS[0]); ++i)
