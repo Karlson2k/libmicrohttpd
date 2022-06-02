@@ -41,7 +41,8 @@ enum MHD_AuthType
   MHD_AUTHTYPE_NONE = 0,/**< No authorisation */
   MHD_AUTHTYPE_BASIC,   /**< Basic Authorisation, RFC 7617  */
   MHD_AUTHTYPE_DIGEST,  /**< Digest Authorisation, RFC 7616 */
-  MHD_AUTHTYPE_INVALID  /**< Wrong/Unknown/Unsupported authorisation type */
+  MHD_AUTHTYPE_UNKNOWN, /**< Unknown/Unsupported authorisation type */
+  MHD_AUTHTYPE_INVALID  /**< Wrong/broken authorisation header */
 };
 
 #ifdef BAUTH_SUPPORT

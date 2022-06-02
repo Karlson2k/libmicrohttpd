@@ -480,7 +480,7 @@ parse_auth_rq_header_ (struct MHD_Connection *c)
   if (NULL != rq_auth)
   {
     memset (rq_auth, 0, sizeof(struct MHD_AuthRqHeader));
-    rq_auth->auth_type = MHD_AUTHTYPE_INVALID;
+    rq_auth->auth_type = MHD_AUTHTYPE_UNKNOWN;
   }
   return false;
 }
