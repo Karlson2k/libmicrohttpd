@@ -371,6 +371,20 @@ parse_auth_rq_header_ (struct MHD_Connection *c)
   h += i;
   h_len -= i;
 
+  if (0 == h_len)
+  { /* The header is an empty string */
+    rq_auth = (struct MHD_AuthRqHeader *)
+              MHD_connection_alloc_memory_ (c,
+                                            sizeof (struct MHD_AuthRqHeader));
+    c->rq_auth = rq_auth;
+    if (NULL != rq_auth)
+    {
+      memset (rq_auth, 0, sizeof(struct MHD_AuthRqHeader));
+      rq_auth->auth_type = MHD_AUTHTYPE_INVALID;
+    }
+    return false;
+  }
+
 #ifdef DAUTH_SUPPORT
   if (1)
   {
