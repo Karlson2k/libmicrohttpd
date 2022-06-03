@@ -176,16 +176,21 @@ parse_dauth_params (const char *str,
     for (p = 0; p < sizeof(map) / sizeof(map[0]); p++)
     {
       struct dauth_token_param *const aparam = map + p;
-      if ( (aparam->tk_name->len < left) &&
+      if ( (aparam->tk_name->len <= left) &&
            MHD_str_equal_caseless_bin_n_ (str + i, aparam->tk_name->str,
                                           aparam->tk_name->len) &&
-           (('=' == str[i + aparam->tk_name->len]) ||
+           ((aparam->tk_name->len == left) ||
+            ('=' == str[i + aparam->tk_name->len]) ||
             (' ' == str[i + aparam->tk_name->len]) ||
-            ('\t' == str[i + aparam->tk_name->len])) )
+            ('\t' == str[i + aparam->tk_name->len]) ||
+            (',' == str[i + aparam->tk_name->len])) )
       {
         size_t value_start;
         size_t value_len;
         bool quoted; /* Only mark as "quoted" if backslash-escape used */
+
+        if (aparam->tk_name->len == left)
+          return false; /* No equal sign after parameter name, broken data */
 
         quoted = false;
         i += aparam->tk_name->len;
