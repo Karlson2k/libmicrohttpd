@@ -73,8 +73,10 @@ parse_bauth_params (const char *str,
     /* Find end of the token. Token cannot contain whitespace. */
     while (i < str_len && ' ' != str[i] && '\t' != str[i])
     {
-      if (0 == str[0])
-        return false; /* Binary zero is not allowed */
+      if (0 == str[i])
+        return false;  /* Binary zero is not allowed */
+      if ((',' == str[i]) || (';' == str[i]))
+        return false;  /* Only single token68 is allowed */
       i++;
     }
     token68_len = i - token68_start;
