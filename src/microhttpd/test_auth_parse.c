@@ -611,6 +611,72 @@ check_type (void)
   r += expect_result_type (1, "Digest foo=bar,=", EXPECT_TYPE_FOR_DIGEST_INVLD);
   r += expect_result_type (1, "Digest foo=bar, =", \
                            EXPECT_TYPE_FOR_DIGEST_INVLD);
+  /* Unclosed quotation */
+  r += expect_result_type (1, "Digest nc=\"", EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc=\"abc", EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc=\"   ", EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc=\"abc   ", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc=\"   abc", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc=\"   abc", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc=\"\\", EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc=\"\\\"", EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc=\"  \\\"", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc=\"\\\"  ", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc=\"  \\\"  ", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc=\"\\\"\\\"\\\"\\\"", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc= \"", EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc= \"abc", EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc= \"   ", EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc= \"abc   ", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc= \"   abc", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc= \"   abc", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc= \"\\", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc= \"\\\"", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc= \"  \\\"", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc= \"\\\"  ", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc= \"  \\\"  ", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest nc= \"\\\"\\\"\\\"\\\"", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest foo=\"", EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest foo=\"bar", EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest foo=\"   ", EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest foo=\"bar   ", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest foo=\"   bar", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest foo=\"   bar", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest foo= \"   bar", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest foo=\",   bar", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest foo=\"   bar,", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest foo=\"\\\"", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest foo=\"  \\\"", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest foo=\"\\\"  ", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest foo=\"  \\\"  ", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type (1, "Digest foo=\"\\\"\\\"\\\"\\\"", \
+                           EXPECT_TYPE_FOR_DIGEST_INVLD);
   /* Full set of parameters with semicolon inside */
   r += expect_result_type (1, "Digest username=\"test@example.com\", " \
                            "realm=\"users@example.com\", nonce=\"32141232413abcde\", " \
