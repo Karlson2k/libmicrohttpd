@@ -256,6 +256,11 @@ endif
 endif
 endif
 
+if HAVE_ANYAUTH
+check_PROGRAMS += \
+  test_auth_parse
+endif
+
 TESTS = $(check_PROGRAMS)
 
 test_start_stop_SOURCES = \
@@ -429,6 +434,9 @@ test_sha1_SOURCES = \
   test_sha1.c test_helpers.h \
   sha1.c sha1.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
 
+test_auth_parse_SOURCES = \
+  test_auth_parse.c gen_auth.c gen_auth.h  mhd_str.h mhd_str.c
+
 test_options_SOURCES = \
   test_options.c
 test_options_LDADD = \
@@ -498,3 +506,4 @@ test_set_panic_SOURCES = \
   test_set_panic.c
 test_set_panic_LDADD = \
   libmicrohttpd.la
+
