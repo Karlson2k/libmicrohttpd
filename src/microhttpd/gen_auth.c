@@ -175,6 +175,8 @@ parse_dauth_params (const char *str,
     mhd_assert ('\t' != str[i]);
 
     left = str_len - i;
+    if ('=' == str[i])
+      return false; /* The equal sign is not allowed as the first character */
     for (p = 0; p < sizeof(map) / sizeof(map[0]); p++)
     {
       struct dauth_token_param *const aparam = map + p;
