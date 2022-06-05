@@ -481,7 +481,7 @@ MHD_bin_to_hex (const void *bin,
  *
  * @param quoted the quoted string, must NOT include leading and closing
  *               DQUOTE chars, does not need to be zero-terminated
- * @param size the size in chars of the @a quited string
+ * @param quoted_len the length in chars of the @a quoted string
  * @param[out] result the pointer to the buffer to put the result, must
  *                    be at least @a size character long. The result is NOT
  *                    zero-terminated.
