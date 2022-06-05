@@ -18,7 +18,7 @@
 */
 
 /**
- * @file microhttpd/test_str_token.c
+ * @file microhttpd/test_auth_parse.c
  * @brief  Unit tests for request's 'Authorization" headers parsing
  * @author Karlson2k (Evgeny Grin)
  */
@@ -713,8 +713,8 @@ check_type (void)
   r += expect_result_type (1, "DigestBasic ", MHD_AUTHTYPE_UNKNOWN);
   r += expect_result_type (1, " DigestBasic", MHD_AUTHTYPE_UNKNOWN);
   r += expect_result_type (1, "DigestBasic" "a", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "Digest\0", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "\0Digest", MHD_AUTHTYPE_UNKNOWN);
+  r += expect_result_type (1, "Digest" "\0", MHD_AUTHTYPE_UNKNOWN);
+  r += expect_result_type (1, "\0" "Digest", MHD_AUTHTYPE_UNKNOWN);
   return r;
 }
 
