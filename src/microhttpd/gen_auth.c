@@ -187,7 +187,8 @@ parse_dauth_params (const char *str,
             ('=' == str[i + aparam->tk_name->len]) ||
             (' ' == str[i + aparam->tk_name->len]) ||
             ('\t' == str[i + aparam->tk_name->len]) ||
-            (',' == str[i + aparam->tk_name->len])) )
+            (',' == str[i + aparam->tk_name->len]) ||
+            (';' == str[i + aparam->tk_name->len])) )
       {
         size_t value_start;
         size_t value_len;
@@ -236,6 +237,8 @@ parse_dauth_params (const char *str,
           {
             if (0 == str[i])
               return false;  /* Binary zero in parameter value */
+            if (';' == str[i])
+              return false;  /* Semicolon in parameter value */
             i++;
           }
           value_len = i - value_start;
@@ -263,13 +266,17 @@ parse_dauth_params (const char *str,
       /* No matching parameter name */
       while (str_len > i && ',' != str[i])
       {
+        if ((0 == str[i]) || (';' == str[i]))
+          return false; /* Not allowed characters */
         if ('"' == str[i])
         { /* Skip quoted part */
           i++; /* Advance after the opening quote */
           while (str_len > i && '"' != str[i])
           {
+            if (0 == str[i])
+              return false;  /* Binary zero is not allowed */
             if ('\\' == str[i])
-              i++; /* Skip escaped char */
+              i++;           /* Skip escaped char */
             i++;
           }
           if (str_len <= i)
