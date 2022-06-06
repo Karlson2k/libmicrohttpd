@@ -51,7 +51,7 @@
 
 struct MHD_RqDAuthParam
 {
-  struct _MHD_cstr_w_len value;
+  struct _MHD_str_w_len value;
   bool quoted;
 };
 

@@ -37,7 +37,7 @@
 
 struct MHD_RqBAuth
 {
-  struct _MHD_cstr_w_len token68;
+  struct _MHD_str_w_len token68;
 };
 
 #endif /* ! MHD_BASICAUTH_H */

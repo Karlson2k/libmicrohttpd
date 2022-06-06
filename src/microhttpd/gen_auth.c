@@ -91,8 +91,8 @@ parse_bauth_params (const char *str,
     else
     {
       /* No more data in the string, only single token68. */
-      const struct _MHD_cstr_w_len tkn = { str + token68_start, token68_len};
-      memcpy (&pbauth->token68, &tkn, sizeof(tkn));
+      pbauth->token68.str = str + token68_start;
+      pbauth->token68.len = token68_len;
     }
   }
   return true;
@@ -251,11 +251,8 @@ parse_dauth_params (const char *str,
 
         /* Have valid parameter name and value */
         mhd_assert (! quoted || 0 != value_len);
-        if (1)
-        {
-          const struct _MHD_cstr_w_len val = {str + value_start, value_len};
-          memcpy (&aparam->param->value, &val, sizeof(val));
-        }
+        aparam->param->value.str = str + value_start;
+        aparam->param->value.len = value_len;
         aparam->param->quoted = quoted;
 
         break; /* Found matching parameter name */

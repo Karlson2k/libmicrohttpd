@@ -64,6 +64,15 @@ struct _MHD_cstr_w_len
 };
 
 /**
+ * String with length
+ */
+struct _MHD_str_w_len
+{
+  const char *str;
+  size_t len;
+};
+
+/**
  * Static string initialiser for struct _MHD_str_w_len
  */
 #define _MHD_S_STR_W_LEN(str) { str, MHD_STATICSTR_LEN_(str) }
