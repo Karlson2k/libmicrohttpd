@@ -1067,7 +1067,7 @@ try_ready_normal_body (struct MHD_Connection *connection)
 
   ret = response->crc (response->crc_cls,
                        connection->response_write_position,
-                       response->data,
+                       (char *) response->data,
                        (size_t) MHD_MIN ((uint64_t) response->data_buffer_size,
                                          response->total_size
                                          - connection->response_write_position));
