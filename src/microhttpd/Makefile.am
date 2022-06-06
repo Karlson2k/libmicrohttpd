@@ -258,7 +258,7 @@ endif
 
 if HAVE_ANYAUTH
 check_PROGRAMS += \
-  test_auth_parse
+  test_auth_parse test_str_quote
 endif
 
 TESTS = $(check_PROGRAMS)
@@ -436,6 +436,9 @@ test_sha1_SOURCES = \
 
 test_auth_parse_SOURCES = \
   test_auth_parse.c gen_auth.c gen_auth.h  mhd_str.h mhd_str.c
+  
+test_str_quote_SOURCES = \
+  test_str_quote.c mhd_str.h mhd_str.c mhd_assert.h
 
 test_options_SOURCES = \
   test_options.c

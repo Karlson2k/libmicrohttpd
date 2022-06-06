@@ -79,3 +79,4 @@ test_postprocessor_md
 /test_client_put_chunked_steps_hard_close
 /test_set_panic
 /test_auth_parse
+/test_str_quote
