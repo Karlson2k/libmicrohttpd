@@ -1418,6 +1418,36 @@ MHD_str_equal_quoted_bin_n (const char *quoted,
 }
 
 
+bool
+MHD_str_equal_caseless_quoted_bin_n (const char *quoted,
+                                     size_t quoted_len,
+                                     const char *unquoted,
+                                     size_t unquoted_len)
+{
+  size_t i;
+  size_t j;
+  if (unquoted_len < quoted_len / 2)
+    return false;
+
+  j = 0;
+  for (i = 0; quoted_len > i && unquoted_len > j; ++i, ++j)
+  {
+    if ('\\' == quoted[i])
+    {
+      i++; /* Advance to the next character */
+      if (quoted_len == i)
+        return false; /* No character after escaping backslash */
+    }
+    if (! charsequalcaseless (quoted[i], unquoted[j]))
+      return false; /* Different characters */
+  }
+  if ((quoted_len != i) || (unquoted_len != j))
+    return false; /* The strings have different length */
+
+  return true;
+}
+
+
 size_t
 MHD_str_unquote (const char *quoted,
                  size_t quoted_len,
