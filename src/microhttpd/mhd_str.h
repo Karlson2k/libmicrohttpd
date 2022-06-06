@@ -476,6 +476,31 @@ MHD_bin_to_hex (const void *bin,
                 char *hex);
 
 /**
+ * Check two strings for equality, "unquoting" the first string from quoted
+ * form as specified by RFC7230#section-3.2.6 and RFC7694#quoted.strings.
+ *
+ * Null-termination for input stings is not required, binary zeros compared
+ * like other characters.
+ *
+ * @param quoted the quoted string to compare, must NOT include leading and
+ *               closing DQUOTE chars, does not need to be zero-terminated
+ * @param quoted_len the length in chars of the @a quoted string
+ * @param unquoted the unquoted string to compare, does not need to be
+ *                 zero-terminated
+ * @param unquoted_len the length in chars of the @a unquoted string
+ * @return zero if quoted form is broken (no character after the last escaping
+ *         backslash), zero if strings are not equal after unquoting of the
+ *         first string,
+ *         non-zero if two strings are equal after unquoting of the
+ *         first string.
+ */
+bool
+MHD_str_equal_quoted_bin_n (const char *quoted,
+                            size_t quoted_len,
+                            const char *unquoted,
+                            size_t unquoted_len);
+
+/**
  * Convert string from quoted to unquoted form as specified by
  * RFC7230#section-3.2.6 and RFC7694#quoted.strings.
  *
