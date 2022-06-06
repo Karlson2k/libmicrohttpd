@@ -295,35 +295,19 @@ parse_dauth_params (const char *str,
   }
 
   /* Postprocess values */
-  if ((NULL != userhash.value.str) && (0 != userhash.value.len))
+  if (NULL != userhash.value.str)
   {
-    const char *param_str;
-    size_t param_len;
-    char buf[5 * 2]; /* 5 is the length of "false" (longer then "true") */
-    if (! userhash.quoted)
-    {
-      param_str = userhash.value.str;
-      param_len = userhash.value.len;
-    }
+    if (userhash.quoted)
+      pdauth->userhash =
+        MHD_str_equal_caseless_quoted_bin_n (userhash.value.str,
+                                             userhash.value.len,
+                                             "true",
+                                             MHD_STATICSTR_LEN_ ("true"));
     else
-    {
-      if (sizeof(buf) / sizeof(buf[0]) >= userhash.value.len)
-      {
-        param_len = MHD_str_unquote (userhash.value.str, userhash.value.len,
-                                     buf);
-        param_str = buf;
-      }
-      else
-      {
-        param_len = 0;
-        param_str = NULL; /* Actually not used */
-      }
-    }
-    if ((param_len == 4) && MHD_str_equal_caseless_bin_n_ (param_str, "true",
-                                                           4))
-      pdauth->userhash = true;
-    else
-      pdauth->userhash = false;
+      pdauth->userhash =
+        (MHD_STATICSTR_LEN_ ("true") == userhash.value.len) &&
+        (0 == memcmp (str, userhash.value.str, userhash.value.len));
+
   }
   else
     pdauth->userhash = false;

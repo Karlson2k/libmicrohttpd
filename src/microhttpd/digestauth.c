@@ -1363,6 +1363,30 @@ get_unqouted_param (const struct MHD_RqDAuthParam *param,
 
 
 /**
+ * Check whether Digest Auth request parameter is equal to given string
+ * @param param the parameter to check
+ * @param str the string to compare with, does not need to be zero-terminated
+ * @param str_len the length of the @a str
+ * @return true is parameter is equal to the given string,
+ *         false otherwise
+ */
+_MHD_static_inline bool
+is_param_equal (const struct MHD_RqDAuthParam *param,
+                const char *const str,
+                const size_t str_len)
+{
+  mhd_assert (NULL != param->value.str);
+  mhd_assert (0 != param->value.len);
+  if (param->quoted)
+    return MHD_str_equal_quoted_bin_n (param->value.str, param->value.len,
+                                       str, str_len);
+  return (str_len == param->value.len) &&
+         (0 == memcmp (str, param->value.str, str_len));
+
+}
+
+
+/**
  * Authenticates the authorization header sent by the client
  *
  * @param connection The MHD connection structure
@@ -1413,6 +1437,8 @@ digest_auth_check_all (struct MHD_Connection *connection,
 #ifdef HAVE_MESSAGES
   bool err_logged;
 #endif /* HAVE_MESSAGES */
+  size_t username_len;
+  size_t realm_len;
 
   tmp2 = NULL;
   tmp2_size = 0;
@@ -1420,35 +1446,24 @@ digest_auth_check_all (struct MHD_Connection *connection,
   err_logged = false;
 #endif /* HAVE_MESSAGES */
 
-  params = get_rq_dauth_params (connection);
-  if (NULL == params)
-    return MHD_DAUTH_WRONG_HEADER;
-
   do /* Only to avoid "goto" */
   {
-    /* Check 'username' */
-    unq_res = get_unqouted_param (&params->username, tmp1, &tmp2, &tmp2_size,
-                                  &unquoted);
-    if (_MHD_UNQ_NON_EMPTY != unq_res)
+
+    params = get_rq_dauth_params (connection);
+    if (NULL == params)
     {
-      if (_MHD_UNQ_NO_STRING == unq_res)
-        ret = MHD_DAUTH_WRONG_HEADER;
-      else if (_MHD_UNQ_EMPTY == unq_res)
-        ret = MHD_DAUTH_WRONG_USERNAME;
-      else if (_MHD_UNQ_TOO_LARGE == unq_res)
-        ret = MHD_DAUTH_WRONG_HEADER;
-      else if (_MHD_UNQ_OUT_OF_MEM == unq_res)
-        ret = MHD_DAUTH_ERROR;
-      else
-      {
-        mhd_assert (0); /* Must not happen */
-        ret = MHD_DAUTH_ERROR;
-      }
+      ret = MHD_DAUTH_WRONG_HEADER;
       break;
     }
-    /* 'unquoted" may not contain binary zero */
-    if ( (0 != strncmp (username, unquoted.str, unquoted.len)) ||
-         (0 != username[unquoted.len]) )
+
+    /* Check 'username' */
+    if (NULL == params->username.value.str)
+    {
+      ret = MHD_DAUTH_WRONG_HEADER;
+      break;
+    }
+    username_len = strlen (username);
+    if (! is_param_equal (&params->username, username, username_len))
     {
       ret = MHD_DAUTH_WRONG_USERNAME;
       break;
@@ -1456,28 +1471,13 @@ digest_auth_check_all (struct MHD_Connection *connection,
     /* 'username' valid */
 
     /* Check 'realm' */
-    unq_res = get_unqouted_param (&params->realm, tmp1, &tmp2, &tmp2_size,
-                                  &unquoted);
-    if (_MHD_UNQ_NON_EMPTY != unq_res)
+    if (NULL == params->realm.value.str)
     {
-      if (_MHD_UNQ_NO_STRING == unq_res)
-        ret = MHD_DAUTH_WRONG_HEADER;
-      else if (_MHD_UNQ_EMPTY == unq_res)
-        ret = MHD_DAUTH_WRONG_REALM;
-      else if (_MHD_UNQ_TOO_LARGE == unq_res)
-        ret = MHD_DAUTH_WRONG_HEADER;
-      else if (_MHD_UNQ_OUT_OF_MEM == unq_res)
-        ret = MHD_DAUTH_ERROR;
-      else
-      {
-        mhd_assert (0); /* Must not happen */
-        ret = MHD_DAUTH_ERROR;
-      }
+      ret = MHD_DAUTH_WRONG_HEADER;
       break;
     }
-    /* 'unquoted" may not contain binary zero */
-    if ( (0 != strncmp (realm, unquoted.str, unquoted.len)) ||
-         (0 != realm[unquoted.len]) )
+    realm_len = strlen (realm);
+    if (! is_param_equal (&params->realm, realm, realm_len))
     {
       ret = MHD_DAUTH_WRONG_REALM;
       break;
