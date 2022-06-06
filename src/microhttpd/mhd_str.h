@@ -483,11 +483,12 @@ MHD_bin_to_hex (const void *bin,
  *               DQUOTE chars, does not need to be zero-terminated
  * @param quoted_len the length in chars of the @a quoted string
  * @param[out] result the pointer to the buffer to put the result, must
- *                    be at least @a size character long. The result is NOT
+ *                    be at least @a size character long.May be modified even
+ *                    if @a quoted is invalid sequence. The result is NOT
  *                    zero-terminated.
  * @return The number of characters written to the output buffer,
  *         zero if last backslash is not followed by any character (or
- *         @a size is zero).
+ *         @a quoted_len is zero).
  */
 size_t
 MHD_str_unquote (const char *quoted,
