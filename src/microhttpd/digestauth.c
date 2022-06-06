@@ -485,7 +485,9 @@ digest_calc_ha1_from_digest (const char *alg,
  * @param alg The hash algorithm used, can be "MD5" or "MD5-sess"
  *             or "SHA-256" or "SHA-256-sess"
  * @param username A `char *' pointer to the username value
+ * @param username the length of the @a username
  * @param realm A `char *' pointer to the realm value
+ * @param realm_len the length of the @a realm
  * @param password A `char *' pointer to the password value
  * @param nonce A `char *' pointer to the nonce value
  * @param cnonce A `char *' pointer to the cnonce value
@@ -495,7 +497,9 @@ digest_calc_ha1_from_digest (const char *alg,
 static void
 digest_calc_ha1_from_user (const char *alg,
                            const char *username,
+                           size_t username_len,
                            const char *realm,
+                           size_t realm_len,
                            const char *password,
                            const char *nonce,
                            const char *cnonce,
@@ -504,13 +508,13 @@ digest_calc_ha1_from_user (const char *alg,
   digest_init (da);
   digest_update (da,
                  (const unsigned char *) username,
-                 strlen (username));
+                 username_len);
   digest_update (da,
                  (const unsigned char *) ":",
                  1);
   digest_update (da,
                  (const unsigned char *) realm,
-                 strlen (realm));
+                 realm_len);
   digest_update (da,
                  (const unsigned char *) ":",
                  1);
@@ -914,6 +918,7 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection)
  * @param rnd_size The size of the random seed array @a rnd
  * @param uri HTTP URI (in MHD, without the arguments ("?k=v")
  * @param realm A string of characters that describes the realm of auth.
+ * @param realm_len the length of the @a realm.
  * @param da digest algorithm to use
  * @param[out] nonce A pointer to a character array for the nonce to put in,
  *        must provide NONCE_STD_LEN(da->digest_size)+1 bytes
@@ -925,6 +930,7 @@ calculate_nonce (uint64_t nonce_time,
                  size_t rnd_size,
                  const char *uri,
                  const char *realm,
+                 size_t realm_len,
                  struct DigestAlgorithm *da,
                  char *nonce)
 {
@@ -969,7 +975,7 @@ calculate_nonce (uint64_t nonce_time,
                  1);
   digest_update (da,
                  (const unsigned char *) realm,
-                 strlen (realm));
+                 realm_len);
   digest_calc_hash (da);
   MHD_bin_to_hex (digest_get_bin (da),
                   digest_get_size (da),
@@ -1045,6 +1051,7 @@ is_slot_available (const struct MHD_NonceNc *const nn,
  * @param connection the MHD connection structure
  * @param timestamp the current timestamp
  * @param realm the string of characters that describes the realm of auth
+ * @param realm_len the lenght of the @a realm
  * @param da the digest algorithm to use
  * @param[out] nonce the pointer to a character array for the nonce to put in,
  *        must provide NONCE_STD_LEN(da->digest_size)+1 bytes
@@ -1055,6 +1062,7 @@ static bool
 calculate_add_nonce (struct MHD_Connection *const connection,
                      uint64_t timestamp,
                      const char *realm,
+                     size_t realm_len,
                      struct DigestAlgorithm *da,
                      char *nonce)
 {
@@ -1072,6 +1080,7 @@ calculate_add_nonce (struct MHD_Connection *const connection,
                    daemon->digest_auth_rand_size,
                    connection->url,
                    realm,
+                   realm_len,
                    da,
                    nonce);
 
@@ -1118,8 +1127,10 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
                                 char *nonce)
 {
   const uint64_t timestamp1 = MHD_monotonic_msec_counter ();
+  const size_t realm_len = strlen (realm);
 
-  if (! calculate_add_nonce (connection, timestamp1, realm, da, nonce))
+  if (! calculate_add_nonce (connection, timestamp1, realm, realm_len, da,
+                             nonce))
   {
     /* Either:
      * 1. The same nonce was already generated. If it will be used then one
@@ -1156,9 +1167,10 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
       /* Use up to 127 ms difference */
       timestamp2 -= (base4 & DAUTH_JUMPBACK_MAX);
       if (timestamp1 == timestamp2)
-        timestamp2 -= 2;
+        timestamp2 -= 2; /* Fallback value */
     }
-    if (! calculate_add_nonce (connection, timestamp2, realm, da, nonce2))
+    if (! calculate_add_nonce (connection, timestamp2, realm, realm_len, da,
+                               nonce2))
     {
       /* No free slot has been found. Re-tries are expensive, just use
        * the generated nonce. As it is not stored in nonce-nc map array,
@@ -1534,6 +1546,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
                      daemon->digest_auth_rand_size,
                      connection->url,
                      realm,
+                     realm_len,
                      da,
                      noncehashexp);
     /*
@@ -1779,7 +1792,9 @@ digest_auth_check_all (struct MHD_Connection *connection,
       mhd_assert (NULL != password);   /* NULL == digest => password != NULL */
       digest_calc_ha1_from_user (digest_get_algo_name (da),
                                  username,
+                                 username_len,
                                  realm,
+                                 realm_len,
                                  password,
                                  noncehashexp,
                                  cnonce,
