@@ -475,6 +475,7 @@ MHD_bin_to_hex (const void *bin,
                 size_t size,
                 char *hex);
 
+#ifdef DAUTH_SUPPORT
 /**
  * Check two strings for equality, "unquoting" the first string from quoted
  * form as specified by RFC7230#section-3.2.6 and RFC7694#quoted.strings.
@@ -519,5 +520,7 @@ size_t
 MHD_str_unquote (const char *quoted,
                  size_t quoted_len,
                  char *result);
+
+#endif /* DAUTH_SUPPORT */
 
 #endif /* MHD_STR_H */

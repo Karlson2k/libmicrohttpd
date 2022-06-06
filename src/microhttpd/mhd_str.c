@@ -1387,6 +1387,7 @@ MHD_bin_to_hex (const void *bin,
 }
 
 
+#ifdef DAUTH_SUPPORT
 bool
 MHD_str_equal_quoted_bin_n (const char *quoted,
                             size_t quoted_len,
@@ -1440,3 +1441,6 @@ MHD_str_unquote (const char *quoted,
   }
   return w;
 }
+
+
+#endif /* DAUTH_SUPPORT */
