@@ -135,28 +135,47 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
 
 
 /**
- * Queues a response to request basic authentication from the client
+ * Queues a response to request basic authentication from the client.
+ *
  * The given response object is expected to include the payload for
  * the response; the "WWW-Authenticate" header will be added and the
  * response queued with the 'UNAUTHORIZED' status code.
  *
- * @param connection The MHD connection structure
+ * See RFC 7617#section-2 for details.
+ *
+ * The @a response is modified by this function. The modified response object
+ * can be used to respond subsequent requests by #MHD_queue_response()
+ * function with status code #MHD_HTTP_UNAUTHORIZED and must not be used again
+ * with MHD_queue_basic_auth_fail_response3() function. The response could
+ * be destroyed right after call of this function.
+ *
+ * @param connection the MHD connection structure
  * @param realm the realm presented to the client
- * @param response response object to modify and queue; the NULL is tolerated
+ * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
+ *                    be added, indicating for client that UTF-8 encoding
+ *                    is preferred
+ * @param response the response object to modify and queue; the NULL
+ *                 is tolerated
  * @return #MHD_YES on success, #MHD_NO otherwise
+ * @note Available since #MHD_VERSION 0x00097516
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
-MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
-                                    const char *realm,
-                                    struct MHD_Response *response)
+MHD_queue_basic_auth_fail_response3 (struct MHD_Connection *connection,
+                                     const char *realm,
+                                     int prefer_utf8,
+                                     struct MHD_Response *response)
 {
+  static const char prefix[] = "Basic realm=\"";
+  static const char suff_charset[] = "\", charset=\"UTF-8\"";
+  static const size_t prefix_len = MHD_STATICSTR_LEN_ (prefix);
+  static const size_t suff_simple_len = MHD_STATICSTR_LEN_ ("\"");
+  static const size_t suff_charset_len =
+    MHD_STATICSTR_LEN_ (suff_charset);
   enum MHD_Result ret;
   char *h_str;
-  static const char prefix[] = "Basic realm=\"";
-  static const size_t prefix_len = MHD_STATICSTR_LEN_ (prefix);
-  static const size_t suffix_len = MHD_STATICSTR_LEN_ ("\"");
   size_t h_maxlen;
+  size_t suffix_len;
   size_t realm_len;
   size_t realm_quoted_len;
   size_t pos;
@@ -164,8 +183,10 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
   if (NULL == response)
     return MHD_NO;
 
+  suffix_len = (0 == prefer_utf8) ? suff_simple_len : suff_charset_len;
   realm_len = strlen (realm);
   h_maxlen = prefix_len + realm_len * 2 + suffix_len;
+
   h_str = (char *) malloc (h_maxlen + 1);
   if (NULL == h_str)
   {
@@ -181,9 +202,19 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
                                     h_maxlen - prefix_len - suffix_len);
   pos += realm_quoted_len;
   mhd_assert (pos + suffix_len <= h_maxlen);
-  h_str[pos++] = '\"';
-  h_str[pos++] = 0; /* Zero terminate the result */
-  mhd_assert (pos <= h_maxlen + 1);
+  if (0 == prefer_utf8)
+  {
+    h_str[pos++] = '\"';
+    h_str[pos++] = 0; /* Zero terminate the result */
+    mhd_assert (pos <= h_maxlen + 1);
+  }
+  else
+  {
+    /* Copy with the final zero-termination */
+    mhd_assert (pos + suff_charset_len <= h_maxlen);
+    memcpy (h_str + pos, suff_charset, suff_charset_len + 1);
+    mhd_assert (0 == h_str[pos + suff_charset_len]);
+  }
 
   ret = MHD_add_response_header (response,
                                  MHD_HTTP_HEADER_WWW_AUTHENTICATE,
@@ -203,6 +234,29 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
 #endif /* HAVE_MESSAGES */
   }
   return ret;
+}
+
+
+/**
+ * Queues a response to request basic authentication from the client
+ * The given response object is expected to include the payload for
+ * the response; the "WWW-Authenticate" header will be added and the
+ * response queued with the 'UNAUTHORIZED' status code.
+ *
+ * @param connection The MHD connection structure
+ * @param realm the realm presented to the client
+ * @param response response object to modify and queue; the NULL is tolerated
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @deprecated use MHD_queue_basic_auth_fail_response3()
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
+                                    const char *realm,
+                                    struct MHD_Response *response)
+{
+  return MHD_queue_basic_auth_fail_response3 (connection, realm, MHD_NO,
+                                              response);
 }
 
 

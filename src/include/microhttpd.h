@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097515
+#define MHD_VERSION 0x00097516
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4648,6 +4648,39 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
 
 
 /**
+ * Queues a response to request basic authentication from the client.
+ *
+ * The given response object is expected to include the payload for
+ * the response; the "WWW-Authenticate" header will be added and the
+ * response queued with the 'UNAUTHORIZED' status code.
+ *
+ * See RFC 7617#section-2 for details.
+ *
+ * The @a response is modified by this function. The modified response object
+ * can be used to respond subsequent requests by #MHD_queue_response()
+ * function with status code #MHD_HTTP_UNAUTHORIZED and must not be used again
+ * with MHD_queue_basic_auth_fail_response3() function. The response could
+ * be destroyed right after call of this function.
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm presented to the client
+ * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
+ *                    be added, indicating for client that UTF-8 encoding
+ *                    is preferred
+ * @param response the response object to modify and queue; the NULL
+ *                 is tolerated
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @note Available since #MHD_VERSION 0x00097516
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_queue_basic_auth_fail_response3 (struct MHD_Connection *connection,
+                                     const char *realm,
+                                     int prefer_utf8,
+                                     struct MHD_Response *response);
+
+
+/**
  * Queues a response to request basic authentication from the client
  * The given response object is expected to include the payload for
  * the response; the "WWW-Authenticate" header will be added and the
@@ -4657,6 +4690,7 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
  * @param realm the realm presented to the client
  * @param response response object to modify and queue; the NULL is tolerated
  * @return #MHD_YES on success, #MHD_NO otherwise
+ * @deprecated use MHD_queue_basic_auth_fail_response3()
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
