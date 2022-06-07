@@ -553,11 +553,9 @@ _MHD_dumbClient_create (uint16_t port, const char *method, const char *url,
                                             ": chunked\r\n");
     }
   }
-  if (NULL != add_headers)
+  if (0 != add_hdrs_size)
   {
-    memcpy (send_buf + clnt->req_size,
-            add_headers,
-            add_hdrs_size);
+    memcpy (send_buf + clnt->req_size, add_headers, add_hdrs_size);
     clnt->req_size += add_hdrs_size;
   }
   /* Terminate header */
@@ -567,7 +565,7 @@ _MHD_dumbClient_create (uint16_t port, const char *method, const char *url,
   /* Add body (if any) */
   if (! chunked)
   {
-    if (NULL != req_body)
+    if (0 != req_body_size)
     {
       memcpy (send_buf + clnt->req_size, req_body, req_body_size);
       clnt->req_size += req_body_size;
@@ -575,7 +573,7 @@ _MHD_dumbClient_create (uint16_t port, const char *method, const char *url,
   }
   else
   {
-    if (NULL != req_body)
+    if (0 != req_body_size)
     {
       int prn_size;
       prn_size = snprintf (send_buf + clnt->req_size,
