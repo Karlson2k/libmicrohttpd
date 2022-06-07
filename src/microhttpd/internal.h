@@ -69,7 +69,7 @@
  * pointer to unmodifiable data.
  * Must not be used to transform pointers for MHD needs.
  */
-#define _MHD_DROP_CONST(ptr)    ((void *)((uintptr_t)((const void *)(ptr))))
+#define _MHD_DROP_CONST(ptr)    ((void *) ((uintptr_t) ((const void *) (ptr))))
 
 /**
  * @def _MHD_MACRO_NO
@@ -269,7 +269,7 @@ struct MHD_NonceNc
   /**
    * Nonce value:
    */
-  char nonce[MAX_NONCE_LENGTH];
+  char nonce[MAX_NONCE_LENGTH + 1];
 
 };
 
@@ -848,7 +848,7 @@ enum MHD_HTTP_Version
  * Returns boolean 'true' if HTTP version is supported by MHD
  */
 #define MHD_IS_HTTP_VER_SUPPORTED(ver) (MHD_HTTP_VER_1_0 <= (ver) && \
-    MHD_HTTP_VER_1_2__1_9 >= (ver))
+                                        MHD_HTTP_VER_1_2__1_9 >= (ver))
 
 /**
  * Protocol should be used as HTTP/1.1 protocol.
@@ -857,7 +857,7 @@ enum MHD_HTTP_Version
  * https://datatracker.ietf.org/doc/html/rfc7230#section-2.6
  */
 #define MHD_IS_HTTP_VER_1_1_COMPAT(ver) (MHD_HTTP_VER_1_1 == (ver) || \
-    MHD_HTTP_VER_1_2__1_9 == (ver))
+                                         MHD_HTTP_VER_1_2__1_9 == (ver))
 
 /**
  * The HTTP method.
