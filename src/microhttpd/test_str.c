@@ -244,7 +244,7 @@ n_prnt (const char *str)
 {
   static char *buf;  /* should be enough for testing */
   static const size_t buf_size = sizeof(tmp_bufs[0]);
-  const unsigned char *p = (const unsigned char*) str;
+  const unsigned char *p = (const unsigned char *) str;
   size_t w_pos = 0;
   if (++buf_idx > 3)
     buf_idx = 0;
