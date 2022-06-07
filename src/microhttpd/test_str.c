@@ -3661,6 +3661,14 @@ check_strx_from_uint32 (void)
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
                      (intptr_t) rs,  get_current_locale_str ());
           }
+          else if (sizeof(buf) <= rs)
+          {
+            fprintf (stderr,
+                     "ERROR: dstrs_w_values[%u] has string with too many"
+                     "(%u) digits, size of 'buf' should be increased.\n",
+                     (unsigned int) i, (unsigned int) rs);
+            return -1;
+          }
           else if (0 != memcmp (buf + rs, erase + rs, sizeof(buf) - rs))
           {
             if (0 == c_failed[i])
