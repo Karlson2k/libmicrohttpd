@@ -3116,7 +3116,8 @@ parse_cookie_header (struct MHD_Connection *connection)
           hdr_len);
   cpy[hdr_len] = '\0';
 
-  strict_parsing = (1 == connection->daemon->strict_for_client);
+  /* TODO: add individual configuration */
+  strict_parsing = (0 < connection->daemon->strict_for_client);
   i = 0;
   /* Skip all initial whitespaces */
   while (i < hdr_len && (' ' == cpy[i] || '\t' == cpy[i]))
