@@ -153,3 +153,5 @@ core
 /test_basicauth
 /test_parse_cookies_invalid
 /test_basicauth_preauth
+/test_basicauth_oldapi
+/test_basicauth_preauth_oldapi

@@ -251,6 +251,7 @@ struct CBC
 
 static int verbose;
 static int preauth;
+static int oldapi;
 
 static size_t
 copyBuffer (void *ptr,
@@ -279,8 +280,6 @@ ahc_echo (void *cls,
           void **req_cls)
 {
   struct MHD_Response *response;
-  char *username;
-  char *password;
   enum MHD_Result ret;
   static int already_called_marker;
   (void) cls; (void) url;         /* Unused. Silent compiler warning. */
@@ -298,46 +297,129 @@ ahc_echo (void *cls,
     mhdErrorExitDesc ("Unexpected HTTP method");
 
   /* require: USERNAME with password PASSWORD */
-  password = NULL;
-  username = MHD_basic_auth_get_username_password (connection,
-                                                   &password);
-  if (NULL != username)
+  if (! oldapi)
   {
-    if (0 != strcmp (username, USERNAME))
+    struct MHD_BasicAuthInfo *creds;
+
+    creds = MHD_basic_auth_get_username_password3 (connection);
+    if (NULL != creds)
     {
-      fprintf (stderr, "'username' does not match.\n"
-               "Expected: '%s'\tRecieved: '%s'. ", USERNAME, username);
-      mhdErrorExitDesc ("Wrong 'username'");
+      if (NULL == creds->username)
+        mhdErrorExitDesc ("'username' is NULL");
+      else if (MHD_STATICSTR_LEN_ (USERNAME) != creds->username_len)
+      {
+        fprintf (stderr, "'username_len' does not match.\n"
+                 "Expected: %u\tRecieved: %u. ",
+                 (unsigned) MHD_STATICSTR_LEN_ (USERNAME),
+                 (unsigned) creds->username_len);
+        mhdErrorExitDesc ("Wrong 'username_len'");
+      }
+      else if (0 != memcmp (creds->username, USERNAME, creds->username_len))
+      {
+        fprintf (stderr, "'username' does not match.\n"
+                 "Expected: '%s'\tRecieved: '%.*s'. ",
+                 USERNAME,
+                 (int) creds->username_len,
+                 creds->username);
+        mhdErrorExitDesc ("Wrong 'username'");
+      }
+      else if (0 != creds->username[creds->username_len])
+        mhdErrorExitDesc ("'username' is not zero-terminated");
+      else if (NULL == creds->password)
+        mhdErrorExitDesc ("'password' is NULL");
+      else if (MHD_STATICSTR_LEN_ (PASSWORD) != creds->password_len)
+      {
+        fprintf (stderr, "'password_len' does not match.\n"
+                 "Expected: %u\tRecieved: %u. ",
+                 (unsigned) MHD_STATICSTR_LEN_ (PASSWORD),
+                 (unsigned) creds->password_len);
+        mhdErrorExitDesc ("Wrong 'password_len'");
+      }
+      else if (0 != memcmp (creds->password, PASSWORD, creds->password_len))
+      {
+        fprintf (stderr, "'password' does not match.\n"
+                 "Expected: '%s'\tRecieved: '%.*s'. ",
+                 PASSWORD,
+                 (int) creds->password_len,
+                 creds->password);
+        mhdErrorExitDesc ("Wrong 'username'");
+      }
+      else if (0 != creds->password[creds->password_len])
+        mhdErrorExitDesc ("'password' is not zero-terminated");
+
+      MHD_free (creds);
+
+      response =
+        MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (PAGE),
+                                                (const void *) PAGE);
+      if (NULL == response)
+        mhdErrorExitDesc ("Response creation failed");
+      ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+      if (MHD_YES != ret)
+        mhdErrorExitDesc ("'MHD_queue_response()' failed");
     }
-    if (NULL == password)
-      mhdErrorExitDesc ("The password pointer is NULL");
-    if (0 != strcmp (password, PASSWORD))
-      fprintf (stderr, "'password' does not match.\n"
-               "Expected: '%s'\tRecieved: '%s'. ", PASSWORD, password);
-    response =
-      MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (PAGE),
-                                              (const void *) PAGE);
-    if (NULL == response)
-      mhdErrorExitDesc ("Response creation failed");
-    ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-    if (MHD_YES != ret)
-      mhdErrorExitDesc ("'MHD_queue_response()' failed");
+    else
+    {
+      response =
+        MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (DENIED),
+                                                (const void *) DENIED);
+      if (NULL == response)
+        mhdErrorExitDesc ("Response creation failed");
+      ret = MHD_queue_basic_auth_fail_response3 (connection, REALM, 1,
+                                                 response);
+      if (MHD_YES != ret)
+        mhdErrorExitDesc ("'MHD_queue_basic_auth_fail_response3()' failed");
+    }
   }
   else
   {
+    char *username;
+    char *password;
+
+    password = NULL;
+    username = MHD_basic_auth_get_username_password (connection,
+                                                     &password);
+    if (NULL != username)
+    {
+      if (0 != strcmp (username, USERNAME))
+      {
+        fprintf (stderr, "'username' does not match.\n"
+                 "Expected: '%s'\tRecieved: '%s'. ", USERNAME, username);
+        mhdErrorExitDesc ("Wrong 'username'");
+      }
+      if (NULL == password)
+        mhdErrorExitDesc ("The password pointer is NULL");
+      if (0 != strcmp (password, PASSWORD))
+        fprintf (stderr, "'password' does not match.\n"
+                 "Expected: '%s'\tRecieved: '%s'. ", PASSWORD, password);
+      response =
+        MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (PAGE),
+                                                (const void *) PAGE);
+      if (NULL == response)
+        mhdErrorExitDesc ("Response creation failed");
+      ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+      if (MHD_YES != ret)
+        mhdErrorExitDesc ("'MHD_queue_response()' failed");
+    }
+    else
+    {
+      if (NULL != password)
+        mhdErrorExitDesc ("The password pointer is NOT NULL");
+      response =
+        MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (DENIED),
+                                                (const void *) DENIED);
+      if (NULL == response)
+        mhdErrorExitDesc ("Response creation failed");
+      ret = MHD_queue_basic_auth_fail_response (connection, REALM, response);
+      if (MHD_YES != ret)
+        mhdErrorExitDesc ("'MHD_queue_basic_auth_fail_response()' failed");
+    }
+    if (NULL != username)
+      MHD_free (username);
     if (NULL != password)
-      mhdErrorExitDesc ("The password pointer is NOT NULL");
-    response =
-      MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (DENIED),
-                                              (const void *) DENIED);
-    ret = MHD_queue_basic_auth_fail_response (connection, REALM,
-                                              response);
+      MHD_free (password);
   }
 
-  if (NULL != username)
-    MHD_free (username);
-  if (NULL != password)
-    MHD_free (password);
   MHD_destroy_response (response);
   return ret;
 }
@@ -376,6 +458,7 @@ setupCURL (void *cbc, int port, char *errbuf)
                                      ((long) TIMEOUTS_VAL))) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
                                      CURL_HTTP_VERSION_1_1)) ||
+      /* (CURLE_OK != curl_easy_setopt (c, CURLOPT_VERBOSE, 1L)) || */
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
 #if CURL_AT_LEAST_VERSION (7, 19, 4)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_PROTOCOLS, CURLPROTO_HTTP)) ||
@@ -386,10 +469,10 @@ setupCURL (void *cbc, int port, char *errbuf)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_PORT, ((long) port))) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_URL, url)))
     libcurlErrorExitDesc ("curl_easy_setopt() failed");
-#if CURL_AT_LEAST_VERSION(7,21,3)
+#if CURL_AT_LEAST_VERSION (7,21,3)
   if ((CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTPAUTH,
-                                     CURLAUTH_BASIC |
-                                     (preauth ? 0 : CURLAUTH_ONLY))) ||
+                                     CURLAUTH_BASIC
+                                     | (preauth ? 0 : CURLAUTH_ONLY))) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_USERPWD,
                                      USERNAME ":" PASSWORD)))
     libcurlErrorExitDesc ("curl_easy_setopt() authorization options failed");
@@ -646,6 +729,7 @@ main (int argc, char *const *argv)
 #endif
 #endif
 #endif /* MHD_HTTPS_REQUIRE_GRYPT */
+  oldapi = has_in_name (argv[0], "_oldapi");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testBasicAuth ();

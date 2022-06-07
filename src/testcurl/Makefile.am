@@ -153,7 +153,8 @@ endif
 
 if ENABLE_BAUTH
 check_PROGRAMS += \
-  test_basicauth test_basicauth_preauth
+  test_basicauth test_basicauth_preauth \
+  test_basicauth_oldapi test_basicauth_preauth_oldapi
 endif
 
 if HAVE_POSTPROCESSOR
@@ -237,6 +238,12 @@ test_basicauth_SOURCES = \
   test_basicauth.c
 
 test_basicauth_preauth_SOURCES = \
+  test_basicauth.c
+
+test_basicauth_oldapi_SOURCES = \
+  test_basicauth.c
+
+test_basicauth_preauth_oldapi_SOURCES = \
   test_basicauth.c
 
 test_digestauth_SOURCES = \
