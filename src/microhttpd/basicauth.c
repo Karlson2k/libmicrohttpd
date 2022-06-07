@@ -56,12 +56,104 @@ get_rq_bauth_params (struct MHD_Connection *connection)
 
 
 /**
+ * Get the username and password from the Basic Authorisation header
+ * sent by the client
+ *
+ * @param connection the MHD connection structure
+ * @return NULL not valid Basic Authentication header is present in
+ *         current request, or pointer to structure with username and
+ *         password, which must be freed by #MHD_free().
+ * @note Available since #MHD_VERSION 0x00097517
+ * @ingroup authentication
+ */
+_MHD_EXTERN struct MHD_BasicAuthInfo *
+MHD_basic_auth_get_username_password3 (struct MHD_Connection *connection)
+{
+  const struct MHD_RqBAuth *params;
+  char *decoded;
+  size_t decoded_len;
+  struct MHD_BasicAuthInfo *ret;
+  size_t username_len;
+  char *colon;
+  size_t password_pos;
+  size_t password_len;
+
+  params = get_rq_bauth_params (connection);
+
+  if (NULL == params)
+    return NULL;
+
+  if ((NULL == params->token68.str) || (0 == params->token68.len))
+    return NULL;
+
+  decoded = BASE64Decode (params->token68.str, params->token68.len,
+                          &decoded_len);
+  if ((NULL == decoded) || (0 == decoded_len))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Error decoding Basic Authorization authentication.\n"));
+#endif /* HAVE_MESSAGES */
+    if (NULL != decoded)
+      free (decoded);
+    return NULL;
+  }
+  colon = memchr (decoded, ':', decoded_len);
+  if (NULL != colon)
+  {
+    username_len = (size_t) (colon - decoded);
+    password_pos = username_len + 1;
+    password_len = decoded_len - password_pos;
+  }
+  else
+    username_len = decoded_len;
+
+  ret = (struct MHD_BasicAuthInfo *) malloc (sizeof(struct MHD_BasicAuthInfo)
+                                             + decoded_len + 1);
+  if (NULL == ret)
+  {
+    free (decoded);
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Failed to allocate memory to process " \
+                 "Basic Authorization authentication.\n"));
+#endif /* HAVE_MESSAGES */
+    return NULL;
+  }
+
+  ret->username = (char *) (ret + 1);
+  memcpy (ret->username, decoded, decoded_len);
+  free (decoded);
+  ret->username[username_len] = 0; /* Zero-terminate the string */
+  ret->username_len = username_len;
+  if (NULL != colon)
+  {
+    mhd_assert (decoded_len >= password_pos);
+    mhd_assert (decoded_len > password_pos || 0 == password_len);
+    mhd_assert (decoded_len > password_len);
+    mhd_assert (decoded_len > username_len);
+    ret->password = ret->username + password_pos;
+    ret->password[password_len] = 0; /* Zero-terminate the string */
+    ret->password_len = password_len;
+  }
+  else
+  {
+    ret->password = NULL;
+    ret->password_len = 0;
+  }
+
+  return ret;
+}
+
+
+/**
  * Get the username and password from the basic authorization header sent by the client
  *
  * @param connection The MHD connection structure
  * @param[out] password a pointer for the password, free using #MHD_free().
  * @return NULL if no username could be found, a pointer
  *      to the username if found, free using #MHD_free().
+ * @deprecated use #MHD_basic_auth_get_username_password3()
  * @ingroup authentication
  */
 _MHD_EXTERN char *

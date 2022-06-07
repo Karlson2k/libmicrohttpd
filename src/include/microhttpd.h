@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097516
+#define MHD_VERSION 0x00097517
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4634,12 +4634,59 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
 
 
 /**
+ * Information decoded from Basic Authentication client's header.
+ *
+ * The username and the password are technically allowed to have binary zeros,
+ * username_len and password_len could be used to detect such situations.
+ *
+ * The buffers pointed by username and password members are freed
+ * when #MHD_free() is called for pointer to this structure.
+ *
+ * Application may modify buffers as needed until #MHD_free() is called for
+ * pointer to this structure
+ */
+struct MHD_BasicAuthInfo
+{
+  /**
+   * The username, cannot be NULL
+   */
+  char *username;
+  /**
+   * The length of the @a username, not including zero-termination
+   */
+  size_t username_len;
+  /**
+   * The password, may be NULL if password is not encoded by the client
+   */
+  char *password;
+  /**
+   * The length of the @a password, not including zero-termination
+   */
+  size_t password_len;
+};
+
+/**
+ * Get the username and password from the Basic Authorisation header
+ * sent by the client
+ *
+ * @param connection the MHD connection structure
+ * @return NULL not valid Basic Authentication header is present in
+ *         current request, or pointer to structure with username and
+ *         password, which must be freed by #MHD_free().
+ * @note Available since #MHD_VERSION 0x00097517
+ * @ingroup authentication
+ */
+_MHD_EXTERN struct MHD_BasicAuthInfo *
+MHD_basic_auth_get_username_password3 (struct MHD_Connection *connection);
+
+/**
  * Get the username and password from the basic authorization header sent by the client
  *
  * @param connection The MHD connection structure
  * @param[out] password a pointer for the password, free using #MHD_free().
  * @return NULL if no username could be found, a pointer
  *      to the username if found, free using #MHD_free().
+ * @deprecated use #MHD_basic_auth_get_username_password3()
  * @ingroup authentication
  */
 _MHD_EXTERN char *
