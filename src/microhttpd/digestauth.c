@@ -751,7 +751,7 @@ check_nonce_nc (struct MHD_Connection *connection,
   mhd_assert (0 != noncelen);
   mhd_assert (strlen (nonce) == noncelen);
   mhd_assert (0 != nc);
-  if (MAX_NONCE_LENGTH < noncelen)
+  if (MAX_DIGEST_NONCE_LENGTH < noncelen)
     return MHD_CHECK_NONCENC_WRONG; /* This should be impossible, but static analysis
                       tools have a hard time with it *and* this also
                       protects against unsafe modifications that may
@@ -1010,7 +1010,7 @@ is_slot_available (const struct MHD_NonceNc *const nn,
   uint64_t timestamp;
   bool timestamp_valid;
   mhd_assert (new_nonce_len <= NONCE_STD_LEN (MAX_DIGEST));
-  mhd_assert (NONCE_STD_LEN (MAX_DIGEST) < MAX_NONCE_LENGTH);
+  mhd_assert (NONCE_STD_LEN (MAX_DIGEST) <= MAX_DIGEST_NONCE_LENGTH);
   if (0 == nn->nonce[0])
     return true; /* The slot is empty */
 
@@ -1071,7 +1071,7 @@ calculate_add_nonce (struct MHD_Connection *const connection,
   const size_t nonce_size = NONCE_STD_LEN (digest_get_size (da));
   bool ret;
 
-  mhd_assert (MAX_NONCE_LENGTH >= nonce_size);
+  mhd_assert (MAX_DIGEST_NONCE_LENGTH >= nonce_size);
   mhd_assert (0 != nonce_size);
 
   calculate_nonce (timestamp,
@@ -1427,7 +1427,7 @@ digest_auth_check_all (struct MHD_Connection *connection,
                        unsigned int nonce_timeout)
 {
   struct MHD_Daemon *daemon = MHD_get_master (connection->daemon);
-  char cnonce[MAX_NONCE_LENGTH];
+  char cnonce[MAX_CLIENT_NONCE_LENGTH];
   const unsigned int digest_size = digest_get_size (da);
   char ha1[VLA_ARRAY_LEN_DIGEST (digest_size) * 2 + 1];
   char qop[15]; /* auth,auth-int */

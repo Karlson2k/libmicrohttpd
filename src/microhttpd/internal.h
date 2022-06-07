@@ -240,8 +240,16 @@ enum MHD_ConnectionEventLoopInfo
  * (already) takes more (see Mantis #1633), so we've increased the
  * value to support something longer...
  */
-#define MAX_NONCE_LENGTH 129
+#define MAX_CLIENT_NONCE_LENGTH 129
 
+/**
+ * The maximum size of MHD-generated nonce when printed with hexadecimal chars.
+ *
+ * This is equal to "(32 bytes for SHA-256 nonce plus 6 bytes for timestamp)
+ * multiplied by two hex chars per byte".
+ * Please keep it in sync with digestauth.c
+ */
+#define MAX_DIGEST_NONCE_LENGTH ((32 + 6) * 2)
 
 /**
  * A structure representing the internal holder of the
@@ -269,7 +277,7 @@ struct MHD_NonceNc
   /**
    * Nonce value:
    */
-  char nonce[MAX_NONCE_LENGTH + 1];
+  char nonce[MAX_DIGEST_NONCE_LENGTH + 1];
 
 };
 
