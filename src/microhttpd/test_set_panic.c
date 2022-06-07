@@ -146,28 +146,28 @@
 
 #if defined(HAVE___FUNC__)
 #define externalErrorExit(ignore) \
-    _externalErrorExit_func(NULL, __func__, __LINE__)
+  _externalErrorExit_func (NULL, __func__, __LINE__)
 #define externalErrorExitDesc(errDesc) \
-    _externalErrorExit_func(errDesc, __func__, __LINE__)
+  _externalErrorExit_func (errDesc, __func__, __LINE__)
 #define mhdErrorExit(ignore) \
-    _mhdErrorExit_func(NULL, __func__, __LINE__)
+  _mhdErrorExit_func (NULL, __func__, __LINE__)
 #define mhdErrorExitDesc(errDesc) \
-    _mhdErrorExit_func(errDesc, __func__, __LINE__)
+  _mhdErrorExit_func (errDesc, __func__, __LINE__)
 #elif defined(HAVE___FUNCTION__)
 #define externalErrorExit(ignore) \
-    _externalErrorExit_func(NULL, __FUNCTION__, __LINE__)
+  _externalErrorExit_func (NULL, __FUNCTION__, __LINE__)
 #define externalErrorExitDesc(errDesc) \
-    _externalErrorExit_func(errDesc, __FUNCTION__, __LINE__)
+  _externalErrorExit_func (errDesc, __FUNCTION__, __LINE__)
 #define mhdErrorExit(ignore) \
-    _mhdErrorExit_func(NULL, __FUNCTION__, __LINE__)
+  _mhdErrorExit_func (NULL, __FUNCTION__, __LINE__)
 #define mhdErrorExitDesc(errDesc) \
-    _mhdErrorExit_func(errDesc, __FUNCTION__, __LINE__)
+  _mhdErrorExit_func (errDesc, __FUNCTION__, __LINE__)
 #else
-#define externalErrorExit(ignore) _externalErrorExit_func(NULL, NULL, __LINE__)
+#define externalErrorExit(ignore) _externalErrorExit_func (NULL, NULL, __LINE__)
 #define externalErrorExitDesc(errDesc) \
-  _externalErrorExit_func(errDesc, NULL, __LINE__)
-#define mhdErrorExit(ignore) _mhdErrorExit_func(NULL, NULL, __LINE__)
-#define mhdErrorExitDesc(errDesc) _mhdErrorExit_func(errDesc, NULL, __LINE__)
+  _externalErrorExit_func (errDesc, NULL, __LINE__)
+#define mhdErrorExit(ignore) _mhdErrorExit_func (NULL, NULL, __LINE__)
+#define mhdErrorExitDesc(errDesc) _mhdErrorExit_func (errDesc, NULL, __LINE__)
 #endif
 
 
@@ -443,6 +443,7 @@ _MHD_dumbClient_create (uint16_t port, const char *method, const char *url,
   size_t add_hdrs_size;
   size_t buf_alloc_size;
   char *send_buf;
+
   mhd_assert (0 != port);
   mhd_assert (NULL != req_body || 0 == req_body_size);
   mhd_assert (0 == req_body_size || NULL != req_body);
@@ -525,7 +526,9 @@ _MHD_dumbClient_create (uint16_t port, const char *method, const char *url,
     if (! chunked)
     {
       int prn_size;
-      memcpy (send_buf + clnt->req_size, MHD_HTTP_HEADER_CONTENT_LENGTH ": ",
+
+      memcpy (send_buf + clnt->req_size,
+              MHD_HTTP_HEADER_CONTENT_LENGTH ": ",
               MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_LENGTH ": "));
       clnt->req_size += MHD_STATICSTR_LEN_ (
         MHD_HTTP_HEADER_CONTENT_LENGTH ": ");
@@ -550,9 +553,11 @@ _MHD_dumbClient_create (uint16_t port, const char *method, const char *url,
                                             ": chunked\r\n");
     }
   }
-  if (0 != add_hdrs_size)
+  if (NULL != add_headers)
   {
-    memcpy (send_buf + clnt->req_size, add_headers, add_hdrs_size);
+    memcpy (send_buf + clnt->req_size,
+            add_headers,
+            add_hdrs_size);
     clnt->req_size += add_hdrs_size;
   }
   /* Terminate header */
@@ -562,7 +567,7 @@ _MHD_dumbClient_create (uint16_t port, const char *method, const char *url,
   /* Add body (if any) */
   if (! chunked)
   {
-    if (0 != req_body_size)
+    if (NULL != req_body)
     {
       memcpy (send_buf + clnt->req_size, req_body, req_body_size);
       clnt->req_size += req_body_size;
@@ -570,7 +575,7 @@ _MHD_dumbClient_create (uint16_t port, const char *method, const char *url,
   }
   else
   {
-    if (0 != req_body_size)
+    if (NULL != req_body)
     {
       int prn_size;
       prn_size = snprintf (send_buf + clnt->req_size,

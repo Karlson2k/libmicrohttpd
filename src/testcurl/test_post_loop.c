@@ -521,7 +521,7 @@ testExternalPost ()
       if ((CURLM_OK == curl_multi_timeout (multi, &ctimeout)) &&
           (ctimeout >= 0) && ((uint64_t) ctimeout < timeout64))
         timeout64 = (uint64_t) ctimeout;
-      if ( (c == NULL) || (0 == running) )
+      if (0 == running)
         timeout64 = 0; /* terminate quickly... */
       tv.tv_sec = timeout64 / 1000;
       tv.tv_usec = (timeout64 % 1000) * 1000;
@@ -576,14 +576,11 @@ testExternalPost ()
           fprintf (stderr, "libcurl haven't returned OK code\n");
           abort ();
         }
-        curl_multi_remove_handle (multi, c);
-        curl_easy_cleanup (c);
-        c = NULL;
         break;
       }
       MHD_run (d);
     }
-    if (c != NULL)
+    if (NULL != c)
     {
       curl_multi_remove_handle (multi, c);
       curl_easy_cleanup (c);
