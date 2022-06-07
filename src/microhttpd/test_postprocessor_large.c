@@ -89,7 +89,16 @@ test_simple_large ()
   while (i < size)
   {
     delta = 1 + MHD_random_ () % (size - i);
-    MHD_post_process (pp, &data[i], delta);
+    if (MHD_YES !=
+        MHD_post_process (pp,
+                          &data[i],
+                          delta))
+    {
+      fprintf (stderr,
+               "MHD_post_process() failed!\n");
+      MHD_destroy_post_processor (pp);
+      return 1;
+    }
     i += delta;
   }
   MHD_destroy_post_processor (pp);

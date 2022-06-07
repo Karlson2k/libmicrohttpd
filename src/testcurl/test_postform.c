@@ -145,12 +145,19 @@ ahc_echo (void *cls,
   if (pp == NULL)
   {
     eok = 0;
-    pp = MHD_create_post_processor (connection, 1024, &post_iterator, &eok);
-    if (pp == NULL)
+    pp = MHD_create_post_processor (connection,
+                                    1024,
+                                    &post_iterator,
+                                    &eok);
+    if (NULL == pp)
       abort ();
     *req_cls = pp;
   }
-  MHD_post_process (pp, upload_data, *upload_data_size);
+  if (MHD_YES !=
+      MHD_post_process (pp,
+                        upload_data,
+                        *upload_data_size))
+    abort ();
   if ((eok == 3) && (0 == *upload_data_size))
   {
     response = MHD_create_response_from_buffer (strlen (url),
