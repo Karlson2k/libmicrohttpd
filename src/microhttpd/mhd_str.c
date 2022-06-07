@@ -1489,25 +1489,45 @@ MHD_str_quote (const char *unquoted,
   r = 0;
   w = 0;
 
-  if (unquoted_len > buf_size)
-    return 0; /* The output buffer is too small */
-
-  while (unquoted_len > r)
+#ifndef MHD_FAVOR_SMALL_CODE
+  if (unquoted_len * 2 <= buf_size)
   {
-    if (buf_size <= w)
-      return 0; /* The output buffer is too small */
-    else
+    /* Fast loop: the output will fit the buffer with any input string content */
+    while (unquoted_len > r)
     {
       const char chr = unquoted[r++];
       if (('\\' == chr) || ('\"' == chr))
-      {
         result[w++] = '\\'; /* Escape current char */
-        if (buf_size <= w)
-          return 0; /* The output buffer is too small */
-      }
       result[w++] = chr;
     }
   }
+  else
+  {
+    if (unquoted_len > buf_size)
+      return 0; /* Quick fail: the output buffer is too small */
+#else  /* MHD_FAVOR_SMALL_CODE */
+  if (1)
+  {
+#endif /* MHD_FAVOR_SMALL_CODE */
+
+    while (unquoted_len > r)
+    {
+      if (buf_size <= w)
+        return 0; /* The output buffer is too small */
+      else
+      {
+        const char chr = unquoted[r++];
+        if (('\\' == chr) || ('\"' == chr))
+        {
+          result[w++] = '\\'; /* Escape current char */
+          if (buf_size <= w)
+            return 0; /* The output buffer is too small */
+        }
+        result[w++] = chr;
+      }
+    }
+  }
+
   mhd_assert (w >= r);
   mhd_assert (w <= r * 2);
   return w;
