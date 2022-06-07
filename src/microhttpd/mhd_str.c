@@ -1474,3 +1474,44 @@ MHD_str_unquote (const char *quoted,
 
 
 #endif /* DAUTH_SUPPORT */
+
+#if defined(DAUTH_SUPPORT) || defined(BAUTH_SUPPORT)
+
+size_t
+MHD_str_quote (const char *unquoted,
+               size_t unquoted_len,
+               char *result,
+               size_t buf_size)
+{
+  size_t r;
+  size_t w;
+
+  r = 0;
+  w = 0;
+
+  if (unquoted_len > buf_size)
+    return 0; /* The output buffer is too small */
+
+  while (unquoted_len > r)
+  {
+    if (buf_size <= w)
+      return 0; /* The output buffer is too small */
+    else
+    {
+      const char chr = unquoted[r++];
+      if (('\\' == chr) || ('\"' == chr))
+      {
+        result[w++] = '\\'; /* Escape current char */
+        if (buf_size <= w)
+          return 0; /* The output buffer is too small */
+      }
+      result[w++] = chr;
+    }
+  }
+  mhd_assert (w >= r);
+  mhd_assert (w <= r * 2);
+  return w;
+}
+
+
+#endif /* DAUTH_SUPPORT || BAUTH_SUPPORT */

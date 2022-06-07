@@ -544,7 +544,7 @@ MHD_str_equal_caseless_quoted_bin_n (const char *quoted,
  *               DQUOTE chars, does not need to be zero-terminated
  * @param quoted_len the length in chars of the @a quoted string
  * @param[out] result the pointer to the buffer to put the result, must
- *                    be at least @a size character long.May be modified even
+ *                    be at least @a size character long. May be modified even
  *                    if @a quoted is invalid sequence. The result is NOT
  *                    zero-terminated.
  * @return The number of characters written to the output buffer,
@@ -557,5 +557,30 @@ MHD_str_unquote (const char *quoted,
                  char *result);
 
 #endif /* DAUTH_SUPPORT */
+
+#if defined(DAUTH_SUPPORT) || defined(BAUTH_SUPPORT)
+
+/**
+ * Convert string from unquoted to quoted form as specified by
+ * RFC7230#section-3.2.6 and RFC7694#quoted.strings.
+ *
+ * @param unquoted the unquoted string, does not need to be zero-terminated
+ * @param unquoted_len the length in chars of the @a unquoted string
+ * @param[out] result the pointer to the buffer to put the result. May be
+ *                    modified even if function failed due to insufficient
+ *                    space. The result is NOT zero-terminated and does not
+ *                    have opening and closing DQUOTE chars.
+ * @param buf_size the size of the allocated memory for @a result
+ * @return The number of copied characters, can be up to two times more than
+ *         @a unquoted_len, zero if @a unquoted_len is zero or if quoted
+ *         string is larger than @a buf_size.
+ */
+size_t
+MHD_str_quote (const char *unquoted,
+               size_t unquoted_len,
+               char *result,
+               size_t buf_size);
+
+#endif /* DAUTH_SUPPORT || BAUTH_SUPPORT */
 
 #endif /* MHD_STR_H */
