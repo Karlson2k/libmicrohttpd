@@ -142,8 +142,9 @@ testLongUrlGet (size_t buff_size)
   }
   c = curl_easy_init ();
   url = malloc (VERY_LONG);
-  if (url == NULL)
+  if (NULL == url)
   {
+    curl_easy_cleanup (c);
     MHD_stop_daemon (d);
     return 1;
   }
@@ -235,8 +236,9 @@ testLongHeaderGet (size_t buff_size)
   }
   c = curl_easy_init ();
   url = malloc (VERY_LONG);
-  if (url == NULL)
+  if (NULL == url)
   {
+    curl_easy_cleanup (c);
     MHD_stop_daemon (d);
     return 16;
   }
