@@ -50,10 +50,12 @@ expect_result_unquote_n (const char *const quoted, const size_t quoted_len,
   unsigned int ret1;
   unsigned int ret2;
   unsigned int ret3;
+  unsigned int ret4;
 
   mhd_assert (NULL != quoted);
   mhd_assert (NULL != unquoted);
   mhd_assert (TEST_STR_MAX_LEN > quoted_len);
+  mhd_assert (quoted_len >= unquoted_len);
 
   /* First check: MHD_str_unquote () */
   ret1 = 0;
@@ -66,7 +68,7 @@ expect_result_unquote_n (const char *const quoted, const size_t quoted_len,
     fprintf (stderr,
              "'MHD_str_unquote ()' FAILED: Wrong result size:\n");
   }
-  else if (0 != memcmp (buf, unquoted, unquoted_len))
+  else if ((0 != unquoted_len) && (0 != memcmp (buf, unquoted, unquoted_len)))
   {
     ret1 = 1;
     fprintf (stderr,
@@ -129,7 +131,38 @@ expect_result_unquote_n (const char *const quoted, const size_t quoted_len,
     ret3 = 1;
   }
 
-  return ret1 + ret2 + ret3;
+  /* Fourth check: MHD_str_unquote () */
+  ret4 = 0;
+  memset (buf, '#', sizeof(buf)); /* Fill buffer with character unused in the check */
+  res_len = MHD_str_quote (unquoted, unquoted_len, buf, quoted_len);
+  if (res_len != quoted_len)
+  {
+    ret4 = 1;
+    fprintf (stderr,
+             "'MHD_str_quote ()' FAILED: Wrong result size:\n");
+  }
+  else if ((0 != quoted_len) && (0 != memcmp (buf, quoted, quoted_len)))
+  {
+    ret4 = 1;
+    fprintf (stderr,
+             "'MHD_str_quote ()' FAILED: Wrong result string:\n");
+  }
+  if (0 != ret4)
+  {
+    /* This does NOT print part of the string after binary zero */
+    fprintf (stderr,
+             "\tRESULT  : MHD_str_quote('%.*s', %u, ->'%.*s', %u) -> %u\n"
+             "\tEXPECTED: MHD_str_quote('%.*s', %u, ->'%.*s', %u) -> %u\n",
+             (int) unquoted_len, unquoted, (unsigned) unquoted_len,
+             (int) res_len, buf, (unsigned) quoted_len, (unsigned) res_len,
+             (int) unquoted_len, unquoted, (unsigned) unquoted_len,
+             (int) quoted_len, quoted, (unsigned) quoted_len,
+             (unsigned) unquoted_len);
+    fprintf (stderr,
+             "The check is at line: %u\n\n", line_num);
+  }
+
+  return ret1 + ret2 + ret3 + ret4;
 }
 
 
@@ -160,6 +193,89 @@ check_match (void)
   r += expect_result_unquote ("\\\\\\\"\\\\\\\"\\\\\\\"\\\\\\\"\\\\\\\"" \
                               "\\\\\\\"\\\\\\\"\\\\\\\"\\\\\\\"\\\\\\\"", \
                               "\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"");
+
+  return r;
+}
+
+
+/* return zero if succeed, non-zero otherwise */
+static unsigned int
+expect_result_quote_failed_n (const char *const unquoted,
+                              const size_t unquoted_len,
+                              const size_t buf_size,
+                              const unsigned int line_num)
+{
+  static char buf[TEST_STR_MAX_LEN];
+  size_t res_len;
+  unsigned int ret4;
+
+  mhd_assert (TEST_STR_MAX_LEN > buf_size);
+
+  /* The check: MHD_str_unquote () */
+  ret4 = 0;
+  memset (buf, '#', sizeof(buf)); /* Fill buffer with character unused in the check */
+  res_len = MHD_str_quote (unquoted, unquoted_len, buf, buf_size);
+  if (0 != res_len)
+  {
+    ret4 = 1;
+    fprintf (stderr,
+             "'MHD_str_quote ()' FAILED: Wrong result size:\n");
+  }
+  if (0 != ret4)
+  {
+    /* This does NOT print part of the string after binary zero */
+    fprintf (stderr,
+             "\tRESULT  : MHD_str_quote('%.*s', %u, ->'%.*s', %u) -> %u\n"
+             "\tEXPECTED: MHD_str_quote('%.*s', %u, (not checked), %u) -> 0\n",
+             (int) unquoted_len, unquoted, (unsigned) unquoted_len,
+             (int) res_len, buf,
+             (unsigned) buf_size, (unsigned) res_len,
+             (int) unquoted_len, unquoted, (unsigned) unquoted_len,
+             (unsigned) buf_size);
+    fprintf (stderr,
+             "The check is at line: %u\n\n", line_num);
+  }
+
+  return ret4;
+}
+
+
+#define expect_result_quote_failed(q,s) \
+    expect_result_quote_failed_n(q,MHD_STATICSTR_LEN_(q),\
+                            s,__LINE__)
+
+
+static unsigned int
+check_quote_failed (void)
+{
+  unsigned int r = 0; /**< The number of errors */
+
+  r += expect_result_quote_failed ("a", 0);
+  r += expect_result_quote_failed ("aa", 1);
+  r += expect_result_quote_failed ("abc\\", 4);
+  r += expect_result_quote_failed ("abc\"", 4);
+  r += expect_result_quote_failed ("abc\"\"\"\"", 6);
+  r += expect_result_quote_failed ("abc\"\"\"\"", 7);
+  r += expect_result_quote_failed ("abc\"\"\"\"", 8);
+  r += expect_result_quote_failed ("abc\"\"\"\"", 9);
+  r += expect_result_quote_failed ("abc\"\"\"\"", 10);
+  r += expect_result_quote_failed ("abc\\\\\\\\", 9);
+  r += expect_result_quote_failed ("abc\\\\\\\\", 10);
+  r += expect_result_quote_failed ("abc\"\"\"\"", 9);
+  r += expect_result_quote_failed ("abc\"\"\"\"", 10);
+  r += expect_result_quote_failed ("abc\"\\\"\\", 9);
+  r += expect_result_quote_failed ("abc\\\"\\\"", 10);
+  r += expect_result_quote_failed ("\"\"\"\"abc", 6);
+  r += expect_result_quote_failed ("\"\"\"\"abc", 7);
+  r += expect_result_quote_failed ("\"\"\"\"abc", 8);
+  r += expect_result_quote_failed ("\"\"\"\"abc", 9);
+  r += expect_result_quote_failed ("\"\"\"\"abc", 10);
+  r += expect_result_quote_failed ("\\\\\\\\abc", 9);
+  r += expect_result_quote_failed ("\\\\\\\\abc", 10);
+  r += expect_result_quote_failed ("\"\"\"\"abc", 9);
+  r += expect_result_quote_failed ("\"\"\"\"abc", 10);
+  r += expect_result_quote_failed ("\"\\\"\\abc", 9);
+  r += expect_result_quote_failed ("\\\"\\\"abc", 10);
 
   return r;
 }
@@ -670,6 +786,7 @@ main (int argc, char *argv[])
   unsigned int errcount = 0;
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
   errcount += check_match ();
+  errcount += check_quote_failed ();
   errcount += check_match_caseless ();
   errcount += check_invalid ();
   errcount += check_unmatch ();
