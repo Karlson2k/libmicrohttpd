@@ -152,3 +152,4 @@ core
 /test_digestauth_concurrent
 /test_basicauth
 /test_parse_cookies_invalid
+/test_basicauth_preauth

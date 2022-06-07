@@ -42,6 +42,7 @@
 #endif
 
 #include "mhd_has_param.h"
+#include "mhd_has_in_name.h"
 
 #ifndef MHD_STATICSTR_LEN_
 /**
@@ -249,6 +250,7 @@ struct CBC
 };
 
 static int verbose;
+static int preauth;
 
 static size_t
 copyBuffer (void *ptr,
@@ -384,10 +386,19 @@ setupCURL (void *cbc, int port, char *errbuf)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_PORT, ((long) port))) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_URL, url)))
     libcurlErrorExitDesc ("curl_easy_setopt() failed");
+#if CURL_AT_LEAST_VERSION(7,21,3)
+  if ((CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTPAUTH,
+                                     CURLAUTH_BASIC |
+                                     (preauth ? 0 : CURLAUTH_ONLY))) ||
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_USERPWD,
+                                     USERNAME ":" PASSWORD)))
+    libcurlErrorExitDesc ("curl_easy_setopt() authorization options failed");
+#else  /* libcurl version before 7.21.3 */
   if ((CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTPAUTH, CURLAUTH_BASIC)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_USERPWD,
                                      USERNAME ":" PASSWORD)))
     libcurlErrorExitDesc ("curl_easy_setopt() authorization options failed");
+#endif /* libcurl version before 7.21.3 */
   return c;
 }
 
@@ -617,8 +628,17 @@ main (int argc, char *const *argv)
                has_param (argc, argv, "--quiet") ||
                has_param (argc, argv, "-s") ||
                has_param (argc, argv, "--silent"));
+  preauth = has_in_name (argv[0], "_preauth");
+#if ! CURL_AT_LEAST_VERSION (7,21,3)
+  if (preauth)
+  {
+    fprintf (stderr, "libcurl version 7.21.3 or later is "
+             "required to run this test.\n");
+    return 77;
+  }
+#endif /* libcurl version before 7.21.3 */
 
-  #ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GRYPT
 #ifdef HAVE_GCRYPT_H
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED

@@ -153,7 +153,7 @@ endif
 
 if ENABLE_BAUTH
 check_PROGRAMS += \
-  test_basicauth
+  test_basicauth test_basicauth_preauth
 endif
 
 if HAVE_POSTPROCESSOR
@@ -234,6 +234,9 @@ perf_get_concurrent11_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
 
 test_basicauth_SOURCES = \
+  test_basicauth.c
+
+test_basicauth_preauth_SOURCES = \
   test_basicauth.c
 
 test_digestauth_SOURCES = \
