@@ -31,6 +31,7 @@
 #include "internal.h"
 #include "base64.h"
 #include "mhd_compat.h"
+#include "mhd_str.h"
 
 
 /**
@@ -151,34 +152,43 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
                                     struct MHD_Response *response)
 {
   enum MHD_Result ret;
-  int res;
-  size_t hlen = strlen (realm) + MHD_STATICSTR_LEN_ ("Basic realm=\"\"") + 1;
-  char *header;
+  char *h_str;
+  static const char prefix[] = "Basic realm=\"";
+  static const size_t prefix_len = MHD_STATICSTR_LEN_ (prefix);
+  static const size_t suffix_len = MHD_STATICSTR_LEN_ ("\"");
+  size_t h_maxlen;
+  size_t realm_len;
+  size_t realm_quoted_len;
+  size_t pos;
 
   if (NULL == response)
     return MHD_NO;
 
-  header = (char *) malloc (hlen);
-  if (NULL == header)
+  realm_len = strlen (realm);
+  h_maxlen = prefix_len + realm_len * 2 + suffix_len;
+  h_str = (char *) malloc (h_maxlen + 1);
+  if (NULL == h_str)
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
-              "Failed to allocate memory for auth header.\n");
+              "Failed to allocate memory for Basic Authentication header.\n");
 #endif /* HAVE_MESSAGES */
     return MHD_NO;
   }
-  res = MHD_snprintf_ (header,
-                       hlen,
-                       "Basic realm=\"%s\"",
-                       realm);
-  if ((res > 0) && ((size_t) res < hlen))
-    ret = MHD_add_response_header (response,
-                                   MHD_HTTP_HEADER_WWW_AUTHENTICATE,
-                                   header);
-  else
-    ret = MHD_NO;
+  memcpy (h_str, prefix, prefix_len);
+  pos = prefix_len;
+  realm_quoted_len = MHD_str_quote (realm, realm_len, h_str + pos,
+                                    h_maxlen - prefix_len - suffix_len);
+  pos += realm_quoted_len;
+  mhd_assert (pos + suffix_len <= h_maxlen);
+  h_str[pos++] = '\"';
+  h_str[pos++] = 0; /* Zero terminate the result */
+  mhd_assert (pos <= h_maxlen + 1);
 
-  free (header);
+  ret = MHD_add_response_header (response,
+                                 MHD_HTTP_HEADER_WWW_AUTHENTICATE,
+                                 h_str);
+  free (h_str);
   if (MHD_NO != ret)
   {
     ret = MHD_queue_response (connection,
@@ -189,7 +199,7 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
-              _ ("Failed to add Basic auth header.\n"));
+              _ ("Failed to add Basic Authentication header.\n"));
 #endif /* HAVE_MESSAGES */
   }
   return ret;
