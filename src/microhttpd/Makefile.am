@@ -255,6 +255,10 @@ check_PROGRAMS += \
   test_client_put_chunked_steps_hard_close_stress_os
 endif
 endif
+if ENABLE_BAUTH
+check_PROGRAMS += \
+  test_str_base64
+endif
 
 TESTS = $(check_PROGRAMS)
 
@@ -428,6 +432,9 @@ test_sha256_SOURCES = \
 test_sha1_SOURCES = \
   test_sha1.c test_helpers.h \
   sha1.c sha1.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
+
+test_str_base64_SOURCES = \
+  test_str_base64.c mhd_str.h mhd_str.c mhd_assert.h
 
 test_options_SOURCES = \
   test_options.c
