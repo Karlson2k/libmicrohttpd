@@ -450,4 +450,31 @@ MHD_uint8_to_str_pad (uint8_t val,
                       size_t buf_size);
 
 
+#ifdef BAUTH_SUPPORT
+
+/**
+ * Convert Base64 encoded string to binary data.
+ * @param base64 the input string with Base64 encoded data, could be NOT zero
+ *               terminated
+ * @param base64_len the number of characters to decode in @a base64 string,
+ *                   valid number must be a multiple of four
+ * @param[out] bin the pointer to the output buffer, the buffer may be altered
+ *                 even if decoding failed
+ * @param bin_size the size of the @a bin buffer in bytes, if the size is
+ *                 at least @a base64_len / 4 * 3 then result will always
+ *                 fit, regardless of the amount of the padding characters
+ * @return 0 if @base64_len is zero, or input string has wrong data (not
+ *         valid Base64 sequence), or @a bin_size is too small;
+ *         non-zero number of bytes written to the @a bin, the number must be
+ *         (base64_len / 4 * 3 - 2), (base64_len / 4 * 3 - 1) or
+ *         (base64_len / 4 * 3), depending on the number of padding characters.
+ */
+size_t
+MHD_base64_to_bin_n (const char *base64,
+                     size_t base64_len,
+                     void *bin,
+                     size_t bin_size);
+
+#endif /* BAUTH_SUPPORT */
+
 #endif /* MHD_STR_H */
