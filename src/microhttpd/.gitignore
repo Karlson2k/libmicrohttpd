@@ -80,3 +80,4 @@ test_postprocessor_md
 /test_set_panic
 /test_auth_parse
 /test_str_quote
+/test_str_base64
