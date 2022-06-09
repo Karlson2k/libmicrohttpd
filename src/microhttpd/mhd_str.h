@@ -475,7 +475,7 @@ MHD_uint8_to_str_pad (uint8_t val,
  * hexadecimal digits, zero-terminate the result.
  * @param bin the pointer to the binary data to convert
  * @param size the size in bytes of the binary data to convert
- * @param hex the output buffer, but be at least 2 * @a size + 1
+ * @param hex the output buffer, should be at least 2 * @a size + 1
  * @return The number of characters written to the output buffer,
  *         not including terminating zero.
  */
