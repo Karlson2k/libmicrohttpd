@@ -167,8 +167,7 @@ endif
 
 if ENABLE_BAUTH
 libmicrohttpd_la_SOURCES += \
-  basicauth.c \
-  base64.c base64.h
+  basicauth.c
 endif
 
 if ENABLE_HTTPS
