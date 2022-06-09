@@ -4670,9 +4670,10 @@ struct MHD_BasicAuthInfo
  * sent by the client
  *
  * @param connection the MHD connection structure
- * @return NULL not valid Basic Authentication header is present in
- *         current request, or pointer to structure with username and
- *         password, which must be freed by #MHD_free().
+ * @return NULL if no valid Basic Authentication header is present in
+ *         current request, or
+ *         pointer to structure with username and password, which must be
+ *         freed by #MHD_free().
  * @note Available since #MHD_VERSION 0x00097517
  * @ingroup authentication
  */
