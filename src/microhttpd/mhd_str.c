@@ -1383,7 +1383,7 @@ MHD_bin_to_hex (const void *bin,
     hex[i * 2 + 1] = (char) ((j < 10) ? (j + '0') : (j - 10 + 'a'));
   }
   hex[i * 2] = 0;
-  return i;
+  return i * 2;
 }
 
 
