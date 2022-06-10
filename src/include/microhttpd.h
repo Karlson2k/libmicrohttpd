@@ -2926,6 +2926,22 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 
 
 /**
+ * Free the memory allocated by MHD.
+ *
+ * If any MHD function explicitly mentions that returned pointer must be
+ * freed by this function, then no other method must be used to free
+ * the memory.
+ *
+ * @param ptr the pointer to free.
+ * @sa #MHD_digest_auth_get_username(), #MHD_basic_auth_get_username_password3()
+ * @sa #MHD_basic_auth_get_username_password()
+ * @note Available since #MHD_VERSION 0x00095600
+ * @ingroup specialized
+ */
+_MHD_EXTERN void
+MHD_free (void *ptr);
+
+/**
  * Obtain timeout value for external polling function for this daemon.
  *
  * This function set value to the amount of milliseconds for which polling
@@ -4327,18 +4343,6 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
  */
 _MHD_EXTERN char *
 MHD_digest_auth_get_username (struct MHD_Connection *connection);
-
-
-/**
- * Free the memory given by @a ptr. Calls "free(ptr)".  This function
- * should be used to free the username returned by
- * #MHD_digest_auth_get_username().
- * @note Available since #MHD_VERSION 0x00095600
- *
- * @param ptr pointer to free.
- */
-_MHD_EXTERN void
-MHD_free (void *ptr);
 
 
 /**

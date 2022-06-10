@@ -204,12 +204,17 @@ MHD_default_logger_ (void *cls,
 
 
 /**
- * Free the memory given by @a ptr. Calls "free(ptr)".  This function
- * should be used to free the username returned by
- * #MHD_digest_auth_get_username().
- * @note Available since #MHD_VERSION 0x00095600
+ * Free the memory allocated by MHD.
  *
- * @param ptr pointer to free.
+ * If any MHD function explicitly mentions that returned pointer must be
+ * freed by this function, then no other method must be used to free
+ * the memory.
+ *
+ * @param ptr the pointer to free.
+ * @sa #MHD_digest_auth_get_username(), #MHD_basic_auth_get_username_password3()
+ * @sa #MHD_basic_auth_get_username_password()
+ * @note Available since #MHD_VERSION 0x00095600
+ * @ingroup specialized
  */
 _MHD_EXTERN void
 MHD_free (void *ptr)
