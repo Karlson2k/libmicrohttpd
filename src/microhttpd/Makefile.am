@@ -274,9 +274,9 @@ update-po-POTFILES.in: $(top_srcdir)/po/POTFILES.in
 
 $(top_srcdir)/po/POTFILES.in: $(srcdir)/Makefile.am
 	@echo "Creating $@"
-	@echo  src/include/microhttpd.h > $@ && \
+	@echo  src/include/microhttpd.h > "$@" && \
 	for src in $(am__libmicrohttpd_la_SOURCES_DIST) ; do \
-	  echo "$(subdir)/$$src" >> $@ ; \
+	  echo "$(subdir)/$$src" >> "$@" ; \
 	done
 
 test_start_stop_SOURCES = \
