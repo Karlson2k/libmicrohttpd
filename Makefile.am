@@ -126,6 +126,10 @@ dist-po: po/Makefile
 	echo "cd po && $(MAKE) $(AM_MAKEFLAGS) distdir='$$rel_distsubdir' distdir" && \
 	$(am__cd) po && $(MAKE) $(AM_MAKEFLAGS) distdir="$$rel_distsubdir" distdir
 
+$(top_srcdir)/po/POTFILES.in: $(top_srcdir)/src/microhttpd/Makefile.am
+	@echo "cd src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) update-po-POTFILES.in" && \
+	$(am__cd) src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) update-po-POTFILES.in
+
 EXTRA_DIST += $(am__po_configure_deps) $(top_srcdir)/po/po-configure.ac.in $(top_srcdir)/po-configure
 DISTCLEANFILES += config.main.log po-config.log
 

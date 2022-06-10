@@ -270,6 +270,15 @@ endif
 
 TESTS = $(check_PROGRAMS)
 
+update-po-POTFILES.in: $(top_srcdir)/po/POTFILES.in
+
+$(top_srcdir)/po/POTFILES.in: $(srcdir)/Makefile.am
+	@echo "Creating $@"
+	@echo  src/include/microhttpd.h > $@ && \
+	for src in $(am__libmicrohttpd_la_SOURCES_DIST) ; do \
+	  echo "$(subdir)/$$src" >> $@ ; \
+	done
+
 test_start_stop_SOURCES = \
   test_start_stop.c
 test_start_stop_LDADD = \
@@ -520,3 +529,4 @@ test_set_panic_SOURCES = \
 test_set_panic_LDADD = \
   libmicrohttpd.la
 
+.PHONY: update-po-POTFILES.in
