@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <stdint.h>
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
@@ -213,6 +214,12 @@ _mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 }
 
 
+/* Global generic functions */
+
+void
+_MHD_sleep (uint32_t ms);
+
+
 /**
  * Pause execution for specified number of milliseconds.
  * @param ms the number of milliseconds to sleep
@@ -256,7 +263,7 @@ _MHD_sleep (uint32_t ms)
 /* Global parameters */
 static int verbose;                 /**< Be verbose */
 static int oneone;                  /**< If false use HTTP/1.0 for requests*/
-static int global_port;             /**< MHD daemons listen port number */
+static uint16_t global_port;        /**< MHD daemons listen port number */
 
 static int use_shutdown;            /**< Use shutdown at client side */
 static int use_close;               /**< Use socket close at client side */
@@ -416,6 +423,71 @@ make_nonblocking (MHD_socket fd)
 }
 
 
+/* DumbClient API */
+struct _MHD_dumbClient *
+_MHD_dumbClient_create (uint16_t port, const char *method, const char *url,
+                        const char *add_headers,
+                        const uint8_t *req_body, size_t req_body_size,
+                        int chunked);
+
+void
+_MHD_dumbClient_set_send_limits (struct _MHD_dumbClient *clnt,
+                                 size_t step_size, size_t max_total_send);
+
+void
+_MHD_dumbClient_start_connect (struct _MHD_dumbClient *clnt);
+
+int
+_MHD_dumbClient_is_req_sent (struct _MHD_dumbClient *clnt);
+
+
+/**
+ * Process the client data with send()/recv() as needed.
+ * @param clnt the client to process
+ * @return non-zero if client finished processing the request,
+ *         zero otherwise.
+ */
+int
+_MHD_dumbClient_process (struct _MHD_dumbClient *clnt);
+
+
+void
+_MHD_dumbClient_get_fdsets (struct _MHD_dumbClient *clnt,
+                            MHD_socket *maxsckt,
+                            fd_set *rs, fd_set *ws, fd_set *es);
+
+/**
+ * Process the client data with send()/recv() as needed based on
+ * information in fd_sets.
+ * @param clnt the client to process
+ * @return non-zero if client finished processing the request,
+ *         zero otherwise.
+ */
+int
+_MHD_dumbClient_process_from_fdsets (struct _MHD_dumbClient *clnt,
+                                     fd_set *rs, fd_set *ws, fd_set *es);
+
+
+/**
+ * Perform full request.
+ * @param clnt the client to run
+ * @return zero if client finished processing the request,
+ *         non-zero if timeout is reached.
+ */
+int
+_MHD_dumbClient_perform (struct _MHD_dumbClient *clnt);
+
+
+/**
+ * Close the client and free internally allocated resources.
+ * @param clnt the client to close
+ */
+void
+_MHD_dumbClient_close (struct _MHD_dumbClient *clnt);
+
+
+/* DumbClient implementation */
+
 enum _MHD_clientStage
 {
   DUMB_CLIENT_INIT = 0,
@@ -437,9 +509,11 @@ struct _MHD_dumbClient
 
   int sckt_nonblock;  /**< non-zero if socket is non-blocking */
 
-  unsigned int port; /**< the port to connect to */
+  uint16_t port; /**< the port to connect to */
 
   const char *send_buf; /**< the buffer for the request, malloced */
+
+  void *buf; /**< the buffer location */
 
   size_t req_size; /**< the size of the request, including header */
 
@@ -454,7 +528,7 @@ struct _MHD_dumbClient
 };
 
 struct _MHD_dumbClient *
-_MHD_dumbClient_create (unsigned int port, const char *method, const char *url,
+_MHD_dumbClient_create (uint16_t port, const char *method, const char *url,
                         const char *add_headers,
                         const uint8_t *req_body, size_t req_body_size,
                         int chunked)
@@ -617,6 +691,7 @@ _MHD_dumbClient_create (unsigned int port, const char *method, const char *url,
     send_buf[clnt->req_size++] = '\n';
   }
   mhd_assert (clnt->req_size < buf_alloc_size);
+  clnt->buf = send_buf;
   clnt->send_buf = send_buf;
 
   return clnt;
@@ -829,7 +904,14 @@ _MHD_dumbClient_needs_process (const struct _MHD_dumbClient *clnt)
   case DUMB_CLIENT_REQ_SENT:
   case DUMB_CLIENT_HEADER_RECVEIVED:
   case DUMB_CLIENT_BODY_RECVEIVED:
+  case DUMB_CLIENT_FINISHED:
     return ! 0;
+  case DUMB_CLIENT_CONNECTING:
+  case DUMB_CLIENT_CONNECTED:
+  case DUMB_CLIENT_REQ_SENDING:
+  case DUMB_CLIENT_HEADER_RECVEIVING:
+  case DUMB_CLIENT_BODY_RECVEIVING:
+  case DUMB_CLIENT_FINISHING:
   default:
     return 0;
   }
@@ -879,6 +961,8 @@ _MHD_dumbClient_process (struct _MHD_dumbClient *clnt)
     case DUMB_CLIENT_FINISHING:
       _MHD_dumbClient_finalize (clnt);
       break;
+    case DUMB_CLIENT_FINISHED:
+      return ! 0;
     default:
       mhd_assert (0);
       mhdErrorExit ();
@@ -969,9 +1053,13 @@ _MHD_dumbClient_perform (struct _MHD_dumbClient *clnt)
       maxMhdSk = MHD_INVALID_SOCKET;
       _MHD_dumbClient_get_fdsets (clnt, &maxMhdSk, &rs, &ws, &es);
       mhd_assert (now >= start);
-      tv.tv_sec = TIMEOUTS_VAL * 2 - (now - start) + 1;
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+      tv.tv_sec = (time_t) (TIMEOUTS_VAL * 2 - (now - start) + 1);
+#else  /* Native W32 */
+      tv.tv_sec = (long) (TIMEOUTS_VAL * 2 - (now - start) + 1);
+#endif /* Native W32 */
       tv.tv_usec = 250 * 1000;
-      if (-1 == select (maxMhdSk + 1, &rs, &ws, &es, &tv))
+      if (-1 == select ((int) maxMhdSk + 1, &rs, &ws, &es, &tv))
       {
 #ifdef MHD_POSIX_SOCKETS
         if (EINTR != errno)
@@ -980,7 +1068,7 @@ _MHD_dumbClient_perform (struct _MHD_dumbClient *clnt)
         mhd_assert ((0 != rs.fd_count) || (0 != ws.fd_count) || \
                     (0 != es.fd_count));
         externalErrorExitDesc ("Unexpected select() error");
-        Sleep (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+        Sleep ((DWORD) (tv.tv_sec * 1000 + tv.tv_usec / 1000));
 #endif /* ! MHD_POSIX_SOCKETS */
         continue;
       }
@@ -1006,7 +1094,9 @@ _MHD_dumbClient_close (struct _MHD_dumbClient *clnt)
   _MHD_dumbClient_socket_close (clnt);
   if (NULL != clnt->send_buf)
   {
-    free ((void *) clnt->send_buf);
+    mhd_assert (clnt->send_buf == clnt->buf);
+    free (clnt->buf);
+    clnt->buf = NULL;
     clnt->send_buf = NULL;
   }
   free (clnt);
@@ -1019,7 +1109,7 @@ struct sckt_notif_cb_param
   volatile unsigned int num_finished;
 };
 
-void
+static void
 socket_cb (void *cls,
            struct MHD_Connection *c,
            void **socket_context,
@@ -1045,7 +1135,7 @@ socket_cb (void *cls,
 struct term_notif_cb_param
 {
   volatile int term_reason;
-  volatile int num_called;
+  volatile unsigned int num_called;
 };
 
 
@@ -1067,7 +1157,7 @@ term_cb (void *cls,
 }
 
 
-const char *
+static const char *
 term_reason_str (enum MHD_RequestTerminationCode term_code)
 {
   switch ((int) term_code)
@@ -1130,7 +1220,7 @@ struct mhd_header_checker_param
   int found_header_te;   /**< the number of 'Transfer-Encoding' headers */
 };
 
-enum MHD_Result
+static enum MHD_Result
 headerCheckerInterator (void *cls,
                         enum MHD_ValueKind kind,
                         const char *key,
@@ -1338,13 +1428,13 @@ struct simpleQueryParams
   const char *method;
 
   /* Destination port for HTTP query */
-  int queryPort;
+  uint16_t queryPort;
 
   /* Additional request headers, static */
   const char *headers;
 
   /* NULL for request without body */
-  uint8_t *req_body;
+  const uint8_t *req_body;
   size_t req_body_size;
 
   /* Non-zero to use chunked encoding for request body */
@@ -1458,7 +1548,7 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
       tv.tv_sec = 0;
       tv.tv_usec = FINAL_PACKETS_MS * 1000;
     }
-    num_ready = select (maxMhdSk + 1, &rs, &ws, &es, &tv);
+    num_ready = select ((int) maxMhdSk + 1, &rs, &ws, &es, &tv);
     if (-1 == num_ready)
     {
 #ifdef MHD_POSIX_SOCKETS
@@ -1468,7 +1558,7 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
       if ((WSAEINVAL != WSAGetLastError ()) ||
           (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
         externalErrorExitDesc ("Unexpected select() error");
-      Sleep (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+      Sleep ((DWORD) (tv.tv_sec * 1000 + tv.tv_usec / 1000));
 #endif
       continue;
     }
@@ -1558,7 +1648,7 @@ doClientQueryInThread (struct MHD_Daemon *d,
 }
 
 
-void
+static void
 printTestResults (FILE *stream,
                   struct simpleQueryParams *qParam,
                   struct ahc_cls_type *ahc_param,
@@ -1604,8 +1694,8 @@ printTestResults (FILE *stream,
 
 
 /* Perform test queries, shut down MHD daemon, and free parameters */
-static int
-performTestQueries (struct MHD_Daemon *d, int d_port,
+static unsigned int
+performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
                     struct ahc_cls_type *ahc_param,
                     struct check_uri_cls *uri_cb_param,
                     struct term_notif_cb_param *term_result,
@@ -1613,7 +1703,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
 {
   struct simpleQueryParams qParam;
   time_t start;
-  int ret = 0;          /* Return value */
+  unsigned int ret = 0;          /* Return value */
   size_t req_total_size;
   size_t limit_send_size;
   size_t inc_size;
@@ -1626,7 +1716,7 @@ performTestQueries (struct MHD_Daemon *d, int d_port,
   qParam.method = MHD_HTTP_METHOD_PUT;
   qParam.queryPath = EXPECTED_URI_BASE_PATH;
   qParam.headers = REQ_HEADER_CT;
-  qParam.req_body = (uint8_t *) REQ_BODY;
+  qParam.req_body = (const uint8_t *) REQ_BODY;
   qParam.req_body_size = MHD_STATICSTR_LEN_ (REQ_BODY);
   qParam.chunked = upl_chunked;
   qParam.step_size = by_step ? 1 : 0;
@@ -1789,7 +1879,7 @@ enum testMhdPollType
 static unsigned int
 testNumThreadsForPool (enum testMhdPollType pollType)
 {
-  int numThreads = MHD_CPU_COUNT;
+  unsigned int numThreads = MHD_CPU_COUNT;
   (void) pollType; /* Don't care about pollType for this test */
   return numThreads; /* No practical limit for non-cleanup test */
 }
@@ -1797,7 +1887,7 @@ testNumThreadsForPool (enum testMhdPollType pollType)
 
 static struct MHD_Daemon *
 startTestMhdDaemon (enum testMhdThreadsType thrType,
-                    enum testMhdPollType pollType, int *pport,
+                    enum testMhdPollType pollType, uint16_t *pport,
                     struct ahc_cls_type **ahc_param,
                     struct check_uri_cls **uri_cb_param,
                     struct term_notif_cb_param **term_result,
@@ -1844,7 +1934,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
   }
 
   if (testMhdThreadInternalPool != thrType)
-    d = MHD_start_daemon (((int) thrType) | ((int) pollType)
+    d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
                           | (verbose ? MHD_USE_ERROR_LOG : 0),
                           *pport, NULL, NULL,
                           &ahcCheck, *ahc_param,
@@ -1857,7 +1947,8 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           (unsigned) TIMEOUTS_VAL,
                           MHD_OPTION_END);
   else
-    d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | ((int) pollType)
+    d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD
+                          | ((unsigned int) pollType)
                           | (verbose ? MHD_USE_ERROR_LOG : 0),
                           *pport, NULL, NULL,
                           &ahcCheck, *ahc_param,
@@ -1892,11 +1983,11 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
 /* Test runners */
 
 
-static int
+static unsigned int
 testExternalGet (void)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
   struct ahc_cls_type *ahc_param;
   struct check_uri_cls *uri_cb_param;
   struct term_notif_cb_param *term_result;
