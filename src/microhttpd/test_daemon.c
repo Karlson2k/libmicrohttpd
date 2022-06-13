@@ -35,8 +35,8 @@
 #endif
 
 
-static int
-testStartError ()
+static unsigned int
+testStartError (void)
 {
   struct MHD_Daemon *d;
 
@@ -91,8 +91,8 @@ ahc_nothing (void *cls,
 }
 
 
-static int
-testStartStop ()
+static unsigned int
+testStartStop (void)
 {
   struct MHD_Daemon *d;
 
@@ -105,7 +105,7 @@ testStartStop ()
   {
     fprintf (stderr,
              "Failed to start daemon on port %u\n",
-             0);
+             (unsigned int) 0);
     exit (77);
   }
   MHD_stop_daemon (d);
@@ -113,8 +113,8 @@ testStartStop ()
 }
 
 
-static int
-testExternalRun ()
+static unsigned int
+testExternalRun (void)
 {
   struct MHD_Daemon *d;
   fd_set rs;
@@ -131,7 +131,7 @@ testExternalRun ()
   {
     fprintf (stderr,
              "Failed to start daemon on port %u\n",
-             0);
+             (unsigned int) 0);
     exit (77);
   }
   i = 0;
@@ -160,8 +160,8 @@ testExternalRun ()
 }
 
 
-static int
-testThread ()
+static unsigned int
+testThread (void)
 {
   struct MHD_Daemon *d;
 
@@ -175,7 +175,7 @@ testThread ()
   {
     fprintf (stderr,
              "Failed to start daemon on port %u.\n",
-             1082);
+             (unsigned int) 1082);
     exit (77);
   }
   if (MHD_run (d) != MHD_NO)
@@ -189,8 +189,8 @@ testThread ()
 }
 
 
-static int
-testMultithread ()
+static unsigned int
+testMultithread (void)
 {
   struct MHD_Daemon *d;
 
@@ -205,7 +205,7 @@ testMultithread ()
   {
     fprintf (stderr,
              "Failed to start daemon on port %u\n",
-             0);
+             (unsigned int) 0);
     exit (77);
   }
   if (MHD_run (d) != MHD_NO)
@@ -223,7 +223,7 @@ int
 main (int argc,
       char *const *argv)
 {
-  int errorCount = 0;
+  unsigned int errorCount = 0;
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
 
   errorCount += testStartError ();
