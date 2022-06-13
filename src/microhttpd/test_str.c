@@ -35,6 +35,9 @@
 #define PRIX64 "llX"
 #endif /* ! HAVE_INTTYPES_H */
 #include <stdint.h>
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
 #include "mhd_limits.h"
 #include "mhd_str.h"
 #include "test_helpers.h"
@@ -208,11 +211,14 @@ static const unsigned int locale_name_count = sizeof(locale_names)
  *  Helper functions
  */
 
-int
-set_test_locale (unsigned int num)
+static int
+set_test_locale (size_t num)
 {
   if (num >= locale_name_count)
-    return -1;
+  {
+    fprintf (stderr, "Unexpected number of locale.\n");
+    exit (99);
+  }
   if (verbose > 2)
     printf ("Setting locale \"%s\":", locale_names[num]);
   if (setlocale (LC_ALL, locale_names[num]))
@@ -227,7 +233,7 @@ set_test_locale (unsigned int num)
 }
 
 
-const char *
+static const char *
 get_current_locale_str (void)
 {
   char const *loc_str = setlocale (LC_ALL, NULL);
@@ -239,7 +245,7 @@ static char tmp_bufs[4][4 * 1024]; /* should be enough for testing */
 static size_t buf_idx = 0;
 
 /* print non-printable chars as char codes */
-char *
+static char *
 n_prnt (const char *str)
 {
   static char *buf;  /* should be enough for testing */
@@ -258,10 +264,10 @@ n_prnt (const char *str)
       if (w_pos + 2 >= buf_size)
         break;
       buf[w_pos++] = '\\';
-      buf[w_pos++] = c;
+      buf[w_pos++] = (char) c;
     }
     else if ((c >= 0x20) && (c <= 0x7E) )
-      buf[w_pos++] = c;
+      buf[w_pos++] = (char) c;
     else
     {
       if (w_pos + 4 >= buf_size)
@@ -502,7 +508,7 @@ static const struct two_neq_strs neq_strings[] = {
 };
 
 
-int
+static size_t
 check_eq_strings (void)
 {
   size_t t_failed = 0;
@@ -549,7 +555,7 @@ check_eq_strings (void)
 }
 
 
-int
+static size_t
 check_neq_strings (void)
 {
   size_t t_failed = 0;
@@ -596,7 +602,7 @@ check_neq_strings (void)
 }
 
 
-int
+static size_t
 check_eq_strings_n (void)
 {
   size_t t_failed = 0;
@@ -649,7 +655,7 @@ check_eq_strings_n (void)
 }
 
 
-int
+static size_t
 check_neq_strings_n (void)
 {
   size_t t_failed = 0;
@@ -675,7 +681,7 @@ check_neq_strings_n (void)
                                                                      int) t->
                  dif_pos,
                  (unsigned int) t->s1.len, (unsigned int) t->s2.len);
-        return -1;
+        exit (99);
       }
       if (t->dif_pos > t->s1.len)
       {
@@ -684,7 +690,7 @@ check_neq_strings_n (void)
                  "equal to s1.len (%u).\n", (unsigned int) i, (unsigned
                                                                int) t->dif_pos,
                  (unsigned int) t->s1.len);
-        return -1;
+        exit (99);
       }
       if (t->dif_pos > t->s2.len)
       {
@@ -693,7 +699,7 @@ check_neq_strings_n (void)
                  "equal to s2.len (%u).\n", (unsigned int) i, (unsigned
                                                                int) t->dif_pos,
                  (unsigned int) t->s2.len);
-        return -1;
+        exit (99);
       }
       for (k = 0; k <= m_len + 1 && ! c_failed[i]; k++)
       {
@@ -769,21 +775,16 @@ check_neq_strings_n (void)
 /*
  * Run eq/neq strings tests
  */
-int
+static int
 run_eq_neq_str_tests (void)
 {
-  int str_equal_caseless_fails = 0;
-  int str_equal_caseless_n_fails = 0;
-  int res;
+  size_t str_equal_caseless_fails = 0;
+  size_t str_equal_caseless_n_fails = 0;
+  size_t res;
 
   res = check_eq_strings ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr, "ERROR: test internal error in check_eq_strings().\n");
-      return 99;
-    }
     str_equal_caseless_fails += res;
     fprintf (stderr, "FAILED: testcase check_eq_strings() failed.\n\n");
   }
@@ -793,11 +794,6 @@ run_eq_neq_str_tests (void)
   res = check_neq_strings ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr, "ERROR: test internal error in check_neq_strings().\n");
-      return 99;
-    }
     str_equal_caseless_fails += res;
     fprintf (stderr, "FAILED: testcase check_neq_strings() failed.\n\n");
   }
@@ -806,8 +802,9 @@ run_eq_neq_str_tests (void)
 
   if (str_equal_caseless_fails)
     fprintf (stderr,
-             "FAILED: function MHD_str_equal_caseless_() failed %d time%s.\n\n",
-             str_equal_caseless_fails, str_equal_caseless_fails == 1 ? "" :
+             "FAILED: function MHD_str_equal_caseless_() failed %lu time%s.\n\n",
+             (unsigned long) str_equal_caseless_fails,
+             str_equal_caseless_fails == 1 ? "" :
              "s");
   else if (verbose > 0)
     printf (
@@ -816,11 +813,6 @@ run_eq_neq_str_tests (void)
   res = check_eq_strings_n ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr, "ERROR: test internal error in check_eq_strings_n().\n");
-      return 99;
-    }
     str_equal_caseless_n_fails += res;
     fprintf (stderr, "FAILED: testcase check_eq_strings_n() failed.\n\n");
   }
@@ -830,12 +822,6 @@ run_eq_neq_str_tests (void)
   res = check_neq_strings_n ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_neq_strings_n().\n");
-      return 99;
-    }
     str_equal_caseless_n_fails += res;
     fprintf (stderr, "FAILED: testcase check_neq_strings_n() failed.\n\n");
   }
@@ -844,8 +830,9 @@ run_eq_neq_str_tests (void)
 
   if (str_equal_caseless_n_fails)
     fprintf (stderr,
-             "FAILED: function MHD_str_equal_caseless_n_() failed %d time%s.\n\n",
-             str_equal_caseless_n_fails, str_equal_caseless_n_fails == 1 ? "" :
+             "FAILED: function MHD_str_equal_caseless_n_() failed %lu time%s.\n\n",
+             (unsigned long) str_equal_caseless_n_fails,
+             str_equal_caseless_n_fails == 1 ? "" :
              "s");
   else if (verbose > 0)
     printf (
@@ -1133,7 +1120,7 @@ const struct str_with_len strx_ovflw[] = {
 };
 
 
-int
+static size_t
 check_str_to_uint64_valid (void)
 {
   size_t t_failed = 0;
@@ -1164,7 +1151,7 @@ check_str_to_uint64_valid (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       rv = 9435223;     /* some random value */
       rs = MHD_str_to_uint64_ (t->str.str, &rv);
@@ -1201,7 +1188,7 @@ check_str_to_uint64_valid (void)
 }
 
 
-int
+static size_t
 check_str_to_uint64_all_chars (void)
 {
   static const size_t n_checks = 256; /* from 0 to 255 */
@@ -1268,7 +1255,7 @@ check_str_to_uint64_all_chars (void)
 }
 
 
-int
+static size_t
 check_str_to_uint64_overflow (void)
 {
   size_t t_failed = 0;
@@ -1326,7 +1313,7 @@ check_str_to_uint64_overflow (void)
 }
 
 
-int
+static size_t
 check_str_to_uint64_no_val (void)
 {
   size_t t_failed = 0;
@@ -1384,7 +1371,7 @@ check_str_to_uint64_no_val (void)
 }
 
 
-int
+static size_t
 check_str_to_uint64_n_valid (void)
 {
   size_t t_failed = 0;
@@ -1413,7 +1400,7 @@ check_str_to_uint64_n_valid (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       for (len = t->num_of_digt; len <= t->str.len + 1 && ! c_failed[i]; len++)
       {
@@ -1456,7 +1443,7 @@ check_str_to_uint64_n_valid (void)
 }
 
 
-int
+static size_t
 check_str_to_uint64_n_all_chars (void)
 {
   static const size_t n_checks = 256; /* from 0 to 255 */
@@ -1533,7 +1520,7 @@ check_str_to_uint64_n_all_chars (void)
 }
 
 
-int
+static size_t
 check_str_to_uint64_n_overflow (void)
 {
   size_t t_failed = 0;
@@ -1602,7 +1589,7 @@ check_str_to_uint64_n_overflow (void)
 }
 
 
-int
+static size_t
 check_str_to_uint64_n_no_val (void)
 {
   size_t t_failed = 0;
@@ -1670,7 +1657,7 @@ check_str_to_uint64_n_no_val (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint32_valid (void)
 {
   size_t t_failed = 0;
@@ -1704,7 +1691,7 @@ check_strx_to_uint32_valid (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       rv = 1458532;     /* some random value */
       rs = MHD_strx_to_uint32_ (t->str.str, &rv);
@@ -1743,7 +1730,7 @@ check_strx_to_uint32_valid (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint32_all_chars (void)
 {
   static const size_t n_checks = 256; /* from 0 to 255 */
@@ -1815,7 +1802,7 @@ check_strx_to_uint32_all_chars (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint32_overflow (void)
 {
   size_t t_failed = 0;
@@ -1891,7 +1878,7 @@ check_strx_to_uint32_overflow (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint32_no_val (void)
 {
   size_t t_failed = 0;
@@ -1950,7 +1937,7 @@ check_strx_to_uint32_no_val (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint32_n_valid (void)
 {
   size_t t_failed = 0;
@@ -1982,7 +1969,7 @@ check_strx_to_uint32_n_valid (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       for (len = t->num_of_digt; len <= t->str.len + 1 && ! c_failed[i]; len++)
       {
@@ -2027,7 +2014,7 @@ check_strx_to_uint32_n_valid (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint32_n_all_chars (void)
 {
   static const size_t n_checks = 256; /* from 0 to 255 */
@@ -2109,7 +2096,7 @@ check_strx_to_uint32_n_all_chars (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint32_n_overflow (void)
 {
   size_t t_failed = 0;
@@ -2154,7 +2141,7 @@ check_strx_to_uint32_n_overflow (void)
                    (unsigned int) (i - n_checks1), (unsigned
                                                     int) t->num_of_digt,
                    (unsigned int) t->str.len);
-          return -1;
+          exit (99);
         }
         str = t->str.str;
         min_len = t->num_of_digt;
@@ -2211,7 +2198,7 @@ check_strx_to_uint32_n_overflow (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint32_n_no_val (void)
 {
   size_t t_failed = 0;
@@ -2280,7 +2267,7 @@ check_strx_to_uint32_n_no_val (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint64_valid (void)
 {
   size_t t_failed = 0;
@@ -2311,7 +2298,7 @@ check_strx_to_uint64_valid (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       rv = 1458532;     /* some random value */
       rs = MHD_strx_to_uint64_ (t->str.str, &rv);
@@ -2349,7 +2336,7 @@ check_strx_to_uint64_valid (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint64_all_chars (void)
 {
   static const size_t n_checks = 256; /* from 0 to 255 */
@@ -2420,7 +2407,7 @@ check_strx_to_uint64_all_chars (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint64_overflow (void)
 {
   size_t t_failed = 0;
@@ -2478,7 +2465,7 @@ check_strx_to_uint64_overflow (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint64_no_val (void)
 {
   size_t t_failed = 0;
@@ -2536,7 +2523,7 @@ check_strx_to_uint64_no_val (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint64_n_valid (void)
 {
   size_t t_failed = 0;
@@ -2565,7 +2552,7 @@ check_strx_to_uint64_n_valid (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       for (len = t->num_of_digt; len <= t->str.len + 1 && ! c_failed[i]; len++)
       {
@@ -2609,7 +2596,7 @@ check_strx_to_uint64_n_valid (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint64_n_all_chars (void)
 {
   static const size_t n_checks = 256; /* from 0 to 255 */
@@ -2691,7 +2678,7 @@ check_strx_to_uint64_n_all_chars (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint64_n_overflow (void)
 {
   size_t t_failed = 0;
@@ -2761,7 +2748,7 @@ check_strx_to_uint64_n_overflow (void)
 }
 
 
-int
+static size_t
 check_strx_to_uint64_n_no_val (void)
 {
   size_t t_failed = 0;
@@ -2830,26 +2817,20 @@ check_strx_to_uint64_n_no_val (void)
 }
 
 
-int
+static int
 run_str_to_X_tests (void)
 {
-  int str_to_uint64_fails = 0;
-  int str_to_uint64_n_fails = 0;
-  int strx_to_uint32_fails = 0;
-  int strx_to_uint32_n_fails = 0;
-  int strx_to_uint64_fails = 0;
-  int strx_to_uint64_n_fails = 0;
-  int res;
+  size_t str_to_uint64_fails = 0;
+  size_t str_to_uint64_n_fails = 0;
+  size_t strx_to_uint32_fails = 0;
+  size_t strx_to_uint32_n_fails = 0;
+  size_t strx_to_uint64_fails = 0;
+  size_t strx_to_uint64_n_fails = 0;
+  size_t res;
 
   res = check_str_to_uint64_valid ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_valid().\n");
-      return 99;
-    }
     str_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_valid() failed.\n\n");
@@ -2861,12 +2842,6 @@ run_str_to_X_tests (void)
   res = check_str_to_uint64_all_chars ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_all_chars().\n");
-      return 99;
-    }
     str_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_all_chars() failed.\n\n");
@@ -2878,12 +2853,6 @@ run_str_to_X_tests (void)
   res = check_str_to_uint64_overflow ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_overflow().\n");
-      return 99;
-    }
     str_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_overflow() failed.\n\n");
@@ -2895,12 +2864,6 @@ run_str_to_X_tests (void)
   res = check_str_to_uint64_no_val ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_no_val().\n");
-      return 99;
-    }
     str_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_no_val() failed.\n\n");
@@ -2911,8 +2874,9 @@ run_str_to_X_tests (void)
 
   if (str_to_uint64_fails)
     fprintf (stderr,
-             "FAILED: function MHD_str_to_uint64_() failed %d time%s.\n\n",
-             str_to_uint64_fails, str_to_uint64_fails == 1 ? "" : "s");
+             "FAILED: function MHD_str_to_uint64_() failed %lu time%s.\n\n",
+             (unsigned long) str_to_uint64_fails,
+             str_to_uint64_fails == 1 ? "" : "s");
   else if (verbose > 0)
     printf (
       "PASSED: function MHD_str_to_uint64_() successfully passed all checks.\n\n");
@@ -2920,12 +2884,6 @@ run_str_to_X_tests (void)
   res = check_str_to_uint64_n_valid ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_n_valid().\n");
-      return 99;
-    }
     str_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_n_valid() failed.\n\n");
@@ -2937,12 +2895,6 @@ run_str_to_X_tests (void)
   res = check_str_to_uint64_n_all_chars ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_n_all_chars().\n");
-      return 99;
-    }
     str_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_n_all_chars() failed.\n\n");
@@ -2954,12 +2906,6 @@ run_str_to_X_tests (void)
   res = check_str_to_uint64_n_overflow ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_n_overflow().\n");
-      return 99;
-    }
     str_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_n_overflow() failed.\n\n");
@@ -2971,12 +2917,6 @@ run_str_to_X_tests (void)
   res = check_str_to_uint64_n_no_val ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_to_uint64_n_no_val().\n");
-      return 99;
-    }
     str_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_str_to_uint64_n_no_val() failed.\n\n");
@@ -2987,8 +2927,9 @@ run_str_to_X_tests (void)
 
   if (str_to_uint64_n_fails)
     fprintf (stderr,
-             "FAILED: function MHD_str_to_uint64_n_() failed %d time%s.\n\n",
-             str_to_uint64_n_fails, str_to_uint64_n_fails == 1 ? "" : "s");
+             "FAILED: function MHD_str_to_uint64_n_() failed %lu time%s.\n\n",
+             (unsigned long) str_to_uint64_n_fails,
+             str_to_uint64_n_fails == 1 ? "" : "s");
   else if (verbose > 0)
     printf (
       "PASSED: function MHD_str_to_uint64_n_() successfully passed all checks.\n\n");
@@ -2996,12 +2937,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint32_valid ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_valid().\n");
-      return 99;
-    }
     strx_to_uint32_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_valid() failed.\n\n");
@@ -3013,12 +2948,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint32_all_chars ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_all_chars().\n");
-      return 99;
-    }
     strx_to_uint32_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_all_chars() failed.\n\n");
@@ -3030,12 +2959,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint32_overflow ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_overflow().\n");
-      return 99;
-    }
     strx_to_uint32_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_overflow() failed.\n\n");
@@ -3047,12 +2970,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint32_no_val ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_no_val().\n");
-      return 99;
-    }
     strx_to_uint32_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_no_val() failed.\n\n");
@@ -3063,8 +2980,9 @@ run_str_to_X_tests (void)
 
   if (strx_to_uint32_fails)
     fprintf (stderr,
-             "FAILED: function MHD_strx_to_uint32_() failed %d time%s.\n\n",
-             strx_to_uint32_fails, strx_to_uint32_fails == 1 ? "" : "s");
+             "FAILED: function MHD_strx_to_uint32_() failed %lu time%s.\n\n",
+             (unsigned long) strx_to_uint32_fails,
+             strx_to_uint32_fails == 1 ? "" : "s");
   else if (verbose > 0)
     printf (
       "PASSED: function MHD_strx_to_uint32_() successfully passed all checks.\n\n");
@@ -3072,12 +2990,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint32_n_valid ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_n_valid().\n");
-      return 99;
-    }
     strx_to_uint32_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_n_valid() failed.\n\n");
@@ -3089,12 +3001,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint32_n_all_chars ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_n_all_chars().\n");
-      return 99;
-    }
     strx_to_uint32_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_n_all_chars() failed.\n\n");
@@ -3106,12 +3012,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint32_n_overflow ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_n_overflow().\n");
-      return 99;
-    }
     strx_to_uint32_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_n_overflow() failed.\n\n");
@@ -3123,12 +3023,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint32_n_no_val ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint32_n_no_val().\n");
-      return 99;
-    }
     strx_to_uint32_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint32_n_no_val() failed.\n\n");
@@ -3139,8 +3033,9 @@ run_str_to_X_tests (void)
 
   if (strx_to_uint32_n_fails)
     fprintf (stderr,
-             "FAILED: function MHD_strx_to_uint32_n_() failed %d time%s.\n\n",
-             strx_to_uint32_n_fails, strx_to_uint32_n_fails == 1 ? "" : "s");
+             "FAILED: function MHD_strx_to_uint32_n_() failed %lu time%s.\n\n",
+             (unsigned long) strx_to_uint32_n_fails,
+             strx_to_uint32_n_fails == 1 ? "" : "s");
   else if (verbose > 0)
     printf (
       "PASSED: function MHD_strx_to_uint32_n_() successfully passed all checks.\n\n");
@@ -3148,12 +3043,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint64_valid ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_valid().\n");
-      return 99;
-    }
     strx_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_valid() failed.\n\n");
@@ -3165,12 +3054,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint64_all_chars ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_all_chars().\n");
-      return 99;
-    }
     strx_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_all_chars() failed.\n\n");
@@ -3182,12 +3065,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint64_overflow ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_overflow().\n");
-      return 99;
-    }
     strx_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_overflow() failed.\n\n");
@@ -3199,12 +3076,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint64_no_val ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_no_val().\n");
-      return 99;
-    }
     strx_to_uint64_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_no_val() failed.\n\n");
@@ -3215,8 +3086,9 @@ run_str_to_X_tests (void)
 
   if (strx_to_uint64_fails)
     fprintf (stderr,
-             "FAILED: function MHD_strx_to_uint64_() failed %d time%s.\n\n",
-             strx_to_uint64_fails, strx_to_uint64_fails == 1 ? "" : "s");
+             "FAILED: function MHD_strx_to_uint64_() failed %lu time%s.\n\n",
+             (unsigned long) strx_to_uint64_fails,
+             strx_to_uint64_fails == 1 ? "" : "s");
   else if (verbose > 0)
     printf (
       "PASSED: function MHD_strx_to_uint64_() successfully passed all checks.\n\n");
@@ -3224,12 +3096,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint64_n_valid ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_n_valid().\n");
-      return 99;
-    }
     strx_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_n_valid() failed.\n\n");
@@ -3241,12 +3107,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint64_n_all_chars ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_n_all_chars().\n");
-      return 99;
-    }
     strx_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_n_all_chars() failed.\n\n");
@@ -3258,12 +3118,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint64_n_overflow ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_n_overflow().\n");
-      return 99;
-    }
     strx_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_n_overflow() failed.\n\n");
@@ -3275,12 +3129,6 @@ run_str_to_X_tests (void)
   res = check_strx_to_uint64_n_no_val ();
   if (res != 0)
   {
-    if (res < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_to_uint64_n_no_val().\n");
-      return 99;
-    }
     strx_to_uint64_n_fails += res;
     fprintf (stderr,
              "FAILED: testcase check_strx_to_uint64_n_no_val() failed.\n\n");
@@ -3291,8 +3139,9 @@ run_str_to_X_tests (void)
 
   if (strx_to_uint64_n_fails)
     fprintf (stderr,
-             "FAILED: function MHD_strx_to_uint64_n_() failed %d time%s.\n\n",
-             strx_to_uint64_n_fails, strx_to_uint64_n_fails == 1 ? "" : "s");
+             "FAILED: function MHD_strx_to_uint64_n_() failed %lu time%s.\n\n",
+             (unsigned long) strx_to_uint64_n_fails,
+             strx_to_uint64_n_fails == 1 ? "" : "s");
   else if (verbose > 0)
     printf (
       "PASSED: function MHD_strx_to_uint64_n_() successfully passed all checks.\n\n");
@@ -3314,7 +3163,7 @@ run_str_to_X_tests (void)
 }
 
 
-int
+static size_t
 check_str_from_uint16 (void)
 {
   size_t t_failed = 0;
@@ -3350,7 +3199,7 @@ check_str_from_uint16 (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       if ('0' == t->str.str[0])
         continue;  /* Skip strings prefixed with zeros */
@@ -3364,14 +3213,15 @@ check_str_from_uint16 (void)
                  "ERROR: dstrs_w_values[%u] has too long (%u) string, "
                  "size of 'buf' should be increased.\n",
                  (unsigned int) i, (unsigned int) t->str.len);
-        return -1;
+        exit (99);
       }
+      rs = 0; /* Only to mute compiler warning */
       for (b_size = 0; b_size <= t->str.len + 1; ++b_size)
       {
         /* fill buffer with pseudo-random values */
         memcpy (buf, erase, sizeof(buf));
 
-        rs = MHD_uint16_to_str (t->val, buf, b_size);
+        rs = MHD_uint16_to_str ((uint16_t) t->val, buf, b_size);
 
         if (t->num_of_digt > b_size)
         {
@@ -3438,7 +3288,7 @@ check_str_from_uint16 (void)
 }
 
 
-int
+static size_t
 check_str_from_uint64 (void)
 {
   size_t t_failed = 0;
@@ -3474,7 +3324,7 @@ check_str_from_uint64 (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       if ('0' == t->str.str[0])
         continue;  /* Skip strings prefixed with zeros */
@@ -3486,7 +3336,7 @@ check_str_from_uint64 (void)
                  "ERROR: dstrs_w_values[%u] has too long (%u) string, "
                  "size of 'buf' should be increased.\n",
                  (unsigned int) i, (unsigned int) t->str.len);
-        return -1;
+        exit (99);
       }
       for (b_size = 0; b_size <= t->str.len + 1; ++b_size)
       {
@@ -3560,7 +3410,7 @@ check_str_from_uint64 (void)
 }
 
 
-int
+static size_t
 check_strx_from_uint32 (void)
 {
   size_t t_failed = 0;
@@ -3596,7 +3446,7 @@ check_strx_from_uint32 (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       if ('0' == t->str.str[0])
         continue;  /* Skip strings prefixed with zeros */
@@ -3610,14 +3460,15 @@ check_strx_from_uint32 (void)
                  "ERROR: dstrs_w_values[%u] has too long (%u) string, "
                  "size of 'buf' should be increased.\n",
                  (unsigned int) i, (unsigned int) t->str.len);
-        return -1;
+        exit (99);
       }
+      rs = 0; /* Only to mute compiler warning */
       for (b_size = 0; b_size <= t->str.len + 1; ++b_size)
       {
         /* fill buffer with pseudo-random values */
         memcpy (buf, erase, sizeof(buf));
 
-        rs = MHD_uint32_to_strx (t->val, buf, b_size);
+        rs = MHD_uint32_to_strx ((uint32_t) t->val, buf, b_size);
 
         if (t->num_of_digt > b_size)
         {
@@ -3667,7 +3518,7 @@ check_strx_from_uint32 (void)
                      "ERROR: dstrs_w_values[%u] has string with too many"
                      "(%u) digits, size of 'buf' should be increased.\n",
                      (unsigned int) i, (unsigned int) rs);
-            return -1;
+            exit (99);
           }
           else if (0 != memcmp (buf + rs, erase + rs, sizeof(buf) - rs))
           {
@@ -4474,12 +4325,12 @@ static const struct str_with_value duint8_w_values_p3[] = {
 static const struct str_with_value *duint8_w_values_p[3] =
 {duint8_w_values_p1, duint8_w_values_p2, duint8_w_values_p3};
 
-int
+static size_t
 check_str_from_uint8_pad (void)
 {
   int i;
-  int pad;
-  int t_failed = 0;
+  uint8_t pad;
+  size_t t_failed = 0;
 
   if ((256 != sizeof(duint8_w_values_p1) / sizeof(duint8_w_values_p1[0])) ||
       (256 != sizeof(duint8_w_values_p2) / sizeof(duint8_w_values_p2[0])) ||
@@ -4487,11 +4338,11 @@ check_str_from_uint8_pad (void)
   {
     fprintf (stderr,
              "ERROR: wrong number of items in duint8_w_values_p*.\n");
-    return -1;
+    exit (99);
   }
   for (pad = 0; pad <= 3; pad++)
   {
-    int table_num = pad - 1;
+    size_t table_num = pad - 1;
     if (0 == pad)
       table_num = 0;
 
@@ -4510,7 +4361,7 @@ check_str_from_uint8_pad (void)
                  (unsigned int) i, (unsigned int) t->num_of_digt, (unsigned
                                                                    int) t->str.
                  len);
-        return -1;
+        exit (99);
       }
       if (sizeof(buf) < t->str.len + 1)
       {
@@ -4518,14 +4369,14 @@ check_str_from_uint8_pad (void)
                  "ERROR: dstrs_w_values[%u] has too long (%u) string, "
                  "size of 'buf' should be increased.\n",
                  (unsigned int) i, (unsigned int) t->str.len);
-        return -1;
+        exit (99);
       }
       for (b_size = 0; b_size <= t->str.len + 1; ++b_size)
       {
         /* fill buffer with pseudo-random values */
         memset (buf, '#', sizeof(buf));
 
-        rs = MHD_uint8_to_str_pad (t->val, pad, buf, b_size);
+        rs = MHD_uint8_to_str_pad ((uint8_t) t->val, pad, buf, b_size);
 
         if (t->num_of_digt > b_size)
         {
@@ -4581,26 +4432,20 @@ check_str_from_uint8_pad (void)
 }
 
 
-int
+static int
 run_str_from_X_tests (void)
 {
-  int str_from_uint16;
-  int str_from_uint64;
-  int strx_from_uint32;
-  int str_from_uint8_pad;
-  int failures;
+  size_t str_from_uint16;
+  size_t str_from_uint64;
+  size_t strx_from_uint32;
+  size_t str_from_uint8_pad;
+  size_t failures;
 
   failures = 0;
 
   str_from_uint16 = check_str_from_uint16 ();
   if (str_from_uint16 != 0)
   {
-    if (str_from_uint16 < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_from_uint16().\n");
-      return 99;
-    }
     fprintf (stderr,
              "FAILED: testcase check_str_from_uint16() failed.\n\n");
     failures += str_from_uint16;
@@ -4612,12 +4457,6 @@ run_str_from_X_tests (void)
   str_from_uint64 = check_str_from_uint64 ();
   if (str_from_uint64 != 0)
   {
-    if (str_from_uint64 < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_from_uint16().\n");
-      return 99;
-    }
     fprintf (stderr,
              "FAILED: testcase check_str_from_uint16() failed.\n\n");
     failures += str_from_uint64;
@@ -4628,12 +4467,6 @@ run_str_from_X_tests (void)
   strx_from_uint32 = check_strx_from_uint32 ();
   if (strx_from_uint32 != 0)
   {
-    if (strx_from_uint32 < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_strx_from_uint32().\n");
-      return 99;
-    }
     fprintf (stderr,
              "FAILED: testcase check_strx_from_uint32() failed.\n\n");
     failures += strx_from_uint32;
@@ -4645,12 +4478,6 @@ run_str_from_X_tests (void)
   str_from_uint8_pad = check_str_from_uint8_pad ();
   if (str_from_uint8_pad != 0)
   {
-    if (str_from_uint8_pad < 0)
-    {
-      fprintf (stderr,
-               "ERROR: test internal error in check_str_from_uint8_pad().\n");
-      return 99;
-    }
     fprintf (stderr,
              "FAILED: testcase check_str_from_uint8_pad() failed.\n\n");
     failures += str_from_uint8_pad;
