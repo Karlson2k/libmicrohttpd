@@ -374,11 +374,9 @@ test_postprocessor_large_LDADD = \
   $(builddir)/libmicrohttpd.la
 
 test_postprocessor_md_SOURCES = \
-  test_postprocessor_md.c
-test_postprocessor_md_CPPFLAGS = \
-  $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
-test_postprocessor_md_CFLAGS = \
-  $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+  test_postprocessor_md.c postprocessor.h postprocessor.c \
+  internal.h internal.c mhd_str.h mhd_str.c \
+  mhd_panic.h mhd_panic.c
 
 test_shutdown_select_SOURCES = \
   test_shutdown_select.c
