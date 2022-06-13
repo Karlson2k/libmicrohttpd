@@ -52,8 +52,7 @@ ahc_echo (void *cls,
   static int aptr;
   struct MHD_Response *response;
   enum MHD_Result ret;
-  char *user;
-  char *pass;
+  struct MHD_BasicAuthInfo *auth_info;
   int fail;
   (void) cls;               /* Unused. Silent compiler warning. */
   (void) url;               /* Unused. Silent compiler warning. */
@@ -72,18 +71,26 @@ ahc_echo (void *cls,
   *req_cls = NULL;                  /* reset when done */
 
   /* require: "Aladdin" with password "open sesame" */
-  pass = NULL;
-  user = MHD_basic_auth_get_username_password (connection,
-                                               &pass);
-  fail = ( (NULL == user) ||
-           (0 != strcmp (user, "Aladdin")) ||
-           (0 != strcmp (pass, "open sesame") ) );
+  auth_info = MHD_basic_auth_get_username_password3 (connection);
+  fail = ( (NULL == auth_info) ||
+           (strlen ("Aladdin") != auth_info->username_len) ||
+           (0 != memcmp (auth_info->username, "Aladdin",
+                         auth_info->username_len)) ||
+           /* The next check against NULL is optional,
+            * if 'password' is NULL then 'password_len' is always zero. */
+           (NULL == auth_info->password) ||
+           (strlen ("open sesame") != auth_info->password_len) ||
+           (0 != memcmp (auth_info->password, "open sesame",
+                         auth_info->password_len)) );
   if (fail)
   {
     response =
       MHD_create_response_from_buffer_static (strlen (DENIED),
                                               (const void *) DENIED);
-    ret = MHD_queue_basic_auth_fail_response (connection,"TestRealm",response);
+    ret = MHD_queue_basic_auth_fail_response3 (connection,
+                                               "TestRealm",
+                                               MHD_NO,
+                                               response);
   }
   else
   {
@@ -92,10 +99,8 @@ ahc_echo (void *cls,
                                               (const void *) PAGE);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   }
-  if (NULL != user)
-    MHD_free (user);
-  if (NULL != pass)
-    MHD_free (pass);
+  if (NULL != auth_info)
+    MHD_free (auth_info);
   MHD_destroy_response (response);
   return ret;
 }

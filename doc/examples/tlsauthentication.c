@@ -15,54 +15,12 @@
 
 #define PORT 8888
 
-#define REALM     "\"Maintenance\""
+#define REALM     "Maintenance"
 #define USER      "a legitimate user"
 #define PASSWORD  "and his password"
 
 #define SERVERKEYFILE "server.key"
 #define SERVERCERTFILE "server.pem"
-
-
-static char *
-string_to_base64 (const char *message)
-{
-  const char *lookup =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  unsigned long l;
-  size_t i;
-  size_t j;
-  char *tmp;
-  size_t length = strlen (message);
-
-  tmp = malloc (length * 2 + 1);
-  if (NULL == tmp)
-    return NULL;
-  j = 0;
-  for (i = 0; i < length; i += 3)
-  {
-    l = (((unsigned long) message[i]) << 16)
-        | (((i + 1) < length) ? (((unsigned long) message[i + 1]) << 8) : 0)
-        | (((i + 2) < length) ? ((unsigned long) message[i + 2]) : 0);
-
-
-    tmp [j++] = lookup[(l >> 18) & 0x3F];
-    tmp [j++] = lookup[(l >> 12) & 0x3F];
-
-    if (i + 1 < length)
-      tmp [j++] = lookup[(l >> 6) & 0x3F];
-    if (i + 2 < length)
-      tmp [j++] = lookup[l & 0x3F];
-  }
-
-  if (0 != length % 3)
-    tmp [j++] = '=';
-  if (1 == length % 3)
-    tmp [j++] = '=';
-
-  tmp [j] = 0;
-
-  return tmp;
-}
 
 
 static size_t
@@ -126,35 +84,15 @@ ask_for_authentication (struct MHD_Connection *connection, const char *realm)
 {
   enum MHD_Result ret;
   struct MHD_Response *response;
-  char *headervalue;
-  size_t slen;
-  const char *strbase = "Basic realm=";
 
   response = MHD_create_response_empty (MHD_RF_NONE);
   if (! response)
     return MHD_NO;
 
-  slen = strlen (strbase) + strlen (realm) + 1;
-  if (NULL == (headervalue = malloc (slen)))
-    return MHD_NO;
-  snprintf (headervalue,
-            slen,
-            "%s%s",
-            strbase,
-            realm);
-  ret = MHD_add_response_header (response,
-                                 "WWW-Authenticate",
-                                 headervalue);
-  free (headervalue);
-  if (! ret)
-  {
-    MHD_destroy_response (response);
-    return MHD_NO;
-  }
-
-  ret = MHD_queue_response (connection,
-                            MHD_HTTP_UNAUTHORIZED,
-                            response);
+  ret = MHD_queue_basic_auth_fail_response3 (connection,
+                                             realm,
+                                             MHD_YES,
+                                             response);
   MHD_destroy_response (response);
   return ret;
 }
@@ -165,37 +103,23 @@ is_authenticated (struct MHD_Connection *connection,
                   const char *username,
                   const char *password)
 {
-  const char *headervalue;
-  char *expected_b64;
-  char *expected;
-  const char *strbase = "Basic ";
+  struct MHD_BasicAuthInfo *auth_info;
   int authenticated;
-  size_t slen;
 
-  headervalue =
-    MHD_lookup_connection_value (connection, MHD_HEADER_KIND,
-                                 "Authorization");
-  if (NULL == headervalue)
+  auth_info = MHD_basic_auth_get_username_password3 (connection);
+  if (NULL == auth_info)
     return 0;
-  if (0 != strncmp (headervalue, strbase, strlen (strbase)))
-    return 0;
-
-  slen = strlen (username) + 1 + strlen (password) + 1;
-  if (NULL == (expected = malloc (slen)))
-    return 0;
-  snprintf (expected,
-            slen,
-            "%s:%s",
-            username,
-            password);
-  expected_b64 = string_to_base64 (expected);
-  free (expected);
-  if (NULL == expected_b64)
-    return 0;
-
   authenticated =
-    (strcmp (headervalue + strlen (strbase), expected_b64) == 0);
-  free (expected_b64);
+    ( (strlen (username) == auth_info->username_len) &&
+      (0 == memcmp (auth_info->username, username, auth_info->username_len)) &&
+      /* The next check against NULL is optional,
+       * if 'password' is NULL then 'password_len' is always zero. */
+      (NULL != auth_info->password) &&
+      (strlen (password) == auth_info->password_len) &&
+      (0 == memcmp (auth_info->password, password, auth_info->password_len)) );
+
+  MHD_free (auth_info);
+
   return authenticated;
 }
 
