@@ -1778,7 +1778,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
      * As soon as connection will be marked with BOTH
      * 'urh->was_closed' AND 'urh->clean_ready', it will
      * be moved to cleanup list by MHD_resume_connection(). */
-    upgraded_connection_mark_app_closed_ (connection);
+    MHD_upgraded_connection_mark_app_closed_ (connection);
     return MHD_YES;
   case MHD_UPGRADE_ACTION_CORK_ON:
     /* Unportable API. TODO: replace with portable action. */

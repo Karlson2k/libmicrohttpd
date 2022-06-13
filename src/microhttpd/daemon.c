@@ -3284,7 +3284,7 @@ MHD_resume_connection (struct MHD_Connection *connection)
  * @param connection the upgraded connection to mark as closed by application
  */
 void
-upgraded_connection_mark_app_closed_ (struct MHD_Connection *connection)
+MHD_upgraded_connection_mark_app_closed_ (struct MHD_Connection *connection)
 {
   /* Cache 'daemon' here to avoid data races */
   struct MHD_Daemon *const daemon = connection->daemon;
