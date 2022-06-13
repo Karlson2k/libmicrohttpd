@@ -3532,6 +3532,8 @@ enum MHD_ResponseFlags
    * (zero-size body).
    * Responses with this flag enabled cannot be used in situations where
    * reply body must be sent to the client.
+   * This flag is primarily intended to be used when automatic "Content-Length"
+   * header is undesirable in response to HEAD requests.
    * @note Available since #MHD_VERSION 0x00097502
    */
   MHD_RF_HEAD_ONLY_RESPONSE = 1 << 4
@@ -4655,16 +4657,20 @@ struct MHD_BasicAuthInfo
    * The username, cannot be NULL
    */
   char *username;
+
   /**
    * The length of the @a username, not including zero-termination
    */
   size_t username_len;
+
   /**
    * The password, may be NULL if password is not encoded by the client
    */
   char *password;
+
   /**
-   * The length of the @a password, not including zero-termination
+   * The length of the @a password, not including zero-termination;
+   * when the @a password is NULL, the length is always zero.
    */
   size_t password_len;
 };
