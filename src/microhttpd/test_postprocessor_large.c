@@ -42,7 +42,7 @@ value_checker (void *cls,
                const char *transfer_encoding,
                const char *data, uint64_t off, size_t size)
 {
-  unsigned int *pos = cls;
+  size_t *pos = (size_t *) cls;
   (void) kind; (void) key; (void) filename; (void) content_type; /* Unused. Silent compiler warning. */
   (void) transfer_encoding; (void) data; (void) off;             /* Unused. Silent compiler warning. */
 #if 0
@@ -60,7 +60,7 @@ value_checker (void *cls,
 
 
 static int
-test_simple_large ()
+test_simple_large (void)
 {
   struct MHD_Connection connection;
   struct MHD_HTTP_Req_Header header;
@@ -69,7 +69,7 @@ test_simple_large ()
   size_t delta;
   size_t size;
   char data[102400];
-  unsigned int pos;
+  size_t pos;
 
   pos = 0;
   memset (data, 'A', sizeof (data));

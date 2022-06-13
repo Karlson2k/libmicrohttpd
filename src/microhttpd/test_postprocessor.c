@@ -87,14 +87,24 @@ struct expResult exp_results[] = {
 #define URL_ENC_END (URL_ENC_START + 4)
   {NULL, NULL, NULL, NULL, NULL},
 #define FORM_DATA \
-  "--AaB03x\r\ncontent-disposition: form-data; name=\"field1\"\r\n\r\nJoe Blow\r\n--AaB03x\r\ncontent-disposition: form-data; name=\"pics\"; filename=\"file1.txt\"\r\nContent-Type: text/plain\r\nContent-Transfer-Encoding: binary\r\n\r\nfiledata\r\n--AaB03x--\r\n"
+  "--AaB03x\r\ncontent-disposition: form-data; name=\"field1\"\r\n\r\n" \
+  "Joe Blow\r\n--AaB03x\r\ncontent-disposition: form-data; name=\"pics\";" \
+  " filename=\"file1.txt\"\r\nContent-Type: text/plain\r\n" \
+  "Content-Transfer-Encoding: binary\r\n\r\nfiledata\r\n--AaB03x--\r\n"
 #define FORM_START (URL_ENC_END + 1)
   {"field1", NULL, NULL, NULL, "Joe Blow"},
   {"pics", "file1.txt", "text/plain", "binary", "filedata"},
 #define FORM_END (FORM_START + 2)
   {NULL, NULL, NULL, NULL, NULL},
 #define FORM_NESTED_DATA \
-  "--AaB03x\r\ncontent-disposition: form-data; name=\"field1\"\r\n\r\nJane Blow\r\n--AaB03x\r\ncontent-disposition: form-data; name=\"pics\"\r\nContent-type: multipart/mixed, boundary=BbC04y\r\n\r\n--BbC04y\r\nContent-disposition: attachment; filename=\"file1.txt\"\r\nContent-Type: text/plain\r\n\r\nfiledata1\r\n--BbC04y\r\nContent-disposition: attachment; filename=\"file2.gif\"\r\nContent-type: image/gif\r\nContent-Transfer-Encoding: binary\r\n\r\nfiledata2\r\n--BbC04y--\r\n--AaB03x--"
+  "--AaB03x\r\ncontent-disposition: form-data; name=\"field1\"\r\n\r\n" \
+  "Jane Blow\r\n--AaB03x\r\ncontent-disposition: form-data; name=\"pics\"\r\n" \
+  "Content-type: multipart/mixed, boundary=BbC04y\r\n\r\n--BbC04y\r\n" \
+  "Content-disposition: attachment; filename=\"file1.txt\"\r\n" \
+  "Content-Type: text/plain\r\n\r\nfiledata1\r\n--BbC04y\r\n" \
+  "Content-disposition: attachment; filename=\"file2.gif\"\r\n" \
+  "Content-type: image/gif\r\nContent-Transfer-Encoding: binary\r\n\r\n" \
+  "filedata2\r\n--BbC04y--\r\n--AaB03x--"
 #define FORM_NESTED_START (FORM_END + 1)
   {"field1", NULL, NULL, NULL, "Jane Blow"},
   {"pics", "file1.txt", "text/plain", NULL, "filedata1"},
@@ -210,13 +220,13 @@ value_checker (void *cls,
 }
 
 
-static int
+static unsigned int
 test_urlencoding_case (unsigned int want_start,
                        unsigned int want_end,
                        const char *url_data)
 {
   size_t step;
-  int errors = 0;
+  unsigned int errors = 0;
   const size_t size = strlen (url_data);
 
   for (step = 1; size >= step; ++step)
@@ -278,7 +288,7 @@ test_urlencoding_case (unsigned int want_start,
 }
 
 
-static int
+static unsigned int
 test_urlencoding (void)
 {
   unsigned int errorCount = 0;
@@ -357,7 +367,7 @@ test_urlencoding (void)
 }
 
 
-static int
+static unsigned int
 test_multipart_garbage (void)
 {
   struct MHD_Connection connection;
@@ -425,7 +435,7 @@ test_multipart_garbage (void)
 }
 
 
-static int
+static unsigned int
 test_multipart_splits (void)
 {
   struct MHD_Connection connection;
@@ -487,7 +497,7 @@ test_multipart_splits (void)
 }
 
 
-static int
+static unsigned int
 test_multipart (void)
 {
   struct MHD_Connection connection;
@@ -544,7 +554,7 @@ test_multipart (void)
 }
 
 
-static int
+static unsigned int
 test_nested_multipart (void)
 {
   struct MHD_Connection connection;
@@ -619,8 +629,8 @@ value_checker2 (void *cls,
 }
 
 
-static int
-test_overflow ()
+static unsigned int
+test_overflow (void)
 {
   struct MHD_Connection connection;
   struct MHD_HTTP_Req_Header header;
@@ -675,7 +685,7 @@ test_overflow ()
 }
 
 
-static int
+static unsigned int
 test_empty_key (void)
 {
   const char form_data[] = "=abcdef";
@@ -726,7 +736,7 @@ test_empty_key (void)
 }
 
 
-static int
+static unsigned int
 test_double_value (void)
 {
   const char form_data[] = URL_DATA "=abcdef";
@@ -822,5 +832,5 @@ main (int argc, char *const *argv)
   errorCount += test_overflow ();
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
-  return errorCount != 0;       /* 0 == pass */
+  return (errorCount == 0) ? 0 : 1;       /* 0 == pass */
 }
