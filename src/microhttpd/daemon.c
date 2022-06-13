@@ -3269,6 +3269,44 @@ MHD_resume_connection (struct MHD_Connection *connection)
 }
 
 
+#ifdef UPGRADE_SUPPORT
+/**
+ * Mark upgraded connection as closed by application.
+ *
+ * The @a connection pointer must not be used after call of this function
+ * as it may be freed in other thread immediately.
+ * @param connection the upgraded connection to mark as closed by application
+ */
+void
+MHD_upgraded_connection_mark_app_closed_ (struct MHD_Connection *connection)
+{
+  /* Cache 'daemon' here to avoid data races */
+  struct MHD_Daemon *const daemon = connection->daemon;
+#if defined(MHD_USE_THREADS)
+  mhd_assert (NULL == daemon->worker_pool);
+#endif /* MHD_USE_THREADS */
+  mhd_assert (NULL != connection->urh);
+  mhd_assert (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME));
+
+  MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
+  connection->urh->was_closed = true;
+  connection->resuming = true;
+  daemon->resuming = true;
+  MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+  if ( (MHD_ITC_IS_VALID_ (daemon->itc)) &&
+       (! MHD_itc_activate_ (daemon->itc, "r")) )
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Failed to signal resume via " \
+                 "inter-thread communication channel.\n"));
+#endif
+  }
+}
+
+
+#endif /* UPGRADE_SUPPORT */
+
 /**
  * Run through the suspended connections and move any that are no
  * longer suspended back to the active state.

@@ -1587,11 +1587,12 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
     }
 #endif /* HTTPS_SUPPORT */
     mhd_assert (MHD_CONNECTION_UPGRADE == connection->state);
-    urh->was_closed = true;
-    /* As soon as connection will be marked with BOTH
+    /* The next function will mark the connection as closed by application
+     * by setting 'urh->was_closed'.
+     * As soon as connection will be marked with BOTH
      * 'urh->was_closed' AND 'urh->clean_ready', it will
      * be moved to cleanup list by MHD_resume_connection(). */
-    MHD_resume_connection (connection);
+    MHD_upgraded_connection_mark_app_closed_ (connection);
     return MHD_YES;
   case MHD_UPGRADE_ACTION_CORK_ON:
     /* Unportable API. TODO: replace with portable action. */

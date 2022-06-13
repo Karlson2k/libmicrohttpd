@@ -2408,4 +2408,19 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
 void
 internal_suspend_connection_ (struct MHD_Connection *connection);
 
+
+#ifdef UPGRADE_SUPPORT
+/**
+ * Mark upgraded connection as closed by application.
+ *
+ * The @a connection pointer must not be used after call of this function
+ * as it may be freed in other thread immediately.
+ * @param connection the upgraded connection to mark as closed by application
+ */
+void
+MHD_upgraded_connection_mark_app_closed_ (struct MHD_Connection *connection);
+
+#endif /* UPGRADE_SUPPORT */
+
+
 #endif
