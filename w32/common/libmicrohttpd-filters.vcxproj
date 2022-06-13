@@ -67,6 +67,9 @@
     <ClInclude Include="$(MhdSrc)microhttpd\memorypool.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MhdSrc)microhttpd\postprocessor.h">
+      <Filter>Internal Headers</Filter>
+    </ClInclude>
     <ClInclude Include="$(MhdSrc)microhttpd\response.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>

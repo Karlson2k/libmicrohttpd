@@ -48,6 +48,7 @@
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_limits.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_mono_clock.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\response.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\postprocessor.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\tsearch.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\sysfdsetsize.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_str.h" />

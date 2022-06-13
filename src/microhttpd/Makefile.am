@@ -158,7 +158,7 @@ endif
 
 if HAVE_POSTPROCESSOR
 libmicrohttpd_la_SOURCES += \
-  postprocessor.c
+  postprocessor.c postprocessor.h
 endif
 
 if HAVE_ANYAUTH
