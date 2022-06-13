@@ -101,7 +101,7 @@ minor change, we can proceed to implement the actual authentication process.
 
 Let us assume we had only files not intended to be handed out without the
 correct username/password, so every "GET" request will be challenged.
-@emph{RFC 2617} describes how the server shall ask for authentication by
+@emph{RFC 7617} describes how the server shall ask for authentication by
 adding a @emph{WWW-Authenticate} response header with the name of the
 @emph{realm} protected.  MHD can generate and queue such a failure response
 for you using the @code{MHD_queue_basic_auth_fail_response} API.  The only
@@ -112,50 +112,60 @@ the proper credentials were already supplied using the
 
 Your code would then look like this:
 @verbatim
-static int
+static enum MHD_Result
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
                       size_t *upload_data_size, void **req_cls)
 {
-  char *user;
-  char *pass;
-  int fail;
+  struct MHD_BasicAuthInfo *auth_info;
   enum MHD_Result ret;
   struct MHD_Response *response;
 
-  if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
+  if (0 != strcmp (method, "GET"))
     return MHD_NO;
   if (NULL == *req_cls)
-    {
-      *req_cls = connection;
-      return MHD_YES;
-    }
-  pass = NULL;
-  user = MHD_basic_auth_get_username_password (connection, &pass);
-  fail = ( (user == NULL) ||
-	   (0 != strcmp (user, "root")) ||
-	   (0 != strcmp (pass, "pa$$w0rd") ) );
-  if (user != NULL) free (user);
-  if (pass != NULL) free (pass);
-  if (fail)
-    {
-      const char *page = "<html><body>Go away.</body></html>";
-      response =
-	MHD_create_response_from_buffer (strlen (page), (void *) page,
-				       MHD_RESPMEM_PERSISTENT);
-      ret = MHD_queue_basic_auth_fail_response (connection,
-						"my realm",
-						response);
-    }
+  {
+    *req_cls = connection;
+    return MHD_YES;
+  }
+  auth_info = MHD_basic_auth_get_username_password3 (connection);
+  if (NULL == auth_info)
+  {
+    static const char *page =
+      "<html><body>Authorization required</body></html>";
+    response = MHD_create_response_from_buffer_static (strlen (page), page);
+    ret = MHD_queue_basic_auth_fail_response3 (connection,
+                                               "admins",
+                                               MHD_YES,
+                                               response);
+  }
+  else if ((strlen ("root") != auth_info->username_len) ||
+           (0 != memcmp (auth_info->username, "root",
+                         auth_info->username_len)) ||
+           /* The next check against NULL is optional,
+            * if 'password' is NULL then 'password_len' is always zero. */
+           (NULL == auth_info->password) ||
+           (strlen ("pa$$w0rd") != auth_info->password_len) ||
+           (0 != memcmp (auth_info->password, "pa$$w0rd",
+                         auth_info->password_len)))
+  {
+    static const char *page =
+      "<html><body>Wrong username or password</body></html>";
+    response = MHD_create_response_from_buffer_static (strlen (page), page);
+    ret = MHD_queue_basic_auth_fail_response3 (connection,
+                                               "admins",
+                                               MHD_YES,
+                                               response);
+  }
   else
-    {
-      const char *page = "<html><body>A secret.</body></html>";
-      response =
-	MHD_create_response_from_buffer (strlen (page), (void *) page,
-				       MHD_RESPMEM_PERSISTENT);
-      ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-    }
+  {
+    static const char *page = "<html><body>A secret.</body></html>";
+    response = MHD_create_response_from_buffer_static (strlen (page), page);
+    ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+  }
+  if (NULL != auth_info)
+    MHD_free (auth_info);
   MHD_destroy_response (response);
   return ret;
 }

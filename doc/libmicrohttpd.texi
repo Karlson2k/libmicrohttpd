@@ -3114,20 +3114,23 @@ client certificates is presented in the MHD tutorial.
 Free the memory given at @code{ptr}.  Used to free data structures allocated by MHD. Calls @code{free(ptr)}.
 @end deftypefun
 
-@deftypefun {char *} MHD_basic_auth_get_username_password (struct MHD_Connection *connection, char** password)
+@deftypefun {char *} MHD_basic_auth_get_username_password3 (struct MHD_Connection *connection)
 Get the username and password from the basic authorization header sent by the client.
-Return @code{NULL} if no username could be found, a pointer to the username if found.
-If returned value is not @code{NULL}, the value must be @code{MHD_free()}'ed.
-
-@var{password} reference a buffer to store the password. It can be @code{NULL}.
+Return @code{NULL} if no Basic Authorization header set by the client or if Base64
+encoding is invalid; a pointer to the structure with username and password
+if found values set by the client.
 If returned value is not @code{NULL}, the value must be @code{MHD_free()}'ed.
 @end deftypefun
 
-@deftypefun {enum MHD_Result} MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection, const char *realm, struct MHD_Response *response)
+@deftypefun {enum MHD_Result} MHD_queue_basic_auth_fail_response3 (struct MHD_Connection *connection, const char *realm, int prefer_utf8, struct MHD_Response *response)
 Queues a response to request basic authentication from the client.
 Return @code{MHD_YES} if successful, otherwise @code{MHD_NO}.
 
 @var{realm} must reference to a zero-terminated string representing the realm.
+
+@var{prefer_utf8} if set to @code{MHD_YES} then parameter @code{charset} with value
+@code{UTF-8} will be added to the response authentication header which indicates
+that UTF-8 encoding is preferred for username and password.
 
 @var{response} a response structure to specify what shall be presented to the
 client with a 401 HTTP status.
