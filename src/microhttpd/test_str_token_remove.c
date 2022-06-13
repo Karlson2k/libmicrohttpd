@@ -56,7 +56,8 @@ expect_result_n (const char *str, size_t str_len,
     ssize_t result_len;
     memset (buf_out, '$', sizeof(buf_out));
 
-    result_len = buf_len;
+    result_len = (ssize_t) buf_len;
+    mhd_assert (0 <= result_len);
 
     res = MHD_str_remove_token_caseless_ (buf_in, str_len, buf_token, token_len,
                                           buf_out, &result_len);
@@ -79,7 +80,7 @@ expect_result_n (const char *str, size_t str_len,
       if ( (expected_removed != res) ||
            (expected_len != (size_t) result_len) ||
            ((0 != result_len) && (0 != memcmp (expected, buf_out,
-                                               result_len))) ||
+                                               (size_t) result_len))) ||
            ('$' != buf_out[result_len]))
       {
         fprintf (stderr,
@@ -104,7 +105,7 @@ expect_result_n (const char *str, size_t str_len,
                    (t),MHD_STATICSTR_LEN_ (t), \
                    (e),MHD_STATICSTR_LEN_ (e), found)
 
-int
+static int
 check_result (void)
 {
   int errcount = 0;
