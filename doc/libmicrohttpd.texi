@@ -332,11 +332,13 @@ valid as long as the response itself is valid.
 @cindex microhttpd.h
 
 Ideally, before including "microhttpd.h" you should add the necessary
-includes to define the @code{uint64_t}, @code{size_t}, @code{fd_set},
-@code{socklen_t} and @code{struct sockaddr} data types.  Which
-specific headers are needed may depend on your platform and your build
-system might include some tests to provide you with the necessary
-conditional operations.  For possible suggestions consult
+includes to define the @code{va_list}, @code{size_t}, @code{ssize_t},
+@code{intptr_t}, @code{off_t}, @code{uint8_t}, @code{uint16_t},
+@code{int32_t}, @code{uint32_t}, @code{int64_t}, @code{uint64_t},
+@code{fd_set}, @code{socklen_t} and @code{struct sockaddr} data types.
+Which specific headers are needed may depend on your platform and your
+build system might include some tests to provide you with the
+necessary conditional operations.  For possible suggestions consult
 @code{platform.h} and @code{configure.ac} in the MHD distribution.
 
 Once you have ensured that you manually (!) included the right headers
