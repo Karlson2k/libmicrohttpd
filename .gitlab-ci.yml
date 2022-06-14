@@ -78,10 +78,11 @@ Scan-Build/Debian:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$DEBIAN_BUILD
   script:
     - export CFLAGS="$CFLAGS_DEFAULT"
+    - export CC="clang-3.8"
     - ./bootstrap
-    - scan-build ./configure $CONFIGURE_BASE_FLAGS --enable-build-type=debug --disable-sanitizers
-    - scan-build -v -enable-checker security,nullability --status-bugs -o scan-build make -j$(nproc)
-    - scan-build -v -enable-checker security,nullability --status-bugs -o scan-build make -k check
+    - scan-build --use-cc=clang-3.8 ./configure $CONFIGURE_BASE_FLAGS --enable-build-type=debug --disable-sanitizers
+    - scan-build --use-cc="ccache clang-3.8" -v -enable-checker security,nullability --status-bugs -o scan-build make -j$(nproc)
+    - scan-build --use-cc="ccache clang-3.8" -v -enable-checker security,nullability --status-bugs -o scan-build make -k check
   tags:
     - shared
     - linux
