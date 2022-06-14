@@ -1163,7 +1163,7 @@ check_str_to_uint64_valid (void)
                  "FAILED: MHD_str_to_uint64_(\"%s\", ->%" PRIu64 ") returned %"
                  PRIuPTR
                  ", while expecting %d."
-                 " Locale: %s\n", n_prnt (t->str.str), rv, (intptr_t) rs,
+                 " Locale: %s\n", n_prnt (t->str.str), rv, (uintptr_t) rs,
                  (int) t->num_of_digt, get_current_locale_str ());
       }
       if (rv != t->val)
@@ -1413,7 +1413,7 @@ check_str_to_uint64_n_valid (void)
                    "FAILED: MHD_str_to_uint64_n_(\"%s\", %" PRIuPTR ", ->%"
                    PRIu64 ")"
                    " returned %" PRIuPTR ", while expecting %d. Locale: %s\n",
-                   n_prnt (t->str.str), (intptr_t) len, rv, (intptr_t) rs,
+                   n_prnt (t->str.str), (uintptr_t) len, rv, (uintptr_t) rs,
                    (int) t->num_of_digt, get_current_locale_str ());
         }
         if (rv != t->val)
@@ -1425,7 +1425,7 @@ check_str_to_uint64_n_valid (void)
                    PRIu64 ")"
                    " converted string to value %" PRIu64
                    ", while expecting result %" PRIu64
-                   ". Locale: %s\n", n_prnt (t->str.str), (intptr_t) len, rv,
+                   ". Locale: %s\n", n_prnt (t->str.str), (uintptr_t) len, rv,
                    rv,
                    t->val, get_current_locale_str ());
         }
@@ -1435,8 +1435,8 @@ check_str_to_uint64_n_valid (void)
           "PASSED: MHD_str_to_uint64_n_(\"%s\", %" PRIuPTR "..%" PRIuPTR ", ->%"
           PRIu64 ")"
           " == %" PRIuPTR "\n", n_prnt (t->str.str),
-          (intptr_t) t->num_of_digt,
-          (intptr_t) t->str.len + 1, rv, rs);
+          (uintptr_t) t->num_of_digt,
+          (uintptr_t) t->str.len + 1, rv, rs);
     }
   }
   return t_failed;
@@ -1704,7 +1704,7 @@ check_strx_to_uint32_valid (void)
                  ") returned %"
                  PRIuPTR ", while expecting %d."
                  " Locale: %s\n", n_prnt (t->str.str), (uint64_t) rv,
-                 (intptr_t) rs, (int) t->num_of_digt,
+                 (uintptr_t) rs, (int) t->num_of_digt,
                  get_current_locale_str ());
       }
       if (rv != t->val)
@@ -1982,8 +1982,8 @@ check_strx_to_uint32_n_valid (void)
                    "FAILED: MHD_strx_to_uint32_n_(\"%s\", %" PRIuPTR ", ->0x%"
                    PRIX64 ")"
                    " returned %" PRIuPTR ", while expecting %d. Locale: %s\n",
-                   n_prnt (t->str.str), (intptr_t) len, (uint64_t) rv,
-                   (intptr_t) rs,
+                   n_prnt (t->str.str), (uintptr_t) len, (uint64_t) rv,
+                   (uintptr_t) rs,
                    (int) t->num_of_digt, get_current_locale_str ());
         }
         if (rv != t->val)
@@ -1995,7 +1995,7 @@ check_strx_to_uint32_n_valid (void)
                    PRIX64 ")"
                    " converted string to value 0x%" PRIX64
                    ", while expecting result 0x%" PRIX64
-                   ". Locale: %s\n", n_prnt (t->str.str), (intptr_t) len,
+                   ". Locale: %s\n", n_prnt (t->str.str), (uintptr_t) len,
                    (uint64_t) rv, (uint64_t) rv,
                    t->val, get_current_locale_str ());
         }
@@ -2006,8 +2006,8 @@ check_strx_to_uint32_n_valid (void)
           ", ->0x%"
           PRIX64 ")"
           " == %" PRIuPTR "\n", n_prnt (t->str.str),
-          (intptr_t) t->num_of_digt,
-          (intptr_t) t->str.len + 1, (uint64_t) rv, rs);
+          (uintptr_t) t->num_of_digt,
+          (uintptr_t) t->str.len + 1, (uint64_t) rv, rs);
     }
   }
   return t_failed;
@@ -2310,7 +2310,7 @@ check_strx_to_uint64_valid (void)
                  "FAILED: MHD_strx_to_uint64_(\"%s\", ->0x%" PRIX64
                  ") returned %"
                  PRIuPTR ", while expecting %d."
-                 " Locale: %s\n", n_prnt (t->str.str), rv, (intptr_t) rs,
+                 " Locale: %s\n", n_prnt (t->str.str), rv, (uintptr_t) rs,
                  (int) t->num_of_digt, get_current_locale_str ());
       }
       if (rv != t->val)
@@ -2321,8 +2321,8 @@ check_strx_to_uint64_valid (void)
                  "FAILED: MHD_strx_to_uint64_(\"%s\", ->0x%" PRIX64
                  ") converted string to value 0x%"
                  PRIX64 ","
-                 " while expecting result 0x%" PRIX64 ". Locale: %s\n", n_prnt (
-                   t->str.str), rv, rv,
+                 " while expecting result 0x%" PRIX64 ". Locale: %s\n",
+                 n_prnt (t->str.str), rv, rv,
                  t->val, get_current_locale_str ());
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
@@ -2565,7 +2565,7 @@ check_strx_to_uint64_n_valid (void)
                    "FAILED: MHD_strx_to_uint64_n_(\"%s\", %" PRIuPTR ", ->0x%"
                    PRIX64 ")"
                    " returned %" PRIuPTR ", while expecting %d. Locale: %s\n",
-                   n_prnt (t->str.str), (intptr_t) len, rv, (intptr_t) rs,
+                   n_prnt (t->str.str), (uintptr_t) len, rv, (uintptr_t) rs,
                    (int) t->num_of_digt, get_current_locale_str ());
         }
         if (rv != t->val)
@@ -2577,7 +2577,7 @@ check_strx_to_uint64_n_valid (void)
                    PRIX64 ")"
                    " converted string to value 0x%" PRIX64
                    ", while expecting result 0x%" PRIX64
-                   ". Locale: %s\n", n_prnt (t->str.str), (intptr_t) len, rv,
+                   ". Locale: %s\n", n_prnt (t->str.str), (uintptr_t) len, rv,
                    rv,
                    t->val, get_current_locale_str ());
         }
@@ -2588,8 +2588,8 @@ check_strx_to_uint64_n_valid (void)
           ", ->0x%"
           PRIX64 ")"
           " == %" PRIuPTR "\n", n_prnt (t->str.str),
-          (intptr_t) t->num_of_digt,
-          (intptr_t) t->str.len + 1, rv, rs);
+          (uintptr_t) t->num_of_digt,
+          (uintptr_t) t->str.len + 1, rv, rs);
     }
   }
   return t_failed;
@@ -3235,7 +3235,7 @@ check_str_from_uint16 (void)
                      "FAILED: MHD_uint16_to_str(%" PRIu64 ", -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting 0."
-                     " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
+                     " Locale: %s\n", t->val, (int) b_size, (uintptr_t) rs,
                      get_current_locale_str ());
           }
         }
@@ -3250,7 +3250,7 @@ check_str_from_uint16 (void)
                      "FAILED: MHD_uint16_to_str(%" PRIu64 ", -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting %d."
-                     " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
+                     " Locale: %s\n", t->val, (int) b_size, (uintptr_t) rs,
                      (int) t->num_of_digt, get_current_locale_str ());
           }
           else if (0 != memcmp (buf, t->str.str, t->num_of_digt))
@@ -3262,7 +3262,7 @@ check_str_from_uint16 (void)
                      "FAILED: MHD_uint16_to_str(%" PRIu64 ", -> \"%.*s\","
                      " %d) returned %" PRIuPTR "."
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
-                     (intptr_t) rs,  get_current_locale_str ());
+                     (uintptr_t) rs,  get_current_locale_str ());
           }
           else if (0 != memcmp (buf + rs, erase + rs, sizeof(buf) - rs))
           {
@@ -3274,14 +3274,14 @@ check_str_from_uint16 (void)
                      " %d) returned %" PRIuPTR
                      " and touched data after the resulting string."
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
-                     (intptr_t) rs,  get_current_locale_str ());
+                     (uintptr_t) rs,  get_current_locale_str ());
           }
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
         printf ("PASSED: MHD_uint16_to_str(%" PRIu64 ", -> \"%.*s\", %d) "
                 "== %" PRIuPTR "\n",
-                t->val, (int) rs, buf, (int) b_size - 1, (intptr_t) rs);
+                t->val, (int) rs, buf, (int) b_size - 1, (uintptr_t) rs);
     }
   }
   return t_failed;
@@ -3357,7 +3357,7 @@ check_str_from_uint64 (void)
                      "FAILED: MHD_uint64_to_str(%" PRIu64 ", -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting 0."
-                     " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
+                     " Locale: %s\n", t->val, (int) b_size, (uintptr_t) rs,
                      get_current_locale_str ());
           }
         }
@@ -3372,7 +3372,7 @@ check_str_from_uint64 (void)
                      "FAILED: MHD_uint64_to_str(%" PRIu64 ", -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting %d."
-                     " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
+                     " Locale: %s\n", t->val, (int) b_size, (uintptr_t) rs,
                      (int) t->num_of_digt, get_current_locale_str ());
           }
           else if (0 != memcmp (buf, t->str.str, t->num_of_digt))
@@ -3384,7 +3384,7 @@ check_str_from_uint64 (void)
                      "FAILED: MHD_uint64_to_str(%" PRIu64 ", -> \"%.*s\","
                      " %d) returned %" PRIuPTR "."
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
-                     (intptr_t) rs,  get_current_locale_str ());
+                     (uintptr_t) rs,  get_current_locale_str ());
           }
           else if (0 != memcmp (buf + rs, erase + rs, sizeof(buf) - rs))
           {
@@ -3396,14 +3396,14 @@ check_str_from_uint64 (void)
                      " %d) returned %" PRIuPTR
                      " and touched data after the resulting string."
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
-                     (intptr_t) rs,  get_current_locale_str ());
+                     (uintptr_t) rs,  get_current_locale_str ());
           }
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
         printf ("PASSED: MHD_uint64_to_str(%" PRIu64 ", -> \"%.*s\", %d) "
                 "== %" PRIuPTR "\n",
-                t->val, (int) rs, buf, (int) b_size - 1, (intptr_t) rs);
+                t->val, (int) rs, buf, (int) b_size - 1, (uintptr_t) rs);
     }
   }
   return t_failed;
@@ -3482,7 +3482,7 @@ check_strx_from_uint32 (void)
                      "FAILED: MHD_uint32_to_strx(0x%" PRIX64 ", -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting 0."
-                     " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
+                     " Locale: %s\n", t->val, (int) b_size, (uintptr_t) rs,
                      get_current_locale_str ());
           }
         }
@@ -3497,7 +3497,7 @@ check_strx_from_uint32 (void)
                      "FAILED: MHD_uint32_to_strx(0x%" PRIX64 ", -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting %d."
-                     " Locale: %s\n", t->val, (int) b_size, (intptr_t) rs,
+                     " Locale: %s\n", t->val, (int) b_size, (uintptr_t) rs,
                      (int) t->num_of_digt, get_current_locale_str ());
           }
           else if (0 == MHD_str_equal_caseless_bin_n_ (buf, t->str.str,
@@ -3510,7 +3510,7 @@ check_strx_from_uint32 (void)
                      "FAILED: MHD_uint32_to_strx(0x%" PRIX64 ", -> \"%.*s\","
                      " %d) returned %" PRIuPTR "."
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
-                     (intptr_t) rs,  get_current_locale_str ());
+                     (uintptr_t) rs,  get_current_locale_str ());
           }
           else if (sizeof(buf) <= rs)
           {
@@ -3530,14 +3530,14 @@ check_strx_from_uint32 (void)
                      " %d) returned %" PRIuPTR
                      " and touched data after the resulting string."
                      " Locale: %s\n", t->val, (int) rs, buf, (int) b_size,
-                     (intptr_t) rs,  get_current_locale_str ());
+                     (uintptr_t) rs,  get_current_locale_str ());
           }
         }
       }
       if ((verbose > 1) && (j == locale_name_count - 1) && ! c_failed[i])
         printf ("PASSED: MHD_uint32_to_strx(0x%" PRIX64 ", -> \"%.*s\", %d) "
                 "== %" PRIuPTR "\n",
-                t->val, (int) rs, buf, (int) b_size - 1, (intptr_t) rs);
+                t->val, (int) rs, buf, (int) b_size - 1, (uintptr_t) rs);
     }
   }
   return t_failed;
@@ -4388,7 +4388,7 @@ check_str_from_uint8_pad (void)
                      "FAILED: MHD_uint8_to_str_pad(%" PRIu64 ", %d, -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting 0.\n", t->val, (int) pad, (int) b_size,
-                     (intptr_t) rs);
+                     (uintptr_t) rs);
           }
         }
         else
@@ -4400,7 +4400,7 @@ check_str_from_uint8_pad (void)
                      "FAILED: MHD_uint8_to_str_pad(%" PRIu64 ", %d, -> buf,"
                      " %d) returned %" PRIuPTR
                      ", while expecting %d.\n", t->val, (int) pad,
-                     (int) b_size, (intptr_t) rs, (int) t->num_of_digt);
+                     (int) b_size, (uintptr_t) rs, (int) t->num_of_digt);
           }
           else if (0 != memcmp (buf, t->str.str, t->num_of_digt))
           {
@@ -4409,7 +4409,7 @@ check_str_from_uint8_pad (void)
                      "FAILED: MHD_uint8_to_str_pad(%" PRIu64 ", %d, "
                      "-> \"%.*s\", %d) returned %" PRIuPTR ".\n",
                      t->val, (int) pad, (int) rs, buf,
-                     (int) b_size, (intptr_t) rs);
+                     (int) b_size, (uintptr_t) rs);
           }
           else if (0 != memcmp (buf + rs, "########", sizeof(buf) - rs))
           {
@@ -4419,7 +4419,7 @@ check_str_from_uint8_pad (void)
                      " -> \"%.*s\", %d) returned %" PRIuPTR
                      " and touched data after the resulting string.\n",
                      t->val, (int) pad, (int) rs, buf, (int) b_size,
-                     (intptr_t) rs);
+                     (uintptr_t) rs);
           }
         }
       }
