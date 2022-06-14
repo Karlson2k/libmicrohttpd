@@ -28,13 +28,6 @@
 #include "microhttpd.h"
 #include "mhd_sockets.h"
 
-#define MHD_E_MEM "Error: memory error\n"
-#define MHD_E_SERVER_INIT "Error: failed to start server\n"
-
-const int DEBUG_GNUTLS_LOG_LEVEL = 0;
-const char *test_file_name = "https_test_file";
-const char test_file_data[] = "Hello World\n";
-
 static enum MHD_Result
 ahc_echo (void *cls,
           struct MHD_Connection *connection,
@@ -57,10 +50,10 @@ ahc_echo (void *cls,
 }
 
 
-static int
-test_wrap_loc (char *test_name, int (*test)(void))
+static unsigned int
+test_wrap_loc (const char *test_name, unsigned int (*test)(void))
 {
-  int ret;
+  unsigned int ret;
 
   fprintf (stdout, "running test: %s ", test_name);
   ret = test ();
@@ -79,8 +72,8 @@ test_wrap_loc (char *test_name, int (*test)(void))
 /**
  * Test daemon initialization with the MHD_OPTION_SOCK_ADDR option
  */
-static int
-test_ip_addr_option ()
+static unsigned int
+test_ip_addr_option (void)
 {
   struct MHD_Daemon *d;
   struct sockaddr_in daemon_ip_addr;
@@ -105,7 +98,7 @@ test_ip_addr_option ()
                         &daemon_ip_addr, MHD_OPTION_END);
 
   if (d == 0)
-    return -1;
+    return 1;
 
   MHD_stop_daemon (d);
 
@@ -115,7 +108,7 @@ test_ip_addr_option ()
                         &daemon_ip_addr6, MHD_OPTION_END);
 
   if (d == 0)
-    return -1;
+    return 1;
 
   MHD_stop_daemon (d);
 #endif
