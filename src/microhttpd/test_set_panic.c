@@ -791,7 +791,14 @@ _MHD_dumbClient_needs_process (const struct _MHD_dumbClient *clnt)
   case DUMB_CLIENT_REQ_SENT:
   case DUMB_CLIENT_HEADER_RECVEIVED:
   case DUMB_CLIENT_BODY_RECVEIVED:
+  case DUMB_CLIENT_FINISHED:
     return ! 0;
+  case DUMB_CLIENT_CONNECTING:
+  case DUMB_CLIENT_CONNECTED:
+  case DUMB_CLIENT_REQ_SENDING:
+  case DUMB_CLIENT_HEADER_RECVEIVING:
+  case DUMB_CLIENT_BODY_RECVEIVING:
+  case DUMB_CLIENT_FINISHING:
   default:
     return 0;
   }
@@ -841,6 +848,8 @@ _MHD_dumbClient_process (struct _MHD_dumbClient *clnt)
     case DUMB_CLIENT_FINISHING:
       _MHD_dumbClient_finalize (clnt);
       break;
+    case DUMB_CLIENT_FINISHED:
+      return ! 0;
     default:
       mhd_assert (0);
       mhdErrorExit ();
