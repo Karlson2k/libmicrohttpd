@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 
-uint64_t num_errors;
+static uint64_t num_errors;
 
 static enum MHD_Result
 check_post (void *cls, enum MHD_ValueKind kind, const char *key,

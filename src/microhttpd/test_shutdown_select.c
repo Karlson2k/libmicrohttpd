@@ -219,7 +219,7 @@ start_socket_listen (int domain)
 }
 
 
-MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
+static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
 select_thread (void *data)
 {
   /* use select() like in daemon.c */
@@ -240,7 +240,7 @@ select_thread (void *data)
 
 
 #ifdef HAVE_POLL
-MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
+static MHD_THRD_RTRN_TYPE_ MHD_THRD_CALL_SPEC_
 poll_thread (void *data)
 {
   /* use poll() like in daemon.c */

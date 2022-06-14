@@ -54,7 +54,7 @@ struct expResult
  * Each series of checks should be terminated by
  * five NULL-entries.
  */
-struct expResult exp_results[] = {
+static struct expResult exp_results[] = {
 #define URL_NOVALUE1_DATA "abc&x=5"
 #define URL_NOVALUE1_START 0
   {"abc", NULL, NULL, NULL, /* NULL */ ""}, /* change after API update */
