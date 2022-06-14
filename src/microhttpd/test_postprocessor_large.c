@@ -59,7 +59,7 @@ value_checker (void *cls,
 }
 
 
-static int
+static unsigned int
 test_simple_large (void)
 {
   struct MHD_Connection connection;
@@ -88,7 +88,7 @@ test_simple_large (void)
   size = strlen (data);
   while (i < size)
   {
-    delta = 1 + MHD_random_ () % (size - i);
+    delta = 1 + ((size_t) MHD_random_ ()) % (size - i);
     if (MHD_YES !=
         MHD_post_process (pp,
                           &data[i],

@@ -416,19 +416,19 @@ test_multipart_garbage (void)
     if (MHD_YES != MHD_post_process (pp, &xdata[splitpoint], size - splitpoint))
     {
       fprintf (stderr,
-               "Test failed in line %u at point %d\n",
+               "Test failed in line %u at point %u\n",
                (unsigned int) __LINE__,
-               (int) splitpoint);
+               (unsigned int) splitpoint);
       exit (49);
     }
     MHD_destroy_post_processor (pp);
     if (want_off != FORM_END)
     {
       fprintf (stderr,
-               "Test failed in line %u at point %d\n",
+               "Test failed in line %u at point %u\n",
                (unsigned int) __LINE__,
-               (int) splitpoint);
-      return (int) splitpoint;
+               (unsigned int) splitpoint);
+      return (unsigned int) splitpoint;
     }
   }
   return 0;
@@ -478,19 +478,19 @@ test_multipart_splits (void)
                                      size - splitpoint))
     {
       fprintf (stderr,
-               "Test failed in line %u at point %d\n",
+               "Test failed in line %u at point %u\n",
                (unsigned int) __LINE__,
-               (int) splitpoint);
+               (unsigned int) splitpoint);
       exit (49);
     }
     MHD_destroy_post_processor (pp);
     if (want_off != FORM_END)
     {
       fprintf (stderr,
-               "Test failed in line %u at point %d\n",
+               "Test failed in line %u at point %u\n",
                (unsigned int) __LINE__,
-               (int) splitpoint);
-      return (int) splitpoint;
+               (unsigned int) splitpoint);
+      return (unsigned int) splitpoint;
     }
   }
   return 0;
@@ -529,7 +529,7 @@ test_multipart (void)
   size = strlen (FORM_DATA);
   while (i < size)
   {
-    delta = 1 + MHD_random_ () % (size - i);
+    delta = 1 + ((size_t) MHD_random_ ()) % (size - i);
     if (MHD_YES != MHD_post_process (pp,
                                      &FORM_DATA[i],
                                      delta))
@@ -586,7 +586,7 @@ test_nested_multipart (void)
   size = strlen (FORM_NESTED_DATA);
   while (i < size)
   {
-    delta = 1 + MHD_random_ () % (size - i);
+    delta = 1 + ((size_t) MHD_random_ ()) % (size - i);
     if (MHD_YES != MHD_post_process (pp,
                                      &FORM_NESTED_DATA[i],
                                      delta))
@@ -665,7 +665,7 @@ test_overflow (void)
       return 1;
     memset (buf, 'A', i);
     buf[i / 2] = '=';
-    delta = 1 + (MHD_random_ () % (i - 1));
+    delta = 1 + (((size_t) MHD_random_ ()) % (i - 1));
     j = 0;
     while (j < i)
     {
