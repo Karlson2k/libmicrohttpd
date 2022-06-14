@@ -26,8 +26,8 @@ variables:
   DEBIAN_BUILD: buildenv-debian-stretch
   MINGW_BUILD: buildenv-debian-mingw
   GET_SOURCES_ATTEMPTS: "3"
-  CONFIGURE_BASE_FLAGS: --enable-asserts --cache-file cache/config.cache
-  CFLAGS_DEFAULT: -O0 -g -ggdb3 -Wall -Wextra
+  CONFIGURE_BASE_FLAGS: --cache-file cache/config.cache
+  CFLAGS_DEFAULT: ""
 
 # In this build we combine
 #  * gcc
@@ -37,7 +37,7 @@ gcc/Stretch:
   script:
     - export CFLAGS="$CFLAGS_DEFAULT"
     - ./bootstrap
-    - ./configure $CONFIGURE_BASE_FLAGS
+    - ./configure $CONFIGURE_BASE_FLAGS --enable-build-type=debug --disable-sanitizers
     - make -j$(nproc) && make -k check
   tags:
     - shared
@@ -61,7 +61,7 @@ Sanitizers/Stretch:
     - ./bootstrap
     - export CC="ccache clang"
     - export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-3.8/bin/llvm-symbolizer
-    - ./configure $CONFIGURE_BASE_FLAGS --disable-doc --enable-sanitizers
+    - ./configure $CONFIGURE_BASE_FLAGS --disable-doc --enable-build-type=debug --enable-sanitizers
     - make -j$(nproc) && make -k check
   tags:
     - shared
@@ -79,7 +79,7 @@ Scan-Build/Debian:
   script:
     - export CFLAGS="$CFLAGS_DEFAULT"
     - ./bootstrap
-    - scan-build ./configure $CONFIGURE_BASE_FLAGS
+    - scan-build ./configure $CONFIGURE_BASE_FLAGS --enable-build-type=debug --disable-sanitizers
     - scan-build -v -enable-checker security,nullability --status-bugs -o scan-build make -j$(nproc)
     - scan-build -v -enable-checker security,nullability --status-bugs -o scan-build make -k check
   tags:
@@ -99,7 +99,7 @@ MinGW/Debian:
     - export CFLAGS="$CFLAGS_DEFAULT"
     - export CC="ccache $PREFIX-gcc"
     - ./bootstrap
-    - ./configure $CONFIGURE_BASE_FLAGS --build=x86_64-pc-linux-gnu --host=$PREFIX
+    - ./configure $CONFIGURE_BASE_FLAGS --build=x86_64-pc-linux-gnu --host=$PREFIX --enable-build-type=release
     - make -j$(nproc)
   tags:
     - shared
@@ -110,7 +110,7 @@ dist/Stretch:
   script:
     - export CFLAGS="$CFLAGS_DEFAULT"
     - ./bootstrap
-    - ./configure $CONFIGURE_BASE_FLAGS
+    - ./configure $CONFIGURE_BASE_FLAGS --enable-build-type=release
     - make -j$(nproc) dist
   tags:
     - shared
