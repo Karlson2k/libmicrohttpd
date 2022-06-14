@@ -596,7 +596,7 @@ static pthread_t pt_client;
 static volatile bool done;
 
 
-const char *
+static const char *
 term_reason_str (enum MHD_RequestTerminationCode term_code)
 {
   switch ((int) term_code)
@@ -776,7 +776,7 @@ send_all (struct wr_socket *sock,
   size_t off;
 
   make_blocking (wr_fd (sock));
-  for (off = 0; off < len; off += ret)
+  for (off = 0; off < len; off += (size_t) ret)
   {
     ret = wr_send (sock,
                    &text[off],
@@ -856,7 +856,7 @@ recv_all (struct wr_socket *sock,
   size_t off;
 
   make_blocking (wr_fd (sock));
-  for (off = 0; off < len; off += ret)
+  for (off = 0; off < len; off += (size_t) ret)
   {
     ret = wr_recv (sock,
                    &buf[off],
@@ -1117,8 +1117,12 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
                               &to64);
     if (1000 < to64)
       to64 = 1000;
-    tv.tv_sec = to64 / 1000;
-    tv.tv_usec = 1000 * (to64 % 1000);
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+    tv.tv_sec = (time_t) (to64 / 1000);
+#else  /* Native W32 */
+    tv.tv_sec = (long) (to64 / 1000);
+#endif /* Native W32 */
+    tv.tv_usec = (long) (1000 * (to64 % 1000));
     if (0 > MHD_SYS_select_ (max_fd + 1,
                              &rs,
                              &ws,
@@ -1132,7 +1136,7 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
       if ((WSAEINVAL != WSAGetLastError ()) ||
           (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
         externalErrorExitDesc ("Unexpected select() error");
-      Sleep (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+      Sleep ((DWORD) (tv.tv_sec * 1000 + tv.tv_usec / 1000));
 #endif
     }
     MHD_run_from_select (daemon,
@@ -1250,8 +1254,8 @@ static bool test_tls;
  * @param flags which event loop style should be tested
  * @param pool size of the thread pool, 0 to disable
  */
-static int
-test_upgrade (int flags,
+static unsigned int
+test_upgrade (unsigned int flags,
               unsigned int pool)
 {
   struct MHD_Daemon *d = NULL;
@@ -1368,8 +1372,8 @@ int
 main (int argc,
       char *const *argv)
 {
-  int error_count = 0;
-  int res;
+  unsigned int error_count = 0;
+  unsigned int res;
 
   use_tls_tool = TLS_CLI_NO_TOOL;
   test_tls = has_in_name (argv[0], "_tls");
@@ -1381,6 +1385,7 @@ main (int argc,
 
   if (test_tls)
   {
+    use_tls_tool = TLS_LIB_GNUTLS;   /* Should be always available as MHD uses it. */
 #ifdef HTTPS_SUPPORT
     if (has_param (argc, argv, "--use-gnutls-cli"))
       use_tls_tool = TLS_CLI_GNUTLS;
@@ -1394,8 +1399,6 @@ main (int argc,
     else if (0 == system ("openssl version 1> /dev/null 2> /dev/null"))
       use_tls_tool = TLS_CLI_OPENSSL;
 #endif /* HAVE_FORK && HAVE_WAITPID */
-    else
-      use_tls_tool = TLS_LIB_GNUTLS;   /* Should be available as MHD use it. */
     if (verbose)
     {
       switch (use_tls_tool)
@@ -1409,6 +1412,7 @@ main (int argc,
       case TLS_LIB_GNUTLS:
         printf ("GnuTLS library will be used for testing.\n");
         break;
+      case TLS_CLI_NO_TOOL:
       default:
         externalErrorExitDesc ("Wrong 'use_tls_tool' value");
       }
@@ -1437,7 +1441,7 @@ main (int argc,
   error_count += res;
   if (res)
     fprintf (stderr,
-             "FAILED: Upgrade with external select, return code %d.\n",
+             "FAILED: Upgrade with external select, return code %u.\n",
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with external select.\n");
@@ -1449,7 +1453,7 @@ main (int argc,
   error_count += res;
   if (res)
     fprintf (stderr,
-             "FAILED: Upgrade with external 'auto', return code %d.\n",
+             "FAILED: Upgrade with external 'auto', return code %u.\n",
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with external 'auto'.\n");
@@ -1461,7 +1465,7 @@ main (int argc,
   error_count += res;
   if (res)
     fprintf (stderr,
-             "FAILED: Upgrade with external select with EPOLL, return code %d.\n",
+             "FAILED: Upgrade with external select with EPOLL, return code %u.\n",
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with external select with EPOLL.\n");
@@ -1475,7 +1479,7 @@ main (int argc,
   error_count += res;
   if (res)
     fprintf (stderr,
-             "FAILED: Upgrade with thread per connection, return code %d.\n",
+             "FAILED: Upgrade with thread per connection, return code %u.\n",
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with thread per connection.\n");
@@ -1487,7 +1491,7 @@ main (int argc,
   error_count += res;
   if (res)
     fprintf (stderr,
-             "FAILED: Upgrade with thread per connection and 'auto', return code %d.\n",
+             "FAILED: Upgrade with thread per connection and 'auto', return code %u.\n",
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with thread per connection and 'auto'.\n");
@@ -1499,7 +1503,7 @@ main (int argc,
   error_count += res;
   if (res)
     fprintf (stderr,
-             "FAILED: Upgrade with thread per connection and poll, return code %d.\n",
+             "FAILED: Upgrade with thread per connection and poll, return code %u.\n",
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with thread per connection and poll.\n");
@@ -1512,7 +1516,7 @@ main (int argc,
   error_count += res;
   if (res)
     fprintf (stderr,
-             "FAILED: Upgrade with internal select, return code %d.\n",
+             "FAILED: Upgrade with internal select, return code %u.\n",
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with internal select.\n");
@@ -1522,7 +1526,7 @@ main (int argc,
   error_count += res;
   if (res)
     fprintf (stderr,
-             "FAILED: Upgrade with internal select with thread pool, return code %d.\n",
+             "FAILED: Upgrade with internal select with thread pool, return code %u.\n",
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with internal select with thread pool.\n");
@@ -1532,7 +1536,7 @@ main (int argc,
   error_count += res;
   if (res)
     fprintf (stderr,
-             "FAILED: Upgrade with internal 'auto' return code %d.\n",
+             "FAILED: Upgrade with internal 'auto' return code %u.\n",
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with internal 'auto'.\n");
@@ -1542,7 +1546,7 @@ main (int argc,
   error_count += res;
   if (res)
     fprintf (stderr,
-             "FAILED: Upgrade with internal 'auto' with thread pool, return code %d.\n",
+             "FAILED: Upgrade with internal 'auto' with thread pool, return code %u.\n",
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with internal 'auto' with thread pool.\n");
@@ -1553,7 +1557,7 @@ main (int argc,
   error_count += res;
   if (res)
     fprintf (stderr,
-             "FAILED: Upgrade with internal poll, return code %d.\n",
+             "FAILED: Upgrade with internal poll, return code %u.\n",
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with internal poll.\n");
@@ -1562,7 +1566,7 @@ main (int argc,
   fflush_allstd ();
   if (res)
     fprintf (stderr,
-             "FAILED: Upgrade with internal poll with thread pool, return code %d.\n",
+             "FAILED: Upgrade with internal poll with thread pool, return code %u.\n",
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with internal poll with thread pool.\n");
@@ -1573,7 +1577,7 @@ main (int argc,
   fflush_allstd ();
   if (res)
     fprintf (stderr,
-             "FAILED: Upgrade with internal epoll, return code %d.\n",
+             "FAILED: Upgrade with internal epoll, return code %u.\n",
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with internal epoll.\n");
@@ -1582,7 +1586,7 @@ main (int argc,
   fflush_allstd ();
   if (res)
     fprintf (stderr,
-             "FAILED: Upgrade with internal epoll, return code %d.\n",
+             "FAILED: Upgrade with internal epoll, return code %u.\n",
              res);
   else if (verbose)
     printf ("PASSED: Upgrade with internal epoll.\n");
