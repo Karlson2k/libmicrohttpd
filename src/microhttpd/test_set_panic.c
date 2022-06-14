@@ -708,6 +708,7 @@ _MHD_dumbClient_send_req (struct _MHD_dumbClient *clnt)
 
 
 /* internal */
+_MHD_NORETURN /* not implemented */
 static void
 _MHD_dumbClient_recv_reply (struct _MHD_dumbClient *clnt)
 {
@@ -988,7 +989,7 @@ _MHD_dumbClient_close (struct _MHD_dumbClient *clnt)
 }
 
 
-static void
+_MHD_NORETURN static void
 socket_cb (void *cls,
            struct MHD_Connection *c,
            void **socket_context,
@@ -1409,7 +1410,7 @@ testNumThreadsForPool (enum testMhdPollType pollType)
 
 #define PANIC_MAGIC_CHECK 1133
 
-static void
+_MHD_NORETURN static void
 myPanicCallback (void *cls,
                  const char *file,
                  unsigned int line,

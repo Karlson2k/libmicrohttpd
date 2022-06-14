@@ -52,9 +52,7 @@
 #endif /* !WIN32_LEAN_AND_MEAN */
 #include <windows.h>
 #endif
-
-extern const char srv_key_pem[];
-extern const char srv_self_signed_cert_pem[];
+#include "tls_test_keys.h"
 
 static const int TIME_OUT = 2;
 

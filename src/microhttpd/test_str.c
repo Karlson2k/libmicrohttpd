@@ -932,7 +932,7 @@ static const struct str_with_value dstrs_w_values[] = {
 };
 
 /* strings that should overflow uint64_t */
-const struct str_with_len str_ovflw[] = {
+static const struct str_with_len str_ovflw[] = {
   D_STR_W_LEN ("18446744073709551616"),  /* 0x10000000000000000, UINT64_MAX+1 */
   D_STR_W_LEN ("18446744073709551620"),
   D_STR_W_LEN ("18446744083709551615"),
@@ -952,7 +952,7 @@ const struct str_with_len str_ovflw[] = {
 };
 
 /* strings that should not be convertible to numeric value */
-const struct str_with_len str_no_num[] = {
+static const struct str_with_len str_no_num[] = {
   D_STR_W_LEN ("zero"),
   D_STR_W_LEN ("one"),
   D_STR_W_LEN ("\xb9\xb2\xb3"),                                    /* superscript "123" in ISO-8859-1/CP1252 */
@@ -1089,7 +1089,7 @@ static const struct str_with_value xdstrs_w_values[] = {
 };
 
 /* hex strings that should overflow uint64_t */
-const struct str_with_len strx_ovflw[] = {
+static const struct str_with_len strx_ovflw[] = {
   D_STR_W_LEN ("10000000000000000"),            /* 0x10000000000000000, UINT64_MAX+1 */
   D_STR_W_LEN ("10000000000000001"),
   D_STR_W_LEN ("10000000000000002"),
@@ -3338,6 +3338,7 @@ check_str_from_uint64 (void)
                  (unsigned int) i, (unsigned int) t->str.len);
         exit (99);
       }
+      rs = 0; /* Only to mute compiler warning */
       for (b_size = 0; b_size <= t->str.len + 1; ++b_size)
       {
         /* fill buffer with pseudo-random values */

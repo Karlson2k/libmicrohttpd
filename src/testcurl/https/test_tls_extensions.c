@@ -32,11 +32,9 @@
 #ifdef MHD_HTTPS_REQUIRE_GRYPT
 #include <gcrypt.h>
 #endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#include "tls_test_keys.h"
 
 #define MAX_EXT_DATA_LENGTH 256
-
-extern const char srv_key_pem[];
-extern const char srv_self_signed_cert_pem[];
 
 /**
  * Test daemon response to TLS client hello requests containing extensions

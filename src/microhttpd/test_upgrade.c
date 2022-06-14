@@ -184,7 +184,7 @@ enum tls_tool
   TLS_LIB_GNUTLS
 };
 
-enum tls_tool use_tls_tool;
+static enum tls_tool use_tls_tool;
 
 #if defined(HTTPS_SUPPORT) && defined(HAVE_FORK) && defined(HAVE_WAITPID)
 /**
@@ -423,9 +423,9 @@ wr_create_from_plain_sckt (MHD_socket plain_sk)
 static int
 wr_connect (struct wr_socket *s,
             const struct sockaddr *addr,
-            int length)
+            unsigned int length)
 {
-  if (0 != connect (s->fd, addr, length))
+  if (0 != connect (s->fd, addr, (socklen_t) length))
   {
     testErrorLogDesc ("connect() failed");
     return -1;
@@ -797,7 +797,7 @@ send_all (struct wr_socket *sock,
 
 /**
  * Read character-by-character until we
- * get '\r\n\r\n'.
+ * get 'CRLNCRLN'.
  */
 static void
 recv_hdr (struct wr_socket *sock)
@@ -1154,7 +1154,7 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
  *
  * @param daemon daemon to run it for
  */
-static void
+_MHD_NORETURN static void
 run_mhd_poll_loop (struct MHD_Daemon *daemon)
 {
   (void) daemon; /* Unused. Silent compiler warning. */
@@ -1229,7 +1229,7 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
  */
 static void
 run_mhd_loop (struct MHD_Daemon *daemon,
-              int flags)
+              unsigned int flags)
 {
   if (0 == (flags & (MHD_USE_POLL | MHD_USE_EPOLL)))
     run_mhd_select_loop (daemon);

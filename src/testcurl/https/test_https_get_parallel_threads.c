@@ -37,6 +37,7 @@
 #include <gcrypt.h>
 #endif /* MHD_HTTPS_REQUIRE_GRYPT */
 #include "tls_test_common.h"
+#include "tls_test_keys.h"
 
 #if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 4
 #undef MHD_CPU_COUNT
@@ -44,9 +45,6 @@
 #if ! defined(MHD_CPU_COUNT)
 #define MHD_CPU_COUNT 4
 #endif
-
-extern const char srv_key_pem[];
-extern const char srv_self_signed_cert_pem[];
 
 int curl_check_version (const char *req_version, ...);
 

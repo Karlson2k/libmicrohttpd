@@ -802,6 +802,7 @@ _MHD_dumbClient_send_req (struct _MHD_dumbClient *clnt)
 
 
 /* internal */
+_MHD_NORETURN /* Declared as 'noreturn' until it is implemented */
 static void
 _MHD_dumbClient_recv_reply (struct _MHD_dumbClient *clnt)
 {
@@ -1687,7 +1688,8 @@ printTestResults (FILE *stream,
     fprintf (stream, " Final notification callback has been called %u time%s "
              "with %s code.", term_result->num_called,
              (1 == term_result->num_called) ? "" : "s",
-             term_reason_str (term_result->term_reason));
+             term_reason_str ((enum MHD_RequestTerminationCode)
+                              term_result->term_reason));
   fprintf (stream, "\n");
   fflush (stream);
 }
@@ -1848,7 +1850,9 @@ performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
   if (! found_right_reason)
   {
     fprintf (stderr, "FAILED: termination callback was not called with "
-             "expected (%s) reason.\n", term_reason_str (expected_reason));
+             "expected (%s) reason.\n",
+             term_reason_str ((enum MHD_RequestTerminationCode)
+                              expected_reason));
     fflush (stderr);
     ret |= 1 << 1;
   }
@@ -1971,7 +1975,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port))
       mhdErrorExitDesc ("MHD_get_daemon_info() failed");
-    *pport = (int) dinfo->port;
+    *pport = dinfo->port;
     if (0 == global_port)
       global_port = *pport; /* Reuse the same port for all tests */
   }
