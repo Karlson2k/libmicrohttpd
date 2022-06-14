@@ -513,8 +513,8 @@ check_eq_strings (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(eq_strings) / sizeof(eq_strings[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(eq_strings) / sizeof(eq_strings[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -560,8 +560,8 @@ check_neq_strings (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(neq_strings) / sizeof(neq_strings[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(neq_strings) / sizeof(neq_strings[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -607,8 +607,8 @@ check_eq_strings_n (void)
 {
   size_t t_failed = 0;
   size_t i, j, k;
-  static const size_t n_checks = sizeof(eq_strings) / sizeof(eq_strings[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(eq_strings) / sizeof(eq_strings[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -660,8 +660,8 @@ check_neq_strings_n (void)
 {
   size_t t_failed = 0;
   size_t i, j, k;
-  static const size_t n_checks = sizeof(neq_strings) / sizeof(neq_strings[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(neq_strings) / sizeof(neq_strings[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1125,9 +1125,9 @@ check_str_to_uint64_valid (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(dstrs_w_values)
-                                 / sizeof(dstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(dstrs_w_values)
+               / sizeof(dstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1191,8 +1191,8 @@ check_str_to_uint64_valid (void)
 static size_t
 check_str_to_uint64_all_chars (void)
 {
-  static const size_t n_checks = 256; /* from 0 to 255 */
-  int c_failed[n_checks];
+  int c_failed[256]; /* from 0 to 255 */
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
   size_t t_failed = 0;
   size_t j;
 
@@ -1260,8 +1260,8 @@ check_str_to_uint64_overflow (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_ovflw) / sizeof(str_ovflw[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_ovflw) / sizeof(str_ovflw[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1318,8 +1318,8 @@ check_str_to_uint64_no_val (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_no_num) / sizeof(str_no_num[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_no_num) / sizeof(str_no_num[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1376,9 +1376,9 @@ check_str_to_uint64_n_valid (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(dstrs_w_values)
-                                 / sizeof(dstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(dstrs_w_values)
+               / sizeof(dstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1446,8 +1446,8 @@ check_str_to_uint64_n_valid (void)
 static size_t
 check_str_to_uint64_n_all_chars (void)
 {
-  static const size_t n_checks = 256; /* from 0 to 255 */
-  int c_failed[n_checks];
+  int c_failed[256]; /* from 0 to 255 */
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
   size_t t_failed = 0;
   size_t j;
 
@@ -1525,8 +1525,8 @@ check_str_to_uint64_n_overflow (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_ovflw) / sizeof(str_ovflw[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_ovflw) / sizeof(str_ovflw[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1594,8 +1594,8 @@ check_str_to_uint64_n_no_val (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_no_num) / sizeof(str_no_num[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_no_num) / sizeof(str_no_num[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1662,9 +1662,9 @@ check_strx_to_uint32_valid (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(xdstrs_w_values)
-                                 / sizeof(xdstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(xdstrs_w_values)
+               / sizeof(xdstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1733,8 +1733,8 @@ check_strx_to_uint32_valid (void)
 static size_t
 check_strx_to_uint32_all_chars (void)
 {
-  static const size_t n_checks = 256; /* from 0 to 255 */
-  int c_failed[n_checks];
+  int c_failed[256]; /* from 0 to 255 */
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
   size_t t_failed = 0;
   size_t j;
 
@@ -1808,10 +1808,10 @@ check_strx_to_uint32_overflow (void)
   size_t t_failed = 0;
   size_t i, j;
   static const size_t n_checks1 = sizeof(strx_ovflw) / sizeof(strx_ovflw[0]);
-  static const size_t n_checks = sizeof(strx_ovflw) / sizeof(strx_ovflw[0])
-                                 + sizeof(xdstrs_w_values)
-                                 / sizeof(xdstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(strx_ovflw) / sizeof(strx_ovflw[0])
+               + sizeof(xdstrs_w_values)
+               / sizeof(xdstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1883,8 +1883,8 @@ check_strx_to_uint32_no_val (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_no_num) / sizeof(str_no_num[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_no_num) / sizeof(str_no_num[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -1942,9 +1942,9 @@ check_strx_to_uint32_n_valid (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(xdstrs_w_values)
-                                 / sizeof(xdstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(xdstrs_w_values)
+               / sizeof(xdstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2017,8 +2017,8 @@ check_strx_to_uint32_n_valid (void)
 static size_t
 check_strx_to_uint32_n_all_chars (void)
 {
-  static const size_t n_checks = 256; /* from 0 to 255 */
-  int c_failed[n_checks];
+  int c_failed[256]; /* from 0 to 255 */
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
   size_t t_failed = 0;
   size_t j;
 
@@ -2102,10 +2102,10 @@ check_strx_to_uint32_n_overflow (void)
   size_t t_failed = 0;
   size_t i, j;
   static const size_t n_checks1 = sizeof(strx_ovflw) / sizeof(strx_ovflw[0]);
-  static const size_t n_checks = sizeof(strx_ovflw) / sizeof(strx_ovflw[0])
-                                 + sizeof(xdstrs_w_values)
-                                 / sizeof(xdstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(strx_ovflw) / sizeof(strx_ovflw[0])
+               + sizeof(xdstrs_w_values)
+               / sizeof(xdstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2203,8 +2203,8 @@ check_strx_to_uint32_n_no_val (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_no_num) / sizeof(str_no_num[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_no_num) / sizeof(str_no_num[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2272,9 +2272,9 @@ check_strx_to_uint64_valid (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(xdstrs_w_values)
-                                 / sizeof(xdstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(xdstrs_w_values)
+               / sizeof(xdstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2339,8 +2339,8 @@ check_strx_to_uint64_valid (void)
 static size_t
 check_strx_to_uint64_all_chars (void)
 {
-  static const size_t n_checks = 256; /* from 0 to 255 */
-  int c_failed[n_checks];
+  int c_failed[256]; /* from 0 to 255 */
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
   size_t t_failed = 0;
   size_t j;
 
@@ -2412,8 +2412,8 @@ check_strx_to_uint64_overflow (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(strx_ovflw) / sizeof(strx_ovflw[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(strx_ovflw) / sizeof(strx_ovflw[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2470,8 +2470,8 @@ check_strx_to_uint64_no_val (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_no_num) / sizeof(str_no_num[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_no_num) / sizeof(str_no_num[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2599,8 +2599,8 @@ check_strx_to_uint64_n_valid (void)
 static size_t
 check_strx_to_uint64_n_all_chars (void)
 {
-  static const size_t n_checks = 256; /* from 0 to 255 */
-  int c_failed[n_checks];
+  int c_failed[256]; /* from 0 to 255 */
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
   size_t t_failed = 0;
   size_t j;
 
@@ -2683,8 +2683,8 @@ check_strx_to_uint64_n_overflow (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(strx_ovflw) / sizeof(strx_ovflw[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(strx_ovflw) / sizeof(strx_ovflw[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -2753,8 +2753,8 @@ check_strx_to_uint64_n_no_val (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(str_no_num) / sizeof(str_no_num[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(str_no_num) / sizeof(str_no_num[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -3173,9 +3173,9 @@ check_str_from_uint16 (void)
     "-@=sd#+&(pdiren456qwe#@C3S!DAS45AOIPUQWESAdFzxcv1s*()&#$%34`"
     "32452d098poiden45SADFFDA3S4D3SDFdfgsdfgsSADFzxdvs$*()&#2342`"
     "adsf##$$@&*^%*^&56qwe#3C@S!DAScFAOIP$#%#$Ad1zs3v1$*()&#1228`";
-  static const size_t n_checks = sizeof(dstrs_w_values)
-                                 / sizeof(dstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(dstrs_w_values)
+               / sizeof(dstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -3298,9 +3298,9 @@ check_str_from_uint64 (void)
     "-@=sd#+&(pdirenDSFGSe#@C&S!DAS*!AOIPUQWESAdFzxcvSs*()&#$%KH`"
     "32452d098poiden45SADFFDA3S4D3SDFdfgsdfgsSADFzxdvs$*()&#2342`"
     "adsf##$$@&*^%*^&56qwe#3C@S!DAScFAOIP$#%#$Ad1zs3v1$*()&#1228`";
-  static const size_t n_checks = sizeof(dstrs_w_values)
-                                 / sizeof(dstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(dstrs_w_values)
+               / sizeof(dstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
@@ -3420,9 +3420,9 @@ check_strx_from_uint32 (void)
     "jrlkjssfhjfvrjntJHLJ$@%$#adsfdkj;k$##$%#$%FGDF%$#^FDFG%$#$D`"
     ";skjdhjflsdkjhdjfalskdjhdfalkjdhf$%##%$$#%FSDGFSDDGDFSSDSDF`"
     "#5#$%#$#$DFSFDDFSGSDFSDF354FDDSGFDFfdssfddfswqemn,.zxih,.sx`";
-  static const size_t n_checks = sizeof(xdstrs_w_values)
-                                 / sizeof(xdstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(xdstrs_w_values)
+               / sizeof(xdstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
