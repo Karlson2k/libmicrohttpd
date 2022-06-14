@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2015, 2016 Karlson2k (Evgeny Grin)
+  Copyright (C) 2015-2022 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -596,7 +596,7 @@ MHD_str_quote (const char *unquoted,
  * @param bin_size the size of the @a bin buffer in bytes, if the size is
  *                 at least @a base64_len / 4 * 3 then result will always
  *                 fit, regardless of the amount of the padding characters
- * @return 0 if @base64_len is zero, or input string has wrong data (not
+ * @return 0 if @a base64_len is zero, or input string has wrong data (not
  *         valid Base64 sequence), or @a bin_size is too small;
  *         non-zero number of bytes written to the @a bin, the number must be
  *         (base64_len / 4 * 3 - 2), (base64_len / 4 * 3 - 1) or
