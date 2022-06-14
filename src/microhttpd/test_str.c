@@ -4342,8 +4342,10 @@ check_str_from_uint8_pad (void)
   }
   for (pad = 0; pad <= 3; pad++)
   {
-    size_t table_num = pad - 1;
-    if (0 == pad)
+    size_t table_num;
+    if (0 != pad)
+      table_num = pad - 1;
+    else
       table_num = 0;
 
     for (i = 0; i <= 255; i++)
