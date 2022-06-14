@@ -280,7 +280,7 @@ SHA1Result (struct SHA1Context *context, unsigned char
   }
   if (context->corrupted)
   {
-    return context->corrupted;
+    return SHA1_RESULT_STATE_ERROR;
   }
   if (! context->computed)
   {
@@ -316,12 +316,12 @@ SHA1Input (struct SHA1Context *context, const unsigned char *message_array,
   }
   if (context->computed)
   {
-    context->corrupted = SHA1_RESULT_STATE_ERROR;
+    context->corrupted = 1;
     return SHA1_RESULT_STATE_ERROR;
   }
   if (context->corrupted)
   {
-    return context->corrupted;
+    return SHA1_RESULT_STATE_ERROR;
   }
   while (length-- && ! context->corrupted)
   {
