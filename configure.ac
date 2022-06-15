@@ -85,17 +85,17 @@ AS_IF([test "x${enable_build_type}" = "x"], [enable_build_type="neutral"])
 AS_VAR_IF([enable_build_type], ["no"], [enable_build_type="neutral"])
 AS_VAR_IF([enable_build_type], ["yes"], [AC_MSG_ERROR([[Missing TYPE for --enable-build-type=]])])
 AS_CASE([${enable_build_type}],
-  [debug], [AC_MSG_RESULT([debug: enable asserts, sanitizers (if any supported), debug information, compiler optimisation for debugging])],
-  [debugger], [AC_MSG_RESULT([debuger: enable asserts, disable sanitizers, debug information, no compiler optimisation])],
-  [neutral], [AC_MSG_RESULT([neutral: use only user-specified compiler and linker flags])],
-  [release], [AC_MSG_RESULT([release: disable asserts, enable compiler optimisations])],
-  [release-compact], [AC_MSG_RESULT([release-compact: disable asserts, enable compiler optimisations for size, enable compact code])],
-  [release-hardened], [AC_MSG_RESULT([release-hardened: disable asserts, enable compiler optimisations, enable linker and compiler hardening])],
+  [debug], [AC_MSG_RESULT([debug. Defaults: enable asserts, sanitizers (if any supported), debug information, compiler optimisation for debugging])],
+  [debugger], [AC_MSG_RESULT([debuger. Defaults: enable asserts, disable sanitizers, debug information, no compiler optimisation])],
+  [neutral], [AC_MSG_RESULT([neutral. Defaults: use only user-specified compiler and linker flags])],
+  [release], [AC_MSG_RESULT([release. Defaults: disable asserts, enable compiler optimisations])],
+  [release-compact], [AC_MSG_RESULT([release-compact. Defaults: disable asserts, enable compiler optimisations for size, enable compact code])],
+  [release-hardened], [AC_MSG_RESULT([release-hardened. Defaults: disable asserts, enable compiler optimisations, enable linker and compiler hardening])],
   [AC_MSG_ERROR([[Unknown build type: ${enable_build_type}]])]
 )
 AS_VAR_IF([enable_build_type], ["neutral"], [:],
   [
-    # For all non-neutreal build types do not use automatic "-g -O2" for CFLAGS
+    # For all non-neutral build types do not use automatic "-g -O2" for CFLAGS
     AS_IF([test -z "${CFLAGS}"], [CFLAGS=""])
   ]
 )
