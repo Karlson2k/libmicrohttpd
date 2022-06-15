@@ -138,6 +138,119 @@ CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
 
+AC_ARG_ENABLE([compact-code],
+  [AS_HELP_STRING([[--enable-compact-code]],
+  [enable use of a reduced size version of the code, resulting in smaller ]
+  [binaries with a slight performance hit [auto]])],
+  [], [enable_compact_code=auto])
+AS_IF([test "x${enable_compact_code}" = "x"], [enable_compact_code="auto"])
+AH_TEMPLATE([[MHD_FAVOR_SMALL_CODE]], [Define to '1' to use compact code version])
+AH_TEMPLATE([[MHD_FAVOR_FAST_CODE]], [Define to '1' to use fast (and larger) code version])
+AS_UNSET([compact_code_MSG])
+AS_CASE([${enable_compact_code}], [auto],
+  [
+    # Parameter not set.
+    # Check preprocessor macros
+    AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],
+      [
+        enable_compact_code="yes"
+        compact_code_MSG="enabled by preprocessor macro"
+      ],
+      [],[/* no includes */]
+    )
+    AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],
+      [
+        AS_VAR_IF([enable_compact_code],["yes"],
+          [AC_MSG_ERROR([Both MHD_FAVOR_SMALL_CODE and MHD_FAVOR_FAST_CODE macros are defined])]
+        )
+        enable_compact_code="no"
+        compact_code_MSG="set by preprocessor macro"
+      ],[],[/* no includes */]
+    )
+
+    AS_VAR_IF([enable_compact_code], ["auto"], 
+      [
+        # No preference by preprocessor macros
+        AC_CACHE_CHECK([whether compiler is configured to optimize for size],
+          [mhd_cv_cc_optim_size],
+          [
+            AC_COMPILE_IFELSE(
+              [
+                AC_LANG_PROGRAM([[
+#ifndef __OPTIMIZE_SIZE__
+#error Looks like compiler does not optimize for size
+choke me now
+#endif
+              ]],[])
+              ],
+              [mhd_cv_cc_optim_size="yes"],[mhd_cv_cc_optim_size="no"]
+            )
+          ]
+        )
+        AS_VAR_IF([mhd_cv_cc_optim_size], ["yes"],
+          [
+            enable_compact_code="yes"
+            compact_code_MSG="enabled automatically as compiler optimizes for size"
+            AC_DEFINE([MHD_FAVOR_SMALL_CODE],[1])
+          ]
+        )
+      ]
+    )
+
+    AS_VAR_IF([enable_compact_code], ["auto"], 
+      [
+        # No preference by preprocessor macros and compiler flags
+        AS_CASE([${enable_build_type}],[*-compact],
+          [
+            enable_compact_code="yes"
+            compact_code_MSG="enabled by build type ${enable_build_type}"
+            AC_DEFINE([MHD_FAVOR_SMALL_CODE],[1])
+          ]
+        )
+      ]
+    )
+
+    AS_VAR_IF([enable_compact_code], ["auto"], 
+      [
+        # No preference
+        enable_compact_code="no"
+        compact_code_MSG="by default"
+        AC_DEFINE([MHD_FAVOR_FAST_CODE],[1])
+      ]
+    )
+  ],
+  [yes],
+  [
+    compact_code_MSG="enabled by configure parameter"
+    AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],
+      [],
+      [AC_DEFINE([MHD_FAVOR_SMALL_CODE],[1])],[/* no includes */]
+    )
+    AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],
+      [AC_MSG_ERROR([MHD_FAVOR_FAST_CODE macro is defined, --enable-compact-code could not be used])
+      ],
+      [],[/* no includes */]
+    )
+  ],
+  [no],
+  [
+    compact_code_MSG="disabled by configure parameter"
+    AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],
+      [],
+      [AC_DEFINE([MHD_FAVOR_FAST_CODE],[1])],[/* no includes */]
+    )
+    AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],
+      [AC_MSG_ERROR([MHD_FAVOR_SMALL_CODE macro is defined, --disable-compact-code could not be used])
+      ],
+      [],[/* no includes */]
+    )
+  ],
+  [AC_MSG_ERROR([[Unknown parameter value: --enable-compact-code=${enable_compact_code}]])]
+)
+
+AC_MSG_CHECKING([whether to use a reduced size version of the code])
+AC_MSG_RESULT([${enable_compact_code} (${compact_code_MSG})])
+
 
 CFLAGS="${user_CFLAGS}"
 # Compiler options to always enable (if supported)
@@ -3824,6 +3937,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   HTTPS support:     ${MSG_HTTPS}
   Threading lib:     ${USE_THREADS}
   Use thread names:  ${enable_thread_names}
+  Compact code:      ${enable_compact_code} (${compact_code_MSG})
   Use debug asserts: ${enable_asserts}
   Use sanitizers:    ${enabled_sanitizers:=no}
   Messages:          ${enable_messages}
