@@ -495,9 +495,6 @@ access_handler (void *cls,
       response = MHD_create_response_for_upgrade (&upgrade_handler,
                                                   NULL);
       MHD_add_response_header (response,
-                               MHD_HTTP_HEADER_CONNECTION,
-                               "Upgrade");
-      MHD_add_response_header (response,
                                MHD_HTTP_HEADER_UPGRADE,
                                "websocket");
       MHD_add_response_header (response,
