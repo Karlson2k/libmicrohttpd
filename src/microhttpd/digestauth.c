@@ -1801,11 +1801,11 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
         *qmark = '\0';
 
       /* Need to unescape URI before comparing with connection->url */
-      daemon->unescape_callback (daemon->unescape_callback_cls,
-                                 connection,
-                                 uri);
-      if (0 != strcmp (uri,
-                       connection->url))
+      uri_len = daemon->unescape_callback (daemon->unescape_callback_cls,
+                                           connection,
+                                           uri);
+      if ((uri_len != connection->url_len) ||
+          (0 != memcmp (uri, connection->url, uri_len)))
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
