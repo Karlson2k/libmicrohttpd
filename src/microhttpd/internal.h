@@ -1034,6 +1034,11 @@ struct MHD_Connection
   const char *url;
 
   /**
+   * The length of the @a url in characters, not including the terminating zero.
+   */
+  size_t url_len;
+
+  /**
    * HTTP version string (i.e. http/1.1).  Allocated
    * in pool.
    */

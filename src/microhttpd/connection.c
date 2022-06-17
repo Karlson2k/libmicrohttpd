@@ -2427,6 +2427,7 @@ transmit_error_response_len (struct MHD_Connection *connection,
     connection->version = NULL;
     connection->method = NULL;
     connection->url = NULL;
+    connection->url_len = 0;
     connection->last = NULL;
     connection->colon = NULL;
     connection->headers_received = NULL;
@@ -3366,9 +3367,15 @@ parse_initial_message_line (struct MHD_Connection *connection,
 
   /* unescape URI *after* searching for arguments and log callback */
   if (NULL != uri)
-    daemon->unescape_callback (daemon->unescape_callback_cls,
-                               connection,
-                               uri);
+  {
+    connection->url_len =
+      daemon->unescape_callback (daemon->unescape_callback_cls,
+                                 connection,
+                                 uri);
+  }
+  else
+    connection->url_len = 0;
+
   connection->url = curi;
   return MHD_YES;
 }
@@ -4755,6 +4762,7 @@ connection_reset (struct MHD_Connection *connection,
     c->method = NULL;
     c->http_mthd = MHD_HTTP_MTHD_NO_METHOD;
     c->url = NULL;
+    c->url_len = 0;
     memset (&c->rp_props, 0, sizeof(c->rp_props));
     c->write_buffer = NULL;
     c->write_buffer_size = 0;
