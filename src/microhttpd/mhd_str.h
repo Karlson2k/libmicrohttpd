@@ -73,6 +73,15 @@ struct _MHD_str_w_len
 };
 
 /**
+ * Modifiable string with length
+ */
+struct _MHD_mstr_w_len
+{
+  char *str;
+  size_t len;
+};
+
+/**
  * Static string initialiser for struct _MHD_str_w_len
  */
 #define _MHD_S_STR_W_LEN(str) { str, MHD_STATICSTR_LEN_(str) }

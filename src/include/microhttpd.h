@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097517
+#define MHD_VERSION 0x00097518
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4376,7 +4376,7 @@ enum MHD_DigestAuthAlgorithm
  *
  * All error values are zero or negative.
  *
- * @note Available since #MHD_VERSION 0x00097513
+ * @note Available since #MHD_VERSION 0x00097518
  */
 enum MHD_DigestAuthResult
 {
@@ -4410,25 +4410,35 @@ enum MHD_DigestAuthResult
    */
   MHD_DAUTH_WRONG_URI = -4,
 
+  /**
+   * Wrong 'qop'.
+   */
+  MHD_DAUTH_WRONG_QOP = -5,
+
+  /**
+   * Too large (>64 KiB) Authorization parameter value.
+   */
+  MHD_DAUTH_TOO_LARGE = -15,
+
   /* The different form of naming is intentionally used for the results below,
    * as they are more important */
 
   /**
    * The 'nonce' is too old. Suggest the client to retry with the same
    * username and password to get the fresh 'nonce'.
-   * The validity of the 'nonce' may not be checked.
+   * The validity of the 'nonce' may be not checked.
    */
-  MHD_DAUTH_NONCE_STALE = -16,
+  MHD_DAUTH_NONCE_STALE = -17,
 
   /**
    * The 'nonce' is wrong. May indicate an attack attempt.
    */
-  MHD_DAUTH_NONCE_WRONG = -32,
+  MHD_DAUTH_NONCE_WRONG = -33,
 
   /**
    * The 'response' is wrong. May indicate an attack attempt.
    */
-  MHD_DAUTH_RESPONSE_WRONG = -33,
+  MHD_DAUTH_RESPONSE_WRONG = -34,
 };
 
 
@@ -4443,7 +4453,7 @@ enum MHD_DigestAuthResult
  * @param algo the digest algorithms allowed for verification
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097513
+ * @note Available since #MHD_VERSION 0x00097518
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
