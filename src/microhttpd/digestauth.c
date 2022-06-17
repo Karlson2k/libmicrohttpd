@@ -1522,324 +1522,320 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 
   tmp2_size = 0;
 
-  do /* Only to avoid "goto" */
+  params = get_rq_dauth_params (connection);
+  if (NULL == params)
+    return MHD_DAUTH_WRONG_HEADER;
+
+  /* Check 'username' */
+  if (NULL == params->username.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+
+  username_len = strlen (username);
+  if (! is_param_equal (&params->username, username, username_len))
+    return MHD_DAUTH_WRONG_USERNAME;
+  /* 'username' valid */
+
+  /* Check 'realm' */
+  if (NULL == params->realm.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  realm_len = strlen (realm);
+  if (! is_param_equal (&params->realm, realm, realm_len))
+    return MHD_DAUTH_WRONG_REALM;
+  /* 'realm' valid */
+
+  /* Check 'nonce' */
+  if (NULL == params->nonce.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (0 == params->nonce.value.len)
+    return MHD_DAUTH_NONCE_WRONG;
+  else if (NONCE_STD_LEN (digest_size) * 2 < params->nonce.value.len)
+    return MHD_DAUTH_NONCE_WRONG;
+
+  unq_res = get_unquoted_param (&params->nonce, tmp1, ptmp2, &tmp2_size,
+                                &unquoted);
+  if (_MHD_UNQ_OK != unq_res)
+    return MHD_DAUTH_ERROR;
+  if (NONCE_STD_LEN (digest_size) != unquoted.len)
+    return MHD_DAUTH_NONCE_WRONG;
+
+  if (! get_nonce_timestamp (unquoted.str, unquoted.len, &nonce_time))
   {
-
-    params = get_rq_dauth_params (connection);
-    if (NULL == params)
-      return MHD_DAUTH_WRONG_HEADER;
-
-    /* Check 'username' */
-    if (NULL == params->username.value.str)
-      return MHD_DAUTH_WRONG_HEADER;
-
-    username_len = strlen (username);
-    if (! is_param_equal (&params->username, username, username_len))
-      return MHD_DAUTH_WRONG_USERNAME;
-    /* 'username' valid */
-
-    /* Check 'realm' */
-    if (NULL == params->realm.value.str)
-      return MHD_DAUTH_WRONG_HEADER;
-    realm_len = strlen (realm);
-    if (! is_param_equal (&params->realm, realm, realm_len))
-      return MHD_DAUTH_WRONG_REALM;
-    /* 'realm' valid */
-
-    /* Check 'nonce' */
-    if (NULL == params->nonce.value.str)
-      return MHD_DAUTH_WRONG_HEADER;
-    else if (0 == params->nonce.value.len)
-      return MHD_DAUTH_NONCE_WRONG;
-    else if (NONCE_STD_LEN (digest_size) * 2 < params->nonce.value.len)
-      return MHD_DAUTH_NONCE_WRONG;
-
-    unq_res = get_unquoted_param (&params->nonce, tmp1, ptmp2, &tmp2_size,
-                                  &unquoted);
-    if (_MHD_UNQ_OK != unq_res)
-      return MHD_DAUTH_ERROR;
-    if (NONCE_STD_LEN (digest_size) != unquoted.len)
-      return MHD_DAUTH_NONCE_WRONG;
-
-    if (! get_nonce_timestamp (unquoted.str, unquoted.len, &nonce_time))
-    {
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Authentication failed, invalid timestamp format.\n"));
+    MHD_DLOG (daemon,
+              _ ("Authentication failed, invalid timestamp format.\n"));
 #endif
-      return MHD_DAUTH_NONCE_WRONG;
-    }
-    t = MHD_monotonic_msec_counter ();
+    return MHD_DAUTH_NONCE_WRONG;
+  }
+  t = MHD_monotonic_msec_counter ();
+  /*
+   * First level vetting for the nonce validity: if the timestamp
+   * attached to the nonce exceeds `nonce_timeout', then the nonce is
+   * invalid.
+   */
+  if (TRIM_TO_TIMESTAMP (t - nonce_time) > (nonce_timeout * 1000))
+    return MHD_DAUTH_NONCE_STALE; /* too old */
+
+  calculate_nonce (nonce_time,
+                   connection->method,
+                   daemon->digest_auth_random,
+                   daemon->digest_auth_rand_size,
+                   connection->url,
+                   realm,
+                   realm_len,
+                   da,
+                   noncehashexp);
+  /*
+   * Second level vetting for the nonce validity
+   * if the timestamp attached to the nonce is valid
+   * and possibly fabricated (in case of an attack)
+   * the attacker must also know the random seed to be
+   * able to generate a "sane" nonce, which if he does
+   * not, the nonce fabrication process going to be
+   * very hard to achieve.
+   */
+  if ((0 != strncmp (noncehashexp, unquoted.str, unquoted.len)) ||
+      (0 != noncehashexp[unquoted.len]))
+    return MHD_DAUTH_NONCE_WRONG;
+  /* 'nonce' valid */
+
+  /* Get 'cnonce' */
+  if (NULL == params->cnonce.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (0 == params->cnonce.value.len)
+    return MHD_DAUTH_WRONG_HEADER;
+  unq_res = get_unquoted_param (&params->cnonce, tmp1, ptmp2, &tmp2_size,
+                                &unquoted);
+  if (_MHD_UNQ_OK != unq_res)
+    return (_MHD_UNQ_TOO_LARGE == unq_res) ?
+           MHD_DAUTH_TOO_LARGE : MHD_DAUTH_ERROR;
+
+  if (sizeof(cnonce) <= unquoted.len)
+    return MHD_DAUTH_ERROR; /* TODO: handle large client nonces */
+
+  /* TODO: avoid memcpy() */
+  memcpy (cnonce, unquoted.str, unquoted.len);
+  cnonce[unquoted.len] = 0;
+  /* Got 'cnonce' */
+
+  /* Get 'qop' */
+  if (NULL == params->qop.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (0 == params->qop.value.len)
+    return MHD_DAUTH_WRONG_QOP;
+  else if (MHD_STATICSTR_LEN_ ("auth-int") * 2 < params->qop.value.len)
+    return MHD_DAUTH_WRONG_QOP;
+  unq_res = get_unquoted_param (&params->qop, tmp1, ptmp2, &tmp2_size,
+                                &unquoted);
+  if (_MHD_UNQ_OK != unq_res)
+    return MHD_DAUTH_ERROR;
+
+  if (sizeof(qop) <= unquoted.len)
+    return MHD_DAUTH_ERROR; /* TODO: handle large client qop */
+  /* TODO: avoid memcpy() */
+  memcpy (qop, unquoted.str, unquoted.len);
+  qop[unquoted.len] = 0;
+  /* TODO: Really support empty value, support "auth-int" */
+  if ( ((MHD_STATICSTR_LEN_ ("auth") != unquoted.len) ||
+        (! MHD_str_equal_caseless_bin_n_ (qop, "auth", unquoted.len))) &&
+       (0 != strcmp (qop,"")) )
+    return MHD_DAUTH_WRONG_QOP;
+  /* Got 'qop' */
+
+  /* Get 'nc' */
+  if (NULL == params->nc.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (0 == params->nc.value.len)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (4 * 8 < params->nc.value.len) /* Four time more than needed */
+    return MHD_DAUTH_NONCE_WRONG;
+  unq_res = get_unquoted_param (&params->nc, tmp1, ptmp2, &tmp2_size,
+                                &unquoted);
+  if (_MHD_UNQ_OK != unq_res)
+    return MHD_DAUTH_ERROR;
+
+  if (sizeof(nc) <= unquoted.len)
+    return MHD_DAUTH_ERROR;
+  /* TODO: avoid memcpy() */
+  memcpy (nc, unquoted.str, unquoted.len);
+  nc[unquoted.len] = 0;
+  if (unquoted.len != MHD_strx_to_uint64_n_ (nc,
+                                             unquoted.len,
+                                             &nci))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Authentication failed, invalid nc format.\n"));
+#endif
+    return MHD_DAUTH_WRONG_HEADER;   /* invalid nonce format */
+  }
+  if (0 == nci)
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Authentication failed, invalid 'nc' value.\n"));
+#endif
+    return MHD_DAUTH_WRONG_HEADER;   /* invalid nc value */
+  }
+  /* Got 'nc' */
+
+  /* Get 'response' */
+  if (NULL == params->response.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (0 == params->response.value.len)
+    return MHD_DAUTH_RESPONSE_WRONG;
+  else if (digest_size * 4 < params->response.value.len)
+    return MHD_DAUTH_RESPONSE_WRONG;
+  unq_res = get_unquoted_param (&params->response, tmp1, ptmp2, &tmp2_size,
+                                &unquoted);
+  if (_MHD_UNQ_OK != unq_res)
+    return MHD_DAUTH_ERROR;
+  if (digest_size * 2 != unquoted.len)
+    return MHD_DAUTH_RESPONSE_WRONG;
+
+  mhd_assert (sizeof(response) > unquoted.len);
+
+  if (sizeof(response) <= unquoted.len)
+    return MHD_DAUTH_ERROR;
+  /* TODO: avoid memcpy() */
+  memcpy (response, unquoted.str, unquoted.len);
+  response[unquoted.len] = 0;
+  /* Got 'response' */
+
+  if (1)
+  {
+    enum MHD_CheckNonceNC_ nonce_nc_check;
     /*
-     * First level vetting for the nonce validity: if the timestamp
-     * attached to the nonce exceeds `nonce_timeout', then the nonce is
-     * invalid.
+     * Checking if that combination of nonce and nc is sound
+     * and not a replay attack attempt. Refuse if nonce was not
+     * generated previously.
      */
-    if (TRIM_TO_TIMESTAMP (t - nonce_time) > (nonce_timeout * 1000))
-      return MHD_DAUTH_NONCE_STALE; /* too old */
-
-    calculate_nonce (nonce_time,
-                     connection->method,
-                     daemon->digest_auth_random,
-                     daemon->digest_auth_rand_size,
-                     connection->url,
-                     realm,
-                     realm_len,
-                     da,
-                     noncehashexp);
-    /*
-     * Second level vetting for the nonce validity
-     * if the timestamp attached to the nonce is valid
-     * and possibly fabricated (in case of an attack)
-     * the attacker must also know the random seed to be
-     * able to generate a "sane" nonce, which if he does
-     * not, the nonce fabrication process going to be
-     * very hard to achieve.
-     */
-    if ((0 != strncmp (noncehashexp, unquoted.str, unquoted.len)) ||
-        (0 != noncehashexp[unquoted.len]))
-      return MHD_DAUTH_NONCE_WRONG;
-    /* 'nonce' valid */
-
-    /* Get 'cnonce' */
-    if (NULL == params->cnonce.value.str)
-      return MHD_DAUTH_WRONG_HEADER;
-    else if (0 == params->cnonce.value.len)
-      return MHD_DAUTH_WRONG_HEADER;
-    unq_res = get_unquoted_param (&params->cnonce, tmp1, ptmp2, &tmp2_size,
-                                  &unquoted);
-    if (_MHD_UNQ_OK != unq_res)
-      return (_MHD_UNQ_TOO_LARGE == unq_res) ?
-             MHD_DAUTH_TOO_LARGE : MHD_DAUTH_ERROR;
-
-    if (sizeof(cnonce) <= unquoted.len)
-      return MHD_DAUTH_ERROR; /* TODO: handle large client nonces */
-
-    /* TODO: avoid memcpy() */
-    memcpy (cnonce, unquoted.str, unquoted.len);
-    cnonce[unquoted.len] = 0;
-    /* Got 'cnonce' */
-
-    /* Get 'qop' */
-    if (NULL == params->qop.value.str)
-      return MHD_DAUTH_WRONG_HEADER;
-    else if (0 == params->qop.value.len)
-      return MHD_DAUTH_WRONG_QOP;
-    else if (MHD_STATICSTR_LEN_ ("auth-int") * 2 < params->qop.value.len)
-      return MHD_DAUTH_WRONG_QOP;
-    unq_res = get_unquoted_param (&params->qop, tmp1, ptmp2, &tmp2_size,
-                                  &unquoted);
-    if (_MHD_UNQ_OK != unq_res)
-      return MHD_DAUTH_ERROR;
-
-    if (sizeof(qop) <= unquoted.len)
-      return MHD_DAUTH_ERROR; /* TODO: handle large client qop */
-    /* TODO: avoid memcpy() */
-    memcpy (qop, unquoted.str, unquoted.len);
-    qop[unquoted.len] = 0;
-    /* TODO: Really support empty value, support "auth-int" */
-    if ( ((MHD_STATICSTR_LEN_ ("auth") != unquoted.len) ||
-          (! MHD_str_equal_caseless_bin_n_ (qop, "auth", unquoted.len))) &&
-         (0 != strcmp (qop,"")) )
-      return MHD_DAUTH_WRONG_QOP;
-    /* Got 'qop' */
-
-    /* Get 'nc' */
-    if (NULL == params->nc.value.str)
-      return MHD_DAUTH_WRONG_HEADER;
-    else if (0 == params->nc.value.len)
-      return MHD_DAUTH_WRONG_HEADER;
-    else if (4 * 8 < params->nc.value.len) /* Four time more than needed */
-      return MHD_DAUTH_NONCE_WRONG;
-    unq_res = get_unquoted_param (&params->nc, tmp1, ptmp2, &tmp2_size,
-                                  &unquoted);
-    if (_MHD_UNQ_OK != unq_res)
-      return MHD_DAUTH_ERROR;
-
-    if (sizeof(nc) <= unquoted.len)
-      return MHD_DAUTH_ERROR;
-    /* TODO: avoid memcpy() */
-    memcpy (nc, unquoted.str, unquoted.len);
-    nc[unquoted.len] = 0;
-    if (unquoted.len != MHD_strx_to_uint64_n_ (nc,
-                                               unquoted.len,
-                                               &nci))
+    nonce_nc_check = check_nonce_nc (connection,
+                                     noncehashexp,
+                                     NONCE_STD_LEN (digest_size),
+                                     nonce_time,
+                                     nci);
+    if (MHD_CHECK_NONCENC_STALE == nonce_nc_check)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _ ("Authentication failed, invalid nc format.\n"));
+                _ ("Stale nonce received. If this happens a lot, you should "
+                   "probably increase the size of the nonce array.\n"));
 #endif
-      return MHD_DAUTH_WRONG_HEADER;   /* invalid nonce format */
+      return MHD_DAUTH_NONCE_STALE;
     }
-    if (0 == nci)
+    else if (MHD_CHECK_NONCENC_WRONG == nonce_nc_check)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _ ("Authentication failed, invalid 'nc' value.\n"));
+                _ ("Received nonce that technically valid, but was not "
+                   "generated by MHD. This may indicate an attack attempt.\n"));
 #endif
-      return MHD_DAUTH_WRONG_HEADER;   /* invalid nc value */
+      return MHD_DAUTH_NONCE_WRONG;
     }
-    /* Got 'nc' */
+    mhd_assert (MHD_CHECK_NONCENC_OK == nonce_nc_check);
+  }
 
-    /* Get 'response' */
-    if (NULL == params->response.value.str)
-      return MHD_DAUTH_WRONG_HEADER;
-    else if (0 == params->response.value.len)
-      return MHD_DAUTH_RESPONSE_WRONG;
-    else if (digest_size * 4 < params->response.value.len)
-      return MHD_DAUTH_RESPONSE_WRONG;
-    unq_res = get_unquoted_param (&params->response, tmp1, ptmp2, &tmp2_size,
-                                  &unquoted);
-    if (_MHD_UNQ_OK != unq_res)
-      return MHD_DAUTH_ERROR;
-    if (digest_size * 2 != unquoted.len)
-      return MHD_DAUTH_RESPONSE_WRONG;
+  /* Get 'uri' */
+  if (NULL == params->uri.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (0 == params->uri.value.len)
+    return MHD_DAUTH_WRONG_URI;
+  unq_res = get_unquoted_param_copy (&params->uri, tmp1, ptmp2, &tmp2_size,
+                                     &unq_copy);
+  if (_MHD_UNQ_OK != unq_res)
+    return (_MHD_UNQ_TOO_LARGE == unq_res) ?
+           MHD_DAUTH_TOO_LARGE : MHD_DAUTH_ERROR;
 
-    mhd_assert (sizeof(response) > unquoted.len);
-
-    if (sizeof(response) <= unquoted.len)
-      return MHD_DAUTH_ERROR;
-    /* TODO: avoid memcpy() */
-    memcpy (response, unquoted.str, unquoted.len);
-    response[unquoted.len] = 0;
-    /* Got 'response' */
-
-    if (1)
-    {
-      enum MHD_CheckNonceNC_ nonce_nc_check;
-      /*
-       * Checking if that combination of nonce and nc is sound
-       * and not a replay attack attempt. Refuse if nonce was not
-       * generated previously.
-       */
-      nonce_nc_check = check_nonce_nc (connection,
-                                       noncehashexp,
-                                       NONCE_STD_LEN (digest_size),
-                                       nonce_time,
-                                       nci);
-      if (MHD_CHECK_NONCENC_STALE == nonce_nc_check)
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _ ("Stale nonce received. If this happens a lot, you should "
-                     "probably increase the size of the nonce array.\n"));
-#endif
-        return MHD_DAUTH_NONCE_STALE;
-      }
-      else if (MHD_CHECK_NONCENC_WRONG == nonce_nc_check)
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _ ("Received nonce that technically valid, but was not "
-                     "generated by MHD. This may indicate an attack attempt.\n"));
-#endif
-        return MHD_DAUTH_NONCE_WRONG;
-      }
-      mhd_assert (MHD_CHECK_NONCENC_OK == nonce_nc_check);
-    }
-
-    /* Get 'uri' */
-    if (NULL == params->uri.value.str)
-      return MHD_DAUTH_WRONG_HEADER;
-    else if (0 == params->uri.value.len)
-      return MHD_DAUTH_WRONG_URI;
-    unq_res = get_unquoted_param_copy (&params->uri, tmp1, ptmp2, &tmp2_size,
-                                       &unq_copy);
-    if (_MHD_UNQ_OK != unq_res)
-      return (_MHD_UNQ_TOO_LARGE == unq_res) ?
-             MHD_DAUTH_TOO_LARGE : MHD_DAUTH_ERROR;
-
-    if (NULL != digest)
-    {
-      /* This will initialize da->digest_hex (ha1) */
-      digest_calc_ha1_from_digest (digest_get_algo_name (da),
-                                   da,
-                                   digest,
-                                   noncehashexp,
-                                   cnonce);
-    }
-    else
-    {
-      /* This will initialize da->digest_hex (ha1) */
-      mhd_assert (NULL != password);   /* NULL == digest => password != NULL */
-      digest_calc_ha1_from_user (digest_get_algo_name (da),
-                                 username,
-                                 username_len,
-                                 realm,
-                                 realm_len,
-                                 password,
+  if (NULL != digest)
+  {
+    /* This will initialize da->digest_hex (ha1) */
+    digest_calc_ha1_from_digest (digest_get_algo_name (da),
+                                 da,
+                                 digest,
                                  noncehashexp,
-                                 cnonce,
-                                 da);
+                                 cnonce);
+  }
+  else
+  {
+    /* This will initialize da->digest_hex (ha1) */
+    mhd_assert (NULL != password);   /* NULL == digest => password != NULL */
+    digest_calc_ha1_from_user (digest_get_algo_name (da),
+                               username,
+                               username_len,
+                               realm,
+                               realm_len,
+                               password,
+                               noncehashexp,
+                               cnonce,
+                               da);
+  }
+  memcpy (ha1,
+          digest_get_hex_buffer (da),
+          digest_size * 2 + 1);
+  /* This will initialize da->sessionkey (respexp) */
+  digest_calc_response (ha1,
+                        noncehashexp,
+                        nc,
+                        cnonce,
+                        qop,
+                        connection->method,
+                        unq_copy.str,
+                        unq_copy.len,
+                        hentity,
+                        da);
+  if (1)
+  {
+    char *uri;
+    size_t uri_len;
+    uri = unq_copy.str;
+    uri_len = unq_copy.len;
+
+    uri[uri_len] = 0;
+    qmark = memchr (uri,
+                    '?',
+                    uri_len);
+    if (NULL != qmark)
+      *qmark = '\0';
+
+    /* Need to unescape URI before comparing with connection->url */
+    uri_len = daemon->unescape_callback (daemon->unescape_callback_cls,
+                                         connection,
+                                         uri);
+    if ((uri_len != connection->url_len) ||
+        (0 != memcmp (uri, connection->url, uri_len)))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Authentication failed, URI does not match.\n"));
+#endif
+      return MHD_DAUTH_WRONG_URI;
     }
-    memcpy (ha1,
-            digest_get_hex_buffer (da),
-            digest_size * 2 + 1);
-    /* This will initialize da->sessionkey (respexp) */
-    digest_calc_response (ha1,
-                          noncehashexp,
-                          nc,
-                          cnonce,
-                          qop,
-                          connection->method,
-                          unq_copy.str,
-                          unq_copy.len,
-                          hentity,
-                          da);
+
     if (1)
     {
-      char *uri;
-      size_t uri_len;
-      uri = unq_copy.str;
-      uri_len = unq_copy.len;
+      const char *args = qmark;
 
-      uri[uri_len] = 0;
-      qmark = memchr (uri,
-                      '?',
-                      uri_len);
-      if (NULL != qmark)
-        *qmark = '\0';
-
-      /* Need to unescape URI before comparing with connection->url */
-      uri_len = daemon->unescape_callback (daemon->unescape_callback_cls,
-                                           connection,
-                                           uri);
-      if ((uri_len != connection->url_len) ||
-          (0 != memcmp (uri, connection->url, uri_len)))
+      if (NULL == args)
+        args = "";
+      else
+        args++;
+      if (MHD_NO ==
+          check_argument_match (connection,
+                                args) )
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
-                  _ ("Authentication failed, URI does not match.\n"));
+                  _ ("Authentication failed, arguments do not match.\n"));
 #endif
         return MHD_DAUTH_WRONG_URI;
       }
-
-      if (1)
-      {
-        const char *args = qmark;
-
-        if (NULL == args)
-          args = "";
-        else
-          args++;
-        if (MHD_NO ==
-            check_argument_match (connection,
-                                  args) )
-        {
-#ifdef HAVE_MESSAGES
-          MHD_DLOG (daemon,
-                    _ ("Authentication failed, arguments do not match.\n"));
-#endif
-          return MHD_DAUTH_WRONG_URI;
-        }
-      }
-
-      ret = (0 == strcmp (response,
-                          digest_get_hex_buffer (da)))
-      ? MHD_DAUTH_OK
-      : MHD_DAUTH_RESPONSE_WRONG;
     }
-  } while (0);
+
+    ret = (0 == strcmp (response,
+                        digest_get_hex_buffer (da)))
+    ? MHD_DAUTH_OK
+    : MHD_DAUTH_RESPONSE_WRONG;
+  }
 
   return ret;
 }
