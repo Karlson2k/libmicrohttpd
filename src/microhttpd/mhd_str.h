@@ -498,7 +498,7 @@ MHD_bin_to_hex (const void *bin,
  * Check two strings for equality, "unquoting" the first string from quoted
  * form as specified by RFC7230#section-3.2.6 and RFC7694#quoted.strings.
  *
- * Null-termination for input stings is not required, binary zeros compared
+ * Null-termination for input strings is not required, binary zeros compared
  * like other characters.
  *
  * @param quoted the quoted string to compare, must NOT include leading and
@@ -524,7 +524,7 @@ MHD_str_equal_quoted_bin_n (const char *quoted,
  * form as specified by RFC7230#section-3.2.6 and RFC7694#quoted.strings and
  * ignoring case of US-ASCII letters.
  *
- * Null-termination for input stings is not required, binary zeros compared
+ * Null-termination for input strings is not required, binary zeros compared
  * like other characters.
  *
  * @param quoted the quoted string to compare, must NOT include leading and
