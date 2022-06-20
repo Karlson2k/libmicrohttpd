@@ -1387,6 +1387,314 @@ MHD_bin_to_hex (const void *bin,
 }
 
 
+size_t
+MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
+                              size_t pct_encoded_len,
+                              char *decoded,
+                              size_t buf_size)
+{
+#ifdef MHD_FAVOR_SMALL_CODE
+  bool broken;
+  size_t res;
+
+  res = MHD_str_pct_decode_lenient_n_ (pct_encoded, pct_encoded_len, decoded,
+                                       buf_size, &broken);
+  if (broken)
+    return 0;
+  return res;
+#else  /* ! MHD_FAVOR_SMALL_CODE */
+  size_t r;
+  size_t w;
+  r = 0;
+  w = 0;
+
+  if (buf_size >= pct_encoded_len)
+  {
+    while (r < pct_encoded_len)
+    {
+      const char chr = pct_encoded[r];
+      if ('%' == chr)
+      {
+        if (2 > pct_encoded_len - r)
+          return 0;
+        else
+        {
+          const int h = toxdigitvalue (pct_encoded[++r]);
+          const int l = toxdigitvalue (pct_encoded[++r]);
+          unsigned char out;
+          if ((0 > h) || (0 > l))
+            return 0;
+          out = (unsigned char) ( (((uint8_t) ((unsigned int) h)) << 4)
+                                  | ((uint8_t) ((unsigned int) l)) );
+          decoded[w] = (char) out;
+        }
+      }
+      else
+        decoded[w] = chr;
+      ++r;
+      ++w;
+    }
+    return w;
+  }
+
+  while (r < pct_encoded_len)
+  {
+    const char chr = pct_encoded[r];
+    if (w >= buf_size)
+      return 0;
+    if ('%' == chr)
+    {
+      if (2 > pct_encoded_len - r)
+        return 0;
+      else
+      {
+        const int h = toxdigitvalue (pct_encoded[++r]);
+        const int l = toxdigitvalue (pct_encoded[++r]);
+        unsigned char out;
+        if ((0 > h) || (0 > l))
+          return 0;
+        out = (unsigned char) ( (((uint8_t) ((unsigned int) h)) << 4)
+                                | ((uint8_t) ((unsigned int) l)) );
+        decoded[w] = (char) out;
+      }
+    }
+    else
+      decoded[w] = chr;
+    ++r;
+    ++w;
+  }
+  return w;
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+}
+
+
+size_t
+MHD_str_pct_decode_lenient_n_ (const char *pct_encoded,
+                               size_t pct_encoded_len,
+                               char *decoded,
+                               size_t buf_size,
+                               bool *broken_encoding)
+{
+  size_t r;
+  size_t w;
+  r = 0;
+  w = 0;
+  if (NULL != broken_encoding)
+    *broken_encoding = false;
+#ifndef MHD_FAVOR_SMALL_CODE
+  if (buf_size >= pct_encoded_len)
+  {
+    while (r < pct_encoded_len)
+    {
+      const char chr = pct_encoded[r];
+      if ('%' == chr)
+      {
+        if (2 > pct_encoded_len - r)
+        {
+          if (NULL != broken_encoding)
+            *broken_encoding = true;
+          decoded[w] = chr; /* Copy "as is" */
+        }
+        else
+        {
+          const int h = toxdigitvalue (pct_encoded[++r]);
+          const int l = toxdigitvalue (pct_encoded[++r]);
+          unsigned char out;
+          if ((0 > h) || (0 > l))
+          {
+            r -= 2;
+            if (NULL != broken_encoding)
+              *broken_encoding = true;
+            decoded[w] = chr; /* Copy "as is" */
+          }
+          else
+          {
+            out = (unsigned char) ( (((uint8_t) ((unsigned int) h)) << 4)
+                                    | ((uint8_t) ((unsigned int) l)) );
+            decoded[w] = (char) out;
+          }
+        }
+      }
+      else
+        decoded[w] = chr;
+      ++r;
+      ++w;
+    }
+    return w;
+  }
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+  while (r < pct_encoded_len)
+  {
+    const char chr = pct_encoded[r];
+    if (w >= buf_size)
+      return 0;
+    if ('%' == chr)
+    {
+      if (2 > pct_encoded_len - r)
+      {
+        if (NULL != broken_encoding)
+          *broken_encoding = true;
+        decoded[w] = chr; /* Copy "as is" */
+      }
+      else
+      {
+        const int h = toxdigitvalue (pct_encoded[++r]);
+        const int l = toxdigitvalue (pct_encoded[++r]);
+        if ((0 > h) || (0 > l))
+        {
+          r -= 2;
+          if (NULL != broken_encoding)
+            *broken_encoding = true;
+          decoded[w] = chr; /* Copy "as is" */
+        }
+        else
+        {
+          unsigned char out;
+          out = (unsigned char) ( (((uint8_t) ((unsigned int) h)) << 4)
+                                  | ((uint8_t) ((unsigned int) l)) );
+          decoded[w] = (char) out;
+        }
+      }
+    }
+    else
+      decoded[w] = chr;
+    ++r;
+    ++w;
+  }
+  return w;
+}
+
+
+size_t
+MHD_str_pct_decode_in_place_strict_ (char *str)
+{
+#ifdef MHD_FAVOR_SMALL_CODE
+  size_t res;
+  bool broken;
+
+  res = MHD_str_pct_decode_in_place_lenient_ (str, &broken);
+  if (broken)
+  {
+    res = 0;
+    str[0] = 0;
+  }
+  return res;
+#else  /* ! MHD_FAVOR_SMALL_CODE */
+  size_t r;
+  size_t w;
+  r = 0;
+  w = 0;
+
+  while (0 != str[r])
+  {
+    const char chr = str[r++];
+    if ('%' == chr)
+    {
+      const char d1 = str[r++];
+      if (0 == d1)
+        return 0;
+      else
+      {
+        const char d2 = str[r++];
+        if (0 == d2)
+          return 0;
+        else
+        {
+          const int h = toxdigitvalue (d1);
+          const int l = toxdigitvalue (d2);
+          unsigned char out;
+          if ((0 > h) || (0 > l))
+            return 0;
+          out = (unsigned char) ( (((uint8_t) ((unsigned int) h)) << 4)
+                                  | ((uint8_t) ((unsigned int) l)) );
+          str[w++] = (char) out;
+        }
+      }
+    }
+    else
+      str[w++] = chr;
+  }
+  str[w] = 0;
+  return w;
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+}
+
+
+size_t
+MHD_str_pct_decode_in_place_lenient_ (char *str,
+                                      bool *broken_encoding)
+{
+#ifdef MHD_FAVOR_SMALL_CODE
+  size_t len;
+  size_t res;
+
+  len = strlen (str);
+  res = MHD_str_pct_decode_lenient_n_ (str, len, str, len, broken_encoding);
+  str[res] = 0;
+
+  return res;
+#else  /* ! MHD_FAVOR_SMALL_CODE */
+  size_t r;
+  size_t w;
+  if (NULL != broken_encoding)
+    *broken_encoding = false;
+  r = 0;
+  w = 0;
+  while (0 != str[r])
+  {
+    const char chr = str[r++];
+    if ('%' == chr)
+    {
+      const char d1 = str[r++];
+      if (0 == d1)
+      {
+        if (NULL != broken_encoding)
+          *broken_encoding = true;
+        str[w++] = chr; /* Copy "as is" */
+        str[w] = 0;
+        return w;
+      }
+      else
+      {
+        const char d2 = str[r++];
+        if (0 == d2)
+        {
+          if (NULL != broken_encoding)
+            *broken_encoding = true;
+          str[w++] = chr; /* Copy "as is" */
+          str[w++] = d1; /* Copy "as is" */
+          str[w] = 0;
+          return w;
+        }
+        else
+        {
+          const int h = toxdigitvalue (d1);
+          const int l = toxdigitvalue (d2);
+          unsigned char out;
+          if ((0 > h) || (0 > l))
+          {
+            if (NULL != broken_encoding)
+              *broken_encoding = true;
+            str[w++] = chr; /* Copy "as is" */
+            str[w++] = d1;
+            str[w++] = d2;
+            continue;
+          }
+          out = (unsigned char) ( (((uint8_t) ((unsigned int) h)) << 4)
+                                  | ((uint8_t) ((unsigned int) l)) );
+          str[w++] = (char) out;
+          continue;
+        }
+      }
+    }
+    str[w++] = chr;
+  }
+  str[w] = 0;
+  return w;
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+}
+
+
 #ifdef DAUTH_SUPPORT
 bool
 MHD_str_equal_quoted_bin_n (const char *quoted,

@@ -493,6 +493,99 @@ MHD_bin_to_hex (const void *bin,
                 size_t size,
                 char *hex);
 
+/**
+ * Decode string with percent-encoded characters as defined by
+ * RFC 3986 #section-2.1.
+ *
+ * This function decode string by converting percent-encoded characters to
+ * their decoded versions and copying all other characters without extra
+ * processing.
+ *
+ * @param pct_encoded the input string to be decoded
+ * @param pct_encoded_len the length of the @a pct_encoded
+ * @param[out] decoded the output buffer, NOT zero-terminated, can point
+ *                     to the same buffer as @a pct_encoded
+ * @param buf_size the size of the output buffer
+ * @return the number of characters written to the output buffer or
+ *         zero if any percent-encoded characters is broken ('%' followed
+ *         by less than two hexadecimal digits) or output buffer is too
+ *         small to hold the result
+ */
+size_t
+MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
+                              size_t pct_encoded_len,
+                              char *decoded,
+                              size_t buf_size);
+
+/**
+ * Decode string with percent-encoded characters as defined by
+ * RFC 3986 #section-2.1.
+ *
+ * This function decode string by converting percent-encoded characters to
+ * their decoded versions and copying all other characters without extra
+ * processing.
+ *
+ * Any invalid percent-encoding sequences ('%' symbol not followed by two
+ * valid hexadecimal digits) are copied to the output string without decoding.
+ *
+ * @param pct_encoded the input string to be decoded
+ * @param pct_encoded_len the length of the @a pct_encoded
+ * @param[out] decoded the output buffer, NOT zero-terminated, can point
+ *                     to the same buffer as @a pct_encoded
+ * @param buf_size the size of the output buffer
+ * @param[out] broken_encoding will be set to true if any '%' symbol is not
+ *                             followed by two valid hexadecimal digits,
+ *                             optional, can be NULL
+ * @return the number of characters written to the output buffer or
+ *         zero if output buffer is too small to hold the result
+ */
+size_t
+MHD_str_pct_decode_lenient_n_ (const char *pct_encoded,
+                               size_t pct_encoded_len,
+                               char *decoded,
+                               size_t buf_size,
+                               bool *broken_encoding);
+
+
+/**
+ * Decode string in-place with percent-encoded characters as defined by
+ * RFC 3986 #section-2.1.
+ *
+ * This function decode string by converting percent-encoded characters to
+ * their decoded versions and copying back all other characters without extra
+ * processing.
+ *
+ * @param[in,out] str the string to be updated in-place, must be zero-terminated
+ *                    on input, the output is zero-terminated; the string is
+ *                    truncated to zero length if broken encoding is found
+ * @return the number of character in decoded string
+ */
+size_t
+MHD_str_pct_decode_in_place_strict_ (char *str);
+
+
+/**
+ * Decode string in-place with percent-encoded characters as defined by
+ * RFC 3986 #section-2.1.
+ *
+ * This function decode string by converting percent-encoded characters to
+ * their decoded versions and copying back all other characters without extra
+ * processing.
+ *
+ * Any invalid percent-encoding sequences ('%' symbol not followed by two
+ * valid hexadecimal digits) are copied to the output string without decoding.
+ *
+ * @param[in,out] str the string to be updated in-place, must be zero-terminated
+ *                    on input, the output is zero-terminated
+ * @param[out] broken_encoding will be set to true if any '%' symbol is not
+ *                             followed by two valid hexadecimal digits,
+ *                             optional, can be NULL
+ * @return the number of character in decoded string
+ */
+size_t
+MHD_str_pct_decode_in_place_lenient_ (char *str,
+                                      bool *broken_encoding);
+
 #ifdef DAUTH_SUPPORT
 /**
  * Check two strings for equality, "unquoting" the first string from quoted
