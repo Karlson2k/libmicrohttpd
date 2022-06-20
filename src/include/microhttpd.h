@@ -3300,8 +3300,8 @@ MHD_set_panic_func (MHD_PanicCallback cb, void *cls);
 
 /**
  * Process escape sequences ('%HH') Updates val in place; the
- * result should be UTF-8 encoded and cannot be larger than the input.
- * The result must also still be 0-terminated.
+ * result cannot be larger than the input.
+ * The result is still be 0-terminated.
  *
  * @param val value to unescape (modified in the process)
  * @return length of the resulting val (`strlen(val)` may be

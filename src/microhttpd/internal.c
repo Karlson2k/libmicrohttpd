@@ -135,8 +135,8 @@ MHD_unescape_plus (char *arg)
 
 /**
  * Process escape sequences ('%HH') Updates val in place; the
- * result should be UTF-8 encoded and cannot be larger than the input.
- * The result must also still be 0-terminated.
+ * result cannot be larger than the input.
+ * The result is still be 0-terminated.
  *
  * @param val value to unescape (modified in the process)
  * @return length of the resulting val (`strlen(val)` may be
@@ -145,35 +145,7 @@ MHD_unescape_plus (char *arg)
 _MHD_EXTERN size_t
 MHD_http_unescape (char *val)
 {
-  char *rpos = val;
-  char *wpos = val;
-
-  while ('\0' != *rpos)
-  {
-    uint32_t num;
-    switch (*rpos)
-    {
-    case '%':
-      if (2 == MHD_strx_to_uint32_n_ (rpos + 1,
-                                      2,
-                                      &num))
-      {
-        *wpos = (char) ((unsigned char) num);
-        wpos++;
-        rpos += 3;
-        break;
-      }
-    /* TODO: add bad sequence handling */
-    /* intentional fall through! */
-    default:
-      *wpos = *rpos;
-      wpos++;
-      rpos++;
-    }
-  }
-  *wpos = '\0'; /* add 0-terminator */
-  mhd_assert (wpos >= val);
-  return (size_t) (wpos - val);
+  return MHD_str_pct_decode_in_place_lenient_ (val, NULL);
 }
 
 

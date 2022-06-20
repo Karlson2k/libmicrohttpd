@@ -45,6 +45,7 @@
 #include "mhd_compat.h"
 #include "mhd_send.h"
 #include "mhd_align.h"
+#include "mhd_str.h"
 
 #ifdef HAVE_SEARCH_H
 #include <search.h>
@@ -5672,7 +5673,7 @@ MHD_polling_thread (void *cls)
 
 /**
  * Process escape sequences ('%HH') Updates val in place; the
- * result should be UTF-8 encoded and cannot be larger than the input.
+ * result cannot be larger than the input.
  * The result must also still be 0-terminated.
  *
  * @param cls closure (use NULL)
@@ -5686,10 +5687,23 @@ unescape_wrapper (void *cls,
                   struct MHD_Connection *connection,
                   char *val)
 {
+  bool broken;
+  size_t res;
   (void) cls; /* Mute compiler warning. */
 
-  (void) connection; /* Mute compiler warning. */
-  return MHD_http_unescape (val);
+  /* TODO: add individual parameter */
+  if (1 <= connection->daemon->strict_for_client)
+    return MHD_str_pct_decode_in_place_strict_ (val);
+
+  res = MHD_str_pct_decode_in_place_lenient_ (val, &broken);
+#ifdef HAVE_MESSAGES
+  if (broken)
+  {
+    MHD_DLOG (connection->daemon,
+              _ ("The URL encoding is broken.\n"));
+  }
+#endif /* HAVE_MESSAGES */
+  return res;
 }
 
 
