@@ -494,6 +494,24 @@ MHD_bin_to_hex (const void *bin,
                 char *hex);
 
 /**
+ * Convert hexadecimal digits to binary data.
+ *
+ * The input decoded byte-by-byte (each byte is two hexadecimal digits).
+ * If length is an odd number, extra leading zero is assumed.
+ *
+ * @param hex the input string with hexadecimal digits
+ * @param len the length of the input string
+ * @param[out] bin the output buffer, must be at least len/2 bytes long (or
+ *                 len/2 + 1 if @a len is not even number)
+ * @return the number of bytes written to the output buffer,
+ *         zero if found any character which is not hexadecimal digits
+ */
+size_t
+MHD_hex_to_bin (const char *hex,
+                size_t len,
+                void *bin);
+
+/**
  * Decode string with percent-encoded characters as defined by
  * RFC 3986 #section-2.1.
  *

@@ -1388,6 +1388,42 @@ MHD_bin_to_hex (const void *bin,
 
 
 size_t
+MHD_hex_to_bin (const char *hex,
+                size_t len,
+                void *bin)
+{
+  uint8_t *const out = (uint8_t *) bin;
+  size_t r;
+  size_t w;
+
+  if (0 == len)
+    return 0;
+  r = 0;
+  w = 0;
+  if (0 != len % 2)
+  {
+    /* Assume the first byte is encoded with single digit */
+    const int l = toxdigitvalue (hex[r++]);
+    if (0 > l)
+      return 0;
+    out[w++] = (uint8_t) ((unsigned int) l);
+  }
+  while (r < len)
+  {
+    const int h = toxdigitvalue (hex[r++]);
+    const int l = toxdigitvalue (hex[r++]);
+    if ((0 > h) || (0 > l))
+      return 0;
+    out[w++] = ( (((uint8_t) ((unsigned int) h)) << 4)
+                 | ((uint8_t) ((unsigned int) l)) );
+  }
+  mhd_assert (len == r);
+  mhd_assert ((len + 1) / 2 == w);
+  return w;
+}
+
+
+size_t
 MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
                               size_t pct_encoded_len,
                               char *decoded,
