@@ -49,12 +49,26 @@
  */
 #define _MHD_AUTH_DIGEST_BASE   "Digest"
 
+/**
+ * Parameter of request's Digest Authorization header
+ */
 struct MHD_RqDAuthParam
 {
+  /**
+   * The string with length, NOT zero-terminated
+   */
   struct _MHD_str_w_len value;
+  /**
+   * True if string must be "unquoted" before processing.
+   * This member is false if the string is used in DQUOTE marks, but no
+   * backslash-escape is used in the string.
+   */
   bool quoted;
 };
 
+/**
+ * Request client's Digest Authorization header parameters
+ */
 struct MHD_RqDAuth
 {
   struct MHD_RqDAuthParam nonce;
@@ -68,6 +82,9 @@ struct MHD_RqDAuth
   struct MHD_RqDAuthParam qop;
   struct MHD_RqDAuthParam cnonce;
   struct MHD_RqDAuthParam nc;
+  /**
+   * True if 'userhash' parameter is used with value 'true'.
+   */
   bool userhash;
 };
 
