@@ -762,7 +762,6 @@ AC_MSG_CHECKING([[for target host OS]])
 AS_CASE(["$host_os"],
  [*darwin* | *rhapsody* | *macosx*],
  [AC_DEFINE([OSX],[1],[This is an OS X system])
-     CFLAGS_ac="-no-cpp-precomp -fno-common $CFLAGS_ac"
      mhd_host_os='Darwin'
      AC_MSG_RESULT([[$mhd_host_os]])],
  [kfreebsd*-gnu],
