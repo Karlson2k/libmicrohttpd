@@ -234,7 +234,8 @@ testDigestAuth ()
   }
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/bar%%20foo%%3Fkey%%3Dvalue",
+            "http://127.0.0.1:%d/bar%%20foo?"
+            "key=value&more=even%%20more&empty&=no_key&&same=one&&same=two",
             port);
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, url);
