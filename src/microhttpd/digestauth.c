@@ -147,9 +147,26 @@
 #define _MHD_SHA256_TOKEN "SHA-256"
 
 /**
+ * The token for SHA-512/256 algorithm.
+ * Unsupported currently by MHD for authentication.
+ */
+#define _MHD_SHA512_256_TOKEN "SHA-512-256"
+
+/**
  * The postfix token for "session" algorithms.
  */
 #define _MHD_SESS_TOKEN "-sess"
+
+/**
+ * The required prefix of parameter with the extended notation
+ */
+#define MHD_DAUTH_EXT_PARAM_PREFIX "UTF-8'"
+
+/**
+ * The minimal size of the prefix for parameter with the extended notation
+ */
+#define MHD_DAUTH_EXT_PARAM_MIN_LEN \
+  MHD_STATICSTR_LEN_(MHD_DAUTH_EXT_PARAM_PREFIX "'")
 
 /**
  * The result of nonce-nc map array check.
@@ -855,6 +872,557 @@ check_nonce_nc (struct MHD_Connection *connection,
   MHD_mutex_unlock_chk_ (&daemon->nnc_lock);
 
   return ret;
+}
+
+
+/**
+ * Get username type used by the client.
+ * This function does not check whether userhash can be decoded or
+ * extended notation (if used) is valid.
+ * @param params the Digest Authorization parameters
+ * @return the type of username
+ */
+_MHD_static_inline enum MHD_DigestAuthUsernameType
+get_rq_uname_type (const struct MHD_RqDAuth *params)
+{
+  if (NULL != params->username.value.str)
+  {
+    if (NULL == params->username_ext.value.str)
+      return params->userhash ?
+             MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH :
+             MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD;
+    else  /* Both 'username' and 'username*' are used */
+      return MHD_DIGEST_AUTH_UNAME_TYPE_INVALID;
+  }
+  else if (NULL != params->username_ext.value.str)
+  {
+    if (! params->username_ext.quoted && ! params->userhash &&
+        (MHD_DAUTH_EXT_PARAM_MIN_LEN <= params->username_ext.value.len) )
+      return MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED;
+    else
+      return MHD_DIGEST_AUTH_UNAME_TYPE_INVALID;
+  }
+
+  return MHD_DIGEST_AUTH_UNAME_TYPE_MISSING;
+}
+
+
+/**
+ * Get total size required for 'username' and 'userhash_bin'
+ * @param params the Digest Authorization parameters
+ * @param uname_type the type of username
+ * @return the total size required for 'username' and
+ *         'userhash_bin' is userhash is used
+ */
+_MHD_static_inline size_t
+get_rq_unames_size (const struct MHD_RqDAuth *params,
+                    enum MHD_DigestAuthUsernameType uname_type)
+{
+  size_t s;
+
+  mhd_assert (get_rq_uname_type (params) == uname_type);
+  s = 0;
+  if ((MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD == uname_type) ||
+      (MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH == uname_type) )
+  {
+    s += params->username.value.len + 1; /* Add one byte for zero-termination */
+    if (MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH == uname_type)
+      s += (params->username.value.len + 1) / 2;
+  }
+  else if (MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED == uname_type)
+    s += params->username_ext.value.len + 1; /* Add one byte for zero-termination */
+  return s;
+}
+
+
+/**
+ * Get client's Digest Authorization algorithm type.
+ * If no algorithm is specified by client, MD5 is assumed.
+ * @param params the Digest Authorization parameters
+ * @return the algorithm type
+ */
+static enum MHD_DigestAuthAlgo3
+get_rq_algo (const struct MHD_RqDAuth *params)
+{
+  const struct MHD_RqDAuthParam *const algo_param =
+    &params->algorithm;
+  if (NULL == algo_param->value.str)
+    return MHD_DIGEST_AUTH_ALGO3_MD5; /* Assume MD5 by default */
+
+  if (algo_param->quoted)
+  {
+    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
+                                               algo_param->value.len, \
+                                               _MHD_MD5_TOKEN))
+      return MHD_DIGEST_AUTH_ALGO3_MD5;
+    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
+                                               algo_param->value.len, \
+                                               _MHD_SHA256_TOKEN))
+      return MHD_DIGEST_AUTH_ALGO3_SHA256;
+    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
+                                               algo_param->value.len, \
+                                               _MHD_MD5_TOKEN _MHD_SESS_TOKEN))
+      return MHD_DIGEST_AUTH_ALGO3_MD5_SESSION;
+    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
+                                               algo_param->value.len, \
+                                               _MHD_SHA256_TOKEN \
+                                               _MHD_SESS_TOKEN))
+      return MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION;
+
+    /* Algorithms below are not supported by MHD for authentication */
+
+    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
+                                               algo_param->value.len, \
+                                               _MHD_SHA512_256_TOKEN))
+      return MHD_DIGEST_AUTH_ALGO3_SHA512_256;
+    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
+                                               algo_param->value.len, \
+                                               _MHD_SHA512_256_TOKEN \
+                                               _MHD_SESS_TOKEN))
+      return MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION;
+
+    /* No known algorithm has been detected */
+    return MHD_DIGEST_AUTH_ALGO3_INVALID;
+  }
+  /* The algorithm value is not quoted */
+  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_MD5_TOKEN, \
+                                       algo_param->value.str, \
+                                       algo_param->value.len))
+    return MHD_DIGEST_AUTH_ALGO3_MD5;
+  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA256_TOKEN, \
+                                       algo_param->value.str, \
+                                       algo_param->value.len))
+    return MHD_DIGEST_AUTH_ALGO3_MD5;
+  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_MD5_TOKEN _MHD_SESS_TOKEN, \
+                                       algo_param->value.str, \
+                                       algo_param->value.len))
+    return MHD_DIGEST_AUTH_ALGO3_MD5;
+  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA256_TOKEN _MHD_SESS_TOKEN, \
+                                       algo_param->value.str, \
+                                       algo_param->value.len))
+    return MHD_DIGEST_AUTH_ALGO3_MD5;
+
+  /* Algorithms below are not supported by MHD for authentication */
+
+  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA512_256_TOKEN, \
+                                       algo_param->value.str, \
+                                       algo_param->value.len))
+    return MHD_DIGEST_AUTH_ALGO3_MD5;
+  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA512_256_TOKEN _MHD_SESS_TOKEN, \
+                                       algo_param->value.str, \
+                                       algo_param->value.len))
+    return MHD_DIGEST_AUTH_ALGO3_MD5;
+
+  /* No known algorithm has been detected */
+  return MHD_DIGEST_AUTH_ALGO3_INVALID;
+}
+
+
+/**
+ * Get unquoted version of Digest Authorization parameter.
+ * This function automatically zero-teminate the result.
+ * @param param the parameter to extract
+ * @param[out] buf the output buffer, must be enough size to hold the result,
+ *                 the recommended size is 'param->value.len + 1'
+ * @return the size of the result, not including the terminating zero
+ */
+static size_t
+get_rq_param_unquoted_copy_z (const struct MHD_RqDAuthParam *param, char *buf)
+{
+  size_t len;
+  mhd_assert (NULL != param->value.str);
+  if (! param->quoted)
+  {
+    memcpy (buf, param->value.str, param->value.len);
+    buf [param->value.len] = 0;
+    return param->value.len;
+  }
+
+  len = MHD_str_unquote (param->value.str, param->value.len, buf);
+  mhd_assert (0 != len);
+  mhd_assert (len < param->value.len);
+  buf[len] = 0;
+  return len;
+}
+
+
+/**
+ * Get decoded version of username from extended notation.
+ * This function automatically zero-teminate the result.
+ * @param uname_ext the string of client's 'username*' parameter value
+ * @param uname_ext_len the length of @a uname_ext in chars
+ * @param[out] buf the output buffer to put decoded username value
+ * @param buf_size the size of @a buf
+ * @return the number of characters copied to the output buffer or
+ *         -1 if wrong extended notation is used.
+ */
+static ssize_t
+get_rq_extended_uname_copy_z (const char *uname_ext, size_t uname_ext_len,
+                              char *buf, size_t buf_size)
+{
+  size_t r;
+  size_t w;
+  if ((size_t) SSIZE_MAX < uname_ext_len)
+    return -1; /* Too long input string */
+
+  if (MHD_DAUTH_EXT_PARAM_MIN_LEN > uname_ext_len)
+    return -1; /* Required prefix is missing */
+
+  if (! MHD_str_equal_caseless_bin_n_ (uname_ext, MHD_DAUTH_EXT_PARAM_PREFIX,
+                                       MHD_STATICSTR_LEN_ ( \
+                                         MHD_DAUTH_EXT_PARAM_PREFIX)))
+    return -1; /* Only UTF-8 is supported, as it is implied by RFC 7616 */
+
+  r = MHD_STATICSTR_LEN_ (MHD_DAUTH_EXT_PARAM_PREFIX);
+  /* Skip language tag */
+  while (r < uname_ext_len && '\'' != uname_ext[r])
+  {
+    const char chr = uname_ext[r];
+    if ((' ' == chr) || ('\t' == chr) || ('\"' == chr) || (',' == chr) ||
+        (';' == chr) )
+      return -1; /* Wrong char in language tag */
+    r++;
+  }
+  if (r >= uname_ext_len)
+    return -1; /* The end of the language tag was not found */
+  r++; /* Advance to the next char */
+
+  w = MHD_str_pct_decode_strict_n_ (uname_ext + r, uname_ext_len - r,
+                                    buf, buf_size);
+  if ((0 == w) && (0 != uname_ext_len - r))
+    return -1; /* Broken percent encoding */
+  buf[w] = 0; /* Zero terminate the result */
+  mhd_assert (SSIZE_MAX > w);
+  return (ssize_t) w;
+}
+
+
+/**
+ * Get copy of username used by the client.
+ * @param params the Digest Authorization parameters
+ * @param uname_type the type of username
+ * @param[out] unames the pointer to the structure to be filled
+ * @param buf the buffer to be used for usernames
+ * @param buf_size the size of the @a buf
+ * @return the size of the @a buf used by pointers in @a unames structure
+ */
+static size_t
+get_rq_uname (const struct MHD_RqDAuth *params,
+              enum MHD_DigestAuthUsernameType uname_type,
+              struct MHD_DigestAuthUsernameInfo *uname_info,
+              uint8_t *buf,
+              size_t buf_size)
+{
+  size_t buf_used;
+
+  buf_used = 0;
+  mhd_assert (get_rq_uname_type (params) == uname_type);
+  mhd_assert (MHD_DIGEST_AUTH_UNAME_TYPE_INVALID != uname_type);
+  mhd_assert (MHD_DIGEST_AUTH_UNAME_TYPE_MISSING != uname_type);
+
+  if ( (MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD == uname_type) ||
+       (MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH == uname_type) )
+  {
+    uname_info->username = (char *) (buf + buf_used);
+    uname_info->username_len =
+      get_rq_param_unquoted_copy_z (&params->username,
+                                    uname_info->username);
+    buf_used += uname_info->username_len + 1;
+    if (MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH == uname_type)
+    {
+      uname_info->userhash_bin_size = MHD_hex_to_bin (uname_info->username,
+                                                      uname_info->username_len,
+                                                      buf + buf_used);
+      if ( (0 == uname_info->userhash_bin_size) &&
+           (0 != uname_info->username_len) )
+      {
+        uname_info->userhash_bin = NULL;
+        uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_INVALID;
+      }
+      else
+      {
+        uname_info->userhash_bin = (uint8_t *) (buf + buf_used);
+        buf_used += uname_info->userhash_bin_size;
+      }
+    }
+  }
+  else if (MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED == uname_type)
+  {
+    ssize_t res;
+    res = get_rq_extended_uname_copy_z (params->username_ext.value.str,
+                                        params->username_ext.value.len,
+                                        (char *) (buf + buf_used),
+                                        buf_size - buf_used);
+    if (0 > res)
+      uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_INVALID;
+    else
+    {
+      uname_info->username = (char *) (buf + buf_used);
+      uname_info->username_len = (size_t) res;
+      buf_used += uname_info->username_len + 1;
+    }
+  }
+  mhd_assert (buf_size >= buf_used);
+  return buf_used;
+}
+
+
+/**
+ * Get QOP ('quality of protection') type.
+ * @param params the Digest Authorization parameters
+ * @return detected QOP ('quality of protection') type.
+ */
+static enum MHD_DigestAuthQOP
+get_rq_qop (const struct MHD_RqDAuth *params)
+{
+  const struct MHD_RqDAuthParam *const qop_param =
+    &params->qop;
+  if (NULL == qop_param->value.str)
+    return MHD_DIGEST_AUTH_QOP_NONE;
+  if (qop_param->quoted)
+  {
+    if (MHD_str_equal_caseless_quoted_s_bin_n (qop_param->value.str, \
+                                               qop_param->value.len, \
+                                               "auth"))
+      return MHD_DIGEST_AUTH_QOP_AUTH;
+    if (MHD_str_equal_caseless_quoted_s_bin_n (qop_param->value.str, \
+                                               qop_param->value.len, \
+                                               "auth-int"))
+      return MHD_DIGEST_AUTH_QOP_AUTH_INT;
+  }
+  else
+  {
+    if (MHD_str_equal_caseless_s_bin_n_ ("auth", \
+                                         qop_param->value.str, \
+                                         qop_param->value.len))
+      return MHD_DIGEST_AUTH_QOP_AUTH;
+    if (MHD_str_equal_caseless_s_bin_n_ ("auth-int", \
+                                         qop_param->value.str, \
+                                         qop_param->value.len))
+      return MHD_DIGEST_AUTH_QOP_AUTH_INT;
+  }
+  /* No know QOP has been detected */
+  return MHD_DIGEST_AUTH_QOP_INVALID;
+}
+
+
+/**
+ * Result of request's Digest Authorization 'nc' value extraction
+ */
+enum MHD_GetRqNCResult
+{
+  MHD_GET_RQ_NC_NONE = -1,    /**< No 'nc' value */
+  MHD_GET_RQ_NC_VALID = 0,    /**< Readable 'nc' value */
+  MHD_GET_RQ_NC_TOO_LONG = 1, /**< The 'nc' value is too long */
+  MHD_GET_RQ_NC_TOO_LARGE = 2,/**< The 'nc' value is too big to fit uint32_t */
+  MHD_GET_RQ_NC_BROKEN = 3    /**< The 'nc' value is not a number */
+};
+
+
+/**
+ * Get 'nc' value from request's Authorization header
+ * @param params the request digest authentication
+ * @param[out] nc the pointer to put nc value to
+ * @return enum value indicating the result
+ */
+static enum MHD_GetRqNCResult
+get_rq_nc (const struct MHD_RqDAuth *params,
+           uint32_t *nc)
+{
+  const struct MHD_RqDAuthParam *const nc_param =
+    &params->nc;
+  char unq[16];
+  const char *val;
+  size_t val_len;
+  size_t res;
+  uint64_t nc_val;
+
+  if (NULL == nc_param->value.str)
+    return MHD_GET_RQ_NC_NONE;
+
+  if (0 == nc_param->value.len)
+    return MHD_GET_RQ_NC_BROKEN;
+
+  if (! nc_param->quoted)
+  {
+    val = nc_param->value.str;
+    val_len = nc_param->value.len;
+  }
+  else
+  {
+    /* Actually no backslashes must be used in 'nc' */
+    if (sizeof(unq) < params->nc.value.len)
+      return MHD_GET_RQ_NC_TOO_LONG;
+    val_len = MHD_str_unquote (nc_param->value.str, nc_param->value.len, unq);
+    if (0 == val_len)
+      return MHD_GET_RQ_NC_BROKEN;
+    val = unq;
+  }
+
+  res = MHD_strx_to_uint64_n_ (val, val_len, &nc_val);
+  if (0 == res)
+  {
+    const char f = val[0];
+    if ( (('9' >= f) && ('0' <= f)) ||
+         (('F' >= f) && ('A' <= f)) ||
+         (('a' <= f) && ('f' >= f)) )
+      return MHD_GET_RQ_NC_TOO_LARGE;
+    else
+      return MHD_GET_RQ_NC_BROKEN;
+  }
+  if (val_len != res)
+    return MHD_GET_RQ_NC_BROKEN;
+  if (UINT32_MAX < nc_val)
+    return MHD_GET_RQ_NC_TOO_LARGE;
+  *nc = (uint32_t) nc_val;
+  return MHD_GET_RQ_NC_VALID;
+}
+
+
+/**
+ * Get information about Digest Authorization client's header.
+ *
+ * @param connection The MHD connection structure
+ * @return NULL no valid Digest Authorization header is used in the request;
+ *         a pointer structure with information if the valid request header
+ *         found, free using #MHD_free().
+ * @note Available since #MHD_VERSION 0x00097519
+ * @ingroup authentication
+ */
+_MHD_EXTERN struct MHD_DigestAuthInfo *
+MHD_digest_auth_get_request_info3 (struct MHD_Connection *connection)
+{
+  const struct MHD_RqDAuth *params;
+  struct MHD_DigestAuthInfo *info;
+  enum MHD_DigestAuthUsernameType uname_type;
+  size_t unif_buf_size;
+  uint8_t *unif_buf_ptr;
+  size_t unif_buf_used;
+  enum MHD_GetRqNCResult nc_res;
+
+  params = get_rq_dauth_params (connection);
+  if (NULL == params)
+    return NULL;
+
+  unif_buf_size = 0;
+
+  uname_type = get_rq_uname_type (params);
+
+  unif_buf_size += get_rq_unames_size (params, uname_type);
+
+  if (NULL != params->opaque.value.str)
+    unif_buf_size += params->opaque.value.len + 1;  /* Add one for zero-termination */
+  if (NULL != params->realm.value.str)
+    unif_buf_size += params->realm.value.len + 1;   /* Add one for zero-termination */
+  info = (struct MHD_DigestAuthInfo *)
+         MHD_calloc_ (1, (sizeof(struct MHD_DigestAuthInfo)) + unif_buf_size);
+  unif_buf_ptr = (uint8_t *) (info + 1);
+  unif_buf_used = 0;
+
+  info->algo = get_rq_algo (params);
+
+  if ( (MHD_DIGEST_AUTH_UNAME_TYPE_MISSING != uname_type) &&
+       (MHD_DIGEST_AUTH_UNAME_TYPE_INVALID != uname_type) )
+  {
+    struct MHD_DigestAuthUsernameInfo uname_strct;
+    memset (&uname_strct, 0, sizeof(uname_strct));
+    unif_buf_used += get_rq_uname (params, uname_type, &uname_strct,
+                                   unif_buf_ptr + unif_buf_used,
+                                   unif_buf_size - unif_buf_used);
+    info->uname_type = uname_strct.uname_type;
+    info->username = uname_strct.username;
+    info->username_len = uname_strct.username_len;
+    info->userhash_bin = uname_strct.userhash_bin;
+    info->userhash_bin_size = uname_strct.userhash_bin_size;
+  }
+  else
+    info->uname_type = uname_type;
+
+  if (NULL != params->opaque.value.str)
+  {
+    info->opaque = (char *) (unif_buf_ptr + unif_buf_used);
+    info->opaque_len = get_rq_param_unquoted_copy_z (&params->opaque,
+                                                     info->opaque);
+    unif_buf_used += info->opaque_len + 1;
+  }
+  if (NULL != params->realm.value.str)
+  {
+    info->realm = (char *) (unif_buf_ptr + unif_buf_used);
+    info->realm_len = get_rq_param_unquoted_copy_z (&params->realm,
+                                                    info->realm);
+    unif_buf_used += info->realm_len + 1;
+  }
+
+  mhd_assert (unif_buf_size >= unif_buf_used);
+
+  info->qop = get_rq_qop (params);
+
+  if (NULL != params->cnonce.value.str)
+    info->cnonce_len = params->cnonce.value.len;
+  else
+    info->cnonce_len = 0;
+
+  nc_res = get_rq_nc (params, &info->nc);
+  if (MHD_GET_RQ_NC_VALID != nc_res)
+    info->nc = MHD_DIGEST_AUTH_INVALID_NC_VALUE;
+
+  return info;
+}
+
+
+/**
+ * Get the username from Digest Authorization client's header.
+ *
+ * @param connection The MHD connection structure
+ * @return NULL if no valid Digest Authorization header is used in the request,
+ *         or no username parameter is present in the header, or username is
+ *         provided incorrectly by client (see description for
+ *         #MHD_DIGEST_AUTH_UNAME_TYPE_INVALID);
+ *         a pointer structure with information if the valid request header
+ *         found, free using #MHD_free().
+ * @sa MHD_digest_auth_get_request_info3() provides more complete information
+ * @note Available since #MHD_VERSION 0x00097519
+ * @ingroup authentication
+ */
+_MHD_EXTERN struct MHD_DigestAuthUsernameInfo *
+MHD_digest_auth_get_username3 (struct MHD_Connection *connection)
+{
+  const struct MHD_RqDAuth *params;
+  struct MHD_DigestAuthUsernameInfo *uname_info;
+  enum MHD_DigestAuthUsernameType uname_type;
+  size_t unif_buf_size;
+  uint8_t *unif_buf_ptr;
+  size_t unif_buf_used;
+
+  params = get_rq_dauth_params (connection);
+  if (NULL == params)
+    return NULL;
+
+  uname_type = get_rq_uname_type (params);
+  if ( (MHD_DIGEST_AUTH_UNAME_TYPE_MISSING == uname_type) ||
+       (MHD_DIGEST_AUTH_UNAME_TYPE_INVALID == uname_type) )
+    return NULL;
+
+  unif_buf_size = get_rq_unames_size (params, uname_type);
+
+  uname_info = (struct MHD_DigestAuthUsernameInfo *)
+               MHD_calloc_ (1, (sizeof(struct MHD_DigestAuthUsernameInfo))
+                            + unif_buf_size);
+  unif_buf_ptr = (uint8_t *) (uname_info + 1);
+  unif_buf_used = get_rq_uname (params, uname_type, uname_info, unif_buf_ptr,
+                                unif_buf_size);
+  mhd_assert (unif_buf_size >= unif_buf_used);
+  (void) unif_buf_used; /* Mute compiler warning on non-debug builds */
+  mhd_assert (MHD_DIGEST_AUTH_UNAME_TYPE_MISSING != uname_info->uname_type);
+
+  if (MHD_DIGEST_AUTH_UNAME_TYPE_INVALID == uname_info->uname_type)
+  {
+    free (uname_info);
+    return NULL;
+  }
+  mhd_assert (uname_type == uname_info->uname_type);
+
+  return uname_info;
 }
 
 

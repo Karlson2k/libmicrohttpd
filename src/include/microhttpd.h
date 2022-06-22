@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097518
+#define MHD_VERSION 0x00097519
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4334,6 +4334,331 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
  */
 #define MHD_INVALID_NONCE -1
 
+/**
+ * The flag indicating non-session algorithm types,
+ * like 'MD5' or 'SHA-256'.
+ * @note Available since #MHD_VERSION 0x00097519
+ */
+#define MHD_DIGEST_AUTH_ALGO3_NON_SESSION    (1 << 6)
+
+/**
+ * The flag indicating session algorithm types,
+ * like 'MD5-sess' or 'SHA-256-sess'.
+ * @note Available since #MHD_VERSION 0x00097519
+ */
+#define MHD_DIGEST_AUTH_ALGO3_SESSION        (1 << 7)
+
+/**
+ * Digest algorithm identification
+ * @warning Do not be confused with #MHD_DigestAuthAlgorithm,
+ *          which uses other values!
+ * @note Available since #MHD_VERSION 0x00097519
+ */
+enum MHD_DigestAuthAlgo3
+{
+  /**
+   * Unknown or wrong algorithm type.
+   * Used in struct MHD_DigestAuthInfo to indicate client value that
+   * cannot by identified.
+   */
+  MHD_DIGEST_AUTH_ALGO3_INVALID = 0,
+  /**
+   * The 'MD5' algorithm.
+   */
+  MHD_DIGEST_AUTH_ALGO3_MD5 =
+    (1 << 0) | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+  /**
+   * The 'MD5-sess' algorithm.
+   * Not supported by MHD.
+   */
+  MHD_DIGEST_AUTH_ALGO3_MD5_SESSION =
+    (1 << 0) | MHD_DIGEST_AUTH_ALGO3_SESSION,
+  /**
+   * The 'SHA-256' algorithm.
+   */
+  MHD_DIGEST_AUTH_ALGO3_SHA256 =
+    (1 << 1) | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+  /**
+   * The 'SHA-256-sess' algorithm.
+   * Not supported by MHD.
+   */
+  MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION =
+    (1 << 1) | MHD_DIGEST_AUTH_ALGO3_SESSION,
+  /**
+   * The 'SHA-512-256' (SHA-512/256) algorithm.
+   * Not supported by MHD.
+   */
+  MHD_DIGEST_AUTH_ALGO3_SHA512_256 =
+    (1 << 2) | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+  /**
+   * The 'SHA-512-256-sess' (SHA-512/256 session) algorithm.
+   * Not supported by MHD.
+   */
+  MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION =
+    (1 << 2) | MHD_DIGEST_AUTH_ALGO3_SESSION,
+  /**
+   * Any non-session algorithm, MHD will choose.
+   */
+  MHD_DIGEST_AUTH_ALGO3_ANY_NON_SESSION =
+    (0x3F) | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+  /**
+   * Any session algorithm, MHD will choose.
+   * Not supported by MHD.
+   */
+  MHD_DIGEST_AUTH_ALGO3_ANY_SESSION =
+    (0x3F) | MHD_DIGEST_AUTH_ALGO3_SESSION,
+  /**
+   * Any algorithm, MHD will choose.
+   */
+  MHD_DIGEST_AUTH_ALGO3_ANY =
+    (0x3F) | MHD_DIGEST_AUTH_ALGO3_NON_SESSION | MHD_DIGEST_AUTH_ALGO3_SESSION
+} _MHD_FLAGS_ENUM;
+
+/**
+ * The type of username used by client in Digest Authorization header
+ *
+ * @note Available since #MHD_VERSION 0x00097519
+ */
+enum MHD_DigestAuthUsernameType
+{
+  /**
+   * No username parameter in in Digest Authorization header.
+   * This should be treated as an error.
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_MISSING = 0,
+  /**
+   * The 'username' parameter is used to specify the username.
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD = 1,
+  /**
+   * The username is specified by 'username*' parameter with
+   * the extended notation (see RFC 5987 #section-3.2.1).
+   * The only difference between standard and extended types is
+   * the way how username value is encoded in the header.
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED = 2,
+  /**
+   * The username provided in form of 'userhash' as
+   * specified by RFC 7616 #section-3.4.4.
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH = 3,
+  /**
+   * The invalid combination of username parameters are used by client.
+   * Either:
+   * * both 'username' and 'username*' are used
+   * * 'username*' is used with 'userhash=true'
+   * * 'username*' used with invalid extended notation
+   * * 'username' is not hexadecimal digits, while 'userhash' set to 'true'
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_INVALID = 15
+} _MHD_FIXED_ENUM;
+
+/**
+ * The QOP ('quality of protection') types.
+ * @note Available since #MHD_VERSION 0x00097519
+ */
+enum MHD_DigestAuthQOP
+{
+  /**
+   * Invalid/unknown QOP.
+   * Used in struct MHD_DigestAuthInfo to indicate client value that
+   * cannot by identified.
+   */
+  MHD_DIGEST_AUTH_QOP_INVALID = 0,
+  /**
+   * No QOP value.
+   */
+  MHD_DIGEST_AUTH_QOP_NONE = 1 << 0,
+  /**
+   * The 'auth' QOP type.
+   */
+  MHD_DIGEST_AUTH_QOP_AUTH = 1 << 1,
+  /**
+   * The 'auth-int' QOP type.
+   * Not supported by MHD.
+   */
+  MHD_DIGEST_AUTH_QOP_AUTH_INT = 1 << 2
+} _MHD_FLAGS_ENUM;
+
+/**
+ * The invalid value of 'nc' parameter in client Digest Authorization header.
+ * @note Available since #MHD_VERSION 0x00097519
+ */
+#define MHD_DIGEST_AUTH_INVALID_NC_VALUE        (0)
+
+/**
+ * Information from Digest Authorization client's header.
+ *
+ * All buffers pointed by any struct members are freed when #MHD_free() is
+ * called for pointer to this structure.
+ *
+ * Application may modify buffers as needed until #MHD_free() is called for
+ * pointer to this structure
+ * @note Available since #MHD_VERSION 0x00097519
+ */
+struct MHD_DigestAuthInfo
+{
+  /**
+   * The algorithm as defined by client.
+   * Set automatically to MD5 if not specified by client.
+   * No "group" (ALGO3_ANY) values are used.
+   * @warning Do not be confused with #MHD_DigestAuthAlgorithm,
+   *          which uses other values!
+   */
+  enum MHD_DigestAuthAlgo3 algo;
+  /**
+   * The type of username used by client.
+   */
+  enum MHD_DigestAuthUsernameType uname_type;
+  /**
+   * The username string.
+   * Valid only if username is standard, extended, or userhash.
+   * For userhash this is unqoted string without decoding of the
+   * hexadecimal digits (as provided by client).
+   * If extended notation is used, this string is pct-decoded string
+   * with charset and language tag removed (i.e. it is original username
+   * extracted from the extended notation).
+   * This can be NULL is username is missing or invalid.
+   */
+  char *username;
+  /**
+   * The length of the @a username.
+   * When the @a username is NULL, this member is always zero.
+   */
+  size_t username_len;
+  /**
+   * The userhash decoded to binary form.
+   * Used only if username type is userhash, always NULL otherwise.
+   * @warning this is a binary data, no zero termination
+   */
+  uint8_t *userhash_bin;
+  /**
+   * The number of bytes pointed by the @a userhash_bin.
+   * When the @a userhash_bin is NULL, this member is always zero.
+   */
+  size_t userhash_bin_size;
+  /**
+   * The 'opaque' parameter value, as specified by client.
+   * NULL if not specified by client.
+   */
+  char *opaque;
+  /**
+   * The length of the @a opaque.
+   * When the @a opaque is NULL, this member is always zero.
+   */
+  size_t opaque_len;
+  /**
+   * The 'realm' parameter value, as specified by client.
+   * NULL if not specified by client.
+   */
+  char *realm;
+  /**
+   * The length of the @a realm.
+   * When the @a realm is NULL, this member is always zero.
+   */
+  size_t realm_len;
+  /**
+   * The 'qop' parameter value.
+   */
+  enum MHD_DigestAuthQOP qop;
+  /**
+   * The length of the 'cnonce' parameter value, including possible
+   * backslash-escape characters.
+   * 'cnonce' is used in hash calculation, which is CPU-intensive procedure.
+   * An applicaion may want to reject too large cnonces to limit the CPU load.
+   * A few kilobytes is a reasonable limit, typically cnonce is just 32-160
+   * characters long.
+   */
+  size_t cnonce_len;
+  /**
+   * The nc parameter value.
+   * Can be used by application to limit the number of nonce re-uses. If @ nc
+   * is higher than application wants to allow, then fail response with
+   * 'stale=true' could be used to ask force client to get the fresh 'nonce'.
+   * If not specified by client or does not have hexadecimal digits only, the
+   * value is #MHD_DIGEST_AUTH_INVALID_NC_VALUE.
+   */
+  uint32_t nc;
+};
+
+/**
+ * Get information about Digest Authorization client's header.
+ *
+ * @param connection The MHD connection structure
+ * @return NULL if no valid Digest Authorization header is used in the request;
+ *         a pointer to the structure with information if the valid request
+ *         header found, free using #MHD_free().
+ * @note Available since #MHD_VERSION 0x00097519
+ * @ingroup authentication
+ */
+_MHD_EXTERN struct MHD_DigestAuthInfo *
+MHD_digest_auth_get_request_info3 (struct MHD_Connection *connection);
+
+
+/**
+ * Information from Digest Authorization client's header.
+ *
+ * All buffers pointed by any struct members are freed when #MHD_free() is
+ * called for pointer to this structure.
+ *
+ * Application may modify buffers as needed until #MHD_free() is called for
+ * pointer to this structure
+ * @note Available since #MHD_VERSION 0x00097519
+ */
+struct MHD_DigestAuthUsernameInfo
+{
+  /**
+   * The type of username used by client.
+   * The 'invalid' and 'missing' types are not used in this structure,
+   * instead NULL is returned by #MHD_digest_auth_get_username3().
+   */
+  enum MHD_DigestAuthUsernameType uname_type;
+  /**
+   * The username string.
+   * Valid only if username is standard, extended, or userhash.
+   * For userhash this is unqoted string without decoding of the
+   * hexadecimal digits (as provided by client).
+   * If extended notation is used, this string is pct-decoded string
+   * with charset and language tag removed (i.e. it is original username
+   * extracted from the extended notation).
+   * This can be NULL is username is missing or invalid.
+   */
+  char *username;
+  /**
+   * The length of the @a username.
+   * When the @a username is NULL, this member is always zero.
+   */
+  size_t username_len;
+  /**
+   * The userhash decoded to binary form.
+   * Used only if username type is userhash, always NULL if not used.
+   * @warning this is a binary data, no zero termination
+   */
+  uint8_t *userhash_bin;
+  /**
+   * The number of bytes pointed by the @a userhash_bin.
+   * When the @a userhash_bin is NULL, this member is always zero.
+   */
+  size_t userhash_bin_size;
+};
+
+/**
+ * Get the username from Digest Authorization client's header.
+ *
+ * @param connection The MHD connection structure
+ * @return NULL if no valid Digest Authorization header is used in the request,
+ *         or no username parameter is present in the header, or username is
+ *         provided incorrectly by client (see description for
+ *         #MHD_DIGEST_AUTH_UNAME_TYPE_INVALID);
+ *         a pointer structure with information if the valid request header
+ *         found, free using #MHD_free().
+ * @sa MHD_digest_auth_get_request_info3() provides more complete information
+ * @note Available since #MHD_VERSION 0x00097519
+ * @ingroup authentication
+ */
+_MHD_EXTERN struct MHD_DigestAuthUsernameInfo *
+MHD_digest_auth_get_username3 (struct MHD_Connection *connection);
+
 
 /**
  * Get the username from the authorization header sent by the client
@@ -4341,6 +4666,7 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
  * @param connection The MHD connection structure
  * @return NULL if no username could be found, a pointer
  *      to the username if found, free using #MHD_free().
+ * @deprecated use MHD_digest_auth_get_username3()
  * @ingroup authentication
  */
 _MHD_EXTERN char *
