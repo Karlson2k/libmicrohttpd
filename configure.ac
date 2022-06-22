@@ -254,7 +254,9 @@ AC_MSG_RESULT([${enable_compact_code} (${compact_code_MSG})])
 
 CFLAGS="${user_CFLAGS}"
 # Compiler options to always enable (if supported)
-MHD_CHECK_ADD_CC_CFLAG([-fno-strict-aliasing], [CFLAGS_ac])
+MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-fno-strict-aliasing], [-qnoansialias])
+# '-qlonglong' is XLC option for C89, not used with C99 or later
+MHD_CHECK_ADD_CC_CFLAG([-qlonglong], [CFLAGS_ac])
 
 AS_VAR_IF([enable_build_type],["neutral"],[],
   [ # Any non-neutral build types
