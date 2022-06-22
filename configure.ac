@@ -759,7 +759,6 @@ AS_VAR_IF([mhd_cv_c_alignof], ["yes"],
 
 
 # Check system type
-shutdown_trig_select='no'
 AC_MSG_CHECKING([[for target host OS]])
 AS_CASE(["$host_os"],
  [*darwin* | *rhapsody* | *macosx*],
