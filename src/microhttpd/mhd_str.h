@@ -144,6 +144,24 @@ MHD_str_equal_caseless_bin_n_ (const char *const str1,
 
 
 /**
+ * Check whether string is equal statically allocated another string,
+ * ignoring case of US-ASCII letters and checking not more than @a len bytes.
+ *
+ * If strings have different sizes (lengths) then macro returns boolean false
+ * without checking the content.
+ *
+ * Compares not more first than @a len bytes, including binary zero characters.
+ * Comparison stops at first unmatched byte.
+ * @param a the statically allocated string to compare
+ * @param s the string to compare
+ * @param len number of characters to compare
+ * @return non-zero if @a len bytes are equal, zero otherwise.
+ */
+#define MHD_str_equal_caseless_s_bin_n_(a,s,l) \
+  ((MHD_STATICSTR_LEN_(a) == (l)) \
+   && MHD_str_equal_caseless_bin_n_(a,s,l))
+
+/**
  * Check whether @a str has case-insensitive @a token.
  * Token could be surrounded by spaces and tabs and delimited by comma.
  * Match succeed if substring between start, end (of string) or comma
@@ -484,7 +502,7 @@ MHD_uint8_to_str_pad (uint8_t val,
  * hexadecimal digits, zero-terminate the result.
  * @param bin the pointer to the binary data to convert
  * @param size the size in bytes of the binary data to convert
- * @param hex the output buffer, should be at least 2 * @a size + 1
+ * @param[out] hex the output buffer, should be at least 2 * @a size + 1
  * @return The number of characters written to the output buffer,
  *         not including terminating zero.
  */
@@ -631,6 +649,25 @@ MHD_str_equal_quoted_bin_n (const char *quoted,
                             size_t unquoted_len);
 
 /**
+ * Check whether the string after "unquoting" equals static string.
+ *
+ * Null-termination for input string is not required, binary zeros compared
+ * like other characters.
+ *
+ * @param q the quoted string to compare, must NOT include leading and
+ *          closing DQUOTE chars, does not need to be zero-terminated
+ * @param l the length in chars of the @a q string
+ * @param u the unquoted static string to compare
+ * @return zero if quoted form is broken (no character after the last escaping
+ *         backslash), zero if strings are not equal after unquoting of the
+ *         first string,
+ *         non-zero if two strings are equal after unquoting of the
+ *         first string.
+ */
+#define MHD_str_equal_quoted_s_bin_n(q,l,u) \
+    MHD_str_equal_quoted_bin_n(q,l,u,MHD_STATICSTR_LEN_(u))
+
+/**
  * Check two strings for equality, "unquoting" the first string from quoted
  * form as specified by RFC7230#section-3.2.6 and RFC7694#quoted.strings and
  * ignoring case of US-ASCII letters.
@@ -655,6 +692,26 @@ MHD_str_equal_caseless_quoted_bin_n (const char *quoted,
                                      size_t quoted_len,
                                      const char *unquoted,
                                      size_t unquoted_len);
+
+/**
+ * Check whether the string after "unquoting" equals static string, ignoring
+ * case of US-ASCII letters.
+ *
+ * Null-termination for input string is not required, binary zeros compared
+ * like other characters.
+ *
+ * @param q the quoted string to compare, must NOT include leading and
+ *          closing DQUOTE chars, does not need to be zero-terminated
+ * @param l the length in chars of the @a q string
+ * @param u the unquoted static string to compare
+ * @return zero if quoted form is broken (no character after the last escaping
+ *         backslash), zero if strings are not equal after unquoting of the
+ *         first string,
+ *         non-zero if two strings are caseless equal after unquoting of the
+ *         first string.
+ */
+#define MHD_str_equal_caseless_quoted_s_bin_n(q,l,u) \
+    MHD_str_equal_caseless_quoted_bin_n(q,l,u,MHD_STATICSTR_LEN_(u))
 
 /**
  * Convert string from quoted to unquoted form as specified by
