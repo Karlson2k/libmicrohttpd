@@ -2725,8 +2725,7 @@ get_next_header_line (struct MHD_Connection *connection,
  * Add an entry to the HTTP headers of a connection.  If this fails,
  * transmit an error response (request too big).
  *
- * @param connection the connection for which a
- *  value should be set
+ * @param cls the context (connection)
  * @param kind kind of the value
  * @param key key for the value
  * @param key_size number of bytes in @a key
@@ -2735,13 +2734,14 @@ get_next_header_line (struct MHD_Connection *connection,
  * @return #MHD_NO on failure (out of memory), #MHD_YES for success
  */
 static enum MHD_Result
-connection_add_header (struct MHD_Connection *connection,
+connection_add_header (void *cls,
                        const char *key,
                        size_t key_size,
                        const char *value,
                        size_t value_size,
                        enum MHD_ValueKind kind)
 {
+  struct MHD_Connection *connection = (struct MHD_Connection *) cls;
   if (MHD_NO ==
       MHD_set_connection_value_n (connection,
                                   kind,
@@ -3266,7 +3266,6 @@ parse_initial_message_line (struct MHD_Connection *connection,
   char *uri;
   char *http_version;
   char *args;
-  unsigned int unused_num_headers;
 
   if (NULL == (uri = memchr (line,
                              ' ',
@@ -3362,7 +3361,7 @@ parse_initial_message_line (struct MHD_Connection *connection,
                           MHD_GET_ARGUMENT_KIND,
                           args,
                           &connection_add_header,
-                          &unused_num_headers);
+                          connection);
   }
 
   /* unescape URI *after* searching for arguments and log callback */

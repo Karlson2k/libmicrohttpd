@@ -2368,7 +2368,7 @@ MHD_unescape_plus (char *arg);
  * Callback invoked when iterating over @a key / @a value
  * argument pairs during parsing.
  *
- * @param connection context of the iteration
+ * @param cls context of the iteration
  * @param key 0-terminated key string, never NULL
  * @param key_size number of bytes in key
  * @param value 0-terminated binary data, may include binary zeros, may be NULL
@@ -2378,7 +2378,7 @@ MHD_unescape_plus (char *arg);
  *         #MHD_NO to signal failure (and abort iteration)
  */
 typedef enum MHD_Result
-(*MHD_ArgumentIterator_)(struct MHD_Connection *connection,
+(*MHD_ArgumentIterator_)(void *cls,
                          const char *key,
                          size_t key_size,
                          const char *value,
@@ -2395,7 +2395,7 @@ typedef enum MHD_Result
  * @param[in,out] args argument URI string (after "?" in URI),
  *        clobbered in the process!
  * @param cb function to call on each key-value pair found
- * @param[out] num_headers set to the number of headers found
+ * @param cls the iterator context
  * @return #MHD_NO on failure (@a cb returned #MHD_NO),
  *         #MHD_YES for success (parsing succeeded, @a cb always
  *                               returned #MHD_YES)
@@ -2405,7 +2405,7 @@ MHD_parse_arguments_ (struct MHD_Connection *connection,
                       enum MHD_ValueKind kind,
                       char *args,
                       MHD_ArgumentIterator_ cb,
-                      unsigned int *num_headers);
+                      void *cls);
 
 
 /**

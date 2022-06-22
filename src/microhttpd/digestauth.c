@@ -1185,11 +1185,17 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
 }
 
 
+struct test_header_param
+{
+  struct MHD_Connection *connection;
+  unsigned int num_headers;
+};
+
 /**
  * Test if the given key-value pair is in the headers for the
  * given connection.
  *
- * @param connection the connection
+ * @param cls the test context
  * @param key the key
  * @param key_size number of bytes in @a key
  * @param value the value, can be NULL
@@ -1199,15 +1205,18 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
  *         #MHD_NO if not
  */
 static enum MHD_Result
-test_header (struct MHD_Connection *connection,
+test_header (void *cls,
              const char *key,
              size_t key_size,
              const char *value,
              size_t value_size,
              enum MHD_ValueKind kind)
 {
+  struct test_header_param *const param = (struct test_header_param *) cls;
+  struct MHD_Connection *connection = param->connection;
   struct MHD_HTTP_Req_Header *pos;
 
+  param->num_headers++;
   for (pos = connection->headers_received; NULL != pos; pos = pos->next)
   {
     if (kind != pos->kind)
@@ -1251,8 +1260,8 @@ check_argument_match (struct MHD_Connection *connection,
 {
   struct MHD_HTTP_Req_Header *pos;
   char *argb;
-  unsigned int num_headers;
   enum MHD_Result ret;
+  struct test_header_param param;
 
   argb = strdup (args);
   if (NULL == argb)
@@ -1263,11 +1272,13 @@ check_argument_match (struct MHD_Connection *connection,
 #endif /* HAVE_MESSAGES */
     return MHD_NO;
   }
+  param.connection = connection;
+  param.num_headers = 0;
   ret = MHD_parse_arguments_ (connection,
                               MHD_GET_ARGUMENT_KIND,
                               argb,
                               &test_header,
-                              &num_headers);
+                              &param);
   free (argb);
   if (MHD_NO == ret)
   {
@@ -1278,9 +1289,9 @@ check_argument_match (struct MHD_Connection *connection,
   {
     if (MHD_GET_ARGUMENT_KIND != pos->kind)
       continue;
-    num_headers--;
+    param.num_headers--;
   }
-  if (0 != num_headers)
+  if (0 != param.num_headers)
   {
     /* argument count mismatch */
     return MHD_NO;
