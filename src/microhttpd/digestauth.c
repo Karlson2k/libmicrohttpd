@@ -1215,30 +1215,40 @@ test_header (void *cls,
   struct test_header_param *const param = (struct test_header_param *) cls;
   struct MHD_Connection *connection = param->connection;
   struct MHD_HTTP_Req_Header *pos;
+  size_t i;
 
   param->num_headers++;
+  i = 0;
   for (pos = connection->headers_received; NULL != pos; pos = pos->next)
   {
     if (kind != pos->kind)
       continue;
-    if (key_size != pos->header_size)
-      continue;
-    if (value_size != pos->value_size)
-      continue;
-    if (0 != memcmp (key,
-                     pos->header,
-                     key_size))
-      continue;
-    if ( (NULL == value) &&
-         (NULL == pos->value) )
+    if (++i == param->num_headers)
+    {
+      if (key_size != pos->header_size)
+        return MHD_NO;
+      if (value_size != pos->value_size)
+        return MHD_NO;
+      if (0 != key_size)
+      {
+        mhd_assert (NULL != key);
+        mhd_assert (NULL != pos->header);
+        if (0 != memcmp (key,
+                         pos->header,
+                         key_size))
+          return MHD_NO;
+      }
+      if (0 != value_size)
+      {
+        mhd_assert (NULL != value);
+        mhd_assert (NULL != pos->value);
+        if (0 != memcmp (value,
+                         pos->value,
+                         value_size))
+          return MHD_NO;
+      }
       return MHD_YES;
-    if ( (NULL == value) ||
-         (NULL == pos->value) ||
-         (0 != memcmp (value,
-                       pos->value,
-                       value_size)) )
-      continue;
-    return MHD_YES;
+    }
   }
   return MHD_NO;
 }
