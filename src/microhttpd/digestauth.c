@@ -930,12 +930,14 @@ calculate_nonce (uint64_t nonce_time,
                  size_t rnd_size,
                  const char *uri,
                  size_t uri_len,
+                 struct MHD_HTTP_Req_Header *first_header,
                  const char *realm,
                  size_t realm_len,
                  struct DigestAlgorithm *da,
                  char *nonce)
 {
   uint8_t timestamp[TIMESTAMP_BIN_SIZE];
+  struct MHD_HTTP_Req_Header *h;
 
   digest_init (da);
   /* If the nonce_time is milliseconds, then the same 48 bit value will repeat
@@ -971,6 +973,17 @@ calculate_nonce (uint64_t nonce_time,
   digest_update (da,
                  (const unsigned char *) uri,
                  uri_len);
+  for (h = first_header; NULL != h; h = h->next)
+  {
+    if (MHD_GET_ARGUMENT_KIND != h->kind)
+      continue;
+    digest_update (da, (const uint8_t *) "##", 3);
+    if (0 != h->header_size)
+      digest_update (da, (const uint8_t *) h->header, h->header_size);
+    digest_update (da, (const uint8_t *) "#", 2);
+    if (0 != h->value_size)
+      digest_update (da, (const uint8_t *) h->value, h->value_size);
+  }
   digest_update (da,
                  (const unsigned char *) ":",
                  1);
@@ -1081,6 +1094,7 @@ calculate_add_nonce (struct MHD_Connection *const connection,
                    daemon->digest_auth_rand_size,
                    connection->url,
                    connection->url_len,
+                   connection->headers_received,
                    realm,
                    realm_len,
                    da,
@@ -1593,6 +1607,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
                    daemon->digest_auth_rand_size,
                    connection->url,
                    connection->url_len,
+                   connection->headers_received,
                    realm,
                    realm_len,
                    da,
