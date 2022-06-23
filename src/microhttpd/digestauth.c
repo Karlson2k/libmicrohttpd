@@ -1188,7 +1188,7 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
 struct test_header_param
 {
   struct MHD_Connection *connection;
-  unsigned int num_headers;
+  size_t num_headers;
 };
 
 /**
