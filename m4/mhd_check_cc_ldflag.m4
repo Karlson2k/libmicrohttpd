@@ -9,7 +9,7 @@
 #   The check is performing by prepending FLAG-TO-TEST to LDFLAGS, then
 #   prepending value of VARIABLE-TO-PREPEND-LDFLAGS (if any) to LDFLAGS, and
 #   then performing compile and link test. If test succeed without warnings,
-#   then the flag is considered to be suppoted. Otherwise, if compile and link
+#   then the flag is considered to be supported. Otherwise, if compile and link
 #   without test flag can be done without any warning, the flag is considered
 #   to be unsuppoted.
 #

@@ -4459,7 +4459,7 @@ should be @code{NULL}.
 This parameter is a pointer to a variable which contains the last check status
 of the UTF-8 sequence. It is required to continue a previous
 UTF-8 sequence check when fragmentation is used, because a UTF-8 sequence
-could be splitted upon fragments.
+could be split upon fragments.
 
 @code{enum MHD_WEBSOCKET_UTF8STEP} is used for this value.
 If you start a new fragment using

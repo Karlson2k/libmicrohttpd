@@ -105,7 +105,7 @@ to @code{MHD_upgrade_action()}.
 
 Depending of the flags specified while calling @code{MHD_start_deamon()}
 our @code{upgrade_handler} is either executed in the same thread
-as our deamon or in a thread specific for each connection.
+as our daemon or in a thread specific for each connection.
 If it is executed in the same thread then @code{upgrade_handler} is
 a blocking call for our webserver and
 we should finish it as fast as possible (i. e. by creating a thread and
@@ -436,7 +436,7 @@ to the websocket protocol.
 To use received payload data, you need to decode the frame data first.
 To send payload data, you need to encode it into frame data first.
 
-@emph{libmicrohttpd_ws} provides serveral functions for encoding of
+@emph{libmicrohttpd_ws} provides several functions for encoding of
 payload data and decoding of frame data:
 
 @itemize @bullet

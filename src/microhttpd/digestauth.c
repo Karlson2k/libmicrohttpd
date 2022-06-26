@@ -651,7 +651,7 @@ get_rq_dauth_params (struct MHD_Connection *connection)
 /**
  * Extract timestamp from the given nonce.
  * @param nonce the nonce to check
- * @param noncelen the lenght of the nonce, zero for autodetect
+ * @param noncelen the length of the nonce, zero for autodetect
  * @param[out] ptimestamp the pointer to store extracted timestamp
  * @return true if timestamp was extracted,
  *         false if nonce does not have valid timestamp.
@@ -709,7 +709,7 @@ fast_simple_hash (const uint8_t *data,
  *
  * @param arr_size the size of nonce_nc array
  * @param nonce the pointer that referenced a zero-terminated array of nonce
- * @param noncelen the lenth of @a nonce, in characters
+ * @param noncelen the length of @a nonce, in characters
  * @return #MHD_YES if successful, #MHD_NO if invalid (or we have no NC array)
  */
 static size_t
@@ -1065,7 +1065,7 @@ is_slot_available (const struct MHD_NonceNc *const nn,
  * @param connection the MHD connection structure
  * @param timestamp the current timestamp
  * @param realm the string of characters that describes the realm of auth
- * @param realm_len the lenght of the @a realm
+ * @param realm_len the length of the @a realm
  * @param da the digest algorithm to use
  * @param[out] nonce the pointer to a character array for the nonce to put in,
  *        must provide NONCE_STD_LEN(da->digest_size)+1 bytes
@@ -1377,7 +1377,7 @@ get_buffer_for_size (char tmp1[_MHD_STATIC_UNQ_BUFFER_SIZE],
 enum _MHD_GetUnqResult
 {
   _MHD_UNQ_OK = 0,         /**< Got unquoted string */
-  _MHD_UNQ_TOO_LARGE = -7, /**< The string is too large to unqoute */
+  _MHD_UNQ_TOO_LARGE = -7, /**< The string is too large to unquote */
   _MHD_UNQ_OUT_OF_MEM = 3  /**< Out of memory error */
 };
 
@@ -1536,8 +1536,8 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   uint64_t nci;
   char *qmark;
   const struct MHD_RqDAuth *params;
-  char tmp1[_MHD_STATIC_UNQ_BUFFER_SIZE]; /**< Temporal buffer in stack for unqouting */
-  char **const ptmp2 = pbuf;     /**< Temporal malloc'ed buffer for unqouting */
+  char tmp1[_MHD_STATIC_UNQ_BUFFER_SIZE]; /**< Temporal buffer in stack for unquoting */
+  char **const ptmp2 = pbuf;     /**< Temporal malloc'ed buffer for unquoting */
   size_t tmp2_size; /**< The size of @a tmp2 buffer */
   struct _MHD_str_w_len unquoted;
   struct _MHD_mstr_w_len unq_copy;

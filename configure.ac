@@ -77,7 +77,7 @@ AC_MSG_CHECKING([for build type])
 AC_ARG_ENABLE([build-type],
   [AS_HELP_STRING([[--enable-build-type=TYPE]],
   [enable build TYPE, a set of configuration parameters; individual settings ]
-  [(asserts, sanitizers, compiler and linker flags) can be overriden by ]
+  [(asserts, sanitizers, compiler and linker flags) can be overridden by ]
   [additional configure parameters (debug, debugger, neutral, release, release-compact, ]
   [release-hardened) [neutral]])],
   [], [enable_build_type=neutral])
@@ -86,7 +86,7 @@ AS_VAR_IF([enable_build_type], ["no"], [enable_build_type="neutral"])
 AS_VAR_IF([enable_build_type], ["yes"], [AC_MSG_ERROR([[Missing TYPE for --enable-build-type=]])])
 AS_CASE([${enable_build_type}],
   [debug], [AC_MSG_RESULT([debug. Defaults: enable asserts, sanitizers (if any supported), debug information, compiler optimisation for debugging])],
-  [debugger], [AC_MSG_RESULT([debuger. Defaults: enable asserts, disable sanitizers, debug information, no compiler optimisation])],
+  [debugger], [AC_MSG_RESULT([debugger. Defaults: enable asserts, disable sanitizers, debug information, no compiler optimisation])],
   [neutral], [AC_MSG_RESULT([neutral. Defaults: use only user-specified compiler and linker flags])],
   [release], [AC_MSG_RESULT([release. Defaults: disable asserts, enable compiler optimisations])],
   [release-compact], [AC_MSG_RESULT([release-compact. Defaults: disable asserts, enable compiler optimisations for size, enable compact code])],
@@ -1537,7 +1537,7 @@ fd = epoll_create1(EPOLL_CLOEXEC);]])],
   AS_IF([test "x$mhd_cv_have_epoll_create1" = "xyes"],[
     AC_DEFINE([[HAVE_EPOLL_CREATE1]], [[1]], [Define if you have epoll_create1 function.])]))
 
-AC_CACHE_CHECK([for suported 'noreturn' keyword], [mhd_cv_decl_noreturn],
+AC_CACHE_CHECK([for supported 'noreturn' keyword], [mhd_cv_decl_noreturn],
   [
     mhd_cv_decl_noreturn="none"
     CFLAGS="${CFLAGS_ac} ${user_CFLAGS} ${errattr_CFLAGS}"
@@ -3297,7 +3297,7 @@ AC_MSG_CHECKING([whether to enable run-time sanitizers])
 AC_ARG_ENABLE([sanitizers],
   [AS_HELP_STRING([[--enable-sanitizers[=address,undefined,leak,user-poison]]],
   [enable run-time sanitizers, specify the list of types of sanitizers to enable, ]
-  [leave the list empty (or set to "auto") to enable all suppoted and available ]
+  [leave the list empty (or set to "auto") to enable all supported and available ]
   [sanitizers, or specify "auto-fallback" to use sanitizers even without ]
   [installed sanitizer run-time library])],
   [], [AS_CASE([${enable_build_type}],[debug],
