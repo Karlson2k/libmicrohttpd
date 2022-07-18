@@ -2120,24 +2120,13 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   if (NULL == params)
     return MHD_DAUTH_WRONG_HEADER;
 
-  /* Check 'username' */
+  /* A quick check for presence of all required parameters */
   if (NULL == params->username.value.str)
     return MHD_DAUTH_WRONG_HEADER;
 
-  username_len = strlen (username);
-  if (! is_param_equal (&params->username, username, username_len))
-    return MHD_DAUTH_WRONG_USERNAME;
-  /* 'username' valid */
-
-  /* Check 'realm' */
   if (NULL == params->realm.value.str)
     return MHD_DAUTH_WRONG_HEADER;
-  realm_len = strlen (realm);
-  if (! is_param_equal (&params->realm, realm, realm_len))
-    return MHD_DAUTH_WRONG_REALM;
-  /* 'realm' valid */
 
-  /* Check 'nonce' */
   if (NULL == params->nonce.value.str)
     return MHD_DAUTH_WRONG_HEADER;
   else if (0 == params->nonce.value.len)
@@ -2145,6 +2134,50 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   else if (NONCE_STD_LEN (digest_size) * 2 < params->nonce.value.len)
     return MHD_DAUTH_NONCE_WRONG;
 
+  if (NULL == params->cnonce.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (0 == params->cnonce.value.len)
+    return MHD_DAUTH_WRONG_HEADER;
+
+  if (NULL == params->qop.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (0 == params->qop.value.len)
+    return MHD_DAUTH_WRONG_QOP;
+  else if (MHD_STATICSTR_LEN_ ("auth-int") * 2 < params->qop.value.len)
+    return MHD_DAUTH_WRONG_QOP;
+
+  if (NULL == params->nc.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (0 == params->nc.value.len)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (4 * 8 < params->nc.value.len) /* Four times more than needed */
+    return MHD_DAUTH_WRONG_HEADER;
+
+  if (NULL == params->response.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (0 == params->response.value.len)
+    return MHD_DAUTH_RESPONSE_WRONG;
+  else if (digest_size * 4 < params->response.value.len)
+    return MHD_DAUTH_RESPONSE_WRONG;
+
+  if (NULL == params->uri.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (0 == params->uri.value.len)
+    return MHD_DAUTH_WRONG_URI;
+
+  /* Check 'username' */
+  username_len = strlen (username);
+  if (! is_param_equal (&params->username, username, username_len))
+    return MHD_DAUTH_WRONG_USERNAME;
+  /* 'username' valid */
+
+  /* Check 'realm' */
+  realm_len = strlen (realm);
+  if (! is_param_equal (&params->realm, realm, realm_len))
+    return MHD_DAUTH_WRONG_REALM;
+  /* 'realm' valid */
+
+  /* Check 'nonce' */
   unq_res = get_unquoted_param (&params->nonce, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
@@ -2195,10 +2228,6 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   /* 'nonce' valid */
 
   /* Get 'cnonce' */
-  if (NULL == params->cnonce.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (0 == params->cnonce.value.len)
-    return MHD_DAUTH_WRONG_HEADER;
   unq_res = get_unquoted_param (&params->cnonce, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
@@ -2214,12 +2243,6 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   /* Got 'cnonce' */
 
   /* Get 'qop' */
-  if (NULL == params->qop.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (0 == params->qop.value.len)
-    return MHD_DAUTH_WRONG_QOP;
-  else if (MHD_STATICSTR_LEN_ ("auth-int") * 2 < params->qop.value.len)
-    return MHD_DAUTH_WRONG_QOP;
   unq_res = get_unquoted_param (&params->qop, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
@@ -2238,12 +2261,6 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   /* Got 'qop' */
 
   /* Get 'nc' */
-  if (NULL == params->nc.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (0 == params->nc.value.len)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (4 * 8 < params->nc.value.len) /* Four time more than needed */
-    return MHD_DAUTH_NONCE_WRONG;
   unq_res = get_unquoted_param (&params->nc, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
@@ -2275,12 +2292,6 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   /* Got 'nc' */
 
   /* Get 'response' */
-  if (NULL == params->response.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (0 == params->response.value.len)
-    return MHD_DAUTH_RESPONSE_WRONG;
-  else if (digest_size * 4 < params->response.value.len)
-    return MHD_DAUTH_RESPONSE_WRONG;
   unq_res = get_unquoted_param (&params->response, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
@@ -2332,10 +2343,6 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   }
 
   /* Get 'uri' */
-  if (NULL == params->uri.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (0 == params->uri.value.len)
-    return MHD_DAUTH_WRONG_URI;
   unq_res = get_unquoted_param_copy (&params->uri, tmp1, ptmp2, &tmp2_size,
                                      &unq_copy);
   if (_MHD_UNQ_OK != unq_res)
