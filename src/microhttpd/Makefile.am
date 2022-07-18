@@ -190,6 +190,7 @@ check_PROGRAMS = \
   test_str_token \
   test_str_token_remove \
   test_str_tokens_remove \
+  test_str_pct \
   test_http_reasons \
   test_md5 \
   test_sha1 \
@@ -456,6 +457,9 @@ test_str_quote_SOURCES = \
 
 test_str_base64_SOURCES = \
   test_str_base64.c mhd_str.h mhd_str.c mhd_assert.h
+
+test_str_pct_SOURCES = \
+  test_str_pct.c mhd_str.h mhd_str.c mhd_assert.h
 
 test_options_SOURCES = \
   test_options.c

@@ -81,3 +81,4 @@ test_postprocessor_md
 /test_auth_parse
 /test_str_quote
 /test_str_base64
+/test_str_pct
