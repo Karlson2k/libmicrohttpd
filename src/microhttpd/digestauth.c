@@ -242,7 +242,6 @@ struct DigestAlgorithm
   /**
    * Buffer for hex-print of the final digest.
    */
-  union DigestHex digest_hex;
 #if _DEBUG
   bool setup; /**< The structure was set-up */
   bool inited; /**< The calculation was initialised */
@@ -378,6 +377,20 @@ digest_update (struct DigestAlgorithm *da,
 
 
 /**
+ * Feed digest calculation with more data from string.
+ * @param da the digest calculation
+ * @param str the zero-terminated string to process
+ */
+_MHD_static_inline void
+digest_update_str (struct DigestAlgorithm *da,
+                   const char *str)
+{
+  const size_t str_len = strlen (str);
+  digest_update (da, (const uint8_t *) str, str_len);
+}
+
+
+/**
  * Finally calculate hash (the digest).
  * @param da the digest calculation
  */
@@ -410,244 +423,6 @@ digest_get_bin (struct DigestAlgorithm *da)
   mhd_assert (da->digest_calculated);
   mhd_assert (da->digest.md5 == da->digest.sha256);
   return da->digest.sha256;
-}
-
-
-/**
- * Get pointer to the buffer for the printed digest.
- * @param da the digest calculation
- * @return the pointer to the buffer
- */
-_MHD_static_inline char *
-digest_get_hex_buffer (struct DigestAlgorithm *da)
-{
-  return da->digest_hex.sha256;
-}
-
-
-/**
- * Put calculated digest to the buffer as hex digits.
- * @param da the digest calculation
- * @return the pointer to the calculated digest
- */
-_MHD_static_inline void
-digest_make_hex (struct DigestAlgorithm *da)
-{
-  MHD_bin_to_hex (digest_get_bin (da),
-                  digest_get_size (da),
-                  digest_get_hex_buffer (da));
-}
-
-
-/**
- * calculate H(A1) from given hash as per RFC2617 spec
- * and store the result in 'digest_hex'.
- *
- * @param alg The hash algorithm used, can be "MD5" or "MD5-sess"
- *            or "SHA-256" or "SHA-256-sess"
- *    Note that the rest of the code does not support the the "-sess" variants!
- * @param[in,out] da digest implementation, must match @a alg; the
- *          da->digest_hex will be initialized to the digest in HEX
- * @param digest An `unsigned char *' pointer to the binary MD5 sum
- *      for the precalculated hash value "username:realm:password"
- *      of #MHD_MD5_DIGEST_SIZE or #SHA256_DIGEST_SIZE bytes
- * @param nonce A `char *' pointer to the nonce value
- * @param cnonce A `char *' pointer to the cnonce value
- */
-static void
-digest_calc_ha1_from_digest (const char *alg,
-                             struct DigestAlgorithm *da,
-                             const uint8_t *digest,
-                             const char *nonce,
-                             const char *cnonce)
-{
-  /* TODO: disable unsupported code paths */
-  if ( (MHD_str_equal_caseless_ (alg,
-                                 _MHD_MD5_TOKEN _MHD_SESS_TOKEN)) ||
-       (MHD_str_equal_caseless_ (alg,
-                                 _MHD_SHA256_TOKEN _MHD_SESS_TOKEN)) )
-  {
-    digest_init (da);
-    digest_update (da,
-                   digest,
-                   digest_get_size (da));
-    digest_update (da,
-                   (const unsigned char *) ":",
-                   1);
-    digest_update (da,
-                   (const unsigned char *) nonce,
-                   strlen (nonce));
-    digest_update (da,
-                   (const unsigned char *) ":",
-                   1);
-    digest_update (da,
-                   (const unsigned char *) cnonce,
-                   strlen (cnonce));
-    digest_calc_hash (da);
-    digest_make_hex (da);
-  }
-  else
-  {
-    MHD_bin_to_hex (digest,
-                    digest_get_size (da),
-                    digest_get_hex_buffer (da));
-  }
-}
-
-
-/**
- * calculate H(A1) from username, realm and password as per RFC2617 spec
- * and store the result in 'digest_hex'.
- *
- * @param alg The hash algorithm used, can be "MD5" or "MD5-sess"
- *             or "SHA-256" or "SHA-256-sess"
- * @param username A `char *' pointer to the username value
- * @param username the length of the @a username
- * @param realm A `char *' pointer to the realm value
- * @param realm_len the length of the @a realm
- * @param password A `char *' pointer to the password value
- * @param nonce A `char *' pointer to the nonce value
- * @param cnonce A `char *' pointer to the cnonce value
- * @param[in,out] da digest algorithm to use, and where to write
- *         the sessionkey to
- */
-static void
-digest_calc_ha1_from_user (const char *alg,
-                           const char *username,
-                           size_t username_len,
-                           const char *realm,
-                           size_t realm_len,
-                           const char *password,
-                           const char *nonce,
-                           const char *cnonce,
-                           struct DigestAlgorithm *da)
-{
-  digest_init (da);
-  digest_update (da,
-                 (const unsigned char *) username,
-                 username_len);
-  digest_update (da,
-                 (const unsigned char *) ":",
-                 1);
-  digest_update (da,
-                 (const unsigned char *) realm,
-                 realm_len);
-  digest_update (da,
-                 (const unsigned char *) ":",
-                 1);
-  digest_update (da,
-                 (const unsigned char *) password,
-                 strlen (password));
-  digest_calc_hash (da);
-  digest_calc_ha1_from_digest (alg,
-                               da,
-                               digest_get_bin (da),
-                               nonce,
-                               cnonce);
-}
-
-
-/**
- * Calculate request-digest/response-digest as per RFC2617 / RFC7616
- * spec.
- *
- * @param ha1 H(A1), twice the @a da->digest_size + 1 bytes (0-terminated),
- *        MUST NOT be aliased with `da->sessionkey`!
- * @param nonce nonce from server
- * @param noncecount 8 hex digits
- * @param cnonce client nonce
- * @param qop qop-value: "", "auth" or "auth-int" (NOTE: only 'auth' is supported today.)
- * @param method method from request
- * @param uri requested URL, could be not zero-terminated
- * @param uri_len the length of @a uri, in characters
- * @param hentity H(entity body) if qop="auth-int"
- * @param[in,out] da digest algorithm to use, also
- *        we write da->sessionkey (set to response request-digest or response-digest)
- */
-static void
-digest_calc_response (const char *ha1,
-                      const char *nonce,
-                      const char *noncecount,
-                      const char *cnonce,
-                      const char *qop,
-                      const char *method,
-                      const char *uri,
-                      size_t uri_len,
-                      const char *hentity,
-                      struct DigestAlgorithm *da)
-{
-  (void) hentity; /* Unused. Silence compiler warning. */
-
-  /* Calculate h(a2) */
-  digest_init (da);
-  digest_update (da,
-                 (const unsigned char *) method,
-                 strlen (method));
-  digest_update (da,
-                 (const unsigned char *) ":",
-                 1);
-  digest_update (da,
-                 (const unsigned char *) uri,
-                 uri_len);
-#if 0
-  if (0 == strcasecmp (qop,
-                       "auth-int"))
-  {
-    /* This is dead code since the rest of this module does
- not support auth-int. */
-    digest_update (da,
-                   ":",
-                   1);
-    if (NULL != hentity)
-      da->update (da->ctx,
-                  hentity,
-                  strlen (hentity));
-  }
-#endif
-  digest_calc_hash (da);
-  digest_make_hex (da);
-
-  /* calculate response */
-  digest_init (da);
-  digest_update (da,
-                 (const unsigned char *) ha1,
-                 digest_get_size (da) * 2);
-  digest_update (da,
-                 (const unsigned char *) ":",
-                 1);
-  digest_update (da,
-                 (const unsigned char *) nonce,
-                 strlen (nonce));
-  digest_update (da,
-                 (const unsigned char *) ":",
-                 1);
-  if ('\0' != *qop)
-  {
-    digest_update (da,
-                   (const unsigned char *) noncecount,
-                   strlen (noncecount));
-    digest_update (da,
-                   (const unsigned char *) ":",
-                   1);
-    digest_update (da,
-                   (const unsigned char *) cnonce,
-                   strlen (cnonce));
-    digest_update (da,
-                   (const unsigned char *) ":",
-                   1);
-    digest_update (da,
-                   (const unsigned char *) qop,
-                   strlen (qop));
-    digest_update (da,
-                   (const unsigned char *) ":",
-                   1);
-  }
-  digest_update (da,
-                 (const unsigned char *) digest_get_hex_buffer (da),
-                 digest_get_size (da) * 2);
-
-  digest_calc_hash (da);
-  digest_make_hex (da);
 }
 
 
@@ -744,7 +519,8 @@ get_nonce_nc_idx (size_t arr_size,
  * Check nonce-nc map array with the new nonce counter.
  *
  * @param connection The MHD connection structure
- * @param nonce A pointer that referenced a zero-terminated array of nonce
+ * @param nonce the pointer that referenced hex nonce, does not need to be
+ *              zero-terminated
  * @param noncelen the length of @a nonce, in characters
  * @param nc The nonce counter
  * @return #MHD_DAUTH_NONCENC_OK if successful,
@@ -766,7 +542,6 @@ check_nonce_nc (struct MHD_Connection *connection,
   enum MHD_CheckNonceNC_ ret;
 
   mhd_assert (0 != noncelen);
-  mhd_assert (strlen (nonce) == noncelen);
   mhd_assert (0 != nc);
   if (MAX_DIGEST_NONCE_LENGTH < noncelen)
     return MHD_CHECK_NONCENC_WRONG; /* This should be impossible, but static analysis
@@ -800,7 +575,7 @@ check_nonce_nc (struct MHD_Connection *connection,
     else
     {
       uint64_t slot_ts; /**< The timestamp in the slot */
-      if (! get_nonce_timestamp (nn->nonce, 0, &slot_ts))
+      if (! get_nonce_timestamp (nn->nonce, noncelen, &slot_ts))
       {
         mhd_assert (0); /* The value is the slot is wrong */
         ret = MHD_CHECK_NONCENC_STALE;
@@ -2105,6 +1880,30 @@ is_param_equal (const struct MHD_RqDAuthParam *param,
 
 
 /**
+ * Check whether Digest Auth request parameter is caseless equal to given string
+ * @param param the parameter to check
+ * @param str the string to compare with, does not need to be zero-terminated
+ * @param str_len the length of the @a str
+ * @return true is parameter is caseless equal to the given string,
+ *         false otherwise
+ */
+_MHD_static_inline bool
+is_param_equal_caseless (const struct MHD_RqDAuthParam *param,
+                         const char *const str,
+                         const size_t str_len)
+{
+  mhd_assert (NULL != param->value.str);
+  mhd_assert (0 != param->value.len);
+  if (param->quoted)
+    return MHD_str_equal_quoted_bin_n (param->value.str, param->value.len,
+                                       str, str_len);
+  return (str_len == param->value.len) &&
+         (0 == memcmp (str, param->value.str, str_len));
+
+}
+
+
+/**
  * Authenticates the authorization header sent by the client
  *
  * @param connection The MHD connection structure
@@ -2136,13 +1935,16 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
                              char **pbuf)
 {
   struct MHD_Daemon *daemon = MHD_get_master (connection->daemon);
-  char cnonce[MAX_CLIENT_NONCE_LENGTH];
+  static const uint8_t colon = (uint8_t) ':';
   const unsigned int digest_size = digest_get_size (da);
-  char ha1[VLA_ARRAY_LEN_DIGEST (digest_size) * 2 + 1];
-  char qop[15]; /* auth,auth-int */
-  char nc[20];
-  char response[MAX_AUTH_RESPONSE_LENGTH];
+  char hdigest1[VLA_ARRAY_LEN_DIGEST (digest_size) * 2 + 1];
+  char hdigest2[VLA_ARRAY_LEN_DIGEST (digest_size) * 2 + 1];
+  char *ha1;
+  char *ha2;
+  uint8_t *response_bin;
+#if 0
   const char *hentity = NULL; /* "auth-int" is not supported */
+#endif
   char noncehashexp[NONCE_STD_LEN (VLA_ARRAY_LEN_DIGEST (digest_size)) + 1];
   uint64_t nonce_time;
   uint64_t t;
@@ -2154,17 +1956,18 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   struct _MHD_str_w_len unquoted;
   struct _MHD_mstr_w_len unq_copy;
   enum _MHD_GetUnqResult unq_res;
-  enum MHD_DigestAuthResult ret;
   size_t username_len;
   size_t realm_len;
 
   tmp2_size = 0;
+  ha1 = NULL;
+  ha2 = NULL;
 
   params = get_rq_dauth_params (connection);
   if (NULL == params)
     return MHD_DAUTH_WRONG_HEADER;
 
-  /* A quick check for presence of all required parameters */
+  /* ** A quick check for presence of all required parameters ** */
   if (NULL == params->username.value.str)
     return MHD_DAUTH_WRONG_HEADER;
 
@@ -2178,10 +1981,19 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   else if (NONCE_STD_LEN (digest_size) * 2 < params->nonce.value.len)
     return MHD_DAUTH_NONCE_WRONG;
 
+  if (NULL == params->nc.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (0 == params->nc.value.len)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (4 * 8 < params->nc.value.len) /* Four times more than needed */
+    return MHD_DAUTH_WRONG_HEADER;
+
   if (NULL == params->cnonce.value.str)
     return MHD_DAUTH_WRONG_HEADER;
   else if (0 == params->cnonce.value.len)
     return MHD_DAUTH_WRONG_HEADER;
+  else if (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < params->cnonce.value.len)
+    return MHD_DAUTH_TOO_LARGE;
 
   if (NULL == params->qop.value.str)
     return MHD_DAUTH_WRONG_HEADER;
@@ -2189,13 +2001,6 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     return MHD_DAUTH_WRONG_QOP;
   else if (MHD_STATICSTR_LEN_ ("auth-int") * 2 < params->qop.value.len)
     return MHD_DAUTH_WRONG_QOP;
-
-  if (NULL == params->nc.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (0 == params->nc.value.len)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (4 * 8 < params->nc.value.len) /* Four times more than needed */
-    return MHD_DAUTH_WRONG_HEADER;
 
   if (NULL == params->response.value.str)
     return MHD_DAUTH_WRONG_HEADER;
@@ -2208,6 +2013,10 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     return MHD_DAUTH_WRONG_HEADER;
   else if (0 == params->uri.value.len)
     return MHD_DAUTH_WRONG_URI;
+  else if (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < params->uri.value.len)
+    return MHD_DAUTH_TOO_LARGE;
+
+  /* ** Check simple parameters match ** */
 
   /* Check 'username' */
   username_len = strlen (username);
@@ -2221,101 +2030,20 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     return MHD_DAUTH_WRONG_REALM;
   /* 'realm' valid */
 
-  /* Check 'nonce' */
-  unq_res = get_unquoted_param (&params->nonce, tmp1, ptmp2, &tmp2_size,
-                                &unquoted);
-  if (_MHD_UNQ_OK != unq_res)
-    return MHD_DAUTH_ERROR;
-  if (NONCE_STD_LEN (digest_size) != unquoted.len)
-    return MHD_DAUTH_NONCE_WRONG;
-
-  if (! get_nonce_timestamp (unquoted.str, unquoted.len, &nonce_time))
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Authentication failed, invalid timestamp format.\n"));
-#endif
-    return MHD_DAUTH_NONCE_WRONG;
-  }
-  t = MHD_monotonic_msec_counter ();
-  /*
-   * First level vetting for the nonce validity: if the timestamp
-   * attached to the nonce exceeds `nonce_timeout', then the nonce is
-   * invalid.
-   */
-  if (TRIM_TO_TIMESTAMP (t - nonce_time) > (nonce_timeout * 1000))
-    return MHD_DAUTH_NONCE_STALE; /* too old */
-
-  calculate_nonce (nonce_time,
-                   connection->method,
-                   daemon->digest_auth_random,
-                   daemon->digest_auth_rand_size,
-                   connection->url,
-                   connection->url_len,
-                   connection->headers_received,
-                   realm,
-                   realm_len,
-                   da,
-                   noncehashexp);
-  /*
-   * Second level vetting for the nonce validity
-   * if the timestamp attached to the nonce is valid
-   * and possibly fabricated (in case of an attack)
-   * the attacker must also know the random seed to be
-   * able to generate a "sane" nonce, which if he does
-   * not, the nonce fabrication process going to be
-   * very hard to achieve.
-   */
-  if ((0 != strncmp (noncehashexp, unquoted.str, unquoted.len)) ||
-      (0 != noncehashexp[unquoted.len]))
-    return MHD_DAUTH_NONCE_WRONG;
-  /* 'nonce' valid */
-
-  /* Get 'cnonce' */
-  unq_res = get_unquoted_param (&params->cnonce, tmp1, ptmp2, &tmp2_size,
-                                &unquoted);
-  if (_MHD_UNQ_OK != unq_res)
-    return (_MHD_UNQ_TOO_LARGE == unq_res) ?
-           MHD_DAUTH_TOO_LARGE : MHD_DAUTH_ERROR;
-
-  if (sizeof(cnonce) <= unquoted.len)
-    return MHD_DAUTH_ERROR; /* TODO: handle large client nonces */
-
-  /* TODO: avoid memcpy() */
-  memcpy (cnonce, unquoted.str, unquoted.len);
-  cnonce[unquoted.len] = 0;
-  /* Got 'cnonce' */
-
-  /* Get 'qop' */
-  unq_res = get_unquoted_param (&params->qop, tmp1, ptmp2, &tmp2_size,
-                                &unquoted);
-  if (_MHD_UNQ_OK != unq_res)
-    return MHD_DAUTH_ERROR;
-
-  if (sizeof(qop) <= unquoted.len)
-    return MHD_DAUTH_ERROR; /* TODO: handle large client qop */
-  /* TODO: avoid memcpy() */
-  memcpy (qop, unquoted.str, unquoted.len);
-  qop[unquoted.len] = 0;
-  /* TODO: Really support empty value, support "auth-int" */
-  if ( ((MHD_STATICSTR_LEN_ ("auth") != unquoted.len) ||
-        (! MHD_str_equal_caseless_bin_n_ (qop, "auth", unquoted.len))) &&
-       (0 != strcmp (qop,"")) )
+  /* Check 'qop' */
+  /* TODO: support MHD_DIGEST_AUTH_QOP_NONE and MHD_DIGEST_AUTH_QOP_AUTH_INT */
+  if (MHD_DIGEST_AUTH_QOP_AUTH != get_rq_qop (params))
     return MHD_DAUTH_WRONG_QOP;
-  /* Got 'qop' */
+  /* 'qop' valid */
 
-  /* Get 'nc' */
+  /* ** Do basic nonce and nonce-counter checks (size, timestamp) ** */
+  /* Get 'nc' digital value */
   unq_res = get_unquoted_param (&params->nc, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
 
-  if (sizeof(nc) <= unquoted.len)
-    return MHD_DAUTH_ERROR;
-  /* TODO: avoid memcpy() */
-  memcpy (nc, unquoted.str, unquoted.len);
-  nc[unquoted.len] = 0;
-  if (unquoted.len != MHD_strx_to_uint64_n_ (nc,
+  if (unquoted.len != MHD_strx_to_uint64_n_ (unquoted.str,
                                              unquoted.len,
                                              &nci))
   {
@@ -2333,25 +2061,30 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 #endif
     return MHD_DAUTH_WRONG_HEADER;   /* invalid nc value */
   }
-  /* Got 'nc' */
-
-  /* Get 'response' */
-  unq_res = get_unquoted_param (&params->response, tmp1, ptmp2, &tmp2_size,
+  /* Got 'nc' digital value */
+  /* Get 'nonce' with basic checks */
+  unq_res = get_unquoted_param (&params->nonce, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
-  if (digest_size * 2 != unquoted.len)
-    return MHD_DAUTH_RESPONSE_WRONG;
 
-  mhd_assert (sizeof(response) > unquoted.len);
-
-  if (sizeof(response) <= unquoted.len)
-    return MHD_DAUTH_ERROR;
-  /* TODO: avoid memcpy() */
-  memcpy (response, unquoted.str, unquoted.len);
-  response[unquoted.len] = 0;
-  /* Got 'response' */
-
+  if ((NONCE_STD_LEN (digest_size) != unquoted.len) ||
+      (! get_nonce_timestamp (unquoted.str, unquoted.len, &nonce_time)))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Authentication failed, invalid nonce format.\n"));
+#endif
+    return MHD_DAUTH_NONCE_WRONG;
+  }
+  t = MHD_monotonic_msec_counter ();
+  /*
+   * First level vetting for the nonce validity: if the timestamp
+   * attached to the nonce exceeds `nonce_timeout', then the nonce is
+   * invalid.
+   */
+  if (TRIM_TO_TIMESTAMP (t - nonce_time) > (nonce_timeout * 1000))
+    return MHD_DAUTH_NONCE_STALE; /* too old */
   if (1)
   {
     enum MHD_CheckNonceNC_ nonce_nc_check;
@@ -2361,7 +2094,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
      * generated previously.
      */
     nonce_nc_check = check_nonce_nc (connection,
-                                     noncehashexp,
+                                     unquoted.str,
                                      NONCE_STD_LEN (digest_size),
                                      nonce_time,
                                      nci);
@@ -2385,60 +2118,115 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     }
     mhd_assert (MHD_CHECK_NONCENC_OK == nonce_nc_check);
   }
+  /* The nonce was generated by MHD, is not stale and nonce-nc combination was
+     not used before */
 
+  /* ** Build H(A2) and check URI match in the header and in the request ** */
   /* Get 'uri' */
+  digest_init (da);
+  digest_update_str (da, connection->method);
+  digest_update (da, &colon, 1);
+#if 0
+  /* TODO: add support for "auth-int" */
+  digest_update_str (da, hentity);
+  digest_update (da, &colon, 1);
+#endif
   unq_res = get_unquoted_param_copy (&params->uri, tmp1, ptmp2, &tmp2_size,
                                      &unq_copy);
   if (_MHD_UNQ_OK != unq_res)
-    return (_MHD_UNQ_TOO_LARGE == unq_res) ?
-           MHD_DAUTH_TOO_LARGE : MHD_DAUTH_ERROR;
+    return MHD_DAUTH_ERROR;
 
-  if (NULL != digest)
-  {
-    /* This will initialize da->digest_hex (ha1) */
-    digest_calc_ha1_from_digest (digest_get_algo_name (da),
-                                 da,
-                                 digest,
-                                 noncehashexp,
-                                 cnonce);
-  }
-  else
-  {
-    /* This will initialize da->digest_hex (ha1) */
-    mhd_assert (NULL != password);   /* NULL == digest => password != NULL */
-    digest_calc_ha1_from_user (digest_get_algo_name (da),
-                               username,
-                               username_len,
-                               realm,
-                               realm_len,
-                               password,
-                               noncehashexp,
-                               cnonce,
-                               da);
-  }
-  memcpy (ha1,
-          digest_get_hex_buffer (da),
-          digest_size * 2 + 1);
-  /* This will initialize da->sessionkey (respexp) */
-  digest_calc_response (ha1,
-                        noncehashexp,
-                        nc,
-                        cnonce,
-                        qop,
-                        connection->method,
-                        unq_copy.str,
-                        unq_copy.len,
-                        hentity,
-                        da);
-
+  digest_update (da, (const uint8_t *) unq_copy.str, unq_copy.len);
+  /* The next check will modify copied URI string */
   if (! check_uri_match (connection, unq_copy.str, unq_copy.len))
     return MHD_DAUTH_WRONG_URI;
+  digest_calc_hash (da);
+  ha2 = hdigest2;
+  MHD_bin_to_hex (digest_get_bin (da), digest_size, ha2);
+  /* Got H(A2) */
 
-  ret = (0 == strcmp (response,
-                      digest_get_hex_buffer (da))) ?
-        MHD_DAUTH_OK : MHD_DAUTH_RESPONSE_WRONG;
+  /* ** Build H(A1) ** */
+  ha1 = hdigest1;
+  if (NULL == digest)
+  {
+    digest_init (da);
+    digest_update (da, (const uint8_t *) username, username_len);
+    digest_update (da, &colon, 1);
+    digest_update (da, (const uint8_t *) realm, realm_len);
+    digest_update (da, &colon, 1);
+    digest_update_str (da, password);
+    digest_calc_hash (da);
+    MHD_bin_to_hex (digest_get_bin (da), digest_size, ha1);
+  }
+  else
+    MHD_bin_to_hex (digest, digest_size, ha1);
+  /* TODO: support '-sess' versions */
+  /* Got H(A1) */
 
-  return ret;
+  /* **  Check 'response' ** */
+  digest_init (da);
+  digest_update (da, (const uint8_t *) ha1, digest_size * 2);
+  ha1 = NULL;
+  /* H(A1) is not needed anymore, reuse the buffer */
+  response_bin = (uint8_t *) hdigest1;
+  unq_res = get_unquoted_param (&params->response, tmp1, ptmp2, &tmp2_size,
+                                &unquoted);
+  if (_MHD_UNQ_OK != unq_res)
+    return MHD_DAUTH_ERROR;
+  if (digest_size != MHD_hex_to_bin (unquoted.str, unquoted.len, response_bin))
+    return MHD_DAUTH_RESPONSE_WRONG;
+  digest_update (da, &colon, 1);
+  unq_res = get_unquoted_param (&params->nonce, tmp1, ptmp2, &tmp2_size,
+                                &unquoted);
+  if (_MHD_UNQ_OK != unq_res)
+    return MHD_DAUTH_ERROR;
+  digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
+  digest_update (da, &colon, 1);
+  unq_res = get_unquoted_param (&params->nc, tmp1, ptmp2, &tmp2_size,
+                                &unquoted);
+  if (_MHD_UNQ_OK != unq_res)
+    return MHD_DAUTH_ERROR;
+  digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
+  digest_update (da, &colon, 1);
+  unq_res = get_unquoted_param (&params->cnonce, tmp1, ptmp2, &tmp2_size,
+                                &unquoted);
+  if (_MHD_UNQ_OK != unq_res)
+    return MHD_DAUTH_ERROR;
+  digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
+  digest_update (da, &colon, 1);
+  unq_res = get_unquoted_param (&params->qop, tmp1, ptmp2, &tmp2_size,
+                                &unquoted);
+  if (_MHD_UNQ_OK != unq_res)
+    return MHD_DAUTH_ERROR;
+  digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
+  digest_update (da, &colon, 1);
+  digest_update (da, (const uint8_t *) ha2, digest_size * 2);
+  ha2 = NULL;
+  digest_calc_hash (da);
+  if (0 != memcmp (digest_get_bin (da), response_bin, digest_size))
+    return MHD_DAUTH_RESPONSE_WRONG;
+  response_bin = NULL;
+
+  /* It was already checked that 'nonce' (including timestamp) was generated
+     by MHD. The next check is mostly an overcaution. */
+  calculate_nonce (nonce_time,
+                   connection->method,
+                   daemon->digest_auth_random,
+                   daemon->digest_auth_rand_size,
+                   connection->url,
+                   connection->url_len,
+                   connection->headers_received,
+                   realm,
+                   realm_len,
+                   da,
+                   noncehashexp);
+
+  if (! is_param_equal (&params->nonce, noncehashexp,
+                        NONCE_STD_LEN (digest_size)))
+    return MHD_DAUTH_NONCE_WRONG;
+  /* The 'nonce' was generated in the same conditions */
+
+  return MHD_DAUTH_OK;
 }
 
 
