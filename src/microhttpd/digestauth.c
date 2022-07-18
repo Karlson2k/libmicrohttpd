@@ -1844,39 +1844,29 @@ test_header (void *cls,
  * got as part of the HTTP request URI.
  *
  * @param connection connections with headers to compare against
- * @param args argument URI string (after "?" in URI)
- * @return #MHD_YES if the arguments match,
- *         #MHD_NO if not
+ * @param args the copy of argument URI string (after "?" in URI), will be
+ *             modified by this function
+ * @return boolean true if the arguments match,
+ *         boolean false if not
  */
-static enum MHD_Result
+static bool
 check_argument_match (struct MHD_Connection *connection,
-                      const char *args)
+                      char *args)
 {
   struct MHD_HTTP_Req_Header *pos;
-  char *argb;
   enum MHD_Result ret;
   struct test_header_param param;
 
-  argb = strdup (args);
-  if (NULL == argb)
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("Failed to allocate memory for copy of URI arguments.\n"));
-#endif /* HAVE_MESSAGES */
-    return MHD_NO;
-  }
   param.connection = connection;
   param.num_headers = 0;
   ret = MHD_parse_arguments_ (connection,
                               MHD_GET_ARGUMENT_KIND,
-                              argb,
+                              args,
                               &test_header,
                               &param);
-  free (argb);
   if (MHD_NO == ret)
   {
-    return MHD_NO;
+    return false;
   }
   /* also check that the number of headers matches */
   for (pos = connection->headers_received; NULL != pos; pos = pos->next)
@@ -1888,9 +1878,64 @@ check_argument_match (struct MHD_Connection *connection,
   if (0 != param.num_headers)
   {
     /* argument count mismatch */
-    return MHD_NO;
+    return false;
   }
-  return MHD_YES;
+  return true;
+}
+
+
+/**
+ * Check that the URI provided by the client as part
+ * of the authentication header match the real HTTP request URI.
+ *
+ * @param connection connections with headers to compare against
+ * @param uri the copy of URI in the authentication header, should point to
+ *            modifiable buffer at least @a uri_len + 1 characters long,
+ *            will be modified by this function, not valid upon return
+ * @param uri_len the length of the @a uri string in characters
+ * @return boolean true if the URIs match,
+ *         boolean false if not
+ */
+static bool
+check_uri_match (struct MHD_Connection *connection, char *uri, size_t uri_len)
+{
+  char *qmark;
+  char *args;
+  struct MHD_Daemon *const daemon = connection->daemon;
+
+  uri[uri_len] = 0;
+  qmark = memchr (uri,
+                  '?',
+                  uri_len);
+  if (NULL != qmark)
+    *qmark = '\0';
+
+  /* Need to unescape URI before comparing with connection->url */
+  uri_len = daemon->unescape_callback (daemon->unescape_callback_cls,
+                                       connection,
+                                       uri);
+  if ((uri_len != connection->url_len) ||
+      (0 != memcmp (uri, connection->url, uri_len)))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Authentication failed, URI does not match.\n"));
+#endif
+    return false;
+  }
+
+  args = (NULL != qmark) ? (qmark + 1) : uri + uri_len;
+
+  if (! check_argument_match (connection,
+                              args) )
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Authentication failed, arguments do not match.\n"));
+#endif
+    return false;
+  }
+  return true;
 }
 
 
@@ -2102,7 +2147,6 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   uint64_t nonce_time;
   uint64_t t;
   uint64_t nci;
-  char *qmark;
   const struct MHD_RqDAuth *params;
   char tmp1[_MHD_STATIC_UNQ_BUFFER_SIZE]; /**< Temporal buffer in stack for unquoting */
   char **const ptmp2 = pbuf;     /**< Temporal malloc'ed buffer for unquoting */
@@ -2386,59 +2430,13 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
                         unq_copy.len,
                         hentity,
                         da);
-  if (1)
-  {
-    char *uri;
-    size_t uri_len;
-    uri = unq_copy.str;
-    uri_len = unq_copy.len;
 
-    uri[uri_len] = 0;
-    qmark = memchr (uri,
-                    '?',
-                    uri_len);
-    if (NULL != qmark)
-      *qmark = '\0';
+  if (! check_uri_match (connection, unq_copy.str, unq_copy.len))
+    return MHD_DAUTH_WRONG_URI;
 
-    /* Need to unescape URI before comparing with connection->url */
-    uri_len = daemon->unescape_callback (daemon->unescape_callback_cls,
-                                         connection,
-                                         uri);
-    if ((uri_len != connection->url_len) ||
-        (0 != memcmp (uri, connection->url, uri_len)))
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Authentication failed, URI does not match.\n"));
-#endif
-      return MHD_DAUTH_WRONG_URI;
-    }
-
-    if (1)
-    {
-      const char *args = qmark;
-
-      if (NULL == args)
-        args = "";
-      else
-        args++;
-      if (MHD_NO ==
-          check_argument_match (connection,
-                                args) )
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _ ("Authentication failed, arguments do not match.\n"));
-#endif
-        return MHD_DAUTH_WRONG_URI;
-      }
-    }
-
-    ret = (0 == strcmp (response,
-                        digest_get_hex_buffer (da)))
-    ? MHD_DAUTH_OK
-    : MHD_DAUTH_RESPONSE_WRONG;
-  }
+  ret = (0 == strcmp (response,
+                      digest_get_hex_buffer (da))) ?
+        MHD_DAUTH_OK : MHD_DAUTH_RESPONSE_WRONG;
 
   return ret;
 }
