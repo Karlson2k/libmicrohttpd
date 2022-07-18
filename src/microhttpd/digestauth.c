@@ -1545,10 +1545,10 @@ calculate_nonce (uint64_t nonce_time,
   {
     if (MHD_GET_ARGUMENT_KIND != h->kind)
       continue;
-    digest_update (da, (const uint8_t *) "##", 3);
+    digest_update (da, (const uint8_t *) "\0", 2);
     if (0 != h->header_size)
       digest_update (da, (const uint8_t *) h->header, h->header_size);
-    digest_update (da, (const uint8_t *) "#", 2);
+    digest_update (da, (const uint8_t *) "", 1);
     if (0 != h->value_size)
       digest_update (da, (const uint8_t *) h->value, h->value_size);
   }
