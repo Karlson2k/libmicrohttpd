@@ -360,15 +360,15 @@ digest_init (struct DigestAlgorithm *da)
  */
 _MHD_static_inline void
 digest_update (struct DigestAlgorithm *da,
-               const uint8_t *data,
+               const void *data,
                size_t length)
 {
   mhd_assert (da->inited);
   mhd_assert (! da->digest_calculated);
   if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
-    MHD_MD5Update (&da->ctx.md5_ctx, data, length);
+    MHD_MD5Update (&da->ctx.md5_ctx, (const uint8_t *) data, length);
   else if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
-    MHD_SHA256_update (&da->ctx.sha256_ctx, data, length);
+    MHD_SHA256_update (&da->ctx.sha256_ctx, (const uint8_t *) data, length);
   else
     mhd_assert (0); /* May not happen */
 }
@@ -1313,26 +1313,26 @@ calculate_nonce (uint64_t nonce_time,
   digest_update_with_colon (da);
   if (rnd_size > 0)
     digest_update (da,
-                   (const unsigned char *) rnd,
+                   rnd,
                    rnd_size);
   digest_update_with_colon (da);
   digest_update (da,
-                 (const unsigned char *) uri,
+                 uri,
                  uri_len);
   for (h = first_header; NULL != h; h = h->next)
   {
     if (MHD_GET_ARGUMENT_KIND != h->kind)
       continue;
-    digest_update (da, (const uint8_t *) "\0", 2);
+    digest_update (da, "\0", 2);
     if (0 != h->header_size)
-      digest_update (da, (const uint8_t *) h->header, h->header_size);
-    digest_update (da, (const uint8_t *) "", 1);
+      digest_update (da, h->header, h->header_size);
+    digest_update (da, "", 1);
     if (0 != h->value_size)
-      digest_update (da, (const uint8_t *) h->value, h->value_size);
+      digest_update (da, h->value, h->value_size);
   }
   digest_update_with_colon (da);
   digest_update (da,
-                 (const unsigned char *) realm,
+                 realm,
                  realm_len);
   digest_calc_hash (da);
   MHD_bin_to_hex (digest_get_bin (da),
@@ -2149,7 +2149,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
 
-  digest_update (da, (const uint8_t *) unq_copy.str, unq_copy.len);
+  digest_update (da, unq_copy.str, unq_copy.len);
   /* The next check will modify copied URI string */
   if (! check_uri_match (connection, unq_copy.str, unq_copy.len))
     return MHD_DAUTH_WRONG_URI;
