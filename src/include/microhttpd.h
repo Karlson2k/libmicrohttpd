@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097520
+#define MHD_VERSION 0x00097521
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4740,7 +4740,7 @@ enum MHD_DigestAuthAlgorithm
  *
  * All error values are zero or negative.
  *
- * @note Available since #MHD_VERSION 0x00097518
+ * @note Available since #MHD_VERSION 0x00097521
  */
 enum MHD_DigestAuthResult
 {
@@ -4780,6 +4780,11 @@ enum MHD_DigestAuthResult
   MHD_DAUTH_WRONG_QOP = -5,
 
   /**
+   * Wrong 'algorithm'.
+   */
+  MHD_DAUTH_WRONG_ALGO = -6,
+
+  /**
    * Too large (>64 KiB) Authorization parameter value.
    */
   MHD_DAUTH_TOO_LARGE = -15,
@@ -4817,7 +4822,7 @@ enum MHD_DigestAuthResult
  * @param algo the digest algorithms allowed for verification
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097518
+ * @note Available since #MHD_VERSION 0x00097521
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
@@ -4843,7 +4848,7 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  * @param algo digest algorithms allowed for verification
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097513
+ * @note Available since #MHD_VERSION 0x00097521
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult

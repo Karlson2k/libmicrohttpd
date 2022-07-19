@@ -2034,6 +2034,19 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     return MHD_DAUTH_WRONG_QOP;
   /* 'qop' valid */
 
+  /* Check 'algorithm' */
+  if (1)
+  {
+    const enum MHD_DigestAuthAlgo3 r_algo = get_rq_algo (params);
+    const enum MHD_DigestBaseAlgo p_algo = da->algo;
+    if ( (! ((MHD_DIGEST_AUTH_ALGO3_MD5 == r_algo) &&
+             (MHD_DIGEST_BASE_ALGO_MD5 == p_algo))) &&
+         (! ((MHD_DIGEST_AUTH_ALGO3_SHA256 == r_algo) &&
+             (MHD_DIGEST_BASE_ALGO_SHA256 == p_algo))) )
+      return MHD_DAUTH_WRONG_ALGO;
+  }
+  /* 'algorithm' valid */
+
   /* ** Do basic nonce and nonce-counter checks (size, timestamp) ** */
   /* Get 'nc' digital value */
   unq_res = get_unquoted_param (&params->nc, tmp1, ptmp2, &tmp2_size,
