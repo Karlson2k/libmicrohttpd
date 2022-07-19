@@ -234,10 +234,11 @@ struct DigestAlgorithm
    * Digest in binary form.
    */
   union DigestBin digest;
+
   /**
-   * The digest algorithm.
+   * The hash calculation algorithm.
    */
-  enum MHD_DigestAuthAlgorithm algo;
+  enum MHD_DigestBaseAlgo algo;
 
   /**
    * Buffer for hex-print of the final digest.
@@ -259,9 +260,9 @@ _MHD_static_inline const char *
 digest_get_algo_name (struct DigestAlgorithm *da)
 {
   mhd_assert (da->setup);
-  if (MHD_DIGEST_ALG_MD5 == da->algo)
+  if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
     return _MHD_MD5_TOKEN;
-  if (MHD_DIGEST_ALG_SHA256 == da->algo)
+  if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
     return _MHD_SHA256_TOKEN;
   mhd_assert (0); /* May not happen */
   return "";
@@ -277,9 +278,9 @@ _MHD_static_inline unsigned int
 digest_get_size (struct DigestAlgorithm *da)
 {
   mhd_assert (da->setup);
-  if (MHD_DIGEST_ALG_MD5 == da->algo)
+  if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
     return MD5_DIGEST_SIZE;
-  if (MHD_DIGEST_ALG_SHA256 == da->algo)
+  if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
     return SHA256_DIGEST_SIZE;
   mhd_assert (0); /* May not happen */
   return 0;
@@ -295,18 +296,15 @@ digest_get_size (struct DigestAlgorithm *da)
  */
 _MHD_static_inline bool
 digest_setup (struct DigestAlgorithm *da,
-              enum MHD_DigestAuthAlgorithm algo)
+              enum MHD_DigestBaseAlgo algo)
 {
 #ifdef _DEBUG
   da->setup = false;
   da->inited = false;
   da->digest_calculated = false;
 #endif /* _DEBUG */
-  if (MHD_DIGEST_ALG_AUTO == algo)
-    algo = MHD_DIGEST_ALG_SHA256;
-
-  if ((MHD_DIGEST_ALG_MD5 == algo) ||
-      (MHD_DIGEST_ALG_SHA256 == algo))
+  if ((MHD_DIGEST_BASE_ALGO_MD5 == algo) ||
+      (MHD_DIGEST_BASE_ALGO_SHA256 == algo))
   {
     da->algo = algo;
 #ifdef _DEBUG
@@ -330,14 +328,14 @@ digest_init (struct DigestAlgorithm *da)
 #ifdef _DEBUG
   da->digest_calculated = false;
 #endif
-  if (MHD_DIGEST_ALG_MD5 == da->algo)
+  if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
   {
     MHD_MD5Init (&da->ctx.md5_ctx);
 #ifdef _DEBUG
     da->inited = true;
 #endif
   }
-  else if (MHD_DIGEST_ALG_SHA256 == da->algo)
+  else if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
   {
     MHD_SHA256_init (&da->ctx.sha256_ctx);
 #ifdef _DEBUG
@@ -367,9 +365,9 @@ digest_update (struct DigestAlgorithm *da,
 {
   mhd_assert (da->inited);
   mhd_assert (! da->digest_calculated);
-  if (MHD_DIGEST_ALG_MD5 == da->algo)
+  if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
     MHD_MD5Update (&da->ctx.md5_ctx, data, length);
-  else if (MHD_DIGEST_ALG_SHA256 == da->algo)
+  else if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
     MHD_SHA256_update (&da->ctx.sha256_ctx, data, length);
   else
     mhd_assert (0); /* May not happen */
@@ -399,9 +397,9 @@ digest_calc_hash (struct DigestAlgorithm *da)
 {
   mhd_assert (da->inited);
   mhd_assert (! da->digest_calculated);
-  if (MHD_DIGEST_ALG_MD5 == da->algo)
+  if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
     MHD_MD5Final (&da->ctx.md5_ctx, da->digest.md5);
-  else if (MHD_DIGEST_ALG_SHA256 == da->algo)
+  else if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
     MHD_SHA256_finish (&da->ctx.sha256_ctx, da->digest.sha256);
   else
     mhd_assert (0); /* May not happen */
@@ -2331,7 +2329,17 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
 
   mhd_assert (NULL != password);
 
-  if (! digest_setup (&da, algo))
+  if ((MHD_DIGEST_ALG_MD5 == algo) || (MHD_DIGEST_ALG_AUTO == algo))
+  {
+    if (! digest_setup (&da, MHD_DIGEST_BASE_ALGO_MD5))
+      MHD_PANIC (_ ("Error initialising hash algorithm.\n"));
+  }
+  else if (MHD_DIGEST_ALG_SHA256 == algo)
+  {
+    if (! digest_setup (&da, MHD_DIGEST_BASE_ALGO_SHA256))
+      MHD_PANIC (_ ("Error initialising hash algorithm.\n"));
+  }
+  else
     MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */
 
   return digest_auth_check_all (connection,
@@ -2373,7 +2381,17 @@ MHD_digest_auth_check_digest3 (struct MHD_Connection *connection,
   struct DigestAlgorithm da;
 
   mhd_assert (NULL != digest);
-  if (! digest_setup (&da, algo))
+  if ((MHD_DIGEST_ALG_MD5 == algo) || (MHD_DIGEST_ALG_AUTO == algo))
+  {
+    if (! digest_setup (&da, MHD_DIGEST_BASE_ALGO_MD5))
+      MHD_PANIC (_ ("Error initialising hash algorithm.\n"));
+  }
+  else if (MHD_DIGEST_ALG_SHA256 == algo)
+  {
+    if (! digest_setup (&da, MHD_DIGEST_BASE_ALGO_SHA256))
+      MHD_PANIC (_ ("Error initialising hash algorithm.\n"));
+  }
+  else
     MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */
 
   if (digest_get_size (&da) != digest_size)
@@ -2539,7 +2557,17 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
 
   struct DigestAlgorithm da;
 
-  if (! digest_setup (&da, algo))
+  if ((MHD_DIGEST_ALG_MD5 == algo) || (MHD_DIGEST_ALG_AUTO == algo))
+  {
+    if (! digest_setup (&da, MHD_DIGEST_BASE_ALGO_MD5))
+      MHD_PANIC (_ ("Error initialising hash algorithm.\n"));
+  }
+  else if (MHD_DIGEST_ALG_SHA256 == algo)
+  {
+    if (! digest_setup (&da, MHD_DIGEST_BASE_ALGO_SHA256))
+      MHD_PANIC (_ ("Error initialising hash algorithm.\n"));
+  }
+  else
     MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */
 
   if (NULL == response)
