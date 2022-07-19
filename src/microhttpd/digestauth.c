@@ -1447,6 +1447,9 @@ calculate_add_nonce (struct MHD_Connection *const connection,
   if (0 == daemon->nonce_nc_size)
     return false;
 
+  /* Sanity check for values */
+  mhd_assert (MAX_DIGEST_NONCE_LENGTH == NONCE_STD_LEN (MAX_DIGEST));
+
   nn = daemon->nnc + get_nonce_nc_idx (daemon->nonce_nc_size,
                                        nonce,
                                        nonce_size);
