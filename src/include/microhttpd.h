@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097519
+#define MHD_VERSION 0x00097520
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4335,6 +4335,44 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
 #define MHD_INVALID_NONCE -1
 
 /**
+ * Base type of hash calculation.
+ * Used as part of #MHD_DigestAuthAlgo3 values.
+ *
+ * @warning Not used directly by MHD API.
+ * @note Available since #MHD_VERSION 0x00097520
+ */
+enum MHD_DigestBaseAlgo
+{
+  /**
+   * Invalid hash algorithm value
+   */
+  MHD_DIGEST_BASE_ALGO_INVALID = 0,
+  /**
+   * MD5 hash algorithm.
+   * As specified by RFC1321
+   */
+  MHD_DIGEST_BASE_ALGO_MD5 = (1 << 0),
+  /**
+   * SHA-256 has algorithm.
+   * As specified by FIPS PUB 180-4
+   */
+  MHD_DIGEST_BASE_ALGO_SHA256 = (1 << 1),
+  /**
+   * SHA-512/256 has algorithm.
+   * Not supported for calculations, only supported for parsing of
+   * client's authorisation headers.
+   */
+  MHD_DIGEST_BASE_ALGO_SHA512_256 = (1 << 2)
+};
+
+/**
+ * The flag indicating digest calculation types,
+ * like 'MD5' or 'SHA-256'.
+ * @note Available since #MHD_VERSION 0x00097519
+ */
+#define MHD_DIGEST_AUTH_ALGO3_NON_SESSION    (1 << 6)
+
+/**
  * The flag indicating non-session algorithm types,
  * like 'MD5' or 'SHA-256'.
  * @note Available since #MHD_VERSION 0x00097519
@@ -4366,36 +4404,36 @@ enum MHD_DigestAuthAlgo3
    * The 'MD5' algorithm.
    */
   MHD_DIGEST_AUTH_ALGO3_MD5 =
-    (1 << 0) | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+    MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
   /**
    * The 'MD5-sess' algorithm.
    * Not supported by MHD.
    */
   MHD_DIGEST_AUTH_ALGO3_MD5_SESSION =
-    (1 << 0) | MHD_DIGEST_AUTH_ALGO3_SESSION,
+    MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_AUTH_ALGO3_SESSION,
   /**
    * The 'SHA-256' algorithm.
    */
   MHD_DIGEST_AUTH_ALGO3_SHA256 =
-    (1 << 1) | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+    MHD_DIGEST_BASE_ALGO_SHA256 | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
   /**
    * The 'SHA-256-sess' algorithm.
    * Not supported by MHD.
    */
   MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION =
-    (1 << 1) | MHD_DIGEST_AUTH_ALGO3_SESSION,
+    MHD_DIGEST_BASE_ALGO_SHA256 | MHD_DIGEST_AUTH_ALGO3_SESSION,
   /**
    * The 'SHA-512-256' (SHA-512/256) algorithm.
    * Not supported by MHD.
    */
   MHD_DIGEST_AUTH_ALGO3_SHA512_256 =
-    (1 << 2) | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+    MHD_DIGEST_BASE_ALGO_SHA512_256 | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
   /**
    * The 'SHA-512-256-sess' (SHA-512/256 session) algorithm.
    * Not supported by MHD.
    */
   MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION =
-    (1 << 2) | MHD_DIGEST_AUTH_ALGO3_SESSION,
+    MHD_DIGEST_BASE_ALGO_SHA512_256 | MHD_DIGEST_AUTH_ALGO3_SESSION,
   /**
    * Any non-session algorithm, MHD will choose.
    */
