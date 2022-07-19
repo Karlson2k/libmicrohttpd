@@ -1948,7 +1948,6 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 #if 0
   const char *hentity = NULL; /* "auth-int" is not supported */
 #endif
-  char noncehashexp[NONCE_STD_LEN (VLA_ARRAY_LEN_DIGEST (digest_size)) + 1];
   uint64_t nonce_time;
   uint64_t t;
   uint64_t nci;
@@ -2223,6 +2222,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     return MHD_DAUTH_RESPONSE_WRONG;
   response_bin = NULL;
 
+  mhd_assert (sizeof(tmp1) >= (NONCE_STD_LEN (digest_size) + 1));
   /* It was already checked that 'nonce' (including timestamp) was generated
      by MHD. The next check is mostly an overcaution. */
   calculate_nonce (nonce_time,
@@ -2235,9 +2235,9 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
                    realm,
                    realm_len,
                    da,
-                   noncehashexp);
+                   tmp1);
 
-  if (! is_param_equal (&params->nonce, noncehashexp,
+  if (! is_param_equal (&params->nonce, tmp1,
                         NONCE_STD_LEN (digest_size)))
     return MHD_DAUTH_NONCE_WRONG;
   /* The 'nonce' was generated in the same conditions */
