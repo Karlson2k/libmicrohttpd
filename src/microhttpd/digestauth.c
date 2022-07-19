@@ -389,6 +389,19 @@ digest_update_str (struct DigestAlgorithm *da,
 
 
 /**
+ * Feed digest calculation with single colon ':' character.
+ * @param da the digest calculation
+ * @param str the zero-terminated string to process
+ */
+_MHD_static_inline void
+digest_update_with_colon (struct DigestAlgorithm *da)
+{
+  static const uint8_t colon = (uint8_t) ':';
+  digest_update (da, &colon, 1);
+}
+
+
+/**
  * Finally calculate hash (the digest).
  * @param da the digest calculation
  */
@@ -1295,22 +1308,14 @@ calculate_nonce (uint64_t nonce_time,
   digest_update (da,
                  timestamp,
                  sizeof (timestamp));
-  digest_update (da,
-                 (const unsigned char *) ":",
-                 1);
-  digest_update (da,
-                 (const unsigned char *) method,
-                 strlen (method));
-  digest_update (da,
-                 (const unsigned char *) ":",
-                 1);
+  digest_update_with_colon (da);
+  digest_update_str (da, method);
+  digest_update_with_colon (da);
   if (rnd_size > 0)
     digest_update (da,
                    (const unsigned char *) rnd,
                    rnd_size);
-  digest_update (da,
-                 (const unsigned char *) ":",
-                 1);
+  digest_update_with_colon (da);
   digest_update (da,
                  (const unsigned char *) uri,
                  uri_len);
@@ -1325,9 +1330,7 @@ calculate_nonce (uint64_t nonce_time,
     if (0 != h->value_size)
       digest_update (da, (const uint8_t *) h->value, h->value_size);
   }
-  digest_update (da,
-                 (const unsigned char *) ":",
-                 1);
+  digest_update_with_colon (da);
   digest_update (da,
                  (const unsigned char *) realm,
                  realm_len);
@@ -1933,7 +1936,6 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
                              char **pbuf)
 {
   struct MHD_Daemon *daemon = MHD_get_master (connection->daemon);
-  static const uint8_t colon = (uint8_t) ':';
   const unsigned int digest_size = digest_get_size (da);
   char hdigest1[VLA_ARRAY_LEN_DIGEST (digest_size) * 2 + 1];
   char hdigest2[VLA_ARRAY_LEN_DIGEST (digest_size) * 2 + 1];
@@ -2136,11 +2138,11 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   /* Get 'uri' */
   digest_init (da);
   digest_update_str (da, connection->method);
-  digest_update (da, &colon, 1);
+  digest_update_with_colon (da);
 #if 0
   /* TODO: add support for "auth-int" */
   digest_update_str (da, hentity);
-  digest_update (da, &colon, 1);
+  digest_update_with_colon (da);
 #endif
   unq_res = get_unquoted_param_copy (&params->uri, tmp1, ptmp2, &tmp2_size,
                                      &unq_copy);
@@ -2162,9 +2164,9 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   {
     digest_init (da);
     digest_update (da, (const uint8_t *) username, username_len);
-    digest_update (da, &colon, 1);
+    digest_update_with_colon (da);
     digest_update (da, (const uint8_t *) realm, realm_len);
-    digest_update (da, &colon, 1);
+    digest_update_with_colon (da);
     digest_update_str (da, password);
     digest_calc_hash (da);
     MHD_bin_to_hex (digest_get_bin (da), digest_size, ha1);
@@ -2186,31 +2188,31 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     return MHD_DAUTH_ERROR;
   if (digest_size != MHD_hex_to_bin (unquoted.str, unquoted.len, response_bin))
     return MHD_DAUTH_RESPONSE_WRONG;
-  digest_update (da, &colon, 1);
+  digest_update_with_colon (da);
   unq_res = get_unquoted_param (&params->nonce, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
   digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
-  digest_update (da, &colon, 1);
+  digest_update_with_colon (da);
   unq_res = get_unquoted_param (&params->nc, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
   digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
-  digest_update (da, &colon, 1);
+  digest_update_with_colon (da);
   unq_res = get_unquoted_param (&params->cnonce, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
   digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
-  digest_update (da, &colon, 1);
+  digest_update_with_colon (da);
   unq_res = get_unquoted_param (&params->qop, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
   digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
-  digest_update (da, &colon, 1);
+  digest_update_with_colon (da);
   digest_update (da, (const uint8_t *) ha2, digest_size * 2);
   ha2 = NULL;
   digest_calc_hash (da);
