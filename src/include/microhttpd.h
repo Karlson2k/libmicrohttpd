@@ -4603,7 +4603,7 @@ struct MHD_DigestAuthInfo
    * The length of the 'cnonce' parameter value, including possible
    * backslash-escape characters.
    * 'cnonce' is used in hash calculation, which is CPU-intensive procedure.
-   * An applicaion may want to reject too large cnonces to limit the CPU load.
+   * An application may want to reject too large cnonces to limit the CPU load.
    * A few kilobytes is a reasonable limit, typically cnonce is just 32-160
    * characters long.
    */
