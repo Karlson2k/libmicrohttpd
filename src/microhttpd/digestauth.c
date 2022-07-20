@@ -202,24 +202,6 @@ union DigestCtx
 };
 
 /**
- * Digest printed as hex digits.
- */
-union DigestHex
-{
-  char md5[MD5_DIGEST_STRING_LENGTH];
-  char sha256[SHA256_DIGEST_STRING_SIZE];
-};
-
-/**
- * Digest in binary form.
- */
-union DigestBin
-{
-  uint8_t md5[MD5_DIGEST_SIZE];
-  uint8_t sha256[SHA256_DIGEST_SIZE];
-};
-
-/**
  * The digest calculation structure.
  */
 struct DigestAlgorithm
@@ -229,11 +211,6 @@ struct DigestAlgorithm
    * useful for @e init, @e update and @e digest.
    */
   union DigestCtx ctx;
-
-  /**
-   * Digest in binary form.
-   */
-  union DigestBin digest;
 
   /**
    * The hash calculation algorithm.
@@ -404,36 +381,23 @@ digest_update_with_colon (struct DigestAlgorithm *da)
 /**
  * Finally calculate hash (the digest).
  * @param da the digest calculation
+ * @param[out] digest the pointer to the buffer to put calculated digest,
+ *                    must be at least digest_get_size(da) bytes large
  */
 _MHD_static_inline void
-digest_calc_hash (struct DigestAlgorithm *da)
+digest_calc_hash (struct DigestAlgorithm *da, uint8_t *digest)
 {
   mhd_assert (da->inited);
   mhd_assert (! da->digest_calculated);
   if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
-    MHD_MD5Final (&da->ctx.md5_ctx, da->digest.md5);
+    MHD_MD5Final (&da->ctx.md5_ctx, digest);
   else if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
-    MHD_SHA256_finish (&da->ctx.sha256_ctx, da->digest.sha256);
+    MHD_SHA256_finish (&da->ctx.sha256_ctx, digest);
   else
     mhd_assert (0); /* May not happen */
 #ifdef _DEBUG
   da->digest_calculated = true;
 #endif
-}
-
-
-/**
- * Get pointer to the calculated digest in binary form.
- * @param da the digest calculation
- * @return the pointer to the calculated digest
- */
-_MHD_static_inline const uint8_t *
-digest_get_bin (struct DigestAlgorithm *da)
-{
-  mhd_assert (da->inited);
-  mhd_assert (da->digest_calculated);
-  mhd_assert (da->digest.md5 == da->digest.sha256);
-  return da->digest.sha256;
 }
 
 
@@ -1334,10 +1298,15 @@ calculate_nonce (uint64_t nonce_time,
   digest_update (da,
                  realm,
                  realm_len);
-  digest_calc_hash (da);
-  MHD_bin_to_hex (digest_get_bin (da),
-                  digest_get_size (da),
-                  nonce);
+  if (1)
+  {
+    const unsigned int digest_size = digest_get_size (da);
+    uint8_t hash[VLA_ARRAY_LEN_DIGEST (digest_size)];
+    digest_calc_hash (da, hash);
+    MHD_bin_to_hex (hash,
+                    digest_size,
+                    nonce);
+  }
   MHD_bin_to_hex (timestamp,
                   sizeof (timestamp),
                   nonce + digest_get_size (da) * 2);
@@ -1940,11 +1909,8 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 {
   struct MHD_Daemon *daemon = MHD_get_master (connection->daemon);
   const unsigned int digest_size = digest_get_size (da);
-  char hdigest1[VLA_ARRAY_LEN_DIGEST (digest_size) * 2 + 1];
-  char hdigest2[VLA_ARRAY_LEN_DIGEST (digest_size) * 2 + 1];
-  char *ha1;
-  char *ha2;
-  uint8_t *response_bin;
+  uint8_t hash1_bin[VLA_ARRAY_LEN_DIGEST (digest_size)];
+  uint8_t hash2_bin[VLA_ARRAY_LEN_DIGEST (digest_size)];
 #if 0
   const char *hentity = NULL; /* "auth-int" is not supported */
 #endif
@@ -1952,7 +1918,10 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   uint64_t t;
   uint64_t nci;
   const struct MHD_RqDAuth *params;
-  char tmp1[_MHD_STATIC_UNQ_BUFFER_SIZE]; /**< Temporal buffer in stack for unquoting */
+  /**
+   * Temporal buffer in stack for unquoting and other needs
+   */
+  char tmp1[_MHD_STATIC_UNQ_BUFFER_SIZE];
   char **const ptmp2 = pbuf;     /**< Temporal malloc'ed buffer for unquoting */
   size_t tmp2_size; /**< The size of @a tmp2 buffer */
   struct _MHD_str_w_len unquoted;
@@ -1962,8 +1931,6 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   size_t realm_len;
 
   tmp2_size = 0;
-  ha1 = NULL;
-  ha2 = NULL;
 
   params = get_rq_dauth_params (connection);
   if (NULL == params)
@@ -2155,13 +2122,10 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   /* The next check will modify copied URI string */
   if (! check_uri_match (connection, unq_copy.str, unq_copy.len))
     return MHD_DAUTH_WRONG_URI;
-  digest_calc_hash (da);
-  ha2 = hdigest2;
-  MHD_bin_to_hex (digest_get_bin (da), digest_size, ha2);
+  digest_calc_hash (da, hash2_bin);
   /* Got H(A2) */
 
   /* ** Build H(A1) ** */
-  ha1 = hdigest1;
   if (NULL == digest)
   {
     digest_init (da);
@@ -2170,57 +2134,74 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     digest_update (da, (const uint8_t *) realm, realm_len);
     digest_update_with_colon (da);
     digest_update_str (da, password);
-    digest_calc_hash (da);
-    MHD_bin_to_hex (digest_get_bin (da), digest_size, ha1);
+    digest_calc_hash (da, hash1_bin);
   }
-  else
-    MHD_bin_to_hex (digest, digest_size, ha1);
   /* TODO: support '-sess' versions */
   /* Got H(A1) */
 
   /* **  Check 'response' ** */
   digest_init (da);
-  digest_update (da, (const uint8_t *) ha1, digest_size * 2);
-  ha1 = NULL;
-  /* H(A1) is not needed anymore, reuse the buffer */
-  response_bin = (uint8_t *) hdigest1;
+  /* Update digest with H(A1) */
+  mhd_assert (sizeof (tmp1) >= (digest_size * 2 + 1));
+  if (NULL == digest)
+    MHD_bin_to_hex (hash1_bin, digest_size, tmp1);
+  else
+    MHD_bin_to_hex (digest, digest_size, tmp1);
+  digest_update (da, (const uint8_t *) tmp1, digest_size * 2);
+
+  /* H(A1) is not needed anymore, reuse the buffer.
+   * Use hash1_bin for the client's 'response' decoded to binary form. */
   unq_res = get_unquoted_param (&params->response, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
-  if (digest_size != MHD_hex_to_bin (unquoted.str, unquoted.len, response_bin))
+  if (digest_size != MHD_hex_to_bin (unquoted.str, unquoted.len, hash1_bin))
     return MHD_DAUTH_RESPONSE_WRONG;
+
+  /* Update digest with ':' */
   digest_update_with_colon (da);
+  /* Update digest with 'nonce' text value */
   unq_res = get_unquoted_param (&params->nonce, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
   digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
+  /* Update digest with ':' */
   digest_update_with_colon (da);
+  /* Update digest with 'nc' text value */
   unq_res = get_unquoted_param (&params->nc, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
   digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
+  /* Update digest with ':' */
   digest_update_with_colon (da);
+  /* Update digest with 'cnonce' value */
   unq_res = get_unquoted_param (&params->cnonce, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
   digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
+  /* Update digest with ':' */
   digest_update_with_colon (da);
+  /* Update digest with 'qop' value */
   unq_res = get_unquoted_param (&params->qop, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
   digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
+  /* Update digest with ':' */
   digest_update_with_colon (da);
-  digest_update (da, (const uint8_t *) ha2, digest_size * 2);
-  ha2 = NULL;
-  digest_calc_hash (da);
-  if (0 != memcmp (digest_get_bin (da), response_bin, digest_size))
+  /* Update digest with H(A2) */
+  MHD_bin_to_hex (hash2_bin, digest_size, tmp1);
+  digest_update (da, (const uint8_t *) tmp1, digest_size * 2);
+
+  /* H(A2) is not needed anymore, reuse the buffer.
+   * Use hash2_bin for the calculated response in binary form */
+  digest_calc_hash (da, hash2_bin);
+
+  if (0 != memcmp (hash1_bin, hash2_bin, digest_size))
     return MHD_DAUTH_RESPONSE_WRONG;
-  response_bin = NULL;
 
   mhd_assert (sizeof(tmp1) >= (NONCE_STD_LEN (digest_size) + 1));
   /* It was already checked that 'nonce' (including timestamp) was generated
