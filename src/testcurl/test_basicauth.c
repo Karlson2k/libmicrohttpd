@@ -21,7 +21,7 @@
 
 /**
  * @file test_basicauth.c
- * @brief  Testcase for libmicrohttpd concurrent Basic Authorisation
+ * @brief  Testcase for libmicrohttpd Basic Authorisation
  * @author Amr Ali
  * @author Karlson2k (Evgeny Grin)
  */
