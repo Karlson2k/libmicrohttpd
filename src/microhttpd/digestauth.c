@@ -1937,8 +1937,15 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     return MHD_DAUTH_WRONG_HEADER;
 
   /* ** A quick check for presence of all required parameters ** */
-  if (NULL == params->username.value.str)
+  if ((NULL == params->username.value.str) &&
+      (NULL == params->username_ext.value.str))
     return MHD_DAUTH_WRONG_HEADER;
+  else if ((NULL != params->username.value.str) &&
+           (NULL != params->username_ext.value.str))
+    return MHD_DAUTH_WRONG_HEADER; /* Parameters cannot be used together */
+  else if ((NULL != params->username_ext.value.str) &&
+           (MHD_DAUTH_EXT_PARAM_MIN_LEN > params->username_ext.value.len))
+    return MHD_DAUTH_WRONG_HEADER; /* Broken extended notation */
 
   if (NULL == params->realm.value.str)
     return MHD_DAUTH_WRONG_HEADER;
@@ -1989,8 +1996,34 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 
   /* Check 'username' */
   username_len = strlen (username);
-  if (! is_param_equal (&params->username, username, username_len))
-    return MHD_DAUTH_WRONG_USERNAME;
+  if (NULL != params->username.value.str)
+  { /* Username in standard notation */
+    if (! is_param_equal (&params->username, username, username_len))
+      return MHD_DAUTH_WRONG_USERNAME;
+  }
+  else
+  { /* Username in extended notation */
+    char *r_uname;
+    size_t buf_size = params->username_ext.value.len;
+    ssize_t res;
+
+    mhd_assert (NULL != params->username_ext.value.str);
+    mhd_assert (MHD_DAUTH_EXT_PARAM_MIN_LEN <= buf_size); /* It was checked already */
+    buf_size += 1; /* For zero-termination */
+    buf_size -= MHD_DAUTH_EXT_PARAM_MIN_LEN;
+    r_uname = get_buffer_for_size (tmp1, ptmp2, &tmp2_size, buf_size);
+    if (NULL == r_uname)
+      return (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < buf_size) ?
+             MHD_DAUTH_TOO_LARGE : MHD_DAUTH_ERROR;
+    res = get_rq_extended_uname_copy_z (params->username_ext.value.str,
+                                        params->username_ext.value.len,
+                                        r_uname, buf_size);
+    if (0 > res)
+      return MHD_DAUTH_WRONG_HEADER; /* Broken extended notation */
+    if ((username_len != (size_t) res) ||
+        (0 != memcmp (username, r_uname, username_len)))
+      return MHD_DAUTH_WRONG_USERNAME;
+  }
   /* 'username' valid */
 
   /* Check 'realm' */
