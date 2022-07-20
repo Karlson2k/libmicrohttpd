@@ -1239,7 +1239,7 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection)
  * @param realm_len the length of the @a realm.
  * @param da digest algorithm to use
  * @param[out] nonce A pointer to a character array for the nonce to put in,
- *        must provide NONCE_STD_LEN(da->digest_size)+1 bytes
+ *        must provide NONCE_STD_LEN(digest_get_size(da))+1 bytes
  */
 static void
 calculate_nonce (uint64_t nonce_time,
@@ -1301,7 +1301,7 @@ calculate_nonce (uint64_t nonce_time,
   if (1)
   {
     const unsigned int digest_size = digest_get_size (da);
-    uint8_t hash[VLA_ARRAY_LEN_DIGEST (digest_size)];
+    uint8_t hash[MAX_DIGEST];
     digest_calc_hash (da, hash);
     MHD_bin_to_hex (hash,
                     digest_size,
@@ -1381,7 +1381,7 @@ is_slot_available (const struct MHD_NonceNc *const nn,
  * @param realm_len the length of the @a realm
  * @param da the digest algorithm to use
  * @param[out] nonce the pointer to a character array for the nonce to put in,
- *        must provide NONCE_STD_LEN(da->digest_size)+1 bytes
+ *        must provide NONCE_STD_LEN(digest_get_size(da))+1 bytes
  * @return true if the new nonce has been added to the nonce-nc map array,
  *         false otherwise.
  */
@@ -1450,7 +1450,7 @@ calculate_add_nonce (struct MHD_Connection *const connection,
  * @param realm A string of characters that describes the realm of auth.
  * @param da digest algorithm to use
  * @param[out] nonce A pointer to a character array for the nonce to put in,
- *        must provide NONCE_STD_LEN(da->digest_size)+1 bytes
+ *        must provide NONCE_STD_LEN(digest_get_size(da))+1 bytes
  */
 static bool
 calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
@@ -1472,7 +1472,7 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
      * used by the client and this nonce is still fresh enough.
      */
     const size_t digest_size = digest_get_size (da);
-    char nonce2[NONCE_STD_LEN (VLA_ARRAY_LEN_DIGEST (digest_size)) + 1];
+    char nonce2[NONCE_STD_LEN (MAX_DIGEST) + 1];
     uint64_t timestamp2;
     if (0 == MHD_get_master (connection->daemon)->nonce_nc_size)
       return false; /* No need to re-try */
@@ -1888,7 +1888,7 @@ is_param_equal_caseless (const struct MHD_RqDAuthParam *param,
  * @param password The password used in the authentication
  * @param digest An optional binary hash
  *     of the precalculated hash value "username:realm:password"
- *     (must contain "da->digest_size" bytes or be NULL)
+ *     (must contain "digest_get_size(da)" bytes or be NULL)
  * @param nonce_timeout The amount of time for a nonce to be
  *      invalid in seconds
  * @param[out] pbuf the pointer to pointer to internally malloc'ed buffer,
@@ -1909,8 +1909,8 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 {
   struct MHD_Daemon *daemon = MHD_get_master (connection->daemon);
   const unsigned int digest_size = digest_get_size (da);
-  uint8_t hash1_bin[VLA_ARRAY_LEN_DIGEST (digest_size)];
-  uint8_t hash2_bin[VLA_ARRAY_LEN_DIGEST (digest_size)];
+  uint8_t hash1_bin[MAX_DIGEST];
+  uint8_t hash2_bin[MAX_DIGEST];
 #if 0
   const char *hentity = NULL; /* "auth-int" is not supported */
 #endif
@@ -2239,7 +2239,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
  * @param password The password used in the authentication
  * @param digest An optional binary hash
  *     of the precalculated hash value "username:realm:password"
- *     (must contain "da->digest_size" bytes or be NULL)
+ *     (must contain "digest_get_size(da)" bytes or be NULL)
  * @param nonce_timeout The amount of time for a nonce to be
  *      invalid in seconds
  * @return #MHD_DAUTH_OK if authenticated,
@@ -2583,10 +2583,9 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
 
   if (1)
   {
-    char nonce[NONCE_STD_LEN (VLA_ARRAY_LEN_DIGEST (digest_get_size (&da)))
-               + 1];
+    char nonce[NONCE_STD_LEN (MAX_DIGEST) + 1];
 
-    VLA_CHECK_LEN_DIGEST (digest_get_size (&da));
+    /* VLA_CHECK_LEN_DIGEST (digest_get_size (&da)); */
     if (! calculate_add_nonce_with_retry (connection, realm, &da, nonce))
     {
 #ifdef HAVE_MESSAGES
