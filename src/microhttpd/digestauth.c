@@ -1937,6 +1937,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     return MHD_DAUTH_WRONG_HEADER;
 
   /* ** A quick check for presence of all required parameters ** */
+
   if ((NULL == params->username.value.str) &&
       (NULL == params->username_ext.value.str))
     return MHD_DAUTH_WRONG_HEADER;
@@ -1949,13 +1950,6 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 
   if (NULL == params->realm.value.str)
     return MHD_DAUTH_WRONG_HEADER;
-
-  if (NULL == params->nonce.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (0 == params->nonce.value.len)
-    return MHD_DAUTH_NONCE_WRONG;
-  else if (NONCE_STD_LEN (digest_size) * 2 < params->nonce.value.len)
-    return MHD_DAUTH_NONCE_WRONG;
 
   if (NULL == params->nc.value.str)
     return MHD_DAUTH_WRONG_HEADER;
@@ -1978,13 +1972,6 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   else if (MHD_STATICSTR_LEN_ ("auth-int") * 2 < params->qop.value.len)
     return MHD_DAUTH_WRONG_QOP;
 
-  if (NULL == params->response.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (0 == params->response.value.len)
-    return MHD_DAUTH_RESPONSE_WRONG;
-  else if (digest_size * 4 < params->response.value.len)
-    return MHD_DAUTH_RESPONSE_WRONG;
-
   if (NULL == params->uri.value.str)
     return MHD_DAUTH_WRONG_HEADER;
   else if (0 == params->uri.value.len)
@@ -1992,7 +1979,46 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   else if (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < params->uri.value.len)
     return MHD_DAUTH_TOO_LARGE;
 
+  if (NULL == params->nonce.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (0 == params->nonce.value.len)
+    return MHD_DAUTH_NONCE_WRONG;
+  else if (NONCE_STD_LEN (digest_size) * 2 < params->nonce.value.len)
+    return MHD_DAUTH_NONCE_WRONG;
+
+  if (NULL == params->response.value.str)
+    return MHD_DAUTH_WRONG_HEADER;
+  else if (0 == params->response.value.len)
+    return MHD_DAUTH_RESPONSE_WRONG;
+  else if (digest_size * 4 < params->response.value.len)
+    return MHD_DAUTH_RESPONSE_WRONG;
+
   /* ** Check simple parameters match ** */
+
+  /* Check 'algorithm' */
+  if (1)
+  {
+    const enum MHD_DigestAuthAlgo3 r_algo = get_rq_algo (params);
+    const enum MHD_DigestBaseAlgo p_algo = da->algo;
+    if ( (! ((MHD_DIGEST_AUTH_ALGO3_MD5 == r_algo) &&
+             (MHD_DIGEST_BASE_ALGO_MD5 == p_algo))) &&
+         (! ((MHD_DIGEST_AUTH_ALGO3_SHA256 == r_algo) &&
+             (MHD_DIGEST_BASE_ALGO_SHA256 == p_algo))) )
+      return MHD_DAUTH_WRONG_ALGO;
+  }
+  /* 'algorithm' valid */
+
+  /* Check 'qop' */
+  /* TODO: support MHD_DIGEST_AUTH_QOP_NONE and MHD_DIGEST_AUTH_QOP_AUTH_INT */
+  if (MHD_DIGEST_AUTH_QOP_AUTH != get_rq_qop (params))
+    return MHD_DAUTH_WRONG_QOP;
+  /* 'qop' valid */
+
+  /* Check 'realm' */
+  realm_len = strlen (realm);
+  if (! is_param_equal (&params->realm, realm, realm_len))
+    return MHD_DAUTH_WRONG_REALM;
+  /* 'realm' valid */
 
   /* Check 'username' */
   username_len = strlen (username);
@@ -2026,32 +2052,8 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   }
   /* 'username' valid */
 
-  /* Check 'realm' */
-  realm_len = strlen (realm);
-  if (! is_param_equal (&params->realm, realm, realm_len))
-    return MHD_DAUTH_WRONG_REALM;
-  /* 'realm' valid */
-
-  /* Check 'qop' */
-  /* TODO: support MHD_DIGEST_AUTH_QOP_NONE and MHD_DIGEST_AUTH_QOP_AUTH_INT */
-  if (MHD_DIGEST_AUTH_QOP_AUTH != get_rq_qop (params))
-    return MHD_DAUTH_WRONG_QOP;
-  /* 'qop' valid */
-
-  /* Check 'algorithm' */
-  if (1)
-  {
-    const enum MHD_DigestAuthAlgo3 r_algo = get_rq_algo (params);
-    const enum MHD_DigestBaseAlgo p_algo = da->algo;
-    if ( (! ((MHD_DIGEST_AUTH_ALGO3_MD5 == r_algo) &&
-             (MHD_DIGEST_BASE_ALGO_MD5 == p_algo))) &&
-         (! ((MHD_DIGEST_AUTH_ALGO3_SHA256 == r_algo) &&
-             (MHD_DIGEST_BASE_ALGO_SHA256 == p_algo))) )
-      return MHD_DAUTH_WRONG_ALGO;
-  }
-  /* 'algorithm' valid */
-
   /* ** Do basic nonce and nonce-counter checks (size, timestamp) ** */
+
   /* Get 'nc' digital value */
   unq_res = get_unquoted_param (&params->nc, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
@@ -2137,6 +2139,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
      not used before */
 
   /* ** Build H(A2) and check URI match in the header and in the request ** */
+
   /* Get 'uri' */
   digest_init (da);
   digest_update_str (da, connection->method);
@@ -2173,6 +2176,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   /* Got H(A1) */
 
   /* **  Check 'response' ** */
+
   digest_init (da);
   /* Update digest with H(A1) */
   mhd_assert (sizeof (tmp1) >= (digest_size * 2 + 1));
