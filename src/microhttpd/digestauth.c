@@ -1200,35 +1200,43 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection)
 {
   const struct MHD_RqDAuth *params;
   char *username;
-  size_t username_len;
+  size_t buf_size;
+  enum MHD_DigestAuthUsernameType uname_type;
 
   params = get_rq_dauth_params (connection);
   if (NULL == params)
     return NULL;
 
-  if (NULL == params->username.value.str)
+  uname_type = get_rq_uname_type (params);
+
+  if ( (MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD != uname_type) &&
+       (MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED != uname_type) )
     return NULL;
 
-  username_len = params->username.value.len;
-  username = malloc (username_len + 1);
+  buf_size = get_rq_unames_size (params, uname_type);
+
+  mhd_assert (0 != buf_size);
+
+  username = (char *) MHD_calloc_ (1, buf_size);
   if (NULL == username)
     return NULL;
 
-  if (! params->username.quoted)
+  if (1)
   {
-    /* The username is not quoted, no need to unquote */
-    if (0 != username_len)
-      memcpy (username, params->username.value.str, username_len);
-    username[username_len] = 0; /* Zero-terminate */
-  }
-  else
-  {
-    /* Need to properly unquote the username */
-    mhd_assert (0 != username_len); /* Quoted string may not be zero-legth */
-    username_len = MHD_str_unquote (params->username.value.str, username_len,
-                                    username);
-    mhd_assert (0 != username_len); /* The unquoted string cannot be empty */
-    username[username_len] = 0; /* Zero-terminate */
+    struct MHD_DigestAuthUsernameInfo uname_strct;
+    size_t used;
+
+    memset (&uname_strct, 0, sizeof(uname_strct));
+
+    used = get_rq_uname (params, uname_type, &uname_strct,
+                         (uint8_t *) username, buf_size);
+    if (uname_type != uname_strct.uname_type)
+    { /* Broken encoding for extended notation */
+      free (username);
+      return NULL;
+    }
+    (void) used; /* Mute compiler warning for non-debug builds */
+    mhd_assert (buf_size >= used);
   }
 
   return username;
