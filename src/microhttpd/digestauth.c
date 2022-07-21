@@ -892,9 +892,12 @@ get_rq_uname (const struct MHD_RqDAuth *params,
       else
       {
         uname_info->userhash_bin = (uint8_t *) (buf + buf_used);
+        uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH;
         buf_used += uname_info->userhash_bin_size;
       }
     }
+    else
+      uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD;
   }
   else if (MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED == uname_type)
   {
@@ -909,8 +912,14 @@ get_rq_uname (const struct MHD_RqDAuth *params,
     {
       uname_info->username = (char *) (buf + buf_used);
       uname_info->username_len = (size_t) res;
+      uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED;
       buf_used += uname_info->username_len + 1;
     }
+  }
+  else
+  {
+    mhd_assert (0);
+    uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_INVALID;
   }
   mhd_assert (buf_size >= buf_used);
   return buf_used;
