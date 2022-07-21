@@ -302,8 +302,8 @@ parse_dauth_params (const char *str,
                                              MHD_STATICSTR_LEN_ ("true"));
     else
       pdauth->userhash =
-        (MHD_STATICSTR_LEN_ ("true") == userhash.value.len) &&
-        (0 == memcmp (str, userhash.value.str, userhash.value.len));
+        MHD_str_equal_caseless_s_bin_n_ ("true", userhash.value.str, \
+                                         userhash.value.len);
 
   }
   else
