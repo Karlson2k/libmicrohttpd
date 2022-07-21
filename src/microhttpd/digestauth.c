@@ -1973,6 +1973,9 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 
   if (NULL == params->realm.value.str)
     return MHD_DAUTH_WRONG_HEADER;
+  else if (((NULL == digest) || params->userhash) &&
+           (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < params->realm.value.len))
+    return MHD_DAUTH_TOO_LARGE; /* Realm is too large and it will be used in hash calculations */
 
   if (NULL == params->nc.value.str)
     return MHD_DAUTH_WRONG_HEADER;
