@@ -296,10 +296,9 @@ parse_dauth_params (const char *str,
   {
     if (userhash.quoted)
       pdauth->userhash =
-        MHD_str_equal_caseless_quoted_bin_n (userhash.value.str,
-                                             userhash.value.len,
-                                             "true",
-                                             MHD_STATICSTR_LEN_ ("true"));
+        MHD_str_equal_caseless_quoted_s_bin_n (userhash.value.str, \
+                                               userhash.value.len, \
+                                               "true");
     else
       pdauth->userhash =
         MHD_str_equal_caseless_s_bin_n_ ("true", userhash.value.str, \
