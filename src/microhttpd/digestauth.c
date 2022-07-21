@@ -680,7 +680,8 @@ get_rq_unames_size (const struct MHD_RqDAuth *params,
       s += (params->username.value.len + 1) / 2;
   }
   else if (MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED == uname_type)
-    s += params->username_ext.value.len + 1; /* Add one byte for zero-termination */
+    s += params->username_ext.value.len
+         - MHD_DAUTH_EXT_PARAM_MIN_LEN + 1; /* Add one byte for zero-termination */
   return s;
 }
 
