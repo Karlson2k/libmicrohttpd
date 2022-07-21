@@ -155,3 +155,5 @@ core
 /test_basicauth_preauth
 /test_basicauth_oldapi
 /test_basicauth_preauth_oldapi
+/test_digestauth_emu_ext
+/test_digestauth_emu_ext_oldapi

@@ -71,14 +71,6 @@ THREAD_ONLY_TESTS += \
 endif
 endif
 
-if ENABLE_DAUTH
-THREAD_ONLY_TESTS += \
-  test_digestauth \
-  test_digestauth_sha256 \
-  test_digestauth_with_arguments \
-  test_digestauth_concurrent
-endif
-
 if HEAVY_TESTS
 if HAVE_POSIX_THREADS
 THREAD_ONLY_TESTS += \
@@ -158,13 +150,26 @@ check_PROGRAMS += \
 endif
 
 if HAVE_POSTPROCESSOR
- check_PROGRAMS += \
+check_PROGRAMS += \
   test_post \
   test_postform \
   test_post_loop \
   test_post11 \
   test_postform11 \
   test_post_loop11
+endif
+
+
+if ENABLE_DAUTH
+THREAD_ONLY_TESTS += \
+  test_digestauth \
+  test_digestauth_sha256 \
+  test_digestauth_with_arguments \
+  test_digestauth_concurrent
+
+check_PROGRAMS += \
+  test_digestauth_emu_ext \
+  test_digestauth_emu_ext_oldapi
 endif
 
 if HEAVY_TESTS
@@ -267,6 +272,12 @@ test_digestauth_concurrent_CFLAGS = \
   $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_digestauth_concurrent_LDADD = \
   @LIBGCRYPT_LIBS@ $(LDADD) $(PTHREAD_LIBS) $(LDADD)
+
+test_digestauth_emu_ext_SOURCES = \
+  test_digestauth_emu_ext.c
+
+test_digestauth_emu_ext_oldapi_SOURCES = \
+  test_digestauth_emu_ext.c
 
 test_get_iovec_SOURCES = \
   test_get_iovec.c mhd_has_in_name.h
