@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097521
+#define MHD_VERSION 0x00097522
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4701,9 +4701,14 @@ MHD_digest_auth_get_username3 (struct MHD_Connection *connection);
 /**
  * Get the username from the authorization header sent by the client
  *
+ * This function supports username in standard and extended notations.
+ * "userhash" is not supported by this function.
+ *
  * @param connection The MHD connection structure
- * @return NULL if no username could be found, a pointer
- *      to the username if found, free using #MHD_free().
+ * @return NULL if no username could be found, username provided as
+ *         "userhash" or memory allocation error occurred;
+ *         a pointer to the username if found, free using #MHD_free().
+ * @warning Returned value must be freed by #MHD_free().
  * @deprecated use MHD_digest_auth_get_username3()
  * @ingroup authentication
  */

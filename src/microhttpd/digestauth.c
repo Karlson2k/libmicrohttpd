@@ -1189,10 +1189,15 @@ MHD_digest_auth_get_username3 (struct MHD_Connection *connection)
 /**
  * Get the username from the authorization header sent by the client
  *
+ * This function support username in standard and extended notations.
+ * "userhash" is not supported by this function.
+ *
  * @param connection The MHD connection structure
- * @return NULL if no username could be found, a pointer
- *      to the username if found
+ * @return NULL if no username could be found, username provided as
+ *         "userhash" or memory allocation error occurs;
+ *         a pointer to the username if found, free using #MHD_free().
  * @warning Returned value must be freed by #MHD_free().
+ * @deprecated use MHD_digest_auth_get_username3()
  * @ingroup authentication
  */
 _MHD_EXTERN char *
