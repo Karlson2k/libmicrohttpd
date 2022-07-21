@@ -1933,7 +1933,6 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   const char *hentity = NULL; /* "auth-int" is not supported */
 #endif
   uint64_t nonce_time;
-  uint64_t t;
   uint64_t nci;
   const struct MHD_RqDAuth *params;
   /**
@@ -2112,14 +2111,20 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 #endif
     return MHD_DAUTH_NONCE_WRONG;
   }
-  t = MHD_monotonic_msec_counter ();
-  /*
-   * First level vetting for the nonce validity: if the timestamp
-   * attached to the nonce exceeds `nonce_timeout', then the nonce is
-   * invalid.
-   */
-  if (TRIM_TO_TIMESTAMP (t - nonce_time) > (nonce_timeout * 1000))
-    return MHD_DAUTH_NONCE_STALE; /* too old */
+
+  if (1)
+  {
+    uint64_t t;
+
+    t = MHD_monotonic_msec_counter ();
+    /*
+     * First level vetting for the nonce validity: if the timestamp
+     * attached to the nonce exceeds `nonce_timeout', then the nonce is
+     * invalid.
+     */
+    if (TRIM_TO_TIMESTAMP (t - nonce_time) > (nonce_timeout * 1000))
+      return MHD_DAUTH_NONCE_STALE; /* too old */
+  }
   if (1)
   {
     enum MHD_CheckNonceNC_ nonce_nc_check;
