@@ -312,8 +312,9 @@ ahc_echo (void *cls,
                                   realm,
                                   username,
                                   password,
-                                  300,
-                                  MHD_DIGEST_ALG_MD5);
+                                  50 * TIMEOUTS_VAL,
+                                  0, MHD_DIGEST_AUTH_MULT_QOP_AUTH,
+                                  MHD_DIGEST_AUTH_MULT_ALGO3_MD5);
   MHD_free (username);
   if (ret_e != MHD_DAUTH_OK)
   {

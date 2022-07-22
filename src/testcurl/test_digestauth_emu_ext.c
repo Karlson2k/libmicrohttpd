@@ -483,7 +483,9 @@ ahc_echo (void *cls,
 
     check_res = MHD_digest_auth_check3 (connection, REALM, USERNAME,
                                         PASSWORD_VALUE,
-                                        300, MHD_DIGEST_ALG_MD5);
+                                        50 * TIMEOUTS_VAL,
+                                        0, MHD_DIGEST_AUTH_MULT_QOP_AUTH,
+                                        MHD_DIGEST_AUTH_MULT_ALGO3_MD5);
 
     switch (check_res)
     {

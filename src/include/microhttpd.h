@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097525
+#define MHD_VERSION 0x00097526
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -327,12 +327,6 @@ _MHD_DEPR_MACRO ( \
 _MHD_DEPR_MACRO ( \
   "Macro MHD_LONG_LONG_PRINTF is deprecated, use MHD_UNSIGNED_LONG_LONG_PRINTF")
 #endif
-
-
-/**
- * Length of the binary output of the MD5 hash function.
- */
-#define  MHD_MD5_DIGEST_SIZE 16
 
 
 /**
@@ -4328,6 +4322,22 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
 
 
 /**
+ * Length of the binary output of the MD5 hash function.
+ * @sa #MHD_digest_get_hash_size()
+ * @ingroup authentication
+ */
+#define MHD_MD5_DIGEST_SIZE 16
+
+
+/**
+ * Length of the binary output of the SHA-256 hash function.
+ * @sa #MHD_digest_get_hash_size()
+ * @ingroup authentication
+ */
+#define MHD_SHA256_DIGEST_SIZE 32
+
+
+/**
  * Constant to indicate that the nonce of the provided
  * authentication code was wrong.
  * @ingroup authentication
@@ -4707,7 +4717,7 @@ struct MHD_DigestAuthInfo
    * long.
    * @warning This is binary data, no zero termination.
    * @warning To avoid buffer overruns, always check the size of the data before
-   *          use, because @ userhash_bin can point even to zero-sized
+   *          use, because @a userhash_bin can point even to zero-sized
    *          data.
    */
   uint8_t *userhash_bin;
@@ -4753,9 +4763,9 @@ struct MHD_DigestAuthInfo
 
   /**
    * The nc parameter value.
-   * Can be used by application to limit the number of nonce re-uses. If @ nc
-   * is higher than application wants to allow, then fail response with
-   * 'stale=true' could be used to ask force client to get the fresh 'nonce'.
+   * Can be used by application to limit the number of nonce re-uses. If @a nc
+   * is higher than application wants to allow, then auth required response with
+   * 'stale=true' could be used to force client to get the fresh 'nonce'.
    * If not specified by client or does not have hexadecimal digits only, the
    * value is #MHD_DIGEST_AUTH_INVALID_NC_VALUE.
    */
@@ -4819,11 +4829,28 @@ struct MHD_DigestAuthUsernameInfo
    * long.
    * @warning This is binary data, no zero termination.
    * @warning To avoid buffer overruns, always check the size of the data before
-   *          use, because @ userhash_bin can point even to zero-sized
+   *          use, because @a userhash_bin can point even to zero-sized
    *          data.
    */
   uint8_t *userhash_bin;
 };
+
+
+/**
+ * Get digest size for specified algorithm.
+ *
+ * The size of the digest specifies the size of the userhash, userdigest
+ * and other parameters which size depends on used hash algorithm.
+ * @param algo3 the algorithm to check
+ * @return the size of the digest (either #MHD_MD5_DIGEST_SIZE or
+ *         #MHD_SHA256_DIGEST_SIZE) or zero if the input value is not
+ *         recognised/valid
+ * @note Available since #MHD_VERSION 0x00097526
+ * @ingroup authentication
+ */
+_MHD_EXTERN size_t
+MHD_digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3);
+
 
 /**
  * Get the username from Digest Authorization client's header.
@@ -4868,7 +4895,7 @@ enum MHD_DigestAuthAlgorithm
 {
 
   /**
-   * MHD should pick (currently defaults to SHA-256).
+   * MHD should pick (currently defaults to MD5).
    */
   MHD_DIGEST_ALG_AUTO = 0,
 
@@ -4969,10 +4996,17 @@ enum MHD_DigestAuthResult
  * @param username the username needs to be authenticated
  * @param password the password used in the authentication
  * @param nonce_timeout the nonce validity duration in seconds
- * @param algo the digest algorithms allowed for verification
+ * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
+ *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
+ *               returned;
+ *               zero for no limit
+ * @param mqop the QOP to use, currently the only allowed value is
+ *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param malgo3 digest algorithm to use, if several algorithms are specified
+ *               then MD5 is used (if allowed)
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097521
+ * @note Available since #MHD_VERSION 0x00097526
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
@@ -4981,34 +5015,49 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
                         const char *username,
                         const char *password,
                         unsigned int nonce_timeout,
-                        enum MHD_DigestAuthAlgorithm algo);
+                        uint32_t max_nc,
+                        enum MHD_DigestAuthMultiQOP mqop,
+                        enum MHD_DigestAuthMultiAlgo3 malgo3);
 
 
 /**
- * Authenticates the authorization header sent by the client.
+ * Authenticates the authorization header sent by the client by using
+ * hash of "username:realm:password".
  *
  * @param connection the MHD connection structure
- * @param realm the realm to be used for authorization of the client
+ * @param realm the realm presented to the client
  * @param username the username needs to be authenticated
- * @param digest the pointer to the binary digest for the precalculated hash
- *        value "username:realm:password" with specified @a algo
- * @param digest_size the number of bytes in @a digest (the size must match
- *        @a algo!)
- * @param nonce_timeout the nonce validity duration in seconds
- * @param algo digest algorithms allowed for verification
+ * @param userdigest the precalculated binary hash of the string
+ *                   "username:realm:password"
+ * @param userdigest_size the size of the @a userdigest in bytes, must match the
+ *                        hashing algorithm (see #MHD_MD5_DIGEST_SIZE,
+ *                        #MHD_SHA256_DIGEST_SIZE)
+ * @param nonce_timeout the period of seconds since nonce generation, when
+ *                      the nonce is recognised as valid and not stale.
+ * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
+ *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
+ *               returned;
+ *               zero for no limit
+ * @param mqop the QOP to use, currently the only allowed value is
+ *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param malgo3 the digest algorithms to use; both MD5-based and SHA-256-based
+ *               algorithms cannot be used at the same time for this function
+ *               as @a userdigest_size must match specified algorithm
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097521
+ * @note Available since #MHD_VERSION 0x00097526
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
 MHD_digest_auth_check_digest3 (struct MHD_Connection *connection,
                                const char *realm,
                                const char *username,
-                               const uint8_t *digest,
-                               size_t digest_size,
+                               const void *userdigest,
+                               size_t userdigest_size,
                                unsigned int nonce_timeout,
-                               enum MHD_DigestAuthAlgorithm algo);
+                               uint32_t max_nc,
+                               enum MHD_DigestAuthMultiQOP mqop,
+                               enum MHD_DigestAuthMultiAlgo3 malgo3);
 
 
 /**
@@ -5121,6 +5170,66 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
 /**
  * Queues a response to request authentication from the client
  *
+ * This function modifies provided @a response. The @a response must not be
+ * reused and should be destroyed (by #MHD_destroy_response()) after call of
+ * this function.
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm presented to the client
+ * @param opaque the string for opaque value, can be NULL, but NULL is
+ *               not recommended for better compatibility with clients
+ * @param domain the optional space-separated list of URIs for which the
+ *               same authorisation could be used, URIs can be in form
+ *               "path-absolute" (the path for the same host with initial slash)
+ *               or in form "absolute-URI" (the full path with protocol), in
+ *               any case client may assume that any URI which starts with
+ *               any of specified URI is in the same "protection space";
+ *               could be NULL (clients typically assume that the same
+ *               credentials could be used for any URI on the same host)
+ * @param response the reply to send; should contain the "access denied"
+ *                 body; note that this function sets the "WWW Authenticate"
+ *                 header and that the caller should not do this;
+ *                 the NULL is tolerated
+ * @param signal_stale set to #MHD_YES if the nonce is stale to add 'stale=true'
+ *                     to the authentication header, this instructs the client
+ *                     to retry immediately with the new nonce and the same
+ *                     credentials, without asking user for the new password
+ * @param mqop the QOP to use, currently the only allowed value is
+ *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param malgo3 digest algorithm to use, if several algorithms are specified
+ *               then MD5 is used (if allowed)
+ * @param userhash_support if set to non-zero value (#MHD_YES) then support of
+ *                         userhash is indicated, the client may provide
+ *                         hash("username:realm") instead of username in
+ *                         clear text; note that client is allowed to provide
+ *                         the username in cleartext even if this parameter set
+ *                         to non-zero
+ * @param prefer_utf8 if not set to #MHD_NO, parameter 'charset=UTF-8' is
+ *                    added, indicating for the client that UTF-8 encoding
+ *                    is preferred
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @note Available since #MHD_VERSION 0x00097526
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
+                                   const char *realm,
+                                   const char *opaque,
+                                   const char *domain,
+                                   struct MHD_Response *response,
+                                   int signal_stale,
+                                   enum MHD_DigestAuthMultiQOP qop,
+                                   enum MHD_DigestAuthMultiAlgo3 algo,
+                                   int userhash_support,
+                                   int prefer_utf8);
+
+
+/**
+ * Queues a response to request authentication from the client
+ *
+ * This function modifies provided @a response. The @a response must not be
+ * reused and should be destroyed after call of this function.
+ *
  * @param connection The MHD connection structure
  * @param realm the realm presented to the client
  * @param opaque string to user for opaque value
@@ -5132,6 +5241,7 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  * @param algo digest algorithm to use
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @note Available since #MHD_VERSION 0x00096200
+ * @deprecated use MHD_queue_auth_required_response3()
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
@@ -5148,6 +5258,9 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
  * For now uses MD5 (for backwards-compatibility). Still, if you
  * need to be sure, use #MHD_queue_auth_fail_response2().
  *
+ * This function modifies provided @a response. The @a response must not be
+ * reused and should be destroyed after call of this function.
+ *
  * @param connection The MHD connection structure
  * @param realm the realm presented to the client
  * @param opaque string to user for opaque value
@@ -5157,8 +5270,8 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
  * @param signal_stale #MHD_YES if the nonce is stale to add
  *        'stale=true' to the authentication header
  * @return #MHD_YES on success, #MHD_NO otherwise
+ * @deprecated use MHD_queue_auth_required_response3()
  * @ingroup authentication
- * @deprecated use MHD_queue_auth_fail_response2()
  */
 _MHD_EXTERN enum MHD_Result
 MHD_queue_auth_fail_response (struct MHD_Connection *connection,

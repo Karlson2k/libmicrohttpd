@@ -84,8 +84,8 @@ ahc_echo (void *cls,
   res_e = MHD_digest_auth_check3 (connection, realm,
                                   username,
                                   password,
-                                  300,
-                                  MHD_DIGEST_ALG_MD5);
+                                  300, 60, MHD_DIGEST_AUTH_MULT_QOP_AUTH,
+                                  MHD_DIGEST_AUTH_MULT_ALGO3_MD5);
   MHD_free (username);
   if (res_e != MHD_DAUTH_OK)
   {

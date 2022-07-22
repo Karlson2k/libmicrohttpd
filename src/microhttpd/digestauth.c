@@ -30,6 +30,7 @@
 #include "platform.h"
 #include "mhd_limits.h"
 #include "internal.h"
+#include "response.h"
 #include "md5.h"
 #include "sha256.h"
 #include "mhd_mono_clock.h"
@@ -158,6 +159,16 @@
 #define _MHD_SESS_TOKEN "-sess"
 
 /**
+ * The "auth" token for QOP
+ */
+#define MHD_TOKEN_AUTH_ "auth"
+
+/**
+ * The "auth-int" token for QOP
+ */
+#define MHD_TOKEN_AUTH_INT_ "auth-int"
+
+/**
  * The required prefix of parameter with the extended notation
  */
 #define MHD_DAUTH_EXT_PARAM_PREFIX "UTF-8'"
@@ -190,6 +201,73 @@ enum MHD_CheckNonceNC_
    */
   MHD_CHECK_NONCENC_WRONG = MHD_DAUTH_NONCE_WRONG,
 };
+
+
+/**
+ * Get base hash calculation algorithm from #MHD_DigestAuthAlgo3 value.
+ * @param algo3 the MHD_DigestAuthAlgo3 value
+ * @return the base hash calculation algorithm
+ */
+_MHD_static_inline enum MHD_DigestBaseAlgo
+get_base_digest_algo (enum MHD_DigestAuthAlgo3 algo3)
+{
+  unsigned int base_algo;
+
+  base_algo =
+    ((unsigned int) algo3)
+    & ~((unsigned int)
+        (MHD_DIGEST_AUTH_ALGO3_NON_SESSION
+         | MHD_DIGEST_AUTH_ALGO3_NON_SESSION));
+  return (enum MHD_DigestBaseAlgo) base_algo;
+}
+
+
+/**
+ * Get digest size for specified algorithm.
+ *
+ * Internal inline version.
+ * @param algo3 the algorithm to check
+ * @return the size of the digest or zero if the input value is not
+ *         recognised/valid
+ */
+_MHD_static_inline size_t
+digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3)
+{
+  mhd_assert (MHD_MD5_DIGEST_SIZE == MD5_DIGEST_SIZE);
+  mhd_assert (MHD_SHA256_DIGEST_SIZE == SHA256_DIGEST_SIZE);
+  /* Both MD5 and SHA-256 must not be specified at the same time */
+  mhd_assert ( (0 == (((unsigned int) algo3)   \
+                      & ((unsigned int) MHD_DIGEST_BASE_ALGO_MD5))) || \
+               (0 == (((unsigned int) algo3)   \
+                      & ((unsigned int) MHD_DIGEST_BASE_ALGO_SHA256))) );
+  if (0 != (((unsigned int) algo3)
+            & ((unsigned int) MHD_DIGEST_BASE_ALGO_MD5)))
+    return MHD_MD5_DIGEST_SIZE;
+  else if (0 != (((unsigned int) algo3)
+                 & ((unsigned int) MHD_DIGEST_BASE_ALGO_SHA256)))
+    return MHD_SHA256_DIGEST_SIZE;
+
+  return 0; /* Wrong input */
+}
+
+
+/**
+ * Get digest size for specified algorithm.
+ *
+ * The size of the digest specifies the size of the userhash, userdigest
+ * and other parameters which size depends on used hash algorithm.
+ * @param algo3 the algorithm to check
+ * @return the size of the digest (either #MHD_MD5_DIGEST_SIZE or
+ *         #MHD_SHA256_DIGEST_SIZE) or zero if the input value is not
+ *         recognised/valid
+ * @note Available since #MHD_VERSION 0x00097526
+ * @ingroup authentication
+ */
+_MHD_EXTERN size_t
+MHD_digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3)
+{
+  return digest_get_hash_size (algo3);
+}
 
 
 /**
@@ -1904,18 +1982,22 @@ is_param_equal_caseless (const struct MHD_RqDAuthParam *param,
 /**
  * Authenticates the authorization header sent by the client
  *
- * @param connection The MHD connection structure
- * @param[in,out] da digest algorithm to use for checking (written to as
- *         part of the calculations, but the values left in the struct
- *         are not actually expected to be useful for the caller)
- * @param realm The realm presented to the client
- * @param username The username needs to be authenticated
- * @param password The password used in the authentication
- * @param digest An optional binary hash
- *     of the precalculated hash value "username:realm:password"
- *     (must contain "digest_get_size(da)" bytes or be NULL)
- * @param nonce_timeout The amount of time for a nonce to be
- *      invalid in seconds
+ * @param connection the MHD connection structure
+ * @param realm the realm presented to the client
+ * @param username the username needs to be authenticated
+ * @param password the password used in the authentication
+ * @param userdigest the optional precalculated binary hash of the string
+ *                   "username:realm:password"
+ * @param nonce_timeout the period of seconds since nonce generation, when
+ *                      the nonce is recognised as valid and not stale.
+ * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
+ *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
+ *               returned;
+ *               zero for no limit
+ * @param mqop the QOP to use, currently the only allowed value is
+ *            #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param malgo3 digest algorithms to use, if several algorithms are specified
+ *               then MD5 is used (if allowed)
  * @param[out] pbuf the pointer to pointer to internally malloc'ed buffer,
  *                  to be free if not NULL upon return
  * @return #MHD_DAUTH_OK if authenticated,
@@ -1924,16 +2006,20 @@ is_param_equal_caseless (const struct MHD_RqDAuthParam *param,
  */
 static enum MHD_DigestAuthResult
 digest_auth_check_all_inner (struct MHD_Connection *connection,
-                             struct DigestAlgorithm *da,
                              const char *realm,
                              const char *username,
                              const char *password,
-                             const uint8_t *digest,
+                             const uint8_t *userdigest,
                              unsigned int nonce_timeout,
+                             uint32_t max_nc,
+                             enum MHD_DigestAuthMultiQOP mqop,
+                             enum MHD_DigestAuthMultiAlgo3 malgo3,
                              char **pbuf)
 {
   struct MHD_Daemon *daemon = MHD_get_master (connection->daemon);
-  const unsigned int digest_size = digest_get_size (da);
+  enum MHD_DigestAuthAlgo3 s_algo; /**< Selected algorithm */
+  struct DigestAlgorithm da;
+  unsigned int digest_size;
   uint8_t hash1_bin[MAX_DIGEST];
   uint8_t hash2_bin[MAX_DIGEST];
 #if 0
@@ -1960,6 +2046,28 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   if (NULL == params)
     return MHD_DAUTH_WRONG_HEADER;
 
+  /* ** Initial parameters checks and setup ** */
+  if (MHD_DIGEST_AUTH_MULT_QOP_AUTH != mqop)
+    MHD_PANIC (_ ("Wrong 'mqop' value, API violation"));
+
+  if (0 != (((unsigned int) malgo3) & MHD_DIGEST_AUTH_ALGO3_SESSION))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The 'session' algorithms are not supported.\n"));
+#endif /* HAVE_MESSAGES */
+    return MHD_DAUTH_WRONG_ALGO;
+  }
+  if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_MD5))
+    s_algo = MHD_DIGEST_AUTH_ALGO3_MD5;
+  else if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_SHA256))
+    s_algo = MHD_DIGEST_AUTH_ALGO3_SHA256;
+  else
+    MHD_PANIC (_ ("Wrong 'malgo3' value, API violation"));
+  if (! digest_setup (&da, get_base_digest_algo (s_algo)))
+    MHD_PANIC (_ ("Wrong 'malgo3' value, API violation"));
+  digest_size = digest_get_size (&da);
+
   /* ** A quick check for presence of all required parameters ** */
 
   if ((NULL == params->username.value.str) &&
@@ -1980,7 +2088,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 
   if (NULL == params->realm.value.str)
     return MHD_DAUTH_WRONG_HEADER;
-  else if (((NULL == digest) || params->userhash) &&
+  else if (((NULL == userdigest) || params->userhash) &&
            (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < params->realm.value.len))
     return MHD_DAUTH_TOO_LARGE; /* Realm is too large and it will be used in hash calculations */
 
@@ -2029,16 +2137,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   /* ** Check simple parameters match ** */
 
   /* Check 'algorithm' */
-  if (1)
-  {
-    const enum MHD_DigestAuthAlgo3 r_algo = get_rq_algo (params);
-    const enum MHD_DigestBaseAlgo p_algo = da->algo;
-    if ( (! ((MHD_DIGEST_AUTH_ALGO3_MD5 == r_algo) &&
-             (MHD_DIGEST_BASE_ALGO_MD5 == p_algo))) &&
-         (! ((MHD_DIGEST_AUTH_ALGO3_SHA256 == r_algo) &&
-             (MHD_DIGEST_BASE_ALGO_SHA256 == p_algo))) )
-      return MHD_DAUTH_WRONG_ALGO;
-  }
+  /* The 'algorithm' was checked at the start of the function */
   /* 'algorithm' valid */
 
   /* Check 'qop' */
@@ -2089,11 +2188,11 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   else
   { /* Userhash */
     mhd_assert (NULL != params->username.value.str);
-    digest_init (da);
-    digest_update (da, username, username_len);
-    digest_update_with_colon (da);
-    digest_update (da, realm, realm_len);
-    digest_calc_hash (da, hash1_bin);
+    digest_init (&da);
+    digest_update (&da, username, username_len);
+    digest_update_with_colon (&da);
+    digest_update (&da, realm, realm_len);
+    digest_calc_hash (&da, hash1_bin);
     mhd_assert (sizeof (tmp1) >= (2 * digest_size + 1));
     MHD_bin_to_hex (hash1_bin, digest_size, tmp1);
     if (! is_param_equal_caseless (&params->username, tmp1, 2 * digest_size))
@@ -2127,7 +2226,10 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 #endif
     return MHD_DAUTH_WRONG_HEADER;   /* invalid nc value */
   }
+  if ((0 != max_nc) && (max_nc < nci))
+    return MHD_DAUTH_NONCE_STALE;    /* Too large 'nc' value */
   /* Got 'nc' digital value */
+
   /* Get 'nonce' with basic checks */
   unq_res = get_unquoted_param (&params->nonce, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
@@ -2183,7 +2285,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _ ("Received nonce that technically valid, but was not "
+                _ ("Received nonce that was not "
                    "generated by MHD. This may indicate an attack attempt.\n"));
 #endif
       return MHD_DAUTH_NONCE_WRONG;
@@ -2196,9 +2298,9 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   /* ** Build H(A2) and check URI match in the header and in the request ** */
 
   /* Get 'uri' */
-  digest_init (da);
-  digest_update_str (da, connection->method);
-  digest_update_with_colon (da);
+  digest_init (&da);
+  digest_update_str (&da, connection->method);
+  digest_update_with_colon (&da);
 #if 0
   /* TODO: add support for "auth-int" */
   digest_update_str (da, hentity);
@@ -2209,37 +2311,37 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
 
-  digest_update (da, unq_copy.str, unq_copy.len);
+  digest_update (&da, unq_copy.str, unq_copy.len);
   /* The next check will modify copied URI string */
   if (! check_uri_match (connection, unq_copy.str, unq_copy.len))
     return MHD_DAUTH_WRONG_URI;
-  digest_calc_hash (da, hash2_bin);
+  digest_calc_hash (&da, hash2_bin);
   /* Got H(A2) */
 
   /* ** Build H(A1) ** */
-  if (NULL == digest)
+  if (NULL == userdigest)
   {
-    digest_init (da);
-    digest_update (da, (const uint8_t *) username, username_len);
-    digest_update_with_colon (da);
-    digest_update (da, (const uint8_t *) realm, realm_len);
-    digest_update_with_colon (da);
-    digest_update_str (da, password);
-    digest_calc_hash (da, hash1_bin);
+    digest_init (&da);
+    digest_update (&da, (const uint8_t *) username, username_len);
+    digest_update_with_colon (&da);
+    digest_update (&da, (const uint8_t *) realm, realm_len);
+    digest_update_with_colon (&da);
+    digest_update_str (&da, password);
+    digest_calc_hash (&da, hash1_bin);
   }
   /* TODO: support '-sess' versions */
   /* Got H(A1) */
 
   /* **  Check 'response' ** */
 
-  digest_init (da);
+  digest_init (&da);
   /* Update digest with H(A1) */
   mhd_assert (sizeof (tmp1) >= (digest_size * 2 + 1));
-  if (NULL == digest)
+  if (NULL == userdigest)
     MHD_bin_to_hex (hash1_bin, digest_size, tmp1);
   else
-    MHD_bin_to_hex (digest, digest_size, tmp1);
-  digest_update (da, (const uint8_t *) tmp1, digest_size * 2);
+    MHD_bin_to_hex (userdigest, digest_size, tmp1);
+  digest_update (&da, (const uint8_t *) tmp1, digest_size * 2);
 
   /* H(A1) is not needed anymore, reuse the buffer.
    * Use hash1_bin for the client's 'response' decoded to binary form. */
@@ -2251,46 +2353,46 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     return MHD_DAUTH_RESPONSE_WRONG;
 
   /* Update digest with ':' */
-  digest_update_with_colon (da);
+  digest_update_with_colon (&da);
   /* Update digest with 'nonce' text value */
   unq_res = get_unquoted_param (&params->nonce, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
-  digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
+  digest_update (&da, (const uint8_t *) unquoted.str, unquoted.len);
   /* Update digest with ':' */
-  digest_update_with_colon (da);
+  digest_update_with_colon (&da);
   /* Update digest with 'nc' text value */
   unq_res = get_unquoted_param (&params->nc, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
-  digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
+  digest_update (&da, (const uint8_t *) unquoted.str, unquoted.len);
   /* Update digest with ':' */
-  digest_update_with_colon (da);
+  digest_update_with_colon (&da);
   /* Update digest with 'cnonce' value */
   unq_res = get_unquoted_param (&params->cnonce, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
-  digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
+  digest_update (&da, (const uint8_t *) unquoted.str, unquoted.len);
   /* Update digest with ':' */
-  digest_update_with_colon (da);
+  digest_update_with_colon (&da);
   /* Update digest with 'qop' value */
   unq_res = get_unquoted_param (&params->qop, tmp1, ptmp2, &tmp2_size,
                                 &unquoted);
   if (_MHD_UNQ_OK != unq_res)
     return MHD_DAUTH_ERROR;
-  digest_update (da, (const uint8_t *) unquoted.str, unquoted.len);
+  digest_update (&da, (const uint8_t *) unquoted.str, unquoted.len);
   /* Update digest with ':' */
-  digest_update_with_colon (da);
+  digest_update_with_colon (&da);
   /* Update digest with H(A2) */
   MHD_bin_to_hex (hash2_bin, digest_size, tmp1);
-  digest_update (da, (const uint8_t *) tmp1, digest_size * 2);
+  digest_update (&da, (const uint8_t *) tmp1, digest_size * 2);
 
   /* H(A2) is not needed anymore, reuse the buffer.
    * Use hash2_bin for the calculated response in binary form */
-  digest_calc_hash (da, hash2_bin);
+  digest_calc_hash (&da, hash2_bin);
 
   if (0 != memcmp (hash1_bin, hash2_bin, digest_size))
     return MHD_DAUTH_RESPONSE_WRONG;
@@ -2307,7 +2409,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
                    connection->headers_received,
                    realm,
                    realm_len,
-                   da,
+                   &da,
                    tmp1);
 
   if (! is_param_equal (&params->nonce, tmp1,
@@ -2322,37 +2424,46 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 /**
  * Authenticates the authorization header sent by the client
  *
- * @param connection The MHD connection structure
- * @param[in,out] da digest algorithm to use for checking (written to as
- *         part of the calculations, but the values left in the struct
- *         are not actually expected to be useful for the caller)
- * @param realm The realm presented to the client
- * @param username The username needs to be authenticated
- * @param password The password used in the authentication
- * @param digest An optional binary hash
- *     of the precalculated hash value "username:realm:password"
- *     (must contain "digest_get_size(da)" bytes or be NULL)
- * @param nonce_timeout The amount of time for a nonce to be
- *      invalid in seconds
+ * @param connection the MHD connection structure
+ * @param realm the realm presented to the client
+ * @param username the username needs to be authenticated
+ * @param password the password used in the authentication
+ * @param userdigest the optional precalculated binary hash of the string
+ *                   "username:realm:password"
+ * @param nonce_timeout the period of seconds since nonce generation, when
+ *                      the nonce is recognised as valid and not stale.
+ * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
+ *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
+ *               returned;
+ *               zero for no limit
+ * @param mqop the QOP to use, currently the only allowed value is
+ *            #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param malgo3 digest algorithms to use, if several algorithms are specified
+ *               then MD5 is used (if allowed)
  * @return #MHD_DAUTH_OK if authenticated,
  *         error code otherwise.
  * @ingroup authentication
  */
 static enum MHD_DigestAuthResult
 digest_auth_check_all (struct MHD_Connection *connection,
-                       struct DigestAlgorithm *da,
                        const char *realm,
                        const char *username,
                        const char *password,
-                       const uint8_t *digest,
-                       unsigned int nonce_timeout)
+                       const uint8_t *userdigest,
+                       unsigned int nonce_timeout,
+                       uint32_t max_nc,
+                       enum MHD_DigestAuthMultiQOP mqop,
+                       enum MHD_DigestAuthMultiAlgo3 malgo3)
 {
   enum MHD_DigestAuthResult res;
   char *buf;
 
   buf = NULL;
-  res = digest_auth_check_all_inner (connection, da, realm, username, password,
-                                     digest, nonce_timeout, &buf);
+  res = digest_auth_check_all_inner (connection, realm, username, password,
+                                     userdigest,
+                                     nonce_timeout,
+                                     max_nc, mqop, malgo3,
+                                     &buf);
   if (NULL != buf)
     free (buf);
 
@@ -2402,10 +2513,17 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  * @param username the username needs to be authenticated
  * @param password the password used in the authentication
  * @param nonce_timeout the nonce validity duration in seconds
- * @param algo the digest algorithms allowed for verification
+ * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
+ *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
+ *               returned;
+ *               zero for no limit
+ * @param mqop the QOP to use, currently the only allowed value is
+ *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param malgo3 digest algorithm to use, if several algorithms are specified
+ *               then MD5 is used (if allowed)
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097513
+ * @note Available since #MHD_VERSION 0x00097526
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
@@ -2414,87 +2532,84 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
                         const char *username,
                         const char *password,
                         unsigned int nonce_timeout,
-                        enum MHD_DigestAuthAlgorithm algo)
+                        uint32_t max_nc,
+                        enum MHD_DigestAuthMultiQOP mqop,
+                        enum MHD_DigestAuthMultiAlgo3 malgo3)
 {
-  struct DigestAlgorithm da;
-
   mhd_assert (NULL != password);
 
-  if ((MHD_DIGEST_ALG_MD5 == algo) || (MHD_DIGEST_ALG_AUTO == algo))
-  {
-    if (! digest_setup (&da, MHD_DIGEST_BASE_ALGO_MD5))
-      MHD_PANIC (_ ("Error initialising hash algorithm.\n"));
-  }
-  else if (MHD_DIGEST_ALG_SHA256 == algo)
-  {
-    if (! digest_setup (&da, MHD_DIGEST_BASE_ALGO_SHA256))
-      MHD_PANIC (_ ("Error initialising hash algorithm.\n"));
-  }
-  else
-    MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */
-
   return digest_auth_check_all (connection,
-                                &da,
                                 realm,
                                 username,
                                 password,
                                 NULL,
-                                nonce_timeout);
+                                nonce_timeout,
+                                max_nc,
+                                mqop,
+                                malgo3);
 }
 
 
 /**
- * Authenticates the authorization header sent by the client.
+ * Authenticates the authorization header sent by the client by using
+ * hash of "username:realm:password".
  *
  * @param connection the MHD connection structure
- * @param realm the realm to be used for authorization of the client
+ * @param realm the realm presented to the client
  * @param username the username needs to be authenticated
- * @param digest the pointer to the binary digest for the precalculated hash
- *        value "username:realm:password" with specified @a algo
- * @param digest_size the number of bytes in @a digest (the size must match
- *        @a algo!)
- * @param nonce_timeout the nonce validity duration in seconds
- * @param algo digest algorithms allowed for verification
+ * @param userdigest the precalculated binary hash of the string
+ *                   "username:realm:password"
+ * @param userdigest_size the size of the @a userdigest in bytes, must match the
+ *                        hashing algorithm (see #MHD_MD5_DIGEST_SIZE,
+ *                        #MHD_SHA256_DIGEST_SIZE)
+ * @param nonce_timeout the period of seconds since nonce generation, when
+ *                      the nonce is recognised as valid and not stale.
+ * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
+ *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
+ *               returned;
+ *               zero for no limit
+ * @param mqop the QOP to use, currently the only allowed value is
+ *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param malgo3 the digest algorithms to use; both MD5-based and SHA-256-based
+ *               algorithms cannot be used at the same time for this function
+ *               as @a userdigest_size must match specified algorithm
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097513
+ * @note Available since #MHD_VERSION 0x00097526
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
 MHD_digest_auth_check_digest3 (struct MHD_Connection *connection,
                                const char *realm,
                                const char *username,
-                               const uint8_t *digest,
-                               size_t digest_size,
+                               const void *userdigest,
+                               size_t userdigest_size,
                                unsigned int nonce_timeout,
-                               enum MHD_DigestAuthAlgorithm algo)
+                               uint32_t max_nc,
+                               enum MHD_DigestAuthMultiQOP mqop,
+                               enum MHD_DigestAuthMultiAlgo3 malgo3)
 {
-  struct DigestAlgorithm da;
+  if (((unsigned int) (MHD_DIGEST_BASE_ALGO_MD5
+                       | MHD_DIGEST_BASE_ALGO_SHA256)) ==
+      (((unsigned int) malgo3) & (MHD_DIGEST_BASE_ALGO_MD5
+                                  | MHD_DIGEST_BASE_ALGO_SHA256)))
+    MHD_PANIC (_ ("Wrong 'malgo3' value, both MD5 and SHA-256 specified, "
+                  "API violation"));
 
-  mhd_assert (NULL != digest);
-  if ((MHD_DIGEST_ALG_MD5 == algo) || (MHD_DIGEST_ALG_AUTO == algo))
-  {
-    if (! digest_setup (&da, MHD_DIGEST_BASE_ALGO_MD5))
-      MHD_PANIC (_ ("Error initialising hash algorithm.\n"));
-  }
-  else if (MHD_DIGEST_ALG_SHA256 == algo)
-  {
-    if (! digest_setup (&da, MHD_DIGEST_BASE_ALGO_SHA256))
-      MHD_PANIC (_ ("Error initialising hash algorithm.\n"));
-  }
-  else
-    MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */
-
-  if (digest_get_size (&da) != digest_size)
-    MHD_PANIC (_ ("Digest size mismatch.\n")); /* API violation! */
+  if (digest_get_hash_size ((enum MHD_DigestAuthAlgo3) malgo3) !=
+      userdigest_size)
+    MHD_PANIC (_ ("Wrong 'userdigest_size' value, not matching 'malgo3, "
+                  "API violation"));
 
   return digest_auth_check_all (connection,
-                                &da,
                                 realm,
                                 username,
                                 NULL,
-                                digest,
-                                nonce_timeout);
+                                (const uint8_t *) userdigest,
+                                nonce_timeout,
+                                max_nc,
+                                mqop,
+                                malgo3);
 }
 
 
@@ -2523,12 +2638,24 @@ MHD_digest_auth_check2 (struct MHD_Connection *connection,
                         enum MHD_DigestAuthAlgorithm algo)
 {
   enum MHD_DigestAuthResult res;
+  enum MHD_DigestAuthMultiAlgo3 malgo3;
+
+  if (MHD_DIGEST_ALG_AUTO == algo)
+    malgo3 = MHD_DIGEST_AUTH_MULT_ALGO3_ANY_NON_SESSION;
+  else if (MHD_DIGEST_ALG_MD5 == algo)
+    malgo3 = MHD_DIGEST_AUTH_MULT_ALGO3_MD5;
+  else if (MHD_DIGEST_ALG_SHA256 == algo)
+    malgo3 = MHD_DIGEST_AUTH_MULT_ALGO3_SHA256;
+  else
+    MHD_PANIC (_ ("Wrong 'algo' value, API violation"));
+
   res = MHD_digest_auth_check3 (connection,
                                 realm,
                                 username,
                                 password,
                                 nonce_timeout,
-                                algo);
+                                0, MHD_DIGEST_AUTH_MULT_QOP_AUTH,
+                                malgo3);
   if (MHD_DAUTH_OK == res)
     return MHD_YES;
   else if ((MHD_DAUTH_NONCE_STALE == res) || (MHD_DAUTH_NONCE_WRONG == res))
@@ -2567,6 +2694,16 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
                                enum MHD_DigestAuthAlgorithm algo)
 {
   enum MHD_DigestAuthResult res;
+  enum MHD_DigestAuthMultiAlgo3 malgo3;
+
+  if (MHD_DIGEST_ALG_AUTO == algo)
+    malgo3 = MHD_DIGEST_AUTH_MULT_ALGO3_ANY_NON_SESSION;
+  else if (MHD_DIGEST_ALG_MD5 == algo)
+    malgo3 = MHD_DIGEST_AUTH_MULT_ALGO3_MD5;
+  else if (MHD_DIGEST_ALG_SHA256 == algo)
+    malgo3 = MHD_DIGEST_AUTH_MULT_ALGO3_SHA256;
+  else
+    MHD_PANIC (_ ("Wrong 'algo' value, API violation"));
 
   res = MHD_digest_auth_check_digest3 (connection,
                                        realm,
@@ -2574,7 +2711,8 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
                                        digest,
                                        digest_size,
                                        nonce_timeout,
-                                       algo);
+                                       0, MHD_DIGEST_AUTH_MULT_QOP_AUTH,
+                                       malgo3);
   if (MHD_DAUTH_OK == res)
     return MHD_YES;
   else if ((MHD_DAUTH_NONCE_STALE == res) || (MHD_DAUTH_NONCE_WRONG == res))
@@ -2622,6 +2760,317 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
 /**
  * Queues a response to request authentication from the client
  *
+ * This function modifies provided @a response. The @a response must not be
+ * reused and should be destroyed (by #MHD_destroy_response()) after call of
+ * this function.
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm presented to the client
+ * @param opaque the string for opaque value, can be NULL, but NULL is
+ *               not recommended for better compatibility with clients
+ * @param domain the optional space-separated list of URIs for which the
+ *               same authorisation could be used, URIs can be in form
+ *               "path-absolute" (the path for the same host with initial slash)
+ *               or in form "absolute-URI" (the full path with protocol), in
+ *               any case client may assume that any URI which starts with
+ *               any of specified URI is in the same "protection space";
+ *               could be NULL (clients typically assume that the same
+ *               credentials could be used for any URI on the same host)
+ * @param response the reply to send; should contain the "access denied"
+ *                 body; note that this function sets the "WWW Authenticate"
+ *                 header and that the caller should not do this;
+ *                 the NULL is tolerated
+ * @param signal_stale set to #MHD_YES if the nonce is stale to add 'stale=true'
+ *                     to the authentication header, this instructs the client
+ *                     to retry immediately with the new nonce and the same
+ *                     credentials, without asking user for the new password
+ * @param mqop the QOP to use, currently the only allowed value is
+ *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param malgo3 digest algorithm to use, if several algorithms are specified
+ *               then MD5 is used (if allowed)
+ * @param userhash_support if set to non-zero value (#MHD_YES) then support of
+ *                         userhash is indicated, the client may provide
+ *                         hash("username:realm") instead of username in
+ *                         clear text; note that client is allowed to provide
+ *                         the username in cleartext even if this parameter set
+ *                         to non-zero
+ * @param prefer_utf8 if not set to #MHD_NO, parameter 'charset=UTF-8' is
+ *                    added, indicating for the client that UTF-8 encoding
+ *                    is preferred
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @note Available since #MHD_VERSION 0x00097526
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
+                                   const char *realm,
+                                   const char *opaque,
+                                   const char *domain,
+                                   struct MHD_Response *response,
+                                   int signal_stale,
+                                   enum MHD_DigestAuthMultiQOP mqop,
+                                   enum MHD_DigestAuthMultiAlgo3 malgo3,
+                                   int userhash_support,
+                                   int prefer_utf8)
+{
+  static const char prefix_realm[] = "realm=\"";
+  static const char prefix_qop[] = "qop=\"";
+  static const char prefix_algo[] = "algorithm=";
+  static const char prefix_nonce[] = "nonce=\"";
+  static const char prefix_opaque[] = "opaque=\"";
+  static const char prefix_domain[] = "domain=\"";
+  static const char str_charset[] = "charset=UTF-8";
+  static const char str_userhash[] = "userhash=true";
+  static const char str_stale[] = "stale=true";
+  enum MHD_DigestAuthAlgo3 s_algo; /**< Selected algorithm */
+  size_t realm_len;
+  size_t opaque_len;
+  size_t domain_len;
+  size_t buf_size;
+  char *buf;
+  size_t p; /* The position in the buffer */
+  struct DigestAlgorithm da;
+
+  if (0 != (((unsigned int) malgo3) & MHD_DIGEST_AUTH_ALGO3_SESSION))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The 'session' algorithms are not supported.\n"));
+#endif /* HAVE_MESSAGES */
+    return MHD_NO;
+  }
+  if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_MD5))
+    s_algo = MHD_DIGEST_AUTH_ALGO3_MD5;
+  else if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_SHA256))
+    s_algo = MHD_DIGEST_AUTH_ALGO3_SHA256;
+  else
+    MHD_PANIC (_ ("Wrong 'malgo3' value, API violation"));
+
+  if (MHD_DIGEST_AUTH_MULT_QOP_AUTH != mqop)
+    MHD_PANIC (_ ("Wrong 'mqop' value, API violation"));
+
+  if (0 == MHD_get_master (connection->daemon)->nonce_nc_size)
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The nonce array size is zero.\n"));
+#endif /* HAVE_MESSAGES */
+    return MHD_NO;
+  }
+
+  if (! digest_setup (&da, get_base_digest_algo (s_algo)))
+    MHD_PANIC (_ ("Wrong 'algo' value, API violation"));
+
+  /* Calculate required size */
+  buf_size = 0;
+  /* 'Digest ' */
+  buf_size += MHD_STATICSTR_LEN_ (_MHD_AUTH_DIGEST_BASE) + 1; /* 1 for ' ' */
+  buf_size += MHD_STATICSTR_LEN_ (prefix_realm) + 3; /* 3 for '", ' */
+  /* 'realm="xxxx", ' */
+  realm_len = strlen (realm);
+  if (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < realm_len)
+    return MHD_NO;
+  if ((NULL != memchr (realm, '\r', realm_len)) ||
+      (NULL != memchr (realm, '\n', realm_len)))
+    return MHD_NO;
+  buf_size += realm_len * 2; /* Quoting may double the size */
+  /* 'qop="xxxx", ' */
+  buf_size += MHD_STATICSTR_LEN_ (prefix_qop) + 3; /* 3 for '", ' */
+  buf_size += MHD_STATICSTR_LEN_ (MHD_TOKEN_AUTH_);
+  /* 'algorithm="xxxx", ' */
+  buf_size += MHD_STATICSTR_LEN_ (prefix_algo) + 2; /* 2 for ', ' */
+  if (MHD_DIGEST_AUTH_ALGO3_MD5 == s_algo)
+    buf_size += MHD_STATICSTR_LEN_ (_MHD_MD5_TOKEN);
+  else if (MHD_DIGEST_AUTH_ALGO3_SHA256 == s_algo)
+    buf_size += MHD_STATICSTR_LEN_ (_MHD_SHA256_TOKEN);
+  else
+    mhd_assert (0);
+  /* 'nonce="xxxx", ' */
+  buf_size += MHD_STATICSTR_LEN_ (prefix_nonce) + 3; /* 3 for '", ' */
+  buf_size += NONCE_STD_LEN (digest_get_size (&da)); /* Escaping not needed */
+  /* 'opaque="xxxx", ' */
+  if (NULL != opaque)
+  {
+    buf_size += MHD_STATICSTR_LEN_ (prefix_opaque) + 3; /* 3 for '", ' */
+    opaque_len = strlen (opaque);
+    if ((NULL != memchr (opaque, '\r', opaque_len)) ||
+        (NULL != memchr (opaque, '\n', opaque_len)))
+      return MHD_NO;
+    buf_size += opaque_len * 2; /* Quoting may double the size */
+  }
+  else
+    opaque_len = 0;
+  /* 'domain="xxxx", ' */
+  if (NULL != domain)
+  {
+    buf_size += MHD_STATICSTR_LEN_ (prefix_domain) + 3; /* 3 for '", ' */
+    domain_len = strlen (domain);
+    if ((NULL != memchr (domain, '\r', domain_len)) ||
+        (NULL != memchr (domain, '\n', domain_len)))
+      return MHD_NO;
+    buf_size += domain_len * 2; /* Quoting may double the size */
+  }
+  else
+    domain_len = 0;
+  /* 'charset=UTF-8' */
+  if (MHD_NO != prefer_utf8)
+    buf_size += MHD_STATICSTR_LEN_ (str_charset) + 2; /* 2 for ', ' */
+  /* 'userhash=true' */
+  if (MHD_NO != userhash_support)
+    buf_size += MHD_STATICSTR_LEN_ (str_userhash) + 2; /* 2 for ', ' */
+  /* 'stale=true' */
+  if (MHD_NO != signal_stale)
+    buf_size += MHD_STATICSTR_LEN_ (str_stale) + 2; /* 2 for ', ' */
+
+  /* The calculated length is for string ended with ", ". One character will
+   * be used for zero-termination, the last one will not be used. */
+
+  /* Allocate the buffer */
+  buf = malloc (buf_size);
+  if (NULL == buf)
+    return MHD_NO;
+
+  /* Build the challenge string */
+  p = 0;
+  /* 'Digest: ' */
+  memcpy (buf + p, _MHD_AUTH_DIGEST_BASE,
+          MHD_STATICSTR_LEN_ (_MHD_AUTH_DIGEST_BASE));
+  p += MHD_STATICSTR_LEN_ (_MHD_AUTH_DIGEST_BASE);
+  buf[p++] = ' ';
+  /* 'realm="xxxx", ' */
+  memcpy (buf + p, prefix_realm,
+          MHD_STATICSTR_LEN_ (prefix_realm));
+  p += MHD_STATICSTR_LEN_ (prefix_realm);
+  mhd_assert ((buf_size - p) >= (realm_len * 2));
+  p += MHD_str_quote (realm, realm_len, buf + p, buf_size - p);
+  buf[p++] = '\"';
+  buf[p++] = ',';
+  buf[p++] = ' ';
+  /* 'qop="xxxx", ' */
+  memcpy (buf + p, prefix_qop,
+          MHD_STATICSTR_LEN_ (prefix_qop));
+  p += MHD_STATICSTR_LEN_ (prefix_qop);
+  memcpy (buf + p, MHD_TOKEN_AUTH_,
+          MHD_STATICSTR_LEN_ (MHD_TOKEN_AUTH_));
+  p += MHD_STATICSTR_LEN_ (MHD_TOKEN_AUTH_);
+  buf[p++] = '\"';
+  buf[p++] = ',';
+  buf[p++] = ' ';
+  /* 'algorithm="xxxx", ' */
+  memcpy (buf + p, prefix_algo,
+          MHD_STATICSTR_LEN_ (prefix_algo));
+  p += MHD_STATICSTR_LEN_ (prefix_algo);
+  if (MHD_DIGEST_AUTH_ALGO3_MD5 == s_algo)
+  {
+    memcpy (buf + p, _MHD_MD5_TOKEN,
+            MHD_STATICSTR_LEN_ (_MHD_MD5_TOKEN));
+    p += MHD_STATICSTR_LEN_ (_MHD_MD5_TOKEN);
+  }
+  else if (MHD_DIGEST_AUTH_ALGO3_SHA256 == s_algo)
+  {
+    memcpy (buf + p, _MHD_SHA256_TOKEN,
+            MHD_STATICSTR_LEN_ (_MHD_SHA256_TOKEN));
+    p += MHD_STATICSTR_LEN_ (_MHD_SHA256_TOKEN);
+  }
+  buf[p++] = ',';
+  buf[p++] = ' ';
+  /* 'nonce="xxxx", ' */
+  memcpy (buf + p, prefix_nonce,
+          MHD_STATICSTR_LEN_ (prefix_nonce));
+  p += MHD_STATICSTR_LEN_ (prefix_nonce);
+  mhd_assert ((buf_size - p) >= (NONCE_STD_LEN (digest_get_size (&da))));
+  if (! calculate_add_nonce_with_retry (connection, realm, &da, buf + p))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Could not register nonce. Client's requests with this "
+                 "nonce will be always 'stale'. Probably clients' requests "
+                 "are too intensive.\n"));
+#endif /* HAVE_MESSAGES */
+    (void) 0; /* Mute compiler warning for builds without messages */
+  }
+  p += NONCE_STD_LEN (digest_get_size (&da));
+  buf[p++] = '\"';
+  buf[p++] = ',';
+  buf[p++] = ' ';
+  /* 'opaque="xxxx", ' */
+  if (NULL != opaque)
+  {
+    memcpy (buf + p, prefix_opaque,
+            MHD_STATICSTR_LEN_ (prefix_opaque));
+    p += MHD_STATICSTR_LEN_ (prefix_opaque);
+    mhd_assert ((buf_size - p) >= (opaque_len * 2));
+    p += MHD_str_quote (opaque, opaque_len, buf + p, buf_size - p);
+    buf[p++] = '\"';
+    buf[p++] = ',';
+    buf[p++] = ' ';
+  }
+  /* 'domain="xxxx", ' */
+  if (NULL != domain)
+  {
+    memcpy (buf + p, prefix_domain,
+            MHD_STATICSTR_LEN_ (prefix_domain));
+    p += MHD_STATICSTR_LEN_ (prefix_domain);
+    mhd_assert ((buf_size - p) >= (domain_len * 2));
+    p += MHD_str_quote (domain, domain_len, buf + p, buf_size - p);
+    buf[p++] = '\"';
+    buf[p++] = ',';
+    buf[p++] = ' ';
+  }
+  /* 'charset=UTF-8' */
+  if (MHD_NO != prefer_utf8)
+  {
+    memcpy (buf + p, str_charset,
+            MHD_STATICSTR_LEN_ (str_charset));
+    p += MHD_STATICSTR_LEN_ (str_charset);
+    buf[p++] = ',';
+    buf[p++] = ' ';
+  }
+  /* 'userhash=true' */
+  if (MHD_NO != userhash_support)
+  {
+    memcpy (buf + p, str_userhash,
+            MHD_STATICSTR_LEN_ (str_userhash));
+    p += MHD_STATICSTR_LEN_ (str_userhash);
+    buf[p++] = ',';
+    buf[p++] = ' ';
+  }
+  /* 'stale=true' */
+  if (MHD_NO != signal_stale)
+  {
+    memcpy (buf + p, str_stale,
+            MHD_STATICSTR_LEN_ (str_stale));
+    p += MHD_STATICSTR_LEN_ (str_stale);
+    buf[p++] = ',';
+    buf[p++] = ' ';
+  }
+  mhd_assert (buf_size >= p);
+  /* The build string ends with ", ". Replace comma with zero-termination. */
+  --p;
+  buf[--p] = 0;
+
+  if (! MHD_add_response_entry_no_check_ (response, MHD_HEADER_KIND,
+                                          MHD_HTTP_HEADER_WWW_AUTHENTICATE,
+                                          MHD_STATICSTR_LEN_ ( \
+                                            MHD_HTTP_HEADER_WWW_AUTHENTICATE),
+                                          buf, p))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Failed to add Digest auth header.\n"));
+#endif /* HAVE_MESSAGES */
+    free (buf);
+    return MHD_NO;
+  }
+  free (buf);
+
+  return MHD_queue_response (connection, MHD_HTTP_UNAUTHORIZED, response);
+}
+
+
+/**
+ * Queues a response to request authentication from the client
+ *
  * @param connection The MHD connection structure
  * @param realm the realm presented to the client
  * @param opaque string to user for opaque value
@@ -2643,119 +3092,22 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
                                int signal_stale,
                                enum MHD_DigestAuthAlgorithm algo)
 {
-  enum MHD_Result ret;
-  int hlen;
+  enum MHD_DigestAuthMultiAlgo3 algo3;
 
-  struct DigestAlgorithm da;
-
-  if ((MHD_DIGEST_ALG_MD5 == algo) || (MHD_DIGEST_ALG_AUTO == algo))
-  {
-    if (! digest_setup (&da, MHD_DIGEST_BASE_ALGO_MD5))
-      MHD_PANIC (_ ("Error initialising hash algorithm.\n"));
-  }
+  if (MHD_DIGEST_ALG_MD5 == algo)
+    algo3 = MHD_DIGEST_AUTH_MULT_ALGO3_MD5;
   else if (MHD_DIGEST_ALG_SHA256 == algo)
-  {
-    if (! digest_setup (&da, MHD_DIGEST_BASE_ALGO_SHA256))
-      MHD_PANIC (_ ("Error initialising hash algorithm.\n"));
-  }
+    algo3 = MHD_DIGEST_AUTH_MULT_ALGO3_SHA256;
+  else if ((MHD_DIGEST_ALG_MD5 == algo) || (MHD_DIGEST_ALG_AUTO == algo))
+    algo3 = MHD_DIGEST_AUTH_MULT_ALGO3_ANY_NON_SESSION;
   else
     MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */
 
-  if (NULL == response)
-    return MHD_NO;
-
-  if (0 == MHD_get_master (connection->daemon)->nonce_nc_size)
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("The nonce array size is zero.\n"));
-#endif /* HAVE_MESSAGES */
-    return MHD_NO;
-  }
-
-  if (1)
-  {
-    char nonce[NONCE_STD_LEN (MAX_DIGEST) + 1];
-
-    /* VLA_CHECK_LEN_DIGEST (digest_get_size (&da)); */
-    if (! calculate_add_nonce_with_retry (connection, realm, &da, nonce))
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (connection->daemon,
-                _ ("Could not register nonce. Client's requests with this "
-                   "nonce will be always 'stale'. Probably clients' requests "
-                   "are too intensive.\n"));
-#else  /* ! HAVE_MESSAGES */
-      (void) 0;
-#endif /* ! HAVE_MESSAGES */
-    }
-    /* Building the authentication header */
-    hlen = MHD_snprintf_ (NULL,
-                          0,
-                          "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\",algorithm=%s%s",
-                          realm,
-                          nonce,
-                          opaque,
-                          digest_get_algo_name (&da),
-                          signal_stale
-                          ? ",stale=\"true\""
-                          : "");
-    if (hlen > 0)
-    {
-      char *header;
-
-      header = MHD_calloc_ (1,
-                            (size_t) hlen + 1);
-      if (NULL == header)
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (connection->daemon,
-                  _ ("Failed to allocate memory for auth response header.\n"));
-#endif /* HAVE_MESSAGES */
-        return MHD_NO;
-      }
-
-      if (MHD_snprintf_ (header,
-                         (size_t) hlen + 1,
-                         "Digest realm=\"%s\",qop=\"auth\",nonce=\"%s\",opaque=\"%s\",algorithm=%s%s",
-                         realm,
-                         nonce,
-                         opaque,
-                         digest_get_algo_name (&da),
-                         signal_stale
-                         ? ",stale=\"true\""
-                         : "") == hlen)
-        ret = MHD_add_response_header (response,
-                                       MHD_HTTP_HEADER_WWW_AUTHENTICATE,
-                                       header);
-      else
-        ret = MHD_NO;
-#if 0
-      if ( (MHD_NO != ret) && (AND in state : 100 continue aborting ...))
-        ret = MHD_add_response_header (response,
-                                       MHD_HTTP_HEADER_CONNECTION,
-                                       "close");
-#endif
-      free (header);
-    }
-    else
-      ret = MHD_NO;
-  }
-
-  if (MHD_NO != ret)
-  {
-    ret = MHD_queue_response (connection,
-                              MHD_HTTP_UNAUTHORIZED,
-                              response);
-  }
-  else
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("Failed to add Digest auth header.\n"));
-#endif /* HAVE_MESSAGES */
-  }
-  return ret;
+  return MHD_queue_auth_required_response3 (connection, realm, opaque,
+                                            NULL, response, signal_stale,
+                                            MHD_DIGEST_AUTH_MULT_QOP_AUTH,
+                                            algo3,
+                                            0, 0);
 }
 
 
