@@ -153,7 +153,7 @@
 #define _MHD_SHA512_256_TOKEN "SHA-512-256"
 
 /**
- * The postfix token for "session" algorithms.
+ * The suffix token for "session" algorithms.
  */
 #define _MHD_SESS_TOKEN "-sess"
 
