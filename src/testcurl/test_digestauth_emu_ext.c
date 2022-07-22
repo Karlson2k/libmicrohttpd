@@ -237,7 +237,7 @@ _checkCURLE_OK_func (CURLcode code, const char *curlFunc,
 #define USERNAME "titkos szuper" "\xC3\xBC" "gyn" "\xC3\xB6" "k"
 /* percent-encoded username */
 #define USERNAME_PCTENC "titkos%20szuper%C3%BCgyn%C3%B6k"
-#define PASSWORD "fake pass"
+#define PASSWORD_VALUE "fake pass"
 #define OPAQUE_VALUE "opaque-content"
 #define NONCE_EMU "badbadbadbadbadbadbadbadbadbadbadbadbadbadba"
 #define CNONCE_EMU "utututututututututututututututututututututs="
@@ -354,6 +354,14 @@ ahc_echo (void *cls,
     creds = MHD_digest_auth_get_username3 (connection);
     if (NULL == creds)
       mhdErrorExitDesc ("MHD_digest_auth_get_username3() returned NULL");
+    else if (MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED != creds->uname_type)
+    {
+      fprintf (stderr, "Unexpected 'uname_type'.\n"
+               "Expected: %d\tRecieved: %d. ",
+               (int) MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED,
+               (int) creds->uname_type);
+      mhdErrorExitDesc ("Wrong 'uname_type'");
+    }
     else if (NULL == creds->username)
       mhdErrorExitDesc ("'username' is NULL");
     else if (creds->username_len != MHD_STATICSTR_LEN_ (USERNAME))
@@ -377,7 +385,12 @@ ahc_echo (void *cls,
       mhdErrorExitDesc ("'userhash_bin' is NOT NULL");
     else if (0 != creds->userhash_bin_size)
       mhdErrorExitDesc ("'userhash_bin_size' is NOT zero");
-    else if (MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED != creds->uname_type)
+    MHD_free (creds);
+
+    dinfo = MHD_digest_auth_get_request_info3 (connection);
+    if (NULL == dinfo)
+      mhdErrorExitDesc ("MHD_digest_auth_get_username3() returned NULL");
+    else if (MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED != dinfo->uname_type)
     {
       fprintf (stderr, "Unexpected 'uname_type'.\n"
                "Expected: %d\tRecieved: %d. ",
@@ -385,11 +398,6 @@ ahc_echo (void *cls,
                (int) creds->uname_type);
       mhdErrorExitDesc ("Wrong 'uname_type'");
     }
-    MHD_free (creds);
-
-    dinfo = MHD_digest_auth_get_request_info3 (connection);
-    if (NULL == dinfo)
-      mhdErrorExitDesc ("MHD_digest_auth_get_username3() returned NULL");
     else if (NULL == dinfo->username)
       mhdErrorExitDesc ("'username' is NULL");
     else if (dinfo->username_len != MHD_STATICSTR_LEN_ (USERNAME))
@@ -413,14 +421,6 @@ ahc_echo (void *cls,
       mhdErrorExitDesc ("'userhash_bin' is NOT NULL");
     else if (0 != dinfo->userhash_bin_size)
       mhdErrorExitDesc ("'userhash_bin_size' is NOT zero");
-    else if (MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED != dinfo->uname_type)
-    {
-      fprintf (stderr, "Unexpected 'uname_type'.\n"
-               "Expected: %d\tRecieved: %d. ",
-               (int) MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED,
-               (int) dinfo->uname_type);
-      mhdErrorExitDesc ("Wrong 'uname_type'");
-    }
     else if (MHD_DIGEST_AUTH_ALGO3_MD5 != dinfo->algo)
     {
       fprintf (stderr, "Unexpected 'algo'.\n"
@@ -485,7 +485,8 @@ ahc_echo (void *cls,
     }
     MHD_free (dinfo);
 
-    check_res = MHD_digest_auth_check3 (connection, REALM, USERNAME, PASSWORD,
+    check_res = MHD_digest_auth_check3 (connection, REALM, USERNAME,
+                                        PASSWORD_VALUE,
                                         300, MHD_DIGEST_ALG_MD5);
 
     switch (check_res)
@@ -563,7 +564,8 @@ ahc_echo (void *cls,
     }
     MHD_free (username);
 
-    check_res = MHD_digest_auth_check (connection, REALM, USERNAME, PASSWORD,
+    check_res = MHD_digest_auth_check (connection, REALM, USERNAME,
+                                       PASSWORD_VALUE,
                                        300);
 
     if (MHD_INVALID_NONCE != check_res)
