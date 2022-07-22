@@ -73,4 +73,26 @@ MHD_get_response_element_n_ (struct MHD_Response *response,
                              const char *key,
                              size_t key_len);
 
+/**
+ * Add a header or footer line to the response without checking.
+ *
+ * It is assumed that parameters are correct.
+ *
+ * @param response response to add a header to
+ * @param kind header or footer
+ * @param header the header to add, does not need to be zero-terminated
+ * @param header_len the length of the @a header
+ * @param content value to add, does not need to be zero-terminated
+ * @param content_len the length of the @a content
+ * @return false on error (like out-of-memory),
+ *         true if succeed
+ */
+bool
+MHD_add_response_entry_no_check_ (struct MHD_Response *response,
+                                  enum MHD_ValueKind kind,
+                                  const char *header,
+                                  size_t header_len,
+                                  const char *content,
+                                  size_t content_len);
+
 #endif

@@ -145,6 +145,103 @@
 } while (0)
 
 /**
+ * Add a header or footer line to the response without checking.
+ *
+ * It is assumed that parameters are correct.
+ *
+ * @param response response to add a header to
+ * @param kind header or footer
+ * @param header the header to add, does not need to be zero-terminated
+ * @param header_len the length of the @a header
+ * @param content value to add, does not need to be zero-terminated
+ * @param content_len the length of the @a content
+ * @return false on error (like out-of-memory),
+ *         true if succeed
+ */
+bool
+MHD_add_response_entry_no_check_ (struct MHD_Response *response,
+                                  enum MHD_ValueKind kind,
+                                  const char *header,
+                                  size_t header_len,
+                                  const char *content,
+                                  size_t content_len)
+{
+  struct MHD_HTTP_Res_Header *hdr;
+
+  mhd_assert (0 != header_len);
+  mhd_assert (0 != content_len);
+  if (NULL == (hdr = MHD_calloc_ (1, sizeof (struct MHD_HTTP_Res_Header))))
+    return false;
+  hdr->header = malloc (header_len + 1);
+  if (NULL != hdr->header)
+  {
+    memcpy (hdr->header, header, header_len);
+    hdr->header[header_len] = 0;
+    hdr->header_size = header_len;
+
+    hdr->value = malloc (content_len + 1);
+    if (NULL != hdr->value)
+    {
+      memcpy (hdr->value, content, content_len);
+      hdr->value[content_len] = 0;
+      hdr->value_size = content_len;
+
+      hdr->kind = kind;
+      _MHD_insert_header_last (response, hdr);
+
+      return true; /* Success exit point */
+    }
+    free (hdr->header);
+  }
+  free (hdr);
+
+  return false; /* Failure exit point */
+}
+
+
+/**
+ * Add a header or footer line to the response.
+ *
+ * @param header the header to add, does not need to be zero-terminated
+ * @param header_len the length of the @a header
+ * @param content value to add, does not need to be zero-terminated
+ * @param content_len the length of the @a content
+ * @return false on error (out-of-memory, invalid header or content),
+ *         true if succeed
+ */
+static bool
+add_response_entry_n (struct MHD_Response *response,
+                      enum MHD_ValueKind kind,
+                      const char *header,
+                      size_t header_len,
+                      const char *content,
+                      size_t content_len)
+{
+  if (NULL == response)
+    return false;
+  if (0 == header_len)
+    return false;
+  if (0 == content_len)
+    return false;
+  if (NULL != memchr (header, '\t', header_len))
+    return false;
+  if (NULL != memchr (header, ' ', header_len))
+    return false;
+  if (NULL != memchr (header, '\r', header_len))
+    return false;
+  if (NULL != memchr (header, '\n', header_len))
+    return false;
+  if (NULL != memchr (content, '\r', content_len))
+    return false;
+  if (NULL != memchr (content, '\n', content_len))
+    return false;
+
+  return MHD_add_response_entry_no_check_ (response, kind, header, header_len,
+                                           content, content_len);
+}
+
+
+/**
  * Add a header or footer line to the response.
  *
  * @param response response to add a header to
@@ -159,38 +256,17 @@ add_response_entry (struct MHD_Response *response,
                     const char *header,
                     const char *content)
 {
-  struct MHD_HTTP_Res_Header *hdr;
+  size_t header_len;
+  size_t content_len;
 
-  if ( (NULL == response) ||
-       (NULL == header) ||
-       (NULL == content) ||
-       (0 == header[0]) ||
-       (0 == content[0]) ||
-       (NULL != strchr (header, '\t')) ||
-       (NULL != strchr (header, ' ')) ||
-       (NULL != strchr (header, '\r')) ||
-       (NULL != strchr (header, '\n')) ||
-       (NULL != strchr (content, '\r')) ||
-       (NULL != strchr (content, '\n')) )
+  if (NULL == content)
     return MHD_NO;
-  if (NULL == (hdr = MHD_calloc_ (1, sizeof (struct MHD_HTTP_Res_Header))))
-    return MHD_NO;
-  if (NULL == (hdr->header = strdup (header)))
-  {
-    free (hdr);
-    return MHD_NO;
-  }
-  hdr->header_size = strlen (header);
-  if (NULL == (hdr->value = strdup (content)))
-  {
-    free (hdr->header);
-    free (hdr);
-    return MHD_NO;
-  }
-  hdr->value_size = strlen (content);
-  hdr->kind = kind;
-  _MHD_insert_header_last (response, hdr);
-  return MHD_YES;
+
+  header_len = strlen (header);
+  content_len = strlen (content);
+  return add_response_entry_n (response, kind, header,
+                               header_len, content,
+                               content_len) ? MHD_YES : MHD_NO;
 }
 
 
