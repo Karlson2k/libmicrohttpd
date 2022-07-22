@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097522
+#define MHD_VERSION 0x00097523
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4347,33 +4347,29 @@ enum MHD_DigestBaseAlgo
    * Invalid hash algorithm value
    */
   MHD_DIGEST_BASE_ALGO_INVALID = 0,
+
   /**
    * MD5 hash algorithm.
    * As specified by RFC1321
    */
   MHD_DIGEST_BASE_ALGO_MD5 = (1 << 0),
+
   /**
-   * SHA-256 has algorithm.
+   * SHA-256 hash algorithm.
    * As specified by FIPS PUB 180-4
    */
   MHD_DIGEST_BASE_ALGO_SHA256 = (1 << 1),
+
   /**
-   * SHA-512/256 has algorithm.
+   * SHA-512/256 hash algorithm.
    * Not supported for calculations, only supported for parsing of
    * client's authorisation headers.
    */
   MHD_DIGEST_BASE_ALGO_SHA512_256 = (1 << 2)
-};
+} _MHD_FIXED_FLAGS_ENUM;
 
 /**
  * The flag indicating digest calculation types,
- * like 'MD5' or 'SHA-256'.
- * @note Available since #MHD_VERSION 0x00097519
- */
-#define MHD_DIGEST_AUTH_ALGO3_NON_SESSION    (1 << 6)
-
-/**
- * The flag indicating non-session algorithm types,
  * like 'MD5' or 'SHA-256'.
  * @note Available since #MHD_VERSION 0x00097519
  */
@@ -4390,7 +4386,7 @@ enum MHD_DigestBaseAlgo
  * Digest algorithm identification
  * @warning Do not be confused with #MHD_DigestAuthAlgorithm,
  *          which uses other values!
- * @note Available since #MHD_VERSION 0x00097519
+ * @note Available since #MHD_VERSION 0x00097523
  */
 enum MHD_DigestAuthAlgo3
 {
@@ -4400,57 +4396,140 @@ enum MHD_DigestAuthAlgo3
    * cannot by identified.
    */
   MHD_DIGEST_AUTH_ALGO3_INVALID = 0,
+
   /**
-   * The 'MD5' algorithm.
+   * The 'MD5' algorithm, non-session version.
    */
   MHD_DIGEST_AUTH_ALGO3_MD5 =
     MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+
   /**
    * The 'MD5-sess' algorithm.
-   * Not supported by MHD.
+   * Not supported by MHD for authentication.
    */
   MHD_DIGEST_AUTH_ALGO3_MD5_SESSION =
     MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_AUTH_ALGO3_SESSION,
+
   /**
-   * The 'SHA-256' algorithm.
+   * The 'SHA-256' algorithm, non-session version.
    */
   MHD_DIGEST_AUTH_ALGO3_SHA256 =
     MHD_DIGEST_BASE_ALGO_SHA256 | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+
   /**
    * The 'SHA-256-sess' algorithm.
-   * Not supported by MHD.
+   * Not supported by MHD for authentication.
    */
   MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION =
     MHD_DIGEST_BASE_ALGO_SHA256 | MHD_DIGEST_AUTH_ALGO3_SESSION,
+
   /**
    * The 'SHA-512-256' (SHA-512/256) algorithm.
-   * Not supported by MHD.
+   * Not supported by MHD for authentication.
    */
   MHD_DIGEST_AUTH_ALGO3_SHA512_256 =
     MHD_DIGEST_BASE_ALGO_SHA512_256 | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+
   /**
    * The 'SHA-512-256-sess' (SHA-512/256 session) algorithm.
-   * Not supported by MHD.
+   * Not supported by MHD for authentication.
    */
   MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION =
     MHD_DIGEST_BASE_ALGO_SHA512_256 | MHD_DIGEST_AUTH_ALGO3_SESSION,
+};
+
+/**
+ * Digest algorithm identification, allow multiple selection.
+ *
+ * #MHD_DigestAuthAlgo3 always can be casted to #MHD_DigestAuthMultiAlgo3, but
+ * not vice versa.
+ *
+ * @note Available since #MHD_VERSION 0x00097523
+ */
+enum MHD_DigestAuthMultiAlgo3
+{
+  /**
+   * Unknown or wrong algorithm type.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_INVALID = MHD_DIGEST_AUTH_ALGO3_INVALID,
+
+  /**
+   * The 'MD5' algorithm, non-session version.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_MD5 = MHD_DIGEST_AUTH_ALGO3_MD5,
+
+  /**
+   * The 'MD5-sess' algorithm.
+   * Not supported by MHD for authentication.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_MD5_SESSION = MHD_DIGEST_AUTH_ALGO3_MD5_SESSION,
+
+  /**
+   * The 'SHA-256' algorithm, non-session version.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA256 = MHD_DIGEST_AUTH_ALGO3_SHA256,
+
+  /**
+   * The 'SHA-256-sess' algorithm.
+   * Not supported by MHD for authentication.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA256_SESSION =
+    MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION,
+
+  /**
+   * The 'SHA-512-256' (SHA-512/256) algorithm.
+   * Not supported by MHD for authentication.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256 = MHD_DIGEST_AUTH_ALGO3_SHA512_256,
+
+  /**
+   * The 'SHA-512-256-sess' (SHA-512/256 session) algorithm.
+   * Not supported by MHD for authentication.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256_SESSION =
+    MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION,
+
   /**
    * Any non-session algorithm, MHD will choose.
    */
-  MHD_DIGEST_AUTH_ALGO3_ANY_NON_SESSION =
+  MHD_DIGEST_AUTH_MULT_ALGO3_ANY_NON_SESSION =
     (0x3F) | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+
   /**
    * Any session algorithm, MHD will choose.
    * Not supported by MHD.
+   * Reserved value.
    */
-  MHD_DIGEST_AUTH_ALGO3_ANY_SESSION =
+  MHD_DIGEST_AUTH_MULT_ALGO3_ANY_SESSION =
     (0x3F) | MHD_DIGEST_AUTH_ALGO3_SESSION,
+
+  /**
+   * The 'MD5' algorithm, session or non-session.
+   * Not supported by MHD.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_MD5_ANY =
+    MHD_DIGEST_AUTH_MULT_ALGO3_MD5 | MHD_DIGEST_AUTH_MULT_ALGO3_MD5_SESSION,
+
+  /**
+   * The 'SHA-256' algorithm, session or non-session.
+   * Not supported by MHD.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA256_ANY =
+    MHD_DIGEST_AUTH_MULT_ALGO3_SHA256
+    | MHD_DIGEST_AUTH_MULT_ALGO3_SHA256_SESSION,
+
   /**
    * Any algorithm, MHD will choose.
    */
-  MHD_DIGEST_AUTH_ALGO3_ANY =
+  MHD_DIGEST_AUTH_MULT_ALGO3_ANY =
     (0x3F) | MHD_DIGEST_AUTH_ALGO3_NON_SESSION | MHD_DIGEST_AUTH_ALGO3_SESSION
-} _MHD_FLAGS_ENUM;
+};
 
 /**
  * The type of username used by client in Digest Authorization header
@@ -4464,10 +4543,12 @@ enum MHD_DigestAuthUsernameType
    * This should be treated as an error.
    */
   MHD_DIGEST_AUTH_UNAME_TYPE_MISSING = 0,
+
   /**
    * The 'username' parameter is used to specify the username.
    */
   MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD = 1,
+
   /**
    * The username is specified by 'username*' parameter with
    * the extended notation (see RFC 5987 #section-3.2.1).
@@ -4475,11 +4556,13 @@ enum MHD_DigestAuthUsernameType
    * the way how username value is encoded in the header.
    */
   MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED = 2,
+
   /**
    * The username provided in form of 'userhash' as
    * specified by RFC 7616 #section-3.4.4.
    */
   MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH = 3,
+
   /**
    * The invalid combination of username parameters are used by client.
    * Either:
@@ -4503,20 +4586,69 @@ enum MHD_DigestAuthQOP
    * cannot by identified.
    */
   MHD_DIGEST_AUTH_QOP_INVALID = 0,
+
   /**
-   * No QOP value.
+   * No QOP parameter.
+   * Match old RFC 2069 specification.
+   * Not supported by MHD for authentication.
    */
   MHD_DIGEST_AUTH_QOP_NONE = 1 << 0,
+
   /**
    * The 'auth' QOP type.
    */
   MHD_DIGEST_AUTH_QOP_AUTH = 1 << 1,
+
+  /**
+   * The 'auth-int' QOP type.
+   * Not supported by MHD for authentication.
+   */
+  MHD_DIGEST_AUTH_QOP_AUTH_INT = 1 << 2
+} _MHD_FIXED_FLAGS_ENUM;
+
+/**
+ * The QOP ('quality of protection') types, multiple selection.
+ *
+ * #MHD_DigestAuthQOP always can be casted to #MHD_DigestAuthMultiQOP, but
+ * not vice versa.
+ *
+ * @note Available since #MHD_VERSION 0x00097523
+ */
+enum MHD_DigestAuthMultiQOP
+{
+  /**
+   * Invalid/unknown QOP.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_INVALID = MHD_DIGEST_AUTH_QOP_INVALID,
+
+  /**
+   * No QOP parameter.
+   * Match old RFC 2069 specification.
+   * Not supported by MHD.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_NONE = MHD_DIGEST_AUTH_QOP_NONE,
+
+  /**
+   * The 'auth' QOP type.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_AUTH = MHD_DIGEST_AUTH_QOP_AUTH,
+
   /**
    * The 'auth-int' QOP type.
    * Not supported by MHD.
+   * Reserved value.
    */
-  MHD_DIGEST_AUTH_QOP_AUTH_INT = 1 << 2
-} _MHD_FLAGS_ENUM;
+  MHD_DIGEST_AUTH_MULT_QOP_AUTH_INT = MHD_DIGEST_AUTH_QOP_AUTH_INT,
+
+  /**
+   * Any 'auth' QOP type ('auth' or 'auth-int').
+   * Not supported by MHD.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_AUTH_ANY =
+    MHD_DIGEST_AUTH_QOP_AUTH | MHD_DIGEST_AUTH_QOP_AUTH_INT
+} _MHD_FIXED_ENUM;
 
 /**
  * The invalid value of 'nc' parameter in client Digest Authorization header.
