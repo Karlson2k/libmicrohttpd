@@ -881,20 +881,23 @@ get_rq_uname (const struct MHD_RqDAuth *params,
     buf_used += uname_info->username_len + 1;
     if (MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH == uname_type)
     {
-      uname_info->userhash_bin_size = MHD_hex_to_bin (uname_info->username,
-                                                      uname_info->username_len,
-                                                      buf + buf_used);
-      if ( (0 == uname_info->userhash_bin_size) &&
-           (0 != uname_info->username_len) )
+      size_t res;
+      uint8_t *const bin_data = (uint8_t *) (buf + buf_used);
+      res = MHD_hex_to_bin (uname_info->username,
+                            uname_info->username_len,
+                            bin_data);
+      if (res != uname_info->username_len / 2)
       {
         uname_info->userhash_bin = NULL;
         uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_INVALID;
       }
       else
       {
-        uname_info->userhash_bin = (uint8_t *) (buf + buf_used);
+        /* Avoid pointers outside allocated region when the size is zero */
+        uname_info->userhash_bin = (0 != res) ?
+                                   bin_data : (uint8_t *) uname_info->username;
         uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH;
-        buf_used += uname_info->userhash_bin_size;
+        buf_used += res;
       }
     }
     else
@@ -1093,7 +1096,6 @@ MHD_digest_auth_get_request_info3 (struct MHD_Connection *connection)
     info->username = uname_strct.username;
     info->username_len = uname_strct.username_len;
     info->userhash_bin = uname_strct.userhash_bin;
-    info->userhash_bin_size = uname_strct.userhash_bin_size;
   }
   else
     info->uname_type = uname_type;

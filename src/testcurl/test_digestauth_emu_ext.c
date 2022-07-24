@@ -383,8 +383,6 @@ ahc_echo (void *cls,
     }
     else if (NULL != creds->userhash_bin)
       mhdErrorExitDesc ("'userhash_bin' is NOT NULL");
-    else if (0 != creds->userhash_bin_size)
-      mhdErrorExitDesc ("'userhash_bin_size' is NOT zero");
     MHD_free (creds);
 
     dinfo = MHD_digest_auth_get_request_info3 (connection);
@@ -419,8 +417,6 @@ ahc_echo (void *cls,
     }
     else if (NULL != dinfo->userhash_bin)
       mhdErrorExitDesc ("'userhash_bin' is NOT NULL");
-    else if (0 != dinfo->userhash_bin_size)
-      mhdErrorExitDesc ("'userhash_bin_size' is NOT zero");
     else if (MHD_DIGEST_AUTH_ALGO3_MD5 != dinfo->algo)
     {
       fprintf (stderr, "Unexpected 'algo'.\n"

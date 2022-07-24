@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097523
+#define MHD_VERSION 0x00097525
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4664,7 +4664,7 @@ enum MHD_DigestAuthMultiQOP
  *
  * Application may modify buffers as needed until #MHD_free() is called for
  * pointer to this structure
- * @note Available since #MHD_VERSION 0x00097519
+ * @note Available since #MHD_VERSION 0x00097525
  */
 struct MHD_DigestAuthInfo
 {
@@ -4676,10 +4676,12 @@ struct MHD_DigestAuthInfo
    *          which uses other values!
    */
   enum MHD_DigestAuthAlgo3 algo;
+
   /**
    * The type of username used by client.
    */
   enum MHD_DigestAuthUsernameType uname_type;
+
   /**
    * The username string.
    * Valid only if username is standard, extended, or userhash.
@@ -4691,46 +4693,54 @@ struct MHD_DigestAuthInfo
    * This can be NULL is username is missing or invalid.
    */
   char *username;
+
   /**
    * The length of the @a username.
    * When the @a username is NULL, this member is always zero.
    */
   size_t username_len;
+
   /**
    * The userhash decoded to binary form.
    * Used only if username type is userhash, always NULL otherwise.
-   * @warning this is a binary data, no zero termination
+   * When not NULL, this points to binary sequence @a username_len /2 bytes
+   * long.
+   * @warning This is binary data, no zero termination.
+   * @warning To avoid buffer overruns, always check the size of the data before
+   *          use, because @ userhash_bin can point even to zero-sized
+   *          data.
    */
   uint8_t *userhash_bin;
-  /**
-   * The number of bytes pointed by the @a userhash_bin.
-   * When the @a userhash_bin is NULL, this member is always zero.
-   */
-  size_t userhash_bin_size;
+
   /**
    * The 'opaque' parameter value, as specified by client.
    * NULL if not specified by client.
    */
   char *opaque;
+
   /**
    * The length of the @a opaque.
    * When the @a opaque is NULL, this member is always zero.
    */
   size_t opaque_len;
+
   /**
    * The 'realm' parameter value, as specified by client.
    * NULL if not specified by client.
    */
   char *realm;
+
   /**
    * The length of the @a realm.
    * When the @a realm is NULL, this member is always zero.
    */
   size_t realm_len;
+
   /**
    * The 'qop' parameter value.
    */
   enum MHD_DigestAuthQOP qop;
+
   /**
    * The length of the 'cnonce' parameter value, including possible
    * backslash-escape characters.
@@ -4740,6 +4750,7 @@ struct MHD_DigestAuthInfo
    * characters long.
    */
   size_t cnonce_len;
+
   /**
    * The nc parameter value.
    * Can be used by application to limit the number of nonce re-uses. If @ nc
@@ -4773,7 +4784,7 @@ MHD_digest_auth_get_request_info3 (struct MHD_Connection *connection);
  *
  * Application may modify buffers as needed until #MHD_free() is called for
  * pointer to this structure
- * @note Available since #MHD_VERSION 0x00097519
+ * @note Available since #MHD_VERSION 0x00097525
  */
 struct MHD_DigestAuthUsernameInfo
 {
@@ -4783,6 +4794,7 @@ struct MHD_DigestAuthUsernameInfo
    * instead NULL is returned by #MHD_digest_auth_get_username3().
    */
   enum MHD_DigestAuthUsernameType uname_type;
+
   /**
    * The username string.
    * Valid only if username is standard, extended, or userhash.
@@ -4794,22 +4806,23 @@ struct MHD_DigestAuthUsernameInfo
    * This can be NULL is username is missing or invalid.
    */
   char *username;
+
   /**
    * The length of the @a username.
    * When the @a username is NULL, this member is always zero.
    */
   size_t username_len;
+
   /**
    * The userhash decoded to binary form.
-   * Used only if username type is userhash, always NULL if not used.
-   * @warning this is a binary data, no zero termination
+   * When not NULL, this points to binary sequence @a username_len /2 bytes
+   * long.
+   * @warning This is binary data, no zero termination.
+   * @warning To avoid buffer overruns, always check the size of the data before
+   *          use, because @ userhash_bin can point even to zero-sized
+   *          data.
    */
   uint8_t *userhash_bin;
-  /**
-   * The number of bytes pointed by the @a userhash_bin.
-   * When the @a userhash_bin is NULL, this member is always zero.
-   */
-  size_t userhash_bin_size;
 };
 
 /**
