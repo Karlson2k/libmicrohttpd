@@ -279,6 +279,15 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
+#if (LIBCURL_VERSION_MAJOR == 7) && (LIBCURL_VERSION_MINOR == 62)
+  if (1)
+  {
+    fprintf (stderr, "libcurl version 7.62.x has bug in processing"
+             "URI with GET argements for Digest Auth.\n");
+    fprintf (stderr, "This test cannot be performed.\n");
+    exit (77);
+  }
+#endif /* libcurl version 7.62.x */
 
 #ifdef MHD_HTTPS_REQUIRE_GRYPT
 #ifdef HAVE_GCRYPT_H

@@ -216,7 +216,7 @@ _checkCURLE_OK_func (CURLcode code, const char *curlFunc,
 /* Could be increased to facilitate debugging */
 #define TIMEOUTS_VAL 5
 
-#define MHD_URI_BASE_PATH "/bar%20foo?key=value"
+#define MHD_URI_BASE_PATH "/bar%20foo%20without%20args"
 
 #define PAGE \
   "<html><head><title>libmicrohttpd demo</title></head><body>Access granted</body></html>"

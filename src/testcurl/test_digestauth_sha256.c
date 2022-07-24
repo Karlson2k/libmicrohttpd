@@ -302,6 +302,15 @@ main (int argc, char *const *argv)
   unsigned int errorCount = 0;
   curl_version_info_data *d = curl_version_info (CURLVERSION_NOW);
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
+#if (LIBCURL_VERSION_MAJOR == 7) && (LIBCURL_VERSION_MINOR == 62)
+  if (1)
+  {
+    fprintf (stderr, "libcurl version 7.62.x has bug in processing"
+             "URI with GET argements for Digest Auth.\n");
+    fprintf (stderr, "This test cannot be performed.\n");
+    exit (77);
+  }
+#endif /* libcurl version 7.62.x */
 
 #ifdef CURL_VERSION_SSPI
   if (0 != (d->features & CURL_VERSION_SSPI))
