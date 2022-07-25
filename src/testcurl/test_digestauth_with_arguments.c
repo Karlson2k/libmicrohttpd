@@ -87,7 +87,7 @@ ahc_echo (void *cls,
   const char *password = "testpass";
   const char *realm = "test@example.com";
   enum MHD_Result ret;
-  enum MHD_DigestAuthResult ret_e;
+  int ret_i;
   static int already_called_marker;
   (void) cls; (void) url;                         /* Unused. Silent compiler warning. */
   (void) method; (void) version; (void) upload_data; /* Unused. Silent compiler warning. */
@@ -114,24 +114,28 @@ ahc_echo (void *cls,
     MHD_destroy_response (response);
     return ret;
   }
-  ret_e = MHD_digest_auth_check3 (connection, realm,
+  ret_i = MHD_digest_auth_check2 (connection,
+                                  realm,
                                   username,
                                   password,
                                   300,
                                   MHD_DIGEST_ALG_MD5);
   MHD_free (username);
-  if (ret_e != MHD_DAUTH_OK)
+  if (ret_i != MHD_YES)
   {
     response = MHD_create_response_from_buffer_static (strlen (DENIED),
                                                        DENIED);
     if (NULL == response)
-      return MHD_NO;
-    ret = MHD_queue_auth_fail_response2 (connection, realm,
+      fprintf (stderr, "MHD_create_response_from_buffer() failed.\n");
+    ret = MHD_queue_auth_fail_response2 (connection,
+                                         realm,
                                          MY_OPAQUE,
                                          response,
-                                         (ret_e == MHD_DAUTH_NONCE_STALE) ?
+                                         (MHD_INVALID_NONCE == ret_i) ?
                                          MHD_YES : MHD_NO,
                                          MHD_DIGEST_ALG_MD5);
+    if (MHD_YES != ret)
+      fprintf (stderr, "MHD_queue_auth_fail_response2() failed.\n");
     MHD_destroy_response (response);
     return ret;
   }
@@ -143,8 +147,8 @@ ahc_echo (void *cls,
 }
 
 
-static int
-testDigestAuth ()
+static unsigned int
+testDigestAuth (void)
 {
   CURL *c;
   CURLcode errornum;
@@ -152,7 +156,7 @@ testDigestAuth ()
   struct CBC cbc;
   char buf[2048];
   char rnd[8];
-  int port;
+  uint16_t port;
   char url[128];
 #ifndef WINDOWS
   int fd;
@@ -216,7 +220,7 @@ testDigestAuth ()
   }
 #endif
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, PAGE,
+                        port, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof (rnd), rnd,
                         MHD_OPTION_NONCE_NC_SIZE, 300,
                         MHD_OPTION_END);
@@ -230,13 +234,13 @@ testDigestAuth ()
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   snprintf (url,
             sizeof (url),
             "http://127.0.0.1:%d/bar%%20foo?"
             "key=value&more=even%%20more&empty&=no_key&&same=one&&same=two",
-            port);
+            (int) port);
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);

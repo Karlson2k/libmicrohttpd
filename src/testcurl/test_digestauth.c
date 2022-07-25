@@ -265,7 +265,7 @@ ahc_echo (void *cls,
   const char *password = "testpass";
   const char *realm = "test@example.com";
   enum MHD_Result ret;
-  enum MHD_DigestAuthResult ret_e;
+  int ret_i;
   static int already_called_marker;
   (void) cls; (void) url;                         /* Unused. Silent compiler warning. */
   (void) method; (void) version; (void) upload_data; /* Unused. Silent compiler warning. */
@@ -297,14 +297,14 @@ ahc_echo (void *cls,
     MHD_destroy_response (response);
     return ret;
   }
-  ret_e = MHD_digest_auth_check3 (connection,
+  ret_i = MHD_digest_auth_check2 (connection,
                                   realm,
                                   username,
                                   password,
                                   300,
                                   MHD_DIGEST_ALG_MD5);
   MHD_free (username);
-  if (ret_e != MHD_DAUTH_OK)
+  if (ret_i != MHD_YES)
   {
     response = MHD_create_response_from_buffer_static (strlen (DENIED),
                                                        DENIED);
@@ -314,7 +314,7 @@ ahc_echo (void *cls,
                                          realm,
                                          MY_OPAQUE,
                                          response,
-                                         (MHD_DAUTH_NONCE_STALE == ret_e) ?
+                                         (MHD_INVALID_NONCE == ret_i) ?
                                          MHD_YES : MHD_NO,
                                          MHD_DIGEST_ALG_MD5);
     if (MHD_YES != ret)
@@ -337,7 +337,7 @@ ahc_echo (void *cls,
 
 
 static CURL *
-setupCURL (void *cbc, int port)
+setupCURL (void *cbc, uint16_t port)
 {
   CURL *c;
   char url[512];
@@ -348,7 +348,7 @@ setupCURL (void *cbc, int port)
     /* A workaround for some old libcurl versions, which ignore the specified
      * port by CURLOPT_PORT when digest authorisation is used. */
     res = snprintf (url, (sizeof(url) / sizeof(url[0])),
-                    "http://127.0.0.1:%d%s", port, MHD_URI_BASE_PATH);
+                    "http://127.0.0.1:%d%s", (int) port, MHD_URI_BASE_PATH);
     if ((0 >= res) || ((sizeof(url) / sizeof(url[0])) <= (size_t) res))
       externalErrorExitDesc ("Cannot form request URL");
   }
@@ -387,15 +387,15 @@ setupCURL (void *cbc, int port)
 }
 
 
-static int
-testDigestAuth ()
+static unsigned int
+testDigestAuth (void)
 {
   CURL *c;
   struct MHD_Daemon *d;
   struct CBC cbc;
   char buf[2048];
   char rnd[8];
-  int port;
+  uint16_t port;
 #ifndef WINDOWS
   int fd;
   size_t len;
@@ -446,7 +446,7 @@ testDigestAuth ()
 #endif
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         port, NULL, NULL,
-                        &ahc_echo, PAGE,
+                        &ahc_echo, NULL,
                         MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof (rnd), rnd,
                         MHD_OPTION_NONCE_NC_SIZE, 300,
                         MHD_OPTION_END);
@@ -461,7 +461,7 @@ testDigestAuth ()
     if ( (NULL == dinfo) ||
          (0 == dinfo->port) )
       mhdErrorExitDesc ("MHD_get_daemon_info() failed");
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = setupCURL (&cbc, port);
 
