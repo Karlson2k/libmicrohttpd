@@ -348,7 +348,7 @@ ahc_echo (void *cls,
 
 
 static CURL *
-setupCURL (void *cbc, int port, char *errbuf)
+setupCURL (void *cbc, uint16_t port, char *errbuf)
 {
   CURL *c;
   char url[512];
@@ -359,7 +359,7 @@ setupCURL (void *cbc, int port, char *errbuf)
     /* A workaround for some old libcurl versions, which ignore the specified
      * port by CURLOPT_PORT when digest authorisation is used. */
     res = snprintf (url, (sizeof(url) / sizeof(url[0])),
-                    "http://127.0.0.1:%d%s", port, MHD_URI_BASE_PATH);
+                    "http://127.0.0.1:%d%s", (int) port, MHD_URI_BASE_PATH);
     if ((0 >= res) || ((sizeof(url) / sizeof(url[0])) <= (size_t) res))
       externalErrorExitDesc ("Cannot form request URL");
   }
@@ -455,7 +455,7 @@ struct curlWokerInfo
   /**
    * The number of successful worker results
    */
-  volatile int success;
+  volatile unsigned int success;
 };
 
 
@@ -552,17 +552,17 @@ worker_func (void *param)
 
 #define CLIENT_BUF_SIZE 2048
 
-static int
+static unsigned int
 testDigestAuth (void)
 {
   struct MHD_Daemon *d;
   char rnd[8];
-  int port;
+  uint16_t port;
   size_t i;
   /* Run three workers in parallel so at least two workers would start within
    * the same monotonic clock second.*/
   struct curlWokerInfo workers[3];
-  int ret;
+  unsigned int ret;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -573,7 +573,7 @@ testDigestAuth (void)
 
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         port, NULL, NULL,
-                        &ahc_echo, PAGE,
+                        &ahc_echo, NULL,
                         MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof (rnd), rnd,
                         MHD_OPTION_NONCE_NC_SIZE, 300,
                         MHD_OPTION_THREAD_POOL_SIZE,
@@ -590,7 +590,7 @@ testDigestAuth (void)
     if ( (NULL == dinfo) ||
          (0 == dinfo->port) )
       mhdErrorExitDesc ("MHD_get_daemon_info() failed");
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   /* Initialise all workers */
