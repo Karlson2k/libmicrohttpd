@@ -169,7 +169,12 @@ THREAD_ONLY_TESTS += \
 
 check_PROGRAMS += \
   test_digestauth_emu_ext \
-  test_digestauth_emu_ext_oldapi
+  test_digestauth_emu_ext_oldapi \
+  test_digestauth2 \
+  test_digestauth2_oldapi \
+  test_digestauth2_userhash \
+  test_digestauth2_sha256 \
+  test_digestauth2_sha256_userhash
 endif
 
 if HEAVY_TESTS
@@ -278,6 +283,21 @@ test_digestauth_emu_ext_SOURCES = \
 
 test_digestauth_emu_ext_oldapi_SOURCES = \
   test_digestauth_emu_ext.c
+
+test_digestauth2_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
+test_digestauth2_oldapi_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
+test_digestauth2_userhash_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
+test_digestauth2_sha256_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
+test_digestauth2_sha256_userhash_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
 
 test_get_iovec_SOURCES = \
   test_get_iovec.c mhd_has_in_name.h
