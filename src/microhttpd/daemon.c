@@ -8379,7 +8379,45 @@ MHD_is_feature_supported (enum MHD_FEATURE feature)
 #else
     return MHD_NO;
 #endif
+  case MHD_FEATURE_DIGEST_AUTH_RFC2069:
+#ifdef DAUTH_SUPPORT
+    return MHD_NO;
+#else
+    return MHD_NO;
+#endif
+  case MHD_FEATURE_DIGEST_AUTH_MD5:
+#ifdef DAUTH_SUPPORT
+    return MHD_YES;
+#else
+    return MHD_NO;
+#endif
+  case MHD_FEATURE_DIGEST_AUTH_SHA256:
+#ifdef DAUTH_SUPPORT
+    return MHD_YES;
+#else
+    return MHD_NO;
+#endif
+  case MHD_FEATURE_DIGEST_AUTH_AUTH_INT:
+#ifdef DAUTH_SUPPORT
+    return MHD_NO;
+#else
+    return MHD_NO;
+#endif
+  case MHD_FEATURE_DIGEST_AUTH_ALGO_SESSION:
+#ifdef DAUTH_SUPPORT
+    return MHD_NO;
+#else
+    return MHD_NO;
+#endif
+  case MHD_FEATURE_DIGEST_AUTH_USERHASH:
+#ifdef DAUTH_SUPPORT
+    return MHD_YES;
+#else
+    return MHD_NO;
+#endif
 
+  default:
+    break;
   }
   return MHD_NO;
 }

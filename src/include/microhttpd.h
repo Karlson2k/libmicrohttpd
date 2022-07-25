@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097526
+#define MHD_VERSION 0x00097527
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -5708,8 +5708,57 @@ enum MHD_FEATURE
    * MHD versions before 0x00097514 always support cookie parsing.
    * @note Available since #MHD_VERSION 0x00097514
    */
-  MHD_FEATURE_HTTPS_COOKIE_PARSING = 24
-} _MHD_FIXED_ENUM;
+  MHD_FEATURE_HTTPS_COOKIE_PARSING = 24,
+
+  /**
+   * Get whether the early version the Digest Authorization (RFC 2069) is
+   * supported.
+   * Currently it is always not supported if Digest Auth module is built.
+   * @note Available since #MHD_VERSION 0x00097527
+   */
+  MHD_FEATURE_DIGEST_AUTH_RFC2069 = 25,
+
+  /**
+   * Get whether the MD5-based hashing algorithms are supported for Digest
+   * Authorization.
+   * Currently it is always not supported if Digest Auth module is built.
+   * @note Available since #MHD_VERSION 0x00097527
+   */
+  MHD_FEATURE_DIGEST_AUTH_MD5 = 26,
+
+  /**
+   * Get whether the SHA-256-based hashing algorithms are supported for Digest
+   * Authorization.
+   * It it always supported since #MHD_VERSION 0x00096200 if Digest Auth
+   * module is built.
+   * @note Available since #MHD_VERSION 0x00097527
+   */
+  MHD_FEATURE_DIGEST_AUTH_SHA256 = 27,
+
+  /**
+   * Get whether QOP with value 'auth-int' (authentication with integrity
+   * protection) is supported for Digest Authorization.
+   * Currently it is always not supported if Digest Auth module is built.
+   * @note Available since #MHD_VERSION 0x00097527
+   */
+  MHD_FEATURE_DIGEST_AUTH_AUTH_INT = 28,
+
+  /**
+   * Get whether 'session' algorithms (like 'MD5-sess') are supported for Digest
+   * Authorization.
+   * Currently it is always not supported.
+   * @note Available since #MHD_VERSION 0x00097527
+   */
+  MHD_FEATURE_DIGEST_AUTH_ALGO_SESSION = 29,
+
+  /**
+   * Get whether 'userhash' is supported for Digest Authorization.
+   * It it always supported since #MHD_VERSION 0x00097526 if Digest Auth
+   * module is built.
+   * @note Available since #MHD_VERSION 0x00097527
+   */
+  MHD_FEATURE_DIGEST_AUTH_USERHASH = 30
+};
 
 
 /**
