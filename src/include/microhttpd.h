@@ -1764,6 +1764,11 @@ enum MHD_OPTION
    * Size of the internal array holding the map of the nonce and
    * the nonce counter. This option should be followed by an `unsigend int`
    * argument.
+   * The map size is 4 by default, which is enough to communicate with
+   * a single client at any given moment of time, but not enough to
+   * handle several clients simultaneously.
+   * If Digest Auth is not used, this option can be set to zero to minimise
+   * memory allocation.
    */
   MHD_OPTION_NONCE_NC_SIZE = 18,
 
