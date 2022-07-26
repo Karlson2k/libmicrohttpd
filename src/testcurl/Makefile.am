@@ -529,4 +529,3 @@ test_tricky_url_SOURCES = \
 
 test_tricky_header2_SOURCES = \
   test_tricky.c mhd_has_in_name.h mhd_has_param.h
-  
