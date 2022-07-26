@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097527
+#define MHD_VERSION 0x00097528
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -5002,11 +5002,11 @@ enum MHD_DigestAuthResult
  *               zero for no limit
  * @param mqop the QOP to use, currently the only allowed value is
  *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
- * @param malgo3 digest algorithm to use, if several algorithms are specified
- *               then MD5 is used (if allowed)
+ * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
+ *               by the client is not allowed by this parameter
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097526
+ * @note Available since #MHD_VERSION 0x00097528
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
@@ -5040,12 +5040,14 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  *               zero for no limit
  * @param mqop the QOP to use, currently the only allowed value is
  *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
- * @param malgo3 the digest algorithms to use; both MD5-based and SHA-256-based
- *               algorithms cannot be used at the same time for this function
- *               as @a userdigest_size must match specified algorithm
+ * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
+ *               by the client is not allowed by this parameter;
+ *               both MD5-based and SHA-256-based algorithms cannot be used at
+ *               the same time for this function as @a userdigest_size must
+ *               match specified algorithm
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097526
+ * @note Available since #MHD_VERSION 0x00097528
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult

@@ -1996,8 +1996,8 @@ is_param_equal_caseless (const struct MHD_RqDAuthParam *param,
  *               zero for no limit
  * @param mqop the QOP to use, currently the only allowed value is
  *            #MHD_DIGEST_AUTH_MULT_QOP_AUTH
- * @param malgo3 digest algorithms to use, if several algorithms are specified
- *               then MD5 is used (if allowed)
+ * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
+ *               by the client is not allowed by this parameter
  * @param[out] pbuf the pointer to pointer to internally malloc'ed buffer,
  *                  to be free if not NULL upon return
  * @return #MHD_DAUTH_OK if authenticated,
@@ -2017,7 +2017,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
                              char **pbuf)
 {
   struct MHD_Daemon *daemon = MHD_get_master (connection->daemon);
-  enum MHD_DigestAuthAlgo3 s_algo; /**< Selected algorithm */
+  enum MHD_DigestAuthAlgo3 c_algo; /**< Client's algorithm */
   struct DigestAlgorithm da;
   unsigned int digest_size;
   uint8_t hash1_bin[MAX_DIGEST];
@@ -2047,10 +2047,14 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     return MHD_DAUTH_WRONG_HEADER;
 
   /* ** Initial parameters checks and setup ** */
-  if (MHD_DIGEST_AUTH_MULT_QOP_AUTH != mqop)
-    MHD_PANIC (_ ("Wrong 'mqop' value, API violation"));
-
-  if (0 != (((unsigned int) malgo3) & MHD_DIGEST_AUTH_ALGO3_SESSION))
+  /* Get client's algorithm */
+  c_algo = get_rq_algo (params);
+  /* Check whether client's algorithm is allowed by function parameter */
+  if (((unsigned int) c_algo) !=
+      (((unsigned int) c_algo) & ((unsigned int) malgo3)))
+    return MHD_DAUTH_WRONG_ALGO;
+  /* Check whether client's algorithm is supported */
+  if (0 != (((unsigned int) c_algo) & MHD_DIGEST_AUTH_ALGO3_SESSION))
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
@@ -2058,14 +2062,20 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 #endif /* HAVE_MESSAGES */
     return MHD_DAUTH_WRONG_ALGO;
   }
-  if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_MD5))
-    s_algo = MHD_DIGEST_AUTH_ALGO3_MD5;
-  else if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_SHA256))
-    s_algo = MHD_DIGEST_AUTH_ALGO3_SHA256;
-  else
+  if (0 != (((unsigned int) c_algo) & MHD_DIGEST_BASE_ALGO_SHA512_256))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The SHA-512/256 algorithm is not supported.\n"));
+#endif /* HAVE_MESSAGES */
+    return MHD_DAUTH_WRONG_ALGO;
+  }
+  if (! digest_setup (&da, get_base_digest_algo (c_algo)))
     MHD_PANIC (_ ("Wrong 'malgo3' value, API violation"));
-  if (! digest_setup (&da, get_base_digest_algo (s_algo)))
-    MHD_PANIC (_ ("Wrong 'malgo3' value, API violation"));
+  /* Check 'mqop' value */
+  if (MHD_DIGEST_AUTH_MULT_QOP_AUTH != mqop)
+    MHD_PANIC (_ ("Wrong 'mqop' value, API violation"));
+
   digest_size = digest_get_size (&da);
 
   /* ** A quick check for presence of all required parameters ** */
@@ -2438,8 +2448,8 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
  *               zero for no limit
  * @param mqop the QOP to use, currently the only allowed value is
  *            #MHD_DIGEST_AUTH_MULT_QOP_AUTH
- * @param malgo3 digest algorithms to use, if several algorithms are specified
- *               then MD5 is used (if allowed)
+ * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
+ *               by the client is not allowed by this parameter
  * @return #MHD_DAUTH_OK if authenticated,
  *         error code otherwise.
  * @ingroup authentication
@@ -2519,11 +2529,11 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  *               zero for no limit
  * @param mqop the QOP to use, currently the only allowed value is
  *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
- * @param malgo3 digest algorithm to use, if several algorithms are specified
- *               then MD5 is used (if allowed)
+ * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
+ *               by the client is not allowed by this parameter
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097526
+ * @note Available since #MHD_VERSION 0x00097528
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
@@ -2570,12 +2580,14 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  *               zero for no limit
  * @param mqop the QOP to use, currently the only allowed value is
  *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
- * @param malgo3 the digest algorithms to use; both MD5-based and SHA-256-based
- *               algorithms cannot be used at the same time for this function
- *               as @a userdigest_size must match specified algorithm
+ * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
+ *               by the client is not allowed by this parameter;
+ *               both MD5-based and SHA-256-based algorithms cannot be used at
+ *               the same time for this function as @a userdigest_size must
+ *               match specified algorithm
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097526
+ * @note Available since #MHD_VERSION 0x00097528
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
