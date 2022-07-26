@@ -979,31 +979,35 @@ testDigestAuth (void)
 {
   struct MHD_Daemon *d;
   uint16_t port;
-  uint8_t salt[8];
   struct CBC cbc;
   char buf[2048];
   CURL *c;
   int failed = 0;
-
-  if (! gen_good_rnd (salt, sizeof(salt)))
-  {
-    fprintf (stderr, "WARNING: the random buffer (used as salt value) is not "
-             "initialised completely, nonce generation may be "
-             "predictable in this test.\n");
-    fflush (stderr);
-  }
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
   else
     port = 4210;
 
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        port, NULL, NULL,
-                        &ahc_echo, NULL,
-                        MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof (salt), salt,
-                        MHD_OPTION_NONCE_NC_SIZE, 300,
-                        MHD_OPTION_END);
+  if (1)
+  {
+    uint8_t salt[8]; /* Use local variable to test MHD "copy" function */
+    if (! gen_good_rnd (salt, sizeof(salt)))
+    {
+      fprintf (stderr, "WARNING: the random buffer (used as salt value) is not "
+               "initialised completely, nonce generation may be "
+               "predictable in this test.\n");
+      fflush (stderr);
+    }
+
+    d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+                          port, NULL, NULL,
+                          &ahc_echo, NULL,
+                          MHD_OPTION_DIGEST_AUTH_RANDOM_COPY,
+                          sizeof (salt), salt,
+                          MHD_OPTION_NONCE_NC_SIZE, 300,
+                          MHD_OPTION_END);
+  }
   if (d == NULL)
     return 1;
   if (0 == port)
