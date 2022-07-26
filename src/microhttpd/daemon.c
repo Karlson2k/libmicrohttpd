@@ -6236,10 +6236,16 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif /* HTTPS_SUPPORT */
 #ifdef DAUTH_SUPPORT
     case MHD_OPTION_DIGEST_AUTH_RANDOM:
+    case MHD_OPTION_DIGEST_AUTH_RANDOM_COPY:
       daemon->digest_auth_rand_size = va_arg (ap,
                                               size_t);
       daemon->digest_auth_random = va_arg (ap,
                                            const char *);
+      if (MHD_OPTION_DIGEST_AUTH_RANDOM_COPY == opt)
+        /* Set to some non-NULL value just to indicate that copy is required. */
+        daemon->digest_auth_random_copy = daemon;
+      else
+        daemon->digest_auth_random_copy = NULL;
       break;
     case MHD_OPTION_NONCE_NC_SIZE:
       daemon->nonce_nc_size = va_arg (ap,
@@ -6440,6 +6446,7 @@ parse_options_va (struct MHD_Daemon *daemon,
           break;
         /* options taking size_t-number followed by pointer */
         case MHD_OPTION_DIGEST_AUTH_RANDOM:
+        case MHD_OPTION_DIGEST_AUTH_RANDOM_COPY:
           if (MHD_NO == parse_options (daemon,
                                        servaddr,
                                        opt,
@@ -6913,6 +6920,24 @@ MHD_start_daemon_va (unsigned int flags,
   }
 
 #ifdef DAUTH_SUPPORT
+  if (NULL != daemon->digest_auth_random_copy)
+  {
+    mhd_assert (daemon == daemon->digest_auth_random_copy);
+    daemon->digest_auth_random_copy = malloc (daemon->digest_auth_rand_size);
+    if (NULL == daemon->digest_auth_random_copy)
+    {
+#ifdef HTTPS_SUPPORT
+      if (0 != (*pflags & MHD_USE_TLS))
+        gnutls_priority_deinit (daemon->priority_cache);
+#endif /* HTTPS_SUPPORT */
+      free (daemon);
+      return NULL;
+    }
+    memcpy (daemon->digest_auth_random_copy,
+            daemon->digest_auth_random,
+            daemon->digest_auth_rand_size);
+    daemon->digest_auth_random = daemon->digest_auth_random_copy;
+  }
   if (daemon->nonce_nc_size > 0)
   {
     if ( ( (size_t) (daemon->nonce_nc_size * sizeof (struct MHD_NonceNc)))
@@ -6926,6 +6951,7 @@ MHD_start_daemon_va (unsigned int flags,
       if (0 != (*pflags & MHD_USE_TLS))
         gnutls_priority_deinit (daemon->priority_cache);
 #endif /* HTTPS_SUPPORT */
+      free (daemon->digest_auth_random_copy);
       free (daemon);
       return NULL;
     }
@@ -6942,6 +6968,7 @@ MHD_start_daemon_va (unsigned int flags,
       if (0 != (*pflags & MHD_USE_TLS))
         gnutls_priority_deinit (daemon->priority_cache);
 #endif /* HTTPS_SUPPORT */
+      free (daemon->digest_auth_random_copy);
       free (daemon);
       return NULL;
     }
@@ -6958,6 +6985,7 @@ MHD_start_daemon_va (unsigned int flags,
     if (0 != (*pflags & MHD_USE_TLS))
       gnutls_priority_deinit (daemon->priority_cache);
 #endif /* HTTPS_SUPPORT */
+    free (daemon->digest_auth_random_copy);
     free (daemon->nnc);
     free (daemon);
     return NULL;
@@ -7586,6 +7614,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef DAUTH_SUPPORT
         d->nnc = NULL;
         d->nonce_nc_size = 0;
+        d->digest_auth_random_copy = NULL;
 #if defined(MHD_USE_THREADS)
         memset (&d->nnc_lock, 1, sizeof(d->nnc_lock));
 #endif /* MHD_USE_THREADS */
@@ -7706,6 +7735,7 @@ free_and_fail:
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 #endif /* EPOLL_SUPPORT */
 #ifdef DAUTH_SUPPORT
+  free (daemon->digest_auth_random_copy);
   free (daemon->nnc);
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_destroy_chk_ (&daemon->nnc_lock);
@@ -8102,6 +8132,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #endif /* HTTPS_SUPPORT */
 
 #ifdef DAUTH_SUPPORT
+    free (daemon->digest_auth_random_copy);
     free (daemon->nnc);
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
     MHD_mutex_destroy_chk_ (&daemon->nnc_lock);

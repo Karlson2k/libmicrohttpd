@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097528
+#define MHD_VERSION 0x00097529
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -1760,6 +1760,7 @@ enum MHD_OPTION
    * Note that the application must ensure that the buffer of the
    * second argument remains allocated and unmodified while the
    * daemon is running.
+   * @sa #MHD_OPTION_DIGEST_AUTH_RANDOM_COPY
    */
   MHD_OPTION_DIGEST_AUTH_RANDOM = 17,
 
@@ -1927,7 +1928,22 @@ enum MHD_OPTION
    * This option should be followed by an `int` argument.
    * @note Available since #MHD_VERSION 0x00097207
    */
-  MHD_OPTION_TLS_NO_ALPN = 34
+  MHD_OPTION_TLS_NO_ALPN = 34,
+
+  /**
+   * Memory pointer for the random values to be used by the Digest
+   * Auth module. This option should be followed by two arguments.
+   * First an integer of type `size_t` which specifies the size
+   * of the buffer pointed to by the second argument in bytes.
+   * The recommended size is between 8 and 32. If size is four or less
+   * then security could be lowered. Sizes more then 32 (or, probably
+   * more than 16 - debatable) will not increase security.
+   * An internal copy of the buffer will be made, the data do not
+   * need to be static.
+   * @sa #MHD_OPTION_DIGEST_AUTH_RANDOM
+   * @note Available since #MHD_VERSION 0x00097529
+   */
+  MHD_OPTION_DIGEST_AUTH_RANDOM_COPY = 35
 } _MHD_FIXED_ENUM;
 
 

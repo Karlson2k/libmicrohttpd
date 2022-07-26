@@ -2149,6 +2149,11 @@ struct MHD_Daemon
   const char *digest_auth_random;
 
   /**
+   * The malloc'ed copy of the @a digest_auth_random.
+   */
+  void *digest_auth_random_copy;
+
+  /**
    * An array that contains the map nonce-nc.
    */
   struct MHD_NonceNc *nnc;
