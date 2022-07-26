@@ -7608,7 +7608,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
         /* Some members must be used only in master daemon */
 #if defined(MHD_USE_THREADS)
-        memset (&d->per_ip_connection_mutex, 1,
+        memset (&d->per_ip_connection_mutex, 0x7F,
                 sizeof(d->per_ip_connection_mutex));
 #endif /* MHD_USE_THREADS */
 #ifdef DAUTH_SUPPORT
@@ -7616,7 +7616,7 @@ MHD_start_daemon_va (unsigned int flags,
         d->nonce_nc_size = 0;
         d->digest_auth_random_copy = NULL;
 #if defined(MHD_USE_THREADS)
-        memset (&d->nnc_lock, 1, sizeof(d->nnc_lock));
+        memset (&d->nnc_lock, 0x7F, sizeof(d->nnc_lock));
 #endif /* MHD_USE_THREADS */
 #endif /* DAUTH_SUPPORT */
 
