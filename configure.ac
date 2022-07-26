@@ -3948,6 +3948,8 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Postproc:          ${enable_postprocessor}
   Build docs:        ${enable_doc}
   Build examples:    ${enable_examples}
+  Build static lib:  ${enable_static}
+  Build shared lib:  ${enable_shared}
   Test with libcurl: ${MSG_CURL}
 ])
 
