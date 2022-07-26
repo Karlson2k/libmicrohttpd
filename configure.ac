@@ -25,7 +25,6 @@ AC_PREREQ([2.64])
 LT_PREREQ([2.4.0])
 AC_INIT([GNU libmicrohttpd],[0.9.75],[libmicrohttpd@gnu.org])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([gnu] [check-news] [filename-length-max=99] [tar-v7] [silent-rules] [subdir-objects])
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 m4_pattern_forbid([^_?MHD_[A-Z_]+_CC_])dnl
@@ -86,7 +85,7 @@ AS_VAR_IF([enable_build_type], ["no"], [enable_build_type="neutral"])
 AS_VAR_IF([enable_build_type], ["yes"], [AC_MSG_ERROR([[Missing TYPE for --enable-build-type=]])])
 AS_CASE([${enable_build_type}],
   [debug], [AC_MSG_RESULT([debug. Defaults: enable asserts, sanitizers (if any supported), debug information, compiler optimisation for debugging])],
-  [debugger], [AC_MSG_RESULT([debugger. Defaults: enable asserts, disable sanitizers, debug information, no compiler optimisation])],
+  [debugger], [AC_MSG_RESULT([debugger. Defaults: enable asserts, disable sanitizers, debug information, no compiler optimisation, static lib])],
   [neutral], [AC_MSG_RESULT([neutral. Defaults: use only user-specified compiler and linker flags])],
   [release], [AC_MSG_RESULT([release. Defaults: disable asserts, enable compiler optimisations])],
   [release-compact], [AC_MSG_RESULT([release-compact. Defaults: disable asserts, enable compiler optimisations for size, enable compact code])],
@@ -99,6 +98,30 @@ AS_VAR_IF([enable_build_type], ["neutral"], [:],
     AS_IF([test -z "${CFLAGS}"], [CFLAGS=""])
   ]
 )
+AS_VAR_IF([enable_build_type], ["debugger"],
+  [ # Build only static version unless something else is specified by the user
+    AS_IF([test -z "${enable_static}" || test "x${enable_static}" = "xyes"],
+      [
+        AS_IF([test -z "${enable_shared}"], 
+          [
+            enable_shared="no"
+            enable_static="yes"
+          ]
+        )
+      ],
+      [
+        AS_CASE([${enable_static}],[*libmicrohttpd*],
+          [AS_IF([test -z "${enable_shared}"], [enable_shared="no"])],
+        )
+      ]
+    )
+  ]
+)
+AS_CASE([${enable_build_type}],[debug|debugger],
+  [ AS_IF([test -z "${enable_silent_rules}"], [ enable_silent_rules="yes" ])]
+)
+
+AM_INIT_AUTOMAKE([gnu] [check-news] [filename-length-max=99] [tar-v7] [silent-rules] [subdir-objects])
 
 # Checks for programs.
 AC_PROG_AWK
