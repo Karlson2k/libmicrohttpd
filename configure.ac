@@ -23,7 +23,7 @@
 #
 AC_PREREQ([2.64])
 LT_PREREQ([2.4.0])
-AC_INIT([GNU Libmicrohttpd],[0.9.75],[libmicrohttpd@gnu.org])
+AC_INIT([GNU libmicrohttpd],[0.9.75],[libmicrohttpd@gnu.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([gnu] [check-news] [filename-length-max=99] [tar-v7] [silent-rules] [subdir-objects])
 AC_CONFIG_HEADERS([MHD_config.h])
@@ -33,9 +33,9 @@ m4_pattern_forbid([^_?MHD_[A-Z_]+_CC_])dnl
 LIB_VERSION_CURRENT=72
 LIB_VERSION_REVISION=0
 LIB_VERSION_AGE=60
-AC_SUBST(LIB_VERSION_CURRENT)
-AC_SUBST(LIB_VERSION_REVISION)
-AC_SUBST(LIB_VERSION_AGE)
+AC_SUBST([LIB_VERSION_CURRENT])
+AC_SUBST([LIB_VERSION_REVISION])
+AC_SUBST([LIB_VERSION_AGE])
 
 
 PACKAGE_VERSION_MAJOR='m4_car(m4_unquote(m4_split(AC_PACKAGE_VERSION, [\.])))'
@@ -3894,7 +3894,7 @@ MHD_PREPEND_FLAG_TO_VAR([fin_lib_LDFLAGS],[$MHD_LIB_LDFLAGS])
 MHD_PREPEND_FLAG_TO_VAR([fin_lib_CPPFLAGS],[$CPPFLAGS_ac])
 MHD_PREPEND_FLAG_TO_VAR([fin_lib_CFLAGS],[$CFLAGS_ac])
 MHD_PREPEND_FLAG_TO_VAR([fin_lib_LDFLAGS],[$LDFLAGS_ac])
-AC_MSG_NOTICE([Toolchain flags:
+AC_MSG_NOTICE([Toolchain settings:
   CC=$CC
   User/system/default flags:
     CPPFLAGS="$user_CPPFLAGS"
