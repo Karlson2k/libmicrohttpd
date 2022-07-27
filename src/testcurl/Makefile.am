@@ -171,14 +171,18 @@ check_PROGRAMS += \
   test_digestauth_emu_ext \
   test_digestauth_emu_ext_oldapi \
   test_digestauth2 \
-  test_digestauth2_oldapi \
+  test_digestauth2_oldapi1 \
+  test_digestauth2_oldapi2 \
   test_digestauth2_userhash \
   test_digestauth2_sha256 \
   test_digestauth2_sha256_userhash \
+  test_digestauth2_oldapi2_sha256 \
   test_digestauth2_userdigest \
-  test_digestauth2_oldapi_userdigest \
+  test_digestauth2_oldapi1_userdigest \
+  test_digestauth2_oldapi2_userdigest \
   test_digestauth2_userhash_userdigest \
   test_digestauth2_sha256_userdigest \
+  test_digestauth2_oldapi2_sha256_userdigest \
   test_digestauth2_sha256_userhash_userdigest
 endif
 
@@ -292,7 +296,10 @@ test_digestauth_emu_ext_oldapi_SOURCES = \
 test_digestauth2_SOURCES = \
   test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
 
-test_digestauth2_oldapi_SOURCES = \
+test_digestauth2_oldapi1_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
+test_digestauth2_oldapi2_SOURCES = \
   test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
 
 test_digestauth2_userhash_SOURCES = \
@@ -301,19 +308,28 @@ test_digestauth2_userhash_SOURCES = \
 test_digestauth2_sha256_SOURCES = \
   test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
 
+test_digestauth2_oldapi2_sha256_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
 test_digestauth2_sha256_userhash_SOURCES = \
   test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
 
 test_digestauth2_userdigest_SOURCES = \
   test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
 
-test_digestauth2_oldapi_userdigest_SOURCES = \
+test_digestauth2_oldapi1_userdigest_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
+test_digestauth2_oldapi2_userdigest_SOURCES = \
   test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
 
 test_digestauth2_userhash_userdigest_SOURCES = \
   test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
 
 test_digestauth2_sha256_userdigest_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
+test_digestauth2_oldapi2_sha256_userdigest_SOURCES = \
   test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
 
 test_digestauth2_sha256_userhash_userdigest_SOURCES = \

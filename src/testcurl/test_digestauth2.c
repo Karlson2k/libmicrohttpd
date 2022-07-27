@@ -735,9 +735,78 @@ ahc_echo (void *cls,
         mhdErrorExitDesc ("'MHD_queue_auth_required_response3()' failed");
     }
   }
-  else
+  else if (2 == test_oldapi)
   {
-    /* Use old API */
+    /* Use old API v2 */
+    char *username;
+    int check_res;
+
+    username = MHD_digest_auth_get_username (connection);
+    if (NULL != username)
+    { /* Has a valid username in header */
+      if (0 != strcmp (username, username_ptr))
+      {
+        fprintf (stderr, "'username' does not match.\n"
+                 "Expected: '%s'\tRecieved: '%s'. ",
+                 username_ptr,
+                 username);
+        mhdErrorExitDesc ("Wrong 'username'");
+      }
+      MHD_free (username);
+
+      if (! test_userdigest)
+        check_res =
+          MHD_digest_auth_check2 (connection, REALM_VAL, username_ptr,
+                                  PASSWORD_VALUE,
+                                  50 * TIMEOUTS_VAL,
+                                  test_sha256 ?
+                                  MHD_DIGEST_ALG_SHA256 : MHD_DIGEST_ALG_MD5);
+      else
+        check_res =
+          MHD_digest_auth_check_digest2 (connection, REALM_VAL, username_ptr,
+                                         userdigest_bin, userdigest_bin_size,
+                                         50 * TIMEOUTS_VAL,
+                                         test_sha256 ?
+                                         MHD_DIGEST_ALG_SHA256 :
+                                         MHD_DIGEST_ALG_MD5);
+
+      if (MHD_YES != check_res)
+      {
+        fprintf (stderr, "'MHD_digest_auth_check[_digest]2()' returned "
+                 "unexpected result: %d. ", check_res);
+        mhdErrorExitDesc ("Wrong 'MHD_digest_auth_check[_digest]2()' result");
+      }
+      response =
+        MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (PAGE),
+                                                (const void *) PAGE);
+      if (NULL == response)
+        mhdErrorExitDesc ("Response creation failed");
+
+      if (MHD_YES !=
+          MHD_queue_response (connection, MHD_HTTP_OK, response))
+        mhdErrorExitDesc ("'MHD_queue_response()' failed");
+    }
+    else
+    {
+      /* Has no valid username in header */
+      response =
+        MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (DENIED),
+                                                (const void *) DENIED);
+      if (NULL == response)
+        mhdErrorExitDesc ("Response creation failed");
+
+      res = MHD_queue_auth_fail_response2 (connection, REALM_VAL, OPAQUE_VALUE,
+                                           response, 0,
+                                           test_sha256 ?
+                                           MHD_DIGEST_ALG_SHA256 :
+                                           MHD_DIGEST_ALG_MD5);
+      if (MHD_YES != res)
+        mhdErrorExitDesc ("'MHD_queue_auth_fail_response()' failed");
+    }
+  }
+  else if (1 == test_oldapi)
+  {
+    /* Use old API v1 */
     char *username;
     int check_res;
 
@@ -796,6 +865,9 @@ ahc_echo (void *cls,
         mhdErrorExitDesc ("'MHD_queue_auth_fail_response()' failed");
     }
   }
+  else
+    externalErrorExitDesc ("Wrong 'test_oldapi' value");
+
   MHD_destroy_response (response);
   return MHD_YES;
 }
@@ -1087,8 +1159,8 @@ main (int argc, char *const *argv)
 {
 #if ! CURL_AT_LEAST_VERSION (7,19,1)
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
-  /* Need version 7.19.1 for separate username and password */
-  fprintf (stderr, "Required libcurl version 7.19.1 at least"
+  /* Need version 7.19.1 or newer for separate username and password */
+  fprintf (stderr, "Required libcurl at least version 7.19.1"
            " to run this test.\n");
   return 77;
 #else  /* CURL_AT_LEAST_VERSION(7,19,1) */
@@ -1103,14 +1175,24 @@ main (int argc, char *const *argv)
                has_param (argc, argv, "--quiet") ||
                has_param (argc, argv, "-s") ||
                has_param (argc, argv, "--silent"));
-  test_oldapi = has_in_name (argv[0], "_oldapi");
+  test_oldapi = 0;
+  if (has_in_name (argv[0], "_oldapi1"))
+    test_oldapi = 1;
+  if (has_in_name (argv[0], "_oldapi2"))
+    test_oldapi = 2;
   test_userhash = has_in_name (argv[0], "_userhash");
   test_userdigest = has_in_name (argv[0], "_userdigest");
   test_sha256 = has_in_name (argv[0], "_sha256");
 
+  /* Wrong test types combinations */
+  if (1 == test_oldapi)
+  {
+    if (test_sha256)
+      return 99;
+  }
   if (test_oldapi)
-  { /* Wrong test types combination */
-    if (test_userhash || test_sha256)
+  {
+    if (test_userhash)
       return 99;
   }
 
