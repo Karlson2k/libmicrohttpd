@@ -174,7 +174,12 @@ check_PROGRAMS += \
   test_digestauth2_oldapi \
   test_digestauth2_userhash \
   test_digestauth2_sha256 \
-  test_digestauth2_sha256_userhash
+  test_digestauth2_sha256_userhash \
+  test_digestauth2_userdigest \
+  test_digestauth2_oldapi_userdigest \
+  test_digestauth2_userhash_userdigest \
+  test_digestauth2_sha256_userdigest \
+  test_digestauth2_sha256_userhash_userdigest
 endif
 
 if HEAVY_TESTS
@@ -297,6 +302,21 @@ test_digestauth2_sha256_SOURCES = \
   test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
 
 test_digestauth2_sha256_userhash_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
+test_digestauth2_userdigest_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
+test_digestauth2_oldapi_userdigest_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
+test_digestauth2_userhash_userdigest_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
+test_digestauth2_sha256_userdigest_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
+test_digestauth2_sha256_userhash_userdigest_SOURCES = \
   test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
 
 test_get_iovec_SOURCES = \

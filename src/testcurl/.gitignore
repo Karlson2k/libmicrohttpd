@@ -162,3 +162,8 @@ core
 /test_digestauth2_userhash
 /test_digestauth2_sha256
 /test_digestauth2_sha256_userhash
+/test_digestauth2_userdigest
+/test_digestauth2_oldapi_userdigest
+/test_digestauth2_userhash_userdigest
+/test_digestauth2_sha256_userdigest
+/test_digestauth2_sha256_userhash_userdigest

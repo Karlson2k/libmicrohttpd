@@ -229,7 +229,7 @@ _checkCURLE_OK_func (CURLcode code, const char *curlFunc,
 
 #define MHD_URI_BASE_PATH "/bar%20foo?key=value"
 
-#define REALM "TestRealm"
+#define REALM_VAL "TestRealm"
 #define USERNAME1 "test_user"
 /* The hex form of MD5("test_user:TestRealm") */
 #define USERHASH1_MD5_HEX "c53c601503ff176f18f623725fba4281"
@@ -242,6 +242,15 @@ _checkCURLE_OK_func (CURLcode code, const char *curlFunc,
 #define USERHASH1_SHA256_BIN 0x09, 0x0c, 0x7e, 0x06, 0xb7, 0x7d, 0x66, 0x14, \
   0xcf, 0x5f, 0xe6, 0xca, 0xfa, 0x00, 0x4d, 0x2e, 0x5f, 0x8f, 0xb3, 0x6b, \
   0xa4, 0x5a, 0x0e, 0x35, 0xea, 0xcb, 0x2e, 0xb7, 0x72, 0x8f, 0x34, 0xde
+/* The hex form of MD5("test_user:TestRealm:test pass") */
+#define USERDIGEST1_MD5_BIN 0xd8, 0xb4, 0xa6, 0xd0, 0x01, 0x13, 0x07, 0xb7, \
+  0x67, 0x94, 0xea, 0x66, 0x86, 0x03, 0x6b, 0x43
+/* The hex form of SHA-256("test_user:TestRealm:test pass") */
+/* The binary form of SHA-256("test_user:TestRealm:test pass") */
+#define USERDIGEST1_SHA256_BIN 0xc3, 0x4e, 0x16, 0x5a, 0x17, 0x0f, 0xe5, \
+  0xac, 0x04, 0xf1, 0x6e, 0x46, 0x48, 0x2b, 0xa0, 0xc6, 0x56, 0xc1, 0xfb, \
+  0x8f, 0x66, 0xa6, 0xd6, 0x3f, 0x91, 0x12, 0xf8, 0x56, 0xa5, 0xec, 0x6d, \
+  0x6d
 /* "titkos szuperügynök" in UTF-8 */
 #define USERNAME2 "titkos szuper" "\xC3\xBC" "gyn" "\xC3\xB6" "k"
 /* percent-encoded username */
@@ -262,6 +271,7 @@ _checkCURLE_OK_func (CURLcode code, const char *curlFunc,
 static int verbose;
 static int test_oldapi;
 static int test_userhash;
+static int test_userdigest;
 static int test_sha256;
 static int curl_uses_usehash;
 
@@ -270,9 +280,13 @@ static const char userhash1_md5_hex[] = USERHASH1_MD5_HEX;
 static const uint8_t userhash1_md5_bin[] = { USERHASH1_MD5_BIN };
 static const char userhash1_sha256_hex[] = USERHASH1_SHA256_HEX;
 static const uint8_t userhash1_sha256_bin[] = { USERHASH1_SHA256_BIN };
-static const char *userhash1_hex;
-static size_t userhash1_hex_len;
-static const uint8_t *userhash1_bin;
+static const char *userhash_hex;
+static size_t userhash_hex_len;
+static const uint8_t *userhash_bin;
+static const uint8_t userdigest1_md5_bin[] = { USERDIGEST1_MD5_BIN };
+static const uint8_t userdigest1_sha256_bin[] = { USERDIGEST1_SHA256_BIN };
+static const uint8_t *userdigest_bin;
+static size_t userdigest_bin_size;
 static const char *username_ptr;
 
 static void
@@ -286,22 +300,28 @@ test_global_init (void)
   username_ptr = USERNAME1;
   if (! test_sha256)
   {
-    userhash1_hex = userhash1_md5_hex;
-    userhash1_hex_len = MHD_STATICSTR_LEN_ (userhash1_md5_hex);
-    userhash1_bin = userhash1_md5_bin;
-    if ((userhash1_hex_len / 2) != \
+    userhash_hex = userhash1_md5_hex;
+    userhash_hex_len = MHD_STATICSTR_LEN_ (userhash1_md5_hex);
+    userhash_bin = userhash1_md5_bin;
+    if ((userhash_hex_len / 2) != \
         (sizeof(userhash1_md5_bin) / sizeof(userhash1_md5_bin[0])))
       externalErrorExitDesc ("Wrong size of the 'userhash1_md5_bin' array");
+    userdigest_bin = userdigest1_md5_bin;
+    userdigest_bin_size =
+      (sizeof(userdigest1_md5_bin) / sizeof(userdigest1_md5_bin[0]));
   }
   else
   {
-    userhash1_hex = userhash1_sha256_hex;
-    userhash1_hex_len = MHD_STATICSTR_LEN_ (userhash1_sha256_hex);
-    userhash1_bin = userhash1_sha256_bin;
-    if ((userhash1_hex_len / 2) != \
+    userhash_hex = userhash1_sha256_hex;
+    userhash_hex_len = MHD_STATICSTR_LEN_ (userhash1_sha256_hex);
+    userhash_bin = userhash1_sha256_bin;
+    if ((userhash_hex_len / 2) != \
         (sizeof(userhash1_sha256_bin)   \
          / sizeof(userhash1_sha256_bin[0])))
       externalErrorExitDesc ("Wrong size of the 'userhash1_sha256_bin' array");
+    userdigest_bin = userdigest1_sha256_bin;
+    userdigest_bin_size =
+      (sizeof(userdigest1_sha256_bin) / sizeof(userdigest1_sha256_bin[0]));
   }
 }
 
@@ -437,27 +457,27 @@ ahc_echo (void *cls,
                    (int) dinfo->uname_type);
           mhdErrorExitDesc ("Wrong 'uname_type'");
         }
-        else if (dinfo->username_len != userhash1_hex_len)
+        else if (dinfo->username_len != userhash_hex_len)
         {
           fprintf (stderr, "'username_len' does not match.\n"
                    "Expected: %u\tRecieved: %u. ",
-                   (unsigned) userhash1_hex_len,
+                   (unsigned) userhash_hex_len,
                    (unsigned) dinfo->username_len);
           mhdErrorExitDesc ("Wrong 'username_len'");
         }
-        else if (0 != memcmp (dinfo->username, userhash1_hex,
+        else if (0 != memcmp (dinfo->username, userhash_hex,
                               dinfo->username_len))
         {
           fprintf (stderr, "'username' does not match.\n"
                    "Expected: '%s'\tRecieved: '%.*s'. ",
-                   userhash1_hex,
+                   userhash_hex,
                    (int) dinfo->username_len,
                    dinfo->username);
           mhdErrorExitDesc ("Wrong 'username'");
         }
         else if (NULL == dinfo->userhash_bin)
           mhdErrorExitDesc ("'userhash_bin' is NULL");
-        else if (0 != memcmp (dinfo->userhash_bin, userhash1_bin,
+        else if (0 != memcmp (dinfo->userhash_bin, userhash_bin,
                               dinfo->username_len / 2))
           mhdErrorExitDesc ("Wrong 'userhash_bin'");
       }
@@ -535,15 +555,15 @@ ahc_echo (void *cls,
       }
       else if (NULL == dinfo->realm)
         mhdErrorExitDesc ("'realm' is NULL");
-      else if (dinfo->realm_len != MHD_STATICSTR_LEN_ (REALM))
+      else if (dinfo->realm_len != MHD_STATICSTR_LEN_ (REALM_VAL))
       {
         fprintf (stderr, "'realm_len' does not match.\n"
                  "Expected: %u\tRecieved: %u. ",
-                 (unsigned) MHD_STATICSTR_LEN_ (REALM),
+                 (unsigned) MHD_STATICSTR_LEN_ (REALM_VAL),
                  (unsigned) dinfo->realm_len);
         mhdErrorExitDesc ("Wrong 'realm_len'");
       }
-      else if (0 != memcmp (dinfo->realm, REALM, dinfo->realm_len))
+      else if (0 != memcmp (dinfo->realm, REALM_VAL, dinfo->realm_len))
       {
         fprintf (stderr, "'realm' does not match.\n"
                  "Expected: '%s'\tRecieved: '%.*s'. ",
@@ -569,27 +589,27 @@ ahc_echo (void *cls,
                    (int) uname->uname_type);
           mhdErrorExitDesc ("Wrong 'uname_type'");
         }
-        else if (uname->username_len != userhash1_hex_len)
+        else if (uname->username_len != userhash_hex_len)
         {
           fprintf (stderr, "'username_len' does not match.\n"
                    "Expected: %u\tRecieved: %u. ",
-                   (unsigned) userhash1_hex_len,
+                   (unsigned) userhash_hex_len,
                    (unsigned) uname->username_len);
           mhdErrorExitDesc ("Wrong 'username_len'");
         }
-        else if (0 != memcmp (uname->username, userhash1_hex,
+        else if (0 != memcmp (uname->username, userhash_hex,
                               uname->username_len))
         {
           fprintf (stderr, "'username' does not match.\n"
                    "Expected: '%s'\tRecieved: '%.*s'. ",
-                   userhash1_hex,
+                   userhash_hex,
                    (int) uname->username_len,
                    uname->username);
           mhdErrorExitDesc ("Wrong 'username'");
         }
         else if (NULL == uname->userhash_bin)
           mhdErrorExitDesc ("'userhash_bin' is NULL");
-        else if (0 != memcmp (uname->userhash_bin, userhash1_bin,
+        else if (0 != memcmp (uname->userhash_bin, userhash_bin,
                               uname->username_len / 2))
           mhdErrorExitDesc ("Wrong 'userhash_bin'");
       }
@@ -626,11 +646,20 @@ ahc_echo (void *cls,
       }
       MHD_free (uname);
 
-      check_res =
-        MHD_digest_auth_check3 (connection, REALM, username_ptr,
-                                PASSWORD_VALUE, 50 * TIMEOUTS_VAL,
-                                0, MHD_DIGEST_AUTH_MULT_QOP_AUTH,
-                                (enum MHD_DigestAuthMultiAlgo3) algo3);
+      if (! test_userdigest)
+        check_res =
+          MHD_digest_auth_check3 (connection, REALM_VAL, username_ptr,
+                                  PASSWORD_VALUE,
+                                  50 * TIMEOUTS_VAL,
+                                  0, MHD_DIGEST_AUTH_MULT_QOP_AUTH,
+                                  (enum MHD_DigestAuthMultiAlgo3) algo3);
+      else
+        check_res =
+          MHD_digest_auth_check_digest3 (connection, REALM_VAL, username_ptr,
+                                         userdigest_bin, userdigest_bin_size,
+                                         50 * TIMEOUTS_VAL,
+                                         0, MHD_DIGEST_AUTH_MULT_QOP_AUTH,
+                                         (enum MHD_DigestAuthMultiAlgo3) algo3);
 
       switch (check_res)
       {
@@ -641,23 +670,23 @@ ahc_echo (void *cls,
         break;
       /* Invalid results */
       case MHD_DAUTH_NONCE_STALE:
-        mhdErrorExitDesc ("MHD_digest_auth_check3()' returned " \
+        mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
                           "MHD_DAUTH_NONCE_STALE");
         break;
       case MHD_DAUTH_NONCE_WRONG:
-        mhdErrorExitDesc ("MHD_digest_auth_check3()' returned " \
+        mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
                           "MHD_DAUTH_NONCE_WRONG");
         break;
       case MHD_DAUTH_ERROR:
         externalErrorExitDesc ("General error returned " \
-                               "by 'MHD_digest_auth_check3()'");
+                               "by 'MHD_digest_auth_check[_digest]3()'");
         break;
       case MHD_DAUTH_WRONG_USERNAME:
-        mhdErrorExitDesc ("MHD_digest_auth_check3()' returned " \
+        mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
                           "MHD_DAUTH_WRONG_USERNAME");
         break;
       case MHD_DAUTH_RESPONSE_WRONG:
-        mhdErrorExitDesc ("MHD_digest_auth_check3()' returned " \
+        mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
                           "MHD_DAUTH_RESPONSE_WRONG");
         break;
       case MHD_DAUTH_WRONG_HEADER:
@@ -666,13 +695,13 @@ ahc_echo (void *cls,
       case MHD_DAUTH_WRONG_QOP:
       case MHD_DAUTH_WRONG_ALGO:
       case MHD_DAUTH_TOO_LARGE:
-        fprintf (stderr, "'MHD_digest_auth_check3()' returned "
+        fprintf (stderr, "'MHD_digest_auth_check[_digest]3()' returned "
                  "unexpected result: %d. ",
                  check_res);
         mhdErrorExitDesc ("Wrong returned code");
         break;
       default:
-        fprintf (stderr, "'MHD_digest_auth_check3()' returned "
+        fprintf (stderr, "'MHD_digest_auth_check[_digest]3()' returned "
                  "impossible result code: %d. ",
                  check_res);
         mhdErrorExitDesc ("Impossible returned code");
@@ -697,7 +726,7 @@ ahc_echo (void *cls,
       if (NULL == response)
         mhdErrorExitDesc ("Response creation failed");
       res =
-        MHD_queue_auth_required_response3 (connection, REALM, OPAQUE_VALUE,
+        MHD_queue_auth_required_response3 (connection, REALM_VAL, OPAQUE_VALUE,
                                            "/", response, 0,
                                            MHD_DIGEST_AUTH_MULT_QOP_AUTH,
                                            (enum MHD_DigestAuthMultiAlgo3) algo3,
@@ -725,14 +754,22 @@ ahc_echo (void *cls,
       }
       MHD_free (username);
 
-      check_res = MHD_digest_auth_check (connection, REALM, username_ptr,
-                                         PASSWORD_VALUE, 50 * TIMEOUTS_VAL);
+      if (! test_userdigest)
+        check_res =
+          MHD_digest_auth_check (connection, REALM_VAL, username_ptr,
+                                 PASSWORD_VALUE,
+                                 50 * TIMEOUTS_VAL);
+      else
+        check_res =
+          MHD_digest_auth_check_digest (connection, REALM_VAL, username_ptr,
+                                        userdigest_bin,
+                                        50 * TIMEOUTS_VAL);
 
       if (MHD_YES != check_res)
       {
-        fprintf (stderr, "'MHD_digest_auth_check()' returned unexpected"
-                 " result: %d. ", check_res);
-        mhdErrorExitDesc ("Wrong 'MHD_digest_auth_check()' result");
+        fprintf (stderr, "'MHD_digest_auth_check[_digest]()' returned "
+                 "unexpected result: %d. ", check_res);
+        mhdErrorExitDesc ("Wrong 'MHD_digest_auth_check[_digest]()' result");
       }
       response =
         MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (PAGE),
@@ -753,7 +790,7 @@ ahc_echo (void *cls,
       if (NULL == response)
         mhdErrorExitDesc ("Response creation failed");
 
-      res = MHD_queue_auth_fail_response (connection, REALM, OPAQUE_VALUE,
+      res = MHD_queue_auth_fail_response (connection, REALM_VAL, OPAQUE_VALUE,
                                           response, 0);
       if (MHD_YES != res)
         mhdErrorExitDesc ("'MHD_queue_auth_fail_response()' failed");
@@ -1068,6 +1105,7 @@ main (int argc, char *const *argv)
                has_param (argc, argv, "--silent"));
   test_oldapi = has_in_name (argv[0], "_oldapi");
   test_userhash = has_in_name (argv[0], "_userhash");
+  test_userdigest = has_in_name (argv[0], "_userdigest");
   test_sha256 = has_in_name (argv[0], "_sha256");
 
   if (test_oldapi)
