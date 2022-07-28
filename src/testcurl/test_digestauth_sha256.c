@@ -306,7 +306,7 @@ main (int argc, char *const *argv)
   if (1)
   {
     fprintf (stderr, "libcurl version 7.62.x has bug in processing"
-             "URI with GET argements for Digest Auth.\n");
+             "URI with GET arguments for Digest Auth.\n");
     fprintf (stderr, "This test cannot be performed.\n");
     exit (77);
   }
