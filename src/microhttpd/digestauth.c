@@ -1982,6 +1982,14 @@ is_param_equal_caseless (const struct MHD_RqDAuthParam *param,
 /**
  * Authenticates the authorization header sent by the client
  *
+ * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
+ * @a mqop and the client uses this mode, then server generated nonces are
+ * used as one-time nonces because nonce-count is not suppoted in this old RFC.
+ * Communication in this mode is very inefficient, especially if the client
+ * requests several resources one-by-one as for every request new nonce must be
+ * generated and client repeat all requests twice (first time to get a new
+ * nonce and second time to perform an authorised request).
+ *
  * @param connection the MHD connection structure
  * @param realm the realm presented to the client
  * @param username the username needs to be authenticated
@@ -1994,8 +2002,7 @@ is_param_equal_caseless (const struct MHD_RqDAuthParam *param,
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
  *               zero for no limit
- * @param mqop the QOP to use, currently the only allowed value is
- *            #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param mqop the QOP to use
  * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
  *               by the client is not allowed by this parameter
  * @param[out] pbuf the pointer to pointer to internally malloc'ed buffer,
@@ -2018,6 +2025,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 {
   struct MHD_Daemon *daemon = MHD_get_master (connection->daemon);
   enum MHD_DigestAuthAlgo3 c_algo; /**< Client's algorithm */
+  enum MHD_DigestAuthQOP c_qop; /**< Client's QOP */
   struct DigestAlgorithm da;
   unsigned int digest_size;
   uint8_t hash1_bin[MAX_DIGEST];
@@ -2073,8 +2081,19 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   if (! digest_setup (&da, get_base_digest_algo (c_algo)))
     MHD_PANIC (_ ("Wrong 'malgo3' value, API violation"));
   /* Check 'mqop' value */
-  if (MHD_DIGEST_AUTH_MULT_QOP_AUTH != mqop)
-    MHD_PANIC (_ ("Wrong 'mqop' value, API violation"));
+  c_qop = get_rq_qop (params);
+  /* Check whether client's algorithm is allowed by function parameter */
+  if (((unsigned int) c_qop) !=
+      (((unsigned int) c_qop) & ((unsigned int) mqop)))
+    return MHD_DAUTH_WRONG_QOP;
+  if (0 != (((unsigned int) c_qop) & MHD_DIGEST_AUTH_QOP_AUTH_INT))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The 'auth-int' QOP is not supported.\n"));
+#endif /* HAVE_MESSAGES */
+    return MHD_DAUTH_WRONG_QOP;
+  }
 
   digest_size = digest_get_size (&da);
 
@@ -2102,26 +2121,24 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
            (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < params->realm.value.len))
     return MHD_DAUTH_TOO_LARGE; /* Realm is too large and it will be used in hash calculations */
 
-  if (NULL == params->nc.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (0 == params->nc.value.len)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (4 * 8 < params->nc.value.len) /* Four times more than needed */
-    return MHD_DAUTH_WRONG_HEADER;
+  if (MHD_DIGEST_AUTH_QOP_NONE != c_qop)
+  {
+    if (NULL == params->nc.value.str)
+      return MHD_DAUTH_WRONG_HEADER;
+    else if (0 == params->nc.value.len)
+      return MHD_DAUTH_WRONG_HEADER;
+    else if (4 * 8 < params->nc.value.len) /* Four times more than needed */
+      return MHD_DAUTH_WRONG_HEADER;
 
-  if (NULL == params->cnonce.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (0 == params->cnonce.value.len)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < params->cnonce.value.len)
-    return MHD_DAUTH_TOO_LARGE;
+    if (NULL == params->cnonce.value.str)
+      return MHD_DAUTH_WRONG_HEADER;
+    else if (0 == params->cnonce.value.len)
+      return MHD_DAUTH_WRONG_HEADER;
+    else if (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < params->cnonce.value.len)
+      return MHD_DAUTH_TOO_LARGE;
+  }
 
-  if (NULL == params->qop.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
-  else if (0 == params->qop.value.len)
-    return MHD_DAUTH_WRONG_QOP;
-  else if (MHD_STATICSTR_LEN_ ("auth-int") * 2 < params->qop.value.len)
-    return MHD_DAUTH_WRONG_QOP;
+  /* The QOP parameter was checked already */
 
   if (NULL == params->uri.value.str)
     return MHD_DAUTH_WRONG_HEADER;
@@ -2151,9 +2168,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   /* 'algorithm' valid */
 
   /* Check 'qop' */
-  /* TODO: support MHD_DIGEST_AUTH_QOP_NONE and MHD_DIGEST_AUTH_QOP_AUTH_INT */
-  if (MHD_DIGEST_AUTH_QOP_AUTH != get_rq_qop (params))
-    return MHD_DAUTH_WRONG_QOP;
+  /* The 'qop' was checked at the start of the function */
   /* 'qop' valid */
 
   /* Check 'realm' */
@@ -2213,31 +2228,37 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   /* ** Do basic nonce and nonce-counter checks (size, timestamp) ** */
 
   /* Get 'nc' digital value */
-  unq_res = get_unquoted_param (&params->nc, tmp1, ptmp2, &tmp2_size,
-                                &unquoted);
-  if (_MHD_UNQ_OK != unq_res)
-    return MHD_DAUTH_ERROR;
+  if (MHD_DIGEST_AUTH_QOP_NONE != c_qop)
+  {
 
-  if (unquoted.len != MHD_strx_to_uint64_n_ (unquoted.str,
-                                             unquoted.len,
-                                             &nci))
-  {
+    unq_res = get_unquoted_param (&params->nc, tmp1, ptmp2, &tmp2_size,
+                                  &unquoted);
+    if (_MHD_UNQ_OK != unq_res)
+      return MHD_DAUTH_ERROR;
+
+    if (unquoted.len != MHD_strx_to_uint64_n_ (unquoted.str,
+                                               unquoted.len,
+                                               &nci))
+    {
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Authentication failed, invalid nc format.\n"));
+      MHD_DLOG (daemon,
+                _ ("Authentication failed, invalid nc format.\n"));
 #endif
-    return MHD_DAUTH_WRONG_HEADER;   /* invalid nonce format */
-  }
-  if (0 == nci)
-  {
+      return MHD_DAUTH_WRONG_HEADER;   /* invalid nonce format */
+    }
+    if (0 == nci)
+    {
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Authentication failed, invalid 'nc' value.\n"));
+      MHD_DLOG (daemon,
+                _ ("Authentication failed, invalid 'nc' value.\n"));
 #endif
-    return MHD_DAUTH_WRONG_HEADER;   /* invalid nc value */
+      return MHD_DAUTH_WRONG_HEADER;   /* invalid nc value */
+    }
+    if ((0 != max_nc) && (max_nc < nci))
+      return MHD_DAUTH_NONCE_STALE;    /* Too large 'nc' value */
   }
-  if ((0 != max_nc) && (max_nc < nci))
-    return MHD_DAUTH_NONCE_STALE;    /* Too large 'nc' value */
+  else
+    nci = 1; /* Force 'nc' value */
   /* Got 'nc' digital value */
 
   /* Get 'nonce' with basic checks */
@@ -2285,9 +2306,15 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     if (MHD_CHECK_NONCENC_STALE == nonce_nc_check)
     {
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Stale nonce received. If this happens a lot, you should "
-                   "probably increase the size of the nonce array.\n"));
+      if (MHD_DIGEST_AUTH_QOP_NONE != c_qop)
+        MHD_DLOG (daemon,
+                  _ ("Stale nonce received. If this happens a lot, you should "
+                     "probably increase the size of the nonce array.\n"));
+      else
+        MHD_DLOG (daemon,
+                  _ ("Stale nonce received. If this happens a lot, you should "
+                     "probably increase the size of the nonce array or not"
+                     "use RFC2069-compatible mode .\n"));
 #endif
       return MHD_DAUTH_NONCE_STALE;
     }
@@ -2372,30 +2399,33 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   digest_update (&da, (const uint8_t *) unquoted.str, unquoted.len);
   /* Update digest with ':' */
   digest_update_with_colon (&da);
-  /* Update digest with 'nc' text value */
-  unq_res = get_unquoted_param (&params->nc, tmp1, ptmp2, &tmp2_size,
-                                &unquoted);
-  if (_MHD_UNQ_OK != unq_res)
-    return MHD_DAUTH_ERROR;
-  digest_update (&da, (const uint8_t *) unquoted.str, unquoted.len);
-  /* Update digest with ':' */
-  digest_update_with_colon (&da);
-  /* Update digest with 'cnonce' value */
-  unq_res = get_unquoted_param (&params->cnonce, tmp1, ptmp2, &tmp2_size,
-                                &unquoted);
-  if (_MHD_UNQ_OK != unq_res)
-    return MHD_DAUTH_ERROR;
-  digest_update (&da, (const uint8_t *) unquoted.str, unquoted.len);
-  /* Update digest with ':' */
-  digest_update_with_colon (&da);
-  /* Update digest with 'qop' value */
-  unq_res = get_unquoted_param (&params->qop, tmp1, ptmp2, &tmp2_size,
-                                &unquoted);
-  if (_MHD_UNQ_OK != unq_res)
-    return MHD_DAUTH_ERROR;
-  digest_update (&da, (const uint8_t *) unquoted.str, unquoted.len);
-  /* Update digest with ':' */
-  digest_update_with_colon (&da);
+  if (MHD_DIGEST_AUTH_QOP_NONE != c_qop)
+  {
+    /* Update digest with 'nc' text value */
+    unq_res = get_unquoted_param (&params->nc, tmp1, ptmp2, &tmp2_size,
+                                  &unquoted);
+    if (_MHD_UNQ_OK != unq_res)
+      return MHD_DAUTH_ERROR;
+    digest_update (&da, (const uint8_t *) unquoted.str, unquoted.len);
+    /* Update digest with ':' */
+    digest_update_with_colon (&da);
+    /* Update digest with 'cnonce' value */
+    unq_res = get_unquoted_param (&params->cnonce, tmp1, ptmp2, &tmp2_size,
+                                  &unquoted);
+    if (_MHD_UNQ_OK != unq_res)
+      return MHD_DAUTH_ERROR;
+    digest_update (&da, (const uint8_t *) unquoted.str, unquoted.len);
+    /* Update digest with ':' */
+    digest_update_with_colon (&da);
+    /* Update digest with 'qop' value */
+    unq_res = get_unquoted_param (&params->qop, tmp1, ptmp2, &tmp2_size,
+                                  &unquoted);
+    if (_MHD_UNQ_OK != unq_res)
+      return MHD_DAUTH_ERROR;
+    digest_update (&da, (const uint8_t *) unquoted.str, unquoted.len);
+    /* Update digest with ':' */
+    digest_update_with_colon (&da);
+  }
   /* Update digest with H(A2) */
   MHD_bin_to_hex (hash2_bin, digest_size, tmp1);
   digest_update (&da, (const uint8_t *) tmp1, digest_size * 2);
@@ -2434,6 +2464,14 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 /**
  * Authenticates the authorization header sent by the client
  *
+ * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
+ * @a mqop and the client uses this mode, then server generated nonces are
+ * used as one-time nonces because nonce-count is not suppoted in this old RFC.
+ * Communication in this mode is very inefficient, especially if the client
+ * requests several resources one-by-one as for every request new nonce must be
+ * generated and client repeat all requests twice (first time to get a new
+ * nonce and second time to perform an authorised request).
+ *
  * @param connection the MHD connection structure
  * @param realm the realm presented to the client
  * @param username the username needs to be authenticated
@@ -2446,8 +2484,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
  *               zero for no limit
- * @param mqop the QOP to use, currently the only allowed value is
- *            #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param mqop the QOP to use
  * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
  *               by the client is not allowed by this parameter
  * @return #MHD_DAUTH_OK if authenticated,
@@ -2518,6 +2555,14 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
 /**
  * Authenticates the authorization header sent by the client.
  *
+ * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
+ * @a mqop and the client uses this mode, then server generated nonces are
+ * used as one-time nonces because nonce-count is not suppoted in this old RFC.
+ * Communication in this mode is very inefficient, especially if the client
+ * requests several resources one-by-one as for every request new nonce must be
+ * generated and client repeat all requests twice (first time to get a new
+ * nonce and second time to perform an authorised request).
+ *
  * @param connection the MHD connection structure
  * @param realm the realm to be used for authorization of the client
  * @param username the username needs to be authenticated
@@ -2527,8 +2572,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
  *               zero for no limit
- * @param mqop the QOP to use, currently the only allowed value is
- *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param mqop the QOP to use
  * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
  *               by the client is not allowed by this parameter
  * @return #MHD_DAUTH_OK if authenticated,
@@ -2564,6 +2608,14 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  * Authenticates the authorization header sent by the client by using
  * hash of "username:realm:password".
  *
+ * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
+ * @a mqop and the client uses this mode, then server generated nonces are
+ * used as one-time nonces because nonce-count is not suppoted in this old RFC.
+ * Communication in this mode is very inefficient, especially if the client
+ * requests several resources one-by-one as for every request new nonce must be
+ * generated and client repeat all requests twice (first time to get a new
+ * nonce and second time to perform an authorised request).
+ *
  * @param connection the MHD connection structure
  * @param realm the realm presented to the client
  * @param username the username needs to be authenticated
@@ -2578,8 +2630,7 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
  *               zero for no limit
- * @param mqop the QOP to use, currently the only allowed value is
- *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param mqop the QOP to use
  * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
  *               by the client is not allowed by this parameter;
  *               both MD5-based and SHA-256-based algorithms cannot be used at
@@ -2776,10 +2827,20 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  * reused and should be destroyed (by #MHD_destroy_response()) after call of
  * this function.
  *
+ * If @a mqop allows both RFC 2069 (MHD_DIGEST_AUTH_QOP_NONE) and QOP with
+ * value, then response is formed like if MHD_DIGEST_AUTH_QOP_NONE bit was
+ * not set, because such response should be backward-compatible with RFC 2069.
+ *
+ * If @a mqop allows only MHD_DIGEST_AUTH_MULT_QOP_NONE, then the response is
+ * formed in strict accordance with RFC 2069 (no 'qop', no 'userhash', no
+ * 'charset'). For better compatibility with clients, it is recommended (but
+ * not required) to set @a domain to NULL in this mode.
+ *
  * @param connection the MHD connection structure
  * @param realm the realm presented to the client
  * @param opaque the string for opaque value, can be NULL, but NULL is
- *               not recommended for better compatibility with clients
+ *               not recommended for better compatibility with clients;
+ *               the recommended format is hex or Base64 encoded string
  * @param domain the optional space-separated list of URIs for which the
  *               same authorisation could be used, URIs can be in form
  *               "path-absolute" (the path for the same host with initial slash)
@@ -2796,8 +2857,7 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  *                     to the authentication header, this instructs the client
  *                     to retry immediately with the new nonce and the same
  *                     credentials, without asking user for the new password
- * @param mqop the QOP to use, currently the only allowed value is
- *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param mqop the QOP to use
  * @param malgo3 digest algorithm to use, if several algorithms are specified
  *               then MD5 is used (if allowed)
  * @param userhash_support if set to non-zero value (#MHD_YES) then support of
@@ -2858,8 +2918,24 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
   else
     MHD_PANIC (_ ("Wrong 'malgo3' value, API violation"));
 
-  if (MHD_DIGEST_AUTH_MULT_QOP_AUTH != mqop)
+  if (((unsigned int) mqop) !=
+      (((unsigned int) mqop) & MHD_DIGEST_AUTH_MULT_QOP_ANY_NON_INT))
     MHD_PANIC (_ ("Wrong 'mqop' value, API violation"));
+
+  if (! digest_setup (&da, get_base_digest_algo (s_algo)))
+    MHD_PANIC (_ ("Wrong 'algo' value, API violation"));
+
+  if (MHD_DIGEST_AUTH_MULT_QOP_NONE == mqop)
+  {
+#ifdef HAVE_MESSAGES
+    if ((0 != userhash_support) || (0 != prefer_utf8))
+      MHD_DLOG (connection->daemon,
+                _ ("The 'userhash' and 'charset' ('prefer_utf8') parameters " \
+                   "are not compatible with RFC2069 and igored.\n"));
+#endif
+    userhash_support = 0;
+    prefer_utf8 = 0;
+  }
 
   if (0 == MHD_get_master (connection->daemon)->nonce_nc_size)
   {
@@ -2869,9 +2945,6 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
 #endif /* HAVE_MESSAGES */
     return MHD_NO;
   }
-
-  if (! digest_setup (&da, get_base_digest_algo (s_algo)))
-    MHD_PANIC (_ ("Wrong 'algo' value, API violation"));
 
   /* Calculate required size */
   buf_size = 0;
@@ -2887,8 +2960,11 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
     return MHD_NO;
   buf_size += realm_len * 2; /* Quoting may double the size */
   /* 'qop="xxxx", ' */
-  buf_size += MHD_STATICSTR_LEN_ (prefix_qop) + 3; /* 3 for '", ' */
-  buf_size += MHD_STATICSTR_LEN_ (MHD_TOKEN_AUTH_);
+  if (MHD_DIGEST_AUTH_MULT_QOP_NONE != mqop)
+  {
+    buf_size += MHD_STATICSTR_LEN_ (prefix_qop) + 3; /* 3 for '", ' */
+    buf_size += MHD_STATICSTR_LEN_ (MHD_TOKEN_AUTH_);
+  }
   /* 'algorithm="xxxx", ' */
   buf_size += MHD_STATICSTR_LEN_ (prefix_algo) + 2; /* 2 for ', ' */
   if (MHD_DIGEST_AUTH_ALGO3_MD5 == s_algo)
@@ -2959,15 +3035,18 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
   buf[p++] = ',';
   buf[p++] = ' ';
   /* 'qop="xxxx", ' */
-  memcpy (buf + p, prefix_qop,
-          MHD_STATICSTR_LEN_ (prefix_qop));
-  p += MHD_STATICSTR_LEN_ (prefix_qop);
-  memcpy (buf + p, MHD_TOKEN_AUTH_,
-          MHD_STATICSTR_LEN_ (MHD_TOKEN_AUTH_));
-  p += MHD_STATICSTR_LEN_ (MHD_TOKEN_AUTH_);
-  buf[p++] = '\"';
-  buf[p++] = ',';
-  buf[p++] = ' ';
+  if (MHD_DIGEST_AUTH_MULT_QOP_NONE != mqop)
+  {
+    memcpy (buf + p, prefix_qop,
+            MHD_STATICSTR_LEN_ (prefix_qop));
+    p += MHD_STATICSTR_LEN_ (prefix_qop);
+    memcpy (buf + p, MHD_TOKEN_AUTH_,
+            MHD_STATICSTR_LEN_ (MHD_TOKEN_AUTH_));
+    p += MHD_STATICSTR_LEN_ (MHD_TOKEN_AUTH_);
+    buf[p++] = '\"';
+    buf[p++] = ',';
+    buf[p++] = ' ';
+  }
   /* 'algorithm="xxxx", ' */
   memcpy (buf + p, prefix_algo,
           MHD_STATICSTR_LEN_ (prefix_algo));

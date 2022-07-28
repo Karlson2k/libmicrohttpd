@@ -8412,7 +8412,7 @@ MHD_is_feature_supported (enum MHD_FEATURE feature)
 #endif
   case MHD_FEATURE_DIGEST_AUTH_RFC2069:
 #ifdef DAUTH_SUPPORT
-    return MHD_NO;
+    return MHD_YES;
 #else
     return MHD_NO;
 #endif

@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097529
+#define MHD_VERSION 0x00097530
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4623,8 +4623,11 @@ enum MHD_DigestAuthQOP
 
   /**
    * No QOP parameter.
-   * Match old RFC 2069 specification.
-   * Not supported by MHD for authentication.
+   * As described in old RFC 2069 original specification.
+   * This mode is not allowed by latest RFCs and should be used only to
+   * communicate with clients that do not support more modern modes (with QOP
+   * parameter).
+   * This mode is less secure than other modes and inefficient.
    */
   MHD_DIGEST_AUTH_QOP_NONE = 1 << 0,
 
@@ -4646,7 +4649,7 @@ enum MHD_DigestAuthQOP
  * #MHD_DigestAuthQOP always can be casted to #MHD_DigestAuthMultiQOP, but
  * not vice versa.
  *
- * @note Available since #MHD_VERSION 0x00097523
+ * @note Available since #MHD_VERSION 0x00097530
  */
 enum MHD_DigestAuthMultiQOP
 {
@@ -4657,9 +4660,11 @@ enum MHD_DigestAuthMultiQOP
 
   /**
    * No QOP parameter.
-   * Match old RFC 2069 specification.
-   * Not supported by MHD.
-   * Reserved value.
+   * As described in old RFC 2069 original specification.
+   * This mode is not allowed by latest RFCs and should be used only to
+   * communicate with clients that do not support more modern modes (with QOP
+   * parameter).
+   * This mode is less secure than other modes and inefficient.
    */
   MHD_DIGEST_AUTH_MULT_QOP_NONE = MHD_DIGEST_AUTH_QOP_NONE,
 
@@ -4674,6 +4679,15 @@ enum MHD_DigestAuthMultiQOP
    * Reserved value.
    */
   MHD_DIGEST_AUTH_MULT_QOP_AUTH_INT = MHD_DIGEST_AUTH_QOP_AUTH_INT,
+
+  /**
+   * The 'auth' QOP type OR the old RFC2069 (no QOP) type.
+   * In other words: any types except 'auth-int'.
+   * RFC2069-compatible mode is allowed, thus this value should be used only
+   * when it is really necessary.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_ANY_NON_INT =
+    MHD_DIGEST_AUTH_QOP_NONE | MHD_DIGEST_AUTH_QOP_AUTH,
 
   /**
    * Any 'auth' QOP type ('auth' or 'auth-int').
@@ -5015,6 +5029,14 @@ enum MHD_DigestAuthResult
 /**
  * Authenticates the authorization header sent by the client.
  *
+ * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
+ * @a mqop and the client uses this mode, then server generated nonces are
+ * used as one-time nonces because nonce-count is not suppoted in this old RFC.
+ * Communication in this mode is very inefficient, especially if the client
+ * requests several resources one-by-one as for every request new nonce must be
+ * generated and client repeat all requests twice (first time to get a new
+ * nonce and second time to perform an authorised request).
+ *
  * @param connection the MHD connection structure
  * @param realm the realm to be used for authorization of the client
  * @param username the username needs to be authenticated
@@ -5024,8 +5046,7 @@ enum MHD_DigestAuthResult
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
  *               zero for no limit
- * @param mqop the QOP to use, currently the only allowed value is
- *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param mqop the QOP to use
  * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
  *               by the client is not allowed by this parameter
  * @return #MHD_DAUTH_OK if authenticated,
@@ -5048,6 +5069,14 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  * Authenticates the authorization header sent by the client by using
  * hash of "username:realm:password".
  *
+ * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
+ * @a mqop and the client uses this mode, then server generated nonces are
+ * used as one-time nonces because nonce-count is not suppoted in this old RFC.
+ * Communication in this mode is very inefficient, especially if the client
+ * requests several resources one-by-one as for every request new nonce must be
+ * generated and client repeat all requests twice (first time to get a new
+ * nonce and second time to perform an authorised request).
+ *
  * @param connection the MHD connection structure
  * @param realm the realm presented to the client
  * @param username the username needs to be authenticated
@@ -5062,8 +5091,7 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
  *               zero for no limit
- * @param mqop the QOP to use, currently the only allowed value is
- *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param mqop the QOP to use
  * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
  *               by the client is not allowed by this parameter;
  *               both MD5-based and SHA-256-based algorithms cannot be used at
@@ -5200,10 +5228,20 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  * reused and should be destroyed (by #MHD_destroy_response()) after call of
  * this function.
  *
+ * If @a mqop allows both RFC 2069 (MHD_DIGEST_AUTH_QOP_NONE) and QOP with
+ * value, then response is formed like if MHD_DIGEST_AUTH_QOP_NONE bit was
+ * not set, because such response should be backward-compatible with RFC 2069.
+ *
+ * If @a mqop allows only MHD_DIGEST_AUTH_MULT_QOP_NONE, then the response is
+ * formed in strict accordance with RFC 2069 (no 'qop', no 'userhash', no
+ * 'charset'). For better compatibility with clients, it is recommended (but
+ * not required) to set @a domain to NULL in this mode.
+ *
  * @param connection the MHD connection structure
  * @param realm the realm presented to the client
  * @param opaque the string for opaque value, can be NULL, but NULL is
- *               not recommended for better compatibility with clients
+ *               not recommended for better compatibility with clients;
+ *               the recommended format is hex or Base64 encoded string
  * @param domain the optional space-separated list of URIs for which the
  *               same authorisation could be used, URIs can be in form
  *               "path-absolute" (the path for the same host with initial slash)
@@ -5220,8 +5258,7 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  *                     to the authentication header, this instructs the client
  *                     to retry immediately with the new nonce and the same
  *                     credentials, without asking user for the new password
- * @param mqop the QOP to use, currently the only allowed value is
- *             #MHD_DIGEST_AUTH_MULT_QOP_AUTH
+ * @param mqop the QOP to use
  * @param malgo3 digest algorithm to use, if several algorithms are specified
  *               then MD5 is used (if allowed)
  * @param userhash_support if set to non-zero value (#MHD_YES) then support of
@@ -5739,7 +5776,8 @@ enum MHD_FEATURE
   /**
    * Get whether the early version the Digest Authorization (RFC 2069) is
    * supported.
-   * Currently it is always not supported if Digest Auth module is built.
+   * Since #MHD_VERSION 0x00097530 it is always supported if Digest Auth
+   * module is built.
    * @note Available since #MHD_VERSION 0x00097527
    */
   MHD_FEATURE_DIGEST_AUTH_RFC2069 = 25,
