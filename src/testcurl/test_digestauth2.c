@@ -273,6 +273,7 @@ static int test_oldapi;
 static int test_userhash;
 static int test_userdigest;
 static int test_sha256;
+static int test_rfc2069;
 static int curl_uses_usehash;
 
 /* Static helper variables */
@@ -437,6 +438,8 @@ ahc_echo (void *cls,
     struct MHD_DigestAuthInfo *dinfo;
     const enum MHD_DigestAuthAlgo3 algo3 =
       test_sha256 ? MHD_DIGEST_AUTH_ALGO3_SHA256 : MHD_DIGEST_AUTH_ALGO3_MD5;
+    const enum MHD_DigestAuthQOP qop =
+      test_rfc2069 ? MHD_DIGEST_AUTH_QOP_NONE : MHD_DIGEST_AUTH_QOP_AUTH;
 
     dinfo = MHD_digest_auth_get_request_info3 (connection);
     if (NULL != dinfo)
@@ -520,13 +523,25 @@ ahc_echo (void *cls,
                  (int) dinfo->algo);
         mhdErrorExitDesc ("Wrong 'algo'");
       }
-      else if (10 >= dinfo->cnonce_len)
+      if (! test_rfc2069)
       {
-        fprintf (stderr, "Unexpected small 'cnonce_len': %ld. ",
-                 (long) dinfo->cnonce_len);
-        mhdErrorExitDesc ("Wrong 'cnonce_len'");
+        if (10 >= dinfo->cnonce_len)
+        {
+          fprintf (stderr, "Unexpected small 'cnonce_len': %ld. ",
+                   (long) dinfo->cnonce_len);
+          mhdErrorExitDesc ("Wrong 'cnonce_len'");
+        }
       }
-      else if (NULL == dinfo->opaque)
+      else
+      {
+        if (0 != dinfo->cnonce_len)
+        {
+          fprintf (stderr, "'cnonce_len' is not zero: %ld. ",
+                   (long) dinfo->cnonce_len);
+          mhdErrorExitDesc ("Wrong 'cnonce_len'");
+        }
+      }
+      if (NULL == dinfo->opaque)
         mhdErrorExitDesc ("'opaque' is NULL");
       else if (dinfo->opaque_len != MHD_STATICSTR_LEN_ (OPAQUE_VALUE))
       {
@@ -545,11 +560,11 @@ ahc_echo (void *cls,
                  dinfo->opaque);
         mhdErrorExitDesc ("Wrong 'opaque'");
       }
-      else if (MHD_DIGEST_AUTH_QOP_AUTH != dinfo->qop)
+      else if (qop != dinfo->qop)
       {
         fprintf (stderr, "Unexpected 'qop'.\n"
                  "Expected: %d\tRecieved: %d. ",
-                 (int) MHD_DIGEST_AUTH_QOP_AUTH,
+                 (int) qop,
                  (int) dinfo->qop);
         mhdErrorExitDesc ("Wrong 'qop'");
       }
@@ -651,14 +666,16 @@ ahc_echo (void *cls,
           MHD_digest_auth_check3 (connection, REALM_VAL, username_ptr,
                                   PASSWORD_VALUE,
                                   50 * TIMEOUTS_VAL,
-                                  0, MHD_DIGEST_AUTH_MULT_QOP_AUTH,
+                                  0,
+                                  (enum MHD_DigestAuthMultiQOP) qop,
                                   (enum MHD_DigestAuthMultiAlgo3) algo3);
       else
         check_res =
           MHD_digest_auth_check_digest3 (connection, REALM_VAL, username_ptr,
                                          userdigest_bin, userdigest_bin_size,
                                          50 * TIMEOUTS_VAL,
-                                         0, MHD_DIGEST_AUTH_MULT_QOP_AUTH,
+                                         0,
+                                         (enum MHD_DigestAuthMultiQOP) qop,
                                          (enum MHD_DigestAuthMultiAlgo3) algo3);
 
       switch (check_res)
@@ -690,6 +707,9 @@ ahc_echo (void *cls,
                           "MHD_DAUTH_RESPONSE_WRONG");
         break;
       case MHD_DAUTH_WRONG_HEADER:
+        mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
+                          "MHD_DAUTH_WRONG_HEADER");
+        break;
       case MHD_DAUTH_WRONG_REALM:
       case MHD_DAUTH_WRONG_URI:
       case MHD_DAUTH_WRONG_QOP:
@@ -728,7 +748,7 @@ ahc_echo (void *cls,
       res =
         MHD_queue_auth_required_response3 (connection, REALM_VAL, OPAQUE_VALUE,
                                            "/", response, 0,
-                                           MHD_DIGEST_AUTH_MULT_QOP_AUTH,
+                                           (enum MHD_DigestAuthMultiQOP) qop,
                                            (enum MHD_DigestAuthMultiAlgo3) algo3,
                                            test_userhash, 0);
       if (MHD_YES != res)
@@ -1183,6 +1203,7 @@ main (int argc, char *const *argv)
   test_userhash = has_in_name (argv[0], "_userhash");
   test_userdigest = has_in_name (argv[0], "_userdigest");
   test_sha256 = has_in_name (argv[0], "_sha256");
+  test_rfc2069 = has_in_name (argv[0], "_rfc2069");
 
   /* Wrong test types combinations */
   if (1 == test_oldapi)
@@ -1191,6 +1212,11 @@ main (int argc, char *const *argv)
       return 99;
   }
   if (test_oldapi)
+  {
+    if (test_userhash || test_rfc2069)
+      return 99;
+  }
+  if (test_rfc2069)
   {
     if (test_userhash)
       return 99;

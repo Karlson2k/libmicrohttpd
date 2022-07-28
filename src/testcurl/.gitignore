@@ -158,6 +158,8 @@ core
 /test_digestauth_emu_ext
 /test_digestauth_emu_ext_oldapi
 /test_digestauth2
+/test_digestauth2_rfc2069
+/test_digestauth2_rfc2069_userdigest
 /test_digestauth2_oldapi1
 /test_digestauth2_oldapi2
 /test_digestauth2_userhash

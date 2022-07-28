@@ -171,6 +171,8 @@ check_PROGRAMS += \
   test_digestauth_emu_ext \
   test_digestauth_emu_ext_oldapi \
   test_digestauth2 \
+  test_digestauth2_rfc2069 \
+  test_digestauth2_rfc2069_userdigest \
   test_digestauth2_oldapi1 \
   test_digestauth2_oldapi2 \
   test_digestauth2_userhash \
@@ -294,6 +296,12 @@ test_digestauth_emu_ext_oldapi_SOURCES = \
   test_digestauth_emu_ext.c
 
 test_digestauth2_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
+test_digestauth2_rfc2069_SOURCES = \
+  test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
+
+test_digestauth2_rfc2069_userdigest_SOURCES = \
   test_digestauth2.c mhd_has_param.h mhd_has_in_name.h
 
 test_digestauth2_oldapi1_SOURCES = \
