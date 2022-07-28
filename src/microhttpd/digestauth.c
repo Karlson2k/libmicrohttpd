@@ -2101,22 +2101,22 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 
   if ((NULL == params->username.value.str) &&
       (NULL == params->username_ext.value.str))
-    return MHD_DAUTH_WRONG_HEADER;
+    return MHD_DAUTH_WRONG_USERNAME;
   else if ((NULL != params->username.value.str) &&
            (NULL != params->username_ext.value.str))
-    return MHD_DAUTH_WRONG_HEADER; /* Parameters cannot be used together */
+    return MHD_DAUTH_WRONG_USERNAME; /* Parameters cannot be used together */
   else if ((NULL != params->username_ext.value.str) &&
            (MHD_DAUTH_EXT_PARAM_MIN_LEN > params->username_ext.value.len))
-    return MHD_DAUTH_WRONG_HEADER;  /* Broken extended notation */
+    return MHD_DAUTH_WRONG_USERNAME;  /* Broken extended notation */
   else if (params->userhash && (NULL == params->username.value.str))
-    return MHD_DAUTH_WRONG_HEADER;  /* Userhash cannot be used with extended notation */
+    return MHD_DAUTH_WRONG_USERNAME;  /* Userhash cannot be used with extended notation */
   else if (params->userhash && (digest_size * 2 > params->username.value.len))
-    return MHD_DAUTH_WRONG_HEADER;  /* Too few chars for correct userhash */
+    return MHD_DAUTH_WRONG_USERNAME;  /* Too few chars for correct userhash */
   else if (params->userhash && (digest_size * 4 < params->username.value.len))
-    return MHD_DAUTH_WRONG_HEADER;  /* Too many chars for correct userhash */
+    return MHD_DAUTH_WRONG_USERNAME;  /* Too many chars for correct userhash */
 
   if (NULL == params->realm.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
+    return MHD_DAUTH_WRONG_REALM;
   else if (((NULL == userdigest) || params->userhash) &&
            (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < params->realm.value.len))
     return MHD_DAUTH_TOO_LARGE; /* Realm is too large and it will be used in hash calculations */
@@ -2141,21 +2141,21 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   /* The QOP parameter was checked already */
 
   if (NULL == params->uri.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
+    return MHD_DAUTH_WRONG_URI;
   else if (0 == params->uri.value.len)
     return MHD_DAUTH_WRONG_URI;
   else if (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < params->uri.value.len)
     return MHD_DAUTH_TOO_LARGE;
 
   if (NULL == params->nonce.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
+    return MHD_DAUTH_NONCE_WRONG;
   else if (0 == params->nonce.value.len)
     return MHD_DAUTH_NONCE_WRONG;
   else if (NONCE_STD_LEN (digest_size) * 2 < params->nonce.value.len)
     return MHD_DAUTH_NONCE_WRONG;
 
   if (NULL == params->response.value.str)
-    return MHD_DAUTH_WRONG_HEADER;
+    return MHD_DAUTH_RESPONSE_WRONG;
   else if (0 == params->response.value.len)
     return MHD_DAUTH_RESPONSE_WRONG;
   else if (digest_size * 4 < params->response.value.len)

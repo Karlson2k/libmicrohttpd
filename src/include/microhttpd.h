@@ -4922,6 +4922,8 @@ enum MHD_DigestAuthResult
 
   /**
    * No "Authorization" header or wrong format of the header.
+   * Also may be returned if required parameters in client Authorisation header
+   * are missing or broken (in invalid format).
    */
   MHD_DAUTH_WRONG_HEADER = -1,
 
