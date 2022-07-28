@@ -1050,6 +1050,63 @@ struct MHD_Reply_Properties
   bool chunked; /**< Use chunked encoding for reply */
 };
 
+#if defined(_MHD_HAVE_SENDFILE)
+enum MHD_resp_sender_
+{
+  MHD_resp_sender_std = 0,
+  MHD_resp_sender_sendfile
+};
+#endif /* _MHD_HAVE_SENDFILE */
+
+/**
+ * Reply-specific values.
+ *
+ * Meaningful for the current reply only.
+ */
+struct MHD_Reply
+{
+  /**
+   * Response to transmit (initially NULL).
+   */
+  struct MHD_Response *response;
+
+  /**
+   * HTTP response code.  Only valid if response object
+   * is already set.
+   */
+  unsigned int responseCode;
+
+  /**
+   * The "ICY" response.
+   * Reply begins with the SHOUTcast "ICY" line instead of "HTTP".
+   */
+  bool responseIcy;
+
+  /**
+   * Current write position in the actual response
+   * (excluding headers, content only; should be 0
+   * while sending headers).
+   */
+  uint64_t rsp_write_position;
+
+  /**
+   * The copy of iov response.
+   * Valid if iovec response is used.
+   * Updated during send.
+   * Members are allocated in the pool.
+   */
+  struct MHD_iovec_track_ resp_iov;
+
+#if defined(_MHD_HAVE_SENDFILE)
+  enum MHD_resp_sender_ resp_sender;
+#endif /* _MHD_HAVE_SENDFILE */
+
+  /**
+   * Reply-specific properties
+   */
+  struct MHD_Reply_Properties props;
+};
+
 /**
  * State kept for each HTTP request.
  */
@@ -1103,9 +1160,9 @@ struct MHD_Connection
   struct MHD_Request rq;
 
   /**
-   * Response to transmit (initially NULL).
+   * Reply-specific data
    */
-  struct MHD_Response *response;
+  struct MHD_Reply rp;
 
   /**
    * The memory pool is created whenever we first read from the TCP
@@ -1196,30 +1253,6 @@ struct MHD_Connection
    * append and up to where is it safe to send?)
    */
   size_t write_buffer_append_offset;
-
-  /**
-   * Current write position in the actual response
-   * (excluding headers, content only; should be 0
-   * while sending headers).
-   */
-  uint64_t response_write_position;
-
-  /**
-   * The copy of iov response.
-   * Valid if iovec response is used.
-   * Updated during send.
-   * Members are allocated in the pool.
-   */
-  struct MHD_iovec_track_ resp_iov;
-
-
-#if defined(_MHD_HAVE_SENDFILE)
-  enum MHD_resp_sender_
-  {
-    MHD_resp_sender_std = 0,
-    MHD_resp_sender_sendfile
-  } resp_sender;
-#endif /* _MHD_HAVE_SENDFILE */
 
   /**
    * Position in the 100 CONTINUE message that
@@ -1338,23 +1371,6 @@ struct MHD_Connection
    * What is this connection waiting for?
    */
   enum MHD_ConnectionEventLoopInfo event_loop_info;
-
-  /**
-   * HTTP response code.  Only valid if response object
-   * is already set.
-   */
-  unsigned int responseCode;
-
-  /**
-   * The "ICY" response.
-   * Reply begins with the SHOUTcast "ICY" line instead of "HTTP".
-   */
-  bool responseIcy;
-
-  /**
-   * Reply-specific properties
-   */
-  struct MHD_Reply_Properties rp_props;
 
   /**
    * Function used for reading HTTP request stream.

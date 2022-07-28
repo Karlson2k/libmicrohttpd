@@ -1159,7 +1159,7 @@ MHD_send_hdr_and_body_ (struct MHD_Connection *connection,
     /* Luckily the type of send function will be used next is known. */
     post_send_setopt (connection,
 #if defined(_MHD_HAVE_SENDFILE)
-                      MHD_resp_sender_std == connection->resp_sender,
+                      MHD_resp_sender_std == connection->rp.resp_sender,
 #else  /* ! _MHD_HAVE_SENDFILE */
                       true,
 #endif /* ! _MHD_HAVE_SENDFILE */
@@ -1179,7 +1179,7 @@ ssize_t
 MHD_send_sendfile_ (struct MHD_Connection *connection)
 {
   ssize_t ret;
-  const int file_fd = connection->response->fd;
+  const int file_fd = connection->rp.response->fd;
   uint64_t left;
   uint64_t offsetu64;
 #ifndef HAVE_SENDFILE64
@@ -1207,18 +1207,19 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
                             MHD_SENFILE_CHUNK_;
   size_t send_size = 0;
   bool push_data;
-  mhd_assert (MHD_resp_sender_sendfile == connection->resp_sender);
+  mhd_assert (MHD_resp_sender_sendfile == connection->rp.resp_sender);
   mhd_assert (0 == (connection->daemon->options & MHD_USE_TLS));
 
-  offsetu64 = connection->response_write_position
-              + connection->response->fd_off;
+  offsetu64 = connection->rp.rsp_write_position
+              + connection->rp.response->fd_off;
   if (max_off_t < offsetu64)
   {   /* Retry to send with standard 'send()'. */
-    connection->resp_sender = MHD_resp_sender_std;
+    connection->rp.resp_sender = MHD_resp_sender_std;
     return MHD_ERR_AGAIN_;
   }
 
-  left = connection->response->total_size - connection->response_write_position;
+  left = connection->rp.response->total_size
+         - connection->rp.rsp_write_position;
 
   if ( (uint64_t) SSIZE_MAX < left)
     left = SSIZE_MAX;
@@ -1274,14 +1275,14 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
        to fall back to 'SEND'; see also this thread for info on
        odd libc/Linux behavior with sendfile:
        http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
-    connection->resp_sender = MHD_resp_sender_std;
+    connection->rp.resp_sender = MHD_resp_sender_std;
     return MHD_ERR_AGAIN_;
 #else  /* HAVE_SOLARIS_SENDFILE */
     if ( (EAFNOSUPPORT == err) ||
          (EINVAL == err) ||
          (EOPNOTSUPP == err) )
     {     /* Retry with standard file reader. */
-      connection->resp_sender = MHD_resp_sender_std;
+      connection->rp.resp_sender = MHD_resp_sender_std;
       return MHD_ERR_AGAIN_;
     }
     if ( (ENOTCONN == err) ||
@@ -1323,7 +1324,7 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
     }
     /* Some unrecoverable error. Possibly file FD is not suitable
      * for sendfile(). Retry with standard send(). */
-    connection->resp_sender = MHD_resp_sender_std;
+    connection->rp.resp_sender = MHD_resp_sender_std;
     return MHD_ERR_AGAIN_;
   }
   mhd_assert (0 < sent_bytes);
@@ -1357,7 +1358,7 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
         (EOPNOTSUPP == err) )
     {     /* This file FD is not suitable for sendfile().
            * Retry with standard send(). */
-      connection->resp_sender = MHD_resp_sender_std;
+      connection->rp.resp_sender = MHD_resp_sender_std;
       return MHD_ERR_AGAIN_;
     }
     return MHD_ERR_BADF_;   /* Return hard error. */
@@ -1629,9 +1630,9 @@ MHD_send_iovec_ (struct MHD_Connection *connection,
 #endif /* HTTPS_SUPPORT || _MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
 #endif /* MHD_VECT_SEND */
 
-  mhd_assert (NULL != connection->resp_iov.iov);
-  mhd_assert (NULL != connection->response->data_iov);
-  mhd_assert (connection->resp_iov.cnt > connection->resp_iov.sent);
+  mhd_assert (NULL != connection->rp.resp_iov.iov);
+  mhd_assert (NULL != connection->rp.response->data_iov);
+  mhd_assert (connection->rp.resp_iov.cnt > connection->rp.resp_iov.sent);
 #ifdef MHD_VECT_SEND
 #if defined(HTTPS_SUPPORT) || \
   defined(_MHD_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)

@@ -2237,10 +2237,10 @@ thread_main_handle_connection (void *data)
                            MHD_REQUEST_TERMINATED_WITH_ERROR);
   MHD_connection_handle_idle (con);
 exit:
-  if (NULL != con->response)
+  if (NULL != con->rp.response)
   {
-    MHD_destroy_response (con->response);
-    con->response = NULL;
+    MHD_destroy_response (con->rp.response);
+    con->rp.response = NULL;
   }
 
   if (MHD_INVALID_SOCKET != con->socket_fd)
@@ -3913,10 +3913,10 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
       }
     }
 #endif
-    if (NULL != pos->response)
+    if (NULL != pos->rp.response)
     {
-      MHD_destroy_response (pos->response);
-      pos->response = NULL;
+      MHD_destroy_response (pos->rp.response);
+      pos->rp.response = NULL;
     }
     if (MHD_INVALID_SOCKET != pos->socket_fd)
       MHD_socket_close_chk_ (pos->socket_fd);
