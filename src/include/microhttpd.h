@@ -4360,14 +4360,6 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
  */
 #define MHD_SHA256_DIGEST_SIZE 32
 
-
-/**
- * Constant to indicate that the nonce of the provided
- * authentication code was wrong.
- * @ingroup authentication
- */
-#define MHD_INVALID_NONCE -1
-
 /**
  * Base type of hash calculation.
  * Used as part of #MHD_DigestAuthAlgo3 values.
@@ -4471,6 +4463,22 @@ enum MHD_DigestAuthAlgo3
   MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION =
     MHD_DIGEST_BASE_ALGO_SHA512_256 | MHD_DIGEST_AUTH_ALGO3_SESSION,
 };
+
+
+/**
+ * Get digest size for specified algorithm.
+ *
+ * The size of the digest specifies the size of the userhash, userdigest
+ * and other parameters which size depends on used hash algorithm.
+ * @param algo3 the algorithm to check
+ * @return the size of the digest (either #MHD_MD5_DIGEST_SIZE or
+ *         #MHD_SHA256_DIGEST_SIZE) or zero if the input value is not
+ *         recognised/valid
+ * @note Available since #MHD_VERSION 0x00097526
+ * @ingroup authentication
+ */
+_MHD_EXTERN size_t
+MHD_digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3);
 
 /**
  * Digest algorithm identification, allow multiple selection.
@@ -4719,7 +4727,6 @@ struct MHD_DigestAuthInfo
   /**
    * The algorithm as defined by client.
    * Set automatically to MD5 if not specified by client.
-   * No "group" (ALGO3_ANY) values are used.
    * @warning Do not be confused with #MHD_DigestAuthAlgorithm,
    *          which uses other values!
    */
@@ -4810,6 +4817,7 @@ struct MHD_DigestAuthInfo
   uint32_t nc;
 };
 
+
 /**
  * Get information about Digest Authorization client's header.
  *
@@ -4817,6 +4825,7 @@ struct MHD_DigestAuthInfo
  * @return NULL if no valid Digest Authorization header is used in the request;
  *         a pointer to the structure with information if the valid request
  *         header found, free using #MHD_free().
+ * @sa #MHD_digest_auth_get_username3()
  * @note Available since #MHD_VERSION 0x00097519
  * @ingroup authentication
  */
@@ -4875,22 +4884,6 @@ struct MHD_DigestAuthUsernameInfo
 
 
 /**
- * Get digest size for specified algorithm.
- *
- * The size of the digest specifies the size of the userhash, userdigest
- * and other parameters which size depends on used hash algorithm.
- * @param algo3 the algorithm to check
- * @return the size of the digest (either #MHD_MD5_DIGEST_SIZE or
- *         #MHD_SHA256_DIGEST_SIZE) or zero if the input value is not
- *         recognised/valid
- * @note Available since #MHD_VERSION 0x00097526
- * @ingroup authentication
- */
-_MHD_EXTERN size_t
-MHD_digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3);
-
-
-/**
  * Get the username from Digest Authorization client's header.
  *
  * @param connection The MHD connection structure
@@ -4900,54 +4893,12 @@ MHD_digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3);
  *         #MHD_DIGEST_AUTH_UNAME_TYPE_INVALID);
  *         a pointer structure with information if the valid request header
  *         found, free using #MHD_free().
- * @sa MHD_digest_auth_get_request_info3() provides more complete information
+ * @sa #MHD_digest_auth_get_request_info3() provides more complete information
  * @note Available since #MHD_VERSION 0x00097519
  * @ingroup authentication
  */
 _MHD_EXTERN struct MHD_DigestAuthUsernameInfo *
 MHD_digest_auth_get_username3 (struct MHD_Connection *connection);
-
-
-/**
- * Get the username from the authorization header sent by the client
- *
- * This function supports username in standard and extended notations.
- * "userhash" is not supported by this function.
- *
- * @param connection The MHD connection structure
- * @return NULL if no username could be found, username provided as
- *         "userhash" or memory allocation error occurred;
- *         a pointer to the username if found, free using #MHD_free().
- * @warning Returned value must be freed by #MHD_free().
- * @deprecated use MHD_digest_auth_get_username3()
- * @ingroup authentication
- */
-_MHD_EXTERN char *
-MHD_digest_auth_get_username (struct MHD_Connection *connection);
-
-
-/**
- * Which digest algorithm should MHD use for HTTP digest authentication?
- */
-enum MHD_DigestAuthAlgorithm
-{
-
-  /**
-   * MHD should pick (currently defaults to MD5).
-   */
-  MHD_DIGEST_ALG_AUTO = 0,
-
-  /**
-   * Force use of MD5.
-   */
-  MHD_DIGEST_ALG_MD5,
-
-  /**
-   * Force use of SHA-256.
-   */
-  MHD_DIGEST_ALG_SHA256
-
-} _MHD_FIXED_ENUM;
 
 
 /**
@@ -5115,6 +5066,126 @@ MHD_digest_auth_check_digest3 (struct MHD_Connection *connection,
 
 
 /**
+ * Queues a response to request authentication from the client
+ *
+ * This function modifies provided @a response. The @a response must not be
+ * reused and should be destroyed (by #MHD_destroy_response()) after call of
+ * this function.
+ *
+ * If @a mqop allows both RFC 2069 (MHD_DIGEST_AUTH_QOP_NONE) and QOP with
+ * value, then response is formed like if MHD_DIGEST_AUTH_QOP_NONE bit was
+ * not set, because such response should be backward-compatible with RFC 2069.
+ *
+ * If @a mqop allows only MHD_DIGEST_AUTH_MULT_QOP_NONE, then the response is
+ * formed in strict accordance with RFC 2069 (no 'qop', no 'userhash', no
+ * 'charset'). For better compatibility with clients, it is recommended (but
+ * not required) to set @a domain to NULL in this mode.
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm presented to the client
+ * @param opaque the string for opaque value, can be NULL, but NULL is
+ *               not recommended for better compatibility with clients;
+ *               the recommended format is hex or Base64 encoded string
+ * @param domain the optional space-separated list of URIs for which the
+ *               same authorisation could be used, URIs can be in form
+ *               "path-absolute" (the path for the same host with initial slash)
+ *               or in form "absolute-URI" (the full path with protocol), in
+ *               any case client may assume that any URI which starts with
+ *               any of specified URI is in the same "protection space";
+ *               could be NULL (clients typically assume that the same
+ *               credentials could be used for any URI on the same host)
+ * @param response the reply to send; should contain the "access denied"
+ *                 body; note that this function sets the "WWW Authenticate"
+ *                 header and that the caller should not do this;
+ *                 the NULL is tolerated
+ * @param signal_stale set to #MHD_YES if the nonce is stale to add 'stale=true'
+ *                     to the authentication header, this instructs the client
+ *                     to retry immediately with the new nonce and the same
+ *                     credentials, without asking user for the new password
+ * @param mqop the QOP to use
+ * @param malgo3 digest algorithm to use, if several algorithms are specified
+ *               then MD5 is used (if allowed)
+ * @param userhash_support if set to non-zero value (#MHD_YES) then support of
+ *                         userhash is indicated, the client may provide
+ *                         hash("username:realm") instead of username in
+ *                         clear text; note that client is allowed to provide
+ *                         the username in cleartext even if this parameter set
+ *                         to non-zero
+ * @param prefer_utf8 if not set to #MHD_NO, parameter 'charset=UTF-8' is
+ *                    added, indicating for the client that UTF-8 encoding
+ *                    is preferred
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @note Available since #MHD_VERSION 0x00097526
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
+                                   const char *realm,
+                                   const char *opaque,
+                                   const char *domain,
+                                   struct MHD_Response *response,
+                                   int signal_stale,
+                                   enum MHD_DigestAuthMultiQOP qop,
+                                   enum MHD_DigestAuthMultiAlgo3 algo,
+                                   int userhash_support,
+                                   int prefer_utf8);
+
+
+/**
+ * Constant to indicate that the nonce of the provided
+ * authentication code was wrong.
+ * Used as return code by #MHD_digest_auth_check(), #MHD_digest_auth_check2(),
+ * #MHD_digest_auth_check_digest(), #MHD_digest_auth_check_digest2().
+ * @ingroup authentication
+ */
+#define MHD_INVALID_NONCE -1
+
+
+/**
+ * Get the username from the authorization header sent by the client
+ *
+ * This function supports username in standard and extended notations.
+ * "userhash" is not supported by this function.
+ *
+ * @param connection The MHD connection structure
+ * @return NULL if no username could be found, username provided as
+ *         "userhash" or memory allocation error occurred;
+ *         a pointer to the username if found, free using #MHD_free().
+ * @warning Returned value must be freed by #MHD_free().
+ * @deprecated use MHD_digest_auth_get_username3()
+ * @ingroup authentication
+ */
+_MHD_EXTERN char *
+MHD_digest_auth_get_username (struct MHD_Connection *connection);
+
+
+/**
+ * Which digest algorithm should MHD use for HTTP digest authentication?
+ * Used as parameter for #MHD_digest_auth_check2(),
+ * #MHD_digest_auth_check_digest2(), #MHD_queue_auth_fail_response2().
+ */
+enum MHD_DigestAuthAlgorithm
+{
+
+  /**
+   * MHD should pick (currently defaults to MD5).
+   */
+  MHD_DIGEST_ALG_AUTO = 0,
+
+  /**
+   * Force use of MD5.
+   */
+  MHD_DIGEST_ALG_MD5,
+
+  /**
+   * Force use of SHA-256.
+   */
+  MHD_DIGEST_ALG_SHA256
+
+} _MHD_FIXED_ENUM;
+
+
+/**
  * Authenticates the authorization header sent by the client.
  *
  * @param connection The MHD connection structure
@@ -5219,72 +5290,6 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
                               const char *username,
                               const uint8_t digest[MHD_MD5_DIGEST_SIZE],
                               unsigned int nonce_timeout);
-
-
-/**
- * Queues a response to request authentication from the client
- *
- * This function modifies provided @a response. The @a response must not be
- * reused and should be destroyed (by #MHD_destroy_response()) after call of
- * this function.
- *
- * If @a mqop allows both RFC 2069 (MHD_DIGEST_AUTH_QOP_NONE) and QOP with
- * value, then response is formed like if MHD_DIGEST_AUTH_QOP_NONE bit was
- * not set, because such response should be backward-compatible with RFC 2069.
- *
- * If @a mqop allows only MHD_DIGEST_AUTH_MULT_QOP_NONE, then the response is
- * formed in strict accordance with RFC 2069 (no 'qop', no 'userhash', no
- * 'charset'). For better compatibility with clients, it is recommended (but
- * not required) to set @a domain to NULL in this mode.
- *
- * @param connection the MHD connection structure
- * @param realm the realm presented to the client
- * @param opaque the string for opaque value, can be NULL, but NULL is
- *               not recommended for better compatibility with clients;
- *               the recommended format is hex or Base64 encoded string
- * @param domain the optional space-separated list of URIs for which the
- *               same authorisation could be used, URIs can be in form
- *               "path-absolute" (the path for the same host with initial slash)
- *               or in form "absolute-URI" (the full path with protocol), in
- *               any case client may assume that any URI which starts with
- *               any of specified URI is in the same "protection space";
- *               could be NULL (clients typically assume that the same
- *               credentials could be used for any URI on the same host)
- * @param response the reply to send; should contain the "access denied"
- *                 body; note that this function sets the "WWW Authenticate"
- *                 header and that the caller should not do this;
- *                 the NULL is tolerated
- * @param signal_stale set to #MHD_YES if the nonce is stale to add 'stale=true'
- *                     to the authentication header, this instructs the client
- *                     to retry immediately with the new nonce and the same
- *                     credentials, without asking user for the new password
- * @param mqop the QOP to use
- * @param malgo3 digest algorithm to use, if several algorithms are specified
- *               then MD5 is used (if allowed)
- * @param userhash_support if set to non-zero value (#MHD_YES) then support of
- *                         userhash is indicated, the client may provide
- *                         hash("username:realm") instead of username in
- *                         clear text; note that client is allowed to provide
- *                         the username in cleartext even if this parameter set
- *                         to non-zero
- * @param prefer_utf8 if not set to #MHD_NO, parameter 'charset=UTF-8' is
- *                    added, indicating for the client that UTF-8 encoding
- *                    is preferred
- * @return #MHD_YES on success, #MHD_NO otherwise
- * @note Available since #MHD_VERSION 0x00097526
- * @ingroup authentication
- */
-_MHD_EXTERN enum MHD_Result
-MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
-                                   const char *realm,
-                                   const char *opaque,
-                                   const char *domain,
-                                   struct MHD_Response *response,
-                                   int signal_stale,
-                                   enum MHD_DigestAuthMultiQOP qop,
-                                   enum MHD_DigestAuthMultiAlgo3 algo,
-                                   int userhash_support,
-                                   int prefer_utf8);
 
 
 /**
@@ -5775,7 +5780,7 @@ enum MHD_FEATURE
 
   /**
    * Get whether the early version the Digest Authorization (RFC 2069) is
-   * supported.
+   * supported (digest authorisation without QOP parameter).
    * Since #MHD_VERSION 0x00097530 it is always supported if Digest Auth
    * module is built.
    * @note Available since #MHD_VERSION 0x00097527
