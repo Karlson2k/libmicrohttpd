@@ -1505,12 +1505,12 @@ calculate_add_nonce (struct MHD_Connection *const connection,
   mhd_assert (0 != nonce_size);
 
   calculate_nonce (timestamp,
-                   connection->method,
+                   connection->rq.method,
                    daemon->digest_auth_random,
                    daemon->digest_auth_rand_size,
-                   connection->url,
-                   connection->url_len,
-                   connection->headers_received,
+                   connection->rq.url,
+                   connection->rq.url_len,
+                   connection->rq.headers_received,
                    realm,
                    realm_len,
                    da,
@@ -1654,7 +1654,7 @@ test_header (void *cls,
 
   param->num_headers++;
   i = 0;
-  for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+  for (pos = connection->rq.headers_received; NULL != pos; pos = pos->next)
   {
     if (kind != pos->kind)
       continue;
@@ -1720,7 +1720,7 @@ check_argument_match (struct MHD_Connection *connection,
     return false;
   }
   /* also check that the number of headers matches */
-  for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+  for (pos = connection->rq.headers_received; NULL != pos; pos = pos->next)
   {
     if (MHD_GET_ARGUMENT_KIND != pos->kind)
       continue;
@@ -1765,8 +1765,8 @@ check_uri_match (struct MHD_Connection *connection, char *uri, size_t uri_len)
   uri_len = daemon->unescape_callback (daemon->unescape_callback_cls,
                                        connection,
                                        uri);
-  if ((uri_len != connection->url_len) ||
-      (0 != memcmp (uri, connection->url, uri_len)))
+  if ((uri_len != connection->rq.url_len) ||
+      (0 != memcmp (uri, connection->rq.url, uri_len)))
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
@@ -2336,7 +2336,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 
   /* Get 'uri' */
   digest_init (&da);
-  digest_update_str (&da, connection->method);
+  digest_update_str (&da, connection->rq.method);
   digest_update_with_colon (&da);
 #if 0
   /* TODO: add support for "auth-int" */
@@ -2441,12 +2441,12 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   /* It was already checked that 'nonce' (including timestamp) was generated
      by MHD. The next check is mostly an overcaution. */
   calculate_nonce (nonce_time,
-                   connection->method,
+                   connection->rq.method,
                    daemon->digest_auth_random,
                    daemon->digest_auth_rand_size,
-                   connection->url,
-                   connection->url_len,
-                   connection->headers_received,
+                   connection->rq.url,
+                   connection->rq.url_len,
+                   connection->rq.headers_received,
                    realm,
                    realm_len,
                    &da,

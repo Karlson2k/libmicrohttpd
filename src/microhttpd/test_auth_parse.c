@@ -155,10 +155,10 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
   if (NULL == value_size_ptr)
     mhdErrorExitDesc ("The 'value_size_ptr' parameter is NULL");
 
-  if (NULL == connection->client_context)
+  if (NULL == connection->rq.client_context)
     externalErrorExitDesc ("The 'connection->client_context' value is NULL");
 
-  args = (struct TestArguments *) connection->client_context;
+  args = (struct TestArguments *) connection->rq.client_context;
   if (MHD_NO == args->res)
     return args->res;
 
@@ -231,7 +231,7 @@ get_AuthRqHeader (int use_hdr, const char *hdr, size_t hdr_len)
   test_args.len = hdr_len;
   memset (&conn, 0, sizeof (conn));
   /* Store pointer in some member unused in this test */
-  conn.client_context = &test_args;
+  conn.rq.client_context = &test_args;
   conn.state = MHD_CONNECTION_FULL_REQ_RECEIVED; /* Should be typical value */
   res1 = MHD_get_auth_rq_params_ (&conn);
   if (NULL == res1)

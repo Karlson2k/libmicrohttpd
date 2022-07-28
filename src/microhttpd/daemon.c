@@ -2201,12 +2201,12 @@ thread_main_handle_connection (void *data)
       /* Normal HTTP processing is finished,
        * notify application. */
       if ( (NULL != daemon->notify_completed) &&
-           (con->client_aware) )
+           (con->rq.client_aware) )
         daemon->notify_completed (daemon->notify_completed_cls,
                                   con,
-                                  &con->client_context,
+                                  &con->rq.client_context,
                                   MHD_REQUEST_TERMINATED_COMPLETED_OK);
-      con->client_aware = false;
+      con->rq.client_aware = false;
 
       thread_main_connection_upgrade (con);
       /* MHD_connection_finish_forward_() was called by thread_main_connection_upgrade(). */
@@ -3420,13 +3420,13 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
 
       if ( (NULL != daemon->notify_completed) &&
            (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-           (pos->client_aware) )
+           (pos->rq.client_aware) )
       {
         daemon->notify_completed (daemon->notify_completed_cls,
                                   pos,
-                                  &pos->client_context,
+                                  &pos->rq.client_context,
                                   MHD_REQUEST_TERMINATED_COMPLETED_OK);
-        pos->client_aware = false;
+        pos->rq.client_aware = false;
       }
       DLL_insert (daemon->cleanup_head,
                   daemon->cleanup_tail,

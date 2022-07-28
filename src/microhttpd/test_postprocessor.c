@@ -239,7 +239,7 @@ test_urlencoding_case (unsigned int want_start,
 
     memset (&connection, 0, sizeof (struct MHD_Connection));
     memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
-    connection.headers_received = &header;
+    connection.rq.headers_received = &header;
     header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
     header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
     header.header_size = MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_TYPE);
@@ -389,7 +389,7 @@ test_multipart_garbage (void)
     want_off = FORM_START;
     memset (&connection, 0, sizeof (struct MHD_Connection));
     memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
-    connection.headers_received = &header;
+    connection.rq.headers_received = &header;
     header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
     header.value =
       MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA ", boundary=AaB03x";
@@ -451,7 +451,7 @@ test_multipart_splits (void)
     want_off = FORM_START;
     memset (&connection, 0, sizeof (struct MHD_Connection));
     memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
-    connection.headers_received = &header;
+    connection.rq.headers_received = &header;
     header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
     header.value =
       MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA ", boundary=AaB03x";
@@ -510,7 +510,7 @@ test_multipart (void)
 
   memset (&connection, 0, sizeof (struct MHD_Connection));
   memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
-  connection.headers_received = &header;
+  connection.rq.headers_received = &header;
   header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
   header.value =
     MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA ", boundary=AaB03x";
@@ -567,7 +567,7 @@ test_nested_multipart (void)
 
   memset (&connection, 0, sizeof (struct MHD_Connection));
   memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
-  connection.headers_received = &header;
+  connection.rq.headers_received = &header;
   header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
   header.value =
     MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA ", boundary=AaB03x";
@@ -642,7 +642,7 @@ test_overflow (void)
 
   memset (&connection, 0, sizeof (struct MHD_Connection));
   memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
-  connection.headers_received = &header;
+  connection.rq.headers_received = &header;
   header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
   header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
   header.header_size = strlen (header.header);
@@ -701,8 +701,8 @@ test_empty_key (void)
     memset (&connection, 0, sizeof (struct MHD_Connection));
     memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
 
-    connection.headers_received = &header;
-    connection.headers_received_tail = &header;
+    connection.rq.headers_received = &header;
+    connection.rq.headers_received_tail = &header;
     header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
     header.header_size = MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_TYPE);
     header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
@@ -755,8 +755,8 @@ test_double_value (void)
     memset (&connection, 0, sizeof (struct MHD_Connection));
     memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
 
-    connection.headers_received = &header;
-    connection.headers_received_tail = &header;
+    connection.rq.headers_received = &header;
+    connection.rq.headers_received_tail = &header;
     header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
     header.header_size = MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_TYPE);
     header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;

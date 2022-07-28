@@ -2120,7 +2120,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   /* hand over socket to application */
   response->upgrade_handler (response->upgrade_handler_cls,
                              connection,
-                             connection->client_context,
+                             connection->rq.client_context,
                              connection->read_buffer,
                              rbo,
 #ifdef HTTPS_SUPPORT

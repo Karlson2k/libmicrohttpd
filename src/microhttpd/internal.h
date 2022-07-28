@@ -918,6 +918,128 @@ enum MHD_HTTP_Method
 
 
 /**
+ * Request-specific values.
+ *
+ * Meaningful for the current request only.
+ */
+struct MHD_Request
+{
+  /**
+   * HTTP version string (i.e. http/1.1).  Allocated
+   * in pool.
+   */
+  const char *version;
+
+  /**
+   * HTTP protocol version as enum.
+   */
+  enum MHD_HTTP_Version http_ver;
+
+  /**
+   * Request method.  Should be GET/POST/etc.  Allocated in pool.
+   */
+  const char *method;
+
+  /**
+   * The request method as enum.
+   */
+  enum MHD_HTTP_Method http_mthd;
+
+  /**
+   * Requested URL (everything after "GET" only).  Allocated
+   * in pool.
+   */
+  const char *url;
+
+  /**
+   * The length of the @a url in characters, not including the terminating zero.
+   */
+  size_t url_len;
+
+  /**
+   * Linked list of parsed headers.
+   */
+  struct MHD_HTTP_Req_Header *headers_received;
+
+  /**
+   * Tail of linked list of parsed headers.
+   */
+  struct MHD_HTTP_Req_Header *headers_received_tail;
+
+  /**
+   * Number of bytes we had in the HTTP header, set once we
+   * pass #MHD_CONNECTION_HEADERS_RECEIVED.
+   */
+  size_t header_size;
+
+  /**
+   * How many more bytes of the body do we expect
+   * to read? #MHD_SIZE_UNKNOWN for unknown.
+   */
+  uint64_t remaining_upload_size;
+
+  /**
+   * Are we receiving with chunked encoding?
+   * This will be set to #MHD_YES after we parse the headers and
+   * are processing the body with chunks.
+   * After we are done with the body and we are processing the footers;
+   * once the footers are also done, this will be set to #MHD_NO again
+   * (before the final call to the handler).
+   * It is used only for requests, chunked encoding for response is
+   * indicated by @a rp_props.
+   */
+  bool have_chunked_upload;
+
+  /**
+   * If we are receiving with chunked encoding, where are we right
+   * now?
+   * Set to 0 if we are waiting to receive the chunk size;
+   * otherwise, this is the size of the current chunk.
+   * A value of zero is also used when we're at the end of the chunks.
+   */
+  uint64_t current_chunk_size;
+
+  /**
+   * If we are receiving with chunked encoding, where are we currently
+   * with respect to the current chunk (at what offset / position)?
+   */
+  uint64_t current_chunk_offset;
+
+  /**
+   * We allow the main application to associate some pointer with the
+   * HTTP request, which is passed to each #MHD_AccessHandlerCallback
+   * and some other API calls.  Here is where we store it.  (MHD does
+   * not know or care what it is).
+   */
+  void *client_context;
+
+  /**
+   * Did we ever call the "default_handler" on this request?
+   * This flag determines if we have called the #MHD_OPTION_NOTIFY_COMPLETED
+   * handler when the request finishes.
+   */
+  bool client_aware;
+
+  /**
+   * Last incomplete header line during parsing of headers.
+   * Allocated in pool.  Only valid if state is
+   * either #MHD_CONNECTION_HEADER_PART_RECEIVED or
+   * #MHD_CONNECTION_FOOTER_PART_RECEIVED.
+   */
+  char *last;
+
+  /**
+   * Position after the colon on the last incomplete header
+   * line during parsing of headers.
+   * Allocated in pool.  Only valid if state is
+   * either #MHD_CONNECTION_HEADER_PART_RECEIVED or
+   * #MHD_CONNECTION_FOOTER_PART_RECEIVED.
+   */
+  char *colon;
+};
+
+
+/**
  * Reply-specific properties.
  */
 struct MHD_Reply_Properties
@@ -976,14 +1098,9 @@ struct MHD_Connection
   struct MHD_Daemon *daemon;
 
   /**
-   * Linked list of parsed headers.
+   * Request-specific data
    */
-  struct MHD_HTTP_Req_Header *headers_received;
-
-  /**
-   * Tail of linked list of parsed headers.
-   */
-  struct MHD_HTTP_Req_Header *headers_received_tail;
+  struct MHD_Request rq;
 
   /**
    * Response to transmit (initially NULL).
@@ -1002,52 +1119,12 @@ struct MHD_Connection
 
   /**
    * We allow the main application to associate some pointer with the
-   * HTTP request, which is passed to each #MHD_AccessHandlerCallback
-   * and some other API calls.  Here is where we store it.  (MHD does
-   * not know or care what it is).
-   */
-  void *client_context;
-
-  /**
-   * We allow the main application to associate some pointer with the
    * TCP connection (which may span multiple HTTP requests).  Here is
    * where we store it.  (MHD does not know or care what it is).
    * The location is given to the #MHD_NotifyConnectionCallback and
    * also accessible via #MHD_CONNECTION_INFO_SOCKET_CONTEXT.
    */
   void *socket_context;
-
-  /**
-   * Request method.  Should be GET/POST/etc.  Allocated in pool.
-   */
-  const char *method;
-
-  /**
-   * The request method as enum.
-   */
-  enum MHD_HTTP_Method http_mthd;
-
-  /**
-   * Requested URL (everything after "GET" only).  Allocated
-   * in pool.
-   */
-  const char *url;
-
-  /**
-   * The length of the @a url in characters, not including the terminating zero.
-   */
-  size_t url_len;
-
-  /**
-   * HTTP version string (i.e. http/1.1).  Allocated
-   * in pool.
-   */
-  const char *version;
-
-  /**
-   * HTTP protocol version as enum.
-   */
-  enum MHD_HTTP_Version http_ver;
 
 #if defined(BAUTH_SUPPORT) || defined(DAUTH_SUPPORT)
   /**
@@ -1056,7 +1133,6 @@ struct MHD_Connection
    */
   const struct MHD_AuthRqHeader *rq_auth;
 #endif
-
 
   /**
    * Close connection after sending response?
@@ -1077,23 +1153,6 @@ struct MHD_Connection
    * in pool.
    */
   char *write_buffer;
-
-  /**
-   * Last incomplete header line during parsing of headers.
-   * Allocated in pool.  Only valid if state is
-   * either #MHD_CONNECTION_HEADER_PART_RECEIVED or
-   * #MHD_CONNECTION_FOOTER_PART_RECEIVED.
-   */
-  char *last;
-
-  /**
-   * Position after the colon on the last incomplete header
-   * line during parsing of headers.
-   * Allocated in pool.  Only valid if state is
-   * either #MHD_CONNECTION_HEADER_PART_RECEIVED or
-   * #MHD_CONNECTION_FOOTER_PART_RECEIVED.
-   */
-  char *colon;
 
   /**
    * Foreign address (of length @e addr_len).  MALLOCED (not
@@ -1137,18 +1196,6 @@ struct MHD_Connection
    * append and up to where is it safe to send?)
    */
   size_t write_buffer_append_offset;
-
-  /**
-   * Number of bytes we had in the HTTP header, set once we
-   * pass #MHD_CONNECTION_HEADERS_RECEIVED.
-   */
-  size_t header_size;
-
-  /**
-   * How many more bytes of the body do we expect
-   * to read? #MHD_SIZE_UNKNOWN for unknown.
-   */
-  uint64_t remaining_upload_size;
 
   /**
    * Current write position in the actual response
@@ -1197,13 +1244,6 @@ struct MHD_Connection
    * Zero for no timeout.
    */
   uint64_t connection_timeout_ms;
-
-  /**
-   * Did we ever call the "default_handler" on this connection?  (this
-   * flag will determine if we call the #MHD_OPTION_NOTIFY_COMPLETED
-   * handler when the connection closes down).
-   */
-  bool client_aware;
 
   /**
    * Socket for this connection.  Set to #MHD_INVALID_SOCKET if
@@ -1315,33 +1355,6 @@ struct MHD_Connection
    * Reply-specific properties
    */
   struct MHD_Reply_Properties rp_props;
-
-  /**
-   * Are we receiving with chunked encoding?
-   * This will be set to #MHD_YES after we parse the headers and
-   * are processing the body with chunks.
-   * After we are done with the body and we are processing the footers;
-   * once the footers are also done, this will be set to #MHD_NO again
-   * (before the final call to the handler).
-   * It is used only for requests, chunked encoding for response is
-   * indicated by @a rp_props.
-   */
-  bool have_chunked_upload;
-
-  /**
-   * If we are receiving with chunked encoding, where are we right
-   * now?
-   * Set to 0 if we are waiting to receive the chunk size;
-   * otherwise, this is the size of the current chunk.
-   * A value of zero is also used when we're at the end of the chunks.
-   */
-  uint64_t current_chunk_size;
-
-  /**
-   * If we are receiving with chunked encoding, where are we currently
-   * with respect to the current chunk (at what offset / position)?
-   */
-  uint64_t current_chunk_offset;
 
   /**
    * Function used for reading HTTP request stream.

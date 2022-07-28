@@ -392,7 +392,7 @@ MHD_get_connection_values (struct MHD_Connection *connection,
   if (NULL == connection)
     return -1;
   ret = 0;
-  for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+  for (pos = connection->rq.headers_received; NULL != pos; pos = pos->next)
     if (0 != (pos->kind & kind))
     {
       ret++;
@@ -433,13 +433,13 @@ MHD_get_connection_values_n (struct MHD_Connection *connection,
   ret = 0;
 
   if (NULL == iterator)
-    for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+    for (pos = connection->rq.headers_received; NULL != pos; pos = pos->next)
     {
       if (0 != (kind & pos->kind))
         ret++;
     }
   else
-    for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+    for (pos = connection->rq.headers_received; NULL != pos; pos = pos->next)
       if (0 != (kind & pos->kind))
       {
         ret++;
@@ -493,15 +493,15 @@ MHD_set_connection_value_n_nocheck_ (struct MHD_Connection *connection,
   pos->kind = kind;
   pos->next = NULL;
   /* append 'pos' to the linked list of headers */
-  if (NULL == connection->headers_received_tail)
+  if (NULL == connection->rq.headers_received_tail)
   {
-    connection->headers_received = pos;
-    connection->headers_received_tail = pos;
+    connection->rq.headers_received = pos;
+    connection->rq.headers_received_tail = pos;
   }
   else
   {
-    connection->headers_received_tail->next = pos;
-    connection->headers_received_tail = pos;
+    connection->rq.headers_received_tail->next = pos;
+    connection->rq.headers_received_tail = pos;
   }
   return MHD_YES;
 }
@@ -660,7 +660,7 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
 
   if (NULL == key)
   {
-    for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+    for (pos = connection->rq.headers_received; NULL != pos; pos = pos->next)
     {
       if ( (0 != (kind & pos->kind)) &&
            (NULL == pos->header) )
@@ -669,7 +669,7 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
   }
   else
   {
-    for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+    for (pos = connection->rq.headers_received; NULL != pos; pos = pos->next)
     {
       if ( (0 != (kind & pos->kind)) &&
            (key_size == pos->header_size) &&
@@ -722,7 +722,7 @@ MHD_lookup_header_token_ci (const struct MHD_Connection *connection,
       (NULL == token) || (0 == token[0]))
     return false;
 
-  for (pos = connection->headers_received; NULL != pos; pos = pos->next)
+  for (pos = connection->rq.headers_received; NULL != pos; pos = pos->next)
   {
     if ((0 != (pos->kind & MHD_HEADER_KIND)) &&
         (header_len == pos->header_size) &&
@@ -765,7 +765,7 @@ need_100_continue (struct MHD_Connection *connection)
 {
   const char *expect;
 
-  return (MHD_IS_HTTP_VER_1_1_COMPAT (connection->http_ver) &&
+  return (MHD_IS_HTTP_VER_1_1_COMPAT (connection->rq.http_ver) &&
           (MHD_NO != MHD_lookup_connection_value_n (connection,
                                                     MHD_HEADER_KIND,
                                                     MHD_HTTP_HEADER_EXPECT,
@@ -834,12 +834,12 @@ MHD_connection_close_ (struct MHD_Connection *connection,
                MHD_thread_ID_match_current_ (connection->pid) );
 #endif /* MHD_USE_THREADS */
   if ( (NULL != daemon->notify_completed) &&
-       (connection->client_aware) )
+       (connection->rq.client_aware) )
     daemon->notify_completed (daemon->notify_completed_cls,
                               connection,
-                              &connection->client_context,
+                              &connection->rq.client_context,
                               termination_code);
-  connection->client_aware = false;
+  connection->rq.client_aware = false;
   if (NULL != resp)
   {
     connection->response = NULL;
@@ -1312,7 +1312,7 @@ keepalive_possible (struct MHD_Connection *connection)
     /* No "close" token is enforced by 'add_response_header_connection()' */
     mhd_assert (0 == (r->flags_auto & MHD_RAF_HAS_CONNECTION_CLOSE));
     /* Valid HTTP version is enforced by 'MHD_queue_response()' */
-    mhd_assert (MHD_IS_HTTP_VER_SUPPORTED (c->http_ver));
+    mhd_assert (MHD_IS_HTTP_VER_SUPPORTED (c->rq.http_ver));
     mhd_assert (! c->stop_with_error);
     return MHD_CONN_MUST_UPGRADE;
   }
@@ -1327,7 +1327,7 @@ keepalive_possible (struct MHD_Connection *connection)
   if (0 != (r->flags_auto & MHD_RAF_HAS_CONNECTION_CLOSE))
     return MHD_CONN_MUST_CLOSE;
 
-  if (! MHD_IS_HTTP_VER_SUPPORTED (c->http_ver))
+  if (! MHD_IS_HTTP_VER_SUPPORTED (c->rq.http_ver))
     return MHD_CONN_MUST_CLOSE;
 
   if (MHD_lookup_header_s_token_ci (c,
@@ -1335,7 +1335,7 @@ keepalive_possible (struct MHD_Connection *connection)
                                     "close"))
     return MHD_CONN_MUST_CLOSE;
 
-  if ((MHD_HTTP_VER_1_0 == connection->http_ver) ||
+  if ((MHD_HTTP_VER_1_0 == connection->rq.http_ver) ||
       (0 != (connection->response->flags & MHD_RF_HTTP_1_0_SERVER)))
   {
     if (MHD_lookup_header_s_token_ci (connection,
@@ -1346,7 +1346,7 @@ keepalive_possible (struct MHD_Connection *connection)
     return MHD_CONN_MUST_CLOSE;
   }
 
-  if (MHD_IS_HTTP_VER_1_1_COMPAT (c->http_ver))
+  if (MHD_IS_HTTP_VER_1_1_COMPAT (c->rq.http_ver))
     return MHD_CONN_USE_KEEPALIVE;
 
   return MHD_CONN_MUST_CLOSE;
@@ -1737,7 +1737,7 @@ is_reply_body_needed (struct MHD_Connection *connection,
   /* CONNECT is not supported by MHD */
   /* Successful responses for connect requests are filtered by
    * MHD_queue_response() */
-  if ( (MHD_HTTP_MTHD_CONNECT == c->http_mthd) &&
+  if ( (MHD_HTTP_MTHD_CONNECT == c->rq.http_mthd) &&
        (2 == rcode / 100) )
     return false; /* Actually pass-through CONNECT is not supported by MHD */
 #endif
@@ -1745,7 +1745,7 @@ is_reply_body_needed (struct MHD_Connection *connection,
   /* Reply body headers could be used.
    * Check whether reply body itself must be used. */
 
-  if (MHD_HTTP_MTHD_HEAD == c->http_mthd)
+  if (MHD_HTTP_MTHD_HEAD == c->rq.http_mthd)
     return RP_BODY_HEADERS_ONLY;
 
   if (MHD_HTTP_NOT_MODIFIED == rcode)
@@ -1794,7 +1794,7 @@ setup_reply_properties (struct MHD_Connection *connection)
     { /* Use chunked reply encoding if possible */
 
       /* Check whether chunked encoding is supported by the client */
-      if (! MHD_IS_HTTP_VER_1_1_COMPAT (c->http_ver))
+      if (! MHD_IS_HTTP_VER_1_1_COMPAT (c->rq.http_ver))
         use_chunked = false;
       /* Check whether chunked encoding is allowed for the reply */
       else if (0 != (r->flags & (MHD_RF_HTTP_1_0_COMPATIBLE_STRICT
@@ -2088,7 +2088,7 @@ build_header_response (struct MHD_Connection *connection)
      * For HTTP/1.1 add header only if explicitly requested by app
      * (by response flag), as "Keep-Alive" is default for HTTP/1.1. */
     if ((0 != (r->flags & MHD_RF_SEND_KEEP_ALIVE_HEADER)) ||
-        (MHD_HTTP_VER_1_0 == c->http_ver) ||
+        (MHD_HTTP_VER_1_0 == c->rq.http_ver) ||
         (0 != (r->flags & MHD_RF_HTTP_1_0_SERVER)))
       use_conn_k_alive = true;
     else
@@ -2424,14 +2424,14 @@ transmit_error_response_len (struct MHD_Connection *connection,
   if (MHD_NO == build_header_response (connection))
   {
     /* No memory. Release everything. */
-    connection->version = NULL;
-    connection->method = NULL;
-    connection->url = NULL;
-    connection->url_len = 0;
-    connection->last = NULL;
-    connection->colon = NULL;
-    connection->headers_received = NULL;
-    connection->headers_received_tail = NULL;
+    connection->rq.version = NULL;
+    connection->rq.method = NULL;
+    connection->rq.url = NULL;
+    connection->rq.url_len = 0;
+    connection->rq.last = NULL;
+    connection->rq.colon = NULL;
+    connection->rq.headers_received = NULL;
+    connection->rq.headers_received_tail = NULL;
     connection->write_buffer = NULL;
     connection->write_buffer_size = 0;
     connection->write_buffer_send_offset = 0;
@@ -2525,7 +2525,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
       if ( (connection->read_buffer_offset == connection->read_buffer_size) &&
            (! try_grow_read_buffer (connection, true)) )
       {
-        if (connection->url != NULL)
+        if (connection->rq.url != NULL)
           transmit_error_response_static (connection,
                                           MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
                                           REQUEST_TOO_BIG);
@@ -2707,7 +2707,7 @@ get_next_header_line (struct MHD_Connection *connection,
   if ( (connection->read_buffer_offset == connection->read_buffer_size) &&
        (! try_grow_read_buffer (connection, true)) )
   {
-    if (NULL != connection->url)
+    if (NULL != connection->rq.url)
       transmit_error_response_static (connection,
                                       MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
                                       REQUEST_TOO_BIG);
@@ -3160,7 +3160,7 @@ parse_http_version (struct MHD_Connection *connection,
       ((h[5] < '0') || (h[5] > '9')) ||
       ((h[7] < '0') || (h[7] > '9')))
   {
-    connection->http_ver = MHD_HTTP_VER_INVALID;
+    connection->rq.http_ver = MHD_HTTP_VER_INVALID;
     transmit_error_response_static (connection,
                                     MHD_HTTP_BAD_REQUEST,
                                     REQUEST_MALFORMED);
@@ -3170,11 +3170,11 @@ parse_http_version (struct MHD_Connection *connection,
   {
     /* HTTP/1.x */
     if (1 == h[7] - '0')
-      connection->http_ver = MHD_HTTP_VER_1_1;
+      connection->rq.http_ver = MHD_HTTP_VER_1_1;
     else if (0 == h[7] - '0')
-      connection->http_ver = MHD_HTTP_VER_1_0;
+      connection->rq.http_ver = MHD_HTTP_VER_1_0;
     else
-      connection->http_ver = MHD_HTTP_VER_1_2__1_9;
+      connection->rq.http_ver = MHD_HTTP_VER_1_2__1_9;
 
     return MHD_YES;
   }
@@ -3182,14 +3182,14 @@ parse_http_version (struct MHD_Connection *connection,
   if (0 == h[5] - '0')
   {
     /* Too old major version */
-    connection->http_ver = MHD_HTTP_VER_TOO_OLD;
+    connection->rq.http_ver = MHD_HTTP_VER_TOO_OLD;
     transmit_error_response_static (connection,
                                     MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED,
                                     REQ_HTTP_VER_IS_TOO_OLD);
     return MHD_NO;
   }
 
-  connection->http_ver = MHD_HTTP_VER_FUTURE;
+  connection->rq.http_ver = MHD_HTTP_VER_FUTURE;
   transmit_error_response_static (connection,
                                   MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED,
                                   REQ_HTTP_VER_IS_NOT_SUPPORTED);
@@ -3219,30 +3219,30 @@ parse_http_std_method (struct MHD_Connection *connection,
 
   if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_GET) == len) &&
       (0 == memcmp (m, MHD_HTTP_METHOD_GET, len)))
-    connection->http_mthd = MHD_HTTP_MTHD_GET;
+    connection->rq.http_mthd = MHD_HTTP_MTHD_GET;
   else if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_HEAD) == len) &&
            (0 == memcmp (m, MHD_HTTP_METHOD_HEAD, len)))
-    connection->http_mthd = MHD_HTTP_MTHD_HEAD;
+    connection->rq.http_mthd = MHD_HTTP_MTHD_HEAD;
   else if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_POST) == len) &&
            (0 == memcmp (m, MHD_HTTP_METHOD_POST, len)))
-    connection->http_mthd = MHD_HTTP_MTHD_POST;
+    connection->rq.http_mthd = MHD_HTTP_MTHD_POST;
   else if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_PUT) == len) &&
            (0 == memcmp (m, MHD_HTTP_METHOD_PUT, len)))
-    connection->http_mthd = MHD_HTTP_MTHD_PUT;
+    connection->rq.http_mthd = MHD_HTTP_MTHD_PUT;
   else if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_DELETE) == len) &&
            (0 == memcmp (m, MHD_HTTP_METHOD_DELETE, len)))
-    connection->http_mthd = MHD_HTTP_MTHD_DELETE;
+    connection->rq.http_mthd = MHD_HTTP_MTHD_DELETE;
   else if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_CONNECT) == len) &&
            (0 == memcmp (m, MHD_HTTP_METHOD_CONNECT, len)))
-    connection->http_mthd = MHD_HTTP_MTHD_CONNECT;
+    connection->rq.http_mthd = MHD_HTTP_MTHD_CONNECT;
   else if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_OPTIONS) == len) &&
            (0 == memcmp (m, MHD_HTTP_METHOD_OPTIONS, len)))
-    connection->http_mthd = MHD_HTTP_MTHD_OPTIONS;
+    connection->rq.http_mthd = MHD_HTTP_MTHD_OPTIONS;
   else if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_TRACE) == len) &&
            (0 == memcmp (m, MHD_HTTP_METHOD_TRACE, len)))
-    connection->http_mthd = MHD_HTTP_MTHD_TRACE;
+    connection->rq.http_mthd = MHD_HTTP_MTHD_TRACE;
   else
-    connection->http_mthd = MHD_HTTP_MTHD_OTHER;
+    connection->rq.http_mthd = MHD_HTTP_MTHD_OTHER;
 
   /* Any method string with non-zero length is valid */
   return MHD_YES;
@@ -3273,8 +3273,8 @@ parse_initial_message_line (struct MHD_Connection *connection,
                              line_len)))
     return MHD_NO;              /* serious error */
   uri[0] = '\0';
-  connection->method = line;
-  if (MHD_NO == parse_http_std_method (connection, connection->method,
+  connection->rq.method = line;
+  if (MHD_NO == parse_http_std_method (connection, connection->rq.method,
                                        (size_t) (uri - line)))
     return MHD_NO;
   uri++;
@@ -3289,9 +3289,9 @@ parse_initial_message_line (struct MHD_Connection *connection,
     /* No URI and no http version given */
     curi = "";
     uri = NULL;
-    connection->version = "";
+    connection->rq.version = "";
     args = NULL;
-    if (MHD_NO == parse_http_version (connection, connection->version, 0))
+    if (MHD_NO == parse_http_version (connection, connection->rq.version, 0))
       return MHD_NO;
   }
   else
@@ -3313,18 +3313,18 @@ parse_initial_message_line (struct MHD_Connection *connection,
     {
       /* http_version points to character before HTTP version string */
       http_version[0] = '\0';
-      connection->version = http_version + 1;
-      if (MHD_NO == parse_http_version (connection, connection->version,
+      connection->rq.version = http_version + 1;
+      if (MHD_NO == parse_http_version (connection, connection->rq.version,
                                         line_len
                                         - (size_t)
-                                        (connection->version - line)))
+                                        (connection->rq.version - line)))
         return MHD_NO;
       uri_len = (size_t) (http_version - uri);
     }
     else
     {
-      connection->version = "";
-      if (MHD_NO == parse_http_version (connection, connection->version, 0))
+      connection->rq.version = "";
+      if (MHD_NO == parse_http_version (connection, connection->rq.version, 0))
         return MHD_NO;
       uri_len = line_len - (size_t) (uri - line);
     }
@@ -3346,8 +3346,8 @@ parse_initial_message_line (struct MHD_Connection *connection,
   /* log callback before we modify URI *or* args */
   if (NULL != daemon->uri_log_callback)
   {
-    connection->client_aware = true;
-    connection->client_context
+    connection->rq.client_aware = true;
+    connection->rq.client_context
       = daemon->uri_log_callback (daemon->uri_log_callback_cls,
                                   uri,
                                   connection);
@@ -3368,15 +3368,15 @@ parse_initial_message_line (struct MHD_Connection *connection,
   /* unescape URI *after* searching for arguments and log callback */
   if (NULL != uri)
   {
-    connection->url_len =
+    connection->rq.url_len =
       daemon->unescape_callback (daemon->unescape_callback_cls,
                                  connection,
                                  uri);
   }
   else
-    connection->url_len = 0;
+    connection->rq.url_len = 0;
 
-  connection->url = curi;
+  connection->rq.url = curi;
   return MHD_YES;
 }
 
@@ -3397,16 +3397,16 @@ call_connection_handler (struct MHD_Connection *connection)
   if (NULL != connection->response)
     return;                     /* already queued a response */
   processed = 0;
-  connection->client_aware = true;
+  connection->rq.client_aware = true;
   if (MHD_NO ==
       daemon->default_handler (daemon->default_handler_cls,
                                connection,
-                               connection->url,
-                               connection->method,
-                               connection->version,
+                               connection->rq.url,
+                               connection->rq.method,
+                               connection->rq.version,
                                NULL,
                                &processed,
-                               &connection->client_context))
+                               &connection->rq.client_context))
   {
     /* serious internal error, close connection */
     CONNECTION_CLOSE_ERROR (connection,
@@ -3440,9 +3440,9 @@ process_request_body (struct MHD_Connection *connection)
        (but not more, there might be another request after it) */
     size_t purge;
 
-    purge = (size_t) MHD_MIN (connection->remaining_upload_size,
+    purge = (size_t) MHD_MIN (connection->rq.remaining_upload_size,
                               (uint64_t) connection->read_buffer_offset);
-    connection->remaining_upload_size -= purge;
+    connection->rq.remaining_upload_size -= purge;
     if (connection->read_buffer_offset > purge)
       memmove (connection->read_buffer,
                &connection->read_buffer[purge],
@@ -3460,12 +3460,12 @@ process_request_body (struct MHD_Connection *connection)
     size_t processed_size;
 
     instant_retry = false;
-    if (connection->have_chunked_upload)
+    if (connection->rq.have_chunked_upload)
     {
-      mhd_assert (MHD_SIZE_UNKNOWN == connection->remaining_upload_size);
-      if ( (connection->current_chunk_offset ==
-            connection->current_chunk_size) &&
-           (0 != connection->current_chunk_size) )
+      mhd_assert (MHD_SIZE_UNKNOWN == connection->rq.remaining_upload_size);
+      if ( (connection->rq.current_chunk_offset ==
+            connection->rq.current_chunk_size) &&
+           (0 != connection->rq.current_chunk_size) )
       {
         size_t i;
         mhd_assert (0 != available);
@@ -3489,21 +3489,22 @@ process_request_body (struct MHD_Connection *connection)
         }
         available -= i;
         buffer_head += i;
-        connection->current_chunk_offset = 0;
-        connection->current_chunk_size = 0;
+        connection->rq.current_chunk_offset = 0;
+        connection->rq.current_chunk_size = 0;
         if (0 == available)
           break;
       }
-      if (0 != connection->current_chunk_size)
+      if (0 != connection->rq.current_chunk_size)
       {
         uint64_t cur_chunk_left;
-        mhd_assert (connection->current_chunk_offset < \
-                    connection->current_chunk_size);
+        mhd_assert (connection->rq.current_chunk_offset < \
+                    connection->rq.current_chunk_size);
         /* we are in the middle of a chunk, give
            as much as possible to the client (without
            crossing chunk boundaries) */
         cur_chunk_left
-          = connection->current_chunk_size - connection->current_chunk_offset;
+          = connection->rq.current_chunk_size
+            - connection->rq.current_chunk_offset;
         if (cur_chunk_left > available)
           to_be_processed = available;
         else
@@ -3583,15 +3584,15 @@ process_request_body (struct MHD_Connection *connection)
 
             mhd_assert (found_chunk_size_str);
             /* Start reading payload data of the chunk */
-            connection->current_chunk_offset = 0;
-            connection->current_chunk_size = chunk_size;
+            connection->rq.current_chunk_offset = 0;
+            connection->rq.current_chunk_size = chunk_size;
             i++; /* Consume the last checked char */
             available -= i;
             buffer_head += i;
 
-            if (0 == connection->current_chunk_size)
+            if (0 == connection->rq.current_chunk_size)
             { /* The final (termination) chunk */
-              connection->remaining_upload_size = 0;
+              connection->rq.remaining_upload_size = 0;
               break;
             }
             if (available > 0)
@@ -3629,24 +3630,24 @@ process_request_body (struct MHD_Connection *connection)
     else
     {
       /* no chunked encoding, give all to the client */
-      mhd_assert (MHD_SIZE_UNKNOWN != connection->remaining_upload_size);
-      mhd_assert (0 != connection->remaining_upload_size);
-      if (connection->remaining_upload_size < available)
-        to_be_processed = (size_t) connection->remaining_upload_size;
+      mhd_assert (MHD_SIZE_UNKNOWN != connection->rq.remaining_upload_size);
+      mhd_assert (0 != connection->rq.remaining_upload_size);
+      if (connection->rq.remaining_upload_size < available)
+        to_be_processed = (size_t) connection->rq.remaining_upload_size;
       else
         to_be_processed = available;
     }
     left_unprocessed = to_be_processed;
-    connection->client_aware = true;
+    connection->rq.client_aware = true;
     if (MHD_NO ==
         daemon->default_handler (daemon->default_handler_cls,
                                  connection,
-                                 connection->url,
-                                 connection->method,
-                                 connection->version,
+                                 connection->rq.url,
+                                 connection->rq.method,
+                                 connection->rq.version,
                                  buffer_head,
                                  &left_unprocessed,
-                                 &connection->client_context))
+                                 &connection->rq.client_context))
     {
       /* serious internal error, close connection */
       CONNECTION_CLOSE_ERROR (connection,
@@ -3671,18 +3672,18 @@ process_request_body (struct MHD_Connection *connection)
 #endif
     }
     processed_size = to_be_processed - left_unprocessed;
-    if (connection->have_chunked_upload)
-      connection->current_chunk_offset += processed_size;
+    if (connection->rq.have_chunked_upload)
+      connection->rq.current_chunk_offset += processed_size;
     /* dh left "processed" bytes in buffer for next time... */
     buffer_head += processed_size;
     available -= processed_size;
-    if (! connection->have_chunked_upload)
+    if (! connection->rq.have_chunked_upload)
     {
-      mhd_assert (MHD_SIZE_UNKNOWN != connection->remaining_upload_size);
-      connection->remaining_upload_size -= processed_size;
+      mhd_assert (MHD_SIZE_UNKNOWN != connection->rq.remaining_upload_size);
+      connection->rq.remaining_upload_size -= processed_size;
     }
     else
-      mhd_assert (MHD_SIZE_UNKNOWN == connection->remaining_upload_size);
+      mhd_assert (MHD_SIZE_UNKNOWN == connection->rq.remaining_upload_size);
   } while (instant_retry);
   /* TODO: zero out reused memory region */
   if ( (available > 0) &&
@@ -3771,8 +3772,8 @@ process_header_line (struct MHD_Connection *connection,
      loop since we need to be able to inspect
      the *next* header line (in case it starts
      with a space...) */
-  connection->last = line;
-  connection->colon = colon;
+  connection->rq.last = line;
+  connection->rq.colon = colon;
   return MHD_YES;
 }
 
@@ -3797,7 +3798,7 @@ process_broken_line (struct MHD_Connection *connection,
   size_t last_len;
   size_t tmp_len;
 
-  last = connection->last;
+  last = connection->rq.last;
   if ( (' ' == line[0]) ||
        ('\t' == line[0]) )
   {
@@ -3833,17 +3834,17 @@ process_broken_line (struct MHD_Connection *connection,
     memcpy (&last[last_len],
             tmp,
             tmp_len + 1);
-    connection->last = last;
+    connection->rq.last = last;
     return MHD_YES;             /* possibly more than 2 lines... */
   }
   mhd_assert ( (NULL != last) &&
-               (NULL != connection->colon) );
+               (NULL != connection->rq.colon) );
   if (MHD_NO ==
       connection_add_header (connection,
                              last,
                              strlen (last),
-                             connection->colon,
-                             strlen (connection->colon),
+                             connection->rq.colon,
+                             strlen (connection->rq.colon),
                              kind))
   {
     /* Error has been queued by connection_add_header() */
@@ -3913,7 +3914,7 @@ parse_connection_headers (struct MHD_Connection *connection)
   }
 #endif /* COOKIE_SUPPORT */
   if ( (1 <= connection->daemon->strict_for_client) &&
-       (MHD_IS_HTTP_VER_1_1_COMPAT (connection->http_ver)) &&
+       (MHD_IS_HTTP_VER_1_1_COMPAT (connection->rq.http_ver)) &&
        (MHD_NO ==
         MHD_lookup_connection_value_n (connection,
                                        MHD_HEADER_KIND,
@@ -3933,7 +3934,7 @@ parse_connection_headers (struct MHD_Connection *connection)
     return;
   }
 
-  connection->remaining_upload_size = 0;
+  connection->rq.remaining_upload_size = 0;
   if (MHD_NO != MHD_lookup_connection_value_n (connection,
                                                MHD_HEADER_KIND,
                                                MHD_HTTP_HEADER_TRANSFER_ENCODING,
@@ -3942,10 +3943,10 @@ parse_connection_headers (struct MHD_Connection *connection)
                                                &enc,
                                                NULL))
   {
-    connection->remaining_upload_size = MHD_SIZE_UNKNOWN;
+    connection->rq.remaining_upload_size = MHD_SIZE_UNKNOWN;
     if (MHD_str_equal_caseless_ (enc,
                                  "chunked"))
-      connection->have_chunked_upload = true;
+      connection->rq.have_chunked_upload = true;
   }
   else
   {
@@ -3961,11 +3962,11 @@ parse_connection_headers (struct MHD_Connection *connection)
 
       num_digits = MHD_str_to_uint64_n_ (clen,
                                          val_len,
-                                         &connection->remaining_upload_size);
+                                         &connection->rq.remaining_upload_size);
       if ( (val_len != num_digits) ||
            (0 == num_digits) )
       {
-        connection->remaining_upload_size = 0;
+        connection->rq.remaining_upload_size = 0;
         if ((0 == num_digits) &&
             (0 != val_len) &&
             ('0' <= clen[0]) && ('9' >= clen[0]))
@@ -4273,7 +4274,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #ifdef HAVE_MESSAGES
       MHD_DLOG (connection->daemon,
                 _ ("Failed to send data in request for %s.\n"),
-                connection->url);
+                connection->rq.url);
 #endif
       CONNECTION_CLOSE_ERROR (connection,
                               NULL);
@@ -4358,7 +4359,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         MHD_DLOG (connection->daemon,
                   _ ("Failed to send the response headers for the " \
                      "request for `%s'. Error: %s\n"),
-                  connection->url,
+                  connection->rq.url,
                   str_conn_error_ (ret));
 #endif
         CONNECTION_CLOSE_ERROR (connection,
@@ -4451,7 +4452,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
         MHD_DLOG (connection->daemon,
                   _ ("Failed to send the response body for the " \
                      "request for `%s'. Error: %s\n"),
-                  connection->url,
+                  connection->rq.url,
                   str_conn_error_ (ret));
 #endif
         CONNECTION_CLOSE_ERROR (connection,
@@ -4483,7 +4484,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       MHD_DLOG (connection->daemon,
                 _ ("Failed to send the chunked response body for the " \
                    "request for `%s'. Error: %s\n"),
-                connection->url,
+                connection->rq.url,
                 str_conn_error_ (ret));
 #endif
       CONNECTION_CLOSE_ERROR (connection,
@@ -4519,7 +4520,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
       MHD_DLOG (connection->daemon,
                 _ ("Failed to send the footers for the " \
                    "request for `%s'. Error: %s\n"),
-                connection->url,
+                connection->rq.url,
                 str_conn_error_ (ret));
 #endif
       CONNECTION_CLOSE_ERROR (connection,
@@ -4719,25 +4720,39 @@ connection_reset (struct MHD_Connection *connection,
     mhd_assert (! c->discard_request);
 
     if ( (NULL != d->notify_completed) &&
-         (c->client_aware) )
+         (c->rq.client_aware) )
       d->notify_completed (d->notify_completed_cls,
                            c,
-                           &c->client_context,
+                           &c->rq.client_context,
                            MHD_REQUEST_TERMINATED_COMPLETED_OK);
-    c->client_aware = false;
+    c->rq.client_aware = false;
 
     if (NULL != c->response)
       MHD_destroy_response (c->response);
     c->response = NULL;
-    c->version = NULL;
-    c->http_ver = MHD_HTTP_VER_UNKNOWN;
-    c->last = NULL;
-    c->colon = NULL;
-    c->header_size = 0;
+
+    c->keepalive = MHD_CONN_KEEPALIVE_UNKOWN;
+    c->state = MHD_CONNECTION_INIT;
+
+    memset (&c->rq, 0, sizeof(c->rq));
 #if defined(BAUTH_SUPPORT) || defined(DAUTH_SUPPORT)
     c->rq_auth = NULL;
 #endif
-    c->keepalive = MHD_CONN_KEEPALIVE_UNKOWN;
+
+    c->responseCode = 0;
+    c->responseIcy = false;
+    c->response_write_position = 0;
+
+    memset (&c->rp_props, 0, sizeof(c->rp_props));
+    /* iov (if any) was deallocated by MHD_pool_reset */
+    memset (&connection->resp_iov, 0, sizeof(connection->resp_iov));
+
+    c->write_buffer = NULL;
+    c->write_buffer_size = 0;
+    c->write_buffer_send_offset = 0;
+    c->write_buffer_append_offset = 0;
+    c->continue_message_write_offset = 0;
+
     /* Reset the read buffer to the starting size,
        preserving the bytes we have already read. */
     new_read_buf_size = c->daemon->pool_size / 2;
@@ -4750,29 +4765,8 @@ connection_reset (struct MHD_Connection *connection,
                         c->read_buffer_offset,
                         new_read_buf_size);
     c->read_buffer_size = new_read_buf_size;
-    c->continue_message_write_offset = 0;
-    c->headers_received = NULL;
-    c->headers_received_tail = NULL;
-    c->have_chunked_upload = false;
-    c->current_chunk_size = 0;
-    c->current_chunk_offset = 0;
-    c->responseCode = 0;
-    c->responseIcy = false;
-    c->response_write_position = 0;
-    c->method = NULL;
-    c->http_mthd = MHD_HTTP_MTHD_NO_METHOD;
-    c->url = NULL;
-    c->url_len = 0;
-    memset (&c->rp_props, 0, sizeof(c->rp_props));
-    c->write_buffer = NULL;
-    c->write_buffer_size = 0;
-    c->write_buffer_send_offset = 0;
-    c->write_buffer_append_offset = 0;
-    /* iov (if any) was deallocated by MHD_pool_reset */
-    memset (&connection->resp_iov, 0, sizeof(connection->resp_iov));
-    c->state = MHD_CONNECTION_INIT;
   }
-  connection->client_context = NULL;
+  c->rq.client_context = NULL;
 }
 
 
@@ -4842,7 +4836,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                                         NULL);
         else
         {
-          mhd_assert (MHD_IS_HTTP_VER_SUPPORTED (connection->http_ver));
+          mhd_assert (MHD_IS_HTTP_VER_SUPPORTED (connection->rq.http_ver));
           connection->state = MHD_CONNECTION_URL_RECEIVED;
         }
         continue;
@@ -4874,8 +4868,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       if (0 == line[0])
       {
         connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
-        connection->header_size = (size_t) (connection->read_buffer
-                                            - connection->method);
+        connection->rq.header_size = (size_t) (connection->read_buffer
+                                               - connection->rq.method);
         continue;
       }
       if (MHD_NO == process_header_line (connection,
@@ -4911,8 +4905,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       if (0 == line[0])
       {
         connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
-        connection->header_size = (size_t) (connection->read_buffer
-                                            - connection->method);
+        connection->rq.header_size = (size_t) (connection->read_buffer
+                                               - connection->rq.method);
         continue;
       }
       continue;
@@ -4937,14 +4931,14 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         break;
       }
       if ( (NULL != connection->response) &&
-           (0 != connection->remaining_upload_size) )
+           (0 != connection->rq.remaining_upload_size) )
       {
         /* we refused (no upload allowed!) */
-        connection->remaining_upload_size = 0;
+        connection->rq.remaining_upload_size = 0;
         /* force close, in case client still tries to upload... */
         connection->discard_request = true;
       }
-      connection->state = (0 == connection->remaining_upload_size)
+      connection->state = (0 == connection->rq.remaining_upload_size)
                           ? MHD_CONNECTION_FULL_REQ_RECEIVED
                           : MHD_CONNECTION_CONTINUE_SENT;
       if (connection->suspended)
@@ -4968,12 +4962,12 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           continue;
         }
       }
-      if ( (0 == connection->remaining_upload_size) ||
-           ( (MHD_SIZE_UNKNOWN == connection->remaining_upload_size) &&
+      if ( (0 == connection->rq.remaining_upload_size) ||
+           ( (MHD_SIZE_UNKNOWN == connection->rq.remaining_upload_size) &&
              (0 == connection->read_buffer_offset) &&
              (connection->discard_request) ) )
       {
-        if ( (connection->have_chunked_upload) &&
+        if ( (connection->rq.have_chunked_upload) &&
              (! connection->discard_request) )
           connection->state = MHD_CONNECTION_BODY_RECEIVED;
         else
@@ -5404,7 +5398,7 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     if ( (MHD_CONNECTION_HEADERS_RECEIVED > connection->state) ||
          (MHD_CONNECTION_CLOSED == connection->state) )
       return NULL;   /* invalid, too early! */
-    connection->connection_info_dummy.header_size = connection->header_size;
+    connection->connection_info_dummy.header_size = connection->rq.header_size;
     return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_HTTP_STATUS:
     if (NULL == connection->response)
@@ -5613,7 +5607,7 @@ MHD_queue_response (struct MHD_Connection *connection,
 #endif
       return MHD_NO;
     }
-    if (! MHD_IS_HTTP_VER_1_1_COMPAT (connection->http_ver))
+    if (! MHD_IS_HTTP_VER_1_1_COMPAT (connection->rq.http_ver))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -5658,7 +5652,7 @@ MHD_queue_response (struct MHD_Connection *connection,
   }
   if (200 > status_code)
   {
-    if (MHD_HTTP_VER_1_0 == connection->http_ver)
+    if (MHD_HTTP_VER_1_0 == connection->rq.http_ver)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -5680,7 +5674,7 @@ MHD_queue_response (struct MHD_Connection *connection,
       return MHD_NO;
     }
   }
-  if ( (MHD_HTTP_MTHD_CONNECT == connection->http_mthd) &&
+  if ( (MHD_HTTP_MTHD_CONNECT == connection->rq.http_mthd) &&
        (2 == status_code / 100) )
   {
 #ifdef HAVE_MESSAGES
@@ -5736,7 +5730,7 @@ MHD_queue_response (struct MHD_Connection *connection,
   /* FIXME: if 'is_pipe' is set, TLS is off, and we have *splice*, we could use splice()
      to avoid two user-space copies... */
 
-  if ( (MHD_HTTP_MTHD_HEAD == connection->http_mthd) ||
+  if ( (MHD_HTTP_MTHD_HEAD == connection->rq.http_mthd) ||
        (MHD_HTTP_OK > status_code) ||
        (MHD_HTTP_NO_CONTENT == status_code) ||
        (MHD_HTTP_NOT_MODIFIED == status_code) )
@@ -5754,7 +5748,7 @@ MHD_queue_response (struct MHD_Connection *connection,
        further requests! */
     connection->discard_request = true;
     connection->state = MHD_CONNECTION_START_REPLY;
-    connection->remaining_upload_size = 0;
+    connection->rq.remaining_upload_size = 0;
   }
   if (! connection->in_idle)
     (void) MHD_connection_handle_idle (connection);

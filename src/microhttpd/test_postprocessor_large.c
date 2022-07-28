@@ -77,7 +77,7 @@ test_simple_large (void)
   data[sizeof (data) - 1] = '\0';
   memset (&connection, 0, sizeof (struct MHD_Connection));
   memset (&header, 0, sizeof (struct MHD_HTTP_Res_Header));
-  connection.headers_received = &header;
+  connection.rq.headers_received = &header;
   header.header = MHD_HTTP_HEADER_CONTENT_TYPE;
   header.value = MHD_HTTP_POST_ENCODING_FORM_URLENCODED;
   header.header_size = strlen (header.header);
