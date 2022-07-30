@@ -62,6 +62,10 @@
 #include "mhd_locks.h"
 #include "mhd_sockets.h"
 #include "mhd_itc_types.h"
+#if defined(BAUTH_SUPPORT) || defined(DAUTH_SUPPORT)
+#include "gen_auth.h"
+#endif /* BAUTH_SUPPORT || DAUTH_SUPPORT*/
+
 
 /**
  * Macro to drop 'const' qualifier from pointer without compiler warning.
@@ -786,8 +790,6 @@ typedef ssize_t
                      size_t max_bytes);
 
 
-struct MHD_AuthRqHeader; /* Forward declaration only */
-
 /**
  * Ability to use same connection for next request
  */
@@ -1020,6 +1022,33 @@ struct MHD_Request
    */
   bool client_aware;
 
+#ifdef BAUTH_SUPPORT
+  /**
+   * Basic Authorization parameters.
+   * The result of Basic Authorization header parsing.
+   * Allocated in the connection's pool.
+   */
+  const struct MHD_RqBAuth *bauth;
+
+  /**
+   * Set to true if current request headers are checked for Basic Authorization
+   */
+  bool bauth_tried;
+#endif /* BAUTH_SUPPORT */
+#ifdef DAUTH_SUPPORT
+  /**
+   * Digest Authorization parameters.
+   * The result of Digest Authorization header parsing.
+   * Allocated in the connection's pool.
+   */
+  const struct MHD_RqDAuth *dauth;
+
+  /**
+   * Set to true if current request headers are checked for Digest Authorization
+   */
+  bool dauth_tried;
+#endif /* DAUTH_SUPPORT */
+
   /**
    * Last incomplete header line during parsing of headers.
    * Allocated in pool.  Only valid if state is
@@ -1182,14 +1211,6 @@ struct MHD_Connection
    * also accessible via #MHD_CONNECTION_INFO_SOCKET_CONTEXT.
    */
   void *socket_context;
-
-#if defined(BAUTH_SUPPORT) || defined(DAUTH_SUPPORT)
-  /**
-   * Pointer to request authorization structure.
-   * Allocated in pool.
-   */
-  const struct MHD_AuthRqHeader *rq_auth;
-#endif
 
   /**
    * Close connection after sending response?

@@ -120,54 +120,6 @@ _mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 
 /* Local replacements implementations */
 
-/**
- * Parameters for function emulation
- */
-struct TestArguments
-{
-  const char *str;
-  size_t len;
-  enum MHD_Result res;
-};
-
-
-_MHD_EXTERN enum MHD_Result
-MHD_lookup_connection_value_n (struct MHD_Connection *connection,
-                               enum MHD_ValueKind kind,
-                               const char *key,
-                               size_t key_size,
-                               const char **value_ptr,
-                               size_t *value_size_ptr)
-{
-  struct TestArguments *args;
-  if (NULL == connection)
-    mhdErrorExitDesc ("The 'connection' parameter is NULL");
-  if (MHD_HEADER_KIND != kind)
-    mhdErrorExitDesc ("Wrong 'kind' parameter");
-  if (NULL == key)
-    mhdErrorExitDesc ("The 'key' parameter is NULL");
-  if (0 != strcmp (key, MHD_HTTP_HEADER_AUTHORIZATION))
-    mhdErrorExitDesc ("Wrong 'key' value");
-  if (MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_AUTHORIZATION) != key_size)
-    mhdErrorExitDesc ("Wrong 'key_size' value");
-  if (NULL == value_ptr)
-    mhdErrorExitDesc ("The 'value_ptr' parameter is NULL");
-  if (NULL == value_size_ptr)
-    mhdErrorExitDesc ("The 'value_size_ptr' parameter is NULL");
-
-  if (NULL == connection->rq.client_context)
-    externalErrorExitDesc ("The 'connection->client_context' value is NULL");
-
-  args = (struct TestArguments *) connection->rq.client_context;
-  if (MHD_NO == args->res)
-    return args->res;
-
-  *value_ptr = args->str;
-  *value_size_ptr = args->len;
-  return args->res;
-}
-
-
 void *
 MHD_connection_alloc_memory_ (struct MHD_Connection *connection,
                               size_t size)
@@ -188,118 +140,257 @@ MHD_connection_alloc_memory_ (struct MHD_Connection *connection,
 }
 
 
-_MHD_NORETURN void
+/**
+ * Static variable to avoid additional malloc()/free() pairs
+ */
+static struct MHD_Connection conn;
+
+void
 MHD_DLOG (const struct MHD_Daemon *daemon,
           const char *format,
           ...)
 {
   (void) daemon;
-  fprintf (stderr, "Unexpected call of 'MHD_LOG(), format is '%s'.\n", format);
-  mhdErrorExit ();
+  if (NULL == conn.rq.last)
+  {
+    fprintf (stderr, "Unexpected call of 'MHD_LOG(), format is '%s'.\n",
+             format);
+    fprintf (stderr, "'Authorization' header value: '%s'.\n",
+             (NULL == conn.rq.headers_received) ?
+             "NULL" : (conn.rq.headers_received->value));
+    mhdErrorExit ();
+  }
+  conn.rq.last = NULL; /* Clear the flag */
+  return;
 }
 
 
 /**
  * Static variable to avoid additional malloc()/free() pairs
  */
-static struct MHD_Connection conn;
+static struct MHD_HTTP_Req_Header req_header;
+
+static void
+test_global_init (void)
+{
+  memset (&conn, 0, sizeof(conn));
+  memset (&req_header, 0, sizeof(req_header));
+}
+
 
 /**
- * Create test "Authorization" client header and return result of its parsing.
+ * Add "Authorization" client test header.
  *
- * Function performs basic checking of the parsing result
- * @param use_hdr if set to non-zero value, the test header is added,
- *                if set to zero value, emulated absence "Authorization" client
- *                header
- * @param hdr the test "Authorization" client header string, must be statically
- *                allocated.
+ * @param hdr the pointer to the headr value, must be valid until end of
+ *            checking of this header
  * @param hdr_len the length of the @a hdr
- * @return result of @a hdr parsing (or parsing of header absence if @a use_hdr
- *         is not set), never NULL. Must be free()'ed.
  * @note The function is NOT thread-safe
  */
-static const struct MHD_AuthRqHeader *
-get_AuthRqHeader (int use_hdr, const char *hdr, size_t hdr_len)
+static void
+add_AuthHeader (const char *hdr, size_t hdr_len)
 {
-  const struct MHD_AuthRqHeader *res1;
-  const struct MHD_AuthRqHeader *res2;
-  static struct TestArguments test_args;
-  if (NULL != conn.socket_context)
-    mhdErrorExitDesc ("Memory was not freed in previous check cycle");
-  test_args.res = use_hdr ? MHD_YES : MHD_NO;
-  test_args.str = hdr;
-  test_args.len = hdr_len;
-  memset (&conn, 0, sizeof (conn));
+  if ((NULL != conn.rq.headers_received) ||
+      (NULL != conn.rq.headers_received_tail))
+    externalErrorExitDesc ("Connection's test headers are not empty already");
+  if (NULL != hdr)
+  {
+    /* Skip initial whitespaces, emulate MHD's headers processing */
+    while (' ' == hdr[0] || '\t' == hdr[0])
+    {
+      hdr++;
+      hdr_len--;
+    }
+    req_header.header = MHD_HTTP_HEADER_AUTHORIZATION; /* Static string */
+    req_header.header_size = MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_AUTHORIZATION);
+    req_header.value = hdr;
+    req_header.value_size = hdr_len;
+    req_header.kind = MHD_HEADER_KIND;
+    req_header.prev = NULL;
+    req_header.next = NULL;
+    conn.rq.headers_received = &req_header;
+    conn.rq.headers_received_tail = &req_header;
+  }
+  else
+  {
+    conn.rq.headers_received = NULL;
+    conn.rq.headers_received_tail = NULL;
+  }
+  conn.state = MHD_CONNECTION_FULL_REQ_RECEIVED; /* Should be a typical value */
+}
+
+
+#ifdef BAUTH_SUPPORT
+/**
+ * Parse previously added Basic Authorization client header and return
+ * result of the parsing.
+ *
+ * Function performs basic checking of the parsing result
+ * @return result of header parsing
+ * @note The function is NOT thread-safe
+ */
+static const struct MHD_RqBAuth *
+get_BAuthRqParams (void)
+{
+  const struct MHD_RqBAuth *res1;
+  const struct MHD_RqBAuth *res2;
   /* Store pointer in some member unused in this test */
-  conn.rq.client_context = &test_args;
-  conn.state = MHD_CONNECTION_FULL_REQ_RECEIVED; /* Should be typical value */
-  res1 = MHD_get_auth_rq_params_ (&conn);
-  if (NULL == res1)
-    mhdErrorExitDesc ("MHD_get_auth_rq_params_() returned NULL");
-  res2 = MHD_get_auth_rq_params_ (&conn);
+  res1 = MHD_get_rq_bauth_params_ (&conn);
+  if (! conn.rq.bauth_tried)
+    mhdErrorExitDesc ("'rq.bauth_tried' is not set");
+  res2 = MHD_get_rq_bauth_params_ (&conn);
   if (res1 != res2)
-    mhdErrorExitDesc ("MHD_get_auth_rq_params_() returned another pointer when" \
-                      "called for the second time");
+    mhdErrorExitDesc ("MHD_get_rq_bauth_params_() returned another pointer " \
+                      "when called for the second time");
   return res2;
 }
 
 
+#endif /* BAUTH_SUPPORT */
+
+#ifdef DAUTH_SUPPORT
+/**
+ * Parse previously added Digest Authorization client header and return
+ * result of the parsing.
+ *
+ * Function performs basic checking of the parsing result
+ * @return result of header parsing
+ * @note The function is NOT thread-safe
+ */
+static const struct MHD_RqDAuth *
+get_DAuthRqParams (void)
+{
+  const struct MHD_RqDAuth *res1;
+  const struct MHD_RqDAuth *res2;
+  /* Store pointer in some member unused in this test */
+  res1 = MHD_get_rq_dauth_params_ (&conn);
+  if (! conn.rq.dauth_tried)
+    mhdErrorExitDesc ("'rq.dauth_tried' is not set");
+  res2 = MHD_get_rq_dauth_params_ (&conn);
+  if (res1 != res2)
+    mhdErrorExitDesc ("MHD_get_rq_bauth_params_() returned another pointer " \
+                      "when called for the second time");
+  return res2;
+}
+
+
+#endif /* DAUTH_SUPPORT */
+
+
 static void
-free_AuthRqHeader (void)
+clean_AuthHeaders (void)
 {
-  if (conn.socket_context != conn.rq_auth)
+  conn.state = MHD_CONNECTION_INIT;
+  free (conn.socket_context);
+
+#ifdef BAUTH_SUPPORT
+  conn.rq.bauth_tried = false;
+#endif /* BAUTH_SUPPORT */
+#ifdef DAUTH_SUPPORT
+  conn.rq.dauth_tried = false;
+#endif /* BAUTH_SUPPORT */
+
+#ifdef BAUTH_SUPPORT
+  if ((NULL != conn.rq.bauth) && (conn.socket_context != conn.rq.bauth))
     externalErrorExitDesc ("Memory allocation is not tracked as it should be");
+  conn.rq.bauth = NULL;
+#endif /* BAUTH_SUPPORT */
+#ifdef DAUTH_SUPPORT
+  if ((NULL != conn.rq.dauth) && (conn.socket_context != conn.rq.dauth))
+    externalErrorExitDesc ("Memory allocation is not tracked as it should be");
+  conn.rq.dauth = NULL;
+#endif /* BAUTH_SUPPORT */
 
-  if (NULL != conn.rq_auth)
-    free (conn.socket_context);
-  conn.rq_auth = NULL;
+  conn.rq.headers_received = NULL;
+  conn.rq.headers_received_tail = NULL;
+
   conn.socket_context = NULL;
+  conn.rq.last = NULL;
 }
 
 
-static const char *
-get_auth_type_str (enum MHD_AuthType type)
+enum MHD_TestAuthType
 {
-  switch (type)
-  {
-  case MHD_AUTHTYPE_NONE:
-    return "No authorisation";
-  case MHD_AUTHTYPE_BASIC:
-    return "Basic Authorisation";
-  case MHD_AUTHTYPE_DIGEST:
-    return "Digest Authorisation";
-  case MHD_AUTHTYPE_UNKNOWN:
-    return "Unknown/Unsupported authorisation";
-  case MHD_AUTHTYPE_INVALID:
-    return "Wrong/broken authorisation header";
-  default:
-    mhdErrorExitDesc ("Wrong 'enum MHD_AuthType' value");
-  }
-  return "Wrong 'enum MHD_AuthType' value"; /* Unreachable code */
-}
+  MHD_TEST_AUTHTYPE_NONE,
+  MHD_TEST_AUTHTYPE_BASIC,
+  MHD_TEST_AUTHTYPE_DIGEST,
+};
 
 
-/* return zero if succeed, 1 otherwise */
+/* return zero if succeed, non-zero otherwise */
 static unsigned int
-expect_result_type_n (int use_hdr, const char *hdr, size_t hdr_len,
-                      const enum MHD_AuthType expected_type,
+expect_result_type_n (const char *hdr, size_t hdr_len,
+                      const enum MHD_TestAuthType expected_type,
+                      int expect_log,
                       unsigned int line_num)
 {
-  const struct MHD_AuthRqHeader *h;
+  static char marker1[] = "Expected log call";
   unsigned int ret;
 
-  h = get_AuthRqHeader (use_hdr, hdr, hdr_len);
-  mhd_assert (NULL != h);
-  if (expected_type == h->auth_type)
-    ret = 0;
+  ret = 0;
+  add_AuthHeader (hdr, hdr_len);
+  if (expect_log)
+    conn.rq.last = marker1; /* Use like a flag */
   else
+    conn.rq.last = NULL;
+#ifdef BAUTH_SUPPORT
+  if (MHD_TEST_AUTHTYPE_BASIC == expected_type)
+  {
+    if (NULL == get_BAuthRqParams ())
+    {
+      fprintf (stderr,
+               "'Authorization' header parsing FAILED:\n"
+               "Basic Authorization was not found, while it should be.\n");
+      ret++;
+    }
+  }
+  else
+#endif /* BAUTH_SUPPORT */
+#ifdef DAUTH_SUPPORT
+  if (MHD_TEST_AUTHTYPE_DIGEST == expected_type)
+  {
+    if (NULL == get_DAuthRqParams ())
+    {
+      fprintf (stderr,
+               "'Authorization' header parsing FAILED:\n"
+               "Digest Authorization was not found, while it should be.\n");
+      ret++;
+    }
+  }
+  else
+#endif /* BAUTH_SUPPORT */
+  {
+#ifdef BAUTH_SUPPORT
+    if (NULL != get_BAuthRqParams ())
+    {
+      fprintf (stderr,
+               "'Authorization' header parsing FAILED:\n"
+               "Found Basic Authorization, while it should not be.\n");
+      ret++;
+    }
+#endif /* BAUTH_SUPPORT */
+#ifdef DAUTH_SUPPORT
+    if (NULL != get_DAuthRqParams ())
+    {
+      fprintf (stderr,
+               "'Authorization' header parsing FAILED:\n"
+               "Found Digest Authorization, while it should not be.\n");
+      ret++;
+    }
+#endif /* DAUTH_SUPPORT */
+  }
+#if defined(BAUTH_SUPPORT) && defined(DAUTH_SUPPORT)
+  if (conn.rq.last)
   {
     fprintf (stderr,
-             "'Authorization' header parsing FAILED:\n"
-             "Wrong type:\tRESULT: %s\tEXPECTED: %s\n",
-             get_auth_type_str (h->auth_type),
-             get_auth_type_str (expected_type));
-    if (! use_hdr)
+             "'Authorization' header parsing ERROR:\n"
+             "Log function must be called, but it was not.\n");
+    ret++;
+  }
+#endif /* BAUTH_SUPPORT && DAUTH_SUPPORT */
+
+  if (ret)
+  {
+    if (NULL == hdr)
       fprintf (stderr,
                "Input: Absence of 'Authorization' header.\n");
     else if (0 == hdr_len)
@@ -312,30 +403,14 @@ expect_result_type_n (int use_hdr, const char *hdr, size_t hdr_len,
              "The check is at line: %u\n\n", line_num);
     ret = 1;
   }
-  free_AuthRqHeader ();
+  clean_AuthHeaders ();
 
   return ret;
 }
 
 
-#define expect_result_type(u,h,t) \
-    expect_result_type_n(u,h,MHD_STATICSTR_LEN_(h),t,__LINE__)
-
-
-#ifdef BAUTH_SUPPORT
-#define EXPECT_TYPE_FOR_BASIC_AUTH MHD_AUTHTYPE_BASIC
-#define EXPECT_TYPE_FOR_BASIC_INVLD MHD_AUTHTYPE_INVALID
-#else  /* ! BAUTH_SUPPORT */
-#define EXPECT_TYPE_FOR_BASIC_AUTH MHD_AUTHTYPE_UNKNOWN
-#define EXPECT_TYPE_FOR_BASIC_INVLD MHD_AUTHTYPE_UNKNOWN
-#endif /* ! BAUTH_SUPPORT */
-#ifdef DAUTH_SUPPORT
-#define EXPECT_TYPE_FOR_DIGEST_AUTH MHD_AUTHTYPE_DIGEST
-#define EXPECT_TYPE_FOR_DIGEST_INVLD MHD_AUTHTYPE_INVALID
-#else  /* ! DAUTH_SUPPORT */
-#define EXPECT_TYPE_FOR_DIGEST_AUTH MHD_AUTHTYPE_UNKNOWN
-#define EXPECT_TYPE_FOR_DIGEST_INVLD MHD_AUTHTYPE_UNKNOWN
-#endif /* ! DAUTH_SUPPORT */
+#define expect_result_type(h,t,l) \
+    expect_result_type_n(h,MHD_STATICSTR_LEN_(h),t,l,__LINE__)
 
 
 static unsigned int
@@ -343,378 +418,378 @@ check_type (void)
 {
   unsigned int r = 0; /**< The number of errors */
 
-  r += expect_result_type (0, "", MHD_AUTHTYPE_NONE);
+  r += expect_result_type_n (NULL, 0, MHD_TEST_AUTHTYPE_NONE, 0, __LINE__);
 
-  r += expect_result_type (1, "", MHD_AUTHTYPE_INVALID);
-  r += expect_result_type (1, " ", MHD_AUTHTYPE_INVALID);
-  r += expect_result_type (1, "    ", MHD_AUTHTYPE_INVALID);
-  r += expect_result_type (1, "\t", MHD_AUTHTYPE_INVALID);
-  r += expect_result_type (1, " \t", MHD_AUTHTYPE_INVALID);
-  r += expect_result_type (1, "\t ", MHD_AUTHTYPE_INVALID);
-  r += expect_result_type (1, "\t \t", MHD_AUTHTYPE_INVALID);
-  r += expect_result_type (1, " \t ", MHD_AUTHTYPE_INVALID);
-  r += expect_result_type (1, " \t \t", MHD_AUTHTYPE_INVALID);
-  r += expect_result_type (1, "\t \t ", MHD_AUTHTYPE_INVALID);
+  r += expect_result_type ("", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" ", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("    ", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("\t", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" \t", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("\t ", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("\t \t", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" \t ", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" \t \t", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("\t \t ", MHD_TEST_AUTHTYPE_NONE, 0);
 
-  r += expect_result_type (1, "Basic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, " Basic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\tBasic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t Basic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, " \tBasic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "    Basic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t\t\tBasic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t\t  \tBasic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t\t  \t Basic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "Basic ", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "Basic \t", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "Basic \t ", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "Basic 123", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "Basic \t123", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "Basic  abc ", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "bAsIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, " bAsIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\tbAsIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t bAsIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, " \tbAsIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "    bAsIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t\t\tbAsIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t\t  \tbAsIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t\t  \t bAsIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "bAsIC ", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "bAsIC \t", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "bAsIC \t ", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "bAsIC 123", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "bAsIC \t123", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "bAsIC  abc ", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "basic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, " basic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\tbasic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t basic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, " \tbasic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "    basic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t\t\tbasic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t\t  \tbasic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t\t  \t basic", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "basic ", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "basic \t", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "basic \t ", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "basic 123", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "basic \t123", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "basic  abc ", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "BASIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, " BASIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\tBASIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t BASIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, " \tBASIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "    BASIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t\t\tBASIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t\t  \tBASIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "\t\t  \t BASIC", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "BASIC ", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "BASIC \t", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "BASIC \t ", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "BASIC 123", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "BASIC \t123", EXPECT_TYPE_FOR_BASIC_AUTH);
-  r += expect_result_type (1, "BASIC  abc ", EXPECT_TYPE_FOR_BASIC_AUTH);
+  r += expect_result_type ("Basic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type (" Basic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\tBasic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t Basic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type (" \tBasic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("    Basic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t\t\tBasic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t\t  \tBasic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t\t  \t Basic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("Basic ", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("Basic \t", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("Basic \t ", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("Basic 123", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("Basic \t123", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("Basic  abc ", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("bAsIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type (" bAsIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\tbAsIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t bAsIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type (" \tbAsIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("    bAsIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t\t\tbAsIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t\t  \tbAsIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t\t  \t bAsIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("bAsIC ", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("bAsIC \t", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("bAsIC \t ", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("bAsIC 123", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("bAsIC \t123", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("bAsIC  abc ", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("basic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type (" basic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\tbasic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t basic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type (" \tbasic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("    basic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t\t\tbasic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t\t  \tbasic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t\t  \t basic", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("basic ", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("basic \t", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("basic \t ", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("basic 123", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("basic \t123", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("basic  abc ", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("BASIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type (" BASIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\tBASIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t BASIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type (" \tBASIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("    BASIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t\t\tBASIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t\t  \tBASIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("\t\t  \t BASIC", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("BASIC ", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("BASIC \t", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("BASIC \t ", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("BASIC 123", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("BASIC \t123", MHD_TEST_AUTHTYPE_BASIC, 0);
+  r += expect_result_type ("BASIC  abc ", MHD_TEST_AUTHTYPE_BASIC, 0);
   /* Only single token is allowed for 'Basic' Authorization */
-  r += expect_result_type (1, "Basic a b", EXPECT_TYPE_FOR_BASIC_INVLD);
-  r += expect_result_type (1, "Basic a\tb", EXPECT_TYPE_FOR_BASIC_INVLD);
-  r += expect_result_type (1, "Basic a\tb", EXPECT_TYPE_FOR_BASIC_INVLD);
-  r += expect_result_type (1, "Basic abc1 b", EXPECT_TYPE_FOR_BASIC_INVLD);
-  r += expect_result_type (1, "Basic c abc1", EXPECT_TYPE_FOR_BASIC_INVLD);
-  r += expect_result_type (1, "Basic c abc1 ", EXPECT_TYPE_FOR_BASIC_INVLD);
-  r += expect_result_type (1, "Basic c abc1\t", EXPECT_TYPE_FOR_BASIC_INVLD);
-  r += expect_result_type (1, "Basic c\tabc1\t", EXPECT_TYPE_FOR_BASIC_INVLD);
-  r += expect_result_type (1, "Basic c abc1 b", EXPECT_TYPE_FOR_BASIC_INVLD);
-  r += expect_result_type (1, "Basic zyx, b", EXPECT_TYPE_FOR_BASIC_INVLD);
-  r += expect_result_type (1, "Basic zyx,b", EXPECT_TYPE_FOR_BASIC_INVLD);
-  r += expect_result_type (1, "Basic zyx ,b", EXPECT_TYPE_FOR_BASIC_INVLD);
-  r += expect_result_type (1, "Basic zyx;b", EXPECT_TYPE_FOR_BASIC_INVLD);
-  r += expect_result_type (1, "Basic zyx; b", EXPECT_TYPE_FOR_BASIC_INVLD);
+  r += expect_result_type ("Basic a b", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Basic a\tb", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Basic a\tb", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Basic abc1 b", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Basic c abc1", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Basic c abc1 ", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Basic c abc1\t", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Basic c\tabc1\t", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Basic c abc1 b", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Basic zyx, b", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Basic zyx,b", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Basic zyx ,b", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Basic zyx;b", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Basic zyx; b", MHD_TEST_AUTHTYPE_NONE, 1);
 
-  r += expect_result_type (1, "Basic2", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, " Basic2", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, " Basic2 ", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "\tBasic2", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "\t Basic2", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, " \tBasic2", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "    Basic2", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "\t\t\tBasic2", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "\t\t  \tBasic2", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "\t\t  \t Basic2", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "Basic2 ", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "Basic2 \t", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "Basic2 \t ", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "Basic2 123", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "Basic2 \t123", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "Basic2  abc ", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "BasicBasic", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, " BasicBasic", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "\tBasicBasic", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "\t BasicBasic", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, " \tBasicBasic", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "BasicBasic ", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "BasicBasic \t", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "BasicBasic \t\t", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "BasicDigest", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, " BasicDigest", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "BasicDigest ", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "Basic\0", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "\0" "Basic", MHD_AUTHTYPE_UNKNOWN);
+  r += expect_result_type ("Basic2", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" Basic2", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" Basic2 ", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("\tBasic2", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("\t Basic2", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" \tBasic2", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("    Basic2", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("\t\t\tBasic2", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("\t\t  \tBasic2", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("\t\t  \t Basic2", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("Basic2 ", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("Basic2 \t", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("Basic2 \t ", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("Basic2 123", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("Basic2 \t123", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("Basic2  abc ", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("BasicBasic", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" BasicBasic", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("\tBasicBasic", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("\t BasicBasic", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" \tBasicBasic", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("BasicBasic ", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("BasicBasic \t", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("BasicBasic \t\t", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("BasicDigest", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" BasicDigest", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("BasicDigest ", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("Basic\0", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("\0" "Basic", MHD_TEST_AUTHTYPE_NONE, 0);
 
-  r += expect_result_type (1, "Digest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, " Digest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\tDigest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t Digest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, " \tDigest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "    Digest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t\t\tDigest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t\t  \tDigest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t\t  \t Digest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest \t", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest \t ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\tDigest ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "  Digest \t", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t \tDigest \t ", EXPECT_TYPE_FOR_DIGEST_AUTH);
+  r += expect_result_type ("Digest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type (" Digest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\tDigest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t Digest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type (" \tDigest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("    Digest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t\t\tDigest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t\t  \tDigest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t\t  \t Digest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest \t", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest \t ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\tDigest ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("  Digest \t", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t \tDigest \t ", MHD_TEST_AUTHTYPE_DIGEST, 0);
 
-  r += expect_result_type (1, "digEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, " digEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\tdigEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t digEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, " \tdigEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "    digEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t\t\tdigEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t\t  \tdigEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t\t  \t digEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "digEST ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "digEST \t", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "digEST \t ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\tdigEST ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "  digEST \t", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t \tdigEST \t ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "digest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, " digest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\tdigest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t digest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, " \tdigest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "    digest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t\t\tdigest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t\t  \tdigest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t\t  \t digest", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "digest ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "digest \t", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "digest \t ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\tdigest ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "  digest \t", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t \tdigest \t ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "DIGEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, " DIGEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\tDIGEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t DIGEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, " \tDIGEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "    DIGEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t\t\tDIGEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t\t  \tDIGEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t\t  \t DIGEST", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "DIGEST ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "DIGEST \t", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "DIGEST \t ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\tDIGEST ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "  DIGEST \t", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "\t \tDIGEST \t ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest ,", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest ,\t", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest ,  ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest   ,  ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest ,\t, ,\t, ,\t, ,", \
-                           EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest ,\t,\t,\t,\t,\t,\t,", \
-                           EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest a=b", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest a=\"b\"", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest nc=1", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest nc=\"1\"", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest a=b ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest a=\"b\" ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest nc=1 ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest nc=\"1\" ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest a = b", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest a\t=\t\"b\"", \
-                           EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest nc =1", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest nc= \"1\"", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest a=\tb ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest a = \"b\" ", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest nc\t\t\t= 1 ", \
-                           EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest nc   =\t\t\t\"1\" ", \
-                           EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest nc =1,,,,", EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest nc =1  ,,,,", \
-                           EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest ,,,,nc= \"1 \"", \
-                           EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest ,,,,  nc= \" 1\"", \
-                           EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest ,,,, nc= \"1\",,,,", \
-                           EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest ,,,, nc= \"1\"  ,,,,", \
-                           EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest ,,,, nc= \"1\"  ,,,,", \
-                           EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest ,,,, nc= \"1\"  ,,,,", \
-                           EXPECT_TYPE_FOR_DIGEST_AUTH);
-  r += expect_result_type (1, "Digest ,,,, nc= \"1\"  ,,,,,", \
-                           EXPECT_TYPE_FOR_DIGEST_AUTH);
+  r += expect_result_type ("digEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type (" digEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\tdigEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t digEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type (" \tdigEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("    digEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t\t\tdigEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t\t  \tdigEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t\t  \t digEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("digEST ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("digEST \t", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("digEST \t ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\tdigEST ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("  digEST \t", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t \tdigEST \t ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("digest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type (" digest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\tdigest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t digest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type (" \tdigest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("    digest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t\t\tdigest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t\t  \tdigest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t\t  \t digest", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("digest ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("digest \t", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("digest \t ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\tdigest ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("  digest \t", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t \tdigest \t ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("DIGEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type (" DIGEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\tDIGEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t DIGEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type (" \tDIGEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("    DIGEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t\t\tDIGEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t\t  \tDIGEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t\t  \t DIGEST", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("DIGEST ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("DIGEST \t", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("DIGEST \t ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\tDIGEST ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("  DIGEST \t", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("\t \tDIGEST \t ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest ,", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest ,\t", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest ,  ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest   ,  ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest ,\t, ,\t, ,\t, ,", \
+                           MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest ,\t,\t,\t,\t,\t,\t,", \
+                           MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest a=b", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest a=\"b\"", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest nc=1", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest nc=\"1\"", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest a=b ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest a=\"b\" ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest nc=1 ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest nc=\"1\" ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest a = b", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest a\t=\t\"b\"", \
+                           MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest nc =1", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest nc= \"1\"", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest a=\tb ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest a = \"b\" ", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest nc\t\t\t= 1 ", \
+                           MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest nc   =\t\t\t\"1\" ", \
+                           MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest nc =1,,,,", MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest nc =1  ,,,,", \
+                           MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest ,,,,nc= \"1 \"", \
+                           MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest ,,,,  nc= \" 1\"", \
+                           MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest ,,,, nc= \"1\",,,,", \
+                           MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest ,,,, nc= \"1\"  ,,,,", \
+                           MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest ,,,, nc= \"1\"  ,,,,", \
+                           MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest ,,,, nc= \"1\"  ,,,,", \
+                           MHD_TEST_AUTHTYPE_DIGEST, 0);
+  r += expect_result_type ("Digest ,,,, nc= \"1\"  ,,,,,", \
+                           MHD_TEST_AUTHTYPE_DIGEST, 0);
 
-  r += expect_result_type (1, "Digest nc", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest   nc", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc  ", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc  ,", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc  , ", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest \tnc\t  ", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest \tnc\t  ", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc,", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc,uri", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=1,uri", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=1,uri   ", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=1,uri,", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=1, uri,", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=1,uri   ,", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=1,uri   , ", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type ("Digest nc", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest   nc", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc  ", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc  ,", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc  , ", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest \tnc\t  ", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest \tnc\t  ", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc,", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc,uri", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=1,uri", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=1,uri   ", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=1,uri,", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=1, uri,", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=1,uri   ,", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=1,uri   , ", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
   /* Binary zero */
-  r += expect_result_type (1, "Digest nc=1\0", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=1\0" " ", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=1\t\0", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=\0" "1", EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type ("Digest nc=1\0", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=1\0" " ", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=1\t\0", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=\0" "1", MHD_TEST_AUTHTYPE_NONE, 1);
   /* Semicolon */
-  r += expect_result_type (1, "Digest nc=1;", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=1; ", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=;1", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc;=1", EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type ("Digest nc=1;", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=1; ", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=;1", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc;=1", MHD_TEST_AUTHTYPE_NONE, 1);
   /* The equal sign alone */
-  r += expect_result_type (1, "Digest =", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest   =", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest   =  ", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest ,=", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest , =", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest ,= ", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest , = ", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=1,=", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=1, =", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=bar,=", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=bar, =", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type ("Digest =", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest   =", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest   =  ", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest ,=", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest , =", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest ,= ", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest , = ", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=1,=", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=1, =", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=bar,=", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=bar, =", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
   /* Unclosed quotation */
-  r += expect_result_type (1, "Digest nc=\"", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=\"abc", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=\"   ", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=\"abc   ", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=\"   abc", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=\"   abc", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=\"\\", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=\"\\\"", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=\"  \\\"", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=\"\\\"  ", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=\"  \\\"  ", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc=\"\\\"\\\"\\\"\\\"", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc= \"", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc= \"abc", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc= \"   ", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc= \"abc   ", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc= \"   abc", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc= \"   abc", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc= \"\\", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc= \"\\\"", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc= \"  \\\"", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc= \"\\\"  ", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc= \"  \\\"  ", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest nc= \"\\\"\\\"\\\"\\\"", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=\"", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=\"bar", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=\"   ", EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=\"bar   ", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=\"   bar", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=\"   bar", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo= \"   bar", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=\",   bar", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=\"   bar,", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=\"\\\"", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=\"  \\\"", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=\"\\\"  ", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=\"  \\\"  ", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest foo=\"\\\"\\\"\\\"\\\"", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+  r += expect_result_type ("Digest nc=\"", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=\"abc", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=\"   ", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=\"abc   ", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=\"   abc", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=\"   abc", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=\"\\", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=\"\\\"", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=\"  \\\"", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=\"\\\"  ", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=\"  \\\"  ", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc=\"\\\"\\\"\\\"\\\"", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc= \"", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc= \"abc", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc= \"   ", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc= \"abc   ", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc= \"   abc", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc= \"   abc", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc= \"\\", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc= \"\\\"", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc= \"  \\\"", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc= \"\\\"  ", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc= \"  \\\"  ", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest nc= \"\\\"\\\"\\\"\\\"", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=\"", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=\"bar", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=\"   ", MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=\"bar   ", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=\"   bar", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=\"   bar", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo= \"   bar", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=\",   bar", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=\"   bar,", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=\"\\\"", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=\"  \\\"", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=\"\\\"  ", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=\"  \\\"  ", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest foo=\"\\\"\\\"\\\"\\\"", \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
   /* Full set of parameters with semicolon inside */
-  r += expect_result_type (1, "Digest username=\"test@example.com\", " \
+  r += expect_result_type ("Digest username=\"test@example.com\", " \
                            "realm=\"users@example.com\", nonce=\"32141232413abcde\", " \
                            "uri=\"/example\", qop=auth, nc=00000001; cnonce=\"0a4f113b\", " \
                            "response=\"6629fae49393a05397450978507c4ef1\", " \
                            "opaque=\"sadfljk32sdaf\"", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest username=\"test@example.com\", " \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest username=\"test@example.com\", " \
                            "realm=\"users@example.com\", nonce=\"32141232413abcde\", " \
                            "uri=\"/example\", qop=auth, nc=00000001;cnonce=\"0a4f113b\", " \
                            "response=\"6629fae49393a05397450978507c4ef1\", " \
                            "opaque=\"sadfljk32sdaf\"", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
-  r += expect_result_type (1, "Digest username;=\"test@example.com\", " \
+                           MHD_TEST_AUTHTYPE_NONE, 1);
+  r += expect_result_type ("Digest username;=\"test@example.com\", " \
                            "realm=\"users@example.com\", nonce=\"32141232413abcde\", " \
                            "uri=\"/example\", qop=auth, nc=00000001, cnonce=\"0a4f113b\", " \
                            "response=\"6629fae49393a05397450978507c4ef1\", " \
                            "opaque=\"sadfljk32sdaf\"", \
-                           EXPECT_TYPE_FOR_DIGEST_INVLD);
+                           MHD_TEST_AUTHTYPE_NONE, 1);
 
-  r += expect_result_type (1, "Digest2", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "2Digest", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "Digest" "a", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "a" "Digest", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, " Digest2", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, " 2Digest", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, " Digest" "a", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, " a" "Digest", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "Digest2 ", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "2Digest ", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "Digest" "a", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "a" "Digest ", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "DigestBasic", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "DigestBasic ", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, " DigestBasic", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "DigestBasic" "a", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "Digest" "\0", MHD_AUTHTYPE_UNKNOWN);
-  r += expect_result_type (1, "\0" "Digest", MHD_AUTHTYPE_UNKNOWN);
+  r += expect_result_type ("Digest2", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("2Digest", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("Digest" "a", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("a" "Digest", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" Digest2", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" 2Digest", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" Digest" "a", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" a" "Digest", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("Digest2 ", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("2Digest ", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("Digest" "a", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("a" "Digest ", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("DigestBasic", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("DigestBasic ", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type (" DigestBasic", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("DigestBasic" "a", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("Digest" "\0", MHD_TEST_AUTHTYPE_NONE, 0);
+  r += expect_result_type ("\0" "Digest", MHD_TEST_AUTHTYPE_NONE, 0);
   return r;
 }
 
@@ -727,51 +802,39 @@ expect_basic_n (const char *hdr, size_t hdr_len,
                 const char *tkn, size_t tkn_len,
                 unsigned int line_num)
 {
-  const struct MHD_AuthRqHeader *h;
+  const struct MHD_RqBAuth *h;
   unsigned int ret;
 
   mhd_assert (NULL != hdr);
   mhd_assert (0 != hdr_len);
 
-  h = get_AuthRqHeader (1, hdr, hdr_len);
-  mhd_assert (NULL != h);
-  if (MHD_AUTHTYPE_BASIC != h->auth_type)
-  {
+  add_AuthHeader (hdr, hdr_len);
+  h = get_BAuthRqParams ();
+  if (NULL == h)
+    mhdErrorExitDesc ("'MHD_get_rq_bauth_params_()' returned NULL");
+  ret = 1;
+  if (tkn_len != h->token68.len)
     fprintf (stderr,
              "'Authorization' header parsing FAILED:\n"
-             "Wrong type:\tRESULT: %s\tEXPECTED: %s\n",
-             get_auth_type_str (h->auth_type),
-             get_auth_type_str (MHD_AUTHTYPE_BASIC));
-    ret = 1;
-  }
+             "Wrong token length:\tRESULT[%u]: %.*s\tEXPECTED[%u]: %.*s\n",
+             (unsigned) h->token68.len,
+             (int) h->token68.len,
+             h->token68.str ?
+             h->token68.str : "(NULL)",
+             (unsigned) tkn_len, (int) tkn_len, tkn ? tkn : "(NULL)");
+  else if ( ((NULL == tkn) != (NULL == h->token68.str)) ||
+            ((NULL != tkn) &&
+             (0 != memcmp (tkn, h->token68.str, tkn_len))) )
+    fprintf (stderr,
+             "'Authorization' header parsing FAILED:\n"
+             "Wrong token string:\tRESULT[%u]: %.*s\tEXPECTED[%u]: %.*s\n",
+             (unsigned) h->token68.len,
+             (int) h->token68.len,
+             h->token68.str ?
+             h->token68.str : "(NULL)",
+             (unsigned) tkn_len, (int) tkn_len, tkn ? tkn : "(NULL)");
   else
-  {
-    if (NULL == h->params.bauth)
-      mhdErrorExitDesc ("'params.bauth' pointer is NULL");
-    ret = 1;
-    if (tkn_len != h->params.bauth->token68.len)
-      fprintf (stderr,
-               "'Authorization' header parsing FAILED:\n"
-               "Wrong token length:\tRESULT[%u]: %.*s\tEXPECTED[%u]: %.*s\n",
-               (unsigned) h->params.bauth->token68.len,
-               (int) h->params.bauth->token68.len,
-               h->params.bauth->token68.str ?
-               h->params.bauth->token68.str : "(NULL)",
-               (unsigned) tkn_len, (int) tkn_len, tkn ? tkn : "(NULL)");
-    else if ( ((NULL == tkn) != (NULL == h->params.bauth->token68.str)) ||
-              ((NULL != tkn) &&
-               (0 != memcmp (tkn, h->params.bauth->token68.str, tkn_len))) )
-      fprintf (stderr,
-               "'Authorization' header parsing FAILED:\n"
-               "Wrong token string:\tRESULT[%u]: %.*s\tEXPECTED[%u]: %.*s\n",
-               (unsigned) h->params.bauth->token68.len,
-               (int) h->params.bauth->token68.len,
-               h->params.bauth->token68.str ?
-               h->params.bauth->token68.str : "(NULL)",
-               (unsigned) tkn_len, (int) tkn_len, tkn ? tkn : "(NULL)");
-    else
-      ret = 0;
-  }
+    ret = 0;
   if (0 != ret)
   {
     fprintf (stderr,
@@ -779,7 +842,7 @@ expect_basic_n (const char *hdr, size_t hdr_len,
     fprintf (stderr,
              "The check is at line: %u\n\n", line_num);
   }
-  free_AuthRqHeader ();
+  clean_AuthHeaders ();
 
   return ret;
 }
@@ -911,51 +974,38 @@ expect_digest_n (const char *hdr, size_t hdr_len,
                  int userhash,
                  unsigned int line_num)
 {
-  const struct MHD_AuthRqHeader *h;
+  const struct MHD_RqDAuth *h;
   unsigned int ret;
 
   mhd_assert (NULL != hdr);
   mhd_assert (0 != hdr_len);
 
-  h = get_AuthRqHeader (1, hdr, hdr_len);
-  mhd_assert (NULL != h);
-  if (MHD_AUTHTYPE_DIGEST != h->auth_type)
-  {
-    fprintf (stderr,
-             "'Authorization' header parsing FAILED:\n"
-             "Wrong type:\tRESULT: %s\tEXPECTED: %s\n",
-             get_auth_type_str (h->auth_type),
-             get_auth_type_str (MHD_AUTHTYPE_DIGEST));
-    ret = 1;
-  }
-  else
-  {
-    const struct MHD_RqDAuth *params;
-    if (NULL == h->params.dauth)
-      mhdErrorExitDesc ("'params.dauth' pointer is NULL");
-    params = h->params.dauth;
-    ret = 0;
+  add_AuthHeader (hdr, hdr_len);
 
-    ret += cmp_dauth_param ("nonce", &params->nonce, nonce);
-    ret += cmp_dauth_param ("algorithm", &params->algorithm, algorithm);
-    ret += cmp_dauth_param ("response", &params->response, response);
-    ret += cmp_dauth_param ("username", &params->username, username);
-    ret += cmp_dauth_param ("username_ext", &params->username_ext,
-                            username_ext);
-    ret += cmp_dauth_param ("realm", &params->realm, realm);
-    ret += cmp_dauth_param ("uri", &params->uri, uri);
-    ret += cmp_dauth_param ("qop", &params->qop, qop);
-    ret += cmp_dauth_param ("cnonce", &params->cnonce, cnonce);
-    ret += cmp_dauth_param ("nc", &params->nc, nc);
-    if (params->userhash != ! (! userhash))
-    {
-      ret += 1;
-      fprintf (stderr, "Parameter 'userhash' parsed incorrectly:\n");
-      fprintf (stderr, "\tRESULT  :\t%s\n",
-               params->userhash ? "true" : "false");
-      fprintf (stderr, "\tEXPECTED:\t%s\n",
-               userhash ? "true" : "false");
-    }
+  h = get_DAuthRqParams ();
+  if (NULL == h)
+    mhdErrorExitDesc ("'MHD_get_rq_dauth_params_()' returned NULL");
+  ret = 0;
+
+  ret += cmp_dauth_param ("nonce", &h->nonce, nonce);
+  ret += cmp_dauth_param ("algorithm", &h->algorithm, algorithm);
+  ret += cmp_dauth_param ("response", &h->response, response);
+  ret += cmp_dauth_param ("username", &h->username, username);
+  ret += cmp_dauth_param ("username_ext", &h->username_ext,
+                          username_ext);
+  ret += cmp_dauth_param ("realm", &h->realm, realm);
+  ret += cmp_dauth_param ("uri", &h->uri, uri);
+  ret += cmp_dauth_param ("qop", &h->qop, qop);
+  ret += cmp_dauth_param ("cnonce", &h->cnonce, cnonce);
+  ret += cmp_dauth_param ("nc", &h->nc, nc);
+  if (h->userhash != ! (! userhash))
+  {
+    ret += 1;
+    fprintf (stderr, "Parameter 'userhash' parsed incorrectly:\n");
+    fprintf (stderr, "\tRESULT  :\t%s\n",
+             h->userhash ? "true" : "false");
+    fprintf (stderr, "\tEXPECTED:\t%s\n",
+             userhash ? "true" : "false");
   }
   if (0 != ret)
   {
@@ -964,7 +1014,7 @@ expect_digest_n (const char *hdr, size_t hdr_len,
     fprintf (stderr,
              "The check is at line: %u\n\n", line_num);
   }
-  free_AuthRqHeader ();
+  clean_AuthHeaders ();
 
   return ret;
 }
@@ -1214,6 +1264,8 @@ main (int argc, char *argv[])
 {
   unsigned int errcount = 0;
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
+  test_global_init ();
+
   errcount += check_type ();
 #ifdef BAUTH_SUPPORT
   errcount += check_basic ();

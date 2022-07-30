@@ -34,27 +34,6 @@
 
 
 /**
- * Get request's Basic Authorisation parameters.
- * @param connection the connection to process
- * @return pointer to request Basic Authorisation parameters structure if
- *         request has such header (allocated in connection's pool),
- *         NULL otherwise.
- */
-static const struct MHD_RqBAuth *
-get_rq_bauth_params (struct MHD_Connection *connection)
-{
-  const struct MHD_AuthRqHeader *rq_params;
-
-  rq_params = MHD_get_auth_rq_params_ (connection);
-  if ( (NULL == rq_params) ||
-       (MHD_AUTHTYPE_BASIC != rq_params->auth_type) )
-    return NULL;
-
-  return rq_params->params.bauth;
-}
-
-
-/**
  * Get the username and password from the Basic Authorisation header
  * sent by the client
  *
@@ -73,7 +52,7 @@ MHD_basic_auth_get_username_password3 (struct MHD_Connection *connection)
   size_t decoded_max_len;
   struct MHD_BasicAuthInfo *ret;
 
-  params = get_rq_bauth_params (connection);
+  params = MHD_get_rq_bauth_params_ (connection);
 
   if (NULL == params)
     return NULL;

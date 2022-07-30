@@ -40,7 +40,104 @@
 #error This file requires Basic or Digest authentication support
 #endif
 
+/**
+ * Type of authorisation
+ */
+enum MHD_AuthType
+{
+  MHD_AUTHTYPE_NONE = 0,/**< No authorisation, unused */
+  MHD_AUTHTYPE_BASIC,   /**< Basic Authorisation, RFC 7617  */
+  MHD_AUTHTYPE_DIGEST,  /**< Digest Authorisation, RFC 7616 */
+  MHD_AUTHTYPE_UNKNOWN, /**< Unknown/Unsupported authorisation type, unused */
+  MHD_AUTHTYPE_INVALID  /**< Wrong/broken authorisation header, unused */
+};
+
+/**
+ * Find required "Authorization" request header
+ * @param c the connection with request
+ * @param type the type of the authorisation: basic or digest
+ * @param[out] auth_value will be set to the remaining of header value after
+ *                        authorisation token (after "Basic " or "Digest ")
+ * @return true if requested header is found,
+ *         false otherwise
+ */
+static bool
+find_auth_rq_header_ (const struct MHD_Connection *c, enum MHD_AuthType type,
+                      struct _MHD_str_w_len *auth_value)
+{
+  const struct MHD_HTTP_Req_Header *h;
+  const char *token;
+  size_t token_len;
+
+  mhd_assert (MHD_CONNECTION_HEADERS_PROCESSED <= c->state);
+  if (MHD_CONNECTION_HEADERS_PROCESSED > c->state)
+    return false;
+
+#ifdef DAUTH_SUPPORT
+  if (MHD_AUTHTYPE_DIGEST == type)
+  {
+    token = _MHD_AUTH_DIGEST_BASE;
+    token_len = MHD_STATICSTR_LEN_ (_MHD_AUTH_DIGEST_BASE);
+  }
+  else /* combined with the next line */
+#endif /* DAUTH_SUPPORT */
 #ifdef BAUTH_SUPPORT
+  if (MHD_AUTHTYPE_BASIC == type)
+  {
+    token = _MHD_AUTH_BASIC_BASE;
+    token_len = MHD_STATICSTR_LEN_ (_MHD_AUTH_BASIC_BASE);
+  }
+  else /* combined with the next line */
+#endif /* BAUTH_SUPPORT */
+  {
+    assert (0);
+    return false;
+  }
+
+  for (h = c->rq.headers_received; NULL != h; h = h->next)
+  {
+    if (MHD_HEADER_KIND != h->kind)
+      continue;
+    if (MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_AUTHORIZATION) != h->header_size)
+      continue;
+    if (token_len > h->value_size)
+      continue;
+    if (! MHD_str_equal_caseless_bin_n_ (MHD_HTTP_HEADER_AUTHORIZATION,
+                                         h->header,
+                                         MHD_STATICSTR_LEN_ ( \
+                                           MHD_HTTP_HEADER_AUTHORIZATION)))
+      continue;
+    if (! MHD_str_equal_caseless_bin_n_ (h->value, token, token_len))
+      continue;
+    /* Match only if token string is full header value or token is
+     * followed by space or tab
+     * Note: RFC 9110 (and RFC 7234) allows only space character, but
+     * tab is supported here as well for additional flexibility and uniformity
+     * as tabs are supported as separators between parameters.
+     */
+    if ((token_len == h->value_size) ||
+        (' ' == h->value[token_len]) || ('\t'  == h->value[token_len]))
+    {
+      if (token_len != h->value_size)
+      { /* Skip whitespace */
+        auth_value->str = h->value + token_len + 1;
+        auth_value->len = h->value_size - (token_len + 1);
+      }
+      else
+      { /* No whitespace to skip */
+        auth_value->str = h->value + token_len;
+        auth_value->len = h->value_size - token_len;
+      }
+      return true; /* Found a match */
+    }
+  }
+  return false; /* No matching header has been found */
+}
+
+
+#ifdef BAUTH_SUPPORT
+
+
 /**
  * Parse request Authorization header parameters for Basic Authentication
  * @param str the header string, everything after "Basic " substring
@@ -96,6 +193,71 @@ parse_bauth_params (const char *str,
     }
   }
   return true;
+}
+
+
+/**
+ * Return request's Basic Authorisation parameters.
+ *
+ * Function return result of parsing of the request's "Authorization" header or
+ * returns cached parsing result if the header was already parsed for
+ * the current request.
+ * @param connection the connection to process
+ * @return the pointer to structure with Authentication parameters,
+ *         NULL if no memory in memory pool, if called too early (before
+ *         header has been received) or if no valid Basic Authorisation header
+ *         found.
+ */
+const struct MHD_RqBAuth *
+MHD_get_rq_bauth_params_ (struct MHD_Connection *connection)
+{
+  struct _MHD_str_w_len h_auth_value;
+  struct MHD_RqBAuth *bauth;
+
+  mhd_assert (MHD_CONNECTION_HEADERS_PROCESSED <= connection->state);
+
+  if (connection->rq.bauth_tried)
+    return connection->rq.bauth;
+
+  if (MHD_CONNECTION_HEADERS_PROCESSED > connection->state)
+    return NULL;
+
+  if (! find_auth_rq_header_ (connection, MHD_AUTHTYPE_BASIC, &h_auth_value))
+  {
+    connection->rq.bauth_tried = true;
+    connection->rq.bauth = NULL;
+    return NULL;
+  }
+
+  bauth =
+    (struct MHD_RqBAuth *)
+    MHD_connection_alloc_memory_ (connection, sizeof (struct MHD_RqBAuth));
+
+  if (NULL == bauth)
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Not enough memory in the connection's pool to allocate " \
+                 "for Basic Authorization header parsing.\n"));
+#endif /* HAVE_MESSAGES */
+    return NULL;
+  }
+
+  memset (bauth, 0, sizeof(struct MHD_RqBAuth));
+  if (parse_bauth_params (h_auth_value.str, h_auth_value.len, bauth))
+    connection->rq.bauth = bauth;
+  else
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The Basic Authorization client's header has "
+                 "incorrect format.\n"));
+#endif /* HAVE_MESSAGES */
+    connection->rq.bauth = NULL;
+    /* Memory in the pool remains allocated until next request */
+  }
+  connection->rq.bauth_tried = true;
+  return connection->rq.bauth;
 }
 
 
@@ -312,213 +474,69 @@ parse_dauth_params (const char *str,
 }
 
 
-#endif /* DAUTH_SUPPORT */
-
-
 /**
- * Parse request "Authorization" header
- * @param c the connection to process
- * @return true if any supported Authorisation scheme were found,
- *         false if no "Authorization" header found, no supported scheme found,
- *         or an error occurred.
- */
-_MHD_static_inline bool
-parse_auth_rq_header_ (struct MHD_Connection *c)
-{
-  const char *h; /**< The "Authorization" header */
-  size_t h_len;
-  struct MHD_AuthRqHeader *rq_auth;
-  size_t i;
-
-  mhd_assert (NULL == c->rq_auth);
-  mhd_assert (MHD_CONNECTION_HEADERS_PROCESSED <= c->state);
-  if (MHD_CONNECTION_HEADERS_PROCESSED > c->state)
-    return false;
-
-  if (MHD_NO ==
-      MHD_lookup_connection_value_n (c, MHD_HEADER_KIND,
-                                     MHD_HTTP_HEADER_AUTHORIZATION,
-                                     MHD_STATICSTR_LEN_ ( \
-                                       MHD_HTTP_HEADER_AUTHORIZATION), &h,
-                                     &h_len))
-  {
-    rq_auth = (struct MHD_AuthRqHeader *)
-              MHD_connection_alloc_memory_ (c,
-                                            sizeof (struct MHD_AuthRqHeader));
-    c->rq_auth = rq_auth;
-    if (NULL != rq_auth)
-    {
-      memset (rq_auth, 0, sizeof(struct MHD_AuthRqHeader));
-      rq_auth->auth_type = MHD_AUTHTYPE_NONE;
-    }
-    return false;
-  }
-
-  rq_auth = NULL;
-  i = 0;
-  /* Skip the leading whitespace */
-  while (i < h_len)
-  {
-    const char ch = h[i];
-    if ((' ' != ch) && ('\t' != ch))
-      break;
-    i++;
-  }
-  h += i;
-  h_len -= i;
-
-  if (0 == h_len)
-  { /* The header is an empty string */
-    rq_auth = (struct MHD_AuthRqHeader *)
-              MHD_connection_alloc_memory_ (c,
-                                            sizeof (struct MHD_AuthRqHeader));
-    c->rq_auth = rq_auth;
-    if (NULL != rq_auth)
-    {
-      memset (rq_auth, 0, sizeof(struct MHD_AuthRqHeader));
-      rq_auth->auth_type = MHD_AUTHTYPE_INVALID;
-    }
-    return false;
-  }
-
-#ifdef DAUTH_SUPPORT
-  if (1)
-  {
-    static const struct _MHD_cstr_w_len scheme_token =
-      _MHD_S_STR_W_LEN (_MHD_AUTH_DIGEST_BASE);
-
-    if ((scheme_token.len <= h_len) &&
-        MHD_str_equal_caseless_bin_n_ (h, scheme_token.str, scheme_token.len))
-    {
-      i = scheme_token.len;
-      /* RFC 7235 require only space after scheme token */
-      if ( (h_len <= i) ||
-           ((' ' == h[i]) || ('\t' == h[i])) ) /* Actually tab should NOT be allowed */
-      { /* Matched Digest authorisation scheme */
-        i++; /* Advance to the next char (even if it is beyond the end of the string) */
-
-        rq_auth = (struct MHD_AuthRqHeader *)
-                  MHD_connection_alloc_memory_ (c,
-                                                sizeof (struct MHD_AuthRqHeader)
-                                                + sizeof (struct MHD_RqDAuth));
-        c->rq_auth = rq_auth;
-        if (NULL == rq_auth)
-        {
-#ifdef HAVE_MESSAGES
-          MHD_DLOG (c->daemon,
-                    _ ("Failed to allocate memory in connection pool to " \
-                       "process \"" MHD_HTTP_HEADER_AUTHORIZATION "\" " \
-                       "header.\n"));
-#endif /* HAVE_MESSAGES */
-          return false;
-        }
-        memset (rq_auth, 0, sizeof (struct MHD_AuthRqHeader)
-                + sizeof (struct MHD_RqDAuth));
-        rq_auth->params.dauth = (struct MHD_RqDAuth *) (rq_auth + 1);
-
-        if (h_len > i)
-        {
-          if (! parse_dauth_params (h + i, h_len - i, rq_auth->params.dauth))
-          {
-            rq_auth->auth_type = MHD_AUTHTYPE_INVALID;
-            return false;
-          }
-        }
-
-        rq_auth->auth_type = MHD_AUTHTYPE_DIGEST;
-        return true;
-      }
-    }
-  }
-#endif /* DAUTH_SUPPORT */
-#ifdef BAUTH_SUPPORT
-  if (1)
-  {
-    static const struct _MHD_cstr_w_len scheme_token =
-      _MHD_S_STR_W_LEN (_MHD_AUTH_BASIC_BASE);
-
-    if ((scheme_token.len <= h_len) &&
-        MHD_str_equal_caseless_bin_n_ (h, scheme_token.str, scheme_token.len))
-    {
-      i = scheme_token.len;
-      /* RFC 7235 require only space after scheme token */
-      if ( (h_len <= i) ||
-           ((' ' == h[i]) || ('\t' == h[i])) ) /* Actually tab should NOT be allowed */
-      { /* Matched Basic authorisation scheme */
-        i++; /* Advance to the next char (even if it is beyond the end of the string) */
-
-        rq_auth = (struct MHD_AuthRqHeader *)
-                  MHD_connection_alloc_memory_ (c,
-                                                sizeof (struct MHD_AuthRqHeader)
-                                                + sizeof (struct MHD_RqBAuth));
-        c->rq_auth = rq_auth;
-        if (NULL == rq_auth)
-        {
-#ifdef HAVE_MESSAGES
-          MHD_DLOG (c->daemon,
-                    _ ("Failed to allocate memory in connection pool to " \
-                       "process \"" MHD_HTTP_HEADER_AUTHORIZATION "\" " \
-                       "header.\n"));
-#endif /* HAVE_MESSAGES */
-          return false;
-        }
-        memset (rq_auth, 0, sizeof (struct MHD_AuthRqHeader)
-                + sizeof (struct MHD_RqBAuth));
-        rq_auth->params.bauth = (struct MHD_RqBAuth *) (rq_auth + 1);
-
-        if (h_len > i)
-        {
-          if (! parse_bauth_params (h + i, h_len - i, rq_auth->params.bauth))
-          {
-            rq_auth->auth_type = MHD_AUTHTYPE_INVALID;
-            return false;
-          }
-        }
-
-        rq_auth->auth_type = MHD_AUTHTYPE_BASIC;
-        return true;
-      }
-    }
-  }
-#endif /* BAUTH_SUPPORT */
-
-  if (NULL == rq_auth)
-    rq_auth = (struct MHD_AuthRqHeader *)
-              MHD_connection_alloc_memory_ (c,
-                                            sizeof (struct MHD_AuthRqHeader));
-  c->rq_auth = rq_auth;
-  if (NULL != rq_auth)
-  {
-    memset (rq_auth, 0, sizeof(struct MHD_AuthRqHeader));
-    rq_auth->auth_type = MHD_AUTHTYPE_UNKNOWN;
-  }
-  return false;
-}
-
-
-/**
- * Return request's Authentication type and parameters.
+ * Return request's Digest Authorisation parameters.
  *
  * Function return result of parsing of the request's "Authorization" header or
  * returns cached parsing result if the header was already parsed for
  * the current request.
  * @param connection the connection to process
- * @return the pointer to structure with Authentication type and parameters,
- *         NULL if no memory in memory pool or if called too early (before
- *         header has been received).
+ * @return the pointer to structure with Authentication parameters,
+ *         NULL if no memory in memory pool, if called too early (before
+ *         header has been received) or if no valid Basic Authorisation header
+ *         found.
  */
-const struct MHD_AuthRqHeader *
-MHD_get_auth_rq_params_ (struct MHD_Connection *connection)
+const struct MHD_RqDAuth *
+MHD_get_rq_dauth_params_ (struct MHD_Connection *connection)
 {
+  struct _MHD_str_w_len h_auth_value;
+  struct MHD_RqDAuth *dauth;
+
   mhd_assert (MHD_CONNECTION_HEADERS_PROCESSED <= connection->state);
 
-  if (NULL != connection->rq_auth)
-    return connection->rq_auth;
+  if (connection->rq.dauth_tried)
+    return connection->rq.dauth;
 
   if (MHD_CONNECTION_HEADERS_PROCESSED > connection->state)
     return NULL;
 
-  parse_auth_rq_header_ (connection);
+  if (! find_auth_rq_header_ (connection, MHD_AUTHTYPE_DIGEST, &h_auth_value))
+  {
+    connection->rq.dauth_tried = true;
+    connection->rq.dauth = NULL;
+    return NULL;
+  }
 
-  return connection->rq_auth;
+  dauth =
+    (struct MHD_RqDAuth *)
+    MHD_connection_alloc_memory_ (connection, sizeof (struct MHD_RqDAuth));
+
+  if (NULL == dauth)
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Not enough memory in the connection's pool to allocate " \
+                 "for Digest Authorization header parsing.\n"));
+#endif /* HAVE_MESSAGES */
+    return NULL;
+  }
+
+  memset (dauth, 0, sizeof(struct MHD_RqDAuth));
+  if (parse_dauth_params (h_auth_value.str, h_auth_value.len, dauth))
+    connection->rq.dauth = dauth;
+  else
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The Digest Authorization client's header has "
+                 "incorrect format.\n"));
+#endif /* HAVE_MESSAGES */
+    connection->rq.dauth = NULL;
+    /* Memory in the pool remains allocated until next request */
+  }
+  connection->rq.dauth_tried = true;
+  return connection->rq.dauth;
 }
+
+
+#endif /* DAUTH_SUPPORT */

@@ -479,20 +479,6 @@ digest_calc_hash (struct DigestAlgorithm *da, uint8_t *digest)
 }
 
 
-static const struct MHD_RqDAuth *
-get_rq_dauth_params (struct MHD_Connection *connection)
-{
-  const struct MHD_AuthRqHeader *rq_params;
-
-  rq_params = MHD_get_auth_rq_params_ (connection);
-  if ( (NULL == rq_params) ||
-       (MHD_AUTHTYPE_DIGEST != rq_params->auth_type) )
-    return NULL;
-
-  return rq_params->params.dauth;
-}
-
-
 /**
  * Extract timestamp from the given nonce.
  * @param nonce the nonce to check
@@ -1141,7 +1127,7 @@ MHD_digest_auth_get_request_info3 (struct MHD_Connection *connection)
   size_t unif_buf_used;
   enum MHD_GetRqNCResult nc_res;
 
-  params = get_rq_dauth_params (connection);
+  params = MHD_get_rq_dauth_params_ (connection);
   if (NULL == params)
     return NULL;
 
@@ -1234,7 +1220,7 @@ MHD_digest_auth_get_username3 (struct MHD_Connection *connection)
   uint8_t *unif_buf_ptr;
   size_t unif_buf_used;
 
-  params = get_rq_dauth_params (connection);
+  params = MHD_get_rq_dauth_params_ (connection);
   if (NULL == params)
     return NULL;
 
@@ -1288,7 +1274,7 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection)
   size_t buf_size;
   enum MHD_DigestAuthUsernameType uname_type;
 
-  params = get_rq_dauth_params (connection);
+  params = MHD_get_rq_dauth_params_ (connection);
   if (NULL == params)
     return NULL;
 
@@ -2050,7 +2036,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 
   tmp2_size = 0;
 
-  params = get_rq_dauth_params (connection);
+  params = MHD_get_rq_dauth_params_ (connection);
   if (NULL == params)
     return MHD_DAUTH_WRONG_HEADER;
 

@@ -33,62 +33,44 @@
 
 struct MHD_Connection; /* Forward declaration to avoid include of the large headers */
 
-/**
- * Type of authorisation
- */
-enum MHD_AuthType
-{
-  MHD_AUTHTYPE_NONE = 0,/**< No authorisation */
-  MHD_AUTHTYPE_BASIC,   /**< Basic Authorisation, RFC 7617  */
-  MHD_AUTHTYPE_DIGEST,  /**< Digest Authorisation, RFC 7616 */
-  MHD_AUTHTYPE_UNKNOWN, /**< Unknown/Unsupported authorisation type */
-  MHD_AUTHTYPE_INVALID  /**< Wrong/broken authorisation header */
-};
-
 #ifdef BAUTH_SUPPORT
+
 /* Forward declaration to avoid additional headers inclusion */
 struct MHD_RqBAuth;
-#endif /* BAUTH_SUPPORT */
-#ifdef DAUTH_SUPPORT
-/* Forward declaration to avoid additional headers inclusion */
-struct MHD_RqDAuth;
-#endif /* DAUTH_SUPPORT */
-
 /**
- * Universal Authorisation Request parameters
- */
-union MHD_AuthRqParams
-{
-#ifdef BAUTH_SUPPORT
-  struct MHD_RqBAuth *bauth;
-#endif /* BAUTH_SUPPORT */
-#ifdef DAUTH_SUPPORT
-  struct MHD_RqDAuth *dauth;
-#endif /* DAUTH_SUPPORT */
-};
-
-/**
- * Request Authentication type and parameters
- */
-struct MHD_AuthRqHeader
-{
-  enum MHD_AuthType auth_type;
-  union MHD_AuthRqParams params;
-};
-
-
-/**
- * Return request's Authentication type and parameters.
+ * Return request's Basic Authorisation parameters.
  *
  * Function return result of parsing of the request's "Authorization" header or
  * returns cached parsing result if the header was already parsed for
  * the current request.
  * @param connection the connection to process
- * @return the pointer to structure with Authentication type and parameters,
- *         NULL if no memory in memory pool or if called too early (before
- *         header has been received).
+ * @return the pointer to structure with Authentication parameters,
+ *         NULL if no memory in memory pool, if called too early (before
+ *         header has been received) or if no valid Basic Authorisation header
+ *         found.
  */
-const struct MHD_AuthRqHeader *
-MHD_get_auth_rq_params_ (struct MHD_Connection *connection);
+const struct MHD_RqBAuth *
+MHD_get_rq_bauth_params_ (struct MHD_Connection *connection);
 
-#endif /* ! MHD_GET_AUTH_H */
+#endif /* BAUTH_SUPPORT */
+#ifdef DAUTH_SUPPORT
+/* Forward declaration to avoid additional headers inclusion */
+struct MHD_RqDAuth;
+
+/**
+ * Return request's Digest Authorisation parameters.
+ *
+ * Function return result of parsing of the request's "Authorization" header or
+ * returns cached parsing result if the header was already parsed for
+ * the current request.
+ * @param connection the connection to process
+ * @return the pointer to structure with Authentication parameters,
+ *         NULL if no memory in memory pool, if called too early (before
+ *         header has been received) or if no valid Basic Authorisation header
+ *         found.
+ */
+const struct MHD_RqDAuth *
+MHD_get_rq_dauth_params_ (struct MHD_Connection *connection);
+#endif /* DAUTH_SUPPORT */
+
+#endif /* MHD_GET_AUTH_H */

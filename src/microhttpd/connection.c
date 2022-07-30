@@ -4737,9 +4737,6 @@ connection_reset (struct MHD_Connection *connection,
     c->state = MHD_CONNECTION_INIT;
 
     memset (&c->rq, 0, sizeof(c->rq));
-#if defined(BAUTH_SUPPORT) || defined(DAUTH_SUPPORT)
-    c->rq_auth = NULL;
-#endif
 
     /* iov (if any) will be deallocated by MHD_pool_reset */
     memset (&c->rp, 0, sizeof(c->rp));
