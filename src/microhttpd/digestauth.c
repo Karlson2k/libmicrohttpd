@@ -1984,7 +1984,7 @@ is_param_equal_caseless (const struct MHD_RqDAuthParam *param,
  *
  * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
  * @a mqop and the client uses this mode, then server generated nonces are
- * used as one-time nonces because nonce-count is not suppoted in this old RFC.
+ * used as one-time nonces because nonce-count is not supported in this old RFC.
  * Communication in this mode is very inefficient, especially if the client
  * requests several resources one-by-one as for every request new nonce must be
  * generated and client repeat all requests twice (first time to get a new
@@ -2466,7 +2466,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
  *
  * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
  * @a mqop and the client uses this mode, then server generated nonces are
- * used as one-time nonces because nonce-count is not suppoted in this old RFC.
+ * used as one-time nonces because nonce-count is not supported in this old RFC.
  * Communication in this mode is very inefficient, especially if the client
  * requests several resources one-by-one as for every request new nonce must be
  * generated and client repeat all requests twice (first time to get a new
@@ -2557,7 +2557,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  *
  * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
  * @a mqop and the client uses this mode, then server generated nonces are
- * used as one-time nonces because nonce-count is not suppoted in this old RFC.
+ * used as one-time nonces because nonce-count is not supported in this old RFC.
  * Communication in this mode is very inefficient, especially if the client
  * requests several resources one-by-one as for every request new nonce must be
  * generated and client repeat all requests twice (first time to get a new
@@ -2610,7 +2610,7 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  *
  * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
  * @a mqop and the client uses this mode, then server generated nonces are
- * used as one-time nonces because nonce-count is not suppoted in this old RFC.
+ * used as one-time nonces because nonce-count is not supported in this old RFC.
  * Communication in this mode is very inefficient, especially if the client
  * requests several resources one-by-one as for every request new nonce must be
  * generated and client repeat all requests twice (first time to get a new

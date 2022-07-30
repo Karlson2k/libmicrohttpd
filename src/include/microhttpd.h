@@ -487,50 +487,50 @@ _MHD_DEPR_MACRO ( \
 /* Deprecated names and codes */
 /** @deprecated */
 #define MHD_HTTP_METHOD_NOT_ACCEPTABLE \
-  _MHD_DEPR_IN_MACRO("Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, " \
-  "use MHD_HTTP_NOT_ACCEPTABLE") \
+  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, " \
+                      "use MHD_HTTP_NOT_ACCEPTABLE") \
   406
 
 /** @deprecated */
 #define MHD_HTTP_REQUEST_ENTITY_TOO_LARGE \
-  _MHD_DEPR_IN_MACRO("Value MHD_HTTP_REQUEST_ENTITY_TOO_LARGE is deprecated, " \
-  "use MHD_HTTP_CONTENT_TOO_LARGE") \
+  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_REQUEST_ENTITY_TOO_LARGE is deprecated, " \
+                      "use MHD_HTTP_CONTENT_TOO_LARGE") \
   413
 
 /** @deprecated */
 #define MHD_HTTP_PAYLOAD_TOO_LARGE \
-    _MHD_DEPR_IN_MACRO("Value MHD_HTTP_PAYLOAD_TOO_LARGE is deprecated, " \
-  "use MHD_HTTP_CONTENT_TOO_LARGE") \
+  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_PAYLOAD_TOO_LARGE is deprecated, " \
+                      "use MHD_HTTP_CONTENT_TOO_LARGE") \
   413
 
 /** @deprecated */
 #define MHD_HTTP_REQUEST_URI_TOO_LONG \
-  _MHD_DEPR_IN_MACRO("Value MHD_HTTP_REQUEST_URI_TOO_LONG is deprecated, " \
-  "use MHD_HTTP_URI_TOO_LONG") \
+  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_REQUEST_URI_TOO_LONG is deprecated, " \
+                      "use MHD_HTTP_URI_TOO_LONG") \
   414
 
 /** @deprecated */
 #define MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE \
-  _MHD_DEPR_IN_MACRO("Value MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE is " \
-  "deprecated, use MHD_HTTP_RANGE_NOT_SATISFIABLE") \
+  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE is " \
+                      "deprecated, use MHD_HTTP_RANGE_NOT_SATISFIABLE") \
   416
 
 /** @deprecated */
 #define MHD_HTTP_UNPROCESSABLE_ENTITY \
-  _MHD_DEPR_IN_MACRO("Value MHD_HTTP_UNPROCESSABLE_ENTITY is deprecated, " \
-  "use MHD_HTTP_UNPROCESSABLE_CONTENT") \
+  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_UNPROCESSABLE_ENTITY is deprecated, " \
+                      "use MHD_HTTP_UNPROCESSABLE_CONTENT") \
   422
 
 /** @deprecated */
 #define MHD_HTTP_UNORDERED_COLLECTION \
-  _MHD_DEPR_IN_MACRO("Value MHD_HTTP_UNORDERED_COLLECTION is deprecated " \
-  "as it was removed from RFC") \
+  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_UNORDERED_COLLECTION is deprecated " \
+                      "as it was removed from RFC") \
   425
 
 /** @deprecated */
 #define MHD_HTTP_NO_RESPONSE \
   _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_NO_RESPONSE is deprecated as " \
-  "it is nginx internal code for logs only") \
+                      "it is nginx internal code for logs only") \
   444
 
 
@@ -4984,7 +4984,7 @@ enum MHD_DigestAuthResult
  *
  * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
  * @a mqop and the client uses this mode, then server generated nonces are
- * used as one-time nonces because nonce-count is not suppoted in this old RFC.
+ * used as one-time nonces because nonce-count is not supported in this old RFC.
  * Communication in this mode is very inefficient, especially if the client
  * requests several resources one-by-one as for every request new nonce must be
  * generated and client repeat all requests twice (first time to get a new
@@ -5024,7 +5024,7 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  *
  * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
  * @a mqop and the client uses this mode, then server generated nonces are
- * used as one-time nonces because nonce-count is not suppoted in this old RFC.
+ * used as one-time nonces because nonce-count is not supported in this old RFC.
  * Communication in this mode is very inefficient, especially if the client
  * requests several resources one-by-one as for every request new nonce must be
  * generated and client repeat all requests twice (first time to get a new
