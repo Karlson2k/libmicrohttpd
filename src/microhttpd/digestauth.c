@@ -72,7 +72,7 @@
  * Trim value to the TIMESTAMP_BIN_SIZE size
  */
 #define TRIM_TO_TIMESTAMP(value) \
-  ((value) & ((UINT64_C(1) << (TIMESTAMP_BIN_SIZE * 8)) - 1))
+  ((value) & ((UINT64_C (1) << (TIMESTAMP_BIN_SIZE * 8)) - 1))
 
 
 /**
@@ -177,7 +177,7 @@
  * The minimal size of the prefix for parameter with the extended notation
  */
 #define MHD_DAUTH_EXT_PARAM_MIN_LEN \
-  MHD_STATICSTR_LEN_(MHD_DAUTH_EXT_PARAM_PREFIX "'")
+  MHD_STATICSTR_LEN_ (MHD_DAUTH_EXT_PARAM_PREFIX "'")
 
 /**
  * The result of nonce-nc map array check.
@@ -2931,7 +2931,7 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
     if ((0 != userhash_support) || (0 != prefer_utf8))
       MHD_DLOG (connection->daemon,
                 _ ("The 'userhash' and 'charset' ('prefer_utf8') parameters " \
-                   "are not compatible with RFC2069 and igored.\n"));
+                   "are not compatible with RFC2069 and ignored.\n"));
 #endif
     userhash_support = 0;
     prefer_utf8 = 0;
