@@ -1064,6 +1064,29 @@ check_digest (void)
   r += expect_digest ("Digest nc=\"1\\;\", ", NULL, NULL, NULL, NULL, NULL, \
                       NULL, NULL, NULL, NULL, "1\\;", 0);
 
+  r += expect_digest ("Digest userhash=false", NULL, NULL, NULL, NULL, NULL, \
+                      NULL, NULL, NULL, NULL, NULL, 0);
+  r += expect_digest ("Digest userhash=\"false\"", NULL, NULL, NULL, NULL, NULL, \
+                      NULL, NULL, NULL, NULL, NULL, 0);
+  r += expect_digest ("Digest userhash=foo", NULL, NULL, NULL, NULL, NULL, \
+                      NULL, NULL, NULL, NULL, NULL, 0);
+  r += expect_digest ("Digest userhash=true", NULL, NULL, NULL, NULL, NULL, \
+                      NULL, NULL, NULL, NULL, NULL, 1);
+  r += expect_digest ("Digest userhash=\"true\"", NULL, NULL, NULL, NULL, NULL, \
+                      NULL, NULL, NULL, NULL, NULL, 1);
+  r += expect_digest ("Digest userhash=\"\\t\\r\\u\\e\"", NULL, NULL, NULL, \
+                      NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1);
+  r += expect_digest ("Digest userhash=TRUE", NULL, NULL, NULL, NULL, NULL, \
+                      NULL, NULL, NULL, NULL, NULL, 1);
+  r += expect_digest ("Digest userhash=True", NULL, NULL, NULL, NULL, NULL, \
+                      NULL, NULL, NULL, NULL, NULL, 1);
+  r += expect_digest ("Digest userhash = true", NULL, NULL, NULL, NULL, \
+                      NULL,  NULL, NULL, NULL, NULL, NULL, 1);
+  r += expect_digest ("Digest userhash=True2", NULL, NULL, NULL, NULL, NULL, \
+                      NULL, NULL, NULL, NULL, NULL, 0);
+  r += expect_digest ("Digest userhash=\" true\"", NULL, NULL, NULL, NULL, \
+                      NULL,  NULL, NULL, NULL, NULL, NULL, 0);
+
   r += expect_digest ("Digest username=\"test@example.com\", " \
                       "realm=\"users@example.com\", nonce=\"32141232413abcde\", " \
                       "uri=\"/example\", qop=auth, nc=00000001, cnonce=\"0a4f113b\", " \
