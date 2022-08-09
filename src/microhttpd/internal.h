@@ -268,7 +268,7 @@ struct MHD_NonceNc
    * 'nc' value.
    * This 'nc' value was already used by the client.
    */
-  uint64_t nc;
+  uint32_t nc;
 
   /**
    * Bitmask over the previous 64 nonce counter values (down to to nc-64).

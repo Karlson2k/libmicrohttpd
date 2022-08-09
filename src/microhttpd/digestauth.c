@@ -590,7 +590,7 @@ check_nonce_nc (struct MHD_Connection *connection,
   mod = daemon->nonce_nc_size;
   if (0 == mod)
     return MHD_CHECK_NONCENC_STALE;  /* no array! */
-  if (nc >= UINT64_MAX - 64)
+  if (nc >= UINT32_MAX - 64)
     return MHD_CHECK_NONCENC_STALE;  /* Overflow, unrealistically high value */
 
   nn = &daemon->nnc[get_nonce_nc_idx (mod, nonce, noncelen)];
@@ -649,7 +649,7 @@ check_nonce_nc (struct MHD_Connection *connection,
   else if (nc > nn->nc)
   {
     /* 'nc' is larger, shift bitmask and bump limit */
-    const uint64_t jump_size = nc - nn->nc;
+    const uint32_t jump_size = (uint32_t) nc - nn->nc;
     if (64 > jump_size)
     {
       /* small jump, less than mask width */
@@ -661,7 +661,7 @@ check_nonce_nc (struct MHD_Connection *connection,
       nn->nmask = (UINT64_C (1) << 63);
     else
       nn->nmask = 0;                /* big jump, unset all bits in the mask */
-    nn->nc = nc;
+    nn->nc = (uint32_t) nc;
     ret = MHD_CHECK_NONCENC_OK;
   }
   else if (nc < nn->nc)
