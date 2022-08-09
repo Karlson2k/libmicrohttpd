@@ -127,15 +127,24 @@ MHD_connection_alloc_memory_ (struct MHD_Connection *connection,
   void *ret;
   if (NULL == connection)
     mhdErrorExitDesc ("'connection' parameter is NULL");
-  /* Use 'socket_context' just as a flag */
-  if (NULL != connection->socket_context)
-    mhdErrorExitDesc ("Unexpected memory allocation, " \
-                      "while previous allocation was not freed");
+  /* Use 'read_buffer' just as a flag */
+  if (NULL != connection->read_buffer)
+  {
+    /* Use 'write_buffer' just as a flag */
+    if (NULL != connection->write_buffer)
+      mhdErrorExitDesc ("Unexpected third memory allocation, " \
+                        "while previous allocations was not freed");
+  }
   /* Just use simple "malloc()" here */
   ret = malloc (size);
   if (NULL == ret)
     externalErrorExit ();
-  connection->socket_context = ret;
+
+  /* Track up to two allocations */
+  if (NULL == connection->read_buffer)
+    connection->read_buffer = (char *) ret;
+  else
+    connection->write_buffer = (char *) ret;
   return ret;
 }
 
@@ -280,7 +289,8 @@ static void
 clean_AuthHeaders (void)
 {
   conn.state = MHD_CONNECTION_INIT;
-  free (conn.socket_context);
+  free (conn.read_buffer);
+  free (conn.write_buffer);
 
 #ifdef BAUTH_SUPPORT
   conn.rq.bauth_tried = false;
@@ -290,12 +300,16 @@ clean_AuthHeaders (void)
 #endif /* BAUTH_SUPPORT */
 
 #ifdef BAUTH_SUPPORT
-  if ((NULL != conn.rq.bauth) && (conn.socket_context != conn.rq.bauth))
+  if ((NULL != conn.rq.bauth) &&
+      (conn.read_buffer != (const char *) conn.rq.bauth) &&
+      (conn.write_buffer != (const char *) conn.rq.bauth))
     externalErrorExitDesc ("Memory allocation is not tracked as it should be");
   conn.rq.bauth = NULL;
 #endif /* BAUTH_SUPPORT */
 #ifdef DAUTH_SUPPORT
-  if ((NULL != conn.rq.dauth) && (conn.socket_context != conn.rq.dauth))
+  if ((NULL != conn.rq.dauth) &&
+      (conn.read_buffer != (const char *) conn.rq.dauth) &&
+      (conn.write_buffer != (const char *) conn.rq.dauth))
     externalErrorExitDesc ("Memory allocation is not tracked as it should be");
   conn.rq.dauth = NULL;
 #endif /* BAUTH_SUPPORT */
@@ -303,7 +317,8 @@ clean_AuthHeaders (void)
   conn.rq.headers_received = NULL;
   conn.rq.headers_received_tail = NULL;
 
-  conn.socket_context = NULL;
+  conn.read_buffer = NULL;
+  conn.write_buffer = NULL;
   conn.rq.last = NULL;
 }
 
@@ -1282,6 +1297,107 @@ check_digest (void)
 
 #endif /* DAUTH_SUPPORT */
 
+#define TEST_AUTH_STR "dXNlcjpwYXNz"
+
+static unsigned int
+check_two_auths (void)
+{
+  unsigned int ret;
+  static struct MHD_HTTP_Req_Header h1;
+  static struct MHD_HTTP_Req_Header h2;
+  static struct MHD_HTTP_Req_Header h3;
+#ifdef BAUTH_SUPPORT
+  const struct MHD_RqBAuth *bauth;
+#endif /* BAUTH_SUPPORT */
+#ifdef DAUTH_SUPPORT
+  const struct MHD_RqDAuth *dauth;
+#endif /* DAUTH_SUPPORT */
+
+  if ((NULL != conn.rq.headers_received) ||
+      (NULL != conn.rq.headers_received_tail))
+    externalErrorExitDesc ("Connection's test headers are not empty already");
+
+  /* Init and use both Basic and Digest Auth headers */
+  memset (&h1, 0, sizeof(h1));
+  memset (&h2, 0, sizeof(h2));
+  memset (&h3, 0, sizeof(h3));
+
+  h1.kind = MHD_HEADER_KIND;
+  h1.header = MHD_HTTP_HEADER_HOST; /* Just some random header */
+  h1.header_size = MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_HOST);
+  h1.value = "localhost";
+  h1.value_size = strlen (h1.value);
+
+  h2.kind = MHD_HEADER_KIND;
+  h2.header = MHD_HTTP_HEADER_AUTHORIZATION;
+  h2.header_size = MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_AUTHORIZATION);
+  h2.value = "Basic " TEST_AUTH_STR;
+  h2.value_size = strlen (h2.value);
+
+  h3.kind = MHD_HEADER_KIND;
+  h3.header = MHD_HTTP_HEADER_AUTHORIZATION;
+  h3.header_size = MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_AUTHORIZATION);
+  h3.value = "Digest cnonce=" TEST_AUTH_STR;
+  h3.value_size = strlen (h3.value);
+
+  conn.rq.headers_received = &h1;
+  h1.next = &h2;
+  h2.prev = &h1;
+  h2.next = &h3;
+  h3.prev = &h2;
+  conn.rq.headers_received_tail = &h3;
+
+  conn.state = MHD_CONNECTION_FULL_REQ_RECEIVED; /* Should be a typical value */
+
+  ret = 0;
+#ifdef BAUTH_SUPPORT
+  bauth = get_BAuthRqParams ();
+#endif /* BAUTH_SUPPORT */
+#ifdef DAUTH_SUPPORT
+  dauth = get_DAuthRqParams ();
+#endif /* DAUTH_SUPPORT */
+#ifdef BAUTH_SUPPORT
+  if (NULL == bauth)
+  {
+    fprintf (stderr, "No Basic Authorization header detected. Line: %u\n",
+             (unsigned int) __LINE__);
+    ret++;
+  }
+  else if ((MHD_STATICSTR_LEN_ (TEST_AUTH_STR) != bauth->token68.len) ||
+           (0 != memcmp (bauth->token68.str, TEST_AUTH_STR,
+                         bauth->token68.len)))
+  {
+    fprintf (stderr, "Basic Authorization token does not match. Line: %u\n",
+             (unsigned int) __LINE__);
+    ret++;
+  }
+#endif /* BAUTH_SUPPORT */
+#ifdef DAUTH_SUPPORT
+  if (NULL == dauth)
+  {
+    fprintf (stderr, "No Digest Authorization header detected. Line: %u\n",
+             (unsigned int) __LINE__);
+    ret++;
+  }
+  else if ((MHD_STATICSTR_LEN_ (TEST_AUTH_STR) != dauth->cnonce.value.len) ||
+           (0 != memcmp (dauth->cnonce.value.str, TEST_AUTH_STR,
+                         dauth->cnonce.value.len)))
+  {
+    fprintf (stderr, "Digest Authorization 'cnonce' does not match. Line: %u\n",
+             (unsigned int) __LINE__);
+    ret++;
+  }
+#endif /* DAUTH_SUPPORT */
+
+  /* Cleanup */
+  conn.rq.headers_received = NULL;
+  conn.rq.headers_received_tail = NULL;
+  conn.state = MHD_CONNECTION_INIT;
+
+  return ret;
+}
+
+
 int
 main (int argc, char *argv[])
 {
@@ -1296,6 +1412,7 @@ main (int argc, char *argv[])
 #ifdef DAUTH_SUPPORT
   errcount += check_digest ();
 #endif /* DAUTH_SUPPORT */
+  errcount += check_two_auths ();
   if (0 == errcount)
     printf ("All tests were passed without errors.\n");
   return errcount == 0 ? 0 : 1;
