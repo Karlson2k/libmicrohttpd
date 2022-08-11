@@ -33,18 +33,12 @@
 #include "response.h"
 #include "md5.h"
 #include "sha256.h"
+#include "mhd_locks.h"
 #include "mhd_mono_clock.h"
 #include "mhd_str.h"
 #include "mhd_compat.h"
 #include "mhd_bithelpers.h"
 #include "mhd_assert.h"
-
-#if defined(MHD_W32_MUTEX_)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN 1
-#endif /* !WIN32_LEAN_AND_MEAN */
-#include <windows.h>
-#endif /* MHD_W32_MUTEX_ */
 
 
 /**
