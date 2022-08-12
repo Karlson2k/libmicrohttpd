@@ -5092,8 +5092,8 @@ MHD_digest_auth_check_digest3 (struct MHD_Connection *connection,
  *               same authorisation could be used, URIs can be in form
  *               "path-absolute" (the path for the same host with initial slash)
  *               or in form "absolute-URI" (the full path with protocol), in
- *               any case client may assume that any URI which starts with
- *               any of specified URI is in the same "protection space";
+ *               any case client may assume that URI is in the same "protection
+ *               space" if it starts with any of values specified here;
  *               could be NULL (clients typically assume that the same
  *               credentials could be used for any URI on the same host)
  * @param response the reply to send; should contain the "access denied"
