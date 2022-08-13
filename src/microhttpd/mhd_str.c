@@ -1382,8 +1382,21 @@ MHD_bin_to_hex (const void *bin,
     j = b & 0x0f;
     hex[i * 2 + 1] = (char) ((j < 10) ? (j + '0') : (j - 10 + 'a'));
   }
-  hex[i * 2] = 0;
   return i * 2;
+}
+
+
+size_t
+MHD_bin_to_hex_z (const void *bin,
+                  size_t size,
+                  char *hex)
+{
+  size_t res;
+
+  res = MHD_bin_to_hex (bin, size, hex);
+  hex[res] = 0;
+
+  return res;
 }
 
 

@@ -86,7 +86,7 @@ expect_decoded_n (const char *const encoded, const size_t encoded_len,
     }
     else
     {
-      prnt_size = MHD_bin_to_hex (buf, res_size, prnt);
+      prnt_size = MHD_bin_to_hex_z (buf, res_size, prnt);
       mhd_assert (2 * res_size == prnt_size);
 
       fprintf (stderr,
@@ -96,7 +96,7 @@ expect_decoded_n (const char *const encoded, const size_t encoded_len,
                (int) prnt_size, prnt, (unsigned) decoded_size,
                (unsigned) res_size);
     }
-    prnt_size = MHD_bin_to_hex (decoded, decoded_size, prnt);
+    prnt_size = MHD_bin_to_hex_z (decoded, decoded_size, prnt);
     mhd_assert (2 * decoded_size == prnt_size);
     fprintf (stderr,
              "\tEXPECTED: MHD_base64_to_bin_n ('%.*s', %u, ->%.*sh, %u)"
@@ -620,7 +620,7 @@ expect_fail_n (const char *const encoded, const size_t encoded_len,
     }
     else
     {
-      prnt_size = MHD_bin_to_hex (buf, res_size, prnt);
+      prnt_size = MHD_bin_to_hex_z (buf, res_size, prnt);
       mhd_assert (2 * res_size == prnt_size);
 
       fprintf (stderr,

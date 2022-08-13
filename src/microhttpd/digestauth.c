@@ -1603,7 +1603,6 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
       return false;
     }
     memcpy (nonce, nonce2, NONCE_STD_LEN (digest_size));
-    mhd_assert (0 == nonce[NONCE_STD_LEN (digest_size)]);
   }
   return true;
 }

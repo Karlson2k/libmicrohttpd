@@ -168,7 +168,7 @@ expect_decoded_n (const char *const hex, const size_t hex_len,
     unsigned int check_res = 0;
 
     memset (buf, fill_chr, sizeof(buf)); /* Fill buffer with some character */
-    res_size = MHD_bin_to_hex (bin, bin_size, buf);
+    res_size = MHD_bin_to_hex_z (bin, bin_size, buf);
 
     if (res_size != hex_len)
     {
