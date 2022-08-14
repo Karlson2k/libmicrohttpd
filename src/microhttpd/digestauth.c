@@ -23,7 +23,9 @@
  * @author Amr Ali
  * @author Matthieu Speder
  * @author Christian Grothoff (RFC 7616 support)
- * @author Karlson2k (Evgeny Grin)
+ * @author Karlson2k (Evgeny Grin) (fixes, new API, improvements, large rewrite,
+ *                                  many RFC 7616 features implementation,
+ *                                  old RFC 2069 support)
  */
 #include "digestauth.h"
 #include "gen_auth.h"
@@ -1314,85 +1316,140 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection)
  * H(timestamp ":" method ":" random ":" uri ":" realm) + Hex(timestamp)
  *
  * @param nonce_time The amount of time in seconds for a nonce to be invalid
- * @param method HTTP method
- * @param rnd A pointer to a character array for the random seed
+ * @param mthd_e HTTP method as enum value
+ * @param method HTTP method as a string
+ * @param rnd the pointer to a character array for the random seed
  * @param rnd_size The size of the random seed array @a rnd
- * @param uri HTTP URI (in MHD, without the arguments ("?k=v")
+ * @param saddr the pointer to the socket address structure
+ * @param saddr_size the size of the socket address structure @a saddr
+ * @param uri the HTTP URI (in MHD, without the arguments ("?k=v")
+ * @param uri_len the length of the @a uri
+ * @param first_header the pointer to the first request's header
  * @param realm A string of characters that describes the realm of auth.
  * @param realm_len the length of the @a realm.
+ * @param bind_options the nonce bind options (#MHD_DAuthBindNonce values).
  * @param da digest algorithm to use
- * @param[out] nonce A pointer to a character array for the nonce to put in,
- *        must provide NONCE_STD_LEN(digest_get_size(da))+1 bytes
+ * @param[out] nonce the pointer to a character array for the nonce to put in,
+ *                   must provide NONCE_STD_LEN(digest_get_size(da)) bytes,
+ *                   result is NOT zero-terminated
  */
 static void
 calculate_nonce (uint64_t nonce_time,
+                 enum MHD_HTTP_Method mthd_e,
                  const char *method,
                  const char *rnd,
                  size_t rnd_size,
+                 const struct sockaddr_storage *saddr,
+                 size_t saddr_size,
                  const char *uri,
                  size_t uri_len,
-                 struct MHD_HTTP_Req_Header *first_header,
+                 const struct MHD_HTTP_Req_Header *first_header,
                  const char *realm,
                  size_t realm_len,
+                 unsigned int bind_options,
                  struct DigestAlgorithm *da,
                  char *nonce)
 {
-  uint8_t timestamp[TIMESTAMP_BIN_SIZE];
-  struct MHD_HTTP_Req_Header *h;
-
   digest_init (da);
-  /* If the nonce_time is milliseconds, then the same 48 bit value will repeat
-   * every 8 925 years, which is more than enough to mitigate a replay attack */
+  if (1)
+  {
+    uint8_t timestamp[TIMESTAMP_BIN_SIZE];
+    /* If the nonce_time is milliseconds, then the same 48 bit value will repeat
+     * every 8 925 years, which is more than enough to mitigate a replay attack */
 #if TIMESTAMP_BIN_SIZE != 6
 #error The code needs to be updated here
 #endif
-  timestamp[0] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 0)));
-  timestamp[1] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 1)));
-  timestamp[2] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 2)));
-  timestamp[3] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 3)));
-  timestamp[4] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 4)));
-  timestamp[5] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 5)));
-  digest_update (da,
-                 timestamp,
-                 sizeof (timestamp));
-  digest_update_with_colon (da);
-  digest_update_str (da, method);
-  digest_update_with_colon (da);
+    timestamp[0] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 0)));
+    timestamp[1] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 1)));
+    timestamp[2] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 2)));
+    timestamp[3] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 3)));
+    timestamp[4] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 4)));
+    timestamp[5] = (uint8_t) (nonce_time >> (8 * (TIMESTAMP_BIN_SIZE - 1 - 5)));
+    MHD_bin_to_hex (timestamp,
+                    sizeof (timestamp),
+                    nonce + digest_get_size (da) * 2);
+    digest_update (da,
+                   timestamp,
+                   sizeof (timestamp));
+    digest_update_with_colon (da);
+  }
   if (rnd_size > 0)
+  {
     digest_update (da,
                    rnd,
                    rnd_size);
-  digest_update_with_colon (da);
-  digest_update (da,
-                 uri,
-                 uri_len);
-  for (h = first_header; NULL != h; h = h->next)
-  {
-    if (MHD_GET_ARGUMENT_KIND != h->kind)
-      continue;
-    digest_update (da, "\0", 2);
-    if (0 != h->header_size)
-      digest_update (da, h->header, h->header_size);
-    digest_update (da, "", 1);
-    if (0 != h->value_size)
-      digest_update (da, h->value, h->value_size);
+    digest_update_with_colon (da);
   }
-  digest_update_with_colon (da);
-  digest_update (da,
-                 realm,
-                 realm_len);
+  if ( (0 != (bind_options & MHD_DAUTH_BIND_NONCE_CLIENT_IP)) &&
+       (0 != saddr_size) )
+  {
+    if (AF_INET == saddr->ss_family)
+      digest_update (da,
+                     &((const struct sockaddr_in *) saddr)->sin_addr,
+                     sizeof(((const struct sockaddr_in *) saddr)->sin_addr));
+#ifdef HAVE_INET6
+    else if (AF_INET6 == saddr->ss_family)
+      digest_update (da,
+                     &((const struct sockaddr_in6 *) saddr)->sin6_addr,
+                     sizeof(((const struct sockaddr_in6 *) saddr)->sin6_addr));
+#endif /* HAVE_INET6 */
+    digest_update_with_colon (da);
+  }
+  if (0 != (bind_options & MHD_DAUTH_BIND_NONCE_URI))
+  {
+    if (MHD_HTTP_MTHD_OTHER != mthd_e)
+    {
+      uint8_t mthd_for_hash;
+      if (MHD_HTTP_MTHD_HEAD != mthd_e)
+        mthd_for_hash = (uint8_t) mthd_e;
+      else /* Treat HEAD method in the same way as GET method */
+        mthd_for_hash = (uint8_t) MHD_HTTP_MTHD_GET;
+      digest_update (da,
+                     &mthd_for_hash,
+                     sizeof(mthd_for_hash));
+    }
+    else
+      digest_update_str (da, method);
+
+    digest_update_with_colon (da);
+
+    digest_update (da,
+                   uri,
+                   uri_len);
+    digest_update_with_colon (da);
+  }
+  if (0 != (bind_options & MHD_DAUTH_BIND_NONCE_URI_PARAMS))
+  {
+    const struct MHD_HTTP_Req_Header *h;
+
+    for (h = first_header; NULL != h; h = h->next)
+    {
+      if (MHD_GET_ARGUMENT_KIND != h->kind)
+        continue;
+      digest_update (da, "\0", 2);
+      if (0 != h->header_size)
+        digest_update (da, h->header, h->header_size);
+      digest_update (da, "", 1);
+      if (0 != h->value_size)
+        digest_update (da, h->value, h->value_size);
+    }
+    digest_update_with_colon (da);
+  }
+  if (0 != (bind_options & MHD_DAUTH_BIND_NONCE_REALM))
+  {
+    digest_update (da,
+                   realm,
+                   realm_len);
+    digest_update_with_colon (da);
+  }
   if (1)
   {
-    const unsigned int digest_size = digest_get_size (da);
     uint8_t hash[MAX_DIGEST];
     digest_calc_hash (da, hash);
     MHD_bin_to_hex (hash,
-                    digest_size,
+                    digest_get_size (da),
                     nonce);
   }
-  MHD_bin_to_hex (timestamp,
-                  sizeof (timestamp),
-                  nonce + digest_get_size (da) * 2);
 }
 
 
@@ -1464,7 +1521,8 @@ is_slot_available (const struct MHD_NonceNc *const nn,
  * @param realm_len the length of the @a realm
  * @param da the digest algorithm to use
  * @param[out] nonce the pointer to a character array for the nonce to put in,
- *        must provide NONCE_STD_LEN(digest_get_size(da))+1 bytes
+ *                   must provide NONCE_STD_LEN(digest_get_size(da)) bytes,
+ *                   result is NOT zero-terminated
  * @return true if the new nonce has been added to the nonce-nc map array,
  *         false otherwise.
  */
@@ -1485,14 +1543,18 @@ calculate_add_nonce (struct MHD_Connection *const connection,
   mhd_assert (0 != nonce_size);
 
   calculate_nonce (timestamp,
+                   connection->rq.http_mthd,
                    connection->rq.method,
                    daemon->digest_auth_random,
                    daemon->digest_auth_rand_size,
+                   connection->addr,
+                   (size_t) connection->addr_len,
                    connection->rq.url,
                    connection->rq.url_len,
                    connection->rq.headers_received,
                    realm,
                    realm_len,
+                   daemon->dauth_bind_type,
                    da,
                    nonce);
 
@@ -1532,8 +1594,9 @@ calculate_add_nonce (struct MHD_Connection *const connection,
  * @param connection the MHD connection structure
  * @param realm A string of characters that describes the realm of auth.
  * @param da digest algorithm to use
- * @param[out] nonce A pointer to a character array for the nonce to put in,
- *        must provide NONCE_STD_LEN(digest_get_size(da))+1 bytes
+ * @param[out] nonce the pointer to a character array for the nonce to put in,
+ *                   must provide NONCE_STD_LEN(digest_get_size(da)) bytes,
+ *                   result is NOT zero-terminated
  */
 static bool
 calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
@@ -2213,7 +2276,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     digest_update_with_colon (&da);
     digest_update (&da, realm, realm_len);
     digest_calc_hash (&da, hash1_bin);
-    mhd_assert (sizeof (tmp1) >= (2 * digest_size + 1));
+    mhd_assert (sizeof (tmp1) >= (2 * digest_size));
     MHD_bin_to_hex (hash1_bin, digest_size, tmp1);
     if (! is_param_equal_caseless (&params->username, tmp1, 2 * digest_size))
       return MHD_DAUTH_WRONG_USERNAME;
@@ -2368,7 +2431,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 
   digest_init (&da);
   /* Update digest with H(A1) */
-  mhd_assert (sizeof (tmp1) >= (digest_size * 2 + 1));
+  mhd_assert (sizeof (tmp1) >= (digest_size * 2));
   if (NULL == userdigest)
     MHD_bin_to_hex (hash1_bin, digest_size, tmp1);
   else
@@ -2432,25 +2495,33 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   if (0 != memcmp (hash1_bin, hash2_bin, digest_size))
     return MHD_DAUTH_RESPONSE_WRONG;
 
-  mhd_assert (sizeof(tmp1) >= (NONCE_STD_LEN (digest_size) + 1));
-  /* It was already checked that 'nonce' (including timestamp) was generated
-     by MHD. The next check is mostly an overcaution. */
-  calculate_nonce (nonce_time,
-                   connection->rq.method,
-                   daemon->digest_auth_random,
-                   daemon->digest_auth_rand_size,
-                   connection->rq.url,
-                   connection->rq.url_len,
-                   connection->rq.headers_received,
-                   realm,
-                   realm_len,
-                   &da,
-                   tmp1);
+  if (MHD_DAUTH_BIND_NONCE_NONE != daemon->dauth_bind_type)
+  {
+    mhd_assert (sizeof(tmp1) >= (NONCE_STD_LEN (digest_size) + 1));
+    /* It was already checked that 'nonce' (including timestamp) was generated
+       by MHD. */
+    calculate_nonce (nonce_time,
+                     connection->rq.http_mthd,
+                     connection->rq.method,
+                     daemon->digest_auth_random,
+                     daemon->digest_auth_rand_size,
+                     connection->addr,
+                     (size_t) connection->addr_len,
+                     connection->rq.url,
+                     connection->rq.url_len,
+                     connection->rq.headers_received,
+                     realm,
+                     realm_len,
+                     daemon->dauth_bind_type,
+                     &da,
+                     tmp1);
 
-  if (! is_param_equal (&params->nonce, tmp1,
-                        NONCE_STD_LEN (digest_size)))
-    return MHD_DAUTH_NONCE_WRONG;
-  /* The 'nonce' was generated in the same conditions */
+
+    if (! is_param_equal (&params->nonce, tmp1,
+                          NONCE_STD_LEN (digest_size)))
+      return MHD_DAUTH_NONCE_OTHER_COND;
+    /* The 'nonce' was generated in the same conditions */
+  }
 
   return MHD_DAUTH_OK;
 }
@@ -2716,7 +2787,8 @@ MHD_digest_auth_check2 (struct MHD_Connection *connection,
                                 malgo3);
   if (MHD_DAUTH_OK == res)
     return MHD_YES;
-  else if ((MHD_DAUTH_NONCE_STALE == res) || (MHD_DAUTH_NONCE_WRONG == res))
+  else if ((MHD_DAUTH_NONCE_STALE == res) || (MHD_DAUTH_NONCE_WRONG == res) ||
+           (MHD_DAUTH_NONCE_OTHER_COND == res) )
     return MHD_INVALID_NONCE;
   return MHD_NO;
 
@@ -2773,7 +2845,8 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
                                        malgo3);
   if (MHD_DAUTH_OK == res)
     return MHD_YES;
-  else if ((MHD_DAUTH_NONCE_STALE == res) || (MHD_DAUTH_NONCE_WRONG == res))
+  else if ((MHD_DAUTH_NONCE_STALE == res) || (MHD_DAUTH_NONCE_WRONG == res) ||
+           (MHD_DAUTH_NONCE_OTHER_COND == res) )
     return MHD_INVALID_NONCE;
   return MHD_NO;
 }

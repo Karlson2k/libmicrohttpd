@@ -694,6 +694,10 @@ ahc_echo (void *cls,
         mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
                           "MHD_DAUTH_NONCE_WRONG");
         break;
+      case MHD_DAUTH_NONCE_OTHER_COND:
+        mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
+                          "MHD_DAUTH_NONCE_OTHER_COND");
+        break;
       case MHD_DAUTH_ERROR:
         externalErrorExitDesc ("General error returned " \
                                "by 'MHD_digest_auth_check[_digest]3()'");

@@ -2225,6 +2225,10 @@ struct MHD_Daemon
    */
   unsigned int nonce_nc_size;
 
+  /**
+   * Nonce bind type.
+   */
+  unsigned int dauth_bind_type;
 #endif
 
 #ifdef TCP_FASTOPEN

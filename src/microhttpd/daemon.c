@@ -6257,6 +6257,12 @@ parse_options_va (struct MHD_Daemon *daemon,
       daemon->nonce_nc_size = va_arg (ap,
                                       unsigned int);
       break;
+    case MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE:
+      daemon->dauth_bind_type = va_arg (ap,
+                                        unsigned int);
+      if (0 != (daemon->dauth_bind_type & MHD_DAUTH_BIND_NONCE_URI_PARAMS))
+        daemon->dauth_bind_type |= MHD_DAUTH_BIND_NONCE_URI;
+      break;
 #endif
     case MHD_OPTION_LISTEN_SOCKET:
       if (0 != (daemon->options & MHD_USE_NO_LISTEN_SOCKET))
@@ -6379,6 +6385,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_LISTENING_ADDRESS_REUSE:
         case MHD_OPTION_LISTEN_BACKLOG_SIZE:
         case MHD_OPTION_SERVER_INSANITY:
+        case MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE:
           if (MHD_NO == parse_options (daemon,
                                        servaddr,
                                        opt,
