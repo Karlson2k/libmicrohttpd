@@ -2083,6 +2083,13 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 #endif /* HAVE_MESSAGES */
     return MHD_DAUTH_WRONG_QOP;
   }
+#ifdef HAVE_MESSAGES
+  if ((MHD_DIGEST_AUTH_QOP_NONE == c_qop) &&
+      (0 == (((unsigned int) c_algo) & MHD_DIGEST_BASE_ALGO_MD5)))
+    MHD_DLOG (connection->daemon,
+              _ ("RFC2069 with SHA-256 algorithm is non-standard " \
+                 "extension.\n"));
+#endif /* HAVE_MESSAGES */
 
   digest_size = digest_get_size (&da);
 
@@ -2921,6 +2928,10 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
       MHD_DLOG (connection->daemon,
                 _ ("The 'userhash' and 'charset' ('prefer_utf8') parameters " \
                    "are not compatible with RFC2069 and ignored.\n"));
+    if (0 == (((unsigned int) s_algo) & MHD_DIGEST_BASE_ALGO_MD5))
+      MHD_DLOG (connection->daemon,
+                _ ("RFC2069 with SHA-256 algorithm is non-standard " \
+                   "extension.\n"));
 #endif
     userhash_support = 0;
     prefer_utf8 = 0;
