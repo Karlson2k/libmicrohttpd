@@ -2301,9 +2301,9 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
                      "probably increase the size of the nonce array.\n"));
       else
         MHD_DLOG (daemon,
-                  _ ("Stale nonce received. If this happens a lot, you should "
-                     "probably increase the size of the nonce array or not"
-                     "use RFC2069-compatible mode .\n"));
+                  _ ("Stale nonce received. This is expected when client " \
+                     "uses RFC2069-compatible mode and makes more than one " \
+                     "request.\n"));
 #endif
       return MHD_DAUTH_NONCE_STALE;
     }
