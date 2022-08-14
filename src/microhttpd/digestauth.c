@@ -1544,6 +1544,15 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
   const uint64_t timestamp1 = MHD_monotonic_msec_counter ();
   const size_t realm_len = strlen (realm);
 
+#ifdef HAVE_MESSAGES
+  if (0 == MHD_get_master (connection->daemon)->digest_auth_rand_size)
+    MHD_DLOG (connection->daemon,
+              _ ("Random value was not initialised by " \
+                 "MHD_OPTION_DIGEST_AUTH_RANDOM or " \
+                 "MHD_OPTION_DIGEST_AUTH_RANDOM_COPY, generated nonces " \
+                 "are predictable.\n"));
+#endif
+
   if (! calculate_add_nonce (connection, timestamp1, realm, realm_len, da,
                              nonce))
   {
