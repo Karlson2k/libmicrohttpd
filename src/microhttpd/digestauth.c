@@ -2966,13 +2966,17 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
     buf_size += MHD_STATICSTR_LEN_ (MHD_TOKEN_AUTH_);
   }
   /* 'algorithm="xxxx", ' */
-  buf_size += MHD_STATICSTR_LEN_ (prefix_algo) + 2; /* 2 for ', ' */
-  if (MHD_DIGEST_AUTH_ALGO3_MD5 == s_algo)
-    buf_size += MHD_STATICSTR_LEN_ (_MHD_MD5_TOKEN);
-  else if (MHD_DIGEST_AUTH_ALGO3_SHA256 == s_algo)
-    buf_size += MHD_STATICSTR_LEN_ (_MHD_SHA256_TOKEN);
-  else
-    mhd_assert (0);
+  if (((MHD_DIGEST_AUTH_MULT_QOP_NONE) != mqop) ||
+      (0 == (((unsigned int) s_algo) & MHD_DIGEST_BASE_ALGO_MD5)))
+  {
+    buf_size += MHD_STATICSTR_LEN_ (prefix_algo) + 2; /* 2 for ', ' */
+    if (MHD_DIGEST_AUTH_ALGO3_MD5 == s_algo)
+      buf_size += MHD_STATICSTR_LEN_ (_MHD_MD5_TOKEN);
+    else if (MHD_DIGEST_AUTH_ALGO3_SHA256 == s_algo)
+      buf_size += MHD_STATICSTR_LEN_ (_MHD_SHA256_TOKEN);
+    else
+      mhd_assert (0);
+  }
   /* 'nonce="xxxx", ' */
   buf_size += MHD_STATICSTR_LEN_ (prefix_nonce) + 3; /* 3 for '", ' */
   buf_size += NONCE_STD_LEN (digest_get_size (&da)); /* Escaping not needed */
@@ -3048,23 +3052,27 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
     buf[p++] = ' ';
   }
   /* 'algorithm="xxxx", ' */
-  memcpy (buf + p, prefix_algo,
-          MHD_STATICSTR_LEN_ (prefix_algo));
-  p += MHD_STATICSTR_LEN_ (prefix_algo);
-  if (MHD_DIGEST_AUTH_ALGO3_MD5 == s_algo)
+  if (((MHD_DIGEST_AUTH_MULT_QOP_NONE) != mqop) ||
+      (0 == (((unsigned int) s_algo) & MHD_DIGEST_BASE_ALGO_MD5)))
   {
-    memcpy (buf + p, _MHD_MD5_TOKEN,
-            MHD_STATICSTR_LEN_ (_MHD_MD5_TOKEN));
-    p += MHD_STATICSTR_LEN_ (_MHD_MD5_TOKEN);
+    memcpy (buf + p, prefix_algo,
+            MHD_STATICSTR_LEN_ (prefix_algo));
+    p += MHD_STATICSTR_LEN_ (prefix_algo);
+    if (MHD_DIGEST_AUTH_ALGO3_MD5 == s_algo)
+    {
+      memcpy (buf + p, _MHD_MD5_TOKEN,
+              MHD_STATICSTR_LEN_ (_MHD_MD5_TOKEN));
+      p += MHD_STATICSTR_LEN_ (_MHD_MD5_TOKEN);
+    }
+    else if (MHD_DIGEST_AUTH_ALGO3_SHA256 == s_algo)
+    {
+      memcpy (buf + p, _MHD_SHA256_TOKEN,
+              MHD_STATICSTR_LEN_ (_MHD_SHA256_TOKEN));
+      p += MHD_STATICSTR_LEN_ (_MHD_SHA256_TOKEN);
+    }
+    buf[p++] = ',';
+    buf[p++] = ' ';
   }
-  else if (MHD_DIGEST_AUTH_ALGO3_SHA256 == s_algo)
-  {
-    memcpy (buf + p, _MHD_SHA256_TOKEN,
-            MHD_STATICSTR_LEN_ (_MHD_SHA256_TOKEN));
-    p += MHD_STATICSTR_LEN_ (_MHD_SHA256_TOKEN);
-  }
-  buf[p++] = ',';
-  buf[p++] = ' ';
   /* 'nonce="xxxx", ' */
   memcpy (buf + p, prefix_nonce,
           MHD_STATICSTR_LEN_ (prefix_nonce));
