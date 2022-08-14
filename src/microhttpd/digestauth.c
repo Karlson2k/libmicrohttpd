@@ -2115,7 +2115,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     return MHD_DAUTH_WRONG_REALM;
   else if (((NULL == userdigest) || params->userhash) &&
            (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < params->realm.value.len))
-    return MHD_DAUTH_TOO_LARGE; /* Realm is too large and it will be used in hash calculations */
+    return MHD_DAUTH_TOO_LARGE; /* Realm is too large and should be used in hash calculations */
 
   if (MHD_DIGEST_AUTH_QOP_NONE != c_qop)
   {
@@ -2954,7 +2954,13 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
   /* 'realm="xxxx", ' */
   realm_len = strlen (realm);
   if (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < realm_len)
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The 'realm' is too large.\n"));
+#endif /* HAVE_MESSAGES */
     return MHD_NO;
+  }
   if ((NULL != memchr (realm, '\r', realm_len)) ||
       (NULL != memchr (realm, '\n', realm_len)))
     return MHD_NO;
@@ -3034,7 +3040,21 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
           MHD_STATICSTR_LEN_ (prefix_realm));
   p += MHD_STATICSTR_LEN_ (prefix_realm);
   mhd_assert ((buf_size - p) >= (realm_len * 2));
-  p += MHD_str_quote (realm, realm_len, buf + p, buf_size - p);
+  if (1)
+  {
+    size_t quoted_size;
+    quoted_size = MHD_str_quote (realm, realm_len, buf + p, buf_size - p);
+    if (_MHD_AUTH_DIGEST_MAX_PARAM_SIZE < quoted_size)
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+                _ ("The 'realm' is too large after 'quoting'.\n"));
+#endif /* HAVE_MESSAGES */
+      free (buf);
+      return MHD_NO;
+    }
+    p += quoted_size;
+  }
   buf[p++] = '\"';
   buf[p++] = ',';
   buf[p++] = ' ';
