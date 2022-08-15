@@ -799,6 +799,8 @@ ahc_echo (void *cls,
                  check_res);
         mhdErrorExitDesc ("Impossible returned code");
       }
+      fflush (stderr);
+      fflush (stdout);
 
       if (MHD_DAUTH_OK == check_res)
       {
@@ -832,7 +834,7 @@ ahc_echo (void *cls,
           mhdErrorExitDesc ("'MHD_queue_auth_required_response3()' failed");
       }
       else
-        mhdErrorExitDesc ("Wrong 'check_res' value");
+        externalErrorExitDesc ("Wrong 'check_res' value");
     }
     else
     {
@@ -960,7 +962,7 @@ ahc_echo (void *cls,
                                            MHD_DIGEST_ALG_SHA256 :
                                            MHD_DIGEST_ALG_MD5);
       if (MHD_YES != res)
-        mhdErrorExitDesc ("'MHD_queue_auth_fail_response()' failed");
+        mhdErrorExitDesc ("'MHD_queue_auth_fail_response2()' failed");
     }
   }
   else if (1 == test_oldapi)
