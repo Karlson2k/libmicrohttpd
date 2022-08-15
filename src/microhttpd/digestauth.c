@@ -1313,7 +1313,7 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection)
 /**
  * Calculate the server nonce so that it mitigates replay attacks
  * The current format of the nonce is ...
- * H(timestamp ":" method ":" random ":" uri ":" realm) + Hex(timestamp)
+ * H(various parameters) + Hex(timestamp)
  *
  * @param nonce_time The amount of time in seconds for a nonce to be invalid
  * @param mthd_e HTTP method as enum value
@@ -1353,6 +1353,7 @@ calculate_nonce (uint64_t nonce_time,
   digest_init (da);
   if (1)
   {
+    /* Add the timestamp to the hash calculation */
     uint8_t timestamp[TIMESTAMP_BIN_SIZE];
     /* If the nonce_time is milliseconds, then the same 48 bit value will repeat
      * every 8 919 years, which is more than enough to mitigate a replay attack */
@@ -1371,28 +1372,30 @@ calculate_nonce (uint64_t nonce_time,
     digest_update (da,
                    timestamp,
                    sizeof (timestamp));
-    digest_update_with_colon (da);
   }
   if (rnd_size > 0)
   {
+    /* Add the unique random value to the hash calculation */
+    digest_update_with_colon (da);
     digest_update (da,
                    rnd,
                    rnd_size);
-    digest_update_with_colon (da);
   }
   if ( (MHD_DAUTH_BIND_NONCE_NONE == bind_options) &&
        (0 != saddr_size) )
   {
-    /* Use full client address including source port to make unique nonces
+    /* Add full client address including source port to make unique nonces
      * for requests received exactly at the same time */
+    digest_update_with_colon (da);
     digest_update (da,
                    saddr,
                    saddr_size);
-    digest_update_with_colon (da);
   }
   if ( (0 != (bind_options & MHD_DAUTH_BIND_NONCE_CLIENT_IP)) &&
        (0 != saddr_size) )
   {
+    /* Add the client's IP address to the hash calculation */
+    digest_update_with_colon (da);
     if (AF_INET == saddr->ss_family)
       digest_update (da,
                      &((const struct sockaddr_in *) saddr)->sin_addr,
@@ -1403,11 +1406,12 @@ calculate_nonce (uint64_t nonce_time,
                      &((const struct sockaddr_in6 *) saddr)->sin6_addr,
                      sizeof(((const struct sockaddr_in6 *) saddr)->sin6_addr));
 #endif /* HAVE_INET6 */
-    digest_update_with_colon (da);
   }
   if ( (MHD_DAUTH_BIND_NONCE_NONE == bind_options) ||
        (0 != (bind_options & MHD_DAUTH_BIND_NONCE_URI)))
   {
+    /* Add the request method to the hash calculation */
+    digest_update_with_colon (da);
     if (MHD_HTTP_MTHD_OTHER != mthd_e)
     {
       uint8_t mthd_for_hash;
@@ -1425,17 +1429,19 @@ calculate_nonce (uint64_t nonce_time,
 
   if (0 != (bind_options & MHD_DAUTH_BIND_NONCE_URI))
   {
+    /* Add the request URI to the hash calculation */
     digest_update_with_colon (da);
 
     digest_update (da,
                    uri,
                    uri_len);
-    digest_update_with_colon (da);
   }
   if (0 != (bind_options & MHD_DAUTH_BIND_NONCE_URI_PARAMS))
   {
+    /* Add the request URI parameters to the hash calculation */
     const struct MHD_HTTP_Req_Header *h;
 
+    digest_update_with_colon (da);
     for (h = first_header; NULL != h; h = h->next)
     {
       if (MHD_GET_ARGUMENT_KIND != h->kind)
@@ -1447,15 +1453,15 @@ calculate_nonce (uint64_t nonce_time,
       if (0 != h->value_size)
         digest_update (da, h->value, h->value_size);
     }
-    digest_update_with_colon (da);
   }
   if ( (MHD_DAUTH_BIND_NONCE_NONE == bind_options) ||
        (0 != (bind_options & MHD_DAUTH_BIND_NONCE_REALM)))
   {
+    /* Add the realm to the hash calculation */
+    digest_update_with_colon (da);
     digest_update (da,
                    realm,
                    realm_len);
-    digest_update_with_colon (da);
   }
   if (1)
   {
