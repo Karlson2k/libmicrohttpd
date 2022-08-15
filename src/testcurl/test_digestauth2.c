@@ -1129,7 +1129,7 @@ setupCURL (void *cbc, unsigned int port)
 
 
 static CURLcode
-performQueryExternal (struct MHD_Daemon *d, CURL *c)
+performQueryExternal (struct MHD_Daemon *d, CURL *c, CURLM **multi_reuse)
 {
   CURLM *multi;
   time_t start;
@@ -1137,10 +1137,15 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c)
   CURLcode ret;
 
   ret = CURLE_FAILED_INIT; /* will be replaced with real result */
-  multi = NULL;
-  multi = curl_multi_init ();
-  if (multi == NULL)
-    libcurlErrorExitDesc ("curl_multi_init() failed");
+  if (NULL != *multi_reuse)
+    multi = *multi_reuse;
+  else
+  {
+    multi = curl_multi_init ();
+    if (multi == NULL)
+      libcurlErrorExitDesc ("curl_multi_init() failed");
+    *multi_reuse = multi;
+  }
   if (CURLM_OK != curl_multi_add_handle (multi, c))
     libcurlErrorExitDesc ("curl_multi_add_handle() failed");
 
@@ -1185,7 +1190,6 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c)
           externalErrorExit ();
         }
         curl_multi_remove_handle (multi, c);
-        curl_multi_cleanup (multi);
         multi = NULL;
       }
       else
@@ -1291,6 +1295,7 @@ testDigestAuth (void)
   struct req_track rq_tr;
   char buf[2048];
   CURL *c;
+  CURLM *multi_reuse;
   int failed = 0;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -1348,8 +1353,9 @@ testDigestAuth (void)
   cbc.pos = 0;
   memset (cbc.buf, 0, cbc.size);
   c = setupCURL (&cbc, (unsigned int) port);
+  multi_reuse = NULL;
   /* First request */
-  if (check_result (performQueryExternal (d, c), c, &cbc))
+  if (check_result (performQueryExternal (d, c, &multi_reuse), c, &cbc))
   {
     if (verbose)
       printf ("Got expected response.\n");
@@ -1363,7 +1369,7 @@ testDigestAuth (void)
   rq_tr.req_num = 0;
   /* Second request */
   setCURL_rq_path (c, port, ++rq_tr.uri_num);
-  if (check_result (performQueryExternal (d, c), c, &cbc))
+  if (check_result (performQueryExternal (d, c, &multi_reuse), c, &cbc))
   {
     if (verbose)
       printf ("Got expected response.\n");
@@ -1374,6 +1380,8 @@ testDigestAuth (void)
     failed = 1;
   }
   curl_easy_cleanup (c);
+  if (NULL != multi_reuse)
+    curl_multi_cleanup (multi_reuse);
 
   MHD_stop_daemon (d);
   return failed ? 1 : 0;
