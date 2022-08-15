@@ -1562,6 +1562,9 @@ enum MHD_DAuthBindNonce
    * for any request in the same "protection space".
    * CPU is loaded less when this value is used when checking client's
    * authorisation request.
+   * This mode gives MHD maximum flexibility for nonces generation and can
+   * prevent possible nonce collisions (and corresponding log warning messages)
+   * when clients' requests are intensive.
    * This value cannot be combined with other values.
    */
   MHD_DAUTH_BIND_NONCE_NONE = 0,
@@ -1596,9 +1599,6 @@ enum MHD_DAuthBindNonce
    * jump from one IP to another (mobile or Wi-Fi handover, DHCP re-assignment,
    * Multi-NAT, different proxy chain and other reasons), while IP address
    * spoofing could be used relatively easily.
-   * However, if server gets intensive requests with Digest Authentication
-   * this value helps to generate unique nonces for several requests, received
-   * exactly at the same time (within one millisecond) from different clients.
    */
   MHD_DAUTH_BIND_NONCE_CLIENT_IP = 1 << 3
 } _MHD_FLAGS_ENUM;
@@ -2014,6 +2014,7 @@ enum MHD_OPTION
    * #MHD_digest_auth_check3() and similar functions.
    * This option should be followed by an 'unsigned int` argument with value
    * formed as bitwise OR combination of #MHD_DAuthBindNonce values.
+   * When not specified, default value #MHD_DAUTH_BIND_NONCE_NONE is used.
    * @note Available since #MHD_VERSION 0x00097531
    */
   MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE = 36

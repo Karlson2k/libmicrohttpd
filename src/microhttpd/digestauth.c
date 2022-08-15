@@ -1380,6 +1380,16 @@ calculate_nonce (uint64_t nonce_time,
                    rnd_size);
     digest_update_with_colon (da);
   }
+  if ( (MHD_DAUTH_BIND_NONCE_NONE == bind_options) &&
+       (0 != saddr_size) )
+  {
+    /* Use full client address including source port to make unique nonces
+     * for requests received exactly at the same time */
+    digest_update (da,
+                   saddr,
+                   saddr_size);
+    digest_update_with_colon (da);
+  }
   if ( (0 != (bind_options & MHD_DAUTH_BIND_NONCE_CLIENT_IP)) &&
        (0 != saddr_size) )
   {
@@ -1395,7 +1405,8 @@ calculate_nonce (uint64_t nonce_time,
 #endif /* HAVE_INET6 */
     digest_update_with_colon (da);
   }
-  if (0 != (bind_options & MHD_DAUTH_BIND_NONCE_URI))
+  if ( (MHD_DAUTH_BIND_NONCE_NONE == bind_options) ||
+       (0 != (bind_options & MHD_DAUTH_BIND_NONCE_URI)))
   {
     if (MHD_HTTP_MTHD_OTHER != mthd_e)
     {
@@ -1410,7 +1421,10 @@ calculate_nonce (uint64_t nonce_time,
     }
     else
       digest_update_str (da, method);
+  }
 
+  if (0 != (bind_options & MHD_DAUTH_BIND_NONCE_URI))
+  {
     digest_update_with_colon (da);
 
     digest_update (da,
@@ -1435,7 +1449,8 @@ calculate_nonce (uint64_t nonce_time,
     }
     digest_update_with_colon (da);
   }
-  if (0 != (bind_options & MHD_DAUTH_BIND_NONCE_REALM))
+  if ( (MHD_DAUTH_BIND_NONCE_NONE == bind_options) ||
+       (0 != (bind_options & MHD_DAUTH_BIND_NONCE_REALM)))
   {
     digest_update (da,
                    realm,
