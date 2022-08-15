@@ -1355,7 +1355,7 @@ calculate_nonce (uint64_t nonce_time,
   {
     uint8_t timestamp[TIMESTAMP_BIN_SIZE];
     /* If the nonce_time is milliseconds, then the same 48 bit value will repeat
-     * every 8 925 years, which is more than enough to mitigate a replay attack */
+     * every 8 919 years, which is more than enough to mitigate a replay attack */
 #if TIMESTAMP_BIN_SIZE != 6
 #error The code needs to be updated here
 #endif
