@@ -229,6 +229,14 @@ _checkCURLE_OK_func (CURLcode code, const char *curlFunc,
 
 #define MHD_URI_BASE_PATH "/bar%20foo?key=value"
 #define MHD_URI_BASE_PATH2 "/another_path"
+/* Should not fit buffer in the stack */
+#define MHD_URI_BASE_PATH3 \
+  "/long/long/long/long/long/long/long/long/long/long/long/long/long/long" \
+  "/long/long/long/long/long/long/long/long/long/long/long/long/long/long" \
+  "/long/long/long/long/long/long/long/long/long/long/long/long/long/long" \
+  "/long/long/long/long/long/long/long/long/long/long/long/long/long/long" \
+  "/long/long/long/long/long/long/long/long/long/long/long/long/long/long" \
+  "/path?with%20some=parameters"
 
 #define REALM_VAL "TestRealm"
 #define USERNAME1 "test_user"
@@ -705,7 +713,7 @@ ahc_echo (void *cls,
 
       if (test_rfc2069)
       {
-        if ((1 == tr_p->uri_num) && (1 == tr_p->req_num))
+        if ((0 != tr_p->uri_num) && (1 == tr_p->req_num))
           expect_res = MHD_DAUTH_NONCE_STALE;
         else
           expect_res = MHD_DAUTH_OK;
@@ -1060,19 +1068,26 @@ ahc_echo (void *cls,
  *
  * @param c the CURL handle to use
  * @param port the port to set
- * @param uri_num the number of URI, 0 or 1
+ * @param uri_num the number of URI, should be 0, 1 or 2
  */
 static void
 setCURL_rq_path (CURL *c, unsigned int port, unsigned int uri_num)
 {
+  const char *req_path;
   char uri[512];
   int res;
+
+  if (0 == uri_num)
+    req_path = MHD_URI_BASE_PATH;
+  else if (1 == uri_num)
+    req_path = MHD_URI_BASE_PATH2;
+  else
+    req_path = MHD_URI_BASE_PATH3;
   /* A workaround for some old libcurl versions, which ignore the specified
    * port by CURLOPT_PORT when authorisation is used. */
   res = snprintf (uri, (sizeof(uri) / sizeof(uri[0])),
                   "http://127.0.0.1:%u%s", port,
-                  (0 == uri_num) ?
-                  MHD_URI_BASE_PATH : MHD_URI_BASE_PATH2);
+                  req_path);
   if ((0 >= res) || ((sizeof(uri) / sizeof(uri[0])) <= (size_t) res))
     externalErrorExitDesc ("Cannot form request URL");
 
@@ -1357,12 +1372,14 @@ testDigestAuth (void)
   /* First request */
   if (check_result (performQueryExternal (d, c, &multi_reuse), c, &cbc))
   {
+    fflush (stderr);
     if (verbose)
-      printf ("Got expected response.\n");
+      printf ("Got first expected response.\n");
+    fflush (stdout);
   }
   else
   {
-    fprintf (stderr, "Request FAILED.\n");
+    fprintf (stderr, "First request FAILED.\n");
     failed = 1;
   }
   cbc.pos = 0; /* Reset buffer position */
@@ -1371,14 +1388,36 @@ testDigestAuth (void)
   setCURL_rq_path (c, port, ++rq_tr.uri_num);
   if (check_result (performQueryExternal (d, c, &multi_reuse), c, &cbc))
   {
+    fflush (stderr);
     if (verbose)
-      printf ("Got expected response.\n");
+      printf ("Got second expected response.\n");
+    fflush (stdout);
   }
   else
   {
-    fprintf (stderr, "Request FAILED.\n");
+    fprintf (stderr, "Second request FAILED.\n");
     failed = 1;
   }
+  cbc.pos = 0; /* Reset buffer position */
+  rq_tr.req_num = 0;
+  /* Third request */
+  if (NULL != multi_reuse)
+    curl_multi_cleanup (multi_reuse);
+  multi_reuse = NULL; /* Force new connection */
+  setCURL_rq_path (c, port, ++rq_tr.uri_num);
+  if (check_result (performQueryExternal (d, c, &multi_reuse), c, &cbc))
+  {
+    fflush (stderr);
+    if (verbose)
+      printf ("Got third expected response.\n");
+    fflush (stdout);
+  }
+  else
+  {
+    fprintf (stderr, "Third request FAILED.\n");
+    failed = 1;
+  }
+
   curl_easy_cleanup (c);
   if (NULL != multi_reuse)
     curl_multi_cleanup (multi_reuse);
