@@ -383,6 +383,9 @@ setupCURL (void *cbc, uint16_t port, char *errbuf)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
                                      CURL_HTTP_VERSION_1_1)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L)) ||
+#ifdef _DEBUG
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_VERBOSE, 1L)) ||
+#endif /* _DEBUG */
 #if CURL_AT_LEAST_VERSION (7, 19, 4)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_PROTOCOLS, CURLPROTO_HTTP)) ||
 #endif /* CURL_AT_LEAST_VERSION (7, 19, 4) */
@@ -472,7 +475,6 @@ worker_func (void *param)
   req_result = curl_easy_perform (w->c);
   if (CURLE_OK != req_result)
   {
-    fflush (stdout);
     if (0 != w->libcurl_errbuf[0])
       fprintf (stderr, "Worker %d: first request failed. "
                "libcurl error: '%s'.\n"
@@ -483,7 +485,6 @@ worker_func (void *param)
       fprintf (stderr, "Worker %d: first request failed. "
                "libcurl error: '%s'.\n",
                w->workerNumber, curl_easy_strerror (req_result));
-    fflush (stderr);
   }
   else
   {
@@ -506,13 +507,16 @@ worker_func (void *param)
       printf ("Worker %d: first request successful.\n", w->workerNumber);
     w->success++;
   }
+#ifdef _DEBUG
+  fflush (stderr);
+  fflush (stdout);
+#endif /* _DEBUG */
 
   /* Second request */
   w->cbc.pos = 0;
   req_result = curl_easy_perform (w->c);
   if (CURLE_OK != req_result)
   {
-    fflush (stdout);
     if (0 != w->libcurl_errbuf[0])
       fprintf (stderr, "Worker %d: second request failed. "
                "libcurl error: '%s'.\n"
@@ -523,7 +527,6 @@ worker_func (void *param)
       fprintf (stderr, "Worker %d: second request failed. "
                "libcurl error: '%s'.\n",
                w->workerNumber, curl_easy_strerror (req_result));
-    fflush (stderr);
   }
   else
   {
@@ -546,6 +549,10 @@ worker_func (void *param)
       printf ("Worker %d: second request successful.\n", w->workerNumber);
     w->success++;
   }
+#ifdef _DEBUG
+  fflush (stderr);
+  fflush (stdout);
+#endif /* _DEBUG */
 
   w->finished = ! 0;
   return NULL;
