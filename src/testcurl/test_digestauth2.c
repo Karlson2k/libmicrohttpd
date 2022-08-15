@@ -275,6 +275,10 @@ static int test_userhash;
 static int test_userdigest;
 static int test_sha256;
 static int test_rfc2069;
+/* Bind DAuth nonces to everything except URI */
+static int test_bind_all;
+/* Bind DAuth nonces to URI */
+static int test_bind_uri;
 static int curl_uses_usehash;
 
 /* Static helper variables */
@@ -706,6 +710,13 @@ ahc_echo (void *cls,
         else
           expect_res = MHD_DAUTH_OK;
       }
+      else if (test_bind_uri)
+      {
+        if ((0 != tr_p->uri_num) && (1 == tr_p->req_num))
+          expect_res = MHD_DAUTH_NONCE_OTHER_COND;
+        else
+          expect_res = MHD_DAUTH_OK;
+      }
       else
         expect_res = MHD_DAUTH_OK;
 
@@ -732,14 +743,21 @@ ahc_echo (void *cls,
           mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
                             "MHD_DAUTH_NONCE_STALE");
         break;
+      case MHD_DAUTH_NONCE_OTHER_COND:
+        if (expect_res == MHD_DAUTH_NONCE_OTHER_COND)
+        {
+          if (verbose)
+            printf ("Got expected auth check result: "
+                    "MHD_DAUTH_NONCE_OTHER_COND.\n");
+        }
+        else
+          mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
+                            "MHD_DAUTH_NONCE_OTHER_COND");
+        break;
       /* Invalid results */
       case MHD_DAUTH_NONCE_WRONG:
         mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
                           "MHD_DAUTH_NONCE_WRONG");
-        break;
-      case MHD_DAUTH_NONCE_OTHER_COND:
-        mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
-                          "MHD_DAUTH_NONCE_OTHER_COND");
         break;
       case MHD_DAUTH_ERROR:
         externalErrorExitDesc ("General error returned " \
@@ -786,7 +804,8 @@ ahc_echo (void *cls,
             MHD_queue_response (connection, MHD_HTTP_OK, response))
           mhdErrorExitDesc ("'MHD_queue_response()' failed");
       }
-      else if (MHD_DAUTH_NONCE_STALE == check_res)
+      else if ((MHD_DAUTH_NONCE_STALE == check_res) ||
+               (MHD_DAUTH_NONCE_OTHER_COND == check_res))
       {
         response =
           MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (DENIED),
@@ -838,6 +857,7 @@ ahc_echo (void *cls,
     /* Use old API v2 */
     char *username;
     int check_res;
+    int expect_res;
 
     username = MHD_digest_auth_get_username (connection);
     if (NULL != username)
@@ -868,10 +888,21 @@ ahc_echo (void *cls,
                                          MHD_DIGEST_ALG_SHA256 :
                                          MHD_DIGEST_ALG_MD5);
 
-      if (MHD_YES != check_res)
+      if (test_bind_uri)
+      {
+        if ((0 != tr_p->uri_num) && (1 == tr_p->req_num))
+          expect_res = MHD_INVALID_NONCE;
+        else
+          expect_res = MHD_YES;
+      }
+      else
+        expect_res = MHD_YES;
+
+      if (expect_res != check_res)
       {
         fprintf (stderr, "'MHD_digest_auth_check[_digest]2()' returned "
-                 "unexpected result: %d. ", check_res);
+                 "unexpected result '%d', while expected is '%d. ",
+                 check_res, expect_res);
         mhdErrorExitDesc ("Wrong 'MHD_digest_auth_check[_digest]2()' result");
       }
       response =
@@ -880,9 +911,24 @@ ahc_echo (void *cls,
       if (NULL == response)
         mhdErrorExitDesc ("Response creation failed");
 
-      if (MHD_YES !=
-          MHD_queue_response (connection, MHD_HTTP_OK, response))
-        mhdErrorExitDesc ("'MHD_queue_response()' failed");
+      if (MHD_YES == expect_res)
+      {
+        if (MHD_YES !=
+            MHD_queue_response (connection, MHD_HTTP_OK, response))
+          mhdErrorExitDesc ("'MHD_queue_response()' failed");
+      }
+      else if (MHD_INVALID_NONCE == expect_res)
+      {
+        if (MHD_YES !=
+            MHD_queue_auth_fail_response2 (connection, REALM_VAL, OPAQUE_VALUE,
+                                           response, 1,
+                                           test_sha256 ?
+                                           MHD_DIGEST_ALG_SHA256 :
+                                           MHD_DIGEST_ALG_MD5))
+          mhdErrorExitDesc ("'MHD_queue_auth_fail_response2()' failed");
+      }
+      else
+        externalErrorExitDesc ("Wrong 'check_res' value");
     }
     else
     {
@@ -914,6 +960,7 @@ ahc_echo (void *cls,
     /* Use old API v1 */
     char *username;
     int check_res;
+    int expect_res;
 
     username = MHD_digest_auth_get_username (connection);
     if (NULL != username)
@@ -939,21 +986,45 @@ ahc_echo (void *cls,
                                         userdigest_bin,
                                         50 * TIMEOUTS_VAL);
 
-      if (MHD_YES != check_res)
+      if (test_bind_uri)
+      {
+        if ((0 != tr_p->uri_num) && (1 == tr_p->req_num))
+          expect_res = MHD_INVALID_NONCE;
+        else
+          expect_res = MHD_YES;
+      }
+      else
+        expect_res = MHD_YES;
+
+      if (expect_res != check_res)
       {
         fprintf (stderr, "'MHD_digest_auth_check[_digest]()' returned "
-                 "unexpected result: %d. ", check_res);
+                 "unexpected result '%d', while expected is '%d. ",
+                 check_res, expect_res);
         mhdErrorExitDesc ("Wrong 'MHD_digest_auth_check[_digest]()' result");
       }
+
       response =
         MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (PAGE),
                                                 (const void *) PAGE);
       if (NULL == response)
         mhdErrorExitDesc ("Response creation failed");
 
-      if (MHD_YES !=
-          MHD_queue_response (connection, MHD_HTTP_OK, response))
-        mhdErrorExitDesc ("'MHD_queue_response()' failed");
+      if (MHD_YES == expect_res)
+      {
+        if (MHD_YES !=
+            MHD_queue_response (connection, MHD_HTTP_OK, response))
+          mhdErrorExitDesc ("'MHD_queue_response()' failed");
+      }
+      else if (MHD_INVALID_NONCE == expect_res)
+      {
+        if (MHD_YES !=
+            MHD_queue_auth_fail_response (connection, REALM_VAL, OPAQUE_VALUE,
+                                          response, 1))
+          mhdErrorExitDesc ("'MHD_queue_auth_fail_response()' failed");
+      }
+      else
+        externalErrorExitDesc ("Wrong 'check_res' value");
     }
     else
     {
@@ -1213,6 +1284,7 @@ check_result (CURLcode curl_code, CURL *c, struct CBC *pcbc)
 static unsigned int
 testDigestAuth (void)
 {
+  unsigned int dauth_nonce_bind;
   struct MHD_Daemon *d;
   uint16_t port;
   struct CBC cbc;
@@ -1237,12 +1309,21 @@ testDigestAuth (void)
       fflush (stderr);
     }
 
+    dauth_nonce_bind = MHD_DAUTH_BIND_NONCE_NONE;
+    if (test_bind_all)
+      dauth_nonce_bind |=
+        (MHD_DAUTH_BIND_NONCE_CLIENT_IP | MHD_DAUTH_BIND_NONCE_REALM);
+    if (test_bind_uri)
+      dauth_nonce_bind |= MHD_DAUTH_BIND_NONCE_URI_PARAMS;
+
     d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                           port, NULL, NULL,
                           &ahc_echo, &rq_tr,
                           MHD_OPTION_DIGEST_AUTH_RANDOM_COPY,
                           sizeof (salt), salt,
                           MHD_OPTION_NONCE_NC_SIZE, 300,
+                          MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE,
+                          dauth_nonce_bind,
                           MHD_OPTION_END);
   }
   if (d == NULL)
@@ -1329,6 +1410,8 @@ main (int argc, char *const *argv)
   test_userdigest = has_in_name (argv[0], "_userdigest");
   test_sha256 = has_in_name (argv[0], "_sha256");
   test_rfc2069 = has_in_name (argv[0], "_rfc2069");
+  test_bind_all = has_in_name (argv[0], "_bind_all");
+  test_bind_uri = has_in_name (argv[0], "_bind_uri");
 
   /* Wrong test types combinations */
   if (1 == test_oldapi)
