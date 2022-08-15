@@ -228,6 +228,7 @@ _checkCURLE_OK_func (CURLcode code, const char *curlFunc,
 #define TIMEOUTS_VAL 10
 
 #define MHD_URI_BASE_PATH "/bar%20foo?key=value"
+#define MHD_URI_BASE_PATH2 "/another_path"
 
 #define REALM_VAL "TestRealm"
 #define USERNAME1 "test_user"
@@ -388,6 +389,20 @@ struct CBC
   size_t size;
 };
 
+struct req_track
+{
+  /**
+   * The number of used URI, zero-based
+   */
+  unsigned int uri_num;
+
+  /**
+   * The number of request for URI.
+   * This includes number of unauthorised requests.
+   */
+  unsigned int req_num;
+};
+
 
 static size_t
 copyBuffer (void *ptr,
@@ -418,9 +433,10 @@ ahc_echo (void *cls,
   struct MHD_Response *response;
   enum MHD_Result res;
   static int already_called_marker;
-  (void) cls; (void) url;         /* Unused. Silent compiler warning. */
+  struct req_track *const tr_p = (struct req_track *) cls;
+  (void) url;              /* Unused. Silent compiler warning. */
   (void) method; (void) version; (void) upload_data; /* Unused. Silent compiler warning. */
-  (void) upload_data_size;        /* Unused. Silent compiler warning. */
+  (void) upload_data_size; /* Unused. Silent compiler warning. */
 
   if (&already_called_marker != *req_cls)
   { /* Called for the first time, request not fully read yet */
@@ -431,6 +447,10 @@ ahc_echo (void *cls,
 
   if (0 != strcmp (method, MHD_HTTP_METHOD_GET))
     mhdErrorExitDesc ("Unexpected HTTP method");
+
+  tr_p->req_num++;
+  if (2 < tr_p->req_num)
+    mhdErrorExitDesc ("Received more than two requests for the same URI");
 
   response = NULL;
   if (! test_oldapi)
@@ -447,6 +467,7 @@ ahc_echo (void *cls,
       /* Got any kind of Digest response. Check it, it must be valid */
       struct MHD_DigestAuthUsernameInfo *uname;
       enum MHD_DigestAuthResult check_res;
+      enum MHD_DigestAuthResult expect_res;
 
       if (NULL == dinfo->username)
         mhdErrorExitDesc ("'username' is NULL");
@@ -678,18 +699,40 @@ ahc_echo (void *cls,
                                          (enum MHD_DigestAuthMultiQOP) qop,
                                          (enum MHD_DigestAuthMultiAlgo3) algo3);
 
+      if (test_rfc2069)
+      {
+        if ((1 == tr_p->uri_num) && (1 == tr_p->req_num))
+          expect_res = MHD_DAUTH_NONCE_STALE;
+        else
+          expect_res = MHD_DAUTH_OK;
+      }
+      else
+        expect_res = MHD_DAUTH_OK;
+
       switch (check_res)
       {
-      /* Valid result */
+      /* Conditionally valid results */
       case MHD_DAUTH_OK:
-        if (verbose)
-          printf ("Got valid auth check result: MHD_DAUTH_OK.\n");
+        if (expect_res == MHD_DAUTH_OK)
+        {
+          if (verbose)
+            printf ("Got valid auth check result: MHD_DAUTH_OK.\n");
+        }
+        else
+          mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
+                            "MHD_DAUTH_OK");
+        break;
+      case MHD_DAUTH_NONCE_STALE:
+        if (expect_res == MHD_DAUTH_NONCE_STALE)
+        {
+          if (verbose)
+            printf ("Got expected auth check result: MHD_DAUTH_NONCE_STALE.\n");
+        }
+        else
+          mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
+                            "MHD_DAUTH_NONCE_STALE");
         break;
       /* Invalid results */
-      case MHD_DAUTH_NONCE_STALE:
-        mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
-                          "MHD_DAUTH_NONCE_STALE");
-        break;
       case MHD_DAUTH_NONCE_WRONG:
         mhdErrorExitDesc ("MHD_digest_auth_check[_digest]3()' returned " \
                           "MHD_DAUTH_NONCE_WRONG");
@@ -731,19 +774,50 @@ ahc_echo (void *cls,
         mhdErrorExitDesc ("Impossible returned code");
       }
 
-      response =
-        MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (PAGE),
-                                                (const void *) PAGE);
-      if (NULL == response)
-        mhdErrorExitDesc ("Response creation failed");
+      if (MHD_DAUTH_OK == check_res)
+      {
+        response =
+          MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (PAGE),
+                                                  (const void *) PAGE);
+        if (NULL == response)
+          mhdErrorExitDesc ("Response creation failed");
 
-      if (MHD_YES !=
-          MHD_queue_response (connection, MHD_HTTP_OK, response))
-        mhdErrorExitDesc ("'MHD_queue_response()' failed");
+        if (MHD_YES !=
+            MHD_queue_response (connection, MHD_HTTP_OK, response))
+          mhdErrorExitDesc ("'MHD_queue_response()' failed");
+      }
+      else if (MHD_DAUTH_NONCE_STALE == check_res)
+      {
+        response =
+          MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (DENIED),
+                                                  (const void *) DENIED);
+        if (NULL == response)
+          mhdErrorExitDesc ("Response creation failed");
+        res =
+          MHD_queue_auth_required_response3 (connection, REALM_VAL,
+                                             OPAQUE_VALUE,
+                                             "/", response, 1,
+                                             (enum MHD_DigestAuthMultiQOP) qop,
+                                             (enum MHD_DigestAuthMultiAlgo3)
+                                             algo3,
+                                             test_userhash, 0);
+        if (MHD_YES != res)
+          mhdErrorExitDesc ("'MHD_queue_auth_required_response3()' failed");
+      }
+      else
+        mhdErrorExitDesc ("Wrong 'check_res' value");
     }
     else
     {
       /* No Digest auth header */
+      if ((1 != tr_p->req_num) || (0 != tr_p->uri_num))
+      {
+        fprintf (stderr, "Received request number %u for URI number %u "
+                 "without Digest Authorisation header. ",
+                 tr_p->req_num, tr_p->uri_num + 1);
+        mhdErrorExitDesc ("Wrong requests sequence");
+      }
+
       response =
         MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (DENIED),
                                                 (const void *) DENIED);
@@ -813,6 +887,13 @@ ahc_echo (void *cls,
     else
     {
       /* Has no valid username in header */
+      if ((1 != tr_p->req_num) || (0 != tr_p->uri_num))
+      {
+        fprintf (stderr, "Received request number %u for URI number %u "
+                 "without Digest Authorisation header. ",
+                 tr_p->req_num, tr_p->uri_num + 1);
+        mhdErrorExitDesc ("Wrong requests sequence");
+      }
       response =
         MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (DENIED),
                                                 (const void *) DENIED);
@@ -877,6 +958,13 @@ ahc_echo (void *cls,
     else
     {
       /* Has no valid username in header */
+      if ((1 != tr_p->req_num) || (0 != tr_p->uri_num))
+      {
+        fprintf (stderr, "Received request number %u for URI number %u "
+                 "without Digest Authorisation header. ",
+                 tr_p->req_num, tr_p->uri_num + 1);
+        mhdErrorExitDesc ("Wrong requests sequence");
+      }
       response =
         MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (DENIED),
                                                 (const void *) DENIED);
@@ -897,22 +985,35 @@ ahc_echo (void *cls,
 }
 
 
+/**
+ *
+ * @param c the CURL handle to use
+ * @param port the port to set
+ * @param uri_num the number of URI, 0 or 1
+ */
+static void
+setCURL_rq_path (CURL *c, unsigned int port, unsigned int uri_num)
+{
+  char uri[512];
+  int res;
+  /* A workaround for some old libcurl versions, which ignore the specified
+   * port by CURLOPT_PORT when authorisation is used. */
+  res = snprintf (uri, (sizeof(uri) / sizeof(uri[0])),
+                  "http://127.0.0.1:%u%s", port,
+                  (0 == uri_num) ?
+                  MHD_URI_BASE_PATH : MHD_URI_BASE_PATH2);
+  if ((0 >= res) || ((sizeof(uri) / sizeof(uri[0])) <= (size_t) res))
+    externalErrorExitDesc ("Cannot form request URL");
+
+  if (CURLE_OK != curl_easy_setopt (c, CURLOPT_URL, uri))
+    libcurlErrorExitDesc ("Cannot set request URL");
+}
+
+
 static CURL *
-setupCURL (void *cbc, int port)
+setupCURL (void *cbc, unsigned int port)
 {
   CURL *c;
-  char url[512];
-
-  if (1)
-  {
-    int res;
-    /* A workaround for some old libcurl versions, which ignore the specified
-     * port by CURLOPT_PORT when authorisation is used. */
-    res = snprintf (url, (sizeof(url) / sizeof(url[0])),
-                    "http://127.0.0.1:%d%s", port, MHD_URI_BASE_PATH);
-    if ((0 >= res) || ((sizeof(url) / sizeof(url[0])) <= (size_t) res))
-      externalErrorExitDesc ("Cannot form request URL");
-  }
 
   c = curl_easy_init ();
   if (NULL == c)
@@ -947,9 +1048,11 @@ setupCURL (void *cbc, int port)
 #if CURL_AT_LEAST_VERSION (7, 45, 0)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_DEFAULT_PROTOCOL, "http")) ||
 #endif /* CURL_AT_LEAST_VERSION (7, 45, 0) */
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_PORT, ((long) port))) ||
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_URL, url)))
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_PORT, ((long) port))))
     libcurlErrorExitDesc ("curl_easy_setopt() failed");
+
+  setCURL_rq_path (c, port, 0);
+
   return c;
 }
 
@@ -1113,6 +1216,7 @@ testDigestAuth (void)
   struct MHD_Daemon *d;
   uint16_t port;
   struct CBC cbc;
+  struct req_track rq_tr;
   char buf[2048];
   CURL *c;
   int failed = 0;
@@ -1135,7 +1239,7 @@ testDigestAuth (void)
 
     d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                           port, NULL, NULL,
-                          &ahc_echo, NULL,
+                          &ahc_echo, &rq_tr,
                           MHD_OPTION_DIGEST_AUTH_RANDOM_COPY,
                           sizeof (salt), salt,
                           MHD_OPTION_NONCE_NC_SIZE, 300,
@@ -1156,11 +1260,28 @@ testDigestAuth (void)
   }
 
   /* First request */
+  rq_tr.req_num = 0;
+  rq_tr.uri_num = 0;
   cbc.buf = buf;
   cbc.size = sizeof (buf);
   cbc.pos = 0;
   memset (cbc.buf, 0, cbc.size);
-  c = setupCURL (&cbc, port);
+  c = setupCURL (&cbc, (unsigned int) port);
+  /* First request */
+  if (check_result (performQueryExternal (d, c), c, &cbc))
+  {
+    if (verbose)
+      printf ("Got expected response.\n");
+  }
+  else
+  {
+    fprintf (stderr, "Request FAILED.\n");
+    failed = 1;
+  }
+  cbc.pos = 0; /* Reset buffer position */
+  rq_tr.req_num = 0;
+  /* Second request */
+  setCURL_rq_path (c, port, ++rq_tr.uri_num);
   if (check_result (performQueryExternal (d, c), c, &cbc))
   {
     if (verbose)
