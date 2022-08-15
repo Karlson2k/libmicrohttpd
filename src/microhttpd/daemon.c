@@ -321,7 +321,7 @@ MHD_ip_addr_compare (const void *a1,
  * @return #MHD_YES on success and #MHD_NO otherwise (e.g., invalid address type)
  */
 static enum MHD_Result
-MHD_ip_addr_to_key (const struct sockaddr *addr,
+MHD_ip_addr_to_key (const struct sockaddr_storage *addr,
                     socklen_t addrlen,
                     struct MHD_IPCount *key)
 {
@@ -332,13 +332,12 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
   /* IPv4 addresses */
   if (sizeof (struct sockaddr_in) <= (size_t) addrlen)
   {
-    if (AF_INET == addr->sa_family)
+    if (AF_INET == addr->ss_family)
     {
       key->family = AF_INET;
       memcpy (&key->addr.ipv4,
-              ((const uint8_t *) addr)
-              + _MHD_OFFSETOF (struct sockaddr_in, sin_addr),
-              sizeof(((struct sockaddr_in *) NULL)->sin_addr));
+              &((const struct sockaddr_in *) addr)->sin_addr,
+              sizeof(((const struct sockaddr_in *) NULL)->sin_addr));
       return MHD_YES;
     }
   }
@@ -347,13 +346,12 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
   if (sizeof (struct sockaddr_in6) <= (size_t) addrlen)
   {
     /* IPv6 addresses */
-    if (AF_INET6 == addr->sa_family)
+    if (AF_INET6 == addr->ss_family)
     {
       key->family = AF_INET6;
       memcpy (&key->addr.ipv6,
-              ((const uint8_t *) addr)
-              + _MHD_OFFSETOF (struct sockaddr_in6, sin6_addr),
-              sizeof(((struct sockaddr_in6 *) NULL)->sin6_addr));
+              &((const struct sockaddr_in6 *) addr)->sin6_addr,
+              sizeof(((const struct sockaddr_in6 *) NULL)->sin6_addr));
       return MHD_YES;
     }
   }
@@ -377,7 +375,7 @@ MHD_ip_addr_to_key (const struct sockaddr *addr,
  */
 static enum MHD_Result
 MHD_ip_limit_add (struct MHD_Daemon *daemon,
-                  const struct sockaddr *addr,
+                  const struct sockaddr_storage *addr,
                   socklen_t addrlen)
 {
   struct MHD_IPCount *newkeyp;
@@ -445,7 +443,7 @@ MHD_ip_limit_add (struct MHD_Daemon *daemon,
  */
 static void
 MHD_ip_limit_del (struct MHD_Daemon *daemon,
-                  const struct sockaddr *addr,
+                  const struct sockaddr_storage *addr,
                   socklen_t addrlen)
 {
   struct MHD_IPCount search_key;
@@ -2423,7 +2421,7 @@ psk_gnutls_adapter (gnutls_session_t session,
 static struct MHD_Connection *
 new_connection_prepare_ (struct MHD_Daemon *daemon,
                          MHD_socket client_socket,
-                         const struct sockaddr *addr,
+                         const struct sockaddr_storage *addr,
                          socklen_t addrlen,
                          bool external_add,
                          bool non_blck,
@@ -2461,7 +2459,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
   /* apply connection acceptance policy if present */
   if ( (NULL != daemon->apc) &&
        (MHD_NO == daemon->apc (daemon->apc_cls,
-                               addr,
+                               (const struct sockaddr *) addr,
                                addrlen)) )
   {
 #if _MHD_DEBUG_CLOSE
@@ -2964,7 +2962,7 @@ new_connection_process_ (struct MHD_Daemon *daemon,
 static enum MHD_Result
 internal_add_connection (struct MHD_Daemon *daemon,
                          MHD_socket client_socket,
-                         const struct sockaddr *addr,
+                         const struct sockaddr_storage *addr,
                          socklen_t addrlen,
                          bool external_add,
                          bool non_blck,
@@ -3491,6 +3489,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 {
   bool sk_nonbl;
   bool sk_spipe_supprs;
+  struct sockaddr_storage addrstorage;
 
   /* NOT thread safe with internal thread. TODO: fix thread safety. */
   if ((0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
@@ -3591,6 +3590,13 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 #endif
   }
 
+  /* Copy to sockaddr_storage structure to avoid alignment problems */
+  if (0 < addrlen)
+    memcpy (&addrstorage, addr, (size_t) addrlen);
+#ifdef HAVE_STRUCT_SOCKADDR_STORAGE_SS_LEN
+  addrstorage.ss_len = addrlen; /* Force set the right length */
+#endif /* HAVE_STRUCT_SOCKADDR_STORAGE_SS_LEN */
+
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if (NULL != daemon->worker_pool)
   {
@@ -3606,7 +3612,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
       if (worker->connections < worker->connection_limit)
         return internal_add_connection (worker,
                                         client_socket,
-                                        addr,
+                                        &addrstorage,
                                         addrlen,
                                         true,
                                         sk_nonbl,
@@ -3624,7 +3630,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 
   return internal_add_connection (daemon,
                                   client_socket,
-                                  addr,
+                                  &addrstorage,
                                   addrlen,
                                   true,
                                   sk_nonbl,
@@ -3650,12 +3656,7 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 static enum MHD_Result
 MHD_accept_connection (struct MHD_Daemon *daemon)
 {
-#ifdef HAVE_INET6
-  struct sockaddr_in6 addrstorage;
-#else
-  struct sockaddr_in addrstorage;
-#endif
-  struct sockaddr *addr = (struct sockaddr *) &addrstorage;
+  struct sockaddr_storage addrstorage;
   socklen_t addrlen;
   MHD_socket s;
   MHD_socket fd;
@@ -3669,16 +3670,21 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   mhd_assert (NULL == daemon->worker_pool);
 #endif /* MHD_USE_THREADS */
 
-  addrlen = sizeof (addrstorage);
-  memset (addr,
-          0,
-          sizeof (addrstorage));
   if ( (MHD_INVALID_SOCKET == (fd = daemon->listen_fd)) ||
        (daemon->was_quiesced) )
     return MHD_NO;
+
+  addrlen = (socklen_t) sizeof (addrstorage);
+  memset (&addrstorage,
+          0,
+          (size_t) addrlen);
+#ifdef HAVE_STRUCT_SOCKADDR_STORAGE_SS_LEN
+  addrstorage.ss_len = addrlen;
+#endif /* HAVE_STRUCT_SOCKADDR_STORAGE_SS_LEN */
+
 #ifdef USE_ACCEPT4
   s = accept4 (fd,
-               addr,
+               &addrstorage,
                &addrlen,
                SOCK_CLOEXEC_OR_ZERO | SOCK_NONBLOCK_OR_ZERO
                | SOCK_NOSIGPIPE_OR_ZERO);
@@ -3691,7 +3697,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   sk_cloexec = (SOCK_CLOEXEC_OR_ZERO != 0);
 #else  /* ! USE_ACCEPT4 */
   s = accept (fd,
-              addr,
+              (struct sockaddr *) &addrstorage,
               &addrlen);
 #ifdef MHD_ACCEPT_INHERIT_NONBLOCK
   sk_nonbl = daemon->listen_nonblk;
@@ -3821,7 +3827,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif
   (void) internal_add_connection (daemon,
                                   s,
-                                  addr,
+                                  &addrstorage,
                                   addrlen,
                                   false,
                                   sk_nonbl,

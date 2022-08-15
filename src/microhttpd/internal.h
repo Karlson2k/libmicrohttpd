@@ -1236,7 +1236,7 @@ struct MHD_Connection
    * Foreign address (of length @e addr_len).  MALLOCED (not
    * in pool!).
    */
-  struct sockaddr *addr;
+  struct sockaddr_storage *addr;
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   /**
