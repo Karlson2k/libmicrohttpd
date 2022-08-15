@@ -6020,8 +6020,8 @@ parse_options_va (struct MHD_Daemon *daemon,
       /* Next comparison could be always false on some platforms and whole branch will
        * be optimized out on these platforms. On others it will be compiled into real
        * check. */
-      else if (daemon->worker_pool_size >= (SIZE_MAX / sizeof (struct
-                                                               MHD_Daemon)))            /* Compiler may warn on some platforms, ignore warning. */
+      else if (daemon->worker_pool_size >=
+               (SIZE_MAX / sizeof (struct MHD_Daemon)))            /* Compiler may warn on some platforms, ignore warning. */
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
