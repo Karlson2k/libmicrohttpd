@@ -2748,7 +2748,7 @@ MHD_digest_auth_check_digest3 (struct MHD_Connection *connection,
 
   if (digest_get_hash_size ((enum MHD_DigestAuthAlgo3) malgo3) !=
       userdigest_size)
-    MHD_PANIC (_ ("Wrong 'userdigest_size' value, not matching 'malgo3, "
+    MHD_PANIC (_ ("Wrong 'userdigest_size' value, does not match 'malgo3', "
                   "API violation"));
 
   return digest_auth_check_all (connection,
