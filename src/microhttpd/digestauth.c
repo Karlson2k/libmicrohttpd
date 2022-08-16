@@ -303,24 +303,6 @@ struct DigestAlgorithm
 
 
 /**
- * Return name of the algorithm as a string.
- * @param da the digest calculation structure to identify
- * @return the name of the @a algo as a string.
- */
-_MHD_static_inline const char *
-digest_get_algo_name (struct DigestAlgorithm *da)
-{
-  mhd_assert (da->setup);
-  if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
-    return _MHD_MD5_TOKEN;
-  if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
-    return _MHD_SHA256_TOKEN;
-  mhd_assert (0); /* May not happen */
-  return "";
-}
-
-
-/**
  * Return the size of the digest.
  * @param da the digest calculation structure to identify
  * @return the size of the digest.
