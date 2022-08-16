@@ -5088,7 +5088,7 @@ enum MHD_DigestAuthResult
  *               returned;
  *               zero for no limit
  * @param mqop the QOP to use
- * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
+ * @param malgo3 digest algorithms allowed to use, fail if algorithm used
  *               by the client is not allowed by this parameter
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
@@ -5133,7 +5133,7 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  *               returned;
  *               zero for no limit
  * @param mqop the QOP to use
- * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
+ * @param malgo3 digest algorithms allowed to use, fail if algorithm used
  *               by the client is not allowed by this parameter;
  *               both MD5-based and SHA-256-based algorithms cannot be used at
  *               the same time for this function as @a userdigest_size must
@@ -5193,8 +5193,9 @@ MHD_digest_auth_check_digest3 (struct MHD_Connection *connection,
  *                     to retry immediately with the new nonce and the same
  *                     credentials, without asking user for the new password
  * @param mqop the QOP to use
- * @param malgo3 digest algorithm to use, if several algorithms are specified
- *               then MD5 is used (if allowed)
+ * @param malgo3 digest algorithm to use, MHD selects; if several algorithms
+ *               are allowed then MD5 is preferred (currently, may be changed
+ *               in next versions)
  * @param userhash_support if set to non-zero value (#MHD_YES) then support of
  *                         userhash is indicated, the client may provide
  *                         hash("username:realm") instead of username in
