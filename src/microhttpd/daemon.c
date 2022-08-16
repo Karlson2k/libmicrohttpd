@@ -3684,7 +3684,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 
 #ifdef USE_ACCEPT4
   s = accept4 (fd,
-               &addrstorage,
+               (struct sockaddr *) &addrstorage,
                &addrlen,
                SOCK_CLOEXEC_OR_ZERO | SOCK_NONBLOCK_OR_ZERO
                | SOCK_NOSIGPIPE_OR_ZERO);
