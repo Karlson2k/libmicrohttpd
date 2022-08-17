@@ -5898,7 +5898,7 @@ enum MHD_FEATURE
   /**
    * Get whether QOP with value 'auth-int' (authentication with integrity
    * protection) is supported for Digest Authorization.
-   * Currently it is always not supported if Digest Auth module is built.
+   * Currently it is always not supported.
    * @note Available since #MHD_VERSION 0x00097527
    */
   MHD_FEATURE_DIGEST_AUTH_AUTH_INT = 28,
