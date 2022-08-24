@@ -399,10 +399,10 @@ parse_dauth_params (const char *str,
           {
             if (0 == str[i])
               return false;  /* Binary zero in parameter value */
-            if (';' == str[i])
-              return false;  /* Semicolon in parameter value */
             i++;
           }
+          if (';' == str[i])
+            return false;  /* Semicolon in parameter value */
           value_len = i - value_start;
         }
         /* Skip all whitespaces after parameter value */
