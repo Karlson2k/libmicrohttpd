@@ -90,7 +90,7 @@ find_auth_rq_header_ (const struct MHD_Connection *c, enum MHD_AuthType type,
   else /* combined with the next line */
 #endif /* BAUTH_SUPPORT */
   {
-    assert (0);
+    mhd_assert (0);
     return false;
   }
 
