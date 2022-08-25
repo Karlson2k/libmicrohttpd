@@ -134,37 +134,6 @@
 #define MAX_AUTH_RESPONSE_LENGTH (MAX_DIGEST * 2)
 
 /**
- * The token for MD5 algorithm.
- */
-#define _MHD_MD5_TOKEN "MD5"
-
-/**
- * The token for SHA-256 algorithm.
- */
-#define _MHD_SHA256_TOKEN "SHA-256"
-
-/**
- * The token for SHA-512/256 algorithm.
- * Unsupported currently by MHD for authentication.
- */
-#define _MHD_SHA512_256_TOKEN "SHA-512-256"
-
-/**
- * The suffix token for "session" algorithms.
- */
-#define _MHD_SESS_TOKEN "-sess"
-
-/**
- * The "auth" token for QOP
- */
-#define MHD_TOKEN_AUTH_ "auth"
-
-/**
- * The "auth-int" token for QOP
- */
-#define MHD_TOKEN_AUTH_INT_ "auth-int"
-
-/**
  * The required prefix of parameter with the extended notation
  */
 #define MHD_DAUTH_EXT_PARAM_PREFIX "UTF-8'"
@@ -729,89 +698,6 @@ get_rq_unames_size (const struct MHD_RqDAuth *params,
 
 
 /**
- * Get client's Digest Authorization algorithm type.
- * If no algorithm is specified by client, MD5 is assumed.
- * @param params the Digest Authorization parameters
- * @return the algorithm type
- */
-static enum MHD_DigestAuthAlgo3
-get_rq_algo (const struct MHD_RqDAuth *params)
-{
-  const struct MHD_RqDAuthParam *const algo_param =
-    &params->algorithm;
-  if (NULL == algo_param->value.str)
-    return MHD_DIGEST_AUTH_ALGO3_MD5; /* Assume MD5 by default */
-
-  if (algo_param->quoted)
-  {
-    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
-                                               algo_param->value.len, \
-                                               _MHD_MD5_TOKEN))
-      return MHD_DIGEST_AUTH_ALGO3_MD5;
-    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
-                                               algo_param->value.len, \
-                                               _MHD_SHA256_TOKEN))
-      return MHD_DIGEST_AUTH_ALGO3_SHA256;
-    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
-                                               algo_param->value.len, \
-                                               _MHD_MD5_TOKEN _MHD_SESS_TOKEN))
-      return MHD_DIGEST_AUTH_ALGO3_MD5_SESSION;
-    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
-                                               algo_param->value.len, \
-                                               _MHD_SHA256_TOKEN \
-                                               _MHD_SESS_TOKEN))
-      return MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION;
-
-    /* Algorithms below are not supported by MHD for authentication */
-
-    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
-                                               algo_param->value.len, \
-                                               _MHD_SHA512_256_TOKEN))
-      return MHD_DIGEST_AUTH_ALGO3_SHA512_256;
-    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
-                                               algo_param->value.len, \
-                                               _MHD_SHA512_256_TOKEN \
-                                               _MHD_SESS_TOKEN))
-      return MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION;
-
-    /* No known algorithm has been detected */
-    return MHD_DIGEST_AUTH_ALGO3_INVALID;
-  }
-  /* The algorithm value is not quoted */
-  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_MD5_TOKEN, \
-                                       algo_param->value.str, \
-                                       algo_param->value.len))
-    return MHD_DIGEST_AUTH_ALGO3_MD5;
-  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA256_TOKEN, \
-                                       algo_param->value.str, \
-                                       algo_param->value.len))
-    return MHD_DIGEST_AUTH_ALGO3_SHA256;
-  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_MD5_TOKEN _MHD_SESS_TOKEN, \
-                                       algo_param->value.str, \
-                                       algo_param->value.len))
-    return MHD_DIGEST_AUTH_ALGO3_MD5_SESSION;
-  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA256_TOKEN _MHD_SESS_TOKEN, \
-                                       algo_param->value.str, \
-                                       algo_param->value.len))
-    return MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION;
-
-  /* Algorithms below are not supported by MHD for authentication */
-
-  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA512_256_TOKEN, \
-                                       algo_param->value.str, \
-                                       algo_param->value.len))
-    return MHD_DIGEST_AUTH_ALGO3_SHA512_256;
-  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA512_256_TOKEN _MHD_SESS_TOKEN, \
-                                       algo_param->value.str, \
-                                       algo_param->value.len))
-    return MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION;
-
-  /* No known algorithm has been detected */
-  return MHD_DIGEST_AUTH_ALGO3_INVALID;
-}
-
-
-/**
  * Get unquoted version of Digest Authorization parameter.
  * This function automatically zero-teminate the result.
  * @param param the parameter to extract
@@ -973,45 +859,6 @@ get_rq_uname (const struct MHD_RqDAuth *params,
 
 
 /**
- * Get QOP ('quality of protection') type.
- * @param params the Digest Authorization parameters
- * @return detected QOP ('quality of protection') type.
- */
-static enum MHD_DigestAuthQOP
-get_rq_qop (const struct MHD_RqDAuth *params)
-{
-  const struct MHD_RqDAuthParam *const qop_param =
-    &params->qop;
-  if (NULL == qop_param->value.str)
-    return MHD_DIGEST_AUTH_QOP_NONE;
-  if (qop_param->quoted)
-  {
-    if (MHD_str_equal_caseless_quoted_s_bin_n (qop_param->value.str, \
-                                               qop_param->value.len, \
-                                               "auth"))
-      return MHD_DIGEST_AUTH_QOP_AUTH;
-    if (MHD_str_equal_caseless_quoted_s_bin_n (qop_param->value.str, \
-                                               qop_param->value.len, \
-                                               "auth-int"))
-      return MHD_DIGEST_AUTH_QOP_AUTH_INT;
-  }
-  else
-  {
-    if (MHD_str_equal_caseless_s_bin_n_ ("auth", \
-                                         qop_param->value.str, \
-                                         qop_param->value.len))
-      return MHD_DIGEST_AUTH_QOP_AUTH;
-    if (MHD_str_equal_caseless_s_bin_n_ ("auth-int", \
-                                         qop_param->value.str, \
-                                         qop_param->value.len))
-      return MHD_DIGEST_AUTH_QOP_AUTH_INT;
-  }
-  /* No know QOP has been detected */
-  return MHD_DIGEST_AUTH_QOP_INVALID;
-}
-
-
-/**
  * Result of request's Digest Authorization 'nc' value extraction
  */
 enum MHD_GetRqNCResult
@@ -1124,7 +971,7 @@ MHD_digest_auth_get_request_info3 (struct MHD_Connection *connection)
   unif_buf_ptr = (uint8_t *) (info + 1);
   unif_buf_used = 0;
 
-  info->algo = get_rq_algo (params);
+  info->algo3 = params->algo3;
 
   if ( (MHD_DIGEST_AUTH_UNAME_TYPE_MISSING != uname_type) &&
        (MHD_DIGEST_AUTH_UNAME_TYPE_INVALID != uname_type) )
@@ -1159,7 +1006,7 @@ MHD_digest_auth_get_request_info3 (struct MHD_Connection *connection)
 
   mhd_assert (unif_buf_size >= unif_buf_used);
 
-  info->qop = get_rq_qop (params);
+  info->qop = params->qop;
 
   if (NULL != params->cnonce.value.str)
     info->cnonce_len = params->cnonce.value.len;
@@ -2110,7 +1957,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 
   /* ** Initial parameters checks and setup ** */
   /* Get client's algorithm */
-  c_algo = get_rq_algo (params);
+  c_algo = params->algo3;
   /* Check whether client's algorithm is allowed by function parameter */
   if (((unsigned int) c_algo) !=
       (((unsigned int) c_algo) & ((unsigned int) malgo3)))
@@ -2135,7 +1982,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   if (! digest_setup (&da, get_base_digest_algo (c_algo)))
     MHD_PANIC (_ ("Wrong 'malgo3' value, API violation"));
   /* Check 'mqop' value */
-  c_qop = get_rq_qop (params);
+  c_qop = params->qop;
   /* Check whether client's algorithm is allowed by function parameter */
   if (((unsigned int) c_qop) !=
       (((unsigned int) c_qop) & ((unsigned int) mqop)))
@@ -2479,7 +2326,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     /* Update digest with ':' */
     digest_update_with_colon (&da);
     /* Update digest with 'qop' value */
-    unq_res = get_unquoted_param (&params->qop, tmp1, ptmp2, &tmp2_size,
+    unq_res = get_unquoted_param (&params->qop_raw, tmp1, ptmp2, &tmp2_size,
                                   &unquoted);
     if (_MHD_UNQ_OK != unq_res)
       return MHD_DAUTH_ERROR;

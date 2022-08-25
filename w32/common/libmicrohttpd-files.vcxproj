@@ -52,6 +52,7 @@
     <ClInclude Include="$(MhdSrc)microhttpd\tsearch.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\sysfdsetsize.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_str.h" />
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_str_types.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_threads.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_locks.h" />
     <ClInclude Include="$(MhdSrc)microhttpd\mhd_send.h" />

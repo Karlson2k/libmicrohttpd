@@ -62,6 +62,7 @@
 #include "mhd_locks.h"
 #include "mhd_sockets.h"
 #include "mhd_itc_types.h"
+#include "mhd_str_types.h"
 #if defined(BAUTH_SUPPORT) || defined(DAUTH_SUPPORT)
 #include "gen_auth.h"
 #endif /* BAUTH_SUPPORT || DAUTH_SUPPORT*/
@@ -2281,6 +2282,51 @@ struct MHD_Daemon
   union MHD_DaemonInfo daemon_info_dummy_port;
 };
 
+
+#ifdef DAUTH_SUPPORT
+
+/**
+ * Parameter of request's Digest Authorization header
+ */
+struct MHD_RqDAuthParam
+{
+  /**
+   * The string with length, NOT zero-terminated
+   */
+  struct _MHD_str_w_len value;
+  /**
+   * True if string must be "unquoted" before processing.
+   * This member is false if the string is used in DQUOTE marks, but no
+   * backslash-escape is used in the string.
+   */
+  bool quoted;
+};
+
+/**
+ * Request client's Digest Authorization header parameters
+ */
+struct MHD_RqDAuth
+{
+  struct MHD_RqDAuthParam nonce;
+  struct MHD_RqDAuthParam opaque;
+  struct MHD_RqDAuthParam response;
+  struct MHD_RqDAuthParam username;
+  struct MHD_RqDAuthParam username_ext;
+  struct MHD_RqDAuthParam realm;
+  struct MHD_RqDAuthParam uri;
+  /* The raw QOP value, used in the 'response' calculation */
+  struct MHD_RqDAuthParam qop_raw;
+  struct MHD_RqDAuthParam cnonce;
+  struct MHD_RqDAuthParam nc;
+
+  /* Decoded values are below */
+  bool userhash; /* True if 'userhash' parameter has value 'true'. */
+  enum MHD_DigestAuthAlgo3 algo3;
+  enum MHD_DigestAuthQOP qop;
+};
+
+
+#endif /* DAUTH_SUPPORT */
 
 /**
  * Insert an element at the head of a DLL. Assumes that head, tail and

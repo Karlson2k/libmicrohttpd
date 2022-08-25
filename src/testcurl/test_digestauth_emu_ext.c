@@ -417,12 +417,12 @@ ahc_echo (void *cls,
     }
     else if (NULL != dinfo->userhash_bin)
       mhdErrorExitDesc ("'userhash_bin' is NOT NULL");
-    else if (MHD_DIGEST_AUTH_ALGO3_MD5 != dinfo->algo)
+    else if (MHD_DIGEST_AUTH_ALGO3_MD5 != dinfo->algo3)
     {
       fprintf (stderr, "Unexpected 'algo'.\n"
                "Expected: %d\tRecieved: %d. ",
                (int) MHD_DIGEST_AUTH_ALGO3_MD5,
-               (int) dinfo->algo);
+               (int) dinfo->algo3);
       mhdErrorExitDesc ("Wrong 'algo'");
     }
     else if (MHD_STATICSTR_LEN_ (CNONCE_EMU) != dinfo->cnonce_len)

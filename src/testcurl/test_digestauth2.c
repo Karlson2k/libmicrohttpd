@@ -548,12 +548,12 @@ ahc_echo (void *cls,
         else if (NULL != dinfo->userhash_bin)
           mhdErrorExitDesc ("'userhash_bin' is NOT NULL");
       }
-      if (algo3 != dinfo->algo)
+      if (algo3 != dinfo->algo3)
       {
         fprintf (stderr, "Unexpected 'algo'.\n"
                  "Expected: %d\tRecieved: %d. ",
                  (int) algo3,
-                 (int) dinfo->algo);
+                 (int) dinfo->algo3);
         mhdErrorExitDesc ("Wrong 'algo'");
       }
       if (! test_rfc2069)

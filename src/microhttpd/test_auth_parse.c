@@ -956,13 +956,15 @@ cmp_dauth_param (const char *pname, const struct MHD_RqDAuthParam *param,
   if (0 != ret)
   {
     fprintf (stderr, "Parameter '%s' parsed incorrectly:\n", pname);
-    fprintf (stderr, "\tRESULT  :\tvalue.str: %s",
+    fprintf (stderr, "\tRESULT  :\tvalue.str: %.*s",
+             (int) (param->value.str ? param->value.len : 6),
              param->value.str ? param->value.str : "(NULL)");
     fprintf (stderr, "\tvalue.len: %u",
              (unsigned) param->value.len);
     fprintf (stderr, "\tquoted: %s\n",
              (unsigned) param->quoted ? "true" : "false");
-    fprintf (stderr, "\tEXPECTED:\tvalue.str: %s",
+    fprintf (stderr, "\tEXPECTED:\tvalue.str: %.*s",
+             (int) (expected_value ? expected_len : 6),
              expected_value ? expected_value : "(NULL)");
     fprintf (stderr, "\tvalue.len: %u",
              (unsigned) expected_len);
@@ -977,13 +979,14 @@ cmp_dauth_param (const char *pname, const struct MHD_RqDAuthParam *param,
 static unsigned int
 expect_digest_n (const char *hdr, size_t hdr_len,
                  const char *nonce,
-                 const char *algorithm,
+                 enum MHD_DigestAuthAlgo3 algo3,
                  const char *response,
                  const char *username,
                  const char *username_ext,
                  const char *realm,
                  const char *uri,
-                 const char *qop,
+                 const char *qop_raw,
+                 enum MHD_DigestAuthQOP qop,
                  const char *cnonce,
                  const char *nc,
                  int userhash,
@@ -1003,14 +1006,31 @@ expect_digest_n (const char *hdr, size_t hdr_len,
   ret = 0;
 
   ret += cmp_dauth_param ("nonce", &h->nonce, nonce);
-  ret += cmp_dauth_param ("algorithm", &h->algorithm, algorithm);
+  if (h->algo3 != algo3)
+  {
+    ret += 1;
+    fprintf (stderr, "Parameter 'algorithm' detected incorrectly:\n");
+    fprintf (stderr, "\tRESULT  :\t%u\n",
+             (unsigned) h->algo3);
+    fprintf (stderr, "\tEXPECTED:\t%u\n",
+             (unsigned) algo3);
+  }
   ret += cmp_dauth_param ("response", &h->response, response);
   ret += cmp_dauth_param ("username", &h->username, username);
   ret += cmp_dauth_param ("username_ext", &h->username_ext,
                           username_ext);
   ret += cmp_dauth_param ("realm", &h->realm, realm);
   ret += cmp_dauth_param ("uri", &h->uri, uri);
-  ret += cmp_dauth_param ("qop", &h->qop, qop);
+  ret += cmp_dauth_param ("qop", &h->qop_raw, qop_raw);
+  if (h->qop != qop)
+  {
+    ret += 1;
+    fprintf (stderr, "Parameter 'qop' detected incorrectly:\n");
+    fprintf (stderr, "\tRESULT  :\t%u\n",
+             (unsigned) h->qop);
+    fprintf (stderr, "\tEXPECTED:\t%u\n",
+             (unsigned) qop);
+  }
   ret += cmp_dauth_param ("cnonce", &h->cnonce, cnonce);
   ret += cmp_dauth_param ("nc", &h->nc, nc);
   if (h->userhash != ! (! userhash))
@@ -1035,102 +1055,286 @@ expect_digest_n (const char *hdr, size_t hdr_len,
 }
 
 
-#define expect_digest(h,no,a,rs,un,ux,rm,ur,q,c,nc,uh) \
+#define expect_digest(h,no,a,rs,un,ux,rm,ur,qr,qe,c,nc,uh) \
     expect_digest_n(h,MHD_STATICSTR_LEN_(h),\
-                    no,a,rs,un,ux,rm,ur,q,c,nc,uh,__LINE__)
+                    no,a,rs,un,ux,rm,ur,qr,qe,c,nc,uh,__LINE__)
 
 static unsigned int
 check_digest (void)
 {
   unsigned int r = 0; /**< The number of errors */
 
-  r += expect_digest ("Digest", NULL, NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, 0);
-  r += expect_digest ("Digest nc=1", NULL, NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, "1", 0);
-  r += expect_digest ("Digest nc=\"1\"", NULL, NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, "1", 0);
-  r += expect_digest ("Digest nc=\"1\"   ", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, "1", 0);
-  r += expect_digest ("Digest ,nc=\"1\"   ", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, "1", 0);
-  r += expect_digest ("Digest nc=\"1\",   ", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, "1", 0);
-  r += expect_digest ("Digest nc=\"1\" ,   ", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, "1", 0);
-  r += expect_digest ("Digest nc=1,   ", NULL, NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, "1", 0);
-  r += expect_digest ("Digest nc=1 ,   ", NULL, NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, "1", 0);
-  r += expect_digest ("Digest ,,,nc=1,   ", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, "1", 0);
-  r += expect_digest ("Digest ,,,nc=1 ,   ", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, "1", 0);
-  r += expect_digest ("Digest ,,,nc=\"1 \",   ", NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, NULL, "1 ", 0);
-  r += expect_digest ("Digest nc=\"1 \"", NULL, NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, "1 ", 0);
-  r += expect_digest ("Digest nc=\"1 \" ,", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, "1 ", 0);
-  r += expect_digest ("Digest nc=\"1 \", ", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, "1 ", 0);
-  r += expect_digest ("Digest nc=\"1;\", ", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, "1;", 0);
-  r += expect_digest ("Digest nc=\"1\\;\", ", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, "1\\;", 0);
+  r += expect_digest ("Digest", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest nc=1", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, NULL, \
+                      MHD_DIGEST_AUTH_QOP_NONE, NULL, "1", 0);
+  r += expect_digest ("Digest nc=\"1\"", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1", 0);
+  r += expect_digest ("Digest nc=\"1\"   ", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1", 0);
+  r += expect_digest ("Digest ,nc=\"1\"   ", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1", 0);
+  r += expect_digest ("Digest nc=\"1\",   ", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1", 0);
+  r += expect_digest ("Digest nc=\"1\" ,   ", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1", 0);
+  r += expect_digest ("Digest nc=1,   ", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1", 0);
+  r += expect_digest ("Digest nc=1 ,   ", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1", 0);
+  r += expect_digest ("Digest ,,,nc=1,   ", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1", 0);
+  r += expect_digest ("Digest ,,,nc=1 ,   ", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1", 0);
+  r += expect_digest ("Digest ,,,nc=\"1 \",   ", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1 ", 0);
+  r += expect_digest ("Digest nc=\"1 \"", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1 ", 0);
+  r += expect_digest ("Digest nc=\"1 \" ,", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1 ", 0);
+  r += expect_digest ("Digest nc=\"1 \", ", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1 ", 0);
+  r += expect_digest ("Digest nc=\"1;\", ", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1;", 0);
+  r += expect_digest ("Digest nc=\"1\\;\", ", NULL, MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, "1\\;", 0);
 
-  r += expect_digest ("Digest userhash=false", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, NULL, 0);
-  r += expect_digest ("Digest userhash=\"false\"", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, NULL, 0);
-  r += expect_digest ("Digest userhash=foo", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, NULL, 0);
-  r += expect_digest ("Digest userhash=true", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, NULL, 1);
-  r += expect_digest ("Digest userhash=\"true\"", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, NULL, 1);
-  r += expect_digest ("Digest userhash=\"\\t\\r\\u\\e\"", NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1);
-  r += expect_digest ("Digest userhash=TRUE", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, NULL, 1);
-  r += expect_digest ("Digest userhash=True", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, NULL, 1);
-  r += expect_digest ("Digest userhash = true", NULL, NULL, NULL, NULL, \
-                      NULL,  NULL, NULL, NULL, NULL, NULL, 1);
-  r += expect_digest ("Digest userhash=True2", NULL, NULL, NULL, NULL, NULL, \
-                      NULL, NULL, NULL, NULL, NULL, 0);
-  r += expect_digest ("Digest userhash=\" true\"", NULL, NULL, NULL, NULL, \
-                      NULL,  NULL, NULL, NULL, NULL, NULL, 0);
+  r += expect_digest ("Digest userhash=false", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest userhash=\"false\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest userhash=foo", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest userhash=true", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 1);
+  r += expect_digest ("Digest userhash=\"true\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 1);
+  r += expect_digest ("Digest userhash=\"\\t\\r\\u\\e\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 1);
+  r += expect_digest ("Digest userhash=TRUE", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 1);
+  r += expect_digest ("Digest userhash=True", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 1);
+  r += expect_digest ("Digest userhash = true", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL,  NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 1);
+  r += expect_digest ("Digest userhash=True2", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest userhash=\" true\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL,  NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+
+  r += expect_digest ("Digest algorithm=MD5", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=md5", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=Md5", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=mD5", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=\"MD5\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=\"\\M\\D\\5\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=\"\\m\\d\\5\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=SHA-256", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=sha-256", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=Sha-256", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=\"SHA-256\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=\"SHA\\-25\\6\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=\"shA-256\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=MD5-sess", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5_SESSION, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=MD5-SESS", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5_SESSION, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=md5-Sess", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5_SESSION, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=SHA-256-seSS", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=SHA-512-256", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_SHA512_256, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=SHA-512-256-sess", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=MD5-2", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_INVALID, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=MD5-sess2", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_INVALID, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=SHA-256-512", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_INVALID, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+  r += expect_digest ("Digest algorithm=", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_INVALID, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      NULL, MHD_DIGEST_AUTH_QOP_NONE, NULL, NULL, 0);
+
+  r += expect_digest ("Digest qop=auth", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, NULL, NULL, 0);
+  r += expect_digest ("Digest qop=\"auth\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, NULL, NULL, 0);
+  r += expect_digest ("Digest qop=Auth", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      "Auth", MHD_DIGEST_AUTH_QOP_AUTH, NULL, NULL, 0);
+  r += expect_digest ("Digest qop=AUTH", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      "AUTH", MHD_DIGEST_AUTH_QOP_AUTH, NULL, NULL, 0);
+  r += expect_digest ("Digest qop=\"\\A\\ut\\H\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      "\\A\\ut\\H", MHD_DIGEST_AUTH_QOP_AUTH, NULL, NULL, 0);
+  r += expect_digest ("Digest qop=\"auth \"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      "auth ", MHD_DIGEST_AUTH_QOP_INVALID, NULL, NULL, 0);
+  r += expect_digest ("Digest qop=auth-int", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      "auth-int", MHD_DIGEST_AUTH_QOP_AUTH_INT, NULL, NULL, 0);
+  r += expect_digest ("Digest qop=\"auth-int\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      "auth-int", MHD_DIGEST_AUTH_QOP_AUTH_INT, NULL, NULL, 0);
+  r += expect_digest ("Digest qop=\"auTh-iNt\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      "auTh-iNt", MHD_DIGEST_AUTH_QOP_AUTH_INT, NULL, NULL, 0);
+  r += expect_digest ("Digest qop=\"auTh-iNt2\"", NULL, \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
+                      NULL, NULL, NULL, NULL, NULL, \
+                      "auTh-iNt2", MHD_DIGEST_AUTH_QOP_INVALID, NULL, NULL, 0);
 
   r += expect_digest ("Digest username=\"test@example.com\", " \
-                      "realm=\"users@example.com\", nonce=\"32141232413abcde\", " \
-                      "uri=\"/example\", qop=auth, nc=00000001, cnonce=\"0a4f113b\", " \
+                      "realm=\"users@example.com\", " \
+                      "nonce=\"32141232413abcde\", " \
+                      "uri=\"/example\", qop=auth, nc=00000001, " \
+                      "cnonce=\"0a4f113b\", " \
                       "response=\"6629fae49393a05397450978507c4ef1\", " \
-                      "opaque=\"sadfljk32sdaf\"", "32141232413abcde", NULL, \
+                      "opaque=\"sadfljk32sdaf\"", "32141232413abcde", \
+                      MHD_DIGEST_AUTH_ALGO3_MD5, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
-                      NULL, "users@example.com", "/example", "auth", \
+                      NULL, "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, \
                       "0a4f113b", "00000001", 0);
   r += expect_digest ("Digest username=\"test@example.com\", " \
                       "realm=\"users@example.com\", algorithm=SHA-256, " \
                       "nonce=\"32141232413abcde\", " \
                       "username*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates, " \
-                      "uri=\"/example\", qop=auth, nc=00000001, cnonce=\"0a4f113b\", " \
+                      "uri=\"/example\", qop=auth, nc=00000001, " \
+                      "cnonce=\"0a4f113b\", " \
                       "response=\"6629fae49393a05397450978507c4ef1\", " \
-                      "opaque=\"sadfljk32sdaf\"", "32141232413abcde", "SHA-256", \
+                      "opaque=\"sadfljk32sdaf\"", "32141232413abcde", \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
   r += expect_digest ("Digest username=test@example.com, " \
-                      "realm=users@example.com, algorithm=\"SHA-256\", " \
+                      "realm=users@example.com, algorithm=\"SHA-256-sess\", " \
                       "nonce=32141232413abcde, " \
                       "username*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates, " \
-                      "uri=/example, qop=\"auth\", nc=\"00000001\", cnonce=0a4f113b, " \
+                      "uri=/example, qop=\"auth\", nc=\"00000001\", " \
+                      "cnonce=0a4f113b, " \
                       "response=6629fae49393a05397450978507c4ef1, " \
-                      "opaque=sadfljk32sdaf", "32141232413abcde", "SHA-256", \
+                      "opaque=sadfljk32sdaf", "32141232413abcde", \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
   r += expect_digest ("Digest username = \"test@example.com\", " \
                       "realm\t=\t\"users@example.com\", algorithm\t= SHA-256, " \
@@ -1140,21 +1344,25 @@ check_digest (void)
                       "cnonce\t\t\t=   \"0a4f113b\", " \
                       "response  =\"6629fae49393a05397450978507c4ef1\", " \
                       "opaque=\t\t\"sadfljk32sdaf\"", "32141232413abcde", \
-                      "SHA-256", \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
   r += expect_digest ("Digest username=\"test@example.com\"," \
-                      "realm=\"users@example.com\",algorithm=SHA-256," \
+                      "realm=\"users@example.com\",algorithm=SHA-512-256," \
                       "nonce=\"32141232413abcde\"," \
                       "username*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates," \
-                      "uri=\"/example\",qop=auth,nc=00000001,cnonce=\"0a4f113b\"," \
+                      "uri=\"/example\",qop=auth,nc=00000001," \
+                      "cnonce=\"0a4f113b\"," \
                       "response=\"6629fae49393a05397450978507c4ef1\"," \
-                      "opaque=\"sadfljk32sdaf\"", "32141232413abcde", "SHA-256", \
+                      "opaque=\"sadfljk32sdaf\"", "32141232413abcde", \
+                      MHD_DIGEST_AUTH_ALGO3_SHA512_256, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
   r += expect_digest ("Digest username=\"test@example.com\"," \
                       "realm=\"users@example.com\",algorithm=SHA-256," \
@@ -1162,107 +1370,128 @@ check_digest (void)
                       "username*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates," \
                       "uri=\"/example\",qop=auth,nc=00000001,cnonce=\"0a4f113b\"," \
                       "response=\"6629fae49393a05397450978507c4ef1\"," \
-                      "opaque=\"sadfljk32sdaf\"", "32141232413abcde", "SHA-256", \
+                      "opaque=\"sadfljk32sdaf\"", "32141232413abcde", \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
   r += expect_digest ("Digest abc=zyx, username=\"test@example.com\", " \
                       "realm=\"users@example.com\", algorithm=SHA-256, " \
                       "nonce=\"32141232413abcde\", " \
                       "username*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates, " \
-                      "uri=\"/example\", qop=auth, nc=00000001, cnonce=\"0a4f113b\", " \
+                      "uri=\"/example\", qop=auth, nc=00000001, " \
+                      "cnonce=\"0a4f113b\", " \
                       "response=\"6629fae49393a05397450978507c4ef1\", " \
-                      "opaque=\"sadfljk32sdaf\"", "32141232413abcde", "SHA-256", \
+                      "opaque=\"sadfljk32sdaf\"", "32141232413abcde", \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
   r += expect_digest ("Digest abc=zyx,,,,,,,username=\"test@example.com\", " \
                       "realm=\"users@example.com\", algorithm=SHA-256, " \
                       "nonce=\"32141232413abcde\", " \
                       "username*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates, " \
-                      "uri=\"/example\", qop=auth, nc=00000001, cnonce=\"0a4f113b\", " \
+                      "uri=\"/example\", qop=auth, nc=00000001, " \
+                      "cnonce=\"0a4f113b\", " \
                       "response=\"6629fae49393a05397450978507c4ef1\", " \
-                      "opaque=\"sadfljk32sdaf\"", "32141232413abcde", "SHA-256", \
+                      "opaque=\"sadfljk32sdaf\"", "32141232413abcde",
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
   r += expect_digest ("Digest abc=zyx,,,,,,,username=\"test@example.com\", " \
                       "realm=\"users@example.com\", algorithm=SHA-256, " \
                       "nonce=\"32141232413abcde\", " \
                       "username*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates, " \
-                      "uri=\"/example\", qop=auth, nc=00000001, cnonce=\"0a4f113b\", " \
+                      "uri=\"/example\", qop=auth, nc=00000001, "
+                      "cnonce=\"0a4f113b\", " \
                       "response=\"6629fae49393a05397450978507c4ef1\", " \
                       "opaque=\"sadfljk32sdaf\",,,,,", "32141232413abcde", \
-                      "SHA-256", \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
   r += expect_digest ("Digest abc=zyx,,,,,,,username=\"test@example.com\", " \
                       "realm=\"users@example.com\", algorithm=SHA-256, " \
                       "nonce=\"32141232413abcde\", " \
                       "username*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates, " \
-                      "uri=\"/example\", qop=auth, nc=00000001, cnonce=\"0a4f113b\", " \
+                      "uri=\"/example\", qop=auth, nc=00000001, " \
+                      "cnonce=\"0a4f113b\", " \
                       "response=\"6629fae49393a05397450978507c4ef1\", " \
                       "opaque=\"sadfljk32sdaf\",foo=bar", "32141232413abcde", \
-                      "SHA-256", \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
   r += expect_digest ("Digest abc=\"zyx\", username=\"test@example.com\", " \
                       "realm=\"users@example.com\", algorithm=SHA-256, " \
                       "nonce=\"32141232413abcde\", " \
                       "username*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates, " \
-                      "uri=\"/example\", qop=auth, nc=00000001, cnonce=\"0a4f113b\", " \
+                      "uri=\"/example\", qop=auth, nc=00000001, "
+                      "cnonce=\"0a4f113b\", " \
                       "response=\"6629fae49393a05397450978507c4ef1\", " \
                       "opaque=\"sadfljk32sdaf\",foo=bar", "32141232413abcde", \
-                      "SHA-256", \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
   r += expect_digest ("Digest abc=\"zyx, abc\", " \
                       "username=\"test@example.com\", " \
                       "realm=\"users@example.com\", algorithm=SHA-256, " \
                       "nonce=\"32141232413abcde\", " \
                       "username*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates, " \
-                      "uri=\"/example\", qop=auth, nc=00000001, cnonce=\"0a4f113b\", " \
+                      "uri=\"/example\", qop=auth, nc=00000001, "
+                      "cnonce=\"0a4f113b\", " \
                       "response=\"6629fae49393a05397450978507c4ef1\", " \
                       "opaque=\"sadfljk32sdaf\",foo=bar", "32141232413abcde", \
-                      "SHA-256", \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
   r += expect_digest ("Digest abc=\"zyx, abc=cde\", " \
                       "username=\"test@example.com\", " \
                       "realm=\"users@example.com\", algorithm=SHA-256, " \
                       "nonce=\"32141232413abcde\", " \
                       "username*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates, " \
-                      "uri=\"/example\", qop=auth, nc=00000001, cnonce=\"0a4f113b\", " \
+                      "uri=\"/example\", qop=auth, nc=00000001, " \
+                      "cnonce=\"0a4f113b\", " \
                       "response=\"6629fae49393a05397450978507c4ef1\", " \
                       "opaque=\"sadfljk32sdaf\",foo=bar", "32141232413abcde", \
-                      "SHA-256", \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
   r += expect_digest ("Digest abc=\"zyx, abc=cde\", " \
                       "username=\"test@example.com\", " \
                       "realm=\"users@example.com\", algorithm=SHA-256, " \
                       "nonce=\"32141232413abcde\", " \
                       "username*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates, " \
-                      "uri=\"/example\", qop=auth, nc=00000001, cnonce=\"0a4f113b\", " \
+                      "uri=\"/example\", qop=auth, nc=00000001, " \
+                      "cnonce=\"0a4f113b\", " \
                       "response=\"6629fae49393a05397450978507c4ef1\", " \
                       "opaque=\"sadfljk32sdaf\", foo=\"bar1, bar2\"", \
-                      "32141232413abcde", "SHA-256", \
+                      "32141232413abcde", \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
   r += expect_digest ("Digest abc=\"zyx, \\\\\"abc=cde\\\\\"\", " \
                       "username=\"test@example.com\", " \
@@ -1272,23 +1501,28 @@ check_digest (void)
                       "uri=\"/example\", qop=auth, nc=00000001, cnonce=\"0a4f113b\", " \
                       "response=\"6629fae49393a05397450978507c4ef1\", " \
                       "opaque=\"sadfljk32sdaf\", foo=\"bar1, bar2\"", \
-                      "32141232413abcde", "SHA-256", \
+                      "32141232413abcde",
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
   r += expect_digest ("Digest abc=\"zyx, \\\\\"abc=cde\\\\\"\", " \
                       "username=\"test@example.com\", " \
                       "realm=\"users@example.com\", algorithm=SHA-256, " \
                       "nonce=\"32141232413abcde\", " \
                       "username*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates, " \
-                      "uri=\"/example\", qop=auth, nc=00000001, cnonce=\"0a4f113b\", " \
+                      "uri=\"/example\", qop=auth, nc=00000001, "
+                      "cnonce=\"0a4f113b\", " \
                       "response=\"6629fae49393a05397450978507c4ef1\", " \
                       "opaque=\"sadfljk32sdaf\", foo=\",nc=02\"",
-                      "32141232413abcde", "SHA-256", \
+                      "32141232413abcde", \
+                      MHD_DIGEST_AUTH_ALGO3_SHA256, \
                       "6629fae49393a05397450978507c4ef1", "test@example.com", \
                       "UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", \
-                      "users@example.com", "/example", "auth", "0a4f113b", \
+                      "users@example.com", "/example", \
+                      "auth", MHD_DIGEST_AUTH_QOP_AUTH, "0a4f113b", \
                       "00000001", 0);
 
   return r;

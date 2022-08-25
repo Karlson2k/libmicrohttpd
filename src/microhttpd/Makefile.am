@@ -82,7 +82,7 @@ libmicrohttpd_la_SOURCES = \
   mhd_mono_clock.c mhd_mono_clock.h \
   mhd_limits.h \
   sysfdsetsize.c sysfdsetsize.h \
-  mhd_str.c mhd_str.h \
+  mhd_str.c mhd_str.h mhd_str_types.h\
   mhd_send.h mhd_send.c \
   mhd_assert.h \
   mhd_sockets.c mhd_sockets.h \

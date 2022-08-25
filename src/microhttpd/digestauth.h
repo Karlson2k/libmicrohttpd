@@ -50,43 +50,35 @@
 #define _MHD_AUTH_DIGEST_BASE   "Digest"
 
 /**
- * Parameter of request's Digest Authorization header
+ * The token for MD5 algorithm.
  */
-struct MHD_RqDAuthParam
-{
-  /**
-   * The string with length, NOT zero-terminated
-   */
-  struct _MHD_str_w_len value;
-  /**
-   * True if string must be "unquoted" before processing.
-   * This member is false if the string is used in DQUOTE marks, but no
-   * backslash-escape is used in the string.
-   */
-  bool quoted;
-};
+#define _MHD_MD5_TOKEN "MD5"
 
 /**
- * Request client's Digest Authorization header parameters
+ * The token for SHA-256 algorithm.
  */
-struct MHD_RqDAuth
-{
-  struct MHD_RqDAuthParam nonce;
-  struct MHD_RqDAuthParam opaque;
-  struct MHD_RqDAuthParam algorithm;
-  struct MHD_RqDAuthParam response;
-  struct MHD_RqDAuthParam username;
-  struct MHD_RqDAuthParam username_ext;
-  struct MHD_RqDAuthParam realm;
-  struct MHD_RqDAuthParam uri;
-  struct MHD_RqDAuthParam qop;
-  struct MHD_RqDAuthParam cnonce;
-  struct MHD_RqDAuthParam nc;
-  /**
-   * True if 'userhash' parameter is used with value 'true'.
-   */
-  bool userhash;
-};
+#define _MHD_SHA256_TOKEN "SHA-256"
+
+/**
+ * The token for SHA-512/256 algorithm.
+ * Unsupported currently by MHD for authentication.
+ */
+#define _MHD_SHA512_256_TOKEN "SHA-512-256"
+
+/**
+ * The suffix token for "session" algorithms.
+ */
+#define _MHD_SESS_TOKEN "-sess"
+
+/**
+ * The "auth" token for QOP
+ */
+#define MHD_TOKEN_AUTH_ "auth"
+
+/**
+ * The "auth-int" token for QOP
+ */
+#define MHD_TOKEN_AUTH_INT_ "auth-int"
 
 #endif /* ! MHD_DIGESTAUTH_H */
 

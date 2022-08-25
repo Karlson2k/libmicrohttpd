@@ -38,6 +38,8 @@
 #include <stdbool.h>
 #endif /* HAVE_STDBOOL_H */
 
+#include "mhd_str_types.h"
+
 #if defined(_MSC_FULL_VER) && ! defined(_SSIZE_T_DEFINED)
 #define _SSIZE_T_DEFINED
 typedef intptr_t ssize_t;
@@ -46,46 +48,6 @@ typedef intptr_t ssize_t;
 #ifdef MHD_FAVOR_SMALL_CODE
 #include "mhd_limits.h"
 #endif /* MHD_FAVOR_SMALL_CODE */
-
-#ifndef MHD_STATICSTR_LEN_
-/**
- * Determine length of static string / macro strings at compile time.
- */
-#define MHD_STATICSTR_LEN_(macro) (sizeof(macro) / sizeof(char) - 1)
-#endif /* ! MHD_STATICSTR_LEN_ */
-
-/**
- * Constant string with length
- */
-struct _MHD_cstr_w_len
-{
-  const char *const str;
-  const size_t len;
-};
-
-/**
- * String with length
- */
-struct _MHD_str_w_len
-{
-  const char *str;
-  size_t len;
-};
-
-/**
- * Modifiable string with length
- */
-struct _MHD_mstr_w_len
-{
-  char *str;
-  size_t len;
-};
-
-/**
- * Static string initialiser for struct _MHD_str_w_len
- */
-#define _MHD_S_STR_W_LEN(str) { str, MHD_STATICSTR_LEN_(str) }
-
 
 /*
  * Block of functions/macros that use US-ASCII charset as required by HTTP

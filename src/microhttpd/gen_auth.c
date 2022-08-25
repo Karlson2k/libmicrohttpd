@@ -274,6 +274,125 @@ struct dauth_token_param
   struct MHD_RqDAuthParam *const param;
 };
 
+
+/**
+ * Get client's Digest Authorization algorithm type.
+ * If no algorithm is specified by client, MD5 is assumed.
+ * @param params the Digest Authorization 'algorithm' parameter
+ * @return the algorithm type
+ */
+static enum MHD_DigestAuthAlgo3
+get_rq_dauth_algo (const struct MHD_RqDAuthParam *const algo_param)
+{
+  if (NULL == algo_param->value.str)
+    return MHD_DIGEST_AUTH_ALGO3_MD5; /* Assume MD5 by default */
+
+  if (algo_param->quoted)
+  {
+    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
+                                               algo_param->value.len, \
+                                               _MHD_MD5_TOKEN))
+      return MHD_DIGEST_AUTH_ALGO3_MD5;
+    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
+                                               algo_param->value.len, \
+                                               _MHD_SHA256_TOKEN))
+      return MHD_DIGEST_AUTH_ALGO3_SHA256;
+    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
+                                               algo_param->value.len, \
+                                               _MHD_MD5_TOKEN _MHD_SESS_TOKEN))
+      return MHD_DIGEST_AUTH_ALGO3_MD5_SESSION;
+    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
+                                               algo_param->value.len, \
+                                               _MHD_SHA256_TOKEN \
+                                               _MHD_SESS_TOKEN))
+      return MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION;
+
+    /* Algorithms below are not supported by MHD for authentication */
+
+    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
+                                               algo_param->value.len, \
+                                               _MHD_SHA512_256_TOKEN))
+      return MHD_DIGEST_AUTH_ALGO3_SHA512_256;
+    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
+                                               algo_param->value.len, \
+                                               _MHD_SHA512_256_TOKEN \
+                                               _MHD_SESS_TOKEN))
+      return MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION;
+
+    /* No known algorithm has been detected */
+    return MHD_DIGEST_AUTH_ALGO3_INVALID;
+  }
+  /* The algorithm value is not quoted */
+  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_MD5_TOKEN, \
+                                       algo_param->value.str, \
+                                       algo_param->value.len))
+    return MHD_DIGEST_AUTH_ALGO3_MD5;
+  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA256_TOKEN, \
+                                       algo_param->value.str, \
+                                       algo_param->value.len))
+    return MHD_DIGEST_AUTH_ALGO3_SHA256;
+  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_MD5_TOKEN _MHD_SESS_TOKEN, \
+                                       algo_param->value.str, \
+                                       algo_param->value.len))
+    return MHD_DIGEST_AUTH_ALGO3_MD5_SESSION;
+  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA256_TOKEN _MHD_SESS_TOKEN, \
+                                       algo_param->value.str, \
+                                       algo_param->value.len))
+    return MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION;
+
+  /* Algorithms below are not supported by MHD for authentication */
+
+  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA512_256_TOKEN, \
+                                       algo_param->value.str, \
+                                       algo_param->value.len))
+    return MHD_DIGEST_AUTH_ALGO3_SHA512_256;
+  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA512_256_TOKEN _MHD_SESS_TOKEN, \
+                                       algo_param->value.str, \
+                                       algo_param->value.len))
+    return MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION;
+
+  /* No known algorithm has been detected */
+  return MHD_DIGEST_AUTH_ALGO3_INVALID;
+}
+
+
+/**
+ * Get QOP ('quality of protection') type.
+ * @param qop_param the Digest Authorization 'QOP' parameter
+ * @return detected QOP ('quality of protection') type.
+ */
+static enum MHD_DigestAuthQOP
+get_rq_dauth_qop (const struct MHD_RqDAuthParam *const qop_param)
+{
+  if (NULL == qop_param->value.str)
+    return MHD_DIGEST_AUTH_QOP_NONE;
+  if (qop_param->quoted)
+  {
+    if (MHD_str_equal_caseless_quoted_s_bin_n (qop_param->value.str, \
+                                               qop_param->value.len, \
+                                               MHD_TOKEN_AUTH_))
+      return MHD_DIGEST_AUTH_QOP_AUTH;
+    if (MHD_str_equal_caseless_quoted_s_bin_n (qop_param->value.str, \
+                                               qop_param->value.len, \
+                                               MHD_TOKEN_AUTH_INT_))
+      return MHD_DIGEST_AUTH_QOP_AUTH_INT;
+  }
+  else
+  {
+    if (MHD_str_equal_caseless_s_bin_n_ (MHD_TOKEN_AUTH_, \
+                                         qop_param->value.str, \
+                                         qop_param->value.len))
+      return MHD_DIGEST_AUTH_QOP_AUTH;
+    if (MHD_str_equal_caseless_s_bin_n_ (MHD_TOKEN_AUTH_INT_, \
+                                         qop_param->value.str, \
+                                         qop_param->value.len))
+      return MHD_DIGEST_AUTH_QOP_AUTH_INT;
+  }
+  /* No know QOP has been detected */
+  return MHD_DIGEST_AUTH_QOP_INVALID;
+}
+
+
 /**
  * Parse request Authorization header parameters for Digest Authentication
  * @param str the header string, everything after "Digest " substring
@@ -306,16 +425,17 @@ parse_dauth_params (const char *str,
   static const struct _MHD_cstr_w_len userhash_tk =
     _MHD_S_STR_W_LEN ("userhash");
   struct MHD_RqDAuthParam userhash;
+  struct MHD_RqDAuthParam algorithm;
   struct dauth_token_param map[] = {
     {&nonce_tk, &(pdauth->nonce)},
     {&opaque_tk, &(pdauth->opaque)},
-    {&algorithm_tk, &(pdauth->algorithm)},
+    {&algorithm_tk, &algorithm},
     {&response_tk, &(pdauth->response)},
     {&username_tk, &(pdauth->username)},
     {&username_ext_tk, &(pdauth->username_ext)},
     {&realm_tk, &(pdauth->realm)},
     {&uri_tk, &(pdauth->uri)},
-    {&qop_tk, &(pdauth->qop)},
+    {&qop_tk, &(pdauth->qop_raw)},
     {&cnonce_tk, &(pdauth->cnonce)},
     {&nc_tk, &(pdauth->nc)},
     {&userhash_tk, &userhash}
@@ -324,6 +444,7 @@ parse_dauth_params (const char *str,
   size_t p;
 
   memset (&userhash, 0, sizeof(userhash));
+  memset (&algorithm, 0, sizeof(algorithm));
   i = 0;
 
   /* Skip all whitespaces at start */
@@ -454,6 +575,7 @@ parse_dauth_params (const char *str,
   }
 
   /* Postprocess values */
+
   if (NULL != userhash.value.str)
   {
     if (userhash.quoted)
@@ -469,6 +591,9 @@ parse_dauth_params (const char *str,
   }
   else
     pdauth->userhash = false;
+
+  pdauth->algo3 = get_rq_dauth_algo (&algorithm);
+  pdauth->qop = get_rq_dauth_qop (&pdauth->qop_raw);
 
   return true;
 }

@@ -4789,7 +4789,7 @@ enum MHD_DigestAuthMultiQOP
  *
  * Application may modify buffers as needed until #MHD_free() is called for
  * pointer to this structure
- * @note Available since #MHD_VERSION 0x00097525
+ * @note Available since #MHD_VERSION 0x00097533
  */
 struct MHD_DigestAuthInfo
 {
@@ -4799,7 +4799,7 @@ struct MHD_DigestAuthInfo
    * @warning Do not be confused with #MHD_DigestAuthAlgorithm,
    *          which uses other values!
    */
-  enum MHD_DigestAuthAlgo3 algo;
+  enum MHD_DigestAuthAlgo3 algo3;
 
   /**
    * The type of username used by client.
