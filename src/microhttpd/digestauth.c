@@ -780,7 +780,7 @@ get_rq_extended_uname_copy_z (const char *uname_ext, size_t uname_ext_len,
  * Get copy of username used by the client.
  * @param params the Digest Authorization parameters
  * @param uname_type the type of username
- * @param[out] unames the pointer to the structure to be filled
+ * @param[out] uname_info the pointer to the structure to be filled
  * @param buf the buffer to be used for usernames
  * @param buf_size the size of the @a buf
  * @return the size of the @a buf used by pointers in @a unames structure
@@ -975,17 +975,11 @@ MHD_digest_auth_get_request_info3 (struct MHD_Connection *connection)
 
   if ( (MHD_DIGEST_AUTH_UNAME_TYPE_MISSING != uname_type) &&
        (MHD_DIGEST_AUTH_UNAME_TYPE_INVALID != uname_type) )
-  {
-    struct MHD_DigestAuthUsernameInfo uname_strct;
-    memset (&uname_strct, 0, sizeof(uname_strct));
-    unif_buf_used += get_rq_uname (params, uname_type, &uname_strct,
-                                   unif_buf_ptr + unif_buf_used,
-                                   unif_buf_size - unif_buf_used);
-    info->uname_type = uname_strct.uname_type;
-    info->username = uname_strct.username;
-    info->username_len = uname_strct.username_len;
-    info->userhash_bin = uname_strct.userhash_bin;
-  }
+    unif_buf_used +=
+      get_rq_uname (params, uname_type,
+                    (struct MHD_DigestAuthUsernameInfo *) info,
+                    unif_buf_ptr + unif_buf_used,
+                    unif_buf_size - unif_buf_used);
   else
     info->uname_type = uname_type;
 
@@ -1072,6 +1066,7 @@ MHD_digest_auth_get_username3 (struct MHD_Connection *connection)
     return NULL;
   }
   mhd_assert (uname_type == uname_info->uname_type);
+  uname_info->algo3 = params->algo3;
 
   return uname_info;
 }

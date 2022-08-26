@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097533
+#define MHD_VERSION 0x00097534
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4911,10 +4911,18 @@ MHD_digest_auth_get_request_info3 (struct MHD_Connection *connection);
  *
  * Application may modify buffers as needed until #MHD_free() is called for
  * pointer to this structure
- * @note Available since #MHD_VERSION 0x00097525
+ * @note Available since #MHD_VERSION 0x00097534
  */
 struct MHD_DigestAuthUsernameInfo
 {
+  /**
+   * The algorithm as defined by client.
+   * Set automatically to MD5 if not specified by client.
+   * @warning Do not be confused with #MHD_DigestAuthAlgorithm,
+   *          which uses other values!
+   */
+  enum MHD_DigestAuthAlgo3 algo3;
+
   /**
    * The type of username used by client.
    * The 'invalid' and 'missing' types are not used in this structure,

@@ -550,11 +550,11 @@ ahc_echo (void *cls,
       }
       if (algo3 != dinfo->algo3)
       {
-        fprintf (stderr, "Unexpected 'algo'.\n"
+        fprintf (stderr, "Unexpected 'algo3'.\n"
                  "Expected: %d\tRecieved: %d. ",
                  (int) algo3,
                  (int) dinfo->algo3);
-        mhdErrorExitDesc ("Wrong 'algo'");
+        mhdErrorExitDesc ("Wrong 'algo3'");
       }
       if (! test_rfc2069)
       {
@@ -691,6 +691,14 @@ ahc_echo (void *cls,
         }
         else if (NULL != uname->userhash_bin)
           mhdErrorExitDesc ("'userhash_bin' is NOT NULL");
+      }
+      if (algo3 != uname->algo3)
+      {
+        fprintf (stderr, "Unexpected 'algo3'.\n"
+                 "Expected: %d\tRecieved: %d. ",
+                 (int) algo3,
+                 (int) uname->algo3);
+        mhdErrorExitDesc ("Wrong 'algo3'");
       }
       MHD_free (uname);
 
