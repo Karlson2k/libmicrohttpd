@@ -225,6 +225,8 @@ digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3)
  * @return the size of the digest (either #MHD_MD5_DIGEST_SIZE or
  *         #MHD_SHA256_DIGEST_SIZE) or zero if the input value is not
  *         recognised/valid
+ * @sa #MHD_digest_auth_calc_userdigest()
+ * @sa #MHD_digest_auth_calc_userhash(), #MHD_digest_auth_calc_userhash_hex()
  * @note Available since #MHD_VERSION 0x00097526
  * @ingroup authentication
  */
@@ -1137,7 +1139,7 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection)
 /**
  * Calculate the server nonce so that it mitigates replay attacks
  * The current format of the nonce is ...
- * H(various parameters) + Hex(timestamp)
+ * H(timestamp:random data:various parameters) + Hex(timestamp)
  *
  * @param nonce_time The amount of time in seconds for a nonce to be invalid
  * @param mthd_e HTTP method as enum value
@@ -1513,6 +1515,240 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
     memcpy (nonce, nonce2, NONCE_STD_LEN (digest_size));
   }
   return true;
+}
+
+
+/**
+ * Calculate userdigest, return it as binary data.
+ *
+ * It is equal to H(A1) for non-session algorithms.
+ *
+ * MHD internal version.
+ *
+ * @param da the digest algorithm
+ * @param username the username to use
+ * @param username_len the length of the @a username
+ * @param realm the realm to use
+ * @param realm_len the length of the @a realm
+ * @param password the password, must be zero-terminated
+ * @param[out] ha1_bin the output buffer, must have at least
+ *                     #digest_get_size(da) bytes available
+ */
+_MHD_static_inline void
+calc_userdigest (struct DigestAlgorithm *da,
+                 const char *username, const size_t username_len,
+                 const char *realm, const size_t realm_len,
+                 const char *password,
+                 uint8_t *ha1_bin)
+{
+  digest_init (da);
+  digest_update (da, username, username_len);
+  digest_update_with_colon (da);
+  digest_update (da, realm, realm_len);
+  digest_update_with_colon (da);
+  digest_update_str (da, password);
+  digest_calc_hash (da, ha1_bin);
+}
+
+
+/**
+ * Calculate userdigest, return it as binary data.
+ *
+ * The "userdigest" is the hash of the "username:realm:password" string.
+ *
+ * The "userdigest" can be used to avoid storing the password in clear text
+ * in database/files
+ *
+ * This function is designed to improve security of stored credentials,
+ * the "userdigest" does not improve security of the authentication process.
+ *
+ * The results can be used to store username & userdigest pairs instead of
+ * username & password pairs. To further improve security, application may
+ * store username & userhash & userdigest triplets.
+ *
+ * @param algo3 the digest algorithm
+ * @param username the username
+ * @param realm the realm
+ * @param password the password, must be zero-terminated
+ * @param[out] userdigest_bin the output buffer for userdigest;
+ *                            if this function succeeds, then this buffer has
+ *                            #MHD_digest_get_hash_size(algo3) bytes of
+ *                            userdigest upon return
+ * @param userdigest_bin the size of the @a userdigest_bin buffer, must be
+ *                       at least #MHD_digest_get_hash_size(algo3) bytes long
+ * @return MHD_YES on success, MHD_NO if @a userdigest_bin is too small or
+ *                             if @a algo3 algorithm is not supported.
+ * @sa #MHD_digest_auth_check_digest3()
+ * @note Available since #MHD_VERSION 0x00097535
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_digest_auth_calc_userdigest (enum MHD_DigestAuthAlgo3 algo3,
+                                 const char *username,
+                                 const char *realm,
+                                 const char *password,
+                                 void *userdigest_bin,
+                                 size_t bin_buf_size)
+{
+  struct DigestAlgorithm da;
+  if (! digest_setup (&da, get_base_digest_algo (algo3)))
+    return MHD_NO;
+  if (digest_get_size (&da) > bin_buf_size)
+    return MHD_NO;
+  calc_userdigest (&da,
+                   username,
+                   strlen (username),
+                   realm,
+                   strlen (realm),
+                   password,
+                   userdigest_bin);
+  return MHD_YES;
+}
+
+
+/**
+ * Calculate userhash, return it as binary data.
+ *
+ * MHD internal version.
+ *
+ * @param da the digest algorithm
+ * @param username the username to use
+ * @param username_len the length of the @a username
+ * @param realm the realm to use
+ * @param realm_len the length of the @a realm
+ * @param[out] digest_bin the output buffer, must have at least
+ *                        #MHD_digest_get_hash_size(algo3) bytes available
+ */
+_MHD_static_inline void
+calc_userhash (struct DigestAlgorithm *da,
+               const char *username, const size_t username_len,
+               const char *realm, const size_t realm_len,
+               uint8_t *digest_bin)
+{
+  mhd_assert (NULL != username);
+  digest_init (da);
+  digest_update (da, username, username_len);
+  digest_update_with_colon (da);
+  digest_update (da, realm, realm_len);
+  digest_calc_hash (da, digest_bin);
+}
+
+
+/**
+ * Calculate "userhash", return it as binary data.
+ *
+ * The "userhash" is the hash of the string "username:realm".
+ *
+ * The "Userhash" could be used to avoid sending username in cleartext in Digest
+ * Authorization client's header.
+ *
+ * Userhash is not designed to hide the username in local database or files,
+ * as username in cleartext is required for #MHD_digest_auth_check3() function
+ * to check the response, but it can be used to hide username in HTTP headers.
+ *
+ * This function could be used when the new username is added to the username
+ * database to save the "userhash" alongside with the username (preferably) or
+ * when loading list of the usernames to generate the userhash for every loaded
+ * username (this will cause delays at the start with the long lists).
+ *
+ * Once "userhash" is generated it could be used to identify users for clients
+ * with "userhash" support.
+ * Avoid repetitive usage of this function for the same username/realm
+ * combination as it will cause excessive CPU load; save and re-use the result
+ * instead.
+ *
+ * @param algo3 the algorithm for userhash calculations
+ * @param username the username
+ * @param realm the realm
+ * @param[out] userhash_bin the output buffer for userhash as binary data;
+ *                          if this function succeeds, then this buffer has
+ *                          #MHD_digest_get_hash_size(algo3) bytes of userhash
+ *                          upon return
+ * @param bin_buf_size the size of the @a userhash_bin buffer, must be
+ *                     at least #MHD_digest_get_hash_size(algo3) bytes long
+ * @return MHD_YES on success, MHD_NO if @a bin_buf_size is too small or
+ *                             if @a algo3 algorithm is not supported.
+ * @note Available since #MHD_VERSION 0x00097535
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo3 algo3,
+                               const char *username,
+                               const char *realm,
+                               void *userhash_bin,
+                               size_t bin_buf_size)
+{
+  struct DigestAlgorithm da;
+  if (! digest_setup (&da, get_base_digest_algo (algo3)))
+    return MHD_NO;
+  if (digest_get_size (&da) > bin_buf_size)
+    return MHD_NO;
+  calc_userhash (&da,
+                 username,
+                 strlen (username),
+                 realm,
+                 strlen (realm),
+                 userhash_bin);
+  return MHD_YES;
+}
+
+
+/**
+ * Calculate "userhash", return it as hexadecimal data.
+ *
+ * The "userhash" is the hash of the string "username:realm".
+ *
+ * The "Userhash" could be used to avoid sending username in cleartext in Digest
+ * Authorization client's header.
+ *
+ * Userhash is not designed to hide the username in local database or files,
+ * as username in cleartext is required for #MHD_digest_auth_check3() function
+ * to check the response, but it can be used to hide username in HTTP headers.
+ *
+ * This function could be used when the new username is added to the username
+ * database to save the "userhash" alongside with the username (preferably) or
+ * when loading list of the usernames to generate the userhash for every loaded
+ * username (this will cause delays at the start with the long lists).
+ *
+ * Once "userhash" is generated it could be used to identify users for clients
+ * with "userhash" support.
+ * Avoid repetitive usage of this function for the same username/realm
+ * combination as it will cause excessive CPU load; save and re-use the result
+ * instead.
+ *
+ * @param algo3 the algorithm for userhash calculations
+ * @param username the username
+ * @param realm the realm
+ * @param[out] userhash_hex the output buffer for userhash as hex data;
+ *                          if this function succeeds, then this buffer has
+ *                          #MHD_digest_get_hash_size(algo3)*2 chars long
+ *                          userhash string
+ * @param bin_buf_size the size of the @a userhash_bin buffer, must be
+ *                     at least #MHD_digest_get_hash_size(algo3)*2+1 chars long
+ * @return MHD_YES on success, MHD_NO if @a bin_buf_size is too small or
+ *                             if @a algo3 algorithm is not supported.
+ * @note Available since #MHD_VERSION 0x00097535
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_digest_auth_calc_userhash_hex (enum MHD_DigestAuthAlgo3 algo3,
+                                   const char *username,
+                                   const char *realm,
+                                   char *userhash_hex,
+                                   size_t hex_buf_size)
+{
+  uint8_t userhash_bin[MAX_DIGEST];
+  size_t digest_size;
+
+  digest_size = digest_get_hash_size (algo3);
+  if (digest_size * 2 + 1 > hex_buf_size)
+    return MHD_NO;
+  if (MHD_NO == MHD_digest_auth_calc_userhash (algo3, username, realm,
+                                               userhash_bin, MAX_DIGEST))
+    return MHD_NO;
+
+  MHD_bin_to_hex_z (userhash_bin, digest_size, userhash_hex);
+  return MHD_YES;
 }
 
 
@@ -2116,11 +2352,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   else
   { /* Userhash */
     mhd_assert (NULL != params->username.value.str);
-    digest_init (&da);
-    digest_update (&da, username, username_len);
-    digest_update_with_colon (&da);
-    digest_update (&da, realm, realm_len);
-    digest_calc_hash (&da, hash1_bin);
+    calc_userhash (&da, username, username_len, realm, realm_len, hash1_bin);
     mhd_assert (sizeof (tmp1) >= (2 * digest_size));
     MHD_bin_to_hex (hash1_bin, digest_size, tmp1);
     if (! is_param_equal_caseless (&params->username, tmp1, 2 * digest_size))
@@ -2260,15 +2492,11 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 
   /* ** Build H(A1) ** */
   if (NULL == userdigest)
-  {
-    digest_init (&da);
-    digest_update (&da, (const uint8_t *) username, username_len);
-    digest_update_with_colon (&da);
-    digest_update (&da, (const uint8_t *) realm, realm_len);
-    digest_update_with_colon (&da);
-    digest_update_str (&da, password);
-    digest_calc_hash (&da, hash1_bin);
-  }
+    calc_userdigest (&da,
+                     username, username_len,
+                     realm, realm_len,
+                     password,
+                     hash1_bin);
   /* TODO: support '-sess' versions */
   /* Got H(A1) */
 
@@ -2476,7 +2704,8 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  *
  * @param connection the MHD connection structure
  * @param realm the realm to be used for authorization of the client
- * @param username the username needs to be authenticated
+ * @param username the username needs to be authenticated, must be in clear text
+ *                 even if userhash is used by the client
  * @param password the password used in the authentication
  * @param nonce_timeout the nonce validity duration in seconds
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
@@ -2528,13 +2757,15 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  * nonce and second time to perform an authorised request).
  *
  * @param connection the MHD connection structure
- * @param realm the realm presented to the client
- * @param username the username needs to be authenticated
+ * @param realm the realm to be used for authorization of the client
+ * @param username the username needs to be authenticated, must be in clear text
+ *                 even if userhash is used by the client
  * @param userdigest the precalculated binary hash of the string
- *                   "username:realm:password"
+ *                   "username:realm:password",
+ *                   see #MHD_digest_auth_calc_userdigest()
  * @param userdigest_size the size of the @a userdigest in bytes, must match the
  *                        hashing algorithm (see #MHD_MD5_DIGEST_SIZE,
- *                        #MHD_SHA256_DIGEST_SIZE)
+ *                        #MHD_SHA256_DIGEST_SIZE, #MHD_digest_get_hash_size())
  * @param nonce_timeout the period of seconds since nonce generation, when
  *                      the nonce is recognised as valid and not stale.
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
@@ -2549,6 +2780,7 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  *               match specified algorithm
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
+ * @sa #MHD_digest_auth_calc_userdigest()
  * @note Available since #MHD_VERSION 0x00097528
  * @ingroup authentication
  */
@@ -2777,9 +3009,13 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  * @param userhash_support if set to non-zero value (#MHD_YES) then support of
  *                         userhash is indicated, the client may provide
  *                         hash("username:realm") instead of username in
- *                         clear text; note that client is allowed to provide
- *                         the username in cleartext even if this parameter set
- *                         to non-zero
+ *                         clear text;
+ *                         note that clients are allowed to provide the username
+ *                         in cleartext even if this parameter set to non-zero;
+ *                         when userhash is used, application must be ready to
+ *                         identify users by provided userhash value instead of
+ *                         username; see #MHD_digest_auth_calc_userhash() and
+ *                         #MHD_digest_auth_calc_userhash_hex()
  * @param prefer_utf8 if not set to #MHD_NO, parameter 'charset=UTF-8' is
  *                    added, indicating for the client that UTF-8 encoding
  *                    is preferred
