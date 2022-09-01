@@ -6037,7 +6037,7 @@ enum MHD_FEATURE
   /**
    * Get whether the MD5-based hashing algorithms are supported for Digest
    * Authorization.
-   * Currently it is always not supported if Digest Auth module is built.
+   * Currently it is always supported if Digest Auth module is built.
    * @note Available since #MHD_VERSION 0x00097527
    */
   MHD_FEATURE_DIGEST_AUTH_MD5 = 26,
@@ -6069,7 +6069,7 @@ enum MHD_FEATURE
 
   /**
    * Get whether 'userhash' is supported for Digest Authorization.
-   * It it always supported since #MHD_VERSION 0x00097526 if Digest Auth
+   * It is always supported since #MHD_VERSION 0x00097526 if Digest Auth
    * module is built.
    * @note Available since #MHD_VERSION 0x00097527
    */
