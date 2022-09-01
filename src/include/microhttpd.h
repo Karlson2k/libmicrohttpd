@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097535
+#define MHD_VERSION 0x00097536
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -6052,28 +6052,36 @@ enum MHD_FEATURE
   MHD_FEATURE_DIGEST_AUTH_SHA256 = 27,
 
   /**
+   * Get whether the SHA-512/256-based hashing algorithms are supported
+   * for Digest Authorization.
+   * Currently it is always not supported.
+   * @note Available since #MHD_VERSION 0x00097536
+   */
+  MHD_FEATURE_DIGEST_AUTH_SHA512_256 = 28,
+
+  /**
    * Get whether QOP with value 'auth-int' (authentication with integrity
    * protection) is supported for Digest Authorization.
    * Currently it is always not supported.
-   * @note Available since #MHD_VERSION 0x00097527
+   * @note Available since #MHD_VERSION 0x00097536
    */
-  MHD_FEATURE_DIGEST_AUTH_AUTH_INT = 28,
+  MHD_FEATURE_DIGEST_AUTH_AUTH_INT = 29,
 
   /**
    * Get whether 'session' algorithms (like 'MD5-sess') are supported for Digest
    * Authorization.
    * Currently it is always not supported.
-   * @note Available since #MHD_VERSION 0x00097527
+   * @note Available since #MHD_VERSION 0x00097536
    */
-  MHD_FEATURE_DIGEST_AUTH_ALGO_SESSION = 29,
+  MHD_FEATURE_DIGEST_AUTH_ALGO_SESSION = 30,
 
   /**
    * Get whether 'userhash' is supported for Digest Authorization.
    * It is always supported since #MHD_VERSION 0x00097526 if Digest Auth
    * module is built.
-   * @note Available since #MHD_VERSION 0x00097527
+   * @note Available since #MHD_VERSION 0x00097536
    */
-  MHD_FEATURE_DIGEST_AUTH_USERHASH = 30
+  MHD_FEATURE_DIGEST_AUTH_USERHASH = 31
 };
 
 

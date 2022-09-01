@@ -8441,6 +8441,12 @@ MHD_is_feature_supported (enum MHD_FEATURE feature)
 #else
     return MHD_NO;
 #endif
+  case MHD_FEATURE_DIGEST_AUTH_SHA512_256:
+#ifdef DAUTH_SUPPORT
+    return MHD_NO;
+#else
+    return MHD_NO;
+#endif
   case MHD_FEATURE_DIGEST_AUTH_AUTH_INT:
 #ifdef DAUTH_SUPPORT
     return MHD_NO;
