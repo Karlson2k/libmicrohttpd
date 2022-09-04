@@ -85,3 +85,4 @@ test_postprocessor_md
 /test_str_bin_hex
 /test_dauth_userdigest
 /test_dauth_userhash
+test_*[a-z0-9_][a-z0-9_][a-z0-9_]
