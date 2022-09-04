@@ -83,3 +83,5 @@ test_postprocessor_md
 /test_str_base64
 /test_str_pct
 /test_str_bin_hex
+/test_dauth_userdigest
+/test_dauth_userhash

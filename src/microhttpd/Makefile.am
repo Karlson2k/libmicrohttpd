@@ -263,7 +263,9 @@ check_PROGRAMS += \
 endif
 if ENABLE_DAUTH
 check_PROGRAMS += \
-  test_str_quote
+  test_str_quote \
+  test_dauth_userdigest \
+  test_dauth_userhash
 endif
 if ENABLE_BAUTH
 check_PROGRAMS += \
@@ -533,6 +535,16 @@ test_client_put_chunked_steps_hard_close_LDADD = \
 test_set_panic_SOURCES = \
   test_set_panic.c
 test_set_panic_LDADD = \
+  libmicrohttpd.la
+
+test_dauth_userdigest_SOURCES = \
+  test_dauth_userdigest.c
+test_dauth_userdigest_LDADD = \
+  libmicrohttpd.la
+
+test_dauth_userhash_SOURCES = \
+  test_dauth_userhash.c
+test_dauth_userhash_LDADD = \
   libmicrohttpd.la
 
 .PHONY: update-po-POTFILES.in
