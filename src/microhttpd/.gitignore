@@ -77,3 +77,4 @@ test_postprocessor_md
 /test_client_put_chunked_steps_shutdown
 /test_client_put_chunked_steps_close
 /test_client_put_chunked_steps_hard_close
+test_*[a-z0-9_][a-z0-9_][a-z0-9_]

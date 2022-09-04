@@ -149,3 +149,4 @@ core
 /test_toolarge_reply_headers
 /test_tricky_url
 /test_tricky_header2
+test_*[a-z0-9_][a-z0-9_][a-z0-9_]

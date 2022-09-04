@@ -41,3 +41,4 @@
 /daemontest_get_chunked
 /daemontest_get11
 *.exe
+test_*[a-z0-9_][a-z0-9_][a-z0-9_]
