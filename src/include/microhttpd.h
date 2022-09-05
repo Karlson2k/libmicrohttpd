@@ -4999,7 +4999,7 @@ struct MHD_DigestAuthInfo
    * The nc parameter value.
    * Can be used by application to limit the number of nonce re-uses. If @a nc
    * is higher than application wants to allow, then auth required response with
-   * 'stale=true' could be used to force client to get the fresh 'nonce'.
+   * 'stale=true' could be used to force client to retry with the fresh 'nonce'.
    * If not specified by client or does not have hexadecimal digits only, the
    * value is #MHD_DIGEST_AUTH_INVALID_NC_VALUE.
    */
@@ -5429,10 +5429,11 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
  *
  * @param connection The MHD connection structure
  * @return NULL if no username could be found, username provided as
- *         "userhash" or memory allocation error occurred;
+ *         "userhash", extended notation broken or memory allocation error
+ *         occurs;
  *         a pointer to the username if found, free using #MHD_free().
  * @warning Returned value must be freed by #MHD_free().
- * @deprecated use MHD_digest_auth_get_username3()
+ * @sa #MHD_digest_auth_get_username3()
  * @ingroup authentication
  */
 _MHD_EXTERN char *
