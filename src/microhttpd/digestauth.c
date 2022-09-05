@@ -801,37 +801,47 @@ get_rq_uname (const struct MHD_RqDAuth *params,
   mhd_assert (MHD_DIGEST_AUTH_UNAME_TYPE_INVALID != uname_type);
   mhd_assert (MHD_DIGEST_AUTH_UNAME_TYPE_MISSING != uname_type);
 
-  if ( (MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD == uname_type) ||
-       (MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH == uname_type) )
+  uname_info->username = NULL;
+  uname_info->username_len = 0;
+  uname_info->userhash_hex = NULL;
+  uname_info->userhash_hex_len = 0;
+  uname_info->userhash_bin = NULL;
+
+  if (MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD == uname_type)
   {
     uname_info->username = (char *) (buf + buf_used);
     uname_info->username_len =
       get_rq_param_unquoted_copy_z (&params->username,
                                     uname_info->username);
     buf_used += uname_info->username_len + 1;
-    if (MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH == uname_type)
+    uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD;
+  }
+  else if (MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH == uname_type)
+  {
+    size_t res;
+
+    uname_info->userhash_hex = (char *) (buf + buf_used);
+    uname_info->userhash_hex_len =
+      get_rq_param_unquoted_copy_z (&params->username,
+                                    uname_info->userhash_hex);
+    buf_used += uname_info->userhash_hex_len + 1;
+    uname_info->userhash_bin = (uint8_t *) (buf + buf_used);
+    res = MHD_hex_to_bin (uname_info->userhash_hex,
+                          uname_info->userhash_hex_len,
+                          uname_info->userhash_bin);
+    if (res != uname_info->username_len / 2)
     {
-      size_t res;
-      uint8_t *const bin_data = (uint8_t *) (buf + buf_used);
-      res = MHD_hex_to_bin (uname_info->username,
-                            uname_info->username_len,
-                            bin_data);
-      if (res != uname_info->username_len / 2)
-      {
-        uname_info->userhash_bin = NULL;
-        uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_INVALID;
-      }
-      else
-      {
-        /* Avoid pointers outside allocated region when the size is zero */
-        uname_info->userhash_bin = (0 != res) ?
-                                   bin_data : (uint8_t *) uname_info->username;
-        uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH;
-        buf_used += res;
-      }
+      uname_info->userhash_bin = NULL;
+      uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_INVALID;
     }
     else
-      uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD;
+    {
+      /* Avoid pointers outside allocated region when the size is zero */
+      if (0 == res)
+        uname_info->userhash_bin = (uint8_t *) uname_info->username;
+      uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH;
+      buf_used += res;
+    }
   }
   else if (MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED == uname_type)
   {

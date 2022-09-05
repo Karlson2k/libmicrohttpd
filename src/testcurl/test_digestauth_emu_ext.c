@@ -381,6 +381,10 @@ ahc_echo (void *cls,
                creds->username);
       mhdErrorExitDesc ("Wrong 'username'");
     }
+    else if (NULL != creds->userhash_hex)
+      mhdErrorExitDesc ("'userhash_hex' is NOT NULL");
+    else if (0 != creds->userhash_hex_len)
+      mhdErrorExitDesc ("'userhash_hex' is NOT zero");
     else if (NULL != creds->userhash_bin)
       mhdErrorExitDesc ("'userhash_bin' is NOT NULL");
     MHD_free (creds);
@@ -415,6 +419,10 @@ ahc_echo (void *cls,
                dinfo->username);
       mhdErrorExitDesc ("Wrong 'username'");
     }
+    else if (NULL != dinfo->userhash_hex)
+      mhdErrorExitDesc ("'userhash_hex' is NOT NULL");
+    else if (0 != dinfo->userhash_hex_len)
+      mhdErrorExitDesc ("'userhash_hex' is NOT zero");
     else if (NULL != dinfo->userhash_bin)
       mhdErrorExitDesc ("'userhash_bin' is NOT NULL");
     else if (MHD_DIGEST_AUTH_ALGO3_MD5 != dinfo->algo3)

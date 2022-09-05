@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097536
+#define MHD_VERSION 0x00097537
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4738,7 +4738,16 @@ MHD_digest_auth_calc_userhash_hex (enum MHD_DigestAuthAlgo3 algo3,
 /**
  * The type of username used by client in Digest Authorization header
  *
- * @note Available since #MHD_VERSION 0x00097519
+ * Values are sorted so simplified checks could be used.
+ * For example:
+ * * (value <= MHD_DIGEST_AUTH_UNAME_TYPE_INVALID) is true if not valid username
+ *   is provided by the client
+ * * (value >= MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH) is true if username is
+ *   provided in any form
+ * * (value >= MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD) is true if username is
+ *   provided in clear text (not userhash matching is needed)
+ *
+ * @note Available since #MHD_VERSION 0x00097537
  */
 enum MHD_DigestAuthUsernameType
 {
@@ -4751,7 +4760,7 @@ enum MHD_DigestAuthUsernameType
   /**
    * The 'username' parameter is used to specify the username.
    */
-  MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD = 1,
+  MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD = (1 << 2),
 
   /**
    * The username is specified by 'username*' parameter with
@@ -4759,14 +4768,14 @@ enum MHD_DigestAuthUsernameType
    * The only difference between standard and extended types is
    * the way how username value is encoded in the header.
    */
-  MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED = 2,
+  MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED = (1 << 3),
 
   /**
    * The username provided in form of 'userhash' as
    * specified by RFC 7616 #section-3.4.4.
    * @sa #MHD_digest_auth_calc_userhash_hex(), #MHD_digest_auth_calc_userhash()
    */
-  MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH = 3,
+  MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH = (1 << 1),
 
   /**
    * The invalid combination of username parameters are used by client.
@@ -4776,7 +4785,7 @@ enum MHD_DigestAuthUsernameType
    * * 'username*' used with invalid extended notation
    * * 'username' is not hexadecimal digits, while 'userhash' set to 'true'
    */
-  MHD_DIGEST_AUTH_UNAME_TYPE_INVALID = 15
+  MHD_DIGEST_AUTH_UNAME_TYPE_INVALID = (1 << 0)
 } _MHD_FIXED_ENUM;
 
 /**
@@ -4883,7 +4892,7 @@ enum MHD_DigestAuthMultiQOP
  *
  * Application may modify buffers as needed until #MHD_free() is called for
  * pointer to this structure
- * @note Available since #MHD_VERSION 0x00097533
+ * @note Available since #MHD_VERSION 0x00097537
  */
 struct MHD_DigestAuthInfo
 {
@@ -4902,14 +4911,12 @@ struct MHD_DigestAuthInfo
 
   /**
    * The username string.
-   * Valid only if username is standard, extended, or userhash.
-   * For userhash this is unqoted string without decoding of the
-   * hexadecimal digits (as provided by the client).
+   * Used only if username type is standard or extended, always NULL otherwise.
    * If extended notation is used, this string is pct-decoded string
    * with charset and language tag removed (i.e. it is original username
    * extracted from the extended notation).
-   * This can be NULL is username is missing or invalid.
-   * @sa #MHD_digest_auth_calc_userhash_hex()
+   * When userhash is used by the client, this member is NULL and
+   * @a userhash_hex is set.
    */
   char *username;
 
@@ -4920,11 +4927,27 @@ struct MHD_DigestAuthInfo
   size_t username_len;
 
   /**
+   * The userhash string.
+   * Valid only if username type is userhash.
+   * This is unqoted string without decoding of the hexadecimal
+   * digits (as provided by the client).
+   * @sa #MHD_digest_auth_calc_userhash_hex()
+   */
+  char *userhash_hex;
+
+  /**
+   * The length of the @a userhash_hex in characters.
+   * The valid size should be #MHD_digest_get_hash_size(algo3) * 2 characters.
+   * When the @a userhash_hex is NULL, this member is always zero.
+   */
+  size_t userhash_hex_len;
+
+  /**
    * The userhash decoded to binary form.
    * Used only if username type is userhash, always NULL otherwise.
-   * When not NULL, this points to binary sequence @a username_len /2 bytes
+   * When not NULL, this points to binary sequence @a userhash_hex_len /2 bytes
    * long.
-   * The valid size should be #MHD_digest_get_hash_size(algo) bytes.
+   * The valid size should be #MHD_digest_get_hash_size(algo3) bytes.
    * @warning This is binary data, no zero termination.
    * @warning To avoid buffer overruns, always check the size of the data before
    *          use, because @a userhash_bin can point even to zero-sized
@@ -5007,7 +5030,7 @@ MHD_digest_auth_get_request_info3 (struct MHD_Connection *connection);
  *
  * Application may modify buffers as needed until #MHD_free() is called for
  * pointer to this structure
- * @note Available since #MHD_VERSION 0x00097534
+ * @note Available since #MHD_VERSION 0x00097537
  */
 struct MHD_DigestAuthUsernameInfo
 {
@@ -5028,12 +5051,12 @@ struct MHD_DigestAuthUsernameInfo
 
   /**
    * The username string.
-   * For userhash this is unqoted string without decoding of the
-   * hexadecimal digits (as provided by client).
+   * Used only if username type is standard or extended, always NULL otherwise.
    * If extended notation is used, this string is pct-decoded string
    * with charset and language tag removed (i.e. it is original username
    * extracted from the extended notation).
-   * @sa #MHD_digest_auth_calc_userhash_hex()
+   * When userhash is used by the client, this member is NULL and
+   * @a userhash_hex is set.
    */
   char *username;
 
@@ -5044,11 +5067,27 @@ struct MHD_DigestAuthUsernameInfo
   size_t username_len;
 
   /**
+   * The userhash string.
+   * Valid only if username type is userhash.
+   * This is unqoted string without decoding of the hexadecimal
+   * digits (as provided by the client).
+   * @sa #MHD_digest_auth_calc_userhash_hex()
+   */
+  char *userhash_hex;
+
+  /**
+   * The length of the @a userhash_hex in characters.
+   * The valid size should be #MHD_digest_get_hash_size(algo3) * 2 characters.
+   * When the @a userhash_hex is NULL, this member is always zero.
+   */
+  size_t userhash_hex_len;
+
+  /**
    * The userhash decoded to binary form.
    * Used only if username type is userhash, always NULL otherwise.
-   * When not NULL, this points to binary sequence @a username_len /2 bytes
+   * When not NULL, this points to binary sequence @a userhash_hex_len /2 bytes
    * long.
-   * The valid size should be #MHD_digest_get_hash_size(algo) bytes.
+   * The valid size should be #MHD_digest_get_hash_size(algo3) bytes.
    * @warning This is binary data, no zero termination.
    * @warning To avoid buffer overruns, always check the size of the data before
    *          use, because @a userhash_bin can point even to zero-sized

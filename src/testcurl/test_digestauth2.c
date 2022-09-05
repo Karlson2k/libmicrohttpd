@@ -476,8 +476,6 @@ ahc_echo (void *cls,
       enum MHD_DigestAuthResult check_res;
       enum MHD_DigestAuthResult expect_res;
 
-      if (NULL == dinfo->username)
-        mhdErrorExitDesc ("'username' is NULL");
       if (curl_uses_usehash)
       {
         if (MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH != dinfo->uname_type)
@@ -488,29 +486,33 @@ ahc_echo (void *cls,
                    (int) dinfo->uname_type);
           mhdErrorExitDesc ("Wrong 'uname_type'");
         }
-        else if (dinfo->username_len != userhash_hex_len)
+        else if (dinfo->userhash_hex_len != userhash_hex_len)
         {
-          fprintf (stderr, "'username_len' does not match.\n"
+          fprintf (stderr, "'userhash_hex_len' does not match.\n"
                    "Expected: %u\tRecieved: %u. ",
                    (unsigned) userhash_hex_len,
-                   (unsigned) dinfo->username_len);
-          mhdErrorExitDesc ("Wrong 'username_len'");
+                   (unsigned) dinfo->userhash_hex_len);
+          mhdErrorExitDesc ("Wrong 'userhash_hex_len'");
         }
-        else if (0 != memcmp (dinfo->username, userhash_hex,
-                              dinfo->username_len))
+        else if (0 != memcmp (dinfo->userhash_hex, userhash_hex,
+                              dinfo->userhash_hex_len))
         {
-          fprintf (stderr, "'username' does not match.\n"
+          fprintf (stderr, "'userhash_hex' does not match.\n"
                    "Expected: '%s'\tRecieved: '%.*s'. ",
                    userhash_hex,
-                   (int) dinfo->username_len,
-                   dinfo->username);
-          mhdErrorExitDesc ("Wrong 'username'");
+                   (int) dinfo->userhash_hex_len,
+                   dinfo->userhash_hex);
+          mhdErrorExitDesc ("Wrong 'userhash_hex'");
         }
         else if (NULL == dinfo->userhash_bin)
           mhdErrorExitDesc ("'userhash_bin' is NULL");
         else if (0 != memcmp (dinfo->userhash_bin, userhash_bin,
                               dinfo->username_len / 2))
           mhdErrorExitDesc ("Wrong 'userhash_bin'");
+        else if (NULL != dinfo->username)
+          mhdErrorExitDesc ("'username' is NOT NULL");
+        else if (0 != dinfo->username_len)
+          mhdErrorExitDesc ("'username_len' is NOT zero");
       }
       else
       {
@@ -522,6 +524,8 @@ ahc_echo (void *cls,
                    (int) dinfo->uname_type);
           mhdErrorExitDesc ("Wrong 'uname_type'");
         }
+        else if (NULL == dinfo->username)
+          mhdErrorExitDesc ("'username' is NULL");
         else if (dinfo->username_len != strlen (username_ptr))
         {
           fprintf (stderr, "'username_len' does not match.\n"
@@ -540,6 +544,10 @@ ahc_echo (void *cls,
                    dinfo->username);
           mhdErrorExitDesc ("Wrong 'username'");
         }
+        else if (NULL != dinfo->userhash_hex)
+          mhdErrorExitDesc ("'userhash_hex' is NOT NULL");
+        else if (0 != dinfo->userhash_hex_len)
+          mhdErrorExitDesc ("'userhash_hex_len' is NOT zero");
         else if (NULL != dinfo->userhash_bin)
           mhdErrorExitDesc ("'userhash_bin' is NOT NULL");
       }
@@ -620,8 +628,6 @@ ahc_echo (void *cls,
       uname = MHD_digest_auth_get_username3 (connection);
       if (NULL == uname)
         mhdErrorExitDesc ("MHD_digest_auth_get_username3() returned NULL");
-      else if (NULL == uname->username)
-        mhdErrorExitDesc ("'username' is NULL");
       if (curl_uses_usehash)
       {
         if (MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH != uname->uname_type)
@@ -632,29 +638,33 @@ ahc_echo (void *cls,
                    (int) uname->uname_type);
           mhdErrorExitDesc ("Wrong 'uname_type'");
         }
-        else if (uname->username_len != userhash_hex_len)
+        else if (uname->userhash_hex_len != userhash_hex_len)
         {
-          fprintf (stderr, "'username_len' does not match.\n"
+          fprintf (stderr, "'userhash_hex_len' does not match.\n"
                    "Expected: %u\tRecieved: %u. ",
                    (unsigned) userhash_hex_len,
-                   (unsigned) uname->username_len);
-          mhdErrorExitDesc ("Wrong 'username_len'");
+                   (unsigned) uname->userhash_hex_len);
+          mhdErrorExitDesc ("Wrong 'userhash_hex_len'");
         }
-        else if (0 != memcmp (uname->username, userhash_hex,
-                              uname->username_len))
+        else if (0 != memcmp (uname->userhash_hex, userhash_hex,
+                              uname->userhash_hex_len))
         {
           fprintf (stderr, "'username' does not match.\n"
                    "Expected: '%s'\tRecieved: '%.*s'. ",
                    userhash_hex,
-                   (int) uname->username_len,
-                   uname->username);
-          mhdErrorExitDesc ("Wrong 'username'");
+                   (int) uname->userhash_hex_len,
+                   uname->userhash_hex);
+          mhdErrorExitDesc ("Wrong 'userhash_hex'");
         }
         else if (NULL == uname->userhash_bin)
           mhdErrorExitDesc ("'userhash_bin' is NULL");
         else if (0 != memcmp (uname->userhash_bin, userhash_bin,
                               uname->username_len / 2))
           mhdErrorExitDesc ("Wrong 'userhash_bin'");
+        else if (NULL != uname->username)
+          mhdErrorExitDesc ("'username' is NOT NULL");
+        else if (0 != uname->username_len)
+          mhdErrorExitDesc ("'username_len' is NOT zero");
       }
       else
       {
@@ -666,6 +676,8 @@ ahc_echo (void *cls,
                    (int) uname->uname_type);
           mhdErrorExitDesc ("Wrong 'uname_type'");
         }
+        else if (NULL == uname->username)
+          mhdErrorExitDesc ("'username' is NULL");
         else if (uname->username_len != strlen (username_ptr))
         {
           fprintf (stderr, "'username_len' does not match.\n"
@@ -684,6 +696,10 @@ ahc_echo (void *cls,
                    uname->username);
           mhdErrorExitDesc ("Wrong 'username'");
         }
+        else if (NULL != uname->userhash_hex)
+          mhdErrorExitDesc ("'userhash_hex' is NOT NULL");
+        else if (0 != uname->userhash_hex_len)
+          mhdErrorExitDesc ("'userhash_hex_len' is NOT zero");
         else if (NULL != uname->userhash_bin)
           mhdErrorExitDesc ("'userhash_bin' is NOT NULL");
       }
