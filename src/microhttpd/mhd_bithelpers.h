@@ -140,7 +140,7 @@ _MHD_PUT_64BIT_LE_SAFE (void *dst, uint64_t value)
   if (0 != ((uintptr_t) dst) % (_MHD_UINT64_ALIGN))
     _MHD_PUT_64BIT_LE_SLOW (dst, value);
   else
-#endif /* ! _MHD_PUT_64BIT_BE_UNALIGNED */
+#endif /* ! _MHD_PUT_64BIT_LE_UNALIGNED */
   _MHD_PUT_64BIT_LE (dst, value);
 }
 
