@@ -230,6 +230,31 @@ _MHD_PUT_64BIT_BE_SAFE (void *dst, uint64_t value)
 }
 
 
+/* _MHD_GET_64BIT_BE (addr)
+ * load 64-bit value located at addr in big endian mode.
+ */
+#if _MHD_BYTE_ORDER == _MHD_BIG_ENDIAN
+#define _MHD_GET_64BIT_BE(addr)             \
+  (*(const uint64_t*) (addr))
+#elif _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN
+#define _MHD_GET_64BIT_BE(addr)             \
+  _MHD_BYTES_SWAP64 (*(const uint64_t*) (addr))
+#else  /* _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN */
+/* Endianness was not detected or non-standard like PDP-endian */
+#define _MHD_GET_64BIT_BE(addr)                           \
+  (   (((uint64_t) (((const uint8_t*) addr)[0])) << 56)   \
+    | (((uint64_t) (((const uint8_t*) addr)[1])) << 48)   \
+    | (((uint64_t) (((const uint8_t*) addr)[2])) << 40)   \
+    | (((uint64_t) (((const uint8_t*) addr)[3])) << 32)   \
+    | (((uint64_t) (((const uint8_t*) addr)[4])) << 24)   \
+    | (((uint64_t) (((const uint8_t*) addr)[5])) << 16)   \
+    | (((uint64_t) (((const uint8_t*) addr)[6])) << 8)    \
+    | ((uint64_t)  (((const uint8_t*) addr)[7])) )
+/* Indicate that _MHD_GET_64BIT_BE does not need aligned pointer */
+#define _MHD_GET_64BIT_BE_ALLOW_UNALIGNED 1
+#endif /* _MHD_BYTE_ORDER != _MHD_LITTLE_ENDIAN */
+
+
 /* _MHD_PUT_32BIT_BE (addr, value32)
  * put native-endian 32-bit value32 to addr
  * in big-endian mode.
@@ -332,6 +357,37 @@ _MHD_ROTL32 (uint32_t value32, int bits)
 
 
 #endif /* ! __builtin_rotateleft32 */
+
+
+/**
+ * Rotate right 64-bit value by number of bits.
+ * bits parameter must be more than zero and must be less than 64.
+ */
+#if defined(_MSC_FULL_VER) && (! defined(__clang__) || (defined(__c2__) && \
+  defined(__OPTIMIZE__)))
+/* Clang/C2 do not inline this function if optimisations are turned off. */
+#ifndef __clang__
+#pragma intrinsic(_rotr64)
+#endif /* ! __clang__ */
+#define _MHD_ROTR64(value64, bits) \
+  ((uint64_t) _rotr64 ((uint64_t) (value64),(bits)))
+#elif __has_builtin (__builtin_rotateright64)
+#define _MHD_ROTR64(value64, bits) \
+  ((uint64_t) __builtin_rotateright64 ((value64), (bits)))
+#else  /* ! __builtin_rotateright64 */
+_MHD_static_inline uint64_t
+_MHD_ROTR64 (uint64_t value64, int bits)
+{
+  bits %= 64;
+  if (0 == bits)
+    return value64;
+  /* Defined in form which modern compiler could optimise. */
+  return (value64 >> bits) | (value64 << (64 - bits));
+}
+
+
+#endif /* ! __builtin_rotateright64 */
+
 
 #ifdef _MHD_has_builtin_dummy
 /* Remove macro function replacement to avoid misdetection in files which
