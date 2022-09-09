@@ -3033,28 +3033,26 @@ AM_CONDITIONAL([HAVE_GNUTLS_MTHREAD_BROKEN], [[test "x${mhd_cv_gnutls_mthread_br
 AM_CONDITIONAL([USE_UPGRADE_TLS_TESTS], [[test "x${mhd_cv_gnutls_mthread_broken}" = "xno" || test "x${mhd_cv_gnutls_cli}" = "xyes"]])
 
 # optional: HTTP Basic Auth support. Enabled by default
-AC_MSG_CHECKING([[whether to support HTTP basic authentication]])
+AC_MSG_CHECKING([[whether to support HTTP Basic authentication]])
 AC_ARG_ENABLE([bauth],
-		AS_HELP_STRING([--disable-bauth],
-			[disable HTTP basic Auth support]),
+		[AS_HELP_STRING([--disable-bauth],[disable HTTP Basic Authentication support])],
 		[enable_bauth=${enableval}],
 		[enable_bauth=yes])
 AS_IF([[test "x$enable_bauth" != "xno"]],
   [ enable_bauth=yes
-    AC_DEFINE([BAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with basic Auth support.]) ])
+    AC_DEFINE([BAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with Basic Auth support.]) ])
 AM_CONDITIONAL([ENABLE_BAUTH], [test "x$enable_bauth" != "xno"])
 AC_MSG_RESULT([[$enable_bauth]])
 
 # optional: HTTP Digest Auth support. Enabled by default
-AC_MSG_CHECKING([[whether to support HTTP digest authentication]])
+AC_MSG_CHECKING([[whether to support HTTP Digest authentication]])
 AC_ARG_ENABLE([dauth],
-		AS_HELP_STRING([--disable-dauth],
-			[disable HTTP basic and digest Auth support]),
+		[AS_HELP_STRING([--disable-dauth], [disable HTTP Digest Authentication support])],
 		[enable_dauth=${enableval}],
 		[enable_dauth=yes])
 AS_IF([[test "x$enable_dauth" != "xno"]],
   [ enable_dauth=yes
-    AC_DEFINE([DAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with digest Auth support.]) ])
+    AC_DEFINE([DAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with Digest Auth support.]) ])
 AM_CONDITIONAL([ENABLE_DAUTH], [test "x$enable_dauth" != "xno"])
 AC_MSG_RESULT([[$enable_dauth]])
 
@@ -3063,8 +3061,7 @@ AM_CONDITIONAL([HAVE_ANYAUTH],[test "x$enable_bauth" != "xno" || test "x$enable_
 # optional: HTTP "Upgrade" support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP "Upgrade"]])
 AC_ARG_ENABLE([[httpupgrade]],
-    AS_HELP_STRING([[--disable-httpupgrade]],
-      [disable HTTP "Upgrade" support]),
+    [AS_HELP_STRING([[--disable-httpupgrade]], [disable HTTP "Upgrade" support])],
     [AS_VAR_IF([[enable_httpupgrade]],[["no"]],[],[[enable_httpupgrade='yes']])],
     [[enable_httpupgrade='yes']])
 AS_VAR_IF([[enable_httpupgrade]],[["yes"]],
@@ -3076,8 +3073,7 @@ AC_MSG_RESULT([[$enable_httpupgrade]])
 # optional: HTTP cookie parsing support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP cookie parsing]])
 AC_ARG_ENABLE([[cookie]],
-    AS_HELP_STRING([[--disable-cookie]],
-      [disable HTTP cookie parsing support]),
+    [AS_HELP_STRING([[--disable-cookie]], [disable HTTP cookie parsing support])],
     [AS_VAR_IF([[enable_cookie]],[["no"]],[],[[enable_cookie='yes']])],
     [[enable_cookie='yes']])
 AS_VAR_IF([[enable_cookie]],[["yes"]],
