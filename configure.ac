@@ -3082,6 +3082,34 @@ AS_VAR_IF([[enable_cookie]],[["yes"]],
 AM_CONDITIONAL([ENABLE_COOKIE], [[test "x$enable_cookie" = "xyes"]])
 AC_MSG_RESULT([[$enable_cookie]])
 
+# optional: SHA-512/256 support for Digest Auth. Enabled by default.
+AC_ARG_ENABLE([[sha512-256]],
+  [AS_HELP_STRING([[--disable-sha512-256]],[disable SHA-512/256 support for Digest Authentication])
+  ],
+  [
+    AS_VAR_IF([[enable_sha512_256]],[["yes"]],
+      [
+        AS_VAR_IF([enable_dauth],["yes"],[],
+          [
+            AC_MSG_WARN([The parameter --enable-sha512-256 is ignored as Digest Authentication is disabled])
+            enable_sha512_256='no'
+          ]
+        )
+      ],[[enable_sha512_256='no']]
+    )
+  ], [[enable_sha512_256="${enable_dauth}"]]
+)
+AC_MSG_CHECKING([[whether to support SHA-512/256]])
+AS_VAR_IF([[enable_sha512_256]],[["yes"]],
+  [
+   AC_DEFINE([[SHA512_256_SUPPORT]],[[1]],
+     [Define to 1 if libmicrohttpd is compiled with SHA-512/256 support.])
+  ]
+)
+AM_CONDITIONAL([ENABLE_SHA512_256], [[test "x${enable_sha512_256}" = "xyes"]])
+AC_MSG_RESULT([[${enable_sha512_256}]])
+
+
 AC_CACHE_CHECK([[for calloc()]], [[mhd_cv_have_func_calloc]],
   [
    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
@@ -3962,6 +3990,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Messages:          ${enable_messages}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
+  SHA-512/256:       ${enable_sha512_256}
   HTTP "Upgrade":    ${enable_httpupgrade}
   Cookie parsing:    ${enable_cookie}
   Postproc:          ${enable_postprocessor}
@@ -3982,6 +4011,7 @@ AS_IF([test "x$enable_https" = "xyes"],
 
 AS_IF([test "x$enable_bauth" != "xyes" || \
    test "x$enable_dauth" != "xyes" || \
+   test "x${enable_sha512_256}" != "xyes" || \
    test "x$enable_httpupgrade" != "xyes" || \
    test "x$enable_cookie" != "xyes" || \
    test "x$enable_postprocessor" != "xyes"],

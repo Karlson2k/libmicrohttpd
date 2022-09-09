@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097537
+#define MHD_VERSION 0x00097538
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4427,6 +4427,15 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
  * @ingroup authentication
  */
 #define MHD_SHA256_DIGEST_SIZE 32
+
+/**
+ * Length of the binary output of the SHA-512/256 hash function.
+ * The value is the same as the #MHD_SHA256_DIGEST_SIZE.
+ * @sa #MHD_digest_get_hash_size()
+ * @note Available since #MHD_VERSION 0x00097538
+ * @ingroup authentication
+ */
+#define MHD_SHA512_256_DIGEST_SIZE 32
 
 /**
  * Base type of hash calculation.

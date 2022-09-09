@@ -171,6 +171,10 @@ libmicrohttpd_la_SOURCES += \
   mhd_bithelpers.h mhd_byteorder.h mhd_align.h \
   md5.c md5.h \
   sha256.c sha256.h
+if ENABLE_SHA512_256
+libmicrohttpd_la_SOURCES += \
+  sha512_256.c sha512_256.h
+endif
 endif
 
 if ENABLE_BAUTH
@@ -214,6 +218,11 @@ check_PROGRAMS = \
   test_client_put_chunked_steps_hard_close \
   test_options \
   test_set_panic
+
+if ENABLE_SHA512_256
+check_PROGRAMS += \
+  test_sha512_256
+endif
 
 if HAVE_POSIX_THREADS
 if ENABLE_UPGRADE
@@ -447,6 +456,10 @@ test_md5_SOURCES = \
 test_sha256_SOURCES = \
   test_sha256.c test_helpers.h \
   sha256.c sha256.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
+
+test_sha512_256_SOURCES = \
+  test_sha512_256.c test_helpers.h \
+  sha512_256.c sha512_256.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
 
 test_sha1_SOURCES = \
   test_sha1.c test_helpers.h \
