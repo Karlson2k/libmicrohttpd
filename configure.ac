@@ -1,6 +1,6 @@
 # This file is part of libmicrohttpd.
 # (C) 2006-2021 Christian Grothoff (and other contributing authors)
-# (C) 2014-2021 Evgeny Grin (Karlson2k)
+# (C) 2014-2022 Evgeny Grin (Karlson2k)
 #
 # libmicrohttpd is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -2659,36 +2659,33 @@ AM_CONDITIONAL([HAVE_GNUTLS_MTHREAD_BROKEN], [[test "x${mhd_cv_gnutls_mthread_br
 AM_CONDITIONAL([USE_UPGRADE_TLS_TESTS], [[test "x${mhd_cv_gnutls_mthread_broken}" = "xno" || test "x${mhd_cv_gnutls_cli}" = "xyes"]])
 
 # optional: HTTP Basic Auth support. Enabled by default
-AC_MSG_CHECKING([[whether to support HTTP basic authentication]])
+AC_MSG_CHECKING([[whether to support HTTP Basic authentication]])
 AC_ARG_ENABLE([bauth],
-		AS_HELP_STRING([--disable-bauth],
-			[disable HTTP basic Auth support]),
+		[AS_HELP_STRING([--disable-bauth],[disable HTTP Basic Authentication support])],
 		[enable_bauth=${enableval}],
 		[enable_bauth=yes])
 AS_IF([[test "x$enable_bauth" != "xno"]],
   [ enable_bauth=yes
-    AC_DEFINE([BAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with basic Auth support.]) ])
+    AC_DEFINE([BAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with Basic Auth support.]) ])
 AM_CONDITIONAL([ENABLE_BAUTH], [test "x$enable_bauth" != "xno"])
 AC_MSG_RESULT([[$enable_bauth]])
 
 # optional: HTTP Digest Auth support. Enabled by default
-AC_MSG_CHECKING([[whether to support HTTP digest authentication]])
+AC_MSG_CHECKING([[whether to support HTTP Digest authentication]])
 AC_ARG_ENABLE([dauth],
-		AS_HELP_STRING([--disable-dauth],
-			[disable HTTP basic and digest Auth support]),
+		[AS_HELP_STRING([--disable-dauth], [disable HTTP Digest Authentication support])],
 		[enable_dauth=${enableval}],
 		[enable_dauth=yes])
 AS_IF([[test "x$enable_dauth" != "xno"]],
   [ enable_dauth=yes
-    AC_DEFINE([DAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with digest Auth support.]) ])
+    AC_DEFINE([DAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with Digest Auth support.]) ])
 AM_CONDITIONAL([ENABLE_DAUTH], [test "x$enable_dauth" != "xno"])
 AC_MSG_RESULT([[$enable_dauth]])
 
 # optional: HTTP "Upgrade" support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP "Upgrade"]])
 AC_ARG_ENABLE([[httpupgrade]],
-    AS_HELP_STRING([[--disable-httpupgrade]],
-      [disable HTTP "Upgrade" support]),
+    [AS_HELP_STRING([[--disable-httpupgrade]], [disable HTTP "Upgrade" support])],
     [AS_VAR_IF([[enable_httpupgrade]],[["no"]],[],[[enable_httpupgrade='yes']])],
     [[enable_httpupgrade='yes']])
 AS_VAR_IF([[enable_httpupgrade]],[["yes"]],
