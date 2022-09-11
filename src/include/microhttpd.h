@@ -4421,7 +4421,6 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
  */
 #define MHD_MD5_DIGEST_SIZE 16
 
-
 /**
  * Length of the binary output of the SHA-256 hash function.
  * @sa #MHD_digest_get_hash_size()
@@ -4740,7 +4739,7 @@ MHD_digest_auth_calc_userhash_hex (enum MHD_DigestAuthAlgo3 algo3,
  *
  * Values are sorted so simplified checks could be used.
  * For example:
- * * (value <= MHD_DIGEST_AUTH_UNAME_TYPE_INVALID) is true if not valid username
+ * * (value <= MHD_DIGEST_AUTH_UNAME_TYPE_INVALID) is true if no valid username
  *   is provided by the client
  * * (value >= MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH) is true if username is
  *   provided in any form
