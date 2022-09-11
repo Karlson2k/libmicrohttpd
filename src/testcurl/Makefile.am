@@ -161,12 +161,18 @@ endif
 
 
 if ENABLE_DAUTH
+if ENABLE_MD5
 THREAD_ONLY_TESTS += \
   test_digestauth \
-  test_digestauth_sha256 \
   test_digestauth_with_arguments \
   test_digestauth_concurrent
+endif
+if ENABLE_SHA256
+THREAD_ONLY_TESTS += \
+  test_digestauth_sha256
+endif
 
+if ENABLE_MD5
 check_PROGRAMS += \
   test_digestauth_emu_ext \
   test_digestauth_emu_ext_oldapi \
@@ -176,20 +182,24 @@ check_PROGRAMS += \
   test_digestauth2_oldapi1 \
   test_digestauth2_oldapi2 \
   test_digestauth2_userhash \
-  test_digestauth2_sha256 \
-  test_digestauth2_sha256_userhash \
-  test_digestauth2_oldapi2_sha256 \
   test_digestauth2_userdigest \
   test_digestauth2_oldapi1_userdigest \
   test_digestauth2_oldapi2_userdigest \
   test_digestauth2_userhash_userdigest \
-  test_digestauth2_sha256_userdigest \
-  test_digestauth2_oldapi2_sha256_userdigest \
-  test_digestauth2_sha256_userhash_userdigest \
   test_digestauth2_bind_all \
   test_digestauth2_bind_uri \
   test_digestauth2_oldapi1_bind_all \
   test_digestauth2_oldapi1_bind_uri
+endif
+if ENABLE_SHA256
+check_PROGRAMS += \
+  test_digestauth2_sha256 \
+  test_digestauth2_sha256_userhash \
+  test_digestauth2_oldapi2_sha256 \
+  test_digestauth2_sha256_userdigest \
+  test_digestauth2_oldapi2_sha256_userdigest \
+  test_digestauth2_sha256_userhash_userdigest
+endif
 endif
 
 if HEAVY_TESTS

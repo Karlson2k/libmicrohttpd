@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097538
+#define MHD_VERSION 0x00097539
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4430,7 +4430,8 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
 
 /**
  * Length of the binary output of the SHA-512/256 hash function.
- * The value is the same as the #MHD_SHA256_DIGEST_SIZE.
+ * @warning While this value is the same as the #MHD_SHA256_DIGEST_SIZE,
+ *          the calculated digests for SHA-256 and SHA-512/256 are different.
  * @sa #MHD_digest_get_hash_size()
  * @note Available since #MHD_VERSION 0x00097538
  * @ingroup authentication
@@ -4465,22 +4466,21 @@ enum MHD_DigestBaseAlgo
 
   /**
    * SHA-512/256 hash algorithm.
-   * Not supported for calculations, only supported for parsing of
-   * client's authorisation headers.
+   * As specified by FIPS PUB 180-4
    */
   MHD_DIGEST_BASE_ALGO_SHA512_256 = (1 << 2)
 } _MHD_FIXED_FLAGS_ENUM;
 
 /**
- * The flag indicating digest calculation types,
- * like 'MD5' or 'SHA-256'.
+ * The flag indicating non-session algorithm types,
+ * like 'MD5', 'SHA-256' or 'SHA-512-256'.
  * @note Available since #MHD_VERSION 0x00097519
  */
 #define MHD_DIGEST_AUTH_ALGO3_NON_SESSION    (1 << 6)
 
 /**
  * The flag indicating session algorithm types,
- * like 'MD5-sess' or 'SHA-256-sess'.
+ * like 'MD5-sess', 'SHA-256-sess' or 'SHA-512-256-sess'.
  * @note Available since #MHD_VERSION 0x00097519
  */
 #define MHD_DIGEST_AUTH_ALGO3_SESSION        (1 << 7)
@@ -4528,7 +4528,6 @@ enum MHD_DigestAuthAlgo3
 
   /**
    * The 'SHA-512-256' (SHA-512/256) algorithm.
-   * Not supported by MHD for authentication.
    */
   MHD_DIGEST_AUTH_ALGO3_SHA512_256 =
     MHD_DIGEST_BASE_ALGO_SHA512_256 | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
@@ -4549,8 +4548,8 @@ enum MHD_DigestAuthAlgo3
  * and other parameters which size depends on used hash algorithm.
  * @param algo3 the algorithm to check
  * @return the size of the digest (either #MHD_MD5_DIGEST_SIZE or
- *         #MHD_SHA256_DIGEST_SIZE) or zero if the input value is not
- *         recognised/valid
+ *         #MHD_SHA256_DIGEST_SIZE/MHD_SHA512_256_DIGEST_SIZE)
+ *         or zero if the input value is not supported or not valid
  * @sa #MHD_digest_auth_calc_userdigest()
  * @sa #MHD_digest_auth_calc_userhash(), #MHD_digest_auth_calc_userhash_hex()
  * @note Available since #MHD_VERSION 0x00097526
@@ -4601,8 +4600,6 @@ enum MHD_DigestAuthMultiAlgo3
 
   /**
    * The 'SHA-512-256' (SHA-512/256) algorithm.
-   * Not supported by MHD for authentication.
-   * Reserved value.
    */
   MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256 = MHD_DIGEST_AUTH_ALGO3_SHA512_256,
 
@@ -4644,6 +4641,15 @@ enum MHD_DigestAuthMultiAlgo3
   MHD_DIGEST_AUTH_MULT_ALGO3_SHA256_ANY =
     MHD_DIGEST_AUTH_MULT_ALGO3_SHA256
     | MHD_DIGEST_AUTH_MULT_ALGO3_SHA256_SESSION,
+
+  /**
+   * The 'SHA-512/256' algorithm, session or non-session.
+   * Not supported by MHD.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256_ANY =
+    MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256
+    | MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256_SESSION,
 
   /**
    * Any algorithm, MHD will choose.
@@ -5317,7 +5323,8 @@ MHD_digest_auth_calc_userdigest (enum MHD_DigestAuthAlgo3 algo3,
  *                   see #MHD_digest_auth_calc_userdigest()
  * @param userdigest_size the size of the @a userdigest in bytes, must match the
  *                        hashing algorithm (see #MHD_MD5_DIGEST_SIZE,
- *                        #MHD_SHA256_DIGEST_SIZE, #MHD_digest_get_hash_size())
+ *                        #MHD_SHA256_DIGEST_SIZE, #MHD_SHA512_256_DIGEST_SIZE,
+ *                        #MHD_digest_get_hash_size())
  * @param nonce_timeout the period of seconds since nonce generation, when
  *                      the nonce is recognised as valid and not stale.
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
@@ -5327,9 +5334,9 @@ MHD_digest_auth_calc_userdigest (enum MHD_DigestAuthAlgo3 algo3,
  * @param mqop the QOP to use
  * @param malgo3 digest algorithms allowed to use, fail if algorithm used
  *               by the client is not allowed by this parameter;
- *               both MD5-based and SHA-256-based algorithms cannot be used at
- *               the same time for this function as @a userdigest_size must
- *               match specified algorithm
+ *               more than one base algorithms (MD5, SHA-256, SHA-512/256)
+ *               cannot be used at the same time for this function
+ *               as @a userdigest must match specified algorithm
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
  * @sa #MHD_digest_auth_calc_userdigest()
@@ -6085,7 +6092,8 @@ enum MHD_FEATURE
   /**
    * Get whether the MD5-based hashing algorithms are supported for Digest
    * Authorization.
-   * Currently it is always supported if Digest Auth module is built.
+   * Currently it is always supported if Digest Auth module is built
+   * unless manually disabled in a custom build.
    * @note Available since #MHD_VERSION 0x00097527
    */
   MHD_FEATURE_DIGEST_AUTH_MD5 = 26,
@@ -6094,7 +6102,7 @@ enum MHD_FEATURE
    * Get whether the SHA-256-based hashing algorithms are supported for Digest
    * Authorization.
    * It it always supported since #MHD_VERSION 0x00096200 if Digest Auth
-   * module is built.
+   * module is built unless manually disabled in a custom build.
    * @note Available since #MHD_VERSION 0x00097527
    */
   MHD_FEATURE_DIGEST_AUTH_SHA256 = 27,
@@ -6102,7 +6110,8 @@ enum MHD_FEATURE
   /**
    * Get whether the SHA-512/256-based hashing algorithms are supported
    * for Digest Authorization.
-   * Currently it is always not supported.
+   * It it always supported since #MHD_VERSION 0x00097539 if Digest Auth
+   * module is built unless manually disabled in a custom build.
    * @note Available since #MHD_VERSION 0x00097536
    */
   MHD_FEATURE_DIGEST_AUTH_SHA512_256 = 28,

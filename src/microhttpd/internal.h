@@ -250,11 +250,15 @@ enum MHD_ConnectionEventLoopInfo
 /**
  * The maximum size of MHD-generated nonce when printed with hexadecimal chars.
  *
- * This is equal to "(32 bytes for SHA-256 nonce plus 6 bytes for timestamp)
- * multiplied by two hex chars per byte".
+ * This is equal to "(32 bytes for SHA-256 (or SHA-512/256) nonce plus 6 bytes
+ * for timestamp) multiplied by two hex chars per byte".
  * Please keep it in sync with digestauth.c
  */
+#if defined(MHD_SHA256_SUPPORT) || defined(MHD_SHA512_256_SUPPORT)
 #define MAX_DIGEST_NONCE_LENGTH ((32 + 6) * 2)
+#else  /* !MHD_SHA256_SUPPORT && !MHD_SHA512_256_SUPPORT */
+#define MAX_DIGEST_NONCE_LENGTH ((16 + 6) * 2)
+#endif /* !MHD_SHA256_SUPPORT && !MHD_SHA512_256_SUPPORT */
 
 /**
  * A structure representing the internal holder of the
@@ -280,7 +284,7 @@ struct MHD_NonceNc
   uint64_t nmask;
 
   /**
-   * Nonce value:
+   * Nonce value
    */
   char nonce[MAX_DIGEST_NONCE_LENGTH + 1];
 

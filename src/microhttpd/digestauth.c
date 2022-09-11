@@ -33,8 +33,15 @@
 #include "mhd_limits.h"
 #include "internal.h"
 #include "response.h"
-#include "md5.h"
-#include "sha256.h"
+#ifdef MHD_MD5_SUPPORT
+#  include "md5.h"
+#endif /* MHD_MD5_SUPPORT */
+#ifdef MHD_SHA256_SUPPORT
+#  include "sha256.h"
+#endif /* MHD_SHA256_SUPPORT */
+#ifdef MHD_SHA512_256_SUPPORT
+#  include "sha512_256.h"
+#endif /* MHD_SHA512_256_SUPPORT */
 #include "mhd_locks.h"
 #include "mhd_mono_clock.h"
 #include "mhd_str.h"
@@ -86,11 +93,37 @@
   ((digest_size) * 2 + TIMESTAMP_CHARS_LEN)
 
 
+#ifdef MHD_SHA512_256_SUPPORT
+/**
+ * Maximum size of any digest hash supported by MHD.
+ * (SHA-512/256 > MD5).
+ */
+#define MAX_DIGEST SHA512_256_DIGEST_SIZE
+
+/**
+ * The common size of SHA-256 digest and SHA-512/256 digest
+ */
+#define SHA256_SHA512_256_DIGEST_SIZE SHA512_256_DIGEST_SIZE
+#elif defined(MHD_SHA256_SUPPORT)
 /**
  * Maximum size of any digest hash supported by MHD.
  * (SHA-256 > MD5).
  */
 #define MAX_DIGEST SHA256_DIGEST_SIZE
+
+/**
+ * The common size of SHA-256 digest and SHA-512/256 digest
+ */
+#define SHA256_SHA512_256_DIGEST_SIZE SHA256_DIGEST_SIZE
+#elif defined(MHD_MD5_SUPPORT)
+/**
+ * Maximum size of any digest hash supported by MHD.
+ */
+#define MAX_DIGEST MD5_DIGEST_SIZE
+#else  /* ! MHD_MD5_SUPPORT */
+#error At least one hashing algorithm must be enabled
+#endif /* ! MHD_MD5_SUPPORT */
+
 
 /**
  * Macro to avoid using VLAs if the compiler does not support them.
@@ -193,26 +226,54 @@ get_base_digest_algo (enum MHD_DigestAuthAlgo3 algo3)
  * Internal inline version.
  * @param algo3 the algorithm to check
  * @return the size of the digest or zero if the input value is not
- *         recognised/valid
+ *         supported/valid
  */
 _MHD_static_inline size_t
 digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3)
 {
+#ifdef MHD_MD5_SUPPORT
   mhd_assert (MHD_MD5_DIGEST_SIZE == MD5_DIGEST_SIZE);
+#endif /* MHD_MD5_SUPPORT */
+#ifdef MHD_SHA256_SUPPORT
   mhd_assert (MHD_SHA256_DIGEST_SIZE == SHA256_DIGEST_SIZE);
-  /* Both MD5 and SHA-256 must not be specified at the same time */
-  mhd_assert ( (0 == (((unsigned int) algo3)   \
-                      & ((unsigned int) MHD_DIGEST_BASE_ALGO_MD5))) || \
-               (0 == (((unsigned int) algo3)   \
-                      & ((unsigned int) MHD_DIGEST_BASE_ALGO_SHA256))) );
+#endif /* MHD_SHA256_SUPPORT */
+#ifdef MHD_SHA512_256_SUPPORT
+  mhd_assert (MHD_SHA512_256_DIGEST_SIZE == SHA512_256_DIGEST_SIZE);
+#ifdef MHD_SHA256_SUPPORT
+  mhd_assert (SHA256_DIGEST_SIZE == SHA512_256_DIGEST_SIZE);
+#endif /* MHD_SHA256_SUPPORT */
+#endif /* MHD_SHA512_256_SUPPORT */
+  /* Only one algorithm must be specified */
+  mhd_assert (1 == \
+              (((0 != (algo3 & MHD_DIGEST_BASE_ALGO_MD5)) ? 1 : 0)   \
+               + ((0 != (algo3 & MHD_DIGEST_BASE_ALGO_SHA256)) ? 1 : 0)   \
+               + ((0 != (algo3 & MHD_DIGEST_BASE_ALGO_SHA512_256)) ? 1 : 0)));
+#ifdef MHD_MD5_SUPPORT
   if (0 != (((unsigned int) algo3)
             & ((unsigned int) MHD_DIGEST_BASE_ALGO_MD5)))
     return MHD_MD5_DIGEST_SIZE;
-  else if (0 != (((unsigned int) algo3)
-                 & ((unsigned int) MHD_DIGEST_BASE_ALGO_SHA256)))
+  else
+#endif /* MHD_MD5_SUPPORT */
+#if defined(MHD_SHA256_SUPPORT) && defined(MHD_SHA512_256_SUPPORT)
+  if (0 != (((unsigned int) algo3)
+            & ( ((unsigned int) MHD_DIGEST_BASE_ALGO_SHA256)
+                | ((unsigned int) MHD_DIGEST_BASE_ALGO_SHA512_256))))
+    return MHD_SHA256_DIGEST_SIZE; /* The same as SHA512_256_DIGEST_SIZE */
+  else
+#elif defined(MHD_SHA256_SUPPORT)
+  if (0 != (((unsigned int) algo3)
+            & ((unsigned int) MHD_DIGEST_BASE_ALGO_SHA256)))
     return MHD_SHA256_DIGEST_SIZE;
+  else
+#elif defined(MHD_SHA512_256_SUPPORT)
+  if (0 != (((unsigned int) algo3)
+            & ((unsigned int) MHD_DIGEST_BASE_ALGO_SHA512_256)))
+    return MHD_SHA512_256_DIGEST_SIZE;
+  else
+#endif /* MHD_SHA512_256_SUPPORT */
+    (void) 0; /* Unsupported algorithm */
 
-  return 0; /* Wrong input */
+  return 0; /* Wrong input or unsupported algorithm */
 }
 
 
@@ -223,8 +284,8 @@ digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3)
  * and other parameters which size depends on used hash algorithm.
  * @param algo3 the algorithm to check
  * @return the size of the digest (either #MHD_MD5_DIGEST_SIZE or
- *         #MHD_SHA256_DIGEST_SIZE) or zero if the input value is not
- *         recognised/valid
+ *         #MHD_SHA256_DIGEST_SIZE/MHD_SHA512_256_DIGEST_SIZE)
+ *         or zero if the input value is not supported or not valid
  * @sa #MHD_digest_auth_calc_userdigest()
  * @sa #MHD_digest_auth_calc_userhash(), #MHD_digest_auth_calc_userhash_hex()
  * @note Available since #MHD_VERSION 0x00097526
@@ -242,8 +303,15 @@ MHD_digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3)
  */
 union DigestCtx
 {
+#ifdef MHD_MD5_SUPPORT
   struct MD5Context md5_ctx;
+#endif /* MHD_MD5_SUPPORT */
+#ifdef MHD_SHA256_SUPPORT
   struct Sha256Ctx sha256_ctx;
+#endif /* MHD_SHA256_SUPPORT */
+#ifdef MHD_SHA512_256_SUPPORT
+  struct Sha512_256Ctx sha512_256_ctx;
+#endif /* MHD_SHA512_256_SUPPORT */
 };
 
 /**
@@ -282,10 +350,18 @@ _MHD_static_inline unsigned int
 digest_get_size (struct DigestAlgorithm *da)
 {
   mhd_assert (da->setup);
+#ifdef MHD_MD5_SUPPORT
   if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
     return MD5_DIGEST_SIZE;
+#endif /* MHD_MD5_SUPPORT */
+#ifdef MHD_SHA256_SUPPORT
   if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
     return SHA256_DIGEST_SIZE;
+#endif /* MHD_SHA256_SUPPORT */
+#ifdef MHD_SHA512_256_SUPPORT
+  if (MHD_DIGEST_BASE_ALGO_SHA512_256 == da->algo)
+    return SHA512_256_DIGEST_SIZE;
+#endif /* MHD_SHA512_256_SUPPORT */
   mhd_assert (0); /* May not happen */
   return 0;
 }
@@ -307,8 +383,17 @@ digest_setup (struct DigestAlgorithm *da,
   da->inited = false;
   da->digest_calculated = false;
 #endif /* _DEBUG */
-  if ((MHD_DIGEST_BASE_ALGO_MD5 == algo) ||
-      (MHD_DIGEST_BASE_ALGO_SHA256 == algo))
+  if (false
+#ifdef MHD_MD5_SUPPORT
+      || (MHD_DIGEST_BASE_ALGO_MD5 == algo)
+#endif /* MHD_MD5_SUPPORT */
+#ifdef MHD_SHA256_SUPPORT
+      || (MHD_DIGEST_BASE_ALGO_SHA256 == algo)
+#endif /* MHD_SHA256_SUPPORT */
+#ifdef MHD_SHA512_256_SUPPORT
+      || (MHD_DIGEST_BASE_ALGO_SHA512_256 == algo)
+#endif /* MHD_SHA512_256_SUPPORT */
+      )
   {
     da->algo = algo;
 #ifdef _DEBUG
@@ -316,8 +401,7 @@ digest_setup (struct DigestAlgorithm *da,
 #endif /* _DEBUG */
     return true;
   }
-  mhd_assert (0); /* Bad parameter */
-  return false;
+  return false; /* Bad or unsupported algorithm */
 }
 
 
@@ -332,6 +416,7 @@ digest_init (struct DigestAlgorithm *da)
 #ifdef _DEBUG
   da->digest_calculated = false;
 #endif
+#ifdef MHD_MD5_SUPPORT
   if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
   {
     MHD_MD5Init (&da->ctx.md5_ctx);
@@ -339,7 +424,10 @@ digest_init (struct DigestAlgorithm *da)
     da->inited = true;
 #endif
   }
-  else if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
+  else
+#endif /* MHD_MD5_SUPPORT */
+#ifdef MHD_SHA256_SUPPORT
+  if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
   {
     MHD_SHA256_init (&da->ctx.sha256_ctx);
 #ifdef _DEBUG
@@ -347,6 +435,17 @@ digest_init (struct DigestAlgorithm *da)
 #endif
   }
   else
+#endif /* MHD_SHA256_SUPPORT */
+#ifdef MHD_SHA512_256_SUPPORT
+  if (MHD_DIGEST_BASE_ALGO_SHA512_256 == da->algo)
+  {
+    MHD_SHA512_256_init (&da->ctx.sha512_256_ctx);
+#ifdef _DEBUG
+    da->inited = true;
+#endif
+  }
+  else
+#endif /* MHD_SHA512_256_SUPPORT */
   {
 #ifdef _DEBUG
     da->inited = false;
@@ -369,12 +468,23 @@ digest_update (struct DigestAlgorithm *da,
 {
   mhd_assert (da->inited);
   mhd_assert (! da->digest_calculated);
+#ifdef MHD_MD5_SUPPORT
   if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
     MHD_MD5Update (&da->ctx.md5_ctx, (const uint8_t *) data, length);
-  else if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
+  else
+#endif /* MHD_MD5_SUPPORT */
+#ifdef MHD_SHA256_SUPPORT
+  if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
     MHD_SHA256_update (&da->ctx.sha256_ctx, (const uint8_t *) data, length);
   else
-    mhd_assert (0); /* May not happen */
+#endif /* MHD_SHA256_SUPPORT */
+#ifdef MHD_SHA512_256_SUPPORT
+  if (MHD_DIGEST_BASE_ALGO_SHA512_256 == da->algo)
+    MHD_SHA512_256_update (&da->ctx.sha512_256_ctx,
+                           (const uint8_t *) data, length);
+  else
+#endif /* MHD_SHA512_256_SUPPORT */
+  mhd_assert (0);   /* May not happen */
 }
 
 
@@ -416,12 +526,22 @@ digest_calc_hash (struct DigestAlgorithm *da, uint8_t *digest)
 {
   mhd_assert (da->inited);
   mhd_assert (! da->digest_calculated);
+#ifdef MHD_MD5_SUPPORT
   if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
     MHD_MD5Final (&da->ctx.md5_ctx, digest);
-  else if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
+  else
+#endif /* MHD_MD5_SUPPORT */
+#ifdef MHD_SHA256_SUPPORT
+  if (MHD_DIGEST_BASE_ALGO_SHA256 == da->algo)
     MHD_SHA256_finish (&da->ctx.sha256_ctx, digest);
   else
-    mhd_assert (0); /* May not happen */
+#endif /* MHD_SHA256_SUPPORT */
+#ifdef MHD_SHA512_256_SUPPORT
+  if (MHD_DIGEST_BASE_ALGO_SHA512_256 == da->algo)
+    MHD_SHA512_256_finish (&da->ctx.sha512_256_ctx, digest);
+  else
+#endif /* MHD_SHA512_256_SUPPORT */
+  mhd_assert (0);   /* May not happen */
 #ifdef _DEBUG
   da->digest_calculated = true;
 #endif
@@ -444,8 +564,14 @@ get_nonce_timestamp (const char *const nonce,
   if (0 == noncelen)
     noncelen = strlen (nonce);
 
-  if ( (NONCE_STD_LEN (SHA256_DIGEST_SIZE) != noncelen) &&
-       (NONCE_STD_LEN (MD5_DIGEST_SIZE) != noncelen) )
+  if (true
+#ifdef MHD_MD5_SUPPORT
+      && (NONCE_STD_LEN (MD5_DIGEST_SIZE) != noncelen)
+#endif /* MHD_MD5_SUPPORT */
+#if defined(MHD_SHA256_SUPPORT) || defined(MHD_SHA512_256_SUPPORT)
+      && (NONCE_STD_LEN (SHA256_SHA512_256_DIGEST_SIZE) != noncelen)
+#endif /* MHD_SHA256_SUPPORT */
+      )
     return false;
 
   if (TIMESTAMP_CHARS_LEN !=
@@ -2213,19 +2339,43 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
 #endif /* HAVE_MESSAGES */
     return MHD_DAUTH_WRONG_ALGO;
   }
+#ifndef MHD_MD5_SUPPORT
+  if (0 != (((unsigned int) c_algo) & MHD_DIGEST_BASE_ALGO_MD5))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The MD5 algorithm is not supported by this MHD build.\n"));
+#endif /* HAVE_MESSAGES */
+    return MHD_DAUTH_WRONG_ALGO;
+  }
+#endif /* ! MHD_MD5_SUPPORT */
+#ifndef MHD_SHA256_SUPPORT
+  if (0 != (((unsigned int) c_algo) & MHD_DIGEST_BASE_ALGO_SHA256))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The SHA-256 algorithm is not supported by "
+                 "this MHD build.\n"));
+#endif /* HAVE_MESSAGES */
+    return MHD_DAUTH_WRONG_ALGO;
+  }
+#endif /* ! MHD_SHA256_SUPPORT */
+#ifndef MHD_SHA512_256_SUPPORT
   if (0 != (((unsigned int) c_algo) & MHD_DIGEST_BASE_ALGO_SHA512_256))
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
-              _ ("The SHA-512/256 algorithm is not supported.\n"));
+              _ ("The SHA-512/256 algorithm is not supported by "
+                 "this MHD build.\n"));
 #endif /* HAVE_MESSAGES */
     return MHD_DAUTH_WRONG_ALGO;
   }
+#endif /* ! MHD_SHA512_256_SUPPORT */
   if (! digest_setup (&da, get_base_digest_algo (c_algo)))
     MHD_PANIC (_ ("Wrong 'malgo3' value, API violation"));
   /* Check 'mqop' value */
   c_qop = params->qop;
-  /* Check whether client's algorithm is allowed by function parameter */
+  /* Check whether client's QOP is allowed by function parameter */
   if (((unsigned int) c_qop) !=
       (((unsigned int) c_qop) & ((unsigned int) mqop)))
     return MHD_DAUTH_WRONG_QOP;
@@ -2241,8 +2391,8 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   if ((MHD_DIGEST_AUTH_QOP_NONE == c_qop) &&
       (0 == (((unsigned int) c_algo) & MHD_DIGEST_BASE_ALGO_MD5)))
     MHD_DLOG (connection->daemon,
-              _ ("RFC2069 with SHA-256 algorithm is non-standard " \
-                 "extension.\n"));
+              _ ("RFC2069 with SHA-256 or SHA-512/256 algorithm is " \
+                 "non-standard extension.\n"));
 #endif /* HAVE_MESSAGES */
 
   digest_size = digest_get_size (&da);
@@ -2776,7 +2926,8 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  *                   see #MHD_digest_auth_calc_userdigest()
  * @param userdigest_size the size of the @a userdigest in bytes, must match the
  *                        hashing algorithm (see #MHD_MD5_DIGEST_SIZE,
- *                        #MHD_SHA256_DIGEST_SIZE, #MHD_digest_get_hash_size())
+ *                        #MHD_SHA256_DIGEST_SIZE, #MHD_SHA512_256_DIGEST_SIZE,
+ *                        #MHD_digest_get_hash_size())
  * @param nonce_timeout the period of seconds since nonce generation, when
  *                      the nonce is recognised as valid and not stale.
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
@@ -2786,9 +2937,9 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  * @param mqop the QOP to use
  * @param malgo3 digest algorithms allowed to use, fail if algorithm used
  *               by the client is not allowed by this parameter;
- *               both MD5-based and SHA-256-based algorithms cannot be used at
- *               the same time for this function as @a userdigest_size must
- *               match specified algorithm
+ *               more than one base algorithms (MD5, SHA-256, SHA-512/256)
+ *               cannot be used at the same time for this function
+ *               as @a userdigest must match specified algorithm
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
  * @sa #MHD_digest_auth_calc_userdigest()
@@ -2806,12 +2957,45 @@ MHD_digest_auth_check_digest3 (struct MHD_Connection *connection,
                                enum MHD_DigestAuthMultiQOP mqop,
                                enum MHD_DigestAuthMultiAlgo3 malgo3)
 {
-  if (((unsigned int) (MHD_DIGEST_BASE_ALGO_MD5
-                       | MHD_DIGEST_BASE_ALGO_SHA256)) ==
-      (((unsigned int) malgo3) & (MHD_DIGEST_BASE_ALGO_MD5
-                                  | MHD_DIGEST_BASE_ALGO_SHA256)))
-    MHD_PANIC (_ ("Wrong 'malgo3' value, both MD5 and SHA-256 specified, "
+  if (1 != (((0 != (malgo3 & MHD_DIGEST_BASE_ALGO_MD5)) ? 1 : 0)
+            + ((0 != (malgo3 & MHD_DIGEST_BASE_ALGO_SHA256)) ? 1 : 0)
+            + ((0 != (malgo3 & MHD_DIGEST_BASE_ALGO_SHA512_256)) ? 1 : 0)))
+    MHD_PANIC (_ ("Wrong 'malgo3' value, only one base hashing algorithm " \
+                  "(MD5, SHA-256 or SHA-512/256) must be specified, " \
                   "API violation"));
+
+#ifndef MHD_MD5_SUPPORT
+  if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_MD5))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The MD5 algorithm is not supported by this MHD build.\n"));
+#endif /* HAVE_MESSAGES */
+    return MHD_DAUTH_WRONG_ALGO;
+  }
+#endif /* ! MHD_MD5_SUPPORT */
+#ifndef MHD_SHA256_SUPPORT
+  if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_SHA256))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The SHA-256 algorithm is not supported by "
+                 "this MHD build.\n"));
+#endif /* HAVE_MESSAGES */
+    return MHD_DAUTH_WRONG_ALGO;
+  }
+#endif /* ! MHD_SHA256_SUPPORT */
+#ifndef MHD_SHA512_256_SUPPORT
+  if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_SHA512_256))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The SHA-512/256 algorithm is not supported by "
+                 "this MHD build.\n"));
+#endif /* HAVE_MESSAGES */
+    return MHD_DAUTH_WRONG_ALGO;
+  }
+#endif /* ! MHD_SHA512_256_SUPPORT */
 
   if (digest_get_hash_size ((enum MHD_DigestAuthAlgo3) malgo3) !=
       userdigest_size)
@@ -3072,12 +3256,45 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
 #endif /* HAVE_MESSAGES */
     return MHD_NO;
   }
+#ifndef MHD_SHA512_256_SUPPORT
+  if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_SHA512_256))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("The SHA-512/256 algorithm is not enabled.\n"));
+#endif /* HAVE_MESSAGES */
+    return MHD_NO;
+  }
+#endif /* ! MHD_SHA512_256_SUPPORT */
+#ifdef MHD_MD5_SUPPORT
   if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_MD5))
     s_algo = MHD_DIGEST_AUTH_ALGO3_MD5;
-  else if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_SHA256))
+  else
+#endif /* MHD_MD5_SUPPORT */
+#ifdef MHD_SHA256_SUPPORT
+  if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_SHA256))
     s_algo = MHD_DIGEST_AUTH_ALGO3_SHA256;
   else
-    MHD_PANIC (_ ("Wrong 'malgo3' value, API violation"));
+#endif /* MHD_SHA256_SUPPORT */
+#ifdef MHD_SHA512_256_SUPPORT
+  if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_SHA512_256))
+    s_algo = MHD_DIGEST_AUTH_ALGO3_SHA512_256;
+  else
+#endif /* MHD_SHA512_256_SUPPORT */
+  {
+    if (0 == (((unsigned int) malgo3)
+              & (MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_BASE_ALGO_SHA512_256
+                 | MHD_DIGEST_BASE_ALGO_SHA512_256)))
+      MHD_PANIC (_ ("Wrong 'malgo3' value, API violation"));
+    else
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (connection->daemon,
+                _ ("No requested algorithm is supported by this MHD build.\n"));
+#endif /* HAVE_MESSAGES */
+    }
+    return MHD_NO;
+  }
 
   if (((unsigned int) mqop) !=
       (((unsigned int) mqop) & MHD_DIGEST_AUTH_MULT_QOP_ANY_NON_INT))
@@ -3095,8 +3312,8 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
                    "are not compatible with RFC2069 and ignored.\n"));
     if (0 == (((unsigned int) s_algo) & MHD_DIGEST_BASE_ALGO_MD5))
       MHD_DLOG (connection->daemon,
-                _ ("RFC2069 with SHA-256 algorithm is non-standard " \
-                   "extension.\n"));
+                _ ("RFC2069 with SHA-256 or SHA-512/256 algorithm is " \
+                   "non-standard extension.\n"));
 #endif
     userhash_support = 0;
     prefer_utf8 = 0;
@@ -3141,12 +3358,22 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
       (0 == (((unsigned int) s_algo) & MHD_DIGEST_BASE_ALGO_MD5)))
   {
     buf_size += MHD_STATICSTR_LEN_ (prefix_algo) + 2; /* 2 for ', ' */
+#ifdef MHD_MD5_SUPPORT
     if (MHD_DIGEST_AUTH_ALGO3_MD5 == s_algo)
       buf_size += MHD_STATICSTR_LEN_ (_MHD_MD5_TOKEN);
-    else if (MHD_DIGEST_AUTH_ALGO3_SHA256 == s_algo)
+    else
+#endif /* MHD_MD5_SUPPORT */
+#ifdef MHD_SHA256_SUPPORT
+    if (MHD_DIGEST_AUTH_ALGO3_SHA256 == s_algo)
       buf_size += MHD_STATICSTR_LEN_ (_MHD_SHA256_TOKEN);
     else
-      mhd_assert (0);
+#endif /* MHD_SHA256_SUPPORT */
+#ifdef MHD_SHA512_256_SUPPORT
+    if (MHD_DIGEST_AUTH_ALGO3_SHA512_256 == s_algo)
+      buf_size += MHD_STATICSTR_LEN_ (_MHD_SHA512_256_TOKEN);
+    else
+#endif /* MHD_SHA512_256_SUPPORT */
+    mhd_assert (0);
   }
   /* 'nonce="xxxx", ' */
   buf_size += MHD_STATICSTR_LEN_ (prefix_nonce) + 3; /* 3 for '", ' */
@@ -3243,18 +3470,34 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
     memcpy (buf + p, prefix_algo,
             MHD_STATICSTR_LEN_ (prefix_algo));
     p += MHD_STATICSTR_LEN_ (prefix_algo);
+#ifdef MHD_MD5_SUPPORT
     if (MHD_DIGEST_AUTH_ALGO3_MD5 == s_algo)
     {
       memcpy (buf + p, _MHD_MD5_TOKEN,
               MHD_STATICSTR_LEN_ (_MHD_MD5_TOKEN));
       p += MHD_STATICSTR_LEN_ (_MHD_MD5_TOKEN);
     }
-    else if (MHD_DIGEST_AUTH_ALGO3_SHA256 == s_algo)
+    else
+#endif /* MHD_MD5_SUPPORT */
+#ifdef MHD_SHA256_SUPPORT
+    if (MHD_DIGEST_AUTH_ALGO3_SHA256 == s_algo)
     {
       memcpy (buf + p, _MHD_SHA256_TOKEN,
               MHD_STATICSTR_LEN_ (_MHD_SHA256_TOKEN));
       p += MHD_STATICSTR_LEN_ (_MHD_SHA256_TOKEN);
     }
+    else
+#endif /* MHD_SHA256_SUPPORT */
+#ifdef MHD_SHA512_256_SUPPORT
+    if (MHD_DIGEST_AUTH_ALGO3_SHA512_256 == s_algo)
+    {
+      memcpy (buf + p, _MHD_SHA512_256_TOKEN,
+              MHD_STATICSTR_LEN_ (_MHD_SHA512_256_TOKEN));
+      p += MHD_STATICSTR_LEN_ (_MHD_SHA512_256_TOKEN);
+    }
+    else
+#endif /* MHD_SHA512_256_SUPPORT */
+    mhd_assert (0);
     buf[p++] = ',';
     buf[p++] = ' ';
   }
@@ -3382,7 +3625,7 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
     algo3 = MHD_DIGEST_AUTH_MULT_ALGO3_MD5;
   else if (MHD_DIGEST_ALG_SHA256 == algo)
     algo3 = MHD_DIGEST_AUTH_MULT_ALGO3_SHA256;
-  else if ((MHD_DIGEST_ALG_MD5 == algo) || (MHD_DIGEST_ALG_AUTO == algo))
+  else if (MHD_DIGEST_ALG_AUTO == algo)
     algo3 = MHD_DIGEST_AUTH_MULT_ALGO3_ANY_NON_SESSION;
   else
     MHD_PANIC (_ ("Wrong algo value.\n")); /* API violation! */

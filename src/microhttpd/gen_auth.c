@@ -300,23 +300,23 @@ get_rq_dauth_algo (const struct MHD_RqDAuthParam *const algo_param)
     if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
                                                algo_param->value.len, \
                                                _MHD_MD5_TOKEN _MHD_SESS_TOKEN))
+      return MHD_DIGEST_AUTH_ALGO3_SHA512_256;
+    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
+                                               algo_param->value.len, \
+                                               _MHD_SHA512_256_TOKEN \
+                                               _MHD_SESS_TOKEN))
+
+      /* Algorithms below are not supported by MHD for authentication */
+
       return MHD_DIGEST_AUTH_ALGO3_MD5_SESSION;
     if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
                                                algo_param->value.len, \
                                                _MHD_SHA256_TOKEN \
                                                _MHD_SESS_TOKEN))
       return MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION;
-
-    /* Algorithms below are not supported by MHD for authentication */
-
     if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
                                                algo_param->value.len, \
                                                _MHD_SHA512_256_TOKEN))
-      return MHD_DIGEST_AUTH_ALGO3_SHA512_256;
-    if (MHD_str_equal_caseless_quoted_s_bin_n (algo_param->value.str, \
-                                               algo_param->value.len, \
-                                               _MHD_SHA512_256_TOKEN \
-                                               _MHD_SESS_TOKEN))
       return MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION;
 
     /* No known algorithm has been detected */
@@ -331,6 +331,13 @@ get_rq_dauth_algo (const struct MHD_RqDAuthParam *const algo_param)
                                        algo_param->value.str, \
                                        algo_param->value.len))
     return MHD_DIGEST_AUTH_ALGO3_SHA256;
+  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA512_256_TOKEN, \
+                                       algo_param->value.str, \
+                                       algo_param->value.len))
+    return MHD_DIGEST_AUTH_ALGO3_SHA512_256;
+
+  /* Algorithms below are not supported by MHD for authentication */
+
   if (MHD_str_equal_caseless_s_bin_n_ (_MHD_MD5_TOKEN _MHD_SESS_TOKEN, \
                                        algo_param->value.str, \
                                        algo_param->value.len))
@@ -339,13 +346,6 @@ get_rq_dauth_algo (const struct MHD_RqDAuthParam *const algo_param)
                                        algo_param->value.str, \
                                        algo_param->value.len))
     return MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION;
-
-  /* Algorithms below are not supported by MHD for authentication */
-
-  if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA512_256_TOKEN, \
-                                       algo_param->value.str, \
-                                       algo_param->value.len))
-    return MHD_DIGEST_AUTH_ALGO3_SHA512_256;
   if (MHD_str_equal_caseless_s_bin_n_ (_MHD_SHA512_256_TOKEN _MHD_SESS_TOKEN, \
                                        algo_param->value.str, \
                                        algo_param->value.len))

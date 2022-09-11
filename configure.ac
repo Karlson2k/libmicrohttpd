@@ -3082,9 +3082,63 @@ AS_VAR_IF([[enable_cookie]],[["yes"]],
 AM_CONDITIONAL([ENABLE_COOKIE], [[test "x$enable_cookie" = "xyes"]])
 AC_MSG_RESULT([[$enable_cookie]])
 
+# optional: MD5 support for Digest Auth. Enabled by default.
+AC_ARG_ENABLE([[md5]],
+  [AS_HELP_STRING([[--disable-md5]],[disable MD5 hashing support for Digest Authentication])
+  ],
+  [
+    AS_VAR_IF([[enable_md5]],[["yes"]],
+      [
+        AS_VAR_IF([enable_dauth],["yes"],[],
+          [
+            AC_MSG_WARN([The parameter --enable-md5 is ignored as Digest Authentication is disabled])
+            enable_md5='no'
+          ]
+        )
+      ],[[enable_md5='no']]
+    )
+  ], [[enable_md5="${enable_dauth}"]]
+)
+AC_MSG_CHECKING([[whether to support MD5]])
+AS_VAR_IF([[enable_md5]],[["yes"]],
+  [
+   AC_DEFINE([[MHD_MD5_SUPPORT]],[[1]],
+     [Define to 1 if libmicrohttpd is compiled with MD5 hashing support.])
+  ]
+)
+AM_CONDITIONAL([ENABLE_MD5], [[test "x${enable_md5}" = "xyes"]])
+AC_MSG_RESULT([[${enable_md5}]])
+
+# optional: SHA-256 support for Digest Auth. Enabled by default.
+AC_ARG_ENABLE([[sha256]],
+  [AS_HELP_STRING([[--disable-sha256]],[disable SHA-256 hashing support for Digest Authentication])
+  ],
+  [
+    AS_VAR_IF([[enable_sha256]],[["yes"]],
+      [
+        AS_VAR_IF([enable_dauth],["yes"],[],
+          [
+            AC_MSG_WARN([The parameter --enable-sha256 is ignored as Digest Authentication is disabled])
+            enable_sha256='no'
+          ]
+        )
+      ],[[enable_sha256='no']]
+    )
+  ], [[enable_sha256="${enable_dauth}"]]
+)
+AC_MSG_CHECKING([[whether to support SHA-256]])
+AS_VAR_IF([[enable_sha256]],[["yes"]],
+  [
+   AC_DEFINE([[MHD_SHA256_SUPPORT]],[[1]],
+     [Define to 1 if libmicrohttpd is compiled with SHA-256 hashing support.])
+  ]
+)
+AM_CONDITIONAL([ENABLE_SHA256], [[test "x${enable_sha256}" = "xyes"]])
+AC_MSG_RESULT([[${enable_sha256}]])
+
 # optional: SHA-512/256 support for Digest Auth. Enabled by default.
 AC_ARG_ENABLE([[sha512-256]],
-  [AS_HELP_STRING([[--disable-sha512-256]],[disable SHA-512/256 support for Digest Authentication])
+  [AS_HELP_STRING([[--disable-sha512-256]],[disable SHA-512/256 hashing support for Digest Authentication])
   ],
   [
     AS_VAR_IF([[enable_sha512_256]],[["yes"]],
@@ -3102,12 +3156,20 @@ AC_ARG_ENABLE([[sha512-256]],
 AC_MSG_CHECKING([[whether to support SHA-512/256]])
 AS_VAR_IF([[enable_sha512_256]],[["yes"]],
   [
-   AC_DEFINE([[SHA512_256_SUPPORT]],[[1]],
-     [Define to 1 if libmicrohttpd is compiled with SHA-512/256 support.])
+   AC_DEFINE([[MHD_SHA512_256_SUPPORT]],[[1]],
+     [Define to 1 if libmicrohttpd is compiled with SHA-512/256 hashing support.])
   ]
 )
 AM_CONDITIONAL([ENABLE_SHA512_256], [[test "x${enable_sha512_256}" = "xyes"]])
 AC_MSG_RESULT([[${enable_sha512_256}]])
+
+AS_IF([test "x$enable_dauth" != "xno"],
+  [
+    AS_IF([test "x${enable_md5}" != "xyes" &&  test "x${enable_sha256}" != "xyes" && test "x${enable_sha512_256}" != "xyes"],
+      [AC_MSG_ERROR([At least one hashing algorithm must be enabled if Digest Auth is enabled])]
+    )
+  ]
+)
 
 
 AC_CACHE_CHECK([[for calloc()]], [[mhd_cv_have_func_calloc]],
@@ -3990,6 +4052,8 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Messages:          ${enable_messages}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
+  MD5:               ${enable_md5}
+  SHA-256:           ${enable_sha256}
   SHA-512/256:       ${enable_sha512_256}
   HTTP "Upgrade":    ${enable_httpupgrade}
   Cookie parsing:    ${enable_cookie}
@@ -4011,6 +4075,8 @@ AS_IF([test "x$enable_https" = "xyes"],
 
 AS_IF([test "x$enable_bauth" != "xyes" || \
    test "x$enable_dauth" != "xyes" || \
+   test "x${enable_md5}" != "xyes" || \
+   test "x${enable_sha256}" != "xyes" || \
    test "x${enable_sha512_256}" != "xyes" || \
    test "x$enable_httpupgrade" != "xyes" || \
    test "x$enable_cookie" != "xyes" || \

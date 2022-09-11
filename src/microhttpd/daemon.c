@@ -8430,20 +8430,20 @@ MHD_is_feature_supported (enum MHD_FEATURE feature)
     return MHD_NO;
 #endif
   case MHD_FEATURE_DIGEST_AUTH_MD5:
-#ifdef DAUTH_SUPPORT
+#if defined(DAUTH_SUPPORT) && defined(MHD_MD5_SUPPORT)
     return MHD_YES;
 #else
     return MHD_NO;
 #endif
   case MHD_FEATURE_DIGEST_AUTH_SHA256:
-#ifdef DAUTH_SUPPORT
+#if defined(DAUTH_SUPPORT) && defined(MHD_SHA256_SUPPORT)
     return MHD_YES;
 #else
     return MHD_NO;
 #endif
   case MHD_FEATURE_DIGEST_AUTH_SHA512_256:
-#ifdef DAUTH_SUPPORT
-    return MHD_NO;
+#if defined(DAUTH_SUPPORT) && defined(MHD_SHA512_256_SUPPORT)
+    return MHD_YES;
 #else
     return MHD_NO;
 #endif

@@ -123,6 +123,54 @@ static const struct data_sha256 sha256_tests[] = {
     0xcb, 0x14, 0x9c, 0x54, 0xf3, 0x7c, 0xff, 0x37}}
 };
 
+struct data_sha512_256
+{
+  unsigned int line_num;
+  const char *const username;
+  const char *const realm;
+  const char *const password;
+  const uint8_t hash[MHD_SHA512_256_DIGEST_SIZE];
+};
+
+static const struct data_sha512_256 sha512_256_tests[] = {
+  {__LINE__,
+   "u", "r", "p",
+   {0xd5, 0xe8, 0xe7, 0x3b, 0xa3, 0x47, 0xb9, 0xad, 0xf0, 0xe4, 0x7a, 0x9a,
+    0xce, 0x43, 0xb7, 0x08, 0x2a, 0xbc, 0x8d, 0x27, 0x27, 0x2e, 0x38, 0x7d,
+    0x1d, 0x9c, 0xe2, 0x44, 0x25, 0x68, 0x74, 0x04}},
+  {__LINE__,
+   "testuser", "testrealm", "testpass",
+   {0x41, 0x7d, 0xf9, 0x60, 0x7c, 0xc9, 0x60, 0x28, 0x44, 0x74, 0x75, 0xf7,
+    0x7b, 0x78, 0xe7, 0x60, 0xec, 0x9a, 0xe1, 0x62, 0xd4, 0x95, 0x82, 0x61,
+    0x68, 0xa7, 0x94, 0xe8, 0x3b, 0xdf, 0x8d, 0x59}},
+  {__LINE__,  /* Values from testcurl/test_digestauth2.c */
+   "test_user", "TestRealm", "test pass",
+   {0xe7, 0xa1, 0x9e, 0x27, 0xf6, 0x73, 0x88, 0xb2, 0xde, 0xa4, 0xe2, 0x66,
+    0xc5, 0x16, 0x37, 0x17, 0x4d, 0x29, 0xcc, 0xa3, 0xc1, 0xf5, 0xb2, 0x49,
+    0x20, 0xc1, 0x05, 0xc9, 0x20, 0x13, 0x3c, 0x3d}},
+  {__LINE__,
+   "Mufasa", "myhost@testrealm.com", "CircleOfLife",
+   {0x44, 0xbc, 0xd2, 0xb1, 0x1f, 0x6f, 0x7d, 0xd3, 0xae, 0xa6, 0x66, 0x8a,
+    0x24, 0x84, 0x4b, 0x87, 0x7d, 0xe1, 0x80, 0x24, 0x9a, 0x26, 0x6b, 0xe6,
+    0xdb, 0x7f, 0xe3, 0xc8, 0x7a, 0xf9, 0x75, 0x64}},
+  {__LINE__,
+   "Mufasa", "myhost@example.com", "Circle Of Life",
+   {0xd5, 0xf6, 0x25, 0x7c, 0x64, 0xe4, 0x01, 0xd2, 0x87, 0xd5, 0xaa, 0x19,
+    0xae, 0xf0, 0xa2, 0xa2, 0xce, 0x4e, 0x5d, 0xfc, 0x77, 0x70, 0x0b, 0x72,
+    0x90, 0x43, 0x96, 0xd2, 0x95, 0x6e, 0x83, 0x0a}},
+  {__LINE__,
+   "Mufasa", "http-auth@example.org", "Circle of Life",
+   {0xfb, 0x17, 0x4f, 0x5c, 0x3c, 0x78, 0x02, 0x72, 0x15, 0x17, 0xca, 0xe1,
+    0x3b, 0x98, 0xe2, 0xb8, 0xda, 0xe2, 0xe0, 0x11, 0x8c, 0xb7, 0x05, 0xd9,
+    0x4e, 0xe2, 0x99, 0x46, 0x31, 0x92, 0x04, 0xce}},
+  {__LINE__,
+   "J" "\xC3\xA4" "s" "\xC3\xB8" "n Doe" /* "Jäsøn Doe" */,
+   "api@example.org", "Secret, or not?",
+   {0x2d, 0x3d, 0x9f, 0x12, 0xc9, 0xf3, 0xd3, 0x00, 0x11, 0x25, 0x9d, 0xc5,
+    0xfe, 0xce, 0xe0, 0x05, 0xae, 0x24, 0xde, 0x40, 0xe3, 0xe1, 0xf6, 0x18,
+    0x06, 0xd0, 0x3e, 0x65, 0xf1, 0xe6, 0x02, 0x4f}}
+};
+
 
 /*
  *  Helper functions
@@ -413,6 +461,156 @@ test_sha256_failure (void)
 }
 
 
+static unsigned int
+check_sha512_256 (const struct data_sha512_256 *const data)
+{
+  static const enum MHD_DigestAuthAlgo3 algo3 =
+    MHD_DIGEST_AUTH_ALGO3_SHA512_256;
+  uint8_t hash_bin[MHD_SHA512_256_DIGEST_SIZE];
+  char hash_hex[MHD_SHA512_256_DIGEST_SIZE * 2 + 1];
+  char expected_hex[MHD_SHA512_256_DIGEST_SIZE * 2 + 1];
+  const char *func_name;
+  unsigned int failed = 0;
+
+  func_name = "MHD_digest_auth_calc_userdigest";
+  if (MHD_YES != MHD_digest_auth_calc_userdigest (algo3,
+                                                  data->username,
+                                                  data->realm,
+                                                  data->password,
+                                                  hash_bin, sizeof(hash_bin)))
+  {
+    failed++;
+    fprintf (stderr,
+             "FAILED: %s() has not returned MHD_YES.\n",
+             func_name);
+  }
+  else if (0 != memcmp (hash_bin, data->hash, sizeof(data->hash)))
+  {
+    failed++;
+    bin2hex (hash_bin, sizeof(hash_bin), hash_hex);
+    bin2hex (data->hash, sizeof(data->hash), expected_hex);
+    fprintf (stderr,
+             "FAILED: %s() produced wrong hash. "
+             "Calculated digest %s, expected digest %s.\n",
+             func_name,
+             hash_hex, expected_hex);
+  }
+
+  if (failed)
+  {
+    fprintf (stderr,
+             "The check failed for data located at line: %u.\n",
+             data->line_num);
+    fflush (stderr);
+  }
+  else if (verbose)
+  {
+    printf ("PASSED: check for data at line: %u.\n",
+            data->line_num);
+  }
+  return failed ? 1 : 0;
+}
+
+
+static unsigned int
+test_sha512_256 (void)
+{
+  unsigned int num_failed = 0;
+  size_t i;
+
+  for (i = 0; i < sizeof(sha512_256_tests) / sizeof(sha512_256_tests[0]); i++)
+    num_failed += check_sha512_256 (sha512_256_tests + i);
+  return num_failed;
+}
+
+
+static unsigned int
+test_sha512_256_failure (void)
+{
+  static const enum MHD_DigestAuthAlgo3 algo3 =
+    MHD_DIGEST_AUTH_ALGO3_SHA512_256;
+  static const enum MHD_FEATURE feature = MHD_FEATURE_DIGEST_AUTH_SHA512_256;
+  uint8_t hash_bin[MHD_SHA512_256_DIGEST_SIZE];
+  char hash_hex[MHD_SHA512_256_DIGEST_SIZE * 2 + 1];
+  const char *func_name;
+  unsigned int failed = 0;
+
+  func_name = "MHD_digest_auth_calc_userhash";
+  if (MHD_NO != MHD_digest_auth_calc_userhash (algo3,
+                                               "u", "r",
+                                               hash_bin, sizeof(hash_bin) - 1))
+  {
+    failed++;
+    fprintf (stderr,
+             "FAILED: %s() has not returned MHD_NO at line: %u.\n",
+             func_name, (unsigned) __LINE__);
+  }
+  if (MHD_NO != MHD_digest_auth_calc_userhash (algo3,
+                                               "u", "r",
+                                               hash_bin, 0))
+  {
+    failed++;
+    fprintf (stderr,
+             "FAILED: %s() has not returned MHD_NO at line: %u.\n",
+             func_name, (unsigned) __LINE__);
+  }
+  if (MHD_NO == MHD_is_feature_supported (feature))
+  {
+    if (MHD_NO != MHD_digest_auth_calc_userhash (algo3,
+                                                 "u", "r",
+                                                 hash_bin, sizeof(hash_bin)))
+    {
+      failed++;
+      fprintf (stderr,
+               "FAILED: %s() has not returned MHD_NO at line: %u.\n",
+               func_name, (unsigned) __LINE__);
+    }
+  }
+
+  func_name = "MHD_digest_auth_calc_userhash_hex";
+  if (MHD_NO !=
+      MHD_digest_auth_calc_userhash_hex (algo3,
+                                         "u", "r",
+                                         hash_hex, sizeof(hash_hex) - 1))
+  {
+    failed++;
+    fprintf (stderr,
+             "FAILED: %s() has not returned MHD_NO at line: %u.\n",
+             func_name, (unsigned) __LINE__);
+  }
+  if (MHD_NO !=
+      MHD_digest_auth_calc_userhash_hex (algo3,
+                                         "u", "r",
+                                         hash_hex, 0))
+  {
+    failed++;
+    fprintf (stderr,
+             "FAILED: %s() has not returned MHD_NO at line: %u.\n",
+             func_name, (unsigned) __LINE__);
+  }
+  if (MHD_NO == MHD_is_feature_supported (feature))
+  {
+    if (MHD_NO !=
+        MHD_digest_auth_calc_userhash_hex (algo3,
+                                           "u", "r",
+                                           hash_hex, sizeof(hash_hex)))
+    {
+      failed++;
+      fprintf (stderr,
+               "FAILED: %s() has not returned MHD_NO at line: %u.\n",
+               func_name, (unsigned) __LINE__);
+    }
+  }
+
+  if (! failed && verbose)
+  {
+    printf ("PASSED: all checks with expected MHD_NO result near line: %u.\n",
+            (unsigned) __LINE__);
+  }
+  return failed ? 1 : 0;
+}
+
+
 int
 main (int argc, char *argv[])
 {
@@ -427,6 +625,9 @@ main (int argc, char *argv[])
   if (MHD_is_feature_supported (MHD_FEATURE_DIGEST_AUTH_SHA256))
     num_failed += test_sha256 ();
   num_failed += test_sha256_failure ();
+  if (MHD_is_feature_supported (MHD_FEATURE_DIGEST_AUTH_SHA512_256))
+    num_failed += test_sha512_256 ();
+  num_failed += test_sha512_256_failure ();
 
   return num_failed ? 1 : 0;
 }

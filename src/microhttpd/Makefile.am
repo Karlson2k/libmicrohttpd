@@ -168,9 +168,15 @@ endif
 if ENABLE_DAUTH
 libmicrohttpd_la_SOURCES += \
   digestauth.c digestauth.h \
-  mhd_bithelpers.h mhd_byteorder.h mhd_align.h \
-  md5.c md5.h \
+  mhd_bithelpers.h mhd_byteorder.h mhd_align.h
+if ENABLE_MD5
+libmicrohttpd_la_SOURCES += \
+  md5.c md5.h
+endif
+if ENABLE_SHA256
+libmicrohttpd_la_SOURCES += \
   sha256.c sha256.h
+endif
 if ENABLE_SHA512_256
 libmicrohttpd_la_SOURCES += \
   sha512_256.c sha512_256.h
@@ -197,9 +203,7 @@ check_PROGRAMS = \
   test_str_pct \
   test_str_bin_hex \
   test_http_reasons \
-  test_md5 \
   test_sha1 \
-  test_sha256 \
   test_start_stop \
   test_daemon \
   test_response_entries \
@@ -219,6 +223,14 @@ check_PROGRAMS = \
   test_options \
   test_set_panic
 
+if ENABLE_MD5
+check_PROGRAMS += \
+  test_md5
+endif
+if ENABLE_SHA256
+check_PROGRAMS += \
+  test_sha256
+endif
 if ENABLE_SHA512_256
 check_PROGRAMS += \
   test_sha512_256
