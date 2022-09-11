@@ -453,7 +453,7 @@ test_sha256_failure (void)
              "FAILED: %s() has not returned MHD_NO at line: %u.\n",
              func_name, (unsigned) __LINE__);
   }
-  if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_DIGEST_AUTH_MD5))
+  if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_DIGEST_AUTH_SHA256))
   {
     if (MHD_NO != MHD_digest_auth_calc_userhash (algo3,
                                                  "u", "r",
@@ -487,7 +487,7 @@ test_sha256_failure (void)
              "FAILED: %s() has not returned MHD_NO at line: %u.\n",
              func_name, (unsigned) __LINE__);
   }
-  if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_DIGEST_AUTH_MD5))
+  if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_DIGEST_AUTH_SHA256))
   {
     if (MHD_NO !=
         MHD_digest_auth_calc_userhash_hex (algo3,
