@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2019-2021 Karlson2k (Evgeny Grin)
+     Copyright (C) 2019-2022 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -66,7 +66,7 @@ MHD_SHA256_init (struct Sha256Ctx *ctx)
  */
 static void
 sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
-                  const uint8_t data[SHA256_BLOCK_SIZE])
+                  const void *data)
 {
   /* Working variables,
      see FIPS PUB 180-4 paragraph 6.2. */
@@ -127,7 +127,7 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
     /* The W[] buffer itself will be used as the source of the data,
      * but data will be reloaded in correct bytes order during
      * the next steps */
-    data = (uint8_t *) W;
+    data = (const void *) W;
   }
 #endif /* _MHD_GET_32BIT_BE_UNALIGNED */
 
@@ -188,8 +188,8 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
                     + (w)[((t) - 7) & 0xf] + sig0 ((w)[((t) - 15) & 0xf]) )
 
   /* During last 48 steps, before making any calculations on each step,
-     W element is generated from W elements of cyclic buffer and generated value
-     stored back in cyclic buffer. */
+     current W element is generated from other W elements of the cyclic buffer
+     and the generated value is stored back in the cyclic buffer. */
   /* Note: instead of using K constants as array, all K values are specified
      individually for each step, see FIPS PUB 180-4 paragraph 4.2.2 for K values. */
   SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0xe49b69c1), W[16 & 0xf] = \
@@ -332,7 +332,7 @@ MHD_SHA256_update (struct Sha256Ctx *ctx,
     if (length >= bytes_left)
     {     /* Combine new data with data in the buffer and
              process full block. */
-      memcpy (ctx->buffer + bytes_have,
+      memcpy (((uint8_t *) ctx->buffer) + bytes_have,
               data,
               bytes_left);
       data += bytes_left;
@@ -353,7 +353,7 @@ MHD_SHA256_update (struct Sha256Ctx *ctx,
   if (0 != length)
   {   /* Copy incomplete block of new data (if any)
          to the buffer. */
-    memcpy (ctx->buffer + bytes_have, data, length);
+    memcpy (((uint8_t *) ctx->buffer) + bytes_have, data, length);
   }
 }
 
@@ -382,19 +382,24 @@ MHD_SHA256_finish (struct Sha256Ctx *ctx,
            equal (count % SHA256_BLOCK_SIZE) for this block size. */
   bytes_have = (unsigned) (ctx->count & (SHA256_BLOCK_SIZE - 1));
 
-  /* Input data must be padded with bit "1" and with length of data in bits.
+  /* Input data must be padded with a single bit "1", then with zeros and
+     the finally the length of data in bits must be added as the final bytes
+     of the last block.
      See FIPS PUB 180-4 paragraph 5.1.1. */
+
   /* Data is always processed in form of bytes (not by individual bits),
-     therefore position of first padding bit in byte is always predefined (0x80). */
+     therefore position of first padding bit in byte is always
+     predefined (0x80). */
   /* Buffer always have space at least for one byte (as full buffers are
      processed immediately). */
-  ctx->buffer[bytes_have++] = 0x80;
+  ((uint8_t *) ctx->buffer)[bytes_have++] = 0x80;
 
   if (SHA256_BLOCK_SIZE - bytes_have < SHA256_SIZE_OF_LEN_ADD)
   {   /* No space in current block to put total length of message.
          Pad current block with zeros and process it. */
     if (bytes_have < SHA256_BLOCK_SIZE)
-      memset (ctx->buffer + bytes_have, 0, SHA256_BLOCK_SIZE - bytes_have);
+      memset (((uint8_t *) ctx->buffer) + bytes_have, 0,
+              SHA256_BLOCK_SIZE - bytes_have);
     /* Process full block. */
     sha256_transform (ctx->H, ctx->buffer);
     /* Start new block. */
@@ -402,12 +407,10 @@ MHD_SHA256_finish (struct Sha256Ctx *ctx,
   }
 
   /* Pad the rest of the buffer with zeros. */
-  memset (ctx->buffer + bytes_have, 0,
+  memset (((uint8_t *) ctx->buffer) + bytes_have, 0,
           SHA256_BLOCK_SIZE - SHA256_SIZE_OF_LEN_ADD - bytes_have);
-  /* Put number of bits in processed message as big-endian value. */
-  _MHD_PUT_64BIT_BE_SAFE (ctx->buffer + SHA256_BLOCK_SIZE
-                          - SHA256_SIZE_OF_LEN_ADD,
-                          num_bits);
+  /* Put the number of bits in processed message as big-endian value. */
+  _MHD_PUT_64BIT_BE_SAFE (ctx->buffer + SHA256_BLOCK_SIZE_WORDS - 2, num_bits);
   /* Process full final block. */
   sha256_transform (ctx->H, ctx->buffer);
 
@@ -428,9 +431,8 @@ MHD_SHA256_finish (struct Sha256Ctx *ctx,
     memcpy (digest, alig_dgst, SHA256_DIGEST_SIZE);
   }
   else
-#else  /* _MHD_PUT_32BIT_BE_UNALIGNED */
+#endif /* ! _MHD_PUT_32BIT_BE_UNALIGNED */
   if (1)
-#endif /* _MHD_PUT_32BIT_BE_UNALIGNED */
   {
     /* Use cast to (void*) here to mute compiler alignment warnings.
      * Compilers are not smart enough to see that alignment has been checked. */
