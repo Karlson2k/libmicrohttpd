@@ -1,6 +1,6 @@
 /*
      This file is part of GNU libmicrohttpd
-     Copyright (C) 2022 Karlson2k (Evgeny Grin)
+     Copyright (C) 2022 Evgeny Grin (Karlson2k)
 
      GNU libmicrohttpd is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -68,18 +68,17 @@
 #define SHA512_256_DIGEST_STRING_SIZE ((SHA512_256_DIGEST_SIZE) * 2 + 1)
 
 /**
- * Size of single processing block in bits.
- * This is the final digest size, not intermediate hash.
+ * Size of SHA-512/256 single processing block in bits.
  */
 #define SHA512_256_BLOCK_SIZE_BITS 1024
 
 /**
- * Size of single processing block in bytes.
+ * Size of SHA-512/256 single processing block in bytes.
  */
 #define SHA512_256_BLOCK_SIZE (SHA512_256_BLOCK_SIZE_BITS / 8)
 
 /**
- * Size of single processing block in words.
+ * Size of SHA-512/256 single processing block in words.
  */
 #define SHA512_256_BLOCK_SIZE_WORDS \
  (SHA512_256_BLOCK_SIZE_BITS / SHA512_256_WORD_SIZE_BITS)

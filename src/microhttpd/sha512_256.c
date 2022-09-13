@@ -1,6 +1,6 @@
 /*
      This file is part of GNU libmicrohttpd
-     Copyright (C) 2022 Karlson2k (Evgeny Grin)
+     Copyright (C) 2022 Evgeny Grin (Karlson2k)
 
      GNU libmicrohttpd is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -60,9 +60,9 @@ MHD_SHA512_256_init (struct Sha512_256Ctx *ctx)
 
 /**
  * Base of SHA-512/256 transformation.
- * Gets full 64 bytes block of data and updates hash values;
+ * Gets full 128 bytes block of data and updates hash values;
  * @param H     hash values
- * @param data  the data buffer with SHA512_256_BLOCK_SIZE bytes block
+ * @param data  the data buffer with #SHA512_256_BLOCK_SIZE bytes block
  */
 static void
 sha512_256_transform (uint64_t H[SHA512_256_HASH_SIZE_WORDS],
@@ -91,7 +91,7 @@ sha512_256_transform (uint64_t H[SHA512_256_HASH_SIZE_WORDS],
     /* The W[] buffer itself will be used as the source of the data,
      * but the data will be reloaded in correct bytes order on
      * the next steps */
-    data = (uint8_t *) W;
+    data = (const void *) W;
   }
 #endif /* _MHD_GET_64BIT_BE_ALLOW_UNALIGNED */
 
@@ -118,12 +118,6 @@ sha512_256_transform (uint64_t H[SHA512_256_HASH_SIZE_WORDS],
   /* One step of SHA-512/256 computation,
      see FIPS PUB 180-4 clause 6.4.2 step 3.
    * Note: this macro updates working variables in-place, without rotation.
-   * Note: instead of reassigning all working variables on each step,
-           variables are rotated for each step:
-             SHA2STEP64(a, b, c, d, e, f, g, h, K[0], data[0]);
-             SHA2STEP64(h, a, b, c, d, e, f, g, K[1], data[1]);
-           so current 'vD' will be used as 'vE' on next step,
-           current 'vH' will be used as 'vA' on next step.
    * Note: the first (vH += SIG1(vE) + Ch(vE,vF,vG) + kt + wt) equals T1 in
            FIPS PUB 180-4 clause 6.4.2 step 3.
            the second (vH += SIG0(vA) + Maj(vE,vF,vC) equals T1 + T2 in
@@ -442,8 +436,10 @@ MHD_SHA512_256_update (struct Sha512_256Ctx *ctx,
 
   mhd_assert ((data != NULL) || (length == 0));
 
+#ifndef MHD_FAVOR_SMALL_CODE
   if (0 == length)
-    return; /* Do nothing */
+    return; /* Shortcut, do nothing */
+#endif /* ! MHD_FAVOR_SMALL_CODE */
 
   /* Note: (count & (SHA512_256_BLOCK_SIZE-1))
            equals (count % SHA512_256_BLOCK_SIZE) for this block size. */
@@ -521,9 +517,11 @@ MHD_SHA512_256_finish (struct Sha512_256Ctx *ctx,
            equals (count % SHA512_256_BLOCK_SIZE) for this block size. */
   bytes_have = (unsigned int) (ctx->count & (SHA512_256_BLOCK_SIZE - 1));
 
-  /* Input data must be padded with bit "1" and then the length of data in bits
-     must be added as the final bytes of the last block.
+  /* Input data must be padded with a single bit "1", then with zeros and
+     the finally the length of data in bits must be added as the final bytes
+     of the last block.
      See FIPS PUB 180-4 clause 5.1.2. */
+
   /* Data is always processed in form of bytes (not by individual bits),
      therefore position of the first padding bit in byte is always
      predefined (0x80). */
@@ -560,8 +558,16 @@ MHD_SHA512_256_finish (struct Sha512_256Ctx *ctx,
   /* Put in BE mode the leftmost part of the hash as the final digest.
      See FIPS PUB 180-4 clause 6.7. */
 #ifndef _MHD_PUT_64BIT_BE_UNALIGNED
-  if (0 != ((uintptr_t) digest) % _MHD_UINT64_ALIGN)
-  { /* The destination is unaligned */
+  if (1
+#ifndef MHD_FAVOR_SMALL_CODE
+      && (0 != ((uintptr_t) digest) % _MHD_UINT64_ALIGN)
+#endif /* MHD_FAVOR_SMALL_CODE */
+      )
+  {
+    /* If storing of the final result requires aligned address and
+       the destination address is not aligned or compact code is used,
+       store the final digest in aligned temporary buffer first, then
+       copy it to the destination. */
     uint64_t alig_dgst[SHA512_256_DIGEST_SIZE_WORDS];
     _MHD_PUT_64BIT_BE (alig_dgst + 0, ctx->H[0]);
     _MHD_PUT_64BIT_BE (alig_dgst + 1, ctx->H[1]);
@@ -570,8 +576,11 @@ MHD_SHA512_256_finish (struct Sha512_256Ctx *ctx,
     /* Copy result to the unaligned destination address */
     memcpy (digest, alig_dgst, SHA512_256_DIGEST_SIZE);
   }
+#ifndef MHD_FAVOR_SMALL_CODE
   else /* Combined with the next 'if' */
+#endif /* MHD_FAVOR_SMALL_CODE */
 #endif /* ! _MHD_PUT_64BIT_BE_UNALIGNED */
+#if ! defined(MHD_FAVOR_SMALL_CODE) || defined(_MHD_PUT_64BIT_BE_UNALIGNED)
   if (1)
   {
     /* Use cast to (void*) here to mute compiler alignment warnings.
@@ -585,6 +594,7 @@ MHD_SHA512_256_finish (struct Sha512_256Ctx *ctx,
     _MHD_PUT_64BIT_BE ((void *) (digest + 3 * SHA512_256_BYTES_IN_WORD), \
                        ctx->H[3]);
   }
+#endif /* ! MHD_FAVOR_SMALL_CODE || _MHD_PUT_64BIT_BE_UNALIGNED */
 
   /* Erase potentially sensitive data. */
   memset (ctx, 0, sizeof(struct Sha512_256Ctx));
