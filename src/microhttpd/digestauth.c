@@ -304,7 +304,7 @@ MHD_digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3)
 union DigestCtx
 {
 #ifdef MHD_MD5_SUPPORT
-  struct MD5Context md5_ctx;
+  struct Md5Ctx md5_ctx;
 #endif /* MHD_MD5_SUPPORT */
 #ifdef MHD_SHA256_SUPPORT
   struct Sha256Ctx sha256_ctx;
@@ -419,7 +419,7 @@ digest_init (struct DigestAlgorithm *da)
 #ifdef MHD_MD5_SUPPORT
   if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
   {
-    MHD_MD5Init (&da->ctx.md5_ctx);
+    MHD_MD5_init (&da->ctx.md5_ctx);
 #ifdef _DEBUG
     da->inited = true;
 #endif
@@ -470,7 +470,7 @@ digest_update (struct DigestAlgorithm *da,
   mhd_assert (! da->digest_calculated);
 #ifdef MHD_MD5_SUPPORT
   if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
-    MHD_MD5Update (&da->ctx.md5_ctx, (const uint8_t *) data, length);
+    MHD_MD5_update (&da->ctx.md5_ctx, (const uint8_t *) data, length);
   else
 #endif /* MHD_MD5_SUPPORT */
 #ifdef MHD_SHA256_SUPPORT
@@ -528,7 +528,7 @@ digest_calc_hash (struct DigestAlgorithm *da, uint8_t *digest)
   mhd_assert (! da->digest_calculated);
 #ifdef MHD_MD5_SUPPORT
   if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
-    MHD_MD5Final (&da->ctx.md5_ctx, digest);
+    MHD_MD5_finish (&da->ctx.md5_ctx, digest);
   else
 #endif /* MHD_MD5_SUPPORT */
 #ifdef MHD_SHA256_SUPPORT
