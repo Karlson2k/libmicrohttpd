@@ -65,7 +65,7 @@ MHD_SHA256_init (struct Sha256Ctx *ctx)
  * @param data  data, must be exactly 64 bytes long
  */
 static void
-sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
+sha256_transform (uint32_t H[SHA256_DIGEST_SIZE_WORDS],
                   const void *data)
 {
   /* Working variables,
@@ -82,6 +82,18 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
   /* Data buffer, used as cyclic buffer.
      See FIPS PUB 180-4 paragraphs 5.2.1, 6.2. */
   uint32_t W[16];
+
+#ifndef _MHD_GET_32BIT_BE_UNALIGNED
+  if (0 != (((uintptr_t) data) % _MHD_UINT32_ALIGN))
+  {
+    /* Copy the unaligned input data to the aligned buffer */
+    memcpy (W, data, SHA256_BLOCK_SIZE);
+    /* The W[] buffer itself will be used as the source of the data,
+     * but data will be reloaded in correct bytes order during
+     * the next steps */
+    data = (const void *) W;
+  }
+#endif /* _MHD_GET_32BIT_BE_UNALIGNED */
 
   /* 'Ch' and 'Maj' macro functions are defined with
      widely-used optimization.
@@ -103,14 +115,9 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
 #define sig1(x)  (_MHD_ROTR32 ((x), 17) ^ _MHD_ROTR32 ((x),19) ^ \
                   ((x) >> 10) )
 
-  /* Single step of SHA-256 computation,
+  /* One step of SHA-256 computation,
      see FIPS PUB 180-4 paragraph 6.2.2 step 3.
-   * Note: instead of reassigning all working variables on each step,
-           variables are rotated for each step:
-             SHA2STEP32(a, b, c, d, e, f, g, h, K[0], data[0]);
-             SHA2STEP32(h, a, b, c, d, e, f, g, K[1], data[1]);
-           so current 'vD' will be used as 'vE' on next step,
-           current 'vH' will be used as 'vA' on next step.
+   * Note: this macro updates working variables in-place, without rotation.
    * Note: first (vH += SIG1(vE) + Ch(vE,vF,vG) + kt + wt) equals T1 in FIPS PUB 180-4 paragraph 6.2.2 step 3.
            second (vH += SIG0(vA) + Maj(vE,vF,vC) equals T1 + T2 in FIPS PUB 180-4 paragraph 6.2.2 step 3.
    * Note: 'wt' must be used exactly one time in this macro as it change other data as well
@@ -118,18 +125,6 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
 #define SHA2STEP32(vA,vB,vC,vD,vE,vF,vG,vH,kt,wt) do {                  \
     (vD) += ((vH) += SIG1 ((vE)) + Ch ((vE),(vF),(vG)) + (kt) + (wt));  \
     (vH) += SIG0 ((vA)) + Maj ((vA),(vB),(vC)); } while (0)
-
-#ifndef _MHD_GET_32BIT_BE_UNALIGNED
-  if (0 != (((uintptr_t) data) % _MHD_UINT32_ALIGN))
-  {
-    /* Copy the unaligned input data to the aligned buffer */
-    memcpy (W, data, SHA256_BLOCK_SIZE);
-    /* The W[] buffer itself will be used as the source of the data,
-     * but data will be reloaded in correct bytes order during
-     * the next steps */
-    data = (const void *) W;
-  }
-#endif /* _MHD_GET_32BIT_BE_UNALIGNED */
 
   /* Get value of W(t) from input data buffer,
      See FIPS PUB 180-4 paragraph 6.2.
@@ -141,11 +136,27 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
   _MHD_GET_32BIT_BE ((const void*)(((const uint8_t*) (buf)) + \
                                    (t) * SHA256_BYTES_IN_WORD))
 
+  /* 'W' generation and assignment for 16 <= t <= 63.
+     See FIPS PUB 180-4 paragraph 6.2.2.
+     As only last 16 'W' are used in calculations, it is possible to
+     use 16 elements array of W as cyclic buffer.
+   * Note: ((t-16)&0xf) have same value as (t&0xf) */
+#define Wgen(w,t) ( (w)[(t - 16) & 0xf] + sig1 ((w)[((t) - 2) & 0xf])   \
+                    + (w)[((t) - 7) & 0xf] + sig0 ((w)[((t) - 15) & 0xf]) )
+
+#ifndef MHD_FAVOR_SMALL_CODE
   /* During first 16 steps, before making any calculations on each step,
      the W element is read from input data buffer as big-endian value and
      stored in array of W elements. */
   /* Note: instead of using K constants as array, all K values are specified
-     individually for each step, see FIPS PUB 180-4 paragraph 4.2.2 for K values. */
+           individually for each step, see FIPS PUB 180-4 paragraph 4.2.2 for
+           K values. */
+  /* Note: instead of reassigning all working variables on each step,
+           variables are rotated for each step:
+             SHA2STEP32(a, b, c, d, e, f, g, h, K[0], data[0]);
+             SHA2STEP32(h, a, b, c, d, e, f, g, K[1], data[1]);
+           so current 'vD' will be used as 'vE' on next step,
+           current 'vH' will be used as 'vA' on next step. */
   SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0x428a2f98), W[0] = \
                 GET_W_FROM_DATA (data, 0));
   SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0x71374491), W[1] = \
@@ -178,14 +189,6 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
                 GET_W_FROM_DATA (data, 14));
   SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0xc19bf174), W[15] = \
                 GET_W_FROM_DATA (data, 15));
-
-  /* 'W' generation and assignment for 16 <= t <= 63.
-     See FIPS PUB 180-4 paragraph 6.2.2.
-     As only last 16 'W' are used in calculations, it is possible to
-     use 16 elements array of W as cyclic buffer.
-   * Note: ((t-16)&0xf) have same value as (t&0xf) */
-#define Wgen(w,t) ( (w)[(t - 16) & 0xf] + sig1 ((w)[((t) - 2) & 0xf])   \
-                    + (w)[((t) - 7) & 0xf] + sig0 ((w)[((t) - 15) & 0xf]) )
 
   /* During last 48 steps, before making any calculations on each step,
      current W element is generated from other W elements of the cyclic buffer
@@ -288,6 +291,70 @@ sha256_transform (uint32_t H[_SHA256_DIGEST_LENGTH],
                 Wgen (W,62));
   SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0xc67178f2), W[63 & 0xf] = \
                 Wgen (W,63));
+#else  /* ! MHD_FAVOR_SMALL_CODE */
+  if (1)
+  {
+    unsigned int t;
+    /* K constants array.
+       See FIPS PUB 180-4 paragraph 4.2.2 for K values. */
+    static const uint32_t K[80] =
+    { UINT32_C (0x428a2f98),  UINT32_C (0x71374491),  UINT32_C (0xb5c0fbcf),
+      UINT32_C (0xe9b5dba5),  UINT32_C (0x3956c25b),  UINT32_C (0x59f111f1),
+      UINT32_C (0x923f82a4),  UINT32_C (0xab1c5ed5),  UINT32_C (0xd807aa98),
+      UINT32_C (0x12835b01),  UINT32_C (0x243185be),  UINT32_C (0x550c7dc3),
+      UINT32_C (0x72be5d74),  UINT32_C (0x80deb1fe),  UINT32_C (0x9bdc06a7),
+      UINT32_C (0xc19bf174),  UINT32_C (0xe49b69c1),  UINT32_C (0xefbe4786),
+      UINT32_C (0x0fc19dc6),  UINT32_C (0x240ca1cc),  UINT32_C (0x2de92c6f),
+      UINT32_C (0x4a7484aa),  UINT32_C (0x5cb0a9dc),  UINT32_C (0x76f988da),
+      UINT32_C (0x983e5152),  UINT32_C (0xa831c66d),  UINT32_C (0xb00327c8),
+      UINT32_C (0xbf597fc7),  UINT32_C (0xc6e00bf3),  UINT32_C (0xd5a79147),
+      UINT32_C (0x06ca6351),  UINT32_C (0x14292967),  UINT32_C (0x27b70a85),
+      UINT32_C (0x2e1b2138),  UINT32_C (0x4d2c6dfc),  UINT32_C (0x53380d13),
+      UINT32_C (0x650a7354),  UINT32_C (0x766a0abb),  UINT32_C (0x81c2c92e),
+      UINT32_C (0x92722c85),  UINT32_C (0xa2bfe8a1),  UINT32_C (0xa81a664b),
+      UINT32_C (0xc24b8b70),  UINT32_C (0xc76c51a3),  UINT32_C (0xd192e819),
+      UINT32_C (0xd6990624),  UINT32_C (0xf40e3585),  UINT32_C (0x106aa070),
+      UINT32_C (0x19a4c116),  UINT32_C (0x1e376c08),  UINT32_C (0x2748774c),
+      UINT32_C (0x34b0bcb5),  UINT32_C (0x391c0cb3),  UINT32_C (0x4ed8aa4a),
+      UINT32_C (0x5b9cca4f),  UINT32_C (0x682e6ff3),  UINT32_C (0x748f82ee),
+      UINT32_C (0x78a5636f),  UINT32_C (0x84c87814),  UINT32_C (0x8cc70208),
+      UINT32_C (0x90befffa),  UINT32_C (0xa4506ceb),  UINT32_C (0xbef9a3f7),
+      UINT32_C (0xc67178f2) };
+    /* One step of SHA-256 computation with working variables rotation,
+       see FIPS PUB 180-4 paragraph 6.2.2 step 3.
+     * Note: this version of macro reassign all working variable on
+             each step. */
+#define SHA2STEP32RV(vA,vB,vC,vD,vE,vF,vG,vH,kt,wt) do {              \
+    uint32_t tmp_h_ = (vH);                                           \
+    SHA2STEP32((vA),(vB),(vC),(vD),(vE),(vF),(vG),tmp_h_,(kt),(wt));  \
+    (vH) = (vG);                                                      \
+    (vG) = (vF);                                                      \
+    (vF) = (vE);                                                      \
+    (vE) = (vD);                                                      \
+    (vD) = (vC);                                                      \
+    (vC) = (vB);                                                      \
+    (vB) = (vA);                                                      \
+    (vA) = tmp_h_;  } while (0)
+
+    /* During first 16 steps, before making any calculations on each step,
+       the W element is read from input data buffer as big-endian value and
+       stored in array of W elements. */
+    for (t = 0; t < 16; ++t)
+    {
+      SHA2STEP32RV (a, b, c, d, e, f, g, h, K[t], \
+                    W[t] = GET_W_FROM_DATA (data, t));
+    }
+
+    /* During last 48 steps, before making any calculations on each step,
+       current W element is generated from other W elements of the cyclic buffer
+       and the generated value is stored back in the cyclic buffer. */
+    for (t = 16; t < 64; ++t)
+    {
+      SHA2STEP32RV (a, b, c, d, e, f, g, h, K[t], W[t & 15] = Wgen (W,t));
+    }
+  }
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+
 
   /* Compute intermediate hash.
      See FIPS PUB 180-4 paragraph 6.2.2 step 4. */
@@ -318,8 +385,10 @@ MHD_SHA256_update (struct Sha256Ctx *ctx,
 
   mhd_assert ((data != NULL) || (length == 0));
 
+#ifndef MHD_FAVOR_SMALL_CODE
   if (0 == length)
-    return; /* Do nothing */
+    return; /* Shortcut, do nothing */
+#endif /* MHD_FAVOR_SMALL_CODE */
 
   /* Note: (count & (SHA256_BLOCK_SIZE-1))
            equals (count % SHA256_BLOCK_SIZE) for this block size. */
@@ -416,9 +485,17 @@ MHD_SHA256_finish (struct Sha256Ctx *ctx,
 
   /* Put final hash/digest in BE mode */
 #ifndef _MHD_PUT_32BIT_BE_UNALIGNED
-  if (0 != ((uintptr_t) digest) % _MHD_UINT32_ALIGN)
+  if (1
+#ifndef MHD_FAVOR_SMALL_CODE
+      && (0 != ((uintptr_t) digest) % _MHD_UINT32_ALIGN)
+#endif /* MHD_FAVOR_SMALL_CODE */
+      )
   {
-    uint32_t alig_dgst[_SHA256_DIGEST_LENGTH];
+    /* If storing of the final result requires aligned address and
+       the destination address is not aligned or compact code is used,
+       store the final digest in aligned temporary buffer first, then
+       copy it to the destination. */
+    uint32_t alig_dgst[SHA256_DIGEST_SIZE_WORDS];
     _MHD_PUT_32BIT_BE (alig_dgst + 0, ctx->H[0]);
     _MHD_PUT_32BIT_BE (alig_dgst + 1, ctx->H[1]);
     _MHD_PUT_32BIT_BE (alig_dgst + 2, ctx->H[2]);
@@ -430,8 +507,11 @@ MHD_SHA256_finish (struct Sha256Ctx *ctx,
     /* Copy result to unaligned destination address */
     memcpy (digest, alig_dgst, SHA256_DIGEST_SIZE);
   }
-  else
+#ifndef MHD_FAVOR_SMALL_CODE
+  else /* Combined with the next 'if' */
+#endif /* MHD_FAVOR_SMALL_CODE */
 #endif /* ! _MHD_PUT_32BIT_BE_UNALIGNED */
+#if ! defined(MHD_FAVOR_SMALL_CODE) || defined(_MHD_PUT_32BIT_BE_UNALIGNED)
   if (1)
   {
     /* Use cast to (void*) here to mute compiler alignment warnings.
@@ -445,6 +525,7 @@ MHD_SHA256_finish (struct Sha256Ctx *ctx,
     _MHD_PUT_32BIT_BE ((void *) (digest + 6 * SHA256_BYTES_IN_WORD), ctx->H[6]);
     _MHD_PUT_32BIT_BE ((void *) (digest + 7 * SHA256_BYTES_IN_WORD), ctx->H[7]);
   }
+#endif /* ! MHD_FAVOR_SMALL_CODE || _MHD_PUT_32BIT_BE_UNALIGNED */
 
   /* Erase potentially sensitive data. */
   memset (ctx, 0, sizeof(struct Sha256Ctx));

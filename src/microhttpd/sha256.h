@@ -36,7 +36,7 @@
 /**
  *  Digest is kept internally as 8 32-bit words.
  */
-#define _SHA256_DIGEST_LENGTH 8
+#define SHA256_DIGEST_SIZE_WORDS 8
 
 /**
  * Number of bits in single SHA-256 word
@@ -52,7 +52,7 @@
 /**
  * Size of SHA-256 digest in bytes
  */
-#define SHA256_DIGEST_SIZE (_SHA256_DIGEST_LENGTH * SHA256_BYTES_IN_WORD)
+#define SHA256_DIGEST_SIZE (SHA256_DIGEST_SIZE_WORDS * SHA256_BYTES_IN_WORD)
 
 /**
  * Size of SHA-256 digest string in chars including termination NUL
@@ -77,7 +77,7 @@
 
 struct Sha256Ctx
 {
-  uint32_t H[_SHA256_DIGEST_LENGTH];        /**< Intermediate hash value / digest at end of calculation */
+  uint32_t H[SHA256_DIGEST_SIZE_WORDS];     /**< Intermediate hash value / digest at end of calculation */
   uint32_t buffer[SHA256_BLOCK_SIZE_WORDS]; /**< SHA256 input data buffer */
   uint64_t count;                           /**< number of bytes, mod 2^64 */
 };
