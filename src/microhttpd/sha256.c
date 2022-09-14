@@ -145,9 +145,7 @@ sha256_transform (uint32_t H[SHA256_DIGEST_SIZE_WORDS],
                     + (w)[((t) - 7) & 0xf] + sig0 ((w)[((t) - 15) & 0xf]) )
 
 #ifndef MHD_FAVOR_SMALL_CODE
-  /* During first 16 steps, before making any calculations on each step,
-     the W element is read from input data buffer as big-endian value and
-     stored in array of W elements. */
+
   /* Note: instead of using K constants as array, all K values are specified
            individually for each step, see FIPS PUB 180-4 paragraph 4.2.2 for
            K values. */
@@ -157,38 +155,68 @@ sha256_transform (uint32_t H[SHA256_DIGEST_SIZE_WORDS],
              SHA2STEP32(h, a, b, c, d, e, f, g, K[1], data[1]);
            so current 'vD' will be used as 'vE' on next step,
            current 'vH' will be used as 'vA' on next step. */
-  SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0x428a2f98), W[0] = \
-                GET_W_FROM_DATA (data, 0));
-  SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0x71374491), W[1] = \
-                GET_W_FROM_DATA (data, 1));
-  SHA2STEP32 (g, h, a, b, c, d, e, f, UINT32_C (0xb5c0fbcf), W[2] = \
-                GET_W_FROM_DATA (data, 2));
-  SHA2STEP32 (f, g, h, a, b, c, d, e, UINT32_C (0xe9b5dba5), W[3] = \
-                GET_W_FROM_DATA (data, 3));
-  SHA2STEP32 (e, f, g, h, a, b, c, d, UINT32_C (0x3956c25b), W[4] = \
-                GET_W_FROM_DATA (data, 4));
-  SHA2STEP32 (d, e, f, g, h, a, b, c, UINT32_C (0x59f111f1), W[5] = \
-                GET_W_FROM_DATA (data, 5));
-  SHA2STEP32 (c, d, e, f, g, h, a, b, UINT32_C (0x923f82a4), W[6] = \
-                GET_W_FROM_DATA (data, 6));
-  SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0xab1c5ed5), W[7] = \
-                GET_W_FROM_DATA (data, 7));
-  SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0xd807aa98), W[8] = \
-                GET_W_FROM_DATA (data, 8));
-  SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0x12835b01), W[9] = \
-                GET_W_FROM_DATA (data, 9));
-  SHA2STEP32 (g, h, a, b, c, d, e, f, UINT32_C (0x243185be), W[10] = \
-                GET_W_FROM_DATA (data, 10));
-  SHA2STEP32 (f, g, h, a, b, c, d, e, UINT32_C (0x550c7dc3), W[11] = \
-                GET_W_FROM_DATA (data, 11));
-  SHA2STEP32 (e, f, g, h, a, b, c, d, UINT32_C (0x72be5d74), W[12] = \
-                GET_W_FROM_DATA (data, 12));
-  SHA2STEP32 (d, e, f, g, h, a, b, c, UINT32_C (0x80deb1fe), W[13] = \
-                GET_W_FROM_DATA (data, 13));
-  SHA2STEP32 (c, d, e, f, g, h, a, b, UINT32_C (0x9bdc06a7), W[14] = \
-                GET_W_FROM_DATA (data, 14));
-  SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0xc19bf174), W[15] = \
-                GET_W_FROM_DATA (data, 15));
+#if _MHD_BYTE_ORDER == _MHD_BIG_ENDIAN
+  if ((const void *) W == data)
+  {
+    /* The input data is already in the cyclic data buffer W[] in correct bytes
+       order. */
+    SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0x428a2f98), W[0]);
+    SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0x71374491), W[1]);
+    SHA2STEP32 (g, h, a, b, c, d, e, f, UINT32_C (0xb5c0fbcf), W[2]);
+    SHA2STEP32 (f, g, h, a, b, c, d, e, UINT32_C (0xe9b5dba5), W[3]);
+    SHA2STEP32 (e, f, g, h, a, b, c, d, UINT32_C (0x3956c25b), W[4]);
+    SHA2STEP32 (d, e, f, g, h, a, b, c, UINT32_C (0x59f111f1), W[5]);
+    SHA2STEP32 (c, d, e, f, g, h, a, b, UINT32_C (0x923f82a4), W[6]);
+    SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0xab1c5ed5), W[7]);
+    SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0xd807aa98), W[8]);
+    SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0x12835b01), W[9]);
+    SHA2STEP32 (g, h, a, b, c, d, e, f, UINT32_C (0x243185be), W[10]);
+    SHA2STEP32 (f, g, h, a, b, c, d, e, UINT32_C (0x550c7dc3), W[11]);
+    SHA2STEP32 (e, f, g, h, a, b, c, d, UINT32_C (0x72be5d74), W[12]);
+    SHA2STEP32 (d, e, f, g, h, a, b, c, UINT32_C (0x80deb1fe), W[13]);
+    SHA2STEP32 (c, d, e, f, g, h, a, b, UINT32_C (0x9bdc06a7), W[14]);
+    SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0xc19bf174), W[15]);
+  }
+  else /* Combined with the next 'if' */
+#endif /* _MHD_BYTE_ORDER == _MHD_BIG_ENDIAN */
+  if (1)
+  {
+    /* During first 16 steps, before making any calculations on each step,
+       the W element is read from input data buffer as big-endian value and
+       stored in array of W elements. */
+    SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0x428a2f98), W[0] = \
+                  GET_W_FROM_DATA (data, 0));
+    SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0x71374491), W[1] = \
+                  GET_W_FROM_DATA (data, 1));
+    SHA2STEP32 (g, h, a, b, c, d, e, f, UINT32_C (0xb5c0fbcf), W[2] = \
+                  GET_W_FROM_DATA (data, 2));
+    SHA2STEP32 (f, g, h, a, b, c, d, e, UINT32_C (0xe9b5dba5), W[3] = \
+                  GET_W_FROM_DATA (data, 3));
+    SHA2STEP32 (e, f, g, h, a, b, c, d, UINT32_C (0x3956c25b), W[4] = \
+                  GET_W_FROM_DATA (data, 4));
+    SHA2STEP32 (d, e, f, g, h, a, b, c, UINT32_C (0x59f111f1), W[5] = \
+                  GET_W_FROM_DATA (data, 5));
+    SHA2STEP32 (c, d, e, f, g, h, a, b, UINT32_C (0x923f82a4), W[6] = \
+                  GET_W_FROM_DATA (data, 6));
+    SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0xab1c5ed5), W[7] = \
+                  GET_W_FROM_DATA (data, 7));
+    SHA2STEP32 (a, b, c, d, e, f, g, h, UINT32_C (0xd807aa98), W[8] = \
+                  GET_W_FROM_DATA (data, 8));
+    SHA2STEP32 (h, a, b, c, d, e, f, g, UINT32_C (0x12835b01), W[9] = \
+                  GET_W_FROM_DATA (data, 9));
+    SHA2STEP32 (g, h, a, b, c, d, e, f, UINT32_C (0x243185be), W[10] = \
+                  GET_W_FROM_DATA (data, 10));
+    SHA2STEP32 (f, g, h, a, b, c, d, e, UINT32_C (0x550c7dc3), W[11] = \
+                  GET_W_FROM_DATA (data, 11));
+    SHA2STEP32 (e, f, g, h, a, b, c, d, UINT32_C (0x72be5d74), W[12] = \
+                  GET_W_FROM_DATA (data, 12));
+    SHA2STEP32 (d, e, f, g, h, a, b, c, UINT32_C (0x80deb1fe), W[13] = \
+                  GET_W_FROM_DATA (data, 13));
+    SHA2STEP32 (c, d, e, f, g, h, a, b, UINT32_C (0x9bdc06a7), W[14] = \
+                  GET_W_FROM_DATA (data, 14));
+    SHA2STEP32 (b, c, d, e, f, g, h, a, UINT32_C (0xc19bf174), W[15] = \
+                  GET_W_FROM_DATA (data, 15));
+  }
 
   /* During last 48 steps, before making any calculations on each step,
      current W element is generated from other W elements of the cyclic buffer

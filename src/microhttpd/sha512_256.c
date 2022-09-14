@@ -144,9 +144,7 @@ sha512_256_transform (uint64_t H[SHA512_256_HASH_SIZE_WORDS],
                     + (w)[((t) - 7) & 15] + sig0 ((w)[((t) - 15) & 15]) )
 
 #ifndef MHD_FAVOR_SMALL_CODE
-  /* During first 16 steps, before making any calculations on each step,
-     the W element is read from the input data buffer as big-endian value and
-     stored in the array of W elements. */
+
   /* Note: instead of using K constants as array, all K values are specified
            individually for each step, see FIPS PUB 180-4 clause 4.2.3 for
            K values. */
@@ -156,38 +154,68 @@ sha512_256_transform (uint64_t H[SHA512_256_HASH_SIZE_WORDS],
              SHA2STEP64(h, a, b, c, d, e, f, g, K[1], data[1]);
            so current 'vD' will be used as 'vE' on next step,
            current 'vH' will be used as 'vA' on next step. */
-  SHA2STEP64 (a, b, c, d, e, f, g, h, UINT64_C (0x428a2f98d728ae22), \
-              W[0] = GET_W_FROM_DATA (data, 0));
-  SHA2STEP64 (h, a, b, c, d, e, f, g, UINT64_C (0x7137449123ef65cd), \
-              W[1] = GET_W_FROM_DATA (data, 1));
-  SHA2STEP64 (g, h, a, b, c, d, e, f, UINT64_C (0xb5c0fbcfec4d3b2f), \
-              W[2] = GET_W_FROM_DATA (data, 2));
-  SHA2STEP64 (f, g, h, a, b, c, d, e, UINT64_C (0xe9b5dba58189dbbc), \
-              W[3] = GET_W_FROM_DATA (data, 3));
-  SHA2STEP64 (e, f, g, h, a, b, c, d, UINT64_C (0x3956c25bf348b538), \
-              W[4] = GET_W_FROM_DATA (data, 4));
-  SHA2STEP64 (d, e, f, g, h, a, b, c, UINT64_C (0x59f111f1b605d019), \
-              W[5] = GET_W_FROM_DATA (data, 5));
-  SHA2STEP64 (c, d, e, f, g, h, a, b, UINT64_C (0x923f82a4af194f9b), \
-              W[6] = GET_W_FROM_DATA (data, 6));
-  SHA2STEP64 (b, c, d, e, f, g, h, a, UINT64_C (0xab1c5ed5da6d8118), \
-              W[7] = GET_W_FROM_DATA (data, 7));
-  SHA2STEP64 (a, b, c, d, e, f, g, h, UINT64_C (0xd807aa98a3030242), \
-              W[8] = GET_W_FROM_DATA (data, 8));
-  SHA2STEP64 (h, a, b, c, d, e, f, g, UINT64_C (0x12835b0145706fbe), \
-              W[9] = GET_W_FROM_DATA (data, 9));
-  SHA2STEP64 (g, h, a, b, c, d, e, f, UINT64_C (0x243185be4ee4b28c), \
-              W[10] = GET_W_FROM_DATA (data, 10));
-  SHA2STEP64 (f, g, h, a, b, c, d, e, UINT64_C (0x550c7dc3d5ffb4e2), \
-              W[11] = GET_W_FROM_DATA (data, 11));
-  SHA2STEP64 (e, f, g, h, a, b, c, d, UINT64_C (0x72be5d74f27b896f), \
-              W[12] = GET_W_FROM_DATA (data, 12));
-  SHA2STEP64 (d, e, f, g, h, a, b, c, UINT64_C (0x80deb1fe3b1696b1), \
-              W[13] = GET_W_FROM_DATA (data, 13));
-  SHA2STEP64 (c, d, e, f, g, h, a, b, UINT64_C (0x9bdc06a725c71235), \
-              W[14] = GET_W_FROM_DATA (data, 14));
-  SHA2STEP64 (b, c, d, e, f, g, h, a, UINT64_C (0xc19bf174cf692694), \
-              W[15] = GET_W_FROM_DATA (data, 15));
+#if _MHD_BYTE_ORDER == _MHD_BIG_ENDIAN
+  if ((const void *) W == data)
+  {
+    /* The input data is already in the cyclic data buffer W[] in correct bytes
+       order. */
+    SHA2STEP64 (a, b, c, d, e, f, g, h, UINT64_C (0x428a2f98d728ae22), W[0]);
+    SHA2STEP64 (h, a, b, c, d, e, f, g, UINT64_C (0x7137449123ef65cd), W[1]);
+    SHA2STEP64 (g, h, a, b, c, d, e, f, UINT64_C (0xb5c0fbcfec4d3b2f), W[2]);
+    SHA2STEP64 (f, g, h, a, b, c, d, e, UINT64_C (0xe9b5dba58189dbbc), W[3]);
+    SHA2STEP64 (e, f, g, h, a, b, c, d, UINT64_C (0x3956c25bf348b538), W[4]);
+    SHA2STEP64 (d, e, f, g, h, a, b, c, UINT64_C (0x59f111f1b605d019), W[5]);
+    SHA2STEP64 (c, d, e, f, g, h, a, b, UINT64_C (0x923f82a4af194f9b), W[6]);
+    SHA2STEP64 (b, c, d, e, f, g, h, a, UINT64_C (0xab1c5ed5da6d8118), W[7]);
+    SHA2STEP64 (a, b, c, d, e, f, g, h, UINT64_C (0xd807aa98a3030242), W[8]);
+    SHA2STEP64 (h, a, b, c, d, e, f, g, UINT64_C (0x12835b0145706fbe), W[9]);
+    SHA2STEP64 (g, h, a, b, c, d, e, f, UINT64_C (0x243185be4ee4b28c), W[10]);
+    SHA2STEP64 (f, g, h, a, b, c, d, e, UINT64_C (0x550c7dc3d5ffb4e2), W[11]);
+    SHA2STEP64 (e, f, g, h, a, b, c, d, UINT64_C (0x72be5d74f27b896f), W[12]);
+    SHA2STEP64 (d, e, f, g, h, a, b, c, UINT64_C (0x80deb1fe3b1696b1), W[13]);
+    SHA2STEP64 (c, d, e, f, g, h, a, b, UINT64_C (0x9bdc06a725c71235), W[14]);
+    SHA2STEP64 (b, c, d, e, f, g, h, a, UINT64_C (0xc19bf174cf692694), W[15]);
+  }
+  else /* Combined with the next 'if' */
+#endif /* _MHD_BYTE_ORDER == _MHD_BIG_ENDIAN */
+  if (1)
+  {
+    /* During first 16 steps, before making any calculations on each step,
+       the W element is read from the input data buffer as big-endian value and
+       stored in the array of W elements. */
+    SHA2STEP64 (a, b, c, d, e, f, g, h, UINT64_C (0x428a2f98d728ae22), \
+                W[0] = GET_W_FROM_DATA (data, 0));
+    SHA2STEP64 (h, a, b, c, d, e, f, g, UINT64_C (0x7137449123ef65cd), \
+                W[1] = GET_W_FROM_DATA (data, 1));
+    SHA2STEP64 (g, h, a, b, c, d, e, f, UINT64_C (0xb5c0fbcfec4d3b2f), \
+                W[2] = GET_W_FROM_DATA (data, 2));
+    SHA2STEP64 (f, g, h, a, b, c, d, e, UINT64_C (0xe9b5dba58189dbbc), \
+                W[3] = GET_W_FROM_DATA (data, 3));
+    SHA2STEP64 (e, f, g, h, a, b, c, d, UINT64_C (0x3956c25bf348b538), \
+                W[4] = GET_W_FROM_DATA (data, 4));
+    SHA2STEP64 (d, e, f, g, h, a, b, c, UINT64_C (0x59f111f1b605d019), \
+                W[5] = GET_W_FROM_DATA (data, 5));
+    SHA2STEP64 (c, d, e, f, g, h, a, b, UINT64_C (0x923f82a4af194f9b), \
+                W[6] = GET_W_FROM_DATA (data, 6));
+    SHA2STEP64 (b, c, d, e, f, g, h, a, UINT64_C (0xab1c5ed5da6d8118), \
+                W[7] = GET_W_FROM_DATA (data, 7));
+    SHA2STEP64 (a, b, c, d, e, f, g, h, UINT64_C (0xd807aa98a3030242), \
+                W[8] = GET_W_FROM_DATA (data, 8));
+    SHA2STEP64 (h, a, b, c, d, e, f, g, UINT64_C (0x12835b0145706fbe), \
+                W[9] = GET_W_FROM_DATA (data, 9));
+    SHA2STEP64 (g, h, a, b, c, d, e, f, UINT64_C (0x243185be4ee4b28c), \
+                W[10] = GET_W_FROM_DATA (data, 10));
+    SHA2STEP64 (f, g, h, a, b, c, d, e, UINT64_C (0x550c7dc3d5ffb4e2), \
+                W[11] = GET_W_FROM_DATA (data, 11));
+    SHA2STEP64 (e, f, g, h, a, b, c, d, UINT64_C (0x72be5d74f27b896f), \
+                W[12] = GET_W_FROM_DATA (data, 12));
+    SHA2STEP64 (d, e, f, g, h, a, b, c, UINT64_C (0x80deb1fe3b1696b1), \
+                W[13] = GET_W_FROM_DATA (data, 13));
+    SHA2STEP64 (c, d, e, f, g, h, a, b, UINT64_C (0x9bdc06a725c71235), \
+                W[14] = GET_W_FROM_DATA (data, 14));
+    SHA2STEP64 (b, c, d, e, f, g, h, a, UINT64_C (0xc19bf174cf692694), \
+                W[15] = GET_W_FROM_DATA (data, 15));
+  }
 
   /* During last 64 steps, before making any calculations on each step,
      current W element is generated from other W elements of the cyclic buffer
