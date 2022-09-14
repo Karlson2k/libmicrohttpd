@@ -120,41 +120,71 @@ md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
 
   /* Round 1. */
 
-  MD5STEP_R1 (A, B, C, D, X[0] = GET_X_FROM_DATA (M, 0), 7, \
-              UINT32_C (0xd76aa478));
-  MD5STEP_R1 (D, A, B, C, X[1] = GET_X_FROM_DATA (M, 1), 12, \
-              UINT32_C (0xe8c7b756));
-  MD5STEP_R1 (C, D, A, B, X[2] = GET_X_FROM_DATA (M, 2), 17, \
-              UINT32_C (0x242070db));
-  MD5STEP_R1 (B, C, D, A, X[3] = GET_X_FROM_DATA (M, 3), 22, \
-              UINT32_C (0xc1bdceee));
+#if ! defined(MHD_FAVOR_SMALL_CODE) && (_MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN)
+  if ((const void *) X == M)
+  {
+    /* The input data is already in the data buffer X[] in correct bytes
+       order. */
+    MD5STEP_R1 (A, B, C, D, X[0],  7,  UINT32_C (0xd76aa478));
+    MD5STEP_R1 (D, A, B, C, X[1],  12, UINT32_C (0xe8c7b756));
+    MD5STEP_R1 (C, D, A, B, X[2],  17, UINT32_C (0x242070db));
+    MD5STEP_R1 (B, C, D, A, X[3],  22, UINT32_C (0xc1bdceee));
 
-  MD5STEP_R1 (A, B, C, D, X[4] = GET_X_FROM_DATA (M, 4), 7, \
-              UINT32_C (0xf57c0faf));
-  MD5STEP_R1 (D, A, B, C, X[5] = GET_X_FROM_DATA (M, 5), 12, \
-              UINT32_C (0x4787c62a));
-  MD5STEP_R1 (C, D, A, B, X[6] = GET_X_FROM_DATA (M, 6), 17, \
-              UINT32_C (0xa8304613));
-  MD5STEP_R1 (B, C, D, A, X[7] = GET_X_FROM_DATA (M, 7), 22, \
-              UINT32_C (0xfd469501));
+    MD5STEP_R1 (A, B, C, D, X[4],  7,  UINT32_C (0xf57c0faf));
+    MD5STEP_R1 (D, A, B, C, X[5],  12, UINT32_C (0x4787c62a));
+    MD5STEP_R1 (C, D, A, B, X[6],  17, UINT32_C (0xa8304613));
+    MD5STEP_R1 (B, C, D, A, X[7],  22, UINT32_C (0xfd469501));
 
-  MD5STEP_R1 (A, B, C, D, X[8] = GET_X_FROM_DATA (M, 8), 7, \
-              UINT32_C (0x698098d8));
-  MD5STEP_R1 (D, A, B, C, X[9] = GET_X_FROM_DATA (M, 9), 12, \
-              UINT32_C (0x8b44f7af));
-  MD5STEP_R1 (C, D, A, B, X[10] = GET_X_FROM_DATA (M, 10), 17, \
-              UINT32_C (0xffff5bb1));
-  MD5STEP_R1 (B, C, D, A, X[11] = GET_X_FROM_DATA (M, 11), 22, \
-              UINT32_C (0x895cd7be));
+    MD5STEP_R1 (A, B, C, D, X[8],  7,  UINT32_C (0x698098d8));
+    MD5STEP_R1 (D, A, B, C, X[9],  12, UINT32_C (0x8b44f7af));
+    MD5STEP_R1 (C, D, A, B, X[10], 17, UINT32_C (0xffff5bb1));
+    MD5STEP_R1 (B, C, D, A, X[11], 22, UINT32_C (0x895cd7be));
 
-  MD5STEP_R1 (A, B, C, D, X[12] = GET_X_FROM_DATA (M, 12), 7, \
-              UINT32_C (0x6b901122));
-  MD5STEP_R1 (D, A, B, C, X[13] = GET_X_FROM_DATA (M, 13), 12, \
-              UINT32_C (0xfd987193));
-  MD5STEP_R1 (C, D, A, B, X[14] = GET_X_FROM_DATA (M, 14), 17, \
-              UINT32_C (0xa679438e));
-  MD5STEP_R1 (B, C, D, A, X[15] = GET_X_FROM_DATA (M, 15), 22, \
-              UINT32_C (0x49b40821));
+    MD5STEP_R1 (A, B, C, D, X[12], 7,  UINT32_C (0x6b901122));
+    MD5STEP_R1 (D, A, B, C, X[13], 12, UINT32_C (0xfd987193));
+    MD5STEP_R1 (C, D, A, B, X[14], 17, UINT32_C (0xa679438e));
+    MD5STEP_R1 (B, C, D, A, X[15], 22, UINT32_C (0x49b40821));
+  }
+  else /* Combined with the next 'if' */
+#endif /* ! MHD_FAVOR_SMALL_CODE && (_MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN) */
+  if (1)
+  {
+    MD5STEP_R1 (A, B, C, D, X[0]  = GET_X_FROM_DATA (M, 0),  7, \
+                UINT32_C (0xd76aa478));
+    MD5STEP_R1 (D, A, B, C, X[1]  = GET_X_FROM_DATA (M, 1),  12, \
+                UINT32_C (0xe8c7b756));
+    MD5STEP_R1 (C, D, A, B, X[2]  = GET_X_FROM_DATA (M, 2),  17, \
+                UINT32_C (0x242070db));
+    MD5STEP_R1 (B, C, D, A, X[3]  = GET_X_FROM_DATA (M, 3),  22, \
+                UINT32_C (0xc1bdceee));
+
+    MD5STEP_R1 (A, B, C, D, X[4]  = GET_X_FROM_DATA (M, 4),  7, \
+                UINT32_C (0xf57c0faf));
+    MD5STEP_R1 (D, A, B, C, X[5]  = GET_X_FROM_DATA (M, 5),  12, \
+                UINT32_C (0x4787c62a));
+    MD5STEP_R1 (C, D, A, B, X[6]  = GET_X_FROM_DATA (M, 6),  17, \
+                UINT32_C (0xa8304613));
+    MD5STEP_R1 (B, C, D, A, X[7]  = GET_X_FROM_DATA (M, 7),  22, \
+                UINT32_C (0xfd469501));
+
+    MD5STEP_R1 (A, B, C, D, X[8]  = GET_X_FROM_DATA (M, 8),  7, \
+                UINT32_C (0x698098d8));
+    MD5STEP_R1 (D, A, B, C, X[9]  = GET_X_FROM_DATA (M, 9),  12, \
+                UINT32_C (0x8b44f7af));
+    MD5STEP_R1 (C, D, A, B, X[10] = GET_X_FROM_DATA (M, 10), 17, \
+                UINT32_C (0xffff5bb1));
+    MD5STEP_R1 (B, C, D, A, X[11] = GET_X_FROM_DATA (M, 11), 22, \
+                UINT32_C (0x895cd7be));
+
+    MD5STEP_R1 (A, B, C, D, X[12] = GET_X_FROM_DATA (M, 12), 7, \
+                UINT32_C (0x6b901122));
+    MD5STEP_R1 (D, A, B, C, X[13] = GET_X_FROM_DATA (M, 13), 12, \
+                UINT32_C (0xfd987193));
+    MD5STEP_R1 (C, D, A, B, X[14] = GET_X_FROM_DATA (M, 14), 17, \
+                UINT32_C (0xa679438e));
+    MD5STEP_R1 (B, C, D, A, X[15] = GET_X_FROM_DATA (M, 15), 22, \
+                UINT32_C (0x49b40821));
+  }
 
   /* One step of round 2 of MD5 computation, see RFC 1321, Clause 3.4 (step 4).
      The original function was modified to use X[k] and T[i] as
