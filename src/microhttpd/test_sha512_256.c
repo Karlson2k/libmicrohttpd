@@ -489,11 +489,14 @@ test2_str (void)
     size_t part_s = data_units1[i].str_l.len / 4;
 
     MHD_SHA512_256_init (&ctx);
+    MHD_SHA512_256_update (&ctx, (const uint8_t *) "", 0);
     MHD_SHA512_256_update (&ctx, (const uint8_t *) data_units1[i].str_l.str,
                            part_s);
+    MHD_SHA512_256_update (&ctx, (const uint8_t *) "", 0);
     MHD_SHA512_256_update (&ctx, (const uint8_t *) data_units1[i].str_l.str
                            + part_s,
                            data_units1[i].str_l.len - part_s);
+    MHD_SHA512_256_update (&ctx, (const uint8_t *) "", 0);
     MHD_SHA512_256_finish (&ctx, digest);
     num_failed += check_result (__FUNCTION__, i, digest,
                                 data_units1[i].digest);
@@ -516,6 +519,7 @@ test2_bin (void)
 
     MHD_SHA512_256_init (&ctx);
     MHD_SHA512_256_update (&ctx, data_units2[i].bin_l.bin, part_s);
+    MHD_SHA512_256_update (&ctx, (const uint8_t *) "", 0);
     MHD_SHA512_256_update (&ctx, data_units2[i].bin_l.bin + part_s,
                            data_units2[i].bin_l.len - part_s);
     MHD_SHA512_256_finish (&ctx, digest);
