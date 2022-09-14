@@ -106,8 +106,6 @@ md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
   /* One step of round 1 of MD5 computation, see RFC 1321, Clause 3.4 (step 4).
      The original function was modified to use X[k] and T[i] as
      direct inputs. */
-  /* The input data is loaded in correct format before
-     calculations on each step. */
 #define MD5STEP_R1(va,vb,vc,vd,vX,vs,vT) do {          \
     (va) += (vX) + (vT);                               \
     (va) += F_FUNC((vb),(vc),(vd));                    \
@@ -118,9 +116,36 @@ md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
 #define GET_X_FROM_DATA(buf,t) \
   _MHD_GET_32BIT_LE (((const uint32_t*) (buf)) + (t))
 
+  /* One step of round 2 of MD5 computation, see RFC 1321, Clause 3.4 (step 4).
+     The original function was modified to use X[k] and T[i] as
+     direct inputs. */
+#define MD5STEP_R2(va,vb,vc,vd,vX,vs,vT) do {         \
+    (va) += (vX) + (vT);                              \
+    (va) += G_FUNC_1((vb),(vc),(vd));                 \
+    (va) += G_FUNC_2((vb),(vc),(vd));                 \
+    (va) = _MHD_ROTL32((va),(vs)) + (vb); } while (0)
+
+  /* One step of round 3 of MD5 computation, see RFC 1321, Clause 3.4 (step 4).
+     The original function was modified to use X[k] and T[i] as
+     direct inputs. */
+#define MD5STEP_R3(va,vb,vc,vd,vX,vs,vT) do {         \
+    (va) += (vX) + (vT);                              \
+    (va) += H_FUNC((vb),(vc),(vd));                   \
+    (va) = _MHD_ROTL32((va),(vs)) + (vb); } while (0)
+
+  /* One step of round 4 of MD5 computation, see RFC 1321, Clause 3.4 (step 4).
+     The original function was modified to use X[k] and T[i] as
+     direct inputs. */
+#define MD5STEP_R4(va,vb,vc,vd,vX,vs,vT) do {         \
+    (va) += (vX) + (vT);                              \
+    (va) += I_FUNC((vb),(vc),(vd));                   \
+    (va) = _MHD_ROTL32((va),(vs)) + (vb); } while (0)
+
+#if ! defined(MHD_FAVOR_SMALL_CODE)
+
   /* Round 1. */
 
-#if ! defined(MHD_FAVOR_SMALL_CODE) && (_MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN)
+#if _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN
   if ((const void *) X == M)
   {
     /* The input data is already in the data buffer X[] in correct bytes
@@ -146,9 +171,11 @@ md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
     MD5STEP_R1 (B, C, D, A, X[15], 22, UINT32_C (0x49b40821));
   }
   else /* Combined with the next 'if' */
-#endif /* ! MHD_FAVOR_SMALL_CODE && (_MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN) */
+#endif /* _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN */
   if (1)
   {
+    /* The input data is loaded in correct (little-endian) format before
+       calculations on each step. */
     MD5STEP_R1 (A, B, C, D, X[0]  = GET_X_FROM_DATA (M, 0),  7, \
                 UINT32_C (0xd76aa478));
     MD5STEP_R1 (D, A, B, C, X[1]  = GET_X_FROM_DATA (M, 1),  12, \
@@ -186,15 +213,6 @@ md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
                 UINT32_C (0x49b40821));
   }
 
-  /* One step of round 2 of MD5 computation, see RFC 1321, Clause 3.4 (step 4).
-     The original function was modified to use X[k] and T[i] as
-     direct inputs. */
-#define MD5STEP_R2(va,vb,vc,vd,vX,vs,vT) do {         \
-    (va) += (vX) + (vT);                              \
-    (va) += G_FUNC_1((vb),(vc),(vd));                 \
-    (va) += G_FUNC_2((vb),(vc),(vd));                 \
-    (va) = _MHD_ROTL32((va),(vs)) + (vb); } while (0)
-
   /* Round 2. */
 
   MD5STEP_R2 (A, B, C, D, X[1], 5, UINT32_C (0xf61e2562));
@@ -216,14 +234,6 @@ md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
   MD5STEP_R2 (D, A, B, C, X[2], 9, UINT32_C (0xfcefa3f8));
   MD5STEP_R2 (C, D, A, B, X[7], 14, UINT32_C (0x676f02d9));
   MD5STEP_R2 (B, C, D, A, X[12], 20, UINT32_C (0x8d2a4c8a));
-
-  /* One step of round 3 of MD5 computation, see RFC 1321, Clause 3.4 (step 4).
-     The original function was modified to use X[k] and T[i] as
-     direct inputs. */
-#define MD5STEP_R3(va,vb,vc,vd,vX,vs,vT) do {         \
-    (va) += (vX) + (vT);                              \
-    (va) += H_FUNC((vb),(vc),(vd));                   \
-    (va) = _MHD_ROTL32((va),(vs)) + (vb); } while (0)
 
   /* Round 3. */
 
@@ -247,14 +257,6 @@ md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
   MD5STEP_R3 (C, D, A, B, X[15], 16, UINT32_C (0x1fa27cf8));
   MD5STEP_R3 (B, C, D, A, X[2], 23, UINT32_C (0xc4ac5665));
 
-  /* One step of round 4 of MD5 computation, see RFC 1321, Clause 3.4 (step 4).
-     The original function was modified to use X[k] and T[i] as
-     direct inputs. */
-#define MD5STEP_R4(va,vb,vc,vd,vX,vs,vT) do {         \
-    (va) += (vX) + (vT);                              \
-    (va) += I_FUNC((vb),(vc),(vd));                   \
-    (va) = _MHD_ROTL32((va),(vs)) + (vb); } while (0)
-
   /* Round 4. */
 
   MD5STEP_R4 (A, B, C, D, X[0], 6, UINT32_C (0xf4292244));
@@ -276,6 +278,97 @@ md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
   MD5STEP_R4 (D, A, B, C, X[11], 10, UINT32_C (0xbd3af235));
   MD5STEP_R4 (C, D, A, B, X[2], 15, UINT32_C (0x2ad7d2bb));
   MD5STEP_R4 (B, C, D, A, X[9], 21, UINT32_C (0xeb86d391));
+#else  /* MHD_FAVOR_SMALL_CODE */
+  if (1)
+  {
+    static const uint32_t T[64] =
+    { UINT32_C (0xd76aa478), UINT32_C (0xe8c7b756), UINT32_C (0x242070db),
+      UINT32_C (0xc1bdceee), UINT32_C (0xf57c0faf), UINT32_C (0x4787c62a),
+      UINT32_C (0xa8304613), UINT32_C (0xfd469501), UINT32_C (0x698098d8),
+      UINT32_C (0x8b44f7af), UINT32_C (0xffff5bb1), UINT32_C (0x895cd7be),
+      UINT32_C (0x6b901122), UINT32_C (0xfd987193), UINT32_C (0xa679438e),
+      UINT32_C (0x49b40821), UINT32_C (0xf61e2562), UINT32_C (0xc040b340),
+      UINT32_C (0x265e5a51), UINT32_C (0xe9b6c7aa), UINT32_C (0xd62f105d),
+      UINT32_C (0x02441453), UINT32_C (0xd8a1e681), UINT32_C (0xe7d3fbc8),
+      UINT32_C (0x21e1cde6), UINT32_C (0xc33707d6), UINT32_C (0xf4d50d87),
+      UINT32_C (0x455a14ed), UINT32_C (0xa9e3e905), UINT32_C (0xfcefa3f8),
+      UINT32_C (0x676f02d9), UINT32_C (0x8d2a4c8a), UINT32_C (0xfffa3942),
+      UINT32_C (0x8771f681), UINT32_C (0x6d9d6122), UINT32_C (0xfde5380c),
+      UINT32_C (0xa4beea44), UINT32_C (0x4bdecfa9), UINT32_C (0xf6bb4b60),
+      UINT32_C (0xbebfbc70), UINT32_C (0x289b7ec6), UINT32_C (0xeaa127fa),
+      UINT32_C (0xd4ef3085), UINT32_C (0x04881d05), UINT32_C (0xd9d4d039),
+      UINT32_C (0xe6db99e5), UINT32_C (0x1fa27cf8), UINT32_C (0xc4ac5665),
+      UINT32_C (0xf4292244), UINT32_C (0x432aff97), UINT32_C (0xab9423a7),
+      UINT32_C (0xfc93a039), UINT32_C (0x655b59c3), UINT32_C (0x8f0ccc92),
+      UINT32_C (0xffeff47d), UINT32_C (0x85845dd1), UINT32_C (0x6fa87e4f),
+      UINT32_C (0xfe2ce6e0), UINT32_C (0xa3014314), UINT32_C (0x4e0811a1),
+      UINT32_C (0xf7537e82), UINT32_C (0xbd3af235), UINT32_C (0x2ad7d2bb),
+      UINT32_C (0xeb86d391) };
+    unsigned int i; /**< Zero-based index */
+
+    /* Round 1. */
+
+    i = 0;
+    do
+    {
+      /* The input data is loaded in correct (little-endian) format before
+         calculations on each step. */
+      MD5STEP_R1 (A, B, C, D, X[i]  = GET_X_FROM_DATA (M, i),  7,  T[i]);
+      ++i;
+      MD5STEP_R1 (D, A, B, C, X[i]  = GET_X_FROM_DATA (M, i),  12, T[i]);
+      ++i;
+      MD5STEP_R1 (C, D, A, B, X[i]  = GET_X_FROM_DATA (M, i),  17, T[i]);
+      ++i;
+      MD5STEP_R1 (B, C, D, A, X[i]  = GET_X_FROM_DATA (M, i),  22, T[i]);
+      ++i;
+    } while (i < 16);
+
+    /* Round 2. */
+
+    do
+    {
+      const unsigned int idx_add = i;
+      MD5STEP_R2 (A, B, C, D, X[(1U  + idx_add) & 15U], 5,  T[i]);
+      ++i;
+      MD5STEP_R2 (D, A, B, C, X[(6U  + idx_add) & 15U], 9,  T[i]);
+      ++i;
+      MD5STEP_R2 (C, D, A, B, X[(11U + idx_add) & 15U], 14, T[i]);
+      ++i;
+      MD5STEP_R2 (B, C, D, A, X[(0U  + idx_add) & 15U], 20, T[i]);
+      ++i;
+    } while (i < 32);
+
+    /* Round 3. */
+
+    do
+    {
+      const unsigned int idx_add = i;
+      MD5STEP_R3 (A, B, C, D, X[(5U  + 64U - idx_add) & 15U], 4,  T[i]);
+      ++i;
+      MD5STEP_R3 (D, A, B, C, X[(8U  + 64U - idx_add) & 15U], 11, T[i]);
+      ++i;
+      MD5STEP_R3 (C, D, A, B, X[(11U + 64U - idx_add) & 15U], 16, T[i]);
+      ++i;
+      MD5STEP_R3 (B, C, D, A, X[(14U + 64U - idx_add) & 15U], 23, T[i]);
+      ++i;
+    } while (i < 48);
+
+    /* Round 4. */
+
+    do
+    {
+      const unsigned int idx_add = i;
+      MD5STEP_R4 (A, B, C, D, X[(0U  + 64U - idx_add) & 15U], 6,  T[i]);
+      ++i;
+      MD5STEP_R4 (D, A, B, C, X[(7U  + 64U - idx_add) & 15U], 10, T[i]);
+      ++i;
+      MD5STEP_R4 (C, D, A, B, X[(14U + 64U - idx_add) & 15U], 15, T[i]);
+      ++i;
+      MD5STEP_R4 (B, C, D, A, X[(5U  + 64U - idx_add) & 15U], 21, T[i]);
+      ++i;
+    } while (i < 64);
+  }
+#endif /* MHD_FAVOR_SMALL_CODE */
 
   /* Finally increment and store working variables.
      See RFC 1321, end of Clause 3.4 (step 4). */
@@ -414,8 +507,16 @@ MHD_MD5_finish (struct Md5Ctx *ctx,
   /* Put in LE mode the hash as the final digest.
      See RFC 1321, clauses 2 and 3.5 (step 5). */
 #ifndef _MHD_PUT_32BIT_LE_UNALIGNED
-  if (0 != ((uintptr_t) digest) % _MHD_UINT32_ALIGN)
-  { /* The destination is unaligned */
+  if (1
+#ifndef MHD_FAVOR_SMALL_CODE
+      && (0 != ((uintptr_t) digest) % _MHD_UINT32_ALIGN)
+#endif /* MHD_FAVOR_SMALL_CODE */
+      )
+  {
+    /* If storing of the final result requires aligned address and
+       the destination address is not aligned or compact code is used,
+       store the final digest in aligned temporary buffer first, then
+       copy it to the destination. */
     uint32_t alig_dgst[MD5_DIGEST_SIZE_WORDS];
     _MHD_PUT_32BIT_LE (alig_dgst + 0, ctx->H[0]);
     _MHD_PUT_32BIT_LE (alig_dgst + 1, ctx->H[1]);
@@ -424,8 +525,11 @@ MHD_MD5_finish (struct Md5Ctx *ctx,
     /* Copy result to the unaligned destination address. */
     memcpy (digest, alig_dgst, MD5_DIGEST_SIZE);
   }
+#ifndef MHD_FAVOR_SMALL_CODE
   else /* Combined with the next 'if' */
+#endif /* MHD_FAVOR_SMALL_CODE */
 #endif /* ! _MHD_PUT_32BIT_LE_UNALIGNED */
+#if ! defined(MHD_FAVOR_SMALL_CODE) || defined(_MHD_PUT_32BIT_LE_UNALIGNED)
   if (1)
   {
     /* Use cast to (void*) here to mute compiler alignment warnings.
@@ -435,6 +539,7 @@ MHD_MD5_finish (struct Md5Ctx *ctx,
     _MHD_PUT_32BIT_LE ((void *) (digest + 2 * MD5_BYTES_IN_WORD), ctx->H[2]);
     _MHD_PUT_32BIT_LE ((void *) (digest + 3 * MD5_BYTES_IN_WORD), ctx->H[3]);
   }
+#endif /* ! MHD_FAVOR_SMALL_CODE || _MHD_PUT_32BIT_LE_UNALIGNED */
 
   /* Erase potentially sensitive data. */
   memset (ctx, 0, sizeof(struct Md5Ctx));
