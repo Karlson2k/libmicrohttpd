@@ -63,6 +63,15 @@ static const struct data_unit1 data_units1[] = {
                 "abcdefghijklmnopqrstuvwxyzzyxwvutsrqponMLKJIHGFEDCBA"),
    {0xaf, 0xab, 0xc7, 0xe9, 0xe7, 0x17, 0xbe, 0xd6, 0xc0, 0x0f, 0x78, 0x8c,
     0xde, 0xdd, 0x11, 0xd1}},
+  {D_STR_W_LEN ("/long/long/long/long/long/long/long/long/long/long/long" \
+                "/long/long/long/long/long/long/long/long/long/long/long" \
+                "/long/long/long/long/long/long/long/long/long/long/long" \
+                "/long/long/long/long/long/long/long/long/long/long/long" \
+                "/long/long/long/long/long/long/long/long/long/long/long" \
+                "/long/long/long/long/long/long/long/long/long/long/long" \
+                "/long/long/long/long/path?with%20some=parameters"),
+   {0x7e, 0xe6, 0xdb, 0xe2, 0x76, 0x49, 0x1a, 0xd8, 0xaf, 0xf3, 0x52, 0x2d,
+    0xd8, 0xfc, 0x89, 0x1e}},
   {D_STR_W_LEN (""),
    {0xd4, 0x1d, 0x8c, 0xd9, 0x8f, 0x00, 0xb2, 0x04, 0xe9, 0x80, 0x09, 0x98,
     0xec, 0xf8, 0x42, 0x7e}},
