@@ -3256,16 +3256,6 @@ MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
 #endif /* HAVE_MESSAGES */
     return MHD_NO;
   }
-#ifndef MHD_SHA512_256_SUPPORT
-  if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_SHA512_256))
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("The SHA-512/256 algorithm is not enabled.\n"));
-#endif /* HAVE_MESSAGES */
-    return MHD_NO;
-  }
-#endif /* ! MHD_SHA512_256_SUPPORT */
 #ifdef MHD_MD5_SUPPORT
   if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_MD5))
     s_algo = MHD_DIGEST_AUTH_ALGO3_MD5;
