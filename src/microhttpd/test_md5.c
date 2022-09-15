@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2019 Karlson2k (Evgeny Grin)
+  Copyright (C) 2019-2022 Evgeny Grin (Karlson2k)
 
   This test tool is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -312,10 +312,10 @@ test1_str (void)
 {
   unsigned int i;
   int num_failed = 0;
+  struct Md5Ctx ctx;
 
   for (i = 0; i < units1_num; i++)
   {
-    struct Md5Ctx ctx;
     uint8_t digest[MD5_DIGEST_SIZE];
 
     MHD_MD5_init (&ctx);
@@ -334,10 +334,10 @@ test1_bin (void)
 {
   unsigned int i;
   int num_failed = 0;
+  struct Md5Ctx ctx;
 
   for (i = 0; i < units2_num; i++)
   {
-    struct Md5Ctx ctx;
     uint8_t digest[MD5_DIGEST_SIZE];
 
     MHD_MD5_init (&ctx);
@@ -356,10 +356,10 @@ test2_str (void)
 {
   unsigned int i;
   int num_failed = 0;
+  struct Md5Ctx ctx;
 
   for (i = 0; i < units1_num; i++)
   {
-    struct Md5Ctx ctx;
     uint8_t digest[MD5_DIGEST_SIZE];
     size_t part_s = data_units1[i].str_l.len / 4;
 
@@ -383,10 +383,10 @@ test2_bin (void)
 {
   unsigned int i;
   int num_failed = 0;
+  struct Md5Ctx ctx;
 
   for (i = 0; i < units2_num; i++)
   {
-    struct Md5Ctx ctx;
     uint8_t digest[MD5_DIGEST_SIZE];
     size_t part_s = data_units2[i].bin_l.len * 2 / 3;
 
@@ -414,6 +414,7 @@ test_unaligned (void)
   unsigned int offset;
   uint8_t *buf;
   uint8_t *digest_buf;
+  struct Md5Ctx ctx;
 
   const struct data_unit2 *const tdata = data_units2 + DATA_POS;
 
@@ -424,7 +425,6 @@ test_unaligned (void)
 
   for (offset = MAX_OFFSET; offset >= 1; --offset)
   {
-    struct Md5Ctx ctx;
     uint8_t *unaligned_digest;
     uint8_t *unaligned_buf;
 
