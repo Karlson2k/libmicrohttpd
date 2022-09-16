@@ -1465,12 +1465,10 @@ is_slot_available (const struct MHD_NonceNc *const nn,
   if (0 == nn->nonce[0])
     return true; /* The slot is empty */
 
-  if ((0 == memcmp (nn->nonce, new_nonce, new_nonce_len)) &&
-      (0 == nn->nonce[new_nonce_len]))
+  if (0 == memcmp (nn->nonce, new_nonce, new_nonce_len))
   {
-    /* The slot has the same nonce already, the same nonce was already generated
-     * and used, this slot cannot be used with the same nonce as it would
-     * just reset received 'nc' values. */
+    /* The slot has the same nonce already. This nonce cannot be registered
+     * again as it would just clear 'nc' usage history. */
     return false;
   }
 
