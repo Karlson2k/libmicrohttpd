@@ -336,7 +336,7 @@ struct DigestAlgorithm
 #if _DEBUG
   bool setup; /**< The structure was set-up */
   bool inited; /**< The calculation was initialised */
-  bool digest_calculated; /**< The digest was calculated */
+  bool hashing; /**< Some data has been hashed, but digest is not yet finalised */
 #endif /* _DEBUG */
 };
 
@@ -381,7 +381,7 @@ digest_setup (struct DigestAlgorithm *da,
 #ifdef _DEBUG
   da->setup = false;
   da->inited = false;
-  da->digest_calculated = false;
+  da->hashing = false;
 #endif /* _DEBUG */
   if (false
 #ifdef MHD_MD5_SUPPORT
@@ -413,9 +413,8 @@ _MHD_static_inline void
 digest_init (struct DigestAlgorithm *da)
 {
   mhd_assert (da->setup);
-#ifdef _DEBUG
-  da->digest_calculated = false;
-#endif
+  mhd_assert (! da->hashing);
+  mhd_assert (! da->inited);
 #ifdef MHD_MD5_SUPPORT
   if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
   {
@@ -467,7 +466,6 @@ digest_update (struct DigestAlgorithm *da,
                size_t length)
 {
   mhd_assert (da->inited);
-  mhd_assert (! da->digest_calculated);
 #ifdef MHD_MD5_SUPPORT
   if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
     MHD_MD5_update (&da->ctx.md5_ctx, (const uint8_t *) data, length);
@@ -485,6 +483,9 @@ digest_update (struct DigestAlgorithm *da,
   else
 #endif /* MHD_SHA512_256_SUPPORT */
   mhd_assert (0);   /* May not happen */
+#ifdef _DEBUG
+  da->hashing = true;
+#endif
 }
 
 
@@ -525,7 +526,6 @@ _MHD_static_inline void
 digest_calc_hash (struct DigestAlgorithm *da, uint8_t *digest)
 {
   mhd_assert (da->inited);
-  mhd_assert (! da->digest_calculated);
 #ifdef MHD_MD5_SUPPORT
   if (MHD_DIGEST_BASE_ALGO_MD5 == da->algo)
     MHD_MD5_finish (&da->ctx.md5_ctx, digest);
@@ -543,7 +543,8 @@ digest_calc_hash (struct DigestAlgorithm *da, uint8_t *digest)
 #endif /* MHD_SHA512_256_SUPPORT */
   mhd_assert (0);   /* May not happen */
 #ifdef _DEBUG
-  da->digest_calculated = true;
+  da->hashing = false;
+  da->inited = false;
 #endif
 }
 
