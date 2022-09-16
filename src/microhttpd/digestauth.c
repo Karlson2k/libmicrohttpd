@@ -1619,16 +1619,29 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
     {
       /* The timestamps are equal, need to generate some arbitrary
        * difference for nonce. */
+      /* As the number is needed only to differentiate clients, weak
+       * pseudo-random generators could be used. Seeding is not needed. */
       uint64_t base1;
       uint32_t base2;
       uint16_t base3;
       uint8_t base4;
-      base1 = (uint64_t) (uintptr_t) nonce2;
+#ifdef HAVE_RANDOM
+      base1 = ((uint64_t) random ()) ^ UINT64_C (0x54a5acff5be47e63);
+      base4 = 0xb8;
+#elif defined(HAVE_RAND)
+      base1 = ((uint64_t) rand ()) ^ UINT64_C (0xc4bcf553b12f3965);
+      base4 = 0x92;
+#else
+      /* Monotonic msec counter alone does not really help here as it is already
+         known that this value is not unique. */
+      base1 = ((uint64_t) (uintptr_t) nonce2) ^ UINT64_C (0xf2e1b21bc6c92655);
       base2 = ((uint32_t) (base1 >> 32)) ^ ((uint32_t) base1);
-      base2 = _MHD_ROTL32 (base2, 4);
+      base2 = _MHD_ROTR32 (base2, 4);
       base3 = ((uint16_t) (base2 >> 16)) ^ ((uint16_t) base2);
       base4 = ((uint8_t) (base3 >> 8)) ^ ((uint8_t) base3);
-      base1 = (uint64_t) (uintptr_t) connection;
+      base1 = ((uint64_t) MHD_monotonic_msec_counter ())
+              ^ UINT64_C (0xccab93f72cf5b15);
+#endif
       base2 = ((uint32_t) (base1 >> 32)) ^ ((uint32_t) base1);
       base2 = _MHD_ROTL32 (base2, (((base4 >> 4) ^ base4) % 32));
       base3 = ((uint16_t) (base2 >> 16)) ^ ((uint16_t) base2);
