@@ -41,6 +41,9 @@
  */
 #define _(String) (String)
 
+#if defined(_MHD_EXTERN) && ! defined(BUILDING_MHD_LIB)
+#undef _MHD_EXTERN
+#endif /* _MHD_EXTERN && ! BUILDING_MHD_LIB */
 
 #ifndef _MHD_EXTERN
 #if defined(BUILDING_MHD_LIB) && defined(_WIN32) && \
