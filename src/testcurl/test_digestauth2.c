@@ -25,13 +25,19 @@
  * @author Karlson2k (Evgeny Grin)
  */
 
-#include "MHD_config.h"
+#include "mhd_options.h"
 #include "platform.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#if defined(MHD_HTTPS_REQUIRE_GCRYPT) && \
+  (defined(MHD_SHA256_TLSLIB) || defined(MHD_MD5_TLSLIB))
+#define NEED_GCRYP_INIT 1
+#include <gcrypt.h>
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT && (MHD_SHA256_TLSLIB || MHD_MD5_TLSLIB) */
 
 #ifndef _WIN32
 #include <sys/socket.h>
@@ -1464,6 +1470,12 @@ main (int argc, char *const *argv)
   int curl_sspi;
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
 
+#ifdef NEED_GCRYP_INIT
+  gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
+#ifdef GCRYCTL_INITIALIZATION_FINISHED
+  gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif /* GCRYCTL_INITIALIZATION_FINISHED */
+#endif /* NEED_GCRYP_INIT */
   /* Test type and test parameters */
   verbose = ! (has_param (argc, argv, "-q") ||
                has_param (argc, argv, "--quiet") ||

@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097539
+#define MHD_VERSION 0x00097540
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -4691,8 +4691,10 @@ enum MHD_DigestAuthMultiAlgo3
  *                          upon return
  * @param bin_buf_size the size of the @a userhash_bin buffer, must be
  *                     at least #MHD_digest_get_hash_size(algo3) bytes long
- * @return MHD_YES on success, MHD_NO if @a bin_buf_size is too small or
- *                             if @a algo3 algorithm is not supported.
+ * @return MHD_YES on success,
+ *         MHD_NO if @a bin_buf_size is too small or if @a algo3 algorithm is
+ *         not supported (or external error has occurred,
+ *         see #MHD_FEATURE_EXTERN_HASH)
  * @note Available since #MHD_VERSION 0x00097535
  * @ingroup authentication
  */
@@ -4736,8 +4738,10 @@ MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo3 algo3,
  *                          userhash string
  * @param bin_buf_size the size of the @a userhash_bin buffer, must be
  *                     at least #MHD_digest_get_hash_size(algo3)*2+1 chars long
- * @return MHD_YES on success, MHD_NO if @a bin_buf_size is too small or
- *                             if @a algo3 algorithm is not supported.
+ * @return MHD_YES on success,
+ *         MHD_NO if @a bin_buf_size is too small or if @a algo3 algorithm is
+ *         not supported (or external error has occurred,
+ *         see #MHD_FEATURE_EXTERN_HASH).
  * @note Available since #MHD_VERSION 0x00097535
  * @ingroup authentication
  */
@@ -5287,8 +5291,10 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  *                            userdigest upon return
  * @param userdigest_bin the size of the @a userdigest_bin buffer, must be
  *                       at least #MHD_digest_get_hash_size(algo3) bytes long
- * @return MHD_YES on success, MHD_NO if @a userdigest_bin is too small or
- *                             if @a algo3 algorithm is not supported.
+ * @return MHD_YES on success,
+ *         MHD_NO if @a userdigest_bin is too small or if @a algo3 algorithm is
+ *         not supported (or external error has occurred,
+ *         see #MHD_FEATURE_EXTERN_HASH).
  * @sa #MHD_digest_auth_check_digest3()
  * @note Available since #MHD_VERSION 0x00097535
  * @ingroup authentication
@@ -5649,6 +5655,9 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
                               const char *opaque,
                               struct MHD_Response *response,
                               int signal_stale);
+
+
+/* ********************* Basic Authentication functions *************** */
 
 
 /**
@@ -6138,7 +6147,21 @@ enum MHD_FEATURE
    * module is built.
    * @note Available since #MHD_VERSION 0x00097536
    */
-  MHD_FEATURE_DIGEST_AUTH_USERHASH = 31
+  MHD_FEATURE_DIGEST_AUTH_USERHASH = 31,
+
+  /**
+   * Get whether any of hashing algorithms is implemented by external
+   * function (like TLS library) and may fail due to external conditions,
+   * like "out-of-memory".
+   *
+   * If result is #MHD_YES then functions which use hash calculations
+   * like #MHD_digest_auth_calc_userhash(), #MHD_digest_auth_check3() and others
+   * potentially may fail even with valid input because of out-of-memory error
+   * or crypto accelerator device failure, however in practice such fails are
+   * unlikely.
+   * @note Available since #MHD_VERSION 0x00097540
+   */
+  MHD_FEATURE_EXTERN_HASH = 32
 };
 
 

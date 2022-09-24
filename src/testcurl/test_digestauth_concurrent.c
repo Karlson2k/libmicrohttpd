@@ -26,18 +26,18 @@
  * @author Karlson2k (Evgeny Grin)
  */
 
-#include "MHD_config.h"
+#include "mhd_options.h"
 #include "platform.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#ifdef MHD_HTTPS_REQUIRE_GCRYPT
-#ifdef HAVE_GCRYPT_H
+#if defined(MHD_HTTPS_REQUIRE_GCRYPT) && \
+  (defined(MHD_SHA256_TLSLIB) || defined(MHD_MD5_TLSLIB))
+#define NEED_GCRYP_INIT 1
 #include <gcrypt.h>
-#endif
-#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT && (MHD_SHA256_TLSLIB || MHD_MD5_TLSLIB) */
 
 #ifndef WINDOWS
 #include <sys/socket.h>
@@ -669,14 +669,12 @@ main (int argc, char *const *argv)
                has_param (argc, argv, "-s") ||
                has_param (argc, argv, "--silent"));
 
-  #ifdef MHD_HTTPS_REQUIRE_GCRYPT
-#ifdef HAVE_GCRYPT_H
+#ifdef NEED_GCRYP_INIT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
-#endif
-#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
+#endif /* GCRYCTL_INITIALIZATION_FINISHED */
+#endif /* NEED_GCRYP_INIT */
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   errorCount += testDigestAuth ();

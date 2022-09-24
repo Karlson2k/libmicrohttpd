@@ -171,11 +171,25 @@ libmicrohttpd_la_SOURCES += \
   mhd_bithelpers.h mhd_byteorder.h mhd_align.h
 if ENABLE_MD5
 libmicrohttpd_la_SOURCES += \
+  mhd_md5_wrap.h
+if ! ENABLE_MD5_EXT
+libmicrohttpd_la_SOURCES += \
   md5.c md5.h
+else
+libmicrohttpd_la_SOURCES += \
+  md5_ext.c md5_ext.h
+endif
 endif
 if ENABLE_SHA256
 libmicrohttpd_la_SOURCES += \
+  mhd_sha256_wrap.h
+if ! ENABLE_SHA256_EXT
+libmicrohttpd_la_SOURCES += \
   sha256.c sha256.h
+else
+libmicrohttpd_la_SOURCES += \
+  sha256_ext.c sha256_ext.h
+endif
 endif
 if ENABLE_SHA512_256
 libmicrohttpd_la_SOURCES += \
@@ -462,12 +476,40 @@ test_http_reasons_SOURCES = \
   reason_phrase.c mhd_str.c mhd_str.h
 
 test_md5_SOURCES = \
-  test_md5.c test_helpers.h \
+  test_md5.c test_helpers.h mhd_md5_wrap.h ../include/mhd_options.h
+if ! ENABLE_MD5_EXT
+test_md5_SOURCES += \
   md5.c md5.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
+test_md5_CPPFLAGS = $(AM_CPPFLAGS)
+test_md5_CFLAGS = $(AM_CFLAGS)
+test_md5_LDFLAGS = $(AM_LDFLAGS)
+test_md5_LDADD = $(LDADD)
+else
+test_md5_SOURCES += \
+  md5_ext.c md5_ext.h
+test_md5_CPPFLAGS = $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
+test_md5_CFLAGS = $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+test_md5_LDFLAGS = $(AM_LDFLAGS) $(MHD_TLS_LIB_LDFLAGS)
+test_md5_LDADD = $(MHD_TLS_LIBDEPS) $(LDADD)
+endif
 
 test_sha256_SOURCES = \
-  test_sha256.c test_helpers.h \
+  test_sha256.c test_helpers.h mhd_sha256_wrap.h ../include/mhd_options.h
+if ! ENABLE_SHA256_EXT
+test_sha256_SOURCES += \
   sha256.c sha256.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
+test_sha256_CPPFLAGS = $(AM_CPPFLAGS)
+test_sha256_CFLAGS = $(AM_CFLAGS)
+test_sha256_LDFLAGS = $(AM_LDFLAGS)
+test_sha256_LDADD = $(LDADD)
+else
+test_sha256_SOURCES += \
+  sha256_ext.c sha256_ext.h
+test_sha256_CPPFLAGS = $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
+test_sha256_CFLAGS = $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+test_sha256_LDFLAGS = $(AM_LDFLAGS) $(MHD_TLS_LIB_LDFLAGS)
+test_sha256_LDADD = $(MHD_TLS_LIBDEPS) $(LDADD)
+endif
 
 test_sha512_256_SOURCES = \
   test_sha512_256.c test_helpers.h \

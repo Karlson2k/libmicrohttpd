@@ -26,8 +26,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "mhd_options.h"
 #include "microhttpd.h"
 #include "test_helpers.h"
+
+#if defined(MHD_HTTPS_REQUIRE_GCRYPT) && \
+  (defined(MHD_SHA256_TLSLIB) || defined(MHD_MD5_TLSLIB))
+#define NEED_GCRYP_INIT 1
+#include <gcrypt.h>
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT && (MHD_SHA256_TLSLIB || MHD_MD5_TLSLIB) */
 
 static int verbose = 1; /* verbose level (0-1)*/
 
@@ -747,6 +754,13 @@ main (int argc, char *argv[])
   (void) has_in_name; /* Mute compiler warning. */
   if (has_param (argc, argv, "-s") || has_param (argc, argv, "--silent"))
     verbose = 0;
+
+#ifdef NEED_GCRYP_INIT
+  gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
+#ifdef GCRYCTL_INITIALIZATION_FINISHED
+  gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif /* GCRYCTL_INITIALIZATION_FINISHED */
+#endif /* NEED_GCRYP_INIT */
 
   if (MHD_is_feature_supported (MHD_FEATURE_DIGEST_AUTH_MD5))
     num_failed += test_md5 ();

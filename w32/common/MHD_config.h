@@ -74,6 +74,12 @@
 /* Enable digest Auth support */
 #define DAUTH_SUPPORT 1
 
+/* Enable MD5 hashing support. */
+#define MHD_MD5_SUPPORT 1
+
+/* Enable SHA-256 hashing support. */
+#define MHD_SHA256_SUPPORT 1
+
 /* Enable postprocessor.c */
 #define HAVE_POSTPROCESSOR 1
 

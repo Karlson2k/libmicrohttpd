@@ -24,10 +24,15 @@
  */
 
 #include "mhd_options.h"
-#include "sha256.h"
+#include "mhd_sha256_wrap.h"
 #include "test_helpers.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#if defined(MHD_SHA256_TLSLIB) && defined(MHD_HTTPS_REQUIRE_GCRYPT)
+#define NEED_GCRYP_INIT 1
+#include <gcrypt.h>
+#endif /* MHD_SHA256_TLSLIB && MHD_HTTPS_REQUIRE_GCRYPT */
 
 static int verbose = 0; /* verbose level (0-1)*/
 
@@ -320,9 +325,9 @@ check_result (const char *test_name,
   {
     char calc_str[SHA256_DIGEST_STRING_SIZE];
     bin2hex (calculated, SHA256_DIGEST_SIZE, calc_str);
-    printf (
-      "PASSED: %s check %u: calculated digest %s matches expected digest.\n",
-      test_name, check_num, calc_str);
+    printf ("PASSED: %s check %u: calculated digest %s "
+            "matches expected digest.\n",
+            test_name, check_num, calc_str);
     fflush (stdout);
   }
   return failed ? 1 : 0;
@@ -339,19 +344,27 @@ test1_str (void)
 {
   int num_failed = 0;
   unsigned int i;
-  struct Sha256Ctx ctx;
+  struct Sha256CtxWr ctx;
 
+  MHD_SHA256_init_one_time (&ctx);
   for (i = 0; i < units1_num; i++)
   {
     uint8_t digest[SHA256_DIGEST_SIZE];
 
-    MHD_SHA256_init (&ctx);
     MHD_SHA256_update (&ctx, (const uint8_t *) data_units1[i].str_l.str,
                        data_units1[i].str_l.len);
-    MHD_SHA256_finish (&ctx, digest);
+    MHD_SHA256_finish_reset (&ctx, digest);
+#ifdef MHD_SHA256_HAS_EXT_ERROR
+    if (0 != ctx.ext_error)
+    {
+      fprintf (stderr, "External hashing error: %d.\n", ctx.ext_error);
+      exit (99);
+    }
+#endif /* MHD_SHA256_HAS_EXT_ERROR */
     num_failed += check_result (__FUNCTION__, i, digest,
                                 data_units1[i].digest);
   }
+  MHD_SHA256_deinit (&ctx);
   return num_failed;
 }
 
@@ -361,19 +374,27 @@ test1_bin (void)
 {
   int num_failed = 0;
   unsigned int i;
-  struct Sha256Ctx ctx;
+  struct Sha256CtxWr ctx;
 
+  MHD_SHA256_init_one_time (&ctx);
   for (i = 0; i < units2_num; i++)
   {
     uint8_t digest[SHA256_DIGEST_SIZE];
 
-    MHD_SHA256_init (&ctx);
     MHD_SHA256_update (&ctx, data_units2[i].bin_l.bin,
                        data_units2[i].bin_l.len);
-    MHD_SHA256_finish (&ctx, digest);
+    MHD_SHA256_finish_reset (&ctx, digest);
+#ifdef MHD_SHA256_HAS_EXT_ERROR
+    if (0 != ctx.ext_error)
+    {
+      fprintf (stderr, "External hashing error: %d.\n", ctx.ext_error);
+      exit (99);
+    }
+#endif /* MHD_SHA256_HAS_EXT_ERROR */
     num_failed += check_result (__FUNCTION__, i, digest,
                                 data_units2[i].digest);
   }
+  MHD_SHA256_deinit (&ctx);
   return num_failed;
 }
 
@@ -384,14 +405,14 @@ test2_str (void)
 {
   int num_failed = 0;
   unsigned int i;
-  struct Sha256Ctx ctx;
+  struct Sha256CtxWr ctx;
 
+  MHD_SHA256_init_one_time (&ctx);
   for (i = 0; i < units1_num; i++)
   {
     uint8_t digest[SHA256_DIGEST_SIZE];
     size_t part_s = data_units1[i].str_l.len / 4;
 
-    MHD_SHA256_init (&ctx);
     MHD_SHA256_update (&ctx, (const uint8_t *) "", 0);
     MHD_SHA256_update (&ctx, (const uint8_t *) data_units1[i].str_l.str,
                        part_s);
@@ -400,10 +421,18 @@ test2_str (void)
                        + part_s,
                        data_units1[i].str_l.len - part_s);
     MHD_SHA256_update (&ctx, (const uint8_t *) "", 0);
-    MHD_SHA256_finish (&ctx, digest);
+    MHD_SHA256_finish_reset (&ctx, digest);
+#ifdef MHD_SHA256_HAS_EXT_ERROR
+    if (0 != ctx.ext_error)
+    {
+      fprintf (stderr, "External hashing error: %d.\n", ctx.ext_error);
+      exit (99);
+    }
+#endif /* MHD_SHA256_HAS_EXT_ERROR */
     num_failed += check_result (__FUNCTION__, i, digest,
                                 data_units1[i].digest);
   }
+  MHD_SHA256_deinit (&ctx);
   return num_failed;
 }
 
@@ -413,22 +442,30 @@ test2_bin (void)
 {
   int num_failed = 0;
   unsigned int i;
-  struct Sha256Ctx ctx;
+  struct Sha256CtxWr ctx;
 
+  MHD_SHA256_init_one_time (&ctx);
   for (i = 0; i < units2_num; i++)
   {
     uint8_t digest[SHA256_DIGEST_SIZE];
     size_t part_s = data_units2[i].bin_l.len * 2 / 3;
 
-    MHD_SHA256_init (&ctx);
     MHD_SHA256_update (&ctx, data_units2[i].bin_l.bin, part_s);
     MHD_SHA256_update (&ctx, (const uint8_t *) "", 0);
     MHD_SHA256_update (&ctx, data_units2[i].bin_l.bin + part_s,
                        data_units2[i].bin_l.len - part_s);
-    MHD_SHA256_finish (&ctx, digest);
+    MHD_SHA256_finish_reset (&ctx, digest);
+#ifdef MHD_SHA256_HAS_EXT_ERROR
+    if (0 != ctx.ext_error)
+    {
+      fprintf (stderr, "External hashing error: %d.\n", ctx.ext_error);
+      exit (99);
+    }
+#endif /* MHD_SHA256_HAS_EXT_ERROR */
     num_failed += check_result (__FUNCTION__, i, digest,
                                 data_units2[i].digest);
   }
+  MHD_SHA256_deinit (&ctx);
   return num_failed;
 }
 
@@ -444,10 +481,11 @@ test_unaligned (void)
   unsigned int offset;
   uint8_t *buf;
   uint8_t *digest_buf;
-  struct Sha256Ctx ctx;
+  struct Sha256CtxWr ctx;
 
   const struct data_unit2 *const tdata = data_units2 + DATA_POS;
 
+  MHD_SHA256_init_one_time (&ctx);
   buf = malloc (tdata->bin_l.len + MAX_OFFSET);
   digest_buf = malloc (SHA256_DIGEST_SIZE + MAX_OFFSET);
   if ((NULL == buf) || (NULL == digest_buf))
@@ -463,14 +501,21 @@ test_unaligned (void)
     unaligned_digest = digest_buf + MAX_OFFSET - offset;
     memset (unaligned_digest, 0, SHA256_DIGEST_SIZE);
 
-    MHD_SHA256_init (&ctx);
     MHD_SHA256_update (&ctx, unaligned_buf, tdata->bin_l.len);
-    MHD_SHA256_finish (&ctx, unaligned_digest);
+    MHD_SHA256_finish_reset (&ctx, unaligned_digest);
+#ifdef MHD_SHA256_HAS_EXT_ERROR
+    if (0 != ctx.ext_error)
+    {
+      fprintf (stderr, "External hashing error: %d.\n", ctx.ext_error);
+      exit (99);
+    }
+#endif /* MHD_SHA256_HAS_EXT_ERROR */
     num_failed += check_result (__FUNCTION__, MAX_OFFSET - offset,
                                 unaligned_digest, tdata->digest);
   }
   free (digest_buf);
   free (buf);
+  MHD_SHA256_deinit (&ctx);
   return num_failed;
 }
 
@@ -482,6 +527,13 @@ main (int argc, char *argv[])
   (void) has_in_name; /* Mute compiler warning. */
   if (has_param (argc, argv, "-v") || has_param (argc, argv, "--verbose"))
     verbose = 1;
+
+#ifdef NEED_GCRYP_INIT
+  gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
+#ifdef GCRYCTL_INITIALIZATION_FINISHED
+  gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif /* GCRYCTL_INITIALIZATION_FINISHED */
+#endif /* NEED_GCRYP_INIT */
 
   num_failed += test1_str ();
   num_failed += test1_bin ();

@@ -58,7 +58,13 @@
     <ClInclude Include="$(MhdSrc)microhttpd\internal.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_md5_wrap.h">
+      <Filter>Internal Headers</Filter>
+    </ClInclude>
     <ClInclude Include="$(MhdSrc)microhttpd\md5.h">
+      <Filter>Internal Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MhdSrc)microhttpd\mhd_sha256_wrap.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MhdSrc)microhttpd\sha256.h">

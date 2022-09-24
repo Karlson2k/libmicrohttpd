@@ -3048,8 +3048,8 @@ AC_MSG_RESULT([[$enable_bauth]])
 AC_MSG_CHECKING([[whether to support HTTP Digest authentication]])
 AC_ARG_ENABLE([dauth],
 		[AS_HELP_STRING([--disable-dauth], [disable HTTP Digest Authentication support])],
-		[enable_dauth=${enableval}],
-		[enable_dauth=yes])
+		[enable_dauth="${enableval}"],
+		[enable_dauth="yes"])
 AS_IF([[test "x$enable_dauth" != "xno"]],
   [ enable_dauth=yes
     AC_DEFINE([DAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with Digest Auth support.]) ])
@@ -3084,57 +3084,249 @@ AC_MSG_RESULT([[$enable_cookie]])
 
 # optional: MD5 support for Digest Auth. Enabled by default.
 AC_ARG_ENABLE([[md5]],
-  [AS_HELP_STRING([[--disable-md5]],[disable MD5 hashing support for Digest Authentication])
+  [AS_HELP_STRING([[--enable-md5=TYPE]],[enable TYPE of MD5 hashing code (yes, no, builtin, tlslib) [yes if dauth enabled]])
   ],
   [
-    AS_VAR_IF([[enable_md5]],[["yes"]],
+    AS_VAR_IF([enable_md5],["internal"],[enable_md5='builtin'])
+    AS_VAR_IF([enable_md5],["built-in"],[enable_md5='builtin'])
+    AS_VAR_IF([enable_dauth],["yes"],[],
       [
-        AS_VAR_IF([enable_dauth],["yes"],[],
+        AS_VAR_IF([enable_md5],["no"],[],
           [
-            AC_MSG_WARN([The parameter --enable-md5 is ignored as Digest Authentication is disabled])
+            AC_MSG_WARN([The parameter --enable-md5=${enable_md5} is ignored as Digest Authentication is disabled])
             enable_md5='no'
           ]
         )
-      ],[[enable_md5='no']]
+      ]
     )
   ], [[enable_md5="${enable_dauth}"]]
 )
-AC_MSG_CHECKING([[whether to support MD5]])
-AS_VAR_IF([[enable_md5]],[["yes"]],
+AS_CASE([${enable_md5}],[yes|tlslib],
   [
-   AC_DEFINE([[MHD_MD5_SUPPORT]],[[1]],
-     [Define to 1 if libmicrohttpd is compiled with MD5 hashing support.])
+    AS_IF([test "x${enable_compact_code}" != "xno" || test "x$enable_md5" = "xtlslib"],
+      [
+        AS_IF([test "x$enable_https" = "xyes"],
+          [
+            AC_CACHE_CHECK([whether GnuTLS supports MD5 hashing],[mhd_cv_gnutls_md5],
+              [
+                CFLAGS="${CFLAGS_ac} ${GNUTLS_CFLAGS} ${user_CFLAGS}"
+                CPPFLAGS="${CPPFLAGS_ac} ${MHD_TLS_LIB_CPPFLAGS} ${user_CPPFLAGS}"
+                CFLAGS="${CFLAGS_ac} ${MHD_TLS_LIB_CFLAGS} ${user_CFLAGS}"
+                LDFLAGS="${LDFLAGS_ac} ${MHD_TLS_LIB_LDFLAGS} ${user_LDFLAGS}"
+                save_LIBS="$LIBS"
+                LIBS="${MHD_TLS_LIBDEPS} ${LIBS}"
+                AC_LINK_IFELSE(
+                  [
+                    AC_LANG_PROGRAM(
+                      [[
+#include <gnutls/crypto.h>
+                      ]],
+                      [[
+    gnutls_hash_hd_t hash_handle;
+    unsigned char digest[16];
+    int exit_code;
+
+    if (0 == gnutls_hash_init(&hash_handle, GNUTLS_DIG_MD5))
+    {
+      if (0 == gnutls_hash(hash_handle, "", 1))
+      {
+        gnutls_hash_output(hash_handle, digest);
+        if (0x93 == digest[0])
+          exit_code = 0;
+        else
+          exit_code = 7;
+      }
+      else
+        exit_code = 5;
+      gnutls_hash_deinit(hash_handle, (void *)0);
+    }
+    else
+      exit_code = 2;
+    if (exit_code)
+      return exit_code;
+                      ]]
+                    )
+                  ],
+                  [mhd_cv_gnutls_md5='yes'],[mhd_cv_gnutls_md5='no']
+                )
+                LIBS="${save_LIBS}"
+                CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+                CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+                CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+                LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+              ]
+            )
+            AS_VAR_IF([mhd_cv_gnutls_md5],["no"],
+              [
+                AS_VAR_IF([enable_md5],["tlslib"],
+                  [AC_MSG_FAILURE([TLS library MD5 implementation is not available])]
+                )
+                enable_md5="builtin"
+              ],
+              [enable_md5="tlslib"]
+            )
+          ],
+          [
+            AS_VAR_IF([enable_md5],["tlslib"],
+              [AC_MSG_ERROR([HTTPS is not enabled, TLS library MD5 implementation cannot be used])]
+            )
+            enable_md5="builtin"
+          ]
+        )
+      ],
+      [
+        enable_md5="builtin"
+      ]
+    )
   ]
 )
-AM_CONDITIONAL([ENABLE_MD5], [[test "x${enable_md5}" = "xyes"]])
-AC_MSG_RESULT([[${enable_md5}]])
+AC_MSG_CHECKING([[whether to support MD5]])
+AS_UNSET([enable_md5_MSG])
+AS_CASE([${enable_md5}],
+  [builtin],[enable_md5_MSG='yes, built-in'],
+  [tlslib],[enable_md5_MSG='yes, external (TLS library)'],
+  [no],[enable_md5_MSG='no'],
+  [yes],[AC_MSG_ERROR([configure internal error: unexpected variable value])],
+  [AC_MSG_ERROR([Unrecognized parameter --enable-md5=${enable_md5}])]
+)
+AS_IF([test "x${enable_md5}" = "xbuiltin" || test "x${enable_md5}" = "xtlslib" ],
+  [
+    AC_DEFINE([[MHD_MD5_SUPPORT]],[[1]],
+      [Define to 1 if libmicrohttpd is compiled with MD5 hashing support.])
+  ]
+)
+AS_IF([test "x${enable_md5}" = "xtlslib" ],
+  [
+    AC_DEFINE([[MHD_MD5_TLSLIB]],[[1]],
+      [Define to 1 if libmicrohttpd is compiled with MD5 hashing by TLS library.])
+  ]
+)
+AM_CONDITIONAL([ENABLE_MD5], [[test "x${enable_md5}" = "xbuiltin" || test "x${enable_md5}" = "xtlslib" ]])
+AM_CONDITIONAL([ENABLE_MD5_EXT], [[test "x${enable_md5}" = "xtlslib" ]])
+AC_MSG_RESULT([[${enable_md5_MSG}]])
 
 # optional: SHA-256 support for Digest Auth. Enabled by default.
 AC_ARG_ENABLE([[sha256]],
-  [AS_HELP_STRING([[--disable-sha256]],[disable SHA-256 hashing support for Digest Authentication])
+  [AS_HELP_STRING([[--enable-sha256=TYPE]],[enable TYPE of SHA-256 hashing code (yes, no, builtin, tlslib) [yes if dauth enabled]])
   ],
   [
-    AS_VAR_IF([[enable_sha256]],[["yes"]],
+    AS_VAR_IF([enable_sha256],["internal"],[enable_sha256='builtin'])
+    AS_VAR_IF([enable_sha256],["built-in"],[enable_sha256='builtin'])
+    AS_VAR_IF([enable_dauth],["yes"],[],
       [
-        AS_VAR_IF([enable_dauth],["yes"],[],
+        AS_VAR_IF([enable_sha256],["no"],[],
           [
-            AC_MSG_WARN([The parameter --enable-sha256 is ignored as Digest Authentication is disabled])
+            AC_MSG_WARN([The parameter --enable-sha256=${enable_sha256} is ignored as Digest Authentication is disabled])
             enable_sha256='no'
           ]
         )
-      ],[[enable_sha256='no']]
+      ]
     )
   ], [[enable_sha256="${enable_dauth}"]]
 )
-AC_MSG_CHECKING([[whether to support SHA-256]])
-AS_VAR_IF([[enable_sha256]],[["yes"]],
+AS_CASE([${enable_sha256}],[yes|tlslib],
   [
-   AC_DEFINE([[MHD_SHA256_SUPPORT]],[[1]],
-     [Define to 1 if libmicrohttpd is compiled with SHA-256 hashing support.])
+    AS_IF([test "x${enable_compact_code}" != "xno" || test "x$enable_sha256" = "xtlslib"],
+      [
+        AS_IF([test "x$enable_https" = "xyes"],
+          [
+            AC_CACHE_CHECK([whether GnuTLS supports sha256 hashing],[mhd_cv_gnutls_sha256],
+              [
+                CFLAGS="${CFLAGS_ac} ${GNUTLS_CFLAGS} ${user_CFLAGS}"
+                CPPFLAGS="${CPPFLAGS_ac} ${MHD_TLS_LIB_CPPFLAGS} ${user_CPPFLAGS}"
+                CFLAGS="${CFLAGS_ac} ${MHD_TLS_LIB_CFLAGS} ${user_CFLAGS}"
+                LDFLAGS="${LDFLAGS_ac} ${MHD_TLS_LIB_LDFLAGS} ${user_LDFLAGS}"
+                save_LIBS="$LIBS"
+                LIBS="${MHD_TLS_LIBDEPS} ${LIBS}"
+                AC_LINK_IFELSE(
+                  [
+                    AC_LANG_PROGRAM(
+                      [[
+#include <gnutls/crypto.h>
+                      ]],
+                      [[
+    gnutls_hash_hd_t hash_handle;
+    unsigned char digest[32];
+    int exit_code;
+
+    if (0 == gnutls_hash_init(&hash_handle, GNUTLS_DIG_SHA256))
+    {
+      if (0 == gnutls_hash(hash_handle, "", 1))
+      {
+        gnutls_hash_output(hash_handle, digest);
+        if (0x6e == digest[0])
+          exit_code = 0;
+        else
+          exit_code = 7;
+      }
+      else
+        exit_code = 5;
+      gnutls_hash_deinit(hash_handle, (void *)0);
+    }
+    else
+      exit_code = 2;
+    if (exit_code)
+      return exit_code;
+                      ]]
+                    )
+                  ],
+                  [mhd_cv_gnutls_sha256='yes'],[mhd_cv_gnutls_sha256='no']
+                )
+                LIBS="${save_LIBS}"
+                CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+                CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+                CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+                LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+              ]
+            )
+            AS_VAR_IF([mhd_cv_gnutls_sha256],["no"],
+              [
+                AS_VAR_IF([enable_sha256],["tlslib"],
+                  [AC_MSG_FAILURE([TLS library SHA-256 implementation is not available])]
+                )
+                enable_sha256="builtin"
+              ],
+              [enable_sha256="tlslib"]
+            )
+          ],
+          [
+            AS_VAR_IF([enable_sha256],["tlslib"],
+              [AC_MSG_ERROR([HTTPS is not enabled, TLS library SHA-256 implementation cannot be used])]
+            )
+            enable_sha256="builtin"
+          ]
+        )
+      ],
+      [
+        enable_sha256="builtin"
+      ]
+    )
   ]
 )
-AM_CONDITIONAL([ENABLE_SHA256], [[test "x${enable_sha256}" = "xyes"]])
-AC_MSG_RESULT([[${enable_sha256}]])
+AC_MSG_CHECKING([[whether to support SHA-256]])
+AS_UNSET([enable_sha256_MSG])
+AS_CASE([${enable_sha256}],
+  [builtin],[enable_sha256_MSG='yes, built-in'],
+  [tlslib],[enable_sha256_MSG='yes, external (TLS library)'],
+  [no],[enable_sha256_MSG='no'],
+  [yes],[AC_MSG_ERROR([configure internal error: unexpected variable value])],
+  [AC_MSG_ERROR([Unrecognized parameter --enable-sha256=${enable_sha256}])]
+)
+AS_IF([test "x${enable_sha256}" = "xbuiltin" || test "x${enable_sha256}" = "xtlslib" ],
+  [
+    AC_DEFINE([[MHD_SHA256_SUPPORT]],[[1]],
+      [Define to 1 if libmicrohttpd is compiled with SHA-256 hashing support.])
+  ]
+)
+AS_IF([test "x${enable_sha256}" = "xtlslib" ],
+  [
+    AC_DEFINE([[MHD_SHA256_TLSLIB]],[[1]],
+      [Define to 1 if libmicrohttpd is compiled with SHA-256 hashing by TLS library.])
+  ]
+)
+AM_CONDITIONAL([ENABLE_SHA256], [[test "x${enable_sha256}" = "xbuiltin" || test "x${enable_sha256}" = "xtlslib" ]])
+AM_CONDITIONAL([ENABLE_SHA256_EXT], [[test "x${enable_sha256}" = "xtlslib" ]])
+AC_MSG_RESULT([[${enable_sha256_MSG}]])
 
 # optional: SHA-512/256 support for Digest Auth. Enabled by default.
 AC_ARG_ENABLE([[sha512-256]],
@@ -3154,6 +3346,12 @@ AC_ARG_ENABLE([[sha512-256]],
   ], [[enable_sha512_256="${enable_dauth}"]]
 )
 AC_MSG_CHECKING([[whether to support SHA-512/256]])
+AS_UNSET([enable_sha512_256_MSG])
+AS_CASE([${enable_sha512_256}],
+  [yes],[enable_sha512_256_MSG='yes, built-in'],
+  [no],[enable_sha512_256_MSG='no'],
+  [AC_MSG_ERROR([Unrecognized parameter --enable-sha512-256=${enable_sha512_256}])]
+)
 AS_VAR_IF([[enable_sha512_256]],[["yes"]],
   [
    AC_DEFINE([[MHD_SHA512_256_SUPPORT]],[[1]],
@@ -3161,11 +3359,11 @@ AS_VAR_IF([[enable_sha512_256]],[["yes"]],
   ]
 )
 AM_CONDITIONAL([ENABLE_SHA512_256], [[test "x${enable_sha512_256}" = "xyes"]])
-AC_MSG_RESULT([[${enable_sha512_256}]])
+AC_MSG_RESULT([[${enable_sha512_256_MSG}]])
 
 AS_IF([test "x$enable_dauth" != "xno"],
   [
-    AS_IF([test "x${enable_md5}" != "xyes" &&  test "x${enable_sha256}" != "xyes" && test "x${enable_sha512_256}" != "xyes"],
+    AS_IF([test "x${enable_md5}" = "xno" &&  test "x${enable_sha256}" = "xno" && test "x${enable_sha512_256}" != "xyes"],
       [AC_MSG_ERROR([At least one hashing algorithm must be enabled if Digest Auth is enabled])]
     )
   ]
@@ -4052,9 +4250,9 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Messages:          ${enable_messages}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
-  MD5:               ${enable_md5}
-  SHA-256:           ${enable_sha256}
-  SHA-512/256:       ${enable_sha512_256}
+  MD5:               ${enable_md5_MSG}
+  SHA-256:           ${enable_sha256_MSG}
+  SHA-512/256:       ${enable_sha512_256_MSG}
   HTTP "Upgrade":    ${enable_httpupgrade}
   Cookie parsing:    ${enable_cookie}
   Postproc:          ${enable_postprocessor}
@@ -4075,8 +4273,8 @@ AS_IF([test "x$enable_https" = "xyes"],
 
 AS_IF([test "x$enable_bauth" != "xyes" || \
    test "x$enable_dauth" != "xyes" || \
-   test "x${enable_md5}" != "xyes" || \
-   test "x${enable_sha256}" != "xyes" || \
+   test "x${enable_md5}" = "xno" || \
+   test "x${enable_sha256}" = "xno" || \
    test "x${enable_sha512_256}" != "xyes" || \
    test "x$enable_httpupgrade" != "xyes" || \
    test "x$enable_cookie" != "xyes" || \

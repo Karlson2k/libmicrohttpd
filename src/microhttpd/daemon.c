@@ -8465,6 +8465,12 @@ MHD_is_feature_supported (enum MHD_FEATURE feature)
 #else
     return MHD_NO;
 #endif
+  case MHD_FEATURE_EXTERN_HASH:
+#if defined(MHD_MD5_TLSLIB) || defined(MHD_SHA256_TLSLIB)
+    return MHD_YES;
+#else
+    return MHD_NO;
+#endif
 
   default:
     break;

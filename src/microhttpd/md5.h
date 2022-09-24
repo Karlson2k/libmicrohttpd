@@ -123,4 +123,9 @@ void
 MHD_MD5_finish (struct Md5Ctx *ctx,
                 uint8_t digest[MD5_DIGEST_SIZE]);
 
+/**
+ * Indicates that function MHD_MD5_finish() (without context reset) is available
+ */
+#define MHD_MD5_HAS_FINISH 1
+
 #endif /* MHD_MD5_H */

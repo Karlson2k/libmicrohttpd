@@ -25,18 +25,19 @@
  * @author Amr Ali
  * @author Karlson2k (Evgeny Grin)
  */
-#include "MHD_config.h"
+#include "mhd_options.h"
 #include "platform.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#ifdef MHD_HTTPS_REQUIRE_GCRYPT
-#ifdef HAVE_GCRYPT_H
+
+#if defined(MHD_HTTPS_REQUIRE_GCRYPT) && \
+  (defined(MHD_SHA256_TLSLIB) || defined(MHD_MD5_TLSLIB))
+#define NEED_GCRYP_INIT 1
 #include <gcrypt.h>
-#endif
-#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT && (MHD_SHA256_TLSLIB || MHD_MD5_TLSLIB) */
 
 #ifndef WINDOWS
 #include <sys/socket.h>

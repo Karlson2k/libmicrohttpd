@@ -114,4 +114,9 @@ void
 MHD_SHA256_finish (struct Sha256Ctx *ctx,
                    uint8_t digest[SHA256_DIGEST_SIZE]);
 
+/**
+ * Indicates that function MHD_SHA256_finish() (without context reset) is available
+ */
+#define MHD_SHA256_HAS_FINISH 1
+
 #endif /* MHD_SHA256_H */
