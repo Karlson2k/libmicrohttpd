@@ -40,9 +40,6 @@
     <ClInclude Include="$(MhdW32Common)MHD_config.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MhdSrc)microhttpd\base64.h">
-      <Filter>Internal Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MhdSrc)microhttpd\basicauth.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>
@@ -68,6 +65,9 @@
       <Filter>Internal Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MhdSrc)microhttpd\sha256.h">
+      <Filter>Internal Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MhdSrc)microhttpd\sha512_256.h">
       <Filter>Internal Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MhdSrc)microhttpd\memorypool.h">
@@ -135,9 +135,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MhdSrc)microhttpd\base64.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="$(MhdSrc)microhttpd\basicauth.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -160,6 +157,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="$(MhdSrc)microhttpd\sha256.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MhdSrc)microhttpd\sha512_256.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="$(MhdSrc)microhttpd\memorypool.c">

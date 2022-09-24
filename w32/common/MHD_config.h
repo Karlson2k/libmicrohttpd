@@ -80,6 +80,9 @@
 /* Enable SHA-256 hashing support. */
 #define MHD_SHA256_SUPPORT 1
 
+/* Enable SHA-512/256 hashing support. */
+#define MHD_SHA512_256_SUPPORT 1
+
 /* Enable postprocessor.c */
 #define HAVE_POSTPROCESSOR 1
 
@@ -176,6 +179,9 @@
 #define HAVE_STDALIGN_H 1
 #endif /* C11 */
 #endif /* VS 2015 and later */
+
+/* Define to 1 if you have the 'rand' function. */
+#define HAVE_RAND 1
 
 /* *** Headers information *** */
 /* Not really important as not used by code currently */
