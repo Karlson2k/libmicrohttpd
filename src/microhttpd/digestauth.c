@@ -955,7 +955,7 @@ get_rq_uname (const struct MHD_RqDAuth *params,
     res = MHD_hex_to_bin (uname_info->userhash_hex,
                           uname_info->userhash_hex_len,
                           uname_info->userhash_bin);
-    if (res != uname_info->username_len / 2)
+    if (res != uname_info->userhash_hex_len / 2)
     {
       uname_info->userhash_bin = NULL;
       uname_info->uname_type = MHD_DIGEST_AUTH_UNAME_TYPE_INVALID;
