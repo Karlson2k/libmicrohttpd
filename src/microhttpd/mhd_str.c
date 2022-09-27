@@ -1154,7 +1154,7 @@ MHD_str_to_uvalue_n_ (const char *str,
                       void *out_val,
                       size_t val_size,
                       uint64_t max_val,
-                      int base)
+                      unsigned int base)
 {
   size_t i;
   uint64_t res;
