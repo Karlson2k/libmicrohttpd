@@ -5103,9 +5103,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         connection->state = MHD_CONNECTION_FULL_REPLY_SENT;
       continue;
     case MHD_CONNECTION_NORMAL_BODY_READY:
+      mhd_assert (connection->rp.props.send_reply_body);
+      mhd_assert (! connection->rp.props.chunked);
       /* nothing to do here */
       break;
     case MHD_CONNECTION_NORMAL_BODY_UNREADY:
+      mhd_assert (connection->rp.props.send_reply_body);
+      mhd_assert (! connection->rp.props.chunked);
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
       if (NULL != connection->rp.response->crc)
         MHD_mutex_lock_chk_ (&connection->rp.response->mutex);
@@ -5137,9 +5141,13 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       /* not ready, no socket action */
       break;
     case MHD_CONNECTION_CHUNKED_BODY_READY:
+      mhd_assert (connection->rp.props.send_reply_body);
+      mhd_assert (connection->rp.props.chunked);
       /* nothing to do here */
       break;
     case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
+      mhd_assert (connection->rp.props.send_reply_body);
+      mhd_assert (connection->rp.props.chunked);
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
       if (NULL != connection->rp.response->crc)
         MHD_mutex_lock_chk_ (&connection->rp.response->mutex);
@@ -5172,7 +5180,10 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       }
       break;
     case MHD_CONNECTION_CHUNKED_BODY_SENT:
+      mhd_assert (connection->rp.props.send_reply_body);
       mhd_assert (connection->rp.props.chunked);
+      mhd_assert (connection->write_buffer_send_offset <= \
+                  connection->write_buffer_append_offset);
 
       if (MHD_NO == build_connection_chunked_response_footer (connection))
       {
@@ -5191,6 +5202,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         connection->state = MHD_CONNECTION_FOOTERS_SENDING;
       continue;
     case MHD_CONNECTION_FOOTERS_SENDING:
+      mhd_assert (connection->rp.props.send_reply_body);
+      mhd_assert (connection->rp.props.chunked);
       /* no default action */
       break;
     case MHD_CONNECTION_FULL_REPLY_SENT:
