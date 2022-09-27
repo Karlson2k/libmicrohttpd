@@ -1168,12 +1168,8 @@ MHD_str_to_uvalue_n_ (const char *str,
 {
   size_t i;
   uint64_t res;
-  int digit;
   const uint64_t max_v_div_b = max_val / base;
   const uint64_t max_v_mod_b = max_val % base;
-  /* 'digit->value' must be function, not macro */
-  int (*const dfunc)(char) = (base == 16) ?
-                             toxdigitvalue : todigitvalue;
 
   if (! str || ! out_val ||
       ((base != 16) && (base != 10)) )
@@ -1181,8 +1177,13 @@ MHD_str_to_uvalue_n_ (const char *str,
 
   res = 0;
   i = 0;
-  while (maxlen > i && 0 <= (digit = dfunc (str[i])))
+  while (maxlen > i)
   {
+    const int digit = (base == 16) ?
+                      toxdigitvalue (str[i]) : todigitvalue (str[i]);
+
+    if (0 > digit)
+      break;
     if ( ((max_v_div_b) < res) ||
          (( (max_v_div_b) == res) && ( (max_v_mod_b) < (uint64_t) digit) ) )
       return 0;
