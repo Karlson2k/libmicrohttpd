@@ -419,37 +419,45 @@ test_postprocessor_md_SOURCES = \
 
 test_shutdown_select_SOURCES = \
   test_shutdown_select.c
+test_shutdown_select_CFLAGS = $(AM_CFLAGS)
+test_shutdown_select_LDADD = $(LDADD)
 if USE_POSIX_THREADS
-test_shutdown_select_CFLAGS = \
-  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
-test_shutdown_select_LDADD = \
+test_shutdown_select_CFLAGS += \
+  $(PTHREAD_CFLAGS)
+test_shutdown_select_LDADD += \
   $(PTHREAD_LIBS)
 endif
 
 test_shutdown_poll_SOURCES = \
   test_shutdown_select.c mhd_threads.h
+test_shutdown_poll_CFLAGS = $(AM_CFLAGS)
+test_shutdown_poll_LDADD = $(LDADD)
 if USE_POSIX_THREADS
-test_shutdown_poll_CFLAGS = \
+test_shutdown_poll_CFLAGS += \
   $(AM_CFLAGS) $(PTHREAD_CFLAGS)
-test_shutdown_poll_LDADD = \
+test_shutdown_poll_LDADD += \
   $(PTHREAD_LIBS)
 endif
 
 test_shutdown_select_ignore_SOURCES = \
   test_shutdown_select.c
+test_shutdown_select_ignore_CFLAGS = $(AM_CFLAGS)
+test_shutdown_select_ignore_LDADD = $(LDADD)
 if USE_POSIX_THREADS
-test_shutdown_select_ignore_CFLAGS = \
-  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
-test_shutdown_select_ignore_LDADD = \
+test_shutdown_select_ignore_CFLAGS += \
+  $(PTHREAD_CFLAGS)
+test_shutdown_select_ignore_LDADD += \
   $(PTHREAD_LIBS)
 endif
 
 test_shutdown_poll_ignore_SOURCES = \
   test_shutdown_select.c mhd_threads.h
+test_shutdown_poll_ignore_CFLAGS = $(AM_CFLAGS)
+test_shutdown_poll_ignore_LDADD = $(LDADD)
 if USE_POSIX_THREADS
-test_shutdown_poll_ignore_CFLAGS = \
+test_shutdown_poll_ignore_CFLAGS += \
   $(AM_CFLAGS) $(PTHREAD_CFLAGS)
-test_shutdown_poll_ignore_LDADD = \
+test_shutdown_poll_ignore_LDADD += \
   $(PTHREAD_LIBS)
 endif
 

@@ -87,7 +87,7 @@ test_https_get_parallel_SOURCES = \
   tls_test_common.h \
   tls_test_common.c
 test_https_get_parallel_CFLAGS = \
-  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 test_https_get_parallel_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
 
@@ -103,7 +103,7 @@ test_https_get_parallel_threads_SOURCES = \
   tls_test_common.h \
   tls_test_common.c
 test_https_get_parallel_threads_CFLAGS = \
-  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 test_https_get_parallel_threads_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
 

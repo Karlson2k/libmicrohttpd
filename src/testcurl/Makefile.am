@@ -225,7 +225,7 @@ endif
 test_concurrent_stop_SOURCES = \
   test_concurrent_stop.c
 test_concurrent_stop_CFLAGS = \
-  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 test_concurrent_stop_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
 
@@ -235,14 +235,14 @@ test_get_SOURCES = \
 test_quiesce_SOURCES = \
   test_quiesce.c mhd_has_param.h mhd_has_in_name.h
 test_quiesce_CFLAGS = \
-  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 test_quiesce_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
 
 test_quiesce_stream_SOURCES = \
   test_quiesce_stream.c
 test_quiesce_stream_CFLAGS = \
-  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 test_quiesce_stream_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
 
@@ -257,7 +257,7 @@ perf_get_concurrent_SOURCES = \
   perf_get_concurrent.c \
   gauger.h mhd_has_in_name.h
 perf_get_concurrent_CFLAGS = \
-  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 perf_get_concurrent_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
 
@@ -265,7 +265,7 @@ perf_get_concurrent11_SOURCES = \
   perf_get_concurrent.c \
   gauger.h mhd_has_in_name.h
 perf_get_concurrent11_CFLAGS = \
-  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 perf_get_concurrent11_LDADD = \
   $(PTHREAD_LIBS) $(LDADD)
 
@@ -299,7 +299,7 @@ test_digestauth_with_arguments_LDADD = \
 test_digestauth_concurrent_SOURCES = \
   test_digestauth_concurrent.c
 test_digestauth_concurrent_CFLAGS = \
-  $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 test_digestauth_concurrent_LDADD = \
   @LIBGCRYPT_LIBS@ $(LDADD) $(PTHREAD_LIBS) $(LDADD)
 
