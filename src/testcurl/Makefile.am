@@ -81,6 +81,8 @@ endif
 if HAVE_CURL
 check_PROGRAMS = \
   test_get \
+  test_head \
+  test_head10 \
   test_get_iovec \
   test_get_sendfile \
   test_get_close \
@@ -231,6 +233,12 @@ test_concurrent_stop_LDADD = \
 
 test_get_SOURCES = \
   test_get.c mhd_has_in_name.h mhd_has_param.h
+
+test_head_SOURCES = \
+  test_head.c mhd_has_in_name.h mhd_has_param.h
+
+test_head10_SOURCES = \
+  test_head.c mhd_has_in_name.h mhd_has_param.h
 
 test_quiesce_SOURCES = \
   test_quiesce.c mhd_has_param.h mhd_has_in_name.h
