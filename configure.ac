@@ -2482,7 +2482,7 @@ AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"],
             gnutls_free(data.data);
           ]])], [[have_gnutls_sni=yes]], [[have_gnutls_sni=no]])
      AC_MSG_RESULT([[$have_gnutls_sni]])
-     AC_CACHE_CHECK([[whether GnuTLS require libgcrypt initialisaion]], [mhd_cv_gcrypt_required],
+     AC_CACHE_CHECK([[whether GnuTLS require libgcrypt initialisation]], [mhd_cv_gcrypt_required],
        [
         AC_COMPILE_IFELSE(
           [
@@ -2492,7 +2492,7 @@ AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"],
              ],
              [
 #if !defined(GNUTLS_VERSION_NUMBER) || GNUTLS_VERSION_NUMBER+0 <= 0x020c14
-#error Old versions of GnuTLS require libgcript initialisaion
+#error Old versions of GnuTLS require libgcript initialisation
 choke me now
 #endif
              ]
