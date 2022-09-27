@@ -5193,13 +5193,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
                                   "Closing connection (failed to create response footer)."));
         continue;
       }
-      /* TODO: remove next 'if' */
-      if ( (! connection->rp.props.chunked) ||
-           (connection->write_buffer_send_offset ==
-            connection->write_buffer_append_offset) )
-        connection->state = MHD_CONNECTION_FULL_REPLY_SENT;
-      else
-        connection->state = MHD_CONNECTION_FOOTERS_SENDING;
+      mhd_assert (connection->write_buffer_send_offset < \
+                  connection->write_buffer_append_offset);
+      connection->state = MHD_CONNECTION_FOOTERS_SENDING;
       continue;
     case MHD_CONNECTION_FOOTERS_SENDING:
       mhd_assert (connection->rp.props.send_reply_body);
