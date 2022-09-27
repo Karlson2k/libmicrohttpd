@@ -1823,7 +1823,9 @@ setup_reply_properties (struct MHD_Connection *connection)
     use_chunked = false; /* chunked encoding cannot be used without body */
 
   c->rp.props.chunked = use_chunked;
+#ifdef _DEBUG
   c->rp.props.set = true;
+#endif /* _DEBUG */
 }
 
 

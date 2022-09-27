@@ -1080,7 +1080,9 @@ struct MHD_Request
  */
 struct MHD_Reply_Properties
 {
+#ifdef _DEBUG
   bool set; /**< Indicates that other members are set and valid */
+#endif /* _DEBUG */
   bool use_reply_body_headers; /**< Use reply body-specific headers */
   bool send_reply_body; /**< Send reply body (can be zero-sized) */
   bool chunked; /**< Use chunked encoding for reply */
