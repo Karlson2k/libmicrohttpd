@@ -3155,7 +3155,7 @@ parse_http_version (struct MHD_Connection *connection,
   const char *const h = http_string; /**< short alias */
   mhd_assert (NULL != http_string);
 
-  /* String must starts with 'HTTP/d.d', case-sensetive match.
+  /* String must start with 'HTTP/d.d', case-sensetive match.
    * See https://datatracker.ietf.org/doc/html/rfc7230#section-2.6 */
   if ((len != 8) ||
       (h[0] != 'H') || (h[1] != 'T') || (h[2] != 'T') || (h[3] != 'P') ||
