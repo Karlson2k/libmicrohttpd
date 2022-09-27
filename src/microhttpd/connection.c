@@ -4721,10 +4721,15 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       }
 #endif /* UPGRADE_SUPPORT */
 
-      if (connection->rp_props.chunked)
-        connection->state = MHD_CONNECTION_CHUNKED_BODY_UNREADY;
+      if (connection->rp_props.send_reply_body)
+      {
+        if (connection->rp_props.chunked)
+          connection->state = MHD_CONNECTION_CHUNKED_BODY_UNREADY;
+        else
+          connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
+      }
       else
-        connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
+        connection->state = MHD_CONNECTION_FOOTERS_SENT;
       continue;
     case MHD_CONNECTION_NORMAL_BODY_READY:
       /* nothing to do here */
