@@ -2280,7 +2280,7 @@ build_connection_chunked_response_footer (struct MHD_Connection *connection)
   mhd_assert (connection->rp.props.chunked);
   /* TODO: allow combining of the final footer with the last chunk,
    * modify the next assert. */
-  mhd_assert (MHD_CONNECTION_BODY_SENT == connection->state);
+  mhd_assert (MHD_CONNECTION_CHUNKED_BODY_SENT == connection->state);
   mhd_assert (NULL != c->rp.response);
 
   buf_size = connection_maximize_write_buffer (c);
@@ -2624,13 +2624,13 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
     case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
       connection->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
       break;
-    case MHD_CONNECTION_BODY_SENT:
+    case MHD_CONNECTION_CHUNKED_BODY_SENT:
       mhd_assert (0);
       break;
     case MHD_CONNECTION_FOOTERS_SENDING:
       connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
       break;
-    case MHD_CONNECTION_FOOTERS_SENT:
+    case MHD_CONNECTION_FULL_REPLY_SENT:
       mhd_assert (0);
       break;
     case MHD_CONNECTION_CLOSED:
@@ -4208,9 +4208,9 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
   case MHD_CONNECTION_NORMAL_BODY_READY:
   case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
   case MHD_CONNECTION_CHUNKED_BODY_READY:
-  case MHD_CONNECTION_BODY_SENT:
+  case MHD_CONNECTION_CHUNKED_BODY_SENT:
   case MHD_CONNECTION_FOOTERS_SENDING:
-  case MHD_CONNECTION_FOOTERS_SENT:
+  case MHD_CONNECTION_FULL_REPLY_SENT:
   default:
     mhd_assert (0); /* Should not be possible */
   }
@@ -4466,7 +4466,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     }
     if (connection->rp.rsp_write_position ==
         connection->rp.response->total_size)
-      connection->state = MHD_CONNECTION_FOOTERS_SENT;   /* have no footers */
+      connection->state = MHD_CONNECTION_FULL_REPLY_SENT;
     return;
   case MHD_CONNECTION_NORMAL_BODY_UNREADY:
     mhd_assert (0);
@@ -4500,11 +4500,11 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     check_write_done (connection,
                       (connection->rp.response->total_size ==
                        connection->rp.rsp_write_position) ?
-                      MHD_CONNECTION_BODY_SENT :
+                      MHD_CONNECTION_CHUNKED_BODY_SENT :
                       MHD_CONNECTION_CHUNKED_BODY_UNREADY);
     return;
   case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
-  case MHD_CONNECTION_BODY_SENT:
+  case MHD_CONNECTION_CHUNKED_BODY_SENT:
     mhd_assert (0);
     return;
   case MHD_CONNECTION_FOOTERS_SENDING:
@@ -4534,9 +4534,9 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     if (MHD_CONNECTION_FOOTERS_SENDING != connection->state)
       return;
     check_write_done (connection,
-                      MHD_CONNECTION_FOOTERS_SENT);
+                      MHD_CONNECTION_FULL_REPLY_SENT);
     return;
-  case MHD_CONNECTION_FOOTERS_SENT:
+  case MHD_CONNECTION_FULL_REPLY_SENT:
     mhd_assert (0);
     return;
   case MHD_CONNECTION_CLOSED:
@@ -5065,7 +5065,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       /* no default action */
       break;
     case MHD_CONNECTION_HEADERS_SENT:
-      /* Some clients may take some actions right after header receive */
 #ifdef UPGRADE_SUPPORT
       if (NULL != connection->rp.response->upgrade_handler)
       {
@@ -5099,7 +5098,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           connection->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
       }
       else
-        connection->state = MHD_CONNECTION_FOOTERS_SENT;
+        connection->state = MHD_CONNECTION_FULL_REPLY_SENT;
       continue;
     case MHD_CONNECTION_NORMAL_BODY_READY:
       /* nothing to do here */
@@ -5116,9 +5115,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           MHD_mutex_unlock_chk_ (&connection->rp.response->mutex);
 #endif
         if (connection->rp.props.chunked)
-          connection->state = MHD_CONNECTION_BODY_SENT;
+          connection->state = MHD_CONNECTION_CHUNKED_BODY_SENT;
         else
-          connection->state = MHD_CONNECTION_FOOTERS_SENT;
+          connection->state = MHD_CONNECTION_FULL_REPLY_SENT;
         continue;
       }
       if (MHD_NO != try_ready_normal_body (connection))
@@ -5151,7 +5150,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         if (NULL != connection->rp.response->crc)
           MHD_mutex_unlock_chk_ (&connection->rp.response->mutex);
 #endif
-        connection->state = MHD_CONNECTION_BODY_SENT;
+        connection->state = MHD_CONNECTION_CHUNKED_BODY_SENT;
         continue;
       }
       if (1)
@@ -5163,14 +5162,14 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           if (NULL != connection->rp.response->crc)
             MHD_mutex_unlock_chk_ (&connection->rp.response->mutex);
 #endif
-          connection->state = finished ? MHD_CONNECTION_BODY_SENT :
+          connection->state = finished ? MHD_CONNECTION_CHUNKED_BODY_SENT :
                               MHD_CONNECTION_CHUNKED_BODY_READY;
           continue;
         }
         /* mutex was already unlocked by try_ready_chunked_body */
       }
       break;
-    case MHD_CONNECTION_BODY_SENT:
+    case MHD_CONNECTION_CHUNKED_BODY_SENT:
       mhd_assert (connection->rp.props.chunked);
 
       if (MHD_NO == build_connection_chunked_response_footer (connection))
@@ -5185,14 +5184,14 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       if ( (! connection->rp.props.chunked) ||
            (connection->write_buffer_send_offset ==
             connection->write_buffer_append_offset) )
-        connection->state = MHD_CONNECTION_FOOTERS_SENT;
+        connection->state = MHD_CONNECTION_FULL_REPLY_SENT;
       else
         connection->state = MHD_CONNECTION_FOOTERS_SENDING;
       continue;
     case MHD_CONNECTION_FOOTERS_SENDING:
       /* no default action */
       break;
-    case MHD_CONNECTION_FOOTERS_SENT:
+    case MHD_CONNECTION_FULL_REPLY_SENT:
       if (MHD_HTTP_PROCESSING == connection->rp.responseCode)
       {
         /* After this type of response, we allow sending another! */

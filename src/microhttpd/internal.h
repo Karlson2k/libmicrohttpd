@@ -706,31 +706,33 @@ enum MHD_CONNECTION_STATE
   MHD_CONNECTION_CHUNKED_BODY_READY = MHD_CONNECTION_CHUNKED_BODY_UNREADY + 1,
 
   /**
-   * We have sent the response body. Prepare the footers.
+   * We have sent the chunked response body. Prepare the footers.
    */
-  MHD_CONNECTION_BODY_SENT = MHD_CONNECTION_CHUNKED_BODY_READY + 1,
+  MHD_CONNECTION_CHUNKED_BODY_SENT = MHD_CONNECTION_CHUNKED_BODY_READY + 1,
 
   /**
    * We have prepared the response footer.  Send it.
    */
-  MHD_CONNECTION_FOOTERS_SENDING = MHD_CONNECTION_BODY_SENT + 1,
+  MHD_CONNECTION_FOOTERS_SENDING = MHD_CONNECTION_CHUNKED_BODY_SENT + 1,
 
   /**
-   * We have sent the response footer.  Shutdown or restart.
+   * We have sent the entire reply.
+   * Shutdown connection or restart processing to get a new request.
    */
-  MHD_CONNECTION_FOOTERS_SENT = MHD_CONNECTION_FOOTERS_SENDING + 1,
+  MHD_CONNECTION_FULL_REPLY_SENT = MHD_CONNECTION_FOOTERS_SENDING + 1,
 
   /**
    * This connection is to be closed.
    */
-  MHD_CONNECTION_CLOSED = MHD_CONNECTION_FOOTERS_SENT + 1,
+  MHD_CONNECTION_CLOSED = MHD_CONNECTION_FULL_REPLY_SENT + 1
 
 #ifdef UPGRADE_SUPPORT
+  ,
   /**
    * Connection was "upgraded" and socket is now under the
    * control of the application.
    */
-  MHD_CONNECTION_UPGRADE
+  MHD_CONNECTION_UPGRADE = MHD_CONNECTION_CLOSED + 1
 #endif /* UPGRADE_SUPPORT */
 
 } _MHD_FIXED_ENUM;

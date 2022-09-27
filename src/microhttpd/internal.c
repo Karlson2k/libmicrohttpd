@@ -75,12 +75,12 @@ MHD_state_to_string (enum MHD_CONNECTION_STATE state)
     return "chunked body unready";
   case MHD_CONNECTION_CHUNKED_BODY_READY:
     return "chunked body ready";
-  case MHD_CONNECTION_BODY_SENT:
-    return "body sent";
+  case MHD_CONNECTION_CHUNKED_BODY_SENT:
+    return "chunked body sent";
   case MHD_CONNECTION_FOOTERS_SENDING:
     return "footers sending";
-  case MHD_CONNECTION_FOOTERS_SENT:
-    return "footers sent";
+  case MHD_CONNECTION_FULL_REPLY_SENT:
+    return "reply sent completely";
   case MHD_CONNECTION_CLOSED:
     return "closed";
   default:
