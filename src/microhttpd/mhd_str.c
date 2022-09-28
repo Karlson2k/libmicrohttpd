@@ -1428,7 +1428,7 @@ MHD_hex_to_bin (const char *hex,
     const int l = toxdigitvalue (hex[r++]);
     if ((0 > h) || (0 > l))
       return 0;
-    out[w++] = ( (((uint8_t) ((unsigned int) h)) << 4)
+    out[w++] = ( ((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
                  | ((uint8_t) ((unsigned int) l)) );
   }
   mhd_assert (len == r);

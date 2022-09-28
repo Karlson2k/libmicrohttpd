@@ -88,7 +88,7 @@ compress_buf (z_stream *strm, const void *src, size_t src_size, size_t *offset,
     {
       strm->avail_out = CHUNK;
       strm->next_out = tmp;
-      ret = deflate (strm, flush);
+      ret = (Z_OK == deflate (strm, flush)) ? MHD_YES : MHD_NO;
       have = CHUNK - strm->avail_out;
       *dest_size += have;
       tmp_dest = realloc (*dest, *dest_size);
@@ -104,7 +104,7 @@ compress_buf (z_stream *strm, const void *src, size_t src_size, size_t *offset,
     while (0 == strm->avail_out);
   }
   while (flush != Z_SYNC_FLUSH);
-  return (Z_OK == ret) ? MHD_YES : MHD_NO;
+  return ret;
 }
 
 
@@ -183,8 +183,7 @@ ahc_echo (void *cls, struct MHD_Connection *con, const char *url, const
   holder->file = fopen (__FILE__, "rb");
   if (NULL == holder->file)
     goto file_error;
-  ret = deflateInit (&holder->stream, Z_BEST_COMPRESSION);
-  if (ret != Z_OK)
+  if (Z_OK != deflateInit (&holder->stream, Z_BEST_COMPRESSION))
     goto stream_error;
   holder->buf = malloc (CHUNK);
   if (NULL == holder->buf)
