@@ -325,7 +325,7 @@ AS_CASE([${enable_build_type}],[debug|debugger],
     MHD_CHECK_ADD_CC_CFLAGS([-Wextra -Wdouble-promotion], [CFLAGS_ac])
     MHD_FIND_ADD_CC_CFLAG_IFELSE(
       [
-        # clang produce warning when string pointer is used as a formar for v*printf() function
+        # clang produce warning when string pointer is used as a format specifier for v*printf() function
         AS_VAR_IF([mhd_cv_cc_clang_based],["yes"],[MHD_CHECK_ADD_CC_CFLAG([-Wno-format-nonliteral], [CFLAGS_ac])])
       ],[],
       [CFLAGS_ac], [-Wformat=2], [-Wformat]
@@ -359,7 +359,39 @@ AS_CASE([${enable_build_type}],[debug|debugger],
     MHD_CHECK_ADD_CC_CFLAGS([-Wmissing-noreturn -Wmissing-variable-declarations -Wnested-anon-types], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wnewline-eof -Wover-aligned -Wredundant-parens], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wshift-sign-overflow -Wtautological-compare -Wunaligned-access], [CFLAGS_ac])
-    MHD_CHECK_ADD_CC_CFLAGS([-Wunused -Wused-but-marked-unused -Wzero-as-null-pointer-constant -Wzero-length-array], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wunused -Wzero-as-null-pointer-constant -Wzero-length-array], [CFLAGS_ac])
+    MHD_CHECK_CC_CFLAG([-Wused-but-marked-unused],[CFLAGS_ac],
+      [
+        AC_CACHE_CHECK([whether $[]CC -Wused-but-marked-unused works with system headers],
+          [mhd_cv_wused_but_marked_unused_sys_header],
+          [
+            SAVE_ac_c_werror_flag="$ac_c_werror_flag"
+            ac_c_werror_flag="yes"
+            CFLAGS="${CFLAGS_ac} -Wused-but-marked-unused ${user_CFLAGS}"
+            AC_COMPILE_IFELSE(
+              [
+                AC_LANG_SOURCE([[
+#include <stdio.h>
+
+int main(void)
+{
+  char buf[16];
+  return (int) snprintf(buf, 16, "test");
+}
+                  ]]
+                )
+              ],
+              [mhd_cv_wused_but_marked_unused_sys_header="yes"],
+              [mhd_cv_wused_but_marked_unused_sys_header="no"]
+            )
+            ac_c_werror_flag="$SAVE_ac_c_werror_flag"
+          ]
+        )
+        AS_VAR_IF([mhd_cv_wused_but_marked_unused_sys_header],["yes"],
+          [MHD_APPEND_FLAG_TO_VAR([CFLAGS_ac],[-Wused-but-marked-unused])]
+        )
+      ]
+    )
     #
     # Removed flags:
     #

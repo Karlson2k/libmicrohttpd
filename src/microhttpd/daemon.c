@@ -815,20 +815,20 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
 
   if (MHD_INVALID_SOCKET != conn_sckt)
   {
-    if (FD_ISSET (conn_sckt, rs))
+    if (FD_ISSET (conn_sckt, (fd_set *) _MHD_DROP_CONST (rs)))
       urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
-    if (FD_ISSET (conn_sckt, ws))
+    if (FD_ISSET (conn_sckt, (fd_set *) _MHD_DROP_CONST (ws)))
       urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
-    if (FD_ISSET (conn_sckt, es))
+    if (FD_ISSET (conn_sckt, (fd_set *) _MHD_DROP_CONST (es)))
       urh->app.celi |= MHD_EPOLL_STATE_ERROR;
   }
   if ((MHD_INVALID_SOCKET != mhd_sckt))
   {
-    if (FD_ISSET (mhd_sckt, rs))
+    if (FD_ISSET (mhd_sckt, (fd_set *) _MHD_DROP_CONST (rs)))
       urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
-    if (FD_ISSET (mhd_sckt, ws))
+    if (FD_ISSET (mhd_sckt, (fd_set *) _MHD_DROP_CONST (ws)))
       urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
-    if (FD_ISSET (mhd_sckt, es))
+    if (FD_ISSET (mhd_sckt, (fd_set *) _MHD_DROP_CONST (es)))
       urh->mhd.celi |= MHD_EPOLL_STATE_ERROR;
   }
 }
@@ -4299,7 +4299,7 @@ internal_run_from_select (struct MHD_Daemon *daemon,
      will trigger select again and will be processed */
   if ( (MHD_ITC_IS_VALID_ (daemon->itc)) &&
        (FD_ISSET (MHD_itc_r_fd_ (daemon->itc),
-                  read_fd_set)) )
+                  (fd_set *) _MHD_DROP_CONST (read_fd_set))) )
     MHD_itc_clear_ (daemon->itc);
 
   /* Process externally added connection if any */
@@ -4310,7 +4310,7 @@ internal_run_from_select (struct MHD_Daemon *daemon,
   if ( (MHD_INVALID_SOCKET != (ds = daemon->listen_fd)) &&
        (! daemon->was_quiesced) &&
        (FD_ISSET (ds,
-                  read_fd_set)) )
+                  (fd_set *) _MHD_DROP_CONST (read_fd_set))) )
     (void) MHD_accept_connection (daemon);
 
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
@@ -4325,11 +4325,11 @@ internal_run_from_select (struct MHD_Daemon *daemon,
         continue;
       call_handlers (pos,
                      FD_ISSET (ds,
-                               read_fd_set),
+                               (fd_set *) _MHD_DROP_CONST (read_fd_set)),
                      FD_ISSET (ds,
-                               write_fd_set),
+                               (fd_set *) _MHD_DROP_CONST (write_fd_set)),
                      FD_ISSET (ds,
-                               except_fd_set));
+                               (fd_set *) _MHD_DROP_CONST (except_fd_set)));
     }
   }
 
