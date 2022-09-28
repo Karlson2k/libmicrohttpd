@@ -394,8 +394,9 @@ test_multipart_garbage (void)
     header.value =
       MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA ", boundary=AaB03x";
     header.header_size = MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_TYPE);
-    header.value_size = MHD_STATICSTR_LEN_ (
-      MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA ", boundary=AaB03x");
+    header.value_size =
+      MHD_STATICSTR_LEN_ (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA \
+                          ", boundary=AaB03x");
     header.kind = MHD_HEADER_KIND;
     pp = MHD_create_post_processor (&connection,
                                     1024, &value_checker, &want_off);

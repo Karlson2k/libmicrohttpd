@@ -119,15 +119,15 @@ testLongUrlGet (size_t buff_size)
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (
-    MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_ERROR_LOG */,
-    port,
-    &apc_all,
-    NULL,
-    &ahc_echo,
-    "GET",
-    MHD_OPTION_CONNECTION_MEMORY_LIMIT,
-    (size_t) buff_size, MHD_OPTION_END);
+  d =
+    MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_ERROR_LOG */,
+                      port,
+                      &apc_all,
+                      NULL,
+                      &ahc_echo,
+                      "GET",
+                      MHD_OPTION_CONNECTION_MEMORY_LIMIT,
+                      (size_t) buff_size, MHD_OPTION_END);
   if (d == NULL)
     return 1;
   if (0 == port)
@@ -213,15 +213,15 @@ testLongHeaderGet (size_t buff_size)
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (
-    MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_ERROR_LOG */,
-    port,
-    &apc_all,
-    NULL,
-    &ahc_echo,
-    "GET",
-    MHD_OPTION_CONNECTION_MEMORY_LIMIT,
-    (size_t) buff_size, MHD_OPTION_END);
+  d =
+    MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_ERROR_LOG */,
+                      port,
+                      &apc_all,
+                      NULL,
+                      &ahc_echo,
+                      "GET",
+                      MHD_OPTION_CONNECTION_MEMORY_LIMIT,
+                      (size_t) buff_size, MHD_OPTION_END);
   if (d == NULL)
     return 16;
   if (0 == port)

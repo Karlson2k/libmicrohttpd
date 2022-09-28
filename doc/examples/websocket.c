@@ -411,8 +411,7 @@ access_handler (void *cls,
   {
     struct MHD_Response *response;
     response =
-      MHD_create_response_from_buffer_static (strlen (
-                                                PAGE_NOT_FOUND),
+      MHD_create_response_from_buffer_static (strlen (PAGE_NOT_FOUND),
                                               PAGE_NOT_FOUND);
     ret = MHD_queue_response (connection,
                               MHD_HTTP_NOT_FOUND,

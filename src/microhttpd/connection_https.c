@@ -111,9 +111,9 @@ recv_tls_adapter (struct MHD_Connection *connection,
 #endif /* EPOLL_SUPPORT */
 
   /* Check whether TLS buffers still have some unread data. */
-  connection->tls_read_ready = ( ((size_t) res == i) &&
-                                 (0 != gnutls_record_check_pending (
-                                    connection->tls_session)) );
+  connection->tls_read_ready =
+    ( ((size_t) res == i) &&
+      (0 != gnutls_record_check_pending (connection->tls_session)) );
   return res;
 }
 

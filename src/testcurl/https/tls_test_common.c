@@ -711,8 +711,8 @@ testsuite_curl_global_init (void)
   res = curl_global_init (CURL_GLOBAL_ALL);
   if (CURLE_OK != res)
   {
-    fprintf (stderr, "libcurl initialisation error: %s\n", curl_easy_strerror (
-               res));
+    fprintf (stderr, "libcurl initialisation error: %s\n",
+             curl_easy_strerror (res));
     return 0;
   }
   return 1;

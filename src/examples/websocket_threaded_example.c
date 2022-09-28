@@ -861,18 +861,19 @@ ahc_cb (void *cls, struct MHD_Connection *con, const char *url,
   {
     return send_bad_request (con);
   }
-  ws_version_header = MHD_lookup_connection_value (
-    con, MHD_HEADER_KIND, MHD_HTTP_HEADER_SEC_WEBSOCKET_VERSION);
+  ws_version_header =
+    MHD_lookup_connection_value (con, MHD_HEADER_KIND,
+                                 MHD_HTTP_HEADER_SEC_WEBSOCKET_VERSION);
   if ((NULL == ws_version_header)
       || (0 != strcmp (ws_version_header, WS_SEC_WEBSOCKET_VERSION)))
   {
     return send_upgrade_required (con);
   }
-  ret = MHD_lookup_connection_value_n (
-    con, MHD_HEADER_KIND,
-    MHD_HTTP_HEADER_SEC_WEBSOCKET_KEY,
-    strlen (MHD_HTTP_HEADER_SEC_WEBSOCKET_KEY),
-    &ws_key_header, &key_size);
+  ret = MHD_lookup_connection_value_n (con, MHD_HEADER_KIND,
+                                       MHD_HTTP_HEADER_SEC_WEBSOCKET_KEY,
+                                       strlen (
+                                         MHD_HTTP_HEADER_SEC_WEBSOCKET_KEY),
+                                       &ws_key_header, &key_size);
   if ((MHD_NO == ret) || (key_size != WS_KEY_LEN))
   {
     return send_bad_request (con);

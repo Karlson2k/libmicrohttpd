@@ -54,13 +54,14 @@ MHD_create_post_processor (struct MHD_Connection *connection,
        (NULL == iter))
     MHD_PANIC (_ ("libmicrohttpd API violation.\n"));
   encoding = NULL;
-  if (MHD_NO == MHD_lookup_connection_value_n (connection,
-                                               MHD_HEADER_KIND,
-                                               MHD_HTTP_HEADER_CONTENT_TYPE,
-                                               MHD_STATICSTR_LEN_ (
-                                                 MHD_HTTP_HEADER_CONTENT_TYPE),
-                                               &encoding,
-                                               NULL))
+  if (MHD_NO ==
+      MHD_lookup_connection_value_n (connection,
+                                     MHD_HEADER_KIND,
+                                     MHD_HTTP_HEADER_CONTENT_TYPE,
+                                     MHD_STATICSTR_LEN_ (
+                                       MHD_HTTP_HEADER_CONTENT_TYPE),
+                                     &encoding,
+                                     NULL))
     return NULL;
   mhd_assert (NULL != encoding);
   boundary = NULL;

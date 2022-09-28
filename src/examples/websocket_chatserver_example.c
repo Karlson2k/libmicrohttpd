@@ -966,12 +966,9 @@ chat_adduser (struct ConnectedUser *cu)
 
   /* add the new user to the list */
   size_t user_count_ = user_count + 1;
-  struct ConnectedUser **users_ = (struct ConnectedUser **) realloc (users,
-                                                                     user_count_
-                                                                     * sizeof (
-                                                                       struct
-                                                                       ConnectedUser
-                                                                       *));
+  struct ConnectedUser **users_ =
+    (struct ConnectedUser **) realloc (users, user_count_
+                                       * sizeof (struct ConnectedUser *));
   if (NULL == users_)
   {
     /* realloc failed */
@@ -1546,8 +1543,8 @@ connecteduser_parse_received_websocket_stream (struct ConnectedUser *cu,
               snprintf (result_text + 5, 235, "%d", (int) cu->user_id);
               strcat (result_text,
                       "|");
-              snprintf (result_text + strlen (result_text), 240 - strlen (
-                          result_text), "%d", (int) ping);
+              snprintf (result_text + strlen (result_text), 240
+                        - strlen (result_text), "%d", (int) ping);
               chat_addmessage (0,
                                0,
                                result_text,
@@ -2256,9 +2253,10 @@ access_handler (void *cls,
     {
       /* return error page */
       struct MHD_Response *response;
-      response = MHD_create_response_from_buffer_static (strlen (
-                                                           PAGE_INVALID_WEBSOCKET_REQUEST),
-                                                         PAGE_INVALID_WEBSOCKET_REQUEST);
+      response =
+        MHD_create_response_from_buffer_static ( \
+          strlen (PAGE_INVALID_WEBSOCKET_REQUEST),
+          PAGE_INVALID_WEBSOCKET_REQUEST);
       ret = MHD_queue_response (connection,
                                 MHD_HTTP_BAD_REQUEST,
                                 response);

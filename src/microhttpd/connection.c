@@ -766,13 +766,14 @@ need_100_continue (struct MHD_Connection *connection)
   const char *expect;
 
   return (MHD_IS_HTTP_VER_1_1_COMPAT (connection->rq.http_ver) &&
-          (MHD_NO != MHD_lookup_connection_value_n (connection,
-                                                    MHD_HEADER_KIND,
-                                                    MHD_HTTP_HEADER_EXPECT,
-                                                    MHD_STATICSTR_LEN_ (
-                                                      MHD_HTTP_HEADER_EXPECT),
-                                                    &expect,
-                                                    NULL)) &&
+          (MHD_NO !=
+           MHD_lookup_connection_value_n (connection,
+                                          MHD_HEADER_KIND,
+                                          MHD_HTTP_HEADER_EXPECT,
+                                          MHD_STATICSTR_LEN_ (
+                                            MHD_HTTP_HEADER_EXPECT),
+                                          &expect,
+                                          NULL)) &&
           (MHD_str_equal_caseless_ (expect,
                                     "100-continue")) );
 }
@@ -1085,8 +1086,8 @@ try_ready_normal_body (struct MHD_Connection *connection)
                              MHD_REQUEST_TERMINATED_COMPLETED_OK);
     else
       CONNECTION_CLOSE_ERROR (connection,
-                              _ (
-                                "Closing connection (application reported error generating data)."));
+                              _ ("Closing connection (application reported " \
+                                 "error generating data)."));
     return MHD_NO;
   }
   response->data_start = connection->rp.rsp_write_position;
@@ -1225,8 +1226,8 @@ try_ready_chunked_body (struct MHD_Connection *connection,
     MHD_mutex_unlock_chk_ (&response->mutex);
 #endif
     CONNECTION_CLOSE_ERROR (connection,
-                            _ (
-                              "Closing connection (application error generating response)."));
+                            _ ("Closing connection (application error " \
+                               "generating response)."));
     return MHD_NO;
   }
   if (MHD_CONTENT_READER_END_OF_STREAM == ret)
@@ -3100,13 +3101,14 @@ parse_cookie_header (struct MHD_Connection *connection)
   bool strict_parsing;
   size_t i;
 
-  if (MHD_NO == MHD_lookup_connection_value_n (connection,
-                                               MHD_HEADER_KIND,
-                                               MHD_HTTP_HEADER_COOKIE,
-                                               MHD_STATICSTR_LEN_ (
-                                                 MHD_HTTP_HEADER_COOKIE),
-                                               &hdr,
-                                               &hdr_len))
+  if (MHD_NO ==
+      MHD_lookup_connection_value_n (connection,
+                                     MHD_HEADER_KIND,
+                                     MHD_HTTP_HEADER_COOKIE,
+                                     MHD_STATICSTR_LEN_ (
+                                       MHD_HTTP_HEADER_COOKIE),
+                                     &hdr,
+                                     &hdr_len))
     return MHD_PARSE_COOKIE_OK;
   if (0 == hdr_len)
     return MHD_PARSE_COOKIE_OK;
@@ -3414,8 +3416,8 @@ call_connection_handler (struct MHD_Connection *connection)
   {
     /* serious internal error, close connection */
     CONNECTION_CLOSE_ERROR (connection,
-                            _ (
-                              "Application reported internal error, closing connection."));
+                            _ ("Application reported internal error, " \
+                               "closing connection."));
     return;
   }
 }
@@ -3939,13 +3941,14 @@ parse_connection_headers (struct MHD_Connection *connection)
   }
 
   connection->rq.remaining_upload_size = 0;
-  if (MHD_NO != MHD_lookup_connection_value_n (connection,
-                                               MHD_HEADER_KIND,
-                                               MHD_HTTP_HEADER_TRANSFER_ENCODING,
-                                               MHD_STATICSTR_LEN_ (
-                                                 MHD_HTTP_HEADER_TRANSFER_ENCODING),
-                                               &enc,
-                                               NULL))
+  if (MHD_NO !=
+      MHD_lookup_connection_value_n (connection,
+                                     MHD_HEADER_KIND,
+                                     MHD_HTTP_HEADER_TRANSFER_ENCODING,
+                                     MHD_STATICSTR_LEN_ (
+                                       MHD_HTTP_HEADER_TRANSFER_ENCODING),
+                                     &enc,
+                                     NULL))
   {
     connection->rq.remaining_upload_size = MHD_SIZE_UNKNOWN;
     if (MHD_str_equal_caseless_ (enc,
@@ -3954,13 +3957,14 @@ parse_connection_headers (struct MHD_Connection *connection)
   }
   else
   {
-    if (MHD_NO != MHD_lookup_connection_value_n (connection,
-                                                 MHD_HEADER_KIND,
-                                                 MHD_HTTP_HEADER_CONTENT_LENGTH,
-                                                 MHD_STATICSTR_LEN_ (
-                                                   MHD_HTTP_HEADER_CONTENT_LENGTH),
-                                                 &clen,
-                                                 &val_len))
+    if (MHD_NO !=
+        MHD_lookup_connection_value_n (connection,
+                                       MHD_HEADER_KIND,
+                                       MHD_HTTP_HEADER_CONTENT_LENGTH,
+                                       MHD_STATICSTR_LEN_ (
+                                         MHD_HTTP_HEADER_CONTENT_LENGTH),
+                                       &clen,
+                                       &val_len))
     {
       size_t num_digits;
 
@@ -4679,8 +4683,8 @@ cleanup_connection (struct MHD_Connection *connection)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _ (
-                  "Failed to signal end of connection via inter-thread communication channel.\n"));
+                _ ("Failed to signal end of connection via inter-thread " \
+                   "communication channel.\n"));
 #endif
     }
   }
@@ -5189,8 +5193,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       {
         /* oops - close! */
         CONNECTION_CLOSE_ERROR (connection,
-                                _ (
-                                  "Closing connection (failed to create response footer)."));
+                                _ ("Closing connection (failed to create " \
+                                   "response footer)."));
         continue;
       }
       mhd_assert (connection->write_buffer_send_offset < \

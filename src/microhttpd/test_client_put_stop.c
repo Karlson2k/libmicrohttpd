@@ -623,8 +623,8 @@ _MHD_dumbClient_create (uint16_t port, const char *method, const char *url,
       int prn_size;
       memcpy (send_buf + clnt->req_size, MHD_HTTP_HEADER_CONTENT_LENGTH ": ",
               MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_LENGTH ": "));
-      clnt->req_size += MHD_STATICSTR_LEN_ (
-        MHD_HTTP_HEADER_CONTENT_LENGTH ": ");
+      clnt->req_size +=
+        MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_LENGTH ": ");
       prn_size = snprintf (send_buf + clnt->req_size,
                            (buf_alloc_size - clnt->req_size),
                            "%u", (unsigned int) req_body_size);

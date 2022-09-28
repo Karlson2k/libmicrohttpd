@@ -172,11 +172,11 @@ testInternalPost ()
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (
-    MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_ERROR_LOG */,
-    11080, NULL, NULL, &ahc_echo, NULL,
-    MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,
-    MHD_OPTION_END);
+  d =
+    MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_ERROR_LOG */,
+                      11080, NULL, NULL, &ahc_echo, NULL,
+                      MHD_OPTION_NOTIFY_COMPLETED, &completed_cb, NULL,
+                      MHD_OPTION_END);
   if (d == NULL)
     return 1;
   zzuf_socat_start ();

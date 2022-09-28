@@ -249,9 +249,9 @@ check_result (const char *test_name,
   {
     char calc_str[SHA1_DIGEST_STRING_SIZE];
     bin2hex (calculated, SHA1_DIGEST_SIZE, calc_str);
-    printf (
-      "PASSED: %s check %u: calculated digest %s matches expected digest.\n",
-      test_name, check_num, calc_str);
+    printf ("PASSED: %s check %u: calculated digest %s matches " \
+            "expected digest.\n",
+            test_name, check_num, calc_str);
     fflush (stdout);
   }
   return failed ? 1 : 0;
@@ -275,7 +275,7 @@ test1_str (void)
     uint8_t digest[SHA1_DIGEST_SIZE];
 
     MHD_SHA1_init (&ctx);
-    MHD_SHA1_update (&ctx, (const uint8_t*) data_units1[i].str_l.str,
+    MHD_SHA1_update (&ctx, (const uint8_t *) data_units1[i].str_l.str,
                      data_units1[i].str_l.len);
     MHD_SHA1_finish (&ctx, digest);
     num_failed += check_result (__FUNCTION__, i, digest,
@@ -321,8 +321,8 @@ test2_str (void)
     size_t part_s = data_units1[i].str_l.len / 4;
 
     MHD_SHA1_init (&ctx);
-    MHD_SHA1_update (&ctx, (const uint8_t*) data_units1[i].str_l.str, part_s);
-    MHD_SHA1_update (&ctx, (const uint8_t*) data_units1[i].str_l.str + part_s,
+    MHD_SHA1_update (&ctx, (const uint8_t *) data_units1[i].str_l.str, part_s);
+    MHD_SHA1_update (&ctx, (const uint8_t *) data_units1[i].str_l.str + part_s,
                      data_units1[i].str_l.len - part_s);
     MHD_SHA1_finish (&ctx, digest);
     num_failed += check_result (__FUNCTION__, i, digest,

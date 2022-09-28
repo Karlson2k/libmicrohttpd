@@ -373,8 +373,8 @@ fill_v1_v2_form (const void *cls,
   size_t slen;
   (void) cls; /* Unused. Silent compiler warning. */
 
-  slen = strlen (SECOND_PAGE) + strlen (session->value_1) + strlen (
-    session->value_2);
+  slen = strlen (SECOND_PAGE) + strlen (session->value_1)
+         + strlen (session->value_2);
   reply = malloc (slen + 1);
   if (NULL == reply)
     return MHD_NO;

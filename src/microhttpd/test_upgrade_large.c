@@ -519,8 +519,8 @@ wr_create_tls_sckt (void)
     {
       if (GNUTLS_E_SUCCESS == gnutls_set_default_priority (s->tls_s))
       {
-        if (GNUTLS_E_SUCCESS == gnutls_certificate_allocate_credentials (
-              &(s->tls_crd)))
+        if (GNUTLS_E_SUCCESS ==
+            gnutls_certificate_allocate_credentials (&(s->tls_crd)))
         {
           if (GNUTLS_E_SUCCESS == gnutls_credentials_set (s->tls_s,
                                                           GNUTLS_CRD_CERTIFICATE,
