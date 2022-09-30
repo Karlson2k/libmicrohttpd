@@ -113,7 +113,7 @@ http_ContentReaderCallback (void *cls,
   if (userdata->bytes_written >= 1024)
   {
     fprintf (stderr,
-             "finish: %d\n",
+             "finish: %u\n",
              request_counter);
     return MHD_CONTENT_READER_END_OF_STREAM;
   }
@@ -155,7 +155,7 @@ http_AccessHandlerCallback (void *cls,
   {
     struct ContentReaderUserdata *userdata;
     fprintf (stderr,
-             "start: %d\n",
+             "start: %u\n",
              ++request_counter);
 
     userdata = malloc (sizeof(struct ContentReaderUserdata));

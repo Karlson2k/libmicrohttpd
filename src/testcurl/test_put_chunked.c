@@ -125,9 +125,8 @@ ahc_echo (void *cls,
 #endif
     return MHD_YES;
   }
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                   (const void *) url);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;

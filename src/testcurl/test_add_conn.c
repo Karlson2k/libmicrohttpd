@@ -151,15 +151,15 @@ ahc_echo (void *cls,
           void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
   const char *v;
+  (void) cls;
   (void) version;
   (void) upload_data;
   (void) upload_data_size;       /* Unused. Silence compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *req_cls)
   {
@@ -200,9 +200,8 @@ ahc_echo (void *cls,
   if (slow_reply)
     usleep (200000);
 
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                   (const void *) url);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -266,7 +265,7 @@ createListeningSocket (int *pport)
   struct sockaddr_in sin;
   socklen_t sin_len;
 #ifdef MHD_POSIX_SOCKETS
-  static const int on = 1;
+  static int on = 1;
 #endif /* MHD_POSIX_SOCKETS */
 
   skt = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -745,7 +744,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           | (no_listen ? MHD_USE_NO_LISTEN_SOCKET : 0)
                           | MHD_USE_ERROR_LOG,
                           *pport, NULL, NULL,
-                          &ahc_echo, "GET",
+                          &ahc_echo, NULL,
                           MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                           MHD_OPTION_END);
   else
@@ -754,7 +753,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           | (no_listen ? MHD_USE_NO_LISTEN_SOCKET : 0)
                           | MHD_USE_ERROR_LOG,
                           *pport, NULL, NULL,
-                          &ahc_echo, "GET",
+                          &ahc_echo, NULL,
                           MHD_OPTION_THREAD_POOL_SIZE,
                           testNumThreadsForPool (pollType),
                           MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,

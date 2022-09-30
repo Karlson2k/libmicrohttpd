@@ -522,8 +522,12 @@ testExternalPost ()
         timeout64 = (uint64_t) ctimeout;
       if (0 == running)
         timeout64 = 0; /* terminate quickly... */
-      tv.tv_sec = timeout64 / 1000;
-      tv.tv_usec = (timeout64 % 1000) * 1000;
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+      tv.tv_sec = (time_t) (timeout64 / 1000);
+#else  /* Native W32 */
+      tv.tv_sec = (long) (timeout64 / 1000);
+#endif /* Native W32 */
+      tv.tv_usec = (long) (1000 * (timeout64 % 1000));
       if (-1 == select (maxposixs + 1, &rs, &ws, &es, &tv))
       {
 #ifdef MHD_POSIX_SOCKETS

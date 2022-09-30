@@ -183,16 +183,16 @@ ahc_echo (void *cls,
           const char *upload_data, size_t *upload_data_size, void **req_cls)
 {
   static int aptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
 
+  (void) cls;
   (void) url;
   (void) version;              /* Unused. Silent compiler warning. */
   (void) upload_data;
   (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
   if (&aptr != *req_cls)
   {
@@ -227,8 +227,7 @@ ahc_echo (void *cls,
       for (pos = 0; pos < resp_size; pos += RESP_BLOCK_SIZE)
         memset (buf + pos, 'A' + (pos / RESP_BLOCK_SIZE), RESP_BLOCK_SIZE);
 
-      response = MHD_create_response_from_buffer (resp_size, buf,
-                                                  MHD_RESPMEM_MUST_COPY);
+      response = MHD_create_response_from_buffer_copy (resp_size, buf);
       free (buf);
     }
     else
@@ -324,7 +323,7 @@ testInternalGet ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 1;
   if (0 == port)
@@ -407,7 +406,7 @@ testMultithreadedGet ()
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 16;
   if (0 == port)
@@ -489,7 +488,7 @@ testMultithreadedPoolGet ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET",
+                        port, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_THREAD_POOL_SIZE, MHD_CPU_COUNT,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -588,7 +587,7 @@ testExternalGet ()
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 256;
   if (0 == port)

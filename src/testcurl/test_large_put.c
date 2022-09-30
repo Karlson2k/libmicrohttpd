@@ -286,9 +286,9 @@ ahc_echo (void *cls,
       *done = 1;   /* Whole request is processed. */
     return MHD_YES;
   }
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  response =
+    MHD_create_response_from_buffer_copy (strlen (url),
+                                          (const void *) url);
   if (NULL == response)
     mhdErrorExitDesc ("Failed to create response");
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);

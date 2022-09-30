@@ -80,17 +80,16 @@ ahc_echo (void *cls,
           const char *upload_data, size_t *upload_data_size,
           void **req_cls)
 {
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
+  (void) cls;
   (void) version; (void) upload_data;      /* Unused. Silent compiler warning. */
   (void) upload_data_size; (void) req_cls; /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                   (const void *) url);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   return ret;
@@ -124,8 +123,7 @@ testLongUrlGet (size_t buff_size)
                       port,
                       &apc_all,
                       NULL,
-                      &ahc_echo,
-                      "GET",
+                      &ahc_echo, NULL,
                       MHD_OPTION_CONNECTION_MEMORY_LIMIT,
                       (size_t) buff_size, MHD_OPTION_END);
   if (d == NULL)
@@ -218,8 +216,7 @@ testLongHeaderGet (size_t buff_size)
                       port,
                       &apc_all,
                       NULL,
-                      &ahc_echo,
-                      "GET",
+                      &ahc_echo, NULL,
                       MHD_OPTION_CONNECTION_MEMORY_LIMIT,
                       (size_t) buff_size, MHD_OPTION_END);
   if (d == NULL)

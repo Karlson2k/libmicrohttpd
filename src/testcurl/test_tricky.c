@@ -246,7 +246,7 @@ struct headers_check_result
 };
 
 
-size_t
+static size_t
 lcurl_hdr_callback (char *buffer, size_t size, size_t nitems,
                     void *userdata)
 {
@@ -314,7 +314,7 @@ struct mhd_header_checker_param
   int found_header4;
 };
 
-enum MHD_Result
+static enum MHD_Result
 headerCheckerInterator (void *cls,
                         enum MHD_ValueKind kind,
                         const char *key,
@@ -425,9 +425,9 @@ ahcCheck (void *cls,
                                        &param->header_check_param))
     mhdErrorExitDesc ("Wrong number of headers in the request");
 
-  response = MHD_create_response_from_buffer (param->rp_data_size,
-                                              (void *) param->rp_data,
-                                              MHD_RESPMEM_MUST_COPY);
+  response =
+    MHD_create_response_from_buffer_copy (param->rp_data_size,
+                                          (const void *) param->rp_data);
   if (NULL == response)
     mhdErrorExitDesc ("Failed to create response");
 

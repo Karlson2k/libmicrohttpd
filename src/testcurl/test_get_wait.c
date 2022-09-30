@@ -89,12 +89,12 @@ ahc_echo (void *cls,
           void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   enum MHD_Result ret;
+  (void) cls;
   (void) url; (void) version;                      /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *req_cls)
   {
@@ -176,7 +176,7 @@ testRunWaitGet (int port, int poll_flag)
           test_desc);
   signal_done = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG | poll_flag,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     abort ();
   if (0 == port)
@@ -224,9 +224,8 @@ main (int argc, char *const *argv)
     port += 5;
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
-  response = MHD_create_response_from_buffer (strlen ("/hello_world"),
-                                              "/hello_world",
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_static (strlen ("/hello_world"),
+                                                     "/hello_world");
   testRunWaitGet (port++, 0);
   if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_EPOLL))
     testRunWaitGet (port++, MHD_USE_EPOLL);

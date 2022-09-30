@@ -137,9 +137,9 @@ ahc_echo (void *cls,
   enum MHD_Result ret;
   (void) cls; (void) version;      /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp ("POST", method))
+  if (0 != strcmp (MHD_HTTP_METHOD_POST, method))
   {
-    printf ("METHOD: %s\n", method);
+    fprintf (stderr, "METHOD: %s\n", method);
     return MHD_NO;              /* unexpected method */
   }
   pp = *req_cls;
@@ -152,9 +152,8 @@ ahc_echo (void *cls,
   MHD_post_process (pp, upload_data, *upload_data_size);
   if ((eok == 3) && (0 == *upload_data_size))
   {
-    response = MHD_create_response_from_buffer (strlen (url),
-                                                (void *) url,
-                                                MHD_RESPMEM_MUST_COPY);
+    response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                     (const void *) url);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     MHD_destroy_response (response);
     MHD_destroy_post_processor (pp);
@@ -608,7 +607,8 @@ ahc_cancel (void *cls,
 
   if (*req_cls == NULL)
   {
-    *req_cls = "wibble";
+    static int marker = 1;
+    *req_cls = &marker;
     /* We don't want the body. Send a 500. */
     response = MHD_create_response_empty (MHD_RF_NONE);
     ret = MHD_queue_response (connection, 500, response);
@@ -768,8 +768,8 @@ testMultithreadedPostCancelPart (int flags)
 #endif /* ! _WIN32 */
     {
       fprintf (stderr,
-               "flibbet curl_easy_perform didn't fail as expected: `%s' %d\n",
-               curl_easy_strerror (errornum), errornum);
+               "flibbet curl_easy_perform didn't fail as expected: `%s' %u\n",
+               curl_easy_strerror (errornum), (unsigned int) errornum);
       result = 65536;
     }
     curl_easy_cleanup (c);

@@ -530,6 +530,7 @@ ahc_echo (void *cls,
     case MHD_DAUTH_WRONG_QOP:
     case MHD_DAUTH_WRONG_ALGO:
     case MHD_DAUTH_TOO_LARGE:
+    case MHD_DAUTH_NONCE_OTHER_COND:
       fprintf (stderr, "'MHD_digest_auth_check3()' returned "
                "unexpected result: %d. ",
                check_res);

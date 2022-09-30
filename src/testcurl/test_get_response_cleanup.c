@@ -125,14 +125,13 @@ ahc_echo (void *cls,
           void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
+  (void) cls;
   (void) url; (void) version;                      /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
-  // fprintf (stderr, "In CB: %s!\n", method);
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *req_cls)
   {
@@ -172,7 +171,7 @@ testInternalGet ()
 
   ok = 1;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 1;
   if (0 == port)
@@ -221,7 +220,7 @@ testMultithreadedGet ()
   ok = 1;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET",
+                        port, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 2,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -283,7 +282,7 @@ testMultithreadedPoolGet ()
 
   ok = 1;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET",
+                        port, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_THREAD_POOL_SIZE, MHD_CPU_COUNT,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -339,7 +338,7 @@ testExternalGet ()
 
   ok = 1;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 256;
   if (0 == port)

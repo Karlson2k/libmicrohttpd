@@ -110,15 +110,15 @@ ahc_echo (void *cls,
           void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
   const char *v;
+  (void) cls;
   (void) version;
   (void) upload_data;
   (void) upload_data_size;       /* Unused. Silence compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *req_cls)
   {
@@ -156,9 +156,8 @@ ahc_echo (void *cls,
              NULL == v ? "NULL" : v);
     _exit (19);
   }
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                   (const void *) url);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -195,7 +194,7 @@ testInternalGet (int poll_flag)
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
                         | poll_flag,
                         global_port, NULL, NULL,
-                        &ahc_echo, "GET",
+                        &ahc_echo, NULL,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -269,7 +268,7 @@ testMultithreadedGet (int poll_flag)
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
                         | poll_flag,
                         global_port, NULL, NULL,
-                        &ahc_echo, "GET",
+                        &ahc_echo, NULL,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -342,7 +341,7 @@ testMultithreadedPoolGet (int poll_flag)
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
                         | poll_flag,
                         global_port, NULL, NULL,
-                        &ahc_echo, "GET",
+                        &ahc_echo, NULL,
                         MHD_OPTION_THREAD_POOL_SIZE, MHD_CPU_COUNT,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                         MHD_OPTION_END);
@@ -426,7 +425,7 @@ testExternalGet ()
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         global_port, NULL, NULL,
-                        &ahc_echo, "GET",
+                        &ahc_echo, NULL,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -601,7 +600,7 @@ testUnknownPortGet (int poll_flag)
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
                         | poll_flag,
-                        0, NULL, NULL, &ahc_echo, "GET",
+                        0, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_SOCK_ADDR, &addr,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                         MHD_OPTION_END);
@@ -688,7 +687,7 @@ testStopRace (int poll_flag)
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
                         | poll_flag,
                         global_port, NULL, NULL,
-                        &ahc_echo, "GET",
+                        &ahc_echo, NULL,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                         MHD_OPTION_END);
   if (d == NULL)

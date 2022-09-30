@@ -92,15 +92,20 @@ iov_free_callback (void *cls)
 }
 
 
+struct iovncont_data
+{
+  void *ptrs[TESTSTR_IOVCNT];
+};
+
 static void
 iovncont_free_callback (void *cls)
 {
-  struct MHD_IoVec *iov = cls;
+  struct iovncont_data *data = (struct iovncont_data *) cls;
   unsigned int i;
 
   for (i = 0; i < TESTSTR_IOVCNT; ++i)
-    free ((void *) iov[i].iov_base);
-  free (iov);
+    free (data->ptrs[i]);
+  free (data);
 }
 
 
@@ -126,7 +131,7 @@ check_read_data (const void *ptr, size_t len)
 
 
 static enum MHD_Result
-ahc_echo (void *cls,
+ahc_cont (void *cls,
           struct MHD_Connection *connection,
           const char *url,
           const char *method,
@@ -135,16 +140,16 @@ ahc_echo (void *cls,
           void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
   int *data;
   struct MHD_IoVec iov[TESTSTR_IOVCNT];
   int i;
+  (void) cls;
   (void) url; (void) version;                      /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *req_cls)
   {
@@ -182,25 +187,25 @@ ahc_echo (void *cls,
 
 
 static enum MHD_Result
-ncont_echo (void *cls,
-            struct MHD_Connection *connection,
-            const char *url,
-            const char *method,
-            const char *version,
-            const char *upload_data, size_t *upload_data_size,
-            void **req_cls)
+ahc_ncont (void *cls,
+           struct MHD_Connection *connection,
+           const char *url,
+           const char *method,
+           const char *version,
+           const char *upload_data, size_t *upload_data_size,
+           void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
-  int *data;
-  struct MHD_IoVec *iov;
+  struct MHD_IoVec iov[TESTSTR_IOVCNT];
+  struct iovncont_data *clear_cls;
   int i, j;
+  (void) cls;
   (void) url; (void) version;                      /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *req_cls)
   {
@@ -209,30 +214,33 @@ ncont_echo (void *cls,
   }
   *req_cls = NULL;
 
-  if (NULL == (iov = malloc (sizeof(struct MHD_IoVec) * TESTSTR_IOVCNT)))
-    return MHD_NO;
-
+  clear_cls = malloc (sizeof(struct iovncont_data));
+  if (NULL == clear_cls)
+    abort ();
   memset (iov, 0, sizeof(struct MHD_IoVec) * TESTSTR_IOVCNT);
 
   /* Create some test data. */
   for (j = TESTSTR_IOVCNT - 1; j >= 0; --j)
   {
-    if (NULL == (data = malloc (TESTSTR_IOVLEN)))
-      goto err_out;
-
-    iov[j].iov_base = data;
-    iov[j].iov_len = TESTSTR_IOVLEN;
+    int *data;
+    data = malloc (TESTSTR_IOVLEN);
+    if (NULL == data)
+      abort ();
+    clear_cls->ptrs[j] = (void *) data;
 
     for (i = 0; i < (int) (TESTSTR_IOVLEN / sizeof(int)); ++i)
     {
       data[i] = i + (j * TESTSTR_IOVLEN / sizeof(int));
     }
+    iov[j].iov_base = (const void *) data;
+    iov[j].iov_len = TESTSTR_IOVLEN;
+
   }
 
   response = MHD_create_response_from_iovec (iov,
                                              TESTSTR_IOVCNT,
                                              &iovncont_free_callback,
-                                             iov);
+                                             clear_cls);
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -240,15 +248,6 @@ ncont_echo (void *cls,
   if (ret == MHD_NO)
     abort ();
   return ret;
-
-err_out:
-  for (j = 0; j < TESTSTR_IOVCNT; ++j)
-  {
-    if (NULL != iov[j].iov_base)
-      free ((void *) iov[j].iov_base);
-  }
-  free (iov);
-  return MHD_NO;
 }
 
 
@@ -277,12 +276,12 @@ testInternalGet (bool contiguous)
   if (contiguous)
   {
     d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                          port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                          port, NULL, NULL, &ahc_cont, NULL, MHD_OPTION_END);
   }
   else
   {
     d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                          port, NULL, NULL, &ncont_echo, "GET", MHD_OPTION_END);
+                          port, NULL, NULL, &ahc_ncont, NULL, MHD_OPTION_END);
   }
 
   if (d == NULL)
@@ -356,7 +355,7 @@ testMultithreadedGet ()
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
                         | MHD_USE_AUTO,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_cont, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 16;
   if (0 == port)
@@ -427,7 +426,7 @@ testMultithreadedPoolGet ()
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
                         | MHD_USE_AUTO,
-                        port, NULL, NULL, &ahc_echo, "GET",
+                        port, NULL, NULL, &ahc_cont, NULL,
                         MHD_OPTION_THREAD_POOL_SIZE, MHD_CPU_COUNT,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -514,7 +513,7 @@ testExternalGet ()
   cbc.size = sizeof(readbuf);
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_cont, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 256;
   if (0 == port)
@@ -682,7 +681,7 @@ testUnknownPortGet ()
   cbc.size = sizeof(readbuf);
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        0, NULL, NULL, &ahc_echo, "GET",
+                        0, NULL, NULL, &ahc_cont, NULL,
                         MHD_OPTION_SOCK_ADDR, &addr,
                         MHD_OPTION_END);
   if (d == NULL)

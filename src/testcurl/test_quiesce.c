@@ -251,11 +251,11 @@ ahc_echo (void *cls,
           void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   struct MHD_Response *response;
+  (void) cls;
   (void) version; (void) upload_data; (void) upload_data_size;       /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
   {
     fprintf (stderr, "Unexpected HTTP method '%s'. ", method);
     externalErrorExit ();
@@ -266,9 +266,8 @@ ahc_echo (void *cls,
     return MHD_YES;
   }
   *req_cls = NULL;
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                   (const void *) url);
   if (NULL == response)
     mhdErrorExitDesc ("MHD_create_response failed");
   /* Make sure that connection will not be reused */
@@ -317,7 +316,7 @@ ServeOneRequest (void *param)
   fd = *((MHD_socket *) param);
 
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        0, NULL, NULL, &ahc_echo, "GET",
+                        0, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_LISTEN_SOCKET, fd,
                         MHD_OPTION_NOTIFY_COMPLETED, &request_completed, &done,
                         MHD_OPTION_END);
@@ -404,7 +403,7 @@ testGet (int type, int pool_count, int poll_flag)
   struct CBC cbc;
   MHD_socket fd;
   pthread_t thrd;
-  const char *thrdRet;
+  char *thrdRet;
 
   if (verbose)
     printf ("testGet(%d, %d, %d) test started.\n",
@@ -416,7 +415,7 @@ testGet (int type, int pool_count, int poll_flag)
   if (pool_count > 0)
   {
     d = MHD_start_daemon (type | MHD_USE_ERROR_LOG | MHD_USE_ITC | poll_flag,
-                          global_port, NULL, NULL, &ahc_echo, "GET",
+                          global_port, NULL, NULL, &ahc_echo, NULL,
                           MHD_OPTION_THREAD_POOL_SIZE,
                           (unsigned int) pool_count,
                           MHD_OPTION_END);
@@ -425,7 +424,7 @@ testGet (int type, int pool_count, int poll_flag)
   else
   {
     d = MHD_start_daemon (type | MHD_USE_ERROR_LOG | MHD_USE_ITC | poll_flag,
-                          global_port, NULL, NULL, &ahc_echo, "GET",
+                          global_port, NULL, NULL, &ahc_echo, NULL,
                           MHD_OPTION_END);
   }
   if (d == NULL)
@@ -555,7 +554,7 @@ testExternalGet (void)
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         global_port,
                         NULL, NULL,
-                        &ahc_echo, "GET",
+                        &ahc_echo, NULL,
                         MHD_OPTION_END);
   if (d == NULL)
     mhdErrorExitDesc ("Failed to start MHD daemon");

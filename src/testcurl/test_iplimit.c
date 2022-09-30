@@ -85,12 +85,12 @@ ahc_echo (void *cls,
           void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
+  (void) cls;
   (void) version; (void) upload_data; (void) upload_data_size;       /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *req_cls)
   {
@@ -98,9 +98,8 @@ ahc_echo (void *cls,
     return MHD_YES;
   }
   *req_cls = NULL;
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                   (const void *) url);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   if (ret == MHD_NO)
@@ -134,7 +133,7 @@ testMultithreadedGet ()
 
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         port, NULL, NULL,
-                        &ahc_echo, "GET",
+                        &ahc_echo, NULL,
                         MHD_OPTION_PER_IP_CONNECTION_LIMIT, (unsigned int) 2,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -245,7 +244,7 @@ testMultithreadedPoolGet ()
     return 0;
 
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET",
+                        port, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_PER_IP_CONNECTION_LIMIT, (unsigned int) 2,
                         MHD_OPTION_THREAD_POOL_SIZE, MHD_CPU_COUNT,
                         MHD_OPTION_END);

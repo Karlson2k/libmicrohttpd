@@ -157,12 +157,12 @@ ahc_echo (void *cls,
           void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   enum MHD_Result ret;
+  (void) cls;
   (void) url; (void) version;                      /* Unused. Silent compiler warning. */
   (void) upload_data; (void) upload_data_size;     /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *req_cls)
   {
@@ -184,6 +184,7 @@ thread_gets (void *param)
   CURLcode errornum;
   unsigned int i;
   char *const url = (char *) param;
+  static char curl_err_marker[] = "curl error";
 
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, url);
@@ -208,7 +209,7 @@ thread_gets (void *param)
                "curl_easy_perform failed: `%s'\n",
                curl_easy_strerror (errornum));
       curl_easy_cleanup (c);
-      return "curl error";
+      return curl_err_marker;
     }
   }
   curl_easy_cleanup (c);
@@ -225,6 +226,7 @@ do_gets (void *param)
   char url[64];
   int port = (int) (intptr_t) param;
   char *err = NULL;
+  static char pthr_err_marker[] = "pthread_create error";
 
   snprintf (url,
             sizeof (url),
@@ -236,7 +238,7 @@ do_gets (void *param)
     {
       for (j--; j >= 0; j--)
         pthread_join (par[j], NULL);
-      return "pthread_create error";
+      return pthr_err_marker;
     }
   }
   for (j = 0; j < PAR; j++)
@@ -269,8 +271,8 @@ testInternalGet (int port, int poll_flag)
 
   signal_done = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
-                        | poll_flag,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        | (enum MHD_FLAG) poll_flag,
+                        port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 1;
   if (0 == port)
@@ -320,8 +322,8 @@ testMultithreadedGet (int port, int poll_flag)
   signal_done = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
-                        | poll_flag,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        | (enum MHD_FLAG) poll_flag,
+                        port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 16;
   if (0 == port)
@@ -367,8 +369,8 @@ testMultithreadedPoolGet (int port, int poll_flag)
 
   signal_done = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
-                        | poll_flag,
-                        port, NULL, NULL, &ahc_echo, "GET",
+                        | (enum MHD_FLAG) poll_flag,
+                        port, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_THREAD_POOL_SIZE, MHD_CPU_COUNT,
                         MHD_OPTION_END);
   if (d == NULL)
@@ -418,7 +420,7 @@ testExternalGet (int port)
 
   signal_done = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, "GET", MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 256;
   if (0 == port)
@@ -453,8 +455,12 @@ testExternalGet (int port)
     tret = MHD_get_timeout64 (d, &tt64);
     if (MHD_YES != tret)
       tt64 = 1;
-    tv.tv_sec = tt64 / 1000;
-    tv.tv_usec = 1000 * (tt64 % 1000);
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+    tv.tv_sec = (time_t) (tt64 / 1000);
+#else  /* Native W32 */
+    tv.tv_sec = (long) (tt64 / 1000);
+#endif /* Native W32 */
+    tv.tv_usec = ((long) (tt64 % 1000)) * 1000;
     if (-1 == select (max + 1, &rs, &ws, &es, &tv))
     {
 #ifdef MHD_POSIX_SOCKETS
@@ -511,9 +517,8 @@ main (int argc, char *const *argv)
     port += 15;
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
-  response = MHD_create_response_from_buffer (strlen ("/hello_world"),
-                                              "/hello_world",
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_copy (strlen ("/hello_world"),
+                                                   "/hello_world");
   errorCount += testInternalGet (port++, 0);
   errorCount += testMultithreadedGet (port++, 0);
   errorCount += testMultithreadedPoolGet (port++, 0);
