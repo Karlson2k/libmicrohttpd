@@ -45,7 +45,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "gauger.h"
 #include "mhd_has_in_name.h"
 
 #ifndef WINDOWS
@@ -131,10 +130,6 @@ stop (const char *desc)
            desc,
            rps,
            "requests/s");
-  GAUGER (desc,
-          "Sequential GETs",
-          rps,
-          "requests/s");
 }
 
 

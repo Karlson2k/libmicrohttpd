@@ -33,7 +33,6 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
-#include "gauger.h"
 
 #if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 2
 #undef MHD_CPU_COUNT

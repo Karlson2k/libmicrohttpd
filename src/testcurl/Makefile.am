@@ -259,11 +259,11 @@ test_callback_SOURCES = \
 
 perf_get_SOURCES = \
   perf_get.c \
-  gauger.h mhd_has_in_name.h
+  mhd_has_in_name.h
 
 perf_get_concurrent_SOURCES = \
   perf_get_concurrent.c \
-  gauger.h mhd_has_in_name.h
+  mhd_has_in_name.h
 perf_get_concurrent_CFLAGS = \
   $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 perf_get_concurrent_LDADD = \
@@ -271,7 +271,7 @@ perf_get_concurrent_LDADD = \
 
 perf_get_concurrent11_SOURCES = \
   perf_get_concurrent.c \
-  gauger.h mhd_has_in_name.h
+  mhd_has_in_name.h
 perf_get_concurrent11_CFLAGS = \
   $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 perf_get_concurrent11_LDADD = \

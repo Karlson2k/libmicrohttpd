@@ -42,7 +42,6 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
-#include "gauger.h"
 #include "mhd_has_in_name.h"
 
 #if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 2
@@ -135,10 +134,6 @@ stop (const char *desc)
            desc,
            rps,
            "requests/s");
-  GAUGER (desc,
-          "Parallel GETs",
-          rps,
-          "requests/s");
 }
 
 

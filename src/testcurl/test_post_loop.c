@@ -33,7 +33,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "gauger.h"
 #include "mhd_has_in_name.h"
 
 #ifndef WINDOWS
@@ -642,11 +641,6 @@ main (int argc, char *const *argv)
              "%s: Sequential POSTs (http/1.0) %f/s\n",
              "internal select",
              (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0));
-    GAUGER ("internal select",
-            oneone ? "Sequential POSTs (http/1.1)" :
-            "Sequential POSTs (http/1.0)",
-            (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0),
-            "requests/s");
     start_time = now ();
     errorCount += testMultithreadedPost ();
     fprintf (stderr,
@@ -654,11 +648,6 @@ main (int argc, char *const *argv)
              "%s: Sequential POSTs (http/1.0) %f/s\n",
              "multithreaded post",
              (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0));
-    GAUGER ("Multithreaded select",
-            oneone ? "Sequential POSTs (http/1.1)" :
-            "Sequential POSTs (http/1.0)",
-            (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0),
-            "requests/s");
     start_time = now ();
     errorCount += testMultithreadedPoolPost ();
     fprintf (stderr,
@@ -666,11 +655,6 @@ main (int argc, char *const *argv)
              "%s: Sequential POSTs (http/1.0) %f/s\n",
              "thread with pool",
              (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0));
-    GAUGER ("thread with pool",
-            oneone ? "Sequential POSTs (http/1.1)" :
-            "Sequential POSTs (http/1.0)",
-            (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0),
-            "requests/s");
   }
   start_time = now ();
   errorCount += testExternalPost ();
@@ -679,11 +663,6 @@ main (int argc, char *const *argv)
            "%s: Sequential POSTs (http/1.0) %f/s\n",
            "external select",
            (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0));
-  GAUGER ("external select",
-          oneone ? "Sequential POSTs (http/1.1)" :
-          "Sequential POSTs (http/1.0)",
-          (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0),
-          "requests/s");
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();
