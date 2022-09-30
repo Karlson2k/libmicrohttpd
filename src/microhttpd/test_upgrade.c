@@ -1196,8 +1196,12 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
                               &to64);
     if (1000 < to64)
       to64 = 1000;
-    tv.tv_sec = to64 / 1000;
-    tv.tv_usec = 1000 * (to64 % 1000);
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+    tv.tv_sec = (time_t) (to64 / 1000);
+#else  /* Native W32 */
+    tv.tv_sec = (long) (to64 / 1000);
+#endif /* Native W32 */
+    tv.tv_usec = (int) (1000 * (to64 % 1000));
     ret = select (ep + 1,
                   &rs,
                   NULL,

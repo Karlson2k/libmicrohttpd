@@ -2011,7 +2011,7 @@ static int
 testInternalGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
   struct ahc_cls_type *ahc_param;
   struct check_uri_cls *uri_cb_param;
   struct term_notif_cb_param *term_result;
@@ -2027,7 +2027,7 @@ static int
 testMultithreadedGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
   struct ahc_cls_type *ahc_param;
   struct check_uri_cls *uri_cb_param;
   struct term_notif_cb_param *term_result;
@@ -2042,7 +2042,7 @@ static int
 testMultithreadedPoolGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
   struct ahc_cls_type *ahc_param;
   struct check_uri_cls *uri_cb_param;
   struct term_notif_cb_param *term_result;
