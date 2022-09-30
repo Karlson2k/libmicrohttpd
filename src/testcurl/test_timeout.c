@@ -45,7 +45,7 @@
  * Pause execution for specified number of milliseconds.
  * @param ms the number of milliseconds to sleep
  */
-void
+static void
 _MHD_sleep (uint32_t ms)
 {
 #if defined(_WIN32)
@@ -224,7 +224,7 @@ ahc_echo (void *cls,
 
 
 static int
-testWithoutTimeout ()
+testWithoutTimeout (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -311,7 +311,7 @@ testWithoutTimeout ()
 
 
 static int
-testWithTimeout ()
+testWithTimeout (void)
 {
   struct MHD_Daemon *d;
   CURL *c;

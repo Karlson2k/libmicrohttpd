@@ -245,7 +245,7 @@ do_gets (void *param)
 }
 
 
-pthread_t
+static pthread_t
 start_gets (int port)
 {
   pthread_t tid;

@@ -393,7 +393,7 @@ testMultithreadedPoolGet (int poll_flag)
 
 
 static int
-testExternalGet ()
+testExternalGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;

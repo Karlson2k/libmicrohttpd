@@ -174,7 +174,7 @@ ahc_echo (void *cls,
 
 
 static struct curl_httppost *
-make_form ()
+make_form (void)
 {
   struct curl_httppost *post = NULL;
   struct curl_httppost *last = NULL;
@@ -188,7 +188,7 @@ make_form ()
 
 
 static int
-testInternalPost ()
+testInternalPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -266,7 +266,7 @@ testInternalPost ()
 
 
 static int
-testMultithreadedPost ()
+testMultithreadedPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -345,7 +345,7 @@ testMultithreadedPost ()
 
 
 static int
-testMultithreadedPoolPost ()
+testMultithreadedPoolPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -424,7 +424,7 @@ testMultithreadedPoolPost ()
 
 
 static int
-testExternalPost ()
+testExternalPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;

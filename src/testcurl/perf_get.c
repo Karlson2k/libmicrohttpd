@@ -95,7 +95,7 @@ static unsigned long long start_time;
  * @return current time in ms
  */
 static unsigned long long
-now ()
+now (void)
 {
   struct timeval tv;
 
@@ -109,7 +109,7 @@ now ()
  * Start the timer.
  */
 static void
-start_timer ()
+start_timer (void)
 {
   start_time = now ();
 }

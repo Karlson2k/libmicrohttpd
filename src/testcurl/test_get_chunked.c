@@ -93,7 +93,7 @@ struct headers_check_result
   int found_footer;
 };
 
-size_t
+static size_t
 lcurl_hdr_callback (char *buffer, size_t size, size_t nitems,
                     void *userdata)
 {
@@ -307,7 +307,7 @@ validate (struct CBC cbc, int ebase)
 
 
 static int
-testInternalGet ()
+testInternalGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -389,7 +389,7 @@ testInternalGet ()
 
 
 static int
-testMultithreadedGet ()
+testMultithreadedGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -472,7 +472,7 @@ testMultithreadedGet ()
 
 
 static int
-testMultithreadedPoolGet ()
+testMultithreadedPoolGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -556,7 +556,7 @@ testMultithreadedPoolGet ()
 
 
 static int
-testExternalGet ()
+testExternalGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;

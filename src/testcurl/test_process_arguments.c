@@ -112,7 +112,7 @@ ahc_echo (void *cls,
 
 
 static int
-testExternalGet ()
+testExternalGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;

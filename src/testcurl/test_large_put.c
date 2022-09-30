@@ -168,7 +168,7 @@ struct CBC
   size_t size;
 };
 
-char *
+static char *
 alloc_init (size_t buf_size)
 {
   static const char template[] =

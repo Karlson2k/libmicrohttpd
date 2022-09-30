@@ -109,7 +109,7 @@ ahc_echo (void *cls,
 
 
 static int
-testMultithreadedGet ()
+testMultithreadedGet (void)
 {
   struct MHD_Daemon *d;
   char buf[2048];
@@ -224,7 +224,7 @@ testMultithreadedGet ()
 
 
 static int
-testMultithreadedPoolGet ()
+testMultithreadedPoolGet (void)
 {
   struct MHD_Daemon *d;
   char buf[2048];

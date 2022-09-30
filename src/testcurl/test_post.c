@@ -166,7 +166,7 @@ ahc_echo (void *cls,
 
 
 static int
-testInternalPost ()
+testInternalPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -242,7 +242,7 @@ testInternalPost ()
 
 
 static int
-testMultithreadedPost ()
+testMultithreadedPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -319,7 +319,7 @@ testMultithreadedPost ()
 
 
 static int
-testMultithreadedPoolPost ()
+testMultithreadedPoolPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -396,7 +396,7 @@ testMultithreadedPoolPost ()
 
 
 static int
-testExternalPost ()
+testExternalPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -803,7 +803,7 @@ testMultithreadedPostCancelPart (int flags)
 
 
 static int
-testMultithreadedPostCancel ()
+testMultithreadedPostCancel (void)
 {
   int result = 0;
   int flags;

@@ -134,7 +134,7 @@ ahc_echo (void *cls,
 
 
 static int
-testInternalPut ()
+testInternalPut (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -208,7 +208,7 @@ testInternalPut ()
 
 
 static int
-testMultithreadedPut ()
+testMultithreadedPut (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -284,7 +284,7 @@ testMultithreadedPut ()
 
 
 static int
-testMultithreadedPoolPut ()
+testMultithreadedPoolPut (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -361,7 +361,7 @@ testMultithreadedPoolPut ()
 
 
 static int
-testExternalPut ()
+testExternalPut (void)
 {
   struct MHD_Daemon *d;
   CURL *c;

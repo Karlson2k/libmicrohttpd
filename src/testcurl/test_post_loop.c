@@ -118,7 +118,7 @@ ahc_echo (void *cls,
 
 
 static int
-testInternalPost ()
+testInternalPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -207,7 +207,7 @@ testInternalPost ()
 
 
 static int
-testMultithreadedPost ()
+testMultithreadedPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -299,7 +299,7 @@ testMultithreadedPost ()
 
 
 static int
-testMultithreadedPoolPost ()
+testMultithreadedPoolPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -390,7 +390,7 @@ testMultithreadedPoolPost ()
 
 
 static int
-testExternalPost ()
+testExternalPost (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -615,7 +615,7 @@ static unsigned long long start_time;
  * @return current time in ms
  */
 static unsigned long long
-now ()
+now (void)
 {
   struct timeval tv;
 

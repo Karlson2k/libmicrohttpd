@@ -153,7 +153,7 @@ ahc_echo (void *cls,
 
 
 static int
-testInternalGet ()
+testInternalGet (void)
 {
   struct MHD_Daemon *d;
   pid_t curl;
@@ -201,7 +201,7 @@ testInternalGet ()
 
 
 static int
-testMultithreadedGet ()
+testMultithreadedGet (void)
 {
   struct MHD_Daemon *d;
   pid_t curl;
@@ -264,7 +264,7 @@ testMultithreadedGet ()
 
 
 static int
-testMultithreadedPoolGet ()
+testMultithreadedPoolGet (void)
 {
   struct MHD_Daemon *d;
   pid_t curl;
@@ -314,7 +314,7 @@ testMultithreadedPoolGet ()
 
 
 static int
-testExternalGet ()
+testExternalGet (void)
 {
   struct MHD_Daemon *d;
   fd_set rs;

@@ -124,7 +124,7 @@ ahc_echo (void *cls,
 
 
 static int
-testInternalDelete ()
+testInternalDelete (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -199,7 +199,7 @@ testInternalDelete ()
 
 
 static int
-testMultithreadedDelete ()
+testMultithreadedDelete (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -276,7 +276,7 @@ testMultithreadedDelete ()
 
 
 static int
-testMultithreadedPoolDelete ()
+testMultithreadedPoolDelete (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -354,7 +354,7 @@ testMultithreadedPoolDelete ()
 
 
 static int
-testExternalDelete ()
+testExternalDelete (void)
 {
   struct MHD_Daemon *d;
   CURL *c;

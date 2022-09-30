@@ -238,7 +238,7 @@ struct headers_check_result
   int found_conn_keep_alive;
 };
 
-size_t
+static size_t
 lcurl_hdr_callback (char *buffer, size_t size, size_t nitems,
                     void *userdata)
 {
