@@ -219,7 +219,7 @@ _checkCURLE_OK_func (CURLcode code, const char *curlFunc,
 /* Global parameters */
 static int verbose;                 /**< Be verbose */
 static int oneone;                  /**< If false use HTTP/1.0 for requests*/
-static int global_port;             /**< MHD daemons listen port number */
+static uint16_t global_port;        /**< MHD daemons listen port number */
 
 struct CBC
 {
@@ -394,8 +394,8 @@ setupCURL (void *cbc)
 }
 
 
-static int
-testGet (int type, int pool_count, int poll_flag)
+static unsigned int
+testGet (unsigned int type, int pool_count, uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -406,15 +406,16 @@ testGet (int type, int pool_count, int poll_flag)
   char *thrdRet;
 
   if (verbose)
-    printf ("testGet(%d, %d, %d) test started.\n",
-            type, pool_count, poll_flag);
+    printf ("testGet(%u, %d, %u) test started.\n",
+            type, pool_count, (unsigned int) poll_flag);
 
   cbc.buf = buf;
   cbc.size = sizeof(buf);
   cbc.pos = 0;
   if (pool_count > 0)
   {
-    d = MHD_start_daemon (type | MHD_USE_ERROR_LOG | MHD_USE_ITC | poll_flag,
+    d = MHD_start_daemon (type | MHD_USE_ERROR_LOG | MHD_USE_ITC
+                          | (enum MHD_FLAG) poll_flag,
                           global_port, NULL, NULL, &ahc_echo, NULL,
                           MHD_OPTION_THREAD_POOL_SIZE,
                           (unsigned int) pool_count,
@@ -423,7 +424,8 @@ testGet (int type, int pool_count, int poll_flag)
   }
   else
   {
-    d = MHD_start_daemon (type | MHD_USE_ERROR_LOG | MHD_USE_ITC | poll_flag,
+    d = MHD_start_daemon (type | MHD_USE_ERROR_LOG | MHD_USE_ITC
+                          | (enum MHD_FLAG) poll_flag,
                           global_port, NULL, NULL, &ahc_echo, NULL,
                           MHD_OPTION_END);
   }
@@ -435,7 +437,7 @@ testGet (int type, int pool_count, int poll_flag)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
       mhdErrorExit ();
-    global_port = (int) dinfo->port;
+    global_port = dinfo->port;
   }
 
   c = setupCURL (&cbc);
@@ -515,8 +517,8 @@ testGet (int type, int pool_count, int poll_flag)
 
   if (verbose)
   {
-    printf ("testGet(%d, %d, %d) test succeed.\n",
-            type, pool_count, poll_flag);
+    printf ("testGet(%u, %d, %u) test succeed.\n",
+            type, pool_count, (unsigned int) poll_flag);
     fflush (stdout);
   }
 
@@ -524,7 +526,7 @@ testGet (int type, int pool_count, int poll_flag)
 }
 
 
-static int
+static unsigned int
 testExternalGet (void)
 {
   struct MHD_Daemon *d;
@@ -564,7 +566,7 @@ testExternalGet (void)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
       mhdErrorExit ();
-    global_port = (int) dinfo->port;
+    global_port = dinfo->port;
   }
 
   for (i = 0; i < 2; i++)

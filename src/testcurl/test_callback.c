@@ -47,7 +47,7 @@ called_twice (void *cls, uint64_t pos, char *buf, size_t max)
   {
     memcpy (buf, "test", 5);
     cls2->called = 1;
-    return strlen (buf);
+    return (ssize_t) strlen (buf);
   }
   if (cls2->called == 1)
   {
@@ -132,7 +132,7 @@ main (int argc, char **argv)
   int running;
   struct timeval tv;
   int extra;
-  int port;
+  uint16_t port;
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -157,7 +157,7 @@ main (int argc, char **argv)
     {
       MHD_stop_daemon (d); return 48;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");

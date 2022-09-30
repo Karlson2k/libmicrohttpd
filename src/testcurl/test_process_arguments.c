@@ -111,7 +111,7 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testExternalGet (void)
 {
   struct MHD_Daemon *d;
@@ -133,7 +133,7 @@ testExternalGet (void)
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -160,7 +160,7 @@ testExternalGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL,

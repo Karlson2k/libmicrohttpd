@@ -94,7 +94,7 @@ suspend_connection (struct MHD_Connection *connection)
 
 struct ContentReaderUserdata
 {
-  int bytes_written;
+  size_t bytes_written;
   struct MHD_Connection *connection;
 };
 
@@ -188,7 +188,7 @@ http_AccessHandlerCallback (void *cls,
 int
 main (void)
 {
-  int port;
+  uint16_t port;
   char command_line[1024];
   /* Flags */
   unsigned int daemon_flags
@@ -226,12 +226,12 @@ main (void)
     {
       MHD_stop_daemon (daemon); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   snprintf (command_line,
             sizeof (command_line),
-            "curl -s http://127.0.0.1:%d",
-            port);
+            "curl -s http://127.0.0.1:%u",
+            (unsigned int) port);
 
   if (0 != system (command_line))
   {

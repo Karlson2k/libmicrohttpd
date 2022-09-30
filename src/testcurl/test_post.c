@@ -165,7 +165,7 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testInternalPost (void)
 {
   struct MHD_Daemon *d;
@@ -173,7 +173,7 @@ testInternalPost (void)
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -201,7 +201,7 @@ testInternalPost (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -241,7 +241,7 @@ testInternalPost (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPost (void)
 {
   struct MHD_Daemon *d;
@@ -249,7 +249,7 @@ testMultithreadedPost (void)
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -278,7 +278,7 @@ testMultithreadedPost (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -318,7 +318,7 @@ testMultithreadedPost (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPoolPost (void)
 {
   struct MHD_Daemon *d;
@@ -326,7 +326,7 @@ testMultithreadedPoolPost (void)
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -355,7 +355,7 @@ testMultithreadedPoolPost (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -395,7 +395,7 @@ testMultithreadedPoolPost (void)
 }
 
 
-static int
+static unsigned int
 testExternalPost (void)
 {
   struct MHD_Daemon *d;
@@ -417,7 +417,7 @@ testExternalPost (void)
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -446,7 +446,7 @@ testExternalPost (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -666,7 +666,7 @@ slowReadBuffer (void *p, size_t size, size_t nmemb, void *opaque)
 #define FLAG_COUNT 16
 
 
-static int
+static unsigned int
 testMultithreadedPostCancelPart (int flags)
 {
   struct MHD_Daemon *d;
@@ -677,9 +677,9 @@ testMultithreadedPostCancelPart (int flags)
   struct curl_slist *headers = NULL;
   long response_code;
   CURLcode cc;
-  int result = 0;
+  unsigned int result = 0;
   struct CRBC crbc;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -712,7 +712,7 @@ testMultithreadedPostCancelPart (int flags)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   crbc.buffer = "Test content";
@@ -802,10 +802,10 @@ testMultithreadedPostCancelPart (int flags)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPostCancel (void)
 {
-  int result = 0;
+  unsigned int result = 0;
   int flags;
   for (flags = 0; flags < FLAG_COUNT; ++flags)
     result |= testMultithreadedPostCancelPart (flags);

@@ -349,7 +349,8 @@ setupCURL (void *cbc, uint16_t port)
     /* A workaround for some old libcurl versions, which ignore the specified
      * port by CURLOPT_PORT when digest authorisation is used. */
     res = snprintf (url, (sizeof(url) / sizeof(url[0])),
-                    "http://127.0.0.1:%d%s", (int) port, MHD_URI_BASE_PATH);
+                    "http://127.0.0.1:%u%s",
+                    (unsigned int) port, MHD_URI_BASE_PATH);
     if ((0 >= res) || ((sizeof(url) / sizeof(url[0])) <= (size_t) res))
       externalErrorExitDesc ("Cannot form request URL");
   }
@@ -419,9 +420,9 @@ testDigestAuth (void)
 
   while (off < 8)
   {
-    len = read (fd,
-                rnd + off,
-                8 - off);
+    len = (size_t) read (fd,
+                         rnd + off,
+                         8 - off);
     if (len == (size_t) -1)
       externalErrorExitDesc ("Failed to read '/dev/urandom'");
     off += len;

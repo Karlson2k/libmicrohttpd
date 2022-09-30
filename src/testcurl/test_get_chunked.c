@@ -84,7 +84,7 @@ int chunked_forced;
 /**
  * MHD port used for testing
  */
-int port_global;
+uint16_t port_global;
 
 
 struct headers_check_result
@@ -159,7 +159,9 @@ crc (void *cls,
 
   if (max < RESP_BLOCK_SIZE)
     abort ();                   /* should not happen in this testcase... */
-  memset (buf, 'A' + (pos / RESP_BLOCK_SIZE), RESP_BLOCK_SIZE);
+  memset (buf,
+          'A' + (char) (unsigned char) (pos / RESP_BLOCK_SIZE),
+          RESP_BLOCK_SIZE);
   return RESP_BLOCK_SIZE;
 }
 
@@ -225,7 +227,9 @@ ahc_echo (void *cls,
       if (NULL == buf)
         _exit (99);
       for (pos = 0; pos < resp_size; pos += RESP_BLOCK_SIZE)
-        memset (buf + pos, 'A' + (pos / RESP_BLOCK_SIZE), RESP_BLOCK_SIZE);
+        memset (buf + pos,
+                'A' + (char) (unsigned char) (pos / RESP_BLOCK_SIZE),
+                RESP_BLOCK_SIZE);
 
       response = MHD_create_response_from_buffer_copy (resp_size, buf);
       free (buf);
@@ -264,8 +268,8 @@ ahc_echo (void *cls,
 }
 
 
-static int
-validate (struct CBC cbc, int ebase)
+static unsigned int
+validate (struct CBC cbc, unsigned int ebase)
 {
   int i;
   char buf[RESP_BLOCK_SIZE];
@@ -306,7 +310,7 @@ validate (struct CBC cbc, int ebase)
 }
 
 
-static int
+static unsigned int
 testInternalGet (void)
 {
   struct MHD_Daemon *d;
@@ -314,7 +318,7 @@ testInternalGet (void)
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
   struct curl_slist *h_list = NULL;
   struct headers_check_result hdr_check;
 
@@ -334,7 +338,7 @@ testInternalGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
     if (0 == port_global)
       port_global = port; /* Re-use the same port for all checks */
   }
@@ -388,7 +392,7 @@ testInternalGet (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedGet (void)
 {
   struct MHD_Daemon *d;
@@ -396,7 +400,7 @@ testMultithreadedGet (void)
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
   struct curl_slist *h_list = NULL;
   struct headers_check_result hdr_check;
 
@@ -417,7 +421,7 @@ testMultithreadedGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
     if (0 == port_global)
       port_global = port; /* Re-use the same port for all checks */
   }
@@ -471,7 +475,7 @@ testMultithreadedGet (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPoolGet (void)
 {
   struct MHD_Daemon *d;
@@ -479,7 +483,7 @@ testMultithreadedPoolGet (void)
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
   struct curl_slist *h_list = NULL;
   struct headers_check_result hdr_check;
 
@@ -501,7 +505,7 @@ testMultithreadedPoolGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
     if (0 == port_global)
       port_global = port; /* Re-use the same port for all checks */
   }
@@ -555,7 +559,7 @@ testMultithreadedPoolGet (void)
 }
 
 
-static int
+static unsigned int
 testExternalGet (void)
 {
   struct MHD_Daemon *d;
@@ -577,7 +581,7 @@ testExternalGet (void)
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  int port;
+  uint16_t port;
   struct curl_slist *h_list = NULL;
   struct headers_check_result hdr_check;
 
@@ -598,7 +602,7 @@ testExternalGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
     if (0 == port_global)
       port_global = port; /* Re-use the same port for all checks */
   }

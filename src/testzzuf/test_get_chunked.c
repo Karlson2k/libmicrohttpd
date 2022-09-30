@@ -146,7 +146,7 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testInternalGet ()
 {
   struct MHD_Daemon *d;
@@ -189,7 +189,7 @@ testInternalGet ()
 }
 
 
-static int
+static unsigned int
 testMultithreadedGet ()
 {
   struct MHD_Daemon *d;
@@ -232,7 +232,7 @@ testMultithreadedGet ()
 }
 
 
-static int
+static unsigned int
 testExternalGet ()
 {
   struct MHD_Daemon *d;

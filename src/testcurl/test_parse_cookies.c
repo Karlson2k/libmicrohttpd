@@ -146,7 +146,7 @@ ahc_echo (void *cls,
 
 
 /* Re-use the same port for all checks */
-static unsigned int port;
+static uint16_t port;
 
 static unsigned int
 testExternalGet (int test_number)
@@ -188,7 +188,7 @@ testExternalGet (int test_number)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");

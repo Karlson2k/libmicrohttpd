@@ -152,12 +152,12 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testInternalGet (void)
 {
   struct MHD_Daemon *d;
   pid_t curl;
-  int port;
+  uint16_t port;
   char url[127];
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -182,12 +182,12 @@ testInternalGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/",
-            port);
+            "http://127.0.0.1:%u/",
+            (unsigned int) port);
   curl = fork_curl (url);
   (void) sleep (1);
   kill_curl (curl);
@@ -200,12 +200,12 @@ testInternalGet (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedGet (void)
 {
   struct MHD_Daemon *d;
   pid_t curl;
-  int port;
+  uint16_t port;
   char url[127];
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -233,12 +233,12 @@ testMultithreadedGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/",
-            port);
+            "http://127.0.0.1:%u/",
+            (unsigned int) port);
   // fprintf (stderr, "Forking cURL!\n");
   curl = fork_curl (url);
   (void) sleep (1);
@@ -263,12 +263,12 @@ testMultithreadedGet (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPoolGet (void)
 {
   struct MHD_Daemon *d;
   pid_t curl;
-  int port;
+  uint16_t port;
   char url[127];
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -295,12 +295,12 @@ testMultithreadedPoolGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/",
-            port);
+            "http://127.0.0.1:%u/",
+            (unsigned int) port);
   curl = fork_curl (url);
   (void) sleep (1);
   kill_curl (curl);
@@ -313,7 +313,7 @@ testMultithreadedPoolGet (void)
 }
 
 
-static int
+static unsigned int
 testExternalGet (void)
 {
   struct MHD_Daemon *d;
@@ -324,7 +324,7 @@ testExternalGet (void)
   time_t start;
   struct timeval tv;
   pid_t curl;
-  int port;
+  uint16_t port;
   char url[127];
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -349,12 +349,12 @@ testExternalGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/",
-            port);
+            "http://127.0.0.1:%u/",
+            (unsigned int) port);
   curl = fork_curl (url);
 
   start = time (NULL);

@@ -160,7 +160,7 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testInternalPost ()
 {
   struct MHD_Daemon *d;
@@ -213,7 +213,7 @@ testInternalPost ()
 }
 
 
-static int
+static unsigned int
 testMultithreadedPost ()
 {
   struct MHD_Daemon *d;
@@ -267,7 +267,7 @@ testMultithreadedPost ()
 }
 
 
-static int
+static unsigned int
 testExternalPost ()
 {
   struct MHD_Daemon *d;

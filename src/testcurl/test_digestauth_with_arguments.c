@@ -184,7 +184,7 @@ testDigestAuth (void)
   }
   while (off < 8)
   {
-    len = read (fd, rnd + off, 8 - off);
+    len = (size_t) read (fd, rnd + off, 8 - off);
     if (len == (size_t) -1)
     {
       fprintf (stderr,
@@ -239,9 +239,9 @@ testDigestAuth (void)
   }
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/bar%%20foo?"
+            "http://127.0.0.1:%u/bar%%20foo?"
             "key=value&more=even%%20more&empty&=no_key&&same=one&&same=two",
-            (int) port);
+            (unsigned int) port);
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, url);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);

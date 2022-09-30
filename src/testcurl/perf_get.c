@@ -186,8 +186,8 @@ ahc_echo (void *cls,
 }
 
 
-static int
-testInternalGet (int port, int poll_flag)
+static unsigned int
+testInternalGet (uint16_t port, uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -215,12 +215,12 @@ testInternalGet (int port, int poll_flag)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/hello_world",
-            port);
+            "http://127.0.0.1:%u/hello_world",
+            (unsigned int) port);
   start_timer ();
   for (i = 0; i < ROUNDS; i++)
   {
@@ -264,8 +264,8 @@ testInternalGet (int port, int poll_flag)
 }
 
 
-static int
-testMultithreadedGet (int port, int poll_flag)
+static unsigned int
+testMultithreadedGet (uint16_t port, uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -294,12 +294,12 @@ testMultithreadedGet (int port, int poll_flag)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/hello_world",
-            port);
+            "http://127.0.0.1:%u/hello_world",
+            (unsigned int) port);
   start_timer ();
   for (i = 0; i < ROUNDS; i++)
   {
@@ -346,8 +346,8 @@ testMultithreadedGet (int port, int poll_flag)
 }
 
 
-static int
-testMultithreadedPoolGet (int port, int poll_flag)
+static unsigned int
+testMultithreadedPoolGet (uint16_t port, uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -377,12 +377,12 @@ testMultithreadedPoolGet (int port, int poll_flag)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/hello_world",
-            port);
+            "http://127.0.0.1:%u/hello_world",
+            (unsigned int) port);
   start_timer ();
   for (i = 0; i < ROUNDS; i++)
   {
@@ -426,8 +426,8 @@ testMultithreadedPoolGet (int port, int poll_flag)
 }
 
 
-static int
-testExternalGet (int port)
+static unsigned int
+testExternalGet (uint16_t port)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -471,12 +471,12 @@ testExternalGet (int port)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/hello_world",
-            port);
+            "http://127.0.0.1:%u/hello_world",
+            (unsigned int) port);
   start_timer ();
   multi = curl_multi_init ();
   if (multi == NULL)
@@ -628,7 +628,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  int port = 1130;
+  uint16_t port = 1130;
   (void) argc;   /* Unused. Silent compiler warning. */
 
   if ((NULL == argv) || (0 == argv[0]))

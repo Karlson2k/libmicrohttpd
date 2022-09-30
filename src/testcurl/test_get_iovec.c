@@ -169,8 +169,8 @@ ahc_cont (void *cls,
 
   for (i = 0; i < TESTSTR_IOVCNT; ++i)
   {
-    iov[i].iov_base = data + (i * (TESTSTR_SIZE / TESTSTR_IOVCNT
-                                   / sizeof(int)));
+    iov[i].iov_base = data + (((size_t) i)
+                              * (TESTSTR_SIZE / TESTSTR_IOVCNT / sizeof(int)));
     iov[i].iov_len = TESTSTR_SIZE / TESTSTR_IOVCNT;
   }
 
@@ -230,7 +230,7 @@ ahc_ncont (void *cls,
 
     for (i = 0; i < (int) (TESTSTR_IOVLEN / sizeof(int)); ++i)
     {
-      data[i] = i + (j * TESTSTR_IOVLEN / sizeof(int));
+      data[i] = i + (j * (int) (TESTSTR_IOVLEN / sizeof(int)));
     }
     iov[j].iov_base = (const void *) data;
     iov[j].iov_len = TESTSTR_IOVLEN;
@@ -251,14 +251,14 @@ ahc_ncont (void *cls,
 }
 
 
-static int
+static unsigned int
 testInternalGet (bool contiguous)
 {
   struct MHD_Daemon *d;
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -294,7 +294,7 @@ testInternalGet (bool contiguous)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");
@@ -331,14 +331,14 @@ testInternalGet (bool contiguous)
 }
 
 
-static int
+static unsigned int
 testMultithreadedGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -366,7 +366,7 @@ testMultithreadedGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");
@@ -403,14 +403,14 @@ testMultithreadedGet (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPoolGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -439,7 +439,7 @@ testMultithreadedPoolGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");
@@ -476,7 +476,7 @@ testMultithreadedPoolGet (void)
 }
 
 
-static int
+static unsigned int
 testExternalGet (void)
 {
   struct MHD_Daemon *d;
@@ -497,7 +497,7 @@ testExternalGet (void)
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -524,7 +524,7 @@ testExternalGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/");
@@ -659,7 +659,7 @@ testExternalGet (void)
 }
 
 
-static int
+static unsigned int
 testUnknownPortGet (void)
 {
   struct MHD_Daemon *d;
@@ -667,7 +667,7 @@ testUnknownPortGet (void)
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
   char buf[2048];
 
   struct sockaddr_in addr;
@@ -698,7 +698,7 @@ testUnknownPortGet (void)
 
     if (addr.sin_family != AF_INET)
       return 26214;
-    port = (int) ntohs (addr.sin_port);
+    port = ntohs (addr.sin_port);
   }
   else
   {
@@ -708,11 +708,11 @@ testUnknownPortGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
-  snprintf (buf, sizeof(buf), "http://127.0.0.1:%d/",
-            port);
+  snprintf (buf, sizeof(buf), "http://127.0.0.1:%u/",
+            (unsigned int) port);
 
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, buf);

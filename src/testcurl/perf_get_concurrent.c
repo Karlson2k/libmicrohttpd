@@ -224,14 +224,14 @@ do_gets (void *param)
   int j;
   pthread_t par[PAR];
   char url[64];
-  int port = (int) (intptr_t) param;
+  uint16_t port = (uint16_t) (intptr_t) param;
   char *err = NULL;
   static char pthr_err_marker[] = "pthread_create error";
 
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/hello_world",
-            port);
+            "http://127.0.0.1:%u/hello_world",
+            (unsigned int) port);
   for (j = 0; j < PAR; j++)
   {
     if (0 != pthread_create (&par[j], NULL, &thread_gets, (void *) url))
@@ -253,8 +253,8 @@ do_gets (void *param)
 }
 
 
-static int
-testInternalGet (int port, int poll_flag)
+static unsigned int
+testInternalGet (uint16_t port, uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   const char *const test_desc = ((poll_flag & MHD_USE_AUTO) ?
@@ -283,7 +283,7 @@ testInternalGet (int port, int poll_flag)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   start_timer ();
   ret_val = do_gets ((void *) (intptr_t) port);
@@ -300,8 +300,8 @@ testInternalGet (int port, int poll_flag)
 }
 
 
-static int
-testMultithreadedGet (int port, int poll_flag)
+static unsigned int
+testMultithreadedGet (uint16_t port, uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   const char *const test_desc = ((poll_flag & MHD_USE_AUTO) ?
@@ -334,7 +334,7 @@ testMultithreadedGet (int port, int poll_flag)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   start_timer ();
   ret_val = do_gets ((void *) (intptr_t) port);
@@ -351,8 +351,8 @@ testMultithreadedGet (int port, int poll_flag)
 }
 
 
-static int
-testMultithreadedPoolGet (int port, int poll_flag)
+static unsigned int
+testMultithreadedPoolGet (uint16_t port, uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   const char *const test_desc = ((poll_flag & MHD_USE_AUTO) ?
@@ -383,7 +383,7 @@ testMultithreadedPoolGet (int port, int poll_flag)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   start_timer ();
   ret_val = do_gets ((void *) (intptr_t) port);
@@ -400,8 +400,8 @@ testMultithreadedPoolGet (int port, int poll_flag)
 }
 
 
-static int
-testExternalGet (int port)
+static unsigned int
+testExternalGet (uint16_t port)
 {
   struct MHD_Daemon *d;
   pthread_t pid;
@@ -431,7 +431,7 @@ testExternalGet (int port)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   if (0 != pthread_create (&pid, NULL,
                            &do_gets, (void *) (intptr_t) port))
@@ -507,7 +507,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  int port = 1100;
+  uint16_t port = 1100;
   (void) argc;   /* Unused. Silent compiler warning. */
 
   if ((NULL == argv) || (0 == argv[0]))

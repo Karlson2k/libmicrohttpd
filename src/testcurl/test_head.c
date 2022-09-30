@@ -435,7 +435,7 @@ setCURL_rq_path (CURL *c, int uri_exist)
 
 
 static CURL *
-setupCURL (void *cbc, unsigned int port,
+setupCURL (void *cbc, uint16_t port,
            struct headers_check_result *hdr_chk_result)
 {
   CURL *c;
@@ -715,7 +715,7 @@ testHead (void)
   cbc.size = sizeof (buf);
   cbc.pos = 0;
   memset (cbc.buf, 0, cbc.size);
-  c = setupCURL (&cbc, (unsigned int) port, &rp_headers_check);
+  c = setupCURL (&cbc, port, &rp_headers_check);
   setCURL_rq_path (c, 1);
   multi_reuse = NULL;
   /* First request */

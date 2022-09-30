@@ -1098,7 +1098,7 @@ ahc_echo (void *cls,
  * @param uri_num the number of URI, should be 0, 1 or 2
  */
 static void
-setCURL_rq_path (CURL *c, unsigned int port, unsigned int uri_num)
+setCURL_rq_path (CURL *c, uint16_t port, unsigned int uri_num)
 {
   const char *req_path;
   char uri[512];
@@ -1113,7 +1113,7 @@ setCURL_rq_path (CURL *c, unsigned int port, unsigned int uri_num)
   /* A workaround for some old libcurl versions, which ignore the specified
    * port by CURLOPT_PORT when authorisation is used. */
   res = snprintf (uri, (sizeof(uri) / sizeof(uri[0])),
-                  "http://127.0.0.1:%u%s", port,
+                  "http://127.0.0.1:%u%s", (unsigned int) port,
                   req_path);
   if ((0 >= res) || ((sizeof(uri) / sizeof(uri[0])) <= (size_t) res))
     externalErrorExitDesc ("Cannot form request URL");
@@ -1124,7 +1124,7 @@ setCURL_rq_path (CURL *c, unsigned int port, unsigned int uri_num)
 
 
 static CURL *
-setupCURL (void *cbc, unsigned int port)
+setupCURL (void *cbc, uint16_t port)
 {
   CURL *c;
 
@@ -1394,7 +1394,7 @@ testDigestAuth (void)
   cbc.size = sizeof (buf);
   cbc.pos = 0;
   memset (cbc.buf, 0, cbc.size);
-  c = setupCURL (&cbc, (unsigned int) port);
+  c = setupCURL (&cbc, port);
   multi_reuse = NULL;
   /* First request */
   if (check_result (performQueryExternal (d, c, &multi_reuse), c, &cbc))

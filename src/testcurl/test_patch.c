@@ -58,8 +58,8 @@ struct CBC
 static size_t
 putBuffer (void *stream, size_t size, size_t nmemb, void *ptr)
 {
-  unsigned int *pos = ptr;
-  unsigned int wrt;
+  size_t *pos = ptr;
+  size_t wrt;
 
   wrt = size * nmemb;
   if (wrt > 8 - (*pos))
@@ -126,7 +126,7 @@ ahc_echo (void *cls,
 static CURL *
 setup_curl (long port,
             struct CBC *cbc,
-            unsigned int *pos)
+            size_t *pos)
 {
   CURL *c;
 
@@ -156,17 +156,17 @@ setup_curl (long port,
 }
 
 
-static int
+static unsigned int
 testInternalPut (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
-  unsigned int pos = 0;
+  size_t pos = 0;
   int done_flag = 0;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -193,7 +193,7 @@ testInternalPut (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = setup_curl (port, &cbc, &pos);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
@@ -215,17 +215,17 @@ testInternalPut (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPut (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
-  unsigned int pos = 0;
+  size_t pos = 0;
   int done_flag = 0;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -253,7 +253,7 @@ testMultithreadedPut (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = setup_curl (port, &cbc, &pos);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
@@ -276,17 +276,17 @@ testMultithreadedPut (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPoolPut (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
-  unsigned int pos = 0;
+  size_t pos = 0;
   int done_flag = 0;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -315,7 +315,7 @@ testMultithreadedPoolPut (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = setup_curl (port, &cbc, &pos);
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
@@ -338,7 +338,7 @@ testMultithreadedPoolPut (void)
 }
 
 
-static int
+static unsigned int
 testExternalPut (void)
 {
   struct MHD_Daemon *d;
@@ -356,9 +356,9 @@ testExternalPut (void)
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  unsigned int pos = 0;
+  size_t pos = 0;
   int done_flag = 0;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -386,7 +386,7 @@ testExternalPut (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = setup_curl (port, &cbc, &pos);
 

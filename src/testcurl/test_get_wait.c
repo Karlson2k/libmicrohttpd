@@ -116,12 +116,12 @@ thread_gets (void *param)
   CURLcode errornum;
   unsigned int i;
   char url[64];
-  int port = (int) (intptr_t) param;
+  uint16_t port = (uint16_t) (intptr_t) param;
 
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/hello_world",
-            port);
+            "http://127.0.0.1:%u/hello_world",
+            (unsigned int) port);
 
   c = curl_easy_init ();
   if (NULL == c)
@@ -156,8 +156,8 @@ thread_gets (void *param)
 }
 
 
-static int
-testRunWaitGet (int port, int poll_flag)
+static unsigned int
+testRunWaitGet (uint16_t port, uint32_t poll_flag)
 {
   pthread_t get_tid;
   struct MHD_Daemon *d;
@@ -175,7 +175,7 @@ testRunWaitGet (int port, int poll_flag)
   printf ("Starting MHD_run_wait() test with MHD in %s polling mode.\n",
           test_desc);
   signal_done = 0;
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG | poll_flag,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | (enum MHD_FLAG) poll_flag,
                         port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     abort ();
@@ -185,7 +185,7 @@ testRunWaitGet (int port, int poll_flag)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
       abort ();
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   if (0 != pthread_create (&get_tid, NULL,
@@ -214,7 +214,7 @@ testRunWaitGet (int port, int poll_flag)
 int
 main (int argc, char *const *argv)
 {
-  int port = 1675;
+  uint16_t port = 1675;
   (void) argc;   /* Unused. Silent compiler warning. */
 
   if ((NULL == argv) || (0 == argv[0]))

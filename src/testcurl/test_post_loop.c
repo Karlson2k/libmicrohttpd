@@ -117,7 +117,7 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testInternalPost (void)
 {
   struct MHD_Daemon *d;
@@ -127,7 +127,7 @@ testInternalPost (void)
   CURLcode errornum;
   int i;
   char url[1024];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -152,7 +152,7 @@ testInternalPost (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   for (i = 0; i < LOOPCOUNT; i++)
   {
@@ -163,8 +163,8 @@ testInternalPost (void)
     buf[0] = '\0';
     snprintf (url,
               sizeof (url),
-              "http://127.0.0.1:%d/hw%d",
-              port,
+              "http://127.0.0.1:%u/hw%d",
+              (unsigned int) port,
               i);
     curl_easy_setopt (c, CURLOPT_URL, url);
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
@@ -206,7 +206,7 @@ testInternalPost (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPost (void)
 {
   struct MHD_Daemon *d;
@@ -216,7 +216,7 @@ testMultithreadedPost (void)
   CURLcode errornum;
   int i;
   char url[1024];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -244,7 +244,7 @@ testMultithreadedPost (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   for (i = 0; i < LOOPCOUNT; i++)
   {
@@ -255,8 +255,8 @@ testMultithreadedPost (void)
     buf[0] = '\0';
     snprintf (url,
               sizeof (url),
-              "http://127.0.0.1:%d/hw%d",
-              port,
+              "http://127.0.0.1:%u/hw%d",
+              (unsigned int) port,
               i);
     curl_easy_setopt (c, CURLOPT_URL, url);
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
@@ -298,7 +298,7 @@ testMultithreadedPost (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPoolPost (void)
 {
   struct MHD_Daemon *d;
@@ -308,7 +308,7 @@ testMultithreadedPoolPost (void)
   CURLcode errornum;
   int i;
   char url[1024];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -335,7 +335,7 @@ testMultithreadedPoolPost (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   for (i = 0; i < LOOPCOUNT; i++)
   {
@@ -346,8 +346,8 @@ testMultithreadedPoolPost (void)
     buf[0] = '\0';
     snprintf (url,
               sizeof (url),
-              "http://127.0.0.1:%d/hw%d",
-              port,
+              "http://127.0.0.1:%u/hw%d",
+              (unsigned int) port,
               i);
     curl_easy_setopt (c, CURLOPT_URL, url);
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
@@ -389,7 +389,7 @@ testMultithreadedPoolPost (void)
 }
 
 
-static int
+static unsigned int
 testExternalPost (void)
 {
   struct MHD_Daemon *d;
@@ -415,7 +415,7 @@ testExternalPost (void)
   uint64_t timeout64;
   long ctimeout;
   char url[1024];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -442,7 +442,7 @@ testExternalPost (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   multi = curl_multi_init ();
   if (multi == NULL)
@@ -459,8 +459,8 @@ testExternalPost (void)
     buf[0] = '\0';
     snprintf (url,
               sizeof (url),
-              "http://127.0.0.1:%d/hw%d",
-              port,
+              "http://127.0.0.1:%u/hw%d",
+              (unsigned int) port,
               i);
     curl_easy_setopt (c, CURLOPT_URL, url);
     curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
@@ -644,21 +644,24 @@ main (int argc, char *const *argv)
              oneone ? "%s: Sequential POSTs (http/1.1) %f/s\n" :
              "%s: Sequential POSTs (http/1.0) %f/s\n",
              "internal select",
-             (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0));
+             (double) 1000 * LOOPCOUNT
+             / ((double) (now () - start_time) + 1.0));
     start_time = now ();
     errorCount += testMultithreadedPost ();
     fprintf (stderr,
              oneone ? "%s: Sequential POSTs (http/1.1) %f/s\n" :
              "%s: Sequential POSTs (http/1.0) %f/s\n",
              "multithreaded post",
-             (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0));
+             (double) 1000 * LOOPCOUNT
+             / ((double) (now () - start_time) + 1.0));
     start_time = now ();
     errorCount += testMultithreadedPoolPost ();
     fprintf (stderr,
              oneone ? "%s: Sequential POSTs (http/1.1) %f/s\n" :
              "%s: Sequential POSTs (http/1.0) %f/s\n",
              "thread with pool",
-             (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0));
+             (double) 1000 * LOOPCOUNT
+             / ((double) (now () - start_time) + 1.0));
   }
   start_time = now ();
   errorCount += testExternalPost ();
@@ -666,7 +669,8 @@ main (int argc, char *const *argv)
            oneone ? "%s: Sequential POSTs (http/1.1) %f/s\n" :
            "%s: Sequential POSTs (http/1.0) %f/s\n",
            "external select",
-           (double) 1000 * LOOPCOUNT / (now () - start_time + 1.0));
+           (double) 1000 * LOOPCOUNT
+           / ((double) (now () - start_time) + 1.0));
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();

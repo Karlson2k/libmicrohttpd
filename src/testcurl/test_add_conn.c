@@ -79,20 +79,19 @@
 
 /* Cleanup test: max number of concurrent daemons depending on maximum number
  * of open FDs. */
-#define CLEANUP_MAX_DAEMONS(max_fds) ( ((max_fds) < 10) ? 0 : \
-                                         ( (((max_fds) - 10) / \
-                                           (CLEANUP_NUM_REQS_PER_DAEMON * 5 \
-                                            + 3)) ) )
+#define CLEANUP_MAX_DAEMONS(max_fds) (unsigned int) \
+  ( ((max_fds) < 10) ? \
+    0 : ( (((max_fds) - 10) / (CLEANUP_NUM_REQS_PER_DAEMON * 5 + 3)) ) )
 
 #define EXPECTED_URI_BASE_PATH  "/hello_world"
 #define EXPECTED_URI_QUERY      "a=%26&b=c"
 #define EXPECTED_URI_FULL_PATH  EXPECTED_URI_BASE_PATH "?" EXPECTED_URI_QUERY
 
 /* Global parameters */
-static int oneone;         /**< Use HTTP/1.1 instead of HTTP/1.0 */
-static int no_listen;      /**< Start MHD daemons without listen socket */
-static int global_port;    /**< MHD daemons listen port number */
-static int cleanup_test;   /**< Test for final cleanup */
+static int oneone;           /**< Use HTTP/1.1 instead of HTTP/1.0 */
+static int no_listen;        /**< Start MHD daemons without listen socket */
+static uint16_t global_port; /**< MHD daemons listen port number */
+static int cleanup_test;     /**< Test for final cleanup */
 static int slow_reply = 0; /**< Slowdown MHD replies */
 static int ignore_response_errors = 0; /**< Do not fail test if CURL
                                             returns error */
@@ -255,11 +254,11 @@ _externalErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 
 
 /* Static const value, indicates that result value was not set yet */
-static const int eMarker = 0xCE;
+static const unsigned int eMarker = 0xCE;
 
 
 static MHD_socket
-createListeningSocket (int *pport)
+createListeningSocket (uint16_t *pport)
 {
   MHD_socket skt;
   struct sockaddr_in sin;
@@ -300,7 +299,7 @@ createListeningSocket (int *pport)
     if (AF_INET != sin.sin_family)
       externalErrorExitDesc ("getsockname() returned wrong socket family");
 
-    *pport = (int) ntohs (sin.sin_port);
+    *pport = ntohs (sin.sin_port);
   }
 
   return skt;
@@ -338,14 +337,14 @@ struct addConnParam
 
   MHD_socket clent_sk;
   /* Non-zero indicate error */
-  volatile int result;
+  volatile unsigned int result;
 
 #ifdef HAVE_PTHREAD_H
   pthread_t addConnThread;
 #endif /* HAVE_PTHREAD_H */
 };
 
-static int
+static unsigned int
 doAcceptAndAddConnInThread (struct addConnParam *p)
 {
   struct sockaddr addr;
@@ -386,7 +385,7 @@ startThreadAddConn (struct addConnParam *param)
 }
 
 
-static int
+static unsigned int
 finishThreadAddConn (struct addConnParam *param)
 {
   struct addConnParam *result;
@@ -413,10 +412,10 @@ struct curlQueryParams
   const char *queryPath;
 
   /* Destination port for CURL query */
-  int queryPort;
+  uint16_t queryPort;
 
   /* CURL query result error flag */
-  volatile int queryError;
+  volatile unsigned int queryError;
 
 #ifdef HAVE_PTHREAD_H
   pthread_t queryThread;
@@ -424,7 +423,7 @@ struct curlQueryParams
 };
 
 static CURL *
-curlEasyInitForTest (const char *queryPath, int port, struct CBC *pcbc)
+curlEasyInitForTest (const char *queryPath, uint16_t port, struct CBC *pcbc)
 {
   CURL *c;
 
@@ -458,7 +457,7 @@ curlEasyInitForTest (const char *queryPath, int port, struct CBC *pcbc)
 }
 
 
-static int
+static unsigned int
 doCurlQueryInThread (struct curlQueryParams *p)
 {
   CURL *c;
@@ -539,7 +538,7 @@ startThreadCurlQuery (struct curlQueryParams *param)
 }
 
 
-static int
+static unsigned int
 finishThreadCurlQuery (struct curlQueryParams *param)
 {
   struct curlQueryParams *result;
@@ -558,13 +557,13 @@ finishThreadCurlQuery (struct curlQueryParams *param)
 
 
 /* Perform test queries and shut down MHD daemon */
-static int
-performTestQueries (struct MHD_Daemon *d, int d_port)
+static unsigned int
+performTestQueries (struct MHD_Daemon *d, uint16_t d_port)
 {
   struct curlQueryParams qParam;
   struct addConnParam aParam;
-  int a_port;           /* Additional listening socket port */
-  int ret = 0;          /* Return value */
+  uint16_t a_port;      /* Additional listening socket port */
+  unsigned int ret = 0; /* Return value */
 
   qParam.queryPath = "http://127.0.0.1" EXPECTED_URI_FULL_PATH;
   a_port = 0; /* auto-assign */
@@ -603,16 +602,16 @@ performTestQueries (struct MHD_Daemon *d, int d_port)
 
 
 /* Perform test for cleanup and shutdown MHD daemon */
-static int
-performTestCleanup (struct MHD_Daemon *d, int num_queries)
+static unsigned int
+performTestCleanup (struct MHD_Daemon *d, unsigned int num_queries)
 {
   struct curlQueryParams *qParamList;
   struct addConnParam aParam;
   MHD_socket lstn_sk;   /* Additional listening socket */
   MHD_socket *clntSkList;
-  int a_port;           /* Additional listening socket port */
-  int i;
-  int ret = 0;          /* Return value */
+  uint16_t a_port;      /* Additional listening socket port */
+  unsigned int i;
+  unsigned int ret = 0; /* Return value */
 
   a_port = 0; /* auto-assign */
 
@@ -703,7 +702,7 @@ enum testMhdPollType
 static unsigned int
 testNumThreadsForPool (enum testMhdPollType pollType)
 {
-  int numThreads = MHD_CPU_COUNT;
+  unsigned int numThreads = MHD_CPU_COUNT;
   if (! cleanup_test)
     return numThreads; /* No practical limit for non-cleanup test */
   if (CLEANUP_MAX_DAEMONS (sys_max_fds) < numThreads)
@@ -720,7 +719,7 @@ testNumThreadsForPool (enum testMhdPollType pollType)
 
 static struct MHD_Daemon *
 startTestMhdDaemon (enum testMhdThreadsType thrType,
-                    enum testMhdPollType pollType, int *pport)
+                    enum testMhdPollType pollType, uint16_t *pport)
 {
   struct MHD_Daemon *d;
   const union MHD_DaemonInfo *dinfo;
@@ -738,7 +737,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
   }
 
   if (testMhdThreadInternalPool != thrType)
-    d = MHD_start_daemon (((int) thrType) | ((int) pollType)
+    d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
                           | (thrType == testMhdThreadExternal ?
                              0 : MHD_USE_ITC)
                           | (no_listen ? MHD_USE_NO_LISTEN_SOCKET : 0)
@@ -748,7 +747,8 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                           MHD_OPTION_END);
   else
-    d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | ((int) pollType)
+    d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD
+                          | ((unsigned int) pollType)
                           | MHD_USE_ITC
                           | (no_listen ? MHD_USE_NO_LISTEN_SOCKET : 0)
                           | MHD_USE_ERROR_LOG,
@@ -773,7 +773,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
       fprintf (stderr, "MHD_get_daemon_info() failed.\n");
       abort ();
     }
-    *pport = (int) dinfo->port;
+    *pport = dinfo->port;
   }
 
   return d;
@@ -783,7 +783,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
 /* Test runners */
 
 
-static int
+static unsigned int
 testExternalGet (void)
 {
   struct MHD_Daemon *d;
@@ -796,10 +796,10 @@ testExternalGet (void)
   CURLM *multi;
   time_t start;
   struct timeval tv;
-  int d_port = global_port; /* Daemon's port */
-  int a_port = 0;           /* Additional listening socket port */
+  uint16_t d_port = global_port; /* Daemon's port */
+  uint16_t a_port = 0;      /* Additional listening socket port */
   struct addConnParam aParam;
-  int ret = 0;              /* Return value of the test */
+  unsigned int ret = 0;     /* Return value of the test */
   const int c_no_listen = no_listen; /* Local const value to mute analyzer */
 
   d = startTestMhdDaemon (testMhdThreadExternal, testMhdPollBySelect, &d_port);
@@ -993,11 +993,11 @@ testExternalGet (void)
 
 
 #ifdef HAVE_PTHREAD_H
-static int
+static unsigned int
 testInternalGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
 
   d = startTestMhdDaemon (testMhdThreadInternal, pollType,
                           &d_port);
@@ -1008,11 +1008,11 @@ testInternalGet (enum testMhdPollType pollType)
 }
 
 
-static int
+static unsigned int
 testMultithreadedGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
 
   d = startTestMhdDaemon (testMhdThreadInternalPerConnection, pollType,
                           &d_port);
@@ -1025,11 +1025,11 @@ testMultithreadedGet (enum testMhdPollType pollType)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPoolGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
 
   d = startTestMhdDaemon (testMhdThreadInternalPool, pollType,
                           &d_port);
@@ -1041,17 +1041,17 @@ testMultithreadedPoolGet (enum testMhdPollType pollType)
 }
 
 
-static int
+static unsigned int
 testStopRace (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
-  int a_port = 0;           /* Additional listening socket port */
+  uint16_t d_port = global_port; /* Daemon's port */
+  uint16_t a_port = 0;           /* Additional listening socket port */
   struct sockaddr_in sin;
   MHD_socket fd1;
   MHD_socket fd2;
   struct addConnParam aParam;
-  int ret = 0;              /* Return value of the test */
+  unsigned int ret = 0;              /* Return value of the test */
 
   d = startTestMhdDaemon (testMhdThreadInternal, pollType,
                           &d_port);

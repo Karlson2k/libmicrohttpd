@@ -152,7 +152,7 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testInternalGet (void)
 {
   struct MHD_Daemon *d;
@@ -160,7 +160,7 @@ testInternalGet (void)
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -186,7 +186,7 @@ testInternalGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -223,7 +223,7 @@ testInternalGet (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedGet (void)
 {
   struct MHD_Daemon *d;
@@ -231,7 +231,7 @@ testMultithreadedGet (void)
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -258,7 +258,7 @@ testMultithreadedGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -295,7 +295,7 @@ testMultithreadedGet (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPoolGet (void)
 {
   struct MHD_Daemon *d;
@@ -303,7 +303,7 @@ testMultithreadedPoolGet (void)
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -331,7 +331,7 @@ testMultithreadedPoolGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -368,7 +368,7 @@ testMultithreadedPoolGet (void)
 }
 
 
-static int
+static unsigned int
 testExternalGet (void)
 {
   struct MHD_Daemon *d;
@@ -390,7 +390,7 @@ testExternalGet (void)
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -417,7 +417,7 @@ testExternalGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");

@@ -167,9 +167,9 @@ _libcurlErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
                                   HDR_CONN_KEEP_ALIVE_VALUE
 
 /* Global parameters */
-static int oneone;         /**< Use HTTP/1.1 instead of HTTP/1.0 for requests*/
-static int conn_close;     /**< Don't use Keep-Alive */
-static int global_port;    /**< MHD daemons listen port number */
+static int oneone;           /**< Use HTTP/1.1 instead of HTTP/1.0 for requests*/
+static int conn_close;       /**< Don't use Keep-Alive */
+static uint16_t global_port; /**< MHD daemons listen port number */
 static int slow_reply = 0; /**< Slowdown MHD replies */
 static int ignore_response_errors = 0; /**< Do not fail test if CURL
                                             returns error */
@@ -384,15 +384,15 @@ struct curlQueryParams
   const char *queryPath;
 
   /* Destination port for CURL query */
-  int queryPort;
+  uint16_t queryPort;
 
   /* CURL query result error flag */
-  volatile int queryError;
+  volatile unsigned int queryError;
 };
 
 
 static CURL *
-curlEasyInitForTest (const char *queryPath, int port, struct CBC *pcbc,
+curlEasyInitForTest (const char *queryPath, uint16_t port, struct CBC *pcbc,
                      struct headers_check_result *hdr_chk_result,
                      int add_hdr_close, int add_hdr_k_alive)
 {
@@ -625,7 +625,7 @@ getMhdActiveConnections (struct MHD_Daemon *d)
 }
 
 
-static int
+static unsigned int
 doCurlQueryInThread (struct MHD_Daemon *d,
                      struct curlQueryParams *p,
                      int add_hdr_close,
@@ -853,11 +853,11 @@ doCurlQueryInThread (struct MHD_Daemon *d,
 
 
 /* Perform test queries and shut down MHD daemon */
-static int
-performTestQueries (struct MHD_Daemon *d, int d_port)
+static unsigned int
+performTestQueries (struct MHD_Daemon *d, uint16_t d_port)
 {
   struct curlQueryParams qParam;
-  int ret = 0;          /* Return value */
+  unsigned int ret = 0;          /* Return value */
   int i = 0;
   /* masks */
   const int m_mhd_close = 1 << (i++);
@@ -932,7 +932,7 @@ enum testMhdPollType
 static unsigned int
 testNumThreadsForPool (enum testMhdPollType pollType)
 {
-  int numThreads = MHD_CPU_COUNT;
+  unsigned int numThreads = MHD_CPU_COUNT;
   (void) pollType; /* Don't care about pollType for this test */
   return numThreads; /* No practical limit for non-cleanup test */
 }
@@ -940,7 +940,7 @@ testNumThreadsForPool (enum testMhdPollType pollType)
 
 static struct MHD_Daemon *
 startTestMhdDaemon (enum testMhdThreadsType thrType,
-                    enum testMhdPollType pollType, int *pport)
+                    enum testMhdPollType pollType, uint16_t *pport)
 {
   struct MHD_Daemon *d;
   const union MHD_DaemonInfo *dinfo;
@@ -956,14 +956,15 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
   }
 
   if (testMhdThreadInternalPool != thrType)
-    d = MHD_start_daemon (((int) thrType) | ((int) pollType)
+    d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
                           | MHD_USE_ERROR_LOG,
                           *pport, NULL, NULL,
                           &ahc_echo, NULL,
                           MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                           MHD_OPTION_END);
   else
-    d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | ((int) pollType)
+    d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD
+                          | ((unsigned int) pollType)
                           | MHD_USE_ERROR_LOG,
                           *pport, NULL, NULL,
                           &ahc_echo, NULL,
@@ -986,7 +987,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
       fprintf (stderr, "MHD_get_daemon_info() failed.\n");
       abort ();
     }
-    *pport = (int) dinfo->port;
+    *pport = dinfo->port;
     if (0 == global_port)
       global_port = *pport; /* Reuse the same port for all tests */
   }
@@ -998,11 +999,11 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
 /* Test runners */
 
 
-static int
+static unsigned int
 testExternalGet (void)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
 
   d = startTestMhdDaemon (testMhdThreadExternal, testMhdPollBySelect, &d_port);
 
@@ -1010,11 +1011,11 @@ testExternalGet (void)
 }
 
 
-static int
+static unsigned int
 testInternalGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
 
   d = startTestMhdDaemon (testMhdThreadInternal, pollType,
                           &d_port);
@@ -1023,11 +1024,11 @@ testInternalGet (enum testMhdPollType pollType)
 }
 
 
-static int
+static unsigned int
 testMultithreadedGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
 
   d = startTestMhdDaemon (testMhdThreadInternalPerConnection, pollType,
                           &d_port);
@@ -1035,11 +1036,11 @@ testMultithreadedGet (enum testMhdPollType pollType)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPoolGet (enum testMhdPollType pollType)
 {
   struct MHD_Daemon *d;
-  int d_port = global_port; /* Daemon's port */
+  uint16_t d_port = global_port; /* Daemon's port */
 
   d = startTestMhdDaemon (testMhdThreadInternalPool, pollType,
                           &d_port);

@@ -599,7 +599,7 @@ ahc_echo (void *cls,
 
 
 static CURL *
-setupCURL (void *cbc, int port)
+setupCURL (void *cbc, uint16_t port)
 {
   CURL *c;
   char url[512];
@@ -610,7 +610,8 @@ setupCURL (void *cbc, int port)
     /* A workaround for some old libcurl versions, which ignore the specified
      * port by CURLOPT_PORT when authorisation is used. */
     res = snprintf (url, (sizeof(url) / sizeof(url[0])),
-                    "http://127.0.0.1:%d%s", port, MHD_URI_BASE_PATH);
+                    "http://127.0.0.1:%u%s",
+                    (unsigned int) port, MHD_URI_BASE_PATH);
     if ((0 >= res) || ((sizeof(url) / sizeof(url[0])) <= (size_t) res))
       externalErrorExitDesc ("Cannot form request URL");
   }

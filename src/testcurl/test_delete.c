@@ -58,8 +58,8 @@ struct CBC
 static size_t
 putBuffer (void *stream, size_t size, size_t nmemb, void *ptr)
 {
-  unsigned int *pos = ptr;
-  unsigned int wrt;
+  size_t *pos = ptr;
+  size_t wrt;
 
   wrt = size * nmemb;
   if (wrt > 8 - (*pos))
@@ -123,17 +123,17 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testInternalDelete (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
-  unsigned int pos = 0;
+  size_t pos = 0;
   int done_flag = 0;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -156,7 +156,7 @@ testInternalDelete (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -198,17 +198,17 @@ testInternalDelete (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedDelete (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
-  unsigned int pos = 0;
+  size_t pos = 0;
   int done_flag = 0;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -232,7 +232,7 @@ testMultithreadedDelete (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -275,17 +275,17 @@ testMultithreadedDelete (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPoolDelete (void)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
-  unsigned int pos = 0;
+  size_t pos = 0;
   int done_flag = 0;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -310,7 +310,7 @@ testMultithreadedPoolDelete (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
@@ -353,7 +353,7 @@ testMultithreadedPoolDelete (void)
 }
 
 
-static int
+static unsigned int
 testExternalDelete (void)
 {
   struct MHD_Daemon *d;
@@ -375,9 +375,9 @@ testExternalDelete (void)
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  unsigned int pos = 0;
+  size_t pos = 0;
   int done_flag = 0;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -401,7 +401,7 @@ testExternalDelete (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");

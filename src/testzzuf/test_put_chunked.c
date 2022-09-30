@@ -137,7 +137,7 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testInternalPut ()
 {
   struct MHD_Daemon *d;
@@ -190,7 +190,7 @@ testInternalPut ()
 }
 
 
-static int
+static unsigned int
 testMultithreadedPut ()
 {
   struct MHD_Daemon *d;
@@ -249,7 +249,7 @@ testMultithreadedPut ()
 }
 
 
-static int
+static unsigned int
 testExternalPut ()
 {
   struct MHD_Daemon *d;

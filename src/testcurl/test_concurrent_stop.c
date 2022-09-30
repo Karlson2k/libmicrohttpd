@@ -216,12 +216,12 @@ do_gets (void *param)
   int j;
   pthread_t par[PAR];
   char url[64];
-  int port = (int) (intptr_t) param;
+  uint16_t port = (uint16_t) (intptr_t) param;
 
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d/hello_world",
-            port);
+            "http://127.0.0.1:%u/hello_world",
+            (unsigned int) port);
 
   for (j = 0; j < PAR; j++)
   {
@@ -246,7 +246,7 @@ do_gets (void *param)
 
 
 static pthread_t
-start_gets (int port)
+start_gets (uint16_t port)
 {
   pthread_t tid;
   continue_requesting = 1;
@@ -259,18 +259,18 @@ start_gets (int port)
 }
 
 
-static int
-testMultithreadedGet (int port,
-                      int poll_flag)
+static unsigned int
+testMultithreadedGet (uint16_t port,
+                      uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   pthread_t p;
-  int result;
+  unsigned int result;
 
   result = 0;
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
-                        | poll_flag,
+                        | (enum MHD_FLAG) poll_flag,
                         port,
                         NULL, NULL,
                         &ahc_echo, NULL,
@@ -285,7 +285,7 @@ testMultithreadedGet (int port,
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   client_error = CURLE_OK; /* clear client error state */
   p = start_gets (port);
@@ -305,17 +305,17 @@ testMultithreadedGet (int port,
 }
 
 
-static int
-testMultithreadedPoolGet (int port,
-                          int poll_flag)
+static unsigned int
+testMultithreadedPoolGet (uint16_t port,
+                          uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   pthread_t p;
-  int result;
+  unsigned int result;
 
   result = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
-                        | poll_flag,
+                        | (enum MHD_FLAG) poll_flag,
                         port,
                         NULL, NULL,
                         &ahc_echo, NULL,
@@ -331,7 +331,7 @@ testMultithreadedPoolGet (int port,
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   client_error = CURLE_OK; /* clear client error state */
   p = start_gets (port);
@@ -355,7 +355,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  int port;
+  uint16_t port;
   (void) argc;   /* Unused. Silent compiler warning. */
   (void) argv;   /* Unused. Silent compiler warning. */
 

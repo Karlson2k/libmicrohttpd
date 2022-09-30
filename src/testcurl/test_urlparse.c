@@ -128,15 +128,15 @@ ahc_echo (void *cls,
 }
 
 
-static int
-testInternalGet (int poll_flag)
+static unsigned int
+testInternalGet (uint32_t poll_flag)
 {
   struct MHD_Daemon *d;
   CURL *c;
   char buf[2048];
   struct CBC cbc;
   CURLcode errornum;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -151,7 +151,7 @@ testInternalGet (int poll_flag)
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG
-                        | poll_flag,
+                        | (enum MHD_FLAG) poll_flag,
                         port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
   if (d == NULL)
     return 1;
@@ -163,7 +163,7 @@ testInternalGet (int poll_flag)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world?a=b&c=&d");

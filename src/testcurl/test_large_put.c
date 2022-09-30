@@ -297,7 +297,7 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testPutInternalThread (unsigned int add_flag)
 {
   struct MHD_Daemon *d;
@@ -307,7 +307,7 @@ testPutInternalThread (unsigned int add_flag)
   int done_flag = 0;
   CURLcode errornum;
   char buf[2048];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -338,7 +338,7 @@ testPutInternalThread (unsigned int add_flag)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
       mhdErrorExit ();
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   c = curl_easy_init ();
@@ -402,7 +402,7 @@ testPutInternalThread (unsigned int add_flag)
 }
 
 
-static int
+static unsigned int
 testPutThreadPerConn (unsigned int add_flag)
 {
   struct MHD_Daemon *d;
@@ -412,7 +412,7 @@ testPutThreadPerConn (unsigned int add_flag)
   int done_flag = 0;
   CURLcode errornum;
   char buf[2048];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -444,7 +444,7 @@ testPutThreadPerConn (unsigned int add_flag)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
       mhdErrorExit ();
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   c = curl_easy_init ();
@@ -507,7 +507,7 @@ testPutThreadPerConn (unsigned int add_flag)
 }
 
 
-static int
+static unsigned int
 testPutThreadPool (unsigned int add_flag)
 {
   struct MHD_Daemon *d;
@@ -517,7 +517,7 @@ testPutThreadPool (unsigned int add_flag)
   int done_flag = 0;
   CURLcode errornum;
   char buf[2048];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -549,7 +549,7 @@ testPutThreadPool (unsigned int add_flag)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
       mhdErrorExit ();
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   c = curl_easy_init ();
@@ -611,7 +611,7 @@ testPutThreadPool (unsigned int add_flag)
 }
 
 
-static int
+static unsigned int
 testPutExternal (void)
 {
   struct MHD_Daemon *d;
@@ -629,7 +629,7 @@ testPutExternal (void)
   size_t pos = 0;
   int done_flag = 0;
   char buf[2048];
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -660,7 +660,7 @@ testPutExternal (void)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
       mhdErrorExit ();
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   c = curl_easy_init ();

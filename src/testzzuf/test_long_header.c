@@ -106,7 +106,7 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testLongUrlGet ()
 {
   struct MHD_Daemon *d;
@@ -173,7 +173,7 @@ testLongUrlGet ()
 }
 
 
-static int
+static unsigned int
 testLongHeaderGet ()
 {
   struct MHD_Daemon *d;

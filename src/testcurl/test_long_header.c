@@ -96,7 +96,7 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testLongUrlGet (size_t buff_size)
 {
   struct MHD_Daemon *d;
@@ -105,13 +105,13 @@ testLongUrlGet (size_t buff_size)
   struct CBC cbc;
   char *url;
   long code;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
   else
   {
-    port = 1330 + buff_size % 20;
+    port = 1330 + (uint16_t) (buff_size % 20);
     if (oneone)
       port += 5;
   }
@@ -136,7 +136,7 @@ testLongUrlGet (size_t buff_size)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   url = malloc (VERY_LONG);
@@ -187,7 +187,7 @@ testLongUrlGet (size_t buff_size)
 }
 
 
-static int
+static unsigned int
 testLongHeaderGet (size_t buff_size)
 {
   struct MHD_Daemon *d;
@@ -197,13 +197,13 @@ testLongHeaderGet (size_t buff_size)
   char *url;
   long code;
   struct curl_slist *header = NULL;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
   else
   {
-    port = 1331 + buff_size % 20;
+    port = 1331 + (uint16_t) (buff_size % 20);
     if (oneone)
       port += 5;
   }
@@ -229,7 +229,7 @@ testLongHeaderGet (size_t buff_size)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   c = curl_easy_init ();
   url = malloc (VERY_LONG);

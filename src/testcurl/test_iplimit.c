@@ -108,7 +108,7 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testMultithreadedGet (void)
 {
   struct MHD_Daemon *d;
@@ -116,7 +116,7 @@ testMultithreadedGet (void)
   int k;
   unsigned int success;
   unsigned int failure;
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -146,7 +146,7 @@ testMultithreadedGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   for (k = 0; k < 3; ++k)
@@ -223,13 +223,13 @@ testMultithreadedGet (void)
 }
 
 
-static int
+static unsigned int
 testMultithreadedPoolGet (void)
 {
   struct MHD_Daemon *d;
   char buf[2048];
   int k;
-  int port;
+  uint16_t port;
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
   else
@@ -258,7 +258,7 @@ testMultithreadedPoolGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   for (k = 0; k < 3; ++k)

@@ -98,7 +98,7 @@ int
 main (void)
 {
   struct MHD_Daemon *daemon;
-  int port;
+  uint16_t port;
   char url[255];
   CURL *curl;
   CURLcode success;
@@ -129,15 +129,15 @@ main (void)
     {
       MHD_stop_daemon (daemon); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   curl = curl_easy_init ();
   /* curl_easy_setopt(curl, CURLOPT_POST, 1L); */
   snprintf (url,
             sizeof (url),
-            "http://127.0.0.1:%d",
-            port);
+            "http://127.0.0.1:%u",
+            (unsigned int) port);
   curl_easy_setopt (curl, CURLOPT_URL, url);
   curl_easy_setopt (curl, CURLOPT_WRITEFUNCTION, write_data);
 
