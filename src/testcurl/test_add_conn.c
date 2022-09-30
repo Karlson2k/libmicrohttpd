@@ -1139,14 +1139,15 @@ main (int argc, char *const *argv)
 #ifndef _WIN32
     /* Find system limit for number of open FDs. */
 #if defined(HAVE_SYSCONF) && defined(_SC_OPEN_MAX)
-    sys_max_fds = sysconf (_SC_OPEN_MAX);
+    sys_max_fds = sysconf (_SC_OPEN_MAX) > 500000 ?
+                  500000 : (int) sysconf (_SC_OPEN_MAX);
 #else  /* ! HAVE_SYSCONF || ! _SC_OPEN_MAX */
     sys_max_fds = -1;
 #endif /* ! HAVE_SYSCONF || ! _SC_OPEN_MAX */
     if (0 > sys_max_fds)
     {
 #if defined(OPEN_MAX) && (0 < ((OPEN_MAX) +1))
-      sys_max_fds = OPEN_MAX;
+      sys_max_fds = OPEN_MAX > 500000 ? 500000 : (int) OPEN_MAX;
 #else  /* ! OPEN_MAX */
       sys_max_fds = 256; /* Use reasonable value */
 #endif /* ! OPEN_MAX */
