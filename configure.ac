@@ -2410,14 +2410,6 @@ AS_IF([test "$enable_curl" != "no"],
       enable_curl=no
     ])
 ])
-AS_IF([test "$enable_curl" != "no"],
- [
-# Lib cURL & cURL - OpenSSL versions
-  AC_DEFINE([MHD_REQ_CURL_VERSION], ["7.16.4"], [required cURL version to run tests])
-  AC_DEFINE([MHD_REQ_CURL_OPENSSL_VERSION], ["0.9.8"], [required cURL SSL version to run tests])
-  AC_DEFINE([MHD_REQ_CURL_GNUTLS_VERSION], ["2.8.6"], [gnuTLS lib version - used in conjunction with cURL])
-  AC_DEFINE([MHD_REQ_CURL_NSS_VERSION], ["3.12.0"], [NSS lib version - used in conjunction with cURL])
- ])
 AM_CONDITIONAL([HAVE_CURL], [test "x$enable_curl" = "xyes"])
 
 mhd_have_libmagic="no"

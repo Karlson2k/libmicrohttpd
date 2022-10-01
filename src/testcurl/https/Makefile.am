@@ -78,8 +78,7 @@ test_tls_options_SOURCES = \
   test_tls_options.c \
   tls_test_keys.h \
   tls_test_common.h \
-  tls_test_common.c \
-  curl_version_check.c
+  tls_test_common.c
 
 test_https_get_parallel_SOURCES = \
   test_https_get_parallel.c \

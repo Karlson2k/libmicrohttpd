@@ -34,8 +34,6 @@
 #include "tls_test_common.h"
 #include "tls_test_keys.h"
 
-int curl_check_version (const char *req_version, ...);
-
 /**
  * test server refuses to negotiate connections with unsupported protocol versions
  *
@@ -110,28 +108,34 @@ main (int argc, char *const *argv)
   if (! testsuite_curl_global_init ())
     return 99;
 
-  if (curl_check_version (MHD_REQ_CURL_VERSION))
-  {
-    return 77;
-  }
   ssl_version = curl_version_info (CURLVERSION_NOW)->ssl_version;
-  if (NULL == ssl_version)
+  if (0 == strncmp (ssl_version, "OpenSSL/", 8))
   {
-    fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
-    return 77;
+    if (0 == strncmp (ssl_version, "OpenSSL/0.", 10))
+    {
+      fprintf (stderr, "Curl uses too old library: %s\n", ssl_version);
+      curl_global_cleanup ();
+      return 77;
+    }
   }
-
-  if (curl_tls_is_schannel () || curl_tls_is_sectransport ())
+  else if ((0 == strncmp (ssl_version, "GnuTLS/", 7)))
   {
-    fprintf (stderr,
-             "libcurl TLS backend does not support this test. Skipping.\n");
+#if GNUTLS_VERSION_NUMBER <= 0x020806
+    fprintf (stderr, "Curl uses too old library: %s\n", ssl_version);
+    curl_global_cleanup ();
     return 77;
+#else
+    (void) 0;
+#endif
   }
-
-  if (curl_tls_is_nss ())
+  else
   {
-    aes128_sha = "rsa_aes_128_sha";
-    aes256_sha = "rsa_aes_256_sha";
+    if (NULL == ssl_version)
+      fprintf (stderr, "Curl does not support TLS.\n");
+    else
+      fprintf (stderr, "Curl uses too old library: %s\n", ssl_version);
+    curl_global_cleanup ();
+    return 77;
   }
 
   if (0 !=

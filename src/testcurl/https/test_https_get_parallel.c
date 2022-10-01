@@ -44,8 +44,6 @@
 #define MHD_CPU_COUNT 4
 #endif
 
-int curl_check_version (const char *req_version, ...);
-
 
 /**
  * used when spawning multiple threads executing curl server requests
