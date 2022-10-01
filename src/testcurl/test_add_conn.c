@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2009, 2011 Christian Grothoff
-     Copyright (C) 2014-2020 Evgeny Grin (Karlson2k) - large rework,
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k) - large rework,
                              multithreading.
 
      libmicrohttpd is free software; you can redistribute it and/or modify
