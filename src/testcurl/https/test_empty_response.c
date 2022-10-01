@@ -58,7 +58,7 @@ ahc_echo (void *cls,
 
 
 static int
-testInternalSelectGet ()
+testInternalSelectGet (void)
 {
   struct MHD_Daemon *d;
   CURL *c;

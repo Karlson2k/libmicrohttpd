@@ -28,7 +28,7 @@
 
 
 FILE *
-setup_ca_cert ()
+setup_ca_cert (void)
 {
   FILE *cert_fd;
 

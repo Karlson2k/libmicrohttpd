@@ -95,7 +95,7 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
  */
 #if LIBCURL_VERSION_NUM >= 0x072200
 static int
-test_query_session ()
+test_query_session (void)
 {
   CURL *c;
   struct CBC cbc;

@@ -64,7 +64,7 @@ static unsigned int num_disconnects = 0;
  * Pause execution for specified number of milliseconds.
  * @param ms the number of milliseconds to sleep
  */
-void
+static void
 _MHD_sleep (uint32_t ms)
 {
 #if defined(_WIN32)
@@ -98,7 +98,7 @@ _MHD_sleep (uint32_t ms)
 }
 
 
-void
+static void
 socket_cb (void *cls,
            struct MHD_Connection *c,
            void **socket_context,
