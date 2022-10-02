@@ -47,12 +47,12 @@ ahc_echo (void *cls,
           void **req_cls)
 {
   static int ptr;
-  const char *me = cls;
   struct MHD_Response *response;
   enum MHD_Result ret;
+  (void) cls;
   (void) version; (void) upload_data; (void) upload_data_size;       /* Unused. Silent compiler warning. */
 
-  if (0 != strcmp (me, method))
+  if (0 != strcmp (MHD_HTTP_METHOD_GET, method))
     return MHD_NO;              /* unexpected method */
   if (&ptr != *req_cls)
   {
@@ -60,9 +60,8 @@ ahc_echo (void *cls,
     return MHD_YES;
   }
   *req_cls = NULL;
-  response = MHD_create_response_from_buffer (strlen (url),
-                                              (void *) url,
-                                              MHD_RESPMEM_MUST_COPY);
+  response = MHD_create_response_from_buffer_copy (strlen (url),
+                                                   (const void *) url);
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
   if (ret == MHD_NO)
@@ -71,8 +70,8 @@ ahc_echo (void *cls,
 }
 
 
-static int
-testExternalGet (int flags)
+static unsigned int
+testExternalGet (unsigned int flags)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -94,7 +93,7 @@ testExternalGet (int flags)
   time_t start;
   struct timeval tv;
   const char *aes256_sha = "AES256-SHA";
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -106,7 +105,7 @@ testExternalGet (int flags)
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_TLS | flags,
-                        port, NULL, NULL, &ahc_echo, "GET",
+                        port, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
@@ -120,7 +119,7 @@ testExternalGet (int flags)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   if (curl_tls_is_nss ())

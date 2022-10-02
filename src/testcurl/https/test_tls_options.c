@@ -38,8 +38,8 @@
  * test server refuses to negotiate connections with unsupported protocol versions
  *
  */
-static int
-test_unmatching_ssl_version (void *cls, int port, const char *cipher_suite,
+static unsigned int
+test_unmatching_ssl_version (void *cls, uint16_t port, const char *cipher_suite,
                              int curl_req_ssl_version)
 {
   struct CBC cbc;
@@ -49,7 +49,7 @@ test_unmatching_ssl_version (void *cls, int port, const char *cipher_suite,
   {
     fprintf (stderr, "Error: failed to allocate: %s\n",
              strerror (errno));
-    return -1;
+    return 1;
   }
   cbc.size = 256;
   cbc.pos = 0;
@@ -61,7 +61,7 @@ test_unmatching_ssl_version (void *cls, int port, const char *cipher_suite,
     free (cbc.buf);
     fprintf (stderr,
              "Internal error in gen_test_file_url\n");
-    return -1;
+    return 1;
   }
 
   /* assert daemon *rejected* request */
@@ -71,7 +71,7 @@ test_unmatching_ssl_version (void *cls, int port, const char *cipher_suite,
     free (cbc.buf);
     fprintf (stderr,
              "cURL failed to reject request despite SSL version mismatch!\n");
-    return -1;
+    return 1;
   }
 
   free (cbc.buf);
@@ -85,10 +85,10 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
   const char *ssl_version;
-  int daemon_flags =
+  unsigned int daemon_flags =
     MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD
     | MHD_USE_TLS | MHD_USE_ERROR_LOG;
-  int port;
+  uint16_t port;
   const char *aes128_sha = "AES128-SHA";
   const char *aes256_sha = "AES256-SHA";
   (void) argc; (void) argv;       /* Unused. Silent compiler warning. */

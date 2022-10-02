@@ -39,15 +39,15 @@
  * assert initiating two separate daemons and having one shut down
  * doesn't affect the other
  */
-static int
+static unsigned int
 test_concurent_daemon_pair (void *cls,
                             const char *cipher_suite,
                             int proto_version)
 {
-  int ret;
+  unsigned int ret;
   struct MHD_Daemon *d1;
   struct MHD_Daemon *d2;
-  int port1, port2;
+  uint16_t port1, port2;
   (void) cls;    /* Unused. Silent compiler warning. */
 
 
@@ -70,7 +70,7 @@ test_concurent_daemon_pair (void *cls,
   if (d1 == NULL)
   {
     fprintf (stderr, MHD_E_SERVER_INIT);
-    return -1;
+    return 1;
   }
   if (0 == port1)
   {
@@ -78,7 +78,9 @@ test_concurent_daemon_pair (void *cls,
     dinfo = MHD_get_daemon_info (d1, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
     {
-      MHD_stop_daemon (d1); return -1;
+      fprintf (stderr, "Cannot detect daemon bind port.\n");
+      MHD_stop_daemon (d1);
+      return 1;
     }
     port1 = (int) dinfo->port;
   }
@@ -95,7 +97,7 @@ test_concurent_daemon_pair (void *cls,
   {
     MHD_stop_daemon (d1);
     fprintf (stderr, MHD_E_SERVER_INIT);
-    return -1;
+    return 1;
   }
   if (0 == port2)
   {
@@ -103,9 +105,10 @@ test_concurent_daemon_pair (void *cls,
     dinfo = MHD_get_daemon_info (d2, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
     {
+      fprintf (stderr, "Cannot detect daemon bind port.\n");
       MHD_stop_daemon (d1);
       MHD_stop_daemon (d2);
-      return -1;
+      return 1;
     }
     port2 = (int) dinfo->port;
   }

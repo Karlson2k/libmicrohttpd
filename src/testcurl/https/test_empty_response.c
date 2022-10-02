@@ -57,7 +57,7 @@ ahc_echo (void *cls,
 }
 
 
-static int
+static unsigned int
 testInternalSelectGet (void)
 {
   struct MHD_Daemon *d;
@@ -74,8 +74,8 @@ testInternalSelectGet (void)
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  int port;
-  char *aes256_sha = "AES256-SHA";
+  uint16_t port;
+  const char *aes256_sha = "AES256-SHA";
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -88,7 +88,7 @@ testInternalSelectGet (void)
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_TLS
                         | MHD_USE_INTERNAL_POLLING_THREAD,
-                        port, NULL, NULL, &ahc_echo, "GET",
+                        port, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
@@ -103,7 +103,7 @@ testInternalSelectGet (void)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   if (curl_tls_is_nss ())
   {

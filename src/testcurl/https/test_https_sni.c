@@ -180,7 +180,7 @@ sni_callback (gnutls_session_t session,
 
 /* perform a HTTP GET request via SSL/TLS */
 static int
-do_get (const char *url, int port)
+do_get (const char *url, uint16_t port)
 {
   CURL *c;
   struct CBC cbc;
@@ -215,9 +215,9 @@ do_get (const char *url, int port)
   /* TODO merge into send_curl_req */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 2L);
-  sprintf (buf, "mhdhost1:%d:127.0.0.1", port);
+  sprintf (buf, "mhdhost1:%u:127.0.0.1", (unsigned int) port);
   dns_info = curl_slist_append (NULL, buf);
-  sprintf (buf, "mhdhost2:%d:127.0.0.1", port);
+  sprintf (buf, "mhdhost2:%u:127.0.0.1", (unsigned int) port);
   dns_info = curl_slist_append (dns_info, buf);
   curl_easy_setopt (c, CURLOPT_RESOLVE, dns_info);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);
@@ -255,9 +255,9 @@ main (int argc, char *const *argv)
 {
   unsigned int error_count = 0;
   struct MHD_Daemon *d;
-  int port;
-  (void) argc;   /* Unused. Silent compiler warning. */
+  uint16_t port;
   const char *tls_backend;
+  (void) argc;   /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -313,7 +313,7 @@ main (int argc, char *const *argv)
     {
       MHD_stop_daemon (d); return -1;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
   if (0 != do_get ("https://mhdhost1/", port))
     error_count++;

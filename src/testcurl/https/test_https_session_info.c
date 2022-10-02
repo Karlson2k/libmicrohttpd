@@ -94,14 +94,14 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
  * negotiate a secure connection with server & query negotiated security parameters
  */
 #if LIBCURL_VERSION_NUM >= 0x072200
-static int
+static unsigned int
 test_query_session (void)
 {
   CURL *c;
   struct CBC cbc;
   CURLcode errornum;
   char url[256];
-  int port;
+  uint16_t port;
   const char *aes256_sha = "AES256-SHA";
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -139,7 +139,7 @@ test_query_session (void)
       free (cbc.buf);
       return 32;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   if (curl_tls_is_nss ())
@@ -180,7 +180,7 @@ test_query_session (void)
     MHD_stop_daemon (d);
     curl_easy_cleanup (c);
     free (cbc.buf);
-    return -1;
+    return 1;
   }
 
   curl_easy_cleanup (c);

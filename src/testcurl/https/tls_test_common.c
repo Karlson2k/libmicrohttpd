@@ -60,11 +60,11 @@ setup_ca_cert (void)
 /*
  * test HTTPS transfer
  */
-int
+unsigned int
 test_daemon_get (void *cls,
                  const char *cipher_suite,
                  int proto_version,
-                 int port,
+                 uint16_t port,
                  int ver_peer)
 {
   CURL *c;
@@ -79,7 +79,7 @@ test_daemon_get (void *cls,
   if (NULL == (cbc.buf = malloc (sizeof (char) * len)))
   {
     fprintf (stderr, MHD_E_MEM);
-    return -1;
+    return 1;
   }
   cbc.size = len;
   cbc.pos = 0;
@@ -108,7 +108,7 @@ test_daemon_get (void *cls,
              curl_easy_strerror (e));
     curl_easy_cleanup (c);
     free (cbc.buf);
-    return e;
+    return 1;
   }
 
   /* TLS options */
@@ -127,16 +127,17 @@ test_daemon_get (void *cls,
              curl_easy_strerror (e));
     curl_easy_cleanup (c);
     free (cbc.buf);
-    return e;
+    return 1;
   }
   if (ver_peer &&
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_CAINFO, ca_cert_file_name)))
+      (CURLE_OK !=
+       (e = curl_easy_setopt (c, CURLOPT_CAINFO, ca_cert_file_name))))
   {
     fprintf (stderr, "HTTPS curl_easy_setopt failed: `%s'\n",
              curl_easy_strerror (e));
     curl_easy_cleanup (c);
     free (cbc.buf);
-    return e;
+    return 1;
   }
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
   {
@@ -144,7 +145,7 @@ test_daemon_get (void *cls,
              curl_easy_strerror (errornum));
     curl_easy_cleanup (c);
     free (cbc.buf);
-    return errornum;
+    return 1;
   }
 
   curl_easy_cleanup (c);
@@ -153,7 +154,7 @@ test_daemon_get (void *cls,
   {
     fprintf (stderr, "Error: local file & received file differ.\n");
     free (cbc.buf);
-    return -1;
+    return 1;
   }
 
   free (cbc.buf);
@@ -162,15 +163,13 @@ test_daemon_get (void *cls,
 
 
 void
-print_test_result (int test_outcome,
-                   char *test_name)
+print_test_result (unsigned int test_outcome,
+                   const char *test_name)
 {
   if (test_outcome != 0)
     fprintf (stderr,
              "running test: %s [fail: %u]\n",
-             test_name, (unsigned
-                         int)
-             test_outcome);
+             test_name, test_outcome);
 #if 0
   else
     fprintf (stdout,
@@ -189,7 +188,10 @@ copyBuffer (void *ptr,
   struct CBC *cbc = ctx;
 
   if (cbc->pos + size * nmemb > cbc->size)
+  {
+    fprintf (stderr, "Server data does not fit buffer.\n");
     return 0;                   /* overflow */
+  }
   memcpy (&cbc->buf[cbc->pos], ptr, size * nmemb);
   cbc->pos += size * nmemb;
   return size * nmemb;
@@ -264,7 +266,7 @@ http_dummy_ahc (void *cls,
  * @return
  */
 /* TODO have test wrap consider a NULL cbc */
-int
+CURLcode
 send_curl_req (char *url,
                struct CBC *cbc,
                const char *cipher_suite,
@@ -339,29 +341,29 @@ send_curl_req (char *url,
  * @param[out] url - char buffer into which the url is compiled
  * @param url_len number of bytes available in url
  * @param port port to use for the test
- * @return -1 on error
+ * @return 1 on error
  */
-int
+unsigned int
 gen_test_file_url (char *url,
                    size_t url_len,
-                   int port)
+                   uint16_t port)
 {
-  int ret = 0;
+  unsigned int ret = 0;
   char *doc_path;
   size_t doc_path_len;
+#ifdef WINDOWS
+  size_t i;
+#endif /* ! WINDOWS */
   /* setup test file path, url */
 #ifdef PATH_MAX
   doc_path_len = PATH_MAX > 4096 ? 4096 : PATH_MAX;
 #else  /* ! PATH_MAX */
   doc_path_len = 4096;
 #endif /* ! PATH_MAX */
-#ifdef WINDOWS
-  size_t i;
-#endif /* ! WINDOWS */
   if (NULL == (doc_path = malloc (doc_path_len)))
   {
     fprintf (stderr, MHD_E_MEM);
-    return -1;
+    return 1;
   }
   if (NULL == getcwd (doc_path, doc_path_len))
   {
@@ -369,7 +371,7 @@ gen_test_file_url (char *url,
              "Error: failed to get working directory. %s\n",
              strerror (errno));
     free (doc_path);
-    return -1;
+    return 1;
   }
 #ifdef WINDOWS
   for (i = 0; i < doc_path_len; i++)
@@ -391,12 +393,12 @@ gen_test_file_url (char *url,
   /* construct url */
   if (snprintf (url,
                 url_len,
-                "%s:%d%s/%s",
+                "%s:%u%s/%s",
                 "https://127.0.0.1",
-                port,
+                (unsigned int) port,
                 doc_path,
                 "urlpath") >= (long long) url_len)
-    ret = -1;
+    ret = 1;
 
   free (doc_path);
   return ret;
@@ -406,14 +408,14 @@ gen_test_file_url (char *url,
 /**
  * test HTTPS file transfer
  */
-int
+unsigned int
 test_https_transfer (void *cls,
-                     int port,
+                     uint16_t port,
                      const char *cipher_suite,
                      int proto_version)
 {
-  int len;
-  int ret = 0;
+  size_t len;
+  unsigned int ret = 0;
   struct CBC cbc;
   char url[255];
   (void) cls;    /* Unused. Silent compiler warning. */
@@ -422,7 +424,7 @@ test_https_transfer (void *cls,
   if (NULL == (cbc.buf = malloc (sizeof (char) * len)))
   {
     fprintf (stderr, MHD_E_MEM);
-    return -1;
+    return 1;
   }
   cbc.size = len;
   cbc.pos = 0;
@@ -431,14 +433,14 @@ test_https_transfer (void *cls,
                          sizeof (url),
                          port))
   {
-    ret = -1;
+    ret = 1;
     goto cleanup;
   }
 
   if (CURLE_OK !=
       send_curl_req (url, &cbc, cipher_suite, proto_version))
   {
-    ret = -1;
+    ret = 1;
     goto cleanup;
   }
 
@@ -449,7 +451,7 @@ test_https_transfer (void *cls,
                 len) != 0) )
   {
     fprintf (stderr, "Error: local file & received file differ.\n");
-    ret = -1;
+    ret = 1;
   }
 cleanup:
   free (cbc.buf);
@@ -465,9 +467,9 @@ cleanup:
  * @param arg_list
  * @return port number on success or zero on failure
  */
-int
-setup_testcase (struct MHD_Daemon **d, int port, int daemon_flags, va_list
-                arg_list)
+uint16_t
+setup_testcase (struct MHD_Daemon **d, uint16_t port, unsigned int daemon_flags,
+                va_list arg_list)
 {
   *d = MHD_start_daemon_va (daemon_flags, port,
                             NULL, NULL, &http_ahc, NULL, arg_list);
@@ -487,7 +489,7 @@ setup_testcase (struct MHD_Daemon **d, int port, int daemon_flags, va_list
       MHD_stop_daemon (*d);
       return 0;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   return port;
@@ -501,7 +503,7 @@ teardown_testcase (struct MHD_Daemon *d)
 }
 
 
-int
+unsigned int
 setup_session (gnutls_session_t *session,
                gnutls_certificate_credentials_t *xcred)
 {
@@ -522,11 +524,11 @@ setup_session (gnutls_session_t *session,
     }
     gnutls_deinit (*session);
   }
-  return -1;
+  return 1;
 }
 
 
-int
+unsigned int
 teardown_session (gnutls_session_t session,
                   gnutls_certificate_credentials_t xcred)
 {
@@ -537,14 +539,15 @@ teardown_session (gnutls_session_t session,
 
 
 /* TODO test_wrap: change sig to (setup_func, test, va_list test_arg) */
-int
-test_wrap (const char *test_name, int
-           (*test_function)(void *cls, int port, const char *cipher_suite,
+unsigned int
+test_wrap (const char *test_name, unsigned int
+           (*test_function)(void *cls, uint16_t port, const char *cipher_suite,
                             int proto_version), void *cls,
-           int port,
-           int daemon_flags, const char *cipher_suite, int proto_version, ...)
+           uint16_t port,
+           unsigned int daemon_flags, const char *cipher_suite,
+           int proto_version, ...)
 {
-  int ret;
+  unsigned int ret;
   va_list arg_list;
   struct MHD_Daemon *d;
   (void) cls;    /* Unused. Silent compiler warning. */
@@ -555,7 +558,7 @@ test_wrap (const char *test_name, int
   {
     va_end (arg_list);
     fprintf (stderr, "Failed to setup testcase %s\n", test_name);
-    return -1;
+    return 1;
   }
 #if 0
   fprintf (stdout, "running test: %s ", test_name);

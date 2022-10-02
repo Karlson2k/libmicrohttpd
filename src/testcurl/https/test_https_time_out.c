@@ -121,8 +121,8 @@ socket_cb (void *cls,
 }
 
 
-static int
-test_tls_session_time_out (gnutls_session_t session, int port)
+static unsigned int
+test_tls_session_time_out (gnutls_session_t session, uint16_t port)
 {
   int ret;
   MHD_socket sd;
@@ -183,11 +183,11 @@ test_tls_session_time_out (gnutls_session_t session, int port)
 int
 main (int argc, char *const *argv)
 {
-  int errorCount = 0;
+  unsigned int errorCount = 0;
   struct MHD_Daemon *d;
   gnutls_session_t session;
   gnutls_certificate_credentials_t xcred;
-  int port;
+  uint16_t port;
   (void) argc;   /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -241,9 +241,10 @@ main (int argc, char *const *argv)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
     {
-      MHD_stop_daemon (d); return -1;
+      MHD_stop_daemon (d);
+      return 99;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   if (0 != setup_session (&session, &xcred))

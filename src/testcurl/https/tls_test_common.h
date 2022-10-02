@@ -52,7 +52,7 @@
 struct https_test_data
 {
   void *cls;
-  int port;
+  uint16_t port;
   const char *cipher_suite;
   int proto_version;
 };
@@ -95,13 +95,14 @@ setup_ca_cert (void);
 /**
  * perform cURL request for file
  */
-int
+unsigned int
 test_daemon_get (void *cls,
                  const char *cipher_suite, int proto_version,
-                 int port, int ver_peer);
+                 uint16_t port, int ver_peer);
 
 void
-print_test_result (int test_outcome, char *test_name);
+print_test_result (unsigned int test_outcome,
+                   const char *test_name);
 
 size_t
 copyBuffer (void *ptr, size_t size, size_t nmemb, void *ctx);
@@ -124,43 +125,48 @@ http_dummy_ahc (void *cls, struct MHD_Connection *connection,
  * @param[out] url - char buffer into which the url is compiled
  * @param url_len number of bytes available in @a url
  * @param port port to use for the test
- * @return -1 on error
+ * @return 1 on error
  */
-int
+unsigned int
 gen_test_file_url (char *url,
                    size_t url_len,
-                   int port);
+                   uint16_t port);
 
-int
-send_curl_req (char *url, struct CBC *cbc, const char *cipher_suite,
+CURLcode
+send_curl_req (char *url,
+               struct CBC *cbc,
+               const char *cipher_suite,
                int proto_version);
 
-int
-test_https_transfer (void *cls, int port, const char *cipher_suite, int
-                     proto_version);
+unsigned int
+test_https_transfer (void *cls,
+                     uint16_t port,
+                     const char *cipher_suite,
+                     int proto_version);
 
-int
-setup_testcase (struct MHD_Daemon **d, int port, int daemon_flags, va_list
-                arg_list);
+uint16_t
+setup_testcase (struct MHD_Daemon **d, uint16_t port, unsigned int daemon_flags,
+                va_list arg_list);
 
 void
 teardown_testcase (struct MHD_Daemon *d);
 
 
-int
+unsigned int
 setup_session (gnutls_session_t *session,
                gnutls_certificate_credentials_t *xcred);
 
-int
+unsigned int
 teardown_session (gnutls_session_t session,
                   gnutls_certificate_credentials_t xcred);
 
-int
-test_wrap (const char *test_name, int
-           (*test_function)(void *cls, int port, const char *cipher_suite,
+unsigned int
+test_wrap (const char *test_name, unsigned int
+           (*test_function)(void *cls, uint16_t port, const char *cipher_suite,
                             int proto_version), void *cls,
-           int port,
-           int daemon_flags, const char *cipher_suite, int proto_version, ...);
+           uint16_t port,
+           unsigned int daemon_flags, const char *cipher_suite,
+           int proto_version, ...);
 
 int testsuite_curl_global_init (void);
 

@@ -37,12 +37,12 @@
 
 
 /* perform a HTTP GET request via SSL/TLS */
-static int
-test_secure_get (void *cls, char *cipher_suite, int proto_version)
+static unsigned int
+test_secure_get (void *cls, const char *cipher_suite, int proto_version)
 {
-  int ret;
+  unsigned int ret;
   struct MHD_Daemon *d;
-  int port;
+  uint16_t port;
   (void) cls;    /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -61,7 +61,7 @@ test_secure_get (void *cls, char *cipher_suite, int proto_version)
   if (d == NULL)
   {
     fprintf (stderr, MHD_E_SERVER_INIT);
-    return -1;
+    return 1;
   }
   if (0 == port)
   {
@@ -69,9 +69,10 @@ test_secure_get (void *cls, char *cipher_suite, int proto_version)
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
     if ((NULL == dinfo) || (0 == dinfo->port) )
     {
-      MHD_stop_daemon (d); return -1;
+      MHD_stop_daemon (d);
+      return 1;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   ret = test_daemon_get (NULL, cipher_suite, proto_version, port, 0);
@@ -85,7 +86,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  char *aes256_sha = "AES256-SHA";
+  const char *aes256_sha = "AES256-SHA";
   FILE *crt;
   (void) argc;
   (void) argv;       /* Unused. Silent compiler warning. */

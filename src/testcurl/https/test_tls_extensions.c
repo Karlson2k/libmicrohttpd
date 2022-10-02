@@ -47,7 +47,8 @@
  * @return 0 on successful test completion, -1 otherwise
  */
 static int
-test_hello_extension (gnutls_session_t session, int port, extensions_t exten_t,
+test_hello_extension (gnutls_session_t session, uint16_t port,
+                      extensions_t exten_t,
                       int ext_count, int ext_length)
 {
   int i, ret = 0, pos = 0;
@@ -213,7 +214,7 @@ main (int argc, char *const *argv)
     GNUTLS_EXTENSION_SERVER_NAME,
     -1
   };
-  int port;
+  uint16_t port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -258,7 +259,7 @@ main (int argc, char *const *argv)
     {
       MHD_stop_daemon (d); return -1;
     }
-    port = (int) dinfo->port;
+    port = dinfo->port;
   }
 
   i = 0;

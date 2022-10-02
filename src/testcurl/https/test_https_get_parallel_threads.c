@@ -55,7 +55,7 @@ https_transfer_thread_adapter (void *args)
 {
   static int nonnull;
   struct https_test_data *cargs = args;
-  int ret;
+  unsigned int ret;
 
   /* time spread incoming requests */
   usleep ((useconds_t) 10.0 * ((double) rand ()) / ((double) RAND_MAX));
@@ -70,12 +70,12 @@ https_transfer_thread_adapter (void *args)
 /**
  * Test non-parallel requests.
  *
- * @return: 0 upon all client requests returning '0', -1 otherwise.
+ * @return: 0 upon all client requests returning '0', 1 otherwise.
  *
  * TODO : make client_count a parameter - number of curl client threads to spawn
  */
-static int
-test_single_client (void *cls, int port, const char *cipher_suite,
+static unsigned int
+test_single_client (void *cls, uint16_t port, const char *cipher_suite,
                     int curl_proto_version)
 {
   void *client_thread_ret;
@@ -85,7 +85,7 @@ test_single_client (void *cls, int port, const char *cipher_suite,
 
   client_thread_ret = https_transfer_thread_adapter (&client_args);
   if (client_thread_ret != NULL)
-    return -1;
+    return 1;
   return 0;
 }
 
@@ -93,12 +93,12 @@ test_single_client (void *cls, int port, const char *cipher_suite,
 /**
  * Test parallel request handling.
  *
- * @return: 0 upon all client requests returning '0', -1 otherwise.
+ * @return: 0 upon all client requests returning '0', 1 otherwise.
  *
  * TODO : make client_count a parameter - number of curl client threads to spawn
  */
-static int
-test_parallel_clients (void *cls, int port, const char *cipher_suite,
+static unsigned int
+test_parallel_clients (void *cls, uint16_t port, const char *cipher_suite,
                        int curl_proto_version)
 {
   int i;
@@ -116,7 +116,7 @@ test_parallel_clients (void *cls, int port, const char *cipher_suite,
     {
       fprintf (stderr, "Error: failed to spawn test client threads.\n");
 
-      return -1;
+      return 1;
     }
   }
 
@@ -125,7 +125,7 @@ test_parallel_clients (void *cls, int port, const char *cipher_suite,
   {
     if ((pthread_join (client_arr[i], &client_thread_ret) != 0) ||
         (client_thread_ret != NULL))
-      return -1;
+      return 1;
   }
 
   return 0;
@@ -137,9 +137,9 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
   const char *ssl_version;
-  int port;
+  uint16_t port;
   unsigned int iseed;
-  char *aes256_sha = "AES256-SHA";
+  const char *aes256_sha = "AES256-SHA";
   (void) argc;   /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
