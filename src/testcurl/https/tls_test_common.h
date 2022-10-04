@@ -33,7 +33,7 @@
 #define CURL_VERBOS_LEVEL 0
 
 #define test_data "Hello World\n"
-#define ca_cert_file_name "tmp_ca_cert.pem"
+#define ca_cert_file_name SRCDIR "/test-ca.crt"
 
 #define EMPTY_PAGE \
   "<html><head><title>Empty page</title></head><body>Empty page</body></html>"
@@ -88,9 +88,6 @@ curl_tls_is_schannel (void);
 
 int
 curl_tls_is_sectransport (void);
-
-FILE *
-setup_ca_cert (void);
 
 /**
  * perform cURL request for file

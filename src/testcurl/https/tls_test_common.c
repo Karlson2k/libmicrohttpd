@@ -27,36 +27,6 @@
 #include "tls_test_keys.h"
 
 
-FILE *
-setup_ca_cert (void)
-{
-  FILE *cert_fd;
-
-  if (NULL == (cert_fd = fopen (ca_cert_file_name, "wb+")))
-  {
-    fprintf (stderr, "Error: failed to open `%s': %s\n",
-             ca_cert_file_name, strerror (errno));
-    return NULL;
-  }
-  if (fwrite (ca_cert_pem, sizeof (char), strlen (ca_cert_pem) + 1, cert_fd)
-      != strlen (ca_cert_pem) + 1)
-  {
-    fprintf (stderr, "Error: failed to write `%s. %s'\n",
-             ca_cert_file_name, strerror (errno));
-    fclose (cert_fd);
-    return NULL;
-  }
-  if (fflush (cert_fd))
-  {
-    fprintf (stderr, "Error: failed to flush ca cert file stream. %s\n",
-             strerror (errno));
-    fclose (cert_fd);
-    return NULL;
-  }
-  return cert_fd;
-}
-
-
 /*
  * test HTTPS transfer
  */

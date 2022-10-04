@@ -9,6 +9,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/microhttpd \
   -DMHD_CPU_COUNT=$(CPU_COUNT) \
+  -DSRCDIR=\"$(srcdir)\" \
   $(CPPFLAGS_ac) $(LIBCURL_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_ac) @LIBGCRYPT_CFLAGS@
@@ -136,16 +137,11 @@ test_https_get_iovec_SOURCES = \
   tls_test_common.h \
   tls_test_common.c
 
-if HAVE_GNUTLS_SNI
 test_https_sni_SOURCES = \
   test_https_sni.c \
   tls_test_keys.h \
   tls_test_common.h \
   tls_test_common.c
-test_https_sni_CPPFLAGS = \
-  $(AM_CPPFLAGS) \
-  -DABS_SRCDIR=\"$(abs_srcdir)\"
-endif
 
 test_https_get_select_SOURCES = \
   test_https_get_select.c \

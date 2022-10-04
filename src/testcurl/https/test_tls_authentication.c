@@ -87,7 +87,6 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
   const char *aes256_sha = "AES256-SHA";
-  FILE *crt;
   (void) argc;
   (void) argv;       /* Unused. Silent compiler warning. */
 
@@ -106,13 +105,6 @@ main (int argc, char *const *argv)
     return 77;
   }
 
-  if (NULL == (crt = setup_ca_cert ()))
-  {
-    fprintf (stderr, MHD_E_TEST_FILE_CREAT);
-    curl_global_cleanup ();
-    return 99;
-  }
-  fclose (crt);
   if (curl_tls_is_nss ())
   {
     aes256_sha = "rsa_aes_256_sha";
@@ -124,9 +116,5 @@ main (int argc, char *const *argv)
   print_test_result (errorCount, argv[0]);
 
   curl_global_cleanup ();
-  if (0 != remove (ca_cert_file_name))
-    fprintf (stderr,
-             "Failed to remove `%s'\n",
-             ca_cert_file_name);
   return errorCount != 0 ? 1 : 0;
 }

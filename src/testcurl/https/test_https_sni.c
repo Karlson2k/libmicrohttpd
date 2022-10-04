@@ -209,7 +209,7 @@ do_get (const char *url, uint16_t port)
   curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_FILE, &cbc);
-  curl_easy_setopt (c, CURLOPT_CAINFO, ABS_SRCDIR "/test-ca.crt");
+  curl_easy_setopt (c, CURLOPT_CAINFO, SRCDIR "/test-ca.crt");
 
   /* perform peer authentication */
   /* TODO merge into send_curl_req */
@@ -288,10 +288,10 @@ main (int argc, char *const *argv)
     return 77;
   }
 
-  load_keys ("mhdhost1", ABS_SRCDIR "/mhdhost1.crt",
-             ABS_SRCDIR "/mhdhost1.key");
-  load_keys ("mhdhost2", ABS_SRCDIR "/mhdhost2.crt",
-             ABS_SRCDIR "/mhdhost2.key");
+  load_keys ("mhdhost1", SRCDIR "/mhdhost1.crt",
+             SRCDIR "/mhdhost1.key");
+  load_keys ("mhdhost2", SRCDIR "/mhdhost2.crt",
+             SRCDIR "/mhdhost2.key");
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                         | MHD_USE_ERROR_LOG,
