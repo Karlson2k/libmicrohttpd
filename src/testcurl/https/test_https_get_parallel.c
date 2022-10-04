@@ -134,7 +134,6 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  const char *aes256_sha = "AES256-SHA";
   uint16_t port;
   unsigned int iseed;
   (void) argc;   /* Unused. Silent compiler warning. */
@@ -155,8 +154,6 @@ main (int argc, char *const *argv)
     fprintf (stderr, "Curl does not support SSL.  Cannot run the test.\n");
     return 77;
   }
-  if (curl_tls_is_nss ())
-    aes256_sha = "rsa_aes_256_sha";
 #ifdef EPOLL_SUPPORT
   errorCount +=
     test_wrap ("single threaded daemon, single client, epoll",
@@ -164,7 +161,7 @@ main (int argc, char *const *argv)
                NULL, port,
                MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                | MHD_USE_ERROR_LOG | MHD_USE_EPOLL,
-               aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               NULL, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 #endif
@@ -173,7 +170,7 @@ main (int argc, char *const *argv)
                NULL, port,
                MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                | MHD_USE_ERROR_LOG,
-               aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               NULL, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 #ifdef EPOLL_SUPPORT
@@ -182,7 +179,7 @@ main (int argc, char *const *argv)
                &test_parallel_clients, NULL, port,
                MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                | MHD_USE_ERROR_LOG | MHD_USE_EPOLL,
-               aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               NULL, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 #endif
@@ -191,7 +188,7 @@ main (int argc, char *const *argv)
                &test_parallel_clients, NULL, port,
                MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                | MHD_USE_ERROR_LOG,
-               aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               NULL, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 

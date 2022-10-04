@@ -139,7 +139,6 @@ main (int argc, char *const *argv)
   const char *ssl_version;
   uint16_t port;
   unsigned int iseed;
-  const char *aes256_sha = "AES256-SHA";
   (void) argc;   /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -172,17 +171,12 @@ main (int argc, char *const *argv)
     return 77;
   }
 
-  if (curl_tls_is_nss ())
-  {
-    aes256_sha = "rsa_aes_256_sha";
-  }
-
   errorCount +=
     test_wrap ("multi threaded daemon, single client", &test_single_client,
                NULL, port,
                MHD_USE_TLS | MHD_USE_ERROR_LOG | MHD_USE_THREAD_PER_CONNECTION
                | MHD_USE_INTERNAL_POLLING_THREAD,
-               aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               NULL, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 
@@ -191,7 +185,7 @@ main (int argc, char *const *argv)
                &test_parallel_clients, NULL, port,
                MHD_USE_TLS | MHD_USE_ERROR_LOG | MHD_USE_THREAD_PER_CONNECTION
                | MHD_USE_INTERNAL_POLLING_THREAD,
-               aes256_sha, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               NULL, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 

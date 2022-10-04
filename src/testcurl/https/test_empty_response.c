@@ -75,7 +75,6 @@ testInternalSelectGet (void)
   time_t start;
   struct timeval tv;
   uint16_t port;
-  const char *aes256_sha = "AES256-SHA";
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -105,10 +104,6 @@ testInternalSelectGet (void)
     }
     port = dinfo->port;
   }
-  if (curl_tls_is_nss ())
-  {
-    aes256_sha = "rsa_aes_256_sha";
-  }
 
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "https://127.0.0.1/hello_world");
@@ -117,7 +112,6 @@ testInternalSelectGet (void)
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   /* TLS options */
   curl_easy_setopt (c, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
-  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, aes256_sha);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);

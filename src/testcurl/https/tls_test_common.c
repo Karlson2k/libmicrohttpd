@@ -84,8 +84,9 @@ test_daemon_get (void *cls,
   /* TLS options */
   if ((CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_SSLVERSION,
                                           proto_version))) ||
-      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST,
-                                          cipher_suite))) ||
+      ((NULL != cipher_suite) &&
+       (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST,
+                                           cipher_suite)))) ||
 
       /* perform peer authentication */
       /* TODO merge into send_curl_req */
@@ -280,8 +281,9 @@ send_curl_req (char *url,
   /* TLS options */
   if ((CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_SSLVERSION,
                                            proto_version))) ||
-      (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST,
-                                           cipher_suite))) ||
+      ((NULL != cipher_suite) &&
+       (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST,
+                                           cipher_suite)))) ||
       /* currently skip any peer authentication */
       (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L))) ||
       (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L))))

@@ -187,7 +187,7 @@ test_hello_extension (gnutls_session_t session, uint16_t port,
   gnutls_free (data);
 
   /* make sure daemon is still functioning */
-  if (CURLE_OK != send_curl_req (url, &cbc, "AES128-SHA",
+  if (CURLE_OK != send_curl_req (url, &cbc, NULL,
                                  MHD_GNUTLS_PROTOCOL_TLS1_2))
   {
     ret = -1;

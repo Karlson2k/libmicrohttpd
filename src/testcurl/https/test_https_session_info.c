@@ -102,7 +102,6 @@ test_query_session (void)
   CURLcode errornum;
   char url[256];
   uint16_t port;
-  const char *aes256_sha = "AES256-SHA";
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
@@ -142,11 +141,6 @@ test_query_session (void)
     port = dinfo->port;
   }
 
-  if (curl_tls_is_nss ())
-  {
-    aes256_sha = "rsa_aes_256_sha";
-  }
-
   gen_test_file_url (url,
                      sizeof (url),
                      port);
@@ -162,7 +156,6 @@ test_query_session (void)
   curl_easy_setopt (c, CURLOPT_FILE, &cbc);
   /* TLS options */
   curl_easy_setopt (c, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
-  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, aes256_sha);
   /* currently skip any peer authentication */
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L);

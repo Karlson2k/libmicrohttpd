@@ -86,7 +86,6 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  const char *aes256_sha = "AES256-SHA";
   (void) argc;
   (void) argv;       /* Unused. Silent compiler warning. */
 
@@ -105,13 +104,8 @@ main (int argc, char *const *argv)
     return 77;
   }
 
-  if (curl_tls_is_nss ())
-  {
-    aes256_sha = "rsa_aes_256_sha";
-  }
-
   errorCount +=
-    test_secure_get (NULL, aes256_sha, CURL_SSLVERSION_TLSv1);
+    test_secure_get (NULL, NULL, CURL_SSLVERSION_TLSv1);
 
   print_test_result (errorCount, argv[0]);
 

@@ -89,8 +89,6 @@ main (int argc, char *const *argv)
     MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD
     | MHD_USE_TLS | MHD_USE_ERROR_LOG;
   uint16_t port;
-  const char *aes128_sha = "AES128-SHA";
-  const char *aes256_sha = "AES256-SHA";
   (void) argc; (void) argv;       /* Unused. Silent compiler warning. */
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -139,9 +137,9 @@ main (int argc, char *const *argv)
   }
 
   if (0 !=
-      test_wrap ("TLS1.0-AES-SHA1",
+      test_wrap ("TLS1.0",
                  &test_https_transfer, NULL, port, daemon_flags,
-                 aes128_sha,
+                 NULL,
                  CURL_SSLVERSION_TLSv1,
                  MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                  MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
@@ -149,7 +147,7 @@ main (int argc, char *const *argv)
                  "NONE:+VERS-TLS1.0:+AES-128-CBC:+SHA1:+RSA:+COMP-NULL",
                  MHD_OPTION_END))
   {
-    fprintf (stderr, "TLS1.0-AES-SHA1 test failed\n");
+    fprintf (stderr, "TLS1.0 test failed\n");
     errorCount++;
   }
   fprintf (stderr,
@@ -157,7 +155,7 @@ main (int argc, char *const *argv)
   if (0 !=
       test_wrap ("TLS1.1 vs TLS1.0",
                  &test_unmatching_ssl_version, NULL, port, daemon_flags,
-                 aes256_sha,
+                 NULL,
                  CURL_SSLVERSION_TLSv1_1,
                  MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                  MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
