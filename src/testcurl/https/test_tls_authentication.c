@@ -105,7 +105,7 @@ main (int argc, char *const *argv)
   }
 
   errorCount +=
-    test_secure_get (NULL, NULL, CURL_SSLVERSION_TLSv1);
+    test_secure_get (NULL, NULL, CURL_SSLVERSION_DEFAULT);
 
   print_test_result (errorCount, argv[0]);
 

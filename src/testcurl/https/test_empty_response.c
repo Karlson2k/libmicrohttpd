@@ -111,7 +111,7 @@ testInternalSelectGet (void)
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   /* TLS options */
-  curl_easy_setopt (c, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+  curl_easy_setopt (c, CURLOPT_SSLVERSION, CURL_SSLVERSION_DEFAULT);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);

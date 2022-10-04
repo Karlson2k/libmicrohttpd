@@ -249,7 +249,7 @@ main (int argc, char *const *argv)
     return 77;
   }
   errorCount +=
-    test_secure_get (NULL, NULL, CURL_SSLVERSION_TLSv1);
+    test_secure_get (NULL, NULL, CURL_SSLVERSION_DEFAULT);
   errorCount += testEmptyGet (0);
   curl_global_cleanup ();
 

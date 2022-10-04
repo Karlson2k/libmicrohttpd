@@ -161,7 +161,7 @@ main (int argc, char *const *argv)
                NULL, port,
                MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                | MHD_USE_ERROR_LOG | MHD_USE_EPOLL,
-               NULL, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               NULL, CURL_SSLVERSION_DEFAULT, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 #endif
@@ -170,7 +170,7 @@ main (int argc, char *const *argv)
                NULL, port,
                MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                | MHD_USE_ERROR_LOG,
-               NULL, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               NULL, CURL_SSLVERSION_DEFAULT, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 #ifdef EPOLL_SUPPORT
@@ -179,7 +179,7 @@ main (int argc, char *const *argv)
                &test_parallel_clients, NULL, port,
                MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                | MHD_USE_ERROR_LOG | MHD_USE_EPOLL,
-               NULL, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               NULL, CURL_SSLVERSION_DEFAULT, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 #endif
@@ -188,7 +188,7 @@ main (int argc, char *const *argv)
                &test_parallel_clients, NULL, port,
                MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                | MHD_USE_ERROR_LOG,
-               NULL, CURL_SSLVERSION_TLSv1, MHD_OPTION_HTTPS_MEM_KEY,
+               NULL, CURL_SSLVERSION_DEFAULT, MHD_OPTION_HTTPS_MEM_KEY,
                srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 
