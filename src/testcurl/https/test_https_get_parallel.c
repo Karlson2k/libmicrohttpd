@@ -56,8 +56,6 @@ https_transfer_thread_adapter (void *args)
   struct https_test_data *cargs = args;
   unsigned int ret;
 
-  /* time spread incoming requests */
-  usleep ((useconds_t) 10.0 * ((double) rand ()) / ((double) RAND_MAX));
   ret = test_https_transfer (NULL, cargs->port,
                              cargs->cipher_suite, cargs->proto_version);
   if (ret == 0)
