@@ -70,7 +70,7 @@ test_daemon_get (void *cls,
       (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT, 10L))) ||
       (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_WRITEFUNCTION,
                                           &copyBuffer))) ||
-      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_FILE, &cbc))) ||
+      (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc))) ||
       (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L))) ||
       (CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L))))
   {
@@ -269,7 +269,7 @@ send_curl_req (char *url,
   {
     if ((CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_WRITEFUNCTION,
                                              &copyBuffer))) ||
-        (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_FILE, cbc))))
+        (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_WRITEDATA, cbc))))
     {
       fprintf (stderr, "curl_easy_setopt failed: `%s'\n",
                curl_easy_strerror (e));
