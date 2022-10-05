@@ -35,7 +35,8 @@
 #include "tls_test_common.h"
 #include "tls_test_keys.h"
 
-struct MHD_Daemon *d;
+#if LIBCURL_VERSION_NUM >= 0x072200
+static struct MHD_Daemon *d;
 
 /*
  * HTTP access handler call back
@@ -93,7 +94,6 @@ query_session_ahc (void *cls, struct MHD_Connection *connection,
 /**
  * negotiate a secure connection with server & query negotiated security parameters
  */
-#if LIBCURL_VERSION_NUM >= 0x072200
 static unsigned int
 test_query_session (void)
 {
@@ -183,12 +183,9 @@ test_query_session (void)
 }
 
 
-#endif
-
 int
 main (int argc, char *const *argv)
 {
-#if LIBCURL_VERSION_NUM >= 0x072200
   unsigned int errorCount = 0;
   const char *ssl_version;
   (void) argc;   /* Unused. Silent compiler warning. */
@@ -219,9 +216,19 @@ main (int argc, char *const *argv)
   print_test_result (errorCount, argv[0]);
   curl_global_cleanup ();
   return errorCount != 0 ? 1 : 0;
-#else  /* LIBCURL_VERSION_NUM < 0x072200 */
-  (void) argc; (void) argv;   /* Unused. Silent compiler warning. */
-  (void) query_session_ahc; /* Mute compiler warning */
-  return 77;
-#endif /* LIBCURL_VERSION_NUM < 0x072200 */
 }
+
+
+#else  /* LIBCURL_VERSION_NUM < 0x072200 */
+
+int
+main (int argc, char *const *argv)
+{
+  (void) argc; (void) argv;   /* Unused. Silent compiler warning. */
+  fprintf (stderr, "libcurl version 7.34.0 or later is required.\n" \
+           "Cannot run the test.\n");
+  return 77;
+}
+
+
+#endif /* LIBCURL_VERSION_NUM < 0x072200 */
