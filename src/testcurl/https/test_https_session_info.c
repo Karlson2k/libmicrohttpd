@@ -145,7 +145,7 @@ test_query_session (void)
                      sizeof (url),
                      port);
   c = curl_easy_init ();
-#if DEBUG_HTTPS_TEST
+#ifdef _DEBUG
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1L);
 #endif
   curl_easy_setopt (c, CURLOPT_URL, url);

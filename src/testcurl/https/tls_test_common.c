@@ -60,7 +60,7 @@ test_daemon_get (void *cls,
                      port);
 
   c = curl_easy_init ();
-#if DEBUG_HTTPS_TEST
+#ifdef _DEBUG
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1L);
 #endif
   if ((CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_URL, url))) ||
@@ -247,8 +247,8 @@ send_curl_req (char *url,
   CURLcode errornum;
   CURLcode e;
   c = curl_easy_init ();
-#if DEBUG_HTTPS_TEST
-  curl_easy_setopt (c, CURLOPT_VERBOSE, CURL_VERBOS_LEVEL);
+#ifdef _DEBUG
+  curl_easy_setopt (c, CURLOPT_VERBOSE, 1L);
 #endif
   if ((CURLE_OK != (e = curl_easy_setopt (c, CURLOPT_URL, url))) ||
       (CURLE_OK  != (e = curl_easy_setopt (c, CURLOPT_HTTP_VERSION,

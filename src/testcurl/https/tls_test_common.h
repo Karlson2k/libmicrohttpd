@@ -28,10 +28,6 @@
 #include <limits.h>
 #include <gnutls/gnutls.h>
 
-/* this enables verbos CURL version checking */
-#define DEBUG_HTTPS_TEST 0
-#define CURL_VERBOS_LEVEL 0
-
 #define test_data "Hello World\n"
 #define ca_cert_file_name SRCDIR "/test-ca.crt"
 

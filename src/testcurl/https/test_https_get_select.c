@@ -122,6 +122,9 @@ testExternalGet (unsigned int flags)
   }
 
   c = curl_easy_init ();
+#ifdef _DEBUG
+  curl_easy_setopt (c, CURLOPT_VERBOSE, 1L);
+#endif
   curl_easy_setopt (c, CURLOPT_URL, "https://127.0.0.1/hello_world");
   curl_easy_setopt (c, CURLOPT_PORT, (long) port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
