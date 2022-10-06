@@ -6737,16 +6737,17 @@ MHD_start_daemon_va (unsigned int flags,
     return NULL;
 
   /* Check for invalid combinations of flags. */
-  if ( ((0 != (*pflags & MHD_USE_POLL)) && (0 != (*pflags & MHD_USE_EPOLL))) ||
-       ((0 != (*pflags & MHD_USE_EPOLL)) && (0 != (*pflags
-                                                   &
-                                                   MHD_USE_THREAD_PER_CONNECTION)))
-       ||
-       ((0 != (*pflags & MHD_USE_POLL)) &&
-        (0 == (*pflags & (MHD_USE_INTERNAL_POLLING_THREAD
-                          | MHD_USE_THREAD_PER_CONNECTION)))) ||
-       ((0 != (*pflags & MHD_USE_AUTO)) && (0 != (*pflags & (MHD_USE_POLL
-                                                             | MHD_USE_EPOLL)))) )
+  if ((0 != (*pflags & MHD_USE_POLL)) && (0 != (*pflags & MHD_USE_EPOLL)))
+    return NULL;
+  if ((0 != (*pflags & MHD_USE_EPOLL)) &&
+      (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION)))
+    return NULL;
+  if ((0 != (*pflags & MHD_USE_POLL)) &&
+      (0 == (*pflags & (MHD_USE_INTERNAL_POLLING_THREAD
+                        | MHD_USE_THREAD_PER_CONNECTION))))
+    return NULL;
+  if ((0 != (*pflags & MHD_USE_AUTO)) &&
+      (0 != (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL))))
     return NULL;
 
   if (0 != (*pflags & MHD_USE_AUTO))
