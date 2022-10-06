@@ -1245,6 +1245,11 @@ enum MHD_FLAG
   /**
    * Run using one thread per connection.
    * Must be used only with #MHD_USE_INTERNAL_POLLING_THREAD.
+   *
+   * If #MHD_USE_ITC is also not used, closed and expired connections may only
+   * be cleaned up internally when a new connection is received.
+   * Consider adding of #MHD_USE_ITC flag to have faster internal cleanups
+   * at very minor increase in system resources usage.
    */
   MHD_USE_THREAD_PER_CONNECTION = 4,
 
