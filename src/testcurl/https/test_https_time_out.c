@@ -54,10 +54,10 @@
 #endif
 #include "tls_test_keys.h"
 
-static const int TIME_OUT = 2;
+static const unsigned int timeout_val = 2;
 
-static unsigned int num_connects = 0;
-static unsigned int num_disconnects = 0;
+static volatile unsigned int num_connects = 0;
+static volatile unsigned int num_disconnects = 0;
 
 
 /**
@@ -104,18 +104,27 @@ socket_cb (void *cls,
            void **socket_context,
            enum MHD_ConnectionNotificationCode toe)
 {
-  struct sckt_notif_cb_param *param = (struct sckt_notif_cb_param *) cls;
   if (NULL == socket_context)
     abort ();
   if (NULL == c)
     abort ();
-  if (NULL == param)
+  if (NULL != cls)
     abort ();
 
   if (MHD_CONNECTION_NOTIFY_STARTED == toe)
+  {
     num_connects++;
+#ifdef _DEBUG
+    fprintf (stderr, "MHD: Connection has started.\n");
+#endif /* _DEBUG */
+  }
   else if (MHD_CONNECTION_NOTIFY_CLOSED == toe)
+  {
     num_disconnects++;
+#ifdef _DEBUG
+    fprintf (stderr, "MHD: Connection has closed.\n");
+#endif /* _DEBUG */
+  }
   else
     abort ();
 }
@@ -163,17 +172,21 @@ test_tls_session_time_out (gnutls_session_t session, uint16_t port)
     return 2;
   }
 
-  _MHD_sleep (TIME_OUT * 1000 + 1200);
+  _MHD_sleep (timeout_val * 1000 + 1700);
 
-  /* check that server has closed the connection */
-  if (1 == num_disconnects)
+  if (0 == num_connects)
   {
-    fprintf (stderr, "Connection failed to time-out\n");
+    fprintf (stderr, "MHD has not detected any connection attempt.\n");
+    MHD_socket_close_chk_ (sd);
+    return 4;
+  }
+  /* check that server has closed the connection */
+  if (0 == num_disconnects)
+  {
+    fprintf (stderr, "MHD has not detected any disconnections.\n");
     MHD_socket_close_chk_ (sd);
     return 1;
   }
-  else if (0 != num_disconnects)
-    abort ();
 
   MHD_socket_close_chk_ (sd);
   return 0;
@@ -225,7 +238,9 @@ main (int argc, char *const *argv)
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                         | MHD_USE_ERROR_LOG, port,
                         NULL, NULL, &http_dummy_ahc, NULL,
-                        MHD_OPTION_CONNECTION_TIMEOUT, TIME_OUT,
+                        MHD_OPTION_CONNECTION_TIMEOUT,
+                        (unsigned int) timeout_val,
+                        MHD_OPTION_NOTIFY_CONNECTION, &socket_cb, NULL,
                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
