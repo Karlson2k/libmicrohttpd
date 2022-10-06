@@ -321,58 +321,13 @@ gen_test_file_url (char *url,
                    uint16_t port)
 {
   unsigned int ret = 0;
-  char *doc_path;
-  size_t doc_path_len;
-#ifdef WINDOWS
-  size_t i;
-#endif /* ! WINDOWS */
-  /* setup test file path, url */
-#ifdef PATH_MAX
-  doc_path_len = PATH_MAX > 4096 ? 4096 : PATH_MAX;
-#else  /* ! PATH_MAX */
-  doc_path_len = 4096;
-#endif /* ! PATH_MAX */
-  if (NULL == (doc_path = malloc (doc_path_len)))
-  {
-    fprintf (stderr, MHD_E_MEM);
-    return 1;
-  }
-  if (NULL == getcwd (doc_path, doc_path_len))
-  {
-    fprintf (stderr,
-             "Error: failed to get working directory. %s\n",
-             strerror (errno));
-    free (doc_path);
-    return 1;
-  }
-#ifdef WINDOWS
-  for (i = 0; i < doc_path_len; i++)
-  {
-    if (doc_path[i] == 0)
-      break;
-    if (doc_path[i] == '\\')
-    {
-      doc_path[i] = '/';
-    }
-    if (doc_path[i] != ':')
-      continue;
-    if (i == 0)
-      break;
-    doc_path[i] = doc_path[i - 1];
-    doc_path[i - 1] = '/';
-  }
-#endif
   /* construct url */
-  if (snprintf (url,
-                url_len,
-                "%s:%u%s/%s",
-                "https://127.0.0.1",
-                (unsigned int) port,
-                doc_path,
-                "urlpath") >= (long long) url_len)
+  if ((size_t) snprintf (url,
+                         url_len,
+                         "https://127.0.0.1:%u/urlpath",
+                         (unsigned int) port) >= url_len)
     ret = 1;
 
-  free (doc_path);
   return ret;
 }
 
