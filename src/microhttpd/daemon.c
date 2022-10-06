@@ -6628,8 +6628,9 @@ MHD_start_daemon_va (unsigned int flags,
   }
 #endif
 
-  if ( (NULL != daemon->notify_completed) &&
-       (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
+  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+       && ((NULL != daemon->notify_completed)
+           || (NULL != daemon->notify_connection)) )
     *pflags |= MHD_USE_ITC; /* requires ITC */
 
 #ifndef NDEBUG
