@@ -55,9 +55,9 @@ test_daemon_get (void *cls,
   cbc.pos = 0;
 
   /* construct url - this might use doc_path */
-  gen_test_file_url (url,
-                     sizeof (url),
-                     port);
+  gen_test_uri (url,
+                sizeof (url),
+                port);
 
   c = curl_easy_init ();
 #ifdef _DEBUG
@@ -308,27 +308,27 @@ send_curl_req (char *url,
 
 
 /**
- * compile test file url pointing to the current running directory path
+ * compile test URI
  *
- * @param[out] url - char buffer into which the url is compiled
- * @param url_len number of bytes available in url
+ * @param[out] uri - char buffer into which the url is compiled
+ * @param uri_len number of bytes available in @a url
  * @param port port to use for the test
  * @return 1 on error
  */
 unsigned int
-gen_test_file_url (char *url,
-                   size_t url_len,
-                   uint16_t port)
+gen_test_uri (char *uri,
+              size_t uri_len,
+              uint16_t port)
 {
   int res;
 
-  res = snprintf (url,
-                  url_len,
+  res = snprintf (uri,
+                  uri_len,
                   "https://127.0.0.1:%u/urlpath",
                   (unsigned int) port);
   if (res <= 0)
     return 1;
-  if ((size_t) res >= url_len)
+  if ((size_t) res >= uri_len)
     return 1;
 
   return 0;
@@ -359,9 +359,9 @@ test_https_transfer (void *cls,
   cbc.size = len;
   cbc.pos = 0;
 
-  if (gen_test_file_url (url,
-                         sizeof (url),
-                         port))
+  if (gen_test_uri (url,
+                    sizeof (url),
+                    port))
   {
     ret = 1;
     goto cleanup;
@@ -397,7 +397,7 @@ cleanup:
  * @param arg_list
  * @return port number on success or zero on failure
  */
-uint16_t
+static uint16_t
 setup_testcase (struct MHD_Daemon **d, uint16_t port, unsigned int daemon_flags,
                 va_list arg_list)
 {
@@ -426,7 +426,7 @@ setup_testcase (struct MHD_Daemon **d, uint16_t port, unsigned int daemon_flags,
 }
 
 
-void
+static void
 teardown_testcase (struct MHD_Daemon *d)
 {
   MHD_stop_daemon (d);

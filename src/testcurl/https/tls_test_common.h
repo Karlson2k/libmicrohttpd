@@ -44,7 +44,6 @@
 #define MHD_E_FAILED_TO_CONNECT \
   "Error: server connection could not be established\n"
 
-/* TODO rm if unused */
 struct https_test_data
 {
   void *cls;
@@ -59,16 +58,6 @@ struct CBC
   size_t pos;
   size_t size;
 };
-
-struct CipherDef
-{
-  int options[2];
-  char *curlname;
-};
-
-
-int
-curl_check_version (const char *req_version, ...);
 
 int
 curl_tls_is_gnutls (void);
@@ -113,17 +102,17 @@ http_dummy_ahc (void *cls, struct MHD_Connection *connection,
 
 
 /**
- * compile test file url pointing to the current running directory path
+ * compile test URI
  *
- * @param[out] url - char buffer into which the url is compiled
- * @param url_len number of bytes available in @a url
+ * @param[out] uri - char buffer into which the url is compiled
+ * @param uri_len number of bytes available in @a url
  * @param port port to use for the test
  * @return 1 on error
  */
 unsigned int
-gen_test_file_url (char *url,
-                   size_t url_len,
-                   uint16_t port);
+gen_test_uri (char *uri,
+              size_t uri_len,
+              uint16_t port);
 
 CURLcode
 send_curl_req (char *url,
@@ -136,14 +125,6 @@ test_https_transfer (void *cls,
                      uint16_t port,
                      const char *cipher_suite,
                      int proto_version);
-
-uint16_t
-setup_testcase (struct MHD_Daemon **d, uint16_t port, unsigned int daemon_flags,
-                va_list arg_list);
-
-void
-teardown_testcase (struct MHD_Daemon *d);
-
 
 unsigned int
 setup_session (gnutls_session_t *session,

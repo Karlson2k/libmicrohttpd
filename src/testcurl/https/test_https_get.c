@@ -26,8 +26,6 @@
 
 #include "platform.h"
 #include "microhttpd.h"
-#include <limits.h>
-#include <sys/stat.h>
 #include <curl/curl.h>
 #ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #include <gcrypt.h>
@@ -41,8 +39,7 @@ static uint16_t global_port;
 
 /* perform a HTTP GET request via SSL/TLS */
 static unsigned int
-test_secure_get (FILE *test_fd,
-                 const char *cipher_suite,
+test_secure_get (const char *cipher_suite,
                  int proto_version)
 {
   unsigned int ret;
@@ -80,7 +77,7 @@ test_secure_get (FILE *test_fd,
     port = dinfo->port;
   }
 
-  ret = test_https_transfer (test_fd,
+  ret = test_https_transfer (NULL,
                              port,
                              cipher_suite,
                              proto_version);
@@ -252,7 +249,7 @@ main (int argc, char *const *argv)
     return 77;
   }
   errorCount +=
-    test_secure_get (NULL, NULL, CURL_SSLVERSION_DEFAULT);
+    test_secure_get (NULL, CURL_SSLVERSION_DEFAULT);
   errorCount += testEmptyGet (0);
   curl_global_cleanup ();
 

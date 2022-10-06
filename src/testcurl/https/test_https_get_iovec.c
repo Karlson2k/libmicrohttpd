@@ -161,9 +161,9 @@ test_iovec_transfer (void *cls,
   cbc.size = len;
   cbc.pos = 0;
 
-  if (gen_test_file_url (url,
-                         sizeof (url),
-                         port))
+  if (gen_test_uri (url,
+                    sizeof (url),
+                    port))
   {
     ret = 1;
     goto cleanup;
@@ -176,7 +176,6 @@ test_iovec_transfer (void *cls,
     goto cleanup;
   }
 
-  /* compare test file & daemon response */
   if ((cbc.pos != TESTSTR_SIZE) ||
       (0 != check_read_data (cbc.buf, cbc.pos)))
   {

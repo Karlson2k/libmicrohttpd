@@ -141,9 +141,9 @@ test_query_session (void)
     port = dinfo->port;
   }
 
-  gen_test_file_url (url,
-                     sizeof (url),
-                     port);
+  gen_test_uri (url,
+                sizeof (url),
+                port);
   c = curl_easy_init ();
 #ifdef _DEBUG
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1L);

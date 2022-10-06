@@ -54,9 +54,9 @@ test_unmatching_ssl_version (void *cls, uint16_t port, const char *cipher_suite,
   cbc.size = 256;
   cbc.pos = 0;
 
-  if (gen_test_file_url (url,
-                         sizeof (url),
-                         port))
+  if (gen_test_uri (url,
+                    sizeof (url),
+                    port))
   {
     free (cbc.buf);
     fprintf (stderr,
@@ -79,7 +79,6 @@ test_unmatching_ssl_version (void *cls, uint16_t port, const char *cipher_suite,
 }
 
 
-/* setup a temporary transfer test file */
 int
 main (int argc, char *const *argv)
 {
