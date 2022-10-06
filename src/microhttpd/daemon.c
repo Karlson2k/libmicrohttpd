@@ -5528,25 +5528,23 @@ MHD_run_wait (struct MHD_Daemon *daemon,
 
   if (0 > millisec)
     millisec = -1;
-  if (false)
-  {
-    (void) 0; /* Mute compiler warning */
-  }
 #ifdef HAVE_POLL
-  else if (0 != (daemon->options & MHD_USE_POLL))
+  if (0 != (daemon->options & MHD_USE_POLL))
   {
     res = MHD_poll_all (daemon, millisec);
     MHD_cleanup_connections (daemon);
   }
+  else
 #endif /* HAVE_POLL */
 #ifdef EPOLL_SUPPORT
-  else if (0 != (daemon->options & MHD_USE_EPOLL))
+  if (0 != (daemon->options & MHD_USE_EPOLL))
   {
     res = MHD_epoll (daemon, millisec);
     MHD_cleanup_connections (daemon);
   }
-#endif
   else
+#endif
+  if (1)
   {
     res = MHD_select (daemon, millisec);
     /* MHD_select does MHD_cleanup_connections already */
