@@ -4943,8 +4943,6 @@ static enum MHD_Result
 MHD_poll (struct MHD_Daemon *daemon,
           int may_block)
 {
-  if (daemon->shutdown)
-    return MHD_NO;
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
     return MHD_poll_all (daemon,
                          may_block ? -1 : 0);
