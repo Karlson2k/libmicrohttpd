@@ -4930,6 +4930,7 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
 
 #endif
 
+#ifdef HAVE_POLL
 
 /**
  * Do poll()-based processing.
@@ -4942,7 +4943,6 @@ static enum MHD_Result
 MHD_poll (struct MHD_Daemon *daemon,
           int may_block)
 {
-#ifdef HAVE_POLL
   if (daemon->shutdown)
     return MHD_NO;
   if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
@@ -4950,12 +4950,10 @@ MHD_poll (struct MHD_Daemon *daemon,
                          may_block ? -1 : 0);
   return MHD_poll_listen_socket (daemon,
                                  may_block);
-#else
-  (void) daemon;
-  (void) may_block;
-  return MHD_NO;
-#endif
 }
+
+
+#endif /* HAVE_POLL */
 
 
 #ifdef EPOLL_SUPPORT
@@ -5642,14 +5640,17 @@ MHD_polling_thread (void *cls)
 #endif /* HAVE_PTHREAD_SIGMASK */
   while (! daemon->shutdown)
   {
+#ifdef HAVE_POLL
     if (0 != (daemon->options & MHD_USE_POLL))
       MHD_poll (daemon, MHD_YES);
-#ifdef EPOLL_SUPPORT
-    else if (0 != (daemon->options & MHD_USE_EPOLL))
-      MHD_epoll (daemon, -1);
-#endif
     else
-      MHD_select (daemon, -1);
+#endif /* HAVE_POLL */
+#ifdef EPOLL_SUPPORT
+    if (0 != (daemon->options & MHD_USE_EPOLL))
+      MHD_epoll (daemon, -1);
+    else
+#endif
+    MHD_select (daemon, -1);
     MHD_cleanup_connections (daemon);
   }
 
