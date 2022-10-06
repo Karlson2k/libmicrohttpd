@@ -320,15 +320,18 @@ gen_test_file_url (char *url,
                    size_t url_len,
                    uint16_t port)
 {
-  unsigned int ret = 0;
-  /* construct url */
-  if ((size_t) snprintf (url,
-                         url_len,
-                         "https://127.0.0.1:%u/urlpath",
-                         (unsigned int) port) >= url_len)
-    ret = 1;
+  int res;
 
-  return ret;
+  res = snprintf (url,
+                  url_len,
+                  "https://127.0.0.1:%u/urlpath",
+                  (unsigned int) port);
+  if (res <= 0)
+    return 1;
+  if ((size_t) res >= url_len)
+    return 1;
+
+  return 0;
 }
 
 
