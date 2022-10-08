@@ -26,6 +26,29 @@
 #include "tls_test_common.h"
 #include "tls_test_keys.h"
 
+/**
+ * Map @a know_gnutls_tls_ids values to printable names.
+ */
+const char *tls_names[6] = {
+  "Bad value",
+  "SSL version 3",
+  "TLS version 1.0",
+  "TLS version 1.1",
+  "TLS version 1.2",
+  "TLS version 1.3"
+};
+
+/**
+ * Map @a know_gnutls_tls_ids values to GnuTLS priorities strings.
+ */
+const char *priorities_map[6] = {
+  "NONE",
+  "NORMAL:!VERS-ALL:+VERS-SSL3.0",
+  "NORMAL:!VERS-ALL:+VERS-TLS1.0",
+  "NORMAL:!VERS-ALL:+VERS-TLS1.1",
+  "NORMAL:!VERS-ALL:+VERS-TLS1.2",
+  "NORMAL:!VERS-ALL:+VERS-TLS1.3"
+};
 
 /*
  * test HTTPS transfer

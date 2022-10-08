@@ -44,6 +44,35 @@
 #define MHD_E_FAILED_TO_CONNECT \
   "Error: server connection could not be established\n"
 
+
+/* The local copy if GnuTLS IDs to avoid long #ifdefs list with various
+ * GnuTLS versions */
+/**
+ * The list of know (at the moment of writing) GnuTLS IDs of TLS versions.
+ * Can be safely casted to/from @a gnutls_protocol_t.
+ */
+enum know_gnutls_tls_id
+{
+  KNOWN_BAD = 0,       /**< No TLS */
+  KNOWN_TLS_SSLv3 = 1, /**< GNUTLS_SSL3 */
+  KNOWN_TLS_V1_0 =  2, /**< GNUTLS_TLS1_0 */
+  KNOWN_TLS_V1_1 =  3, /**< GNUTLS_TLS1_1 */
+  KNOWN_TLS_V1_2 =  4, /**< GNUTLS_TLS1_2 */
+  KNOWN_TLS_V1_3 =  5, /**< GNUTLS_TLS1_3 */
+  KNOWN_TLS_MIN = KNOWN_TLS_SSLv3, /**< Minimum valid value */
+  KNOWN_TLS_MAX = KNOWN_TLS_V1_3   /**< Maximum valid value */
+};
+
+/**
+ * Map @a know_gnutls_tls_ids values to printable names.
+ */
+extern const char *tls_names[6];
+
+/**
+ * Map @a know_gnutls_tls_ids values to GnuTLS priorities strings.
+ */
+extern const char *priorities_map[6];
+
 struct https_test_data
 {
   void *cls;
