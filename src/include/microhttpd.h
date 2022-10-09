@@ -1581,7 +1581,8 @@ enum MHD_DAuthBindNonce
    * RFC 7616 allows clients to re-use server-generated nonces for any URI
    * in the same "protection space" which is by default consists of all server
    * URIs.
-   * This was default (and only supported) value before #MHD_VERSION 0x00097518
+   * This was default (and only supported) nonce bind type
+   * before #MHD_VERSION 0x00097518
    */
   MHD_DAUTH_BIND_NONCE_URI = 1 << 1,
 
