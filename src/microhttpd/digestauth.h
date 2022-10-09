@@ -61,7 +61,6 @@
 
 /**
  * The token for SHA-512/256 algorithm.
- * Unsupported currently by MHD for authentication.
  */
 #define _MHD_SHA512_256_TOKEN "SHA-512-256"
 
