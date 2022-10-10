@@ -201,7 +201,7 @@ test_secure_get (FILE *test_fd,
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
   else
-    port = 3041;
+    port = 3045;
 
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS

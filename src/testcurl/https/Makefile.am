@@ -3,7 +3,7 @@ EMPTY_ITEM =
 
 SUBDIRS = .
 
-.NOTPARALLEL:
+@HEAVY_TESTS_NOTPARALLEL@
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \

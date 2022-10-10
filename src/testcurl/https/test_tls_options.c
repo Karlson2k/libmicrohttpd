@@ -267,7 +267,7 @@ test_first_supported_versions (void)
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;     /* Use system automatic assignment */
   else
-    port = 3060;  /* Use predefined port, may break parallel testing of another MHD build */
+    port = 3080;  /* Use predefined port, may break parallel testing of another MHD build */
 
   vers_list = gnutls_protocol_list ();
   if (NULL == vers_list)
