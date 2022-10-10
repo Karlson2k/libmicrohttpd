@@ -133,10 +133,25 @@ curl_tls_is_schannel (void);
 int
 curl_tls_is_sectransport (void);
 
+
+enum test_get_result
+{
+  TEST_GET_OK = 0,
+  TEST_GET_ERROR = 1,
+
+  TEST_GET_MHD_ERROR = 16,
+  TEST_GET_TRANSFER_ERROR = 17,
+
+  TEST_GET_CURL_GEN_ERROR = 32,
+  TEST_GET_CURL_CA_ERROR = 33,
+  TEST_GET_CURL_NOT_IMPLT = 34,
+
+  TEST_GET_HARD_ERROR = 999
+};
 /**
  * perform cURL request for file
  */
-unsigned int
+enum test_get_result
 test_daemon_get (void *cls,
                  const char *cipher_suite, int proto_version,
                  uint16_t port, int ver_peer);

@@ -42,7 +42,7 @@
 static unsigned int
 test_secure_get (void *cls, const char *cipher_suite, int proto_version)
 {
-  unsigned int ret;
+  enum test_get_result ret;
   struct MHD_Daemon *d;
   uint16_t port;
   (void) cls;    /* Unused. Silent compiler warning. */
@@ -80,14 +80,28 @@ test_secure_get (void *cls, const char *cipher_suite, int proto_version)
   ret = test_daemon_get (NULL, cipher_suite, proto_version, port, 1);
 
   MHD_stop_daemon (d);
-  return ret;
+  if (TEST_GET_HARD_ERROR == ret)
+    return 99;
+  if (TEST_GET_CURL_GEN_ERROR == ret)
+  {
+    fprintf (stderr, "libcurl error.\nTest aborted.\n");
+    return 99;
+  }
+  if ((TEST_GET_CURL_CA_ERROR == ret) ||
+      (TEST_GET_CURL_NOT_IMPLT == ret))
+  {
+    fprintf (stderr, "libcurl TLS backend does not support custom CA.\n"
+             "Test skipped.\n");
+    return 77;
+  }
+  return TEST_GET_OK == ret ? 0 : 1;
 }
 
 
 int
 main (int argc, char *const *argv)
 {
-  unsigned int errorCount = 0;
+  unsigned int errorCount;
   (void) argc;
   (void) argv;       /* Unused. Silent compiler warning. */
 
@@ -105,12 +119,25 @@ main (int argc, char *const *argv)
     curl_global_cleanup ();
     return 77;
   }
+#if ! CURL_AT_LEAST_VERSION (7,60,0)
+  if (curl_tls_is_schannel ())
+  {
+    fprintf (stderr, "libcurl before version 7.60.0 does not support "
+             "custom CA with Schannel backend.\nTest skipped.\n");
+    curl_global_cleanup ();
+    return 77;
+  }
+#endif /* ! CURL_AT_LEAST_VERSION(7,60,0) */
 
-  errorCount +=
+  errorCount =
     test_secure_get (NULL, NULL, CURL_SSLVERSION_DEFAULT);
 
   print_test_result (errorCount, argv[0]);
 
   curl_global_cleanup ();
+  if (77 == errorCount)
+    return 77;
+  if (99 == errorCount)
+    return 77;
   return errorCount != 0 ? 1 : 0;
 }

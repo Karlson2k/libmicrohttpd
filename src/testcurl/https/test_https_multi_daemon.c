@@ -47,11 +47,11 @@ test_concurent_daemon_pair (void *cls,
                             int proto_version)
 {
   unsigned int ret;
+  enum test_get_result res;
   struct MHD_Daemon *d1;
   struct MHD_Daemon *d2;
   uint16_t port1, port2;
   (void) cls;    /* Unused. Silent compiler warning. */
-
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port1 = port2 = 0;
@@ -115,15 +115,42 @@ test_concurent_daemon_pair (void *cls,
     port2 = (int) dinfo->port;
   }
 
-  ret =
+  res =
     test_daemon_get (NULL, cipher_suite, proto_version, port1, 0);
-  ret +=
+  ret = (unsigned int) res;
+  if ((TEST_GET_HARD_ERROR == res) ||
+      (TEST_GET_CURL_GEN_ERROR == res))
+  {
+    fprintf (stderr, "libcurl error.\nTest aborted.\n");
+    MHD_stop_daemon (d2);
+    MHD_stop_daemon (d1);
+    return 99;
+  }
+
+  res =
     test_daemon_get (NULL, cipher_suite, proto_version,
                      port2, 0);
+  ret += (unsigned int) res;
+  if ((TEST_GET_HARD_ERROR == res) ||
+      (TEST_GET_CURL_GEN_ERROR == res))
+  {
+    fprintf (stderr, "libcurl error.\nTest aborted.\n");
+    MHD_stop_daemon (d2);
+    MHD_stop_daemon (d1);
+    return 99;
+  }
 
   MHD_stop_daemon (d2);
-  ret +=
+  res =
     test_daemon_get (NULL, cipher_suite, proto_version, port1, 0);
+  ret += (unsigned int) res;
+  if ((TEST_GET_HARD_ERROR == res) ||
+      (TEST_GET_CURL_GEN_ERROR == res))
+  {
+    fprintf (stderr, "libcurl error.\nTest aborted.\n");
+    MHD_stop_daemon (d1);
+    return 99;
+  }
   MHD_stop_daemon (d1);
   return ret;
 }
@@ -132,7 +159,7 @@ test_concurent_daemon_pair (void *cls,
 int
 main (int argc, char *const *argv)
 {
-  unsigned int errorCount = 0;
+  unsigned int errorCount;
   (void) argc; (void) argv;       /* Unused. Silent compiler warning. */
 
 #ifdef MHD_HTTPS_REQUIRE_GCRYPT
@@ -150,11 +177,14 @@ main (int argc, char *const *argv)
     return 77;
   }
 
-  errorCount +=
+  errorCount =
     test_concurent_daemon_pair (NULL, NULL, CURL_SSLVERSION_DEFAULT);
 
   print_test_result (errorCount, "concurent_daemon_pair");
 
   curl_global_cleanup ();
+  if (99 == errorCount)
+    return 99;
+
   return errorCount != 0 ? 1 : 0;
 }

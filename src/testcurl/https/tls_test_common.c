@@ -98,7 +98,7 @@ const long libcurl_tls_max_vers_map[KNOW_TLS_IDS_COUNT]  = {
 /*
  * test HTTPS transfer
  */
-unsigned int
+enum test_get_result
 test_daemon_get (void *cls,
                  const char *cipher_suite,
                  int proto_version,
@@ -117,7 +117,7 @@ test_daemon_get (void *cls,
   if (NULL == (cbc.buf = malloc (sizeof (char) * len)))
   {
     fprintf (stderr, MHD_E_MEM);
-    return 1;
+    return TEST_GET_HARD_ERROR;
   }
   cbc.size = len;
   cbc.pos = 0;
@@ -146,7 +146,7 @@ test_daemon_get (void *cls,
              curl_easy_strerror (e));
     curl_easy_cleanup (c);
     free (cbc.buf);
-    return 1;
+    return TEST_GET_CURL_GEN_ERROR;
   }
 
   /* TLS options */
@@ -166,7 +166,7 @@ test_daemon_get (void *cls,
              curl_easy_strerror (e));
     curl_easy_cleanup (c);
     free (cbc.buf);
-    return 1;
+    return TEST_GET_CURL_GEN_ERROR;
   }
   if (ver_peer &&
       (CURLE_OK !=
@@ -176,7 +176,7 @@ test_daemon_get (void *cls,
              curl_easy_strerror (e));
     curl_easy_cleanup (c);
     free (cbc.buf);
-    return 1;
+    return TEST_GET_CURL_CA_ERROR;
   }
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
   {
@@ -184,7 +184,15 @@ test_daemon_get (void *cls,
              curl_easy_strerror (errornum));
     curl_easy_cleanup (c);
     free (cbc.buf);
-    return 1;
+    if ((CURLE_SSL_CACERT_BADFILE == errornum)
+#if CURL_AT_LEAST_VERSION (7,21,5)
+        || (CURLE_NOT_BUILT_IN == errornum)
+#endif /* CURL_AT_LEAST_VERSION (7,21,5) */
+        )
+      return TEST_GET_CURL_CA_ERROR;
+    if (CURLE_OUT_OF_MEMORY == errornum)
+      return TEST_GET_HARD_ERROR;
+    return TEST_GET_ERROR;
   }
 
   curl_easy_cleanup (c);
@@ -193,11 +201,11 @@ test_daemon_get (void *cls,
   {
     fprintf (stderr, "Error: local data & received data differ.\n");
     free (cbc.buf);
-    return 1;
+    return TEST_GET_TRANSFER_ERROR;
   }
 
   free (cbc.buf);
-  return 0;
+  return TEST_GET_OK;
 }
 
 
