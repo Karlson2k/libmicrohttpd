@@ -146,7 +146,7 @@ test_daemon_get (void *cls,
 
   if (memcmp (cbc.buf, test_data, len) != 0)
   {
-    fprintf (stderr, "Error: local file & received file differ.\n");
+    fprintf (stderr, "Error: local data & received data differ.\n");
     free (cbc.buf);
     return 1;
   }
@@ -359,7 +359,7 @@ gen_test_uri (char *uri,
 
 
 /**
- * test HTTPS file transfer
+ * test HTTPS data transfer
  */
 unsigned int
 test_https_transfer (void *cls,
@@ -397,13 +397,13 @@ test_https_transfer (void *cls,
     goto cleanup;
   }
 
-  /* compare test file & daemon response */
+  /* compare test data & daemon response */
   if ( (len != strlen (test_data)) ||
        (memcmp (cbc.buf,
                 test_data,
                 len) != 0) )
   {
-    fprintf (stderr, "Error: local file & received file differ.\n");
+    fprintf (stderr, "Error: original data & received data differ.\n");
     ret = 1;
   }
 cleanup:
