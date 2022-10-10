@@ -28,6 +28,14 @@
 #include <limits.h>
 #include <gnutls/gnutls.h>
 
+#ifndef CURL_VERSION_BITS
+#define CURL_VERSION_BITS(x,y,z) ((x) << 16 | (y) << 8 | (z))
+#endif /* ! CURL_VERSION_BITS */
+#ifndef CURL_AT_LEAST_VERSION
+#define CURL_AT_LEAST_VERSION(x,y,z) \
+  (LIBCURL_VERSION_NUM >= CURL_VERSION_BITS (x, y, z))
+#endif /* ! CURL_AT_LEAST_VERSION */
+
 #define test_data "Hello World\n"
 #define ca_cert_file_name SRCDIR "/test-ca.crt"
 
@@ -43,6 +51,13 @@
 #define MHD_E_KEY_FILE_CREAT "Error: failed to setup test certificate\n"
 #define MHD_E_FAILED_TO_CONNECT \
   "Error: server connection could not be established\n"
+
+#ifndef MHD_STATICSTR_LEN_
+/**
+ * Determine length of static string / macro strings at compile time.
+ */
+#define MHD_STATICSTR_LEN_(macro) (sizeof(macro) / sizeof(char) - 1)
+#endif /* ! MHD_STATICSTR_LEN_ */
 
 
 /* The local copy if GnuTLS IDs to avoid long #ifdefs list with various
@@ -63,15 +78,29 @@ enum know_gnutls_tls_id
   KNOWN_TLS_MAX = KNOWN_TLS_V1_3   /**< Maximum valid value */
 };
 
+#define KNOW_TLS_IDS_COUNT 6 /* KNOWN_TLS_MAX + 1 */
 /**
  * Map @a know_gnutls_tls_ids values to printable names.
  */
-extern const char *tls_names[6];
+extern const char *tls_names[KNOW_TLS_IDS_COUNT];
 
 /**
  * Map @a know_gnutls_tls_ids values to GnuTLS priorities strings.
  */
-extern const char *priorities_map[6];
+extern const char *priorities_map[KNOW_TLS_IDS_COUNT];
+
+/**
+ * Map @a know_gnutls_tls_ids values to libcurl @a CURLOPT_SSLVERSION value.
+ */
+extern const long libcurl_tls_vers_map[KNOW_TLS_IDS_COUNT];
+
+#if CURL_AT_LEAST_VERSION (7,54,0)
+/**
+ * Map @a know_gnutls_tls_ids values to libcurl @a CURLOPT_SSLVERSION value
+ * for maximum supported TLS version.
+ */
+extern const long libcurl_tls_max_vers_map[KNOW_TLS_IDS_COUNT];
+#endif /* CURL_AT_LEAST_VERSION(7,54,0) */
 
 struct https_test_data
 {

@@ -29,7 +29,7 @@
 /**
  * Map @a know_gnutls_tls_ids values to printable names.
  */
-const char *tls_names[6] = {
+const char *tls_names[KNOW_TLS_IDS_COUNT] = {
   "Bad value",
   "SSL version 3",
   "TLS version 1.0",
@@ -41,7 +41,7 @@ const char *tls_names[6] = {
 /**
  * Map @a know_gnutls_tls_ids values to GnuTLS priorities strings.
  */
-const char *priorities_map[6] = {
+const char *priorities_map[KNOW_TLS_IDS_COUNT] = {
   "NONE",
   "NORMAL:!VERS-ALL:+VERS-SSL3.0",
   "NORMAL:!VERS-ALL:+VERS-TLS1.0",
@@ -49,6 +49,50 @@ const char *priorities_map[6] = {
   "NORMAL:!VERS-ALL:+VERS-TLS1.2",
   "NORMAL:!VERS-ALL:+VERS-TLS1.3"
 };
+
+
+/**
+ * Map @a know_gnutls_tls_ids values to libcurl @a CURLOPT_SSLVERSION value.
+ */
+const long libcurl_tls_vers_map[KNOW_TLS_IDS_COUNT] = {
+  CURL_SSLVERSION_LAST, /* bad value */
+  CURL_SSLVERSION_SSLv3,
+#if CURL_AT_LEAST_VERSION (7,34,0)
+  CURL_SSLVERSION_TLSv1_0,
+#else  /* CURL VER < 7.34.0 */
+  CURL_SSLVERSION_TLSv1, /* TLS 1.0 or later */
+#endif /* CURL VER < 7.34.0 */
+#if CURL_AT_LEAST_VERSION (7,34,0)
+  CURL_SSLVERSION_TLSv1_1,
+#else  /* CURL VER < 7.34.0 */
+  CURL_SSLVERSION_LAST, /* bad value, not supported by this libcurl version */
+#endif /* CURL VER < 7.34.0 */
+#if CURL_AT_LEAST_VERSION (7,34,0)
+  CURL_SSLVERSION_TLSv1_2,
+#else  /* CURL VER < 7.34.0 */
+  CURL_SSLVERSION_LAST, /* bad value, not supported by this libcurl version */
+#endif /* CURL VER < 7.34.0 */
+#if CURL_AT_LEAST_VERSION (7,52,0)
+  CURL_SSLVERSION_TLSv1_3
+#else  /* CURL VER < 7.34.0 */
+  CURL_SSLVERSION_LAST /* bad value, not supported by this libcurl version */
+#endif /* CURL VER < 7.34.0 */
+};
+
+#if CURL_AT_LEAST_VERSION (7,54,0)
+/**
+ * Map @a know_gnutls_tls_ids values to libcurl @a CURLOPT_SSLVERSION value
+ * for maximum supported TLS version.
+ */
+const long libcurl_tls_max_vers_map[KNOW_TLS_IDS_COUNT]  = {
+  CURL_SSLVERSION_MAX_DEFAULT, /* bad value */
+  CURL_SSLVERSION_MAX_DEFAULT, /* SSLv3 */
+  CURL_SSLVERSION_MAX_TLSv1_0,
+  CURL_SSLVERSION_MAX_TLSv1_1,
+  CURL_SSLVERSION_MAX_TLSv1_2,
+  CURL_SSLVERSION_MAX_TLSv1_3
+};
+#endif /* CURL_AT_LEAST_VERSION(7,54,0) */
 
 /*
  * test HTTPS transfer
