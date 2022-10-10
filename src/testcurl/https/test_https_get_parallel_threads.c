@@ -162,12 +162,6 @@ main (int argc, char *const *argv)
     curl_global_cleanup ();
     return 77;
   }
-  if (! curl_tls_is_gnutls ())
-  {
-    fprintf (stderr, "This test can be run only with libcurl-gnutls.\n");
-    curl_global_cleanup ();
-    return 77;
-  }
 
   errorCount +=
     test_wrap ("multi threaded daemon, single client", &test_single_client,
