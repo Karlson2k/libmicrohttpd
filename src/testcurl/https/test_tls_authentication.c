@@ -75,7 +75,7 @@ test_secure_get (void *cls, const char *cipher_suite, int proto_version)
     port = dinfo->port;
   }
 
-  ret = test_daemon_get (NULL, cipher_suite, proto_version, port, 0);
+  ret = test_daemon_get (NULL, cipher_suite, proto_version, port, 1);
 
   MHD_stop_daemon (d);
   return ret;
