@@ -20,7 +20,7 @@
  */
 
 /**
- * @file mhds_session_info_test.c
+ * @file test_https_session_info.c
  * @brief  Testcase for libmicrohttpd HTTPS connection querying operations
  * @author Sagie Amir
  * @author Karlson2k (Evgeny Grin)

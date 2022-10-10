@@ -1,6 +1,7 @@
 /*
  This file is part of libmicrohttpd
  Copyright (C) 2007 Christian Grothoff
+ Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
 
  libmicrohttpd is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published
@@ -19,9 +20,10 @@
  */
 
 /**
- * @file tls_authentication_test.c
- * @brief  Testcase for libmicrohttpd HTTPS GET operations
+ * @file test_tls_authentication.c
+ * @brief  Testcase for libmicrohttpd HTTPS GET operations with CA-signed TLS server certificate
  * @author Sagie Amir
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"

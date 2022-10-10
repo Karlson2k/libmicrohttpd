@@ -1,6 +1,7 @@
 /*
   This file is part of libmicrohttpd
   Copyright (C) 2007 Christian Grothoff
+  Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
   libmicrohttpd is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
@@ -19,10 +20,12 @@
 */
 
 /**
- * @file tls_thread_mode_test.c
- * @brief  Testcase for libmicrohttpd HTTPS GET operations
+ * @file test_https_get_parallel_threads.c
+ * @brief  Testcase for libmicrohttpd HTTPS GET operations with multi-threaded
+ *         MHD daemon and several clients working in parallel
  * @author Sagie Amir
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  *
  * TODO: add test for external select!
  */

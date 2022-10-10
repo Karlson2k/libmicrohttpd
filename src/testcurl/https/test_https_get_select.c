@@ -1,6 +1,7 @@
 /*
  This file is part of libmicrohttpd
  Copyright (C) 2007 Christian Grothoff
+ Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
  libmicrohttpd is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published
@@ -20,8 +21,9 @@
 
 /**
  * @file test_https_get_select.c
- * @brief  Testcase for libmicrohttpd HTTPS GET operations
+ * @brief  Testcase for libmicrohttpd HTTPS GET operations using external select
  * @author Sagie Amir
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"

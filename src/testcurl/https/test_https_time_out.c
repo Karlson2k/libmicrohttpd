@@ -1,7 +1,7 @@
 /*
  This file is part of libmicrohttpd
  Copyright (C) 2007 Christian Grothoff
- Copyright (C) 2014-2021 Karlson2k (Evgeny Grin)
+ Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
  libmicrohttpd is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published
@@ -21,7 +21,7 @@
 
 /**
  * @file test_https_time_out.c
- * @brief: daemon TLS alert response test-case
+ * @brief: daemon TLS timeout test
  *
  * @author Sagie Amir
  * @author Karlson2k (Evgeny Grin)
