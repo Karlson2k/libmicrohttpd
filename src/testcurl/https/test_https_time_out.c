@@ -241,7 +241,7 @@ main (int argc, char *const *argv)
                         MHD_OPTION_CONNECTION_TIMEOUT,
                         (unsigned int) timeout_val,
                         MHD_OPTION_NOTIFY_CONNECTION, &socket_cb, NULL,
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                        MHD_OPTION_HTTPS_MEM_KEY, srv_self_signed_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
 

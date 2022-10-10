@@ -169,7 +169,7 @@ main (int argc, char *const *argv)
                MHD_USE_TLS | MHD_USE_ERROR_LOG | MHD_USE_THREAD_PER_CONNECTION
                | MHD_USE_INTERNAL_POLLING_THREAD,
                NULL, CURL_SSLVERSION_DEFAULT, MHD_OPTION_HTTPS_MEM_KEY,
-               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               srv_self_signed_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 
   errorCount +=
@@ -178,7 +178,7 @@ main (int argc, char *const *argv)
                MHD_USE_TLS | MHD_USE_ERROR_LOG | MHD_USE_THREAD_PER_CONNECTION
                | MHD_USE_INTERNAL_POLLING_THREAD,
                NULL, CURL_SSLVERSION_DEFAULT, MHD_OPTION_HTTPS_MEM_KEY,
-               srv_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
+               srv_self_signed_key_pem, MHD_OPTION_HTTPS_MEM_CERT,
                srv_self_signed_cert_pem, MHD_OPTION_END);
 
   if (errorCount != 0)

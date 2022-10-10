@@ -88,7 +88,7 @@ testInternalSelectGet (void)
   d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_TLS
                         | MHD_USE_INTERNAL_POLLING_THREAD,
                         port, NULL, NULL, &ahc_echo, NULL,
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                        MHD_OPTION_HTTPS_MEM_KEY, srv_self_signed_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
   if (d == NULL)

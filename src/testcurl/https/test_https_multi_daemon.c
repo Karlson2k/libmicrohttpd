@@ -63,7 +63,7 @@ test_concurent_daemon_pair (void *cls,
                          | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                          | MHD_USE_ERROR_LOG, port1,
                          NULL, NULL, &http_ahc, NULL,
-                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                         MHD_OPTION_HTTPS_MEM_KEY, srv_self_signed_key_pem,
                          MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                          MHD_OPTION_END);
 
@@ -89,7 +89,7 @@ test_concurent_daemon_pair (void *cls,
                          | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_TLS
                          | MHD_USE_ERROR_LOG, port2,
                          NULL, NULL, &http_ahc, NULL,
-                         MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                         MHD_OPTION_HTTPS_MEM_KEY, srv_self_signed_key_pem,
                          MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                          MHD_OPTION_END);
 

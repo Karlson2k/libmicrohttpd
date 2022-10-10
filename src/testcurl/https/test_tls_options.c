@@ -99,7 +99,7 @@ check_tls_match_inner (enum know_gnutls_tls_id tls_ver_mhd,
                       NULL, NULL,
                       &simple_ahc, NULL,
                       MHD_OPTION_HTTPS_PRIORITIES, priorities_map[tls_ver_mhd],
-                      MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                      MHD_OPTION_HTTPS_MEM_KEY, srv_self_signed_key_pem,
                       MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                       MHD_OPTION_END);
   fflush (stderr);
@@ -415,7 +415,7 @@ test_first_supported_versions (void)
     }
   }
 
-  fprintf (stderr, "The test skipped: No know TLS version is supported by "
+  fprintf (stderr, "The test skipped: No know TLS versions are supported by "
            "both MHD and libcurl.\n");
   fflush (stderr);
   return 77;

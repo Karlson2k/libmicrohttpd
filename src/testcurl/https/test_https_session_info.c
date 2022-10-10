@@ -35,8 +35,6 @@
 #include "tls_test_common.h"
 #include "tls_test_keys.h"
 
-static struct MHD_Daemon *d;
-
 /*
  * HTTP access handler call back
  * used to query negotiated security parameters
@@ -101,6 +99,7 @@ test_query_session (enum know_gnutls_tls_id tls_ver, uint16_t *pport)
   CURLcode errornum;
   char url[256];
   enum know_gnutls_tls_id found_tls_ver;
+  struct MHD_Daemon *d;
 
   if (NULL == (cbc.buf = malloc (sizeof (char) * 255)))
     return 99;
@@ -115,15 +114,13 @@ test_query_session (enum know_gnutls_tls_id tls_ver, uint16_t *pport)
                         NULL, NULL,
                         &query_info_ahc, &found_tls_ver,
                         MHD_OPTION_HTTPS_PRIORITIES, priorities_map[tls_ver],
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                        MHD_OPTION_HTTPS_MEM_KEY, srv_self_signed_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
 
   if (d == NULL)
   {
     free (cbc.buf);
-    fflush (stderr);
-    fflush (stdout);
     fprintf (stderr, "MHD_start_daemon() with %s failed.\n",
              tls_names[tls_ver]);
     fflush (stderr);
@@ -136,11 +133,9 @@ test_query_session (enum know_gnutls_tls_id tls_ver, uint16_t *pport)
     if ((NULL == dinfo) || (0 == dinfo->port) )
     {
       MHD_stop_daemon (d);
-      fflush (stderr);
-      fflush (stdout);
+      free (cbc.buf);
       fprintf (stderr, "MHD_get_daemon_info() failed.\n");
       fflush (stderr);
-      free (cbc.buf);
       return 10;
     }
     *pport = dinfo->port; /* Use the same port for rest of the checks */
@@ -150,6 +145,15 @@ test_query_session (enum know_gnutls_tls_id tls_ver, uint16_t *pport)
                 sizeof (url),
                 *pport);
   c = curl_easy_init ();
+  fflush (stderr);
+  if (NULL == c)
+  {
+    fprintf (stderr, "curl_easy_init() failed.\n");
+    fflush (stderr);
+    MHD_stop_daemon (d);
+    free (cbc.buf);
+    return 99;
+  }
 #ifdef _DEBUG
   curl_easy_setopt (c, CURLOPT_VERBOSE, 1L);
 #endif
@@ -174,6 +178,9 @@ test_query_session (enum know_gnutls_tls_id tls_ver, uint16_t *pport)
        (errornum = curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L))) ||
       (CURLE_OK != (errornum = curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L))))
   {
+    curl_easy_cleanup (c);
+    free (cbc.buf);
+    MHD_stop_daemon (d);
     fflush (stderr);
     fflush (stdout);
     fprintf (stderr, "Error setting libcurl option: %s.\n",
@@ -185,9 +192,9 @@ test_query_session (enum know_gnutls_tls_id tls_ver, uint16_t *pport)
   if (CURLE_OK != (errornum = curl_easy_perform (c)))
   {
     unsigned int ret;
-    MHD_stop_daemon (d);
     curl_easy_cleanup (c);
     free (cbc.buf);
+    MHD_stop_daemon (d);
 
     fflush (stderr);
     fflush (stdout);
@@ -211,8 +218,8 @@ test_query_session (enum know_gnutls_tls_id tls_ver, uint16_t *pport)
   }
 
   curl_easy_cleanup (c);
-  MHD_stop_daemon (d);
   free (cbc.buf);
+  MHD_stop_daemon (d);
 
   if (tls_ver != found_tls_ver)
   {
@@ -250,10 +257,7 @@ test_all_supported_versions (void)
   vers_list = gnutls_protocol_list ();
   if (NULL == vers_list)
   {
-    fflush (stderr);
-    fflush (stdout);
     fprintf (stderr, "Error getting GnuTLS supported TLS versions");
-    fflush (stdout);
     return 99;
   }
   num_success = 0;
@@ -271,28 +275,25 @@ test_all_supported_versions (void)
     }
     if (0 == *ver_ptr)
     {
-      fflush (stderr);
       printf ("%s is not supported by GnuTLS, skipping.\n\n",
               tls_names[ver_for_test]);
       fflush (stdout);
       continue;
     }
-    fflush (stderr);
     printf ("Starting check for %s...\n",
             tls_names[ver_for_test]);
     fflush (stdout);
     res = test_query_session (ver_for_test, &port);
+    fflush (stderr);
+    fflush (stdout);
     if (99 == res)
     {
-      fflush (stderr);
-      fflush (stdout);
       fprintf (stderr, "Hard error. Test stopped.\n");
       fflush (stderr);
       return 99;
     }
     else if (77 == res)
     {
-      fflush (stderr);
       printf ("%s does not work with libcurl client and GnuTLS "
               "server combination, skipping.\n",
               tls_names[ver_for_test]);
@@ -300,8 +301,6 @@ test_all_supported_versions (void)
     }
     else if (0 != res)
     {
-      fflush (stderr);
-      fflush (stdout);
       fprintf (stderr, "Check failed for %s.\n",
                tls_names[ver_for_test]);
       fflush (stderr);
@@ -309,7 +308,6 @@ test_all_supported_versions (void)
     }
     else
     {
-      fflush (stderr);
       printf ("Check succeeded for %s.\n",
               tls_names[ver_for_test]);
       fflush (stdout);
@@ -323,8 +321,6 @@ test_all_supported_versions (void)
   {
     if (0 == num_success)
     {
-      fflush (stderr);
-      fflush (stdout);
       fprintf (stderr, "No supported TLS version was found.\n");
       fflush (stderr);
       return 77;

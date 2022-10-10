@@ -105,7 +105,7 @@ testExternalGet (unsigned int flags)
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_TLS | flags,
                         port, NULL, NULL, &ahc_echo, NULL,
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
+                        MHD_OPTION_HTTPS_MEM_KEY, srv_self_signed_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
   if (d == NULL)
