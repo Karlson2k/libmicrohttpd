@@ -5892,6 +5892,100 @@ parse_options (struct MHD_Daemon *daemon,
 }
 
 
+#ifdef HTTPS_SUPPORT
+/**
+ * Type of GnuTLS priorities base string
+ */
+enum MHD_TlsPrioritiesBaseType
+{
+  MHD_TLS_PRIO_BASE_LIBMHD = 0, /**< @c "@LIBMICROHTTPD" */
+  MHD_TLS_PRIO_BASE_SYSTEM = 1, /**< @c "@SYSTEM" */
+#if GNUTLS_VERSION_NUMBER >= 0x030300
+  MHD_TLS_PRIO_BASE_DEFAULT,    /**< Default priorities string */
+#endif /* GNUTLS_VERSION_NUMBER >= 0x030300 */
+  MHD_TLS_PRIO_BASE_NORMAL      /**< @c "NORMAL */
+};
+
+static const struct _MHD_cstr_w_len MHD_TlsBasePriotities[] = {
+  _MHD_S_STR_W_LEN ("@LIBMICROHTTPD"),
+  _MHD_S_STR_W_LEN ("@SYSTEM"),
+#if GNUTLS_VERSION_NUMBER >= 0x030300
+  {NULL, 0},
+#endif /* GNUTLS_VERSION_NUMBER >= 0x030300 */
+  _MHD_S_STR_W_LEN ("NORMAL")
+};
+
+/**
+ * Initialise TLS priorities with default settings
+ * @param daemon the daemon to initialise TLS priorities
+ * @return true on success, false on error
+ */
+static bool
+daemon_tls_priorities_init_default (struct MHD_Daemon *daemon)
+{
+  unsigned int p;
+  int res;
+
+  mhd_assert (0 != (((unsigned int) daemon->options) & MHD_USE_TLS));
+  mhd_assert (NULL == daemon->priority_cache);
+  mhd_assert (MHD_TLS_PRIO_BASE_NORMAL + 1 == \
+              sizeof(MHD_TlsBasePriotities) / sizeof(MHD_TlsBasePriotities[0]));
+
+  for (p = 0;
+       p < sizeof(MHD_TlsBasePriotities) / sizeof(MHD_TlsBasePriotities[0]);
+       ++p)
+  {
+    res = gnutls_priority_init (&daemon->priority_cache,
+                                MHD_TlsBasePriotities[p].str, NULL);
+    if (GNUTLS_E_SUCCESS == res)
+    {
+#ifdef _DEBUG
+#ifdef HAVE_MESSAGES
+      switch ((enum MHD_TlsPrioritiesBaseType) p)
+      {
+      case MHD_TLS_PRIO_BASE_LIBMHD:
+        MHD_DLOG (daemon,
+                  _ ("GnuTLS priorities have been initialised with " \
+                     "@LIBMICROHTTPD application-specific system-wide " \
+                     "configuration.\n") );
+        break;
+      case MHD_TLS_PRIO_BASE_SYSTEM:
+        MHD_DLOG (daemon,
+                  _ ("GnuTLS priorities have been initialised with " \
+                     "@SYSTEM system-wide configuration.\n") );
+        break;
+#if GNUTLS_VERSION_NUMBER >= 0x030300
+      case MHD_TLS_PRIO_BASE_DEFAULT:
+        MHD_DLOG (daemon,
+                  _ ("GnuTLS priorities have been initialised with " \
+                     "GnuTLS default configuration.\n") );
+        break;
+#endif /* GNUTLS_VERSION_NUMBER >= 0x030300 */
+      case MHD_TLS_PRIO_BASE_NORMAL:
+        MHD_DLOG (daemon,
+                  _ ("GnuTLS priorities have been initialised with " \
+                     "NORMAL configuration.\n") );
+        break;
+      default:
+        mhd_assert (0);
+      }
+#endif /* HAVE_MESSAGES */
+#endif /* _DEBUG */
+      return true;
+    }
+  }
+#ifdef HAVE_MESSAGES
+  MHD_DLOG (daemon,
+            _ ("Failed to set GnuTLS priorities. Last error: %s\n"),
+            gnutls_strerror (res));
+#endif /* HAVE_MESSAGES */
+  return false;
+}
+
+
+#endif /* HTTPS_SUPPORT */
+
+
 /**
  * Parse a list of options given as varargs.
  *
@@ -6158,7 +6252,8 @@ parse_options_va (struct MHD_Daemon *daemon,
       if (0 != (daemon->options & MHD_USE_TLS))
       {
         int init_res;
-        gnutls_priority_deinit (daemon->priority_cache);
+        if (NULL != daemon->priority_cache)
+          gnutls_priority_deinit (daemon->priority_cache);
         init_res = gnutls_priority_init (&daemon->priority_cache,
                                          pstr,
                                          NULL);
@@ -6653,7 +6748,6 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 
 #endif
 
-
 /**
  * Start a webserver on the given port.
  *
@@ -6775,12 +6869,6 @@ MHD_start_daemon_va (unsigned int flags,
   /* try to open listen socket */
 #ifdef HTTPS_SUPPORT
   daemon->priority_cache = NULL;
-  if (0 != (*pflags & MHD_USE_TLS))
-  {
-    gnutls_priority_init (&daemon->priority_cache,
-                          "NORMAL",
-                          NULL);
-  }
 #endif /* HTTPS_SUPPORT */
   daemon->listen_fd = MHD_INVALID_SOCKET;
   daemon->listen_is_unix = _MHD_NO;
@@ -6857,6 +6945,19 @@ MHD_start_daemon_va (unsigned int flags,
     free (daemon);
     return NULL;
   }
+#ifdef HTTPS_SUPPORT
+  if ((0 != (*pflags & MHD_USE_TLS))
+      && (NULL == daemon->priority_cache)
+      && ! daemon_tls_priorities_init_default (daemon))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Failed to initialise GnuTLS priorities.\n"));
+#endif /* HAVE_MESSAGES */
+    free (daemon);
+    return NULL;
+  }
+#endif /* HTTPS_SUPPORT */
 
 #ifdef HAVE_MESSAGES
   if ( (0 != (flags & MHD_USE_THREAD_PER_CONNECTION)) &&

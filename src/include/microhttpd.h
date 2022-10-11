@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097540
+#define MHD_VERSION 0x00097541
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -1732,8 +1732,15 @@ enum MHD_OPTION
   MHD_OPTION_HTTPS_CRED_TYPE = 10,
 
   /**
-   * Memory pointer to a `const char *` specifying the
-   * cipher algorithm (default: "NORMAL").
+   * Memory pointer to a `const char *` specifying the GnuTLS priorities string.
+   * If this options is not specified, then MHD will try the following strings:
+   * * "@LIBMICROHTTPD" (application-specific system-wide configuration)
+   * * "@SYSTEM"        (system-wide configuration)
+   * * default GnuTLS priorities string
+   * * "NORMAL"
+   * The first configuration accepted by GnuTLS will be used.
+   * For more details see GnuTLS documentation for "Application-specific
+   * priority strings".
    */
   MHD_OPTION_HTTPS_PRIORITIES = 11,
 
