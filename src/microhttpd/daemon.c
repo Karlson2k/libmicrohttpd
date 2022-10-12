@@ -6416,36 +6416,6 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
       break;
     case MHD_OPTION_HTTPS_PRIORITIES:
-      pstr = va_arg (ap,
-                     const char *);
-      if (0 != (daemon->options & MHD_USE_TLS))
-      {
-        int init_res;
-        if (NULL != daemon->priority_cache)
-          gnutls_priority_deinit (daemon->priority_cache);
-        init_res = gnutls_priority_init (&daemon->priority_cache,
-                                         pstr,
-                                         NULL);
-        if (GNUTLS_E_SUCCESS != init_res)
-        {
-#ifdef HAVE_MESSAGES
-          MHD_DLOG (daemon,
-                    _ ("Setting priorities to `%s' failed: %s\n"),
-                    pstr,
-                    gnutls_strerror (init_res));
-#endif
-          daemon->priority_cache = NULL;
-          return MHD_NO;
-        }
-      }
-#ifdef HAVE_MESSAGES
-      else
-        MHD_DLOG (daemon,
-                  _ ("MHD HTTPS option %d passed to MHD but " \
-                     "MHD_USE_TLS not set.\n"),
-                  opt);
-#endif
-      break;
     case MHD_OPTION_HTTPS_PRIORITIES_APPEND:
       pstr = va_arg (ap,
                      const char *);
@@ -6453,10 +6423,32 @@ parse_options_va (struct MHD_Daemon *daemon,
       {
         if (NULL != daemon->priority_cache)
           gnutls_priority_deinit (daemon->priority_cache);
-        daemon->priority_cache = NULL;
-        /* The next function log error messages if needed */
-        if (! daemon_tls_priorities_init_append (daemon, pstr))
-          return MHD_NO;
+
+        if (MHD_OPTION_HTTPS_PRIORITIES == opt)
+        {
+          int init_res;
+          init_res = gnutls_priority_init (&daemon->priority_cache,
+                                           pstr,
+                                           NULL);
+          if (GNUTLS_E_SUCCESS != init_res)
+          {
+#ifdef HAVE_MESSAGES
+            MHD_DLOG (daemon,
+                      _ ("Setting priorities to `%s' failed: %s\n"),
+                      pstr,
+                      gnutls_strerror (init_res));
+#endif
+            daemon->priority_cache = NULL;
+            return MHD_NO;
+          }
+        }
+        else
+        {
+          /* The cache has been deinited */
+          daemon->priority_cache = NULL;
+          if (! daemon_tls_priorities_init_append (daemon, pstr))
+            return MHD_NO;
+        }
       }
 #ifdef HAVE_MESSAGES
       else
