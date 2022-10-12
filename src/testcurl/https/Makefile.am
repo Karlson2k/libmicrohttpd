@@ -29,7 +29,7 @@ if HAVE_GNUTLS_SNI
 endif
 
 if HAVE_POSIX_THREADS
-  HTTPS_PARALLEL_TESTS = \
+HTTPS_PARALLEL_TESTS = \
     test_https_get_parallel \
     test_https_get_parallel_threads
 endif
