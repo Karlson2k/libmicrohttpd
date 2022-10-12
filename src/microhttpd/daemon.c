@@ -5983,6 +5983,175 @@ daemon_tls_priorities_init_default (struct MHD_Daemon *daemon)
 }
 
 
+/**
+ * The inner helper function for #daemon_tls_priorities_init_app().
+ * @param daemon the daemon to use
+ * @param prio   the appication-specified appendix for default priorities
+ * @param prio_len the length of @a prio
+ * @param buf    the temporal buffer for string manipulations
+ * @param buf_size the size of the @a buf
+ * @return true on success, false on error
+ */
+static bool
+daemon_tls_priorities_init_append_inner_ (struct MHD_Daemon *daemon,
+                                          const char *prio,
+                                          size_t prio_len,
+                                          char *buf,
+                                          const size_t buf_size)
+{
+  unsigned int p;
+  int res;
+  const char *err_pos;
+
+  (void) buf_size; /* Mute compiler warning for non-Debug builds */
+  mhd_assert (0 != (((unsigned int) daemon->options) & MHD_USE_TLS));
+  mhd_assert (NULL == daemon->priority_cache);
+  mhd_assert (MHD_TLS_PRIO_BASE_NORMAL + 1 == \
+              sizeof(MHD_TlsBasePriotities) / sizeof(MHD_TlsBasePriotities[0]));
+
+  for (p = 0;
+       p < sizeof(MHD_TlsBasePriotities) / sizeof(MHD_TlsBasePriotities[0]);
+       ++p)
+  {
+
+#if GNUTLS_VERSION_NUMBER >= 0x030300
+#if GNUTLS_VERSION_NUMBER >= 0x030603
+    if (NULL == MHD_TlsBasePriotities[p].str)
+      res = gnutls_priority_init2 (&daemon->priority_cache, prio, &err_pos,
+                                   GNUTLS_PRIORITY_INIT_DEF_APPEND);
+    else
+#else  \
+    /* 0x030300 <= GNUTLS_VERSION_NUMBER && GNUTLS_VERSION_NUMBER < 0x030603 */
+    if (NULL == MHD_TlsBasePriotities[p].str)
+      continue; /* Skip the value, no way to append priorities to the default string */
+    else
+#endif /* GNUTLS_VERSION_NUMBER < 0x030603 */
+#endif /* GNUTLS_VERSION_NUMBER >= 0x030300 */
+    if (1)
+    {
+      size_t buf_pos;
+
+      mhd_assert (NULL != MHD_TlsBasePriotities[p].str);
+      buf_pos = 0;
+      memcpy (buf + buf_pos, MHD_TlsBasePriotities[p].str,
+              MHD_TlsBasePriotities[p].len);
+      buf_pos += MHD_TlsBasePriotities[p].len;
+      buf[buf_pos++] = ':';
+      memcpy (buf + buf_pos, prio, prio_len + 1);
+#ifdef _DEBUG
+      buf_pos += prio_len + 1;
+      mhd_assert (buf_size >= buf_pos);
+#endif /* _DEBUG */
+      res = gnutls_priority_init (&daemon->priority_cache, buf, &err_pos);
+    }
+    if (GNUTLS_E_SUCCESS == res)
+    {
+#ifdef _DEBUG
+#ifdef HAVE_MESSAGES
+      switch ((enum MHD_TlsPrioritiesBaseType) p)
+      {
+      case MHD_TLS_PRIO_BASE_LIBMHD:
+        MHD_DLOG (daemon,
+                  _ ("GnuTLS priorities have been initialised with " \
+                     "priorities specified by application appended to " \
+                     "@LIBMICROHTTPD application-specific system-wide " \
+                     "configuration.\n") );
+        break;
+      case MHD_TLS_PRIO_BASE_SYSTEM:
+        MHD_DLOG (daemon,
+                  _ ("GnuTLS priorities have been initialised with " \
+                     "priorities specified by application appended to " \
+                     "@SYSTEM system-wide configuration.\n") );
+        break;
+#if GNUTLS_VERSION_NUMBER >= 0x030300
+      case MHD_TLS_PRIO_BASE_DEFAULT:
+        MHD_DLOG (daemon,
+                  _ ("GnuTLS priorities have been initialised with " \
+                     "priorities specified by application appended to " \
+                     "GnuTLS default configuration.\n") );
+        break;
+#endif /* GNUTLS_VERSION_NUMBER >= 0x030300 */
+      case MHD_TLS_PRIO_BASE_NORMAL:
+        MHD_DLOG (daemon,
+                  _ ("GnuTLS priorities have been initialised with " \
+                     "priorities specified by application appended to " \
+                     "NORMAL configuration.\n") );
+        break;
+      default:
+        mhd_assert (0);
+      }
+#endif /* HAVE_MESSAGES */
+#endif /* _DEBUG */
+      return true;
+    }
+  }
+#ifdef HAVE_MESSAGES
+  MHD_DLOG (daemon,
+            _ ("Failed to set GnuTLS priorities. Last error: %s. " \
+               "The problematic part starts at: %s\n"),
+            gnutls_strerror (res), err_pos);
+#endif /* HAVE_MESSAGES */
+  return false;
+}
+
+
+#define LOCAL_BUFF_SIZE 128
+
+/**
+ * Initialise TLS priorities with default settings with application-specified
+ * appended string.
+ * @param daemon the daemon to initialise TLS priorities
+ * @param prio the application specified priorities to be appended to
+ *             the GnuTLS standard priorities string
+ * @return true on success, false on error
+ */
+static bool
+daemon_tls_priorities_init_append (struct MHD_Daemon *daemon, const char *prio)
+{
+  static const size_t longest_base_prio = MHD_TlsBasePriotities[0].len;
+  bool ret;
+  size_t prio_len;
+  size_t buf_size_needed;
+
+  if (NULL == prio)
+    return daemon_tls_priorities_init_default (daemon);
+
+  if (':' == prio[0])
+    ++prio;
+
+  prio_len = strlen (prio);
+
+  buf_size_needed = longest_base_prio + 1 + prio_len + 1;
+
+  if (LOCAL_BUFF_SIZE >= buf_size_needed)
+  {
+    char local_buffer[LOCAL_BUFF_SIZE];
+    ret = daemon_tls_priorities_init_append_inner_ (daemon, prio, prio_len,
+                                                    local_buffer,
+                                                    LOCAL_BUFF_SIZE);
+  }
+  else
+  {
+    char *allocated_buffer;
+    allocated_buffer = (char *) malloc (buf_size_needed);
+    if (NULL == allocated_buffer)
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Error allocating memory: %s\n"),
+                MHD_strerror_ (errno));
+#endif
+      return false;
+    }
+    ret = daemon_tls_priorities_init_append_inner_ (daemon, prio, prio_len,
+                                                    allocated_buffer,
+                                                    buf_size_needed);
+    free (allocated_buffer);
+  }
+  return ret;
+}
+
+
 #endif /* HTTPS_SUPPORT */
 
 
@@ -6277,6 +6446,26 @@ parse_options_va (struct MHD_Daemon *daemon,
                   opt);
 #endif
       break;
+    case MHD_OPTION_HTTPS_PRIORITIES_APPEND:
+      pstr = va_arg (ap,
+                     const char *);
+      if (0 != (daemon->options & MHD_USE_TLS))
+      {
+        if (NULL != daemon->priority_cache)
+          gnutls_priority_deinit (daemon->priority_cache);
+        daemon->priority_cache = NULL;
+        /* The next function log error messages if needed */
+        if (! daemon_tls_priorities_init_append (daemon, pstr))
+          return MHD_NO;
+      }
+#ifdef HAVE_MESSAGES
+      else
+        MHD_DLOG (daemon,
+                  _ ("MHD HTTPS option %d passed to MHD but " \
+                     "MHD_USE_TLS not set.\n"),
+                  opt);
+#endif
+      break;
     case MHD_OPTION_HTTPS_CERT_CALLBACK:
 #if GNUTLS_VERSION_MAJOR < 3
 #ifdef HAVE_MESSAGES
@@ -6514,6 +6703,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_HTTPS_MEM_TRUST:
         case MHD_OPTION_HTTPS_MEM_DHPARAMS:
         case MHD_OPTION_HTTPS_PRIORITIES:
+        case MHD_OPTION_HTTPS_PRIORITIES_APPEND:
         case MHD_OPTION_ARRAY:
         case MHD_OPTION_HTTPS_CERT_CALLBACK:
         case MHD_OPTION_HTTPS_CERT_CALLBACK2:

@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097541
+#define MHD_VERSION 0x00097542
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -2025,7 +2025,19 @@ enum MHD_OPTION
    * When not specified, default value #MHD_DAUTH_BIND_NONCE_NONE is used.
    * @note Available since #MHD_VERSION 0x00097531
    */
-  MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE = 36
+  MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE = 36,
+
+  /**
+   * Memory pointer to a `const char *` specifying the GnuTLS priorities to be
+   * appended to default priorities.
+   * This allow some specific options to be enabled/disabled, while leaving
+   * the rest of the settings to their defaults.
+   * The string does not have to start with a colon ':' character.
+   * See #MHD_OPTION_HTTPS_PRIORITIES description for details of automatic
+   * default priorities.
+   * @note Available since #MHD_VERSION 0x00097542
+   */
+  MHD_OPTION_HTTPS_PRIORITIES_APPEND = 37
 } _MHD_FIXED_ENUM;
 
 
