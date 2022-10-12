@@ -6427,16 +6427,19 @@ parse_options_va (struct MHD_Daemon *daemon,
         if (MHD_OPTION_HTTPS_PRIORITIES == opt)
         {
           int init_res;
+          const char *err_pos;
           init_res = gnutls_priority_init (&daemon->priority_cache,
                                            pstr,
-                                           NULL);
+                                           &err_pos);
           if (GNUTLS_E_SUCCESS != init_res)
           {
 #ifdef HAVE_MESSAGES
             MHD_DLOG (daemon,
-                      _ ("Setting priorities to `%s' failed: %s\n"),
+                      _ ("Setting priorities to '%s' failed: %s " \
+                         "The problematic part starts at: %s\n"),
                       pstr,
-                      gnutls_strerror (init_res));
+                      gnutls_strerror (init_res),
+                      err_pos);
 #endif
             daemon->priority_cache = NULL;
             return MHD_NO;
