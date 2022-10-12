@@ -301,6 +301,12 @@ curlExcessFound (CURL *c,
   const size_t str_size = strlen (excess_found);
   (void) c;      /* Unused. Silence compiler warning. */
 
+#ifdef _DEBUG
+  if ((CURLINFO_TEXT == type) ||
+      (CURLINFO_HEADER_IN == type) ||
+      (CURLINFO_HEADER_OUT == type))
+    fprintf (stderr, "%.*s", (int) size, data);
+#endif /* _DEBUG */
   if ((CURLINFO_TEXT == type)
       && (size >= str_size)
       && (0 == strncmp (excess_found, data, str_size)))
@@ -355,6 +361,7 @@ testEmptyGet (unsigned int poll_flag)
 #endif
   curl_easy_setopt (c, CURLOPT_URL, "https://127.0.0.1/");
   curl_easy_setopt (c, CURLOPT_PORT, (long) global_port);
+  curl_easy_setopt (c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_DEBUGFUNCTION, &curlExcessFound);
