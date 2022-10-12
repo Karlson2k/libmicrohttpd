@@ -91,6 +91,11 @@ extern const char *tls_names[KNOW_TLS_IDS_COUNT];
 extern const char *priorities_map[KNOW_TLS_IDS_COUNT];
 
 /**
+ * Map @a know_gnutls_tls_ids values to GnuTLS priorities append strings.
+ */
+extern const char *priorities_append_map[KNOW_TLS_IDS_COUNT];
+
+/**
  * Map @a know_gnutls_tls_ids values to libcurl @a CURLOPT_SSLVERSION value.
  */
 extern const long libcurl_tls_vers_map[KNOW_TLS_IDS_COUNT];
@@ -217,5 +222,21 @@ test_wrap (const char *test_name, unsigned int
            int proto_version, ...);
 
 int testsuite_curl_global_init (void);
+
+/**
+ * Check whether program name contains specific @a marker string.
+ * Only last component in pathname is checked for marker presence,
+ * all leading directories names (if any) are ignored. Directories
+ * separators are handled correctly on both non-W32 and W32
+ * platforms.
+ * @param prog_name program name, may include path
+ * @param marker    marker to look for.
+ * @return zero if any parameter is NULL or empty string or
+ *         @prog_name ends with slash or @marker is not found in
+ *         program name, non-zero if @maker is found in program
+ *         name.
+ */
+int
+has_in_name (const char *prog_name, const char *marker);
 
 #endif /* TLS_TEST_COMMON_H_ */

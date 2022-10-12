@@ -35,6 +35,9 @@
 #include "tls_test_common.h"
 #include "tls_test_keys.h"
 
+
+static int test_append_prio;
+
 /*
  * HTTP access handler call back
  * used to query negotiated security parameters
@@ -113,7 +116,12 @@ test_query_session (enum know_gnutls_tls_id tls_ver, uint16_t *pport)
                         | MHD_USE_ERROR_LOG, *pport,
                         NULL, NULL,
                         &query_info_ahc, &found_tls_ver,
-                        MHD_OPTION_HTTPS_PRIORITIES, priorities_map[tls_ver],
+                        test_append_prio ?
+                        MHD_OPTION_HTTPS_PRIORITIES_APPEND :
+                        MHD_OPTION_HTTPS_PRIORITIES,
+                        test_append_prio ?
+                        priorities_append_map[tls_ver] :
+                        priorities_map[tls_ver],
                         MHD_OPTION_HTTPS_MEM_KEY, srv_self_signed_key_pem,
                         MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
                         MHD_OPTION_END);
@@ -344,6 +352,7 @@ main (int argc, char *const *argv)
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
 #endif /* MHD_HTTPS_REQUIRE_GCRYPT */
+  test_append_prio = has_in_name (argv[0], "_append");
   if (! testsuite_curl_global_init ())
     return 99;
 

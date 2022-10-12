@@ -23,7 +23,9 @@
  * @file tls_test_common.c
  * @brief  Common tls test functions
  * @author Sagie Amir
+ * @author Karlson2k (Evgeny Grin)
  */
+#include <string.h>
 #include "tls_test_common.h"
 #include "tls_test_keys.h"
 
@@ -49,6 +51,18 @@ const char *priorities_map[KNOW_TLS_IDS_COUNT] = {
   "NORMAL:!VERS-ALL:+VERS-TLS1.1",
   "NORMAL:!VERS-ALL:+VERS-TLS1.2",
   "NORMAL:!VERS-ALL:+VERS-TLS1.3"
+};
+
+/**
+ * Map @a know_gnutls_tls_ids values to GnuTLS priorities append strings.
+ */
+const char *priorities_append_map[KNOW_TLS_IDS_COUNT] = {
+  "NONE",
+  "!VERS-ALL:+VERS-SSL3.0",
+  "!VERS-ALL:+VERS-TLS1.0",
+  "!VERS-ALL:+VERS-TLS1.1",
+  "!VERS-ALL:+VERS-TLS1.2",
+  "!VERS-ALL:+VERS-TLS1.3"
 };
 
 
@@ -725,4 +739,44 @@ testsuite_curl_global_init (void)
     return 0;
   }
   return 1;
+}
+
+
+/**
+ * Check whether program name contains specific @a marker string.
+ * Only last component in pathname is checked for marker presence,
+ * all leading directories names (if any) are ignored. Directories
+ * separators are handled correctly on both non-W32 and W32
+ * platforms.
+ * @param prog_name program name, may include path
+ * @param marker    marker to look for.
+ * @return zero if any parameter is NULL or empty string or
+ *         @prog_name ends with slash or @marker is not found in
+ *         program name, non-zero if @maker is found in program
+ *         name.
+ */
+int
+has_in_name (const char *prog_name, const char *marker)
+{
+  size_t name_pos;
+  size_t pos;
+
+  if (! prog_name || ! marker || ! prog_name[0] || ! marker[0])
+    return 0;
+
+  pos = 0;
+  name_pos = 0;
+  while (prog_name[pos])
+  {
+    if ('/' == prog_name[pos])
+      name_pos = pos + 1;
+#if defined(_WIN32) || defined(__CYGWIN__)
+    else if ('\\' == prog_name[pos])
+      name_pos = pos + 1;
+#endif /* _WIN32 || __CYGWIN__ */
+    pos++;
+  }
+  if (name_pos == pos)
+    return 0;
+  return strstr (prog_name + name_pos, marker) != (char *) 0;
 }

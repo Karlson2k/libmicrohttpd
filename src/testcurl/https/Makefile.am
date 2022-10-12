@@ -40,6 +40,7 @@ THREAD_ONLY_TESTS = \
   $(HTTPS_PARALLEL_TESTS) \
   $(TEST_HTTPS_SNI) \
   test_https_session_info \
+  test_https_session_info_append \
   test_https_multi_daemon \
   test_https_get \
   test_empty_response \
@@ -118,6 +119,8 @@ test_https_session_info_SOURCES = \
   tls_test_keys.h \
   tls_test_common.h \
   tls_test_common.c
+
+test_https_session_info_append_SOURCES = $(test_https_session_info_SOURCES)
 
 test_https_multi_daemon_SOURCES = \
   test_https_multi_daemon.c \
