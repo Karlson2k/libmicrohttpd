@@ -1270,7 +1270,7 @@ performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
   }
   else if (large_rsp_headers)
   {
-    unsigned int num_hrds;
+    size_t num_hrds;
     const size_t hdr_size = strlen (N1_HEADER_CRLF);
 
     for (num_hrds = TEST_START_SIZE / hdr_size;
