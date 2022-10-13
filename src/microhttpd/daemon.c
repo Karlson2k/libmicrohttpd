@@ -6108,7 +6108,7 @@ daemon_tls_priorities_init_append_inner_ (struct MHD_Daemon *daemon,
 static bool
 daemon_tls_priorities_init_append (struct MHD_Daemon *daemon, const char *prio)
 {
-  static const size_t longest_base_prio = MHD_TlsBasePriotities[0].len;
+  static const size_t longest_base_prio = MHD_STATICSTR_LEN_ ("@LIBMICROHTTPD");
   bool ret;
   size_t prio_len;
   size_t buf_size_needed;
