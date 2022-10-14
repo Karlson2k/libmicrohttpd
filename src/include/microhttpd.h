@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097542
+#define MHD_VERSION 0x00097543
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -6186,7 +6186,15 @@ enum MHD_FEATURE
    * unlikely.
    * @note Available since #MHD_VERSION 0x00097540
    */
-  MHD_FEATURE_EXTERN_HASH = 32
+  MHD_FEATURE_EXTERN_HASH = 32,
+
+  /**
+   * Get whether MHD was built with asserts enabled.
+   * For debug builds the error log is always enabled even if #MHD_USE_ERROR_LOG
+   * is not specified for daemon.
+   * @note Available since #MHD_VERSION 0x00097543
+   */
+  MHD_FEATURE_DEBUG_BUILD = 33
 };
 
 
