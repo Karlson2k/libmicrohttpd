@@ -3656,6 +3656,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   bool sk_nonbl;
   bool sk_spipe_supprs;
   bool sk_cloexec;
+  enum MHD_tristate sk_non_ip;
 
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
@@ -3675,37 +3676,48 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   addrstorage.ss_len = addrlen;
 #endif /* HAVE_STRUCT_SOCKADDR_STORAGE_SS_LEN */
 
-#ifdef USE_ACCEPT4
-  s = accept4 (fd,
-               (struct sockaddr *) &addrstorage,
-               &addrlen,
-               SOCK_CLOEXEC_OR_ZERO | SOCK_NONBLOCK_OR_ZERO
-               | SOCK_NOSIGPIPE_OR_ZERO);
-  sk_nonbl = (SOCK_NONBLOCK_OR_ZERO != 0);
-#ifndef MHD_WINSOCK_SOCKETS
-  sk_spipe_supprs = (SOCK_NOSIGPIPE_OR_ZERO != 0);
-#else  /* MHD_WINSOCK_SOCKETS */
-  sk_spipe_supprs = true; /* Nothing to suppress on W32 */
-#endif /* MHD_WINSOCK_SOCKETS */
-  sk_cloexec = (SOCK_CLOEXEC_OR_ZERO != 0);
-#else  /* ! USE_ACCEPT4 */
-  s = accept (fd,
-              (struct sockaddr *) &addrstorage,
-              &addrlen);
-#ifdef MHD_ACCEPT_INHERIT_NONBLOCK
-  sk_nonbl = daemon->listen_nonblk;
-#else  /* ! MHD_ACCEPT_INHERIT_NONBLOCK */
+  /* Initialise with default values to avoid compiler warnings */
   sk_nonbl = false;
+  sk_spipe_supprs = false;
+  sk_cloexec = false;
+
+#ifdef USE_ACCEPT4
+  if (MHD_INVALID_SOCKET !=
+      (s = accept4 (fd,
+                    (struct sockaddr *) &addrstorage,
+                    &addrlen,
+                    SOCK_CLOEXEC_OR_ZERO | SOCK_NONBLOCK_OR_ZERO
+                    | SOCK_NOSIGPIPE_OR_ZERO)))
+  {
+    sk_nonbl = (SOCK_NONBLOCK_OR_ZERO != 0);
+#ifndef MHD_WINSOCK_SOCKETS
+    sk_spipe_supprs = (SOCK_NOSIGPIPE_OR_ZERO != 0);
+#else  /* MHD_WINSOCK_SOCKETS */
+    sk_spipe_supprs = true; /* Nothing to suppress on W32 */
+#endif /* MHD_WINSOCK_SOCKETS */
+    sk_cloexec = (SOCK_CLOEXEC_OR_ZERO != 0);
+  }
+#else  /* ! USE_ACCEPT4 */
+  if (MHD_INVALID_SOCKET !=
+      (s = accept (fd,
+                   (struct sockaddr *) &addrstorage,
+                   &addrlen)))
+  {
+#ifdef MHD_ACCEPT_INHERIT_NONBLOCK
+    sk_nonbl = daemon->listen_nonblk;
+#else  /* ! MHD_ACCEPT_INHERIT_NONBLOCK */
+    sk_nonbl = false;
 #endif /* ! MHD_ACCEPT_INHERIT_NONBLOCK */
 #ifndef MHD_WINSOCK_SOCKETS
-  sk_spipe_supprs = false;
+    sk_spipe_supprs = false;
 #else  /* MHD_WINSOCK_SOCKETS */
-  sk_spipe_supprs = true; /* Nothing to suppress on W32 */
+    sk_spipe_supprs = true; /* Nothing to suppress on W32 */
 #endif /* MHD_WINSOCK_SOCKETS */
-  sk_cloexec = false;
+    sk_cloexec = false;
+  }
 #endif /* ! USE_ACCEPT4 */
-  if ( (MHD_INVALID_SOCKET == s) ||
-       (addrlen <= 0) )
+
+  if (MHD_INVALID_SOCKET == s)
   {
     const int err = MHD_socket_get_error_ ();
 
@@ -3721,10 +3733,6 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                 _ ("Error accepting connection: %s\n"),
                 MHD_socket_strerr_ (err));
 #endif
-    if (MHD_INVALID_SOCKET != s)
-    {
-      MHD_socket_close_chk_ (s);
-    }
     if (MHD_SCKT_ERR_IS_LOW_RESOURCES_ (err) )
     {
       /* system/process out of resources */
@@ -3760,6 +3768,35 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
       }
     }
     return MHD_NO;
+  }
+
+  sk_non_ip = daemon->listen_is_unix;
+  if (0 >= addrlen)
+  {
+    /* Should not happen as 'sockaddr_storage' must be large enough to
+     * store any address supported by the system. */
+#ifdef HAVE_MESSAGES
+    if (_MHD_NO != daemon->listen_is_unix)
+      MHD_DLOG (daemon,
+                _ ("Accepted socket has zero-length address. "
+                   "Processing the new socket as a socket with " \
+                   "unknown type.\n"));
+#endif
+    addrlen = 0;
+    sk_non_ip = _MHD_YES; /* IP-type addresses have non-zero length */
+  }
+  if (((socklen_t) sizeof (addrstorage)) < addrlen)
+  {
+    /* Should not happen as 'sockaddr_storage' must be large enough to
+     * store any address supported by the system. */
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Accepted socket address is larger than expected by " \
+                 "system headers. Processing the new socket as a socket with " \
+                 "unknown type.\n"));
+#endif
+    addrlen = 0;
+    sk_non_ip = _MHD_YES; /* IP-type addresses must fit */
   }
 
   if (! sk_nonbl && ! MHD_socket_nonblocking_ (s))
@@ -3825,7 +3862,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
                                   false,
                                   sk_nonbl,
                                   sk_spipe_supprs,
-                                  daemon->listen_is_unix);
+                                  sk_non_ip);
   return MHD_YES;
 }
 
