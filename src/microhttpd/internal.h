@@ -2416,6 +2416,18 @@ struct MHD_Daemon
    * The value to be returned by #MHD_get_daemon_info()
    */
   union MHD_DaemonInfo daemon_info_dummy_port;
+
+#if defined(_DEBUG) && defined(HAVE_ACCEPT4)
+  /**
+   * If set to 'true', accept() function will be used instead of accept4() even
+   * if accept4() is available.
+   * This is a workaround for zzuf, which does not support sockets created
+   * by accept4() function.
+   * There is no API to change the value of this member, it can be flipped
+   * only by direct access to the struct member.
+   */
+  bool avoid_accept4;
+#endif /* _DEBUG */
 };
 
 

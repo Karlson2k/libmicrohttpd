@@ -3662,6 +3662,13 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   bool sk_spipe_supprs;
   bool sk_cloexec;
   enum MHD_tristate sk_non_ip;
+#if defined(_DEBUG) && defined (USE_ACCEPT4)
+  const bool use_accept4 = ! daemon->avoid_accept4;
+#elif defined (USE_ACCEPT4)
+  static const bool use_accept4 = true;
+#else  /* ! USE_ACCEPT4 && ! _DEBUG */
+  static const bool use_accept4 = false;
+#endif /* ! USE_ACCEPT4 && ! _DEBUG */
 
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
@@ -3685,14 +3692,16 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   sk_nonbl = false;
   sk_spipe_supprs = false;
   sk_cloexec = false;
+  s = MHD_INVALID_SOCKET;
 
 #ifdef USE_ACCEPT4
-  if (MHD_INVALID_SOCKET !=
-      (s = accept4 (fd,
-                    (struct sockaddr *) &addrstorage,
-                    &addrlen,
-                    SOCK_CLOEXEC_OR_ZERO | SOCK_NONBLOCK_OR_ZERO
-                    | SOCK_NOSIGPIPE_OR_ZERO)))
+  if (use_accept4 &&
+      (MHD_INVALID_SOCKET !=
+       (s = accept4 (fd,
+                     (struct sockaddr *) &addrstorage,
+                     &addrlen,
+                     SOCK_CLOEXEC_OR_ZERO | SOCK_NONBLOCK_OR_ZERO
+                     | SOCK_NOSIGPIPE_OR_ZERO))))
   {
     sk_nonbl = (SOCK_NONBLOCK_OR_ZERO != 0);
 #ifndef MHD_WINSOCK_SOCKETS
@@ -3702,11 +3711,13 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif /* MHD_WINSOCK_SOCKETS */
     sk_cloexec = (SOCK_CLOEXEC_OR_ZERO != 0);
   }
-#else  /* ! USE_ACCEPT4 */
-  if (MHD_INVALID_SOCKET !=
-      (s = accept (fd,
-                   (struct sockaddr *) &addrstorage,
-                   &addrlen)))
+#endif /* USE_ACCEPT4 */
+#if defined(_DEBUG) || ! defined(USE_ACCEPT4)
+  if (! use_accept4 &&
+      (MHD_INVALID_SOCKET !=
+       (s = accept (fd,
+                    (struct sockaddr *) &addrstorage,
+                    &addrlen))))
   {
 #ifdef MHD_ACCEPT_INHERIT_NONBLOCK
     sk_nonbl = daemon->listen_nonblk;
@@ -3720,7 +3731,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif /* MHD_WINSOCK_SOCKETS */
     sk_cloexec = false;
   }
-#endif /* ! USE_ACCEPT4 */
+#endif /* _DEBUG || !USE_ACCEPT4 */
 
   if (MHD_INVALID_SOCKET == s)
   {
@@ -3778,8 +3789,6 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   sk_non_ip = daemon->listen_is_unix;
   if (0 >= addrlen)
   {
-    /* Should not happen as 'sockaddr_storage' must be large enough to
-     * store any address supported by the system. */
 #ifdef HAVE_MESSAGES
     if (_MHD_NO != daemon->listen_is_unix)
       MHD_DLOG (daemon,
@@ -7156,6 +7165,9 @@ MHD_start_daemon_va (unsigned int flags,
   /* There is no SIGPIPE on W32, nothing to block. */
   daemon->sigpipe_blocked = true;
 #endif /* _WIN32 && ! __CYGWIN__ */
+#if defined(_DEBUG) && defined(HAVE_ACCEPT4)
+  daemon->avoid_accept4 = false;
+#endif /* _DEBUG */
 
   if ( (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION)) &&
        (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) )
