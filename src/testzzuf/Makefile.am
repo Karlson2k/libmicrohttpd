@@ -3,6 +3,7 @@ SUBDIRS  = .
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
+  -I$(top_srcdir)/src/microhttpd \
   -DMHD_CPU_COUNT=$(CPU_COUNT) \
   $(CPPFLAGS_ac) $(LIBCURL_CPPFLAGS)
 
