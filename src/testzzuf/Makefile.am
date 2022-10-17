@@ -4,7 +4,7 @@ SUBDIRS  = .
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   -DMHD_CPU_COUNT=$(CPU_COUNT) \
-  $(LIBCURL_CPPFLAGS)
+  $(CPPFLAGS_ac) $(LIBCURL_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_ac) @LIBGCRYPT_CFLAGS@
 
