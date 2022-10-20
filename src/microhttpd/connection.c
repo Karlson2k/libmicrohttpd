@@ -5278,7 +5278,7 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
        (0 == (connection->epoll_state & MHD_EPOLL_STATE_SUSPENDED)) &&
        ( ( (MHD_EVENT_LOOP_INFO_WRITE == connection->event_loop_info) &&
            (0 == (connection->epoll_state & MHD_EPOLL_STATE_WRITE_READY))) ||
-         ( (MHD_EVENT_LOOP_INFO_READ == connection->event_loop_info) &&
+         ( (0 != (MHD_EVENT_LOOP_INFO_READ & connection->event_loop_info)) &&
            (0 == (connection->epoll_state & MHD_EPOLL_STATE_READ_READY)) ) ) )
   {
     /* add to epoll set */

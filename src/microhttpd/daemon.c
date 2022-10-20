@@ -985,6 +985,7 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
     switch (pos->event_loop_info)
     {
     case MHD_EVENT_LOOP_INFO_READ:
+    case MHD_EVENT_LOOP_INFO_PROCESS_READ:
       if (! MHD_add_to_fd_set_ (pos->socket_fd,
                                 read_fd_set,
                                 max_fd,
@@ -1181,7 +1182,7 @@ call_handlers (struct MHD_Connection *con,
   if (con->tls_read_ready)
     read_ready = true;
 #endif /* HTTPS_SUPPORT */
-  if ( (MHD_EVENT_LOOP_INFO_READ == con->event_loop_info) &&
+  if ( (0 != (MHD_EVENT_LOOP_INFO_READ & con->event_loop_info)) &&
        (read_ready || (force_close && con->sk_nonblck)) )
   {
     MHD_connection_handle_read (con, force_close);
@@ -1255,11 +1256,11 @@ call_handlers (struct MHD_Connection *con,
   if ( (! con->daemon->data_already_pending) &&
        (0 == (con->daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
   {
-    if (MHD_EVENT_LOOP_INFO_BLOCK == con->event_loop_info)
+    if (0 != (MHD_EVENT_LOOP_INFO_BLOCK & con->event_loop_info))
       con->daemon->data_already_pending = true;
 #ifdef HTTPS_SUPPORT
     else if ( (con->tls_read_ready) &&
-              (MHD_EVENT_LOOP_INFO_READ == con->event_loop_info) )
+              (0 != (MHD_EVENT_LOOP_INFO_READ & con->event_loop_info)) )
       con->daemon->data_already_pending = true;
 #endif /* HTTPS_SUPPORT */
   }
@@ -1985,13 +1986,13 @@ thread_main_handle_connection (void *data)
       was_suspended = false;
     }
 
-    use_zero_timeout = ( (MHD_EVENT_LOOP_INFO_BLOCK == con->event_loop_info)
+    use_zero_timeout =
+      (0 != (MHD_EVENT_LOOP_INFO_BLOCK & con->event_loop_info)
 #ifdef HTTPS_SUPPORT
-                         || ( (con->tls_read_ready) && \
-                              (MHD_EVENT_LOOP_INFO_READ ==
-                               con->event_loop_info) )
+       || ( (con->tls_read_ready) &&
+            (0 != (MHD_EVENT_LOOP_INFO_READ & con->event_loop_info)) )
 #endif /* HTTPS_SUPPORT */
-                         );
+      );
     if (! use_poll)
     {
       /* use select */
@@ -2027,6 +2028,7 @@ thread_main_handle_connection (void *data)
       switch (con->event_loop_info)
       {
       case MHD_EVENT_LOOP_INFO_READ:
+      case MHD_EVENT_LOOP_INFO_PROCESS_READ:
         if (! MHD_add_to_fd_set_ (con->socket_fd,
                                   &rs,
                                   &maxsock,
@@ -2133,6 +2135,7 @@ thread_main_handle_connection (void *data)
       switch (con->event_loop_info)
       {
       case MHD_EVENT_LOOP_INFO_READ:
+      case MHD_EVENT_LOOP_INFO_PROCESS_READ:
         p[0].events |= POLLIN | MHD_POLL_EVENTS_ERR_DISC;
         break;
       case MHD_EVENT_LOOP_INFO_WRITE:
@@ -4750,6 +4753,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       switch (pos->event_loop_info)
       {
       case MHD_EVENT_LOOP_INFO_READ:
+      case MHD_EVENT_LOOP_INFO_PROCESS_READ:
         p[poll_server + i].events |= POLLIN | MHD_POLL_EVENTS_ERR_DISC;
         break;
       case MHD_EVENT_LOOP_INFO_WRITE:
@@ -5362,7 +5366,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
         if (0 != (events[i].events & EPOLLIN))
         {
           pos->epoll_state |= MHD_EPOLL_STATE_READ_READY;
-          if ( ( (MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info) ||
+          if ( ( (0 != (MHD_EVENT_LOOP_INFO_READ & pos->event_loop_info)) ||
                  (pos->read_buffer_size > pos->read_buffer_offset) ) &&
                (0 == (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL) ) )
           {
@@ -5452,7 +5456,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
         (pos->epoll_state & (MHD_EPOLL_STATE_SUSPENDED
                              | MHD_EPOLL_STATE_IN_EREADY_EDLL)))
     {
-      if ( ((MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info) &&
+      if ( ((0 != (MHD_EVENT_LOOP_INFO_READ & pos->event_loop_info)) &&
             (0 == (pos->epoll_state & MHD_EPOLL_STATE_READ_READY)) ) ||
            ((MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info) &&
             (0 == (pos->epoll_state & MHD_EPOLL_STATE_WRITE_READY)) ) ||
