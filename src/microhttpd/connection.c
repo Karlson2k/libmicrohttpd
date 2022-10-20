@@ -2543,7 +2543,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
       if (! connection->discard_request)
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
       else
-        connection->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
+        connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
       break;
     case MHD_CONNECTION_HEADERS_RECEIVED:
       mhd_assert (0);
@@ -2583,7 +2583,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
            (! connection->discard_request) )
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
       else
-        connection->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
+        connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
       break;
     case MHD_CONNECTION_BODY_RECEIVED:
     case MHD_CONNECTION_FOOTER_PART_RECEIVED:
@@ -2603,7 +2603,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
       mhd_assert (0);
       break;
     case MHD_CONNECTION_FULL_REQ_RECEIVED:
-      connection->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
+      connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
       break;
     case MHD_CONNECTION_START_REPLY:
       mhd_assert (0);
@@ -2619,13 +2619,13 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
       connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
       break;
     case MHD_CONNECTION_NORMAL_BODY_UNREADY:
-      connection->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
+      connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
       break;
     case MHD_CONNECTION_CHUNKED_BODY_READY:
       connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
       break;
     case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
-      connection->event_loop_info = MHD_EVENT_LOOP_INFO_BLOCK;
+      connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
       break;
     case MHD_CONNECTION_CHUNKED_BODY_SENT:
       mhd_assert (0);

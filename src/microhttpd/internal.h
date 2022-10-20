@@ -224,14 +224,14 @@ enum MHD_ConnectionEventLoopInfo
   /**
    * We are waiting for the application to provide data.
    */
-  MHD_EVENT_LOOP_INFO_BLOCK = 1 << 2,
+  MHD_EVENT_LOOP_INFO_PROCESS = 1 << 2,
 
   /**
    * Some data is ready to be processed, but more data could
    * be read.
    */
   MHD_EVENT_LOOP_INFO_PROCESS_READ =
-    MHD_EVENT_LOOP_INFO_READ | MHD_EVENT_LOOP_INFO_BLOCK,
+    MHD_EVENT_LOOP_INFO_READ | MHD_EVENT_LOOP_INFO_PROCESS,
 
   /**
    * We are finished and are awaiting cleanup.

@@ -1011,7 +1011,7 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
                           fd_setsize);
 #endif /* MHD_POSIX_SOCKETS */
       break;
-    case MHD_EVENT_LOOP_INFO_BLOCK:
+    case MHD_EVENT_LOOP_INFO_PROCESS:
       if ( (NULL == except_fd_set) ||
            ! MHD_add_to_fd_set_ (pos->socket_fd,
                                  except_fd_set,
@@ -1256,7 +1256,7 @@ call_handlers (struct MHD_Connection *con,
   if ( (! con->daemon->data_already_pending) &&
        (0 == (con->daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
   {
-    if (0 != (MHD_EVENT_LOOP_INFO_BLOCK & con->event_loop_info))
+    if (0 != (MHD_EVENT_LOOP_INFO_PROCESS & con->event_loop_info))
       con->daemon->data_already_pending = true;
 #ifdef HTTPS_SUPPORT
     else if ( (con->tls_read_ready) &&
@@ -1987,7 +1987,7 @@ thread_main_handle_connection (void *data)
     }
 
     use_zero_timeout =
-      (0 != (MHD_EVENT_LOOP_INFO_BLOCK & con->event_loop_info)
+      (0 != (MHD_EVENT_LOOP_INFO_PROCESS & con->event_loop_info)
 #ifdef HTTPS_SUPPORT
        || ( (con->tls_read_ready) &&
             (0 != (MHD_EVENT_LOOP_INFO_READ & con->event_loop_info)) )
@@ -2042,7 +2042,7 @@ thread_main_handle_connection (void *data)
                                   FD_SETSIZE))
           err_state = true;
         break;
-      case MHD_EVENT_LOOP_INFO_BLOCK:
+      case MHD_EVENT_LOOP_INFO_PROCESS:
         if (! MHD_add_to_fd_set_ (con->socket_fd,
                                   &es,
                                   &maxsock,
@@ -2141,7 +2141,7 @@ thread_main_handle_connection (void *data)
       case MHD_EVENT_LOOP_INFO_WRITE:
         p[0].events |= POLLOUT | MHD_POLL_EVENTS_ERR_DISC;
         break;
-      case MHD_EVENT_LOOP_INFO_BLOCK:
+      case MHD_EVENT_LOOP_INFO_PROCESS:
         p[0].events |= MHD_POLL_EVENTS_ERR_DISC;
         break;
       case MHD_EVENT_LOOP_INFO_CLEANUP:
@@ -4759,7 +4759,7 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       case MHD_EVENT_LOOP_INFO_WRITE:
         p[poll_server + i].events |= POLLOUT | MHD_POLL_EVENTS_ERR_DISC;
         break;
-      case MHD_EVENT_LOOP_INFO_BLOCK:
+      case MHD_EVENT_LOOP_INFO_PROCESS:
         p[poll_server + i].events |=  MHD_POLL_EVENTS_ERR_DISC;
         break;
       case MHD_EVENT_LOOP_INFO_CLEANUP:
