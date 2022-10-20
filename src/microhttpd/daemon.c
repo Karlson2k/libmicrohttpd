@@ -2530,6 +2530,7 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
   connection->sk_spipe_suppress = sk_spipe_supprs;
   connection->daemon = daemon;
   connection->connection_timeout_ms = daemon->connection_timeout_ms;
+  connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
   if (0 != connection->connection_timeout_ms)
     connection->last_activity = MHD_monotonic_msec_counter ();
 

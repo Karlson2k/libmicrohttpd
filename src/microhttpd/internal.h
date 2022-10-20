@@ -214,22 +214,22 @@ enum MHD_ConnectionEventLoopInfo
   /**
    * We are waiting to be able to read.
    */
-  MHD_EVENT_LOOP_INFO_READ = 0,
+  MHD_EVENT_LOOP_INFO_READ = 1 << 0,
 
   /**
    * We are waiting to be able to write.
    */
-  MHD_EVENT_LOOP_INFO_WRITE = 1,
+  MHD_EVENT_LOOP_INFO_WRITE = 1 << 1,
 
   /**
    * We are waiting for the application to provide data.
    */
-  MHD_EVENT_LOOP_INFO_BLOCK = 2,
+  MHD_EVENT_LOOP_INFO_BLOCK = 1 << 2,
 
   /**
    * We are finished and are awaiting cleanup.
    */
-  MHD_EVENT_LOOP_INFO_CLEANUP = 3
+  MHD_EVENT_LOOP_INFO_CLEANUP = 1 << 3
 } _MHD_FIXED_ENUM;
 
 
