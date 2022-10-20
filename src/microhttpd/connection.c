@@ -2592,6 +2592,8 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
       if ( (connection->read_buffer_offset < connection->read_buffer_size) &&
            (! connection->discard_request) )
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+      else if (connection->rq.some_payload_processed)
+        connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS_READ;
       else
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
       break;
@@ -3448,6 +3450,8 @@ process_request_body (struct MHD_Connection *connection)
   bool instant_retry;
   char *buffer_head;
 
+  connection->rq.some_payload_processed = false;
+
   if (NULL != connection->rp.response)
   {
     /* TODO: discard all read buffer as early response
@@ -3673,19 +3677,27 @@ process_request_body (struct MHD_Connection *connection)
     }
     if (left_unprocessed > to_be_processed)
       MHD_PANIC (_ ("libmicrohttpd API violation.\n"));
+
+    if (left_unprocessed != to_be_processed)
+      /* Something was processed by the application. */
+      connection->rq.some_payload_processed = true;
     if (0 != left_unprocessed)
     {
       instant_retry = false; /* client did not process everything */
 #ifdef HAVE_MESSAGES
-      /* client did not process all upload data, complain if
-         the setup was incorrect, which may prevent us from
-         handling the rest of the request */
-      if ( (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
-           (! connection->suspended) )
-        MHD_DLOG (daemon,
-                  _ ("WARNING: incomplete upload processing and connection " \
-                     "not suspended may result in hung connection.\n"));
-#endif
+      if ((left_unprocessed == to_be_processed) &&
+          (! connection->suspended))
+      {
+        /* client did not process any upload data, complain if
+           the setup was incorrect, which may prevent us from
+           handling the rest of the request */
+        if (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
+          MHD_DLOG (daemon,
+                    _ ("WARNING: Access Handler Callback has not processed " \
+                       "any upload data and connection is not suspended. " \
+                       "This may result in hung connection.\n"));
+      }
+#endif /* HAVE_MESSAGES */
     }
     processed_size = to_be_processed - left_unprocessed;
     if (connection->rq.have_chunked_upload)
