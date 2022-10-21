@@ -765,17 +765,27 @@ need_100_continue (struct MHD_Connection *connection)
 {
   const char *expect;
 
-  return (MHD_IS_HTTP_VER_1_1_COMPAT (connection->rq.http_ver) &&
-          (MHD_NO !=
-           MHD_lookup_connection_value_n (connection,
-                                          MHD_HEADER_KIND,
-                                          MHD_HTTP_HEADER_EXPECT,
-                                          MHD_STATICSTR_LEN_ (
-                                            MHD_HTTP_HEADER_EXPECT),
-                                          &expect,
-                                          NULL)) &&
-          (MHD_str_equal_caseless_ (expect,
-                                    "100-continue")) );
+  if (! MHD_IS_HTTP_VER_1_1_COMPAT (connection->rq.http_ver))
+    return false;
+
+  if (0 == connection->rq.remaining_upload_size)
+    return false;
+
+  if (MHD_NO ==
+      MHD_lookup_connection_value_n (connection,
+                                     MHD_HEADER_KIND,
+                                     MHD_HTTP_HEADER_EXPECT,
+                                     MHD_STATICSTR_LEN_ ( \
+                                       MHD_HTTP_HEADER_EXPECT),
+                                     &expect,
+                                     NULL))
+    return false;
+
+  if (MHD_str_equal_caseless_ (expect,
+                               "100-continue"))
+    return true;
+
+  return false;
 }
 
 
