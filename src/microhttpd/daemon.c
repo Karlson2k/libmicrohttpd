@@ -5456,7 +5456,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
         (pos->epoll_state & (MHD_EPOLL_STATE_SUSPENDED
                              | MHD_EPOLL_STATE_IN_EREADY_EDLL)))
     {
-      if ( ((0 != (MHD_EVENT_LOOP_INFO_READ & pos->event_loop_info)) &&
+      if ( ((MHD_EVENT_LOOP_INFO_READ == pos->event_loop_info) &&
             (0 == (pos->epoll_state & MHD_EPOLL_STATE_READ_READY)) ) ||
            ((MHD_EVENT_LOOP_INFO_WRITE == pos->event_loop_info) &&
             (0 == (pos->epoll_state & MHD_EPOLL_STATE_WRITE_READY)) ) ||
