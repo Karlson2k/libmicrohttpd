@@ -5301,10 +5301,20 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 enum MHD_Result
 MHD_connection_epoll_update_ (struct MHD_Connection *connection)
 {
-  struct MHD_Daemon *daemon = connection->daemon;
+  struct MHD_Daemon *const daemon = connection->daemon;
 
-  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-       (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) &&
+  mhd_assert (0 != (daemon->options & MHD_USE_EPOLL));
+
+  if ((0 != (MHD_EVENT_LOOP_INFO_PROCESS & connection->event_loop_info)) &&
+      (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL)))
+  {
+    /* Make sure that connection waiting for processing will be processed */
+    EDLL_insert (daemon->eready_head,
+                 daemon->eready_tail,
+                 connection);
+  }
+
+  if ( (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) &&
        (0 == (connection->epoll_state & MHD_EPOLL_STATE_SUSPENDED)) &&
        ( ( (MHD_EVENT_LOOP_INFO_WRITE == connection->event_loop_info) &&
            (0 == (connection->epoll_state & MHD_EPOLL_STATE_WRITE_READY))) ||
