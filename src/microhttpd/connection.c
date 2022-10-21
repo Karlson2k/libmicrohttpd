@@ -2589,13 +2589,16 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
           continue;
         }
       }
-      if ( (connection->read_buffer_offset < connection->read_buffer_size) &&
-           (! connection->discard_request) )
+      if (connection->discard_request)
+        connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+      else if (connection->read_buffer_offset == connection->read_buffer_size)
+        connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+      else if (0 == connection->read_buffer_offset)
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
       else if (connection->rq.some_payload_processed)
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS_READ;
       else
-        connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+        connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
       break;
     case MHD_CONNECTION_BODY_RECEIVED:
     case MHD_CONNECTION_FOOTER_PART_RECEIVED:
