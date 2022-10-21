@@ -4935,8 +4935,12 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         continue;
       if (connection->suspended)
         continue;
+
       if ( (NULL == connection->rp.response) &&
-           (need_100_continue (connection)) )
+           (need_100_continue (connection)) &&
+           /* If the client is already sending the payload (body)
+              there is no need to send "100 Continue" */
+           (0 == connection->read_buffer_offset) )
       {
         connection->state = MHD_CONNECTION_CONTINUE_SENDING;
         break;
