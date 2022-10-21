@@ -649,12 +649,12 @@ enum MHD_CONNECTION_STATE
   /**
    * We have sent 100 CONTINUE (or do not need to).  Read the message body.
    */
-  MHD_CONNECTION_CONTINUE_SENT = MHD_CONNECTION_CONTINUE_SENDING + 1,
+  MHD_CONNECTION_BODY_RECEIVING = MHD_CONNECTION_CONTINUE_SENDING + 1,
 
   /**
    * We got the request body.  Wait for a line of the footer.
    */
-  MHD_CONNECTION_BODY_RECEIVED = MHD_CONNECTION_CONTINUE_SENT + 1,
+  MHD_CONNECTION_BODY_RECEIVED = MHD_CONNECTION_BODY_RECEIVING + 1,
 
   /**
    * We got part of a line of the footer.  Wait for the

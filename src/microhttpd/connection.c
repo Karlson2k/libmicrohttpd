@@ -2554,7 +2554,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
     case MHD_CONNECTION_CONTINUE_SENDING:
       connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
       break;
-    case MHD_CONNECTION_CONTINUE_SENT:
+    case MHD_CONNECTION_BODY_RECEIVING:
       if (connection->read_buffer_offset == connection->read_buffer_size)
       {
         const bool internal_poll = (0 != (connection->daemon->options
@@ -4173,7 +4173,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
   case MHD_CONNECTION_HEADERS_RECEIVED:
   case MHD_CONNECTION_HEADERS_PROCESSED:
   case MHD_CONNECTION_CONTINUE_SENDING:
-  case MHD_CONNECTION_CONTINUE_SENT:
+  case MHD_CONNECTION_BODY_RECEIVING:
   case MHD_CONNECTION_BODY_RECEIVED:
   case MHD_CONNECTION_FOOTER_PART_RECEIVED:
   case MHD_CONNECTION_FOOTERS_RECEIVED:
@@ -4297,7 +4297,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     connection->continue_message_write_offset += (size_t) ret;
     MHD_update_last_activity_ (connection);
     return;
-  case MHD_CONNECTION_CONTINUE_SENT:
+  case MHD_CONNECTION_BODY_RECEIVING:
   case MHD_CONNECTION_BODY_RECEIVED:
   case MHD_CONNECTION_FOOTER_PART_RECEIVED:
   case MHD_CONNECTION_FOOTERS_RECEIVED:
@@ -4941,7 +4941,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       }
       connection->state = (0 == connection->rq.remaining_upload_size)
                           ? MHD_CONNECTION_FULL_REQ_RECEIVED
-                          : MHD_CONNECTION_CONTINUE_SENT;
+                          : MHD_CONNECTION_BODY_RECEIVING;
       if (connection->suspended)
         break;
       continue;
@@ -4949,17 +4949,17 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       if (connection->continue_message_write_offset ==
           MHD_STATICSTR_LEN_ (HTTP_100_CONTINUE))
       {
-        connection->state = MHD_CONNECTION_CONTINUE_SENT;
+        connection->state = MHD_CONNECTION_BODY_RECEIVING;
         continue;
       }
       break;
-    case MHD_CONNECTION_CONTINUE_SENT:
+    case MHD_CONNECTION_BODY_RECEIVING:
       if (0 != connection->read_buffer_offset)
       {
         process_request_body (connection);           /* loop call */
         if (connection->discard_request)
         {
-          mhd_assert (MHD_CONNECTION_CONTINUE_SENT != connection->state);
+          mhd_assert (MHD_CONNECTION_BODY_RECEIVING != connection->state);
           continue;
         }
       }

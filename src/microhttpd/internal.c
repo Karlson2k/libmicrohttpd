@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2015-2021 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -22,6 +23,7 @@
  * @brief  internal shared structures
  * @author Daniel Pittman
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "internal.h"
@@ -51,8 +53,8 @@ MHD_state_to_string (enum MHD_CONNECTION_STATE state)
     return "headers processed";
   case MHD_CONNECTION_CONTINUE_SENDING:
     return "continue sending";
-  case MHD_CONNECTION_CONTINUE_SENT:
-    return "continue sent";
+  case MHD_CONNECTION_BODY_RECEIVING:
+    return "body receiving";
   case MHD_CONNECTION_BODY_RECEIVED:
     return "body received";
   case MHD_CONNECTION_FOOTER_PART_RECEIVED:
