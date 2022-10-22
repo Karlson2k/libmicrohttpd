@@ -434,6 +434,54 @@ setCURL_rq_path (CURL *c, int uri_exist)
 }
 
 
+static int
+libcurl_debug_cb (CURL *handle,
+                  curl_infotype type,
+                  char *data,
+                  size_t size,
+                  void *userptr)
+{
+  static const char excess_mark[] = "Excess found";
+  static const size_t excess_mark_len = MHD_STATICSTR_LEN_ (excess_mark);
+
+  (void) handle;
+  (void) userptr;
+
+#ifdef _DEBUG
+  switch (type)
+  {
+  case CURLINFO_TEXT:
+    fprintf (stderr, "* %.*s", (int) size, data);
+    break;
+  case CURLINFO_HEADER_IN:
+    fprintf (stderr, "< %.*s", (int) size, data);
+    break;
+  case CURLINFO_HEADER_OUT:
+    fprintf (stderr, "> %.*s", (int) size, data);
+    break;
+  case CURLINFO_DATA_IN:
+#if 0
+    fprintf (stderr, "<| %.*s\n", (int) size, data);
+#endif
+    break;
+  case CURLINFO_DATA_OUT:
+  case CURLINFO_SSL_DATA_IN:
+  case CURLINFO_SSL_DATA_OUT:
+  case CURLINFO_END:
+  default:
+    break;
+  }
+#endif /* _DEBUG */
+  if (CURLINFO_TEXT == type)
+  {
+    if ((size >= excess_mark_len) &&
+        (0 == memcmp (data, excess_mark, excess_mark_len)))
+      mhdErrorExitDesc ("Extra data has been detected in MHD reply");
+  }
+  return 0;
+}
+
+
 static CURL *
 setupCURL (void *cbc, uint16_t port,
            struct headers_check_result *hdr_chk_result)
@@ -466,6 +514,8 @@ setupCURL (void *cbc, uint16_t port,
 #ifdef _DEBUG
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_VERBOSE, 1L)) ||
 #endif /* _DEBUG */
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_DEBUGFUNCTION,
+                                     &libcurl_debug_cb)) ||
 #if CURL_AT_LEAST_VERSION (7, 19, 4)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_PROTOCOLS, CURLPROTO_HTTP)) ||
 #endif /* CURL_AT_LEAST_VERSION (7, 19, 4) */
