@@ -612,6 +612,15 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c, CURLM **multi_reuse)
       mhdErrorExitDesc ("MHD_get_fdset() failed");
     tv.tv_sec = 0;
     tv.tv_usec = 200000;
+    if (0 == MHD_get_timeout64s (d))
+      tv.tv_usec = 0;
+    else
+    {
+      long curl_to = -1;
+      curl_multi_timeout (multi, &curl_to);
+      if (0 == curl_to)
+        tv.tv_usec = 0;
+    }
 #ifdef MHD_POSIX_SOCKETS
     if (maxMhdSk > maxCurlSk)
       maxCurlSk = maxMhdSk;
@@ -625,7 +634,7 @@ performQueryExternal (struct MHD_Daemon *d, CURL *c, CURLM **multi_reuse)
       if ((WSAEINVAL != WSAGetLastError ()) ||
           (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
         externalErrorExitDesc ("Unexpected select() error");
-      Sleep (200);
+      Sleep ((unsigned long) tv.tv_usec / 1000);
 #endif
     }
     if (MHD_YES != MHD_run_from_select (d, &rs, &ws, &es))
