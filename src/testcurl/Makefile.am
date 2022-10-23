@@ -114,6 +114,8 @@ check_PROGRAMS = \
   test_put11 \
   test_large_put11 \
   test_large_put_inc11 \
+  test_put_broken_len10 \
+  test_put_broken_len \
   test_get_chunked \
   test_get_chunked_close \
   test_get_chunked_string \
@@ -607,3 +609,8 @@ test_tricky_url_SOURCES = \
 
 test_tricky_header2_SOURCES = \
   test_tricky.c mhd_has_in_name.h mhd_has_param.h
+
+test_put_broken_len_SOURCES = \
+  test_put_broken_len.c mhd_has_in_name.h mhd_has_param.h
+
+test_put_broken_len10_SOURCES = $(test_put_broken_len_SOURCES)
