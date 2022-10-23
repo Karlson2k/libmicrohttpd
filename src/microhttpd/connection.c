@@ -4842,6 +4842,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     case MHD_CONNECTION_REQ_LINE_RECEIVING:
       line = get_next_header_line (connection,
                                    &line_len);
+      if (MHD_CONNECTION_REQ_LINE_RECEIVING < connection->state)
+        continue;
       if (NULL != line)
       {
         /* Check for empty string, as we might want
@@ -4876,10 +4878,10 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     case MHD_CONNECTION_URL_RECEIVED:
       line = get_next_header_line (connection,
                                    NULL);
+      if (MHD_CONNECTION_URL_RECEIVED != connection->state)
+        continue;
       if (NULL == line)
       {
-        if (MHD_CONNECTION_URL_RECEIVED != connection->state)
-          continue;
         if (connection->read_closed)
         {
           CONNECTION_CLOSE_ERROR (connection,
@@ -4908,6 +4910,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     case MHD_CONNECTION_HEADER_PART_RECEIVED:
       line = get_next_header_line (connection,
                                    NULL);
+      if (MHD_CONNECTION_HEADER_PART_RECEIVED != connection->state)
+        continue;
       if (NULL == line)
       {
         if (connection->state != MHD_CONNECTION_HEADER_PART_RECEIVED)
@@ -4935,7 +4939,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       continue;
     case MHD_CONNECTION_HEADERS_RECEIVED:
       parse_connection_headers (connection);
-      if (MHD_CONNECTION_CLOSED == connection->state)
+      if (MHD_CONNECTION_HEADERS_RECEIVED != connection->state)
         continue;
       connection->state = MHD_CONNECTION_HEADERS_PROCESSED;
       if (connection->suspended)
@@ -4943,7 +4947,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       continue;
     case MHD_CONNECTION_HEADERS_PROCESSED:
       call_connection_handler (connection);     /* first call */
-      if (MHD_CONNECTION_CLOSED == connection->state)
+      if (MHD_CONNECTION_HEADERS_PROCESSED != connection->state)
         continue;
       if (connection->suspended)
         continue;
@@ -4983,11 +4987,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       if (0 != connection->read_buffer_offset)
       {
         process_request_body (connection);           /* loop call */
-        if (connection->discard_request)
-        {
-          mhd_assert (MHD_CONNECTION_BODY_RECEIVING != connection->state);
+        if (MHD_CONNECTION_BODY_RECEIVING != connection->state)
           continue;
-        }
       }
       if ( (0 == connection->rq.remaining_upload_size) ||
            ( (MHD_SIZE_UNKNOWN == connection->rq.remaining_upload_size) &&
@@ -5007,10 +5008,10 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     case MHD_CONNECTION_BODY_RECEIVED:
       line = get_next_header_line (connection,
                                    NULL);
+      if (connection->state != MHD_CONNECTION_BODY_RECEIVED)
+        continue;
       if (NULL == line)
       {
-        if (connection->state != MHD_CONNECTION_BODY_RECEIVED)
-          continue;
         if (connection->read_closed)
         {
           CONNECTION_CLOSE_ERROR (connection,
@@ -5041,10 +5042,10 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     case MHD_CONNECTION_FOOTER_PART_RECEIVED:
       line = get_next_header_line (connection,
                                    NULL);
+      if (connection->state != MHD_CONNECTION_FOOTER_PART_RECEIVED)
+        continue;
       if (NULL == line)
       {
-        if (connection->state != MHD_CONNECTION_FOOTER_PART_RECEIVED)
-          continue;
         if (connection->read_closed)
         {
           CONNECTION_CLOSE_ERROR (connection,
@@ -5073,7 +5074,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       continue;
     case MHD_CONNECTION_FULL_REQ_RECEIVED:
       call_connection_handler (connection);     /* "final" call */
-      if (connection->state == MHD_CONNECTION_CLOSED)
+      if (connection->state != MHD_CONNECTION_FULL_REQ_RECEIVED)
         continue;
       if (NULL == connection->rp.response)
         break;                  /* try again next time */
