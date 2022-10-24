@@ -74,13 +74,13 @@ enum RN_State
   RN_OptN = 1,
 
   /**
-   * Expect LFCR (and only LFCR).  As always, we also
+   * Expect CRLF (and only CRLF).  As always, we also
    * expect only LF or only CR.
    */
   RN_Full = 2,
 
   /**
-   * Expect either LFCR or '--'LFCR.  If '--'LFCR, transition into dash-state
+   * Expect either CRLF or '--'CRLF.  If '--'CRLF, transition into dash-state
    * for the main state machine
    */
   RN_Dash = 3,
@@ -222,9 +222,9 @@ struct MHD_PostProcessor
   enum PP_State state;
 
   /**
-   * Side-state-machine: skip LRCR (or just LF).
+   * Side-state-machine: skip CRLF (or just LF).
    * Set to 0 if we are not in skip mode.  Set to 2
-   * if a LFCR is expected, set to 1 if a CR should
+   * if a CRLF is expected, set to 1 if a CR should
    * be skipped if it is the next character.
    */
   enum RN_State skip_rn;
