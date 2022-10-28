@@ -1789,6 +1789,7 @@ AS_VAR_IF([use_heavy_tests], ["yes"],
   ]
 )
 AM_CONDITIONAL([HEAVY_TESTS],[test "x$use_heavy_tests" = "xyes"])
+AM_CONDITIONAL([VHEAVY_TESTS],[test "x$use_vheavy_tests" = "xyes"])
 AM_CONDITIONAL([TESTS_STRESS_OS],[false])
 
 AC_ARG_ENABLE([[poll]],
@@ -4844,6 +4845,7 @@ int main(void)
 
 # fuzzing tests
 run_zzuf_tests="no"
+zzuf_socat_mandatory="no"
 AS_VAR_IF([use_heavy_tests],["yes"],
   [
     AS_VAR_IF([enable_curl],["yes"],
@@ -4855,19 +4857,32 @@ AS_VAR_IF([use_heavy_tests],["yes"],
             run_zzuf_tests_MSG="no, zzuf tool not found"
           ],
           [
+	        AC_PATH_PROG([SOCAT],[socat],[no])
             AS_IF([test "x${ac_cv_func_accept4}" = "xyes" && test "x${enable_asserts}" = "xno"],
               [
-                run_zzuf_tests="no"
-                run_zzuf_tests_MSG="no, fuzzing tests require asserts enabled on this platform"
+                zzuf_socat_mandatory="yes"
+		        AS_VAR_IF([SOCAT],["no"],
+                  [run_zzuf_tests_MSG="no, socat not found, but required for fuzzing tests on this platform without asserts enabled"],
+                  [
+		            run_zzuf_tests="yes"
+		            run_zzuf_tests_MSG="yes, with zzuf and socat tools"
+                  ]
+                )
               ],
               [test -n "${enabled_sanitizers}"],
               [
-                run_zzuf_tests="no"
-                run_zzuf_tests_MSG="no, fuzzing tests cannot be used with sanitizers"
+                zzuf_socat_mandatory="yes"
+		        AS_VAR_IF([SOCAT],["no"],
+                  [run_zzuf_tests_MSG="no, socat not found, but required for fuzzing tests when sanitizers enabled"],
+                  [
+		            run_zzuf_tests="yes"
+		            run_zzuf_tests_MSG="yes, with zzuf and socat tools"
+                  ]
+                )
               ],
               [
                 run_zzuf_tests="yes"
-                run_zzuf_tests_MSG="yes"
+                run_zzuf_tests_MSG="yes, with zzuf tool"
               ]
             )
           ]
@@ -4885,6 +4900,7 @@ AS_VAR_IF([use_heavy_tests],["yes"],
   ]
 )
 AM_CONDITIONAL([RUN_ZZUF_TESTS],[test "x$run_zzuf_tests" = "xyes"])
+AM_CONDITIONAL([FORCE_USE_ZZUF_SOCAT],[test "x$zzuf_socat_mandatory" = "xyes"])
 
 # Final flags that may interfere with autoconf detections
 AS_CASE([${enable_build_type}],[debug|debugger],
@@ -4959,6 +4975,7 @@ AC_CONFIG_COMMANDS([po-directories],
 AC_DEFINE_DIR([MHD_PLUGIN_INSTALL_PREFIX], [libdir/libmicrohttpd], [tls plugins])
 
 AC_SUBST([ZZUF])
+AC_SUBST([SOCAT])
 
 # should experimental code be compiled (code that may not yet compile)?
 AC_MSG_CHECKING(whether to compile experimental code)

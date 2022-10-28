@@ -10,6 +10,15 @@ ZZUF_SEED = 0
 # Additional flags for zzuf
 ZZUF_FLAGS = 
 
+# Additional flags for socat (if socat is used)
+SOCAT_FLAGS = 
+
+if FORCE_USE_ZZUF_SOCAT
+TEST_RUNNER_SCRIPT = zzuf_socat_test_runner.sh
+else
+TEST_RUNNER_SCRIPT = zzuf_test_runner.sh
+endif
+
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/microhttpd \
@@ -23,7 +32,9 @@ AM_LDFLAGS = $(LDFLAGS_ac)
 AM_TESTS_ENVIRONMENT = $(TESTS_ENVIRONMENT_ac) \
   ZZUF="$(ZZUF)" ; export ZZUF ; \
   ZZUF_SEED="$(ZZUF_SEED)" ; export ZZUF_SEED ; \
-  ZZUF_FLAGS="$(ZZUF_FLAGS)" ; export ZZUF_FLAGS ;
+  ZZUF_FLAGS="$(ZZUF_FLAGS)" ; export ZZUF_FLAGS ; \
+  SOCAT="$(SOCAT)" ; export SOCAT ; \
+  SOCAT_FLAGS="$(SOCAT_FLAGS)" ; export SOCAT_FLAGS ;
 
 if USE_COVERAGE
   AM_CFLAGS += -fprofile-arcs -ftest-coverage
@@ -70,9 +81,21 @@ check_PROGRAMS = \
 
 TESTS = $(check_PROGRAMS)
 
-dist_check_SCRIPTS = zzuf_test_runner.sh
+dist_check_SCRIPTS = zzuf_test_runner.sh zzuf_socat_test_runner.sh
 
-LOG_COMPILER = @SHELL@ $(srcdir)/zzuf_test_runner.sh
+LOG_COMPILER = @SHELL@ "$(srcdir)/$(TEST_RUNNER_SCRIPT)"
+
+if VHEAVY_TESTS
+check_SCRIPTS = warn_vheavy_use
+
+.PHONY: warn_vheavy_use
+endif
+
+warn_vheavy_use:
+	@echo "NOTICE" ; \
+	echo "NOTICE: Full heavy tests are enabled. Each test may take up to several minutes to complete." ; \
+	echo "NOTICE"
+	
 
 tests_common_sources = mhd_debug_funcs.h mhd_debug_funcs.c 
 

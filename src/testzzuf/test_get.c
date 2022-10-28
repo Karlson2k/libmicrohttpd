@@ -96,8 +96,14 @@ static int use_post_form;
 static int use_long_header;
 static int use_long_uri;
 static int use_close;
+static int run_with_socat;
 
 #define TEST_BASE_URI "http:/" "/127.0.0.1/test_uri"
+#define TEST_BASE_URI_SOCAT "http:/" "/127.0.0.121/test_uri"
+
+#define SOCAT_PORT 10121
+
+#define TEST_BASE_PORT 4010
 
 #define EMPTY_PAGE "Empty page."
 #define EMPTY_PAGE_ALT "Alternative empty page."
@@ -959,19 +965,24 @@ setupCURL (struct CBC *cbc, uint16_t port
   CURLcode e;
   char *buf;
   const char *uri_to_use;
+  const char *base_uri;
 
 #ifndef TEST_USE_STATIC_POST_DATA
   *mime = NULL;
 #endif /* ! TEST_USE_STATIC_POST_DATA */
 
+  base_uri = run_with_socat ? TEST_BASE_URI_SOCAT : TEST_BASE_URI;
   if (! use_long_uri)
   {
-    uri_to_use = TEST_BASE_URI;
+    uri_to_use = base_uri;
     buf = NULL;
   }
   else
   {
     size_t pos;
+    size_t base_uri_len;
+
+    base_uri_len = strlen (base_uri);
     buf = malloc (TEST_STRING_VLONG_LEN + 1);
     if (NULL == buf)
     {
@@ -979,8 +990,8 @@ setupCURL (struct CBC *cbc, uint16_t port
                "at line %d.\n", (int) __LINE__);
       return NULL;
     }
-    memcpy (buf, TEST_BASE_URI, MHD_STATICSTR_LEN_ (TEST_BASE_URI));
-    for (pos = MHD_STATICSTR_LEN_ (TEST_BASE_URI);
+    memcpy (buf, base_uri, base_uri_len);
+    for (pos = base_uri_len;
          pos < TEST_STRING_VLONG_LEN;
          ++pos)
     {
@@ -993,6 +1004,8 @@ setupCURL (struct CBC *cbc, uint16_t port
     buf[TEST_STRING_VLONG_LEN] = 0;
     uri_to_use = buf;
   }
+  if (run_with_socat)
+    port = SOCAT_PORT;
 
   c = curl_easy_init ();
   if (NULL == c)
@@ -1189,8 +1202,10 @@ start_daemon_for_test (unsigned int daemon_flags, uint16_t *pport,
              "at line %d.\n", (int) __LINE__);
     return NULL;
   }
+
   /* Do not use accept4() as only accept() is intercepted by zzuf */
-  MHD_avoid_accept4_ (d);
+  if (! run_with_socat)
+    MHD_avoid_accept4_ (d);
 
   if (0 == *pport)
   {
@@ -1516,44 +1531,49 @@ run_all_checks (void)
   unsigned int testRes;
   unsigned int ret = 0;
 
-  if (MHD_are_sanitizers_enabled_ ())
+  if (! run_with_socat)
   {
-    fprintf (stderr, "The test does not work with sanitizers. "
-             "At line %d.\n", (int) __LINE__);
-    return 77;
+    if (MHD_are_sanitizers_enabled_ ())
+    {
+      fprintf (stderr, "Direct run with zzuf does not work with sanitizers. "
+               "At line %d.\n", (int) __LINE__);
+      return 77;
+    }
+    if (! MHD_is_avoid_accept4_possible_ ())
+    {
+      fprintf (stderr,
+               "Non-debug build of MHD on this platform use accept4() function. "
+               "Direct run with zzuf is not possible. "
+               "At line %d.\n", (int) __LINE__);
+      return 77;
+    }
+    if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+      port = 0;     /* Use system automatic assignment */
+    else
+    {
+      port = TEST_BASE_PORT;  /* Use predefined port, may break parallel testing of another MHD build */
+      if (oneone)
+        port += 100;
+      if (use_long_uri)
+        port += 30;
+      else if (use_long_header)
+        port += 35;
+      else if (use_get_chunked)
+        port += 0;
+      else if (use_get)
+        port += 5;
+      else if (use_post_form)
+        port += 10;
+      else if (use_post)
+        port += 15;
+      else if (use_put_large)
+        port += 20;
+      else if (use_put_chunked)
+        port += 25;
+    }
   }
-  if (! MHD_is_avoid_accept4_possible_ ())
-  {
-    fprintf (stderr,
-             "Non-debug build of MHD on this platform use accept4() function. "
-             "Test with zzuf is not possible. "
-             "At line %d.\n", (int) __LINE__);
-    return 77;
-  }
-  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-    port = 0;     /* Use system automatic assignment */
   else
-  {
-    port = 4010;  /* Use predefined port, may break parallel testing of another MHD build */
-    if (oneone)
-      port += 100;
-    if (use_long_uri)
-      port += 30;
-    else if (use_long_header)
-      port += 35;
-    else if (use_get_chunked)
-      port += 0;
-    else if (use_get)
-      port += 5;
-    else if (use_post_form)
-      port += 10;
-    else if (use_post)
-      port += 15;
-    else if (use_put_large)
-      port += 20;
-    else if (use_put_chunked)
-      port += 25;
-  }
+    port = TEST_BASE_PORT;  /* Use predefined port, may break parallel testing of another MHD build */
 
   if (! dry_run && (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_THREADS)))
   {
@@ -1600,6 +1620,7 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int res;
+  int use_magic_exit_codes;
 
   oneone = ! has_in_name (argv[0], "10");
   use_get = has_in_name (argv[0], "_get");
@@ -1613,6 +1634,7 @@ main (int argc, char *const *argv)
   use_long_uri = has_in_name (argv[0], "_long_uri");
   use_close = has_in_name (argv[0], "_close");
 
+  run_with_socat = has_param (argc, argv, "--with-socat");
   dry_run = has_param (argc, argv, "--dry-run") ||
             has_param (argc, argv, "-n");
 
@@ -1623,17 +1645,18 @@ main (int argc, char *const *argv)
              "for the test type.\n", argv[0] ? argv[0] : "(NULL)");
     return 99;
   }
+  use_magic_exit_codes = run_with_socat || dry_run;
 
   /* zzuf cannot bypass exit values.
      Unless 'dry run' is used, do not return errors for external error
      conditions (like out-of-memory) as they will be reported as test failures. */
   if (! test_global_init ())
-    return dry_run ? 99 : 0;
+    return use_magic_exit_codes ? 99 : 0;
   res = run_all_checks ();
   test_global_deinit ();
   if (99 == res)
-    return dry_run ? 99 : 0;
+    return use_magic_exit_codes ? 99 : 0;
   if (77 == res)
-    return dry_run ? 77 : 0;
+    return use_magic_exit_codes ? 77 : 0;
   return (0 == res) ? 0 : 1;       /* 0 == pass */
 }
