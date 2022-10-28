@@ -3052,47 +3052,6 @@ AS_IF([[test "x$enable_postprocessor" != "xno"]],
 AM_CONDITIONAL([HAVE_POSTPROCESSOR], [test "x$enable_postprocessor" != "xno"])
 AC_MSG_RESULT([[$enable_postprocessor]])
 
-
-# optional: have zzuf, socat?
-run_zzuf_tests="no"
-AS_VAR_IF([use_heavy_tests],["yes"],
-  [
-    AS_VAR_IF([enable_curl],["yes"],
-      [
-        AC_CHECK_PROG([have_zzuf],[zzuf],[yes],[no])
-        AS_VAR_IF([have_zzuf],["yes"],
-          [
-            AC_CHECK_PROG([have_socat],[socat],[yes],[no])
-            AS_VAR_IF([have_socat],["yes"],
-              [
-                run_zzuf_tests="yes"
-                run_zzuf_tests_MSG="yes"
-              ],
-              [
-                run_zzuf_tests="no"
-                run_zzuf_tests_MSG="no, socat tool not found"
-              ]
-            )
-          ],
-          [
-            run_zzuf_tests="no"
-            run_zzuf_tests_MSG="no, zzuf tool not found"
-          ]
-        )
-      ],
-      [
-        run_zzuf_tests="no"
-        run_zzuf_tests_MSG="no, tests with libcurl are not enabled"
-      ]
-    )
-  ],
-  [
-    run_zzuf_tests="no"
-    run_zzuf_tests_MSG="no, heavy tests are not enabled"
-  ]
-)
-AM_CONDITIONAL([RUN_ZZUF_TESTS],[test "x$run_zzuf_tests" = "xyes"])
-
 have_gnutls=no
 have_gnutls_sni=no
 have_gcrypt=no
@@ -4883,6 +4842,50 @@ int main(void)
  ]
 )
 
+# fuzzing tests
+run_zzuf_tests="no"
+AS_VAR_IF([use_heavy_tests],["yes"],
+  [
+    AS_VAR_IF([enable_curl],["yes"],
+      [
+        AC_PATH_PROG([ZZUF],[zzuf],[no])
+        AS_VAR_IF([ZZUF],["no"],
+          [
+            run_zzuf_tests="no"
+            run_zzuf_tests_MSG="no, zzuf tool not found"
+          ],
+          [
+            AS_IF([test "x${ac_cv_func_accept4}" = "xyes" && test "x${enable_asserts}" = "xno"],
+              [
+                run_zzuf_tests="no"
+                run_zzuf_tests_MSG="no, fuzzing tests require asserts enabled on this platform"
+              ],
+              [test -n "${enabled_sanitizers}"],
+              [
+                run_zzuf_tests="no"
+                run_zzuf_tests_MSG="no, fuzzing tests cannot be used with sanitizers"
+              ],
+              [
+                run_zzuf_tests="yes"
+                run_zzuf_tests_MSG="yes"
+              ]
+            )
+          ]
+        )
+      ],
+      [
+        run_zzuf_tests="no"
+        run_zzuf_tests_MSG="no, tests with libcurl are not enabled"
+      ]
+    )
+  ],
+  [
+    run_zzuf_tests="no"
+    run_zzuf_tests_MSG="no, heavy tests are not enabled"
+  ]
+)
+AM_CONDITIONAL([RUN_ZZUF_TESTS],[test "x$run_zzuf_tests" = "xyes"])
+
 # Final flags that may interfere with autoconf detections
 AS_CASE([${enable_build_type}],[debug|debugger],
   [ # Debug build or build for walking with debugger
@@ -4955,6 +4958,7 @@ AC_CONFIG_COMMANDS([po-directories],
 # not contain the actual installation.
 AC_DEFINE_DIR([MHD_PLUGIN_INSTALL_PREFIX], [libdir/libmicrohttpd], [tls plugins])
 
+AC_SUBST([ZZUF])
 
 # should experimental code be compiled (code that may not yet compile)?
 AC_MSG_CHECKING(whether to compile experimental code)

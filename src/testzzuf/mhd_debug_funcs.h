@@ -44,4 +44,14 @@ MHD_is_avoid_accept4_possible_ (void);
 void
 MHD_avoid_accept4_ (struct MHD_Daemon *daemon);
 
+/**
+ * Checks whether any know sanitizer is enabled for this build.
+ * zzuf does not work together with sanitizers as both are intercepting
+ * standard library calls.
+ * @return non-zero if any sanitizer is enabled,
+ *         zero otherwise
+ */
+int
+MHD_are_sanitizers_enabled_ (void);
+
 #endif /* MHD_DEBUG_FUNCS_H */

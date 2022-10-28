@@ -1,5 +1,14 @@
 # This Makefile.am is in the public domain
+
 SUBDIRS  = .
+
+# ZZUF_SEED can be redefined to use other initial seeds
+# for extended testing. E.g.,
+#  make ZZUF_SEED=1234 check
+ZZUF_SEED = 0
+
+# Additional flags for zzuf
+ZZUF_FLAGS = 
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
@@ -7,11 +16,14 @@ AM_CPPFLAGS = \
   -DMHD_CPU_COUNT=$(CPU_COUNT) \
   $(CPPFLAGS_ac) $(LIBCURL_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_ac) @LIBGCRYPT_CFLAGS@
+AM_CFLAGS = $(CFLAGS_ac)
 
 AM_LDFLAGS = $(LDFLAGS_ac)
 
-AM_TESTS_ENVIRONMENT = $(TESTS_ENVIRONMENT_ac)
+AM_TESTS_ENVIRONMENT = $(TESTS_ENVIRONMENT_ac) \
+  ZZUF="$(ZZUF)" ; export ZZUF ; \
+  ZZUF_SEED="$(ZZUF_SEED)" ; export ZZUF_SEED ; \
+  ZZUF_FLAGS="$(ZZUF_FLAGS)" ; export ZZUF_FLAGS ;
 
 if USE_COVERAGE
   AM_CFLAGS += -fprofile-arcs -ftest-coverage
@@ -25,11 +37,6 @@ $(top_builddir)/src/microhttpd/libmicrohttpd.la: $(top_builddir)/src/microhttpd/
 	@echo ' cd $(top_builddir)/src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd.la'; \
 	$(am__cd) $(top_builddir)/src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd.la
 
-EXTRA_DIST = README socat.c
-
-THREAD_ONLY_TESTS = \
-  test_long_header
-
 check_PROGRAMS = \
   test_get \
   test_get_chunked \
@@ -38,64 +45,86 @@ check_PROGRAMS = \
   test_put \
   test_put_chunked \
   test_put_large \
-  test_get11 \
-  test_post11 \
-  test_post_form11 \
-  test_put11 \
-  test_put_large11
+  test_get_long_uri \
+  test_get_long_header \
+  test_get_close \
+  test_get_chunked_close \
+  test_post_close \
+  test_post_form_close \
+  test_put_close \
+  test_put_chunked_close \
+  test_put_large_close \
+  test_get_long_uri_close \
+  test_get_long_header_close \
+  test_get10 \
+  test_get_chunked10 \
+  test_post10 \
+  test_post_form10 \
+  test_put10 \
+  test_put_large10 \
+  test_get_long_uri10 \
+  test_get_long_header10
 
 .NOTPARALLEL:
 
 
-if USE_POSIX_THREADS
-check_PROGRAMS += \
-  $(THREAD_ONLY_TESTS)
-endif
-if USE_W32_THREADS
-check_PROGRAMS += \
-  $(THREAD_ONLY_TESTS)
-endif
-
-
 TESTS = $(check_PROGRAMS)
 
+dist_check_SCRIPTS = zzuf_test_runner.sh
+
+LOG_COMPILER = @SHELL@ $(srcdir)/zzuf_test_runner.sh
+
+tests_common_sources = mhd_debug_funcs.h mhd_debug_funcs.c 
+
 test_get_SOURCES = \
-  test_get.c
+  test_get.c $(tests_common_sources)
 
-test_get_chunked_SOURCES = \
-  test_get_chunked.c
+test_get_chunked_SOURCES = $(test_get_SOURCES)
 
-test_post_SOURCES = \
-  test_post.c
+test_post_SOURCES = $(test_get_SOURCES)
 
-test_post_form_SOURCES = \
-  test_post_form.c
+test_post_form_SOURCES = $(test_get_SOURCES)
 
-test_put_SOURCES = \
-  test_put.c
+test_put_SOURCES = $(test_get_SOURCES)
 
-test_put_chunked_SOURCES = \
-  test_put_chunked.c
+test_put_chunked_SOURCES = $(test_get_SOURCES)
 
-test_put_large_SOURCES = \
-  test_put_large.c
+test_put_large_SOURCES = $(test_get_SOURCES)
 
+test_get_long_uri_SOURCES = $(test_get_SOURCES)
 
+test_get_long_header_SOURCES = $(test_get_SOURCES)
 
-test_get11_SOURCES = \
-  test_get.c
+test_get_close_SOURCES = $(test_get_SOURCES)
 
-test_post11_SOURCES = \
-  test_post.c
+test_get_chunked_close_SOURCES = $(test_get_chunked_SOURCES)
 
-test_post_form11_SOURCES = \
-  test_post_form.c
+test_post_close_SOURCES = $(test_post_SOURCES)
 
-test_put11_SOURCES = \
-  test_put.c
+test_post_form_close_SOURCES = $(test_post_form_SOURCES)
 
-test_put_large11_SOURCES = \
-  test_put_large.c
+test_put_close_SOURCES = $(test_put_SOURCES)
 
-test_long_header_SOURCES = \
-  test_long_header.c
+test_put_chunked_close_SOURCES = $(test_put_chunked_SOURCES)
+
+test_put_large_close_SOURCES = $(test_put_large_SOURCES)
+
+test_get_long_uri_close_SOURCES = $(test_get_long_uri_SOURCES)
+
+test_get_long_header_close_SOURCES = $(test_get_long_header_SOURCES)
+
+test_get10_SOURCES = $(test_get_SOURCES)
+
+test_get_chunked10_SOURCES = $(test_get_chunked_SOURCES)
+
+test_post10_SOURCES = $(test_post_SOURCES)
+
+test_post_form10_SOURCES = $(test_post_form_SOURCES)
+
+test_put10_SOURCES = $(test_put_SOURCES)
+
+test_put_large10_SOURCES = $(test_put_large_SOURCES)
+
+test_get_long_uri10_SOURCES = $(test_get_long_uri_SOURCES)
+
+test_get_long_header10_SOURCES = $(test_get_long_header_SOURCES)

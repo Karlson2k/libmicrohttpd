@@ -61,3 +61,48 @@ MHD_avoid_accept4_ (struct MHD_Daemon *daemon)
 #endif /* ! _DEBUG */
 #endif /* USE_ACCEPT4 */
 }
+
+#ifdef MHD_ASAN_ACTIVE
+#define MHD_ASAN_ENABLED_ 1
+#else  /* ! MHD_ASAN_ACTIVE */
+#ifdef __SANITIZE_ADDRESS__
+#define MHD_ASAN_ENABLED_ 1
+#else  /* ! __SANITIZE_ADDRESS__ */
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define MHD_ASAN_ENABLED_ 1
+#endif /* __has_feature(address_sanitizer) */
+#endif /* __has_feature */
+#endif /* ! __SANITIZE_ADDRESS__ */
+#endif /* ! MHD_ASAN_ACTIVE */
+/**
+ * Checks whether any know sanitizer is enabled for this build.
+ * zzuf does not work together with sanitizers as both are intercepting
+ * standard library calls.
+ * @return non-zero if any sanitizer is enabled,
+ *         zero otherwise
+ */
+int
+MHD_are_sanitizers_enabled_ (void)
+{
+  int ret = 0;
+#ifdef MHD_ASAN_ENABLED_
+  ++ret;
+#endif /* ! MHD_ASAN_ENABLED_ */
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer)
+  ++ret;
+#endif
+#if __has_feature(memory_sanitizer)
+  ++ret;
+#endif
+#if __has_feature(dataflow_sanitizer)
+  ++ret;
+#endif
+#else  /* ! defined(__has_feature) */
+#ifdef __SANITIZE_THREAD__
+  ++ret;
+#endif
+#endif /* ! defined(__has_feature) */
+  return ret;
+}
