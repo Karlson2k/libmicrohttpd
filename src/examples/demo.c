@@ -797,6 +797,27 @@ generate_page (void *cls,
     else
 #endif /* MHD_HAVE_LIBMAGIC */
     mime = NULL;
+    {
+      /* Set mime-type by file-extension in some cases */
+      const char *ldot = strrchr (&url[1], '.');
+
+      if (NULL != ldot)
+      {
+        if (0 == strcasecmp (ldot,
+                             ".html"))
+          mime = "text/html";
+        if (0 == strcasecmp (ldot,
+                             ".css"))
+          mime = "text/css";
+        if (0 == strcasecmp (ldot,
+                             ".css3"))
+          mime = "text/css";
+        if (0 == strcasecmp (ldot,
+                             ".js"))
+          mime = "application/javascript";
+      }
+
+    }
 
     if (NULL == (response = MHD_create_response_from_fd ((size_t) buf.st_size,
                                                          fd)))
