@@ -1560,12 +1560,12 @@ enum MHD_DAuthBindNonce
    * expired yet.
    * It is recommended because RFC 7616 allows clients to use the same nonce
    * for any request in the same "protection space".
-   * CPU is loaded less when this value is used when checking client's
-   * authorisation requests.
+   * When checking client's authorisation requests CPU is loaded less if this
+   * value is used.
    * This mode gives MHD maximum flexibility for nonces generation and can
    * prevent possible nonce collisions (and corresponding log warning messages)
    * when clients' requests are intensive.
-   * This value cannot be combined with other values.
+   * This value cannot be biwise-OR combined with other values.
    */
   MHD_DAUTH_BIND_NONCE_NONE = 0,
 
@@ -1579,10 +1579,10 @@ enum MHD_DAuthBindNonce
    * after '?' in URI) and request method (GET, POST etc).
    * Not recommended unless "protection space" is limited to a single URI as
    * RFC 7616 allows clients to re-use server-generated nonces for any URI
-   * in the same "protection space" which is by default consists of all server
+   * in the same "protection space" which by default consists of all server
    * URIs.
-   * This was default (and only supported) nonce bind type
-   * before #MHD_VERSION 0x00097518
+   * Before #MHD_VERSION 0x00097518 this was default (and only supported)
+   * nonce bind type.
    */
   MHD_DAUTH_BIND_NONCE_URI = 1 << 1,
 
@@ -2735,7 +2735,8 @@ typedef void
  *
  * @param cls user-specified closure
  * @param kind type of the value, always #MHD_POSTDATA_KIND when called from MHD
- * @param key 0-terminated key for the value
+ * @param key 0-terminated key for the value, NULL if not known. This value
+ *            is never NULL for url-encoded POST data.
  * @param filename name of the uploaded file, NULL if not known
  * @param content_type mime-type of the data, NULL if not known
  * @param transfer_encoding encoding of the data, NULL if not known
