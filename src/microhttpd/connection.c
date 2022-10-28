@@ -5312,6 +5312,7 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
     EDLL_insert (daemon->eready_head,
                  daemon->eready_tail,
                  connection);
+    connection->epoll_state |= MHD_EPOLL_STATE_IN_EREADY_EDLL;
   }
 
   if ( (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EPOLL_SET)) &&
