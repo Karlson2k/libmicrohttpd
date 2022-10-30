@@ -10,6 +10,8 @@ AM_CFLAGS = $(CFLAGS_ac) @LIBGCRYPT_CFLAGS@
 
 AM_LDFLAGS = $(LDFLAGS_ac)
 
+AM_TESTS_ENVIRONMENT = $(TESTS_ENVIRONMENT_ac)
+
 if USE_COVERAGE
   AM_CFLAGS += -fprofile-arcs -ftest-coverage
 endif
