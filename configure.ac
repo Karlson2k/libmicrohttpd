@@ -3174,8 +3174,8 @@ AC_MSG_RESULT([[$enable_cookie]])
 
 # optional: MD5 support for Digest Auth. Enabled by default.
 AC_ARG_ENABLE([[md5]],
-  [AS_HELP_STRING([[--enable-md5=TYPE]],[enable TYPE of MD5 hashing code (yes, no, builtin, tlslib) [yes if dauth enabled]])
-  ],
+  [AS_HELP_STRING([[--enable-md5=TYPE]],
+    [enable TYPE of MD5 hashing code (yes, no, builtin, tlslib) [yes if dauth enabled]])],
   [
     AS_VAR_IF([enable_md5],["internal"],[enable_md5='builtin'])
     AS_VAR_IF([enable_md5],["built-in"],[enable_md5='builtin'])
@@ -3297,8 +3297,8 @@ AC_MSG_RESULT([[${enable_md5_MSG}]])
 
 # optional: SHA-256 support for Digest Auth. Enabled by default.
 AC_ARG_ENABLE([[sha256]],
-  [AS_HELP_STRING([[--enable-sha256=TYPE]],[enable TYPE of SHA-256 hashing code (yes, no, builtin, tlslib) [yes if dauth enabled]])
-  ],
+  [AS_HELP_STRING([[--enable-sha256=TYPE]],
+    [enable TYPE of SHA-256 hashing code (yes, no, builtin, tlslib) [yes if dauth enabled]])],
   [
     AS_VAR_IF([enable_sha256],["internal"],[enable_sha256='builtin'])
     AS_VAR_IF([enable_sha256],["built-in"],[enable_sha256='builtin'])
@@ -3420,8 +3420,8 @@ AC_MSG_RESULT([[${enable_sha256_MSG}]])
 
 # optional: SHA-512/256 support for Digest Auth. Enabled by default.
 AC_ARG_ENABLE([[sha512-256]],
-  [AS_HELP_STRING([[--disable-sha512-256]],[disable SHA-512/256 hashing support for Digest Authentication])
-  ],
+  [AS_HELP_STRING([[--disable-sha512-256]],
+    [disable SHA-512/256 hashing support for Digest Authentication])],
   [
     AS_VAR_IF([[enable_sha512_256]],[["yes"]],
       [
