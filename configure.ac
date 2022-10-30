@@ -2662,10 +2662,44 @@ AC_MSG_RESULT([[$enable_postprocessor]])
 
 
 # optional: have zzuf, socat?
-AC_CHECK_PROG([have_zzuf],[zzuf], [yes], [no])
-AC_CHECK_PROG([have_socat],[socat], [yes], [no])
-AM_CONDITIONAL([HAVE_ZZUF], [test "x$have_zzuf" = "xyes"])
-AM_CONDITIONAL([HAVE_SOCAT], [test "x$have_socat" = "xyes"])
+run_zzuf_tests="no"
+AS_VAR_IF([enable_heavy_tests],["yes"],
+  [
+    AS_VAR_IF([enable_curl],["yes"],
+      [
+        AC_CHECK_PROG([have_zzuf],[zzuf],[yes],[no])
+        AS_VAR_IF([have_zzuf],["yes"],
+          [
+            AC_CHECK_PROG([have_socat],[socat],[yes],[no])
+            AS_VAR_IF([have_socat],["yes"],
+              [
+                run_zzuf_tests="yes"
+                run_zzuf_tests_MSG="yes"
+              ],
+              [
+                run_zzuf_tests="no"
+                run_zzuf_tests_MSG="no, socat tool not found"
+              ]
+            )
+          ],
+          [
+            run_zzuf_tests="no"
+            run_zzuf_tests_MSG="no, zzuf tool not found"
+          ]
+        )
+      ],
+      [
+        run_zzuf_tests="no"
+        run_zzuf_tests_MSG="no, tests with libcurl are not enabled"
+      ]
+    )
+  ],
+  [
+    run_zzuf_tests="no"
+    run_zzuf_tests_MSG="no, heavy tests are not enabled"
+  ]
+)
+AM_CONDITIONAL([RUN_ZZUF_TESTS],[test "x$run_zzuf_tests" = "xyes"])
 
 have_gnutls=no
 have_gnutls_sni=no
@@ -4285,6 +4319,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Build static lib:  ${enable_static}
   Build shared lib:  ${enable_shared}
   Test with libcurl: ${MSG_CURL}
+  Fuzzing tests:     ${run_zzuf_tests_MSG=no}
 ])
 
 AS_IF([test "x$enable_https" = "xyes"],
