@@ -4322,26 +4322,26 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Target directory:  ${prefix}
   Cross-compiling:   ${cross_compiling}
   Operating System:  ${mhd_host_os}${os_ver_msg}
-  Shutdown of listening socket triggers select: ${mhd_cv_host_shtdwn_trgr_select}
-  Inter-thread comm: ${use_itc}
-  poll support:      ${enable_poll=no}
-  epoll support:     ${enable_epoll=no}
-  sendfile used:     ${found_sendfile}
-  HTTPS support:     ${MSG_HTTPS}
-  Threading lib:     ${USE_THREADS}
-  Use thread names:  ${enable_thread_names}
-  Compact code:      ${enable_compact_code} (${compact_code_MSG})
-  Use debug asserts: ${enable_asserts}
-  Use sanitizers:    ${enabled_sanitizers:=no}
   Messages:          ${enable_messages}
+  Cookie parsing:    ${enable_cookie}
+  Postproc:          ${enable_postprocessor}
+  HTTP "Upgrade":    ${enable_httpupgrade}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
   MD5:               ${enable_md5_MSG}
   SHA-256:           ${enable_sha256_MSG}
   SHA-512/256:       ${enable_sha512_256_MSG}
-  HTTP "Upgrade":    ${enable_httpupgrade}
-  Cookie parsing:    ${enable_cookie}
-  Postproc:          ${enable_postprocessor}
+  Shutdown of listening socket triggers select: ${mhd_cv_host_shtdwn_trgr_select}
+  Inter-thread comm: ${use_itc}
+  Threading lib:     ${USE_THREADS}
+  poll support:      ${enable_poll=no}
+  epoll support:     ${enable_epoll=no}
+  sendfile used:     ${found_sendfile}
+  HTTPS support:     ${MSG_HTTPS}
+  Compact code:      ${enable_compact_code} (${compact_code_MSG})
+  Use thread names:  ${enable_thread_names}
+  Use debug asserts: ${enable_asserts}
+  Use sanitizers:    ${enabled_sanitizers:=no}
   Build docs:        ${enable_doc}
   Build examples:    ${enable_examples}
   Build static lib:  ${enable_static}
