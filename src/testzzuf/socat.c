@@ -43,11 +43,11 @@
  * long for most user's patience.  So this small
  * value is the default.
  */
-#ifndef _MHD_HEAVY_TESTS
+#ifndef _MHD_VHEAVY_TESTS
 #define LOOP_COUNT 10
-#else  /* ! _MHD_HEAVY_TESTS */
+#else  /* ! _MHD_VHEAVY_TESTS */
 #define LOOP_COUNT 200
-#endif /* ! _MHD_HEAVY_TESTS */
+#endif /* ! _MHD_VHEAVY_TESTS */
 
 #define CURL_TIMEOUT 50L
 

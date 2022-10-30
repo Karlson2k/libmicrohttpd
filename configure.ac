@@ -1510,23 +1510,49 @@ test "x$enable_examples" = "xno" || enable_examples=yes
 AM_CONDITIONAL([BUILD_EXAMPLES], [test "x$enable_examples" = "xyes"])
 
 AC_ARG_ENABLE([[heavy-tests]],
-  [AS_HELP_STRING([[--enable-heavy-tests]], [use heavy tests in test-suite. WARNING:]
+  [AS_HELP_STRING([[--enable-heavy-tests[=SCOPE]]], [use SCOPE of heavy tests in test-suite. WARNING:]
   [a dedicated host with minimal number of background processes and no network]
-  [activity is recommended to enable.])], [],
+  [activity is recommended to enable. (basic, full)])], [],
     [enable_heavy_tests=no])
-AS_VAR_IF([enable_heavy_tests], ["yes"],
+use_heavy_tests="no"
+use_vheavy_tests="no"
+use_heavy_tests_MSG="no"
+AS_CASE([${enable_heavy_tests}],
+  [yes|basic],
+  [
+  	enable_heavy_tests="basic"
+    use_heavy_tests="yes"
+    use_vheavy_tests="no"
+    use_heavy_tests_MSG="yes, basic heavy tests (a dedicated host is recommended)"
+  ],
+  [all|full],
+  [
+  	enable_heavy_tests="full"
+    use_heavy_tests="yes"
+    use_vheavy_tests="yes"
+    use_heavy_tests_MSG="yes, full set of heavy tests (a dedicated host is recommended)"
+  ],
+  [no],
+  [
+    use_heavy_tests="no"
+    use_vheavy_tests="no"
+    use_heavy_tests_MSG="no"
+  ],
+  [AC_MSG_ERROR([[Unknown parameter value: --enable-heavy-tests=${enable_heavy_tests}]])]
+)
+AS_VAR_IF([use_heavy_tests], ["yes"],
   [
     HEAVY_TESTS_NOTPARALLEL='.NOTPARALLEL:'
     AC_DEFINE([_MHD_HEAVY_TESTS], [1], [Define to 1 to enable "heavy" test paths.])
-    heavy_tests_MSG="yes (dedicated host is recommended)"
+    AS_VAR_IF([use_vheavy_tests], ["yes"],
+      [AC_DEFINE([_MHD_VHEAVY_TESTS], [1], [Define to 1 to enable "very heavy" test paths.])]
+    )
   ],
   [
-    enable_heavy_tests=no
     HEAVY_TESTS_NOTPARALLEL=" "
-    heavy_tests_MSG="no"
   ]
 )
-AM_CONDITIONAL([HEAVY_TESTS],[test "x$enable_heavy_tests" = "xyes"])
+AM_CONDITIONAL([HEAVY_TESTS],[test "x$use_heavy_tests" = "xyes"])
 
 AC_ARG_ENABLE([[poll]],
   [AS_HELP_STRING([[--enable-poll[=ARG]]], [enable poll support (yes, no, auto) [auto]])],
@@ -2665,7 +2691,7 @@ AC_MSG_RESULT([[$enable_postprocessor]])
 
 # optional: have zzuf, socat?
 run_zzuf_tests="no"
-AS_VAR_IF([enable_heavy_tests],["yes"],
+AS_VAR_IF([use_heavy_tests],["yes"],
   [
     AS_VAR_IF([enable_curl],["yes"],
       [
@@ -3600,7 +3626,7 @@ AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
 AX_COUNT_CPUS
 AC_MSG_CHECKING([for number of CPU cores to use in tests])
-AS_VAR_IF([enable_heavy_tests], ["yes"],
+AS_VAR_IF([use_heavy_tests], ["yes"],
   [
     # Enable usage of many core if heavy tests are enabled
     AS_IF([[test "$CPU_COUNT" -gt "32"]], [[CPU_COUNT="32"]])dnl Limit resource usage
@@ -4321,7 +4347,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Build static lib:  ${enable_static}
   Build shared lib:  ${enable_shared}
   Test with libcurl: ${MSG_CURL}
-  Heavy tests:       ${heavy_tests_MSG}
+  Heavy tests:       ${use_heavy_tests_MSG}
   Fuzzing tests:     ${run_zzuf_tests_MSG=no}
 ])
 
