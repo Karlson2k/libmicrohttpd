@@ -1,5 +1,5 @@
 # This Makefile.am is in the public domain
-if HAVE_CURL
+if RUN_LIBCURL_TESTS
 curltests = testcurl
 if HAVE_ZZUF
 if HAVE_SOCAT

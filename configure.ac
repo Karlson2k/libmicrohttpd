@@ -2410,7 +2410,11 @@ AS_IF([test "$enable_curl" != "no"],
       enable_curl=no
     ])
 ])
-AM_CONDITIONAL([HAVE_CURL], [test "x$enable_curl" = "xyes"])
+AM_CONDITIONAL([RUN_LIBCURL_TESTS], [test "x$enable_curl" = "xyes"])
+AS_IF([test "x$enable_curl" = "xyes"],
+  [MSG_CURL="yes"],
+  [MSG_CURL="no, many unit tests will not run"]
+)
 
 mhd_have_libmagic="no"
 SAVE_LIBS="$LIBS"
@@ -4246,10 +4250,6 @@ AS_UNSET([fin_LDFLAGS])
 AS_UNSET([fin_lib_CPPFLAGS])
 AS_UNSET([fin_lib_CFLAGS])
 AS_UNSET([fin_lib_LDFLAGS])
-
-AS_IF([test "x$enable_curl" != "xyes"],
- [MSG_CURL="no, many unit tests will not run"],
- [MSG_CURL="yes"])
 
 AS_VAR_IF([os_is_windows], ["yes"],
   [os_ver_msg="

@@ -80,7 +80,7 @@ THREAD_ONLY_TESTS += \
 endif
 endif
 
-if HAVE_CURL
+if RUN_LIBCURL_TESTS
 check_PROGRAMS = \
   test_get \
   test_head \
