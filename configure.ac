@@ -1518,10 +1518,12 @@ AS_VAR_IF([enable_heavy_tests], ["yes"],
   [
     HEAVY_TESTS_NOTPARALLEL='.NOTPARALLEL:'
     AC_DEFINE([_MHD_HEAVY_TESTS], [1], [Define to 1 to enable "heavy" test paths.])
+    heavy_tests_MSG="yes (dedicated host is recommended)"
   ],
   [
     enable_heavy_tests=no
     HEAVY_TESTS_NOTPARALLEL=" "
+    heavy_tests_MSG="no"
   ]
 )
 AM_CONDITIONAL([HEAVY_TESTS],[test "x$enable_heavy_tests" = "xyes"])
@@ -4319,6 +4321,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Build static lib:  ${enable_static}
   Build shared lib:  ${enable_shared}
   Test with libcurl: ${MSG_CURL}
+  Heavy tests:       ${heavy_tests_MSG}
   Fuzzing tests:     ${run_zzuf_tests_MSG=no}
 ])
 
