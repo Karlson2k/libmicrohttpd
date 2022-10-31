@@ -226,7 +226,7 @@ choke me now
         AS_CASE([${enable_build_type}],[*-compact],
           [
             enable_compact_code="yes"
-            compact_code_MSG="enabled by build type ${enable_build_type}"
+            compact_code_MSG="enabled by --enable-build-type=${enable_build_type}"
             AC_DEFINE([MHD_FAVOR_SMALL_CODE],[1])
           ]
         )
@@ -3640,44 +3640,191 @@ AS_VAR_IF([use_heavy_tests], ["yes"],
 AC_MSG_RESULT([$CPU_COUNT])
 
 
-AC_MSG_CHECKING([[whether to enable debug asserts]])
 AC_ARG_ENABLE([[asserts]],
   [AS_HELP_STRING([[--enable-asserts]],
     [enable test build with debug asserts])],
   [],
-  [AS_CASE([${enable_build_type}],[debug|debugger],
-    [enable_asserts='yes'],[enable_asserts='no'])]
+  [enable_asserts='auto']
+)
+AS_UNSET([use_asserts_MSG])
+AC_CACHE_CHECK([[whether NDEBUG macro is defined]], [mhd_cv_macro_ndebug_def],
+  [
+    AC_LINK_IFELSE(
+      [
+        AC_LANG_SOURCE([[
+#ifndef NDEBUG
+#error NDEBUG is NOT defined
+chome me now
+#endif
+
+int main(void)
+{
+  return 0;
+}
+          ]]
+        )
+      ],
+      [[mhd_cv_macro_ndebug_def='yes']],
+      [[mhd_cv_macro_ndebug_def='no']]
+    )
+  ]
+)
+AS_VAR_IF([enable_asserts],["yes"],
+  [
+    AS_VAR_IF([mhd_cv_macro_ndebug_def],["yes"],
+      [
+        AC_MSG_FAILURE([Parameter --enable-asserts is specified, but NDEBUG macro is defined as well])
+      ]
+    )
+    use_asserts_MSG="yes, enabled by configure parameter"
+  ]
+)
+AC_CACHE_CHECK([[whether _DEBUG macro is defined]], [mhd_cv_macro__debug_def],
+  [
+    AC_LINK_IFELSE(
+      [
+        AC_LANG_SOURCE([[
+#ifndef _DEBUG
+#error _DEBUG is NOT defined
+chome me now
+#endif
+
+int main(void)
+{
+  return 0;
+}
+          ]]
+        )
+      ],
+      [[mhd_cv_macro__debug_def='yes']],
+      [[mhd_cv_macro__debug_def='no']]
+    )
+  ]
+)
+AS_VAR_IF([enable_asserts],["no"],
+  [
+    AS_VAR_IF([mhd_cv_macro__debug_def],["yes"],
+      [
+        AC_MSG_FAILURE([Parameter --disable-asserts is specified, but _DEBUG macro is defined as well])
+      ]
+    )
+    use_asserts_MSG="no, set by configure parameter"
+  ]
+)
+AS_IF([test "x${mhd_cv_macro_ndebug_def}" = "xyes" && test "x${mhd_cv_macro__debug_def}" = "xyes"],
+  [AC_MSG_FAILURE([Both NDEBUG and _DEBUG macros are defined])]
+)
+AS_VAR_IF([enable_asserts],["auto"],
+  [
+    AS_VAR_IF([mhd_cv_macro_ndebug_def],["yes"],
+      [
+        enable_asserts="no"
+        use_asserts_MSG="no, set by NDEBUG preprocessor macro"
+      ]
+    )
+  ]
+)
+AS_VAR_IF([enable_asserts],["auto"],
+  [
+    AS_VAR_IF([mhd_cv_macro__debug_def],["yes"],
+      [
+        enable_asserts="yes"
+        use_asserts_MSG="yes, enabled by _DEBUG preprocessor macro"
+      ]
+    )
+  ]
+)
+AS_VAR_IF([enable_asserts],["auto"],
+  [
+    AC_CACHE_CHECK([[whether DEBUG macro is defined]], [mhd_cv_macro_debug_def],
+      [
+        AC_LINK_IFELSE(
+          [
+            AC_LANG_SOURCE([[
+#ifndef DEBUG
+#error DEBUG is NOT defined
+chome me now
+#endif
+
+int main(void)
+{
+  return 0;
+}
+              ]]
+            )
+          ],
+          [[mhd_cv_macro_debug_def='yes']],
+          [[mhd_cv_macro_debug_def='no']]
+        )
+      ]
+    )
+    AS_VAR_IF([mhd_cv_macro_debug_def],["yes"],
+      [
+        enable_asserts="yes"
+        use_asserts_MSG="yes, enabled by DEBUG preprocessor macro"
+      ]
+    )
+  ]
+)
+AC_MSG_CHECKING([[whether to enable debug asserts]])
+AS_VAR_IF([enable_asserts],["auto"],
+  [
+    AS_CASE([${enable_build_type}],
+      [debug|debugger],
+      [
+        enable_asserts="yes"
+        use_asserts_MSG="yes, enabled by --enable-bulid-type=${enable_build_type}"
+      ],
+      [
+        enable_asserts="no"
+        use_asserts_MSG="no"
+      ]
+    )
+  ]
 )
 AS_CASE([[$enable_asserts]], [[yes]], [[:]], [[no]], [[:]], [[enable_asserts='no']])
-AC_MSG_RESULT([[$enable_asserts]])
+AC_MSG_RESULT([[${use_asserts_MSG=no}]])
 
 AS_VAR_IF([[enable_asserts]], [["yes"]],
   [
-   MHD_PREPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-D_DEBUG=1])
-   CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
-   [mhd_assert_test_prg="#include <assert.h>
-   int pos_val(void) {return 5;}
-   int neg_val(void) {return -5;}
-   int main(void)
-   { int pos_var = pos_val(), neg_var = neg_val();
-     assert(neg_var > pos_var); /* Must trigger assert. */
-     (void)pos_var; (void)neg_var;
-     return 0; }
-   "]
-   AC_CACHE_CHECK([[whether system assert() is available]], [mhd_cv_sys_assert_avail],
-     [
-      AC_LINK_IFELSE([AC_LANG_SOURCE([[$mhd_assert_test_prg]])],
-                     [[mhd_cv_sys_assert_avail='yes']],
-                     [[mhd_cv_sys_assert_avail='no']])
-     ]
-   )
-   AS_VAR_IF([[mhd_cv_sys_assert_avail]], [["no"]], [],
-     [AC_DEFINE([[HAVE_ASSERT]], [[1]], [Define if you have usable assert() and assert.h])])
-   AS_UNSET([mhd_assert_test_prg])
+    AS_VAR_IF([[mhd_cv_macro__debug_def]], [["yes"]], [:],
+      [
+        MHD_PREPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-D_DEBUG=1])
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+      ]
+    )
+    AC_CACHE_CHECK([[whether system assert() is available]], [mhd_cv_sys_assert_avail],
+      [
+        AC_LINK_IFELSE(
+          [
+            AC_LANG_SOURCE([[
+#include <assert.h>
+
+static int pos_val(void) {return 5;}
+static int neg_val(void) {return -5;}
+int main(void)
+{
+  int pos_var = pos_val(), neg_var = neg_val();
+  assert(neg_var > pos_var); /* Must trigger assert. */
+  return pos_var + neg_var;
+}
+            ]])
+          ],
+          [[mhd_cv_sys_assert_avail='yes']],
+          [[mhd_cv_sys_assert_avail='no']]
+        )
+      ]
+    )
+    AS_VAR_IF([[mhd_cv_sys_assert_avail]], [["no"]], [],
+      [AC_DEFINE([[HAVE_ASSERT]], [[1]], [Define if you have usable assert() and assert.h])])
   ],
   [
-    MHD_PREPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-DNDEBUG=1])
-    CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+    AS_VAR_IF([[mhd_cv_macro_ndebug_def]], [["yes"]], [:],
+      [
+        MHD_PREPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-DNDEBUG=1])
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+      ]
+    )
   ]
 )
 
@@ -4340,7 +4487,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   HTTPS support:     ${MSG_HTTPS}
   Compact code:      ${enable_compact_code} (${compact_code_MSG})
   Use thread names:  ${enable_thread_names}
-  Use debug asserts: ${enable_asserts}
+  Use debug asserts: ${use_asserts_MSG=no}
   Use sanitizers:    ${enabled_sanitizers:=no}
   Build docs:        ${enable_doc}
   Build examples:    ${enable_examples}
