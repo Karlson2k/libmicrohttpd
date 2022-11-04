@@ -90,6 +90,19 @@
 #endif
 
 /**
+ * Response text used when the request has unsupported "Transfer-Enconding:".
+ */
+#ifdef HAVE_MESSAGES
+#define REQUEST_UNSUPPORTED_TR_ENCODING \
+  "<html>" \
+  "<head><title>Unsupported Transfer-Encoding</title></head>" \
+  "<body>The Transfer-Encoding used in request is not supported.</body>" \
+  "</html>"
+#else
+#define REQUEST_UNSUPPORTED_TR_ENCODING ""
+#endif
+
+/**
  * Response text used when the request (http header) is
  * malformed.
  *
@@ -3975,10 +3988,16 @@ parse_connection_headers (struct MHD_Connection *connection)
                                      &enc,
                                      NULL))
   {
+    if (! MHD_str_equal_caseless_ (enc,
+                                   "chunked"))
+    {
+      transmit_error_response_static (connection,
+                                      MHD_HTTP_BAD_REQUEST,
+                                      REQUEST_UNSUPPORTED_TR_ENCODING);
+      return;
+    }
+    connection->rq.have_chunked_upload = true;
     connection->rq.remaining_upload_size = MHD_SIZE_UNKNOWN;
-    if (MHD_str_equal_caseless_ (enc,
-                                 "chunked"))
-      connection->rq.have_chunked_upload = true;
   }
   else
   {
