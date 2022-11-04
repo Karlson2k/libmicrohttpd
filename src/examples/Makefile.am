@@ -18,6 +18,10 @@ if USE_COVERAGE
   AM_CFLAGS += --coverage
 endif
 
+$(top_builddir)/src/microhttpd/libmicrohttpd.la: $(top_builddir)/src/microhttpd/Makefile
+	@echo ' cd $(top_builddir)/src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd.la'; \
+	$(am__cd) $(top_builddir)/src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd.la
+
 
 # example programs
 noinst_PROGRAMS = \
