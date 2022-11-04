@@ -103,6 +103,21 @@
 #endif
 
 /**
+ * Response text used when the request has unsupported both headers:
+ * "Transfer-Enconding:" and "Content-Length:"
+ */
+#ifdef HAVE_MESSAGES
+#define REQUEST_LENGTH_WITH_TR_ENCODING \
+  "<html>" \
+  "<head><title>Malformed request</title></head>" \
+  "<body>Wrong combination of the request headers: both Transfer-Encoding " \
+  "and Content-Length headers are used at the same time.</body>" \
+  "</html>"
+#else
+#define REQUEST_LENGTH_WITH_TR_ENCODING ""
+#endif
+
+/**
  * Response text used when the request (http header) is
  * malformed.
  *
@@ -3995,6 +4010,33 @@ parse_connection_headers (struct MHD_Connection *connection)
                                       MHD_HTTP_BAD_REQUEST,
                                       REQUEST_UNSUPPORTED_TR_ENCODING);
       return;
+    }
+    else if (MHD_NO !=
+             MHD_lookup_connection_value_n (connection,
+                                            MHD_HEADER_KIND,
+                                            MHD_HTTP_HEADER_CONTENT_LENGTH,
+                                            MHD_STATICSTR_LEN_ ( \
+                                              MHD_HTTP_HEADER_CONTENT_LENGTH),
+                                            NULL,
+                                            NULL))
+    {
+      /* TODO: add individual settings */
+      if (1 <= connection->daemon->strict_for_client)
+      {
+        transmit_error_response_static (connection,
+                                        MHD_HTTP_BAD_REQUEST,
+                                        REQUEST_LENGTH_WITH_TR_ENCODING);
+        return;
+      }
+#ifdef HAVE_MESSAGES
+      else
+      {
+        MHD_DLOG (connection->daemon,
+                  _ ("The 'Content-Length' request header is ignored "
+                     "as chunked Transfer-Encoding is used "
+                     "for this request.\n"));
+      }
+#endif /* HAVE_MESSAGES */
     }
     connection->rq.have_chunked_upload = true;
     connection->rq.remaining_upload_size = MHD_SIZE_UNKNOWN;
