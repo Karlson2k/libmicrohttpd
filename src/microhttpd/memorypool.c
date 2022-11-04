@@ -103,7 +103,7 @@
 #define _MHD_POISON_MEMORY(pointer, size) (void)0
 #define _MHD_UNPOISON_MEMORY(pointer, size) (void)0
 #else  /* MHD_ASAN_POISON_ACTIVE */
-#if defined(FUNC_ATTR_PTRCOMPARE_WOKRS)
+#if defined(FUNC_ATTR_PTRCOMPARE_WORKS)
 #define _MHD_NOSANITIZE_PTRS \
   __attribute__((no_sanitize("pointer-compare","pointer-subtract")))
 #elif defined(FUNC_ATTR_NOSANITIZE_WORKS)

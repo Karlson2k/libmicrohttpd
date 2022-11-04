@@ -4040,7 +4040,7 @@ int ptr_process(void *ptr1, void *ptr2)
                          ]
                        )
                        AS_VAR_IF([mhd_cv_func_attribute_nosanitize_ptr], ["yes"],
-                         [AC_DEFINE([FUNC_ATTR_PTRCOMPARE_WOKRS],[1],[Define to '1' if '__attribute__((no_sanitize("pointer-compare","pointer-subtract")))' works])],
+                         [AC_DEFINE([FUNC_ATTR_PTRCOMPARE_WORKS],[1],[Define to '1' if '__attribute__((no_sanitize("pointer-compare","pointer-subtract")))' works])],
                          [
                            AC_CACHE_CHECK([whether '__attribute__((no_sanitize("address")))' works for pointers compare], [mhd_cv_func_attribute_nosanitize_addr],
                              [
