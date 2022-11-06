@@ -135,6 +135,9 @@ check_PROGRAMS = \
   test_get_chunked_close_empty_forced \
   test_put_chunked \
   test_callback \
+  test_get_header_fold \
+  test_put_header_fold \
+  test_put_large_header_fold \
   $(EMPTY_ITEM)
 
 if HEAVY_TESTS
@@ -463,4 +466,10 @@ test_tricky_url_SOURCES = \
 
 test_tricky_header2_SOURCES = \
   test_tricky.c ../microhttpd/test_helpers.h
-  
+
+test_put_header_fold_SOURCES = \
+  test_put_header_fold.c ../microhttpd/test_helpers.h
+
+test_put_large_header_fold_SOURCES = $(test_put_header_fold_SOURCES)
+
+test_get_header_fold_SOURCES = $(test_put_header_fold_SOURCES)
