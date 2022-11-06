@@ -137,6 +137,9 @@ check_PROGRAMS = \
   test_get_chunked_close_empty_forced \
   test_put_chunked \
   test_callback \
+  test_get_header_fold \
+  test_put_header_fold \
+  test_put_large_header_fold \
   $(EMPTY_ITEM)
 
 if ENABLE_COOKIE
@@ -629,3 +632,10 @@ test_put_broken_len_SOURCES = \
   test_put_broken_len.c mhd_has_in_name.h mhd_has_param.h
 
 test_put_broken_len10_SOURCES = $(test_put_broken_len_SOURCES)
+
+test_put_header_fold_SOURCES = \
+  test_put_header_fold.c mhd_has_in_name.h mhd_has_param.h
+
+test_put_large_header_fold_SOURCES = $(test_put_header_fold_SOURCES)
+
+test_get_header_fold_SOURCES = $(test_put_header_fold_SOURCES)
