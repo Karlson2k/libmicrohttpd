@@ -274,16 +274,24 @@ lcurl_hdr_callback (char *buffer, size_t size, size_t nitems,
     int res;
     const unsigned int numbers_pos =
       MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_CONTENT_LENGTH ": ");
-    res = snprintf (cmpbuf, sizeof(cmpbuf), "%u\r\n", check_res->expected_size);
+    res = snprintf (cmpbuf, sizeof(cmpbuf), "%u", check_res->expected_size);
     if ((res <= 0) || (res > ((int) (sizeof(cmpbuf) - 1))))
       externalErrorExit ();
-    if (0 != strcmp (buffer + numbers_pos, cmpbuf))
+    if (data_size - numbers_pos <= 2)
+      mhdErrorExitDesc ("Broken Content-Length");
+    else if ((((size_t) res + 2) != data_size - numbers_pos) ||
+             (0 != memcmp (buffer + numbers_pos, cmpbuf, (size_t) res)))
     {
       fprintf (stderr, "Wrong Content-Length.\n"
                "Expected:\n%u\n"
                "Received:\n%s", check_res->expected_size,
                buffer + numbers_pos);
       mhdErrorExitDesc ("Wrong Content-Length");
+    }
+    else if (0 != memcmp ("\r\n", buffer + data_size - 2, 2))
+    {
+      mhdErrorExitDesc ("The Content-Length header is not " \
+                        "terminated by CRLF");
     }
     check_res->size_found++;
   }
