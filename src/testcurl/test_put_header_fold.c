@@ -232,13 +232,14 @@ _mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 #define RP_HEADER2 RP_HEADER2_NAME ": " RP_HEADER2_VALUE
 #define RP_HEADER2_CRLF RP_HEADER2 "\r\n"
 
+#define HDR_FOLD "\r\n "
 #define RQ_HEADER1_NAME RP_HEADER1_NAME
 #define RQ_HEADER1_VALUE RP_HEADER1_VALUE
 #define RQ_HEADER1 RQ_HEADER1_NAME ": " RQ_HEADER1_VALUE
 #define RQ_HEADER2_NAME "Folded"
 #define RQ_HEADER2_VALUE_S "start"
 #define RQ_HEADER2_VALUE_E "end"
-#define RQ_HEADER2_VALUE RQ_HEADER2_VALUE_S "\r\n \r\n " RQ_HEADER2_VALUE_E
+#define RQ_HEADER2_VALUE RQ_HEADER2_VALUE_S HDR_FOLD HDR_FOLD RQ_HEADER2_VALUE_E
 #define RQ_HEADER2 RQ_HEADER2_NAME ": " RQ_HEADER2_VALUE
 #define RQ_HEADER3_NAME RP_HEADER2_NAME
 #define RQ_HEADER3_VALUE RP_HEADER2_VALUE
@@ -265,6 +266,7 @@ static int oneone;                  /**< If false use HTTP/1.0 for requests*/
 static int use_get;
 static int use_put;
 static int use_put_large;
+static int use_hdr_last; /**< If non-zero, folded header is placed last */
 
 /* Static data */
 static struct curl_slist *libcurl_headers = NULL;
@@ -284,13 +286,23 @@ libcurl_headers_init (void)
   if (NULL == libcurl_headers)
     libcurlErrorExitDesc ("curl_slist_append() failed");
 
+  if (use_hdr_last)
+  {
+    libcurl_headers = curl_slist_append (libcurl_headers, RQ_HEADER3);
+    if (NULL == libcurl_headers)
+      libcurlErrorExitDesc ("curl_slist_append() failed");
+  }
+
   libcurl_headers = curl_slist_append (libcurl_headers, RQ_HEADER2);
   if (NULL == libcurl_headers)
     libcurlErrorExitDesc ("curl_slist_append() failed");
 
-  libcurl_headers = curl_slist_append (libcurl_headers, RQ_HEADER3);
-  if (NULL == libcurl_headers)
-    libcurlErrorExitDesc ("curl_slist_append() failed");
+  if (! use_hdr_last)
+  {
+    libcurl_headers = curl_slist_append (libcurl_headers, RQ_HEADER3);
+    if (NULL == libcurl_headers)
+      libcurlErrorExitDesc ("curl_slist_append() failed");
+  }
 }
 
 
@@ -1064,7 +1076,8 @@ performCheck (void)
       port += UINT16_C (2);
     if (use_put_large)
       port += UINT16_C (4);
-    port = (uint16_t) 4220;
+    if (use_hdr_last)
+      port += UINT16_C (8);
   }
 
   if (1)
@@ -1212,6 +1225,7 @@ main (int argc, char *const *argv)
   use_put = has_in_name (argv[0], "_put");
 
   use_put_large = has_in_name (argv[0], "_put_large");
+  use_hdr_last = has_in_name (argv[0], "_last");
 
   if (1 !=
       ((use_get ? 1 : 0) + (use_put ? 1 : 0)))

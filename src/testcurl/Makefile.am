@@ -138,6 +138,7 @@ check_PROGRAMS = \
   test_get_header_fold \
   test_put_header_fold \
   test_put_large_header_fold \
+  test_put_header_fold_last \
   $(EMPTY_ITEM)
 
 if HEAVY_TESTS
@@ -473,3 +474,5 @@ test_put_header_fold_SOURCES = \
 test_put_large_header_fold_SOURCES = $(test_put_header_fold_SOURCES)
 
 test_get_header_fold_SOURCES = $(test_put_header_fold_SOURCES)
+
+test_put_header_fold_last_SOURCES = $(test_put_header_fold_SOURCES)
