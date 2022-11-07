@@ -240,8 +240,12 @@ _mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 #define RQ_HEADER2_NAME "Folded"
 #define RQ_HEADER2_VALUE_S "start"
 #define RQ_HEADER2_VALUE_E "end"
-#define RQ_HEADER2_VALUE RQ_HEADER2_VALUE_S HDR_FOLD HDR_FOLD RQ_HEADER2_VALUE_E
+#define RQ_HEADER2_VALUE \
+  RQ_HEADER2_VALUE_S HDR_FOLD RQ_HEADER2_VALUE_E
+#define RQ_HEADER2_VALUE_DF \
+  RQ_HEADER2_VALUE_S HDR_FOLD HDR_FOLD RQ_HEADER2_VALUE_E
 #define RQ_HEADER2 RQ_HEADER2_NAME ": " RQ_HEADER2_VALUE
+#define RQ_HEADER2_DF RQ_HEADER2_NAME ": " RQ_HEADER2_VALUE_DF
 #define RQ_HEADER3_NAME RP_HEADER2_NAME
 #define RQ_HEADER3_VALUE RP_HEADER2_VALUE
 #define RQ_HEADER3 RQ_HEADER3_NAME ": " RQ_HEADER3_VALUE
@@ -267,6 +271,7 @@ static int oneone;                  /**< If false use HTTP/1.0 for requests*/
 static int use_get;
 static int use_put;
 static int use_put_large;
+static int use_double_fold;
 static int use_hdr_last; /**< If non-zero, folded header is placed last */
 static int use_hdr_large; /**< If non-zero, folded header is large */
 
@@ -297,7 +302,10 @@ libcurl_headers_init (void)
 
   if (! use_hdr_large)
   {
-    libcurl_headers = curl_slist_append (libcurl_headers, RQ_HEADER2);
+    if (! use_double_fold)
+      libcurl_headers = curl_slist_append (libcurl_headers, RQ_HEADER2);
+    else
+      libcurl_headers = curl_slist_append (libcurl_headers, RQ_HEADER2_DF);
     if (NULL == libcurl_headers)
       libcurlErrorExitDesc ("curl_slist_append() failed");
   }
@@ -318,6 +326,11 @@ libcurl_headers_init (void)
     pos += MHD_STATICSTR_LEN_ (RQ_HEADER2_VALUE_S);
     memcpy (buf + pos, HDR_FOLD, MHD_STATICSTR_LEN_ (HDR_FOLD));
     pos += MHD_STATICSTR_LEN_ (HDR_FOLD);
+    if (use_double_fold)
+    {
+      memcpy (buf + pos, HDR_FOLD, MHD_STATICSTR_LEN_ (HDR_FOLD));
+      pos += MHD_STATICSTR_LEN_ (HDR_FOLD);
+    }
     memset (buf + pos, 'a',
             TEST_UPLOAD_DATA_SIZE - pos
             - MHD_STATICSTR_LEN_ (RQ_HEADER2_VALUE_E) - 1);
@@ -1266,6 +1279,7 @@ main (int argc, char *const *argv)
   use_get = has_in_name (argv[0], "_get");
   use_put = has_in_name (argv[0], "_put");
 
+  use_double_fold = has_in_name (argv[0], "_double_fold");
   use_put_large = has_in_name (argv[0], "_put_large");
   use_hdr_last = has_in_name (argv[0], "_last");
   use_hdr_large = has_in_name (argv[0], "_fold_large");
