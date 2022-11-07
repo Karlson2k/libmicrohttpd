@@ -140,6 +140,11 @@ check_PROGRAMS = \
   test_put_large_header_fold \
   test_put_header_fold_last \
   test_put_header_fold_large \
+  test_get_header_double_fold \
+  test_put_header_double_fold \
+  test_put_large_header_double_fold \
+  test_put_header_double_fold_last \
+  test_put_header_double_fold_large \
   $(EMPTY_ITEM)
 
 if HEAVY_TESTS
@@ -479,3 +484,13 @@ test_get_header_fold_SOURCES = $(test_put_header_fold_SOURCES)
 test_put_header_fold_last_SOURCES = $(test_put_header_fold_SOURCES)
 
 test_put_header_fold_large_SOURCES = $(test_put_header_fold_SOURCES)
+
+test_put_header_double_fold_SOURCES = $(test_put_header_fold_SOURCES)
+
+test_put_large_header_double_fold_SOURCES = $(test_put_large_header_fold_SOURCES)
+
+test_get_header_double_fold_SOURCES = $(test_put_header_fold_SOURCES)
+
+test_put_header_double_fold_last_SOURCES = $(test_put_header_fold_last_SOURCES)
+
+test_put_header_double_fold_large_SOURCES = $(test_put_header_fold_large_SOURCES)
