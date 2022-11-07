@@ -141,6 +141,7 @@ check_PROGRAMS = \
   test_put_header_fold \
   test_put_large_header_fold \
   test_put_header_fold_last \
+  test_put_header_fold_large \
   $(EMPTY_ITEM)
 
 if ENABLE_COOKIE
@@ -642,3 +643,5 @@ test_put_large_header_fold_SOURCES = $(test_put_header_fold_SOURCES)
 test_get_header_fold_SOURCES = $(test_put_header_fold_SOURCES)
 
 test_put_header_fold_last_SOURCES = $(test_put_header_fold_SOURCES)
+
+test_put_header_fold_large_SOURCES = $(test_put_header_fold_SOURCES)

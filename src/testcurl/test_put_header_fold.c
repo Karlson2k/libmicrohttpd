@@ -268,6 +268,7 @@ static int use_get;
 static int use_put;
 static int use_put_large;
 static int use_hdr_last; /**< If non-zero, folded header is placed last */
+static int use_hdr_large; /**< If non-zero, folded header is large */
 
 /* Static data */
 static struct curl_slist *libcurl_headers = NULL;
@@ -294,9 +295,48 @@ libcurl_headers_init (void)
       libcurlErrorExitDesc ("curl_slist_append() failed");
   }
 
-  libcurl_headers = curl_slist_append (libcurl_headers, RQ_HEADER2);
-  if (NULL == libcurl_headers)
-    libcurlErrorExitDesc ("curl_slist_append() failed");
+  if (! use_hdr_large)
+  {
+    libcurl_headers = curl_slist_append (libcurl_headers, RQ_HEADER2);
+    if (NULL == libcurl_headers)
+      libcurlErrorExitDesc ("curl_slist_append() failed");
+  }
+  else
+  {
+    char *buf;
+    size_t pos;
+    buf = malloc (TEST_UPLOAD_DATA_SIZE + 1);
+    if (NULL == buf)
+      externalErrorExitDesc ("malloc() failed");
+    pos = 0;
+    memcpy (buf, RQ_HEADER2_NAME, MHD_STATICSTR_LEN_ (RQ_HEADER2_NAME));
+    pos += MHD_STATICSTR_LEN_ (RQ_HEADER2_NAME);
+    buf[pos++] = ':';
+    buf[pos++] = ' ';
+    memcpy (buf + pos,
+            RQ_HEADER2_VALUE_S, MHD_STATICSTR_LEN_ (RQ_HEADER2_VALUE_S));
+    pos += MHD_STATICSTR_LEN_ (RQ_HEADER2_VALUE_S);
+    memcpy (buf + pos, HDR_FOLD, MHD_STATICSTR_LEN_ (HDR_FOLD));
+    pos += MHD_STATICSTR_LEN_ (HDR_FOLD);
+    memset (buf + pos, 'a',
+            TEST_UPLOAD_DATA_SIZE - pos
+            - MHD_STATICSTR_LEN_ (RQ_HEADER2_VALUE_E) - 1);
+    pos += TEST_UPLOAD_DATA_SIZE - pos
+           - MHD_STATICSTR_LEN_ (RQ_HEADER2_VALUE_E) - 1;
+    buf[pos++] = ' ';
+    memcpy (buf + pos,
+            RQ_HEADER2_VALUE_E, MHD_STATICSTR_LEN_ (RQ_HEADER2_VALUE_E));
+    pos += MHD_STATICSTR_LEN_ (RQ_HEADER2_VALUE_E);
+    if (TEST_UPLOAD_DATA_SIZE != pos)
+      externalErrorExitDesc ("Position miscalculation");
+    buf[pos] = 0;
+
+    libcurl_headers = curl_slist_append (libcurl_headers, buf);
+    if (NULL == libcurl_headers)
+      libcurlErrorExitDesc ("curl_slist_append() failed");
+
+    free (buf);
+  }
 
   if (! use_hdr_last)
   {
@@ -1078,6 +1118,8 @@ performCheck (void)
       port += UINT16_C (4);
     if (use_hdr_last)
       port += UINT16_C (8);
+    if (use_hdr_large)
+      port += UINT16_C (16);
   }
 
   if (1)
@@ -1226,6 +1268,7 @@ main (int argc, char *const *argv)
 
   use_put_large = has_in_name (argv[0], "_put_large");
   use_hdr_last = has_in_name (argv[0], "_last");
+  use_hdr_large = has_in_name (argv[0], "_fold_large");
 
   if (1 !=
       ((use_get ? 1 : 0) + (use_put ? 1 : 0)))
