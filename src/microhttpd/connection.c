@@ -76,6 +76,63 @@
 #endif
 
 /**
+ * Response text used when the request line has more then two whitespaces.
+ */
+#ifdef HAVE_MESSAGES
+#define RQ_LINE_TOO_MANY_WSP \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>The request line has more then two whitespaces.</body>" \
+  "</html>"
+#else
+#define RQ_LINE_TOO_MANY_WSP ""
+#endif
+
+/**
+ * Response text used when the request HTTP header has bare CR character
+ * without LF character (and CR is not allowed to be treated as whitespace).
+ */
+#ifdef HAVE_MESSAGES
+#define BARE_CR_IN_HEADER \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your HTTP header has bare CR character without " \
+  "following LF character.</body>" \
+  "</html>"
+#else
+#define BARE_CR_IN_HEADER ""
+#endif
+
+/**
+ * Response text used when the request HTTP header has bare LF character
+ * without CR character.
+ */
+#ifdef HAVE_MESSAGES
+#define BARE_LF_IN_HEADER \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your HTTP header has bare LF character without " \
+  "preceding CR character.</body>" \
+  "</html>"
+#else
+#define BARE_LF_IN_HEADER ""
+#endif
+
+/**
+ * Response text used when the request line has invalid characters in URI.
+ */
+#ifdef HAVE_MESSAGES
+#define RQ_TARGET_INVALID_CHAR \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your HTTP request has invalid characters in " \
+  "the request-target.</body>" \
+  "</html>"
+#else
+#define RQ_TARGET_INVALID_CHAR ""
+#endif
+
+/**
  * Response text used when the request (http header) does not
  * contain a "Host:" header and still claims to be HTTP 1.1.
  *
@@ -126,7 +183,7 @@
  */
 #ifdef HAVE_MESSAGES
 #define REQUEST_MALFORMED \
-  "<html><head><title>Request malformed</title></head><body>Your HTTP request was syntactically incorrect.</body></html>"
+  "<html><head><title>Request malformed</title></head><body>Your HTTP request is syntactically incorrect.</body></html>"
 #else
 #define REQUEST_MALFORMED ""
 #endif
@@ -1005,41 +1062,6 @@ connection_close_error (struct MHD_Connection *connection,
 #define CONNECTION_CLOSE_ERROR(c, emsg) connection_close_error (c, emsg)
 #else
 #define CONNECTION_CLOSE_ERROR(c, emsg) connection_close_error (c, NULL)
-#endif
-
-
-/**
- * A serious error occurred, check whether error response is already
- * queued and close the connection if response wasn't queued.
- *
- * @param connection connection to close with error
- * @param emsg error message (can be NULL)
- */
-static void
-connection_close_error_check (struct MHD_Connection *connection,
-                              const char *emsg)
-{
-  if ( (NULL != connection->rp.response) &&
-       (400 <= connection->rp.responseCode) &&
-       (NULL == connection->rp.response->crc) && /* Static response only! */
-       (connection->stop_with_error) &&
-       (MHD_CONNECTION_HEADERS_SENDING == connection->state) )
-    return; /* An error response was already queued */
-
-  connection_close_error (connection, emsg);
-}
-
-
-/**
- * Macro to only include error message in call to
- * #connection_close_error_check() if we have HAVE_MESSAGES.
- */
-#ifdef HAVE_MESSAGES
-#define CONNECTION_CLOSE_ERROR_CHECK(c, emsg) \
-  connection_close_error_check (c, emsg)
-#else
-#define CONNECTION_CLOSE_ERROR_CHECK(c, emsg) \
-  connection_close_error_check (c, NULL)
 #endif
 
 
@@ -2407,12 +2429,22 @@ build_connection_chunked_response_footer (struct MHD_Connection *connection)
  * @param status_code the response code to send (400, 413 or 414)
  * @param message the error message to send
  * @param message_len the length of the @a message
+ * @param header_name the name of the header, malloc()ed by the caller,
+ *                    free() by this function, optional, can be NULL
+ * @param header_name_len the length of the @a header_name
+ * @param header_value the value of the header, malloc()ed by the caller,
+ *                     free() by this function, optional, can be NULL
+ * @param header_value_len the length of the @a header_value
  */
 static void
 transmit_error_response_len (struct MHD_Connection *connection,
                              unsigned int status_code,
                              const char *message,
-                             size_t message_len)
+                             size_t message_len,
+                             char *header_name,
+                             size_t header_name_len,
+                             char *header_value,
+                             size_t header_value_len)
 {
   struct MHD_Response *response;
   enum MHD_Result iret;
@@ -2479,9 +2511,30 @@ transmit_error_response_len (struct MHD_Connection *connection,
     connection->state = MHD_CONNECTION_CLOSED;
     return;
   }
-  iret = MHD_queue_response (connection,
-                             status_code,
-                             response);
+  mhd_assert ((0 == header_name_len) || (NULL != header_name));
+  mhd_assert ((NULL == header_name) || (0 != header_name_len));
+  mhd_assert ((0 == header_value_len) || (NULL != header_value));
+  mhd_assert ((NULL == header_value) || (0 != header_value_len));
+  mhd_assert ((NULL == header_name) || (NULL != header_value));
+  mhd_assert ((NULL != header_value) || (NULL == header_name));
+  if (NULL != header_name)
+  {
+    iret = MHD_add_response_entry_no_alloc_ (response, MHD_HEADER_KIND,
+                                             header_name, header_name_len,
+                                             header_value, header_value_len);
+    if (MHD_NO == iret)
+    {
+      free (header_name);
+      free (header_value);
+    }
+  }
+  else
+    iret = MHD_YES;
+
+  if (MHD_NO != iret)
+    iret = MHD_queue_response (connection,
+                               status_code,
+                               response);
   MHD_destroy_response (response);
   if (MHD_NO == iret)
   {
@@ -2533,7 +2586,18 @@ transmit_error_response_len (struct MHD_Connection *connection,
  * Transmit static string as error response
  */
 #define transmit_error_response_static(c, code, msg) \
-  transmit_error_response_len (c, code, msg, MHD_STATICSTR_LEN_ (msg))
+  transmit_error_response_len (c, code, \
+                               msg, MHD_STATICSTR_LEN_ (msg), \
+                               NULL, 0, NULL, 0)
+
+/**
+ * Transmit static string as error response and add specified header
+ */
+#define transmit_error_response_header(c, code, m, hd_n, hd_n_l, hd_v, hd_v_l) \
+  transmit_error_response_len (c, code, \
+                               m, MHD_STATICSTR_LEN_ (m), \
+                               hd_n, hd_n_l, \
+                               hd_v, hd_v_l)
 
 /**
  * Update the 'event_loop_info' field of this connection based on the state
@@ -3183,10 +3247,10 @@ parse_cookie_header (struct MHD_Connection *connection)
  * @param connection the connection
  * @param http_string the pointer to HTTP version string
  * @param len the length of @a http_string in bytes
- * @return #MHD_YES if HTTP version is correct and supported,
- *         #MHD_NO if HTTP version is not correct or unsupported.
+ * @return true if HTTP version is correct and supported,
+ *         false if HTTP version is not correct or unsupported.
  */
-static enum MHD_Result
+static bool
 parse_http_version (struct MHD_Connection *connection,
                     const char *http_string,
                     size_t len)
@@ -3207,7 +3271,7 @@ parse_http_version (struct MHD_Connection *connection,
     transmit_error_response_static (connection,
                                     MHD_HTTP_BAD_REQUEST,
                                     REQUEST_MALFORMED);
-    return MHD_NO;
+    return false;
   }
   if (1 == h[5] - '0')
   {
@@ -3219,7 +3283,7 @@ parse_http_version (struct MHD_Connection *connection,
     else
       connection->rq.http_ver = MHD_HTTP_VER_1_2__1_9;
 
-    return MHD_YES;
+    return true;
   }
 
   if (0 == h[5] - '0')
@@ -3229,14 +3293,14 @@ parse_http_version (struct MHD_Connection *connection,
     transmit_error_response_static (connection,
                                     MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED,
                                     REQ_HTTP_VER_IS_TOO_OLD);
-    return MHD_NO;
+    return false;
   }
 
   connection->rq.http_ver = MHD_HTTP_VER_FUTURE;
   transmit_error_response_static (connection,
                                   MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED,
                                   REQ_HTTP_VER_IS_NOT_SUPPORTED);
-  return MHD_NO;
+  return false;
 }
 
 
@@ -3246,19 +3310,15 @@ parse_http_version (struct MHD_Connection *connection,
  * @param connection the connection
  * @param method the pointer to HTTP request method string
  * @param len the length of @a method in bytes
- * @return #MHD_YES if HTTP method is valid string,
- *         #MHD_NO if HTTP method string is not valid.
  */
-static enum MHD_Result
+static void
 parse_http_std_method (struct MHD_Connection *connection,
                        const char *method,
                        size_t len)
 {
   const char *const m = method; /**< short alias */
   mhd_assert (NULL != m);
-
-  if (0 == len)
-    return MHD_NO;
+  mhd_assert (0 != len);
 
   if ((MHD_STATICSTR_LEN_ (MHD_HTTP_METHOD_GET) == len) &&
       (0 == memcmp (m, MHD_HTTP_METHOD_GET, len)))
@@ -3286,141 +3346,6 @@ parse_http_std_method (struct MHD_Connection *connection,
     connection->rq.http_mthd = MHD_HTTP_MTHD_TRACE;
   else
     connection->rq.http_mthd = MHD_HTTP_MTHD_OTHER;
-
-  /* Any method string with non-zero length is valid */
-  return MHD_YES;
-}
-
-
-/**
- * Parse the first line of the HTTP HEADER.
- *
- * @param connection the connection (updated)
- * @param line the first line, not 0-terminated
- * @param line_len length of the first @a line
- * @return #MHD_YES if the line is ok, #MHD_NO if it is malformed
- */
-static enum MHD_Result
-parse_initial_message_line (struct MHD_Connection *connection,
-                            char *line,
-                            size_t line_len)
-{
-  struct MHD_Daemon *daemon = connection->daemon;
-  const char *curi;
-  char *uri;
-  char *http_version;
-  char *args;
-
-  if (NULL == (uri = memchr (line,
-                             ' ',
-                             line_len)))
-    return MHD_NO;              /* serious error */
-  uri[0] = '\0';
-  connection->rq.method = line;
-  if (MHD_NO == parse_http_std_method (connection, connection->rq.method,
-                                       (size_t) (uri - line)))
-    return MHD_NO;
-  uri++;
-  /* Skip any spaces. Not required by standard but allow
-     to be more tolerant. */
-  /* TODO: do not skip them in standard mode */
-  while ( (' ' == uri[0]) &&
-          ( (size_t) (uri - line) < line_len) )
-    uri++;
-  if ((size_t) (uri - line) == line_len)
-  {
-    /* No URI and no http version given */
-    curi = "";
-    uri = NULL;
-    connection->rq.version = "";
-    args = NULL;
-    if (MHD_NO == parse_http_version (connection, connection->rq.version, 0))
-      return MHD_NO;
-  }
-  else
-  {
-    size_t uri_len;
-    curi = uri;
-    /* Search from back to accept malformed URI with space */
-    http_version = line + line_len - 1;
-    /* Skip any trailing spaces */
-    /* TODO: do not skip them in standard mode */
-    while ( (' ' == http_version[0]) &&
-            (http_version > uri) )
-      http_version--;
-    /* Find first space in reverse direction */
-    while ( (' ' != http_version[0]) &&
-            (http_version > uri) )
-      http_version--;
-    if (http_version > uri)
-    {
-      /* http_version points to character before HTTP version string */
-      http_version[0] = '\0';
-      connection->rq.version = http_version + 1;
-      if (MHD_NO == parse_http_version (connection, connection->rq.version,
-                                        line_len
-                                        - (size_t)
-                                        (connection->rq.version - line)))
-        return MHD_NO;
-      uri_len = (size_t) (http_version - uri);
-    }
-    else
-    {
-      connection->rq.version = "";
-      if (MHD_NO == parse_http_version (connection, connection->rq.version, 0))
-        return MHD_NO;
-      uri_len = line_len - (size_t) (uri - line);
-    }
-    /* check for spaces in URI if we are "strict" */
-    if ( (-2 < daemon->client_discipline) &&
-         (NULL != memchr (uri,
-                          ' ',
-                          uri_len)) )
-    {
-      /* space exists in URI and we are supposed to be strict, reject */
-      return MHD_NO;
-    }
-
-    args = memchr (uri,
-                   '?',
-                   uri_len);
-  }
-
-  /* log callback before we modify URI *or* args */
-  if (NULL != daemon->uri_log_callback)
-  {
-    connection->rq.client_aware = true;
-    connection->rq.client_context
-      = daemon->uri_log_callback (daemon->uri_log_callback_cls,
-                                  uri,
-                                  connection);
-  }
-
-  if (NULL != args)
-  {
-    args[0] = '\0';
-    args++;
-    /* note that this call clobbers 'args' */
-    MHD_parse_arguments_ (connection,
-                          MHD_GET_ARGUMENT_KIND,
-                          args,
-                          &connection_add_header,
-                          connection);
-  }
-
-  /* unescape URI *after* searching for arguments and log callback */
-  if (NULL != uri)
-  {
-    connection->rq.url_len =
-      daemon->unescape_callback (daemon->unescape_callback_cls,
-                                 connection,
-                                 uri);
-  }
-  else
-    connection->rq.url_len = 0;
-
-  connection->rq.url = curi;
-  return MHD_YES;
 }
 
 
@@ -4060,6 +3985,792 @@ parse_connection_headers (struct MHD_Connection *connection)
       }
     }
   }
+}
+
+
+#ifndef MHD_MAX_EMPTY_LINES_SKIP
+/**
+ * The maximum number of ignored empty line before the request line
+ * at default "strictness" level.
+ */
+#define MHD_MAX_EMPTY_LINES_SKIP 1024
+#endif /* ! MHD_MAX_EMPTY_LINES_SKIP */
+
+/**
+ * Find and parse the request line.
+ * @param c the connection to process
+ * @return true if request line completely processed and state is changed,
+ *         false if not enough data yet in the receive buffer
+ */
+static bool
+get_request_line_inner (struct MHD_Connection *c)
+{
+  size_t p; /**< The current processing position */
+  const int discp_lvl = c->daemon->client_discipline;
+  /* Allow to skip one or more empty lines before the request line.
+     RFC 9112, section 2.2 */
+  const bool skip_empty_lines = (1 >= discp_lvl);
+  /* Allow to skip more then one empty line before the request line.
+     RFC 9112, section 2.2 */
+  const bool skip_several_empty_lines = (skip_empty_lines && (0 >= discp_lvl));
+  /* Allow to skip number of unlimited empty lines before the request line.
+     RFC 9112, section 2.2 */
+  const bool skip_unlimited_empty_lines =
+    (skip_empty_lines && (-3 >= discp_lvl));
+  /* Treat bare LF as the end of the line.
+     RFC 9112, section 2.2 */
+  const bool bare_lf_as_crlf = (0 >= discp_lvl);
+  /* Treat tab as whitespace delimiter */
+  const bool tab_as_wsp = (0 >= discp_lvl);
+  /* Treat VT (vertical tab) and FF (form feed) as whitespace delimiters */
+  const bool other_wsp_as_wsp = (-1 >= discp_lvl);
+  /* Treat continuous whitespace block as a single space */
+  const bool wsp_blocks = (-1 >= discp_lvl);
+  /* Parse whitespace in URI, special parsing of the request line */
+  const bool wsp_in_uri = (0 >= discp_lvl);
+  /* Keep whitespace in URI, give app URI with whitespace instead of
+     automatic redirect to fixed URI */
+  const bool wsp_in_uri_keep = (-2 >= discp_lvl);
+  /* Keep bare CR character as is.
+     Violates RFC 9112, section 2.2 */
+  const bool bare_cr_keep = (wsp_in_uri_keep && (-3 >= discp_lvl));
+  /* Treat bare CR as space; replace it with space before processing.
+     RFC 9112, section 2.2 */
+  const bool bare_cr_as_sp = ((! bare_cr_keep) && (-1 >= discp_lvl));
+
+  mhd_assert (MHD_CONNECTION_INIT == c->state || \
+              MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
+  mhd_assert (NULL == c->rq.method || \
+              MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
+  mhd_assert (MHD_HTTP_MTHD_NO_METHOD == c->rq.http_mthd || \
+              MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
+  mhd_assert (MHD_HTTP_MTHD_NO_METHOD == c->rq.http_mthd || \
+              0 != c->rq.hdrs.rq_line.proc_pos);
+
+  if (0 == c->read_buffer_offset)
+  {
+    mhd_assert (MHD_CONNECTION_INIT == c->state);
+    return false; /* No data to process */
+  }
+  p = c->rq.hdrs.rq_line.proc_pos;
+  mhd_assert (p <= c->read_buffer_offset);
+
+  /* Skip empty lines, if any (and if allowed) */
+  /* See RFC 9112, section 2.2 */
+  if ((0 == p)
+      && (skip_empty_lines))
+  {
+    /* Skip empty lines before the request line.
+       See RFC 9112, section 2.2 */
+    bool is_empty_line;
+    mhd_assert (MHD_CONNECTION_INIT == c->state);
+    mhd_assert (NULL == c->rq.method);
+    mhd_assert (NULL == c->rq.url);
+    mhd_assert (0 == c->rq.url_len);
+    mhd_assert (NULL == c->rq.hdrs.rq_line.rq_tgt);
+    mhd_assert (0 == c->rq.hdrs.rq_line.rq_tgt_len);
+    mhd_assert (NULL == c->rq.version);
+    do
+    {
+      is_empty_line = false;
+      if ('\r' == c->read_buffer[0])
+      {
+        if (1 == c->read_buffer_offset)
+          return false; /* Not enough data yet */
+        if ('\n' == c->read_buffer[1])
+        {
+          is_empty_line = true;
+          c->read_buffer += 2;
+          c->read_buffer_size -= 2;
+          c->read_buffer_offset -= 2;
+          c->rq.hdrs.rq_line.skipped_empty_lines++;
+        }
+      }
+      else if (('\n' == c->read_buffer[0]) &&
+               (bare_lf_as_crlf))
+      {
+        is_empty_line = true;
+        c->read_buffer += 1;
+        c->read_buffer_size -= 1;
+        c->read_buffer_offset -= 1;
+        c->rq.hdrs.rq_line.skipped_empty_lines++;
+      }
+      if (is_empty_line)
+      {
+        if ((! skip_unlimited_empty_lines) &&
+            (((skip_several_empty_lines) ? MHD_MAX_EMPTY_LINES_SKIP : 1) <
+             c->rq.hdrs.rq_line.skipped_empty_lines))
+        {
+          connection_close_error (c,
+                                  _ ("Too many meaningless extra empty lines " \
+                                     "received before the request"));
+          return true; /* Process connection closure */
+        }
+        if (0 == c->read_buffer_offset)
+          return false;  /* No more data to process */
+      }
+    } while (is_empty_line);
+  }
+  /* All empty lines are skipped */
+
+  c->state = MHD_CONNECTION_REQ_LINE_RECEIVING;
+  /* Read and parse the request line */
+  mhd_assert (1 <= c->read_buffer_offset);
+
+  while (p < c->read_buffer_offset)
+  {
+    const char chr = c->read_buffer[p];
+    bool end_of_line;
+    /*
+       The processing logic is different depending on the configured strictness:
+
+       When whitespace BLOCKS are NOT ALLOWED, the end of the whitespace is
+       processed BEFORE processing of the current character.
+       When whitespace BLOCKS are ALLOWED, the end of the whitespace is
+       processed AFTER processing of the current character.
+
+       When space char in the URI is ALLOWED, the delimiter between the URI and
+       the HTTP version string is processed only at the END of the line.
+       When space in the URI is NOT ALLOWED, the delimiter between the URI and
+       the HTTP version string is processed as soon as the FIRST whitespace is
+       found after URI start.
+     */
+
+    end_of_line = false;
+
+    mhd_assert ((0 == c->rq.hdrs.rq_line.last_ws_end) || \
+                (c->rq.hdrs.rq_line.last_ws_end > \
+                 c->rq.hdrs.rq_line.last_ws_start));
+    mhd_assert ((0 == c->rq.hdrs.rq_line.last_ws_start) || \
+                (0 != c->rq.hdrs.rq_line.last_ws_end));
+
+    /* Check for the end of the line */
+    if ('\r' == chr)
+    {
+      if (p + 1 == c->read_buffer_offset)
+      {
+        c->rq.hdrs.rq_line.proc_pos = p;
+        return false; /* Not enough data yet */
+      }
+      else if ('\n' == c->read_buffer[p + 1])
+        end_of_line = true;
+      else
+      {
+        /* Bare CR alone */
+        /* Must be rejected or replaced with space char.
+           See RFC 9112, section 2.2 */
+        if (bare_cr_as_sp)
+        {
+          c->read_buffer[p] = ' ';
+          c->rq.num_cr_sp_replaced++;
+          continue; /* Re-start processing of the current character */
+        }
+        else if (! bare_cr_keep)
+        {
+          /* A quick simple check whether this line looks like an HTTP request */
+          if ((MHD_HTTP_MTHD_GET <= c->rq.http_mthd) &&
+              (MHD_HTTP_MTHD_DELETE >= c->rq.http_mthd))
+          {
+            transmit_error_response_static (c,
+                                            MHD_HTTP_BAD_REQUEST,
+                                            BARE_CR_IN_HEADER);
+          }
+          else
+            connection_close_error (c,
+                                    _ ("Bare CR characters are not allowed " \
+                                       "in the request line.\n"));
+          return true; /* Error in the request */
+        }
+      }
+    }
+    else if ('\n' == chr)
+    {
+      /* Bare LF may be recognised as a line delimiter.
+         See RFC 9112, section 2.2 */
+      if (bare_lf_as_crlf)
+        end_of_line = true;
+      else
+      {
+        /* While RFC does not enforce error for bare LF character,
+           if this char is not treated as a line delimiter, it should be
+           rejected to avoid any security weakness due to request smuggling. */
+        /* A quick simple check whether this line looks like an HTTP request */
+        if ((MHD_HTTP_MTHD_GET <= c->rq.http_mthd) &&
+            (MHD_HTTP_MTHD_DELETE >= c->rq.http_mthd))
+        {
+          transmit_error_response_static (c,
+                                          MHD_HTTP_BAD_REQUEST,
+                                          BARE_LF_IN_HEADER);
+        }
+        else
+          connection_close_error (c,
+                                  _ ("Bare LF characters are not allowed " \
+                                     "in the request line.\n"));
+        return true; /* Error in the request */
+      }
+    }
+
+    if (end_of_line)
+    {
+      /* Handle the end of the request line */
+
+      if (NULL != c->rq.method)
+      {
+        if (wsp_in_uri)
+        {
+          /* The end of the URI and the start of the HTTP version string
+             should be determined now. */
+          mhd_assert (NULL == c->rq.version);
+          mhd_assert (0 == c->rq.hdrs.rq_line.rq_tgt_len);
+          if (0 != c->rq.hdrs.rq_line.last_ws_end)
+          {
+            /* Determine the end and the length of the URI */
+            if (NULL != c->rq.hdrs.rq_line.rq_tgt)
+            {
+              c->read_buffer [c->rq.hdrs.rq_line.last_ws_start] = 0; /* Zero terminate the URI */
+              c->rq.hdrs.rq_line.rq_tgt_len =
+                c->rq.hdrs.rq_line.last_ws_start
+                - (size_t) (c->rq.hdrs.rq_line.rq_tgt - c->read_buffer);
+            }
+            else if ((c->rq.hdrs.rq_line.last_ws_start + 1 <
+                      c->rq.hdrs.rq_line.last_ws_end) &&
+                     (HTTP_VER_LEN == (p - c->rq.hdrs.rq_line.last_ws_end)))
+            {
+              /* Found only HTTP method and HTTP version and more than one
+                 whitespace between them. Assume zero-length URI. */
+              mhd_assert (wsp_blocks);
+              c->rq.hdrs.rq_line.last_ws_start++;
+              c->read_buffer[c->rq.hdrs.rq_line.last_ws_start] = 0; /* Zero terminate the URI */
+              c->rq.hdrs.rq_line.rq_tgt =
+                c->read_buffer + c->rq.hdrs.rq_line.last_ws_start;
+              c->rq.hdrs.rq_line.rq_tgt_len = 0;
+              c->rq.hdrs.rq_line.num_ws_in_uri = 0;
+              c->rq.hdrs.rq_line.rq_tgt_qmark = NULL;
+            }
+            /* Determine the start of the HTTP version string */
+            if (NULL != c->rq.hdrs.rq_line.rq_tgt)
+            {
+              c->rq.version = c->read_buffer + c->rq.hdrs.rq_line.last_ws_end;
+            }
+          }
+        }
+        else
+        {
+          /* The end of the URI and the start of the HTTP version string
+             should be already known. */
+          if ((NULL == c->rq.version)
+              && (NULL != c->rq.hdrs.rq_line.rq_tgt)
+              && (HTTP_VER_LEN == p - (size_t) (c->rq.hdrs.rq_line.rq_tgt
+                                                - c->read_buffer))
+              && (0 != c->read_buffer[(size_t)
+                                      (c->rq.hdrs.rq_line.rq_tgt
+                                       - c->read_buffer) - 1]))
+          {
+            /* Found only HTTP method and HTTP version and more than one
+               whitespace between them. Assume zero-length URI. */
+            size_t uri_pos;
+            mhd_assert (wsp_blocks);
+            mhd_assert (0 == c->rq.hdrs.rq_line.rq_tgt_len);
+            uri_pos = (size_t) (c->rq.hdrs.rq_line.rq_tgt - c->read_buffer) - 1;
+            mhd_assert (uri_pos < p);
+            c->rq.version = c->rq.hdrs.rq_line.rq_tgt;
+            c->read_buffer[uri_pos] = 0;  /* Zero terminate the URI */
+            c->rq.hdrs.rq_line.rq_tgt = c->read_buffer + uri_pos;
+            c->rq.hdrs.rq_line.rq_tgt_len = 0;
+            c->rq.hdrs.rq_line.num_ws_in_uri = 0;
+            c->rq.hdrs.rq_line.rq_tgt_qmark = NULL;
+          }
+        }
+
+        if (NULL != c->rq.version)
+        {
+          mhd_assert (NULL != c->rq.hdrs.rq_line.rq_tgt);
+          if (! parse_http_version (c, c->rq.version,
+                                    p
+                                    - (size_t) (c->rq.version
+                                                - c->read_buffer)))
+          {
+            mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING < c->state);
+            return true; /* Unsupported / broken HTTP version */
+          }
+          c->read_buffer[p] = 0; /* Zero terminate the HTTP version strings */
+          if ('\r' == chr)
+          {
+            p++; /* Consume CR */
+            mhd_assert (p < c->read_buffer_offset); /* The next character has been already checked */
+          }
+          p++; /* Consume LF */
+          c->read_buffer += p;
+          c->read_buffer_size -= p;
+          c->read_buffer_offset -= p;
+          mhd_assert (c->rq.hdrs.rq_line.num_ws_in_uri <= \
+                      c->rq.hdrs.rq_line.rq_tgt_len);
+          mhd_assert ((NULL == c->rq.hdrs.rq_line.rq_tgt_qmark) || \
+                      (0 != c->rq.hdrs.rq_line.rq_tgt_len));
+          mhd_assert ((NULL == c->rq.hdrs.rq_line.rq_tgt_qmark) || \
+                      ((size_t) (c->rq.hdrs.rq_line.rq_tgt_qmark \
+                                 - c->rq.hdrs.rq_line.rq_tgt) < \
+                       c->rq.hdrs.rq_line.rq_tgt_len));
+          mhd_assert ((NULL == c->rq.hdrs.rq_line.rq_tgt_qmark) || \
+                      (c->rq.hdrs.rq_line.rq_tgt_qmark >= \
+                       c->rq.hdrs.rq_line.rq_tgt));
+          return true; /* The request line is successfully parsed */
+        }
+      }
+      /* Error in the request line */
+
+      /* A quick simple check whether this line looks like an HTTP request */
+      if ((MHD_HTTP_MTHD_GET <= c->rq.http_mthd) &&
+          (MHD_HTTP_MTHD_DELETE >= c->rq.http_mthd))
+      {
+        transmit_error_response_static (c,
+                                        MHD_HTTP_BAD_REQUEST,
+                                        REQUEST_MALFORMED);
+      }
+      else
+        connection_close_error (c,
+                                _ ("The request line is malformed.\n"));
+
+      return true;
+    }
+
+    /* Process possible end of the previously found whitespace delimiter */
+    if ((! wsp_blocks) &&
+        (p == c->rq.hdrs.rq_line.last_ws_end) &&
+        (0 != c->rq.hdrs.rq_line.last_ws_end))
+    {
+      /* Previous character was a whitespace char and whitespace blocks
+         are not allowed. */
+      /* The current position is the next character after
+         a whitespace delimiter */
+      if (NULL == c->rq.hdrs.rq_line.rq_tgt)
+      {
+        /* The current position is the start of the URI */
+        mhd_assert (0 == c->rq.hdrs.rq_line.rq_tgt_len);
+        mhd_assert (NULL == c->rq.version);
+        c->rq.hdrs.rq_line.rq_tgt = c->read_buffer + p;
+        /* Reset the whitespace marker */
+        c->rq.hdrs.rq_line.last_ws_start = 0;
+        c->rq.hdrs.rq_line.last_ws_end = 0;
+      }
+      else
+      {
+        /* It was a whitespace after the start of the URI */
+        if (! wsp_in_uri)
+        {
+          mhd_assert ((0 != c->rq.hdrs.rq_line.rq_tgt_len) || \
+                      (c->rq.hdrs.rq_line.rq_tgt + 1 == c->read_buffer + p));
+          mhd_assert (NULL == c->rq.version); /* Too many whitespaces? This error is handled at whitespace start */
+          c->rq.version = c->read_buffer + p;
+          /* Reset the whitespace marker */
+          c->rq.hdrs.rq_line.last_ws_start = 0;
+          c->rq.hdrs.rq_line.last_ws_end = 0;
+        }
+      }
+    }
+
+    /* Process the current character.
+       Is it not the end of the line.  */
+    if ((' ' == chr)
+        || (('\t' == chr) && (tab_as_wsp))
+        || ((other_wsp_as_wsp) && ((0xb == chr) || (0xc == chr))))
+    {
+      /* A whitespace character */
+      if ((0 == c->rq.hdrs.rq_line.last_ws_end) ||
+          (p != c->rq.hdrs.rq_line.last_ws_end) ||
+          (! wsp_blocks))
+      {
+        /* Found first whitespace char of the new whitespace block */
+        if (NULL == c->rq.method)
+        {
+          /* Found the end of the HTTP method string */
+          mhd_assert (0 == c->rq.hdrs.rq_line.last_ws_start);
+          mhd_assert (0 == c->rq.hdrs.rq_line.last_ws_end);
+          mhd_assert (NULL == c->rq.hdrs.rq_line.rq_tgt);
+          mhd_assert (0 == c->rq.hdrs.rq_line.rq_tgt_len);
+          mhd_assert (NULL == c->rq.version);
+          if (0 == p)
+          {
+            connection_close_error (c,
+                                    _ ("The request line starts with "
+                                       "a whitespace.\n"));
+            return true; /* Error in the request */
+          }
+          c->read_buffer[p] = 0; /* Zero-terminate the request method string */
+          c->rq.method = c->read_buffer;
+          parse_http_std_method (c, c->rq.method, p);
+        }
+        else
+        {
+          /* A whitespace after the start of the URI */
+          if (! wsp_in_uri)
+          {
+            /* Whitespace in URI is not allowed to be parsed */
+            if (NULL == c->rq.version)
+            {
+              mhd_assert (NULL != c->rq.hdrs.rq_line.rq_tgt);
+              /* This is a delimiter between URI and HTTP version string */
+              c->read_buffer[p] = 0; /* Zero-terminate request URI string */
+              mhd_assert (((size_t) (c->rq.hdrs.rq_line.rq_tgt   \
+                                     - c->read_buffer)) <= p);
+              c->rq.hdrs.rq_line.rq_tgt_len =
+                p - (size_t) (c->rq.hdrs.rq_line.rq_tgt - c->read_buffer);
+            }
+            else
+            {
+              /* This is a delimiter AFTER version string */
+
+              /* A quick simple check whether this line looks like an HTTP request */
+              if ((MHD_HTTP_MTHD_GET <= c->rq.http_mthd) &&
+                  (MHD_HTTP_MTHD_DELETE >= c->rq.http_mthd))
+              {
+                transmit_error_response_static (c,
+                                                MHD_HTTP_BAD_REQUEST,
+                                                RQ_LINE_TOO_MANY_WSP);
+              }
+              else
+                connection_close_error (c,
+                                        _ ("The request line has more than "
+                                           "two whitespaces.\n"));
+              return true; /* Error in the request */
+            }
+          }
+          else
+          {
+            /* Whitespace in URI is allowed to be parsed */
+            if (0 != c->rq.hdrs.rq_line.last_ws_end)
+            {
+              /* The whitespace after the start of the URI has been found already */
+              c->rq.hdrs.rq_line.num_ws_in_uri +=
+                c->rq.hdrs.rq_line.last_ws_end
+                - c->rq.hdrs.rq_line.last_ws_start;
+            }
+          }
+        }
+        c->rq.hdrs.rq_line.last_ws_start = p;
+        c->rq.hdrs.rq_line.last_ws_end = p + 1; /* Will be updated on the next char parsing */
+      }
+      else
+      {
+        /* Continuation of the whitespace block */
+        mhd_assert (0 != c->rq.hdrs.rq_line.last_ws_end);
+        mhd_assert (0 != p);
+        c->rq.hdrs.rq_line.last_ws_end = p + 1;
+      }
+    }
+    else
+    {
+      /* Non-whitespace char, not the end of the line */
+      mhd_assert ((0 == c->rq.hdrs.rq_line.last_ws_end) || \
+                  (c->rq.hdrs.rq_line.last_ws_end == p) || \
+                  wsp_in_uri);
+
+      if ((p == c->rq.hdrs.rq_line.last_ws_end) &&
+          (0 != c->rq.hdrs.rq_line.last_ws_end) &&
+          (wsp_blocks))
+      {
+        /* The end of the whitespace block */
+        if (NULL == c->rq.hdrs.rq_line.rq_tgt)
+        {
+          /* This is the first character of the URI */
+          mhd_assert (0 == c->rq.hdrs.rq_line.rq_tgt_len);
+          mhd_assert (NULL == c->rq.version);
+          c->rq.hdrs.rq_line.rq_tgt = c->read_buffer + p;
+          /* Reset the whitespace marker */
+          c->rq.hdrs.rq_line.last_ws_start = 0;
+          c->rq.hdrs.rq_line.last_ws_end = 0;
+        }
+        else
+        {
+          if (! wsp_in_uri)
+          {
+            /* This is the first character of the HTTP version */
+            mhd_assert (NULL != c->rq.hdrs.rq_line.rq_tgt);
+            mhd_assert ((0 != c->rq.hdrs.rq_line.rq_tgt_len) || \
+                        (c->rq.hdrs.rq_line.rq_tgt + 1 == c->read_buffer + p));
+            mhd_assert (NULL == c->rq.version); /* Handled at whitespace start */
+            c->rq.version = c->read_buffer + p;
+            /* Reset the whitespace marker */
+            c->rq.hdrs.rq_line.last_ws_start = 0;
+            c->rq.hdrs.rq_line.last_ws_end = 0;
+          }
+        }
+      }
+
+      /* Handle other special characters */
+      if ('?' == chr)
+      {
+        if ((NULL == c->rq.hdrs.rq_line.rq_tgt_qmark) &&
+            (NULL != c->rq.hdrs.rq_line.rq_tgt))
+        {
+          c->rq.hdrs.rq_line.rq_tgt_qmark = c->read_buffer + p;
+        }
+      }
+      else if ((0xb == chr) || (0xc == chr))
+      {
+        /* VT or LF characters */
+        mhd_assert (! other_wsp_as_wsp);
+        if ((NULL != c->rq.hdrs.rq_line.rq_tgt) &&
+            (NULL == c->rq.version) &&
+            (wsp_in_uri))
+        {
+          c->rq.hdrs.rq_line.num_ws_in_uri++;
+        }
+        else
+        {
+          connection_close_error (c,
+                                  _ ("Invalid character is in the "
+                                     "request line.\n"));
+          return true; /* Error in the request */
+        }
+      }
+      else if (0 == chr)
+      {
+        /* NUL character */
+        connection_close_error (c,
+                                _ ("The NUL character is in the "
+                                   "request line.\n"));
+        return true; /* Error in the request */
+      }
+    }
+
+    p++;
+  }
+
+  c->rq.hdrs.rq_line.proc_pos = p;
+  return false; /* Not enough data yet */
+}
+
+
+#ifndef MHD_MAX_FIXED_URI_LEN
+/**
+ * The maximum size of the fixed URI for automatic redirection
+ */
+#define MHD_MAX_FIXED_URI_LEN (64 * 1024)
+#endif /* ! MHD_MAX_FIXED_URI_LEN */
+
+/**
+ * Send the automatic redirection to fixed URI when received URI with
+ * whitespaces.
+ * If URI is too large, close connection with error.
+ *
+ * @param c the connection to process
+ */
+static void
+send_redirect_fixed_rq_target (struct MHD_Connection *c)
+{
+  char *b;
+  size_t fixed_uri_len;
+  size_t i;
+  size_t o;
+  char *hdr_name;
+  size_t hdr_name_len;
+  mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
+  mhd_assert (0 != c->rq.hdrs.rq_line.num_ws_in_uri);
+  mhd_assert (c->rq.hdrs.rq_line.num_ws_in_uri <= \
+              c->rq.hdrs.rq_line.rq_tgt_len);
+  fixed_uri_len = c->rq.hdrs.rq_line.rq_tgt_len
+                  + 2 * c->rq.hdrs.rq_line.num_ws_in_uri;
+  if ((fixed_uri_len + 200 > c->daemon->pool_size) ||
+      (fixed_uri_len > MHD_MAX_FIXED_URI_LEN) ||
+      (NULL == (b = malloc (fixed_uri_len + 1))))
+  {
+    connection_close_error (c,
+                            _ ("The request has whitespace character is " \
+                               "in the URI and the URI is too large to " \
+                               "send automatic redirect to fixed URI.\n"));
+    return;
+  }
+  i = 0;
+  o = 0;
+
+  do
+  {
+    const char chr = c->rq.hdrs.rq_line.rq_tgt[i++];
+    mhd_assert ('\r' != chr); /* Replaced during request line parsing */
+    mhd_assert ('\n' != chr); /* Rejected during request line parsing */
+    mhd_assert (0 != chr); /* Rejected during request line parsing */
+    switch (chr)
+    {
+    case ' ':
+      b[o++] = '%';
+      b[o++] = '2';
+      b[o++] = '0';
+      break;
+    case '\t':
+      b[o++] = '%';
+      b[o++] = '0';
+      b[o++] = '9';
+      break;
+    case 0x0B:   /* VT (vertical tab) */
+      b[o++] = '%';
+      b[o++] = '0';
+      b[o++] = 'B';
+      break;
+    case 0x0C:   /* FF (form feed) */
+      b[o++] = '%';
+      b[o++] = '0';
+      b[o++] = 'C';
+      break;
+    default:
+      b[o++] = chr;
+      break;
+    }
+  } while (i < c->rq.hdrs.rq_line.rq_tgt_len);
+  mhd_assert (fixed_uri_len == o);
+  b[o] = 0; /* Zero-terminate the result */
+
+  hdr_name_len = MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_LOCATION);
+  hdr_name = malloc (hdr_name_len + 1);
+  if (NULL != hdr_name)
+  {
+    memcpy (hdr_name, MHD_HTTP_HEADER_LOCATION, hdr_name_len + 1);
+    transmit_error_response_header (c, MHD_HTTP_MOVED_PERMANENTLY,
+                                    RQ_TARGET_INVALID_CHAR,
+                                    hdr_name, hdr_name_len,
+                                    b, o);
+    return;
+  }
+  free (b);
+  connection_close_error (c,
+                          _ ("The request has whitespace character is in the " \
+                             "URI.\n"));
+  return;
+}
+
+
+/**
+ * Process request-target string, form URI and URI parameters
+ * @param c the connection to process
+ * @return true if request-target successfully processed,
+ *         false if error encountered
+ */
+static bool
+process_request_target (struct MHD_Connection *c)
+{
+#if _DEBUG
+  size_t params_len;
+#endif /* _DEBUG */
+  mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
+  mhd_assert (NULL == c->rq.url);
+  mhd_assert (0 == c->rq.url_len);
+  mhd_assert (NULL != c->rq.hdrs.rq_line.rq_tgt);
+  mhd_assert ((NULL == c->rq.hdrs.rq_line.rq_tgt_qmark) || \
+              (c->rq.hdrs.rq_line.rq_tgt <= c->rq.hdrs.rq_line.rq_tgt_qmark));
+  mhd_assert ((NULL == c->rq.hdrs.rq_line.rq_tgt_qmark) || \
+              (c->rq.hdrs.rq_line.rq_tgt_len > \
+               (size_t) (c->rq.hdrs.rq_line.rq_tgt_qmark \
+                         - c->rq.hdrs.rq_line.rq_tgt)));
+
+  /* Log callback before the request-target is modified/decoded */
+  if (NULL != c->daemon->uri_log_callback)
+  {
+    c->rq.client_aware = true;
+    c->rq.client_context =
+      c->daemon->uri_log_callback (c->daemon->uri_log_callback_cls,
+                                   c->rq.hdrs.rq_line.rq_tgt,
+                                   c);
+  }
+
+  if (NULL != c->rq.hdrs.rq_line.rq_tgt_qmark)
+  {
+#if _DEBUG
+    params_len =
+      c->rq.hdrs.rq_line.rq_tgt_len
+      - (size_t) (c->rq.hdrs.rq_line.rq_tgt_qmark - c->rq.hdrs.rq_line.rq_tgt);
+#endif /* _DEBUG */
+    c->rq.hdrs.rq_line.rq_tgt_qmark[0] = 0; /* Replace '?' with zero termination */
+    if (MHD_NO == MHD_parse_arguments_ (c,
+                                        MHD_GET_ARGUMENT_KIND,
+                                        c->rq.hdrs.rq_line.rq_tgt_qmark + 1,
+                                        &connection_add_header,
+                                        c))
+    {
+      mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING != c->state);
+      return false;
+    }
+  }
+#if _DEBUG
+  else
+    params_len = 0;
+#endif /* _DEBUG */
+
+  mhd_assert (strlen (c->rq.hdrs.rq_line.rq_tgt) == \
+              c->rq.hdrs.rq_line.rq_tgt_len - params_len);
+
+  /* Finally unescape URI itself */
+  c->rq.url_len =
+    c->daemon->unescape_callback (c->daemon->unescape_callback_cls,
+                                  c,
+                                  c->rq.hdrs.rq_line.rq_tgt);
+  c->rq.url = c->rq.hdrs.rq_line.rq_tgt;
+
+  return true;
+}
+
+
+/**
+ * Find and parse the request line.
+ * Advance to the next state when done, handle errors.
+ * @param c the connection to process
+ * @return true if request line completely processed and state is changed,
+ *         false if not enough data yet in the receive buffer
+ */
+static bool
+get_request_line (struct MHD_Connection *c)
+{
+  const int discp_lvl = c->daemon->client_discipline;
+  /* Parse whitespace in URI, special parsing of the request line */
+  const bool wsp_in_uri = (0 >= discp_lvl);
+  /* Keep whitespace in URI, give app URI with whitespace instead of
+     automatic redirect to fixed URI */
+  const bool wsp_in_uri_keep = (-2 >= discp_lvl);
+
+  if (! get_request_line_inner (c))
+    return false;
+  if (MHD_CONNECTION_REQ_LINE_RECEIVING < c->state)
+    return true; /* Error in the request */
+
+  mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
+  mhd_assert (NULL == c->rq.url);
+  mhd_assert (0 == c->rq.url_len);
+  mhd_assert (NULL != c->rq.hdrs.rq_line.rq_tgt);
+  if (0 != c->rq.hdrs.rq_line.num_ws_in_uri)
+  {
+    if (! wsp_in_uri)
+    {
+      transmit_error_response_static (c,
+                                      MHD_HTTP_BAD_REQUEST,
+                                      RQ_TARGET_INVALID_CHAR);
+      return true; /* Error in the request */
+    }
+    if (! wsp_in_uri_keep)
+    {
+      send_redirect_fixed_rq_target (c);
+      return true; /* Error in the request */
+    }
+  }
+#ifdef HAVE_MESSAGES
+  if (1 == c->rq.num_cr_sp_replaced)
+  {
+    MHD_DLOG (c->daemon,
+              _ ("One bare CR character has been replaced with space " \
+                 "in the request line.\n"));
+  }
+  else if (0 != c->rq.num_cr_sp_replaced)
+  {
+    MHD_DLOG (c->daemon,
+              _ ("%" PRIu64 " bare CR characters have been replaced with " \
+                 "spaces in the request line.\n"),
+                 (uint64_t) c->rq.num_cr_sp_replaced);
+  }
+#endif /* HAVE_MESSAGES */
+  if (! process_request_target (c))
+    return true; /* Error in processing */
+
+  memset (&c->rq.hdrs.hdr, 0, sizeof(c->rq.hdrs.hdr));
+  c->state = MHD_CONNECTION_URL_RECEIVED;
+  return true;
 }
 
 
@@ -4846,7 +5557,6 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
   char *line;
-  size_t line_len;
   enum MHD_Result ret;
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
@@ -4876,40 +5586,14 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
     {
     case MHD_CONNECTION_INIT:
     case MHD_CONNECTION_REQ_LINE_RECEIVING:
-      line = get_next_header_line (connection,
-                                   &line_len);
-      if (MHD_CONNECTION_REQ_LINE_RECEIVING < connection->state)
-        continue;
-      if (NULL != line)
+      if (get_request_line (connection))
       {
-        /* Check for empty string, as we might want
-           to tolerate 'spurious' empty lines */
-        if (0 == line[0])
-        {
-          /* TODO: Add MHD option to not tolerate it */
-          connection->state = MHD_CONNECTION_INIT;
-          continue; /* Process the next line */
-        }
-        if (MHD_NO == parse_initial_message_line (connection,
-                                                  line,
-                                                  line_len))
-          CONNECTION_CLOSE_ERROR_CHECK (connection,
-                                        NULL);
-        else
-        {
-          mhd_assert (MHD_IS_HTTP_VER_SUPPORTED (connection->rq.http_ver));
-          connection->state = MHD_CONNECTION_URL_RECEIVED;
-        }
+        mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING < connection->state);
+        mhd_assert ((MHD_IS_HTTP_VER_SUPPORTED (connection->rq.http_ver)) \
+                    || (connection->discard_request));
         continue;
       }
-      /* NULL means we didn't get a full line yet */
-      if (connection->discard_request)
-      {
-        mhd_assert (MHD_CONNECTION_INIT != connection->state);
-        continue;
-      }
-      if (0 < connection->read_buffer_offset)
-        connection->state = MHD_CONNECTION_REQ_LINE_RECEIVING;
+      mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING >= connection->state);
       break;
     case MHD_CONNECTION_URL_RECEIVED:
       line = get_next_header_line (connection,

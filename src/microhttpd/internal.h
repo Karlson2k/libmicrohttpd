@@ -1,7 +1,7 @@
 /*
   This file is part of libmicrohttpd
   Copyright (C) 2007-2018 Daniel Pittman and Christian Grothoff
-  Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+  Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -886,7 +886,7 @@ enum MHD_HTTP_Version
 /**
  * The HTTP method.
  *
- * Only primary methods (specified in RFC7231) are defined here.
+ * Only primary methods (specified in RFC9110) are defined here.
  */
 enum MHD_HTTP_Method
 {
@@ -932,6 +932,76 @@ enum MHD_HTTP_Method
   MHD_HTTP_MTHD_OTHER = 1000
 } _MHD_FIXED_ENUM;
 
+
+/**
+ * The request line processing data
+ */
+struct MHD_RequestLineProcessing
+{
+  /**
+   * The position of the next character to be processed
+   */
+  size_t proc_pos;
+  /**
+   * The number of empty lines skipped
+   */
+  unsigned int skipped_empty_lines;
+  /**
+   * The position of the start of the current/last found whitespace block,
+   * zero if not found yet.
+   */
+  size_t last_ws_start;
+  /**
+   * The position of the next character after the last known whitespace
+   * character in the current/last found whitespace block,
+   * zero if not found yet.
+   */
+  size_t last_ws_end;
+  /**
+   * The pointer to the request target.
+   * The request URI will be formed based on it.
+   */
+  char *rq_tgt;
+  /**
+   * The length of the @a rq_tgt, not including terminating zero.
+   */
+  size_t rq_tgt_len;
+  /**
+   * The pointer to the first question mark in the @a rq_tgt.
+   */
+  char *rq_tgt_qmark;
+  /**
+   * The number of whitespace characters in the request URI
+   */
+  size_t num_ws_in_uri;
+};
+
+/**
+ * The request header processing data
+ */
+struct MHD_HeaderProcessing
+{
+  /**
+   * The position of the last processed character
+   */
+  size_t proc_pos;
+};
+
+/**
+ * The union of request line and header processing data
+ */
+union MHD_HeadersProcessing
+{
+  /**
+   * The request line processing data
+   */
+  struct MHD_RequestLineProcessing rq_line;
+
+  /**
+   * The request header processing data
+   */
+  struct MHD_HeaderProcessing hdr;
+};
 
 /**
  * Request-specific values.
@@ -1074,6 +1144,16 @@ struct MHD_Request
    */
   bool dauth_tried;
 #endif /* DAUTH_SUPPORT */
+  /**
+   * Number of bare CR characters that were replaced with space characters
+   * in the request line or in the headers (field lines).
+   */
+  size_t num_cr_sp_replaced;
+
+  /**
+   * The data of the request line / request headers processing
+   */
+  union MHD_HeadersProcessing hdrs;
 
   /**
    * Last incomplete header line during parsing of headers.
