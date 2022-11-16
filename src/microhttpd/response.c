@@ -145,6 +145,51 @@
 } while (0)
 
 /**
+ * Add preallocated strings a header or footer line to the response without
+ * checking.
+ *
+ * Header/footer strings are not checked and assumed to be correct.
+ *
+ * The string must not be statically allocated!
+ * The strings must be malloc()'ed and zero terminated. The strings will
+ * be free()'ed when the response is destroyed.
+ *
+ * @param response response to add a header to
+ * @param kind header or footer
+ * @param header the header string to add, must be malloc()'ed and
+ *               zero-terminated
+ * @param header_len the length of the @a header
+ * @param content the value string to add, must be malloc()'ed and
+ *                zero-terminated
+ * @param content_len the length of the @a content
+ */
+bool
+MHD_add_response_entry_no_alloc_ (struct MHD_Response *response,
+                                  enum MHD_ValueKind kind,
+                                  char *header,
+                                  size_t header_len,
+                                  char *content,
+                                  size_t content_len)
+{
+  struct MHD_HTTP_Res_Header *hdr;
+
+  mhd_assert (0 != header_len);
+  mhd_assert (0 != content_len);
+  if (NULL == (hdr = MHD_calloc_ (1, sizeof (struct MHD_HTTP_Res_Header))))
+    return false;
+
+  hdr->header = header;
+  hdr->header_size = header_len;
+  hdr->value = content;
+  hdr->value_size = content_len;
+  hdr->kind = kind;
+  _MHD_insert_header_last (response, hdr);
+
+  return true; /* Success exit point */
+}
+
+
+/**
  * Add a header or footer line to the response without checking.
  *
  * It is assumed that parameters are correct.
@@ -166,34 +211,32 @@ MHD_add_response_entry_no_check_ (struct MHD_Response *response,
                                   const char *content,
                                   size_t content_len)
 {
-  struct MHD_HTTP_Res_Header *hdr;
+  char *header_malloced;
+  char *value_malloced;
 
   mhd_assert (0 != header_len);
   mhd_assert (0 != content_len);
-  if (NULL == (hdr = MHD_calloc_ (1, sizeof (struct MHD_HTTP_Res_Header))))
+  header_malloced = malloc (header_len + 1);
+  if (NULL == header_malloced)
     return false;
-  hdr->header = malloc (header_len + 1);
-  if (NULL != hdr->header)
+
+  memcpy (header_malloced, header, header_len);
+  header_malloced[header_len] = 0;
+
+  value_malloced = malloc (content_len + 1);
+  if (NULL != value_malloced)
   {
-    memcpy (hdr->header, header, header_len);
-    hdr->header[header_len] = 0;
-    hdr->header_size = header_len;
+    memcpy (value_malloced, content, content_len);
+    value_malloced[content_len] = 0;
 
-    hdr->value = malloc (content_len + 1);
-    if (NULL != hdr->value)
-    {
-      memcpy (hdr->value, content, content_len);
-      hdr->value[content_len] = 0;
-      hdr->value_size = content_len;
-
-      hdr->kind = kind;
-      _MHD_insert_header_last (response, hdr);
-
+    if (MHD_add_response_entry_no_alloc_ (response, kind,
+                                          header_malloced, header_len,
+                                          value_malloced, content_len))
       return true; /* Success exit point */
-    }
-    free (hdr->header);
+
+    free (value_malloced);
   }
-  free (hdr);
+  free (header_malloced);
 
   return false; /* Failure exit point */
 }

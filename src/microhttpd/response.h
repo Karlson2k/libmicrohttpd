@@ -95,4 +95,31 @@ MHD_add_response_entry_no_check_ (struct MHD_Response *response,
                                   const char *content,
                                   size_t content_len);
 
+/**
+ * Add preallocated strings a header or footer line to the response without
+ * checking.
+ *
+ * Header/footer strings are not checked and assumed to be correct.
+ *
+ * The string must not be statically allocated!
+ * The strings must be malloc()'ed and zero terminated. The strings will
+ * be free()'ed when the response is destroyed.
+ *
+ * @param response response to add a header to
+ * @param kind header or footer
+ * @param header the header string to add, must be malloc()'ed and
+ *               zero-terminated
+ * @param header_len the length of the @a header
+ * @param content the value string to add, must be malloc()'ed and
+ *                zero-terminated
+ * @param content_len the length of the @a content
+ */
+bool
+MHD_add_response_entry_no_alloc_ (struct MHD_Response *response,
+                                  enum MHD_ValueKind kind,
+                                  char *header,
+                                  size_t header_len,
+                                  char *content,
+                                  size_t content_len);
+
 #endif
