@@ -3183,8 +3183,14 @@ parse_cookie_header (struct MHD_Connection *connection)
 
 #endif /* COOKIE_SUPPORT */
 
+
 /**
- * Detect HTTP version
+ * The valid length of any HTTP version string
+ */
+#define HTTP_VER_LEN (MHD_STATICSTR_LEN_(MHD_HTTP_VERSION_1_1))
+
+/**
+ * Detect HTTP version, send error response if version is not supported
  *
  * @param connection the connection
  * @param http_string the pointer to HTTP version string
@@ -3201,13 +3207,13 @@ parse_http_version (struct MHD_Connection *connection,
   mhd_assert (NULL != http_string);
 
   /* String must start with 'HTTP/d.d', case-sensetive match.
-   * See https://datatracker.ietf.org/doc/html/rfc7230#section-2.6 */
-  if ((len != 8) ||
-      (h[0] != 'H') || (h[1] != 'T') || (h[2] != 'T') || (h[3] != 'P') ||
-      (h[4] != '/')
-      || (h[6] != '.') ||
-      ((h[5] < '0') || (h[5] > '9')) ||
-      ((h[7] < '0') || (h[7] > '9')))
+   * See https://www.rfc-editor.org/rfc/rfc9112#name-http-version */
+  if ((HTTP_VER_LEN != len) ||
+      ('H' != h[0] ) || ('T' != h[1]) || ('T' != h[2]) || ('P' != h[3]) ||
+      ('/' != h[4])
+      || ('.' != h[6]) ||
+      (('0' > h[5]) || ('9' < h[5])) ||
+      (('0' > h[7]) || ('9' < h[7])))
   {
     connection->rq.http_ver = MHD_HTTP_VER_INVALID;
     transmit_error_response_static (connection,
