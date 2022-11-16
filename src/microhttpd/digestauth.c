@@ -3507,6 +3507,7 @@ queue_auth_required_response3_inner (struct MHD_Connection *connection,
   size_t buf_size;
   char *buf;
   size_t p; /* The position in the buffer */
+  char *hdr_name;
 
   if (0 != (((unsigned int) malgo3) & MHD_DIGEST_AUTH_ALGO3_SESSION))
   {
@@ -3836,24 +3837,34 @@ queue_auth_required_response3_inner (struct MHD_Connection *connection,
     buf[p++] = ' ';
   }
   mhd_assert (buf_size >= p);
-  /* The build string ends with ", ". Replace comma with zero-termination. */
+  /* The built string ends with ", ". Replace comma with zero-termination. */
   --p;
   buf[--p] = 0;
 
-  if (! MHD_add_response_entry_no_check_ (response, MHD_HEADER_KIND,
-                                          MHD_HTTP_HEADER_WWW_AUTHENTICATE,
+  hdr_name = malloc (MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_WWW_AUTHENTICATE) + 1);
+  if (NULL != hdr_name)
+  {
+    memcpy (hdr_name, MHD_HTTP_HEADER_WWW_AUTHENTICATE,
+            MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_WWW_AUTHENTICATE) + 1);
+    if (MHD_add_response_entry_no_alloc_ (response, MHD_HEADER_KIND,
+                                          hdr_name,
                                           MHD_STATICSTR_LEN_ ( \
                                             MHD_HTTP_HEADER_WWW_AUTHENTICATE),
                                           buf, p))
-  {
+    {
+      *buf_ptr = NULL; /* The buffer will be free()ed when the response is destroyed */
+      return MHD_queue_response (connection, MHD_HTTP_UNAUTHORIZED, response);
+    }
 #ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("Failed to add Digest auth header.\n"));
+    else
+    {
+      MHD_DLOG (connection->daemon,
+                _ ("Failed to add Digest auth header.\n"));
+    }
 #endif /* HAVE_MESSAGES */
-    return MHD_NO;
+    free (hdr_name);
   }
-
-  return MHD_queue_response (connection, MHD_HTTP_UNAUTHORIZED, response);
+  return MHD_NO;
 }
 
 
