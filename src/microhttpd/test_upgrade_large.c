@@ -907,7 +907,7 @@ run_usock_client (void *cls)
   struct wr_socket *sock = cls;
 
   send_all (sock,
-            "GET / HTTP/1.1\r\nConnection: Upgrade\r\n\r\n");
+            "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: Upgrade\r\n\r\n");
   recv_hdr (sock);
   recv_all (sock,
             LARGE_STRING);
