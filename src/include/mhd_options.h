@@ -156,9 +156,12 @@
 #endif /* MHD_ASAN_ACTIVE */
 
 #if defined(MHD_ASAN_ACTIVE) && defined(HAVE_SANITIZER_ASAN_INTERFACE_H) && \
-  (defined(FUNC_ATTR_PTRCOMPARE_WORKS) || defined(FUNC_ATTR_NOSANITIZE_WORKS))
+  (defined(FUNC_PTRCOMPARE_CAST_WORKAROUND_WORKS) || \
+  (defined(FUNC_ATTR_PTRCOMPARE_WORKS) && \
+  defined(FUNC_ATTR_PTRSUBTRACT_WORKS)) || \
+  defined(FUNC_ATTR_NOSANITIZE_WORKS))
 #ifndef MHD_ASAN_POISON_ACTIVE
-/* Manual ASAN poisoning could be used */
+/* User ASAN poisoning could be used */
 #warning User memory poisoning is not active
 #endif /* ! MHD_ASAN_POISON_ACTIVE */
 #else  /* ! (MHD_ASAN_ACTIVE && HAVE_SANITIZER_ASAN_INTERFACE_H &&

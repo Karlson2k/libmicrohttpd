@@ -102,19 +102,92 @@
 #define ROUND_TO_ALIGN_PLUS_RED_ZONE(n) ROUND_TO_ALIGN(n)
 #define _MHD_POISON_MEMORY(pointer, size) (void)0
 #define _MHD_UNPOISON_MEMORY(pointer, size) (void)0
+/**
+ * Boolean 'true' if the first pointer is less or equal the second pointer
+ */
+#define mp_ptr_le_(p1,p2) \
+  (((const uint8_t*)p1) <= ((const uint8_t*)p2))
+/**
+ * The difference in bytes between positions of the first and
+ * the second pointers
+ */
+#define mp_ptr_diff_(p1,p2) \
+  ((size_t)(((const uint8_t*)p1) - ((const uint8_t*)p2)))
 #else  /* MHD_ASAN_POISON_ACTIVE */
-#if defined(FUNC_ATTR_PTRCOMPARE_WORKS)
-#define _MHD_NOSANITIZE_PTRS \
-  __attribute__((no_sanitize("pointer-compare","pointer-subtract")))
-#elif defined(FUNC_ATTR_NOSANITIZE_WORKS)
-#define _MHD_NOSANITIZE_PTRS __attribute__((no_sanitize("address")))
-#endif
 #define _MHD_RED_ZONE_SIZE (ALIGN_SIZE)
 #define ROUND_TO_ALIGN_PLUS_RED_ZONE(n) (ROUND_TO_ALIGN(n) + _MHD_RED_ZONE_SIZE)
 #define _MHD_POISON_MEMORY(pointer, size) \
   ASAN_POISON_MEMORY_REGION ((pointer), (size))
 #define _MHD_UNPOISON_MEMORY(pointer, size) \
   ASAN_UNPOISON_MEMORY_REGION ((pointer), (size))
+#if defined(FUNC_PTRCOMPARE_CAST_WORKAROUND_WORKS)
+/**
+ * Boolean 'true' if the first pointer is less or equal the second pointer
+ */
+#define mp_ptr_le_(p1,p2) \
+  (((uintptr_t)((const void*)(p1))) <= ((uintptr_t)((const void*)(p1))))
+/**
+ * The difference in bytes between positions of the first and
+ * the second pointers
+ */
+#define mp_ptr_diff_(p1,p2) \
+  ((size_t)(((uintptr_t)((const uint8_t*)p1)) - \
+            ((uintptr_t)((const uint8_t*)p2))))
+#elif defined(FUNC_ATTR_PTRCOMPARE_WORKS) && \
+  defined(FUNC_ATTR_PTRSUBTRACT_WORKS)
+#ifdef _DEBUG
+/**
+ * Boolean 'true' if the first pointer is less or equal the second pointer
+ */
+__attribute__((no_sanitize ("pointer-compare"))) static bool
+mp_ptr_le_ (const void *p1, const void *p2)
+{
+  return (((const uint8_t *) p1) <= ((const uint8_t *) p2));
+}
+
+
+#endif /* _DEBUG */
+
+
+/**
+ * The difference in bytes between positions of the first and
+ * the second pointers
+ */
+__attribute__((no_sanitize ("pointer-subtract"))) static size_t
+mp_ptr_diff_ (const void *p1, const void *p2)
+{
+  return (size_t) (((const uint8_t *) p1) - ((const uint8_t *) p2));
+}
+
+
+#elif defined(FUNC_ATTR_NOSANITIZE_WORKS)
+#ifdef _DEBUG
+/**
+ * Boolean 'true' if the first pointer is less or equal the second pointer
+ */
+__attribute__((no_sanitize ("address"))) static bool
+mp_ptr_le_ (const void *p1, const void *p2)
+{
+  return (((const uint8_t *) p1) <= ((const uint8_t *) p2));
+}
+
+
+#endif /* _DEBUG */
+
+/**
+ * The difference in bytes between positions of the first and
+ * the second pointers
+ */
+__attribute__((no_sanitize ("address"))) static size_t
+mp_ptr_diff_ (const void *p1, const void *p2)
+{
+  return (size_t) (((const uint8_t *) p1) - ((const uint8_t *) p2));
+}
+
+
+#else  /* ! FUNC_ATTR_NOSANITIZE_WORKS */
+#error User-poisoning cannot be used
+#endif /* ! FUNC_ATTR_NOSANITIZE_WORKS */
 #endif /* MHD_ASAN_POISON_ACTIVE */
 
 /**
@@ -419,7 +492,7 @@ MHD_pool_try_alloc (struct MemoryPool *pool,
  *         NULL if the pool cannot support @a new_size
  *         bytes (old continues to be valid for @a old_size)
  */
-_MHD_NOSANITIZE_PTRS void *
+void *
 MHD_pool_reallocate (struct MemoryPool *pool,
                      void *old,
                      size_t old_size,
@@ -432,23 +505,21 @@ MHD_pool_reallocate (struct MemoryPool *pool,
   mhd_assert (pool->size >= pool->end - pool->pos);
   mhd_assert (old != NULL || old_size == 0);
   mhd_assert (pool->size >= old_size);
-  mhd_assert (old == NULL || pool->memory <= (uint8_t *) old);
-  /* (old == NULL || pool->memory + pool->size >= (uint8_t*) old + old_size) */
-  mhd_assert (old == NULL || \
-              (pool->size - _MHD_RED_ZONE_SIZE) >= \
-              (((size_t) (((uint8_t *) old) - pool->memory)) + old_size));
-  /* Blocks "from the end" must not be reallocated */
-  /* (old == NULL || old_size == 0 || pool->memory + pool->pos > (uint8_t*) old) */
-  mhd_assert (old == NULL || old_size == 0 || \
-              pool->pos > (size_t) ((uint8_t *) old - pool->memory));
-  mhd_assert (old == NULL || old_size == 0 || \
-              (size_t) (((uint8_t *) old) - pool->memory) + old_size <= \
-              pool->end - _MHD_RED_ZONE_SIZE);
 
   if (NULL != old)
   {   /* Have previously allocated data */
-    const size_t old_offset = (size_t) (((uint8_t *) old) - pool->memory);
+    const size_t old_offset = mp_ptr_diff_ (old, pool->memory);
     const bool shrinking = (old_size > new_size);
+
+    mhd_assert (mp_ptr_le_ (pool->memory, old));
+    /* (pool->memory + pool->size >= (uint8_t*) old + old_size) */
+    mhd_assert ((pool->size - _MHD_RED_ZONE_SIZE) >= (old_offset + old_size));
+    /* Blocks "from the end" must not be reallocated */
+    /* (old_size == 0 || pool->memory + pool->pos > (uint8_t*) old) */
+    mhd_assert ((old_size == 0) || \
+                (pool->pos > old_offset));
+    mhd_assert ((old_size == 0) || \
+                ((pool->end - _MHD_RED_ZONE_SIZE) >= (old_offset + old_size)));
     /* Try resizing in-place */
     if (shrinking)
     {     /* Shrinking in-place, zero-out freed part */
@@ -510,7 +581,7 @@ MHD_pool_reallocate (struct MemoryPool *pool,
  *                 (should be larger or equal to @a copy_bytes)
  * @return addr new address of @a keep (if it had to change)
  */
-_MHD_NOSANITIZE_PTRS void *
+void *
 MHD_pool_reset (struct MemoryPool *pool,
                 void *keep,
                 size_t copy_bytes,
@@ -521,11 +592,10 @@ MHD_pool_reset (struct MemoryPool *pool,
   mhd_assert (copy_bytes <= new_size);
   mhd_assert (copy_bytes <= pool->size);
   mhd_assert (keep != NULL || copy_bytes == 0);
-  mhd_assert (keep == NULL || pool->memory <= (uint8_t *) keep);
+  mhd_assert (keep == NULL || mp_ptr_le_ (pool->memory, keep));
   /* (keep == NULL || pool->memory + pool->size >= (uint8_t*) keep + copy_bytes) */
-  mhd_assert (keep == NULL || \
-              pool->size >= \
-              ((size_t) ((uint8_t *) keep - pool->memory)) + copy_bytes);
+  mhd_assert ((keep == NULL) || \
+              (pool->size >= mp_ptr_diff_ (keep, pool->memory) + copy_bytes));
   _MHD_UNPOISON_MEMORY (pool->memory, new_size);
   if ( (NULL != keep) &&
        (keep != pool->memory) )

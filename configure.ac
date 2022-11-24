@@ -3995,39 +3995,167 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
                AS_VAR_IF([enable_san_upoison], ["no"], [:],
                  [
                    AC_CHECK_HEADERS([sanitizer/asan_interface.h], [], [], [AC_INCLUDES_DEFAULT])
-                   AS_IF([test "x${mhd_cv_cc_sanitizer_pointer_compare}" = "xyes" && test "x${ac_cv_header_sanitizer_asan_interface_h}" = "xyes"],
+                   AS_VAR_IF([ac_cv_header_sanitizer_asan_interface_h],["yes"],
                      [
-                       AC_CACHE_CHECK([whether '__attribute__((no_sanitize("pointer-compare","pointer-subtract")))' works], [mhd_cv_func_attribute_nosanitize_ptr],
+                       AC_CACHE_CHECK([whether special function attribute is needed for user-poison], [mhd_cv_func_u_p_attribute_needed],
                          [
                            ASAN_OPTIONS="exitcode=88:detect_invalid_pointer_pairs=3:halt_on_error=1"
                            export ASAN_OPTIONS
                            CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS} ${user_CFLAGS}"
                            AC_RUN_IFELSE(
                              [
-                               AC_LANG_PROGRAM(
+                               AC_LANG_SOURCE(
                                  [[
+#include <stdint.h>
 #include <stdlib.h>
+#include <sanitizer/asan_interface.h>
 
-__attribute__((no_sanitize("pointer-compare","pointer-subtract")))
-int ptr_process(void *ptr1, void *ptr2)
+static const size_t first_pos = 0;
+static const size_t mid_pos = 64;
+static const size_t last_pos = 128;
+static const size_t zone_size = 16;
+static const size_t buf_size = 128 + 16;
+
+static int ptr_compare(void *ptr1, uint8_t *ptr2)
 {
-  if ((char*)ptr1 <= (char*)ptr2)
-    return (int) ((char*)ptr2 - (char*)ptr1);
-  return (int) ((char*)ptr1 - (char*)ptr2);
+  if ((((uintptr_t) (uint8_t *)ptr1) >= ((uintptr_t)ptr2)))
+    return ((char *) ptr1)[0] < ((char *) ptr2)[0];
+  return ((char *) ptr1)[0] > ((char *) ptr2)[0];
 }
-                                 ]],
-                                 [[
-  int *a = (int*) malloc (sizeof(int)*4);
-  int *b = (int*) malloc (sizeof(long)*6);
-  int c = ptr_process(a, b);
-  if (c)
+
+static int ptr_subtract(void *ptr1, uint8_t *ptr2)
+{
+  return ((size_t)(((uintptr_t)(uint8_t*)ptr1) - ((uintptr_t)ptr2))) <= last_pos;
+}
+
+int main(int argc, char *argv[])
+{
+  char *buf = (char*) malloc (buf_size);
+  char *a;
+  char *b;
+  int ret;
+
+  (void) argv;
+  if (NULL == buf)
+    return 10;
+  ASAN_POISON_MEMORY_REGION (buf + first_pos + zone_size, mid_pos - first_pos - zone_size);
+  ASAN_POISON_MEMORY_REGION (buf + mid_pos + zone_size, last_pos - mid_pos - zone_size);
+
+  if (0 < argc)
+    a = buf + last_pos;
+  else
+    a = buf + first_pos;
+  b = buf + mid_pos;
+
+  *a = '0';
+  *b = '9';
+
+  if (ptr_compare((void *)a, (uint8_t*) b))
   {
-    free (b);
-    free (a);
-    return 0;
+    if (ptr_subtract((void *)a, (uint8_t*) b))
+      ret = 0;
+    else
+      ret = 10;
   }
-  free (a);
-  free (b);
+  else
+    ret = 5;
+  ASAN_UNPOISON_MEMORY_REGION (buf, buf_size);
+  free (buf);
+
+  return ret;
+}
+                                 ]]
+                               )
+                             ],
+                             [mhd_cv_func_u_p_attribute_needed="no"], [mhd_cv_func_u_p_attribute_needed="yes"],
+                             [
+                               # Cross-compiling with sanitizers??
+                               mhd_cv_func_up_attribute_needed='assuming no'
+                             ]
+                           )
+                           AS_UNSET([ASAN_OPTIONS])
+                         ]
+                       )
+                     ]
+                   )
+                   AS_VAR_IF([mhd_cv_func_u_p_attribute_needed],["yes"],[:],
+                     [
+                       AC_DEFINE([FUNC_PTRCOMPARE_CAST_WORKAROUND_WORKS],[1],[Define to '1' if cast to 'uintptr_t' works for safely processing user-poisoned pointer])
+                     ]
+                   )
+                   AS_IF([test "x${mhd_cv_func_u_p_attribute_needed}" = "xyes" && test "x${ac_cv_header_sanitizer_asan_interface_h}" = "xyes"],
+                     [
+                       AC_CACHE_CHECK([whether '__attribute__((no_sanitize("pointer-compare")))' and '__attribute__((no_sanitize("pointer-subtract")))' work],
+                         [mhd_cv_func_attribute_nosanitize_ptr],
+                         [
+                           ASAN_OPTIONS="exitcode=88:detect_invalid_pointer_pairs=3:halt_on_error=1"
+                           export ASAN_OPTIONS
+                           CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS} ${user_CFLAGS}"
+                           AC_RUN_IFELSE(
+                             [
+                               AC_LANG_SOURCE(
+                                 [[
+#include <stdint.h>
+#include <stdlib.h>
+#include <sanitizer/asan_interface.h>
+
+static const size_t first_pos = 0;
+static const size_t mid_pos = 64;
+static const size_t last_pos = 128;
+static const size_t zone_size = 16;
+static const size_t buf_size = 128 + 16;
+
+__attribute__((no_sanitize("pointer-compare")))
+static int ptr_compare(void *ptr1, uint8_t *ptr2)
+{
+  if ((((const uint8_t*)ptr1) >= ((const uint8_t*)ptr2)))
+    return ((char *) ptr1)[0] < ((char *) ptr2)[0];
+  return ((char *) ptr1)[0] > ((char *) ptr2)[0];
+}
+
+__attribute__((no_sanitize("pointer-subtract")))
+static int ptr_subtract(void *ptr1, uint8_t *ptr2)
+{
+  return ((size_t)(((const uint8_t*)ptr1) - \
+          ((const uint8_t*)ptr2))) <= last_pos;
+}
+
+int main(int argc, char *argv[])
+{
+  char *buf = (char*) malloc (buf_size);
+  char *a;
+  char *b;
+  int ret;
+
+  (void) argv;
+  if (NULL == buf)
+    return 10;
+  ASAN_POISON_MEMORY_REGION (buf + first_pos + zone_size, mid_pos - first_pos - zone_size);
+  ASAN_POISON_MEMORY_REGION (buf + mid_pos + zone_size, last_pos - mid_pos - zone_size);
+
+  if (0 < argc)
+    a = buf + last_pos;
+  else
+    a = buf + first_pos;
+  b = buf + mid_pos;
+
+  *a = '0';
+  *b = '9';
+
+  if (ptr_compare((void *)a, (uint8_t*) b))
+  {
+    if (ptr_subtract((void *)a, (uint8_t*) b))
+      ret = 0;
+    else
+      ret = 10;
+  }
+  else
+    ret = 5;
+  ASAN_UNPOISON_MEMORY_REGION (buf, buf_size);
+  free (buf);
+
+  return ret;
+}
                                  ]]
                                )
                              ],
@@ -4041,7 +4169,10 @@ int ptr_process(void *ptr1, void *ptr2)
                          ]
                        )
                        AS_VAR_IF([mhd_cv_func_attribute_nosanitize_ptr], ["yes"],
-                         [AC_DEFINE([FUNC_ATTR_PTRCOMPARE_WORKS],[1],[Define to '1' if '__attribute__((no_sanitize("pointer-compare","pointer-subtract")))' works])],
+                         [
+                           AC_DEFINE([FUNC_ATTR_PTRCOMPARE_WORKS],[1],[Define to '1' if '__attribute__((no_sanitize("pointer-compare")))' works])
+                           AC_DEFINE([FUNC_ATTR_PTRSUBTRACT_WORKS],[1],[Define to '1' if '__attribute__((no_sanitize("pointer-subtract")))' works])
+                         ],
                          [
                            AC_CACHE_CHECK([whether '__attribute__((no_sanitize("address")))' works for pointers compare], [mhd_cv_func_attribute_nosanitize_addr],
                              [
@@ -4050,30 +4181,69 @@ int ptr_process(void *ptr1, void *ptr2)
                                CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS} ${user_CFLAGS}"
                                AC_RUN_IFELSE(
                                  [
-                                   AC_LANG_PROGRAM(
+                                   AC_LANG_SOURCE(
                                      [[
+#include <stdint.h>
 #include <stdlib.h>
+#include <sanitizer/asan_interface.h>
+
+static const size_t first_pos = 0;
+static const size_t mid_pos = 64;
+static const size_t last_pos = 128;
+static const size_t zone_size = 16;
+static const size_t buf_size = 128 + 16;
 
 __attribute__((no_sanitize("address")))
-int ptr_process(void *ptr1, void *ptr2)
+static int ptr_compare(void *ptr1, uint8_t *ptr2)
 {
-  if ((char*)ptr1 <= (char*)ptr2)
-    return (int) ((char*)ptr2 - (char*)ptr1);
-  return (int) ((char*)ptr1 - (char*)ptr2);
+  if ((((const uint8_t*)ptr1) >= ((const uint8_t*)ptr2)))
+    return ((char *) ptr1)[0] < ((char *) ptr2)[0];
+  return ((char *) ptr1)[0] > ((char *) ptr2)[0];
 }
-                                     ]],
-                                     [[
-  int *a = (int*) malloc (sizeof(int)*4);
-  int *b = (int*) malloc (sizeof(long)*6);
-  int c = ptr_process(a, b);
-  if (c)
+
+__attribute__((no_sanitize("address")))
+static int ptr_subtract(void *ptr1, uint8_t *ptr2)
+{
+  return ((size_t)(((const uint8_t*)ptr1) - \
+          ((const uint8_t*)ptr2))) <= last_pos;
+}
+
+int main(int argc, char *argv[])
+{
+  char *buf = (char*) malloc (buf_size);
+  char *a;
+  char *b;
+  int ret;
+
+  (void) argv;
+  if (NULL == buf)
+    return 10;
+  ASAN_POISON_MEMORY_REGION (buf + first_pos + zone_size, mid_pos - first_pos - zone_size);
+  ASAN_POISON_MEMORY_REGION (buf + mid_pos + zone_size, last_pos - mid_pos - zone_size);
+
+  if (0 < argc)
+    a = buf + last_pos;
+  else
+    a = buf + first_pos;
+  b = buf + mid_pos;
+
+  *a = '0';
+  *b = '9';
+
+  if (ptr_compare((void *)a, (uint8_t*) b))
   {
-    free (b);
-    free (a);
-    return 0;
+    if (ptr_subtract((void *)a, (uint8_t*) b))
+      ret = 0;
+    else
+      ret = 10;
   }
-  free (a);
-  free (b);
+  else
+    ret = 5;
+  ASAN_UNPOISON_MEMORY_REGION (buf, buf_size);
+  free (buf);
+
+  return ret;
+}
                                      ]]
                                    )
                                  ],
@@ -4263,9 +4433,9 @@ int main(void)
            AS_VAR_IF([enable_san_upoison], ["no"], [:],
              [
                AC_MSG_CHECKING([whether to enable user memory poisoning])
-               AS_IF([test "x${mhd_cv_cc_sanitizer_address}" = "xyes" && test "x${mhd_cv_cc_sanitizer_pointer_compare}" = "xyes" && \
-                 test "x${ac_cv_header_sanitizer_asan_interface_h}" = "xyes" && \
-                 (test "x${mhd_cv_func_attribute_nosanitize_ptr}" = "xyes" || test "x${mhd_cv_func_attribute_nosanitize_addr}" = "xyes")],
+               AS_IF([test "x${mhd_cv_cc_sanitizer_address}" = "xyes" && test "x${ac_cv_header_sanitizer_asan_interface_h}" = "xyes" && \
+                 (test "x${mhd_cv_func_u_p_attribute_needed}" != "xyes" || test "x${mhd_cv_func_attribute_nosanitize_ptr}" = "xyes" || \
+                  test "x${mhd_cv_func_attribute_nosanitize_addr}" = "xyes")],
                  [
                    AC_DEFINE([MHD_ASAN_POISON_ACTIVE], [1], [Define to '1' if user memory poison is used])
                    enabled_sanitizers="${enabled_sanitizers}${enabled_sanitizers:+, }user-poison"
