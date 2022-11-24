@@ -2032,6 +2032,7 @@ AS_IF([[test "x$enable_itc" = "xeventfd" || test "x$enable_itc" = "xauto"]], [
         AC_LINK_IFELSE([
           AC_LANG_PROGRAM([[
 #include <sys/eventfd.h>
+#include <unistd.h>
           ]], [[
           int ef = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
           if (ef < 0) return 1;
