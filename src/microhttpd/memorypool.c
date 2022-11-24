@@ -427,6 +427,38 @@ MHD_pool_allocate (struct MemoryPool *pool,
 
 
 /**
+ * Checks whether allocated block is re-sizable in-place.
+ * If block is not re-sizable in-place, it still could be shrunk, but freed
+ * memory will not be re-used until reset of the pool.
+ * @param pool the memory pool to use
+ * @param block the pointer to the allocated block to check
+ * @param block_size the size of the allocated @a block
+ * @return true if block can be resized in-place in the optimal way,
+ *         false otherwise
+ */
+bool
+MHD_pool_is_resizable_inplace (struct MemoryPool *pool,
+                               void *block,
+                               size_t block_size)
+{
+  mhd_assert (pool->end >= pool->pos);
+  mhd_assert (pool->size >= pool->end - pool->pos);
+  mhd_assert (block != NULL || block_size == 0);
+  mhd_assert (pool->size >= block_size);
+  if (NULL != block)
+  {
+    const size_t block_offset = mp_ptr_diff_ (block, pool->memory);
+    mhd_assert (mp_ptr_le_ (pool->memory, block));
+    mhd_assert (pool->size >= block_offset);
+    mhd_assert (pool->size >= block_offset + block_size);
+    return (pool->pos ==
+            ROUND_TO_ALIGN_PLUS_RED_ZONE (block_offset + block_size));
+  }
+  return false; /* Unallocated blocks cannot be resized in-place */
+}
+
+
+/**
  * Try to allocate @a size bytes memory area from the @a pool.
  *
  * If allocation fails, @a required_bytes is updated with size required to be

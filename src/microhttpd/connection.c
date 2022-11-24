@@ -276,57 +276,59 @@ MHD_connection_alloc_memory_ (struct MHD_Connection *connection,
 {
   struct MHD_Connection *const c = connection; /* a short alias */
   struct MemoryPool *const pool = c->pool;     /* a short alias */
-  size_t need_to_free; /**< The required amount of free memory */
+  size_t need_to_be_freed; /**< The required amount of additional free memory */
   void *res;
 
-  res = MHD_pool_try_alloc (pool, size, &need_to_free);
-  if (NULL == res)
+  res = MHD_pool_try_alloc (pool, size, &need_to_be_freed);
+  if (NULL != res)
+    return res;
+
+  if (MHD_pool_is_resizable_inplace (pool,
+                                     c->write_buffer,
+                                     c->write_buffer_size))
   {
-    if (NULL != c->write_buffer)
+    if (c->write_buffer_size - c->write_buffer_append_offset >=
+        need_to_be_freed)
     {
-      /* The connection is in the sending phase */
-      mhd_assert (MHD_CONNECTION_START_REPLY <= c->state);
-      if (c->write_buffer_size - c->write_buffer_append_offset >= need_to_free)
-      {
-        char *buf;
-        const size_t new_buf_size = c->write_buffer_size - need_to_free;
-        buf = MHD_pool_reallocate (pool,
-                                   c->write_buffer,
-                                   c->write_buffer_size,
-                                   new_buf_size);
-        mhd_assert (c->write_buffer == buf);
-        mhd_assert (c->write_buffer_append_offset <= new_buf_size);
-        mhd_assert (c->write_buffer_send_offset <= new_buf_size);
-        c->write_buffer_size = new_buf_size;
-        c->write_buffer = buf;
-      }
-      else
-        return NULL;
-    }
-    else if (NULL != c->read_buffer)
-    {
-      /* The connection is in the receiving phase */
-      if (c->read_buffer_size - c->read_buffer_offset >= need_to_free)
-      {
-        char *buf;
-        const size_t new_buf_size = c->read_buffer_size - need_to_free;
-        buf = MHD_pool_reallocate (pool,
-                                   c->read_buffer,
-                                   c->read_buffer_size,
-                                   new_buf_size);
-        mhd_assert (c->read_buffer == buf);
-        mhd_assert (c->read_buffer_offset <= new_buf_size);
-        c->read_buffer_size = new_buf_size;
-        c->read_buffer = buf;
-      }
-      else
-        return NULL;
+      char *buf;
+      const size_t new_buf_size = c->write_buffer_size - need_to_be_freed;
+      buf = MHD_pool_reallocate (pool,
+                                 c->write_buffer,
+                                 c->write_buffer_size,
+                                 new_buf_size);
+      mhd_assert (c->write_buffer == buf);
+      mhd_assert (c->write_buffer_append_offset <= new_buf_size);
+      mhd_assert (c->write_buffer_send_offset <= new_buf_size);
+      c->write_buffer_size = new_buf_size;
+      c->write_buffer = buf;
     }
     else
       return NULL;
-    res = MHD_pool_allocate (pool, size, true);
-    mhd_assert (NULL != res); /* It has been checked that pool has enough space */
   }
+  else if (MHD_pool_is_resizable_inplace (pool,
+                                          c->read_buffer,
+                                          c->read_buffer_size))
+  {
+    if (c->read_buffer_size - c->read_buffer_offset >= need_to_be_freed)
+    {
+      char *buf;
+      const size_t new_buf_size = c->read_buffer_size - need_to_be_freed;
+      buf = MHD_pool_reallocate (pool,
+                                 c->read_buffer,
+                                 c->read_buffer_size,
+                                 new_buf_size);
+      mhd_assert (c->read_buffer == buf);
+      mhd_assert (c->read_buffer_offset <= new_buf_size);
+      c->read_buffer_size = new_buf_size;
+      c->read_buffer = buf;
+    }
+    else
+      return NULL;
+  }
+  else
+    return NULL;
+  res = MHD_pool_allocate (pool, size, true);
+  mhd_assert (NULL != res); /* It has been checked that pool has enough space */
   return res;
 }
 
@@ -1195,10 +1197,15 @@ try_ready_chunked_body (struct MHD_Connection *connection,
     /* Limit the buffer size to the largest usable size for chunks */
     if ( (max_chunk + max_chunk_overhead) < size)
       size = max_chunk + max_chunk_overhead;
-    connection->write_buffer = MHD_pool_reallocate (connection->pool,
-                                                    connection->write_buffer,
-                                                    connection->
-                                                    write_buffer_size, size);
+    mhd_assert ((NULL == connection->write_buffer) || \
+                MHD_pool_is_resizable_inplace (connection->pool, \
+                                               connection->write_buffer, \
+                                               connection->write_buffer_size));
+    connection->write_buffer =
+      MHD_pool_reallocate (connection->pool,
+                           connection->write_buffer,
+                           connection->write_buffer_size,
+                           size);
     mhd_assert (NULL != connection->write_buffer);
     connection->write_buffer_size = size;
   }
@@ -1556,6 +1563,15 @@ try_grow_read_buffer (struct MHD_Connection *connection,
     }
     new_size = connection->read_buffer_size + grow_size;
   }
+  /* Make sure that read buffer will not be moved */
+  if ((NULL != connection->read_buffer) &&
+      ! MHD_pool_is_resizable_inplace (connection->pool,
+                                       connection->read_buffer,
+                                       connection->read_buffer_size))
+  {
+    mhd_assert (0);
+    return false;
+  }
   /* we can actually grow the buffer, do it! */
   rb = MHD_pool_reallocate (connection->pool,
                             connection->read_buffer,
@@ -1605,6 +1621,8 @@ connection_shrink_read_buffer (struct MHD_Connection *connection)
   }
   else
   {
+    mhd_assert (MHD_pool_is_resizable_inplace (c->pool, c->read_buffer, \
+                                               c->read_buffer_size));
     new_buf = MHD_pool_reallocate (c->pool, c->read_buffer, c->read_buffer_size,
                                    c->read_buffer_offset);
     mhd_assert (c->read_buffer == new_buf);
@@ -1618,8 +1636,7 @@ connection_shrink_read_buffer (struct MHD_Connection *connection)
  * Allocate the maximum available amount of memory from MemoryPool
  * for write buffer.
  * @param connection the connection whose write buffer is being manipulated
- * @return the size of free space in write buffer, may be smaller
- *         than requested size.
+ * @return the size of the free space in the write buffer
  */
 static size_t
 connection_maximize_write_buffer (struct MHD_Connection *connection)
@@ -1642,6 +1659,9 @@ connection_maximize_write_buffer (struct MHD_Connection *connection)
      * MHD_pool_reallocate () may return the new position only if buffer was
      * allocated 'from_end' or is not the last allocation,
      * which should not happen. */
+    mhd_assert ((NULL == c->write_buffer) || \
+                MHD_pool_is_resizable_inplace (pool, c->write_buffer, \
+                                               c->write_buffer_size));
     new_buf = MHD_pool_reallocate (pool,
                                    c->write_buffer,
                                    c->write_buffer_size,
