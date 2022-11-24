@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2006-2021 Christian Grothoff (and other contributing authors)
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097601
+#define MHD_VERSION 0x00097602
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
@@ -4425,6 +4425,18 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
  */
 _MHD_EXTERN const char *
 MHD_get_version (void);
+
+
+/**
+ * Obtain the version of this library as a binary value.
+ *
+ * @return version binary value, e.g. "0x00090900" (#MHD_VERSION of
+ *         compiled MHD binary)
+ * @note Available since #MHD_VERSION 0x00097602
+ * @ingroup specialized
+ */
+_MHD_EXTERN uint32_t
+MHD_get_version_bin (void);
 
 
 /**

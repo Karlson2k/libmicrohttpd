@@ -7975,6 +7975,21 @@ MHD_get_version (void)
 
 
 /**
+ * Obtain the version of this library as a binary value.
+ *
+ * @return version binary value, e.g. "0x00090900" (#MHD_VERSION of
+ *         compiled MHD binary)
+ * @note Available since #MHD_VERSION 0x00097602
+ * @ingroup specialized
+ */
+_MHD_EXTERN uint32_t
+MHD_get_version_bin (void)
+{
+  return (uint32_t) MHD_VERSION;
+}
+
+
+/**
  * Get information about supported MHD features.
  * Indicate that MHD was compiled with or without support for
  * particular feature. Some features require additional support
