@@ -2829,146 +2829,6 @@ enum _MHD_ParseCookie
 /**
  * Parse the cookies string (see RFC 6265).
  *
- * Parsing may fail if the string is not formed strictly as defined by RFC 6265.
- *
- * @param str the string to parse, without leading whitespaces
- * @param str_len the size of the @a str, not including mandatory
- *                zero-termination
- * @param connection the connection to add parsed cookies
- * @return #MHD_PARSE_COOKIE_OK for success, error code otherwise
- */
-static enum _MHD_ParseCookie
-parse_cookies_string_strict (char *str,
-                             size_t str_len,
-                             struct MHD_Connection *connection)
-{
-  size_t i;
-
-  i = 0;
-  while (i < str_len)
-  {
-    size_t name_start;
-    size_t name_len;
-    size_t value_start;
-    size_t value_len;
-    bool val_quoted;
-    /* 'i' must point to the first char of cookie-name */
-    name_start = i;
-    /* Find the end of the cookie-name */
-    do
-    {
-      const char l = str[i];
-      if (('=' == l) || (' ' == l) || ('\t' == l) || ('"' == l) || (',' == l) ||
-          (';' == l) || (0 == l))
-        break;
-    } while (str_len > ++i);
-    if ((str_len == i) || ('=' != str[i]) || (name_start == i))
-      return MHD_PARSE_COOKIE_MALFORMED; /* Incomplete cookie name */
-    name_len = i - name_start;
-    /* 'i' must point to the '=' char */
-    mhd_assert ('=' == str[i]);
-    i++;
-    /* 'i' must point to the first char of cookie-value */
-    if (str_len == i)
-    {
-      value_start = 0;
-      value_len = 0;
-#ifdef _DEBUG
-      val_quoted = false; /* This assignment used in assert */
-#endif
-    }
-    else
-    {
-      bool valid_cookie;
-      val_quoted = ('"' == str[i]);
-      if (val_quoted)
-        i++;
-      value_start = i;
-      /* Find the end of the cookie-value */
-      while (str_len > i)
-      {
-        const char l = str[i];
-        if ((';' == l) || ('"' == l) || (' ' == l) || ('\t' == l)
-            || (',' == l) || ('\\' == l) || (0 == l))
-          break;
-        i++;
-      }
-      value_len = i - value_start;
-      if (val_quoted)
-      {
-        if ((str_len == i) || ('"' != str[i]))
-          return MHD_PARSE_COOKIE_MALFORMED; /* Incomplete cookie value, no closing quote */
-        i++;
-      }
-      if (str_len == i)
-        valid_cookie = true;
-      else if (';' == str[i])
-        valid_cookie = true;
-      else if ((' ' == str[i]) || ('\t' == str[i]))
-      { /* Optional whitespace at the end of the string? */
-        while (str_len > ++i)
-        {
-          if ((' ' != str[i]) && ('\t' != str[i]))
-            break;
-        }
-        if (str_len == i)
-          valid_cookie = true;
-        else
-          valid_cookie = false;
-      }
-      else
-        valid_cookie = false;
-
-      if (! valid_cookie)
-        return MHD_PARSE_COOKIE_MALFORMED; /* Garbage at the end of the cookie value */
-    }
-    mhd_assert (0 != name_len);
-    str[name_start + name_len] = 0; /* Zero-terminate the name */
-    if (0 != value_len)
-    {
-      mhd_assert (0 == str[i] || ';' == str[i]);
-      mhd_assert (! val_quoted || ';' == str[i]);
-      str[value_start + value_len] = 0; /* Zero-terminate the value */
-      if (MHD_NO ==
-          MHD_set_connection_value_n_nocheck_ (connection,
-                                               MHD_COOKIE_KIND,
-                                               str + name_start,
-                                               name_len,
-                                               str + value_start,
-                                               value_len))
-        return MHD_PARSE_COOKIE_NO_MEMORY;
-    }
-    else
-    {
-      if (MHD_NO ==
-          MHD_set_connection_value_n_nocheck_ (connection,
-                                               MHD_COOKIE_KIND,
-                                               str + name_start,
-                                               name_len,
-                                               "",
-                                               0))
-        return MHD_PARSE_COOKIE_NO_MEMORY;
-    }
-    if (str_len > i)
-    {
-      mhd_assert (0 == str[i] || ';' == str[i]);
-      mhd_assert (! val_quoted || ';' == str[i]);
-      mhd_assert (';' != str[i] || val_quoted || 0 == value_len);
-      i++;
-      if (str_len == i)
-        return MHD_PARSE_COOKIE_MALFORMED;  /* No cookie name after semicolon */
-      if (' ' != str[i])
-        return MHD_PARSE_COOKIE_MALFORMED;  /* No space after semicolon */
-      i++;
-    }
-  }
-  return MHD_PARSE_COOKIE_OK;
-}
-
-
-/**
- * Parse the cookies string (see RFC 6265).
- *
  * Try to parse the cookies string even if it is not strictly formed
  * as specified by RFC 6265.
  *
@@ -2979,12 +2839,22 @@ parse_cookies_string_strict (char *str,
  * @return #MHD_PARSE_COOKIE_OK for success, error code otherwise
  */
 static enum _MHD_ParseCookie
-parse_cookies_string_lenient (char *str,
-                              size_t str_len,
-                              struct MHD_Connection *connection)
+parse_cookies_string (char *str,
+                      const size_t str_len,
+                      struct MHD_Connection *connection)
 {
   size_t i;
   bool non_strict;
+  /* Skip extra whitespaces and empty cookies */
+  const bool allow_wsp_empty = (0 >= connection->daemon->strict_for_client);
+  /* Allow whitespaces around '=' character */
+  const bool wsp_around_eq = (0 > connection->daemon->strict_for_client);
+  /* Allow whitespaces in quoted cookie value */
+  const bool wsp_in_quoted = (0 >= connection->daemon->strict_for_client);
+  /* Allow tab as space after semicolon between cookies */
+  const bool tab_as_sp = (0 >= connection->daemon->strict_for_client);
+  /* Allow no space after semicolon between cookies */
+  const bool allow_no_space = (0 >= connection->daemon->strict_for_client);
 
   non_strict = false;
   i = 0;
@@ -2998,6 +2868,8 @@ parse_cookies_string_lenient (char *str,
     /* Skip any whitespaces and empty cookies */
     while (' ' == str[i] || '\t' == str[i] || ';' == str[i])
     {
+      if (! allow_wsp_empty)
+        return MHD_PARSE_COOKIE_MALFORMED;
       non_strict = true;
       i++;
       if (i == str_len)
@@ -3017,6 +2889,8 @@ parse_cookies_string_lenient (char *str,
     /* Skip any whitespaces */
     while (str_len > i && (' ' == str[i] || '\t' == str[i]))
     {
+      if (! wsp_around_eq)
+        return MHD_PARSE_COOKIE_MALFORMED;
       non_strict = true;
       i++;
     }
@@ -3028,6 +2902,8 @@ parse_cookies_string_lenient (char *str,
     /* Skip any whitespaces */
     while (str_len > i && (' ' == str[i] || '\t' == str[i]))
     {
+      if (! wsp_around_eq)
+        return MHD_PARSE_COOKIE_MALFORMED;
       non_strict = true;
       i++;
     }
@@ -3058,6 +2934,8 @@ parse_cookies_string_lenient (char *str,
         {
           if (! val_quoted)
             break;
+          if (! wsp_in_quoted)
+            return MHD_PARSE_COOKIE_MALFORMED;
           non_strict = true;
         }
         i++;
@@ -3070,10 +2948,19 @@ parse_cookies_string_lenient (char *str,
         i++;
       }
       /* Skip any whitespaces */
-      while (str_len > i && (' ' == str[i] || '\t' == str[i]))
+      if ((str_len > i) && ((' ' == str[i]) || ('\t' == str[i])))
       {
-        non_strict = true;
-        i++;
+        do
+        {
+          i++;
+        } while (str_len > i && (' ' == str[i] || '\t' == str[i]));
+        /* Whitespace at the end? */
+        if (str_len > i)
+        {
+          if (! allow_wsp_empty)
+            return MHD_PARSE_COOKIE_MALFORMED;
+          non_strict = true;
+        }
       }
       if (str_len == i)
         valid_cookie = true;
@@ -3118,11 +3005,29 @@ parse_cookies_string_lenient (char *str,
       mhd_assert (';' != str[i] || val_quoted || non_strict || 0 == value_len);
       i++;
       if (str_len == i)
-        non_strict = true;  /* No cookie name after semicolon */
+      { /* No next cookie after semicolon */
+        if (! allow_wsp_empty)
+          return MHD_PARSE_COOKIE_MALFORMED;
+        non_strict = true;
+      }
       else if (' ' != str[i])
-        non_strict = true;  /* No space after semicolon */
+      {/* No space after semicolon */
+        if (('\t' == str[i]) && tab_as_sp)
+          i++;
+        else if (! allow_no_space)
+          return MHD_PARSE_COOKIE_MALFORMED;
+        non_strict = true;
+      }
       else
+      {
         i++;
+        if (str_len == i)
+        {
+          if (! allow_wsp_empty)
+            return MHD_PARSE_COOKIE_MALFORMED;
+          non_strict = true;
+        }
+      }
     }
   }
   return non_strict? MHD_PARSE_COOKIE_OK_LAX : MHD_PARSE_COOKIE_OK;
@@ -3141,8 +3046,10 @@ parse_cookie_header (struct MHD_Connection *connection)
   const char *hdr;
   size_t hdr_len;
   char *cpy;
-  bool strict_parsing;
   size_t i;
+  enum _MHD_ParseCookie parse_res;
+  const struct MHD_HTTP_Req_Header *const saved_tail =
+    connection->rq.headers_received_tail;
 
   if (MHD_NO ==
       MHD_lookup_connection_value_n (connection,
@@ -3159,25 +3066,61 @@ parse_cookie_header (struct MHD_Connection *connection)
   cpy = MHD_connection_alloc_memory_ (connection,
                                       hdr_len + 1);
   if (NULL == cpy)
-    return MHD_PARSE_COOKIE_NO_MEMORY;
+    parse_res = MHD_PARSE_COOKIE_NO_MEMORY;
+  else
+  {
+    memcpy (cpy,
+            hdr,
+            hdr_len);
+    cpy[hdr_len] = '\0';
 
-  memcpy (cpy,
-          hdr,
-          hdr_len);
-  cpy[hdr_len] = '\0';
+    i = 0;
+    /* Skip all initial whitespaces */
+    while (i < hdr_len && (' ' == cpy[i] || '\t' == cpy[i]))
+      i++;
 
-  /* TODO: add individual configuration */
-  strict_parsing = (0 < connection->daemon->strict_for_client);
-  i = 0;
-  /* Skip all initial whitespaces */
-  while (i < hdr_len && (' ' == cpy[i] || '\t' == cpy[i]))
-    i++;
+    parse_res = parse_cookies_string (cpy + i, hdr_len - i, connection);
+  }
 
-  /* 'i' points to the first non-whitespace char or to the end of the string */
-  if (strict_parsing)
-    return parse_cookies_string_strict (cpy + i, hdr_len - i, connection);
+  switch (parse_res)
+  {
+  case MHD_PARSE_COOKIE_OK:
+    break;
+  case MHD_PARSE_COOKIE_OK_LAX:
+#ifdef HAVE_MESSAGES
+    if (saved_tail != connection->rq.headers_received_tail)
+      MHD_DLOG (connection->daemon,
+                _ ("The Cookie header has been parsed, but it is not fully "
+                   "compliant with the standard.\n"));
+#endif /* HAVE_MESSAGES */
+    break;
+  case MHD_PARSE_COOKIE_MALFORMED:
+#ifdef HAVE_MESSAGES
+    if (saved_tail != connection->rq.headers_received_tail)
+      MHD_DLOG (connection->daemon,
+                _ ("The Cookie header has been only partially parsed as it "
+                   "contains malformed data.\n"));
+    else
+      MHD_DLOG (connection->daemon,
+                _ ("The Cookie header has malformed data.\n"));
+#endif /* HAVE_MESSAGES */
+    break;
+  case MHD_PARSE_COOKIE_NO_MEMORY:
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (connection->daemon,
+              _ ("Not enough memory in the connection pool to "
+                 "parse client cookies!\n"));
+#endif /* HAVE_MESSAGES */
+    break;
+  default:
+    mhd_assert (0);
+    break;
+  }
+#ifndef HAVE_MESSAGES
+  (void) saved_tail; /* Mute compiler warning */
+#endif /* ! HAVE_MESSAGES */
 
-  return parse_cookies_string_lenient (cpy + i, hdr_len - i, connection);
+  return parse_res;
 }
 
 
@@ -3946,36 +3889,12 @@ parse_connection_headers (struct MHD_Connection *connection)
   size_t val_len;
 
 #ifdef COOKIE_SUPPORT
-  enum _MHD_ParseCookie cookie_res;
-
-  cookie_res = parse_cookie_header (connection);
-  if (MHD_PARSE_COOKIE_NO_MEMORY == cookie_res)
+  if (MHD_PARSE_COOKIE_NO_MEMORY == parse_cookie_header (connection))
   {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("Not enough memory in pool to parse cookies!\n"));
-#endif
     transmit_error_response_static (connection,
                                     MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
                                     REQUEST_TOO_BIG);
     return;
-  }
-  else if (MHD_PARSE_COOKIE_OK_LAX == cookie_res)
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("The Cookie header has been parsed, but is not fully "
-                 "compliant with the standard.\n"));
-#endif
-    (void) 0; /* Mute compiler warning */
-  }
-  else if (MHD_PARSE_COOKIE_MALFORMED == cookie_res)
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (connection->daemon,
-              _ ("The Cookie header has malformed data.\n"));
-#endif
-    (void) 0; /* Mute compiler warning */
   }
 #endif /* COOKIE_SUPPORT */
   if ( (1 <= connection->daemon->strict_for_client) &&

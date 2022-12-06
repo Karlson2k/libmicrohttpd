@@ -144,8 +144,9 @@ check_PROGRAMS = \
 
 if ENABLE_COOKIE
 check_PROGRAMS += \
-  test_parse_cookies \
-  test_parse_cookies_nonstrict
+  test_parse_cookies_strict_p1 \
+  test_parse_cookies_strict_zero \
+  test_parse_cookies_strict_n1
 endif
 
 if HEAVY_TESTS
@@ -467,11 +468,14 @@ test_post_SOURCES = \
 test_process_headers_SOURCES = \
   test_process_headers.c mhd_has_in_name.h
 
-test_parse_cookies_SOURCES = \
+test_parse_cookies_strict_zero_SOURCES = \
   test_parse_cookies.c mhd_has_in_name.h mhd_has_param.h
 
-test_parse_cookies_nonstrict_SOURCES = \
-  $(test_parse_cookies_SOURCES)
+test_parse_cookies_strict_p1_SOURCES = \
+  $(test_parse_cookies_strict_zero_SOURCES)
+
+test_parse_cookies_strict_n1_SOURCES = \
+  $(test_parse_cookies_strict_zero_SOURCES)
 
 test_process_arguments_SOURCES = \
   test_process_arguments.c mhd_has_in_name.h
