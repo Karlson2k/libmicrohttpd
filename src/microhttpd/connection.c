@@ -3953,15 +3953,17 @@ parse_connection_headers (struct MHD_Connection *connection)
                                         REQUEST_LENGTH_WITH_TR_ENCODING);
         return;
       }
-#ifdef HAVE_MESSAGES
       else
       {
+        /* Must close connection after reply to prevent potential attack */
+        connection->keepalive = MHD_CONN_MUST_CLOSE;
+#ifdef HAVE_MESSAGES
         MHD_DLOG (connection->daemon,
                   _ ("The 'Content-Length' request header is ignored "
                      "as chunked Transfer-Encoding is used "
                      "for this request.\n"));
-      }
 #endif /* HAVE_MESSAGES */
+      }
     }
     connection->rq.have_chunked_upload = true;
     connection->rq.remaining_upload_size = MHD_SIZE_UNKNOWN;
