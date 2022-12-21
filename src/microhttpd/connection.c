@@ -3152,7 +3152,7 @@ parse_http_version (struct MHD_Connection *connection,
   /* String must start with 'HTTP/d.d', case-sensetive match.
    * See https://www.rfc-editor.org/rfc/rfc9112#name-http-version */
   if ((HTTP_VER_LEN != len) ||
-      ('H' != h[0] ) || ('T' != h[1]) || ('T' != h[2]) || ('P' != h[3]) ||
+      ('H' != h[0]) || ('T' != h[1]) || ('T' != h[2]) || ('P' != h[3]) ||
       ('/' != h[4])
       || ('.' != h[6]) ||
       (('0' > h[5]) || ('9' < h[5])) ||
