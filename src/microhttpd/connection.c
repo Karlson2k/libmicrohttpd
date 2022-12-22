@@ -2850,7 +2850,7 @@ parse_cookies_string (char *str,
   /* Allow whitespaces around '=' character */
   const bool wsp_around_eq = (-3 >= connection->daemon->client_discipline);
   /* Allow whitespaces in quoted cookie value */
-  const bool wsp_in_quoted = (0 >= connection->daemon->client_discipline);
+  const bool wsp_in_quoted = (-2 >= connection->daemon->client_discipline);
   /* Allow tab as space after semicolon between cookies */
   const bool tab_as_sp = (0 >= connection->daemon->client_discipline);
   /* Allow no space after semicolon between cookies */
@@ -3048,8 +3048,10 @@ parse_cookie_header (struct MHD_Connection *connection)
   char *cpy;
   size_t i;
   enum _MHD_ParseCookie parse_res;
-  const struct MHD_HTTP_Req_Header *const saved_tail =
+  struct MHD_HTTP_Req_Header *const saved_tail =
     connection->rq.headers_received_tail;
+  const bool allow_partially_correct_cookie =
+    (1 >= connection->daemon->client_discipline);
 
   if (MHD_NO ==
       MHD_lookup_connection_value_n (connection,
@@ -3097,9 +3099,22 @@ parse_cookie_header (struct MHD_Connection *connection)
   case MHD_PARSE_COOKIE_MALFORMED:
 #ifdef HAVE_MESSAGES
     if (saved_tail != connection->rq.headers_received_tail)
-      MHD_DLOG (connection->daemon,
-                _ ("The Cookie header has been only partially parsed as it "
-                   "contains malformed data.\n"));
+    {
+      if (allow_partially_correct_cookie)
+        MHD_DLOG (connection->daemon,
+                  _ ("The Cookie header has been only partially parsed as it "
+                     "contains malformed data.\n"));
+      else
+      {
+        /* Remove extracted values from partially broken cookie */
+        /* Memory remains allocated until the end of the request processing */
+        connection->rq.headers_received_tail = saved_tail;
+        saved_tail->next = NULL;
+        MHD_DLOG (connection->daemon,
+                  _ ("The Cookie header has been ignored as it contains "
+                     "malformed data.\n"));
+      }
+    }
     else
       MHD_DLOG (connection->daemon,
                 _ ("The Cookie header has malformed data.\n"));

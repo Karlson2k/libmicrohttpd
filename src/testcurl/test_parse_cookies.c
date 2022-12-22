@@ -237,10 +237,11 @@ struct strct_test_data
 {
   unsigned int line_num;
   const char *header_str;
-  unsigned int num_cookies_strict_p2; /* Reserved */
+  unsigned int num_cookies_strict_p2;
   unsigned int num_cookies_strict_p1;
   unsigned int num_cookies_strict_zero;
-  unsigned int num_cookies_strict_n1;
+  unsigned int num_cookies_strict_n2;
+  unsigned int num_cookies_strict_n3;
   struct strct_cookie cookies[5];
 };
 
@@ -248,6 +249,7 @@ static const struct strct_test_data test_data[] = {
   {
     __LINE__,
     "name1=value1",
+    1,
     1,
     1,
     1,
@@ -263,6 +265,7 @@ static const struct strct_test_data test_data[] = {
   {
     __LINE__,
     "name1=value1;",
+    0,
     1,
     1,
     1,
@@ -282,6 +285,7 @@ static const struct strct_test_data test_data[] = {
     1,
     1,
     1,
+    1,
     {
       COOKIE_ ("name1", "value1"),
       COOKIE_NULL,
@@ -295,6 +299,7 @@ static const struct strct_test_data test_data[] = {
     "; name1=value1",
     0,
     0,
+    1,
     1,
     1,
     {
@@ -312,6 +317,7 @@ static const struct strct_test_data test_data[] = {
     0,
     1,
     1,
+    1,
     {
       COOKIE_ ("name1", "value1"),
       COOKIE_NULL,
@@ -323,6 +329,7 @@ static const struct strct_test_data test_data[] = {
   {
     __LINE__,
     "name1=value1 ",
+    1,
     1,
     1,
     1,
@@ -342,6 +349,7 @@ static const struct strct_test_data test_data[] = {
     0,
     1,
     1,
+    1,
     {
       COOKIE_ ("name1", "value1"),
       COOKIE_NULL,
@@ -357,6 +365,7 @@ static const struct strct_test_data test_data[] = {
     0,
     1,
     1,
+    1,
     {
       COOKIE_ ("name1", "value1"),
       COOKIE_NULL,
@@ -368,6 +377,7 @@ static const struct strct_test_data test_data[] = {
   {
     __LINE__,
     "name2=\"value 2\"",
+    0,
     0,
     0,
     1,
@@ -387,6 +397,7 @@ static const struct strct_test_data test_data[] = {
     1,
     2,
     2,
+    2,
     {
       COOKIE_ ("name1", "value1"),
       COOKIE_ ("name2", "value2"),
@@ -402,9 +413,10 @@ static const struct strct_test_data test_data[] = {
     2,
     2,
     2,
+    2,
     {
       COOKIE_ ("name1", "value1"),
-      COOKIE_ ("name1", "value1"),
+      COOKIE_ ("name1", "value1"), /* The second value is not checked actually */
       COOKIE_NULL,
       COOKIE_NULL,
       COOKIE_NULL
@@ -414,20 +426,6 @@ static const struct strct_test_data test_data[] = {
     __LINE__,
     "name1=value1; name2=value2",
     2,
-    2,
-    2,
-    2,
-    {
-      COOKIE_ ("name1", "value1"),
-      COOKIE_ ("name2", "value2"),
-      COOKIE_NULL,
-      COOKIE_NULL,
-      COOKIE_NULL
-    }
-  },
-  {
-    __LINE__,
-    "name1=value1; name2=value2",
     2,
     2,
     2,
@@ -442,22 +440,8 @@ static const struct strct_test_data test_data[] = {
   },
   {
     __LINE__,
-    "name1=value1; name2=value2",
+    "name1=value1; name2=value2    ",
     2,
-    2,
-    2,
-    2,
-    {
-      COOKIE_ ("name1", "value1"),
-      COOKIE_ ("name2", "value2"),
-      COOKIE_NULL,
-      COOKIE_NULL,
-      COOKIE_NULL
-    }
-  },
-  {
-    __LINE__,
-    "name1=value1; name2=value2",
     2,
     2,
     2,
@@ -472,23 +456,9 @@ static const struct strct_test_data test_data[] = {
   },
   {
     __LINE__,
-    "name1=value1; name2=value2",
-    2,
-    2,
-    2,
-    2,
-    {
-      COOKIE_ ("name1", "value1"),
-      COOKIE_ ("name2", "value2"),
-      COOKIE_NULL,
-      COOKIE_NULL,
-      COOKIE_NULL
-    }
-  },
-  {
-    __LINE__,
-    "name1=value1; name2=value2",
-    2,
+    "name1=value1;  name2=value2",
+    0,
+    1,
     2,
     2,
     2,
@@ -502,7 +472,56 @@ static const struct strct_test_data test_data[] = {
   },
   {
     __LINE__,
-    "name1=value1; name2=value2",
+    "name1=value1;name2=value2",
+    0,
+    1,
+    2,
+    2,
+    2,
+    {
+      COOKIE_ ("name1", "value1"),
+      COOKIE_ ("name2", "value2"),
+      COOKIE_NULL,
+      COOKIE_NULL,
+      COOKIE_NULL
+    }
+  },
+  {
+    __LINE__,
+    "name1=value1;\tname2=value2",
+    0,
+    1,
+    2,
+    2,
+    2,
+    {
+      COOKIE_ ("name1", "value1"),
+      COOKIE_ ("name2", "value2"),
+      COOKIE_NULL,
+      COOKIE_NULL,
+      COOKIE_NULL
+    }
+  },
+  {
+    __LINE__,
+    "name1=value1 ; name2=value2",
+    0,
+    0,
+    2,
+    2,
+    2,
+    {
+      COOKIE_ ("name1", "value1"),
+      COOKIE_ ("name2", "value2"),
+      COOKIE_NULL,
+      COOKIE_NULL,
+      COOKIE_NULL
+    }
+  },
+  {
+    __LINE__,
+    "     name1=value1; name2=value2",
+    2,
     2,
     2,
     2,
@@ -521,6 +540,7 @@ static const struct strct_test_data test_data[] = {
     "name4=\"var4 with spaces\"; " \
     "name5=var_with_=_char",
     0,
+    3,
     3,
     5,
     5,
@@ -539,6 +559,7 @@ static const struct strct_test_data test_data[] = {
     "name5=var_with_=_char",
     0,
     1,
+    3,
     5,
     5,
     {
@@ -556,6 +577,7 @@ static const struct strct_test_data test_data[] = {
     "name5=var_with_=_char\t \t",
     0,
     1,
+    3,
     5,
     5,
     {
@@ -573,6 +595,7 @@ static const struct strct_test_data test_data[] = {
     "name5=var_with_=_char;\t \t",
     0,
     1,
+    3,
     5,
     5,
     {
@@ -589,6 +612,7 @@ static const struct strct_test_data test_data[] = {
     "name5=var_with_=_char;" \
     "name4=\"var4 with spaces\"",
     0,
+    4,
     4,
     5,
     5,
@@ -607,6 +631,7 @@ static const struct strct_test_data test_data[] = {
     "name4=\"var4 with spaces\";",
     0,
     4,
+    4,
     5,
     5,
     {
@@ -623,6 +648,7 @@ static const struct strct_test_data test_data[] = {
     "name5=var_with_=_char; " \
     "name4=\"var4 with spaces\"; name3=",
     0,
+    3,
     3,
     5,
     5,
@@ -641,6 +667,7 @@ static const struct strct_test_data test_data[] = {
     "name5=var_with_=_char; name3=;",
     0,
     2,
+    2,
     5,
     5,
     {
@@ -658,6 +685,7 @@ static const struct strct_test_data test_data[] = {
     "name5=var_with_=_char",
     0,
     0,
+    3,
     5,
     5,
     {
@@ -674,6 +702,7 @@ static const struct strct_test_data test_data[] = {
     "name4=\"var4 with spaces\"; ; ; ; ; " \
     "name5=var_with_=_char",
     0,
+    3,
     3,
     5,
     5,
@@ -692,6 +721,7 @@ static const struct strct_test_data test_data[] = {
     "name5=var_with_=_char;;;;;;;;",
     0,
     3,
+    3,
     5,
     5,
     {
@@ -708,6 +738,7 @@ static const struct strct_test_data test_data[] = {
     "name4=\"var4 with spaces\";" \
     "name5=var_with_=_char; ; ; ; ; name3=",
     0,
+    2,
     2,
     5,
     5,
@@ -726,14 +757,15 @@ static const struct strct_test_data test_data[] = {
     "name4=\"var4 with spaces\" ",
     0,
     0,
+    4,
     5,
     5,
     {
       COOKIE_ ("name1", "var1"),
       COOKIE_ ("name2", "var2"),
       COOKIE_ ("name3", ""),
-      COOKIE_ ("name4", "var4 with spaces"),
-      COOKIE_ ("name5", "var_with_=_char")
+      COOKIE_ ("name5", "var_with_=_char"),
+      COOKIE_ ("name4", "var4 with spaces")
     }
   },
   {
@@ -741,6 +773,7 @@ static const struct strct_test_data test_data[] = {
     "name5=var_with_=_char; name4=\"var4 with spaces\";" \
     "name1=var1; name2=var2; name3=",
     0,
+    1,
     1,
     5,
     5,
@@ -754,7 +787,25 @@ static const struct strct_test_data test_data[] = {
   },
   {
     __LINE__,
+    "name5=var_with_=_char; name4=\"var4_without_spaces\"; " \
+    "name1=var1; name2=var2; name3=",
+    5,
+    5,
+    5,
+    5,
+    5,
+    {
+      COOKIE_ ("name5", "var_with_=_char"),
+      COOKIE_ ("name1", "var1"),
+      COOKIE_ ("name2", "var2"),
+      COOKIE_ ("name3", ""),
+      COOKIE_ ("name4", "var4_without_spaces")
+    }
+  },
+  {
+    __LINE__,
     "name1 = value1",
+    0,
     0,
     0,
     0,
@@ -773,6 +824,7 @@ static const struct strct_test_data test_data[] = {
     0,
     0,
     0,
+    0,
     1,
     {
       COOKIE_ ("name1", "value1"),
@@ -785,6 +837,7 @@ static const struct strct_test_data test_data[] = {
   {
     __LINE__,
     "name1\t = \tvalue1",
+    0,
     0,
     0,
     0,
@@ -803,6 +856,7 @@ static const struct strct_test_data test_data[] = {
     0,
     0,
     0,
+    0,
     2,
     {
       COOKIE_ ("name1", "value1"),
@@ -818,6 +872,7 @@ static const struct strct_test_data test_data[] = {
     0,
     1,
     1,
+    1,
     2,
     {
       COOKIE_ ("name1", "value1"),
@@ -830,6 +885,7 @@ static const struct strct_test_data test_data[] = {
   {
     __LINE__,
     "name1 = value1; name2=value2",
+    0,
     0,
     0,
     0,
@@ -849,6 +905,7 @@ static const struct strct_test_data test_data[] = {
     0,
     0,
     0,
+    0,
     {
       COOKIE_NULL,
       COOKIE_NULL,
@@ -860,6 +917,7 @@ static const struct strct_test_data test_data[] = {
   {
     __LINE__,
     "      ",
+    0,
     0,
     0,
     0,
@@ -879,6 +937,7 @@ static const struct strct_test_data test_data[] = {
     0,
     0,
     0,
+    0,
     {
       COOKIE_NULL,
       COOKIE_NULL,
@@ -890,6 +949,7 @@ static const struct strct_test_data test_data[] = {
   {
     __LINE__,
     "var=,",
+    0,
     0,
     0,
     0,
@@ -909,6 +969,7 @@ static const struct strct_test_data test_data[] = {
     0,
     0,
     0,
+    0,
     {
       COOKIE_NULL,
       COOKIE_NULL,
@@ -920,6 +981,7 @@ static const struct strct_test_data test_data[] = {
   {
     __LINE__,
     "var=value  space",
+    0,
     0,
     0,
     0,
@@ -939,6 +1001,7 @@ static const struct strct_test_data test_data[] = {
     0,
     0,
     0,
+    0,
     {
       COOKIE_NULL,
       COOKIE_NULL,
@@ -950,6 +1013,7 @@ static const struct strct_test_data test_data[] = {
   {
     __LINE__,
     "=",
+    0,
     0,
     0,
     0,
@@ -969,6 +1033,7 @@ static const struct strct_test_data test_data[] = {
     0,
     0,
     0,
+    0,
     {
       COOKIE_NULL,
       COOKIE_NULL,
@@ -980,6 +1045,7 @@ static const struct strct_test_data test_data[] = {
   {
     __LINE__,
     ";=",
+    0,
     0,
     0,
     0,
@@ -999,6 +1065,7 @@ static const struct strct_test_data test_data[] = {
     0,
     0,
     0,
+    0,
     {
       COOKIE_NULL,
       COOKIE_NULL,
@@ -1010,6 +1077,7 @@ static const struct strct_test_data test_data[] = {
   {
     __LINE__,
     "=;",
+    0,
     0,
     0,
     0,
@@ -1029,6 +1097,7 @@ static const struct strct_test_data test_data[] = {
     0,
     0,
     0,
+    0,
     {
       COOKIE_NULL,
       COOKIE_NULL,
@@ -1040,6 +1109,7 @@ static const struct strct_test_data test_data[] = {
   {
     __LINE__,
     ";= ;",
+    0,
     0,
     0,
     0,
@@ -1057,10 +1127,12 @@ static const struct strct_test_data test_data[] = {
 /* Global parameters */
 static int verbose;
 static int oneone;                  /**< If false use HTTP/1.0 for requests*/
-static int use_strict_n1;
-static int use_strict_zero;
-static int use_strict_p1;
-static int strict_level;
+static int use_discp_n3;
+static int use_discp_n2;
+static int use_discp_zero;
+static int use_discp_p1;
+static int use_discp_p2;
+static int discp_level;
 
 static void
 test_global_init (void)
@@ -1128,12 +1200,16 @@ ahcCheck (void *cls,
   unsigned int i;
   int cookie_failed;
 
-  if (use_strict_p1)
+  if (use_discp_p2)
+    expected_num_cookies = param->check->num_cookies_strict_p2;
+  else if (use_discp_p1)
     expected_num_cookies = param->check->num_cookies_strict_p1;
-  else if (use_strict_zero)
+  else if (use_discp_zero)
     expected_num_cookies = param->check->num_cookies_strict_zero;
-  else if (use_strict_n1)
-    expected_num_cookies = param->check->num_cookies_strict_n1;
+  else if (use_discp_n2)
+    expected_num_cookies = param->check->num_cookies_strict_n2;
+  else if (use_discp_n3)
+    expected_num_cookies = param->check->num_cookies_strict_n3;
   else
     externalErrorExit ();
 
@@ -1565,13 +1641,13 @@ testExternalPolling (void)
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
     port = 0;
   else
-    port = 1340 + oneone ? 0 : 6 + (uint16_t) (1 + strict_level);
+    port = 1340 + oneone ? 0 : 6 + (uint16_t) (1 + discp_level);
 
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         port, NULL, NULL,
                         &ahcCheck, &ahc_param,
-                        MHD_OPTION_STRICT_FOR_CLIENT,
-                        (int) (strict_level),
+                        MHD_OPTION_CLIENT_DISCIPLINE_LVL,
+                        (int) (discp_level),
                         MHD_OPTION_END);
   if (d == NULL)
     return 1;
@@ -1640,19 +1716,26 @@ main (int argc, char *const *argv)
                has_param (argc, argv, "-s") ||
                has_param (argc, argv, "--silent"));
   oneone = ! has_in_name (argv[0], "10");
-  use_strict_n1 = has_in_name (argv[0], "_strict_n1");
-  use_strict_zero = has_in_name (argv[0], "_strict_zero");
-  use_strict_p1 = has_in_name (argv[0], "_strict_p1");
-  if (1 != ((use_strict_n1 ? 1 : 0) + (use_strict_zero ? 1 : 0)
-            + (use_strict_p1 ? 1 : 0)))
+  use_discp_n3 = has_in_name (argv[0], "_discp_n3");
+  use_discp_n2 = has_in_name (argv[0], "_discp_n2");
+  use_discp_zero = has_in_name (argv[0], "_discp_zero");
+  use_discp_p1 = has_in_name (argv[0], "_discp_p1");
+  use_discp_p2 = has_in_name (argv[0], "_discp_p2");
+  if (1 != ((use_discp_n3 ? 1 : 0) + (use_discp_n2 ? 1 : 0)
+            + (use_discp_zero ? 1 : 0)
+            + (use_discp_p1 ? 1 : 0) + (use_discp_p2 ? 1 : 0)))
     return 99;
 
-  if (use_strict_n1)
-    strict_level = -1;
-  else if (use_strict_zero)
-    strict_level = 0;
-  else if (use_strict_p1)
-    strict_level = 1;
+  if (use_discp_n3)
+    discp_level = -3;
+  else if (use_discp_n2)
+    discp_level = -2;
+  else if (use_discp_zero)
+    discp_level = 0;
+  else if (use_discp_p1)
+    discp_level = 1;
+  else if (use_discp_p2)
+    discp_level = 2;
 
   test_global_init ();
 

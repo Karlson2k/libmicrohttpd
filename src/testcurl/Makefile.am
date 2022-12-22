@@ -144,9 +144,11 @@ check_PROGRAMS = \
 
 if ENABLE_COOKIE
 check_PROGRAMS += \
-  test_parse_cookies_strict_p1 \
-  test_parse_cookies_strict_zero \
-  test_parse_cookies_strict_n1
+  test_parse_cookies_discp_p2 \
+  test_parse_cookies_discp_p1 \
+  test_parse_cookies_discp_zero \
+  test_parse_cookies_discp_n2 \
+  test_parse_cookies_discp_n3
 endif
 
 if HEAVY_TESTS
@@ -468,14 +470,20 @@ test_post_SOURCES = \
 test_process_headers_SOURCES = \
   test_process_headers.c mhd_has_in_name.h
 
-test_parse_cookies_strict_zero_SOURCES = \
+test_parse_cookies_discp_zero_SOURCES = \
   test_parse_cookies.c mhd_has_in_name.h mhd_has_param.h
 
-test_parse_cookies_strict_p1_SOURCES = \
-  $(test_parse_cookies_strict_zero_SOURCES)
+test_parse_cookies_discp_p2_SOURCES = \
+  $(test_parse_cookies_discp_zero_SOURCES)
 
-test_parse_cookies_strict_n1_SOURCES = \
-  $(test_parse_cookies_strict_zero_SOURCES)
+test_parse_cookies_discp_p1_SOURCES = \
+  $(test_parse_cookies_discp_zero_SOURCES)
+
+test_parse_cookies_discp_n2_SOURCES = \
+  $(test_parse_cookies_discp_zero_SOURCES)
+
+test_parse_cookies_discp_n3_SOURCES = \
+  $(test_parse_cookies_discp_zero_SOURCES)
 
 test_process_arguments_SOURCES = \
   test_process_arguments.c mhd_has_in_name.h
