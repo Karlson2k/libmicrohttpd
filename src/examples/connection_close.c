@@ -118,7 +118,7 @@ main (int argc, char *const *argv)
     MHD_OPTION_NOTIFY_COMPLETED, &request_completed, NULL,
     MHD_OPTION_NOTIFY_CONNECTION, &connection_completed, NULL,
     MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
-    MHD_OPTION_STRICT_FOR_CLIENT, (int) 1,
+    MHD_OPTION_CLIENT_DISCIPLINE_LVL, (int) 1,
     MHD_OPTION_END);
   if (d == NULL)
     return 1;

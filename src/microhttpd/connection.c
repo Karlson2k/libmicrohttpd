@@ -2846,15 +2846,15 @@ parse_cookies_string (char *str,
   size_t i;
   bool non_strict;
   /* Skip extra whitespaces and empty cookies */
-  const bool allow_wsp_empty = (0 >= connection->daemon->strict_for_client);
+  const bool allow_wsp_empty = (0 >= connection->daemon->client_discipline);
   /* Allow whitespaces around '=' character */
-  const bool wsp_around_eq = (0 > connection->daemon->strict_for_client);
+  const bool wsp_around_eq = (-3 >= connection->daemon->client_discipline);
   /* Allow whitespaces in quoted cookie value */
-  const bool wsp_in_quoted = (0 >= connection->daemon->strict_for_client);
+  const bool wsp_in_quoted = (0 >= connection->daemon->client_discipline);
   /* Allow tab as space after semicolon between cookies */
-  const bool tab_as_sp = (0 >= connection->daemon->strict_for_client);
+  const bool tab_as_sp = (0 >= connection->daemon->client_discipline);
   /* Allow no space after semicolon between cookies */
-  const bool allow_no_space = (0 >= connection->daemon->strict_for_client);
+  const bool allow_no_space = (0 >= connection->daemon->client_discipline);
 
   non_strict = false;
   i = 0;
@@ -3327,7 +3327,7 @@ parse_initial_message_line (struct MHD_Connection *connection,
       uri_len = line_len - (size_t) (uri - line);
     }
     /* check for spaces in URI if we are "strict" */
-    if ( (1 <= daemon->strict_for_client) &&
+    if ( (-2 < daemon->client_discipline) &&
          (NULL != memchr (uri,
                           ' ',
                           uri_len)) )
@@ -3752,7 +3752,7 @@ process_header_line (struct MHD_Connection *connection,
     /* error in header line, die hard */
     return MHD_NO;
   }
-  if (-1 >= connection->daemon->strict_for_client)
+  if (-3 < connection->daemon->client_discipline)
   {
     /* check for whitespace before colon, which is not allowed
  by RFC 7230 section 3.2.4; we count space ' ' and
@@ -3897,7 +3897,7 @@ parse_connection_headers (struct MHD_Connection *connection)
     return;
   }
 #endif /* COOKIE_SUPPORT */
-  if ( (1 <= connection->daemon->strict_for_client) &&
+  if ( (-3 < connection->daemon->client_discipline) &&
        (MHD_IS_HTTP_VER_1_1_COMPAT (connection->rq.http_ver)) &&
        (MHD_NO ==
         MHD_lookup_connection_value_n (connection,
@@ -3946,7 +3946,7 @@ parse_connection_headers (struct MHD_Connection *connection)
                                             NULL))
     {
       /* TODO: add individual settings */
-      if (1 <= connection->daemon->strict_for_client)
+      if (1 <= connection->daemon->client_discipline)
       {
         transmit_error_response_static (connection,
                                         MHD_HTTP_BAD_REQUEST,

@@ -5729,7 +5729,7 @@ unescape_wrapper (void *cls,
   (void) cls; /* Mute compiler warning. */
 
   /* TODO: add individual parameter */
-  if (1 <= connection->daemon->strict_for_client)
+  if (0 <= connection->daemon->client_discipline)
     return MHD_str_pct_decode_in_place_strict_ (val);
 
   res = MHD_str_pct_decode_in_place_lenient_ (val, &broken);
@@ -6653,14 +6653,33 @@ parse_options_va (struct MHD_Daemon *daemon,
                                             unsigned int);
       break;
     case MHD_OPTION_STRICT_FOR_CLIENT:
-      daemon->strict_for_client = va_arg (ap, int);
+      daemon->client_discipline = va_arg (ap, int); /* Temporal assignment */
+      /* Map to correct value */
+      if (-1 >= daemon->client_discipline)
+        daemon->client_discipline = -3;
+      else if (1 <= daemon->client_discipline)
+        daemon->client_discipline = 1;
 #ifdef HAVE_MESSAGES
       if ( (0 != (daemon->options & MHD_USE_PEDANTIC_CHECKS)) &&
-           (1 != daemon->strict_for_client) )
+           (1 != daemon->client_discipline) )
       {
         MHD_DLOG (daemon,
                   _ ("Flag MHD_USE_PEDANTIC_CHECKS is ignored because "
-                     "another behavior is specified by MHD_OPTION_STRICT_CLIENT.\n"));
+                     "another behaviour is specified by "
+                     "MHD_OPTION_STRICT_CLIENT.\n"));
+      }
+#endif /* HAVE_MESSAGES */
+      break;
+    case MHD_OPTION_CLIENT_DISCIPLINE_LVL:
+      daemon->client_discipline = va_arg (ap, int);
+#ifdef HAVE_MESSAGES
+      if ( (0 != (daemon->options & MHD_USE_PEDANTIC_CHECKS)) &&
+           (1 != daemon->client_discipline) )
+      {
+        MHD_DLOG (daemon,
+                  _ ("Flag MHD_USE_PEDANTIC_CHECKS is ignored because "
+                     "another behaviour is specified by "
+                     "MHD_OPTION_CLIENT_DISCIPLINE_LVL.\n"));
       }
 #endif /* HAVE_MESSAGES */
       break;
@@ -6723,6 +6742,7 @@ parse_options_va (struct MHD_Daemon *daemon,
           break;
         /* all options taking 'int' */
         case MHD_OPTION_STRICT_FOR_CLIENT:
+        case MHD_OPTION_CLIENT_DISCIPLINE_LVL:
         case MHD_OPTION_SIGPIPE_HANDLED_BY_APP:
         case MHD_OPTION_TLS_NO_ALPN:
           if (MHD_NO == parse_options (daemon,
@@ -7102,8 +7122,8 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->listening_address_reuse = 0;
   daemon->options = *pflags;
   pflags = &daemon->options;
-  daemon->strict_for_client = (0 != (*pflags & MHD_USE_PEDANTIC_CHECKS)) ? 1 :
-                              0;
+  daemon->client_discipline = (0 != (*pflags & MHD_USE_PEDANTIC_CHECKS)) ?
+                              1 : 0;
   daemon->port = port;
   daemon->apc = apc;
   daemon->apc_cls = apc_cls;

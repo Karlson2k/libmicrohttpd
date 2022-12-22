@@ -105,7 +105,6 @@ main (int argc,
     (uint16_t) port,
     NULL, NULL, &ahc_echo, &data_for_handler,
     MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
-    MHD_OPTION_STRICT_FOR_CLIENT, (int) 1,
     MHD_OPTION_END);
   if (d == NULL)
     return 1;

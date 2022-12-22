@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097544
+#define MHD_VERSION 0x00097545
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -1291,12 +1291,14 @@ enum MHD_FLAG
    * as liberal as possible in what you accept" norm.  It is
    * recommended to turn this ON if you are testing clients against
    * MHD, and OFF in production.
+   * @sa #MHD_OPTION_CLIENT_DISCIPLINE_LVL
    */
   MHD_USE_PEDANTIC_CHECKS = 32,
 #if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_PEDANTIC_CHECKS \
   _MHD_DEPR_IN_MACRO ( \
-    "Flag MHD_USE_PEDANTIC_CHECKS is deprecated, use option MHD_OPTION_STRICT_FOR_CLIENT instead") \
+    "Flag MHD_USE_PEDANTIC_CHECKS is deprecated, " \
+    "use option MHD_OPTION_CLIENT_DISCIPLINE_LVL instead") \
   32
 #endif /* 0 */
 
@@ -1939,15 +1941,18 @@ enum MHD_OPTION
    * If set to 1 - be strict about the protocol.  Use -1 to be
    * as tolerant as possible.
    *
-   * Specifically, at the moment, at 1 this flag
-   * causes MHD to reject HTTP 1.1 connections without a "Host" header,
-   * and to disallow spaces in the URL or (at -1) in HTTP header key strings.
+   * The more flexible option #MHD_OPTION_CLIENT_DISCIPLINE_LVL is recommended
+   * instead of this option.
    *
-   * These are required by some versions of the standard, but of
-   * course in violation of the "be as liberal as possible in what you
-   * accept" norm.  It is recommended to set this to 1 if you are
-   * testing clients against MHD, and 0 in production.  This option
-   * should be followed by an `int` argument.
+   * The values mapping table:
+   * #MHD_OPTION_STRICT_FOR_CLIENT | #MHD_OPTION_CLIENT_DISCIPLINE_LVL
+   * -----------------------------:|:---------------------------------
+   * 1                             | 1
+   * 0                             | 0
+   * -1                            | -3
+   *
+   * This option should be followed by an `int` argument.
+   * @sa #MHD_OPTION_CLIENT_DISCIPLINE_LVL
    */
   MHD_OPTION_STRICT_FOR_CLIENT = 29,
 
@@ -2037,7 +2042,54 @@ enum MHD_OPTION
    * default priorities.
    * @note Available since #MHD_VERSION 0x00097542
    */
-  MHD_OPTION_HTTPS_PRIORITIES_APPEND = 37
+  MHD_OPTION_HTTPS_PRIORITIES_APPEND = 37,
+
+  /**
+   * Sets specified client discipline level (i.e. HTTP protocol parsing
+   * strictness level).
+   *
+   * The following basic values are supported:
+   *  0 - default MHD level, a balance between extra security and broader
+   *      compatibility, as allowed by RFCs for HTTP servers;
+   *  1 - more strict protocol interpretation, within the limits set by
+   *      RFCs for HTTP servers;
+   * -1 - more lenient protocol interpretation, within the limits set by
+   *      RFCs for HTTP servers.
+   * The following extended values could be used as well:
+   *  2 - stricter protocol interpretation, even stricter then allowed
+   *      by RFCs for HTTP servers, however it should be absolutely compatible
+   *      with clients following at least RFCs' "MUST" type of requirements
+   *      for HTTP clients;
+   *  3 - strictest protocol interpretation, even stricter then allowed
+   *      by RFCs for HTTP servers, however it should be absolutely compatible
+   *      with clients following RFCs' "SHOULD" and "MUST" types of requirements
+   *      for HTTP clients;
+   * -2 - more relaxed protocol interpretation, violating RFCs' "SHOULD" type
+   *      of requirements for HTTP servers;
+   * -3 - the most flexible protocol interpretation, beyond RFCs' "MUST" type of
+   *      requirements for HTTP server.
+   * Values higher than "3" or lower than "-3" are interpreted as "3" or "-3"
+   * respectively.
+   *
+   * Higher values are more secure, lower values are more compatible with
+   * various HTTP clients.
+   *
+   * The default value ("0") could be used in most cases.
+   * Value "1" is suitable for highly loaded public servers.
+   * Values "2" and "3" are generally recommended only for testing of HTTP
+   * clients against MHD.
+   * Value "2" may be used for security-centric application, however it is
+   * slight violation of RFCs' requirements.
+   * Negative values are not recommended for public servers.
+   * Values "-1" and "-2" could be used for servers in isolated environment.
+   * Value "-3" is not recommended unless it is absolutely necessary to
+   * communicate with some client(s) with badly broken HTTP implementation.
+   *
+   * This option should be followed by an `int` argument.
+   * @note Available since #MHD_VERSION 0x00097545
+   */
+  MHD_OPTION_CLIENT_DISCIPLINE_LVL = 38
+
 } _MHD_FIXED_ENUM;
 
 

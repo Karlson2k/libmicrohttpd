@@ -160,7 +160,7 @@ main (int argc,
     (uint16_t) port,
     NULL, NULL, &ahc_echo, NULL,
     MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
-    MHD_OPTION_STRICT_FOR_CLIENT, (int) 1,
+    MHD_OPTION_CLIENT_DISCIPLINE_LVL, (int) 1,
     /* Optionally, the gnutls_load_file() can be used to
        load the key and the certificate from file. */
     MHD_OPTION_HTTPS_MEM_KEY, srv_signed_key_pem,

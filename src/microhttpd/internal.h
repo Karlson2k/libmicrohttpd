@@ -2104,9 +2104,10 @@ struct MHD_Daemon
   unsigned int per_ip_connection_limit;
 
   /**
-   * Be neutral (zero), strict (1) or permissive (-1) to client.
+   * The strictness level for parsing of incoming data.
+   * @see #MHD_OPTION_CLIENT_DISCIPLINE_LVL
    */
-  int strict_for_client;
+  int client_discipline;
 
   /**
    * True if SIGPIPE is blocked
