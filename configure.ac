@@ -1333,29 +1333,11 @@ AC_CHECK_MEMBERS([struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len,
 #endif
    ])
 
-MHD_CHECK_FUNC([getsockname],
-  [[
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-#ifdef HAVE_WINSOCK2_H
-#include <winsock2.h>
-#endif
-  ]],
+MHD_CHECK_LINK_RUN([[for working getsockname()]],[[mhd_cv_getsockname_usable]],
+  [[mhd_cv_getsockname_usable='assuming yes']],
   [
-    struct sockaddr_storage ss;
-    (void)getsockname(socket(0,0,0),(struct sockaddr *)&ss,(void*)0);
-  ],
-  [
-    AC_CACHE_CHECK([[whether getsockname() is usable]], [[mhd_cv_getsockname_usable]],
-      [
-         AC_RUN_IFELSE(
-           [
-            AC_LANG_SOURCE(
-             [[
+    AC_LANG_SOURCE(
+      [[
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -1436,18 +1418,10 @@ int main(void)
 #endif
   return ret;
 }
-             ]]
-            )
-           ],
-           [[mhd_cv_getsockname_usable='yes']],
-           [[mhd_cv_getsockname_usable='no']],
-           [[mhd_cv_getsockname_usable='assuming yes']]
-         )
-        ]
-      )
-    AS_VAR_IF([[mhd_cv_getsockname_usable]], [["no"]], [:],
-        [AC_DEFINE([[MHD_USE_GETSOCKNAME]], [[1]], [Define if you have usable `getsockname' function.])])
-  ]
+      ]]
+    )
+  ],
+  [AC_DEFINE([[MHD_USE_GETSOCKNAME]], [[1]], [Define if you have usable `getsockname' function.])]
 )
 
 AC_CACHE_CHECK([for usable PAGESIZE macro], [mhd_cv_macro_pagesize_usable],
@@ -1644,18 +1618,25 @@ AC_INCLUDES_DEFAULT
         ], [[
           int arr[2];
           int res;
-          res = pipe(arr)
+          res = pipe(arr);
+          if (res != 0) return 33;
+          close (arr[0]);
+          close (arr[1]);
         ]])
       ], [[mhd_cv_pipe_usable='yes']], [[mhd_cv_pipe_usable='no']])
     ])
-  ])
-  AS_VAR_IF([[mhd_cv_pipe_usable]], [["yes"]], [
-    use_itc='pipe'
-    enable_itc="$use_itc"
-    AC_DEFINE([[_MHD_ITC_PIPE]], [[1]], [Define to use pipe for inter-thread communication])
-    AC_CACHE_CHECK([[whether pipe2(2) is usable]], [[mhd_cv_pipe2_usable]], [
-      AC_LINK_IFELSE([
-        AC_LANG_PROGRAM([
+    AS_VAR_IF([[mhd_cv_pipe_usable]], [["yes"]], [
+      use_itc='pipe'
+      enable_itc="$use_itc"
+      AC_DEFINE([[_MHD_ITC_PIPE]], [[1]], [Define to use pipe for inter-thread communication])
+      MHD_CHECK_LINK_RUN([[whether pipe2(2) is usable]],[[mhd_cv_pipe2_usable]],
+        [
+          # Cross-compiling
+          AS_CASE([${host_os}], [kfreebsd*-gnu], [[mhd_cv_pipe2_usable='assuming no']],
+            [[mhd_cv_pipe2_usable='assuming yes']])
+        ],
+        [
+          AC_LANG_PROGRAM([
 AC_INCLUDES_DEFAULT
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -1663,17 +1644,21 @@ AC_INCLUDES_DEFAULT
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-        ], [[
-          int arr[2];
-          int res;
-          res = pipe2(arr, O_CLOEXEC | O_NONBLOCK)
-        ]])
-      ], [[mhd_cv_pipe2_usable='yes']], [[mhd_cv_pipe2_usable='no']])
+            ], [[
+              int arr[2];
+              int res;
+              res = pipe2(arr, O_CLOEXEC | O_NONBLOCK);
+              if (res != 0) return 33;
+              close (arr[0]);
+              close (arr[1]);
+            ]]
+          )
+        ],
+        [AC_DEFINE([[HAVE_PIPE2_FUNC]], [[1]], [Define if you have usable pipe2(2) function])]
+      )
+    ], [
+      AS_VAR_IF([[enable_itc]], [["pipe"]], [AC_MSG_ERROR([[pipe(3) is not usable, consider using other type of inter-thread communication]])])
     ])
-    AS_VAR_IF([[mhd_cv_pipe2_usable]], [["yes"]],
-      [AC_DEFINE([[HAVE_PIPE2_FUNC]], [[1]], [Define if you have usable pipe2(2) function])])
-  ], [
-    AS_VAR_IF([[enable_itc]], [["pipe"]], [AC_MSG_ERROR([[pipe(3) is not usable, consider using other type of inter-thread communication]])])
   ])
 ])
 
