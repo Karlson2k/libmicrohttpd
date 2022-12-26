@@ -1520,7 +1520,7 @@ main (int argc, char *const *argv)
   if ((CURL_VERSION_BITS (7,63,0) > curl_info->version_num) &&
       (CURL_VERSION_BITS (7,62,0) <= curl_info->version_num) )
   {
-    fprintf (stderr, "libcurl version 7.62.x has bug in processing"
+    fprintf (stderr, "libcurl version 7.62.x has bug in processing "
              "URI with GET arguments for Digest Auth.\n");
     fprintf (stderr, "This test with libcurl %u.%u.%u cannot be performed.\n",
              0xFF & (curl_info->version_num >> 16),
@@ -1552,9 +1552,9 @@ main (int argc, char *const *argv)
     }
     else if (CURL_VERSION_BITS (7,81,0) > curl_info->version_num)
     {
-      fprintf (stderr, "Required libcurl version 7.81.0 at least"
-               " to run this test with userhash.\n");
-      fprintf (stderr, "This libcurl version %u.%u.%u has broken digest"
+      fprintf (stderr, "Required libcurl at least version 7.81.0 "
+               "to run this test with userhash.\n");
+      fprintf (stderr, "This libcurl version %u.%u.%u has broken digest "
                "calculation when userhash is used.\n",
                0xFF & (curl_info->version_num >> 16),
                0xFF & (curl_info->version_num >> 8),
@@ -1576,8 +1576,8 @@ main (int argc, char *const *argv)
     }
     else if (CURL_VERSION_BITS (7,57,0) > curl_info->version_num)
     {
-      fprintf (stderr, "Required libcurl version 7.57.0 at least"
-               " to run this test with SHA-256.\n");
+      fprintf (stderr, "Required libcurl at least version 7.57.0 "
+               "to run this test with SHA-256.\n");
       fprintf (stderr, "This libcurl version %u.%u.%u "
                "does not support SHA-256.\n",
                0xFF & (curl_info->version_num >> 16),
