@@ -1634,8 +1634,10 @@ MHD_create_response_from_buffer_with_free_callback_cls (size_t size,
 
   if ((NULL == buffer) && (size > 0))
     return NULL;
+#if SIZEOF_SIZE_T >= SIZEOF_UINT64_T
   if (MHD_SIZE_UNKNOWN == size)
     return NULL;
+#endif /* SIZEOF_SIZE_T >= SIZEOF_UINT64_T */
   r = MHD_calloc_ (1, sizeof (struct MHD_Response));
   if (NULL == r)
     return NULL;
