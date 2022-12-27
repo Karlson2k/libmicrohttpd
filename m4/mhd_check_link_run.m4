@@ -12,7 +12,7 @@
 #   COMMAND_IF_CROSS_COMPILING action must set CACHE_ID variable to "yes", "no",
 #   "assuming yes" or "assuming no".
 #   ACTION_IF_SUCCEED is executed if result is "yes" or "assuming yes".
-#   ACTION_IF_FAILED is execuded if result is "no" or "assuming no".
+#   ACTION_IF_FAILED is executed if result is "no" or "assuming no".
 #
 #   Example usage:
 #
