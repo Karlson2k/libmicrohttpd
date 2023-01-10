@@ -2655,7 +2655,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
     {
     case MHD_CONNECTION_INIT:
     case MHD_CONNECTION_REQ_LINE_RECEIVING:
-    case MHD_CONNECTION_URL_RECEIVED:
+    case MHD_CONNECTION_REQ_LINE_RECEIVED:
     case MHD_CONNECTION_HEADER_PART_RECEIVED:
       /* while reading headers, we always grow the
          read buffer if needed, no size-check required */
@@ -4769,7 +4769,7 @@ get_request_line (struct MHD_Connection *c)
     return true; /* Error in processing */
 
   memset (&c->rq.hdrs.hdr, 0, sizeof(c->rq.hdrs.hdr));
-  c->state = MHD_CONNECTION_URL_RECEIVED;
+  c->state = MHD_CONNECTION_REQ_LINE_RECEIVED;
   return true;
 }
 
@@ -4937,7 +4937,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
   {
   case MHD_CONNECTION_INIT:
   case MHD_CONNECTION_REQ_LINE_RECEIVING:
-  case MHD_CONNECTION_URL_RECEIVED:
+  case MHD_CONNECTION_REQ_LINE_RECEIVED:
   case MHD_CONNECTION_HEADER_PART_RECEIVED:
   case MHD_CONNECTION_HEADERS_RECEIVED:
   case MHD_CONNECTION_HEADERS_PROCESSED:
@@ -5030,7 +5030,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
   {
   case MHD_CONNECTION_INIT:
   case MHD_CONNECTION_REQ_LINE_RECEIVING:
-  case MHD_CONNECTION_URL_RECEIVED:
+  case MHD_CONNECTION_REQ_LINE_RECEIVED:
   case MHD_CONNECTION_HEADER_PART_RECEIVED:
   case MHD_CONNECTION_HEADERS_RECEIVED:
     mhd_assert (0);
@@ -5595,10 +5595,10 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       }
       mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING >= connection->state);
       break;
-    case MHD_CONNECTION_URL_RECEIVED:
+    case MHD_CONNECTION_REQ_LINE_RECEIVED:
       line = get_next_header_line (connection,
                                    NULL);
-      if (MHD_CONNECTION_URL_RECEIVED != connection->state)
+      if (MHD_CONNECTION_REQ_LINE_RECEIVED != connection->state)
         continue;
       if (NULL == line)
       {

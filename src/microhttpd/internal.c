@@ -43,8 +43,8 @@ MHD_state_to_string (enum MHD_CONNECTION_STATE state)
     return "connection init";
   case MHD_CONNECTION_REQ_LINE_RECEIVING:
     return "receiving request line";
-  case MHD_CONNECTION_URL_RECEIVED:
-    return "connection url received";
+  case MHD_CONNECTION_REQ_LINE_RECEIVED:
+    return "request line received";
   case MHD_CONNECTION_HEADER_PART_RECEIVED:
     return "header partially received";
   case MHD_CONNECTION_HEADERS_RECEIVED:

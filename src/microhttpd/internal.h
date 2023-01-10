@@ -624,12 +624,12 @@ enum MHD_CONNECTION_STATE
   /**
    * We got the URL (and request type and version).  Wait for a header line.
    */
-  MHD_CONNECTION_URL_RECEIVED = MHD_CONNECTION_REQ_LINE_RECEIVING + 1,
+  MHD_CONNECTION_REQ_LINE_RECEIVED = MHD_CONNECTION_REQ_LINE_RECEIVING + 1,
 
   /**
    * We got part of a multi-line request header.  Wait for the rest.
    */
-  MHD_CONNECTION_HEADER_PART_RECEIVED = MHD_CONNECTION_URL_RECEIVED + 1,
+  MHD_CONNECTION_HEADER_PART_RECEIVED = MHD_CONNECTION_REQ_LINE_RECEIVED + 1,
 
   /**
    * We got the request headers.  Process them.
