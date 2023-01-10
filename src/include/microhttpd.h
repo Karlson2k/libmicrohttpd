@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097701
+#define MHD_VERSION 0x00097702
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -6200,7 +6200,7 @@ enum MHD_FEATURE
   /**
    * Get whether the SHA-256-based hashing algorithms are supported for Digest
    * Authorization.
-   * It it always supported since #MHD_VERSION 0x00096200 if Digest Auth
+   * It is always supported since #MHD_VERSION 0x00096200 if Digest Auth
    * module is built unless manually disabled in a custom build.
    * @note Available since #MHD_VERSION 0x00097701
    */
