@@ -833,6 +833,7 @@ MHD_connection_close_ (struct MHD_Connection *connection,
   struct MHD_Daemon *daemon = connection->daemon;
   struct MHD_Response *resp = connection->response;
 
+  mhd_assert (! connection->suspended);
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                MHD_thread_ID_match_current_ (connection->pid) );
