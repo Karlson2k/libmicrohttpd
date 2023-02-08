@@ -3146,7 +3146,7 @@ parse_cookie_header (struct MHD_Connection *connection)
 /**
  * The valid length of any HTTP version string
  */
-#define HTTP_VER_LEN (MHD_STATICSTR_LEN_(MHD_HTTP_VERSION_1_1))
+#define HTTP_VER_LEN (MHD_STATICSTR_LEN_ (MHD_HTTP_VERSION_1_1))
 
 /**
  * Detect HTTP version, send error response if version is not supported

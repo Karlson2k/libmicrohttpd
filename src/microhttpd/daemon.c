@@ -2848,7 +2848,7 @@ new_connection_process_ (struct MHD_Daemon *daemon,
           {
             struct epoll_event event;
 
-            event.events = EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLET;
+            event.events = EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLET | EPOLLRDHUP;
             event.data.ptr = connection;
             if (0 != epoll_ctl (daemon->epoll_fd,
                                 EPOLL_CTL_ADD,
@@ -5214,7 +5214,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
        (! daemon->listen_socket_in_epoll) &&
        (! daemon->at_limit) )
   {
-    event.events = EPOLLIN;
+    event.events = EPOLLIN | EPOLLRDHUP;
     event.data.ptr = daemon;
     if (0 != epoll_ctl (daemon->epoll_fd,
                         EPOLL_CTL_ADD,
@@ -5247,7 +5247,7 @@ MHD_epoll (struct MHD_Daemon *daemon,
   if ( ( (! daemon->upgrade_fd_in_epoll) &&
          (-1 != daemon->epoll_upgrade_fd) ) )
   {
-    event.events = EPOLLIN | EPOLLOUT;
+    event.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
     event.data.ptr = _MHD_DROP_CONST (upgrade_marker);
     if (0 != epoll_ctl (daemon->epoll_fd,
                         EPOLL_CTL_ADD,
@@ -6956,7 +6956,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   if ( (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) &&
        (! daemon->was_quiesced) )
   {
-    event.events = EPOLLIN;
+    event.events = EPOLLIN | EPOLLRDHUP;
     event.data.ptr = daemon;
     if (0 != epoll_ctl (daemon->epoll_fd,
                         EPOLL_CTL_ADD,
@@ -6975,7 +6975,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 
   if (MHD_ITC_IS_VALID_ (daemon->itc))
   {
-    event.events = EPOLLIN;
+    event.events = EPOLLIN | EPOLLRDHUP;
     event.data.ptr = _MHD_DROP_CONST (epoll_itc_marker);
     if (0 != epoll_ctl (daemon->epoll_fd,
                         EPOLL_CTL_ADD,
