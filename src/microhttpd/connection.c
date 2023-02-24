@@ -3402,24 +3402,7 @@ process_request_body (struct MHD_Connection *connection)
 
   connection->rq.some_payload_processed = false;
 
-  if (NULL != connection->rp.response)
-  {
-    /* TODO: discard all read buffer as early response
-     * means that connection have to be closed. */
-    /* already queued a response, discard remaining upload
-       (but not more, there might be another request after it) */
-    size_t purge;
-
-    purge = (size_t) MHD_MIN (connection->rq.remaining_upload_size,
-                              (uint64_t) connection->read_buffer_offset);
-    connection->rq.remaining_upload_size -= purge;
-    if (connection->read_buffer_offset > purge)
-      memmove (connection->read_buffer,
-               &connection->read_buffer[purge],
-               connection->read_buffer_offset - purge);
-    connection->read_buffer_offset -= purge;
-    return;
-  }
+  mhd_assert (NULL == connection->rp.response);
 
   buffer_head = connection->read_buffer;
   available = connection->read_buffer_offset;
@@ -5704,24 +5687,25 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       }
       break;
     case MHD_CONNECTION_BODY_RECEIVING:
+      mhd_assert (0 != connection->rq.remaining_upload_size);
+      mhd_assert (! connection->discard_request);
+      mhd_assert (NULL == connection->rp.response);
       if (0 != connection->read_buffer_offset)
       {
         process_request_body (connection);           /* loop call */
         if (MHD_CONNECTION_BODY_RECEIVING != connection->state)
           continue;
       }
-      if ( (0 == connection->rq.remaining_upload_size) ||
-           ( (MHD_SIZE_UNKNOWN == connection->rq.remaining_upload_size) &&
-             (0 == connection->read_buffer_offset) &&
-             (connection->discard_request) ) )
+      /* Modify here when response queue during data processing
+         will be supported */
+      mhd_assert (! connection->discard_request);
+      mhd_assert (NULL == connection->rp.response);
+      if (0 == connection->rq.remaining_upload_size)
       {
-        if ( (connection->rq.have_chunked_upload) &&
-             (! connection->discard_request) )
+        if (connection->rq.have_chunked_upload)
           connection->state = MHD_CONNECTION_BODY_RECEIVED;
         else
           connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
-        if (connection->suspended)
-          break;
         continue;
       }
       break;
