@@ -18,7 +18,7 @@
 */
 
 /**
- * @file microhttpd/md5_ext.h
+ * @file microhttpd/md5_ext.c
  * @brief  Wrapper for MD5 calculation performed by TLS library
  * @author Karlson2k (Evgeny Grin)
  */
