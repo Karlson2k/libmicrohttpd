@@ -1,6 +1,7 @@
 Sun Feb 26 05:49:30 PM CET 2023
     Fix potential DoS vector in MHD_PostProcessor discovered
     by Gynvael Coldwind and Dejan Alvadzijevic. -CG
+    Releasing GNU libmicrohttpd 0.9.76 hotfix. -CG
 
 Sun 26 Dec 2021 20:30:00 MSK
     Releasing GNU libmicrohttpd 0.9.75 -EG
