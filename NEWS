@@ -1,3 +1,17 @@
+Sun 26 Feb 2023 17:49:30 CET
+Released GNU libmicrohttpd 0.9.76 hotfix. -CG
+
+    This is a hotfix release.
+    This only change since previous release is fixed potential DoS vector
+    in MHD_PostProcessor discovered by Gynvael Coldwind and Dejan
+    Alvadzijevic (CVE-2023-27371).
+    While the researchers have not been able to exploit this attack vector
+    when libmicrohttpd is compiled with the standard GNU C library, it is
+    recommended that you update MHD as soon as possible if your
+    applications are using (optional) MHD_PostProcessor functionality.
+
+    -- Evgeny Grin (Karlson2k)
+
 Sun 26 Dec 2021 20:30:00 MSK
 Released GNU libmicrohttpd 0.9.75 -EG
 
