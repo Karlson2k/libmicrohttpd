@@ -1,6 +1,6 @@
 Sun Feb 26 05:49:30 PM CET 2023
     Fix potential DoS vector in MHD_PostProcessor discovered
-    by Gynvael Coldwind and Dejan Alvadzijevic. -CG
+    by Gynvael Coldwind and Dejan Alvadzijeviac	(CVE-2023-27371). -CG
 
 Sun 26 Dec 2021 20:30:00 MSK
     Releasing GNU libmicrohttpd 0.9.75 -EG
