@@ -1579,32 +1579,52 @@ AS_CASE([[$enable_itc]],
   [[no]], [AC_MSG_ERROR([[inter-thread communication cannot be disabled]])],
     [AC_MSG_ERROR([[unrecognized type "$enable_itc" of inter-thread communication specified by "--enable-itc=$enable_itc"]])]
 )
-# AS_UNSET([[use_itc]])
+AS_UNSET([[use_itc]])
 
-AS_IF([[test "x$enable_itc" = "xeventfd" || test "x$enable_itc" = "xauto"]], [
-  AS_VAR_IF([[os_is_native_w32]], [["yes"]], [], [
-    AC_CHECK_HEADERS([sys/eventfd.h], [], [], [AC_INCLUDES_DEFAULT])
-    AS_VAR_IF([[ac_cv_header_sys_eventfd_h]], [["yes"]], [
-      AC_CACHE_CHECK([whether eventfd(2) is usable], [[mhd_cv_eventfd_usable]], [
-        AC_LINK_IFELSE([
-          AC_LANG_PROGRAM([[
+AS_IF([[test "x$enable_itc" = "xeventfd" || test "x$enable_itc" = "xauto"]],
+  [
+    MHD_CHECK_LINK_RUN([[for working eventfd(2)]],[[mhd_cv_eventfd_usable]],[[mhd_cv_eventfd_usable='assuming no']],
+      [
+        AC_LANG_SOURCE([[
 #include <sys/eventfd.h>
-          ]], [[
-          int ef = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-          if (ef) return ef - 1;
-          ]])
-        ], [[mhd_cv_eventfd_usable='yes']], [[mhd_cv_eventfd_usable='no']])
-      ])
-    ])
-  ])
-  AS_VAR_IF([[mhd_cv_eventfd_usable]], [["yes"]], [
-    use_itc='eventfd'
-    enable_itc="$use_itc"
-    AC_DEFINE([[_MHD_ITC_EVENTFD]], [[1]], [Define to use eventFD for inter-thread communication])
-  ], [
-    AS_VAR_IF([[enable_itc]], [["eventfd"]], [AC_MSG_ERROR([[eventfd(2) is not usable, consider using other type of inter-thread communication]])])
-  ])
-])
+#include <unistd.h>
+
+int main(void)
+{
+  unsigned char buf[8];
+  int ret;
+  int efd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+  if (0 > efd)
+    return 2;
+  ret = 0;
+  buf[3] = 1;
+  if (8 != write(efd, buf, 8))
+    ret = 3;
+  else
+  {
+    if (8 != read(efd, buf, 8))
+      ret = 4;
+  }
+  close(efd);
+  return ret;
+}
+          ]]
+        )
+      ],
+      [
+        use_itc='eventfd'
+        enable_itc="$use_itc"
+        AC_DEFINE([[_MHD_ITC_EVENTFD]], [[1]], [Define to use eventFD for inter-thread communication])
+      ],
+      [
+        AS_VAR_IF([[enable_itc]], [["eventfd"]], [AC_MSG_ERROR([[eventfd(2) is not usable, consider using other type of inter-thread communication]])])
+      ]
+    )
+    AS_VAR_IF([mhd_cv_eventfd_usable],["assuming no"],
+      [AC_MSG_WARN([if you have 'eventfd' support enabled on your target system consider overriding test result by "mhd_cv_eventfd_usable=yes" configure parameter])]
+    )
+  ]
+)
 
 AS_IF([[test "x$enable_itc" = "xpipe" || test "x$enable_itc" = "xauto"]], [
   AS_VAR_IF([[os_is_native_w32]], [["yes"]], [], [
