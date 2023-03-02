@@ -483,10 +483,11 @@ MHD_ip_limit_del (struct MHD_Daemon *daemon,
     tdelete (found_key,
              &daemon->per_ip_connection_count,
              &MHD_ip_addr_compare);
+    MHD_ip_count_unlock (daemon);
     free (found_key);
   }
-
-  MHD_ip_count_unlock (daemon);
+  else
+    MHD_ip_count_unlock (daemon);
 }
 
 
