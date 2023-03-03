@@ -281,6 +281,7 @@ MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-fno-strict-aliasing], [-qnoansialias])
 # '-qlonglong' is XLC option for C89, not used with C99 or later
 MHD_CHECK_ADD_CC_CFLAG([-qlonglong], [CFLAGS_ac])
 
+# Set basic optimisation flags
 AS_VAR_IF([enable_build_type],["neutral"],[],
   [ # Any non-neutral build types
     AC_CACHE_CHECK([whether workarounds for clang or clang-based compiler are required],
@@ -298,14 +299,6 @@ choke me now
         )
       ]
     )
-    MHD_CHECK_ADD_CC_CFLAGS([-Wall -fdelete-null-pointer-checks -Wnull-dereference], [CFLAGS_ac])
-    MHD_CHECK_ADD_CC_CFLAGS([-Wdeclaration-after-statement -Wimplicit -Wnested-externs], [CFLAGS_ac])
-    MHD_CHECK_ADD_CC_CFLAGS([-Wredundant-decls -Wtrampolines -Wunsafe-loop-optimizations], [CFLAGS_ac])
-    MHD_CHECK_ADD_CC_CFLAGS([-Wpoison-system-directories], [CFLAGS_ac])
-    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
-    LDFLAGS="${user_LDFLAGS}"
-    MHD_CHECK_ADD_CC_LDFLAG([-Wl,--warn-common], [LDFLAGS_ac])
-    LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
   ]
 )
 AS_CASE([${enable_build_type}],[debug|debugger],
@@ -321,6 +314,53 @@ AS_CASE([${enable_build_type}],[debug|debugger],
       ],
       [MHD_CHECK_ADD_CC_CFLAG([-O0], [CFLAGS_ac])]
     )
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+  ]
+)
+AS_CASE([${enable_build_type}],[release|release-*],
+  [ # All release types
+    AS_VAR_IF([enable_build_type],["release-compact"],
+      [
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+        AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],[],
+          [AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],[],
+            [MHD_APPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-DMHD_FAVOR_SMALL_CODE=1])],
+            [/* no includes */])],[/* no includes */])
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+        CFLAGS="${user_CFLAGS}"
+        MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Oz], [-Os], [-O])
+	    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+      ],
+      [ # All non-compact release types
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+        AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],[],
+          [AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],[],
+            [MHD_APPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-DMHD_FAVOR_FAST_CODE=1])],
+            [/* no includes */])],[/* no includes */])
+        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+        CFLAGS="${user_CFLAGS}"
+        MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-O2], [-O])
+	    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+      ]
+    )
+  ]
+)
+
+AS_VAR_IF([enable_build_type],["neutral"],[],
+  [ # Any non-neutral build types
+    MHD_CHECK_ADD_CC_CFLAGS([-Wall -Wnull-dereference], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wdeclaration-after-statement -Wimplicit -Wnested-externs], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wredundant-decls -Wtrampolines -Wunsafe-loop-optimizations], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wpoison-system-directories], [CFLAGS_ac])
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    LDFLAGS="${user_LDFLAGS}"
+    MHD_CHECK_ADD_CC_LDFLAG([-Wl,--warn-common], [LDFLAGS_ac])
+    LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+  ]
+)
+AS_CASE([${enable_build_type}],[debug|debugger],
+  [ # Debug build or build for walking with debugger
+    CFLAGS="${user_CFLAGS}"
     MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-ggdb3], [-g3], [-ggdb], [-g])
     MHD_CHECK_ADD_CC_CFLAGS([-Wextra -Wdouble-promotion], [CFLAGS_ac])
     MHD_FIND_ADD_CC_CFLAG_IFELSE(
@@ -407,21 +447,8 @@ AS_CASE([${enable_build_type}],[release|release-*],
   [ # All release types
     CFLAGS="${user_CFLAGS}"
     AS_VAR_IF([enable_build_type],["release-compact"],
-      [
-        AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],[],
-          [AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],[],
-            [MHD_APPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-DMHD_FAVOR_SMALL_CODE=1])],
-            [/* no includes */])],[/* no includes */])
-        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
-        MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Oz], [-Os], [-O])
-      ],
+      [],
       [ # All non-compact release types
-        AC_CHECK_DECL([MHD_FAVOR_SMALL_CODE],[],
-          [AC_CHECK_DECL([MHD_FAVOR_FAST_CODE],[],
-            [MHD_APPEND_FLAG_TO_VAR([CPPFLAGS_ac],[-DMHD_FAVOR_FAST_CODE=1])],
-            [/* no includes */])],[/* no includes */])
-        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
-        MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-O2], [-O])
         MHD_CHECK_ADD_CC_CFLAGS([-fsched-pressure -fira-loop-pressure -fmerge-all-constants], [CFLAGS_ac]) # These flags may improve size, recheck with LTO and linker garbage collection
         MHD_CHECK_ADD_CC_CFLAGS([-ftree-partial-pre -fgcse-after-reload -fipa-pta], [CFLAGS_ac])
         MHD_CHECK_ADD_CC_CFLAGS([-fisolate-erroneous-paths-attribute -ffinite-loops -floop-nest-optimize], [CFLAGS_ac])
