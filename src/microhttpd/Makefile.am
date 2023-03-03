@@ -16,14 +16,14 @@ lib_LTLIBRARIES = \
 noinst_DATA =
 MOSTLYCLEANFILES =
 
-AM_V_LIB = $(am__v_LIB_$(V))
-am__v_LIB_ = $(am__v_LIB_$(AM_DEFAULT_VERBOSITY))
+AM_V_LIB = $(am__v_LIB_@AM_V@)
+am__v_LIB_ = $(am__v_LIB_@AM_DEFAULT_V@)
 am__v_LIB_0 = @echo "  LIB     " $@;
 am__v_LIB_1 = 
 
 if W32_SHARED_LIB_EXP
-AM_V_DLLTOOL = $(am__v_DLLTOOL_$(V))
-am__v_DLLTOOL_ = $(am__v_DLLTOOL_$(AM_DEFAULT_VERBOSITY))
+AM_V_DLLTOOL = $(am__v_DLLTOOL_@AM_V@)
+am__v_DLLTOOL_ = $(am__v_DLLTOOL_@AM_DEFAULT_V@)
 am__v_DLLTOOL_0 = @echo "  DLLTOOL " $@;
 am__v_DLLTOOL_1 = 
 
