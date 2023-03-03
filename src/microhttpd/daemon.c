@@ -45,11 +45,11 @@
 #include "mhd_compat.h"
 #include "mhd_send.h"
 
-#if HAVE_SEARCH_H
+#ifdef MHD_USE_SYS_TSEARCH
 #include <search.h>
-#else
+#else  /* ! MHD_USE_SYS_TSEARCH */
 #include "tsearch.h"
-#endif
+#endif /* ! MHD_USE_SYS_TSEARCH */
 
 #ifdef HTTPS_SUPPORT
 #include "connection_https.h"
