@@ -843,7 +843,8 @@ AX_CHECK_COMPILE_FLAG([[-Werror=attributes]],
    AC_MSG_CHECKING([[whether -Werror=attributes actually works]])
    CFLAGS="${CFLAGS_ac} ${user_CFLAGS} -Werror=attributes"
    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[__attribute__((non_existing_attrb_dummy)) int SimpleFunc(void) {return 3;}]], [[int r = SimpleFunc(); if (r) return r;]])],
+       [[__attribute__((non_existing_attrb_dummy)) static int SimpleFunc(void) {return 3;}]],
+       [[int r = SimpleFunc(); if (r) return r;]])],
      [
        AC_MSG_RESULT([[no]])
        errattr_CFLAGS=""
@@ -1591,7 +1592,17 @@ AM_CONDITIONAL([HAVE_LISTEN_SHUTDOWN], [test "x$mhd_cv_host_shtdwn_trgr_select" 
 # SENDMSG. Should we check for SCM_RIGHTS instead?
 # https://lists.x.org/archives/xorg-devel/2013-November/038687.html
 AC_SEARCH_LIBS([sendmsg], [socket], [AC_DEFINE([HAVE_SENDMSG],[1],[Define if your platform supports sendmsg])])
-AC_CHECK_FUNCS([writev])
+MHD_CHECK_FUNC([writev],
+  [[#include <sys/uio.h>]],
+  [[
+    struct iovec iov[2];
+    char some_str[4] = "OK\n";
+    iov[0].iov_base = (void *) some_str;
+    iov[0].iov_len = 3;
+    if (0 > writev(1, iov, 1))
+      return 2;
+  ]]
+)
 
 AC_C_BIGENDIAN
 AC_C_VARARRAYS
@@ -1614,14 +1625,14 @@ AS_VAR_IF([mhd_cv_macro___func___avail], ["yes"],
 )
 AC_CACHE_CHECK([[whether __builtin_bswap32() is available]],
   [[mhd_cv_func___builtin_bswap32_avail]], [dnl
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include<stdint.h>]], [[uint32_t a = 1; uint32_t b = __builtin_bswap32(a); a = b;]])],
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include<stdint.h>]], [[uint32_t a = 1; uint32_t b = __builtin_bswap32(a); a = b; (void) a;]])],
     [[mhd_cv_func___builtin_bswap32_avail="yes"]],[[mhd_cv_func___builtin_bswap32_avail="no"]])
 ])
 AS_IF([[test "x$mhd_cv_func___builtin_bswap32_avail" = "xyes"]],
   [AC_DEFINE([[MHD_HAVE___BUILTIN_BSWAP32]], [[1]], [Define to 1 if you have __builtin_bswap32() builtin function])])
 AC_CACHE_CHECK([[whether __builtin_bswap64() is available]],
   [[mhd_cv_func___builtin_bswap64_avail]], [dnl
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include<stdint.h>]], [[uint64_t a = 1; uint32_t b = __builtin_bswap64(a); a = b;]])],
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include<stdint.h>]], [[uint64_t a = 1; uint64_t b = __builtin_bswap64(a); a = b; (void) a;]])],
     [[mhd_cv_func___builtin_bswap64_avail="yes"]], [[mhd_cv_func___builtin_bswap64_avail="no"]])
 ])
 AS_IF([[test "x$mhd_cv_func___builtin_bswap64_avail" = "xyes"]],
@@ -1698,24 +1709,55 @@ AC_ARG_ENABLE([[poll]],
   )
 
 AS_IF([test "$enable_poll" != "no"],
-       [AS_IF([test "$os_is_native_w32" != "yes"],
-             AC_CHECK_HEADERS([poll.h],
-                [AC_CHECK_FUNCS([poll], [have_poll='yes'], [have_poll='no'])],
-		[],
-		[AC_INCLUDES_DEFAULT]),
-             [AC_MSG_CHECKING([for WSAPoll()])
-              AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  [
+    AS_IF([test "$os_is_native_w32" != "yes"],
+      [
+        AC_CHECK_HEADERS([poll.h],
+          [
+            MHD_CHECK_FUNC([poll],
+              [[
+#include <poll.h>
+              ]],
+              [[
+  struct pollfd fds[2];
+  
+  fds[0].fd = 0;
+  fds[0].events = POLLIN;
+  if (0 > poll(fds, 1, 0))
+    return 2;
+              ]], 
+              [have_poll='yes'], [have_poll='no']
+            )
+          ], [], [AC_INCLUDES_DEFAULT]
+        )
+      ],
+      [
+        AC_MSG_CHECKING([for WSAPoll()])
+        AC_LINK_IFELSE(
+          [
+            AC_LANG_PROGRAM(
+              [[
 #include <winsock2.h>
               ]],[[
 WSAPOLLFD fda[2];
-WSAPoll(fda, 2, 0);]])],
-              [have_poll='yes'
-              AC_DEFINE([HAVE_POLL],[1])
-              ],[have_poll='no'])
-              AC_MSG_RESULT([$have_poll])])
-       AS_IF([test "$enable_poll" = "yes" && test "$have_poll" != "yes"],
-             [AC_MSG_ERROR([[Support for poll was explicitly requested but cannot be enabled on this platform.]])])
-       enable_poll="$have_poll"])
+WSAPoll(fda, 2, 0);
+              ]]
+            )
+          ],
+          [
+            have_poll='yes'
+            AC_DEFINE([HAVE_POLL],[1])
+          ],
+          [have_poll='no']
+        )
+        AC_MSG_RESULT([$have_poll])
+      ]
+    )
+    AS_IF([test "$enable_poll" = "yes" && test "$have_poll" != "yes"],
+      [AC_MSG_ERROR([[Support for poll was explicitly requested but cannot be enabled on this platform.]])])
+    enable_poll="$have_poll"
+  ]
+)
 
 AC_ARG_ENABLE([[epoll]],
   [AS_HELP_STRING([[--enable-epoll[=ARG]]], [enable epoll support (yes, no, auto) [auto]])],
@@ -1750,8 +1792,10 @@ AS_IF([test "x$enable_epoll" = "xyes"],
       AC_LANG_PROGRAM([[
 #include <sys/epoll.h>
         ]], [[
-int fd;
-fd = epoll_create1(EPOLL_CLOEXEC);]])],
+  if (0 > epoll_create1(EPOLL_CLOEXEC))
+    return 3;
+        ]]
+      )],
       [mhd_cv_have_epoll_create1=yes],
       [mhd_cv_have_epoll_create1=no])])
   AS_IF([test "x$mhd_cv_have_epoll_create1" = "xyes"],[
@@ -1769,7 +1813,7 @@ AC_CACHE_CHECK([for supported 'noreturn' keyword], [mhd_cv_decl_noreturn],
 #include <stdlib.h>
 #endif
 
-${decl_noret} void myexitfunc(int code)
+${decl_noret} static void myexitfunc(int code)
 {
 #ifdef HAVE_STDLIB_H
   exit (code);
@@ -2276,7 +2320,68 @@ AC_INCLUDES_DEFAULT
 AS_IF([[test -z "$use_itc"]], [AC_MSG_ERROR([[cannot find usable type of inter-thread communication]])])
 
 
-AC_CHECK_FUNCS_ONCE([accept4 gmtime_r memmem snprintf])
+MHD_CHECK_FUNC([accept4],
+  [[
+#if defined(HAVE_SYS_TYPES_H)
+#  include <sys/types.h>
+#endif
+#include <sys/socket.h>
+  ]],
+  [
+  struct sockaddr sk_addr;
+  socklen_t addr_size;
+  if (0 > accept4(0, &sk_addr, &addr_size, 0))
+    return 3;
+  ]
+)
+MHD_CHECK_FUNC([gmtime_r],
+  [[
+#if defined(HAVE_SYS_TYPES_H)
+#  include <sys/types.h>
+#endif
+#include <time.h>
+  ]],
+  [[
+  time_t timer = (time_t) 0;
+  struct tm res;
+  
+  if (&res != gmtime_r(&timer, &res))
+    return 3;
+  ]]
+)
+MHD_CHECK_FUNC([memmem],
+  [[
+#if defined(HAVE_STDDEF_H)
+#  include <stddef.h>
+#elif defined(HAVE_STDLIB_H)
+#  include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+#include <string.h>
+  ]],
+  [[
+  const char *haystack = "abc";
+  size_t hslen = 3;
+  const char *needle = "b";
+  size_t needlelen = 1;
+  
+  if ((haystack + 1) != memmem(haystack, hslen, needle, needlelen))
+    return 3;
+  ]]
+)
+MHD_CHECK_FUNC([snprintf],
+  [[
+#include <stdio.h>
+  ]],
+  [[
+  char buf[2];
+  
+  if (1 != snprintf(buf, 2, "a"))
+    return 3;
+  /* Do not use the next check to avoid compiler warning */
+  /* if (4 != snprintf(buf, 2, "abcd"))
+    return 4; */
+  ]]
+)
 AC_CHECK_DECL([gmtime_s],
   [
     AC_MSG_CHECKING([[whether gmtime_s is in C11 form]])
@@ -2433,46 +2538,36 @@ choke me now
   ]
 )
 
-AS_VAR_SET_IF([ac_cv_func_gettimeofday], [mhd_cv_func_gettimeofday="${ac_cv_func_gettimeofday}"])
-AC_CACHE_CHECK([[for gettimeofday(2)]], [mhd_cv_func_gettimeofday], [
-  AC_LINK_IFELSE(
-    [
-      AC_LANG_PROGRAM(
-        [[
+MHD_CHECK_FUNC([[gettimeofday]],
+  [[
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif /* HAVE_SYS_TIME_H */
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif /* HAVE_TIME_H */
-        ]],
-        [[
+  ]],
+  [[
   struct timeval tv;
   if (0 != gettimeofday (&tv, (void*) 0))
     return 1;
-        ]]
-      )
-    ], [[mhd_cv_func_gettimeofday="yes"]], [[mhd_cv_func_gettimeofday="no"]]
-  )
-])
-AS_VAR_IF([mhd_cv_func_gettimeofday], ["yes"],
-  [AC_DEFINE([HAVE_GETTIMEOFDAY], [1], [Define to 1 if you have `gettimeofday' function.])]
+  ]]
 )
 
 # IPv6
 AC_MSG_CHECKING(for IPv6)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
-#if HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_SYS_SOCKET_H
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#if HAVE_WINSOCK2_H
+#ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
 #endif
-#if HAVE_WS2TCPIP_H
+#ifdef HAVE_WS2TCPIP_H
 #include <ws2tcpip.h>
 #endif
 ]], [[
@@ -2610,7 +2705,45 @@ AM_CONDITIONAL([MHD_HAVE_LIBMAGIC], [[test "x$mhd_have_libmagic" = "xyes"]])
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
-AC_CHECK_FUNCS([lseek64 pread64 pread])
+MHD_CHECK_FUNC([lseek64],
+  [[
+#if defined(HAVE_SYS_TYPES_H)
+#  include <sys/types.h>
+#endif
+#include <unistd.h>
+  ]],
+  [[
+  if (((off64_t) -1) == lseek64(0, (off64_t) 0, SEEK_SET))
+    return 3;
+  ]]
+)
+MHD_CHECK_FUNC([pread64],
+  [[
+#if defined(HAVE_SYS_TYPES_H)
+#  include <sys/types.h>
+#endif
+#include <unistd.h>
+  ]],
+  [[
+  char buf[5];
+  if (0 > pread64(0, (void *) buf, 1, (off64_t) 0))
+    return 3;
+  ]]
+)
+MHD_CHECK_FUNC([pread],
+  [[
+#if defined(HAVE_SYS_TYPES_H)
+#  include <sys/types.h>
+#endif
+#include <unistd.h>
+  ]],
+  [[
+  char buf[5];
+  if (0 > pread(0, (void *) buf, 1, 0))
+    return 3;
+  ]]
+)
+
 
 # check for various sendfile functions
 AC_ARG_ENABLE([sendfile],
@@ -2654,7 +2787,16 @@ ssize_t sendfile(int, int, off_t*, size_t);
         AC_DEFINE([HAVE_LINUX_SENDFILE], [1], [Define to 1 if you have linux-style sendfile(2).])
         found_sendfile="yes, Linux-style"
         AC_MSG_RESULT([[yes]])
-        AC_CHECK_FUNCS([sendfile64])
+        MHD_CHECK_FUNC([sendfile64],
+          [[
+#include <sys/sendfile.h>
+          ]],
+          [[
+  off64_t f_offset = (off64_t) 0;
+  if (0 > sendfile64 (0, 1, &f_offset, 1))
+    return 3;
+          ]]
+        )
       ],
       [AC_MSG_RESULT([[no]])
       ]
@@ -2781,7 +2923,18 @@ ssize_t sendfile(int out_fd, int in_fd,
        MHD_LIBDEPS="-lsendfile $MHD_LIBDEPS"
        MHD_LIBDEPS_PKGCFG="-lsendfile $MHD_LIBDEPS_PKGCFG"
        AC_MSG_RESULT([[yes]])
-       AC_CHECK_FUNCS([sendfile64])
+       MHD_CHECK_FUNC([sendfile64],
+         [[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/sendfile.h>
+         ]],
+         [[
+  off64_t f_offset = (off64_t) 0;
+  if (0 > sendfile64 (0, 1, &f_offset, 1))
+    return 3;
+         ]]
+       )
      ],
      [AC_MSG_RESULT([[no]])
      ]
@@ -4410,22 +4563,22 @@ int main(int argc, char *argv[])
             test_undf_prog='
 #include <stdio.h>
 
-void func_out_b(char *arr)
+static void func_out_b(char *arr)
 {
   arr[0] = 0;
   arr[16] = 2;
 }
 
-unsigned int int_deref(void *ptr)
+static unsigned int int_deref(void *ptr)
 {
-  return (*((int*)ptr)) + 2;
+  return (*((unsigned int*)ptr)) + 2;
 }
 
-int func1(void)
+static int func1(void)
 {
   char chr[16];
   func_out_b (chr);
-  return int_deref(chr + 1) + int_deref(chr + 2);
+  return (int) (int_deref(chr + 1) + int_deref(chr + 2));
 }
 
 int main(void)
