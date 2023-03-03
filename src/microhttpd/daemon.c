@@ -47,11 +47,11 @@
 #include "mhd_align.h"
 #include "mhd_str.h"
 
-#ifdef HAVE_SEARCH_H
+#ifdef MHD_USE_SYS_TSEARCH
 #include <search.h>
-#else
+#else  /* ! MHD_USE_SYS_TSEARCH */
 #include "tsearch.h"
-#endif
+#endif /* ! MHD_USE_SYS_TSEARCH */
 
 #ifdef HTTPS_SUPPORT
 #include "connection_https.h"

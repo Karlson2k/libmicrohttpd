@@ -525,14 +525,124 @@ AC_CHECK_HEADERS([sys/msg.h sys/mman.h signal.h], [], [], [AC_INCLUDES_DEFAULT])
 
 AC_CHECK_HEADER([[search.h]],
   [
-   gl_FUNC_TSEARCH
-   AS_IF([[test "x$HAVE_TSEARCH" = "x1" && test "x$REPLACE_TSEARCH" != "x1"]],
-     [AC_DEFINE([[HAVE_SEARCH_H]], [[1]],
-       [Define to 1 if you have the <search.h> header file and your system have properly functioning tsearch(), tfind() and tdelete() functions])])
-  ],
-  [], [AC_INCLUDES_DEFAULT])
+    MHD_CHECK_LINK_RUN([[for proper tsearch(), tfind() and tdelete()]],[[mhd_cv_sys_tsearch_usable]],
+	  [
+	    AS_CASE([$host_os],
+	      [openbsd*],
+	      [[ # Some OpenBSD versions have wrong return value for tdelete()
+	        mhd_cv_sys_tsearch_usable='assuming no'
+	      ]],
+	      [netbsd*],
+	      [[ # NetBSD had leaked root node for years
+	        mhd_cv_sys_tsearch_usable='assuming no'
+	      ]],
+	      [[mhd_cv_sys_tsearch_usable='assuming yes']]
+	    )
+	  ],
+	  [
+	    AC_LANG_SOURCE(
+	      [[
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>
+#endif /* HAVE_STDDEF_H */
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
 
-AM_CONDITIONAL([MHD_HAVE_TSEARCH], [[test "x$ac_cv_header_search_h" = xyes && test "x$HAVE_TSEARCH" = "x1" && test "x$REPLACE_TSEARCH" != "x1"]])
+#include <stdio.h>
+#include <search.h>
+
+static int cmp_func(const void *p1, const void *p2)
+{
+  return (*((const int *)p1)) - (*((const int *)p2));
+}
+
+int main(void)
+{
+  int ret = 0; 
+  void *root_ptr = NULL;
+  int element1 = 1;
+  int **element_ptr_ptr1;
+  int **element_ptr_ptr2;
+  
+  element_ptr_ptr1 =
+    (int **) tsearch ((void*) &element1, &root_ptr, &cmp_func);
+  if (NULL == element_ptr_ptr1)
+  {
+    fprintf (stderr, "NULL pointer has been returned when tsearch() called for the first time.\n");
+    return ++ret;
+  }
+  if (*element_ptr_ptr1 != &element1)
+  {
+    fprintf (stderr, "Wrong pointer has been returned when tsearch() called for the first time.\n");
+    return ++ret;
+  }
+  if (NULL == root_ptr)
+  {
+    fprintf (stderr, "Root pointer has not been set by tsearch().\n");
+    return ++ret;
+  }
+  
+  element_ptr_ptr2 =
+    (int **) tsearch ((void*) &element1, &root_ptr, &cmp_func);
+  if (NULL == element_ptr_ptr2)
+  {
+    fprintf (stderr, "NULL pointer has been returned when tsearch() called for the second time.\n");
+    return ++ret;
+  }
+  if (*element_ptr_ptr2 != &element1)
+  {
+    fprintf (stderr, "Wrong pointer has been returned when tsearch() called for the second time.\n");
+    ++ret;
+  }
+  if (element_ptr_ptr2 != element_ptr_ptr1)
+  {
+    fprintf (stderr, "Wrong element has been returned when tsearch() called for the second time.\n");
+    ++ret;
+  }
+  
+  element_ptr_ptr2 =
+    (int **) tfind ((void*) &element1, &root_ptr, &cmp_func);
+  if (NULL == element_ptr_ptr2)
+  {
+    fprintf (stderr, "NULL pointer has been returned by tfind().\n");
+    ++ret;
+  }
+  if (*element_ptr_ptr2 != &element1)
+  {
+    fprintf (stderr, "Wrong pointer has been returned when by tfind().\n");
+    ++ret;
+  }
+  if (element_ptr_ptr2 != element_ptr_ptr1)
+  {
+    fprintf (stderr, "Wrong element has been returned when tsearch() called for the second time.\n");
+    ++ret;
+  }
+  
+  element_ptr_ptr1 =
+    (int **) tdelete ((void*) &element1, &root_ptr, &cmp_func);
+  if (NULL == element_ptr_ptr1)
+  {
+    fprintf (stderr, "NULL pointer has been returned by tdelete().\n");
+    ++ret;
+  }
+  if (NULL != root_ptr)
+  {
+    fprintf (stderr, "Root pointer has not been set to NULL by tdelete().\n");
+    ++ret;
+  }
+  
+  return ret;
+}
+	      ]]
+	    )
+	  ],
+	  [AC_DEFINE([[MHD_USE_SYS_TSEARCH]], [[1]], [Define to 1 if you have properly working tsearch(), tfind() and tdelete() functions.])]
+	)
+  ],
+  [], [AC_INCLUDES_DEFAULT]
+)
+AM_CONDITIONAL([MHD_USE_SYS_TSEARCH], [[test "x$mhd_cv_sys_tsearch_usable" = "xyes" || test "x$mhd_cv_sys_tsearch_usable" = "xassuming yes"]])
 
 # Optional headers used for tests
 AC_CHECK_HEADERS([sys/sysctl.h netinet/ip_icmp.h netinet/icmp_var.h], [], [],
