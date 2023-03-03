@@ -37,14 +37,14 @@
 #
 # LICENSE
 #
-#   Copyright (c) 2019-2022 Karlson2k (Evgeny Grin) <k2k@narod.ru>
+#   Copyright (c) 2019-2023 Karlson2k (Evgeny Grin) <k2k@narod.ru>
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 3
+#serial 4
 
 AC_DEFUN([MHD_CHECK_FUNC],[dnl
   AC_PREREQ([2.64])dnl for AS_VAR_IF, m4_ifblank, m4_ifnblank
@@ -63,7 +63,18 @@ AC_DEFUN([MHD_CHECK_FUNC],[dnl
         LIBS="$LIBS _mhd_norm_expd([$6])"
       ])dnl
       AC_LINK_IFELSE(
-        [AC_LANG_PROGRAM([m4_default_nblank([$2],[AC_INCLUDES_DEFAULT])], [$3]) ],
+        [AC_LANG_SOURCE([
+m4_default_nblank([$2],[AC_INCLUDES_DEFAULT])
+
+int main(void)
+{
+
+  $3
+
+  return 0;
+}
+          ])
+        ],
         [AS_VAR_SET([cv_Var],["yes"])], [AS_VAR_SET([cv_Var],["no"])] ) 
       m4_ifnblank([$6],[dnl
         LIBS="${mhd_check_func_SAVE_LIBS}"
