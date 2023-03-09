@@ -2643,7 +2643,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 int af=AF_INET6;
 int pf=PF_INET6;
 struct sockaddr_in6 sa;
-printf("%d %d %p\n", af, pf, &sa);
+printf("%d %d %p\n", af, pf, (void*) &sa);
 ]])],[
 have_inet6=yes;
 AC_DEFINE([HAVE_INET6], [1], [Provides IPv6 headers])
@@ -3121,15 +3121,20 @@ AC_ARG_WITH([[gnutls]],
         LDFLAGS="${LDFLAGS_ac} -L$with_gnutls/lib ${user_LDFLAGS}"
         CPPFLAGS="${CPPFLAGS_ac} -I$with_gnutls/include ${user_CPPFLAGS}"
         have_gnutls_pkgcfg=no
-          AC_CHECK_HEADERS([gnutls/gnutls.h],
-            [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
-              [
-                GNUTLS_CPPFLAGS="-I$with_gnutls/include"
-                GNUTLS_LDFLAGS="-L$with_gnutls/lib"
-                GNUTLS_LIBS="-lgnutls"
-                have_gnutls=yes
-              ])], [], [AC_INCLUDES_DEFAULT])
-        AS_IF([test "x$have_gnutls" != "xyes"], [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])])
+        MHD_CHECK_FUNC([gnutls_check_version],[[#include <gnutls/gnutls.h>]],
+          [
+           if(!gnutls_check_version("2.0.0"))
+             return 3;
+          ],
+          [
+            GNUTLS_CPPFLAGS="-I$with_gnutls/include"
+            GNUTLS_LDFLAGS="-L$with_gnutls/lib"
+            GNUTLS_LIBS="-lgnutls"
+            have_gnutls=yes
+          ],
+          [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])],
+          [-lgnutls]
+        )
         CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
         CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
         LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
