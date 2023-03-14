@@ -102,7 +102,7 @@ AS_VAR_IF([enable_build_type], ["debugger"],
   [ # Build only static version unless something else is specified by the user
     AS_IF([test -z "${enable_static}" || test "x${enable_static}" = "xyes"],
       [
-        AS_IF([test -z "${enable_shared}"], 
+        AS_IF([test -z "${enable_shared}"],
           [
             enable_shared="no"
             enable_static="yes"
@@ -191,7 +191,7 @@ AS_CASE([${enable_compact_code}], [auto],
       ],[],[/* no includes */]
     )
 
-    AS_VAR_IF([enable_compact_code], ["auto"], 
+    AS_VAR_IF([enable_compact_code], ["auto"],
       [
         # No preference by preprocessor macros
         AC_CACHE_CHECK([whether compiler is configured to optimize for size],
@@ -220,7 +220,7 @@ choke me now
       ]
     )
 
-    AS_VAR_IF([enable_compact_code], ["auto"], 
+    AS_VAR_IF([enable_compact_code], ["auto"],
       [
         # No preference by preprocessor macros and compiler flags
         AS_CASE([${enable_build_type}],[*-compact],
@@ -233,7 +233,7 @@ choke me now
       ]
     )
 
-    AS_VAR_IF([enable_compact_code], ["auto"], 
+    AS_VAR_IF([enable_compact_code], ["auto"],
       [
         # No preference
         enable_compact_code="no"
@@ -560,12 +560,12 @@ static int cmp_func(const void *p1, const void *p2)
 
 int main(void)
 {
-  int ret = 0; 
+  int ret = 0;
   void *root_ptr = NULL;
   int element1 = 1;
   int **element_ptr_ptr1;
   int **element_ptr_ptr2;
-  
+
   element_ptr_ptr1 =
     (int **) tsearch ((void*) &element1, &root_ptr, &cmp_func);
   if (NULL == element_ptr_ptr1)
@@ -583,7 +583,7 @@ int main(void)
     fprintf (stderr, "Root pointer has not been set by tsearch().\n");
     return ++ret;
   }
-  
+
   element_ptr_ptr2 =
     (int **) tsearch ((void*) &element1, &root_ptr, &cmp_func);
   if (NULL == element_ptr_ptr2)
@@ -601,7 +601,7 @@ int main(void)
     fprintf (stderr, "Wrong element has been returned when tsearch() called for the second time.\n");
     ++ret;
   }
-  
+
   element_ptr_ptr2 =
     (int **) tfind ((void*) &element1, &root_ptr, &cmp_func);
   if (NULL == element_ptr_ptr2)
@@ -619,7 +619,7 @@ int main(void)
     fprintf (stderr, "Wrong element has been returned when tsearch() called for the second time.\n");
     ++ret;
   }
-  
+
   element_ptr_ptr1 =
     (int **) tdelete ((void*) &element1, &root_ptr, &cmp_func);
   if (NULL == element_ptr_ptr1)
@@ -632,7 +632,7 @@ int main(void)
     fprintf (stderr, "Root pointer has not been set to NULL by tdelete().\n");
     ++ret;
   }
-  
+
   return ret;
 }
 	      ]]
@@ -1600,7 +1600,7 @@ MHD_FIND_LIB([socket],
 #if defined(_WIN32) && ! defined(__CYGWIN__)
 #include <winsock2.h>
 #endif
-  ]], 
+  ]],
   [(void)socket(0, 0, 0);],
   [socket ws2_32 xnet],
   [
@@ -1789,12 +1789,12 @@ AS_IF([test "$enable_poll" != "no"],
               ]],
               [[
   struct pollfd fds[2];
-  
+
   fds[0].fd = 0;
   fds[0].events = POLLIN;
   if (0 > poll(fds, 1, 0))
     return 2;
-              ]], 
+              ]],
               [have_poll='yes'], [have_poll='no']
             )
           ], [], [AC_INCLUDES_DEFAULT]
@@ -2436,7 +2436,7 @@ MHD_CHECK_FUNC([snprintf],
   ]],
   [[
   char buf[2];
-  
+
   i][f (1 != snprintf(buf, 2, "a"))
     return 3;
   /* Do not use the next check to avoid compiler warning */
