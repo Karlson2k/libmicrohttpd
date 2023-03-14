@@ -1801,25 +1801,20 @@ AS_IF([test "$enable_poll" != "no"],
         )
       ],
       [
-        AC_MSG_CHECKING([for WSAPoll()])
-        AC_LINK_IFELSE(
-          [
-            AC_LANG_PROGRAM(
-              [[
+        MHD_CHECK_FUNC([WSAPoll],
+          [[
 #include <winsock2.h>
-              ]],[[
-WSAPOLLFD fda[2];
-WSAPoll(fda, 2, 0);
-              ]]
-            )
-          ],
+          ]],
+          [[
+  WSAPOLLFD fda[2];
+  WSAPoll(fda, 2, 0);
+          ]],
           [
             have_poll='yes'
             AC_DEFINE([HAVE_POLL],[1])
           ],
           [have_poll='no']
         )
-        AC_MSG_RESULT([$have_poll])
       ]
     )
     AS_IF([test "$enable_poll" = "yes" && test "$have_poll" != "yes"],
@@ -1855,20 +1850,18 @@ AS_IF([test "$enable_epoll" != "no"],
 AM_CONDITIONAL([MHD_HAVE_EPOLL], [[test "x$enable_epoll" = xyes]])
 
 AS_IF([test "x$enable_epoll" = "xyes"],
-  AC_CACHE_CHECK([for epoll_create1()],
-                 [mhd_cv_have_epoll_create1], [
-    AC_LINK_IFELSE([
-      AC_LANG_PROGRAM([[
+  [
+    MHD_CHECK_FUNC([epoll_create1],
+      [[
 #include <sys/epoll.h>
-        ]], [[
-  if (0 > epoll_create1(EPOLL_CLOEXEC))
+      ]],
+      [[
+  i][f (0 > epoll_create1(EPOLL_CLOEXEC))
     return 3;
-        ]]
-      )],
-      [mhd_cv_have_epoll_create1=yes],
-      [mhd_cv_have_epoll_create1=no])])
-  AS_IF([test "x$mhd_cv_have_epoll_create1" = "xyes"],[
-    AC_DEFINE([[HAVE_EPOLL_CREATE1]], [[1]], [Define if you have epoll_create1 function.])]))
+      ]]
+    )
+  ]
+)
 
 AC_CACHE_CHECK([for supported 'noreturn' keyword], [mhd_cv_decl_noreturn],
   [
@@ -2533,32 +2526,22 @@ MHD_FIND_LIB([clock_gettime],[[#include <time.h>]],
   [MHD_LIBDEPS]
 )
 
-AC_MSG_CHECKING([[for clock_get_time]])
-AC_LINK_IFELSE(
-  [AC_LANG_PROGRAM(
-    [[
+MHD_CHECK_FUNC([clock_get_time],
+  [[
 #include <mach/clock.h>
 #include <mach/mach.h>
-    ]],
-    [[
-      clock_serv_t cs;
-      mach_timespec_t mt;
-      host_get_clock_service(mach_host_self(), SYSTEM_CLOCK, &cs);
-      clock_get_time(cs, &mt);
-      mach_port_deallocate(mach_task_self(), cs);
-    ]])
-  ],
-  [
-    AC_DEFINE([HAVE_CLOCK_GET_TIME], [1], [Define to 1 if you have `clock_get_time', `host_get_clock_service' and `mach_port_deallocate' functions.])
-    AC_MSG_RESULT([[yes]])
-  ],
-  [AC_MSG_RESULT([[no]])
-  ])
+  ]],
+  [[
+    clock_serv_t cs;
+    mach_timespec_t mt;
+    host_get_clock_service(mach_host_self(), SYSTEM_CLOCK, &cs);
+    clock_get_time(cs, &mt);
+    mach_port_deallocate(mach_task_self(), cs);
+  ]]
+)
 
-AC_MSG_CHECKING([[for gethrtime]])
-AC_LINK_IFELSE(
-  [AC_LANG_PROGRAM(
-    [[
+MHD_CHECK_FUNC([gethrtime],
+  [[
 #ifdef HAVE_SYS_TIME_H
 /* Solaris define gethrtime() in sys/time.h */
 #include <sys/time.h>
@@ -2567,42 +2550,30 @@ AC_LINK_IFELSE(
 /* HP-UX define gethrtime() in time.h */
 #include <time.h>
 #endif /* HAVE_TIME_H */
-    ]], [[hrtime_t hrt = gethrtime(); ]])
-  ],
-  [
-    AC_DEFINE([HAVE_GETHRTIME], [1], [Define to 1 if you have `gethrtime' function.])
-    AC_MSG_RESULT([[yes]])
-  ],
-  [AC_MSG_RESULT([[no]])
-  ])
+  ]],
+  [[
+    hrtime_t hrt = gethrtime();
+    i][f (0 == hrt)
+      return 3;
+  ]]
+)
 
 AS_VAR_IF([ac_cv_header_time_h], ["yes"],
   [
-    AC_CACHE_CHECK([[for C11 timespec_get()]], [mhd_cv_func_timespec_get],
-      [
-        AC_LINK_IFELSE(
-          [
-            AC_LANG_PROGRAM(
-              [[
+    MHD_CHECK_FUNC([timespec_get],
+      [[
 #include <time.h>
 
 #ifndef TIME_UTC
 #error TIME_UTC must be defined to use timespec_get()
 choke me now
 #endif
-              ]],
-              [[
+      ]],
+      [[
   struct timespec ts;
-  if (TIME_UTC != timespec_get (&ts, TIME_UTC))
-    return 1;
-              ]]
-            )
-          ], [[mhd_cv_func_timespec_get="yes"]], [[mhd_cv_func_timespec_get="no"]]
-        )
-      ]
-    )
-    AS_VAR_IF([mhd_cv_func_timespec_get], ["yes"],
-      [AC_DEFINE([HAVE_TIMESPEC_GET], [1], [Define to 1 if you have C11 `mhd_cv_func_timespec_get' function and TIME_UTC macro.])]
+  i][f (TIME_UTC != timespec_get (&ts, TIME_UTC))
+    return 3;
+      ]]
     )
   ]
 )
@@ -2624,8 +2595,9 @@ MHD_CHECK_FUNC([[gettimeofday]],
 )
 
 # IPv6
-AC_MSG_CHECKING(for IPv6)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+AC_CACHE_CHECK([for IPv6],[mhd_cv_have_inet6],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -2639,18 +2611,22 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #ifdef HAVE_WS2TCPIP_H
 #include <ws2tcpip.h>
 #endif
-]], [[
-int af=AF_INET6;
-int pf=PF_INET6;
-struct sockaddr_in6 sa;
-printf("%d %d %p\n", af, pf, (void*) &sa);
-]])],[
-have_inet6=yes;
-AC_DEFINE([HAVE_INET6], [1], [Provides IPv6 headers])
-],[
-have_inet6=no
-])
-AC_MSG_RESULT($have_inet6)
+          ]], [[
+  int af=AF_INET6;
+  int pf=PF_INET6;
+  struct sockaddr_in6 sa;
+  printf("%d %d %p\n", af, pf, (void*) &sa);
+          ]]
+        )
+      ],
+      [AS_VAR_SET([mhd_cv_have_inet6],["yes"])],
+      [AS_VAR_SET([mhd_cv_have_inet6],["no"])]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_have_inet6],["yes"],
+  [AC_DEFINE([HAVE_INET6], [1], [Define to '1' if you have IPv6 headers])]
+)
 
 MHD_CHECK_FUNC([[sysconf]], [[#include <unistd.h>]], [[long a = sysconf(0); if (a) return 1;]])
 
@@ -2739,37 +2715,24 @@ AS_IF([test "x$enable_curl" = "xyes"],
   [MSG_CURL="no, many unit tests will not run"]
 )
 
-mhd_have_libmagic="no"
-SAVE_LIBS="$LIBS"
-LIBS="-lmagic $LIBS"
-AC_MSG_CHECKING([[for suitable libmagic]])
-AC_LINK_IFELSE(
-  [AC_LANG_PROGRAM(
-    [AC_INCLUDES_DEFAULT
-     [
+MHD_CHECK_FUNC([magic_open],
+  [[
 #include <magic.h>
-    ]],
-    [[
-      char var_data[256];
-      const char *var_mime;
-      magic_t var_magic = magic_open (MAGIC_MIME_TYPE);
-      (void)magic_load (var_magic, NULL);
-      var_data[0] = 0;
-      var_mime = magic_buffer (var_magic, var_data, 1);
-      magic_close (var_magic);
-    ]]
-   )
-  ],
-  [
-    AC_DEFINE([MHD_HAVE_LIBMAGIC], [1], [Define to 1 if you have suitable libmagic.])
-    mhd_have_libmagic="yes"
-    AC_MSG_RESULT([[yes]])
-  ],
-  [AC_MSG_RESULT([[no]])
-  ]
+  ]],
+  [[
+    char var_data[256];
+    const char *var_mime;
+    magic_t var_magic = magic_open (MAGIC_MIME_TYPE);
+    (void)magic_load (var_magic, NULL);
+    var_data[0] = 0;
+    var_mime = magic_buffer (var_magic, var_data, 1);
+    magic_close (var_magic);
+  ]],
+  [AC_DEFINE([MHD_HAVE_LIBMAGIC], [1], [Define to 1 if you have suitable libmagic.])],
+  [],
+  [-lmagic]
 )
-LIBS="$SAVE_LIBS"
-AM_CONDITIONAL([MHD_HAVE_LIBMAGIC], [[test "x$mhd_have_libmagic" = "xyes"]])
+AM_CONDITIONAL([MHD_HAVE_LIBMAGIC], [[test "x$mhd_cv_func_magic_open" = "xyes"]])
 
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
@@ -3833,7 +3796,7 @@ AS_VAR_IF([[mhd_cv_have_func_calloc]], [["yes"]],
   [AC_DEFINE([[HAVE_CALLOC]], [[1]], [Define to 1 if you have the usable `calloc' function.])])
 
 # Some systems have IPv6 disabled in kernel at run-time
-AS_IF([[test "x${have_inet6}" = "xyes" && test "x${cross_compiling}" = "xno"]],
+AS_IF([[test "x${mhd_cv_have_inet6}" = "xyes" && test "x${cross_compiling}" = "xno"]],
  [
    AC_CACHE_CHECK([whether IPv6 could be used for testing],[mhd_cv_ipv6_for_testing],
      [
