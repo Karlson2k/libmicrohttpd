@@ -2578,21 +2578,7 @@ choke me now
   ]
 )
 
-MHD_CHECK_FUNC([[gettimeofday]],
-  [[
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif /* HAVE_SYS_TIME_H */
-#ifdef HAVE_TIME_H
-#include <time.h>
-#endif /* HAVE_TIME_H */
-  ]],
-  [[
-  struct timeval tv;
-  i][f (0 != gettimeofday (&tv, (void*) 0))
-    return 1;
-  ]]
-)
+MHD_CHECK_FUNC_GETTIMEOFDAY
 
 # IPv6
 AC_CACHE_CHECK([for IPv6],[mhd_cv_have_inet6],
