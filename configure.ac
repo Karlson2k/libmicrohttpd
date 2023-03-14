@@ -483,7 +483,8 @@ AC_CHECK_HEADERS_ONCE([stdio.h string.h stdint.h errno.h limits.h fcntl.h], [],
   [AC_MSG_ERROR([Compiling libmicrohttpd requires standard POSIX headers files])], [AC_INCLUDES_DEFAULT])
 
 # Check for basic optional headers
-AC_CHECK_HEADERS([stddef.h stdlib.h inttypes.h sys/types.h sys/stat.h unistd.h], [], [], [AC_INCLUDES_DEFAULT])
+AC_CHECK_HEADERS([stddef.h stdlib.h inttypes.h sys/types.h sys/stat.h unistd.h \
+                  sys/uio.h], [], [], [AC_INCLUDES_DEFAULT])
 
 # Check for clock-specific optional headers
 AC_CHECK_HEADERS([sys/time.h time.h], [], [], [AC_INCLUDES_DEFAULT])
@@ -983,8 +984,7 @@ AS_CASE(["$host_os"],
      AC_DEFINE([_REENTRANT],[1],[Need with solaris or errno does not work])
      mhd_host_os='Solaris'
      AC_MSG_RESULT([[$mhd_host_os]])
-     AC_SEARCH_LIBS([gethostbyname], [nsl])
-     AC_SEARCH_LIBS([socket], [socket])],
+     AC_SEARCH_LIBS([gethostbyname], [nsl])],
   [*linux*],
   [AC_DEFINE([LINUX],[1],[This is a Linux kernel])
      mhd_host_os='Linux'
@@ -1000,7 +1000,6 @@ AS_CASE(["$host_os"],
      AC_DEFINE([WINDOWS],[1],[This is a Windows system])
      mhd_host_os='Windows/MinGW'
      AC_MSG_RESULT([[$mhd_host_os]])
-     LIBS="-lws2_32 ${LIBS}"
      AC_CHECK_HEADERS([winsock2.h ws2tcpip.h], [], [AC_MSG_ERROR([[Winsock2 headers are required for W32]])], [AC_INCLUDES_DEFAULT])
      AC_CACHE_CHECK([for MS lib utility], [ac_cv_use_ms_lib_tool],
        [mslibcheck=`lib 2>&1`
@@ -1586,12 +1585,36 @@ AM_CONDITIONAL([W32_SHARED_LIB_EXP], [test "x$w32_shared_lib_exp" = "xyes"])
 AM_CONDITIONAL([USE_MS_LIB_TOOL], [test "x$ac_cv_use_ms_lib_tool" = "xyes"])
 AM_CONDITIONAL([USE_EXPORT_FILE], [test "x$use_expfile" = "xyes"])
 
+MHD_FIND_LIB([socket],
+  [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+  ]], 
+  [(void)socket(0, 0, 0);],
+  [socket ws2_32],
+  [
+    AS_VAR_IF([[mhd_cv_find_lib_socket]],[["none required"]], [],
+      [
+       MHD_LIBDEPS_PKGCFG="${mhd_cv_find_lib_socket} $MHD_LIBDEPS_PKGCFG"
+      ]
+    )
+  ],
+  [AC_MSG_ERROR([[cannot find header or library required for function socket()]])]
+)
+
 MHD_CHECK_SOCKET_SHUTDOWN_TRIGGER([AC_DEFINE([HAVE_LISTEN_SHUTDOWN],[1],[can use shutdown on listen sockets])])
 AM_CONDITIONAL([HAVE_LISTEN_SHUTDOWN], [test "x$mhd_cv_host_shtdwn_trgr_select" = "xyes"])
 
-# SENDMSG. Should we check for SCM_RIGHTS instead?
-# https://lists.x.org/archives/xorg-devel/2013-November/038687.html
-AC_SEARCH_LIBS([sendmsg], [socket], [AC_DEFINE([HAVE_SENDMSG],[1],[Define if your platform supports sendmsg])])
 MHD_CHECK_FUNC([writev],
   [[#include <sys/uio.h>]],
   [[
@@ -1602,6 +1625,51 @@ MHD_CHECK_FUNC([writev],
     if (0 > writev(1, iov, 1))
       return 2;
   ]]
+)
+MHD_FIND_LIB([sendmsg],
+  [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+  ]],
+  [[
+    struct msghdr msg;
+    struct iovec iov;
+    unsigned int i;
+    char some_str[5] = "test";
+
+    iov.iov_base = (void*)some_str;
+    iov.iov_len = 4;
+
+    for (i = 0; i < (unsigned int) sizeof(msg); i++)
+    {
+      *(((unsigned char *)&msg) + i) = 0;
+    }
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+
+    if (0 > sendmsg(1, &msg, 0))
+      return -1;
+  ]],
+  [socket],
+  [
+    AC_DEFINE([HAVE_SENDMSG],[1],[Define to '1' if your have sendmsg() function])
+    AS_VAR_IF([[mhd_cv_find_lib_sendmsg]],[["none required"]], [],
+      [
+        MHD_LIBDEPS_PKGCFG="${mhd_cv_find_lib_sendmsg} $MHD_LIBDEPS_PKGCFG"
+      ]
+    )
+  ],[],
+  [MHD_LIBDEPS]
 )
 
 AC_C_BIGENDIAN
@@ -2446,23 +2514,23 @@ AC_CHECK_DECL([SOCK_NONBLOCK], [AC_DEFINE([HAVE_SOCK_NONBLOCK], [1], [SOCK_NONBL
   ]]
 )
 
-
-AC_CHECK_DECL([[clock_gettime]],
+MHD_FIND_LIB([clock_gettime],[[#include <time.h>]],
+  [[
+    struct timespec tp;
+    if (0 > clock_gettime(CLOCK_REALTIME, &tp))
+      return 3;
+  ]],
+  [rt],
   [
-   SAVE_LIBS="$LIBS"
-   AC_SEARCH_LIBS([clock_gettime], [rt],
-     [
-      AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Have clock_gettime])
-      AS_VAR_IF([[ac_cv_search_clock_gettime]],[["none required"]], [],
-        [
-         MHD_LIBDEPS="$ac_cv_search_clock_gettime $MHD_LIBDEPS"
-         MHD_LIBDEPS_PKGCFG="$ac_cv_search_clock_gettime $MHD_LIBDEPS_PKGCFG"
-        ])
-     ], [], [$MHD_LIBDEPS])
-   LIBS="$SAVE_LIBS"
-  ], [], [[
-#include <time.h>
-  ]])
+    AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Define to '1' if you have clock_gettime() function])
+    AS_VAR_IF([[mhd_cv_find_lib_clock_gettime]],[["none required"]], [],
+      [
+        MHD_LIBDEPS_PKGCFG="${mhd_cv_find_lib_clock_gettime} $MHD_LIBDEPS_PKGCFG"
+      ]
+    )
+  ],[],
+  [MHD_LIBDEPS]
+)
 
 AC_MSG_CHECKING([[for clock_get_time]])
 AC_LINK_IFELSE(
