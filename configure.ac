@@ -1623,7 +1623,7 @@ MHD_CHECK_FUNC([writev],
     char some_str[4] = "OK\n";
     iov[0].iov_base = (void *) some_str;
     iov[0].iov_len = 3;
-    if (0 > writev(1, iov, 1))
+    i][f (0 > writev(1, iov, 1))
       return 2;
   ]]
 )
@@ -1658,7 +1658,7 @@ MHD_FIND_LIB([sendmsg],
     msg.msg_iov = &iov;
     msg.msg_iovlen = 1;
 
-    if (0 > sendmsg(1, &msg, 0))
+    i][f (0 > sendmsg(1, &msg, 0))
       return -1;
   ]],
   [socket],
@@ -1993,7 +1993,7 @@ AC_CHECK_MEMBERS([struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len,
 #endif
    ])
 
-MHD_CHECK_LINK_RUN([[for working getsockname()]],[[mhd_cv_getsockname_usable]],
+MHD_CHECK_LINK_RUN([[f][or working getsockname()]],[[mhd_cv_getsockname_usable]],
   [[mhd_cv_getsockname_usable='assuming yes']],
   [
     AC_LANG_SOURCE(
@@ -2243,7 +2243,7 @@ AS_UNSET([[use_itc]])
 
 AS_IF([[test "x$enable_itc" = "xeventfd" || test "x$enable_itc" = "xauto"]],
   [
-    MHD_CHECK_LINK_RUN([[for working eventfd(2)]],[[mhd_cv_eventfd_usable]],[[mhd_cv_eventfd_usable='assuming no']],
+    MHD_CHECK_LINK_RUN([[f][or working eventfd(2)]],[[mhd_cv_eventfd_usable]],[[mhd_cv_eventfd_usable='assuming no']],
       [
         AC_LANG_SOURCE([[
 #include <sys/eventfd.h>
@@ -2389,12 +2389,12 @@ MHD_CHECK_FUNC([accept4],
 #endif
 #include <sys/socket.h>
   ]],
-  [
+  [[
   struct sockaddr sk_addr;
   socklen_t addr_size;
-  if (0 > accept4(0, &sk_addr, &addr_size, 0))
+  i][f (0 > accept4(0, &sk_addr, &addr_size, 0))
     return 3;
-  ]
+  ]]
 )
 MHD_CHECK_FUNC([gmtime_r],
   [[
@@ -2406,8 +2406,8 @@ MHD_CHECK_FUNC([gmtime_r],
   [[
   time_t timer = (time_t) 0;
   struct tm res;
-  
-  if (&res != gmtime_r(&timer, &res))
+
+  i][f (&res != gmtime_r(&timer, &res))
     return 3;
   ]]
 )
@@ -2425,8 +2425,8 @@ MHD_CHECK_FUNC([memmem],
   size_t hslen = 3;
   const char *needle = "b";
   size_t needlelen = 1;
-  
-  if ((haystack + 1) != memmem(haystack, hslen, needle, needlelen))
+
+  i][f ((haystack + 1) != memmem(haystack, hslen, needle, needlelen))
     return 3;
   ]]
 )
@@ -2437,10 +2437,10 @@ MHD_CHECK_FUNC([snprintf],
   [[
   char buf[2];
   
-  if (1 != snprintf(buf, 2, "a"))
+  i][f (1 != snprintf(buf, 2, "a"))
     return 3;
   /* Do not use the next check to avoid compiler warning */
-  /* if (4 != snprintf(buf, 2, "abcd"))
+  /* i][f (4 != snprintf(buf, 2, "abcd"))
     return 4; */
   ]]
 )
@@ -2511,7 +2511,7 @@ AC_CHECK_DECL([SOCK_NONBLOCK], [AC_DEFINE([HAVE_SOCK_NONBLOCK], [1], [SOCK_NONBL
 MHD_FIND_LIB([clock_gettime],[[#include <time.h>]],
   [[
     struct timespec tp;
-    if (0 > clock_gettime(CLOCK_REALTIME, &tp))
+    i][f (0 > clock_gettime(CLOCK_REALTIME, &tp))
       return 3;
   ]],
   [rt],
@@ -2589,7 +2589,7 @@ MHD_CHECK_FUNC([[gettimeofday]],
   ]],
   [[
   struct timeval tv;
-  if (0 != gettimeofday (&tv, (void*) 0))
+  i][f (0 != gettimeofday (&tv, (void*) 0))
     return 1;
   ]]
 )
@@ -2745,7 +2745,7 @@ MHD_CHECK_FUNC([lseek64],
 #include <unistd.h>
   ]],
   [[
-  if (((off64_t) -1) == lseek64(0, (off64_t) 0, SEEK_SET))
+  i][f (((off64_t) -1) == lseek64(0, (off64_t) 0, SEEK_SET))
     return 3;
   ]]
 )
@@ -2758,7 +2758,7 @@ MHD_CHECK_FUNC([pread64],
   ]],
   [[
   char buf[5];
-  if (0 > pread64(0, (void *) buf, 1, (off64_t) 0))
+  i][f (0 > pread64(0, (void *) buf, 1, (off64_t) 0))
     return 3;
   ]]
 )
@@ -2771,7 +2771,7 @@ MHD_CHECK_FUNC([pread],
   ]],
   [[
   char buf[5];
-  if (0 > pread(0, (void *) buf, 1, 0))
+  i][f (0 > pread(0, (void *) buf, 1, 0))
     return 3;
   ]]
 )
@@ -4215,7 +4215,7 @@ AS_IF([test "x${enable_sanitizers}" = "xno"],
     enable_san_undef="no"
     enable_san_leak="no"
     enable_san_upoison="no"
-    for san in `AS_ECHO([${enable_sanitizers}]) | tr ',' ' '`
+    f][or san in `AS_ECHO([${enable_sanitizers}]) | tr ',' ' '`
     do
       AS_CASE([$san],
         [address], [enable_san_address="yes"],
