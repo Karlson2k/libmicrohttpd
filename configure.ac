@@ -1602,7 +1602,7 @@ MHD_FIND_LIB([socket],
 #endif
   ]], 
   [(void)socket(0, 0, 0);],
-  [socket ws2_32],
+  [socket ws2_32 xnet],
   [
     AS_VAR_IF([[mhd_cv_find_lib_socket]],[["none required"]], [],
       [
