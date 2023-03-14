@@ -983,8 +983,7 @@ AS_CASE(["$host_os"],
  [AC_DEFINE([SOLARIS],[1],[This is a Solaris system])
      AC_DEFINE([_REENTRANT],[1],[Need with solaris or errno does not work])
      mhd_host_os='Solaris'
-     AC_MSG_RESULT([[$mhd_host_os]])
-     AC_SEARCH_LIBS([gethostbyname], [nsl])],
+     AC_MSG_RESULT([[$mhd_host_os]])],
   [*linux*],
   [AC_DEFINE([LINUX],[1],[This is a Linux kernel])
      mhd_host_os='Linux'
@@ -1585,6 +1584,8 @@ AM_CONDITIONAL([W32_SHARED_LIB_EXP], [test "x$w32_shared_lib_exp" = "xyes"])
 AM_CONDITIONAL([USE_MS_LIB_TOOL], [test "x$ac_cv_use_ms_lib_tool" = "xyes"])
 AM_CONDITIONAL([USE_EXPORT_FILE], [test "x$use_expfile" = "xyes"])
 
+dnl gethostbyname() is not really needed
+dnl AC_SEARCH_LIBS([gethostbyname], [nsl])
 MHD_FIND_LIB([socket],
   [[
 #ifdef HAVE_SYS_TYPES_H
