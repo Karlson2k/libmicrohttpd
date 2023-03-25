@@ -18,7 +18,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 5
+#serial 6
 
 AC_DEFUN([MHD_CHECK_SOCKET_SHUTDOWN_TRIGGER],[dnl
   AC_PREREQ([2.64])dnl
@@ -121,7 +121,7 @@ AC_DEFUN([_MHD_RUN_CHECK_SOCKET_SHUTDOWN_TRIGGER],[dnl
 
 #include <pthread.h>
 
-   #ifndef SHUT_RD
+#ifndef SHUT_RD
 #  define SHUT_RD 0
 #endif
 #ifndef SHUT_WR
