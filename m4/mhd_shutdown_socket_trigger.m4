@@ -136,7 +136,7 @@ AC_DEFUN([_MHD_RUN_CHECK_SOCKET_SHUTDOWN_TRIGGER],[dnl
 
 #include <pthread.h>
 
-   #ifndef SHUT_RD
+#ifndef SHUT_RD
 #  define SHUT_RD 0
 #endif
 #ifndef SHUT_WR
