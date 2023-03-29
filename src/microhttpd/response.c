@@ -2059,6 +2059,11 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
          use our 'emergency' buffer of #RESERVE_EBUF_SIZE bytes. */
       avail = RESERVE_EBUF_SIZE;
       buf = urh->e_buf;
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Memory shortage in connection's memory pool. " \
+                   "The \"upgraded\" communication will be inefficient.\n"));
+#endif
     }
     else
     {
