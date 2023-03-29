@@ -135,7 +135,7 @@ AS_IF([test "x${cv_Var}" != "xno"],
     ]
   )
   m4_n([$5])dnl
-],[m4_n([$6])])dnl AS_VAR_SET_IF cv_Var
+],[$6])dnl AS_VAR_SET_IF cv_Var
 AS_VAR_POPDEF([cv_Var])dnl
 AS_VAR_POPDEF([decl_cv_Var])dnl
 m4_newline([[# Expansion of $0 macro ends here]])
