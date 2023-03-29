@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097545
+#define MHD_VERSION 0x00097601
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -1550,7 +1550,7 @@ typedef int
  * #MHD_digest_auth_check3() (and similar functions) to check nonce by
  * re-generating it again with the same parameters, which is CPU-intensive
  * operation.
- * @note Available since #MHD_VERSION 0x00097531
+ * @note Available since #MHD_VERSION 0x00097601
  */
 enum MHD_DAuthBindNonce
 {
@@ -1583,7 +1583,7 @@ enum MHD_DAuthBindNonce
    * RFC 7616 allows clients to re-use server-generated nonces for any URI
    * in the same "protection space" which by default consists of all server
    * URIs.
-   * Before #MHD_VERSION 0x00097518 this was default (and only supported)
+   * Before #MHD_VERSION 0x00097601 this was default (and only supported)
    * nonce bind type.
    */
   MHD_DAUTH_BIND_NONCE_URI = 1 << 1,
@@ -2017,7 +2017,7 @@ enum MHD_OPTION
    * An internal copy of the buffer will be made, the data do not
    * need to be static.
    * @sa #MHD_OPTION_DIGEST_AUTH_RANDOM
-   * @note Available since #MHD_VERSION 0x00097529
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_OPTION_DIGEST_AUTH_RANDOM_COPY = 35,
 
@@ -2028,7 +2028,7 @@ enum MHD_OPTION
    * This option should be followed by an 'unsigned int` argument with value
    * formed as bitwise OR combination of #MHD_DAuthBindNonce values.
    * When not specified, default value #MHD_DAUTH_BIND_NONCE_NONE is used.
-   * @note Available since #MHD_VERSION 0x00097531
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE = 36,
 
@@ -2040,7 +2040,7 @@ enum MHD_OPTION
    * The string does not have to start with a colon ':' character.
    * See #MHD_OPTION_HTTPS_PRIORITIES description for details of automatic
    * default priorities.
-   * @note Available since #MHD_VERSION 0x00097542
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_OPTION_HTTPS_PRIORITIES_APPEND = 37,
 
@@ -2086,7 +2086,7 @@ enum MHD_OPTION
    * communicate with some client(s) with badly broken HTTP implementation.
    *
    * This option should be followed by an `int` argument.
-   * @note Available since #MHD_VERSION 0x00097545
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_OPTION_CLIENT_DISCIPLINE_LVL = 38
 
@@ -3137,7 +3137,7 @@ MHD_free (void *ptr);
  *                  timeout (in milliseconds)
  * @return #MHD_YES if timeout value has been set,
  *         #MHD_NO if timeouts are not used and no data processing is pending.
- * @note Available since #MHD_VERSION 0x00097508
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup event
  */
 _MHD_EXTERN enum MHD_Result
@@ -3178,7 +3178,7 @@ MHD_get_timeout64 (struct MHD_Daemon *daemon,
  *         activity for indefinite amount of time,
  *         otherwise returned value is the the maximum amount of millisecond
  *         that external polling function must wait for the activity of FDs.
- * @note Available since #MHD_VERSION 0x00097509
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup event
  */
 _MHD_EXTERN int64_t
@@ -3219,7 +3219,7 @@ MHD_get_timeout64s (struct MHD_Daemon *daemon);
  *         otherwise returned value is the the maximum amount of millisecond
  *         (capped at INT_MAX) that external polling function must wait
  *         for the activity of FDs.
- * @note Available since #MHD_VERSION 0x00097510
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup event
  */
 _MHD_EXTERN int
@@ -3699,7 +3699,7 @@ enum MHD_ResponseFlags
    * reply body must be sent to the client.
    * This flag is primarily intended to be used when automatic "Content-Length"
    * header is undesirable in response to HEAD requests.
-   * @note Available since #MHD_VERSION 0x00097502
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_RF_HEAD_ONLY_RESPONSE = 1 << 4
 } _MHD_FIXED_FLAGS_ENUM;
@@ -3870,7 +3870,7 @@ MHD_create_response_from_buffer (size_t size,
  * @param buffer the buffer with the data for the response body, can be NULL
  *               if @a size is zero
  * @return NULL on error (i.e. invalid arguments, out of memory)
- * @note Available since #MHD_VERSION 0x00097506
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
@@ -3897,7 +3897,7 @@ MHD_create_response_from_buffer_static (size_t size,
  * @param buffer the buffer with the data for the response body, can be NULL
  *               if @a size is zero
  * @return NULL on error (i.e. invalid arguments, out of memory)
- * @note Available since #MHD_VERSION 0x00097507
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
@@ -3948,7 +3948,7 @@ MHD_create_response_from_buffer_with_free_callback (size_t size,
  * @param crfc_cls an argument for @a crfc
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @note Available since #MHD_VERSION 0x00097302
- * @note 'const' qualifier is used for @a buffer since #MHD_VERSION 0x00097504
+ * @note 'const' qualifier is used for @a buffer since #MHD_VERSION 0x00097601
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
@@ -4138,7 +4138,7 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
  * @param flags the flags for the new response object
  * @return NULL on error (i.e. invalid arguments, out of memory),
  *         the pointer to the created response object otherwise
- * @note Available since #MHD_VERSION 0x00097503
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
@@ -4511,7 +4511,7 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
  * @warning While this value is the same as the #MHD_SHA256_DIGEST_SIZE,
  *          the calculated digests for SHA-256 and SHA-512/256 are different.
  * @sa #MHD_digest_get_hash_size()
- * @note Available since #MHD_VERSION 0x00097538
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup authentication
  */
 #define MHD_SHA512_256_DIGEST_SIZE 32
@@ -4521,7 +4521,7 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
  * Used as part of #MHD_DigestAuthAlgo3 values.
  *
  * @warning Not used directly by MHD API.
- * @note Available since #MHD_VERSION 0x00097520
+ * @note Available since #MHD_VERSION 0x00097601
  */
 enum MHD_DigestBaseAlgo
 {
@@ -4552,14 +4552,14 @@ enum MHD_DigestBaseAlgo
 /**
  * The flag indicating non-session algorithm types,
  * like 'MD5', 'SHA-256' or 'SHA-512-256'.
- * @note Available since #MHD_VERSION 0x00097519
+ * @note Available since #MHD_VERSION 0x00097601
  */
 #define MHD_DIGEST_AUTH_ALGO3_NON_SESSION    (1 << 6)
 
 /**
  * The flag indicating session algorithm types,
  * like 'MD5-sess', 'SHA-256-sess' or 'SHA-512-256-sess'.
- * @note Available since #MHD_VERSION 0x00097519
+ * @note Available since #MHD_VERSION 0x00097601
  */
 #define MHD_DIGEST_AUTH_ALGO3_SESSION        (1 << 7)
 
@@ -4567,7 +4567,7 @@ enum MHD_DigestBaseAlgo
  * Digest algorithm identification
  * @warning Do not be confused with #MHD_DigestAuthAlgorithm,
  *          which uses other values!
- * @note Available since #MHD_VERSION 0x00097523
+ * @note Available since #MHD_VERSION 0x00097601
  */
 enum MHD_DigestAuthAlgo3
 {
@@ -4630,7 +4630,7 @@ enum MHD_DigestAuthAlgo3
  *         or zero if the input value is not supported or not valid
  * @sa #MHD_digest_auth_calc_userdigest()
  * @sa #MHD_digest_auth_calc_userhash(), #MHD_digest_auth_calc_userhash_hex()
- * @note Available since #MHD_VERSION 0x00097526
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup authentication
  */
 _MHD_EXTERN size_t
@@ -4642,7 +4642,7 @@ MHD_digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3);
  * #MHD_DigestAuthAlgo3 always can be casted to #MHD_DigestAuthMultiAlgo3, but
  * not vice versa.
  *
- * @note Available since #MHD_VERSION 0x00097523
+ * @note Available since #MHD_VERSION 0x00097601
  */
 enum MHD_DigestAuthMultiAlgo3
 {
@@ -4773,7 +4773,7 @@ enum MHD_DigestAuthMultiAlgo3
  *         MHD_NO if @a bin_buf_size is too small or if @a algo3 algorithm is
  *         not supported (or external error has occurred,
  *         see #MHD_FEATURE_EXTERN_HASH)
- * @note Available since #MHD_VERSION 0x00097535
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
@@ -4820,7 +4820,7 @@ MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo3 algo3,
  *         MHD_NO if @a bin_buf_size is too small or if @a algo3 algorithm is
  *         not supported (or external error has occurred,
  *         see #MHD_FEATURE_EXTERN_HASH).
- * @note Available since #MHD_VERSION 0x00097535
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
@@ -4843,7 +4843,7 @@ MHD_digest_auth_calc_userhash_hex (enum MHD_DigestAuthAlgo3 algo3,
  * * (value >= MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD) is true if username is
  *   provided in clear text (not userhash matching is needed)
  *
- * @note Available since #MHD_VERSION 0x00097537
+ * @note Available since #MHD_VERSION 0x00097601
  */
 enum MHD_DigestAuthUsernameType
 {
@@ -4886,7 +4886,7 @@ enum MHD_DigestAuthUsernameType
 
 /**
  * The QOP ('quality of protection') types.
- * @note Available since #MHD_VERSION 0x00097519
+ * @note Available since #MHD_VERSION 0x00097601
  */
 enum MHD_DigestAuthQOP
 {
@@ -4925,7 +4925,7 @@ enum MHD_DigestAuthQOP
  * #MHD_DigestAuthQOP always can be casted to #MHD_DigestAuthMultiQOP, but
  * not vice versa.
  *
- * @note Available since #MHD_VERSION 0x00097530
+ * @note Available since #MHD_VERSION 0x00097601
  */
 enum MHD_DigestAuthMultiQOP
 {
@@ -4976,7 +4976,7 @@ enum MHD_DigestAuthMultiQOP
 
 /**
  * The invalid value of 'nc' parameter in client Digest Authorization header.
- * @note Available since #MHD_VERSION 0x00097519
+ * @note Available since #MHD_VERSION 0x00097601
  */
 #define MHD_DIGEST_AUTH_INVALID_NC_VALUE        (0)
 
@@ -4988,7 +4988,7 @@ enum MHD_DigestAuthMultiQOP
  *
  * Application may modify buffers as needed until #MHD_free() is called for
  * pointer to this structure
- * @note Available since #MHD_VERSION 0x00097537
+ * @note Available since #MHD_VERSION 0x00097601
  */
 struct MHD_DigestAuthInfo
 {
@@ -5111,7 +5111,7 @@ struct MHD_DigestAuthInfo
  *         a pointer to the structure with information if the valid request
  *         header found, free using #MHD_free().
  * @sa #MHD_digest_auth_get_username3()
- * @note Available since #MHD_VERSION 0x00097519
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup authentication
  */
 _MHD_EXTERN struct MHD_DigestAuthInfo *
@@ -5126,7 +5126,7 @@ MHD_digest_auth_get_request_info3 (struct MHD_Connection *connection);
  *
  * Application may modify buffers as needed until #MHD_free() is called for
  * pointer to this structure
- * @note Available since #MHD_VERSION 0x00097537
+ * @note Available since #MHD_VERSION 0x00097601
  */
 struct MHD_DigestAuthUsernameInfo
 {
@@ -5205,7 +5205,7 @@ struct MHD_DigestAuthUsernameInfo
  *         a pointer structure with information if the valid request header
  *         found, free using #MHD_free().
  * @sa #MHD_digest_auth_get_request_info3() provides more complete information
- * @note Available since #MHD_VERSION 0x00097519
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup authentication
  */
 _MHD_EXTERN struct MHD_DigestAuthUsernameInfo *
@@ -5217,7 +5217,7 @@ MHD_digest_auth_get_username3 (struct MHD_Connection *connection);
  *
  * All error values are zero or negative.
  *
- * @note Available since #MHD_VERSION 0x00097531
+ * @note Available since #MHD_VERSION 0x00097601
  */
 enum MHD_DigestAuthResult
 {
@@ -5330,7 +5330,7 @@ enum MHD_DigestAuthResult
  *               by the client is not allowed by this parameter
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097528
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
@@ -5374,7 +5374,7 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  *         not supported (or external error has occurred,
  *         see #MHD_FEATURE_EXTERN_HASH).
  * @sa #MHD_digest_auth_check_digest3()
- * @note Available since #MHD_VERSION 0x00097535
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
@@ -5424,7 +5424,7 @@ MHD_digest_auth_calc_userdigest (enum MHD_DigestAuthAlgo3 algo3,
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
  * @sa #MHD_digest_auth_calc_userdigest()
- * @note Available since #MHD_VERSION 0x00097528
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
@@ -5494,7 +5494,7 @@ MHD_digest_auth_check_digest3 (struct MHD_Connection *connection,
  *                    added, indicating for the client that UTF-8 encoding
  *                    is preferred
  * @return #MHD_YES on success, #MHD_NO otherwise
- * @note Available since #MHD_VERSION 0x00097526
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
@@ -5783,7 +5783,7 @@ struct MHD_BasicAuthInfo
  *         current request, or
  *         pointer to structure with username and password, which must be
  *         freed by #MHD_free().
- * @note Available since #MHD_VERSION 0x00097517
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup authentication
  */
 _MHD_EXTERN struct MHD_BasicAuthInfo *
@@ -5827,7 +5827,7 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
  * @param response the response object to modify and queue; the NULL
  *                 is tolerated
  * @return #MHD_YES on success, #MHD_NO otherwise
- * @note Available since #MHD_VERSION 0x00097516
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
@@ -5992,7 +5992,7 @@ MHD_get_version (void);
  *
  * @return version binary value, e.g. "0x00090900" (#MHD_VERSION of
  *         compiled MHD binary)
- * @note Available since #MHD_VERSION 0x00097544
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup specialized
  */
 _MHD_EXTERN uint32_t
@@ -6174,17 +6174,17 @@ enum MHD_FEATURE
   /**
    * Get whether automatic parsing of HTTP Cookie header is supported.
    * If disabled, no MHD_COOKIE_KIND will be generated by MHD.
-   * MHD versions before 0x00097514 always support cookie parsing.
-   * @note Available since #MHD_VERSION 0x00097514
+   * MHD versions before 0x00097601 always support cookie parsing.
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_FEATURE_HTTPS_COOKIE_PARSING = 24,
 
   /**
    * Get whether the early version the Digest Authorization (RFC 2069) is
    * supported (digest authorisation without QOP parameter).
-   * Since #MHD_VERSION 0x00097530 it is always supported if Digest Auth
+   * Since #MHD_VERSION 0x00097601 it is always supported if Digest Auth
    * module is built.
-   * @note Available since #MHD_VERSION 0x00097527
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_FEATURE_DIGEST_AUTH_RFC2069 = 25,
 
@@ -6193,7 +6193,7 @@ enum MHD_FEATURE
    * Authorization.
    * Currently it is always supported if Digest Auth module is built
    * unless manually disabled in a custom build.
-   * @note Available since #MHD_VERSION 0x00097527
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_FEATURE_DIGEST_AUTH_MD5 = 26,
 
@@ -6202,16 +6202,16 @@ enum MHD_FEATURE
    * Authorization.
    * It it always supported since #MHD_VERSION 0x00096200 if Digest Auth
    * module is built unless manually disabled in a custom build.
-   * @note Available since #MHD_VERSION 0x00097527
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_FEATURE_DIGEST_AUTH_SHA256 = 27,
 
   /**
    * Get whether the SHA-512/256-based hashing algorithms are supported
    * for Digest Authorization.
-   * It it always supported since #MHD_VERSION 0x00097539 if Digest Auth
+   * It it always supported since #MHD_VERSION 0x00097601 if Digest Auth
    * module is built unless manually disabled in a custom build.
-   * @note Available since #MHD_VERSION 0x00097536
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_FEATURE_DIGEST_AUTH_SHA512_256 = 28,
 
@@ -6219,7 +6219,7 @@ enum MHD_FEATURE
    * Get whether QOP with value 'auth-int' (authentication with integrity
    * protection) is supported for Digest Authorization.
    * Currently it is always not supported.
-   * @note Available since #MHD_VERSION 0x00097536
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_FEATURE_DIGEST_AUTH_AUTH_INT = 29,
 
@@ -6227,15 +6227,15 @@ enum MHD_FEATURE
    * Get whether 'session' algorithms (like 'MD5-sess') are supported for Digest
    * Authorization.
    * Currently it is always not supported.
-   * @note Available since #MHD_VERSION 0x00097536
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_FEATURE_DIGEST_AUTH_ALGO_SESSION = 30,
 
   /**
    * Get whether 'userhash' is supported for Digest Authorization.
-   * It is always supported since #MHD_VERSION 0x00097526 if Digest Auth
+   * It is always supported since #MHD_VERSION 0x00097601 if Digest Auth
    * module is built.
-   * @note Available since #MHD_VERSION 0x00097536
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_FEATURE_DIGEST_AUTH_USERHASH = 31,
 
@@ -6249,7 +6249,7 @@ enum MHD_FEATURE
    * potentially may fail even with valid input because of out-of-memory error
    * or crypto accelerator device failure, however in practice such fails are
    * unlikely.
-   * @note Available since #MHD_VERSION 0x00097540
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_FEATURE_EXTERN_HASH = 32,
 
@@ -6257,7 +6257,7 @@ enum MHD_FEATURE
    * Get whether MHD was built with asserts enabled.
    * For debug builds the error log is always enabled even if #MHD_USE_ERROR_LOG
    * is not specified for daemon.
-   * @note Available since #MHD_VERSION 0x00097543
+   * @note Available since #MHD_VERSION 0x00097601
    */
   MHD_FEATURE_DEBUG_BUILD = 33
 };
