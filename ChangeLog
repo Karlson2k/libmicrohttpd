@@ -1,5 +1,5 @@
 Web 29 Mar 2023 20:56:00 CEST
-    Bumped version as hotfix was released based on the separate branch. -EG
+    Bumped version as the hotfix was released based on the separate branch. -EG
 
 Sun Feb 26 05:49:30 PM CET 2023
     Fix potential DoS vector in MHD_PostProcessor discovered
