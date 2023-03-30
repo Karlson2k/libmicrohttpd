@@ -5121,6 +5121,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
           continue;
         }
         /* Response is not required anymore for this connection. */
+        if (1)
         {
           struct MHD_Response *const resp = connection->rp.response;
 
