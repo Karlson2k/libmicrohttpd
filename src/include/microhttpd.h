@@ -6036,7 +6036,7 @@ enum MHD_FEATURE
   /**
    * Get whether IPv6 without IPv4 is supported. If not supported
    * then IPv4 is always enabled in IPv6 sockets and
-   * flag #MHD_USE_DUAL_STACK if always used when #MHD_USE_IPv6 is
+   * flag #MHD_USE_DUAL_STACK is always used when #MHD_USE_IPv6 is
    * specified.
    */
   MHD_FEATURE_IPv6_ONLY = 5,
