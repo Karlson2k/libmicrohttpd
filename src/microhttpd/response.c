@@ -2045,13 +2045,26 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
       free (urh);
       return MHD_NO;
     }
+    pool = connection->pool;
+    if (0 != connection->write_buffer_size)
+    {
+      mhd_assert (NULL != connection->write_buffer);
+      /* All data should be sent already */
+      mhd_assert (connection->write_buffer_send_offset == \
+                  connection->write_buffer_append_offset);
+      (void) MHD_pool_reallocate (pool, connection->write_buffer,
+                                  connection->write_buffer_size, 0);
+      connection->write_buffer_append_offset = 0;
+      connection->write_buffer_send_offset = 0;
+      connection->write_buffer_size = 0;
+    }
+    connection->write_buffer = NULL;
     urh->app.socket = sv[0];
     urh->app.urh = urh;
     urh->app.celi = MHD_EPOLL_STATE_UNREADY;
     urh->mhd.socket = sv[1];
     urh->mhd.urh = urh;
     urh->mhd.celi = MHD_EPOLL_STATE_UNREADY;
-    pool = connection->pool;
     avail = MHD_pool_get_free (pool);
     if (avail < RESERVE_EBUF_SIZE)
     {
