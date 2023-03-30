@@ -1942,22 +1942,14 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                MHD_thread_ID_match_current_ (connection->pid) );
 #endif /* MHD_USE_THREADS */
 
-  if (0 == (daemon->options & MHD_ALLOW_UPGRADE))
-    return MHD_NO;
-
-  if (NULL ==
-      MHD_get_response_element_n_ (response, MHD_HEADER_KIND,
-                                   MHD_HTTP_HEADER_UPGRADE,
-                                   MHD_STATICSTR_LEN_ ( \
-                                     MHD_HTTP_HEADER_UPGRADE)))
-  {
-#ifdef HAVE_MESSAGES
-    MHD_DLOG (daemon,
-              _ ("Invalid response for upgrade: " \
-                 "application failed to set the 'Upgrade' header!\n"));
-#endif
-    return MHD_NO;
-  }
+  /* "Upgrade" responses accepted only if MHD_ALLOW_UPGRADE is enabled */
+  mhd_assert (0 != (daemon->options & MHD_ALLOW_UPGRADE));
+  /* The header was checked when response queued */
+  mhd_assert (NULL != \
+              MHD_get_response_element_n_ (response, MHD_HEADER_KIND,
+                                           MHD_HTTP_HEADER_UPGRADE,
+                                           MHD_STATICSTR_LEN_ ( \
+                                             MHD_HTTP_HEADER_UPGRADE)));
 
   urh = MHD_calloc_ (1, sizeof (struct MHD_UpgradeResponseHandle));
   if (NULL == urh)
