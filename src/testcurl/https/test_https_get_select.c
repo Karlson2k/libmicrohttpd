@@ -29,9 +29,9 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <curl/curl.h>
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #include <gcrypt.h>
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #include "tls_test_common.h"
 
 extern const char srv_key_pem[];

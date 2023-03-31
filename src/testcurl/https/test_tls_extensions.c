@@ -29,9 +29,9 @@
 #include "microhttpd.h"
 #include "tls_test_common.h"
 #include "mhd_sockets.h" /* only macros used */
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #include <gcrypt.h>
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 
 #define MAX_EXT_DATA_LENGTH 256
 
@@ -222,12 +222,12 @@ main (int argc, char *const *argv)
   else
     port = 3080;
 
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
   gcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
 #ifdef GCRYCTL_INITIALIZATION_FINISHED
   gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
   MHD_gtls_global_set_log_level (11);
 
   if ((test_fd = setup_test_file ()) == NULL)

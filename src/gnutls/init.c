@@ -26,7 +26,7 @@
 #include "init.h"
 
 
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #if defined(HTTPS_SUPPORT) && GCRYPT_VERSION_NUMBER < 0x010600
 #if defined(MHD_USE_POSIX_THREADS)
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
@@ -82,7 +82,7 @@ static struct gcry_thread_cbs gcry_threads_w32 = {
 
 #endif /* defined(MHD_W32_MUTEX_) */
 #endif /* HTTPS_SUPPORT && GCRYPT_VERSION_NUMBER < 0x010600 */
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 
 
 #ifndef _AUTOINIT_FUNCS_ARE_SUPPORTED
@@ -129,7 +129,7 @@ MHD_TLS_init (void)
   WSADATA wsd;
 #endif /* _WIN32 && ! __CYGWIN__ */
 
-#ifdef MHD_HTTPS_REQUIRE_GRYPT
+#ifdef MHD_HTTPS_REQUIRE_GCRYPT
 #if GCRYPT_VERSION_NUMBER < 0x010600
 #if defined(MHD_USE_POSIX_THREADS)
   if (0 != gcry_control (GCRYCTL_SET_THREAD_CBS,
@@ -146,7 +146,7 @@ MHD_TLS_init (void)
     MHD_PANIC (_ (
                  "libgcrypt is too old. MHD was compiled for libgcrypt 1.6.0 or newer.\n"));
 #endif
-#endif /* MHD_HTTPS_REQUIRE_GRYPT */
+#endif /* MHD_HTTPS_REQUIRE_GCRYPT */
   gnutls_global_init ();
 }
 
