@@ -36,7 +36,7 @@
 extern const char srv_key_pem[];
 extern const char srv_self_signed_cert_pem[];
 
-int curl_check_version (const char *req_version, ...);
+int curl_check_version (const char *req_version);
 
 /**
  * test server refuses to negotiate connections with unsupported protocol versions

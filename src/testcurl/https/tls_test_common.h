@@ -72,7 +72,7 @@ struct CipherDef
 
 
 int
-curl_check_version (const char *req_version, ...);
+curl_check_version (const char *req_version);
 
 int
 curl_tls_is_gnutls (void);
