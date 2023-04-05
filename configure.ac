@@ -4303,6 +4303,10 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
                    AC_CHECK_HEADERS([sanitizer/asan_interface.h], [], [], [AC_INCLUDES_DEFAULT])
                    AS_VAR_IF([ac_cv_header_sanitizer_asan_interface_h],["yes"],
                      [
+                       CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS} ${user_CFLAGS}"
+                       MHD_CHECK_FUNC([__asan_region_is_poisoned],[[#include <sanitizer/asan_interface.h>]],
+                         [[int a_var=1; i][f(((void*) 0) != __asan_region_is_poisoned((void*) &a_var, sizeof(a_var))) return 3;]]
+                       )
                        AC_CACHE_CHECK([whether special function attribute is needed for user-poison], [mhd_cv_func_u_p_attribute_needed],
                          [
                            ASAN_OPTIONS="exitcode=88:detect_invalid_pointer_pairs=3:halt_on_error=1"

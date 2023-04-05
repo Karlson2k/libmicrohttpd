@@ -345,6 +345,7 @@ MHD_pool_destroy (struct MemoryPool *pool)
 
   mhd_assert (pool->end >= pool->pos);
   mhd_assert (pool->size >= pool->end - pool->pos);
+  mhd_assert (pool->pos == ROUND_TO_ALIGN (pool->pos));
   _MHD_UNPOISON_MEMORY (pool->memory, pool->size);
   if (! pool->is_mmap)
     free (pool->memory);
@@ -374,6 +375,7 @@ MHD_pool_get_free (struct MemoryPool *pool)
 {
   mhd_assert (pool->end >= pool->pos);
   mhd_assert (pool->size >= pool->end - pool->pos);
+  mhd_assert (pool->pos == ROUND_TO_ALIGN (pool->pos));
 #ifdef MHD_ASAN_POISON_ACTIVE
   if ((pool->end - pool->pos) <= _MHD_RED_ZONE_SIZE)
     return 0;
@@ -403,6 +405,7 @@ MHD_pool_allocate (struct MemoryPool *pool,
 
   mhd_assert (pool->end >= pool->pos);
   mhd_assert (pool->size >= pool->end - pool->pos);
+  mhd_assert (pool->pos == ROUND_TO_ALIGN (pool->pos));
   asize = ROUND_TO_ALIGN_PLUS_RED_ZONE (size);
   if ( (0 == asize) && (0 != size) )
     return NULL; /* size too close to SIZE_MAX */
@@ -452,6 +455,7 @@ MHD_pool_try_alloc (struct MemoryPool *pool,
 
   mhd_assert (pool->end >= pool->pos);
   mhd_assert (pool->size >= pool->end - pool->pos);
+  mhd_assert (pool->pos == ROUND_TO_ALIGN (pool->pos));
   asize = ROUND_TO_ALIGN_PLUS_RED_ZONE (size);
   if ( (0 == asize) && (0 != size) )
   { /* size is too close to SIZE_MAX, very unlikely */
@@ -505,6 +509,10 @@ MHD_pool_reallocate (struct MemoryPool *pool,
   mhd_assert (pool->size >= pool->end - pool->pos);
   mhd_assert (old != NULL || old_size == 0);
   mhd_assert (pool->size >= old_size);
+  mhd_assert (pool->pos == ROUND_TO_ALIGN (pool->pos));
+#if defined(MHD_ASAN_POISON_ACTIVE) && defined(HAVE___ASAN_REGION_IS_POISONED)
+  mhd_assert (NULL == __asan_region_is_poisoned (old, old_size));
+#endif /* MHD_ASAN_POISON_ACTIVE && HAVE___ASAN_REGION_IS_POISONED */
 
   if (NULL != old)
   {   /* Have previously allocated data */
@@ -596,6 +604,9 @@ MHD_pool_reset (struct MemoryPool *pool,
   /* (keep == NULL || pool->memory + pool->size >= (uint8_t*) keep + copy_bytes) */
   mhd_assert ((keep == NULL) || \
               (pool->size >= mp_ptr_diff_ (keep, pool->memory) + copy_bytes));
+#if defined(MHD_ASAN_POISON_ACTIVE) && defined(HAVE___ASAN_REGION_IS_POISONED)
+  mhd_assert (NULL == __asan_region_is_poisoned (keep, copy_bytes));
+#endif /* MHD_ASAN_POISON_ACTIVE && HAVE___ASAN_REGION_IS_POISONED */
   _MHD_UNPOISON_MEMORY (pool->memory, new_size);
   if ( (NULL != keep) &&
        (keep != pool->memory) )
