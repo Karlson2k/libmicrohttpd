@@ -125,7 +125,7 @@
  * Boolean 'true' if the first pointer is less or equal the second pointer
  */
 #define mp_ptr_le_(p1,p2) \
-  (((uintptr_t)((const void*)(p1))) <= ((uintptr_t)((const void*)(p1))))
+  (((uintptr_t)((const void*)(p1))) <= ((uintptr_t)((const void*)(p2))))
 /**
  * The difference in bytes between positions of the first and
  * the second pointers
