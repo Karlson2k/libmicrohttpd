@@ -106,13 +106,13 @@
  * Boolean 'true' if the first pointer is less or equal the second pointer
  */
 #define mp_ptr_le_(p1,p2) \
-  (((const uint8_t*)p1) <= ((const uint8_t*)p2))
+  (((const uint8_t*)(p1)) <= ((const uint8_t*)(p2)))
 /**
  * The difference in bytes between positions of the first and
  * the second pointers
  */
 #define mp_ptr_diff_(p1,p2) \
-  ((size_t)(((const uint8_t*)p1) - ((const uint8_t*)p2)))
+  ((size_t)(((const uint8_t*)(p1)) - ((const uint8_t*)(p2))))
 #else  /* MHD_ASAN_POISON_ACTIVE */
 #define _MHD_RED_ZONE_SIZE (ALIGN_SIZE)
 #define ROUND_TO_ALIGN_PLUS_RED_ZONE(n) (ROUND_TO_ALIGN(n) + _MHD_RED_ZONE_SIZE)
@@ -131,8 +131,8 @@
  * the second pointers
  */
 #define mp_ptr_diff_(p1,p2) \
-  ((size_t)(((uintptr_t)((const uint8_t*)p1)) - \
-            ((uintptr_t)((const uint8_t*)p2))))
+  ((size_t)(((uintptr_t)((const uint8_t*)(p1))) - \
+            ((uintptr_t)((const uint8_t*)(p2)))))
 #elif defined(FUNC_ATTR_PTRCOMPARE_WORKS) && \
   defined(FUNC_ATTR_PTRSUBTRACT_WORKS)
 #ifdef _DEBUG
