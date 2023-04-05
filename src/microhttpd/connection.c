@@ -3469,58 +3469,32 @@ process_broken_line (struct MHD_Connection *connection,
                      char *line,
                      enum MHD_ValueKind kind)
 {
-  char *last;
-  char *tmp;
-  size_t last_len;
-  size_t tmp_len;
+  char *const last_value = connection->colon;
+  const size_t last_value_len = strlen (last_value);
+  mhd_assert (NULL != connection->last);
+  mhd_assert (NULL != connection->colon);
 
-  last = connection->last;
   if ( (' ' == line[0]) ||
        ('\t' == line[0]) )
   {
-    /* value was continued on the next line, see
-       http://www.jmarshall.com/easy/http/ */
-    last_len = strlen (last);
-    /* skip whitespace at start of 2nd line */
-    tmp = line;
-    while ( (' ' == tmp[0]) ||
-            ('\t' == tmp[0]) )
-      tmp++;
-    tmp_len = strlen (tmp);
-    /* FIXME: we might be able to do this better (faster!), as most
-       likely 'last' and 'line' should already be adjacent in
-       memory; however, doing this right gets tricky if we have a
-       value continued over multiple lines (in which case we need to
-       record how often we have done this so we can check for
-       adjacency); also, in the case where these are not adjacent
-       (not sure how it can happen!), we would want to allocate from
-       the end of the pool, so as to not destroy the read-buffer's
-       ability to grow nicely. */
-    last = MHD_pool_reallocate (connection->pool,
-                                last,
-                                last_len + 1,
-                                last_len + tmp_len + 1);
-    if (NULL == last)
-    {
-      transmit_error_response_static (connection,
-                                      MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                      REQUEST_TOO_BIG);
-      return MHD_NO;
-    }
-    memcpy (&last[last_len],
-            tmp,
-            tmp_len + 1);
-    connection->last = last;
-    return MHD_YES;             /* possibly more than 2 lines... */
+    /* This line is a continuation of the previous line */
+    /* NOTE: this is a simplified implementation only for v0.9.77 */
+    size_t num_to_replace = ((size_t) (line - last_value)) - last_value_len;
+
+    /* Only CRLF or LF should be between lines */
+    mhd_assert ((2 == num_to_replace) || (1 == num_to_replace));
+    /* Replace CRLF with spaces */
+    last_value[last_value_len] = ' ';
+    if (0 != --num_to_replace)
+      last_value[last_value_len + 1] = ' ';
+    return MHD_NO;             /* possibly more than 2 lines... */
   }
-  mhd_assert ( (NULL != last) &&
-               (NULL != connection->colon) );
   if (MHD_NO ==
       connection_add_header (connection,
-                             last,
-                             strlen (last),
-                             connection->colon,
-                             strlen (connection->colon),
+                             connection->last,
+                             strlen (connection->last),
+                             last_value,
+                             last_value_len,
                              kind))
   {
     /* Error has been queued by connection_add_header() */
