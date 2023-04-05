@@ -4304,6 +4304,9 @@ AS_VAR_IF([enable_sanitizers], ["no"], [:],
                    AS_VAR_IF([ac_cv_header_sanitizer_asan_interface_h],["yes"],
                      [
                        CFLAGS="${CFLAGS_ac} ${san_CFLAGS} ${san_FLAGS} ${errattr_CFLAGS} ${user_CFLAGS}"
+                       MHD_CHECK_FUNC([__asan_address_is_poisoned],[[#include <sanitizer/asan_interface.h>]],
+                         [[int a_var=1; i][f(__asan_address_is_poisoned((void*) &a_var)) return 3;]]
+                       )
                        MHD_CHECK_FUNC([__asan_region_is_poisoned],[[#include <sanitizer/asan_interface.h>]],
                          [[int a_var=1; i][f(((void*) 0) != __asan_region_is_poisoned((void*) &a_var, sizeof(a_var))) return 3;]]
                        )

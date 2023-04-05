@@ -577,6 +577,109 @@ MHD_pool_reallocate (struct MemoryPool *pool,
 
 
 /**
+ * Deallocate a block of memory obtained from the pool.
+ *
+ * If the given block is not the most recently
+ * (re)allocated block, the memory of the this block
+ * allocation may be not released until the pool is
+ * destroyed or reset.
+ *
+ * @param pool memory pool to use for the operation
+ * @param block the allocated block, the NULL is tolerated
+ * @param block_size the size of the allocated block
+ */
+void
+MHD_pool_deallocate (struct MemoryPool *pool,
+                     void *block,
+                     size_t block_size)
+{
+  mhd_assert (pool->end >= pool->pos);
+  mhd_assert (pool->size >= pool->end - pool->pos);
+  mhd_assert (block != NULL || block_size == 0);
+  mhd_assert (pool->size >= block_size);
+  mhd_assert (pool->pos == ROUND_TO_ALIGN (pool->pos));
+
+  if (NULL != block)
+  {   /* Have previously allocated data */
+    const size_t block_offset = mp_ptr_diff_ (block, pool->memory);
+    mhd_assert (mp_ptr_le_ (pool->memory, block));
+    mhd_assert (block_offset <= pool->size);
+    mhd_assert ((block_offset != pool->pos) || (block_size == 0));
+    /* Zero-out deallocated region */
+    if (0 != block_size)
+    {
+      memset (block, 0, block_size);
+      _MHD_POISON_MEMORY (block, block_size);
+    }
+#if ! defined(MHD_FAVOR_SMALL_CODE) && ! defined(MHD_ASAN_POISON_ACTIVE)
+    else
+      return; /* Zero size, no need to do anything */
+#endif /* ! MHD_FAVOR_SMALL_CODE && ! MHD_ASAN_POISON_ACTIVE */
+    if (block_offset <= pool->pos)
+    {
+      /* "Normal" block, not allocated "from the end". */
+      const size_t alg_end =
+        ROUND_TO_ALIGN_PLUS_RED_ZONE (block_offset + block_size);
+      mhd_assert (alg_end <= pool->pos);
+      if (alg_end == pool->pos)
+      {
+        /* The last allocated block, return deallocated block to the pool */
+        size_t alg_start = ROUND_TO_ALIGN (block_offset);
+        mhd_assert (alg_start >= block_offset);
+#if defined(MHD_ASAN_POISON_ACTIVE)
+        if (alg_start != block_offset)
+        {
+          _MHD_POISON_MEMORY (pool->memory + block_offset, \
+                              alg_start - block_offset);
+        }
+        else if (0 != alg_start)
+        {
+          bool need_red_zone_before;
+          mhd_assert (_MHD_RED_ZONE_SIZE <= alg_start);
+#if defined(HAVE___ASAN_REGION_IS_POISONED)
+          need_red_zone_before =
+            (NULL == __asan_region_is_poisoned (pool->memory
+                                                + alg_start
+                                                - _MHD_RED_ZONE_SIZE,
+                                                _MHD_RED_ZONE_SIZE));
+#elif defined(HAVE___ASAN_ADDRESS_IS_POISONED)
+          need_red_zone_before =
+            (0 == __asan_address_is_poisoned (pool->memory + alg_start - 1));
+#else  /* ! HAVE___ASAN_ADDRESS_IS_POISONED */
+          need_red_zone_before = true; /* Unknown, assume new red zone needed */
+#endif /* ! HAVE___ASAN_ADDRESS_IS_POISONED */
+          if (need_red_zone_before)
+          {
+            _MHD_POISON_MEMORY (pool->memory + alg_start, _MHD_RED_ZONE_SIZE);
+            alg_start += _MHD_RED_ZONE_SIZE;
+          }
+        }
+#endif /* MHD_ASAN_POISON_ACTIVE */
+        mhd_assert (alg_start <= pool->pos);
+        mhd_assert (alg_start == ROUND_TO_ALIGN (alg_start));
+        pool->pos = alg_start;
+      }
+    }
+    else
+    {
+      /* Allocated "from the end" block. */
+      /* The size and the pointers of such block should not be manipulated by
+         MHD code (block split is disallowed). */
+      mhd_assert (block_offset >= pool->end);
+      mhd_assert (ROUND_TO_ALIGN (block_offset) == block_offset);
+      if (block_offset == pool->end)
+      {
+        /* The last allocated block, return deallocated block to the pool */
+        const size_t alg_end =
+          ROUND_TO_ALIGN_PLUS_RED_ZONE (block_offset + block_size);
+        pool->end = alg_end;
+      }
+    }
+  }
+}
+
+
+/**
  * Clear all entries from the memory pool except
  * for @a keep of the given @a copy_bytes.  The pointer
  * returned should be a buffer of @a new_size where

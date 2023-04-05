@@ -148,6 +148,24 @@ MHD_pool_get_free (struct MemoryPool *pool);
 
 
 /**
+ * Deallocate a block of memory obtained from the pool.
+ *
+ * If the given block is not the most recently
+ * (re)allocated block, the memory of the this block
+ * allocation may be not released until the pool is
+ * destroyed or reset.
+ *
+ * @param pool memory pool to use for the operation
+ * @param block the allocated block, the NULL is tolerated
+ * @param block_size the size of the allocated block
+ */
+void
+MHD_pool_deallocate (struct MemoryPool *pool,
+                     void *block,
+                     size_t block_size);
+
+
+/**
  * Clear all entries from the memory pool except
  * for @a keep of the given @a copy_bytes.  The pointer
  * returned should be a buffer of @a new_size where

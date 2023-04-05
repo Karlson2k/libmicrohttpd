@@ -2148,28 +2148,21 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     size_t avail;
     char *buf;
 
-    if (0 != connection->write_buffer_size)
-    {
-      mhd_assert (NULL != connection->write_buffer);
-      /* All data should be sent already */
-      mhd_assert (connection->write_buffer_send_offset == \
-                  connection->write_buffer_append_offset);
-      (void) MHD_pool_reallocate (pool, connection->write_buffer,
-                                  connection->write_buffer_size, 0);
-      connection->write_buffer_append_offset = 0;
-      connection->write_buffer_send_offset = 0;
-      connection->write_buffer_size = 0;
-    }
+    /* All data should be sent already */
+    mhd_assert (connection->write_buffer_send_offset == \
+                connection->write_buffer_append_offset);
+    MHD_pool_deallocate (pool, connection->write_buffer,
+                         connection->write_buffer_size);
+    connection->write_buffer_append_offset = 0;
+    connection->write_buffer_send_offset = 0;
+    connection->write_buffer_size = 0;
     connection->write_buffer = NULL;
 
-    if (0 != connection->read_buffer_size)
-    {
-      mhd_assert (NULL != connection->read_buffer);
-      (void) MHD_pool_reallocate (pool, connection->read_buffer,
-                                  connection->read_buffer_size, 0);
-      connection->read_buffer_offset = 0;
-      connection->read_buffer_size = 0;
-    }
+    /* Extra read data should be processed already by the application */
+    MHD_pool_deallocate (pool, connection->read_buffer,
+                         connection->read_buffer_size);
+    connection->read_buffer_offset = 0;
+    connection->read_buffer_size = 0;
     connection->read_buffer = NULL;
 
     avail = MHD_pool_get_free (pool);
