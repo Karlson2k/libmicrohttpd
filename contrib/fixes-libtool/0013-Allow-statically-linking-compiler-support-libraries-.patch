@@ -11,10 +11,10 @@ here.
  build-aux/ltmain.in | 11 +++++++++--
  1 file changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/build-aux/ltmain.sh b/build-aux/ltmain.sh
+diff --git a/build-aux/ltmain.in b/build-aux/ltmain.in
 index e2fb2633..db4d775c 100644
---- a/build-aux/ltmain.sh
-+++ b/build-aux/ltmain.sh
+--- a/build-aux/ltmain.in
++++ b/build-aux/ltmain.in
 @@ -5870,8 +5870,15 @@ func_mode_link ()
  	  fi
  	  case $linkmode in

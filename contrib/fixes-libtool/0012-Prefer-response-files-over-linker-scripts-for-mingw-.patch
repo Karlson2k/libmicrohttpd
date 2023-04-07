@@ -12,10 +12,10 @@ list of files is overkill for cases when a response file is enough.
  m4/libtool.m4       |  2 ++
  2 files changed, 16 insertions(+), 14 deletions(-)
 
-diff --git a/build-aux/ltmain.sh b/build-aux/ltmain.sh
+diff --git a/build-aux/ltmain.in b/build-aux/ltmain.in
 index e2fb263..db5d590 100644
---- a/build-aux/ltmain.sh
-+++ b/build-aux/ltmain.sh
+--- a/build-aux/ltmain.in
++++ b/build-aux/ltmain.in
 @@ -7932,20 +7932,7 @@ EOF
  	  last_robj=
  	  k=1
