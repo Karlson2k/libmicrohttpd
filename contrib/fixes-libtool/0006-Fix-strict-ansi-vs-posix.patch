@@ -2,13 +2,13 @@
 * build-aux/ltmain.in (func_mode_link): Also check for _POSIX
 as well as __STRICT_ANSI__ to avoid re-definitions.
 ---
- build-aux/ltmain.sh |    4 +++-
+ build-aux/ltmain.in |    4 +++-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/build-aux/ltmain.sh b/build-aux/ltmain.sh
+diff --git a/build-aux/ltmain.in b/build-aux/ltmain.in
 index af46cb8..244bb5b 100644
---- a/build-aux/ltmain.sh
-+++ b/build-aux/ltmain.sh
+--- a/build-aux/ltmain.in
++++ b/build-aux/ltmain.in
 @@ -3382,7 +3382,7 @@
  
  /* declarations of non-ANSI functions */

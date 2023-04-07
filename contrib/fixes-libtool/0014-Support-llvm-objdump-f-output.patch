@@ -8,10 +8,10 @@ Subject: [PATCH] Support llvm-objdump -f output
  m4/libtool.m4       | 2 +-
  2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/build-aux/ltmain.sh b/build-aux/ltmain.sh
+diff --git a/build-aux/ltmain.in b/build-aux/ltmain.in
 index a9f070a..4a434cc 100644
---- a/build-aux/ltmain.sh
-+++ b/build-aux/ltmain.sh
+--- a/build-aux/ltmain.in
++++ b/build-aux/ltmain.in
 @@ -3019,7 +3019,7 @@ func_win32_libid ()
    *ar\ archive*) # could be an import, or static
      # Keep the egrep pattern in sync with the one in _LT_CHECK_MAGIC_METHOD.
