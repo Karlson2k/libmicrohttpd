@@ -48,7 +48,7 @@ pkgconfig_DATA = libmicrohttpd.pc
 EXTRA_DIST += pre-dist-hook-dummy
 MOSTLYCLEANFILES = pre-dist-hook-dummy
 DISTCLEANFILES = 
-MAINTAINERCLEANFILES = 
+MAINTAINERCLEANFILES = m4/c_backported.m4
 
 pre-dist-hook-dummy: pre-dist-hook Makefile
 	@echo "dummy" > $@
@@ -57,6 +57,15 @@ dist-hook: dist-po
 	@chmod u+w '$(distdir)/pre-dist-hook-dummy' && \
 	  rm -f '$(distdir)/pre-dist-hook-dummy'
 	@rm -f pre-dist-hook-dummy
+	@if test -w '$(distdir)/m4/c_backported.m4'; then \
+	  echo "Use empty m4/c_backported.m4 for dist target"; \
+	  touch -r '$(distdir)/m4/c_backported.m4' '$(distdir)/m4/c_backported.m4-tmst' && \
+	    echo '# Not used for distribution' > '$(distdir)/m4/c_backported.m4' && \
+	    touch -r '$(distdir)/m4/c_backported.m4-tmst' '$(distdir)/m4/c_backported.m4' && \
+	    rm -f '$(distdir)/m4/c_backported.m4-tmst'; \
+	else \
+	  true; \
+	fi
 
 pre-dist-hook: pre-dist-hook-doc
 	@echo "Preparing to make dist"
