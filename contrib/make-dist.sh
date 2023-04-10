@@ -61,7 +61,7 @@ make distclean || exit 4
 rm -f ./configure ./aclocal.m4 || exit 4
 rm -rf ./autom4te.cache || exit 4
 echo ''
-echo '** Initial intermediate completed.'
+echo '** Intermediate cleanup completed.'
 echo ''
 
 # Patching local autotools files
