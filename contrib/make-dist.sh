@@ -10,7 +10,7 @@
 
 if ! grep -Eq -e '^PRETTY_NAME="Debian GNU/Linux 12 \(bookworm\)"$' /etc/os-release
 then
-  echo "Only Debian 'bookworm' is suppoted by this script." >&2
+  echo "Only Debian 'bookworm' is supported by this script." >&2
   exit 1
 fi
 
@@ -30,7 +30,7 @@ rootsrcdir="$PWD" || exit 2
 
 # Cleanup sources
 echo ''
-echo '*** Perfoming initial cleanup...'
+echo '*** Performing initial cleanup...'
 echo ''
 if [[ ! -f 'Makefile' ]] || ! make maintainer-clean
 then
@@ -54,7 +54,7 @@ echo '*** Copying autotools files...'
 echo ''
 autoreconf -fvi || exit 4
 echo ''
-echo '*** Perfoming intermediate cleanup...'
+echo '*** Performing intermediate cleanup...'
 echo ''
 ./configure || exit 4
 make distclean || exit 4
@@ -66,7 +66,7 @@ echo ''
 
 # Patching local autotools files
 echo ''
-echo '*** Perfoming patching of local autotools files...'
+echo '*** Performing patching of local autotools files...'
 echo ''
 "$tooldir/fixes-libtool/apply-all.sh" || exit 5
 "$tooldir/fixes-autoconf/apply-all.sh" || exit 5
