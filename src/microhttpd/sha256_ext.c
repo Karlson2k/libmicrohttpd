@@ -48,8 +48,11 @@ MHD_SHA256_init_one_time (struct Sha256CtxExt *ctx)
     gnutls_free (ctx->handle);
     ctx->handle = NULL;
   }
-  else
-    mhd_assert (NULL != ctx->handle); /* If error is not returned, the handle must not be NULL */
+
+  /* If handle is NULL, the error must be set */
+  mhd_assert ((NULL != ctx->handle) || (0 != ctx->ext_error));
+  /* If error is set, the handle must be NULL */
+  mhd_assert ((0 == ctx->ext_error) || (NULL == ctx->handle));
 }
 
 
