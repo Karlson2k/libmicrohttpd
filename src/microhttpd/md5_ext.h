@@ -16,13 +16,11 @@
      License along with GNU libmicrohttpd.
      If not, see <http://www.gnu.org/licenses/>.
 */
-
 /**
  * @file microhttpd/md5_ext.h
  * @brief  Wrapper declarations for MD5 calculation performed by TLS library
  * @author Karlson2k (Evgeny Grin)
  */
-
 #ifndef MHD_MD5_EXT_H
 #define MHD_MD5_EXT_H 1
 
@@ -31,6 +29,7 @@
 #ifdef HAVE_STDDEF_H
 #include <stddef.h>  /* for size_t */
 #endif /* HAVE_STDDEF_H */
+#include <gnutls/crypto.h>
 
 /**
  * Size of MD5 resulting digest in bytes
@@ -38,8 +37,6 @@
  */
 #define MD5_DIGEST_SIZE (16)
 
-/* Actual declaration is in GnuTLS lib header */
-struct hash_hd_st;
 
 /**
  * Indicates that struct Md5CtxExt has 'ext_error'
@@ -51,7 +48,7 @@ struct hash_hd_st;
  */
 struct Md5CtxExt
 {
-  struct hash_hd_st *handle; /**< Hash calculation handle */
+  gnutls_hash_hd_t handle; /**< Hash calculation handle */
   int ext_error; /**< Non-zero if external error occurs during init or hashing */
 };
 
