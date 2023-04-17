@@ -1,6 +1,6 @@
 # This file is part of libmicrohttpd.
 # (C) 2006-2021 Christian Grothoff (and other contributing authors)
-# (C) 2014-2022 Evgeny Grin (Karlson2k)
+# (C) 2014-2023 Evgeny Grin (Karlson2k)
 #
 # libmicrohttpd is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published
@@ -25,6 +25,7 @@ AC_PREREQ([2.64])
 LT_PREREQ([2.4.0])
 AC_INIT([GNU libmicrohttpd],[0.9.76],[libmicrohttpd@gnu.org])
 AC_CONFIG_AUX_DIR([build-aux])
+MHD_AUX_DIR='build-aux' # Must be set to the same value as in the previous line
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 m4_pattern_forbid([^_?MHD_[A-Z_]+_CC_])dnl
@@ -4865,7 +4866,21 @@ AC_SUBST([CPPFLAGS_ac])
 
 # Used for 'po' directory staff
 AC_SUBST([ac_configure_args])
-AC_SUBST([EMPTY_VAR], [[]])
+AC_SUBST([EMPTY_VAR],[])
+AC_SUBST([MHD_AUX_DIR])
+AC_CONFIG_FILES([po/po-configure.ac])
+AC_CONFIG_COMMANDS([po/Makefile.in],
+  [
+    echo "Skipping update of po/Makefile.in"
+    echo "Real update of po/Makefile.in for 'make dist' is peformed by po-config.status"
+  ]
+)
+AC_CONFIG_COMMANDS([po-directories],
+  [
+    echo "Skipping po-directories command."
+    echo "Real po-directories command for 'make dist' is implemented in po-config.status"
+  ]
+)
 
 # We define the paths here, because MinGW/GCC expands paths
 # passed through the command line ("-DDIR=..."). This would
@@ -4887,7 +4902,6 @@ AM_CONDITIONAL([HAVE_EXPERIMENTAL], [test "x$enable_experimental" = "xyes"])
 AC_CONFIG_FILES([libmicrohttpd.pc
 w32/common/microhttpd_dll_res_vc.rc
 Makefile
-po/po-configure.ac
 contrib/Makefile
 doc/Makefile
 doc/doxygen/libmicrohttpd.doxy
