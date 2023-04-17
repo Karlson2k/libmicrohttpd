@@ -41,12 +41,14 @@ MHD_MD5_init_one_time (struct Md5CtxExt *ctx)
                                      GNUTLS_DIG_MD5);
   if ((0 != ctx->ext_error) && (NULL != ctx->handle))
   {
+    /* GnuTLS may return initialisation error and set the handle at the
+       same time. Such handle cannot be used for calculations.
+       Note: GnuTLS may also return an error and NOT set the handle. */
     gnutls_free (ctx->handle);
     ctx->handle = NULL;
   }
   else
-    mhd_assert ( (NULL != ctx->handle) ||
-                 (0 != ctx->ext_error) );
+    mhd_assert (NULL != ctx->handle); /* If error is not returned, the handle must not be NULL */
 }
 
 
