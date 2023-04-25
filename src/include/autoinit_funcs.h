@@ -67,7 +67,7 @@
 * Current version of the header in packed BCD form.
 * 0x01093001 = 1.9.30-1.
 */
-#define AUTOINIT_FUNCS_VERSION 0x01000500
+#define AUTOINIT_FUNCS_VERSION 0x01000600
 
 #if defined(__GNUC__) || defined(__clang__)
 /* if possible - check for supported attribute */
@@ -78,7 +78,7 @@
 #endif /* __has_attribute */
 #endif /* __GNUC__ */
 
-/* "_attribute__ ((constructor))" is supported by GCC, clang and
+/* "__has_attribute__ ((constructor))" is supported by GCC, clang and
    Sun/Oracle compiler starting from version 12.1. */
 #if ((defined(__GNUC__) || defined(__clang__)) && \
   ! defined(_GNUC_ATTR_CONSTR_NOT_SUPPORTED)) || \
@@ -106,7 +106,7 @@
 /* Define AUTOINIT_FUNCS_DECLARE_STATIC_REG if you need macro declaration
    for registering static initialization functions even if you building DLL */
 /* Define AUTOINIT_FUNCS_FORCE_STATIC_REG if you want to set main macro
-   _SET_INIT_AND_DEINIT_FUNCS to static version even if building a DLL*/
+   _SET_INIT_AND_DEINIT_FUNCS to static version even if building a DLL */
 
 /* Stringify macros */
 #define _INSTRMACRO(a) #a
@@ -128,11 +128,11 @@
 #if defined(_M_X64) || defined(_M_AMD64)
 #define W32_VARDECORPREFIX
 #define W32_DECORVARNAME(v) v
-#define W32_VARDECORPEFIXSTR ""
+#define W32_VARDECORPREFIXSTR ""
 #elif defined(_M_IX86) || defined(_X86_)
 #define W32_VARDECORPREFIX _
 #define W32_DECORVARNAME(v) _ ## v
-#define W32_VARDECORPEFIXSTR "_"
+#define W32_VARDECORPREFIXSTR "_"
 #else
 #error Do not know how to decorate symbols for this architecture
 #endif
@@ -140,7 +140,7 @@
 /* Internal variable prefix (can be any) */
 #define W32_INITHELPERVARNAME(f) _initHelperDummy_ ## f
 #define W32_INITHELPERVARNAMEDECORSTR(f) \
-  W32_VARDECORPEFIXSTR _STRMACRO (W32_INITHELPERVARNAME (f))
+  W32_VARDECORPREFIXSTR _STRMACRO (W32_INITHELPERVARNAME (f))
 
 /* Declare section (segment), put variable pointing to init function to chosen segment,
    force linker to include variable to avoid omitting by optimizer */
@@ -248,7 +248,7 @@
    abort compilation if automatic initializers/deinitializers are not supported */
 #ifdef EMIT_ERROR_IF_AUTOINIT_FUNCS_ARE_NOT_SUPPORTED
 #error \
-  Compiler/platform don not support automatic calls of user-defined initializer and deinitializer
+  Compiler/platform does not support automatic calls of user-defined initializer and deinitializer
 #endif /* EMIT_ERROR_IF_AUTOINIT_FUNCS_ARE_NOT_SUPPORTED */
 
 /* Do nothing */
