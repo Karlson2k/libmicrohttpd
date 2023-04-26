@@ -1,6 +1,6 @@
 /*
  *  AutoinitFuncs: Automatic Initialization and Deinitialization Functions
- *  Copyright(C) 2014-2022 Karlson2k (Evgeny Grin)
+ *  Copyright(C) 2014-2023 Karlson2k (Evgeny Grin)
  *
  *  This header is free software; you can redistribute it and / or
  *  modify it under the terms of the GNU Lesser General Public
@@ -67,7 +67,7 @@
 * Current version of the header in packed BCD form.
 * 0x01093001 = 1.9.30-1.
 */
-#define AUTOINIT_FUNCS_VERSION 0x01000600
+#define AUTOINIT_FUNCS_VERSION 0x01000700
 
 #if defined(__GNUC__) || defined(__clang__)
 /* if possible - check for supported attribute */
@@ -125,11 +125,14 @@
 #endif
 
 /* How variable is decorated by compiler */
-#if defined(_M_X64) || defined(_M_AMD64)
+#if (defined(_WIN32) || defined(_WIN64)) && ! defined(_M_IX86)
+#if ! defined(_M_X64) && ! defined (_M_ARM) && ! defined (_M_ARM64)
+#warning Untested architecture, linker may fail with unresolved symbol
+#endif /* ! _M_X64 && ! _M_ARM && ! _M_ARM64 */
 #define W32_VARDECORPREFIX
 #define W32_DECORVARNAME(v) v
 #define W32_VARDECORPREFIXSTR ""
-#elif defined(_M_IX86) || defined(_X86_)
+#elif defined(_WIN32) && defined(_M_IX86)
 #define W32_VARDECORPREFIX _
 #define W32_DECORVARNAME(v) _ ## v
 #define W32_VARDECORPREFIXSTR "_"
