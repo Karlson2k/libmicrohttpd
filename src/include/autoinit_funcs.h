@@ -67,7 +67,7 @@
 * Current version of the header in packed BCD form.
 * 0x01093001 = 1.9.30-1.
 */
-#define AUTOINIT_FUNCS_VERSION 0x01000700
+#define AUTOINIT_FUNCS_VERSION 0x01000800
 
 #if defined(__GNUC__) || defined(__clang__)
 /* if possible - check for supported attribute */
@@ -112,10 +112,8 @@
 #define _INSTRMACRO(a) #a
 #define _STRMACRO(a) _INSTRMACRO (a)
 
-#if ! defined(_USRDLL) || defined(AUTOINIT_FUNCS_DECLARE_STATIC_REG)
-
-/* required for atexit() */
-#include <stdlib.h>
+#if ! defined(_USRDLL) || defined(AUTOINIT_FUNCS_DECLARE_STATIC_REG) \
+  || defined(AUTOINIT_FUNCS_FORCE_STATIC_REG)
 
 /* Use "C" linkage for variable to simplify variable decoration */
 #ifdef __cplusplus
@@ -146,77 +144,116 @@
   W32_VARDECORPREFIXSTR _STRMACRO (W32_INITHELPERVARNAME (f))
 
 /* Declare section (segment), put variable pointing to init function to chosen segment,
-   force linker to include variable to avoid omitting by optimizer */
-/* Initialization function must be declared as
-   int __cdecl FuncName(void) */
-/* Return value is ignored for C++ initializers */
-/* For C initializers: startup process is aborted if initializer return non-zero */
-#define W32_FPTR_IN_SEG(S,F) \
+   force linker to always include variable to avoid omitting by optimiser */
+/* Initialisation function must be declared as
+   void __cdecl FuncName(void)
+/* "extern" with initialisation value means that variable is declared AND defined. */
+#define W32_VFPTR_IN_SEG(S,F) \
+  __pragma (section (S,long,read)) \
+  __pragma (comment (linker, "/INCLUDE:" W32_INITHELPERVARNAMEDECORSTR (F))) \
+  W32_INITVARDECL __declspec(allocate (S))void \
+    (__cdecl * W32_INITHELPERVARNAME (F))(void) = &F
+
+/* Sections (segments) for pointers to initialisers/deinitialisers */
+
+/* Semi-officially suggested section for early initialisers (called before
+   C++ objects initialisers), "void" return type */
+#define W32_SEG_INIT_EARLY      ".CRT$XCT"
+/* Semi-officially suggested section for late initialisers (called after
+   C++ objects initialisers), "void" return type */
+#define W32_SEG_INIT_LATE       ".CRT$XCV"
+
+/* Unsafe sections (segments) for pointers to initialisers/deinitialisers */
+
+/* C++ lib initialisers, "void" return type (reserved by the system!) */
+#define W32_SEG_INIT_CXX_LIB    ".CRT$XCL"
+/* C++ user initialisers, "void" return type (reserved by the system!) */
+#define W32_SEG_INIT_CXX_USER   ".CRT$XCU"
+
+
+/* Declare section (segment), put variable pointing to init function to chosen segment,
+   force linker to always include variable to avoid omitting by optimiser */
+/* Initialisation function must be declared as
+   int __cdecl FuncName(void)
+/* Startup process is aborted if initialiser returns non-zero */
+/* "extern" with initialisation value means that variable is declared AND defined. */
+#define W32_IFPTR_IN_SEG(S,F) \
   __pragma (section (S,long,read)) \
   __pragma (comment (linker, "/INCLUDE:" W32_INITHELPERVARNAMEDECORSTR (F))) \
   W32_INITVARDECL __declspec(allocate (S))int \
     (__cdecl * W32_INITHELPERVARNAME (F))(void) = &F
 
-/* Section (segment) names for pointers to initializers */
-#define W32_SEG_INIT_C_USER   ".CRT$XCU"
-#define W32_SEG_INIT_C_LIB    ".CRT$XCL"
-#define W32_SEG_INIT_CXX_USER ".CRT$XIU"
-#define W32_SEG_INIT_CXX_LIB  ".CRT$XIL"
+/* Unsafe sections (segments) for pointers to initialisers with
+   "int" return type */
 
-/* Declare macro for different initializers sections */
-/* Macro can be used several times to register several initializers */
-/* Once function is registered as initializer, it will be called automatically
+/* C lib initialisers, "int" return type (reserved by the system!).
+   These initialisers are called before others. */
+#define W32_SEG_INIT_C_LIB      ".CRT$XIL"
+/* C user initialisers, "int" return type (reserved by the system!).
+   These initialisers are called before others. */
+#define W32_SEG_INIT_C_USER     ".CRT$XIU"
+
+
+/* Declare macro for different initialisers sections */
+/* Macro can be used several times to register several initialisers */
+/* Once function is registered as initialiser, it will be called automatically
    during application startup */
-/* "lib" initializers are called before "user" initializers */
-/* "C" initializers are called before "C++" initializers */
-#define W32_REG_INIT_C_USER(F) W32_FPTR_IN_SEG (W32_SEG_INIT_C_USER,F)
-#define W32_REG_INIT_C_LIB(F) W32_FPTR_IN_SEG (W32_SEG_INIT_C_LIB,F)
+#define W32_REG_INIT_EARLY(F) W32_VFPTR_IN_SEG (W32_SEG_INIT_EARLY,F)
+#define W32_REG_INIT_LATE(F)  W32_VFPTR_IN_SEG (W32_SEG_INIT_LATE,F)
+
+
+/* Not recommended / unsafe */
+/* "lib" initialisers are called before "user" initialisers */
+/* "C" initialisers are called before "C++" initialisers */
+#define W32_REG_INIT_C_USER(F)   W32_FPTR_IN_SEG (W32_SEG_INIT_C_USER,F)
+#define W32_REG_INIT_C_LIB(F)    W32_FPTR_IN_SEG (W32_SEG_INIT_C_LIB,F)
 #define W32_REG_INIT_CXX_USER(F) W32_FPTR_IN_SEG (W32_SEG_INIT_CXX_USER,F)
-#define W32_REG_INIT_CXX_LIB(F) W32_FPTR_IN_SEG (W32_SEG_INIT_CXX_LIB,F)
+#define W32_REG_INIT_CXX_LIB(F)  W32_FPTR_IN_SEG (W32_SEG_INIT_CXX_LIB,F)
 
 /* Choose main register macro based on language and program type */
 /* Assuming that _LIB or _USRDLL is defined for static or DLL-library */
 /* Macro can be used several times to register several initializers */
 /* Once function is registered as initializer, it will be called automatically
    during application startup */
-/* Define AUTOINIT_FUNCS_FORCE_USER_LVL_INIT to register initializers
-   at user level even if building library */
-#ifdef __cplusplus
-#if ((defined(_LIB) && ! defined(_CONSOLE)) || defined(_USRDLL)) && \
-  ! defined(AUTOINIT_FUNCS_FORCE_USER_LVL_INIT)
-#define W32_REGISTER_INIT(F) W32_REG_INIT_CXX_LIB (F)
-#else  /* ! _LIB && ! _DLL */
-#define W32_REGISTER_INIT(F) W32_REG_INIT_CXX_USER (F)
-#endif /* ! _LIB && ! _DLL */
-#else  /* !__cplusplus*/
-#if ((defined(_LIB) && ! defined(_CONSOLE)) || defined(_USRDLL)) && \
-  ! defined(AUTOINIT_FUNCS_FORCE_USER_LVL_INIT)
-#define W32_REGISTER_INIT(F) W32_REG_INIT_C_LIB (F)
-#else  /* ! _LIB && ! _DLL */
-#define W32_REGISTER_INIT(F) W32_REG_INIT_C_USER (F)
-#endif /* ! _LIB && ! _DLL */
-#endif /* !__cplusplus*/
+/* Define AUTOINIT_FUNCS_FORCE_EARLY_INIT to force register as early
+   initialiser */
+/* Define AUTOINIT_FUNCS_FORCE_LATE_INIT to force register as late
+   initialiser */
+/* By default C++ static or DLL-library code and any C code and will be
+   registered as early initialiser, while C++ non-library code will be
+   registered as late initialiser */
+#if (! defined(__cplusplus) || \
+  ((defined(_LIB) && ! defined(_CONSOLE)) || defined(_USRDLL)) || \
+  defined(AUTOINIT_FUNCS_FORCE_EARLY_INIT)) && \
+  ! defined(AUTOINIT_FUNCS_FORCE_LATE_INIT)
+#define W32_REGISTER_INIT(F) W32_REG_INIT_EARLY(F)
+#else
+#define W32_REGISTER_INIT(F) W32_REG_INIT_LATE(F)
+#endif
 
-#else /* _USRDLL */
+#endif /* ! _USRDLL || ! AUTOINIT_FUNCS_DECLARE_STATIC_REG
+          || AUTOINIT_FUNCS_FORCE_STATIC_REG */
+
+
+#if ! defined(_USRDLL) || defined(AUTOINIT_FUNCS_FORCE_STATIC_REG)
+
+#include <stdlib.h> /* required for atexit() */
+
+#define W32_SET_INIT_AND_DEINIT(FI,FD) \
+  void __cdecl _W32_init_helper_ ## FI (void);    \
+  void __cdecl _W32_deinit_helper_ ## FD (void); \
+  void __cdecl _W32_init_helper_ ## FI (void)     \
+  { (void) (FI) (); atexit (_W32_deinit_helper_ ## FD); } \
+  void __cdecl _W32_deinit_helper_ ## FD (void)  \
+  { (void) (FD) (); } \
+  W32_REGISTER_INIT (_W32_init_helper_ ## FI)
+#else  /* _USRDLL */
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
 #endif /* WIN32_LEAN_AND_MEAN */
-/* Required for DllMain */
-#include <Windows.h>
-#endif /* _USRDLL */
 
-
-#if ! defined(_USRDLL) || defined(AUTOINIT_FUNCS_FORCE_STATIC_REG)
-#define W32_SET_INIT_AND_DEINIT(FI,FD) \
-  int __cdecl _W32_init_helper_ ## FI (void);    \
-  void __cdecl _W32_deinit_helper_ ## FD (void); \
-  void __cdecl _W32_deinit_helper_ ## FD (void)  \
-  { (void) (FD) (); } \
-  int __cdecl _W32_init_helper_ ## FI (void)     \
-  { (void) (FI) (); atexit (_W32_deinit_helper_ ## FD); return 0; } \
-  W32_REGISTER_INIT (_W32_init_helper_ ## FI)
-#else  /* _USRDLL */
+#include <Windows.h> /* Required for DllMain */
 
 /* If DllMain is already present in code, define AUTOINIT_FUNCS_CALL_USR_DLLMAIN
    and rename DllMain to usr_DllMain */
