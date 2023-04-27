@@ -20,11 +20,11 @@
 /*
    General usage is simple: include this header, declare or define two
    functions with zero parameters (void) and any return type: one for
-   initialization and one for deinitialization, add
+   initialisation and one for deinitialisation, add
    _SET_INIT_AND_DEINIT_FUNCS(FuncInitName, FuncDeInitName) to the code
    and functions will be automatically called during application startup
    and shutdown.
-   This is useful for libraries as libraries doesn't have direct access
+   This is useful for libraries as libraries don't have direct access
    to main() functions.
    Example:
    -------------------------------------------------
@@ -48,14 +48,14 @@
    _SET_INIT_AND_DEINIT_FUNCS(libInit,libDeinit);
    -------------------------------------------------
 
-   If initializer or deinitializer function is not needed, just define
+   If initialiser or deinitialiser function is not needed, just define
    it as empty function.
 
    This header should work with GCC, clang, MSVC (2010 or later) and
    SunPro / Sun Studio / Oracle Solaris Studio / Oracle Developer Studio
    compiler.
    Supported C and C++ languages; application, static and dynamic (DLL)
-   libraries; non-optimized (Debug) and optimized (Release) compilation
+   libraries; non-optimized (Debug) and optimised (Release) compilation
    and linking.
 
    For more information see header code and comments in code.
@@ -104,7 +104,7 @@
    not defined both _LIB and _USRDLL if building an application */
 
 /* Define AUTOINIT_FUNCS_DECLARE_STATIC_REG if you need macro declaration
-   for registering static initialization functions even if you building DLL */
+   for registering static initialisation functions even if you building DLL */
 /* Define AUTOINIT_FUNCS_FORCE_STATIC_REG if you want to set main macro
    _SET_INIT_AND_DEINIT_FUNCS to static version even if building a DLL */
 
@@ -212,8 +212,8 @@
 
 /* Choose main register macro based on language and program type */
 /* Assuming that _LIB or _USRDLL is defined for static or DLL-library */
-/* Macro can be used several times to register several initializers */
-/* Once function is registered as initializer, it will be called automatically
+/* Macro can be used several times to register several initialisers */
+/* Once function is registered as initialiser, it will be called automatically
    during application startup */
 /* Define AUTOINIT_FUNCS_FORCE_EARLY_INIT to force register as early
    initialiser */
@@ -279,13 +279,13 @@
 #endif /* _USRDLL */
 
 #define _SET_INIT_AND_DEINIT_FUNCS(FI,FD) W32_SET_INIT_AND_DEINIT (FI,FD)
-/* Indicate that automatic initializers/deinitializers are supported */
+/* Indicate that automatic initialisers/deinitialisers are supported */
 #define _AUTOINIT_FUNCS_ARE_SUPPORTED 1
 
 #else  /* !__GNUC__ && !_MSC_FULL_VER */
 
 /* Define EMIT_ERROR_IF_AUTOINIT_FUNCS_ARE_NOT_SUPPORTED before inclusion of header to
-   abort compilation if automatic initializers/deinitializers are not supported */
+   abort compilation if automatic initialisers/deinitialisers are not supported */
 #ifdef EMIT_ERROR_IF_AUTOINIT_FUNCS_ARE_NOT_SUPPORTED
 #error \
   Compiler/platform does not support automatic calls of user-defined initializer and deinitializer
@@ -293,7 +293,7 @@
 
 /* Do nothing */
 #define _SET_INIT_AND_DEINIT_FUNCS(FI,FD)
-/* Indicate that automatic initializers/deinitializers are not supported */
+/* Indicate that automatic initialisers/deinitialisers are not supported */
 #define _AUTOINIT_FUNCS_ARE_NOT_SUPPORTED 1
 
 #endif /* !__GNUC__ && !_MSC_FULL_VER */
