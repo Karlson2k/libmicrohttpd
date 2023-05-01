@@ -5,6 +5,8 @@
          Only 0 and 1 are used currently -->
     <TargetOSLevel Condition="$(PlatformToolset.EndsWith('_xp'))">0</TargetOSLevel>
     <TargetOSLevel Condition="! $(PlatformToolset.EndsWith('_xp'))">1</TargetOSLevel>
+    <MhdNumBits Condition="$(Platform.EndsWith('64'))">64</MhdNumBits>
+    <MhdNumBits Condition="! $(Platform.EndsWith('64'))">32</MhdNumBits>
   </PropertyGroup>
   <PropertyGroup>
     <IncludePath>$(SolutionDir);$(MhdW32Common);$(MhdSrc)include;$(IncludePath)</IncludePath>
@@ -25,7 +27,7 @@
       <WarningLevel Condition="'%(ClCompile.ExternalWarningLevel)' != ''">EnableAllWarnings</WarningLevel>
       <WarningLevel Condition="'%(ClCompile.ExternalWarningLevel)' == ''">Level4</WarningLevel>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4996;4820;4127;5045</DisableSpecificWarnings>
       <TreatSpecificWarningsAsErrors>4013</TreatSpecificWarningsAsErrors>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
@@ -35,6 +37,11 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(MhdNumBits)' == '32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(TargetOSLevel)'&gt;'0'">
     <ClCompile>
