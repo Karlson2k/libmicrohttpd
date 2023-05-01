@@ -9,11 +9,7 @@
   <PropertyGroup>
     <IncludePath>$(SolutionDir);$(MhdW32Common);$(MhdSrc)include;$(IncludePath)</IncludePath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Platform)'=='Win32'">
-    <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\</IntDir>
-    <OutDir>$(SolutionDir)Output\</OutDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Platform)'=='x64'">
+  <PropertyGroup>
     <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <OutDir>$(SolutionDir)Output\$(Platform)\</OutDir>
   </PropertyGroup>
