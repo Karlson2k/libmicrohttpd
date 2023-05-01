@@ -1,10 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="UserMacros">
-    <!-- WinXP = 0; Vista = 1; Win7 = 2; Win8 = 3...
-         Only 0 and 1 are used currently -->
-    <TargetOSLevel Condition="$(PlatformToolset.EndsWith('_xp'))">0</TargetOSLevel>
-    <TargetOSLevel Condition="! $(PlatformToolset.EndsWith('_xp'))">1</TargetOSLevel>
+    <!-- Target minimum OS version: WinXP = 0; Vista = 1; Win7 = 2; Win8 = 3...
+         Only 0, 1 and 3 are used currently -->
+    <TargetOSLevel Condition="$(Platform.StartsWith('ARM'))">3</TargetOSLevel>
+    <TargetOSLevel Condition="! $(Platform.StartsWith('ARM')) And $(PlatformToolset.EndsWith('_xp'))">0</TargetOSLevel>
+    <TargetOSLevel Condition="! $(Platform.StartsWith('ARM')) And ! $(PlatformToolset.EndsWith('_xp'))">1</TargetOSLevel>
     <MhdNumBits Condition="$(Platform.EndsWith('64'))">64</MhdNumBits>
     <MhdNumBits Condition="! $(Platform.EndsWith('64'))">32</MhdNumBits>
   </PropertyGroup>
@@ -43,7 +44,18 @@
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(TargetOSLevel)'&gt;'0'">
+  <ItemDefinitionGroup Condition="'$(TargetOSLevel)'&gt;='3'">
+    <ClCompile>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <MinimumRequiredVersion>6.02</MinimumRequiredVersion>
+    </Link>
+    <Lib>
+      <MinimumRequiredVersion>6.02</MinimumRequiredVersion>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(TargetOSLevel)'&gt;'0' And '$(TargetOSLevel)'&lt;'3'">
     <ClCompile>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
