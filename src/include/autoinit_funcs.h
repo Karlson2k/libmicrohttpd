@@ -67,7 +67,7 @@
 * Current version of the header in packed BCD form.
 * 0x01093001 = 1.9.30-1.
 */
-#define AUTOINIT_FUNCS_VERSION 0x01000800
+#define AUTOINIT_FUNCS_VERSION 0x01000900
 
 #if defined(__GNUC__) || defined(__clang__)
 /* if possible - check for supported attribute */
@@ -123,14 +123,16 @@
 #endif
 
 /* How variable is decorated by compiler */
-#if (defined(_WIN32) || defined(_WIN64)) && ! defined(_M_IX86)
-#if ! defined(_M_X64) && ! defined (_M_ARM) && ! defined (_M_ARM64)
+#if (defined(_WIN32) || defined(_WIN64)) \
+  && ! defined(_M_IX86) && ! defined(_X86_)
+#if ! defined(_M_X64) && ! defined(_M_AMD64) || ! defined(_x86_64_) \
+  && ! defined(_M_ARM) && ! defined(_M_ARM64)
 #warning Untested architecture, linker may fail with unresolved symbol
-#endif /* ! _M_X64 && ! _M_ARM && ! _M_ARM64 */
+#endif /* ! _M_X64 && ! _M_AMD64 && ! _x86_64_ && ! _M_ARM && ! _M_ARM64 */
 #define W32_VARDECORPREFIX
 #define W32_DECORVARNAME(v) v
 #define W32_VARDECORPREFIXSTR ""
-#elif defined(_WIN32) && defined(_M_IX86)
+#elif defined(_WIN32) && (defined(_M_IX86) || defined(_X86_))
 #define W32_VARDECORPREFIX _
 #define W32_DECORVARNAME(v) _ ## v
 #define W32_VARDECORPREFIXSTR "_"
