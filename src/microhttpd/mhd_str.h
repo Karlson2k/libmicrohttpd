@@ -38,7 +38,7 @@
 #include <stdbool.h>
 #endif /* HAVE_STDBOOL_H */
 
-#if defined(_MSC_FULL_VER) && ! defined (_SSIZE_T_DEFINED)
+#if defined(_MSC_FULL_VER) && ! defined(_SSIZE_T_DEFINED)
 #define _SSIZE_T_DEFINED
 typedef intptr_t ssize_t;
 #endif /* !_SSIZE_T_DEFINED */
