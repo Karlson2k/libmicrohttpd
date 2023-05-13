@@ -4872,7 +4872,7 @@ AC_CONFIG_FILES([po/po-configure.ac])
 AC_CONFIG_COMMANDS([po/Makefile.in],
   [
     echo "Skipping update of po/Makefile.in"
-    echo "Real update of po/Makefile.in for 'make dist' is peformed by po-config.status"
+    echo "Real update of po/Makefile.in for 'make dist' is performed by po-config.status"
   ]
 )
 AC_CONFIG_COMMANDS([po-directories],
