@@ -1,40 +1,64 @@
 #!/bin/sh
-unset bs_srcdir
-if test X"`dirname / 2>/dev/null`" = X"/"; then
-  bs_scrdir=`dirname $0`
-else
-  bs_scrdir="${0%/*}"
-fi
-
-test -n "$bs_scrdir" && cd "$bs_scrdir" || echo "Warning: cannot get sources directory" 1>&2
 
 # This is more portable than `which' but comes with
 # the caveat of not(?) properly working on busybox's ash:
-existence()
+have_command()
 {
     command -v "$1" >/dev/null 2>&1
 }
 
-
-if existence uncrustify; then
-    echo "Installing uncrustify hook and configuration"
-    # Install uncrustify format symlink (if possible)
-    ln -s contrib/uncrustify.cfg uncrustify.cfg 2> /dev/null
-    # Install pre-commit hook (if possible)
-    ln -s ../../contrib/uncrustify_precommit .git/hooks/pre-commit 2> /dev/null
+unset bs_srcdir
+if test X"`dirname / 2>/dev/null`" = X"/"; then
+  bs_scrdir=`dirname $0`
 else
-    echo "Uncrustify not detected, hook not installed. Please install uncrustify if you plan on doing development"
+  case $0 in
+    */*) bs_scrdir=`echo $0 | ${SED-sed} -n -e 's|/.*$||p'` ;;
+    *) bs_scrdir='.' ;;
+  esac
 fi
 
-if existence libtool || existence libtoolize || existence glibtoolize || existence slibtool; then
+test -n "$bs_scrdir" && cd "$bs_scrdir" || echo "Warning: cannot detect sources directory" 1>&2
+
+if test ! -f './configure.ac'; then
+  echo "Error: no 'configure.ac' found. Wrong sources directory?" 1>&2
+  exit 2
+fi
+if test ! -f './src/include/microhttpd.h'; then
+  echo "Error: src/include/libmicrohttpd.h not found. Wrong sources directory?" 1>&2
+  exit 2
+fi
+
+if have_command uncrustify; then
+    if test -f uncrustify.cfg; then
+      echo "Uncrustify configuration already exists, skipping installation from the upstream file."
+    else
+      echo "Installing configuration"
+      ln -s contrib/uncrustify.cfg uncrustify.cfg
+    fi
+    if test -d '.git'; then
+      if test -f .git/hooks/pre-commit; then
+        echo "Pre-commit git hook already exists, skipping installation from the upstream file."
+      else
+        echo "Installing uncrustify pre-commit git hook"
+        ln -s ../../contrib/uncrustify_precommit .git/hooks/pre-commit
+      fi
+    else
+      echo "No '.git' directory found, skipping installation of pre-commit git hook."
+    fi
+else
+    echo "Uncrustify not detected, hook not installed. Please install uncrustify if you plan on doing development."
+fi
+
+if have_command libtool || have_command libtoolize || have_command glibtoolize || have_command slibtool; then
     echo "Running autotools..."
-    aclocal -I m4 --install && \
+    have_command libtoolize && \
+      aclocal -I m4 --install && \
       libtoolize -c -i -v && \
       autoconf && \
       autoheader && \
       automake -a -c --gnu
     if test $? -ne 0 || ! test -x configure || ! test -f Makefile.in ; then
-        echo "Autotools failed, retrying with autoreconf..."
+        echo "Trying with autoreconf..."
         if ! autoreconf -i ${1+"$@"} ; then
             echo "Failed to autoreconf, retrying with force install..."
             if ! autoreconf -i -f ${1+"$@"} ; then
@@ -45,6 +69,6 @@ if existence libtool || existence libtoolize || existence glibtoolize || existen
     fi
     echo "The ${bs_scrdir-.}/configure is ready to run."
 else
-    echo "*** No libtoolize (libtool) or libtool found, please install it ***" >&2;
+    echo "*** No libtoolize or libtool found, please install it ***" >&2;
     exit 1
 fi
