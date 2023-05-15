@@ -148,7 +148,7 @@
 /* Declare section (segment), put variable pointing to init function to chosen segment,
    force linker to always include variable to avoid omitting by optimiser */
 /* Initialisation function must be declared as
-   void __cdecl FuncName(void)
+   void __cdecl FuncName(void) */
 /* "extern" with initialisation value means that variable is declared AND defined. */
 #define W32_VFPTR_IN_SEG(S,F) \
   __pragma (section (S,long,read)) \
@@ -176,7 +176,7 @@
 /* Declare section (segment), put variable pointing to init function to chosen segment,
    force linker to always include variable to avoid omitting by optimiser */
 /* Initialisation function must be declared as
-   int __cdecl FuncName(void)
+   int __cdecl FuncName(void) */
 /* Startup process is aborted if initialiser returns non-zero */
 /* "extern" with initialisation value means that variable is declared AND defined. */
 #define W32_IFPTR_IN_SEG(S,F) \
