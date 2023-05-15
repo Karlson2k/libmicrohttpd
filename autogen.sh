@@ -4,4 +4,4 @@
 # It is recommended to use 'bootstrap' directly instead.
 
 ag_srcdir="${0%/*}" && ag_srcdir="${ag_srcdir}${ag_srcdir:+/}"
-"${ag_srcdir}bootstrap" ${1+"$@"}
+"${ag_srcdir}./bootstrap" ${1+"$@"}
