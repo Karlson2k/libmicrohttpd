@@ -515,6 +515,7 @@ AC_DEFUN([AC_C_VARARRAYS],
     [AC_COMPILE_IFELSE([AC_LANG_SOURCE(
 [[	#ifndef __STDC_NO_VLA__
 	#error __STDC_NO_VLA__ not defined
+	choke me now
 	#endif
 ]])],
        [ac_cv_c_vararrays='no: __STDC_NO_VLA__ is defined'],
@@ -546,6 +547,7 @@ AC_DEFUN([AC_C_VARARRAYS],
 		   int D[m];
 		   static int (*q)[m] = &B;
 		   int (*s)[n] = q;
+		   (void) simple;
 		   return C && &x[0][0] == &D[0] && &D[0] == s[0];
 		 }
 	       #endif
