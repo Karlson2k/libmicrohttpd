@@ -635,7 +635,9 @@ setupCURL (void *cbc, uint16_t port)
       /* (CURLE_OK != curl_easy_setopt (c, CURLOPT_VERBOSE, 1L)) || */
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_FAILONERROR, 0L)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTPHEADER, curl_headers)) ||
-#if CURL_AT_LEAST_VERSION (7, 19, 4)
+#if CURL_AT_LEAST_VERSION (7, 85, 0)
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_PROTOCOLS_STR, "http")) ||
+#elif CURL_AT_LEAST_VERSION (7, 19, 4)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_PROTOCOLS, CURLPROTO_HTTP)) ||
 #endif /* CURL_AT_LEAST_VERSION (7, 19, 4) */
 #if CURL_AT_LEAST_VERSION (7, 45, 0)

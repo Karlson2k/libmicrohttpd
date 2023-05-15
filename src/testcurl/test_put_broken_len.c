@@ -424,7 +424,9 @@ setupCURL (void *cbc, uint16_t port)
 #endif /* _DEBUG */
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_DEBUGFUNCTION,
                                      &libcurl_debug_cb)) ||
-#if CURL_AT_LEAST_VERSION (7, 19, 4)
+#if CURL_AT_LEAST_VERSION (7, 85, 0)
+      (CURLE_OK != curl_easy_setopt (c, CURLOPT_PROTOCOLS_STR, "http")) ||
+#elif CURL_AT_LEAST_VERSION (7, 19, 4)
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_PROTOCOLS, CURLPROTO_HTTP)) ||
 #endif /* CURL_AT_LEAST_VERSION (7, 19, 4) */
 #if CURL_AT_LEAST_VERSION (7, 45, 0)
