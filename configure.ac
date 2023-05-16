@@ -3768,7 +3768,6 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Use debug asserts: ${enable_asserts}
   Use sanitizers:    ${enabled_sanitizers:=no}
   Messages:          ${enable_messages}
-  Gettext:           ${have_po}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
   HTTP "Upgrade":    ${enable_httpupgrade}
