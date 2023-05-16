@@ -782,7 +782,7 @@ doCurlQueryInThread (struct MHD_Daemon *d,
     {
       if (CURLE_OPERATION_TIMEDOUT == errornum)
         mhdErrorExitDesc ("Request was aborted due to timeout");
-      fprintf (stderr, "libcurl returned expected error: %s\n",
+      fprintf (stderr, "libcurl returned unexpected error: %s\n",
                curl_easy_strerror (errornum));
       mhdErrorExitDesc ("Request failed due to unexpected error");
     }
