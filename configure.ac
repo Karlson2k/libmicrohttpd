@@ -744,15 +744,15 @@ AS_VAR_IF([enable_linker_hardening],["yes"],
 )
 
 
-AH_TEMPLATE([[HAVE_STDBOOL_H]], [Define to 1 i][f you have the <stdbool.h> header file and <stdbool.h> defines 'bool' type.])
-AH_TEMPLATE([[HAVE_REAL_BOOL]], [Define to 1 i][f you have the real boolean type.])
+AH_TEMPLATE([[HAVE_STDBOOL_H]], [Define to 1 if you have the <stdbool.h> header file and <stdbool.h> defines 'bool' type.])
+AH_TEMPLATE([[HAVE_BUILTIN_TYPE_BOOL]], [Define to 1 if you have the real boolean type.])
 AH_TEMPLATE([[bool]], [Define to type name which will be used as boolean type.])
 AC_CHECK_HEADER([stdbool.h],
   [
    AC_CHECK_TYPE([bool],
      [
       AC_DEFINE([[HAVE_STDBOOL_H]], [[1]])
-      AC_DEFINE([[HAVE_REAL_BOOL]], [[1]])
+      AC_DEFINE([[HAVE_BUILTIN_TYPE_BOOL]], [[1]])
      ],
      [
       AC_MSG_WARN([[Header <stdbool.h> is present, but "bool" type cannot be detected. Check compiler flags.]])
@@ -764,11 +764,11 @@ AC_CHECK_HEADER([stdbool.h],
   ],
   [
    AC_CHECK_TYPE([bool],
-     [AC_DEFINE([[HAVE_REAL_BOOL]], [[1]])],
+     [AC_DEFINE([[HAVE_BUILTIN_TYPE_BOOL]], [[1]])],
      [
       AC_CHECK_TYPE([_Bool],
         [
-         AC_DEFINE([[HAVE_REAL_BOOL]], [[1]])
+         AC_DEFINE([[HAVE_BUILTIN_TYPE_BOOL]], [[1]])
          AC_DEFINE([[bool]], [[_Bool]])
         ],
         [
