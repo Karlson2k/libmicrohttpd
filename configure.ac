@@ -282,7 +282,7 @@ m4_ifdef([AM_GNU_GETTEXT], [
 ])
 m4_ifdef([AM_GNU_GETTEXT_VERSION], [
 #do not indent here
-AM_GNU_GETTEXT_VERSION([0.20.2])
+AM_GNU_GETTEXT_VERSION([0.21])
 ])
 AM_CONDITIONAL([HAVE_PO], [ test "$have_po" = yes ])
 
