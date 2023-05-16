@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2020 Christian Grothoff
-     Copyright (C) 2020-2022 Evgeny Grin (Karlson2k)
+     Copyright (C) 2020-2023 Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -518,6 +518,7 @@ main (int argc, char *argv[])
 
   if (1)
   {
+    unsigned i;
     const char *chunks[] = {
       "t=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%2C%2Cxxxxx%2C%2Cx%2Cxxxxxxxx"
       "xxxxxxxxxxxx%2C%2Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
@@ -680,7 +681,7 @@ main (int argc, char *argv[])
     postprocessor->buffer_size = 131076;
     postprocessor->state = PP_Init;
     postprocessor->skip_rn = RN_Inactive;
-    for (unsigned i = 0; i < ARRAY_LENGTH (chunks); ++i)
+    for (i = 0; i < ARRAY_LENGTH (chunks); ++i)
     {
       const char *chunk = chunks[i];
       if (MHD_YES != MHD_post_process (postprocessor, chunk, strlen (chunk) ))
@@ -693,6 +694,7 @@ main (int argc, char *argv[])
   }
   if (1)
   {
+    unsigned i;
     const char *chunks[] = {
       "XXXXXXXXXXXX=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
       "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&XXXXXX=&XXXXXXXXXXXXXX=X"
@@ -716,7 +718,7 @@ main (int argc, char *argv[])
     postprocessor->buffer_size = 131076;
     postprocessor->state = PP_Init;
     postprocessor->skip_rn = RN_Inactive;
-    for (unsigned i = 0; i < ARRAY_LENGTH (chunks); ++i)
+    for (i = 0; i < ARRAY_LENGTH (chunks); ++i)
     {
       const char *chunk = chunks[i];
       if (MHD_YES != MHD_post_process (postprocessor, chunk, strlen (chunk) ))
