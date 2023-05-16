@@ -2263,9 +2263,11 @@ MHD_CHECK_FUNC([magic_open],
     char var_data[256];
     const char *var_mime;
     magic_t var_magic = magic_open (MAGIC_MIME_TYPE);
-    (void)magic_load (var_magic, NULL);
+    (void)magic_load (var_magic, "filename");
     var_data[0] = 0;
     var_mime = magic_buffer (var_magic, var_data, 1);
+    i][f (! var_mime)
+      return 1;
     magic_close (var_magic);
   ]],
   [AC_DEFINE([MHD_HAVE_LIBMAGIC], [1], [Define to 1 if you have suitable libmagic.])],
@@ -3133,6 +3135,12 @@ AC_LINK_IFELSE(
      [
       AC_LANG_PROGRAM(
         [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include <sys/wait.h>
         ]], [[
      pid_t p = fork ();
