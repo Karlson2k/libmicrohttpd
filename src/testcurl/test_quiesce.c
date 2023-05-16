@@ -543,7 +543,7 @@ testExternalGet (void)
   time_t start;
   struct timeval tv;
   int i;
-  MHD_socket fd;
+  MHD_socket fd = MHD_INVALID_SOCKET;
 
   if (verbose)
     printf ("testExternalGet test started.\n");
