@@ -1443,7 +1443,7 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
         else
         {
           /* When rate limiter is enabled, all sent packets must be received
-           * before client close connection to avoid RST for every ACK.
+           * before client closes connection to avoid RST for every ACK.
            * When rate limiter is not enabled, the MHD must receive at
            * least something before closing the connection. */
           do_client = 0;
