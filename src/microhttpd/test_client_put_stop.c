@@ -310,8 +310,14 @@ test_global_init (void)
     mib[1] = PF_INET;
     mib[2] = IPPROTO_ICMP;
     mib[3] = ICMPCTL_ICMPLIM;
-    if ((0 != sysctl (mib, 4, &limit, &limit_size, NULL, 0)) ||
-        (sizeof(limit) != limit_size) )
+    if (0 != sysctl (mib, 4, &limit, &limit_size, NULL, 0))
+    {
+      if (ENOENT == errno)
+        limit = 0; /* No such parameter (Darwin) */
+      else
+        externalErrorExitDesc ("Cannot get RST rate limit value");
+    }
+    else if (sizeof(limit) != limit_size)
       externalErrorExitDesc ("Cannot get RST rate limit value");
     if (limit > 0)
     {
