@@ -1326,6 +1326,7 @@ AS_VAR_IF([enable_heavy_tests], ["yes"],
   ]
 )
 AM_CONDITIONAL([HEAVY_TESTS],[test "x$enable_heavy_tests" = "xyes"])
+AM_CONDITIONAL([TESTS_STRESS_OS],[false])
 
 AC_ARG_ENABLE([[poll]],
   [AS_HELP_STRING([[--enable-poll[=ARG]]], [enable poll support (yes, no, auto) [auto]])],
