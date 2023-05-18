@@ -13,12 +13,6 @@
 #include <string.h>
 #include <microhttpd.h>
 
-#ifdef _MSC_VER
-#ifndef strcasecmp
-#define strcasecmp(a,b) _stricmp ((a),(b))
-#endif /* !strcasecmp */
-#endif /* _MSC_VER */
-
 #if defined(_MSC_VER) && _MSC_VER + 0 <= 1800
 /* Substitution is OK while return value is not used */
 #define snprintf _snprintf
@@ -236,7 +230,7 @@ answer_to_connection (void *cls,
     con_info->answercode = 0;   /* none yet */
     con_info->fp = NULL;
 
-    if (0 == strcasecmp (method, MHD_HTTP_METHOD_POST))
+    if (0 == strcmp (method, MHD_HTTP_METHOD_POST))
     {
       con_info->postprocessor =
         MHD_create_post_processor (connection,
@@ -264,7 +258,7 @@ answer_to_connection (void *cls,
     return MHD_YES;
   }
 
-  if (0 == strcasecmp (method, MHD_HTTP_METHOD_GET))
+  if (0 == strcmp (method, MHD_HTTP_METHOD_GET))
   {
     /* We just return the standard form for uploads on all GET requests */
     char buffer[1024];
@@ -278,7 +272,7 @@ answer_to_connection (void *cls,
                       MHD_HTTP_OK);
   }
 
-  if (0 == strcasecmp (method, MHD_HTTP_METHOD_POST))
+  if (0 == strcmp (method, MHD_HTTP_METHOD_POST))
   {
     struct connection_info_struct *con_info = *req_cls;
 
