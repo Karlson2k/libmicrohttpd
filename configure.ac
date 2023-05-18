@@ -496,8 +496,8 @@ AC_CHECK_HEADERS([endian.h machine/endian.h sys/endian.h sys/byteorder.h \
                   sys/ioctl.h], [], [], [AC_INCLUDES_DEFAULT])
 
 # Check for network and sockets optional headers
-AC_CHECK_HEADERS([sys/socket.h sys/select.h netinet/in.h arpa/inet.h \
-                  netinet/ip.h netinet/tcp.h net/if.h \
+AC_CHECK_HEADERS([sys/socket.h sys/select.h netinet/in_systm.h netinet/in.h \
+                  arpa/inet.h netinet/ip.h netinet/tcp.h net/if.h \
                   netdb.h sockLib.h inetLib.h], [], [],
   [AC_INCLUDES_DEFAULT
    [
@@ -510,6 +510,9 @@ AC_CHECK_HEADERS([sys/socket.h sys/select.h netinet/in.h arpa/inet.h \
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif /* HAVE_SYS_SOCKET_H */
+#ifdef HAVE_NETINET_IN_SYSTM_H
+#include <netinet/in_systm.h>
+#endif /* HAVE_NETINET_IN_SYSTM_H */
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif /* HAVE_NETINET_IN_H */
@@ -658,6 +661,9 @@ AC_CHECK_HEADERS([sys/sysctl.h netinet/ip_icmp.h netinet/icmp_var.h], [], [],
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif /* HAVE_SYS_SOCKET_H */
+#ifdef HAVE_NETINET_IN_SYSTM_H
+#include <netinet/in_systm.h>
+#endif /* HAVE_NETINET_IN_SYSTM_H */
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif /* HAVE_NETINET_IN_H */
