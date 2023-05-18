@@ -529,7 +529,7 @@ check_nonce_nc (struct MHD_Connection *connection,
                 const char *nonce,
                 uint64_t nc)
 {
-  struct MHD_Daemon *daemon = connection->daemon;
+  struct MHD_Daemon *const daemon = MHD_get_master (connection->daemon);
   struct MHD_NonceNc *nn;
   uint32_t off;
   uint32_t mod;

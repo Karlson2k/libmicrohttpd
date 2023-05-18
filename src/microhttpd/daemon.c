@@ -257,7 +257,7 @@ MHD_free (void *ptr)
  * @param daemon handle to a daemon
  * @return master daemon handle
  */
-static struct MHD_Daemon *
+struct MHD_Daemon *
 MHD_get_master (struct MHD_Daemon *daemon)
 {
   while (NULL != daemon->master)
@@ -7277,6 +7277,10 @@ MHD_start_daemon_va (unsigned int flags,
         d->master = daemon;
         d->worker_pool_size = 0;
         d->worker_pool = NULL;
+#if defined(DAUTH_SUPPORT) && defined(MHD_USE_THREADS)
+        /* Avoid accidental re-use of the mutex copies */
+        memset (&d->nnc_lock, -1, sizeof(d->nnc_lock));
+#endif /* DAUTH_SUPPORT && MHD_USE_THREADS */
         if (! MHD_mutex_init_ (&d->new_connections_mutex))
         {
   #ifdef HAVE_MESSAGES

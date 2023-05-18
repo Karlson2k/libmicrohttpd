@@ -2395,6 +2395,15 @@ MHD_check_response_header_token_ci (const struct MHD_Response *response,
   MHD_check_response_header_token_ci ((r),(k),MHD_STATICSTR_LEN_ (k), \
                                       (tkn),MHD_STATICSTR_LEN_ (tkn))
 
+/**
+ * Trace up to and return master daemon. If the supplied daemon
+ * is a master, then return the daemon itself.
+ *
+ * @param daemon handle to a daemon
+ * @return master daemon handle
+ */
+struct MHD_Daemon *
+MHD_get_master (struct MHD_Daemon *daemon);
 
 /**
  * Internal version of #MHD_suspend_connection().
