@@ -268,6 +268,7 @@ static uint16_t global_port;        /**< MHD daemons listen port number */
 static int use_shutdown;            /**< Use shutdown at client side */
 static int use_close;               /**< Use socket close at client side */
 static int use_hard_close;          /**< Use socket close with RST at client side */
+static int use_stress_os;           /**< Stress OS by RST before getting ACKs for sent packets */
 static int by_step;                 /**< Send request byte-by-byte */
 static int upl_chunked;             /**< Use chunked encoding for request body */
 
@@ -277,83 +278,94 @@ static void
 test_global_init (void)
 {
   rate_limiter = 0;
-#ifdef HAVE_SYSCTLBYNAME
   if (use_hard_close)
   {
-    int blck_hl;
-    size_t blck_hl_size = sizeof (blck_hl);
-    if (0 == sysctlbyname ("net.inet.tcp.blackhole", &blck_hl, &blck_hl_size,
-                           NULL, 0))
+#ifdef HAVE_SYSCTLBYNAME
+    if (1)
     {
-      if (2 <= blck_hl)
+      int blck_hl;
+      size_t blck_hl_size = sizeof (blck_hl);
+      if (0 == sysctlbyname ("net.inet.tcp.blackhole", &blck_hl, &blck_hl_size,
+                             NULL, 0))
       {
-        fprintf (stderr, "'sysctl net.inet.tcp.blackhole = %d', test is "
-                 "unreliable with this system setting, skipping.\n", blck_hl);
-        exit (77);
+        if (2 <= blck_hl)
+        {
+          fprintf (stderr, "'sysctl net.inet.tcp.blackhole = %d', test is "
+                   "unreliable with this system setting, skipping.\n", blck_hl);
+          exit (77);
+        }
+      }
+      else
+      {
+        if (ENOENT != errno)
+          externalErrorExitDesc ("Cannot get 'net.inet.tcp.blackhole' value");
       }
     }
-    else
-    {
-      if (ENOENT != errno)
-        externalErrorExitDesc ("Cannot get 'net.inet.tcp.blackhole' value");
-    }
-  }
 #endif
 #if defined(HAVE_SYSCTL) && defined(CTL_NET) && defined(PF_INET) && \
-  defined(IPPROTO_ICMP) && defined(ICMPCTL_ICMPLIM)
-  if (use_hard_close)
-  {
-    int mib[4];
-    int limit;
-    size_t limit_size = sizeof(limit);
-    mib[0] = CTL_NET;
-    mib[1] = PF_INET;
-    mib[2] = IPPROTO_ICMP;
-    mib[3] = ICMPCTL_ICMPLIM;
-    if (0 != sysctl (mib, 4, &limit, &limit_size, NULL, 0))
+    defined(IPPROTO_ICMP) && defined(ICMPCTL_ICMPLIM)
+    if (1)
     {
-      if (ENOENT == errno)
-        limit = 0; /* No such parameter (Darwin) */
-      else
+      int mib[4];
+      int limit;
+      size_t limit_size = sizeof(limit);
+      mib[0] = CTL_NET;
+      mib[1] = PF_INET;
+      mib[2] = IPPROTO_ICMP;
+      mib[3] = ICMPCTL_ICMPLIM;
+      if (0 != sysctl (mib, 4, &limit, &limit_size, NULL, 0))
+      {
+        if (ENOENT == errno)
+          limit = 0; /* No such parameter (new Darwin versions) */
+        else
+          externalErrorExitDesc ("Cannot get RST rate limit value");
+      }
+      else if (sizeof(limit) != limit_size)
         externalErrorExitDesc ("Cannot get RST rate limit value");
-    }
-    else if (sizeof(limit) != limit_size)
-      externalErrorExitDesc ("Cannot get RST rate limit value");
-    if (limit > 0)
-    {
+      if (limit > 0)
+      {
 #ifndef _MHD_HEAVY_TESTS
-      fprintf (stderr, "This system has limits on number of RST packet"
-               " per second (%d).\nThis test will be used only if configured "
-               "with '--enable-heavy-test'.\n", limit);
-      exit (77);
-#else  /* _MHD_HEAVY_TESTS */
-      int test_limit; /**< Maximum number of checks per second */
-      test_limit = limit - limit / 10; /* Add some space to not hit the limiter */
-      test_limit /= 4;   /* Assume that all four tests with 'hard_close' run in parallel */
-      test_limit -= 5;   /* Add some more space to not hit the limiter */
-      test_limit /= 3;   /* Use only one third of available limit */
-      if (test_limit <= 0)
-      {
-        fprintf (stderr, "System limit for 'net.inet.icmp.icmplim' is "
-                 "too strict for this test (value: %d).\n", limit);
+        fprintf (stderr, "This system has limits on number of RST packet"
+                 " per second (%d).\nThis test will be used only if configured "
+                 "with '--enable-heavy-test'.\n", limit);
         exit (77);
-      }
-      if (verbose)
-      {
-        printf ("Limiting number of checks to %d checks/second.\n", test_limit);
-        fflush (stdout);
-      }
-      rate_limiter = (unsigned int) test_limit;
+#else  /* _MHD_HEAVY_TESTS */
+        int test_limit; /**< Maximum number of checks per second */
+
+        if (use_stress_os)
+        {
+          fprintf (stderr, "This system has limits on number of RST packet"
+                   " per second (%d).\n'_stress_os' is not possible.\n", limit);
+          exit (77);
+        }
+        test_limit = limit - limit / 10; /* Add some space to not hit the limiter */
+        test_limit /= 4;   /* Assume that all four tests with 'hard_close' run in parallel */
+        test_limit -= 5;   /* Add some more space to not hit the limiter */
+        test_limit /= 3;   /* Use only one third of available limit */
+        if (test_limit <= 0)
+        {
+          fprintf (stderr, "System limit for 'net.inet.icmp.icmplim' is "
+                   "too strict for this test (value: %d).\n", limit);
+          exit (77);
+        }
+        if (verbose)
+        {
+          printf ("Limiting number of checks to %d checks/second.\n",
+                  test_limit);
+          fflush (stdout);
+        }
+        rate_limiter = (unsigned int) test_limit;
 #if ! defined(HAVE_USLEEP) && ! defined(HAVE_NANOSLEEP) && ! defined(_WIN32)
-      fprintf (stderr, "Sleep function is required for this test, "
-               "but not available on this system.\n");
-      exit (77);
+        fprintf (stderr, "Sleep function is required for this test, "
+                 "but not available on this system.\n");
+        exit (77);
 #endif
 #endif /* _MHD_HEAVY_TESTS */
+      }
     }
-  }
 #endif /* HAVE_SYSCTL && CTL_NET && PF_INET &&
           IPPROTO_ICMP && ICMPCTL_ICMPLIM */
+  }
   if (MHD_YES != MHD_is_feature_supported (MHD_FEATURE_AUTOSUPPRESS_SIGPIPE))
   {
 #if defined(HAVE_SIGNAL_H) && defined(SIGPIPE)
@@ -1523,12 +1535,24 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
         /* All request data has been sent.
          * Client will close the socket as the next step. */
         if (full_req_recieved)
-          do_client = 1; /* All data has been received by the MHD */
-        else if ((0 == rate_limiter) && some_data_recieved)
         {
-          /* No RST rate limiter, no need to avoid extra RST
+          /* All data has been received by the MHD */
+          do_client = 1; /* Close the client socket */
+        }
+        else if (some_data_recieved &&
+                 (! use_hard_close || ((0 == rate_limiter) && use_stress_os)))
+        {
+          /* No RST rate limiter or no "hard close", no need to avoid extra RST
            * and at least something was received by the MHD */
-          do_client = 1;
+          /* In case of 'hard close' this can stress the OS, especially
+           * if 'by_step' is enabled as several ACKs (for delivered packets
+           * containing the request) from the server may arrive to the client
+           * when the client has closed port and may be reflected by several
+           * RSTs from the client side to the server side (when ACK received
+           * without active connection then RST packet should be sent).
+           * When listening socket receives RST packets, it may block
+           * the sender preventing the next connection. */
+          do_client = 1; /* Proceed with the closure of the client socket */
         }
         else
         {
@@ -1536,7 +1560,7 @@ performQueryExternal (struct MHD_Daemon *d, struct _MHD_dumbClient *clnt)
            * before client closes connection to avoid RST for every ACK.
            * When rate limiter is not enabled, the MHD must receive at
            * least something before closing the connection. */
-          do_client = 0;
+          do_client = 0; /* Do not close the client socket yet */
         }
       }
 
@@ -2074,6 +2098,7 @@ main (int argc, char *const *argv)
   use_shutdown = has_in_name (argv[0], "_shutdown") ? 1 : 0;
   use_close = has_in_name (argv[0], "_close") ? 1 : 0;
   use_hard_close = has_in_name (argv[0], "_hard_close") ? 1 : 0;
+  use_stress_os = has_in_name (argv[0], "_stress_os") ? 1 : 0;
   by_step = has_in_name (argv[0], "_steps") ? 1 : 0;
   upl_chunked = has_in_name (argv[0], "_chunked") ? 1 : 0;
 #ifndef SO_LINGER
@@ -2089,6 +2114,8 @@ main (int argc, char *const *argv)
                has_param (argc, argv, "--quiet") ||
                has_param (argc, argv, "-s") ||
                has_param (argc, argv, "--silent"));
+  if (use_stress_os && ! use_hard_close)
+    return 99;
 
   test_global_init ();
 

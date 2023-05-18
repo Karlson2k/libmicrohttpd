@@ -309,6 +309,17 @@ check_PROGRAMS += \
   test_str_base64
 endif
 
+
+if HEAVY_TESTS
+if TESTS_STRESS_OS
+check_PROGRAMS += \
+  test_client_put_hard_close_stress_os \
+  test_client_put_steps_hard_close_stress_os \
+  test_client_put_chunked_steps_hard_close_stress_os
+endif
+endif
+
+
 TESTS = $(check_PROGRAMS)
 
 update-po-POTFILES.in: $(top_srcdir)/po/POTFILES.in
@@ -564,6 +575,11 @@ test_client_put_hard_close_SOURCES = \
 test_client_put_hard_close_LDADD = \
   libmicrohttpd.la
 
+test_client_put_hard_close_stress_os_SOURCES = \
+  $(test_client_put_hard_close_SOURCES)
+test_client_put_hard_close_stress_os_LDADD = \
+  $(test_client_put_hard_close_LDADD)
+
 test_client_put_steps_shutdown_SOURCES = \
   test_client_put_stop.c
 test_client_put_steps_shutdown_LDADD = \
@@ -578,6 +594,11 @@ test_client_put_steps_hard_close_SOURCES = \
   test_client_put_stop.c
 test_client_put_steps_hard_close_LDADD = \
   libmicrohttpd.la
+
+test_client_put_steps_hard_close_stress_os_SOURCES = \
+  $(test_client_put_steps_hard_close_SOURCES)
+test_client_put_steps_hard_close_stress_os_LDADD = \
+  $(test_client_put_steps_hard_close_LDADD)
 
 test_client_put_chunked_shutdown_SOURCES = \
   test_client_put_stop.c
@@ -608,6 +629,11 @@ test_client_put_chunked_steps_hard_close_SOURCES = \
   test_client_put_stop.c
 test_client_put_chunked_steps_hard_close_LDADD = \
   libmicrohttpd.la
+
+test_client_put_chunked_steps_hard_close_stress_os_SOURCES = \
+  $(test_client_put_chunked_steps_hard_close_SOURCES)
+test_client_put_chunked_steps_hard_close_stress_os_LDADD = \
+  $(test_client_put_chunked_steps_hard_close_LDADD)
 
 test_set_panic_SOURCES = \
   test_set_panic.c
