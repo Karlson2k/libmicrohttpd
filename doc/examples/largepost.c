@@ -80,7 +80,7 @@ const char *fileexistspage =
   "<html><body>This file already exists.</body></html>";
 const char *fileioerror =
   "<html><body>IO error writing to disk.</body></html>";
-const char*const postprocerror =
+const char *const postprocerror =
   "<html><head><title>Error</title></head><body>Error processing POST data</body></html>";
 
 
