@@ -45,12 +45,9 @@ if HEAVY_TESTS
 THREAD_ONLY_TESTS += \
   test_add_conn_cleanup \
   test_add_conn_cleanup_nolisten \
-  $(EMPTY_ITEM)
-endif
-
-THREAD_ONLY_TESTS += \
   test_timeout \
   $(EMPTY_ITEM)
+endif
 
 if HAVE_POSIX_THREADS
 if HEAVY_TESTS
