@@ -2564,7 +2564,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
 #if DEBUG_STATES
     MHD_DLOG (connection->daemon,
               _ ("In function %s handling connection at state: %s\n"),
-              __FUNCTION__,
+              MHD_FUNC_,
               MHD_state_to_string (connection->state));
 #endif
     switch (connection->state)
@@ -4198,7 +4198,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
 #if DEBUG_STATES
   MHD_DLOG (connection->daemon,
             _ ("In function %s handling connection at state: %s\n"),
-            __FUNCTION__,
+            MHD_FUNC_,
             MHD_state_to_string (connection->state));
 #endif
   /* TODO: check whether the next 'switch()' really needed */
@@ -4292,7 +4292,7 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
 #if DEBUG_STATES
   MHD_DLOG (connection->daemon,
             _ ("In function %s handling connection at state: %s\n"),
-            __FUNCTION__,
+            MHD_FUNC_,
             MHD_state_to_string (connection->state));
 #endif
   switch (connection->state)
@@ -4849,7 +4849,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #if DEBUG_STATES
     MHD_DLOG (daemon,
               _ ("In function %s handling connection at state: %s\n"),
-              __FUNCTION__,
+              MHD_FUNC_,
               MHD_state_to_string (connection->state));
 #endif
     switch (connection->state)
