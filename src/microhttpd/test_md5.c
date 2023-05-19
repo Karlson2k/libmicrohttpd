@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2019-2022 Evgeny Grin (Karlson2k)
+  Copyright (C) 2019-2023 Evgeny Grin (Karlson2k)
 
   This test tool is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -335,7 +335,7 @@ test1_str (void)
       exit (99);
     }
 #endif
-    num_failed += check_result (__FUNCTION__, i, digest,
+    num_failed += check_result (MHD_FUNC_, i, digest,
                                 data_units1[i].digest);
   }
   MHD_MD5_deinit (&ctx);
@@ -365,7 +365,7 @@ test1_bin (void)
       exit (99);
     }
 #endif
-    num_failed += check_result (__FUNCTION__, i, digest,
+    num_failed += check_result (MHD_FUNC_, i, digest,
                                 data_units2[i].digest);
   }
   MHD_MD5_deinit (&ctx);
@@ -402,7 +402,7 @@ test2_str (void)
       exit (99);
     }
 #endif
-    num_failed += check_result (__FUNCTION__, i, digest,
+    num_failed += check_result (MHD_FUNC_, i, digest,
                                 data_units1[i].digest);
   }
   MHD_MD5_deinit (&ctx);
@@ -436,7 +436,7 @@ test2_bin (void)
       exit (99);
     }
 #endif
-    num_failed += check_result (__FUNCTION__, i, digest,
+    num_failed += check_result (MHD_FUNC_, i, digest,
                                 data_units2[i].digest);
   }
   MHD_MD5_deinit (&ctx);
@@ -485,7 +485,7 @@ test_unaligned (void)
       exit (99);
     }
 #endif
-    num_failed += check_result (__FUNCTION__, MAX_OFFSET - offset,
+    num_failed += check_result (MHD_FUNC_, MAX_OFFSET - offset,
                                 unaligned_digest, tdata->digest);
   }
   MHD_MD5_deinit (&ctx);
