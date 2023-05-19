@@ -275,7 +275,7 @@ test1_str (void)
     uint8_t digest[SHA1_DIGEST_SIZE];
 
     MHD_SHA1_init (&ctx);
-    MHD_SHA1_update (&ctx, (const uint8_t*) data_units1[i].str_l.str,
+    MHD_SHA1_update (&ctx, (const uint8_t *) data_units1[i].str_l.str,
                      data_units1[i].str_l.len);
     MHD_SHA1_finish (&ctx, digest);
     num_failed += check_result (MHD_FUNC_, i, digest,
@@ -321,8 +321,8 @@ test2_str (void)
     size_t part_s = data_units1[i].str_l.len / 4;
 
     MHD_SHA1_init (&ctx);
-    MHD_SHA1_update (&ctx, (const uint8_t*) data_units1[i].str_l.str, part_s);
-    MHD_SHA1_update (&ctx, (const uint8_t*) data_units1[i].str_l.str + part_s,
+    MHD_SHA1_update (&ctx, (const uint8_t *) data_units1[i].str_l.str, part_s);
+    MHD_SHA1_update (&ctx, (const uint8_t *) data_units1[i].str_l.str + part_s,
                      data_units1[i].str_l.len - part_s);
     MHD_SHA1_finish (&ctx, digest);
     num_failed += check_result (MHD_FUNC_, i, digest,
