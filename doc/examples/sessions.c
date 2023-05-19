@@ -294,13 +294,14 @@ fill_v1_form (const void *cls,
               struct MHD_Connection *connection)
 {
   enum MHD_Result ret;
-  const char *form = cls;
   char *reply;
   struct MHD_Response *response;
   int len;
 
+  (void) cls; /* Unused parameter */
+
   /* Emulate 'asprintf' */
-  len = snprintf(NULL, 0, form, session->value_1);
+  len = snprintf (NULL, 0, MAIN_PAGE, session->value_1);
   if (0 > len)
     return MHD_NO; /* Internal error */
 
@@ -309,22 +310,33 @@ fill_v1_form (const void *cls,
     return MHD_NO; /* Out-of-memory error */
 
   if (len != snprintf (reply,
-                       form,
+                       ((size_t) len) + 1,
+                       MAIN_PAGE,
                        session->value_1))
+  {
+    free (reply);
     return MHD_NO; /* printf error */
+  }
 
-  /* return static form */
   response = MHD_create_response_from_buffer (strlen (reply),
                                               (void *) reply,
                                               MHD_RESPMEM_MUST_FREE);
-  add_session_cookie (session, response);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_ENCODING,
-                           mime);
-  ret = MHD_queue_response (connection,
-                            MHD_HTTP_OK,
-                            response);
-  MHD_destroy_response (response);
+  if (NULL != response)
+  {
+    add_session_cookie (session, response);
+    MHD_add_response_header (response,
+                             MHD_HTTP_HEADER_CONTENT_ENCODING,
+                             mime);
+    ret = MHD_queue_response (connection,
+                              MHD_HTTP_OK,
+                              response);
+    MHD_destroy_response (response);
+  }
+  else
+  {
+    free (reply);
+    ret = MHD_NO;
+  }
   return ret;
 }
 
@@ -344,13 +356,14 @@ fill_v1_v2_form (const void *cls,
                  struct MHD_Connection *connection)
 {
   enum MHD_Result ret;
-  const char *form = cls;
   char *reply;
   struct MHD_Response *response;
   int len;
 
+  (void) cls; /* Unused parameter */
+
   /* Emulate 'asprintf' */
-  len = snprintf(NULL, 0, form, session->value_1, session->value_2);
+  len = snprintf (NULL, 0, SECOND_PAGE, session->value_1, session->value_2);
   if (0 > len)
     return MHD_NO; /* Internal error */
 
@@ -358,24 +371,35 @@ fill_v1_v2_form (const void *cls,
   if (NULL == reply)
     return MHD_NO; /* Out-of-memory error */
 
-  if (len != snprintf (reply,
-                       form,
+  if (len == snprintf (reply,
+                       ((size_t) len) + 1,
+                       SECOND_PAGE,
                        session->value_1,
                        session->value_2))
+  {
+    free (reply);
     return MHD_NO; /* printf error */
+  }
 
-  /* return static form */
   response = MHD_create_response_from_buffer (strlen (reply),
                                               (void *) reply,
                                               MHD_RESPMEM_MUST_FREE);
-  add_session_cookie (session, response);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_ENCODING,
-                           mime);
-  ret = MHD_queue_response (connection,
-                            MHD_HTTP_OK,
-                            response);
-  MHD_destroy_response (response);
+  if (NULL != response)
+  {
+    add_session_cookie (session, response);
+    MHD_add_response_header (response,
+                             MHD_HTTP_HEADER_CONTENT_ENCODING,
+                             mime);
+    ret = MHD_queue_response (connection,
+                              MHD_HTTP_OK,
+                              response);
+    MHD_destroy_response (response);
+  }
+  else
+  {
+    free (reply);
+    ret = MHD_NO;
+  }
   return ret;
 }
 
@@ -418,8 +442,8 @@ not_found_page (const void *cls,
  * List of all pages served by this HTTP server.
  */
 static const struct Page pages[] = {
-  { "/", "text/html",  &fill_v1_form, MAIN_PAGE },
-  { "/2", "text/html", &fill_v1_v2_form, SECOND_PAGE },
+  { "/", "text/html",  &fill_v1_form, NULL },
+  { "/2", "text/html", &fill_v1_v2_form, NULL },
   { "/S", "text/html", &serve_simple_form, SUBMIT_PAGE },
   { "/F", "text/html", &serve_simple_form, LAST_PAGE },
   { NULL, NULL, &not_found_page, NULL }   /* 404 */
