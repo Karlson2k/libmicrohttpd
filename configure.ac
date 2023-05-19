@@ -1279,7 +1279,19 @@ AS_VAR_IF([mhd_cv_macro___func___avail], ["yes"],
       AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stddef.h>]],[[const char *funcname = __FUNCTION__ ; if (NULL == funcname) return 1;]])],
         [[mhd_cv_macro___function___avail="yes"]],[[mhd_cv_macro___function___avail="no"]])
     ])
-    AC_DEFINE([HAVE___FUNCTION__], [1], [Define to 1 if your compiler supports __FUNCTION__ magic-macro.])
+    AS_VAR_IF([mhd_cv_macro___function___avail], ["yes"],
+      [AC_DEFINE([HAVE___FUNCTION__], [1], [Define to 1 if your compiler supports __FUNCTION__ magic-macro.])],
+      [
+        AC_CACHE_CHECK([[whether __PRETTY_FUNCTION__ magic-macro is available]],
+          [[mhd_cv_macro___pretty_function___avail]], [dnl
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stddef.h>]],[[const char *funcname = __PRETTY_FUNCTION__ ; if (NULL == funcname) return 1;]])],
+            [[mhd_cv_macro___pretty_function___avail="yes"]],[[mhd_cv_macro___pretty_function___avail="no"]])
+        ])
+        AS_VAR_IF([mhd_cv_macro___pretty_function___avail], ["yes"],
+          [AC_DEFINE([HAVE___PRETTY_FUNCTION__], [1], [Define to 1 if your compiler supports __PRETTY_FUNCTION__ magic-macro.])],
+        )
+      ]
+    )
   ]
 )
 AC_CACHE_CHECK([[whether __builtin_bswap32() is available]],
