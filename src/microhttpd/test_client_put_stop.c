@@ -935,9 +935,9 @@ _MHD_dumbClient_needs_process (const struct _MHD_dumbClient *clnt)
   case DUMB_CLIENT_BODY_RECVEIVING:
   case DUMB_CLIENT_FINISHING:
   default:
-    return 0;
+    break;
   }
-  return 0; /* Should be unreachable */
+  return 0;
 }
 
 
@@ -1199,9 +1199,9 @@ term_reason_str (enum MHD_RequestTerminationCode term_code)
   case -1:
     return "(not called)";
   default:
-    return "(unknown code)";
+    break;
   }
-  return "(problem)"; /* unreachable */
+  return "(unknown code)";
 }
 
 
