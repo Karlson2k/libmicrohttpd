@@ -1,59 +1,12 @@
 /* Feel free to use this example code in any way
    you see fit (Public Domain) */
 
-/* needed for asprintf */
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE 1
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
 #include <microhttpd.h>
-
-#if defined _WIN32 && ! defined(__MINGW64_VERSION_MAJOR)
-static int
-asprintf (char **resultp, const char *format, ...)
-{
-  va_list argptr;
-  char *result = NULL;
-  int len = 0;
-
-  if (format == NULL)
-    return -1;
-
-  va_start (argptr, format);
-
-  len = _vscprintf ((char *) format, argptr);
-  if (len >= 0)
-  {
-    len += 1;
-    result = (char *) malloc (sizeof (char *) * len);
-    if (result != NULL)
-    {
-      int len2 = _vscprintf ((char *) format, argptr);
-      if ((len2 != len - 1) || (len2 <= 0))
-      {
-        free (result);
-        result = NULL;
-        len = -1;
-      }
-      else
-      {
-        len = len2;
-        if (resultp)
-          *resultp = result;
-      }
-    }
-  }
-  va_end (argptr);
-  return len;
-}
-
-
-#endif
 
 /**
  * Invalid method page.
@@ -344,14 +297,22 @@ fill_v1_form (const void *cls,
   const char *form = cls;
   char *reply;
   struct MHD_Response *response;
+  int len;
 
-  if (-1 == asprintf (&reply,
-                      form,
-                      session->value_1))
-  {
-    /* oops */
-    return MHD_NO;
-  }
+  /* Emulate 'asprintf' */
+  len = snprintf(NULL, 0, form, session->value_1);
+  if (0 > len)
+    return MHD_NO; /* Internal error */
+
+  reply = (char *) malloc (len + 1);
+  if (NULL == reply)
+    return MHD_NO; /* Out-of-memory error */
+
+  if (len != snprintf (reply,
+                       form,
+                       session->value_1))
+    return MHD_NO; /* printf error */
+
   /* return static form */
   response = MHD_create_response_from_buffer (strlen (reply),
                                               (void *) reply,
@@ -386,15 +347,23 @@ fill_v1_v2_form (const void *cls,
   const char *form = cls;
   char *reply;
   struct MHD_Response *response;
+  int len;
 
-  if (-1 == asprintf (&reply,
-                      form,
-                      session->value_1,
-                      session->value_2))
-  {
-    /* oops */
-    return MHD_NO;
-  }
+  /* Emulate 'asprintf' */
+  len = snprintf(NULL, 0, form, session->value_1, session->value_2);
+  if (0 > len)
+    return MHD_NO; /* Internal error */
+
+  reply = (char *) malloc (len + 1);
+  if (NULL == reply)
+    return MHD_NO; /* Out-of-memory error */
+
+  if (len != snprintf (reply,
+                       form,
+                       session->value_1,
+                       session->value_2))
+    return MHD_NO; /* printf error */
+
   /* return static form */
   response = MHD_create_response_from_buffer (strlen (reply),
                                               (void *) reply,
@@ -448,7 +417,7 @@ not_found_page (const void *cls,
 /**
  * List of all pages served by this HTTP server.
  */
-static struct Page pages[] = {
+static const struct Page pages[] = {
   { "/", "text/html",  &fill_v1_form, MAIN_PAGE },
   { "/2", "text/html", &fill_v1_v2_form, SECOND_PAGE },
   { "/S", "text/html", &serve_simple_form, SUBMIT_PAGE },
