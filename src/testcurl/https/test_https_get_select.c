@@ -95,7 +95,6 @@ testExternalGet (int flags)
   struct CURLMsg *msg;
   time_t start;
   struct timeval tv;
-  const char *aes256_sha = "AES256-SHA";
   int port;
 
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
@@ -109,8 +108,8 @@ testExternalGet (int flags)
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_TLS | flags,
                         port, NULL, NULL, &ahc_echo, "GET",
-                        MHD_OPTION_HTTPS_MEM_KEY, srv_key_pem,
-                        MHD_OPTION_HTTPS_MEM_CERT, srv_self_signed_cert_pem,
+                        MHD_OPTION_HTTPS_MEM_KEY, srv_signed_key_pem,
+                        MHD_OPTION_HTTPS_MEM_CERT, srv_signed_cert_pem,
                         MHD_OPTION_END);
   if (d == NULL)
     return 256;
@@ -125,17 +124,12 @@ testExternalGet (int flags)
     port = (int) dinfo->port;
   }
 
-  if (curl_tls_is_nss ())
-    aes256_sha = "rsa_aes_256_sha";
-
   c = curl_easy_init ();
   curl_easy_setopt (c, CURLOPT_URL, "https://127.0.0.1/hello_world");
   curl_easy_setopt (c, CURLOPT_PORT, (long) port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   /* TLS options */
-  curl_easy_setopt (c, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
-  curl_easy_setopt (c, CURLOPT_SSL_CIPHER_LIST, aes256_sha);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt (c, CURLOPT_SSL_VERIFYHOST, 0L);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 1L);

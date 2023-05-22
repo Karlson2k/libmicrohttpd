@@ -40,7 +40,7 @@ extern const char srv_signed_key_pem[];
 
 /* perform a HTTP GET request via SSL/TLS */
 static int
-test_secure_get (void *cls, char *cipher_suite, int proto_version)
+test_secure_get (void *cls)
 {
   int ret;
   struct MHD_Daemon *d;
@@ -76,7 +76,7 @@ test_secure_get (void *cls, char *cipher_suite, int proto_version)
     port = (int) dinfo->port;
   }
 
-  ret = test_daemon_get (NULL, cipher_suite, proto_version, port, 0);
+  ret = test_daemon_get (NULL, port, 0);
 
   MHD_stop_daemon (d);
   return ret;
@@ -87,7 +87,6 @@ int
 main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
-  char *aes256_sha = "AES256-SHA";
   FILE *crt;
   (void) argc;
   (void) argv;       /* Unused. Silent compiler warning. */
@@ -114,13 +113,9 @@ main (int argc, char *const *argv)
     return 99;
   }
   fclose (crt);
-  if (curl_tls_is_nss ())
-  {
-    aes256_sha = "rsa_aes_256_sha";
-  }
 
   errorCount +=
-    test_secure_get (NULL, aes256_sha, CURL_SSLVERSION_TLSv1);
+    test_secure_get (NULL);
 
   print_test_result (errorCount, argv[0]);
 

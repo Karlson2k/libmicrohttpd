@@ -42,9 +42,7 @@ extern const char srv_self_signed_cert_pem[];
  * doesn't affect the other
  */
 static int
-test_concurent_daemon_pair (void *cls,
-                            const char *cipher_suite,
-                            int proto_version)
+test_concurent_daemon_pair (void *cls)
 {
   int ret;
   struct MHD_Daemon *d1;
@@ -113,14 +111,13 @@ test_concurent_daemon_pair (void *cls,
   }
 
   ret =
-    test_daemon_get (NULL, cipher_suite, proto_version, port1, 0);
+    test_daemon_get (NULL, port1, 0);
   ret +=
-    test_daemon_get (NULL, cipher_suite, proto_version,
-                     port2, 0);
+    test_daemon_get (NULL, port2, 0);
 
   MHD_stop_daemon (d2);
   ret +=
-    test_daemon_get (NULL, cipher_suite, proto_version, port1, 0);
+    test_daemon_get (NULL, port1, 0);
   MHD_stop_daemon (d1);
   return ret;
 }
@@ -131,7 +128,6 @@ main (int argc, char *const *argv)
 {
   unsigned int errorCount = 0;
   FILE *cert;
-  const char *aes256_sha = "AES256-SHA";
   (void) argc; (void) argv;       /* Unused. Silent compiler warning. */
 
 #ifdef MHD_HTTPS_REQUIRE_GCRYPT
@@ -155,13 +151,8 @@ main (int argc, char *const *argv)
     return 99;
   }
 
-  if (curl_tls_is_nss ())
-  {
-    aes256_sha = "rsa_aes_256_sha";
-  }
-
   errorCount +=
-    test_concurent_daemon_pair (NULL, aes256_sha, CURL_SSLVERSION_TLSv1);
+    test_concurent_daemon_pair (NULL);
 
   print_test_result (errorCount, "concurent_daemon_pair");
 

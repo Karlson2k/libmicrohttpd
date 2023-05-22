@@ -53,8 +53,6 @@ struct https_test_data
 {
   void *cls;
   int port;
-  const char *cipher_suite;
-  int proto_version;
 };
 
 struct CBC
@@ -94,7 +92,6 @@ setup_ca_cert (void);
  */
 int
 test_daemon_get (void *cls,
-                 const char *cipher_suite, int proto_version,
                  int port, int ver_peer);
 
 void
@@ -129,12 +126,10 @@ gen_test_file_url (char *url,
                    int port);
 
 int
-send_curl_req (char *url, struct CBC *cbc, const char *cipher_suite,
-               int proto_version);
+send_curl_req (char *url, struct CBC *cbc);
 
 int
-test_https_transfer (void *cls, int port, const char *cipher_suite, int
-                     proto_version);
+test_https_transfer (void *cls, int port);
 
 int
 setup_testcase (struct MHD_Daemon **d, int port, int daemon_flags, va_list
@@ -154,10 +149,9 @@ teardown_session (gnutls_session_t session,
 
 int
 test_wrap (const char *test_name, int
-           (*test_function)(void *cls, int port, const char *cipher_suite,
-                            int proto_version), void *cls,
+           (*test_function)(void *cls, int port), void *cls,
            int port,
-           int daemon_flags, const char *cipher_suite, int proto_version, ...);
+           int daemon_flags, ...);
 
 int testsuite_curl_global_init (void);
 
