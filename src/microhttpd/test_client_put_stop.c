@@ -325,7 +325,7 @@ test_global_init (void)
       if (limit > 0)
       {
 #ifndef _MHD_HEAVY_TESTS
-        fprintf (stderr, "This system has limits on number of RST packet"
+        fprintf (stderr, "This system has limits on number of RST packets"
                  " per second (%d).\nThis test will be used only if configured "
                  "with '--enable-heavy-test'.\n", limit);
         exit (77);
