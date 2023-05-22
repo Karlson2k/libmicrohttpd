@@ -2211,10 +2211,48 @@ MHD_CHECK_FUNC([[sysctl]], [[
 #ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 #endif
-#ifdef HAVE_STDDEF_H
+#if defined(HAVE_STDDEF_H)
 #include <stddef.h>
+#elif defined(HAVE_STDLIB_H)
+#include <stdlib.h>
 #endif
-  ]], [[int mib[2] = {CTL_KERN, KERN_MAXPROC}; if (sysctl(mib, 2, NULL, NULL, NULL, 0)) return 1;]]
+  ]], [[
+      int mib[2] = {0, 0}; /* Avoid any platform-specific values */
+      i][f (sysctl(mib, 2, NULL, NULL, NULL, 0)) return 1;
+  ]],
+  [
+    AC_CHECK_DECLS([CTL_NET,PF_INET,IPPROTO_ICMP,ICMPCTL_ICMPLIM],[],[],
+      [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#ifdef HAVE_SYS_SYSCTL_H
+#include <sys/sysctl.h>
+#endif /* HAVE_SYS_SYSCTL_H */
+#ifdef HAVE_SYS_SYSCTL_H
+#include <sys/sysctl.h>
+#endif /* HAVE_SYS_SYSCTL_H */
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif /* HAVE_SYS_SOCKET_H */
+#ifdef HAVE_NETINET_IN_SYSTM_H
+#include <netinet/in_systm.h>
+#endif /* HAVE_NETINET_IN_SYSTM_H */
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif /* HAVE_NETINET_IN_H */
+#ifdef HAVE_NETINET_IP_H
+#include <netinet/ip.h>
+#endif /* HAVE_NETINET_IP_H */
+#ifdef HAVE_NETINET_IP_ICMP_H
+#include <netinet/ip_icmp.h>
+#endif /* HAVE_NETINET_IP_ICMP_H */
+#ifdef HAVE_NETINET_ICMP_VAR_H
+#include <netinet/icmp_var.h>
+#endif /* HAVE_NETINET_ICMP_VAR_H */
+      ]]
+    )
+  ]
 )
 
 MHD_CHECK_FUNC([[sysctlbyname]], [[
@@ -2224,8 +2262,10 @@ MHD_CHECK_FUNC([[sysctlbyname]], [[
 #ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 #endif
-#ifdef HAVE_STDDEF_H
+#if defined(HAVE_STDDEF_H)
 #include <stddef.h>
+#elif defined(HAVE_STDLIB_H)
+#include <stdlib.h>
 #endif
   ]], [[sysctlbyname("test", NULL, NULL, NULL, 0);]]
 )
