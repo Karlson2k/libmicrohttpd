@@ -305,8 +305,12 @@ test_global_init (void)
       }
     }
 #endif
-#if defined(HAVE_SYSCTL) && defined(CTL_NET) && defined(PF_INET) && \
-    defined(IPPROTO_ICMP) && defined(ICMPCTL_ICMPLIM)
+#if defined(HAVE_SYSCTL) && defined(HAVE_DECL_CTL_NET) && \
+    defined(HAVE_DECL_PF_INET) && defined(HAVE_DECL_IPPROTO_ICMP) && \
+    defined(HAVE_DECL_ICMPCTL_ICMPLIM)
+    /* Macros may have zero values */
+#if HAVE_DECL_CTL_NET && HAVE_DECL_PF_INET && HAVE_DECL_IPPROTO_ICMP && \
+    HAVE_DECL_ICMPCTL_ICMPLIM
     if (1)
     {
       int mib[4];
@@ -366,8 +370,10 @@ test_global_init (void)
 #endif /* _MHD_HEAVY_TESTS */
       }
     }
-#endif /* HAVE_SYSCTL && CTL_NET && PF_INET &&
-          IPPROTO_ICMP && ICMPCTL_ICMPLIM */
+#endif /* HAVE_DECL_CTL_NET && HAVE_DECL_PF_INET && HAVE_DECL_IPPROTO_ICMP && \
+          HAVE_DECL_ICMPCTL_ICMPLIM */
+#endif /* HAVE_SYSCTL && HAVE_DECL_CTL_NET && HAVE_DECL_PF_INET &&
+          HAVE_DECL_IPPROTO_ICMP && HAVE_DECL_ICMPCTL_ICMPLIM */
   }
   if (MHD_YES != MHD_is_feature_supported (MHD_FEATURE_AUTOSUPPRESS_SIGPIPE))
   {
