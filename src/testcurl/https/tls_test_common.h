@@ -56,10 +56,10 @@ extern const char *const srv_signed_key_pem;
 /* test server CA signed certificates */
 extern const char *const srv_signed_cert_pem;
 
-/* test server self signed certificates */
+/* test server self signed certificate */
 extern const char *const srv_self_signed_cert_pem;
 
-/* test server key */
+/* test server self signed certificate key */
 extern const char *const srv_key_pem;
 
 /* TODO rm if unused */
