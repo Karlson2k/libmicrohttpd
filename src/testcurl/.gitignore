@@ -178,3 +178,5 @@ core
 /test_digestauth2_oldapi1_bind_all
 /test_digestauth2_oldapi1_bind_uri
 test_*[a-z0-9_][a-z0-9_][a-z0-9_]
+!*.c
+!*.h
