@@ -48,6 +48,20 @@
 #define MHD_E_FAILED_TO_CONNECT \
   "Error: server connection could not be established\n"
 
+extern const char *const ca_cert_pem;
+
+/* test server key */
+extern const char *const srv_signed_key_pem;
+
+/* test server CA signed certificates */
+extern const char *const srv_signed_cert_pem;
+
+/* test server self signed certificates */
+extern const char *const srv_self_signed_cert_pem;
+
+/* test server key */
+extern const char *const srv_key_pem;
+
 /* TODO rm if unused */
 struct https_test_data
 {

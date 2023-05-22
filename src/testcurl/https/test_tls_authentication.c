@@ -34,9 +34,6 @@
 #endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #include "tls_test_common.h"
 
-extern const char srv_signed_cert_pem[];
-extern const char srv_signed_key_pem[];
-
 
 /* perform a HTTP GET request via SSL/TLS */
 static int

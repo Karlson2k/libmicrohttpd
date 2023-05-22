@@ -35,9 +35,6 @@
 
 #define MAX_EXT_DATA_LENGTH 256
 
-extern const char srv_key_pem[];
-extern const char srv_self_signed_cert_pem[];
-
 /**
  * Test daemon response to TLS client hello requests containing extensions
  *

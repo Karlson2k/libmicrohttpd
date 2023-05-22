@@ -53,9 +53,6 @@
 #include <windows.h>
 #endif
 
-extern const char srv_key_pem[];
-extern const char srv_self_signed_cert_pem[];
-
 static const int TIME_OUT = 2;
 
 static unsigned int num_connects = 0;

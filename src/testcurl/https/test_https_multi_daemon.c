@@ -34,9 +34,6 @@
 #endif /* MHD_HTTPS_REQUIRE_GCRYPT */
 #include "tls_test_common.h"
 
-extern const char srv_key_pem[];
-extern const char srv_self_signed_cert_pem[];
-
 /*
  * assert initiating two separate daemons and having one shut down
  * doesn't affect the other
