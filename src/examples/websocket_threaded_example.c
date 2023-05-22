@@ -38,7 +38,7 @@
   "<title>WebSocket chat</title>\n"                                           \
   "<script>\n"                                                                \
   "document.addEventListener('DOMContentLoaded', function() {\n"              \
-  "  const ws = new WebSocket('ws:/" "/ ' + window.location.host);\n"     /*  \
+  "  const ws = new WebSocket('ws:/" "/ ' + window.location.host);\n"         \
   "  const btn = document.getElementById('send');\n"                          \
   "  const msg = document.getElementById('msg');\n"                           \
   "  const log = document.getElementById('log');\n"                           \
@@ -71,7 +71,7 @@
   "<input type='button' id='send' value='Send' /><br /><br />\n"              \
   "<textarea id='log' rows='20' cols='28'></textarea>\n"                      \
   "</body>\n"                                                                 \
-  "</html>"                                                               */
+  "</html>"
 #define BAD_REQUEST_PAGE                                                      \
   "<html>\n"                                                                  \
   "<head>\n"                                                                  \
