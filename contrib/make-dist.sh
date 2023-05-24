@@ -84,11 +84,22 @@ echo '** Patched build system ready.'
 echo ''
 
 # Build the configure and the related files with patches
+
+have_command()
+{
+    command -v "$1" >/dev/null 2>&1
+}
+
 echo ''
 echo '*** Building dist tarball...'
 echo ''
 ./configure || exit 7
-make dist || exit 7
+if have_command zopfli; then
+    make dist-custm2 'ARC_CMD=zopfli -v --gzip --i15' 'ARC_EXT=tar.gz' || exit 7
+else
+    make dist || exit 7
+    echo '* zopfli is not installed, tarball size is suboptimal.'
+fi
 echo ''
 echo '** Dist tarball ready.'
 echo ''
