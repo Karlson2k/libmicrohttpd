@@ -19,7 +19,8 @@ May 2023
     on automatic selection by TLS library.
     HTTPS tests: changed certificate hash algorithm from SHA-1 to SHA-256
     as SHA-1 is already blocked by some libs/OSes.
-    W32 VS projects: supported ARM and ARM64. -EG
+    W32 VS projects: supported ARM and ARM64.
+    Fixed compiler warning on x32. -EG
 
 April 2023
     Fixed processing of folded headers.
