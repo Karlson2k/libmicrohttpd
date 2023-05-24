@@ -60,12 +60,31 @@ dist-hook: dist-po
 	@if test -w '$(distdir)/m4/c_backported.m4'; then \
 	  echo "Use empty m4/c_backported.m4 for dist target"; \
 	  touch -r '$(distdir)/m4/c_backported.m4' '$(distdir)/m4/c_backported.m4-tmst' && \
-	    echo '# Not used for distribution' > '$(distdir)/m4/c_backported.m4' && \
+	    echo 'dnl Not used for distribution' > '$(distdir)/m4/c_backported.m4' && \
 	    touch -r '$(distdir)/m4/c_backported.m4-tmst' '$(distdir)/m4/c_backported.m4' && \
 	    rm -f '$(distdir)/m4/c_backported.m4-tmst'; \
 	else \
 	  true; \
 	fi
+
+dist-custm: distdir
+	@test -n "$(ARC_CMD)" || \
+	  { echo 'The valid archive command must be defined by "ARC_CMD".' >&2; false; }
+	@test -n "$(ARC_EXT)" || \
+	  { echo 'The archive file extention must be set by "ARC_EXT".' >&2; false; }
+	-rm -f '$(distdir).$(ARC_EXT)'
+	tardir=$(distdir) && $(am__tar) | $(ARC_CMD) >$(distdir).$(ARC_EXT)
+	$(am__post_remove_distdir)
+
+dist-custm2: distdir
+	@test -n "$(ARC_CMD)" || \
+	  { echo 'The valid archive command must be defined by "ARC_CMD".' >&2; false; }
+	@test -n "$(ARC_EXT)" || \
+	  { echo 'The archive file extention must be set by "ARC_EXT".' >&2; false; }
+	-rm -f '$(distdir).$(ARC_EXT)'
+	tardir=$(distdir) && $(am__tar) >$(distdir).tar && $(ARC_CMD) $(distdir).tar
+	rm -f $(distdir).tar
+	$(am__post_remove_distdir)
 
 pre-dist-hook: pre-dist-hook-doc
 	@echo "Preparing to make dist"
