@@ -18,7 +18,8 @@ May 2023
     HTTPS tests: removed enforcement of the cipher and TLS version. Relay
     on automatic selection by TLS library.
     HTTPS tests: changed certificate hash algorithm from SHA-1 to SHA-256
-    as SHA-1 is already blocked by some libs/OSes. -EG
+    as SHA-1 is already blocked by some libs/OSes.
+    W32 VS projects: supported ARM and ARM64. -EG
 
 April 2023
     Fixed processing of folded headers.
