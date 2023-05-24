@@ -966,7 +966,7 @@ file_reader (void *cls,
     pos_uli.QuadPart = (uint64_t) offset64;   /* Simple transformation 64bit -> 2x32bit. */
     f_ol.Offset = pos_uli.LowPart;
     f_ol.OffsetHigh = pos_uli.HighPart;
-    if (! ReadFile (fh, (void*) buf, toRead, &resRead, &f_ol))
+    if (! ReadFile (fh, (void *) buf, toRead, &resRead, &f_ol))
       return MHD_CONTENT_READER_END_WITH_ERROR;   /* Read error. */
     if (0 == resRead)
       return MHD_CONTENT_READER_END_OF_STREAM;
