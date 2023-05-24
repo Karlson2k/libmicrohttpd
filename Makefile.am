@@ -59,3 +59,23 @@ dist-hook:
 	else \
 	  true; \
 	fi
+
+dist-custm: distdir
+	@test -n "$(ARC_CMD)" || \
+	  { echo 'The valid archive command must be defined by "ARC_CMD".' >&2; false; }
+	@test -n "$(ARC_EXT)" || \
+	  { echo 'The archive file extention must be set by "ARC_EXT".' >&2; false; }
+	-rm -f '$(distdir).$(ARC_EXT)'
+	tardir=$(distdir) && $(am__tar) | $(ARC_CMD) >$(distdir).$(ARC_EXT)
+	$(am__post_remove_distdir)
+
+dist-custm2: distdir
+	@test -n "$(ARC_CMD)" || \
+	  { echo 'The valid archive command must be defined by "ARC_CMD".' >&2; false; }
+	@test -n "$(ARC_EXT)" || \
+	  { echo 'The archive file extention must be set by "ARC_EXT".' >&2; false; }
+	-rm -f '$(distdir).$(ARC_EXT)'
+	tardir=$(distdir) && $(am__tar) >$(distdir).tar && $(ARC_CMD) $(distdir).tar
+	rm -f $(distdir).tar
+	$(am__post_remove_distdir)
+
