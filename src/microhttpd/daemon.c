@@ -4033,13 +4033,13 @@ get_timeout_millisec_ (struct MHD_Daemon *daemon,
     return 0;
 
   if (MHD_NO == MHD_get_timeout (daemon, &ulltimeout))
-    return (INT_MAX < max_timeout) ? INT_MAX : (int) max_timeout;
+    return (INT_MAX <= max_timeout) ? INT_MAX : (int) max_timeout;
 
   if ( (0 > max_timeout) ||
        ((uint32_t) max_timeout > ulltimeout) )
-    return (INT_MAX < ulltimeout) ? INT_MAX : (int) ulltimeout;
+    return (INT_MAX <= ulltimeout) ? INT_MAX : (int) ulltimeout;
 
-  return (INT_MAX < max_timeout) ? INT_MAX : (int) max_timeout;
+  return (INT_MAX <= max_timeout) ? INT_MAX : (int) max_timeout;
 }
 
 
