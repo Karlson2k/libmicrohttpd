@@ -5435,7 +5435,7 @@ MHD_get_connection_info (struct MHD_Connection *connection,
       memset (&connection->connection_info_dummy.client_addr, 0,
               sizeof (connection->connection_info_dummy.client_addr));
       memcpy (&connection->connection_info_dummy.client_addr,
-              &connection->addr,
+              connection->addr,
               (size_t) connection->addr_len);
       return &connection->connection_info_dummy;
     }
