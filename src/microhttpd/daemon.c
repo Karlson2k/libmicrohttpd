@@ -4139,6 +4139,7 @@ MHD_get_timeout64 (struct MHD_Daemon *daemon,
 }
 
 
+#if defined(HAVE_POLL) || defined(EPOLL_SUPPORT)
 /**
  * Obtain timeout value for external polling function for this daemon.
  *
@@ -4300,6 +4301,8 @@ get_timeout_millisec_int (struct MHD_Daemon *daemon,
   return (int) res;
 }
 
+
+#endif /* HAVE_POLL || EPOLL_SUPPORT */
 
 /**
  * Internal version of #MHD_run_from_select().
