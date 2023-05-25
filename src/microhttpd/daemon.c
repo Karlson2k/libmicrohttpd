@@ -4013,6 +4013,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
 }
 
 
+#if defined(HAVE_POLL) || defined(EPOLL_SUPPORT)
 /**
  * Obtain timeout value for polling function for this daemon.
  * @remark To be called only from the thread that processes
@@ -4041,6 +4042,8 @@ get_timeout_millisec_ (struct MHD_Daemon *daemon,
   return (INT_MAX < max_timeout) ? INT_MAX : (int) max_timeout;
 }
 
+
+#endif /* HAVE_POLL || EPOLL_SUPPORT */
 
 /**
  * Internal version of #MHD_run_from_select().
