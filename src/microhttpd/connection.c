@@ -5432,11 +5432,11 @@ MHD_get_connection_info (struct MHD_Connection *connection,
   case MHD_CONNECTION_INFO_CLIENT_ADDRESS:
     if (0 < connection->addr_len)
     {
-      memset (&connection->connection_info_dummy.client_addr, 0,
-              sizeof (connection->connection_info_dummy.client_addr));
+      mhd_assert (sizeof (connection->addr) == \
+                  sizeof (connection->connection_info_dummy.client_addr));
       memcpy (&connection->connection_info_dummy.client_addr,
-              connection->addr,
-              (size_t) connection->addr_len);
+              &connection->addr,
+              sizeof(connection->addr));
       return &connection->connection_info_dummy;
     }
     return NULL;
