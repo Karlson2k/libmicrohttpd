@@ -60,7 +60,7 @@ MHD_basic_auth_get_username_password3 (struct MHD_Connection *connection)
   if ((NULL == params->token68.str) || (0 == params->token68.len))
     return NULL;
 
-  decoded_max_len = (params->token68.len / 4) * 3;
+  decoded_max_len = MHD_base64_max_dec_size_ (params->token68.len);
   ret = (struct MHD_BasicAuthInfo *) malloc (sizeof(struct MHD_BasicAuthInfo)
                                              + decoded_max_len + 1);
   if (NULL != ret)
