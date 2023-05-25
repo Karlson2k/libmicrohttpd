@@ -4269,7 +4269,7 @@ get_timeout_millisec_ (struct MHD_Daemon *daemon,
   if ((0 < max_timeout) && ((uint64_t) max_timeout < d_timeout))
     return max_timeout;
 
-  if (INT64_MAX < d_timeout)
+  if (INT64_MAX <= d_timeout)
     return INT64_MAX;
 
   return (int64_t) d_timeout;
