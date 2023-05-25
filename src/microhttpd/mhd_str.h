@@ -453,6 +453,16 @@ MHD_uint8_to_str_pad (uint8_t val,
 #ifdef BAUTH_SUPPORT
 
 /**
+ * Returns the maximum possible size of the Base64 decoded data.
+ * The real recoded size could be up to two bytes smaller.
+ * @param enc_size the size of encoded data, in characters
+ * @return the maximum possible size of the decoded data, in bytes, if
+ *         @a enc_size is valid (properly padded),
+ *         undefined value smaller then @a enc_size if @a enc_size is not valid
+ */
+#define MHD_base64_max_dec_size_(enc_size) (((enc_size) / 4) * 3)
+
+/**
  * Convert Base64 encoded string to binary data.
  * @param base64 the input string with Base64 encoded data, could be NOT zero
  *               terminated
