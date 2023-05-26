@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)..\common\vs_dirs.props" />
-  <Import Project="$(MhdW32Common)\project-configs.vcxproj" />
-  <Import Project="$(MhdW32Common)\libmicrohttpd-files.vcxproj" />
+  <Import Project="$(MhdW32Common)project-configs.props" />
+  <Import Project="$(MhdW32Common)libmicrohttpd-files.vcxproj" />
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9CFB0342-A9E7-483E-BEE5-A1DE22584C5A}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -27,8 +27,8 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <Import Project="$(MhdW32Common)common-build-settings.vcxproj" />
-  <Import Project="$(MhdW32Common)libmicrohttpd-build-settings.vcxproj" />
+  <Import Project="$(MhdW32Common)common-build-settings.props" />
+  <Import Project="$(MhdW32Common)libmicrohttpd-build-settings.props" />
   <PropertyGroup />
   <ItemDefinitionGroup>
     <ClCompile />
