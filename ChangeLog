@@ -20,7 +20,10 @@ May 2023
     HTTPS tests: changed certificate hash algorithm from SHA-1 to SHA-256
     as SHA-1 is already blocked by some libs/OSes.
     W32 VS projects: supported ARM and ARM64.
-    Fixed compiler warning on x32. -EG
+    Fixed compiler warning on x32.
+    Basic Auth switched to internal Base64 implementation for better
+    checking of input data validity.
+    Removed public domain Base64 implementation. -EG
 
 April 2023
     Fixed processing of folded headers.
@@ -81,12 +84,16 @@ June 2022
     Fixed compiler warnings in main code and examples.
     Fixed data races when closing upgraded connection.
     Removed duplication of "Connection: upgrade" header. Patch by Alexander
-    Irion. -EG
+    Irion.
+    Implemented Base64 decoding with thorough checks for the input data
+    validity.
+    Added new test for Base64 decoding. -EG
 
 May 2022
     Fixed compiler warnings.
     Fixed MHD functionality with blocking sockets. Patch by Kolja Nowak.
-    Fixed possible use of uninitialised variable. -EG
+    Fixed possible use of uninitialised variable.
+    Added new test for Basic Auth. -EG
 
 April 2022
     Fixed compiler warnings.
