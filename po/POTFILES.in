@@ -1,6 +1,4 @@
 src/include/microhttpd.h
-src/microhttpd/base64.c
-src/microhttpd/base64.h
 src/microhttpd/basicauth.c
 src/microhttpd/connection.c
 src/microhttpd/connection.h
