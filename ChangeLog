@@ -1,3 +1,6 @@
+Sun 28 May 2023 18:00:00 MSK
+    Releasing GNU libmicrohttpd 0.9.77 -EG
+
 May 2023
     Improved portability of boostrap (and autogen.sh)
     Muted more compiler warnings in configure.
@@ -23,7 +26,8 @@ May 2023
     Fixed compiler warning on x32.
     Basic Auth switched to internal Base64 implementation for better
     checking of input data validity.
-    Removed public domain Base64 implementation. -EG
+    Removed public domain Base64 implementation.
+    Some minor fixes for W32 VS compilation. -EG
 
 April 2023
     Fixed processing of folded headers.
@@ -113,7 +117,7 @@ March 2022
 January 2022
     Tuned automake options.
     Fixed compiler warning in examples.
-    Fixed used of initialised variable in tests.
+    Fixed use of initialised variable in tests.
     Digest Auth: changed "md5" / "sha-256" to "MD5" / "SHA-256" to better
     match RFC (while clients should use caseless matching).
     Minor autoconf macros fixes. -EG

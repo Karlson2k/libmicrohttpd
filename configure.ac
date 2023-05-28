@@ -23,15 +23,15 @@
 #
 AC_PREREQ([2.64])
 LT_PREREQ([2.4.0])
-AC_INIT([GNU Libmicrohttpd],[0.9.76],[libmicrohttpd@gnu.org])
+AC_INIT([GNU Libmicrohttpd],[0.9.77],[libmicrohttpd@gnu.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([gnu] [check-news] [filename-length-max=99] [tar-v7] [silent-rules] [subdir-objects])
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
-LIB_VERSION_CURRENT=72
-LIB_VERSION_REVISION=1
-LIB_VERSION_AGE=60
+LIB_VERSION_CURRENT=73
+LIB_VERSION_REVISION=0
+LIB_VERSION_AGE=61
 AC_SUBST([LIB_VERSION_CURRENT])
 AC_SUBST([LIB_VERSION_REVISION])
 AC_SUBST([LIB_VERSION_AGE])
