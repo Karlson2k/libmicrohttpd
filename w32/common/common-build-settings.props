@@ -3,9 +3,9 @@
   <PropertyGroup Label="UserMacros">
     <!-- Target minimum OS version: WinXP = 0; Vista = 1; Win7 = 2; Win8 = 3...
          Only 0, 1 and 3 are used currently -->
-    <TargetOSLevel Condition="$(Platform.StartsWith('ARM'))">3</TargetOSLevel>
-    <TargetOSLevel Condition="! $(Platform.StartsWith('ARM')) And $(PlatformToolset.EndsWith('_xp'))">0</TargetOSLevel>
-    <TargetOSLevel Condition="! $(Platform.StartsWith('ARM')) And ! $(PlatformToolset.EndsWith('_xp'))">1</TargetOSLevel>
+    <TargetOSLevel Condition="$(Platform.ToLowerInvariant().StartsWith('arm'))">3</TargetOSLevel>
+    <TargetOSLevel Condition="! $(Platform.ToLowerInvariant().StartsWith('arm')) And $(PlatformToolset.EndsWith('_xp'))">0</TargetOSLevel>
+    <TargetOSLevel Condition="! $(Platform.ToLowerInvariant().StartsWith('arm')) And ! $(PlatformToolset.EndsWith('_xp'))">1</TargetOSLevel>
     <MhdNumBits Condition="$(Platform.EndsWith('64'))">64</MhdNumBits>
     <MhdNumBits Condition="! $(Platform.EndsWith('64'))">32</MhdNumBits>
   </PropertyGroup>
