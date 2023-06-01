@@ -178,12 +178,18 @@
  */
 #if defined(HAVE___FUNC__)
 #define MHD_FUNC_       __func__
+#define MHD_HAVE_MHD_FUNC_ 1
 #elif defined(HAVE___FUNCTION__)
 #define MHD_FUNC_       __FUNCTION__
+#define MHD_HAVE_MHD_FUNC_ 1
 #elif defined(HAVE___PRETTY_FUNCTION__)
 #define MHD_FUNC_       __PRETTY_FUNCTION__
+#define MHD_HAVE_MHD_FUNC_ 1
 #else
 #define MHD_FUNC_       "**name unavailable**"
+#ifdef MHD_HAVE_MHD_FUNC_
+#undef MHD_HAVE_MHD_FUNC_
+#endif /* MHD_HAVE_MHD_FUNC_ */
 #endif
 
 
