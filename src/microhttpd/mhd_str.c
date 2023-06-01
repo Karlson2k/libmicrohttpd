@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2015-2022 Karlson2k (Evgeny Grin)
+  Copyright (C) 2015-2023 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -211,6 +211,308 @@ todigitvalue (char c)
 _MHD_static_inline int
 toxdigitvalue (char c)
 {
+#if ! defined(MHD_FAVOR_SMALL_CODE)
+  switch ((unsigned char) c)
+  {
+#if 0 /* Disabled to give the compiler a hint about low probability */
+  case 0x00U:    /* NUL */
+  case 0x01U:    /* SOH */
+  case 0x02U:    /* STX */
+  case 0x03U:    /* ETX */
+  case 0x04U:    /* EOT */
+  case 0x05U:    /* ENQ */
+  case 0x06U:    /* ACK */
+  case 0x07U:    /* BEL */
+  case 0x08U:    /* BS */
+  case 0x09U:    /* HT */
+  case 0x0AU:    /* LF */
+  case 0x0BU:    /* VT */
+  case 0x0CU:    /* FF */
+  case 0x0DU:    /* CR */
+  case 0x0EU:    /* SO */
+  case 0x0FU:    /* SI */
+  case 0x10U:    /* DLE */
+  case 0x11U:    /* DC1 */
+  case 0x12U:    /* DC2 */
+  case 0x13U:    /* DC3 */
+  case 0x14U:    /* DC4 */
+  case 0x15U:    /* NAK */
+  case 0x16U:    /* SYN */
+  case 0x17U:    /* ETB */
+  case 0x18U:    /* CAN */
+  case 0x19U:    /* EM */
+  case 0x1AU:    /* SUB */
+  case 0x1BU:    /* ESC */
+  case 0x1CU:    /* FS */
+  case 0x1DU:    /* GS */
+  case 0x1EU:    /* RS */
+  case 0x1FU:    /* US */
+  case 0x20U:    /* ' ' */
+  case 0x21U:    /* '!' */
+  case 0x22U:    /* '"' */
+  case 0x23U:    /* '#' */
+  case 0x24U:    /* '$' */
+  case 0x25U:    /* '%' */
+  case 0x26U:    /* '&' */
+  case 0x27U:    /* '\'' */
+  case 0x28U:    /* '(' */
+  case 0x29U:    /* ')' */
+  case 0x2AU:    /* '*' */
+  case 0x2BU:    /* '+' */
+  case 0x2CU:    /* ',' */
+  case 0x2DU:    /* '-' */
+  case 0x2EU:    /* '.' */
+  case 0x2FU:    /* '/' */
+    return -1;
+#endif
+  case 0x30U: /* '0' */
+    return 0;
+  case 0x31U: /* '1' */
+    return 1;
+  case 0x32U: /* '2' */
+    return 2;
+  case 0x33U: /* '3' */
+    return 3;
+  case 0x34U: /* '4' */
+    return 4;
+  case 0x35U: /* '5' */
+    return 5;
+  case 0x36U: /* '6' */
+    return 6;
+  case 0x37U: /* '7' */
+    return 7;
+  case 0x38U: /* '8' */
+    return 8;
+  case 0x39U: /* '9' */
+    return 9;
+#if 0         /* Disabled to give the compiler a hint about low probability */
+  case 0x3AU: /* ':' */
+  case 0x3BU: /* ';' */
+  case 0x3CU: /* '<' */
+  case 0x3DU: /* '=' */
+  case 0x3EU: /* '>' */
+  case 0x3FU: /* '?' */
+  case 0x40U: /* '@' */
+    return -1;
+#endif
+  case 0x41U: /* 'A' */
+    return 0xAU;
+  case 0x42U: /* 'B' */
+    return 0xBU;
+  case 0x43U: /* 'C' */
+    return 0xCU;
+  case 0x44U: /* 'D' */
+    return 0xDU;
+  case 0x45U: /* 'E' */
+    return 0xEU;
+  case 0x46U: /* 'F' */
+    return 0xFU;
+#if 0         /* Disabled to give the compiler a hint about low probability */
+  case 0x47U: /* 'G' */
+  case 0x48U: /* 'H' */
+  case 0x49U: /* 'I' */
+  case 0x4AU: /* 'J' */
+  case 0x4BU: /* 'K' */
+  case 0x4CU: /* 'L' */
+  case 0x4DU: /* 'M' */
+  case 0x4EU: /* 'N' */
+  case 0x4FU: /* 'O' */
+  case 0x50U: /* 'P' */
+  case 0x51U: /* 'Q' */
+  case 0x52U: /* 'R' */
+  case 0x53U: /* 'S' */
+  case 0x54U: /* 'T' */
+  case 0x55U: /* 'U' */
+  case 0x56U: /* 'V' */
+  case 0x57U: /* 'W' */
+  case 0x58U: /* 'X' */
+  case 0x59U: /* 'Y' */
+  case 0x5AU: /* 'Z' */
+  case 0x5BU: /* '[' */
+  case 0x5CU: /* '\' */
+  case 0x5DU: /* ']' */
+  case 0x5EU: /* '^' */
+  case 0x5FU: /* '_' */
+  case 0x60U: /* '`' */
+    return -1;
+#endif
+  case 0x61U: /* 'a' */
+    return 0xAU;
+  case 0x62U: /* 'b' */
+    return 0xBU;
+  case 0x63U: /* 'c' */
+    return 0xCU;
+  case 0x64U: /* 'd' */
+    return 0xDU;
+  case 0x65U: /* 'e' */
+    return 0xEU;
+  case 0x66U: /* 'f' */
+    return 0xFU;
+#if 0         /* Disabled to give the compiler a hint about low probability */
+  case 0x67U: /* 'g' */
+  case 0x68U: /* 'h' */
+  case 0x69U: /* 'i' */
+  case 0x6AU: /* 'j' */
+  case 0x6BU: /* 'k' */
+  case 0x6CU: /* 'l' */
+  case 0x6DU: /* 'm' */
+  case 0x6EU: /* 'n' */
+  case 0x6FU: /* 'o' */
+  case 0x70U: /* 'p' */
+  case 0x71U: /* 'q' */
+  case 0x72U: /* 'r' */
+  case 0x73U: /* 's' */
+  case 0x74U: /* 't' */
+  case 0x75U: /* 'u' */
+  case 0x76U: /* 'v' */
+  case 0x77U: /* 'w' */
+  case 0x78U: /* 'x' */
+  case 0x79U: /* 'y' */
+  case 0x7AU: /* 'z' */
+  case 0x7BU: /* '{' */
+  case 0x7CU: /* '|' */
+  case 0x7DU: /* '}' */
+  case 0x7EU: /* '~' */
+  case 0x7FU: /* DEL */
+  case 0x80U: /* EXT */
+  case 0x81U: /* EXT */
+  case 0x82U: /* EXT */
+  case 0x83U: /* EXT */
+  case 0x84U: /* EXT */
+  case 0x85U: /* EXT */
+  case 0x86U: /* EXT */
+  case 0x87U: /* EXT */
+  case 0x88U: /* EXT */
+  case 0x89U: /* EXT */
+  case 0x8AU: /* EXT */
+  case 0x8BU: /* EXT */
+  case 0x8CU: /* EXT */
+  case 0x8DU: /* EXT */
+  case 0x8EU: /* EXT */
+  case 0x8FU: /* EXT */
+  case 0x90U: /* EXT */
+  case 0x91U: /* EXT */
+  case 0x92U: /* EXT */
+  case 0x93U: /* EXT */
+  case 0x94U: /* EXT */
+  case 0x95U: /* EXT */
+  case 0x96U: /* EXT */
+  case 0x97U: /* EXT */
+  case 0x98U: /* EXT */
+  case 0x99U: /* EXT */
+  case 0x9AU: /* EXT */
+  case 0x9BU: /* EXT */
+  case 0x9CU: /* EXT */
+  case 0x9DU: /* EXT */
+  case 0x9EU: /* EXT */
+  case 0x9FU: /* EXT */
+  case 0xA0U: /* EXT */
+  case 0xA1U: /* EXT */
+  case 0xA2U: /* EXT */
+  case 0xA3U: /* EXT */
+  case 0xA4U: /* EXT */
+  case 0xA5U: /* EXT */
+  case 0xA6U: /* EXT */
+  case 0xA7U: /* EXT */
+  case 0xA8U: /* EXT */
+  case 0xA9U: /* EXT */
+  case 0xAAU: /* EXT */
+  case 0xABU: /* EXT */
+  case 0xACU: /* EXT */
+  case 0xADU: /* EXT */
+  case 0xAEU: /* EXT */
+  case 0xAFU: /* EXT */
+  case 0xB0U: /* EXT */
+  case 0xB1U: /* EXT */
+  case 0xB2U: /* EXT */
+  case 0xB3U: /* EXT */
+  case 0xB4U: /* EXT */
+  case 0xB5U: /* EXT */
+  case 0xB6U: /* EXT */
+  case 0xB7U: /* EXT */
+  case 0xB8U: /* EXT */
+  case 0xB9U: /* EXT */
+  case 0xBAU: /* EXT */
+  case 0xBBU: /* EXT */
+  case 0xBCU: /* EXT */
+  case 0xBDU: /* EXT */
+  case 0xBEU: /* EXT */
+  case 0xBFU: /* EXT */
+  case 0xC0U: /* EXT */
+  case 0xC1U: /* EXT */
+  case 0xC2U: /* EXT */
+  case 0xC3U: /* EXT */
+  case 0xC4U: /* EXT */
+  case 0xC5U: /* EXT */
+  case 0xC6U: /* EXT */
+  case 0xC7U: /* EXT */
+  case 0xC8U: /* EXT */
+  case 0xC9U: /* EXT */
+  case 0xCAU: /* EXT */
+  case 0xCBU: /* EXT */
+  case 0xCCU: /* EXT */
+  case 0xCDU: /* EXT */
+  case 0xCEU: /* EXT */
+  case 0xCFU: /* EXT */
+  case 0xD0U: /* EXT */
+  case 0xD1U: /* EXT */
+  case 0xD2U: /* EXT */
+  case 0xD3U: /* EXT */
+  case 0xD4U: /* EXT */
+  case 0xD5U: /* EXT */
+  case 0xD6U: /* EXT */
+  case 0xD7U: /* EXT */
+  case 0xD8U: /* EXT */
+  case 0xD9U: /* EXT */
+  case 0xDAU: /* EXT */
+  case 0xDBU: /* EXT */
+  case 0xDCU: /* EXT */
+  case 0xDDU: /* EXT */
+  case 0xDEU: /* EXT */
+  case 0xDFU: /* EXT */
+  case 0xE0U: /* EXT */
+  case 0xE1U: /* EXT */
+  case 0xE2U: /* EXT */
+  case 0xE3U: /* EXT */
+  case 0xE4U: /* EXT */
+  case 0xE5U: /* EXT */
+  case 0xE6U: /* EXT */
+  case 0xE7U: /* EXT */
+  case 0xE8U: /* EXT */
+  case 0xE9U: /* EXT */
+  case 0xEAU: /* EXT */
+  case 0xEBU: /* EXT */
+  case 0xECU: /* EXT */
+  case 0xEDU: /* EXT */
+  case 0xEEU: /* EXT */
+  case 0xEFU: /* EXT */
+  case 0xF0U: /* EXT */
+  case 0xF1U: /* EXT */
+  case 0xF2U: /* EXT */
+  case 0xF3U: /* EXT */
+  case 0xF4U: /* EXT */
+  case 0xF5U: /* EXT */
+  case 0xF6U: /* EXT */
+  case 0xF7U: /* EXT */
+  case 0xF8U: /* EXT */
+  case 0xF9U: /* EXT */
+  case 0xFAU: /* EXT */
+  case 0xFBU: /* EXT */
+  case 0xFCU: /* EXT */
+  case 0xFDU: /* EXT */
+  case 0xFEU: /* EXT */
+  case 0xFFU: /* EXT */
+    return -1;
+  default:
+    mhd_assert (0);
+    break;  /* Should be unreachable */
+#else
+  default:
+    break;
+#endif
+  }
+  return -1;
+#else  /* MHD_FAVOR_SMALL_CODE */
   if (isasciidigit (c))
     return (unsigned char) (c - '0');
   if ( (c >= 'A') && (c <= 'F') )
@@ -219,6 +521,7 @@ toxdigitvalue (char c)
     return (unsigned char) (c - 'a' + 10);
 
   return -1;
+#endif /* MHD_FAVOR_SMALL_CODE */
 }
 
 
