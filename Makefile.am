@@ -49,7 +49,7 @@ pkgconfig_DATA = libmicrohttpd.pc
 
 EXTRA_DIST += pre-dist-hook-dummy
 MOSTLYCLEANFILES = pre-dist-hook-dummy
-DISTCLEANFILES = 
+DISTCLEANFILES =
 MAINTAINERCLEANFILES = m4/c_backported.m4
 
 pre-dist-hook-dummy: pre-dist-hook Makefile
@@ -73,7 +73,7 @@ dist-custm: distdir
 	@test -n "$(ARC_CMD)" || \
 	  { echo 'The valid archive command must be defined by "ARC_CMD".' >&2; false; }
 	@test -n "$(ARC_EXT)" || \
-	  { echo 'The archive file extention must be set by "ARC_EXT".' >&2; false; }
+	  { echo 'The archive file extension must be set by "ARC_EXT".' >&2; false; }
 	-rm -f '$(distdir).$(ARC_EXT)'
 	tardir=$(distdir) && $(am__tar) | $(ARC_CMD) >$(distdir).$(ARC_EXT)
 	$(am__post_remove_distdir)
@@ -82,7 +82,7 @@ dist-custm2: distdir
 	@test -n "$(ARC_CMD)" || \
 	  { echo 'The valid archive command must be defined by "ARC_CMD".' >&2; false; }
 	@test -n "$(ARC_EXT)" || \
-	  { echo 'The archive file extention must be set by "ARC_EXT".' >&2; false; }
+	  { echo 'The archive file extension must be set by "ARC_EXT".' >&2; false; }
 	-rm -f '$(distdir).$(ARC_EXT)'
 	tardir=$(distdir) && $(am__tar) >$(distdir).tar && $(ARC_CMD) $(distdir).tar
 	rm -f $(distdir).tar
@@ -196,7 +196,7 @@ $(srcdir_po)/POTFILES.in: $(top_srcdir)/src/microhttpd/Makefile.am
 	$(am__cd) '$(top_builddir)/src/microhttpd' && $(MAKE) $(AM_MAKEFLAGS) update-po-POTFILES.in
 
 AUTOPOINT = autopoint
-AUTOPOINT_FLAGS = 
+AUTOPOINT_FLAGS =
 
 APIM_LOCK_BASE = autopoint-updating-lock
 APIM_TMSTMP_BASE = autopoint-timestamp
