@@ -4061,7 +4061,7 @@ MHD_get_timeout (struct MHD_Daemon *daemon,
  *                  timeout (in milliseconds)
  * @return #MHD_YES if timeout value has been set,
  *         #MHD_NO if timeouts are not used and no data processing is pending.
- * @note Available since #MHD_VERSION 0x00097508
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup event
  */
 _MHD_EXTERN enum MHD_Result
@@ -4175,7 +4175,7 @@ MHD_get_timeout64 (struct MHD_Daemon *daemon,
  *         activity for indefinite amount of time,
  *         otherwise returned value is the the maximum amount of millisecond
  *         that external polling function must wait for the activity of FDs.
- * @note Available since #MHD_VERSION 0x00097509
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup event
  */
 _MHD_EXTERN int64_t
@@ -4227,7 +4227,7 @@ MHD_get_timeout64s (struct MHD_Daemon *daemon)
  *         otherwise returned value is the the maximum amount of millisecond
  *         (capped at INT_MAX) that external polling function must wait
  *         for the activity of FDs.
- * @note Available since #MHD_VERSION 0x00097510
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup event
  */
 _MHD_EXTERN int
@@ -8606,7 +8606,7 @@ MHD_get_version (void)
  *
  * @return version binary value, e.g. "0x00090900" (#MHD_VERSION of
  *         compiled MHD binary)
- * @note Available since #MHD_VERSION 0x00097544
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup specialized
  */
 _MHD_EXTERN uint32_t

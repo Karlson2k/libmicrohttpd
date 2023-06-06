@@ -288,7 +288,7 @@ digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3)
  *         or zero if the input value is not supported or not valid
  * @sa #MHD_digest_auth_calc_userdigest()
  * @sa #MHD_digest_auth_calc_userhash(), #MHD_digest_auth_calc_userhash_hex()
- * @note Available since #MHD_VERSION 0x00097526
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
 _MHD_EXTERN size_t
@@ -1257,7 +1257,7 @@ get_rq_nc (const struct MHD_RqDAuth *params,
  * @return NULL no valid Digest Authorization header is used in the request;
  *         a pointer structure with information if the valid request header
  *         found, free using #MHD_free().
- * @note Available since #MHD_VERSION 0x00097519
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
 _MHD_EXTERN struct MHD_DigestAuthInfo *
@@ -1345,7 +1345,7 @@ MHD_digest_auth_get_request_info3 (struct MHD_Connection *connection)
  *         a pointer structure with information if the valid request header
  *         found, free using #MHD_free().
  * @sa MHD_digest_auth_get_request_info3() provides more complete information
- * @note Available since #MHD_VERSION 0x00097519
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
 _MHD_EXTERN struct MHD_DigestAuthUsernameInfo *
@@ -1922,7 +1922,7 @@ calc_userdigest (struct DigestAlgorithm *da,
  *         not supported (or external error has occurred,
  *         see #MHD_FEATURE_EXTERN_HASH).
  * @sa #MHD_digest_auth_check_digest3()
- * @note Available since #MHD_VERSION 0x00097535
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
@@ -2026,7 +2026,7 @@ calc_userhash (struct DigestAlgorithm *da,
  *         MHD_NO if @a bin_buf_size is too small or if @a algo3 algorithm is
  *         not supported (or external error has occurred,
  *         see #MHD_FEATURE_EXTERN_HASH)
- * @note Available since #MHD_VERSION 0x00097535
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
@@ -2100,7 +2100,7 @@ MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo3 algo3,
  *         MHD_NO if @a bin_buf_size is too small or if @a algo3 algorithm is
  *         not supported (or external error has occurred,
  *         see #MHD_FEATURE_EXTERN_HASH).
- * @note Available since #MHD_VERSION 0x00097535
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
@@ -3146,7 +3146,7 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  *               by the client is not allowed by this parameter
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097528
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
@@ -3211,7 +3211,7 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
  * @sa #MHD_digest_auth_calc_userdigest()
- * @note Available since #MHD_VERSION 0x00097528
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
@@ -3474,7 +3474,7 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
  *                    added, indicating for the client that UTF-8 encoding
  *                    is preferred
  * @return #MHD_YES on success, #MHD_NO otherwise
- * @note Available since #MHD_VERSION 0x00097526
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
 static enum MHD_Result
@@ -3923,7 +3923,7 @@ queue_auth_required_response3_inner (struct MHD_Connection *connection,
  *                    added, indicating for the client that UTF-8 encoding
  *                    is preferred
  * @return #MHD_YES on success, #MHD_NO otherwise
- * @note Available since #MHD_VERSION 0x00097526
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result

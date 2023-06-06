@@ -1500,7 +1500,7 @@ MHD_create_response_from_buffer (size_t size,
  * @param buffer the buffer with the data for the response body, can be NULL
  *               if @a size is zero
  * @return NULL on error (i.e. invalid arguments, out of memory)
- * @note Available since #MHD_VERSION 0x00097506
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
@@ -1533,7 +1533,7 @@ MHD_create_response_from_buffer_static (size_t size,
  * @param buffer the buffer with the data for the response body, can be NULL
  *               if @a size is zero
  * @return NULL on error (i.e. invalid arguments, out of memory)
- * @note Available since #MHD_VERSION 0x00097507
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
@@ -1620,7 +1620,7 @@ MHD_create_response_from_buffer_with_free_callback (size_t size,
  * @param crfc_cls an argument for @a crfc
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @note Available since #MHD_VERSION 0x00097302
- * @note 'const' qualifier is used for @a buffer since #MHD_VERSION 0x00097504
+ * @note 'const' qualifier is used for @a buffer since #MHD_VERSION 0x00097701
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
@@ -1819,7 +1819,7 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
  * @param flags the flags for the new response object
  * @return NULL on error (i.e. invalid arguments, out of memory),
  *         the pointer to the created response object otherwise
- * @note Available since #MHD_VERSION 0x00097503
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *

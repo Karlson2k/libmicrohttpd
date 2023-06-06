@@ -42,7 +42,7 @@
  *         current request, or
  *         pointer to structure with username and password, which must be
  *         freed by #MHD_free().
- * @note Available since #MHD_VERSION 0x00097517
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
 _MHD_EXTERN struct MHD_BasicAuthInfo *
@@ -216,7 +216,7 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
  * @param response the response object to modify and queue; the NULL
  *                 is tolerated
  * @return #MHD_YES on success, #MHD_NO otherwise
- * @note Available since #MHD_VERSION 0x00097516
+ * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
