@@ -237,6 +237,7 @@ check_PROGRAMS = \
   test_client_put_chunked_steps_close \
   test_client_put_chunked_steps_hard_close \
   test_options \
+  test_mhd_version \
   test_set_panic
 
 if ENABLE_MD5
@@ -648,6 +649,11 @@ test_dauth_userdigest_LDADD = \
 test_dauth_userhash_SOURCES = \
   test_dauth_userhash.c
 test_dauth_userhash_LDADD = \
+  libmicrohttpd.la
+
+test_mhd_version_SOURCES = \
+  test_mhd_version.c
+test_mhd_version_LDADD = \
   libmicrohttpd.la
 
 .PHONY: update-po-POTFILES.in
