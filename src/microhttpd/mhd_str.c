@@ -2199,18 +2199,68 @@ MHD_str_quote (const char *unquoted,
 
 #ifdef BAUTH_SUPPORT
 
+/*
+ * MHD_BASE64_FUNC_VERSION
+ * 1 = smallest,
+ * 2 = medium,
+ * 3 = fastest
+ */
+#ifndef MHD_BASE64_FUNC_VERSION
+#ifdef MHD_FAVOR_SMALL_CODE
+#define MHD_BASE64_FUNC_VERSION 1
+#else  /* ! MHD_FAVOR_SMALL_CODE */
+#define MHD_BASE64_FUNC_VERSION 3
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+#endif /* ! MHD_BASE64_FUNC_VERSION */
+
+#if MHD_BASE64_FUNC_VERSION < 1 || MHD_BASE64_FUNC_VERSION > 3
+#error Wrong MHD_BASE64_FUNC_VERSION value
+#endif /* MHD_BASE64_FUNC_VERSION < 1 || MHD_BASE64_FUNC_VERSION > 3 */
+
+#if MHD_BASE64_FUNC_VERSION == 3
+#define MHD_base64_map_type_ int
+#else  /* MHD_BASE64_FUNC_VERSION < 3 */
+#define MHD_base64_map_type_ int8_t
+#endif /* MHD_BASE64_FUNC_VERSION < 3 */
+
+#if MHD_BASE64_FUNC_VERSION == 1
+static MHD_base64_map_type_
+base64_char_to_value_ (uint8_t c)
+{
+  if ('Z' >= c)
+  {
+    if ('A' <= c)
+      return (MHD_base64_map_type_) (c - 'A') + 0;
+    if ('0' <= c)
+    {
+      if ('9' >= c)
+        return (MHD_base64_map_type_) (c - '0') + 52;
+      if ('=' == c)
+        return -2;
+      return -1;
+    }
+    if ('+' == c)
+      return 62;
+    if ('/' == c)
+      return 63;
+    return -1;
+  }
+  if (('z' >= c) && ('a' <= c))
+    return (MHD_base64_map_type_) (c - 'a') + 26;
+  return -1;
+}
+
+
+#endif /* MHD_BASE64_FUNC_VERSION == 1 */
+
 size_t
 MHD_base64_to_bin_n (const char *base64,
                      size_t base64_len,
                      void *bin,
                      size_t bin_size)
 {
-#ifndef MHD_FAVOR_SMALL_CODE
-#define map_type int
-#else  /* MHD_FAVOR_SMALL_CODE */
-#define map_type int8_t
-#endif /* MHD_FAVOR_SMALL_CODE */
-  static const map_type map[] = {
+#if MHD_BASE64_FUNC_VERSION >= 2
+  static const MHD_base64_map_type_ map[] = {
     /* -1 = invalid char, -2 = padding
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
     NUL,  SOH,  STX,  ETX,  EOT,  ENQ,  ACK,  BEL,  */
@@ -2276,7 +2326,7 @@ MHD_base64_to_bin_n (const char *base64,
     'x',  'y',  'z',  '{',  '|',  '}',  '~',  DEL,  */
     49,   50,   51,   -1,   -1,   -1,   -1,   -1
 
-#ifndef MHD_FAVOR_SMALL_CODE
+#if MHD_BASE64_FUNC_VERSION == 3
     ,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* 80..8F */
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* 90..9F */
@@ -2286,8 +2336,10 @@ MHD_base64_to_bin_n (const char *base64,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* D0..DF */
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* E0..EF */
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  /* F0..FF */
-#endif /* ! MHD_FAVOR_SMALL_CODE */
+#endif /* ! MHD_BASE64_FUNC_VERSION == 3 */
   };
+#define base64_char_to_value_(c) map[(c)]
+#endif /* MHD_BASE64_FUNC_VERSION >= 2 */
   const uint8_t *const in = (const uint8_t *) base64;
   uint8_t *const out = (uint8_t *) bin;
   size_t i;
@@ -2302,16 +2354,16 @@ MHD_base64_to_bin_n (const char *base64,
   j = 0;
   for (i = 0; i < (base64_len - 4); i += 4)
   {
-#ifdef MHD_FAVOR_SMALL_CODE
+#if MHD_BASE64_FUNC_VERSION == 2
     if (0 != (0x80 & (in[i] | in[i + 1] | in[i + 2] | in[i + 3])))
       return 0;
-#endif /* MHD_FAVOR_SMALL_CODE */
+#endif /* MHD_BASE64_FUNC_VERSION == 2 */
     if (1)
     {
-      const map_type v1 = map[in[i + 0]];
-      const map_type v2 = map[in[i + 1]];
-      const map_type v3 = map[in[i + 2]];
-      const map_type v4 = map[in[i + 3]];
+      const MHD_base64_map_type_ v1 = base64_char_to_value_ (in[i + 0]);
+      const MHD_base64_map_type_ v2 = base64_char_to_value_ (in[i + 1]);
+      const MHD_base64_map_type_ v3 = base64_char_to_value_ (in[i + 2]);
+      const MHD_base64_map_type_ v4 = base64_char_to_value_ (in[i + 3]);
       if ((0 > v1) || (0 > v2) || (0 > v3) || (0 > v4))
         return 0;
       out[j + 0] = (uint8_t) ((((uint8_t) v1) << 2) | (((uint8_t) v2) >> 4));
@@ -2320,16 +2372,16 @@ MHD_base64_to_bin_n (const char *base64,
     }
     j += 3;
   }
-#ifdef MHD_FAVOR_SMALL_CODE
+#if MHD_BASE64_FUNC_VERSION == 2
   if (0 != (0x80 & (in[i] | in[i + 1] | in[i + 2] | in[i + 3])))
     return 0;
-#endif /* MHD_FAVOR_SMALL_CODE */
+#endif /* MHD_BASE64_FUNC_VERSION == 2 */
   if (1)
   { /* The last four chars block */
-    const map_type v1 = map[in[i + 0]];
-    const map_type v2 = map[in[i + 1]];
-    const map_type v3 = map[in[i + 2]];
-    const map_type v4 = map[in[i + 3]];
+    const MHD_base64_map_type_ v1 = base64_char_to_value_ (in[i + 0]);
+    const MHD_base64_map_type_ v2 = base64_char_to_value_ (in[i + 1]);
+    const MHD_base64_map_type_ v3 = base64_char_to_value_ (in[i + 2]);
+    const MHD_base64_map_type_ v4 = base64_char_to_value_ (in[i + 3]);
     if ((0 > v1) || (0 > v2))
       return 0; /* Invalid char or padding at first two positions */
     mhd_assert (j < bin_size);
@@ -2358,8 +2410,12 @@ MHD_base64_to_bin_n (const char *base64,
     out[j++] = (uint8_t) ((((uint8_t) v3) << 6) | (((uint8_t) v4)));
   }
   return j;
-#undef map_type
+#if MHD_BASE64_FUNC_VERSION >= 2
+#undef base64_char_to_value_
+#endif /* MHD_BASE64_FUNC_VERSION >= 2 */
 }
 
+
+#undef MHD_base64_map_type_
 
 #endif /* BAUTH_SUPPORT */
