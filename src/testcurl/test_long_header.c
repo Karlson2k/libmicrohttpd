@@ -304,6 +304,8 @@ main (int argc, char *const *argv)
   errorCount += testLongHeaderGet (VERY_LONG / 2 + 1893);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
+  else
+    printf ("Test succeed.\n");
   curl_global_cleanup ();
   return (0 == errorCount) ? 0 : 1;       /* 0 == pass */
 }

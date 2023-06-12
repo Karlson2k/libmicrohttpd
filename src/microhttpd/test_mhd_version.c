@@ -18,7 +18,7 @@
 */
 
 /**
- * @file microhttpd/test_mhd_version.h
+ * @file microhttpd/test_mhd_version.с
  * @brief  Tests for MHD versions identifiers
  * @author Karlson2k (Evgeny Grin)
  */
@@ -103,16 +103,22 @@ test_macro2_vs_func_str (void)
 static int
 test_func_str_vs_macro_bin (void)
 {
-#ifdef HAVE_SNPRINTF
-  char bin_print[10];
+  char bin_print[64];
   int res;
   const char *str_func = MHD_get_version ();
 
   printf ("Checking MHD_get_version() function vs MHD_VERSION macro.\n");
+#ifdef HAVE_SNPRINTF
   res = snprintf (bin_print, sizeof(bin_print), "%X.%X.%X",
                   (unsigned int) ((bin_macro >> 24) & 0xFF),
                   (unsigned int) ((bin_macro >> 16) & 0xFF),
                   (unsigned int) ((bin_macro >> 8) & 0xFF));
+#else  /* ! HAVE_SNPRINTF */
+  res = sprintf (bin_print, "%X.%X.%X",
+                 (unsigned int) ((bin_macro >> 24) & 0xFF),
+                 (unsigned int) ((bin_macro >> 16) & 0xFF),
+                 (unsigned int) ((bin_macro >> 8) & 0xFF));
+#endif /* ! HAVE_SNPRINTF */
   if ((9 < res) || (0 >= res))
   {
     fprintf (stderr, "snprintf() error.\n");
@@ -132,11 +138,6 @@ test_func_str_vs_macro_bin (void)
            bin_macro,
            bin_print);
   return 0;
-#else  /* ! HAVE_SNPRINTF */
-  fprintf (stderr, "snprintf() function is not available. "
-           "Cannot check binary/string match.\n");
-  return 0;
-#endif /* ! HAVE_SNPRINTF */
 }
 
 
@@ -219,5 +220,11 @@ main (void)
   res += test_macro_vs_func_bin ();
   res += test_func_bin_format ();
 
-  return 0 == res ? 0 : 1;
+  if (0 != res)
+  {
+    fprintf (stderr, "Test failed. Number of errors: %d\n", res);
+    return 1;
+  }
+  printf ("Test succeed.\n");
+  return 0;
 }
