@@ -45,8 +45,8 @@ MHD_state_to_string (enum MHD_CONNECTION_STATE state)
     return "receiving request line";
   case MHD_CONNECTION_REQ_LINE_RECEIVED:
     return "request line received";
-  case MHD_CONNECTION_HEADER_PART_RECEIVED:
-    return "header partially received";
+  case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
+    return "headers receiving";
   case MHD_CONNECTION_HEADERS_RECEIVED:
     return "headers received";
   case MHD_CONNECTION_HEADERS_PROCESSED:
@@ -57,8 +57,8 @@ MHD_state_to_string (enum MHD_CONNECTION_STATE state)
     return "body receiving";
   case MHD_CONNECTION_BODY_RECEIVED:
     return "body received";
-  case MHD_CONNECTION_FOOTER_PART_RECEIVED:
-    return "footer partially received";
+  case MHD_CONNECTION_FOOTERS_RECEIVING:
+    return "footers receiving";
   case MHD_CONNECTION_FOOTERS_RECEIVED:
     return "footers received";
   case MHD_CONNECTION_FULL_REQ_RECEIVED:

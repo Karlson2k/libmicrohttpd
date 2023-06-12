@@ -64,13 +64,14 @@
 /**
  * Response text used when the request (http header) is too big to
  * be processed.
- *
- * Intentionally empty here to keep our memory footprint
- * minimal.
  */
 #ifdef HAVE_MESSAGES
 #define REQUEST_TOO_BIG \
-  "<html><head><title>Request too big</title></head><body>Your HTTP header was too big for the memory constraints of this webserver.</body></html>"
+  "<html>" \
+  "<head><title>Request too big</title></head>" \
+  "<body>Your HTTP header is too big for the memory constraints " \
+  "of this webserver.</body>" \
+  "</html>"
 #else
 #define REQUEST_TOO_BIG ""
 #endif
@@ -104,6 +105,21 @@
 #endif
 
 /**
+ * Response text used when the request HTTP footer has bare CR character
+ * without LF character (and CR is not allowed to be treated as whitespace).
+ */
+#ifdef HAVE_MESSAGES
+#define BARE_CR_IN_FOOTER \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your HTTP footer has bare CR character without " \
+  "following LF character.</body>" \
+  "</html>"
+#else
+#define BARE_CR_IN_FOOTER ""
+#endif
+
+/**
  * Response text used when the request HTTP header has bare LF character
  * without CR character.
  */
@@ -119,6 +135,21 @@
 #endif
 
 /**
+ * Response text used when the request HTTP footer has bare LF character
+ * without CR character.
+ */
+#ifdef HAVE_MESSAGES
+#define BARE_LF_IN_FOOTER \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your HTTP footer has bare LF character without " \
+  "preceding CR character.</body>" \
+  "</html>"
+#else
+#define BARE_LF_IN_FOOTER ""
+#endif
+
+/**
  * Response text used when the request line has invalid characters in URI.
  */
 #ifdef HAVE_MESSAGES
@@ -130,6 +161,170 @@
   "</html>"
 #else
 #define RQ_TARGET_INVALID_CHAR ""
+#endif
+
+/**
+ * Response text used when line folding is used in request headers.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_RSP_OBS_FOLD \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Obsolete line folding is used in your HTTP request header.</body>" \
+  "</html>"
+#else
+#define ERR_RSP_OBS_FOLD ""
+#endif
+
+/**
+ * Response text used when line folding is used in request footers.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_RSP_OBS_FOLD_FOOTER \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Obsolete line folding is used in your HTTP request footer.</body>" \
+  "</html>"
+#else
+#define ERR_RSP_OBS_FOLD_FOOTER ""
+#endif
+
+/**
+ * Response text used when the request has whitespace at the start
+ * of the first header line.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_RSP_WSP_BEFORE_HEADER \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your HTTP request has whitespace between the request line and " \
+  "the first header.</body>" \
+  "</html>"
+#else
+#define ERR_RSP_WSP_BEFORE_HEADER ""
+#endif
+
+/**
+ * Response text used when the request has whitespace at the start
+ * of the first footer line.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_RSP_WSP_BEFORE_FOOTER \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your first HTTP footer line has whitespace at the first " \
+  "position.</body>" \
+  "</html>"
+#else
+#define ERR_RSP_WSP_BEFORE_FOOTER ""
+#endif
+
+/**
+ * Response text used when the whitespace found before colon (inside header
+ * name or between header name and colon).
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_RSP_WSP_IN_HEADER_NAME \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your HTTP request has whitespace before the first colon " \
+  "in header line.</body>" \
+  "</html>"
+#else
+#define ERR_RSP_WSP_IN_HEADER_NAME ""
+#endif
+
+/**
+ * Response text used when the whitespace found before colon (inside header
+ * name or between header name and colon).
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_RSP_WSP_IN_FOOTER_NAME \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your HTTP request has whitespace before the first colon " \
+  "in footer line.</body>" \
+  "</html>"
+#else
+#define ERR_RSP_WSP_IN_FOOTER_NAME ""
+#endif
+
+/**
+ * Response text used when request header has invalid character.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_RSP_INVALID_CHR_IN_HEADER \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your HTTP request has invalid character in header.</body>" \
+  "</html>"
+#else
+#define ERR_RSP_INVALID_CHR_IN_HEADER ""
+#endif
+
+/**
+ * Response text used when request header has invalid character.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_RSP_INVALID_CHR_IN_FOOTER \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your HTTP request has invalid character in footer.</body>" \
+  "</html>"
+#else
+#define ERR_RSP_INVALID_CHR_IN_HEADER ""
+#endif
+
+/**
+ * Response text used when request header has no colon character.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_RSP_HEADER_WITHOUT_COLON \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your HTTP request header line has no colon character.</body>" \
+  "</html>"
+#else
+#define ERR_RSP_INVALID_CHR_IN_HEADER ""
+#endif
+
+/**
+ * Response text used when request footer has no colon character.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_RSP_FOOTER_WITHOUT_COLON \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your HTTP request footer line has no colon character.</body>" \
+  "</html>"
+#else
+#define ERR_RSP_FOOTER_WITHOUT_COLON ""
+#endif
+
+/**
+ * Response text used when request header has zero-length header (filed) name.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_RSP_EMPTY_HEADER_NAME \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your HTTP request header has empty header name.</body>" \
+  "</html>"
+#else
+#define ERR_RSP_EMPTY_HEADER_NAME ""
+#endif
+
+/**
+ * Response text used when request header has zero-length header (filed) name.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_RSP_EMPTY_FOOTER_NAME \
+  "<html>" \
+  "<head><title>Request broken</title></head>" \
+  "<body>Your HTTP request footer has empty header name.</body>" \
+  "</html>"
+#else
+#define ERR_RSP_EMPTY_FOOTER_NAME ""
 #endif
 
 /**
@@ -2656,7 +2851,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
     case MHD_CONNECTION_INIT:
     case MHD_CONNECTION_REQ_LINE_RECEIVING:
     case MHD_CONNECTION_REQ_LINE_RECEIVED:
-    case MHD_CONNECTION_HEADER_PART_RECEIVED:
+    case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
       /* while reading headers, we always grow the
          read buffer if needed, no size-check required */
       if ( (connection->read_buffer_offset == connection->read_buffer_size) &&
@@ -2723,7 +2918,7 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
       break;
     case MHD_CONNECTION_BODY_RECEIVED:
-    case MHD_CONNECTION_FOOTER_PART_RECEIVED:
+    case MHD_CONNECTION_FOOTERS_RECEIVING:
       /* while reading footers, we always grow the
          read buffer if needed, no size-check required */
       if (connection->read_closed)
@@ -3971,6 +4166,20 @@ parse_connection_headers (struct MHD_Connection *connection)
 }
 
 
+/**
+ * Reset request header processing state.
+ *
+ * This function resets the processing state before processing the next header
+ * (or footer) line.
+ * @param c the connection to process
+ */
+_MHD_static_inline void
+reset_rq_header_processing_state (struct MHD_Connection *c)
+{
+  memset (&c->rq.hdrs.hdr, 0, sizeof(c->rq.hdrs.hdr));
+}
+
+
 #ifndef MHD_MAX_EMPTY_LINES_SKIP
 /**
  * The maximum number of ignored empty line before the request line
@@ -3982,7 +4191,8 @@ parse_connection_headers (struct MHD_Connection *connection)
 /**
  * Find and parse the request line.
  * @param c the connection to process
- * @return true if request line completely processed and state is changed,
+ * @return true if request line completely processed (or unrecoverable error
+ *         found) and state is changed,
  *         false if not enough data yet in the receive buffer
  */
 static bool
@@ -4733,26 +4943,641 @@ get_request_line (struct MHD_Connection *c)
       return true; /* Error in the request */
     }
   }
+  if (! process_request_target (c))
+    return true; /* Error in processing */
+
+  c->state = MHD_CONNECTION_REQ_LINE_RECEIVED;
+  return true;
+}
+
+
+/**
+ * Results of header line reading
+ */
+enum MHD_HdrLineReadRes_
+{
+  /**
+   * Not enough data yet
+   */
+  MHD_HDR_LINE_READING_NEED_MORE_DATA = 0,
+  /**
+   * New header line has been read
+   */
+  MHD_HDR_LINE_READING_GOT_HEADER,
+  /**
+   * Error in header data, error response has been queued
+   */
+  MHD_HDR_LINE_READING_DATA_ERROR,
+  /**
+   * Found the end of the request header (end of field lines)
+   */
+  MHD_HDR_LINE_READING_GOT_END_OF_HEADER
+} _MHD_FIXED_ENUM;
+
+
+/**
+ * Find the end of the request header line and make basic header parsing.
+ * Handle errors and header folding.
+ * @param c the connection to process
+ * @param process_footers if true then footers are processed,
+ *                        if false then headers are processed
+ * @param[out] hdr_name the name of the parsed header (field)
+ * @param[out] hdr_name the value of the parsed header (field)
+ * @return true if request header line completely processed,
+ *         false if not enough data yet in the receive buffer
+ */
+static enum MHD_HdrLineReadRes_
+get_req_header (struct MHD_Connection *c,
+                bool process_footers,
+                struct _MHD_str_w_len *hdr_name,
+                struct _MHD_str_w_len *hdr_value)
+{
+  const int discp_lvl = c->daemon->client_discipline;
+  /* Treat bare LF as the end of the line.
+     RFC 9112, section 2.2-3
+     Note: MHD never replaces bare LF with space (RFC 9110, section 5.5-5).
+     Bare LF is processed as end of the line or rejected as broken request. */
+  const bool bare_lf_as_crlf = (0 >= discp_lvl);
+  /* Keep bare CR character as is.
+     Violates RFC 9112, section 2.2-4 */
+  const bool bare_cr_keep = (-3 >= discp_lvl);
+  /* Treat bare CR as space; replace it with space before processing.
+     RFC 9112, section 2.2-4 */
+  const bool bare_cr_as_sp = ((! bare_cr_keep) && (-1 >= discp_lvl));
+  /* Treat NUL as space; replace it with space before processing.
+     RFC 9110, section 5.5-5 */
+  const bool nul_as_sp = (-1 >= discp_lvl);
+  /* Allow folded header lines.
+     RFC 9112, section 5.2-4 */
+  const bool allow_folded = (0 >= discp_lvl);
+  /* Do not reject headers with the whitespace at the start of the first line.
+     When allowed, the first line with whitespace character at the first
+     position is ignored (as well as all possible line foldings of the first
+     line).
+     RFC 9112, section 2.2-8 */
+  const bool allow_wsp_at_start = allow_folded && (-1 >= discp_lvl);
+  /* Allow whitespace in header (field) name.
+     Violates RFC 9110, section 5.1-2 */
+  const bool allow_wsp_in_name = (-2 >= discp_lvl);
+  /* Allow zero-length header (field) name.
+     Violates RFC 9110, section 5.1-2 */
+  const bool allow_empty_name = (-2 >= discp_lvl);
+  /* Allow whitespace before colon.
+     Violates RFC 9112, section 5.1-2 */
+  const bool allow_wsp_before_colon = (-3 >= discp_lvl);
+  /* Do not abort the request when header line has no colon, just skip such
+     bad lines.
+     RFC 9112, section 5-1 */
+  const bool allow_line_without_colon = (-2 >= discp_lvl);
+
+  size_t p; /**< The position of the currently processed character */
+
+#if ! defined (HAVE_MESSAGES) && ! defined(_DEBUG)
+  (void) process_footers; /* Unused parameter */
+#endif /* !HAVE_MESSAGES && !_DEBUG */
+
+  mhd_assert ((process_footers ? MHD_CONNECTION_FOOTERS_RECEIVING : \
+               MHD_CONNECTION_REQ_HEADERS_RECEIVING) == \
+              c->state);
+
+  p = c->rq.hdrs.hdr.proc_pos;
+
+  mhd_assert (p <= c->read_buffer_offset);
+  while (p < c->read_buffer_offset)
+  {
+    const char chr = c->read_buffer[p];
+    bool end_of_line;
+
+    mhd_assert ((0 == c->rq.hdrs.hdr.name_len) || \
+                (c->rq.hdrs.hdr.name_len < p));
+    mhd_assert ((0 == c->rq.hdrs.hdr.name_len) || (0 != p));
+    mhd_assert ((0 == c->rq.hdrs.hdr.name_len) || \
+                (c->rq.hdrs.hdr.name_end_found));
+    mhd_assert ((0 == c->rq.hdrs.hdr.value_start) || \
+                (c->rq.hdrs.hdr.name_len < c->rq.hdrs.hdr.value_start));
+    mhd_assert ((0 == c->rq.hdrs.hdr.value_start) || \
+                (0 != c->rq.hdrs.hdr.name_len));
+    mhd_assert ((0 == c->rq.hdrs.hdr.ws_start) || \
+                (0 == c->rq.hdrs.hdr.name_len) || \
+                (c->rq.hdrs.hdr.ws_start > c->rq.hdrs.hdr.name_len));
+    mhd_assert ((0 == c->rq.hdrs.hdr.ws_start) || \
+                (0 == c->rq.hdrs.hdr.value_start) || \
+                (c->rq.hdrs.hdr.ws_start > c->rq.hdrs.hdr.value_start));
+
+    /* Check for the end of the line */
+    if ('\r' == chr)
+    {
+      if (0 != p)
+      {
+        /* Line is not empty, need to check for possible line folding */
+        if (p + 2 >= c->read_buffer_offset)
+          break; /* Not enough data yet to check for folded line */
+      }
+      else
+      {
+        /* Line is empty, no need to check for possible line folding */
+        if (p + 2 > c->read_buffer_offset)
+          break; /* Not enough data yet to check for the end of the line */
+      }
+      if ('\n' == c->read_buffer[p + 1])
+        end_of_line = true;
+      else
+      {
+        /* Bare CR alone */
+        /* Must be rejected or replaced with space char.
+           See RFC 9112, section 2.2-4 */
+        if (bare_cr_as_sp)
+        {
+          c->read_buffer[p] = ' ';
+          c->rq.num_cr_sp_replaced++;
+          continue; /* Re-start processing of the current character */
+        }
+        else if (! bare_cr_keep)
+        {
+          transmit_error_response_static (c,
+                                          MHD_HTTP_BAD_REQUEST,
+                                          (! process_footers) ?
+                                          BARE_CR_IN_HEADER :
+                                          BARE_CR_IN_FOOTER);
+          return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
+        }
+        end_of_line = false;
+      }
+    }
+    else if ('\n' == chr)
+    {
+      /* Bare LF may be recognised as a line delimiter.
+         See RFC 9112, section 2.2-3 */
+      if (bare_lf_as_crlf)
+      {
+        if (0 != p)
+        {
+          /* Line is not empty, need to check for possible line folding */
+          if (p + 1 >= c->read_buffer_offset)
+            break; /* Not enough data yet to check for folded line */
+        }
+        end_of_line = true;
+      }
+      else
+      {
+        transmit_error_response_static (c,
+                                        MHD_HTTP_BAD_REQUEST,
+                                        (! process_footers) ?
+                                        BARE_LF_IN_HEADER : BARE_LF_IN_FOOTER);
+        return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
+      }
+    }
+    else
+      end_of_line = false;
+
+    if (end_of_line)
+    {
+      /* Handle the end of the line */
+      /**
+       *  The full length of the line, including CRLF (or bare LF).
+       */
+      const size_t line_len = p + (('\r' == chr) ? 2 : 1);
+      char next_line_char;
+      mhd_assert (line_len <= c->read_buffer_offset);
+
+      if (0 == p)
+      {
+        /* Zero-length header line. This is the end of the request header
+           section.
+           RFC 9112, Section 2.1-1 */
+        mhd_assert (! c->rq.hdrs.hdr.starts_with_ws);
+        mhd_assert (! c->rq.hdrs.hdr.name_end_found);
+        mhd_assert (0 == c->rq.hdrs.hdr.name_len);
+        mhd_assert (0 == c->rq.hdrs.hdr.ws_start);
+        mhd_assert (0 == c->rq.hdrs.hdr.value_start);
+        /* Consume the line with CRLF (or bare LF) */
+        c->read_buffer += line_len;
+        c->read_buffer_offset -= line_len;
+        c->read_buffer_size -= line_len;
+        return MHD_HDR_LINE_READING_GOT_END_OF_HEADER;
+      }
+
+      mhd_assert (line_len < c->read_buffer_offset);
+      mhd_assert (0 != line_len);
+      mhd_assert ('\n' == c->read_buffer[line_len - 1]);
+      next_line_char = c->read_buffer[line_len];
+      if ((' ' == next_line_char) ||
+          ('\t' == next_line_char))
+      {
+        /* Folded line */
+        if (! allow_folded)
+        {
+          transmit_error_response_static (c,
+                                          MHD_HTTP_BAD_REQUEST,
+                                          (! process_footers) ?
+                                          ERR_RSP_OBS_FOLD :
+                                          ERR_RSP_OBS_FOLD_FOOTER);
+          return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
+        }
+        /* Replace CRLF (or bare LF) character(s) with space characters.
+           See RFC 9112, Section 5.2-4 */
+        c->read_buffer[p] = ' ';
+        if ('\r' == chr)
+          c->read_buffer[p + 1] = ' ';
+        continue; /* Re-start processing of the current character */
+      }
+      else
+      {
+        /* It is not a folded line, it's the real end of the non-empty line */
+        bool skip_line = false;
+        mhd_assert (0 != p);
+        if (c->rq.hdrs.hdr.starts_with_ws)
+        {
+          /* This is the first line and it starts with whitespace. This line
+             must be discarded completely.
+             See RFC 9112, Section 2.2-8 */
+          mhd_assert (allow_wsp_at_start);
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (c->daemon,
+                    _ ("Whitespace-prefixed first header line " \
+                       "has been skipped.\n"));
+#endif /* HAVE_MESSAGES */
+          skip_line = true;
+        }
+        else if (! c->rq.hdrs.hdr.name_end_found)
+        {
+          if (! allow_line_without_colon)
+          {
+            transmit_error_response_static (c,
+                                            MHD_HTTP_BAD_REQUEST,
+                                            (! process_footers) ?
+                                            ERR_RSP_HEADER_WITHOUT_COLON :
+                                            ERR_RSP_FOOTER_WITHOUT_COLON);
+            return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
+          }
+          /* Skip broken line completely */
+          c->rq.skipped_broken_lines++;
+          skip_line = true;
+        }
+        if (skip_line)
+        {
+          /* Skip the entire line */
+          c->read_buffer += line_len;
+          c->read_buffer_offset -= line_len;
+          c->read_buffer_size -= line_len;
+          p = 0;
+          /* Reset processing state */
+          memset (&c->rq.hdrs.hdr, 0, sizeof(c->rq.hdrs.hdr));
+          /* Start processing of the next line */
+          continue;
+        }
+        else
+        {
+          /* This line should be valid header line */
+          size_t value_len;
+          mhd_assert ((0 != c->rq.hdrs.hdr.name_len) || allow_empty_name);
+
+          hdr_name->str = c->read_buffer + 0; /* The name always starts at the first character */
+          hdr_name->len = c->rq.hdrs.hdr.name_len;
+          mhd_assert (0 == hdr_name->str[hdr_name->len]);
+
+          if (0 == c->rq.hdrs.hdr.value_start)
+          {
+            c->rq.hdrs.hdr.value_start = p;
+            c->read_buffer[p] = 0;
+            value_len = 0;
+          }
+          else if (0 != c->rq.hdrs.hdr.ws_start)
+          {
+            mhd_assert (p > c->rq.hdrs.hdr.ws_start);
+            mhd_assert (c->rq.hdrs.hdr.ws_start > c->rq.hdrs.hdr.value_start);
+            c->read_buffer[c->rq.hdrs.hdr.ws_start] = 0;
+            value_len = c->rq.hdrs.hdr.ws_start - c->rq.hdrs.hdr.value_start;
+          }
+          else
+          {
+            mhd_assert (p > c->rq.hdrs.hdr.ws_start);
+            c->read_buffer[p] = 0;
+            value_len = p - c->rq.hdrs.hdr.value_start;
+          }
+          hdr_value->str = c->read_buffer + c->rq.hdrs.hdr.value_start;
+          hdr_value->len = value_len;
+          mhd_assert (0 == hdr_value->str[hdr_value->len]);
+          /* Consume the entire line */
+          c->read_buffer += line_len;
+          c->read_buffer_offset -= line_len;
+          c->read_buffer_size -= line_len;
+          return MHD_HDR_LINE_READING_GOT_HEADER;
+        }
+      }
+    }
+    else if ((' ' == chr) || ('\t' == chr))
+    {
+      if (0 == p)
+      {
+        if (! allow_wsp_at_start)
+        {
+          transmit_error_response_static (c,
+                                          MHD_HTTP_BAD_REQUEST,
+                                          (! process_footers) ?
+                                          ERR_RSP_WSP_BEFORE_HEADER :
+                                          ERR_RSP_WSP_BEFORE_FOOTER);
+          return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
+        }
+        c->rq.hdrs.hdr.starts_with_ws = true;
+      }
+      else if ((! c->rq.hdrs.hdr.name_end_found) &&
+               (! c->rq.hdrs.hdr.starts_with_ws))
+      {
+        /* Whitespace in header name / between header name and colon */
+        if (allow_wsp_in_name || allow_wsp_before_colon)
+        {
+          if (0 == c->rq.hdrs.hdr.ws_start)
+            c->rq.hdrs.hdr.ws_start = p;
+        }
+        else
+        {
+          transmit_error_response_static (c,
+                                          MHD_HTTP_BAD_REQUEST,
+                                          (! process_footers) ?
+                                          ERR_RSP_WSP_IN_HEADER_NAME :
+                                          ERR_RSP_WSP_IN_FOOTER_NAME);
+          return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
+        }
+      }
+      else
+      {
+        /* Whitespace before/inside/after header (field) value */
+        if (0 == c->rq.hdrs.hdr.ws_start)
+          c->rq.hdrs.hdr.ws_start = p;
+      }
+    }
+    else if (0 == chr)
+    {
+      if (! nul_as_sp)
+      {
+        transmit_error_response_static (c,
+                                        MHD_HTTP_BAD_REQUEST,
+                                        (! process_footers) ?
+                                        ERR_RSP_INVALID_CHR_IN_HEADER :
+                                        ERR_RSP_INVALID_CHR_IN_FOOTER);
+        return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
+      }
+      c->read_buffer[p] = ' ';
+      continue; /* Re-start processing of the current character */
+    }
+    else
+    {
+      /* Not a whitespace, not the end of the header line */
+      mhd_assert ('\r' != chr);
+      mhd_assert ('\n' != chr);
+      mhd_assert ('\0' != chr);
+      if ((! c->rq.hdrs.hdr.name_end_found) &&
+          (! c->rq.hdrs.hdr.starts_with_ws))
+      {
+        /* Processing the header (field) name */
+        if (':' == chr)
+        {
+          if (0 == c->rq.hdrs.hdr.ws_start)
+            c->rq.hdrs.hdr.name_len = p;
+          else
+          {
+            mhd_assert (allow_wsp_in_name || allow_wsp_before_colon);
+            if (! allow_wsp_before_colon)
+            {
+              transmit_error_response_static (c,
+                                              MHD_HTTP_BAD_REQUEST,
+                                              (! process_footers) ?
+                                              ERR_RSP_WSP_IN_HEADER_NAME :
+                                              ERR_RSP_WSP_IN_FOOTER_NAME);
+              return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
+            }
+            c->rq.hdrs.hdr.name_len = c->rq.hdrs.hdr.ws_start;
+#ifndef MHD_FAVOR_SMALL_CODE
+            c->rq.hdrs.hdr.ws_start = 0; /* Not on whitespace anymore */
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+          }
+          if ((0 == c->rq.hdrs.hdr.name_len) && ! allow_empty_name)
+          {
+            transmit_error_response_static (c,
+                                            MHD_HTTP_BAD_REQUEST,
+                                            (! process_footers) ?
+                                            ERR_RSP_EMPTY_HEADER_NAME :
+                                            ERR_RSP_EMPTY_FOOTER_NAME);
+            return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
+          }
+          c->rq.hdrs.hdr.name_end_found = true;
+          c->read_buffer[c->rq.hdrs.hdr.name_len] = 0; /* Zero-terminate the name */
+        }
+        else
+        {
+          if (0 != c->rq.hdrs.hdr.ws_start)
+          {
+            /* End of the whitespace in header (field) name */
+            mhd_assert (allow_wsp_in_name || allow_wsp_before_colon);
+            if (! allow_wsp_in_name)
+            {
+              transmit_error_response_static (c,
+                                              MHD_HTTP_BAD_REQUEST,
+                                              (! process_footers) ?
+                                              ERR_RSP_WSP_IN_HEADER_NAME :
+                                              ERR_RSP_WSP_IN_FOOTER_NAME);
+              return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
+            }
+#ifndef MHD_FAVOR_SMALL_CODE
+            c->rq.hdrs.hdr.ws_start = 0; /* Not on whitespace anymore */
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+          }
+        }
+      }
+      else
+      {
+        /* Processing the header (field) value */
+        if (0 == c->rq.hdrs.hdr.value_start)
+          c->rq.hdrs.hdr.value_start = p;
+#ifndef MHD_FAVOR_SMALL_CODE
+        c->rq.hdrs.hdr.ws_start = 0; /* Not on whitespace anymore */
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+      }
+#ifdef MHD_FAVOR_SMALL_CODE
+      c->rq.hdrs.hdr.ws_start = 0; /* Not on whitespace anymore */
+#endif /* MHD_FAVOR_SMALL_CODE */
+    }
+    p++;
+  }
+  c->rq.hdrs.hdr.proc_pos = p;
+  return MHD_HDR_LINE_READING_NEED_MORE_DATA; /* Not enough data yet */
+}
+
+
+/**
+ * Find the end of the request headers and make basic header parsing.
+ * Advance to the next state when done, handle errors.
+ * @param c the connection to process
+ * @param process_footers if true then footers are processed,
+ *                        if false then headers are processed
+ * @return true if request headers reading finished (either successfully
+ *         or with error),
+ *         false if not enough data yet in the receive buffer
+ */
+static bool
+get_req_headers (struct MHD_Connection *c, bool process_footers)
+{
+  do
+  {
+    struct _MHD_str_w_len hdr_name;
+    struct _MHD_str_w_len hdr_value;
+    enum MHD_HdrLineReadRes_ res;
+
+    mhd_assert ((process_footers ? MHD_CONNECTION_FOOTERS_RECEIVING : \
+                 MHD_CONNECTION_REQ_HEADERS_RECEIVING) == \
+                c->state);
+
+    #ifdef _DEBUG
+    hdr_name.str = NULL;
+    hdr_value.str = NULL;
+#endif /* _DEBUG */
+    res = get_req_header (c, process_footers, &hdr_name, &hdr_value);
+    if (MHD_HDR_LINE_READING_GOT_HEADER == res)
+    {
+      mhd_assert ((process_footers ? MHD_CONNECTION_FOOTERS_RECEIVING : \
+                   MHD_CONNECTION_REQ_HEADERS_RECEIVING) == \
+                  c->state);
+      mhd_assert (NULL != hdr_name.str);
+      mhd_assert (NULL != hdr_value.str);
+      /* Values must be zero-terminated and must not have binary zeros */
+      mhd_assert (strlen (hdr_name.str) == hdr_name.len);
+      mhd_assert (strlen (hdr_value.str) == hdr_value.len);
+      /* Values must not have whitespaces at the start or at the end */
+      mhd_assert ((hdr_name.len == 0) || (hdr_name.str[0] != ' '));
+      mhd_assert ((hdr_name.len == 0) || (hdr_name.str[0] != '\t'));
+      mhd_assert ((hdr_name.len == 0) || \
+                  (hdr_name.str[hdr_name.len - 1] != ' '));
+      mhd_assert ((hdr_name.len == 0) || \
+                  (hdr_name.str[hdr_name.len - 1] != '\t'));
+      mhd_assert ((hdr_value.len == 0) || (hdr_value.str[0] != ' '));
+      mhd_assert ((hdr_value.len == 0) || (hdr_value.str[0] != '\t'));
+      mhd_assert ((hdr_value.len == 0) || \
+                  (hdr_value.str[hdr_value.len - 1] != ' '));
+      mhd_assert ((hdr_value.len == 0) || \
+                  (hdr_value.str[hdr_value.len - 1] != '\t'));
+
+      if (MHD_NO ==
+          MHD_set_connection_value_n_nocheck_ (c,
+                                               (! process_footers) ?
+                                               MHD_HEADER_KIND :
+                                               MHD_FOOTER_KIND,
+                                               hdr_name.str, hdr_name.len,
+                                               hdr_value.str, hdr_value.len))
+      {
+        /**
+         * If 'true' then "headers too large" is used for the error response,
+         * if 'false' then "URI too large is used for the error response.
+         */
+        bool headers_large_err;
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (c->daemon,
+                  _ ("Failed to allocate memory in the connection memory " \
+                     "pool to store %s.\n"),
+                  (! process_footers) ? _ ("header") : _ ("footer"));
+#endif /* HAVE_MESSAGES */
+
+        if (! process_footers)
+        {
+          size_t http_headers_size;
+          size_t url_size;
+          const struct MHD_HTTP_Req_Header *hdr;
+
+          http_headers_size = hdr_name.len + hdr_value.len;
+          url_size = c->rq.url_len;
+          for (hdr = c->rq.headers_received; NULL != hdr; hdr = hdr->next)
+          {
+            if (MHD_HEADER_KIND == hdr->kind)
+              http_headers_size += hdr->header_size + hdr->value_size + 2;
+            else if (MHD_GET_ARGUMENT_KIND == hdr->kind)
+              url_size += hdr->header_size + hdr->value_size + 2;
+          }
+          /* The comparison is not precise as linefeeds (for headers) and
+             unescaping (for GET parameters) are not taken into account,
+             but precision is not required here.  */
+          headers_large_err =
+            (http_headers_size >= url_size);
+        }
+        else
+          headers_large_err = true;
+
+        transmit_error_response_static (c,
+                                        headers_large_err ?
+                                        MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE
+                                        : MHD_HTTP_URI_TOO_LONG,
+                                        REQUEST_TOO_BIG);
+        mhd_assert (MHD_CONNECTION_FULL_REQ_RECEIVED < c->state);
+        return true;
+      }
+      /* Reset processing state */
+      reset_rq_header_processing_state (c);
+      mhd_assert ((process_footers ? MHD_CONNECTION_FOOTERS_RECEIVING : \
+                   MHD_CONNECTION_REQ_HEADERS_RECEIVING) == \
+                  c->state);
+      /* Read the next header (field) line */
+      continue;
+    }
+    else if (MHD_HDR_LINE_READING_NEED_MORE_DATA == res)
+    {
+      mhd_assert ((process_footers ? MHD_CONNECTION_FOOTERS_RECEIVING : \
+                   MHD_CONNECTION_REQ_HEADERS_RECEIVING) == \
+                  c->state);
+      return false;
+    }
+    else if (MHD_HDR_LINE_READING_DATA_ERROR == res)
+    {
+      mhd_assert ((process_footers ? \
+                   MHD_CONNECTION_FOOTERS_RECEIVING : \
+                   MHD_CONNECTION_REQ_HEADERS_RECEIVING) < c->state);
+      mhd_assert (c->stop_with_error);
+      mhd_assert (c->discard_request);
+      return true;
+    }
+    mhd_assert (MHD_HDR_LINE_READING_GOT_END_OF_HEADER == res);
+    break;
+  } while (1);
+
 #ifdef HAVE_MESSAGES
   if (1 == c->rq.num_cr_sp_replaced)
   {
     MHD_DLOG (c->daemon,
               _ ("One bare CR character has been replaced with space " \
-                 "in the request line.\n"));
+                 "in %s.\n"),
+              (! process_footers) ?
+              _ ("the request line or in the request headers") :
+              _ ("the request footers"));
   }
   else if (0 != c->rq.num_cr_sp_replaced)
   {
     MHD_DLOG (c->daemon,
               _ ("%" PRIu64 " bare CR characters have been replaced with " \
-                 "spaces in the request line.\n"),
-                 (uint64_t) c->rq.num_cr_sp_replaced);
+                 "spaces in the request line and/or in the request %s.\n"),
+              (uint64_t) c->rq.num_cr_sp_replaced,
+              (! process_footers) ? _ ("headers") : _ ("footers"));
+  }
+  if (1 == c->rq.skipped_broken_lines)
+  {
+    MHD_DLOG (c->daemon,
+              _ ("One %s line without colon has been skipped.\n"),
+              (! process_footers) ? _ ("header") : _ ("footer"));
+  }
+  else if (0 != c->rq.skipped_broken_lines)
+  {
+    MHD_DLOG (c->daemon,
+              _ ("%" PRIu64 " %s lines without colons has been skipped.\n"),
+              (uint64_t) c->rq.skipped_broken_lines,
+              (! process_footers) ? _ ("header") : _ ("footer"));
   }
 #endif /* HAVE_MESSAGES */
-  if (! process_request_target (c))
-    return true; /* Error in processing */
 
-  memset (&c->rq.hdrs.hdr, 0, sizeof(c->rq.hdrs.hdr));
-  c->state = MHD_CONNECTION_REQ_LINE_RECEIVED;
+  mhd_assert (c->rq.method < c->read_buffer);
+  if (! process_footers)
+  {
+    c->rq.header_size = (size_t) (c->read_buffer - c->rq.method);
+    c->state = MHD_CONNECTION_HEADERS_RECEIVED;
+  }
+  else
+    c->state = MHD_CONNECTION_FOOTERS_RECEIVED;
   return true;
 }
 
@@ -4920,15 +5745,9 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
   {
   case MHD_CONNECTION_INIT:
   case MHD_CONNECTION_REQ_LINE_RECEIVING:
-  case MHD_CONNECTION_REQ_LINE_RECEIVED:
-  case MHD_CONNECTION_HEADER_PART_RECEIVED:
-  case MHD_CONNECTION_HEADERS_RECEIVED:
-  case MHD_CONNECTION_HEADERS_PROCESSED:
-  case MHD_CONNECTION_CONTINUE_SENDING:
+  case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
   case MHD_CONNECTION_BODY_RECEIVING:
-  case MHD_CONNECTION_BODY_RECEIVED:
-  case MHD_CONNECTION_FOOTER_PART_RECEIVED:
-  case MHD_CONNECTION_FOOTERS_RECEIVED:
+  case MHD_CONNECTION_FOOTERS_RECEIVING:
   case MHD_CONNECTION_FULL_REQ_RECEIVED:
     /* nothing to do but default action */
     if (connection->read_closed)
@@ -4960,6 +5779,15 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
       connection->read_buffer_size = connection->read_buffer_offset;
     }
     break;
+  case MHD_CONNECTION_REQ_LINE_RECEIVED:
+  case MHD_CONNECTION_HEADERS_RECEIVED:
+  case MHD_CONNECTION_HEADERS_PROCESSED:
+  case MHD_CONNECTION_BODY_RECEIVED:
+  case MHD_CONNECTION_FOOTERS_RECEIVED:
+    /* Milestone state, no data should be read */
+    mhd_assert (0); /* Should not be possible */
+    break;
+  case MHD_CONNECTION_CONTINUE_SENDING:
   case MHD_CONNECTION_HEADERS_SENDING:
   case MHD_CONNECTION_HEADERS_SENT:
   case MHD_CONNECTION_NORMAL_BODY_UNREADY:
@@ -4971,6 +5799,7 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
   case MHD_CONNECTION_FULL_REPLY_SENT:
   default:
     mhd_assert (0); /* Should not be possible */
+    break;
   }
   return;
 }
@@ -5014,11 +5843,10 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
   case MHD_CONNECTION_INIT:
   case MHD_CONNECTION_REQ_LINE_RECEIVING:
   case MHD_CONNECTION_REQ_LINE_RECEIVED:
-  case MHD_CONNECTION_HEADER_PART_RECEIVED:
+  case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
   case MHD_CONNECTION_HEADERS_RECEIVED:
-    mhd_assert (0);
-    return;
   case MHD_CONNECTION_HEADERS_PROCESSED:
+    mhd_assert (0);
     return;
   case MHD_CONNECTION_CONTINUE_SENDING:
     ret = MHD_send_data_ (connection,
@@ -5051,9 +5879,11 @@ MHD_connection_handle_write (struct MHD_Connection *connection)
     return;
   case MHD_CONNECTION_BODY_RECEIVING:
   case MHD_CONNECTION_BODY_RECEIVED:
-  case MHD_CONNECTION_FOOTER_PART_RECEIVED:
+  case MHD_CONNECTION_FOOTERS_RECEIVING:
   case MHD_CONNECTION_FOOTERS_RECEIVED:
   case MHD_CONNECTION_FULL_REQ_RECEIVED:
+    mhd_assert (0);
+    return;
   case MHD_CONNECTION_START_REPLY:
     mhd_assert (0);
     return;
@@ -5579,67 +6409,19 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING >= connection->state);
       break;
     case MHD_CONNECTION_REQ_LINE_RECEIVED:
-      line = get_next_header_line (connection,
-                                   NULL);
-      if (MHD_CONNECTION_REQ_LINE_RECEIVED != connection->state)
-        continue;
-      if (NULL == line)
-      {
-        if (connection->read_closed)
-        {
-          CONNECTION_CLOSE_ERROR (connection,
-                                  NULL);
-          continue;
-        }
-        break;
-      }
-      if (0 == line[0])
-      {
-        connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
-        connection->rq.header_size = (size_t) (connection->read_buffer
-                                               - connection->rq.method);
-        continue;
-      }
-      if (MHD_NO == process_header_line (connection,
-                                         line))
-      {
-        transmit_error_response_static (connection,
-                                        MHD_HTTP_BAD_REQUEST,
-                                        REQUEST_MALFORMED);
-        break;
-      }
-      connection->state = MHD_CONNECTION_HEADER_PART_RECEIVED;
+      reset_rq_header_processing_state (connection);
+      connection->state = MHD_CONNECTION_REQ_HEADERS_RECEIVING;
       continue;
-    case MHD_CONNECTION_HEADER_PART_RECEIVED:
-      line = get_next_header_line (connection,
-                                   NULL);
-      if (MHD_CONNECTION_HEADER_PART_RECEIVED != connection->state)
-        continue;
-      if (NULL == line)
+    case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
+      if (get_req_headers (connection, false))
       {
-        if (connection->state != MHD_CONNECTION_HEADER_PART_RECEIVED)
-          continue;
-        if (connection->read_closed)
-        {
-          CONNECTION_CLOSE_ERROR (connection,
-                                  NULL);
-          continue;
-        }
-        break;
-      }
-      if (MHD_NO ==
-          process_broken_line (connection,
-                               line,
-                               MHD_HEADER_KIND))
-        continue;
-      if (0 == line[0])
-      {
-        connection->state = MHD_CONNECTION_HEADERS_RECEIVED;
-        connection->rq.header_size = (size_t) (connection->read_buffer
-                                               - connection->rq.method);
+        mhd_assert (MHD_CONNECTION_REQ_HEADERS_RECEIVING < connection->state);
+        mhd_assert ((MHD_CONNECTION_HEADERS_RECEIVED == connection->state) || \
+                    (connection->discard_request));
         continue;
       }
-      continue;
+      mhd_assert (MHD_CONNECTION_REQ_HEADERS_RECEIVING == connection->state);
+      break;
     case MHD_CONNECTION_HEADERS_RECEIVED:
       parse_connection_headers (connection);
       if (MHD_CONNECTION_HEADERS_RECEIVED != connection->state)
@@ -5696,81 +6478,44 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
         if (MHD_CONNECTION_BODY_RECEIVING != connection->state)
           continue;
       }
-      /* Modify here when response queue during data processing
+      /* Modify here when queueing of the response during data processing
          will be supported */
       mhd_assert (! connection->discard_request);
       mhd_assert (NULL == connection->rp.response);
       if (0 == connection->rq.remaining_upload_size)
       {
+        connection->state = MHD_CONNECTION_BODY_RECEIVED;
+        continue;
+      }
+      break;
+    case MHD_CONNECTION_BODY_RECEIVED:
+      mhd_assert (! connection->discard_request);
+      mhd_assert (NULL == connection->rp.response);
+      if (0 == connection->rq.remaining_upload_size)
+      {
         if (connection->rq.have_chunked_upload)
-          connection->state = MHD_CONNECTION_BODY_RECEIVED;
+        {
+          /* Reset counter variables reused for footers */
+          connection->rq.num_cr_sp_replaced = 0;
+          connection->rq.skipped_broken_lines = 0;
+          reset_rq_header_processing_state (connection);
+          connection->state = MHD_CONNECTION_FOOTERS_RECEIVING;
+        }
         else
           connection->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
         continue;
       }
       break;
-    case MHD_CONNECTION_BODY_RECEIVED:
-      line = get_next_header_line (connection,
-                                   NULL);
-      if (connection->state != MHD_CONNECTION_BODY_RECEIVED)
-        continue;
-      if (NULL == line)
+    case MHD_CONNECTION_FOOTERS_RECEIVING:
+      if (get_req_headers (connection, true))
       {
-        if (connection->read_closed)
-        {
-          CONNECTION_CLOSE_ERROR (connection,
-                                  NULL);
-          continue;
-        }
-        if (0 < connection->read_buffer_offset)
-          connection->state = MHD_CONNECTION_FOOTER_PART_RECEIVED;
-        break;
-      }
-      if (0 == line[0])
-      {
-        connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
-        if (connection->suspended)
-          break;
+        mhd_assert (MHD_CONNECTION_FOOTERS_RECEIVING < connection->state);
+        mhd_assert ((MHD_CONNECTION_FOOTERS_RECEIVED == connection->state) || \
+                    (connection->discard_request));
         continue;
       }
-      if (MHD_NO == process_header_line (connection,
-                                         line))
-      {
-        transmit_error_response_static (connection,
-                                        MHD_HTTP_BAD_REQUEST,
-                                        REQUEST_MALFORMED);
-        break;
-      }
-      connection->state = MHD_CONNECTION_FOOTER_PART_RECEIVED;
-      continue;
-    case MHD_CONNECTION_FOOTER_PART_RECEIVED:
-      line = get_next_header_line (connection,
-                                   NULL);
-      if (connection->state != MHD_CONNECTION_FOOTER_PART_RECEIVED)
-        continue;
-      if (NULL == line)
-      {
-        if (connection->read_closed)
-        {
-          CONNECTION_CLOSE_ERROR (connection,
-                                  NULL);
-          continue;
-        }
-        break;
-      }
-      if (MHD_NO ==
-          process_broken_line (connection,
-                               line,
-                               MHD_FOOTER_KIND))
-        continue;
-      if (0 == line[0])
-      {
-        connection->state = MHD_CONNECTION_FOOTERS_RECEIVED;
-        if (connection->suspended)
-          break;
-        continue;
-      }
-      continue;
+      mhd_assert (MHD_CONNECTION_FOOTERS_RECEIVING == connection->state);
+      break;
     case MHD_CONNECTION_FOOTERS_RECEIVED:
       /* The header, the body, and the footers of the request has been received,
        * switch to the final processing of the request. */

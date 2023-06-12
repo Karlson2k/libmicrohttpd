@@ -623,18 +623,20 @@ enum MHD_CONNECTION_STATE
 
   /**
    * We got the URL (and request type and version).  Wait for a header line.
+   *
+   * A milestone state. No received data is processed in this state.
    */
   MHD_CONNECTION_REQ_LINE_RECEIVED = MHD_CONNECTION_REQ_LINE_RECEIVING + 1,
 
   /**
-   * We got part of a multi-line request header.  Wait for the rest.
+   * Receiving request headers.  Wait for the rest of the headers.
    */
-  MHD_CONNECTION_HEADER_PART_RECEIVED = MHD_CONNECTION_REQ_LINE_RECEIVED + 1,
+  MHD_CONNECTION_REQ_HEADERS_RECEIVING = MHD_CONNECTION_REQ_LINE_RECEIVED + 1,
 
   /**
    * We got the request headers.  Process them.
    */
-  MHD_CONNECTION_HEADERS_RECEIVED = MHD_CONNECTION_HEADER_PART_RECEIVED + 1,
+  MHD_CONNECTION_HEADERS_RECEIVED = MHD_CONNECTION_REQ_HEADERS_RECEIVING + 1,
 
   /**
    * We have processed the request headers.  Send 100 continue.
@@ -652,20 +654,23 @@ enum MHD_CONNECTION_STATE
   MHD_CONNECTION_BODY_RECEIVING = MHD_CONNECTION_CONTINUE_SENDING + 1,
 
   /**
-   * We got the request body.  Wait for a line of the footer.
+   * We got the request body.
+   *
+   * A milestone state. No received data is processed in this state.
    */
   MHD_CONNECTION_BODY_RECEIVED = MHD_CONNECTION_BODY_RECEIVING + 1,
 
   /**
-   * We got part of a line of the footer.  Wait for the
-   * rest.
+   * We are reading the request footers.
    */
-  MHD_CONNECTION_FOOTER_PART_RECEIVED = MHD_CONNECTION_BODY_RECEIVED + 1,
+  MHD_CONNECTION_FOOTERS_RECEIVING = MHD_CONNECTION_BODY_RECEIVED + 1,
 
   /**
    * We received the entire footer.
+   *
+   * A milestone state. No received data is processed in this state.
    */
-  MHD_CONNECTION_FOOTERS_RECEIVED = MHD_CONNECTION_FOOTER_PART_RECEIVED + 1,
+  MHD_CONNECTION_FOOTERS_RECEIVED = MHD_CONNECTION_FOOTERS_RECEIVING + 1,
 
   /**
    * We received the entire request.
@@ -985,6 +990,41 @@ struct MHD_HeaderProcessing
    * The position of the last processed character
    */
   size_t proc_pos;
+
+  /**
+   * The position of the first whitespace character in current contiguous
+   * whitespace block.
+   * Zero when no whitespace found or found non-whitespace character after
+   * whitespace.
+   * Must be zero, if the current character is not whitespace.
+   */
+  size_t ws_start;
+
+  /**
+   * Indicates that end of the header (field) name found.
+   * Must be false until the first colon in line is found.
+   */
+  bool name_end_found;
+
+  /**
+   * The length of the header name.
+   * Must be zero until the first colon in line is found.
+   * Name always starts at zero position.
+   */
+  size_t name_len;
+
+  /**
+   * The position of the first character of the header value.
+   * Zero when the first character has not been found yet.
+   */
+  size_t value_start;
+
+  /**
+   * Line starts with whitespace.
+   * It's meaningful only for the first line, as other lines should be handled
+   * as "folded".
+   */
+  bool starts_with_ws;
 };
 
 /**
@@ -1151,6 +1191,11 @@ struct MHD_Request
   size_t num_cr_sp_replaced;
 
   /**
+   * The number of header lines skipped because they have no colon
+   */
+  size_t skipped_broken_lines;
+
+  /**
    * The data of the request line / request headers processing
    */
   union MHD_HeadersProcessing hdrs;
@@ -1158,8 +1203,8 @@ struct MHD_Request
   /**
    * Last incomplete header line during parsing of headers.
    * Allocated in pool.  Only valid if state is
-   * either #MHD_CONNECTION_HEADER_PART_RECEIVED or
-   * #MHD_CONNECTION_FOOTER_PART_RECEIVED.
+   * either #MHD_CONNECTION_REQ_HEADERS_RECEIVING or
+   * #MHD_CONNECTION_FOOTERS_RECEIVING.
    */
   char *last;
 
@@ -1167,8 +1212,8 @@ struct MHD_Request
    * Position after the colon on the last incomplete header
    * line during parsing of headers.
    * Allocated in pool.  Only valid if state is
-   * either #MHD_CONNECTION_HEADER_PART_RECEIVED or
-   * #MHD_CONNECTION_FOOTER_PART_RECEIVED.
+   * either #MHD_CONNECTION_REQ_HEADERS_RECEIVING or
+   * #MHD_CONNECTION_FOOTERS_RECEIVING.
    */
   char *colon;
 };
