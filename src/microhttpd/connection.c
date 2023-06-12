@@ -69,7 +69,7 @@
 #define REQUEST_TOO_BIG \
   "<html>" \
   "<head><title>Request too big</title></head>" \
-  "<body>Your HTTP header is too big for the memory constraints " \
+  "<body>Request HTTP header is too big for the memory constraints " \
   "of this webserver.</body>" \
   "</html>"
 #else
@@ -97,7 +97,7 @@
 #define BARE_CR_IN_HEADER \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your HTTP header has bare CR character without " \
+  "<body>Request HTTP header has bare CR character without " \
   "following LF character.</body>" \
   "</html>"
 #else
@@ -112,7 +112,7 @@
 #define BARE_CR_IN_FOOTER \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your HTTP footer has bare CR character without " \
+  "<body>Request HTTP footer has bare CR character without " \
   "following LF character.</body>" \
   "</html>"
 #else
@@ -127,7 +127,7 @@
 #define BARE_LF_IN_HEADER \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your HTTP header has bare LF character without " \
+  "<body>Request HTTP header has bare LF character without " \
   "preceding CR character.</body>" \
   "</html>"
 #else
@@ -142,7 +142,7 @@
 #define BARE_LF_IN_FOOTER \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your HTTP footer has bare LF character without " \
+  "<body>Request HTTP footer has bare LF character without " \
   "preceding CR character.</body>" \
   "</html>"
 #else
@@ -156,7 +156,7 @@
 #define RQ_TARGET_INVALID_CHAR \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your HTTP request has invalid characters in " \
+  "<body>HTTP request has invalid characters in " \
   "the request-target.</body>" \
   "</html>"
 #else
@@ -170,7 +170,7 @@
 #define ERR_RSP_OBS_FOLD \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Obsolete line folding is used in your HTTP request header.</body>" \
+  "<body>Obsolete line folding is used in HTTP request header.</body>" \
   "</html>"
 #else
 #define ERR_RSP_OBS_FOLD ""
@@ -183,7 +183,7 @@
 #define ERR_RSP_OBS_FOLD_FOOTER \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Obsolete line folding is used in your HTTP request footer.</body>" \
+  "<body>Obsolete line folding is used in HTTP request footer.</body>" \
   "</html>"
 #else
 #define ERR_RSP_OBS_FOLD_FOOTER ""
@@ -197,7 +197,7 @@
 #define ERR_RSP_WSP_BEFORE_HEADER \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your HTTP request has whitespace between the request line and " \
+  "<body>HTTP request has whitespace between the request line and " \
   "the first header.</body>" \
   "</html>"
 #else
@@ -212,7 +212,7 @@
 #define ERR_RSP_WSP_BEFORE_FOOTER \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your first HTTP footer line has whitespace at the first " \
+  "<body>First HTTP footer line has whitespace at the first " \
   "position.</body>" \
   "</html>"
 #else
@@ -227,7 +227,7 @@
 #define ERR_RSP_WSP_IN_HEADER_NAME \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your HTTP request has whitespace before the first colon " \
+  "<body>HTTP request has whitespace before the first colon " \
   "in header line.</body>" \
   "</html>"
 #else
@@ -242,7 +242,7 @@
 #define ERR_RSP_WSP_IN_FOOTER_NAME \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your HTTP request has whitespace before the first colon " \
+  "<body>HTTP request has whitespace before the first colon " \
   "in footer line.</body>" \
   "</html>"
 #else
@@ -256,7 +256,7 @@
 #define ERR_RSP_INVALID_CHR_IN_HEADER \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your HTTP request has invalid character in header.</body>" \
+  "<body>HTTP request has invalid character in header.</body>" \
   "</html>"
 #else
 #define ERR_RSP_INVALID_CHR_IN_HEADER ""
@@ -269,7 +269,7 @@
 #define ERR_RSP_INVALID_CHR_IN_FOOTER \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your HTTP request has invalid character in footer.</body>" \
+  "<body>HTTP request has invalid character in footer.</body>" \
   "</html>"
 #else
 #define ERR_RSP_INVALID_CHR_IN_HEADER ""
@@ -282,7 +282,7 @@
 #define ERR_RSP_HEADER_WITHOUT_COLON \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your HTTP request header line has no colon character.</body>" \
+  "<body>HTTP request header line has no colon character.</body>" \
   "</html>"
 #else
 #define ERR_RSP_INVALID_CHR_IN_HEADER ""
@@ -295,7 +295,7 @@
 #define ERR_RSP_FOOTER_WITHOUT_COLON \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your HTTP request footer line has no colon character.</body>" \
+  "<body>HTTP request footer line has no colon character.</body>" \
   "</html>"
 #else
 #define ERR_RSP_FOOTER_WITHOUT_COLON ""
@@ -308,7 +308,7 @@
 #define ERR_RSP_EMPTY_HEADER_NAME \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your HTTP request header has empty header name.</body>" \
+  "<body>HTTP request header has empty header name.</body>" \
   "</html>"
 #else
 #define ERR_RSP_EMPTY_HEADER_NAME ""
@@ -321,7 +321,7 @@
 #define ERR_RSP_EMPTY_FOOTER_NAME \
   "<html>" \
   "<head><title>Request broken</title></head>" \
-  "<body>Your HTTP request footer has empty header name.</body>" \
+  "<body>HTTP request footer has empty footer name.</body>" \
   "</html>"
 #else
 #define ERR_RSP_EMPTY_FOOTER_NAME ""
@@ -336,7 +336,11 @@
  */
 #ifdef HAVE_MESSAGES
 #define REQUEST_LACKS_HOST \
-  "<html><head><title>&quot;Host:&quot; header required</title></head><body>In HTTP 1.1, requests must include a &quot;Host:&quot; header, and your HTTP 1.1 request lacked such a header.</body></html>"
+  "<html>" \
+  "<head><title>&quot;Host:&quot; header required</title></head>" \
+  "<body>HTTP/1.1 request without <b>&quot;Host:&quot;</b>.</body>"\
+  "</html>"
+
 #else
 #define REQUEST_LACKS_HOST ""
 #endif
@@ -378,7 +382,8 @@
  */
 #ifdef HAVE_MESSAGES
 #define REQUEST_MALFORMED \
-  "<html><head><title>Request malformed</title></head><body>Your HTTP request is syntactically incorrect.</body></html>"
+  "<html><head><title>Request malformed</title></head>" \
+  "<body>HTTP request is syntactically incorrect.</body></html>"
 #else
 #define REQUEST_MALFORMED ""
 #endif
@@ -389,7 +394,8 @@
  */
 #ifdef HAVE_MESSAGES
 #define REQUEST_CHUNKED_MALFORMED \
-  "<html><head><title>Request malformed</title></head><body>Your HTTP chunked encoding was syntactically incorrect.</body></html>"
+  "<html><head><title>Request malformed</title></head>" \
+  "<body>HTTP chunked encoding is syntactically incorrect.</body></html>"
 #else
 #define REQUEST_CHUNKED_MALFORMED ""
 #endif
@@ -399,7 +405,9 @@
  */
 #ifdef HAVE_MESSAGES
 #define REQUEST_CHUNK_TOO_LARGE \
-  "<html><head><title>Request content too large</title></head><body>The chunk size used in your HTTP chunked encoded request is too large.</body></html>"
+  "<html><head><title>Request content too large</title></head>" \
+  "<body>The chunk size used in HTTP chunked encoded " \
+  "request is too large.</body></html>"
 #else
 #define REQUEST_CHUNK_TOO_LARGE ""
 #endif
@@ -410,7 +418,8 @@
 #ifdef HAVE_MESSAGES
 #define REQUEST_CONTENTLENGTH_TOOLARGE \
   "<html><head><title>Request content too large</title></head>" \
-  "<body>Your HTTP request has too large value for <b>Content-Length</b> header.</body></html>"
+  "<body>HTTP request has too large value for " \
+  "<b>Content-Length</b> header.</body></html>"
 #else
 #define REQUEST_CONTENTLENGTH_TOOLARGE ""
 #endif
@@ -422,7 +431,8 @@
 #ifdef HAVE_MESSAGES
 #define REQUEST_CONTENTLENGTH_MALFORMED \
   "<html><head><title>Request malformed</title></head>" \
-  "<body>Your HTTP request has wrong value for <b>Content-Length</b> header.</body></html>"
+  "<body>HTTP request has wrong value for " \
+  "<b>Content-Length</b> header.</body></html>"
 #else
 #define REQUEST_CONTENTLENGTH_MALFORMED ""
 #endif
@@ -435,7 +445,10 @@
  */
 #ifdef HAVE_MESSAGES
 #define INTERNAL_ERROR \
-  "<html><head><title>Internal server error</title></head><body>Please ask the developer of this Web server to carefully read the GNU libmicrohttpd documentation about connection management and blocking.</body></html>"
+  "<html><head><title>Internal server error</title></head>" \
+  "<body>Please ask the developer of this Web server to carefully " \
+  "read the GNU libmicrohttpd documentation about connection "\
+  "management and blocking.</body></html>"
 #else
 #define INTERNAL_ERROR ""
 #endif
@@ -445,7 +458,9 @@
  */
 #ifdef HAVE_MESSAGES
 #define REQ_HTTP_VER_IS_TOO_OLD \
-  "<html><head><title>Requested HTTP version is not supported</title></head><body>Requested HTTP version is too old and not supported.</body></html>"
+  "<html><head><title>Requested HTTP version is not supported</title></head>" \
+  "<body>Requested HTTP version is too old and not " \
+  "supported.</body></html>"
 #else
 #define REQ_HTTP_VER_IS_TOO_OLD ""
 #endif
@@ -455,7 +470,8 @@
  */
 #ifdef HAVE_MESSAGES
 #define REQ_HTTP_VER_IS_NOT_SUPPORTED \
-  "<html><head><title>Requested HTTP version is not supported</title></head><body>Requested HTTP version is not supported.</body></html>"
+  "<html><head><title>Requested HTTP version is not supported</title></head>" \
+  "<body>Requested HTTP version is not supported.</body></html>"
 #else
 #define REQ_HTTP_VER_IS_NOT_SUPPORTED ""
 #endif
