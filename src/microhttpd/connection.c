@@ -6159,7 +6159,9 @@ connection_reset (struct MHD_Connection *connection,
 
     c->keepalive = MHD_CONN_KEEPALIVE_UNKOWN;
     c->state = MHD_CONNECTION_INIT;
-    c->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+    c->event_loop_info =
+      (0 == c->read_buffer_offset) ?
+      MHD_EVENT_LOOP_INFO_READ : MHD_EVENT_LOOP_INFO_PROCESS;
 
     memset (&c->rq, 0, sizeof(c->rq));
 
