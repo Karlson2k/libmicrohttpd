@@ -6250,10 +6250,41 @@ parse_options_va (struct MHD_Daemon *daemon,
     case MHD_OPTION_CONNECTION_MEMORY_LIMIT:
       daemon->pool_size = va_arg (ap,
                                   size_t);
+      if (64 > daemon->pool_size)
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  _ ("Warning: specified MHD_OPTION_CONNECTION_MEMORY_LIMIT " \
+                     "value is too small and rounded up to 64.\n"));
+#endif /* HAVE_MESSAGES */
+        daemon->pool_size = 64;
+      }
+      if (daemon->pool_size / 4 < daemon->pool_increment)
+        daemon->pool_increment = daemon->pool_size / 4;
       break;
     case MHD_OPTION_CONNECTION_MEMORY_INCREMENT:
       daemon->pool_increment = va_arg (ap,
                                        size_t);
+      if (0 == daemon->pool_increment)
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  _ ("The MHD_OPTION_CONNECTION_MEMORY_INCREMENT value " \
+                     "cannot be zero.\n"));
+#endif /* HAVE_MESSAGES */
+        return MHD_NO;
+      }
+      if (daemon->pool_size / 4 < daemon->pool_increment)
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  _ ("Warning: specified " \
+                     "MHD_OPTION_CONNECTION_MEMORY_INCREMENT value is too " \
+                     "large and rounded down to 1/4 of " \
+                     "MHD_OPTION_CONNECTION_MEMORY_LIMIT.\n"));
+#endif /* HAVE_MESSAGES */
+        daemon->pool_increment = daemon->pool_size / 4;
+      }
       break;
     case MHD_OPTION_CONNECTION_LIMIT:
       daemon->connection_limit = va_arg (ap,
