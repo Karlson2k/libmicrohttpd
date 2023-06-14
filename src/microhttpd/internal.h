@@ -1199,23 +1199,6 @@ struct MHD_Request
    * The data of the request line / request headers processing
    */
   union MHD_HeadersProcessing hdrs;
-
-  /**
-   * Last incomplete header line during parsing of headers.
-   * Allocated in pool.  Only valid if state is
-   * either #MHD_CONNECTION_REQ_HEADERS_RECEIVING or
-   * #MHD_CONNECTION_FOOTERS_RECEIVING.
-   */
-  char *last;
-
-  /**
-   * Position after the colon on the last incomplete header
-   * line during parsing of headers.
-   * Allocated in pool.  Only valid if state is
-   * either #MHD_CONNECTION_REQ_HEADERS_RECEIVING or
-   * #MHD_CONNECTION_FOOTERS_RECEIVING.
-   */
-  char *colon;
 };
 
 

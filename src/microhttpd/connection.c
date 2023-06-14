@@ -2749,8 +2749,6 @@ transmit_error_response_len (struct MHD_Connection *connection,
     connection->rq.method = NULL;
     connection->rq.url = NULL;
     connection->rq.url_len = 0;
-    connection->rq.last = NULL;
-    connection->rq.colon = NULL;
     connection->rq.headers_received = NULL;
     connection->rq.headers_received_tail = NULL;
     connection->write_buffer = NULL;
@@ -2981,81 +2979,6 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
     }
     break;
   }
-}
-
-
-/**
- * Parse a single line of the HTTP header.  Advance read_buffer (!)
- * appropriately.  If the current line does not fit, consider growing
- * the buffer.  If the line is far too long, close the connection.  If
- * no line is found (incomplete, buffer too small, line too long),
- * return NULL.  Otherwise return a pointer to the line.
- *
- * @param connection connection we're processing
- * @param[out] line_len pointer to variable that receive
- *             length of line or NULL
- * @return NULL if no full line is available; note that the returned
- *         string will not be 0-termianted
- */
-static char *
-get_next_header_line (struct MHD_Connection *connection,
-                      size_t *line_len)
-{
-  char *rbuf;
-  size_t pos;
-
-  if (0 == connection->read_buffer_offset)
-    return NULL;
-  pos = 0;
-  rbuf = connection->read_buffer;
-  mhd_assert (NULL != rbuf);
-
-  do
-  {
-    const char c = rbuf[pos];
-    bool found;
-    found = false;
-    if ( ('\r' == c) && (pos < connection->read_buffer_offset - 1) &&
-         ('\n' == rbuf[pos + 1]) )
-    { /* Found CRLF */
-      found = true;
-      if (line_len)
-        *line_len = pos;
-      rbuf[pos++] = 0; /* Replace CR with zero */
-      rbuf[pos++] = 0; /* Replace LF with zero */
-    }
-    else if ('\n' == c) /* TODO: Add MHD option to disallow */
-    { /* Found bare LF */
-      found = true;
-      if (line_len)
-        *line_len = pos;
-      rbuf[pos++] = 0; /* Replace LF with zero */
-    }
-    if (found)
-    {
-      connection->read_buffer += pos;
-      connection->read_buffer_size -= pos;
-      connection->read_buffer_offset -= pos;
-      return rbuf;
-    }
-  } while (++pos < connection->read_buffer_offset);
-
-  /* not found, consider growing... */
-  if ( (connection->read_buffer_offset == connection->read_buffer_size) &&
-       (! try_grow_read_buffer (connection, true)) )
-  {
-    if (NULL != connection->rq.url)
-      transmit_error_response_static (connection,
-                                      MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                      REQUEST_TOO_BIG);
-    else
-      transmit_error_response_static (connection,
-                                      MHD_HTTP_URI_TOO_LONG,
-                                      REQUEST_TOO_BIG);
-  }
-  if (line_len)
-    *line_len = 0;
-  return NULL;
 }
 
 
@@ -3874,150 +3797,6 @@ check_write_done (struct MHD_Connection *connection,
   connection->write_buffer_append_offset = 0;
   connection->write_buffer_send_offset = 0;
   connection->state = next_state;
-  return MHD_YES;
-}
-
-
-/**
- * We have received (possibly the beginning of) a line in the
- * header (or footer).  Validate (check for ":") and prepare
- * to process.
- *
- * @param connection connection we're processing
- * @param line line from the header to process
- * @return #MHD_YES on success, #MHD_NO on error (malformed @a line)
- */
-static enum MHD_Result
-process_header_line (struct MHD_Connection *connection,
-                     char *line)
-{
-  char *colon;
-
-  /* line should be normal header line, find colon */
-  colon = strchr (line, ':');
-  if (NULL == colon)
-  {
-    /* error in header line, die hard */
-    return MHD_NO;
-  }
-  if (-3 < connection->daemon->client_discipline)
-  {
-    /* check for whitespace before colon, which is not allowed
- by RFC 7230 section 3.2.4; we count space ' ' and
- tab '\t', but not '\r\n' as those would have ended the line. */
-    const char *white;
-
-    white = strchr (line, ' ');
-    if ( (NULL != white) &&
-         (white < colon) )
-      return MHD_NO;
-    white = strchr (line, '\t');
-    if ( (NULL != white) &&
-         (white < colon) )
-      return MHD_NO;
-  }
-  /* zero-terminate header */
-  colon[0] = '\0';
-  colon++;                      /* advance to value */
-  while ( ('\0' != colon[0]) &&
-          ( (' ' == colon[0]) ||
-            ('\t' == colon[0]) ) )
-    colon++;
-  /* we do the actual adding of the connection
-     header at the beginning of the while
-     loop since we need to be able to inspect
-     the *next* header line (in case it starts
-     with a space...) */
-  connection->rq.last = line;
-  connection->rq.colon = colon;
-  return MHD_YES;
-}
-
-
-/**
- * Process a header value that spans multiple lines.
- * The previous line(s) are in connection->last.
- *
- * @param connection connection we're processing
- * @param line the current input line
- * @param kind if the line is complete, add a header
- *        of the given kind
- * @return #MHD_YES if the line was processed successfully
- */
-static enum MHD_Result
-process_broken_line (struct MHD_Connection *connection,
-                     char *line,
-                     enum MHD_ValueKind kind)
-{
-  char *last;
-  char *tmp;
-  size_t last_len;
-  size_t tmp_len;
-
-  last = connection->rq.last;
-  if ( (' ' == line[0]) ||
-       ('\t' == line[0]) )
-  {
-    /* value was continued on the next line, see
-       http://www.jmarshall.com/easy/http/ */
-    last_len = strlen (last);
-    /* skip whitespace at start of 2nd line */
-    tmp = line;
-    while ( (' ' == tmp[0]) ||
-            ('\t' == tmp[0]) )
-      tmp++;
-    tmp_len = strlen (tmp);
-    /* FIXME: we might be able to do this better (faster!), as most
-       likely 'last' and 'line' should already be adjacent in
-       memory; however, doing this right gets tricky if we have a
-       value continued over multiple lines (in which case we need to
-       record how often we have done this so we can check for
-       adjacency); also, in the case where these are not adjacent
-       (not sure how it can happen!), we would want to allocate from
-       the end of the pool, so as to not destroy the read-buffer's
-       ability to grow nicely. */
-    last = MHD_pool_reallocate (connection->pool,
-                                last,
-                                last_len + 1,
-                                last_len + tmp_len + 1);
-    if (NULL == last)
-    {
-      transmit_error_response_static (connection,
-                                      MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                      REQUEST_TOO_BIG);
-      return MHD_NO;
-    }
-    memcpy (&last[last_len],
-            tmp,
-            tmp_len + 1);
-    connection->rq.last = last;
-    return MHD_YES;             /* possibly more than 2 lines... */
-  }
-  mhd_assert ( (NULL != last) &&
-               (NULL != connection->rq.colon) );
-  if (MHD_NO ==
-      connection_add_header (connection,
-                             last,
-                             strlen (last),
-                             connection->rq.colon,
-                             strlen (connection->rq.colon),
-                             kind))
-  {
-    /* Error has been queued by connection_add_header() */
-    return MHD_NO;
-  }
-  /* we still have the current line to deal with... */
-  if (0 != line[0])
-  {
-    if (MHD_NO == process_header_line (connection,
-                                       line))
-    {
-      transmit_error_response_static (connection,
-                                      MHD_HTTP_BAD_REQUEST,
-                                      REQUEST_MALFORMED);
-      return MHD_NO;
-    }
-  }
   return MHD_YES;
 }
 
@@ -6369,7 +6148,6 @@ enum MHD_Result
 MHD_connection_handle_idle (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
-  char *line;
   enum MHD_Result ret;
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \

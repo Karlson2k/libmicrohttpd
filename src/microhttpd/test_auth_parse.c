@@ -160,7 +160,7 @@ MHD_DLOG (const struct MHD_Daemon *daemon,
           ...)
 {
   (void) daemon;
-  if (NULL == conn.rq.last)
+  if (! conn.rq.client_aware)
   {
     fprintf (stderr, "Unexpected call of 'MHD_LOG(), format is '%s'.\n",
              format);
@@ -169,7 +169,7 @@ MHD_DLOG (const struct MHD_Daemon *daemon,
              "NULL" : (conn.rq.headers_received->value));
     mhdErrorExit ();
   }
-  conn.rq.last = NULL; /* Clear the flag */
+  conn.rq.client_aware = false; /* Clear the flag */
   return;
 }
 
@@ -319,7 +319,7 @@ clean_AuthHeaders (void)
 
   conn.read_buffer = NULL;
   conn.write_buffer = NULL;
-  conn.rq.last = NULL;
+  conn.rq.client_aware = false;
 }
 
 
@@ -338,15 +338,14 @@ expect_result_type_n (const char *hdr, size_t hdr_len,
                       int expect_log,
                       unsigned int line_num)
 {
-  static char marker1[] = "Expected log call";
   unsigned int ret;
 
   ret = 0;
   add_AuthHeader (hdr, hdr_len);
   if (expect_log)
-    conn.rq.last = marker1; /* Use like a flag */
+    conn.rq.client_aware = true; /* Use like a flag */
   else
-    conn.rq.last = NULL;
+    conn.rq.client_aware = false;
 #ifdef BAUTH_SUPPORT
   if (MHD_TEST_AUTHTYPE_BASIC == expected_type)
   {
@@ -394,7 +393,7 @@ expect_result_type_n (const char *hdr, size_t hdr_len,
 #endif /* DAUTH_SUPPORT */
   }
 #if defined(BAUTH_SUPPORT) && defined(DAUTH_SUPPORT)
-  if (conn.rq.last)
+  if (conn.rq.client_aware)
   {
     fprintf (stderr,
              "'Authorization' header parsing ERROR:\n"
