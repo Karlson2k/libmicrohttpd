@@ -2801,6 +2801,9 @@ new_connection_process_ (struct MHD_Daemon *daemon,
                      connection);
       }
       MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
+
+      MHD_connection_set_initial_state_ (connection);
+
       if (NULL != daemon->notify_connection)
         daemon->notify_connection (daemon->notify_connection_cls,
                                    connection,

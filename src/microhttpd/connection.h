@@ -87,6 +87,14 @@ MHD_set_http_callbacks_ (struct MHD_Connection *connection);
 
 
 /**
+ * Set initial internal states for the connection to start reading and
+ * processing incoming data.
+ * @param c the connection to process
+ */
+void
+MHD_connection_set_initial_state_ (struct MHD_Connection *c);
+
+/**
  * This function handles a particular connection when it has been
  * determined that there is data to be read off a socket. All
  * implementations (multithreaded, external polling, internal polling)

@@ -6069,6 +6069,47 @@ cleanup_connection (struct MHD_Connection *connection)
 
 
 /**
+ * Set initial internal states for the connection to start reading and
+ * processing incoming data.
+ * @param c the connection to process
+ */
+void
+MHD_connection_set_initial_state_ (struct MHD_Connection *c)
+{
+  size_t read_buf_size;
+
+#ifdef HTTPS_SUPPORT
+  mhd_assert ( (0 == (c->daemon->options & MHD_USE_TLS)) || \
+               (MHD_TLS_CONN_INIT == c->tls_state) );
+  mhd_assert ( (0 != (c->daemon->options & MHD_USE_TLS)) || \
+               (MHD_TLS_CONN_NO_TLS == c->tls_state) );
+#endif /* HTTPS_SUPPORT */
+  mhd_assert (MHD_CONNECTION_INIT == c->state);
+
+  c->keepalive = MHD_CONN_KEEPALIVE_UNKOWN;
+  c->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+
+  memset (&c->rq, 0, sizeof(c->rq));
+  memset (&c->rp, 0, sizeof(c->rp));
+
+  c->write_buffer = NULL;
+  c->write_buffer_size = 0;
+  c->write_buffer_send_offset = 0;
+  c->write_buffer_append_offset = 0;
+
+  c->continue_message_write_offset = 0;
+
+  c->read_buffer_offset = 0;
+  read_buf_size = c->daemon->pool_size / 2;
+  c->read_buffer
+    = MHD_pool_allocate (c->pool,
+                         read_buf_size,
+                         false);
+  c->read_buffer_size = read_buf_size;
+}
+
+
+/**
  * Reset connection after request-reply cycle.
  * @param connection the connection to process
  * @param reuse the flag to choose whether to close connection or
