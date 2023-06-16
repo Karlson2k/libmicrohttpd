@@ -3752,7 +3752,7 @@ process_request_body (struct MHD_Connection *connection)
     {
       instant_retry = false; /* client did not process everything */
 #ifdef HAVE_MESSAGES
-      if ((left_unprocessed == to_be_processed) &&
+      if ((! connection->rq.some_payload_processed) &&
           (! connection->suspended))
       {
         /* client did not process any upload data, complain if
@@ -3767,8 +3767,6 @@ process_request_body (struct MHD_Connection *connection)
 #endif /* HAVE_MESSAGES */
     }
     processed_size = to_be_processed - left_unprocessed;
-    if (connection->rq.have_chunked_upload)
-      connection->rq.current_chunk_offset += processed_size;
     /* dh left "processed" bytes in buffer for next time... */
     buffer_head += processed_size;
     available -= processed_size;
@@ -3778,7 +3776,10 @@ process_request_body (struct MHD_Connection *connection)
       connection->rq.remaining_upload_size -= processed_size;
     }
     else
+    {
       mhd_assert (MHD_SIZE_UNKNOWN == connection->rq.remaining_upload_size);
+      connection->rq.current_chunk_offset += processed_size;
+    }
   } while (instant_retry);
   /* TODO: zero out reused memory region */
   if ( (available > 0) &&
