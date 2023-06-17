@@ -1132,14 +1132,19 @@ struct MHD_Request
   uint64_t current_chunk_offset;
 
   /**
-   * Indicate that some of the upload payload data have been processed
-   * by the last call of the connection handler.
+   * Indicate that some of the upload payload data (from the currently
+   * processed chunk for chunked uploads) have been processed by the
+   * last call of the connection handler.
    * If any data have been processed, but some data left in the buffer
    * for further processing, then MHD will use zero timeout before the
-   * next data processing round.
+   * next data processing round. This allow the application handler
+   * process the data by the fixed portions or other way suitable for
+   * application developer.
    * If no data have been processed, than MHD will wait for more data
-   * to come (as it makes no sense to call the connection handler with
-   * the same conditions).
+   * to come (as it makes no sense to call the same connection handler
+   * under the same conditions). However this is dangerous as if buffer
+   * is completely used then connection is aborted. Connection
+   * suspension should be used in such case.
    */
   bool some_payload_processed;
 

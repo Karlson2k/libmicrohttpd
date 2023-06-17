@@ -3534,8 +3534,6 @@ process_request_body (struct MHD_Connection *connection)
   bool instant_retry;
   char *buffer_head;
 
-  connection->rq.some_payload_processed = false;
-
   mhd_assert (NULL == connection->rp.response);
 
   buffer_head = connection->read_buffer;
@@ -3545,6 +3543,8 @@ process_request_body (struct MHD_Connection *connection)
     size_t to_be_processed;
     size_t left_unprocessed;
     size_t processed_size;
+
+    connection->rq.some_payload_processed = false;
 
     instant_retry = false;
     if (connection->rq.have_chunked_upload)
