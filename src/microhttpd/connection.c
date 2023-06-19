@@ -1768,6 +1768,7 @@ try_grow_read_buffer (struct MHD_Connection *connection,
 {
   size_t new_size;
   size_t avail_size;
+  const size_t def_grow_size = connection->daemon->pool_increment;
   void *rb;
 
   avail_size = MHD_pool_get_free (connection->pool);
@@ -1780,14 +1781,23 @@ try_grow_read_buffer (struct MHD_Connection *connection,
     size_t grow_size;
 
     grow_size = avail_size / 8;
-    if (MHD_BUF_INC_SIZE > grow_size)
+    if (def_grow_size > grow_size)
     {                  /* Shortage of space */
-      if (! required)
-        return false;  /* Grow is not mandatory, leave some space in pool */
+      const size_t left_free =
+        connection->read_buffer_size - connection->read_buffer_offset;
+      mhd_assert (connection->read_buffer_size >= \
+                  connection->read_buffer_offset);
+      if ((def_grow_size <= grow_size + left_free)
+          && (left_free < def_grow_size))
+        grow_size = def_grow_size - left_free;  /* Use precise 'def_grow_size' for new free space */
+      else if (! required)
+        return false;                           /* Grow is not mandatory, leave some space in pool */
       else
       {
         /* Shortage of space, but grow is mandatory */
-        static const size_t small_inc = MHD_BUF_INC_SIZE / 8;
+        const size_t small_inc =
+          ((MHD_BUF_INC_SIZE > def_grow_size) ?
+           def_grow_size : MHD_BUF_INC_SIZE) / 8;
         if (small_inc < avail_size)
           grow_size = small_inc;
         else
@@ -1821,6 +1831,7 @@ try_grow_read_buffer (struct MHD_Connection *connection,
     mhd_assert (0);
     return false;
   }
+  mhd_assert (connection->read_buffer == rb);
   connection->read_buffer = rb;
   mhd_assert (NULL != connection->read_buffer);
   connection->read_buffer_size = new_size;
