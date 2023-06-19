@@ -136,8 +136,10 @@
  * IO-buffer, but if absolutely needed we additively grow by the
  * number of bytes given here (up to -- theoretically -- the full pool
  * space).
+ *
+ * Currently set to reasonable maximum MSS size.
  */
-#define MHD_BUF_INC_SIZE 1024
+#define MHD_BUF_INC_SIZE 1500
 
 #ifndef MHD_STATICSTR_LEN_
 /**
