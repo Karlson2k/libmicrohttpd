@@ -2778,6 +2778,7 @@ new_connection_process_ (struct MHD_Daemon *daemon,
     /* Firm check under lock. */
     if (daemon->connections >= daemon->connection_limit)
     { /* Connections limit */
+      MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ ("Server reached connection limit. "
