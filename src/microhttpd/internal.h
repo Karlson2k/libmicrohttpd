@@ -641,7 +641,7 @@ enum MHD_CONNECTION_STATE
   MHD_CONNECTION_HEADERS_RECEIVED = MHD_CONNECTION_REQ_HEADERS_RECEIVING + 1,
 
   /**
-   * We have processed the request headers.  Send 100 continue.
+   * We have processed the request headers.  Call application callback.
    */
   MHD_CONNECTION_HEADERS_PROCESSED = MHD_CONNECTION_HEADERS_RECEIVED + 1,
 

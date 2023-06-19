@@ -346,7 +346,7 @@
 #endif
 
 /**
- * Response text used when the request has unsupported "Transfer-Enconding:".
+ * Response text used when the request has unsupported "Transfer-Encoding:".
  */
 #ifdef HAVE_MESSAGES
 #define REQUEST_UNSUPPORTED_TR_ENCODING \
@@ -360,7 +360,7 @@
 
 /**
  * Response text used when the request has unsupported both headers:
- * "Transfer-Enconding:" and "Content-Length:"
+ * "Transfer-Encoding:" and "Content-Length:"
  */
 #ifdef HAVE_MESSAGES
 #define REQUEST_LENGTH_WITH_TR_ENCODING \

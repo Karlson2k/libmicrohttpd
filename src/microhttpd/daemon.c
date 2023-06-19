@@ -5535,7 +5535,7 @@ MHD_run (struct MHD_Daemon *daemon)
 
 
 /**
- * Run websever operation with possible blocking.
+ * Run webserver operation with possible blocking.
  *
  * This function does the following: waits for any network event not more than
  * specified number of milliseconds, processes all incoming and outgoing data,
