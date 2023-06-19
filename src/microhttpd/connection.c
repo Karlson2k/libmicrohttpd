@@ -57,6 +57,16 @@
 #include "mhd_assert.h"
 
 /**
+ * The reasonable length of the upload chunk "header" (the size specifier
+ * with optional chunk extension).
+ * MHD tries to keep the space in the read buffer large enough to read
+ * the chunk "header" in one step.
+ * The real "header" could be much larger, it will be handled correctly
+ * anyway, however it may require several rounds of buffer grow.
+ */
+#define MHD_CHUNK_HEADER_REASONABLE_LEN 24
+
+/**
  * Message to transmit when http 1.1 request is received
  */
 #define HTTP_100_CONTINUE "HTTP/1.1 100 Continue\r\n\r\n"
@@ -444,13 +454,13 @@
  * minimal.
  */
 #ifdef HAVE_MESSAGES
-#define INTERNAL_ERROR \
+#define ERROR_MSG_DATA_NOT_HANDLED_BY_APP \
   "<html><head><title>Internal server error</title></head>" \
   "<body>Please ask the developer of this Web server to carefully " \
   "read the GNU libmicrohttpd documentation about connection "\
   "management and blocking.</body></html>"
 #else
-#define INTERNAL_ERROR ""
+#define ERROR_MSG_DATA_NOT_HANDLED_BY_APP ""
 #endif
 
 /**
@@ -2819,6 +2829,182 @@ transmit_error_response_len (struct MHD_Connection *connection,
                                hd_n, hd_n_l, \
                                hd_v, hd_v_l)
 
+
+/**
+ * Check whether the read buffer has any upload body data ready to
+ * be processed.
+ * Must be called only when connection is in MHD_CONNECTION_BODY_RECEIVING
+ * state.
+ *
+ * @param c the connection to check
+ * @return 'true' if upload body data is already in the read buffer,
+ *         'false' if no upload data is received and not processed.
+ */
+static bool
+has_unprocessed_upload_body_data_in_buffer (struct MHD_Connection *c)
+{
+  mhd_assert (MHD_CONNECTION_BODY_RECEIVING == c->state);
+  if (! c->rq.have_chunked_upload)
+    return 0 != c->read_buffer_offset;
+
+  /* Chunked upload */
+  mhd_assert (0 != c->rq.remaining_upload_size); /* Must not be possible in MHD_CONNECTION_BODY_RECEIVING state */
+  if (c->rq.current_chunk_offset == c->rq.current_chunk_size)
+  {
+    /* 0 == c->rq.current_chunk_size: Waiting the chunk size (chunk header).
+       0 != c->rq.current_chunk_size: Waiting for chunk-closing CRLF. */
+    return false; /*  */
+  }
+  return 0 != c->read_buffer_offset; /* Chunk payload data in the read buffer */
+}
+
+
+/**
+ * Check whether enough space is available in the read buffer for the next
+ * operation.
+ * Handles grow of the buffer if required and error conditions (when buffer
+ * grow is required but not possible).
+ * Must be called only when processing the event loop states and when
+ * reading is required for the next phase.
+ * @param c the connection to check
+ * @return true if connection handled successfully and enough buffer
+ *         is available,
+ *         false if not enough buffer is available and the loop's states
+ *         must be processed again as connection is in the error state.
+ */
+static bool
+check_and_grow_read_buffer_space (struct MHD_Connection *c)
+{
+  /**
+   * The increase of read buffer size is desirable.
+   */
+  bool rbuff_grow_desired;
+  /**
+   * The increase of read buffer size is a hard requirement.
+   */
+  bool rbuff_grow_required;
+
+  mhd_assert (0 != (MHD_EVENT_LOOP_INFO_READ & c->event_loop_info));
+  mhd_assert (! c->discard_request);
+
+  rbuff_grow_required = (c->read_buffer_offset == c->read_buffer_size);
+  if (rbuff_grow_required)
+    rbuff_grow_desired = true;
+  else
+  {
+    rbuff_grow_desired = (c->read_buffer_offset + c->daemon->pool_increment >
+                          c->read_buffer_size);
+
+    if ((rbuff_grow_desired) &&
+        (MHD_CONNECTION_BODY_RECEIVING == c->state))
+    {
+      if (! c->rq.have_chunked_upload)
+      {
+        mhd_assert (MHD_SIZE_UNKNOWN != c->rq.remaining_upload_size);
+        /* Do not grow read buffer more than necessary to process the current
+           request. */
+        rbuff_grow_desired =
+          (c->rq.remaining_upload_size > c->read_buffer_size);
+      }
+      else
+      {
+        mhd_assert (MHD_SIZE_UNKNOWN == c->rq.remaining_upload_size);
+        if (0 == c->rq.current_chunk_size)
+          rbuff_grow_desired =  /* Reading value of the next chunk size */
+                               (MHD_CHUNK_HEADER_REASONABLE_LEN >
+                                c->read_buffer_size);
+        else
+        {
+          const size_t cur_chunk_left =
+            c->rq.current_chunk_size - c->rq.current_chunk_offset;
+          /* Do not grow read buffer more than necessary to process the current
+             chunk with terminating CRLF. */
+          mhd_assert (c->rq.current_chunk_offset <= c->rq.current_chunk_size);
+          rbuff_grow_desired = ((cur_chunk_left + 2) > c->read_buffer_size);
+        }
+      }
+    }
+  }
+
+  if (! rbuff_grow_desired)
+    return true; /* No need to increase the buffer */
+
+  if (try_grow_read_buffer (c, rbuff_grow_required))
+    return true; /* Buffer increase succeed */
+
+  if (! rbuff_grow_required)
+    return true; /* Can continue without buffer increase */
+
+  /* Failed to increase the read buffer size, but need to read the data
+     from the network.
+     No more space in the buffer, no more space to increase the buffer. */
+
+  /* 'PROCESS_READ' event state flag must be set only if the last application
+     callback has processed some data. If any data is processed then some
+     space in the read buffer must be available. */
+  mhd_assert (0 == (MHD_EVENT_LOOP_INFO_PROCESS & c->event_loop_info));
+
+  if (MHD_CONNECTION_BODY_RECEIVING != c->state)
+  {
+    /* Receiving request line, request headers or request footers */
+    /* TODO: Improve detection of the conditions */
+    if (c->rq.url != NULL)
+      transmit_error_response_static (c,
+                                      MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
+                                      REQUEST_TOO_BIG);
+    else
+      transmit_error_response_static (c,
+                                      MHD_HTTP_URI_TOO_LONG,
+                                      REQUEST_TOO_BIG);
+    return false;
+  }
+
+  /* Receiving the request body and no space left in the buffer */
+
+  if (! has_unprocessed_upload_body_data_in_buffer (c))
+  {
+    /* Full header is received and no space left for reading
+       the request body.
+       For chunked upload encoding: chunk-extension is too long or
+       chunk size is encoded with excessive number of leading zeros. */
+    /* TODO: report proper cause for the error */
+    transmit_error_response_static (c,
+                                    MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
+                                    REQUEST_TOO_BIG);
+    return false;
+  }
+
+  /* No space left in the buffer but some upload body data can be processed
+     and some space could be freed. */
+  mhd_assert (! c->rq.some_payload_processed);
+  if (0 == (c->daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
+  {
+    /* The application is handling processing cycles.
+       The data may be processed later. */
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+    return true;
+  }
+
+  /* Using internal thread for sockets polling */
+
+  /* failed to grow the read buffer, and the
+     client which is supposed to handle the
+     received data in a *blocking* fashion
+     (in this mode) did not handle the data as
+     it was supposed to!
+     => we would either have to do busy-waiting
+     (on the client, which would likely fail),
+     or if we do nothing, we would just timeout
+     on the connection (if a timeout is even
+     set!).
+     Solution: we kill the connection with an error */
+  transmit_error_response_static (c,
+                                  MHD_HTTP_INTERNAL_SERVER_ERROR,
+                                  ERROR_MSG_DATA_NOT_HANDLED_BY_APP);
+  return false;
+}
+
+
 /**
  * Update the 'event_loop_info' field of this connection based on the state
  * that the connection is now in.  May also close the connection or
@@ -2875,31 +3061,15 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
     {
     case MHD_CONNECTION_INIT:
     case MHD_CONNECTION_REQ_LINE_RECEIVING:
-    case MHD_CONNECTION_REQ_LINE_RECEIVED:
-    case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
-      /* while reading headers, we always grow the
-         read buffer if needed, no size-check required */
-      if ( (connection->read_buffer_offset == connection->read_buffer_size) &&
-           (! try_grow_read_buffer (connection, true)) )
-      {
-        if (connection->rq.url != NULL)
-          transmit_error_response_static (connection,
-                                          MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                          REQUEST_TOO_BIG);
-        else
-          transmit_error_response_static (connection,
-                                          MHD_HTTP_URI_TOO_LONG,
-                                          REQUEST_TOO_BIG);
-        continue;
-      }
-      if (! connection->discard_request)
-        connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
-      else
-        connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+      connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
       break;
-    case MHD_CONNECTION_HEADERS_RECEIVED:
+    case MHD_CONNECTION_REQ_LINE_RECEIVED:
       mhd_assert (0);
       break;
+    case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
+      connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+      break;
+    case MHD_CONNECTION_HEADERS_RECEIVED:
     case MHD_CONNECTION_HEADERS_PROCESSED:
       mhd_assert (0);
       break;
@@ -2907,54 +3077,37 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
       connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
       break;
     case MHD_CONNECTION_BODY_RECEIVING:
-      if (connection->read_buffer_offset == connection->read_buffer_size)
+      if ((connection->rq.some_payload_processed) &&
+          has_unprocessed_upload_body_data_in_buffer (connection))
       {
-        const bool internal_poll = (0 != (connection->daemon->options
-                                          & MHD_USE_INTERNAL_POLLING_THREAD));
-        if ( (! try_grow_read_buffer (connection, true)) &&
-             internal_poll)
+        /* Some data was processed, the buffer must have some free space */
+        mhd_assert (connection->read_buffer_offset < \
+                    connection->read_buffer_size);
+        if (! connection->rq.have_chunked_upload)
         {
-          /* failed to grow the read buffer, and the
-             client which is supposed to handle the
-             received data in a *blocking* fashion
-             (in this mode) did not handle the data as
-             it was supposed to!
-             => we would either have to do busy-waiting
-             (on the client, which would likely fail),
-             or if we do nothing, we would just timeout
-             on the connection (if a timeout is even
-             set!).
-             Solution: we kill the connection with an error */
-          transmit_error_response_static (connection,
-                                          MHD_HTTP_INTERNAL_SERVER_ERROR,
-                                          INTERNAL_ERROR);
-          continue;
+          /* Not a chunked upload. Do not read more than necessary to
+             process the current request. */
+          if (connection->rq.remaining_upload_size >=
+              connection->read_buffer_offset)
+            connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+          else
+            connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS_READ;
+        }
+        else
+        {
+          /* Chunked upload. The size of the current request is unknown.
+             Continue reading as the space in the read buffer is available. */
+          connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS_READ;
         }
       }
-      if (connection->discard_request)
-        connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
-      else if (connection->read_buffer_offset == connection->read_buffer_size)
-        connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
-      else if (0 == connection->read_buffer_offset)
-        connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
-      else if (connection->rq.some_payload_processed)
-        connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS_READ;
       else
         connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
       break;
     case MHD_CONNECTION_BODY_RECEIVED:
+      mhd_assert (0);
+      break;
     case MHD_CONNECTION_FOOTERS_RECEIVING:
-      /* while reading footers, we always grow the
-         read buffer if needed, no size-check required */
-      if (connection->read_closed)
-      {
-        CONNECTION_CLOSE_ERROR (connection,
-                                NULL);
-        continue;
-      }
       connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
-      /* transition to FOOTERS_RECEIVED
-         happens in read handler */
       break;
     case MHD_CONNECTION_FOOTERS_RECEIVED:
       mhd_assert (0);
@@ -2972,17 +3125,17 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
     case MHD_CONNECTION_HEADERS_SENT:
       mhd_assert (0);
       break;
-    case MHD_CONNECTION_NORMAL_BODY_READY:
-      connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
-      break;
     case MHD_CONNECTION_NORMAL_BODY_UNREADY:
       connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
       break;
-    case MHD_CONNECTION_CHUNKED_BODY_READY:
+    case MHD_CONNECTION_NORMAL_BODY_READY:
       connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
       break;
     case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
       connection->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+      break;
+    case MHD_CONNECTION_CHUNKED_BODY_READY:
+      connection->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
       break;
     case MHD_CONNECTION_CHUNKED_BODY_SENT:
       mhd_assert (0);
@@ -3004,7 +3157,17 @@ MHD_connection_update_event_loop_info (struct MHD_Connection *connection)
     default:
       mhd_assert (0);
     }
-    break;
+
+    if (0 != (MHD_EVENT_LOOP_INFO_READ & connection->event_loop_info))
+    {
+      /* Check whether the space is available to receive data */
+      if (! check_and_grow_read_buffer_space (connection))
+      {
+        mhd_assert (connection->discard_request);
+        continue;
+      }
+    }
+    break; /* Everything was processed. */
   }
 }
 
@@ -3555,8 +3718,6 @@ process_request_body (struct MHD_Connection *connection)
     size_t left_unprocessed;
     size_t processed_size;
 
-    connection->rq.some_payload_processed = false;
-
     instant_retry = false;
     if (connection->rq.have_chunked_upload)
     {
@@ -3756,9 +3917,9 @@ process_request_body (struct MHD_Connection *connection)
     if (left_unprocessed > to_be_processed)
       MHD_PANIC (_ ("libmicrohttpd API violation.\n"));
 
-    if (left_unprocessed != to_be_processed)
-      /* Something was processed by the application. */
-      connection->rq.some_payload_processed = true;
+    connection->rq.some_payload_processed =
+      (left_unprocessed != to_be_processed);
+
     if (0 != left_unprocessed)
     {
       instant_retry = false; /* client did not process everything */
@@ -5461,16 +5622,10 @@ MHD_connection_handle_read (struct MHD_Connection *connection,
   }
 #endif /* HTTPS_SUPPORT */
 
-  /* make sure "read" has a reasonable number of bytes
-     in buffer to use per system call (if possible) */
-  if (connection->read_buffer_offset + connection->daemon->pool_increment >
-      connection->read_buffer_size)
-    try_grow_read_buffer (connection,
-                          (connection->read_buffer_size ==
-                           connection->read_buffer_offset));
-
+  mhd_assert (NULL != connection->read_buffer);
   if (connection->read_buffer_size == connection->read_buffer_offset)
     return; /* No space for receiving data. */
+
   bytes_read = connection->recv_cls (connection,
                                      &connection->read_buffer
                                      [connection->read_buffer_offset],
