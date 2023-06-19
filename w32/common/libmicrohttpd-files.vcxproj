@@ -81,4 +81,7 @@
       <AdditionalInputs>$(MhdW32Common)gen_dll_res.ps1;$(MhdRoot)configure.ac</AdditionalInputs>
     </CustomBuild>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MhdW32Common)cpp.hint" />
+  </ItemGroup>
 </Project>

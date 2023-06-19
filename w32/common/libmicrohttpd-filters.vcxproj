@@ -215,4 +215,7 @@
       <Filter>Template Files</Filter>
     </CustomBuild>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MhdW32Common)cpp.hint" />
+  </ItemGroup>
 </Project>

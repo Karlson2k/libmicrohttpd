@@ -1,0 +1,3 @@
+/* This is a helper file used by MSVC Browsing Database Parser.
+   This file is required to quickly identify functions in the code. */
+#define _MHD_EXTERN
