@@ -6308,7 +6308,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         uv = UINT64_MAX / 4000 - 1;
       }
 #endif /* (SIZEOF_UINT64_T - 2) <= SIZEOF_UNSIGNED_INT */
-      daemon->connection_timeout_ms = uv * 1000;
+      daemon->connection_timeout_ms = ((uint64_t) uv) * 1000;
       break;
     case MHD_OPTION_NOTIFY_COMPLETED:
       daemon->notify_completed = va_arg (ap,

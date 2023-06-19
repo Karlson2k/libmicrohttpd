@@ -6807,7 +6807,7 @@ MHD_set_connection_option (struct MHD_Connection *connection,
           XDLL_remove (daemon->manual_timeout_head,
                        daemon->manual_timeout_tail,
                        connection);
-        connection->connection_timeout_ms = ui_val * 1000;
+        connection->connection_timeout_ms = ((uint64_t) ui_val) * 1000;
         if (connection->connection_timeout_ms == daemon->connection_timeout_ms)
           XDLL_insert (daemon->normal_timeout_head,
                        daemon->normal_timeout_tail,
