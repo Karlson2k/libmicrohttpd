@@ -5543,9 +5543,37 @@ get_req_headers (struct MHD_Connection *c, bool process_footers)
   {
     c->rq.header_size = (size_t) (c->read_buffer - c->rq.method);
     c->state = MHD_CONNECTION_HEADERS_RECEIVED;
+
+    if (MHD_BUF_INC_SIZE > c->read_buffer_size)
+    {
+      /* Try to re-use some of the last bytes of the request header */
+      /* Do this only if space in the read buffer is limited AND
+         amount of read ahead data is small. */
+      /**
+       *  The position of the terminating NUL after the last character of
+       *  the last header element.
+       */
+      const char *last_elmnt_end;
+      size_t shift_back_size;
+      if (NULL != c->rq.headers_received_tail)
+        last_elmnt_end =
+          c->rq.headers_received_tail->value
+          + c->rq.headers_received_tail->value_size;
+      else
+        last_elmnt_end = c->rq.version + HTTP_VER_LEN;
+      mhd_assert ((last_elmnt_end + 1) < c->read_buffer);
+      shift_back_size = (size_t) (c->read_buffer - (last_elmnt_end + 1));
+      if (0 != c->read_buffer_offset)
+        memmove (c->read_buffer - shift_back_size,
+                 c->read_buffer,
+                 c->read_buffer_offset);
+      c->read_buffer -= shift_back_size;
+      c->read_buffer_size += shift_back_size;
+    }
   }
   else
     c->state = MHD_CONNECTION_FOOTERS_RECEIVED;
+
   return true;
 }
 
