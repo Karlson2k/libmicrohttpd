@@ -5062,11 +5062,14 @@ get_req_header (struct MHD_Connection *c,
         }
         else if (! bare_cr_keep)
         {
-          transmit_error_response_static (c,
-                                          MHD_HTTP_BAD_REQUEST,
-                                          (! process_footers) ?
-                                          BARE_CR_IN_HEADER :
-                                          BARE_CR_IN_FOOTER);
+          if (! process_footers)
+            transmit_error_response_static (c,
+                                            MHD_HTTP_BAD_REQUEST,
+                                            BARE_CR_IN_HEADER);
+          else
+            transmit_error_response_static (c,
+                                            MHD_HTTP_BAD_REQUEST,
+                                            BARE_CR_IN_FOOTER);
           return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
         }
         end_of_line = false;
@@ -5088,10 +5091,14 @@ get_req_header (struct MHD_Connection *c,
       }
       else
       {
-        transmit_error_response_static (c,
-                                        MHD_HTTP_BAD_REQUEST,
-                                        (! process_footers) ?
-                                        BARE_LF_IN_HEADER : BARE_LF_IN_FOOTER);
+        if (! process_footers)
+          transmit_error_response_static (c,
+                                          MHD_HTTP_BAD_REQUEST,
+                                          BARE_LF_IN_HEADER);
+        else
+          transmit_error_response_static (c,
+                                          MHD_HTTP_BAD_REQUEST,
+                                          BARE_LF_IN_FOOTER);
         return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
       }
     }
@@ -5135,11 +5142,15 @@ get_req_header (struct MHD_Connection *c,
         /* Folded line */
         if (! allow_folded)
         {
-          transmit_error_response_static (c,
-                                          MHD_HTTP_BAD_REQUEST,
-                                          (! process_footers) ?
-                                          ERR_RSP_OBS_FOLD :
-                                          ERR_RSP_OBS_FOLD_FOOTER);
+          if (! process_footers)
+            transmit_error_response_static (c,
+                                            MHD_HTTP_BAD_REQUEST,
+                                            ERR_RSP_OBS_FOLD);
+          else
+            transmit_error_response_static (c,
+                                            MHD_HTTP_BAD_REQUEST,
+                                            ERR_RSP_OBS_FOLD_FOOTER);
+
           return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
         }
         /* Replace CRLF (or bare LF) character(s) with space characters.
@@ -5171,11 +5182,15 @@ get_req_header (struct MHD_Connection *c,
         {
           if (! allow_line_without_colon)
           {
-            transmit_error_response_static (c,
-                                            MHD_HTTP_BAD_REQUEST,
-                                            (! process_footers) ?
-                                            ERR_RSP_HEADER_WITHOUT_COLON :
-                                            ERR_RSP_FOOTER_WITHOUT_COLON);
+            if (! process_footers)
+              transmit_error_response_static (c,
+                                              MHD_HTTP_BAD_REQUEST,
+                                              ERR_RSP_HEADER_WITHOUT_COLON);
+            else
+              transmit_error_response_static (c,
+                                              MHD_HTTP_BAD_REQUEST,
+                                              ERR_RSP_FOOTER_WITHOUT_COLON);
+
             return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
           }
           /* Skip broken line completely */
@@ -5240,11 +5255,14 @@ get_req_header (struct MHD_Connection *c,
       {
         if (! allow_wsp_at_start)
         {
-          transmit_error_response_static (c,
-                                          MHD_HTTP_BAD_REQUEST,
-                                          (! process_footers) ?
-                                          ERR_RSP_WSP_BEFORE_HEADER :
-                                          ERR_RSP_WSP_BEFORE_FOOTER);
+          if (! process_footers)
+            transmit_error_response_static (c,
+                                            MHD_HTTP_BAD_REQUEST,
+                                            ERR_RSP_WSP_BEFORE_HEADER);
+          else
+            transmit_error_response_static (c,
+                                            MHD_HTTP_BAD_REQUEST,
+                                            ERR_RSP_WSP_BEFORE_FOOTER);
           return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
         }
         c->rq.hdrs.hdr.starts_with_ws = true;
@@ -5260,11 +5278,15 @@ get_req_header (struct MHD_Connection *c,
         }
         else
         {
-          transmit_error_response_static (c,
-                                          MHD_HTTP_BAD_REQUEST,
-                                          (! process_footers) ?
-                                          ERR_RSP_WSP_IN_HEADER_NAME :
-                                          ERR_RSP_WSP_IN_FOOTER_NAME);
+          if (! process_footers)
+            transmit_error_response_static (c,
+                                            MHD_HTTP_BAD_REQUEST,
+                                            ERR_RSP_WSP_IN_HEADER_NAME);
+          else
+            transmit_error_response_static (c,
+                                            MHD_HTTP_BAD_REQUEST,
+                                            ERR_RSP_WSP_IN_FOOTER_NAME);
+
           return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
         }
       }
@@ -5279,11 +5301,15 @@ get_req_header (struct MHD_Connection *c,
     {
       if (! nul_as_sp)
       {
-        transmit_error_response_static (c,
-                                        MHD_HTTP_BAD_REQUEST,
-                                        (! process_footers) ?
-                                        ERR_RSP_INVALID_CHR_IN_HEADER :
-                                        ERR_RSP_INVALID_CHR_IN_FOOTER);
+        if (! process_footers)
+          transmit_error_response_static (c,
+                                          MHD_HTTP_BAD_REQUEST,
+                                          ERR_RSP_INVALID_CHR_IN_HEADER);
+        else
+          transmit_error_response_static (c,
+                                          MHD_HTTP_BAD_REQUEST,
+                                          ERR_RSP_INVALID_CHR_IN_FOOTER);
+
         return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
       }
       c->read_buffer[p] = ' ';
@@ -5308,11 +5334,14 @@ get_req_header (struct MHD_Connection *c,
             mhd_assert (allow_wsp_in_name || allow_wsp_before_colon);
             if (! allow_wsp_before_colon)
             {
-              transmit_error_response_static (c,
-                                              MHD_HTTP_BAD_REQUEST,
-                                              (! process_footers) ?
-                                              ERR_RSP_WSP_IN_HEADER_NAME :
-                                              ERR_RSP_WSP_IN_FOOTER_NAME);
+              if (! process_footers)
+                transmit_error_response_static (c,
+                                                MHD_HTTP_BAD_REQUEST,
+                                                ERR_RSP_WSP_IN_HEADER_NAME);
+              else
+                transmit_error_response_static (c,
+                                                MHD_HTTP_BAD_REQUEST,
+                                                ERR_RSP_WSP_IN_FOOTER_NAME);
               return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
             }
             c->rq.hdrs.hdr.name_len = c->rq.hdrs.hdr.ws_start;
@@ -5322,11 +5351,14 @@ get_req_header (struct MHD_Connection *c,
           }
           if ((0 == c->rq.hdrs.hdr.name_len) && ! allow_empty_name)
           {
-            transmit_error_response_static (c,
-                                            MHD_HTTP_BAD_REQUEST,
-                                            (! process_footers) ?
-                                            ERR_RSP_EMPTY_HEADER_NAME :
-                                            ERR_RSP_EMPTY_FOOTER_NAME);
+            if (! process_footers)
+              transmit_error_response_static (c,
+                                              MHD_HTTP_BAD_REQUEST,
+                                              ERR_RSP_EMPTY_HEADER_NAME);
+            else
+              transmit_error_response_static (c,
+                                              MHD_HTTP_BAD_REQUEST,
+                                              ERR_RSP_EMPTY_FOOTER_NAME);
             return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
           }
           c->rq.hdrs.hdr.name_end_found = true;
@@ -5340,11 +5372,15 @@ get_req_header (struct MHD_Connection *c,
             mhd_assert (allow_wsp_in_name || allow_wsp_before_colon);
             if (! allow_wsp_in_name)
             {
-              transmit_error_response_static (c,
-                                              MHD_HTTP_BAD_REQUEST,
-                                              (! process_footers) ?
-                                              ERR_RSP_WSP_IN_HEADER_NAME :
-                                              ERR_RSP_WSP_IN_FOOTER_NAME);
+              if (! process_footers)
+                transmit_error_response_static (c,
+                                                MHD_HTTP_BAD_REQUEST,
+                                                ERR_RSP_WSP_IN_HEADER_NAME);
+              else
+                transmit_error_response_static (c,
+                                                MHD_HTTP_BAD_REQUEST,
+                                                ERR_RSP_WSP_IN_FOOTER_NAME);
+
               return MHD_HDR_LINE_READING_DATA_ERROR; /* Error in the request */
             }
 #ifndef MHD_FAVOR_SMALL_CODE
