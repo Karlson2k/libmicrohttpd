@@ -1745,6 +1745,12 @@ AC_ARG_ENABLE([[examples]],
 test "x$enable_examples" = "xno" || enable_examples=yes
 AM_CONDITIONAL([BUILD_EXAMPLES], [test "x$enable_examples" = "xyes"])
 
+AC_ARG_ENABLE([[tools]],
+  [AS_HELP_STRING([[--disable-tools]], [do not build testing and demo tools])], ,
+    [enable_tools=yes])
+test "x$enable_tools" = "xyes" || enable_tools=no
+AM_CONDITIONAL([BUILD_TOOLS], [test "x$enable_tools" = "xyes"])
+
 AC_ARG_ENABLE([[heavy-tests]],
   [AS_HELP_STRING([[--enable-heavy-tests[=SCOPE]]], [use SCOPE of heavy tests in test-suite. WARNING:]
   [a dedicated host with minimal number of background processes and no network]
@@ -3895,6 +3901,34 @@ AS_VAR_IF([mhd_cv_ipv6_for_testing],["yes"],
 	[AC_DEFINE([[USE_IPV6_TESTING]], [[1]], [Define to 1 if your kernel supports IPv6 and IPv6 is enabled and useful for testing.])]
 )
 
+AS_VAR_IF([enable_tools],["yes"],
+  [
+    MHD_CHECK_FUNC([pclose],[[#include <stdio.h>]],
+      [[
+        i][f (0 == pclose(NULL)) return 2;
+      ]],
+      [
+        MHD_CHECK_FUNC([popen],[[#include <stdio.h>]],
+          [[
+            FILE *cmd_out = popen ("cat conftest.c", "r");
+            i][f (NULL == cmd_out) return 2;
+            i][f (0 != pclose(cmd_out)) return 3;
+          ]]
+        )
+      ]
+    )
+    MATH_LIB=''
+    MHD_FIND_LIB([sqrt],[#include <math.h>],
+      [[
+        double res = sqrt ((double) 4);
+        i][f (((double) 2) != res) return 2;
+      ]],[m],
+      [AC_DEFINE([[HAVE_SQRT_FUNC]],[[1]],[Define to 1 i][f 'sqrt()' function is available.])
+      ],[],[MATH_LIB]
+    )
+    AC_SUBST([MATH_LIB])
+  ]
+)
 
 # Check for fork() and waitpid(). They are used for tests.
 AC_MSG_CHECKING([[for fork()]])
@@ -3960,6 +3994,8 @@ AC_MSG_RESULT($use_gcov)
 AM_CONDITIONAL([USE_COVERAGE], [test "x$use_gcov" = "xyes"])
 
 AX_COUNT_CPUS
+AC_SUBST([MHD_REAL_CPU_COUNT],[${CPU_COUNT}])
+AM_SUBST_NOTMAKE([MHD_REAL_CPU_COUNT])
 AC_MSG_CHECKING([for number of CPU cores to use in tests])
 AS_VAR_IF([use_heavy_tests], ["yes"],
   [
@@ -5002,6 +5038,7 @@ src/lib/Makefile
 src/microhttpd/Makefile
 src/microhttpd_ws/Makefile
 src/examples/Makefile
+src/tools/Makefile
 src/testcurl/Makefile
 src/testcurl/https/Makefile
 src/testzzuf/Makefile])
@@ -5077,6 +5114,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Use sanitizers:    ${enabled_sanitizers:=no}
   Build docs:        ${enable_doc}
   Build examples:    ${enable_examples}
+  Build tools:       ${enable_examples}
   Build static lib:  ${enable_static}
   Build shared lib:  ${enable_shared}
   Test with libcurl: ${MSG_CURL}

@@ -18,6 +18,9 @@ if BUILD_EXAMPLES
 SUBDIRS += examples
 endif
 
+if BUILD_TOOLS
+SUBDIRS += tools
+endif
 
 EXTRA_DIST = \
  datadir/cert-and-key.pem \
