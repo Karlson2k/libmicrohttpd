@@ -73,6 +73,7 @@ static char self_name[500] = "perf_replies";
 static uint16_t mhd_port = 0;
 static struct MHD_Response **resps = NULL;
 static unsigned int num_resps = 0;
+static char *body_dyn = NULL; /* Non-static body data */
 
 static void
 set_self_name (int argc, char *const *argv)
@@ -340,11 +341,17 @@ show_help (void)
     printf ("          --poll            use poll() function\n");
   printf ("          --select          use select() function\n");
   printf ("\n");
+  printf ("Response size options (mutually exclusive):\n");
+  printf ("  -E,     --empty           empty response, 0 bytes\n");
+  printf ("  -T,     --tiny            tiny response, 3 bytes (default)\n");
+  printf ("  -M,     --medium          medium response, 8 KB\n");
+  printf ("  -L,     --large           large response, 1 MB\n");
+  printf ("\n");
   printf ("Other options:\n");
   printf ("  -c NUM, --connections=NUM reject more than NUM client \n"
           "                            connections\n");
   printf ("  -O NUM, --timeout=NUM     set connection timeout to NUM seconds,\n"
-          "                            zero means no timeout");
+          "                            zero means no timeout\n");
   printf ("          --date-header     use the 'Date:' header in every\n"
           "                            reply\n");
   printf ("          --help            display this help and exit\n");
@@ -363,6 +370,10 @@ struct PerfRepl_parameters
   int epoll;
   int poll;
   int select;
+  int empty;
+  int tiny;
+  int medium;
+  int large;
   unsigned int connections;
   unsigned int timeout;
   int date_header;
@@ -371,6 +382,10 @@ struct PerfRepl_parameters
 };
 
 static struct PerfRepl_parameters tool_params = {
+  0,
+  0,
+  0,
+  0,
   0,
   0,
   0,
@@ -500,6 +515,114 @@ process_param__select (const char *param_name)
 }
 
 
+static enum PerfRepl_param_result
+process_param__empty (const char *param_name)
+{
+  if (tool_params.tiny)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-T' or '--tiny'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  if (tool_params.medium)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-M' or '--medium'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  if (tool_params.large)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-L' or '--large'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  tool_params.empty = ! 0;
+  return '-' == param_name[1] ?
+         PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
+}
+
+
+static enum PerfRepl_param_result
+process_param__tiny (const char *param_name)
+{
+  if (tool_params.empty)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-E' or '--empty'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  if (tool_params.medium)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-M' or '--medium'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  if (tool_params.large)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-L' or '--large'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  tool_params.tiny = ! 0;
+  return '-' == param_name[1] ?
+         PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
+}
+
+
+static enum PerfRepl_param_result
+process_param__medium (const char *param_name)
+{
+  if (tool_params.empty)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-E' or '--empty'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  if (tool_params.tiny)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-T' or '--tiny'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  if (tool_params.large)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-L' or '--large'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  tool_params.medium = ! 0;
+  return '-' == param_name[1] ?
+         PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
+}
+
+
+static enum PerfRepl_param_result
+process_param__large (const char *param_name)
+{
+  if (tool_params.empty)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-E' or '--empty'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  if (tool_params.tiny)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-T' or '--tiny'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  if (tool_params.medium)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-M' or '--medium'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  tool_params.large = ! 0;
+  return '-' == param_name[1] ?
+         PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
+}
+
+
 /**
  * Process parameter '-c' or '--connections'
  * @param param_name the name of the parameter as specified in command line
@@ -605,6 +728,14 @@ process_short_param (const char *param, const char *next_param)
     return process_param__all_cpus ("-A");
   else if ('t' == param_chr)
     return process_param__threads ("-t", param + 1, next_param);
+  else if ('E' == param_chr)
+    return process_param__empty ("-E");
+  else if ('T' == param_chr)
+    return process_param__tiny ("-T");
+  else if ('M' == param_chr)
+    return process_param__medium ("-M");
+  else if ('L' == param_chr)
+    return process_param__large ("-L");
   else if ('c' == param_chr)
     return process_param__connections ("-c", param + 1, next_param);
   else if ('O' == param_chr)
@@ -673,6 +804,18 @@ process_long_param (const char *param, const char *next_param)
   else if ((MHD_STATICSTR_LEN_ ("select") == param_len) &&
            (0 == memcmp (param, "select", MHD_STATICSTR_LEN_ ("select"))))
     return process_param__select ("--select");
+  else if ((MHD_STATICSTR_LEN_ ("empty") == param_len) &&
+           (0 == memcmp (param, "empty", MHD_STATICSTR_LEN_ ("empty"))))
+    return process_param__empty ("--empty");
+  else if ((MHD_STATICSTR_LEN_ ("tiny") == param_len) &&
+           (0 == memcmp (param, "tiny", MHD_STATICSTR_LEN_ ("tiny"))))
+    return process_param__tiny ("--tiny");
+  else if ((MHD_STATICSTR_LEN_ ("medium") == param_len) &&
+           (0 == memcmp (param, "medium", MHD_STATICSTR_LEN_ ("medium"))))
+    return process_param__medium ("--medium");
+  else if ((MHD_STATICSTR_LEN_ ("large") == param_len) &&
+           (0 == memcmp (param, "large", MHD_STATICSTR_LEN_ ("large"))))
+    return process_param__large ("--large");
   else if ((MHD_STATICSTR_LEN_ ("connections") <= param_len) &&
            (0 == memcmp (param, "connections",
                          MHD_STATICSTR_LEN_ ("connections"))))
@@ -877,6 +1020,15 @@ check_param__poll (void)
 }
 
 
+static void
+check_param__empty_tiny_medium_large (void)
+{
+  if (0 == (tool_params.empty | tool_params.tiny | tool_params.medium
+            | tool_params.large))
+    tool_params.tiny = ! 0;
+}
+
+
 /* Must be called after 'check_apply_param__threads()' and
    'check_apply_param__all_cpus()' */
 /* non-zero - OK, zero - error */
@@ -922,6 +1074,7 @@ check_apply_params (void)
     return PERF_RPL_ERR_CODE_BAD_PARAM;
   if (! check_param__poll ())
     return PERF_RPL_ERR_CODE_BAD_PARAM;
+  check_param__empty_tiny_medium_large ();
   if (! check_param__connections ())
     return PERF_RPL_ERR_CODE_BAD_PARAM;
   return 0;
@@ -935,23 +1088,106 @@ init_data (void)
      The system will keep it in cache. */
   static const char tiny_body[] = "Hi!";
   unsigned int i;
+  size_t body_dyn_size;
+
+  if (tool_params.medium)
+    body_dyn_size = 8U * 1024U;
+  else if (tool_params.large)
+    body_dyn_size = 1024U * 1024U;
+  else
+    body_dyn_size = 0;
+
+  if (0 != body_dyn_size)
+  {
+    body_dyn = (char *) malloc (body_dyn_size);
+    if (NULL == body_dyn)
+    {
+      fprintf (stderr, "Failed to allocate memory.\n");
+      return 25;
+    }
+    if (tool_params.medium)
+    {
+      /* Fill the body with HTML-like content */
+      size_t pos;
+      size_t filler_pos;
+      static const char body_header[] =
+        "<html>\n"
+        "<head>\n<title>Sample page title</title>\n<head>\n"
+        "<body>\n";
+      static const char body_filler[] =
+        "The quick brown fox jumps over the lazy dog.<br>\n";
+      static const char body_footer[] =
+        "</body>\n"
+        "</html>\n";
+      pos = 0;
+      memcpy (body_dyn + pos, body_header, MHD_STATICSTR_LEN_ (body_header));
+      pos += MHD_STATICSTR_LEN_ (body_header);
+      for (filler_pos = 0;
+           filler_pos < (body_dyn_size - (MHD_STATICSTR_LEN_ (body_header)
+                                          + MHD_STATICSTR_LEN_ (body_footer)));
+           ++filler_pos)
+      {
+        body_dyn[pos + filler_pos] =
+          body_filler[filler_pos % MHD_STATICSTR_LEN_ (body_filler)];
+      }
+      pos += filler_pos;
+      memcpy (body_dyn + pos, body_footer, MHD_STATICSTR_LEN_ (body_footer));
+    }
+    else
+    {
+      /* Fill the body with binary-like content */
+      size_t pos;
+      for (pos = 0; pos < body_dyn_size; ++pos)
+      {
+        body_dyn[pos] = (char) (unsigned char) (255U - pos % 256U);
+      }
+    }
+  }
+
   /* Use more responses to minimise waiting in threads to unlock
      the response used by other thread. */
   num_resps = 16 * get_num_threads ();
   resps = (struct MHD_Response **)
           malloc ((sizeof(struct MHD_Response *)) * num_resps);
   if (NULL == resps)
+  {
+    if (NULL != body_dyn)
+    {
+      free (body_dyn);
+      body_dyn = NULL;
+    }
+    fprintf (stderr, "Failed to allocate memory.\n");
     return 25;
+  }
   for (i = 0; i < num_resps; ++i)
   {
 #if MHD_VERSION >= 0x00097701
-    resps[i] = MHD_create_response_from_buffer_static (sizeof(tiny_body) - 1,
-                                                       tiny_body);
-#else /* MHD_VERSION < 0x00097701 */
-    resps[i] = MHD_create_response_from_buffer (sizeof(tiny_body) - 1,
-                                                (void *) tiny_body,
-                                                MHD_RESPMEM_PERSISTENT);
-#endif
+    if (NULL != body_dyn)
+      resps[i] = MHD_create_response_from_buffer_static (body_dyn_size,
+                                                         body_dyn);
+    else if (tool_params.empty)
+      resps[i] = MHD_create_response_empty (MHD_RF_NONE);
+    else
+      resps[i] =
+        MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (tiny_body),
+                                                tiny_body);
+
+#else  /* MHD_VERSION < 0x00097701 */
+    if (NULL != body_dyn)
+      resps[i] = MHD_create_response_from_buffer (body_dyn_size,
+                                                  (void *) body_dyn,
+                                                  MHD_RESPMEM_PERSISTENT);
+    else if (tool_params.empty)
+      resps[i] = MHD_create_response_from_buffer (0,
+                                                  (void *) tiny_body,
+                                                  MHD_RESPMEM_PERSISTENT);
+    else if (tool_params.tiny)
+      resps[i] =
+        MHD_create_response_from_buffer (MHD_STATICSTR_LEN_ (tiny_body),
+                                         (void *) tiny_body,
+                                         MHD_RESPMEM_PERSISTENT);
+    else
+#endif /* MHD_VERSION < 0x00097701 */
     if (NULL == resps[i])
     {
       fprintf (stderr, "Failed to create responses.\n");
@@ -967,6 +1203,9 @@ init_data (void)
   free (resps);
   resps = NULL;
   num_resps = 0;
+  if (NULL != body_dyn)
+    free (body_dyn);
+  body_dyn = NULL;
   return 32;
 }
 
@@ -981,6 +1220,9 @@ deinit_data (void)
   free (resps);
   resps = NULL;
   num_resps = 0;
+  if (NULL != body_dyn)
+    free (body_dyn);
+  body_dyn = NULL;
 }
 
 
@@ -1043,6 +1285,22 @@ get_mhd_conn_limit (struct MHD_Daemon *d)
 }
 
 
+static const char *
+get_mhd_response_size (void)
+{
+  if (tool_params.empty)
+    return "0 bytes (empty)";
+  else if (tool_params.tiny)
+    return "3 bytes (tiny)";
+  else if (tool_params.medium)
+    return "8 KB (medium)";
+  else if (tool_params.large)
+    return "1 MB (large)";
+  abort ();
+  return "";
+}
+
+
 static int
 run_mhd (void)
 {
@@ -1066,11 +1324,11 @@ run_mhd (void)
   fprintf (stderr, "WARNING: The tools is compiled with size-optimisations, "
            "the performance is suboptimal.\n");
 #endif /* __GNUC__ && ! __OPTIMIZE__ */
-#if MHD_VERSION >= 0x00097703
+#if MHD_VERSION >= 0x00097701
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_DEBUG_BUILD))
     fprintf (stderr, "WARNING: The libmicrohttpd is compiled with "
              "debug asserts enabled, the performance is suboptimal.\n");
-#endif /* MHD_VERSION >= 0x00097703 */
+#endif /* MHD_VERSION >= 0x00097701 */
   flags |= MHD_USE_ERROR_LOG;
   flags |= MHD_USE_INTERNAL_POLLING_THREAD;
   if (tool_params.epoll)
@@ -1148,6 +1406,8 @@ run_mhd (void)
           0 == tool_params.timeout ? " (no timeout)" : "");
   printf ("  'Date:' header:     %s\n",
           tool_params.date_header ? "Yes" : "No");
+  printf ("  Response size:      %s\n",
+          get_mhd_response_size ());
   printf ("To test with remote client use            "
           "http://HOST_IP:%u/\n", (unsigned int) port);
   printf ("To test with client on the same host use  "
