@@ -334,11 +334,19 @@ show_help (void)
   printf ("  -t NUM, --threads=NUM     use NUM threads\n");
   printf ("\n");
   printf ("Force polling function (mutually exclusive):\n");
-  printf ("          --epoll           use 'epoll' functionality\n");
-  printf ("          --poll            use poll() function\n");
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_EPOLL))
+    printf ("          --epoll           use 'epoll' functionality\n");
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_POLL))
+    printf ("          --poll            use poll() function\n");
   printf ("          --select          use select() function\n");
   printf ("\n");
   printf ("Other options:\n");
+  printf ("  -c NUM, --connections=NUM reject more than NUM client \n"
+          "                            connections\n");
+  printf ("  -O NUM, --timeout=NUM     set connection timeout to NUM seconds,\n"
+          "                            zero means no timeout");
+  printf ("          --date-header     use the 'Date:' header in every\n"
+          "                            reply\n");
   printf ("          --help            display this help and exit\n");
   printf ("  -V,     --version         output version information and exit\n");
   printf ("\n");
@@ -355,11 +363,17 @@ struct PerfRepl_parameters
   int epoll;
   int poll;
   int select;
+  unsigned int connections;
+  unsigned int timeout;
+  int date_header;
   int help;
   int version;
 };
 
 static struct PerfRepl_parameters tool_params = {
+  0,
+  0,
+  0,
   0,
   0,
   0,
@@ -374,7 +388,7 @@ static struct PerfRepl_parameters tool_params = {
  * Process parameter '-t' or '--threads'
  * @param param_name the name of the parameter as specified in command line
  * @param param_tail the pointer to the character after parameter name in
- *                   the parameter string or NULL for "long" parameters
+ *                   the parameter string
  * @param next_param the pointer to the next parameter (if any) or NULL
  * @return enum value, the PERF_PERPL_SPARAM_ONE_CHAR is not used by
  *                     this function
@@ -418,28 +432,6 @@ process_param__all_cpus (const char *param_name)
     return PERF_RPL_PARAM_ERROR;
   }
   tool_params.all_cpus = ! 0;
-  return '-' == param_name[1] ?
-         PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
-}
-
-
-static enum PerfRepl_param_result
-process_param__help (const char *param_name)
-{
-  /* Use only one of help | version */
-  if (! tool_params.version)
-    tool_params.help = ! 0;
-  return '-' == param_name[1] ?
-         PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
-}
-
-
-static enum PerfRepl_param_result
-process_param__version (const char *param_name)
-{
-  /* Use only one of help | version */
-  if (! tool_params.help)
-    tool_params.version = ! 0;
   return '-' == param_name[1] ?
          PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
 }
@@ -509,6 +501,95 @@ process_param__select (const char *param_name)
 
 
 /**
+ * Process parameter '-c' or '--connections'
+ * @param param_name the name of the parameter as specified in command line
+ * @param param_tail the pointer to the character after parameter name in
+ *                   the parameter string
+ * @param next_param the pointer to the next parameter (if any) or NULL
+ * @return enum value, the PERF_PERPL_SPARAM_ONE_CHAR is not used by
+ *                     this function
+ */
+static enum PerfRepl_param_result
+process_param__connections (const char *param_name, const char *param_tail,
+                            const char *next_param)
+{
+  unsigned int param_value;
+  enum PerfRepl_param_result value_res;
+
+  value_res = get_param_value (param_name, param_tail, next_param,
+                               &param_value);
+  if (PERF_RPL_PARAM_ERROR == value_res)
+    return value_res;
+
+  if (0 == param_value)
+  {
+    fprintf (stderr, "'0' is not valid value for parameter '%s'.\n",
+             param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  tool_params.connections = param_value;
+  return value_res;
+}
+
+
+/**
+ * Process parameter '-O' or '--timeout'
+ * @param param_name the name of the parameter as specified in command line
+ * @param param_tail the pointer to the character after parameter name in
+ *                   the parameter string
+ * @param next_param the pointer to the next parameter (if any) or NULL
+ * @return enum value, the PERF_PERPL_SPARAM_ONE_CHAR is not used by
+ *                     this function
+ */
+static enum PerfRepl_param_result
+process_param__timeout (const char *param_name, const char *param_tail,
+                        const char *next_param)
+{
+  unsigned int param_value;
+  enum PerfRepl_param_result value_res;
+
+  value_res = get_param_value (param_name, param_tail, next_param,
+                               &param_value);
+  if (PERF_RPL_PARAM_ERROR == value_res)
+    return value_res;
+
+  tool_params.timeout = param_value;
+  return value_res;
+}
+
+
+static enum PerfRepl_param_result
+process_param__date_header (const char *param_name)
+{
+  tool_params.date_header = ! 0;
+  return '-' == param_name[1] ?
+         PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
+}
+
+
+static enum PerfRepl_param_result
+process_param__help (const char *param_name)
+{
+  /* Use only one of help | version */
+  if (! tool_params.version)
+    tool_params.help = ! 0;
+  return '-' == param_name[1] ?
+         PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
+}
+
+
+static enum PerfRepl_param_result
+process_param__version (const char *param_name)
+{
+  /* Use only one of help | version */
+  if (! tool_params.help)
+    tool_params.version = ! 0;
+  return '-' == param_name[1] ?
+         PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
+}
+
+
+/**
  * Process "short" (one character) parameter.
  * @param param the pointer to character after "-" or after another valid
  *              parameter
@@ -524,6 +605,10 @@ process_short_param (const char *param, const char *next_param)
     return process_param__all_cpus ("-A");
   else if ('t' == param_chr)
     return process_param__threads ("-t", param + 1, next_param);
+  else if ('c' == param_chr)
+    return process_param__connections ("-c", param + 1, next_param);
+  else if ('O' == param_chr)
+    return process_param__timeout ("-O", param + 1, next_param);
   else if ('V' == param_chr)
     return process_param__version ("-V");
 
@@ -588,6 +673,23 @@ process_long_param (const char *param, const char *next_param)
   else if ((MHD_STATICSTR_LEN_ ("select") == param_len) &&
            (0 == memcmp (param, "select", MHD_STATICSTR_LEN_ ("select"))))
     return process_param__select ("--select");
+  else if ((MHD_STATICSTR_LEN_ ("connections") <= param_len) &&
+           (0 == memcmp (param, "connections",
+                         MHD_STATICSTR_LEN_ ("connections"))))
+    return process_param__connections ("--connections",
+                                       param
+                                       + MHD_STATICSTR_LEN_ ("connections"),
+                                       next_param);
+  else if ((MHD_STATICSTR_LEN_ ("timeout") <= param_len) &&
+           (0 == memcmp (param, "timeout",
+                         MHD_STATICSTR_LEN_ ("timeout"))))
+    return process_param__timeout ("--timeout",
+                                   param + MHD_STATICSTR_LEN_ ("timeout"),
+                                   next_param);
+  else if ((MHD_STATICSTR_LEN_ ("date-header") == param_len) &&
+           (0 == memcmp (param, "date-header",
+                         MHD_STATICSTR_LEN_ ("date-header"))))
+    return process_param__date_header ("--date-header");
   else if ((MHD_STATICSTR_LEN_ ("help") == param_len) &&
            (0 == memcmp (param, "help", MHD_STATICSTR_LEN_ ("help"))))
     return process_param__help ("--help");
@@ -692,6 +794,21 @@ print_all_cores_used (void)
 
 
 /**
+ * Apply parameter '-A' or '--all-cpus'
+ */
+static void
+check_apply_param__all_cpus (void)
+{
+  if (! tool_params.all_cpus)
+    return;
+
+  num_threads = get_cpu_core_count ();
+  printf ("Requested use of all available CPU cores for MHD threads.\n");
+  print_all_cores_used ();
+}
+
+
+/**
  * Apply parameter '-t' or '--threads'
  */
 static void
@@ -715,21 +832,6 @@ check_apply_param__threads (void)
     fprintf (stderr, "This decreases the performance. "
              "Consider using fewer threads.\n");
   }
-}
-
-
-/**
- * Apply parameter '-A' or '--all-cpus'
- */
-static void
-check_apply_param__all_cpus (void)
-{
-  if (! tool_params.all_cpus)
-    return;
-
-  num_threads = get_cpu_core_count ();
-  printf ("Requested use of all available CPU cores for MHD threads.\n");
-  print_all_cores_used ();
 }
 
 
@@ -775,6 +877,25 @@ check_param__poll (void)
 }
 
 
+/* Must be called after 'check_apply_param__threads()' and
+   'check_apply_param__all_cpus()' */
+/* non-zero - OK, zero - error */
+static int
+check_param__connections (void)
+{
+  if (0 == tool_params.connections)
+    return ! 0;
+  if (get_num_threads () > tool_params.connections)
+  {
+    fprintf (stderr, "The connections number limit (%u) is less than number "
+             "of threads used (%u). Use higher value for connections limit.\n",
+             tool_params.connections, get_num_threads ());
+    return 0;
+  }
+  return ! 0;
+}
+
+
 /**
  * Apply decoded parameters
  * @return 0 if success,
@@ -794,12 +915,15 @@ check_apply_params (void)
     print_version ();
     return -1;
   }
+  check_param_port ();
+  check_apply_param__all_cpus ();
+  check_apply_param__threads ();
   if (! check_param__epoll ())
     return PERF_RPL_ERR_CODE_BAD_PARAM;
   if (! check_param__poll ())
     return PERF_RPL_ERR_CODE_BAD_PARAM;
-  check_apply_param__threads ();
-  check_apply_param__all_cpus ();
+  if (! check_param__connections ())
+    return PERF_RPL_ERR_CODE_BAD_PARAM;
   return 0;
 }
 
@@ -897,6 +1021,28 @@ answer_shared_response (void *cls,
 }
 
 
+/* Borrowed from daemon.c */
+/* TODO: run-time detection */
+/**
+ * Default connection limit.
+ */
+#ifdef MHD_POSIX_SOCKETS
+#define MHD_MAX_CONNECTIONS_DEFAULT (FD_SETSIZE - 4)
+#else
+#define MHD_MAX_CONNECTIONS_DEFAULT (FD_SETSIZE - 2)
+#endif
+
+static unsigned int
+get_mhd_conn_limit (struct MHD_Daemon *d)
+{
+  /* TODO: implement run-time detection */
+  (void) d; /* Unused */
+  if (0 != tool_params.connections)
+    return tool_params.connections;
+  return (unsigned int) MHD_MAX_CONNECTIONS_DEFAULT;
+}
+
+
 static int
 run_mhd (void)
 {
@@ -935,18 +1081,25 @@ run_mhd (void)
     (void) flags; /* No special additional flag */
   else
     flags |= MHD_USE_AUTO;
-  flags |= MHD_USE_SUPPRESS_DATE_NO_CLOCK;
+  if (! tool_params.date_header)
+    flags |= MHD_USE_SUPPRESS_DATE_NO_CLOCK;
 
-  if (0)
+  if (0 != tool_params.connections)
   {
     struct MHD_OptionItem option =
-    { MHD_OPTION_CONNECTION_LIMIT, 5, NULL };
+    { MHD_OPTION_CONNECTION_LIMIT, (intptr_t) tool_params.connections, NULL };
     opt_arr[opt_count++] = option;
   }
   if (1 < get_num_threads ())
   {
     struct MHD_OptionItem option =
-    { MHD_OPTION_THREAD_POOL_SIZE, (int) get_num_threads (), NULL };
+    { MHD_OPTION_THREAD_POOL_SIZE, (intptr_t) get_num_threads (), NULL };
+    opt_arr[opt_count++] = option;
+  }
+  if (1)
+  {
+    struct MHD_OptionItem option =
+    { MHD_OPTION_CONNECTION_TIMEOUT, (intptr_t) tool_params.timeout, NULL };
     opt_arr[opt_count++] = option;
   }
   if (1)
@@ -983,17 +1136,22 @@ run_mhd (void)
              "port number explicitly.\n");
 
   printf ("\nMHD is running.\n");
-  printf ("  Bind port:         %u\n", (unsigned int) port);
-  printf ("  Polling function:  %s\n", poll_mode);
-  printf ("  Threading:         ");
+  printf ("  Bind port:          %u\n", (unsigned int) port);
+  printf ("  Polling function:   %s\n", poll_mode);
+  printf ("  Threading:          ");
   if (1 == get_num_threads ())
     printf ("one MHD thread\n");
   else
     printf ("%u MHD threads in thread pool\n", get_num_threads ());
-  printf ("To test with remote client use            http://HOST_IP:%u/\n",
-          (unsigned int) port);
+  printf ("  Connections limit:  %u\n", get_mhd_conn_limit (d));
+  printf ("  Connection timeout: %u%s\n", tool_params.timeout,
+          0 == tool_params.timeout ? " (no timeout)" : "");
+  printf ("  'Date:' header:     %s\n",
+          tool_params.date_header ? "Yes" : "No");
+  printf ("To test with remote client use            "
+          "http://HOST_IP:%u/\n", (unsigned int) port);
   printf ("To test with client on the same host use  "
-          "http://127.0.0.1:%u\n", (unsigned int) port);
+          "http://127.0.0.1:%u/\n", (unsigned int) port);
   printf ("\nPress ENTER to stop.\n");
   if (1)
   {

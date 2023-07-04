@@ -37,5 +37,3 @@ endif
 
 perf_replies_SOURCES = \
     perf_replies.c
-perf_replies_LDADD = \
-    $(LDADD) $(MATH_LIB)

@@ -3917,16 +3917,6 @@ AS_VAR_IF([enable_tools],["yes"],
         )
       ]
     )
-    MATH_LIB=''
-    MHD_FIND_LIB([sqrt],[#include <math.h>],
-      [[
-        double res = sqrt ((double) 4);
-        i][f (((double) 2) != res) return 2;
-      ]],[m],
-      [AC_DEFINE([[HAVE_SQRT_FUNC]],[[1]],[Define to 1 i][f 'sqrt()' function is available.])
-      ],[],[MATH_LIB]
-    )
-    AC_SUBST([MATH_LIB])
   ]
 )
 
