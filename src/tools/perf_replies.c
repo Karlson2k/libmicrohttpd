@@ -336,12 +336,12 @@ show_help (void)
   printf ("\n");
   printf ("Force polling function (mutually exclusive):\n");
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_EPOLL))
-    printf ("          --epoll           use 'epoll' functionality\n");
+    printf ("  -e,     --epoll           use 'epoll' functionality\n");
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_POLL))
-    printf ("          --poll            use poll() function\n");
-  printf ("          --select          use select() function\n");
+    printf ("  -p,     --poll            use poll() function\n");
+  printf ("  -s,     --select          use select() function\n");
   printf ("\n");
-  printf ("Response size options (mutually exclusive):\n");
+  printf ("Response body size options (mutually exclusive):\n");
   printf ("  -E,     --empty           empty response, 0 bytes\n");
   printf ("  -T,     --tiny            tiny response, 3 bytes (default)\n");
   printf ("  -M,     --medium          medium response, 8 KB\n");
@@ -458,13 +458,13 @@ process_param__epoll (const char *param_name)
   if (tool_params.poll)
   {
     fprintf (stderr, "Parameter '%s' cannot be used together "
-             "with '--poll'.\n", param_name);
+             "with '-p' or '--poll'.\n", param_name);
     return PERF_RPL_PARAM_ERROR;
   }
   if (tool_params.select)
   {
     fprintf (stderr, "Parameter '%s' cannot be used together "
-             "with '--select'.\n", param_name);
+             "with '-s' or '--select'.\n", param_name);
     return PERF_RPL_PARAM_ERROR;
   }
   tool_params.epoll = ! 0;
@@ -479,13 +479,13 @@ process_param__poll (const char *param_name)
   if (tool_params.epoll)
   {
     fprintf (stderr, "Parameter '%s' cannot be used together "
-             "with '--epoll'.\n", param_name);
+             "with '-e' or '--epoll'.\n", param_name);
     return PERF_RPL_PARAM_ERROR;
   }
   if (tool_params.select)
   {
     fprintf (stderr, "Parameter '%s' cannot be used together "
-             "with '--select'.\n", param_name);
+             "with '-s' or '--select'.\n", param_name);
     return PERF_RPL_PARAM_ERROR;
   }
   tool_params.poll = ! 0;
@@ -500,13 +500,13 @@ process_param__select (const char *param_name)
   if (tool_params.epoll)
   {
     fprintf (stderr, "Parameter '%s' cannot be used together "
-             "with '--epoll'.\n", param_name);
+             "with '-e' or '--epoll'.\n", param_name);
     return PERF_RPL_PARAM_ERROR;
   }
   if (tool_params.poll)
   {
     fprintf (stderr, "Parameter '%s' cannot be used together "
-             "with '--poll'.\n", param_name);
+             "with '-p' or '--poll'.\n", param_name);
     return PERF_RPL_PARAM_ERROR;
   }
   tool_params.select = ! 0;
@@ -728,6 +728,12 @@ process_short_param (const char *param, const char *next_param)
     return process_param__all_cpus ("-A");
   else if ('t' == param_chr)
     return process_param__threads ("-t", param + 1, next_param);
+  else if ('e' == param_chr)
+    return process_param__epoll ("-e");
+  else if ('p' == param_chr)
+    return process_param__poll ("-p");
+  else if ('s' == param_chr)
+    return process_param__select ("-s");
   else if ('E' == param_chr)
     return process_param__empty ("-E");
   else if ('T' == param_chr)
@@ -1406,7 +1412,7 @@ run_mhd (void)
           0 == tool_params.timeout ? " (no timeout)" : "");
   printf ("  'Date:' header:     %s\n",
           tool_params.date_header ? "Yes" : "No");
-  printf ("  Response size:      %s\n",
+  printf ("  Response body size: %s\n",
           get_mhd_response_size ());
   printf ("To test with remote client use            "
           "http://HOST_IP:%u/\n", (unsigned int) port);
