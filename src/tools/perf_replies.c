@@ -333,6 +333,9 @@ show_help (void)
   printf ("  -A,     --all-cpus        use all available CPU cores (for \n"
           "                            testing with remote client)\n");
   printf ("  -t NUM, --threads=NUM     use NUM threads\n");
+  printf ("  -P,     --thread-per-conn use thread-per-connection mode,\n"
+          "                            the number of threads are limited only\n"
+          "                            by the number of connection\n");
   printf ("\n");
   printf ("Force polling function (mutually exclusive):\n");
   if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_EPOLL))
@@ -367,6 +370,7 @@ struct PerfRepl_parameters
   unsigned int port;
   int all_cpus;
   unsigned int threads;
+  int thread_per_conn;
   int epoll;
   int poll;
   int select;
@@ -396,8 +400,31 @@ static struct PerfRepl_parameters tool_params = {
   0,
   0,
   0,
+  0,
   0
 };
+
+
+static enum PerfRepl_param_result
+process_param__all_cpus (const char *param_name)
+{
+  if (0 != tool_params.threads)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-t' or '--threads'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  if (tool_params.thread_per_conn)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-P' or '--thread-per-conn'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  tool_params.all_cpus = ! 0;
+  return '-' == param_name[1] ?
+         PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
+}
+
 
 /**
  * Process parameter '-t' or '--threads'
@@ -421,6 +448,12 @@ process_param__threads (const char *param_name, const char *param_tail,
              "with '-A' or '--all-cpus'.\n", param_name);
     return PERF_RPL_PARAM_ERROR;
   }
+  if (tool_params.thread_per_conn)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-P' or '--thread-per-conn'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
   value_res = get_param_value (param_name, param_tail, next_param,
                                &param_value);
   if (PERF_RPL_PARAM_ERROR == value_res)
@@ -438,15 +471,21 @@ process_param__threads (const char *param_name, const char *param_tail,
 
 
 static enum PerfRepl_param_result
-process_param__all_cpus (const char *param_name)
+process_param__thread_per_conn (const char *param_name)
 {
+  if (tool_params.all_cpus)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-A' or '--all-cpus'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
   if (0 != tool_params.threads)
   {
     fprintf (stderr, "Parameter '%s' cannot be used together "
              "with '-t' or '--threads'.\n", param_name);
     return PERF_RPL_PARAM_ERROR;
   }
-  tool_params.all_cpus = ! 0;
+  tool_params.thread_per_conn = ! 0;
   return '-' == param_name[1] ?
          PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
 }
@@ -728,6 +767,8 @@ process_short_param (const char *param, const char *next_param)
     return process_param__all_cpus ("-A");
   else if ('t' == param_chr)
     return process_param__threads ("-t", param + 1, next_param);
+  else if ('P' == param_chr)
+    return process_param__thread_per_conn ("-P");
   else if ('e' == param_chr)
     return process_param__epoll ("-e");
   else if ('p' == param_chr)
@@ -801,6 +842,10 @@ process_long_param (const char *param, const char *next_param)
     return process_param__threads ("--threads",
                                    param + MHD_STATICSTR_LEN_ ("threads"),
                                    next_param);
+  else if ((MHD_STATICSTR_LEN_ ("thread-per-conn") == param_len) &&
+           (0 == memcmp (param, "thread-per-conn",
+                         MHD_STATICSTR_LEN_ ("thread-per-conn"))))
+    return process_param__thread_per_conn ("--thread-per-conn");
   else if ((MHD_STATICSTR_LEN_ ("epoll") == param_len) &&
            (0 == memcmp (param, "epoll", MHD_STATICSTR_LEN_ ("epoll"))))
     return process_param__epoll ("--epoll");
@@ -942,6 +987,16 @@ print_all_cores_used (void)
 }
 
 
+static void
+check_param_port (void)
+{
+  if (0 != tool_params.port)
+    return;
+  if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    tool_params.port = PERF_REPL_PORT_FALLBACK;
+}
+
+
 /**
  * Apply parameter '-A' or '--all-cpus'
  */
@@ -984,13 +1039,25 @@ check_apply_param__threads (void)
 }
 
 
-static void
-check_param_port (void)
+/**
+ * Apply parameter '-P' or '--thread-per-conn'
+ * @return non-zero - OK, zero - error
+ */
+static int
+check_apply_param__thread_per_conn (void)
 {
-  if (0 != tool_params.port)
-    return;
-  if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-    tool_params.port = PERF_REPL_PORT_FALLBACK;
+  if (! tool_params.thread_per_conn)
+    return ! 0;
+
+  if (tool_params.epoll)
+  {
+    fprintf (stderr, "'Thread-per-connection' mode cannot be used together "
+             "with 'epoll'.\n");
+    return 0;
+  }
+  num_threads = 1;
+
+  return ! 0;
 }
 
 
@@ -1076,6 +1143,8 @@ check_apply_params (void)
   check_param_port ();
   check_apply_param__all_cpus ();
   check_apply_param__threads ();
+  if (! check_apply_param__thread_per_conn ())
+    return PERF_RPL_ERR_CODE_BAD_PARAM;
   if (! check_param__epoll ())
     return PERF_RPL_ERR_CODE_BAD_PARAM;
   if (! check_param__poll ())
@@ -1345,6 +1414,10 @@ run_mhd (void)
     (void) flags; /* No special additional flag */
   else
     flags |= MHD_USE_AUTO;
+
+  if (tool_params.thread_per_conn)
+    flags |= MHD_USE_THREAD_PER_CONNECTION;
+
   if (! tool_params.date_header)
     flags |= MHD_USE_SUPPRESS_DATE_NO_CLOCK;
 
@@ -1403,7 +1476,9 @@ run_mhd (void)
   printf ("  Bind port:          %u\n", (unsigned int) port);
   printf ("  Polling function:   %s\n", poll_mode);
   printf ("  Threading:          ");
-  if (1 == get_num_threads ())
+  if (MHD_USE_THREAD_PER_CONNECTION == (flags & MHD_USE_THREAD_PER_CONNECTION))
+    printf ("thread per connection\n");
+  else if (1 == get_num_threads ())
     printf ("one MHD thread\n");
   else
     printf ("%u MHD threads in thread pool\n", get_num_threads ());
