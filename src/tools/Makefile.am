@@ -36,4 +36,4 @@ endif
 
 
 perf_replies_SOURCES = \
-    perf_replies.c
+    perf_replies.c mhd_tool_str_to_uint.h

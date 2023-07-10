@@ -26,7 +26,7 @@
 */
 
 /**
- * @file examples/perf_replies.c
+ * @file tools/perf_replies.c
  * @brief  Implementation of HTTP server optimised for fast replies
  *         based on MHD.
  * @author Karlson2k (Evgeny Grin)
@@ -38,6 +38,7 @@
 #include <stdint.h>
 #include "mhd_options.h"
 #include "microhttpd.h"
+#include "mhd_tool_str_to_uint.h"
 
 #if defined(MHD_REAL_CPU_COUNT)
 #if MHD_REAL_CPU_COUNT == 0
@@ -106,43 +107,6 @@ set_self_name (int argc, char *const *argv)
 }
 
 
-/**
- * Convert decimal string to unsigned int.
- * Function stops at the end of the string or on first non-digit character.
- * @param str the string to convert
- * @param[out] value the pointer to put the result
- * @return return the number of digits converted or
- *         zero if no digits found or result would overflow the output
- *         variable (the output set to UINT_MAX in this case).
- */
-static size_t
-str_to_uint (const char *str, unsigned int *value)
-{
-  size_t i;
-  unsigned int v = 0;
-  *value = 0;
-
-  for (i = 0; 0 != str[i]; ++i)
-  {
-    const char chr = str[i];
-    unsigned int digit;
-    if (('0' > chr) || ('9' < chr))
-      break;
-    digit = (unsigned char) (chr - '0');
-    if ((((0U - 1) / 10) < v) || ((v * 10 + digit) < v))
-    {
-      /* Overflow */
-      *value = 0U - 1;
-      return 0;
-    }
-    v *= 10;
-    v += digit;
-  }
-  *value = v;
-  return i;
-}
-
-
 #if defined (HAVE_POPEN) && defined(HAVE_PCLOSE)
 /**
  * Read the command output as a number and return the number.
@@ -175,7 +139,7 @@ get_cmd_out_as_number (const char *cmd)
   {
     size_t digits_found;
     unsigned int out_value;
-    digits_found = str_to_uint (buf, &out_value);
+    digits_found = mhd_tool_str_to_uint (buf, &out_value);
     if (0 != digits_found)
     {
       if ((0 == buf[digits_found])
@@ -302,7 +266,7 @@ get_param_value (const char *param_name, const char *param_tail,
     value_str = next_param;
 
   if (NULL != value_str)
-    digits = str_to_uint (value_str, param_value);
+    digits = mhd_tool_str_to_uint (value_str, param_value);
   else
     digits = 0;
 
@@ -1033,7 +997,7 @@ process_params (int argc, char *const *argv)
       /* Process the port number */
       unsigned int read_port;
       size_t num_digits;
-      num_digits = str_to_uint (p, &read_port);
+      num_digits = mhd_tool_str_to_uint (p, &read_port);
       if (0 != p[num_digits])
       {
         fprintf (stderr, "Error in specified port number: %s\n", p);
