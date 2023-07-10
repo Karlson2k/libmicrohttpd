@@ -48,10 +48,10 @@ run_with_socat ()
 }
 
 # zzuf cannot pass-through the return value of checked program
-# so try the direct dry-run first to get possibe 77 or 99 codes
+# so try the direct dry-run first to get possible 77 or 99 codes
 echo "## Dry-run of the $@..."
 if "$@" --dry-run ; then
-  echo "# Dry-run succeded."
+  echo "# Dry-run succeeded."
 else
   res_code=$?
   echo "Dry-run failed with exit code $res_code." 1>&2
@@ -81,7 +81,7 @@ fi
 
 echo "## Dry-run of the $@ with zzuf..."
 if "$ZZUF" ${zzuf_all_params} "$@" --dry-run ; then
-  echo "# Dry-run with zzuf succeded."
+  echo "# Dry-run with zzuf succeeded."
 else
   res_code=$?
   echo "$@ cannot be run with zzuf directly." 1>&2
