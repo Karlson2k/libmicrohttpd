@@ -71,9 +71,6 @@ static const char *const build_revision = ""
 /* Dynamic variables */
 static char self_name[500] = "perf_replies";
 static uint16_t mhd_port = 0;
-static struct MHD_Response **resps = NULL;
-static unsigned int num_resps = 0;
-static char *body_dyn = NULL; /* Non-static body data */
 
 static void
 set_self_name (int argc, char *const *argv)
@@ -350,6 +347,14 @@ show_help (void)
   printf ("  -M,     --medium          medium response, 8 KB\n");
   printf ("  -L,     --large           large response, 1 MB\n");
   printf ("\n");
+  printf ("Response use options (mutually exclusive):\n");
+  printf ("  -S,     --shared          pool of pre-generated shared response\n"
+          "                            objects (default)\n");
+  printf ("  -I,     --single          single pre-generated response object\n"
+          "                            used for all requests\n");
+  printf ("  -U,     --unique          response object generated for every\n"
+          "                            request and used one time only\n");
+  printf ("\n");
   printf ("Other options:\n");
   printf ("  -c NUM, --connections=NUM reject more than NUM client \n"
           "                            connections\n");
@@ -378,6 +383,9 @@ struct PerfRepl_parameters
   int tiny;
   int medium;
   int large;
+  int shared;
+  int single;
+  int unique;
   unsigned int connections;
   unsigned int timeout;
   int date_header;
@@ -386,6 +394,9 @@ struct PerfRepl_parameters
 };
 
 static struct PerfRepl_parameters tool_params = {
+  0,
+  0,
+  0,
   0,
   0,
   0,
@@ -662,6 +673,69 @@ process_param__large (const char *param_name)
 }
 
 
+static enum PerfRepl_param_result
+process_param__shared (const char *param_name)
+{
+  if (tool_params.single)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-I' or '--single'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  if (tool_params.unique)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-U' or '--unique'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  tool_params.shared = ! 0;
+  return '-' == param_name[1] ?
+         PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
+}
+
+
+static enum PerfRepl_param_result
+process_param__single (const char *param_name)
+{
+  if (tool_params.shared)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-S' or '--shared'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  if (tool_params.unique)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-U' or '--unique'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  tool_params.single = ! 0;
+  return '-' == param_name[1] ?
+         PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
+}
+
+
+static enum PerfRepl_param_result
+process_param__unique (const char *param_name)
+{
+  if (tool_params.shared)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-S' or '--shared'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  if (tool_params.single)
+  {
+    fprintf (stderr, "Parameter '%s' cannot be used together "
+             "with '-I' or '--single'.\n", param_name);
+    return PERF_RPL_PARAM_ERROR;
+  }
+  tool_params.unique = ! 0;
+  return '-' == param_name[1] ?
+         PERF_RPL_PARAM_FULL_STR :PERF_RPL_PARAM_ONE_CHAR;
+}
+
+
 /**
  * Process parameter '-c' or '--connections'
  * @param param_name the name of the parameter as specified in command line
@@ -783,6 +857,12 @@ process_short_param (const char *param, const char *next_param)
     return process_param__medium ("-M");
   else if ('L' == param_chr)
     return process_param__large ("-L");
+  else if ('S' == param_chr)
+    return process_param__shared ("-S");
+  else if ('I' == param_chr)
+    return process_param__single ("-I");
+  else if ('U' == param_chr)
+    return process_param__unique ("-U");
   else if ('c' == param_chr)
     return process_param__connections ("-c", param + 1, next_param);
   else if ('O' == param_chr)
@@ -867,6 +947,15 @@ process_long_param (const char *param, const char *next_param)
   else if ((MHD_STATICSTR_LEN_ ("large") == param_len) &&
            (0 == memcmp (param, "large", MHD_STATICSTR_LEN_ ("large"))))
     return process_param__large ("--large");
+  else if ((MHD_STATICSTR_LEN_ ("shared") == param_len) &&
+           (0 == memcmp (param, "shared", MHD_STATICSTR_LEN_ ("shared"))))
+    return process_param__shared ("--shared");
+  else if ((MHD_STATICSTR_LEN_ ("single") == param_len) &&
+           (0 == memcmp (param, "single", MHD_STATICSTR_LEN_ ("single"))))
+    return process_param__single ("--single");
+  else if ((MHD_STATICSTR_LEN_ ("unique") == param_len) &&
+           (0 == memcmp (param, "unique", MHD_STATICSTR_LEN_ ("unique"))))
+    return process_param__unique ("--unique");
   else if ((MHD_STATICSTR_LEN_ ("connections") <= param_len) &&
            (0 == memcmp (param, "connections",
                          MHD_STATICSTR_LEN_ ("connections"))))
@@ -1102,6 +1191,14 @@ check_param__empty_tiny_medium_large (void)
 }
 
 
+static void
+check_param__shared_single_unique (void)
+{
+  if (0 == (tool_params.shared | tool_params.single | tool_params.unique))
+    tool_params.shared = ! 0;
+}
+
+
 /* Must be called after 'check_apply_param__threads()' and
    'check_apply_param__all_cpus()' */
 /* non-zero - OK, zero - error */
@@ -1150,35 +1247,36 @@ check_apply_params (void)
   if (! check_param__poll ())
     return PERF_RPL_ERR_CODE_BAD_PARAM;
   check_param__empty_tiny_medium_large ();
+  check_param__shared_single_unique ();
   if (! check_param__connections ())
     return PERF_RPL_ERR_CODE_BAD_PARAM;
   return 0;
 }
 
 
+/* The pool of shared responses */
+static struct MHD_Response **resps = NULL;
+static unsigned int num_resps = 0;
+/* The single response */
+static struct MHD_Response *resp_single = NULL;
+
+/* Use the same memory area to avoid multiple copies.
+   The system will keep it in cache. */
+static const char tiny_body[] = "Hi!";
+static char *body_dyn = NULL; /* Non-static body data */
+size_t body_dyn_size;
+
+/* Non-zero - success, zero - failure */
 static int
-init_data (void)
+init_response_body_data (void)
 {
-  /* Use the same memory area to avoid multiple copies.
-     The system will keep it in cache. */
-  static const char tiny_body[] = "Hi!";
-  unsigned int i;
-  size_t body_dyn_size;
-
-  if (tool_params.medium)
-    body_dyn_size = 8U * 1024U;
-  else if (tool_params.large)
-    body_dyn_size = 1024U * 1024U;
-  else
-    body_dyn_size = 0;
-
   if (0 != body_dyn_size)
   {
     body_dyn = (char *) malloc (body_dyn_size);
     if (NULL == body_dyn)
     {
       fprintf (stderr, "Failed to allocate memory.\n");
-      return 25;
+      return 0;
     }
     if (tool_params.medium)
     {
@@ -1218,10 +1316,76 @@ init_data (void)
       }
     }
   }
+  return ! 0;
+}
 
-  /* Use more responses to minimise waiting in threads to unlock
-     the response used by other thread. */
-  num_resps = 16 * get_num_threads ();
+
+static struct MHD_Response *
+create_response_object (void)
+{
+#if MHD_VERSION >= 0x00097701
+  if (NULL != body_dyn)
+    return MHD_create_response_from_buffer_static (body_dyn_size,
+                                                   body_dyn);
+  else if (tool_params.empty)
+    return MHD_create_response_empty (MHD_RF_NONE);
+
+  return MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (tiny_body),
+                                                 tiny_body);
+
+#else  /* MHD_VERSION < 0x00097701 */
+  if (NULL != body_dyn)
+    return MHD_create_response_from_buffer (body_dyn_size,
+                                            (void *) body_dyn,
+                                            MHD_RESPMEM_PERSISTENT);
+  else if (tool_params.empty)
+    return MHD_create_response_from_buffer (0,
+                                            (void *) tiny_body,
+                                            MHD_RESPMEM_PERSISTENT);
+
+  return MHD_create_response_from_buffer (MHD_STATICSTR_LEN_ (tiny_body),
+                                          (void *) tiny_body,
+                                          MHD_RESPMEM_PERSISTENT);
+#endif /* MHD_VERSION < 0x00097701 */
+}
+
+
+static int
+init_data (void)
+{
+  unsigned int i;
+
+  if (tool_params.medium)
+    body_dyn_size = 8U * 1024U;
+  else if (tool_params.large)
+    body_dyn_size = 1024U * 1024U;
+  else
+    body_dyn_size = 0;
+
+  if (! init_response_body_data ())
+    return 25;
+
+  if (tool_params.unique)
+    return 0; /* Responses are generated on-fly */
+
+  if (tool_params.single)
+  {
+    resp_single = create_response_object ();
+    if (NULL == resp_single)
+    {
+      fprintf (stderr, "Failed to create response.\n");
+      return 25;
+    }
+    return 0;
+  }
+
+  /* Use more responses to minimise waiting in threads while the response
+     used by other thread. */
+  if (! tool_params.thread_per_conn)
+    num_resps = 16 * get_num_threads ();
+  else
+    num_resps = 16 * get_cpu_core_count ();
+
   resps = (struct MHD_Response **)
           malloc ((sizeof(struct MHD_Response *)) * num_resps);
   if (NULL == resps)
@@ -1236,33 +1400,7 @@ init_data (void)
   }
   for (i = 0; i < num_resps; ++i)
   {
-#if MHD_VERSION >= 0x00097701
-    if (NULL != body_dyn)
-      resps[i] = MHD_create_response_from_buffer_static (body_dyn_size,
-                                                         body_dyn);
-    else if (tool_params.empty)
-      resps[i] = MHD_create_response_empty (MHD_RF_NONE);
-    else
-      resps[i] =
-        MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (tiny_body),
-                                                tiny_body);
-
-#else  /* MHD_VERSION < 0x00097701 */
-    if (NULL != body_dyn)
-      resps[i] = MHD_create_response_from_buffer (body_dyn_size,
-                                                  (void *) body_dyn,
-                                                  MHD_RESPMEM_PERSISTENT);
-    else if (tool_params.empty)
-      resps[i] = MHD_create_response_from_buffer (0,
-                                                  (void *) tiny_body,
-                                                  MHD_RESPMEM_PERSISTENT);
-    else if (tool_params.tiny)
-      resps[i] =
-        MHD_create_response_from_buffer (MHD_STATICSTR_LEN_ (tiny_body),
-                                         (void *) tiny_body,
-                                         MHD_RESPMEM_PERSISTENT);
-    else
-#endif /* MHD_VERSION < 0x00097701 */
+    resps[i] = create_response_object ();
     if (NULL == resps[i])
     {
       fprintf (stderr, "Failed to create responses.\n");
@@ -1288,13 +1426,18 @@ init_data (void)
 static void
 deinit_data (void)
 {
-  unsigned int i;
-  for (i = 0; i < num_resps; ++i)
-    MHD_destroy_response (resps[i]);
-
-  free (resps);
+  if (NULL != resp_single)
+    MHD_destroy_response (resp_single);
+  resp_single = NULL;
+  if (NULL != resps)
+  {
+    unsigned int i;
+    for (i = 0; i < num_resps; ++i)
+      MHD_destroy_response (resps[i]);
+    num_resps = 0;
+    free (resps);
+  }
   resps = NULL;
-  num_resps = 0;
   if (NULL != body_dyn)
     free (body_dyn);
   body_dyn = NULL;
@@ -1335,6 +1478,192 @@ answer_shared_response (void *cls,
      responses locking. */
   resp_index = (last_index++) % num_resps;
   return MHD_queue_response (connection, MHD_HTTP_OK, resps[resp_index]);
+}
+
+
+static enum MHD_Result
+answer_single_response (void *cls,
+                        struct MHD_Connection *connection,
+                        const char *url,
+                        const char *method,
+                        const char *version,
+                        const char *upload_data,
+                        size_t *upload_data_size,
+                        void **req_cls)
+{
+  static int marker = 0;
+  (void) cls;  /* Unused */
+  (void) url; (void) version; /* Unused */
+  (void) upload_data; (void) upload_data_size; /* Unused */
+
+  if (NULL == *req_cls)
+  {
+    /* The fist call */
+    *req_cls = (void *) &marker;
+    /* Do not send reply yet. No error. */
+    return MHD_YES;
+  }
+  if ((0 != strcmp (method, MHD_HTTP_METHOD_GET)) &&
+      (0 != strcmp (method, MHD_HTTP_METHOD_HEAD)))
+    return MHD_NO; /* Unsupported method, close connection */
+
+  return MHD_queue_response (connection, MHD_HTTP_OK, resp_single);
+}
+
+
+static enum MHD_Result
+answer_unique_empty_response (void *cls,
+                              struct MHD_Connection *connection,
+                              const char *url,
+                              const char *method,
+                              const char *version,
+                              const char *upload_data,
+                              size_t *upload_data_size,
+                              void **req_cls)
+{
+  static int marker = 0;
+  struct MHD_Response *r;
+  enum MHD_Result ret;
+  (void) cls;  /* Unused */
+  (void) url; (void) version; /* Unused */
+  (void) upload_data; (void) upload_data_size; /* Unused */
+
+  if (NULL == *req_cls)
+  {
+    /* The fist call */
+    *req_cls = (void *) &marker;
+    /* Do not send reply yet. No error. */
+    return MHD_YES;
+  }
+  if ((0 != strcmp (method, MHD_HTTP_METHOD_GET)) &&
+      (0 != strcmp (method, MHD_HTTP_METHOD_HEAD)))
+    return MHD_NO; /* Unsupported method, close connection */
+
+#if MHD_VERSION >= 0x00097701
+  r = MHD_create_response_empty (MHD_RF_NONE);
+#else  /* MHD_VERSION < 0x00097701 */
+  r = MHD_create_response_from_buffer (0,
+                                       NULL,
+                                       MHD_RESPMEM_PERSISTENT);
+#endif /* MHD_VERSION < 0x00097701 */
+  ret = MHD_queue_response (connection, MHD_HTTP_OK, r);
+  MHD_destroy_response (r);
+  return ret;
+}
+
+
+static enum MHD_Result
+answer_unique_tiny_response (void *cls,
+                             struct MHD_Connection *connection,
+                             const char *url,
+                             const char *method,
+                             const char *version,
+                             const char *upload_data,
+                             size_t *upload_data_size,
+                             void **req_cls)
+{
+  static int marker = 0;
+  struct MHD_Response *r;
+  enum MHD_Result ret;
+  (void) cls;  /* Unused */
+  (void) url; (void) version; /* Unused */
+  (void) upload_data; (void) upload_data_size; /* Unused */
+
+  if (NULL == *req_cls)
+  {
+    /* The fist call */
+    *req_cls = (void *) &marker;
+    /* Do not send reply yet. No error. */
+    return MHD_YES;
+  }
+  if ((0 != strcmp (method, MHD_HTTP_METHOD_GET)) &&
+      (0 != strcmp (method, MHD_HTTP_METHOD_HEAD)))
+    return MHD_NO; /* Unsupported method, close connection */
+
+#if MHD_VERSION >= 0x00097701
+  r = MHD_create_response_from_buffer_static (MHD_STATICSTR_LEN_ (tiny_body),
+                                              tiny_body);
+#else  /* MHD_VERSION < 0x00097701 */
+  r = MHD_create_response_from_buffer (MHD_STATICSTR_LEN_ (tiny_body),
+                                       (void *) tiny_body,
+                                       MHD_RESPMEM_PERSISTENT);
+#endif /* MHD_VERSION < 0x00097701 */
+  ret = MHD_queue_response (connection, MHD_HTTP_OK, r);
+  MHD_destroy_response (r);
+  return ret;
+}
+
+
+static enum MHD_Result
+answer_unique_dyn_response (void *cls,
+                            struct MHD_Connection *connection,
+                            const char *url,
+                            const char *method,
+                            const char *version,
+                            const char *upload_data,
+                            size_t *upload_data_size,
+                            void **req_cls)
+{
+  static int marker = 0;
+  struct MHD_Response *r;
+  enum MHD_Result ret;
+  (void) cls;  /* Unused */
+  (void) url; (void) version; /* Unused */
+  (void) upload_data; (void) upload_data_size; /* Unused */
+
+  if (NULL == *req_cls)
+  {
+    /* The fist call */
+    *req_cls = (void *) &marker;
+    /* Do not send reply yet. No error. */
+    return MHD_YES;
+  }
+  if ((0 != strcmp (method, MHD_HTTP_METHOD_GET)) &&
+      (0 != strcmp (method, MHD_HTTP_METHOD_HEAD)))
+    return MHD_NO; /* Unsupported method, close connection */
+
+#if MHD_VERSION >= 0x00097701
+  r = MHD_create_response_from_buffer_static (body_dyn_size,
+                                              body_dyn);
+#else  /* MHD_VERSION < 0x00097701 */
+  r = MHD_create_response_from_buffer (body_dyn_size,
+                                       (void *) body_dyn,
+                                       MHD_RESPMEM_PERSISTENT);
+#endif /* MHD_VERSION < 0x00097701 */
+  ret = MHD_queue_response (connection, MHD_HTTP_OK, r);
+  MHD_destroy_response (r);
+  return ret;
+}
+
+
+static void
+print_perf_warnings (void)
+{
+  int newline_needed = 0;
+#if defined (_DEBUG)
+  fprintf (stderr, "WARNING: Running with debug asserts enabled, "
+           "the performance is suboptimal.\n");
+  newline_needed |=  ! 0;
+#endif /* _DEBUG */
+#if defined(__GNUC__) && ! defined (__OPTIMIZE__)
+  fprintf (stderr, "WARNING: The tools is compiled without enabled compiler "
+           "optimisations, the performance is suboptimal.\n");
+  newline_needed |=  ! 0;
+#endif /* __GNUC__ && ! __OPTIMIZE__ */
+#if defined(__GNUC__) && defined (__OPTIMIZE_SIZE__)
+  fprintf (stderr, "WARNING: The tools is compiled with size-optimisations, "
+           "the performance is suboptimal.\n");
+#endif /* __GNUC__ && ! __OPTIMIZE__ */
+#if MHD_VERSION >= 0x00097701
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_DEBUG_BUILD))
+  {
+    fprintf (stderr, "WARNING: The libmicrohttpd is compiled with "
+             "debug asserts enabled, the performance is suboptimal.\n");
+    newline_needed |=  ! 0;
+  }
+#endif /* MHD_VERSION >= 0x00097701 */
+  if (newline_needed)
+    printf ("\n");
 }
 
 
@@ -1379,7 +1708,9 @@ get_mhd_response_size (void)
 static int
 run_mhd (void)
 {
+  MHD_AccessHandlerCallback reply_func;
   struct MHD_Daemon *d;
+  unsigned int use_num_threads;
   unsigned int flags = MHD_NO_FLAG;
   struct MHD_OptionItem opt_arr[16];
   size_t opt_count = 0;
@@ -1387,23 +1718,40 @@ run_mhd (void)
   const char *poll_mode;
   uint16_t port;
 
-#if defined (_DEBUG)
-  fprintf (stderr, "WARNING: Running with debug asserts enabled, "
-           "the performance is suboptimal.\n");
-#endif /* _DEBUG */
-#if defined(__GNUC__) && ! defined (__OPTIMIZE__)
-  fprintf (stderr, "WARNING: The tools is compiled without enabled compiler "
-           "optimisations, the performance is suboptimal.\n");
-#endif /* __GNUC__ && ! __OPTIMIZE__ */
-#if defined(__GNUC__) && defined (__OPTIMIZE_SIZE__)
-  fprintf (stderr, "WARNING: The tools is compiled with size-optimisations, "
-           "the performance is suboptimal.\n");
-#endif /* __GNUC__ && ! __OPTIMIZE__ */
-#if MHD_VERSION >= 0x00097701
-  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_DEBUG_BUILD))
-    fprintf (stderr, "WARNING: The libmicrohttpd is compiled with "
-             "debug asserts enabled, the performance is suboptimal.\n");
-#endif /* MHD_VERSION >= 0x00097701 */
+  if (tool_params.thread_per_conn)
+    use_num_threads = 0;
+  else
+    use_num_threads = get_num_threads ();
+  printf ("\n");
+
+  print_perf_warnings ();
+
+  printf ("Responses:\n");
+  printf ("  Sharing:   ");
+  if (tool_params.shared)
+  {
+    reply_func = &answer_shared_response;
+    printf ("pre-generated shared pool with %u objects\n", num_resps);
+  }
+  else if (tool_params.single)
+  {
+    reply_func = &answer_single_response;
+    printf ("single pre-generated reused response object\n");
+  }
+  else
+  {
+    /* Unique responses */
+    if (tool_params.empty)
+      reply_func = &answer_unique_empty_response;
+    else if (tool_params.tiny)
+      reply_func = &answer_unique_tiny_response;
+    else
+      reply_func = &answer_unique_dyn_response;
+    printf ("one-time response object generated for every request\n");
+  }
+  printf ("  Body size: %s\n",
+          get_mhd_response_size ());
+
   flags |= MHD_USE_ERROR_LOG;
   flags |= MHD_USE_INTERNAL_POLLING_THREAD;
   if (tool_params.epoll)
@@ -1427,10 +1775,10 @@ run_mhd (void)
     { MHD_OPTION_CONNECTION_LIMIT, (intptr_t) tool_params.connections, NULL };
     opt_arr[opt_count++] = option;
   }
-  if (1 < get_num_threads ())
+  if (1 < use_num_threads)
   {
     struct MHD_OptionItem option =
-    { MHD_OPTION_THREAD_POOL_SIZE, (intptr_t) get_num_threads (), NULL };
+    { MHD_OPTION_THREAD_POOL_SIZE, (intptr_t) use_num_threads, NULL };
     opt_arr[opt_count++] = option;
   }
   if (1)
@@ -1447,8 +1795,8 @@ run_mhd (void)
     if (opt_count >= (sizeof(opt_arr) / sizeof(opt_arr[0])))
       abort ();
   }
-  d = MHD_start_daemon (flags, mhd_port, NULL, NULL, &answer_shared_response,
-                        NULL, MHD_OPTION_ARRAY, opt_arr, MHD_OPTION_END);
+  d = MHD_start_daemon (flags, mhd_port, NULL, NULL, reply_func, NULL,
+                        MHD_OPTION_ARRAY, opt_arr, MHD_OPTION_END);
   if (NULL == d)
   {
     fprintf (stderr, "Error starting MHD daemon.\n");
@@ -1472,7 +1820,7 @@ run_mhd (void)
     fprintf (stderr, "Cannot detect port number. Consider specifying "
              "port number explicitly.\n");
 
-  printf ("\nMHD is running.\n");
+  printf ("MHD is running.\n");
   printf ("  Bind port:          %u\n", (unsigned int) port);
   printf ("  Polling function:   %s\n", poll_mode);
   printf ("  Threading:          ");
@@ -1487,8 +1835,6 @@ run_mhd (void)
           0 == tool_params.timeout ? " (no timeout)" : "");
   printf ("  'Date:' header:     %s\n",
           tool_params.date_header ? "Yes" : "No");
-  printf ("  Response body size: %s\n",
-          get_mhd_response_size ());
   printf ("To test with remote client use            "
           "http://HOST_IP:%u/\n", (unsigned int) port);
   printf ("To test with client on the same host use  "
