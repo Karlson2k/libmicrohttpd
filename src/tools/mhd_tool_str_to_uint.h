@@ -18,14 +18,13 @@
  */
 
 /**
- * @file tools/mhd_tool_str_to_uint.c
- * @brief  Implementation of HTTP server optimised for fast replies
- *         based on MHD.
+ * @file tools/mhd_tool_str_to_uint.h
+ * @brief  Function to decode the value of decimal string number.
  * @author Karlson2k (Evgeny Grin)
  */
 
 #ifndef MHD_TOOL_STR_TO_UINT_H_
-#define MHD_TOOL_STR_TO_UINT_H_
+#define MHD_TOOL_STR_TO_UINT_H_ 1
 
 #include <stddef.h>
 
