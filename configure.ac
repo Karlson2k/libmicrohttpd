@@ -3917,6 +3917,343 @@ AS_VAR_IF([enable_tools],["yes"],
         )
       ]
     )
+    AC_CHECK_HEADERS([features.h sys/pstat.h vxCpuLib.h],[],[],[AC_INCLUDES_DEFAULT])
+    AC_CHECK_DECLS(
+      [_SC_NPROCESSORS_ONLN,_SC_NPROC_ONLN,_SC_CRAY_NCPU,_SC_NPROCESSORS_CONF,CTL_HW,HW_NCPUONLINE,HW_NCPU,HW_AVAILCPU],
+      [],[],
+      [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
+#ifdef HAVE_SYS_SYSCTL_H
+#include <sys/sysctl.h>
+#endif /* HAVE_SYS_SYSCTL_H */
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+      ]]
+    )
+    MHD_CHECK_FUNC([pstat_getdynamic],[[
+#include <sys/param.h>
+#include <sys/pstat.h>
+      ]],
+      [[
+        struct pst_dynamic psd_data;
+        i][f (1 != pstat_getdynamic(&psd_data, sizeof(psd_data), (size_t)1, 0))
+          return 2;
+        i][f (0 >= psd_data.psd_proc_cnt)
+          return 3; 
+      ]]
+    )
+    MHD_CHECK_FUNC([vxCpuEnabledGet],[[#include <vxCpuLib.h>]],
+      [[
+        cpuset_t enb_set;
+        enb_set = vxCpuEnabledGet();
+        (void) enb_set;
+      ]]
+    )
+    AC_CHECK_HEADERS([sched.h sys/_cpuset.h sys/cpuset.h],[],[],[AC_INCLUDES_DEFAULT])
+    # glibc / Linux kernel
+    MHD_CHECK_FUNC([getpid],[[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#include <unistd.h>
+      ]],
+      [[
+        pid_t cur_pid;
+        cur_pid = getpid();
+        (void) &cur_pid; /* Mute possible warning */
+      ]],
+      [
+        MHD_CHECK_FUNC([sched_getaffinity],[[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#include <unistd.h>
+#include <sched.h>
+          ]],
+          [[
+            cpu_set_t cur_set;
+            i][f (0 != sched_getaffinity(getpid(), sizeof(cur_set), &cur_set))
+              return 2;
+            i][f (0 == CPU_SET (0, &cur_set))
+              return 3; /* Actually this could be a valid result */
+          ]],
+          [
+            MHD_CHECK_FUNC([CPU_COUNT],[[
+#include <stddef.h>
+#include <sched.h>
+              ]],
+              [[
+                cpu_set_t cur_set;
+                CPU_ZERO(&cur_set);
+                i][f (0 != CPU_COUNT(&cur_set))
+                  return 2;
+              ]],
+              [
+                MHD_CHECK_FUNC([CPU_COUNT_S],[[
+#include <stddef.h>
+#include <sched.h>
+                  ]],
+                  [[
+                    static const unsigned int set_size_cpus = 2048u;
+                    const size_t set_size_bytes = (size_t) CPU_ALLOC_SIZE(set_size_cpus);
+                    cpu_set_t *p_set;
+                    p_set = CPU_ALLOC(set_size_cpus);
+                    i][f (!p_set)
+                     return 2;
+                    CPU_ZERO_S(set_size_bytes, p_set);
+                    i][f (0 != CPU_COUNT_S(set_size_bytes, p_set))
+                    {
+                      CPU_FREE(p_set);
+                      return 3;
+                    }
+                    CPU_FREE(p_set);
+                  ]],
+                  [AC_CHECK_DECLS([CPU_SETSIZE],[],[],[#include <sched.h>])]
+                )
+              ]
+            )
+          ]
+        )
+        # NetBSD
+        # Should work only with -lrt, but actually works without it.
+        MHD_CHECK_FUNC([sched_getaffinity_np],[[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#include <unistd.h>
+#include <sched.h>
+          ]],
+          [[
+            cpuset_t *cpuset_ptr;
+            cpuid_t cpu_num = 0;
+            cpuset_ptr = cpuset_create();
+            i][f (!cpuset_ptr)
+              return 2;
+            i][f (0 != sched_getaffinity_np(getpid(), cpuset_size(cpuset_ptr), cpuset_ptr))
+            {
+              cpuset_destroy(cpuset_ptr);
+              return 3;
+            }
+            i][f (0 >= cpuset_isset(cpu_num, cpuset_ptr))
+            {
+              cpuset_destroy(cpuset_ptr);
+              return 4; /* Actually this could be a valid result */
+            }
+            cpuset_destroy(cpuset_ptr);
+          ]]
+        )
+      ]
+    )
+    # FreeBSD
+    MHD_CHECK_FUNC([cpuset_getaffinity],[[
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
+#include <sys/cpuset.h>
+      ]],
+      [[
+        cpuset_t cur_mask;
+        i][f (0 != cpuset_getaffinity(CPU_LEVEL_WHICH, CPU_WHICH_PID, (id_t) -1, sizeof(cur_mask), &cur_mask))
+          return 2;
+      ]],
+      [
+        MHD_CHECK_FUNC([CPU_COUNT],[[
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
+#ifdef HAVE_SYS__CPUSET_H
+#include <sys/_cpuset.h>
+#endif /* HAVE_SYS_PARAM_H */
+#include <sys/cpuset.h>
+          ]],
+          [[
+            cpuset_t test_mask;
+            CPU_ZERO(&test_mask);
+            i][f (0 !=  CPU_COUNT(&test_mask))
+              return 2;
+          ]],
+          [
+            MHD_CHECK_FUNC([CPU_COUNT_S],[[
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
+#ifdef HAVE_SYS__CPUSET_H
+#include <sys/_cpuset.h>
+#endif /* HAVE_SYS_PARAM_H */
+#include <sys/cpuset.h>
+              ]],
+              [[
+                static const unsigned int max_cpu_num = 2048u;
+                cpuset_t *mask_ptr;
+                mask_ptr = CPU_ALLOC(max_cpu_num);
+                i][f (! mask_ptr)
+                  return 2;
+                i][f (0 != cpuset_getaffinity(CPU_LEVEL_WHICH, CPU_WHICH_PID, (id_t) -1,
+                                              CPU_ALLOC_SIZE(max_cpu_num), mask_ptr))
+                {
+                  CPU_FREE(mask_ptr);
+                  return 3;
+                }
+                i][f (0 == CPU_COUNT_S(CPU_ALLOC_SIZE(max_cpu_num), &test_mask))
+                {
+                  CPU_FREE(mask_ptr);
+                  return 4;
+                }
+                CPU_FREE(mask_ptr);
+              ]]
+            )
+          ]
+        )
+      ]
+    )
+    AS_VAR_IF([mhd_cv_func_CPU_COUNT_S],["yes"],
+      [
+        AC_CACHE_CHECK([whether CPU_COUNT_S() expects max CPU number as 'size' parameter],[mhd_cv_func_cpu_count_s_cpus],
+          [
+            AS_VAR_IF([cross-compiling],["yes"],[mhd_cv_func_cpu_count_s_cpus="assuming no"],
+              [
+                AC_LINK_IFELSE(
+                  [
+                    AC_LANG_PROGRAM([[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
+#ifdef HAVE_SYS__CPUSET_H
+#include <sys/_cpuset.h>
+#endif /* HAVE_SYS_PARAM_H */
+#ifdef HAVE_SYS_CPUSET_H
+#include <sys/cpuset.h>
+#endif /* HAVE_SYS_CPUSET_H */
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>
+#endif /* HAVE_STDDEF_H */
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+#ifdef HAVE_SCHED_H
+#include <sched.h>
+#endif /* HAVE_SCHED_H */
+#include <stdio.h>
+
+#ifdef HAVE_SCHED_GETAFFINITY
+#define TEST_CPUSET_TYPE cpu_set_t
+#else  /* ! HAVE_SCHED_GETAFFINITY */
+#define TEST_CPUSET_TYPE cpuset_t
+#endif /* ! HAVE_SCHED_GETAFFINITY */
+                      ]],
+                      [[
+  TEST_CPUSET_TYPE *p_testset;
+  /* The size of the cpuset that is larger then the test cpuset (in CPUs) */
+  static const unsigned int testset_size_oversized_cpus = (8 * sizeof(long)) * 1024;
+  const size_t testset_size_oversized_bytes = CPU_ALLOC_SIZE(testset_size_oversized_cpus);
+  /* The size of the test cpuset in number of CPUs */
+  const unsigned int testset_size_cpus = (unsigned int) testset_size_oversized_bytes;
+  /* The size of the test cpuset in bytes */
+  const size_t testset_size_bytes = CPU_ALLOC_SIZE(testset_size_cpus);
+  /* The last one CPU in the test set */
+  const unsigned int test_cpu_num1 = testset_size_cpus - 1;
+  /* The penultimate CPU in the test set */
+  const unsigned int test_cpu_num2 = testset_size_cpus - 2;
+  /* The CPU numbers that should be cleared */
+  const unsigned int test_cpu_clear1 = testset_size_cpus - 3;
+  const unsigned int test_cpu_clear2 = testset_size_cpus - 4;
+  unsigned int count_res;
+  int ret = 0;
+
+  /* Allocate oversize area to ensure that memory outside the buffer is not used */
+  p_testset = CPU_ALLOC(testset_size_oversized_cpus);
+  if (! p_testset)
+  {
+    fprintf (stderr, "Error allocating memory.\n");
+    return 99;
+  }
+  /* Set the some CPU numbers and then clear them */
+  CPU_SET_S(test_cpu_clear1, testset_size_bytes, p_testset);
+  CPU_SET_S(test_cpu_clear2, testset_size_bytes, p_testset);
+  CPU_ZERO_S(testset_size_bytes, p_testset);
+  /* Set two CPUs on */
+  CPU_SET_S(test_cpu_num1, testset_size_bytes, p_testset);
+  CPU_SET_S(test_cpu_num2, testset_size_bytes, p_testset);
+  count_res = (unsigned int) CPU_COUNT_S(testset_size_bytes, p_testset);
+  if (0 == count_res)
+  {
+    fprintf (stderr, "Full cpuset cannot be read by CPU_COUNT_S() when using the number of bytes as the size parameter.\n");
+    /* Set the some CPU numbers and then clear them */
+    CPU_SET_S(test_cpu_clear1, testset_size_cpus, p_testset);
+    CPU_SET_S(test_cpu_clear2, testset_size_cpus, p_testset);
+    CPU_ZERO_S(testset_size_cpus, p_testset);
+    /* Set two CPUs on */
+    CPU_SET_S(test_cpu_num1, testset_size_cpus, p_testset);
+    CPU_SET_S(test_cpu_num2, testset_size_cpus, p_testset);
+    count_res = (unsigned int) CPU_COUNT_S(testset_size_cpus, p_testset);
+    if (2 == count_res)
+    {
+      fprintf (stderr, "Full cpuset is read by CPU_COUNT_S() only when using the maximum CPU number as the size parameter.\n");
+      ret = 3;
+    }
+    else
+    {
+      fprintf (stderr, "Wrong result returned by CPU_COUNT_S() when using the maximum CPU number as the size parameter.\n");
+      fprintf (stderr, "Number of 'enabled' CPUs: 2\n");
+      fprintf (stderr, "Number of counted CPUs:   %u\n", count_res);
+      fprintf (stderr, "CPU_COUNT_S() could be unreliable.\n");
+      ret = 70;
+    }
+  }
+  else if (2 == count_res)
+  {
+    fprintf (stderr, "Full cpuset is read by CPU_COUNT_S() when using the number of bytes as the size parameter.\n");
+  }
+  else
+  {
+    fprintf (stderr, "Wrong result returned by CPU_COUNT_S() when using the number of bytes as the size parameter.\n");
+    fprintf (stderr, "Number of 'enabled' CPUs: 2\n");
+    fprintf (stderr, "Number of counted CPUs:   %u\n", count_res);
+    fprintf (stderr, "CPU_COUNT_S() could be unreliable.\n");
+    ret = 71;
+  }
+  CPU_FREE(p_testset);
+  if (0 != ret)
+    return ret;
+                      ]]
+                    )
+                  ],
+                  [
+                    AM_RUN_LOG([./conftest$EXEEXT])
+                    count_test_res=$?
+                    AS_IF([test $count_test_res -eq 0],[mhd_cv_func_cpu_count_s_cpus="no"],
+                      [test $count_test_res -eq 3],[mhd_cv_func_cpu_count_s_cpus="yes"],
+                      [
+                        AC_MSG_WARN([Unexpected value returned by CPU_COUNT_S() test program. Please report to ${PACKAGE_BUGREPORT}])
+                        mhd_cv_func_cpu_count_s_cpus="assuming no"
+                      ]
+                    )
+                  ],
+                  [
+                    AC_MSG_WARN([Cannot build CPU_COUNT_S() test program. Please report to ${PACKAGE_BUGREPORT}])
+                    mhd_cv_func_cpu_count_s_cpus="assuming no"
+                  ]
+                )
+              ]
+            )
+          ]
+        )
+        AS_VAR_IF([mhd_cv_func_cpu_count_s_cpus],["yes"],
+          [AC_DEFINE([MHD_FUNC_CPU_COUNT_S_GETS_CPUS],[1],
+             [Define to '1' if CPU_COUNT_S() function expects max CPU number as 'size' parameter])
+          ]
+        )
+      ]
+    )
   ]
 )
 

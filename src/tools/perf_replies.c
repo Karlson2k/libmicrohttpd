@@ -39,6 +39,7 @@
 #include "mhd_options.h"
 #include "microhttpd.h"
 #include "mhd_tool_str_to_uint.h"
+#include "mhd_tool_get_cpu_count.h"
 
 #if defined(MHD_REAL_CPU_COUNT)
 #if MHD_REAL_CPU_COUNT == 0
@@ -165,28 +166,37 @@ get_cmd_out_as_number (const char *cmd)
 static unsigned int
 detect_cpu_core_count (void)
 {
-  int sys_cpu_count = -1;
-#if ! defined(_WIN32) || defined(__CYGWIN__)
-  sys_cpu_count = get_cmd_out_as_number ("nproc 2>/dev/null");
-#endif /* ! _WIN32) || __CYGWIN__ */
-#ifdef _WIN32
-  if (0 >= sys_cpu_count)
-    sys_cpu_count = get_cmd_out_as_number ("echo %NUMBER_OF_PROCESSORS%");
-#endif /* _WIN32 */
+  int sys_cpu_count;
+  sys_cpu_count = mhd_tool_get_system_cpu_count ();
   if (0 >= sys_cpu_count)
   {
-    fprintf (stderr, "Failed to detect the number of available CPU cores.\n");
+    int proc_cpu_count;
+    fprintf (stderr, "Failed to detect the number of logical CPU cores "
+             "available on the system.\n");
+    proc_cpu_count = mhd_tool_get_proc_cpu_count ();
+    if (0 < proc_cpu_count)
+    {
+      fprintf (stderr, "The number of CPU cores available for this process "
+               "is used as a fallback.\n");
+      sys_cpu_count = proc_cpu_count;
+    }
 #ifdef MHD_REAL_CPU_COUNT
-    fprintf (stderr, "Hardcoded number is used as a fallback.\n");
-    sys_cpu_count = MHD_REAL_CPU_COUNT;
+    if (0 >= sys_cpu_count)
+    {
+      fprintf (stderr, "configure-detected hardcoded number is used "
+               "as a fallback.\n");
+      sys_cpu_count = MHD_REAL_CPU_COUNT;
+    }
 #endif
     if (0 >= sys_cpu_count)
       sys_cpu_count = 1;
-    printf ("Assuming %d CPU cores.\n", sys_cpu_count);
+    printf ("Assuming %d logical CPU core%s on this system.\n", sys_cpu_count,
+            (1 == sys_cpu_count) ? "" : "s");
   }
   else
   {
-    printf ("Detected %d CPU cores.\n", sys_cpu_count);
+    printf ("Detected %d logical CPU core%s on this system.\n", sys_cpu_count,
+            (1 == sys_cpu_count) ? "" : "s");
   }
   return (unsigned int) sys_cpu_count;
 }
@@ -202,20 +212,84 @@ get_cpu_core_count (void)
 }
 
 
+static unsigned int
+detect_process_cpu_core_count (void)
+{
+  unsigned int num_proc_cpu_cores;
+  unsigned int sys_cpu_cores;
+  int res;
+
+  sys_cpu_cores = get_cpu_core_count ();
+  res = mhd_tool_get_proc_cpu_count ();
+  if (0 > res)
+  {
+    fprintf (stderr, "Cannot detect the number of logical CPU cores available "
+             "for this process.\n");
+    if (1 != sys_cpu_cores)
+      printf ("Assuming all %u system logical CPU cores are available to run "
+              "threads of this process.\n", sys_cpu_cores);
+    else
+      printf ("Assuming single logical CPU core available for this process.\n");
+    num_proc_cpu_cores = sys_cpu_cores;
+  }
+  else
+  {
+    printf ("Detected %d logical CPU core%s available to run threads "
+            "of this process.\n", res, (1 == res) ? "" : "s");
+    num_proc_cpu_cores = (unsigned int) res;
+  }
+  if (num_proc_cpu_cores > sys_cpu_cores)
+  {
+    fprintf (stderr, "WARNING: Detected number of CPU cores available "
+             "for this process (%u) is larger than detected number "
+             "of CPU cores on the system (%u).\n",
+             num_proc_cpu_cores, sys_cpu_cores);
+    num_proc_cpu_cores = sys_cpu_cores;
+    fprintf (stderr, "Using %u as the number of logical CPU cores available "
+             "for this process.\n", num_proc_cpu_cores);
+  }
+  return num_proc_cpu_cores;
+}
+
+
+static unsigned int
+get_process_cpu_core_count (void)
+{
+  static unsigned int proc_num_cpu_cores = 0;
+  if (0 == proc_num_cpu_cores)
+    proc_num_cpu_cores = detect_process_cpu_core_count ();
+  return proc_num_cpu_cores;
+}
+
+
 static unsigned int num_threads = 0;
 
 static unsigned int
 get_num_threads (void)
 {
   static const unsigned int max_threads = 32;
+  if (0 < num_threads)
+    return num_threads;
+
+  num_threads = get_cpu_core_count () / 2;
   if (0 == num_threads)
+    num_threads = 1;
+  else
   {
-    num_threads = get_cpu_core_count () / 2;
-    if (0 == num_threads)
-      num_threads = 1;
-    else
+    unsigned int num_proc_cpus;
+    num_proc_cpus = get_process_cpu_core_count ();
+    if (num_proc_cpus >= num_threads)
+    {
       printf ("Using half of all available CPU cores, assuming the other half "
               "is used by client / requests generator.\n");
+    }
+    else
+    {
+      printf ("Using all CPU cores available for this process as more than "
+              "half of CPU cores on this system are still available for use "
+              "by client / requests generator.\n");
+      num_threads = num_proc_cpus;
+    }
   }
   if (max_threads < num_threads)
   {
@@ -1059,9 +1133,10 @@ check_apply_param__all_cpus (void)
   if (! tool_params.all_cpus)
     return;
 
-  num_threads = get_cpu_core_count ();
+  num_threads = get_process_cpu_core_count ();
   printf ("Requested use of all available CPU cores for MHD threads.\n");
-  print_all_cores_used ();
+  if (get_cpu_core_count () == num_threads)
+    print_all_cores_used ();
 }
 
 
@@ -1075,19 +1150,20 @@ check_apply_param__threads (void)
     return;
 
   num_threads = tool_params.threads;
+
+  if (get_process_cpu_core_count () < num_threads)
+  {
+    fprintf (stderr, "WARNING: The requested number of threads (%u) is "
+             "higher than the number of detected available CPU cores (%u).\n",
+             num_threads, get_process_cpu_core_count ());
+    fprintf (stderr, "This decreases the performance. "
+             "Consider using fewer threads.\n");
+  }
   if (get_cpu_core_count () == num_threads)
   {
     printf ("The requested number of threads is equal to the number of "
             "detected CPU cores.\n");
     print_all_cores_used ();
-  }
-  else if (get_cpu_core_count () < num_threads)
-  {
-    fprintf (stderr, "WARNING: The requested number of threads (%u) is "
-             "higher than the number of detected CPU cores (%u).\n",
-             num_threads, get_cpu_core_count ());
-    fprintf (stderr, "This decreases the performance. "
-             "Consider using fewer threads.\n");
   }
 }
 
@@ -1228,7 +1304,7 @@ static struct MHD_Response *resp_single = NULL;
    The system will keep it in cache. */
 static const char tiny_body[] = "Hi!";
 static char *body_dyn = NULL; /* Non-static body data */
-size_t body_dyn_size;
+static size_t body_dyn_size;
 
 /* Non-zero - success, zero - failure */
 static int

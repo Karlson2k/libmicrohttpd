@@ -36,4 +36,5 @@ endif
 
 
 perf_replies_SOURCES = \
-    perf_replies.c mhd_tool_str_to_uint.h
+    perf_replies.c mhd_tool_str_to_uint.h \
+    mhd_tool_get_cpu_count.h mhd_tool_get_cpu_count.c
