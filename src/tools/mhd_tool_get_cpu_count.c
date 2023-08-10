@@ -268,7 +268,7 @@ mhd_tool_get_proc_cpu_count_sched_getaffinity_np_ (void)
       cpuid_t cpu_num;
 #if defined(HAVE_SYSCONF) && defined(HAVE_DECL__SC_NPROCESSORS_CONF)
       unsigned int max_num = 0;
-      long sc_value = -1;
+      long sc_value;
       sc_value = sysconf (_SC_NPROCESSORS_ONLN);
       if (0 < sc_value)
         max_num = (unsigned int) sc_value;
@@ -450,7 +450,10 @@ mhd_tool_get_sys_cpu_count_special_api_ (void)
 
 
 /**
- * Detect the number of processors by sysctl*() functions
+ * Detect the number of processors by sysctl*() functions in reliable way.
+ *
+ * This function uses reliable identificators that coreponds to actual
+ * number of CPU cores online currently.
  * @return number of processors as returned by 'sysctl*' functions or
  *         -1 in case of error or the number cannot be detected
  *         by these functions
@@ -535,6 +538,31 @@ mhd_tool_get_sys_cpu_count_sysctl_ (void)
       ret = -1;
   }
 #endif /* HAVE_SYSCTL && HAS_DECL_CTL_HW && HAS_DECL_HW_AVAILCPU */
+#endif /* ! __linux__ */
+  if (0 >= ret)
+    return -1;
+  return ret;
+}
+
+
+/**
+ * Detect the number of processors by sysctl*() functions, using fallback way.
+ *
+ * This function uses less reliable (compared to
+ * #mhd_tool_get_sys_cpu_count_sysctl_()) ways to detect the number of
+ * available CPU cores and may return values corresponding to the number of
+ * physically available (but possibly not used by the kernel) CPU logical cores.
+ * @return number of processors as returned by 'sysctl*' functions or
+ *         -1 in case of error or the number cannot be detected
+ *         by these functions
+ */
+static int
+mhd_tool_get_sys_cpu_count_sysctl_fallback_ (void)
+{
+  int ret = -1;
+  /* Do not use sysctl() function on GNU/Linux even if
+     sysctl() is available */
+#ifndef __linux__
 #ifdef HAVE_SYSCTLBYNAME
   if (0 >= ret)
   {
@@ -567,7 +595,10 @@ mhd_tool_get_sys_cpu_count_sysctl_ (void)
 
 
 /**
- * Detect the number of processors by sysconf() function
+ * Detect the number of processors by sysconf() function in reliable way.
+ *
+ * This function uses reliable identificators that coreponds to actual
+ * number of CPU cores online currently.
  * @return number of processors as returned by 'sysconf' function or
  *         -1 in case of error or 'sysconf' unavailable
  */
@@ -576,9 +607,7 @@ mhd_tool_get_sys_cpu_count_sysconf_ (void)
 {
   int ret = -1;
 #if defined(HAVE_SYSCONF) && \
-  (defined(HAS_DECL__SC_NPROCESSORS_ONLN) || \
-  defined(HAS_DECL__SC_NPROC_ONLN) || \
-  defined(HAS_DECL__SC_CRAY_NCPU))
+  (defined(HAS_DECL__SC_NPROCESSORS_ONLN) || defined(HAS_DECL__SC_NPROC_ONLN))
   long value = -1;
 #ifdef HAS_DECL__SC_NPROCESSORS_ONLN
   if (0 >= value)
@@ -588,18 +617,49 @@ mhd_tool_get_sys_cpu_count_sysconf_ (void)
   if (0 >= value)
     value = sysconf (_SC_NPROC_ONLN);
 #endif /* HAS_DECL__SC_NPROC_ONLN */
-#ifdef HAS_DECL__SC_CRAY_NCPU
-  if (0 >= value)
-    value = sysconf (_SC_CRAY_NCPU);
-#endif /* HAS_DECL__SC_CRAY_NCPU */
   if (0 >= value)
     return -1;
   ret = (int) value;
   if ((long) ret != value)
     return -1; /* Overflow */
 #endif /* HAVE_SYSCONF &&
-          (HAS_DECL__SC_NPROCESSORS_ONLN || HAS_DECL__SC_NPROC_ONLN ||
-           HAS_DECL__SC_CRAY_NCPU) */
+          (HAS_DECL__SC_NPROCESSORS_ONLN || HAS_DECL__SC_NPROC_ONLN) */
+  return ret;
+}
+
+
+/**
+ * Detect the number of processors by sysconf() function, using fallback way.
+ *
+ * This function uses less reliable (compared to
+ * #mhd_tool_get_sys_cpu_count_sysconf_()) ways to detect the number of
+ * available CPU cores and may return values corresponding to the number of
+ * physically available (but possibly not used by the kernel) CPU logical cores.
+ * @return number of processors as returned by 'sysconf' function or
+ *         -1 in case of error or 'sysconf' unavailable
+ */
+static int
+mhd_tool_get_sys_cpu_count_sysconf_fallback_ (void)
+{
+  int ret = -1;
+#if defined(HAVE_SYSCONF) && \
+  (defined(HAS_DECL__SC_CRAY_NCPU) || defined(HAS_DECL__SC_NPROCESSORS_CONF))
+  long value = -1;
+#ifdef HAS_DECL__SC_CRAY_NCPU
+  if (0 >= value)
+    value = sysconf (_SC_CRAY_NCPU);
+#endif /* HAS_DECL__SC_CRAY_NCPU */
+#ifdef HAS_DECL__SC_NPROCESSORS_CONF
+  if (0 >= value)
+    value = sysconf (_SC_NPROCESSORS_CONF);
+#endif /* HAS_DECL__SC_NPROCESSORS_CONF */
+  if (0 >= value)
+    return -1;
+  ret = (int) value;
+  if ((long) ret != value)
+    return -1; /* Overflow */
+#endif /* HAVE_SYSCONF &&
+          (HAS_DECL__SC_CRAY_NCPU || HAS_DECL__SC_NPROCESSORS_CONF) */
   return ret;
 }
 
@@ -645,14 +705,30 @@ mhd_tool_get_system_cpu_count (void)
     int proc_cpu_count;
 
     proc_cpu_count = mhd_tool_get_proc_cpu_count ();
-    if ((0 < proc_cpu_count) && (proc_cpu_count <= res))
+    if (proc_cpu_count == res)
     {
       /* The detected number of CPUs available for the process
-         is 1 or 2 and fits detected number of system CPUS.
+         is equal to the detected number of system CPUs.
          Assume detected number is correct. */
       return res;
     }
   }
 #endif /* __linux__ || __GLIBC__  */
+
+  /* Try available fallbacks */
+
+  res = mhd_tool_get_sys_cpu_count_sysctl_fallback_ ();
+  if (0 < res)
+    return res;
+
+  res = mhd_tool_get_sys_cpu_count_sysconf_fallback_ ();
+#if ! defined(__linux__) && ! defined(__GLIBC__)
+  if (0 < res)
+    return res;
+#else  /* __linux__ || __GLIBC__ */
+  if (2 < res)
+    return res;
+#endif /* __linux__ || __GLIBC__  */
+
   return -1; /* Cannot detect */
 }
