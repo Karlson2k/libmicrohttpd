@@ -1,5 +1,5 @@
 /*
- This file is part of GNU libmicrohttpd
+  This file is part of GNU libmicrohttpd
   Copyright (C) 2023 Evgeny Grin (Karlson2k)
 
   This library is free software; you can redistribute it and/or
