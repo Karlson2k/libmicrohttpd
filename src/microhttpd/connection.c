@@ -3674,6 +3674,7 @@ call_connection_handler (struct MHD_Connection *connection)
     return;                     /* already queued a response */
   processed = 0;
   connection->rq.client_aware = true;
+  connection->in_access_handler = true;
   if (MHD_NO ==
       daemon->default_handler (daemon->default_handler_cls,
                                connection,
@@ -3684,12 +3685,14 @@ call_connection_handler (struct MHD_Connection *connection)
                                &processed,
                                &connection->rq.client_context))
   {
+    connection->in_access_handler = false;
     /* serious internal error, close connection */
     CONNECTION_CLOSE_ERROR (connection,
                             _ ("Application reported internal error, " \
                                "closing connection."));
     return;
   }
+  connection->in_access_handler = false;
 }
 
 
@@ -3898,6 +3901,7 @@ process_request_body (struct MHD_Connection *connection)
     }
     left_unprocessed = to_be_processed;
     connection->rq.client_aware = true;
+    connection->in_access_handler = true;
     if (MHD_NO ==
         daemon->default_handler (daemon->default_handler_cls,
                                  connection,
@@ -3908,12 +3912,15 @@ process_request_body (struct MHD_Connection *connection)
                                  &left_unprocessed,
                                  &connection->rq.client_context))
     {
+      connection->in_access_handler = false;
       /* serious internal error, close connection */
       CONNECTION_CLOSE_ERROR (connection,
                               _ ("Application reported internal error, " \
                                  "closing connection."));
       return;
     }
+    connection->in_access_handler = false;
+
     if (left_unprocessed > to_be_processed)
       MHD_PANIC (_ ("libmicrohttpd API violation.\n"));
 
@@ -7102,10 +7109,12 @@ MHD_queue_response (struct MHD_Connection *connection,
   struct MHD_Daemon *daemon;
   bool reply_icy;
 
-  reply_icy = (0 != (status_code & MHD_ICY_FLAG));
-  status_code &= ~MHD_ICY_FLAG;
   if ((NULL == connection) || (NULL == response))
     return MHD_NO;
+  if (! connection->in_access_handler)
+    return MHD_NO;
+  reply_icy = (0 != (status_code & MHD_ICY_FLAG));
+  status_code &= ~MHD_ICY_FLAG;
 
   daemon = connection->daemon;
 

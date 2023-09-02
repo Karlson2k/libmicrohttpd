@@ -1576,6 +1576,13 @@ struct MHD_Connection
   bool suspended;
 
   /**
+   * Are we currently in the #MHD_AccessHandlerCallback
+   * for this connection (and thus eligible to receive
+   * calls to #MHD_queue_response()?).
+   */
+  bool in_access_handler;
+
+  /**
    * Is the connection wanting to resume?
    */
   volatile bool resuming;
