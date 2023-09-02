@@ -1459,7 +1459,7 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection)
  * The current format of the nonce is ...
  * H(timestamp:random data:various parameters) + Hex(timestamp)
  *
- * @param nonce_time The amount of time in seconds for a nonce to be invalid
+ * @param nonce_time The amount of time in seconds for a nonce to be valid
  * @param mthd_e HTTP method as enum value
  * @param method HTTP method as a string
  * @param rnd the pointer to a character array for the random seed
@@ -1786,7 +1786,11 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
                  "are predictable.\n"));
 #endif
 
-  if (! calculate_add_nonce (connection, timestamp1, realm, realm_len, da,
+  if (! calculate_add_nonce (connection,
+                             timestamp1,
+                             realm,
+                             realm_len,
+                             da,
                              nonce))
   {
     /* Either:

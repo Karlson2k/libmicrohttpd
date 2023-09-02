@@ -1935,7 +1935,6 @@ connection_maximize_write_buffer (struct MHD_Connection *connection)
 }
 
 
-#if 0 /* disable unused function */
 /**
  * Shrink connection write buffer to the size of unsent data.
  *
@@ -1955,7 +1954,8 @@ connection_shrink_write_buffer (struct MHD_Connection *connection)
   mhd_assert (c->write_buffer_append_offset >= c->write_buffer_send_offset);
   mhd_assert (c->write_buffer_size >= c->write_buffer_append_offset);
 
-  if ( (NULL == c->write_buffer) || (0 == c->write_buffer_size))
+  if ( (NULL == c->write_buffer) ||
+       (0 == c->write_buffer_size) )
   {
     mhd_assert (0 == c->write_buffer_append_offset);
     mhd_assert (0 == c->write_buffer_send_offset);
@@ -1965,7 +1965,9 @@ connection_shrink_write_buffer (struct MHD_Connection *connection)
   if (c->write_buffer_append_offset == c->write_buffer_size)
     return;
 
-  new_buf = MHD_pool_reallocate (pool, c->write_buffer, c->write_buffer_size,
+  new_buf = MHD_pool_reallocate (pool,
+                                 c->write_buffer,
+                                 c->write_buffer_size,
                                  c->write_buffer_append_offset);
   mhd_assert ((c->write_buffer == new_buf) || \
               (0 == c->write_buffer_append_offset));
@@ -1975,9 +1977,6 @@ connection_shrink_write_buffer (struct MHD_Connection *connection)
   else
     c->write_buffer = new_buf;
 }
-
-
-#endif /* unused function */
 
 
 /**
@@ -6626,6 +6625,9 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
 #ifdef UPGRADE_SUPPORT
       if (NULL != connection->rp.response->upgrade_handler)
       {
+        /* We may start to read again after the header,
+           so shrink the write buffer again */
+        connection_shrink_write_buffer (connection);
         connection->state = MHD_CONNECTION_UPGRADE;
         /* This connection is "upgraded".  Pass socket to application. */
         if (MHD_NO ==
