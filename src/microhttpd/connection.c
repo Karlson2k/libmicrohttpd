@@ -2763,9 +2763,16 @@ transmit_error_response_len (struct MHD_Connection *connection,
     iret = MHD_YES;
 
   if (MHD_NO != iret)
+  {
+    bool before = connection->in_access_handler;
+
+    /* Fake the flag for the internal call */
+    connection->in_access_handler = true;
     iret = MHD_queue_response (connection,
                                status_code,
                                response);
+    connection->in_access_handler = before;
+  }
   MHD_destroy_response (response);
   if (MHD_NO == iret)
   {
