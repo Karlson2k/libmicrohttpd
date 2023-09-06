@@ -134,7 +134,7 @@ mhd_tool_get_proc_cpu_count_sched_getaffinity_ (void)
   if (0 >= ret)
   {
     cpu_set_t cur_set;
-    if (0 == sched_getaffinity (getpid (), sizeof(cur_set), &cur_set))
+    if (0 == sched_getaffinity (getpid (), sizeof (cur_set), &cur_set))
     {
 #ifdef HAVE_CPU_COUNT
       ret = CPU_COUNT (&cur_set);
@@ -200,7 +200,7 @@ mhd_tool_get_proc_cpu_count_cpuset_getaffinity_ (void)
     /* The should get "anonymous" mask/set. The anonymous mask is always
        a subset of the assigned set (which is a subset of the root set). */
     if (0 == cpuset_getaffinity (CPU_LEVEL_WHICH, CPU_WHICH_PID, (id_t) -1,
-                                 sizeof(cur_mask), &cur_mask))
+                                 sizeof (cur_mask), &cur_mask))
     {
 #ifdef HAVE_CPU_COUNT
       ret = CPU_COUNT (&cur_mask);
@@ -574,8 +574,8 @@ mhd_tool_get_sys_cpu_count_special_api_ (void)
   {
     /* HP-UX things */
     struct pst_dynamic psd_data;
-    memset ((void *) &psd_data, 0, sizeof(psd_data));
-    if (1 == pstat_getdynamic (&psd_data, sizeof(psd_data), (size_t) 1, 0))
+    memset ((void *) &psd_data, 0, sizeof (psd_data));
+    if (1 == pstat_getdynamic (&psd_data, sizeof (psd_data), (size_t) 1, 0))
     {
       if (0 < psd_data.psd_proc_cnt)
         ret = (int) psd_data.psd_proc_cnt;
@@ -627,7 +627,7 @@ mhd_tool_get_sys_cpu_count_special_api_ (void)
       {
         SYSTEM_INFO sysInfo;
 
-        memset ((void *) &sysInfo, 0, sizeof(sysInfo));
+        memset ((void *) &sysInfo, 0, sizeof (sysInfo));
         ptrGetNativeSystemInfo (&sysInfo);
         ret = (int) sysInfo.dwNumberOfProcessors;
         if (sysInfo.dwNumberOfProcessors != (DWORD) ret)
@@ -642,7 +642,7 @@ mhd_tool_get_sys_cpu_count_special_api_ (void)
     /* May give incorrect (low) result on versions from W7 to W11
        when more then 64 CPUs are available */
     SYSTEM_INFO sysInfo;
-    memset ((void *) &sysInfo, 0, sizeof(sysInfo));
+    memset ((void *) &sysInfo, 0, sizeof (sysInfo));
     GetSystemInfo (&sysInfo);
     ret = (int) sysInfo.dwNumberOfProcessors;
     if (sysInfo.dwNumberOfProcessors != (DWORD) ret)
@@ -674,47 +674,47 @@ mhd_tool_get_sys_cpu_count_sysctl_ (void)
 #ifdef HAVE_SYSCTLBYNAME
   if (0 >= ret)
   {
-    size_t value_size = sizeof(ret);
+    size_t value_size = sizeof (ret);
     /* Darwin: The number of available logical CPUs */
     if ((0 != sysctlbyname ("hw.logicalcpu", &ret, &value_size,
                             NULL, 0))
-        || (sizeof(ret) != value_size))
+        || (sizeof (ret) != value_size))
       ret = -1;
   }
   if (0 >= ret)
   {
-    size_t value_size = sizeof(ret);
+    size_t value_size = sizeof (ret);
     /* FreeBSD: The number of online CPUs */
     if ((0 != sysctlbyname ("kern.smp.cpus", &ret, &value_size,
                             NULL, 0))
-        || (sizeof(ret) != value_size))
+        || (sizeof (ret) != value_size))
       ret = -1;
   }
   if (0 >= ret)
   {
-    size_t value_size = sizeof(ret);
+    size_t value_size = sizeof (ret);
     /* Darwin: The current number of CPUs available to run threads */
     if ((0 != sysctlbyname ("hw.activecpu", &ret, &value_size,
                             NULL, 0))
-        || (sizeof(ret) != value_size))
+        || (sizeof (ret) != value_size))
       ret = -1;
   }
   if (0 >= ret)
   {
-    size_t value_size = sizeof(ret);
+    size_t value_size = sizeof (ret);
     /* OpenBSD, NetBSD: The number of online CPUs */
     if ((0 != sysctlbyname ("hw.ncpuonline", &ret, &value_size,
                             NULL, 0))
-        || (sizeof(ret) != value_size))
+        || (sizeof (ret) != value_size))
       ret = -1;
   }
   if (0 >= ret)
   {
-    size_t value_size = sizeof(ret);
+    size_t value_size = sizeof (ret);
     /* Darwin: The old/alternative name for "hw.activecpu" */
     if ((0 != sysctlbyname ("hw.availcpu", &ret, &value_size,
                             NULL, 0))
-        || (sizeof(ret) != value_size))
+        || (sizeof (ret) != value_size))
       ret = -1;
   }
 #endif /* HAVE_SYSCTLBYNAME */
@@ -724,10 +724,10 @@ mhd_tool_get_sys_cpu_count_sysctl_ (void)
   if (0 >= ret)
   {
     /* OpenBSD, NetBSD: The number of online CPUs */
-    int mib[2] = { CTL_HW, HW_NCPUONLINE };
-    size_t value_size = sizeof(ret);
+    int mib[2] = {CTL_HW, HW_NCPUONLINE};
+    size_t value_size = sizeof (ret);
     if ((0 != sysctl (mib, 2, &ret, &value_size, NULL, 0))
-        || (sizeof(ret) != value_size))
+        || (sizeof (ret) != value_size))
       ret = -1;
   }
 #endif /* HAVE_SYSCTL && HAS_DECL_CTL_HW && HAS_DECL_HW_NCPUONLINE */
@@ -737,10 +737,10 @@ mhd_tool_get_sys_cpu_count_sysctl_ (void)
   if (0 >= ret)
   {
     /* Darwin: The MIB name for "hw.activecpu" */
-    int mib[2] = { CTL_HW, HW_AVAILCPU };
-    size_t value_size = sizeof(ret);
+    int mib[2] = {CTL_HW, HW_AVAILCPU};
+    size_t value_size = sizeof (ret);
     if ((0 != sysctl (mib, 2, &ret, &value_size, NULL, 0))
-        || (sizeof(ret) != value_size))
+        || (sizeof (ret) != value_size))
       ret = -1;
   }
 #endif /* HAVE_SYSCTL && HAS_DECL_CTL_HW && HAS_DECL_HW_AVAILCPU */
@@ -772,11 +772,11 @@ mhd_tool_get_sys_cpu_count_sysctl_fallback_ (void)
 #ifdef HAVE_SYSCTLBYNAME
   if (0 >= ret)
   {
-    size_t value_size = sizeof(ret);
+    size_t value_size = sizeof (ret);
     /* FreeBSD, OpenBSD, NetBSD, Darwin (and others?): The number of CPUs */
     if ((0 != sysctlbyname ("hw.ncpu", &ret, &value_size,
                             NULL, 0))
-        || (sizeof(ret) != value_size))
+        || (sizeof (ret) != value_size))
       ret = -1;
   }
 #endif /* HAVE_SYSCTLBYNAME */
@@ -786,10 +786,10 @@ mhd_tool_get_sys_cpu_count_sysctl_fallback_ (void)
   if (0 >= ret)
   {
     /* FreeBSD, OpenBSD, NetBSD, Darwin (and others?): The number of CPUs */
-    int mib[2] = { CTL_HW, HW_NCPU };
-    size_t value_size = sizeof(ret);
+    int mib[2] = {CTL_HW, HW_NCPU};
+    size_t value_size = sizeof (ret);
     if ((0 != sysctl (mib, 2, &ret, &value_size, NULL, 0))
-        || (sizeof(ret) != value_size))
+        || (sizeof (ret) != value_size))
       ret = -1;
   }
 #endif /* HAVE_SYSCTL && HAS_DECL_CTL_HW && HAS_DECL_HW_NCPU */
