@@ -267,7 +267,9 @@ static unsigned int num_threads = 0;
 static unsigned int
 get_num_threads (void)
 {
+#if 0  /* disalbed code */
   static const unsigned int max_threads = 32;
+#endif /* disalbed code */
   if (0 < num_threads)
     return num_threads;
 
@@ -291,12 +293,14 @@ get_num_threads (void)
       num_threads = num_proc_cpus;
     }
   }
+#if 0  /* disalbed code */
   if (max_threads < num_threads)
   {
     printf ("Number of threads are limited to %u as more threads "
             "are unlikely to improve the performance.\n", max_threads);
     num_threads = max_threads;
   }
+#endif /* disalbed code */
 
   return num_threads;
 }
