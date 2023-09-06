@@ -598,7 +598,7 @@ mhd_tool_get_sys_cpu_count_special_api_ (void)
   {
     /* Native W32 */
     HMODULE k32hndl;
-    k32hndl = GetModuleHandleA ("kernel32.dll");
+    k32hndl = LoadLibraryA ("kernel32.dll");
     if (NULL != k32hndl)
     {
       typedef DWORD (WINAPI *GAPC_PTR)(WORD GroupNumber);
@@ -634,6 +634,8 @@ mhd_tool_get_sys_cpu_count_special_api_ (void)
           ret = -1; /* Overflow */
       }
     }
+    if (NULL != k32hndl)
+      FreeLibrary (k32hndl);
   }
   if (0 >= ret)
   {
