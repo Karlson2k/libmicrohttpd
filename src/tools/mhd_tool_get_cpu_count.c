@@ -70,6 +70,9 @@
 #ifdef HAVE_SYS_CPUSET_H
 #  include <sys/cpuset.h>
 #endif /* HAVE_SYS_CPUSET_H */
+#ifdef HAVE_STDBOOL_H
+#  include <stdbool.h>
+#endif /* HAVE_STDBOOL_H */
 
 #if ! defined(HAS_DECL_CPU_SETSIZE) && ! defined(CPU_SETSIZE)
 #  define CPU_SETSIZE (1024)
@@ -312,6 +315,203 @@ mhd_tool_get_proc_cpu_count_sched_getaffinity_np_ (void)
 
 
 /**
+ * Detect the number of logical CPU cores available for the process by
+ * W32 API functions.
+ * @return the number of detected logical CPU cores or
+ *         -1 if failed to detect (or this function unavailable).
+ */
+static int
+mhd_tool_get_proc_cpu_count_w32_ (void)
+{
+  int ret = -1;
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+  /* W32 Native */
+  /**
+   * Maximum used number of CPU groups.
+   * Improvement: Implement dynamic allocation when it would be reasonable
+   */
+#define MHDT_MAX_GROUP_COUNT 128
+  /**
+   * The count of logical CPUs as returned by GetProcessAffinityMask()
+   */
+  int count_by_proc_aff_mask;
+  count_by_proc_aff_mask = -1;
+  if (1)
+  {
+    DWORD_PTR proc_aff;
+    DWORD_PTR sys_aff;
+
+    if (GetProcessAffinityMask (GetCurrentProcess (), &proc_aff, &sys_aff))
+    {
+      /* Count all set bits */
+      for (count_by_proc_aff_mask = 0; 0 != proc_aff; proc_aff &= proc_aff - 1)
+        ++count_by_proc_aff_mask;
+    }
+  }
+  if (0 < count_by_proc_aff_mask)
+  {
+    HMODULE k32hndl;
+    k32hndl = LoadLibraryA ("kernel32.dll");
+    if (NULL != k32hndl)
+    {
+      typedef BOOL (WINAPI *GPGA_PTR)(HANDLE hProcess,
+                                      PUSHORT GroupCount,
+                                      PUSHORT GroupArray);
+      GPGA_PTR ptrGetProcessGroupAffinity;
+      ptrGetProcessGroupAffinity =
+        (GPGA_PTR) (void *) GetProcAddress (k32hndl,
+                                            "GetProcessGroupAffinity");
+      if (NULL == ptrGetProcessGroupAffinity)
+      {
+        /* Windows version before Win7 */
+        /* No processor groups supported, the process affinity mask gives full picture */
+        ret = count_by_proc_aff_mask;
+      }
+      else
+      {
+        /* Windows version Win7 or later */
+        /* Processor groups are supported */
+        USHORT arr_elements = MHDT_MAX_GROUP_COUNT;
+        USHORT groups_arr[MHDT_MAX_GROUP_COUNT]; /* Hopefully should be enough */
+        /* Improvement: Implement dynamic allocation when it would be reasonable */
+        /**
+         * Exactly one processor group is assigned to the process
+         */
+        bool single_cpu_group_assigned; /**< Exactly one processor group is assigned to the process */
+        struct mhdt_GR_AFFINITY
+        {
+          KAFFINITY Mask;
+          WORD Group;
+          WORD Reserved[3];
+        };
+        typedef BOOL (WINAPI *GPDCSM_PTR)(HANDLE Process,
+                                          struct mhdt_GR_AFFINITY *CpuSetMasks,
+                                          USHORT CpuSetMaskCount,
+                                          USHORT *RequiredMaskCount);
+        GPDCSM_PTR ptrGetProcessDefaultCpuSetMasks;
+        bool win_fe_or_later;
+        bool cpu_set_mask_assigned;
+
+        single_cpu_group_assigned = false;
+        if (ptrGetProcessGroupAffinity (GetCurrentProcess (), &arr_elements,
+                                        groups_arr))
+        {
+          if (1 == arr_elements)
+          {
+            /* Exactly one processor group assigned to the process */
+            single_cpu_group_assigned = true;
+#if 0 /* Disabled code */
+            /* The value returned by GetThreadGroupAffinity() is not relevant as
+               for the new threads the process affinity mask is used. */
+            ULONG_PTR proc_aff2;
+            typedef BOOL (WINAPI *GTGA_PTR)(HANDLE hThread,
+                                            struct mhdt_GR_AFFINITY *
+                                            GroupAffinity);
+            GTGA_PTR ptrGetThreadGroupAffinity;
+            ptrGetThreadGroupAffinity =
+              (GTGA_PTR) (void *) GetProcAddress (k32hndl,
+                                                  "GetThreadGroupAffinity");
+            if (NULL != ptrGetThreadGroupAffinity)
+            {
+              struct mhdt_GR_AFFINITY thr_gr_aff;
+              if (ptrGetThreadGroupAffinity (GetCurrentThread (), &thr_gr_aff))
+                proc_aff2 = (ULONG_PTR) thr_gr_aff.Mask;
+            }
+#endif /* Disabled code */
+          }
+        }
+        ptrGetProcessDefaultCpuSetMasks =
+          (GPDCSM_PTR) (void *) GetProcAddress (k32hndl,
+                                                "GetProcessDefaultCpuSetMasks");
+        if (NULL != ptrGetProcessDefaultCpuSetMasks)
+        {
+          /* This is Iron Release / Codename Fe
+             (also know as Windows 11 and Windows Server 2022)
+             or later version */
+          struct mhdt_GR_AFFINITY gr_affs[MHDT_MAX_GROUP_COUNT]; /* Hopefully should be enough */
+          /* Improvement: Implement dynamic allocation when it would be reasonable */
+          USHORT num_elm;
+
+          win_fe_or_later = true;
+
+          if (ptrGetProcessDefaultCpuSetMasks (GetCurrentProcess (), gr_affs,
+                                               sizeof (gr_affs)
+                                               / sizeof (gr_affs[0]), &num_elm))
+          {
+            if (0 == num_elm)
+            {
+              /* No group mask set */
+              cpu_set_mask_assigned = false;
+            }
+            else
+              cpu_set_mask_assigned = true;
+          }
+          else
+            cpu_set_mask_assigned = true; /* Assume the worst case */
+        }
+        else
+        {
+          win_fe_or_later = false;
+          cpu_set_mask_assigned = false;
+        }
+        if (! win_fe_or_later)
+        {
+          /* The OS is not capable of distributing threads across different
+             processor groups. Results reported by GetProcessAffinityMask()
+             are relevant for the main processor group for the process. */
+          ret = count_by_proc_aff_mask;
+        }
+        else
+        {
+          /* The of is capable of automatic threads distribution across
+             processor groups. */
+          if (cpu_set_mask_assigned)
+          {
+            /* Assigned Default CpuSet Masks combines with "classic"
+               affinity in the not fully clear way. The combination
+               is not documented and this functionality could be changed
+               any moment. */
+            ret = -1;
+          }
+          else
+          {
+            if (! single_cpu_group_assigned)
+            {
+              /* This is a multi processor group process on Win11 (or later).
+                 Each processor group may have different affinity and
+                 the OS has not API to get it.
+                 For example, affinity to the main processor group could be
+                 assigned by SetProcessAffinityMask() function, which converts
+                 the process to the single-processor-group type, but if
+                 SetThreadGroupAffinity() is called later and bind the thread
+                 to another processor group, the process becomes multi-processor-
+                 group again, however the initial affinity mask is still used
+                 for the initial (main) processor group. There is no API to read
+                 it.
+                 It is also possible that processor groups have different number
+                 of processors. */
+              ret = -1;
+            }
+            else
+            {
+              /* Single-processor-group process on Win11 (or later) without
+                 assigned Default CpuSet Masks. */
+              ret = count_by_proc_aff_mask;
+            }
+          }
+        }
+      }
+      FreeLibrary (k32hndl);
+    }
+  }
+#endif /* _WIN32 && ! __CYGWIN__ */
+  if (0 >= ret)
+    return -1;
+  return ret;
+}
+
+
+/**
  * Detect the number of logical CPU cores available for the process.
  * The number of cores available for this process could be different from
  * value of cores available on the system. The OS may have limit on number
@@ -349,6 +549,10 @@ mhd_tool_get_proc_cpu_count (void)
 #endif /* ! __linux__ && ! __GLIBC__ */
 
   res = mhd_tool_get_proc_cpu_count_sched_getaffinity_np_ ();
+  if (0 < res)
+    return res;
+
+  res = mhd_tool_get_proc_cpu_count_w32_ ();
   if (0 < res)
     return res;
 
