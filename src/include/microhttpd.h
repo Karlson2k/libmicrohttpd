@@ -3528,8 +3528,14 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
  *
  * For any active connection this function must be called
  * only by #MHD_AccessHandlerCallback callback.
- * For suspended connection this function can be called at any moment. Response
- * will be sent as soon as connection is resumed.
+ *
+ * For suspended connection this function can be called at any moment (this
+ * behaviour is deprecated and will be removed!). Response  will be sent
+ * as soon as connection is resumed.
+ *
+ * For single thread environment, when MHD is used in "external polling" mode
+ * (without MHD_USE_SELECT_INTERNALLY) this function can be called any
+ * time (this behaviour is deprecated and will be removed!).
  *
  * If HTTP specifications require use no body in reply, like @a status_code with
  * value 1xx, the response body is automatically not sent even if it is present

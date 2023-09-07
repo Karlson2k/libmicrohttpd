@@ -3195,10 +3195,6 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
  * socket leaks or lead to undefined behavior).  You must explicitly
  * resume all connections before stopping the daemon.
  *
- * @remark In thread-per-connection mode: can be called from any thread,
- * in any other mode: to be called only from thread that process
- * daemon's select()/poll()/etc.
- *
  * @param connection the connection to suspend
  *
  * @sa #MHD_AccessHandlerCallback

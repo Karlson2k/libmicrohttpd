@@ -7078,8 +7078,14 @@ MHD_set_connection_option (struct MHD_Connection *connection,
  *
  * For any active connection this function must be called
  * only by #MHD_AccessHandlerCallback callback.
- * For suspended connection this function can be called at any moment. Response
- * will be sent as soon as connection is resumed.
+ *
+ * For suspended connection this function can be called at any moment (this
+ * behaviour is deprecated and will be removed!). Response  will be sent
+ * as soon as connection is resumed.
+ *
+ * For single thread environment, when MHD is used in "external polling" mode
+ * (without MHD_USE_SELECT_INTERNALLY) this function can be called any
+ * time (this behaviour is deprecated and will be removed!).
  *
  * If HTTP specifications require use no body in reply, like @a status_code with
  * value 1xx, the response body is automatically not sent even if it is present
@@ -7091,7 +7097,10 @@ MHD_set_connection_option (struct MHD_Connection *connection,
  * header is added automatically based the size of the body in the response.
  * If body size it set to #MHD_SIZE_UNKNOWN or chunked encoding is enforced
  * then "Transfer-Encoding: chunked" header (for HTTP/1.1 only) is added instead
- * of "Content-Length" header.
+ * of "Content-Length" header. For example, if response with zero-size body is
+ * used for HEAD request, then "Content-Length: 0" is added automatically to
+ * reply headers.
+ * @sa #MHD_RF_HEAD_ONLY_RESPONSE
  *
  * In situations, where reply body is required, like answer for the GET request
  * with @a status_code #MHD_HTTP_OK, headers "Content-Length" (for known body
@@ -7118,12 +7127,14 @@ MHD_queue_response (struct MHD_Connection *connection,
 
   if ((NULL == connection) || (NULL == response))
     return MHD_NO;
-  if (! connection->in_access_handler)
-    return MHD_NO;
-  reply_icy = (0 != (status_code & MHD_ICY_FLAG));
-  status_code &= ~MHD_ICY_FLAG;
 
   daemon = connection->daemon;
+  if ((! connection->in_access_handler) && (! connection->suspended) &&
+      (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)))
+    return MHD_NO;
+
+  reply_icy = (0 != (status_code & MHD_ICY_FLAG));
+  status_code &= ~MHD_ICY_FLAG;
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if ( (! connection->suspended) &&
@@ -7138,14 +7149,16 @@ MHD_queue_response (struct MHD_Connection *connection,
   }
 #endif
 
+  if (NULL != connection->rp.response)
+    return MHD_NO; /* The response was already set */
+
+  if ( (MHD_CONNECTION_HEADERS_PROCESSED != connection->state) &&
+       (MHD_CONNECTION_FULL_REQ_RECEIVED != connection->state) )
+    return MHD_NO; /* Wrong connection state */
+
   if (daemon->shutdown)
     return MHD_YES; /* If daemon was shut down in parallel,
                      * response will be aborted now or on later stage. */
-
-  if ( (NULL != connection->rp.response) ||
-       ( (MHD_CONNECTION_HEADERS_PROCESSED != connection->state) &&
-         (MHD_CONNECTION_FULL_REQ_RECEIVED != connection->state) ) )
-    return MHD_NO;
 
 #ifdef UPGRADE_SUPPORT
   if (NULL != response->upgrade_handler)
