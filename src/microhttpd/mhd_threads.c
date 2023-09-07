@@ -234,7 +234,7 @@ MHD_create_thread_ (MHD_thread_handle_ID_ *thread,
                                            NULL);
   thread->handle = (MHD_thread_handle_) thr_handle;
 
-  if ((MHD_thread_handle_) - 1 == thread->handle)
+  if ((MHD_thread_handle_) 0 == thread->handle)
     return 0;
 
   return ! 0;
