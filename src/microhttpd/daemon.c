@@ -131,14 +131,6 @@ MHD_epoll (struct MHD_Daemon *daemon,
 
 #endif /* EPOLL_SUPPORT */
 
-
-#if defined(MHD_WINSOCK_SOCKETS)
-/**
- * Track initialization of winsock
- */
-static int mhd_winsock_inited_ = 0;
-#endif /* MHD_WINSOCK_SOCKETS */
-
 #ifdef _AUTOINIT_FUNCS_ARE_SUPPORTED
 /**
  * Do nothing - global initialisation is
@@ -8959,7 +8951,6 @@ MHD_init (void)
 #if defined(MHD_WINSOCK_SOCKETS)
   if (0 != WSAStartup (MAKEWORD (2, 2), &wsd))
     MHD_PANIC (_ ("Failed to initialize winsock.\n"));
-  mhd_winsock_inited_ = 1;
   if ((2 != LOBYTE (wsd.wVersion)) && (2 != HIBYTE (wsd.wVersion)))
     MHD_PANIC (_ ("Winsock version 2.2 is not available.\n"));
 #endif /* MHD_WINSOCK_SOCKETS */
@@ -9008,8 +8999,7 @@ MHD_fini (void)
   gnutls_global_deinit ();
 #endif /* HTTPS_SUPPORT */
 #if defined(MHD_WINSOCK_SOCKETS)
-  if (mhd_winsock_inited_)
-    WSACleanup ();
+  WSACleanup ();
 #endif /* MHD_WINSOCK_SOCKETS */
   MHD_monotonic_sec_counter_finish ();
 }
