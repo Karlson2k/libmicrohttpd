@@ -157,19 +157,20 @@ typedef struct _MHD_thread_handle_ID_ MHD_thread_handle_ID_;
 
 #if defined(MHD_USE_POSIX_THREADS)
 /**
- * Check whether provided thread ID match current thread.
+ * Check whether provided thread ID matches current thread.
  * @param ID thread ID to match
  * @return nonzero on match, zero otherwise
  */
-#define MHD_thread_ID_match_current_(pid) \
-          (pthread_equal ((pid).ID, pthread_self ()))
+#  define MHD_thread_ID_is_current_thread_(pid) \
+     (pthread_equal ((pid).ID, pthread_self ()))
 #elif defined(MHD_USE_W32_THREADS)
 /**
- * Check whether provided thread ID match current thread.
+ * Check whether provided thread ID matches current thread.
  * @param ID thread ID to match
  * @return nonzero on match, zero otherwise
  */
-#define MHD_thread_ID_match_current_(pid) (GetCurrentThreadId () == (pid).ID)
+#  define MHD_thread_ID_is_current_thread_(pid) \
+     (GetCurrentThreadId () == (pid).ID)
 #endif
 
 #if defined(MHD_USE_POSIX_THREADS)
