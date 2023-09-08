@@ -155,6 +155,9 @@ typedef struct _MHD_thread_handle_ID_ MHD_thread_handle_ID_;
     (CloseHandle ( (thread)), ! 0) : 0 )
 #endif
 
+#define MHD_join_thread_tid_(thread_handle_ID_ptr) \
+  (MHD_join_thread_((thread_handle_ID_ptr)->handle))
+
 #if defined(MHD_USE_POSIX_THREADS)
 /**
  * Check whether provided thread ID matches current thread.

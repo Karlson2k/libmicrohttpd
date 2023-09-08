@@ -3902,7 +3902,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
     MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
     if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
          (! pos->thread_joined) &&
-         (! MHD_join_thread_ (pos->tid.handle)) )
+         (! MHD_join_thread_tid_ (&pos->tid)) )
       MHD_PANIC (_ ("Failed to join a thread.\n"));
 #endif
 #ifdef UPGRADE_SUPPORT
@@ -8288,7 +8288,7 @@ close_all_connections (struct MHD_Daemon *daemon)
          * MHD_resume_connection() during finishing of "upgraded"
          * thread. */
         MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
-        if (! MHD_join_thread_ (pos->tid.handle))
+        if (! MHD_join_thread_tid_ (&pos->tid))
           MHD_PANIC (_ ("Failed to join a thread.\n"));
         pos->thread_joined = true;
         MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
@@ -8320,7 +8320,7 @@ close_all_connections (struct MHD_Daemon *daemon)
       if (! pos->thread_joined)
       {
         MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
-        if (! MHD_join_thread_ (pos->tid.handle))
+        if (! MHD_join_thread_tid_ (&pos->tid))
           MHD_PANIC (_ ("Failed to join a thread.\n"));
         MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
         pos->thread_joined = true;
@@ -8458,7 +8458,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
         mhd_assert (false); /* Should never happen */
       }
 
-      if (! MHD_join_thread_ (daemon->tid.handle))
+      if (! MHD_join_thread_tid_ (&daemon->tid))
       {
         MHD_PANIC (_ ("Failed to join a thread.\n"));
       }
