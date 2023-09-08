@@ -1939,7 +1939,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
-               MHD_thread_ID_is_current_thread_ (connection->pid) );
+               MHD_thread_ID_is_current_thread_ (connection->tid) );
 #endif /* MHD_USE_THREADS */
 
   /* "Upgrade" responses accepted only if MHD_ALLOW_UPGRADE is enabled */

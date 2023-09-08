@@ -1151,7 +1151,7 @@ MHD_connection_close_ (struct MHD_Connection *connection,
   mhd_assert (! connection->suspended);
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
-               MHD_thread_ID_is_current_thread_ (connection->pid) );
+               MHD_thread_ID_is_current_thread_ (connection->tid) );
 #endif /* MHD_USE_THREADS */
   if ( (NULL != daemon->notify_completed) &&
        (connection->rq.client_aware) )
@@ -1195,7 +1195,7 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
-               MHD_thread_ID_is_current_thread_ (daemon->pid) );
+               MHD_thread_ID_is_current_thread_ (daemon->tid) );
 #endif /* MHD_USE_THREADS */
 
   if (0 == (daemon->options & MHD_USE_TLS))
@@ -6248,7 +6248,7 @@ cleanup_connection (struct MHD_Connection *connection)
   struct MHD_Daemon *daemon = connection->daemon;
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
-               MHD_thread_ID_is_current_thread_ (connection->pid) );
+               MHD_thread_ID_is_current_thread_ (connection->tid) );
   mhd_assert (NULL == daemon->worker_pool);
 #endif /* MHD_USE_THREADS */
 
@@ -6455,7 +6455,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   enum MHD_Result ret;
 #ifdef MHD_USE_THREADS
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
-               MHD_thread_ID_is_current_thread_ (connection->pid) );
+               MHD_thread_ID_is_current_thread_ (connection->tid) );
 #endif /* MHD_USE_THREADS */
   /* 'daemon' is not used if epoll is not available and asserts are disabled */
   (void) daemon; /* Mute compiler warning */
@@ -7139,7 +7139,7 @@ MHD_queue_response (struct MHD_Connection *connection,
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if ( (! connection->suspended) &&
        (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
-       (! MHD_thread_ID_is_current_thread_ (connection->pid)) )
+       (! MHD_thread_ID_is_current_thread_ (connection->tid)) )
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,

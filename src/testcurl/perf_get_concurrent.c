@@ -404,7 +404,7 @@ static unsigned int
 testExternalGet (uint16_t port)
 {
   struct MHD_Daemon *d;
-  pthread_t pid;
+  pthread_t tid;
   fd_set rs;
   fd_set ws;
   fd_set es;
@@ -433,7 +433,7 @@ testExternalGet (uint16_t port)
     }
     port = dinfo->port;
   }
-  if (0 != pthread_create (&pid, NULL,
+  if (0 != pthread_create (&tid, NULL,
                            &do_gets, (void *) (intptr_t) port))
   {
     MHD_stop_daemon (d);
@@ -490,7 +490,7 @@ testExternalGet (uint16_t port)
 
   stop ("external select");
   MHD_stop_daemon (d);
-  if ((0 != pthread_join (pid, (void **) &ret_val)) ||
+  if ((0 != pthread_join (tid, (void **) &ret_val)) ||
       (NULL != ret_val) )
   {
     fprintf (stderr,

@@ -450,7 +450,7 @@ struct curlWokerInfo
 {
   int workerNumber;
   struct CBC cbc;
-  pthread_t pid;
+  pthread_t tid;
   /**
    * The libcurl handle to run in thread
    */
@@ -628,7 +628,7 @@ testDigestAuth (void)
   for (i = 0; i < sizeof(workers) / sizeof(workers[0]); i++)
   {
     struct curlWokerInfo *const w = workers + i;
-    if (0 != pthread_create (&w->pid, NULL, &worker_func, w))
+    if (0 != pthread_create (&w->tid, NULL, &worker_func, w))
       externalErrorExitDesc ("pthread_create() failed");
   }
 
@@ -637,7 +637,7 @@ testDigestAuth (void)
   for (i = 0; i < sizeof(workers) / sizeof(workers[0]); i++)
   {
     struct curlWokerInfo *const w = workers + i;
-    if (0 != pthread_join (w->pid, NULL))
+    if (0 != pthread_join (w->tid, NULL))
       externalErrorExitDesc ("pthread_join() failed");
     curl_easy_cleanup (w->c);
     free (w->libcurl_errbuf);
