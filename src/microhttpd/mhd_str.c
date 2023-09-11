@@ -1293,8 +1293,8 @@ MHD_strx_to_uint32_ (const char *str,
   while (digit >= 0)
   {
     if ( (res < (UINT32_MAX / 16)) ||
-         ((res == (UINT32_MAX / 16)) && ( (uint32_t) digit <= (UINT32_MAX
-                                                               % 16)) ) )
+         ((res == (UINT32_MAX / 16)) &&
+          ( (uint32_t) digit <= (UINT32_MAX % 16)) ) )
     {
       res *= 16;
       res += (unsigned int) digit;
@@ -1340,8 +1340,8 @@ MHD_strx_to_uint32_n_ (const char *str,
   while (i < maxlen && (digit = toxdigitvalue (str[i])) >= 0)
   {
     if ( (res > (UINT32_MAX / 16)) ||
-         ((res == (UINT32_MAX / 16)) && ( (uint32_t) digit > (UINT32_MAX
-                                                              % 16)) ) )
+         ((res == (UINT32_MAX / 16)) &&
+          ( (uint32_t) digit > (UINT32_MAX % 16)) ) )
       return 0;
 
     res *= 16;
@@ -1380,8 +1380,8 @@ MHD_strx_to_uint64_ (const char *str,
   while (digit >= 0)
   {
     if ( (res < (UINT64_MAX / 16)) ||
-         ((res == (UINT64_MAX / 16)) && ( (uint64_t) digit <= (UINT64_MAX
-                                                               % 16)) ) )
+         ((res == (UINT64_MAX / 16)) &&
+          ( (uint64_t) digit <= (UINT64_MAX % 16)) ) )
     {
       res *= 16;
       res += (unsigned int) digit;
@@ -1427,8 +1427,8 @@ MHD_strx_to_uint64_n_ (const char *str,
   while (i < maxlen && (digit = toxdigitvalue (str[i])) >= 0)
   {
     if ( (res > (UINT64_MAX / 16)) ||
-         ((res == (UINT64_MAX / 16)) && ( (uint64_t) digit > (UINT64_MAX
-                                                              % 16)) ) )
+         ((res == (UINT64_MAX / 16)) &&
+          ( (uint64_t) digit > (UINT64_MAX % 16)) ) )
       return 0;
 
     res *= 16;
@@ -1777,8 +1777,9 @@ MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
           unsigned char out;
           if ((0 > h) || (0 > l))
             return 0;
-          out = (unsigned char) ( (((uint8_t) ((unsigned int) h)) << 4)
-                                  | ((uint8_t) ((unsigned int) l)) );
+          out =
+            (unsigned char) (((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
+                             | ((uint8_t) ((unsigned int) l)));
           decoded[w] = (char) out;
         }
       }
@@ -1806,8 +1807,9 @@ MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
         unsigned char out;
         if ((0 > h) || (0 > l))
           return 0;
-        out = (unsigned char) ( (((uint8_t) ((unsigned int) h)) << 4)
-                                | ((uint8_t) ((unsigned int) l)) );
+        out =
+          (unsigned char) (((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
+                           | ((uint8_t) ((unsigned int) l)));
         decoded[w] = (char) out;
       }
     }
@@ -1862,8 +1864,9 @@ MHD_str_pct_decode_lenient_n_ (const char *pct_encoded,
           }
           else
           {
-            out = (unsigned char) ( (((uint8_t) ((unsigned int) h)) << 4)
-                                    | ((uint8_t) ((unsigned int) l)) );
+            out =
+              (unsigned char) (((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
+                               | ((uint8_t) ((unsigned int) l)));
             decoded[w] = (char) out;
           }
         }
@@ -1903,8 +1906,9 @@ MHD_str_pct_decode_lenient_n_ (const char *pct_encoded,
         else
         {
           unsigned char out;
-          out = (unsigned char) ( (((uint8_t) ((unsigned int) h)) << 4)
-                                  | ((uint8_t) ((unsigned int) l)) );
+          out =
+            (unsigned char) (((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
+                             | ((uint8_t) ((unsigned int) l)));
           decoded[w] = (char) out;
         }
       }
@@ -1958,8 +1962,9 @@ MHD_str_pct_decode_in_place_strict_ (char *str)
           unsigned char out;
           if ((0 > h) || (0 > l))
             return 0;
-          out = (unsigned char) ( (((uint8_t) ((unsigned int) h)) << 4)
-                                  | ((uint8_t) ((unsigned int) l)) );
+          out =
+            (unsigned char) (((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
+                             | ((uint8_t) ((unsigned int) l)));
           str[w++] = (char) out;
         }
       }
@@ -2033,8 +2038,9 @@ MHD_str_pct_decode_in_place_lenient_ (char *str,
             str[w++] = d2;
             continue;
           }
-          out = (unsigned char) ( (((uint8_t) ((unsigned int) h)) << 4)
-                                  | ((uint8_t) ((unsigned int) l)) );
+          out =
+            (unsigned char) (((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
+                             | ((uint8_t) ((unsigned int) l)));
           str[w++] = (char) out;
           continue;
         }
@@ -2230,11 +2236,11 @@ base64_char_to_value_ (uint8_t c)
   if ('Z' >= c)
   {
     if ('A' <= c)
-      return (MHD_base64_map_type_) (c - 'A') + 0;
+      return (MHD_base64_map_type_) ((c - 'A') + 0);
     if ('0' <= c)
     {
       if ('9' >= c)
-        return (MHD_base64_map_type_) (c - '0') + 52;
+        return (MHD_base64_map_type_) ((c - '0') + 52);
       if ('=' == c)
         return -2;
       return -1;
@@ -2246,7 +2252,7 @@ base64_char_to_value_ (uint8_t c)
     return -1;
   }
   if (('z' >= c) && ('a' <= c))
-    return (MHD_base64_map_type_) (c - 'a') + 26;
+    return (MHD_base64_map_type_) ((c - 'a') + 26);
   return -1;
 }
 
@@ -2366,9 +2372,12 @@ MHD_base64_to_bin_n (const char *base64,
       const MHD_base64_map_type_ v4 = base64_char_to_value_ (in[i + 3]);
       if ((0 > v1) || (0 > v2) || (0 > v3) || (0 > v4))
         return 0;
-      out[j + 0] = (uint8_t) ((((uint8_t) v1) << 2) | (((uint8_t) v2) >> 4));
-      out[j + 1] = (uint8_t) ((((uint8_t) v2) << 4) | (((uint8_t) v3) >> 2));
-      out[j + 2] = (uint8_t) ((((uint8_t) v3) << 6) | (((uint8_t) v4)));
+      out[j + 0] = (uint8_t) (((uint8_t) (((uint8_t) v1) << 2))
+                              | ((uint8_t) (((uint8_t) v2) >> 4)));
+      out[j + 1] = (uint8_t) (((uint8_t) (((uint8_t) v2) << 4))
+                              | ((uint8_t) (((uint8_t) v3) >> 2)));
+      out[j + 2] = (uint8_t) (((uint8_t) (((uint8_t) v3) << 6))
+                              | ((uint8_t) (((uint8_t) v4))));
     }
     j += 3;
   }
@@ -2385,7 +2394,8 @@ MHD_base64_to_bin_n (const char *base64,
     if ((0 > v1) || (0 > v2))
       return 0; /* Invalid char or padding at first two positions */
     mhd_assert (j < bin_size);
-    out[j++] = (uint8_t) ((((uint8_t) v1) << 2) | (((uint8_t) v2) >> 4));
+    out[j++] = (uint8_t) (((uint8_t) (((uint8_t) v1) << 2))
+                          | ((uint8_t) (((uint8_t) v2) >> 4)));
     if (0 > v3)
     { /* Third char is either padding or invalid */
       if ((-2 != v3) || (-2 != v4))
@@ -2396,7 +2406,8 @@ MHD_base64_to_bin_n (const char *base64,
     }
     if (j >= bin_size)
       return 0; /* Not enough space */
-    out[j++] = (uint8_t) ((((uint8_t) v2) << 4) | (((uint8_t) v3) >> 2));
+    out[j++] = (uint8_t) (((uint8_t) (((uint8_t) v2) << 4))
+                          | ((uint8_t) (((uint8_t) v3) >> 2)));
     if (0 > v4)
     { /* Fourth char is either padding or invalid */
       if (-2 != v4)
@@ -2407,7 +2418,8 @@ MHD_base64_to_bin_n (const char *base64,
     }
     if (j >= bin_size)
       return 0; /* Not enough space */
-    out[j++] = (uint8_t) ((((uint8_t) v3) << 6) | (((uint8_t) v4)));
+    out[j++] = (uint8_t) (((uint8_t) (((uint8_t) v3) << 6))
+                          | ((uint8_t) (((uint8_t) v4))));
   }
   return j;
 #if MHD_BASE64_FUNC_VERSION >= 2
