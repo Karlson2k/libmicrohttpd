@@ -4273,7 +4273,8 @@ get_request_line_inner (struct MHD_Connection *c)
       if (is_empty_line)
       {
         if ((! skip_unlimited_empty_lines) &&
-            (((skip_several_empty_lines) ? MHD_MAX_EMPTY_LINES_SKIP : 1) <
+            (((unsigned int) ((skip_several_empty_lines) ?
+                              MHD_MAX_EMPTY_LINES_SKIP : 1)) <
              c->rq.hdrs.rq_line.skipped_empty_lines))
         {
           connection_close_error (c,
@@ -4823,7 +4824,7 @@ send_redirect_fixed_rq_target (struct MHD_Connection *c)
 static bool
 process_request_target (struct MHD_Connection *c)
 {
-#if _DEBUG
+#ifdef _DEBUG
   size_t params_len;
 #endif /* _DEBUG */
   mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
@@ -4849,7 +4850,7 @@ process_request_target (struct MHD_Connection *c)
 
   if (NULL != c->rq.hdrs.rq_line.rq_tgt_qmark)
   {
-#if _DEBUG
+#ifdef _DEBUG
     params_len =
       c->rq.hdrs.rq_line.rq_tgt_len
       - (size_t) (c->rq.hdrs.rq_line.rq_tgt_qmark - c->rq.hdrs.rq_line.rq_tgt);
@@ -4865,7 +4866,7 @@ process_request_target (struct MHD_Connection *c)
       return false;
     }
   }
-#if _DEBUG
+#ifdef _DEBUG
   else
     params_len = 0;
 #endif /* _DEBUG */

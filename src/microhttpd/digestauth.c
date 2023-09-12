@@ -333,7 +333,7 @@ struct DigestAlgorithm
   /**
    * Buffer for hex-print of the final digest.
    */
-#if _DEBUG
+#ifdef _DEBUG
   bool uninitialised; /**< The structure has been not set-up */
   bool algo_selected; /**< The algorithm has been selected */
   bool ready_for_hashing; /**< The structure is ready to hash data */

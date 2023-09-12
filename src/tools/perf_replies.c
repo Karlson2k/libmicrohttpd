@@ -1744,8 +1744,7 @@ get_mhd_response_size (void)
     return "8 KB (medium)";
   else if (tool_params.large)
     return "1 MB (large)";
-  abort ();
-  return "";
+  return "!!internal error!!";
 }
 
 
