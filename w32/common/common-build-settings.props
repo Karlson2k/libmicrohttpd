@@ -29,8 +29,9 @@
       <WarningLevel Condition="'%(ClCompile.ExternalWarningLevel)' == ''">Level4</WarningLevel>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <DisableSpecificWarnings>4996;4820;4127;5045</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4996;4820;4127;5045;4711;4710</DisableSpecificWarnings>
       <TreatSpecificWarningsAsErrors>4013</TreatSpecificWarningsAsErrors>
+      <SmallerTypeCheck>false</SmallerTypeCheck>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <LanguageStandard_C Condition="'%(ClCompile.LanguageStandard_C)' != ''">stdc17</LanguageStandard_C>
