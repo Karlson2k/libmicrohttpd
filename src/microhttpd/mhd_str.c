@@ -2377,7 +2377,7 @@ MHD_base64_to_bin_n (const char *base64,
       out[j + 1] = (uint8_t) (((uint8_t) (((uint8_t) v2) << 4))
                               | ((uint8_t) (((uint8_t) v3) >> 2)));
       out[j + 2] = (uint8_t) (((uint8_t) (((uint8_t) v3) << 6))
-                              | ((uint8_t) (((uint8_t) v4))));
+                              | ((uint8_t) v4));
     }
     j += 3;
   }
@@ -2419,7 +2419,7 @@ MHD_base64_to_bin_n (const char *base64,
     if (j >= bin_size)
       return 0; /* Not enough space */
     out[j++] = (uint8_t) (((uint8_t) (((uint8_t) v3) << 6))
-                          | ((uint8_t) (((uint8_t) v4))));
+                          | ((uint8_t) v4));
   }
   return j;
 #if MHD_BASE64_FUNC_VERSION >= 2
