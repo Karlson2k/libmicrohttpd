@@ -7264,12 +7264,12 @@ MHD_start_daemon_va (unsigned int flags,
            || (NULL != daemon->notify_connection)) )
     *pflags |= MHD_USE_ITC; /* requires ITC */
 
-#ifndef NDEBUG
+#ifdef _DEBUG
 #ifdef HAVE_MESSAGES
   MHD_DLOG (daemon,
             _ ("Using debug build of libmicrohttpd.\n") );
 #endif /* HAVE_MESSAGES */
-#endif /* ! NDEBUG */
+#endif /* _DEBUG */
 
   if ( (0 != (*pflags & MHD_USE_ITC))
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
