@@ -54,6 +54,8 @@ MHD_MD5_init (struct Md5Ctx *ctx)
 }
 
 
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_
+
 /**
  * Base of MD5 transformation.
  * Gets full 64 bytes block of data and updates hash values;
@@ -544,3 +546,6 @@ MHD_MD5_finish (struct Md5Ctx *ctx,
   /* Erase potentially sensitive data. */
   memset (ctx, 0, sizeof(struct Md5Ctx));
 }
+
+
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_

@@ -58,6 +58,8 @@ MHD_SHA512_256_init (struct Sha512_256Ctx *ctx)
 }
 
 
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_
+
 /**
  * Base of SHA-512/256 transformation.
  * Gets full 128 bytes block of data and updates hash values;
@@ -627,3 +629,6 @@ MHD_SHA512_256_finish (struct Sha512_256Ctx *ctx,
   /* Erase potentially sensitive data. */
   memset (ctx, 0, sizeof(struct Sha512_256Ctx));
 }
+
+
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_

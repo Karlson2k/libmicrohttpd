@@ -92,7 +92,6 @@
   <ItemDefinitionGroup Condition="'$(UseDebugLibraries)'=='true'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <SmallerTypeCheck>true</SmallerTypeCheck>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ResourceCompile>

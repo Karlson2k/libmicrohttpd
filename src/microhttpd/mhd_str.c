@@ -2259,6 +2259,10 @@ base64_char_to_value_ (uint8_t c)
 
 #endif /* MHD_BASE64_FUNC_VERSION == 1 */
 
+
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_
+
+
 size_t
 MHD_base64_to_bin_n (const char *base64,
                      size_t base64_len,
@@ -2426,6 +2430,9 @@ MHD_base64_to_bin_n (const char *base64,
 #undef base64_char_to_value_
 #endif /* MHD_BASE64_FUNC_VERSION >= 2 */
 }
+
+
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_
 
 
 #undef MHD_base64_map_type_

@@ -764,6 +764,8 @@ get_nonce_timestamp (const char *const nonce,
 }
 
 
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_
+
 /**
  * Super-fast xor-based "hash" function
  *
@@ -790,6 +792,8 @@ fast_simple_hash (const uint8_t *data,
   return hash;
 }
 
+
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_
 
 /**
  * Get index of the nonce in the nonce-nc map array.
@@ -1756,6 +1760,8 @@ calculate_add_nonce (struct MHD_Connection *const connection,
 }
 
 
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_
+
 /**
  * Calculate the server nonce so that it mitigates replay attacks and add
  * the new nonce to the nonce-nc map array.
@@ -1858,6 +1864,8 @@ calculate_add_nonce_with_retry (struct MHD_Connection *const connection,
   return true;
 }
 
+
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_
 
 /**
  * Calculate userdigest, return it as binary data.

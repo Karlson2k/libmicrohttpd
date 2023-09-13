@@ -172,6 +172,15 @@
 #endif /* ! (MHD_ASAN_ACTIVE && HAVE_SANITIZER_ASAN_INTERFACE_H &&
            (FUNC_ATTR_PTRCOMPARE_WORKS || FUNC_ATTR_NOSANITIZE_WORKS))   */
 
+#ifndef _MSC_FULL_VER
+#  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_ /* empty */
+#  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_ /* empty */
+#else  /* _MSC_FULL_VER */
+#  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_ \
+   __pragma(runtime_checks("c", off))
+#  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_ \
+   __pragma(runtime_checks("c", restore))
+#endif /* _MSC_FULL_VER */
 
 /**
  * Automatic string with the name of the current function

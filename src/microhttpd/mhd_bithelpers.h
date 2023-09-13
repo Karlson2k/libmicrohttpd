@@ -45,6 +45,7 @@
 #  define _MHD_has_builtin_dummy 1
 #endif
 
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_
 
 #ifdef MHD_HAVE___BUILTIN_BSWAP32
 #define _MHD_BYTES_SWAP32(value32)  \
@@ -388,6 +389,7 @@ _MHD_ROTR64 (uint64_t value64, int bits)
 
 #endif /* ! __builtin_rotateright64 */
 
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_
 
 #ifdef _MHD_has_builtin_dummy
 /* Remove macro function replacement to avoid misdetection in files which

@@ -58,6 +58,8 @@ MHD_SHA256_init (struct Sha256Ctx *ctx)
 }
 
 
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_
+
 /**
  * Base of SHA-256 transformation.
  * Gets full 64 bytes block of data and updates hash values;
@@ -558,3 +560,6 @@ MHD_SHA256_finish (struct Sha256Ctx *ctx,
   /* Erase potentially sensitive data. */
   memset (ctx, 0, sizeof(struct Sha256Ctx));
 }
+
+
+MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_
