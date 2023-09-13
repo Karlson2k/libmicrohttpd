@@ -1933,9 +1933,9 @@ enum MHD_Result
 MHD_response_execute_upgrade_ (struct MHD_Response *response,
                                struct MHD_Connection *connection)
 {
-#ifdef HTTPS_SUPPORT
-  struct MHD_Daemon *daemon = connection->daemon;
-#endif /* HTTPS_SUPPORT */
+#if defined(HTTPS_SUPPORT) || defined(_DEBUG)
+  struct MHD_Daemon *const daemon = connection->daemon;
+#endif /* HTTPS_SUPPORT || _DEBUG */
   struct MHD_UpgradeResponseHandle *urh;
   size_t rbo;
 
