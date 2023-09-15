@@ -1142,8 +1142,8 @@ performCheck (void)
     if (use_put_large)
       mem_limit = (size_t) (TEST_UPLOAD_DATA_SIZE / 2 + HEADERS_POINTERS_SIZE);
     else
-      mem_limit = (size_t) ((TEST_UPLOAD_DATA_SIZE * 4) / 3 + 2 +
-                            HEADERS_POINTERS_SIZE);
+      mem_limit = (size_t) ((TEST_UPLOAD_DATA_SIZE * 4) / 3 + 2
+                            + HEADERS_POINTERS_SIZE);
 
     d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                           port, NULL, NULL,
