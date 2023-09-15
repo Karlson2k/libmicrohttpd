@@ -306,12 +306,12 @@ fill_v1_form (const void *cls,
   if (0 > reply_len)
     return MHD_NO; /* Internal error */
 
-  reply = (char *) malloc (reply_len + 1);
+  reply = (char *) malloc ((size_t) ((size_t) reply_len + 1));
   if (NULL == reply)
     return MHD_NO; /* Out-of-memory error */
 
   if (reply_len != snprintf (reply,
-                             ((size_t) reply_len) + 1,
+                             (size_t) (((size_t) reply_len) + 1),
                              FORM_V1,
                              session->value_1))
   {
@@ -370,12 +370,12 @@ fill_v1_v2_form (const void *cls,
   if (0 > reply_len)
     return MHD_NO; /* Internal error */
 
-  reply = (char *) malloc (reply_len + 1);
+  reply = (char *) malloc ((size_t) ((size_t) reply_len + 1));
   if (NULL == reply)
     return MHD_NO; /* Out-of-memory error */
 
   if (reply_len != snprintf (reply,
-                             ((size_t) reply_len) + 1,
+                             (size_t) ((size_t) reply_len + 1),
                              FORM_V1_V2,
                              session->value_1,
                              session->value_2))
