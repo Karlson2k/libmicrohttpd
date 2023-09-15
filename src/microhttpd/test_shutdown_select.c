@@ -338,8 +338,8 @@ main (int argc, char *const *argv)
       return 99;
     }
 #elif defined(MHD_USE_W32_THREADS)
-    sel_thrd = (HANDLE) _beginthreadex (NULL, 0, test_func, &listen_socket, 0,
-                                        NULL);
+    sel_thrd = (HANDLE) (uintptr_t)
+               _beginthreadex (NULL, 0, test_func, &listen_socket, 0, NULL);
     if (0 == (sel_thrd))
     {
       MHD_socket_close_chk_ (listen_socket);
