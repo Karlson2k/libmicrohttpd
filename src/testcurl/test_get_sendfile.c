@@ -34,6 +34,7 @@
 #include <time.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <errno.h>
 #include "mhd_sockets.h"
 #include "mhd_has_in_name.h"
 

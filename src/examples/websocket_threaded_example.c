@@ -29,6 +29,7 @@
 /* TODO: allow to send large messages. */
 
 #include "platform.h"
+#include <errno.h>
 #include <pthread.h>
 #include <microhttpd.h>
 

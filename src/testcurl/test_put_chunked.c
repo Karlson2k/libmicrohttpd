@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 #ifndef WINDOWS
 #include <unistd.h>

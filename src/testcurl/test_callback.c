@@ -29,6 +29,7 @@
 #include "platform.h"
 #include <curl/curl.h>
 #include <microhttpd.h>
+#include <errno.h>
 
 struct callback_closure
 {

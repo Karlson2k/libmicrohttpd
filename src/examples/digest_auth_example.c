@@ -27,6 +27,7 @@
 #include "platform.h"
 #include <microhttpd.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #define PAGE \
   "<html><head><title>libmicrohttpd demo</title></head>" \

@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 #include "mhd_has_in_name.h"
 #include "mhd_has_param.h"
 #include "mhd_sockets.h" /* only macros used */

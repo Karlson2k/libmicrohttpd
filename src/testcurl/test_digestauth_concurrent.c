@@ -38,6 +38,7 @@
 #define NEED_GCRYP_INIT 1
 #include <gcrypt.h>
 #endif /* MHD_HTTPS_REQUIRE_GCRYPT && (MHD_SHA256_TLSLIB || MHD_MD5_TLSLIB) */
+#include <errno.h>
 
 #ifndef WINDOWS
 #include <sys/socket.h>

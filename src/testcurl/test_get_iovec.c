@@ -44,6 +44,7 @@
 #ifdef HAVE_STDBOOL_H
 #include <stdbool.h>
 #endif
+#include <errno.h>
 #include "mhd_sockets.h"
 #include "mhd_has_in_name.h"
 

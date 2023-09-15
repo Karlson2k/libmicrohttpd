@@ -33,6 +33,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #include "platform.h"
+#include <errno.h>
 #include <microhttpd.h>
 #include <microhttpd_ws.h>
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)

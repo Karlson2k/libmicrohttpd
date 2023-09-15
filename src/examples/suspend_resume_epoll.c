@@ -30,6 +30,7 @@
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
 #include <limits.h>
+#include <errno.h>
 
 #define TIMEOUT_INFINITE -1
 

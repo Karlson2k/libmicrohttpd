@@ -33,6 +33,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <errno.h>
 #ifndef WINDOWS
 #include <unistd.h>
 #endif

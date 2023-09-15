@@ -36,6 +36,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <errno.h>
 #ifndef _WIN32
 #include <signal.h>
 #endif /* _WIN32 */

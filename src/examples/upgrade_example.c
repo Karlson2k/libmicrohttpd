@@ -33,6 +33,7 @@
 #include "platform.h"
 #include <microhttpd.h>
 #include <pthread.h>
+#include <errno.h>
 
 #define PAGE \
   "<html><head><title>libmicrohttpd demo</title></head><body>libmicrohttpd demo</body></html>"

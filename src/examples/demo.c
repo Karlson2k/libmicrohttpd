@@ -43,6 +43,7 @@
 #endif /* MHD_HAVE_LIBMAGIC */
 #include <limits.h>
 #include <ctype.h>
+#include <errno.h>
 
 #if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 2
 #undef MHD_CPU_COUNT

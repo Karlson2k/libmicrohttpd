@@ -28,6 +28,7 @@
 #include <microhttpd.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define PAGE \
   "<html><head><title>File not found</title></head><body>File not found</body></html>"

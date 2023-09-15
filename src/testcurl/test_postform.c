@@ -38,6 +38,7 @@
 #include <gcrypt.h>
 #endif
 #endif /* MHD_HTTPS_REQUIRE_GCRYPT */
+#include <errno.h>
 
 #ifndef WINDOWS
 #include <unistd.h>

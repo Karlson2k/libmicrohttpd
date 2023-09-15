@@ -54,10 +54,11 @@
 #include <sys/eventfd.h>
 #include <stdint.h>      /* for uint64_t */
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>      /* for read(), write(), errno */
+#include <unistd.h>      /* for read(), write() */
 #endif /* HAVE_UNISTD_H */
 #ifdef HAVE_STRING_H
 #include <string.h> /* for strerror() */
+#include <errno.h>
 #endif
 
 

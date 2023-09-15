@@ -42,6 +42,7 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
+#include <errno.h>
 #include "mhd_has_in_name.h"
 
 #if defined(MHD_CPU_COUNT) && (MHD_CPU_COUNT + 0) < 2

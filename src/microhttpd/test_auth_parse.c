@@ -26,6 +26,7 @@
 #include "mhd_options.h"
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
 #include "gen_auth.h"
 #ifdef BAUTH_SUPPORT
 #include "basicauth.h"

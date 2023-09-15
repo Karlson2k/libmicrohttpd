@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 #if defined(MHD_HTTPS_REQUIRE_GCRYPT) && \
   (defined(MHD_SHA256_TLSLIB) || defined(MHD_MD5_TLSLIB))

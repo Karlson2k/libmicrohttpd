@@ -30,6 +30,7 @@
 #include <string.h>
 #include <time.h>
 #include <stdint.h>
+#include <errno.h>
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
