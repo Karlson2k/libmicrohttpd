@@ -374,7 +374,7 @@ fill_v1_v2_form (const void *cls,
   if (NULL == reply)
     return MHD_NO; /* Out-of-memory error */
 
-  if (reply_len == snprintf (reply,
+  if (reply_len != snprintf (reply,
                              ((size_t) reply_len) + 1,
                              FORM_V1_V2,
                              session->value_1,
