@@ -322,7 +322,7 @@ main (int argc, char *const *argv)
    */
   for (i = 0; i < 5 && result == 0; i++)
   {
-    MHD_thread_handle_ sel_thrd;
+    MHD_thread_handle_native_ sel_thrd;
     /* fprintf(stdout, "Creating, binding and listening socket...\n"); */
     MHD_socket listen_socket = start_socket_listen (AF_INET);
     if (MHD_INVALID_SOCKET == listen_socket)
