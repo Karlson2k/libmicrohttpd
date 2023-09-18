@@ -4249,7 +4249,7 @@ get_request_line_inner (struct MHD_Connection *c)
     mhd_assert (NULL == c->rq.url);
     mhd_assert (0 == c->rq.url_len);
     mhd_assert (NULL == c->rq.hdrs.rq_line.rq_tgt);
-    mhd_assert (0 == c->rq.hdrs.rq_line.rq_tgt_len);
+    mhd_assert (0 == c->rq.req_target_len);
     mhd_assert (NULL == c->rq.version);
     do
     {
@@ -4403,14 +4403,14 @@ get_request_line_inner (struct MHD_Connection *c)
           /* The end of the URI and the start of the HTTP version string
              should be determined now. */
           mhd_assert (NULL == c->rq.version);
-          mhd_assert (0 == c->rq.hdrs.rq_line.rq_tgt_len);
+          mhd_assert (0 == c->rq.req_target_len);
           if (0 != c->rq.hdrs.rq_line.last_ws_end)
           {
             /* Determine the end and the length of the URI */
             if (NULL != c->rq.hdrs.rq_line.rq_tgt)
             {
               c->read_buffer [c->rq.hdrs.rq_line.last_ws_start] = 0; /* Zero terminate the URI */
-              c->rq.hdrs.rq_line.rq_tgt_len =
+              c->rq.req_target_len =
                 c->rq.hdrs.rq_line.last_ws_start
                 - (size_t) (c->rq.hdrs.rq_line.rq_tgt - c->read_buffer);
             }
@@ -4425,7 +4425,7 @@ get_request_line_inner (struct MHD_Connection *c)
               c->read_buffer[c->rq.hdrs.rq_line.last_ws_start] = 0; /* Zero terminate the URI */
               c->rq.hdrs.rq_line.rq_tgt =
                 c->read_buffer + c->rq.hdrs.rq_line.last_ws_start;
-              c->rq.hdrs.rq_line.rq_tgt_len = 0;
+              c->rq.req_target_len = 0;
               c->rq.hdrs.rq_line.num_ws_in_uri = 0;
               c->rq.hdrs.rq_line.rq_tgt_qmark = NULL;
             }
@@ -4452,13 +4452,13 @@ get_request_line_inner (struct MHD_Connection *c)
                whitespace between them. Assume zero-length URI. */
             size_t uri_pos;
             mhd_assert (wsp_blocks);
-            mhd_assert (0 == c->rq.hdrs.rq_line.rq_tgt_len);
+            mhd_assert (0 == c->rq.req_target_len);
             uri_pos = (size_t) (c->rq.hdrs.rq_line.rq_tgt - c->read_buffer) - 1;
             mhd_assert (uri_pos < p);
             c->rq.version = c->rq.hdrs.rq_line.rq_tgt;
             c->read_buffer[uri_pos] = 0;  /* Zero terminate the URI */
             c->rq.hdrs.rq_line.rq_tgt = c->read_buffer + uri_pos;
-            c->rq.hdrs.rq_line.rq_tgt_len = 0;
+            c->rq.req_target_len = 0;
             c->rq.hdrs.rq_line.num_ws_in_uri = 0;
             c->rq.hdrs.rq_line.rq_tgt_qmark = NULL;
           }
@@ -4486,13 +4486,13 @@ get_request_line_inner (struct MHD_Connection *c)
           c->read_buffer_size -= p;
           c->read_buffer_offset -= p;
           mhd_assert (c->rq.hdrs.rq_line.num_ws_in_uri <= \
-                      c->rq.hdrs.rq_line.rq_tgt_len);
+                      c->rq.req_target_len);
           mhd_assert ((NULL == c->rq.hdrs.rq_line.rq_tgt_qmark) || \
-                      (0 != c->rq.hdrs.rq_line.rq_tgt_len));
+                      (0 != c->rq.req_target_len));
           mhd_assert ((NULL == c->rq.hdrs.rq_line.rq_tgt_qmark) || \
                       ((size_t) (c->rq.hdrs.rq_line.rq_tgt_qmark \
                                  - c->rq.hdrs.rq_line.rq_tgt) < \
-                       c->rq.hdrs.rq_line.rq_tgt_len));
+                       c->rq.req_target_len));
           mhd_assert ((NULL == c->rq.hdrs.rq_line.rq_tgt_qmark) || \
                       (c->rq.hdrs.rq_line.rq_tgt_qmark >= \
                        c->rq.hdrs.rq_line.rq_tgt));
@@ -4528,7 +4528,7 @@ get_request_line_inner (struct MHD_Connection *c)
       if (NULL == c->rq.hdrs.rq_line.rq_tgt)
       {
         /* The current position is the start of the URI */
-        mhd_assert (0 == c->rq.hdrs.rq_line.rq_tgt_len);
+        mhd_assert (0 == c->rq.req_target_len);
         mhd_assert (NULL == c->rq.version);
         c->rq.hdrs.rq_line.rq_tgt = c->read_buffer + p;
         /* Reset the whitespace marker */
@@ -4540,7 +4540,7 @@ get_request_line_inner (struct MHD_Connection *c)
         /* It was a whitespace after the start of the URI */
         if (! wsp_in_uri)
         {
-          mhd_assert ((0 != c->rq.hdrs.rq_line.rq_tgt_len) || \
+          mhd_assert ((0 != c->rq.req_target_len) || \
                       (c->rq.hdrs.rq_line.rq_tgt + 1 == c->read_buffer + p));
           mhd_assert (NULL == c->rq.version); /* Too many whitespaces? This error is handled at whitespace start */
           c->rq.version = c->read_buffer + p;
@@ -4569,7 +4569,7 @@ get_request_line_inner (struct MHD_Connection *c)
           mhd_assert (0 == c->rq.hdrs.rq_line.last_ws_start);
           mhd_assert (0 == c->rq.hdrs.rq_line.last_ws_end);
           mhd_assert (NULL == c->rq.hdrs.rq_line.rq_tgt);
-          mhd_assert (0 == c->rq.hdrs.rq_line.rq_tgt_len);
+          mhd_assert (0 == c->rq.req_target_len);
           mhd_assert (NULL == c->rq.version);
           if (0 == p)
           {
@@ -4595,7 +4595,7 @@ get_request_line_inner (struct MHD_Connection *c)
               c->read_buffer[p] = 0; /* Zero-terminate request URI string */
               mhd_assert (((size_t) (c->rq.hdrs.rq_line.rq_tgt   \
                                      - c->read_buffer)) <= p);
-              c->rq.hdrs.rq_line.rq_tgt_len =
+              c->rq.req_target_len =
                 p - (size_t) (c->rq.hdrs.rq_line.rq_tgt - c->read_buffer);
             }
             else
@@ -4655,7 +4655,7 @@ get_request_line_inner (struct MHD_Connection *c)
         if (NULL == c->rq.hdrs.rq_line.rq_tgt)
         {
           /* This is the first character of the URI */
-          mhd_assert (0 == c->rq.hdrs.rq_line.rq_tgt_len);
+          mhd_assert (0 == c->rq.req_target_len);
           mhd_assert (NULL == c->rq.version);
           c->rq.hdrs.rq_line.rq_tgt = c->read_buffer + p;
           /* Reset the whitespace marker */
@@ -4668,7 +4668,7 @@ get_request_line_inner (struct MHD_Connection *c)
           {
             /* This is the first character of the HTTP version */
             mhd_assert (NULL != c->rq.hdrs.rq_line.rq_tgt);
-            mhd_assert ((0 != c->rq.hdrs.rq_line.rq_tgt_len) || \
+            mhd_assert ((0 != c->rq.req_target_len) || \
                         (c->rq.hdrs.rq_line.rq_tgt + 1 == c->read_buffer + p));
             mhd_assert (NULL == c->rq.version); /* Handled at whitespace start */
             c->rq.version = c->read_buffer + p;
@@ -4750,8 +4750,8 @@ send_redirect_fixed_rq_target (struct MHD_Connection *c)
   mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
   mhd_assert (0 != c->rq.hdrs.rq_line.num_ws_in_uri);
   mhd_assert (c->rq.hdrs.rq_line.num_ws_in_uri <= \
-              c->rq.hdrs.rq_line.rq_tgt_len);
-  fixed_uri_len = c->rq.hdrs.rq_line.rq_tgt_len
+              c->rq.req_target_len);
+  fixed_uri_len = c->rq.req_target_len
                   + 2 * c->rq.hdrs.rq_line.num_ws_in_uri;
   if ((fixed_uri_len + 200 > c->daemon->pool_size) ||
       (fixed_uri_len > MHD_MAX_FIXED_URI_LEN) ||
@@ -4798,7 +4798,7 @@ send_redirect_fixed_rq_target (struct MHD_Connection *c)
       b[o++] = chr;
       break;
     }
-  } while (i < c->rq.hdrs.rq_line.rq_tgt_len);
+  } while (i < c->rq.req_target_len);
   mhd_assert (fixed_uri_len == o);
   b[o] = 0; /* Zero-terminate the result */
 
@@ -4840,7 +4840,7 @@ process_request_target (struct MHD_Connection *c)
   mhd_assert ((NULL == c->rq.hdrs.rq_line.rq_tgt_qmark) || \
               (c->rq.hdrs.rq_line.rq_tgt <= c->rq.hdrs.rq_line.rq_tgt_qmark));
   mhd_assert ((NULL == c->rq.hdrs.rq_line.rq_tgt_qmark) || \
-              (c->rq.hdrs.rq_line.rq_tgt_len > \
+              (c->rq.req_target_len > \
                (size_t) (c->rq.hdrs.rq_line.rq_tgt_qmark \
                          - c->rq.hdrs.rq_line.rq_tgt)));
 
@@ -4858,7 +4858,7 @@ process_request_target (struct MHD_Connection *c)
   {
 #ifdef _DEBUG
     params_len =
-      c->rq.hdrs.rq_line.rq_tgt_len
+      c->rq.req_target_len
       - (size_t) (c->rq.hdrs.rq_line.rq_tgt_qmark - c->rq.hdrs.rq_line.rq_tgt);
 #endif /* _DEBUG */
     c->rq.hdrs.rq_line.rq_tgt_qmark[0] = 0; /* Replace '?' with zero termination */
@@ -4878,7 +4878,7 @@ process_request_target (struct MHD_Connection *c)
 #endif /* _DEBUG */
 
   mhd_assert (strlen (c->rq.hdrs.rq_line.rq_tgt) == \
-              c->rq.hdrs.rq_line.rq_tgt_len - params_len);
+              c->rq.req_target_len - params_len);
 
   /* Finally unescape URI itself */
   c->rq.url_len =

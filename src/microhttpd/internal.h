@@ -970,10 +970,6 @@ struct MHD_RequestLineProcessing
    */
   char *rq_tgt;
   /**
-   * The length of the @a rq_tgt, not including terminating zero.
-   */
-  size_t rq_tgt_len;
-  /**
    * The pointer to the first question mark in the @a rq_tgt.
    */
   char *rq_tgt_qmark;
@@ -1083,6 +1079,11 @@ struct MHD_Request
    * The length of the @a url in characters, not including the terminating zero.
    */
   size_t url_len;
+
+  /**
+   * The original length of the request target.
+   */
+  size_t req_target_len;
 
   /**
    * Linked list of parsed headers.
