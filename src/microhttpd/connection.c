@@ -4909,7 +4909,22 @@ get_request_line (struct MHD_Connection *c)
   const bool wsp_in_uri_keep = (-2 >= discp_lvl);
 
   if (! get_request_line_inner (c))
+  {
+    /* End of the request line has not been found yet */
+    mhd_assert ((! wsp_in_uri) || NULL == c->rq.version);
+    if ((NULL != c->rq.version) &&
+        (HTTP_VER_LEN <
+         (c->rq.hdrs.rq_line.proc_pos
+          - (size_t) (c->rq.version - c->read_buffer))))
+    {
+      c->rq.http_ver = MHD_HTTP_VER_INVALID;
+      transmit_error_response_static (c,
+                                      MHD_HTTP_BAD_REQUEST,
+                                      REQUEST_MALFORMED);
+      return true; /* Error in the request */
+    }
     return false;
+  }
   if (MHD_CONNECTION_REQ_LINE_RECEIVING < c->state)
     return true; /* Error in the request */
 
