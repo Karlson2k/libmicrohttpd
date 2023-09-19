@@ -2307,6 +2307,8 @@ union MHD_ConnectionInfo
 
   /**
    * Size of the client's HTTP header.
+   * It includes the request line, all request headers, the header section
+   * terminating empty line, with all CRLF (or LF) characters.
    */
   size_t header_size;
 

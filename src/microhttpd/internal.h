@@ -1097,6 +1097,8 @@ struct MHD_Request
   /**
    * Number of bytes we had in the HTTP header, set once we
    * pass #MHD_CONNECTION_HEADERS_RECEIVED.
+   * This includes the request line, all request headers, the header section
+   * terminating empty line, with all CRLF (or LF) characters.
    */
   size_t header_size;
 
