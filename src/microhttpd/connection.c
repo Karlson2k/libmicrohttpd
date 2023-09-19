@@ -4195,16 +4195,21 @@ get_request_line_inner (struct MHD_Connection *c)
   /* Treat bare LF as the end of the line.
      RFC 9112, section 2.2 */
   const bool bare_lf_as_crlf = (0 >= discp_lvl);
-  /* Treat tab as whitespace delimiter */
+  /* Treat tab as whitespace delimiter.
+     RFC 9112, section 3 */
   const bool tab_as_wsp = (0 >= discp_lvl);
-  /* Treat VT (vertical tab) and FF (form feed) as whitespace delimiters */
+  /* Treat VT (vertical tab) and FF (form feed) as whitespace delimiters.
+     RFC 9112, section 3 */
   const bool other_wsp_as_wsp = (-1 >= discp_lvl);
-  /* Treat continuous whitespace block as a single space */
+  /* Treat continuous whitespace block as a single space.
+     RFC 9112, section 3 */
   const bool wsp_blocks = (-1 >= discp_lvl);
-  /* Parse whitespace in URI, special parsing of the request line */
+  /* Parse whitespace in URI, special parsing of the request line.
+     RFC 9112, section 3.2 */
   const bool wsp_in_uri = (0 >= discp_lvl);
   /* Keep whitespace in URI, give app URI with whitespace instead of
-     automatic redirect to fixed URI */
+     automatic redirect to fixed URI.
+     Violates RFC 9112, section 3.2 */
   const bool wsp_in_uri_keep = (-2 >= discp_lvl);
   /* Keep bare CR character as is.
      Violates RFC 9112, section 2.2 */
