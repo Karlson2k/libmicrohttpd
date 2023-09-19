@@ -6962,7 +6962,8 @@ MHD_get_connection_info (struct MHD_Connection *connection,
     }
     return NULL;
   case MHD_CONNECTION_INFO_DAEMON:
-    connection->connection_info_dummy.daemon = connection->daemon;
+    connection->connection_info_dummy.daemon =
+      MHD_get_master (connection->daemon);
     return &connection->connection_info_dummy;
   case MHD_CONNECTION_INFO_CONNECTION_FD:
     connection->connection_info_dummy.connect_fd = connection->socket_fd;
