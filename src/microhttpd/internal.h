@@ -1041,6 +1041,26 @@ union MHD_HeadersProcessing
   struct MHD_HeaderProcessing hdr;
 };
 
+
+/**
+ * The union of text staring point and the size of the text
+ */
+union MHD_StartOrSize
+{
+  /**
+   * The starting point of the text.
+   * Valid when the text is being processed and the end of the text
+   * is not yet determined.
+   */
+  const char *start;
+  /**
+   * The size of the text.
+   * Valid when the text has been processed and the end of the text
+   * is known.
+   */
+  size_t size;
+};
+
 /**
  * Request-specific values.
  *
@@ -1102,6 +1122,16 @@ struct MHD_Request
    * terminating empty line, with all CRLF (or LF) characters.
    */
   size_t header_size;
+
+  /**
+   * The union of the size of all request field lines (headers) and
+   * the starting point of the first request field line (the first header).
+   * Until #MHD_CONNECTION_HEADERS_RECEIVED the @a start member is valid,
+   * staring with #MHD_CONNECTION_HEADERS_RECEIVED the @a size member is valid.
+   * The size includes CRLF (or LR) characters, but does not include
+   * the terminating empty line.
+   */
+  union MHD_StartOrSize field_lines;
 
   /**
    * How many more bytes of the body do we expect

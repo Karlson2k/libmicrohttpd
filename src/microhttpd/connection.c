@@ -4163,6 +4163,19 @@ reset_rq_header_processing_state (struct MHD_Connection *c)
 }
 
 
+/**
+ * Switch to request headers (field lines) processing state.
+ * @param c the connection to process
+ */
+_MHD_static_inline void
+switch_to_rq_headers_processing (struct MHD_Connection *c)
+{
+  c->rq.field_lines.start = c->read_buffer;
+  memset (&c->rq.hdrs.hdr, 0, sizeof(c->rq.hdrs.hdr));
+  c->state = MHD_CONNECTION_REQ_HEADERS_RECEIVING;
+}
+
+
 #ifndef MHD_MAX_EMPTY_LINES_SKIP
 /**
  * The maximum number of ignored empty line before the request line
@@ -5614,6 +5627,11 @@ get_req_headers (struct MHD_Connection *c, bool process_footers)
   if (! process_footers)
   {
     c->rq.header_size = (size_t) (c->read_buffer - c->rq.method);
+    mhd_assert (NULL != c->rq.field_lines.start);
+    c->rq.field_lines.size =
+      (size_t) ((c->read_buffer - c->rq.field_lines.start) - 1);
+    if ('\r' == *(c->read_buffer - 2))
+      c->rq.field_lines.size--;
     c->state = MHD_CONNECTION_HEADERS_RECEIVED;
 
     if (MHD_BUF_INC_SIZE > c->read_buffer_size)
@@ -6513,8 +6531,8 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
       mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING >= connection->state);
       break;
     case MHD_CONNECTION_REQ_LINE_RECEIVED:
-      reset_rq_header_processing_state (connection);
-      connection->state = MHD_CONNECTION_REQ_HEADERS_RECEIVING;
+      switch_to_rq_headers_processing (connection);
+      mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVED != connection->state);
       continue;
     case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
       if (get_req_headers (connection, false))
