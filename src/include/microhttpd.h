@@ -480,52 +480,44 @@ _MHD_DEPR_MACRO ( \
 
 /* Deprecated names and codes */
 /** @deprecated */
-#define MHD_HTTP_METHOD_NOT_ACCEPTABLE \
-  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, " \
-                      "use MHD_HTTP_NOT_ACCEPTABLE") \
-  406
+#define MHD_HTTP_METHOD_NOT_ACCEPTABLE _MHD_DEPR_IN_MACRO (\
+ "Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, use MHD_HTTP_NOT_ACCEPTABLE" \
+ ) 406
 
 /** @deprecated */
-#define MHD_HTTP_REQUEST_ENTITY_TOO_LARGE \
-  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_REQUEST_ENTITY_TOO_LARGE is deprecated, " \
-                      "use MHD_HTTP_CONTENT_TOO_LARGE") \
-  413
+#define MHD_HTTP_REQUEST_ENTITY_TOO_LARGE _MHD_DEPR_IN_MACRO (\
+ "Value MHD_HTTP_REQUEST_ENTITY_TOO_LARGE is deprecated, use MHD_HTTP_CONTENT_TOO_LARGE"\
+ ) 413
 
 /** @deprecated */
-#define MHD_HTTP_PAYLOAD_TOO_LARGE \
-  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_PAYLOAD_TOO_LARGE is deprecated, " \
-                      "use MHD_HTTP_CONTENT_TOO_LARGE") \
-  413
+#define MHD_HTTP_PAYLOAD_TOO_LARGE _MHD_DEPR_IN_MACRO (\
+  "Value MHD_HTTP_PAYLOAD_TOO_LARGE is deprecated use MHD_HTTP_CONTENT_TOO_LARGE" \
+  ) 413
 
 /** @deprecated */
-#define MHD_HTTP_REQUEST_URI_TOO_LONG \
-  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_REQUEST_URI_TOO_LONG is deprecated, " \
-                      "use MHD_HTTP_URI_TOO_LONG") \
-  414
+#define MHD_HTTP_REQUEST_URI_TOO_LONG _MHD_DEPR_IN_MACRO (\
+  "Value MHD_HTTP_REQUEST_URI_TOO_LONG is deprecated, use MHD_HTTP_URI_TOO_LONG" \
+  ) 414
 
 /** @deprecated */
-#define MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE \
-  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE is " \
-                      "deprecated, use MHD_HTTP_RANGE_NOT_SATISFIABLE") \
-  416
+#define MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE _MHD_DEPR_IN_MACRO (\
+ "Value MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE is deprecated, use MHD_HTTP_RANGE_NOT_SATISFIABLE" \
+ ) 416
 
 /** @deprecated */
-#define MHD_HTTP_UNPROCESSABLE_ENTITY \
-  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_UNPROCESSABLE_ENTITY is deprecated, " \
-                      "use MHD_HTTP_UNPROCESSABLE_CONTENT") \
-  422
+#define MHD_HTTP_UNPROCESSABLE_ENTITY _MHD_DEPR_IN_MACRO (\
+ "Value MHD_HTTP_UNPROCESSABLE_ENTITY is deprecated, use MHD_HTTP_UNPROCESSABLE_CONTENT" \
+ ) 422
 
 /** @deprecated */
-#define MHD_HTTP_UNORDERED_COLLECTION \
-  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_UNORDERED_COLLECTION is deprecated " \
-                      "as it was removed from RFC") \
-  425
+#define MHD_HTTP_UNORDERED_COLLECTION _MHD_DEPR_IN_MACRO (\
+  "Value MHD_HTTP_UNORDERED_COLLECTION is deprecated as it was removed from RFC" \
+  ) 425
 
 /** @deprecated */
-#define MHD_HTTP_NO_RESPONSE \
-  _MHD_DEPR_IN_MACRO ("Value MHD_HTTP_NO_RESPONSE is deprecated as " \
-                      "it is nginx internal code for logs only") \
-  444
+#define MHD_HTTP_NO_RESPONSE _MHD_DEPR_IN_MACRO (\
+ "Value MHD_HTTP_NO_RESPONSE is deprecated as it is nginx internal code for logs only"\
+ ) 444
 
 
 /** @} */ /* end of group httpcode */
