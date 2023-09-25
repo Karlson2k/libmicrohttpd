@@ -625,7 +625,8 @@ ws_send_frame (MHD_socket sock, const char *msg, size_t length)
   }
   response[idx_response] = '\0';
   output = 0;
-  pthread_mutex_lock (&MUTEX);
+  if (0 != pthread_mutex_lock (&MUTEX))
+    abort ();
   for (i = 0; i < MAX_CLIENTS; i++)
   {
     isock = CLIENT_SOCKS[i];
@@ -634,7 +635,8 @@ ws_send_frame (MHD_socket sock, const char *msg, size_t length)
       output += send_all (isock, response, idx_response);
     }
   }
-  pthread_mutex_unlock (&MUTEX);
+  if (0 != pthread_mutex_unlock (&MUTEX))
+    abort ();
   free (response);
   return (ssize_t) output;
 }
@@ -759,7 +761,8 @@ run_usock (void *cls)
       }
     }
   }
-  pthread_mutex_lock (&MUTEX);
+  if (0 != pthread_mutex_lock (&MUTEX))
+    abort ();
   for (i = 0; i < MAX_CLIENTS; i++)
   {
     if (CLIENT_SOCKS[i] == ws->sock)
@@ -768,7 +771,8 @@ run_usock (void *cls)
       break;
     }
   }
-  pthread_mutex_unlock (&MUTEX);
+  if (0 != pthread_mutex_unlock (&MUTEX))
+    abort ();
   free (ws);
   MHD_upgrade_action (urh, MHD_UPGRADE_ACTION_CLOSE);
   return NULL;
@@ -798,7 +802,8 @@ uh_cb (void *cls, struct MHD_Connection *con, void *req_cls,
   ws->sock = sock;
   ws->urh = urh;
   sock_overflow = MHD_YES;
-  pthread_mutex_lock (&MUTEX);
+  if (0 != pthread_mutex_lock (&MUTEX))
+    abort ();
   for (i = 0; i < MAX_CLIENTS; i++)
   {
     if (MHD_INVALID_SOCKET == CLIENT_SOCKS[i])
@@ -808,7 +813,8 @@ uh_cb (void *cls, struct MHD_Connection *con, void *req_cls,
       break;
     }
   }
-  pthread_mutex_unlock (&MUTEX);
+  if (0 != pthread_mutex_unlock (&MUTEX))
+    abort ();
   if (sock_overflow)
   {
     free (ws);
