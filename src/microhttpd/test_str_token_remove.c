@@ -63,7 +63,7 @@ expect_result_n (const char *str, size_t str_len,
                                           buf_out, &result_len);
     if (buf_len < expected_len)
     { /* The result should not fit into the buffer */
-      if (res || (0 < result_len))
+      if (res || (0 <= result_len))
       {
         fprintf (stderr,
                  "MHD_str_remove_token_caseless_() FAILED:\n"
@@ -78,6 +78,7 @@ expect_result_n (const char *str, size_t str_len,
     else
     { /* The result should fit into the buffer */
       if ( (expected_removed != res) ||
+           (result_len < 0) ||
            (expected_len != (size_t) result_len) ||
            ((0 != result_len) && (0 != memcmp (expected, buf_out,
                                                (size_t) result_len))) ||
