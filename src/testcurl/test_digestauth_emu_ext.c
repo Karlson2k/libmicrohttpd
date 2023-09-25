@@ -56,11 +56,11 @@
 #endif /* ! MHD_STATICSTR_LEN_ */
 
 #ifndef CURL_VERSION_BITS
-#define CURL_VERSION_BITS(x,y,z) ((x)<<16|(y)<<8|(z))
+#define CURL_VERSION_BITS(x,y,z) ((x) << 16 | (y) << 8 | (z))
 #endif /* ! CURL_VERSION_BITS */
 #ifndef CURL_AT_LEAST_VERSION
 #define CURL_AT_LEAST_VERSION(x,y,z) \
-  (LIBCURL_VERSION_NUM >= CURL_VERSION_BITS(x, y, z))
+  (LIBCURL_VERSION_NUM >= CURL_VERSION_BITS (x, y, z))
 #endif /* ! CURL_AT_LEAST_VERSION */
 
 #ifndef _MHD_INSTRMACRO
@@ -74,47 +74,48 @@
 
 #if defined(HAVE___FUNC__)
 #define externalErrorExit(ignore) \
-    _externalErrorExit_func(NULL, __func__, __LINE__)
+  _externalErrorExit_func (NULL, __func__, __LINE__)
 #define externalErrorExitDesc(errDesc) \
-    _externalErrorExit_func(errDesc, __func__, __LINE__)
+  _externalErrorExit_func (errDesc, __func__, __LINE__)
 #define libcurlErrorExit(ignore) \
-    _libcurlErrorExit_func(NULL, __func__, __LINE__)
+  _libcurlErrorExit_func (NULL, __func__, __LINE__)
 #define libcurlErrorExitDesc(errDesc) \
-    _libcurlErrorExit_func(errDesc, __func__, __LINE__)
+  _libcurlErrorExit_func (errDesc, __func__, __LINE__)
 #define mhdErrorExit(ignore) \
-    _mhdErrorExit_func(NULL, __func__, __LINE__)
+  _mhdErrorExit_func (NULL, __func__, __LINE__)
 #define mhdErrorExitDesc(errDesc) \
-    _mhdErrorExit_func(errDesc, __func__, __LINE__)
+  _mhdErrorExit_func (errDesc, __func__, __LINE__)
 #define checkCURLE_OK(libcurlcall) \
-    _checkCURLE_OK_func((libcurlcall), _MHD_STRMACRO(libcurlcall), \
-                        __func__, __LINE__)
+  _checkCURLE_OK_func ((libcurlcall), _MHD_STRMACRO (libcurlcall), \
+                       __func__, __LINE__)
 #elif defined(HAVE___FUNCTION__)
 #define externalErrorExit(ignore) \
-    _externalErrorExit_func(NULL, __FUNCTION__, __LINE__)
+  _externalErrorExit_func (NULL, __FUNCTION__, __LINE__)
 #define externalErrorExitDesc(errDesc) \
-    _externalErrorExit_func(errDesc, __FUNCTION__, __LINE__)
+  _externalErrorExit_func (errDesc, __FUNCTION__, __LINE__)
 #define libcurlErrorExit(ignore) \
-    _libcurlErrorExit_func(NULL, __FUNCTION__, __LINE__)
+  _libcurlErrorExit_func (NULL, __FUNCTION__, __LINE__)
 #define libcurlErrorExitDesc(errDesc) \
-    _libcurlErrorExit_func(errDesc, __FUNCTION__, __LINE__)
+  _libcurlErrorExit_func (errDesc, __FUNCTION__, __LINE__)
 #define mhdErrorExit(ignore) \
-    _mhdErrorExit_func(NULL, __FUNCTION__, __LINE__)
+  _mhdErrorExit_func (NULL, __FUNCTION__, __LINE__)
 #define mhdErrorExitDesc(errDesc) \
-    _mhdErrorExit_func(errDesc, __FUNCTION__, __LINE__)
+  _mhdErrorExit_func (errDesc, __FUNCTION__, __LINE__)
 #define checkCURLE_OK(libcurlcall) \
-    _checkCURLE_OK_func((libcurlcall), _MHD_STRMACRO(libcurlcall), \
-                        __FUNCTION__, __LINE__)
+  _checkCURLE_OK_func ((libcurlcall), _MHD_STRMACRO (libcurlcall), \
+                       __FUNCTION__, __LINE__)
 #else
-#define externalErrorExit(ignore) _externalErrorExit_func(NULL, NULL, __LINE__)
+#define externalErrorExit(ignore) _externalErrorExit_func (NULL, NULL, __LINE__)
 #define externalErrorExitDesc(errDesc) \
-  _externalErrorExit_func(errDesc, NULL, __LINE__)
-#define libcurlErrorExit(ignore) _libcurlErrorExit_func(NULL, NULL, __LINE__)
+  _externalErrorExit_func (errDesc, NULL, __LINE__)
+#define libcurlErrorExit(ignore) _libcurlErrorExit_func (NULL, NULL, __LINE__)
 #define libcurlErrorExitDesc(errDesc) \
-  _libcurlErrorExit_func(errDesc, NULL, __LINE__)
-#define mhdErrorExit(ignore) _mhdErrorExit_func(NULL, NULL, __LINE__)
-#define mhdErrorExitDesc(errDesc) _mhdErrorExit_func(errDesc, NULL, __LINE__)
+  _libcurlErrorExit_func (errDesc, NULL, __LINE__)
+#define mhdErrorExit(ignore) _mhdErrorExit_func (NULL, NULL, __LINE__)
+#define mhdErrorExitDesc(errDesc) _mhdErrorExit_func (errDesc, NULL, __LINE__)
 #define checkCURLE_OK(libcurlcall) \
-  _checkCURLE_OK_func((libcurlcall), _MHD_STRMACRO(libcurlcall), NULL, __LINE__)
+  _checkCURLE_OK_func ((libcurlcall), _MHD_STRMACRO (libcurlcall), NULL, \
+                       __LINE__)
 #endif
 
 
@@ -388,7 +389,6 @@ ahc_echo (void *cls,
       mhdErrorExitDesc ("'userhash_hex' is NOT zero");
     else if (NULL != creds->userhash_bin)
       mhdErrorExitDesc ("'userhash_bin' is NOT NULL");
-    MHD_free (creds);
 
     dinfo = MHD_digest_auth_get_request_info3 (connection);
     if (NULL == dinfo)
@@ -488,6 +488,7 @@ ahc_echo (void *cls,
                dinfo->realm);
       mhdErrorExitDesc ("Wrong 'realm'");
     }
+    MHD_free (creds);
     MHD_free (dinfo);
 
     check_res = MHD_digest_auth_check3 (connection, REALM, USERNAME,
