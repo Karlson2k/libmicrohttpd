@@ -177,8 +177,11 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
     if (*upload_data_size != 0)
     {
-      MHD_post_process (con_info->postprocessor, upload_data,
-                        *upload_data_size);
+      if (MHD_YES !=
+          MHD_post_process (con_info->postprocessor,
+                            upload_data,
+                            *upload_data_size))
+        return MHD_NO;
       *upload_data_size = 0;
 
       return MHD_YES;

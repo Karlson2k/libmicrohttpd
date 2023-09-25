@@ -53,9 +53,14 @@ answer_to_connection (void *cls,
 
   response = MHD_create_response_from_buffer_static (strlen (page),
                                                      (const void *) page);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_TYPE,
-                           "text/html");
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_TYPE,
+                               "text/html"))
+  {
+    fprintf (stderr,
+             "Failed to set content type header!\n");
+  }
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);

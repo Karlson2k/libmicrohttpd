@@ -205,12 +205,13 @@ get_session (struct MHD_Connection *connection)
  * @param mime mime type to use
  * @param session session information
  * @param connection connection to process
- * @param MHD_YES on success, MHD_NO on failure
+ * @param #MHD_YES on success, #MHD_NO on failure
  */
-typedef enum MHD_Result (*PageHandler)(const void *cls,
-                                       const char *mime,
-                                       struct Session *session,
-                                       struct MHD_Connection *connection);
+typedef enum MHD_Result
+(*PageHandler)(const void *cls,
+               const char *mime,
+               struct Session *session,
+               struct MHD_Connection *connection);
 
 
 /**
@@ -633,9 +634,11 @@ create_response (void *cls,
   if (0 == strcmp (method, MHD_HTTP_METHOD_POST))
   {
     /* evaluate POST data */
-    MHD_post_process (request->pp,
-                      upload_data,
-                      *upload_data_size);
+    if (MHD_YES !=
+        MHD_post_process (request->pp,
+                          upload_data,
+                          *upload_data_size))
+      return MHD_NO;
     if (0 != *upload_data_size)
     {
       *upload_data_size = 0;

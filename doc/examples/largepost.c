@@ -95,9 +95,14 @@ send_page (struct MHD_Connection *connection,
   response = MHD_create_response_from_buffer_static (strlen (page), page);
   if (! response)
     return MHD_NO;
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_TYPE,
-                           "text/html");
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_TYPE,
+                               "text/html"))
+  {
+    fprintf (stderr,
+             "Failed to set content type header!\n");
+  }
   ret = MHD_queue_response (connection,
                             status_code,
                             response);
