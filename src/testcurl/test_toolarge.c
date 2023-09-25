@@ -182,7 +182,7 @@ _mhdErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 
 
 /* Could be increased to facilitate debugging */
-#define TIMEOUTS_VAL 5
+#define TIMEOUTS_VAL 50000
 
 #define EXPECTED_URI_BASE_PATH  "/a"
 
@@ -788,9 +788,16 @@ doCurlQueryInThread (struct MHD_Daemon *d,
       mhdErrorExitDesc ("Request failed due to unexpected error");
     }
     p->queryError = 1;
-    if ((0 != resp_code) &&
-        ((499 < resp_code) || (400 > resp_code))) /* TODO: add all expected error codes */
+    switch (resp_code)
     {
+    case 0: /* No parsed response */
+    case 413: /* "Content Too Large" */
+    case 414: /* "URI Too Long" */
+    case 431: /* "Request Header Fields Too Large" */
+    case 501: /* "Not Implemented" */
+      /* Expected error codes */
+      break;
+    default:
       fprintf (stderr,
                "Got reply with unexpected status code: %ld\n",
                resp_code);
@@ -865,7 +872,14 @@ performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
                                     ahc_param->rp_data,
                                     ahc_param->rp_data_size))
       {
-        (void) qParam.responseCode; /* TODO: check for the right response code */
+        if ((0 != qParam.responseCode) && (501 != qParam.responseCode))
+        {
+          fprintf (stderr,
+                   "Got reply with status code %d, "
+                   "while code 501 (\"Not Implemented\") is expected.\n",
+                   qParam.responseCode);
+          mhdErrorExit ();
+        }
         if (TEST_OK_SIZE >= i)
         {
           fprintf (stderr,
@@ -922,7 +936,14 @@ performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
                                     ahc_param->rp_data,
                                     ahc_param->rp_data_size))
       {
-        (void) qParam.responseCode; /* TODO: check for the right response code */
+        if ((0 != qParam.responseCode) && (414 != qParam.responseCode))
+        {
+          fprintf (stderr,
+                   "Got reply with status code %d, "
+                   "while code 414 (\"URI Too Long\") is expected.\n",
+                   qParam.responseCode);
+          mhdErrorExit ();
+        }
         if (TEST_OK_SIZE >= i)
         {
           fprintf (stderr,
@@ -981,7 +1002,14 @@ performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
                                     ahc_param->rp_data,
                                     ahc_param->rp_data_size))
       {
-        (void) qParam.responseCode; /* TODO: check for the right response code */
+        if ((0 != qParam.responseCode) && (431 != qParam.responseCode))
+        {
+          fprintf (stderr,
+                   "Got reply with status code %d, while code 431 "
+                   "(\"Request Header Fields Too Large\") is expected.\n",
+                   qParam.responseCode);
+          mhdErrorExit ();
+        }
         if (0 != ahc_param->header_check_param.large_header_name_size)
         { /* If large header was processed, it must be valid */
           if (i != ahc_param->header_check_param.large_header_name_size)
@@ -1055,7 +1083,14 @@ performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
                                     ahc_param->rp_data,
                                     ahc_param->rp_data_size))
       {
-        (void) qParam.responseCode; /* TODO: check for the right response code */
+        if ((0 != qParam.responseCode) && (431 != qParam.responseCode))
+        {
+          fprintf (stderr,
+                   "Got reply with status code %d, while code 431 "
+                   "(\"Request Header Fields Too Large\") is expected.\n",
+                   qParam.responseCode);
+          mhdErrorExit ();
+        }
         if (0 != ahc_param->header_check_param.large_header_name_size)
         { /* If large header was processed, it must be valid */
           if (1 != ahc_param->header_check_param.large_header_name_size)
@@ -1129,7 +1164,14 @@ performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
                                     ahc_param->rp_data,
                                     ahc_param->rp_data_size))
       {
-        (void) qParam.responseCode; /* TODO: check for the right response code */
+        if ((0 != qParam.responseCode) && (431 != qParam.responseCode))
+        {
+          fprintf (stderr,
+                   "Got reply with status code %d, while code 431 "
+                   "(\"Request Header Fields Too Large\") is expected.\n",
+                   qParam.responseCode);
+          mhdErrorExit ();
+        }
         if (0 != ahc_param->header_check_param.num_n1_headers)
         { /* If headers were processed, they must be valid */
           if (num_hdrs != ahc_param->header_check_param.num_n1_headers)

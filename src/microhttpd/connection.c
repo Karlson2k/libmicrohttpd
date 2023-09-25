@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007-2020 Daniel Pittman and Christian Grothoff
-     Copyright (C) 2015-2022 Evgeny Grin (Karlson2k)
+     Copyright (C) 2015-2023 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -76,14 +76,105 @@
  * be processed.
  */
 #ifdef HAVE_MESSAGES
-#define REQUEST_TOO_BIG \
+#define ERR_MSG_REQUEST_TOO_BIG \
   "<html>" \
   "<head><title>Request too big</title></head>" \
   "<body>Request HTTP header is too big for the memory constraints " \
   "of this webserver.</body>" \
   "</html>"
 #else
-#define REQUEST_TOO_BIG ""
+#define ERR_MSG_REQUEST_TOO_BIG ""
+#endif
+
+/**
+ * Response text used when the request header is too big to be processed.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_MSG_REQUEST_HEADER_TOO_BIG \
+  "<html>" \
+  "<head><title>Request too big</title></head>" \
+  "<body><p>The total size of the request headers, which includes the " \
+  "request target and the request field lines, exceeds the memory " \
+  "constraints of this web server.</p>" \
+  "<p>The request could be re-tried with shorter field lines, a shorter "\
+  "request target or a shorter request method token.</p></body>" \
+  "</html>"
+#else
+#define ERR_MSG_REQUEST_HEADER_TOO_BIG ""
+#endif
+
+/**
+ * Response text used when the request cookie header is too big to be processed.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_MSG_REQUEST_HEADER_WITH_COOKIES_TOO_BIG \
+  "<html>" \
+  "<head><title>Request too big</title></head>" \
+  "<body><p>The total size of the request headers, which includes the " \
+  "request target and the request field lines, exceeds the memory " \
+  "constraints of this web server.</p> "\
+  "<p>The request could be re-tried with smaller " \
+  "<b>&quot;Cookie:&quot;</b> field value, shorter other field lines, " \
+  "a shorter request target or a shorter request method token.</p></body> " \
+  "</html>"
+#else
+#define ERR_MSG_REQUEST_HEADER_WITH_COOKIES_TOO_BIG ""
+#endif
+
+/**
+ * Response text used when the request chunk size line with chunk extension
+ * cannot fit the buffer.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_MSG_REQUEST_CHUNK_LINE_EXT_TOO_BIG \
+  "<html>" \
+  "<head><title>Request too big</title></head>" \
+  "<body><p>The total size of the request target, the request field lines " \
+  "and the chunk size line exceeds the memory constraints of this web " \
+  "server.</p>" \
+  "<p>The request could be re-tried without chunk extensions, with a smaller " \
+  "chunk size, shorter field lines, a shorter request target or a shorter " \
+  "request method token.</p></body>" \
+  "</html>"
+#else
+#define ERR_MSG_REQUEST_CHUNK_LINE_EXT_TOO_BIG ""
+#endif
+
+/**
+ * Response text used when the request chunk size line without chunk extension
+ * cannot fit the buffer.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_MSG_REQUEST_CHUNK_LINE_TOO_BIG \
+  "<html>" \
+  "<head><title>Request too big</title></head>" \
+  "<body><p>The total size of the request target, the request field lines " \
+  "and the chunk size line exceeds the memory constraints of this web " \
+  "server.</p>" \
+  "<p>The request could be re-tried with a smaller " \
+  "chunk size, shorter field lines, a shorter request target or a shorter " \
+  "request method token.</p></body>" \
+  "</html>"
+#else
+#define ERR_MSG_REQUEST_CHUNK_LINE_TOO_BIG ""
+#endif
+
+/**
+ * Response text used when the request header is too big to be processed.
+ */
+#ifdef HAVE_MESSAGES
+#define ERR_MSG_REQUEST_FOOTER_TOO_BIG \
+  "<html>" \
+  "<head><title>Request too big</title></head>" \
+  "<body><p>The total size of the request headers, which includes the " \
+  "request target, the request field lines and the chunked trailer " \
+  "section exceeds the memory constraints of this web server.</p>" \
+  "<p>The request could be re-tried with a shorter chunked trailer " \
+  "section, shorter field lines, a shorter request target or " \
+  "a shorter request method token.</p></body>" \
+  "</html>"
+#else
+#define ERR_MSG_REQUEST_FOOTER_TOO_BIG ""
 #endif
 
 /**
@@ -2860,9 +2951,575 @@ has_unprocessed_upload_body_data_in_buffer (struct MHD_Connection *c)
   {
     /* 0 == c->rq.current_chunk_size: Waiting the chunk size (chunk header).
        0 != c->rq.current_chunk_size: Waiting for chunk-closing CRLF. */
-    return false; /*  */
+    return false;
   }
   return 0 != c->read_buffer_offset; /* Chunk payload data in the read buffer */
+}
+
+
+/**
+ * The stage of input data processing.
+ * Used for out-of-memory (in the pool) handling.
+ */
+enum MHD_ProcRecvDataStage
+{
+  MHD_PROC_RECV_INIT,        /**< No data HTTP request data have been processed yet */
+  MHD_PROC_RECV_METHOD,      /**< Processing/receiving the request HTTP method */
+  MHD_PROC_RECV_URI,         /**< Processing/receiving the request URI */
+  MHD_PROC_RECV_HTTPVER,     /**< Processing/receiving the request HTTP version string */
+  MHD_PROC_RECV_HEADERS,     /**< Processing/receiving the request HTTP headers */
+  MHD_PROC_RECV_COOKIE,      /**< Processing the received request cookie header */
+  MHD_PROC_RECV_BODY_NORMAL, /**< Processing/receiving the request non-chunked body */
+  MHD_PROC_RECV_BODY_CHUNKED,/**< Processing/receiving the request chunked body */
+  MHD_PROC_RECV_FOOTERS      /**< Processing/receiving the request footers */
+};
+
+
+#ifndef MHD_MAX_REASONABLE_HEADERS_SIZE_
+/**
+ * A reasonable headers size (excluding request line) that should be sufficient
+ * for most requests.
+ * If incoming data buffer free space is not enough to process the complete
+ * header (the request line and all headers) and the headers size is larger than
+ * this size then the status code 431 "Request Header Fields Too Large" is
+ * returned to the client.
+ * The larger headers are processed by MHD if enough space is available.
+ */
+#  define MHD_MAX_REASONABLE_HEADERS_SIZE_ (6 * 1024)
+#endif /* ! MHD_MAX_REASONABLE_HEADERS_SIZE_ */
+
+#ifndef MHD_MAX_REASONABLE_REQ_TARGET_SIZE_
+/**
+ * A reasonable request target (the request URI) size that should be sufficient
+ * for most requests.
+ * If incoming data buffer free space is not enough to process the complete
+ * header (the request line and all headers) and the request target size is
+ * larger than this size then the status code 414 "URI Too Long" is
+ * returned to the client.
+ * The larger request targets are processed by MHD if enough space is available.
+ * The value chosen according to RFC 9112 Section 3, paragraph 5
+ */
+#  define MHD_MAX_REASONABLE_REQ_TARGET_SIZE_ 8000
+#endif /* ! MHD_MAX_REASONABLE_REQ_TARGET_SIZE_ */
+
+#ifndef MHD_MIN_REASONABLE_HEADERS_SIZE_
+/**
+ * A reasonable headers size (excluding request line) that should be sufficient
+ * for basic simple requests.
+ * When no space left in the receiving buffer try to avoid replying with
+ * the status code 431 "Request Header Fields Too Large" if headers size
+ * is smaller then this value.
+ */
+#  define MHD_MIN_REASONABLE_HEADERS_SIZE_ 26
+#endif /* ! MHD_MIN_REASONABLE_HEADERS_SIZE_ */
+
+#ifndef MHD_MIN_REASONABLE_REQ_TARGET_SIZE_
+/**
+ * A reasonable request target (the request URI) size that should be sufficient
+ * for basic simple requests.
+ * When no space left in the receiving buffer try to avoid replying with
+ * the status code 414 "URI Too Long" if the request target size is smaller then
+ * this value.
+ */
+#  define MHD_MIN_REASONABLE_REQ_TARGET_SIZE_ 40
+#endif /* ! MHD_MIN_REASONABLE_REQ_TARGET_SIZE_ */
+
+#ifndef MHD_MIN_REASONABLE_REQ_METHOD_SIZE_
+/**
+ * A reasonable request method string size that should be sufficient
+ * for basic simple requests.
+ * When no space left in the receiving buffer try to avoid replying with
+ * the status code 501 "Not Implemented" if the request method size is
+ * smaller then this value.
+ */
+#  define MHD_MIN_REASONABLE_REQ_METHOD_SIZE_ 16
+#endif /* ! MHD_MIN_REASONABLE_REQ_METHOD_SIZE_ */
+
+#ifndef MHD_MIN_REASONABLE_REQ_CHUNK_LINE_LENGTH_
+/**
+ * A reasonable minimal chunk line length.
+ * When no space left in the receiving buffer reply with 413 "Content Too Large"
+ * if the chunk line length is larger than this value.
+ */
+#  define MHD_MIN_REASONABLE_REQ_CHUNK_LINE_LENGTH_ 4
+#endif /* ! MHD_MIN_REASONABLE_REQ_CHUNK_LINE_LENGTH_ */
+
+
+/**
+ * Select the HTTP error status code for "out of receive buffer space" error.
+ * @param c the connection to process
+ * @param stage the current stage of request receiving
+ * @param add_element the optional pointer to the element failed to be processed
+ *                    or added, the meaning of the element depends on
+ *                    the @a stage. Could be not zero-terminated and can
+ *                    contain binary zeros. Can be NULL.
+ * @param add_element_size the size of the @a add_element
+ * @return the HTTP error code to use in the error reply
+ */
+static unsigned int
+get_no_space_err_status_code (struct MHD_Connection *c,
+                              enum MHD_ProcRecvDataStage stage,
+                              const char *add_element,
+                              size_t add_element_size)
+{
+  size_t method_size;
+  size_t uri_size;
+  size_t opt_headers_size;
+  size_t host_field_line_size;
+
+  mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVED < c->state);
+  mhd_assert (MHD_PROC_RECV_HEADERS <= stage);
+  mhd_assert ((0 == add_element_size) || (NULL != add_element));
+
+  if (MHD_CONNECTION_HEADERS_RECEIVED > c->state)
+  {
+    mhd_assert (NULL != c->rq.field_lines.start);
+    opt_headers_size =
+      (size_t) ((c->read_buffer + c->read_buffer_offset)
+                - c->rq.field_lines.start);
+  }
+  else
+    opt_headers_size = c->rq.field_lines.size;
+
+  /* The read buffer is fully used by the request line, the field lines
+     (headers) and internal information.
+     The return status code works as a suggestion for the client to reduce
+     one of the request elements. */
+
+  if ((MHD_PROC_RECV_BODY_CHUNKED == stage) &&
+      (MHD_MIN_REASONABLE_REQ_CHUNK_LINE_LENGTH_ < add_element_size))
+  {
+    /* Request could be re-tried easily with smaller chunk sizes */
+    return MHD_HTTP_CONTENT_TOO_LARGE;
+  }
+
+  host_field_line_size = 0;
+  /* The "Host:" field line is mandatory.
+     The total size of the field lines (headers) cannot be smaller than
+     the size of the "Host:" field line. */
+  if ((MHD_PROC_RECV_HEADERS == stage)
+      && (0 != add_element_size))
+  {
+    static const size_t header_host_key_len =
+      MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_HOST);
+    const bool is_host_header =
+      (header_host_key_len + 1 <= add_element_size)
+      && ( (0 == add_element[header_host_key_len])
+           || (':' == add_element[header_host_key_len]) )
+      && MHD_str_equal_caseless_bin_n_ (MHD_HTTP_HEADER_HOST,
+                                        add_element,
+                                        header_host_key_len);
+    if (is_host_header)
+    {
+      const bool is_parsed = ! (
+        (MHD_CONNECTION_HEADERS_RECEIVED > c->state) &&
+        (add_element_size == c->read_buffer_offset) &&
+        (c->read_buffer == add_element) );
+      size_t actual_element_size;
+
+      mhd_assert (! is_parsed || (0 == add_element[header_host_key_len]));
+      /* The actual size should be larger due to CRLF or LF chars,
+         however the exact termination sequence is not known here and
+         as perfect precision is not required, to simplify the code
+         assume the minimal length. */
+      if (is_parsed)
+        actual_element_size = add_element_size + 1;  /* "1" for LF */
+      else
+        actual_element_size = add_element_size;
+
+      host_field_line_size = actual_element_size;
+      mhd_assert (opt_headers_size >= actual_element_size);
+      opt_headers_size -= actual_element_size;
+    }
+  }
+  if (0 == host_field_line_size)
+  {
+    static const size_t host_field_name_len =
+      MHD_STATICSTR_LEN_ (MHD_HTTP_HEADER_HOST);
+    size_t host_field_name_value_len;
+    if (MHD_NO != MHD_lookup_connection_value_n (c,
+                                                 MHD_HEADER_KIND,
+                                                 MHD_HTTP_HEADER_HOST,
+                                                 host_field_name_len,
+                                                 NULL,
+                                                 &host_field_name_value_len))
+    {
+      /* Calculate the minimal size of the field line: no space between
+         colon and the field value, line terminated by LR */
+      host_field_line_size =
+        host_field_name_len + host_field_name_value_len + 2; /* "2" for ':' and LF */
+
+      /* The "Host:" field could be added by application */
+      if (opt_headers_size >= host_field_line_size)
+      {
+        opt_headers_size -= host_field_line_size;
+        /* Take into account typical space after colon and CR at the end of the line */
+        if (opt_headers_size >= 2)
+          opt_headers_size -= 2;
+      }
+      else
+        host_field_line_size = 0; /* No "Host:" field line set by the client */
+    }
+  }
+
+  uri_size = c->rq.req_target_len;
+  if (MHD_HTTP_MTHD_OTHER != c->rq.http_mthd)
+    method_size = 0; /* Do not recommend shorter request method */
+  else
+  {
+    mhd_assert (NULL != c->rq.method);
+    method_size = strlen (c->rq.method);
+  }
+
+  if ((size_t) MHD_MAX_REASONABLE_HEADERS_SIZE_ < opt_headers_size)
+  {
+    /* Typically the easiest way to reduce request header size is
+       a removal of some optional headers. */
+    if (opt_headers_size > (uri_size / 8))
+    {
+      if ((opt_headers_size / 2) > method_size)
+        return MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE;
+      else
+        return MHD_HTTP_NOT_IMPLEMENTED; /* The length of the HTTP request method is unreasonably large */
+    }
+    else
+    { /* Request target is MUCH larger than headers */
+      if ((uri_size / 16) > method_size)
+        return MHD_HTTP_URI_TOO_LONG;
+      else
+        return MHD_HTTP_NOT_IMPLEMENTED; /* The length of the HTTP request method is unreasonably large */
+    }
+  }
+  if ((size_t) MHD_MAX_REASONABLE_REQ_TARGET_SIZE_ < uri_size)
+  {
+    /* If request target size if larger than maximum reasonable size
+       recommend client to reduce the request target size (length). */
+    if ((uri_size / 16) > method_size)
+      return MHD_HTTP_URI_TOO_LONG;     /* Request target is MUCH larger than headers */
+    else
+      return MHD_HTTP_NOT_IMPLEMENTED;  /* The length of the HTTP request method is unreasonably large */
+  }
+
+  /* The read buffer is too small to handle reasonably large requests */
+
+  if ((size_t) MHD_MIN_REASONABLE_HEADERS_SIZE_ < opt_headers_size)
+  {
+    /* Recommend application to retry with minimal headers */
+    if ((opt_headers_size * 4) > uri_size)
+    {
+      if (opt_headers_size > method_size)
+        return MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE;
+      else
+        return MHD_HTTP_NOT_IMPLEMENTED; /* The length of the HTTP request method is unreasonably large */
+    }
+    else
+    { /* Request target is significantly larger than headers */
+      if (uri_size > method_size * 4)
+        return MHD_HTTP_URI_TOO_LONG;
+      else
+        return MHD_HTTP_NOT_IMPLEMENTED; /* The length of the HTTP request method is unreasonably large */
+    }
+  }
+  if ((size_t) MHD_MIN_REASONABLE_REQ_TARGET_SIZE_ < uri_size)
+  {
+    /* Recommend application to retry with a shorter request target */
+    if (uri_size > method_size * 4)
+      return MHD_HTTP_URI_TOO_LONG;
+    else
+      return MHD_HTTP_NOT_IMPLEMENTED; /* The length of the HTTP request method is unreasonably large */
+  }
+
+  if ((size_t) MHD_MIN_REASONABLE_REQ_METHOD_SIZE_ < method_size)
+  {
+    /* The request target (URI) and headers are (reasonably) very small.
+       Some non-standard long request method is used. */
+    /* The last resort response as it means "the method is not supported
+       by the server for any URI". */
+    return MHD_HTTP_NOT_IMPLEMENTED;
+  }
+
+  /* The almost impossible situation: all elements are small, but cannot
+     fit the buffer. The application set the buffer size to
+     critically low value? */
+
+  if ((1 < opt_headers_size) || (1 < uri_size))
+  {
+    if (opt_headers_size >= uri_size)
+      return MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE;
+    else
+      return MHD_HTTP_URI_TOO_LONG;
+  }
+
+  /* Nothing to reduce in the request.
+     Reply with some status. */
+  if (0 != host_field_line_size)
+    return MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE;
+
+  return MHD_HTTP_URI_TOO_LONG;
+}
+
+
+/**
+ * Send error reply when receive buffer space exhausted while receiving or
+ * storing the request headers
+ * @param c the connection to handle
+ * @param add_header the optional pointer to the current header string being
+ *                   processed or the header failed to be added.
+ *                   Could be not zero-terminated and can contain binary zeros.
+ *                   Can be NULL.
+ * @param add_header_size the size of the @a add_header
+ */
+static void
+handle_req_headers_no_space (struct MHD_Connection *c,
+                             const char *add_header,
+                             size_t add_header_size)
+{
+  unsigned int err_code;
+
+  err_code = get_no_space_err_status_code (c,
+                                           MHD_PROC_RECV_HEADERS,
+                                           add_header,
+                                           add_header_size);
+  transmit_error_response_static (c,
+                                  err_code,
+                                  ERR_MSG_REQUEST_HEADER_TOO_BIG);
+}
+
+
+#ifdef COOKIE_SUPPORT
+/**
+ * Send error reply when the pool has no space to store 'cookie' header
+ * parsing results.
+ * @param c the connection to handle
+ */
+static void
+handle_req_cookie_no_space (struct MHD_Connection *c)
+{
+  unsigned int err_code;
+
+  err_code = get_no_space_err_status_code (c,
+                                           MHD_PROC_RECV_COOKIE,
+                                           NULL,
+                                           0);
+  transmit_error_response_static (c,
+                                  err_code,
+                                  ERR_MSG_REQUEST_HEADER_WITH_COOKIES_TOO_BIG);
+}
+
+
+#endif /* COOKIE_SUPPORT */
+
+
+/**
+ * Send error reply when receive buffer space exhausted while receiving
+ * the chunk size line.
+ * @param c the connection to handle
+ * @param add_header the optional pointer to the partially received
+ *                   the current chunk size line.
+ *                   Could be not zero-terminated and can contain binary zeros.
+ *                   Can be NULL.
+ * @param add_header_size the size of the @a add_header
+ */
+static void
+handle_req_chunk_size_line_no_space (struct MHD_Connection *c,
+                                     const char *chunk_size_line,
+                                     size_t chunk_size_line_size)
+{
+  unsigned int err_code;
+
+  if (NULL != chunk_size_line)
+  {
+    const char *semicol;
+    /* Check for chunk extension */
+    semicol = memchr (chunk_size_line, ';', chunk_size_line_size);
+    if (NULL != semicol)
+    { /* Chunk extension present. It could be removed without any loss of the
+         details of the request. */
+      transmit_error_response_static (c,
+                                      MHD_HTTP_CONTENT_TOO_LARGE,
+                                      ERR_MSG_REQUEST_CHUNK_LINE_EXT_TOO_BIG);
+    }
+  }
+  err_code = get_no_space_err_status_code (c,
+                                           MHD_PROC_RECV_BODY_CHUNKED,
+                                           chunk_size_line,
+                                           chunk_size_line_size);
+  transmit_error_response_static (c,
+                                  err_code,
+                                  ERR_MSG_REQUEST_CHUNK_LINE_TOO_BIG);
+}
+
+
+/**
+ * Send error reply when receive buffer space exhausted while receiving or
+ * storing the request footers (for chunked requests).
+ * @param c the connection to handle
+ * @param add_footer the optional pointer to the current footer string being
+ *                   processed or the footer failed to be added.
+ *                   Could be not zero-terminated and can contain binary zeros.
+ *                   Can be NULL.
+ * @param add_footer_size the size of the @a add_footer
+ */
+static void
+handle_req_footers_no_space (struct MHD_Connection *c,
+                             const char *add_footer,
+                             size_t add_footer_size)
+{
+  (void) add_footer; (void) add_footer_size; /* Unused */
+  mhd_assert (c->rq.have_chunked_upload);
+
+  /* Footers should be optional */
+  transmit_error_response_static (c,
+                                  MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
+                                  ERR_MSG_REQUEST_FOOTER_TOO_BIG);
+}
+
+
+/**
+ * Handle situation with read buffer exhaustion.
+ * Must be called when no more space left in the read buffer, no more
+ * space left in the memory pool to grow the read buffer, but more data
+ * need to be received from the client.
+ * Could be called when the result of received data processing cannot be
+ * stored in the memory pool (like some header).
+ * @param c the connection to process
+ * @param stage the receive stage where the exhaustion happens.
+ */
+static void
+handle_recv_no_space (struct MHD_Connection *c,
+                      enum MHD_ProcRecvDataStage stage)
+{
+  mhd_assert (MHD_PROC_RECV_INIT <= stage);
+  mhd_assert (MHD_PROC_RECV_FOOTERS >= stage);
+  mhd_assert (MHD_CONNECTION_FULL_REQ_RECEIVED > c->state);
+  mhd_assert ((MHD_PROC_RECV_INIT != stage) || \
+              (MHD_CONNECTION_INIT == c->state));
+  mhd_assert ((MHD_PROC_RECV_METHOD != stage) || \
+              (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state));
+  mhd_assert ((MHD_PROC_RECV_URI != stage) || \
+              (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state));
+  mhd_assert ((MHD_PROC_RECV_HTTPVER != stage) || \
+              (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state));
+  mhd_assert ((MHD_PROC_RECV_HEADERS != stage) || \
+              (MHD_CONNECTION_REQ_HEADERS_RECEIVING == c->state));
+  mhd_assert (MHD_PROC_RECV_COOKIE != stage); /* handle_req_cookie_no_space() must be called directly */
+  mhd_assert ((MHD_PROC_RECV_BODY_NORMAL != stage) || \
+              (MHD_CONNECTION_BODY_RECEIVING == c->state));
+  mhd_assert ((MHD_PROC_RECV_BODY_CHUNKED != stage) || \
+              (MHD_CONNECTION_BODY_RECEIVING == c->state));
+  mhd_assert ((MHD_PROC_RECV_FOOTERS != stage) || \
+              (MHD_CONNECTION_FOOTERS_RECEIVING == c->state));
+  mhd_assert ((MHD_PROC_RECV_BODY_NORMAL != stage) || \
+              (! c->rq.have_chunked_upload));
+  mhd_assert ((MHD_PROC_RECV_BODY_CHUNKED != stage) || \
+              (c->rq.have_chunked_upload));
+  switch (stage)
+  {
+  case MHD_PROC_RECV_INIT:
+  case MHD_PROC_RECV_METHOD:
+    /* Some data has been received, but it is not clear yet whether
+     * the received data is an valid HTTP request */
+    connection_close_error (c,
+                            _ ("No space left in the read buffer when " \
+                               "receiving the initial part of " \
+                               "the request line."));
+    return;
+  case MHD_PROC_RECV_URI:
+  case MHD_PROC_RECV_HTTPVER:
+    /* Some data has been received, but the request line is incomplete */
+    mhd_assert (MHD_HTTP_MTHD_NO_METHOD != c->rq.http_mthd);
+    mhd_assert (MHD_HTTP_VER_UNKNOWN == c->rq.http_ver);
+    /* A quick simple check whether the incomplete line looks
+     * like an HTTP request */
+    if ((MHD_HTTP_MTHD_GET <= c->rq.http_mthd) &&
+        (MHD_HTTP_MTHD_DELETE >= c->rq.http_mthd))
+    {
+      transmit_error_response_static (c,
+                                      MHD_HTTP_URI_TOO_LONG,
+                                      ERR_MSG_REQUEST_TOO_BIG);
+      return;
+    }
+    connection_close_error (c,
+                            _ ("No space left in the read buffer when " \
+                               "receiving the URI in " \
+                               "the request line. " \
+                               "The request uses non-standard HTTP request " \
+                               "method token."));
+    return;
+  case MHD_PROC_RECV_HEADERS:
+    handle_req_headers_no_space (c, c->read_buffer, c->read_buffer_offset);
+    return;
+  case MHD_PROC_RECV_BODY_NORMAL:
+  case MHD_PROC_RECV_BODY_CHUNKED:
+    mhd_assert ((MHD_PROC_RECV_BODY_CHUNKED != stage) || \
+                ! c->rq.some_payload_processed);
+    if (has_unprocessed_upload_body_data_in_buffer (c))
+    {
+      /* The connection must not be in MHD_EVENT_LOOP_INFO_READ state
+         when external polling is used and some data left unprocessed. */
+      mhd_assert (0 != (c->daemon->options & MHD_USE_INTERNAL_POLLING_THREAD));
+      /* failed to grow the read buffer, and the
+         client which is supposed to handle the
+         received data in a *blocking* fashion
+         (in this mode) did not handle the data as
+         it was supposed to!
+         => we would either have to do busy-waiting
+         (on the client, which would likely fail),
+         or if we do nothing, we would just timeout
+         on the connection (if a timeout is even
+         set!).
+         Solution: we kill the connection with an error */
+      transmit_error_response_static (c,
+                                      MHD_HTTP_INTERNAL_SERVER_ERROR,
+                                      ERROR_MSG_DATA_NOT_HANDLED_BY_APP);
+    }
+    else
+    {
+      if (MHD_PROC_RECV_BODY_NORMAL == stage)
+      {
+        /* A header probably has been added to a suspended connection and
+           it took precisely all the space in the buffer.
+           Very low probability. */
+        mhd_assert (! c->rq.have_chunked_upload);
+        handle_req_headers_no_space (c, NULL, 0);
+      }
+      else
+      {
+        mhd_assert (c->rq.have_chunked_upload);
+        if (c->rq.current_chunk_offset != c->rq.current_chunk_size)
+        { /* Receiving content of the chunk */
+          /* A header probably has been added to a suspended connection and
+             it took precisely all the space in the buffer.
+             Very low probability. */
+          handle_req_headers_no_space (c, NULL, 0);
+        }
+        else
+        {
+          if (0 != c->rq.current_chunk_size)
+          { /* Waiting for chunk-closing CRLF */
+            /* Not really possible as some payload should be
+               processed and the space used by payload should be available. */
+            handle_req_headers_no_space (c, NULL, 0);
+          }
+          else
+          { /* Reading the line with the chunk size */
+            handle_req_chunk_size_line_no_space (c,
+                                                 c->read_buffer,
+                                                 c->read_buffer_offset);
+          }
+        }
+      }
+    }
+    return;
+  case MHD_PROC_RECV_FOOTERS:
+    handle_req_footers_no_space (c, c->read_buffer, c->read_buffer_offset);
+    return;
+  /* The next cases should not be possible */
+  case MHD_PROC_RECV_COOKIE:
+  default:
+    break;
+  }
+  mhd_assert (0);
 }
 
 
@@ -2944,70 +3601,75 @@ check_and_grow_read_buffer_space (struct MHD_Connection *c)
 
   /* Failed to increase the read buffer size, but need to read the data
      from the network.
-     No more space in the buffer, no more space to increase the buffer. */
+     No more space left in the buffer, no more space to increase the buffer. */
 
   /* 'PROCESS_READ' event state flag must be set only if the last application
      callback has processed some data. If any data is processed then some
      space in the read buffer must be available. */
   mhd_assert (0 == (MHD_EVENT_LOOP_INFO_PROCESS & c->event_loop_info));
 
-  if (MHD_CONNECTION_BODY_RECEIVING != c->state)
-  {
-    /* Receiving request line, request headers or request footers */
-    /* TODO: Improve detection of the conditions */
-    if (c->rq.url != NULL)
-      transmit_error_response_static (c,
-                                      MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                      REQUEST_TOO_BIG);
-    else
-      transmit_error_response_static (c,
-                                      MHD_HTTP_URI_TOO_LONG,
-                                      REQUEST_TOO_BIG);
-    return false;
-  }
-
-  /* Receiving the request body and no space left in the buffer */
-
-  if (! has_unprocessed_upload_body_data_in_buffer (c))
-  {
-    /* Full header is received and no space left for reading
-       the request body.
-       For chunked upload encoding: chunk-extension is too long or
-       chunk size is encoded with excessive number of leading zeros. */
-    /* TODO: report proper cause for the error */
-    transmit_error_response_static (c,
-                                    MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                    REQUEST_TOO_BIG);
-    return false;
-  }
-
-  /* No space left in the buffer but some upload body data can be processed
-     and some space could be freed. */
-  mhd_assert (! c->rq.some_payload_processed);
-  if (0 == (c->daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
+  if ((0 == (c->daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
+      && (MHD_CONNECTION_BODY_RECEIVING == c->state)
+      && has_unprocessed_upload_body_data_in_buffer (c))
   {
     /* The application is handling processing cycles.
-       The data may be processed later. */
+       The data could be processed later. */
     c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
     return true;
   }
+  else
+  {
+    enum MHD_ProcRecvDataStage stage;
 
-  /* Using internal thread for sockets polling */
+    switch (c->state)
+    {
+    case MHD_CONNECTION_INIT:
+      stage = MHD_PROC_RECV_INIT;
+      break;
+    case MHD_CONNECTION_REQ_LINE_RECEIVING:
+      if (MHD_HTTP_MTHD_NO_METHOD == c->rq.http_mthd)
+        stage = MHD_PROC_RECV_METHOD;
+      else if (0 == c->rq.req_target_len)
+        stage = MHD_PROC_RECV_URI;
+      else
+        stage = MHD_PROC_RECV_HTTPVER;
+      break;
+    case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
+      stage = MHD_PROC_RECV_HEADERS;
+      break;
+    case MHD_CONNECTION_BODY_RECEIVING:
+      stage = c->rq.have_chunked_upload ?
+              MHD_PROC_RECV_BODY_CHUNKED : MHD_PROC_RECV_BODY_NORMAL;
+      break;
+    case MHD_CONNECTION_FOOTERS_RECEIVING:
+      stage = MHD_PROC_RECV_FOOTERS;
+      break;
+    case MHD_CONNECTION_REQ_LINE_RECEIVED:
+    case MHD_CONNECTION_HEADERS_RECEIVED:
+    case MHD_CONNECTION_HEADERS_PROCESSED:
+    case MHD_CONNECTION_CONTINUE_SENDING:
+    case MHD_CONNECTION_BODY_RECEIVED:
+    case MHD_CONNECTION_FOOTERS_RECEIVED:
+    case MHD_CONNECTION_FULL_REQ_RECEIVED:
+    case MHD_CONNECTION_START_REPLY:
+    case MHD_CONNECTION_HEADERS_SENDING:
+    case MHD_CONNECTION_HEADERS_SENT:
+    case MHD_CONNECTION_NORMAL_BODY_UNREADY:
+    case MHD_CONNECTION_NORMAL_BODY_READY:
+    case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
+    case MHD_CONNECTION_CHUNKED_BODY_READY:
+    case MHD_CONNECTION_CHUNKED_BODY_SENT:
+    case MHD_CONNECTION_FOOTERS_SENDING:
+    case MHD_CONNECTION_FULL_REPLY_SENT:
+    case MHD_CONNECTION_CLOSED:
+    case MHD_CONNECTION_UPGRADE:
+    default:
+      stage = MHD_PROC_RECV_BODY_NORMAL;
+      mhd_assert (0);
+    }
 
-  /* failed to grow the read buffer, and the
-     client which is supposed to handle the
-     received data in a *blocking* fashion
-     (in this mode) did not handle the data as
-     it was supposed to!
-     => we would either have to do busy-waiting
-     (on the client, which would likely fail),
-     or if we do nothing, we would just timeout
-     on the connection (if a timeout is even
-     set!).
-     Solution: we kill the connection with an error */
-  transmit_error_response_static (c,
-                                  MHD_HTTP_INTERNAL_SERVER_ERROR,
-                                  ERROR_MSG_DATA_NOT_HANDLED_BY_APP);
+    handle_recv_no_space (c, stage);
+  }
   return false;
 }
 
@@ -3214,7 +3876,7 @@ connection_add_header (void *cls,
 #endif
     transmit_error_response_static (connection,
                                     MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                    REQUEST_TOO_BIG);
+                                    ERR_MSG_REQUEST_TOO_BIG);
     return MHD_NO;
   }
   return MHD_YES;
@@ -4021,9 +4683,7 @@ parse_connection_headers (struct MHD_Connection *connection)
 #ifdef COOKIE_SUPPORT
   if (MHD_PARSE_COOKIE_NO_MEMORY == parse_cookie_header (connection))
   {
-    transmit_error_response_static (connection,
-                                    MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                    REQUEST_TOO_BIG);
+    handle_req_cookie_no_space (connection);
     return;
   }
 #endif /* COOKIE_SUPPORT */
@@ -5518,11 +6178,10 @@ get_req_headers (struct MHD_Connection *c, bool process_footers)
                                                hdr_name.str, hdr_name.len,
                                                hdr_value.str, hdr_value.len))
       {
-        /**
-         * If 'true' then "headers too large" is used for the error response,
-         * if 'false' then "URI too large is used for the error response.
-         */
-        bool headers_large_err;
+        size_t add_element_size;
+
+        mhd_assert (hdr_name.str < hdr_value.str);
+
 #ifdef HAVE_MESSAGES
         MHD_DLOG (c->daemon,
                   _ ("Failed to allocate memory in the connection memory " \
@@ -5530,35 +6189,14 @@ get_req_headers (struct MHD_Connection *c, bool process_footers)
                   (! process_footers) ? _ ("header") : _ ("footer"));
 #endif /* HAVE_MESSAGES */
 
+        add_element_size = hdr_value.len
+                           + (size_t) (hdr_value.str - hdr_name.str);
+
         if (! process_footers)
-        {
-          size_t http_headers_size;
-          size_t url_size;
-          const struct MHD_HTTP_Req_Header *hdr;
-
-          http_headers_size = hdr_name.len + hdr_value.len;
-          url_size = c->rq.url_len;
-          for (hdr = c->rq.headers_received; NULL != hdr; hdr = hdr->next)
-          {
-            if (MHD_HEADER_KIND == hdr->kind)
-              http_headers_size += hdr->header_size + hdr->value_size + 2;
-            else if (MHD_GET_ARGUMENT_KIND == hdr->kind)
-              url_size += hdr->header_size + hdr->value_size + 2;
-          }
-          /* The comparison is not precise as linefeeds (for headers) and
-             unescaping (for GET parameters) are not taken into account,
-             but precision is not required here.  */
-          headers_large_err =
-            (http_headers_size >= url_size);
-        }
+          handle_req_headers_no_space (c, hdr_name.str, add_element_size);
         else
-          headers_large_err = true;
+          handle_req_footers_no_space (c, hdr_name.str, add_element_size);
 
-        transmit_error_response_static (c,
-                                        headers_large_err ?
-                                        MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE
-                                        : MHD_HTTP_URI_TOO_LONG,
-                                        REQUEST_TOO_BIG);
         mhd_assert (MHD_CONNECTION_FULL_REQ_RECEIVED < c->state);
         return true;
       }
