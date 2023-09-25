@@ -471,8 +471,13 @@ send_upgrade_required (struct MHD_Connection *con)
     MHD_create_response_from_buffer_static (strlen (UPGRADE_REQUIRED_PAGE),
                                             (const void *)
                                             UPGRADE_REQUIRED_PAGE);
-  MHD_add_response_header (res, MHD_HTTP_HEADER_SEC_WEBSOCKET_VERSION,
-                           WS_SEC_WEBSOCKET_VERSION);
+  if (MHD_YES !=
+      MHD_add_response_header (res, MHD_HTTP_HEADER_SEC_WEBSOCKET_VERSION,
+                               WS_SEC_WEBSOCKET_VERSION))
+  {
+    MHD_destroy_response (res);
+    return MHD_NO;
+  }
   ret = MHD_queue_response (con, MHD_HTTP_UPGRADE_REQUIRED, res);
   MHD_destroy_response (res);
   return ret;
@@ -891,10 +896,21 @@ ahc_cb (void *cls, struct MHD_Connection *con, const char *url,
     return ret;
   }
   res = MHD_create_response_for_upgrade (&uh_cb, NULL);
-  MHD_add_response_header (res, MHD_HTTP_HEADER_UPGRADE, WS_UPGRADE_VALUE);
-  MHD_add_response_header (res, MHD_HTTP_HEADER_SEC_WEBSOCKET_ACCEPT,
-                           ws_ac_value);
+  if (MHD_YES !=
+      MHD_add_response_header (res, MHD_HTTP_HEADER_SEC_WEBSOCKET_ACCEPT,
+                               ws_ac_value))
+  {
+    free (ws_ac_value);
+    MHD_destroy_response (res);
+    return MHD_NO;
+  }
   free (ws_ac_value);
+  if (MHD_YES !=
+      MHD_add_response_header (res, MHD_HTTP_HEADER_UPGRADE, WS_UPGRADE_VALUE))
+  {
+    MHD_destroy_response (res);
+    return MHD_NO;
+  }
   ret = MHD_queue_response (con, MHD_HTTP_SWITCHING_PROTOCOLS, res);
   MHD_destroy_response (res);
   return ret;
