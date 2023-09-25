@@ -348,7 +348,7 @@
 #define REQUEST_LACKS_HOST \
   "<html>" \
   "<head><title>&quot;Host:&quot; header required</title></head>" \
-  "<body>HTTP/1.1 request without <b>&quot;Host:&quot;</b>.</body>"\
+  "<body>HTTP/1.1 request without <b>&quot;Host:&quot;</b>.</body>" \
   "</html>"
 
 #else
@@ -457,7 +457,7 @@
 #define ERROR_MSG_DATA_NOT_HANDLED_BY_APP \
   "<html><head><title>Internal server error</title></head>" \
   "<body>Please ask the developer of this Web server to carefully " \
-  "read the GNU libmicrohttpd documentation about connection "\
+  "read the GNU libmicrohttpd documentation about connection " \
   "management and blocking.</body></html>"
 #else
 #define ERROR_MSG_DATA_NOT_HANDLED_BY_APP ""
@@ -4048,7 +4048,22 @@ parse_connection_headers (struct MHD_Connection *connection)
     return;
   }
 
-  connection->rq.remaining_upload_size = 0;
+  if ( ((0 == (MHD_USE_ICECAST_CLIENT_UPLOADS & connection->daemon->options)) ||
+        (! MHD_lookup_header_s_token_ci (connection,
+                                         MHD_HTTP_HEADER_CONNECTION,
+                                         "close")) ) )
+  {
+    /* Normal case: either no upload allowed, or client has to provide
+       headers as per below */
+    connection->rq.remaining_upload_size = 0;
+  }
+  else
+  {
+    /* Special Icecast case: client says nothing, but still uploads until
+       connection close. Only allowed with ICECAST option *and* if the
+       client at least announced that it will close the connection. */
+    connection->rq.remaining_upload_size = MHD_SIZE_UNKNOWN;
+  }
   if (MHD_NO !=
       MHD_lookup_connection_value_n (connection,
                                      MHD_HEADER_KIND,

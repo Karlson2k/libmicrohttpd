@@ -1503,7 +1503,16 @@ enum MHD_FLAG
    * Flag set to enable TLS 1.3 early data.  This has
    * security implications, be VERY careful when using this.
    */
-  MHD_USE_INSECURE_TLS_EARLY_DATA = 1U << 18
+  MHD_USE_INSECURE_TLS_EARLY_DATA = 1U << 18,
+
+  /**
+   * Flag set to allow uploads from clients even if the client supplied no
+   * transfer encoding and no Content-length header.  The upload is expected
+   * to be concluded when the client closes the connection.
+   * This is in violation of RFC 7230 but useful for
+   * Icecast. Use at your own risk.
+   */
+  MHD_USE_ICECAST_CLIENT_UPLOADS = 1U << 19
 
 };
 
