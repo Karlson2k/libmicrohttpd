@@ -292,9 +292,14 @@ serve_simple_form (const void *cls,
   if (NULL == response)
     return MHD_NO;
   add_session_cookie (session, response);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_ENCODING,
-                           mime);
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_ENCODING,
+                               mime))
+  {
+    fprintf (stderr,
+             "Failed to set content encoding header!\n");
+  }
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -342,9 +347,14 @@ fill_v1_form (const void *cls,
     return MHD_NO;
   }
   add_session_cookie (session, response);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_ENCODING,
-                           mime);
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_ENCODING,
+                               mime))
+  {
+    fprintf (stderr,
+             "Failed to set content encoding header!\n");
+  }
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -394,9 +404,14 @@ fill_v1_v2_form (const void *cls,
     return MHD_NO;
   }
   add_session_cookie (session, response);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_ENCODING,
-                           mime);
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_ENCODING,
+                               mime))
+  {
+    fprintf (stderr,
+             "Failed to set content encoding header!\n");
+  }
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -433,9 +448,14 @@ not_found_page (const void *cls,
   ret = MHD_queue_response (connection,
                             MHD_HTTP_NOT_FOUND,
                             response);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_ENCODING,
-                           mime);
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_ENCODING,
+                               mime))
+  {
+    fprintf (stderr,
+             "Failed to set content encoding header!\n");
+  }
   MHD_destroy_response (response);
   return ret;
 }
