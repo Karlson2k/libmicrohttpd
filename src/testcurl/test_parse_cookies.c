@@ -222,7 +222,7 @@ struct strct_str_len
   const size_t len;
 };
 
-#define STR_LEN_(str)   {str, MHD_STATICSTR_LEN_(str)}
+#define STR_LEN_(str)   {str, MHD_STATICSTR_LEN_ (str)}
 #define STR_NULL_       {NULL, 0}
 
 struct strct_cookie
@@ -231,7 +231,7 @@ struct strct_cookie
   struct strct_str_len value;
 };
 
-#define COOKIE_(name,value)     {STR_LEN_(name), STR_LEN_(value)}
+#define COOKIE_(name,value)     {STR_LEN_ (name), STR_LEN_ (value)}
 #define COOKIE_NULL             {STR_NULL_, STR_NULL_}
 
 struct strct_test_data
@@ -1201,6 +1201,8 @@ ahcCheck (void *cls,
   unsigned int i;
   int cookie_failed;
 
+  if (NULL == param)
+    mhdErrorExitDesc ("cls parameter is NULL");
   if (use_discp_p2)
     expected_num_cookies = param->check->num_cookies_strict_p2;
   else if (use_discp_p1)
@@ -1214,8 +1216,6 @@ ahcCheck (void *cls,
   else
     externalErrorExit ();
 
-  if (NULL == param)
-    mhdErrorExitDesc ("cls parameter is NULL");
 
   if (oneone)
   {
