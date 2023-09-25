@@ -359,7 +359,7 @@ gen_good_rnd (void *rnd_buf, size_t rnd_buf_size)
   if (1)
   {
     const int urand_fd = open ("/dev/urandom", O_RDONLY);
-    if (0 < urand_fd)
+    if (0 <= urand_fd)
     {
       size_t pos = 0;
       do
