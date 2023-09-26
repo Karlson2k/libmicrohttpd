@@ -4048,6 +4048,10 @@ parse_connection_headers (struct MHD_Connection *connection)
     return;
   }
 
+  /* The presence of the request body is indicated by "Content-Length:" or
+     "Transfer-Encoding:" request headers.
+     Unless one of these two headers is used, the request has no request body.
+     See RFC9112, Section 6, paragraph 4. */
   connection->rq.remaining_upload_size = 0;
   if (MHD_NO !=
       MHD_lookup_connection_value_n (connection,
@@ -4098,51 +4102,48 @@ parse_connection_headers (struct MHD_Connection *connection)
     connection->rq.have_chunked_upload = true;
     connection->rq.remaining_upload_size = MHD_SIZE_UNKNOWN;
   }
-  else
+  else if (MHD_NO !=
+           MHD_lookup_connection_value_n (connection,
+                                          MHD_HEADER_KIND,
+                                          MHD_HTTP_HEADER_CONTENT_LENGTH,
+                                          MHD_STATICSTR_LEN_ (
+                                            MHD_HTTP_HEADER_CONTENT_LENGTH),
+                                          &clen,
+                                          &val_len))
   {
-    if (MHD_NO !=
-        MHD_lookup_connection_value_n (connection,
-                                       MHD_HEADER_KIND,
-                                       MHD_HTTP_HEADER_CONTENT_LENGTH,
-                                       MHD_STATICSTR_LEN_ (
-                                         MHD_HTTP_HEADER_CONTENT_LENGTH),
-                                       &clen,
-                                       &val_len))
-    {
-      size_t num_digits;
+    size_t num_digits;
 
-      num_digits = MHD_str_to_uint64_n_ (clen,
-                                         val_len,
-                                         &connection->rq.remaining_upload_size);
-      if ( (val_len != num_digits) ||
-           (0 == num_digits) )
-      {
-        connection->rq.remaining_upload_size = 0;
-        if ((0 == num_digits) &&
-            (0 != val_len) &&
-            ('0' <= clen[0]) && ('9' >= clen[0]))
-        {
+    num_digits = MHD_str_to_uint64_n_ (clen,
+                                       val_len,
+                                       &connection->rq.remaining_upload_size);
+
+    if (((0 == num_digits) &&
+         (0 != val_len) &&
+         ('0' <= clen[0]) && ('9' >= clen[0]))
+        || (MHD_SIZE_UNKNOWN == connection->rq.remaining_upload_size))
+    {
+      connection->rq.remaining_upload_size = 0;
 #ifdef HAVE_MESSAGES
-          MHD_DLOG (connection->daemon,
-                    _ ("Too large value of 'Content-Length' header. " \
-                       "Closing connection.\n"));
+      MHD_DLOG (connection->daemon,
+                _ ("Too large value of 'Content-Length' header. " \
+                   "Closing connection.\n"));
 #endif
-          transmit_error_response_static (connection,
-                                          MHD_HTTP_CONTENT_TOO_LARGE,
-                                          REQUEST_CONTENTLENGTH_TOOLARGE);
-        }
-        else
-        {
+      transmit_error_response_static (connection,
+                                      MHD_HTTP_CONTENT_TOO_LARGE,
+                                      REQUEST_CONTENTLENGTH_TOOLARGE);
+    }
+    else if ((val_len != num_digits) ||
+             (0 == num_digits))
+    {
+      connection->rq.remaining_upload_size = 0;
 #ifdef HAVE_MESSAGES
-          MHD_DLOG (connection->daemon,
-                    _ ("Failed to parse `Content-Length' header. " \
-                       "Closing connection.\n"));
+      MHD_DLOG (connection->daemon,
+                _ ("Failed to parse 'Content-Length' header. " \
+                   "Closing connection.\n"));
 #endif
-          transmit_error_response_static (connection,
-                                          MHD_HTTP_BAD_REQUEST,
-                                          REQUEST_CONTENTLENGTH_MALFORMED);
-        }
-      }
+      transmit_error_response_static (connection,
+                                      MHD_HTTP_BAD_REQUEST,
+                                      REQUEST_CONTENTLENGTH_MALFORMED);
     }
   }
 }
