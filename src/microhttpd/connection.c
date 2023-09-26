@@ -4387,6 +4387,12 @@ process_request_body (struct MHD_Connection *connection)
   size_t available;
   bool instant_retry;
   char *buffer_head;
+  const int discp_lvl = daemon->client_discipline;
+  /* Treat bare LF as the end of the line.
+     RFC 9112, section 2.2-3
+     Note: MHD never replaces bare LF with space (RFC 9110, section 5.5-5).
+     Bare LF is processed as end of the line or rejected as broken request. */
+  const bool bare_lf_as_crlf = MHD_ALLOW_BARE_LF_AS_CRLF_ (discp_lvl);
 
   mhd_assert (NULL == connection->rp.response);
 
@@ -4414,7 +4420,7 @@ process_request_body (struct MHD_Connection *connection)
              ('\r' == buffer_head[0]) &&
              ('\n' == buffer_head[1]) )
           i += 2;                        /* skip CRLF */
-        else if ('\n' == buffer_head[0]) /* TODO: Add MHD option to disallow */
+        else if (bare_lf_as_crlf && ('\n' == buffer_head[0]))
           i++;                           /* skip bare LF */
         else if (2 > available)
           break;                         /* need more upload data */
@@ -4477,9 +4483,13 @@ process_request_body (struct MHD_Connection *connection)
             }
             else
             { /* bare LF */
-              /* TODO: Add an option to disallow bare LF */
-              if (! found_chunk_size_str)
-                chunk_size_len = i;
+              if (bare_lf_as_crlf)
+              {
+                if (! found_chunk_size_str)
+                  chunk_size_len = i;
+              }
+              else
+                chunk_size_len = 0; /* Malformed */
             }
             found_chunk_size_str = true;
             break; /* Found the end of the string */
