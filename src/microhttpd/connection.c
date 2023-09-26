@@ -57,6 +57,14 @@
 #include "mhd_assert.h"
 
 /**
+ * Get whether bare LF in HTTP header and other protocol elements
+ * should be treated as the line termination depending on the configured
+ * strictness level.
+ * RFC 9112, section 2.2
+ */
+#define MHD_ALLOW_BARE_LF_AS_CRLF_(discp_lvl) (0 >= discp_lvl)
+
+/**
  * The reasonable length of the upload chunk "header" (the size specifier
  * with optional chunk extension).
  * MHD tries to keep the space in the read buffer large enough to read
@@ -4868,7 +4876,7 @@ get_request_line_inner (struct MHD_Connection *c)
     (skip_empty_lines && (-3 >= discp_lvl));
   /* Treat bare LF as the end of the line.
      RFC 9112, section 2.2 */
-  const bool bare_lf_as_crlf = (0 >= discp_lvl);
+  const bool bare_lf_as_crlf = MHD_ALLOW_BARE_LF_AS_CRLF_ (discp_lvl);
   /* Treat tab as whitespace delimiter.
      RFC 9112, section 3 */
   const bool tab_as_wsp = (0 >= discp_lvl);
@@ -5674,7 +5682,7 @@ get_req_header (struct MHD_Connection *c,
      RFC 9112, section 2.2-3
      Note: MHD never replaces bare LF with space (RFC 9110, section 5.5-5).
      Bare LF is processed as end of the line or rejected as broken request. */
-  const bool bare_lf_as_crlf = (0 >= discp_lvl);
+  const bool bare_lf_as_crlf = MHD_ALLOW_BARE_LF_AS_CRLF_ (discp_lvl);
   /* Keep bare CR character as is.
      Violates RFC 9112, section 2.2-4 */
   const bool bare_cr_keep = (-3 >= discp_lvl);
