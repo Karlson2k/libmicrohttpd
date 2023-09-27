@@ -88,7 +88,7 @@ kill_curl (pid_t pid)
 {
   int status;
 
-  /* fprintf (stderr, "Killing curl\n"); /
+  /* fprintf (stderr, "Killing curl\n"); */
   kill (pid, SIGTERM);
   waitpid (pid, &status, 0);
 }

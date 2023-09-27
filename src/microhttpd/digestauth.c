@@ -197,7 +197,7 @@ enum MHD_CheckNonceNC_
   /**
    * The 'nonce' is wrong, it was not generated before.
    */
-  MHD_CHECK_NONCENC_WRONG = MHD_DAUTH_NONCE_WRONG,
+  MHD_CHECK_NONCENC_WRONG = MHD_DAUTH_NONCE_WRONG
 };
 
 
