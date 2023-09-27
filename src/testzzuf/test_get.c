@@ -1024,10 +1024,6 @@ setupCURL (struct CBC *cbc, uint16_t port
       (CURLE_OK == (e = curl_easy_setopt (c, CURLOPT_WRITEDATA, cbc))) &&
       (CURLE_OK == (e = curl_easy_setopt (c, CURLOPT_CONNECTTIMEOUT,
                                           ((long) CURL_TIMEOUT)))) &&
-      (CURLE_OK == (e = curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
-                                          oneone ?
-                                          CURL_HTTP_VERSION_1_1 :
-                                          CURL_HTTP_VERSION_1_0))) &&
       (CURLE_OK == (e = curl_easy_setopt (c, CURLOPT_TIMEOUT,
                                           ((long) CURL_TIMEOUT)))) &&
       (CURLE_OK == (e = curl_easy_setopt (c, CURLOPT_FAILONERROR, 0L))) &&
@@ -1038,14 +1034,21 @@ setupCURL (struct CBC *cbc, uint16_t port
                                           &libcurl_debug_cb))) &&
       (CURLE_OK == (e = curl_easy_setopt (c, CURLOPT_DEBUGDATA,
                                           cbc))) &&
-#if CURL_AT_LEAST_VERSION (7, 19, 4)
+#if CURL_AT_LEAST_VERSION (7, 45, 0)
+      (CURLE_OK == (e = curl_easy_setopt (c, CURLOPT_DEFAULT_PROTOCOL,
+                                          "http"))) &&
+#endif /* CURL_AT_LEAST_VERSION (7, 45, 0) */
+#if CURL_AT_LEAST_VERSION (7, 85, 0)
+      (CURLE_OK == (e = curl_easy_setopt (c, CURLOPT_PROTOCOLS_STR,
+                                          "http"))) &&
+#elif CURL_AT_LEAST_VERSION (7, 19, 4)
       (CURLE_OK == (e = curl_easy_setopt (c, CURLOPT_PROTOCOLS,
                                           CURLPROTO_HTTP))) &&
 #endif /* CURL_AT_LEAST_VERSION (7, 19, 4) */
-#if CURL_AT_LEAST_VERSION (7, 45, 0)
-      (CURLE_OK == (e = curl_easy_setopt (c,
-                                          CURLOPT_DEFAULT_PROTOCOL, "http"))) &&
-#endif /* CURL_AT_LEAST_VERSION (7, 45, 0) */
+      (CURLE_OK == (e = curl_easy_setopt (c, CURLOPT_HTTP_VERSION,
+                                          oneone ?
+                                          CURL_HTTP_VERSION_1_1 :
+                                          CURL_HTTP_VERSION_1_0))) &&
 #if CURL_AT_LEAST_VERSION (7, 24, 0)
       (CURLE_OK == (e = curl_easy_setopt (c, CURLOPT_INTERFACE,
                                           "host!127.0.0.101"))) &&
