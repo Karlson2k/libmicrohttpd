@@ -48,6 +48,8 @@
 
 static int oneone;
 
+static uint16_t daemon_port;
+
 static enum MHD_Result
 apc_all (void *cls, const struct sockaddr *addr, socklen_t addrlen)
 {
@@ -105,22 +107,13 @@ testLongUrlGet (size_t buff_size)
   struct CBC cbc;
   char *url;
   long code;
-  uint16_t port;
 
-  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-    port = 0;
-  else
-  {
-    port = 1330 + (uint16_t) (buff_size % 20);
-    if (oneone)
-      port += 5;
-  }
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
   d =
     MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_ERROR_LOG */,
-                      port,
+                      daemon_port,
                       &apc_all,
                       NULL,
                       &ahc_echo, NULL,
@@ -128,7 +121,7 @@ testLongUrlGet (size_t buff_size)
                       (size_t) buff_size, MHD_OPTION_END);
   if (d == NULL)
     return 1;
-  if (0 == port)
+  if (0 == daemon_port)
   {
     const union MHD_DaemonInfo *dinfo;
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
@@ -136,7 +129,7 @@ testLongUrlGet (size_t buff_size)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = dinfo->port;
+    daemon_port = dinfo->port;
   }
   c = curl_easy_init ();
   url = malloc (VERY_LONG);
@@ -150,7 +143,7 @@ testLongUrlGet (size_t buff_size)
   url[VERY_LONG - 1] = '\0';
   memcpy (url, "http://127.0.0.1/", strlen ("http://127.0.0.1/"));
   curl_easy_setopt (c, CURLOPT_URL, url);
-  curl_easy_setopt (c, CURLOPT_PORT, (long) port);
+  curl_easy_setopt (c, CURLOPT_PORT, (long) daemon_port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 0L);
@@ -197,23 +190,13 @@ testLongHeaderGet (size_t buff_size)
   char *url;
   long code;
   struct curl_slist *header = NULL;
-  uint16_t port;
-
-  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
-    port = 0;
-  else
-  {
-    port = 1331 + (uint16_t) (buff_size % 20);
-    if (oneone)
-      port += 5;
-  }
 
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
   d =
     MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD /* | MHD_USE_ERROR_LOG */,
-                      port,
+                      daemon_port,
                       &apc_all,
                       NULL,
                       &ahc_echo, NULL,
@@ -221,7 +204,7 @@ testLongHeaderGet (size_t buff_size)
                       (size_t) buff_size, MHD_OPTION_END);
   if (d == NULL)
     return 16;
-  if (0 == port)
+  if (0 == daemon_port)
   {
     const union MHD_DaemonInfo *dinfo;
     dinfo = MHD_get_daemon_info (d, MHD_DAEMON_INFO_BIND_PORT);
@@ -229,7 +212,7 @@ testLongHeaderGet (size_t buff_size)
     {
       MHD_stop_daemon (d); return 32;
     }
-    port = dinfo->port;
+    daemon_port = dinfo->port;
   }
   c = curl_easy_init ();
   url = malloc (VERY_LONG);
@@ -247,7 +230,7 @@ testLongHeaderGet (size_t buff_size)
 
   curl_easy_setopt (c, CURLOPT_HTTPHEADER, header);
   curl_easy_setopt (c, CURLOPT_URL, "http://127.0.0.1/hello_world");
-  curl_easy_setopt (c, CURLOPT_PORT, (long) port);
+  curl_easy_setopt (c, CURLOPT_PORT, (long) daemon_port);
   curl_easy_setopt (c, CURLOPT_WRITEFUNCTION, &copyBuffer);
   curl_easy_setopt (c, CURLOPT_WRITEDATA, &cbc);
   curl_easy_setopt (c, CURLOPT_FAILONERROR, 0L);
@@ -298,6 +281,10 @@ main (int argc, char *const *argv)
   oneone = has_in_name (argv[0], "11");
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
+  if (MHD_NO == MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    daemon_port = 0;
+  else
+    daemon_port = oneone ? 1336 : 1331;
   errorCount += testLongUrlGet (VERY_LONG / 2);
   errorCount += testLongUrlGet (VERY_LONG / 2 + 978);
   errorCount += testLongHeaderGet (VERY_LONG / 2);
