@@ -515,12 +515,12 @@ libcurlUploadDataCB (void *stream, size_t item_size, size_t nitems, void *ctx)
 
   /* Avoid libcurl magic numbers */
 #ifdef CURL_READFUNC_PAUSE
-  if (CURL_READFUNC_ABORT == to_fill)
-    to_fill -= 2;
+  if (CURL_READFUNC_PAUSE == to_fill)
+    to_fill = (CURL_READFUNC_PAUSE - 2);
 #endif /* CURL_READFUNC_PAUSE */
 #ifdef CURL_READFUNC_ABORT
   if (CURL_READFUNC_ABORT == to_fill)
-    --to_fill;
+    to_fill = (CURL_READFUNC_ABORT - 1);
 #endif /* CURL_READFUNC_ABORT */
 
   memcpy (stream, put_data + cbc->up_pos, to_fill);
