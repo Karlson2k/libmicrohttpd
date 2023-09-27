@@ -4617,7 +4617,7 @@ enum MHD_DigestAuthAlgo3
    * Not supported by MHD for authentication.
    */
   MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION =
-    MHD_DIGEST_BASE_ALGO_SHA512_256 | MHD_DIGEST_AUTH_ALGO3_SESSION,
+    MHD_DIGEST_BASE_ALGO_SHA512_256 | MHD_DIGEST_AUTH_ALGO3_SESSION
 };
 
 
@@ -5302,7 +5302,7 @@ enum MHD_DigestAuthResult
   /**
    * The 'response' is wrong. May indicate an attack attempt.
    */
-  MHD_DAUTH_RESPONSE_WRONG = -34,
+  MHD_DAUTH_RESPONSE_WRONG = -34
 };
 
 

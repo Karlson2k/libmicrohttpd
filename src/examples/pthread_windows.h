@@ -43,4 +43,4 @@ int pthread_cond_signal (pthread_cond_t *cond);
 
 int pthread_cond_broadcast (pthread_cond_t *cond);
 
-#endif // !pthread_windows_H
+#endif /* !pthread_windows_H */

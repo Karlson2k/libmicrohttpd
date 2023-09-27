@@ -88,7 +88,7 @@ kill_curl (pid_t pid)
 {
   int status;
 
-  // fprintf (stderr, "Killing curl\n");
+  /* fprintf (stderr, "Killing curl\n"); /
   kill (pid, SIGTERM);
   waitpid (pid, &status, 0);
 }
@@ -111,7 +111,7 @@ push_free_callback (void *cls)
 {
   int *ok_p = cls;
 
-  // fprintf (stderr, "Cleanup callback called!\n");
+  /* fprintf (stderr, "Cleanup callback called!\n"); */
   *ok_p = 0;
 }
 
@@ -240,7 +240,7 @@ testMultithreadedGet (void)
             sizeof (url),
             "http://127.0.0.1:%u/",
             (unsigned int) port);
-  // fprintf (stderr, "Forking cURL!\n");
+  /* fprintf (stderr, "Forking cURL!\n"); */
   curl = fork_curl (url);
   (void) sleep (1);
   kill_curl (curl);
@@ -255,7 +255,7 @@ testMultithreadedGet (void)
   }
   kill_curl (curl);
   (void) sleep (1);
-  // fprintf (stderr, "Stopping daemon!\n");
+  /* fprintf (stderr, "Stopping daemon!\n"); */
   MHD_stop_daemon (d);
   if (ok != 0)
     return 32;
@@ -306,7 +306,7 @@ testMultithreadedPoolGet (void)
   (void) sleep (1);
   kill_curl (curl);
   (void) sleep (1);
-  // fprintf (stderr, "Stopping daemon!\n");
+  /* fprintf (stderr, "Stopping daemon!\n"); */
   MHD_stop_daemon (d);
   if (ok != 0)
     return 128;

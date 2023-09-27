@@ -1805,9 +1805,9 @@ check_strx_to_uint32_overflow (void)
   size_t t_failed = 0;
   size_t i, j;
   static const size_t n_checks1 = sizeof(strx_ovflw) / sizeof(strx_ovflw[0]);
-  int c_failed[sizeof(strx_ovflw) / sizeof(strx_ovflw[0])
-               + sizeof(xdstrs_w_values)
-               / sizeof(xdstrs_w_values[0])];
+  int c_failed[(sizeof(strx_ovflw) / sizeof(strx_ovflw[0]))
+               + (sizeof(xdstrs_w_values)
+                  / sizeof(xdstrs_w_values[0]))];
   static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
@@ -2099,9 +2099,9 @@ check_strx_to_uint32_n_overflow (void)
   size_t t_failed = 0;
   size_t i, j;
   static const size_t n_checks1 = sizeof(strx_ovflw) / sizeof(strx_ovflw[0]);
-  int c_failed[sizeof(strx_ovflw) / sizeof(strx_ovflw[0])
-               + sizeof(xdstrs_w_values)
-               / sizeof(xdstrs_w_values[0])];
+  int c_failed[(sizeof(strx_ovflw) / sizeof(strx_ovflw[0]))
+               + (sizeof(xdstrs_w_values)
+                  / sizeof(xdstrs_w_values[0]))];
   static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
@@ -2522,9 +2522,8 @@ check_strx_to_uint64_n_valid (void)
 {
   size_t t_failed = 0;
   size_t i, j;
-  static const size_t n_checks = sizeof(xdstrs_w_values)
-                                 / sizeof(xdstrs_w_values[0]);
-  int c_failed[n_checks];
+  int c_failed[sizeof(xdstrs_w_values) / sizeof(xdstrs_w_values[0])];
+  static const size_t n_checks = sizeof(c_failed) / sizeof(c_failed[0]);
 
   memset (c_failed, 0, sizeof(c_failed));
 
