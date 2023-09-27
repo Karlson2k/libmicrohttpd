@@ -265,15 +265,6 @@ MHD_get_rq_bauth_params_ (struct MHD_Connection *connection)
 
 #ifdef DAUTH_SUPPORT
 
-/**
- * Helper structure to map token name to position where to put token's value
- */
-struct dauth_token_param
-{
-  const struct _MHD_cstr_w_len *const tk_name;
-  struct MHD_RqDAuthParam *const param;
-};
-
 
 /**
  * Get client's Digest Authorization algorithm type.
@@ -407,6 +398,7 @@ parse_dauth_params (const char *str,
                     const size_t str_len,
                     struct MHD_RqDAuth *pdauth)
 {
+  /* The tokens */
   static const struct _MHD_cstr_w_len nonce_tk = _MHD_S_STR_W_LEN ("nonce");
   static const struct _MHD_cstr_w_len opaque_tk = _MHD_S_STR_W_LEN ("opaque");
   static const struct _MHD_cstr_w_len algorithm_tk =
@@ -424,25 +416,47 @@ parse_dauth_params (const char *str,
   static const struct _MHD_cstr_w_len nc_tk = _MHD_S_STR_W_LEN ("nc");
   static const struct _MHD_cstr_w_len userhash_tk =
     _MHD_S_STR_W_LEN ("userhash");
+  /* The locally processed parameters */
   struct MHD_RqDAuthParam userhash;
   struct MHD_RqDAuthParam algorithm;
-  struct dauth_token_param map[] = {
-    {&nonce_tk, &(pdauth->nonce)},
-    {&opaque_tk, &(pdauth->opaque)},
-    {&algorithm_tk, &algorithm},
-    {&response_tk, &(pdauth->response)},
-    {&username_tk, &(pdauth->username)},
-    {&username_ext_tk, &(pdauth->username_ext)},
-    {&realm_tk, &(pdauth->realm)},
-    {&uri_tk, &(pdauth->uri)},
-    {&qop_tk, &(pdauth->qop_raw)},
-    {&cnonce_tk, &(pdauth->cnonce)},
-    {&nc_tk, &(pdauth->nc)},
-    {&userhash_tk, &userhash}
-  };
+  /* Indexes */
   size_t i;
   size_t p;
+  /* The list of the tokens.
+     The order of the elements matches the next array. */
+  static const struct _MHD_cstr_w_len *const tk_names[] = {
+    &nonce_tk,          /* 0 */
+    &opaque_tk,         /* 1 */
+    &algorithm_tk,      /* 2 */
+    &response_tk,       /* 3 */
+    &username_tk,       /* 4 */
+    &username_ext_tk,   /* 5 */
+    &realm_tk,          /* 6 */
+    &uri_tk,            /* 7 */
+    &qop_tk,            /* 8 */
+    &cnonce_tk,         /* 9 */
+    &nc_tk,             /* 10 */
+    &userhash_tk        /* 11 */
+  };
+  /* The list of the parameters.
+     The order of the elements matches the previous array. */
+  struct MHD_RqDAuthParam *params[sizeof(tk_names) / sizeof(tk_names[0])];
 
+  params[0 ] = &(pdauth->nonce);           /* 0 */
+  params[1 ] = &(pdauth->opaque);          /* 1 */
+  params[2 ] = &algorithm;                 /* 2 */
+  params[3 ] = &(pdauth->response);        /* 3 */
+  params[4 ] = &(pdauth->username);        /* 4 */
+  params[5 ] = &(pdauth->username_ext);    /* 5 */
+  params[6 ] = &(pdauth->realm);           /* 6 */
+  params[7 ] = &(pdauth->uri);             /* 7 */
+  params[8 ] = &(pdauth->qop_raw);         /* 8 */
+  params[9 ] = &(pdauth->cnonce);          /* 9 */
+  params[10] = &(pdauth->nc);              /* 10 */
+  params[11] = &userhash;                  /* 11 */
+
+  mhd_assert ((sizeof(tk_names) / sizeof(tk_names[0])) == \
+              (sizeof(params) / sizeof(params[0])));
   memset (&userhash, 0, sizeof(userhash));
   memset (&algorithm, 0, sizeof(algorithm));
   i = 0;
@@ -460,28 +474,29 @@ parse_dauth_params (const char *str,
     left = str_len - i;
     if ('=' == str[i])
       return false; /* The equal sign is not allowed as the first character */
-    for (p = 0; p < sizeof(map) / sizeof(map[0]); p++)
+    for (p = 0; p < (sizeof(tk_names) / sizeof(tk_names[0])); ++p)
     {
-      struct dauth_token_param *const aparam = map + p;
-      if ( (aparam->tk_name->len <= left) &&
-           MHD_str_equal_caseless_bin_n_ (str + i, aparam->tk_name->str,
-                                          aparam->tk_name->len) &&
-           ((aparam->tk_name->len == left) ||
-            ('=' == str[i + aparam->tk_name->len]) ||
-            (' ' == str[i + aparam->tk_name->len]) ||
-            ('\t' == str[i + aparam->tk_name->len]) ||
-            (',' == str[i + aparam->tk_name->len]) ||
-            (';' == str[i + aparam->tk_name->len])) )
+      const struct _MHD_cstr_w_len *const tk_name = tk_names[p];
+      struct MHD_RqDAuthParam *const param = params[p];
+      if ( (tk_name->len <= left) &&
+           MHD_str_equal_caseless_bin_n_ (str + i, tk_name->str,
+                                          tk_name->len) &&
+           ((tk_name->len == left) ||
+            ('=' == str[i + tk_name->len]) ||
+            (' ' == str[i + tk_name->len]) ||
+            ('\t' == str[i + tk_name->len]) ||
+            (',' == str[i + tk_name->len]) ||
+            (';' == str[i + tk_name->len])) )
       {
         size_t value_start;
         size_t value_len;
         bool quoted; /* Only mark as "quoted" if backslash-escape used */
 
-        if (aparam->tk_name->len == left)
+        if (tk_name->len == left)
           return false; /* No equal sign after parameter name, broken data */
 
         quoted = false;
-        i += aparam->tk_name->len;
+        i += tk_name->len;
         /* Skip all whitespaces before '=' */
         while (str_len > i && (' ' == str[i] || '\t' == str[i]))
           i++;
@@ -534,14 +549,14 @@ parse_dauth_params (const char *str,
 
         /* Have valid parameter name and value */
         mhd_assert (! quoted || 0 != value_len);
-        aparam->param->value.str = str + value_start;
-        aparam->param->value.len = value_len;
-        aparam->param->quoted = quoted;
+        param->value.str = str + value_start;
+        param->value.len = value_len;
+        param->quoted = quoted;
 
         break; /* Found matching parameter name */
       }
     }
-    if (p == sizeof(map) / sizeof(map[0]))
+    if (p == (sizeof(tk_names) / sizeof(tk_names[0])))
     {
       /* No matching parameter name */
       while (str_len > i && ',' != str[i])
