@@ -108,61 +108,6 @@ set_self_name (int argc, char *const *argv)
 }
 
 
-#if defined (HAVE_POPEN) && defined(HAVE_PCLOSE)
-/**
- * Read the command output as a number and return the number.
- * Only positive decimal numbers are supported
- * @param cmd the command to run
- * @return zero or positive number read if success,
- *         negative number if any error occurs
- */
-static int
-get_cmd_out_as_number (const char *cmd)
-{
-  FILE *cmd_out;
-  char buf[255];
-  int ret;
-  size_t len;
-
-  cmd_out = popen (cmd, "r"
-#ifdef _WIN32
-                   "t"
-#endif /* _WIN32 */
-                   );
-  if (NULL == cmd_out)
-    return -1;
-  ret = -1;
-  if (buf != fgets (buf, sizeof(buf), cmd_out))
-    len = 0;
-  else
-    len = strlen (buf);
-  if ((0 != len) && (sizeof(buf) > (len + 2)) && ! ferror (cmd_out))
-  {
-    size_t digits_found;
-    unsigned int out_value;
-    digits_found = mhd_tool_str_to_uint (buf, &out_value);
-    if (0 != digits_found)
-    {
-      if ((0 == buf[digits_found])
-#ifdef _WIN32
-          || ('\r' == buf[digits_found])
-#endif /* _WIN32 */
-          || ('\n' == buf[digits_found]))
-      {
-        ret = (int) out_value; /* Possible negative cast result is interpreted as an error */
-      }
-    }
-  }
-  if (0 != pclose (cmd_out))
-    ret = -1;
-  return ret;
-}
-
-
-#else  /* ! HAVE_POPEN || ! HAVE_PCLOSE */
-#define read_cmd_out_as_number(ignore) (-1)
-#endif /* ! HAVE_POPEN || ! HAVE_PCLOSE */
-
 static unsigned int
 detect_cpu_core_count (void)
 {
@@ -1814,21 +1759,24 @@ run_mhd (void)
 
   if (0 != tool_params.connections)
   {
-    struct MHD_OptionItem option =
-    { MHD_OPTION_CONNECTION_LIMIT, (intptr_t) tool_params.connections, NULL };
-    opt_arr[opt_count++] = option;
+    opt_arr[opt_count].option = MHD_OPTION_CONNECTION_LIMIT;
+    opt_arr[opt_count].value = (intptr_t) tool_params.connections;
+    opt_arr[opt_count].ptr_value = NULL;
+    ++opt_count;
   }
   if (1 < use_num_threads)
   {
-    struct MHD_OptionItem option =
-    { MHD_OPTION_THREAD_POOL_SIZE, (intptr_t) use_num_threads, NULL };
-    opt_arr[opt_count++] = option;
+    opt_arr[opt_count].option = MHD_OPTION_THREAD_POOL_SIZE;
+    opt_arr[opt_count].value = (intptr_t) use_num_threads;
+    opt_arr[opt_count].ptr_value = NULL;
+    ++opt_count;
   }
   if (1)
   {
-    struct MHD_OptionItem option =
-    { MHD_OPTION_CONNECTION_TIMEOUT, (intptr_t) tool_params.timeout, NULL };
-    opt_arr[opt_count++] = option;
+    opt_arr[opt_count].option = MHD_OPTION_CONNECTION_TIMEOUT;
+    opt_arr[opt_count].value = (intptr_t) tool_params.timeout;
+    opt_arr[opt_count].ptr_value = NULL;
+    ++opt_count;
   }
   if (1)
   {

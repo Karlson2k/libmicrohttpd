@@ -3903,20 +3903,6 @@ AS_VAR_IF([mhd_cv_ipv6_for_testing],["yes"],
 
 AS_VAR_IF([enable_tools],["yes"],
   [
-    MHD_CHECK_FUNC([pclose],[[#include <stdio.h>]],
-      [[
-        i][f (0 == pclose(NULL)) return 2;
-      ]],
-      [
-        MHD_CHECK_FUNC([popen],[[#include <stdio.h>]],
-          [[
-            FILE *cmd_out = popen ("cat conftest.c", "r");
-            i][f (NULL == cmd_out) return 2;
-            i][f (0 != pclose(cmd_out)) return 3;
-          ]]
-        )
-      ]
-    )
     AC_CHECK_HEADERS([features.h sys/pstat.h vxCpuLib.h],[],[],[AC_INCLUDES_DEFAULT])
     AC_CHECK_DECLS(
       [_SC_NPROCESSORS_ONLN,_SC_NPROC_ONLN,_SC_CRAY_NCPU,_SC_NPROCESSORS_CONF,CTL_HW,HW_NCPUONLINE,HW_NCPU,HW_AVAILCPU],
