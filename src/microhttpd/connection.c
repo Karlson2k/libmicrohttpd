@@ -4393,6 +4393,9 @@ process_request_body (struct MHD_Connection *connection)
      Note: MHD never replaces bare LF with space (RFC 9110, section 5.5-5).
      Bare LF is processed as end of the line or rejected as broken request. */
   const bool bare_lf_as_crlf = MHD_ALLOW_BARE_LF_AS_CRLF_ (discp_lvl);
+  /* Allow "Bad WhiteSpace" in chunk extension.
+     RFC 9112, Section 7.1.1, Paragraph 2 */
+  const bool allow_bws = (2 < discp_lvl);
 
   mhd_assert (NULL == connection->rp.response);
 
@@ -4460,86 +4463,102 @@ process_request_body (struct MHD_Connection *connection)
         }
       }
       else
-      {
-        size_t i;
-        /** The length of the string with the number of the chunk size */
-        size_t chunk_size_len;
-        bool found_chunk_size_str;
-        bool malformed;
+      { /* Need the parse the chunk size line */
+        /** The number of found digits in the chunk size number */
+        size_t num_dig;
+        uint64_t chunk_size;
+        bool broken;
+        bool overflow;
 
-        /* we need to read chunk boundaries */
-        i = 0;
-        found_chunk_size_str = false;
-        chunk_size_len = 0;
         mhd_assert (0 != available);
-        do
+
+        overflow = false;
+
+        num_dig = MHD_strx_to_uint64_n_ (buffer_head,
+                                         available,
+                                         &chunk_size);
+        mhd_assert (num_dig <= available);
+        if (num_dig == available)
+          continue; /* Need line delimiter */
+
+        broken = (0 == num_dig);
+        if (broken)
+          /* Check whether result is invalid due to uint64_t overflow */
+          overflow = ((('0' <= buffer_head[0]) && ('9' >= buffer_head[0])) ||
+                      (('A' <= buffer_head[0]) && ('F' >= buffer_head[0])) ||
+                      (('a' <= buffer_head[0]) && ('f' >= buffer_head[0])));
+        else
         {
-          if ('\n' == buffer_head[i])
-          {
-            if ((0 < i) && ('\r' == buffer_head[i - 1]))
-            { /* CRLF */
-              if (! found_chunk_size_str)
-                chunk_size_len = i - 1;
+          /**
+           * The length of the string with the number of the chunk size,
+           * including chunk extension
+           */
+          size_t chunk_size_line_len;
+
+          chunk_size_line_len = 0;
+          if ((';' == buffer_head[num_dig]) ||
+              (allow_bws &&
+               ((' ' == buffer_head[num_dig]) ||
+                ('\t' == buffer_head[num_dig]))))
+          { /* Chunk extension */
+            size_t i;
+
+            /* Skip bad whitespaces (if any) */
+            for (i = num_dig; i < available; ++i)
+            {
+              if ((' ' != buffer_head[i]) && ('\t' != buffer_head[i]))
+                break;
+            }
+            if (i == available)
+              break; /* need more data */
+            if (';' == buffer_head[i])
+            {
+              for (++i; i < available; ++i)
+              {
+                if ('\n' == buffer_head[i])
+                  break;
+              }
+              if (i == available)
+                break; /* need more data */
+              mhd_assert (i > num_dig);
+              mhd_assert (1 <= i);
+              /* Found LF position */
+              if (bare_lf_as_crlf)
+                chunk_size_line_len = i; /* Don't care about CR before LF */
+              else if ('\r' == buffer_head[i - 1])
+                chunk_size_line_len = i;
             }
             else
-            { /* bare LF */
-              if (bare_lf_as_crlf)
-              {
-                if (! found_chunk_size_str)
-                  chunk_size_len = i;
-              }
-              else
-                chunk_size_len = 0; /* Malformed */
-            }
-            found_chunk_size_str = true;
-            break; /* Found the end of the string */
-          }
-          else if (! found_chunk_size_str && (';' == buffer_head[i]))
-          { /* Found chunk extension */
-            chunk_size_len = i;
-            found_chunk_size_str = true;
-          }
-        } while (available > ++i);
-        mhd_assert ((i == available) || found_chunk_size_str);
-        mhd_assert ((0 == chunk_size_len) || found_chunk_size_str);
-        malformed = ((0 == chunk_size_len) && found_chunk_size_str);
-        if (! malformed)
-        {
-          /* Check whether size is valid hexadecimal number
-           * even if end of the string is not found yet. */
-          size_t num_dig;
-          uint64_t chunk_size;
-          mhd_assert (0 < i);
-          if (! found_chunk_size_str)
-          {
-            mhd_assert (i == available);
-            /* Check already available part of the size string for valid
-             * hexadecimal digits. */
-            chunk_size_len = i;
-            if ('\r' == buffer_head[i - 1])
-            {
-              chunk_size_len--;
-              malformed = (0 == chunk_size_len);
+            { /* No ';' after "bad whitespace" */
+              mhd_assert (allow_bws);
+              mhd_assert (0 == chunk_size_line_len);
             }
           }
-          num_dig = MHD_strx_to_uint64_n_ (buffer_head,
-                                           chunk_size_len,
-                                           &chunk_size);
-          malformed = malformed || (chunk_size_len != num_dig);
-
-          if ((available != i) && ! malformed)
+          else
           {
-            /* Found end of the string and the size of the chunk is valid */
+            mhd_assert (available >= num_dig);
+            if ((2 <= (available - num_dig)) &&
+                ('\r' == buffer_head[num_dig]) &&
+                ('\n' == buffer_head[num_dig + 1]))
+              chunk_size_line_len = num_dig + 2;
+            else if (bare_lf_as_crlf &&
+                     ('\n' == buffer_head[num_dig]))
+              chunk_size_line_len = num_dig + 1;
+            else if (2 > (available - num_dig))
+              break; /* need more data */
+          }
 
-            mhd_assert (found_chunk_size_str);
+          if (0 != chunk_size_line_len)
+          { /* Valid termination of the chunk size line */
+            mhd_assert (chunk_size_line_len <= available);
             /* Start reading payload data of the chunk */
             connection->rq.current_chunk_offset = 0;
             connection->rq.current_chunk_size = chunk_size;
-            i++; /* Consume the last checked char */
-            available -= i;
-            buffer_head += i;
 
-            if (0 == connection->rq.current_chunk_size)
+            available -= chunk_size_line_len;
+            buffer_head += chunk_size_line_len;
+
+            if (0 == chunk_size)
             { /* The final (termination) chunk */
               connection->rq.remaining_upload_size = 0;
               break;
@@ -4548,32 +4567,18 @@ process_request_body (struct MHD_Connection *connection)
               instant_retry = true;
             continue;
           }
-
-          if ((0 == num_dig) && (0 != chunk_size_len))
-          { /* Check whether result is invalid due to uint64_t overflow */
-            /* At least one byte is always available
-             * in the input buffer here. */
-            const char d = buffer_head[0]; /**< first digit */
-            if ((('0' <= d) && ('9' >= d)) ||
-                (('A' <= d) && ('F' >= d)) ||
-                (('a' <= d) && ('f' >= d)))
-            { /* The first char is a valid hexadecimal digit */
-              transmit_error_response_static (connection,
-                                              MHD_HTTP_CONTENT_TOO_LARGE,
-                                              REQUEST_CHUNK_TOO_LARGE);
-              return;
-            }
-          }
+          /* Invalid chunk size line */
         }
-        if (malformed)
-        {
+
+        if (! overflow)
           transmit_error_response_static (connection,
                                           MHD_HTTP_BAD_REQUEST,
                                           REQUEST_CHUNKED_MALFORMED);
-          return;
-        }
-        mhd_assert (available == i);
-        break; /* The end of the string not found, need more upload data */
+        else
+          transmit_error_response_static (connection,
+                                          MHD_HTTP_CONTENT_TOO_LARGE,
+                                          REQUEST_CHUNK_TOO_LARGE);
+        return;
       }
     }
     else
