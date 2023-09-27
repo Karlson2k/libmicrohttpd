@@ -741,7 +741,7 @@ testPutExternal (void)
       if ((WSAEINVAL != WSAGetLastError ()) ||
           (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
         externalErrorExitDesc ("Unexpected select() error");
-      Sleep (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+      Sleep ((DWORD) (tv.tv_sec * 1000 + tv.tv_usec / 1000));
 #endif
     }
 
