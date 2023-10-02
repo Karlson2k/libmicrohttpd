@@ -15,7 +15,7 @@ wget -nv https://www.iana.org/assignments/http-fields/field-names.csv -O perm-he
 echo Generating...
 echo '/**
  * @defgroup headers HTTP headers
- * These are the standard headers found in HTTP requests and responses.
+ * The standard headers found in HTTP requests and responses.
  * See: https://www.iana.org/assignments/http-fields/http-fields.xhtml
  * Registry export date: '"$(date -u +%Y-%m-%d)"'
  * @{
@@ -29,17 +29,17 @@ FNR > 1 {
     status = $3
     ref = $4
     comment = $5
-    if ("RFC-ietf-httpbis" == substr(ref, 1, 16))
+    if(ref ~ /^RFC911[0-2]/ && status != "obsoleted")
     {
       gsub(/\]\[/, "; ", ref)
-      if (length(status) == 0)
+      if(length(status) == 0)
       { status = "No category" }
       else
       { sub(/^./, toupper(substr(status, 1, 1)), status) }
       field_name = gensub(/\*/, "ASTERISK", "g", field_name)
       field_name = gensub(/[^a-zA-Z0-9_]/, "_", "g", field_name)
-      printf ("/* %-14.14s %s */\n", status ".", ref)
-      printf ("#define MHD_HTTP_HEADER_%-12s \"%s\"\n", toupper(field_name), $1)
+      printf("/* %-14.14s %s */\n", status ".", ref)
+      printf("#define MHD_HTTP_HEADER_%-12s \"%s\"\n", toupper(field_name), $1)
     }
 }' perm-headers.csv >> header_insert_headers.h && \
 echo '
@@ -51,7 +51,24 @@ FNR > 1 {
     status = $3
     ref = $4
     comment = $5
-    if ("RFC-ietf-httpbis" != substr(ref, 1, 16) && status == "permanent")
+    if(ref !~ /^RFC911[0-2]/ && status == "permanent")
+    {
+      gsub(/\]\[/, "; ", ref)
+      sub(/^./, toupper(substr(status, 1, 1)), status)
+      field_name = gensub(/\*/, "ASTERISK", "g", field_name)
+      field_name = gensub(/[^a-zA-Z0-9_]/, "_", "g", field_name)
+      printf("/* %-14.14s %s */\n", status ".", ref)
+      printf("#define MHD_HTTP_HEADER_%-12s \"%s\"\n", toupper(field_name), $1)
+    }
+}' perm-headers.csv >> header_insert_headers.h && \
+gawk -e 'BEGIN {FPAT = "([^,]*)|(\"[^\"]+\")"}
+FNR > 1 {
+    gsub(/^\[|^"\[|\]"$|\]$/, "", $4)
+    field_name = $1
+    status = $3
+    ref = $4
+    comment = $5
+    if(ref !~ /^RFC911[0-2]/ && status == "provisional")
     {
       gsub(/\]\[/, "; ", ref)
       sub(/^./, toupper(substr(status, 1, 1)), status)
@@ -68,31 +85,14 @@ FNR > 1 {
     status = $3
     ref = $4
     comment = $5
-    if ("RFC-ietf-httpbis" != substr(ref, 1, 16) && status == "provisional")
-    {
-      gsub(/\]\[/, "; ", ref)
-      sub(/^./, toupper(substr(status, 1, 1)), status)
-      field_name = gensub(/\*/, "ASTERISK", "g", field_name)
-      field_name = gensub(/[^a-zA-Z0-9_]/, "_", "g", field_name)
-      printf ("/* %-14.14s %s */\n", status ".", ref)
-      printf ("#define MHD_HTTP_HEADER_%-12s \"%s\"\n", toupper(field_name), $1)
-    }
-}' perm-headers.csv >> header_insert_headers.h && \
-gawk -e 'BEGIN {FPAT = "([^,]*)|(\"[^\"]+\")"}
-FNR > 1 {
-    gsub(/^\[|^"\[|\]"$|\]$/, "", $4)
-    field_name = $1
-    status = $3
-    ref = $4
-    comment = $5
-    if ("RFC-ietf-httpbis" != substr(ref, 1, 16) && length(status) == 0)
+    if(ref !~ /^RFC911[0-2]/ && status != "obsoleted" && status != "permanent" && status != "provisional" && status != "deprecated")
     {
       gsub(/\]\[/, "; ", ref)
       status = "No category"
       field_name = gensub(/\*/, "ASTERISK", "g", field_name)
       field_name = gensub(/[^a-zA-Z0-9_]/, "_", "g", field_name)
-      printf ("/* %-14.14s %s */\n", status ".", ref)
-      printf ("#define MHD_HTTP_HEADER_%-12s \"%s\"\n", toupper(field_name), $1)
+      printf("/* %-14.14s %s */\n", status ".", ref)
+      printf("#define MHD_HTTP_HEADER_%-12s \"%s\"\n", toupper(field_name), $1)
     }
 }' perm-headers.csv >> header_insert_headers.h && \
 gawk -e 'BEGIN {FPAT = "([^,]*)|(\"[^\"]+\")"}
@@ -102,14 +102,14 @@ FNR > 1 {
     status = $3
     ref = $4
     comment = $5
-    if ("RFC-ietf-httpbis" != substr(ref, 1, 16) && status == "deprecated")
+    if(ref !~ /^RFC911[0-2]/ && status == "deprecated")
     {
       gsub(/\]\[/, "; ", ref)
       sub(/^./, toupper(substr(status, 1, 1)), status)
       field_name = gensub(/\*/, "ASTERISK", "g", field_name)
       field_name = gensub(/[^a-zA-Z0-9_]/, "_", "g", field_name)
-      printf ("/* %-14.14s %s */\n", status ".", ref)
-      printf ("#define MHD_HTTP_HEADER_%-12s \"%s\"\n", toupper(field_name), $1)
+      printf("/* %-14.14s %s */\n", status ".", ref)
+      printf("#define MHD_HTTP_HEADER_%-12s \"%s\"\n", toupper(field_name), $1)
     }
 }' perm-headers.csv >> header_insert_headers.h && \
 gawk -e 'BEGIN {FPAT = "([^,]*)|(\"[^\"]+\")"}
@@ -119,14 +119,14 @@ FNR > 1 {
     status = $3
     ref = $4
     comment = $5
-    if ("RFC-ietf-httpbis" != substr(ref, 1, 16) && status == "obsoleted")
+    if (status == "obsoleted")
     {
       gsub(/\]\[/, "; ", ref)
       sub(/^./, toupper(substr(status, 1, 1)), status)
       field_name = gensub(/\*/, "ASTERISK", "g", field_name)
       field_name = gensub(/[^a-zA-Z0-9_]/, "_", "g", field_name)
-      printf ("/* %-14.14s %s */\n", status ".", ref)
-      printf ("#define MHD_HTTP_HEADER_%-12s \"%s\"\n", toupper(field_name), $1)
+      printf("/* %-14.14s %s */\n", status ".", ref)
+      printf("#define MHD_HTTP_HEADER_%-12s \"%s\"\n", toupper(field_name), $1)
     }
 }' perm-headers.csv >> header_insert_headers.h && \
 echo OK && \

@@ -25,6 +25,9 @@ gawk -e 'BEGIN {FPAT = "([^,]*)|(\"[^\"]+\")"}
 FNR > 1 {
   gsub(/^\[|^"\[|\]"$|\]$/, "", $3)
   gsub(/\]\[/, "; ", $3)
+  if (sub(/ *\(OBSOLETED\)/, "", $2)) {
+    $3 = "(OBSOLETED) " $3
+  }
   if ($1 == 306) {
     $2 = "Switch Proxy"
     $3 = "Not used! " $3
@@ -68,12 +71,15 @@ FNR > 1 {
   num = $1
   reason = $2
   desc = $3
+  if (sub(/ *\(OBSOLETED\)/, "", reason)) {
+    desc = "(OBSOLETED) " desc
+  }
   if (num % 100 == 0) {
     if (num != 100) {
       printf ("  /* %s */ %-36s /* %s */\n};\n\n", prev_num, "_MHD_S_STR_W_LEN (\""prev_reason"\")", prev_desc)
     }
     prev_num = num;
-    print "static const struct _MHD_str_w_len " hundreds[$1/100] "_hundred[] = {"
+    print "static const struct _MHD_cstr_w_len " hundreds[$1/100] "_hundred[] = {"
   }
   if (num == 306) { 
     reason = "Switch Proxy"
