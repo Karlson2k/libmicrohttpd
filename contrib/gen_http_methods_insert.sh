@@ -89,7 +89,7 @@ FNR > 1 {
     { indem_m = "Idempotent.    " }
     else
     { indem_m = "Not idempotent." }
-    idx_str = gensub(/[^0-9A-Za-z]+/, " ", "g", reference_m)
+    idx_str = reference_m
     main_methods[idx_str] = sprintf ("%s\n", "/* " safe_m " " indem_m " " reference_m ". */")
     mthd_tkn = gensub(/\*/, "ASTERISK", "g", mthd_m)
     gsub(/[^a-zA-Z0-9_]/, "_", mthd_tkn)
