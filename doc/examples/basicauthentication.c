@@ -45,10 +45,10 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     static const char *page =
       "<html><body>Authorization required</body></html>";
     response = MHD_create_response_from_buffer_static (strlen (page), page);
-    ret = MHD_queue_basic_auth_fail_response3 (connection,
-                                               "admins",
-                                               MHD_YES,
-                                               response);
+    ret = MHD_queue_basic_auth_required_response3 (connection,
+                                                   "admins",
+                                                   MHD_YES,
+                                                   response);
   }
   else if ((strlen ("root") != auth_info->username_len) ||
            (0 != memcmp (auth_info->username, "root",
@@ -63,10 +63,10 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     static const char *page =
       "<html><body>Wrong username or password</body></html>";
     response = MHD_create_response_from_buffer_static (strlen (page), page);
-    ret = MHD_queue_basic_auth_fail_response3 (connection,
-                                               "admins",
-                                               MHD_YES,
-                                               response);
+    ret = MHD_queue_basic_auth_required_response3 (connection,
+                                                   "admins",
+                                                   MHD_YES,
+                                                   response);
   }
   else
   {

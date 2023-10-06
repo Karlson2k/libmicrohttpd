@@ -366,10 +366,10 @@ ahc_echo (void *cls,
                                                 (const void *) DENIED);
       if (NULL == response)
         mhdErrorExitDesc ("Response creation failed");
-      ret = MHD_queue_basic_auth_fail_response3 (connection, REALM, MHD_YES,
-                                                 response);
+      ret = MHD_queue_basic_auth_required_response3 (connection, REALM, MHD_YES,
+                                                     response);
       if (MHD_YES != ret)
-        mhdErrorExitDesc ("'MHD_queue_basic_auth_fail_response3()' failed");
+        mhdErrorExitDesc ("'MHD_queue_basic_auth_required_response3()' failed");
     }
   }
   else

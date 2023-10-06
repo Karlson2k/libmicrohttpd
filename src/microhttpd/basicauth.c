@@ -205,7 +205,7 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
  * The @a response is modified by this function. The modified response object
  * can be used to respond subsequent requests by #MHD_queue_response()
  * function with status code #MHD_HTTP_UNAUTHORIZED and must not be used again
- * with MHD_queue_basic_auth_fail_response3() function. The response could
+ * with MHD_queue_basic_auth_required_response3() function. The response could
  * be destroyed right after call of this function.
  *
  * @param connection the MHD connection structure
@@ -216,14 +216,14 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
  * @param response the response object to modify and queue; the NULL
  *                 is tolerated
  * @return #MHD_YES on success, #MHD_NO otherwise
- * @note Available since #MHD_VERSION 0x00097701
+ * @note Available since #MHD_VERSION 0x00097704
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
-MHD_queue_basic_auth_fail_response3 (struct MHD_Connection *connection,
-                                     const char *realm,
-                                     int prefer_utf8,
-                                     struct MHD_Response *response)
+MHD_queue_basic_auth_required_response3 (struct MHD_Connection *connection,
+                                         const char *realm,
+                                         int prefer_utf8,
+                                         struct MHD_Response *response)
 {
   static const char prefix[] = "Basic realm=\"";
   static const char suff_charset[] = "\", charset=\"UTF-8\"";
@@ -306,7 +306,7 @@ MHD_queue_basic_auth_fail_response3 (struct MHD_Connection *connection,
  * @param realm the realm presented to the client
  * @param response response object to modify and queue; the NULL is tolerated
  * @return #MHD_YES on success, #MHD_NO otherwise
- * @deprecated use MHD_queue_basic_auth_fail_response3()
+ * @deprecated use MHD_queue_basic_auth_required_response3()
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
@@ -314,8 +314,8 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
                                     const char *realm,
                                     struct MHD_Response *response)
 {
-  return MHD_queue_basic_auth_fail_response3 (connection, realm, MHD_NO,
-                                              response);
+  return MHD_queue_basic_auth_required_response3 (connection, realm, MHD_NO,
+                                                  response);
 }
 
 

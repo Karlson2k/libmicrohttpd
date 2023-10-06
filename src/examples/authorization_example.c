@@ -87,10 +87,10 @@ ahc_echo (void *cls,
     response =
       MHD_create_response_from_buffer_static (strlen (DENIED),
                                               (const void *) DENIED);
-    ret = MHD_queue_basic_auth_fail_response3 (connection,
-                                               "TestRealm",
-                                               MHD_NO,
-                                               response);
+    ret = MHD_queue_basic_auth_required_response3 (connection,
+                                                   "TestRealm",
+                                                   MHD_NO,
+                                                   response);
   }
   else
   {

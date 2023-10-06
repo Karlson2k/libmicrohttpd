@@ -89,10 +89,10 @@ ask_for_authentication (struct MHD_Connection *connection, const char *realm)
   if (! response)
     return MHD_NO;
 
-  ret = MHD_queue_basic_auth_fail_response3 (connection,
-                                             realm,
-                                             MHD_YES,
-                                             response);
+  ret = MHD_queue_basic_auth_required_response3 (connection,
+                                                 realm,
+                                                 MHD_YES,
+                                                 response);
   MHD_destroy_response (response);
   return ret;
 }
