@@ -1901,7 +1901,7 @@ calc_userdigest (struct DigestAlgorithm *da,
 
 
 /**
- * Calculate userdigest, return it as binary data.
+ * Calculate userdigest, return it as a binary data.
  *
  * The "userdigest" is the hash of the "username:realm:password" string.
  *
@@ -1918,7 +1918,7 @@ calc_userdigest (struct DigestAlgorithm *da,
  * @param algo3 the digest algorithm
  * @param username the username
  * @param realm the realm
- * @param password the password, must be zero-terminated
+ * @param password the password
  * @param[out] userdigest_bin the output buffer for userdigest;
  *                            if this function succeeds, then this buffer has
  *                            #MHD_digest_get_hash_size(algo3) bytes of
@@ -2003,7 +2003,7 @@ calc_userhash (struct DigestAlgorithm *da,
  *
  * The "userhash" is the hash of the string "username:realm".
  *
- * The "Userhash" could be used to avoid sending username in cleartext in Digest
+ * The "userhash" could be used to avoid sending username in cleartext in Digest
  * Authorization client's header.
  *
  * Userhash is not designed to hide the username in local database or files,
@@ -2015,7 +2015,7 @@ calc_userhash (struct DigestAlgorithm *da,
  * when loading list of the usernames to generate the userhash for every loaded
  * username (this will cause delays at the start with the long lists).
  *
- * Once "userhash" is generated it could be used to identify users for clients
+ * Once "userhash" is generated it could be used to identify users by clients
  * with "userhash" support.
  * Avoid repetitive usage of this function for the same username/realm
  * combination as it will cause excessive CPU load; save and re-use the result
@@ -2034,6 +2034,7 @@ calc_userhash (struct DigestAlgorithm *da,
  *         MHD_NO if @a bin_buf_size is too small or if @a algo3 algorithm is
  *         not supported (or external error has occurred,
  *         see #MHD_FEATURE_EXTERN_HASH)
+ * @sa #MHD_digest_auth_calc_userhash_hex()
  * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
@@ -2073,11 +2074,11 @@ MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo3 algo3,
 
 
 /**
- * Calculate "userhash", return it as hexadecimal data.
+ * Calculate "userhash", return it as hexadecimal string.
  *
  * The "userhash" is the hash of the string "username:realm".
  *
- * The "Userhash" could be used to avoid sending username in cleartext in Digest
+ * The "userhash" could be used to avoid sending username in cleartext in Digest
  * Authorization client's header.
  *
  * Userhash is not designed to hide the username in local database or files,
@@ -2089,7 +2090,7 @@ MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo3 algo3,
  * when loading list of the usernames to generate the userhash for every loaded
  * username (this will cause delays at the start with the long lists).
  *
- * Once "userhash" is generated it could be used to identify users for clients
+ * Once "userhash" is generated it could be used to identify users by clients
  * with "userhash" support.
  * Avoid repetitive usage of this function for the same username/realm
  * combination as it will cause excessive CPU load; save and re-use the result
@@ -2098,16 +2099,17 @@ MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo3 algo3,
  * @param algo3 the algorithm for userhash calculations
  * @param username the username
  * @param realm the realm
- * @param[out] userhash_hex the output buffer for userhash as hex data;
+ * @param[out] userhash_hex the output buffer for userhash as hex string;
  *                          if this function succeeds, then this buffer has
  *                          #MHD_digest_get_hash_size(algo3)*2 chars long
- *                          userhash string
+ *                          userhash zero-terminated string
  * @param bin_buf_size the size of the @a userhash_bin buffer, must be
  *                     at least #MHD_digest_get_hash_size(algo3)*2+1 chars long
  * @return MHD_YES on success,
  *         MHD_NO if @a bin_buf_size is too small or if @a algo3 algorithm is
  *         not supported (or external error has occurred,
  *         see #MHD_FEATURE_EXTERN_HASH).
+ * @sa #MHD_digest_auth_calc_userhash()
  * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
@@ -3135,16 +3137,17 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  * @a mqop and the client uses this mode, then server generated nonces are
  * used as one-time nonces because nonce-count is not supported in this old RFC.
  * Communication in this mode is very inefficient, especially if the client
- * requests several resources one-by-one as for every request new nonce must be
- * generated and client repeat all requests twice (first time to get a new
+ * requests several resources one-by-one as for every request a new nonce must
+ * be generated and client repeats all requests twice (first time to get a new
  * nonce and second time to perform an authorised request).
  *
  * @param connection the MHD connection structure
- * @param realm the realm to be used for authorization of the client
- * @param username the username needs to be authenticated, must be in clear text
+ * @param realm the realm for authorization of the client
+ * @param username the username to be authenticated, must be in clear text
  *                 even if userhash is used by the client
- * @param password the password used in the authentication
- * @param nonce_timeout the nonce validity duration in seconds
+ * @param password the password matching the @a username (and the @a realm)
+ * @param nonce_timeout the period of seconds since nonce generation, when
+ *                      the nonce is recognised as valid and not stale.
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
@@ -3189,13 +3192,13 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  * @a mqop and the client uses this mode, then server generated nonces are
  * used as one-time nonces because nonce-count is not supported in this old RFC.
  * Communication in this mode is very inefficient, especially if the client
- * requests several resources one-by-one as for every request new nonce must be
- * generated and client repeat all requests twice (first time to get a new
+ * requests several resources one-by-one as for every request a new nonce must
+ * be generated and client repeats all requests twice (first time to get a new
  * nonce and second time to perform an authorised request).
  *
  * @param connection the MHD connection structure
- * @param realm the realm to be used for authorization of the client
- * @param username the username needs to be authenticated, must be in clear text
+ * @param realm the realm for authorization of the client
+ * @param username the username to be authenticated, must be in clear text
  *                 even if userhash is used by the client
  * @param userdigest the precalculated binary hash of the string
  *                   "username:realm:password",
@@ -3517,14 +3520,16 @@ queue_auth_required_response3_inner (struct MHD_Connection *connection,
   size_t p; /* The position in the buffer */
   char *hdr_name;
 
-  if (0 != (((unsigned int) malgo3) & MHD_DIGEST_AUTH_ALGO3_SESSION))
+  if (0 == (((unsigned int) malgo3) & MHD_DIGEST_AUTH_ALGO3_NON_SESSION))
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
-              _ ("The 'session' algorithms are not supported.\n"));
+              _ ("Only non-'session' algorithms are supported.\n"));
 #endif /* HAVE_MESSAGES */
     return MHD_NO;
   }
+  malgo3 &= (enum MHD_DigestAuthMultiQOP)
+            (~((enum MHD_DigestAuthMultiQOP) MHD_DIGEST_AUTH_ALGO3_NON_SESSION));
 #ifdef MHD_MD5_SUPPORT
   if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_MD5))
     s_algo = MHD_DIGEST_AUTH_ALGO3_MD5;
@@ -3555,9 +3560,10 @@ queue_auth_required_response3_inner (struct MHD_Connection *connection,
     return MHD_NO;
   }
 
-  if (((unsigned int) mqop) !=
-      (((unsigned int) mqop) & MHD_DIGEST_AUTH_MULT_QOP_ANY_NON_INT))
+  if (MHD_DIGEST_AUTH_MULT_QOP_AUTH_INT == mqop)
     MHD_PANIC (_ ("Wrong 'mqop' value, API violation"));
+  mqop &= (enum MHD_DigestAuthMultiQOP)
+          (~((enum MHD_DigestAuthMultiQOP) MHD_DIGEST_AUTH_QOP_AUTH_INT));
 
   if (! digest_init_one_time (da, get_base_digest_algo (s_algo)))
     MHD_PANIC (_ ("Wrong 'algo' value, API violation"));
@@ -3904,22 +3910,26 @@ queue_auth_required_response3_inner (struct MHD_Connection *connection,
  *               any case client may assume that URI is in the same "protection
  *               space" if it starts with any of values specified here;
  *               could be NULL (clients typically assume that the same
- *               credentials could be used for any URI on the same host)
+ *               credentials could be used for any URI on the same host);
+ *               this list provides information for the client only and does
+ *               not actually restrict anything on the server side
  * @param response the reply to send; should contain the "access denied"
- *                 body; note that this function sets the "WWW Authenticate"
- *                 header and that the caller should not do this;
+ *                 body;
+ *                 note: this function sets the "WWW Authenticate" header and
+ *                 the caller should not set this header;
  *                 the NULL is tolerated
- * @param signal_stale set to #MHD_YES if the nonce is stale to add 'stale=true'
+ * @param signal_stale if set to #MHD_YES then indication of stale nonce used in
+ *                     the client's request is signalled by adding 'stale=true'
  *                     to the authentication header, this instructs the client
  *                     to retry immediately with the new nonce and the same
  *                     credentials, without asking user for the new password
  * @param mqop the QOP to use
- * @param malgo3 digest algorithm to use, MHD selects; if several algorithms
- *               are allowed then MD5 is preferred (currently, may be changed
- *               in next versions)
+ * @param malgo3 digest algorithm to use; if several algorithms are allowed
+ *               then MD5 is preferred (currently, may be changed in next
+ *               versions)
  * @param userhash_support if set to non-zero value (#MHD_YES) then support of
- *                         userhash is indicated, the client may provide
- *                         hash("username:realm") instead of username in
+ *                         userhash is indicated, allowing client to provide
+ *                         hash("username:realm") instead of the username in
  *                         clear text;
  *                         note that clients are allowed to provide the username
  *                         in cleartext even if this parameter set to non-zero;
@@ -3928,8 +3938,8 @@ queue_auth_required_response3_inner (struct MHD_Connection *connection,
  *                         username; see #MHD_digest_auth_calc_userhash() and
  *                         #MHD_digest_auth_calc_userhash_hex()
  * @param prefer_utf8 if not set to #MHD_NO, parameter 'charset=UTF-8' is
- *                    added, indicating for the client that UTF-8 encoding
- *                    is preferred
+ *                    added, indicating for the client that UTF-8 encoding for
+ *                    the username is preferred
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
