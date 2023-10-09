@@ -629,6 +629,13 @@ wr_handshake (struct wr_socket *s)
     MHD_socket_set_error_ (MHD_SCKT_EAGAIN_);
   else
   {
+    fprintf (stderr, "The error returned by gnutls_handshake() is "
+             "'%s' ", gnutls_strerror ((int) res));
+#if GNUTLS_VERSION_NUMBER >= 0x020600
+    fprintf (stderr, "(%s)\n", gnutls_strerror_name ((int) res));
+#else  /* GNUTLS_VERSION_NUMBER < 0x020600 */
+    fprintf (stderr, "(%d)\n", (int) res);
+#endif /* GNUTLS_VERSION_NUMBER < 0x020600 */
     testErrorLogDesc ("gnutls_handshake() failed with hard error");
     MHD_socket_set_error_ (MHD_SCKT_ECONNABORTED_); /* hard error */
   }
@@ -671,6 +678,13 @@ wr_send (struct wr_socket *s,
       MHD_socket_set_error_ (MHD_SCKT_EAGAIN_);
     else
     {
+      fprintf (stderr, "The error returned by gnutls_record_send() is "
+               "'%s' ", gnutls_strerror ((int) ret));
+#if GNUTLS_VERSION_NUMBER >= 0x020600
+      fprintf (stderr, "(%s)\n", gnutls_strerror_name ((int) ret));
+#else  /* GNUTLS_VERSION_NUMBER < 0x020600 */
+      fprintf (stderr, "(%d)\n", (int) ret);
+#endif /* GNUTLS_VERSION_NUMBER < 0x020600 */
       testErrorLogDesc ("gnutls_record_send() failed with hard error");
       MHD_socket_set_error_ (MHD_SCKT_ECONNABORTED_);  /* hard error */
       return -1;
@@ -707,12 +721,19 @@ wr_recv (struct wr_socket *s,
       return -1;
 
     ret = gnutls_record_recv (s->tls_s, buf, len);
-    if (ret > 0)
+    if (ret >= 0)
       return ret;
     if (GNUTLS_E_AGAIN == ret)
       MHD_socket_set_error_ (MHD_SCKT_EAGAIN_);
     else
     {
+      fprintf (stderr, "The error returned by gnutls_record_recv() is "
+               "'%s' ", gnutls_strerror ((int) ret));
+#if GNUTLS_VERSION_NUMBER >= 0x020600
+      fprintf (stderr, "(%s)\n", gnutls_strerror_name ((int) ret));
+#else  /* GNUTLS_VERSION_NUMBER < 0x020600 */
+      fprintf (stderr, "(%d)\n", (int) ret);
+#endif /* GNUTLS_VERSION_NUMBER < 0x020600 */
       testErrorLogDesc ("gnutls_record_recv() failed with hard error");
       MHD_socket_set_error_ (MHD_SCKT_ECONNABORTED_);  /* hard error */
       return -1;
@@ -1050,7 +1071,11 @@ recv_all (struct wr_socket *sock,
       externalErrorExitDesc ("recv() failed");
     }
     if (0 == ret)
+    {
+      fprintf (stderr, "Partial only received text. Expected: '%s' ."
+               "Got: '%.*s'. ", text, (int) (off + (size_t) ret), buf);
       mhdErrorExitDesc ("The server unexpectedly closed connection");
+    }
     if (0 != strncmp (text, buf, off + (size_t) ret))
     {
       fprintf (stderr, "Wrong received text. Expected: '%s' ."
