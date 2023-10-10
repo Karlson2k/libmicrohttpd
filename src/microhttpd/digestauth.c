@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2010, 2011, 2012, 2015, 2018 Daniel Pittman and Christian Grothoff
-     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2023 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -2502,15 +2502,18 @@ is_param_equal_caseless (const struct MHD_RqDAuthParam *param,
  * used as one-time nonces because nonce-count is not supported in this old RFC.
  * Communication in this mode is very inefficient, especially if the client
  * requests several resources one-by-one as for every request new nonce must be
- * generated and client repeat all requests twice (first time to get a new
- * nonce and second time to perform an authorised request).
+ * generated and client repeat all requests twice (the first time to get a new
+ * nonce and the second time to perform an authorised request).
  *
  * @param connection the MHD connection structure
- * @param realm the realm presented to the client
- * @param username the username needs to be authenticated
- * @param password the password used in the authentication
- * @param userdigest the optional precalculated binary hash of the string
- *                   "username:realm:password"
+ * @param realm the realm for authorization of the client
+ * @param username the username to be authenticated, must be in clear text
+ *                 even if userhash is used by the client
+ * @param password the password used in the authentication,
+ *                 must be NULL if @a userdigest is not NULL
+ * @param userdigest the precalculated binary hash of the string
+ *                   "username:realm:password",
+ *                   must be NULL if @a password is not NULL
  * @param nonce_timeout the period of seconds since nonce generation, when
  *                      the nonce is recognised as valid and not stale.
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
@@ -2521,7 +2524,7 @@ is_param_equal_caseless (const struct MHD_RqDAuthParam *param,
  * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
  *               by the client is not allowed by this parameter
  * @param[out] pbuf the pointer to pointer to internally malloc'ed buffer,
- *                  to be free if not NULL upon return
+ *                  to be freed if not NULL upon return
  * @return #MHD_DAUTH_OK if authenticated,
  *         error code otherwise.
  * @ingroup authentication
@@ -2562,6 +2565,9 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
   enum _MHD_GetUnqResult unq_res;
   size_t username_len;
   size_t realm_len;
+
+  mhd_assert ((NULL != password) || (NULL != userdigest));
+  mhd_assert (! ((NULL != userdigest) && (NULL != password)));
 
   tmp2_size = 0;
 
@@ -2834,7 +2840,7 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
     /*
      * First level vetting for the nonce validity: if the timestamp
      * attached to the nonce exceeds `nonce_timeout', then the nonce is
-     * invalid.
+     * stale.
      */
     if (TRIM_TO_TIMESTAMP (t - nonce_time) > (nonce_timeout * 1000))
       return MHD_DAUTH_NONCE_STALE; /* too old */
@@ -3044,15 +3050,18 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
  * used as one-time nonces because nonce-count is not supported in this old RFC.
  * Communication in this mode is very inefficient, especially if the client
  * requests several resources one-by-one as for every request new nonce must be
- * generated and client repeat all requests twice (first time to get a new
- * nonce and second time to perform an authorised request).
+ * generated and client repeat all requests twice (the first time to get a new
+ * nonce and the second time to perform an authorised request).
  *
  * @param connection the MHD connection structure
- * @param realm the realm presented to the client
- * @param username the username needs to be authenticated
- * @param password the password used in the authentication
- * @param userdigest the optional precalculated binary hash of the string
- *                   "username:realm:password"
+ * @param realm the realm for authorization of the client
+ * @param username the username to be authenticated, must be in clear text
+ *                 even if userhash is used by the client
+ * @param password the password used in the authentication,
+ *                 must be NULL if @a userdigest is not NULL
+ * @param userdigest the precalculated binary hash of the string
+ *                   "username:realm:password",
+ *                   must be NULL if @a password is not NULL
  * @param nonce_timeout the period of seconds since nonce generation, when
  *                      the nonce is recognised as valid and not stale.
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
