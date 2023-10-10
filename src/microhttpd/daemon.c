@@ -1424,10 +1424,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     else   /* 0 < res */
     {
       urh->in_buffer_used += (size_t) res;
-      if (0 < gnutls_record_check_pending (connection->tls_session))
-      {
-        connection->tls_read_ready = true;
-      }
+      connection->tls_read_ready =
+        (0 < gnutls_record_check_pending (connection->tls_session));
     }
     if (MHD_EPOLL_STATE_ERROR ==
         ((MHD_EPOLL_STATE_ERROR | MHD_EPOLL_STATE_READ_READY) & urh->app.celi))
@@ -1593,7 +1591,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                     (uint64_t) urh->in_buffer_used,
                     MHD_socket_strerr_ (err));
 #endif
-          /* Discard any data received form remote. */
+          /* Discard any data received from remote. */
           urh->in_buffer_used = 0;
           /* Reading from remote client is not required anymore. */
           urh->in_buffer_size = 0;
