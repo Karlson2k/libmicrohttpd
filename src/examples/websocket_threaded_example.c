@@ -39,7 +39,7 @@
   "<title>WebSocket chat</title>\n"                                           \
   "<script>\n"                                                                \
   "document.addEventListener('DOMContentLoaded', function() {\n"              \
-  "  const ws = new WebSocket('ws:/" "/ ' + window.location.host);\n"         \
+  "  const ws = new WebSocket('ws:/" "/' + window.location.host);\n"         \
   "  const btn = document.getElementById('send');\n"                          \
   "  const msg = document.getElementById('msg');\n"                           \
   "  const log = document.getElementById('log');\n"                           \
