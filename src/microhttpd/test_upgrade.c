@@ -161,6 +161,9 @@ _testErrorLog_func (const char *errDesc, const char *funcName, int lineNum)
 #endif /* ! MHD_HAVE_MHD_FUNC_ */
 
 
+/* Could be increased to facilitate debugging */
+static unsigned int test_timeout = 5U;
+
 static int verbose = 0;
 
 static uint16_t global_port;
@@ -1333,6 +1336,7 @@ test_upgrade (unsigned int flags,
                           MHD_OPTION_NOTIFY_CONNECTION, &notify_connection_cb,
                           NULL,
                           MHD_OPTION_THREAD_POOL_SIZE, pool,
+                          MHD_OPTION_CONNECTION_TIMEOUT, test_timeout,
                           MHD_OPTION_END);
 #ifdef HTTPS_SUPPORT
   else
@@ -1349,6 +1353,7 @@ test_upgrade (unsigned int flags,
                           MHD_OPTION_HTTPS_MEM_KEY, srv_signed_key_pem,
                           MHD_OPTION_HTTPS_MEM_CERT, srv_signed_cert_pem,
                           MHD_OPTION_THREAD_POOL_SIZE, pool,
+                          MHD_OPTION_CONNECTION_TIMEOUT, test_timeout,
                           MHD_OPTION_END);
 #endif /* HTTPS_SUPPORT */
   if (NULL == d)
