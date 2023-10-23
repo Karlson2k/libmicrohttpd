@@ -263,6 +263,62 @@ gnutlscli_connect (int *sock,
 
 
 /**
+ * Change socket to blocking.
+ *
+ * @param fd the socket to manipulate
+ */
+static void
+make_blocking (MHD_socket fd)
+{
+#if defined(MHD_POSIX_SOCKETS)
+  int flags;
+
+  flags = fcntl (fd, F_GETFL);
+  if (-1 == flags)
+    externalErrorExitDesc ("fcntl() failed");
+  if ((flags & ~O_NONBLOCK) != flags)
+    if (-1 == fcntl (fd, F_SETFL, flags & ~O_NONBLOCK))
+      externalErrorExitDesc ("fcntl() failed");
+#elif defined(MHD_WINSOCK_SOCKETS)
+  unsigned long flags = 0;
+
+  if (0 != ioctlsocket (fd, (int) FIONBIO, &flags))
+    externalErrorExitDesc ("ioctlsocket() failed");
+#endif /* MHD_WINSOCK_SOCKETS */
+}
+
+
+/**
+ * Enable TCP_NODELAY on TCP/IP socket.
+ *
+ * @param fd the socket to manipulate
+ */
+static void
+make_nodelay (MHD_socket fd)
+{
+#ifdef TCP_NODELAY
+  const MHD_SCKT_OPT_BOOL_ on_val = 1;
+
+  if (0 == setsockopt (fd,
+                       IPPROTO_TCP,
+                       TCP_NODELAY,
+                       (const void *) &on_val,
+                       sizeof (on_val)))
+    return; /* Success exit point */
+
+#ifndef MHD_WINSOCK_SOCKETS
+  fprintf (stderr, "Failed to enable TCP_NODELAY on socket (ignored). "
+           "errno: %d (%s)\n", (int) errno, strerror (errno));
+#else /* MHD_WINSOCK_SOCKETS */
+  fprintf (stderr, "Failed to enable TCP_NODELAY on socket (ignored). "
+           "WSAGetLastError() value: %d\n", (int) WSAGetLastError ());
+#endif /* MHD_WINSOCK_SOCKETS */
+  fflush (stderr);
+#endif /* TCP_NODELAY */
+}
+
+
+/**
  * Wrapper structure for plain&TLS sockets
  */
 struct wr_socket
@@ -323,7 +379,10 @@ wr_create_plain_sckt (void)
   s->t = wr_plain;
   s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (MHD_INVALID_SOCKET != s->fd)
+  {
+    make_nodelay (s->fd);
     return s; /* Success */
+  }
   testErrorLogDesc ("socket() failed");
   free (s);
   return NULL;
@@ -349,6 +408,7 @@ wr_create_tls_sckt (void)
   s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (MHD_INVALID_SOCKET != s->fd)
   {
+    make_nodelay (s->fd);
     if (GNUTLS_E_SUCCESS == gnutls_init (&(s->tls_s), GNUTLS_CLIENT))
     {
       if (GNUTLS_E_SUCCESS == gnutls_set_default_priority (s->tls_s))
@@ -409,6 +469,7 @@ wr_create_from_plain_sckt (MHD_socket plain_sk)
   }
   s->t = wr_plain;
   s->fd = plain_sk;
+  make_nodelay (s->fd);
   return s;
 }
 
@@ -758,33 +819,6 @@ notify_connection_cb (void *cls,
     started = MHD_NO;
     break;
   }
-}
-
-
-/**
- * Change socket to blocking.
- *
- * @param fd the socket to manipulate
- */
-static void
-make_blocking (MHD_socket fd)
-{
-#if defined(MHD_POSIX_SOCKETS)
-  int flags;
-
-  flags = fcntl (fd, F_GETFL);
-  if (-1 == flags)
-    externalErrorExitDesc ("fcntl() failed");
-  if ((flags & ~O_NONBLOCK) != flags)
-    if (-1 == fcntl (fd, F_SETFL, flags & ~O_NONBLOCK))
-      externalErrorExitDesc ("fcntl() failed");
-#elif defined(MHD_WINSOCK_SOCKETS)
-  unsigned long flags = 0;
-
-  if (0 != ioctlsocket (fd, (int) FIONBIO, &flags))
-    externalErrorExitDesc ("ioctlsocket() failed");
-#endif /* MHD_WINSOCK_SOCKETS */
-
 }
 
 
