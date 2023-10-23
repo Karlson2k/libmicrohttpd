@@ -33,6 +33,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <errno.h>
 #ifndef WINDOWS
 #include <unistd.h>
@@ -60,6 +61,14 @@
 #include <sys/wait.h>
 #endif /* HAVE_FORK && HAVE_WAITPID */
 #endif /* HTTPS_SUPPORT */
+
+
+#ifndef MHD_STATICSTR_LEN_
+/**
+ * Determine length of static string / macro strings at compile time.
+ */
+#define MHD_STATICSTR_LEN_(macro) (sizeof(macro) / sizeof(char) - 1)
+#endif /* ! MHD_STATICSTR_LEN_ */
 
 
 _MHD_NORETURN static void
@@ -128,33 +137,20 @@ _testErrorLog_func (const char *errDesc, const char *funcName, int lineNum)
 }
 
 
-#if defined(HAVE___FUNC__)
+#ifdef MHD_HAVE_MHD_FUNC_
 #define externalErrorExit(ignore) \
-    _externalErrorExit_func(NULL, __func__, __LINE__)
+    _externalErrorExit_func(NULL, MHD_FUNC_, __LINE__)
 #define externalErrorExitDesc(errDesc) \
-    _externalErrorExit_func(errDesc, __func__, __LINE__)
+    _externalErrorExit_func(errDesc, MHD_FUNC_, __LINE__)
 #define mhdErrorExit(ignore) \
-    _mhdErrorExit_func(NULL, __func__, __LINE__)
+    _mhdErrorExit_func(NULL, MHD_FUNC_, __LINE__)
 #define mhdErrorExitDesc(errDesc) \
-    _mhdErrorExit_func(errDesc, __func__, __LINE__)
+    _mhdErrorExit_func(errDesc, MHD_FUNC_, __LINE__)
 #define testErrorLog(ignore) \
-    _testErrorLog_func(NULL, __func__, __LINE__)
+    _testErrorLog_func(NULL, MHD_FUNC_, __LINE__)
 #define testErrorLogDesc(errDesc) \
-    _testErrorLog_func(errDesc, __func__, __LINE__)
-#elif defined(HAVE___FUNCTION__)
-#define externalErrorExit(ignore) \
-    _externalErrorExit_func(NULL, __FUNCTION__, __LINE__)
-#define externalErrorExitDesc(errDesc) \
-    _externalErrorExit_func(errDesc, __FUNCTION__, __LINE__)
-#define mhdErrorExit(ignore) \
-    _mhdErrorExit_func(NULL, __FUNCTION__, __LINE__)
-#define mhdErrorExitDesc(errDesc) \
-    _mhdErrorExit_func(errDesc, __FUNCTION__, __LINE__)
-#define testErrorLog(ignore) \
-    _testErrorLog_func(NULL, __FUNCTION__, __LINE__)
-#define testErrorLogDesc(errDesc) \
-    _testErrorLog_func(errDesc, __FUNCTION__, __LINE__)
-#else
+    _testErrorLog_func(errDesc, MHD_FUNC_, __LINE__)
+#else  /* ! MHD_HAVE_MHD_FUNC_ */
 #define externalErrorExit(ignore) _externalErrorExit_func(NULL, NULL, __LINE__)
 #define externalErrorExitDesc(errDesc) \
   _externalErrorExit_func(errDesc, NULL, __LINE__)
@@ -162,15 +158,7 @@ _testErrorLog_func (const char *errDesc, const char *funcName, int lineNum)
 #define mhdErrorExitDesc(errDesc) _mhdErrorExit_func(errDesc, NULL, __LINE__)
 #define testErrorLog(ignore) _testErrorLog_func(NULL, NULL, __LINE__)
 #define testErrorLogDesc(errDesc) _testErrorLog_func(errDesc, NULL, __LINE__)
-#endif
-
-
-static void
-fflush_allstd (void)
-{
-  fflush (stderr);
-  fflush (stdout);
-}
+#endif /* ! MHD_HAVE_MHD_FUNC_ */
 
 
 static int verbose = 0;
@@ -186,6 +174,14 @@ enum tls_tool
 };
 
 static enum tls_tool use_tls_tool;
+
+static void
+fflush_allstd (void)
+{
+  fflush (stderr);
+  fflush (stdout);
+}
+
 
 #if defined(HTTPS_SUPPORT) && defined(HAVE_FORK) && defined(HAVE_WAITPID)
 /**
@@ -791,18 +787,19 @@ make_blocking (MHD_socket fd)
 
 static void
 send_all (struct wr_socket *sock,
-          const char *text)
+          const void *data,
+          size_t data_size)
 {
-  size_t len = strlen (text);
   ssize_t ret;
-  size_t off;
+  size_t sent;
+  const uint8_t *const buf = (const uint8_t *) data;
 
   make_blocking (wr_fd (sock));
-  for (off = 0; off < len; off += (size_t) ret)
+  for (sent = 0; sent < data_size; sent += (size_t) ret)
   {
     ret = wr_send (sock,
-                   &text[off],
-                   len - off);
+                   buf + sent,
+                   data_size - sent);
     if (0 > ret)
     {
       if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()) ||
@@ -815,6 +812,9 @@ send_all (struct wr_socket *sock,
     }
   }
 }
+
+
+#define send_all_stext(sk,st) send_all(sk,st,MHD_STATICSTR_LEN_(st))
 
 
 /**
@@ -870,19 +870,23 @@ recv_hdr (struct wr_socket *sock)
 
 static void
 recv_all (struct wr_socket *sock,
-          const char *text)
+          const void *data,
+          size_t data_size)
 {
-  size_t len = strlen (text);
-  char buf[len];
+  uint8_t *buf;
   ssize_t ret;
-  size_t off;
+  size_t rcvd;
+
+  buf = (uint8_t *) malloc (data_size);
+  if (NULL == buf)
+    externalErrorExitDesc ("malloc() failed");
 
   make_blocking (wr_fd (sock));
-  for (off = 0; off < len; off += (size_t) ret)
+  for (rcvd = 0; rcvd < data_size; rcvd += (size_t) ret)
   {
     ret = wr_recv (sock,
-                   &buf[off],
-                   len - off);
+                   buf + rcvd,
+                   data_size - rcvd);
     if (0 > ret)
     {
       if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()) ||
@@ -893,20 +897,38 @@ recv_all (struct wr_socket *sock,
       }
       externalErrorExitDesc ("recv() failed");
     }
-    if (0 == ret)
+    else if (0 == ret)
     {
-      fprintf (stderr, "Partial only received text. Expected: '%s' ."
-               "Got: '%.*s'. ", text, (int) (off + (size_t) ret), buf);
+      fprintf (stderr, "Partial only received text. Expected: '%.*s' "
+               "(length: %ud). Got: '%.*s' (length: %ud). ",
+               (int) data_size, (const char *) data, (unsigned int) data_size,
+               (int) rcvd, (const char *) buf, (unsigned int) rcvd);
       mhdErrorExitDesc ("The server unexpectedly closed connection");
     }
+    if ((data_size - rcvd) < (size_t) ret)
+      externalErrorExitDesc ("recv() returned excessive amount of data");
+    if (0 != memcmp (data, buf, rcvd + (size_t) ret))
+    {
+      fprintf (stderr, "Wrong received text. Expected: '%.*s'. "
+               "Got: '%.*s'. ",
+               (int) (rcvd + (size_t) ret), (const char *) data,
+               (int) (rcvd + (size_t) ret), (const char *) buf);
+      mhdErrorExit ();
+    }
   }
-  if (0 != strncmp (text, buf, len))
+  if (0 != memcmp (data, buf, data_size))
   {
-    fprintf (stderr, "Wrong received text. Expected: '%s' ."
-             "Got: '%.*s'. ", text, (int) len, buf);
+    fprintf (stderr, "Wrong received text. Expected: '%.*s'. "
+             "Got: '%.*s'. ",
+             (int) data_size, (const char *) data,
+             (int) data_size, (const char *) buf);
     mhdErrorExit ();
   }
+  free (buf);
 }
+
+
+#define recv_all_stext(sk,st) recv_all(sk,st,MHD_STATICSTR_LEN_(st))
 
 
 /**
@@ -920,12 +942,12 @@ run_usock (void *cls)
 {
   struct MHD_UpgradeResponseHandle *urh = cls;
 
-  send_all (usock,
-            "Hello");
-  recv_all (usock,
-            "World");
-  send_all (usock,
-            "Finished");
+  send_all_stext (usock,
+                  "Hello");
+  recv_all_stext (usock,
+                  "World");
+  send_all_stext (usock,
+                  "Finished");
   MHD_upgrade_action (urh,
                       MHD_UPGRADE_ACTION_CLOSE);
   free (usock);
@@ -945,15 +967,15 @@ run_usock_client (void *cls)
 {
   struct wr_socket *sock = cls;
 
-  send_all (sock,
-            "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: Upgrade\r\n\r\n");
+  send_all_stext (sock,
+                  "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: Upgrade\r\n\r\n");
   recv_hdr (sock);
-  recv_all (sock,
-            "Hello");
-  send_all (sock,
-            "World");
-  recv_all (sock,
-            "Finished");
+  recv_all_stext (sock,
+                  "Hello");
+  send_all_stext (sock,
+                  "World");
+  recv_all_stext (sock,
+                  "Finished");
   wr_close (sock);
   done = true;
   return NULL;
