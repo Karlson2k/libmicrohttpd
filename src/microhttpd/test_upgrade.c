@@ -162,7 +162,7 @@ _testErrorLog_func (const char *errDesc, const char *funcName, int lineNum)
 
 
 /* Could be increased to facilitate debugging */
-static unsigned int test_timeout = 5U;
+static int test_timeout = 5;
 
 static int verbose = 0;
 
@@ -511,10 +511,69 @@ wr_connect (struct wr_socket *s,
 }
 
 
+enum wr_wait_for_type
+{
+  WR_WAIT_FOR_RECV = 0,
+  WR_WAIT_FOR_SEND = 1
+};
+
+static void
+wr_wait_socket_ready_ (struct wr_socket *s,
+                       int timeout_ms,
+                       enum wr_wait_for_type wait_for)
+{
+  fd_set fds;
+  int sel_res;
+  struct timeval tmo;
+
+  if (0 > timeout_ms)
+    return;
+
+#ifndef MHD_WINSOCK_SOCKETS
+  if (FD_SETSIZE <= s->fd)
+    externalErrorExitDesc ("Too large FD value");
+#endif /* ! MHD_WINSOCK_SOCKETS */
+  FD_ZERO (&fds);
+  FD_SET (s->fd, &fds);
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+  tmo.tv_sec = (time_t) (timeout_ms / 1000);
+#else  /* Native W32 */
+  tmo.tv_sec = (long) (timeout_ms / 1000);
+#endif /* Native W32 */
+  tmo.tv_usec = ((long) (timeout_ms % 1000)) * 1000;
+
+  if (WR_WAIT_FOR_RECV == wait_for)
+    sel_res = select (1 + (int) s->fd, &fds, NULL, NULL, &tmo);
+  else
+    sel_res = select (1 + (int) s->fd, NULL, &fds, NULL, &tmo);
+
+  if (1 == sel_res)
+    return;
+
+  if (0 == sel_res)
+    fprintf (stderr, "Timeout");
+  else
+  {
+#ifndef MHD_WINSOCK_SOCKETS
+    fprintf (stderr, "Error %d (%s)", (int) errno, strerror (errno));
+#else /* MHD_WINSOCK_SOCKETS */
+    fprintf (stderr, "Error (WSAGetLastError code: %d)",
+             (int) WSAGetLastError ());
+#endif /* MHD_WINSOCK_SOCKETS */
+  }
+  fprintf (stderr, " waiting for socket to be available for %s.\n",
+           (WR_WAIT_FOR_RECV == wait_for) ? "receiving" : "sending");
+  if (WR_WAIT_FOR_RECV == wait_for)
+    mhdErrorExitDesc ("Client or application failed to receive the data");
+  else
+    mhdErrorExitDesc ("Client or application failed to send the data");
+}
+
+
 #ifdef HTTPS_SUPPORT
 /* Only to be called from wr_send() and wr_recv() ! */
 static bool
-wr_handshake (struct wr_socket *s)
+wr_handshake_ (struct wr_socket *s)
 {
   int res = gnutls_handshake (s->tls_s);
   if (GNUTLS_E_SUCCESS == res)
@@ -545,24 +604,31 @@ wr_handshake (struct wr_socket *s)
  * @param s the socket to use
  * @param buf the buffer with data to send
  * @param len the length of data in @a buf
+ * @param timeout_ms the maximum wait time in milliseconds to send the data,
+ *                   no limit if negative value is used
  * @return number of bytes were sent if succeed,
  *         -1 if failed. Use #MHD_socket_get_error_()
  *         to get socket error.
  */
 static ssize_t
-wr_send (struct wr_socket *s,
-         const void *buf,
-         size_t len)
+wr_send_tmo (struct wr_socket *s,
+             const void *buf,
+             size_t len,
+             int timeout_ms)
 {
   if (wr_plain == s->t)
+  {
+    wr_wait_socket_ready_ (s, timeout_ms, WR_WAIT_FOR_SEND);
     return MHD_send_ (s->fd, buf, len);
+  }
 #ifdef HTTPS_SUPPORT
   if (wr_tls == s->t)
   {
     ssize_t ret;
-    if (! s->tls_connected && ! wr_handshake (s))
+    if (! s->tls_connected && ! wr_handshake_ (s))
       return -1;
 
+    wr_wait_socket_ready_ (s, timeout_ms, WR_WAIT_FOR_SEND);
     ret = gnutls_record_send (s->tls_s, buf, len);
     if (ret > 0)
       return ret;
@@ -590,28 +656,53 @@ wr_send (struct wr_socket *s,
 
 
 /**
+ * Send data to remote by socket.
+ * @param s the socket to use
+ * @param buf the buffer with data to send
+ * @param len the length of data in @a buf
+ * @return number of bytes were sent if succeed,
+ *         -1 if failed. Use #MHD_socket_get_error_()
+ *         to get socket error.
+ */
+static ssize_t
+wr_send (struct wr_socket *s,
+         const void *buf,
+         size_t len)
+{
+  return wr_send_tmo (s, buf, len, test_timeout * 1000);
+}
+
+
+/**
  * Receive data from remote by socket.
  * @param s the socket to use
  * @param buf the buffer to store received data
  * @param len the length of @a buf
+ * @param timeout_ms the maximum wait time in milliseconds to receive the data,
+ *                   no limit if negative value is used
  * @return number of bytes were received if succeed,
  *         -1 if failed. Use #MHD_socket_get_error_()
  *         to get socket error.
  */
 static ssize_t
-wr_recv (struct wr_socket *s,
-         void *buf,
-         size_t len)
+wr_recv_tmo (struct wr_socket *s,
+             void *buf,
+             size_t len,
+             int timeout_ms)
 {
   if (wr_plain == s->t)
+  {
+    wr_wait_socket_ready_ (s, timeout_ms, WR_WAIT_FOR_RECV);
     return MHD_recv_ (s->fd, buf, len);
+  }
 #ifdef HTTPS_SUPPORT
   if (wr_tls == s->t)
   {
     ssize_t ret;
-    if (! s->tls_connected && ! wr_handshake (s))
+    if (! s->tls_connected && ! wr_handshake_ (s))
       return -1;
 
+    wr_wait_socket_ready_ (s, timeout_ms, WR_WAIT_FOR_RECV);
     ret = gnutls_record_recv (s->tls_s, buf, len);
     if (ret >= 0)
       return ret;
@@ -633,6 +724,24 @@ wr_recv (struct wr_socket *s,
   }
 #endif /* HTTPS_SUPPORT */
   return -1;
+}
+
+
+/**
+ * Receive data from remote by socket.
+ * @param s the socket to use
+ * @param buf the buffer to store received data
+ * @param len the length of @a buf
+ * @return number of bytes were received if succeed,
+ *         -1 if failed. Use #MHD_socket_get_error_()
+ *         to get socket error.
+ */
+static ssize_t
+wr_recv (struct wr_socket *s,
+         void *buf,
+         size_t len)
+{
+  return wr_recv_tmo (s, buf, len, test_timeout * 1000);
 }
 
 
@@ -1474,6 +1583,15 @@ main (int argc,
                has_param (argc, argv, "--quiet") ||
                has_param (argc, argv, "-s") ||
                has_param (argc, argv, "--silent"));
+
+  if ((((int) ((~((unsigned int) 0U)) >> 1)) / 1000) < test_timeout)
+  {
+    fprintf (stderr, "The test timeout value (%d) is too large.\n"
+             "The test cannot run.\n", test_timeout);
+    fprintf (stderr, "The maximum allowed timeout value is %d.\n",
+             (((int) ((~((unsigned int) 0U)) >> 1)) / 1000));
+    return 3;
+  }
 
   if (test_tls)
   {
