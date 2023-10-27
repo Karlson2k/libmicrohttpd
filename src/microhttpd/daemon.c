@@ -3854,7 +3854,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
      * but suppression failed and SIGPIPE cannot be suppressed with send(). */
     if (! daemon->sigpipe_blocked)
     {
-      MHD_socket_close_ (s);
+      (void) MHD_socket_close_ (s);
       return MHD_NO;
     }
 #endif /* MSG_NOSIGNAL */
