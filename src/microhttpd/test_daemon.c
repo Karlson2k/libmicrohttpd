@@ -1,6 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2007, 2017 Christian Grothoff
+     Copyright (C) 2014--2023  Evgeny Grin (Karlson2k)
 
      libmicrohttpd is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published
@@ -22,6 +23,7 @@
  * @file test_daemon.c
  * @brief  Testcase for libmicrohttpd starts and stops
  * @author Christian Grothoff
+ * @author Karlson2k (Evgeny Grin)
  */
 
 #include "platform.h"
@@ -106,7 +108,7 @@ testStartStop (void)
     fprintf (stderr,
              "Failed to start daemon on port %u\n",
              (unsigned int) 0);
-    exit (77);
+    exit (3);
   }
   MHD_stop_daemon (d);
   return 0;
@@ -133,10 +135,9 @@ testExternalRun (void)
     fprintf (stderr,
              "Failed to start daemon on port %u\n",
              (unsigned int) 0);
-    exit (77);
+    exit (3);
   }
-  i = 0;
-  while (i < 15)
+  for (i = 0; i < 15; ++i)
   {
     maxfd = 0;
     FD_ZERO (&rs);
@@ -147,14 +148,13 @@ testExternalRun (void)
                "Failed in MHD_get_fdset().\n");
       return 256;
     }
-    if (MHD_run (d) == MHD_NO)
+    if (MHD_NO == MHD_run (d))
     {
       MHD_stop_daemon (d);
       fprintf (stderr,
                "Failed in MHD_run().\n");
       return 8;
     }
-    i++;
   }
   MHD_stop_daemon (d);
   return 0;
@@ -176,8 +176,8 @@ testThread (void)
   {
     fprintf (stderr,
              "Failed to start daemon on port %u.\n",
-             (unsigned int) 1082);
-    exit (77);
+             (unsigned int) 0);
+    exit (3);
   }
   if (MHD_run (d) != MHD_NO)
   {
@@ -207,7 +207,7 @@ testMultithread (void)
     fprintf (stderr,
              "Failed to start daemon on port %u\n",
              (unsigned int) 0);
-    exit (77);
+    exit (3);
   }
   if (MHD_run (d) != MHD_NO)
   {
@@ -225,13 +225,20 @@ main (int argc,
       char *const *argv)
 {
   unsigned int errorCount = 0;
+  int has_threads_support;
   (void) argc; (void) argv; /* Unused. Silent compiler warning. */
 
+  has_threads_support =
+    (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_THREADS));
   errorCount += testStartError ();
-  errorCount += testStartStop ();
+  if (has_threads_support)
+    errorCount += testStartStop ();
   errorCount += testExternalRun ();
-  errorCount += testThread ();
-  errorCount += testMultithread ();
+  if (has_threads_support)
+  {
+    errorCount += testThread ();
+    errorCount += testMultithread ();
+  }
   if (0 != errorCount)
     fprintf (stderr,
              "Error (code: %u)\n",
