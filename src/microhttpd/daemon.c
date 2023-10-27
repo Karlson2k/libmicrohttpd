@@ -4205,9 +4205,12 @@ MHD_get_timeout64 (struct MHD_Daemon *daemon,
 #endif
     return MHD_NO;
   }
-  if (daemon->data_already_pending)
+  if (daemon->data_already_pending
+      || (NULL != daemon->cleanup_head)
+      || daemon->resuming
+      || daemon->have_new)
   {
-    /* Some data already waiting to be processed. */
+    /* Some data or connection statuses already waiting to be processed. */
     *timeout64 = 0;
     return MHD_YES;
   }
