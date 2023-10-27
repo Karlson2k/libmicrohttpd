@@ -1316,12 +1316,9 @@ enum MHD_FLAG
 
   /**
    * Be pedantic about the protocol (as opposed to as tolerant as
-   * possible).  Specifically, at the moment, this flag causes MHD to
-   * reject HTTP 1.1 connections without a "Host" header.  This is
-   * required by the standard, but of course in violation of the "be
-   * as liberal as possible in what you accept" norm.  It is
-   * recommended to turn this ON if you are testing clients against
-   * MHD, and OFF in production.
+   * possible).
+   * This flag is equivalent to setting 1 as #MHD_OPTION_CLIENT_DISCIPLINE_LVL
+   * value.
    * @sa #MHD_OPTION_CLIENT_DISCIPLINE_LVL
    */
   MHD_USE_PEDANTIC_CHECKS = 32,
