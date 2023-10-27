@@ -3036,11 +3036,11 @@ internal_add_connection (struct MHD_Daemon *daemon,
     if ((MHD_ITC_IS_VALID_ (daemon->itc)) &&
         (! MHD_itc_activate_ (daemon->itc, "n")))
     {
- #ifdef HAVE_MESSAGES
+#ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ ("Failed to signal new connection via inter-thread " \
                    "communication channel.\n"));
- #endif
+#endif
     }
     return MHD_YES;
   }
