@@ -1625,6 +1625,501 @@ MHD_FIND_LIB([socket],
 MHD_CHECK_SOCKET_SHUTDOWN_TRIGGER([AC_DEFINE([HAVE_LISTEN_SHUTDOWN],[1],[can use shutdown on listen sockets])])
 AM_CONDITIONAL([HAVE_LISTEN_SHUTDOWN], [test "x$mhd_cv_host_shtdwn_trgr_select" = "xyes"])
 
+AC_CACHE_CHECK([fo][r system default FD_SETSIZE value],[mhd_cv_sys_fd_setsize_value],
+  [
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS} -UFD_SETSIZE"
+    CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS} -UFD_SETSIZE"
+    AC_COMPUTE_INT([mhd_cv_sys_fd_setsize_value],[FD_SETSIZE],dnl
+      [[
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+      ]], [mhd_cv_sys_fd_setsize_value="unknown"]
+    )
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+    AS_IF([test "x${mhd_cv_sys_fd_setsize_value}" != "xunknown" && \
+      test "${mhd_cv_sys_fd_setsize_value}" -eq "0" \
+      ], [mhd_cv_sys_fd_setsize_value="unknown"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_sys_fd_setsize_value],["unknown"],[:],
+  [
+    AC_DEFINE_UNQUOTED([MHD_SYS_FD_SETSIZE_],[${mhd_cv_sys_fd_setsize_value}],
+      [Define to system default value of FD_SETSIZE macro]
+    )
+  ]
+)
+
+AC_CACHE_CHECK([fo][r current FD_SETSIZE value],[mhd_cv_fd_setsize_value],
+  [
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+    AS_IF([test "x${cross_compiling}" != "xno" && test "x${mhd_cv_sys_fd_setsize_value}" != "xunknown"],
+      [
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+              [[
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+
+#define DETECTED_FD_SETZIE_VALUE ${mhd_cv_sys_fd_setsize_value}
+
+#if (FD_SETSIZE) != (DETECTED_FD_SETZIE_VALUE)
+#error The current default FD_SETSIZE value is different from ${mhd_cv_sys_fd_setsize_value}
+choke me here now
+#endif /* (FD_SETSIZE) != (DETECTED_FD_SETZIE_VALUE) */
+
+#if (FD_SETSIZE) != (${mhd_cv_sys_fd_setsize_value})
+#error The current default FD_SETSIZE value is different from ${mhd_cv_sys_fd_setsize_value}
+choke me here now
+#endif /* (FD_SETSIZE) != (${mhd_cv_sys_fd_setsize_value}) */
+              ]],[]
+            )
+          ],
+          [mhd_cv_fd_setsize_value="${mhd_cv_sys_fd_setsize_value}"]
+        )
+      ]
+    )
+    AS_VAR_SET_IF([mhd_cv_fd_setsize_value],[:],
+      [
+        AC_COMPUTE_INT([mhd_cv_fd_setsize_value],[FD_SETSIZE],dnl
+          [[
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+          ]], [mhd_cv_fd_setsize_value="unknown"]
+        )
+      ]
+    )
+    AS_IF([test "x${mhd_cv_fd_setsize_value}" != "xunknown" && \
+      test "${mhd_cv_fd_setsize_value}" -eq "0"],
+      [mhd_cv_fd_setsize_value="unknown"]
+    )
+  ]
+)
+
+
+AC_CACHE_CHECK([whether FD_SETSIZE is overridable],[mhd_cv_fd_setsize_overridable],
+  [
+    AS_VAR_IF([mhd_cv_fd_setsize_value],["unknown"],
+      [
+        AS_VAR_IF([mhd_cv_sys_fd_setsize_value],["unknown"],
+          [
+            # Assume the most popular FD_SETSIZE value
+            base_fd_setsize=1024
+          ],
+          [base_fd_setsize="${mhd_cv_sys_fd_setsize_value}"]
+        )
+        base_min_fd_setsize="${base_fd_setsize}"
+      ],
+      [
+        AS_VAR_IF([mhd_cv_sys_fd_setsize_value],["unknown"],
+          [
+            base_fd_setsize="${mhd_cv_fd_setsize_value}"
+            base_min_fd_setsize="${base_fd_setsize}"
+          ],
+          [
+            AS_IF([test "${mhd_cv_fd_setsize_value}" -ge "${mhd_cv_sys_fd_setsize_value}"],
+              [
+                base_fd_setsize="${mhd_cv_fd_setsize_value}"
+                base_min_fd_setsize="${mhd_cv_sys_fd_setsize_value}"
+              ],
+              [
+                base_fd_setsize="${mhd_cv_sys_fd_setsize_value}"
+                base_min_fd_setsize="${mhd_cv_fd_setsize_value}"
+              ]
+            )
+          ]
+        )
+      ]
+    )
+    # Use two times larger FD_SETSIZE value for test
+    AS_VAR_ARITH([test_fd_setsize],[${base_fd_setsize} '+' ${base_fd_setsize}])
+    AS_IF([test "${test_fd_setsize}" -lt "128"],[test_fd_setsize=128])
+    test_type_fd_setsize="larger"
+
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+
+    _AS_ECHO_LOG([testing whether FD_SETSIZE test value (${test_fd_setsize}) is suitable for 'int' type])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],
+          [[
+            static int test_arr1[(((long long)${test_fd_setsize}) != ((int)${test_fd_setsize})) ? -1 : 1];
+            static int test_arr2[(0 > ((int)${test_fd_setsize})) ? -1 : 1];
+            test_arr1[0] = 0;
+            test_arr2[0] = 0;
+            i][f (test_arr1[0] != test_arr2[0]) return 1;
+          ]]
+        )
+      ],[],
+      [
+        _AS_ECHO_LOG([The selected test FD_SETSIZE value (${test_fd_setsize}) is too large for 'int' type])
+        AS_VAR_ARITH([test_fd_setsize],[${base_min_fd_setsize} '/' '2'])
+        test_type_fd_setsize="smaller"
+      ]
+    )
+
+    _AS_ECHO_LOG([will try ${test_fd_setsize} as FD_SETSIZE value])
+
+    AS_IF([test "x${cross_compiling}" = "xno" && test "x${test_type_fd_setsize}" = "xlarger"],
+      [
+        _AS_ECHO_LOG([will try ${test_fd_setsize} as FD_SETSIZE value with run test])
+        AC_RUN_IFELSE(
+          [
+            AC_LANG_SOURCE(
+              [[
+#ifdef FD_SETSIZE
+#undef FD_SETSIZE
+#endif /* FD_SETSIZE */
+
+#define FD_SETSIZE          ${test_fd_setsize}
+#define MY_TEST_FD_SETSIZE  ${test_fd_setsize}
+
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#define MHD_TEST_SOCKET_TYPE SOCKET
+#else
+#define MHD_TEST_SOCKET_TYPE int
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+
+#include <string.h>
+#include <stdio.h>
+
+/* Test fo][r mismatch by macro check */
+#if (FD_SETSIZE) != (MY_TEST_FD_SETSIZE)
+#error System headers ignore custom FD_SETSIZE value, FD_SETSIZE is NOT ${test_fd_setsize}
+choke me here now;
+#endif /* (FD_SETSIZE) != (MY_TEST_FD_SETSIZE) */
+
+/* Additional test fo][r mismatch by macro check */
+#if (FD_SETSIZE) != (${test_fd_setsize})
+#error System headers ignore custom FD_SETSIZE value, FD_SETSIZE is NOT ${test_fd_setsize}
+choke me here now;
+#endif /* (FD_SETSIZE) != (${test_fd_setsize}) */
+
+static unsigned long var_fd_setsize_value = FD_SETSIZE;
+static unsigned long var_my_test_fd_setsize_value = MY_TEST_FD_SETSIZE;
+
+int main(void)
+{
+  fd_set fds_num_one_copy;
+  fd_set fds_num_three_copy;
+  fd_set test_fdsets[6];
+  int i;
+  int ret = 0;
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+  WSADATA wsa_data;
+
+  if (0 != WSAStartup(MAKEWORD(2, 2), &wsa_data))
+    return 21;
+  if (MAKEWORD(2, 2) != wsa_data.wVersion)
+  {
+    WSACleanup();
+    return 22;
+  }
+#endif /* _WIN32 && ! __CYGWIN__ */
+
+  /* Init with zeros to make sure that slack areas are equal */
+  memset(test_fdsets, 0, sizeof(test_fdsets));
+
+  /* Correctly init fd_sets */
+  for (i = 0; i < 6; ++i)
+    FD_ZERO(test_fdsets + i);
+
+  /* Make copies of zero-inited fd_sets */
+  memcpy(&fds_num_one_copy, test_fdsets + 1, sizeof(fd_set));
+  memcpy(&fds_num_three_copy, test_fdsets + 3, sizeof(fd_set));
+
+  if (var_fd_setsize_value != var_my_test_fd_setsize_value)
+  {
+    fprintf (stderr, "System headers redefined FD_SETSIZE to another value (%lu).\n",
+             (unsigned long) FD_SETSIZE);
+    ret = 2;
+  }
+  else
+  {
+    /* Set (almost) all FDs in test_fdset[2] */
+    for (i = 1; i < FD_SETSIZE; ++i)
+      FD_SET((MHD_TEST_SOCKET_TYPE)i, test_fdsets + 2);
+
+    if (! FD_ISSET((MHD_TEST_SOCKET_TYPE)1, test_fdsets + 2))
+    {
+      fprintf (stderr, "FD number one in original fd_set is unset, while should be set.\n");
+      ret |= 3;
+    }
+    if (! FD_ISSET((MHD_TEST_SOCKET_TYPE)(FD_SETSIZE - 1), test_fdsets + 2))
+    {
+      fprintf (stderr, "FD number %lu in original fd_set is unset, while should be set.\n",
+               (unsigned long) FD_SETSIZE);
+      ret |= 3;
+    }
+
+    if (FD_ISSET((MHD_TEST_SOCKET_TYPE)1, test_fdsets + 1))
+    {
+      fprintf (stderr, "FD number one in the first fd_set is unset, while should be set.\n");
+      ret |= 4;
+    }
+    if (FD_ISSET((MHD_TEST_SOCKET_TYPE)(FD_SETSIZE - 1), test_fdsets + 1))
+    {
+      fprintf (stderr, "FD number %lu in the first fd_set is unset, while should be set.\n",
+               (unsigned long) FD_SETSIZE);
+      ret |= 4;
+    }
+    if (0 != memcmp (&fds_num_one_copy, test_fdsets + 1, sizeof(fd_set)))
+    {
+      fprintf (stderr, "The first fd_set has been altered.\n");
+      ret |= 4;
+    }
+
+    if (FD_ISSET((MHD_TEST_SOCKET_TYPE)1, test_fdsets + 3))
+    {
+      fprintf (stderr, "FD number one in the third fd_set is unset, while should be set.\n");
+      ret |= 8;
+    }
+    if (FD_ISSET((MHD_TEST_SOCKET_TYPE)(FD_SETSIZE - 1), test_fdsets + 3))
+    {
+      fprintf (stderr, "FD number %lu in the third fd_set is unset, while should be set.\n",
+               (unsigned long) FD_SETSIZE);
+      ret |= 8;
+    }
+    if (0 != memcmp (&fds_num_three_copy, test_fdsets + 3, sizeof(fd_set)))
+    {
+      fprintf (stderr, "The third fd_set has been altered.\n");
+      ret |= 8;
+    }
+  }
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+  WSACleanup();
+#endif /* _WIN32 && ! __CYGWIN__ */
+  return ret;
+}
+              ]]
+            )
+          ],
+          [mhd_cv_fd_setsize_overridable="yes"],
+          [mhd_cv_fd_setsize_overridable="no"],
+          [[# Not used when cross-compiling ]]
+        )
+      ],
+      [
+        _AS_ECHO_LOG([will try ${test_fd_setsize} as FD_SETSIZE with simple compile test])
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+              [[
+#ifdef FD_SETSIZE
+#undef FD_SETSIZE
+#endif /* FD_SETSIZE */
+
+#define FD_SETSIZE          ${test_fd_setsize}
+#define MY_TEST_FD_SETSIZE  ${test_fd_setsize}
+
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+
+/* Test fo][r mismatch by macro check */
+#if (FD_SETSIZE) != (MY_TEST_FD_SETSIZE)
+#error System headers ignore custom FD_SETSIZE value, FD_SETSIZE is NOT ${test_fd_setsize}
+choke me here now
+#endif /* (FD_SETSIZE) != (MY_TEST_FD_SETSIZE) */
+
+/* Additional test fo][r mismatch by macro check */
+#if (FD_SETSIZE) != (${test_fd_setsize})
+#error System headers ignore custom FD_SETSIZE value, FD_SETSIZE is NOT ${test_fd_setsize}
+choke me here now
+#endif /* (FD_SETSIZE) != (${test_fd_setsize}) */
+              ]],[]
+            )
+          ],
+          [
+            _AS_ECHO_LOG([comple test succeed, will check whether another FD_SETSIZE value changes the size of 'fd_set'])
+
+            # Check current size of fd_set
+            _AS_ECHO_LOG([find the sizeof(fd_setsize) with current default (${mhd_cv_fd_setsize_value}) FD_SETSIZE value])
+            AC_COMPUTE_INT([sizeof_cur_fd_set],[sizeof(fd_set)],dnl
+              [[
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+              ]], [sizeof_cur_fd_set="unknown"]
+            )
+            _AS_ECHO_LOG([the sizeof(fd_setsize) with current default (${mhd_cv_fd_setsize_value}) FD_SETSIZE value is ${sizeof_cur_fd_set}])
+
+            # Check the size of fd_set with redefined FD_SETSIZE
+            _AS_ECHO_LOG([find the sizeof(fd_setsize) with redefined (${test_fd_setsize}) FD_SETSIZE value])
+            AC_COMPUTE_INT([sizeof_mod_fd_set],[sizeof(fd_set)],dnl
+              [[
+#ifdef FD_SETSIZE
+#undef FD_SETSIZE
+#endif /* FD_SETSIZE */
+
+#define FD_SETSIZE          ${test_fd_setsize}
+
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+              ]], [sizeof_mod_fd_set="unknown"]
+            )
+            _AS_ECHO_LOG([the sizeof(fd_setsize) with redefined (${test_fd_setsize}) FD_SETSIZE value is ${sizeof_mod_fd_set}])
+            _AS_ECHO_LOG([detected sizes of 'fd_set': '${sizeof_cur_fd_set}' (by default), '${sizeof_mod_fd_set}' with modified FD_SETSIZE])
+            AS_IF([test "x${sizeof_cur_fd_set}" != "x${sizeof_mod_fd_set}"],
+              [mhd_cv_fd_setsize_overridable="yes"],
+              [mhd_cv_fd_setsize_overridable="no"]
+            )
+            AS_UNSET([sizeof_mod_fd_set])
+            AS_UNSET([sizeof_cur_fd_set])
+          ],
+          [mhd_cv_fd_setsize_overridable="no"]
+        )
+      ]
+    )
+    AS_UNSET([test_type_fd_setsize])
+    AS_UNSET([test_fd_setsize])
+    AS_UNSET([base_min_fd_setsize])
+    AS_UNSET([base_fd_setsize])
+  ]
+)
+
+AS_VAR_IF([mhd_cv_fd_setsize_overridable],["no"],
+  [
+    AS_VAR_IF([os_is_native_w32],["yes"],
+      [AC_MSG_ERROR([Non-overridable FD_SETSIZE detected for native W32 build. FD_SETSIZE is overridable on W32.])]
+    )
+    AS_IF([test "x${mhd_cv_fd_setsize_value}" != "xunknown" && test "x${mhd_cv_sys_fd_setsize_value}" != "xunknown" && test "${mhd_cv_fd_setsize_value}" -ne "${mhd_cv_sys_fd_setsize_value}"],
+      [AC_MSG_WARN([Detected non-overridable FD_SETSIZE, but the toolchain uses FD_SETSIZE (${mhd_cv_fd_setsize_value}) different from system default (${mhd_cv_sys_fd_setsize_value})])]
+    )
+  ],
+  [AC_DEFINE([HAS_FD_SETSIZE_OVERRIDABLE],[1],[Define to 1 i][f your system allow overriding the value of FD_SETSIZE macro])]
+)
+
+
 MHD_CHECK_FUNC([writev],
   [[#include <sys/uio.h>]],
   [[
