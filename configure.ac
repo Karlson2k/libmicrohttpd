@@ -5450,7 +5450,9 @@ AS_IF([test "x$enable_bauth" != "xyes" || \
    test "x${enable_md5}" = "xno" || \
    test "x${enable_sha256}" = "xno" || \
    test "x${enable_sha512_256}" != "xyes" || \
+   test "x${USE_THREADS}" = "xnone" || \
    test "x$enable_httpupgrade" != "xyes" || \
    test "x$enable_cookie" != "xyes" || \
    test "x$enable_postprocessor" != "xyes"],
-   [AC_MSG_NOTICE([WARNING: This will be a custom build with missing symbols. Do NOT use this build in a distribution. Building with these kinds of configure options is only for custom builds for embedded systems.])])
+   [AC_MSG_WARN([This will be a custom build with missing symbols. Do NOT use this build in a distribution. Building with these kinds of configure options is only for custom builds for embedded systems.])]
+)
