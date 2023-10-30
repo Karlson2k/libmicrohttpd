@@ -961,6 +961,8 @@ AS_VAR_IF([mhd_cv_c_alignof], ["yes"],
 
 # Check system type
 AC_MSG_CHECKING([[for target host OS]])
+os_is_windows="no"
+os_is_native_w32="no"
 AS_CASE(["$host_os"],
  [*darwin* | *rhapsody* | *macosx*],
  [AC_DEFINE([OSX],[1],[This is an OS X system])
@@ -999,7 +1001,7 @@ AS_CASE(["$host_os"],
   [AC_DEFINE([CYGWIN],[1],[This is a Cygwin system])
      mhd_host_os='Windows/Cygwin'
      AC_MSG_RESULT([[$mhd_host_os]])
-     os_is_windows=yes],
+     os_is_windows="yes"],
   [*mingw*],
   [
     AC_DEFINE([MINGW],[1],[This is a MinGW system])
@@ -1016,8 +1018,8 @@ AS_CASE(["$host_os"],
      AS_IF([test "x$ac_cv_use_ms_lib_tool" = "xyes"],
        [AC_SUBST([MS_LIB_TOOL], [[lib]])])
      AC_SUBST([lt_cv_objdir])
-     os_is_windows=yes
-     os_is_native_w32=yes
+     os_is_windows="yes"
+     os_is_native_w32="yes"
    ],
    [*openedition*],
    [AC_DEFINE([OS390],[1],[This is a OS/390 system])
