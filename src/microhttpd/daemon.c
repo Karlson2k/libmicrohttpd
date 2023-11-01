@@ -1107,7 +1107,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
        (NULL == read_fd_set) ||
        (NULL == write_fd_set) ||
        (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) ||
-       (0 != (daemon->options & MHD_USE_POLL)))
+       MHD_D_IS_USING_POLL_ (daemon))
     return MHD_NO;
 
   if (NULL == except_fd_set)
@@ -1122,7 +1122,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
   }
 
 #ifdef EPOLL_SUPPORT
-  if (0 != (daemon->options & MHD_USE_EPOLL))
+  if (MHD_D_IS_USING_EPOLL_ (daemon))
   {
     if (daemon->shutdown)
       return MHD_NO;
@@ -1680,7 +1680,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
      until the application tells us that it is done
      with the socket; */
   if ( (0 != (daemon->options & MHD_USE_TLS)) &&
-       (0 == (daemon->options & MHD_USE_POLL)))
+       MHD_D_IS_USING_SELECT_ (daemon))
   {
     while ( (0 != urh->in_buffer_size) ||
             (0 != urh->out_buffer_size) ||
@@ -1896,7 +1896,7 @@ thread_main_handle_connection (void *data)
 #endif
 #undef EXTRA_SLOTS
 #ifdef HAVE_POLL
-  const bool use_poll = (0 != (daemon->options & MHD_USE_POLL));
+  const bool use_poll = MHD_D_IS_USING_POLL_ (daemon);
 #else  /* ! HAVE_POLL */
   const bool use_poll = 0;
 #endif /* ! HAVE_POLL */
@@ -2813,7 +2813,7 @@ new_connection_process_ (struct MHD_Daemon *daemon,
 #ifdef MHD_USE_THREADS
       if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
       {
-        mhd_assert (0 == (daemon->options & MHD_USE_EPOLL));
+        mhd_assert (! MHD_D_IS_USING_EPOLL_ (daemon));
         if (! MHD_create_named_thread_ (&connection->tid,
                                         "MHD-connection",
                                         daemon->thread_stack_size,
@@ -2847,7 +2847,7 @@ new_connection_process_ (struct MHD_Daemon *daemon,
         connection->tid = daemon->tid;
 #endif /* MHD_USE_THREADS */
 #ifdef EPOLL_SUPPORT
-        if (0 != (daemon->options & MHD_USE_EPOLL))
+        if (MHD_D_IS_USING_EPOLL_ (daemon))
         {
           if (0 == (daemon->options & MHD_USE_TURBO))
           {
@@ -2979,8 +2979,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
   mhd_assert ((NULL == daemon->worker_pool));
 #endif
 
-  if ( (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
-       (! MHD_SCKT_FD_FITS_FDSET_ (client_socket, NULL)) )
+  if (MHD_D_IS_USING_SELECT_ (daemon) &&
+      (! MHD_SCKT_FD_FITS_FDSET_ (client_socket, NULL)) )
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
@@ -2996,8 +2996,8 @@ internal_add_connection (struct MHD_Daemon *daemon,
     return MHD_NO;
   }
 
-  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-       (! non_blck) )
+  if (MHD_D_IS_USING_EPOLL_ (daemon) &&
+      (! non_blck) )
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
@@ -3142,7 +3142,7 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
               connection);
   connection->suspended = true;
 #ifdef EPOLL_SUPPORT
-  if (0 != (daemon->options & MHD_USE_EPOLL))
+  if (MHD_D_IS_USING_EPOLL_ (daemon))
   {
     if (0 != (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
     {
@@ -3392,7 +3392,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
                        pos);
       }
 #ifdef EPOLL_SUPPORT
-      if (0 != (daemon->options & MHD_USE_EPOLL))
+      if (MHD_D_IS_USING_EPOLL_ (daemon))
       {
         if (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
           MHD_PANIC ("Resumed connection was already in EREADY set.\n");
@@ -3932,7 +3932,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
                       pos->addr,
                       pos->addr_len);
 #ifdef EPOLL_SUPPORT
-    if (0 != (daemon->options & MHD_USE_EPOLL))
+    if (MHD_D_IS_USING_EPOLL_ (daemon))
     {
       if (0 != (pos->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL))
       {
@@ -4101,12 +4101,12 @@ MHD_get_timeout64 (struct MHD_Daemon *daemon,
     return MHD_YES;
   }
 #ifdef EPOLL_SUPPORT
-  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-       ((NULL != daemon->eready_head)
+  if (MHD_D_IS_USING_EPOLL_ (daemon) &&
+      ((NULL != daemon->eready_head)
 #if defined(UPGRADE_SUPPORT) && defined(HTTPS_SUPPORT)
-        || (NULL != daemon->eready_urh_head)
+       || (NULL != daemon->eready_urh_head)
 #endif /* UPGRADE_SUPPORT && HTTPS_SUPPORT */
-       ) )
+      ) )
   {
     /* Some connection(s) already have some data pending. */
     *timeout64 = 0;
@@ -4449,8 +4449,8 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
                      const fd_set *except_fd_set)
 {
   fd_set es;
-  if (0 != (daemon->options
-            & (MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_POLL)) )
+  if (MHD_D_IS_USING_POLL_ (daemon) ||
+      (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)))
     return MHD_NO;
   if ((NULL == read_fd_set) || (NULL == write_fd_set))
     return MHD_NO;
@@ -4464,7 +4464,7 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
     FD_ZERO (&es);
     except_fd_set = &es;
   }
-  if (0 != (daemon->options & MHD_USE_EPOLL))
+  if (MHD_D_IS_USING_EPOLL_ (daemon))
   {
 #ifdef EPOLL_SUPPORT
     enum MHD_Result ret = MHD_epoll (daemon,
@@ -5606,7 +5606,7 @@ MHD_run_wait (struct MHD_Daemon *daemon,
   if (0 > millisec)
     millisec = -1;
 #ifdef HAVE_POLL
-  if (0 != (daemon->options & MHD_USE_POLL))
+  if (MHD_D_IS_USING_POLL_ (daemon))
   {
     res = MHD_poll_all (daemon, millisec);
     MHD_cleanup_connections (daemon);
@@ -5614,7 +5614,7 @@ MHD_run_wait (struct MHD_Daemon *daemon,
   else
 #endif /* HAVE_POLL */
 #ifdef EPOLL_SUPPORT
-  if (0 != (daemon->options & MHD_USE_EPOLL))
+  if (MHD_D_IS_USING_EPOLL_ (daemon))
   {
     res = MHD_epoll (daemon, millisec);
     MHD_cleanup_connections (daemon);
@@ -5720,12 +5720,12 @@ MHD_polling_thread (void *cls)
   while (! daemon->shutdown)
   {
 #ifdef HAVE_POLL
-    if (0 != (daemon->options & MHD_USE_POLL))
+    if (MHD_D_IS_USING_POLL_ (daemon))
       MHD_poll (daemon, MHD_YES);
     else
 #endif /* HAVE_POLL */
 #ifdef EPOLL_SUPPORT
-    if (0 != (daemon->options & MHD_USE_EPOLL))
+    if (MHD_D_IS_USING_EPOLL_ (daemon))
       MHD_epoll (daemon, -1);
     else
 #endif
@@ -5876,9 +5876,9 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
     {
       daemon->worker_pool[i].was_quiesced = true;
 #ifdef EPOLL_SUPPORT
-      if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-           (-1 != daemon->worker_pool[i].epoll_fd) &&
-           (daemon->worker_pool[i].listen_socket_in_epoll) )
+      if (MHD_D_IS_USING_EPOLL_ (daemon) &&
+          (-1 != daemon->worker_pool[i].epoll_fd) &&
+          (daemon->worker_pool[i].listen_socket_in_epoll) )
       {
         if (0 != epoll_ctl (daemon->worker_pool[i].epoll_fd,
                             EPOLL_CTL_DEL,
@@ -5899,9 +5899,9 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 #endif
   daemon->was_quiesced = true;
 #ifdef EPOLL_SUPPORT
-  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-       (-1 != daemon->epoll_fd) &&
-       (daemon->listen_socket_in_epoll) )
+  if (MHD_D_IS_USING_EPOLL_ (daemon) &&
+      (-1 != daemon->epoll_fd) &&
+      (daemon->listen_socket_in_epoll) )
   {
     if ( (0 != epoll_ctl (daemon->epoll_fd,
                           EPOLL_CTL_DEL,
@@ -7007,7 +7007,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
   struct epoll_event event;
   MHD_socket ls;
 
-  mhd_assert (0 != (daemon->options & MHD_USE_EPOLL));
+  mhd_assert (MHD_D_IS_USING_EPOLL_ (daemon));
   mhd_assert (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION));
   mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
                (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) || \
@@ -7170,7 +7170,8 @@ MHD_start_daemon_va (unsigned int flags,
     if (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
       *pflags |= MHD_USE_POLL; /* Including thread-per-connection */
 #elif defined(EPOLL_SUPPORT)
-#warning 'epoll' enabled, while 'poll' not detected. Check configure.
+    if (0 == (*pflags & MHD_USE_THREAD_PER_CONNECTION))
+      *pflags |= MHD_USE_EPOLL; /* Including "external select" mode */
 #else
     /* No choice: use select() for any mode - do not modify flags */
 #endif
@@ -7328,9 +7329,9 @@ MHD_start_daemon_va (unsigned int flags,
       free (daemon);
       return NULL;
     }
-    if ( (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
-         (! MHD_SCKT_FD_FITS_FDSET_ (MHD_itc_r_fd_ (daemon->itc),
-                                     NULL)) )
+    if (MHD_D_IS_USING_SELECT_ (daemon) &&
+        (! MHD_SCKT_FD_FITS_FDSET_ (MHD_itc_r_fd_ (daemon->itc),
+                                    NULL)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -7774,7 +7775,7 @@ MHD_start_daemon_va (unsigned int flags,
                 _ ("Failed to set nonblocking mode on listening socket: %s\n"),
                 MHD_socket_last_strerr_ ());
 #endif
-      if (0 != (*pflags & MHD_USE_EPOLL)
+      if (MHD_D_IS_USING_EPOLL_ (daemon)
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
           || (daemon->worker_pool_size > 0)
 #endif
@@ -7792,7 +7793,7 @@ MHD_start_daemon_va (unsigned int flags,
       daemon->listen_nonblk = true;
     if ( (! MHD_SCKT_FD_FITS_FDSET_ (listen_fd,
                                      NULL)) &&
-         (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL)) ) )
+         MHD_D_IS_USING_SELECT_ (daemon) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -7809,11 +7810,11 @@ MHD_start_daemon_va (unsigned int flags,
     daemon->listen_nonblk = false; /* Actually listen socket does not exist */
 
 #ifdef EPOLL_SUPPORT
-  if ( (0 != (*pflags & MHD_USE_EPOLL))
+  if (MHD_D_IS_USING_EPOLL_ (daemon)
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-       && (0 == daemon->worker_pool_size)
+      && (0 == daemon->worker_pool_size)
 #endif
-       )
+      )
   {
     if (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION))
     {
@@ -7992,9 +7993,9 @@ MHD_start_daemon_va (unsigned int flags,
             MHD_mutex_destroy_chk_ (&d->cleanup_connection_mutex);
             goto thread_failed;
           }
-          if ( (0 == (*pflags & (MHD_USE_POLL | MHD_USE_EPOLL))) &&
-               (! MHD_SCKT_FD_FITS_FDSET_ (MHD_itc_r_fd_ (d->itc),
-                                           NULL)) )
+          if (MHD_D_IS_USING_SELECT_ (d) &&
+              (! MHD_SCKT_FD_FITS_FDSET_ (MHD_itc_r_fd_ (d->itc),
+                                          NULL)) )
           {
 #ifdef HAVE_MESSAGES
             MHD_DLOG (daemon,
@@ -8024,8 +8025,8 @@ MHD_start_daemon_va (unsigned int flags,
         if (i < leftover_conns)
           ++d->connection_limit;
 #ifdef EPOLL_SUPPORT
-        if ( (0 != (*pflags & MHD_USE_EPOLL)) &&
-             (MHD_NO == setup_epoll_to_listen (d)) )
+        if (MHD_D_IS_USING_EPOLL_ (d) &&
+            (MHD_NO == setup_epoll_to_listen (d)) )
         {
           if (MHD_ITC_IS_VALID_ (d->itc))
             MHD_itc_destroy_chk_ (d->itc);
@@ -8527,12 +8528,12 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       MHD_itc_destroy_chk_ (daemon->itc);
 
 #ifdef EPOLL_SUPPORT
-    if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-         (-1 != daemon->epoll_fd) )
+    if (MHD_D_IS_USING_EPOLL_ (daemon) &&
+        (-1 != daemon->epoll_fd) )
       MHD_socket_close_chk_ (daemon->epoll_fd);
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
-    if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-         (-1 != daemon->epoll_upgrade_fd) )
+    if (MHD_D_IS_USING_EPOLL_ (daemon) &&
+        (-1 != daemon->epoll_upgrade_fd) )
       MHD_socket_close_chk_ (daemon->epoll_upgrade_fd);
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 #endif /* EPOLL_SUPPORT */

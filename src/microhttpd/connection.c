@@ -1305,11 +1305,11 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
                 daemon->urh_tail,
                 urh);
 #ifdef EPOLL_SUPPORT
-  if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-       (0 != epoll_ctl (daemon->epoll_upgrade_fd,
-                        EPOLL_CTL_DEL,
-                        connection->socket_fd,
-                        NULL)) )
+  if (MHD_D_IS_USING_EPOLL_ (daemon) &&
+      (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                       EPOLL_CTL_DEL,
+                       connection->socket_fd,
+                       NULL)) )
   {
     MHD_PANIC (_ ("Failed to remove FD from epoll set.\n"));
   }
@@ -1324,11 +1324,11 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
   if (MHD_INVALID_SOCKET != urh->mhd.socket)
   {
 #ifdef EPOLL_SUPPORT
-    if ( (0 != (daemon->options & MHD_USE_EPOLL)) &&
-         (0 != epoll_ctl (daemon->epoll_upgrade_fd,
-                          EPOLL_CTL_DEL,
-                          urh->mhd.socket,
-                          NULL)) )
+    if (MHD_D_IS_USING_EPOLL_ (daemon) &&
+        (0 != epoll_ctl (daemon->epoll_upgrade_fd,
+                         EPOLL_CTL_DEL,
+                         urh->mhd.socket,
+                         NULL)) )
     {
       MHD_PANIC (_ ("Failed to remove FD from epoll set.\n"));
     }
@@ -7509,7 +7509,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   ret = MHD_YES;
 #ifdef EPOLL_SUPPORT
   if ( (! connection->suspended) &&
-       (0 != (daemon->options & MHD_USE_EPOLL)) )
+       MHD_D_IS_USING_EPOLL_ (daemon) )
   {
     ret = MHD_connection_epoll_update_ (connection);
   }
@@ -7533,7 +7533,7 @@ MHD_connection_epoll_update_ (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *const daemon = connection->daemon;
 
-  mhd_assert (0 != (daemon->options & MHD_USE_EPOLL));
+  mhd_assert (MHD_D_IS_USING_EPOLL_ (daemon));
 
   if ((0 != (MHD_EVENT_LOOP_INFO_PROCESS & connection->event_loop_info)) &&
       (0 == (connection->epoll_state & MHD_EPOLL_STATE_IN_EREADY_EDLL)))

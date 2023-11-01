@@ -2023,7 +2023,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 #endif /* MHD_socket_nosignal_ */
     if ( (! MHD_SCKT_FD_FITS_FDSET_ (sv[1],
                                      NULL)) &&
-         (0 == (daemon->options & (MHD_USE_POLL | MHD_USE_EPOLL))) )
+         MHD_D_IS_USING_SELECT_ (daemon) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -2044,7 +2044,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     urh->mhd.celi = MHD_EPOLL_STATE_UNREADY;
 #ifdef EPOLL_SUPPORT
     /* Launch IO processing by the event loop */
-    if (0 != (daemon->options & MHD_USE_EPOLL))
+    if (MHD_D_IS_USING_EPOLL_ (daemon))
     {
       /* We're running with epoll(), need to add the sockets
          to the event set of the daemon's `epoll_upgrade_fd` */
