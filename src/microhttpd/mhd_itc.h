@@ -61,6 +61,10 @@
 #include <errno.h>
 #endif
 
+/**
+ * Number of FDs used by every ITC.
+ */
+#define MHD_ITC_NUM_FDS_ (1)
 
 /**
  * Initialise ITC by generating eventFD
@@ -154,6 +158,11 @@ static const uint64_t _MHD_itc_wr_data = 1;
 #include <string.h> /* for strerror() */
 #endif
 
+
+/**
+ * Number of FDs used by every ITC.
+ */
+#define MHD_ITC_NUM_FDS_ (2)
 
 /**
  * Initialise ITC by generating pipe
@@ -255,6 +264,11 @@ MHD_itc_nonblocking_ (struct MHD_itc_ itc);
 
 #include "mhd_sockets.h"
 
+
+/**
+ * Number of FDs used by every ITC.
+ */
+#define MHD_ITC_NUM_FDS_ (2)
 
 /**
  * Initialise ITC by generating socketpair

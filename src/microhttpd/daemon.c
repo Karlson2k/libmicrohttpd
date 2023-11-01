@@ -77,7 +77,7 @@
  * Default connection limit.
  */
 #ifdef MHD_POSIX_SOCKETS
-#define MHD_MAX_CONNECTIONS_DEFAULT (FD_SETSIZE - 4)
+#define MHD_MAX_CONNECTIONS_DEFAULT (FD_SETSIZE - 3 - 1 - MHD_ITC_NUM_FDS_)
 #else
 #define MHD_MAX_CONNECTIONS_DEFAULT (FD_SETSIZE - 2)
 #endif
