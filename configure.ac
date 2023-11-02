@@ -1669,6 +1669,7 @@ AS_VAR_IF([mhd_cv_sys_fd_setsize_value],["unknown"],[:],
     )
   ]
 )
+AM_CONDITIONAL([NEED_SYS_FD_SET_SIZE_VALUE],[test "x${mhd_cv_sys_fd_setsize_value}" = "xunknown"])
 
 AC_CACHE_CHECK([fo][r current FD_SETSIZE value],[mhd_cv_fd_setsize_value],
   [

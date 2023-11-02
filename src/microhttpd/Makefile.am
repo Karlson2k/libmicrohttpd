@@ -83,7 +83,7 @@ libmicrohttpd_la_SOURCES = \
   memorypool.c memorypool.h \
   mhd_mono_clock.c mhd_mono_clock.h \
   mhd_limits.h \
-  sysfdsetsize.c sysfdsetsize.h \
+  sysfdsetsize.h \
   mhd_str.c mhd_str.h mhd_str_types.h\
   mhd_send.h mhd_send.c \
   mhd_assert.h \
@@ -104,6 +104,10 @@ libmicrohttpd_la_SOURCES += \
   mhd_locks.h
 endif
 
+if NEED_SYS_FD_SET_SIZE_VALUE
+libmicrohttpd_la_SOURCES += \
+  sysfdsetsize.c
+endif
 
 libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS) \

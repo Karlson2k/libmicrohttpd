@@ -26,6 +26,10 @@
 
 #include "MHD_config.h"
 
+#ifndef MHD_SYS_FD_SETSIZE_
+
+#include "sysfdsetsize.h"
+
 #ifdef FD_SETSIZE
 /* FD_SETSIZE was defined before system headers. */
 /* To get system value of FD_SETSIZE, undefine FD_SETSIZE
@@ -69,7 +73,6 @@
 #error FD_SETSIZE must be defined in system headers
 #endif /* !FD_SETSIZE */
 
-#include "sysfdsetsize.h"
 
 /**
  * Get system default value of FD_SETSIZE
@@ -78,5 +81,8 @@
 unsigned int
 get_system_fdsetsize_value (void)
 {
-  return FD_SETSIZE;
+  return (unsigned int) FD_SETSIZE;
 }
+
+
+#endif /* ! MHD_SYS_FD_SETSIZE_ */
