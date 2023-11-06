@@ -2976,7 +2976,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   /* Direct add to master daemon could never happen. */
-  mhd_assert ((NULL == daemon->worker_pool));
+  mhd_assert (NULL == daemon->worker_pool);
 #endif
 
   if (MHD_D_IS_USING_SELECT_ (daemon) &&
