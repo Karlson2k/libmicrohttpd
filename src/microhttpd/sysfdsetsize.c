@@ -24,7 +24,7 @@
  */
 
 
-#include "MHD_config.h"
+#include "mhd_options.h"
 
 #ifndef MHD_SYS_FD_SETSIZE_
 

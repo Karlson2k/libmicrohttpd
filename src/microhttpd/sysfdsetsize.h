@@ -26,7 +26,7 @@
 #ifndef SYSFDSETSIZE_H
 #define SYSFDSETSIZE_H 1
 
-#include "MHD_config.h"
+#include "mhd_options.h"
 
 #ifndef MHD_SYS_FD_SETSIZE_
 /**
