@@ -149,61 +149,6 @@
 #endif /* ! MHD_STATICSTR_LEN_ */
 
 
-#if defined(HAVE_POLL) && defined(EPOLL_SUPPORT)
-/**
- * Checks whether the @a d daemon is using select()
- */
-#define MHD_D_IS_USING_SELECT_(d) \
-  (0 == (d->options & (MHD_USE_POLL | MHD_USE_EPOLL)))
-/**
- * Checks whether the @a d daemon is using poll()
- */
-#define MHD_D_IS_USING_POLL_(d) (0 != ((d)->options & MHD_USE_POLL))
-/**
- * Checks whether the @a d daemon is using epoll
- */
-#define MHD_D_IS_USING_EPOLL_(d) (0 != ((d)->options & MHD_USE_EPOLL))
-#elif defined(HAVE_POLL)
-/**
- * Checks whether the @a d daemon is using select()
- */
-#define MHD_D_IS_USING_SELECT_(d) (0 == ((d)->options & MHD_USE_POLL))
-/**
- * Checks whether the @a d daemon is using poll()
- */
-#define MHD_D_IS_USING_POLL_(d) (0 != ((d)->options & MHD_USE_POLL))
-/**
- * Checks whether the @a d daemon is using epoll
- */
-#define MHD_D_IS_USING_EPOLL_(d) ((void) (d), 0)
-#elif defined(EPOLL_SUPPORT)
-/**
- * Checks whether the @a d daemon is using select()
- */
-#define MHD_D_IS_USING_SELECT_(d) (0 == ((d)->options & MHD_USE_EPOLL))
-/**
- * Checks whether the @a d daemon is using poll()
- */
-#define MHD_D_IS_USING_POLL_(d) ((void) (d), 0)
-/**
- * Checks whether the @a d daemon is using epoll
- */
-#define MHD_D_IS_USING_EPOLL_(d) (0 != ((d)->options & MHD_USE_EPOLL))
-#else  /* select() only */
-/**
- * Checks whether the @a d daemon is using select()
- */
-#define MHD_D_IS_USING_SELECT_(d) ((void) (d), ! 0)
-/**
- * Checks whether the @a d daemon is using poll()
- */
-#define MHD_D_IS_USING_POLL_(d) ((void) (d), 0)
-/**
- * Checks whether the @a d daemon is using epoll
- */
-#define MHD_D_IS_USING_EPOLL_(d) ((void) (d), 0)
-#endif /* select() only */
-
 /**
  * Tri-state on/off/unknown
  */
@@ -2532,6 +2477,61 @@ struct MHD_Daemon
 #endif /* _DEBUG */
 };
 
+
+#if defined(HAVE_POLL) && defined(EPOLL_SUPPORT)
+/**
+ * Checks whether the @a d daemon is using select()
+ */
+#define MHD_D_IS_USING_SELECT_(d) \
+  (0 == (d->options & (MHD_USE_POLL | MHD_USE_EPOLL)))
+/**
+ * Checks whether the @a d daemon is using poll()
+ */
+#define MHD_D_IS_USING_POLL_(d) (0 != ((d)->options & MHD_USE_POLL))
+/**
+ * Checks whether the @a d daemon is using epoll
+ */
+#define MHD_D_IS_USING_EPOLL_(d) (0 != ((d)->options & MHD_USE_EPOLL))
+#elif defined(HAVE_POLL)
+/**
+ * Checks whether the @a d daemon is using select()
+ */
+#define MHD_D_IS_USING_SELECT_(d) (0 == ((d)->options & MHD_USE_POLL))
+/**
+ * Checks whether the @a d daemon is using poll()
+ */
+#define MHD_D_IS_USING_POLL_(d) (0 != ((d)->options & MHD_USE_POLL))
+/**
+ * Checks whether the @a d daemon is using epoll
+ */
+#define MHD_D_IS_USING_EPOLL_(d) ((void) (d), 0)
+#elif defined(EPOLL_SUPPORT)
+/**
+ * Checks whether the @a d daemon is using select()
+ */
+#define MHD_D_IS_USING_SELECT_(d) (0 == ((d)->options & MHD_USE_EPOLL))
+/**
+ * Checks whether the @a d daemon is using poll()
+ */
+#define MHD_D_IS_USING_POLL_(d) ((void) (d), 0)
+/**
+ * Checks whether the @a d daemon is using epoll
+ */
+#define MHD_D_IS_USING_EPOLL_(d) (0 != ((d)->options & MHD_USE_EPOLL))
+#else  /* select() only */
+/**
+ * Checks whether the @a d daemon is using select()
+ */
+#define MHD_D_IS_USING_SELECT_(d) ((void) (d), ! 0)
+/**
+ * Checks whether the @a d daemon is using poll()
+ */
+#define MHD_D_IS_USING_POLL_(d) ((void) (d), 0)
+/**
+ * Checks whether the @a d daemon is using epoll
+ */
+#define MHD_D_IS_USING_EPOLL_(d) ((void) (d), 0)
+#endif /* select() only */
 
 #ifdef DAUTH_SUPPORT
 
