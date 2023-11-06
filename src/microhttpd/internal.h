@@ -2533,6 +2533,29 @@ struct MHD_Daemon
 #define MHD_D_IS_USING_EPOLL_(d) ((void) (d), 0)
 #endif /* select() only */
 
+#if defined(MHD_USE_THREADS)
+/**
+ * Checks whether the @a d daemon is using internal polling thread
+ */
+#define MHD_D_IS_USING_THREADS_(d) \
+  (0 != (d->options & (MHD_USE_INTERNAL_POLLING_THREAD)))
+/**
+ * Checks whether the @a d daemon is using thread-per-connection mode
+ */
+#define MHD_D_IS_USING_THREAD_PER_CONN_(d) \
+  (0 != ((d)->options & MHD_USE_THREAD_PER_CONNECTION))
+#else  /* ! MHD_USE_THREADS */
+/**
+ * Checks whether the @a d daemon is using internal polling thread
+ */
+#define MHD_D_IS_USING_THREADS_(d) ((void) d, 0)
+/**
+ * Checks whether the @a d daemon is using thread-per-connection mode
+ */
+#define MHD_D_IS_USING_THREAD_PER_CONN_(d) ((void) d, 0)
+#endif /* ! MHD_USE_THREADS */
+
+
 #ifdef DAUTH_SUPPORT
 
 /**
