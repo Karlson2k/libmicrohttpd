@@ -135,8 +135,12 @@ typedef intptr_t ssize_t;
 #ifdef _MHD_FD_SETSIZE_IS_DEFAULT
 #  define _MHD_SYS_DEFAULT_FD_SETSIZE FD_SETSIZE
 #else  /* ! _MHD_FD_SETSIZE_IS_DEFAULT */
-#  include "sysfdsetsize.h"
-#  define _MHD_SYS_DEFAULT_FD_SETSIZE get_system_fdsetsize_value ()
+#  ifndef MHD_SYS_FD_SETSIZE_
+#    include "sysfdsetsize.h"
+#    define _MHD_SYS_DEFAULT_FD_SETSIZE get_system_fdsetsize_value ()
+#  else  /* MHD_SYS_FD_SETSIZE_ */
+#    define _MHD_SYS_DEFAULT_FD_SETSIZE MHD_SYS_FD_SETSIZE_
+#  endif /* MHD_SYS_FD_SETSIZE_ */
 #endif /* ! _MHD_FD_SETSIZE_IS_DEFAULT */
 
 #ifndef MHD_PANIC
