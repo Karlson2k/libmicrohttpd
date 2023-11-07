@@ -957,7 +957,6 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
                      fd_set *except_fd_set,
                      MHD_socket *max_fd,
                      unsigned int fd_setsize)
-
 {
   struct MHD_Connection *pos;
   struct MHD_Connection *posn;
