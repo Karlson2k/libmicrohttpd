@@ -320,6 +320,7 @@ ServeOneRequest (void *param)
                         0, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_LISTEN_SOCKET, fd,
                         MHD_OPTION_NOTIFY_COMPLETED, &request_completed, &done,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
   if (d == NULL)
     mhdErrorExit ();
@@ -558,6 +559,7 @@ testExternalGet (void)
                         global_port,
                         NULL, NULL,
                         &ahc_echo, NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
   if (d == NULL)
     mhdErrorExitDesc ("Failed to start MHD daemon");

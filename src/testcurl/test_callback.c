@@ -147,6 +147,7 @@ main (int argc, char **argv)
                         NULL,
                         &callback,
                         NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
   if (d == NULL)
     return 32;

@@ -1374,6 +1374,7 @@ testDigestAuth (void)
                           MHD_OPTION_NONCE_NC_SIZE, 300,
                           MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE,
                           dauth_nonce_bind,
+                          MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                           MHD_OPTION_END);
   }
   if (d == NULL)

@@ -374,7 +374,9 @@ testExternalGet (void)
   cbc.size = 2048;
   cbc.pos = 0;
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
-                        port, NULL, NULL, &ahc_echo, NULL, MHD_OPTION_END);
+                        port, NULL, NULL, &ahc_echo, NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
+                        MHD_OPTION_END);
   if (d == NULL)
     return 256;
   if (0 == port)

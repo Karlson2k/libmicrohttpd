@@ -2980,14 +2980,14 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #endif
 
   if (MHD_D_IS_USING_SELECT_ (daemon) &&
-      (! MHD_SCKT_FD_FITS_FDSET_ (client_socket, NULL)) )
+      (! MHD_D_DOES_SCKT_FIT_FDSET_ (client_socket, NULL, daemon)) )
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
               _ ("New connection socket descriptor (%d) is not less " \
                  "than FD_SETSIZE (%d).\n"),
               (int) client_socket,
-              (int) FD_SETSIZE);
+              (int) MHD_D_GET_FD_SETSIZE_ (daemon));
 #endif
     MHD_socket_close_chk_ (client_socket);
 #if defined(ENFILE) && (ENFILE + 0 != 0)
@@ -5922,6 +5922,23 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 
 
 /**
+ * Temporal location of the application-provided parameters/options.
+ * Used when options are decoded from #MHD_start_deamon() parameters, but
+ * not yet processed/applied.
+ */
+struct MHD_InterimParams_
+{
+  /**
+   * Set to 'true' if @a fdset_size is set by application.
+   */
+  bool fdset_size_set;
+  /**
+   * The value for #MHD_OPTION_APP_FD_SETSIZE set by application.
+   */
+  int fdset_size;
+};
+
+/**
  * Signature of the MHD custom logger function.
  *
  * @param cls closure
@@ -5939,12 +5956,14 @@ typedef void
  *
  * @param daemon the daemon to initialize
  * @param servaddr where to store the server's listen address
+ * @param params the interim parameters to be assigned to
  * @param ap the options
  * @return #MHD_YES on success, #MHD_NO on error
  */
 static enum MHD_Result
 parse_options_va (struct MHD_Daemon *daemon,
                   const struct sockaddr **servaddr,
+                  struct MHD_InterimParams_ *params,
                   va_list ap);
 
 
@@ -5953,20 +5972,23 @@ parse_options_va (struct MHD_Daemon *daemon,
  *
  * @param daemon the daemon to initialize
  * @param servaddr where to store the server's listen address
+ * @param params the interim parameters to be assigned to
  * @param ... the options
  * @return #MHD_YES on success, #MHD_NO on error
  */
 static enum MHD_Result
 parse_options (struct MHD_Daemon *daemon,
                const struct sockaddr **servaddr,
+               struct MHD_InterimParams_ *params,
                ...)
 {
   va_list ap;
   enum MHD_Result ret;
 
-  va_start (ap, servaddr);
+  va_start (ap, params);
   ret = parse_options_va (daemon,
                           servaddr,
+                          params,
                           ap);
   va_end (ap);
   return ret;
@@ -6241,12 +6263,14 @@ daemon_tls_priorities_init_append (struct MHD_Daemon *daemon, const char *prio)
  *
  * @param daemon the daemon to initialize
  * @param servaddr where to store the server's listen address
+ * @param params the interim parameters to be assigned to
  * @param ap the options
  * @return #MHD_YES on success, #MHD_NO on error
  */
 static enum MHD_Result
 parse_options_va (struct MHD_Daemon *daemon,
                   const struct sockaddr **servaddr,
+                  struct MHD_InterimParams_ *params,
                   va_list ap)
 {
   enum MHD_OPTION opt;
@@ -6767,6 +6791,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_THREAD_STACK_SIZE:
           if (MHD_NO == parse_options (daemon,
                                        servaddr,
+                                       params,
                                        opt,
                                        (size_t) oa[i].value,
                                        MHD_OPTION_END))
@@ -6785,6 +6810,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE:
           if (MHD_NO == parse_options (daemon,
                                        servaddr,
+                                       params,
                                        opt,
                                        (unsigned int) oa[i].value,
                                        MHD_OPTION_END))
@@ -6795,6 +6821,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #ifdef HTTPS_SUPPORT
           if (MHD_NO == parse_options (daemon,
                                        servaddr,
+                                       params,
                                        opt,
                                        (gnutls_credentials_type_t) oa[i].value,
                                        MHD_OPTION_END))
@@ -6805,6 +6832,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_LISTEN_SOCKET:
           if (MHD_NO == parse_options (daemon,
                                        servaddr,
+                                       params,
                                        opt,
                                        (MHD_socket) oa[i].value,
                                        MHD_OPTION_END))
@@ -6815,8 +6843,10 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_CLIENT_DISCIPLINE_LVL:
         case MHD_OPTION_SIGPIPE_HANDLED_BY_APP:
         case MHD_OPTION_TLS_NO_ALPN:
+        case MHD_OPTION_APP_FD_SETSIZE:
           if (MHD_NO == parse_options (daemon,
                                        servaddr,
+                                       params,
                                        opt,
                                        (int) oa[i].value,
                                        MHD_OPTION_END))
@@ -6836,6 +6866,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_HTTPS_CERT_CALLBACK2:
           if (MHD_NO == parse_options (daemon,
                                        servaddr,
+                                       params,
                                        opt,
                                        oa[i].ptr_value,
                                        MHD_OPTION_END))
@@ -6850,6 +6881,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_GNUTLS_PSK_CRED_HANDLER:
           if (MHD_NO == parse_options (daemon,
                                        servaddr,
+                                       params,
                                        opt,
                                        (void *) oa[i].value,
                                        oa[i].ptr_value,
@@ -6861,6 +6893,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_DIGEST_AUTH_RANDOM_COPY:
           if (MHD_NO == parse_options (daemon,
                                        servaddr,
+                                       params,
                                        opt,
                                        (size_t) oa[i].value,
                                        oa[i].ptr_value,
@@ -6920,6 +6953,11 @@ parse_options_va (struct MHD_Daemon *daemon,
                      "but MHD_USE_TLS not set.\n"),
                   (int) opt);
 #endif /* HAVE_MESSAGES */
+      break;
+    case MHD_OPTION_APP_FD_SETSIZE:
+      params->fdset_size_set = true;
+      params->fdset_size = va_arg (ap,
+                                   int);
       break;
 #ifndef HTTPS_SUPPORT
     case MHD_OPTION_HTTPS_MEM_KEY:
@@ -7066,6 +7104,63 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 
 #endif
 
+
+/**
+ * Apply interim parameters
+ * @param d the daemon to use
+ * @param params the interim parameters to process
+ * @return true in case of success,
+ *         false in case of critical error (the daemon must be closed).
+ */
+static bool
+process_interim_params (struct MHD_Daemon *d,
+                        struct MHD_InterimParams_ *params)
+{
+  if (params->fdset_size_set)
+  {
+    if (0 >= params->fdset_size)
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (d,
+                _ ("MHD_OPTION_APP_FD_SETSIZE value (%d) is not positive.\n"),
+                params->fdset_size);
+#endif /* HAVE_MESSAGES */
+      return false;
+    }
+    if (MHD_D_IS_USING_THREADS_ (d))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (d,
+                _ ("MHD_OPTION_APP_FD_SETSIZE is ignored for daemon started " \
+                   "with MHD_USE_INTERNAL_POLLING_THREAD.\n"));
+#endif /* HAVE_MESSAGES */
+    }
+    else
+    { /* The daemon without internal threads, external sockets polling */
+#ifdef MHD_POSIX_SOCKETS
+#ifndef HAS_FD_SETSIZE_OVERRIDABLE
+      if (((int) FD_SETSIZE) != params->fdset_size)
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (d,
+                  _ ("MHD_OPTION_APP_FD_SETSIZE value (%d) does not match " \
+                     "the platform FD_SETSIZE value (%d) and this platform " \
+                     "does not support overriding of FD_SETSIZE.\n"),
+                  params->fdset_size, (int) FD_SETSIZE);
+#endif /* HAVE_MESSAGES */
+        return false;
+      }
+#else  /* HAS_FD_SETSIZE_OVERRIDABLE */
+      d->fdset_size = params->fdset_size;
+      d->fdset_size_set_by_app = true;
+#endif /* HAS_FD_SETSIZE_OVERRIDABLE */
+#endif /* MHD_POSIX_SOCKETS */
+    }
+  }
+  return true;
+}
+
+
 /**
  * Start a webserver on the given port.
  *
@@ -7110,6 +7205,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
   enum MHD_FLAG eflags; /* same type as in MHD_Daemon */
   enum MHD_FLAG *pflags;
+  struct MHD_InterimParams_ *interim_params;
 
   MHD_check_global_init_ ();
   eflags = (enum MHD_FLAG) flags;
@@ -7179,6 +7275,15 @@ MHD_start_daemon_va (unsigned int flags,
 
   if (NULL == (daemon = MHD_calloc_ (1, sizeof (struct MHD_Daemon))))
     return NULL;
+  interim_params = (struct MHD_InterimParams_ *) \
+                   MHD_calloc_ (1, sizeof (struct MHD_InterimParams_));
+  if (NULL == interim_params)
+  {
+    int err_num = errno;
+    free (daemon);
+    errno = err_num;
+    return NULL;
+  }
 #ifdef EPOLL_SUPPORT
   daemon->epoll_fd = -1;
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
@@ -7229,6 +7334,10 @@ MHD_start_daemon_va (unsigned int flags,
 #if defined(_DEBUG) && defined(HAVE_ACCEPT4)
   daemon->avoid_accept4 = false;
 #endif /* _DEBUG */
+#ifdef HAS_FD_SETSIZE_OVERRIDABLE
+  daemon->fdset_size = (int) FD_SETSIZE;
+  daemon->fdset_size_set_by_app = false;
+#endif /* HAS_FD_SETSIZE_OVERRIDABLE */
 
   if ( (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION)) &&
        (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) )
@@ -7257,9 +7366,12 @@ MHD_start_daemon_va (unsigned int flags,
   }
 #endif /* HTTPS_SUPPORT */
 
+  interim_params->fdset_size_set = false;
+  interim_params->fdset_size = 0;
 
   if (MHD_NO == parse_options_va (daemon,
                                   &servaddr,
+                                  interim_params,
                                   ap))
   {
 #ifdef HTTPS_SUPPORT
@@ -7267,9 +7379,18 @@ MHD_start_daemon_va (unsigned int flags,
          (NULL != daemon->priority_cache) )
       gnutls_priority_deinit (daemon->priority_cache);
 #endif /* HTTPS_SUPPORT */
+    free (interim_params);
     free (daemon);
     return NULL;
   }
+  if (! process_interim_params (daemon, interim_params))
+  {
+    free (interim_params);
+    free (daemon);
+    return NULL;
+  }
+  free (interim_params);
+  interim_params = NULL;
 #ifdef HTTPS_SUPPORT
   if ((0 != (*pflags & MHD_USE_TLS))
       && (NULL == daemon->priority_cache)
@@ -7330,8 +7451,8 @@ MHD_start_daemon_va (unsigned int flags,
       return NULL;
     }
     if (MHD_D_IS_USING_SELECT_ (daemon) &&
-        (! MHD_SCKT_FD_FITS_FDSET_ (MHD_itc_r_fd_ (daemon->itc),
-                                    NULL)) )
+        (! MHD_D_DOES_SCKT_FIT_FDSET_ (MHD_itc_r_fd_ (daemon->itc), \
+                                       NULL, daemon)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -7791,16 +7912,17 @@ MHD_start_daemon_va (unsigned int flags,
     }
     else
       daemon->listen_nonblk = true;
-    if ( (! MHD_SCKT_FD_FITS_FDSET_ (listen_fd,
-                                     NULL)) &&
-         MHD_D_IS_USING_SELECT_ (daemon) )
+    if (MHD_D_IS_USING_SELECT_ (daemon) &&
+        (! MHD_D_DOES_SCKT_FIT_FDSET_ (listen_fd, \
+                                       NULL, \
+                                       daemon)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ ("Listen socket descriptor (%d) is not " \
-                   "less than FD_SETSIZE (%d).\n"),
+                   "less than daemon FD_SETSIZE value (%d).\n"),
                 (int) listen_fd,
-                (int) FD_SETSIZE);
+                (int) MHD_D_GET_FD_SETSIZE_ (daemon));
 #endif
       MHD_socket_close_chk_ (listen_fd);
       goto free_and_fail;
@@ -7994,8 +8116,9 @@ MHD_start_daemon_va (unsigned int flags,
             goto thread_failed;
           }
           if (MHD_D_IS_USING_SELECT_ (d) &&
-              (! MHD_SCKT_FD_FITS_FDSET_ (MHD_itc_r_fd_ (d->itc),
-                                          NULL)) )
+              (! MHD_D_DOES_SCKT_FIT_FDSET_ (MHD_itc_r_fd_ (d->itc), \
+                                             NULL, \
+                                             daemon)) )
           {
 #ifdef HAVE_MESSAGES
             MHD_DLOG (daemon,
@@ -8924,6 +9047,12 @@ MHD_is_feature_supported (enum MHD_FEATURE feature)
 #else
     return MHD_NO;
 #endif
+  case MHD_FEATURE_FLEXIBLE_FD_SETSIZE:
+#ifdef HAS_FD_SETSIZE_OVERRIDABLE
+    return MHD_YES;
+#else  /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+    return MHD_NO;
+#endif /* ! HAS_FD_SETSIZE_OVERRIDABLE */
 
   default:
     break;

@@ -650,6 +650,7 @@ testBasicAuth (void)
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
                         port, NULL, NULL,
                         &ahc_echo, NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
   if (d == NULL)
     return 1;

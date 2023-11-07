@@ -428,6 +428,7 @@ testExternalGet (void)
                         global_port, NULL, NULL,
                         &ahc_echo, NULL,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
   if (d == NULL)
     return 256;

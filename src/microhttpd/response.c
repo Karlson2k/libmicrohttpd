@@ -2021,15 +2021,17 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
 #endif /* ! MSG_NOSIGNAL */
     }
 #endif /* MHD_socket_nosignal_ */
-    if ( (! MHD_SCKT_FD_FITS_FDSET_ (sv[1],
-                                     NULL)) &&
-         MHD_D_IS_USING_SELECT_ (daemon) )
+    if (MHD_D_IS_USING_SELECT_ (daemon) &&
+        (! MHD_D_DOES_SCKT_FIT_FDSET_ (sv[1], \
+                                       NULL, \
+                                       daemon)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
-                _ ("Socketpair descriptor larger than FD_SETSIZE: %d > %d\n"),
+                _ ("Socketpair descriptor is not less than FD_SETSIZE: " \
+                   "%d >= %d\n"),
                 (int) sv[1],
-                (int) FD_SETSIZE);
+                (int) MHD_D_GET_FD_SETSIZE_ (daemon));
 #endif
       MHD_socket_close_chk_ (sv[0]);
       MHD_socket_close_chk_ (sv[1]);

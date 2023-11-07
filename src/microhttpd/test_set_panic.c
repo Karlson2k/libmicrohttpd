@@ -1467,7 +1467,18 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
 
   MHD_set_panic_func (&myPanicCallback, (void *) &magic_panic_param);
 
-  if (testMhdThreadInternalPool != thrType)
+  if (testMhdThreadExternal == thrType)
+    d = MHD_start_daemon (((unsigned int) pollType)
+                          | (verbose ? MHD_USE_ERROR_LOG : 0),
+                          *pport, NULL, NULL,
+                          &ahcCheck, *ahc_param,
+                          MHD_OPTION_NOTIFY_CONNECTION, &socket_cb,
+                          NULL,
+                          MHD_OPTION_CONNECTION_TIMEOUT,
+                          (unsigned) TIMEOUTS_VAL,
+                          MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
+                          MHD_OPTION_END);
+  else if (testMhdThreadInternalPool != thrType)
     d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
                           | (verbose ? MHD_USE_ERROR_LOG : 0),
                           *pport, NULL, NULL,

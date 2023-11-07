@@ -956,7 +956,15 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
       *pport += 2;
   }
 
-  if (testMhdThreadInternalPool != thrType)
+  if (testMhdThreadExternal == thrType)
+    d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
+                          | MHD_USE_ERROR_LOG,
+                          *pport, NULL, NULL,
+                          &ahc_echo, NULL,
+                          MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
+                          MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
+                          MHD_OPTION_END);
+  else if (testMhdThreadInternalPool != thrType)
     d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
                           | MHD_USE_ERROR_LOG,
                           *pport, NULL, NULL,

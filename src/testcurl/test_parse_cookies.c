@@ -1651,6 +1651,7 @@ testExternalPolling (void)
                         &ahcCheck, &ahc_param,
                         MHD_OPTION_CLIENT_DISCIPLINE_LVL,
                         (int) (discp_level),
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
   if (d == NULL)
     return 1;

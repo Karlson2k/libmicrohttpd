@@ -652,6 +652,7 @@ testPutExternal (void)
                         NULL, NULL, &ahc_echo, &done_flag,
                         MHD_OPTION_CONNECTION_MEMORY_LIMIT,
                         (size_t) (incr_read ? 1024 : (PUT_SIZE * 4)),
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
   if (d == NULL)
     mhdErrorExit ();

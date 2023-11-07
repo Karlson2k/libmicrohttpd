@@ -1175,21 +1175,34 @@ start_daemon_for_test (unsigned int daemon_flags, uint16_t *pport,
   struct MHD_Daemon *d;
   struct MHD_OptionItem ops[] = {
     { MHD_OPTION_END, 0, NULL },
+    { MHD_OPTION_END, 0, NULL },
     { MHD_OPTION_END, 0, NULL }
   };
+  size_t num_opt;
+
+  num_opt = 0;
+
   callback_param->magic1 = (unsigned int) TEST_MAGIC_MARKER1;
   callback_param->err_flag = 0;
   callback_param->num_replies = 0;
 
   if (use_put_large)
   {
-    ops[0].option = MHD_OPTION_CONNECTION_MEMORY_LIMIT;
-    ops[0].value = (intptr_t) (PUT_LARGE_SIZE / 4);
+    ops[num_opt].option = MHD_OPTION_CONNECTION_MEMORY_LIMIT;
+    ops[num_opt].value = (intptr_t) (PUT_LARGE_SIZE / 4);
+    ++num_opt;
   }
   else if (use_long_header || use_long_uri)
   {
-    ops[0].option = MHD_OPTION_CONNECTION_MEMORY_LIMIT;
-    ops[0].value = (intptr_t) (TEST_STRING_VLONG_LEN / 2);
+    ops[num_opt].option = MHD_OPTION_CONNECTION_MEMORY_LIMIT;
+    ops[num_opt].value = (intptr_t) (TEST_STRING_VLONG_LEN / 2);
+    ++num_opt;
+  }
+  if (0 == (MHD_USE_INTERNAL_POLLING_THREAD & daemon_flags))
+  {
+    ops[num_opt].option = MHD_OPTION_APP_FD_SETSIZE;
+    ops[num_opt].value = (intptr_t) (FD_SETSIZE);
+    ++num_opt;
   }
   d = MHD_start_daemon (daemon_flags /* | MHD_USE_ERROR_LOG */,
                         *pport, NULL, NULL,

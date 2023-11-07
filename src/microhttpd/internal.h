@@ -2264,6 +2264,22 @@ struct MHD_Daemon
    */
   int client_discipline;
 
+#ifdef HAS_FD_SETSIZE_OVERRIDABLE
+  /**
+   * The value of FD_SETSIZE used by the daemon.
+   * For external sockets polling this is the value provided by the application
+   * via MHD_OPTION_APP_FD_SETSIZE or current FD_SETSIZE value.
+   * For internal threads modes this is always current FD_SETSIZE value.
+   */
+  int fdset_size;
+
+  /**
+   * Indicates whether @a fdset_size value was set by application.
+   * 'false' if default value is used.
+   */
+  bool fdset_size_set_by_app;
+#endif /* HAS_FD_SETSIZE_OVERRIDABLE */
+
   /**
    * True if SIGPIPE is blocked
    */
@@ -2554,6 +2570,24 @@ struct MHD_Daemon
  */
 #define MHD_D_IS_USING_THREAD_PER_CONN_(d) ((void) d, 0)
 #endif /* ! MHD_USE_THREADS */
+
+#ifdef HAS_FD_SETSIZE_OVERRIDABLE
+/**
+ * Get FD_SETSIZE used by the daemon @a d
+ */
+#define MHD_D_GET_FD_SETSIZE_(d) ((d)->fdset_size)
+#else  /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+/**
+ * Get FD_SETSIZE used by the daemon @a d
+ */
+#define MHD_D_GET_FD_SETSIZE_(d) (FD_SETSIZE)
+#endif /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+
+/**
+ * Check whether socket @a sckt fits fd_sets used by the daemon @a d
+ */
+#define MHD_D_DOES_SCKT_FIT_FDSET_(sckt,pset,d) \
+  MHD_SCKT_FD_FITS_FDSET_SETSIZE_(sckt,pset,MHD_D_GET_FD_SETSIZE_(d))
 
 
 #ifdef DAUTH_SUPPORT

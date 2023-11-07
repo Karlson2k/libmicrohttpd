@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097704
+#define MHD_VERSION 0x00097705
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -2118,7 +2118,29 @@ enum MHD_OPTION
    * This option should be followed by an `int` argument.
    * @note Available since #MHD_VERSION 0x00097701
    */
-  MHD_OPTION_CLIENT_DISCIPLINE_LVL = 38
+  MHD_OPTION_CLIENT_DISCIPLINE_LVL = 38,
+
+  /**
+   * Specifies value of FD_SETSIZE used by application.  Only For external
+   * polling modes (without MHD internal threads).
+   * Some platforms (FreeBSD, Solaris, W32 etc.) allow overriding of FD_SETSIZE
+   * value.  When polling by select() is used, MHD rejects sockets with numbers
+   * equal or higher than FD_SETSIZE.  If this option is used, MHD treats this
+   * value as a limitation for socket number instead of FD_SETSIZE value which
+   * was used for building MHD.
+   * When external polling is used with #MHD_get_fdset2() (or #MHD_get_fdset()
+   * macro) and #MHD_run_from_select() interfaces, it is recommended to always
+   * use this option.
+   * It is safe to use this option on platforms with fixed FD_SETSIZE (like
+   * GNU/Linux) if system value of FD_SETSIZE is used as the argument.
+   * Can be used only for daemons without #MHD_USE_INTERNAL_POLLING_THREAD, i.e.
+   * only when external sockets polling is used.
+   * On W32 it is silently ignored, as W32 does not limit the socket number in
+   * fd_sets.
+   * This option should be followed by a positive 'int' argument.
+   * @note Available since #MHD_VERSION 0x00097705
+   */
+  MHD_OPTION_APP_FD_SETSIZE = 39
 
 } _MHD_FIXED_ENUM;
 
@@ -6339,7 +6361,16 @@ enum MHD_FEATURE
    * is not specified for daemon.
    * @note Available since #MHD_VERSION 0x00097701
    */
-  MHD_FEATURE_DEBUG_BUILD = 33
+  MHD_FEATURE_DEBUG_BUILD = 33,
+
+  /**
+   * Get whether MHD was build with support for overridable FD_SETSIZE.
+   * This feature should be always available when the relevant platform ability
+   * is detected.
+   * @sa #MHD_OPTION_APP_FD_SETSIZE
+   * @note Available since #MHD_VERSION 0x00097705
+   */
+  MHD_FEATURE_FLEXIBLE_FD_SETSIZE = 34
 };
 
 

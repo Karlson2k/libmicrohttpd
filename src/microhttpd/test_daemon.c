@@ -125,6 +125,7 @@ testExternalRun (void)
                         0,
                         &apc_all, NULL,
                         &ahc_nothing, NULL,
+                        MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
 
   if (NULL == d)
