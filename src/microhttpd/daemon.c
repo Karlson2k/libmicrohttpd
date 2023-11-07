@@ -821,7 +821,8 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
       urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
     if (FD_ISSET (conn_sckt, (fd_set *) _MHD_DROP_CONST (ws)))
       urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
-    if (FD_ISSET (conn_sckt, (fd_set *) _MHD_DROP_CONST (es)))
+    if ((NULL != es) &&
+        FD_ISSET (conn_sckt, (fd_set *) _MHD_DROP_CONST (es)))
       urh->app.celi |= MHD_EPOLL_STATE_ERROR;
   }
   if ((MHD_INVALID_SOCKET != mhd_sckt))
@@ -830,7 +831,8 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
       urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
     if (FD_ISSET (mhd_sckt, (fd_set *) _MHD_DROP_CONST (ws)))
       urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
-    if (FD_ISSET (mhd_sckt, (fd_set *) _MHD_DROP_CONST (es)))
+    if ((NULL != es) &&
+        FD_ISSET (mhd_sckt, (fd_set *) _MHD_DROP_CONST (es)))
       urh->mhd.celi |= MHD_EPOLL_STATE_ERROR;
   }
 }
@@ -4430,8 +4432,10 @@ internal_run_from_select (struct MHD_Daemon *daemon,
                                (fd_set *) _MHD_DROP_CONST (read_fd_set)),
                      FD_ISSET (ds,
                                (fd_set *) _MHD_DROP_CONST (write_fd_set)),
-                     FD_ISSET (ds,
-                               (fd_set *) _MHD_DROP_CONST (except_fd_set)));
+                     (NULL != except_fd_set) ?
+                     (FD_ISSET (ds,
+                                (fd_set *) _MHD_DROP_CONST (except_fd_set))) :
+                     (false));
     }
   }
 
@@ -4497,22 +4501,19 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
                      const fd_set *write_fd_set,
                      const fd_set *except_fd_set)
 {
-  fd_set es;
   if (MHD_D_IS_USING_POLL_ (daemon) ||
       (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)))
     return MHD_NO;
   if ((NULL == read_fd_set) || (NULL == write_fd_set))
     return MHD_NO;
-  if (NULL == except_fd_set)
-  {   /* Workaround to maintain backward compatibility. */
 #ifdef HAVE_MESSAGES
+  if (NULL == except_fd_set)
+  {
     MHD_DLOG (daemon,
               _ ("MHD_run_from_select() called with except_fd_set "
                  "set to NULL. Such behavior is deprecated.\n"));
-#endif
-    FD_ZERO (&es);
-    except_fd_set = &es;
   }
+#endif /* HAVE_MESSAGES */
   if (MHD_D_IS_USING_EPOLL_ (daemon))
   {
 #ifdef EPOLL_SUPPORT
