@@ -398,7 +398,7 @@ typedef int MHD_SCKT_SEND_SIZE_;
  */
 #if defined(MHD_POSIX_SOCKETS)
 #  define MHD_SCKT_FD_FITS_FDSET_SETSIZE_(fd,pset,setsize) \
-    ((fd) < ((MHD_socket) setsize))
+    ((fd) < ((MHD_socket) (setsize)))
 #elif defined(MHD_WINSOCK_SOCKETS)
 #  define MHD_SCKT_FD_FITS_FDSET_SETSIZE_(fd,pset,setsize) \
    ( ((void*) (pset)==  (void*) 0) || \
