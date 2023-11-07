@@ -696,7 +696,14 @@ MHD_get_fdset (struct MHD_Daemon *daemon,
                          write_fd_set,
                          except_fd_set,
                          max_fd,
-                         _MHD_SYS_DEFAULT_FD_SETSIZE);
+#ifdef HAS_FD_SETSIZE_OVERRIDABLE
+                         daemon->fdset_size_set_by_app ?
+                         ((unsigned int) daemon->fdset_size) :
+                         ((unsigned int) _MHD_SYS_DEFAULT_FD_SETSIZE)
+#else  /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+                         ((unsigned int) _MHD_SYS_DEFAULT_FD_SETSIZE)
+#endif /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+                         );
 }
 
 
@@ -746,7 +753,8 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
     if ((0 == (urh->app.celi & MHD_EPOLL_STATE_ERROR)) &&
         ((0 != urh->in_buffer_size) ||
          (0 != urh->out_buffer_size) ||
-         (0 != urh->out_buffer_used)))
+         (0 != urh->out_buffer_used))
+        && (NULL != es))
       MHD_add_to_fd_set_ (conn_sckt,
                           es,
                           max_fd,
@@ -771,7 +779,8 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
     if ((0 == (urh->mhd.celi & MHD_EPOLL_STATE_ERROR)) &&
         ((0 != urh->out_buffer_size) ||
          (0 != urh->in_buffer_size) ||
-         (0 != urh->in_buffer_used)))
+         (0 != urh->in_buffer_used))
+        && (NULL != es))
       MHD_add_to_fd_set_ (mhd_sckt,
                           es,
                           max_fd,
@@ -985,10 +994,11 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
                                 fd_setsize))
         result = MHD_NO;
 #ifdef MHD_POSIX_SOCKETS
-      MHD_add_to_fd_set_ (pos->socket_fd,
-                          except_fd_set,
-                          max_fd,
-                          fd_setsize);
+      if (NULL != except_fd_set)
+        MHD_add_to_fd_set_ (pos->socket_fd,
+                            except_fd_set,
+                            max_fd,
+                            fd_setsize);
 #endif /* MHD_POSIX_SOCKETS */
       break;
     case MHD_EVENT_LOOP_INFO_WRITE:
@@ -998,10 +1008,11 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
                                 fd_setsize))
         result = MHD_NO;
 #ifdef MHD_POSIX_SOCKETS
-      MHD_add_to_fd_set_ (pos->socket_fd,
-                          except_fd_set,
-                          max_fd,
-                          fd_setsize);
+      if (NULL != except_fd_set)
+        MHD_add_to_fd_set_ (pos->socket_fd,
+                            except_fd_set,
+                            max_fd,
+                            fd_setsize);
 #endif /* MHD_POSIX_SOCKETS */
       break;
     case MHD_EVENT_LOOP_INFO_PROCESS:
@@ -1021,13 +1032,16 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
   /* W32 use limited array for fd_set so add INFO_READ/INFO_WRITE sockets
    * only after INFO_BLOCK sockets to ensure that INFO_BLOCK sockets will
    * not be pushed out. */
-  for (pos = daemon->connections_tail; NULL != pos; pos = posn)
+  if (NULL != except_fd_set)
   {
-    posn = pos->prev;
-    MHD_add_to_fd_set_ (pos->socket_fd,
-                        except_fd_set,
-                        max_fd,
-                        fd_setsize);
+    for (pos = daemon->connections_tail; NULL != pos; pos = posn)
+    {
+      posn = pos->prev;
+      MHD_add_to_fd_set_ (pos->socket_fd,
+                          except_fd_set,
+                          max_fd,
+                          fd_setsize);
+    }
   }
 #endif /* MHD_WINSOCK_SOCKETS */
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
@@ -1101,8 +1115,6 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
                 MHD_socket *max_fd,
                 unsigned int fd_setsize)
 {
-  fd_set es;
-
   if ( (NULL == daemon) ||
        (NULL == read_fd_set) ||
        (NULL == write_fd_set) ||
@@ -1110,16 +1122,54 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
        MHD_D_IS_USING_POLL_ (daemon))
     return MHD_NO;
 
-  if (NULL == except_fd_set)
-  {   /* Workaround to maintain backward compatibility. */
 #ifdef HAVE_MESSAGES
+  if (NULL == except_fd_set)
+  {
     MHD_DLOG (daemon,
               _ ("MHD_get_fdset2() called with except_fd_set "
                  "set to NULL. Such behavior is unsupported.\n"));
-#endif
-    FD_ZERO (&es);
-    except_fd_set = &es;
   }
+#endif
+
+#ifdef HAS_FD_SETSIZE_OVERRIDABLE
+  if (((unsigned int) INT_MAX) < fd_setsize)
+    fd_setsize = (unsigned int) INT_MAX;
+#ifdef HAVE_MESSAGES
+  else if (daemon->fdset_size > ((int) fd_setsize))
+  {
+    if (daemon->fdset_size_set_by_app)
+    {
+      MHD_DLOG (daemon,
+                _ ("MHD_get_fdset2() called with fd_setsize (%u) " \
+                   "less than value set by MHD_OPTION_APP_FD_SETSIZE (%d). " \
+                   "Some socket FDs may be not added. " \
+                   "Use MHD_OPTION_APP_FD_SETSIZE with the correct value.\n"),
+                fd_setsize, daemon->fdset_size);
+    }
+    else
+    {
+      MHD_DLOG (daemon,
+                _ ("MHD_get_fdset2() called with fd_setsize (%u) " \
+                   "less than FD_SETSIZE used by MHD (%d). " \
+                   "Some socket FDs may be not added. " \
+                   "Consider using MHD_OPTION_APP_FD_SETSIZE option.\n"),
+                fd_setsize, daemon->fdset_size);
+    }
+  }
+#endif /* HAVE_MESSAGES */
+#else  /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+  if (((unsigned int) FD_SETSIZE) > fd_setsize)
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("MHD_get_fdset2() called with fd_setsize (%u) " \
+                 "less than fixed FD_SETSIZE value (%d) used on the " \
+                 "platform.\n"),
+              fd_setsize, (int) FD_SETSIZE);
+#endif /* HAVE_MESSAGES */
+    return MHD_NO;
+  }
+#endif /* ! HAS_FD_SETSIZE_OVERRIDABLE */
 
 #ifdef EPOLL_SUPPORT
   if (MHD_D_IS_USING_EPOLL_ (daemon))
