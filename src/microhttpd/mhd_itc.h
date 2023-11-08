@@ -42,10 +42,11 @@
 #    include <stdlib.h>
 #  endif /* HAVE_STDLIB_H */
 /* Simple implementation of MHD_PANIC, to be used outside lib */
-#  define MHD_PANIC(msg) do { fprintf (stderr,           \
-                                       "Abnormal termination at %d line in file %s: %s\n", \
-                                       (int) __LINE__, __FILE__, msg); abort (); \
-} while (0)
+#  define MHD_PANIC(msg)                                             \
+  do { fprintf (stderr,                                              \
+                "Abnormal termination at %d line in file %s: %s\n",  \
+                (int) __LINE__, __FILE__, msg); abort ();            \
+     } while (0)
 #endif /* ! MHD_PANIC */
 
 #if defined(_MHD_ITC_EVENTFD)
@@ -71,8 +72,8 @@
  * @param itc the itc to initialise
  * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_itc_init_(itc) (-1 != ((itc).fd = eventfd (0, EFD_CLOEXEC \
-                                                       | EFD_NONBLOCK)))
+#define MHD_itc_init_(itc) \
+  (-1 != ((itc).fd = eventfd (0, EFD_CLOEXEC | EFD_NONBLOCK)))
 
 /**
  * Get description string of last errno for itc operations.
@@ -90,9 +91,9 @@ static const uint64_t _MHD_itc_wr_data = 1;
  * @param str ignored
  * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_itc_activate_(itc, str) \
-  ((write ((itc).fd, (const void*) &_MHD_itc_wr_data, 8) > 0) || (EAGAIN == \
-                                                                  errno))
+#define MHD_itc_activate_(itc, str)                    \
+  ((write ((itc).fd, (const void*) &_MHD_itc_wr_data,  \
+           sizeof(_MHD_itc_wr_data)) > 0) || (EAGAIN == errno))
 
 /**
  * Return read FD of @a itc which can be used for poll(), select() etc.
@@ -112,9 +113,9 @@ static const uint64_t _MHD_itc_wr_data = 1;
  * Clear signaled state on @a itc
  * @param itc the itc to clear
  */
-#define MHD_itc_clear_(itc)                       \
-  do { uint64_t __b;                              \
-       (void) read ((itc).fd, &__b, sizeof(__b)); \
+#define MHD_itc_clear_(itc)                               \
+  do { uint64_t __b;                                      \
+       (void) read ((itc).fd, (void*)&__b, sizeof(__b));  \
      } while (0)
 
 /**
@@ -124,7 +125,8 @@ static const uint64_t _MHD_itc_wr_data = 1;
  * @param itc the itc to destroy
  * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_itc_destroy_(itc) ((0 == close ((itc).fd)) || (EBADF != errno))
+#define MHD_itc_destroy_(itc) \
+  ((0 == close ((itc).fd)) || (EBADF != errno))
 
 /**
  * Check whether ITC has valid value.
@@ -172,11 +174,11 @@ static const uint64_t _MHD_itc_wr_data = 1;
 #ifdef HAVE_PIPE2_FUNC
 #  define MHD_itc_init_(itc) (! pipe2 ((itc).fd, O_CLOEXEC | O_NONBLOCK))
 #else  /* ! HAVE_PIPE2_FUNC */
-#  define MHD_itc_init_(itc)              \
-  ( (! pipe ((itc).fd)) ?                \
+#  define MHD_itc_init_(itc)          \
+  ( (! pipe ((itc).fd)) ?             \
     (MHD_itc_nonblocking_ ((itc)) ?   \
-     (! 0) :                         \
-     (MHD_itc_destroy_ ((itc)), 0) ) \
+     (! 0) :                          \
+     (MHD_itc_destroy_ ((itc)), 0) )  \
     : (0) )
 #endif /* ! HAVE_PIPE2_FUNC */
 
@@ -213,19 +215,19 @@ static const uint64_t _MHD_itc_wr_data = 1;
  * Clear signaled state on @a itc
  * @param itc the itc to clear
  */
-#define MHD_itc_clear_(itc) do                      \
-  { long __b;                                       \
-    while (0 < read ((itc).fd[0], &__b, sizeof(__b))) \
-    {} } while (0)
+#define MHD_itc_clear_(itc) do                                 \
+  { long __b;                                                  \
+    while (0 < read ((itc).fd[0], (void*) &__b, sizeof(__b)))  \
+    {(void)0;} } while (0)
 
 /**
  * Destroy previously initialised ITC
  * @param itc the itc to destroy
  * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_itc_destroy_(itc)      \
-  ( (0 == close ((itc).fd[0])) ?   \
-    (0 == close ((itc).fd[1])) : \
+#define MHD_itc_destroy_(itc)     \
+  ( (0 == close ((itc).fd[0])) ?  \
+    (0 == close ((itc).fd[1])) :  \
     ((close ((itc).fd[1])), 0) )
 
 /**
@@ -278,11 +280,11 @@ MHD_itc_nonblocking_ (struct MHD_itc_ itc);
 #ifdef MHD_socket_pair_nblk_
 #  define MHD_itc_init_(itc) MHD_socket_pair_nblk_ ((itc).sk)
 #else  /* ! MHD_socket_pair_nblk_ */
-#  define MHD_itc_init_(itc)            \
-  (MHD_socket_pair_ ((itc).sk) ?      \
+#  define MHD_itc_init_(itc)         \
+  (MHD_socket_pair_ ((itc).sk) ?     \
    (MHD_itc_nonblocking_ ((itc)) ?   \
-    (! 0) :                         \
-    (MHD_itc_destroy_ ((itc)), 0) ) \
+    (! 0) :                          \
+    (MHD_itc_destroy_ ((itc)), 0) )  \
    : (0))
 #endif /* ! MHD_socket_pair_nblk_ */
 
@@ -297,8 +299,8 @@ MHD_itc_nonblocking_ (struct MHD_itc_ itc);
  * @param str one-symbol string, useful only for strace debug
  * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_itc_activate_(itc, str)          \
-  ((MHD_send_ ((itc).sk[1], (str), 1) > 0) || \
+#define MHD_itc_activate_(itc, str)            \
+  ((MHD_send_ ((itc).sk[1], (str), 1) > 0) ||  \
    (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ())))
 
 /**
@@ -319,21 +321,19 @@ MHD_itc_nonblocking_ (struct MHD_itc_ itc);
  * Clear signaled state on @a itc
  * @param itc the itc to clear
  */
-#define MHD_itc_clear_(itc) do      \
-  { long __b;                       \
-    while (0 < recv ((itc).sk[0],     \
-                     (char*) &__b,     \
-                     sizeof(__b), 0)) \
-    {} } while (0)
+#define MHD_itc_clear_(itc) do                                    \
+  { long __b;                                                     \
+    while (0 < recv ((itc).sk[0], (void*) &__b, sizeof(__b), 0))  \
+    {(void)0;} } while (0)
 
 /**
  * Destroy previously initialised ITC
  * @param itc the itc to destroy
  * @return non-zero if succeeded, zero otherwise
  */
-#define MHD_itc_destroy_(itc)          \
-  (MHD_socket_close_ ((itc).sk[0]) ?   \
-   MHD_socket_close_ ((itc).sk[1]) : \
+#define MHD_itc_destroy_(itc)         \
+  (MHD_socket_close_ ((itc).sk[0]) ?  \
+   MHD_socket_close_ ((itc).sk[1]) :  \
    ((void) MHD_socket_close_ ((itc).sk[1]), 0) )
 
 
@@ -352,12 +352,13 @@ MHD_itc_nonblocking_ (struct MHD_itc_ itc);
  * Set @a itc to invalid value.
  * @param itc the itc to set
  */
-#define MHD_itc_set_invalid_(itc) ((itc).sk[0] = (itc).sk[1] = \
-                                     MHD_INVALID_SOCKET)
+#define MHD_itc_set_invalid_(itc) \
+  ((itc).sk[0] = (itc).sk[1] = MHD_INVALID_SOCKET)
 
 #ifndef MHD_socket_pair_nblk_
-#  define MHD_itc_nonblocking_(pip) (MHD_socket_nonblocking_ ((pip).sk[0]) && \
-                                     MHD_socket_nonblocking_ ((pip).sk[1]))
+#  define MHD_itc_nonblocking_(pip)          \
+  (MHD_socket_nonblocking_ ((pip).sk[0]) &&  \
+   MHD_socket_nonblocking_ ((pip).sk[1]))
 #endif /* ! MHD_socket_pair_nblk_ */
 
 #endif /* _MHD_ITC_SOCKETPAIR */
@@ -367,9 +368,9 @@ MHD_itc_nonblocking_ (struct MHD_itc_ itc);
  * if error is detected.
  * @param itc the itc to destroy
  */
-#define MHD_itc_destroy_chk_(itc) do {          \
-    if (! MHD_itc_destroy_ (itc))                 \
-      MHD_PANIC (_ ("Failed to destroy ITC.\n")); \
+#define MHD_itc_destroy_chk_(itc) do {             \
+    if (! MHD_itc_destroy_ (itc))                  \
+      MHD_PANIC (_ ("Failed to destroy ITC.\n"));  \
 } while (0)
 
 /**
