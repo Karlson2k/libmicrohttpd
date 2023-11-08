@@ -7186,6 +7186,16 @@ process_interim_params (struct MHD_Daemon *d,
                 _ ("MHD_OPTION_APP_FD_SETSIZE is ignored for daemon started " \
                    "with MHD_USE_INTERNAL_POLLING_THREAD.\n"));
 #endif /* HAVE_MESSAGES */
+      (void) 0;
+    }
+    else if (MHD_D_IS_USING_POLL_ (d))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (d,
+                _ ("MHD_OPTION_APP_FD_SETSIZE is ignored for daemon started " \
+                   "with MHD_USE_POLL.\n"));
+#endif /* HAVE_MESSAGES */
+      (void) 0;
     }
     else
     { /* The daemon without internal threads, external sockets polling */
