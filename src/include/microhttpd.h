@@ -3387,6 +3387,78 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
                      const fd_set *except_fd_set);
 
 
+/**
+ * Run webserver operations. This method should be called by clients
+ * in combination with #MHD_get_fdset and #MHD_get_timeout() if the
+ * client-controlled select method is used.
+ * This function specifies FD_SETSIZE used when provided fd_sets were
+ * created. It is important on platforms where FD_SETSIZE can be
+ * overridden.
+ *
+ * You can use this function instead of #MHD_run if you called
+ * 'select()' on the result from #MHD_get_fdset2().  File descriptors in
+ * the sets that are not controlled by MHD will be ignored.  Calling
+ * this function instead of #MHD_run() is more efficient as MHD will
+ * not have to call 'select()' again to determine which operations are
+ * ready.
+ *
+ * If #MHD_get_timeout() returned #MHD_YES, than this function must be
+ * called right after 'select()' returns regardless of detected activity
+ * on the daemon's FDs.
+ *
+ * This function cannot be used with daemon started with
+ * #MHD_USE_INTERNAL_POLLING_THREAD flag.
+ *
+ * @param daemon the daemon to run select loop for
+ * @param read_fd_set the read set
+ * @param write_fd_set the write set
+ * @param except_fd_set the except set
+ * @param fd_setsize the value of FD_SETSIZE
+ * @return #MHD_NO on serious errors, #MHD_YES on success
+ * @sa #MHD_get_fdset2(), #MHD_OPTION_APP_FD_SETSIZE
+ * @ingroup event
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_run_from_select2 (struct MHD_Daemon *daemon,
+                      const fd_set *read_fd_set,
+                      const fd_set *write_fd_set,
+                      const fd_set *except_fd_set,
+                      unsigned int fd_setsize);
+
+
+/**
+ * Run webserver operations. This method should be called by clients
+ * in combination with #MHD_get_fdset and #MHD_get_timeout() if the
+ * client-controlled select method is used.
+ * This macro automatically substitutes current FD_SETSIZE value.
+ * It is important on platforms where FD_SETSIZE can be overridden.
+ *
+ * You can use this function instead of #MHD_run if you called
+ * 'select()' on the result from #MHD_get_fdset2().  File descriptors in
+ * the sets that are not controlled by MHD will be ignored.  Calling
+ * this function instead of #MHD_run() is more efficient as MHD will
+ * not have to call 'select()' again to determine which operations are
+ * ready.
+ *
+ * If #MHD_get_timeout() returned #MHD_YES, than this function must be
+ * called right after 'select()' returns regardless of detected activity
+ * on the daemon's FDs.
+ *
+ * This function cannot be used with daemon started with
+ * #MHD_USE_INTERNAL_POLLING_THREAD flag.
+ *
+ * @param daemon the daemon to run select loop for
+ * @param read_fd_set the read set
+ * @param write_fd_set the write set
+ * @param except_fd_set the except set
+ * @param fd_setsize the value of FD_SETSIZE
+ * @return #MHD_NO on serious errors, #MHD_YES on success
+ * @sa #MHD_get_fdset2(), #MHD_OPTION_APP_FD_SETSIZE
+ * @ingroup event
+ */
+#define MHD_run_from_select(d,r,w,e) \
+  MHD_run_from_select2((d),(r),(w),(e),(unsigned int)(FD_SETSIZE))
+
 /* **************** Connection handling functions ***************** */
 
 /**

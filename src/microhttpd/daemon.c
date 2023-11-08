@@ -726,7 +726,7 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
               fd_set *ws,
               fd_set *es,
               MHD_socket *max_fd,
-              unsigned int fd_setsize)
+              int fd_setsize)
 {
   const MHD_socket conn_sckt = urh->connection->socket_fd;
   const MHD_socket mhd_sckt = urh->mhd.socket;
@@ -799,12 +799,14 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
  * @param rs read result from select()
  * @param ws write result from select()
  * @param es except result from select()
+ * @param fd_setsize value of FD_SETSIZE used when fd_sets were created
  */
 static void
 urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
                 const fd_set *rs,
                 const fd_set *ws,
-                const fd_set *es)
+                const fd_set *es,
+                int fd_setsize)
 {
   const MHD_socket conn_sckt = urh->connection->socket_fd;
   const MHD_socket mhd_sckt = urh->mhd.socket;
@@ -815,25 +817,49 @@ urh_from_fdset (struct MHD_UpgradeResponseHandle *urh,
   urh->mhd.celi &= (~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY)
                     & ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY));
 
+  mhd_assert (urh->connection->sk_nonblck);
+
+#ifndef HAS_FD_SETSIZE_OVERRIDABLE
+  (void) fd_setsize; /* Mute compiler warning */
+  mhd_assert (((int) FD_SETSIZE) <= fd_setsize);
+  fd_setsize = FD_SETSIZE; /* Help compiler to optimise */
+#endif /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+
   if (MHD_INVALID_SOCKET != conn_sckt)
   {
-    if (FD_ISSET (conn_sckt, (fd_set *) _MHD_DROP_CONST (rs)))
+    if (MHD_SCKT_FD_FITS_FDSET_SETSIZE_ (conn_sckt, NULL, fd_setsize))
+    {
+      if (FD_ISSET (conn_sckt, (fd_set *) _MHD_DROP_CONST (rs)))
+        urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
+      if (FD_ISSET (conn_sckt, (fd_set *) _MHD_DROP_CONST (ws)))
+        urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
+      if ((NULL != es) &&
+          FD_ISSET (conn_sckt, (fd_set *) _MHD_DROP_CONST (es)))
+        urh->app.celi |= MHD_EPOLL_STATE_ERROR;
+    }
+    else
+    { /* Cannot check readiness. Force ready state is safe as socket is non-blocking */
       urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
-    if (FD_ISSET (conn_sckt, (fd_set *) _MHD_DROP_CONST (ws)))
       urh->app.celi |= MHD_EPOLL_STATE_WRITE_READY;
-    if ((NULL != es) &&
-        FD_ISSET (conn_sckt, (fd_set *) _MHD_DROP_CONST (es)))
-      urh->app.celi |= MHD_EPOLL_STATE_ERROR;
+    }
   }
   if ((MHD_INVALID_SOCKET != mhd_sckt))
   {
-    if (FD_ISSET (mhd_sckt, (fd_set *) _MHD_DROP_CONST (rs)))
+    if (MHD_SCKT_FD_FITS_FDSET_SETSIZE_ (mhd_sckt, NULL, fd_setsize))
+    {
+      if (FD_ISSET (mhd_sckt, (fd_set *) _MHD_DROP_CONST (rs)))
+        urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
+      if (FD_ISSET (mhd_sckt, (fd_set *) _MHD_DROP_CONST (ws)))
+        urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
+      if ((NULL != es) &&
+          FD_ISSET (mhd_sckt, (fd_set *) _MHD_DROP_CONST (es)))
+        urh->mhd.celi |= MHD_EPOLL_STATE_ERROR;
+    }
+    else
+    { /* Cannot check readiness. Force ready state is safe as socket is non-blocking */
       urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
-    if (FD_ISSET (mhd_sckt, (fd_set *) _MHD_DROP_CONST (ws)))
       urh->mhd.celi |= MHD_EPOLL_STATE_WRITE_READY;
-    if ((NULL != es) &&
-        FD_ISSET (mhd_sckt, (fd_set *) _MHD_DROP_CONST (es)))
-      urh->mhd.celi |= MHD_EPOLL_STATE_ERROR;
+    }
   }
 }
 
@@ -958,7 +984,7 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
                      fd_set *write_fd_set,
                      fd_set *except_fd_set,
                      MHD_socket *max_fd,
-                     unsigned int fd_setsize)
+                     int fd_setsize)
 {
   struct MHD_Connection *pos;
   struct MHD_Connection *posn;
@@ -1186,7 +1212,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
     return MHD_add_to_fd_set_ (daemon->epoll_fd,
                                read_fd_set,
                                max_fd,
-                               fd_setsize) ? MHD_YES : MHD_NO;
+                               (int) fd_setsize) ? MHD_YES : MHD_NO;
   }
 #endif
 
@@ -1195,7 +1221,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
                               write_fd_set,
                               except_fd_set,
                               max_fd,
-                              fd_setsize);
+                              (int) fd_setsize);
 }
 
 
@@ -1806,7 +1832,8 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
       urh_from_fdset (urh,
                       &rs,
                       &ws,
-                      &es);
+                      &es,
+                      (int) FD_SETSIZE);
       process_urh (urh);
     }
   }
@@ -4372,7 +4399,8 @@ get_timeout_millisec_int (struct MHD_Daemon *daemon,
  * @param daemon daemon to run select loop for
  * @param read_fd_set read set
  * @param write_fd_set write set
- * @param except_fd_set except set (not used, can be NULL)
+ * @param except_fd_set except set
+ * @param fd_setsize value of FD_SETSIZE used when fd_sets were created
  * @return #MHD_NO on serious errors, #MHD_YES on success
  * @ingroup event
  */
@@ -4380,26 +4408,14 @@ static enum MHD_Result
 internal_run_from_select (struct MHD_Daemon *daemon,
                           const fd_set *read_fd_set,
                           const fd_set *write_fd_set,
-                          const fd_set *except_fd_set)
+                          const fd_set *except_fd_set,
+                          int fd_setsize)
 {
   MHD_socket ds;
-  struct MHD_Connection *pos;
-  struct MHD_Connection *prev;
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
-  /* Reset. New value will be set when connections are processed. */
-  /* Note: no-op for thread-per-connection as it is always false in that mode. */
-  daemon->data_already_pending = false;
-
-  /* Clear ITC to avoid spinning select */
-  /* Do it before any other processing so new signals
-     will trigger select again and will be processed */
-  if ( (MHD_ITC_IS_VALID_ (daemon->itc)) &&
-       (FD_ISSET (MHD_itc_r_fd_ (daemon->itc),
-                  (fd_set *) _MHD_DROP_CONST (read_fd_set))) )
-    MHD_itc_clear_ (daemon->itc);
 
   mhd_assert ((0 == (daemon->options & MHD_USE_SELECT_INTERNALLY)) || \
               (MHD_thread_handle_ID_is_valid_ID_ (daemon->tid)));
@@ -4408,36 +4424,86 @@ internal_run_from_select (struct MHD_Daemon *daemon,
   mhd_assert ((0 == (daemon->options & MHD_USE_SELECT_INTERNALLY)) || \
               (MHD_thread_handle_ID_is_current_thread_ (daemon->tid)));
 
+  mhd_assert (0 < fd_setsize);
+#ifndef HAS_FD_SETSIZE_OVERRIDABLE
+  (void) fd_setsize; /* Mute compiler warning */
+  mhd_assert (((int) FD_SETSIZE) <= fd_setsize);
+  fd_setsize = FD_SETSIZE; /* Help compiler to optimise */
+#endif /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+
+  /* Clear ITC to avoid spinning select */
+  /* Do it before any other processing so new signals
+     will trigger select again and will be processed */
+  if (MHD_ITC_IS_VALID_ (daemon->itc))
+  { /* Have ITC */
+    bool need_to_clear_itc = true; /* ITC is always non-blocking, it is safe to clear even if ITC not activated */
+    if (MHD_SCKT_FD_FITS_FDSET_SETSIZE_ (MHD_itc_r_fd_ (daemon->itc),
+                                         NULL, fd_setsize))
+      need_to_clear_itc = FD_ISSET (MHD_itc_r_fd_ (daemon->itc), \
+                                    (fd_set *) _MHD_DROP_CONST (read_fd_set)); /* Skip clearing, if not needed */
+    if (need_to_clear_itc)
+      MHD_itc_clear_ (daemon->itc);
+  }
+
+  /* Reset. New value will be set when connections are processed. */
+  /* Note: no-op for thread-per-connection as it is always false in that mode. */
+  daemon->data_already_pending = false;
+
   /* Process externally added connection if any */
   if (daemon->have_new)
     new_connections_list_process_ (daemon);
 
   /* select connection thread handling type */
-  if ( (MHD_INVALID_SOCKET != (ds = daemon->listen_fd)) &&
-       (! daemon->was_quiesced) &&
-       (FD_ISSET (ds,
-                  (fd_set *) _MHD_DROP_CONST (read_fd_set))) )
-    (void) MHD_accept_connection (daemon);
+  ds = daemon->listen_fd;
+  if ( (MHD_INVALID_SOCKET != ds) &&
+       (! daemon->was_quiesced) )
+  {
+    bool need_to_accept;
+    if (MHD_SCKT_FD_FITS_FDSET_SETSIZE_ (ds, NULL, fd_setsize))
+      need_to_accept = FD_ISSET (ds,
+                                 (fd_set *) _MHD_DROP_CONST (read_fd_set));
+    else                                       /* Cannot check whether new connection are pending */
+      need_to_accept = daemon->listen_nonblk;  /* Try to accept if non-blocking */
 
-  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    if (need_to_accept)
+      (void) MHD_accept_connection (daemon);
+  }
+
+  if (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
   {
     /* do not have a thread per connection, process all connections now */
-    prev = daemon->connections_tail;
-    while (NULL != (pos = prev))
+    struct MHD_Connection *pos;
+    for (pos = daemon->connections_tail; NULL != pos; pos = pos->prev)
     {
-      prev = pos->prev;
-      ds = pos->socket_fd;
-      if (MHD_INVALID_SOCKET == ds)
+      MHD_socket cs;
+      bool r_ready;
+      bool w_ready;
+      bool has_err;
+
+      cs = pos->socket_fd;
+      if (MHD_INVALID_SOCKET == cs)
         continue;
+
+      if (MHD_SCKT_FD_FITS_FDSET_SETSIZE_ (cs, NULL, fd_setsize))
+      {
+        r_ready = FD_ISSET (cs,
+                            (fd_set *) _MHD_DROP_CONST (read_fd_set));
+        w_ready = FD_ISSET (cs,
+                            (fd_set *) _MHD_DROP_CONST (write_fd_set));
+        has_err = (NULL != except_fd_set) &&
+                  FD_ISSET (cs,
+                            (fd_set *) _MHD_DROP_CONST (except_fd_set));
+      }
+      else
+      { /* Cannot check the real readiness */
+        r_ready = pos->sk_nonblck;
+        w_ready = r_ready;
+        has_err = false;
+      }
       call_handlers (pos,
-                     FD_ISSET (ds,
-                               (fd_set *) _MHD_DROP_CONST (read_fd_set)),
-                     FD_ISSET (ds,
-                               (fd_set *) _MHD_DROP_CONST (write_fd_set)),
-                     (NULL != except_fd_set) ?
-                     (FD_ISSET (ds,
-                                (fd_set *) _MHD_DROP_CONST (except_fd_set))) :
-                     (false));
+                     r_ready,
+                     w_ready,
+                     has_err);
     }
   }
 
@@ -4450,7 +4516,8 @@ internal_run_from_select (struct MHD_Daemon *daemon,
     urh_from_fdset (urh,
                     read_fd_set,
                     write_fd_set,
-                    except_fd_set);
+                    except_fd_set,
+                    fd_setsize);
     /* call generic forwarding function for passing data */
     process_urh (urh);
     /* Finished forwarding? */
@@ -4468,6 +4535,127 @@ internal_run_from_select (struct MHD_Daemon *daemon,
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
   MHD_cleanup_connections (daemon);
   return MHD_YES;
+}
+
+
+#undef MHD_run_from_select
+
+/**
+ * Run webserver operations. This method should be called by clients
+ * in combination with #MHD_get_fdset and #MHD_get_timeout() if the
+ * client-controlled select method is used.
+ * This function specifies FD_SETSIZE used when provided fd_sets were
+ * created. It is important on platforms where FD_SETSIZE can be
+ * overridden.
+ *
+ * You can use this function instead of #MHD_run if you called
+ * 'select()' on the result from #MHD_get_fdset2().  File descriptors in
+ * the sets that are not controlled by MHD will be ignored.  Calling
+ * this function instead of #MHD_run() is more efficient as MHD will
+ * not have to call 'select()' again to determine which operations are
+ * ready.
+ *
+ * If #MHD_get_timeout() returned #MHD_YES, than this function must be
+ * called right after 'select()' returns regardless of detected activity
+ * on the daemon's FDs.
+ *
+ * This function cannot be used with daemon started with
+ * #MHD_USE_INTERNAL_POLLING_THREAD flag.
+ *
+ * @param daemon the daemon to run select loop for
+ * @param read_fd_set the read set
+ * @param write_fd_set the write set
+ * @param except_fd_set the except set
+ * @param fd_setsize the value of FD_SETSIZE
+ * @return #MHD_NO on serious errors, #MHD_YES on success
+ * @sa #MHD_get_fdset2(), #MHD_OPTION_APP_FD_SETSIZE
+ * @ingroup event
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_run_from_select2 (struct MHD_Daemon *daemon,
+                      const fd_set *read_fd_set,
+                      const fd_set *write_fd_set,
+                      const fd_set *except_fd_set,
+                      unsigned int fd_setsize)
+{
+  if (MHD_D_IS_USING_POLL_ (daemon) ||
+      (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)))
+    return MHD_NO;
+  if ((NULL == read_fd_set) || (NULL == write_fd_set))
+    return MHD_NO;
+#ifdef HAVE_MESSAGES
+  if (NULL == except_fd_set)
+  {
+    MHD_DLOG (daemon,
+              _ ("MHD_run_from_select() called with except_fd_set "
+                 "set to NULL. Such behavior is deprecated.\n"));
+  }
+#endif /* HAVE_MESSAGES */
+
+#ifdef HAS_FD_SETSIZE_OVERRIDABLE
+  if (0 == fd_setsize)
+    return MHD_NO;
+  else if (((unsigned int) INT_MAX) < fd_setsize)
+    fd_setsize = (unsigned int) INT_MAX;
+#ifdef HAVE_MESSAGES
+  else if (daemon->fdset_size > ((int) fd_setsize))
+  {
+    if (daemon->fdset_size_set_by_app)
+    {
+      MHD_DLOG (daemon,
+                _ ("%s() called with fd_setsize (%u) " \
+                   "less than value set by MHD_OPTION_APP_FD_SETSIZE (%d). " \
+                   "Some socket FDs may be not processed. " \
+                   "Use MHD_OPTION_APP_FD_SETSIZE with the correct value.\n"),
+                "MHD_run_from_select2", fd_setsize, daemon->fdset_size);
+    }
+    else
+    {
+      MHD_DLOG (daemon,
+                _ ("%s() called with fd_setsize (%u) " \
+                   "less than FD_SETSIZE used by MHD (%d). " \
+                   "Some socket FDs may be not processed. " \
+                   "Consider using MHD_OPTION_APP_FD_SETSIZE option.\n"),
+                "MHD_run_from_select2", fd_setsize, daemon->fdset_size);
+    }
+  }
+#endif /* HAVE_MESSAGES */
+#else  /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+  if (((unsigned int) FD_SETSIZE) > fd_setsize)
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("%s() called with fd_setsize (%u) " \
+                 "less than fixed FD_SETSIZE value (%d) used on the " \
+                 "platform.\n", "MHD_run_from_select2"),
+              fd_setsize, (int) FD_SETSIZE);
+#endif /* HAVE_MESSAGES */
+    return MHD_NO;
+  }
+#endif /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+
+  if (MHD_D_IS_USING_EPOLL_ (daemon))
+  {
+#ifdef EPOLL_SUPPORT
+    enum MHD_Result ret = MHD_epoll (daemon,
+                                     0);
+
+    MHD_cleanup_connections (daemon);
+    return ret;
+#else  /* ! EPOLL_SUPPORT */
+    return MHD_NO;
+#endif /* ! EPOLL_SUPPORT */
+  }
+
+  /* Resuming external connections when using an extern mainloop  */
+  if (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
+    resume_suspended_connections (daemon);
+
+  return internal_run_from_select (daemon,
+                                   read_fd_set,
+                                   write_fd_set,
+                                   except_fd_set,
+                                   (int) fd_setsize);
 }
 
 
@@ -4503,40 +4691,18 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
                      const fd_set *write_fd_set,
                      const fd_set *except_fd_set)
 {
-  if (MHD_D_IS_USING_POLL_ (daemon) ||
-      (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)))
-    return MHD_NO;
-  if ((NULL == read_fd_set) || (NULL == write_fd_set))
-    return MHD_NO;
-#ifdef HAVE_MESSAGES
-  if (NULL == except_fd_set)
-  {
-    MHD_DLOG (daemon,
-              _ ("MHD_run_from_select() called with except_fd_set "
-                 "set to NULL. Such behavior is deprecated.\n"));
-  }
-#endif /* HAVE_MESSAGES */
-  if (MHD_D_IS_USING_EPOLL_ (daemon))
-  {
-#ifdef EPOLL_SUPPORT
-    enum MHD_Result ret = MHD_epoll (daemon,
-                                     0);
-
-    MHD_cleanup_connections (daemon);
-    return ret;
-#else  /* ! EPOLL_SUPPORT */
-    return MHD_NO;
-#endif /* ! EPOLL_SUPPORT */
-  }
-
-  /* Resuming external connections when using an extern mainloop  */
-  if (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME))
-    resume_suspended_connections (daemon);
-
-  return internal_run_from_select (daemon,
-                                   read_fd_set,
-                                   write_fd_set,
-                                   except_fd_set);
+  return MHD_run_from_select2 (daemon,
+                               read_fd_set,
+                               write_fd_set,
+                               except_fd_set,
+#ifdef HAS_FD_SETSIZE_OVERRIDABLE
+                               daemon->fdset_size_set_by_app ?
+                               ((unsigned int) daemon->fdset_size) :
+                               ((unsigned int) _MHD_SYS_DEFAULT_FD_SETSIZE)
+#else  /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+                               ((unsigned int) _MHD_SYS_DEFAULT_FD_SETSIZE)
+#endif /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+                               );
 }
 
 
@@ -4587,7 +4753,7 @@ MHD_select (struct MHD_Daemon *daemon,
                              &ws,
                              &es,
                              &maxsock,
-                             FD_SETSIZE))
+                             (int) FD_SETSIZE))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -4604,7 +4770,7 @@ MHD_select (struct MHD_Daemon *daemon,
          (! MHD_add_to_fd_set_ (ls,
                                 &rs,
                                 &maxsock,
-                                FD_SETSIZE)) )
+                                (int) FD_SETSIZE)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -4617,7 +4783,7 @@ MHD_select (struct MHD_Daemon *daemon,
        (! MHD_add_to_fd_set_ (MHD_itc_r_fd_ (daemon->itc),
                               &rs,
                               &maxsock,
-                              FD_SETSIZE)) )
+                              (int) FD_SETSIZE)) )
   {
     bool retry_succeed;
 
@@ -4634,7 +4800,7 @@ MHD_select (struct MHD_Daemon *daemon,
       if (MHD_add_to_fd_set_ (MHD_itc_r_fd_ (daemon->itc),
                               &rs,
                               &maxsock,
-                              FD_SETSIZE))
+                              (int) FD_SETSIZE))
         retry_succeed = true;
     }
 #endif /* MHD_WINSOCK_SOCKETS */
@@ -4731,7 +4897,8 @@ MHD_select (struct MHD_Daemon *daemon,
   if (MHD_NO != internal_run_from_select (daemon,
                                           &rs,
                                           &ws,
-                                          &es))
+                                          &es,
+                                          (int) FD_SETSIZE))
     return (MHD_NO == err_state) ? MHD_YES : MHD_NO;
   return MHD_NO;
 }
@@ -5675,6 +5842,24 @@ MHD_run_wait (struct MHD_Daemon *daemon,
 #endif
   if (1)
   {
+    mhd_assert (MHD_D_IS_USING_SELECT_ (daemon));
+#ifdef HAS_FD_SETSIZE_OVERRIDABLE
+#ifdef HAVE_MESSAGES
+    if (daemon->fdset_size_set_by_app
+        && (((int) FD_SETSIZE) < daemon->fdset_size))
+    {
+      MHD_DLOG (daemon,
+                _ ("MHD_run()/MHD_run_wait() called for daemon started with " \
+                   "MHD_OPTION_APP_FD_SETSIZE option (%d). " \
+                   "The library was compiled with smaller FD_SETSIZE (%d). " \
+                   "Some socket FDs may be not processed. " \
+                   "Use MHD_run_from_select2() instead of MHD_run() or " \
+                   "do not use MHD_OPTION_APP_FD_SETSIZE option.\n"),
+                daemon->fdset_size, (int) FD_SETSIZE);
+    }
+#endif /* HAVE_MESSAGES */
+#endif /* HAS_FD_SETSIZE_OVERRIDABLE */
+
     res = MHD_select (daemon, millisec);
     /* MHD_select does MHD_cleanup_connections already */
   }

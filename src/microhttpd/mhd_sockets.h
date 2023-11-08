@@ -881,7 +881,7 @@ int
 MHD_add_to_fd_set_ (MHD_socket fd,
                     fd_set *set,
                     MHD_socket *max_fd,
-                    unsigned int fd_setsize);
+                    int fd_setsize);
 
 
 /**
