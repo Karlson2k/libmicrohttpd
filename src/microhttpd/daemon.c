@@ -1133,7 +1133,9 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 #endif
 
 #ifdef HAS_FD_SETSIZE_OVERRIDABLE
-  if (((unsigned int) INT_MAX) < fd_setsize)
+  if (0 == fd_setsize)
+    return MHD_NO;
+  else if (((unsigned int) INT_MAX) < fd_setsize)
     fd_setsize = (unsigned int) INT_MAX;
 #ifdef HAVE_MESSAGES
   else if (daemon->fdset_size > ((int) fd_setsize))
@@ -1141,20 +1143,20 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
     if (daemon->fdset_size_set_by_app)
     {
       MHD_DLOG (daemon,
-                _ ("MHD_get_fdset2() called with fd_setsize (%u) " \
+                _ ("%s() called with fd_setsize (%u) " \
                    "less than value set by MHD_OPTION_APP_FD_SETSIZE (%d). " \
-                   "Some socket FDs may be not added. " \
+                   "Some socket FDs may be not processed. " \
                    "Use MHD_OPTION_APP_FD_SETSIZE with the correct value.\n"),
-                fd_setsize, daemon->fdset_size);
+                "MHD_get_fdset2", fd_setsize, daemon->fdset_size);
     }
     else
     {
       MHD_DLOG (daemon,
-                _ ("MHD_get_fdset2() called with fd_setsize (%u) " \
+                _ ("%s() called with fd_setsize (%u) " \
                    "less than FD_SETSIZE used by MHD (%d). " \
-                   "Some socket FDs may be not added. " \
+                   "Some socket FDs may be not processed. " \
                    "Consider using MHD_OPTION_APP_FD_SETSIZE option.\n"),
-                fd_setsize, daemon->fdset_size);
+                "MHD_get_fdset2", fd_setsize, daemon->fdset_size);
     }
   }
 #endif /* HAVE_MESSAGES */
@@ -1163,10 +1165,10 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
-              _ ("MHD_get_fdset2() called with fd_setsize (%u) " \
+              _ ("%s() called with fd_setsize (%u) " \
                  "less than fixed FD_SETSIZE value (%d) used on the " \
                  "platform.\n"),
-              fd_setsize, (int) FD_SETSIZE);
+              "MHD_get_fdset2", fd_setsize, (int) FD_SETSIZE);
 #endif /* HAVE_MESSAGES */
     return MHD_NO;
   }
