@@ -4627,8 +4627,8 @@ MHD_run_from_select2 (struct MHD_Daemon *daemon,
     MHD_DLOG (daemon,
               _ ("%s() called with fd_setsize (%u) " \
                  "less than fixed FD_SETSIZE value (%d) used on the " \
-                 "platform.\n", "MHD_run_from_select2"),
-              fd_setsize, (int) FD_SETSIZE);
+                 "platform.\n"),
+              "MHD_run_from_select2", fd_setsize, (int) FD_SETSIZE);
 #endif /* HAVE_MESSAGES */
     return MHD_NO;
   }
