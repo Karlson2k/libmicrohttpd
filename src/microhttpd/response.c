@@ -1953,6 +1953,15 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
                                            MHD_STATICSTR_LEN_ ( \
                                              MHD_HTTP_HEADER_UPGRADE)));
 
+  if (! connection->sk_nonblck)
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Cannot execute \"upgrade\" as the socket is in " \
+                 "the blocking mode.\n"));
+#endif
+    return MHD_NO;
+  }
   urh = MHD_calloc_ (1, sizeof (struct MHD_UpgradeResponseHandle));
   if (NULL == urh)
     return MHD_NO;
