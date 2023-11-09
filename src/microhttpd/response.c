@@ -2112,7 +2112,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
       urh->in_eready_list = true;
     }
 #endif /* EPOLL_SUPPORT */
-    if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION) )
+    if (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
     {
       /* This takes care of further processing for most event loops:
          simply add to DLL for bi-direcitonal processing */

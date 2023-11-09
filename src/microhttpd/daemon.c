@@ -1333,7 +1333,7 @@ call_handlers (struct MHD_Connection *con,
    * TLS read-ready connection in 'read info' state as connection
    * without space in read buffer will be marked as 'info block'. */
   if ( (! con->daemon->data_already_pending) &&
-       (0 == (con->daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
+       (! MHD_D_IS_USING_THREAD_PER_CONN_ (con->daemon)) )
   {
     if (0 != (MHD_EVENT_LOOP_INFO_PROCESS & con->event_loop_info))
       con->daemon->data_already_pending = true;
@@ -1708,7 +1708,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
    * and incoming forward buffer have some space. */
   if ( (connection->tls_read_ready) &&
        (urh->in_buffer_used < urh->in_buffer_size) &&
-       (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
+       (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon)) )
     daemon->data_already_pending = true;
 
   if ( (daemon->shutdown) &&
@@ -2875,7 +2875,7 @@ new_connection_process_ (struct MHD_Daemon *daemon,
       DLL_insert (daemon->connections_head,
                   daemon->connections_tail,
                   connection);
-      if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+      if (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
       {
         XDLL_insert (daemon->normal_timeout_head,
                      daemon->normal_timeout_tail,
@@ -2891,7 +2891,7 @@ new_connection_process_ (struct MHD_Daemon *daemon,
                                    &connection->socket_context,
                                    MHD_CONNECTION_NOTIFY_STARTED);
 #ifdef MHD_USE_THREADS
-      if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+      if (MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
       {
         mhd_assert (! MHD_D_IS_USING_EPOLL_ (daemon));
         if (! MHD_create_named_thread_ (&connection->tid,
@@ -2978,7 +2978,7 @@ new_connection_process_ (struct MHD_Daemon *daemon,
                                    &connection->socket_context,
                                    MHD_CONNECTION_NOTIFY_CLOSED);
       MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
-      if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+      if (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
       {
         XDLL_remove (daemon->normal_timeout_head,
                      daemon->normal_timeout_tail,
@@ -3189,7 +3189,7 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
-               (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
+               MHD_D_IS_USING_THREAD_PER_CONN_ (daemon) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
 #endif
@@ -3202,7 +3202,7 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
 #endif
     return;
   }
-  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+  if (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
   {
     if (connection->connection_timeout_ms == daemon->connection_timeout_ms)
       XDLL_remove (daemon->normal_timeout_head,
@@ -3286,7 +3286,7 @@ MHD_suspend_connection (struct MHD_Connection *connection)
 
 #ifdef MHD_USE_THREADS
   mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
-               (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
+               MHD_D_IS_USING_THREAD_PER_CONN_ (daemon) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
 #endif /* MHD_USE_THREADS */
 
@@ -3496,7 +3496,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
        * Insert connection into cleanup list. */
 
       if ( (NULL != daemon->notify_completed) &&
-           (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+           (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon)) &&
            (pos->rq.client_aware) )
       {
         daemon->notify_completed (daemon->notify_completed_cls,
@@ -3988,9 +3988,9 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
                 pos);
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
     MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
-    if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-         (! pos->thread_joined) &&
-         (! MHD_thread_handle_ID_join_thread_ (pos->tid)) )
+    if (MHD_D_IS_USING_THREAD_PER_CONN_ (daemon) &&
+        (! pos->thread_joined) &&
+        (! MHD_thread_handle_ID_join_thread_ (pos->tid)) )
       MHD_PANIC (_ ("Failed to join a thread.\n"));
 #endif
 #ifdef UPGRADE_SUPPORT
@@ -4166,7 +4166,7 @@ MHD_get_timeout64 (struct MHD_Daemon *daemon,
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
 #endif /* MHD_USE_THREADS */
 
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+  if (MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
@@ -4741,10 +4741,10 @@ MHD_select (struct MHD_Daemon *daemon,
   err_state = MHD_NO;
   if ( (0 != (daemon->options & MHD_TEST_ALLOW_SUSPEND_RESUME)) &&
        (MHD_NO != resume_suspended_connections (daemon)) &&
-       (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) )
+       (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon)) )
     millisec = 0;
 
-  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+  if (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
   {
     /* single-threaded, go over everything */
     if (MHD_NO ==
@@ -4842,7 +4842,7 @@ MHD_select (struct MHD_Daemon *daemon,
     uint64_t mhd_tmo;
     uint64_t select_tmo;
 
-    if ( (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
+    if ( (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon)) &&
          (MHD_NO != MHD_get_timeout64 (daemon, &mhd_tmo)) )
     {
       if ( (0 < millisec) &&
@@ -5234,7 +5234,7 @@ static enum MHD_Result
 MHD_poll (struct MHD_Daemon *daemon,
           int may_block)
 {
-  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+  if (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
     return MHD_poll_all (daemon,
                          may_block ? -1 : 0);
   return MHD_poll_listen_socket (daemon,
@@ -5886,7 +5886,7 @@ close_connection (struct MHD_Connection *pos)
   mhd_assert (NULL == daemon->worker_pool);
 #endif /* MHD_USE_THREADS */
 
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+  if (MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
   {
     MHD_connection_mark_closed_ (pos);
     return;   /* must let thread to do the rest */
@@ -6671,7 +6671,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
           return MHD_NO;
         }
-        if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+        if (MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
         {
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
@@ -7665,9 +7665,9 @@ MHD_start_daemon_va (unsigned int flags,
   }
 #endif
 
-  if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
-       && ((NULL != daemon->notify_completed)
-           || (NULL != daemon->notify_connection)) )
+  if (MHD_D_IS_USING_THREAD_PER_CONN_ (daemon)
+      && ((NULL != daemon->notify_completed)
+          || (NULL != daemon->notify_connection)) )
     *pflags |= MHD_USE_ITC; /* requires ITC */
 
 #ifdef _DEBUG
@@ -8185,7 +8185,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
       )
   {
-    if (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION))
+    if (MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -8271,8 +8271,7 @@ MHD_start_daemon_va (unsigned int flags,
         goto free_and_fail;
       }
       if (! MHD_create_named_thread_ (&daemon->tid,
-                                      (*pflags
-                                       & MHD_USE_THREAD_PER_CONNECTION) ?
+                                      MHD_D_IS_USING_THREAD_PER_CONN_ (daemon) ?
                                       "MHD-listen" : "MHD-single",
                                       daemon->thread_stack_size,
                                       &MHD_polling_thread,
@@ -8569,8 +8568,7 @@ static void
 close_all_connections (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
-  const bool used_thr_p_c = (0 != (daemon->options
-                                   & MHD_USE_THREAD_PER_CONNECTION));
+  const bool used_thr_p_c = MHD_D_IS_USING_THREAD_PER_CONN_ (daemon);
 #ifdef UPGRADE_SUPPORT
   const bool upg_allowed = (0 != (daemon->options & MHD_ALLOW_UPGRADE));
 #endif /* UPGRADE_SUPPORT */
@@ -8582,7 +8580,7 @@ close_all_connections (struct MHD_Daemon *daemon)
 
 #ifdef MHD_USE_THREADS
   mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
-               (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
+               MHD_D_IS_USING_THREAD_PER_CONN_ (daemon) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
   mhd_assert (NULL == daemon->worker_pool);
 #endif /* MHD_USE_THREADS */
@@ -8710,9 +8708,9 @@ close_all_connections (struct MHD_Daemon *daemon)
     shutdown (pos->socket_fd,
               SHUT_RDWR);
 #ifdef MHD_WINSOCK_SOCKETS
-    if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-         (MHD_ITC_IS_VALID_ (daemon->itc)) &&
-         (! MHD_itc_activate_ (daemon->itc, "e")) )
+    if (MHD_D_IS_USING_THREAD_PER_CONN_ (daemon) &&
+        (MHD_ITC_IS_VALID_ (daemon->itc)) &&
+        (! MHD_itc_activate_ (daemon->itc, "e")) )
       MHD_PANIC (_ ("Failed to signal shutdown via inter-thread " \
                     "communication channel.\n"));
 #endif
@@ -8760,8 +8758,8 @@ close_all_connections (struct MHD_Daemon *daemon)
   while (NULL != (pos = daemon->connections_tail))
   {
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-    if ( (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) &&
-         (! pos->thread_joined) )
+    if (MHD_D_IS_USING_THREAD_PER_CONN_ (daemon) &&
+        (! pos->thread_joined) )
       MHD_PANIC (_ ("Failed to join a thread.\n"));
 #endif
     close_connection (pos);

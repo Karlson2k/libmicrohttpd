@@ -1293,14 +1293,14 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
 
 #ifdef MHD_USE_THREADS
   mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
-               (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
+               MHD_D_IS_USING_THREAD_PER_CONN_ (daemon) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
 #endif /* MHD_USE_THREADS */
 
   if (0 == (daemon->options & MHD_USE_TLS))
     return; /* Nothing to do with non-TLS connection. */
 
-  if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+  if (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
     DLL_remove (daemon->urh_head,
                 daemon->urh_tail,
                 urh);
@@ -6351,7 +6351,7 @@ MHD_update_last_activity_ (struct MHD_Connection *connection)
     return;  /* no activity on suspended connections */
 
   connection->last_activity = MHD_monotonic_msec_counter ();
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+  if (MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
     return; /* each connection has personal timeout */
 
   if (connection->connection_timeout_ms != daemon->connection_timeout_ms)
@@ -6973,7 +6973,7 @@ cleanup_connection (struct MHD_Connection *connection)
   }
   else
   {
-    if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    if (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
     {
       if (connection->connection_timeout_ms == daemon->connection_timeout_ms)
         XDLL_remove (daemon->normal_timeout_head,
@@ -6996,7 +6996,7 @@ cleanup_connection (struct MHD_Connection *connection)
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   MHD_mutex_unlock_chk_ (&daemon->cleanup_connection_mutex);
 #endif
-  if (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+  if (MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
   {
     /* if we were at the connection limit before and are in
        thread-per-connection mode, signal the main thread
@@ -7738,7 +7738,7 @@ MHD_set_connection_option (struct MHD_Connection *connection,
       ui_val = UINT64_MAX / 4000 - 1;
     }
 #endif /* (SIZEOF_UINT64_T - 2) <= SIZEOF_UNSIGNED_INT */
-    if (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION))
+    if (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
     {
 #if defined(MHD_USE_THREADS)
       MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
