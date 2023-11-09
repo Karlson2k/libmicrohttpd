@@ -1145,7 +1145,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
   if ( (NULL == daemon) ||
        (NULL == read_fd_set) ||
        (NULL == write_fd_set) ||
-       (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) ||
+       MHD_D_IS_USING_THREADS_ (daemon) ||
        MHD_D_IS_USING_POLL_ (daemon))
     return MHD_NO;
 
@@ -1407,7 +1407,7 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
   bool was_closed;
 
 #ifdef MHD_USE_THREADS
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                MHD_thread_handle_ID_is_current_thread_ (connection->tid) );
 #endif /* MHD_USE_THREADS */
   if (daemon->shutdown)
@@ -1753,7 +1753,7 @@ thread_main_connection_upgrade (struct MHD_Connection *con)
   struct MHD_UpgradeResponseHandle *urh = con->urh;
   struct MHD_Daemon *daemon = con->daemon;
 
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                MHD_thread_handle_ID_is_current_thread_ (con->tid) );
   /* Here, we need to bi-directionally forward
      until the application tells us that it is done
@@ -2830,7 +2830,7 @@ new_connection_process_ (struct MHD_Daemon *daemon,
 #ifdef MHD_USE_THREADS
   /* Function manipulate connection and timeout DL-lists,
    * must be called only within daemon thread. */
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
   mhd_assert (NULL == daemon->worker_pool);
 #endif /* MHD_USE_THREADS */
@@ -3101,7 +3101,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
     return MHD_NO;
 
   if ((external_add) &&
-      (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)))
+      MHD_D_IS_USING_THREADS_ (daemon))
   {
     /* Connection is added externally and MHD is handling its own threads. */
     MHD_mutex_lock_chk_ (&daemon->new_connections_mutex);
@@ -3135,7 +3135,7 @@ new_connections_list_process_ (struct MHD_Daemon *daemon)
   struct MHD_Connection *local_head;
   struct MHD_Connection *local_tail;
   mhd_assert (daemon->have_new);
-  mhd_assert (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD));
+  mhd_assert (MHD_D_IS_USING_THREADS_ (daemon));
 
   /* Detach DL-list of new connections from the daemon for
    * following local processing. */
@@ -3188,7 +3188,7 @@ internal_suspend_connection_ (struct MHD_Connection *connection)
   mhd_assert (NULL == daemon->worker_pool);
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
   MHD_mutex_lock_chk_ (&daemon->cleanup_connection_mutex);
@@ -3285,7 +3285,7 @@ MHD_suspend_connection (struct MHD_Connection *connection)
   struct MHD_Daemon *const daemon = connection->daemon;
 
 #ifdef MHD_USE_THREADS
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
 #endif /* MHD_USE_THREADS */
@@ -3410,7 +3410,7 @@ resume_suspended_connections (struct MHD_Daemon *daemon)
                                    & MHD_USE_THREAD_PER_CONNECTION));
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   mhd_assert (NULL == daemon->worker_pool);
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
 #endif
 
@@ -3571,12 +3571,12 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   struct sockaddr_storage addrstorage;
 
   /* NOT thread safe with internal thread. TODO: fix thread safety. */
-  if ((0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
+  if ((! MHD_D_IS_USING_THREADS_ (daemon)) &&
       (daemon->connection_limit <= daemon->connections))
     MHD_cleanup_connections (daemon);
 
 #ifdef HAVE_MESSAGES
-  if ((0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
+  if (MHD_D_IS_USING_THREADS_ (daemon) &&
       (0 == (daemon->options & MHD_USE_ITC)))
   {
     MHD_DLOG (daemon,
@@ -3751,7 +3751,7 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
 #endif /* ! USE_ACCEPT4 && ! _DEBUG */
 
 #ifdef MHD_USE_THREADS
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
   mhd_assert (NULL == daemon->worker_pool);
 #endif /* MHD_USE_THREADS */
@@ -3975,7 +3975,7 @@ MHD_cleanup_connections (struct MHD_Daemon *daemon)
 {
   struct MHD_Connection *pos;
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
   mhd_assert (NULL == daemon->worker_pool);
 
@@ -4162,7 +4162,7 @@ MHD_get_timeout64 (struct MHD_Daemon *daemon,
   struct MHD_Connection *earliest_tmot_conn; /**< the connection with earliest timeout */
 
 #ifdef MHD_USE_THREADS
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
 #endif /* MHD_USE_THREADS */
 
@@ -4579,7 +4579,7 @@ MHD_run_from_select2 (struct MHD_Daemon *daemon,
                       unsigned int fd_setsize)
 {
   if (MHD_D_IS_USING_POLL_ (daemon) ||
-      (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)))
+      MHD_D_IS_USING_THREADS_ (daemon))
     return MHD_NO;
   if ((NULL == read_fd_set) || (NULL == write_fd_set))
     return MHD_NO;
@@ -5313,7 +5313,7 @@ run_epoll_for_upgrade (struct MHD_Daemon *daemon)
   struct MHD_UpgradeResponseHandle *prev;
 
 #ifdef MHD_USE_THREADS
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
 #endif /* MHD_USE_THREADS */
 
@@ -5765,7 +5765,7 @@ _MHD_EXTERN enum MHD_Result
 MHD_run (struct MHD_Daemon *daemon)
 {
   if ( (daemon->shutdown) ||
-       (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) )
+       MHD_D_IS_USING_THREADS_ (daemon) )
     return MHD_NO;
 
   (void) MHD_run_wait (daemon, 0);
@@ -5817,7 +5817,7 @@ MHD_run_wait (struct MHD_Daemon *daemon,
 {
   enum MHD_Result res;
   if ( (daemon->shutdown) ||
-       (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) )
+       MHD_D_IS_USING_THREADS_ (daemon) )
     return MHD_NO;
 
   mhd_assert (! MHD_thread_handle_ID_is_valid_handle_ (daemon->tid));
@@ -5881,7 +5881,7 @@ close_connection (struct MHD_Connection *pos)
   struct MHD_Daemon *daemon = pos->daemon;
 
 #ifdef MHD_USE_THREADS
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
   mhd_assert (NULL == daemon->worker_pool);
 #endif /* MHD_USE_THREADS */
@@ -6097,7 +6097,7 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
   if (MHD_INVALID_SOCKET == ret)
     return MHD_INVALID_SOCKET;
   if ( (0 == (daemon->options & (MHD_USE_ITC))) &&
-       (0 != (daemon->options & (MHD_USE_INTERNAL_POLLING_THREAD))) )
+       MHD_D_IS_USING_THREADS_ (daemon) )
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
@@ -6662,7 +6662,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif /* SIZEOF_UNSIGNED_INT >= (SIZEOF_SIZE_T - 2) */
       else
       {
-        if (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
+        if (! MHD_D_IS_USING_THREADS_ (daemon))
         {
 #ifdef HAVE_MESSAGES
           MHD_DLOG (daemon,
@@ -7167,7 +7167,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif
 #endif /* HTTPS_SUPPORT */
     case MHD_OPTION_SIGPIPE_HANDLED_BY_APP:
-      if (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
+      if (! MHD_D_IS_USING_THREADS_ (daemon))
         daemon->sigpipe_blocked = ( (va_arg (ap,
                                              int)) != 0);
       else
@@ -7284,7 +7284,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 
   mhd_assert (MHD_D_IS_USING_EPOLL_ (daemon));
   mhd_assert (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION));
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) || \
                MHD_ITC_IS_VALID_ (daemon->itc) );
   daemon->epoll_fd = setup_epoll_fd (daemon);
@@ -7792,7 +7792,7 @@ MHD_start_daemon_va (unsigned int flags,
 
   /* Thread polling currently works only with internal select thread mode */
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-  if ( (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) &&
+  if ( (! MHD_D_IS_USING_THREADS_ (daemon)) &&
        (daemon->worker_pool_size > 0) )
   {
 #ifdef HAVE_MESSAGES
@@ -8231,7 +8231,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif /* HTTPS_SUPPORT */
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   /* Start threads if requested by parameters */
-  if (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
+  if (MHD_D_IS_USING_THREADS_ (daemon))
   {
     /* Internal thread (or threads) is used.
      * Make sure that MHD will be able to communicate with threads. */
@@ -8581,7 +8581,7 @@ close_all_connections (struct MHD_Daemon *daemon)
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
 
 #ifdef MHD_USE_THREADS
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
   mhd_assert (NULL == daemon->worker_pool);
@@ -8593,7 +8593,7 @@ close_all_connections (struct MHD_Daemon *daemon)
    * not processed by the daemon thread. */
   while (NULL != (pos = daemon->new_connections_tail))
   {
-    mhd_assert (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD));
+    mhd_assert (MHD_D_IS_USING_THREADS_ (daemon));
     DLL_remove (daemon->new_connections_head,
                 daemon->new_connections_tail,
                 pos);
@@ -8809,7 +8809,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   if (NULL != daemon->worker_pool)
   {   /* Master daemon with worker pool. */
     mhd_assert (1 < daemon->worker_pool_size);
-    mhd_assert (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD));
+    mhd_assert (MHD_D_IS_USING_THREADS_ (daemon));
 
     /* Let workers shutdown in parallel. */
     for (i = 0; i < daemon->worker_pool_size; ++i)
@@ -8849,7 +8849,7 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
 #endif
   {   /* Worker daemon or single daemon. */
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-    if (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
+    if (MHD_D_IS_USING_THREADS_ (daemon))
     {     /* Worker daemon or single daemon with internal thread(s). */
       mhd_assert (0 == daemon->worker_pool_size);
       /* Separate thread(s) is used for polling sockets. */
@@ -8997,7 +8997,7 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
     return NULL;
 #endif /* ! EPOLL_SUPPORT */
   case MHD_DAEMON_INFO_CURRENT_CONNECTIONS:
-    if (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
+    if (! MHD_D_IS_USING_THREADS_ (daemon))
     {
       /* Assume that MHD_run() in not called in other thread
        * at the same time. */

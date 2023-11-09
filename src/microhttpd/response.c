@@ -1940,7 +1940,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
   size_t rbo;
 
 #ifdef MHD_USE_THREADS
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                MHD_thread_handle_ID_is_current_thread_ (connection->tid) );
 #endif /* MHD_USE_THREADS */
 

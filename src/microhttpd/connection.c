@@ -1249,7 +1249,7 @@ MHD_connection_close_ (struct MHD_Connection *connection,
 
   mhd_assert (! connection->suspended);
 #ifdef MHD_USE_THREADS
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                MHD_thread_handle_ID_is_current_thread_ (connection->tid) );
 #endif /* MHD_USE_THREADS */
   if ( (NULL != daemon->notify_completed) &&
@@ -1292,7 +1292,7 @@ MHD_connection_finish_forward_ (struct MHD_Connection *connection)
   struct MHD_UpgradeResponseHandle *urh = connection->urh;
 
 #ifdef MHD_USE_THREADS
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                (0 != (daemon->options & MHD_USE_THREAD_PER_CONNECTION)) || \
                MHD_thread_handle_ID_is_current_thread_ (daemon->tid) );
 #endif /* MHD_USE_THREADS */
@@ -3465,7 +3465,7 @@ handle_recv_no_space (struct MHD_Connection *c,
     {
       /* The connection must not be in MHD_EVENT_LOOP_INFO_READ state
          when external polling is used and some data left unprocessed. */
-      mhd_assert (0 != (c->daemon->options & MHD_USE_INTERNAL_POLLING_THREAD));
+      mhd_assert (MHD_D_IS_USING_THREADS_ (c->daemon));
       /* failed to grow the read buffer, and the
          client which is supposed to handle the
          received data in a *blocking* fashion
@@ -3616,7 +3616,7 @@ check_and_grow_read_buffer_space (struct MHD_Connection *c)
      space in the read buffer must be available. */
   mhd_assert (0 == (MHD_EVENT_LOOP_INFO_PROCESS & c->event_loop_info));
 
-  if ((0 == (c->daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
+  if ((! MHD_D_IS_USING_THREADS_ (c->daemon))
       && (MHD_CONNECTION_BODY_RECEIVING == c->state)
       && has_unprocessed_upload_body_data_in_buffer (c))
   {
@@ -4629,7 +4629,7 @@ process_request_body (struct MHD_Connection *connection)
         /* client did not process any upload data, complain if
            the setup was incorrect, which may prevent us from
            handling the rest of the request */
-        if (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD))
+        if (MHD_D_IS_USING_THREADS_ (daemon))
           MHD_DLOG (daemon,
                     _ ("WARNING: Access Handler Callback has not processed " \
                        "any upload data and connection is not suspended. " \
@@ -6948,7 +6948,7 @@ cleanup_connection (struct MHD_Connection *connection)
 {
   struct MHD_Daemon *daemon = connection->daemon;
 #ifdef MHD_USE_THREADS
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                MHD_thread_handle_ID_is_current_thread_ (connection->tid) );
   mhd_assert (NULL == daemon->worker_pool);
 #endif /* MHD_USE_THREADS */
@@ -7155,7 +7155,7 @@ MHD_connection_handle_idle (struct MHD_Connection *connection)
   struct MHD_Daemon *daemon = connection->daemon;
   enum MHD_Result ret;
 #ifdef MHD_USE_THREADS
-  mhd_assert ( (0 == (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) || \
+  mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                MHD_thread_handle_ID_is_current_thread_ (connection->tid) );
 #endif /* MHD_USE_THREADS */
   /* 'daemon' is not used if epoll is not available and asserts are disabled */
@@ -7832,7 +7832,7 @@ MHD_queue_response (struct MHD_Connection *connection,
 
   daemon = connection->daemon;
   if ((! connection->in_access_handler) && (! connection->suspended) &&
-      (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)))
+      MHD_D_IS_USING_THREADS_ (daemon))
     return MHD_NO;
 
   reply_icy = (0 != (status_code & MHD_ICY_FLAG));
@@ -7840,7 +7840,7 @@ MHD_queue_response (struct MHD_Connection *connection,
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if ( (! connection->suspended) &&
-       (0 != (daemon->options & MHD_USE_INTERNAL_POLLING_THREAD)) &&
+       MHD_D_IS_USING_THREADS_ (daemon) &&
        (! MHD_thread_handle_ID_is_current_thread_ (connection->tid)) )
   {
 #ifdef HAVE_MESSAGES
