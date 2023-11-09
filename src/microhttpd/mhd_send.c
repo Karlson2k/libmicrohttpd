@@ -1201,7 +1201,8 @@ MHD_send_sendfile_ (struct MHD_Connection *connection)
 #ifdef HAVE_DARWIN_SENDFILE
   off_t len;
 #endif /* HAVE_DARWIN_SENDFILE */
-  const bool used_thr_p_c = MHD_D_IS_USING_THREAD_PER_CONN_ (daemon);
+  const bool used_thr_p_c =
+    MHD_D_IS_USING_THREAD_PER_CONN_ (connection->daemon);
   const size_t chunk_size = used_thr_p_c ? MHD_SENFILE_CHUNK_THR_P_C_ :
                             MHD_SENFILE_CHUNK_;
   size_t send_size = 0;
