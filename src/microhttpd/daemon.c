@@ -8170,6 +8170,7 @@ MHD_start_daemon_va (unsigned int flags,
 
   if (MHD_INVALID_SOCKET != listen_fd)
   {
+    mhd_assert (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET));
     if (! MHD_socket_nonblocking_ (listen_fd))
     {
 #ifdef HAVE_MESSAGES
@@ -8210,7 +8211,10 @@ MHD_start_daemon_va (unsigned int flags,
     }
   }
   else
+  {
+    mhd_assert (0 != (*pflags & MHD_USE_NO_LISTEN_SOCKET));
     daemon->listen_nonblk = false; /* Actually listen socket does not exist */
+  }
 
 #ifdef EPOLL_SUPPORT
   if (MHD_D_IS_USING_EPOLL_ (daemon)
