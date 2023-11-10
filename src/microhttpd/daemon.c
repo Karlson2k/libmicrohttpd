@@ -1,7 +1,7 @@
 /*
   This file is part of libmicrohttpd
   Copyright (C) 2007-2018 Daniel Pittman and Christian Grothoff
-  Copyright (C) 2015-2021 Evgeny Grin (Karlson2k)
+  Copyright (C) 2015-2023 Evgeny Grin (Karlson2k)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -6173,6 +6173,15 @@ struct MHD_InterimParams_
    * The value for #MHD_OPTION_APP_FD_SETSIZE set by application.
    */
   int fdset_size;
+  /**
+   * Set to 'true' if @a listen_fd is set by application.
+   */
+  bool listen_fd_set;
+  /**
+   * Application-provided listen socket.
+   */
+  MHD_socket listen_fd;
+
 };
 
 /**
@@ -6904,39 +6913,9 @@ parse_options_va (struct MHD_Daemon *daemon,
       break;
 #endif
     case MHD_OPTION_LISTEN_SOCKET:
-      if (0 != (daemon->options & MHD_USE_NO_LISTEN_SOCKET))
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _ ("MHD_OPTION_LISTEN_SOCKET specified for daemon "
-                     "with MHD_USE_NO_LISTEN_SOCKET flag set.\n"));
-#endif
-        return MHD_NO;
-      }
-      else
-      {
-        daemon->listen_fd = va_arg (ap,
-                                    MHD_socket);
-#if defined(SO_DOMAIN) && defined(AF_UNIX)
-        {
-          int af;
-          socklen_t len = sizeof (af);
-
-          if (0 == getsockopt (daemon->listen_fd,
-                               SOL_SOCKET,
-                               SO_DOMAIN,
-                               &af,
-                               &len))
-          {
-            daemon->listen_is_unix = (AF_UNIX == af) ? _MHD_YES : _MHD_NO;
-          }
-          else
-            daemon->listen_is_unix = _MHD_UNKNOWN;
-        }
-#else  /* ! SO_DOMAIN || ! AF_UNIX */
-        daemon->listen_is_unix = _MHD_UNKNOWN;
-#endif /* ! SO_DOMAIN || ! AF_UNIX */
-      }
+      params->listen_fd = va_arg (ap,
+                                  MHD_socket);
+      params->listen_fd_set = true;
       break;
     case MHD_OPTION_EXTERNAL_LOGGER:
 #ifdef HAVE_MESSAGES
@@ -7404,6 +7383,54 @@ process_interim_params (struct MHD_Daemon *d,
 #endif /* MHD_POSIX_SOCKETS */
     }
   }
+
+  if (params->listen_fd_set)
+  {
+    if (MHD_INVALID_SOCKET == params->listen_fd
+#ifdef MHD_POSIX_SOCKETS
+        || 0 > params->listen_fd
+#endif /* MHD_POSIX_SOCKETS */
+        )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (d,
+                _ ("The value provided for MHD_OPTION_LISTEN_SOCKET " \
+                   "is invalid.\n"));
+#endif /* HAVE_MESSAGES */
+      return false;
+    }
+    else if (0 != (d->options & MHD_USE_NO_LISTEN_SOCKET))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (d,
+                _ ("MHD_OPTION_LISTEN_SOCKET specified for daemon "
+                   "with MHD_USE_NO_LISTEN_SOCKET flag set.\n"));
+#endif /* HAVE_MESSAGES */
+      (void) MHD_socket_close_ (params->listen_fd);
+      return false;
+    }
+    else
+    {
+#if defined(SO_DOMAIN) && defined(AF_UNIX)
+      int af;
+      socklen_t len = sizeof (af);
+
+      if (0 == getsockopt (d->listen_fd,
+                           SOL_SOCKET,
+                           SO_DOMAIN,
+                           &af,
+                           &len))
+      {
+        d->listen_is_unix = (AF_UNIX == af) ? _MHD_YES : _MHD_NO;
+      }
+      else
+        d->listen_is_unix = _MHD_UNKNOWN;
+#else  /* ! SO_DOMAIN || ! AF_UNIX */
+      d->listen_is_unix = _MHD_UNKNOWN;
+#endif /* ! SO_DOMAIN || ! AF_UNIX */
+      d->listen_fd = params->listen_fd;
+    }
+  }
   return true;
 }
 
@@ -7615,6 +7642,8 @@ MHD_start_daemon_va (unsigned int flags,
 
   interim_params->fdset_size_set = false;
   interim_params->fdset_size = 0;
+  interim_params->listen_fd_set = false;
+  interim_params->listen_fd = MHD_INVALID_SOCKET;
 
   if (MHD_NO == parse_options_va (daemon,
                                   &servaddr,
