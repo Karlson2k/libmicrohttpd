@@ -7267,6 +7267,25 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
                (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) || \
                MHD_ITC_IS_VALID_ (daemon->itc) );
   daemon->epoll_fd = setup_epoll_fd (daemon);
+  if (! MHD_D_IS_USING_THREADS_ (daemon)
+      && (0 != (daemon->options & MHD_USE_AUTO)))
+  {
+    /* Application requested "MHD_USE_AUTO", probably MHD_get_fdset() will be
+       used.
+       Make sure that epoll FD is suitable for fd_set.
+       Actually, MHD_get_fdset() is allowed for MHD_USE_EPOLL direct,
+       but most probably direct requirement for MHD_USE_EPOLL means that
+       epoll FD will be used directly. This logic is fuzzy, but better
+       than nothing with current MHD API. */
+    if (! MHD_D_DOES_SCKT_FIT_FDSET_ (daemon->epoll_fd, daemon))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("The epoll FD is too large to be used with fd_set.\n"));
+#endif /* HAVE_MESSAGES */
+      return MHD_NO;
+    }
+  }
   if (-1 == daemon->epoll_fd)
     return MHD_NO;
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
