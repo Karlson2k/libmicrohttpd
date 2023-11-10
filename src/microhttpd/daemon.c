@@ -8036,7 +8036,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
 #endif
     }
-    if (-1 == bind (listen_fd, servaddr, addrlen))
+    if (0 != bind (listen_fd, servaddr, addrlen))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -8066,8 +8066,8 @@ MHD_start_daemon_va (unsigned int flags,
       }
     }
 #endif
-    if (listen (listen_fd,
-                (int) daemon->listen_backlog_size) < 0)
+    if (0 != listen (listen_fd,
+                     (int) daemon->listen_backlog_size))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
