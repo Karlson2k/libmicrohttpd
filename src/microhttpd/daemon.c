@@ -7856,6 +7856,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
       goto free_and_fail;
     }
+    daemon->listen_is_unix = _MHD_NO;
 
     /* Apply the socket options according to listening_address_reuse. */
     if (0 == daemon->listening_address_reuse)
@@ -8122,6 +8123,8 @@ MHD_start_daemon_va (unsigned int flags,
       /* Many non-Linux-based platforms return zero addrlen
        * for AF_UNIX sockets */
       daemon->port = 0;     /* special value for UNIX domain sockets */
+      if (_MHD_UNKNOWN == daemon->listen_is_unix)
+        daemon->listen_is_unix = _MHD_YES;
     }
 #endif /* __linux__ */
 #endif /* MHD_POSIX_SOCKETS */
@@ -8149,14 +8152,16 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef AF_UNIX
       case AF_UNIX:
         daemon->port = 0;     /* special value for UNIX domain sockets */
+        daemon->listen_is_unix = _MHD_YES;
         break;
 #endif
       default:
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
-                  _ ("Unknown address family!\n"));
+                  _ ("Listen socket has unknown address family!\n"));
 #endif
         daemon->port = 0;     /* ugh */
+        daemon->listen_is_unix = _MHD_UNKNOWN;
         break;
       }
     }
