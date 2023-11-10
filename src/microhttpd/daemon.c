@@ -3060,7 +3060,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 #endif
 
   if (MHD_D_IS_USING_SELECT_ (daemon) &&
-      (! MHD_D_DOES_SCKT_FIT_FDSET_ (client_socket, NULL, daemon)) )
+      (! MHD_D_DOES_SCKT_FIT_FDSET_ (client_socket, daemon)) )
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
@@ -7727,8 +7727,7 @@ MHD_start_daemon_va (unsigned int flags,
       return NULL;
     }
     if (MHD_D_IS_USING_SELECT_ (daemon) &&
-        (! MHD_D_DOES_SCKT_FIT_FDSET_ (MHD_itc_r_fd_ (daemon->itc), \
-                                       NULL, daemon)) )
+        (! MHD_D_DOES_SCKT_FIT_FDSET_ (MHD_itc_r_fd_ (daemon->itc), daemon)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -8195,9 +8194,7 @@ MHD_start_daemon_va (unsigned int flags,
     else
       daemon->listen_nonblk = true;
     if (MHD_D_IS_USING_SELECT_ (daemon) &&
-        (! MHD_D_DOES_SCKT_FIT_FDSET_ (listen_fd, \
-                                       NULL, \
-                                       daemon)) )
+        (! MHD_D_DOES_SCKT_FIT_FDSET_ (listen_fd, daemon)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -8400,9 +8397,7 @@ MHD_start_daemon_va (unsigned int flags,
             goto thread_failed;
           }
           if (MHD_D_IS_USING_SELECT_ (d) &&
-              (! MHD_D_DOES_SCKT_FIT_FDSET_ (MHD_itc_r_fd_ (d->itc), \
-                                             NULL, \
-                                             daemon)) )
+              (! MHD_D_DOES_SCKT_FIT_FDSET_ (MHD_itc_r_fd_ (d->itc), daemon)) )
           {
 #ifdef HAVE_MESSAGES
             MHD_DLOG (daemon,

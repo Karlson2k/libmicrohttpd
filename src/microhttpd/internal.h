@@ -2586,8 +2586,8 @@ struct MHD_Daemon
 /**
  * Check whether socket @a sckt fits fd_sets used by the daemon @a d
  */
-#define MHD_D_DOES_SCKT_FIT_FDSET_(sckt,pset,d) \
-  MHD_SCKT_FD_FITS_FDSET_SETSIZE_(sckt,pset,MHD_D_GET_FD_SETSIZE_(d))
+#define MHD_D_DOES_SCKT_FIT_FDSET_(sckt,d) \
+  MHD_SCKT_FD_FITS_FDSET_SETSIZE_(sckt,NULL,MHD_D_GET_FD_SETSIZE_(d))
 
 
 #ifdef DAUTH_SUPPORT

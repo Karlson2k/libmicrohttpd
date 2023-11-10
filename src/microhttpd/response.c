@@ -2031,9 +2031,7 @@ MHD_response_execute_upgrade_ (struct MHD_Response *response,
     }
 #endif /* MHD_socket_nosignal_ */
     if (MHD_D_IS_USING_SELECT_ (daemon) &&
-        (! MHD_D_DOES_SCKT_FIT_FDSET_ (sv[1], \
-                                       NULL, \
-                                       daemon)) )
+        (! MHD_D_DOES_SCKT_FIT_FDSET_ (sv[1], daemon)) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
