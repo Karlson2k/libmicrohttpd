@@ -7450,6 +7450,9 @@ process_interim_params (struct MHD_Daemon *d,
       d->listen_is_unix = _MHD_UNKNOWN;
 #endif /* ! SO_DOMAIN || ! AF_UNIX */
       d->listen_fd = params->listen_fd;
+#ifdef MHD_USE_GETSOCKNAME
+      d->port = 0;  /* Force use of autodetection */
+#endif /* MHD_USE_GETSOCKNAME */
     }
   }
   return true;
@@ -8031,6 +8034,43 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
         servaddr = (struct sockaddr *) &servaddr4;
       }
+    }
+    else
+    {
+#ifdef MHD_USE_GETSOCKNAME
+      daemon->port = 0; /* Force use of autodetection */
+#else  /* ! MHD_USE_GETSOCKNAME */
+      switch (servaddr->sa_family)
+      {
+      case AF_INET:
+        {
+          struct sockaddr_in sa4;
+          memcpy (&sa4, servaddr, sizeof(sa4));  /* Required due to stronger alignment */
+          daemon->port = ntohs (sa4.sin_port);
+          break;
+        }
+#ifdef HAVE_INET6
+      case AF_INET6:
+        {
+          struct sockaddr_in6 sa6;
+          memcpy (&sa6, servaddr, sizeof(sa6));  /* Required due to stronger alignment */
+          daemon->port = ntohs (sa6.sin6_port);
+          mhd_assert (0 != (*pflags & MHD_USE_IPv6));
+          break;
+        }
+#endif /* HAVE_INET6 */
+#ifdef AF_UNIX
+      case AF_UNIX:
+        daemon->port = 0;     /* special value for UNIX domain sockets */
+        daemon->listen_is_unix = _MHD_YES;
+        break;
+#endif
+      default:
+        daemon->port = 0;     /* ugh */
+        daemon->listen_is_unix = _MHD_UNKNOWN;
+        break;
+      }
+#endif /* ! MHD_USE_GETSOCKNAME */
     }
     daemon->listen_fd = listen_fd;
     if (0 != (*pflags & MHD_USE_IPv6))
