@@ -7409,7 +7409,7 @@ process_interim_params (struct MHD_Daemon *d,
     {
       (void) 0; /* Use MHD-created socket */
     }
-#ifdef MHD_POSIX_SOCKETS
+#ifdef HAS_SIGNED_SOCKET
     else if (0 > params->listen_fd)
     {
 #ifdef HAVE_MESSAGES
@@ -7419,7 +7419,7 @@ process_interim_params (struct MHD_Daemon *d,
 #endif /* HAVE_MESSAGES */
       return false;
     }
-#endif /* MHD_POSIX_SOCKETS */
+#endif /* HAS_SIGNED_SOCKET */
     else if (0 != (d->options & MHD_USE_NO_LISTEN_SOCKET))
     {
 #ifdef HAVE_MESSAGES

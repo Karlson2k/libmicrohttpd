@@ -2120,6 +2120,55 @@ AS_VAR_IF([mhd_cv_fd_setsize_overridable],["no"],
   [AC_DEFINE([HAS_FD_SETSIZE_OVERRIDABLE],[1],[Define to 1 i][f your system allow overriding the value of FD_SETSIZE macro])]
 )
 
+AC_CACHE_CHECK([whether socket value is a signed type],[mhd_cv_socket_signed],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+
+/* Keep in sync with microhttpd.h */
+#if ! defined(_WIN32) || defined(_SYS_TYPES_FD_SET)
+typedef int MHD_socket;
+#else /* defined(_WIN32) && ! defined(_SYS_TYPES_FD_SET) */
+typedef SOCKET MHD_socket;
+#endif /* defined(_WIN32) && ! defined(_SYS_TYPES_FD_SET) */
+
+int main(void)
+{
+  int test_arr[2 - 5*(!!(0 < ((MHD_socket)-1)))];
+  test_arr[1] = 0;
+  return test_arr[1];
+}
+          ]]
+        )
+      ],
+      [mhd_cv_socket_signed="yes"],
+      [mhd_cv_socket_signed="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_socket_signed],["yes"],
+  [AC_DEFINE([HAS_SIGNED_SOCKET],[1],[Define to 1 i][f your socket type is signed])]
+)
 
 MHD_CHECK_FUNC([writev],
   [[#include <sys/uio.h>]],
