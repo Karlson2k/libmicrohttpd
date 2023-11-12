@@ -7405,11 +7405,12 @@ process_interim_params (struct MHD_Daemon *d,
 
   if (params->listen_fd_set)
   {
-    if (MHD_INVALID_SOCKET == params->listen_fd
+    if (MHD_INVALID_SOCKET == params->listen_fd)
+    {
+      (void) 0; /* Use MHD-created socket */
+    }
 #ifdef MHD_POSIX_SOCKETS
-        || 0 > params->listen_fd
-#endif /* MHD_POSIX_SOCKETS */
-        )
+    else if (0 > params->listen_fd)
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (d,
@@ -7418,6 +7419,7 @@ process_interim_params (struct MHD_Daemon *d,
 #endif /* HAVE_MESSAGES */
       return false;
     }
+#endif /* MHD_POSIX_SOCKETS */
     else if (0 != (d->options & MHD_USE_NO_LISTEN_SOCKET))
     {
 #ifdef HAVE_MESSAGES

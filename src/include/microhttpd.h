@@ -1780,6 +1780,8 @@ enum MHD_OPTION
    * option is used, MHD will not open its own listen socket(s). The
    * argument passed must be of type `MHD_socket` and refer to an
    * existing socket that has been bound to a port and is listening.
+   * If followed by MHD_INVALID_SOCKET value, MHD ignores this option
+   * and creates socket by itself.
    */
   MHD_OPTION_LISTEN_SOCKET = 12,
 
