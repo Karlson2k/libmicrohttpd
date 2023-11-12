@@ -8197,6 +8197,7 @@ MHD_start_daemon_va (unsigned int flags,
           struct sockaddr_in *s4 = (struct sockaddr_in *) &bindaddr;
 
           daemon->port = ntohs (s4->sin_port);
+          daemon->listen_is_unix = _MHD_NO;
           break;
         }
 #ifdef HAVE_INET6
@@ -8205,6 +8206,7 @@ MHD_start_daemon_va (unsigned int flags,
           struct sockaddr_in6 *s6 = (struct sockaddr_in6 *) &bindaddr;
 
           daemon->port = ntohs (s6->sin6_port);
+          daemon->listen_is_unix = _MHD_NO;
           mhd_assert (0 != (*pflags & MHD_USE_IPv6));
           break;
         }
