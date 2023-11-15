@@ -1825,7 +1825,7 @@ enum MHD_OPTION
    *                           MHD_OPTION_END);
    *
    * For options that expect a single pointer argument, the
-   * second member of the `struct MHD_OptionItem` is ignored.
+   * 'value' member of the `struct MHD_OptionItem` is ignored.
    * For options that expect two pointer arguments, the first
    * argument must be cast to `intptr_t`.
    */
