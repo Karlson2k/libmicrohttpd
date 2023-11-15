@@ -7877,6 +7877,19 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
       goto free_and_fail;
     }
+    if (MHD_D_IS_USING_SELECT_ (daemon) &&
+        (! MHD_D_DOES_SCKT_FIT_FDSET_ (listen_fd, daemon)) )
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Listen socket descriptor (%d) is not " \
+                   "less than daemon FD_SETSIZE value (%d).\n"),
+                (int) listen_fd,
+                (int) MHD_D_GET_FD_SETSIZE_ (daemon));
+#endif
+      MHD_socket_close_chk_ (listen_fd);
+      goto free_and_fail;
+    }
     daemon->listen_is_unix = _MHD_NO;
 
     /* Apply the socket options according to listening_address_reuse. */
@@ -8254,19 +8267,6 @@ MHD_start_daemon_va (unsigned int flags,
     }
     else
       daemon->listen_nonblk = true;
-    if (MHD_D_IS_USING_SELECT_ (daemon) &&
-        (! MHD_D_DOES_SCKT_FIT_FDSET_ (listen_fd, daemon)) )
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Listen socket descriptor (%d) is not " \
-                   "less than daemon FD_SETSIZE value (%d).\n"),
-                (int) listen_fd,
-                (int) MHD_D_GET_FD_SETSIZE_ (daemon));
-#endif
-      MHD_socket_close_chk_ (listen_fd);
-      goto free_and_fail;
-    }
   }
   else
   {
