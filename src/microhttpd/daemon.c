@@ -7382,7 +7382,6 @@ process_interim_params (struct MHD_Daemon *d,
     }
     else
     { /* The daemon without internal threads, external sockets polling */
-#ifdef MHD_POSIX_SOCKETS
 #ifndef HAS_FD_SETSIZE_OVERRIDABLE
       if (((int) FD_SETSIZE) != params->fdset_size)
       {
@@ -7399,7 +7398,6 @@ process_interim_params (struct MHD_Daemon *d,
       d->fdset_size = params->fdset_size;
       d->fdset_size_set_by_app = true;
 #endif /* HAS_FD_SETSIZE_OVERRIDABLE */
-#endif /* MHD_POSIX_SOCKETS */
     }
   }
 
