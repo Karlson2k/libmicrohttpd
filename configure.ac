@@ -2552,8 +2552,8 @@ AC_INCLUDES_DEFAULT
   ]
 )
 
-AC_CHECK_MEMBERS([struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len,
-                  struct sockaddr_storage.ss_len],
+AC_CHECK_MEMBERS([struct sockaddr.sa_len, struct sockaddr_storage.ss_len,
+                  struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len],
    [], [],
    [
 #ifdef HAVE_SYS_TYPES_H
@@ -2564,6 +2564,12 @@ AC_CHECK_MEMBERS([struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len,
 #endif
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
+#endif
+#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif
+#ifdef HAVE_WS2TCPIP_H
+#include <ws2tcpip.h>
 #endif
    ])
 

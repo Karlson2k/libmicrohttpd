@@ -6181,7 +6181,22 @@ struct MHD_InterimParams_
    * Application-provided listen socket.
    */
   MHD_socket listen_fd;
-
+  /**
+   * Set to 'true' if @a server_addr is set by application.
+   */
+  bool pserver_addr_set;
+  /**
+   * Application-provided struct sockaddr to bind server to.
+   */
+  const struct sockaddr *pserver_addr;
+  /**
+   * Set to 'true' if @a server_addr_len is set by application.
+   */
+  bool server_addr_len_set;
+  /**
+   * Applicaiton-provided the size of the memory pointed by @a server_addr.
+   */
+  socklen_t server_addr_len;
 };
 
 /**
@@ -6208,7 +6223,6 @@ typedef void
  */
 static enum MHD_Result
 parse_options_va (struct MHD_Daemon *daemon,
-                  const struct sockaddr **servaddr,
                   struct MHD_InterimParams_ *params,
                   va_list ap);
 
@@ -6224,7 +6238,6 @@ parse_options_va (struct MHD_Daemon *daemon,
  */
 static enum MHD_Result
 parse_options (struct MHD_Daemon *daemon,
-               const struct sockaddr **servaddr,
                struct MHD_InterimParams_ *params,
                ...)
 {
@@ -6233,7 +6246,6 @@ parse_options (struct MHD_Daemon *daemon,
 
   va_start (ap, params);
   ret = parse_options_va (daemon,
-                          servaddr,
                           params,
                           ap);
   va_end (ap);
@@ -6507,15 +6519,13 @@ daemon_tls_priorities_init_append (struct MHD_Daemon *daemon, const char *prio)
 /**
  * Parse a list of options given as varargs.
  *
- * @param daemon the daemon to initialize
- * @param servaddr where to store the server's listen address
- * @param params the interim parameters to be assigned to
+ * @param[in,out] daemon the daemon to initialize
+ * @param[out] params the interim parameters to be assigned to
  * @param ap the options
  * @return #MHD_YES on success, #MHD_NO on error
  */
 static enum MHD_Result
 parse_options_va (struct MHD_Daemon *daemon,
-                  const struct sockaddr **servaddr,
                   struct MHD_InterimParams_ *params,
                   va_list ap)
 {
@@ -6618,9 +6628,19 @@ parse_options_va (struct MHD_Daemon *daemon,
       daemon->per_ip_connection_limit = va_arg (ap,
                                                 unsigned int);
       break;
+    case MHD_OPTION_SOCK_ADDR_LEN:
+      params->server_addr_len = va_arg (ap,
+                                        socklen_t);
+      params->server_addr_len_set = true;
+      params->pserver_addr = va_arg (ap,
+                                     const struct sockaddr *);
+      params->pserver_addr_set = true;
+      break;
     case MHD_OPTION_SOCK_ADDR:
-      *servaddr = va_arg (ap,
-                          const struct sockaddr *);
+      params->server_addr_len_set = false;
+      params->pserver_addr = va_arg (ap,
+                                     const struct sockaddr *);
+      params->pserver_addr_set = true;
       break;
     case MHD_OPTION_URI_LOG_CALLBACK:
       daemon->uri_log_callback = va_arg (ap,
@@ -7006,7 +7026,6 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_CONNECTION_MEMORY_INCREMENT:
         case MHD_OPTION_THREAD_STACK_SIZE:
           if (MHD_NO == parse_options (daemon,
-                                       servaddr,
                                        params,
                                        opt,
                                        (size_t) oa[i].value,
@@ -7025,7 +7044,6 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_SERVER_INSANITY:
         case MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE:
           if (MHD_NO == parse_options (daemon,
-                                       servaddr,
                                        params,
                                        opt,
                                        (unsigned int) oa[i].value,
@@ -7036,7 +7054,6 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_HTTPS_CRED_TYPE:
 #ifdef HTTPS_SUPPORT
           if (MHD_NO == parse_options (daemon,
-                                       servaddr,
                                        params,
                                        opt,
                                        (gnutls_credentials_type_t) oa[i].value,
@@ -7047,7 +7064,6 @@ parse_options_va (struct MHD_Daemon *daemon,
         /* all options taking 'MHD_socket' */
         case MHD_OPTION_LISTEN_SOCKET:
           if (MHD_NO == parse_options (daemon,
-                                       servaddr,
                                        params,
                                        opt,
                                        (MHD_socket) oa[i].value,
@@ -7061,7 +7077,6 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_TLS_NO_ALPN:
         case MHD_OPTION_APP_FD_SETSIZE:
           if (MHD_NO == parse_options (daemon,
-                                       servaddr,
                                        params,
                                        opt,
                                        (int) oa[i].value,
@@ -7081,7 +7096,6 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_HTTPS_CERT_CALLBACK:
         case MHD_OPTION_HTTPS_CERT_CALLBACK2:
           if (MHD_NO == parse_options (daemon,
-                                       servaddr,
                                        params,
                                        opt,
                                        oa[i].ptr_value,
@@ -7096,7 +7110,6 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_UNESCAPE_CALLBACK:
         case MHD_OPTION_GNUTLS_PSK_CRED_HANDLER:
           if (MHD_NO == parse_options (daemon,
-                                       servaddr,
                                        params,
                                        opt,
                                        (void *) oa[i].value,
@@ -7108,10 +7121,19 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_DIGEST_AUTH_RANDOM:
         case MHD_OPTION_DIGEST_AUTH_RANDOM_COPY:
           if (MHD_NO == parse_options (daemon,
-                                       servaddr,
                                        params,
                                        opt,
                                        (size_t) oa[i].value,
+                                       oa[i].ptr_value,
+                                       MHD_OPTION_END))
+            return MHD_NO;
+          break;
+        /* options taking socklen_t-number followed by pointer */
+        case MHD_OPTION_SOCK_ADDR_LEN:
+          if (MHD_NO == parse_options (daemon,
+                                       params,
+                                       opt,
+                                       (socklen_t) oa[i].value,
                                        oa[i].ptr_value,
                                        MHD_OPTION_END))
             return MHD_NO;
@@ -7342,13 +7364,19 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
 
 /**
  * Apply interim parameters
- * @param d the daemon to use
- * @param params the interim parameters to process
+ * @param[in,out] d the daemon to use
+ * @param[out] ppsockaddr the pointer to store the pointer to 'struct sockaddr'
+ *                        if provided by application
+ * @param[out] psockaddr_len the size memory area pointed by 'struct sockaddr'
+ *                           if provided by application
+ * @param[in] params the interim parameters to process
  * @return true in case of success,
  *         false in case of critical error (the daemon must be closed).
  */
 static bool
 process_interim_params (struct MHD_Daemon *d,
+                        const struct sockaddr **ppsockaddr,
+                        socklen_t *psockaddr_len,
                         struct MHD_InterimParams_ *params)
 {
   if (params->fdset_size_set)
@@ -7453,6 +7481,51 @@ process_interim_params (struct MHD_Daemon *d,
 #endif /* MHD_USE_GETSOCKNAME */
     }
   }
+
+  mhd_assert (! params->server_addr_len_set || params->pserver_addr_set);
+  if (params->pserver_addr_set)
+  {
+    if (NULL == params->pserver_addr)
+    {
+      /* The size must be zero if set */
+      if (params->server_addr_len_set && (0 != params->server_addr_len))
+        return false;
+      /* Ignore parameter if it is NULL */
+    }
+    else if (MHD_INVALID_SOCKET != d->listen_fd)
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (d,
+                _ ("MHD_OPTION_LISTEN_SOCKET cannot be used together with " \
+                   "MHD_OPTION_SOCK_ADDR_LEN or MHD_OPTION_SOCK_ADDR.\n"));
+#endif /* HAVE_MESSAGES */
+      return false;
+    }
+    else if (0 != (d->options & MHD_USE_NO_LISTEN_SOCKET))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (d,
+                _ ("MHD_OPTION_SOCK_ADDR_LEN or MHD_OPTION_SOCK_ADDR " \
+                   "specified for daemon with MHD_USE_NO_LISTEN_SOCKET " \
+                   "flag set.\n"));
+#endif /* HAVE_MESSAGES */
+      (void) MHD_socket_close_ (params->listen_fd);
+      return false;
+    }
+    else
+    {
+      *ppsockaddr = params->pserver_addr;
+      if (params->server_addr_len_set)
+      {
+        /* The size must be non-zero if set */
+        if (0 == params->server_addr_len)
+          return false;
+        *psockaddr_len = params->server_addr_len;
+      }
+      else
+        *psockaddr_len = 0;
+    }
+  }
   return true;
 }
 
@@ -7490,11 +7563,7 @@ MHD_start_daemon_va (unsigned int flags,
   const MHD_SCKT_OPT_BOOL_ on = 1;
   struct MHD_Daemon *daemon;
   MHD_socket listen_fd;
-  struct sockaddr_in servaddr4;
-#ifdef HAVE_INET6
-  struct sockaddr_in6 servaddr6;
-#endif
-  const struct sockaddr *servaddr = NULL;
+  const struct sockaddr *pservaddr = NULL;
   socklen_t addrlen;
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   unsigned int i;
@@ -7666,9 +7735,12 @@ MHD_start_daemon_va (unsigned int flags,
   interim_params->fdset_size = 0;
   interim_params->listen_fd_set = false;
   interim_params->listen_fd = MHD_INVALID_SOCKET;
+  interim_params->pserver_addr_set = false;
+  interim_params->pserver_addr = NULL;
+  interim_params->server_addr_len_set = false;
+  interim_params->server_addr_len = 0;
 
   if (MHD_NO == parse_options_va (daemon,
-                                  &servaddr,
                                   interim_params,
                                   ap))
   {
@@ -7681,7 +7753,10 @@ MHD_start_daemon_va (unsigned int flags,
     free (daemon);
     return NULL;
   }
-  if (! process_interim_params (daemon, interim_params))
+  if (! process_interim_params (daemon,
+                                &pservaddr,
+                                &addrlen,
+                                interim_params))
   {
     free (interim_params);
     free (daemon);
@@ -7853,19 +7928,216 @@ MHD_start_daemon_va (unsigned int flags,
     goto free_and_fail;
   }
 #endif
+
   if ( (MHD_INVALID_SOCKET == daemon->listen_fd) &&
        (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
   {
     /* try to open listen socket */
+    struct sockaddr_in servaddr4;
+#ifdef HAVE_INET6
+    struct sockaddr_in6 servaddr6;
+    const bool use_ipv6 = (0 != (*pflags & MHD_USE_IPv6));
+#else  /* ! HAVE_INET6 */
+    const bool use_ipv6 = false;
+#endif /* ! HAVE_INET6 */
     int domain;
 
+    if (NULL != pservaddr)
+    {
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+      const socklen_t sa_len = pservaddr->sa_len;
+#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
 #ifdef HAVE_INET6
-    domain = (*pflags & MHD_USE_IPv6) ? PF_INET6 : PF_INET;
-#else  /* ! HAVE_INET6 */
-    if (*pflags & MHD_USE_IPv6)
-      goto free_and_fail;
-    domain = PF_INET;
-#endif /* ! HAVE_INET6 */
+      if (use_ipv6 && (AF_INET6 != pservaddr->sa_family))
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  _ ("MHD_USE_IPv6 is enabled, but 'struct sockaddr *' " \
+                     "specified for MHD_OPTION_SOCK_ADDR_LEN or " \
+                     "MHD_OPTION_SOCK_ADDR is not IPv6 address.\n"));
+#endif /* HAVE_MESSAGES */
+        goto free_and_fail;
+      }
+#endif /* HAVE_INET6 */
+      switch (pservaddr->sa_family)
+      {
+      case AF_INET:
+        if (1)
+        {
+          struct sockaddr_in sa4;
+          uint16_t sa4_port;
+          if ((0 != addrlen)
+              && (((socklen_t) sizeof(sa4)) > addrlen))
+          {
+#ifdef HAVE_MESSAGES
+            MHD_DLOG (daemon,
+                      _ ("The size specified for MHD_OPTION_SOCK_ADDR_LEN " \
+                         "option is wrong.\n"));
+#endif /* HAVE_MESSAGES */
+            goto free_and_fail;
+          }
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+          if (0 != sa_len)
+          {
+            if (((socklen_t) sizeof(sa4)) > sa_len)
+            {
+#ifdef HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        _ ("The value of 'struct sockaddr.sa_len' provided " \
+                           "via MHD_OPTION_SOCK_ADDR_LEN option is not zero " \
+                           "and does not match 'sa_family' value of the " \
+                           "same structure.\n"));
+#endif /* HAVE_MESSAGES */
+              goto free_and_fail;
+            }
+            if ((0 == addrlen) || (sa_len < addrlen))
+              addrlen = sa_len; /* Use smaller value for safety */
+          }
+#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
+          if (0 == addrlen)
+            addrlen = sizeof(sa4);
+          memcpy (&sa4, pservaddr, sizeof(sa4));  /* Required due to stronger alignment */
+          sa4_port = (uint16_t) ntohs (sa4.sin_port);
+#ifndef MHD_USE_GETSOCKNAME
+          if (0 != sa4_port)
+#endif /* ! MHD_USE_GETSOCKNAME */
+          daemon->port = sa4_port;
+          domain = PF_INET;
+        }
+        break;
+#ifdef HAVE_INET6
+      case AF_INET6:
+        if (1)
+        {
+          struct sockaddr_in6 sa6;
+          uint16_t sa6_port;
+          if ((0 != addrlen)
+              && (((socklen_t) sizeof(sa6)) > addrlen))
+          {
+#ifdef HAVE_MESSAGES
+            MHD_DLOG (daemon,
+                      _ ("The size specified for MHD_OPTION_SOCK_ADDR_LEN " \
+                         "option is wrong.\n"));
+#endif /* HAVE_MESSAGES */
+            goto free_and_fail;
+          }
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+          if (0 != sa_len)
+          {
+            if (((socklen_t) sizeof(sa6)) > sa_len)
+            {
+#ifdef HAVE_MESSAGES
+              MHD_DLOG (daemon,
+                        _ ("The value of 'struct sockaddr.sa_len' provided " \
+                           "via MHD_OPTION_SOCK_ADDR_LEN option is not zero " \
+                           "and does not match 'sa_family' value of the " \
+                           "same structure.\n"));
+#endif /* HAVE_MESSAGES */
+              goto free_and_fail;
+            }
+            if ((0 == addrlen) || (sa_len < addrlen))
+              addrlen = sa_len; /* Use smaller value for safety */
+          }
+#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
+          if (0 == addrlen)
+            addrlen = sizeof(sa6);
+          memcpy (&sa6, pservaddr, sizeof(sa6));  /* Required due to stronger alignment */
+          sa6_port = (uint16_t) ntohs (sa6.sin6_port);
+#ifndef MHD_USE_GETSOCKNAME
+          if (0 != sa6_port)
+#endif /* ! MHD_USE_GETSOCKNAME */
+          daemon->port = sa6_port;
+          domain = PF_INET6;
+          *pflags |= ((enum MHD_FLAG) MHD_USE_IPv6);
+        }
+        break;
+#endif /* HAVE_INET6 */
+#ifdef AF_UNIX
+      case AF_UNIX:
+#endif /* AF_UNIX */
+      default:
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+        if (0 == addrlen)
+          addrlen = sa_len;
+        else if ((0 != sa_len) && (sa_len < addrlen))
+          addrlen = sa_len; /* Use smaller value for safety */
+#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
+        if (0 >= addrlen)
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    _ ("The 'sa_family' of the 'struct sockaddr' provided " \
+                       "via MHD_OPTION_SOCK_ADDR option is not supported.\n"));
+#endif /* HAVE_MESSAGES */
+          goto free_and_fail;
+        }
+#ifdef AF_UNIX
+        if (AF_UNIX == pservaddr->sa_family)
+        {
+          daemon->port = 0;     /* special value for UNIX domain sockets */
+          daemon->listen_is_unix = _MHD_YES;
+#ifdef PF_UNIX
+          domain = PF_UNIX;
+#else /* ! PF_UNIX */
+          domain = AF_UNIX;
+#endif /* ! PF_UNIX */
+          domain = PF_UNIX;
+        }
+        else /* combined with the next 'if' */
+#endif /* AF_UNIX */
+        if (1)
+        {
+          daemon->port = 0;     /* ugh */
+          daemon->listen_is_unix = _MHD_UNKNOWN;
+          /* Assumed the same values for AF_* and PF_* */
+          domain = pservaddr->sa_family;
+        }
+        break;
+      }
+    }
+    else
+    {
+      if (! use_ipv6)
+      {
+        memset (&servaddr4,
+                0,
+                sizeof (struct sockaddr_in));
+        servaddr4.sin_family = AF_INET;
+        servaddr4.sin_port = htons (port);
+        if (0 != INADDR_ANY)
+          servaddr4.sin_addr.s_addr = htonl (INADDR_ANY);
+#ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
+        servaddr4.sin_len = sizeof (struct sockaddr_in);
+#endif
+        pservaddr = (struct sockaddr *) &servaddr4;
+        addrlen = (socklen_t) sizeof(servaddr4);
+        daemon->listen_is_unix = _MHD_NO;
+        domain = PF_INET;
+      }
+#ifdef HAVE_INET6
+      else
+      {
+#ifdef IN6ADDR_ANY_INIT
+        static const struct in6_addr static_in6any = IN6ADDR_ANY_INIT;
+#endif
+        memset (&servaddr6,
+                0,
+                sizeof (struct sockaddr_in6));
+        servaddr6.sin6_family = AF_INET6;
+        servaddr6.sin6_port = htons (port);
+#ifdef IN6ADDR_ANY_INIT
+        servaddr6.sin6_addr = static_in6any;
+#endif
+#ifdef HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
+        servaddr6.sin6_len = sizeof (struct sockaddr_in6);
+#endif
+        pservaddr = (struct sockaddr *) &servaddr6;
+        addrlen = (socklen_t) sizeof (servaddr6);
+        daemon->listen_is_unix = _MHD_NO;
+        domain = PF_INET6;
+      }
+#endif /* HAVE_INET6 */
+    }
 
     listen_fd = MHD_socket_create_listen_ (domain);
     if (MHD_INVALID_SOCKET == listen_fd)
@@ -7890,7 +8162,6 @@ MHD_start_daemon_va (unsigned int flags,
       MHD_socket_close_chk_ (listen_fd);
       goto free_and_fail;
     }
-    daemon->listen_is_unix = _MHD_NO;
 
     /* Apply the socket options according to listening_address_reuse. */
     if (0 == daemon->listening_address_reuse)
@@ -8003,87 +8274,8 @@ MHD_start_daemon_va (unsigned int flags,
     }
 
     /* check for user supplied sockaddr */
-#ifdef HAVE_INET6
-    if (0 != (*pflags & MHD_USE_IPv6))
-      addrlen = sizeof (struct sockaddr_in6);
-    else
-#endif
-    addrlen = sizeof (struct sockaddr_in);
-    if (NULL == servaddr)
-    {
-#ifdef HAVE_INET6
-      if (0 != (*pflags & MHD_USE_IPv6))
-      {
-#ifdef IN6ADDR_ANY_INIT
-        static const struct in6_addr static_in6any = IN6ADDR_ANY_INIT;
-#endif
-        memset (&servaddr6,
-                0,
-                sizeof (struct sockaddr_in6));
-        servaddr6.sin6_family = AF_INET6;
-        servaddr6.sin6_port = htons (port);
-#ifdef IN6ADDR_ANY_INIT
-        servaddr6.sin6_addr = static_in6any;
-#endif
-#ifdef HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
-        servaddr6.sin6_len = sizeof (struct sockaddr_in6);
-#endif
-        servaddr = (struct sockaddr *) &servaddr6;
-      }
-      else
-#endif
-      {
-        memset (&servaddr4,
-                0,
-                sizeof (struct sockaddr_in));
-        servaddr4.sin_family = AF_INET;
-        servaddr4.sin_port = htons (port);
-        if (0 != INADDR_ANY)
-          servaddr4.sin_addr.s_addr = htonl (INADDR_ANY);
-#ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
-        servaddr4.sin_len = sizeof (struct sockaddr_in);
-#endif
-        servaddr = (struct sockaddr *) &servaddr4;
-      }
-    }
-    else
-    {
-#ifdef MHD_USE_GETSOCKNAME
-      daemon->port = 0; /* Force use of autodetection */
-#else  /* ! MHD_USE_GETSOCKNAME */
-      switch (servaddr->sa_family)
-      {
-      case AF_INET:
-        {
-          struct sockaddr_in sa4;
-          memcpy (&sa4, servaddr, sizeof(sa4));  /* Required due to stronger alignment */
-          daemon->port = ntohs (sa4.sin_port);
-          break;
-        }
-#ifdef HAVE_INET6
-      case AF_INET6:
-        {
-          struct sockaddr_in6 sa6;
-          memcpy (&sa6, servaddr, sizeof(sa6));  /* Required due to stronger alignment */
-          daemon->port = ntohs (sa6.sin6_port);
-          mhd_assert (0 != (*pflags & MHD_USE_IPv6));
-          break;
-        }
-#endif /* HAVE_INET6 */
-#ifdef AF_UNIX
-      case AF_UNIX:
-        daemon->port = 0;     /* special value for UNIX domain sockets */
-        daemon->listen_is_unix = _MHD_YES;
-        break;
-#endif
-      default:
-        daemon->port = 0;     /* ugh */
-        daemon->listen_is_unix = _MHD_UNKNOWN;
-        break;
-      }
-#endif /* ! MHD_USE_GETSOCKNAME */
-    }
     daemon->listen_fd = listen_fd;
+
     if (0 != (*pflags & MHD_USE_IPv6))
     {
 #ifdef IPPROTO_IPV6
@@ -8108,7 +8300,7 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
 #endif
     }
-    if (0 != bind (listen_fd, servaddr, addrlen))
+    if (0 != bind (listen_fd, pservaddr, addrlen))
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
@@ -8157,7 +8349,8 @@ MHD_start_daemon_va (unsigned int flags,
 
 #ifdef MHD_USE_GETSOCKNAME
   if ( (0 == daemon->port) &&
-       (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
+       (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) &&
+       (_MHD_YES != daemon->listen_is_unix) )
   {   /* Get port number. */
     struct sockaddr_storage bindaddr;
 
@@ -8166,7 +8359,7 @@ MHD_start_daemon_va (unsigned int flags,
             sizeof (struct sockaddr_storage));
     addrlen = sizeof (struct sockaddr_storage);
 #ifdef HAVE_STRUCT_SOCKADDR_STORAGE_SS_LEN
-    bindaddr.ss_len = addrlen;
+    bindaddr.ss_len = (socklen_t) addrlen;
 #endif
     if (0 != getsockname (listen_fd,
                           (struct sockaddr *) &bindaddr,

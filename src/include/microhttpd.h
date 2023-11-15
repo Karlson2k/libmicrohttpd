@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097705
+#define MHD_VERSION 0x00097706
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -1704,6 +1704,8 @@ enum MHD_OPTION
    * be followed by a `struct sockaddr *`.  If #MHD_USE_IPv6 is
    * specified, the `struct sockaddr*` should point to a `struct
    * sockaddr_in6`, otherwise to a `struct sockaddr_in`.
+   * Silently ignored if followed by NULL pointer.
+   * @deprecated Use #MHD_OPTION_SOCK_ADDR_LEN
    */
   MHD_OPTION_SOCK_ADDR = 6,
 
@@ -2142,7 +2144,23 @@ enum MHD_OPTION
    * This option should be followed by a positive 'int' argument.
    * @note Available since #MHD_VERSION 0x00097705
    */
-  MHD_OPTION_APP_FD_SETSIZE = 39
+  MHD_OPTION_APP_FD_SETSIZE = 39,
+
+  /**
+   * Bind daemon to the supplied 'struct sockaddr'.  This option should
+   * be followed by two parameters: 'socklen_t' the size of memory at the next
+   * pointer and the pointer 'const struct sockaddr *'.
+   * Note: the order of the arguments is not the same as for system bind() and
+   * other network functions.
+   * If #MHD_USE_IPv6 is specified, the 'struct sockaddr*' should
+   * point to a 'struct sockaddr_in6'.
+   * The socket domain (protocol family) is detected from provided
+   * 'struct sockaddr'. IP, IPv6 and UNIX sockets are supported (if supported
+   * by the platform). Other types may work occasionally.
+   * Silently ignored if followed by zero size and NULL pointer.
+   * @note Available since #MHD_VERSION 0x00097706
+   */
+  MHD_OPTION_SOCK_ADDR_LEN = 40
 
 } _MHD_FIXED_ENUM;
 
