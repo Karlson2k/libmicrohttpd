@@ -8327,57 +8327,72 @@ MHD_start_daemon_va (unsigned int flags,
   }
   else
   {
-#if defined(SOL_SOCKET) && (defined(SO_DOMAIN) || defined(SO_PROTOCOL_INFOW))
-    int af;
-    int opt_name;
-    void *poptval;
-    socklen_t optval_size;
-#ifdef SO_DOMAIN
-    opt_name = SO_DOMAIN;
-    poptval = &af;
-    optval_size = (socklen_t) sizeof (af);
-#else  /* SO_PROTOCOL_INFOW */
-    WSAPROTOCOL_INFOW prot_info;
-    opt_name = SO_PROTOCOL_INFOW;
-    poptval = &prot_info;
-    optval_size = (socklen_t) sizeof (prot_info);
-#endif /* SO_PROTOCOL_INFOW */
-
-    if (0 == getsockopt (daemon->listen_fd,
-                         SOL_SOCKET,
-                         opt_name,
-                         poptval,
-                         &optval_size))
+    if (MHD_D_IS_USING_SELECT_ (daemon) &&
+        (! MHD_D_DOES_SCKT_FIT_FDSET_ (daemon->listen_fd, daemon)) )
     {
-#ifndef SO_DOMAIN
-      af = prot_info.iAddressFamily;
-#endif /* SO_DOMAIN */
-      switch (af)
-      {
-      case AF_INET:
-        daemon->listen_is_unix = _MHD_NO;
-        break;
-#ifdef HAVE_INET6
-      case AF_INET6:
-        *pflags |= MHD_USE_IPv6;
-        daemon->listen_is_unix = _MHD_NO;
-        break;
-#endif /* HAVE_INET6 */
-#ifdef AF_UNIX
-      case AF_UNIX:
-        daemon->port = 0;     /* special value for UNIX domain sockets */
-        daemon->listen_is_unix = _MHD_YES;
-        break;
-#endif /* AF_UNIX */
-      default:
-        daemon->port = 0;     /* ugh */
-        daemon->listen_is_unix = _MHD_UNKNOWN;
-        break;
-      }
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon,
+                _ ("Listen socket descriptor (%d) is not " \
+                   "less than daemon FD_SETSIZE value (%d).\n"),
+                (int) daemon->listen_fd,
+                (int) MHD_D_GET_FD_SETSIZE_ (daemon));
+#endif
+      goto free_and_fail;
     }
     else
+    {
+#if defined(SOL_SOCKET) && (defined(SO_DOMAIN) || defined(SO_PROTOCOL_INFOW))
+      int af;
+      int opt_name;
+      void *poptval;
+      socklen_t optval_size;
+#ifdef SO_DOMAIN
+      opt_name = SO_DOMAIN;
+      poptval = &af;
+      optval_size = (socklen_t) sizeof (af);
+#else  /* SO_PROTOCOL_INFOW */
+      WSAPROTOCOL_INFOW prot_info;
+      opt_name = SO_PROTOCOL_INFOW;
+      poptval = &prot_info;
+      optval_size = (socklen_t) sizeof (prot_info);
+#endif /* SO_PROTOCOL_INFOW */
+
+      if (0 == getsockopt (daemon->listen_fd,
+                           SOL_SOCKET,
+                           opt_name,
+                           poptval,
+                           &optval_size))
+      {
+#ifndef SO_DOMAIN
+        af = prot_info.iAddressFamily;
+#endif /* SO_DOMAIN */
+        switch (af)
+        {
+        case AF_INET:
+          daemon->listen_is_unix = _MHD_NO;
+          break;
+#ifdef HAVE_INET6
+        case AF_INET6:
+          *pflags |= MHD_USE_IPv6;
+          daemon->listen_is_unix = _MHD_NO;
+          break;
+#endif /* HAVE_INET6 */
+#ifdef AF_UNIX
+        case AF_UNIX:
+          daemon->port = 0;     /* special value for UNIX domain sockets */
+          daemon->listen_is_unix = _MHD_YES;
+          break;
+#endif /* AF_UNIX */
+        default:
+          daemon->port = 0;     /* ugh */
+          daemon->listen_is_unix = _MHD_UNKNOWN;
+          break;
+        }
+      }
+      else
 #endif /* SOL_SOCKET && (SO_DOMAIN || SO_PROTOCOL_INFOW)) */
-    daemon->listen_is_unix = _MHD_UNKNOWN;
+      daemon->listen_is_unix = _MHD_UNKNOWN;
+    }
 
     listen_fd = daemon->listen_fd;
 #ifdef MHD_USE_GETSOCKNAME
