@@ -3599,6 +3599,19 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 #endif /* HAVE_MESSAGES */
         return MHD_NO;
       }
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+      if ((0 != addr->sa_len) &&
+          (sizeof(struct sockaddr_in) > (size_t) addr->sa_len) )
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  _ ("MHD_add_connection() has been called with " \
+                     "non-zero value of 'sa_len' member of " \
+                     "'struct sockaddr' which does not match 'sa_family'.\n"));
+#endif /* HAVE_MESSAGES */
+        return MHD_NO;
+      }
+#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
     }
 #ifdef HAVE_INET6
     if (AF_INET6 == addr->sa_family)
@@ -3612,7 +3625,25 @@ MHD_add_connection (struct MHD_Daemon *daemon,
 #endif /* HAVE_MESSAGES */
         return MHD_NO;
       }
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+      if ((0 != addr->sa_len) &&
+          (sizeof(struct sockaddr_in6) > (size_t) addr->sa_len) )
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  _ ("MHD_add_connection() has been called with " \
+                     "non-zero value of 'sa_len' member of " \
+                     "'struct sockaddr' which does not match 'sa_family'.\n"));
+#endif /* HAVE_MESSAGES */
+        return MHD_NO;
+      }
+#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
     }
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+    if ((0 != addr->sa_len) &&
+        (addrlen > addr->sa_len))
+      addrlen = (socklen_t) addr->sa_len;   /* Use safest value */
+#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
 #endif /* HAVE_INET6 */
   }
 
