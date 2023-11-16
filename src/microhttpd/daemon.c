@@ -3665,7 +3665,9 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   sk_spipe_supprs = true; /* Nothing to suppress on W32 */
 #endif /* MHD_WINSOCK_SOCKETS */
 #if defined(MHD_socket_nosignal_)
-  if (! sk_spipe_supprs && ! MHD_socket_nosignal_ (client_socket))
+  if (! sk_spipe_supprs)
+    sk_spipe_supprs = MHD_socket_nosignal_ (client_socket);
+  if (! sk_spipe_supprs)
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (daemon,
@@ -3686,8 +3688,6 @@ MHD_add_connection (struct MHD_Daemon *daemon,
     }
 #endif /* MSG_NOSIGNAL */
   }
-  else
-    sk_spipe_supprs = true;
 #endif /* MHD_socket_nosignal_ */
 
   if ( (0 != (daemon->options & MHD_USE_TURBO)) &&
