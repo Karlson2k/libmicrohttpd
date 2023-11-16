@@ -7546,7 +7546,7 @@ MHD_start_daemon_va (unsigned int flags,
 {
   const MHD_SCKT_OPT_BOOL_ on = 1;
   struct MHD_Daemon *daemon;
-  MHD_socket listen_fd;
+  MHD_socket listen_fd = MHD_INVALID_SOCKET;
   const struct sockaddr *pservaddr = NULL;
   socklen_t addrlen;
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
@@ -8143,6 +8143,7 @@ MHD_start_daemon_va (unsigned int flags,
                 (int) MHD_D_GET_FD_SETSIZE_ (daemon));
 #endif
       MHD_socket_close_chk_ (listen_fd);
+      listen_fd = MHD_INVALID_SOCKET;
       goto free_and_fail;
     }
 
@@ -8292,6 +8293,7 @@ MHD_start_daemon_va (unsigned int flags,
                 MHD_socket_last_strerr_ ());
 #endif
       MHD_socket_close_chk_ (listen_fd);
+      listen_fd = MHD_INVALID_SOCKET;
       goto free_and_fail;
     }
 #ifdef TCP_FASTOPEN
@@ -8322,6 +8324,7 @@ MHD_start_daemon_va (unsigned int flags,
                 MHD_socket_last_strerr_ ());
 #endif
       MHD_socket_close_chk_ (listen_fd);
+      listen_fd = MHD_INVALID_SOCKET;
       goto free_and_fail;
     }
   }
@@ -8507,6 +8510,7 @@ MHD_start_daemon_va (unsigned int flags,
          * to handle a new connection, but only one will win the race.
          * The others must immediately return. */
         MHD_socket_close_chk_ (listen_fd);
+        listen_fd = MHD_INVALID_SOCKET;
         goto free_and_fail;
       }
       daemon->listen_nonblk = false;
@@ -8835,6 +8839,7 @@ thread_failed:
   {
     if (MHD_INVALID_SOCKET != listen_fd)
       MHD_socket_close_chk_ (listen_fd);
+    listen_fd = MHD_INVALID_SOCKET;
     MHD_mutex_destroy_chk_ (&daemon->per_ip_connection_mutex);
     if (NULL != daemon->worker_pool)
       free (daemon->worker_pool);
@@ -8891,6 +8896,11 @@ free_and_fail:
 #endif /* HTTPS_SUPPORT */
   if (MHD_ITC_IS_VALID_ (daemon->itc))
     MHD_itc_destroy_chk_ (daemon->itc);
+  if (MHD_INVALID_SOCKET != listen_fd)
+    (void) MHD_socket_close_ (listen_fd);
+  if ((MHD_INVALID_SOCKET != daemon->listen_fd) &&
+      (listen_fd != daemon->listen_fd))
+    (void) MHD_socket_close_ (daemon->listen_fd);
   free (daemon);
   return NULL;
 }
