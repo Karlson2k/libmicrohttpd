@@ -7594,6 +7594,10 @@ MHD_start_daemon_va (unsigned int flags,
   MHD_check_global_init_ ();
   eflags = (enum MHD_FLAG) flags;
   pflags = &eflags;
+
+  if (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION))
+    *pflags |= MHD_USE_INTERNAL_POLLING_THREAD; /* Force enable, log warning later if needed */
+
 #ifndef HAVE_INET6
   if (0 != (*pflags & MHD_USE_IPv6))
     return NULL;
@@ -7655,6 +7659,16 @@ MHD_start_daemon_va (unsigned int flags,
 #else
     /* No choice: use select() for any mode - do not modify flags */
 #endif
+  }
+
+  if (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
+    *pflags = (*pflags & ~((enum MHD_FLAG) MHD_USE_ITC)); /* useless if we are using 'external' select */
+  else
+  {
+#ifdef HAVE_LISTEN_SHUTDOWN
+    if (0 != (*pflags & MHD_USE_NO_LISTEN_SOCKET))
+#endif
+    *pflags |= MHD_USE_ITC;       /* yes, must use ITC to signal thread */
   }
 
   if (NULL == (daemon = MHD_calloc_ (1, sizeof (struct MHD_Daemon))))
@@ -7723,21 +7737,6 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->fdset_size_set_by_app = false;
 #endif /* HAS_FD_SETSIZE_OVERRIDABLE */
 
-  if ( (0 != (*pflags & MHD_USE_THREAD_PER_CONNECTION)) &&
-       (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD)) )
-  {
-    /* Log warning message later, when log parameters are processes */
-    *pflags |= MHD_USE_INTERNAL_POLLING_THREAD;
-  }
-  if (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
-    *pflags = (*pflags & ~((enum MHD_FLAG) MHD_USE_ITC)); /* useless if we are using 'external' select */
-  else
-  {
-#ifdef HAVE_LISTEN_SHUTDOWN
-    if (0 != (*pflags & MHD_USE_NO_LISTEN_SOCKET))
-#endif
-    *pflags |= MHD_USE_ITC;       /* yes, must use ITC to signal thread */
-  }
 #ifdef DAUTH_SUPPORT
   daemon->digest_auth_rand_size = 0;
   daemon->digest_auth_random = NULL;
