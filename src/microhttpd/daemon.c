@@ -6128,7 +6128,8 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
   MHD_socket ret;
 
   ret = daemon->listen_fd;
-  if (MHD_INVALID_SOCKET == ret)
+  if ((MHD_INVALID_SOCKET == ret)
+      || daemon->was_quiesced)
     return MHD_INVALID_SOCKET;
   if ( (0 == (daemon->options & (MHD_USE_ITC))) &&
        MHD_D_IS_USING_THREADS_ (daemon) )
