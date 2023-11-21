@@ -732,6 +732,11 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
   const MHD_socket mhd_sckt = urh->mhd.socket;
   bool res = true;
 
+#ifndef HAS_FD_SETSIZE_OVERRIDABLE
+  (void) fd_setsize;  /* Mute compiler warning */
+  fd_setsize = (int) FD_SETSIZE; /* Help compiler to optimise */
+#endif /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+
   /* Do not add to 'es' only if socket is closed
    * or not used anymore. */
   if (MHD_INVALID_SOCKET != conn_sckt)
@@ -991,6 +996,11 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
   enum MHD_Result result = MHD_YES;
   MHD_socket ls;
 
+#ifndef HAS_FD_SETSIZE_OVERRIDABLE
+  (void) fd_setsize;  /* Mute compiler warning */
+  fd_setsize = (int) FD_SETSIZE; /* Help compiler to optimise */
+#endif /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+
   if (daemon->shutdown)
     return MHD_YES;
 
@@ -1198,6 +1208,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 #endif /* HAVE_MESSAGES */
     return MHD_NO;
   }
+  fd_setsize = (int) FD_SETSIZE; /* Help compiler to optimise */
 #endif /* ! HAS_FD_SETSIZE_OVERRIDABLE */
 
 #ifdef EPOLL_SUPPORT

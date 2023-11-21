@@ -386,6 +386,12 @@ MHD_add_to_fd_set_ (MHD_socket fd,
   if ( (NULL == set) ||
        (MHD_INVALID_SOCKET == fd) )
     return 0;
+
+#ifndef HAS_FD_SETSIZE_OVERRIDABLE
+  (void) fd_setsize;  /* Mute compiler warning */
+  fd_setsize = (int) FD_SETSIZE; /* Help compiler to optimise */
+#endif /* ! HAS_FD_SETSIZE_OVERRIDABLE */
+
   if (! MHD_SCKT_FD_FITS_FDSET_SETSIZE_ (fd,
                                          set,
                                          fd_setsize))
