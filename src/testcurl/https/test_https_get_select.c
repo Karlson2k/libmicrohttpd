@@ -278,7 +278,9 @@ main (int argc, char *const *argv)
 #ifdef EPOLL_SUPPORT
   errorCount += testExternalGet (MHD_USE_EPOLL);
 #endif
-  errorCount += testExternalGet (0);
+  if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_THREADS))
+    errorCount += testExternalGet (MHD_NO_FLAG);
+  errorCount += testExternalGet (MHD_USE_NO_THREAD_SAFETY);
   curl_global_cleanup ();
   if (errorCount != 0)
     fprintf (stderr, "Failed test: %s, error: %u.\n", argv[0], errorCount);

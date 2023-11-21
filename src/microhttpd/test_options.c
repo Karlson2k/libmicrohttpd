@@ -102,7 +102,7 @@ test_ip_addr_option (void)
 
   ret = 0;
 
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG, 0,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY, 0,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_SOCK_ADDR, &daemon_ip_addr,
                         MHD_OPTION_END);
@@ -120,7 +120,7 @@ test_ip_addr_option (void)
 
 
   daemon_ip_addr.sin_port = htons (port4);
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG, 0,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY, 0,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_SOCK_ADDR_LEN,
                         (socklen_t) sizeof(daemon_ip_addr), &daemon_ip_addr,
@@ -138,7 +138,7 @@ test_ip_addr_option (void)
   MHD_stop_daemon (d);
 
 
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG, 0,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY, 0,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_SOCK_ADDR_LEN,
                         (socklen_t) (sizeof(daemon_ip_addr) / 2),
@@ -154,7 +154,7 @@ test_ip_addr_option (void)
 #ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
 
   daemon_ip_addr.sin_len = (socklen_t) sizeof(daemon_ip_addr);
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG, 0,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY, 0,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_SOCK_ADDR_LEN,
                         (socklen_t) sizeof(daemon_ip_addr), &daemon_ip_addr,
@@ -173,7 +173,7 @@ test_ip_addr_option (void)
 
 
   daemon_ip_addr.sin_len = (socklen_t) (sizeof(daemon_ip_addr) / 2);
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG, 0,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY, 0,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_SOCK_ADDR_LEN,
                         (socklen_t) sizeof(daemon_ip_addr), &daemon_ip_addr,
@@ -189,7 +189,8 @@ test_ip_addr_option (void)
 
 
 #if defined(HAVE_INET6) && defined(USE_IPV6_TESTING)
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_IPv6, 0,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_IPv6
+                        | MHD_USE_NO_THREAD_SAFETY, 0,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_SOCK_ADDR, &daemon_ip_addr6,
                         MHD_OPTION_END);
@@ -207,7 +208,7 @@ test_ip_addr_option (void)
 
 
   daemon_ip_addr6.sin6_port = htons (port6);
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG, 0,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY, 0,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_SOCK_ADDR_LEN,
                         (socklen_t) sizeof(daemon_ip_addr6), &daemon_ip_addr6,
@@ -225,7 +226,7 @@ test_ip_addr_option (void)
   MHD_stop_daemon (d);
 
 
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG, 0,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY, 0,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_SOCK_ADDR_LEN,
                         (socklen_t) (sizeof(daemon_ip_addr6) / 2),
@@ -241,7 +242,7 @@ test_ip_addr_option (void)
 #if defined(HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN)
 
   daemon_ip_addr6.sin6_len = (socklen_t) sizeof(daemon_ip_addr6);
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG, 0,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY, 0,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_SOCK_ADDR_LEN,
                         (socklen_t) sizeof(daemon_ip_addr6), &daemon_ip_addr6,
@@ -260,7 +261,7 @@ test_ip_addr_option (void)
 
 
   daemon_ip_addr6.sin6_len = (socklen_t) (sizeof(daemon_ip_addr6) / 2);
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG, 0,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY, 0,
                         NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_SOCK_ADDR_LEN,
                         (socklen_t) sizeof(daemon_ip_addr6), &daemon_ip_addr6,

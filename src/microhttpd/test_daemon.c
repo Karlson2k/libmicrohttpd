@@ -116,14 +116,15 @@ testStartStop (void)
 
 
 static unsigned int
-testExternalRun (void)
+testExternalRun (int use_no_thread_safe)
 {
   struct MHD_Daemon *d;
   fd_set rs;
   MHD_socket maxfd;
   int i;
 
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG
+                        | (use_no_thread_safe ? MHD_USE_NO_THREAD_SAFETY : 0),
                         0,
                         &apc_all, NULL,
                         &ahc_nothing, NULL,
@@ -233,7 +234,9 @@ main (int argc,
   errorCount += testStartError ();
   if (has_threads_support)
     errorCount += testStartStop ();
-  errorCount += testExternalRun ();
+  if (has_threads_support)
+    errorCount += testExternalRun (0);
+  errorCount += testExternalRun (! 0);
   if (has_threads_support)
   {
     errorCount += testThread ();

@@ -1272,9 +1272,12 @@ print_test_starting (unsigned int daemon_flags)
   else
   {
     if (0 != (MHD_USE_EPOLL & daemon_flags))
-      printf ("\nStarting test with external polling and internal 'epoll'.\n");
+      printf ("\nStarting test with%s thread safety with external polling "
+              "and internal 'epoll'.\n",
+              ((0 != (MHD_USE_NO_THREAD_SAFETY & daemon_flags)) ? "out" : ""));
     else
-      printf ("\nStarting test with external polling.\n");
+      printf ("\nStarting test with%s thread safety with external polling.\n",
+              ((0 != (MHD_USE_NO_THREAD_SAFETY & daemon_flags)) ? "out" : ""));
   }
   fflush (stdout);
 }
@@ -1623,8 +1626,9 @@ run_all_checks (void)
       if ((77 == testRes) || (99 == testRes))
         return testRes;
     }
+    testRes = testExternalPolling (&port, MHD_NO_FLAG);
   }
-  testRes = testExternalPolling (&port, MHD_NO_FLAG);
+  testRes = testExternalPolling (&port, MHD_USE_NO_THREAD_SAFETY);
   if ((77 == testRes) || (99 == testRes))
     return testRes;
   ret += testRes;

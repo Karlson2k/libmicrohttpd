@@ -394,7 +394,7 @@ testMultithreadedPoolGet (uint32_t poll_flag)
 
 
 static unsigned int
-testExternalGet (void)
+testExternalGet (int thread_unsafe)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -424,7 +424,8 @@ testExternalGet (void)
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG
+                        | (thread_unsafe ? MHD_USE_NO_THREAD_SAFETY : 0),
                         global_port, NULL, NULL,
                         &ahc_echo, NULL,
                         MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
@@ -890,14 +891,20 @@ main (int argc, char *const *argv)
   if (0 != curl_global_init (CURL_GLOBAL_WIN32))
     return 2;
   global_port = 0;
-  test_result = testExternalGet ();
+  test_result = testExternalGet (! 0);
   if (test_result)
-    fprintf (stderr, "FAILED: testExternalGet () - %u.\n", test_result);
+    fprintf (stderr, "FAILED: testExternalGet (!0) - %u.\n", test_result);
   else if (verbose)
     printf ("PASSED: testExternalGet ().\n");
   errorCount += test_result;
   if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_THREADS))
   {
+    test_result += testExternalGet (0);
+    if (test_result)
+      fprintf (stderr, "FAILED: testExternalGet (0) - %u.\n", test_result);
+    else if (verbose)
+      printf ("PASSED: testExternalGet ().\n");
+    errorCount += test_result;
     test_result += testInternalGet (0);
     if (test_result)
       fprintf (stderr, "FAILED: testInternalGet (0) - %u.\n", test_result);

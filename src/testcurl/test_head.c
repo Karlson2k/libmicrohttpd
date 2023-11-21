@@ -756,7 +756,7 @@ testHead (void)
   else
     port = 4220 + oneone ? 0 : 1;
 
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY,
                         port, NULL, NULL,
                         &ahcCheck, &ahc_param,
                         MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,

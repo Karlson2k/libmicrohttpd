@@ -141,7 +141,7 @@ main (int argc, char **argv)
   else
     port = 1140;
 
-  d = MHD_start_daemon (0,
+  d = MHD_start_daemon (MHD_USE_NO_THREAD_SAFETY,
                         port,
                         NULL,
                         NULL,

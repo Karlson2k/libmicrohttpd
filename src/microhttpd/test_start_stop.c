@@ -101,15 +101,31 @@ testMultithreadedPoolGet (unsigned int poll_flag)
 }
 
 
-#endif
-
-
 static unsigned int
 testExternalGet (void)
 {
   struct MHD_Daemon *d;
 
   d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+                        0, NULL, NULL,
+                        &ahc_echo, NULL,
+                        MHD_OPTION_END);
+  if (NULL == d)
+    return 8;
+  MHD_stop_daemon (d);
+  return 0;
+}
+
+
+#endif
+
+
+static unsigned int
+testExternalGetSingleThread (void)
+{
+  struct MHD_Daemon *d;
+
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY,
                         0, NULL, NULL,
                         &ahc_echo, NULL,
                         MHD_OPTION_END);
@@ -132,8 +148,9 @@ main (int argc,
   errorCount += testInternalGet (0);
   errorCount += testMultithreadedGet (0);
   errorCount += testMultithreadedPoolGet (0);
-#endif
   errorCount += testExternalGet ();
+#endif
+  errorCount += testExternalGetSingleThread ();
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
   if (MHD_YES == MHD_is_feature_supported (MHD_FEATURE_POLL))
   {

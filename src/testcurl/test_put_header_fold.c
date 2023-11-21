@@ -1147,7 +1147,7 @@ performCheck (void)
       mem_limit = (size_t) ((TEST_UPLOAD_DATA_SIZE * 4) / 3 + 2
                             + HEADERS_POINTERS_SIZE);
 
-    d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+    d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY,
                           port, NULL, NULL,
                           &ahcCheck, &ahc_param,
                           MHD_OPTION_CONNECTION_MEMORY_LIMIT, mem_limit,

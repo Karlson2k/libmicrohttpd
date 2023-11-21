@@ -1275,7 +1275,8 @@ test_upgrade (unsigned int flags,
   done = false;
 
   if (! test_tls)
-    d = MHD_start_daemon (flags | MHD_USE_ERROR_LOG | MHD_ALLOW_UPGRADE,
+    d = MHD_start_daemon (flags | MHD_USE_ERROR_LOG | MHD_ALLOW_UPGRADE
+                          | MHD_USE_ITC,
                           global_port,
                           NULL, NULL,
                           &ahc_upgrade, NULL,
@@ -1289,7 +1290,7 @@ test_upgrade (unsigned int flags,
 #ifdef HTTPS_SUPPORT
   else
     d = MHD_start_daemon (flags | MHD_USE_ERROR_LOG | MHD_ALLOW_UPGRADE
-                          | MHD_USE_TLS,
+                          | MHD_USE_TLS | MHD_USE_ITC,
                           global_port,
                           NULL, NULL,
                           &ahc_upgrade, NULL,

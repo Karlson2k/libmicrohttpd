@@ -1366,7 +1366,7 @@ testDigestAuth (void)
     if (test_bind_uri)
       dauth_nonce_bind |= MHD_DAUTH_BIND_NONCE_URI_PARAMS;
 
-    d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+    d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY,
                           port, NULL, NULL,
                           &ahc_echo, &rq_tr,
                           MHD_OPTION_DIGEST_AUTH_RANDOM_COPY,

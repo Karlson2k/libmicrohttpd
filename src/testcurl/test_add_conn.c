@@ -739,8 +739,7 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
 
   if (testMhdThreadExternal == thrType)
     d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
-                          | (thrType == testMhdThreadExternal ?
-                             0 : MHD_USE_ITC)
+                          | MHD_USE_NO_THREAD_SAFETY
                           | (no_listen ? MHD_USE_NO_LISTEN_SOCKET : 0)
                           | MHD_USE_ERROR_LOG,
                           *pport, NULL, NULL,

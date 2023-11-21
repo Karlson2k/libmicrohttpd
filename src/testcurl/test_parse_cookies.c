@@ -1646,7 +1646,7 @@ testExternalPolling (void)
   else
     port = 1340 + oneone ? 0 : 6 + (uint16_t) (1 + discp_level);
 
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG | MHD_USE_NO_THREAD_SAFETY,
                         port, NULL, NULL,
                         &ahcCheck, &ahc_param,
                         MHD_OPTION_CLIENT_DISCIPLINE_LVL,

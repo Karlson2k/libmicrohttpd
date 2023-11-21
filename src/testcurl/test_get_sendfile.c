@@ -337,7 +337,7 @@ testMultithreadedPoolGet (void)
 
 
 static unsigned int
-testExternalGet (void)
+testExternalGet (int thread_unsafe)
 {
   struct MHD_Daemon *d;
   CURL *c;
@@ -373,7 +373,8 @@ testExternalGet (void)
   cbc.buf = buf;
   cbc.size = 2048;
   cbc.pos = 0;
-  d = MHD_start_daemon (MHD_USE_ERROR_LOG,
+  d = MHD_start_daemon (MHD_USE_ERROR_LOG
+                        | (thread_unsafe ? MHD_USE_NO_THREAD_SAFETY : 0),
                         port, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                         MHD_OPTION_END);
@@ -660,8 +661,9 @@ main (int argc, char *const *argv)
     errorCount += testMultithreadedGet ();
     errorCount += testMultithreadedPoolGet ();
     errorCount += testUnknownPortGet ();
+    errorCount += testExternalGet (0);
   }
-  errorCount += testExternalGet ();
+  errorCount += testExternalGet (! 0);
   if (errorCount != 0)
     fprintf (stderr, "Error (code: %u)\n", errorCount);
   curl_global_cleanup ();
