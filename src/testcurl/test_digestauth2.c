@@ -1532,6 +1532,27 @@ main (int argc, char *const *argv)
              0xFF & (curl_info->version_num >> 0));
     return 77;
   }
+
+  if (test_sha256)
+  {
+    if (curl_sspi)
+    {
+      fprintf (stderr, "Windows SSPI API does not support SHA-256 digests.\n");
+      return 77;
+    }
+    else if (CURL_VERSION_BITS (7,57,0) > curl_info->version_num)
+    {
+      fprintf (stderr, "Required libcurl at least version 7.57.0 "
+               "to run this test with SHA-256.\n");
+      fprintf (stderr, "This libcurl version %u.%u.%u "
+               "does not support SHA-256.\n",
+               0xFF & (curl_info->version_num >> 16),
+               0xFF & (curl_info->version_num >> 8),
+               0xFF & (curl_info->version_num >> 0));
+      return 77;
+    }
+  }
+
   if (test_userhash)
   {
     if (curl_sspi)
@@ -1570,26 +1591,6 @@ main (int argc, char *const *argv)
   }
   else
     curl_uses_usehash = 0;
-
-  if (test_sha256)
-  {
-    if (curl_sspi)
-    {
-      fprintf (stderr, "Windows SSPI API does not support SHA-256 digests.\n");
-      return 77;
-    }
-    else if (CURL_VERSION_BITS (7,57,0) > curl_info->version_num)
-    {
-      fprintf (stderr, "Required libcurl at least version 7.57.0 "
-               "to run this test with SHA-256.\n");
-      fprintf (stderr, "This libcurl version %u.%u.%u "
-               "does not support SHA-256.\n",
-               0xFF & (curl_info->version_num >> 16),
-               0xFF & (curl_info->version_num >> 8),
-               0xFF & (curl_info->version_num >> 0));
-      return 77;
-    }
-  }
 
   test_global_init ();
 
