@@ -3152,9 +3152,9 @@ internal_add_connection (struct MHD_Daemon *daemon,
     return MHD_NO;
 
   if ((external_add) &&
-      MHD_D_IS_USING_THREADS_ (daemon))
+      MHD_D_IS_THREAD_SAFE_ (daemon))
   {
-    /* Connection is added externally and MHD is handling its own threads. */
+    /* Connection is added externally and MHD is thread safe mode. */
     MHD_mutex_lock_chk_ (&daemon->new_connections_mutex);
     DLL_insert (daemon->new_connections_head,
                 daemon->new_connections_tail,
@@ -3186,7 +3186,7 @@ new_connections_list_process_ (struct MHD_Daemon *daemon)
   struct MHD_Connection *local_head;
   struct MHD_Connection *local_tail;
   mhd_assert (daemon->have_new);
-  mhd_assert (MHD_D_IS_USING_THREADS_ (daemon));
+  mhd_assert (MHD_D_IS_THREAD_SAFE_ (daemon));
 
   /* Detach DL-list of new connections from the daemon for
    * following local processing. */
@@ -3621,8 +3621,8 @@ MHD_add_connection (struct MHD_Daemon *daemon,
   bool sk_spipe_supprs;
   struct sockaddr_storage addrstorage;
 
-  /* NOT thread safe with internal thread. TODO: fix thread safety. */
-  if ((! MHD_D_IS_USING_THREADS_ (daemon)) &&
+  /* TODO: fix atomic value reading */
+  if ((! MHD_D_IS_THREAD_SAFE_ (daemon)) &&
       (daemon->connection_limit <= daemon->connections))
     MHD_cleanup_connections (daemon);
 
@@ -7667,7 +7667,12 @@ MHD_start_daemon_va (unsigned int flags,
     return NULL;
 #endif /* ! UPGRADE_SUPPORT */
   }
-#ifndef MHD_USE_THREADS
+#ifdef MHD_USE_THREADS
+  if ((MHD_USE_NO_THREAD_SAFETY | MHD_USE_INTERNAL_POLLING_THREAD) ==
+      ((MHD_USE_NO_THREAD_SAFETY | MHD_USE_INTERNAL_POLLING_THREAD)
+       & *pflags))
+    return NULL; /* Cannot be thread-unsafe with multiple threads */
+#else  /* ! MHD_USE_THREADS */
   if (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
     return NULL;
 #endif /* ! MHD_USE_THREADS */
@@ -7707,9 +7712,9 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
   }
 
-  if (0 == (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
-    *pflags = (*pflags & ~((enum MHD_FLAG) MHD_USE_ITC)); /* useless if we are using 'external' select */
-  else
+  if (0 != (*pflags & MHD_USE_NO_THREAD_SAFETY))
+    *pflags = (*pflags & ~((enum MHD_FLAG) MHD_USE_ITC)); /* useless in single-threaded environment */
+  else if (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
   {
 #ifdef HAVE_LISTEN_SHUTDOWN
     if (0 != (*pflags & MHD_USE_NO_LISTEN_SOCKET))
@@ -9426,12 +9431,8 @@ MHD_get_daemon_info (struct MHD_Daemon *daemon,
     return NULL;
 #endif /* ! EPOLL_SUPPORT */
   case MHD_DAEMON_INFO_CURRENT_CONNECTIONS:
-    if (! MHD_D_IS_USING_THREADS_ (daemon))
-    {
-      /* Assume that MHD_run() in not called in other thread
-       * at the same time. */
+    if (! MHD_D_IS_THREAD_SAFE_ (daemon))
       MHD_cleanup_connections (daemon);
-    }
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
     else if (daemon->worker_pool)
     {

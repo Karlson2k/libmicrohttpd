@@ -2551,6 +2551,12 @@ struct MHD_Daemon
  */
 #define MHD_D_IS_USING_THREAD_PER_CONN_(d) \
   (0 != ((d)->options & MHD_USE_THREAD_PER_CONNECTION))
+
+/**
+ * Check whether the @a d daemon has thread-safety enabled.
+ */
+#define MHD_D_IS_THREAD_SAFE_(d) \
+  (0 == ((d)->options & MHD_USE_NO_THREAD_SAFETY))
 #else  /* ! MHD_USE_THREADS */
 /**
  * Checks whether the @a d daemon is using internal polling thread
@@ -2560,6 +2566,11 @@ struct MHD_Daemon
  * Checks whether the @a d daemon is using thread-per-connection mode
  */
 #define MHD_D_IS_USING_THREAD_PER_CONN_(d) ((void) d, 0)
+
+/**
+ * Check whether the @a d daemon has thread-safety enabled.
+ */
+#define MHD_D_IS_THREAD_SAFE_(d) ((void) d, 0)
 #endif /* ! MHD_USE_THREADS */
 
 #ifdef HAS_FD_SETSIZE_OVERRIDABLE

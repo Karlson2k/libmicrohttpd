@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097706
+#define MHD_VERSION 0x00097707
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -1531,7 +1531,19 @@ enum MHD_FLAG
    * Flag set to enable TLS 1.3 early data.  This has
    * security implications, be VERY careful when using this.
    */
-  MHD_USE_INSECURE_TLS_EARLY_DATA = 1U << 18
+  MHD_USE_INSECURE_TLS_EARLY_DATA = 1U << 18,
+
+  /**
+   * Indicates that MHD daemon will be used by application in single-threaded
+   * mode only.  When this flag is set then application must call any MHD
+   * function only within a single thread.
+   * This flag turns off some internal thread-safety and allows MHD making
+   * some of the internal optimisations suitable only for single-threaded
+   * environment.
+   * Not compatible with #MHD_USE_INTERNAL_POLLING_THREAD.
+   * @note Available since #MHD_VERSION 0x00097707
+   */
+  MHD_USE_NO_THREAD_SAFETY = 1U << 19
 
 };
 
