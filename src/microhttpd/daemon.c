@@ -992,7 +992,7 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
   MHD_socket ls;
 
   if (daemon->shutdown)
-    return MHD_NO;
+    return MHD_YES;
 
   ls = daemon->listen_fd;
   if ( (MHD_INVALID_SOCKET != ls) &&
@@ -1204,7 +1204,7 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
   if (MHD_D_IS_USING_EPOLL_ (daemon))
   {
     if (daemon->shutdown)
-      return MHD_NO;
+      return MHD_YES;
 
     /* we're in epoll mode, use the epoll FD as a stand-in for
        the entire event set */
@@ -4208,7 +4208,8 @@ MHD_get_timeout64 (struct MHD_Daemon *daemon,
   if (daemon->data_already_pending
       || (NULL != daemon->cleanup_head)
       || daemon->resuming
-      || daemon->have_new)
+      || daemon->have_new
+      || daemon->shutdown)
   {
     /* Some data or connection statuses already waiting to be processed. */
     *timeout64 = 0;
