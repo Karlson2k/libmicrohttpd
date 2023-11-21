@@ -7626,6 +7626,11 @@ MHD_start_daemon_va (unsigned int flags,
     return NULL;
 #endif /* ! UPGRADE_SUPPORT */
   }
+#ifndef MHD_USE_THREADS
+  if (0 != (*pflags & MHD_USE_INTERNAL_POLLING_THREAD))
+    return NULL;
+#endif /* ! MHD_USE_THREADS */
+
   if (NULL == dh)
     return NULL;
 
