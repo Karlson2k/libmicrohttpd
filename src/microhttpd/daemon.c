@@ -6201,6 +6201,14 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 struct MHD_InterimParams_
 {
   /**
+   * The total number of all user options used.
+   *
+   * Contains number only of meaningful options, i.e. #MHD_OPTION_END and
+   * #MHD_OPTION_ARRAY themselves are not counted, while options inside
+   * #MHD_OPTION_ARRAY are counted.
+   */
+  size_t num_opts;
+  /**
    * Set to 'true' if @a fdset_size is set by application.
    */
   bool fdset_size_set;
@@ -6582,7 +6590,7 @@ parse_options_va (struct MHD_Daemon *daemon,
   {
     /* Increase counter at start, so resulting value is number of
      * processed options, including any failed ones. */
-    daemon->num_opts++;
+    params->num_opts++;
     switch (opt)
     {
     case MHD_OPTION_CONNECTION_MEMORY_LIMIT:
@@ -6978,7 +6986,7 @@ parse_options_va (struct MHD_Daemon *daemon,
                                          VfprintfFunctionPointerType);
       daemon->custom_error_log_cls = va_arg (ap,
                                              void *);
-      if (1 != daemon->num_opts)
+      if (1 != params->num_opts)
         MHD_DLOG (daemon,
                   _ ("MHD_OPTION_EXTERNAL_LOGGER is not the first option "
                      "specified for the daemon. Some messages may be "
@@ -7049,7 +7057,7 @@ parse_options_va (struct MHD_Daemon *daemon,
 #endif /* HAVE_MESSAGES */
       break;
     case MHD_OPTION_ARRAY:
-      daemon->num_opts--; /* Do not count MHD_OPTION_ARRAY */
+      params->num_opts--; /* Do not count MHD_OPTION_ARRAY */
       oa = va_arg (ap, struct MHD_OptionItem *);
       i = 0;
       while (MHD_OPTION_END != (opt = oa[i].option))
@@ -7754,6 +7762,7 @@ MHD_start_daemon_va (unsigned int flags,
   }
 #endif /* HTTPS_SUPPORT */
 
+  interim_params->num_opts = 0;
   interim_params->fdset_size_set = false;
   interim_params->fdset_size = 0;
   interim_params->listen_fd_set = false;
