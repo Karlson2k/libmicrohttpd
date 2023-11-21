@@ -995,6 +995,7 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
   struct MHD_Connection *posn;
   enum MHD_Result result = MHD_YES;
   MHD_socket ls;
+  bool itc_added;
 
 #ifndef HAS_FD_SETSIZE_OVERRIDABLE
   (void) fd_setsize;  /* Mute compiler warning */
@@ -1004,14 +1005,37 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
   if (daemon->shutdown)
     return MHD_YES;
 
-  ls = daemon->listen_fd;
-  if ( (MHD_INVALID_SOCKET != ls) &&
-       (! daemon->was_quiesced) &&
-       (! MHD_add_to_fd_set_ (ls,
-                              read_fd_set,
-                              max_fd,
-                              fd_setsize)) )
-    result = MHD_NO;
+  /* The order of FDs added is important for W32 sockets as W32 fd_set has
+     limits for number of added FDs instead of the limit for the higher
+     FD value. */
+
+  /* Add ITC FD first. The daemon must be able to respond on application
+     commands issued in other threads. */
+  itc_added = false;
+  if (MHD_ITC_IS_VALID_ (daemon->itc))
+  {
+    itc_added = MHD_add_to_fd_set_ (MHD_itc_r_fd_ (daemon->itc),
+                                    read_fd_set,
+                                    max_fd,
+                                    fd_setsize);
+    if (! itc_added)
+      result = MHD_NO;
+  }
+
+  ls = daemon->was_quiesced ? MHD_INVALID_SOCKET : daemon->listen_fd;
+  if (! itc_added &&
+      (MHD_INVALID_SOCKET != ls))
+  {
+    /* Add listen FD if ITC was not added. Listen FD could be used to signal
+       the daemon shutdown. */
+    if (MHD_add_to_fd_set_ (ls,
+                            read_fd_set,
+                            max_fd,
+                            fd_setsize))
+      ls = MHD_INVALID_SOCKET;   /* Already added */
+    else
+      result = MHD_NO;
+  }
 
   /* Add all sockets to 'except_fd_set' as well to watch for
    * out-of-band data. However, ignore errors if INFO_READ
@@ -1082,6 +1106,7 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
   }
 #endif /* MHD_WINSOCK_SOCKETS */
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
+  if (1)
   {
     struct MHD_UpgradeResponseHandle *urh;
 
@@ -1098,6 +1123,21 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
     }
   }
 #endif
+
+  if (MHD_INVALID_SOCKET != ls)
+  {
+    /* The listen socket is present and hasn't been added */
+    if ((daemon->connections < daemon->connection_limit) &&
+        ! daemon->at_limit)
+    {
+      if (! MHD_add_to_fd_set_ (ls,
+                                read_fd_set,
+                                max_fd,
+                                fd_setsize))
+        result = MHD_NO;
+    }
+  }
+
 #if _MHD_DEBUG_CONNECT
 #ifdef HAVE_MESSAGES
   if (NULL != max_fd)
@@ -4810,69 +4850,50 @@ MHD_select (struct MHD_Daemon *daemon,
   }
   else
   {
+    bool itc_added;
     /* accept only, have one thread per connection */
-    if ( (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) &&
-         (! daemon->was_quiesced) &&
-         (! MHD_add_to_fd_set_ (ls,
-                                &rs,
-                                &maxsock,
-                                (int) FD_SETSIZE)) )
+    itc_added = false;
+    if (MHD_ITC_IS_VALID_ (daemon->itc))
     {
+      itc_added = MHD_add_to_fd_set_ (MHD_itc_r_fd_ (daemon->itc),
+                                      &rs,
+                                      &maxsock,
+                                      (int) FD_SETSIZE);
+      if (! itc_added)
+      {
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Could not add listen socket to fdset.\n"));
+        MHD_DLOG (daemon, _ ("Could not add control inter-thread " \
+                             "communication channel FD to fdset.\n"));
 #endif
-      return MHD_NO;
+        err_state = MHD_YES;
+      }
     }
-  }
-  if ( (MHD_ITC_IS_VALID_ (daemon->itc)) &&
-       (! MHD_add_to_fd_set_ (MHD_itc_r_fd_ (daemon->itc),
-                              &rs,
-                              &maxsock,
-                              (int) FD_SETSIZE)) )
-  {
-    bool retry_succeed;
-
-    retry_succeed = false;
-#if defined(MHD_WINSOCK_SOCKETS)
-    /* fdset limit reached, new connections
-       cannot be handled. Remove listen socket FD
-       from fdset and retry to add ITC FD. */
     if ( (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) &&
          (! daemon->was_quiesced) )
     {
-      FD_CLR (ls,
-              &rs);
-      if (MHD_add_to_fd_set_ (MHD_itc_r_fd_ (daemon->itc),
-                              &rs,
-                              &maxsock,
-                              (int) FD_SETSIZE))
-        retry_succeed = true;
-    }
-#endif /* MHD_WINSOCK_SOCKETS */
-
-    if (! retry_succeed)
-    {
+      /* Stop listening if we are at the configured connection limit */
+      /* If we're at the connection limit, no point in really
+         accepting new connections; however, make sure we do not miss
+         the shutdown OR the termination of an existing connection; so
+         only do this optimisation if we have a signaling ITC in
+         place. */
+      if (! itc_added ||
+          ((daemon->connections < daemon->connection_limit) &&
+           ! daemon->at_limit))
+      {
+        if (! MHD_add_to_fd_set_ (ls,
+                                  &rs,
+                                  &maxsock,
+                                  (int) FD_SETSIZE))
+        {
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon, _ ("Could not add control inter-thread " \
-                           "communication channel FD to fdset.\n"));
+          MHD_DLOG (daemon,
+                    _ ("Could not add listen socket to fdset.\n"));
 #endif
-      err_state = MHD_YES;
+          err_state = MHD_YES;
+        }
+      }
     }
-  }
-  /* Stop listening if we are at the configured connection limit */
-  /* If we're at the connection limit, no point in really
-     accepting new connections; however, make sure we do not miss
-     the shutdown OR the termination of an existing connection; so
-     only do this optimization if we have a signaling ITC in
-     place. */
-  if ( (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) &&
-       (MHD_ITC_IS_VALID_ (daemon->itc)) &&
-       ( (daemon->connections == daemon->connection_limit) ||
-         (daemon->at_limit) ) )
-  {
-    FD_CLR (ls,
-            &rs);
   }
 
   if (MHD_NO != err_state)
