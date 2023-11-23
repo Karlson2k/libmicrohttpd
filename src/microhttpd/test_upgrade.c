@@ -782,9 +782,14 @@ static struct wr_socket *volatile usock;
 static pthread_t pt_client;
 
 /**
- * Flag set to 1 once the test is finished.
+ * Flag set to true once the client is finished.
  */
-static volatile bool done;
+static volatile bool client_done;
+
+/**
+ * Flag set to true once the app is finished.
+ */
+static volatile bool app_done;
 
 
 static const char *
@@ -1098,6 +1103,7 @@ run_usock (void *cls)
                       MHD_UPGRADE_ACTION_CLOSE);
   free (usock);
   usock = NULL;
+  app_done = true;
   return NULL;
 }
 
@@ -1123,7 +1129,7 @@ run_usock_client (void *cls)
   recv_all_stext (sock,
                   "Finished");
   wr_close (sock);
-  done = true;
+  client_done = true;
   return NULL;
 }
 
@@ -1285,20 +1291,45 @@ ahc_upgrade (void *cls,
 static void
 run_mhd_select_loop (struct MHD_Daemon *daemon)
 {
-  fd_set rs;
-  fd_set ws;
-  fd_set es;
-  MHD_socket max_fd;
-  uint64_t to64;
-  struct timeval tv;
+  const time_t start_time = time (NULL);
+  bool connection_was_accepted;
+  bool connection_has_finished;
 
-  while (! done)
+  connection_was_accepted = false;
+  connection_has_finished = false;
+  while (1)
   {
+    fd_set rs;
+    fd_set ws;
+    fd_set es;
+    MHD_socket max_fd;
+    struct timeval tv;
+    uint64_t to64;
+    bool has_mhd_timeout;
+    const union MHD_DaemonInfo *pdinfo;
+
     FD_ZERO (&rs);
     FD_ZERO (&ws);
     FD_ZERO (&es);
     max_fd = MHD_INVALID_SOCKET;
-    to64 = 1000;
+
+    if (time (NULL) - start_time > ((time_t) test_timeout))
+      mhdErrorExitDesc ("Test timeout");
+
+    pdinfo = MHD_get_daemon_info (daemon, MHD_DAEMON_INFO_CURRENT_CONNECTIONS);
+
+    if (NULL == pdinfo)
+      mhdErrorExitDesc ("MHD_get_daemon_info() failed");
+
+    if (0 != pdinfo->num_connections)
+      connection_was_accepted = true;
+    else
+    {
+      if (connection_was_accepted)
+        connection_has_finished = true;
+    }
+    if (connection_has_finished)
+      return;
 
     if (MHD_YES !=
         MHD_get_fdset (daemon,
@@ -1307,31 +1338,52 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
                        &es,
                        &max_fd))
       mhdErrorExitDesc ("MHD_get_fdset() failed");
-    (void) MHD_get_timeout64 (daemon,
-                              &to64);
-    if (1000 < to64)
-      to64 = 1000;
-#if ! defined(_WIN32) || defined(__CYGWIN__)
-    tv.tv_sec = (time_t) (to64 / 1000);
-#else  /* Native W32 */
-    tv.tv_sec = (long) (to64 / 1000);
-#endif /* Native W32 */
-    tv.tv_usec = (long) (1000 * (to64 % 1000));
-    if (0 > MHD_SYS_select_ (max_fd + 1,
-                             &rs,
-                             &ws,
-                             &es,
-                             &tv))
+    has_mhd_timeout = (MHD_NO != MHD_get_timeout64 (daemon,
+                                                    &to64));
+    if (has_mhd_timeout)
     {
-#ifdef MHD_POSIX_SOCKETS
-      if (EINTR != errno)
-        externalErrorExitDesc ("Unexpected select() error");
-#else
-      if ((WSAEINVAL != WSAGetLastError ()) ||
-          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
-        externalErrorExitDesc ("Unexpected select() error");
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+      tv.tv_sec = (time_t) (to64 / 1000);
+#else  /* Native W32 */
+      tv.tv_sec = (long) (to64 / 1000);
+#endif /* Native W32 */
+      tv.tv_usec = (long) (1000 * (to64 % 1000));
+    }
+    else
+    {
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+      tv.tv_sec = (time_t) test_timeout;
+#else  /* Native W32 */
+      tv.tv_sec = (long) test_timeout;
+#endif /* Native W32 */
+      tv.tv_usec = 0;
+    }
+
+#ifdef MHD_WINSOCK_SOCKETS
+    if ((0 == rs.fd_count) && (0 == ws.fd_count) && (0 != es.fd_count))
       Sleep ((DWORD) (tv.tv_sec * 1000 + tv.tv_usec / 1000));
+    else /* Combined with the next 'if' */
 #endif
+    if (1)
+    {
+      int sel_res;
+      sel_res = MHD_SYS_select_ (max_fd + 1,
+                                 &rs,
+                                 &ws,
+                                 &es,
+                                 &tv);
+      if (0 == sel_res)
+      {
+        if (! has_mhd_timeout)
+          mhdErrorExitDesc ("Timeout waiting for data on sockets");
+      }
+      else if (0 > sel_res)
+      {
+#ifdef MHD_POSIX_SOCKETS
+        if (EINTR != errno)
+#endif /* MHD_POSIX_SOCKETS */
+        mhdErrorExitDesc ("Unexpected select() error");
+      }
     }
     MHD_run_from_select (daemon,
                          &rs,
@@ -1380,7 +1432,7 @@ run_mhd_epoll_loop (struct MHD_Daemon *daemon)
   if (NULL == di)
     mhdErrorExitDesc ("MHD_get_daemon_info() failed");
   ep = di->listen_fd;
-  while (! done)
+  while (! client_done)
   {
     FD_ZERO (&rs);
     to64 = 1000;
@@ -1465,7 +1517,8 @@ test_upgrade (unsigned int flags,
   pid_t pid = -1;
 #endif /* HTTPS_SUPPORT && HAVE_FORK && HAVE_WAITPID */
 
-  done = false;
+  client_done = false;
+  app_done = false;
 
   if (! test_tls)
     d = MHD_start_daemon (flags | MHD_USE_ERROR_LOG | MHD_ALLOW_UPGRADE
@@ -1564,6 +1617,12 @@ test_upgrade (unsigned int flags,
       externalErrorExitDesc ("waitpid() failed");
   }
 #endif /* HTTPS_SUPPORT && HAVE_FORK && HAVE_WAITPID */
+  if (! client_done)
+    externalErrorExitDesc ("The client thread has not signalled " \
+                           "successful finish");
+  if (! app_done)
+    externalErrorExitDesc ("The application thread has not signalled " \
+                           "successful finish");
   MHD_stop_daemon (d);
   return 0;
 }
