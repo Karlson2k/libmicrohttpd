@@ -1817,10 +1817,9 @@ enum MHD_OPTION
   /**
    * Number (`unsigned int`) of threads in thread pool. Enable
    * thread pooling by setting this value to to something
-   * greater than 1. Currently, thread mode must be
-   * #MHD_USE_INTERNAL_POLLING_THREAD if thread pooling is enabled
-   * (#MHD_start_daemon returns NULL for an unsupported thread
-   * mode).
+   * greater than 1.
+   * Can be used only for daemons started with #MHD_USE_INTERNAL_POLLING_THREAD.
+   * Ignored if followed by zero value.
    */
   MHD_OPTION_THREAD_POOL_SIZE = 14,
 

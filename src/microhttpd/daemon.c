@@ -6735,18 +6735,14 @@ parse_options_va (struct MHD_Daemon *daemon,
                                          unsigned int);
       if (0 == daemon->worker_pool_size)
       {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _ ("Warning: Zero size, specified for thread pool size," \
-                     " is ignored. Thread pool is not used.\n"));
-#endif
+        (void) 0; /* MHD_OPTION_THREAD_POOL_SIZE ignored, do nothing */
       }
       else if (1 == daemon->worker_pool_size)
       {
 #ifdef HAVE_MESSAGES
         MHD_DLOG (daemon,
-                  _ ("Warning: \"1\", specified for thread pool size, " \
-                     "is ignored. Thread pool is not used.\n"));
+                  _ ("Warning: value \"1\", specified as the thread pool " \
+                     "size, is ignored. Thread pool is not used.\n"));
 #endif
         daemon->worker_pool_size = 0;
       }
