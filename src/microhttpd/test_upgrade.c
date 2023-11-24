@@ -1284,7 +1284,9 @@ ahc_upgrade (void *cls,
 
 
 /**
- * Run the MHD external event loop using select.
+ * Run the MHD external event loop using select or epoll.
+ *
+ * select/epoll modes are used automatically based on daemon's flags.
  *
  * @param daemon daemon to run it for
  */
@@ -1292,8 +1294,30 @@ static void
 run_mhd_select_loop (struct MHD_Daemon *daemon)
 {
   const time_t start_time = time (NULL);
+  const union MHD_DaemonInfo *pdinfo;
   bool connection_was_accepted;
   bool connection_has_finished;
+  bool use_epoll = false;
+#ifdef EPOLL_SUPPORT
+  int ep = -1;
+
+  pdinfo = MHD_get_daemeon_info (daemon,
+                                 MHD_DAEMON_INFO_FLAGS);
+  if (NULL == pdinfo)
+    mhdErrorExitDesc ("MHD_get_daemon_info() failed");
+  else
+    use_epoll = (0 != (pdinfo->flags & MHD_USE_EPOLL));
+  if (use_epoll)
+  {
+    pdinfo = MHD_get_daemeon_info (daemon,
+                                   MHD_DAEMON_INFO_EPOLL_FD);
+    if (NULL == pdinfo)
+      mhdErrorExitDesc ("MHD_get_daemon_info() failed");
+    ep = pdinfo->listen_fd;
+    if (0 > ep)
+      mhdErrorExitDesc ("Invalid epoll FD value");
+  }
+#endif /* EPOLL_SUPPORT */
 
   connection_was_accepted = false;
   connection_has_finished = false;
@@ -1306,7 +1330,6 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
     struct timeval tv;
     uint64_t to64;
     bool has_mhd_timeout;
-    const union MHD_DaemonInfo *pdinfo;
 
     FD_ZERO (&rs);
     FD_ZERO (&ws);
@@ -1338,6 +1361,17 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
                        &es,
                        &max_fd))
       mhdErrorExitDesc ("MHD_get_fdset() failed");
+
+#ifdef EPOLL_SUPPORT
+    if (use_epoll)
+    {
+      if (ep != max_fd)
+        mhdErrorExitDesc ("Wrong 'max_fd' value");
+      if (! FD_ISSET (&rs, ep))
+        mhdErrorExitDesc ("Epoll FD is NOT set in read fd_set");
+    }
+#endif /* EPOLL_SUPPORT */
+
     has_mhd_timeout = (MHD_NO != MHD_get_timeout64 (daemon,
                                                     &to64));
     if (has_mhd_timeout)
@@ -1411,67 +1445,6 @@ run_mhd_poll_loop (struct MHD_Daemon *daemon)
 #endif /* HAVE_POLL */
 
 
-#ifdef EPOLL_SUPPORT
-/**
- * Run the MHD external event loop using select.
- *
- * @param daemon daemon to run it for
- */
-static void
-run_mhd_epoll_loop (struct MHD_Daemon *daemon)
-{
-  const union MHD_DaemonInfo *di;
-  MHD_socket ep;
-  fd_set rs;
-  uint64_t to64;
-  struct timeval tv;
-  int ret;
-
-  di = MHD_get_daemon_info (daemon,
-                            MHD_DAEMON_INFO_EPOLL_FD);
-  if (NULL == di)
-    mhdErrorExitDesc ("MHD_get_daemon_info() failed");
-  ep = di->listen_fd;
-  while (! client_done)
-  {
-    FD_ZERO (&rs);
-    to64 = 1000;
-
-    FD_SET (ep, &rs);
-    (void) MHD_get_timeout64 (daemon,
-                              &to64);
-    if (1000 < to64)
-      to64 = 1000;
-#if ! defined(_WIN32) || defined(__CYGWIN__)
-    tv.tv_sec = (time_t) (to64 / 1000);
-#else  /* Native W32 */
-    tv.tv_sec = (long) (to64 / 1000);
-#endif /* Native W32 */
-    tv.tv_usec = (int) (1000 * (to64 % 1000));
-    ret = select (ep + 1,
-                  &rs,
-                  NULL,
-                  NULL,
-                  &tv);
-    if (0 > ret)
-    {
-#ifdef MHD_POSIX_SOCKETS
-      if (EINTR != errno)
-        externalErrorExitDesc ("Unexpected select() error");
-#else
-      if ((WSAEINVAL != WSAGetLastError ()) ||
-          (0 != rs.fd_count) || (0 != ws.fd_count) || (0 != es.fd_count) )
-        externalErrorExitDesc ("Unexpected select() error");
-      Sleep ((DWORD) (tv.tv_sec * 1000 + tv.tv_usec / 1000));
-#endif
-    }
-    MHD_run (daemon);
-  }
-}
-
-
-#endif /* EPOLL_SUPPORT */
-
 /**
  * Run the MHD external event loop using select.
  *
@@ -1489,7 +1462,7 @@ run_mhd_loop (struct MHD_Daemon *daemon,
 #endif /* HAVE_POLL */
 #ifdef EPOLL_SUPPORT
   else if (0 != (flags & MHD_USE_EPOLL))
-    run_mhd_epoll_loop (daemon);
+    run_mhd_select_loop (daemon);
 #endif
   else
     externalErrorExitDesc ("Wrong 'flags' value");
