@@ -62,6 +62,14 @@
 #endif /* HAVE_FORK && HAVE_WAITPID */
 #endif /* HTTPS_SUPPORT */
 
+#if defined(MHD_POSIX_SOCKETS)
+#  ifdef MHD_WINSOCK_SOCKETS
+#    error Both MHD_POSIX_SOCKETS and MHD_WINSOCK_SOCKETS are defined
+#  endif /* MHD_WINSOCK_SOCKETS */
+#elif ! defined(MHD_WINSOCK_SOCKETS)
+#  error Neither MHD_POSIX_SOCKETS nor MHD_WINSOCK_SOCKETS are defined
+#endif /* MHD_WINSOCK_SOCKETS */
+
 
 #ifndef MHD_STATICSTR_LEN_
 /**
@@ -262,6 +270,7 @@ gnutlscli_connect (int *sock,
 #endif /* HTTPS_SUPPORT && HAVE_FORK && HAVE_WAITPID */
 
 
+#if 0 /* Unused code */
 /**
  * Change socket to blocking.
  *
@@ -281,6 +290,35 @@ make_blocking (MHD_socket fd)
       externalErrorExitDesc ("fcntl() failed");
 #elif defined(MHD_WINSOCK_SOCKETS)
   unsigned long flags = 0;
+
+  if (0 != ioctlsocket (fd, (int) FIONBIO, &flags))
+    externalErrorExitDesc ("ioctlsocket() failed");
+#endif /* MHD_WINSOCK_SOCKETS */
+}
+
+
+#endif /* Unused code */
+
+
+/**
+ * Change socket to non-blocking.
+ *
+ * @param fd the socket to manipulate
+ */
+static void
+make_nonblocking (MHD_socket fd)
+{
+#if defined(MHD_POSIX_SOCKETS)
+  int flags;
+
+  flags = fcntl (fd, F_GETFL);
+  if (-1 == flags)
+    externalErrorExitDesc ("fcntl() failed");
+  if (O_NONBLOCK != (flags & O_NONBLOCK))
+    if (-1 == fcntl (fd, F_SETFL, flags | O_NONBLOCK))
+      externalErrorExitDesc ("fcntl() failed");
+#elif defined(MHD_WINSOCK_SOCKETS)
+  unsigned long flags = 1;
 
   if (0 != ioctlsocket (fd, (int) FIONBIO, &flags))
     externalErrorExitDesc ("ioctlsocket() failed");
@@ -337,6 +375,8 @@ struct wr_socket
     wr_plain = 1,
     wr_tls = 2
   } t;
+
+  bool is_nonblocking;
 #ifdef HTTPS_SUPPORT
   /**
    * TLS credentials
@@ -363,6 +403,28 @@ struct wr_socket
 #define wr_fd(s) ((s)->fd)
 
 
+#if 0 /* Unused code */
+static void
+wr_make_blocking  (struct wr_socket *s)
+{
+  if (s->is_nonblocking)
+    make_blocking (s->fd);
+  s->is_nonblocking = false;
+}
+
+
+#endif /* Unused code */
+
+
+static void
+wr_make_nonblocking  (struct wr_socket *s)
+{
+  if (! s->is_nonblocking)
+    make_nonblocking (s->fd);
+  s->is_nonblocking = true;
+}
+
+
 /**
  * Create wr_socket with plain TCP underlying socket
  * @return created socket on success, NULL otherwise
@@ -378,6 +440,7 @@ wr_create_plain_sckt (void)
   }
   s->t = wr_plain;
   s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  s->is_nonblocking = false;
   if (MHD_INVALID_SOCKET != s->fd)
   {
     make_nodelay (s->fd);
@@ -406,6 +469,7 @@ wr_create_tls_sckt (void)
   s->t = wr_tls;
   s->tls_connected = 0;
   s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  s->is_nonblocking = false;
   if (MHD_INVALID_SOCKET != s->fd)
   {
     make_nodelay (s->fd);
@@ -469,8 +533,151 @@ wr_create_from_plain_sckt (MHD_socket plain_sk)
   }
   s->t = wr_plain;
   s->fd = plain_sk;
+  s->is_nonblocking = false; /* The actual mode is unknown */
+  wr_make_nonblocking (s);   /* Force set mode to have correct status */
   make_nodelay (s->fd);
   return s;
+}
+
+
+enum wr_wait_for_type
+{
+  WR_WAIT_FOR_RECV = 0,
+  WR_WAIT_FOR_SEND = 1
+};
+
+static bool
+wr_wait_socket_ready_noabort_ (struct wr_socket *s,
+                               int timeout_ms,
+                               enum wr_wait_for_type wait_for)
+{
+  fd_set fds;
+  int sel_res;
+  struct timeval tmo;
+  struct timeval *tmo_ptr;
+
+#ifndef MHD_WINSOCK_SOCKETS
+  if (FD_SETSIZE <= s->fd)
+    externalErrorExitDesc ("Too large FD value");
+#endif /* ! MHD_WINSOCK_SOCKETS */
+  FD_ZERO (&fds);
+  FD_SET (s->fd, &fds);
+  if (0 <= timeout_ms)
+  {
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+    tmo.tv_sec = (time_t) (timeout_ms / 1000);
+#else  /* Native W32 */
+    tmo.tv_sec = (long) (timeout_ms / 1000);
+#endif /* Native W32 */
+    tmo.tv_usec = ((long) (timeout_ms % 1000)) * 1000;
+    tmo_ptr = &tmo;
+  }
+  else
+    tmo_ptr = NULL; /* No timeout */
+
+  if (WR_WAIT_FOR_RECV == wait_for)
+    sel_res = select (1 + (int) s->fd, &fds, NULL, NULL, tmo_ptr);
+  else
+    sel_res = select (1 + (int) s->fd, NULL, &fds, NULL, tmo_ptr);
+
+  if (1 == sel_res)
+    return true;
+
+  if (0 == sel_res)
+    fprintf (stderr, "Timeout");
+  else
+  {
+#ifndef MHD_WINSOCK_SOCKETS
+    fprintf (stderr, "Error %d (%s)", (int) errno, strerror (errno));
+#else /* MHD_WINSOCK_SOCKETS */
+    fprintf (stderr, "Error (WSAGetLastError code: %d)",
+             (int) WSAGetLastError ());
+#endif /* MHD_WINSOCK_SOCKETS */
+  }
+  fprintf (stderr, " waiting for socket to be available for %s.\n",
+           (WR_WAIT_FOR_RECV == wait_for) ? "receiving" : "sending");
+  return false;
+}
+
+
+static void
+wr_wait_socket_ready_ (struct wr_socket *s,
+                       int timeout_ms,
+                       enum wr_wait_for_type wait_for)
+{
+  if (wr_wait_socket_ready_noabort_ (s, timeout_ms, wait_for))
+    return;
+
+  if (WR_WAIT_FOR_RECV == wait_for)
+    mhdErrorExitDesc ("Client or application failed to receive the data");
+  else
+    mhdErrorExitDesc ("Client or application failed to send the data");
+}
+
+
+/**
+ * Connect socket to specified address.
+ * @param s socket to use
+ * @param addr address to connect
+ * @param length of structure pointed by @a addr
+ * @param timeout_ms the maximum wait time in milliseconds to send the data,
+ *                   no limit if negative value is used
+ * @return zero on success, -1 otherwise.
+ */
+static int
+wr_connect_tmo (struct wr_socket *s,
+                const struct sockaddr *addr,
+                unsigned int length,
+                int timeout_ms)
+{
+  if (0 != connect (s->fd, addr, (socklen_t) length))
+  {
+    int err;
+    bool connect_completed = false;
+
+    err = MHD_socket_get_error_ ();
+#if defined(MHD_POSIX_SOCKETS)
+    while (! connect_completed && (EINTR == err))
+    {
+      connect_completed = (0 == connect (s->fd, addr, (socklen_t) length));
+      if (! connect_completed)
+      {
+        err = errno;
+        if (EALREADY == err)
+          err = EINPROGRESS;
+        else if (EISCONN == err)
+          connect_completed = true;
+      }
+    }
+#endif /* MHD_POSIX_SOCKETS */
+    if (! connect_completed &&
+        (MHD_SCKT_ERR_IS_ (err, MHD_SCKT_EINPROGRESS_)
+         || MHD_SCKT_ERR_IS_EAGAIN_ (err))) /* No modern system uses EAGAIN, except W32 */
+      connect_completed =
+        wr_wait_socket_ready_noabort_ (s, timeout_ms, WR_WAIT_FOR_SEND);
+    if (! connect_completed)
+    {
+      testErrorLogDesc ("connect() failed");
+      return -1;
+    }
+  }
+  if (wr_plain == s->t)
+    return 0;
+#ifdef HTTPS_SUPPORT
+  if (wr_tls == s->t)
+  {
+    /* Do not try handshake here as
+     * it requires processing on MHD side and
+     * when testing with "external" polling,
+     * test will call MHD processing only
+     * after return from wr_connect(). */
+    s->tls_connected = 0;
+    return 0;
+  }
+#endif /* HTTPS_SUPPORT */
+  testErrorLogDesc ("HTTPS socket connect called, but code does not support" \
+                    " HTTPS sockets");
+  return -1;
 }
 
 
@@ -486,100 +693,27 @@ wr_connect (struct wr_socket *s,
             const struct sockaddr *addr,
             unsigned int length)
 {
-  if (0 != connect (s->fd, addr, (socklen_t) length))
-  {
-    testErrorLogDesc ("connect() failed");
-    return -1;
-  }
-  if (wr_plain == s->t)
-    return 0;
-#ifdef HTTPS_SUPPORT
-  if (wr_tls == s->t)
-  {
-    /* Do not try handshake here as
-     * it require processing on MHD side and
-     * when testing with "external" polling,
-     * test will call MHD processing only
-     * after return from wr_connect(). */
-    s->tls_connected = 0;
-    return 0;
-  }
-#endif /* HTTPS_SUPPORT */
-  testErrorLogDesc ("HTTPS socket connect called, but code does not support" \
-                    " HTTPS sockets");
-  return -1;
-}
-
-
-enum wr_wait_for_type
-{
-  WR_WAIT_FOR_RECV = 0,
-  WR_WAIT_FOR_SEND = 1
-};
-
-static void
-wr_wait_socket_ready_ (struct wr_socket *s,
-                       int timeout_ms,
-                       enum wr_wait_for_type wait_for)
-{
-  fd_set fds;
-  int sel_res;
-  struct timeval tmo;
-
-  if (0 > timeout_ms)
-    return;
-
-#ifndef MHD_WINSOCK_SOCKETS
-  if (FD_SETSIZE <= s->fd)
-    externalErrorExitDesc ("Too large FD value");
-#endif /* ! MHD_WINSOCK_SOCKETS */
-  FD_ZERO (&fds);
-  FD_SET (s->fd, &fds);
-#if ! defined(_WIN32) || defined(__CYGWIN__)
-  tmo.tv_sec = (time_t) (timeout_ms / 1000);
-#else  /* Native W32 */
-  tmo.tv_sec = (long) (timeout_ms / 1000);
-#endif /* Native W32 */
-  tmo.tv_usec = ((long) (timeout_ms % 1000)) * 1000;
-
-  if (WR_WAIT_FOR_RECV == wait_for)
-    sel_res = select (1 + (int) s->fd, &fds, NULL, NULL, &tmo);
-  else
-    sel_res = select (1 + (int) s->fd, NULL, &fds, NULL, &tmo);
-
-  if (1 == sel_res)
-    return;
-
-  if (0 == sel_res)
-    fprintf (stderr, "Timeout");
-  else
-  {
-#ifndef MHD_WINSOCK_SOCKETS
-    fprintf (stderr, "Error %d (%s)", (int) errno, strerror (errno));
-#else /* MHD_WINSOCK_SOCKETS */
-    fprintf (stderr, "Error (WSAGetLastError code: %d)",
-             (int) WSAGetLastError ());
-#endif /* MHD_WINSOCK_SOCKETS */
-  }
-  fprintf (stderr, " waiting for socket to be available for %s.\n",
-           (WR_WAIT_FOR_RECV == wait_for) ? "receiving" : "sending");
-  if (WR_WAIT_FOR_RECV == wait_for)
-    mhdErrorExitDesc ("Client or application failed to receive the data");
-  else
-    mhdErrorExitDesc ("Client or application failed to send the data");
+  return wr_connect_tmo (s, addr, length, test_timeout * 1000);
 }
 
 
 #ifdef HTTPS_SUPPORT
 /* Only to be called from wr_send() and wr_recv() ! */
 static bool
-wr_handshake_ (struct wr_socket *s)
+wr_handshake_tmo_ (struct wr_socket *s,
+                   int timeout_ms)
 {
   int res = gnutls_handshake (s->tls_s);
+
+  while ((GNUTLS_E_AGAIN == res) || (GNUTLS_E_INTERRUPTED  == res))
+  {
+    wr_wait_socket_ready_ (s, timeout_ms,
+                           gnutls_record_get_direction (s->tls_s) ?
+                           WR_WAIT_FOR_SEND : WR_WAIT_FOR_RECV);
+    res = gnutls_handshake (s->tls_s);
+  }
   if (GNUTLS_E_SUCCESS == res)
     s->tls_connected = true;
-  else if (GNUTLS_E_AGAIN == res)
-    MHD_socket_set_error_ (MHD_SCKT_EAGAIN_);
   else
   {
     fprintf (stderr, "The error returned by gnutls_handshake() is "
@@ -595,6 +729,17 @@ wr_handshake_ (struct wr_socket *s)
   return s->tls_connected;
 }
 
+
+#if 0 /* Unused function */
+/* Only to be called from wr_send() and wr_recv() ! */
+static bool
+wr_handshake_ (struct wr_socket *s)
+{
+  return wr_handshake_tmo_ (s, test_timeout * 1000);
+}
+
+
+#endif /* Unused function */
 
 #endif /* HTTPS_SUPPORT */
 
@@ -618,35 +763,44 @@ wr_send_tmo (struct wr_socket *s,
 {
   if (wr_plain == s->t)
   {
+    int err;
+    ssize_t res = MHD_send_ (s->fd, buf, len);
+    if (0 <= res)
+      return res;
+    err = MHD_socket_get_error_ ();
+    if (! MHD_SCKT_ERR_IS_EAGAIN_ (err) && ! MHD_SCKT_ERR_IS_EINTR_ (err))
+      return res;
     wr_wait_socket_ready_ (s, timeout_ms, WR_WAIT_FOR_SEND);
     return MHD_send_ (s->fd, buf, len);
   }
 #ifdef HTTPS_SUPPORT
-  if (wr_tls == s->t)
+  else if (wr_tls == s->t)
   {
     ssize_t ret;
-    if (! s->tls_connected && ! wr_handshake_ (s))
+    if (! s->tls_connected && ! wr_handshake_tmo_ (s, timeout_ms))
       return -1;
 
-    wr_wait_socket_ready_ (s, timeout_ms, WR_WAIT_FOR_SEND);
-    ret = gnutls_record_send (s->tls_s, buf, len);
-    if (ret > 0)
-      return ret;
-    if (GNUTLS_E_AGAIN == ret)
-      MHD_socket_set_error_ (MHD_SCKT_EAGAIN_);
-    else
+    while (1)
     {
-      fprintf (stderr, "The error returned by gnutls_record_send() is "
-               "'%s' ", gnutls_strerror ((int) ret));
-#if GNUTLS_VERSION_NUMBER >= 0x020600
-      fprintf (stderr, "(%s)\n", gnutls_strerror_name ((int) ret));
-#else  /* GNUTLS_VERSION_NUMBER < 0x020600 */
-      fprintf (stderr, "(%d)\n", (int) ret);
-#endif /* GNUTLS_VERSION_NUMBER < 0x020600 */
-      testErrorLogDesc ("gnutls_record_send() failed with hard error");
-      MHD_socket_set_error_ (MHD_SCKT_ECONNABORTED_);   /* hard error */
-      return -1;
+      ret = gnutls_record_send (s->tls_s, buf, len);
+      if (ret >= 0)
+        return ret;
+      if ((GNUTLS_E_AGAIN != ret) && (GNUTLS_E_INTERRUPTED  != ret))
+        break;
+      wr_wait_socket_ready_ (s, timeout_ms,
+                             gnutls_record_get_direction (s->tls_s) ?
+                             WR_WAIT_FOR_SEND : WR_WAIT_FOR_RECV);
     }
+    fprintf (stderr, "The error returned by gnutls_record_send() is "
+             "'%s' ", gnutls_strerror ((int) ret));
+#if GNUTLS_VERSION_NUMBER >= 0x020600
+    fprintf (stderr, "(%s)\n", gnutls_strerror_name ((int) ret));
+#else  /* GNUTLS_VERSION_NUMBER < 0x020600 */
+    fprintf (stderr, "(%d)\n", (int) ret);
+#endif /* GNUTLS_VERSION_NUMBER < 0x020600 */
+    testErrorLogDesc ("gnutls_record_send() failed with hard error");
+    MHD_socket_set_error_ (MHD_SCKT_ECONNABORTED_);   /* hard error */
+    return -1;
   }
 #endif /* HTTPS_SUPPORT */
   testErrorLogDesc ("HTTPS socket send called, but code does not support" \
@@ -692,6 +846,13 @@ wr_recv_tmo (struct wr_socket *s,
 {
   if (wr_plain == s->t)
   {
+    int err;
+    ssize_t res = MHD_recv_ (s->fd, buf, len);
+    if (0 <= res)
+      return res;
+    err = MHD_socket_get_error_ ();
+    if (! MHD_SCKT_ERR_IS_EAGAIN_ (err) && ! MHD_SCKT_ERR_IS_EINTR_ (err))
+      return res;
     wr_wait_socket_ready_ (s, timeout_ms, WR_WAIT_FOR_RECV);
     return MHD_recv_ (s->fd, buf, len);
   }
@@ -699,28 +860,31 @@ wr_recv_tmo (struct wr_socket *s,
   if (wr_tls == s->t)
   {
     ssize_t ret;
-    if (! s->tls_connected && ! wr_handshake_ (s))
+    if (! s->tls_connected && ! wr_handshake_tmo_ (s, timeout_ms))
       return -1;
 
-    wr_wait_socket_ready_ (s, timeout_ms, WR_WAIT_FOR_RECV);
-    ret = gnutls_record_recv (s->tls_s, buf, len);
-    if (ret >= 0)
-      return ret;
-    if (GNUTLS_E_AGAIN == ret)
-      MHD_socket_set_error_ (MHD_SCKT_EAGAIN_);
-    else
+    while (1)
     {
-      fprintf (stderr, "The error returned by gnutls_record_recv() is "
-               "'%s' ", gnutls_strerror ((int) ret));
-#if GNUTLS_VERSION_NUMBER >= 0x020600
-      fprintf (stderr, "(%s)\n", gnutls_strerror_name ((int) ret));
-#else  /* GNUTLS_VERSION_NUMBER < 0x020600 */
-      fprintf (stderr, "(%d)\n", (int) ret);
-#endif /* GNUTLS_VERSION_NUMBER < 0x020600 */
-      testErrorLogDesc ("gnutls_record_recv() failed with hard error");
-      MHD_socket_set_error_ (MHD_SCKT_ECONNABORTED_);   /* hard error */
-      return -1;
+      ret = gnutls_record_recv (s->tls_s, buf, len);
+      if (ret >= 0)
+        return ret;
+      if ((GNUTLS_E_AGAIN != ret) && (GNUTLS_E_INTERRUPTED  != ret))
+        break;
+      wr_wait_socket_ready_ (s, timeout_ms,
+                             gnutls_record_get_direction (s->tls_s) ?
+                             WR_WAIT_FOR_SEND : WR_WAIT_FOR_RECV);
     }
+
+    fprintf (stderr, "The error returned by gnutls_record_recv() is "
+             "'%s' ", gnutls_strerror ((int) ret));
+#if GNUTLS_VERSION_NUMBER >= 0x020600
+    fprintf (stderr, "(%s)\n", gnutls_strerror_name ((int) ret));
+#else  /* GNUTLS_VERSION_NUMBER < 0x020600 */
+    fprintf (stderr, "(%d)\n", (int) ret);
+#endif /* GNUTLS_VERSION_NUMBER < 0x020600 */
+    testErrorLogDesc ("gnutls_record_recv() failed with hard error");
+    MHD_socket_set_error_ (MHD_SCKT_ECONNABORTED_);   /* hard error */
+    return -1;
   }
 #endif /* HTTPS_SUPPORT */
   return -1;
@@ -945,7 +1109,7 @@ send_all (struct wr_socket *sock,
   size_t sent;
   const uint8_t *const buf = (const uint8_t *) data;
 
-  make_blocking (wr_fd (sock));
+  wr_make_nonblocking (sock);
   for (sent = 0; sent < data_size; sent += (size_t) ret)
   {
     ret = wr_send (sock,
@@ -980,7 +1144,7 @@ recv_hdr (struct wr_socket *sock)
   char c;
   ssize_t ret;
 
-  make_blocking (wr_fd (sock));
+  wr_make_nonblocking (sock);
   next = '\r';
   i = 0;
   while (i < 4)
@@ -1032,7 +1196,7 @@ recv_all (struct wr_socket *sock,
   if (NULL == buf)
     externalErrorExitDesc ("malloc() failed");
 
-  make_blocking (wr_fd (sock));
+  wr_make_nonblocking (sock);
   for (rcvd = 0; rcvd < data_size; rcvd += (size_t) ret)
   {
     ret = wr_recv (sock,
@@ -1193,6 +1357,7 @@ upgrade_cb (void *cls,
   (void) extra_in; /* Unused. Silent compiler warning. */
 
   usock = wr_create_from_plain_sckt (sock);
+  wr_make_nonblocking (usock);
   if (0 != extra_in_size)
     mhdErrorExitDesc ("'extra_in_size' is not zero");
   if (0 != pthread_create (&pt,
@@ -1297,20 +1462,20 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
   const union MHD_DaemonInfo *pdinfo;
   bool connection_was_accepted;
   bool connection_has_finished;
-  bool use_epoll = false;
 #ifdef EPOLL_SUPPORT
+  bool use_epoll = false;
   int ep = -1;
 
-  pdinfo = MHD_get_daemeon_info (daemon,
-                                 MHD_DAEMON_INFO_FLAGS);
+  pdinfo = MHD_get_daemon_info (daemon,
+                                MHD_DAEMON_INFO_FLAGS);
   if (NULL == pdinfo)
     mhdErrorExitDesc ("MHD_get_daemon_info() failed");
   else
     use_epoll = (0 != (pdinfo->flags & MHD_USE_EPOLL));
   if (use_epoll)
   {
-    pdinfo = MHD_get_daemeon_info (daemon,
-                                   MHD_DAEMON_INFO_EPOLL_FD);
+    pdinfo = MHD_get_daemon_info (daemon,
+                                  MHD_DAEMON_INFO_EPOLL_FD);
     if (NULL == pdinfo)
       mhdErrorExitDesc ("MHD_get_daemon_info() failed");
     ep = pdinfo->listen_fd;
@@ -1367,7 +1532,7 @@ run_mhd_select_loop (struct MHD_Daemon *daemon)
     {
       if (ep != max_fd)
         mhdErrorExitDesc ("Wrong 'max_fd' value");
-      if (! FD_ISSET (&rs, ep))
+      if (! FD_ISSET (ep, &rs))
         mhdErrorExitDesc ("Epoll FD is NOT set in read fd_set");
     }
 #endif /* EPOLL_SUPPORT */
@@ -1543,6 +1708,7 @@ test_upgrade (unsigned int flags,
     sock = test_tls ? wr_create_tls_sckt () : wr_create_plain_sckt ();
     if (NULL == sock)
       externalErrorExitDesc ("Create socket failed");
+    wr_make_nonblocking (sock);
     sa.sin_family = AF_INET;
     sa.sin_port = htons (dinfo->port);
     sa.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
@@ -1565,6 +1731,8 @@ test_upgrade (unsigned int flags,
     sock =  wr_create_from_plain_sckt (tls_fork_sock);
     if (NULL == sock)
       externalErrorExitDesc ("wr_create_from_plain_sckt() failed");
+
+    wr_make_nonblocking (sock);
 #else  /* !HTTPS_SUPPORT || !HAVE_FORK || !HAVE_WAITPID */
     externalErrorExitDesc ("Unsupported 'use_tls_tool' value");
 #endif /* !HTTPS_SUPPORT || !HAVE_FORK || !HAVE_WAITPID */
