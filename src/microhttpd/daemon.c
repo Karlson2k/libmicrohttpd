@@ -1769,6 +1769,9 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     urh->out_buffer_size = 0;
     urh->mhd.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
   }
+
+  if (! was_closed && urh->was_closed)
+    daemon->data_already_pending = true; /* Force processing again */
 }
 
 
