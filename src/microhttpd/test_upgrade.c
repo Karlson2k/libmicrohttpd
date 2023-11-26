@@ -172,6 +172,8 @@ _testErrorLog_func (const char *errDesc, const char *funcName, int lineNum)
 /* Could be increased to facilitate debugging */
 static int test_timeout = 5;
 
+static bool test_tls;
+
 static int verbose = 0;
 
 static uint16_t global_port;
@@ -377,6 +379,8 @@ struct wr_socket
   } t;
 
   bool is_nonblocking;
+
+  bool eof_recieved;
 #ifdef HTTPS_SUPPORT
   /**
    * TLS credentials
@@ -439,6 +443,7 @@ wr_create_plain_sckt (void)
     return NULL;
   }
   s->t = wr_plain;
+  s->eof_recieved = false;
   s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
   s->is_nonblocking = false;
   if (MHD_INVALID_SOCKET != s->fd)
@@ -467,6 +472,7 @@ wr_create_tls_sckt (void)
     return NULL;
   }
   s->t = wr_tls;
+  s->eof_recieved = false;
   s->tls_connected = 0;
   s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
   s->is_nonblocking = false;
@@ -532,11 +538,25 @@ wr_create_from_plain_sckt (MHD_socket plain_sk)
     return NULL;
   }
   s->t = wr_plain;
+  s->eof_recieved = false;
   s->fd = plain_sk;
   s->is_nonblocking = false; /* The actual mode is unknown */
   wr_make_nonblocking (s);   /* Force set mode to have correct status */
   make_nodelay (s->fd);
   return s;
+}
+
+
+/**
+ * Check whether shutdown of connection was received from remote
+ * @param s socket to check
+ * @return zero if shutdown signal has not been received,
+ *         1 if shutdown signal was already received
+ */
+static int
+wr_is_eof_received (struct wr_socket *s)
+{
+  return s->eof_recieved ? 1 : 0;
 }
 
 
@@ -575,10 +595,13 @@ wr_wait_socket_ready_noabort_ (struct wr_socket *s,
   else
     tmo_ptr = NULL; /* No timeout */
 
-  if (WR_WAIT_FOR_RECV == wait_for)
-    sel_res = select (1 + (int) s->fd, &fds, NULL, NULL, tmo_ptr);
-  else
-    sel_res = select (1 + (int) s->fd, NULL, &fds, NULL, tmo_ptr);
+  do
+  {
+    if (WR_WAIT_FOR_RECV == wait_for)
+      sel_res = select (1 + (int) s->fd, &fds, NULL, NULL, tmo_ptr);
+    else
+      sel_res = select (1 + (int) s->fd, NULL, &fds, NULL, tmo_ptr);
+  } while (0 > sel_res && MHD_SCKT_ERR_IS_EINTR_ (MHD_socket_get_error_ ()));
 
   if (1 == sel_res)
     return true;
@@ -763,15 +786,19 @@ wr_send_tmo (struct wr_socket *s,
 {
   if (wr_plain == s->t)
   {
-    int err;
-    ssize_t res = MHD_send_ (s->fd, buf, len);
-    if (0 <= res)
-      return res;
-    err = MHD_socket_get_error_ ();
-    if (! MHD_SCKT_ERR_IS_EAGAIN_ (err) && ! MHD_SCKT_ERR_IS_EINTR_ (err))
-      return res;
-    wr_wait_socket_ready_ (s, timeout_ms, WR_WAIT_FOR_SEND);
-    return MHD_send_ (s->fd, buf, len);
+    ssize_t res;
+    while (! 0)
+    {
+      int err;
+      res = MHD_send_ (s->fd, buf, len);
+      if (0 <= res)
+        break; /* Success */
+      err = MHD_socket_get_error_ ();
+      if (! MHD_SCKT_ERR_IS_EAGAIN_ (err) && ! MHD_SCKT_ERR_IS_EINTR_ (err))
+        break; /* Failure */
+      wr_wait_socket_ready_ (s, timeout_ms, WR_WAIT_FOR_SEND);
+    }
+    return res;
   }
 #ifdef HTTPS_SUPPORT
   else if (wr_tls == s->t)
@@ -846,15 +873,21 @@ wr_recv_tmo (struct wr_socket *s,
 {
   if (wr_plain == s->t)
   {
-    int err;
-    ssize_t res = MHD_recv_ (s->fd, buf, len);
-    if (0 <= res)
-      return res;
-    err = MHD_socket_get_error_ ();
-    if (! MHD_SCKT_ERR_IS_EAGAIN_ (err) && ! MHD_SCKT_ERR_IS_EINTR_ (err))
-      return res;
-    wr_wait_socket_ready_ (s, timeout_ms, WR_WAIT_FOR_RECV);
-    return MHD_recv_ (s->fd, buf, len);
+    ssize_t res;
+    while (! 0)
+    {
+      int err;
+      res = MHD_recv_ (s->fd, buf, len);
+      if (0 == res)
+        s->eof_recieved = true;
+      if (0 <= res)
+        break; /* Success */
+      err = MHD_socket_get_error_ ();
+      if (! MHD_SCKT_ERR_IS_EAGAIN_ (err) && ! MHD_SCKT_ERR_IS_EINTR_ (err))
+        break; /* Failure */
+      wr_wait_socket_ready_ (s, timeout_ms, WR_WAIT_FOR_RECV);
+    }
+    return res;
   }
 #ifdef HTTPS_SUPPORT
   if (wr_tls == s->t)
@@ -866,6 +899,8 @@ wr_recv_tmo (struct wr_socket *s,
     while (1)
     {
       ret = gnutls_record_recv (s->tls_s, buf, len);
+      if (0 == ret)
+        s->eof_recieved = true;
       if (ret >= 0)
         return ret;
       if ((GNUTLS_E_AGAIN != ret) && (GNUTLS_E_INTERRUPTED  != ret))
@@ -906,6 +941,90 @@ wr_recv (struct wr_socket *s,
          size_t len)
 {
   return wr_recv_tmo (s, buf, len, test_timeout * 1000);
+}
+
+
+/**
+ * Shutdown send/write on the socket.
+ * @param s the socket to shutdown
+ * @param how the type of shutdown: SHUT_WR or SHUT_RDWR
+ * @param timeout_ms the maximum wait time in milliseconds to receive the data,
+ *                   no limit if negative value is used
+ * @return zero on succeed, -1 otherwise
+ */
+static int
+wr_shutdown_tmo (struct wr_socket *s, int how, int timeout_ms)
+{
+  switch (how)
+  {
+  case SHUT_WR: /* Valid value */
+    break;
+  case SHUT_RDWR: /* Valid value */
+    break;
+  case SHUT_RD:
+    externalErrorExitDesc ("Unsupported 'how' value");
+    break;
+  default:
+    externalErrorExitDesc ("Invalid 'how' value");
+    break;
+  }
+  if (wr_plain == s->t)
+  {
+    (void) timeout_ms; /* Unused parameter for plain sockets */
+    return shutdown (s->fd, how);
+  }
+#ifdef HTTPS_SUPPORT
+  if (wr_tls == s->t)
+  {
+    ssize_t ret;
+    if (! s->tls_connected && ! wr_handshake_tmo_ (s, timeout_ms))
+      return -1;
+
+    while (1)
+    {
+      ret =
+        gnutls_bye  (s->tls_s,
+                     (SHUT_WR == how) ?  GNUTLS_SHUT_WR :  GNUTLS_SHUT_RDWR);
+      if (GNUTLS_E_SUCCESS == ret)
+      {
+#if 0 /* Disabled to test pure behaviour */
+        if (SHUT_RDWR == how)
+          (void) shutdown (s->fd, how); /* Also shutdown the underlying transport layer */
+#endif
+        return 0;
+      }
+      if ((GNUTLS_E_AGAIN != ret) && (GNUTLS_E_INTERRUPTED  != ret))
+        break;
+      wr_wait_socket_ready_ (s, timeout_ms,
+                             gnutls_record_get_direction (s->tls_s) ?
+                             WR_WAIT_FOR_SEND : WR_WAIT_FOR_RECV);
+    }
+
+    fprintf (stderr, "The error returned by gnutls_bye() is "
+             "'%s' ", gnutls_strerror ((int) ret));
+#if GNUTLS_VERSION_NUMBER >= 0x020600
+    fprintf (stderr, "(%s)\n", gnutls_strerror_name ((int) ret));
+#else  /* GNUTLS_VERSION_NUMBER < 0x020600 */
+    fprintf (stderr, "(%d)\n", (int) ret);
+#endif /* GNUTLS_VERSION_NUMBER < 0x020600 */
+    testErrorLogDesc ("gnutls_bye() failed with hard error");
+    MHD_socket_set_error_ (MHD_SCKT_ECONNABORTED_);   /* hard error */
+    return -1;
+  }
+#endif /* HTTPS_SUPPORT */
+  return -1;
+}
+
+
+/**
+ * Shutdown the socket.
+ * @param s the socket to shutdown
+ * @return zero on succeed, -1 otherwise
+ */
+static int
+wr_shutdown (struct wr_socket *s, int how)
+{
+  return wr_shutdown_tmo (s, how, test_timeout * 1000);
 }
 
 
@@ -1247,6 +1366,74 @@ recv_all (struct wr_socket *sock,
 
 
 /**
+ * Shutdown write of the connection to signal end of transmission
+ * for the remote side
+ * @param sock the socket to shutdown
+ */
+static void
+send_eof (struct wr_socket *sock)
+{
+  if (0 != wr_shutdown (sock, wr_is_eof_received (sock) ? SHUT_RDWR : SHUT_WR))
+    externalErrorExitDesc ("Failed to shutdown connection");
+}
+
+
+/**
+ * Receive end of the transmission indication from the remote side
+ * @param sock the socket to use
+ */
+static void
+receive_eof (struct wr_socket *sock)
+{
+  uint8_t buf[127];
+  ssize_t ret;
+  size_t rcvd;
+  bool got_eof = false;
+
+  wr_make_nonblocking (sock);
+  for (rcvd = 0; rcvd < sizeof(buf); rcvd += (size_t) ret)
+  {
+    ret = wr_recv (sock,
+                   buf + rcvd,
+                   sizeof(buf) - rcvd);
+    if (0 > ret)
+    {
+      if (MHD_SCKT_ERR_IS_EAGAIN_ (MHD_socket_get_error_ ()) ||
+          MHD_SCKT_ERR_IS_EINTR_ (MHD_socket_get_error_ ()))
+      {
+        ret = 0;
+        continue;
+      }
+      externalErrorExitDesc ("recv() failed");
+    }
+    else if (0 == ret)
+    {
+      got_eof = true;
+      break;
+    }
+  }
+  if (got_eof && (0 == rcvd))
+    return; /* Success */
+
+  if (0 != rcvd)
+  {
+    if (sizeof(buf) == rcvd)
+    {
+      fprintf (stderr, "Received at least %lu extra bytes while "
+               "end-of-file is expected.\n", (unsigned long) sizeof(buf));
+      mhdErrorExit ();
+    }
+    fprintf (stderr, "Received at %lu extra bytes and then %s"
+             "end-of-file marker.\n", (unsigned long) rcvd,
+             got_eof ? "" : "NO ");
+    mhdErrorExit ();
+  }
+  if (! got_eof)
+    mhdErrorExitDesc ("Failed to receive end-of-file marker.");
+}
+
+
+/**
  * Main function for the thread that runs the interaction with
  * the upgraded socket.
  *
@@ -1263,6 +1450,11 @@ run_usock (void *cls)
                   "World");
   send_all_stext (usock,
                   "Finished");
+  if (! test_tls)
+  {
+    send_eof (usock);
+    receive_eof (usock);
+  }
   MHD_upgrade_action (urh,
                       MHD_UPGRADE_ACTION_CLOSE);
   free (usock);
@@ -1292,6 +1484,11 @@ run_usock_client (void *cls)
                   "World");
   recv_all_stext (sock,
                   "Finished");
+  if (! test_tls)
+  {
+    receive_eof (sock);
+    send_eof (sock);
+  }
   wr_close (sock);
   client_done = true;
   return NULL;
@@ -1633,8 +1830,6 @@ run_mhd_loop (struct MHD_Daemon *daemon,
     externalErrorExitDesc ("Wrong 'flags' value");
 }
 
-
-static bool test_tls;
 
 /**
  * Test upgrading a connection.
