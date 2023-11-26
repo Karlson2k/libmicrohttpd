@@ -1656,8 +1656,6 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
         memmove (urh->out_buffer,
                  &urh->out_buffer[res],
                  next_out_buffer_used);
-        if (data_size > (size_t) res)
-          urh->app.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
       }
       urh->out_buffer_used = next_out_buffer_used;
     }
