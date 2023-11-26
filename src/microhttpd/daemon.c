@@ -1461,6 +1461,9 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
   mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
                MHD_thread_handle_ID_is_current_thread_ (connection->tid) );
 #endif /* MHD_USE_THREADS */
+
+  mhd_assert (0 != (daemon->options & MHD_USE_TLS));
+
   if (daemon->shutdown)
   {
     /* Daemon shutting down, application will not receive any more data. */
@@ -1485,18 +1488,11 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       MHD_DLOG (daemon,
                 _ ("Failed to forward to application %" PRIu64 \
                    " bytes of data received from remote side: " \
-                   "application shut down socket.\n"),
+                   "application closed data forwarding.\n"),
                 (uint64_t) urh->in_buffer_used);
 #endif
 
     }
-    /* If application signaled MHD about socket closure then
-     * check for any pending data even if socket is not marked
-     * as 'ready' (signal may arrive after poll()/select()).
-     * Socketpair for forwarding is always in non-blocking mode
-     * so no risk that recv() will block the thread. */
-    if (0 != urh->out_buffer_size)
-      urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
     /* Discard any data received form remote. */
     urh->in_buffer_used = 0;
     /* Do not try to push data to application. */
@@ -1514,17 +1510,14 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
    * last part of incoming data may be lost.  If disconnect or error was
    * detected - try to read from socket to dry data possibly pending is system
    * buffers. */
-  if (0 != (MHD_EPOLL_STATE_ERROR & urh->app.celi))
-    urh->app.celi |= MHD_EPOLL_STATE_READ_READY;
-  if (0 != (MHD_EPOLL_STATE_ERROR & urh->mhd.celi))
-    urh->mhd.celi |= MHD_EPOLL_STATE_READ_READY;
 
   /*
    * handle reading from remote TLS client
    */
-  if ( ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) ||
-         (connection->tls_read_ready) ) &&
-       (urh->in_buffer_used < urh->in_buffer_size) )
+  if (((0 != ((MHD_EPOLL_STATE_ERROR | MHD_EPOLL_STATE_READ_READY)
+              & urh->app.celi)) ||
+       (connection->tls_read_ready)) &&
+      (urh->in_buffer_used < urh->in_buffer_size))
   {
     ssize_t res;
     size_t buf_size;
@@ -1539,13 +1532,16 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
                               buf_size);
     if (0 >= res)
     {
+      connection->tls_read_ready = false;
       if (GNUTLS_E_INTERRUPTED != res)
       {
         urh->app.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
-        if (GNUTLS_E_AGAIN != res)
+        if ((GNUTLS_E_AGAIN != res) ||
+            (0 != (MHD_EPOLL_STATE_ERROR & urh->app.celi)))
         {
-          /* Unrecoverable error on socket was detected or
-           * socket was disconnected/shut down. */
+          /* TLS unrecoverable error has been detected,
+             socket error was detected and all data has been read,
+             or socket was disconnected/shut down. */
           /* Stop trying to read from this TLS socket. */
           urh->in_buffer_size = 0;
         }
@@ -1557,21 +1553,20 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       connection->tls_read_ready =
         (0 < gnutls_record_check_pending (connection->tls_session));
     }
-    if (MHD_EPOLL_STATE_ERROR ==
-        ((MHD_EPOLL_STATE_ERROR | MHD_EPOLL_STATE_READ_READY) & urh->app.celi))
-    {
-      /* Unrecoverable error on socket was detected and all
-       * pending data was read from system buffers. */
-      /* Stop trying to read from this TLS socket. */
-      urh->in_buffer_size = 0;
-    }
   }
 
   /*
    * handle reading from application
    */
-  if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) &&
-       (urh->out_buffer_used < urh->out_buffer_size) )
+  /* If application signalled MHD about socket closure then
+   * check for any pending data even if socket is not marked
+   * as 'ready' (signal may arrive after poll()/select()).
+   * Socketpair for forwarding is always in non-blocking mode
+   * so no risk that recv() will block the thread. */
+  if (((0 != ((MHD_EPOLL_STATE_ERROR | MHD_EPOLL_STATE_READ_READY)
+              & urh->mhd.celi))
+       || was_closed) /* Force last reading from app if app has closed the connection */
+      && (urh->out_buffer_used < urh->out_buffer_size))
   {
     ssize_t res;
     size_t buf_size;
@@ -1597,7 +1592,8 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
             (! MHD_SCKT_ERR_IS_EAGAIN_ (err)))
         {
           /* Socket disconnect/shutdown was detected;
-           * Application signaled about closure of 'upgraded' socket;
+           * Application signalled about closure of 'upgraded' socket and
+           * all data has been read from application;
            * or persistent / unrecoverable error. */
           /* Do not try to pull more data from application. */
           urh->out_buffer_size = 0;
@@ -1609,15 +1605,6 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
       urh->out_buffer_used += (size_t) res;
       if (buf_size > (size_t) res)
         urh->mhd.celi &= ~((enum MHD_EpollState) MHD_EPOLL_STATE_READ_READY);
-    }
-    if ( (0 == (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) &&
-         ( (0 != (MHD_EPOLL_STATE_ERROR & urh->mhd.celi)) ||
-           (was_closed) ) )
-    {
-      /* Unrecoverable error on socket was detected and all
-       * pending data was read from system buffers. */
-      /* Do not try to pull more data from application. */
-      urh->out_buffer_size = 0;
     }
   }
 
