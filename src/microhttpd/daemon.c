@@ -5334,11 +5334,14 @@ is_urh_ready (struct MHD_UpgradeResponseHandle *const urh)
     return false;
   if (connection->daemon->shutdown)
     return true;
-  if ( ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->app.celi)) ||
+  if ( ( (0 != ((MHD_EPOLL_STATE_READ_READY | MHD_EPOLL_STATE_ERROR)
+                & urh->app.celi)) ||
          (connection->tls_read_ready) ) &&
        (urh->in_buffer_used < urh->in_buffer_size) )
     return true;
-  if ( (0 != (MHD_EPOLL_STATE_READ_READY & urh->mhd.celi)) &&
+  if ( ( (0 != ((MHD_EPOLL_STATE_READ_READY | MHD_EPOLL_STATE_ERROR)
+                & urh->mhd.celi)) ||
+         urh->was_closed) &&
        (urh->out_buffer_used < urh->out_buffer_size) )
     return true;
   if ( (0 != (MHD_EPOLL_STATE_WRITE_READY & urh->app.celi)) &&
