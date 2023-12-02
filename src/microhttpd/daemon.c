@@ -1526,7 +1526,6 @@ process_urh (struct MHD_UpgradeResponseHandle *urh)
     if (buf_size > SSIZE_MAX)
       buf_size = SSIZE_MAX;
 
-    connection->tls_read_ready = false;
     res = gnutls_record_recv (connection->tls_session,
                               &urh->in_buffer[urh->in_buffer_used],
                               buf_size);
