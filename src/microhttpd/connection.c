@@ -3670,7 +3670,9 @@ check_and_grow_read_buffer_space (struct MHD_Connection *c)
     case MHD_CONNECTION_FOOTERS_SENDING:
     case MHD_CONNECTION_FULL_REPLY_SENT:
     case MHD_CONNECTION_CLOSED:
+#ifdef UPGRADE_SUPPORT
     case MHD_CONNECTION_UPGRADE:
+#endif
     default:
       stage = MHD_PROC_RECV_BODY_NORMAL;
       mhd_assert (0);
