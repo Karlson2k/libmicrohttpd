@@ -2399,6 +2399,11 @@ struct MHD_Daemon
   const char *digest_auth_random;
 
   /**
+   * Size of @a digest_auth_random.
+   */
+  size_t digest_auth_rand_size;
+
+  /**
    * The malloc'ed copy of the @a digest_auth_random.
    */
   void *digest_auth_random_copy;
@@ -2414,11 +2419,6 @@ struct MHD_Daemon
    */
   MHD_mutex_ nnc_lock;
 #endif
-
-  /**
-   * Size of `digest_auth_random.
-   */
-  size_t digest_auth_rand_size;
 
   /**
    * Size of the nonce-nc array.
