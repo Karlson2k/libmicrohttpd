@@ -5488,7 +5488,7 @@ enum MHD_DigestAuthResult
    * The interpretation of this code could be different. For example, if
    * #MHD_DAUTH_BIND_NONCE_URI is set and client just used the same 'nonce' for
    * another URI, the code could be handled as #MHD_DAUTH_NONCE_STALE as
-   * it is allowed to re-use nonces for other URIs in the same "protection
+   * RFCs allow nonces re-using for other URIs in the same "protection
    * space". However, if only #MHD_DAUTH_BIND_NONCE_CLIENT_IP bit is set and
    * it is know that clients have fixed IP addresses, this return code could
    * be handled like #MHD_DAUTH_NONCE_WRONG.
