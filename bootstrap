@@ -32,18 +32,24 @@ if have_command uncrustify; then
     if test -f uncrustify.cfg; then
       echo "Uncrustify configuration already exists, skipping installation from the upstream file."
     else
-      echo "Installing configuration"
-      ln -s contrib/uncrustify.cfg uncrustify.cfg
+      echo "Installing libmicrohttpd uncrustify configuration"
+      ln -s contrib/uncrustify.cfg uncrustify.cfg || \
+        cp contrib/uncrustify.cfg uncrustify.cfg || \
+        echo "Failed to install uncrustify configuration file" 1>&2
     fi
-    if test -d '.git'; then
-      if test -f .git/hooks/pre-commit; then
-        echo "Pre-commit git hook already exists, skipping installation from the upstream file."
+    if test -f uncrustify.cfg; then
+      if test -d '.git'; then
+        if test -f .git/hooks/pre-commit; then
+          echo "Pre-commit git hook already exists, skipping installation from the upstream file."
+        else
+          echo "Installing uncrustify pre-commit git hook"
+          ln -s ../../contrib/uncrustify_precommit .git/hooks/pre-commit || \
+            cp ../../contrib/uncrustify_precommit .git/hooks/pre-commit || \
+            echo "Failed to install pre-commit git hook" 1>&2
+        fi
       else
-        echo "Installing uncrustify pre-commit git hook"
-        ln -s ../../contrib/uncrustify_precommit .git/hooks/pre-commit
+        echo "No '.git' directory found, skipping installation of pre-commit git hook."
       fi
-    else
-      echo "No '.git' directory found, skipping installation of pre-commit git hook."
     fi
 else
     echo "Uncrustify not detected, hook not installed. Please install uncrustify if you plan on doing development."
