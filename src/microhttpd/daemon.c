@@ -6993,6 +6993,26 @@ parse_options_va (struct MHD_Daemon *daemon,
       if (0 != (daemon->dauth_bind_type & MHD_DAUTH_BIND_NONCE_URI_PARAMS))
         daemon->dauth_bind_type |= MHD_DAUTH_BIND_NONCE_URI;
       break;
+    case MHD_OPTION_DIGEST_AUTH_DEFAULT_NONCE_TIMEOUT:
+      if (1)
+      {
+        unsigned int val;
+        val = va_arg (ap,
+                      unsigned int);
+        if (0 != val)
+          daemon->dauth_def_nonce_timeout = val;
+      }
+      break;
+    case MHD_OPTION_DIGEST_AUTH_DEFAULT_MAX_NC:
+      if (1)
+      {
+        uint32_t val;
+        val = va_arg (ap,
+                      uint32_t);
+        if (0 != val)
+          daemon->dauth_def_max_nc = val;
+      }
+      break;
 #endif
     case MHD_OPTION_LISTEN_SOCKET:
       params->listen_fd = va_arg (ap,
@@ -7105,6 +7125,7 @@ parse_options_va (struct MHD_Daemon *daemon,
         case MHD_OPTION_LISTEN_BACKLOG_SIZE:
         case MHD_OPTION_SERVER_INSANITY:
         case MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE:
+        case MHD_OPTION_DIGEST_AUTH_DEFAULT_NONCE_TIMEOUT:
           if (MHD_NO == parse_options (daemon,
                                        params,
                                        opt,
@@ -7142,6 +7163,15 @@ parse_options_va (struct MHD_Daemon *daemon,
                                        params,
                                        opt,
                                        (int) oa[i].value,
+                                       MHD_OPTION_END))
+            return MHD_NO;
+          break;
+        /* all options taking 'uint32_t' */
+        case MHD_OPTION_DIGEST_AUTH_DEFAULT_MAX_NC:
+          if (MHD_NO == parse_options (daemon,
+                                       params,
+                                       opt,
+                                       (uint32_t) oa[i].value,
                                        MHD_OPTION_END))
             return MHD_NO;
           break;

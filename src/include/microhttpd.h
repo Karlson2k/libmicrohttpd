@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097708
+#define MHD_VERSION 0x00097709
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -2172,6 +2172,24 @@ enum MHD_OPTION
    * @note Available since #MHD_VERSION 0x00097706
    */
   MHD_OPTION_SOCK_ADDR_LEN = 40
+  ,
+  /**
+   * Default nonce timeout value used for Digest Auth.
+   * This option should be followed by an 'unsigned int' argument.
+   * Silently ignored if followed by zero value.
+   * @see #MHD_digest_auth_check3(), MHD_digest_auth_check_digest3()
+   * @note Available since #MHD_VERSION 0x00097709
+   */
+  MHD_OPTION_DIGEST_AUTH_DEFAULT_NONCE_TIMEOUT = 41
+  ,
+  /**
+   * Default maximum nc (nonce count) value used for Digest Auth.
+   * This option should be followed by an 'uint32_t' argument.
+   * Silently ignored if followed by zero value.
+   * @see #MHD_digest_auth_check3(), MHD_digest_auth_check_digest3()
+   * @note Available since #MHD_VERSION 0x00097709
+   */
+  MHD_OPTION_DIGEST_AUTH_DEFAULT_MAX_NC = 42
 
 } _MHD_FIXED_ENUM;
 
