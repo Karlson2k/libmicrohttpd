@@ -12,7 +12,7 @@ if test X"`dirname / 2>/dev/null`" = X"/"; then
   bs_scrdir=`dirname $0`
 else
   case $0 in
-    */*) bs_scrdir=`echo $0 | ${SED-sed} -n -e 's|/.*$||p'` ;;
+    */*) bs_scrdir=`echo $0 | ${SED-sed} -n -e 's|/[^/]*$||p'` ;;
     *) bs_scrdir='.' ;;
   esac
 fi
