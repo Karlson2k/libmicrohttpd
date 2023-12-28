@@ -7778,6 +7778,8 @@ MHD_start_daemon_va (unsigned int flags,
   daemon->digest_auth_rand_size = 0;
   daemon->digest_auth_random = NULL;
   daemon->nonce_nc_size = 4; /* tiny */
+  daemon->dauth_def_nonce_timeout = 90;
+  daemon->dauth_def_max_nc = 1000;
 #endif
 #ifdef HTTPS_SUPPORT
   if (0 != (*pflags & MHD_USE_TLS))

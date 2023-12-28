@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097707
+#define MHD_VERSION 0x00097708
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -5524,17 +5524,18 @@ enum MHD_DigestAuthResult
  *                 even if userhash is used by the client
  * @param password the password matching the @a username (and the @a realm)
  * @param nonce_timeout the period of seconds since nonce generation, when
- *                      the nonce is recognised as valid and not stale.
+ *                      the nonce is recognised as valid and not stale;
+ *                      if zero is specified then daemon default value is used.
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
- *               zero for no limit
+ *               if zero is specified then daemon default value is used.
  * @param mqop the QOP to use
  * @param malgo3 digest algorithms allowed to use, fail if algorithm used
  *               by the client is not allowed by this parameter
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097701
+ * @note Available since #MHD_VERSION 0x00097708
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
@@ -5614,11 +5615,12 @@ MHD_digest_auth_calc_userdigest (enum MHD_DigestAuthAlgo3 algo3,
  *                        #MHD_SHA256_DIGEST_SIZE, #MHD_SHA512_256_DIGEST_SIZE,
  *                        #MHD_digest_get_hash_size())
  * @param nonce_timeout the period of seconds since nonce generation, when
- *                      the nonce is recognised as valid and not stale.
+ *                      the nonce is recognised as valid and not stale;
+ *                      if zero is specified then daemon default value is used.
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
- *               zero for no limit
+ *               if zero is specified then daemon default value is used.
  * @param mqop the QOP to use
  * @param malgo3 digest algorithms allowed to use, fail if algorithm used
  *               by the client is not allowed by this parameter;

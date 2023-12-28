@@ -2429,6 +2429,16 @@ struct MHD_Daemon
    * Nonce bind type.
    */
   unsigned int dauth_bind_type;
+
+  /**
+   * Default nonce validity length.
+   */
+  unsigned int dauth_def_nonce_timeout;
+
+  /**
+   * Default maximum nc (nonce count) value.
+   */
+  uint32_t dauth_def_max_nc;
 #endif
 
 #ifdef TCP_FASTOPEN

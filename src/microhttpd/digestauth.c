@@ -2515,11 +2515,12 @@ is_param_equal_caseless (const struct MHD_RqDAuthParam *param,
  *                   "username:realm:password",
  *                   must be NULL if @a password is not NULL
  * @param nonce_timeout the period of seconds since nonce generation, when
- *                      the nonce is recognised as valid and not stale.
+ *                      the nonce is recognised as valid and not stale;
+ *                      unlike #digest_auth_check_all() zero is used literally
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
- *               zero for no limit
+ *               unlike #digest_auth_check_all() zero is treated as "no limit"
  * @param mqop the QOP to use
  * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
  *               by the client is not allowed by this parameter
@@ -3063,11 +3064,12 @@ digest_auth_check_all_inner (struct MHD_Connection *connection,
  *                   "username:realm:password",
  *                   must be NULL if @a password is not NULL
  * @param nonce_timeout the period of seconds since nonce generation, when
- *                      the nonce is recognised as valid and not stale.
+ *                      the nonce is recognised as valid and not stale;
+ *                      if set to zero then daemon's default value is used
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
- *               zero for no limit
+ *               if set to zero then daemon's default value is used
  * @param mqop the QOP to use
  * @param malgo3 digest algorithms allowed to use, fail if algorithm specified
  *               by the client is not allowed by this parameter
@@ -3092,6 +3094,10 @@ digest_auth_check_all (struct MHD_Connection *connection,
 
   buf = NULL;
   digest_setup_zero (&da);
+  if (0 == nonce_timeout)
+    nonce_timeout = connection->daemon->dauth_def_nonce_timeout;
+  if (0 == max_nc)
+    max_nc = connection->daemon->dauth_def_max_nc;
   res = digest_auth_check_all_inner (connection, realm, username, password,
                                      userdigest,
                                      nonce_timeout,
@@ -3156,17 +3162,18 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  *                 even if userhash is used by the client
  * @param password the password matching the @a username (and the @a realm)
  * @param nonce_timeout the period of seconds since nonce generation, when
- *                      the nonce is recognised as valid and not stale.
+ *                      the nonce is recognised as valid and not stale;
+ *                      if zero is specified then daemon default value is used.
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
- *               zero for no limit
+ *               if zero is specified then daemon default value is used.
  * @param mqop the QOP to use
  * @param malgo3 digest algorithms allowed to use, fail if algorithm used
  *               by the client is not allowed by this parameter
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
- * @note Available since #MHD_VERSION 0x00097701
+ * @note Available since #MHD_VERSION 0x00097708
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
@@ -3217,11 +3224,12 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  *                        #MHD_SHA256_DIGEST_SIZE, #MHD_SHA512_256_DIGEST_SIZE,
  *                        #MHD_digest_get_hash_size())
  * @param nonce_timeout the period of seconds since nonce generation, when
- *                      the nonce is recognised as valid and not stale.
+ *                      the nonce is recognised as valid and not stale;
+ *                      if zero is specified then daemon default value is used.
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
- *               zero for no limit
+ *               if zero is specified then daemon default value is used.
  * @param mqop the QOP to use
  * @param malgo3 digest algorithms allowed to use, fail if algorithm used
  *               by the client is not allowed by this parameter;
@@ -3231,7 +3239,7 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
  * @sa #MHD_digest_auth_calc_userdigest()
- * @note Available since #MHD_VERSION 0x00097701
+ * @note Available since #MHD_VERSION 0x00097708
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_DigestAuthResult
