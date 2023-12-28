@@ -55,26 +55,11 @@ else
     echo "Uncrustify not detected, hook not installed. Please install uncrustify if you plan on doing development."
 fi
 
-if have_command libtool || have_command libtoolize || have_command glibtoolize || have_command slibtool; then
-    echo "Running autotools..."
-    have_command libtoolize && \
-      aclocal -I m4 --install && \
-      libtoolize -c -i -v && \
-      autoconf && \
-      autoheader && \
-      automake -a -c --gnu
-    if test $? -ne 0 || ! test -x configure || ! test -f Makefile.in ; then
-        echo "Trying with autoreconf..."
-        if ! autoreconf -i ${1+"$@"} ; then
-            echo "Failed to autoreconf, retrying with force install..."
-            if ! autoreconf -i -f ${1+"$@"} ; then
-                echo "*** Failed to create 'configure' and other autotools generated files. ***" >&2
-                exit 1
-            fi
-        fi
-    fi
-    echo "The ${bs_scrdir-.}/configure is ready to run."
-else
-    echo "*** No libtoolize or libtool found, please install it ***" >&2;
-    exit 1
-fi
+aclocal -I m4 --install && \
+  libtoolize -c -i -v && \
+  autoconf && \
+  autoheader && \
+  automake -a -c --gnu || \
+  echo "Trying with autoreconf..." &&
+  autoreconf -vi ${1+"$@"} || \
+  echo "*** Failed to build autoconf output files ***" >&2
