@@ -225,6 +225,7 @@ testDigestAuth (void)
                         port, NULL, NULL, &ahc_echo, NULL,
                         MHD_OPTION_DIGEST_AUTH_RANDOM, sizeof (rnd), rnd,
                         MHD_OPTION_NONCE_NC_SIZE, 300,
+                        MHD_OPTION_DIGEST_AUTH_DEFAULT_MAX_NC, (uint32_t) 999,
                         MHD_OPTION_END);
   if (d == NULL)
     return 1;

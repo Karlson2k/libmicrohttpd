@@ -591,6 +591,7 @@ testDigestAuth (void)
                         MHD_OPTION_NONCE_NC_SIZE, 300,
                         MHD_OPTION_THREAD_POOL_SIZE,
                         (unsigned int) (sizeof(workers) / sizeof(workers[0])),
+                        MHD_OPTION_DIGEST_AUTH_DEFAULT_MAX_NC, (uint32_t) 999,
                         MHD_OPTION_END);
   if (d == NULL)
     return 1;
