@@ -4034,6 +4034,104 @@ AS_IF([[test "x$enable_dauth" != "xno"]],
 AM_CONDITIONAL([ENABLE_DAUTH], [test "x$enable_dauth" != "xno"])
 AC_MSG_RESULT([[$enable_dauth]])
 
+AS_VAR_IF([enable_dauth], ["yes"],
+  [
+    AC_MSG_CHECKING([[for Digest Authentication default nonce timeout value]])
+    AC_ARG_ENABLE([dauth-def-timeout],
+      [AS_HELP_STRING([--enable-dauth-def-timeout=NNN],
+                      [set default Digest Auth nonce validity time to NNN seconds])],
+      [enable_dauth_def_timeout="${enableval}"],
+      [enable_dauth_def_timeout=""]
+    )
+    AS_VAR_IF([enable_dauth_def_timeout], ["no"],
+      [
+        AC_MSG_WARN([Default Diget Auth nonce validity time cannot be disabled, --disable-dauth-def-timeout parameter is ignored])
+        enable_dauth_def_timeout=""
+      ]
+    )
+    AS_IF([test -z "${enable_dauth_def_timeout}"],
+      [
+        enable_dauth_def_timeout="90"
+        enable_dauth_def_timeout_MSG="${enable_dauth_def_timeout} seconds (default)"
+      ],
+      [
+        AS_IF([[test "x${enable_dauth_def_timeout}" = "x`echo ${enable_dauth_def_timeout}|${SED-sed} 's/[^0-9]//g'`" && \
+                test "${enable_dauth_def_timeout}" -ge "0" 2>/dev/null ]],[:],
+          [AC_MSG_ERROR([Invalid parameter --enable-dauth-def-timeout=${enable_dauth_def_timeout}. Timeout value must be a positive integer.])
+          ]
+        )
+        AC_COMPILE_IFELSE(
+          [
+            AC_LANG_PROGRAM([],
+              [[
+  static int arr[((int) 2) - 4 * (int)(${enable_dauth_def_timeout} != ((unsigned int)${enable_dauth_def_timeout}))];
+  (void) arr;
+              ]]
+            )
+          ],
+          [],
+          [AC_MSG_ERROR([The value specified by --enable-dauth-def-timeout=${enable_dauth_def_timeout} is too large.])]
+        )
+        enable_dauth_def_timeout_MSG="${enable_dauth_def_timeout} seconds (set by parameter)"
+      ]
+    )
+    AC_DEFINE_UNQUOTED([MHD_DAUTH_DEF_TIMEOUT_],[${enable_dauth_def_timeout}],
+        [The default HTTP Digest Auth default nonce timeout value (in seconds)])
+    AC_MSG_RESULT([[${enable_dauth_def_timeout_MSG}]])
+
+    AC_MSG_CHECKING([[for Digest Authentication default maximum nc value]])
+    AC_ARG_ENABLE([dauth-def-max-nc],
+      [AS_HELP_STRING([--enable-dauth-def-max-nc=NNN],
+                      [set default Digest Auth maximum nc (nonce count) value to NNN])],
+      [enable_dauth_def_max_nc="${enableval}"],
+      [enable_dauth_def_max_nc=""]
+    )
+    AS_VAR_IF([enable_dauth_def_max_nc], ["no"],
+      [
+        AC_MSG_WARN([Default Diget Auth maximum nc cannot be disabled, --disable-dauth-def-max-nc parameter is ignored])
+        enable_dauth_def_max_nc=""
+      ]
+    )
+    AS_IF([test -z "${enable_dauth_def_max_nc}"],
+      [
+        enable_dauth_def_max_nc="1000"
+        enable_dauth_def_max_nc_MSG="${enable_dauth_def_max_nc} (default)"
+      ],
+      [
+        AS_IF([[test "x${enable_dauth_def_max_nc}" = "x`echo ${enable_dauth_def_max_nc}|${SED-sed} 's/[^0-9]//g'`" && \
+                test "${enable_dauth_def_max_nc}" -ge "0" 2>/dev/null ]],[:],
+          [AC_MSG_ERROR([Invalid parameter --enable-dauth-def-max-nc=${enable_dauth_def_max_nc}. The value must be a positive integer.])
+          ]
+        )
+        AC_COMPILE_IFELSE(
+          [
+            AC_LANG_PROGRAM(
+              [[
+#include <stdint.h>
+              ]],
+              [[
+  static int arr[((int) 2) - 4 * (int)(${enable_dauth_def_max_nc} != ((uint32_t)${enable_dauth_def_max_nc}))];
+  (void) arr;
+              ]]
+            )
+          ],
+          [],
+          [AC_MSG_ERROR([The value specified by --enable-dauth-def-max-nc=${enable_dauth_def_max_nc} is too large.])]
+        )
+        enable_dauth_def_max_nc_MSG="${enable_dauth_def_max_nc} (set by parameter)"
+      ]
+    )
+    AC_DEFINE_UNQUOTED([MHD_DAUTH_DEF_MAX_NC_],[${enable_dauth_def_max_nc}],
+        [The default HTTP Digest Auth default maximum nc (nonce count) value])
+    AC_MSG_RESULT([[${enable_dauth_def_max_nc_MSG}]])
+
+    dauth_defs_MSG="timeout: ${enable_dauth_def_timeout_MSG}, max nc: ${enable_dauth_def_max_nc_MSG}"
+  ],
+  [
+    dauth_defs_MSG="N/A"
+  ]
+)
+
 AM_CONDITIONAL([HAVE_ANYAUTH],[test "x$enable_bauth" != "xno" || test "x$enable_dauth" != "xno"])
 
 # optional: HTTP "Upgrade" support. Enabled by default
@@ -5964,6 +6062,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   HTTP "Upgrade":    ${enable_httpupgrade}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
+  Digest auth. defaults: ${dauth_defs_MSG}
   MD5:               ${enable_md5_MSG}
   SHA-256:           ${enable_sha256_MSG}
   SHA-512/256:       ${enable_sha512_256_MSG}
