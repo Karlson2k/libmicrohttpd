@@ -114,7 +114,7 @@ MHD_pool_is_resizable_inplace (struct MemoryPool *pool,
  * @param size the size of memory in bytes to allocate
  * @param[out] required_bytes the pointer to variable to be updated with
  *                            the size of the required additional free
- *                            memory area, not updated if function succeed.
+ *                            memory area, set to 0 if function succeeds.
  *                            Cannot be NULL.
  * @return the pointer to allocated memory area if succeed,
  *         NULL if the pool doesn't have enough space, required_bytes is updated
