@@ -6447,8 +6447,8 @@ daemon_tls_priorities_init_append_inner_ (struct MHD_Daemon *daemon,
       res = gnutls_priority_init2 (&daemon->priority_cache, prio, &err_pos,
                                    GNUTLS_PRIORITY_INIT_DEF_APPEND);
     else
-#else  \
-    /* 0x030300 <= GNUTLS_VERSION_NUMBER && GNUTLS_VERSION_NUMBER < 0x030603 */
+#else /* 0x030300 <= GNUTLS_VERSION_NUMBER
+         && GNUTLS_VERSION_NUMBER < 0x030603 */
     if (NULL == MHD_TlsBasePriotities[p].str)
       continue; /* Skip the value, no way to append priorities to the default string */
     else
