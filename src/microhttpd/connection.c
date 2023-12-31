@@ -4475,6 +4475,8 @@ process_request_body (struct MHD_Connection *connection)
         mhd_assert (0 != available);
 
         overflow = false;
+        chunk_size = 0; /* Mute possible compiler warning.
+                           The real value will be set later. */
 
         num_dig = MHD_strx_to_uint64_n_ (buffer_head,
                                          available,
