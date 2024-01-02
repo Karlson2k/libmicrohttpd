@@ -1444,16 +1444,16 @@ run_usock (void *cls)
 {
   struct MHD_UpgradeResponseHandle *urh = cls;
 
-  send_all_stext (usock,
-                  "Hello");
   recv_all_stext (usock,
-                  "World");
+                  "Hello");
   send_all_stext (usock,
+                  "World");
+  recv_all_stext (usock,
                   "Finished");
   if (! test_tls)
   {
-    send_eof (usock);
     receive_eof (usock);
+    send_eof (usock);
   }
   MHD_upgrade_action (urh,
                       MHD_UPGRADE_ACTION_CLOSE);
@@ -1478,16 +1478,16 @@ run_usock_client (void *cls)
   send_all_stext (sock,
                   "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: Upgrade\r\n\r\n");
   recv_hdr (sock);
-  recv_all_stext (sock,
-                  "Hello");
   send_all_stext (sock,
-                  "World");
+                  "Hello");
   recv_all_stext (sock,
+                  "World");
+  send_all_stext (sock,
                   "Finished");
   if (! test_tls)
   {
-    receive_eof (sock);
     send_eof (sock);
+    receive_eof (sock);
   }
   wr_close (sock);
   client_done = true;
