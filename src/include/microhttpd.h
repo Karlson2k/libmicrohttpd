@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097709
+#define MHD_VERSION 0x00097710
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -1667,6 +1667,7 @@ enum MHD_OPTION
    * of the memory will be typically used for IO, and TCP buffers are
    * unlikely to support window sizes above 64k on most systems.
    * Values below 64 bytes are completely unusable.
+   * Since #MHD_VERSION 0x00097710 silently ignored if followed by zero value.
    */
   MHD_OPTION_CONNECTION_MEMORY_LIMIT = 1,
 
@@ -1910,6 +1911,7 @@ enum MHD_OPTION
    * Increment to use for growing the read buffer (followed by a
    * `size_t`).
    * Must not be higher than 1/4 of #MHD_OPTION_CONNECTION_MEMORY_LIMIT.
+   * Since #MHD_VERSION 0x00097710 silently ignored if followed by zero value.
    */
   MHD_OPTION_CONNECTION_MEMORY_INCREMENT = 21,
 
