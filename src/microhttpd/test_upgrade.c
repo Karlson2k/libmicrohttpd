@@ -168,15 +168,14 @@ _testErrorLog_func (const char *errDesc, const char *funcName, int lineNum)
 #define testErrorLogDesc(errDesc) _testErrorLog_func(errDesc, NULL, __LINE__)
 #endif /* ! MHD_HAVE_MHD_FUNC_ */
 
+/* ** External parameters ** */
+static bool use_large;
 
-/* Could be increased to facilitate debugging */
-static int test_timeout = 5;
+static bool use_vlarge;
 
 static bool test_tls;
 
 static int verbose = 0;
-
-static uint16_t global_port;
 
 enum tls_tool
 {
@@ -187,6 +186,25 @@ enum tls_tool
 };
 
 static enum tls_tool use_tls_tool;
+
+
+/* ** Internal values ** */
+
+/* Could be increased to facilitate debugging */
+static int test_timeout = 5;
+
+static uint16_t global_port;
+
+static const void *rclient_msg;
+
+static size_t rclient_msg_size;
+
+static const void *app_msg;
+
+static size_t app_msg_size;
+
+static void *alloc_ptr[2] = {NULL, NULL};
+
 
 static void
 fflush_allstd (void)
@@ -1444,10 +1462,8 @@ run_usock (void *cls)
 {
   struct MHD_UpgradeResponseHandle *urh = cls;
 
-  recv_all_stext (usock,
-                  "Hello");
-  send_all_stext (usock,
-                  "World");
+  recv_all (usock, rclient_msg, rclient_msg_size);
+  send_all (usock, app_msg, app_msg_size);
   recv_all_stext (usock,
                   "Finished");
   if (! test_tls)
@@ -1478,10 +1494,8 @@ run_usock_client (void *cls)
   send_all_stext (sock,
                   "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: Upgrade\r\n\r\n");
   recv_hdr (sock);
-  send_all_stext (sock,
-                  "Hello");
-  recv_all_stext (sock,
-                  "World");
+  send_all (sock, rclient_msg, rclient_msg_size);
+  recv_all (sock, app_msg, app_msg_size);
   send_all_stext (sock,
                   "Finished");
   if (! test_tls)
@@ -1849,6 +1863,15 @@ test_upgrade (unsigned int flags,
 #if defined(HTTPS_SUPPORT) && defined(HAVE_FORK) && defined(HAVE_WAITPID)
   pid_t pid = -1;
 #endif /* HTTPS_SUPPORT && HAVE_FORK && HAVE_WAITPID */
+  size_t mem_limit;
+
+  /* Handle memory limits. Actually makes sense only for TLS */
+  if (use_vlarge)
+    mem_limit = 64U * 1024U;  /* Half of the buffer should be large enough to take more than max TLS packet */
+  else if (use_large)
+    mem_limit = 4U * 1024;    /* Make sure that several iteration required to deliver a single message */
+  else
+    mem_limit = 0;            /* Use default value */
 
   client_done = false;
   app_done = false;
@@ -1866,6 +1889,7 @@ test_upgrade (unsigned int flags,
                           NULL,
                           MHD_OPTION_THREAD_POOL_SIZE, pool,
                           MHD_OPTION_CONNECTION_TIMEOUT, test_timeout,
+                          MHD_OPTION_CONNECTION_MEMORY_LIMIT, mem_limit,
                           MHD_OPTION_END);
 #ifdef HTTPS_SUPPORT
   else
@@ -1883,6 +1907,7 @@ test_upgrade (unsigned int flags,
                           MHD_OPTION_HTTPS_MEM_CERT, srv_signed_cert_pem,
                           MHD_OPTION_THREAD_POOL_SIZE, pool,
                           MHD_OPTION_CONNECTION_TIMEOUT, test_timeout,
+                          MHD_OPTION_CONNECTION_MEMORY_LIMIT, mem_limit,
                           MHD_OPTION_END);
 #endif /* HTTPS_SUPPORT */
   if (NULL == d)
@@ -1964,12 +1989,170 @@ test_upgrade (unsigned int flags,
 }
 
 
+enum test_msg_type
+{
+  test_msg_large_app_data,
+  test_msg_large_rclient_data,
+  test_msg_vlarge_app_data,
+  test_msg_vlarge_rclient_data
+};
+
+/**
+ * Initialise test message data
+ * @param buf the pointer to the buffer to fill with the test data
+ * @param buf_size the size of the @a buf
+ * @param msg_type the type of the data to fill the @a buf
+ * @return the @a buf pointer
+ */
+static void *
+init_test_msg (void *buf, size_t buf_size, enum test_msg_type msg_type)
+{
+  size_t i;
+  char *const text_buf = (char *) buf;
+  uint8_t *const bin_buf = (uint8_t *) buf;
+  if (0 == buf_size)
+    return buf;
+  switch (msg_type)
+  {
+  case test_msg_large_app_data:
+  case test_msg_large_rclient_data:
+    /* Simulate text data */
+    for (i = 0; i < buf_size; ++i)
+    {
+      size_t pos;
+      if (test_msg_large_app_data == msg_type)
+        pos = i + 43;
+      else
+        pos = i + 26;
+      if ((0 == i) || (2 == pos % 100) )
+        text_buf[i] =
+          (char) (unsigned char) ((test_msg_large_app_data == msg_type) ?
+                                  ('Z' - pos % ('Z' - 'A' + 1)) :
+                                  ('A' + pos % ('Z' - 'A' + 1)));
+      else if (0 == pos % 100)
+        text_buf[i] = '.';
+      else if (1 == pos % 100)
+        text_buf[i] = ' ';
+      else if ((99 != pos % 100) && (2 != pos % 100) && (0 == pos % 5))
+        text_buf[i] = ' ';
+      else if (test_msg_large_app_data == msg_type)
+        text_buf[i] = (char) (unsigned char) ('z' - pos % ('z' - 'a' + 1));
+      else
+        text_buf[i] = (char) (unsigned char) ('a' + pos % ('z' - 'a' + 1));
+    }
+    break;
+  case test_msg_vlarge_app_data:
+    /* Simulate binary data */
+    for (i = 0; i < buf_size; ++i)
+    {
+      bin_buf[i] = (uint8_t) ((i + 182) & 0xFF);
+    }
+    break;
+  case test_msg_vlarge_rclient_data:
+    /* Simulate binary data */
+    for (i = 0; i < buf_size; ++i)
+    {
+      bin_buf[i] = (uint8_t) ((111 - i) & 0xFF);
+    }
+    break;
+  default:
+    exit (99);
+    break;
+  }
+  return buf;
+}
+
+
+/**
+ * Perform initialisation of variables used in all check in this test
+ * @return true if succeed,
+ *         false if failed.
+ */
+static bool
+global_test_init (void)
+{
+  if (MHD_NO != MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT))
+    global_port = 0;
+  else
+  {
+    global_port = 1090;
+    if (test_tls)
+      global_port += 1U << 0;
+    if (use_large)
+      global_port += 1U << 1;
+    else if (use_vlarge)
+      global_port += 1U << 2;
+  }
+  if (use_large || use_vlarge)
+  {
+    unsigned int i;
+    size_t alloc_size;
+    alloc_size =  use_vlarge ? (64U * 1024U) : (17U * 1024U);
+    for (i = 0; i < (sizeof(alloc_ptr) / sizeof(alloc_ptr[0])); ++i)
+    {
+      alloc_ptr[i] = malloc (alloc_size);
+      if (NULL == alloc_ptr[i])
+      {
+        for (--i; i < (sizeof(alloc_ptr) / sizeof(alloc_ptr[0])); --i)
+        {
+          free (alloc_ptr[i]);
+        }
+        return false;
+      }
+    }
+
+    rclient_msg_size = alloc_size;
+    rclient_msg = init_test_msg (alloc_ptr[0], rclient_msg_size,
+                                 use_vlarge ?
+                                 test_msg_vlarge_rclient_data :
+                                 test_msg_large_rclient_data);
+    app_msg_size = alloc_size;
+    app_msg = init_test_msg (alloc_ptr[1], app_msg_size,
+                             use_vlarge ?
+                             test_msg_vlarge_app_data :
+                             test_msg_large_app_data);
+  }
+  else
+  {
+    unsigned int i;
+    for (i = 0; i < (sizeof(alloc_ptr) / sizeof(alloc_ptr[0])); ++i)
+      alloc_ptr[i] = NULL;
+
+    rclient_msg_size = MHD_STATICSTR_LEN_ ("Hello");
+    rclient_msg = "Hello";
+    app_msg_size = MHD_STATICSTR_LEN_ ("World");;
+    app_msg = "World";
+  }
+  return true;
+}
+
+
+/**
+ * Perform de-initialisation of variables with memory de-allocation if required.
+ */
+static void
+global_test_deinit (void)
+{
+  unsigned int i;
+  for (i = ((sizeof(alloc_ptr) / sizeof(alloc_ptr[0])) - 1);
+       i < (sizeof(alloc_ptr) / sizeof(alloc_ptr[0]));
+       --i)
+  {
+    if (NULL != alloc_ptr[i])
+      free (alloc_ptr[i]);
+  }
+}
+
+
 int
 main (int argc,
       char *const *argv)
 {
   unsigned int error_count = 0;
   unsigned int res;
+
+  use_vlarge = (0 != has_in_name (argv[0], "_vlarge"));
+  use_large = (! use_vlarge) && (0 != has_in_name (argv[0], "_large"));
 
   use_tls_tool = TLS_CLI_NO_TOOL;
   test_tls = has_in_name (argv[0], "_tls");
@@ -2032,8 +2215,15 @@ main (int argc,
 #endif /* ! HTTPS_SUPPORT */
   }
 
-  global_port = MHD_is_feature_supported (MHD_FEATURE_AUTODETECT_BIND_PORT) ?
-                0 : (test_tls ? 1091 : 1090);
+  if (! global_test_init ())
+  {
+#ifdef HTTPS_SUPPORT
+    if (test_tls && (TLS_LIB_GNUTLS == use_tls_tool))
+      gnutls_global_deinit ();
+#endif /* HTTPS_SUPPORT */
+    fprintf (stderr, "Failed to initialise the test.\n");
+    return 99;
+  }
 
   /* run tests */
   if (verbose)
@@ -2201,9 +2391,12 @@ main (int argc,
     fprintf (stderr,
              "Error (code: %u)\n",
              error_count);
+
+  global_test_deinit ();
 #ifdef HTTPS_SUPPORT
   if (test_tls && (TLS_LIB_GNUTLS == use_tls_tool))
     gnutls_global_deinit ();
 #endif /* HTTPS_SUPPORT */
+
   return error_count != 0;       /* 0 == pass */
 }
