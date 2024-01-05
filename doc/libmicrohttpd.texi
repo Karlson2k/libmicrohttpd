@@ -2614,7 +2614,7 @@ Return @code{NULL} on error (i.e. invalid arguments, out of memory).
 @end deftypefun
 
 
-@deftypefun {struct MHD_Response *} MHD_create_response_from_pipe (uint64_t size, int fd)
+@deftypefun {struct MHD_Response *} MHD_create_response_from_pipe (int fd)
 Create a response object.  The response object can be extended with
 header information and then it can be used ONLY ONCE.
 
