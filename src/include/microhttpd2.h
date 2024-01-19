@@ -211,7 +211,7 @@ typedef intptr_t ssize_t;
  * Current version of the library.
  * 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x01000000
+#define MHD_VERSION 0x02000000
 
 
 /**
@@ -394,8 +394,31 @@ typedef SOCKET MHD_socket;
 #endif
 
 
+/* ********** (a) Core HTTP Processing ************ */
+
+
 /**
- * @brief Handle for a connection / HTTP request.
+ * @brief Handle for a daemon that listens for requests.
+ *
+ * Manages the listen socket, event loop (and/or thread pool) and server
+ * settings.
+ */
+struct MHD_Daemon;
+
+
+/**
+ * @brief A connection corresponds to the network/stream abstraction.
+ *
+ * A single network (i.e. TCP) stream may be used for multiple
+ * requests, which in HTTP/1.1 must be processed sequentially.
+ *
+ * @ingroup connection
+ */
+struct MHD_Connection;
+
+
+/**
+ * @brief Handle representing an HTTP request.
  *
  * With HTTP/1.1, multiple requests can be run over the same
  * connection.  However, MHD will only show one request per TCP
@@ -411,16 +434,14 @@ struct MHD_Request;
 
 
 /**
- * A connection corresponds to the network/stream abstraction.
- * A single network (i.e. TCP) stream may be used for multiple
- * requests, which in HTTP/1.1 must be processed sequentially.
+ * Actions are returned by the application to drive the request
+ * handling of MHD.
  */
-struct MHD_Connection;
+struct MHD_Action;
 
 
 /**
- * Return values for reporting errors, also used
- * for logging.
+ * Return values for reporting errors, also used for logging.
  *
  * A value of 0 indicates success (as a return value).
  * Values between 0 and 10000 must be handled explicitly by the app.
@@ -429,7 +450,7 @@ struct MHD_Connection;
  * Values from 30000-39999 indicate unsuccessful (normal) operations.
  * Values from 40000-49999 indicate client errors.
  * Values from 50000-59999 indicate MHD server errors.
- * Values from 60000-69999 indicate application errors.
+ * Values from 60000-65535 indicate application errors.
  */
 enum MHD_StatusCode
 {
@@ -444,6 +465,7 @@ enum MHD_StatusCode
 
   /**
    * We were asked to return a timeout, but, there is no timeout.
+   * FIXME: explain better? Remove?
    */
   MHD_SC_NO_TIMEOUT = 1,
 
@@ -977,13 +999,6 @@ enum MHD_StatusCode
 
 
 /**
- * Actions are returned by the application to drive the request
- * handling of MHD.
- */
-struct MHD_Action;
-
-
-/**
  * HTTP methods explicitly supported by MHD.  Note that for
  * non-canonical methods, MHD will return #MHD_METHOD_UNKNOWN
  * and you can use #MHD_REQUEST_INFORMATION_HTTP_METHOD to get
@@ -1220,6 +1235,7 @@ enum MHD_Method
  */
 #define MHD_HTTP_POST_ENCODING_FORM_URLENCODED \
   "application/x-www-form-urlencoded"
+
 #define MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA "multipart/form-data"
 
 /** @} */ /* end of group postenc */
@@ -1588,7 +1604,7 @@ MHD_NONNULL (1);
 /**
  * Start a webserver.
  *
- * @param daemon daemon to start; you can no longer set
+ * @param[in,out] daemon daemon to start; you can no longer set
  *        options on this daemon after this call!
  * @return #MHD_SC_OK on success
  * @ingroup event
@@ -1612,7 +1628,7 @@ MHD_NONNULL (1);
  * in one of those modes and this option was not given to
  * #MHD_start_daemon, this function will return #MHD_INVALID_SOCKET.
  *
- * @param daemon daemon to stop accepting new connections for
+ * @param[in,out] daemon daemon to stop accepting new connections for
  * @return old listen socket on success, #MHD_INVALID_SOCKET if
  *         the daemon was already not listening anymore, or
  *         was never started
@@ -1626,7 +1642,7 @@ MHD_NONNULL (1);
 /**
  * Shutdown and destroy an HTTP daemon.
  *
- * @param daemon daemon to stop
+ * @param[in] daemon daemon to stop
  * @ingroup event
  */
 _MHD_EXTERN void
@@ -2654,35 +2670,6 @@ MHD_daemon_unescape_cb (struct MHD_Daemon *daemon,
 MHD_NONNULL (1);
 
 
-/**
- * Set random values to be used by the Digest Auth module.  Note that
- * the application must ensure that @a buf remains allocated and
- * unmodified while the daemon is running.
- *
- * @param daemon daemon to configure
- * @param buf_size number of bytes in @a buf
- * @param buf entropy buffer
- */
-_MHD_EXTERN void
-MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
-                               size_t buf_size,
-                               const void *buf)
-MHD_NONNULL (1,3);
-
-
-/**
- * Length of the internal array holding the map of the nonce and
- * the nonce counter.
- *
- * @param daemon daemon to configure
- * @param nc_length desired array length
- */
-_MHD_EXTERN enum MHD_StatusCode
-MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
-                                  size_t nc_length)
-MHD_NONNULL (1);
-
-
 /* ********************* connection options ************** */
 
 
@@ -3320,6 +3307,219 @@ MHD_response_from_fd (enum MHD_HTTP_StatusCode sc,
 
 
 /**
+ * Explicitly decrease reference counter of a response object.  If the
+ * counter hits zero, destroys a response object and associated
+ * resources.  Usually, this is implicitly done by converting a
+ * response to an action and returning the action to MHD.
+ *
+ * @param response response to decrement RC of
+ * @ingroup response
+ */
+_MHD_EXTERN void
+MHD_response_queue_for_destroy (struct MHD_Response *response)
+MHD_NONNULL (1);
+
+
+/**
+ * Add a header line to the response.
+ *
+ * @param response response to add a header to
+ * @param header the header to add
+ * @param content value to add
+ * @return #MHD_NO on error (i.e. invalid header or content format),
+ *         or out of memory
+ * @ingroup response
+ */
+_MHD_EXTERN enum MHD_Bool
+MHD_response_add_header (struct MHD_Response *response,
+                         const char *header,
+                         const char *content)
+MHD_NONNULL (1,2,3);
+
+
+/**
+ * Add a tailer line to the response.
+ *
+ * @param response response to add a footer to
+ * @param footer the footer to add
+ * @param content value to add
+ * @return #MHD_NO on error (i.e. invalid footer or content format),
+ *         or out of memory
+ * @ingroup response
+ */
+_MHD_EXTERN enum MHD_Bool
+MHD_response_add_trailer (struct MHD_Response *response,
+                          const char *footer,
+                          const char *content)
+MHD_NONNULL (1,2,3);
+
+
+/**
+ * Delete a header (or footer) line from the response.
+ *
+ * @param response response to remove a header from
+ * @param header the header to delete
+ * @param content value to delete
+ * @return #MHD_NO on error (no such header known)
+ * @ingroup response
+ */
+_MHD_EXTERN enum MHD_Bool
+MHD_response_del_header (struct MHD_Response *response,
+                         const char *header,
+                         const char *content)
+MHD_NONNULL (1,2,3);
+
+
+/**
+ * Get all of the headers (and footers) added to a response.
+ *
+ * @param response response to query
+ * @param iterator callback to call on each header;
+ *        maybe NULL (then just count headers)
+ * @param iterator_cls extra argument to @a iterator
+ * @return number of entries iterated over
+ * @ingroup response
+ */
+_MHD_EXTERN unsigned int
+MHD_response_get_headers (struct MHD_Response *response,
+                          MHD_KeyValueIterator iterator,
+                          void *iterator_cls)
+MHD_NONNULL (1);
+
+
+/**
+ * Get a particular header (or footer) from the response.
+ *
+ * @param response response to query
+ * @param key which header to get
+ * @return NULL if header does not exist
+ * @ingroup response
+ */
+_MHD_EXTERN const char *
+MHD_response_get_header (struct MHD_Response *response,
+                         const char *key)
+MHD_NONNULL (1,2);
+
+
+/* ************ (b) Upload and PostProcessor functions ********************** */
+
+
+/**
+ * Action telling MHD to continue processing the upload.
+ *
+ * @return action operation, never NULL
+ */
+_MHD_EXTERN const struct MHD_Action *
+MHD_action_continue (void);
+
+
+/**
+ * Function to process data uploaded by a client.
+ *
+ * @param cls argument given together with the function
+ *        pointer when the handler was registered with MHD
+ * @param upload_data the data being uploaded (excluding headers)
+ *        POST data will typically be made available incrementally via
+ *        multiple callbacks
+ * @param[in,out] upload_data_size set initially to the size of the
+ *        @a upload_data provided; the method must update this
+ *        value to the number of bytes NOT processed;
+ * @return action specifying how to proceed, often
+ *         #MHD_action_continue() if all is well,
+ *         #MHD_action_suspend() to stop reading the upload until
+ *              the request is resumed,
+ *         NULL to close the socket, or a response
+ *         to discard the rest of the upload and return the data given
+ */
+typedef const struct MHD_Action *
+(*MHD_UploadCallback) (void *cls,
+                       const char *upload_data,
+                       size_t *upload_data_size);
+
+
+/**
+ * Create an action that handles an upload.
+ *
+ * @param uc function to call with uploaded data
+ * @param uc_cls closure for @a uc
+ * @return NULL on error (out of memory)
+ * @ingroup action
+ */
+_MHD_EXTERN const struct MHD_Action *
+MHD_action_process_upload (MHD_UploadCallback uc,
+                           void *uc_cls)
+MHD_NONNULL (1);
+
+
+/**
+ * Iterator over key-value pairs where the value maybe made available
+ * in increments and/or may not be zero-terminated.  Used for
+ * MHD parsing POST data.  To access "raw" data from POST or PUT
+ * requests, use #MHD_action_process_upload() instead.
+ *
+ * @param cls user-specified closure
+ * @param kind type of the value, always #MHD_POSTDATA_KIND when called from MHD
+ * @param key 0-terminated key for the value
+ * @param filename name of the uploaded file, NULL if not known
+ * @param content_type mime-type of the data, NULL if not known
+ * @param transfer_encoding encoding of the data, NULL if not known
+ * @param data pointer to @a size bytes of data at the
+ *              specified offset
+ * @param off offset of data in the overall value
+ * @param size number of bytes in @a data available
+ * @return action specifying how to proceed, often
+ *         #MHD_action_continue() if all is well,
+ *         #MHD_action_suspend() to stop reading the upload until
+ *              the request is resumed,
+ *         NULL to close the socket, or a response
+ *         to discard the rest of the upload and return the data given
+ */
+typedef const struct MHD_Action *
+(*MHD_PostDataIterator) (void *cls,
+                         enum MHD_ValueKind kind,
+                         const char *key,
+                         const char *filename,
+                         const char *content_type,
+                         const char *transfer_encoding,
+                         const char *data,
+                         uint64_t off,
+                         size_t size);
+
+
+/**
+ * Create an action that parses a POST request.
+ *
+ * This action can be used to (incrementally) parse the data portion
+ * of a POST request.  Note that some buggy browsers fail to set the
+ * encoding type.  If you want to support those, you may have to call
+ * #MHD_set_connection_value with the proper encoding type before
+ * returning this action (if no supported encoding type is detected,
+ * returning this action will cause a bad request to be returned to
+ * the client).
+ *
+ * @param buffer_size maximum number of bytes to use for
+ *        internal buffering (used only for the parsing,
+ *        specifically the parsing of the keys).  A
+ *        tiny value (256-1024) should be sufficient.
+ *        Do NOT use a value smaller than 256.  For good
+ *        performance, use 32 or 64k (i.e. 65536).
+ * @param iter iterator to be called with the parsed data,
+ *        Must NOT be NULL.
+ * @param iter_cls first argument to @a iter
+ * @return NULL on error (out of memory, unsupported encoding),
+ *         otherwise a PP handle
+ * @ingroup request
+ */
+_MHD_EXTERN const struct MHD_Action *
+MHD_action_parse_post (size_t buffer_size,
+                       MHD_PostDataIterator iter,
+                       void *iter_cls)
+MHD_NONNULL (2);
+
+
+/* ***************** (c) WebSocket support ********** */
+
+/**
  * Enumeration for operations MHD should perform on the underlying socket
  * of the upgrade.  This API is not finalized, and in particular
  * the final set of actions is yet to be decided. This is just an
@@ -3460,219 +3660,1448 @@ MHD_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
                           void *upgrade_handler_cls)
 MHD_NONNULL (1);
 
+/* ********************** (d) TLS support ********************** */
+
+/* ???? */
+
+/* ********************** (e) Client auth ********************** */
+
 
 /**
- * Explicitly decrease reference counter of a response object.  If the
- * counter hits zero, destroys a response object and associated
- * resources.  Usually, this is implicitly done by converting a
- * response to an action and returning the action to MHD.
+ * Length of the binary output of the MD5 hash function.
+ * @sa #MHD_digest_get_hash_size()
+ * @ingroup authentication
+ */
+#define MHD_MD5_DIGEST_SIZE 16
+
+/**
+ * Length of the binary output of the SHA-256 hash function.
+ * @sa #MHD_digest_get_hash_size()
+ * @ingroup authentication
+ */
+#define MHD_SHA256_DIGEST_SIZE 32
+
+/**
+ * Length of the binary output of the SHA-512/256 hash function.
+ * @warning While this value is the same as the #MHD_SHA256_DIGEST_SIZE,
+ *          the calculated digests for SHA-256 and SHA-512/256 are different.
+ * @sa #MHD_digest_get_hash_size()
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+#define MHD_SHA512_256_DIGEST_SIZE 32
+
+/**
+ * Base type of hash calculation.
+ * Used as part of #MHD_DigestAuthAlgo3 values.
  *
- * @param response response to decrement RC of
- * @ingroup response
+ * @warning Not used directly by MHD API.
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DigestBaseAlgo
+{
+  /**
+   * Invalid hash algorithm value
+   */
+  MHD_DIGEST_BASE_ALGO_INVALID = 0,
+
+  /**
+   * MD5 hash algorithm.
+   * As specified by RFC1321
+   */
+  MHD_DIGEST_BASE_ALGO_MD5 = (1 << 0),
+
+  /**
+   * SHA-256 hash algorithm.
+   * As specified by FIPS PUB 180-4
+   */
+  MHD_DIGEST_BASE_ALGO_SHA256 = (1 << 1),
+
+  /**
+   * SHA-512/256 hash algorithm.
+   * As specified by FIPS PUB 180-4
+   */
+  MHD_DIGEST_BASE_ALGO_SHA512_256 = (1 << 2)
+} _MHD_FIXED_FLAGS_ENUM;
+
+/**
+ * The flag indicating non-session algorithm types,
+ * like 'MD5', 'SHA-256' or 'SHA-512-256'.
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+#define MHD_DIGEST_AUTH_ALGO3_NON_SESSION    (1 << 6)
+
+/**
+ * The flag indicating session algorithm types,
+ * like 'MD5-sess', 'SHA-256-sess' or 'SHA-512-256-sess'.
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+#define MHD_DIGEST_AUTH_ALGO3_SESSION        (1 << 7)
+
+/**
+ * Digest algorithm identification
+ * @warning Do not be confused with #MHD_DigestAuthAlgorithm,
+ *          which uses other values!
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DigestAuthAlgo3
+{
+  /**
+   * Unknown or wrong algorithm type.
+   * Used in struct MHD_DigestAuthInfo to indicate client value that
+   * cannot by identified.
+   */
+  MHD_DIGEST_AUTH_ALGO3_INVALID = 0,
+
+  /**
+   * The 'MD5' algorithm, non-session version.
+   */
+  MHD_DIGEST_AUTH_ALGO3_MD5 =
+    MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+
+  /**
+   * The 'MD5-sess' algorithm.
+   * Not supported by MHD for authentication.
+   */
+  MHD_DIGEST_AUTH_ALGO3_MD5_SESSION =
+    MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_AUTH_ALGO3_SESSION,
+
+  /**
+   * The 'SHA-256' algorithm, non-session version.
+   */
+  MHD_DIGEST_AUTH_ALGO3_SHA256 =
+    MHD_DIGEST_BASE_ALGO_SHA256 | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+
+  /**
+   * The 'SHA-256-sess' algorithm.
+   * Not supported by MHD for authentication.
+   */
+  MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION =
+    MHD_DIGEST_BASE_ALGO_SHA256 | MHD_DIGEST_AUTH_ALGO3_SESSION,
+
+  /**
+   * The 'SHA-512-256' (SHA-512/256) algorithm.
+   */
+  MHD_DIGEST_AUTH_ALGO3_SHA512_256 =
+    MHD_DIGEST_BASE_ALGO_SHA512_256 | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+
+  /**
+   * The 'SHA-512-256-sess' (SHA-512/256 session) algorithm.
+   * Not supported by MHD for authentication.
+   */
+  MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION =
+    MHD_DIGEST_BASE_ALGO_SHA512_256 | MHD_DIGEST_AUTH_ALGO3_SESSION
+};
+
+
+/**
+ * Get digest size for specified algorithm.
+ *
+ * The size of the digest specifies the size of the userhash, userdigest
+ * and other parameters which size depends on used hash algorithm.
+ * @param algo3 the algorithm to check
+ * @return the size of the digest (either #MHD_MD5_DIGEST_SIZE or
+ *         #MHD_SHA256_DIGEST_SIZE/MHD_SHA512_256_DIGEST_SIZE)
+ *         or zero if the input value is not supported or not valid
+ * @sa #MHD_digest_auth_calc_userdigest()
+ * @sa #MHD_digest_auth_calc_userhash(), #MHD_digest_auth_calc_userhash_hex()
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN size_t
+MHD_digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3);
+
+/**
+ * Digest algorithm identification, allow multiple selection.
+ *
+ * #MHD_DigestAuthAlgo3 always can be casted to #MHD_DigestAuthMultiAlgo3, but
+ * not vice versa.
+ *
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DigestAuthMultiAlgo3
+{
+  /**
+   * Unknown or wrong algorithm type.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_INVALID = MHD_DIGEST_AUTH_ALGO3_INVALID,
+
+  /**
+   * The 'MD5' algorithm, non-session version.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_MD5 = MHD_DIGEST_AUTH_ALGO3_MD5,
+
+  /**
+   * The 'MD5-sess' algorithm.
+   * Not supported by MHD for authentication.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_MD5_SESSION = MHD_DIGEST_AUTH_ALGO3_MD5_SESSION,
+
+  /**
+   * The 'SHA-256' algorithm, non-session version.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA256 = MHD_DIGEST_AUTH_ALGO3_SHA256,
+
+  /**
+   * The 'SHA-256-sess' algorithm.
+   * Not supported by MHD for authentication.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA256_SESSION =
+    MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION,
+
+  /**
+   * The 'SHA-512-256' (SHA-512/256) algorithm, non-session version.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256 = MHD_DIGEST_AUTH_ALGO3_SHA512_256,
+
+  /**
+   * The 'SHA-512-256-sess' (SHA-512/256 session) algorithm.
+   * Not supported by MHD for authentication.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256_SESSION =
+    MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION,
+
+  /**
+   * SHA-256 or SHA-512/256 non-session algorithm, MHD will choose
+   * the preferred or the matching one.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA_ANY_NON_SESSION =
+    MHD_DIGEST_AUTH_ALGO3_SHA256 | MHD_DIGEST_AUTH_ALGO3_SHA512_256,
+
+  /**
+   * Any non-session algorithm, MHD will choose the preferred or
+   * the matching one.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_ANY_NON_SESSION =
+    (0x3F) | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+
+  /**
+   * The SHA-256 or SHA-512/256 session algorithm.
+   * Not supported by MHD.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA_ANY_SESSION =
+    MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION
+    | MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION,
+
+  /**
+   * Any session algorithm.
+   * Not supported by MHD.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_ANY_SESSION =
+    (0x3F) | MHD_DIGEST_AUTH_ALGO3_SESSION,
+
+  /**
+   * The MD5 algorithm, session or non-session.
+   * Currently supported as non-session only.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_MD5_ANY =
+    MHD_DIGEST_AUTH_MULT_ALGO3_MD5 | MHD_DIGEST_AUTH_MULT_ALGO3_MD5_SESSION,
+
+  /**
+   * The SHA-256 algorithm, session or non-session.
+   * Currently supported as non-session only.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA256_ANY =
+    MHD_DIGEST_AUTH_MULT_ALGO3_SHA256
+    | MHD_DIGEST_AUTH_MULT_ALGO3_SHA256_SESSION,
+
+  /**
+   * The SHA-512/256 algorithm, session or non-session.
+   * Currently supported as non-session only.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256_ANY =
+    MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256
+    | MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256_SESSION,
+
+  /**
+   * The SHA-256 or SHA-512/256 algorithm, session or non-session.
+   * Currently supported as non-session only.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA_ANY_ANY =
+    MHD_DIGEST_AUTH_MULT_ALGO3_SHA_ANY_NON_SESSION
+    | MHD_DIGEST_AUTH_MULT_ALGO3_SHA_ANY_SESSION,
+
+  /**
+   * Any algorithm, MHD will choose the preferred or the matching one.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_ANY =
+    (0x3F) | MHD_DIGEST_AUTH_ALGO3_NON_SESSION | MHD_DIGEST_AUTH_ALGO3_SESSION
+};
+
+
+/**
+ * Calculate "userhash", return it as binary data.
+ *
+ * The "userhash" is the hash of the string "username:realm".
+ *
+ * The "userhash" could be used to avoid sending username in cleartext in Digest
+ * Authorization client's header.
+ *
+ * Userhash is not designed to hide the username in local database or files,
+ * as username in cleartext is required for #MHD_digest_auth_check3() function
+ * to check the response, but it can be used to hide username in HTTP headers.
+ *
+ * This function could be used when the new username is added to the username
+ * database to save the "userhash" alongside with the username (preferably) or
+ * when loading list of the usernames to generate the userhash for every loaded
+ * username (this will cause delays at the start with the long lists).
+ *
+ * Once "userhash" is generated it could be used to identify users by clients
+ * with "userhash" support.
+ * Avoid repetitive usage of this function for the same username/realm
+ * combination as it will cause excessive CPU load; save and re-use the result
+ * instead.
+ *
+ * @param algo3 the algorithm for userhash calculations
+ * @param username the username
+ * @param realm the realm
+ * @param[out] userhash_bin the output buffer for userhash as binary data;
+ *                          if this function succeeds, then this buffer has
+ *                          #MHD_digest_get_hash_size(algo3) bytes of userhash
+ *                          upon return
+ * @param bin_buf_size the size of the @a userhash_bin buffer, must be
+ *                     at least #MHD_digest_get_hash_size(algo3) bytes long
+ * @return MHD_YES on success,
+ *         MHD_NO if @a bin_buf_size is too small or if @a algo3 algorithm is
+ *         not supported (or external error has occurred,
+ *         see #MHD_FEATURE_EXTERN_HASH)
+ * @sa #MHD_digest_auth_calc_userhash_hex()
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo3 algo3,
+                               const char *username,
+                               const char *realm,
+                               void *userhash_bin,
+                               size_t bin_buf_size);
+
+
+/**
+ * Calculate "userhash", return it as hexadecimal string.
+ *
+ * The "userhash" is the hash of the string "username:realm".
+ *
+ * The "userhash" could be used to avoid sending username in cleartext in Digest
+ * Authorization client's header.
+ *
+ * Userhash is not designed to hide the username in local database or files,
+ * as username in cleartext is required for #MHD_digest_auth_check3() function
+ * to check the response, but it can be used to hide username in HTTP headers.
+ *
+ * This function could be used when the new username is added to the username
+ * database to save the "userhash" alongside with the username (preferably) or
+ * when loading list of the usernames to generate the userhash for every loaded
+ * username (this will cause delays at the start with the long lists).
+ *
+ * Once "userhash" is generated it could be used to identify users by clients
+ * with "userhash" support.
+ * Avoid repetitive usage of this function for the same username/realm
+ * combination as it will cause excessive CPU load; save and re-use the result
+ * instead.
+ *
+ * @param algo3 the algorithm for userhash calculations
+ * @param username the username
+ * @param realm the realm
+ * @param[out] userhash_hex the output buffer for userhash as hex string;
+ *                          if this function succeeds, then this buffer has
+ *                          #MHD_digest_get_hash_size(algo3)*2 chars long
+ *                          userhash zero-terminated string
+ * @param bin_buf_size the size of the @a userhash_bin buffer, must be
+ *                     at least #MHD_digest_get_hash_size(algo3)*2+1 chars long
+ * @return MHD_YES on success,
+ *         MHD_NO if @a bin_buf_size is too small or if @a algo3 algorithm is
+ *         not supported (or external error has occurred,
+ *         see #MHD_FEATURE_EXTERN_HASH).
+ * @sa #MHD_digest_auth_calc_userhash()
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_digest_auth_calc_userhash_hex (enum MHD_DigestAuthAlgo3 algo3,
+                                   const char *username,
+                                   const char *realm,
+                                   char *userhash_hex,
+                                   size_t hex_buf_size);
+
+
+/**
+ * The type of username used by client in Digest Authorization header
+ *
+ * Values are sorted so simplified checks could be used.
+ * For example:
+ * * (value <= MHD_DIGEST_AUTH_UNAME_TYPE_INVALID) is true if no valid username
+ *   is provided by the client
+ * * (value >= MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH) is true if username is
+ *   provided in any form
+ * * (value >= MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD) is true if username is
+ *   provided in clear text (no userhash matching is needed)
+ *
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DigestAuthUsernameType
+{
+  /**
+   * No username parameter in in Digest Authorization header.
+   * This should be treated as an error.
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_MISSING = 0,
+
+  /**
+   * The 'username' parameter is used to specify the username.
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD = (1 << 2),
+
+  /**
+   * The username is specified by 'username*' parameter with
+   * the extended notation (see RFC 5987 #section-3.2.1).
+   * The only difference between standard and extended types is
+   * the way how username value is encoded in the header.
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED = (1 << 3),
+
+  /**
+   * The username provided in form of 'userhash' as
+   * specified by RFC 7616 #section-3.4.4.
+   * @sa #MHD_digest_auth_calc_userhash_hex(), #MHD_digest_auth_calc_userhash()
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH = (1 << 1),
+
+  /**
+   * The invalid combination of username parameters are used by client.
+   * Either:
+   * * both 'username' and 'username*' are used
+   * * 'username*' is used with 'userhash=true'
+   * * 'username*' used with invalid extended notation
+   * * 'username' is not hexadecimal string, while 'userhash' set to 'true'
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_INVALID = (1 << 0)
+} _MHD_FIXED_ENUM;
+
+/**
+ * The QOP ('quality of protection') types.
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DigestAuthQOP
+{
+  /**
+   * Invalid/unknown QOP.
+   * Used in struct MHD_DigestAuthInfo to indicate client value that
+   * cannot by identified.
+   */
+  MHD_DIGEST_AUTH_QOP_INVALID = 0,
+
+  /**
+   * No QOP parameter.
+   * As described in old RFC 2069 original specification.
+   * This mode is not allowed by latest RFCs and should be used only to
+   * communicate with clients that do not support more modern modes (with QOP
+   * parameter).
+   * This mode is less secure than other modes and inefficient.
+   */
+  MHD_DIGEST_AUTH_QOP_NONE = 1 << 0,
+
+  /**
+   * The 'auth' QOP type.
+   */
+  MHD_DIGEST_AUTH_QOP_AUTH = 1 << 1,
+
+  /**
+   * The 'auth-int' QOP type.
+   * Not supported by MHD for authentication.
+   */
+  MHD_DIGEST_AUTH_QOP_AUTH_INT = 1 << 2
+} _MHD_FIXED_FLAGS_ENUM;
+
+/**
+ * The QOP ('quality of protection') types, multiple selection.
+ *
+ * #MHD_DigestAuthQOP always can be casted to #MHD_DigestAuthMultiQOP, but
+ * not vice versa.
+ *
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DigestAuthMultiQOP
+{
+  /**
+   * Invalid/unknown QOP.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_INVALID = MHD_DIGEST_AUTH_QOP_INVALID,
+
+  /**
+   * No QOP parameter.
+   * As described in old RFC 2069 original specification.
+   * This mode is not allowed by latest RFCs and should be used only to
+   * communicate with clients that do not support more modern modes (with QOP
+   * parameter).
+   * This mode is less secure than other modes and inefficient.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_NONE = MHD_DIGEST_AUTH_QOP_NONE,
+
+  /**
+   * The 'auth' QOP type.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_AUTH = MHD_DIGEST_AUTH_QOP_AUTH,
+
+  /**
+   * The 'auth-int' QOP type.
+   * Not supported by MHD.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_AUTH_INT = MHD_DIGEST_AUTH_QOP_AUTH_INT,
+
+  /**
+   * The 'auth' QOP type OR the old RFC2069 (no QOP) type.
+   * In other words: any types except 'auth-int'.
+   * RFC2069-compatible mode is allowed, thus this value should be used only
+   * when it is really necessary.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_ANY_NON_INT =
+    MHD_DIGEST_AUTH_QOP_NONE | MHD_DIGEST_AUTH_QOP_AUTH,
+
+  /**
+   * Any 'auth' QOP type ('auth' or 'auth-int').
+   * Currently supported as 'auth' QOP type only.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_AUTH_ANY =
+    MHD_DIGEST_AUTH_QOP_AUTH | MHD_DIGEST_AUTH_QOP_AUTH_INT
+} _MHD_FIXED_ENUM;
+
+/**
+ * The invalid value of 'nc' parameter in client Digest Authorization header.
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+#define MHD_DIGEST_AUTH_INVALID_NC_VALUE        (0)
+
+/**
+ * Information from Digest Authorization client's header.
+ *
+ * All buffers pointed by any struct members are freed when #MHD_free() is
+ * called for pointer to this structure.
+ *
+ * Application may modify buffers as needed until #MHD_free() is called for
+ * pointer to this structure
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+struct MHD_DigestAuthInfo
+{
+  /**
+   * The algorithm as defined by client.
+   * Set automatically to MD5 if not specified by client.
+   * @warning Do not be confused with #MHD_DigestAuthAlgorithm,
+   *          which uses other values!
+   */
+  enum MHD_DigestAuthAlgo3 algo3;
+
+  /**
+   * The type of username used by client.
+   */
+  enum MHD_DigestAuthUsernameType uname_type;
+
+  /**
+   * The username string.
+   * Used only if username type is standard or extended, always NULL otherwise.
+   * If extended notation is used, this string is pct-decoded string
+   * with charset and language tag removed (i.e. it is original username
+   * extracted from the extended notation).
+   * When userhash is used by the client, this member is NULL and
+   * @a userhash_hex and @a userhash_bin are set.
+   * The buffer pointed by the @a username becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   */
+  char *username;
+
+  /**
+   * The length of the @a username.
+   * When the @a username is NULL, this member is always zero.
+   */
+  size_t username_len;
+
+  /**
+   * The userhash string.
+   * Valid only if username type is userhash.
+   * This is unqoted string without decoding of the hexadecimal
+   * digits (as provided by the client).
+   * The buffer pointed by the @a userhash_hex becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   * @sa #MHD_digest_auth_calc_userhash_hex()
+   */
+  char *userhash_hex;
+
+  /**
+   * The length of the @a userhash_hex in characters.
+   * The valid size should be #MHD_digest_get_hash_size(algo3) * 2 characters.
+   * When the @a userhash_hex is NULL, this member is always zero.
+   */
+  size_t userhash_hex_len;
+
+  /**
+   * The userhash decoded to binary form.
+   * Used only if username type is userhash, always NULL otherwise.
+   * When not NULL, this points to binary sequence @a userhash_hex_len /2 bytes
+   * long.
+   * The valid size should be #MHD_digest_get_hash_size(algo3) bytes.
+   * The buffer pointed by the @a userhash_bin becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   * @warning This is a binary data, no zero termination.
+   * @warning To avoid buffer overruns, always check the size of the data before
+   *          use, because @a userhash_bin can point even to zero-sized
+   *          data.
+   * @sa #MHD_digest_auth_calc_userhash()
+   */
+  uint8_t *userhash_bin;
+
+  /**
+   * The 'opaque' parameter value, as specified by client.
+   * NULL if not specified by client.
+   * The buffer pointed by the @a opaque becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   */
+  char *opaque;
+
+  /**
+   * The length of the @a opaque.
+   * When the @a opaque is NULL, this member is always zero.
+   */
+  size_t opaque_len;
+
+  /**
+   * The 'realm' parameter value, as specified by client.
+   * NULL if not specified by client.
+   * The buffer pointed by the @a realm becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   */
+  char *realm;
+
+  /**
+   * The length of the @a realm.
+   * When the @a realm is NULL, this member is always zero.
+   */
+  size_t realm_len;
+
+  /**
+   * The 'qop' parameter value.
+   */
+  enum MHD_DigestAuthQOP qop;
+
+  /**
+   * The length of the 'cnonce' parameter value, including possible
+   * backslash-escape characters.
+   * 'cnonce' is used in hash calculation, which is CPU-intensive procedure.
+   * An application may want to reject too large cnonces to limit the CPU load.
+   * A few kilobytes is a reasonable limit, typically cnonce is just 32-160
+   * characters long.
+   */
+  size_t cnonce_len;
+
+  /**
+   * The nc parameter value.
+   * Can be used by application to limit the number of nonce re-uses. If @a nc
+   * is higher than application wants to allow, then "auth required" response
+   * with 'stale=true' could be used to force client to retry with the fresh
+   * 'nonce'.
+   * If not specified by client or does not have hexadecimal digits only, the
+   * value is #MHD_DIGEST_AUTH_INVALID_NC_VALUE.
+   */
+  uint32_t nc;
+};
+
+
+/**
+ * Get information about Digest Authorization client's header.
+ *
+ * @param connection The MHD connection structure
+ * @return NULL if no valid Digest Authorization header is used in the request;
+ *         a pointer to the structure with information if the valid request
+ *         header found, free using #MHD_free().
+ * @sa #MHD_digest_auth_get_username3()
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN struct MHD_DigestAuthInfo *
+MHD_digest_auth_get_request_info3 (struct MHD_Connection *connection);
+
+
+/**
+ * Information from Digest Authorization client's header.
+ *
+ * All buffers pointed by any struct members are freed when #MHD_free() is
+ * called for pointer to this structure.
+ *
+ * Application may modify buffers as needed until #MHD_free() is called for
+ * pointer to this structure
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+struct MHD_DigestAuthUsernameInfo
+{
+  /**
+   * The algorithm as defined by client.
+   * Set automatically to MD5 if not specified by client.
+   * @warning Do not be confused with #MHD_DigestAuthAlgorithm,
+   *          which uses other values!
+   */
+  enum MHD_DigestAuthAlgo3 algo3;
+
+  /**
+   * The type of username used by client.
+   * The 'invalid' and 'missing' types are not used in this structure,
+   * instead NULL is returned by #MHD_digest_auth_get_username3().
+   */
+  enum MHD_DigestAuthUsernameType uname_type;
+
+  /**
+   * The username string.
+   * Used only if username type is standard or extended, always NULL otherwise.
+   * If extended notation is used, this string is pct-decoded string
+   * with charset and language tag removed (i.e. it is original username
+   * extracted from the extended notation).
+   * When userhash is used by the client, this member is NULL and
+   * @a userhash_hex and @a userhash_bin are set.
+   * The buffer pointed by the @a username becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   */
+  char *username;
+
+  /**
+   * The length of the @a username.
+   * When the @a username is NULL, this member is always zero.
+   */
+  size_t username_len;
+
+  /**
+   * The userhash string.
+   * Valid only if username type is userhash.
+   * This is unqoted string without decoding of the hexadecimal
+   * digits (as provided by the client).
+   * The buffer pointed by the @a userhash_hex becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   * @sa #MHD_digest_auth_calc_userhash_hex()
+   */
+  char *userhash_hex;
+
+  /**
+   * The length of the @a userhash_hex in characters.
+   * The valid size should be #MHD_digest_get_hash_size(algo3) * 2 characters.
+   * When the @a userhash_hex is NULL, this member is always zero.
+   */
+  size_t userhash_hex_len;
+
+  /**
+   * The userhash decoded to binary form.
+   * Used only if username type is userhash, always NULL otherwise.
+   * When not NULL, this points to binary sequence @a userhash_hex_len /2 bytes
+   * long.
+   * The valid size should be #MHD_digest_get_hash_size(algo3) bytes.
+   * The buffer pointed by the @a userhash_bin becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   * @warning This is a binary data, no zero termination.
+   * @warning To avoid buffer overruns, always check the size of the data before
+   *          use, because @a userhash_bin can point even to zero-sized
+   *          data.
+   * @sa #MHD_digest_auth_calc_userhash()
+   */
+  uint8_t *userhash_bin;
+};
+
+
+/**
+ * Get the username from Digest Authorization client's header.
+ *
+ * @param connection The MHD connection structure
+ * @return NULL if no valid Digest Authorization header is used in the request,
+ *         or no username parameter is present in the header, or username is
+ *         provided incorrectly by client (see description for
+ *         #MHD_DIGEST_AUTH_UNAME_TYPE_INVALID);
+ *         a pointer structure with information if the valid request header
+ *         found, free using #MHD_free().
+ * @sa #MHD_digest_auth_get_request_info3() provides more complete information
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN struct MHD_DigestAuthUsernameInfo *
+MHD_digest_auth_get_username3 (struct MHD_Connection *connection);
+
+
+/**
+ * The result of digest authentication of the client.
+ *
+ * All error values are zero or negative.
+ *
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DigestAuthResult
+{
+  /**
+   * Authentication OK.
+   */
+  MHD_DAUTH_OK = 1,
+
+  /**
+   * General error, like "out of memory".
+   */
+  MHD_DAUTH_ERROR = 0,
+
+  /**
+   * No "Authorization" header or wrong format of the header.
+   * Also may be returned if required parameters in client Authorisation header
+   * are missing or broken (in invalid format).
+   */
+  MHD_DAUTH_WRONG_HEADER = -1,
+
+  /**
+   * Wrong 'username'.
+   */
+  MHD_DAUTH_WRONG_USERNAME = -2,
+
+  /**
+   * Wrong 'realm'.
+   */
+  MHD_DAUTH_WRONG_REALM = -3,
+
+  /**
+   * Wrong 'URI' (or URI parameters).
+   */
+  MHD_DAUTH_WRONG_URI = -4,
+
+  /**
+   * Wrong 'qop'.
+   */
+  MHD_DAUTH_WRONG_QOP = -5,
+
+  /**
+   * Wrong 'algorithm'.
+   */
+  MHD_DAUTH_WRONG_ALGO = -6,
+
+  /**
+   * Too large (>64 KiB) Authorization parameter value.
+   */
+  MHD_DAUTH_TOO_LARGE = -15,
+
+  /* The different form of naming is intentionally used for the results below,
+   * as they are more important */
+
+  /**
+   * The 'nonce' is too old. Suggest the client to retry with the same
+   * username and password to get the fresh 'nonce'.
+   * The validity of the 'nonce' may be not checked.
+   */
+  MHD_DAUTH_NONCE_STALE = -17,
+
+  /**
+   * The 'nonce' was generated by MHD for other conditions.
+   * This value is only returned if #MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE
+   * is set to anything other than #MHD_DAUTH_BIND_NONCE_NONE.
+   * The interpretation of this code could be different. For example, if
+   * #MHD_DAUTH_BIND_NONCE_URI is set and client just used the same 'nonce' for
+   * another URI, the code could be handled as #MHD_DAUTH_NONCE_STALE as
+   * RFCs allow nonces re-using for other URIs in the same "protection
+   * space". However, if only #MHD_DAUTH_BIND_NONCE_CLIENT_IP bit is set and
+   * it is know that clients have fixed IP addresses, this return code could
+   * be handled like #MHD_DAUTH_NONCE_WRONG.
+   */
+  MHD_DAUTH_NONCE_OTHER_COND = -18,
+
+  /**
+   * The 'nonce' is wrong. May indicate an attack attempt.
+   */
+  MHD_DAUTH_NONCE_WRONG = -33,
+
+  /**
+   * The 'response' is wrong. May indicate an attack attempt.
+   */
+  MHD_DAUTH_RESPONSE_WRONG = -34
+};
+
+
+/**
+ * Authenticates the authorization header sent by the client.
+ *
+ * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
+ * @a mqop and the client uses this mode, then server generated nonces are
+ * used as one-time nonces because nonce-count is not supported in this old RFC.
+ * Communication in this mode is very inefficient, especially if the client
+ * requests several resources one-by-one as for every request a new nonce must
+ * be generated and client repeats all requests twice (first time to get a new
+ * nonce and second time to perform an authorised request).
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm for authorization of the client
+ * @param username the username to be authenticated, must be in clear text
+ *                 even if userhash is used by the client
+ * @param password the password matching the @a username (and the @a realm)
+ * @param nonce_timeout the period of seconds since nonce generation, when
+ *                      the nonce is recognised as valid and not stale;
+ *                      if zero is specified then daemon default value is used.
+ * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
+ *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
+ *               returned;
+ *               if zero is specified then daemon default value is used.
+ * @param mqop the QOP to use
+ * @param malgo3 digest algorithms allowed to use, fail if algorithm used
+ *               by the client is not allowed by this parameter
+ * @return #MHD_DAUTH_OK if authenticated,
+ *         the error code otherwise
+ * @note Available since #MHD_VERSION 0x00097708
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_DigestAuthResult
+MHD_digest_auth_check3 (struct MHD_Connection *connection,
+                        const char *realm,
+                        const char *username,
+                        const char *password,
+                        unsigned int nonce_timeout,
+                        uint32_t max_nc,
+                        enum MHD_DigestAuthMultiQOP mqop,
+                        enum MHD_DigestAuthMultiAlgo3 malgo3);
+
+
+/**
+ * Calculate userdigest, return it as a binary data.
+ *
+ * The "userdigest" is the hash of the "username:realm:password" string.
+ *
+ * The "userdigest" can be used to avoid storing the password in clear text
+ * in database/files
+ *
+ * This function is designed to improve security of stored credentials,
+ * the "userdigest" does not improve security of the authentication process.
+ *
+ * The results can be used to store username & userdigest pairs instead of
+ * username & password pairs. To further improve security, application may
+ * store username & userhash & userdigest triplets.
+ *
+ * @param algo3 the digest algorithm
+ * @param username the username
+ * @param realm the realm
+ * @param password the password
+ * @param[out] userdigest_bin the output buffer for userdigest;
+ *                            if this function succeeds, then this buffer has
+ *                            #MHD_digest_get_hash_size(algo3) bytes of
+ *                            userdigest upon return
+ * @param userdigest_bin the size of the @a userdigest_bin buffer, must be
+ *                       at least #MHD_digest_get_hash_size(algo3) bytes long
+ * @return MHD_YES on success,
+ *         MHD_NO if @a userdigest_bin is too small or if @a algo3 algorithm is
+ *         not supported (or external error has occurred,
+ *         see #MHD_FEATURE_EXTERN_HASH).
+ * @sa #MHD_digest_auth_check_digest3()
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_digest_auth_calc_userdigest (enum MHD_DigestAuthAlgo3 algo3,
+                                 const char *username,
+                                 const char *realm,
+                                 const char *password,
+                                 void *userdigest_bin,
+                                 size_t bin_buf_size);
+
+
+/**
+ * Authenticates the authorization header sent by the client by using
+ * hash of "username:realm:password".
+ *
+ * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
+ * @a mqop and the client uses this mode, then server generated nonces are
+ * used as one-time nonces because nonce-count is not supported in this old RFC.
+ * Communication in this mode is very inefficient, especially if the client
+ * requests several resources one-by-one as for every request a new nonce must
+ * be generated and client repeats all requests twice (first time to get a new
+ * nonce and second time to perform an authorised request).
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm for authorization of the client
+ * @param username the username to be authenticated, must be in clear text
+ *                 even if userhash is used by the client
+ * @param userdigest the precalculated binary hash of the string
+ *                   "username:realm:password",
+ *                   see #MHD_digest_auth_calc_userdigest()
+ * @param userdigest_size the size of the @a userdigest in bytes, must match the
+ *                        hashing algorithm (see #MHD_MD5_DIGEST_SIZE,
+ *                        #MHD_SHA256_DIGEST_SIZE, #MHD_SHA512_256_DIGEST_SIZE,
+ *                        #MHD_digest_get_hash_size())
+ * @param nonce_timeout the period of seconds since nonce generation, when
+ *                      the nonce is recognised as valid and not stale;
+ *                      if zero is specified then daemon default value is used.
+ * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
+ *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
+ *               returned;
+ *               if zero is specified then daemon default value is used.
+ * @param mqop the QOP to use
+ * @param malgo3 digest algorithms allowed to use, fail if algorithm used
+ *               by the client is not allowed by this parameter;
+ *               more than one base algorithms (MD5, SHA-256, SHA-512/256)
+ *               cannot be used at the same time for this function
+ *               as @a userdigest must match specified algorithm
+ * @return #MHD_DAUTH_OK if authenticated,
+ *         the error code otherwise
+ * @sa #MHD_digest_auth_calc_userdigest()
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_DigestAuthResult
+MHD_digest_auth_check_digest3 (struct MHD_Connection *connection,
+                               const char *realm,
+                               const char *username,
+                               const void *userdigest,
+                               size_t userdigest_size,
+                               unsigned int nonce_timeout,
+                               uint32_t max_nc,
+                               enum MHD_DigestAuthMultiQOP mqop,
+                               enum MHD_DigestAuthMultiAlgo3 malgo3);
+
+
+/**
+ * Queues a response to request authentication from the client
+ *
+ * This function modifies provided @a response. The @a response must not be
+ * reused and should be destroyed (by #MHD_destroy_response()) after call of
+ * this function.
+ *
+ * If @a mqop allows both RFC 2069 (MHD_DIGEST_AUTH_QOP_NONE) and QOP with
+ * value, then response is formed like if MHD_DIGEST_AUTH_QOP_NONE bit was
+ * not set, because such response should be backward-compatible with RFC 2069.
+ *
+ * If @a mqop allows only MHD_DIGEST_AUTH_MULT_QOP_NONE, then the response is
+ * formed in strict accordance with RFC 2069 (no 'qop', no 'userhash', no
+ * 'charset'). For better compatibility with clients, it is recommended (but
+ * not required) to set @a domain to NULL in this mode.
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm presented to the client
+ * @param opaque the string for opaque value, can be NULL, but NULL is
+ *               not recommended for better compatibility with clients;
+ *               the recommended format is hex or Base64 encoded string
+ * @param domain the optional space-separated list of URIs for which the
+ *               same authorisation could be used, URIs can be in form
+ *               "path-absolute" (the path for the same host with initial slash)
+ *               or in form "absolute-URI" (the full path with protocol), in
+ *               any case client may assume that URI is in the same "protection
+ *               space" if it starts with any of values specified here;
+ *               could be NULL (clients typically assume that the same
+ *               credentials could be used for any URI on the same host);
+ *               this list provides information for the client only and does
+ *               not actually restrict anything on the server side
+ * @param response the reply to send; should contain the "access denied"
+ *                 body;
+ *                 note: this function sets the "WWW Authenticate" header and
+ *                 the caller should not set this header;
+ *                 the NULL is tolerated
+ * @param signal_stale if set to #MHD_YES then indication of stale nonce used in
+ *                     the client's request is signalled by adding 'stale=true'
+ *                     to the authentication header, this instructs the client
+ *                     to retry immediately with the new nonce and the same
+ *                     credentials, without asking user for the new password
+ * @param mqop the QOP to use
+ * @param malgo3 digest algorithm to use; if several algorithms are allowed
+ *               then MD5 is preferred (currently, may be changed in next
+ *               versions)
+ * @param userhash_support if set to non-zero value (#MHD_YES) then support of
+ *                         userhash is indicated, allowing client to provide
+ *                         hash("username:realm") instead of the username in
+ *                         clear text;
+ *                         note that clients are allowed to provide the username
+ *                         in cleartext even if this parameter set to non-zero;
+ *                         when userhash is used, application must be ready to
+ *                         identify users by provided userhash value instead of
+ *                         username; see #MHD_digest_auth_calc_userhash() and
+ *                         #MHD_digest_auth_calc_userhash_hex()
+ * @param prefer_utf8 if not set to #MHD_NO, parameter 'charset=UTF-8' is
+ *                    added, indicating for the client that UTF-8 encoding for
+ *                    the username is preferred
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
+                                   const char *realm,
+                                   const char *opaque,
+                                   const char *domain,
+                                   struct MHD_Response *response,
+                                   int signal_stale,
+                                   enum MHD_DigestAuthMultiQOP mqop,
+                                   enum MHD_DigestAuthMultiAlgo3 algo,
+                                   int userhash_support,
+                                   int prefer_utf8);
+
+
+/**
+ * Constant to indicate that the nonce of the provided
+ * authentication code was wrong.
+ * Used as return code by #MHD_digest_auth_check(), #MHD_digest_auth_check2(),
+ * #MHD_digest_auth_check_digest(), #MHD_digest_auth_check_digest2().
+ * @ingroup authentication
+ */
+#define MHD_INVALID_NONCE -1
+
+
+/**
+ * Get the username from the authorization header sent by the client
+ *
+ * This function supports username in standard and extended notations.
+ * "userhash" is not supported by this function.
+ *
+ * @param connection The MHD connection structure
+ * @return NULL if no username could be found, username provided as
+ *         "userhash", extended notation broken or memory allocation error
+ *         occurs;
+ *         a pointer to the username if found, free using #MHD_free().
+ * @warning Returned value must be freed by #MHD_free().
+ * @sa #MHD_digest_auth_get_username3()
+ * @ingroup authentication
+ */
+_MHD_EXTERN char *
+MHD_digest_auth_get_username (struct MHD_Connection *connection);
+
+
+/**
+ * Which digest algorithm should MHD use for HTTP digest authentication?
+ * Used as parameter for #MHD_digest_auth_check2(),
+ * #MHD_digest_auth_check_digest2(), #MHD_queue_auth_fail_response2().
+ */
+enum MHD_DigestAuthAlgorithm
+{
+
+  /**
+   * MHD should pick (currently defaults to MD5).
+   */
+  MHD_DIGEST_ALG_AUTO = 0,
+
+  /**
+   * Force use of MD5.
+   */
+  MHD_DIGEST_ALG_MD5,
+
+  /**
+   * Force use of SHA-256.
+   */
+  MHD_DIGEST_ALG_SHA256
+
+} _MHD_FIXED_ENUM;
+
+
+/**
+ * Authenticates the authorization header sent by the client.
+ *
+ * @param connection The MHD connection structure
+ * @param realm The realm presented to the client
+ * @param username The username needs to be authenticated
+ * @param password The password used in the authentication
+ * @param nonce_timeout The amount of time for a nonce to be
+ *      invalid in seconds
+ * @param algo digest algorithms allowed for verification
+ * @return #MHD_YES if authenticated, #MHD_NO if not,
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
+ * @note Available since #MHD_VERSION 0x00096200
+ * @deprecated use MHD_digest_auth_check3()
+ * @ingroup authentication
+ */
+_MHD_EXTERN int
+MHD_digest_auth_check2 (struct MHD_Connection *connection,
+                        const char *realm,
+                        const char *username,
+                        const char *password,
+                        unsigned int nonce_timeout,
+                        enum MHD_DigestAuthAlgorithm algo);
+
+
+/**
+ * Authenticates the authorization header sent by the client.
+ * Uses #MHD_DIGEST_ALG_MD5 (for now, for backwards-compatibility).
+ * Note that this MAY change to #MHD_DIGEST_ALG_AUTO in the future.
+ * If you want to be sure you get MD5, use #MHD_digest_auth_check2()
+ * and specify MD5 explicitly.
+ *
+ * @param connection The MHD connection structure
+ * @param realm The realm presented to the client
+ * @param username The username needs to be authenticated
+ * @param password The password used in the authentication
+ * @param nonce_timeout The amount of time for a nonce to be
+ *      invalid in seconds
+ * @return #MHD_YES if authenticated, #MHD_NO if not,
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
+ * @deprecated use MHD_digest_auth_check3()
+ * @ingroup authentication
+ */
+_MHD_EXTERN int
+MHD_digest_auth_check (struct MHD_Connection *connection,
+                       const char *realm,
+                       const char *username,
+                       const char *password,
+                       unsigned int nonce_timeout);
+
+
+/**
+ * Authenticates the authorization header sent by the client.
+ *
+ * @param connection The MHD connection structure
+ * @param realm The realm presented to the client
+ * @param username The username needs to be authenticated
+ * @param digest An `unsigned char *' pointer to the binary MD5 sum
+ *      for the precalculated hash value "username:realm:password"
+ *      of @a digest_size bytes
+ * @param digest_size number of bytes in @a digest (size must match @a algo!)
+ * @param nonce_timeout The amount of time for a nonce to be
+ *      invalid in seconds
+ * @param algo digest algorithms allowed for verification
+ * @return #MHD_YES if authenticated, #MHD_NO if not,
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
+ * @note Available since #MHD_VERSION 0x00096200
+ * @deprecated use MHD_digest_auth_check_digest3()
+ * @ingroup authentication
+ */
+_MHD_EXTERN int
+MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
+                               const char *realm,
+                               const char *username,
+                               const uint8_t *digest,
+                               size_t digest_size,
+                               unsigned int nonce_timeout,
+                               enum MHD_DigestAuthAlgorithm algo);
+
+
+/**
+ * Authenticates the authorization header sent by the client
+ * Uses #MHD_DIGEST_ALG_MD5 (required, as @a digest is of fixed
+ * size).
+ *
+ * @param connection The MHD connection structure
+ * @param realm The realm presented to the client
+ * @param username The username needs to be authenticated
+ * @param digest An `unsigned char *' pointer to the binary hash
+ *    for the precalculated hash value "username:realm:password";
+ *    length must be #MHD_MD5_DIGEST_SIZE bytes
+ * @param nonce_timeout The amount of time for a nonce to be
+ *      invalid in seconds
+ * @return #MHD_YES if authenticated, #MHD_NO if not,
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
+ * @note Available since #MHD_VERSION 0x00096000
+ * @deprecated use #MHD_digest_auth_check_digest3()
+ * @ingroup authentication
+ */
+_MHD_EXTERN int
+MHD_digest_auth_check_digest (struct MHD_Connection *connection,
+                              const char *realm,
+                              const char *username,
+                              const uint8_t digest[MHD_MD5_DIGEST_SIZE],
+                              unsigned int nonce_timeout);
+
+
+/**
+ * Queues a response to request authentication from the client
+ *
+ * This function modifies provided @a response. The @a response must not be
+ * reused and should be destroyed after call of this function.
+ *
+ * @param connection The MHD connection structure
+ * @param realm the realm presented to the client
+ * @param opaque string to user for opaque value
+ * @param response reply to send; should contain the "access denied"
+ *        body; note that this function will set the "WWW Authenticate"
+ *        header and that the caller should not do this; the NULL is tolerated
+ * @param signal_stale #MHD_YES if the nonce is stale to add
+ *        'stale=true' to the authentication header
+ * @param algo digest algorithm to use
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @note Available since #MHD_VERSION 0x00096200
+ * @deprecated use MHD_queue_auth_required_response3()
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
+                               const char *realm,
+                               const char *opaque,
+                               struct MHD_Response *response,
+                               int signal_stale,
+                               enum MHD_DigestAuthAlgorithm algo);
+
+
+/**
+ * Queues a response to request authentication from the client.
+ * For now uses MD5 (for backwards-compatibility). Still, if you
+ * need to be sure, use #MHD_queue_auth_fail_response2().
+ *
+ * This function modifies provided @a response. The @a response must not be
+ * reused and should be destroyed after call of this function.
+ *
+ * @param connection The MHD connection structure
+ * @param realm the realm presented to the client
+ * @param opaque string to user for opaque value
+ * @param response reply to send; should contain the "access denied"
+ *        body; note that this function will set the "WWW Authenticate"
+ *        header and that the caller should not do this; the NULL is tolerated
+ * @param signal_stale #MHD_YES if the nonce is stale to add
+ *        'stale=true' to the authentication header
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @deprecated use MHD_queue_auth_required_response3()
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_queue_auth_fail_response (struct MHD_Connection *connection,
+                              const char *realm,
+                              const char *opaque,
+                              struct MHD_Response *response,
+                              int signal_stale);
+
+
+/**
+ * Information decoded from Basic Authentication client's header.
+ *
+ * The username and the password are technically allowed to have binary zeros,
+ * username_len and password_len could be used to detect such situations.
+ *
+ * The buffers pointed by username and password members are freed
+ * when #MHD_free() is called for pointer to this structure.
+ *
+ * Application may modify buffers as needed until #MHD_free() is called for
+ * pointer to this structure
+ */
+struct MHD_BasicAuthInfo
+{
+  /**
+   * The username, cannot be NULL.
+   * The buffer pointed by the @a username becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   */
+  char *username;
+
+  /**
+   * The length of the @a username, not including zero-termination
+   */
+  size_t username_len;
+
+  /**
+   * The password, may be NULL if password is not encoded by the client.
+   * The buffer pointed by the @a password becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   */
+  char *password;
+
+  /**
+   * The length of the @a password, not including zero-termination;
+   * when the @a password is NULL, the length is always zero.
+   */
+  size_t password_len;
+};
+
+/**
+ * Get the username and password from the Basic Authorisation header
+ * sent by the client
+ *
+ * @param connection the MHD connection structure
+ * @return NULL if no valid Basic Authentication header is present in
+ *         current request, or
+ *         pointer to structure with username and password, which must be
+ *         freed by #MHD_free().
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN struct MHD_BasicAuthInfo *
+MHD_basic_auth_get_username_password3 (struct MHD_Connection *connection);
+
+/**
+ * Queues a response to request basic authentication from the client.
+ *
+ * The given response object is expected to include the payload for
+ * the response; the "WWW-Authenticate" header will be added and the
+ * response queued with the 'UNAUTHORIZED' status code.
+ *
+ * See RFC 7617#section-2 for details.
+ *
+ * The @a response is modified by this function. The modified response object
+ * can be used to respond subsequent requests by #MHD_queue_response()
+ * function with status code #MHD_HTTP_UNAUTHORIZED and must not be used again
+ * with MHD_queue_basic_auth_required_response3() function. The response could
+ * be destroyed right after call of this function.
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm presented to the client
+ * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
+ *                    be added, indicating for client that UTF-8 encoding
+ *                    is preferred
+ * @param response the response object to modify and queue; the NULL
+ *                 is tolerated
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @note Available since #MHD_VERSION 0x00097704
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_queue_basic_auth_required_response3 (struct MHD_Connection *connection,
+                                         const char *realm,
+                                         int prefer_utf8,
+                                         struct MHD_Response *response);
+
+/**
+ * Get the username and password from the basic authorization header sent by the client
+ *
+ * @param connection The MHD connection structure
+ * @param[out] password a pointer for the password, free using #MHD_free().
+ * @return NULL if no username could be found, a pointer
+ *      to the username if found, free using #MHD_free().
+ * @deprecated use #MHD_basic_auth_get_username_password3()
+ * @ingroup authentication
+ */
+_MHD_EXTERN char *
+MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
+                                      char **password);
+
+
+/**
+ * Queues a response to request basic authentication from the client
+ * The given response object is expected to include the payload for
+ * the response; the "WWW-Authenticate" header will be added and the
+ * response queued with the 'UNAUTHORIZED' status code.
+ *
+ * @param connection The MHD connection structure
+ * @param realm the realm presented to the client
+ * @param response response object to modify and queue; the NULL is tolerated
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @deprecated use MHD_queue_basic_auth_required_response3()
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
+                                    const char *realm,
+                                    struct MHD_Response *response);
+
+
+/**
+ * Set random values to be used by the Digest Auth module.  Note that
+ * the application must ensure that @a buf remains allocated and
+ * unmodified while the daemon is running.
+ *
+ * @param daemon daemon to configure
+ * @param buf_size number of bytes in @a buf
+ * @param buf entropy buffer
  */
 _MHD_EXTERN void
-MHD_response_queue_for_destroy (struct MHD_Response *response)
+MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
+                               size_t buf_size,
+                               const void *buf)
+MHD_NONNULL (1,3);
+
+
+/**
+ * Length of the internal array holding the map of the nonce and
+ * the nonce counter.
+ *
+ * @param daemon daemon to configure
+ * @param nc_length desired array length
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
+                                  size_t nc_length)
 MHD_NONNULL (1);
 
 
-/**
- * Add a header line to the response.
- *
- * @param response response to add a header to
- * @param header the header to add
- * @param content value to add
- * @return #MHD_NO on error (i.e. invalid header or content format),
- *         or out of memory
- * @ingroup response
- */
-_MHD_EXTERN enum MHD_Bool
-MHD_response_add_header (struct MHD_Response *response,
-                         const char *header,
-                         const char *content)
-MHD_NONNULL (1,2,3);
-
-
-/**
- * Add a tailer line to the response.
- *
- * @param response response to add a footer to
- * @param footer the footer to add
- * @param content value to add
- * @return #MHD_NO on error (i.e. invalid footer or content format),
- *         or out of memory
- * @ingroup response
- */
-_MHD_EXTERN enum MHD_Bool
-MHD_response_add_trailer (struct MHD_Response *response,
-                          const char *footer,
-                          const char *content)
-MHD_NONNULL (1,2,3);
-
-
-/**
- * Delete a header (or footer) line from the response.
- *
- * @param response response to remove a header from
- * @param header the header to delete
- * @param content value to delete
- * @return #MHD_NO on error (no such header known)
- * @ingroup response
- */
-_MHD_EXTERN enum MHD_Bool
-MHD_response_del_header (struct MHD_Response *response,
-                         const char *header,
-                         const char *content)
-MHD_NONNULL (1,2,3);
-
-
-/**
- * Get all of the headers (and footers) added to a response.
- *
- * @param response response to query
- * @param iterator callback to call on each header;
- *        maybe NULL (then just count headers)
- * @param iterator_cls extra argument to @a iterator
- * @return number of entries iterated over
- * @ingroup response
- */
-_MHD_EXTERN unsigned int
-MHD_response_get_headers (struct MHD_Response *response,
-                          MHD_KeyValueIterator iterator,
-                          void *iterator_cls)
-MHD_NONNULL (1);
-
-
-/**
- * Get a particular header (or footer) from the response.
- *
- * @param response response to query
- * @param key which header to get
- * @return NULL if header does not exist
- * @ingroup response
- */
-_MHD_EXTERN const char *
-MHD_response_get_header (struct MHD_Response *response,
-                         const char *key)
-MHD_NONNULL (1,2);
-
-
-/* ************Upload and PostProcessor functions ********************** */
-
-
-/**
- * Action telling MHD to continue processing the upload.
- *
- * @return action operation, never NULL
- */
-_MHD_EXTERN const struct MHD_Action *
-MHD_action_continue (void);
-
-
-/**
- * Function to process data uploaded by a client.
- *
- * @param cls argument given together with the function
- *        pointer when the handler was registered with MHD
- * @param upload_data the data being uploaded (excluding headers)
- *        POST data will typically be made available incrementally via
- *        multiple callbacks
- * @param[in,out] upload_data_size set initially to the size of the
- *        @a upload_data provided; the method must update this
- *        value to the number of bytes NOT processed;
- * @return action specifying how to proceed, often
- *         #MHD_action_continue() if all is well,
- *         #MHD_action_suspend() to stop reading the upload until
- *              the request is resumed,
- *         NULL to close the socket, or a response
- *         to discard the rest of the upload and return the data given
- */
-typedef const struct MHD_Action *
-(*MHD_UploadCallback) (void *cls,
-                       const char *upload_data,
-                       size_t *upload_data_size);
-
-
-/**
- * Create an action that handles an upload.
- *
- * @param uc function to call with uploaded data
- * @param uc_cls closure for @a uc
- * @return NULL on error (out of memory)
- * @ingroup action
- */
-_MHD_EXTERN const struct MHD_Action *
-MHD_action_process_upload (MHD_UploadCallback uc,
-                           void *uc_cls)
-MHD_NONNULL (1);
-
-
-/**
- * Iterator over key-value pairs where the value maybe made available
- * in increments and/or may not be zero-terminated.  Used for
- * MHD parsing POST data.  To access "raw" data from POST or PUT
- * requests, use #MHD_action_process_upload() instead.
- *
- * @param cls user-specified closure
- * @param kind type of the value, always #MHD_POSTDATA_KIND when called from MHD
- * @param key 0-terminated key for the value
- * @param filename name of the uploaded file, NULL if not known
- * @param content_type mime-type of the data, NULL if not known
- * @param transfer_encoding encoding of the data, NULL if not known
- * @param data pointer to @a size bytes of data at the
- *              specified offset
- * @param off offset of data in the overall value
- * @param size number of bytes in @a data available
- * @return action specifying how to proceed, often
- *         #MHD_action_continue() if all is well,
- *         #MHD_action_suspend() to stop reading the upload until
- *              the request is resumed,
- *         NULL to close the socket, or a response
- *         to discard the rest of the upload and return the data given
- */
-typedef const struct MHD_Action *
-(*MHD_PostDataIterator) (void *cls,
-                         enum MHD_ValueKind kind,
-                         const char *key,
-                         const char *filename,
-                         const char *content_type,
-                         const char *transfer_encoding,
-                         const char *data,
-                         uint64_t off,
-                         size_t size);
-
-
-/**
- * Create an action that parses a POST request.
- *
- * This action can be used to (incrementally) parse the data portion
- * of a POST request.  Note that some buggy browsers fail to set the
- * encoding type.  If you want to support those, you may have to call
- * #MHD_set_connection_value with the proper encoding type before
- * returning this action (if no supported encoding type is detected,
- * returning this action will cause a bad request to be returned to
- * the client).
- *
- * @param buffer_size maximum number of bytes to use for
- *        internal buffering (used only for the parsing,
- *        specifically the parsing of the keys).  A
- *        tiny value (256-1024) should be sufficient.
- *        Do NOT use a value smaller than 256.  For good
- *        performance, use 32 or 64k (i.e. 65536).
- * @param iter iterator to be called with the parsed data,
- *        Must NOT be NULL.
- * @param iter_cls first argument to @a iter
- * @return NULL on error (out of memory, unsupported encoding),
- *         otherwise a PP handle
- * @ingroup request
- */
-_MHD_EXTERN const struct MHD_Action *
-MHD_action_parse_post (size_t buffer_size,
-                       MHD_PostDataIterator iter,
-                       void *iter_cls)
-MHD_NONNULL (2);
-
-
-/* ********************** generic query functions ********************** */
+/* ********************** (f) Introspection ********************** */
 
 
 /**
