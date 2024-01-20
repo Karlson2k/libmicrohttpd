@@ -1598,6 +1598,7 @@ struct MHD_String
  *         if the socket must be closed due to a serious
  *         error while handling the request
  */
+// FIXME: const or no const?
 typedef const struct MHD_Action *
 (*MHD_RequestCallback) (void *cls,
                         struct MHD_Request *request,
@@ -1700,8 +1701,9 @@ typedef void
  * @param[in,out] daemon which instance to setup logging for
  * @param logger function to invoke
  * @param logger_cls closure for @a logger
+ * @return #MHD_SC_LOGGING_NOT_SUPPORTED
  */
-_MHD_EXTERN void
+_MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_logger (struct MHD_Daemon *daemon,
                        MHD_LoggingCallback logger,
                        void *logger_cls)
@@ -1751,8 +1753,11 @@ enum MHD_DeamonOptionBool
  * @param[in,out] daemon which instance to set boolean @a option for
  * @param option option to modify
  * @param value new value for the option
+ * @return #MHD_SC_OK on on success,
+ *         #MHD_SC_TOO_LATE if this option was set after the daemon was started and it cannot be set anymore
+ *         #MHD_SC_NOT_IMPLEMENTED if this option is not implemented in this version of the library
  */
-_MHD_EXTERN void
+_MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_option_bool (struct MHD_Daemon *daemon,
                             enum MHD_DaemonOptionBool option,
                             bool value)
@@ -1865,10 +1870,10 @@ enum MHD_FastOpenMethod
  * @param fom under which conditions should we use TCP_FASTOPEN?
  * @param queue_length queue length to use, default is 50 if this
  *        option is never given.
- * @return #MHD_YES upon success, #MHD_NO if #MHD_FOM_REQUIRE was
+ * @return FIXME: add proper SCs. #MHD_YES upon success, #MHD_NO if #MHD_FOM_REQUIRE was
  *         given, but TCP_FASTOPEN is not available on the platform
  */
-_MHD_EXTERN enum MHD_Bool
+_MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_option_tcp_fastopen (struct MHD_Daemon *daemon,
                                     enum MHD_FastOpenMethod fom,
                                     unsigned int queue_length)
@@ -1946,7 +1951,7 @@ MHD_NONNULL (1);
 
 
 // FIXME...
-_MHD_EXTERN void
+_MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_option_uint (struct MHD_Daemon *daemon,
                             unsigned int listen_backlog)
 MHD_NONNULL (1);
@@ -2293,7 +2298,7 @@ typedef void
 (*MHD_DaemonReadyCallback)(void *cls);
 
 
-_MHD_EXTERN void
+_MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_daemon_ready_callback (struct MHD_Daemon *daemon,
                                       MHD_DaemonReadyCallback cb,
                                       void *cb)
@@ -2355,7 +2360,7 @@ typedef void
  * @param cb function to call
  * @param cb_cls closure for @a cb
  */
-_MHD_EXTERN void
+_MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_early_uri_logger (struct MHD_Daemon *daemon,
                                  MHD_EarlyUriLogCallback cb,
                                  void *cb_cls)
@@ -2418,7 +2423,7 @@ typedef void
  * @param ncc function to call to check the policy
  * @param ncc_cls closure for @a apc
  */
-_MHD_EXTERN void
+_MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_notify_connection (struct MHD_Daemon *daemon,
                                   MHD_NotifyConnectionCallback ncc,
                                   void *ncc_cls)
@@ -2474,15 +2479,6 @@ enum MHD_ThreadingMode
 {
 
   /**
-   * MHD should create its own thread for listening and furthermore
-   * create another thread per connection to handle requests.  Use
-   * this if handling requests is CPU-intensive or blocking, your
-   * application is thread-safe and you have plenty of memory (per
-   * request).
-   */
-  MHD_TM_THREAD_PER_CONNECTION = -1,
-
-  /**
    * Use an external event loop. This is the default.
    */
   MHD_TM_EXTERNAL_EVENT_LOOP = 0,
@@ -2493,22 +2489,39 @@ enum MHD_ThreadingMode
    * (so > 1 is a thread pool) and distributed processing of
    * requests among the workers.
    *
-   * A good way to express the use of a thread pool
+   * FIXME: A good way to express the use of a thread pool
    * in your code would be to write "MHD_TM_THREAD_POOL(4)"
    * to indicate four threads.
    *
    * If a positive value is set, * #MHD_daemon_run() and
    * #MHD_daemon_run_from_select() cannot be used.
    */
-  MHD_TM_WORKER_THREADS = 1
+  MHD_TM_WORKER_THREADS = 1,
+
+  /**
+   * MHD should create its own thread for listening and furthermore create
+   * another thread per request. Threads may be re-used on the same
+   * connection.  Use this if handling requests is CPU-intensive or blocking,
+   * your application is thread-safe and you have plenty of memory (per
+   * request).
+   */
+  MHD_TM_THREAD_PER_REQUEST = 2
 
 };
 
+/* FUTURE:
+   (with eventually option "number of masters")
+   MHD_TM_WORKER_THREADS_WITH_MASTER_LISTENER = 3 */
 
+
+// FIXME: replace by set_uint option(s)
+// + number of worker threads
+// + number of 'listen' threads (stretch goal, later...)
 /**
  * Use a thread pool of size @a n.
  *
  * @return an `enum MHD_ThreadingMode` for a thread pool of size @a n
+ * @deprecated
  */
 #define MHD_TM_THREAD_POOL(n) ((enum MHD_ThreadingMode) (n))
 
@@ -2516,13 +2529,12 @@ enum MHD_ThreadingMode
 /**
  * Specify threading mode to use.
  *
- * @param daemon daemon to configure
- * @param tm mode to use (positive values indicate the
- *        number of worker threads to be used)
+ * @param[in,out] daemon daemon to configure
+ * @param tm mode to use
  */
-_MHD_EXTERN void
-MHD_daemon_threading_mode (struct MHD_Daemon *daemon,
-                           enum MHD_ThreadingMode tm)
+_MHD_EXTERN enum MHD_StatusCode
+MHD_daemon_set_threading_mode (struct MHD_Daemon *daemon,
+                               enum MHD_ThreadingMode tm)
 MHD_NONNULL (1);
 
 
@@ -2531,6 +2543,9 @@ MHD_NONNULL (1);
  * added to fd_sets. To get only daemon FDs in fd_sets, call FD_ZERO
  * for each fd_set before calling this function. FD_SETSIZE is assumed
  * to be platform's default.
+ *
+ * Passing custom FD_SETSIZE as @a fd_setsize allow usage of
+ * larger/smaller than platform's default fd_sets.
  *
  * This function should only be called in when MHD is configured to
  * use external select with 'select()' or with 'epoll'.  In the latter
@@ -2541,49 +2556,15 @@ MHD_NONNULL (1);
  * This function must be called only for daemon started without
  * #MHD_USE_INTERNAL_POLLING_THREAD flag.
  *
- * @param daemon daemon to get sets from
- * @param read_fd_set read set
- * @param write_fd_set write set
- * @param except_fd_set except set
- * @param max_fd increased to largest FD added (if larger
- *               than existing value); can be NULL
- * @return #MHD_SC_OK on success, otherwise error code
- * @ingroup event
- */
-_MHD_EXTERN enum MHD_StatusCode
-MHD_daemon_get_fdset (struct MHD_Daemon *daemon,
-                      fd_set *read_fd_set,
-                      fd_set *write_fd_set,
-                      fd_set *except_fd_set,
-                      MHD_socket *max_fd)
-MHD_NONNULL (1,2,3,4);
-
-
-/**
- * Obtain the `select()` sets for this daemon.  Daemon's FDs will be
- * added to fd_sets. To get only daemon FDs in fd_sets, call FD_ZERO
- * for each fd_set before calling this function.
- *
- * Passing custom FD_SETSIZE as @a fd_setsize allow usage of
- * larger/smaller than platform's default fd_sets.
- *
- * This function should only be called in when MHD is configured to
- * use external select with 'select()' or with 'epoll'.  In the latter
- * case, it will only add the single 'epoll' file descriptor used by
- * MHD to the sets.  It's necessary to use #MHD_get_timeout() in
- * combination with this function.
- *
- * This function must be called only for daemon started
- * without #MHD_USE_INTERNAL_POLLING_THREAD flag.
- *
- * @param daemon daemon to get sets from
- * @param read_fd_set read set
- * @param write_fd_set write set
- * @param except_fd_set except set
- * @param max_fd increased to largest FD added (if larger
- *               than existing value); can be NULL
- * @param fd_setsize value of FD_SETSIZE
- * @return #MHD_SC_OK on success, otherwise error code
+ * @param[in,out] daemon daemon to get sets from
+ * @param[in,out] read_fd_set read set; our FDs are added, existing bits set are unchanged
+ * @param[in,out] write_fd_set write set; our FDs are added, existing bits set are unchanged
+ * @param[in,out] except_fd_set except set; our FDs are added, existing bits set are unchanged
+ * @param[in,out] max_fd increased to largest FD added (if larger
+ *                than existing value); can be NULL
+ * @param[out] timeout set to the timeout (in milliseconds), -1LL indicates "forever"
+ * @param fd_setsize value of FD_SETSIZE (needed if application set custom values that do not match compile-time MHD)
+ * @return #MHD_SC_OK on success, otherwise error code (specify which ones...); #MHD_SC_NOT_IMPLEMENTED ...
  * @ingroup event
  */
 _MHD_EXTERN enum MHD_StatusCode
@@ -2592,8 +2573,9 @@ MHD_daemon_get_fdset2 (struct MHD_Daemon *daemon,
                        fd_set *write_fd_set,
                        fd_set *except_fd_set,
                        MHD_socket *max_fd,
+                       int64_fast_t *timeout,
                        unsigned int fd_setsize)
-MHD_NONNULL (1,2,3,4);
+MHD_NONNULL (1,2,3,4,6);
 
 
 /**
@@ -2623,55 +2605,6 @@ MHD_NONNULL (1,2,3,4);
   MHD_get_fdset2 ((daemon),(read_fd_set),(write_fd_set),(except_fd_set), \
                   (max_fd),FD_SETSIZE)
 
-
-/**
- * Obtain timeout value for polling function for this daemon.
- * This function set value to amount of milliseconds for which polling
- * function (`select()` or `poll()`) should at most block, not the
- * timeout value set for connections.
- * It is important to always use this function, even if connection
- * timeout is not set, as in some cases MHD may already have more
- * data to process on next turn (data pending in TLS buffers,
- * connections are already ready with epoll etc.) and returned timeout
- * will be zero.
- *
- * @param daemon daemon to query for timeout
- * @param timeout set to the timeout (in milliseconds)
- * @return #MHD_SC_OK on success, #MHD_SC_NO_TIMEOUT if timeouts are
- *        not used (or no connections exist that would
- *        necessitate the use of a timeout right now), otherwise
- *        an error code
- * @ingroup event
- */
-_MHD_EXTERN enum MHD_StatusCode
-MHD_daemon_get_timeout (struct MHD_Daemon *daemon,
-                        MHD_UNSIGNED_LONG_LONG *timeout)
-MHD_NONNULL (1,2);
-
-
-/**
- * Run webserver operations (without blocking unless in client
- * callbacks).  This method should be called by clients in combination
- * with #MHD_get_fdset if the client-controlled select method is used
- * and #MHD_get_timeout().
- *
- * This function is a convenience method, which is useful if the
- * fd_sets from #MHD_get_fdset were not directly passed to `select()`;
- * with this function, MHD will internally do the appropriate `select()`
- * call itself again.  While it is always safe to call #MHD_run (if
- * #MHD_USE_INTERNAL_POLLING_THREAD is not set), you should call
- * #MHD_run_from_select if performance is important (as it saves an
- * expensive call to `select()`).
- *
- * @param daemon daemon to run
- * @return #MHD_SC_OK on success
- * @ingroup event
- */
-_MHD_EXTERN enum MHD_StatusCode
-MHD_daemon_run (struct MHD_Daemon *daemon)
-MHD_NONNULL (1);
-
-
 /**
  * Run webserver operations. This method should be called by clients
  * in combination with #MHD_get_fdset and #MHD_get_timeout() if the
@@ -2687,11 +2620,11 @@ MHD_NONNULL (1);
  * This function cannot be used with daemon started with
  * #MHD_USE_INTERNAL_POLLING_THREAD flag.
  *
- * @param daemon daemon to run select loop for
+ * @param[in,out] daemon daemon to run select loop for
  * @param read_fd_set read set
  * @param write_fd_set write set
  * @param except_fd_set except set
- * @return #MHD_SC_OK on success
+ * @return #MHD_SC_OK on success, #MHD_SC_NOT_IMPLEMENTED ...
  * @ingroup event
  */
 _MHD_EXTERN enum MHD_StatusCode
@@ -2700,6 +2633,116 @@ MHD_daemon_run_from_select (struct MHD_Daemon *daemon,
                             const fd_set *write_fd_set,
                             const fd_set *except_fd_set)
 MHD_NONNULL (1,2,3,4);
+
+
+/**
+ * Obtain timeout value for polling function for this daemon.
+ * This function set value to amount of milliseconds for which polling
+ * function (`select()` or `poll()`) should at most block, not the
+ * timeout value set for connections.
+ * It is important to always use this function, even if connection
+ * timeout is not set, as in some cases MHD may already have more
+ * data to process on next turn (data pending in TLS buffers,
+ * connections are already ready with epoll etc.) and returned timeout
+ * will be zero.
+ *
+ * @param[in,out] daemon daemon to query for timeout
+ * @param[out] timeout set to the timeout (in milliseconds)
+ * @return #MHD_SC_OK on success, #MHD_SC_NO_TIMEOUT if timeouts are
+ *        not used (or no connections exist that would
+ *        necessitate the use of a timeout right now), otherwise
+ *        an error code
+ * @ingroup event
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_daemon_get_timeout (struct MHD_Daemon *daemon,
+                        uint64_fast_t *timeout)
+MHD_NONNULL (1,2);
+
+
+/**
+ * Run websever operation with possible blocking.
+ *
+ * This function does the following: waits for any network event not more than
+ * specified number of milliseconds, processes all incoming and outgoing data,
+ * processes new connections, processes any timed-out connection, and does
+ * other things required to run webserver.
+ * Once all connections are processed, function returns.
+ *
+ * This function is useful for quick and simple (lazy) webserver implementation
+ * if application needs to run a single thread only and does not have any other
+ * network activity.
+ *
+ * FIXME: document use of this function for epoll(), too!
+ *
+ * This function calls MHD_get_timeout() internally and use returned value as
+ * maximum wait time if it less than value of @a millisec parameter.
+ *
+ * It is expected that the "external" socket polling function is not used in
+ * conjunction with this function unless the @a millisec is set to zero.
+ *
+ * @param daemon the daemon to run
+ * @param millisec the maximum time in milliseconds to wait for network and
+ *                 other events. Note: there is no guarantee that function
+ *                 blocks for the specified amount of time. The real processing
+ *                 time can be shorter (if some data or connection timeout
+ *                 comes earlier) or longer (if data processing requires more
+ *                 time, especially in user callbacks).
+ *                 If set to '0' then function does not block and processes
+ *                 only already available data (if any).
+ *                 If set to '-1' then function waits for events
+ *                 indefinitely (blocks until next network activity or
+ *                 connection timeout).
+ * @return #MHD_YES on success, #MHD_NO if this
+ *         daemon was not started with the right
+ *         options for this call or some serious
+ *         unrecoverable error occurs.
+ * @note Available since #MHD_VERSION 0x00097206
+ * @ingroup event
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_daemon_run_wait (struct MHD_Daemon *daemon,
+                     int32_t millisec);
+
+
+/**
+ * Run webserver operations (without blocking unless in client
+ * callbacks).  This method should be called by clients in combination
+ * with #MHD_get_fdset if the client-controlled select method is used
+ * and #MHD_get_timeout().
+ *
+ * FIXME: document use of this function for epoll(), too!
+ *
+ * This function is a convenience method, which is useful if the
+ * fd_sets from #MHD_get_fdset were not directly passed to `select()`;
+ * with this function, MHD will internally do the appropriate `select()`
+ * call itself again.  While it is always safe to call #MHD_run (if
+ * #MHD_USE_INTERNAL_POLLING_THREAD is not set), you should call
+ * #MHD_run_from_select if performance is important (as it saves an
+ * expensive call to `select()`).
+ *
+ * @param[in,out] daemon daemon to run
+ * @return #MHD_SC_OK on success
+ * @ingroup event
+ */
+#define MHD_daemon_run(d) \
+  MHD_daemon_run_wait (d, 0);
+
+
+// FIXME: support external poll???
+struct pollfd;
+
+// num_fds: in,out: in: fds length, out: number desired (if larger than in), number initialized (if smaller or equal to in)
+_MHD_EXTERN enum MHD_StatusCode
+MHD_daemon_get_poll_set (struct MHD_Daemon *daemon,
+                         unsigned int *num_fds,
+                         struct pollfd *fds);
+
+
+_MHD_EXTERN enum MHD_StatusCode
+MHD_daemon_run_from_poll (struct MHD_Daemon *daemon,
+                          unsigned int num_fds,
+                          const struct pollfd fds[MHD_C99 (static num_fds)]);
 
 
 /**
@@ -2744,12 +2787,12 @@ MHD_NONNULL (1);
 /**
  * Set custom timeout for the given connection.
  * Specified as the number of seconds.  Use zero for no timeout.
- * Calling this function will reset timeout timer.
+ * Calling this function will reset its timeout timer.
  *
- * @param connection connection to configure timeout for
+ * @param[in,out] connection connection to configure timeout for
  * @param timeout_s new timeout in seconds
  */
-_MHD_EXTERN void
+_MHD_EXTERN enum MHD_StatusCode
 MHD_connection_set_timeout (struct MHD_Connection *connection,
                             unsigned int timeout_s)
 MHD_NONNULL (1);
@@ -2812,17 +2855,17 @@ enum MHD_ValueKind
  *         #MHD_NO to abort the iteration
  * @ingroup request
  */
-typedef int
-(*MHD_KeyValueIterator) (void *cls,
-                         enum MHD_ValueKind kind,
-                         const char *key,
-                         const char *value);
+typedef enum MHD_Bool
+(*MHD_KeyValueIterator)(void *cls,
+                        enum MHD_ValueKind kind,
+                        const struct MHD_String *key,
+                        const struct MHD_String *value);
 
 
 /**
  * Get all of the headers from the request.
  *
- * @param request request to get values from
+ * @param[in,out] request request to get values from
  * @param kind types of values to iterate over, can be a bitmask
  * @param iterator callback to call on each header;
  *        maybe NULL (then just count headers)
@@ -2836,39 +2879,6 @@ MHD_request_get_values (struct MHD_Request *request,
                         MHD_KeyValueIterator iterator,
                         void *iterator_cls)
 MHD_NONNULL (1);
-
-
-/**
- * This function can be used to add an entry to the HTTP headers of a
- * request (so that the #MHD_request_get_values function will
- * return them -- and the `struct MHD_PostProcessor` will also see
- * them).  This maybe required in certain situations (see Mantis
- * #1399) where (broken) HTTP implementations fail to supply values
- * needed by the post processor (or other parts of the application).
- *
- * This function MUST only be called from within the
- * request callbacks (otherwise, access maybe improperly
- * synchronized).  Furthermore, the client must guarantee that the key
- * and value arguments are 0-terminated strings that are NOT freed
- * until the connection is closed.  (The easiest way to do this is by
- * passing only arguments to permanently allocated strings.).
- *
- * @param request the request for which a
- *  value should be set
- * @param kind kind of the value
- * @param key key for the value
- * @param value the value itself
- * @return #MHD_NO if the operation could not be
- *         performed due to insufficient memory;
- *         #MHD_YES on success
- * @ingroup request
- */
-_MHD_EXTERN enum MHD_Bool
-MHD_request_set_value (struct MHD_Request *request,
-                       enum MHD_ValueKind kind,
-                       const char *key,
-                       const char *value)
-MHD_NONNULL (1,3,4);
 
 
 /**
@@ -2888,108 +2898,129 @@ MHD_request_lookup_value (struct MHD_Request *request,
 MHD_NONNULL (1);
 
 
+// FIXME: gana table for RFC 7541...
+enum MHD_StaticTableKey;
+
+/**
+ * Get last occurence of a particular header value under
+ * the given @a skt.
+ *
+ * @param[in,out] request request to get values from
+ * @param kind what kind of value are we looking for
+ * @param skt the header to look for based on RFC 7541 Appendix A.
+ * @return NULL if no such item was found
+ * @ingroup request
+ */
+_MHD_EXTERN const char *
+MHD_request_lookup_value_by_static_header (struct MHD_Request *request,
+                                           enum MHD_ValueKind kind,
+                                           enum MHD_StaticTableKey skt)
+MHD_NONNULL (1);
+
+
 /**
  * @defgroup httpcode HTTP response codes.
  * These are the status codes defined for HTTP responses.
  * @{
  */
 /* See http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml */
+// Use GANA!
 enum MHD_HTTP_StatusCode
 {
-  MHD_HTTP_CONTINUE = 100,
-  MHD_HTTP_SWITCHING_PROTOCOLS = 101,
-  MHD_HTTP_PROCESSING = 102,
+  MHD_HTTP_STATUS_CONTINUE = 100,
+  MHD_HTTP_STATUS_SWITCHING_PROTOCOLS = 101,
+  MHD_HTTP_STATUS_PROCESSING = 102,
 
-  MHD_HTTP_OK = 200,
-  MHD_HTTP_CREATED = 201,
-  MHD_HTTP_ACCEPTED = 202,
-  MHD_HTTP_NON_AUTHORITATIVE_INFORMATION = 203,
-  MHD_HTTP_NO_CONTENT = 204,
-  MHD_HTTP_RESET_CONTENT = 205,
-  MHD_HTTP_PARTIAL_CONTENT = 206,
-  MHD_HTTP_MULTI_STATUS = 207,
-  MHD_HTTP_ALREADY_REPORTED = 208,
+  MHD_HTTP_STATUS_OK = 200,
+  MHD_HTTP_STATUS_CREATED = 201,
+  MHD_HTTP_STATUS_ACCEPTED = 202,
+  MHD_HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION = 203,
+  MHD_HTTP_STATUS_NO_CONTENT = 204,
+  MHD_HTTP_STATUS_RESET_CONTENT = 205,
+  MHD_HTTP_STATUS_PARTIAL_CONTENT = 206,
+  MHD_HTTP_STATUS_MULTI_STATUS = 207,
+  MHD_HTTP_STATUS_ALREADY_REPORTED = 208,
 
-  MHD_HTTP_IM_USED = 226,
+  MHD_HTTP_STATUS_IM_USED = 226,
 
-  MHD_HTTP_MULTIPLE_CHOICES = 300,
-  MHD_HTTP_MOVED_PERMANENTLY = 301,
-  MHD_HTTP_FOUND = 302,
-  MHD_HTTP_SEE_OTHER = 303,
-  MHD_HTTP_NOT_MODIFIED = 304,
-  MHD_HTTP_USE_PROXY = 305,
-  MHD_HTTP_SWITCH_PROXY = 306, /* IANA: unused */
-  MHD_HTTP_TEMPORARY_REDIRECT = 307,
-  MHD_HTTP_PERMANENT_REDIRECT = 308,
+  MHD_HTTP_STATUS_MULTIPLE_CHOICES = 300,
+  MHD_HTTP_STATUS_MOVED_PERMANENTLY = 301,
+  MHD_HTTP_STATUS_FOUND = 302,
+  MHD_HTTP_STATUS_SEE_OTHER = 303,
+  MHD_HTTP_STATUS_NOT_MODIFIED = 304,
+  MHD_HTTP_STATUS_USE_PROXY = 305,
+  MHD_HTTP_STATUS_SWITCH_PROXY = 306, /* IANA: unused */
+  MHD_HTTP_STATUS_TEMPORARY_REDIRECT = 307,
+  MHD_HTTP_STATUS_PERMANENT_REDIRECT = 308,
 
-  MHD_HTTP_BAD_REQUEST = 400,
-  MHD_HTTP_UNAUTHORIZED = 401,
-  MHD_HTTP_PAYMENT_REQUIRED = 402,
-  MHD_HTTP_FORBIDDEN = 403,
-  MHD_HTTP_NOT_FOUND = 404,
-  MHD_HTTP_METHOD_NOT_ALLOWED = 405,
-  MHD_HTTP_NOT_ACCEPTABLE = 406,
+  MHD_HTTP_STATUS_BAD_REQUEST = 400,
+  MHD_HTTP_STATUS_UNAUTHORIZED = 401,
+  MHD_HTTP_STATUS_PAYMENT_REQUIRED = 402,
+  MHD_HTTP_STATUS_FORBIDDEN = 403,
+  MHD_HTTP_STATUS_NOT_FOUND = 404,
+  MHD_HTTP_STATUS_METHOD_NOT_ALLOWED = 405,
+  MHD_HTTP_STATUS_NOT_ACCEPTABLE = 406,
 /** @deprecated */
-#define MHD_HTTP_METHOD_NOT_ACCEPTABLE \
+#define MHD_HTTP_STATUS_METHOD_NOT_ACCEPTABLE \
   _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, use MHD_HTTP_NOT_ACCEPTABLE") \
-  MHD_HTTP_NOT_ACCEPTABLE
-  MHD_HTTP_PROXY_AUTHENTICATION_REQUIRED = 407,
-  MHD_HTTP_REQUEST_TIMEOUT = 408,
-  MHD_HTTP_CONFLICT = 409,
-  MHD_HTTP_GONE = 410,
-  MHD_HTTP_LENGTH_REQUIRED = 411,
-  MHD_HTTP_PRECONDITION_FAILED = 412,
-  MHD_HTTP_PAYLOAD_TOO_LARGE = 413,
+    "Value MHD_HTTP_STATUS_METHOD_NOT_ACCEPTABLE is deprecated, use MHD_HTTP_STATUS_NOT_ACCEPTABLE") \
+  MHD_HTTP_STATUS_NOT_ACCEPTABLE
+  MHD_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED = 407,
+  MHD_HTTP_STATUS_REQUEST_TIMEOUT = 408,
+  MHD_HTTP_STATUS_CONFLICT = 409,
+  MHD_HTTP_STATUS_GONE = 410,
+  MHD_HTTP_STATUS_LENGTH_REQUIRED = 411,
+  MHD_HTTP_STATUS_PRECONDITION_FAILED = 412,
+  MHD_HTTP_STATUS_PAYLOAD_TOO_LARGE = 413,
 /** @deprecated */
-#define MHD_HTTP_REQUEST_ENTITY_TOO_LARGE \
+#define MHD_HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE \
   _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_HTTP_REQUEST_ENTITY_TOO_LARGE is deprecated, use MHD_HTTP_PAYLOAD_TOO_LARGE") \
-  MHD_HTTP_PAYLOAD_TOO_LARGE
-  MHD_HTTP_URI_TOO_LONG = 414,
+    "Value MHD_HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE is deprecated, use MHD_HTTP_STATUS_PAYLOAD_TOO_LARGE") \
+  MHD_HTTP_STATUS_PAYLOAD_TOO_LARGE
+  MHD_HTTP_STATUS_URI_TOO_LONG = 414,
 /** @deprecated */
-#define MHD_HTTP_REQUEST_URI_TOO_LONG \
+#define MHD_HTTP_STATUS_REQUEST_URI_TOO_LONG \
   _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_HTTP_REQUEST_URI_TOO_LONG is deprecated, use MHD_HTTP_URI_TOO_LONG") \
-  MHD_HTTP_URI_TOO_LONG
-  MHD_HTTP_UNSUPPORTED_MEDIA_TYPE = 415,
-  MHD_HTTP_RANGE_NOT_SATISFIABLE = 416,
+    "Value MHD_HTTP_STATUS_REQUEST_URI_TOO_LONG is deprecated, use MHD_HTTP_STATUS_URI_TOO_LONG") \
+  MHD_HTTP_STATUS_URI_TOO_LONG
+  MHD_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE = 415,
+  MHD_HTTP_STATUS_RANGE_NOT_SATISFIABLE = 416,
 /** @deprecated */
-#define MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE \
+#define MHD_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE \
   _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE is deprecated, use MHD_HTTP_RANGE_NOT_SATISFIABLE") \
-  MHD_HTTP_RANGE_NOT_SATISFIABLE
-  MHD_HTTP_EXPECTATION_FAILED = 417,
+    "Value MHD_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE is deprecated, use MHD_HTTP_STATUS_RANGE_NOT_SATISFIABLE") \
+  MHD_HTTP_STATUS_RANGE_NOT_SATISFIABLE
+  MHD_HTTP_STATUS_EXPECTATION_FAILED = 417,
 
-  MHD_HTTP_MISDIRECTED_REQUEST = 421,
-  MHD_HTTP_UNPROCESSABLE_ENTITY = 422,
-  MHD_HTTP_LOCKED = 423,
-  MHD_HTTP_FAILED_DEPENDENCY = 424,
-  MHD_HTTP_UNORDERED_COLLECTION = 425, /* IANA: unused */
-  MHD_HTTP_UPGRADE_REQUIRED = 426,
+  MHD_HTTP_STATUS_MISDIRECTED_REQUEST = 421,
+  MHD_HTTP_STATUS_UNPROCESSABLE_ENTITY = 422,
+  MHD_HTTP_STATUS_LOCKED = 423,
+  MHD_HTTP_STATUS_FAILED_DEPENDENCY = 424,
+  MHD_HTTP_STATUS_UNORDERED_COLLECTION = 425, /* IANA: unused */
+  MHD_HTTP_STATUS_UPGRADE_REQUIRED = 426,
 
-  MHD_HTTP_PRECONDITION_REQUIRED = 428,
-  MHD_HTTP_TOO_MANY_REQUESTS = 429,
-  MHD_HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
+  MHD_HTTP_STATUS_PRECONDITION_REQUIRED = 428,
+  MHD_HTTP_STATUS_TOO_MANY_REQUESTS = 429,
+  MHD_HTTP_STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
 
-  MHD_HTTP_NO_RESPONSE = 444, /* IANA: unused */
+  MHD_HTTP_STATUS_NO_RESPONSE = 444, /* IANA: unused */
 
-  MHD_HTTP_RETRY_WITH = 449, /* IANA: unused */
-  MHD_HTTP_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS = 450,  /* IANA: unused */
-  MHD_HTTP_UNAVAILABLE_FOR_LEGAL_REASONS = 451,
+  MHD_HTTP_STATUS_RETRY_WITH = 449, /* IANA: unused */
+  MHD_HTTP_STATUS_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS = 450,  /* IANA: unused */
+  MHD_HTTP_STATUS_UNAVAILABLE_FOR_LEGAL_REASONS = 451,
 
-  MHD_HTTP_INTERNAL_SERVER_ERROR = 500,
-  MHD_HTTP_NOT_IMPLEMENTED = 501,
-  MHD_HTTP_BAD_GATEWAY = 502,
-  MHD_HTTP_SERVICE_UNAVAILABLE = 503,
-  MHD_HTTP_GATEWAY_TIMEOUT = 504,
-  MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED = 505,
-  MHD_HTTP_VARIANT_ALSO_NEGOTIATES = 506,
-  MHD_HTTP_INSUFFICIENT_STORAGE = 507,
-  MHD_HTTP_LOOP_DETECTED = 508,
-  MHD_HTTP_BANDWIDTH_LIMIT_EXCEEDED = 509,  /* IANA: unused */
-  MHD_HTTP_NOT_EXTENDED = 510,
-  MHD_HTTP_NETWORK_AUTHENTICATION_REQUIRED = 511
+  MHD_HTTP_STATUS_INTERNAL_SERVER_ERROR = 500,
+  MHD_HTTP_STATUS_NOT_IMPLEMENTED = 501,
+  MHD_HTTP_STATUS_BAD_GATEWAY = 502,
+  MHD_HTTP_STATUS_SERVICE_UNAVAILABLE = 503,
+  MHD_HTTP_STATUS_GATEWAY_TIMEOUT = 504,
+  MHD_HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED = 505,
+  MHD_HTTP_STATUS_VARIANT_ALSO_NEGOTIATES = 506,
+  MHD_HTTP_STATUS_INSUFFICIENT_STORAGE = 507,
+  MHD_HTTP_STATUS_LOOP_DETECTED = 508,
+  MHD_HTTP_STATUS_BANDWIDTH_LIMIT_EXCEEDED = 509,  /* IANA: unused */
+  MHD_HTTP_STATUS_NOT_EXTENDED = 510,
+  MHD_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED = 511
 
 };
 
@@ -3001,7 +3032,7 @@ enum MHD_HTTP_StatusCode
  * message in that status code class.
  */
 _MHD_EXTERN const char *
-MHD_get_reason_phrase_for (enum MHD_HTTP_StatusCode code);
+MHD_status_code_to_string (enum MHD_HTTP_StatusCode code);
 
 /** @} */ /* end of group httpcode */
 
@@ -3012,8 +3043,24 @@ MHD_get_reason_phrase_for (enum MHD_HTTP_StatusCode code);
  * HTTP header.
  * @{
  */
-#define MHD_HTTP_VERSION_1_0 "HTTP/1.0"
-#define MHD_HTTP_VERSION_1_1 "HTTP/1.1"
+// Again: GANA?
+enum MHD_HTTP_ProtocolVersion
+{
+  MHD_HTTP_VERSION_INVALID = 0,
+  MHD_HTTP_VERSION_1_0 = 1,
+  MHD_HTTP_VERSION_1_1 = 2,
+  MHD_HTTP_VERSION_2_0 = 3,
+  MHD_HTTP_VERSION_3_0 = 4
+};
+
+_MHD_EXTERN const char *
+MHD_protocol_version_to_string (enum MHD_HTTP_ProtocolVersion pv);
+
+// Reminder:
+// #define MHD_HTTP_VERSION_1_0 "HTTP/1.0"
+// #define MHD_HTTP_VERSION_1_1 "HTTP/1.1"
+// #define MHD_HTTP_VERSION_2 "HTTP/2"
+// #define MHD_HTTP_VERSION_3 "HTTP/3"
 
 /** @} */ /* end of group versions */
 
@@ -3061,7 +3108,7 @@ MHD_action_suspend (void);
  * the set returned by #MHD_get_fdset() and you may end up with a
  * request that is stuck until the next network activity.
  *
- * @param request the request to resume
+ * @param[in,out] request the request to resume
  */
 _MHD_EXTERN void
 MHD_request_resume (struct MHD_Request *request)
@@ -3099,6 +3146,124 @@ struct MHD_Response;
 _MHD_EXTERN const struct MHD_Action *
 MHD_action_from_response (struct MHD_Response *response,
                           enum MHD_Bool destroy_after_use)
+MHD_NONNULL (1);
+
+#ifndef FIXME_FUN
+struct MHD_Action
+{
+  enum type;
+  // depending on type:
+  union
+  {
+    struct
+    {
+      struct MHD_Response *response;
+    } from_response;
+  } details;
+};
+struct MHD_Response
+{
+  struct MHD_Action my_action = {
+    .type = from_response;
+    .details.from_response = &self;
+  };
+};
+#endif
+
+
+/**
+ * Flags for special handling of responses.
+ */
+enum MHD_ResponseOption
+{
+  /**
+   * Default: no special flags.
+   * @note Available since #MHD_VERSION 0x00093701
+   */
+  MHD_RF_NONE = 0,
+
+  /**
+   * Only respond in conservative (dumb) HTTP/1.0-compatible mode.
+   * Response still use HTTP/1.1 version in header, but always close
+   * the connection after sending the response and do not use chunked
+   * encoding for the response.
+   * You can also set the #MHD_RF_HTTP_1_0_SERVER flag to force
+   * HTTP/1.0 version in the response.
+   * Responses are still compatible with HTTP/1.1.
+   * This option can be used to communicate with some broken client, which
+   * does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
+   * @note Available since #MHD_VERSION 0x00097308
+   */
+  // FIXME: no more bit mask!
+  MHD_RF_HTTP_1_0_COMPATIBLE_STRICT = 1 << 0,
+
+  /**
+   * The same as #MHD_RF_HTTP_1_0_COMPATIBLE_STRICT
+   * @note Available since #MHD_VERSION 0x00093701
+   */
+  MHD_RF_HTTP_VERSION_1_0_ONLY = 1 << 0,
+
+  /**
+   * Only respond in HTTP 1.0-mode.
+   * Contrary to the #MHD_RF_HTTP_1_0_COMPATIBLE_STRICT flag, the response's
+   * HTTP version will always be set to 1.0 and keep-alive connections
+   * will be used if explicitly requested by the client.
+   * The "Connection:" header will be added for both "close" and "keep-alive"
+   * connections.
+   * Chunked encoding will not be used for the response.
+   * Due to backward compatibility, responses still can be used with
+   * HTTP/1.1 clients.
+   * This option can be used to emulate HTTP/1.0 server (for response part
+   * only as chunked encoding in requests (if any) is processed by MHD).
+   * @note Available since #MHD_VERSION 0x00097308
+   */
+  MHD_RF_HTTP_1_0_SERVER = 1 << 1,
+  /**
+   * The same as #MHD_RF_HTTP_1_0_SERVER
+   * @note Available since #MHD_VERSION 0x00096000
+   */
+  MHD_RF_HTTP_VERSION_1_0_RESPONSE = 1 << 1,
+
+  /**
+   * Disable sanity check preventing clients from manually
+   * setting the HTTP content length option.
+   * Allow to set several "Content-Length" headers. These headers will
+   * be used even with replies without body.
+   * @note Available since #MHD_VERSION 0x00096702
+   */
+  MHD_RF_INSANITY_HEADER_CONTENT_LENGTH = 1 << 2,
+
+  /**
+   * Enable sending of "Connection: keep-alive" header even for
+   * HTTP/1.1 clients when "Keep-Alive" connection is used.
+   * Disabled by default for HTTP/1.1 clients as per RFC.
+   * @note Available since #MHD_VERSION 0x00097310
+   */
+  MHD_RF_SEND_KEEP_ALIVE_HEADER = 1 << 3,
+
+  /**
+   * Enable special processing of the response as body-less (with undefined
+   * body size). No automatic "Content-Length" or "Transfer-Encoding: chunked"
+   * headers are added when the response is used with #MHD_HTTP_NOT_MODIFIED
+   * code or to respond to HEAD request.
+   * The flag also allow to set arbitrary "Content-Length" by
+   * MHD_add_response_header() function.
+   * This flag value can be used only with responses created without body
+   * (zero-size body).
+   * Responses with this flag enabled cannot be used in situations where
+   * reply body must be sent to the client.
+   * This flag is primarily intended to be used when automatic "Content-Length"
+   * header is undesirable in response to HEAD requests.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_RF_HEAD_ONLY_RESPONSE = 1 << 4
+} _MHD_FIXED_FLAGS_ENUM;
+
+
+_MHD_EXTERN enum MHD_StatusCode
+MHD_response_set_option_bool (struct MHD_Response *response,
+                              enum MHD_ResponseOption ro,
+                              bool value)
 MHD_NONNULL (1);
 
 
@@ -3193,15 +3358,15 @@ typedef void
  * Set a function to be called once MHD is finished with the
  * request.
  *
- * @param response which response to set the callback for
+ * @param[in,out] response which response to set the callback for
  * @param termination_cb function to call
  * @param termination_cb_cls closure for @e termination_cb
  */
-_MHD_EXTERN void
-MHD_response_option_termination_callback (struct MHD_Response *response,
-                                          MHD_RequestTerminationCallback
-                                          termination_cb,
-                                          void *termination_cb_cls)
+_MHD_EXTERN enum MHD_StatusCode
+MHD_response_set_option_termination_callback (
+  struct MHD_Response *response,
+  MHD_RequestTerminationCallback termination_cb,
+  void *termination_cb_cls)
 MHD_NONNULL (1);
 
 
@@ -3224,7 +3389,7 @@ MHD_NONNULL (1);
  *        libmicrohttpd guarantees that "pos" will be
  *        the sum of all non-negative return values
  *        obtained from the content reader so far.
- * @param buf where to copy the data
+ * @param[out] buf where to copy the data
  * @param max maximum number of bytes to copy to @a buf (size of @a buf)
  * @return number of bytes written to @a buf;
  *  0 is legal unless we are running in internal select mode (since
@@ -3252,7 +3417,7 @@ MHD_NONNULL (1);
 typedef ssize_t
 (*MHD_ContentReaderCallback) (void *cls,
                               uint64_t pos,
-                              char *buf,
+                              void *buf,
                               size_t max);
 
 
@@ -3261,7 +3426,7 @@ typedef ssize_t
  * content reader.  It should be used to free resources associated
  * with the content reader.
  *
- * @param cls closure
+ * @param[in] cls closure
  * @ingroup response
  */
 typedef void
@@ -3311,14 +3476,6 @@ enum MHD_ResponseMemoryMode
   MHD_RESPMEM_PERSISTENT,
 
   /**
-   * Buffer is heap-allocated with `malloc()` (or equivalent) and
-   * should be freed by MHD after processing the response has
-   * concluded (response reference counter reaches zero).
-   * @ingroup response
-   */
-  MHD_RESPMEM_MUST_FREE,
-
-  /**
    * Buffer is in transient memory, but not on the heap (for example,
    * on the stack or non-`malloc()` allocated) and only valid during the
    * call to #MHD_create_response_from_buffer.  MHD must make its
@@ -3344,9 +3501,81 @@ enum MHD_ResponseMemoryMode
  */
 _MHD_EXTERN struct MHD_Response *
 MHD_response_from_buffer (enum MHD_HTTP_StatusCode sc,
-                          size_t size,
-                          void *buffer,
+                          size_t buffer_size,
+                          const char buffer[MHD_C99 (static buffer_size)],
                           enum MHD_ResponseMemoryMode mode);
+
+
+/**
+ * Create a response object with empty (zero size) body.
+ *
+ * The response object can be extended with header information and then be used
+ * any number of times.
+ */
+#define MHD_response_from_empty(sc) \
+  MHD_response_from_buffer (sc, \
+                            0, \
+                            NULL,  \
+                            MHD_RESPMEM_PERSISTENT)
+
+
+/**
+ * Create a response object with an array of memory buffers
+ * used as the response body.
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
+ *
+ * @param iov_count the number of elements in @a iov
+ * @param iov the array for response data buffers, an internal copy of this
+ *        will be made
+ * @param free_cb the callback to clean up any data associated with @a iov when
+ *        the response is destroyed.
+ * @param free_cb_cls the argument passed to @a free_cb
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @note Available since #MHD_VERSION 0x00097204
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_response_from_iovec (
+  enum MHD_HTTP_StatusCode sc,
+  unsigned int iov_count,
+  const struct MHD_IoVec iov[MHD_C99 (iov_count)],
+  MHD_ContentReaderFreeCallback free_cb,
+  void *free_cb_cls);
+
+
+/**
+ * Create a response object with the content of provided buffer used as
+ * the response body.
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
+ *
+ * @param size size of the data portion of the response
+ * @param buffer size bytes containing the response's data portion
+ * @param crfc function to call to cleanup, if set to NULL then callback
+ *             is not called
+ * @param crfc_cls an argument for @a crfc
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @note 'const' qualifier is used for @a buffer since #MHD_VERSION 0x00097701
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_response_from_buffer_with_free_callback (
+  enum MHD_HTTP_StatusCode sc,
+  size_t size,
+  const char buffer[MHD_C99 (static buffer_size)],
+  MHD_ContentReaderFreeCallback crfc,
+  void *crfc_cls);
 
 
 /**
@@ -3373,6 +3602,27 @@ MHD_response_from_fd (enum MHD_HTTP_StatusCode sc,
                       uint64_t offset,
                       uint64_t size);
 
+/**
+ * Create a response object with the response body created by reading
+ * the provided pipe.
+ *
+ * The response object can be extended with header information and
+ * then be used ONLY ONCE.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
+ *
+ * @param fd file descriptor referring to a read-end of a pipe with the
+ *        data; will be closed when response is destroyed;
+ *        fd should be in 'blocking' mode
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_response_from_pipe (enum MHD_HTTP_StatusCode sc,
+                        int fd);
+
 
 /**
  * Explicitly decrease reference counter of a response object.  If the
@@ -3380,7 +3630,7 @@ MHD_response_from_fd (enum MHD_HTTP_StatusCode sc,
  * resources.  Usually, this is implicitly done by converting a
  * response to an action and returning the action to MHD.
  *
- * @param response response to decrement RC of
+ * @param[in] response response to decrement RC of
  * @ingroup response
  */
 _MHD_EXTERN void
@@ -3398,40 +3648,30 @@ MHD_NONNULL (1);
  *         or out of memory
  * @ingroup response
  */
-_MHD_EXTERN enum MHD_Bool
+_MHD_EXTERN enum MHD_StatusCode
 MHD_response_add_header (struct MHD_Response *response,
                          const char *header,
                          const char *content)
 MHD_NONNULL (1,2,3);
 
 
-/**
- * Add a tailer line to the response.
- *
- * @param response response to add a footer to
- * @param footer the footer to add
- * @param content value to add
- * @return #MHD_NO on error (i.e. invalid footer or content format),
- *         or out of memory
- * @ingroup response
- */
-_MHD_EXTERN enum MHD_Bool
-MHD_response_add_trailer (struct MHD_Response *response,
-                          const char *footer,
-                          const char *content)
-MHD_NONNULL (1,2,3);
+_MHD_EXTERN enum MHD_StatusCode
+MHD_response_add_static_header (struct MHD_Response *response,
+                                enum MHD_StaticTableKey stk,
+                                const char *content)
+MHD_NONNULL (1,3);
 
 
 /**
  * Delete a header (or footer) line from the response.
  *
- * @param response response to remove a header from
+ * @param[in,out] response response to remove a header from
  * @param header the header to delete
  * @param content value to delete
  * @return #MHD_NO on error (no such header known)
  * @ingroup response
  */
-_MHD_EXTERN enum MHD_Bool
+_MHD_EXTERN enum MHD_StatusCode
 MHD_response_del_header (struct MHD_Response *response,
                          const char *header,
                          const char *content)
@@ -3439,7 +3679,7 @@ MHD_NONNULL (1,2,3);
 
 
 /**
- * Get all of the headers (and footers) added to a response.
+ * Get all of the headers that were added to a response.
  *
  * @param response response to query
  * @param iterator callback to call on each header;
@@ -3449,27 +3689,83 @@ MHD_NONNULL (1,2,3);
  * @ingroup response
  */
 _MHD_EXTERN unsigned int
-MHD_response_get_headers (struct MHD_Response *response,
+MHD_response_get_headers (const struct MHD_Response *response,
                           MHD_KeyValueIterator iterator,
                           void *iterator_cls)
 MHD_NONNULL (1);
 
 
 /**
- * Get a particular header (or footer) from the response.
+ * Get a particular header from the response.  Valid as
+ * long as the response is valid and the header is not
+ * explicitly deleted from the response.
  *
  * @param response response to query
  * @param key which header to get
  * @return NULL if header does not exist
  * @ingroup response
  */
-_MHD_EXTERN const char *
-MHD_response_get_header (struct MHD_Response *response,
+_MHD_EXTERN const struct MHD_String *
+MHD_response_get_header (const struct MHD_Response *response,
                          const char *key)
 MHD_NONNULL (1,2);
 
 
+/**
+ * Add a tailer line to the response for this request.
+ * Usually called within a MHD_ContentReaderCallback.
+ *
+ * @param response response to add a footer to
+ * @param footer the footer to add
+ * @param content value to add
+ * @return #MHD_NO on error (i.e. invalid footer or content format),
+ *         or out of memory
+ * @ingroup response
+ */
+_MHD_EXTERN enum MHD_Bool
+MHD_request_set_response_trailer (
+  struct MHD_Request *request,
+  const char *footer,
+  const char *content)
+MHD_NONNULL (1,2,3);
+
+
 /* ************ (b) Upload and PostProcessor functions ********************** */
+
+
+/**
+ * This function can be used to add an entry to the HTTP headers of a
+ * request (so that the #MHD_request_get_values function will
+ * return them -- and the `struct MHD_PostProcessor` will also see
+ * them).  This maybe required in certain situations (see Mantis
+ * #1399) where (broken) HTTP implementations fail to supply values
+ * needed by the post processor (or other parts of the application).
+ *
+ * This function MUST only be called from within the
+ * request callbacks (otherwise, access maybe improperly
+ * synchronized).  Furthermore, the client must guarantee that the key
+ * and value arguments are 0-terminated strings that are NOT freed
+ * until the connection is closed.  (The easiest way to do this is by
+ * passing only arguments to permanently allocated strings.).
+ *
+ * @param[in,out] request the request for which a
+ *  value should be set
+ * @param kind kind of the value
+ * @param key key for the value
+ * @param value the value itself
+ * @return #MHD_NO if the operation could not be
+ *         performed due to insufficient memory;
+ *         #MHD_YES on success
+ * @ingroup request
+ *
+ * FIXME: remove, instead fox PostProcessor API to allow application to provide value!
+ */
+_MHD_EXTERN enum MHD_Bool
+MHD_request_set_value (struct MHD_Request *request,
+                       enum MHD_ValueKind kind,
+                       const char *key,
+                       const char *value)
+MHD_NONNULL (1,3,4);
 
 
 /**
@@ -3482,16 +3778,27 @@ MHD_action_continue (void);
 
 
 /**
+ * Action telling MHD to close the connection hard
+ * (kind-of breaking HTTP specification).
+ *
+ * FIXME: Note: equvalent to returning MHD_NO before!
+ *
+ * @return action operation, always NULL ? :-)
+ */
+#define MHD_action_close_connection() \
+  ((const struct MHD_Action *) NULL)
+
+
+/**
  * Function to process data uploaded by a client.
  *
  * @param cls argument given together with the function
  *        pointer when the handler was registered with MHD
+ * @param upload_data_size set to the size of the
+ *        @a upload_data provided
  * @param upload_data the data being uploaded (excluding headers)
- *        POST data will typically be made available incrementally via
- *        multiple callbacks
- * @param[in,out] upload_data_size set initially to the size of the
- *        @a upload_data provided; the method must update this
- *        value to the number of bytes NOT processed;
+ *        uploaded data MAY be made available incrementally via
+ *        multiple callbacks depending on request settings
  * @return action specifying how to proceed, often
  *         #MHD_action_continue() if all is well,
  *         #MHD_action_suspend() to stop reading the upload until
@@ -3500,9 +3807,10 @@ MHD_action_continue (void);
  *         to discard the rest of the upload and return the data given
  */
 typedef const struct MHD_Action *
-(*MHD_UploadCallback) (void *cls,
-                       const char *upload_data,
-                       size_t *upload_data_size);
+(*MHD_UploadCallback) (
+  void *cls,
+  size_t upload_data_size,
+  const char upload_data[MHD_C99 (static upload_data_size)]);
 
 
 /**
@@ -3510,12 +3818,24 @@ typedef const struct MHD_Action *
  *
  * @param uc function to call with uploaded data
  * @param uc_cls closure for @a uc
+ * @param upload_buffer_size how large should the
+ *        upload buffer be. Use 0 for stream processing using
+ *        the normal memory pool. May allocate memory from
+ *        the large memory pool if necessary and non-zero is given.
+ * @param call_when_full only call @a uc when the buffer is full
+ *        (or the upload is complete); otherwise call as soon
+ *        as data is available
  * @return NULL on error (out of memory)
  * @ingroup action
  */
 _MHD_EXTERN const struct MHD_Action *
-MHD_action_process_upload (MHD_UploadCallback uc,
-                           void *uc_cls)
+MHD_action_process_upload (
+  // ?? ugly, how to avoid alloc otherwise??
+  struct MHD_Request *request,
+  size_t upload_buffer_size,
+  bool call_when_full,
+  MHD_UploadCallback uc,
+  void *uc_cls)
 MHD_NONNULL (1);
 
 
@@ -3526,7 +3846,6 @@ MHD_NONNULL (1);
  * requests, use #MHD_action_process_upload() instead.
  *
  * @param cls user-specified closure
- * @param kind type of the value, always #MHD_POSTDATA_KIND when called from MHD
  * @param key 0-terminated key for the value
  * @param filename name of the uploaded file, NULL if not known
  * @param content_type mime-type of the data, NULL if not known
@@ -3544,44 +3863,49 @@ MHD_NONNULL (1);
  */
 typedef const struct MHD_Action *
 (*MHD_PostDataIterator) (void *cls,
-                         enum MHD_ValueKind kind,
-                         const char *key,
-                         const char *filename,
-                         const char *content_type,
-                         const char *transfer_encoding,
-                         const char *data,
+                         const struct MHD_String *key,
+                         const struct MHD_String *filename,
+                         const struct MHD_String *content_type,
+                         const struct MHD_String *transfer_encoding,
+                         const struct MHD_String *data,
                          uint64_t off,
                          size_t size);
 
 
+typedef const struct MHD_Action *
+(*MHD_PostDataFinished) (void *cls);
+
+
 /**
- * Create an action that parses a POST request.
- *
- * This action can be used to (incrementally) parse the data portion
- * of a POST request.  Note that some buggy browsers fail to set the
- * encoding type.  If you want to support those, you may have to call
- * #MHD_set_connection_value with the proper encoding type before
- * returning this action (if no supported encoding type is detected,
- * returning this action will cause a bad request to be returned to
- * the client).
- *
- * @param buffer_size maximum number of bytes to use for
- *        internal buffering (used only for the parsing,
- *        specifically the parsing of the keys).  A
- *        tiny value (256-1024) should be sufficient.
- *        Do NOT use a value smaller than 256.  For good
- *        performance, use 32 or 64k (i.e. 65536).
- * @param iter iterator to be called with the parsed data,
- *        Must NOT be NULL.
- * @param iter_cls first argument to @a iter
- * @return NULL on error (out of memory, unsupported encoding),
- *         otherwise a PP handle
- * @ingroup request
+ * @param pp_buffer_size how much data should the post processor
+ *   buffer in memory
+ * @param pp_stream_limit values above which length should be
+ *   given to @a iter for stream processing
+ * @param iter function to call for "oversize" values in the stream,
+ *             can be NULL
+ * @param iter_cls closure for @a iter
+ * @param done_cb called once all data has been processed for
+ *   the final action; values smaller than @a pp_stream_limit that
+ *   fit into @a pp_buffer_size will be available via
+ *   MHD_request_get_post_processor_value()
  */
-_MHD_EXTERN const struct MHD_Action *
-MHD_action_parse_post (size_t buffer_size,
-                       MHD_PostDataIterator iter,
-                       void *iter_cls)
+_MHD_EXTERN struct MHD_Action *
+MHD_action_post_processor (struct MHD_Request *req,
+                           size_t pp_buffer_size,
+                           size_t pp_stream_limit,
+                           MHD_PostDataIterator iter,
+                           void *iter_cls,
+                           MHD_PostDataFinished done_cb,
+                           void *done_cb_cls)
+MHD_NONNULL (2);
+
+
+// @a kind can be filename, content_type, transfer_encoding or (raw) data
+// NULL if key not found or PP not used.
+_MHD_EXTERN const struct MHD_String *
+MHD_request_get_post_processor_value (struct MHD_Request *req,
+                                      enum MHD_ValueKind kind,
+                                      const char *key)
 MHD_NONNULL (2);
 
 
@@ -3629,7 +3953,7 @@ struct MHD_UpgradeResponseHandle;
  * @param ... arguments to the action (depends on the action)
  * @return #MHD_NO on error, #MHD_YES on success
  */
-_MHD_EXTERN enum MHD_Bool
+_MHD_EXTERN struct MHD_Action *// ???
 MHD_upgrade_operation (struct MHD_UpgradeResponseHandle *urh,
                        enum MHD_UpgradeOperation operation,
                        ...)
