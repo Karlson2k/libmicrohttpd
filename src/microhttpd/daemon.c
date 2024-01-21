@@ -7472,7 +7472,7 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
  *                        if provided by application
  * @param[out] psockaddr_len the size memory area pointed by 'struct sockaddr'
  *                           if provided by application
- * @param[in] params the interim parameters to process
+ * @param[in,out] params the interim parameters to process
  * @return true in case of success,
  *         false in case of critical error (the daemon must be closed).
  */
@@ -7596,7 +7596,11 @@ process_interim_params (struct MHD_Daemon *d,
                    "specified for daemon with MHD_USE_NO_LISTEN_SOCKET " \
                    "flag set.\n"));
 #endif /* HAVE_MESSAGES */
-      (void) MHD_socket_close_ (params->listen_fd);
+      if (MHD_INVALID_SOCKET != d->listen_fd)
+      {
+        (void) MHD_socket_close_ (params->listen_fd);
+        params->listen_fd = MHD_INVALID_SOCKET;
+      }
       return false;
     }
     else
@@ -8301,11 +8305,11 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
       }
 #endif /* ! MHD_WINSOCK_SOCKETS */
-      /* Use SO_REUSEADDR on Windows and SO_REUSEPORT on most platforms.
-       * Fail if SO_REUSEPORT is not defined or setsockopt fails.
-       */
-      /* SO_REUSEADDR on W32 has the same semantics
-         as SO_REUSEPORT on BSD/Linux */
+       /* Use SO_REUSEADDR on Windows and SO_REUSEPORT on most platforms.
+        * Fail if SO_REUSEPORT is not defined or setsockopt fails.
+        */
+       /* SO_REUSEADDR on W32 has the same semantics
+          as SO_REUSEPORT on BSD/Linux */
 #if defined(MHD_WINSOCK_SOCKETS) || defined(SO_REUSEPORT)
       if (0 > setsockopt (listen_fd,
                           SOL_SOCKET,
@@ -8325,8 +8329,8 @@ MHD_start_daemon_va (unsigned int flags,
         goto free_and_fail;
       }
 #else  /* !MHD_WINSOCK_SOCKETS && !SO_REUSEPORT */
-      /* we're supposed to allow address:port re-use, but
-         on this platform we cannot; fail hard */
+       /* we're supposed to allow address:port re-use, but
+          on this platform we cannot; fail hard */
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ ("Cannot allow listening address reuse: " \
@@ -9054,6 +9058,7 @@ close_all_connections (struct MHD_Daemon *daemon)
 #ifdef MHD_USE_THREADS
 /* Remove externally added new connections that are
    * not processed by the daemon thread. */
+  MHD_mutex_lock_chk_ (&daemon->new_connections_mutex);
   while (NULL != (pos = daemon->new_connections_tail))
   {
     mhd_assert (MHD_D_IS_USING_THREADS_ (daemon));
@@ -9062,6 +9067,7 @@ close_all_connections (struct MHD_Daemon *daemon)
                 pos);
     new_connection_close_ (daemon, pos);
   }
+  MHD_mutex_unlock_chk_ (&daemon->new_connections_mutex);
 #endif /* MHD_USE_THREADS */
 
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
