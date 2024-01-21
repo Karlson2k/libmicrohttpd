@@ -239,18 +239,18 @@ _externalErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 
 #if defined(HAVE___FUNC__)
 #define externalErrorExit(ignore) \
-    _externalErrorExit_func(NULL, __func__, __LINE__)
+  _externalErrorExit_func (NULL, __func__, __LINE__)
 #define externalErrorExitDesc(errDesc) \
-    _externalErrorExit_func(errDesc, __func__, __LINE__)
+  _externalErrorExit_func (errDesc, __func__, __LINE__)
 #elif defined(HAVE___FUNCTION__)
 #define externalErrorExit(ignore) \
-    _externalErrorExit_func(NULL, __FUNCTION__, __LINE__)
+  _externalErrorExit_func (NULL, __FUNCTION__, __LINE__)
 #define externalErrorExitDesc(errDesc) \
-    _externalErrorExit_func(errDesc, __FUNCTION__, __LINE__)
+  _externalErrorExit_func (errDesc, __FUNCTION__, __LINE__)
 #else
-#define externalErrorExit(ignore) _externalErrorExit_func(NULL, NULL, __LINE__)
+#define externalErrorExit(ignore) _externalErrorExit_func (NULL, NULL, __LINE__)
 #define externalErrorExitDesc(errDesc) \
-  _externalErrorExit_func(errDesc, NULL, __LINE__)
+  _externalErrorExit_func (errDesc, NULL, __LINE__)
 #endif
 
 
@@ -737,7 +737,9 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
       *pport += 4;
   }
 
-  if (testMhdThreadExternal == thrType)
+  switch (thrType)
+  {
+  case testMhdThreadExternal:
     d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
                           | MHD_USE_NO_THREAD_SAFETY
                           | (no_listen ? MHD_USE_NO_LISTEN_SOCKET : 0)
@@ -747,17 +749,8 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                           MHD_OPTION_APP_FD_SETSIZE, (int) FD_SETSIZE,
                           MHD_OPTION_END);
-  else if (testMhdThreadInternalPool != thrType)
-    d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
-                          | (thrType == testMhdThreadExternal ?
-                             0 : MHD_USE_ITC)
-                          | (no_listen ? MHD_USE_NO_LISTEN_SOCKET : 0)
-                          | MHD_USE_ERROR_LOG,
-                          *pport, NULL, NULL,
-                          &ahc_echo, NULL,
-                          MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
-                          MHD_OPTION_END);
-  else
+    break;
+  case testMhdThreadInternalPool:
     d = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD
                           | ((unsigned int) pollType)
                           | MHD_USE_ITC
@@ -769,6 +762,18 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           testNumThreadsForPool (pollType),
                           MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                           MHD_OPTION_END);
+    break;
+  default:
+    d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
+                          | MHD_USE_ITC
+                          | (no_listen ? MHD_USE_NO_LISTEN_SOCKET : 0)
+                          | MHD_USE_ERROR_LOG,
+                          *pport, NULL, NULL,
+                          &ahc_echo, NULL,
+                          MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
+                          MHD_OPTION_END);
+    break;
+  }
 
   if (NULL == d)
   {
