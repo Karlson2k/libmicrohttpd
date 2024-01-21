@@ -8305,11 +8305,11 @@ MHD_start_daemon_va (unsigned int flags,
 #endif
       }
 #endif /* ! MHD_WINSOCK_SOCKETS */
-       /* Use SO_REUSEADDR on Windows and SO_REUSEPORT on most platforms.
-        * Fail if SO_REUSEPORT is not defined or setsockopt fails.
-        */
-       /* SO_REUSEADDR on W32 has the same semantics
-          as SO_REUSEPORT on BSD/Linux */
+      /* Use SO_REUSEADDR on Windows and SO_REUSEPORT on most platforms.
+       * Fail if SO_REUSEPORT is not defined or setsockopt fails.
+       */
+      /* SO_REUSEADDR on W32 has the same semantics
+         as SO_REUSEPORT on BSD/Linux */
 #if defined(MHD_WINSOCK_SOCKETS) || defined(SO_REUSEPORT)
       if (0 > setsockopt (listen_fd,
                           SOL_SOCKET,
@@ -8329,8 +8329,8 @@ MHD_start_daemon_va (unsigned int flags,
         goto free_and_fail;
       }
 #else  /* !MHD_WINSOCK_SOCKETS && !SO_REUSEPORT */
-       /* we're supposed to allow address:port re-use, but
-          on this platform we cannot; fail hard */
+      /* we're supposed to allow address:port re-use, but
+         on this platform we cannot; fail hard */
 #ifdef HAVE_MESSAGES
       MHD_DLOG (daemon,
                 _ ("Cannot allow listening address reuse: " \
