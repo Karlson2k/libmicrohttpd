@@ -2785,7 +2785,8 @@ transmit_error_response_len (struct MHD_Connection *connection,
   { /* Should not happen */
     if (MHD_CONNECTION_CLOSED > connection->state)
       connection->state = MHD_CONNECTION_CLOSED;
-
+    free (header_name);
+    free (header_value);
     return;
   }
   connection->stop_with_error = true;
@@ -2808,6 +2809,8 @@ transmit_error_response_len (struct MHD_Connection *connection,
 #endif
     CONNECTION_CLOSE_ERROR (connection,
                             _ ("Too late for error response."));
+    free (header_name);
+    free (header_value);
     return;
   }
   /* TODO: remove when special error queue function is implemented */
@@ -2840,6 +2843,8 @@ transmit_error_response_len (struct MHD_Connection *connection,
 #endif
     /* can't even send a reply, at least close the connection */
     connection->state = MHD_CONNECTION_CLOSED;
+    free (header_name);
+    free (header_value);
     return;
   }
   mhd_assert ((0 == header_name_len) || (NULL != header_name));
@@ -2850,7 +2855,8 @@ transmit_error_response_len (struct MHD_Connection *connection,
   mhd_assert ((NULL != header_value) || (NULL == header_name));
   if (NULL != header_name)
   {
-    iret = MHD_add_response_entry_no_alloc_ (response, MHD_HEADER_KIND,
+    iret = MHD_add_response_entry_no_alloc_ (response,
+                                             MHD_HEADER_KIND,
                                              header_name, header_name_len,
                                              header_value, header_value_len);
     if (MHD_NO == iret)
@@ -5447,15 +5453,16 @@ send_redirect_fixed_rq_target (struct MHD_Connection *c)
   size_t o;
   char *hdr_name;
   size_t hdr_name_len;
+
   mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
   mhd_assert (0 != c->rq.hdrs.rq_line.num_ws_in_uri);
   mhd_assert (c->rq.hdrs.rq_line.num_ws_in_uri <= \
               c->rq.req_target_len);
   fixed_uri_len = c->rq.req_target_len
                   + 2 * c->rq.hdrs.rq_line.num_ws_in_uri;
-  if ((fixed_uri_len + 200 > c->daemon->pool_size) ||
-      (fixed_uri_len > MHD_MAX_FIXED_URI_LEN) ||
-      (NULL == (b = malloc (fixed_uri_len + 1))))
+  if ( (fixed_uri_len + 200 > c->daemon->pool_size) ||
+       (fixed_uri_len > MHD_MAX_FIXED_URI_LEN) ||
+       (NULL == (b = malloc (fixed_uri_len + 1))) )
   {
     connection_close_error (c,
                             _ ("The request has whitespace character is " \
@@ -5469,6 +5476,7 @@ send_redirect_fixed_rq_target (struct MHD_Connection *c)
   do
   {
     const char chr = c->rq.hdrs.rq_line.rq_tgt[i++];
+
     mhd_assert ('\r' != chr); /* Replaced during request line parsing */
     mhd_assert ('\n' != chr); /* Rejected during request line parsing */
     mhd_assert (0 != chr); /* Rejected during request line parsing */
@@ -5506,11 +5514,17 @@ send_redirect_fixed_rq_target (struct MHD_Connection *c)
   hdr_name = malloc (hdr_name_len + 1);
   if (NULL != hdr_name)
   {
-    memcpy (hdr_name, MHD_HTTP_HEADER_LOCATION, hdr_name_len + 1);
-    transmit_error_response_header (c, MHD_HTTP_MOVED_PERMANENTLY,
+    memcpy (hdr_name,
+            MHD_HTTP_HEADER_LOCATION,
+            hdr_name_len + 1);
+    /* hdr_name and b are free()d within this call */
+    transmit_error_response_header (c,
+                                    MHD_HTTP_MOVED_PERMANENTLY,
                                     RQ_TARGET_INVALID_CHAR,
-                                    hdr_name, hdr_name_len,
-                                    b, o);
+                                    hdr_name,
+                                    hdr_name_len,
+                                    b,
+                                    o);
     return;
   }
   free (b);
