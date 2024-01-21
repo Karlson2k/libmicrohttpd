@@ -270,9 +270,15 @@ serve_simple_form (const void *cls,
   /* return static form */
   response = MHD_create_response_from_buffer_static (strlen (form), form);
   add_session_cookie (session, response);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_ENCODING,
-                           mime);
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_TYPE,
+                               mime))
+  {
+    fprintf (stderr,
+             "Failed to set content type header!\n");
+    /* return response without content type anyway ... */
+  }
   ret = MHD_queue_response (connection,
                             MHD_HTTP_OK,
                             response);
@@ -327,9 +333,15 @@ fill_v1_form (const void *cls,
   if (NULL != response)
   {
     add_session_cookie (session, response);
-    MHD_add_response_header (response,
-                             MHD_HTTP_HEADER_CONTENT_ENCODING,
-                             mime);
+    if (MHD_YES !=
+        MHD_add_response_header (response,
+                                 MHD_HTTP_HEADER_CONTENT_TYPE,
+                                 mime))
+    {
+      fprintf (stderr,
+               "Failed to set content type header!\n");
+      /* return response without content type anyway ... */
+    }
     ret = MHD_queue_response (connection,
                               MHD_HTTP_OK,
                               response);
@@ -392,9 +404,15 @@ fill_v1_v2_form (const void *cls,
   if (NULL != response)
   {
     add_session_cookie (session, response);
-    MHD_add_response_header (response,
-                             MHD_HTTP_HEADER_CONTENT_ENCODING,
-                             mime);
+    if (MHD_YES !=
+        MHD_add_response_header (response,
+                                 MHD_HTTP_HEADER_CONTENT_TYPE,
+                                 mime))
+    {
+      fprintf (stderr,
+               "Failed to set content type header!\n");
+      /* return response without content type anyway ... */
+    }
     ret = MHD_queue_response (connection,
                               MHD_HTTP_OK,
                               response);
@@ -434,9 +452,15 @@ not_found_page (const void *cls,
   ret = MHD_queue_response (connection,
                             MHD_HTTP_NOT_FOUND,
                             response);
-  MHD_add_response_header (response,
-                           MHD_HTTP_HEADER_CONTENT_ENCODING,
-                           mime);
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_TYPE,
+                               mime))
+  {
+    fprintf (stderr,
+             "Failed to set content type header!\n");
+    /* return response without content type anyway ... */
+  }
   MHD_destroy_response (response);
   return ret;
 }
@@ -470,8 +494,8 @@ static const struct Page pages[] = {
  *              specified offset
  * @param off offset of data in the overall value
  * @param size number of bytes in data available
- * @return MHD_YES to continue iterating,
- *         MHD_NO to abort the iteration
+ * @return #MHD_YES to continue iterating,
+ *         #MHD_NO to abort the iteration
  */
 static enum MHD_Result
 post_iterator (void *cls,
@@ -615,9 +639,11 @@ create_response (void *cls,
   if (0 == strcmp (method, MHD_HTTP_METHOD_POST))
   {
     /* evaluate POST data */
-    MHD_post_process (request->pp,
-                      upload_data,
-                      *upload_data_size);
+    if (MHD_YES !=
+        MHD_post_process (request->pp,
+                          upload_data,
+                          *upload_data_size))
+      return MHD_NO; /* internal error */
     if (0 != *upload_data_size)
     {
       *upload_data_size = 0;

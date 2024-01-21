@@ -63,9 +63,21 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
       return MHD_NO;
   }
   response =
-    MHD_create_response_from_fd_at_offset64 ((size_t) sbuf.st_size, fd, 0);
-  MHD_add_response_header (response, "Content-Type", MIMETYPE);
-  ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+    MHD_create_response_from_fd_at_offset64 ((size_t) sbuf.st_size,
+                                             fd,
+                                             0);
+  if (MHD_YES !=
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_CONTENT_TYPE,
+                               MIMETYPE))
+  {
+    fprintf (stderr,
+             "Failed to set content encoding type!\n");
+    /* return response without content encoding anyway ... */
+  }
+  ret = MHD_queue_response (connection,
+                            MHD_HTTP_OK,
+                            response);
   MHD_destroy_response (response);
 
   return ret;

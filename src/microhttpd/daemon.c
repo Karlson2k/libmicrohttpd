@@ -760,10 +760,10 @@ urh_to_fdset (struct MHD_UpgradeResponseHandle *urh,
          (0 != urh->out_buffer_size) ||
          (0 != urh->out_buffer_used))
         && (NULL != es))
-      MHD_add_to_fd_set_ (conn_sckt,
-                          es,
-                          max_fd,
-                          fd_setsize);
+      (void) MHD_add_to_fd_set_ (conn_sckt,
+                                 es,
+                                 max_fd,
+                                 fd_setsize);
   }
   if (MHD_INVALID_SOCKET != mhd_sckt)
   {
@@ -1056,10 +1056,10 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
         result = MHD_NO;
 #ifdef MHD_POSIX_SOCKETS
       if (NULL != except_fd_set)
-        MHD_add_to_fd_set_ (pos->socket_fd,
-                            except_fd_set,
-                            max_fd,
-                            fd_setsize);
+        (void) MHD_add_to_fd_set_ (pos->socket_fd,
+                                   except_fd_set,
+                                   max_fd,
+                                   fd_setsize);
 #endif /* MHD_POSIX_SOCKETS */
       break;
     case MHD_EVENT_LOOP_INFO_WRITE:
@@ -1070,10 +1070,10 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
         result = MHD_NO;
 #ifdef MHD_POSIX_SOCKETS
       if (NULL != except_fd_set)
-        MHD_add_to_fd_set_ (pos->socket_fd,
-                            except_fd_set,
-                            max_fd,
-                            fd_setsize);
+        (void) MHD_add_to_fd_set_ (pos->socket_fd,
+                                   except_fd_set,
+                                   max_fd,
+                                   fd_setsize);
 #endif /* MHD_POSIX_SOCKETS */
       break;
     case MHD_EVENT_LOOP_INFO_PROCESS:
