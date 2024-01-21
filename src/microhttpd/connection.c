@@ -653,10 +653,12 @@ MHD_connection_alloc_memory_ (struct MHD_Connection *connection,
 {
   struct MHD_Connection *const c = connection; /* a short alias */
   struct MemoryPool *const pool = c->pool;     /* a short alias */
-  size_t need_to_be_freed; /**< The required amount of additional free memory */
+  size_t need_to_be_freed = 0; /**< The required amount of additional free memory */
   void *res;
 
-  res = MHD_pool_try_alloc (pool, size, &need_to_be_freed);
+  res = MHD_pool_try_alloc (pool,
+                            size,
+                            &need_to_be_freed);
   if (NULL != res)
     return res;
 
