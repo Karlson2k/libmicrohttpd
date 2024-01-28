@@ -1923,8 +1923,8 @@ calc_userdigest (struct DigestAlgorithm *da,
  *                            if this function succeeds, then this buffer has
  *                            #MHD_digest_get_hash_size(algo3) bytes of
  *                            userdigest upon return
- * @param userdigest_bin the size of the @a userdigest_bin buffer, must be
- *                       at least #MHD_digest_get_hash_size(algo3) bytes long
+ * @param bin_buf_size the size of the @a userdigest_bin buffer, must be
+ *                     at least #MHD_digest_get_hash_size(algo3) bytes long
  * @return MHD_YES on success,
  *         MHD_NO if @a userdigest_bin is too small or if @a algo3 algorithm is
  *         not supported (or external error has occurred,
@@ -3545,8 +3545,9 @@ queue_auth_required_response3_inner (struct MHD_Connection *connection,
 #endif /* HAVE_MESSAGES */
     return MHD_NO;
   }
-  malgo3 &= (enum MHD_DigestAuthMultiQOP)
-            (~((enum MHD_DigestAuthMultiQOP) MHD_DIGEST_AUTH_ALGO3_NON_SESSION));
+  malgo3 &=
+    (enum MHD_DigestAuthMultiQOP)
+    (~((enum MHD_DigestAuthMultiQOP) MHD_DIGEST_AUTH_ALGO3_NON_SESSION));
 #ifdef MHD_MD5_SUPPORT
   if (0 != (((unsigned int) malgo3) & MHD_DIGEST_BASE_ALGO_MD5))
     s_algo = MHD_DIGEST_AUTH_ALGO3_MD5;
