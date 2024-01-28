@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2010 Christian Grothoff (and other contributing authors)
-     Copyright (C) 2016-2022 Evgeny Grin (Karlson2k)
+     Copyright (C) 2016-2024 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -27,7 +27,12 @@
 #include "platform.h"
 #include <microhttpd.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <errno.h>
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#  include <wincrypt.h>
+#endif /* _WIN32 && ! __CYGWIN__ */
+
 
 #define PAGE \
   "<html><head><title>libmicrohttpd demo</title></head>" \
@@ -48,9 +53,10 @@ ahc_echo (void *cls,
           const char *upload_data, size_t *upload_data_size, void **req_cls)
 {
   struct MHD_Response *response;
-  char *username;
-  const char *password = "testpass";
-  const char *realm = "test@example.com";
+  /* Only one user has access to the page */
+  static const char *username = "testuser";
+  static const char *password = "testpass";
+  static const char *realm = "test@example.com";
   enum MHD_DigestAuthResult res_e;
   enum MHD_Result ret;
   static int already_called_marker;
@@ -68,26 +74,17 @@ ahc_echo (void *cls,
     return MHD_YES;
   }
 
-  username = MHD_digest_auth_get_username (connection);
-  if (NULL == username)
-  {
-    response =
-      MHD_create_response_from_buffer_static (strlen (DENIED),
-                                              DENIED);
-    ret = MHD_queue_auth_fail_response2 (connection, realm,
-                                         MY_OPAQUE_STR,
-                                         response,
-                                         MHD_NO,
-                                         MHD_DIGEST_ALG_MD5);
-    MHD_destroy_response (response);
-    return ret;
-  }
-  res_e = MHD_digest_auth_check3 (connection, realm,
-                                  username,
-                                  password,
-                                  300, 60, MHD_DIGEST_AUTH_MULT_QOP_AUTH,
-                                  MHD_DIGEST_AUTH_MULT_ALGO3_MD5);
-  MHD_free (username);
+  /* No need to call MHD_digest_auth_get_username3() as the only
+   * one user has an access. The username match is checked by
+   * MHD_digest_auth_check3() function. */
+  res_e = MHD_digest_auth_check3 (
+    connection,
+    realm,
+    username,
+    password,
+    0, 0,
+    MHD_DIGEST_AUTH_MULT_QOP_ANY_NON_INT,
+    MHD_DIGEST_AUTH_MULT_ALGO3_ANY_NON_SESSION);
   if (res_e != MHD_DAUTH_OK)
   {
     response =
@@ -95,12 +92,18 @@ ahc_echo (void *cls,
                                               DENIED);
     if (NULL == response)
       return MHD_NO;
-    ret = MHD_queue_auth_fail_response2 (connection, realm,
-                                         MY_OPAQUE_STR,
-                                         response,
-                                         (res_e == MHD_DAUTH_NONCE_STALE) ?
-                                         MHD_YES : MHD_NO,
-                                         MHD_DIGEST_ALG_MD5);
+    ret = MHD_queue_auth_required_response3 (
+      connection,
+      realm,
+      MY_OPAQUE_STR,
+      NULL,
+      response,
+      (res_e == MHD_DAUTH_NONCE_STALE) ? MHD_YES : MHD_NO,
+      MHD_DIGEST_AUTH_MULT_QOP_ANY_NON_INT,
+      MHD_DIGEST_AUTH_MULT_ALGO3_ANY_NON_SESSION,
+      MHD_NO,
+      MHD_YES);
+
     MHD_destroy_response (response);
     return ret;
   }
@@ -114,10 +117,7 @@ ahc_echo (void *cls,
 int
 main (int argc, char *const *argv)
 {
-  int fd;
   char rnd[8];
-  ssize_t len;
-  size_t off;
   struct MHD_Daemon *d;
   unsigned int port;
 
@@ -125,33 +125,67 @@ main (int argc, char *const *argv)
        (1 != sscanf (argv[1], "%u", &port)) ||
        (65535 < port) )
   {
-    printf ("%s PORT\n", argv[0]);
+    fprintf (stderr, "%s PORT\n", argv[0]);
     return 1;
   }
 
-  fd = open ("/dev/urandom", O_RDONLY);
-  if (-1 == fd)
+  if (1)
   {
-    fprintf (stderr, "Failed to open `%s': %s\n",
-             "/dev/urandom",
-             strerror (errno));
-    return 1;
-  }
-  off = 0;
-  while (off < 8)
-  {
-    len = read (fd, rnd, 8);
-    if (0 > len)
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+    int fd;
+    ssize_t len;
+    size_t off;
+
+    fd = open ("/dev/urandom", O_RDONLY);
+    if (-1 == fd)
     {
-      fprintf (stderr, "Failed to read `%s': %s\n",
+      fprintf (stderr, "Failed to open `%s': %s\n",
                "/dev/urandom",
                strerror (errno));
-      (void) close (fd);
       return 1;
     }
-    off += (size_t) len;
+    for (off = 0; off < sizeof(rnd); off += (size_t) len)
+    {
+      len = read (fd, rnd, 8);
+      if (0 > len)
+      {
+        fprintf (stderr, "Failed to read `%s': %s\n",
+                 "/dev/urandom",
+                 strerror (errno));
+        (void) close (fd);
+        return 1;
+      }
+    }
+    (void) close (fd);
+#else  /* Native W32 */
+    HCRYPTPROV cc;
+    BOOL b;
+
+    b = CryptAcquireContext (&cc,
+                             NULL,
+                             NULL,
+                             PROV_RSA_FULL,
+                             CRYPT_VERIFYCONTEXT);
+    if (FALSE == b)
+    {
+      fprintf (stderr,
+               "Failed to acquire crypto provider context: %lu\n",
+               (unsigned long) GetLastError ());
+      return 1;
+    }
+    b = CryptGenRandom (cc, sizeof(rnd), (BYTE *) rnd);
+    if (FALSE == b)
+    {
+      fprintf (stderr,
+               "Failed to generate 8 random bytes: %lu\n",
+               GetLastError ());
+    }
+    CryptReleaseContext (cc, 0);
+    if (FALSE == b)
+      return 1;
+#endif /* Native W32 */
   }
-  (void) close (fd);
+
   d = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
                         | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_ERROR_LOG,
                         (uint16_t) port,
