@@ -72,7 +72,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
                                MIMETYPE))
   {
     fprintf (stderr,
-             "Failed to set content encoding type!\n");
+             "Failed to set content type header!\n");
     /* return response without content encoding anyway ... */
   }
   ret = MHD_queue_response (connection,
