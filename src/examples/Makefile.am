@@ -70,7 +70,8 @@ endif
 
 if ENABLE_DAUTH
 noinst_PROGRAMS += \
- digest_auth_example
+ digest_auth_example \
+ digest_auth_example_adv
 endif
 
 if ENABLE_BAUTH
@@ -213,6 +214,11 @@ authorization_example_LDADD = \
 digest_auth_example_SOURCES = \
  digest_auth_example.c
 digest_auth_example_LDADD = \
+ $(top_builddir)/src/microhttpd/libmicrohttpd.la
+
+digest_auth_example_adv_SOURCES = \
+ digest_auth_example_adv.c
+digest_auth_example_adv_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la
 
 refuse_post_example_SOURCES = \
