@@ -5521,7 +5521,8 @@ enum MHD_DigestAuthResult
   MHD_DAUTH_NONCE_WRONG = -33,
 
   /**
-   * The 'response' is wrong. May indicate an attack attempt.
+   * The 'response' is wrong. Typically it means that wrong password used.
+   * May indicate an attack attempt.
    */
   MHD_DAUTH_RESPONSE_WRONG = -34
 };
@@ -5592,8 +5593,8 @@ MHD_digest_auth_check3 (struct MHD_Connection *connection,
  *                            if this function succeeds, then this buffer has
  *                            #MHD_digest_get_hash_size(algo3) bytes of
  *                            userdigest upon return
- * @param userdigest_bin the size of the @a userdigest_bin buffer, must be
- *                       at least #MHD_digest_get_hash_size(algo3) bytes long
+ * @param bin_buf_size the size of the @a userdigest_bin buffer, must be
+ *                     at least #MHD_digest_get_hash_size(algo3) bytes long
  * @return MHD_YES on success,
  *         MHD_NO if @a userdigest_bin is too small or if @a algo3 algorithm is
  *         not supported (or external error has occurred,
