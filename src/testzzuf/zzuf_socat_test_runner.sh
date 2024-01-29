@@ -8,7 +8,7 @@ fi
 socat_listen_ip='127.0.0.121'
 socat_listen_port='10121'
 mhd_listen_port='4010'
-max_runtime_sec='300'
+max_runtime_sec='1800'
 
 if test "x${ZZUF}" = "xno" ; then
   echo "zzuf command missing" 1>&2
