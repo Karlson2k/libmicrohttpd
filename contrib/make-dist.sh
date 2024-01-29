@@ -5,12 +5,13 @@
 # Optional autotools patches are applied for better toolchains
 # compatibility.
 #
-# Based on Debian SID baseline files as of April 2023.
+# Based on Debian SID baseline files as of January 2024.
 #
 
-if ! grep -Eq -e '^PRETTY_NAME="Debian GNU/Linux 12 \(bookworm\)"$' /etc/os-release
+if ! grep -Eq -e '^PRETTY_NAME="Debian GNU/Linux 12 \(bookworm\)"$' /etc/os-release && \
+   ! grep -Eq -e '^PRETTY_NAME="Debian GNU/Linux trixie/sid"$' /etc/os-release 
 then
-  echo "Only Debian 'bookworm' is supported by this script." >&2
+  echo "Only Debian 'bookworm' and 'trixie/sid' are supported by this script." >&2
   exit 1
 fi
 
@@ -95,7 +96,7 @@ echo '*** Building dist tarball...'
 echo ''
 ./configure || exit 7
 if have_command zopfli; then
-    make dist-custm2 'ARC_CMD=zopfli -v --gzip --i15' 'ARC_EXT=tar.gz' || exit 7
+    make dist-custm2 'ARC_CMD=zopfli -v --gzip --i25' 'ARC_EXT=tar.gz' || exit 7
 else
     make dist || exit 7
     echo '* zopfli is not installed, tarball size is suboptimal.'
