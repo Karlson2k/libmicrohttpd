@@ -84,7 +84,7 @@ test_concurent_daemon_pair (void *cls,
       MHD_stop_daemon (d1);
       return 1;
     }
-    port1 = (int) dinfo->port;
+    port1 = dinfo->port;
   }
 
   d2 = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION
@@ -112,7 +112,7 @@ test_concurent_daemon_pair (void *cls,
       MHD_stop_daemon (d2);
       return 1;
     }
-    port2 = (int) dinfo->port;
+    port2 = dinfo->port;
   }
 
   res =

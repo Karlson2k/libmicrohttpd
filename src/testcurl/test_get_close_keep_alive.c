@@ -108,7 +108,7 @@
 #endif
 
 
-static void
+_MHD_NORETURN static void
 _externalErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 {
   if ((NULL != errDesc) && (0 != errDesc[0]))
@@ -132,7 +132,7 @@ _externalErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 
 static char libcurl_errbuf[CURL_ERROR_SIZE] = "";
 
-static void
+_MHD_NORETURN static void
 _libcurlErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 {
   if ((NULL != errDesc) && (0 != errDesc[0]))

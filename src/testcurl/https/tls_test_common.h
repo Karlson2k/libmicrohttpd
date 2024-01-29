@@ -232,8 +232,8 @@ int testsuite_curl_global_init (void);
  * @param prog_name program name, may include path
  * @param marker    marker to look for.
  * @return zero if any parameter is NULL or empty string or
- *         @prog_name ends with slash or @marker is not found in
- *         program name, non-zero if @maker is found in program
+ *         @a prog_name ends with slash or @a marker is not found in
+ *         program name, non-zero if @a maker is found in program
  *         name.
  */
 int
