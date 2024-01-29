@@ -96,7 +96,7 @@ thread_watchdog (void *param)
 }
 
 
-pthread_t watchdog_tid;
+static pthread_t watchdog_tid;
 
 static void
 start_watchdog (int timeout, const char *obj_name)

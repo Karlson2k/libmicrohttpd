@@ -266,7 +266,7 @@ static int verbose;
 static int oldapi;
 
 /* Static helper variables */
-struct curl_slist *curl_headers;
+static struct curl_slist *curl_headers;
 
 static void
 test_global_init (void)
