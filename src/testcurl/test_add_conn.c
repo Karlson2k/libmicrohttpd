@@ -763,7 +763,8 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                           MHD_OPTION_END);
     break;
-  default:
+  case testMhdThreadInternal:
+  case testMhdThreadInternalPerConnection:
     d = MHD_start_daemon (((unsigned int) thrType) | ((unsigned int) pollType)
                           | MHD_USE_ITC
                           | (no_listen ? MHD_USE_NO_LISTEN_SOCKET : 0)
@@ -772,6 +773,9 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
                           &ahc_echo, NULL,
                           MHD_OPTION_URI_LOG_CALLBACK, &log_cb, NULL,
                           MHD_OPTION_END);
+    break;
+  default:
+    abort ();
     break;
   }
 

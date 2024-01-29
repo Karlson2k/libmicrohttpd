@@ -60,32 +60,32 @@
 /**
  * Use "Connection: close" header?
  */
-int conn_close;
+static int conn_close;
 
 /**
  * Use static string response instead of callback-generated?
  */
-int resp_string;
+static int resp_string;
 
 /**
  * Use response with known size?
  */
-int resp_sized;
+static int resp_sized;
 
 /**
  * Use empty (zero-sized) response?
  */
-int resp_empty;
+static int resp_empty;
 
 /**
  * Force chunked response by response header?
  */
-int chunked_forced;
+static int chunked_forced;
 
 /**
  * MHD port used for testing
  */
-uint16_t port_global;
+static uint16_t port_global;
 
 
 struct headers_check_result
