@@ -235,7 +235,7 @@ do_get (const char *url, uint16_t port)
     curl_easy_cleanup (c);
     free (cbc.buf);
     curl_slist_free_all (dns_info);
-    return errornum;
+    return -1;
   }
 
   curl_easy_cleanup (c);

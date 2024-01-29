@@ -2780,7 +2780,8 @@ new_connection_prepare_ (struct MHD_Daemon *daemon,
                               (int) (client_socket));
 #else  /* GnuTLS before 3.1.9 or Win x64 */
     gnutls_transport_set_ptr (connection->tls_session,
-                              (gnutls_transport_ptr_t) (intptr_t) (client_socket));
+                              (gnutls_transport_ptr_t) \
+                              (intptr_t) client_socket);
 #endif /* GnuTLS before 3.1.9 or Win x64 */
 #ifdef MHD_TLSLIB_NEED_PUSH_FUNC
     gnutls_transport_set_push_function (connection->tls_session,
@@ -6358,6 +6359,8 @@ daemon_tls_priorities_init_default (struct MHD_Daemon *daemon)
   mhd_assert (MHD_TLS_PRIO_BASE_NORMAL + 1 == \
               sizeof(MHD_TlsBasePriotities) / sizeof(MHD_TlsBasePriotities[0]));
 
+  res = GNUTLS_E_SUCCESS; /* Mute compiler warning */
+
   for (p = 0;
        p < sizeof(MHD_TlsBasePriotities) / sizeof(MHD_TlsBasePriotities[0]);
        ++p)
@@ -6435,6 +6438,8 @@ daemon_tls_priorities_init_append_inner_ (struct MHD_Daemon *daemon,
   mhd_assert (NULL == daemon->priority_cache);
   mhd_assert (MHD_TLS_PRIO_BASE_NORMAL + 1 == \
               sizeof(MHD_TlsBasePriotities) / sizeof(MHD_TlsBasePriotities[0]));
+
+  res = GNUTLS_E_SUCCESS; /* Mute compiler warning */
 
   for (p = 0;
        p < sizeof(MHD_TlsBasePriotities) / sizeof(MHD_TlsBasePriotities[0]);

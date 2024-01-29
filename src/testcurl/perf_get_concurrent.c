@@ -412,7 +412,6 @@ testExternalGet (uint16_t port)
   MHD_socket max;
   struct timeval tv;
   uint64_t tt64;
-  int tret;
   char *ret_val;
   int ret = 0;
 
@@ -455,8 +454,7 @@ testExternalGet (uint16_t port)
       MHD_stop_daemon (d);
       return 4096;
     }
-    tret = MHD_get_timeout64 (d, &tt64);
-    if (MHD_YES != tret)
+    if (MHD_NO == MHD_get_timeout64 (d, &tt64))
       tt64 = 1;
 #if ! defined(_WIN32) || defined(__CYGWIN__)
     tv.tv_sec = (time_t) (tt64 / 1000);

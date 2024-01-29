@@ -512,7 +512,8 @@ wr_create_tls_sckt (void)
             gnutls_transport_set_int (s->tls_s, (int) (s->fd));
 #else  /* GnuTLS before 3.1.9 or Win x64 */
             gnutls_transport_set_ptr (s->tls_s,
-                                      (gnutls_transport_ptr_t) (intptr_t) (s->fd));
+                                      (gnutls_transport_ptr_t) \
+                                      (intptr_t) (s->fd));
 #endif /* GnuTLS before 3.1.9 or Win x64 */
             return s;
           }
@@ -2120,7 +2121,7 @@ global_test_init (void)
 
     rclient_msg_size = MHD_STATICSTR_LEN_ ("Hello");
     rclient_msg = "Hello";
-    app_msg_size = MHD_STATICSTR_LEN_ ("World");;
+    app_msg_size = MHD_STATICSTR_LEN_ ("World");
     app_msg = "World";
   }
   return true;
