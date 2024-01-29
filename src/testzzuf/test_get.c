@@ -704,7 +704,8 @@ ahc_check (void *cls,
       /* Check that all 'upload_data' is addressable */
       size_t pos;
       for (pos = 0; pos < *upload_data_size; ++pos)
-        data_sum += (unsigned char) upload_data[pos];
+        data_sum =
+          (unsigned char) (data_sum + (unsigned char) upload_data[pos]);
       if (0 != *upload_data_size)
       {
         if (3 >= *upload_data_size)
