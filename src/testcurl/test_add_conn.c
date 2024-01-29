@@ -215,7 +215,7 @@ ahc_echo (void *cls,
 }
 
 
-static void
+_MHD_NORETURN static void
 _externalErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 {
   if ((NULL != errDesc) && (0 != errDesc[0]))

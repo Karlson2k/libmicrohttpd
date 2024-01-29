@@ -43,7 +43,7 @@
 static volatile unsigned int request_counter;
 
 
-static void
+_MHD_NORETURN static void
 http_PanicCallback (void *cls,
                     const char *file,
                     unsigned int line,
