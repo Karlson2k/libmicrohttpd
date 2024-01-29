@@ -70,6 +70,9 @@ static int allow_rfc2069 = 0;
  */
 static uint16_t daemon_port = 0;
 
+
+/* *** "Database" of users and "database" functions *** */
+
 /**
  * User record.
  * This kind of data (or something similar) should be stored in some database
@@ -380,6 +383,10 @@ find_entry_by_userinfo (const struct MHD_DigestAuthUsernameInfo *username_info)
 }
 
 
+/* *** End of "database" of users and "database" functions *** */
+
+/* *** Requests handling *** */
+
 /**
  * Send "Requested HTTP method is not supported" page
  * @param c the connection structure
@@ -427,8 +434,9 @@ get_m_algo (void)
     return MHD_DIGEST_AUTH_MULT_ALGO3_SHA256;
   else if (force_sha512_256)
     return MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256;
-  else
-    return MHD_DIGEST_AUTH_MULT_ALGO3_ANY_NON_SESSION;
+
+  /* No forced algorithm selection, let MHD to use default */
+  return MHD_DIGEST_AUTH_MULT_ALGO3_ANY_NON_SESSION;
 }
 
 
@@ -853,6 +861,9 @@ ahc_main (void *cls,
 }
 
 
+/* *** End of requests handling *** */
+
+
 /**
  * Add new users to the users "database".
  *
@@ -886,6 +897,13 @@ add_new_users (void)
 }
 
 
+/**
+ * Check and apply application parameters
+ * @param argc the argc of the @a main function
+ * @param argv the argv of the @a main function
+ * @return non-zero on success,
+ *         zero in case of any error (like wrong parameters).
+ */
 static int
 check_params (int argc, char *const *const argv)
 {
@@ -936,10 +954,13 @@ check_params (int argc, char *const *const argv)
 }
 
 
+/**
+ * The cryptographically secure random data
+ */
 static uint8_t rand_data[8];
 
 /**
- * Initialise random data
+ * Initialise the random data
  * @return non-zero if succeed,
  *         zero if failed
  */
@@ -1037,7 +1058,11 @@ main (int argc, char *const *argv)
     MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 180,
     MHD_OPTION_END);
   if (d == NULL)
+  {
+    fprintf (stderr, "Failed to start the server on port %lu.\n",
+             (unsigned long) daemon_port);
     return 1;
+  }
   printf ("Running server on port %lu.\nPress ENTER to stop.\n",
           (unsigned long) daemon_port);
   (void) getc (stdin);
