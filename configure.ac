@@ -2495,7 +2495,7 @@ AC_CACHE_CHECK([size of tv_sec member of struct timeval], [mhd_cv_size_timeval_t
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
-struct timeval test_var;
+static struct timeval test_var;
       ]],
       [
         # The size is used only to exclude additional checks/comparison in code
