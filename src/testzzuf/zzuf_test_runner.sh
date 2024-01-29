@@ -1,7 +1,7 @@
 #!/bin/sh
 
 mhd_listen_ip='127.0.0.1'
-max_runtime_sec='300'
+max_runtime_sec='1800'
 
 if test "x${ZZUF}" = "xno" ; then
   echo "zzuf command missing" 1>&2
