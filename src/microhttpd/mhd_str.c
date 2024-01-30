@@ -1073,7 +1073,7 @@ MHD_str_remove_tokens_caseless_ (char *str,
       while (pt < tokens_len && (' ' == t[pt] || '\t' == t[pt]))
         pt++;
       /* Found end of the token string or non-whitespace char */
-    } while(pt < tokens_len && ',' != t[pt]);
+    } while (pt < tokens_len && ',' != t[pt]);
 
     /* 'tkn' is the input token with 'tkn_len' chars */
     mhd_assert (0 != tkn_len);
@@ -1531,8 +1531,10 @@ MHD_uint32_to_strx (uint32_t val,
 
   while (o_pos < buf_size)
   {
-    buf[o_pos++] = (digit <= 9) ? ('0' + (char) digit) :
-                   ('A' + (char) digit - 10);
+    buf[o_pos++] =
+      (char) ((digit <= 9) ?
+              ('0' + (char) digit) :
+              ('A' + (char) digit - 10));
     if (0 == digit_pos)
       return o_pos;
     digit_pos--;
@@ -1568,7 +1570,7 @@ MHD_uint16_to_str (uint16_t val,
 
   while (0 != buf_size)
   {
-    *chr = (char) digit + '0';
+    *chr = (char) ((char) digit + '0');
     chr++;
     buf_size--;
     if (1 == divisor)
@@ -1609,7 +1611,7 @@ MHD_uint64_to_str (uint64_t val,
 
   while (0 != buf_size)
   {
-    *chr = (char) digit + '0';
+    *chr = (char) ((char) digit + '0');
     chr++;
     buf_size--;
     if (1 == divisor)
@@ -1644,7 +1646,7 @@ MHD_uint8_to_str_pad (uint8_t val,
   }
   else
   {
-    buf[pos++] = '0' + (char) digit;
+    buf[pos++] = (char) ('0' + (char) digit);
     val %= 100;
     min_digits = 2;
   }
@@ -1659,13 +1661,13 @@ MHD_uint8_to_str_pad (uint8_t val,
   }
   else
   {
-    buf[pos++] = '0' + (char) digit;
+    buf[pos++] = (char) ('0' + (char) digit);
     val %= 10;
   }
 
   if (buf_size <= pos)
     return 0;
-  buf[pos++] = '0' + (char) val;
+  buf[pos++] = (char) ('0' + (char) val);
   return pos;
 }
 
