@@ -523,13 +523,13 @@ MHD_socket_create_listen_ (int pf)
 #if defined(MHD_POSIX_SOCKETS) && (defined(SOCK_CLOEXEC) || \
   defined(SOCK_NOSIGPIPE) )
 
+  fd = socket (pf,
+               SOCK_STREAM | SOCK_CLOEXEC | SOCK_NOSIGPIPE_OR_ZERO,
+               0);
   cloexec_set = (SOCK_CLOEXEC_OR_ZERO != 0);
 #if defined(SOCK_NOSIGPIPE) || defined(MHD_socket_nosignal_)
   nosigpipe_set = (SOCK_NOSIGPIPE_OR_ZERO != 0);
 #endif /* SOCK_NOSIGPIPE ||  MHD_socket_nosignal_ */
-  fd = socket (pf,
-               SOCK_STREAM | SOCK_CLOEXEC | SOCK_NOSIGPIPE_OR_ZERO,
-               0);
 #elif defined(MHD_WINSOCK_SOCKETS) && defined(WSA_FLAG_NO_HANDLE_INHERIT)
   fd = WSASocketW (pf,
                    SOCK_STREAM,
@@ -538,9 +538,13 @@ MHD_socket_create_listen_ (int pf)
                    0,
                    WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
   cloexec_set = ! 0;
-#else  /* !SOCK_CLOEXEC */
+#else  /* No special socket init function / flags */
   fd = MHD_INVALID_SOCKET;
-#endif /* !SOCK_CLOEXEC */
+  cloexec_set = 0;
+#if defined(SOCK_NOSIGPIPE) || defined(MHD_socket_nosignal_)
+  nosigpipe_set = 0;
+#endif /* SOCK_NOSIGPIPE ||  MHD_socket_nosignal_ */
+#endif /* No special socket init function / flags */
   if (MHD_INVALID_SOCKET == fd)
   {
     fd = socket (pf,
