@@ -445,6 +445,8 @@ test_postprocessor_md_SOURCES = \
   test_postprocessor_md.c postprocessor.h postprocessor.c \
   internal.h internal.c mhd_str.h mhd_str.c \
   mhd_panic.h mhd_panic.c
+test_postprocessor_md_CPPFLAGS = \
+  $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
 
 test_shutdown_select_SOURCES = \
   test_shutdown_select.c
@@ -558,6 +560,8 @@ test_sha1_SOURCES = \
 
 test_auth_parse_SOURCES = \
   test_auth_parse.c gen_auth.c gen_auth.h  mhd_str.h mhd_str.c mhd_assert.h
+test_auth_parse_CPPFLAGS = \
+  $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
 
 test_str_quote_SOURCES = \
   test_str_quote.c mhd_str.h mhd_str.c mhd_assert.h
