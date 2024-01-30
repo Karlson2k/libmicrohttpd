@@ -3595,12 +3595,13 @@ check_and_grow_read_buffer_space (struct MHD_Connection *c)
                                 c->read_buffer_size);
         else
         {
-          const size_t cur_chunk_left =
+          const uint64_t cur_chunk_left =
             c->rq.current_chunk_size - c->rq.current_chunk_offset;
           /* Do not grow read buffer more than necessary to process the current
              chunk with terminating CRLF. */
           mhd_assert (c->rq.current_chunk_offset <= c->rq.current_chunk_size);
-          rbuff_grow_desired = ((cur_chunk_left + 2) > c->read_buffer_size);
+          rbuff_grow_desired =
+            ((cur_chunk_left + 2) > (uint64_t) (c->read_buffer_size));
         }
       }
     }
