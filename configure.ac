@@ -6056,32 +6056,32 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Target directory:  ${prefix}
   Cross-compiling:   ${cross_compiling}
   Operating System:  ${mhd_host_os}${os_ver_msg}
+  Threading lib:     ${USE_THREADS}
+  Inter-thread comm: ${use_itc}
+  Shutdown of listening socket triggers select: ${mhd_cv_host_shtdwn_trgr_select}
+  poll support:      ${enable_poll=no}
+  epoll support:     ${enable_epoll=no}
+  sendfile used:     ${found_sendfile}
+  HTTPS support:     ${MSG_HTTPS}
   Messages:          ${enable_messages}
   Cookie parsing:    ${enable_cookie}
   Postproc:          ${enable_postprocessor}
-  HTTP "Upgrade":    ${enable_httpupgrade}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
   Digest auth. defaults: ${dauth_defs_MSG}
   MD5:               ${enable_md5_MSG}
   SHA-256:           ${enable_sha256_MSG}
   SHA-512/256:       ${enable_sha512_256_MSG}
-  Shutdown of listening socket triggers select: ${mhd_cv_host_shtdwn_trgr_select}
-  Inter-thread comm: ${use_itc}
-  Threading lib:     ${USE_THREADS}
-  poll support:      ${enable_poll=no}
-  epoll support:     ${enable_epoll=no}
-  sendfile used:     ${found_sendfile}
-  HTTPS support:     ${MSG_HTTPS}
+  HTTP "Upgrade":    ${enable_httpupgrade}
   Compact code:      ${enable_compact_code} (${compact_code_MSG})
   Use thread names:  ${enable_thread_names}
   Use debug asserts: ${use_asserts_MSG=no}
   Use sanitizers:    ${enabled_sanitizers:=no}
+  Build static lib:  ${enable_static}
+  Build shared lib:  ${enable_shared}
   Build docs:        ${enable_doc}
   Build examples:    ${enable_examples}
   Build tools:       ${enable_examples}
-  Build static lib:  ${enable_static}
-  Build shared lib:  ${enable_shared}
   Test with libcurl: ${MSG_CURL}
   Heavy tests:       ${use_heavy_tests_MSG}
   Fuzzing tests:     ${run_zzuf_tests_MSG=no}
