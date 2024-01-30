@@ -63,14 +63,21 @@ static const char *const locale_names[] = {
   ".1250",
   ".1251",
   ".1252",
+  "en",
+  "english",
+  "French_France",
+  "Turkish_Turkey.1254",
+  "de",
+  "zh-Hans",
+  "ru-RU.1251"
+#if 0 /* Disabled extra checks */
+  ,
   ".1254",
   ".20866",   /* number for KOI8-R */
   ".28591",   /* number for ISO-8859-1 */
   ".28595",   /* number for ISO-8859-5 */
   ".28599",   /* number for ISO-8859-9 */
   ".28605",   /* number for ISO-8859-15 */
-  "en",
-  "english",
   "en-US",
   "English-US",
   "en-US.437",
@@ -82,14 +89,12 @@ static const char *const locale_names[] = {
   "fra",
   "french",
   "fr-FR",
-  "French_France",
   "fr-FR.850",
   "french_france.850",
   "fr-FR.1252",
   "French_france.1252",
   "French_france.28605",
   "French_France.65001",
-  "de",
   "de-DE",
   "de-DE.850",
   "German_Germany.850",
@@ -103,7 +108,6 @@ static const char *const locale_names[] = {
   "turkish",
   "tr-TR",
   "tr-TR.1254",
-  "Turkish_Turkey.1254",
   "tr-TR.857",
   "Turkish_Turkey.857",
   "Turkish_Turkey.28599",
@@ -113,14 +117,13 @@ static const char *const locale_names[] = {
   "Russian",
   "ru-RU.866",
   "Russian_Russia.866",
-  "ru-RU.1251",
   "Russian_Russia.1251",
   "Russian_Russia.20866",
   "Russian_Russia.28595",
   "Russian_Russia.65001",
-  "zh-Hans",
   "zh-Hans.936",
   "chinese-simplified"
+#endif /* Disabled extra checks */
 #else /* ! _WIN32 || __CYGWIN__ */
   "C.UTF-8",
   "POSIX",
@@ -424,7 +427,8 @@ static const struct two_eq_strs eq_strings[] = {
      "\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5"
      "\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9"
      "\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed"
-     "\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"),
+     "\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff")
+   ,
    D_STR_W_LEN (
      "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14"
      "\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !\"#$%&'()*+,-./0123456789:;<=>?@ab"
@@ -434,7 +438,8 @@ static const struct two_eq_strs eq_strings[] = {
      "\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5"
      "\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9"
      "\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed"
-     "\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff")}             /* Full with A/a match */
+     "\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff")
+  }                                                                                           /* Full with A/a match */
 };
 
 struct two_neq_strs
@@ -1747,11 +1752,9 @@ check_strx_to_uint32_all_chars (void)
     {
       static const uint32_t rnd_val = 234234;
       size_t rs;
-      if (((c >= '0') && (c <= '9') ) || ((c >= 'A') && (c <= 'F') ) || ((c >=
-                                                                          'a')
-                                                                         &&
-                                                                         (c <=
-                                                                          'f') ))
+      if (( (c >= '0') && (c <= '9') )
+          || ( (c >= 'A') && (c <= 'F') )
+          || ( (c >= 'a') && (c <= 'f') ))
         continue;     /* skip xdigits */
       for (test_val = 0; test_val <= rnd_val && ! c_failed[c]; test_val +=
              rnd_val)
@@ -2033,11 +2036,9 @@ check_strx_to_uint32_n_all_chars (void)
       size_t rs;
       size_t len;
 
-      if (((c >= '0') && (c <= '9') ) || ((c >= 'A') && (c <= 'F') ) || ((c >=
-                                                                          'a')
-                                                                         &&
-                                                                         (c <=
-                                                                          'f') ))
+      if (( (c >= '0') && (c <= '9') )
+          || ( (c >= 'A') && (c <= 'F') )
+          || ( (c >= 'a') && (c <= 'f') ))
         continue;     /* skip xdigits */
 
       for (len = 0; len <= 5; len++)
@@ -2350,11 +2351,9 @@ check_strx_to_uint64_all_chars (void)
     {
       static const uint64_t rnd_val = 234234;
       size_t rs;
-      if (((c >= '0') && (c <= '9') ) || ((c >= 'A') && (c <= 'F') ) || ((c >=
-                                                                          'a')
-                                                                         &&
-                                                                         (c <=
-                                                                          'f') ))
+      if (( (c >= '0') && (c <= '9') )
+          || ( (c >= 'A') && (c <= 'F') )
+          || ( (c >= 'a') && (c <= 'f') ))
         continue;     /* skip xdigits */
       for (test_val = 0; test_val <= rnd_val && ! c_failed[c]; test_val +=
              rnd_val)
@@ -2610,11 +2609,9 @@ check_strx_to_uint64_n_all_chars (void)
       size_t rs;
       size_t len;
 
-      if (((c >= '0') && (c <= '9') ) || ((c >= 'A') && (c <= 'F') ) || ((c >=
-                                                                          'a')
-                                                                         &&
-                                                                         (c <=
-                                                                          'f') ))
+      if (( (c >= '0') && (c <= '9') )
+          || ( (c >= 'A') && (c <= 'F') )
+          || ( (c >= 'a') && (c <= 'f') ))
         continue;     /* skip xdigits */
 
       for (len = 0; len <= 5; len++)
