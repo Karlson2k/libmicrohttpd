@@ -1964,17 +1964,17 @@ startTestMhdDaemon (enum testMhdThreadsType thrType,
   {
     *pport = 4170;
     if (use_shutdown)
-      *pport += 0;
+      *pport = (uint16_t) (*pport + 0);
     if (use_close)
-      *pport += 1;
+      *pport = (uint16_t) (*pport + 1);
     if (use_hard_close)
-      *pport += 1;
+      *pport = (uint16_t) (*pport + 1);
     if (by_step)
-      *pport += 1 << 2;
+      *pport = (uint16_t) (*pport + (1 << 2));
     if (upl_chunked)
-      *pport += 1 << 3;
+      *pport = (uint16_t) (*pport + (1 << 3));
     if (! oneone)
-      *pport += 1 << 4;
+      *pport = (uint16_t) (*pport + (1 << 4));
   }
 
   if (testMhdThreadExternal == thrType)

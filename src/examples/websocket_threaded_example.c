@@ -675,7 +675,7 @@ ws_receive_frame (unsigned char *frame, ssize_t *length, int *type)
     {
       idx_first_mask = 10;
     }
-    idx_first_data = idx_first_mask + 4;
+    idx_first_data = (unsigned char) (idx_first_mask + 4);
     data_length = (size_t) *length - idx_first_data;
     masks[0] = frame[idx_first_mask + 0];
     masks[1] = frame[idx_first_mask + 1];
