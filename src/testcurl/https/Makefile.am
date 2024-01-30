@@ -34,8 +34,9 @@ if HAVE_GNUTLS_SNI
   TEST_HTTPS_SNI = test_https_sni
 endif
 
-if HAVE_POSIX_THREADS
+if !HAVE_GNUTLS_MTHREAD_BROKEN
 HTTPS_PARALLEL_TESTS = \
+    test_https_time_out \
     test_https_get_parallel \
     test_https_get_parallel_threads
 endif
@@ -52,12 +53,6 @@ THREAD_ONLY_TESTS = \
   test_empty_response \
   test_https_get_iovec \
   $(EMPTY_ITEM)
-
-if !HAVE_GNUTLS_MTHREAD_BROKEN
-THREAD_ONLY_TESTS += \
-  test_https_time_out \
-  $(EMPTY_ITEM)
-endif
 
 check_PROGRAMS = \
   test_https_get_select
