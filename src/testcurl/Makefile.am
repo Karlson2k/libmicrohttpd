@@ -59,12 +59,12 @@ endif
 THREAD_ONLY_TESTS += \
   test_get_wait \
   test_get_wait11 \
-  test_quiesce \
   $(EMPTY_ITEM)
 
 if HEAVY_TESTS
 THREAD_ONLY_TESTS += \
   test_concurrent_stop \
+  test_quiesce \
   $(EMPTY_ITEM)
 endif
 
