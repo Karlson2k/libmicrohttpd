@@ -568,7 +568,13 @@ ahc_echo (void *cls,
       }
       if (! test_rfc2069)
       {
-        if (10 >= dinfo->cnonce_len)
+        if (
+#if CURL_AT_LEAST_VERSION (7,37,1)
+          10 >= dinfo->cnonce_len
+#else  /* libcurl before 7.37.1 */
+          8 > dinfo->cnonce_len
+#endif /* libcurl before 7.37.1 */
+          )
         {
           fprintf (stderr, "Unexpected small 'cnonce_len': %ld. ",
                    (long) dinfo->cnonce_len);
@@ -879,11 +885,10 @@ ahc_echo (void *cls,
       if (NULL == response)
         mhdErrorExitDesc ("Response creation failed");
       res =
-        MHD_queue_auth_required_response3 (connection, REALM_VAL, OPAQUE_VALUE,
-                                           "/", response, 0,
-                                           (enum MHD_DigestAuthMultiQOP) qop,
-                                           (enum MHD_DigestAuthMultiAlgo3) algo3,
-                                           test_userhash, 0);
+        MHD_queue_auth_required_response3 (
+          connection, REALM_VAL, OPAQUE_VALUE, "/", response, 0,
+          (enum MHD_DigestAuthMultiQOP) qop,
+          (enum MHD_DigestAuthMultiAlgo3) algo3, test_userhash, 0);
       if (MHD_YES != res)
         mhdErrorExitDesc ("'MHD_queue_auth_required_response3()' failed");
     }
