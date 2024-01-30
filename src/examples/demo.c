@@ -793,8 +793,8 @@ generate_page (void *cls,
     /* read beginning of the file to determine mime type  */
     got = read (fd, file_data, sizeof (file_data));
     (void) lseek (fd, 0, SEEK_SET);
-    if (-1 != got)
-      mime = magic_buffer (magic, file_data, got);
+    if (0 < got)
+      mime = magic_buffer (magic, file_data, (size_t) got);
     else
 #endif /* MHD_HAVE_LIBMAGIC */
     mime = NULL;
@@ -1002,7 +1002,8 @@ main (int argc, char *const *argv)
                         MHD_OPTION_PER_IP_CONNECTION_LIMIT, (unsigned int) (64),
 #endif
                         MHD_OPTION_CONNECTION_TIMEOUT, (unsigned
-                                                        int) (120 /* seconds */),
+                                                        int) (120 /* seconds */)
+                        ,
                         MHD_OPTION_THREAD_POOL_SIZE, (unsigned
                                                       int) NUMBER_OF_THREADS,
                         MHD_OPTION_NOTIFY_COMPLETED,
