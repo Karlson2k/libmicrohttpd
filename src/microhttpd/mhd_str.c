@@ -1575,7 +1575,7 @@ MHD_uint16_to_str (uint16_t val,
     buf_size--;
     if (1 == divisor)
       return (size_t) (chr - buf);
-    val %= divisor;
+    val = (uint16_t) (val % divisor);
     divisor /= 10;
     digit = (int) (val / divisor);
     mhd_assert (digit < 10);
@@ -1733,8 +1733,8 @@ MHD_hex_to_bin (const char *hex,
     const int l = toxdigitvalue (hex[r++]);
     if ((0 > h) || (0 > l))
       return 0;
-    out[w++] = ( ((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
-                 | ((uint8_t) ((unsigned int) l)) );
+    out[w++] = (uint8_t) ( ((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
+                           | ((uint8_t) ((unsigned int) l)) );
   }
   mhd_assert (len == r);
   mhd_assert ((len + 1) / 2 == w);
