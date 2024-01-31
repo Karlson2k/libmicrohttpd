@@ -44,7 +44,15 @@
 /**
  * How many requests do we do in parallel?
  */
-#define PAR (MHD_CPU_COUNT * 4)
+#if SIZEOF_SIZE_T >= 8 || MHD_CPU_COUNT < 8
+#  define PAR (MHD_CPU_COUNT * 4)
+#elif MHD_CPU_COUNT < 16
+/* Limit load */
+#  define PAR (MHD_CPU_COUNT * 2)
+#else
+/* Limit load */
+#  define PAR (MHD_CPU_COUNT * 1)
+#endif
 
 /**
  * Do we use HTTP 1.1?
