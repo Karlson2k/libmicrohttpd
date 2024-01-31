@@ -1,7 +1,7 @@
 /*
   This file is part of libmicrohttpd
   Copyright (C) 2007-2018 Daniel Pittman and Christian Grothoff
-  Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
+  Copyright (C) 2014-2023 Evgeny Grin (Karlson2k)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -2921,6 +2921,7 @@ MHD_get_master (struct MHD_Daemon *const daemon)
  */
 void
 MHD_upgraded_connection_mark_app_closed_ (struct MHD_Connection *connection);
+
 #endif /* UPGRADE_SUPPORT */
 
 

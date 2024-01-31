@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2019-2021 Karlson2k (Evgeny Grin)
+  Copyright (C) 2019-2023 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -58,7 +58,8 @@ MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_
 #endif /* ! __clang__ */
 #define _MHD_BYTES_SWAP32(value32)  \
   ((uint32_t) _byteswap_ulong ((uint32_t) value32))
-#elif __has_builtin (__builtin_bswap32)
+#elif \
+  __has_builtin (__builtin_bswap32)
 #define _MHD_BYTES_SWAP32(value32)  \
   ((uint32_t) __builtin_bswap32 ((uint32_t) value32))
 #else  /* ! __has_builtin(__builtin_bswap32) */
@@ -80,7 +81,8 @@ MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_
 #endif /* ! __clang__ */
 #define _MHD_BYTES_SWAP64(value64)  \
   ((uint64_t) _byteswap_uint64 ((uint64_t) value64))
-#elif __has_builtin (__builtin_bswap64)
+#elif \
+  __has_builtin (__builtin_bswap64)
 #define _MHD_BYTES_SWAP64(value64) \
   ((uint64_t) __builtin_bswap64 ((uint64_t) value64))
 #else  /* ! __has_builtin(__builtin_bswap64) */

@@ -1,7 +1,7 @@
 /*
   This file is part of libmicrohttpd
   Copyright (C) 2007-2018 Daniel Pittman and Christian Grothoff
-  Copyright (C) 2015-2023 Evgeny Grin (Karlson2k)
+  Copyright (C) 2015-2024 Evgeny Grin (Karlson2k)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -6607,10 +6607,10 @@ parse_options_va (struct MHD_Daemon *daemon,
 #ifdef HTTPS_SUPPORT
   const char *pstr;
 #if GNUTLS_VERSION_MAJOR >= 3
-  gnutls_certificate_retrieve_function2 *pgcrf;
+  gnutls_certificate_retrieve_function2 * pgcrf;
 #endif
 #if GNUTLS_VERSION_NUMBER >= 0x030603
-  gnutls_certificate_retrieve_function3 *pgcrf2;
+  gnutls_certificate_retrieve_function3 * pgcrf2;
 #endif
 #endif /* HTTPS_SUPPORT */
 
