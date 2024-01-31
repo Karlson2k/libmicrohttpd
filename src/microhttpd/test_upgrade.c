@@ -1392,7 +1392,11 @@ recv_all (struct wr_socket *sock,
 static void
 send_eof (struct wr_socket *sock)
 {
-  if (0 != wr_shutdown (sock, wr_is_eof_received (sock) ? SHUT_RDWR : SHUT_WR))
+  if (0 != wr_shutdown (sock, /*
+  ** On Darwin local shutdown of RD cause error
+  ** if remote side shut down WR before.
+  wr_is_eof_received (sock) ? SHUT_RDWR : */
+                        SHUT_WR))
     externalErrorExitDesc ("Failed to shutdown connection");
 }
 
