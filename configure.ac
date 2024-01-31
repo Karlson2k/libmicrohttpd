@@ -3676,47 +3676,6 @@ AC_ARG_WITH([[gnutls]],
 
 AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
   [
-    AC_CACHE_CHECK([[whether to add pkg-config special search directories]], [mhd_cv_pkgconf_add_dirs],
-     [
-      AS_IF([[test "x$host_os" = "xsolaris2.11" && test "x$cross_compiling" = "xno"]],
-       [
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-char size_chk[7-sizeof(char*)];
-#if defined(_LP64) || defined(__LP64__) || defined(__x86_64) || defined(__x86_64__)
-#error This is 64-bit target.
-choke me now
-#endif
-#if defined(__amd64) || defined(__amd64__) || defined(__sparcv9) || defined(__sparc_v9__)
-#error This is 64-bit target.
-choke me now
-#endif
-           ]], [[]]
-          )
-         ],
-         [
-          mhd_cv_pkgconf_add_dirs='/usr/lib/pkgconfig/gnutls-3'
-         ],
-         [
-          AS_IF([[test "x$host_cpu" = "xx86_64" || test "x$host_cpu" = "xi386"]],
-                  [[mhd_cv_pkgconf_add_dirs='/usr/lib/amd64/pkgconfig/gnutls-3:/usr/lib/amd64/pkgconfig']],
-                [[test "x$host_cpu" = "xsparc"]],
-                  [[mhd_cv_pkgconf_add_dirs='/usr/lib/sparkv9/pkgconfig/gnutls-3:/usr/lib/sparkv9/pkgconfig']],
-                  [[mhd_cv_pkgconf_add_dirs='/usr/lib/64/pkgconfig/gnutls-3:/usr/lib/64/pkgconfig']]
-          )
-         ]
-        )
-       ],
-       [[ mhd_cv_pkgconf_add_dirs='no' ]]
-      )
-     ]
-    )
-    AS_IF([[test "x$mhd_cv_pkgconf_add_dirs" != "xno"]],
-     [
-      test "x$PKG_CONFIG_PATH" = "x" || PKG_CONFIG_PATH="${PKG_CONFIG_PATH}${PATH_SEPARATOR}"
-      PKG_CONFIG_PATH="${PKG_CONFIG_PATH}${mhd_cv_pkgconf_add_dirs}"
-      export PKG_CONFIG_PATH
-     ]
-    )
     PKG_CHECK_MODULES(GNUTLS, [[gnutls]],
       [
        have_gnutls_pkgcfg='yes'
