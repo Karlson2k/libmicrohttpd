@@ -1,6 +1,6 @@
 # This file is part of libmicrohttpd.
 # (C) 2006-2021 Christian Grothoff (and other contributing authors)
-# (C) 2014-2023 Evgeny Grin (Karlson2k)
+# (C) 2014-2024 Evgeny Grin (Karlson2k)
 #
 # libmicrohttpd is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published

@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2017,2020 Karlson2k (Evgeny Grin), Full re-write of buffering and
+  Copyright (C) 2017-2023 Karlson2k (Evgeny Grin), Full re-write of buffering and
                      pushing, many bugs fixes, optimisations, sendfile() porting
   Copyright (C) 2019 ng0 <ng0@n0.is>, Initial version of send() wrappers
 

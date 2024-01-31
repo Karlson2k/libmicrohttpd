@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2022 Karlson2k (Evgeny Grin)
+  Copyright (C) 2022-2023 Karlson2k (Evgeny Grin)
 
   This test tool is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as

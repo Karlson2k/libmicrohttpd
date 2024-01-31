@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2007--2019 Daniel Pittman, Christian Grothoff and
-     Karlson2k (Evgeny Grin)
+     Copyright (C) 2007--2024 Daniel Pittman and Christian Grothoff
+     Copyright (C) 2016--2024 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
