@@ -62,7 +62,7 @@ callback (void *cls,
   if (buf_size < (param->response_size - pos))
     size_to_copy = buf_size;
   else
-    size_to_copy = param->response_size - pos;
+    size_to_copy = (size_t) (param->response_size - pos);
 
   memcpy (buf, param->response_data + pos, size_to_copy);
 

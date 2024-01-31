@@ -183,7 +183,8 @@ value_checker (void *cls,
       (mismatch (filename, expect->fname)) ||
       (mismatch (content_type, expect->cnt_type)) ||
       (mismatch (transfer_encoding, expect->tr_enc)) ||
-      (mismatch2 (data, expect->data, off, size)))
+      (strlen (expect->data) < off) ||
+      (mismatch2 (data, expect->data, (size_t) off, size)))
   {
     *idxp = (unsigned int) -1;
     fprintf (stderr,
@@ -208,7 +209,8 @@ value_checker (void *cls,
              (mismatch (filename, expect->fname)),
              (mismatch (content_type, expect->cnt_type)),
              (mismatch (transfer_encoding, expect->tr_enc)),
-             (mismatch2 (data, expect->data, off, size)));
+             (strlen (expect->data) < off)
+             || (mismatch2 (data, expect->data, (size_t) off, size)));
     return MHD_NO;
   }
   if ( ( (NULL == expect->data) &&

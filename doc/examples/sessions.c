@@ -524,8 +524,10 @@ post_iterator (void *cls,
   }
   if (0 == strcmp ("v1", key))
   {
-    if (size + off > sizeof(session->value_1))
-      size = sizeof (session->value_1) - off;
+    if (off >= sizeof(session->value_1) - 1)
+      return MHD_YES; /* Discard extra data */
+    if (size + off >= sizeof(session->value_1))
+      size = (size_t) (sizeof (session->value_1) - off - 1); /* crop extra data */
     memcpy (&session->value_1[off],
             data,
             size);
@@ -535,8 +537,10 @@ post_iterator (void *cls,
   }
   if (0 == strcmp ("v2", key))
   {
-    if (size + off > sizeof(session->value_2))
-      size = sizeof (session->value_2) - off;
+    if (off >= sizeof(session->value_2) - 1)
+      return MHD_YES; /* Discard extra data */
+    if (size + off >= sizeof(session->value_2))
+      size = (size_t) (sizeof (session->value_2) - off - 1); /* crop extra data */
     memcpy (&session->value_2[off],
             data,
             size);
