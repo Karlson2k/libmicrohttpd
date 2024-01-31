@@ -29,7 +29,6 @@
 #ifdef HAVE_STDDEF_H
 #include <stddef.h>  /* for size_t */
 #endif /* HAVE_STDDEF_H */
-#include <gnutls/crypto.h>
 
 /**
  * Size of MD5 resulting digest in bytes
@@ -37,6 +36,8 @@
  */
 #define MD5_DIGEST_SIZE (16)
 
+/* Actual declaration is in GnuTLS lib header */
+struct hash_hd_st;
 
 /**
  * Indicates that struct Md5CtxExt has 'ext_error'
@@ -48,7 +49,7 @@
  */
 struct Md5CtxExt
 {
-  gnutls_hash_hd_t handle; /**< Hash calculation handle */
+  struct hash_hd_st *handle; /**< Hash calculation handle */
   int ext_error; /**< Non-zero if external error occurs during init or hashing */
 };
 
