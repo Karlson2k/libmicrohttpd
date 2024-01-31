@@ -566,6 +566,7 @@ wr_create_from_plain_sckt (MHD_socket plain_sk)
 }
 
 
+#if 0 /* Disabled code */
 /**
  * Check whether shutdown of connection was received from remote
  * @param s socket to check
@@ -577,6 +578,9 @@ wr_is_eof_received (struct wr_socket *s)
 {
   return s->eof_recieved ? 1 : 0;
 }
+
+
+#endif /* Disabled code */
 
 
 enum wr_wait_for_type
