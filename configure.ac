@@ -3037,8 +3037,8 @@ extern "C"
 #endif
              struct tm* gmtime_s(const time_t* time, struct tm* result);
            ]], [[
-             struct tm res;
-             time_t t;
+             static struct tm res;
+             static time_t t = 0;
              gmtime_s (&t, &res);
           ]])
         ],
@@ -3058,8 +3058,8 @@ extern "C"
 #endif
 errno_t gmtime_s(struct tm* _tm, const time_t* time);
               ]], [[
-                 struct tm res;
-                 time_t t;
+                 static struct tm res;
+                 static time_t t = 0;
                  gmtime_s (&res, &t);
               ]])
             ],

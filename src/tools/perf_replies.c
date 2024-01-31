@@ -32,11 +32,11 @@
  * @author Karlson2k (Evgeny Grin)
  */
 
+#include "mhd_options.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include "mhd_options.h"
 #include "microhttpd.h"
 #include "mhd_tool_str_to_uint.h"
 #include "mhd_tool_get_cpu_count.h"

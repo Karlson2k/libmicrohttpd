@@ -193,13 +193,13 @@ mp_ptr_diff_ (const void *p1, const void *p2)
 /**
  * Size of memory page
  */
-static size_t MHD_sys_page_size_ =
+static size_t MHD_sys_page_size_ = (size_t)
 #if defined(MHD_USE_PAGESIZE_MACRO_STATIC)
-  PAGESIZE;
+                                   PAGESIZE;
 #elif defined(MHD_USE_PAGE_SIZE_MACRO_STATIC)
-  PAGE_SIZE;
+                                   PAGE_SIZE;
 #else  /* ! MHD_USE_PAGE_SIZE_MACRO_STATIC */
-  _MHD_FALLBACK_PAGE_SIZE;   /* Default fallback value */
+                                   _MHD_FALLBACK_PAGE_SIZE; /* Default fallback value */
 #endif /* ! MHD_USE_PAGE_SIZE_MACRO_STATIC */
 
 /**
@@ -214,13 +214,13 @@ MHD_init_mem_pools_ (void)
   if (-1 != result)
     MHD_sys_page_size_ = (size_t) result;
   else
-    MHD_sys_page_size_ = MHD_DEF_PAGE_SIZE_;
+    MHD_sys_page_size_ = (size_t) MHD_DEF_PAGE_SIZE_;
 #elif defined(_WIN32)
   SYSTEM_INFO si;
   GetSystemInfo (&si);
   MHD_sys_page_size_ = (size_t) si.dwPageSize;
 #else
-  MHD_sys_page_size_ = MHD_DEF_PAGE_SIZE_;
+  MHD_sys_page_size_ = (size_t) MHD_DEF_PAGE_SIZE_;
 #endif /* _WIN32 */
   mhd_assert (0 == (MHD_sys_page_size_ % ALIGN_SIZE));
 }
