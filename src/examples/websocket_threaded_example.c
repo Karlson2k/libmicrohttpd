@@ -382,15 +382,15 @@ BASE64Encode (const void *in, size_t len, char **output)
     c = (data[i] << 4) & 0x3F;
     if (++i < len)
     {
-      c |= (data[i] >> 4) & 0x0F;
+      c = (char) (c | ((data[i] >> 4) & 0x0F));
     }
     opt[ret++] = cvt[(int) c];
     if (i < len)
     {
-      c = (data[i] << 2) & 0x3F;
+      c = (char) (c | ((data[i] << 2) & 0x3F));
       if (++i < len)
       {
-        c |= (data[i] >> 6) & 0x03;
+        c = (char) (c | ((data[i] >> 6) & 0x03));
       }
       opt[ret++] = cvt[(int) c];
     }

@@ -23,10 +23,10 @@
  * @author Karlson2k (Evgeny Grin)
  */
 
+#include "mhd_options.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "mhd_options.h"
 #include "microhttpd.h"
 #include "test_helpers.h"
 
