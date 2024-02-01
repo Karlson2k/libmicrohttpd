@@ -101,7 +101,7 @@ Sun Sep  3 12:23:18 AM CEST 2023
 
 August 2023
     Improved CPU cores detection in perf_replies. -EG
-    
+
 July 2023
     Added new tool perf_replies with automatic detection of number of available
     CPU on system and for the program. -EG
@@ -215,7 +215,7 @@ October 2022
     "libmicrohttpd" system-wide GnuTLS configuration by default with fallbacks
     to generic system-wide GnuTLS configuration and default GnuTLS
     configuration.
-    New daemon option to use addition to default configuration instead of 
+    New daemon option to use addition to default configuration instead of
     specifying full configuration string.
     Added relevant tests for GnuTLS initialization.
     Added reporting of failed part of GnuTLS configuration string.
@@ -251,7 +251,7 @@ September 2022
     Fixed initialisation of very old GnuTLS versions.
     Replace public domain MD5 implementation with the new implementation
     written from scratch.
-    MD5, SHA-256, SHA-512/256: various code improvements, special versions for 
+    MD5, SHA-256, SHA-512/256: various code improvements, special versions for
     compact code.
     Digest Auth: changed internal algorithm for re-use of nonce-nc slot.
     Digest Auth: used weak pseudo-random generators to avoid slot clashes.
@@ -293,8 +293,8 @@ July 2022
     for extended notation.
     Digest Auth: implemented userhash support and tests for extended notation.
     MHD_add_response_entry(): refactoring
-    Digest Auth: implemented DAuth response function 
-    MHD_queue_auth_required_response3() from scratch. Removed old 
+    Digest Auth: implemented DAuth response function
+    MHD_queue_auth_required_response3() from scratch. Removed old
     implementations, old functions converted to wrappers for the new function.
     Digest Auth: added new group of tests.
     Digest Auth: added related MHD_FEATURES_* values.
@@ -370,7 +370,7 @@ May 2022
     with thread pool.
     Digest Auth: fixed stale nonce result value ambiguity.
     Digest Auth: added special check for fabricated nonces.
-    Added new functions MHD_digest_auth_check3() and 
+    Added new functions MHD_digest_auth_check3() and
     MHD_digest_auth_check_digest3() with detailed result of the checks.
     Added return NULL MHD_CONNECTION_INFO_CLIENT_ADDRESS when information is
     not available.
@@ -429,7 +429,7 @@ April 2022
     Fixed unaligned access in MHD_get_connection_info() and
     MHD_get_daemon_info().
     Compiler warning fixes.
-    Changed: any negative number returned by response data generation 
+    Changed: any negative number returned by response data generation
     callback function is treated as an error.
     Fixed setting custom connection timeout value for thread-per-connection
     mode.
