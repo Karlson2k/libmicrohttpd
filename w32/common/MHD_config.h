@@ -109,8 +109,10 @@
 /* Define to 1 if your system allow overriding the value of FD_SETSIZE macro  */
 #define HAS_FD_SETSIZE_OVERRIDABLE 1
 
+#if 0 /* Do not define the macro to keep maintability simple if system value is updated */
 /* Define to system default value of FD_SETSIZE macro */
-#define MHD_SYS_FD_SETSIZE_ 64
+#  define MHD_SYS_FD_SETSIZE_ 64
+#endif
 
 /* Define to use socketpair for inter-thread communication */
 #define _MHD_ITC_SOCKETPAIR 1
