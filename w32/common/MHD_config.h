@@ -74,6 +74,12 @@
 /* Enable digest Auth support */
 #define DAUTH_SUPPORT 1
 
+/* The default HTTP Digest Auth default maximum nc (nonce count) value */
+#define MHD_DAUTH_DEF_MAX_NC_ 1000
+
+/* The default HTTP Digest Auth default nonce timeout value (in seconds) */
+#define MHD_DAUTH_DEF_TIMEOUT_ 90
+
 /* Enable MD5 hashing support. */
 #define MHD_MD5_SUPPORT 1
 
@@ -99,6 +105,12 @@
 
 /* Provides IPv6 headers */
 #define HAVE_INET6 1
+
+/* Define to 1 if your system allow overriding the value of FD_SETSIZE macro  */
+#define HAS_FD_SETSIZE_OVERRIDABLE 1
+
+/* Define to system default value of FD_SETSIZE macro */
+#define MHD_SYS_FD_SETSIZE_ 64
 
 /* Define to use socketpair for inter-thread communication */
 #define _MHD_ITC_SOCKETPAIR 1
@@ -134,9 +146,6 @@
 /* Define if you have usable assert() and assert.h */
 #define HAVE_ASSERT 1
 
-/* Define to 1 if you have the <inttypes.h> header file. */
-#define HAVE_INTTYPES_H 1
-
 /* Define to 1 if you have the <limits.h> header file. */
 #define HAVE_LIMITS_H 1
 
@@ -171,6 +180,8 @@
 #define HAVE_STDBOOL_H 1
 /* Define to 1 if you have the real boolean type. */
 #define HAVE_REAL_BOOL 1
+/* Define to 1 if you have the real boolean type. */
+#define HAVE_BUILTIN_TYPE_BOOL 1
 #else  /* before VS 2013 */
 
 /* Define to type name which will be used as boolean type. */
