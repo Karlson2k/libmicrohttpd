@@ -1,3 +1,6 @@
+Thu 01 Feb 2024 15:00:00 CET
+    Releasing GNU libmicrohttpd 1.0.0 -EG
+
 January 2024
     add missing lock, do not call 'close(-1)' on very rare error path.
     use correct HTTP header (content type, not content encoding) for mime type
@@ -415,7 +418,7 @@ April 2022
     Added new function MHD_create_response_from_buffer_static() to avoid
     unwanted dropping of 'const' when application is using static strings.
     Added new API function MHD_create_response_from_buffer_copy().
-    Public doxy improvments.
+    Public doxy improvements.
     Improved handling of TLS backends for libcurl when testing HTTPS.
     Updated TLS certificates for tests and examples. New certificates
     were generated with SAN fields to match actual requirements.
