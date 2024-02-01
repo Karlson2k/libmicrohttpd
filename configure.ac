@@ -23,16 +23,16 @@
 #
 AC_PREREQ([2.64])
 LT_PREREQ([2.4.0])
-AC_INIT([GNU libmicrohttpd],[0.9.77],[libmicrohttpd@gnu.org])
+AC_INIT([GNU libmicrohttpd],[1.0.0],[libmicrohttpd@gnu.org])
 AC_CONFIG_AUX_DIR([build-aux])
 MHD_AUX_DIR='build-aux' # Must be set to the same value as in the previous line
 AC_CONFIG_HEADERS([MHD_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 m4_pattern_forbid([^_?MHD_[A-Z_]+_CC_])dnl
 
-LIB_VERSION_CURRENT=73
+LIB_VERSION_CURRENT=74
 LIB_VERSION_REVISION=0
-LIB_VERSION_AGE=61
+LIB_VERSION_AGE=62
 AC_SUBST([LIB_VERSION_CURRENT])
 AC_SUBST([LIB_VERSION_REVISION])
 AC_SUBST([LIB_VERSION_AGE])
