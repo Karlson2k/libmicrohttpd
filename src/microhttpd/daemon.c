@@ -4499,6 +4499,7 @@ internal_run_from_select (struct MHD_Daemon *daemon,
               (MHD_thread_handle_ID_is_current_thread_ (daemon->tid)));
 
   mhd_assert (0 < fd_setsize);
+  (void) fd_setsize; /* Mute compiler warning */
 #ifndef HAS_FD_SETSIZE_OVERRIDABLE
   (void) fd_setsize; /* Mute compiler warning */
   mhd_assert (((int) FD_SETSIZE) <= fd_setsize);
