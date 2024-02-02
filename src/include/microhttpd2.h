@@ -38,7 +38,18 @@
  *   struct MHD_Action construction
  * - provide default logarithmic implementation of URL scan
  *   => reduce strcmp(url) from >= 3n operations to "log n"
- *      per request.
+ *      per request. Match on method + URL (longest-prefix /foo/bar/* /foo/ /foo /fo, etc).
+ *      "GET /foo/$ARG/$BAR/match"
+ *    struct MHD_Dispatcher;
+ *
+ *    struct MHD_Dispatcher *
+ *    MHD_dispatcher_create (...);
+ *    enum {no_url, no_method, found}
+ *    MHD_dispatcher_dispatch (dispatcher, url, method, *result);
+ *    MHD_RequestCallback
+ *    MHD_dispatcher_get_callback (struct MHD_Dispatcher *dispatcher);
+ *    struct MHD_dispatcher_destroy (*dispatcher);
+ *
  * - better types, in particular avoid varargs for options
  * - make it harder to pass inconsistent options
  * - combine options and flags into more uniform API (at least
@@ -2538,6 +2549,125 @@ MHD_daemon_set_threading_mode (struct MHD_Daemon *daemon,
 MHD_NONNULL (1);
 
 
+// edge vs. level triggers? howto unify? => application returns type?
+// thread safety?
+// existing cascaded epoll FD approach, how to keep?
+// -> introspection API to return the FD
+// -> if app does NOT set MHD_set_external_event_loop()
+//    we presumably use 'internal' implementation(s),
+//    if internal e-pool implementation configured...
+
+enum MHD_EventType // bitmask
+{
+  MHD_ET_LISTEN = 1,// want to accept
+  MHD_ET_READ = 2,  // want to read
+  MHD_ET_WRITE = 4, // want to write
+  MHD_ET_EXCEPT = 8 // care about remote close / interruption
+};
+
+enum MHD_TriggerLevel
+{
+  MHD_TL_EDGE, // epoll in edge trigger mode
+  MHD_TL_LEVEL // epoll in level trigger mode
+};
+
+// implemented within MHD!
+typedef void
+(*MHD_EventCallback) (void *cls,
+                      enum MHD_EventType et,
+                      enum MHD_TriggerLevel tl);
+
+
+#ifdef EXAMPLE_APP_CODE
+
+struct MHD_ApplicationRegistrationContext *
+// NULL
+app_ereg_cb_select (void *cls,
+                    enum MHD_EventType et,
+                    int fd,
+                    MHD_EventCallback cb,
+                    void *cb_cls)
+{
+  assert (fd < FD_SETSIZE);
+  max_fd = MAX (fd, max_fd);
+  events[fd].cb = cb;
+  events[fd].cb_cls = cb_cls;
+  if (1 == 1 & et)
+    FD_SET (fd, &reads);
+  if (2 == 2 & et)
+    FD_SET (fd, &writes);
+  if (4 == 4 & et)
+    FD_SET (fd, &excepts);
+  return &events[fd];
+}
+
+
+void
+app_unreg (ptr)
+{
+  ptr->cb = NULL;
+  // whichever applicable...
+  int fd = ptr - events;
+  FD_CLR (fd, &reads);
+  FD_CLR (fd, &writes);
+  FD_CLR (fd, &excepts);
+  if (fd == max_fd)
+    while ( (max_fd > 0) &&
+            (NULL == events[--max_fd].cb) )
+      ;
+}
+
+
+loop_do ()
+{
+  d = MHD_daemon_create (...);
+  MHD_set_external_event_loop (d,
+                               &app_reg,
+                               &app_unreg);
+  MHD_daemon_go (d); // => calls app_reg on listen socket
+  while (1)
+  {
+    rs = reads; // copy!
+    ws = writes; // copy!
+    es = excepts; // copy!
+    // + add application FDs here (if not in global reads/writes/excepts)
+    // once per iteration (also runs edge-based events)
+    new_timeout = MHD_run_jobs_and_get_timeout (d);
+    select (max_fd, &rs, &ws, &es, new_timeout);
+    for (bits_set)
+    {
+      events[bit].cb (events[bit].cb_cls,
+                      LISTEN / READ / WRITE / EXCEPT,
+                      MHD_TL_LEVEL);
+    }
+  }
+}
+#endif
+
+
+uint64_t
+MHD_external_event_loop_get_timeout (struct MHD_Daemon *d);
+
+
+struct MHD_ApplicationRegistrationContext; // opaque to MHD, app must define per socket/event
+
+// implemented usually by application,
+typedef struct MHD_ApplicationRegistrationContext * // NULL on error, e.g. fd too large / out of memory => log + close connection
+(*MHD_EventRegistrationUpdateCallback)(
+  void *cls,
+  struct MHD_ApplicationRegistrationContext *old, // null if no previous reg for fd exists
+  enum MHD_EventType et,                          // use NONE to unregister
+  int fd,
+  MHD_EventCallback cb,
+  void *cb_cls);
+
+// NEW style:
+void
+MHD_set_external_event_loop (struct MHD_Daemon *daemon,
+                             MHD_EventRegistrationUpdateCallback cb,
+                             void *cb_cls);
+
+
 /**
  * Obtain the `select()` sets for this daemon.  Daemon's FDs will be
  * added to fd_sets. To get only daemon FDs in fd_sets, call FD_ZERO
@@ -2567,6 +2697,7 @@ MHD_NONNULL (1);
  * @return #MHD_SC_OK on success, otherwise error code (specify which ones...); #MHD_SC_NOT_IMPLEMENTED ...
  * @ingroup event
  */
+// @deprecated, new CB approach!
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_get_fdset2 (struct MHD_Daemon *daemon,
                        fd_set *read_fd_set,
@@ -2600,6 +2731,7 @@ MHD_NONNULL (1,2,3,4,6);
  *         fit fd_set.
  * @ingroup event
  */
+// @deprecated, new CB approach!
 #define MHD_daemon_get_fdset(daemon,read_fd_set,write_fd_set,except_fd_set, \
                              max_fd) \
   MHD_get_fdset2 ((daemon),(read_fd_set),(write_fd_set),(except_fd_set), \
@@ -2627,6 +2759,7 @@ MHD_NONNULL (1,2,3,4,6);
  * @return #MHD_SC_OK on success, #MHD_SC_NOT_IMPLEMENTED ...
  * @ingroup event
  */
+// @deprecated, new CB approach!
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_run_from_select (struct MHD_Daemon *daemon,
                             const fd_set *read_fd_set,
@@ -2654,6 +2787,7 @@ MHD_NONNULL (1,2,3,4);
  *        an error code
  * @ingroup event
  */
+// @deprecated, new CB approach / use for inspiration
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_get_timeout (struct MHD_Daemon *daemon,
                         uint64_fast_t *timeout)
@@ -2700,6 +2834,7 @@ MHD_NONNULL (1,2);
  * @note Available since #MHD_VERSION 0x00097206
  * @ingroup event
  */
+// @deprecated, new CB approach!
 _MHD_EXTERN enum MHD_Result
 MHD_daemon_run_wait (struct MHD_Daemon *daemon,
                      int32_t millisec);
@@ -2733,12 +2868,14 @@ MHD_daemon_run_wait (struct MHD_Daemon *daemon,
 struct pollfd;
 
 // num_fds: in,out: in: fds length, out: number desired (if larger than in), number initialized (if smaller or equal to in)
+// @deprecated, new CB approach!
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_get_poll_set (struct MHD_Daemon *daemon,
                          unsigned int *num_fds,
                          struct pollfd *fds);
 
 
+// @deprecated, new CB approach!
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_run_from_poll (struct MHD_Daemon *daemon,
                           unsigned int num_fds,
@@ -3134,18 +3271,10 @@ struct MHD_Response;
  * However, the @a response is frozen by this step and
  * must no longer be modified (i.e. by setting headers).
  *
- * @param response response to convert, not NULL
- * @param destroy_after_use should the response object be consumed?
- * @return corresponding action, never returns NULL
- *
- * Implementation note: internally, this is largely just
- * a cast (and possibly an RC increment operation),
- * as a response *is* an action.  As no memory is
- * allocated, this operation cannot fail.
+ * @param[in] response response to convert, not NULL
  */
 _MHD_EXTERN const struct MHD_Action *
-MHD_action_from_response (struct MHD_Response *response,
-                          enum MHD_Bool destroy_after_use)
+MHD_action_from_response (struct MHD_Response *response)
 MHD_NONNULL (1);
 
 #ifndef FIXME_FUN
@@ -3174,6 +3303,7 @@ struct MHD_Response
 /**
  * Flags for special handling of responses.
  */
+// FIXME: this should not be a bit map...
 enum MHD_ResponseOption
 {
   /**
@@ -3256,7 +3386,10 @@ enum MHD_ResponseOption
    * header is undesirable in response to HEAD requests.
    * @note Available since #MHD_VERSION 0x00097701
    */
-  MHD_RF_HEAD_ONLY_RESPONSE = 1 << 4
+  MHD_RF_HEAD_ONLY_RESPONSE = 1 << 4,
+
+  // action_from_response does not decrement RC...
+  MHD_RF_REUSABLE = 1 << 5
 } _MHD_FIXED_FLAGS_ENUM;
 
 
@@ -3635,6 +3768,11 @@ MHD_response_from_pipe (enum MHD_HTTP_StatusCode sc,
  */
 _MHD_EXTERN void
 MHD_response_queue_for_destroy (struct MHD_Response *response)
+MHD_NONNULL (1);
+
+
+_MHD_EXTERN struct MHD_Response *
+MHD_response_incref (struct MHD_Response *response)
 MHD_NONNULL (1);
 
 
