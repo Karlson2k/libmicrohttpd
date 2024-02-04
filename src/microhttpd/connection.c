@@ -104,7 +104,7 @@
   "<body><p>The total size of the request headers, which includes the " \
   "request target and the request field lines, exceeds the memory " \
   "constraints of this web server.</p>" \
-  "<p>The request could be re-tried with shorter field lines, a shorter "\
+  "<p>The request could be re-tried with shorter field lines, a shorter " \
   "request target or a shorter request method token.</p></body>" \
   "</html>"
 #else
@@ -120,7 +120,7 @@
   "<head><title>Request too big</title></head>" \
   "<body><p>The total size of the request headers, which includes the " \
   "request target and the request field lines, exceeds the memory " \
-  "constraints of this web server.</p> "\
+  "constraints of this web server.</p> " \
   "<p>The request could be re-tried with smaller " \
   "<b>&quot;Cookie:&quot;</b> field value, shorter other field lines, " \
   "a shorter request target or a shorter request method token.</p></body> " \
@@ -381,7 +381,7 @@
   "<body>HTTP request has invalid character in footer.</body>" \
   "</html>"
 #else
-#define ERR_RSP_INVALID_CHR_IN_HEADER ""
+#define ERR_RSP_INVALID_CHR_IN_FOOTER ""
 #endif
 
 /**
@@ -394,7 +394,7 @@
   "<body>HTTP request header line has no colon character.</body>" \
   "</html>"
 #else
-#define ERR_RSP_INVALID_CHR_IN_HEADER ""
+#define ERR_RSP_HEADER_WITHOUT_COLON ""
 #endif
 
 /**
@@ -447,7 +447,7 @@
 #define REQUEST_LACKS_HOST \
   "<html>" \
   "<head><title>&quot;Host:&quot; header required</title></head>" \
-  "<body>HTTP/1.1 request without <b>&quot;Host:&quot;</b>.</body>"\
+  "<body>HTTP/1.1 request without <b>&quot;Host:&quot;</b>.</body>" \
   "</html>"
 
 #else
@@ -556,7 +556,7 @@
 #define ERROR_MSG_DATA_NOT_HANDLED_BY_APP \
   "<html><head><title>Internal server error</title></head>" \
   "<body>Please ask the developer of this Web server to carefully " \
-  "read the GNU libmicrohttpd documentation about connection "\
+  "read the GNU libmicrohttpd documentation about connection " \
   "management and blocking.</body></html>"
 #else
 #define ERROR_MSG_DATA_NOT_HANDLED_BY_APP ""
