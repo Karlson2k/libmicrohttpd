@@ -381,7 +381,7 @@
   "<body>HTTP request has invalid character in footer.</body>" \
   "</html>"
 #else
-#define ERR_RSP_INVALID_CHR_IN_HEADER ""
+#define ERR_RSP_INVALID_CHR_IN_FOOTER ""
 #endif
 
 /**
@@ -394,7 +394,7 @@
   "<body>HTTP request header line has no colon character.</body>" \
   "</html>"
 #else
-#define ERR_RSP_INVALID_CHR_IN_HEADER ""
+#define ERR_RSP_HEADER_WITHOUT_COLON ""
 #endif
 
 /**
