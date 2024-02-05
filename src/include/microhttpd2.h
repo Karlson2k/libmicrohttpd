@@ -172,6 +172,8 @@
  * TODO:
  * - varargs in upgrade is still there and ugly (and not even used!)
  * - migrate event loop apis (get fdset, timeout, MHD_run(), etc.)
+ *
+ * FIXME: Add to public API internal helpers, like Base64 decoder?
  */
 #ifndef MICROHTTPD2_H
 #define MICROHTTPD2_H
