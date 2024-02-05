@@ -229,7 +229,11 @@ typedef intptr_t ssize_t;
 
 /**
  * Representation of 'bool' in the public API as stdbool.h may not
- * always be available.
+ * always be available and presence of 'bool' keyword may depend on
+ * used C version.
+ * It is always safe to cast 'MHD_Bool' variable to 'bool' and vice versa.
+ * Note: it may be NOT safe to cast pointers 'MHD_Bool*' to 'bool*' and
+ *       vice versa.
  */
 enum MHD_Bool
 {
@@ -252,10 +256,10 @@ enum MHD_Bool
  * Constant used to indicate unknown size (use when
  * creating a response).
  */
-#ifdef UINT64_MAX
-#define MHD_SIZE_UNKNOWN UINT64_MAX
+#ifdef UINT_FAST64_MAX
+#define MHD_SIZE_UNKNOWN UINT_FAST64_MAX
 #else
-#define MHD_SIZE_UNKNOWN  ((uint64_t) -1LL)
+#define MHD_SIZE_UNKNOWN  ((uint_fast64_t) -1LL)
 #endif
 
 #ifdef SIZE_MAX
@@ -263,7 +267,7 @@ enum MHD_Bool
 #define MHD_CONTENT_READER_END_WITH_ERROR (SIZE_MAX - 1)
 #else
 #define MHD_CONTENT_READER_END_OF_STREAM ((size_t) -1LL)
-#define MHD_CONTENT_READER_END_WITH_ERROR (((size_t) -1LL) - 1)
+#define MHD_CONTENT_READER_END_WITH_ERROR ((size_t) -2LL)
 #endif
 
 #ifndef _MHD_EXTERN
@@ -271,7 +275,7 @@ enum MHD_Bool
 #define _MHD_EXTERN extern
 #elif defined(_WIN32) && defined(MHD_W32DLL)
 /* Define MHD_W32DLL when using MHD as W32 .DLL to speed up linker a little */
-#define _MHD_EXTERN __declspec(dllimport)
+#define _MHD_EXTERN extern __declspec(dllimport)
 #else
 #define _MHD_EXTERN extern
 #endif
@@ -385,27 +389,89 @@ typedef SOCKET MHD_socket;
  */
 #if defined(__CYGWIN__) || defined(_WIN32) || defined(MHD_W32LIB) || \
   defined(__clang__) || ! defined(__GNUC__)
+// FIXME: vararg macros still not universally supported
 #define MHD_NONNULL(...) /* empty */
 #else
 #define MHD_NONNULL(...) __THROW __nonnull ((__VA_ARGS__))
 #endif
 
-/**
- * Not all architectures and `printf()`'s support the `long long` type.
- * This gives the ability to replace `long long` with just a `long`,
- * standard `int` or a `short`.
- */
-#ifndef MHD_UNSIGNED_LONG_LONG
-#define MHD_UNSIGNED_LONG_LONG unsigned long long
-#endif
-/**
- * Format string for printing a variable of type #MHD_LONG_LONG.
- * You should only redefine this if you also define #MHD_LONG_LONG.
- */
-#ifndef MHD_UNSIGNED_LONG_LONG_PRINTF
-#define MHD_UNSIGNED_LONG_LONG_PRINTF "%llu"
-#endif
+#if !defined(MHD_NO_FUNC_ATTRIBUTES)
+#  if defined(__has_attribute)
 
+#    if __has_attribute(const) && !defined(MHD_FUNC_CONST_)
+/**
+ * MHD_FUNC_CONST_ functions always return the same value for this same
+ * input value, even if any memory pointed by parameter is changed or
+ * any global value changed. The functions do not change any global values.
+ * In general, such functions must not dereference any pointers provided
+ * as a parameter and must not access any global variables that can be
+ * changed over the time.
+ * Typical examples:
+ *   int square(int x);
+ *   int sum(int a, int b);
+ */
+#      define MHD_FUNC_CONST_ __attribute__ ((const))
+#    endif /* const && !MHD_FUNC_CONST_ */
+
+#    if __has_attribute(pure) && !defined(MHD_FUNC_PURE_)
+/**
+ * MHD_FUNC_PURE_ functions always return the same value for this same input
+ * if volatile memory content is not changed.
+ * In general, such functions must must not access any global variables that
+ * can be changed over the time.
+ * Typical examples:
+ *   size_t strlen(const char *str);
+ *   int memcmpconst void *ptr1, const void *ptr2, size_t _Size);
+ */
+#      define MHD_FUNC_PURE_ __attribute__ ((pure))
+#    endif /* pure && !MHD_FUNC_PURE_*/
+
+#    if __has_attribute(warn_unused_result) && \
+          !defined(MHD_FUNC_MUST_CHECK_RESULT_)
+/**
+ * MHD_FUNC_MUST_CHECK_RESULT_ indicates that caller must check the value
+ * returned by the function.
+ */
+#      define MHD_FUNC_MUST_CHECK_RESULT_ __attribute__ ((warn_unused_result))
+#    endif /* warn_unused_result && !MHD_FUNC_MUST_CHECK_RESULT_*/
+
+#    if __has_attribute(nonnull) && \
+          !defined(MHD_FUNC_PARAM_NONNULL_)
+/**
+ * MHD_FUNC_PARAM_NONNULL_ indicates function parameter number @a param_num
+ * must never be NULL.
+ */
+#      define MHD_FUNC_PARAM_NONNULL_(param_num) \
+          __attribute__ ((nonnull (param_num)))
+#    endif /* nonnull && !MHD_FUNC_PARAM_NONNULL_*/
+
+#    if __has_attribute(nonnull) && \
+          !defined(MHD_FUNC_PARAM_NONNULL_ALL_)
+/**
+ * MHD_FUNC_PARAM_NONNULL_ALL_ indicates all function parameters must
+ * never be NULL.
+ */
+#      define MHD_FUNC_PARAM_NONNULL_ALL_ __attribute__ ((nonnull))
+#    endif /* nonnull && !MHD_FUNC_PARAM_NONNULL_ALL_*/
+
+#  endif /* __has_attribute */
+#endif /* ! MHD_NO_FUNC_ATTRIBUTES */
+
+#ifndef MHD_FUNC_CONST_
+#  define MHD_FUNC_CONST_ /* empty */
+#endif /* ! MHD_FUNC_CONST_ */
+#ifndef MHD_FUNC_PURE_
+#  define MHD_FUNC_PURE_ /* empty */
+#endif /* ! MHD_FUNC_PURE_ */
+#ifndef MHD_FUNC_MUST_CHECK_RESULT_
+#  define MHD_FUNC_MUST_CHECK_RESULT_ /* empty */
+#endif /* ! MHD_FUNC_MUST_CHECK_RESULT_ */
+#ifndef MHD_FUNC_PARAM_NONNULL_
+#  define MHD_FUNC_PARAM_NONNULL_(ignored) /* empty */
+#endif /* ! MHD_FUNC_PARAM_NONNULL_ */
+#ifndef MHD_FUNC_PARAM_NONNULL_ALL_
+#  define MHD_FUNC_PARAM_NONNULL_ALL_ /* empty */
+#endif /* ! MHD_FUNC_PARAM_NONNULL_ALL_ */
 
 /* ********** (a) Core HTTP Processing ************ */
 
@@ -413,17 +479,17 @@ typedef SOCKET MHD_socket;
 /**
  * @brief Handle for a daemon that listens for requests.
  *
- * Manages the listen socket, event loop (and/or thread pool) and server
+ * Manages the listen socket, event loop, optional threads and server
  * settings.
  */
 struct MHD_Daemon;
 
 
 /**
- * @brief A connection corresponds to the network/stream abstraction.
+ * @brief Handle/identifier of a network connection abstraction.
  *
- * A single network (i.e. TCP) stream may be used for multiple
- * requests, which in HTTP/1.1 must be processed sequentially.
+ * A single network (i.e. TCP) connection can be used for
+ * a single (in HTTP/1.1) data stream.
  *
  * @ingroup connection
  */
@@ -431,11 +497,26 @@ struct MHD_Connection;
 
 
 /**
+ * @brief Handle/identifier of a data stream over network
+ * connection.
+ *
+ * A data stream may be used for multiple requests, which
+ * in HTTP/1.1 must be processed sequentially.
+ *
+ * @ingroup connection
+ */
+struct MHD_Stream;
+
+
+// FIXME: shall we support parallel use of MHD1.x and MHD2.x in single application?
+// FIXME: separate namespace? MHD2_Connection / MHD2Connection / MH2_Connection
+
+/**
  * @brief Handle representing an HTTP request.
  *
  * With HTTP/1.1, multiple requests can be run over the same
- * connection.  However, MHD will only show one request per TCP
- * connection to the client at any given time.
+ * stream.  However, MHD will only show one request per data
+ * stream to the client at any given time.
  *
  * Replaces `struct MHD_Connection`, renamed to better reflect
  * what this object truly represents to the application using
@@ -497,7 +578,7 @@ enum MHD_StatusCode
   MHD_SC_CONNECTION_ACCEPTED = 10001,
 
   /**
-   * Informational event, thread processing connection termiantes.
+   * Informational event, thread processing connection terminates.
    */
   MHD_SC_THREAD_TERMINATING = 10002,
 
@@ -1029,59 +1110,79 @@ enum MHD_StatusCode
  * Registry Version 2015-05-19
  * @{
  */
-enum MHD_Method
+enum MHD_HTTP_Method
 {
 
   /**
    * Method did not match any of the methods given below.
    */
-  MHD_METHOD_UNKNOWN = 0,
+  MHD_HTTP_METHOD_OTHER = 0,
+
+  /* Main HTTP methods. */
 
   /**
-   * "OPTIONS" method.
-   * Safe.     Idempotent.     RFC7231, Section 4.3.7.
+   * "GET"
+   * Safe.     Idempotent.     RFC9110, Section 9.3.1.
    */
-  MHD_METHOD_OPTIONS = 1,
+  MHD_HTTP_METHOD_GET = 1,
 
   /**
-   * "GET" method.
-   * Safe.     Idempotent.     RFC7231, Section 4.3.1.
+   * "HEAD"
+   * Safe.     Idempotent.     RFC9110, Section 9.3.2.
    */
-  MHD_METHOD_GET = 2,
+  MHD_HTTP_METHOD_HEAD = 2,
 
   /**
-   * "HEAD" method.
-   * Safe.     Idempotent.     RFC7231, Section 4.3.2.
+   * "POST"
+   * Not safe. Not idempotent. RFC9110, Section 9.3.3.
    */
-  MHD_METHOD_HEAD = 3,
+  MHD_HTTP_METHOD_POST = 3,
 
   /**
-   * "POST" method.
-   * Not safe. Not idempotent. RFC7231, Section 4.3.3.
+   * "PUT"
+   * Not safe. Idempotent.     RFC9110, Section 9.3.4.
    */
-  MHD_METHOD_POST = 4,
+  MHD_HTTP_METHOD_PUT = 4,
 
   /**
-   * "PUT" method.
-   * Not safe. Idempotent.     RFC7231, Section 4.3.4.
+   * "DELETE"
+   * Not safe. Idempotent.     RFC9110, Section 9.3.5.
    */
-  MHD_METHOD_PUT = 5,
+  MHD_HTTP_METHOD_DELETE = 5,
 
   /**
-   * "DELETE" method.
-   * Not safe. Idempotent.     RFC7231, Section 4.3.5.
+   * "CONNECT"
+   * Not safe. Not idempotent. RFC9110, Section 9.3.6.
    */
-  MHD_METHOD_DELETE = 6,
+  MHD_HTTP_METHOD_CONNECT = 6,
 
   /**
-   * "TRACE" method.
+   * "OPTIONS"
+   * Safe.     Idempotent.     RFC9110, Section 9.3.7.
    */
-  MHD_METHOD_TRACE = 7,
+  MHD_HTTP_METHOD_OPTIONS = 7,
 
   /**
-   * "CONNECT" method.
+   * "TRACE"
+   * Safe.     Idempotent.     RFC9110, Section 9.3.8.
    */
-  MHD_METHOD_CONNECT = 8,
+  MHD_HTTP_METHOD_TRACE = 8,
+
+  /**
+   * "*"
+   * Not safe. Not idempotent. RFC9110, Section 18.2.
+   */
+  MHD_HTTP_METHOD_ASTERISK = 9
+
+
+#if 0 // FIXME: Exclude the rest of the list
+      // Keeping all the list as strings increases the binary size,
+      // while providing small or no benefit.
+      // 99% (or more?) of requests uses standard methods,
+      // for the rest application may use string compare.
+
+      // Fixme: provide this part as strings defines? If yes, should standard method
+      // be provided additionally as strings?
 
   /**
    * "ACL" method.
@@ -1236,6 +1337,7 @@ enum MHD_Method
                                /* For more, check:
                                   https://www.iana.org/assignments/http-methods/http-methods.xhtml */
 
+#endif // Disabled code
 };
 
 /** @} */ /* end of group methods */
@@ -1246,10 +1348,38 @@ enum MHD_Method
  * See also: http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4
  * @{
  */
-#define MHD_HTTP_POST_ENCODING_FORM_URLENCODED \
-  "application/x-www-form-urlencoded"
 
-#define MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA "multipart/form-data"
+enum MHD_HTTP_PostEncoding
+{
+  /**
+   * No post encoding / broken data / unknown encoding
+   */
+  MHD_HTTP_POST_ENCODING_OTHER = 0,
+
+  /**
+   * "application/x-www-form-urlencoded"
+   * See https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#url-encoded-form-data
+   * See https://url.spec.whatwg.org/#application/x-www-form-urlencoded
+   * See https://datatracker.ietf.org/doc/html/rfc3986#section-2
+   */
+  MHD_HTTP_POST_ENCODING_FORM_URLENCODED = 1,
+
+  /**
+   * "multipart/form-data"
+   * See https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#url-encoded-form-data
+   * See https://www.rfc-editor.org/rfc/rfc7578.html
+   */
+  MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA = 2,
+
+  /**
+   * "text/plain"
+   * Introduced by HTML5
+   * See https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#plain-text-form-data
+   * @warning Format is ambiguous. Do not use unless there is a very strong reason.
+   */
+  MHD_HTTP_POST_ENCODING_TEXT_PLAIN = 3
+};
+
 
 /** @} */ /* end of group postenc */
 
