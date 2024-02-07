@@ -399,6 +399,8 @@ typedef SOCKET MHD_socket;
 #endif
 
 #if ! defined(MHD_NO_FUNC_ATTRIBUTES)
+// FIXME: old GCC (gcc < 5) does not support __has_attribute
+//        but supports attributes. We will not support it.
 #  if defined(__has_attribute)
 
 #    if __has_attribute (const) && ! defined(MHD_FUNC_CONST_)
@@ -468,6 +470,16 @@ typedef SOCKET MHD_socket;
 #  endif /* __has_attribute */
 #endif /* ! MHD_NO_FUNC_ATTRIBUTES */
 
+#ifndef MHD_C99_
+#  if __STDC_VERSION__ >= 199901L
+// FIXME: does not work with VLA on C11 on some compilers at least
+// FIXME: whitelist supported compilers
+// Probably problematic for typedefs for callbacks
+#    define MHD_C99_(x) x
+#  endif /* __STDC_VERSION__ >= 199901L */
+#endif /* MHD_C99_ */
+
+
 #ifndef MHD_FUNC_CONST_
 #  define MHD_FUNC_CONST_ /* empty */
 #endif /* ! MHD_FUNC_CONST_ */
@@ -486,6 +498,10 @@ typedef SOCKET MHD_socket;
 #ifndef MHD_FUNC_RETURNS_NONNULL_
 #  define MHD_FUNC_RETURNS_NONNULL_ /* empty */
 #endif /* ! MHD_FUNC_RETURNS_NONNULL_ */
+
+#ifndef MHD_C99_
+#  define MHD_C99_(ignored) /* empty */
+#endif /* MHD_C99_ */
 
 /* ********** (a) Core HTTP Processing ************ */
 
@@ -1131,7 +1147,8 @@ enum MHD_StatusCode
   MHD_SC_TOO_LATE = 60009,
 
   /**
-   * Attempted to set two mutually exclusive options.
+   * Attempted to set an option that conflicts with another option
+   * already set.
    */
   MHD_SC_OPTIONS_CONFLICT = 60010
 
@@ -1144,7 +1161,7 @@ MHD_status_code_is_fatal(enum MHD_StatusCode code)
 MHD_FUNC_CONST_;
 
 const char *
-MHD_status_code_string (enum MHD_StatusCode code)
+MHD_status_code_to_string (enum MHD_StatusCode code)
 MHD_FUNC_CONST_ MHD_FUNC_RETURNS_NONNULL_;
 
 /**
@@ -2001,10 +2018,23 @@ struct MHD_Action;
  * @param path the requested uri (without arguments after "?")
  * @param method the HTTP method used (#MHD_HTTP_METHOD_GET,
  *        #MHD_HTTP_METHOD_PUT, etc.)
- * @param content_size the size of the message content payload
+ * @param content_total_size the size of the message content payload,
+ *                           #MHD_SIZE_UNKNOWN for chunked uploads
+ *                           when the final chunk has not been
+ *                           processed yet.
+ * @param uploaded_content_size the size of already uploaded
+ *                              content in @a content_data
+ * @param[out] content_data the uploaded content data,
+ *                          NULL if no content has been
+ *                          processed yet,
+ *                          not NULL if any content has been
+ *                          processed even if content is
+ *                          zero size
  * @return action how to proceed, NULL
- *         if the socket must be closed due to a serious
- *         error while handling the request
+ *         if the request must be closed due to a serious
+ *         error while handling the request (implies closure
+ *         of underling data stream, for HTTP/1.1 it means
+ *         socket closure).
  */
 // FIXME: NOT const, otherwise MHD would need to drop const for freeing the pointer
 typedef struct MHD_Action *
@@ -2013,7 +2043,9 @@ typedef struct MHD_Action *
                         struct MHD_Request *request,
                         const struct MHD_String *path,
                         enum MHD_Method method,
-                        size_t content_size);
+                        size_t content_total_size,
+                        size_t content_data_size,
+                        void *content_data);
 
 
 /**
@@ -2605,7 +2637,7 @@ struct MHD_ServerCredentialsContext;
 enum MHD_StatusCode
 MHD_connection_set_psk (struct MHD_ServerCredentialsContext *mscc,
                         size_t psk_size,
-                        const /*void? */ char psk[MHD_C99 (psk_size)]);
+                        const /*void? */ char psk[MHD_C99_ (psk_size)]);
 
 #define MHD_connection_set_psk_unavailable(mscc) \
   MHD_connection_set_psk (mscc, 0, NULL)
@@ -2792,25 +2824,17 @@ enum MHD_ConnectionNotificationCode
 
 /**
  * Signature of the callback used by MHD to notify the
- * application about started/stopped connections
+ * application about started/stopped network connections
  *
  * @param cls client-defined closure
  * @param connection connection handle
- * @param socket_context socket-specific pointer where the
- *                       client can associate some state specific
- *                       to the TCP connection; note that this is
- *                       different from the "req_cls" which is per
- *                       HTTP request.  The client can initialize
- *                       during #MHD_CONNECTION_NOTIFY_STARTED and
- *                       cleanup during #MHD_CONNECTION_NOTIFY_CLOSED
- *                       and access in the meantime using
- *                       #MHD_CONNECTION_INFO_SOCKET_CONTEXT.
  * @param toe reason for connection notification
- * @see #MHD_OPTION_NOTIFY_CONNECTION
+ * @see #MHD_daemon_set_notify_connection()
  * @ingroup request
  */
 typedef void
-(*MHD_NotifyConnectionCallback) (void *cls,
+(MHD_FUNC_PARAM_NONNULL_ (2)
+ *MHD_NotifyConnectionCallback) (void *cls,
                                  struct MHD_Connection *connection,
                                  enum MHD_ConnectionNotificationCode toe);
 
@@ -2827,7 +2851,63 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_notify_connection (struct MHD_Daemon *daemon,
                                   MHD_NotifyConnectionCallback ncc,
                                   void *ncc_cls)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
+
+/**
+ * The `enum MHD_ConnectionNotificationCode` specifies types
+ * of connection notifications.
+ * @ingroup request
+ */
+enum MHD_StreamNotificationCode
+{
+  // FIXME: more codes, like "server started", "closed with error"&
+  /**
+   * A new connection has been started.
+   * @ingroup request
+   */
+  MHD_STREAM_NOTIFY_STARTED = 0,
+
+  /**
+   * A connection is closed.
+   * @ingroup request
+   */
+  MHD_STREAM_NOTIFY_CLOSED = 1
+
+};
+
+
+/**
+ * Signature of the callback used by MHD to notify the
+ * application about started/stopped data stream
+ * For HTTP/1.1 it is the same like network connection
+ * with 1:1 match.
+ *
+ * @param cls client-defined closure
+ * @param stream the stream handle
+ * @param toe reason for connection notification
+ * @see #MHD_OPTION_NOTIFY_CONNECTION
+ * @ingroup request
+ */
+typedef void
+(MHD_FUNC_PARAM_NONNULL_ (2)
+ *MHD_NotifyStreamCallback) (void *cls,
+                             struct MHD_Stream *stream,
+                             enum MHD_ConnectionNotificationCode toe);
+
+
+/**
+ * Register a function that should be called whenever a stream is
+ * started or closed.
+ *
+ * @param daemon daemon to set callback for
+ * @param nsc function to call to check the policy
+ * @param nsc_cls closure for @a apc
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_daemon_set_notify_stream (struct MHD_Daemon *daemon,
+                              MHD_NotifyStreamCallback nsc,
+                              void *nsc_cls)
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 // FIXME:
@@ -3268,7 +3348,7 @@ MHD_daemon_get_poll_set (struct MHD_Daemon *daemon,
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_run_from_poll (struct MHD_Daemon *daemon,
                           unsigned int num_fds,
-                          const struct pollfd fds[MHD_C99 (static num_fds)]);
+                          const struct pollfd fds[MHD_C99_ (static num_fds)]);
 
 
 /**
@@ -3451,6 +3531,7 @@ MHD_NONNULL (1);
  */
 /* See http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml */
 // Use GANA!
+// FIXME: Discuss GANA. It will be always behind the official specs.
 enum MHD_HTTP_StatusCode
 {
   MHD_HTTP_STATUS_CONTINUE = 100,
@@ -3550,15 +3631,18 @@ MHD_status_code_to_string (enum MHD_HTTP_StatusCode code);
  * @{
  */
 // Again: GANA?
+// FIXME: Discuss GANA. It will be always behind the official specs.
 enum MHD_HTTP_ProtocolVersion
 {
   MHD_HTTP_VERSION_INVALID = 0,
   MHD_HTTP_VERSION_1_0 = 1,
   MHD_HTTP_VERSION_1_1 = 2,
   MHD_HTTP_VERSION_2_0 = 3,
-  MHD_HTTP_VERSION_3_0 = 4
+  MHD_HTTP_VERSION_3_0 = 4,
+  MHD_HTTP_VERSION_FUTURE = 99
 };
 
+// FIXME: remove completely, usable only for HTTP/1.x
 _MHD_EXTERN const char *
 MHD_protocol_version_to_string (enum MHD_HTTP_ProtocolVersion pv);
 
@@ -3618,7 +3702,7 @@ MHD_action_suspend (void);
  */
 _MHD_EXTERN void
 MHD_request_resume (struct MHD_Request *request)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ALL_;
 
 
 /* **************** Response manipulation functions ***************** */
@@ -3765,8 +3849,8 @@ enum MHD_ResponseOption
 _MHD_EXTERN enum MHD_StatusCode
 MHD_response_set_option_bool (struct MHD_Response *response,
                               enum MHD_ResponseOption ro,
-                              bool value)
-MHD_NONNULL (1);
+                              enum MHD_Bool value)
+MHD_FUNC_PARAM_NONNULL_ALL_;
 
 
 /**
@@ -4004,7 +4088,7 @@ enum MHD_ResponseMemoryMode
 _MHD_EXTERN struct MHD_Response *
 MHD_response_from_buffer (enum MHD_HTTP_StatusCode sc,
                           size_t buffer_size,
-                          const char buffer[MHD_C99 (static buffer_size)],
+                          const char buffer[MHD_C99_ (static buffer_size)],
                           enum MHD_ResponseMemoryMode mode);
 
 
@@ -4046,7 +4130,7 @@ _MHD_EXTERN struct MHD_Response *
 MHD_response_from_iovec (
   enum MHD_HTTP_StatusCode sc,
   unsigned int iov_count,
-  const struct MHD_IoVec iov[MHD_C99 (iov_count)],
+  const struct MHD_IoVec iov[MHD_C99_ (iov_count)],
   MHD_ContentReaderFreeCallback free_cb,
   void *free_cb_cls);
 
@@ -4075,7 +4159,7 @@ _MHD_EXTERN struct MHD_Response *
 MHD_response_from_buffer_with_free_callback (
   enum MHD_HTTP_StatusCode sc,
   size_t size,
-  const char buffer[MHD_C99 (static buffer_size)],
+  const char buffer[MHD_C99_ (static size)],
   MHD_ContentReaderFreeCallback crfc,
   void *crfc_cls);
 
@@ -4301,11 +4385,23 @@ MHD_action_continue (void);
  *
  * @param cls argument given together with the function
  *        pointer when the handler was registered with MHD
- * @param upload_data_size set to the size of the
- *        @a upload_data provided
- * @param upload_data the data being uploaded (excluding headers)
- *        uploaded data MAY be made available incrementally via
- *        multiple callbacks depending on request settings
+ * @param path the requested uri (without arguments after "?")
+ * @param method the HTTP method used (#MHD_HTTP_METHOD_GET,
+ *        #MHD_HTTP_METHOD_PUT, etc.)
+ * @param content_total_size the size of the message content payload,
+ *                           #MHD_SIZE_UNKNOWN for chunked uploads
+ *                           when the final chunk has not been
+ *                           processed yet.
+ * @param uploaded_content_size the size of already uploaded
+ *                              content in @a content_data
+ * @param[out] content_data the uploaded content data,
+ *                          NULL if no content has been
+ *                          processed yet,
+ *                          not NULL if any content has been
+ *                          processed even if content is
+ *                          zero size
+ * @param content_processed_size the size of previously provided and
+ *                               processes content data
  * @return action specifying how to proceed, often
  *         #MHD_action_continue() if all is well,
  *         #MHD_action_suspend() to stop reading the upload until
@@ -4314,10 +4410,15 @@ MHD_action_continue (void);
  *         to discard the rest of the upload and return the data given
  */
 typedef const struct MHD_Action *
-(*MHD_UploadCallback) (
-  void *cls,
-  size_t upload_data_size,
-  const char upload_data[MHD_C99 (static upload_data_size)]);
+(MHD_FUNC_PARAM_NONNULL_ (2) MHD_FUNC_PARAM_NONNULL_ (3)
+ *MHD_UploadCallback) (void *upload_cls,
+                       struct MHD_Request *request,
+                       const struct MHD_String *path,
+                       enum MHD_Method method,
+                       size_t content_total_size,
+                       size_t content_data_size,
+                       void *content_data,
+                       size_t content_processed_size);
 
 
 /**
