@@ -174,6 +174,7 @@
  * - migrate event loop apis (get fdset, timeout, MHD_run(), etc.)
  *
  * FIXME: Add to public API internal helpers, like Base64 decoder?
+ * Keep smaller API for now. Do not export.
  */
 #ifndef MICROHTTPD2_H
 #define MICROHTTPD2_H
@@ -227,8 +228,6 @@ typedef intptr_t ssize_t;
  * 0x01093001 = 1.9.30-1.
  */
 #define MHD_VERSION 0x02000000
-
-/// FIXME: Use typedefs for some enums?
 
 /**
  * Representation of 'bool' in the public API as stdbool.h may not
@@ -300,6 +299,8 @@ typedef SOCKET MHD_socket;
 #endif /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
 #define MHD_SOCKET_DEFINED 1
 #endif /* MHD_SOCKET_DEFINED */
+
+// TODO: move compiler macros to separate header
 
 /**
  * Define MHD_NO_DEPRECATION before including "microhttpd.h" to disable deprecation messages
@@ -398,11 +399,11 @@ typedef SOCKET MHD_socket;
 #define MHD_NONNULL(...) __THROW __nonnull ((__VA_ARGS__))
 #endif
 
+// TODO: document
 #if ! defined(MHD_NO_FUNC_ATTRIBUTES)
-// FIXME: old GCC (gcc < 5) does not support __has_attribute
-//        but supports attributes. We will not support it.
 #  if defined(__has_attribute)
 
+// TODO: document
 #    if __has_attribute (const) && ! defined(MHD_FUNC_CONST_)
 /**
  * MHD_FUNC_CONST_ functions always return the same value for this same
@@ -418,6 +419,7 @@ typedef SOCKET MHD_socket;
 #      define MHD_FUNC_CONST_ __attribute__ ((const))
 #    endif /* const && !MHD_FUNC_CONST_ */
 
+// TODO: document
 #    if __has_attribute (pure) && ! defined(MHD_FUNC_PURE_)
 /**
  * MHD_FUNC_PURE_ functions always return the same value for this same input
@@ -431,6 +433,7 @@ typedef SOCKET MHD_socket;
 #      define MHD_FUNC_PURE_ __attribute__ ((pure))
 #    endif /* pure && !MHD_FUNC_PURE_*/
 
+// TODO: document
 #    if __has_attribute (warn_unused_result) && \
   ! defined(MHD_FUNC_MUST_CHECK_RESULT_)
 /**
@@ -536,10 +539,6 @@ struct MHD_Connection;
  * @ingroup connection
  */
 struct MHD_Stream;
-
-
-// FIXME: shall we support parallel use of MHD1.x and MHD2.x in single application?
-// FIXME: separate namespace? MHD2_Connection / MHD2Connection / MH2_Connection
 
 /**
  * @brief Handle representing an HTTP request.
@@ -1156,9 +1155,11 @@ enum MHD_StatusCode
 };
 
 
+// FIXME: maybe not needed? Too large possibly?
 enum MHD_Bool
 MHD_status_code_is_fatal(enum MHD_StatusCode code)
 MHD_FUNC_CONST_;
+
 
 const char *
 MHD_status_code_to_string (enum MHD_StatusCode code)
@@ -1411,6 +1412,9 @@ enum MHD_HTTP_Method
 
 #endif // Disabled code
 };
+
+// TODO: Add API to convert to the string
+// TODO: All of them, including the main one should be macro strings
 
 /** @} */ /* end of group methods */
 
@@ -2036,16 +2040,13 @@ struct MHD_Action;
  *         of underling data stream, for HTTP/1.1 it means
  *         socket closure).
  */
-// FIXME: NOT const, otherwise MHD would need to drop const for freeing the pointer
-typedef struct MHD_Action *
+typedef const struct MHD_Action *
 (MHD_FUNC_PARAM_NONNULL_ (2) MHD_FUNC_PARAM_NONNULL_ (3)
  *MHD_RequestCallback) (void *cls,
                         struct MHD_Request *request,
                         const struct MHD_String *path,
                         enum MHD_Method method,
-                        size_t content_total_size,
-                        size_t content_data_size,
-                        void *content_data);
+                        uint_fast64_t content_total_size);
 
 
 /**
@@ -2243,6 +2244,7 @@ enum MHD_DeamonOptionBool
  *         #MHD_SC_TOO_LATE if this option was set after the daemon was started and it cannot be set anymore
  *         #MHD_SC_FEATURE_DISABLED if this option is not implemented in this version of the library,
  *         #MHD_SC_FEATURE_NOT_AVAILABLE if this options is not supported on this system
+ *         #MHD_SC_OPTIONS_CONFLICT
  */
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_option_bool (struct MHD_Daemon *daemon,
@@ -2380,77 +2382,112 @@ MHD_daemon_bind_socket_address (struct MHD_Daemon *daemon,
                                 size_t sa_len)
 MHD_FUNC_PARAM_NONNULL_ALL_ MHD_FUNC_MUST_CHECK_RESULT_;
 
+// TODO: Sort values and assign numbers
+enum MHD_DeamonOptionUInt
+{
+  /**
+   * Use the given backlog for the listen() call.
+   * Ineffective in conjunction with #MHD_daemon_listen_socket()
+   */
+  MHD_DAEMON_OPTION_UINT_LISTEN_BACKLOG,
+  /**
+   * Maximum number of (concurrent) network connections served
+   * by daemon
+   */
+  MHD_DAEMON_OPTION_UINT_GLOBAL_CONNECTION_LIMIT,
+  /**
+   * Limit on the number of (concurrent) network connections
+   * made to the server from the same IP address.
+   * Can be used to prevent one IP from taking over all of
+   * the allowed connections. If the same IP tries to establish
+   * more than the specified number of connections, they will
+   * be immediately rejected.
+   */
+  MHD_DAEMON_OPTION_UINT_IP_CONNECTION_LIMIT,
 
-// FIXME...
+  /**
+   * After how many seconds of inactivity should a
+   * connection automatically be timed out?
+   * Use zero for no timeout, which is also the (unsafe!) default.
+   */
+  MHD_DAEMON_OPTION_UINT_DEFAULT_TIMEOUT,
+
+};
+
+// ADD - Discussed
+/**
+ * Set unsigned integer MHD option.
+ *
+ * @param[in,out] daemon which instance to set uint @a option for
+ * @param option option to modify
+ * @param value new value for the option
+ * @return #MHD_SC_OK on on success,
+ *         #MHD_SC_TOO_LATE if this option was set after the daemon was started and it cannot be set anymore
+ *         #MHD_SC_FEATURE_DISABLED if this option is not implemented in this version of the library,
+ *         #MHD_SC_FEATURE_NOT_AVAILABLE if this options is not supported on this system
+ *         #MHD_SC_OPTIONS_CONFLICT
+ */
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_option_uint (struct MHD_Daemon *daemon,
-                            unsigned int listen_backlog)
+                            enum MHD_DeamonOptionUInt option,
+                            unsigned int value)
 MHD_NONNULL (1);
+
+// FIXME: Alternative or additional implementation.
+
+struct MHD_DaemonOptioniUIntEntry
+{
+  /**
+   * The option to update the @a value
+   */
+  enum MHD_DeamonOptionUInt option;
+  /**
+   * The value to update for the @a option
+   */
+  unsigned int value;
+};
 
 /**
- * Use the given backlog for the listen() call.
- * Ineffective in conjunction with #MHD_daemon_listen_socket().
+ * Set unsigned integer MHD options.
  *
- * @param[in,out] daemon which instance to configure the backlog for
- * @param listen_backlog backlog to use
+ * @param[in,out] daemon which instance to set uint @a option for
+ * @param num_entries the number of entries in the @a opt_val array
+ *                    and in @a results (if not NULL)
+ * @param[in] opt_val the array with options and values to modify
+ * @param[out] results the results for the applying the options,
+ *                     can be NULL,
+ *                     if not NULL must have @a num_entries entries
+ * @return #MHD_YES if all options have applied successfully
+ *         #MHD_NO if at least single option failed (for more
+ *         details check @a results)
  */
-_MHD_EXTERN void
-MHD_daemon_listen_backlog (struct MHD_Daemon *daemon,
-                           unsigned int listen_backlog)
-MHD_NONNULL (1);
-
-
-/**
- * Set maximum number of concurrent connections to accept.  If not
- * given, MHD will not enforce any limits (modulo running into
- * OS limits).  Values of 0 mean no limit.
- *
- * @param daemon daemon to configure
- * @param global_connection_limit maximum number of (concurrent)
-          connections
- * @param ip_connection_limit limit on the number of (concurrent)
- *        connections made to the server from the same IP address.
- *        Can be used to prevent one IP from taking over all of
- *        the allowed connections.  If the same IP tries to
- *        establish more than the specified number of
- *        connections, they will be immediately rejected.
- */
-_MHD_EXTERN void
-MHD_daemon_connection_limits (struct MHD_Daemon *daemon,
-                              unsigned int global_connection_limit,
-                              unsigned int ip_connection_limit)
-MHD_NONNULL (1);
-
-
-/**
- * After how many seconds of inactivity should a
- * connection automatically be timed out?
- * Use zero for no timeout, which is also the (unsafe!) default.
- *
- * @param daemon daemon to configure
- * @param timeout_s number of seconds of timeout to use
- */
-_MHD_EXTERN void
-MHD_daemon_connection_default_timeout (struct MHD_Daemon *daemon,
-                                       unsigned int timeout_s)
-MHD_NONNULL (1);
+_MHD_EXTERN enum MHD_Bool
+MHD_daemon_set_option_uint (
+  struct MHD_Daemon *daemon,
+  size_t num_entries,
+  struct MHD_DaemonOptioniUIntEntry opt_val[MHD_C99_(static num_entries)],
+  enum MHD_StatusCode *results)
+MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (3);
 
 
 /**
  * Accept connections from the given socket.  Socket
  * must be a TCP or UNIX domain (stream) socket.
  *
- * Unless -1 is given, this disables other listen options, including
- * #MHD_daemon_bind_sa(), #MHD_daemon_bind_port(),
- * #MHD_daemon_listen_queue() and
- * #MHD_daemon_listen_allow_address_reuse().
+ * Unless MHD_INVALID_SOCKET is given, this disables
+ * other listen options.
  *
  * @param daemon daemon to set listen socket for
  * @param listen_socket listen socket to use,
  *        MHD_INVALID_SOCKET value will cause this call to be
  *        ignored (other binding options may still be effective)
+ * @return #MHD_SC_OK on on success,
+ *         #MHD_SC_TOO_LATE if this option was set after the daemon was started and it cannot be set anymore
+ *         #MHD_SC_FEATURE_DISABLED if this option is not implemented in this version of the library,
+ *         #MHD_SC_FEATURE_NOT_AVAILABLE if this options is not supported on this system
+ *         #MHD_SC_OPTIONS_CONFLICT
  */
-_MHD_EXTERN void
+_MHD_EXTERN enum MHD_StatusCode // FIXME - corrected
 MHD_daemon_listen_socket (struct MHD_Daemon *daemon,
                           MHD_socket listen_socket)
 MHD_NONNULL (1);
@@ -4394,9 +4431,11 @@ MHD_action_continue (void);
  *                           processed yet.
  * @param uploaded_content_size the size of already uploaded
  *                              content in @a content_data
- * @param[out] content_data the uploaded content data,
- *                          NULL if no content has been
- *                          processed yet,
+ * @param[in] content_data the uploaded content data,
+ *                         may be modified in .....
+ *                         must not be freed
+ *                         NULL if no content has been
+ *                         processed yet,
  *                          not NULL if any content has been
  *                          processed even if content is
  *                          zero size
@@ -4413,12 +4452,8 @@ typedef const struct MHD_Action *
 (MHD_FUNC_PARAM_NONNULL_ (2) MHD_FUNC_PARAM_NONNULL_ (3)
  *MHD_UploadCallback) (void *upload_cls,
                        struct MHD_Request *request,
-                       const struct MHD_String *path,
-                       enum MHD_Method method,
-                       size_t content_total_size,
                        size_t content_data_size,
-                       void *content_data,
-                       size_t content_processed_size);
+                       void *content_data);
 
 
 /**
