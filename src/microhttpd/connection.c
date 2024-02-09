@@ -4898,7 +4898,7 @@ get_request_line_inner (struct MHD_Connection *c)
   /* Allow to skip more then one empty line before the request line.
      RFC 9112, section 2.2 */
   const bool skip_several_empty_lines = (skip_empty_lines && (0 >= discp_lvl));
-  /* Allow to skip number of unlimited empty lines before the request line.
+  /* Allow to skip unlimited number of empty lines before the request line.
      RFC 9112, section 2.2 */
   const bool skip_unlimited_empty_lines =
     (skip_empty_lines && (-3 >= discp_lvl));

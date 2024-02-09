@@ -2490,11 +2490,11 @@ MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (3);
 _MHD_EXTERN enum MHD_StatusCode // FIXME - corrected
 MHD_daemon_listen_socket (struct MHD_Daemon *daemon,
                           MHD_socket listen_socket)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
- * Event loop syscalls supported by MHD.
+ * Event loop internal syscalls supported by MHD.
  */
 enum MHD_EventLoopSyscall
 {
@@ -2526,12 +2526,16 @@ enum MHD_EventLoopSyscall
  *
  * @param daemon daemon to set event loop style for
  * @param els event loop syscall to use
- * @return #MHD_NO on failure, #MHD_YES on success
+ * @return #MHD_SC_OK on on success,
+ *         #MHD_SC_TOO_LATE if this option was set after the daemon was started and it cannot be set anymore
+ *         #MHD_SC_FEATURE_DISABLED if this option is not implemented in this version of the library,
+ *         #MHD_SC_FEATURE_NOT_AVAILABLE if this options is not supported on this system
+ *         #MHD_SC_OPTIONS_CONFLICT
  */
-_MHD_EXTERN enum MHD_Bool
+_MHD_EXTERN enum MHD_StatusCode // FIXME - corrected
 MHD_daemon_event_loop (struct MHD_Daemon *daemon,
                        enum MHD_EventLoopSyscall els)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
