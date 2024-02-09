@@ -385,7 +385,7 @@ typedef SOCKET MHD_socket;
 #endif /* !_MHD_DEPR_FUNC */
 
 
-/* Define MHD_NONNULL attribute */
+/* Define MHD_FUNC_PARAM_NONNULL_ attribute */
 
 /**
  * Macro to indicate that certain parameters must be
@@ -394,9 +394,9 @@ typedef SOCKET MHD_socket;
 #if defined(__CYGWIN__) || defined(_WIN32) || defined(MHD_W32LIB) || \
   defined(__clang__) || ! defined(__GNUC__)
 // FIXME: vararg macros still not universally supported
-#define MHD_NONNULL(...) /* empty */
+#define MHD_FUNC_PARAM_NONNULL_(...) /* empty */
 #else
-#define MHD_NONNULL(...) __THROW __nonnull ((__VA_ARGS__))
+#define MHD_FUNC_PARAM_NONNULL_(...) __THROW __nonnull ((__VA_ARGS__))
 #endif
 
 // TODO: document
@@ -431,7 +431,7 @@ typedef SOCKET MHD_socket;
  *   int memcmpconst void *ptr1, const void *ptr2, size_t _Size);
  */
 #      define MHD_FUNC_PURE_ __attribute__ ((pure))
-#    endif /* pure && !MHD_FUNC_PURE_*/
+#    endif /* pure && !MHD_FUNC_PURE_ */
 
 // TODO: document
 #    if __has_attribute (warn_unused_result) && \
@@ -441,7 +441,7 @@ typedef SOCKET MHD_socket;
  * returned by the function.
  */
 #      define MHD_FUNC_MUST_CHECK_RESULT_ __attribute__ ((warn_unused_result))
-#    endif /* warn_unused_result && !MHD_FUNC_MUST_CHECK_RESULT_*/
+#    endif /* warn_unused_result && !MHD_FUNC_MUST_CHECK_RESULT_ */
 
 #    if __has_attribute (nonnull) && \
   ! defined(MHD_FUNC_PARAM_NONNULL_)
@@ -451,7 +451,7 @@ typedef SOCKET MHD_socket;
  */
 #      define MHD_FUNC_PARAM_NONNULL_(param_num) \
           __attribute__ ((nonnull (param_num)))
-#    endif /* nonnull && !MHD_FUNC_PARAM_NONNULL_*/
+#    endif /* nonnull && !MHD_FUNC_PARAM_NONNULL_ */
 
 #    if __has_attribute (nonnull) && \
   ! defined(MHD_FUNC_PARAM_NONNULL_ALL_)
@@ -460,7 +460,68 @@ typedef SOCKET MHD_socket;
  * never be NULL.
  */
 #      define MHD_FUNC_PARAM_NONNULL_ALL_ __attribute__ ((nonnull))
-#    endif /* nonnull && !MHD_FUNC_PARAM_NONNULL_ALL_*/
+#    endif /* nonnull && !MHD_FUNC_PARAM_NONNULL_ALL_ */
+
+#    if __has_attribute (access)
+
+#      if ! defined(MHD_FUNC_PARAM_IN_)
+/**
+ * MHD_FUNC_PARAM_IN_ indicates function parameter points to data
+ * that must not be modified by the function
+ */
+#        define MHD_FUNC_PARAM_IN_(param_num)\
+           __attribute__ ((access(read_only,pram_num)))
+#      endif /* !MHD_FUNC_PARAM_IN_ */
+
+#      if ! defined(MHD_FUNC_PARAM_IN_SIZE_)
+/**
+ * MHD_FUNC_PARAM_IN_SIZE_ indicates function parameter points to data
+ * which size is specified by @a size_num parameter and that must not be
+ * modified by the function
+ */
+#        define MHD_FUNC_PARAM_IN_SIZE_(param_num,size_num)\
+           __attribute__ ((access(read_only,pram_num,size_num)))
+#      endif /* !MHD_FUNC_PARAM_IN_SIZE_ */
+
+#      if ! defined(MHD_FUNC_PARAM_OUT_)
+/**
+ * MHD_FUNC_PARAM_OUT_ indicates function parameter points to data
+ * that could be written by the function, but not read.
+ */
+#        define MHD_FUNC_PARAM_OUT_(param_num)\
+           __attribute__ ((access(write_only,pram_num)))
+#      endif /* !MHD_FUNC_PARAM_OUT_ */
+
+#      if ! defined(MHD_FUNC_PARAM_OUT_SIZE_)
+/**
+ * MHD_FUNC_PARAM_OUT_SIZE_ indicates function parameter points to data
+ * which size is specified by @a size_num parameter and that could be
+ * written by the function, but not read.
+ */
+#        define MHD_FUNC_PARAM_OUT_SIZE_(param_num,size_num)\
+           __attribute__ ((access(write_only,pram_num,size_num)))
+#      endif /* !MHD_FUNC_PARAM_OUT_SIZE_ */
+
+#      if ! defined(MHD_FUNC_PARAM_INOUT_)
+/**
+ * MHD_FUNC_PARAM_INOUT_ indicates function parameter points to data
+ * that could be both read and written by the function.
+ */
+#        define MHD_FUNC_PARAM_INOUT_(param_num)\
+           __attribute__ ((access(read_write,pram_num)))
+#      endif /* !MHD_FUNC_PARAM_INOUT_ */
+
+#      if ! defined(MHD_FUNC_PARAM_INOUT_SIZE_)
+/**
+ * MHD_FUNC_PARAM_INOUT_SIZE_ indicates function parameter points to data
+ * which size is specified by @a size_num parameter and that could be
+ * both read and written by the function.
+ */
+#        define MHD_FUNC_PARAM_INOUT_SIZE_(param_num,size_num)\
+           __attribute__ ((access(read_write,pram_num,size_num)))
+#      endif /* !MHD_FUNC_PARAM_INOUT_SIZE_ */
+
+#    endif /* access */
 
 #    if __has_attribute (returns_nonnull) && \
   ! defined(MHD_FUNC_RETURNS_NONNULL_)
@@ -468,7 +529,17 @@ typedef SOCKET MHD_socket;
  * MHD_FUNC_RETURNS_NONNULL_ indicates that function never returns NULL.
  */
 #      define MHD_FUNC_RETURNS_NONNULL_ __attribute__ ((returns_nonnull))
-#    endif /* returns_nonnull && !MHD_FUNC_RETURNS_NONNULL_*/
+#    endif /* returns_nonnull && !MHD_FUNC_RETURNS_NONNULL_ */
+
+#    if __has_attribute (access) && \
+  ! defined(MHD_FUNC_PARAM_IN_)
+/**
+ * MHD_FUNC_PARAM_IN_ indicates function parameter points to data
+ * that must not be modified by the function
+ */
+#      define MHD_FUNC_PARAM_IN_(param_num)\
+         __attribute__ ((access(read_only,pram_num)))
+#    endif /* returns_nonnull && !MHD_FUNC_RETURNS_NONNULL_ */
 
 #  endif /* __has_attribute */
 #endif /* ! MHD_NO_FUNC_ATTRIBUTES */
@@ -498,6 +569,24 @@ typedef SOCKET MHD_socket;
 #ifndef MHD_FUNC_PARAM_NONNULL_ALL_
 #  define MHD_FUNC_PARAM_NONNULL_ALL_ /* empty */
 #endif /* ! MHD_FUNC_PARAM_NONNULL_ALL_ */
+#if ! defined(MHD_FUNC_PARAM_IN_)
+#  define MHD_FUNC_PARAM_IN_(param_num) /* empty */
+#endif /* !MHD_FUNC_PARAM_IN_ */
+#if ! defined(MHD_FUNC_PARAM_IN_SIZE_)
+#  define MHD_FUNC_PARAM_IN_SIZE_(param_num,size_num) /* empty */
+#endif /* !MHD_FUNC_PARAM_IN_SIZE_ */
+#if ! defined(MHD_FUNC_PARAM_OUT_)
+#  define MHD_FUNC_PARAM_OUT_(param_num) /* empty */
+#endif /* !MHD_FUNC_PARAM_OUT_ */
+#if ! defined(MHD_FUNC_PARAM_OUT_SIZE_)
+#  define MHD_FUNC_PARAM_OUT_SIZE_(param_num,size_num) /* empty */
+#endif /* !MHD_FUNC_PARAM_OUT_SIZE_ */
+#if ! defined(MHD_FUNC_PARAM_INOUT_)
+#  define MHD_FUNC_PARAM_INOUT_(param_num) /* empty */
+#endif /* !MHD_FUNC_PARAM_INOUT_ */
+#if ! defined(MHD_FUNC_PARAM_INOUT_SIZE_)
+#  define MHD_FUNC_PARAM_INOUT_SIZE_(param_num,size_num) /* empty */
+#endif /* !MHD_FUNC_PARAM_INOUT_SIZE_ */
 #ifndef MHD_FUNC_RETURNS_NONNULL_
 #  define MHD_FUNC_RETURNS_NONNULL_ /* empty */
 #endif /* ! MHD_FUNC_RETURNS_NONNULL_ */
@@ -2150,7 +2239,7 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_logger (struct MHD_Daemon *daemon,
                        MHD_LoggingCallback logger,
                        void *logger_cls)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -2176,7 +2265,7 @@ enum MHD_DeamonOptionBool
    * #MHD_daemon_disable_itc() can be used with
    * #MHD_daemon_thread_internal() to perform some additional
    * optimizations (in particular, not creating a pipe for IPC
-   * signalling).  If it is used, certain functions like
+   * signaling).  If it is used, certain functions like
    * #MHD_daemon_quiesce() or #MHD_daemon_add_connection() or
    * #MHD_action_suspend() cannot be used anymore.
    * #MHD_daemon_disable_itc() is not beneficial on platforms where
@@ -2431,7 +2520,7 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_option_uint (struct MHD_Daemon *daemon,
                             enum MHD_DeamonOptionUInt option,
                             unsigned int value)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 // FIXME: Alternative or additional implementation.
 
@@ -2540,49 +2629,133 @@ MHD_FUNC_PARAM_NONNULL_ (1);
 
 /**
  * Protocol strictness enforced by MHD on clients.
+ * All levels have different parsing settings for the headers.
  */
 enum MHD_ProtocolStrictLevel
 {
-  /**
-   * Be particularly permissive about the protocol, allowing slight
-   * deviations that are technically not allowed by the
-   * RFC. Specifically, at the moment, this flag causes MHD to allow
-   * spaces in header field names. This is disallowed by the standard.
-   * It is not recommended to set this value on publicly available
-   * servers as it may potentially lower level of protection.
-   */
-  MHD_PSL_PERMISSIVE = -1,
+// FIXME: updated
 
+  /* * Basic levels * */
   /**
    * Sane level of protocol enforcement for production use.
+   * A balance between extra security and broader compatibility,
+   * as allowed by RFCs for HTTP servers.
    */
   MHD_PSL_DEFAULT = 0,
 
   /**
    * Be strict about the protocol (as opposed to as tolerant as
-   * possible).  Specifically, at the moment, this flag causes MHD to
-   * reject HTTP 1.1 connections without a "Host" header.  This is
-   * required by the standard, but of course in violation of the "be
-   * as liberal as possible in what you accept" norm.  It is
-   * recommended to set this if you are testing clients against
-   * MHD, and to use default in production.
+   * possible), within the limits set by RFCs for HTTP servers.
+   * This level (and more strict) forbids use of bare LF as
+   * CRLF. It also rejects requests with both "Transfer-Encoding:"
+   * and "Content-Length:".
+   * It is suitable for public servers.
    */
-  MHD_PSL_STRICT = 1
+  MHD_PSL_STRICT = 1,
+
+  /**
+   * Be particularly permissive about the protocol, within
+   * the limits set by RFCs for HTTP servers.
+   */
+  MHD_PSL_PERMISSIVE = -1,
+
+  /* * Special levels * */
+  /**
+   * Stricter protocol interpretation, even stricter then allowed
+   * by RFCs for HTTP servers.
+   * However it should be absolutely compatible with clients
+   * following at least RFCs' "MUST" type of requirements
+   * for HTTP clients.
+   * For chunked encoding parsing this level (and more strict)
+   * forbids whitespace in chunk extension.
+   * For cookies parsing this (and more strict) level rejects
+   * cookie in full even if a single value is encoded incorrectly
+   * in it.
+   * This level is recommended for testing clients against
+   * MHD. Also can be used for security-centric application,
+   * however it is slight violation of RFCs' requirements.
+   */
+  MHD_PSL_VERY_STRICT = 2,
+
+  /**
+   * The most strict interpretation of the HTTP protocol,
+   * much stricter that defined for HTTP servers by RFC.
+   * However it should be absolutely compatible with clients
+   * following RFCs' "SHOULD" and "MUST" types of requirements
+   * for HTTP clients.
+   * This level can be used for testing clients against MHD.
+   * It is not recommended for any public services as it may
+   * reject legitimate clients (clients not following "SHOULD"
+   * type of RFC requirements).
+   */
+  MHD_PSL_EXTRA_STRICT = 3,
+
+  /**
+   * More relaxed protocol interpretation, violating RFCs'
+   * "SHOULD" type of requirements for HTTP servers.
+   * For cookies parsing this (and more permissive) level
+   * allows whitespaces in cookie values.
+   * This level can be used in isolated environments.
+   */
+  MHD_PSL_VERY_PERMISSIVE = -2,
+
+  /**
+   * The most flexible protocol interpretation, beyond
+   * RFCs' "MUST" type of requirements for HTTP server.
+   * The level allow HTTP/1.1 requests without "Host:" header.
+   * For cookies parsing this level adds allowance of
+   * whitespaces before and after '=' character.
+   * This level is not recommended unless it is absolutely
+   * necessary to communicate with some client(s) with
+   * badly broken HTTP implementation.
+   */
+  MHD_PSL_EXTRA_PERMISSIVE = -3,
 };
 
+// FIXME: Added
+/**
+ * The way Strict Level is enforced.
+ * MHD can be compiled with limited set of strictness levels.
+ * These values instructs MHD how to apply the request level.
+ */
+enum MHD_UseStictLevel
+{
+  /**
+   * Use requested level if available or the nearest stricter
+   * level.
+   * Fail if only more permissive levels available.
+   */
+  MHD_USL_THIS_OR_STRICTER = 0,
+  /**
+   * Use requested level only.
+   * Fail if this level is not available.
+   */
+  MHD_USL_PRECISE = 1,
+  /**
+   * Use requested level if available or the nearest level (stricter
+   * or more permissive).
+   */
+  MHD_USL_NEAREST = -1
+};
 
 /**
  * Set how strictly MHD will enforce the HTTP protocol.
  *
  * @param[in,out] daemon daemon to configure strictness for
- * @param sl how strict should we be
+ * @param sl the level of strictness
+ * @param how the way how to use the requested level
+ * @return #MHD_SC_OK on on success,
+ *         #MHD_SC_TOO_LATE if this option was set after the daemon was started and it cannot be set anymore
+ *         #MHD_SC_FEATURE_DISABLED if this option is not implemented in this version of the library,
  */
-_MHD_EXTERN void
+_MHD_EXTERN enum MHD_StatusCode // FIXME - corrected
 MHD_daemon_protocol_strict_level (struct MHD_Daemon *daemon,
-                                  enum MHD_ProtocolStrictLevel sl)
-MHD_NONNULL (1);
+                                  enum MHD_ProtocolStrictLevel sl,
+                                  enum MHD_UseStictLevel how)
+MHD_FUNC_PARAM_NONNULL_ (1);
 
-
+// FIXME: do we want to keep it as generic API?
+// FIXME: other TLS backends will not support it.
 // + TLS ciphers
 // + 'application name' for lookup
 // of TLS cipher option in configuration file.
@@ -2592,7 +2765,7 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_option_string (struct MHD_Daemon *daemon,
                               enum foo,
                               const char *value)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 /**
  * Provide TLS key and certificate data in-memory.
@@ -2611,7 +2784,7 @@ MHD_daemon_tls_key_and_cert_from_memory (struct MHD_Daemon *daemon,
                                          const char *mem_key,
                                          const char *mem_cert,
                                          const char *pass)
-MHD_NONNULL (1,2,3);
+MHD_FUNC_PARAM_NONNULL_ (1,2,3);
 
 
 /**
@@ -2625,7 +2798,7 @@ MHD_NONNULL (1,2,3);
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_tls_mem_dhparams (struct MHD_Daemon *daemon,
                              const char *dh)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 /**
  * Memory pointer for the certificate (ca.pem) to be used by the
@@ -2638,12 +2811,31 @@ MHD_NONNULL (1);
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_tls_mem_trust (struct MHD_Daemon *daemon,
                           const char *mem_trust)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /* ********************** (d) TLS support ********************** */
 
+/**
+ * The TLS backend choice
+ */
+enum MHD_TlsBackend
+{
+  /**
+   * Use best available TLS backend.
+   * Currently this is equivalent to GnuTLS (if TLS is enabled
+   * for MHD build).
+   */
+  MHD_TLS_BACKEND_ANY = 0,
+  /**
+   * Use GnuTLS as TLS backend.
+   */
+  MHD_TLS_BACKEND_GNUTLS = 1
+};
 
+// FIXME: should we enforce the order of settings applied?
+// Is it required to first enable TLS before using any
+// TLS-specific settings?
 /**
  * Enable and configure TLS.
  *
@@ -2661,7 +2853,7 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_tls_backend (struct MHD_Daemon *daemon,
                             enum MHD_TlsBackend backend);
 
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -2716,7 +2908,7 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_tls_psk_callback (struct MHD_Daemon *daemon,
                                  MHD_PskServerCredentialsCallback psk_cb,
                                  void *psk_cb_cls)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -2733,7 +2925,7 @@ MHD_NONNULL (1);
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_gnutls_credentials (struct MHD_Daemon *daemon,
                                int gnutls_credentials)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -2760,7 +2952,7 @@ MHD_NONNULL (1);
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_gnutls_key_and_cert_from_callback (struct MHD_Daemon *daemon,
                                               void *cb)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 // Callback invoked between full initialization of MHD
 // during MHD_daemon_start() and actual event loop
@@ -2775,7 +2967,7 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_daemon_ready_callback (struct MHD_Daemon *daemon,
                                       MHD_DaemonReadyCallback cb,
                                       void *cb)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -2794,7 +2986,7 @@ typedef enum MHD_Bool
 
 
 /**
- * Set  a policy callback that accepts/rejects connections
+ * Set a policy callback that accepts/rejects connections
  * based on the client's IP address.  This function will be called
  * before a connection object is created.
  *
@@ -2806,12 +2998,15 @@ _MHD_EXTERN void
 MHD_daemon_accept_policy (struct MHD_Daemon *daemon,
                           MHD_AcceptPolicyCallback apc,
                           void *apc_cls)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
  * Function called by MHD to allow the application to log
  * the @a full_uri of a @a request.
+ * This is the only moment when unmodified URI is provided.
+ * After this callback MHD parses the URI and modifies it
+ * by extracting GET parameters in-place.
  *
  * @param cls client-defined closure
  * @param[in,out] request the HTTP request handle (headers are
@@ -2819,7 +3014,8 @@ MHD_NONNULL (1);
  * @param uri the full URI from the HTTP request including parameters (after '?')
  */
 typedef void
-(*MHD_EarlyUriLogCallback)(void *cls,
+(MHD_FUNC_PARAM_NONNULL_ (2) MHD_FUNC_PARAM_NONNULL_ (3)
+ *MHD_EarlyUriLogCallback)(void *cls,
                            struct MHD_Request *request,
                            const struct MHD_String *full_uri);
 
@@ -2837,7 +3033,7 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_early_uri_logger (struct MHD_Daemon *daemon,
                                  MHD_EarlyUriLogCallback cb,
                                  void *cb_cls)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -2894,6 +3090,8 @@ MHD_daemon_set_notify_connection (struct MHD_Daemon *daemon,
                                   void *ncc_cls)
 MHD_FUNC_PARAM_NONNULL_ (1);
 
+
+// FIXME: Added
 /**
  * The `enum MHD_ConnectionNotificationCode` specifies types
  * of connection notifications.
@@ -2916,7 +3114,7 @@ enum MHD_StreamNotificationCode
 
 };
 
-
+// FIXME: Added
 /**
  * Signature of the callback used by MHD to notify the
  * application about started/stopped data stream
@@ -2936,6 +3134,7 @@ typedef void
                              enum MHD_ConnectionNotificationCode toe);
 
 
+// FIXME: Added
 /**
  * Register a function that should be called whenever a stream is
  * started or closed.
@@ -2950,13 +3149,28 @@ MHD_daemon_set_notify_stream (struct MHD_Daemon *daemon,
                               void *nsc_cls)
 MHD_FUNC_PARAM_NONNULL_ (1);
 
+// TODO: Sort and assign values
+enum MHD_DaemonOptionSizet
+{
+  /**
+   * Maximum memory size per connection.
+   * Default is 32 kb (#MHD_POOL_SIZE_DEFAULT).
+   * Values above 128k are unlikely to result in much performance benefit,
+   * as half of the memory will be typically used for IO, and TCP buffers
+   * are unlikely to support window sizes above 64k on most systems.
+   * The size should be large enough to fit all request headers (together
+   * with internal parsing information).
+   */
+  MHD_DAEMON_OPTION_SIZET_CONN_MEM_LIMIT,
+  MHD_DAEMON_OPTION_SIZET_CONN_INCR_SIZE,
 
+};
 // FIXME:
 _MHD_EXTERN void
-MHD_daemon_option_set_size (struct MHD_Daemon *daemon,
-                            enum foo,
-                            size_t limit)
-MHD_NONNULL (1);
+MHD_daemon_option_set_sizet (struct MHD_Daemon *daemon,
+                             enum foo,
+                             size_t value)
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 /**
  * Maximum memory size per connection.
@@ -2973,7 +3187,7 @@ _MHD_EXTERN void
 MHD_daemon_connection_memory_limit (struct MHD_Daemon *daemon,
                                     size_t memory_limit_b,
                                     size_t memory_increment_b)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -2987,7 +3201,7 @@ MHD_NONNULL (1);
 _MHD_EXTERN void
 MHD_daemon_thread_stack_size (struct MHD_Daemon *daemon,
                               size_t stack_limit_b)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /* ******************* Event loop ************************ */
@@ -3056,7 +3270,7 @@ enum MHD_ThreadingMode
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_threading_mode (struct MHD_Daemon *daemon,
                                enum MHD_ThreadingMode tm)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 // edge vs. level triggers? howto unify? => application returns type?
@@ -3216,7 +3430,7 @@ MHD_daemon_get_fdset2 (struct MHD_Daemon *daemon,
                        MHD_socket *max_fd,
                        int64_fast_t *timeout,
                        unsigned int fd_setsize)
-MHD_NONNULL (1,2,3,4,6);
+MHD_FUNC_PARAM_NONNULL_ (1,2,3,4,6);
 
 
 /**
@@ -3275,7 +3489,7 @@ MHD_daemon_run_from_select (struct MHD_Daemon *daemon,
                             const fd_set *read_fd_set,
                             const fd_set *write_fd_set,
                             const fd_set *except_fd_set)
-MHD_NONNULL (1,2,3,4);
+MHD_FUNC_PARAM_NONNULL_ (1,2,3,4);
 
 
 /**
@@ -3301,7 +3515,7 @@ MHD_NONNULL (1,2,3,4);
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_get_timeout (struct MHD_Daemon *daemon,
                         uint64_fast_t *timeout)
-MHD_NONNULL (1,2);
+MHD_FUNC_PARAM_NONNULL_ (1,2);
 
 
 /**
@@ -3425,7 +3639,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
                            const struct sockaddr *addr,
                            socklen_t addrlen,
                            void *connection_cls)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /* ********************* connection options ************** */
@@ -3442,7 +3656,7 @@ MHD_NONNULL (1);
 _MHD_EXTERN enum MHD_StatusCode
 MHD_connection_set_timeout (struct MHD_Connection *connection,
                             unsigned int timeout_s)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /* **************** Request handling functions ***************** */
@@ -3525,7 +3739,7 @@ MHD_request_get_values (struct MHD_Request *request,
                         enum MHD_ValueKind kind,
                         MHD_KeyValueIterator iterator,
                         void *iterator_cls)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -3542,7 +3756,7 @@ _MHD_EXTERN const char *
 MHD_request_lookup_value (struct MHD_Request *request,
                           enum MHD_ValueKind kind,
                           const char *key)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 // FIXME: gana table for RFC 7541...
@@ -3562,7 +3776,7 @@ _MHD_EXTERN const char *
 MHD_request_lookup_value_by_static_header (struct MHD_Request *request,
                                            enum MHD_ValueKind kind,
                                            enum MHD_StaticTableKey skt)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -3769,7 +3983,7 @@ struct MHD_Response;
  */
 _MHD_EXTERN const struct MHD_Action *
 MHD_action_from_response (struct MHD_Response *response)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 #ifndef FIXME_FUN
 struct MHD_Action
@@ -3903,7 +4117,7 @@ MHD_FUNC_PARAM_NONNULL_ALL_;
  */
 _MHD_EXTERN void
 MHD_response_option_v10_only (struct MHD_Response *response)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -3994,7 +4208,7 @@ MHD_response_set_option_termination_callback (
   struct MHD_Response *response,
   MHD_RequestTerminationCallback termination_cb,
   void *termination_cb_cls)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -4262,12 +4476,12 @@ MHD_response_from_pipe (enum MHD_HTTP_StatusCode sc,
  */
 _MHD_EXTERN void
 MHD_response_queue_for_destroy (struct MHD_Response *response)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 _MHD_EXTERN struct MHD_Response *
 MHD_response_incref (struct MHD_Response *response)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -4284,14 +4498,14 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_response_add_header (struct MHD_Response *response,
                          const char *header,
                          const char *content)
-MHD_NONNULL (1,2,3);
+MHD_FUNC_PARAM_NONNULL_ (1,2,3);
 
 
 _MHD_EXTERN enum MHD_StatusCode
 MHD_response_add_static_header (struct MHD_Response *response,
                                 enum MHD_StaticTableKey stk,
                                 const char *content)
-MHD_NONNULL (1,3);
+MHD_FUNC_PARAM_NONNULL_ (1,3);
 
 
 /**
@@ -4307,7 +4521,7 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_response_del_header (struct MHD_Response *response,
                          const char *header,
                          const char *content)
-MHD_NONNULL (1,2,3);
+MHD_FUNC_PARAM_NONNULL_ (1,2,3);
 
 
 /**
@@ -4324,7 +4538,7 @@ _MHD_EXTERN unsigned int
 MHD_response_get_headers (const struct MHD_Response *response,
                           MHD_KeyValueIterator iterator,
                           void *iterator_cls)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -4340,7 +4554,7 @@ MHD_NONNULL (1);
 _MHD_EXTERN const struct MHD_String *
 MHD_response_get_header (const struct MHD_Response *response,
                          const char *key)
-MHD_NONNULL (1,2);
+MHD_FUNC_PARAM_NONNULL_ (1,2);
 
 
 /**
@@ -4359,7 +4573,7 @@ MHD_request_set_response_trailer (
   struct MHD_Request *request,
   const char *footer,
   const char *content)
-MHD_NONNULL (1,2,3);
+MHD_FUNC_PARAM_NONNULL_ (1,2,3);
 
 
 /* ************ (b) Upload and PostProcessor functions ********************** */
@@ -4397,7 +4611,7 @@ MHD_request_set_value (struct MHD_Request *request,
                        enum MHD_ValueKind kind,
                        const char *key,
                        const char *value)
-MHD_NONNULL (1,3,4);
+MHD_FUNC_PARAM_NONNULL_ (1,3,4);
 
 
 /**
@@ -4483,7 +4697,7 @@ MHD_action_process_upload (
   bool call_when_full,
   MHD_UploadCallback uc,
   void *uc_cls)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -4544,7 +4758,7 @@ MHD_action_post_processor (struct MHD_Request *req,
                            void *iter_cls,
                            MHD_PostDataFinished done_cb,
                            void *done_cb_cls)
-MHD_NONNULL (2);
+MHD_FUNC_PARAM_NONNULL_ (2);
 
 
 // @a kind can be filename, content_type, transfer_encoding or (raw) data
@@ -4553,7 +4767,7 @@ _MHD_EXTERN const struct MHD_String *
 MHD_request_get_post_processor_value (struct MHD_Request *req,
                                       enum MHD_ValueKind kind,
                                       const char *key)
-MHD_NONNULL (2);
+MHD_FUNC_PARAM_NONNULL_ (2);
 
 
 /* ***************** (c) WebSocket support ********** */
@@ -4604,7 +4818,7 @@ _MHD_EXTERN struct MHD_Action *// ???
 MHD_upgrade_operation (struct MHD_UpgradeResponseHandle *urh,
                        enum MHD_UpgradeOperation operation,
                        ...)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -4697,7 +4911,7 @@ typedef void
 _MHD_EXTERN struct MHD_Response *
 MHD_response_for_upgrade (MHD_UpgradeHandler upgrade_handler,
                           void *upgrade_handler_cls)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /* ********************** (e) Client auth ********************** */
@@ -6121,7 +6335,7 @@ _MHD_EXTERN void
 MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
                                size_t buf_size,
                                const void *buf)
-MHD_NONNULL (1,3);
+MHD_FUNC_PARAM_NONNULL_ (1,3);
 
 
 /**
@@ -6134,7 +6348,7 @@ MHD_NONNULL (1,3);
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
                                   size_t nc_length)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /* ********************** (f) Introspection ********************** */
@@ -6306,7 +6520,7 @@ MHD_connection_get_information_sz (struct MHD_Connection *connection,
                                    union MHD_ConnectionInformation *return_value
                                    ,
                                    size_t return_value_size)
-MHD_NONNULL (1,3);
+MHD_FUNC_PARAM_NONNULL_ (1,3);
 
 
 /**
@@ -6420,7 +6634,7 @@ MHD_request_get_information_sz (struct MHD_Request *request,
                                 enum MHD_RequestInformationType info_type,
                                 union MHD_RequestInformation *return_value,
                                 size_t return_value_size)
-MHD_NONNULL (1,3);
+MHD_FUNC_PARAM_NONNULL_ (1,3);
 
 
 /**
@@ -6528,7 +6742,7 @@ MHD_daemon_get_information_sz (struct MHD_Daemon *daemon,
                                enum MHD_DaemonInformationType info_type,
                                union MHD_DaemonInformation *return_value,
                                size_t return_value_size)
-MHD_NONNULL (1,3);
+MHD_FUNC_PARAM_NONNULL_ (1,3);
 
 /**
  * Obtain information about the given daemon.
@@ -6597,7 +6811,7 @@ MHD_set_panic_func (MHD_PanicCallback cb,
  */
 _MHD_EXTERN size_t
 MHD_http_unescape (char *val)
-MHD_NONNULL (1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
