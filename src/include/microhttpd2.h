@@ -2501,6 +2501,14 @@ enum MHD_DeamonOptionUInt
    */
   MHD_DAEMON_OPTION_UINT_DEFAULT_TIMEOUT,
 
+  /**
+   * The number of worker threads.
+   * Only useful if the selected threading mode
+   * is #MHD_TM_WORKER_THREADS.
+   * Zero number is silently ignored.
+   */
+  MHD_DAEMON_OPTION_UINT_NUM_WORKERS
+
 };
 
 // ADD - Discussed
@@ -3162,47 +3170,30 @@ enum MHD_DaemonOptionSizet
    * with internal parsing information).
    */
   MHD_DAEMON_OPTION_SIZET_CONN_MEM_LIMIT,
+  // FIXME: remove this option completely and manage it in MHD?
+  // Users do not have clear understanding of what is it and why is it needed/
+  /**
+   * The step in which read buffer is incremented when needed.
+   * If initial half size of the connection's memory region is not enough
+   * for message header and initial part of the request context/body then
+   * buffer is increased by this size.
+   */
   MHD_DAEMON_OPTION_SIZET_CONN_INCR_SIZE,
+  /**
+   * Desired size of the stack for threads created by MHD.
+   * Use 0 for system default, which is also MHD default.
+   * Only useful if the selected threading mode
+   * is not #MHD_TM_EXTERNAL_EVENT_LOOP.
+   */
+  MHD_DAEMON_OPTION_SIZET_STACK_SIZE,
 
 };
 // FIXME:
 _MHD_EXTERN void
 MHD_daemon_option_set_sizet (struct MHD_Daemon *daemon,
-                             enum foo,
+                             enum MHD_DaemonOptionSizet option,
                              size_t value)
 MHD_FUNC_PARAM_NONNULL_ (1);
-
-/**
- * Maximum memory size per connection.
- * Default is 32 kb (#MHD_POOL_SIZE_DEFAULT).
- * Values above 128k are unlikely to result in much benefit, as half
- * of the memory will be typically used for IO, and TCP buffers are
- * unlikely to support window sizes above 64k on most systems.
- *
- * @param daemon daemon to configure
- * @param memory_limit_b connection memory limit to use in bytes
- * @param memory_increment_b increment to use when growing the read buffer, must be smaller than @a memory_limit_b
- */
-_MHD_EXTERN void
-MHD_daemon_connection_memory_limit (struct MHD_Daemon *daemon,
-                                    size_t memory_limit_b,
-                                    size_t memory_increment_b)
-MHD_FUNC_PARAM_NONNULL_ (1);
-
-
-/**
- * Desired size of the stack for threads created by MHD.  Use 0 for
- * system default.  Only useful if the selected threading mode
- * is not #MHD_TM_EXTERNAL_EVENT_LOOP.
- *
- * @param daemon daemon to configure
- * @param stack_limit_b stack size to use in bytes
- */
-_MHD_EXTERN void
-MHD_daemon_thread_stack_size (struct MHD_Daemon *daemon,
-                              size_t stack_limit_b)
-MHD_FUNC_PARAM_NONNULL_ (1);
-
 
 /* ******************* Event loop ************************ */
 
@@ -3217,18 +3208,17 @@ enum MHD_ThreadingMode
    * Use an external event loop. This is the default.
    */
   MHD_TM_EXTERNAL_EVENT_LOOP = 0,
-
+// FIXME: updated
   /**
-   * Run with one or more worker threads.  Any positive value
-   * means that MHD should start that number of worker threads
-   * (so > 1 is a thread pool) and distributed processing of
-   * requests among the workers.
+   * Run with one or more worker threads.
+   * If #MHD_DAEMON_OPTION_UINT_NUM_WORKERS is not specified
+   * then daemon starts with single worker thread that process
+   * all connections.
+   * If #MHD_DAEMON_OPTION_UINT_NUM_WORKERS used with value more
+   * than one, then that number of worker threads and distributed
+   * processing of requests among the workers.
    *
-   * FIXME: A good way to express the use of a thread pool
-   * in your code would be to write "MHD_TM_THREAD_POOL(4)"
-   * to indicate four threads.
-   *
-   * If a positive value is set, * #MHD_daemon_run() and
+   * If this mode is specified, #MHD_daemon_run() and
    * #MHD_daemon_run_from_select() cannot be used.
    */
   MHD_TM_WORKER_THREADS = 1,
@@ -3247,18 +3237,6 @@ enum MHD_ThreadingMode
 /* FUTURE:
    (with eventually option "number of masters")
    MHD_TM_WORKER_THREADS_WITH_MASTER_LISTENER = 3 */
-
-
-// FIXME: replace by set_uint option(s)
-// + number of worker threads
-// + number of 'listen' threads (stretch goal, later...)
-/**
- * Use a thread pool of size @a n.
- *
- * @return an `enum MHD_ThreadingMode` for a thread pool of size @a n
- * @deprecated
- */
-#define MHD_TM_THREAD_POOL(n) ((enum MHD_ThreadingMode) (n))
 
 
 /**
