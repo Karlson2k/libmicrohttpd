@@ -394,6 +394,7 @@ typedef SOCKET MHD_socket;
 #if defined(__CYGWIN__) || defined(_WIN32) || defined(MHD_W32LIB) || \
   defined(__clang__) || ! defined(__GNUC__)
 // FIXME: vararg macros still not universally supported
+// FIXME: discuss long list of attributes
 #define MHD_FUNC_PARAM_NONNULL_(...) /* empty */
 #else
 #define MHD_FUNC_PARAM_NONNULL_(...) __THROW __nonnull ((__VA_ARGS__))
@@ -2087,8 +2088,9 @@ enum MHD_HTTP_PostEncoding
  */
 struct MHD_String
 {
+  // FIXME: edited
   /**
-   * Number of characters in @e buf, without 0-termination.
+   * Number of characters in @e buf, not counting 0-termination.
    */
   size_t len;
 
@@ -2792,7 +2794,8 @@ MHD_daemon_tls_key_and_cert_from_memory (struct MHD_Daemon *daemon,
                                          const char *mem_key,
                                          const char *mem_cert,
                                          const char *pass)
-MHD_FUNC_PARAM_NONNULL_ (1,2,3);
+MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (2)
+MHD_FUNC_PARAM_NONNULL_ (3);
 
 
 /**
@@ -3493,7 +3496,7 @@ MHD_FUNC_PARAM_NONNULL_ (1,2,3,4);
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_get_timeout (struct MHD_Daemon *daemon,
                         uint64_fast_t *timeout)
-MHD_FUNC_PARAM_NONNULL_ (1,2);
+MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (2);
 
 
 /**
@@ -3567,6 +3570,7 @@ MHD_daemon_run_wait (struct MHD_Daemon *daemon,
 
 
 // FIXME: support external poll???
+// FIXME: remove, use universal solution
 struct pollfd;
 
 // num_fds: in,out: in: fds length, out: number desired (if larger than in), number initialized (if smaller or equal to in)
@@ -3607,8 +3611,7 @@ MHD_daemon_run_from_poll (struct MHD_Daemon *daemon,
  * @param connection_cls meta data the application wants to
  *          associate with the new connection object
  * @return #MHD_SC_OK on success
- *        The socket will be closed in any case; `errno` is
- *        set to indicate further details about the error.
+ *         FIXME: add detailed list of codes
  * @ingroup specialized
  */
 _MHD_EXTERN enum MHD_StatusCode
@@ -3640,6 +3643,7 @@ MHD_FUNC_PARAM_NONNULL_ (1);
 /* **************** Request handling functions ***************** */
 
 
+// FIXME: Updated
 /**
  * The `enum MHD_ValueKind` specifies the source of
  * the key-value pairs in the HTTP protocol.
@@ -3648,35 +3652,50 @@ enum MHD_ValueKind
 {
 
   /**
-   * HTTP header (request/response).
+   * HTTP header.
    */
-  MHD_HEADER_KIND = 1,
+  MHD_VK_HEADER = 1,
 
   /**
    * Cookies.  Note that the original HTTP header containing
    * the cookie(s) will still be available and intact.
    */
-  MHD_COOKIE_KIND = 2,
+  MHD_VK_COOKIE = 2,
 
-  /**
-   * POST data.  This is available only if a content encoding
-   * supported by MHD is used (currently only URL encoding),
-   * and only if the posted content fits within the available
-   * memory pool.  Note that in that case, the upload data
-   * given to the #MHD_AccessHandlerCallback will be
-   * empty (since it has already been processed).
-   */
-  MHD_POSTDATA_KIND = 4,
-
+  // FIXME: swappaed values
   /**
    * GET (URI) arguments.
    */
-  MHD_GET_ARGUMENT_KIND = 8,
+  MHD_VK_GET_ARGUMENT = 4,
+
+  /**
+   * POST data.
+   * FIXME: Correct description
+   * This is available only if a content encoding
+   * supported by MHD is used, and only if the posted content
+   * fits within the available memory pool.
+   * Note that in that case, the upload data given to
+   * the #MHD_AccessHandlerCallback will be empty (since it has
+   * already been processed).
+   */
+  MHD_VK_POSTDATA = 8,
 
   /**
    * HTTP footer (only for HTTP 1.1 chunked encodings).
    */
-  MHD_FOOTER_KIND = 16
+  MHD_VK_FOOTER = 16,
+
+  // FIXME: combined values
+  /**
+   * Header and footer values
+   */
+  MHD_VK_HEADER_FOOTER = MHD_VK_HEADER | MHD_VK_FOOTER,
+
+  /**
+   * Values from get arguments or post data
+   */
+  MHD_VK_GET_POST = MHD_VK_POSTDATA | MHD_VK_GET_ARGUMENT
+  // FIXME: Add chunk extension? Another API for extension?
 };
 
 
@@ -3695,14 +3714,15 @@ enum MHD_ValueKind
  * @ingroup request
  */
 typedef enum MHD_Bool
-(*MHD_KeyValueIterator)(void *cls,
+(MHD_FUNC_PARAM_NONNULL_ (3)
+ *MHD_KeyValueIterator)(void *cls,
                         enum MHD_ValueKind kind,
                         const struct MHD_String *key,
                         const struct MHD_String *value);
 
 
 /**
- * Get all of the headers from the request.
+ * Get all of the headers from the request via callback.
  *
  * @param[in,out] request request to get values from
  * @param kind types of values to iterate over, can be a bitmask
@@ -3713,10 +3733,37 @@ typedef enum MHD_Bool
  * @ingroup request
  */
 _MHD_EXTERN unsigned int
-MHD_request_get_values (struct MHD_Request *request,
-                        enum MHD_ValueKind kind,
-                        MHD_KeyValueIterator iterator,
-                        void *iterator_cls)
+MHD_request_get_values_cb (struct MHD_Request *request,
+                           enum MHD_ValueKind kind,
+                           MHD_KeyValueIterator iterator,
+                           void *iterator_cls)
+MHD_FUNC_PARAM_NONNULL_ (1);
+
+// FIXME: added - to discuss
+/**
+ * Get all of the headers from the request.
+ *
+ * @param[in] request request to get values from
+ * @param kind the types of values to iterate over, can be a bitmask
+ * @param num_elements the number of elements in @a keys and @a values arrays
+ * @param[out] keys the array of @a num_elements strings to be filled with
+ *                  the keys data; if @a request has more elements than
+ *                  @a num_elements than first @a num_elements are stored,
+ *                  the parameter can be NULL
+ * @param[out] values the array of @a num_elements strings to be filled with
+ *                    the values data if @a request has more elements than
+ *                    @a num_elements than first @a num_elements are stored,
+ *                    the parameter can be NULL
+ * @return the number of keys (and values) available (if @a keys is NULL),
+ *         the number of elements stored in @a key (and in @a values), the
+ *         number cannot be larger then @a num_elements
+ */
+_MHD_EXTERN unsigned int
+MHD_request_get_values_list (struct MHD_Request *request,
+                             enum MHD_ValueKind kind,
+                             unsigned int num_elements,
+                             struct MHD_String *keys,
+                             struct MHD_String *values)
 MHD_FUNC_PARAM_NONNULL_ (1);
 
 
@@ -3737,7 +3784,7 @@ MHD_request_lookup_value (struct MHD_Request *request,
 MHD_FUNC_PARAM_NONNULL_ (1);
 
 
-// FIXME: gana table for RFC 7541...
+// FIXME: gana? table for RFC 7541...
 enum MHD_StaticTableKey;
 
 /**
