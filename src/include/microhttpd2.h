@@ -229,6 +229,7 @@ typedef intptr_t ssize_t;
  */
 #define MHD_VERSION 0x02000000
 
+// FIXME: doxy edited
 /**
  * Representation of 'bool' in the public API as stdbool.h may not
  * always be available and presence of 'bool' keyword may depend on
@@ -255,13 +256,31 @@ enum MHD_Bool
 
 
 /**
+ * String with length data.
+ */
+struct MHD_String
+{
+  // FIXME: edited
+  /**
+   * Number of characters in @e buf, not counting 0-termination.
+   */
+  size_t len;
+
+  /**
+   * 0-terminated C-string.
+   */
+  const char *buf;
+};
+
+
+/**
  * Constant used to indicate unknown size (use when
  * creating a response).
  */
 #ifdef UINT_FAST64_MAX
-#define MHD_SIZE_UNKNOWN UINT_FAST64_MAX
+#  define MHD_SIZE_UNKNOWN UINT_FAST64_MAX
 #else
-#define MHD_SIZE_UNKNOWN  ((uint_fast64_t) -1LL)
+#  define MHD_SIZE_UNKNOWN ((uint_fast64_t) -1LL)
 #endif
 
 #ifdef SIZE_MAX
@@ -470,7 +489,7 @@ typedef SOCKET MHD_socket;
  * MHD_FUNC_PARAM_IN_ indicates function parameter points to data
  * that must not be modified by the function
  */
-#        define MHD_FUNC_PARAM_IN_(param_num)\
+#        define MHD_FUNC_PARAM_IN_(param_num) \
            __attribute__ ((access(read_only,pram_num)))
 #      endif /* !MHD_FUNC_PARAM_IN_ */
 
@@ -480,7 +499,7 @@ typedef SOCKET MHD_socket;
  * which size is specified by @a size_num parameter and that must not be
  * modified by the function
  */
-#        define MHD_FUNC_PARAM_IN_SIZE_(param_num,size_num)\
+#        define MHD_FUNC_PARAM_IN_SIZE_(param_num,size_num) \
            __attribute__ ((access(read_only,pram_num,size_num)))
 #      endif /* !MHD_FUNC_PARAM_IN_SIZE_ */
 
@@ -489,7 +508,7 @@ typedef SOCKET MHD_socket;
  * MHD_FUNC_PARAM_OUT_ indicates function parameter points to data
  * that could be written by the function, but not read.
  */
-#        define MHD_FUNC_PARAM_OUT_(param_num)\
+#        define MHD_FUNC_PARAM_OUT_(param_num) \
            __attribute__ ((access(write_only,pram_num)))
 #      endif /* !MHD_FUNC_PARAM_OUT_ */
 
@@ -499,7 +518,7 @@ typedef SOCKET MHD_socket;
  * which size is specified by @a size_num parameter and that could be
  * written by the function, but not read.
  */
-#        define MHD_FUNC_PARAM_OUT_SIZE_(param_num,size_num)\
+#        define MHD_FUNC_PARAM_OUT_SIZE_(param_num,size_num) \
            __attribute__ ((access(write_only,pram_num,size_num)))
 #      endif /* !MHD_FUNC_PARAM_OUT_SIZE_ */
 
@@ -508,7 +527,7 @@ typedef SOCKET MHD_socket;
  * MHD_FUNC_PARAM_INOUT_ indicates function parameter points to data
  * that could be both read and written by the function.
  */
-#        define MHD_FUNC_PARAM_INOUT_(param_num)\
+#        define MHD_FUNC_PARAM_INOUT_(param_num) \
            __attribute__ ((access(read_write,pram_num)))
 #      endif /* !MHD_FUNC_PARAM_INOUT_ */
 
@@ -518,7 +537,7 @@ typedef SOCKET MHD_socket;
  * which size is specified by @a size_num parameter and that could be
  * both read and written by the function.
  */
-#        define MHD_FUNC_PARAM_INOUT_SIZE_(param_num,size_num)\
+#        define MHD_FUNC_PARAM_INOUT_SIZE_(param_num,size_num) \
            __attribute__ ((access(read_write,pram_num,size_num)))
 #      endif /* !MHD_FUNC_PARAM_INOUT_SIZE_ */
 
@@ -538,7 +557,7 @@ typedef SOCKET MHD_socket;
  * MHD_FUNC_PARAM_IN_ indicates function parameter points to data
  * that must not be modified by the function
  */
-#      define MHD_FUNC_PARAM_IN_(param_num)\
+#      define MHD_FUNC_PARAM_IN_(param_num) \
          __attribute__ ((access(read_only,pram_num)))
 #    endif /* returns_nonnull && !MHD_FUNC_RETURNS_NONNULL_ */
 
@@ -1251,6 +1270,7 @@ MHD_status_code_is_fatal(enum MHD_StatusCode code)
 MHD_FUNC_CONST_;
 
 
+// FIXME: struct MHD_String
 const char *
 MHD_status_code_to_string (enum MHD_StatusCode code)
 MHD_FUNC_CONST_ MHD_FUNC_RETURNS_NONNULL_;
@@ -1336,175 +1356,106 @@ enum MHD_HTTP_Method
    * Not safe. Not idempotent. RFC9110, Section 18.2.
    */
   MHD_HTTP_METHOD_ASTERISK = 9
-
-
-#if 0 // FIXME: Exclude the rest of the list
-      // Keeping all the list as strings increases the binary size,
-      // while providing small or no benefit.
-      // 99% (or more?) of requests uses standard methods,
-      // for the rest application may use string compare.
-
-      // Fixme: provide this part as strings defines? If yes, should standard method
-      // be provided additionally as strings?
-
-      /**
-       * "ACL" method.
-       */
-                             MHD_METHOD_ACL = 9,
-
-  /**
-   * "BASELINE-CONTROL" method.
-   */
-  MHD_METHOD_BASELINE_CONTROL = 10,
-
-  /**
-   * "BIND" method.
-   */
-  MHD_METHOD_BIND = 11,
-
-  /**
-   * "CHECKIN" method.
-   */
-  MHD_METHOD_CHECKIN = 12,
-
-  /**
-   * "CHECKOUT" method.
-   */
-  MHD_METHOD_CHECKOUT = 13,
-
-  /**
-   * "COPY" method.
-   */
-  MHD_METHOD_COPY = 14,
-
-  /**
-   * "LABEL" method.
-   */
-  MHD_METHOD_LABEL = 15,
-
-  /**
-   * "LINK" method.
-   */
-  MHD_METHOD_LINK = 16,
-
-  /**
-   * "LOCK" method.
-   */
-  MHD_METHOD_LOCK = 17,
-
-  /**
-   * "MERGE" method.
-   */
-  MHD_METHOD_MERGE = 18,
-
-  /**
-   * "MKACTIVITY" method.
-   */
-  MHD_METHOD_MKACTIVITY = 19,
-
-  /**
-   * "MKCOL" method.
-   */
-  MHD_METHOD_MKCOL = 20,
-
-  /**
-   * "MKREDIRECTREF" method.
-   */
-  MHD_METHOD_MKREDIRECTREF = 21,
-
-  /**
-   * "MKWORKSPACE" method.
-   */
-  MHD_METHOD_MKWORKSPACE = 22,
-
-  /**
-   * "MOVE" method.
-   */
-  MHD_METHOD_MOVE = 23,
-
-  /**
-   * "ORDERPATCH" method.
-   */
-  MHD_METHOD_ORDERPATCH = 24,
-
-  /**
-   * "PATCH" method.
-   */
-  MHD_METHOD_PATH = 25,
-
-  /**
-   * "PRI" method.
-   */
-  MHD_METHOD_PRI = 26,
-
-  /**
-   * "PROPFIND" method.
-   */
-  MHD_METHOD_PROPFIND = 27,
-
-  /**
-   * "PROPPATCH" method.
-   */
-  MHD_METHOD_PROPPATCH = 28,
-
-  /**
-   * "REBIND" method.
-   */
-  MHD_METHOD_REBIND = 29,
-
-  /**
-   * "REPORT" method.
-   */
-  MHD_METHOD_REPORT = 30,
-
-  /**
-   * "SEARCH" method.
-   */
-  MHD_METHOD_SEARCH = 31,
-
-  /**
-   * "UNBIND" method.
-   */
-  MHD_METHOD_UNBIND = 32,
-
-  /**
-   * "UNCHECKOUT" method.
-   */
-  MHD_METHOD_UNCHECKOUT = 33,
-
-  /**
-   * "UNLINK" method.
-   */
-  MHD_METHOD_UNLINK = 34,
-
-  /**
-   * "UNLOCK" method.
-   */
-  MHD_METHOD_UNLOCK = 35,
-
-  /**
-   * "UPDATE" method.
-   */
-  MHD_METHOD_UPDATE = 36,
-
-  /**
-   * "UPDATEDIRECTREF" method.
-   */
-  MHD_METHOD_UPDATEDIRECTREF = 37,
-
-  /**
-   * "VERSION-CONTROL" method.
-   */
-  MHD_METHOD_VERSION_CONTROL = 38
-
-                               /* For more, check:
-                                  https://www.iana.org/assignments/http-methods/http-methods.xhtml */
-
-#endif // Disabled code
 };
 
-// TODO: Add API to convert to the string
-// TODO: All of them, including the main one should be macro strings
+// FIXME: added
+// FIXME: return 'const char *'?
+_MHD_EXTERN const struct MHD_String
+MHD_get_http_method_string(enum MHD_HTTP_Method method)
+MHD_FUNC_CONST_;
+
+/**
+ * @defgroup methods HTTP methods
+ * HTTP methods (as strings).
+ * See: https://www.iana.org/assignments/http-methods/http-methods.xml
+ * Registry export date: 2023-10-02
+ * @{
+ */
+
+// FIXME: added
+/* Main HTTP methods. */
+/* Safe.     Idempotent.     RFC9110, Section 9.3.1. */
+#define MHD_HTTP_METHOD_STR_GET      "GET"
+/* Safe.     Idempotent.     RFC9110, Section 9.3.2. */
+#define MHD_HTTP_METHOD_STR_HEAD     "HEAD"
+/* Not safe. Not idempotent. RFC9110, Section 9.3.3. */
+#define MHD_HTTP_METHOD_STR_POST     "POST"
+/* Not safe. Idempotent.     RFC9110, Section 9.3.4. */
+#define MHD_HTTP_METHOD_STR_PUT      "PUT"
+/* Not safe. Idempotent.     RFC9110, Section 9.3.5. */
+#define MHD_HTTP_METHOD_STR_DELETE   "DELETE"
+/* Not safe. Not idempotent. RFC9110, Section 9.3.6. */
+#define MHD_HTTP_METHOD_STR_CONNECT  "CONNECT"
+/* Safe.     Idempotent.     RFC9110, Section 9.3.7. */
+#define MHD_HTTP_METHOD_STR_OPTIONS  "OPTIONS"
+/* Safe.     Idempotent.     RFC9110, Section 9.3.8. */
+#define MHD_HTTP_METHOD_STR_TRACE    "TRACE"
+
+/* Additional HTTP methods. */
+/* Not safe. Idempotent.     RFC3744, Section 8.1. */
+#define MHD_HTTP_METHOD_STR_ACL            "ACL"
+/* Not safe. Idempotent.     RFC3253, Section 12.6. */
+#define MHD_HTTP_METHOD_STR_BASELINE_CONTROL "BASELINE-CONTROL"
+/* Not safe. Idempotent.     RFC5842, Section 4. */
+#define MHD_HTTP_METHOD_STR_BIND           "BIND"
+/* Not safe. Idempotent.     RFC3253, Section 4.4, Section 9.4. */
+#define MHD_HTTP_METHOD_STR_CHECKIN        "CHECKIN"
+/* Not safe. Idempotent.     RFC3253, Section 4.3, Section 8.8. */
+#define MHD_HTTP_METHOD_STR_CHECKOUT       "CHECKOUT"
+/* Not safe. Idempotent.     RFC4918, Section 9.8. */
+#define MHD_HTTP_METHOD_STR_COPY           "COPY"
+/* Not safe. Idempotent.     RFC3253, Section 8.2. */
+#define MHD_HTTP_METHOD_STR_LABEL          "LABEL"
+/* Not safe. Idempotent.     RFC2068, Section 19.6.1.2. */
+#define MHD_HTTP_METHOD_STR_LINK           "LINK"
+/* Not safe. Not idempotent. RFC4918, Section 9.10. */
+#define MHD_HTTP_METHOD_STR_LOCK           "LOCK"
+/* Not safe. Idempotent.     RFC3253, Section 11.2. */
+#define MHD_HTTP_METHOD_STR_MERGE          "MERGE"
+/* Not safe. Idempotent.     RFC3253, Section 13.5. */
+#define MHD_HTTP_METHOD_STR_MKACTIVITY     "MKACTIVITY"
+/* Not safe. Idempotent.     RFC4791, Section 5.3.1; RFC8144, Section 2.3. */
+#define MHD_HTTP_METHOD_STR_MKCALENDAR     "MKCALENDAR"
+/* Not safe. Idempotent.     RFC4918, Section 9.3; RFC5689, Section 3; RFC8144, Section 2.3. */
+#define MHD_HTTP_METHOD_STR_MKCOL          "MKCOL"
+/* Not safe. Idempotent.     RFC4437, Section 6. */
+#define MHD_HTTP_METHOD_STR_MKREDIRECTREF  "MKREDIRECTREF"
+/* Not safe. Idempotent.     RFC3253, Section 6.3. */
+#define MHD_HTTP_METHOD_STR_MKWORKSPACE    "MKWORKSPACE"
+/* Not safe. Idempotent.     RFC4918, Section 9.9. */
+#define MHD_HTTP_METHOD_STR_MOVE           "MOVE"
+/* Not safe. Idempotent.     RFC3648, Section 7. */
+#define MHD_HTTP_METHOD_STR_ORDERPATCH     "ORDERPATCH"
+/* Not safe. Not idempotent. RFC5789, Section 2. */
+#define MHD_HTTP_METHOD_STR_PATCH          "PATCH"
+/* Safe.     Idempotent.     RFC9113, Section 3.4. */
+#define MHD_HTTP_METHOD_STR_PRI            "PRI"
+/* Safe.     Idempotent.     RFC4918, Section 9.1; RFC8144, Section 2.1. */
+#define MHD_HTTP_METHOD_STR_PROPFIND       "PROPFIND"
+/* Not safe. Idempotent.     RFC4918, Section 9.2; RFC8144, Section 2.2. */
+#define MHD_HTTP_METHOD_STR_PROPPATCH      "PROPPATCH"
+/* Not safe. Idempotent.     RFC5842, Section 6. */
+#define MHD_HTTP_METHOD_STR_REBIND         "REBIND"
+/* Safe.     Idempotent.     RFC3253, Section 3.6; RFC8144, Section 2.1. */
+#define MHD_HTTP_METHOD_STR_REPORT         "REPORT"
+/* Safe.     Idempotent.     RFC5323, Section 2. */
+#define MHD_HTTP_METHOD_STR_SEARCH         "SEARCH"
+/* Not safe. Idempotent.     RFC5842, Section 5. */
+#define MHD_HTTP_METHOD_STR_UNBIND         "UNBIND"
+/* Not safe. Idempotent.     RFC3253, Section 4.5. */
+#define MHD_HTTP_METHOD_STR_UNCHECKOUT     "UNCHECKOUT"
+/* Not safe. Idempotent.     RFC2068, Section 19.6.1.3. */
+#define MHD_HTTP_METHOD_STR_UNLINK         "UNLINK"
+/* Not safe. Idempotent.     RFC4918, Section 9.11. */
+#define MHD_HTTP_METHOD_STR_UNLOCK         "UNLOCK"
+/* Not safe. Idempotent.     RFC3253, Section 7.1. */
+#define MHD_HTTP_METHOD_STR_UPDATE         "UPDATE"
+/* Not safe. Idempotent.     RFC4437, Section 7. */
+#define MHD_HTTP_METHOD_STR_UPDATEREDIRECTREF "UPDATEREDIRECTREF"
+/* Not safe. Idempotent.     RFC3253, Section 3.5. */
+#define MHD_HTTP_METHOD_STR_VERSION_CONTROL "VERSION-CONTROL"
+/* Not safe. Not idempotent. RFC9110, Section 18.2. */
+#define MHD_HTTP_METHOD_STR_ASTERISK       "*"
 
 /** @} */ /* end of group methods */
 
@@ -2082,24 +2033,6 @@ enum MHD_HTTP_PostEncoding
 
 /** @} */ /* end of group headers */
 
-
-/**
- * String with length data.
- */
-struct MHD_String
-{
-  // FIXME: edited
-  /**
-   * Number of characters in @e buf, not counting 0-termination.
-   */
-  size_t len;
-
-  /**
-   * 0-terminated C-string.
-   */
-  const char *buf;
-};
-
 /* Forward declaration */
 struct MHD_Action;
 
@@ -2113,18 +2046,9 @@ struct MHD_Action;
  * @param path the requested uri (without arguments after "?")
  * @param method the HTTP method used (#MHD_HTTP_METHOD_GET,
  *        #MHD_HTTP_METHOD_PUT, etc.)
- * @param content_total_size the size of the message content payload,
- *                           #MHD_SIZE_UNKNOWN for chunked uploads
- *                           when the final chunk has not been
- *                           processed yet.
- * @param uploaded_content_size the size of already uploaded
- *                              content in @a content_data
- * @param[out] content_data the uploaded content data,
- *                          NULL if no content has been
- *                          processed yet,
- *                          not NULL if any content has been
- *                          processed even if content is
- *                          zero size
+ * @param upload_size the size of the message upload content payload,
+ *                    #MHD_SIZE_UNKNOWN for chunked uploads (if the
+ *                    final chunk has not been processed yet)
  * @return action how to proceed, NULL
  *         if the request must be closed due to a serious
  *         error while handling the request (implies closure
@@ -2137,9 +2061,10 @@ typedef const struct MHD_Action *
                         struct MHD_Request *request,
                         const struct MHD_String *path,
                         enum MHD_Method method,
-                        uint_fast64_t content_total_size);
+                        uint_fast64_t upload_size);
 
 
+// FIXME: add port? It is used by most of the application.
 /**
  * Create (but do not yet start) an MHD daemon.
  * Usually, you will want to set various options before
@@ -2152,7 +2077,7 @@ typedef const struct MHD_Action *
 _MHD_EXTERN struct MHD_Daemon *
 MHD_daemon_create (MHD_RequestCallback cb,
                    void *cb_cls)
-MHD_FUNC_PARAM_NONNULL_(2);
+MHD_FUNC_PARAM_NONNULL_(1);
 
 
 /**
@@ -2256,11 +2181,12 @@ MHD_FUNC_PARAM_NONNULL_ (1);
 // TODO: Sort values and assign numbers
 enum MHD_DeamonOptionBool
 {
+  // FIXME: edited names, shortened
   /**
    * Suppresses use of "Date:" header.
    * According to RFC should be used only if the system has no RTC.
    */
-  MHD_DAEMON_OPTION_BOOL_SUPPRESS_DATE_HEADER = 1,
+  MHD_DAEMON_OB_SUPPRESS_DATE_HEADER = 1,
 
   /**
    * Disable use of inter-thread communication channel.
@@ -2277,7 +2203,7 @@ enum MHD_DeamonOptionBool
    * satisfy all of its requirements and need a generally minor
    * boost in performance.
    */
-  MHD_DAEMON_OPTION_BOOL_SUPPRESS_ITC = 2,
+  MHD_DAEMON_OB_SUPPRESS_ITC = 2,
 
   /**
    * Enable `turbo`.  Disables certain calls to `shutdown()`,
@@ -2285,7 +2211,7 @@ enum MHD_DeamonOptionBool
    * other potentially unsafe optimizations.
    * Most effects only happen with #MHD_USE_EPOLL.
    */
-  MHD_DAEMON_OPTION_BOOL_TURBO = 3,
+  MHD_DAEMON_OB_TURBO = 3,
 
   /**
    * You need to set this option if you want to disable use of HTTP "Upgrade".
@@ -2296,7 +2222,7 @@ enum MHD_DeamonOptionBool
    * satisfy all of its requirements and need a generally minor
    * boost in performance.
    */
-  MHD_DAEMON_OPTION_DISALLOW_UPGRADE,
+  MHD_DAEMON_OB_DISALLOW_UPGRADE,
 
   /**
    * Disable #MHD_action_suspend() functionality.
@@ -2305,7 +2231,7 @@ enum MHD_DeamonOptionBool
    * satisfy all of its requirements and need a generally minor
    * boost in performance.
    */
-  MHD_DAEMON_OPTION_DISALLOW_SUSPEND_RESUME,
+  MHD_DAEMON_OB_DISALLOW_SUSPEND_RESUME,
 
   /**
    * If present true, allow reusing address:port socket (by using
@@ -2315,13 +2241,20 @@ enum MHD_DeamonOptionBool
    * Windows).
    * Ineffective in conjunction with #MHD_daemon_listen_socket().
    */
-  MHD_DAEMON_OPTION_LISTEN_ALLOW_ADDRESS_REUSE,
+  MHD_DAEMON_OB_LISTEN_ALLOW_ADDRESS_REUSE,
 
   /**
    * Use SHOUTcast.  This will cause *all* responses to begin
    * with the SHOUTcast "ICY" line instead of "HTTP".
    */
-  MHD_DAEMON_OPTION_ENABLE_SHOUTCAST,
+  MHD_DAEMON_OB_ENABLE_SHOUTCAST,
+
+  // FIXME: Added
+  /**
+   * Disable converting plus ('+') character to space in GET
+   * parameters (URI part after '?').
+   */
+  MHD_DAEMON_OB_DISABLE_PLUS_SPACE
 };
 
 
@@ -2564,7 +2497,7 @@ _MHD_EXTERN enum MHD_Bool
 MHD_daemon_set_option_uint (
   struct MHD_Daemon *daemon,
   size_t num_entries,
-  struct MHD_DaemonOptioniUIntEntry opt_val[MHD_C99_(static num_entries)],
+  struct MHD_DaemonOptioniUIntEntry opt_val[MHD_C99_ (static num_entries)],
   enum MHD_StatusCode *results)
 MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (3);
 
@@ -3206,11 +3139,19 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  */
 enum MHD_ThreadingMode
 {
-
+  // FIXME: Updated
   /**
-   * Use an external event loop. This is the default.
+   * The daemon has no internal threads.
+   * The application periodically calls #MHD_process_data(), MHD checks
+   * all sockets internally automatically.
+   * This is the default.
    */
-  MHD_TM_EXTERNAL_EVENT_LOOP = 0,
+  MHD_TM_EXTERNAL_PERIODIC = 0,
+  /**
+   * Use an external event loop.
+   * Application used one of MHD APIs to watch sockets status.
+   */
+  MHD_TM_EXTERNAL_EVENT_LOOP = 1,
 // FIXME: updated
   /**
    * Run with one or more worker threads.
@@ -3224,8 +3165,10 @@ enum MHD_ThreadingMode
    * If this mode is specified, #MHD_daemon_run() and
    * #MHD_daemon_run_from_select() cannot be used.
    */
-  MHD_TM_WORKER_THREADS = 1,
+  MHD_TM_WORKER_THREADS = 2,
 
+  // FIXME: could be unavailable for HTTP/2 and /3. Streams must be
+  // multiplexed. Multiplexing from several threads looks overcomplicated.
   /**
    * MHD should create its own thread for listening and furthermore create
    * another thread per request. Threads may be re-used on the same
@@ -3233,7 +3176,7 @@ enum MHD_ThreadingMode
    * your application is thread-safe and you have plenty of memory (per
    * request).
    */
-  MHD_TM_THREAD_PER_REQUEST = 2
+  MHD_TM_THREAD_PER_REQUEST = 3
 
 };
 
@@ -3372,6 +3315,150 @@ MHD_set_external_event_loop (struct MHD_Daemon *daemon,
                              MHD_EventRegistrationUpdateCallback cb,
                              void *cb_cls);
 
+
+// FIXME: Alternative style
+
+struct MHD_WatchedFD
+{
+  /**
+   * The watched socket
+   */
+  MHD_socket fd;
+
+  /**
+   * Indicates that socket should be watched for incoming data
+   * (when set by #MHD_get_watched_fds())
+   * / socket has incoming data ready to read (when used for
+   * #MHD_process_watched_fds())
+   */
+  enum MHD_bool recv_ready;
+
+  /**
+   * Indicates that socket should be watched for availability for sending
+   * (when set by #MHD_get_watched_fds())
+   * / socket has ability to send data (when used for
+   * #MHD_process_watched_fds())
+   */
+  enum MHD_bool send_ready;
+
+  /**
+   * Indicates that socket should be watched for disconnect, out-of-band
+   * data available or high priority data available (when set by
+   * #MHD_get_watched_fds())
+   * / socket has been disconnected, has out-of-band data available or
+   * has high priority data available (when used for
+   * #MHD_process_watched_fds()). This status must not include "remote
+   * peer shut down writing" status.
+   * Note: #MHD_get_watched_fds() always set it as exceptions must be
+   * always watched.
+   */
+  enum MHD_bool exception;
+};
+
+/**
+ * Get the full list of the sockets that must be watched by application.
+ *
+ * The application may use this function each time to get a full list of
+ * the sockets for watch or may use #MHD_get_watched_fds_update() to
+ * get the incremental updates.
+ *
+ * @param daemon the daemon to get the list
+ * @param num_elements the number of elements in @a fds list
+ * @param[out] fds the arrays of @a num_elements of sockets to be watched
+ *                 by application,
+ *                 could be NULL to get the required number of elements
+ * @param[out] max_wait the pointer to value set to maximum wait time
+ *                      for the network events, set only if @fds is not NULL
+ * @return number of elements set in @a fds, never larger than
+ *         @a num_elements (if @a fds in not NULL);
+ *         the required number elements in @a fds (if @a fds is NULL)
+ */
+_MHD_EXTERN unsigned int
+MHD_get_watched_fds (struct MHD_Daemon *daemon,
+                     unsigned int num_elements,
+                     struct MHD_WatchedFD *fds,
+                     uint_fast64_t *max_wait) // FIXME: never return "no timeout"
+MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (4);
+
+
+enum MHD_WatchedFdAction
+{
+  /**
+   * New watched FD, to be added to the list
+   */
+  MHD_WFA_ADD,
+
+  /**
+   * Update watching interest in already watched FD
+   */
+  MHD_WFA_UPDATE,
+
+  /**
+   * Delete FD from watching list
+   */
+  MHD_WFA_REMOVE
+};
+
+struct MHD_WatchedFdUpdate
+{
+  /**
+   * The required action: add/update/delete
+   */
+  enum MHD_WatchedFdAction action;
+
+  /**
+   * The watched FD to add, update or delete.
+   */
+  struct MHD_WatchedFD watched_fd;
+};
+
+/**
+ * Get the update of the listt of the sockets that must be watched
+ * by application.
+ * This function provides an update to the list of watched sockets
+ * since the last call of #MHD_get_watched_fds() or
+ * #MHD_get_watched_fds_update() with non-NULL @a fds.
+ * If this function is called before #MHD_get_watched_fds() then it
+ * returns full list of sockets to watch with action #MHD_WFA_ADD.
+ *
+ * @param daemon the daemon to get the list
+ * @param num_elements the number of elements in @a fds list
+ * @param[out] fds the arrays of @a num_elements to update the list
+ *                 of watched sockets,
+ *                 could be NULL to get the required number of elements
+ * @param[out] max_wait the pointer to value set to maximum wait time
+ *                      for the network events, set only if @fds is not NULL
+ * @return number of elements set in @a fds, never larger than
+ *         @a num_elements (if @a fds in not NULL);
+ *         the required number elements in @a fds (if @a fds is NULL)
+ */
+_MHD_EXTERN unsigned int
+MHD_get_watched_fds_update (struct MHD_Daemon *daemon,
+                            unsigned int num_elements,
+                            struct MHD_WatchedFdUpdate *fds,
+                            uint_fast64_t *max_wait)
+MHD_FUNC_PARAM_NONNULL_ (1);
+
+
+/**
+ * Perform round of sockets processing, including receiving, sending,
+ * data processing, sockets closing and other things.
+ * @param daemon the daemon to process
+ * @param num_elements the number of elements in the @a fds array
+ * @param fds the array of watched sockets, must be complete list of
+ *            all watched sockets if @a type is #MHD_TL_LEVEL or
+ *            just partial list otherwise
+ * @param type the type of the trigger used to watch sockets
+ * @return #MHD_SC_OK on success,
+ *         otherwise error code TODO: complete list of error codes
+ */
+_MHD_EXTERN enum MHD_StatusCode // FIXME: bool? void?
+MHD_process_watched_fds (
+  struct MHD_Daemon *daemon,
+  unsigned int num_elements,
+  struct MHD_WatchedFD fds[MHD_C99_ (static num_elements)],
+  enum MHD_TriggerLevel type)
+MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (2);
 
 /**
  * Obtain the `select()` sets for this daemon.  Daemon's FDs will be
@@ -3695,7 +3782,7 @@ enum MHD_ValueKind
    * Values from get arguments or post data
    */
   MHD_VK_GET_POST = MHD_VK_POSTDATA | MHD_VK_GET_ARGUMENT
-  // FIXME: Add chunk extension? Another API for extension?
+                    // FIXME: Add chunk extension? Another API for extension?
 };
 
 
