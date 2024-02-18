@@ -8,10 +8,10 @@ SUBDIRS  = .
 ZZUF_SEED = 0
 
 # Additional flags for zzuf
-ZZUF_FLAGS = 
+ZZUF_FLAGS =
 
 # Additional flags for socat (if socat is used)
-SOCAT_FLAGS = 
+SOCAT_FLAGS =
 
 if FORCE_USE_ZZUF_SOCAT
 TEST_RUNNER_SCRIPT = zzuf_socat_test_runner.sh
@@ -95,9 +95,9 @@ warn_vheavy_use:
 	@echo "NOTICE" ; \
 	echo "NOTICE: Full heavy tests are enabled. Each test may take up to several minutes to complete." ; \
 	echo "NOTICE"
-	
 
-tests_common_sources = mhd_debug_funcs.h mhd_debug_funcs.c 
+
+tests_common_sources = mhd_debug_funcs.h mhd_debug_funcs.c
 
 test_get_SOURCES = \
   test_get.c $(tests_common_sources)
