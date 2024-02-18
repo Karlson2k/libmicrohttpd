@@ -229,7 +229,6 @@ typedef intptr_t ssize_t;
  */
 #define MHD_VERSION 0x02000000
 
-// FIXME: doxy edited
 /**
  * Representation of 'bool' in the public API as stdbool.h may not
  * always be available and presence of 'bool' keyword may depend on
@@ -260,7 +259,6 @@ enum MHD_Bool
  */
 struct MHD_String
 {
-  // FIXME: edited
   /**
    * Number of characters in @e buf, not counting 0-termination.
    */
@@ -1270,8 +1268,7 @@ MHD_status_code_is_fatal(enum MHD_StatusCode code)
 MHD_FUNC_CONST_;
 
 
-// FIXME: struct MHD_String
-const char *
+const struct MHD_String *
 MHD_status_code_to_string (enum MHD_StatusCode code)
 MHD_FUNC_CONST_ MHD_FUNC_RETURNS_NONNULL_;
 
@@ -1360,7 +1357,7 @@ enum MHD_HTTP_Method
 
 // FIXME: added
 // FIXME: return 'const char *'?
-_MHD_EXTERN const struct MHD_String
+_MHD_EXTERN const struct MHD_String *
 MHD_get_http_method_string(enum MHD_HTTP_Method method)
 MHD_FUNC_CONST_;
 
@@ -1372,7 +1369,6 @@ MHD_FUNC_CONST_;
  * @{
  */
 
-// FIXME: added
 /* Main HTTP methods. */
 /* Safe.     Idempotent.     RFC9110, Section 9.3.1. */
 #define MHD_HTTP_METHOD_STR_GET      "GET"
@@ -2064,7 +2060,6 @@ typedef const struct MHD_Action *
                         uint_fast64_t upload_size);
 
 
-// FIXME: add port? It is used by most of the application.
 /**
  * Create (but do not yet start) an MHD daemon.
  * Usually, you will want to set various options before
@@ -2253,6 +2248,7 @@ enum MHD_DeamonOptionBool
   /**
    * Disable converting plus ('+') character to space in GET
    * parameters (URI part after '?').
+   * TODO: Add explanation, RFCs, HTML
    */
   MHD_DAEMON_OB_DISABLE_PLUS_SPACE
 };
@@ -2477,6 +2473,7 @@ struct MHD_DaemonOptioniUIntEntry
    * The value to update for the @a option
    */
   unsigned int value;
+  // TODO: union
 };
 
 /**
@@ -2493,15 +2490,14 @@ struct MHD_DaemonOptioniUIntEntry
  *         #MHD_NO if at least single option failed (for more
  *         details check @a results)
  */
-_MHD_EXTERN enum MHD_Bool
+_MHD_EXTERN enum MHD_StatusCode // First failed // TODO: Document that rest may be used
 MHD_daemon_set_option_uint (
   struct MHD_Daemon *daemon,
   size_t num_entries,
-  struct MHD_DaemonOptioniUIntEntry opt_val[MHD_C99_ (static num_entries)],
-  enum MHD_StatusCode *results)
+  struct MHD_DaemonOptioniUIntEntry opt_val[MHD_C99_ (static num_entries)])
 MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (3);
 
-
+// TODO: combine all types of options into single list with union
 /**
  * Accept connections from the given socket.  Socket
  * must be a TCP or UNIX domain (stream) socket.
@@ -2519,7 +2515,7 @@ MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (3);
  *         #MHD_SC_FEATURE_NOT_AVAILABLE if this options is not supported on this system
  *         #MHD_SC_OPTIONS_CONFLICT
  */
-_MHD_EXTERN enum MHD_StatusCode // FIXME - corrected
+_MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_listen_socket (struct MHD_Daemon *daemon,
                           MHD_socket listen_socket)
 MHD_FUNC_PARAM_NONNULL_ (1);
@@ -2576,7 +2572,6 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  */
 enum MHD_ProtocolStrictLevel
 {
-// FIXME: updated
 
   /* * Basic levels * */
   /**
@@ -2655,7 +2650,6 @@ enum MHD_ProtocolStrictLevel
   MHD_PSL_EXTRA_PERMISSIVE = -3,
 };
 
-// FIXME: Added
 /**
  * The way Strict Level is enforced.
  * MHD can be compiled with limited set of strictness levels.
@@ -2678,7 +2672,7 @@ enum MHD_UseStictLevel
    * Use requested level if available or the nearest level (stricter
    * or more permissive).
    */
-  MHD_USL_NEAREST = -1
+  MHD_USL_NEAREST = 2
 };
 
 /**
@@ -2691,7 +2685,7 @@ enum MHD_UseStictLevel
  *         #MHD_SC_TOO_LATE if this option was set after the daemon was started and it cannot be set anymore
  *         #MHD_SC_FEATURE_DISABLED if this option is not implemented in this version of the library,
  */
-_MHD_EXTERN enum MHD_StatusCode // FIXME - corrected
+_MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_protocol_strict_level (struct MHD_Daemon *daemon,
                                   enum MHD_ProtocolStrictLevel sl,
                                   enum MHD_UseStictLevel how)
@@ -2699,6 +2693,7 @@ MHD_FUNC_PARAM_NONNULL_ (1);
 
 // FIXME: do we want to keep it as generic API?
 // FIXME: other TLS backends will not support it.
+// TODO: remove and use low-level from callback
 // + TLS ciphers
 // + 'application name' for lookup
 // of TLS cipher option in configuration file.
@@ -2710,6 +2705,7 @@ MHD_daemon_set_option_string (struct MHD_Daemon *daemon,
                               const char *value)
 MHD_FUNC_PARAM_NONNULL_ (1);
 
+// TODO: three options
 /**
  * Provide TLS key and certificate data in-memory.
  *
@@ -2766,20 +2762,21 @@ MHD_FUNC_PARAM_NONNULL_ (1);
 enum MHD_TlsBackend
 {
   /**
+   * TODO add descr
+   */
+  MHD_TLS_BACKEND_NONE = 0,
+  /**
    * Use best available TLS backend.
    * Currently this is equivalent to GnuTLS (if TLS is enabled
    * for MHD build).
    */
-  MHD_TLS_BACKEND_ANY = 0,
+  MHD_TLS_BACKEND_ANY = 1,
   /**
    * Use GnuTLS as TLS backend.
    */
-  MHD_TLS_BACKEND_GNUTLS = 1
+  MHD_TLS_BACKEND_GNUTLS = 2
 };
 
-// FIXME: should we enforce the order of settings applied?
-// Is it required to first enable TLS before using any
-// TLS-specific settings?
 /**
  * Enable and configure TLS.
  *
@@ -2796,7 +2793,6 @@ enum MHD_TlsBackend
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_tls_backend (struct MHD_Daemon *daemon,
                             enum MHD_TlsBackend backend);
-
 MHD_FUNC_PARAM_NONNULL_ (1);
 
 
@@ -3035,15 +3031,14 @@ MHD_daemon_set_notify_connection (struct MHD_Daemon *daemon,
 MHD_FUNC_PARAM_NONNULL_ (1);
 
 
-// FIXME: Added
 /**
  * The `enum MHD_ConnectionNotificationCode` specifies types
  * of connection notifications.
+ * TODO: document possible extensibility
  * @ingroup request
  */
 enum MHD_StreamNotificationCode
 {
-  // FIXME: more codes, like "server started", "closed with error"&
   /**
    * A new connection has been started.
    * @ingroup request
@@ -3058,7 +3053,14 @@ enum MHD_StreamNotificationCode
 
 };
 
-// FIXME: Added
+// TODO: finish
+struct MHD_something
+{
+  struct MHD_Stream *stream; // const?
+  enum MHD_StreamNotificationCode code;
+  union something;
+};
+
 /**
  * Signature of the callback used by MHD to notify the
  * application about started/stopped data stream
@@ -3074,11 +3076,9 @@ enum MHD_StreamNotificationCode
 typedef void
 (MHD_FUNC_PARAM_NONNULL_ (2)
  *MHD_NotifyStreamCallback) (void *cls,
-                             struct MHD_Stream *stream,
-                             enum MHD_ConnectionNotificationCode toe);
+                             const struct MHD_something *notification);
 
 
-// FIXME: Added
 /**
  * Register a function that should be called whenever a stream is
  * started or closed.
@@ -3108,6 +3108,7 @@ enum MHD_DaemonOptionSizet
   MHD_DAEMON_OPTION_SIZET_CONN_MEM_LIMIT,
   // FIXME: remove this option completely and manage it in MHD?
   // Users do not have clear understanding of what is it and why is it needed/
+  // TODO: remove for now
   /**
    * The step in which read buffer is incremented when needed.
    * If initial half size of the connection's memory region is not enough
@@ -3124,7 +3125,7 @@ enum MHD_DaemonOptionSizet
   MHD_DAEMON_OPTION_SIZET_STACK_SIZE,
 
 };
-// FIXME:
+// FIXME: finish
 _MHD_EXTERN void
 MHD_daemon_option_set_sizet (struct MHD_Daemon *daemon,
                              enum MHD_DaemonOptionSizet option,
@@ -3139,7 +3140,7 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  */
 enum MHD_ThreadingMode
 {
-  // FIXME: Updated
+  // FIXME: Updated - OK
   /**
    * The daemon has no internal threads.
    * The application periodically calls #MHD_process_data(), MHD checks
@@ -3149,7 +3150,7 @@ enum MHD_ThreadingMode
   MHD_TM_EXTERNAL_PERIODIC = 0,
   /**
    * Use an external event loop.
-   * Application used one of MHD APIs to watch sockets status.
+   * Application use one of MHD APIs to watch sockets status.
    */
   MHD_TM_EXTERNAL_EVENT_LOOP = 1,
 // FIXME: updated
@@ -3169,6 +3170,7 @@ enum MHD_ThreadingMode
 
   // FIXME: could be unavailable for HTTP/2 and /3. Streams must be
   // multiplexed. Multiplexing from several threads looks overcomplicated.
+  // TODO: update doxy
   /**
    * MHD should create its own thread for listening and furthermore create
    * another thread per request. Threads may be re-used on the same
@@ -3176,7 +3178,7 @@ enum MHD_ThreadingMode
    * your application is thread-safe and you have plenty of memory (per
    * request).
    */
-  MHD_TM_THREAD_PER_REQUEST = 3
+  MHD_TM_THREAD_PER_CONNECTION = 3
 
 };
 
@@ -3316,14 +3318,30 @@ MHD_set_external_event_loop (struct MHD_Daemon *daemon,
                              void *cb_cls);
 
 
-// FIXME: Alternative style
-
-struct MHD_WatchedFD
+// FIXME: Updated
+// FIXME: any better name? "send_ready"?
+/**
+ * The network status of the socket.
+ * When set by MHD (by #MHD_get_watched_fds() or #MHD_get_watched_fds_update())
+ * it indicates a request to watch for specific socket state:
+ * readiness for receiving the data, readiness for sending the data and/or
+ * exception state of the socket.
+ * When set by application and provided for #MHD_process_watched_fds() it must
+ * indicate the actual status of the socket.
+ *
+ * Any actual state is a bitwise OR combination of #MHD_FD_STATE_RECV,
+ * #MHD_FD_STATE_SEND, #MHD_FD_STATE_EXCEPT.
+ */
+enum MHD_FdState
 {
   /**
-   * The watched socket
+   * The socket is not ready for receiving or sending and
+   * does not have any exceptional state.
+   * The state never set by MHD.
    */
-  MHD_socket fd;
+  MHD_FD_STATE_NONE = 0,
+
+  /* ** Three bit-flags ** */
 
   /**
    * Indicates that socket should be watched for incoming data
@@ -3331,16 +3349,14 @@ struct MHD_WatchedFD
    * / socket has incoming data ready to read (when used for
    * #MHD_process_watched_fds())
    */
-  enum MHD_bool recv_ready;
-
+  MHD_FD_STATE_RECV = 1 << 0,
   /**
    * Indicates that socket should be watched for availability for sending
    * (when set by #MHD_get_watched_fds())
    * / socket has ability to send data (when used for
    * #MHD_process_watched_fds())
    */
-  enum MHD_bool send_ready;
-
+  MHD_FD_STATE_SEND = 1 << 1,
   /**
    * Indicates that socket should be watched for disconnect, out-of-band
    * data available or high priority data available (when set by
@@ -3352,7 +3368,66 @@ struct MHD_WatchedFD
    * Note: #MHD_get_watched_fds() always set it as exceptions must be
    * always watched.
    */
-  enum MHD_bool exception;
+  MHD_FD_STATE_EXCEPT = 1 << 2,
+
+  /* The rest of the list is a bit-wise combination of three main
+   * state. Application may use three main states directly as
+   * a bit-mask instead of using of following values
+   */
+
+  /**
+   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_SEND states.
+   */
+  MHD_FD_STATE_RECV_SEND = MHD_FD_STATE_RECV | MHD_FD_STATE_SEND,
+  /**
+   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
+   */
+  MHD_FD_STATE_RECV_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
+  /**
+   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
+   */
+  MHD_FD_STATE_SEND_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
+  /**
+   * Combination of #MHD_FD_STATE_RECV, #MHD_FD_STATE_SEND and
+   * #MHD_FD_STATE_EXCEPT states.
+   */
+  MHD_FD_STATE_RECV_SEND_EXCEPT = \
+    MHD_FD_STATE_RECV | MHD_FD_STATE_SEND | MHD_FD_STATE_EXCEPT
+};
+
+// TODO: add doxy
+#define MHD_FD_STATE_SET(var,state) \
+  (var) = (enum MHD_FdState)((var) | (state))
+#define MHD_FD_STATE_CLEAR(var,state) \
+  (var) = (enum MHD_FdState)((var) & (((enum MHD_FdState))(~state)))
+
+#define MHD_FD_STATE_SET_RECV(var) MHD_FD_STATE_SET((var),MHD_FD_STATE_RECV)
+#define MHD_FD_STATE_SET_SEND(var) MHD_FD_STATE_SET((var),MHD_FD_STATE_SEND)
+#define MHD_FD_STATE_SET_EXCEPT(var) \
+  MHD_FD_STATE_SET((var),MHD_FD_STATE_EXCEPT)
+
+#define MHD_FD_STATE_CLEAR_RECV(var) \
+  MHD_FD_STATE_CLEAR((var),MHD_FD_STATE_RECV)
+#define MHD_FD_STATE_CLEAR_SEND(var) \
+  MHD_FD_STATE_CLEAR((var),MHD_FD_STATE_SEND)
+#define MHD_FD_STATE_CLEAR_EXCEPT(var) \
+  MHD_FD_STATE_CLEAR((var),MHD_FD_STATE_EXCEPT)
+
+struct MHD_WatchedFD
+{
+  /**
+   * The watched socket.
+   * Ignored if set by application to #MHD_INVALID_SOCKET. TODO: Improve wording
+   */
+  MHD_socket fd;
+
+  /**
+   * Indicates that socket should be watched for specific network state
+   * (when set by #MHD_get_watched_fds(), #MHD_get_watched_fds_update())
+   * / the network state of the socket (when used for
+   * #MHD_process_watched_fds())
+   */
+  enum MHD_FdState state;
 };
 
 /**
@@ -3366,7 +3441,7 @@ struct MHD_WatchedFD
  * @param num_elements the number of elements in @a fds list
  * @param[out] fds the arrays of @a num_elements of sockets to be watched
  *                 by application,
- *                 could be NULL to get the required number of elements
+ *                 could be NULL to get the required number of elements // TODO: replace with introspection
  * @param[out] max_wait the pointer to value set to maximum wait time
  *                      for the network events, set only if @fds is not NULL
  * @return number of elements set in @a fds, never larger than
@@ -3425,8 +3500,8 @@ struct MHD_WatchedFdUpdate
  * @param num_elements the number of elements in @a fds list
  * @param[out] fds the arrays of @a num_elements to update the list
  *                 of watched sockets,
- *                 could be NULL to get the required number of elements
- * @param[out] max_wait the pointer to value set to maximum wait time
+ *                 could be NULL to get the required number of elements // TODO: convert to introspection
+ * @param[out] max_wait the pointer to value set to maximum wait time in millisec // TODO: check with microseconds
  *                      for the network events, set only if @fds is not NULL
  * @return number of elements set in @a fds, never larger than
  *         @a num_elements (if @a fds in not NULL);
@@ -3457,7 +3532,7 @@ MHD_process_watched_fds (
   struct MHD_Daemon *daemon,
   unsigned int num_elements,
   struct MHD_WatchedFD fds[MHD_C99_ (static num_elements)],
-  enum MHD_TriggerLevel type)
+  enum MHD_TriggerLevel type) // TODO: maybe not need
 MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (2);
 
 /**
