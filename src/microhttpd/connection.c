@@ -2210,7 +2210,8 @@ setup_reply_properties (struct MHD_Connection *connection)
   c->rp.props.use_reply_body_headers = (use_rp_body >= RP_BODY_HEADERS_ONLY);
 
 #ifdef UPGRADE_SUPPORT
-  mhd_assert ((NULL == r->upgrade_handler) || (RP_BODY_NONE == use_rp_body));
+  mhd_assert ( (NULL == r->upgrade_handler) ||
+               (RP_BODY_NONE == use_rp_body) );
 #endif /* UPGRADE_SUPPORT */
 
   if (c->rp.props.use_reply_body_headers)
@@ -2237,7 +2238,8 @@ setup_reply_properties (struct MHD_Connection *connection)
     else
       use_chunked = false;
 
-    if ( (MHD_SIZE_UNKNOWN == r->total_size) && ! use_chunked)
+    if ( (MHD_SIZE_UNKNOWN == r->total_size) &&
+         (! use_chunked) )
     {
       /* End of the stream is indicated by closure */
       c->keepalive = MHD_CONN_MUST_CLOSE;
@@ -2262,10 +2264,11 @@ check_connection_reply (struct MHD_Connection *connection)
 {
   struct MHD_Connection *const c = connection; /**< a short alias */
   struct MHD_Response *const r = c->rp.response;  /**< a short alias */
-  mhd_assert (c->rp.props.set);
 
+  mhd_assert (c->rp.props.set);
 #ifdef HAVE_MESSAGES
-  if ((! c->rp.props.use_reply_body_headers) && (0 != r->total_size))
+  if ( (! c->rp.props.use_reply_body_headers) &&
+       (0 != r->total_size) )
   {
     MHD_DLOG (c->daemon,
               _ ("This reply with response code %u cannot use reply body. "
@@ -2477,7 +2480,6 @@ build_header_response (struct MHD_Connection *connection)
   mhd_assert (NULL != r);
 
   /* ** Adjust response properties ** */
-
   setup_reply_properties (c);
 
   mhd_assert (c->rp.props.set);
