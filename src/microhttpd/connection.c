@@ -7882,8 +7882,7 @@ MHD_queue_response (struct MHD_Connection *connection,
     return MHD_NO; /* Wrong connection state */
 
   if (daemon->shutdown)
-    return MHD_YES; /* If daemon was shut down in parallel,
-                     * response will be aborted now or on later stage. */
+    return MHD_NO;
 
 #ifdef UPGRADE_SUPPORT
   if (NULL != response->upgrade_handler)
