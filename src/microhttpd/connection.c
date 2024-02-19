@@ -4189,24 +4189,28 @@ parse_cookie_header (struct MHD_Connection *connection)
 #endif /* HAVE_MESSAGES */
     break;
   case MHD_PARSE_COOKIE_MALFORMED:
-#ifdef HAVE_MESSAGES
     if (saved_tail != connection->rq.headers_received_tail)
     {
-      if (allow_partially_correct_cookie)
-        MHD_DLOG (connection->daemon,
-                  _ ("The Cookie header has been only partially parsed as it "
-                     "contains malformed data.\n"));
-      else
+      if (! allow_partially_correct_cookie)
       {
         /* Remove extracted values from partially broken cookie */
         /* Memory remains allocated until the end of the request processing */
         connection->rq.headers_received_tail = saved_tail;
         saved_tail->next = NULL;
+#ifdef HAVE_MESSAGES
         MHD_DLOG (connection->daemon,
                   _ ("The Cookie header has been ignored as it contains "
                      "malformed data.\n"));
+#endif /* HAVE_MESSAGES */
       }
+#ifdef HAVE_MESSAGES
+      else
+        MHD_DLOG (connection->daemon,
+                  _ ("The Cookie header has been only partially parsed as it "
+                     "contains malformed data.\n"));
+#endif /* HAVE_MESSAGES */
     }
+#ifdef HAVE_MESSAGES
     else
       MHD_DLOG (connection->daemon,
                 _ ("The Cookie header has malformed data.\n"));
