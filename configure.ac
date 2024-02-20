@@ -3595,9 +3595,10 @@ AC_ARG_ENABLE([messages],
    [enable_messages=${enableval}],
    [enable_messages=yes])
 AS_IF([[test "x$enable_messages" = "xyes"]],
-  [ AC_DEFINE([HAVE_MESSAGES],[1],[Define to 1 to enable support for error messages.]) ],
+  [ AC_DEFINE([HAVE_MESSAGES],[1],[Define to 1 to enable support for text messages.]) ],
   [[ enable_messages=no ]])
 AC_MSG_RESULT([[$enable_messages]])
+AM_CONDITIONAL([HAVE_MESSAGES], [test "x$enable_messages" != "xno"])
 
 
 # optional: have postprocessor?
