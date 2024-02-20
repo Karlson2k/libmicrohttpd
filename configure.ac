@@ -3586,11 +3586,12 @@ AS_IF([[test "x$found_sendfile" = "xno" && test "x$enable_sendfile" = "xyes"]],
   [AC_MSG_ERROR([[sendfile() usage was requested by configure parameter, but no usable sendfile() function is detected]])]
 )
 
-# optional: have error messages ?
-AC_MSG_CHECKING([[whether to generate error messages]])
+# optional: enable error and informational messages
+AC_MSG_CHECKING([[whether to generate text messages]])
 AC_ARG_ENABLE([messages],
    [AS_HELP_STRING([--disable-messages],
-               [disable MHD error messages])],
+               [disable error, warning messages and text bodies for ]
+               [automatic HTTP responses (to reduce the binary size)])],
    [enable_messages=${enableval}],
    [enable_messages=yes])
 AS_IF([[test "x$enable_messages" = "xyes"]],
