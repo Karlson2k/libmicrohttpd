@@ -7049,10 +7049,10 @@ parse_options_va (struct MHD_Daemon *daemon,
                      "printed by the standard MHD logger.\n"));
 
 #else
-      va_arg (ap,
-              VfprintfFunctionPointerType);
-      va_arg (ap,
-              void *);
+      (void) va_arg (ap,
+                     VfprintfFunctionPointerType);
+      (void) va_arg (ap,
+                     void *);
 #endif
       break;
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
