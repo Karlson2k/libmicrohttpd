@@ -260,14 +260,14 @@ enum MHD_Bool
 struct MHD_String
 {
   /**
-   * Number of characters in @e buf, not counting 0-termination.
+   * Number of characters in @e str, not counting 0-termination.
    */
   size_t len;
 
   /**
    * 0-terminated C-string.
    */
-  const char *buf;
+  const char *str; // FIXME: renamed
 };
 
 
@@ -281,13 +281,10 @@ struct MHD_String
 #  define MHD_SIZE_UNKNOWN ((uint_fast64_t) -1LL)
 #endif
 
-#ifdef SIZE_MAX
-#define MHD_CONTENT_READER_END_OF_STREAM SIZE_MAX
-#define MHD_CONTENT_READER_END_WITH_ERROR (SIZE_MAX - 1)
-#else
-#define MHD_CONTENT_READER_END_OF_STREAM ((size_t) -1LL)
-#define MHD_CONTENT_READER_END_WITH_ERROR ((size_t) -2LL)
-#endif
+// FIXME: Updated
+#define MHD_DYNAMIC_CONTENT_END_OF_STREAM ((ssize_t) -1)
+#define MHD_DYNAMIC_CONTENT_STOP_WITH_ERROR ((ssize_t) -2)
+#define MHD_DYNAMIC_CONTENT_SUSPEND_REQUEST ((ssize_t) -3)
 
 #ifndef _MHD_EXTERN
 #if defined(_WIN32) && defined(MHD_W32LIB)
@@ -2792,7 +2789,7 @@ enum MHD_TlsBackend
  */
 _MHD_EXTERN enum MHD_StatusCode
 MHD_daemon_set_tls_backend (struct MHD_Daemon *daemon,
-                            enum MHD_TlsBackend backend);
+                            enum MHD_TlsBackend backend)
 MHD_FUNC_PARAM_NONNULL_ (1);
 
 
@@ -3824,7 +3821,7 @@ enum MHD_ValueKind
    */
   MHD_VK_COOKIE = 2,
 
-  // FIXME: swappaed values
+  // FIXME: swapped values
   /**
    * GET (URI) arguments.
    */
@@ -3860,17 +3857,22 @@ enum MHD_ValueKind
                     // FIXME: Add chunk extension? Another API for extension?
 };
 
-
+// FIXME: use struct MHD_KeyValue?
 /**
  * Iterator over key-value pairs.  This iterator can be used to
  * iterate over all of the cookies, headers, or POST-data fields of a
  * request, and also to iterate over the headers that have been added
  * to a response.
  *
+ * The pointers to the strings in @a key and @a value are valid
+ * until the response is queued. If the data is needed beyond this
+ * point, it should be copied.
+ *
  * @param cls closure
  * @param kind kind of the header we are looking at
  * @param key key for the value, can be an empty string
- * @param value corresponding value, can be NULL
+ * @param value corresponding value, can be NULL (no value set) or
+ *              empty (the value is empty)
  * @return #MHD_YES to continue iterating,
  *         #MHD_NO to abort the iteration
  * @ingroup request
@@ -3901,37 +3903,49 @@ MHD_request_get_values_cb (struct MHD_Request *request,
                            void *iterator_cls)
 MHD_FUNC_PARAM_NONNULL_ (1);
 
+
 // FIXME: added - to discuss
+
 /**
- * Get all of the headers from the request.
+ * The Key-Value pair
+ */
+struct MHD_KeyValue
+{
+  struct MHD_String key;
+  struct MHD_String value;
+};
+
+/**
+ * Get all of the headers (or other kind of request data) from the request.
+ *
+ * The pointers to the strings in @a elements are valid until the response
+ * is queued. If the data is needed beyond this point, it should be copied.
  *
  * @param[in] request request to get values from
- * @param kind the types of values to iterate over, can be a bitmask
- * @param num_elements the number of elements in @a keys and @a values arrays
- * @param[out] keys the array of @a num_elements strings to be filled with
- *                  the keys data; if @a request has more elements than
- *                  @a num_elements than first @a num_elements are stored,
- *                  the parameter can be NULL
- * @param[out] values the array of @a num_elements strings to be filled with
- *                    the values data if @a request has more elements than
- *                    @a num_elements than first @a num_elements are stored,
- *                    the parameter can be NULL
- * @return the number of keys (and values) available (if @a keys is NULL),
- *         the number of elements stored in @a key (and in @a values), the
- *         number cannot be larger then @a num_elements
+ * @param kind the types of values to get, can be a bitmask
+ * @param num_elements the number of elements in @a elements array
+ * @param[out] elements the array of @a num_elements strings to be filled with
+ *                      the key-value pairs; if @a request has more elements
+ *                      than @a num_elements than any @a num_elements are
+ *                      stored
+ * @return the number of elements stored in @a key (and in @a values), the
+ *         number cannot be larger then @a num_elements,
+ *         zero if there is no such values or any error occurs
  */
 _MHD_EXTERN unsigned int
 MHD_request_get_values_list (struct MHD_Request *request,
                              enum MHD_ValueKind kind,
                              unsigned int num_elements,
-                             struct MHD_String *keys,
-                             struct MHD_String *values)
-MHD_FUNC_PARAM_NONNULL_ (1);
+                             struct MHD_KeyValue elements[MHD_C99_ (static)])
+MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (4);
 
 
 /**
- * Get a particular header value.  If multiple
- * values match the kind, return any one of them.
+ * Get a particular header (or other kind of request data) value.
+ * If multiple values match the kind, return any one of them.
+ *
+ * The returned pointer is valid until the response is queued.
+ * If the data is needed beyond this point, it should be copied.
  *
  * @param request request to get values from
  * @param kind what kind of value are we looking for
@@ -3940,30 +3954,65 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  * @ingroup request
  */
 _MHD_EXTERN const char *
-MHD_request_lookup_value (struct MHD_Request *request,
-                          enum MHD_ValueKind kind,
-                          const char *key)
+MHD_request_get_value (struct MHD_Request *request,
+                       enum MHD_ValueKind kind,
+                       const char *key)
 MHD_FUNC_PARAM_NONNULL_ (1);
+
+// FIXME: Remove duplicate??
+/**
+ * Get a particular header (or other kind of request data) value.
+ * If multiple values match the kind, return any one of them.
+ *
+ * The pointer to the string in @a value is valid until the response
+ * is queued. If the data is needed beyond this point, it should be copied.
+
+ * @param request request to get values from
+ * @param kind what kind of value are we looking for
+ * @param[in] key the header to look for, zero-length to
+ *                lookup 'trailing' value without a key
+ * @param[out] value the found value, the str pointer set to
+ *                   NULL if nothing is found
+ * @return #MHD_SC_OK if found,
+ *         // FIXME: add error codes
+ * @ingroup request
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_request_get_value_string (struct MHD_Request *request,
+                              enum MHD_ValueKind kind,
+                              struct MHD_String *key,
+                              struct MHD_String *value)
+MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (3)
+MHD_FUNC_PARAM_NONNULL_ (4);
 
 
 // FIXME: gana? table for RFC 7541...
+// TODO: extract https://www.rfc-editor.org/rfc/rfc7541.html#appendix-A
 enum MHD_StaticTableKey;
 
+// FIXME: Updated
 /**
  * Get last occurence of a particular header value under
  * the given @a skt.
  *
+ * The pointer to the string in @a value is valid until the response
+ * is queued. If the data is needed beyond this point, it should be copied.
+ *
  * @param[in,out] request request to get values from
  * @param kind what kind of value are we looking for
  * @param skt the header to look for based on RFC 7541 Appendix A.
- * @return NULL if no such item was found
+ * @param[out] value the found value, the str pointer set to
+ *                   NULL if nothing is found
+ * @return #MHD_SC_OK if found,
+ *         // FIXME: add error codes
  * @ingroup request
  */
-_MHD_EXTERN const char *
+_MHD_EXTERN enum MHD_StatusCode
 MHD_request_lookup_value_by_static_header (struct MHD_Request *request,
                                            enum MHD_ValueKind kind,
-                                           enum MHD_StaticTableKey skt)
-MHD_FUNC_PARAM_NONNULL_ (1);
+                                           enum MHD_StaticTableKey skt,
+                                           struct MHD_String *value)
+MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (4);
 
 
 /**
@@ -3973,9 +4022,19 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  */
 /* See http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml */
 // Use GANA!
-// FIXME: Discuss GANA. It will be always behind the official specs.
+// FIXME: Discuss GANA. Not clear how to use automatic substitution for missing entries
 enum MHD_HTTP_StatusCode
 {
+  // FIXME: added
+  /**
+   * Not a real code.
+   * When used with #MHD_action_from_response() then the real
+   * code is taken from the response.
+   * When used with response creation function it is equivalent
+   * to #MHD_HTTP_STATUS_OK.
+   */
+  MHD_HTTP_STATUS_DEFAULT = 0,
+
   MHD_HTTP_STATUS_CONTINUE = 100,
   MHD_HTTP_STATUS_SWITCHING_PROTOCOLS = 101,
   MHD_HTTP_STATUS_PROCESSING = 102,
@@ -4059,6 +4118,7 @@ enum MHD_HTTP_StatusCode
  *
  * If we don't have a string for a status code, we give the first
  * message in that status code class.
+ * //FIXME: Give "Unknown code" / "Non-standard code" (?) result
  */
 _MHD_EXTERN const char *
 MHD_status_code_to_string (enum MHD_HTTP_StatusCode code);
@@ -4073,7 +4133,7 @@ MHD_status_code_to_string (enum MHD_HTTP_StatusCode code);
  * @{
  */
 // Again: GANA?
-// FIXME: Discuss GANA. It will be always behind the official specs.
+// FIXME: Discuss GANA. Just a few entries so far.
 enum MHD_HTTP_ProtocolVersion
 {
   MHD_HTTP_VERSION_INVALID = 0,
@@ -4084,10 +4144,11 @@ enum MHD_HTTP_ProtocolVersion
   MHD_HTTP_VERSION_FUTURE = 99
 };
 
-// FIXME: remove completely, usable only for HTTP/1.x
+// FIXME: remove completely, usable only for HTTP/1.x, no practical use with the new API
 _MHD_EXTERN const char *
 MHD_protocol_version_to_string (enum MHD_HTTP_ProtocolVersion pv);
 
+// FIXME: remove completely, usable only for HTTP/1.x, no practical use with the new API
 // Reminder:
 // #define MHD_HTTP_VERSION_1_0 "HTTP/1.0"
 // #define MHD_HTTP_VERSION_1_1 "HTTP/1.1"
@@ -4101,10 +4162,6 @@ MHD_protocol_version_to_string (enum MHD_HTTP_ProtocolVersion pv);
  * Suspend handling of network data for a given request.  This can
  * be used to dequeue a request from MHD's event loop for a while.
  *
- * If you use this API in conjunction with a internal select or a
- * thread pool, you must set the option #MHD_USE_ITC to
- * ensure that a resumed request is immediately processed by MHD.
- *
  * Suspended requests continue to count against the total number of
  * requests allowed (per daemon, as well as per IP, if such limits
  * are set).  Suspended requests will NOT time out; timeouts will
@@ -4112,11 +4169,7 @@ MHD_protocol_version_to_string (enum MHD_HTTP_ProtocolVersion pv);
  * request is suspended, MHD will not detect disconnects by the
  * client.
  *
- * The only safe time to suspend a request is from either a
- * #MHD_RequestHeaderCallback, #MHD_UploadCallback, or a
- * #MHD_RequestfetchResponseCallback.  Suspending a request
- * at any other time will cause an assertion failure.
- *
+ * //FIXME: remove this limitation, suspended connections can be easily cleaned
  * Finally, it is an API violation to call #MHD_daemon_stop() while
  * having suspended requests (this will at least create memory and
  * socket leaks or lead to undefined behavior).  You must explicitly
@@ -4125,7 +4178,8 @@ MHD_protocol_version_to_string (enum MHD_HTTP_ProtocolVersion pv);
  * @return action to cause a request to be suspended.
  */
 _MHD_EXTERN const struct MHD_Action *
-MHD_action_suspend (void);
+MHD_action_suspend (void)
+MHD_FUNC_RETURNS_NONNULL_;
 
 
 /**
@@ -4159,18 +4213,26 @@ struct MHD_Response;
 
 
 /**
- * Converts a @a response to an action.  If @a destroy_after_use
- * is set, the reference to the @a response is consumed
- * by the conversion. If @a consume is #MHD_NO, then
- * the @a response can be converted to actions in the future.
+ * Converts a @a response to an action.  If @a MHD_RESP_OPT_REUSABLE
+ * is not set, the reference to the @a response is consumed
+ * by the conversion. If #MHD_RESP_OPT_REUSABLE is #MHD_YES,
+ * then the @a response can be used again to create actions in
+ * the future.
  * However, the @a response is frozen by this step and
  * must no longer be modified (i.e. by setting headers).
  *
- * @param[in] response response to convert, not NULL
+ * @param[in] response the response to convert,
+ *                     if NULL then this function is equivalent to
+ *                     #MHD_action_close_connection() call
+ * @param code the response code, if set to #MHD_HTTP_STATUS_DEFAULT
+ *             then code defined in @a response is used
+ * @return pointer to the action, the action must be consumed
+ *         otherwise response object may leak,
+ *         NULL if failed (no memory)
  */
 _MHD_EXTERN const struct MHD_Action *
-MHD_action_from_response (struct MHD_Response *response)
-MHD_FUNC_PARAM_NONNULL_ (1);
+MHD_action_from_response (struct MHD_Response *response,
+                          enum MHD_HTTP_StatusCode code); // FIXME: Added. Not compatible with no-malloc approach
 
 #ifndef FIXME_FUN
 struct MHD_Action
@@ -4198,39 +4260,26 @@ struct MHD_Response
 /**
  * Flags for special handling of responses.
  */
-// FIXME: this should not be a bit map...
+// FIXME: corrected names and values
 enum MHD_ResponseOption
 {
-  /**
-   * Default: no special flags.
-   * @note Available since #MHD_VERSION 0x00093701
-   */
-  MHD_RF_NONE = 0,
-
   /**
    * Only respond in conservative (dumb) HTTP/1.0-compatible mode.
    * Response still use HTTP/1.1 version in header, but always close
    * the connection after sending the response and do not use chunked
    * encoding for the response.
-   * You can also set the #MHD_RF_HTTP_1_0_SERVER flag to force
+   * You can also set the #MHD_RESP_OPT_HTTP_1_0_SERVER flag to force
    * HTTP/1.0 version in the response.
    * Responses are still compatible with HTTP/1.1.
    * This option can be used to communicate with some broken client, which
    * does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
-   * @note Available since #MHD_VERSION 0x00097308
    */
-  // FIXME: no more bit mask!
-  MHD_RF_HTTP_1_0_COMPATIBLE_STRICT = 1 << 0,
-
-  /**
-   * The same as #MHD_RF_HTTP_1_0_COMPATIBLE_STRICT
-   * @note Available since #MHD_VERSION 0x00093701
-   */
-  MHD_RF_HTTP_VERSION_1_0_ONLY = 1 << 0,
+  // FIXME: no more bit mask! - removed
+  MHD_RESP_OPT_HTTP_1_0_COMPATIBLE_STRICT = 1,
 
   /**
    * Only respond in HTTP 1.0-mode.
-   * Contrary to the #MHD_RF_HTTP_1_0_COMPATIBLE_STRICT flag, the response's
+   * Contrary to the #MHD_RESP_OPT_HTTP_1_0_COMPATIBLE_STRICT flag, the response's
    * HTTP version will always be set to 1.0 and keep-alive connections
    * will be used if explicitly requested by the client.
    * The "Connection:" header will be added for both "close" and "keep-alive"
@@ -4240,31 +4289,23 @@ enum MHD_ResponseOption
    * HTTP/1.1 clients.
    * This option can be used to emulate HTTP/1.0 server (for response part
    * only as chunked encoding in requests (if any) is processed by MHD).
-   * @note Available since #MHD_VERSION 0x00097308
    */
-  MHD_RF_HTTP_1_0_SERVER = 1 << 1,
-  /**
-   * The same as #MHD_RF_HTTP_1_0_SERVER
-   * @note Available since #MHD_VERSION 0x00096000
-   */
-  MHD_RF_HTTP_VERSION_1_0_RESPONSE = 1 << 1,
+  MHD_RESP_OPT_HTTP_1_0_SERVER = 2,
 
   /**
    * Disable sanity check preventing clients from manually
    * setting the HTTP content length option.
    * Allow to set several "Content-Length" headers. These headers will
    * be used even with replies without body.
-   * @note Available since #MHD_VERSION 0x00096702
    */
-  MHD_RF_INSANITY_HEADER_CONTENT_LENGTH = 1 << 2,
+  MHD_RESP_OPT_INSANITY_HEADER_CONTENT_LENGTH = 3,
 
   /**
    * Enable sending of "Connection: keep-alive" header even for
    * HTTP/1.1 clients when "Keep-Alive" connection is used.
    * Disabled by default for HTTP/1.1 clients as per RFC.
-   * @note Available since #MHD_VERSION 0x00097310
    */
-  MHD_RF_SEND_KEEP_ALIVE_HEADER = 1 << 3,
+  MHD_RESP_OPT_SEND_KEEP_ALIVE_HEADER = 4,
 
   /**
    * Enable special processing of the response as body-less (with undefined
@@ -4279,32 +4320,20 @@ enum MHD_ResponseOption
    * reply body must be sent to the client.
    * This flag is primarily intended to be used when automatic "Content-Length"
    * header is undesirable in response to HEAD requests.
-   * @note Available since #MHD_VERSION 0x00097701
    */
-  MHD_RF_HEAD_ONLY_RESPONSE = 1 << 4,
+  MHD_RESP_OPT_HEAD_ONLY_RESPONSE = 5,
 
   // action_from_response does not decrement RC...
-  MHD_RF_REUSABLE = 1 << 5
+  MHD_RESP_OPT_REUSABLE = 6
 } _MHD_FIXED_FLAGS_ENUM;
 
 
+// FIXME: no need for "mass" options set function
 _MHD_EXTERN enum MHD_StatusCode
 MHD_response_set_option_bool (struct MHD_Response *response,
                               enum MHD_ResponseOption ro,
                               enum MHD_Bool value)
 MHD_FUNC_PARAM_NONNULL_ALL_;
-
-
-/**
- * Only respond in conservative HTTP 1.0-mode.  In
- * particular, do not (automatically) sent "Connection" headers and
- * always close the connection after generating the response.
- *
- * @param request the request for which we force HTTP 1.0 to be used
- */
-_MHD_EXTERN void
-MHD_response_option_v10_only (struct MHD_Response *response)
-MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -4319,48 +4348,57 @@ enum MHD_RequestTerminationCode
    * We finished sending the response.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_COMPLETED_OK = 0,
-
+  MHD_REQUEST_TERMINATED_COMPLETED_OK = 0
+  ,
+  // FIXME: extended, sorted
   /**
-   * Error handling the connection (resources
-   * exhausted, other side closed connection,
-   * application error accepting request, etc.)
+   * The application terminated request without response.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_WITH_ERROR = 1,
-
+  MHD_REQUEST_TERMINATED_BY_APP = 1
+  ,
+  /**
+   * The request is not valid according to
+   * HTTP specifications.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR = 2
+  ,
+  /**
+   * The client terminated the connection by closing the socket
+   * for writing (TCP half-closed) before sending complete request;
+   * MHD aborted sending the response according to RFC 2616, section 8.1.4.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_CLIENT_ABORT = 3
+  ,
+  /**
+   * Error handling the connection due to resources
+   * exhausted.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_NO_RESOURCES = 4
+  ,
+  /**
+   * We had to close the session since MHD was being
+   * shut down.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 5
+  ,
   /**
    * No activity on the connection for the number
    * of seconds specified using
    * #MHD_OPTION_CONNECTION_TIMEOUT.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED = 2,
-
+  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED = 6
+  ,
   /**
-   * We had to close the session since MHD was being
-   * shut down.
+   * The connection was broken or TLS protocol error.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 3,
-
-  /**
-   * We tried to read additional data, but the other side closed the
-   * connection.  This error is similar to
-   * #MHD_REQUEST_TERMINATED_WITH_ERROR, but specific to the case where
-   * the connection died because the other side did not send expected
-   * data.
-   * @ingroup request
-   */
-  MHD_REQUEST_TERMINATED_READ_ERROR = 4,
-
-  /**
-   * The client terminated the connection by closing the socket
-   * for writing (TCP half-closed); MHD aborted sending the
-   * response according to RFC 2616, section 8.1.4.
-   * @ingroup request
-   */
-  MHD_REQUEST_TERMINATED_CLIENT_ABORT = 5
+  MHD_REQUEST_TERMINATED_CONNECTION_ERROR = 7
 
 };
 
@@ -4370,7 +4408,7 @@ enum MHD_RequestTerminationCode
  * about completed requests.
  *
  * @param cls client-defined closure
- * @param toe reason for request termination
+ * @param reqtc the reason for request termination
  * @param request_context request context value, as originally
  *         returned by the #MHD_EarlyUriLogCallback
  * @see #MHD_option_request_completion()
@@ -4378,7 +4416,7 @@ enum MHD_RequestTerminationCode
  */
 typedef void
 (*MHD_RequestTerminationCallback) (void *cls,
-                                   enum MHD_RequestTerminationCode toe,
+                                   enum MHD_RequestTerminationCode reqtc,
                                    void *request_context);
 
 
@@ -4387,7 +4425,7 @@ typedef void
  * request.
  *
  * @param[in,out] response which response to set the callback for
- * @param termination_cb function to call
+ * @param termination_cb function to call, can be NULL to not use the callback
  * @param termination_cb_cls closure for @e termination_cb
  */
 _MHD_EXTERN enum MHD_StatusCode
@@ -4398,17 +4436,14 @@ MHD_response_set_option_termination_callback (
 MHD_FUNC_PARAM_NONNULL_ (1);
 
 
+// FIXME: Updated
 /**
  * Callback used by libmicrohttpd in order to obtain content.  The
  * callback is to copy at most @a max bytes of content into @a buf.  The
  * total number of bytes that has been placed into @a buf should be
  * returned.
  *
- * Note that returning zero will cause libmicrohttpd to try again.
- * Thus, returning zero should only be used in conjunction
- * with MHD_suspend_connection() to avoid busy waiting.
- *
- * @param cls extra argument to the callback
+ * @param dyn_cont_cls extra argument to the callback
  * @param pos position in the datastream to access;
  *        note that if a `struct MHD_Response` object is re-used,
  *        it is possible for the same content reader to
@@ -4418,52 +4453,53 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  *        the sum of all non-negative return values
  *        obtained from the content reader so far.
  * @param[out] buf where to copy the data
- * @param max maximum number of bytes to copy to @a buf (size of @a buf)
+ * @param max maximum number of bytes to copy to @a buf (size of @a buf),
+ *            the value of @a max is always less or equal SSIZE_MAX
  * @return number of bytes written to @a buf;
- *  0 is legal unless we are running in internal select mode (since
- *    this would cause busy-waiting); 0 in external select mode
- *    will cause this function to be called again once the external
- *    select calls MHD again;
- *  #MHD_CONTENT_READER_END_OF_STREAM (-1) for the regular
+ *  0 is legal only for external polling modes;
+ *    with internal polling thread(s) it is interpreted as
+ *    #MHD_DYNAMIC_CONTENT_END_WITH_ERROR (see below);
+ *  #MHD_DYNAMIC_CONTENT_END_OF_STREAM (-1) for the regular
  *    end of transmission (with chunked encoding, MHD will then
  *    terminate the chunk and send any HTTP footers that might be
- *    present; without chunked encoding and given an unknown
- *    response size, MHD will simply close the connection; note
- *    that while returning #MHD_CONTENT_READER_END_OF_STREAM is not technically
+ *    present; with HTTP/1.0 and given an unknown response size,
+ *    MHD will simply close the connection; note that while
+ *    returning #MHD_DYNAMIC_CONTENT_END_OF_STREAM is not technically
  *    legal if a response size was specified, MHD accepts this
- *    and treats it just as #MHD_CONTENT_READER_END_WITH_ERROR;
- *  #MHD_CONTENT_READER_END_WITH_ERROR (-2) to indicate a server
+ *    and treats it just as #MHD_DYNAMIC_CONTENT_END_WITH_ERROR;
+ *  #MHD_DYNAMIC_CONTENT_STOP_WITH_ERROR (-2) to indicate a server
  *    error generating the response; this will cause MHD to simply
  *    close the connection immediately.  If a response size was
  *    given or if chunked encoding is in use, this will indicate
- *    an error to the client.  Note, however, that if the client
- *    does not know a response size and chunked encoding is not in
- *    use, then clients will not be able to tell the difference between
- *    #MHD_CONTENT_READER_END_WITH_ERROR and #MHD_CONTENT_READER_END_OF_STREAM.
- *    This is not a limitation of MHD but rather of the HTTP protocol.
+ *    an error to the client.  Note, however, that if HTTP/1.0
+ *    is used then the clients will not be able to differentiate between
+ *    #MHD_DYNAMIC_CONTENT_STOP_WITH_ERROR and #MHD_DYNAMIC_CONTENT_END_OF_STREAM.
+ *    This is not a limitation of MHD but rather of the HTTP/1.0 protocol.
+ *  #MHD_DYNAMIC_CONTENT_SUSPEND_REQUEST (-3) to suspend the request
+ *    processing until MHD_request_resume() is called.
  */
 typedef ssize_t
-(*MHD_ContentReaderCallback) (void *cls,
-                              uint64_t pos,
-                              void *buf,
-                              size_t max);
+(*MHD_DynamicContent) (void *dyn_cont_cls,
+                       uint64_t pos,
+                       void *buf,
+                       size_t max);
 
 
 /**
- * This method is called by libmicrohttpd if we are done with a
- * content reader.  It should be used to free resources associated
- * with the content reader.
+ * This method is called by libmicrohttpd when response with dynamic content
+ * is being destroyed.  It should be used to free resources associated
+ * with the dynamic content.
  *
- * @param[in] cls closure
+ * @param[in] free_cls closure
  * @ingroup response
  */
 typedef void
-(*MHD_ContentReaderFreeCallback) (void *cls);
+(*MHD_FreeCallback) (void *free_cls);
 
 
 /**
- * Create a response action.  The response object can be extended with
- * header information and then be used any number of times.
+ * Create a response.  The response object can be extended with
+ * header information.
  *
  * @param sc status code to return
  * @param size size of the data portion of the response, #MHD_SIZE_UNKNOWN for unknown
@@ -4472,21 +4508,105 @@ typedef void
  *                   is essentially the buffer size used for IO, clients
  *                   should pick a value that is appropriate for IO and
  *                   memory performance requirements
- * @param crc callback to use to obtain response data
- * @param crc_cls extra argument to @a crc
- * @param crfc callback to call to free @a crc_cls resources
+ * @param dyn_cont callback to use to obtain response data
+ * @param dyn_cont_cls extra argument to @a crc
+ * @param dyn_cont_fc callback to call to free @a dyn_cont_cls resources
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
 MHD_response_from_callback (enum MHD_HTTP_StatusCode sc,
                             uint64_t size,
-                            size_t block_size,
-                            MHD_ContentReaderCallback crc,
-                            void *crc_cls,
-                            MHD_ContentReaderFreeCallback crfc);
+                            size_t block_size, // FIXME: remove and manage internally?
+                            MHD_DynamicContent dyn_cont,
+                            void *dyn_cont_cls,
+                            MHD_FreeCallback dyn_cont_fc);
 
 
+enum MHD_DynContentZCAction
+{
+  MHD_DYN_CONTENT_ZC_ACTION_CONTINUE = 0,
+  MHD_DYN_CONTENT_ZC_ACTION_END_OF_STREAM = 1,
+  MHD_DYN_CONTENT_ZC_ACTION_STOP_WITH_ERROR = 2,
+  MHD_DYN_CONTENT_ZC_ACTION_SUSPEND_REQUEST = 3
+};
+
+// TODO: Doxy
+struct MHD_DynContentZCIoVec
+{
+  /**
+   * The number of elements in @a iov
+   */
+  unsigned int iov_count;
+  /**
+   * The pointer to the array with @a iov_count elements.
+   */
+  const struct MHD_IoVec *iov;
+  /**
+   * The callback to free resources.
+   * It is called once the full array of iov elements is sent.
+   * No callback is called if NULL.
+   */
+  MHD_FreeCallback iov_fcb;
+  /**
+   * The parameter for @a iov_fcb
+   */
+  void *iov_fcb_cls;
+};
+
+/**
+ * Callback used by libmicrohttpd in order to obtain content.  The
+ * callback is to copy at most @a max bytes of content into @a buf.  The
+ * total number of bytes that has been placed into @a buf should be
+ * returned.
+ *
+ * If total data size set in @a iov_data by this callback is zero and
+ * internal polling thread(s) is used then it is interpreted like
+ * return of #MHD_DYN_CONTENT_ZC_ACTION_STOP_WITH_ERROR.
+ *
+ * @param dyn_cont_zc_cls extra argument to the callback
+ * @param pos position in the datastream to access;
+ *        note that if a `struct MHD_Response` object is re-used,
+ *        it is possible for the same content reader to
+ *        be queried multiple times for the same data;
+ *        however, if a `struct MHD_Response` is not re-used,
+ *        libmicrohttpd guarantees that "pos" will be
+ *        the sum of all data provided so far.
+ * @param[out] iov_data the parameters
+ * @return the requested next action
+ */
+typedef enum MHD_DynContentZCAction
+(*MHD_DynamicContentZC) (void *dyn_cont_zc_cls,
+                         uint64_t pos,
+                         struct MHD_DynContentZCIoVec iov_data);
+
+
+/**
+ * Create a response.  The response object can be extended with
+ * header information.
+ *
+ * @param sc status code to return
+ * @param size size of the data portion of the response, #MHD_SIZE_UNKNOWN for unknown
+ * @param block_size preferred block size for querying crc (advisory only,
+ *                   MHD may still call @a crc using smaller chunks); this
+ *                   is essentially the buffer size used for IO, clients
+ *                   should pick a value that is appropriate for IO and
+ *                   memory performance requirements
+ * @param dyn_cont_zc callback to use to obtain response data
+ * @param dyn_cont_zc_cls extra argument to @a crc
+ * @param dyn_cont_zc_fc callback to call to free @a dyn_cont_zc_cls resources
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_response_from_callback_zc (enum MHD_HTTP_StatusCode sc,
+                               uint64_t size,
+                               MHD_DynamicContentZC dyn_cont_zc,
+                               void *dyn_cont_zc_cls,
+                               MHD_FreeCallback dyn_cont_zc_fc);
+
+// FIXME: alt version
+#ifdef ORIG_VERSION
 /**
  * Specification for how MHD should treat the memory buffer
  * given for the response.
@@ -4501,7 +4621,7 @@ enum MHD_ResponseMemoryMode
    * it, not free it, not copy it, just keep an alias to it.
    * @ingroup response
    */
-  MHD_RESPMEM_PERSISTENT,
+  MHD_RESPMEM_PERSISTENT = 0,
 
   /**
    * Buffer is in transient memory, but not on the heap (for example,
@@ -4510,7 +4630,7 @@ enum MHD_ResponseMemoryMode
    * own private copy of the data for processing.
    * @ingroup response
    */
-  MHD_RESPMEM_MUST_COPY
+  MHD_RESPMEM_MUST_COPY = 1
 
 };
 
@@ -4533,6 +4653,53 @@ MHD_response_from_buffer (enum MHD_HTTP_StatusCode sc,
                           const char buffer[MHD_C99_ (static buffer_size)],
                           enum MHD_ResponseMemoryMode mode);
 
+#else
+
+
+/**
+ * Create a response object.  The response object can be extended with
+ * header information and then be used any number of times.
+ *
+ * @param sc status code to use for the response;
+ *           #MHD_HTTP_NO_CONTENT is only valid if @a size is 0;
+ * @param size the size of the data portion of the response
+ * @param buffer the @a size bytes containing the response's data portion,
+ *               needs to be valid while the response is used
+ * @param free_cb the callback to free any allocated data, called
+ *                when response is being destroyed, can be NULL
+ *                to skip callback
+ * @param free_cb_cls the parameter for @a free_cb
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_response_from_buffer (enum MHD_HTTP_StatusCode sc,
+                          size_t buffer_size,
+                          const char buffer[MHD_C99_ (static buffer_size)],
+                          MHD_FreeCallback free_cb,
+                          void *free_cb_cls);
+
+
+/**
+ * Create a response object.  The response object can be extended with
+ * header information and then be used any number of times.
+ *
+ * @param sc status code to use for the response;
+ *           #MHD_HTTP_NO_CONTENT is only valid if @a size is 0; // FIXME: remove comment? Too many statuses without body
+ * @param size the size of the data portion of the response
+ * @param buffer the @a size bytes containing the response's data portion,
+ *               an internal copy will be made, there is no need to
+ *               keep this data after return from this function
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_response_from_buffer_copy (
+  enum MHD_HTTP_StatusCode sc,
+  size_t buffer_size,
+  const char buffer[MHD_C99_ (static buffer_size)]);
+
+#endif
 
 /**
  * Create a response object with empty (zero size) body.
@@ -4575,35 +4742,6 @@ MHD_response_from_iovec (
   const struct MHD_IoVec iov[MHD_C99_ (iov_count)],
   MHD_ContentReaderFreeCallback free_cb,
   void *free_cb_cls);
-
-
-/**
- * Create a response object with the content of provided buffer used as
- * the response body.
- *
- * The response object can be extended with header information and then
- * be used any number of times.
- *
- * If response object is used to answer HEAD request then the body
- * of the response is not used, while all headers (including automatic
- * headers) are used.
- *
- * @param size size of the data portion of the response
- * @param buffer size bytes containing the response's data portion
- * @param crfc function to call to cleanup, if set to NULL then callback
- *             is not called
- * @param crfc_cls an argument for @a crfc
- * @return NULL on error (i.e. invalid arguments, out of memory)
- * @note 'const' qualifier is used for @a buffer since #MHD_VERSION 0x00097701
- * @ingroup response
- */
-_MHD_EXTERN struct MHD_Response *
-MHD_response_from_buffer_with_free_callback (
-  enum MHD_HTTP_StatusCode sc,
-  size_t size,
-  const char buffer[MHD_C99_ (static size)],
-  MHD_ContentReaderFreeCallback crfc,
-  void *crfc_cls);
 
 
 /**
@@ -4652,22 +4790,20 @@ MHD_response_from_pipe (enum MHD_HTTP_StatusCode sc,
                         int fd);
 
 
+// FIXME: corrected
 /**
- * Explicitly decrease reference counter of a response object.  If the
- * counter hits zero, destroys a response object and associated
- * resources.  Usually, this is implicitly done by converting a
- * response to an action and returning the action to MHD.
+ * Destroy response.
+ * Should be called if response was created but not consumed.
+ * Also must be called if response has #MHD_RESP_OPT_REUSABLE
+ * set. The actual destroy can be happen later, if the response
+ * is still being used in any request.
+ * The function does not block.
  *
- * @param[in] response response to decrement RC of
+ * @param[in] response the response to destroy
  * @ingroup response
  */
 _MHD_EXTERN void
-MHD_response_queue_for_destroy (struct MHD_Response *response)
-MHD_FUNC_PARAM_NONNULL_ (1);
-
-
-_MHD_EXTERN struct MHD_Response *
-MHD_response_incref (struct MHD_Response *response)
+MHD_response_destroy (struct MHD_Response *response)
 MHD_FUNC_PARAM_NONNULL_ (1);
 
 
