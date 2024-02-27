@@ -2517,7 +2517,6 @@ MHD_daemon_listen_socket (struct MHD_Daemon *daemon,
                           MHD_socket listen_socket)
 MHD_FUNC_PARAM_NONNULL_ (1);
 
-
 /**
  * Event loop internal syscalls supported by MHD.
  */
@@ -3988,7 +3987,7 @@ MHD_FUNC_PARAM_NONNULL_ (4);
 
 // FIXME: gana? table for RFC 7541...
 // TODO: extract https://www.rfc-editor.org/rfc/rfc7541.html#appendix-A
-enum MHD_StaticTableKey;
+enum MHD_PredefinedHeader;
 
 // FIXME: Updated
 /**
@@ -4010,7 +4009,7 @@ enum MHD_StaticTableKey;
 _MHD_EXTERN enum MHD_StatusCode
 MHD_request_lookup_value_by_static_header (struct MHD_Request *request,
                                            enum MHD_ValueKind kind,
-                                           enum MHD_StaticTableKey skt,
+                                           enum MHD_PredefinedHeader skt,
                                            struct MHD_String *value)
 MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (4);
 
@@ -4479,7 +4478,8 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  *    processing until MHD_request_resume() is called.
  */
 typedef ssize_t
-(*MHD_DynamicContent) (void *dyn_cont_cls,
+(MHD_FUNC_PARAM_NONNULL_ (3)
+ *MHD_DynamicContent) (void *dyn_cont_cls,
                        uint64_t pos,
                        void *buf,
                        size_t max);
@@ -4658,7 +4658,7 @@ MHD_response_from_buffer (enum MHD_HTTP_StatusCode sc,
 
 /**
  * Create a response object.  The response object can be extended with
- * header information and then be used any number of times.
+ * header information.
  *
  * @param sc status code to use for the response;
  *           #MHD_HTTP_NO_CONTENT is only valid if @a size is 0;
@@ -4682,7 +4682,7 @@ MHD_response_from_buffer (enum MHD_HTTP_StatusCode sc,
 
 /**
  * Create a response object.  The response object can be extended with
- * header information and then be used any number of times.
+ * header information.
  *
  * @param sc status code to use for the response;
  *           #MHD_HTTP_NO_CONTENT is only valid if @a size is 0; // FIXME: remove comment? Too many statuses without body
@@ -4718,8 +4718,7 @@ MHD_response_from_buffer_copy (
  * Create a response object with an array of memory buffers
  * used as the response body.
  *
- * The response object can be extended with header information and then
- * be used any number of times.
+ * The response object can be extended with header information.
  *
  * If response object is used to answer HEAD request then the body
  * of the response is not used, while all headers (including automatic
@@ -4732,7 +4731,6 @@ MHD_response_from_buffer_copy (
  *        the response is destroyed.
  * @param free_cb_cls the argument passed to @a free_cb
  * @return NULL on error (i.e. invalid arguments, out of memory)
- * @note Available since #MHD_VERSION 0x00097204
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
@@ -4740,14 +4738,14 @@ MHD_response_from_iovec (
   enum MHD_HTTP_StatusCode sc,
   unsigned int iov_count,
   const struct MHD_IoVec iov[MHD_C99_ (iov_count)],
-  MHD_ContentReaderFreeCallback free_cb,
+  MHD_FreeCallback free_cb,
   void *free_cb_cls);
 
 
 /**
  * Create a response object based on an @a fd from which
  * data is read.  The response object can be extended with
- * header information and then be used any number of times.
+ * header information.
  *
  * @param sc status code to return
  * @param fd file descriptor referring to a file on disk with the
@@ -4821,14 +4819,36 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_response_add_header (struct MHD_Response *response,
                          const char *header,
                          const char *content)
-MHD_FUNC_PARAM_NONNULL_ (1,2,3);
+MHD_FUNC_PARAM_NONNULL_(1) MHD_FUNC_PARAM_NONNULL_(2)
+MHD_FUNC_PARAM_NONNULL_(3);
+
+// FIXME: duplication
+/**
+ * Add a header line to the response.
+ *
+ * This function uses application-provided length of string. When using
+ * large strings or many headers this case save some CPU cycles.
+ *
+ * @param response response to add a header to
+ * @param header the header to add
+ * @param content value to add
+ * @return #MHD_NO on error (i.e. invalid header or content format),
+ *         or out of memory
+ * @ingroup response
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_response_add_header_str (struct MHD_Response *response,
+                             const struct MHD_String *header_str,
+                             const struct MHD_String *content_str)
+MHD_FUNC_PARAM_NONNULL_(1) MHD_FUNC_PARAM_NONNULL_(2)
+MHD_FUNC_PARAM_NONNULL_(3);
 
 
 _MHD_EXTERN enum MHD_StatusCode
-MHD_response_add_static_header (struct MHD_Response *response,
-                                enum MHD_StaticTableKey stk,
+MHD_response_add_predef_header (struct MHD_Response *response,
+                                enum MHD_PredefinedHeader stk,
                                 const char *content)
-MHD_FUNC_PARAM_NONNULL_ (1,3);
+MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_(3);
 
 
 /**
@@ -4877,9 +4897,10 @@ MHD_FUNC_PARAM_NONNULL_ (1);
 _MHD_EXTERN const struct MHD_String *
 MHD_response_get_header (const struct MHD_Response *response,
                          const char *key)
-MHD_FUNC_PARAM_NONNULL_ (1,2);
+MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (2);
 
 
+// FIXME: Removed trailer function
 /**
  * Add a tailer line to the response for this request.
  * Usually called within a MHD_ContentReaderCallback.
