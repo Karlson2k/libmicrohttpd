@@ -3869,6 +3869,8 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  */
 struct MHD_KeyValue
 {
+  // FIXME: adding here, so remove elsewhere...
+  enum MHD_ValueKind kind;
   struct MHD_String key;
   struct MHD_String value;
 };
@@ -3891,10 +3893,11 @@ struct MHD_KeyValue
  *         zero if there is no such values or any error occurs
  */
 _MHD_EXTERN unsigned int
-MHD_request_get_values_list (struct MHD_Request *request,
-                             enum MHD_ValueKind kind,
-                             unsigned int num_elements,
-                             struct MHD_KeyValue elements[MHD_C99_ (static)])
+MHD_request_get_values_list (
+  struct MHD_Request *request,
+  enum MHD_ValueKind kind,
+  unsigned int num_elements,
+  struct MHD_KeyValue elements[MHD_C99_ (static num_elements)])
 MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (4);
 
 
@@ -4541,15 +4544,20 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  *                    must be zero if @a footers is NULL
  * @param footers the optional pointer to the array of the footers,
  *                can be NULL
- * @return MHD_SC_OK if success,
+ * @return #MHD_SC_OK if success,
  *         error code otherwise // TODO: add the list
  */
 _MHD_EXTERN enum MHD_StatusCode
-MHD_DCC_set_action_finished (
+MHD_DCC_set_action_finished_with_footer (
   struct MHD_DynamicContentCreatorAction *action,
   size_t num_footers,
-  struct MHD_KeyValue *footers)
+  const struct MHD_CStringPair *footers)
 MHD_FUNC_PARAM_NONNULL_ (1);
+
+
+#define MHD_DCC_set_action_finished(action) \
+  MHD_DCC_set_action_finished_with_footer (action, 0, NULL)
+
 
 /**
  * Set action to "finished".
