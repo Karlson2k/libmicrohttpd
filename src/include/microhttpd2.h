@@ -267,7 +267,7 @@ struct MHD_String
   /**
    * 0-terminated C-string.
    */
-  const char *str; // FIXME: renamed
+  const char *cstr;
 };
 
 
@@ -3131,25 +3131,46 @@ MHD_FUNC_PARAM_NONNULL_ (1);
 /* ******************* Event loop ************************ */
 
 
+// FIXME: updated, renamed
 /**
- * Which threading mode should be used by MHD?
+ * Which threading and polling mode should be used by MHD?
  */
-enum MHD_ThreadingMode
+enum MHD_ThreadingPollingMode
 {
   // FIXME: Updated - OK
   /**
    * The daemon has no internal threads.
    * The application periodically calls #MHD_process_data(), MHD checks
    * all sockets internally automatically.
-   * This is the default.
+   * This is the default. // FIXME: keep as default?
    */
   MHD_TM_EXTERNAL_PERIODIC = 0,
+  // FIXME: updated
   /**
    * Use an external event loop.
-   * Application use one of MHD APIs to watch sockets status.
+   * Application use #MHD_set_external_event_loop() and level
+   * triggered sockets polling (like select() or poll()).
    */
-  MHD_TM_EXTERNAL_EVENT_LOOP = 1,
-// FIXME: updated
+  MHD_TM_EXTERNAL_EVENT_LOOP_CB_LEVEL = 1,
+  /**
+   * Use an external event loop.
+   * Application use #MHD_set_external_event_loop() and edge
+   * triggered sockets polling.
+   */
+  MHD_TM_EXTERNAL_EVENT_LOOP_CB_EDGE = 2,
+  /**
+   * Use an external event loop.
+   * Application use #MHD_get_watched_fds()/#MHD_get_watched_fds_update()
+   * and #MHD_process_watched_fds() with level triggered sockets
+   * polling (like select() or poll()).
+   */
+  MHD_TM_EXTERNAL_EVENT_LOOP_WFD_LEVEL = 3,
+  /**
+   * Use an external event loop.
+   * Application use #MHD_get_watched_fds()/#MHD_get_watched_fds_update()
+   * and #MHD_process_watched_fds() with edge triggered sockets polling.
+   */
+  MHD_TM_EXTERNAL_EVENT_LOOP_WFD_EDGE = 4,
   /**
    * Run with one or more worker threads.
    * If #MHD_DAEMON_OPTION_UINT_NUM_WORKERS is not specified
@@ -3162,7 +3183,7 @@ enum MHD_ThreadingMode
    * If this mode is specified, #MHD_daemon_run() and
    * #MHD_daemon_run_from_select() cannot be used.
    */
-  MHD_TM_WORKER_THREADS = 2,
+  MHD_TM_WORKER_THREADS = 5,
 
   // FIXME: could be unavailable for HTTP/2 and /3. Streams must be
   // multiplexed. Multiplexing from several threads looks overcomplicated.
@@ -3172,9 +3193,9 @@ enum MHD_ThreadingMode
    * another thread per request. Threads may be re-used on the same
    * connection.  Use this if handling requests is CPU-intensive or blocking,
    * your application is thread-safe and you have plenty of memory (per
-   * request).
+   * connection).
    */
-  MHD_TM_THREAD_PER_CONNECTION = 3
+  MHD_TM_THREAD_PER_CONNECTION = 6
 
 };
 
@@ -3211,6 +3232,7 @@ enum MHD_EventType // bitmask
   MHD_ET_EXCEPT = 8 // care about remote close / interruption
 };
 
+// FIXME: remove it, pre-selected by Polling Mode
 enum MHD_TriggerLevel
 {
   MHD_TL_EDGE, // epoll in edge trigger mode
@@ -3391,7 +3413,19 @@ enum MHD_FdState
     MHD_FD_STATE_RECV | MHD_FD_STATE_SEND | MHD_FD_STATE_EXCEPT
 };
 
+// FIXME: added macros
 // TODO: add doxy
+#define MHD_FD_STATE_IS_SET(var,state) \
+  (0 != (((unsigned int)(var)) & ((unsigned int)(state))))
+
+#define MHD_FD_STATE_IS_SET_RECV(var) \
+  MHD_FD_STATE_IS_SET((var),MHD_FD_STATE_RECV)
+#define MHD_FD_STATE_IS_SET_SEND(var) \
+  MHD_FD_STATE_IS_SET((var),MHD_FD_STATE_SEND)
+#define MHD_FD_STATE_IS_SET_EXCEPT(var) \
+  MHD_FD_STATE_IS_SET((var),MHD_FD_STATE_EXCEPT)
+
+
 #define MHD_FD_STATE_SET(var,state) \
   (var) = (enum MHD_FdState)((var) | (state))
 #define MHD_FD_STATE_CLEAR(var,state) \
@@ -3457,17 +3491,17 @@ enum MHD_WatchedFdAction
   /**
    * New watched FD, to be added to the list
    */
-  MHD_WFA_ADD,
-
+  MHD_WFA_ADD = 1
+  ,
   /**
    * Update watching interest in already watched FD
    */
-  MHD_WFA_UPDATE,
-
+  MHD_WFA_UPDATE = 2
+  ,
   /**
    * Delete FD from watching list
    */
-  MHD_WFA_REMOVE
+  MHD_WFA_REMOVE = 3
 };
 
 struct MHD_WatchedFdUpdate
@@ -3484,7 +3518,7 @@ struct MHD_WatchedFdUpdate
 };
 
 /**
- * Get the update of the listt of the sockets that must be watched
+ * Get the update of the list of the sockets that must be watched
  * by application.
  * This function provides an update to the list of watched sockets
  * since the last call of #MHD_get_watched_fds() or
@@ -3530,105 +3564,6 @@ MHD_process_watched_fds (
   struct MHD_WatchedFD fds[MHD_C99_ (static num_elements)],
   enum MHD_TriggerLevel type) // TODO: maybe not need
 MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (2);
-
-/**
- * Obtain the `select()` sets for this daemon.  Daemon's FDs will be
- * added to fd_sets. To get only daemon FDs in fd_sets, call FD_ZERO
- * for each fd_set before calling this function. FD_SETSIZE is assumed
- * to be platform's default.
- *
- * Passing custom FD_SETSIZE as @a fd_setsize allow usage of
- * larger/smaller than platform's default fd_sets.
- *
- * This function should only be called in when MHD is configured to
- * use external select with 'select()' or with 'epoll'.  In the latter
- * case, it will only add the single 'epoll()' file descriptor used by
- * MHD to the sets.  It's necessary to use #MHD_get_timeout() in
- * combination with this function.
- *
- * This function must be called only for daemon started without
- * #MHD_USE_INTERNAL_POLLING_THREAD flag.
- *
- * @param[in,out] daemon daemon to get sets from
- * @param[in,out] read_fd_set read set; our FDs are added, existing bits set are unchanged
- * @param[in,out] write_fd_set write set; our FDs are added, existing bits set are unchanged
- * @param[in,out] except_fd_set except set; our FDs are added, existing bits set are unchanged
- * @param[in,out] max_fd increased to largest FD added (if larger
- *                than existing value); can be NULL
- * @param[out] timeout set to the timeout (in milliseconds), -1LL indicates "forever"
- * @param fd_setsize value of FD_SETSIZE (needed if application set custom values that do not match compile-time MHD)
- * @return #MHD_SC_OK on success, otherwise error code (specify which ones...); #MHD_SC_NOT_IMPLEMENTED ...
- * @ingroup event
- */
-// @deprecated, new CB approach!
-_MHD_EXTERN enum MHD_StatusCode
-MHD_daemon_get_fdset2 (struct MHD_Daemon *daemon,
-                       fd_set *read_fd_set,
-                       fd_set *write_fd_set,
-                       fd_set *except_fd_set,
-                       MHD_socket *max_fd,
-                       int64_fast_t *timeout,
-                       unsigned int fd_setsize)
-MHD_FUNC_PARAM_NONNULL_ (1,2,3,4,6);
-
-
-/**
- * Obtain the `select()` sets for this daemon.  Daemon's FDs will be
- * added to fd_sets. To get only daemon FDs in fd_sets, call FD_ZERO
- * for each fd_set before calling this function. Size of fd_set is
- * determined by current value of FD_SETSIZE.  It's necessary to use
- * #MHD_get_timeout() in combination with this function.
- *
- * This function could be called only for daemon started
- * without #MHD_USE_INTERNAL_POLLING_THREAD flag.
- *
- * @param daemon daemon to get sets from
- * @param read_fd_set read set
- * @param write_fd_set write set
- * @param except_fd_set except set
- * @param max_fd increased to largest FD added (if larger
- *               than existing value); can be NULL
- * @return #MHD_YES on success, #MHD_NO if this
- *         daemon was not started with the right
- *         options for this call or any FD didn't
- *         fit fd_set.
- * @ingroup event
- */
-// @deprecated, new CB approach!
-#define MHD_daemon_get_fdset(daemon,read_fd_set,write_fd_set,except_fd_set, \
-                             max_fd) \
-  MHD_get_fdset2 ((daemon),(read_fd_set),(write_fd_set),(except_fd_set), \
-                  (max_fd),FD_SETSIZE)
-
-/**
- * Run webserver operations. This method should be called by clients
- * in combination with #MHD_get_fdset and #MHD_get_timeout() if the
- * client-controlled select method is used.
- *
- * You can use this function instead of #MHD_run if you called
- * `select()` on the result from #MHD_get_fdset.  File descriptors in
- * the sets that are not controlled by MHD will be ignored.  Calling
- * this function instead of #MHD_run is more efficient as MHD will not
- * have to call `select()` again to determine which operations are
- * ready.
- *
- * This function cannot be used with daemon started with
- * #MHD_USE_INTERNAL_POLLING_THREAD flag.
- *
- * @param[in,out] daemon daemon to run select loop for
- * @param read_fd_set read set
- * @param write_fd_set write set
- * @param except_fd_set except set
- * @return #MHD_SC_OK on success, #MHD_SC_NOT_IMPLEMENTED ...
- * @ingroup event
- */
-// @deprecated, new CB approach!
-_MHD_EXTERN enum MHD_StatusCode
-MHD_daemon_run_from_select (struct MHD_Daemon *daemon,
-                            const fd_set *read_fd_set,
-                            const fd_set *write_fd_set,
-                            const fd_set *except_fd_set)
-MHD_FUNC_PARAM_NONNULL_ (1,2,3,4);
 
 
 /**
@@ -3698,9 +3633,11 @@ MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (2);
  * @ingroup event
  */
 // @deprecated, new CB approach!
+// FIXME: NOT deprecated, useful, renamed
+// FIXME: to be used only in ::MHD_TM_EXTERNAL_PERIODIC mode
 _MHD_EXTERN enum MHD_Result
-MHD_daemon_run_wait (struct MHD_Daemon *daemon,
-                     int32_t millisec);
+MHD_process_data (struct MHD_Daemon *daemon,
+                  int32_t millisec);
 
 
 /**
@@ -3723,27 +3660,8 @@ MHD_daemon_run_wait (struct MHD_Daemon *daemon,
  * @return #MHD_SC_OK on success
  * @ingroup event
  */
-#define MHD_daemon_run(d) \
-  MHD_daemon_run_wait (d, 0);
-
-
-// FIXME: support external poll???
-// FIXME: remove, use universal solution
-struct pollfd;
-
-// num_fds: in,out: in: fds length, out: number desired (if larger than in), number initialized (if smaller or equal to in)
-// @deprecated, new CB approach!
-_MHD_EXTERN enum MHD_StatusCode
-MHD_daemon_get_poll_set (struct MHD_Daemon *daemon,
-                         unsigned int *num_fds,
-                         struct pollfd *fds);
-
-
-// @deprecated, new CB approach!
-_MHD_EXTERN enum MHD_StatusCode
-MHD_daemon_run_from_poll (struct MHD_Daemon *daemon,
-                          unsigned int num_fds,
-                          const struct pollfd fds[MHD_C99_ (static num_fds)]);
+#define MHD_process_data_simple(d) \
+		MHD_process_data (d, 0);
 
 
 /**
@@ -4024,15 +3942,6 @@ MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (4);
 // FIXME: Discuss GANA. Not clear how to use automatic substitution for missing entries
 enum MHD_HTTP_StatusCode
 {
-  // FIXME: added
-  /**
-   * Not a real code.
-   * When used with #MHD_action_from_response() then the real
-   * code is taken from the response.
-   * When used with response creation function it is equivalent
-   * to #MHD_HTTP_STATUS_OK.
-   */
-  MHD_HTTP_STATUS_DEFAULT = 0,
 
   MHD_HTTP_STATUS_CONTINUE = 100,
   MHD_HTTP_STATUS_SWITCHING_PROTOCOLS = 101,
@@ -4113,13 +4022,12 @@ enum MHD_HTTP_StatusCode
 
 
 /**
- * Returns the string reason phrase for a response code.
+ * Returns the string status for a response code.
  *
  * If we don't have a string for a status code, we give the first
  * message in that status code class.
- * //FIXME: Give "Unknown code" / "Non-standard code" (?) result
  */
-_MHD_EXTERN const char *
+_MHD_EXTERN const char*
 MHD_status_code_to_string (enum MHD_HTTP_StatusCode code);
 
 /** @} */ /* end of group httpcode */
@@ -4151,8 +4059,8 @@ MHD_protocol_version_to_string (enum MHD_HTTP_ProtocolVersion pv);
 // Reminder:
 // #define MHD_HTTP_VERSION_1_0 "HTTP/1.0"
 // #define MHD_HTTP_VERSION_1_1 "HTTP/1.1"
-// #define MHD_HTTP_VERSION_2 "HTTP/2"
-// #define MHD_HTTP_VERSION_3 "HTTP/3"
+// #define MHD_HTTP_VERSION_2 "HTTP/2" // FIXME: Used only for non-TLS handshake
+// #define MHD_HTTP_VERSION_3 "HTTP/3" // FIXME: not defined anywhere
 
 /** @} */ /* end of group versions */
 
@@ -4165,20 +4073,26 @@ MHD_protocol_version_to_string (enum MHD_HTTP_ProtocolVersion pv);
  * requests allowed (per daemon, as well as per IP, if such limits
  * are set).  Suspended requests will NOT time out; timeouts will
  * restart when the request handling is resumed.  While a
- * request is suspended, MHD will not detect disconnects by the
+ * request is suspended, MHD may not detect disconnects by the
  * client.
  *
- * //FIXME: remove this limitation, suspended connections can be easily cleaned
- * Finally, it is an API violation to call #MHD_daemon_stop() while
- * having suspended requests (this will at least create memory and
- * socket leaks or lead to undefined behavior).  You must explicitly
- * resume all requests before stopping the daemon.
- *
+ * @param[in,out] requests the request for which the action is generated
+ * @param suspend_microsec the maximum duration of suspension after which
+ *                         the request is automatically resumed, if not
+ *                         resumed earlier by #MHD_request_resume(),
+ *                         the precise resume moment is not guaranteed, it
+ *                         may happen later (but not earlier) depending
+ *                         on timer granularity and the system load;
+ *                         if set to UINT64_MAX (or higher) the request
+ *                         is not resumed automatically,
+ *                         the suspension period can be shorter then requested
+ *                         if the number is higher than 86 400 000 000 (one day) // FIXME: discuss
  * @return action to cause a request to be suspended.
  */
 _MHD_EXTERN const struct MHD_Action *
-MHD_action_suspend (void)
-MHD_FUNC_RETURNS_NONNULL_;
+MHD_action_suspend (struct MHD_Request *request, // FIXME: need check whether used Action matches Request
+                    uint_fast64_t suspend_microsec)
+MHD_FUNC_RETURNS_NONNULL_ MHD_FUNC_PARAM_NONNULL_ALL_;
 
 
 /**
@@ -4212,9 +4126,9 @@ struct MHD_Response;
 
 
 /**
- * Converts a @a response to an action.  If @a MHD_RESP_OPT_REUSABLE
+ * Converts a @a response to an action.  If @a MHD_RESP_OPT_BOOL_REUSABLE
  * is not set, the reference to the @a response is consumed
- * by the conversion. If #MHD_RESP_OPT_REUSABLE is #MHD_YES,
+ * by the conversion. If #MHD_RESP_OPT_BOOL_REUSABLE is #MHD_YES,
  * then the @a response can be used again to create actions in
  * the future.
  * However, the @a response is frozen by this step and
@@ -4223,62 +4137,70 @@ struct MHD_Response;
  * @param[in] response the response to convert,
  *                     if NULL then this function is equivalent to
  *                     #MHD_action_close_connection() call
- * @param code the response code, if set to #MHD_HTTP_STATUS_DEFAULT
- *             then code defined in @a response is used
  * @return pointer to the action, the action must be consumed
- *         otherwise response object may leak,
- *         NULL if failed (no memory)
+ *         otherwise response object may leak;
+ *         NULL if failed (no memory), when failed
+ *         the response object is consumed and need not
+ *         to be "destroyed".
  */
 _MHD_EXTERN const struct MHD_Action *
-MHD_action_from_response (struct MHD_Response *response,
-                          enum MHD_HTTP_StatusCode code); // FIXME: Added. Not compatible with no-malloc approach
-
-#ifndef FIXME_FUN
-struct MHD_Action
-{
-  enum type;
-  // depending on type:
-  union
-  {
-    struct
-    {
-      struct MHD_Response *response;
-    } from_response;
-  } details;
-};
-struct MHD_Response
-{
-  struct MHD_Action my_action = {
-    .type = from_response;
-    .details.from_response = &self;
-  };
-};
-#endif
+MHD_action_from_response (struct MHD_Response *response);
 
 
 /**
  * Flags for special handling of responses.
  */
-// FIXME: corrected names and values
-enum MHD_ResponseOption
+// FIXME: extended, sorted
+enum MHD_ResponseOptionBool
 {
+  /**
+   * Not a real option, terminate the list of options
+   */
+  MHD_RESP_OPT_BOOL_END = 0,
+
+  /**
+   * Make the response object re-usable.
+   * The response will not be consumed by MHD_action_from_response() and
+   * must be destroyed by MHD_response_destroy().
+   * Useful if the response is often used to reply.
+   */
+  MHD_RESP_OPT_BOOL_REUSABLE = 1,
+
+  /**
+   * Force close connection after sending the response, prevents keep-alive
+   * connections and adds "Connection: close" header.
+   */
+  MHD_RESP_OPT_BOOL_CONN_CLOSE = 21,
+
+  /**
+   * Force use of chunked encoding even if the response content size is known.
+   * Ignored when the reply cannot have body/content.
+   */
+  MHD_RESP_OPT_BOOL_CHUNKED_ENC = 22,
+
+  /**
+   * Enable sending of "Connection: keep-alive" header even for
+   * HTTP/1.1 clients when "Keep-Alive" connection is used.
+   * Disabled by default for HTTP/1.1 clients as per RFC.
+   */
+  MHD_RESP_OPT_BOOL_SEND_KEEP_ALIVE_HEADER = 41,
+
   /**
    * Only respond in conservative (dumb) HTTP/1.0-compatible mode.
    * Response still use HTTP/1.1 version in header, but always close
    * the connection after sending the response and do not use chunked
    * encoding for the response.
-   * You can also set the #MHD_RESP_OPT_HTTP_1_0_SERVER flag to force
+   * You can also set the #MHD_RESP_OPT_BOOL_HTTP_1_0_SERVER flag to force
    * HTTP/1.0 version in the response.
    * Responses are still compatible with HTTP/1.1.
    * This option can be used to communicate with some broken client, which
    * does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
    */
-  // FIXME: no more bit mask! - removed
-  MHD_RESP_OPT_HTTP_1_0_COMPATIBLE_STRICT = 1,
+  MHD_RESP_OPT_BOOL_HTTP_1_0_COMPATIBLE_STRICT = 42,
 
   /**
-   * Only respond in HTTP 1.0-mode.
-   * Contrary to the #MHD_RESP_OPT_HTTP_1_0_COMPATIBLE_STRICT flag, the response's
+   * Only respond in HTTP/1.0-mode.
+   * Contrary to the #MHD_RESP_OPT_BOOL_HTTP_1_0_COMPATIBLE_STRICT flag, the response's
    * HTTP version will always be set to 1.0 and keep-alive connections
    * will be used if explicitly requested by the client.
    * The "Connection:" header will be added for both "close" and "keep-alive"
@@ -4289,22 +4211,14 @@ enum MHD_ResponseOption
    * This option can be used to emulate HTTP/1.0 server (for response part
    * only as chunked encoding in requests (if any) is processed by MHD).
    */
-  MHD_RESP_OPT_HTTP_1_0_SERVER = 2,
-
+  MHD_RESP_OPT_BOOL_HTTP_1_0_SERVER = 43,
   /**
    * Disable sanity check preventing clients from manually
    * setting the HTTP content length option.
    * Allow to set several "Content-Length" headers. These headers will
    * be used even with replies without body.
    */
-  MHD_RESP_OPT_INSANITY_HEADER_CONTENT_LENGTH = 3,
-
-  /**
-   * Enable sending of "Connection: keep-alive" header even for
-   * HTTP/1.1 clients when "Keep-Alive" connection is used.
-   * Disabled by default for HTTP/1.1 clients as per RFC.
-   */
-  MHD_RESP_OPT_SEND_KEEP_ALIVE_HEADER = 4,
+  MHD_RESP_OPT_BOOL_INSANITY_HEADER_CONTENT_LENGTH = 61,
 
   /**
    * Enable special processing of the response as body-less (with undefined
@@ -4320,19 +4234,51 @@ enum MHD_ResponseOption
    * This flag is primarily intended to be used when automatic "Content-Length"
    * header is undesirable in response to HEAD requests.
    */
-  MHD_RESP_OPT_HEAD_ONLY_RESPONSE = 5,
-
-  // action_from_response does not decrement RC...
-  MHD_RESP_OPT_REUSABLE = 6
+  MHD_RESP_OPT_BOOL_HEAD_ONLY_RESPONSE = 81 // FIXME: replace with special "create" function?
 } _MHD_FIXED_FLAGS_ENUM;
 
 
-// FIXME: no need for "mass" options set function
+// FIXME: use the same approach as for the daemon
 _MHD_EXTERN enum MHD_StatusCode
 MHD_response_set_option_bool (struct MHD_Response *response,
                               enum MHD_ResponseOption ro,
                               enum MHD_Bool value)
 MHD_FUNC_PARAM_NONNULL_ALL_;
+
+// FIXME: the suggested approach
+
+struct MHD_ResponseOptionBoolSet
+{
+  enum MHD_ResponseOptionBool option;
+  enum MHD_Bool value;
+};
+
+// FIXME: fully type-safe, options array can be built incrementally
+// See https://github.com/babelouest/ulfius/blob/1ed26069fd7e1decd38e8d403a5649b0337893ff/src/ulfius.c#L1073
+// for incrementally built options
+
+/**
+ * Set several options for the response object
+ * @param response the response to set the options
+ * @param options_array the pointer to the array with the options;
+ *                      the array is read until first ::MHD_RESP_OPT_BOOL_END
+ *                      option, but not more than @a max_num_options elements
+ * @param max_num_options the maximum number of elements to read
+ *                        from @a options_array, ignored if set to SIZE_MAX
+ * @return #MHD_SC_OK if found,
+ *         // FIXME: add error codes
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_response_set_options_bool (struct MHD_Response *response,
+                               struct MHD_ResponseOptionBoolSet *options_array,
+                               size_t max_num_options) // FIXME: another sequence, as intended
+MHD_FUNC_PARAM_NONNULL_ALL_;
+
+
+#if 1 //def MHD_USE_VARARG_MACROS_ // FIXME
+// FIXME: How?
+#define MHD_response_set_options_bool_macro(response,...)
+#endif /* MHD_USE_VARARG_MACROS_ */
 
 
 /**
@@ -4434,6 +4380,170 @@ MHD_response_set_option_termination_callback (
   void *termination_cb_cls)
 MHD_FUNC_PARAM_NONNULL_ (1);
 
+// FIXME: remove?
+enum MHD_DynContCreatorActionType
+{
+  /**
+   * Continue with response content
+   */
+  MHD_DYN_CONT_CREATOR_ACT_CONTINUE = 0
+  ,
+
+  /**
+   * The final chunk of content is created
+   */
+  MHD_DYN_CONT_CREATOR_ACT_FINISHED = 1
+  ,
+
+  /**
+   * Error creating the content.
+   * The request will be closed in a hard way.
+   */
+  MHD_DYN_CONT_CREATOR_ACT_ERROR_STOP = 2
+  ,
+
+  /**
+   * Suspend content creation.
+   * // TODO: describe
+   */
+  MHD_DYN_CONT_CREATOR_ACT_SUSPEND = 3
+};
+
+
+/**
+ * This method is called by libmicrohttpd when response with dynamic content
+ * is being destroyed.  It should be used to free resources associated
+ * with the dynamic content.
+ *
+ * @param[in] free_cls closure
+ * @ingroup response
+ */
+typedef void
+(*MHD_FreeCallback) (void *free_cls);
+
+
+// TODO: Doxy
+struct MHD_DynContentZCIoVec
+{
+  /**
+   * The number of elements in @a iov
+   */
+  unsigned int iov_count;
+  /**
+   * The pointer to the array with @a iov_count elements.
+   */
+  const struct MHD_IoVec *iov;
+  /**
+   * The callback to free resources.
+   * It is called once the full array of iov elements is sent.
+   * No callback is called if NULL.
+   */
+  MHD_FreeCallback iov_fcb;
+  /**
+   * The parameter for @a iov_fcb
+   */
+  void *iov_fcb_cls;
+};
+
+struct MHD_DynamicContentCreatorAction;
+
+/**
+ * Set action to "continue processing", the data is provided in the
+ * buffer.
+ * If function failed for any reason, the action is automatically
+ * set to "stop with error".
+ * @param[in,out] action the pointer the action as provided to the callback
+ * @param data_size the amount of the data placed to the provided buffer,
+ *                  cannot be larger than provided buffer size
+ * @param chunk_ext the optional pointer to chunk extension string,
+ *                  can be NULL to not use chunk extension,
+ *                  ignored if chunked encoding is not used
+ * @return MHD_SC_OK if success,
+ *         error code otherwise // TODO: add the list
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_DCC_set_action_continue(
+  struct MHD_DynamicContentCreatorAction *action,
+  size_t data_size,
+  const char *chunk_ext)
+MHD_FUNC_PARAM_NONNULL_ (1);
+
+
+// FIXME: the @a buf parameter will be ignored
+/**
+ * Set action to "continue processing", the zero-copy data is provided
+ * in the @a iov_data.
+ * If function failed for any reason, the action is automatically
+ * set to "stop with error".
+ * @param[in,out] action the pointer the action as provided to the callback
+ * @param data_size the amount of the data placed to the provided buffer,
+ *                  cannot be larger than provided buffer size
+ * @param chunk_ext the optional pointer to chunk extension string,
+ *                  can be NULL to not use chunk extension,
+ *                  ignored if chunked encoding is not used
+ * @return MHD_SC_OK if success,
+ *         error code otherwise // TODO: add the list
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_DCC_set_action_continue_zc(
+  struct MHD_DynamicContentCreatorAction *action,
+  struct MHD_DynContentZCIoVec *iov_data,
+  const char *chunk_ext)
+MHD_FUNC_PARAM_NONNULL_ (1);
+
+/**
+ * Set action to "finished".
+ * If function failed for any reason, the action is automatically
+ * set to "stop with error".
+ * @param[in,out] action the pointer the action as provided to the callback
+ * @param num_footers number of elements in the @a footers array,
+ *                    must be zero if @a footers is NULL
+ * @param footers the optional pointer to the array of the footers,
+ *                can be NULL
+ * @return MHD_SC_OK if success,
+ *         error code otherwise // TODO: add the list
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_DCC_set_action_finished(
+  struct MHD_DynamicContentCreatorAction *action,
+  size_t num_footers,
+  struct MHD_KeyValue *footers)
+MHD_FUNC_PARAM_NONNULL_ (1);
+
+/**
+ * Set action to "finished".
+ * If function failed for any reason, the action is automatically
+ * set to "stop with error".
+ * @param[in,out] action the pointer the action as provided to the callback
+ * @param suspend_microsec the maximum duration of suspension after which
+ *                         the request is automatically resumed, if not
+ *                         resumed earlier by #MHD_request_resume(),
+ *                         the precise resume moment is not guaranteed, it
+ *                         may happen later (but not earlier) depending
+ *                         on timer granularity and the system load;
+ *                         if set to UINT64_MAX (or higher) the request
+ *                         is not resumed automatically,
+ *                         the suspension period can be shorter then requested
+ *                         if the number is higher than 86 400 000 000 (one day) // FIXME: discuss
+ * @return MHD_SC_OK if success,
+ *         error code otherwise // TODO: add the list
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_DCC_set_action_suspend(
+  struct MHD_DynamicContentCreatorAction *action,
+  uint_fast64_t suspend_microsec)
+MHD_FUNC_PARAM_NONNULL_ (1);
+
+/**
+ * Set action to "stop with error".
+ * @param[in,out] action the pointer the action as provided to the callback
+ * @return always MHD_SC_OK
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_DCC_set_action_error_stop(
+  struct MHD_DynamicContentCreatorAction *action)
+MHD_FUNC_PARAM_NONNULL_ (1);
+
 
 // FIXME: Updated
 /**
@@ -4442,7 +4552,7 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  * total number of bytes that has been placed into @a buf should be
  * returned.
  *
- * @param dyn_cont_cls extra argument to the callback
+ * @param dyn_cont_cls closure argument to the callback
  * @param pos position in the datastream to access;
  *        note that if a `struct MHD_Response` object is re-used,
  *        it is possible for the same content reader to
@@ -4454,6 +4564,9 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  * @param[out] buf where to copy the data
  * @param max maximum number of bytes to copy to @a buf (size of @a buf),
  *            the value of @a max is always less or equal SSIZE_MAX
+ * @param[out] action the action to set,
+ *                    the pointer is only valid until
+ *                    the callback returns
  * @return number of bytes written to @a buf;
  *  0 is legal only for external polling modes;
  *    with internal polling thread(s) it is interpreted as
@@ -4479,22 +4592,11 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  */
 typedef ssize_t
 (MHD_FUNC_PARAM_NONNULL_ (3)
- *MHD_DynamicContent) (void *dyn_cont_cls,
-                       uint64_t pos,
-                       void *buf,
-                       size_t max);
-
-
-/**
- * This method is called by libmicrohttpd when response with dynamic content
- * is being destroyed.  It should be used to free resources associated
- * with the dynamic content.
- *
- * @param[in] free_cls closure
- * @ingroup response
- */
-typedef void
-(*MHD_FreeCallback) (void *free_cls);
+ *MHD_DynamicContentCreator) (void *dyn_cont_cls,
+                              uint64_t pos,
+                              void *buf,
+                              size_t max,
+                              struct MHD_DynamicContentCreatorAction *action); // add pointer to struct with command
 
 
 /**
@@ -4517,8 +4619,8 @@ typedef void
 _MHD_EXTERN struct MHD_Response *
 MHD_response_from_callback (enum MHD_HTTP_StatusCode sc,
                             uint64_t size,
-                            size_t block_size, // FIXME: remove and manage internally?
-                            MHD_DynamicContent dyn_cont,
+                            size_t block_size, // FIXME: replace with option
+                            MHD_DynamicContentCreator dyn_cont,
                             void *dyn_cont_cls,
                             MHD_FreeCallback dyn_cont_fc);
 
@@ -4528,7 +4630,7 @@ enum MHD_DynContentZCAction
   MHD_DYN_CONTENT_ZC_ACTION_CONTINUE = 0,
   MHD_DYN_CONTENT_ZC_ACTION_END_OF_STREAM = 1,
   MHD_DYN_CONTENT_ZC_ACTION_STOP_WITH_ERROR = 2,
-  MHD_DYN_CONTENT_ZC_ACTION_SUSPEND_REQUEST = 3
+  MHD_DYN_CONTENT_ZC_ACTION_SUSPEND_REQUEST = 3 // TODO: add timeout
 };
 
 // TODO: Doxy
@@ -4576,7 +4678,7 @@ struct MHD_DynContentZCIoVec
  * @return the requested next action
  */
 typedef enum MHD_DynContentZCAction
-(*MHD_DynamicContentZC) (void *dyn_cont_zc_cls,
+(*MHD_DynamicContentCreatorZC) (void *dyn_cont_zc_cls,
                          uint64_t pos,
                          struct MHD_DynContentZCIoVec iov_data);
 
@@ -4601,7 +4703,7 @@ typedef enum MHD_DynContentZCAction
 _MHD_EXTERN struct MHD_Response *
 MHD_response_from_callback_zc (enum MHD_HTTP_StatusCode sc,
                                uint64_t size,
-                               MHD_DynamicContentZC dyn_cont_zc,
+                               MHD_DynamicContentCreatorZC dyn_cont_zc,
                                void *dyn_cont_zc_cls,
                                MHD_FreeCallback dyn_cont_zc_fc);
 
@@ -4792,7 +4894,7 @@ MHD_response_from_pipe (enum MHD_HTTP_StatusCode sc,
 /**
  * Destroy response.
  * Should be called if response was created but not consumed.
- * Also must be called if response has #MHD_RESP_OPT_REUSABLE
+ * Also must be called if response has #MHD_RESP_OPT_BOOL_REUSABLE
  * set. The actual destroy can be happen later, if the response
  * is still being used in any request.
  * The function does not block.
@@ -4822,7 +4924,7 @@ MHD_response_add_header (struct MHD_Response *response,
 MHD_FUNC_PARAM_NONNULL_(1) MHD_FUNC_PARAM_NONNULL_(2)
 MHD_FUNC_PARAM_NONNULL_(3);
 
-// FIXME: duplication
+// FIXME: duplication - remove
 /**
  * Add a header line to the response.
  *
@@ -4850,7 +4952,7 @@ MHD_response_add_predef_header (struct MHD_Response *response,
                                 const char *content)
 MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_(3);
 
-
+// TODO remove
 /**
  * Delete a header (or footer) line from the response.
  *
@@ -4900,7 +5002,7 @@ MHD_response_get_header (const struct MHD_Response *response,
 MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (2);
 
 
-// FIXME: Removed trailer function
+// FIXME: Removed trailer function, chunk ext - add
 /**
  * Add a tailer line to the response for this request.
  * Usually called within a MHD_ContentReaderCallback.
