@@ -465,7 +465,7 @@ typedef SOCKET MHD_socket;
  * must never be NULL.
  */
 #      define MHD_FUNC_PARAM_NONNULL_(param_num) \
-          __attribute__ ((nonnull (param_num)))
+  __attribute__ ((nonnull (param_num)))
 #    endif /* nonnull && !MHD_FUNC_PARAM_NONNULL_ */
 
 #    if __has_attribute (nonnull) && \
@@ -485,7 +485,7 @@ typedef SOCKET MHD_socket;
  * that must not be modified by the function
  */
 #        define MHD_FUNC_PARAM_IN_(param_num) \
-           __attribute__ ((access(read_only,pram_num)))
+  __attribute__ ((access (read_only,pram_num)))
 #      endif /* !MHD_FUNC_PARAM_IN_ */
 
 #      if ! defined(MHD_FUNC_PARAM_IN_SIZE_)
@@ -495,7 +495,7 @@ typedef SOCKET MHD_socket;
  * modified by the function
  */
 #        define MHD_FUNC_PARAM_IN_SIZE_(param_num,size_num) \
-           __attribute__ ((access(read_only,pram_num,size_num)))
+  __attribute__ ((access (read_only,pram_num,size_num)))
 #      endif /* !MHD_FUNC_PARAM_IN_SIZE_ */
 
 #      if ! defined(MHD_FUNC_PARAM_OUT_)
@@ -504,7 +504,7 @@ typedef SOCKET MHD_socket;
  * that could be written by the function, but not read.
  */
 #        define MHD_FUNC_PARAM_OUT_(param_num) \
-           __attribute__ ((access(write_only,pram_num)))
+  __attribute__ ((access (write_only,pram_num)))
 #      endif /* !MHD_FUNC_PARAM_OUT_ */
 
 #      if ! defined(MHD_FUNC_PARAM_OUT_SIZE_)
@@ -514,7 +514,7 @@ typedef SOCKET MHD_socket;
  * written by the function, but not read.
  */
 #        define MHD_FUNC_PARAM_OUT_SIZE_(param_num,size_num) \
-           __attribute__ ((access(write_only,pram_num,size_num)))
+  __attribute__ ((access (write_only,pram_num,size_num)))
 #      endif /* !MHD_FUNC_PARAM_OUT_SIZE_ */
 
 #      if ! defined(MHD_FUNC_PARAM_INOUT_)
@@ -523,7 +523,7 @@ typedef SOCKET MHD_socket;
  * that could be both read and written by the function.
  */
 #        define MHD_FUNC_PARAM_INOUT_(param_num) \
-           __attribute__ ((access(read_write,pram_num)))
+  __attribute__ ((access (read_write,pram_num)))
 #      endif /* !MHD_FUNC_PARAM_INOUT_ */
 
 #      if ! defined(MHD_FUNC_PARAM_INOUT_SIZE_)
@@ -533,7 +533,7 @@ typedef SOCKET MHD_socket;
  * both read and written by the function.
  */
 #        define MHD_FUNC_PARAM_INOUT_SIZE_(param_num,size_num) \
-           __attribute__ ((access(read_write,pram_num,size_num)))
+  __attribute__ ((access (read_write,pram_num,size_num)))
 #      endif /* !MHD_FUNC_PARAM_INOUT_SIZE_ */
 
 #    endif /* access */
@@ -553,7 +553,7 @@ typedef SOCKET MHD_socket;
  * that must not be modified by the function
  */
 #      define MHD_FUNC_PARAM_IN_(param_num) \
-         __attribute__ ((access(read_only,pram_num)))
+  __attribute__ ((access (read_only,pram_num)))
 #    endif /* returns_nonnull && !MHD_FUNC_RETURNS_NONNULL_ */
 
 #  endif /* __has_attribute */
@@ -1261,7 +1261,7 @@ enum MHD_StatusCode
 
 // FIXME: maybe not needed? Too large possibly?
 enum MHD_Bool
-MHD_status_code_is_fatal(enum MHD_StatusCode code)
+MHD_status_code_is_fatal (enum MHD_StatusCode code)
 MHD_FUNC_CONST_;
 
 
@@ -1355,7 +1355,7 @@ enum MHD_HTTP_Method
 // FIXME: added
 // FIXME: return 'const char *'?
 _MHD_EXTERN const struct MHD_String *
-MHD_get_http_method_string(enum MHD_HTTP_Method method)
+MHD_get_http_method_string (enum MHD_HTTP_Method method)
 MHD_FUNC_CONST_;
 
 /**
@@ -2050,11 +2050,11 @@ struct MHD_Action;
  */
 typedef const struct MHD_Action *
 (MHD_FUNC_PARAM_NONNULL_ (2) MHD_FUNC_PARAM_NONNULL_ (3)
- *MHD_RequestCallback) (void *cls,
-                        struct MHD_Request *request,
-                        const struct MHD_String *path,
-                        enum MHD_Method method,
-                        uint_fast64_t upload_size);
+ *MHD_RequestCallback)(void *cls,
+                       struct MHD_Request *request,
+                       const struct MHD_String *path,
+                       enum MHD_Method method,
+                       uint_fast64_t upload_size);
 
 
 /**
@@ -2069,7 +2069,7 @@ typedef const struct MHD_Action *
 _MHD_EXTERN struct MHD_Daemon *
 MHD_daemon_create (MHD_RequestCallback cb,
                    void *cb_cls)
-MHD_FUNC_PARAM_NONNULL_(1);
+MHD_FUNC_PARAM_NONNULL_ (1);
 
 
 /**
@@ -2268,6 +2268,47 @@ MHD_daemon_set_option_bool (struct MHD_Daemon *daemon,
                             enum MHD_DaemonOptionBool option,
                             enum MHD_Bool value)
 MHD_FUNC_PARAM_NONNULL_ALL_ MHD_FUNC_MUST_CHECK_RESULT_;
+
+
+#if PSEUDO
+
+#define MHD_daemon_set_option_shoutcast() \
+  (struct MHD_DaemonOption) { \
+    .type = MHD_DAEMON_OB_ENABLE_SHOUTCAST, \
+    .details.shoutcast.value = true \
+  }
+
+#define MHD_daemon_set_option_timeout(val) \
+  (struct MHD_DaemonOption) { \
+    .type = MHD_DAEMON_OB_CONNECTION_TIMEOUT, \
+    .details.timeout.delay = val \
+  }
+
+#define MHD_daemon_set_options(...) \
+  MHD_daemon_set_options_ ((struct MHD_DaemonOption[]) { __VA_ARGS__, \
+                                                         MHD_daemon_set_options_end_ ()})
+
+
+main ()
+{
+  // one at a time
+  assert (MHD_daemon_set_options (daemon,
+                                  MHD_daemon_set_option_timeout (42)));
+  // multiple at once
+  assert (MHD_daemon_set_options (daemon,
+                                  MHD_daemon_set_option_shoutcast (),
+                                  MHD_daemon_set_option_timeout (42)));
+  // manual build-up:
+  struct MHD_DaemonOption options[42];
+  options[0] = MHD_daemon_set_option_timeout (42);
+  options[1] = MHD_daemon_set_option_shoutcast ();
+  options[2] = MHD_daemon_set_options_end_ ();
+  MHD_daemon_set_options_ (daemon,
+                           options);
+}
+
+#endif
+
 
 /**
  * Possible levels of enforcement for TCP_FASTOPEN.
@@ -3007,9 +3048,9 @@ enum MHD_ConnectionNotificationCode
  */
 typedef void
 (MHD_FUNC_PARAM_NONNULL_ (2)
- *MHD_NotifyConnectionCallback) (void *cls,
-                                 struct MHD_Connection *connection,
-                                 enum MHD_ConnectionNotificationCode toe);
+ *MHD_NotifyConnectionCallback)(void *cls,
+                                struct MHD_Connection *connection,
+                                enum MHD_ConnectionNotificationCode toe);
 
 
 /**
@@ -3071,8 +3112,8 @@ struct MHD_something
  */
 typedef void
 (MHD_FUNC_PARAM_NONNULL_ (2)
- *MHD_NotifyStreamCallback) (void *cls,
-                             const struct MHD_something *notification);
+ *MHD_NotifyStreamCallback)(void *cls,
+                            const struct MHD_something *notification);
 
 
 /**
@@ -3416,32 +3457,32 @@ enum MHD_FdState
 // FIXME: added macros
 // TODO: add doxy
 #define MHD_FD_STATE_IS_SET(var,state) \
-  (0 != (((unsigned int)(var)) & ((unsigned int)(state))))
+  (0 != (((unsigned int) (var)) & ((unsigned int) (state))))
 
 #define MHD_FD_STATE_IS_SET_RECV(var) \
-  MHD_FD_STATE_IS_SET((var),MHD_FD_STATE_RECV)
+  MHD_FD_STATE_IS_SET ((var),MHD_FD_STATE_RECV)
 #define MHD_FD_STATE_IS_SET_SEND(var) \
-  MHD_FD_STATE_IS_SET((var),MHD_FD_STATE_SEND)
+  MHD_FD_STATE_IS_SET ((var),MHD_FD_STATE_SEND)
 #define MHD_FD_STATE_IS_SET_EXCEPT(var) \
-  MHD_FD_STATE_IS_SET((var),MHD_FD_STATE_EXCEPT)
+  MHD_FD_STATE_IS_SET ((var),MHD_FD_STATE_EXCEPT)
 
 
 #define MHD_FD_STATE_SET(var,state) \
-  (var) = (enum MHD_FdState)((var) | (state))
+  (var) = (enum MHD_FdState) ((var) | (state))
 #define MHD_FD_STATE_CLEAR(var,state) \
-  (var) = (enum MHD_FdState)((var) & (((enum MHD_FdState))(~state)))
+  (var) = (enum MHD_FdState) ((var) & (((enum MHD_FdState))(~state)))
 
-#define MHD_FD_STATE_SET_RECV(var) MHD_FD_STATE_SET((var),MHD_FD_STATE_RECV)
-#define MHD_FD_STATE_SET_SEND(var) MHD_FD_STATE_SET((var),MHD_FD_STATE_SEND)
+#define MHD_FD_STATE_SET_RECV(var) MHD_FD_STATE_SET ((var),MHD_FD_STATE_RECV)
+#define MHD_FD_STATE_SET_SEND(var) MHD_FD_STATE_SET ((var),MHD_FD_STATE_SEND)
 #define MHD_FD_STATE_SET_EXCEPT(var) \
-  MHD_FD_STATE_SET((var),MHD_FD_STATE_EXCEPT)
+  MHD_FD_STATE_SET ((var),MHD_FD_STATE_EXCEPT)
 
 #define MHD_FD_STATE_CLEAR_RECV(var) \
-  MHD_FD_STATE_CLEAR((var),MHD_FD_STATE_RECV)
+  MHD_FD_STATE_CLEAR ((var),MHD_FD_STATE_RECV)
 #define MHD_FD_STATE_CLEAR_SEND(var) \
-  MHD_FD_STATE_CLEAR((var),MHD_FD_STATE_SEND)
+  MHD_FD_STATE_CLEAR ((var),MHD_FD_STATE_SEND)
 #define MHD_FD_STATE_CLEAR_EXCEPT(var) \
-  MHD_FD_STATE_CLEAR((var),MHD_FD_STATE_EXCEPT)
+  MHD_FD_STATE_CLEAR ((var),MHD_FD_STATE_EXCEPT)
 
 struct MHD_WatchedFD
 {
@@ -3661,7 +3702,7 @@ MHD_process_data (struct MHD_Daemon *daemon,
  * @ingroup event
  */
 #define MHD_process_data_simple(d) \
-		MHD_process_data (d, 0);
+  MHD_process_data (d, 0);
 
 
 /**
@@ -4027,7 +4068,7 @@ enum MHD_HTTP_StatusCode
  * If we don't have a string for a status code, we give the first
  * message in that status code class.
  */
-_MHD_EXTERN const char*
+_MHD_EXTERN const char *
 MHD_status_code_to_string (enum MHD_HTTP_StatusCode code);
 
 /** @} */ /* end of group httpcode */
@@ -4275,7 +4316,7 @@ MHD_response_set_options_bool (struct MHD_Response *response,
 MHD_FUNC_PARAM_NONNULL_ALL_;
 
 
-#if 1 //def MHD_USE_VARARG_MACROS_ // FIXME
+#if 1 // def MHD_USE_VARARG_MACROS_ // FIXME
 // FIXME: How?
 #define MHD_response_set_options_bool_macro(response,...)
 #endif /* MHD_USE_VARARG_MACROS_ */
@@ -4462,7 +4503,7 @@ struct MHD_DynamicContentCreatorAction;
  *         error code otherwise // TODO: add the list
  */
 _MHD_EXTERN enum MHD_StatusCode
-MHD_DCC_set_action_continue(
+MHD_DCC_set_action_continue (
   struct MHD_DynamicContentCreatorAction *action,
   size_t data_size,
   const char *chunk_ext)
@@ -4485,7 +4526,7 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  *         error code otherwise // TODO: add the list
  */
 _MHD_EXTERN enum MHD_StatusCode
-MHD_DCC_set_action_continue_zc(
+MHD_DCC_set_action_continue_zc (
   struct MHD_DynamicContentCreatorAction *action,
   struct MHD_DynContentZCIoVec *iov_data,
   const char *chunk_ext)
@@ -4504,7 +4545,7 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  *         error code otherwise // TODO: add the list
  */
 _MHD_EXTERN enum MHD_StatusCode
-MHD_DCC_set_action_finished(
+MHD_DCC_set_action_finished (
   struct MHD_DynamicContentCreatorAction *action,
   size_t num_footers,
   struct MHD_KeyValue *footers)
@@ -4529,7 +4570,7 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  *         error code otherwise // TODO: add the list
  */
 _MHD_EXTERN enum MHD_StatusCode
-MHD_DCC_set_action_suspend(
+MHD_DCC_set_action_suspend (
   struct MHD_DynamicContentCreatorAction *action,
   uint_fast64_t suspend_microsec)
 MHD_FUNC_PARAM_NONNULL_ (1);
@@ -4540,7 +4581,7 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  * @return always MHD_SC_OK
  */
 _MHD_EXTERN enum MHD_StatusCode
-MHD_DCC_set_action_error_stop(
+MHD_DCC_set_action_error_stop (
   struct MHD_DynamicContentCreatorAction *action)
 MHD_FUNC_PARAM_NONNULL_ (1);
 
@@ -4592,11 +4633,11 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  */
 typedef ssize_t
 (MHD_FUNC_PARAM_NONNULL_ (3)
- *MHD_DynamicContentCreator) (void *dyn_cont_cls,
-                              uint64_t pos,
-                              void *buf,
-                              size_t max,
-                              struct MHD_DynamicContentCreatorAction *action); // add pointer to struct with command
+ *MHD_DynamicContentCreator)(void *dyn_cont_cls,
+                             uint64_t pos,
+                             void *buf,
+                             size_t max,
+                             struct MHD_DynamicContentCreatorAction *action);  // add pointer to struct with command
 
 
 /**
@@ -4678,9 +4719,9 @@ struct MHD_DynContentZCIoVec
  * @return the requested next action
  */
 typedef enum MHD_DynContentZCAction
-(*MHD_DynamicContentCreatorZC) (void *dyn_cont_zc_cls,
-                         uint64_t pos,
-                         struct MHD_DynContentZCIoVec iov_data);
+(*MHD_DynamicContentCreatorZC)(void *dyn_cont_zc_cls,
+                               uint64_t pos,
+                               struct MHD_DynContentZCIoVec iov_data);
 
 
 /**
@@ -4921,8 +4962,8 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_response_add_header (struct MHD_Response *response,
                          const char *header,
                          const char *content)
-MHD_FUNC_PARAM_NONNULL_(1) MHD_FUNC_PARAM_NONNULL_(2)
-MHD_FUNC_PARAM_NONNULL_(3);
+MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (2)
+MHD_FUNC_PARAM_NONNULL_ (3);
 
 // FIXME: duplication - remove
 /**
@@ -4942,15 +4983,15 @@ _MHD_EXTERN enum MHD_StatusCode
 MHD_response_add_header_str (struct MHD_Response *response,
                              const struct MHD_String *header_str,
                              const struct MHD_String *content_str)
-MHD_FUNC_PARAM_NONNULL_(1) MHD_FUNC_PARAM_NONNULL_(2)
-MHD_FUNC_PARAM_NONNULL_(3);
+MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (2)
+MHD_FUNC_PARAM_NONNULL_ (3);
 
 
 _MHD_EXTERN enum MHD_StatusCode
 MHD_response_add_predef_header (struct MHD_Response *response,
                                 enum MHD_PredefinedHeader stk,
                                 const char *content)
-MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_(3);
+MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (3);
 
 // TODO remove
 /**
@@ -5114,10 +5155,10 @@ MHD_action_continue (void);
  */
 typedef const struct MHD_Action *
 (MHD_FUNC_PARAM_NONNULL_ (2) MHD_FUNC_PARAM_NONNULL_ (3)
- *MHD_UploadCallback) (void *upload_cls,
-                       struct MHD_Request *request,
-                       size_t content_data_size,
-                       void *content_data);
+ *MHD_UploadCallback)(void *upload_cls,
+                      struct MHD_Request *request,
+                      size_t content_data_size,
+                      void *content_data);
 
 
 /**
