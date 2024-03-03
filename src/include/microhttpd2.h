@@ -4490,6 +4490,26 @@ struct MHD_DynContentZCIoVec
 };
 
 struct MHD_DynamicContentCreatorAction;
+struct MHD_DynamicContentCreatorContext;
+
+
+// internally:
+struct MHD_DynamicContentCreatorAction
+{
+  enum DCC_Actiontype type;
+  union
+  {
+    struct
+    {
+      uint_fast64_t suspend_microsec;
+    } suspend;
+  } details;
+};
+struct MHD_DynamicContentCreatorContext
+{
+  struct MHD_DynamicContentCreatorAction action;
+};
+
 
 /**
  * Set action to "continue processing", the data is provided in the
@@ -4505,9 +4525,9 @@ struct MHD_DynamicContentCreatorAction;
  * @return MHD_SC_OK if success,
  *         error code otherwise // TODO: add the list
  */
-_MHD_EXTERN enum MHD_StatusCode
-MHD_DCC_set_action_continue (
-  struct MHD_DynamicContentCreatorAction *action,
+_MHD_EXTERN const struct MHD_DynamicContentCreatorAction *
+MHD_DCC_action_continue (
+  struct MHD_DynamicContentCreatorContext *ctx,
   size_t data_size,
   const char *chunk_ext)
 MHD_FUNC_PARAM_NONNULL_ (1);
@@ -4531,9 +4551,13 @@ MHD_FUNC_PARAM_NONNULL_ (1);
 _MHD_EXTERN enum MHD_StatusCode
 MHD_DCC_set_action_continue_zc (
   struct MHD_DynamicContentCreatorAction *action,
+  size_t bytes_in_buf,
   struct MHD_DynContentZCIoVec *iov_data,
   const char *chunk_ext)
 MHD_FUNC_PARAM_NONNULL_ (1);
+
+#define MHD_DCC_set_action_continue (a,b) \
+  MHD_DCC_set_action_continue_zc (a, b, NULL, NULL)
 
 /**
  * Set action to "finished".
@@ -4639,13 +4663,13 @@ MHD_FUNC_PARAM_NONNULL_ (1);
  *  #MHD_DYNAMIC_CONTENT_SUSPEND_REQUEST (-3) to suspend the request
  *    processing until MHD_request_resume() is called.
  */
-typedef ssize_t
-(MHD_FUNC_PARAM_NONNULL_ (3)
+typedef const struct MHD_DynamicContentCreatorAction *
+(MHD_FUNC_PARAM_NONNULL_ (2,4)
  *MHD_DynamicContentCreator)(void *dyn_cont_cls,
+                             struct MHD_DynamicContentCreatorContext *ctx,
                              uint64_t pos,
                              void *buf,
-                             size_t max,
-                             struct MHD_DynamicContentCreatorAction *action);  // add pointer to struct with command
+                             size_t max);
 
 
 /**
