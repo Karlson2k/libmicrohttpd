@@ -1353,7 +1353,6 @@ enum MHD_HTTP_Method
 };
 
 // FIXME: added
-// FIXME: return 'const char *'?
 _MHD_EXTERN const struct MHD_String *
 MHD_get_http_method_string (enum MHD_HTTP_Method method)
 MHD_FUNC_CONST_;
@@ -2270,17 +2269,387 @@ MHD_daemon_set_option_bool (struct MHD_Daemon *daemon,
 MHD_FUNC_PARAM_NONNULL_ALL_ MHD_FUNC_MUST_CHECK_RESULT_;
 
 
+/* Test areas */
+
+// TODO: Sort values and assign numbers
+enum MHD_DaemonOption
+{
+  /**
+   * Not a real option.
+   * Should not be used directly.
+   * This value indicates the end of the list of the options.
+   */
+  MHD_D_O_END = 0,
+  // FIXME: edited names, shortened
+  /**
+   * Suppresses use of "Date:" header.
+   * According to RFC should be used only if the system has no RTC.
+   */
+  MHD_D_O_BOOL_SUPPRESS_DATE_HEADER = 1,
+
+  /**
+   * Disable use of inter-thread communication channel.
+   * #MHD_daemon_disable_itc() can be used with
+   * #MHD_daemon_thread_internal() to perform some additional
+   * optimizations (in particular, not creating a pipe for IPC
+   * signaling).  If it is used, certain functions like
+   * #MHD_daemon_quiesce() or #MHD_daemon_add_connection() or
+   * #MHD_action_suspend() cannot be used anymore.
+   * #MHD_daemon_disable_itc() is not beneficial on platforms where
+   * select()/poll()/other signal shutdown() of a listen socket.
+   *
+   * You should only use this function if you are sure you do
+   * satisfy all of its requirements and need a generally minor
+   * boost in performance.
+   */
+  MHD_D_O_BOOL_SUPPRESS_ITC = 2,
+
+  /**
+   * Enable `turbo`.  Disables certain calls to `shutdown()`,
+   * enables aggressive non-blocking optimistic reads and
+   * other potentially unsafe optimizations.
+   * Most effects only happen with #MHD_USE_EPOLL.
+   */
+  MHD_D_O_BOOL_TURBO = 3,
+
+  /**
+   * You need to set this option if you want to disable use of HTTP "Upgrade".
+   * "Upgrade" may require usage of additional internal resources,
+   * which we can avoid providing if they will not be used.
+   *
+   * You should only use this function if you are sure you do
+   * satisfy all of its requirements and need a generally minor
+   * boost in performance.
+   */
+  MHD_D_O_BOOL_DISALLOW_UPGRADE,
+
+  /**
+   * Disable #MHD_action_suspend() functionality.
+   *
+   * You should only use this function if you are sure you do
+   * satisfy all of its requirements and need a generally minor
+   * boost in performance.
+   */
+  MHD_D_O_BOOL_DISALLOW_SUSPEND_RESUME,
+
+  /**
+   * If present true, allow reusing address:port socket (by using
+   * SO_REUSEPORT on most platform, or platform-specific ways).  If
+   * present and set to false, disallow reusing address:port socket
+   * (does nothing on most platform, but uses SO_EXCLUSIVEADDRUSE on
+   * Windows).
+   * Ineffective in conjunction with #MHD_daemon_listen_socket().
+   */
+  MHD_D_O_BOOL_LISTEN_ALLOW_ADDRESS_REUSE,
+
+  /**
+   * Use SHOUTcast.  This will cause *all* responses to begin
+   * with the SHOUTcast "ICY" line instead of "HTTP".
+   */
+  MHD_D_O_BOOL_ENABLE_SHOUTCAST,
+
+  // FIXME: Added
+  /**
+   * Disable converting plus ('+') character to space in GET
+   * parameters (URI part after '?').
+   * TODO: Add explanation, RFCs, HTML
+   */
+  MHD_D_O_BOOL_DISABLE_GET_PAR_PLUS_AS_SPACE,
+
+  /**
+   * Bind to the given socket address.
+   */
+  MHD_D_O_SA,
+};
+
+struct MHD_DaemonOptionValueSA
+{
+  /**
+   * The size of the socket address pointed by @a sa.
+   */
+  size_t sa_len;
+  /**
+   * The pointer to the socket address.
+   */
+  const struct sockaddr *sa;
+};
+
+union MHD_DaemonOptionValue
+{
+  enum MHD_Bool v_bool;
+  unsigned int v_uint;
+  size_t v_sizet;
+  struct MHD_DaemonOptionValueSA v_sa;
+};
+
+struct MHD_DaemonOptionAndValue
+{
+  /**
+   * The daemon configuration option
+   */
+  enum MHD_DaemonOption opt;
+  /**
+   * The value for the @a opt option
+   */
+  union MHD_DaemonOptionValue val;
+};
+
+/**
+ * Set the requested options for the daemon.
+ *
+ * If any option fail other options may be or may be not applied.
+ * @param daemon the daemon to set the options
+ * @param[in] options the pointer to the array with the options;
+ *                    the array processing stops at the first ::MHD_D_O_END
+ *                    option, but not later than after processing
+ *                    @a options_max_num entries
+ * @param options_max_num the maximum number of entries in the @a options
+ * @return ::MHD_SC_OK on success,
+ *         error code otherwise // TODO: add the full list
+ */
+_MHD_EXTERN enum MHD_StatusCode
+MHD_DaemonOptionsSet(struct MHD_Daemon *daemon,
+                     const struct MHD_DaemonOptionAndValue *options,
+                     size_t options_max_num)
+MHD_FUNC_PARAM_NONNULL_ALL_;
+
+//#define MHD_NO_COMPOUND_LITERALS
+
+#if defined(__cplusplus)
+/* Some C++ compilers support compound literals, but may warn when
+ * used in pedantic mode.
+ * MHD requires use of designated initializers when used with compound
+ * literals, which are available since C++20 (__cpp_designated_initializers),
+ * but C++ does not support nested designed initializers, which are required
+ * to enforce type-safety. */
+#  ifdef MHD_USE_COMPOUND_LITERALS
+#    undef MHD_USE_COMPOUND_LITERALS
+#  endif
+#  ifndef MHD_NO_COMPOUND_LITERALS
+#    define MHD_NO_COMPOUND_LITERALS    1
+#  endif
+#endif /* __cplusplus */
+
+#if !defined(MHD_NO_COMPOUND_LITERALS)
+#  if !defined(MHD_USE_COMPOUND_LITERALS)
+#    if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
+#      define MHD_USE_COMPOUND_LITERALS   1
+#    elif defined(__GNUC__) && __GNUC__ >= 3 && !defined(__STRICT_ANSI__)
+       /* This may warn in "pedantic" compilation mode */
+#      define MHD_USE_COMPOUND_LITERALS   1
+#    elif defined(_MSC_FULL_VER) && _MSC_VER >= 1800 && !defined(__STDC__)
+#      define MHD_USE_COMPOUND_LITERALS   1
+#    else
+       /* Compound literals are not supported */
+#      define MHD_NO_COMPOUND_LITERALS    1
+#    endif
+#  endif /* !MHD_USE_COMPOUND_LITERALS */
+#else  /* MHD_NO_COMPOUND_LITERALS */
+#  ifdef MHD_USE_COMPOUND_LITERALS
+#error MHD_USE_COMPOUND_LITERALS and MHD_NO_COMPOUND_LITERALS are both defined
+#  endif /* MHD_USE_COMPOUND_LITERALS */
+#endif /* MHD_NO_COMPOUND_LITERALS */
+
+#if !defined(MHD_NO_VARARG_MACROS)
+#  if !defined(MHD_USE_VARARG_MACROS)
+#    if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
+#      define MHD_USE_VARARG_MACROS   1
+#    elif defined(__cplusplus) && __cplusplus >= 201103
+#      define MHD_USE_VARARG_MACROS   1
+#    elif defined(__GNUC__) && __GNUC__ >= 3 && !defined(__STRICT_ANSI__)
+       /* This may warn in "pedantic" compilation mode */
+#      define MHD_USE_VARARG_MACROS   1
+#    elif defined(_MSC_FULL_VER) && _MSC_VER >= 1400 && !defined(__STDC__)
+#      define MHD_USE_VARARG_MACROS   1
+#    else
+       /* Variable arguments macros are not supported */
+#      define MHD_NO_VARARG_MACROS    1
+#    endif
+#  endif /* !MHD_USE_VARARG_MACROS */
+#else  /* MHD_NO_VARARG_MACROS */
+#  ifdef MHD_USE_VARARG_MACROS
+#error MHD_USE_VARARG_MACROS and MHD_NO_VARARG_MACROS are both defined
+#  endif /* MHD_USE_VARARG_MACROS */
+#endif /* MHD_NO_VARARG_MACROS */
+
+#if !defined(MHD_INLINE)
+#  if defined(inline)
+     /* Assume that proper value of 'inline' was already defined */
+#    define MHD_INLINE inline
+#  elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
+     /* C99 (and later) supports 'inline' */
+#    define MHD_INLINE inline
+#  elif defined(__cplusplus)
+     /* C++ always supports 'inline' */
+#    define MHD_INLINE inline
+#  elif defined(__GNUC__) && __GNUC__ >= 3 && !defined(__STRICT_ANSI__)
+#    define MHD_INLINE __inline__
+#  elif defined(_MSC_FULL_VER) && _MSC_VER >= 1400 && !defined(__STDC__)
+#    define MHD_INLINE __inline
+#  else
+#    define MHD_INLINE /* empty */
+#  endif
+#endif /* MHD_INLINE */
+
+
+#ifdef MHD_USE_COMPOUND_LITERALS
+/* Do not use directly */
+#  define MHD_OptionBoolSet(option,val)          \
+  (const struct MHD_DaemonOptionAndValue)        \
+  {                                              \
+    .opt = (option),                             \
+    .val.v_bool = (bool_val)                     \
+  }
+
+/**
+ * Bind to the given socket address.
+ * Ineffective in conjunction with #MHD_daemon_listen_socket().
+ *
+ * @param sa address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6)
+ *        or even a UNIX domain socket (AF_UNIX)
+ * @param sa_len number of bytes in @a sa
+ * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ */
+#  define MHD_OptionSockaddr(sa_len_val,sa_val)  \
+  (const struct MHD_DaemonOptionAndValue)        \
+  {                                              \
+    .opt = (MHD_D_O_SA),                         \
+    .val.v_sa.sa_len = (sa_len_val),             \
+    .val.v_sa.sa = (sa_val)                      \
+  }
+
+/**
+ * Terminate the list of the options
+ * @return the terminating object of struct MHD_DaemonOptionAndValue
+ */
+#  define MHD_OptionTerminate()                  \
+  MHD_OptionBoolSet(MHD_D_O_END,MHD_NO)
+
+#else  /* ! MHD_USE_COMPOUND_LITERALS */
+
+/* Do not use directly */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_OptionBoolSet(enum MHD_DeamonOption option,
+                  enum MHD_bool val)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = option;
+  opt_val.val.v_bool = val;
+
+  return opt_val;
+}
+
+/**
+ * Bind to the given socket address.
+ * Ineffective in conjunction with #MHD_daemon_listen_socket().
+ *
+ * @param sa address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6)
+ *        or even a UNIX domain socket (AF_UNIX)
+ * @param sa_len number of bytes in @a sa
+ * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_OptionSockaddr(size_t sa_len_val,
+                   const struct sockaddr *sa_val)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_SA;
+  opt_val.val.v_sa.sa_len = sa_len_val;
+  opt_val.val.v_sa.sa = sa_val;
+
+  return opt_val;
+}
+
+#endif
+
+
+
+/**
+ * Suppresses use of "Date:" header.
+ * According to RFC should be used only if the system has no RTC.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ */
+#  define MHD_OptionSuppressDateHeader(bool_val) \
+  MHD_OptionBoolSet(MHD_D_O_BOOL_SUPPRESS_DATE_HEADER,(bool_val))
+
+/**
+ * Disable #MHD_action_suspend() functionality.
+ *
+ * You should only use this function if you are sure you do
+ * satisfy all of its requirements and need a generally minor
+ * boost in performance.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ */
+#  define MHD_OptionDisallowSuspendResume(bool_val) \
+  MHD_OptionBoolSet(MHD_D_O_BOOL_DISALLOW_SUSPEND_RESUME,(bool_val))
+
+
+#ifdef MHD_USE_VARARG_MACROS
+#  ifdef MHD_USE_COMPOUND_LITERALS
+/**
+ * Set the requested options for the daemon.
+ *
+ * If any option fail other options may be or may be not applied.
+ *
+ * It should be used with helpers that creates required options, for example:
+ *
+ * MHD_DaemonOptionsApply(d, MHD_OptionSuppressDateHeader(MHD_YES),
+ *                        MHD_OptionSockaddr(sa_len, sa))
+ *
+ * @param daemon the daemon to set the options
+ * @param ... the list of the options, echo option must be created
+ *            by helpers MHD_OptionNameOfOption(option_value)
+ * @param options_max_num the maximum number of entries in the @a options
+ * @return ::MHD_SC_OK on success,
+ *         error code otherwise // TODO: add the full list
+ */
+#    define MHD_DaemonOptionsApply(daemon,...)      \
+  MHD_DaemonOptionsSet(daemon,                      \
+    (const struct MHD_DaemonOptionAndValue[])       \
+      {__VA_ARGS__, MHD_OptionTerminate()},         \
+    ((size_t)(~((size_t)0))))
+#  elif defined(__cplusplus) && defined(__cpp_initializer_lists)
+#    include <vector>
+/**
+ * Set the requested options for the daemon.
+ *
+ * If any option fail other options may be or may be not applied.
+ *
+ * It should be used with helpers that creates required options, for example:
+ *
+ * MHD_DaemonOptionsApply(d, MHD_OptionSuppressDateHeader(MHD_YES),
+ *                        MHD_OptionSockaddr(sa_len, sa))
+ *
+ * @param daemon the daemon to set the options
+ * @param ... the list of the options, echo option must be created
+ *            by helpers MHD_OptionNameOfOption(option_value)
+ * @param options_max_num the maximum number of entries in the @a options
+ * @return ::MHD_SC_OK on success,
+ *         error code otherwise // TODO: add the full list
+ */
+#    define MHD_DaemonOptionsApply(daemon,...)      \
+  MHD_DaemonOptionsSet(daemon,                      \
+    (std::vector<struct MHD_DaemonOptionAndValue>   \
+      {__VA_ARGS__, MHD_OptionTerminate()}).data(), \
+    ((size_t)(~((size_t)0))))
+#  endif
+#endif /* MHD_USE_VARARG_MACROS */
+
 #if PSEUDO
 
 #define MHD_daemon_set_option_shoutcast() \
   (struct MHD_DaemonOption) { \
-    .type = MHD_DAEMON_OB_ENABLE_SHOUTCAST, \
+    .type = MHD_D_O_BOOL_ENABLE_SHOUTCAST, \
     .details.shoutcast.value = true \
   }
 
 #define MHD_daemon_set_option_timeout(val) \
   (struct MHD_DaemonOption) { \
-    .type = MHD_DAEMON_OB_CONNECTION_TIMEOUT, \
+    .type = MHD_D_O_BOOL_CONNECTION_TIMEOUT, \
     .details.timeout.delay = val \
   }
 
@@ -3273,7 +3642,7 @@ enum MHD_EventType // bitmask
   MHD_ET_EXCEPT = 8 // care about remote close / interruption
 };
 
-// FIXME: remove it, pre-selected by Polling Mode
+// FIXME: remove it, pre-selected by Polling Mode - OK
 enum MHD_TriggerLevel
 {
   MHD_TL_EDGE, // epoll in edge trigger mode
@@ -3677,8 +4046,8 @@ MHD_FUNC_PARAM_NONNULL_ (1) MHD_FUNC_PARAM_NONNULL_ (2);
 // FIXME: NOT deprecated, useful, renamed
 // FIXME: to be used only in ::MHD_TM_EXTERNAL_PERIODIC mode
 _MHD_EXTERN enum MHD_Result
-MHD_process_data (struct MHD_Daemon *daemon,
-                  int32_t millisec);
+MHD_daemon_process_blocking (struct MHD_Daemon *daemon,
+                             uint_fast64_t microsec);
 
 
 /**
@@ -3701,8 +4070,8 @@ MHD_process_data (struct MHD_Daemon *daemon,
  * @return #MHD_SC_OK on success
  * @ingroup event
  */
-#define MHD_process_data_simple(d) \
-  MHD_process_data (d, 0);
+#define MHD_daemon_process_nonblocking(d) \
+		MHD_daemon_process_blocking (d, 0);
 
 
 /**
@@ -4096,6 +4465,7 @@ enum MHD_HTTP_ProtocolVersion
 };
 
 // FIXME: remove completely, usable only for HTTP/1.x, no practical use with the new API
+// FIXME: mark for loggging only
 _MHD_EXTERN const char *
 MHD_protocol_version_to_string (enum MHD_HTTP_ProtocolVersion pv);
 
@@ -4128,9 +4498,7 @@ MHD_protocol_version_to_string (enum MHD_HTTP_ProtocolVersion pv);
  *                         may happen later (but not earlier) depending
  *                         on timer granularity and the system load;
  *                         if set to UINT64_MAX (or higher) the request
- *                         is not resumed automatically,
- *                         the suspension period can be shorter then requested
- *                         if the number is higher than 86 400 000 000 (one day) // FIXME: discuss
+ *                         is not resumed automatically
  * @return action to cause a request to be suspended.
  */
 _MHD_EXTERN const struct MHD_Action *
