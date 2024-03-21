@@ -3664,6 +3664,34 @@ MHD_daemon_option_set_sizet (struct MHD_Daemon *daemon,
                              enum MHD_DaemonOptionSizet option,
                              size_t value)
 MHD_FN_PAR_NONNULL_ (1);
+
+/**
+ * Set random values to be used by the Digest Auth module.  Note that
+ * the application must ensure that @a buf remains allocated and
+ * unmodified while the daemon is running.
+ *
+ * @param daemon daemon to configure
+ * @param buf_size number of bytes in @a buf
+ * @param buf entropy buffer
+ */
+MHD_EXTERN_ void
+MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
+                               size_t buf_size,
+                               const void *buf)
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (3);
+
+/**
+ * Length of the internal array holding the map of the nonce and
+ * the nonce counter.
+ *
+ * @param daemon daemon to configure
+ * @param nc_length desired array length
+ */
+MHD_EXTERN_ enum MHD_StatusCode
+MHD_daemon_set_digest_auth_nc_length (struct MHD_Daemon *daemon,
+                                      size_t nc_length)
+MHD_FN_PAR_NONNULL_ (1);
+
 // FIXME: end of transform everything to option
 
 union MHD_DaemonOptionValue
@@ -4516,7 +4544,8 @@ MHD_daemon_external_event_loop_get_max_wait (struct MHD_Daemon *d);
 /**
  * Run websever operation with possible blocking.
  *
- * Supported only in #MHD_TM_EXTERNAL_PERIODIC mode.
+ * Supported only in #MHD_TM_EXTERNAL_PERIODIC and
+ * #MHD_TM_EXTERNAL_SINGLE_FD_WATCH modes.
  *
  * This function does the following: waits for any network event not more than
  * specified number of milliseconds, processes all incoming and outgoing data,
@@ -4528,9 +4557,9 @@ MHD_daemon_external_event_loop_get_max_wait (struct MHD_Daemon *d);
  * if application needs to run a single thread only and does not have any other
  * network activity.
  *
- * If @a millisec parameter is not zero this function calls MHD_get_timeout()
- * internally and use returned value as maximum wait time if it less than
- * value of @a millisec parameter.
+ * In #MHD_TM_EXTERNAL_PERIODIC mode if @a millisec parameter is not zero
+ * this function calls #MHD_get_timeout()internally and use returned value
+ * as maximum wait time if it less than value of @a millisec parameter.
  *
  * @param daemon the daemon to run
  * @param millisec the maximum time in milliseconds to wait for network and
@@ -4546,6 +4575,8 @@ MHD_daemon_external_event_loop_get_max_wait (struct MHD_Daemon *d);
  *                 If set to #MHD_WAIT_INDEFINITELY then function waits
  *                 for events indefinitely (blocks until next network activity
  *                 or connection timeout).
+ *                 Always used as zero value in
+ *                 #MHD_TM_EXTERNAL_SINGLE_FD_WATCH mode.
  * @return #MHD_SC_OK on success, otherwise
  *         an error code
  * @ingroup event
@@ -4553,9 +4584,9 @@ MHD_daemon_external_event_loop_get_max_wait (struct MHD_Daemon *d);
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_daemon_process_blocking (struct MHD_Daemon *daemon,
                              uint_fast64_t microsec)
-MHD_FN_PAR_NONNULL_(1)
+MHD_FN_PAR_NONNULL_(1);
 
-// TODO: convert to macro, introscpection
+// TODO: introscpection for timeout
 /**
  * Run webserver operations (without blocking unless in client
  * callbacks).
@@ -4571,21 +4602,12 @@ MHD_FN_PAR_NONNULL_(1)
  * if #MHD_daemon_get_timeout() would called immediately.
  *
  * @param daemon the daemon to run
- * @param[out] next_max_wait the optional pointer to variable to be set
- *                           to maximum wait time before the next call
- *                           of this function,
- *                           can be NULL
  * @return #MHD_SC_OK on success, otherwise
  *         an error code
  * @ingroup event
  */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_process_nonblocking (struct MHD_Daemon *daemon,
-                                uint_fast64_t *next_max_wait)
-MHD_FN_PAR_NONNULL_(1)
-MHD_FN_PAR_OUT_(2);
-// FIXME: two different calls. Having both "microsec" for maximum blocking
-// time and the next timeout for external processing is too confusing
+#define MHD_daemon_process_nonblocking(daemon) \
+    MHD_daemon_process_blocking(daemon, 0)
 
 
 /**
@@ -4611,7 +4633,7 @@ MHD_FN_PAR_OUT_(2);
  * @param connection_cls meta data the application wants to
  *          associate with the new connection object
  * @return #MHD_SC_OK on success
- *         FIXME: add detailed list of codes
+ *         error on failure
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
@@ -4823,12 +4845,11 @@ MHD_RESTORE_WARN_VARIADIC_MACROS_
 /* **************** Request handling functions ***************** */
 
 
-// FIXME: Updated
 /**
  * The `enum MHD_ValueKind` specifies the source of
- * the key-value pairs in the HTTP protocol.
+ * the name-value pairs in the HTTP protocol.
  */
-enum MHD_ValueKind
+enum MHD_FLAGS_ENUM_ MHD_ValueKind
 {
 
   /**
@@ -4849,13 +4870,15 @@ enum MHD_ValueKind
   ,
   /**
    * POST data.
-   * // TODO: Correct description
    * This is available only if a content encoding
    * supported by MHD is used, and only if the posted content
    * fits within the available memory pool.
-   * Note that in that case, the upload data given to
-   * the #MHD_AccessHandlerCallback will be empty (since it has
-   * already been processed). // TODO: add warning somewhere
+   *
+   * @warning The encoding "multipart/form-data" has more fields than just
+   * "name" and "value". See #MHD_request_get_post_processor_values_cb() and
+   * #MHD_request_get_post_processor_values_list(). In particular it could be
+   * important to check used "Transfer-Encoding". While it is deprecated and
+   * not used by modern clients, hypothetically it can be used.
    */
   MHD_VK_POSTDATA = 8
   ,
@@ -4909,9 +4932,8 @@ struct MHD_NameValueKind
   enum MHD_ValueKind kind;
 };
 
-// FIXME: updated
 /**
- * Iterator over key-value pairs.  This iterator can be used to
+ * Iterator over name-value pairs.  This iterator can be used to
  * iterate over all of the cookies, headers, or POST-data fields of a
  * request, and also to iterate over the headers that have been added
  * to a response.
@@ -4932,7 +4954,7 @@ typedef enum MHD_Bool
 
 
 /**
- * Get all of the headers from the request via callback.
+ * Get all of the headers (or other kind of request data) via callback.
  *
  * @param[in,out] request request to get values from
  * @param kind types of values to iterate over, can be a bitmask
@@ -4942,7 +4964,7 @@ typedef enum MHD_Bool
  * @return number of entries iterated over
  * @ingroup request
  */
-MHD_EXTERN_ unsigned int
+MHD_EXTERN_ size_t
 MHD_request_get_values_cb (struct MHD_Request *request,
                            enum MHD_ValueKind kind,
                            MHD_NameValueIterator iterator,
@@ -6112,7 +6134,7 @@ MHD_FN_PAR_NONNULL_ (1);
  *         to discard the rest of the upload and return the data given
  */
 typedef const struct MHD_Action *
-(*MHD_PostDataIterator) (struct MHD_Request *req, // FIXME: added
+(*MHD_PostDataReader) (struct MHD_Request *req,
                          void *cls,
                          const struct MHD_String *name,
                          const struct MHD_String *filename,
@@ -6131,7 +6153,7 @@ typedef const struct MHD_Action *
  * @return the action to proceed
  */
 typedef const struct MHD_Action *
-(*MHD_PostDataFinished) (struct MHD_Request *req, // FIXME: added
+(*MHD_PostDataFinished) (struct MHD_Request *req,
                         void *cls);
 
 
@@ -6142,9 +6164,9 @@ typedef const struct MHD_Action *
  *   given to @a iter for stream processing
  * @param enc the data encoding to use,
  *            set to #MHD_HTTP_POST_ENCODING_OTHER to detect automatically
- * @param iter function to call for "oversize" values in the stream,
- *             can be NULL
- * @param iter_cls closure for @a iter
+ * @param reader function to call for "oversize" values in the stream,
+ *               can be NULL
+ * @param reader_cls closure for @a reader
  * @param done_cb called once all data has been processed for
  *   the final action; values smaller than @a pp_stream_limit that
  *   fit into @a pp_buffer_size will be available via
@@ -6156,8 +6178,8 @@ MHD_action_post_processor (struct MHD_Request *req,
                            size_t pp_buffer_size,
                            size_t pp_stream_limit,
                            enum MHD_HTTP_PostEncoding enc,
-                           MHD_PostDataIterator iter,
-                           void *iter_cls,
+                           MHD_PostDataReader reader,
+                           void *reader_cls,
                            MHD_PostDataFinished done_cb,
                            void *done_cb_cls)
 MHD_FN_PAR_NONNULL_ (2);
@@ -6202,6 +6224,41 @@ struct MHD_PostData
 };
 
 /**
+ * Iterator over POST data.
+ *
+ * The pointers to the strings in @a data are valid until the response
+ * is queued. If the data is needed beyond this point, it should be copied.
+ *
+ * @param cls closure
+ * @param nvt the name, the value and the kind of the element
+ * @return #MHD_YES to continue iterating,
+ *         #MHD_NO to abort the iteration
+ * @ingroup request
+ */
+typedef enum MHD_Bool
+(MHD_FN_PAR_NONNULL_ (2)
+ *MHD_PostDataIterator)(void *cls,
+                        const struct MHD_PostData *data);
+
+/**
+ * Get all of the post data from the request via request.
+ *
+ * The pointers to the strings in @a elements are valid until the response
+ * is queued. If the data is needed beyond this point, it should be copied.
+ * @param request the request to get data for
+ * @param iterator callback to call on each header;
+ *        maybe NULL (then just count headers)
+ * @param iterator_cls extra argument to @a iterator
+ * @return number of entries iterated over
+ * @ingroup request
+ */
+MHD_EXTERN_ size_t
+MHD_request_get_post_data_cb (struct MHD_Request *request,
+                              MHD_PostDataIterator iterator,
+                              void *iterator_cls)
+MHD_FN_PAR_NONNULL_ (1);
+
+/**
  * Get all of the post data from the request.
  *
  * The pointers to the strings in @a elements are valid until the response
@@ -6211,16 +6268,15 @@ struct MHD_PostData
  * @param[out] elements the array of @a num_elements to get the data
  * @return the number of elements stored in @a elements,
  *         zero if no data or postprocessor was not used.
+ * @ingroup request
  */
 MHD_EXTERN_ size_t
-MHD_request_get_post_processor_values (
+MHD_request_get_post_data_list (
   struct MHD_Request *request,
   size_t num_elements,
   struct MHD_PostData elements[MHD_FN_PAR_DYN_ARR_SIZE_ (num_elements)])
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_(3);
-
-
 
 /* ***************** (c) WebSocket support ********** */
 
@@ -6659,14 +6715,12 @@ enum MHD_DigestAuthMultiAlgo
  *                          upon return
  * @param bin_buf_size the size of the @a userhash_bin buffer, must be
  *                     at least #MHD_digest_get_hash_size(algo) bytes long
- * @return MHD_YES on success,
- *         MHD_NO if @a bin_buf_size is too small or if @a algo algorithm is
- *         not supported (or external error has occurred,
- *         see #MHD_FEATURE_EXTERN_HASH)
+ * @return MHD_SC_OK on success,
+ *         error code otherwise
  * @sa #MHD_digest_auth_calc_userhash_hex()
  * @ingroup authentication
  */
-MHD_EXTERN_ enum MHD_Result // TODO SC
+MHD_EXTERN_ enum MHD_StatusCode
 MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo algo,
                                const char *username,
                                const char *realm,
@@ -6710,15 +6764,13 @@ MHD_FN_PAR_OUT_SIZE_(4,3);
  *                          if this function succeeds, then this buffer has
  *                          #MHD_digest_get_hash_size(algo)*2 chars long
  *                          userhash zero-terminated string
- * @return MHD_YES on success,
- *         MHD_NO if @a bin_buf_size is too small or if @a algo algorithm is
- *         not supported (or external error has occurred,
- *         see #MHD_FEATURE_EXTERN_HASH).
+ * @return MHD_SC_OK on success,
+ *         error code otherwise
  * @sa #MHD_digest_auth_calc_userhash()
  * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
-MHD_EXTERN_ enum MHD_Result // TODO SC
+MHD_EXTERN_ enum MHD_StatusCode
 MHD_digest_auth_calc_userhash_hex (
   enum MHD_DigestAuthAlgo algo,
   const char *username,
@@ -7205,7 +7257,7 @@ enum MHD_DigestAuthResult
  *         the error code otherwise
  * @ingroup authentication
  */
-MHD_EXTERN_ enum MHD_DigestAuthResult // FIXME: MHD_StatusCode?
+MHD_EXTERN_ enum MHD_DigestAuthResult
 MHD_digest_auth_check (struct MHD_Request *request,
                        const char *realm,
                        const char *username,
@@ -7391,7 +7443,9 @@ MHD_queue_auth_required_response (struct MHD_Request *request,
                                   enum MHD_DigestAuthMultiQOP mqop,
                                   enum MHD_DigestAuthMultiAlgo algo,
                                   enum MHD_Bool userhash_support,
-                                  enum MHD_Bool prefer_utf8);
+                                  enum MHD_Bool prefer_utf8)
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_(2)
+MHD_FN_PAR_CSTR_(3) MHD_FN_PAR_CSTR_(4) MHD_FN_PAR_NONNULL_ (5);
 
 
 /**
@@ -7444,6 +7498,7 @@ struct MHD_BasicAuthInfo
   size_t password_len;
 };
 
+// TODO: convert to introspection
 /**
  * Get the username and password from the Basic Authorisation header
  * sent by the client
@@ -7453,93 +7508,41 @@ struct MHD_BasicAuthInfo
  *         current request, or
  *         pointer to structure with username and password, which must be
  *         freed by #MHD_free().
- * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
 MHD_EXTERN_ struct MHD_BasicAuthInfo *
 MHD_basic_auth_get_username_password3 (struct MHD_Connection *connection);
 
 /**
- * Queues a response to request basic authentication from the client.
- *
- * The given response object is expected to include the payload for
- * the response; the "WWW-Authenticate" header will be added and the
- * response queued with the 'UNAUTHORIZED' status code.
+ * Send a response to request basic authentication from the client.
  *
  * See RFC 7617#section-2 for details.
- *
- * The @a response is modified by this function. The modified response object
- * can be used to respond subsequent requests by #MHD_queue_response()
- * function with status code #MHD_HTTP_UNAUTHORIZED and must not be used again
- * with MHD_queue_basic_auth_required_response3() function. The response could
- * be destroyed right after call of this function.
  *
  * @param connection the MHD connection structure
  * @param realm the realm presented to the client
  * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
  *                    be added, indicating for client that UTF-8 encoding
  *                    is preferred
- * @param response the response object to modify and queue; the NULL
- *                 is tolerated
- * @return #MHD_YES on success, #MHD_NO otherwise
- * @note Available since #MHD_VERSION 0x00097704
+ * @param response the reply to send; should contain the "access denied"
+ *                 body;
+ *                 note: this function sets the "WWW Authenticate" header and
+ *                 the caller should not set this header;
+ *                 the response must have #MHD_HTTP_STATUS_FORBIDDEN status
+ *                 code, must not have #MHD_RESP_OPT_BOOL_REUSABLE enabled;
+ *                 the NULL is tolerated (the result is NULL)
+ * @return pointer to the action on success,
+ *         NULL on failure
  * @ingroup authentication
  */
-MHD_EXTERN_ enum MHD_Result
-MHD_queue_basic_auth_required_response3 (struct MHD_Connection *connection,
-                                         const char *realm,
-                                         int prefer_utf8,
-                                         struct MHD_Response *response);
+MHD_EXTERN_ const struct MHD_Action *
+MHD_queue_basic_auth_required_response (struct MHD_Connection *connection,
+                                        const char *realm,
+                                        enum MHD_Bool prefer_utf8,
+                                        struct MHD_Response *response);
 
 
-/**
- * Queues a response to request basic authentication from the client
- * The given response object is expected to include the payload for
- * the response; the "WWW-Authenticate" header will be added and the
- * response queued with the 'UNAUTHORIZED' status code.
- *
- * @param connection The MHD connection structure
- * @param realm the realm presented to the client
- * @param response response object to modify and queue; the NULL is tolerated
- * @return #MHD_YES on success, #MHD_NO otherwise
- * @deprecated use MHD_queue_basic_auth_required_response3()
- * @ingroup authentication
- */
-MHD_EXTERN_ enum MHD_Result // TODO: new API
-MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
-                                    const char *realm,
-                                    struct MHD_Response *response);
 
 
-// TODO go to options
-/**
- * Set random values to be used by the Digest Auth module.  Note that
- * the application must ensure that @a buf remains allocated and
- * unmodified while the daemon is running.
- *
- * @param daemon daemon to configure
- * @param buf_size number of bytes in @a buf
- * @param buf entropy buffer
- */
-MHD_EXTERN_ void
-MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
-                               size_t buf_size,
-                               const void *buf)
-MHD_FN_PAR_NONNULL_ (1,3);
-
-
-// TODO: recheck
-/**
- * Length of the internal array holding the map of the nonce and
- * the nonce counter.
- *
- * @param daemon daemon to configure
- * @param nc_length desired array length
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_digest_auth_nc_length (struct MHD_Daemon *daemon,
-                                  size_t nc_length)
-MHD_FN_PAR_NONNULL_ (1);
 
 
 /* ********************** (f) Introspection ********************** */
@@ -7825,7 +7828,7 @@ MHD_request_get_information_sz (struct MHD_Request *request,
                                 enum MHD_RequestInformationType info_type,
                                 union MHD_RequestInformation *return_value,
                                 size_t return_value_size)
-MHD_FN_PAR_NONNULL_ (1,3);
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (3);
 
 
 /**
