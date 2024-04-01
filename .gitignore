@@ -16,7 +16,6 @@ Makefile
 /build-aux/*
 /exclude
 /autom4te.cache
-/scripts
 /keys
 /doc.tmp
 /.project

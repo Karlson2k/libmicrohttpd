@@ -1,0 +1,37 @@
+# *-* mode: rec -*-
+#
+# MHD option registry
+#
+%rec: MHD_Option
+%key: Name
+%singular: Value
+%mandatory: Value
+%mandatory: Comment
+%mandatory: Argument
+%mandatory: Description
+%constraint: ( Value > 0 )
+
+Name: suppress_date
+Value: 1
+Argument1: bool suppressed
+Description1: .
+Comment: Suppresses the date header.
++  * This option should only be set when the system lacks an RTC.
++  *
++  * @param bool true to not generate the Data header
+
+Value: 2
+Name: cert_callback
+Comment: Set TLS callback
+Argument1: Callback cb
+Description1: [in] callback
+Member1: opt.cb
+Argument2: void* cls
+Description2: [out] closure
+Member2: opt.cls
+
+
+Name: bind_address
+Value: 3
+Comment: Set IPv4 address to bind to
+Argument1: const struct sockaddr* in

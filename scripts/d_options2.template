@@ -1,0 +1,11 @@
+/**
+ * {{Comments}}
+ */
+inline static enum MHD_Option
+MHD_daemon_set_{{Name}} ({{Arguments}}) {
+  struct MHD_Option opt;
+
+  {{CBody}}
+  return opt;
+}
+
