@@ -1,11 +1,11 @@
 /**
- * {{Comments}}
+{{Comment}}
  */
 inline static enum MHD_Option
-MHD_daemon_set_{{Name}} ({{Arguments}}) {
+MHD_daemon_set_{{Name}} ({{SFArguments}}) {
   struct MHD_Option opt;
 
-  {{CBody}}
+  {{SFBody}}
   return opt;
 }
 

@@ -27,6 +27,8 @@ fi
 
 # parameters
 max_width=79
+input_rec="d_options.rec"
+tmp_rec="d_options_preproc.rec"
   
 # cut string to given length at word boundary if possible
 cut_str_word () {
@@ -50,14 +52,13 @@ cut_str_word () {
 format_param_descr() {
     local prefix1="$1" # first line prefix
     local desc="$2"
-    local prefix2="$3" # prefix on all other lines
     local width="$4"
+    local prefix2="$3" # prefix on all other lines
     local tmp_str
     declare -g format_param_descr_res=''
-    [[ -z $3 ]] && prefix2=' *'
-    [[ -z $width ]] && width=79
-    prefix1="${prefix1#${prefix1%%[! ]*}}"
-    prefix1="${prefix1%${prefix1##*[! ]}} " # trim prefix1
+    [[ -z $width ]] && width=$max_width
+    prefix1="${prefix1%${prefix1##*[! ]}} " # force single trailing space
+    [[ -z $prefix2 ]] && prefix2="$prefix1"
     desc="${desc#${desc%%[! ]*}}"
     desc="${desc%${desc##*[! ]}}" # trim desc
     local width_r=$(( width - ${#prefix1} ))
@@ -76,39 +77,71 @@ ${prefix2}${tmp_str:${#prefix2}}"
     return 0
 }
 
+cat << _EOF_ > "$tmp_rec"
+%rec: MHD_Option_preproc
+%mandatory: Value
+%mandatory: Name
+%type: Value int
 
-cp d_options.rec tmp.rec || exit 2
+_EOF_
 
-for N in $(recsel -t MHD_Option -R Value d_options.rec)
+echo "Processing input file..."
+for N in $(recsel -t MHD_Option -R Value "$input_rec")
 do
-    NAME=$(recsel -t MHD_Option -P Name -e "Value=$N" d_options.rec)
-    COMMENT=$(recsel -t MHD_Option -P Comment -e "Value=$N" d_options.rec)
+    NAME=$(recsel -t MHD_Option -P Name -e "Value=$N" "$input_rec")
+    COMMENT=$(recsel -t MHD_Option -P Comment -e "Value=$N" "$input_rec")
     ARGS=( )
     DESCRS=( )
     MEMBRS=( )
-    [[ -n $NAME ]] || exit 2
+    if [[ -z $NAME ]]; then
+      echo "The name field is empty for 'Value=$N'" >&2
+      exit 2
+    fi
+    EComment=""
+    EName=""
+    FComment=""
+    MArguments=""
+    CLBody=""
+    SFArguments=""
+    SFBody=""
     M=1
     while
-        ARGM=$(recsel -t MHD_Option -P Argument${M} -e "Value=$N" d_options.rec)
+        ARGM=$(recsel -t MHD_Option -P Argument${M} -e "Value=$N" "$input_rec")
         [[ -n $ARGM ]]
     do
         ARGS+=( "$ARGM" )
-        DESCRM=$(recsel -t MHD_Option -P Description${M} -e "Value=$N" d_options.rec)
+        DESCRM=$(recsel -t MHD_Option -P Description${M} -e "Value=$N" "$input_rec")
         if [[ -z $DESCRM ]]; then
             echo "Empty Description${M} for argument \"$ARGM\" for $NAME" >&2
             exit 2
         fi
         DESCRS+=( "$DESCRM" )
-        MEMBRM=$(recsel -t MHD_Option -P Member${M} -e "Value=$N" d_options.rec)
+        MEMBRM=$(recsel -t MHD_Option -P Member${M} -e "Value=$N" "$input_rec")
         [[ -z $MEMBRM ]] && MEMBRM="$ARGM"
         MEMBRS+=( "$MEMBRM" )
+        arg_name="${ARGM##* }"
+        arg_name="${arg_name#\*}"
+        arg_type="${ARGM%${arg_name}}"
+        arg_type="${arg_type% }"
         (( M++ ))
     done
-    CBODY=""
-    MBODY=""
-    SBODY=""
     echo $N - $NAME
+    recins -t MHD_Option_preproc \
+        -f Value -v "$N" \
+        -f Name -v "$NAME" \
+        -f EComment -v "$EComment" \
+        -f EName -v "$EName" \
+        -f MArguments -v "$MArguments" \
+        -f CLBody -v "$CLBody" \
+        -f SFArguments -v "$SFArguments" \
+        -f SFBody -v "$SFBody" \
+        "$tmp_rec"
 done
+echo "finished."
 
-# recfmt -f d_option1.template tmp.rec
-# recfmt -f d_option2.template tmp.rec
+echo "Generating output files..."
+# recfmt -f d_option0.template "$tmp_rec"
+# recfmt -f d_option1.template "$tmp_rec"
+# recfmt -f d_option2.template "$tmp_rec"
+# rm "$tmp_rec"
+echo "finished."

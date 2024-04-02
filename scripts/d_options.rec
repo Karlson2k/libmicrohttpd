@@ -7,31 +7,29 @@
 %singular: Value
 %mandatory: Value
 %mandatory: Comment
-%mandatory: Argument
-%mandatory: Description
+%mandatory: Argument1
+%mandatory: Description1
 %constraint: ( Value > 0 )
 
 Name: suppress_date
 Value: 1
 Argument1: bool suppressed
-Description1: .
+Description1: some short description
 Comment: Suppresses the date header.
-+  * This option should only be set when the system lacks an RTC.
-+  *
-+  * @param bool true to not generate the Data header
 
-Value: 2
 Name: cert_callback
+Value: 2
 Comment: Set TLS callback
 Argument1: Callback cb
-Description1: [in] callback
+Description1: callback
 Member1: opt.cb
 Argument2: void* cls
-Description2: [out] closure
+Description2: closure
 Member2: opt.cls
-
 
 Name: bind_address
 Value: 3
 Comment: Set IPv4 address to bind to
-Argument1: const struct sockaddr* in
+Argument1: const struct sockaddr *in
+Description1: the address
+
