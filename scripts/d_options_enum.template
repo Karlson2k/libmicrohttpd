@@ -2,4 +2,5 @@
 {{EComment}}
    */
   MHD_D_O_{{EName}} = {{Value}}
-{{EComma}}
+  ,
+

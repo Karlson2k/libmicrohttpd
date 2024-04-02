@@ -11,25 +11,42 @@
 %mandatory: Description1
 %constraint: ( Value > 0 )
 
-Name: suppress_date
+Name: SUPPRESS_DATE_HEADER
 Value: 1
-Argument1: bool suppressed
-Description1: some short description
-Comment: Suppresses the date header.
+Argument1: enum MHD_Bool bool_val
+Description1: the value of the parameter
+Comment: Suppresses use of "Date:" header.
++ According to RFC should be used only if the system has no RTC.
 
-Name: cert_callback
+Name: DISALLOW_SUSPEND_resume
 Value: 2
-Comment: Set TLS callback
-Argument1: Callback cb
-Description1: callback
-Member1: opt.cb
-Argument2: void* cls
-Description2: closure
-Member2: opt.cls
+Type: enum MHD_Bool
+Argument1: enum MHD_Bool bool_val
+Description1: the value of the parameter
+Comment: Disable #MHD_action_suspend() functionality.
++
++ You should only use this function if you are sure you do
++ satisfy all of its requirements and need a generally minor
++ boost in performance.
 
-Name: bind_address
+Name: TURBO
 Value: 3
-Comment: Set IPv4 address to bind to
-Argument1: const struct sockaddr *in
-Description1: the address
+Type: enum MHD_Bool
+Argument1: bool_val
+Description1: the value of the parameter
+Comment: Enable `turbo`.  Disables certain calls to `shutdown()`,
++ enables aggressive non-blocking optimistic reads and
++ other potentially unsafe optimisations.
++ Most effects only happen with internal threads with epoll.
++ The 'turbo' mode is not enabled (mode is disabled) by default.
 
+Name: sock addr
+Value: 4
+Comment: Bind to the given socket address.
++ Ineffective in conjunction with #MHD_daemon_listen_socket().
+Argument1: size_t sa_len_val
+Description1: the number of bytes in @a sa
+Member1: sa_len
+Argument2: const struct sockaddr *sa_val
+Description2: the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or even a UNIX domain socket (AF_UNIX)
+Member2: sa

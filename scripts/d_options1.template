@@ -1,5 +1,0 @@
-/**
-{{Comment}}
- */
-#define MHD_daemon_set_{{Name}}({{MArguments}}) \
- (struct MHD_Option){ {{CLBody}} }
