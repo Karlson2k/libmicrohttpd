@@ -21,8 +21,6 @@ Comment: Suppresses use of "Date:" header.
 Name: DISALLOW_SUSPEND_resume
 Value: 2
 Type: enum MHD_Bool
-Argument1: enum MHD_Bool bool_val
-Description1: the value of the parameter
 Comment: Disable #MHD_action_suspend() functionality.
 +
 + You should only use this function if you are sure you do
@@ -44,6 +42,7 @@ Name: sock addr
 Value: 4
 Comment: Bind to the given socket address.
 + Ineffective in conjunction with #MHD_daemon_listen_socket().
+Type: struct MHD_DaemonOptionValueSA
 Argument1: size_t sa_len_val
 Description1: the number of bytes in @a sa
 Member1: sa_len

@@ -1,13 +1,13 @@
 /**
 {{SComment}}
- * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
  */
 #define MHD_DAEMON_OPTION_{{SName}}({{MArguments}}) \
-  MHD_NOWARN_COMPOUND_LITERALS_                     \
-  (const struct MHD_DaemonOptionAndValue)           \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
+  (const struct MHD_DaemonOptionAndValue) \
   { \
     .opt = (MHD_D_O_{{EName}}), \
     {{CLBody}} \
   } \
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
-
