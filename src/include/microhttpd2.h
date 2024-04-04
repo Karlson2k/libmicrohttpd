@@ -2637,30 +2637,7 @@ typedef void
                        const char *fm,
                        va_list ap);
 
-/**
- * Set logging method.  Specify NULL to disable logging entirely.  By
- * default (if this option is not given), MHD writes log messages to
- * stderr.
- *
- * In case of special builds for embedded projects:
- * Logging will not work if MHD was compiled with "--disable-logging".
- * (The function will still be exported, but the @a logger will never
- * be invoked.)
- *
- * @param[in,out] daemon which instance to setup logging for
- * @param logger function to invoke,
- *               NULL to disable logging,
- * @param logger_cls closure for @a logger
- * @return #MHD_SC_OK on success,
- *         #MHD_SC_FEATURE_DISABLED if logging is disabled for this MHD build
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_logger (struct MHD_Daemon *daemon,
-                       MHD_LoggingCallback logger,
-                       void *logger_cls)
-MHD_FN_PAR_NONNULL_ (1);
-
-
+// FIXME: convert
 /**
  * Convenience macro used to disable logging.
  *
@@ -2670,19 +2647,6 @@ MHD_FN_PAR_NONNULL_ (1);
   MHD_daemon_set_logger ((daemon), \
                          MHD_STATIC_CAST_(MHD_LoggingCallback,NULL),   \
                          NULL)
-
-
-struct MHD_DaemonOptionValueSA
-{
-  /**
-   * The size of the socket address pointed by @a sa.
-   */
-  size_t sa_len;
-  /**
-   * The pointer to the socket address.
-   */
-  const struct sockaddr *sa;
-};
 
 /**
  * Parameter for listen socket binding type
@@ -2801,7 +2765,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
 /**
  * Possible levels of enforcement for TCP_FASTOPEN.
  */
-enum MHD_FIXED_ENUM_APP_SET_ MHD_FastOpenOption
+enum MHD_FIXED_ENUM_APP_SET_ MHD_TCPFastOpenType
 {
   /**
    * Disable use of TCP_FASTOPEN.
@@ -2823,30 +2787,6 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_FastOpenOption
   MHD_FOM_REQUIRE = 1
 };
 
-
-/**
- * Configure TCP_FASTOPEN option, including setting a
- * custom @a queue_length.
- *
- * Note that having a larger queue size can cause resource exhaustion
- * attack as the TCP stack has to now allocate resources for the SYN
- * packet along with its DATA.
- *
- * @param daemon which instance to configure TCP_FASTOPEN for
- * @param fom under which conditions should we use TCP_FASTOPEN?
- * @param queue_length queue length to use, default is 50 if this
- *        option is never given.
- * @return #MHD_SC_OK on on success,
- *         #MHD_SC_TOO_LATE if this option was set after the daemon was started and it cannot be set anymore
- *         #MHD_SC_FEATURE_DISABLED,
- *         #MHD_SC_FEATURE_NOT_AVAILABLE,
- *         #MHD_SC_OPTIONS_CONFLICT
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_option_tcp_fastopen (struct MHD_Daemon *daemon,
-                                    enum MHD_FastOpenOption option,
-                                    unsigned int queue_length)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_;
 
 
 /**
@@ -2881,31 +2821,6 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_AddressFamily
    */
   MHD_AF_DUAL = 4
 };
-
-
-/**
- * Bind to the given TCP port and address family.
- *
- * Ineffective in conjunction with #MHD_daemon_listen_socket().
- * Ineffective in conjunction with #MHD_daemon_bind_sa().
- *
- * If neither this option nor the other two mentioned above
- * is specified, MHD will simply not listen on any socket!
- *
- * @param[in,out] daemon which instance to configure the TCP port for
- * @param af address family to use
- * @param port port to use, 0 to bind to a random (free) port
- * @return #MHD_SC_OK on on success,
- *         #MHD_SC_TOO_LATE if this option was set after the daemon was started and it cannot be set anymore
- *         #MHD_SC_FEATURE_DISABLED,
- *         #MHD_SC_FEATURE_NOT_AVAILABLE,
- *         #MHD_SC_OPTIONS_CONFLICT
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_bind_port (struct MHD_Daemon *daemon,
-                      enum MHD_AddressFamily af,
-                      uint_fast16_t port)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_;
 
 
 /**
@@ -3068,7 +2983,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_EventLoopSyscall
   MHD_ELS_POLL = 2
   ,
   /**
-   * Use epoll().
+   * Use epoll.
    */
   MHD_ELS_EPOLL = 3
 };

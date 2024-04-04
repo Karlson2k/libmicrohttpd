@@ -13,3 +13,4 @@ MHD_DAEMON_OPTION_{{SName}} ({{SFArguments}})
 
   return opt_val;
 }
+

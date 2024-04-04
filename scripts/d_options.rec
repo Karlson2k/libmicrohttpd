@@ -3,16 +3,149 @@
 # MHD option registry
 #
 %rec: MHD_Option
+# recutils supports only signed 32 bit values
+%typedef: enum_value range 1 0x7FFFFFFF
 %key: Name
 %singular: Value
+%type: Value enum_value
+%auto: Value
 %mandatory: Value
 %mandatory: Comment
-%mandatory: Argument1
-%mandatory: Description1
-%constraint: ( Value > 0 )
+%allowed: Type Argument1 Description1 Member1 Argument2 Description2 Member2 Argument3 Description3 Member3
+%type: Name,Type,Argument1,Member1,Argument2,Member2,Argument3,Member3 line
+%unique: Type Value Argument1 Description1 Member1 Argument2 Description2 Member2 Argument3 Description3 Member3
+
+#Name: 
+#Value: 
+#Type: enum MHD_Bool
+#Comment:
+#Argument1:
+#Description1:
+#Argument2:
+#Description2:
+
+Name: logger
+Value: 100
+Type: struct MHD_DaemonOptionValueLogger
+Comment: Set logging method.  Specify NULL to disable logging entirely.  By
++ default (if this option is not given), MHD writes log messages to stderr.
++
++ In case of special builds for embedded projects:
++ Logging will not work if MHD was compiled with "--disable-logging".
++ (The function will still be exported, but the @a logger will never
++ be invoked.)
+Argument1: MHD_LoggingCallback cb
+Description1: the logger function to invoke, NULL to disable logging
+Argument2: void *logger_cls
+Description2: the closure for logger @a cb callback
+
+
+Name: bind_socket_address
+Value: 201
+Type: struct MHD_DaemonOptionValueSA
+Comment: Bind to the given socket address.
++ Ineffective in conjunction with #MHD_daemon_listen_socket().
+Argument1: size_t sa_len
+Description1: the size of the socket address pointed by @a sa.
+Argument2: const struct sockaddr *sa
+Description2: the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or even a UNIX domain socket (AF_UNIX)
+
+
+Name: option_tcp_fastopen
+Value: 200
+Type: struct MHD_DaemonOptionValueTFO
+Comment: Configure TCP_FASTOPEN option, including setting a
++ custom @a queue_length.
++
++ Note that having a larger queue size can cause resource exhaustion
++ attack as the TCP stack has to now allocate resources for the SYN
++ packet along with its DATA.
+Argument1: enum MHD_TCPFastOpenType option
+Description1: the type use of of TCP FastOpen
+Argument2: unsigned int queue_length
+Description2: the length of the queue, zero to use system or MHD default
+
+Name: bind_port
+Value: 202
+Type: struct MHD_DaemonOptionValueBind
+Comment: Bind to the given TCP port and address family.
++
++ Ineffective in conjunction with #MHD_daemon_listen_socket().
++ Ineffective in conjunction with #MHD_daemon_bind_sa().
++
++ If neither this option nor the other two mentioned above
++ is specified, MHD will simply not listen on any socket!
+Argument1: enum MHD_AddressFamily af
+Description1: the address family to use
+Argument2: uint_fast16_t port
+Description2: port to use, 0 to let system assign any free port
+
+Name: LISTEN_BACKLOG
+Value: 203
+Type: unsigned int
+Comment: Use the given backlog for the listen() call.
++ Ineffective in conjunction with #MHD_daemon_listen_socket()
+
+Name: GLOBAL_CONNECTION_LIMIT
+Value: 204
+Type: unsigned int
+Comment: Limit on the number of (concurrent) network connections
++ made to the server from the same IP address.
++ Can be used to prevent one IP from taking over all of
++ the allowed connections. If the same IP tries to establish
++ more than the specified number of connections, they will
++ be immediately rejected.
+Argument1: conn_lim
+
+Name: DEFAULT_TIMEOUT
+Value: 205
+Type: unsigned int
+Comment: After how many seconds of inactivity should a
++ connection automatically be timed out?
++ Use zero for no timeout, which is also the (unsafe!) default.
+Argument1: def_timeout
+
+Name: listen_socket
+Value: 206
+Comment: Accept connections from the given socket.  Socket
++ must be a TCP or UNIX domain (SOCK_STREAM) socket.
+Argument1: MHD_socket listen_fd
+Description1: the listen socket to use, ignored if set to #MHD_INVALID_SOCKET
+
+Name: event_loop
+Value: 207
+Comment: Select a particular event loop internal system call.
+Argument1: enum MHD_EventLoopSyscal els
+
+Name: protocol_strict_level
+Value: 210
+Type: struct MHD_DaemonOptionValueStrctLvl
+Comment: Set how strictly MHD will enforce the HTTP protocol.
+Argument1: enum MHD_ProtocolStrictLevel sl
+Description1: the level of strictness
+Argument2: enum MHD_UseStictLevel how
+Description2: the way how to set the requested level
+
+Name: tls_psk_callback
+Value: 211
+Type: struct MHD_DaemonOptionValueTlsPskCB
+Comment: Configure PSK to use for the TLS key exchange.
+Argument1: MHD_PskServerCredentialsCallback psk_cb
+Description1: the function to call to obtain pre-shared key
+Argument2: void *psk_cb_cls
+Description2: the closure for @a psk_cb
+
+#Name: 
+#Value: 
+#Type: enum MHD_Bool
+#Comment: 
+#Argument1: 
+#Description1: 
+#Argument2: 
+#Description2: 
 
 Name: SUPPRESS_DATE_HEADER
-Value: 1
+Value: 101
 Argument1: enum MHD_Bool bool_val
 Description1: the value of the parameter
 Comment: Suppresses use of "Date:" header.
@@ -37,15 +170,3 @@ Comment: Enable `turbo`.  Disables certain calls to `shutdown()`,
 + other potentially unsafe optimisations.
 + Most effects only happen with internal threads with epoll.
 + The 'turbo' mode is not enabled (mode is disabled) by default.
-
-Name: sock addr
-Value: 4
-Comment: Bind to the given socket address.
-+ Ineffective in conjunction with #MHD_daemon_listen_socket().
-Type: struct MHD_DaemonOptionValueSA
-Argument1: size_t sa_len_val
-Description1: the number of bytes in @a sa
-Member1: sa_len
-Argument2: const struct sockaddr *sa_val
-Description2: the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or even a UNIX domain socket (AF_UNIX)
-Member2: sa

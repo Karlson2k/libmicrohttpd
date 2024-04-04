@@ -79,7 +79,8 @@ unset test_var
 # parameters
 max_width=79
 input_rec="d_options.rec"
-tmp_rec="d_options_preproc.rec"
+tmp_rec_name="D_Options_preproc"
+tmp_rec_file="d_options_preproc.rec"
 
 # fixed strings
 flat_arg_descr='the value of the parameter'
@@ -173,31 +174,39 @@ def_name_for_type() {
     esac
 }
 
+capitalise_first() {
+    local first_char="${1:0:1}"
+    printf '%s' "${first_char^^}${1:1}"
+}
 
-cat << _EOF_ > "$tmp_rec"
-%rec: MHD_Option_preproc
+recfix --check "$input_rec" || exit 3
+
+cat << _EOF_ > "$tmp_rec_file"
+%rec: ${tmp_rec_name}
+%key: EName
 %mandatory: Value
 %mandatory: Name
 %type: Value int
 %sort: Value
+%singular: EName UName Value
 
 _EOF_
 
 echo "Processing input file..."
 for N in $(recsel -t MHD_Option -R Value "$input_rec")
 do
-    NAME=$(recsel -t MHD_Option -P Name -e "Value=$N" "$input_rec")
+    NAME=$(recsel -t MHD_Option -P Name -e "Value = $N" "$input_rec")
     if [[ -z $NAME ]]; then
       echo "The 'Name' field is empty for 'Value=$N'" >&2
       exit 2
     fi
     echo "$N: ${NAME^^}"
-    COMMENT=$(recsel -t MHD_Option -P Comment -e "Value=$N" "$input_rec")
+    COMMENT=$(recsel -t MHD_Option -P Comment -e "Value = $N" "$input_rec")
     if [[ -z $COMMENT ]]; then
       echo "The 'Comment' field is empty for '$NAME' ('Value=$N')" >&2
       exit 2
     fi
-    TYPE=$(recsel -t MHD_Option -P Type -e "Value=$N" "$input_rec")
+    TYPE=$(recsel -t MHD_Option -P Type -e "Value = $N" "$input_rec")
     EComment="" # The initial part of doxy comment for the enum value
     EName=""    # The final part of the name of the enum value
     UName=""    # The final part of the name of the union member
@@ -208,6 +217,7 @@ do
     CLBody=""   # The Compound Literal body (for the set macro)
     SFArguments=""  # The arguments for the static function
     SFBody=""   # The static function body
+    StBody=''   # The data struct body (if any)
     
     nested='maybe'  # The option has nested struct parameters ('yes'/'no'/'maybe')
 
@@ -233,12 +243,12 @@ do
     MEMBERS=( )
     M=1
     while
-        ARGM=$(recsel -t MHD_Option -P Argument${M} -e "Value=$N" "$input_rec")
+        ARGM=$(recsel -t MHD_Option -P Argument${M} -e "Value = $N" "$input_rec")
         [[ -n $ARGM ]]
     do
         ARGS[$M]="$ARGM"
-        DESCRS[$M]="$(recsel -t MHD_Option -P Description${M} -e "Value=$N" "$input_rec")"
-        MEMBERS[$M]="$(recsel -t MHD_Option -P Member${M} -e "Value=$N" "$input_rec")"
+        DESCRS[$M]="$(recsel -t MHD_Option -P Description${M} -e "Value = $N" "$input_rec")"
+        MEMBERS[$M]="$(recsel -t MHD_Option -P Member${M} -e "Value = $N" "$input_rec")"
         (( M++ ))
     done
     
@@ -265,6 +275,9 @@ do
         arg_type='' # The type of the data of the current argument
         arg_descr='' # The description of the current argument
         nest_member='' # The name of the member of the nested structure
+        [[ "${ARGS[$M]}" =~ (^' '|' '$) ]] && err_exit "'Argument${M}' value '${ARGS[$M]}' for '$NAME' ('Value=$N') is not trimmed"
+        [[ "${DESCRS[$M]}" =~ (^' '|' '$) ]] && err_exit "'Description${M}' value '${DESCRS[$M]}' for '$NAME' ('Value=$N') is not trimmed"
+        [[ "${MEMBERS[$M]}" =~ (^' '|' '$) ]] && err_exit "'Member${M}' value '${MEMBERS[$M]}' for '$NAME' ('Value=$N') is not trimmed"
         # Pre-process parameters data
         if [[ -n ${ARGS[$M]} ]]; then
             arg_name="${ARGS[$M]##* }"
@@ -290,9 +303,12 @@ do
             [[ $TYPE = $arg_type ]] && \
                 err_exit "The same 'Type' and type for in 'Argument${M}' ('$arg_type') used for non-flat (nested) '$NAME' ('Value=$N')"
             [[ -z $arg_descr ]] && \
-                err_exit "Empty or no 'Description${M}' for argument '${ARGS[$M]}' for '$NAME' ('Value=$N')"
-            [[ -z $nest_membr ]] && \
-                err_exit "Empty or no 'Member${M}' for argument '${ARGS[$M]}' for nested (non-flat) '$NAME' ('Value=$N')"
+                err_exit "Empty or no 'Description${M}' for argument '${ARGS[$M]}' for non-flat (nested) '$NAME' ('Value=$N')"
+            if [[ "$arg_name" = "$nest_membr" ]]; then
+                echo "The name for 'Argument${M}' ('${ARGS[$M]}') is the same as the 'Member${M}' ('$nest_membr') for non-flat (nested) '$NAME' ('Value=$N')" >&2
+                nest_membr="v_${nest_membr}"
+                echo "Auto-correcting the struct member name to '$nest_membr' to avoid wrong macro expansion" >&2
+            fi
         else
             # flat, non-nested
             if [[ -z $arg_type ]]; then
@@ -314,6 +330,11 @@ do
         fi
         
         [[ "$arg_type" =~ \*$ ]] || arg_type+=' ' # Position '*' correctly
+        [[ "$arg_name" = "v_${UName}" ]] && err_exit "The name ('$arg_name') of the argument 'Argument${M}' ('${ARGS[$M]}') for '$NAME' ('Value=$N') conflicts with the union member name ('v_${UName}'). Macro would not work."
+        [[ "$arg_name" = "opt" ]] && err_exit "The name ('$arg_name') of the argument 'Argument${M}' ('${ARGS[$M]}') for '$NAME' ('Value=$N') conflicts with the option struct member name ('opt'). Macro would not work."
+        [[ "$arg_name" = "val" ]] && err_exit "The name ('$arg_name') of the argument 'Argument${M}' ('${ARGS[$M]}') for '$NAME' ('Value=$N') conflicts with the option struct member name ('val'). Macro would not work."
+        [[ "${arg_name,,}" = "${arg_name}" ]] || err_exit "The name ('$arg_name') of the argument 'Argument${M}' ('${ARGS[$M]}') for '$NAME' ('Value=$N') has capital letter(s)"
+        [[ $nested = 'yes' ]] && [[ -z $nest_membr ]] && nest_membr="v_${arg_name}"
         
         [[ $M -gt 1 ]] && [[ $nested = 'no' ]] && err_exit
         
@@ -339,14 +360,27 @@ do
         CLBody+=" = ($arg_name)"
 
         [[ $M -gt 1 ]] && SFBody+=$'\n'"  "
-        SFBody+="opt.val.v_${UName}"
+        SFBody+="opt_val.val.v_${UName}"
         [[ $nested = 'yes' ]] && SFBody+=".${nest_membr}"
         SFBody+=" = ${arg_name};"
         
+        if [[ $nested = 'yes' ]] && [[ "$TYPE" =~ ^'struct ' ]]; then
+            StBody+=$'\n'
+            StBody+="  /**"$'\n'
+            format_doxy '   * ' "$(capitalise_first "$arg_descr")" || err_exit
+            StBody+="$format_doxy_res"$'\n'"   */"$'\n'
+            StBody+="    ${arg_type}$nest_membr;"
+        fi
     done
-    UType="$TYPE"
     
-    recins -t MHD_Option_preproc \
+    UType="$TYPE"
+    if [[ $nested = 'yes' ]] && [[ "$TYPE" =~ ^'struct ' ]]; then
+        need_struct_decl='yes'
+    else
+        need_struct_decl='no'
+    fi
+    
+    recins -t "${tmp_rec_name}" \
         -f Name -v "$NAME" \
         -f Value -v "$N" \
         -f EComment -v "$EComment" \
@@ -359,14 +393,21 @@ do
         -f CLBody -v "$CLBody" \
         -f SFArguments -v "$SFArguments" \
         -f SFBody -v "$SFBody" \
-        "$tmp_rec"
+        -f StBody -v "$StBody" \
+        --verbose "$tmp_rec_file" || err_exit
 done
 echo "finished."
 
 echo "Generating output files..."
-recfmt -f d_options_enum.template <"$tmp_rec" > enum_insert.h
-recfmt -f d_options_union.template <"$tmp_rec" > union_insert.h
-recfmt -f d_options_macro.template <"$tmp_rec" | ${SED-sed} -e 's/##removeme##//g' - > macro_insert.h
-recfmt -f d_options_func.template <"$tmp_rec" > func_insert.h
-# rm "$tmp_rec"
+echo "enum..."
+recfmt -f d_options_enum.template < "$tmp_rec_file" > enum_insert.h
+echo "structs..."
+recsel -e "StBody != ''" "$tmp_rec_file" | recfmt -f d_options_struct.template > struct_insert.h
+echo "union..."
+recfmt -f d_options_union.template < "$tmp_rec_file" > union_insert.h
+echo "macros..."
+recfmt -f d_options_macro.template < "$tmp_rec_file" | ${SED-sed} -e 's/##removeme##//g' - > macro_insert.h
+echo "functions..."
+recfmt -f d_options_func.template < "$tmp_rec_file" > func_insert.h
+# rm "$tmp_rec_file"
 echo "finished."

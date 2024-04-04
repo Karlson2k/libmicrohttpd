@@ -1,0 +1,7 @@
+/**
+ * Data for #MHD_D_O_{{EName}}
+ */
+{{UType}} v_{{UName}}
+{{{StBody}}
+};
+
