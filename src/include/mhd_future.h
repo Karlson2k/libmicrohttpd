@@ -339,3 +339,8 @@ MHD_request_lookup_value_by_static_header (struct MHD_Request *request,
                                            enum MHD_PredefinedHeader skt,
                                            struct MHD_StringNullable *value)
 MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (4); // TODO: convert like previous
+
+
+/* FUTURE:
+   (with eventually option "number of masters")
+   MHD_TM_WORKER_THREADS_WITH_MASTER_LISTENER = 3 */

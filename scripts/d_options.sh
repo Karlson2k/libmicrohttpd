@@ -170,7 +170,7 @@ def_name_for_type() {
         'uint_fast32_t') echo -n "uint32_val";;
         'uint_fast16_t') echo -n "uint16_val";;
         'size_t') echo -n "sizet_val";;
-        *) printf '%s' "${1// /_}_val"
+        *) local tp="${1,,}" && printf '%s' "${tp// /_}_val";;
     esac
 }
 

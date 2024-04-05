@@ -6,3 +6,4 @@ makefile.am	eol=lf
 *.key	eol=lf
 *.crt	eol=lf
 *.pem	eol=lf
+*.rec	eol=lf
