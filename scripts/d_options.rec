@@ -15,14 +15,87 @@
 %type: Name,Type,Argument1,Member1,Argument2,Member2,Argument3,Member3 line
 %unique: Type Value Argument1 Description1 Member1 Argument2 Description2 Member2 Argument3 Description3 Member3
 
-#Name: 
-#Value: 
-#Type: enum MHD_Bool
-#Comment:
-#Argument1:
-#Description1:
-#Argument2:
-#Description2:
+Name: SUPPRESS_DATE_HEADER
+Value: 41
+Type: enum MHD_Bool
+Comment: Suppresses use of "Date:" header.
++ According to RFC should be used only if the system has no RTC.
++ The "Date:" is not suppressed (the header is enabled) by default.
+
+Name: TURBO
+Value: 42
+Type: enum MHD_Bool
+Comment: Enable `turbo`.  
++ Disables certain calls to `shutdown()`, enables aggressive non-blocking optimistic reads and other potentially unsafe optimisations.
++ Most effects only happen with internal threads with epoll.
++ The 'turbo' mode is not enabled (mode is disabled) by default.
+
+Name: DISABLE_THREAD_SAFETY
+Value: 43
+Type: enum MHD_Bool
+Comment: Disable some internal thread safety.
++ Indicates that MHD daemon will be used by application in single-threaded mode only.  When this flag is set then application must call any MHD function only within a single thread.
++ This flag turns off some internal thread-safety and allows MHD making some of the internal optimisations suitable only for single-threaded environment.
++ Not compatible with any internal threads modes.
++ Thread safety is not disabled (safety is enabled) by default.
+
+Name: DISALLOW_UPGRADE
+Value: 44
+Type: enum MHD_Bool
+Comment: You need to set this option if you want to disable use of HTTP "Upgrade".
++ "Upgrade" may require usage of additional internal resources, which we can avoid providing if they will not be used.
++ You should only use this option if you do not use "Upgrade" functionality and need a generally minor boost in performance and resources saving.
++ The "Upgrade" is not disallowed ("upgrade" is allowed) by default.
+
+Name: DISALLOW_SUSPEND_RESUME
+Value: 45
+Type: enum MHD_Bool
+Comment: Disable #MHD_action_suspend() functionality.
++
++ You should only use this function if you do not use suspend functionality and need a generally minor boost in performance.
++ The suspend is not disallowed (suspend is allowed) by default.
+
+Name: ENABLE_SHOUTCAST
+Value: 46
+Type: enum MHD_Bool
+Comment: Use SHOUTcast.  This will cause *all* responses to begin with the SHOUTcast "ICY" line instead of "HTTP".
+
+Name: DISABLE_URI_QUERY_PLUS_AS_SPACE
+Value: 47
+Type: enum MHD_Bool
+Comment: Disable converting plus ('+') character to space in GET parameters (URI part after '?').
++ Plus conversion is not required by HTTP RFCs, however it required by HTML specifications,
++ see https://url.spec.whatwg.org/#application/x-www-form-urlencoded for details.
++ By default plus is converted to space in the query part of URI.
+
+Name: listen addr reuse
+Value: 48
+Comment: Select mode of reusing address:port listen address.
++ Ineffective in conjunction with #MHD_daemon_listen_socket().
+Argument1: enum MHD_DaemonOptionBindType reuse_type
+
+Name: LISTEN_BACKLOG
+Value: 49
+Comment: Use the given backlog for the listen() call.
++ Works only with // FIXME: reference
+Argument1: unsigned int backlog_size
+
+Name: GLOBAL_CONNECTION_LIMIT
+Value: 50
+Comment: Maximum number of (concurrent) network connections served by daemon
+Argument1: unsigned int glob_limit
+
+Name: PER_IP_LIMIT
+Value: 52
+Comment: Limit on the number of (concurrent) network connections made to the server from the same IP address.
++ Can be used to prevent one IP from taking over all of the allowed connections. If the same IP tries to establish more than the specified number of connections, they will be immediately rejected.
+Argument1: unsigned int per_ip_limit
+
+Name: DEFAULT_TIMEOUT
+Value: 53
+Comment: After how many seconds of inactivity should a connection automatically be timed out?
++ Use zero for no timeout, which is also the (unsafe!) default.
+Argument1: unsigned int timeout
 
 Name: logger
 Value: 100
@@ -40,7 +113,7 @@ Argument2: void *logger_cls
 Description2: the closure for logger @a cb callback
 
 
-Name: bind_socket_address
+Name: bind_sa
 Value: 201
 Type: struct MHD_DaemonOptionValueSA
 Comment: Bind to the given socket address.
@@ -80,31 +153,6 @@ Description1: the address family to use
 Argument2: uint_fast16_t port
 Description2: port to use, 0 to let system assign any free port
 
-Name: LISTEN_BACKLOG
-Value: 203
-Type: unsigned int
-Comment: Use the given backlog for the listen() call.
-+ Ineffective in conjunction with #MHD_daemon_listen_socket()
-
-Name: GLOBAL_CONNECTION_LIMIT
-Value: 204
-Type: unsigned int
-Comment: Limit on the number of (concurrent) network connections
-+ made to the server from the same IP address.
-+ Can be used to prevent one IP from taking over all of
-+ the allowed connections. If the same IP tries to establish
-+ more than the specified number of connections, they will
-+ be immediately rejected.
-Argument1: conn_lim
-
-Name: DEFAULT_TIMEOUT
-Value: 205
-Type: unsigned int
-Comment: After how many seconds of inactivity should a
-+ connection automatically be timed out?
-+ Use zero for no timeout, which is also the (unsafe!) default.
-Argument1: def_timeout
-
 Name: listen_socket
 Value: 206
 Comment: Accept connections from the given socket.  Socket
@@ -135,38 +183,86 @@ Description1: the function to call to obtain pre-shared key
 Argument2: void *psk_cb_cls
 Description2: the closure for @a psk_cb
 
-#Name: 
-#Value: 
-#Type: enum MHD_Bool
-#Comment: 
-#Argument1: 
-#Description1: 
-#Argument2: 
-#Description2: 
+Name: daemon_ready_callback
+Value: 212
+Type: struct MHD_DaemonOptionValueReadyCB
+Comment: Set a callback to be called for pre-start finalisation.
++ 
++ The specified callback will be called one time, after network initialisation, TLS pre-initialisationб but before the start of the internal threads (if allowed)ю
+Argument1: MHD_DaemonReadyCallback cb
+Description1: the pre-start callback
+Argument2: void *cb_cls
+Description2: the closure for the callback
 
-Name: SUPPRESS_DATE_HEADER
-Value: 101
-Argument1: enum MHD_Bool bool_val
-Description1: the value of the parameter
-Comment: Suppresses use of "Date:" header.
-+ According to RFC should be used only if the system has no RTC.
+Name: accept_policy
+Value: 213
+Type: struct MHD_DaemonOptionValueAcceptPol
+Comment: Set a policy callback that accepts/rejects connections based on the client's IP address.  This function will be called before a connection object is created.
+Argument1: MHD_AcceptPolicyCallback apc
+Description1: the accept policy callback
+Argument2: void *apc_cls
+Description2: the closure for the callback
 
-Name: DISALLOW_SUSPEND_resume
-Value: 2
-Type: enum MHD_Bool
-Comment: Disable #MHD_action_suspend() functionality.
-+
-+ You should only use this function if you are sure you do
-+ satisfy all of its requirements and need a generally minor
-+ boost in performance.
+Name: early_uri_logger
+Value: 214
+Type: struct MHD_DaemonOptionValueUriCB
+Comment: Set a callback to be called first for every request (before any parsing of the header).  This callback is the only way to get raw (unmodified) request URI as URI is parsed and modified by MHD in-place.
++ Mandatory URI modification may apply before this call, like binary zero replacement, as required by RFCs.
+Argument1: MHD_EarlyUriLogCallback cb
+Description1: the early URI callback
+Argument2: void *cls
+Description2: the closure for the callback
 
-Name: TURBO
-Value: 3
-Type: enum MHD_Bool
-Argument1: bool_val
-Description1: the value of the parameter
-Comment: Enable `turbo`.  Disables certain calls to `shutdown()`,
-+ enables aggressive non-blocking optimistic reads and
-+ other potentially unsafe optimisations.
-+ Most effects only happen with internal threads with epoll.
-+ The 'turbo' mode is not enabled (mode is disabled) by default.
+Name: notify_connection
+Value: 215
+Type: struct MHD_DaemonOptionValueNotifConnCB
+Comment: Set a function that should be called whenever a connection is started or closed.
+Argument1: MHD_NotifyConnectionCallback ncc
+Description1: the callback for notifications
+Argument2: void *cls
+Description2: the closure for the callback
+
+Name: notify_stream
+Value: 216
+Type: struct MHD_DaemonOptionValueNotifStreamCB
+Comment: Register a function that should be called whenever a stream is started or closed.
++ For HTTP/1.1 this callback is called one time for every connection.
+Argument1: MHD_NotifyStreamCallback nsc
+Description1: the callback for notifications
+Argument2: void *cls
+Description2: the closure for the callback
+
+Name: conn memory limit
+Value: 217
+Type: size_t
+Comment: Maximum memory size per connection.
++ Default is 32 kb.
++ Values above 128k are unlikely to result in much performance benefit, as half of the memory will be typically used for IO, and TCP buffersare unlikely to support window sizes above 64k on most systems. 
++ The size should be large enough to fit all request headers (together with internal parsing information).
+
+Name: stack size
+Value: 218
+Type: size_t
+Comment: Desired size of the stack for the threads started by MHD.
++ Use 0 for system default, which is also MHD default.
++ Only useful if mode with the internal threads is selected.
+
+Name: random entropy
+Value: 219
+Type: struct MHD_DaemonOptionValueRand
+Comment: Set strong random data to be used by MHD.
++ Currently the data is only needed for Digest Auth module.
++ The recommended size is between 8 and 32. If size is four or less then security could be lowered.
++ Sizes larger then 32 (or, probably, larger than 16 - debatable) will not increase the security.
+Argument1: size_t buf_size
+Description1: the size of the buffer
+Argument2: const void *buf
+Description2: the buffer with strong random data, the content will be copied by MHD
+
+Name: digest_auth_map_size
+Value: 220
+Comment: Specify the size of the internal hash map array that tracks generated digest nonces usage.
++ If the size of the map is too small then a lot of "stale nonce" results will be produced.
++ By default the size is 8 bytes (very small).
+Argument1: size_t size
+Description1: the size of the map array

@@ -2654,20 +2654,20 @@ typedef void
 enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOptionBindType
 {
   /**
-   * The list socket bind without sharing listen address.
+   * The listen socket bind to the networks address without sharing the address.
    * Default.
    */
   MHD_DAEMON_OPTION_BIND_TYPE_NOT_SHARED = 0
   ,
   /**
-   * The list socket bind with sharing listen address.
+   * The listen socket bind to the networks address with sharing the address.
    * Several sockets can bind to the same address.
    */
   MHD_DAEMON_OPTION_BIND_TYPE_SHARED = 1
   ,
   /**
-   * The list socket bind to the address in explicit exclusive mode.
-   * Ignored on platforms without support for explicit exclusive socket use.
+   * The list socket bind to the networks address in explicit exclusive mode.
+   * Ignored on platforms without support for the explicit exclusive socket use.
    */
   MHD_DAEMON_OPTION_BIND_TYPE_EXCLUSIVE = 2
 };
@@ -3286,48 +3286,6 @@ MHD_daemon_set_tls_psk_callback (struct MHD_Daemon *daemon,
 MHD_FN_PAR_NONNULL_ (1);
 
 
-/**
- * Configure daemon credentials type for GnuTLS.
- *
- * @param gnutls_credentials must be a value of
- *   type `gnutls_credentials_type_t`
- * @return #MHD_SC_OK upon success; TODO: define failure modes
- *
- * FIXME: find a way to do this better that is TLS backend independent!
- * => replace by exposing TLS library low-level details via
- *    introspection, see below
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_gnutls_credentials (struct MHD_Daemon *daemon,
-                               int gnutls_credentials)
-MHD_FN_PAR_NONNULL_ (1);
-
-
-/**
- * Provide TLS key and certificate data via callback.
- *
- * Use a callback to determine which X.509 certificate should be used
- * for a given HTTPS connection.  This option provides an alternative
- * to #MHD_daemon_tls_key_and_cert_from_memory().  You must use this
- * version if multiple domains are to be hosted at the same IP address
- * using TLS's Server Name Indication (SNI) extension.  In this case,
- * the callback is expected to select the correct certificate based on
- * the SNI information provided.  The callback is expected to access
- * the SNI data using `gnutls_server_name_get()`.  Using this option
- * requires GnuTLS 3.0 or higher.
- *
- * @param daemon daemon to configure callback for
- * @param cb must be of type `gnutls_certificate_retrieve_function2 *`.
- * @return #MHD_SC_OK on success
- *
- * FIXME: find a way to do this better that is TLS backend independent!
- * => replace by exposing TLS library low-level details via
- *    introspection, see below
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_gnutls_key_and_cert_from_callback (struct MHD_Daemon *daemon,
-                                              void *cb)
-MHD_FN_PAR_NONNULL_ (1);
 
 // Callback invoked between full initialization of MHD
 // during MHD_daemon_start() and actual event loop
@@ -3460,7 +3418,6 @@ struct MHD_ConnectionNotificationData
    * Initially set to NULL (for connections added by MHD) or set by
    * @a connection_cntx parameter for connections added by
    * #MHD_daemon_add_connection().
-   * Modified pointer is remembered by MHD.
    */
   void *application_context;
   /**
