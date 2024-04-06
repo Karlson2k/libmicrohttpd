@@ -4,11 +4,11 @@
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue 
-MHD_DAEMON_OPTION_{{SName}} ({{SFArguments}})
+{{SName}} ({{SFArguments}})
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
-  opt_val.opt = MHD_D_O_{{EName}};
+  opt_val.opt = {{EName}};
   {{SFBody}}
 
   return opt_val;

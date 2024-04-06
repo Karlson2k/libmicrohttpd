@@ -208,11 +208,11 @@ do
     fi
     TYPE=$(recsel -t MHD_Option -P Type -e "Value = $N" "$input_rec")
     EComment="" # The initial part of doxy comment for the enum value
-    EName=""    # The final part of the name of the enum value
-    UName=""    # The final part of the name of the union member
+    EName=""    # The name of the enum value
+    UName=""    # The name of the union member
     UType=""    # The type of the union member
     SComment="" # The doxy comment for the set macro/function
-    SName=""    # The final part of the name of the set macro/function
+    SName=""    # The name of the set macro/function
     MArguments=""   # The arguments for the macro
     CLBody=""   # The Compound Literal body (for the set macro)
     SFArguments=""  # The arguments for the static function
@@ -225,11 +225,12 @@ do
     clean_name="${clean_name,,}" # Lowercase space-delimited
 
     EName="${clean_name^^}"
-    EName="${EName// /_}" # Uppercase '_'-joined
+    EName="MHD_D_O_${EName// /_}" # Uppercase '_'-joined
     
-    UName="${clean_name// /_}" # lowercase '_'-joined
+    UName="v_${clean_name// /_}" # lowercase '_'-joined
     
-    SName="${EName}" # Uppercase '_'-joined
+    SName="${clean_name^^}"
+    SName="MHD_DAEMON_OPTION_${SName// /_}" # Uppercase '_'-joined
     
     format_doxy '   * ' "$COMMENT" || err_exit
     EComment="$format_doxy_res"
@@ -330,7 +331,7 @@ do
         fi
         
         [[ "$arg_type" =~ \*$ ]] || arg_type+=' ' # Position '*' correctly
-        [[ "$arg_name" = "v_${UName}" ]] && err_exit "The name ('$arg_name') of the argument 'Argument${M}' ('${ARGS[$M]}') for '$NAME' ('Value=$N') conflicts with the union member name ('v_${UName}'). Macro would not work."
+        [[ "$arg_name" = "${UName}" ]] && err_exit "The name ('$arg_name') of the argument 'Argument${M}' ('${ARGS[$M]}') for '$NAME' ('Value=$N') conflicts with the union member name ('${UName}'). Macro would not work."
         [[ "$arg_name" = "opt" ]] && err_exit "The name ('$arg_name') of the argument 'Argument${M}' ('${ARGS[$M]}') for '$NAME' ('Value=$N') conflicts with the option struct member name ('opt'). Macro would not work."
         [[ "$arg_name" = "val" ]] && err_exit "The name ('$arg_name') of the argument 'Argument${M}' ('${ARGS[$M]}') for '$NAME' ('Value=$N') conflicts with the option struct member name ('val'). Macro would not work."
         [[ "${arg_name,,}" = "${arg_name}" ]] || err_exit "The name ('$arg_name') of the argument 'Argument${M}' ('${ARGS[$M]}') for '$NAME' ('Value=$N') has capital letter(s)"
@@ -355,12 +356,12 @@ do
         
         #[[ $M -gt 1 ]] && CLBody+=', \'$'\n'"    "
         [[ $M -gt 1 ]] && CLBody+=', \##removeme##'$'\n'"    " # '##removeme##' is a workaround for requtils bug
-        CLBody+=".val.v_${UName}"
+        CLBody+=".val.${UName}"
         [[ $nested = 'yes' ]] && CLBody+=".${nest_membr}"
         CLBody+=" = ($arg_name)"
 
         [[ $M -gt 1 ]] && SFBody+=$'\n'"  "
-        SFBody+="opt_val.val.v_${UName}"
+        SFBody+="opt_val.val.${UName}"
         [[ $nested = 'yes' ]] && SFBody+=".${nest_membr}"
         SFBody+=" = ${arg_name};"
         

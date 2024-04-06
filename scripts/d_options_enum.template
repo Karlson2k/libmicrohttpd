@@ -1,7 +1,7 @@
   /**
 {{EComment}}
    * The parameter value must be placed to the
-   * @a v_{{UName}} member.
+   * @a {{UName}} member.
    */
-  MHD_D_O_{{EName}} = {{Value}}
+  {{EName}} = {{Value}}
   ,

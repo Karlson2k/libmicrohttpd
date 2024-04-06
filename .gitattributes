@@ -7,3 +7,4 @@ makefile.am	eol=lf
 *.crt	eol=lf
 *.pem	eol=lf
 *.rec	eol=lf
+*.template	eol=lf

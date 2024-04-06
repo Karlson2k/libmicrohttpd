@@ -1,4 +1,4 @@
   /**
-   * Value for #MHD_D_O_{{EName}}
+   * Value for #{{EName}}
    */
-  {{UType}} v_{{UName}};
+  {{UType}} {{UName}};

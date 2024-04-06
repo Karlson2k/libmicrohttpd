@@ -17,10 +17,12 @@
 
 # MHD behaviour
 
-Name: work_mode
+Name: WORK_MODE
 Value: 40
-Comment: Set MHD threading and polling mode
+Comment: Set MHD work (threading and polling) mode.
++ Consider use of #MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC(), #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(), #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(), #MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(), #MHD_DAEMON_OPTION_WORKER_THREADS() or #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION() instead of direct use of this parameter.
 Argument1: struct MHD_WorkModeWithParam wmp
+Description1: the object created by one of the next functions/macros: #MHD_WM_OPTION_EXTERNAL_PERIODIC(), #MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL(), #MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE(), #MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH(), #MHD_WM_OPTION_WORKER_THREADS(), #MHD_WM_OPTION_THREAD_PER_CONNECTION()
 
 Name: poll_syscall
 Value: 41
@@ -92,7 +94,7 @@ Name: sigpipe suppressed
 Value: 103
 Type: enum MHD_Bool
 Comment: Inform that SIGPIPE is suppressed or handled by application.
-+ If suppressed, allows MHD to use network functions that could generate SIGPIPE, like `sendfile()`.
++ If suppressed/handled, MHD uses network functions that could generate SIGPIPE, like `sendfile()`.
 + Silently ignored when MHD creates internal threads as for them SIGPIPE is suppressed automatically.
 
 # TLS settings
@@ -120,7 +122,7 @@ Comment: Controls ALPN for TLS connection.
 + Silently ignored for non-TLS.
 + By default ALPN is automatically used for TLS connections.
 
-# Connection processing
+# Connection handling
 
 Name: DEFAULT_TIMEOUT
 Value: 160
