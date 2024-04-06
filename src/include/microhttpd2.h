@@ -2614,8 +2614,616 @@ MHD_EXTERN_ void
 MHD_daemon_destroy (struct MHD_Daemon *daemon)
 MHD_FN_PAR_NONNULL_ALL_;
 
+/* ******************* External event loop ************************ */
+
+/**
+ * The network status of the socket.
+ * When set by MHD (by #MHD_get_watched_fds(), #MHD_get_watched_fds_update() and
+ * similar) it indicates a request to watch for specific socket state:
+ * readiness for receiving the data, readiness for sending the data and/or
+ * exception state of the socket.
+ * When set by application (and provided for #MHD_process_watched_fds() and
+ * similar) it must indicate the actual status of the socket.
+ *
+ * Any actual state is a bitwise OR combination of #MHD_FD_STATE_RECV,
+ * #MHD_FD_STATE_SEND, #MHD_FD_STATE_EXCEPT.
+ * @ingroup event
+ */
+enum MHD_FIXED_ENUM_ MHD_FdState
+{
+  /**
+   * The socket is not ready for receiving or sending and
+   * does not have any exceptional state.
+   * The state never set by MHD, except de-registration of the sockets
+   * for #MHD_SocketRegistrationUpdateCallback().
+   */
+  MHD_FD_STATE_NONE = 0
+  ,
+  /* ** Three bit-flags ** */
+
+  /**
+   * Indicates that socket should be watched for incoming data
+   * (when set by #MHD_get_watched_fds())
+   * / socket has incoming data ready to read (when used for
+   * #MHD_process_watched_fds())
+   */
+  MHD_FD_STATE_RECV = 1 << 0,
+  /**
+   * Indicates that socket should be watched for availability for sending
+   * (when set by #MHD_get_watched_fds())
+   * / socket has ability to send data (when used for
+   * #MHD_process_watched_fds())
+   */
+  MHD_FD_STATE_SEND = 1 << 1,
+  /**
+   * Indicates that socket should be watched for disconnect, out-of-band
+   * data available or high priority data available (when set by
+   * #MHD_get_watched_fds())
+   * / socket has been disconnected, has out-of-band data available or
+   * has high priority data available (when used for
+   * #MHD_process_watched_fds()). This status must not include "remote
+   * peer shut down writing" status.
+   * Note: #MHD_get_watched_fds() always set it as exceptions must be
+   * always watched.
+   */
+  MHD_FD_STATE_EXCEPT = 1 << 2,
+
+  /* The rest of the list is a bit-wise combination of three main
+   * states. Application may use three main states directly as
+   * a bit-mask instead of using of following values
+   */
+
+  /**
+   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_SEND states.
+   */
+  MHD_FD_STATE_RECV_SEND = MHD_FD_STATE_RECV | MHD_FD_STATE_SEND,
+  /**
+   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
+   */
+  MHD_FD_STATE_RECV_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
+  /**
+   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
+   */
+  MHD_FD_STATE_SEND_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
+  /**
+   * Combination of #MHD_FD_STATE_RECV, #MHD_FD_STATE_SEND and
+   * #MHD_FD_STATE_EXCEPT states.
+   */
+  MHD_FD_STATE_RECV_SEND_EXCEPT = \
+    MHD_FD_STATE_RECV | MHD_FD_STATE_SEND | MHD_FD_STATE_EXCEPT
+};
+
+/**
+ * Checks whether specific @a state is enabled in @a var
+ */
+#define MHD_FD_STATE_IS_SET(var,state)          \
+  (MHD_FD_STATE_NONE !=                         \
+   (((enum MHD_FdState) (var)) & ((enum MHD_FdState) (state))))
+
+/**
+ * Checks whether RECV is enabled in @a var
+ */
+#define MHD_FD_STATE_IS_SET_RECV(var) \
+  MHD_FD_STATE_IS_SET ((var),MHD_FD_STATE_RECV)
+/**
+ * Checks whether SEND is enabled in @a var
+ */
+#define MHD_FD_STATE_IS_SET_SEND(var) \
+  MHD_FD_STATE_IS_SET ((var),MHD_FD_STATE_SEND)
+/**
+ * Checks whether EXCEPT is enabled in @a var
+ */
+#define MHD_FD_STATE_IS_SET_EXCEPT(var) \
+  MHD_FD_STATE_IS_SET ((var),MHD_FD_STATE_EXCEPT)
+
+
+/**
+ * Enable specific @a state in @a var
+ */
+#define MHD_FD_STATE_SET(var,state) \
+  (var) = (enum MHD_FdState) ((var) | (state))
+/**
+ * Enable RECV state in @a var
+ */
+#define MHD_FD_STATE_SET_RECV(var) MHD_FD_STATE_SET ((var),MHD_FD_STATE_RECV)
+/**
+ * Enable SEND state in @a var
+ */
+#define MHD_FD_STATE_SET_SEND(var) MHD_FD_STATE_SET ((var),MHD_FD_STATE_SEND)
+/**
+ * Enable EXCEPT state in @a var
+ */
+#define MHD_FD_STATE_SET_EXCEPT(var) \
+  MHD_FD_STATE_SET ((var),MHD_FD_STATE_EXCEPT)
+
+/**
+ * Clear/disable specific @a state in @a var
+ */
+#define MHD_FD_STATE_CLEAR(var,state) \
+  (var) = (enum MHD_FdState) ((var) & (((enum MHD_FdState))(~state)))
+/**
+ * Clear/disable RECV state in @a var
+ */
+#define MHD_FD_STATE_CLEAR_RECV(var) \
+  MHD_FD_STATE_CLEAR ((var),MHD_FD_STATE_RECV)
+/**
+ * Clear/disable SEND state in @a var
+ */
+#define MHD_FD_STATE_CLEAR_SEND(var) \
+  MHD_FD_STATE_CLEAR ((var),MHD_FD_STATE_SEND)
+/**
+ * Clear/disable EXCEPT state in @a var
+ */
+#define MHD_FD_STATE_CLEAR_EXCEPT(var) \
+  MHD_FD_STATE_CLEAR ((var),MHD_FD_STATE_EXCEPT)
+
+
+/* Changes:
+ * + status update callback replaced with function
+ * + status update accepts array of updates
+ */
+
+/**
+ * The context data to be used for updates of the socket state
+ */
+struct MHD_EventUpdateContext;
+
+
+/* Define MHD_APP_SOCKET_CNTX_TYPE to the socket context type before
+ * including this header.
+ * This is optional, but improves the types safety.
+ * For example:
+ * #define MHD_APP_SOCKET_CNTX_TYPE struct my_structure
+ */
+#ifndef MHD_APP_SOCKET_CNTX_TYPE
+#  define MHD_APP_SOCKET_CNTX_TYPE void
+#endif
+
+/**
+ * The callback for registration/de-registration of the sockets to watch.
+ *
+ * This callback must not call #MHD_daemon_destroy(), #MHD_daemon_quiesce(),
+ * #MHD_daemon_add_connection().
+ *
+ * @param cls the closure
+ * @param fd the socket to watch
+ * @param watch_for the states of the @a fd to watch, if set to
+ *                  #MHD_FD_STATE_NONE the socket must be de-registred
+ * @param app_cntx_old the old application defined context for the socket,
+ *                     NULL if @a fd socket was not registered before
+ * @param ecb_cntx the context handle to be used
+ *                 with #MHD_daemon_event_update()
+ * @return NULL if error (to connection will be closed),
+ *         or the new socket context
+ * @ingroup event
+ */
+typedef MHD_APP_SOCKET_CNTX_TYPE *
+(MHD_FN_PAR_NONNULL_(5)
+ *MHD_SocketRegistrationUpdateCallback)(
+  void *cls,
+  MHD_socket fd,
+  enum MHD_FdState watch_for,
+  MHD_APP_SOCKET_CNTX_TYPE *app_cntx_old,
+  struct MHD_EventUpdateContext *ecb_cntx);
+
+
+/**
+ * Update the sockets state.
+ * Must be called for every socket that got state updated.
+ * For #MHD_TM_EXTERNAL_EVENT_LOOP_CB_LEVEL mode should be called for each
+ * socket.
+ * Available only for daemons stated in #MHD_TM_EXTERNAL_EVENT_LOOP_CB_LEVEL or
+ * #MHD_TM_EXTERNAL_EVENT_LOOP_CB_EDGE modes.
+ * @param daemon the daemon handle
+ * @param ecb_cntx the context handle provided
+ *                 for #MHD_SocketRegistrationUpdateCallback
+ * @param fd_current_state the current state of the socket
+ */
+MHD_EXTERN_ void
+MHD_daemon_event_update (
+  struct MHD_Daemon *daemon,
+  struct MHD_EventUpdateContext *ecb_cntx,
+  enum MHD_FdState fd_current_state)
+MHD_FN_PAR_NONNULL_(1) MHD_FN_PAR_NONNULL_(2);
+
+
+/**
+ * Perform sockets registration, process registered network events.
+ *
+ * This function first processes all registered (by MHD_daemon_event_update())
+ * network events (if any) and then calls #MHD_SocketRegistrationUpdateCallback
+ * callback for every socket that needs to be added/updated/removed.
+ *
+ * Available only for daemons stated in #MHD_TM_EXTERNAL_EVENT_LOOP_CB_LEVEL or
+ * #MHD_TM_EXTERNAL_EVENT_LOOP_CB_EDGE modes.
+ *
+ * @param daemon the daemon handle
+ * @param[out] next_max_wait the optional pointer to receive the next maximum
+ *                           wait time in microseconds to be used for sockets
+ *                           polling function, can be NULL
+ * @return MHD_SC_OK on success,
+ *         error code otherwise
+ */
+MHD_EXTERN_ enum MHD_StatusCode
+MHD_deamon_process_reg_events(struct MHD_Daemon *daemon,
+                              uint_fast64_t *next_max_wait)
+MHD_FN_PAR_NONNULL_(1);
 
 /* ********************* daemon options ************** */
+
+
+/**
+ * Which threading and polling mode should be used by MHD?
+ */
+enum MHD_FIXED_ENUM_APP_SET_ MHD_WorkMode
+{
+  /**
+   * Work mode with no internal threads.
+   * The application periodically calls #MHD_daemon_process_blocking(), where
+   * MHD internally checks all sockets automatically.
+   * This is the default mode.
+   */
+  MHD_WM_EXTERNAL_PERIODIC = 0
+  ,
+  /**
+   * Work mode with an external event loop with level triggers.
+   * Application uses #MHD_SocketRegistrationUpdateCallback, level triggered
+   * sockets polling (like select() or poll()) and #MHD_daemon_event_update().
+   */
+  MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL = 8
+  ,
+  /**
+   * Work mode with an external event loop with edge triggers.
+   * Application uses #MHD_SocketRegistrationUpdateCallback, edge triggered
+   * sockets polling (like epoll with EPOLLET) and #MHD_daemon_event_update().
+   */
+  MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE = 9
+  ,
+  /**
+   * Work mode with no internal threads and aggregate watch FD.
+   * Application uses #MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD to get single FD
+   * that gets triggered by any MHD event.
+   * This FD can be watched as an aggregate indicator for all MHD events.
+   * This mode is available only on selected platforms (currently
+   * GNU/Linux only), see #MHD_LIB_INFO_FIXED_HAS_AGGREGATE_FD.
+   * When the FD is triggered, #MHD_daemon_process_nonblocking() should
+   * be called.
+   */
+  MHD_WM_EXTERNAL_SINGLE_FD_WATCH = 16
+  ,
+  /**
+   * Work mode with one or more worker threads.
+   * If #MHD_DAEMON_OPTION_UINT_NUM_WORKERS is not specified
+   * then daemon starts with single worker thread that process
+   * all connections.
+   * If #MHD_DAEMON_OPTION_UINT_NUM_WORKERS used with value more
+   * than one, then that number of worker threads and distributed
+   * processing of requests among the workers.
+   */
+  MHD_WM_WORKER_THREADS = 24
+  ,
+  /**
+   * Work mode with one internal thread for listening and additional threads
+   * per every connection.  Use this if handling requests is CPU-intensive or
+   * blocking, your application is thread-safe and you have plenty of
+   * memory (per connection).
+   */
+  MHD_WM_THREAD_PER_CONNECTION = 32
+};
+
+/**
+ * Work mode parameters for #MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL and
+ * #MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE modes
+ */
+struct MHD_WorkModeExternalEventLoopCBParam
+{
+  /**
+   * Socket registration callback
+   */
+  MHD_SocketRegistrationUpdateCallback reg_cb;
+  /**
+   * Closure for the @a reg_cb
+   */
+  void *reg_cb_cls;
+}
+
+/**
+ * MHD work mode parameters
+ */
+union MHD_WorkModeParam
+{
+  /**
+   * Work mode parameters for #MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL and
+   * #MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE modes
+   */
+  MHD_SocketRegistrationUpdateCallback v_external_event_loop_cb;
+  /**
+   * Number of worker threads for #MHD_WM_WORKER_THREADS.
+   * If set to one, then daemon starts with single worker thread that process
+   * all connections.
+   * If set to value larger than one, then that number of worker threads
+   * and distributed handling of requests among the workers.
+   * Zero is treated as one.
+   */
+  unsigned int num_worker_threads;
+};
+
+/**
+ * Parameter for #MHD_DAEMON_OPTION_WORK_MODE().
+ * Not recommended to be used directly, better use macro/functions to create it:
+ * #MHD_WM_OPTION_EXTERNAL_PERIODIC(),
+ * #MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
+ * #MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE(),
+ * #MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH(),
+ * #MHD_WM_OPTION_WORKER_THREADS(),
+ * #MHD_WM_OPTION_THREAD_PER_CONNECTION()
+ */
+struct MHD_WorkModeWithParam
+{
+  /**
+   * The work mode for MHD
+   */
+  enum MHD_WorkMode mode;
+  /**
+   * The parameters used for specified work mode
+   */
+  union MHD_WorkModeParam params;
+};
+
+
+
+#if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_DESIG_NEST_INIT)
+/**
+ * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * no internal threads.
+ * The application periodically calls #MHD_daemon_process_blocking(), where
+ * MHD internally checks all sockets automatically.
+ * This is the default mode.
+ * @return the object of struct MHD_WorkModeWithParam with requested values
+ */
+#  define MHD_WM_OPTION_EXTERNAL_PERIODIC()     \
+  MHD_NOWARN_COMPOUND_LITERALS_                 \
+  (const struct MHD_WorkModeWithParam)          \
+  {                                             \
+    .mode = (MHD_WM_EXTERNAL_PERIODIC)          \
+  }                                             \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * an external event loop with level triggers.
+ * Application uses #MHD_SocketRegistrationUpdateCallback, level triggered
+ * sockets polling (like select() or poll()) and #MHD_daemon_event_update().
+ * @param cb_val the callback for sockets registration
+ * @param cb_cls_val the closure for the @a cv_val callback
+ * @return the object of struct MHD_WorkModeWithParam with requested values
+ */
+#  define MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL(cb_val,cb_cls_val) \
+  MHD_NOWARN_COMPOUND_LITERALS_                                         \
+  (const struct MHD_WorkModeWithParam)                                  \
+  {                                                                     \
+    .mode = (MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL),                      \
+    .params.v_external_event_loop_cb.reg_cb = (cb_val),                 \
+    .params.v_external_event_loop_cb.reg_cb_cls = (cb_cls_val)          \
+  }                                                                     \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * an external event loop with edge triggers.
+ * Application uses #MHD_SocketRegistrationUpdateCallback, edge triggered
+ * sockets polling (like epoll with EPOLLET) and #MHD_daemon_event_update().
+ * @param cb_val the callback for sockets registration
+ * @param cb_cls_val the closure for the @a cv_val callback
+ * @return the object of struct MHD_WorkModeWithParam with requested values
+ */
+#  define MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE(cb_val,cb_cls_val)  \
+  MHD_NOWARN_COMPOUND_LITERALS_                                         \
+  (const struct MHD_WorkModeWithParam)                                  \
+  {                                                                     \
+    .mode = (MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE),                       \
+    .params.v_external_event_loop_cb.reg_cb = (cb_val),                 \
+    .params.v_external_event_loop_cb.reg_cb_cls = (cb_cls_val)          \
+  }                                                                     \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * no internal threads and aggregate watch FD.
+ * Application uses #MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD to get single FD
+ * that gets triggered by any MHD event.
+ * This FD can be watched as an aggregate indicator for all MHD events.
+ * This mode is available only on selected platforms (currently
+ * GNU/Linux only), see #MHD_LIB_INFO_FIXED_HAS_AGGREGATE_FD.
+ * When the FD is triggered, #MHD_daemon_process_nonblocking() should
+ * be called.
+ * @return the object of struct MHD_WorkModeWithParam with requested values
+ */
+#  define MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH()      \
+  MHD_NOWARN_COMPOUND_LITERALS_                         \
+  (const struct MHD_WorkModeWithParam)                  \
+  {                                                     \
+    .mode = (MHD_WM_EXTERNAL_SINGLE_FD_WATCH)           \
+  }                                                     \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * one or more worker threads.
+ * If number of threads is one, then daemon starts with single worker thread
+ * that handles all connections.
+ * If number of threads is larger than one, then that number of worker threads,
+ * and handling of connection is distributed among the workers.
+ * @param num_workers the number of worker threads, zero is treated as one
+ * @return the object of struct MHD_WorkModeWithParam with requested values
+ */
+#  define MHD_WM_OPTION_WORKER_THREADS(num_workers)     \
+  MHD_NOWARN_COMPOUND_LITERALS_                         \
+  (const struct MHD_WorkModeWithParam)                  \
+  {                                                     \
+    .mode = (MHD_WM_WORKER_THREADS),                    \
+    .params.num_worker_threads = (num_workers)          \
+  }                                                     \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * one internal thread for listening and additional threads per every
+ * connection.  Use this if handling requests is CPU-intensive or blocking,
+ * your application is thread-safe and you have plenty of memory (per
+ * connection).
+ * @return the object of struct MHD_WorkModeWithParam with requested values
+ */
+#  define MHD_WM_OPTION_THREAD_PER_CONNECTION() \
+  MHD_NOWARN_COMPOUND_LITERALS_                 \
+  (const struct MHD_WorkModeWithParam)          \
+  {                                             \
+    .mode = (MHD_WM_THREAD_PER_CONNECTION)      \
+  }                                             \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+#else  /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
+MHD_NOWARN_UNUSED_FUNC_
+
+/**
+ * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * no internal threads.
+ * The application periodically calls #MHD_daemon_process_blocking(), where
+ * MHD internally checks all sockets automatically.
+ * This is the default mode.
+ * @return the object of struct MHD_WorkModeWithParam with requested values
+ */
+static MHD_INLINE struct MHD_WorkModeWithParam
+MHD_WM_OPTION_EXTERNAL_PERIODIC(void)
+{
+  struct MHD_WorkModeWithParam wm_val;
+
+  wm_val.mode = MHD_WM_EXTERNAL_PERIODIC;
+
+  return wm_val;
+}
+
+/**
+ * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * an external event loop with level triggers.
+ * Application uses #MHD_SocketRegistrationUpdateCallback, level triggered
+ * sockets polling (like select() or poll()) and #MHD_daemon_event_update().
+ * @param cb_val the callback for sockets registration
+ * @param cb_cls_val the closure for the @a cv_val callback
+ * @return the object of struct MHD_WorkModeWithParam with requested values
+ */
+static MHD_INLINE struct MHD_WorkModeWithParam
+MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL(
+    MHD_SocketRegistrationUpdateCallback cb_val,
+    void *cb_cls_val)
+{
+  struct MHD_WorkModeWithParam wm_val;
+
+  wm_val.mode = MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL;
+  wm_val.params.v_external_event_loop_cb.reg_cb = cb_val;
+  wm_val.params.v_external_event_loop_cb.reg_cb_cls = cb_cls_val;
+
+  return wm_val;
+}
+
+/**
+ * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * an external event loop with edge triggers.
+ * Application uses #MHD_SocketRegistrationUpdateCallback, edge triggered
+ * sockets polling (like epoll with EPOLLET) and #MHD_daemon_event_update().
+ * @param cb_val the callback for sockets registration
+ * @param cb_cls_val the closure for the @a cv_val callback
+ * @return the object of struct MHD_WorkModeWithParam with requested values
+ */
+static MHD_INLINE struct MHD_WorkModeWithParam
+MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE(
+    MHD_SocketRegistrationUpdateCallback cb_val,
+    void *cb_cls_val)
+{
+  struct MHD_WorkModeWithParam wm_val;
+
+  wm_val.mode = MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE;
+  wm_val.params.v_external_event_loop_cb.reg_cb = cb_val;
+  wm_val.params.v_external_event_loop_cb.reg_cb_cls = cb_cls_val;
+
+  return wm_val;
+}
+
+/**
+ * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * no internal threads and aggregate watch FD.
+ * Application uses #MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD to get single FD
+ * that gets triggered by any MHD event.
+ * This FD can be watched as an aggregate indicator for all MHD events.
+ * This mode is available only on selected platforms (currently
+ * GNU/Linux only), see #MHD_LIB_INFO_FIXED_HAS_AGGREGATE_FD.
+ * When the FD is triggered, #MHD_daemon_process_nonblocking() should
+ * be called.
+ * @return the object of struct MHD_WorkModeWithParam with requested values
+ */
+static MHD_INLINE struct MHD_WorkModeWithParam
+MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH(void)
+{
+  struct MHD_WorkModeWithParam wm_val;
+
+  wm_val.mode = MHD_WM_EXTERNAL_SINGLE_FD_WATCH;
+
+  return wm_val;
+}
+
+/**
+ * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * one or more worker threads.
+ * If number of threads is one, then daemon starts with single worker thread
+ * that handles all connections.
+ * If number of threads is larger than one, then that number of worker threads,
+ * and handling of connection is distributed among the workers.
+ * @param num_workers the number of worker threads, zero is treated as one
+ * @return the object of struct MHD_WorkModeWithParam with requested values
+ */
+static MHD_INLINE struct MHD_WorkModeWithParam
+MHD_WM_OPTION_WORKER_THREADS(unsigned int num_workers)
+{
+  struct MHD_WorkModeWithParam wm_val;
+
+  wm_val.mode = MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE;
+  wm_val.params.num_worker_threads = num_workers;
+
+  return wm_val;
+}
+
+/**
+ * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * one internal thread for listening and additional threads per every
+ * connection.  Use this if handling requests is CPU-intensive or blocking,
+ * your application is thread-safe and you have plenty of memory (per
+ * connection).
+ * @return the object of struct MHD_WorkModeWithParam with requested values
+ */
+static MHD_INLINE struct MHD_WorkModeWithParam
+MHD_WM_OPTION_THREAD_PER_CONNECTION(void)
+{
+  struct MHD_WorkModeWithParam wm_val;
+
+  wm_val.mode = MHD_WM_THREAD_PER_CONNECTION;
+
+  return wm_val;
+}
+
+MHD_RESTORE_WARN_UNUSED_FUNC_
+#endif /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
+
+
+/**
+ * Specify threading mode to use.
+ *
+ * @param[in,out] daemon daemon to configure
+ * @param tm mode to use
+ */
+MHD_EXTERN_ enum MHD_StatusCode
+MHD_daemon_set_threading_mode (struct MHD_Daemon *daemon,
+                               enum MHD_ThreadingMode tm)
+MHD_FN_PAR_NONNULL_ (1);
 
 /**
  * Type of a callback function used for logging by MHD.
@@ -2959,9 +3567,9 @@ MHD_daemon_listen_socket (struct MHD_Daemon *daemon,
 MHD_FN_PAR_NONNULL_ (1);
 
 /**
- * Event loop internal syscalls supported by MHD.
+ * Sockets polling internal syscalls used by MHD.
  */
-enum MHD_FIXED_ENUM_APP_SET_ MHD_EventLoopSyscall
+enum MHD_FIXED_ENUM_APP_SET_ MHD_SockPollSyscall
 {
   /**
    * Automatic selection of best-available method. This is also the
@@ -3067,7 +3675,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_ProtocolStrictLevel
   ,
   /**
    * More relaxed protocol interpretation, violating RFCs'
-   * "SHOULD" type of requirements for HTTP servers.
+   * "SHOULD" type of restrictions for HTTP servers.
    * For cookies parsing this (and more permissive) level
    * allows whitespaces in cookie values.
    * This level can be used in isolated environments.
@@ -3076,7 +3684,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_ProtocolStrictLevel
 
   /**
    * The most flexible protocol interpretation, beyond
-   * RFCs' "MUST" type of requirements for HTTP server.
+   * RFCs' "MUST" type of restrictions for HTTP server.
    * The level allow HTTP/1.1 requests without "Host:" header.
    * For cookies parsing this level adds allowance of
    * whitespaces before and after '=' character.
@@ -3098,6 +3706,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_UseStictLevel
    * Use requested level if available or the nearest stricter
    * level.
    * Fail if only more permissive levels available.
+   * Recommended value.
    */
   MHD_USL_THIS_OR_STRICTER = 0
   ,
@@ -3908,330 +4517,84 @@ MHD_RESTORE_WARN_VARIADIC_MACROS_
 #endif /* MHD_USE_VARARG_MACROS && MHD_USE_COMP_LIT_FUNC_PARAMS */
 
 
+/**
+ * Create parameter for #MHD_daemon_options_set() for work mode with
+ * no internal threads.
+ * The application periodically calls #MHD_daemon_process_blocking(), where
+ * MHD internally checks all sockets automatically.
+ * This is the default mode.
+ * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ */
+#define MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC() \
+  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_EXTERNAL_PERIODIC())
+
+/**
+* Create parameter for #MHD_daemon_options_set() for work mode with
+* an external event loop with level triggers.
+* Application uses #MHD_SocketRegistrationUpdateCallback, level triggered
+* sockets polling (like select() or poll()) and #MHD_daemon_event_update().
+* @param cb_val the callback for sockets registration
+* @param cb_cls_val the closure for the @a cv_val callback
+* @return the object of struct MHD_DaemonOptionAndValue with requested values
+*/
+#define MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(cb_val,cb_cls_val) \
+  MHD_DAEMON_OPTION_WORK_MODE( \
+    MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL((cb_val),(cb_cls_val)))
+
+/**
+ * Create parameter for #MHD_daemon_options_set() for work mode with
+ * an external event loop with edge triggers.
+ * Application uses #MHD_SocketRegistrationUpdateCallback, edge triggered
+ * sockets polling (like epoll with EPOLLET) and #MHD_daemon_event_update().
+ * @param cb_val the callback for sockets registration
+ * @param cb_cls_val the closure for the @a cv_val callback
+ * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ */
+#define MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(cb_val,cb_cls_val) \
+  MHD_DAEMON_OPTION_WORK_MODE( \
+    MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE((cb_val),(cb_cls_val)))
+
+/**
+ * Create parameter for #MHD_daemon_options_set() for work mode with
+ * no internal threads and aggregate watch FD.
+ * Application uses #MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD to get single FD
+ * that gets triggered by any MHD event.
+ * This FD can be watched as an aggregate indicator for all MHD events.
+ * This mode is available only on selected platforms (currently
+ * GNU/Linux only), see #MHD_LIB_INFO_FIXED_HAS_AGGREGATE_FD.
+ * When the FD is triggered, #MHD_daemon_process_nonblocking() should
+ * be called.
+ * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ */
+#define MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH() \
+  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH())
+
+/**
+ * Create parameter for #MHD_daemon_options_set() for work mode with
+ * one or more worker threads.
+ * If number of threads is one, then daemon starts with single worker thread
+ * that handles all connections.
+ * If number of threads is larger than one, then that number of worker threads,
+ * and handling of connection is distributed among the workers.
+ * @param num_workers the number of worker threads, zero is treated as one
+ * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ */
+#define MHD_DAEMON_OPTION_WORKER_THREADS(num_workers) \
+  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_WORKER_THREADS(num_workers))
+
+/**
+ * Create parameter for #MHD_daemon_options_set() for work mode with
+ * one internal thread for listening and additional threads per every
+ * connection.  Use this if handling requests is CPU-intensive or blocking,
+ * your application is thread-safe and you have plenty of memory (per
+ * connection).
+ * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ */
+#define MHD_DAEMON_OPTION_THREAD_PER_CONNECTION() \
+  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_THREAD_PER_CONNECTION())
+
+
 /* ******************* Event loop ************************ */
-
-
-/**
- * Which threading and polling mode should be used by MHD?
- */
-enum MHD_FIXED_ENUM_APP_SET_ MHD_WorkMode
-{
-  /**
-   * The daemon has no internal threads.
-   * The application periodically calls #MHD_daemon_process_blocking(), where
-   * MHD internally checks all sockets automatically.
-   * This is the default.
-   */
-  MHD_WM_EXTERNAL_PERIODIC = 0
-  ,
-  /**
-   * Use an external event loop with level triggers.
-   * Application uses #MHD_SocketRegistrationUpdateCallback, level triggered
-   * sockets polling (like select() or poll()) and #MHD_daemon_event_update().
-   */
-  MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL = 8
-  ,
-  /**
-   * Use an external event loop with edge triggers.
-   * Application uses #MHD_SocketRegistrationUpdateCallback, edge triggered
-   * sockets polling (like epoll with EPOLLET) and #MHD_daemon_event_update().
-   */
-  MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE = 9
-  ,
-  /**
-   * The daemon has no internal threads.
-   * Application uses #MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD to get single FD
-   * that triggered when any MHD event happens.
-   * This FD can be watched as an aggregate indicator for all MHD events.
-   * This mode is available only on selected platforms (currently
-   * GNU/Linux only), see #MHD_LIB_INFO_FIXED_HAS_AGGREGATE_FD.
-   * When the FD is triggered, #MHD_daemon_process_nonblocking() should
-   * be called.
-   */
-  MHD_WM_EXTERNAL_SINGLE_FD_WATCH = 16
-  ,
-  /**
-   * Run with one or more worker threads.
-   * If #MHD_DAEMON_OPTION_UINT_NUM_WORKERS is not specified
-   * then daemon starts with single worker thread that process
-   * all connections.
-   * If #MHD_DAEMON_OPTION_UINT_NUM_WORKERS used with value more
-   * than one, then that number of worker threads and distributed
-   * processing of requests among the workers.
-   */
-  MHD_WM_WORKER_THREADS = 24
-  ,
-
-  /**
-   * MHD should create its own thread for listening and furthermore create
-   * additional threads per every connection.  Use this if handling requests
-   * is CPU-intensive or blocking, your application is thread-safe and you
-   * have plenty of memory (per connection).
-   */
-  MHD_WM_THREAD_PER_CONNECTION = 32
-};
-
-union MHD_WorkModeParam
-{
-
-};
-
-struct MHD_WorkModeWithParam
-{
-  /**
-   * The work mode for MHD
-   */
-  enum MHD_WorkMode mode;
-  /**
-   * The parameters used for specified work mode
-   */
-  union MHD_WorkModeParam val;
-};
-
-/**
- * Specify threading mode to use.
- *
- * @param[in,out] daemon daemon to configure
- * @param tm mode to use
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_threading_mode (struct MHD_Daemon *daemon,
-                               enum MHD_ThreadingMode tm)
-MHD_FN_PAR_NONNULL_ (1);
-
-
-/**
- * The network status of the socket.
- * When set by MHD (by #MHD_get_watched_fds(), #MHD_get_watched_fds_update() and
- * similar) it indicates a request to watch for specific socket state:
- * readiness for receiving the data, readiness for sending the data and/or
- * exception state of the socket.
- * When set by application (and provided for #MHD_process_watched_fds() and
- * similar) it must indicate the actual status of the socket.
- *
- * Any actual state is a bitwise OR combination of #MHD_FD_STATE_RECV,
- * #MHD_FD_STATE_SEND, #MHD_FD_STATE_EXCEPT.
- * @ingroup event
- */
-enum MHD_FIXED_ENUM_ MHD_FdState
-{
-  /**
-   * The socket is not ready for receiving or sending and
-   * does not have any exceptional state.
-   * The state never set by MHD, except de-registration of the sockets
-   * for #MHD_SocketRegistrationUpdateCallback().
-   */
-  MHD_FD_STATE_NONE = 0
-  ,
-  /* ** Three bit-flags ** */
-
-  /**
-   * Indicates that socket should be watched for incoming data
-   * (when set by #MHD_get_watched_fds())
-   * / socket has incoming data ready to read (when used for
-   * #MHD_process_watched_fds())
-   */
-  MHD_FD_STATE_RECV = 1 << 0,
-  /**
-   * Indicates that socket should be watched for availability for sending
-   * (when set by #MHD_get_watched_fds())
-   * / socket has ability to send data (when used for
-   * #MHD_process_watched_fds())
-   */
-  MHD_FD_STATE_SEND = 1 << 1,
-  /**
-   * Indicates that socket should be watched for disconnect, out-of-band
-   * data available or high priority data available (when set by
-   * #MHD_get_watched_fds())
-   * / socket has been disconnected, has out-of-band data available or
-   * has high priority data available (when used for
-   * #MHD_process_watched_fds()). This status must not include "remote
-   * peer shut down writing" status.
-   * Note: #MHD_get_watched_fds() always set it as exceptions must be
-   * always watched.
-   */
-  MHD_FD_STATE_EXCEPT = 1 << 2,
-
-  /* The rest of the list is a bit-wise combination of three main
-   * states. Application may use three main states directly as
-   * a bit-mask instead of using of following values
-   */
-
-  /**
-   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_SEND states.
-   */
-  MHD_FD_STATE_RECV_SEND = MHD_FD_STATE_RECV | MHD_FD_STATE_SEND,
-  /**
-   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
-   */
-  MHD_FD_STATE_RECV_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
-  /**
-   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
-   */
-  MHD_FD_STATE_SEND_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
-  /**
-   * Combination of #MHD_FD_STATE_RECV, #MHD_FD_STATE_SEND and
-   * #MHD_FD_STATE_EXCEPT states.
-   */
-  MHD_FD_STATE_RECV_SEND_EXCEPT = \
-    MHD_FD_STATE_RECV | MHD_FD_STATE_SEND | MHD_FD_STATE_EXCEPT
-};
-
-/**
- * Checks whether specific @a state is enabled in @a var
- */
-#define MHD_FD_STATE_IS_SET(var,state)          \
-  (MHD_FD_STATE_NONE !=                         \
-   (((enum MHD_FdState) (var)) & ((enum MHD_FdState) (state))))
-
-/**
- * Checks whether RECV is enabled in @a var
- */
-#define MHD_FD_STATE_IS_SET_RECV(var) \
-  MHD_FD_STATE_IS_SET ((var),MHD_FD_STATE_RECV)
-/**
- * Checks whether SEND is enabled in @a var
- */
-#define MHD_FD_STATE_IS_SET_SEND(var) \
-  MHD_FD_STATE_IS_SET ((var),MHD_FD_STATE_SEND)
-/**
- * Checks whether EXCEPT is enabled in @a var
- */
-#define MHD_FD_STATE_IS_SET_EXCEPT(var) \
-  MHD_FD_STATE_IS_SET ((var),MHD_FD_STATE_EXCEPT)
-
-
-/**
- * Enable specific @a state in @a var
- */
-#define MHD_FD_STATE_SET(var,state) \
-  (var) = (enum MHD_FdState) ((var) | (state))
-/**
- * Enable RECV state in @a var
- */
-#define MHD_FD_STATE_SET_RECV(var) MHD_FD_STATE_SET ((var),MHD_FD_STATE_RECV)
-/**
- * Enable SEND state in @a var
- */
-#define MHD_FD_STATE_SET_SEND(var) MHD_FD_STATE_SET ((var),MHD_FD_STATE_SEND)
-/**
- * Enable EXCEPT state in @a var
- */
-#define MHD_FD_STATE_SET_EXCEPT(var) \
-  MHD_FD_STATE_SET ((var),MHD_FD_STATE_EXCEPT)
-
-/**
- * Clear/disable specific @a state in @a var
- */
-#define MHD_FD_STATE_CLEAR(var,state) \
-  (var) = (enum MHD_FdState) ((var) & (((enum MHD_FdState))(~state)))
-/**
- * Clear/disable RECV state in @a var
- */
-#define MHD_FD_STATE_CLEAR_RECV(var) \
-  MHD_FD_STATE_CLEAR ((var),MHD_FD_STATE_RECV)
-/**
- * Clear/disable SEND state in @a var
- */
-#define MHD_FD_STATE_CLEAR_SEND(var) \
-  MHD_FD_STATE_CLEAR ((var),MHD_FD_STATE_SEND)
-/**
- * Clear/disable EXCEPT state in @a var
- */
-#define MHD_FD_STATE_CLEAR_EXCEPT(var) \
-  MHD_FD_STATE_CLEAR ((var),MHD_FD_STATE_EXCEPT)
-
-
-/* Changes:
- * + status update callback replaced with function
- * + status update accepts array of updates
- */
-
-/**
- * The context data to be used for updates of the socket state
- */
-struct MHD_EventUpdateContext;
-
-
-/* Define MHD_APP_SOCKET_CNTX_TYPE to the socket context type before
- * including this header.
- * This is optional, but improves the types safety.
- * For example:
- * #define MHD_APP_SOCKET_CNTX_TYPE struct my_structure
- */
-#ifndef MHD_APP_SOCKET_CNTX_TYPE
-#  define MHD_APP_SOCKET_CNTX_TYPE void
-#endif
-
-/**
- * The callback for registration/de-registration of the sockets to watch.
- *
- * This callback must not call #MHD_daemon_destroy(), #MHD_daemon_quiesce(),
- * #MHD_daemon_add_connection().
- *
- * @param cls the closure
- * @param fd the socket to watch
- * @param watch_for the states of the @a fd to watch, if set to
- *                  #MHD_FD_STATE_NONE the socket must be de-registred
- * @param app_cntx_old the old application defined context for the socket,
- *                     NULL if @a fd socket was not registered before
- * @param ecb_cntx the context handle to be used
- *                 with #MHD_daemon_event_update()
- * @return NULL if error (to connection will be closed),
- *         or the new socket context
- * @ingroup event
- */
-typedef MHD_APP_SOCKET_CNTX_TYPE *
-(MHD_FN_PAR_NONNULL_(5)
- *MHD_SocketRegistrationUpdateCallback)(
-  void *cls,
-  MHD_socket fd,
-  enum MHD_FdState watch_for,
-  MHD_APP_SOCKET_CNTX_TYPE *app_cntx_old,
-  struct MHD_EventUpdateContext *ecb_cntx);
-
-
-/**
- * Update the sockets state.
- * Must be called for every socket that got state updated.
- * For #MHD_TM_EXTERNAL_EVENT_LOOP_CB_LEVEL mode should be called for each
- * socket.
- * Available only for daemons stated in #MHD_TM_EXTERNAL_EVENT_LOOP_CB_LEVEL or
- * #MHD_TM_EXTERNAL_EVENT_LOOP_CB_EDGE modes.
- * @param daemon the daemon handle
- * @param ecb_cntx the context handle provided
- *                 for #MHD_SocketRegistrationUpdateCallback
- * @param fd_current_state the current state of the socket
- */
-MHD_EXTERN_ void
-MHD_daemon_event_update (
-  struct MHD_Daemon *daemon,
-  struct MHD_EventUpdateContext *ecb_cntx,
-  enum MHD_FdState fd_current_state)
-MHD_FN_PAR_NONNULL_(1) MHD_FN_PAR_NONNULL_(2);
-
-
-/**
- * Perform sockets registration, process registered network events.
- *
- * This function first processes all registered (by MHD_daemon_event_update())
- * network events (if any) and then calls #MHD_SocketRegistrationUpdateCallback
- * callback for every socket that needs to be added/updated/removed.
- *
- * Available only for daemons stated in #MHD_TM_EXTERNAL_EVENT_LOOP_CB_LEVEL or
- * #MHD_TM_EXTERNAL_EVENT_LOOP_CB_EDGE modes.
- *
- * @param daemon the daemon handle
- * @param[out] next_max_wait the optional pointer to receive the next maximum
- *                           wait time in microseconds to be used for sockets
- *                           polling function, can be NULL
- * @return MHD_SC_OK on success,
- *         error code otherwise
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_deamon_process_reg_events(struct MHD_Daemon *daemon,
-                              uint_fast64_t *next_max_wait)
-MHD_FN_PAR_NONNULL_(1);
 
 
 /**
