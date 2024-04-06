@@ -200,7 +200,6 @@ do
       echo "The 'Name' field is empty for 'Value=$N'" >&2
       exit 2
     fi
-    echo "$N: ${NAME^^}"
     COMMENT=$(recsel -t MHD_Option -P Comment -e "Value = $N" "$input_rec")
     if [[ -z $COMMENT ]]; then
       echo "The 'Comment' field is empty for '$NAME' ('Value=$N')" >&2
@@ -223,6 +222,8 @@ do
 
     clean_name="${NAME//_/ }"
     clean_name="${clean_name,,}" # Lowercase space-delimited
+
+    echo "$N: ${clean_name// /_}"
 
     EName="${clean_name^^}"
     EName="MHD_D_O_${EName// /_}" # Uppercase '_'-joined
@@ -336,6 +337,7 @@ do
         [[ "$arg_name" = "val" ]] && err_exit "The name ('$arg_name') of the argument 'Argument${M}' ('${ARGS[$M]}') for '$NAME' ('Value=$N') conflicts with the option struct member name ('val'). Macro would not work."
         [[ "${arg_name,,}" = "${arg_name}" ]] || err_exit "The name ('$arg_name') of the argument 'Argument${M}' ('${ARGS[$M]}') for '$NAME' ('Value=$N') has capital letter(s)"
         [[ $nested = 'yes' ]] && [[ -z $nest_membr ]] && nest_membr="v_${arg_name}"
+        [[ "${#arg_name}" -ge 15 ]] && echo "Warning: too long (${#arg_name} chars) parameter name '${arg_name}'." >&2
         
         [[ $M -gt 1 ]] && [[ $nested = 'no' ]] && err_exit
         
@@ -355,7 +357,7 @@ do
         fi
         
         #[[ $M -gt 1 ]] && CLBody+=', \'$'\n'"    "
-        [[ $M -gt 1 ]] && CLBody+=', \##removeme##'$'\n'"    " # '##removeme##' is a workaround for requtils bug
+        [[ $M -gt 1 ]] && CLBody+=', \##removeme##'$'\n'"      " # '##removeme##' is a workaround for requtils bug
         CLBody+=".val.${UName}"
         [[ $nested = 'yes' ]] && CLBody+=".${nest_membr}"
         CLBody+=" = ($arg_name)"

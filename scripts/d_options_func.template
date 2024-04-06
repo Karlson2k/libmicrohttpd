@@ -3,7 +3,7 @@
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-static MHD_INLINE struct MHD_DaemonOptionAndValue 
+static MHD_INLINE struct MHD_DaemonOptionAndValue
 {{SName}} ({{SFArguments}})
 {
   struct MHD_DaemonOptionAndValue opt_val;
