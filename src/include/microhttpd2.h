@@ -2925,7 +2925,7 @@ struct MHD_WorkModeExternalEventLoopCBParam
    * Closure for the @a reg_cb
    */
   void *reg_cb_cls;
-}
+};
 
 /**
  * MHD work mode parameters
@@ -3275,94 +3275,6 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOptionBindType
    * Ignored on platforms without support for the explicit exclusive socket use.
    */
   MHD_DAEMON_OPTION_BIND_TYPE_EXCLUSIVE = 2
-};
-
-
-enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
-{
-  /**
-   * Not a real option.
-   * Should not be used directly.
-   * This value indicates the end of the list of the options.
-   */
-  MHD_D_O_END = 0
-  ,
-  /**
-   * Suppresses use of "Date:" header.
-   * According to RFC should be used only if the system has no RTC.
-   * The "Date:" is not suppressed (the header is enabled) by default.
-   */
-  MHD_D_O_BOOL_SUPPRESS_DATE_HEADER = 100
-  ,
-  /**
-   * Enable `turbo`.  Disables certain calls to `shutdown()`,
-   * enables aggressive non-blocking optimistic reads and
-   * other potentially unsafe optimisations.
-   * Most effects only happen with internal threads with epoll.
-   * The 'turbo' mode is not enabled (mode is disabled) by default.
-   */
-  MHD_D_O_BOOL_TURBO = 102
-  ,
-  /**
-   * Disable some internal thread safety.
-   * Indicates that MHD daemon will be used by application in single-threaded
-   * mode only.  When this flag is set then application must call any MHD
-   * function only within a single thread.
-   * This flag turns off some internal thread-safety and allows MHD making
-   * some of the internal optimisations suitable only for single-threaded
-   * environment.
-   * Not compatible with any internal threads mode.
-   * Thread safety is not disabled (safety is enabled) by default.
-   */
-  MHD_D_O_DISABLE_THREAD_SAFETY = 103
-  ,
-  /**
-   * You need to set this option if you want to disable use of HTTP "Upgrade".
-   * "Upgrade" may require usage of additional internal resources,
-   * which we can avoid providing if they will not be used.
-   *
-   * You should only use this function if you do not use "Upgrade" functionality
-   * and need a generally minor boost in performance.
-   * The "Upgrade" is not disallowed ("upgrade" is allowed) by default.
-   */
-  MHD_D_O_BOOL_DISALLOW_UPGRADE = 104
-  ,
-  /**
-   * Disable #MHD_action_suspend() functionality.
-   *
-   * You should only use this function if you do not use suspend functionality
-   * and need a generally minor boost in performance.
-   * The suspend is not disallowed (suspend is allowed) by default.
-   */
-  MHD_D_O_BOOL_DISALLOW_SUSPEND_RESUME
-  ,
-  /**
-   * Use SHOUTcast.  This will cause *all* responses to begin
-   * with the SHOUTcast "ICY" line instead of "HTTP".
-   */
-  MHD_D_O_BOOL_ENABLE_SHOUTCAST
-  ,
-  /**
-   * Disable converting plus ('+') character to space in GET
-   * parameters (URI part after '?').
-   * TODO: Add explanation, RFCs, HTML
-   */
-  MHD_D_O_BOOL_DISABLE_GET_PARAM_PLUS_AS_SPACE,
-
-  /**
-   * Bind to the given socket address.
-   */
-  MHD_D_O_SA
-  ,
-  /**
-   * If present true, allow reusing address:port socket (by using
-   * SO_REUSEPORT on most platform, or platform-specific ways).  If
-   * present and set to false, disallow reusing address:port socket
-   * (does nothing on most platform, but uses SO_EXCLUSIVEADDRUSE on
-   * Windows).
-   * Ineffective in conjunction with #MHD_daemon_listen_socket().
-   */
-  MHD_D_O_BOOL_LISTEN_ALLOW_ADDRESS_REUSE
 };
 
 // FIXME: transform everything to option
@@ -4279,17 +4191,756 @@ MHD_daemon_set_digest_auth_nc_length (struct MHD_Daemon *daemon,
                                       size_t nc_length)
 MHD_FN_PAR_NONNULL_ (1);
 
-// FIXME: end of transform everything to option
 
-union MHD_DaemonOptionValue
+/**
+ * The options (parameters) for MHD daemon
+ */
+enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
 {
-  enum MHD_Bool v_bool;
-  unsigned int v_uint;
-  size_t v_sizet;
-  struct MHD_DaemonOptionValueSA v_sa;
-  enum MHD_DaemonOptionAddrReuse v_addr_reuse;
+  /**
+   * Not a real option.
+   * Should not be used directly.
+   * This value indicates the end of the list of the options.
+   */
+  MHD_D_O_END = 0
+  ,
+
+  /* = enum MHD_DaemonOption values below are generated automatically = */
+  /**
+   * Set MHD work (threading and polling) mode.
+   * Consider use of #MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC(),
+   * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
+   * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(),
+   * #MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(),
+   * #MHD_DAEMON_OPTION_WORKER_THREADS() or
+   * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION() instead of direct use of this
+   * parameter.
+   * The parameter value must be placed to the
+   * @a v_work_mode member.
+   */
+  MHD_D_O_WORK_MODE = 40
+  ,
+  /**
+   * Select a sockets watch system call used for internal polling.
+   * The parameter value must be placed to the
+   * @a v_poll_syscall member.
+   */
+  MHD_D_O_POLL_SYSCALL = 41
+  ,
+  /**
+   * Bind to the given TCP port and address family.
+   *
+   * Does not work with #MHD_DAEMON_OPTION_BIND_SA() or
+   * #MHD_DAEMON_OPTION_LISTEN_SOCKET().
+   *
+   * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
+   * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are
+   * used, MHD does not listen for incoming connection.
+   * The parameter value must be placed to the
+   * @a v_bind_port member.
+   */
+  MHD_D_O_BIND_PORT = 80
+  ,
+  /**
+   * Bind to the given socket address.
+   *
+   * Does not work with #MHD_DAEMON_OPTION_BIND_PORT() or
+   * #MHD_DAEMON_OPTION_LISTEN_SOCKET().
+   *
+   * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
+   * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are
+   * used, MHD does not listen for incoming connection.
+   * The parameter value must be placed to the
+   * @a v_bind_sa member.
+   */
+  MHD_D_O_BIND_SA = 81
+  ,
+  /**
+   * Accept connections from the given socket.  Socket
+   * must be a TCP or UNIX domain (SOCK_STREAM) socket.
+   *
+   * Does not work with #MHD_DAEMON_OPTION_BIND_PORT() or
+   * #MHD_DAEMON_OPTION_BIND_SA().
+   *
+   * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
+   * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are
+   * used, MHD does not listen for incoming connection.
+   * The parameter value must be placed to the
+   * @a v_listen_socket member.
+   */
+  MHD_D_O_LISTEN_SOCKET = 82
+  ,
+  /**
+   * Select mode of reusing address:port listen address.
+   *
+   * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
+   * #MHD_DAEMON_OPTION_BIND_SA() are used.
+   * The parameter value must be placed to the
+   * @a v_listen_addr_reuse member.
+   */
+  MHD_D_O_LISTEN_ADDR_REUSE = 100
+  ,
+  /**
+   * Configure TCP_FASTOPEN option, including setting a
+   * custom @a queue_length.
+   *
+   * Note that having a larger queue size can cause resource exhaustion
+   * attack as the TCP stack has to now allocate resources for the SYN
+   * packet along with its DATA.
+   *
+   * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
+   * #MHD_DAEMON_OPTION_BIND_SA() are used.
+   * The parameter value must be placed to the
+   * @a v_tcp_fastopen member.
+   */
+  MHD_D_O_TCP_FASTOPEN = 101
+  ,
+  /**
+   * Use the given backlog for the listen() call.
+   *
+   * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
+   * #MHD_DAEMON_OPTION_BIND_SA() are used.
+   * The parameter value must be placed to the
+   * @a v_listen_backlog member.
+   */
+  MHD_D_O_LISTEN_BACKLOG = 102
+  ,
+  /**
+   * Inform that SIGPIPE is suppressed or handled by application.
+   * If suppressed/handled, MHD uses network functions that could generate
+   * SIGPIPE, like `sendfile()`.
+   * Silently ignored when MHD creates internal threads as for them SIGPIPE is
+   * suppressed automatically.
+   * The parameter value must be placed to the
+   * @a v_sigpipe_suppressed member.
+   */
+  MHD_D_O_SIGPIPE_SUPPRESSED = 103
+  ,
+  /**
+   * Enable TLS (HTTPS) and select TLS backend
+   * The parameter value must be placed to the
+   * @a v_tls member.
+   */
+  MHD_D_O_TLS = 120
+  ,
+  /**
+   * Configure PSK to use for the TLS key exchange.
+   * The parameter value must be placed to the
+   * @a v_tls_psk_callback member.
+   */
+  MHD_D_O_TLS_PSK_CALLBACK = 121
+  ,
+  /**
+   * Control ALPN for TLS connection.
+   * Silently ignored for non-TLS.
+   * By default ALPN is automatically used for TLS connections.
+   * The parameter value must be placed to the
+   * @a v_no_alpn member.
+   */
+  MHD_D_O_NO_ALPN = 122
+  ,
+  /**
+   * Specify inactivity timeout for connection.
+   * When no activity for specified time on connection, it is closed
+   * automatically.
+   * Use zero for no timeout, which is also the (unsafe!) default.
+   * The parameter value must be placed to the
+   * @a v_default_timeout member.
+   */
+  MHD_D_O_DEFAULT_TIMEOUT = 160
+  ,
+  /**
+   * Maximum number of (concurrent) network connections served by daemon
+   * The parameter value must be placed to the
+   * @a v_global_connection_limit member.
+   */
+  MHD_D_O_GLOBAL_CONNECTION_LIMIT = 161
+  ,
+  /**
+   * Limit on the number of (concurrent) network connections made to the server
+   * from the same IP address.
+   * Can be used to prevent one IP from taking over all of the allowed
+   * connections. If the same IP tries to establish more than the specified
+   * number of connections, they will be immediately rejected.
+   * The parameter value must be placed to the
+   * @a v_per_ip_limit member.
+   */
+  MHD_D_O_PER_IP_LIMIT = 162
+  ,
+  /**
+   * Set a policy callback that accepts/rejects connections based on the
+   * client's IP address.  The callbeck function will be called before
+   * servicing any new incoming connection.
+   * The parameter value must be placed to the
+   * @a v_accept_policy member.
+   */
+  MHD_D_O_ACCEPT_POLICY = 163
+  ,
+  /**
+   * Set how strictly MHD will enforce the HTTP protocol.
+   * The parameter value must be placed to the
+   * @a v_protocol_strict_level member.
+   */
+  MHD_D_O_PROTOCOL_STRICT_LEVEL = 200
+  ,
+  /**
+   * Set a callback to be called first for every request when the request line
+   * is received (before any parsing of the header).
+   * This callback is the only way to get raw (unmodified) request URI as URI
+   * is parsed and modified by MHD in-place.
+   * Mandatory URI modification may apply before this call, like binary zero
+   * replacement, as required by RFCs.
+   * The parameter value must be placed to the
+   * @a v_early_uri_logger member.
+   */
+  MHD_D_O_EARLY_URI_LOGGER = 201
+  ,
+  /**
+   * Disable converting plus ('+') character to space in GET parameters (URI
+   * part after '?').
+   * Plus conversion is not required by HTTP RFCs, however it required by HTML
+   * specifications, see
+   * https://url.spec.whatwg.org/#application/x-www-form-urlencoded for
+   * details.
+   * By default plus is converted to space in the query part of URI.
+   * The parameter value must be placed to the
+   * @a v_disable_uri_query_plus_as_space member.
+   */
+  MHD_D_O_DISABLE_URI_QUERY_PLUS_AS_SPACE = 202
+  ,
+  /**
+   * Suppresse use of "Date:" header.
+   * According to RFC should be suppressed only if the system has no RTC.
+   * The "Date:" is not suppressed (the header is enabled) by default.
+   * The parameter value must be placed to the
+   * @a v_suppress_date_header member.
+   */
+  MHD_D_O_SUPPRESS_DATE_HEADER = 240
+  ,
+  /**
+   * Use SHOUTcast for responses.
+   * This will cause *all* responses to begin with the SHOUTcast "ICY" line
+   * instead of "HTTP".
+   * The parameter value must be placed to the
+   * @a v_enable_shoutcast member.
+   */
+  MHD_D_O_ENABLE_SHOUTCAST = 241
+  ,
+  /**
+   * Maximum memory size per connection.
+   * Default is 32kb.
+   * Values above 128kb are unlikely to result in much performance benefit, as
+   * half of the memory will be typically used for IO, and TCP buffers are
+   * unlikely to support window sizes above 64k on most systems.
+   * The size should be large enough to fit all request headers (together with
+   * internal parsing information).
+   * The parameter value must be placed to the
+   * @a v_conn_memory_limit member.
+   */
+  MHD_D_O_CONN_MEMORY_LIMIT = 280
+  ,
+  /**
+   * Desired size of the stack for the threads started by MHD.
+   * Use 0 for system default, which is also MHD default.
+   * Works only with ##MHD_DAEMON_OPTION_WORKER_THREADS() or
+   * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
+   * The parameter value must be placed to the
+   * @a v_stack_size member.
+   */
+  MHD_D_O_STACK_SIZE = 281
+  ,
+  /**
+   * The the maximum FD value.
+   * The limit is applied to all sockets used by MHD.
+   * If listen socket FD is equal or higher that specified value, the daemon
+   * fail to start.
+   * If new connection FD is equal or higher that specified value, the
+   * connection is rejected.
+   * Useful if application uses select() for polling the sockets, system
+   * FD_SETSIZE is good value for this option in such case.
+   * Does not work with ##MHD_DAEMON_OPTION_WORKER_THREADS() or
+   * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
+   * Does not work on W32 (WinSock sockets).
+   * The parameter value must be placed to the
+   * @a v_fd_number_limit member.
+   */
+  MHD_D_O_FD_NUMBER_LIMIT = 282
+  ,
+  /**
+   * Enable `turbo`.
+   * Disables certain calls to `shutdown()`, enables aggressive non-blocking
+   * optimistic reads and other potentially unsafe optimisations.
+   * Most effects only happen with internal threads with epoll.
+   * The 'turbo' mode is not enabled (mode is disabled) by default.
+   * The parameter value must be placed to the
+   * @a v_turbo member.
+   */
+  MHD_D_O_TURBO = 320
+  ,
+  /**
+   * Disable some internal thread safety.
+   * Indicates that MHD daemon will be used by application in single-threaded
+   * mode only.  When this flag is set then application must call any MHD
+   * function only within a single thread.
+   * This flag turns off some internal thread-safety and allows MHD making some
+   * of the internal optimisations suitable only for single-threaded
+   * environment.
+   * Not compatible with any internal threads modes.
+   * If MHD is compiled with custom configuration for embedded projects without
+   * threads support, this option is mandatory.
+   * Thread safety is not disabled (safety is enabled) by default.
+   * The parameter value must be placed to the
+   * @a v_disable_thread_safety member.
+   */
+  MHD_D_O_DISABLE_THREAD_SAFETY = 321
+  ,
+  /**
+   * You need to set this option if you want to disable use of HTTP "Upgrade".
+   * "Upgrade" may require usage of additional internal resources, which we can
+   * avoid providing if they will not be used.
+   * You should only use this option if you do not use "Upgrade" functionality
+   * and need a generally minor boost in performance and resources saving.
+   * The "Upgrade" is not disallowed ("upgrade" is allowed) by default.
+   * The parameter value must be placed to the
+   * @a v_disallow_upgrade member.
+   */
+  MHD_D_O_DISALLOW_UPGRADE = 322
+  ,
+  /**
+   * Disable #MHD_action_suspend() functionality.
+   *
+   * You should only use this function if you do not use suspend functionality
+   * and need a generally minor boost in performance.
+   * The suspend is not disallowed (suspend is allowed) by default.
+   * The parameter value must be placed to the
+   * @a v_disallow_suspend_resume member.
+   */
+  MHD_D_O_DISALLOW_SUSPEND_RESUME = 323
+  ,
+  /**
+   * Set a callback to be called for pre-start finalisation.
+   *
+   * The specified callback will be called one time, after network
+   * initialisation, TLS pre-initialisation, but before the start of the
+   * internal threads (if allowed)ю
+   * The parameter value must be placed to the
+   * @a v_daemon_ready_callback member.
+   */
+  MHD_D_O_DAEMON_READY_CALLBACK = 360
+  ,
+  /**
+   * Set a function that should be called whenever a connection is started or
+   * closed.
+   * The parameter value must be placed to the
+   * @a v_notify_connection member.
+   */
+  MHD_D_O_NOTIFY_CONNECTION = 361
+  ,
+  /**
+   * Register a function that should be called whenever a stream is started or
+   * closed.
+   * For HTTP/1.1 this callback is called one time for every connection.
+   * The parameter value must be placed to the
+   * @a v_notify_stream member.
+   */
+  MHD_D_O_NOTIFY_STREAM = 362
+  ,
+  /**
+   * Set strong random data to be used by MHD.
+   * Currently the data is only needed for Digest Auth module.
+   * The recommended size is between 8 and 32 bytes. Security can be lower for
+   * sizes less or equal four.
+   * Sizes larger then 32 (or, probably, larger than 16 - debatable) will not
+   * increase the security.
+   * The parameter value must be placed to the
+   * @a v_random_entropy member.
+   */
+  MHD_D_O_RANDOM_ENTROPY = 400
+  ,
+  /**
+   * Specify the size of the internal hash map array that tracks generated
+   * digest nonces usage.
+   * When the size of the map is too small then need to handle concurrent DAuth
+   * requests, a lot of "stale nonce" results will be produced.
+   * By default the size is 8 bytes (very small).
+   * The parameter value must be placed to the
+   * @a v_dauth_map_size member.
+   */
+  MHD_D_O_DAUTH_MAP_SIZE = 401
+  ,
+  /**
+   * Control the scope of validity of MHD-generated nonces.
+   * This regulates how "nonces" are generated and how "nonces" are checked by
+   * #MHD_digest_auth_check() and similar functions.
+   * This option allows bitwise OR combination of
+   * #MHD_DaemonOptionValueDAuthBindNonce values.
+   * When this option is not used then default value is
+   * #MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
+   * The parameter value must be placed to the
+   * @a v_dauth_nonce_bind_type member.
+   */
+  MHD_D_O_DAUTH_NONCE_BIND_TYPE = 402
+  ,
+  /**
+   * Default nonce timeout value (in seconds) used for Digest Auth.
+   * Silently ignored if followed by zero value.
+   * @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
+   * The parameter value must be placed to the
+   * @a v_dauth_def_nonce_timeout member.
+   */
+  MHD_D_O_DAUTH_DEF_NONCE_TIMEOUT = 403
+  ,
+  /**
+   * Default maximum nc (nonce count) value used for Digest Auth.
+   * Silently ignored if followed by zero value.
+   * @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
+   * The parameter value must be placed to the
+   * @a v_dauth_def_max_nc member.
+   */
+  MHD_D_O_DAUTH_DEF_MAX_NC = 404
+  ,
+  /* = enum MHD_DaemonOption values above are generated automatically = */
+
+  /* * Sentinel * */
+  /**
+   * The sentinel value.
+   * This value enforces specific underlying integer type for the enum.
+   * Do not use.
+   */
+  MHD_D_O_SENTINEL = 65535
+
 };
 
+/* = structures below are generated automatically = */
+/**
+ * Data for #MHD_D_O_BIND_PORT
+ */
+struct MHD_DaemonOptionValueBind
+{
+  /**
+   * The address family to use,
+   * the #MHD_AF_NONE to disable listen socket (the same effect as if this
+   * option is not used)
+   */
+    enum MHD_AddressFamily v_af;
+  /**
+   * Port to use, 0 to let system assign any free port,
+   * ignored if @a af is #MHD_AF_NONE
+   */
+    uint_fast16_t v_port;
+};
+
+/**
+ * Data for #MHD_D_O_BIND_SA
+ */
+struct MHD_DaemonOptionValueSA
+{
+  /**
+   * The size of the socket address pointed by @a sa.
+   */
+    size_t v_sa_len;
+  /**
+   * The address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or even a
+   * UNIX domain socket (AF_UNIX)
+   */
+    const struct sockaddr *v_sa;
+};
+
+/**
+ * Data for #MHD_D_O_TCP_FASTOPEN
+ */
+struct MHD_DaemonOptionValueTFO
+{
+  /**
+   * The type use of of TCP FastOpen
+   */
+    enum MHD_TCPFastOpenType v_option;
+  /**
+   * The length of the queue, zero to use system or MHD default,
+   * silently ignored on platforms without support for custom queue size
+   */
+    unsigned int v_queue_length;
+};
+
+/**
+ * Data for #MHD_D_O_TLS_PSK_CALLBACK
+ */
+struct MHD_DaemonOptionValueTlsPskCB
+{
+  /**
+   * The function to call to obtain pre-shared key
+   */
+    MHD_PskServerCredentialsCallback v_psk_cb;
+  /**
+   * The closure for @a psk_cb
+   */
+    void *v_psk_cb_cls;
+};
+
+/**
+ * Data for #MHD_D_O_ACCEPT_POLICY
+ */
+struct MHD_DaemonOptionValueAcceptPol
+{
+  /**
+   * The accept policy callback
+   */
+    MHD_AcceptPolicyCallback v_apc;
+  /**
+   * The closure for the callback
+   */
+    void *v_apc_cls;
+};
+
+/**
+ * Data for #MHD_D_O_PROTOCOL_STRICT_LEVEL
+ */
+struct MHD_DaemonOptionValueStrctLvl
+{
+  /**
+   * The level of strictness
+   */
+    enum MHD_ProtocolStrictLevel v_sl;
+  /**
+   * The way how to use the requested level
+   */
+    enum MHD_UseStictLevel v_how;
+};
+
+/**
+ * Data for #MHD_D_O_EARLY_URI_LOGGER
+ */
+struct MHD_DaemonOptionValueUriCB
+{
+  /**
+   * The early URI callback
+   */
+    MHD_EarlyUriLogCallback v_cb;
+  /**
+   * The closure for the callback
+   */
+    void *v_cls;
+};
+
+/**
+ * Data for #MHD_D_O_DAEMON_READY_CALLBACK
+ */
+struct MHD_DaemonOptionValueReadyCB
+{
+  /**
+   * The pre-start callback
+   */
+    MHD_DaemonReadyCallback v_cb;
+  /**
+   * The closure for the callback
+   */
+    void *v_cb_cls;
+};
+
+/**
+ * Data for #MHD_D_O_NOTIFY_CONNECTION
+ */
+struct MHD_DaemonOptionValueNotifConnCB
+{
+  /**
+   * The callback for notifications
+   */
+    MHD_NotifyConnectionCallback v_ncc;
+  /**
+   * The closure for the callback
+   */
+    void *v_cls;
+};
+
+/**
+ * Data for #MHD_D_O_NOTIFY_STREAM
+ */
+struct MHD_DaemonOptionValueNotifStreamCB
+{
+  /**
+   * The callback for notifications
+   */
+    MHD_NotifyStreamCallback v_nsc;
+  /**
+   * The closure for the callback
+   */
+    void *v_cls;
+};
+
+/**
+ * Data for #MHD_D_O_RANDOM_ENTROPY
+ */
+struct MHD_DaemonOptionValueRand
+{
+  /**
+   * The size of the buffer
+   */
+    size_t v_buf_size;
+  /**
+   * The buffer with strong random data, the content will be copied by MHD
+   */
+    const void *v_buf;
+};
+
+/* = structures above are generated automatically = */
+
+
+/**
+ * Parameters for MHD daemon options
+ */
+union MHD_DaemonOptionValue
+{
+  /* = union MHD_DaemonOptionValue members below are generated automatically = */
+  /**
+   * Value for #MHD_D_O_WORK_MODE
+   */
+  struct MHD_WorkModeWithParam v_work_mode;
+  /**
+   * Value for #MHD_D_O_POLL_SYSCALL
+   */
+  enum MHD_SockPollSyscall v_poll_syscall;
+  /**
+   * Value for #MHD_D_O_BIND_PORT
+   */
+  struct MHD_DaemonOptionValueBind v_bind_port;
+  /**
+   * Value for #MHD_D_O_BIND_SA
+   */
+  struct MHD_DaemonOptionValueSA v_bind_sa;
+  /**
+   * Value for #MHD_D_O_LISTEN_SOCKET
+   */
+  MHD_socket v_listen_socket;
+  /**
+   * Value for #MHD_D_O_LISTEN_ADDR_REUSE
+   */
+  enum MHD_DaemonOptionBindType v_listen_addr_reuse;
+  /**
+   * Value for #MHD_D_O_TCP_FASTOPEN
+   */
+  struct MHD_DaemonOptionValueTFO v_tcp_fastopen;
+  /**
+   * Value for #MHD_D_O_LISTEN_BACKLOG
+   */
+  unsigned int v_listen_backlog;
+  /**
+   * Value for #MHD_D_O_SIGPIPE_SUPPRESSED
+   */
+  enum MHD_Bool v_sigpipe_suppressed;
+  /**
+   * Value for #MHD_D_O_TLS
+   */
+  enum MHD_TlsBackend v_tls;
+  /**
+   * Value for #MHD_D_O_TLS_PSK_CALLBACK
+   */
+  struct MHD_DaemonOptionValueTlsPskCB v_tls_psk_callback;
+  /**
+   * Value for #MHD_D_O_NO_ALPN
+   */
+  enum MHD_Bool v_no_alpn;
+  /**
+   * Value for #MHD_D_O_DEFAULT_TIMEOUT
+   */
+  unsigned int v_default_timeout;
+  /**
+   * Value for #MHD_D_O_GLOBAL_CONNECTION_LIMIT
+   */
+  unsigned int v_global_connection_limit;
+  /**
+   * Value for #MHD_D_O_PER_IP_LIMIT
+   */
+  unsigned int v_per_ip_limit;
+  /**
+   * Value for #MHD_D_O_ACCEPT_POLICY
+   */
+  struct MHD_DaemonOptionValueAcceptPol v_accept_policy;
+  /**
+   * Value for #MHD_D_O_PROTOCOL_STRICT_LEVEL
+   */
+  struct MHD_DaemonOptionValueStrctLvl v_protocol_strict_level;
+  /**
+   * Value for #MHD_D_O_EARLY_URI_LOGGER
+   */
+  struct MHD_DaemonOptionValueUriCB v_early_uri_logger;
+  /**
+   * Value for #MHD_D_O_DISABLE_URI_QUERY_PLUS_AS_SPACE
+   */
+  enum MHD_Bool v_disable_uri_query_plus_as_space;
+  /**
+   * Value for #MHD_D_O_SUPPRESS_DATE_HEADER
+   */
+  enum MHD_Bool v_suppress_date_header;
+  /**
+   * Value for #MHD_D_O_ENABLE_SHOUTCAST
+   */
+  enum MHD_Bool v_enable_shoutcast;
+  /**
+   * Value for #MHD_D_O_CONN_MEMORY_LIMIT
+   */
+  size_t v_conn_memory_limit;
+  /**
+   * Value for #MHD_D_O_STACK_SIZE
+   */
+  size_t v_stack_size;
+  /**
+   * Value for #MHD_D_O_FD_NUMBER_LIMIT
+   */
+  MHD_socket v_fd_number_limit;
+  /**
+   * Value for #MHD_D_O_TURBO
+   */
+  enum MHD_Bool v_turbo;
+  /**
+   * Value for #MHD_D_O_DISABLE_THREAD_SAFETY
+   */
+  enum MHD_Bool v_disable_thread_safety;
+  /**
+   * Value for #MHD_D_O_DISALLOW_UPGRADE
+   */
+  enum MHD_Bool v_disallow_upgrade;
+  /**
+   * Value for #MHD_D_O_DISALLOW_SUSPEND_RESUME
+   */
+  enum MHD_Bool v_disallow_suspend_resume;
+  /**
+   * Value for #MHD_D_O_DAEMON_READY_CALLBACK
+   */
+  struct MHD_DaemonOptionValueReadyCB v_daemon_ready_callback;
+  /**
+   * Value for #MHD_D_O_NOTIFY_CONNECTION
+   */
+  struct MHD_DaemonOptionValueNotifConnCB v_notify_connection;
+  /**
+   * Value for #MHD_D_O_NOTIFY_STREAM
+   */
+  struct MHD_DaemonOptionValueNotifStreamCB v_notify_stream;
+  /**
+   * Value for #MHD_D_O_RANDOM_ENTROPY
+   */
+  struct MHD_DaemonOptionValueRand v_random_entropy;
+  /**
+   * Value for #MHD_D_O_DAUTH_MAP_SIZE
+   */
+  size_t v_dauth_map_size;
+  /**
+   * Value for #MHD_D_O_DAUTH_NONCE_BIND_TYPE
+   */
+  enum MHD_DaemonOptionValueDAuthBindNonce v_dauth_nonce_bind_type;
+  /**
+   * Value for #MHD_D_O_DAUTH_DEF_NONCE_TIMEOUT
+   */
+  unsigned int v_dauth_def_nonce_timeout;
+  /**
+   * Value for #MHD_D_O_DAUTH_DEF_MAX_NC
+   */
+  uint_fast32_t v_dauth_def_max_nc;
+  /* = union MHD_DaemonOptionValue members above are generated automatically = */
+};
+
+/**
+ * Combination of MHD daemon option with parameters values
+ */
 struct MHD_DaemonOptionAndValue
 {
   /**
@@ -4304,99 +4955,1541 @@ struct MHD_DaemonOptionAndValue
 
 
 #if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_DESIG_NEST_INIT)
-/*  */ // TODO: no generic form
-#  define MHD_D_OPTION_BOOL_SET_(option,bool_val)  \
-  MHD_NOWARN_COMPOUND_LITERALS_                  \
-  (const struct MHD_DaemonOptionAndValue)        \
-  {                                              \
-    .opt = (option),                             \
-    .val.v_bool = (bool_val)                     \
-  }                                              \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+/* = macros below are generated automatically = */
+/**
+ * Set MHD work (threading and polling) mode.
+ * Consider use of #MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC(),
+ * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
+ * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(),
+ * #MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(),
+ * #MHD_DAEMON_OPTION_WORKER_THREADS() or
+ * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION() instead of direct use of this
+ * parameter.
+ * @param wmp the object created by one of the next functions/macros:
+ *            #MHD_WM_OPTION_EXTERNAL_PERIODIC(),
+ *            #MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
+ *            #MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE(),
+ *            #MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH(),
+ *            #MHD_WM_OPTION_WORKER_THREADS(),
+ *            #MHD_WM_OPTION_THREAD_PER_CONNECTION()
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_WORK_MODE(wmp) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_WORK_MODE), \
+      .val.v_work_mode = (wmp) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Select a sockets watch system call used for internal polling.
+ * @param els the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_POLL_SYSCALL(els) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_POLL_SYSCALL), \
+      .val.v_poll_syscall = (els) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Bind to the given TCP port and address family.
+ *
+ * Does not work with #MHD_DAEMON_OPTION_BIND_SA() or
+ * #MHD_DAEMON_OPTION_LISTEN_SOCKET().
+ *
+ * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
+ * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used,
+ * MHD does not listen for incoming connection.
+ * @param af the address family to use,
+ *           the #MHD_AF_NONE to disable listen socket (the same effect as if
+ *           this option is not used)
+ * @param port port to use, 0 to let system assign any free port,
+ *             ignored if @a af is #MHD_AF_NONE
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_BIND_PORT(af,port) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_BIND_PORT), \
+      .val.v_bind_port.v_af = (af), \
+      .val.v_bind_port.v_port = (port) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Bind to the given socket address.
- * Ineffective in conjunction with #MHD_daemon_listen_socket().
  *
- * @param sa address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6)
- *        or even a UNIX domain socket (AF_UNIX)
- * @param sa_len number of bytes in @a sa
- * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ * Does not work with #MHD_DAEMON_OPTION_BIND_PORT() or
+ * #MHD_DAEMON_OPTION_LISTEN_SOCKET().
+ *
+ * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
+ * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used,
+ * MHD does not listen for incoming connection.
+ * @param sa_len the size of the socket address pointed by @a sa.
+ * @param sa the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or
+ *           even a UNIX domain socket (AF_UNIX)
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
  */
-#  define MHD_D_OPTION_SOCK_ADDR(sa_len_val,sa_val)       \
-  MHD_NOWARN_COMPOUND_LITERALS_                         \
-  (const struct MHD_DaemonOptionAndValue)               \
-  {                                                     \
-    .opt = (MHD_D_O_SA),                                \
-    .val.v_sa.sa_len = (sa_len_val),                    \
-    .val.v_sa.sa = (sa_val)                             \
-  }                                                     \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+#  define MHD_DAEMON_OPTION_BIND_SA(sa_len,sa) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_BIND_SA), \
+      .val.v_bind_sa.v_sa_len = (sa_len), \
+      .val.v_bind_sa.v_sa = (sa) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
- * Terminate the list of the options
- * @return the terminating object of struct MHD_DaemonOptionAndValue
+ * Accept connections from the given socket.  Socket
+ * must be a TCP or UNIX domain (SOCK_STREAM) socket.
+ *
+ * Does not work with #MHD_DAEMON_OPTION_BIND_PORT() or
+ * #MHD_DAEMON_OPTION_BIND_SA().
+ *
+ * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
+ * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used,
+ * MHD does not listen for incoming connection.
+ * @param listen_fd the listen socket to use, ignored if set to
+ *                  #MHD_INVALID_SOCKET
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
  */
-#  define MHD_D_OPTION_TERMINATE()                 \
-  MHD_NOWARN_COMPOUND_LITERALS_                  \
-  (const struct MHD_DaemonOptionAndValue)        \
-  {                                              \
-    .opt = (MHD_D_O_END)                         \
-  }                                              \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+#  define MHD_DAEMON_OPTION_LISTEN_SOCKET(listen_fd) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_LISTEN_SOCKET), \
+      .val.v_listen_socket = (listen_fd) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Select mode of reusing address:port listen address.
+ *
+ * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
+ * #MHD_DAEMON_OPTION_BIND_SA() are used.
+ * @param reuse_type the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_LISTEN_ADDR_REUSE(reuse_type) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_LISTEN_ADDR_REUSE), \
+      .val.v_listen_addr_reuse = (reuse_type) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Configure TCP_FASTOPEN option, including setting a
+ * custom @a queue_length.
+ *
+ * Note that having a larger queue size can cause resource exhaustion
+ * attack as the TCP stack has to now allocate resources for the SYN
+ * packet along with its DATA.
+ *
+ * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
+ * #MHD_DAEMON_OPTION_BIND_SA() are used.
+ * @param option the type use of of TCP FastOpen
+ * @param queue_length the length of the queue, zero to use system or MHD
+ *                     default,
+ *                     silently ignored on platforms without support for custom
+ *                     queue size
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_TCP_FASTOPEN(option,queue_length) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_TCP_FASTOPEN), \
+      .val.v_tcp_fastopen.v_option = (option), \
+      .val.v_tcp_fastopen.v_queue_length = (queue_length) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Use the given backlog for the listen() call.
+ *
+ * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
+ * #MHD_DAEMON_OPTION_BIND_SA() are used.
+ * @param backlog_size the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_LISTEN_BACKLOG(backlog_size) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_LISTEN_BACKLOG), \
+      .val.v_listen_backlog = (backlog_size) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Inform that SIGPIPE is suppressed or handled by application.
+ * If suppressed/handled, MHD uses network functions that could generate
+ * SIGPIPE, like `sendfile()`.
+ * Silently ignored when MHD creates internal threads as for them SIGPIPE is
+ * suppressed automatically.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_SIGPIPE_SUPPRESSED(bool_val) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_SIGPIPE_SUPPRESSED), \
+      .val.v_sigpipe_suppressed = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Enable TLS (HTTPS) and select TLS backend
+ * @param backend the TLS backend to use,
+ *                #MHD_TLS_BACKEND_NONE for non-TLS (plain TCP) connections
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_TLS(backend) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_TLS), \
+      .val.v_tls = (backend) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Configure PSK to use for the TLS key exchange.
+ * @param psk_cb the function to call to obtain pre-shared key
+ * @param psk_cb_cls the closure for @a psk_cb
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_TLS_PSK_CALLBACK(psk_cb,psk_cb_cls) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_TLS_PSK_CALLBACK), \
+      .val.v_tls_psk_callback.v_psk_cb = (psk_cb), \
+      .val.v_tls_psk_callback.v_psk_cb_cls = (psk_cb_cls) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Control ALPN for TLS connection.
+ * Silently ignored for non-TLS.
+ * By default ALPN is automatically used for TLS connections.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_NO_ALPN(bool_val) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_NO_ALPN), \
+      .val.v_no_alpn = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Specify inactivity timeout for connection.
+ * When no activity for specified time on connection, it is closed
+ * automatically.
+ * Use zero for no timeout, which is also the (unsafe!) default.
+ * @param timeout the in seconds, zero for no timeout
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_DEFAULT_TIMEOUT(timeout) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_DEFAULT_TIMEOUT), \
+      .val.v_default_timeout = (timeout) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Maximum number of (concurrent) network connections served by daemon
+ * @param glob_limit the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_GLOBAL_CONNECTION_LIMIT(glob_limit) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_GLOBAL_CONNECTION_LIMIT), \
+      .val.v_global_connection_limit = (glob_limit) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Limit on the number of (concurrent) network connections made to the server
+ * from the same IP address.
+ * Can be used to prevent one IP from taking over all of the allowed
+ * connections. If the same IP tries to establish more than the specified
+ * number of connections, they will be immediately rejected.
+ * @param per_ip_limit the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_PER_IP_LIMIT(per_ip_limit) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_PER_IP_LIMIT), \
+      .val.v_per_ip_limit = (per_ip_limit) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Set a policy callback that accepts/rejects connections based on the client's
+ * IP address.  The callbeck function will be called before servicing any new
+ * incoming connection.
+ * @param apc the accept policy callback
+ * @param apc_cls the closure for the callback
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_ACCEPT_POLICY(apc,apc_cls) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_ACCEPT_POLICY), \
+      .val.v_accept_policy.v_apc = (apc), \
+      .val.v_accept_policy.v_apc_cls = (apc_cls) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Set how strictly MHD will enforce the HTTP protocol.
+ * @param sl the level of strictness
+ * @param how the way how to use the requested level
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_PROTOCOL_STRICT_LEVEL(sl,how) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_PROTOCOL_STRICT_LEVEL), \
+      .val.v_protocol_strict_level.v_sl = (sl), \
+      .val.v_protocol_strict_level.v_how = (how) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Set a callback to be called first for every request when the request line is
+ * received (before any parsing of the header).
+ * This callback is the only way to get raw (unmodified) request URI as URI is
+ * parsed and modified by MHD in-place.
+ * Mandatory URI modification may apply before this call, like binary zero
+ * replacement, as required by RFCs.
+ * @param cb the early URI callback
+ * @param cls the closure for the callback
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_EARLY_URI_LOGGER(cb,cls) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_EARLY_URI_LOGGER), \
+      .val.v_early_uri_logger.v_cb = (cb), \
+      .val.v_early_uri_logger.v_cls = (cls) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Disable converting plus ('+') character to space in GET parameters (URI part
+ * after '?').
+ * Plus conversion is not required by HTTP RFCs, however it required by HTML
+ * specifications, see
+ * https://url.spec.whatwg.org/#application/x-www-form-urlencoded for details.
+ * By default plus is converted to space in the query part of URI.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE(bool_val) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_DISABLE_URI_QUERY_PLUS_AS_SPACE), \
+      .val.v_disable_uri_query_plus_as_space = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Suppresse use of "Date:" header.
+ * According to RFC should be suppressed only if the system has no RTC.
+ * The "Date:" is not suppressed (the header is enabled) by default.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_SUPPRESS_DATE_HEADER(bool_val) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_SUPPRESS_DATE_HEADER), \
+      .val.v_suppress_date_header = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Use SHOUTcast for responses.
+ * This will cause *all* responses to begin with the SHOUTcast "ICY" line
+ * instead of "HTTP".
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_ENABLE_SHOUTCAST(bool_val) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_ENABLE_SHOUTCAST), \
+      .val.v_enable_shoutcast = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Maximum memory size per connection.
+ * Default is 32kb.
+ * Values above 128kb are unlikely to result in much performance benefit, as
+ * half of the memory will be typically used for IO, and TCP buffers are
+ * unlikely to support window sizes above 64k on most systems.
+ * The size should be large enough to fit all request headers (together with
+ * internal parsing information).
+ * @param sizet_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_CONN_MEMORY_LIMIT(sizet_val) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_CONN_MEMORY_LIMIT), \
+      .val.v_conn_memory_limit = (sizet_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Desired size of the stack for the threads started by MHD.
+ * Use 0 for system default, which is also MHD default.
+ * Works only with ##MHD_DAEMON_OPTION_WORKER_THREADS() or
+ * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
+ * @param sizet_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_STACK_SIZE(sizet_val) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_STACK_SIZE), \
+      .val.v_stack_size = (sizet_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * The the maximum FD value.
+ * The limit is applied to all sockets used by MHD.
+ * If listen socket FD is equal or higher that specified value, the daemon fail
+ * to start.
+ * If new connection FD is equal or higher that specified value, the connection
+ * is rejected.
+ * Useful if application uses select() for polling the sockets, system
+ * FD_SETSIZE is good value for this option in such case.
+ * Does not work with ##MHD_DAEMON_OPTION_WORKER_THREADS() or
+ * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
+ * Does not work on W32 (WinSock sockets).
+ * @param max_fd the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_FD_NUMBER_LIMIT(max_fd) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_FD_NUMBER_LIMIT), \
+      .val.v_fd_number_limit = (max_fd) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Enable `turbo`.
+ * Disables certain calls to `shutdown()`, enables aggressive non-blocking
+ * optimistic reads and other potentially unsafe optimisations.
+ * Most effects only happen with internal threads with epoll.
+ * The 'turbo' mode is not enabled (mode is disabled) by default.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_TURBO(bool_val) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_TURBO), \
+      .val.v_turbo = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Disable some internal thread safety.
+ * Indicates that MHD daemon will be used by application in single-threaded
+ * mode only.  When this flag is set then application must call any MHD
+ * function only within a single thread.
+ * This flag turns off some internal thread-safety and allows MHD making some
+ * of the internal optimisations suitable only for single-threaded environment.
+ * Not compatible with any internal threads modes.
+ * If MHD is compiled with custom configuration for embedded projects without
+ * threads support, this option is mandatory.
+ * Thread safety is not disabled (safety is enabled) by default.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_DISABLE_THREAD_SAFETY(bool_val) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_DISABLE_THREAD_SAFETY), \
+      .val.v_disable_thread_safety = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * You need to set this option if you want to disable use of HTTP "Upgrade".
+ * "Upgrade" may require usage of additional internal resources, which we can
+ * avoid providing if they will not be used.
+ * You should only use this option if you do not use "Upgrade" functionality
+ * and need a generally minor boost in performance and resources saving.
+ * The "Upgrade" is not disallowed ("upgrade" is allowed) by default.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_DISALLOW_UPGRADE(bool_val) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_DISALLOW_UPGRADE), \
+      .val.v_disallow_upgrade = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Disable #MHD_action_suspend() functionality.
+ *
+ * You should only use this function if you do not use suspend functionality
+ * and need a generally minor boost in performance.
+ * The suspend is not disallowed (suspend is allowed) by default.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_DISALLOW_SUSPEND_RESUME(bool_val) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_DISALLOW_SUSPEND_RESUME), \
+      .val.v_disallow_suspend_resume = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Set a callback to be called for pre-start finalisation.
+ *
+ * The specified callback will be called one time, after network
+ * initialisation, TLS pre-initialisation, but before the start of the internal
+ * threads (if allowed)ю
+ * @param cb the pre-start callback
+ * @param cb_cls the closure for the callback
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_DAEMON_READY_CALLBACK(cb,cb_cls) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_DAEMON_READY_CALLBACK), \
+      .val.v_daemon_ready_callback.v_cb = (cb), \
+      .val.v_daemon_ready_callback.v_cb_cls = (cb_cls) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Set a function that should be called whenever a connection is started or
+ * closed.
+ * @param ncc the callback for notifications
+ * @param cls the closure for the callback
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_NOTIFY_CONNECTION(ncc,cls) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_NOTIFY_CONNECTION), \
+      .val.v_notify_connection.v_ncc = (ncc), \
+      .val.v_notify_connection.v_cls = (cls) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Register a function that should be called whenever a stream is started or
+ * closed.
+ * For HTTP/1.1 this callback is called one time for every connection.
+ * @param nsc the callback for notifications
+ * @param cls the closure for the callback
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_NOTIFY_STREAM(nsc,cls) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_NOTIFY_STREAM), \
+      .val.v_notify_stream.v_nsc = (nsc), \
+      .val.v_notify_stream.v_cls = (cls) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Set strong random data to be used by MHD.
+ * Currently the data is only needed for Digest Auth module.
+ * The recommended size is between 8 and 32 bytes. Security can be lower for
+ * sizes less or equal four.
+ * Sizes larger then 32 (or, probably, larger than 16 - debatable) will not
+ * increase the security.
+ * @param buf_size the size of the buffer
+ * @param buf the buffer with strong random data, the content will be copied by
+ *            MHD
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_RANDOM_ENTROPY(buf_size,buf) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_RANDOM_ENTROPY), \
+      .val.v_random_entropy.v_buf_size = (buf_size), \
+      .val.v_random_entropy.v_buf = (buf) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Specify the size of the internal hash map array that tracks generated digest
+ * nonces usage.
+ * When the size of the map is too small then need to handle concurrent DAuth
+ * requests, a lot of "stale nonce" results will be produced.
+ * By default the size is 8 bytes (very small).
+ * @param size the size of the map array
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_DAUTH_MAP_SIZE(size) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_DAUTH_MAP_SIZE), \
+      .val.v_dauth_map_size = (size) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Control the scope of validity of MHD-generated nonces.
+ * This regulates how "nonces" are generated and how "nonces" are checked by
+ * #MHD_digest_auth_check() and similar functions.
+ * This option allows bitwise OR combination of
+ * #MHD_DaemonOptionValueDAuthBindNonce values.
+ * When this option is not used then default value is
+ * #MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
+ * @param bind_type the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_DAUTH_NONCE_BIND_TYPE(bind_type) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_DAUTH_NONCE_BIND_TYPE), \
+      .val.v_dauth_nonce_bind_type = (bind_type) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Default nonce timeout value (in seconds) used for Digest Auth.
+ * Silently ignored if followed by zero value.
+ * @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
+ * @param timeout the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_DAUTH_DEF_NONCE_TIMEOUT(timeout) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_DAUTH_DEF_NONCE_TIMEOUT), \
+      .val.v_dauth_def_nonce_timeout = (timeout) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Default maximum nc (nonce count) value used for Digest Auth.
+ * Silently ignored if followed by zero value.
+ * @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
+ * @param max_nc the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_DAUTH_DEF_MAX_NC(max_nc) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_DAUTH_DEF_MAX_NC), \
+      .val.v_dauth_def_max_nc = (max_nc) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/* = macros above are generated automatically = */
 
 #else  /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 MHD_NOWARN_UNUSED_FUNC_
-
-/* Do not use directly */
+/* = static functions below are generated automatically = */
+/**
+ * Set MHD work (threading and polling) mode.
+ * Consider use of #MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC(),
+ * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
+ * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(),
+ * #MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(),
+ * #MHD_DAEMON_OPTION_WORKER_THREADS() or
+ * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION() instead of direct use of this
+ * parameter.
+ * @param wmp the object created by one of the next functions/macros:
+ *            #MHD_WM_OPTION_EXTERNAL_PERIODIC(),
+ *            #MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
+ *            #MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE(),
+ *            #MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH(),
+ *            #MHD_WM_OPTION_WORKER_THREADS(),
+ *            #MHD_WM_OPTION_THREAD_PER_CONNECTION()
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_D_OPTION_BOOL_SET_(enum MHD_DaemonOption option,
-                  enum MHD_Bool bool_val)
+MHD_DAEMON_OPTION_WORK_MODE (struct MHD_WorkModeWithParam wmp)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
-  opt_val.opt = option;
-  opt_val.val.v_bool = bool_val;
+  opt_val.opt = MHD_D_O_WORK_MODE;
+  opt_val.val.v_work_mode = wmp;
+
+  return opt_val;
+}
+
+/**
+ * Select a sockets watch system call used for internal polling.
+ * @param els the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_POLL_SYSCALL (enum MHD_SockPollSyscall els)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_POLL_SYSCALL;
+  opt_val.val.v_poll_syscall = els;
+
+  return opt_val;
+}
+
+/**
+ * Bind to the given TCP port and address family.
+ *
+ * Does not work with #MHD_DAEMON_OPTION_BIND_SA() or
+ * #MHD_DAEMON_OPTION_LISTEN_SOCKET().
+ *
+ * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
+ * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used,
+ * MHD does not listen for incoming connection.
+ * @param af the address family to use,
+ *           the #MHD_AF_NONE to disable listen socket (the same effect as if
+ *           this option is not used)
+ * @param port port to use, 0 to let system assign any free port,
+ *             ignored if @a af is #MHD_AF_NONE
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_BIND_PORT (
+  enum MHD_AddressFamily af,
+  uint_fast16_t port)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_BIND_PORT;
+  opt_val.val.v_bind_port.v_af = af;
+  opt_val.val.v_bind_port.v_port = port;
 
   return opt_val;
 }
 
 /**
  * Bind to the given socket address.
- * Ineffective in conjunction with #MHD_daemon_listen_socket().
  *
- * @param sa_len_val the number of bytes in @a sa
- * @param sa_val the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6)
- *        or even a UNIX domain socket (AF_UNIX)
- * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ * Does not work with #MHD_DAEMON_OPTION_BIND_PORT() or
+ * #MHD_DAEMON_OPTION_LISTEN_SOCKET().
+ *
+ * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
+ * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used,
+ * MHD does not listen for incoming connection.
+ * @param sa_len the size of the socket address pointed by @a sa.
+ * @param sa the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or
+ *           even a UNIX domain socket (AF_UNIX)
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_D_OPTION_SOCK_ADDR(size_t sa_len_val,
-                     const struct sockaddr *sa_val)
+MHD_DAEMON_OPTION_BIND_SA (
+  size_t sa_len,
+  const struct sockaddr *sa)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
-  opt_val.opt = MHD_D_O_SA;
-  opt_val.val.v_sa.sa_len = sa_len_val;
-  opt_val.val.v_sa.sa = sa_val;
+  opt_val.opt = MHD_D_O_BIND_SA;
+  opt_val.val.v_bind_sa.v_sa_len = sa_len;
+  opt_val.val.v_bind_sa.v_sa = sa;
 
   return opt_val;
 }
 
 /**
- * Terminate the list of the options
- * @return the terminating object of struct MHD_DaemonOptionAndValue
+ * Accept connections from the given socket.  Socket
+ * must be a TCP or UNIX domain (SOCK_STREAM) socket.
+ *
+ * Does not work with #MHD_DAEMON_OPTION_BIND_PORT() or
+ * #MHD_DAEMON_OPTION_BIND_SA().
+ *
+ * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
+ * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used,
+ * MHD does not listen for incoming connection.
+ * @param listen_fd the listen socket to use, ignored if set to
+ *                  #MHD_INVALID_SOCKET
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_D_OPTION_TERMINATE(void)
+MHD_DAEMON_OPTION_LISTEN_SOCKET (MHD_socket listen_fd)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
-  opt_val.opt = MHD_D_O_END;
+  opt_val.opt = MHD_D_O_LISTEN_SOCKET;
+  opt_val.val.v_listen_socket = listen_fd;
 
   return opt_val;
 }
 
+/**
+ * Select mode of reusing address:port listen address.
+ *
+ * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
+ * #MHD_DAEMON_OPTION_BIND_SA() are used.
+ * @param reuse_type the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_LISTEN_ADDR_REUSE (enum MHD_DaemonOptionBindType reuse_type)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_LISTEN_ADDR_REUSE;
+  opt_val.val.v_listen_addr_reuse = reuse_type;
+
+  return opt_val;
+}
+
+/**
+ * Configure TCP_FASTOPEN option, including setting a
+ * custom @a queue_length.
+ *
+ * Note that having a larger queue size can cause resource exhaustion
+ * attack as the TCP stack has to now allocate resources for the SYN
+ * packet along with its DATA.
+ *
+ * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
+ * #MHD_DAEMON_OPTION_BIND_SA() are used.
+ * @param option the type use of of TCP FastOpen
+ * @param queue_length the length of the queue, zero to use system or MHD
+ *                     default,
+ *                     silently ignored on platforms without support for custom
+ *                     queue size
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_TCP_FASTOPEN (
+  enum MHD_TCPFastOpenType option,
+  unsigned int queue_length)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_TCP_FASTOPEN;
+  opt_val.val.v_tcp_fastopen.v_option = option;
+  opt_val.val.v_tcp_fastopen.v_queue_length = queue_length;
+
+  return opt_val;
+}
+
+/**
+ * Use the given backlog for the listen() call.
+ *
+ * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
+ * #MHD_DAEMON_OPTION_BIND_SA() are used.
+ * @param backlog_size the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_LISTEN_BACKLOG (unsigned int backlog_size)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_LISTEN_BACKLOG;
+  opt_val.val.v_listen_backlog = backlog_size;
+
+  return opt_val;
+}
+
+/**
+ * Inform that SIGPIPE is suppressed or handled by application.
+ * If suppressed/handled, MHD uses network functions that could generate
+ * SIGPIPE, like `sendfile()`.
+ * Silently ignored when MHD creates internal threads as for them SIGPIPE is
+ * suppressed automatically.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_SIGPIPE_SUPPRESSED (enum MHD_Bool bool_val)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_SIGPIPE_SUPPRESSED;
+  opt_val.val.v_sigpipe_suppressed = bool_val;
+
+  return opt_val;
+}
+
+/**
+ * Enable TLS (HTTPS) and select TLS backend
+ * @param backend the TLS backend to use,
+ *                #MHD_TLS_BACKEND_NONE for non-TLS (plain TCP) connections
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_TLS (enum MHD_TlsBackend backend)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_TLS;
+  opt_val.val.v_tls = backend;
+
+  return opt_val;
+}
+
+/**
+ * Configure PSK to use for the TLS key exchange.
+ * @param psk_cb the function to call to obtain pre-shared key
+ * @param psk_cb_cls the closure for @a psk_cb
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_TLS_PSK_CALLBACK (
+  MHD_PskServerCredentialsCallback psk_cb,
+  void *psk_cb_cls)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_TLS_PSK_CALLBACK;
+  opt_val.val.v_tls_psk_callback.v_psk_cb = psk_cb;
+  opt_val.val.v_tls_psk_callback.v_psk_cb_cls = psk_cb_cls;
+
+  return opt_val;
+}
+
+/**
+ * Control ALPN for TLS connection.
+ * Silently ignored for non-TLS.
+ * By default ALPN is automatically used for TLS connections.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_NO_ALPN (enum MHD_Bool bool_val)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_NO_ALPN;
+  opt_val.val.v_no_alpn = bool_val;
+
+  return opt_val;
+}
+
+/**
+ * Specify inactivity timeout for connection.
+ * When no activity for specified time on connection, it is closed
+ * automatically.
+ * Use zero for no timeout, which is also the (unsafe!) default.
+ * @param timeout the in seconds, zero for no timeout
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_DEFAULT_TIMEOUT (unsigned int timeout)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_DEFAULT_TIMEOUT;
+  opt_val.val.v_default_timeout = timeout;
+
+  return opt_val;
+}
+
+/**
+ * Maximum number of (concurrent) network connections served by daemon
+ * @param glob_limit the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_GLOBAL_CONNECTION_LIMIT (unsigned int glob_limit)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_GLOBAL_CONNECTION_LIMIT;
+  opt_val.val.v_global_connection_limit = glob_limit;
+
+  return opt_val;
+}
+
+/**
+ * Limit on the number of (concurrent) network connections made to the server
+ * from the same IP address.
+ * Can be used to prevent one IP from taking over all of the allowed
+ * connections. If the same IP tries to establish more than the specified
+ * number of connections, they will be immediately rejected.
+ * @param per_ip_limit the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_PER_IP_LIMIT (unsigned int per_ip_limit)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_PER_IP_LIMIT;
+  opt_val.val.v_per_ip_limit = per_ip_limit;
+
+  return opt_val;
+}
+
+/**
+ * Set a policy callback that accepts/rejects connections based on the client's
+ * IP address.  The callbeck function will be called before servicing any new
+ * incoming connection.
+ * @param apc the accept policy callback
+ * @param apc_cls the closure for the callback
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_ACCEPT_POLICY (
+  MHD_AcceptPolicyCallback apc,
+  void *apc_cls)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_ACCEPT_POLICY;
+  opt_val.val.v_accept_policy.v_apc = apc;
+  opt_val.val.v_accept_policy.v_apc_cls = apc_cls;
+
+  return opt_val;
+}
+
+/**
+ * Set how strictly MHD will enforce the HTTP protocol.
+ * @param sl the level of strictness
+ * @param how the way how to use the requested level
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_PROTOCOL_STRICT_LEVEL (
+  enum MHD_ProtocolStrictLevel sl,
+  enum MHD_UseStictLevel how)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_PROTOCOL_STRICT_LEVEL;
+  opt_val.val.v_protocol_strict_level.v_sl = sl;
+  opt_val.val.v_protocol_strict_level.v_how = how;
+
+  return opt_val;
+}
+
+/**
+ * Set a callback to be called first for every request when the request line is
+ * received (before any parsing of the header).
+ * This callback is the only way to get raw (unmodified) request URI as URI is
+ * parsed and modified by MHD in-place.
+ * Mandatory URI modification may apply before this call, like binary zero
+ * replacement, as required by RFCs.
+ * @param cb the early URI callback
+ * @param cls the closure for the callback
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_EARLY_URI_LOGGER (
+  MHD_EarlyUriLogCallback cb,
+  void *cls)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_EARLY_URI_LOGGER;
+  opt_val.val.v_early_uri_logger.v_cb = cb;
+  opt_val.val.v_early_uri_logger.v_cls = cls;
+
+  return opt_val;
+}
+
+/**
+ * Disable converting plus ('+') character to space in GET parameters (URI part
+ * after '?').
+ * Plus conversion is not required by HTTP RFCs, however it required by HTML
+ * specifications, see
+ * https://url.spec.whatwg.org/#application/x-www-form-urlencoded for details.
+ * By default plus is converted to space in the query part of URI.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE (enum MHD_Bool bool_val)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_DISABLE_URI_QUERY_PLUS_AS_SPACE;
+  opt_val.val.v_disable_uri_query_plus_as_space = bool_val;
+
+  return opt_val;
+}
+
+/**
+ * Suppresse use of "Date:" header.
+ * According to RFC should be suppressed only if the system has no RTC.
+ * The "Date:" is not suppressed (the header is enabled) by default.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_SUPPRESS_DATE_HEADER (enum MHD_Bool bool_val)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_SUPPRESS_DATE_HEADER;
+  opt_val.val.v_suppress_date_header = bool_val;
+
+  return opt_val;
+}
+
+/**
+ * Use SHOUTcast for responses.
+ * This will cause *all* responses to begin with the SHOUTcast "ICY" line
+ * instead of "HTTP".
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_ENABLE_SHOUTCAST (enum MHD_Bool bool_val)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_ENABLE_SHOUTCAST;
+  opt_val.val.v_enable_shoutcast = bool_val;
+
+  return opt_val;
+}
+
+/**
+ * Maximum memory size per connection.
+ * Default is 32kb.
+ * Values above 128kb are unlikely to result in much performance benefit, as
+ * half of the memory will be typically used for IO, and TCP buffers are
+ * unlikely to support window sizes above 64k on most systems.
+ * The size should be large enough to fit all request headers (together with
+ * internal parsing information).
+ * @param sizet_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_CONN_MEMORY_LIMIT (size_t sizet_val)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_CONN_MEMORY_LIMIT;
+  opt_val.val.v_conn_memory_limit = sizet_val;
+
+  return opt_val;
+}
+
+/**
+ * Desired size of the stack for the threads started by MHD.
+ * Use 0 for system default, which is also MHD default.
+ * Works only with ##MHD_DAEMON_OPTION_WORKER_THREADS() or
+ * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
+ * @param sizet_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_STACK_SIZE (size_t sizet_val)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_STACK_SIZE;
+  opt_val.val.v_stack_size = sizet_val;
+
+  return opt_val;
+}
+
+/**
+ * The the maximum FD value.
+ * The limit is applied to all sockets used by MHD.
+ * If listen socket FD is equal or higher that specified value, the daemon fail
+ * to start.
+ * If new connection FD is equal or higher that specified value, the connection
+ * is rejected.
+ * Useful if application uses select() for polling the sockets, system
+ * FD_SETSIZE is good value for this option in such case.
+ * Does not work with ##MHD_DAEMON_OPTION_WORKER_THREADS() or
+ * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
+ * Does not work on W32 (WinSock sockets).
+ * @param max_fd the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_FD_NUMBER_LIMIT (MHD_socket max_fd)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_FD_NUMBER_LIMIT;
+  opt_val.val.v_fd_number_limit = max_fd;
+
+  return opt_val;
+}
+
+/**
+ * Enable `turbo`.
+ * Disables certain calls to `shutdown()`, enables aggressive non-blocking
+ * optimistic reads and other potentially unsafe optimisations.
+ * Most effects only happen with internal threads with epoll.
+ * The 'turbo' mode is not enabled (mode is disabled) by default.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_TURBO (enum MHD_Bool bool_val)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_TURBO;
+  opt_val.val.v_turbo = bool_val;
+
+  return opt_val;
+}
+
+/**
+ * Disable some internal thread safety.
+ * Indicates that MHD daemon will be used by application in single-threaded
+ * mode only.  When this flag is set then application must call any MHD
+ * function only within a single thread.
+ * This flag turns off some internal thread-safety and allows MHD making some
+ * of the internal optimisations suitable only for single-threaded environment.
+ * Not compatible with any internal threads modes.
+ * If MHD is compiled with custom configuration for embedded projects without
+ * threads support, this option is mandatory.
+ * Thread safety is not disabled (safety is enabled) by default.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_DISABLE_THREAD_SAFETY (enum MHD_Bool bool_val)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_DISABLE_THREAD_SAFETY;
+  opt_val.val.v_disable_thread_safety = bool_val;
+
+  return opt_val;
+}
+
+/**
+ * You need to set this option if you want to disable use of HTTP "Upgrade".
+ * "Upgrade" may require usage of additional internal resources, which we can
+ * avoid providing if they will not be used.
+ * You should only use this option if you do not use "Upgrade" functionality
+ * and need a generally minor boost in performance and resources saving.
+ * The "Upgrade" is not disallowed ("upgrade" is allowed) by default.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_DISALLOW_UPGRADE (enum MHD_Bool bool_val)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_DISALLOW_UPGRADE;
+  opt_val.val.v_disallow_upgrade = bool_val;
+
+  return opt_val;
+}
+
+/**
+ * Disable #MHD_action_suspend() functionality.
+ *
+ * You should only use this function if you do not use suspend functionality
+ * and need a generally minor boost in performance.
+ * The suspend is not disallowed (suspend is allowed) by default.
+ * @param bool_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_DISALLOW_SUSPEND_RESUME (enum MHD_Bool bool_val)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_DISALLOW_SUSPEND_RESUME;
+  opt_val.val.v_disallow_suspend_resume = bool_val;
+
+  return opt_val;
+}
+
+/**
+ * Set a callback to be called for pre-start finalisation.
+ *
+ * The specified callback will be called one time, after network
+ * initialisation, TLS pre-initialisation, but before the start of the internal
+ * threads (if allowed)ю
+ * @param cb the pre-start callback
+ * @param cb_cls the closure for the callback
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_DAEMON_READY_CALLBACK (
+  MHD_DaemonReadyCallback cb,
+  void *cb_cls)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_DAEMON_READY_CALLBACK;
+  opt_val.val.v_daemon_ready_callback.v_cb = cb;
+  opt_val.val.v_daemon_ready_callback.v_cb_cls = cb_cls;
+
+  return opt_val;
+}
+
+/**
+ * Set a function that should be called whenever a connection is started or
+ * closed.
+ * @param ncc the callback for notifications
+ * @param cls the closure for the callback
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_NOTIFY_CONNECTION (
+  MHD_NotifyConnectionCallback ncc,
+  void *cls)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_NOTIFY_CONNECTION;
+  opt_val.val.v_notify_connection.v_ncc = ncc;
+  opt_val.val.v_notify_connection.v_cls = cls;
+
+  return opt_val;
+}
+
+/**
+ * Register a function that should be called whenever a stream is started or
+ * closed.
+ * For HTTP/1.1 this callback is called one time for every connection.
+ * @param nsc the callback for notifications
+ * @param cls the closure for the callback
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_NOTIFY_STREAM (
+  MHD_NotifyStreamCallback nsc,
+  void *cls)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_NOTIFY_STREAM;
+  opt_val.val.v_notify_stream.v_nsc = nsc;
+  opt_val.val.v_notify_stream.v_cls = cls;
+
+  return opt_val;
+}
+
+/**
+ * Set strong random data to be used by MHD.
+ * Currently the data is only needed for Digest Auth module.
+ * The recommended size is between 8 and 32 bytes. Security can be lower for
+ * sizes less or equal four.
+ * Sizes larger then 32 (or, probably, larger than 16 - debatable) will not
+ * increase the security.
+ * @param buf_size the size of the buffer
+ * @param buf the buffer with strong random data, the content will be copied by
+ *            MHD
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_RANDOM_ENTROPY (
+  size_t buf_size,
+  const void *buf)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_RANDOM_ENTROPY;
+  opt_val.val.v_random_entropy.v_buf_size = buf_size;
+  opt_val.val.v_random_entropy.v_buf = buf;
+
+  return opt_val;
+}
+
+/**
+ * Specify the size of the internal hash map array that tracks generated digest
+ * nonces usage.
+ * When the size of the map is too small then need to handle concurrent DAuth
+ * requests, a lot of "stale nonce" results will be produced.
+ * By default the size is 8 bytes (very small).
+ * @param size the size of the map array
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_DAUTH_MAP_SIZE (size_t size)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_DAUTH_MAP_SIZE;
+  opt_val.val.v_dauth_map_size = size;
+
+  return opt_val;
+}
+
+/**
+ * Control the scope of validity of MHD-generated nonces.
+ * This regulates how "nonces" are generated and how "nonces" are checked by
+ * #MHD_digest_auth_check() and similar functions.
+ * This option allows bitwise OR combination of
+ * #MHD_DaemonOptionValueDAuthBindNonce values.
+ * When this option is not used then default value is
+ * #MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
+ * @param bind_type the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_DAUTH_NONCE_BIND_TYPE (enum MHD_DaemonOptionValueDAuthBindNonce bind_type)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_DAUTH_NONCE_BIND_TYPE;
+  opt_val.val.v_dauth_nonce_bind_type = bind_type;
+
+  return opt_val;
+}
+
+/**
+ * Default nonce timeout value (in seconds) used for Digest Auth.
+ * Silently ignored if followed by zero value.
+ * @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
+ * @param timeout the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_DAUTH_DEF_NONCE_TIMEOUT (unsigned int timeout)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_DAUTH_DEF_NONCE_TIMEOUT;
+  opt_val.val.v_dauth_def_nonce_timeout = timeout;
+
+  return opt_val;
+}
+
+/**
+ * Default maximum nc (nonce count) value used for Digest Auth.
+ * Silently ignored if followed by zero value.
+ * @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
+ * @param max_nc the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_DAUTH_DEF_MAX_NC (uint_fast32_t max_nc)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_DAUTH_DEF_MAX_NC;
+  opt_val.val.v_dauth_def_max_nc = max_nc;
+
+  return opt_val;
+}
+
+/* = static functions above are generated automatically = */
 MHD_RESTORE_WARN_UNUSED_FUNC_
 #endif /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 
