@@ -2,7 +2,7 @@
 #
 # MHD option registry
 #
-%rec: MHD_Option
+%rec: D_Options
 # recutils supports only signed 32 bit values
 %typedef: enum_value range 1 0x7FFFFFFF
 %key: Name

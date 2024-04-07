@@ -1,11 +1,11 @@
 /**
 {{SComment}}
- * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ * @return the object of struct MHD_{{hdr_marker}}OptionAndValue with the requested
  *         values
  */
 #  define {{SName}}({{MArguments}}) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
-    (const struct MHD_DaemonOptionAndValue) \
+    (const struct MHD_{{hdr_marker}}OptionAndValue) \
     { \
       .opt = ({{EName}}), \
       {{CLBody}} \

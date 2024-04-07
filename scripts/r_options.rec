@@ -1,0 +1,91 @@
+# *-* mode: rec -*-
+#
+# response option registry
+#
+%rec: R_Options
+# recutils supports only signed 32 bit values
+%typedef: enum_value range 1 0x7FFFFFFF
+%key: Name
+%singular: Value
+%type: Value enum_value
+%auto: Value
+%mandatory: Value
+%mandatory: Comment
+%allowed: Type Argument1 Description1 Member1 Argument2 Description2 Member2 Argument3 Description3 Member3
+%type: Name,Type,Argument1,Member1,Argument2,Member2,Argument3,Member3 line
+%unique: Type Value Argument1 Description1 Member1 Argument2 Description2 Member2 Argument3 Description3 Member3
+
+# General properties
+
+Name: REUSABLE
+Value: 20
+Type: enum MHD_Bool
+Comment: Make the response object re-usable.
++ The response will not be consumed by MHD_action_from_response() and must be destroyed by MHD_response_destroy().
++ Useful if the same response is often used to reply.
+
+# Content control
+
+Name: HEAD_ONLY_RESPONSE
+Value: 40
+Type: enum MHD_Bool
+Comment: Enable special processing of the response as body-less (with undefined body size). No automatic "Content-Length" or "Transfer-Encoding: chunked" headers are added when the response is used with #MHD_HTTP_NOT_MODIFIED code or to respond to HEAD request.
++ The flag also allow to set arbitrary "Content-Length" by #MHD_response_add_header() function.
++ This flag value can be used only with responses created without body (zero-size body).
++ Responses with this flag enabled cannot be used in situations where reply body must be sent to the client.
++ This flag is primarily intended to be used when automatic "Content-Length" header is undesirable in response to HEAD requests.
+
+Name: CHUNKED_ENC
+Value: 41
+Type: enum MHD_Bool
+Comment: Force use of chunked encoding even if the response content size is known.
++ Ignored when the reply cannot have body/content.
+
+# Connection control
+
+Name: CONN_CLOSE
+Value: 60
+Type: enum MHD_Bool
+Comment: Force close connection after sending the response, prevents keep-alive connections and adds "Connection: close" header.
+
+# Compatibility settings
+
+Name: HTTP_1_0_COMPATIBLE_STRIC
+Value: 80
+Type: enum MHD_Bool
+Comment: Only respond in conservative (dumb) HTTP/1.0-compatible mode.
++ Response still use HTTP/1.1 version in header, but always close the connection after sending the response and do not use chunked encoding for the response.
++ You can also set the #MHD_R_O_HTTP_1_0_SERVER flag to force HTTP/1.0 version in the response.
++ Responses are still compatible with HTTP/1.1.
++ This option can be used to communicate with some broken client, which does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
+
+Name: HTTP_1_0_SERVER
+Value: 81
+Type: enum MHD_Bool
+Comment: Only respond in HTTP/1.0-mode.
++ Contrary to the #MHD_R_O_HTTP_1_0_COMPATIBLE_STRICT flag, the response's HTTP version will always be set to 1.0 and keep-alive connections will be used if explicitly requested by the client.
++ The "Connection:" header will be added for both "close" and "keep-alive" connections.
++ Chunked encoding will not be used for the response.
++ Due to backward compatibility, responses still can be used with HTTP/1.1 clients.
++ This option can be used to emulate HTTP/1.0 server (for response part only as chunked encoding in requests (if any) is processed by MHD).
++ With this option HTTP/1.0 server is emulated (with support for "keep-alive" connections).
+
+# Violate HTTP and/or RFCs
+
+Name: INSANITY_HEADER_CONTENT_LENGTH
+Value: 100
+Type: enum MHD_Bool
+Comment: Disable sanity check preventing clients from manually setting the HTTP content length option.
++ Allow to set several "Content-Length" headers. These headers will be used even with replies without body.
+
+# Callbacks
+
+Name: termination_callback
+Value: 121
+Type: struct MHD_ResponeOptionValueTermCB
+Comment: Set a function to be called once MHD is finished with the request.
+Argument1: MHD_RequestTerminationCallback term_cb
+Description1: the function to call,
++ NULL to not use the callback
+Argument2: void *term_cb_cls
+Description2: the closure for the callback

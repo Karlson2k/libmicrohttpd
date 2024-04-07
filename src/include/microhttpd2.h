@@ -7329,133 +7329,6 @@ MHD_action_from_response (struct MHD_Request *request,
                           struct MHD_Response *response);
 
 
-/**
- * Flags for special handling of responses.
- */
-enum MHD_ResponseOptionBool
-{
-  /**
-   * Not a real option, terminate the list of options
-   */
-  MHD_RESP_OPT_BOOL_END = 0
-  ,
-  /**
-   * Make the response object re-usable.
-   * The response will not be consumed by MHD_action_from_response() and
-   * must be destroyed by MHD_response_destroy().
-   * Useful if the response is often used to reply.
-   */
-  MHD_RESP_OPT_BOOL_REUSABLE = 1
-  ,
-  /**
-   * Force close connection after sending the response, prevents keep-alive
-   * connections and adds "Connection: close" header.
-   */
-  MHD_RESP_OPT_BOOL_CONN_CLOSE = 21
-  ,
-  /**
-   * Force use of chunked encoding even if the response content size is known.
-   * Ignored when the reply cannot have body/content.
-   */
-  MHD_RESP_OPT_BOOL_CHUNKED_ENC = 22
-  ,
-  /**
-   * Enable sending of "Connection: keep-alive" header even for
-   * HTTP/1.1 clients when "Keep-Alive" connection is used.
-   * Disabled by default for HTTP/1.1 clients as per RFC.
-   */
-  MHD_RESP_OPT_BOOL_SEND_KEEP_ALIVE_HEADER = 41
-  ,
-  /**
-   * Only respond in conservative (dumb) HTTP/1.0-compatible mode.
-   * Response still use HTTP/1.1 version in header, but always close
-   * the connection after sending the response and do not use chunked
-   * encoding for the response.
-   * You can also set the #MHD_RESP_OPT_BOOL_HTTP_1_0_SERVER flag to force
-   * HTTP/1.0 version in the response.
-   * Responses are still compatible with HTTP/1.1.
-   * This option can be used to communicate with some broken client, which
-   * does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
-   */
-  MHD_RESP_OPT_BOOL_HTTP_1_0_COMPATIBLE_STRICT = 42
-  ,
-  /**
-   * Only respond in HTTP/1.0-mode.
-   * Contrary to the #MHD_RESP_OPT_BOOL_HTTP_1_0_COMPATIBLE_STRICT flag, the response's
-   * HTTP version will always be set to 1.0 and keep-alive connections
-   * will be used if explicitly requested by the client.
-   * The "Connection:" header will be added for both "close" and "keep-alive"
-   * connections.
-   * Chunked encoding will not be used for the response.
-   * Due to backward compatibility, responses still can be used with
-   * HTTP/1.1 clients.
-   * This option can be used to emulate HTTP/1.0 server (for response part
-   * only as chunked encoding in requests (if any) is processed by MHD).
-   */
-  MHD_RESP_OPT_BOOL_HTTP_1_0_SERVER = 43
-  ,
-  /**
-   * Disable sanity check preventing clients from manually
-   * setting the HTTP content length option.
-   * Allow to set several "Content-Length" headers. These headers will
-   * be used even with replies without body.
-   */
-  MHD_RESP_OPT_BOOL_INSANITY_HEADER_CONTENT_LENGTH = 61
-  ,
-  /**
-   * Enable special processing of the response as body-less (with undefined
-   * body size). No automatic "Content-Length" or "Transfer-Encoding: chunked"
-   * headers are added when the response is used with #MHD_HTTP_NOT_MODIFIED
-   * code or to respond to HEAD request.
-   * The flag also allow to set arbitrary "Content-Length" by
-   * MHD_add_response_header() function.
-   * This flag value can be used only with responses created without body
-   * (zero-size body).
-   * Responses with this flag enabled cannot be used in situations where
-   * reply body must be sent to the client.
-   * This flag is primarily intended to be used when automatic "Content-Length"
-   * header is undesirable in response to HEAD requests.
-   */
-  MHD_RESP_OPT_BOOL_HEAD_ONLY_RESPONSE = 81
-};
-
-
-// FIXME: use the same approach as for the daemon
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_response_set_option_bool (struct MHD_Response *response,
-                              enum MHD_ResponseOption ro,
-                              enum MHD_Bool value)
-MHD_FN_PAR_NONNULL_ALL_;
-
-// FIXME: the suggested approach
-
-struct MHD_ResponseOptionBoolSet
-{
-  enum MHD_ResponseOptionBool option;
-  enum MHD_Bool value;
-};
-
-// FIXME: fully type-safe, options array can be built incrementally
-// See https://github.com/babelouest/ulfius/blob/1ed26069fd7e1decd38e8d403a5649b0337893ff/src/ulfius.c#L1073
-// for incrementally built options
-
-/**
- * Set several options for the response object
- * @param response the response to set the options
- * @param options_array the pointer to the array with the options;
- *                      the array is read until first ::MHD_RESP_OPT_BOOL_END
- *                      option, but not more than @a max_num_options elements
- * @param max_num_options the maximum number of elements to read
- *                        from @a options_array, ignored if set to SIZE_MAX
- * @return #MHD_SC_OK if found,
- *         error code otherwise
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_response_set_options_bool (struct MHD_Response *response,
-                               struct MHD_ResponseOptionBoolSet *options_array,
-                               size_t max_num_options)
-MHD_FN_PAR_NONNULL_ALL_;
-
 
 /**
  * The `enum MHD_RequestTerminationCode` specifies reasons
@@ -7564,19 +7437,275 @@ typedef void
 
 
 /**
- * Set a function to be called once MHD is finished with the
- * request.
+ * The options (parameters) for responses.
+ */
+enum MHD_FIXED_ENUM_APP_SET_ MHD_ResponseOption
+{
+  /**
+   * Not a real option, terminate the list of options
+   */
+  MHD_R_O_END = 0
+  ,
+
+  /* = MHD Response Option enum values below are generated automatically = */
+  /**
+   * Make the response object re-usable.
+   * The response will not be consumed by MHD_action_from_response() and
+   * must be destroyed by MHD_response_destroy().
+   * Useful if the response is often used to reply.
+   */
+  MHD_RESP_OPT_BOOL_REUSABLE = 1
+  ,
+  /**
+   * Force close connection after sending the response, prevents keep-alive
+   * connections and adds "Connection: close" header.
+   */
+  MHD_RESP_OPT_BOOL_CONN_CLOSE = 21
+  ,
+  /**
+   * Force use of chunked encoding even if the response content size is known.
+   * Ignored when the reply cannot have body/content.
+   */
+  MHD_RESP_OPT_BOOL_CHUNKED_ENC = 22
+  ,
+  /**
+   * Enable sending of "Connection: keep-alive" header even for
+   * HTTP/1.1 clients when "Keep-Alive" connection is used.
+   * Disabled by default for HTTP/1.1 clients as per RFC.
+   */
+  MHD_RESP_OPT_BOOL_SEND_KEEP_ALIVE_HEADER = 41
+  ,
+  /**
+   * Only respond in conservative (dumb) HTTP/1.0-compatible mode.
+   * Response still use HTTP/1.1 version in header, but always close
+   * the connection after sending the response and do not use chunked
+   * encoding for the response.
+   * You can also set the #MHD_RESP_OPT_BOOL_HTTP_1_0_SERVER flag to force
+   * HTTP/1.0 version in the response.
+   * Responses are still compatible with HTTP/1.1.
+   * This option can be used to communicate with some broken client, which
+   * does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
+   */
+  MHD_RESP_OPT_BOOL_HTTP_1_0_COMPATIBLE_STRICT = 42
+  ,
+  /**
+   * Only respond in HTTP/1.0-mode.
+   * Contrary to the #MHD_RESP_OPT_BOOL_HTTP_1_0_COMPATIBLE_STRICT flag, the response's
+   * HTTP version will always be set to 1.0 and keep-alive connections
+   * will be used if explicitly requested by the client.
+   * The "Connection:" header will be added for both "close" and "keep-alive"
+   * connections.
+   * Chunked encoding will not be used for the response.
+   * Due to backward compatibility, responses still can be used with
+   * HTTP/1.1 clients.
+   * This option can be used to emulate HTTP/1.0 server (for response part
+   * only as chunked encoding in requests (if any) is processed by MHD).
+   */
+  MHD_RESP_OPT_BOOL_HTTP_1_0_SERVER = 43
+  ,
+  /**
+   * Disable sanity check preventing clients from manually
+   * setting the HTTP content length option.
+   * Allow to set several "Content-Length" headers. These headers will
+   * be used even with replies without body.
+   */
+  MHD_RESP_OPT_BOOL_INSANITY_HEADER_CONTENT_LENGTH = 61
+  ,
+  /**
+   * Enable special processing of the response as body-less (with undefined
+   * body size). No automatic "Content-Length" or "Transfer-Encoding: chunked"
+   * headers are added when the response is used with #MHD_HTTP_NOT_MODIFIED
+   * code or to respond to HEAD request.
+   * The flag also allow to set arbitrary "Content-Length" by
+   * MHD_add_response_header() function.
+   * This flag value can be used only with responses created without body
+   * (zero-size body).
+   * Responses with this flag enabled cannot be used in situations where
+   * reply body must be sent to the client.
+   * This flag is primarily intended to be used when automatic "Content-Length"
+   * header is undesirable in response to HEAD requests.
+   */
+  MHD_RESP_OPT_BOOL_HEAD_ONLY_RESPONSE = 81
+  ,
+  /* = MHD Response Option enum values above are generated automatically = */
+
+  /* * Sentinel * */
+  /**
+   * The sentinel value.
+   * This value enforces specific underlying integer type for the enum.
+   * Do not use.
+   */
+  MHD_R_O_SENTINEL = 65535
+
+};
+
+/* = MHD Response Option structures below are generated automatically = */
+
+/* = MHD Response Option structures above are generated automatically = */
+
+/**
+ * Parameters for response options
+ */
+union MHD_ResponseOptionValue
+{
+  /* = MHD Response Option union members below are generated automatically = */
+
+  /* = MHD Response Option union members above are generated automatically = */
+};
+
+/**
+ * Combination of response option with parameters values
+ */
+struct MHD_ResponseOptionAndValue
+{
+  /**
+   * The response configuration option
+   */
+  enum MHD_ResponseOption opt;
+  /**
+   * The value for the @a opt option
+   */
+  union MHD_ResponseOptionValue val;
+};
+
+
+
+
+#if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_DESIG_NEST_INIT)
+/* = MHD Response Option macros below are generated automatically = */
+
+
+/* = MHD Response Option macros above are generated automatically = */
+
+/**
+ * Terminate the list of the options
+ * @return the terminating object of struct MHD_ResponseOptionAndValue
+ */
+#  define MHD_R_OPTION_TERMINATE() \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_R_O_END) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+#else  /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
+MHD_NOWARN_UNUSED_FUNC_
+/* = MHD Response Option static functions below are generated automatically = */
+
+
+
+/* = MHD Response Option static functions above are generated automatically = */
+/**
+ * Terminate the list of the options
+ * @return the terminating object of struct MHD_ResponseOptionAndValue
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_R_OPTION_TERMINATE (void)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_R_O_END;
+
+  return opt_val;
+}
+
+MHD_RESTORE_WARN_UNUSED_FUNC_
+#endif /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
+
+
+/**
+ * Set the requested options for the response.
  *
- * @param[in,out] response which response to set the callback for
- * @param termination_cb function to call, can be NULL to not use the callback
- * @param termination_cb_cls closure for @e termination_cb
+ * If any option fail other options may be or may be not applied.
+ * @param response the response to set the options
+ * @param[in] options the pointer to the array with the options;
+ *                    the array processing stops at the first ::MHD_D_O_END
+ *                    option, but not later than after processing
+ *                    @a options_max_num entries
+ * @param options_max_num the maximum number of entries in the @a options,
+ *                        use #MHD_OPTIONS_ARRAY_MAX_SIZE if options processing
+ *                        must stop only at zero-termination option
+ * @return ::MHD_SC_OK on success,
+ *         error code otherwise
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_response_set_option_termination_callback (
-  struct MHD_Response *response,
-  MHD_RequestTerminationCallback termination_cb,
-  void *termination_cb_cls)
-MHD_FN_PAR_NONNULL_ (1);
+MHD_response_options_set(struct MHD_Response *daemon,
+                         const struct MHD_ResponseOptionAndValue *options,
+                         size_t options_max_num)
+MHD_FN_PAR_NONNULL_ALL_;
+
+
+/**
+ * Set the requested single option for the response.
+ *
+ * @param response the response to set the option
+ * @param[in] options the pointer to the option
+ * @return ::MHD_SC_OK on success,
+ *         error code otherwise
+ */
+#define MHD_response_option_set(response,option_ptr) \
+  MHD_response_options_set(response,options_ptr,1)
+
+
+#ifdef MHD_USE_VARARG_MACROS
+MHD_NOWARN_VARIADIC_MACROS_
+#  if defined(MHD_USE_COMPOUND_LITERALS) && \
+  defined(MHD_USE_COMP_LIT_FUNC_PARAMS)
+/**
+ * Set the requested options for the response.
+ *
+ * If any option fail other options may be or may be not applied.
+ *
+ * It should be used with helpers that creates required options, for example:
+ *
+ * MHD_RESPONE_OPTIONS_SET(d, MHD_D_OPTION_SUPPRESS_DATE_HEADER(MHD_YES), // TODO: use correct macros
+ *                        MHD_D_OPTION_SOCK_ADDR(sa_len, sa))
+ *
+ * @param response the response to set the option
+ * @param ... the list of the options, each option must be created
+ *            by helpers MHD_RESPONSE_OPTION_NameOfOption(option_value)
+ * @return ::MHD_SC_OK on success,
+ *         error code otherwise
+ */
+#    define MHD_RESPONSE_OPTIONS_SET(response,...)      \
+  MHD_NOWARN_COMPOUND_LITERALS_                     \
+  MHD_response_options_set(daemon,                    \
+    ((const struct MHD_ResponseOptionAndValue[])      \
+       {__VA_ARGS__, MHD_R_OPTION_TERMINATE()}),       \
+    MHD_OPTIONS_ARRAY_MAX_SIZE)                     \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+#  elif defined(MHD_USE_CPP_INIT_LIST)
+} /* extern "C" */
+#    include <vector>
+extern "C"
+{
+/**
+ * Set the requested options for the daemon.
+ *
+ * If any option fail other options may be or may be not applied.
+ *
+ * It should be used with helpers that creates required options, for example:
+ *
+ * MHD_DAEMON_OPTIONS_SET(d, MHD_D_OPTION_SUPPRESS_DATE_HEADER(MHD_YES), // TODO: use correct macros
+ *                        MHD_D_OPTION_SOCK_ADDR(sa_len, sa))
+ *
+ * @param daemon the daemon to set the options
+ * @param ... the list of the options, each option must be created
+ *            by helpers MHD_D_OPTION_NameOfOption(option_value)
+ * @return ::MHD_SC_OK on success,
+ *         error code otherwise
+ */
+#    define MHD_DAEMON_OPTIONS_SET(daemon,...)      \
+  MHD_NOWARN_CPP_INIT_LIST_                         \
+  MHD_daemon_options_set(daemon,                      \
+    (std::vector<struct MHD_DaemonOptionAndValue>   \
+     {__VA_ARGS__,MHD_R_OPTION_TERMINATE()}).data(),   \
+    MHD_OPTIONS_ARRAY_MAX_SIZE)                     \
+  MHD_RESTORE_WARN_CPP_INIT_LIST_
+#  endif
+MHD_RESTORE_WARN_VARIADIC_MACROS_
+#endif /* MHD_USE_VARARG_MACROS && MHD_USE_COMP_LIT_FUNC_PARAMS */
 
 
 /**

@@ -1,0 +1,17 @@
+/**
+{{SComment}}
+ * @return the object of struct MHD_{{hdr_marker}}OptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_{{hdr_marker}}OptionAndValue
+{{SName}} ({{SFArguments}})
+{
+  struct MHD_{{hdr_marker}}OptionAndValue opt_val;
+
+  opt_val.opt = {{EName}};
+  {{SFBody}}
+
+  return opt_val;
+}
+
+

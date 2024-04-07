@@ -76,11 +76,32 @@ fi
 
 unset test_var
 
+if [[ "${0}" =~ (^|/|\\)'d_options.sh'$ ]]; then
+    options_type='daemon'
+elif [[ "${0}" =~ (^|/|\\)'r_options.sh'$ ]]; then
+    options_type='response'
+else
+    echo "Wrong name ('$0') of the script file" >&2
+    exit 1
+fi
+
 # parameters
 max_width=79
-input_rec="d_options.rec"
-tmp_rec_name="D_Options_preproc"
-tmp_rec_file="d_options_preproc.rec"
+if [[ "$options_type" = 'daemon' ]]; then
+    input_rec='d_options.rec'
+    rec_name='D_Options'
+    hdr_marker="Daemon"
+    one_char_opt_name='D'
+    short_opt_name="$options_type"
+else
+    input_rec="r_options.rec"
+    rec_name='R_Options'
+    hdr_marker="Response"
+    one_char_opt_name='R'
+    short_opt_name="resp"
+fi
+tmp_rec_name="${rec_name}_preproc"
+tmp_rec_file="${input_rec%.rec}_preproc.rec"
 
 # fixed strings
 flat_arg_descr='the value of the parameter'
@@ -91,7 +112,7 @@ err_exit() {
     
     [[ -z $msg ]] && msg="Error!"
     ( [[ -z $err ]] || (( err < 1 )) ) && err=2
-    echo "$msg" >&1
+    echo "$msg" >&2
     exit $err
 }
 
@@ -199,29 +220,30 @@ cat << _EOF_ > "$tmp_rec_file"
 %mandatory: Name
 %type: Value int
 %sort: Value
-%singular: EName UName Value
+%singular: EName UName SName Value
 
 _EOF_
 
 echo "Processing input file..."
-for N in $(recsel -t MHD_Option -R Value "$input_rec")
+for N in $(recsel -t "${rec_name}" -R Value "$input_rec")
 do
-    NAME=$(recsel -t MHD_Option -P Name -e "Value = $N" "$input_rec")
+    NAME=$(recsel -t "${rec_name}" -P Name -e "Value = $N" "$input_rec")
     if [[ -z $NAME ]]; then
       echo "The 'Name' field is empty for 'Value=$N'" >&2
       exit 2
     fi
     echo -n '.'
-    COMMENT=$(recsel -t MHD_Option -P Comment -e "Value = $N" "$input_rec")
+    COMMENT=$(recsel -t "${rec_name}" -P Comment -e "Value = $N" "$input_rec")
     if [[ -z $COMMENT ]]; then
       echo "The 'Comment' field is empty for '$NAME' ('Value=$N')" >&2
       exit 2
     fi
-    TYPE=$(recsel -t MHD_Option -P Type -e "Value = $N" "$input_rec")
+    TYPE=$(recsel -t "${rec_name}" -P Type -e "Value = $N" "$input_rec")
     EComment="" # The initial part of doxy comment for the enum value
     EName=""    # The name of the enum value
     UName=""    # The name of the union member
     UType=""    # The type of the union member
+    UTypeSp=''  # The type of the union member with space at the end for non-pointers
     SComment="" # The doxy comment for the set macro/function
     SName=""    # The name of the set macro/function
     MArguments=""   # The arguments for the macro
@@ -238,12 +260,12 @@ do
     echo -n "$N: ${clean_name// /_}"
 
     EName="${clean_name^^}"
-    EName="MHD_D_O_${EName// /_}" # Uppercase '_'-joined
+    EName="MHD_${one_char_opt_name^^}_O_${EName// /_}" # Uppercase '_'-joined
     
     UName="v_${clean_name// /_}" # lowercase '_'-joined
     
     SName="${clean_name^^}"
-    SName="MHD_DAEMON_OPTION_${SName// /_}" # Uppercase '_'-joined
+    SName="MHD_${one_char_opt_name^^}_OPTION_${SName// /_}" # Uppercase '_'-joined
     
     format_doxy '   * ' "$COMMENT" || err_exit
     EComment="$format_doxy_res"
@@ -257,12 +279,12 @@ do
     MEMBERS=( )
     M=1
     while
-        ARGM=$(recsel -t MHD_Option -P Argument${M} -e "Value = $N" "$input_rec")
+        ARGM=$(recsel -t "${rec_name}" -P Argument${M} -e "Value = $N" "$input_rec")
         [[ -n $ARGM ]]
     do
         ARGS[$M]="$ARGM"
-        DESCRS[$M]="$(recsel -t MHD_Option -P Description${M} -e "Value = $N" "$input_rec")"
-        MEMBERS[$M]="$(recsel -t MHD_Option -P Member${M} -e "Value = $N" "$input_rec")"
+        DESCRS[$M]=$(recsel -t "${rec_name}" -P Description${M} -e "Value = $N" "$input_rec")
+        MEMBERS[$M]=$(recsel -t "${rec_name}" -P Member${M} -e "Value = $N" "$input_rec")
         (( M++ ))
         echo -n '.'
     done
@@ -400,14 +422,17 @@ do
     else
         need_struct_decl='no'
     fi
+    [[ "$UType" =~ \*$ ]] && UTypeSp="$UType" || UTypeSp="$UType " # Position '*' correctly
     
     recins -t "${tmp_rec_name}" \
         -f Name -v "$NAME" \
         -f Value -v "$N" \
+        -f hdr_marker -v "$hdr_marker" \
         -f EComment -v "$EComment" \
         -f EName -v "$EName" \
         -f UName -v "$UName" \
         -f UType -v "$UType" \
+        -f UTypeSp -v "$UTypeSp" \
         -f SComment -v "$SComment" \
         -f SName -v "$SName" \
         -f MArguments -v "$MArguments" \
@@ -422,7 +447,7 @@ echo "finished."
 
 echo "Updating header file..."
 header_name='microhttpd2.h'
-start_of_marker=' = MHD Daemon Option '
+start_of_marker=" = MHD ${hdr_marker} Option "
 end_of_start_marker=' below are generated automatically = '
 end_of_end_marker=' above are generated automatically = '
 I=0
@@ -433,7 +458,7 @@ middle_of_marker='enum values'
 echo "${middle_of_marker}..."
 in_file="${header_name}"
 out_file="${header_name%.h}_tmp$((++I)).h"
-recfmt -f d_options_enum.template < "$tmp_rec_file" > "header_insert${I}.h" || err_exit
+recfmt -f options_enum.template < "$tmp_rec_file" > "header_insert${I}.h" || err_exit
 middle_of_marker='enum values'
 start_marker="${start_of_marker}${middle_of_marker}${end_of_start_marker}" && end_marker="${start_of_marker}${middle_of_marker}${end_of_end_marker}" || err_exit
 ${SED-sed} -e '/'"$start_marker"'/{p; r header_insert'"$I"'.h
@@ -445,7 +470,7 @@ middle_of_marker='structures'
 echo "${middle_of_marker}..."
 in_file="${out_file}"
 out_file="${header_name%.h}_tmp$((++I)).h"
-recsel -e "StBody != ''" "$tmp_rec_file" | recfmt -f d_options_struct.template > "header_insert${I}.h" || err_exit
+recsel -e "StBody != ''" "$tmp_rec_file" | recfmt -f options_struct.template > "header_insert${I}.h" || err_exit
 start_marker="${start_of_marker}${middle_of_marker}${end_of_start_marker}" && end_marker="${start_of_marker}${middle_of_marker}${end_of_end_marker}" || err_exit
 ${SED-sed} -e '/'"$start_marker"'/{p; r header_insert'"$I"'.h
 }
@@ -456,7 +481,7 @@ middle_of_marker='union members'
 echo "${middle_of_marker}..."
 in_file="${out_file}"
 out_file="${header_name%.h}_tmp$((++I)).h"
-recfmt -f d_options_union.template < "$tmp_rec_file" > "header_insert${I}.h" || err_exit
+recfmt -f options_union.template < "$tmp_rec_file" > "header_insert${I}.h" || err_exit
 start_marker="${start_of_marker}${middle_of_marker}${end_of_start_marker}" && end_marker="${start_of_marker}${middle_of_marker}${end_of_end_marker}" || err_exit
 ${SED-sed} -e '/'"$start_marker"'/{p; r header_insert'"$I"'.h
 }
@@ -467,7 +492,7 @@ middle_of_marker='macros'
 echo "${middle_of_marker}..."
 in_file="${out_file}"
 out_file="${header_name%.h}_tmp$((++I)).h"
-recfmt -f d_options_macro.template < "$tmp_rec_file" | ${SED-sed} -e 's/##removeme##//g' - > "header_insert${I}.h" || err_exit
+recfmt -f options_macro.template < "$tmp_rec_file" | ${SED-sed} -e 's/##removeme##//g' - > "header_insert${I}.h" || err_exit
 start_marker="${start_of_marker}${middle_of_marker}${end_of_start_marker}" && end_marker="${start_of_marker}${middle_of_marker}${end_of_end_marker}" || err_exit
 ${SED-sed} -e '/'"$start_marker"'/{p; r header_insert'"$I"'.h
 }
@@ -478,7 +503,7 @@ middle_of_marker='static functions'
 echo "${middle_of_marker}..."
 in_file="${out_file}"
 out_file="${header_name%.h}_tmp$((++I)).h"
-recfmt -f d_options_func.template < "$tmp_rec_file" > "header_insert${I}.h" || err_exit
+recfmt -f options_func.template < "$tmp_rec_file" > "header_insert${I}.h" || err_exit
 start_marker="${start_of_marker}${middle_of_marker}${end_of_start_marker}" && end_marker="${start_of_marker}${middle_of_marker}${end_of_end_marker}" || err_exit
 ${SED-sed} -e '/'"$start_marker"'/{p; r header_insert'"$I"'.h
 }
@@ -495,5 +520,5 @@ else
 fi
 
 echo "Cleanup..."
-rm -f "$tmp_rec_file" ${header_name%.h}_tmp?.h
+rm -f "$tmp_rec_file" ${header_name%.h}_tmp?.h header_insert?.h
 echo "completed."
