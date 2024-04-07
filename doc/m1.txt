@@ -3,22 +3,24 @@ Dear all,
 We're happy to announce reaching the first milestone for the
 STF MHD 2.0 project, which is completing the MHD HTTP header
 and thus the design for the next generation API.  We have now
-spent several months iterating between discussing, editing,
-and testing details and are finally happy with the result.
+spent several months iterating between discussing, designing,
+optimising, editing, and testing details and are finally
+happy with the result.
 
 Key objectives for us were:
 
 - simplify application code that uses MHD
 - keep the API and the MHD code size small
 - ensure the API is extensible
-- enable use of different TLS backends
+- enable use of different TLS backends, avoid backend-specific
+  settings to use backends in the same way.
 - make API work with HTTP 1.x, HTTP/2 and HTTP/3
 - preserve or improve portability across platforms
 - stay compatible to a wide range of C and C++ compilers
 
 The main changes these objectives inspired are to:
 
-- Split the MHD_AccesSHandlerCallback functionality into
+- Split the MHD_AccessHandlerCallback functionality into
   various separate callbacks to keep the API simple for
   simple requests while allowing complex logic to be
   incrementally introduced via the new "struct MHD_Action".
@@ -45,6 +47,8 @@ The main changes these objectives inspired are to:
   of using well-typed functions, while no such functions
   actually exist in the library, keeping the code size
   minimal, especially if features are not even used :-).
+- Unified the way how settings are used for daemon,
+  connection and response objects.
 - Removed the separation of options and flags and
   made it harder to pass inconsistent options
 - improved terminology across the API, in particular by
@@ -57,6 +61,19 @@ The main changes these objectives inspired are to:
   Also changed the API to use more consistent
   prefixes for related functions by using
   "MHD_subject_verb_object" naming convention
+- significantly simplified for application processing of
+  client's upload. Removed the need for troublesome (for
+  application) incremental processing (especially problematic
+  for forms processing), while keeping automatic limits
+  for memory allocations, preventing by design wide range
+  of remote attacks
+- Added unified and detailed introspection API for library,
+  daemon, connection, stream and request objects.
+  The API is designed in the same way for all object, simplifying 
+  use for the application. The new API is detailed and allow
+  application to extract any required information in a simple
+  way. Also separated "fixed" and "dynamic" properties of objects
+  for letting compiler optimise application code better.
 - Integrated HTTP status into the response object, as
   this is way more logical and we are aware of various
   implementations being forced to basically pass them
@@ -74,11 +91,11 @@ The main changes these objectives inspired are to:
   does not fit into main memory. This both simplifies usage
   in the common case where uploaded data is small, while also
   nicely supporting use-cases with large data streams.
-- Made responses unmodifiable after first use. This would not be thread-safe.
-  However, MHD-generated headers (Date, Connection/Keep-Alive) are
-  part of the *request* and do not count as part of the
-  immutable "response" here.  Removed "footers" from responses.
-  With unmodifiable responses everything should be "headers".
+- Made responses unmodifiable after first use. Modifiable responses
+  are not be thread-safe. However, MHD-generated headers (Date,
+  Connection/Keep-Alive) are part of the *request* and do not count
+  as part of the immutable "response" here.  Removed "footers" from
+  responses.  With unmodifiable responses everything should be "headers".
   However, footers are supported as part of a *request* instead.
 - Move response codes from MHD_HTTP_xxx namespace to MHD_HTTP_CODE_xxx
   namespace. This avoids potential clashes with other MHD constant names.
@@ -88,6 +105,11 @@ The main changes these objectives inspired are to:
   strings (but applications may still also use the strings)
   This also includes better status codes returned from
   API calls to diagnose issues (no more just "YES/NO")
+- Let application to use request methods as a enum, avoid repeated
+  string comparison by sharing result of the already performed
+  internal detection of the request method.  Keep ability to
+  use non-standard HTTP requests methods if needed via use
+  of introspection API.
 - Introduced "MHD_APP_SOCKET_CNTX_TYPE" hack to allow
   applications to improve type-safety by overriding
   the type of "closure" arguments instead of using
