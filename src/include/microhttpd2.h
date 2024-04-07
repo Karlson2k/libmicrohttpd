@@ -317,7 +317,8 @@ struct MHD_StringNullable
 #ifdef UINT64_MAX
 #  define MHD_WAIT_INDEFINITELY UINT64_MAX
 #else
-#  define MHD_WAIT_INDEFINITELY MHD_STATIC_CAST_(uint_fast64_t,0xffffffffffffffffU)
+#  define MHD_WAIT_INDEFINITELY \
+  MHD_STATIC_CAST_(uint_fast64_t,0xffffffffffffffffU)
 #endif
 
 
@@ -329,13 +330,13 @@ struct MHD_StringNullable
 
 
 #ifndef MHD_EXTERN_
-#  if !defined(_WIN32)
+#  if ! defined(_WIN32)
 #    define MHD_EXTERN_ extern
 #  else /* defined(_WIN32) */
-#    if !defined(MHD_W32LIB)
+#    if ! defined(MHD_W32LIB)
 #      define MHD_EXTERN_ extern
 #    else /* defined(_WIN32) && efined(MHD_W32LIB) */
-  /* Define MHD_W32DLL when using MHD as W32 .DLL to speed up linker a little */
+/* Define MHD_W32DLL when using MHD as W32 .DLL to speed up linker a little */
 #      define MHD_EXTERN_ extern __declspec(dllimport)
 #    endif
 #  endif
@@ -347,12 +348,12 @@ struct MHD_StringNullable
  */
 #  if ! defined(_WIN32) || defined(_SYS_TYPES_FD_SET)
 #    define MHD_POSIX_SOCKETS 1
-     typedef int MHD_socket;
+typedef int MHD_socket;
 #    define MHD_INVALID_SOCKET (-1)
 #  else /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
 #    define MHD_WINSOCK_SOCKETS 1
 #    include <winsock2.h>
-     typedef SOCKET MHD_socket;
+typedef SOCKET MHD_socket;
 #    define MHD_INVALID_SOCKET (INVALID_SOCKET)
 #  endif /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
 #  define MHD_SOCKET_DEFINED 1
@@ -390,15 +391,15 @@ struct MHD_StringNullable
 #if defined(_MSC_FULL_VER)
 #  define MHD_MSC_MINV(version) (_MSC_VER >= (version+0))
 #  if defined(_MSC_FULL_VER) \
-      && (!defined(__STDC__) || defined(_MSC_EXTENSIONS))
-     /* Visual C with extensions */
+  && (! defined(__STDC__) || defined(_MSC_EXTENSIONS))
+/* Visual C with extensions */
 #    define MHD_HAS_MSC_EXTENSION 1
 #  endif
 #else  /* ! _MSC_FULL_VER */
 #  define MHD_MSC_MINV(version) (0)
 #endif /* ! _MSC_FULL_VER */
 
-#if defined(__STDC_VERSION__) && !defined(__cplusplus)
+#if defined(__STDC_VERSION__) && ! defined(__cplusplus)
 #  define MHD_C_MINV(version)   (__STDC_VERSION__ >= (version))
 #else
 #  define MHD_C_MINV(version)   (0)
@@ -409,7 +410,7 @@ struct MHD_StringNullable
 
 #ifndef __cplusplus
 #  define MHD_CXX_MINV(version) (0)
-#elif !defined(_MSC_FULL_VER) || !defined(_MSVC_LANG)
+#elif ! defined(_MSC_FULL_VER) || ! defined(_MSVC_LANG)
 #  define MHD_CXX_MINV(version) ((__cplusplus+0) >= version)
 #else
 #  define MHD_CXX_MINV(version) \
@@ -417,22 +418,22 @@ struct MHD_StringNullable
 #endif
 
 /* Use compound literals? */
-#if !defined(MHD_NO_COMPOUND_LITERALS)
-#  if !defined(MHD_USE_COMPOUND_LITERALS)
+#if ! defined(MHD_NO_COMPOUND_LITERALS)
+#  if ! defined(MHD_USE_COMPOUND_LITERALS)
 #    if MHD_C_MINV_99
 #      define MHD_USE_COMPOUND_LITERALS   1
-#    elif MHD_GNUC_MINV(3,0) && !defined(__STRICT_ANSI__)
-       /* This may warn in "pedantic" compilation mode */
+#    elif MHD_GNUC_MINV (3,0) && ! defined(__STRICT_ANSI__)
+/* This may warn in "pedantic" compilation mode */
 #      define MHD_USE_COMPOUND_LITERALS   1
-       /* Compound literals are an extension */
+/* Compound literals are an extension */
 #      define MHD_USE_COMPOUND_LITERALS_EXT     1
-#    elif defined(MHD_HAS_MSC_EXTENSION) && MHD_MSC_MINV(1800) \
-          && !defined(__cplusplus)
+#    elif defined(MHD_HAS_MSC_EXTENSION) && MHD_MSC_MINV (1800) \
+  && ! defined(__cplusplus)
 #      define MHD_USE_COMPOUND_LITERALS   1
-      /* Compound literals are an extension */
+/* Compound literals are an extension */
 #      define MHD_USE_COMPOUND_LITERALS_EXT     1
 #    else
-       /* Compound literals are not supported */
+/* Compound literals are not supported */
 #      define MHD_NO_COMPOUND_LITERALS    1
 #    endif
 #  endif /* !MHD_USE_COMPOUND_LITERALS */
@@ -442,16 +443,16 @@ struct MHD_StringNullable
 
 /* Use compound literals array as function parameter? */
 #if defined(MHD_USE_COMPOUND_LITERALS)
-#  if !defined(MHD_NO_COMP_LIT_FUNC_PARAMS)
-#    if !defined(MHD_USE_COMP_LIT_FUNC_PARAMS)
-#      if !defined(__cplusplus)
-         /* Compound literals are lvalues and their addresses can be taken */
+#  if ! defined(MHD_NO_COMP_LIT_FUNC_PARAMS)
+#    if ! defined(MHD_USE_COMP_LIT_FUNC_PARAMS)
+#      if ! defined(__cplusplus)
+/* Compound literals are lvalues and their addresses can be taken */
 #        define MHD_USE_COMP_LIT_FUNC_PARAMS    1
 #      elif defined(__llvm__)
-         /* clang and LLVM-based compilers treat compound literals as lvalue */
+/* clang and LLVM-based compilers treat compound literals as lvalue */
 #        define MHD_USE_COMP_LIT_FUNC_PARAMS    1
 #      else
-         /* Compound literals array cannot be used as function parameter */
+/* Compound literals array cannot be used as function parameter */
 #        define MHD_NO_COMP_LIT_FUNC_PARAMS     1
 #      endif
 #    endif
@@ -461,7 +462,7 @@ struct MHD_StringNullable
 #  endif
 #else  /* ! MHD_USE_COMPOUND_LITERALS */
 #  ifndef MHD_NO_COMP_LIT_FUNC_PARAMS
-     /* Compound literals array cannot be used as function parameter */
+/* Compound literals array cannot be used as function parameter */
 #    define MHD_NO_COMP_LIT_FUNC_PARAMS 1
 #  endif
 #  ifdef MHD_USE_COMP_LIT_FUNC_PARAMS
@@ -470,25 +471,25 @@ struct MHD_StringNullable
 #endif /* ! MHD_USE_COMPOUND_LITERALS */
 
 /* Use designated initializers? */
-#if !defined(MHD_NO_DESIGNATED_INIT)
-#  if !defined(MHD_USE_DESIGNATED_INIT)
+#if ! defined(MHD_NO_DESIGNATED_INIT)
+#  if ! defined(MHD_USE_DESIGNATED_INIT)
 #    if MHD_C_MINV_99
 #      define MHD_USE_DESIGNATED_INIT   1
 #    elif defined(__cplusplus) && defined(__cpp_designated_initializers)
 #      define MHD_USE_DESIGNATED_INIT   1
-#    elif (MHD_GNUC_MINV(3,0) && !defined(__STRICT_ANSI__) \
-           && !defined(__cplusplus)) \
-          || (defined(__GNUG__) && MHD_GNUC_MINV(4,7))
-       /* This may warn in "pedantic" compilation mode */
+#    elif (MHD_GNUC_MINV (3,0) && ! defined(__STRICT_ANSI__) \
+  && ! defined(__cplusplus)) \
+  || (defined(__GNUG__) && MHD_GNUC_MINV (4,7))
+/* This may warn in "pedantic" compilation mode */
 #      define MHD_USE_DESIGNATED_INIT   1
-       /* Designated initializers are an extension */
+/* Designated initializers are an extension */
 #      define MHD_USE_DESIGNATED_INIT_EXT       1
-#    elif defined(MHD_HAS_MSC_EXTENSION) && MHD_MSC_MINV(1800)
+#    elif defined(MHD_HAS_MSC_EXTENSION) && MHD_MSC_MINV (1800)
 #      define MHD_USE_DESIGNATED_INIT   1
-       /* Designated initializers are an extension */
+/* Designated initializers are an extension */
 #      define MHD_USE_DESIGNATED_INIT_EXT       1
 #    else
-       /* Designated initializers are not supported */
+/* Designated initializers are not supported */
 #      define MHD_NO_DESIGNATED_INIT    1
 #    endif
 #  endif /* !MHD_USE_DESIGNATED_INIT */
@@ -497,7 +498,7 @@ struct MHD_StringNullable
 #endif /* MHD_NO_DESIGNATED_INIT */
 
 /* Use nested designated initializers? */
-#if defined(MHD_USE_DESIGNATED_INIT) && !defined(__cplusplus)
+#if defined(MHD_USE_DESIGNATED_INIT) && ! defined(__cplusplus)
 #  ifdef MHD_NO_DESIG_NEST_INIT
 #    undef MHD_NO_DESIG_NEST_INIT
 #  endif
@@ -509,14 +510,14 @@ struct MHD_StringNullable
 #    undef MHD_USE_DESIG_NEST_INIT
 #  endif
 #  ifndef MHD_NO_DESIG_NEST_INIT
-     /* Designated nested initializers are not supported */
+/* Designated nested initializers are not supported */
 #    define MHD_NO_DESIG_NEST_INIT      1
 #  endif
 #endif /* ! MHD_USE_DESIGNATED_INIT || __cplusplus */
 
 /* Use C++ initializer lists? */
-#if !defined(MHD_NO_CPP_INIT_LIST)
-#  if !defined(MHD_USE_CPP_INIT_LIST)
+#if ! defined(MHD_NO_CPP_INIT_LIST)
+#  if ! defined(MHD_USE_CPP_INIT_LIST)
 #    if defined(__cplusplus) && defined(__cpp_initializer_lists)
 #      define MHD_USE_CPP_INIT_LIST     1
 #    else
@@ -528,23 +529,23 @@ struct MHD_StringNullable
 #endif
 
 /* Use variadic arguments macros? */
-#if !defined(MHD_NO_VARARG_MACROS)
-#  if !defined(MHD_USE_VARARG_MACROS)
+#if ! defined(MHD_NO_VARARG_MACROS)
+#  if ! defined(MHD_USE_VARARG_MACROS)
 #    if MHD_C_MINV_99
 #      define MHD_USE_VARARG_MACROS   1
-#    elif MHD_CXX_MINV(201103)
+#    elif MHD_CXX_MINV (201103)
 #      define MHD_USE_VARARG_MACROS   1
-#    elif MHD_GNUC_MINV(3,0) && !defined(__STRICT_ANSI__)
-       /* This may warn in "pedantic" compilation mode */
+#    elif MHD_GNUC_MINV (3,0) && ! defined(__STRICT_ANSI__)
+/* This may warn in "pedantic" compilation mode */
 #      define MHD_USE_VARARG_MACROS   1
-       /* Variable arguments macros are an extension */
+/* Variable arguments macros are an extension */
 #      define MHD_USE_VARARG_MACROS_EXT 1
-#    elif defined(MHD_HAS_MSC_EXTENSION) && MHD_MSC_MINV(1400)
+#    elif defined(MHD_HAS_MSC_EXTENSION) && MHD_MSC_MINV (1400)
 #      define MHD_USE_VARARG_MACROS   1
-       /* Variable arguments macros are an extension */
+/* Variable arguments macros are an extension */
 #      define MHD_USE_VARARG_MACROS_EXT 1
 #    else
-       /* Variable arguments macros are not supported */
+/* Variable arguments macros are not supported */
 #      define MHD_NO_VARARG_MACROS    1
 #    endif
 #  endif /* !MHD_USE_VARARG_MACROS */
@@ -554,15 +555,16 @@ struct MHD_StringNullable
 
 
 /* Use variable-length arrays? */
-#if !defined(MHD_NO_VLA)
-#  if !defined(MHD_USE_VLA)
-#    if MHD_C_MINV_99 && (!defined(__STDC_NO_VLA__) || __STDC_NO_VLA__+0 != 0)
+#if ! defined(MHD_NO_VLA)
+#  if ! defined(MHD_USE_VLA)
+#    if MHD_C_MINV_99 && \
+  (! defined(__STDC_NO_VLA__) || __STDC_NO_VLA__ + 0 != 0)
 #      if defined(__GNUC__) || defined(__clang__)
 #        define MHD_USE_VLA     1
 #      elif defined(_MSC_VER)
 #        define MHD_NO_VLA      1
 #      else
-         /* Assume 'not supported' */
+/* Assume 'not supported' */
 #        define MHD_NO_VLA      1
 #      endif
 #    else
@@ -573,19 +575,19 @@ struct MHD_StringNullable
 #error MHD_USE_VLA and MHD_NO_VLA are both defined
 #endif /* MHD_NO_VARARG_MACROS */
 
-#if !defined(MHD_INLINE)
+#if ! defined(MHD_INLINE)
 #  if defined(inline)
-     /* Assume that proper value of 'inline' was already defined */
+/* Assume that proper value of 'inline' was already defined */
 #    define MHD_INLINE inline
 #  elif MHD_C_MINV_99
-     /* C99 (and later) supports 'inline' */
+/* C99 (and later) supports 'inline' */
 #    define MHD_INLINE inline
 #  elif defined(__cplusplus)
-     /* C++ always supports 'inline' */
+/* C++ always supports 'inline' */
 #    define MHD_INLINE inline
-#  elif MHD_GNUC_MINV(3,0) && !defined(__STRICT_ANSI__)
+#  elif MHD_GNUC_MINV (3,0) && ! defined(__STRICT_ANSI__)
 #    define MHD_INLINE __inline__
-#  elif defined(MHD_HAS_MSC_EXTENSION) && MHD_MSC_MINV(1400)
+#  elif defined(MHD_HAS_MSC_EXTENSION) && MHD_MSC_MINV (1400)
 #    define MHD_INLINE __inline
 #  else
 #    define MHD_INLINE /* empty */
@@ -593,9 +595,9 @@ struct MHD_StringNullable
 #endif /* MHD_INLINE */
 
 
-#if !defined(MHD_NO__PRAGMA)
-#  if MHD_GNUC_MINV(4,6) && !defined(__clang__)
-     /* '_Pragma()' support was added in GCC 3.0.0
+#if ! defined(MHD_NO__PRAGMA)
+#  if MHD_GNUC_MINV (4,6) && ! defined(__clang__)
+/* '_Pragma()' support was added in GCC 3.0.0
       * 'pragma push/pop' support was added in GCC 4.6.0 */
 #    define MHD_WARN_PUSH_ _Pragma("GCC diagnostic push")
 #    define MHD_WARN_POP_  _Pragma("GCC diagnostic pop")
@@ -613,7 +615,7 @@ struct MHD_StringNullable
 #    define MHD_NOWARN_UNUSED_FUNC_ \
         MHD_WARN_PUSH_  MHD_WARN_INGORE_(-Wunused-function)
 #    define MHD_RESTORE_WARN_UNUSED_FUNC_ MHD_WARN_POP_
-#  elif MHD_CLANG_MINV(3,1)
+#  elif MHD_CLANG_MINV (3,1)
 #    define MHD_WARN_PUSH_ _Pragma("clang diagnostic push")
 #    define MHD_WARN_POP_  _Pragma("clang diagnostic pop")
 #    define MHD_WARN_INGORE_(warn) \
@@ -642,7 +644,7 @@ struct MHD_StringNullable
 #    define MHD_NOWARN_UNUSED_FUNC_ \
         MHD_WARN_PUSH_  MHD_WARN_INGORE_(-Wunused-function)
 #    define MHD_RESTORE_WARN_UNUSED_FUNC_ MHD_WARN_POP_
-#  elif MHD_MSC_MINV(1500)
+#  elif MHD_MSC_MINV (1500)
 #    define MHD_WARN_PUSH_ __pragma(warning(push))
 #    define MHD_WARN_POP_  __pragma(warning(pop))
 #    define MHD_WARN_INGORE_(warn)      __pragma(warning(disable:warn))
@@ -698,21 +700,21 @@ struct MHD_StringNullable
 #endif /* MHD_NO_DEPRECATION */
 
 #ifndef MHD_DEPR_MACRO_
-#  if MHD_GNUC_MINV(4,8) && ! deifned(__clang__) /* GCC >= 4.8 */
+#  if MHD_GNUC_MINV (4,8) && ! deifned (__clang__) /* GCC >= 4.8 */
 /* Print warning when the macro is processed (if not excluded from processing).
  * To be used outside other macros */
 #    define MHD_DEPR_MACRO_(msg) _Pragma(MHD_MACRO_STR_(GCC warning msg))
 /* Print warning message when another macro which includes this macro is used */
 #    define MHD_DEPR_IN_MACRO_(msg) MHD_DEPR_MACRO_(msg)
-#  elif (MHD_CLANG_MINV(3,3) && !defined(__apple_build_version__)) \
-      || MHD_CLANG_MINV(5,0)
+#  elif (MHD_CLANG_MINV (3,3) && ! defined(__apple_build_version__)) \
+  || MHD_CLANG_MINV (5,0)
 /* clang >= 3.3 (or XCode's clang >= 5.0) */
 /* Print warning when the macro is processed (if not excluded from processing).
  * To be used outside other macros */
 #    define MHD_DEPR_MACRO_(msg) _Pragma (MHD_MACRO_STR_(clang warning msg))
 /* Print warning message when another macro which includes this macro is used */
 #    define MHD_DEPR_IN_MACRO_(msg) MHD_DEPR_MACRO_ (msg)
-#  elif MHD_MSC_MINV(1500)
+#  elif MHD_MSC_MINV (1500)
 /* Print warning when the macro is processed (if not excluded from processing).
  * To be used outside other macros */
 #    define MHD_DEPR_MACRO_(msg) \
@@ -720,11 +722,11 @@ struct MHD_StringNullable
                         "warning MHDWARN01 : " msg))
 /* Print warning message when another macro which includes this macro is used */
 #    define MHD_DEPR_IN_MACRO_(msg) MHD_DEPR_MACRO_ (msg)
-#  elif MHD_GNUC_MINV(3,0) /* 3.0 <= GCC < 4.8 */
+#  elif MHD_GNUC_MINV (3,0) /* 3.0 <= GCC < 4.8 */
 /* Print warning when the macro is processed (if not excluded from processing).
  * To be used outside other macros */
 #    define MHD_DEPR_MACRO_(msg) _Pragma (MHD_MACRO_STR_(message msg))
-#  elif MHD_CLANG_MINV(2,9)
+#  elif MHD_CLANG_MINV (2,9)
 /* Print warning when the macro is processed (if not excluded from processing).
  * To be used outside other macros */
 #    define MHD_DEPR_MACRO_(msg) _Pragma (MHD_MACRO_STR_(message msg))
@@ -735,16 +737,16 @@ struct MHD_StringNullable
 #endif /* !MHD_DEPR_MACRO_ */
 
 #ifndef MHD_DEPR_FUNC_
-#  if MHD_GNUC_MINV(5,0) || MHD_CLANG_MINV(2,9)
-  /* GCC >= 5.0 or clang >= 2.9 */
+#  if MHD_GNUC_MINV (5,0) || MHD_CLANG_MINV (2,9)
+/* GCC >= 5.0 or clang >= 2.9 */
 #    define MHD_DEPR_FUNC_(msg) __attribute__((deprecated (msg)))
-#  elif  MHD_GNUC_MINV(3,1) || defined(__clang__)
-  /* 3.1 <= GCC < 5.0 or clang < 2.9 */
+#  elif  MHD_GNUC_MINV (3,1) || defined(__clang__)
+/* 3.1 <= GCC < 5.0 or clang < 2.9 */
 #    define MHD_DEPR_FUNC_(msg) __attribute__((__deprecated__))
-#  elif MHD_MSC_MINV(1400)
-  /* VS 2005 or later */
+#  elif MHD_MSC_MINV (1400)
+/* VS 2005 or later */
 #    define MHD_DEPR_FUNC_(msg) __declspec(deprecated (msg))
-#  elif MHD_MSC_MINV(1310)
+#  elif MHD_MSC_MINV (1310)
 #    define MHD_DEPR_FUNC_(msg) __declspec(deprecated)
 /* #  elif defined(SOMEMACRO) */ /* add compiler-specific macros here if required */
 #  endif
@@ -766,11 +768,11 @@ struct MHD_StringNullable
 
 #ifdef __has_attribute
 #  if __has_attribute (enum_extensibility)
-     /* Enum will not be extended */
+/* Enum will not be extended */
 #    define MHD_FIXED_ENUM_ __attribute__((enum_extensibility (closed)))
 #  endif /* enum_extensibility */
 #  if __has_attribute (flag_enum)
-     /* Enum is a bitmap */
+/* Enum is a bitmap */
 #    define MHD_FLAGS_ENUM_ __attribute__((flag_enum))
 #  endif /* flag_enum */
 #endif /* __has_attribute */
@@ -836,8 +838,8 @@ struct MHD_StringNullable
 #if ! defined(MHD_NO_FUNC_ATTRIBUTES)
 #  if defined(__has_attribute)
 
- /* Override detected value of MHD_FN_PURE_ by defining it before including
-  * the header */
+/* Override detected value of MHD_FN_PURE_ by defining it before including
+ * the header */
 #    if __has_attribute (pure) && ! defined(MHD_FN_PURE_)
 /**
  * MHD_FN_PURE_ functions always return the same value for this same input
@@ -853,7 +855,6 @@ struct MHD_StringNullable
 
 /* Override detected value of MHD_FN_CONST_ by defining it before including
  * the header */
- */
 #    if ! defined(MHD_FN_CONST_)
 #      if __has_attribute (const)
 /**
@@ -873,8 +874,8 @@ struct MHD_StringNullable
 #      endif
 #    endif /* const && !MHD_FN_CONST_ */
 
- /* Override detected value of MHD_FN_MUST_CHECK_RESULT_ by defining it before
-  * including the header */
+/* Override detected value of MHD_FN_MUST_CHECK_RESULT_ by defining it before
+ * including the header */
 #    if __has_attribute (warn_unused_result) && \
   ! defined(MHD_FN_MUST_CHECK_RESULT_)
 /**
@@ -884,8 +885,8 @@ struct MHD_StringNullable
 #      define MHD_FN_MUST_CHECK_RESULT_ __attribute__ ((warn_unused_result))
 #    endif /* warn_unused_result && !MHD_FN_MUST_CHECK_RESULT_ */
 
- /* Override detected value of MHD_FN_PAR_NONNULL_ by defining it before
-  * including the header */
+/* Override detected value of MHD_FN_PAR_NONNULL_ by defining it before
+ * including the header */
 #    if __has_attribute (nonnull) && \
   ! defined(MHD_FN_PAR_NONNULL_)
 /**
@@ -896,8 +897,8 @@ struct MHD_StringNullable
   __attribute__ ((nonnull (param_num)))
 #    endif /* nonnull && !MHD_FN_PAR_NONNULL_ */
 
- /* Override detected value of MHD_FN_PAR_NONNULL_ALL_ by defining it before
-  * including the header */
+/* Override detected value of MHD_FN_PAR_NONNULL_ALL_ by defining it before
+ * including the header */
 #    if __has_attribute (nonnull) && \
   ! defined(MHD_FN_PAR_NONNULL_ALL_)
 /**
@@ -909,7 +910,7 @@ struct MHD_StringNullable
 
 #    if __has_attribute (access)
 
- /* Override detected value of MHD_FN_PAR_IN_ by defining it before
+/* Override detected value of MHD_FN_PAR_IN_ by defining it before
   * including the header */
 #      if ! defined(MHD_FN_PAR_IN_)
 /**
@@ -920,8 +921,8 @@ struct MHD_StringNullable
   __attribute__ ((access (read_only,pram_num)))
 #      endif /* !MHD_FN_PAR_IN_ */
 
- /* Override detected value of MHD_FN_PAR_IN_SIZE_ by defining it before
-  * including the header */
+/* Override detected value of MHD_FN_PAR_IN_SIZE_ by defining it before
+ * including the header */
 #      if ! defined(MHD_FN_PAR_IN_SIZE_)
 /**
  * MHD_FN_PAR_IN_SIZE_ indicates function parameter points to data
@@ -932,8 +933,8 @@ struct MHD_StringNullable
   __attribute__ ((access (read_only,pram_num,size_num)))
 #      endif /* !MHD_FN_PAR_IN_SIZE_ */
 
- /* Override detected value of MHD_FN_PAR_OUT_ by defining it before
-  * including the header */
+/* Override detected value of MHD_FN_PAR_OUT_ by defining it before
+ * including the header */
 #      if ! defined(MHD_FN_PAR_OUT_)
 /**
  * MHD_FN_PAR_OUT_ indicates function parameter points to data
@@ -943,8 +944,8 @@ struct MHD_StringNullable
   __attribute__ ((access (write_only,pram_num)))
 #      endif /* !MHD_FN_PAR_OUT_ */
 
- /* Override detected value of MHD_FN_PAR_OUT_SIZE_ by defining it before
-  * including the header */
+/* Override detected value of MHD_FN_PAR_OUT_SIZE_ by defining it before
+ * including the header */
 #      if ! defined(MHD_FN_PAR_OUT_SIZE_)
 /**
  * MHD_FN_PAR_OUT_SIZE_ indicates function parameter points to data
@@ -955,8 +956,8 @@ struct MHD_StringNullable
   __attribute__ ((access (write_only,pram_num,size_num)))
 #      endif /* !MHD_FN_PAR_OUT_SIZE_ */
 
- /* Override detected value of MHD_FN_PAR_INOUT_ by defining it before
-  * including the header */
+/* Override detected value of MHD_FN_PAR_INOUT_ by defining it before
+ * including the header */
 #      if ! defined(MHD_FN_PAR_INOUT_)
 /**
  * MHD_FN_PAR_INOUT_ indicates function parameter points to data
@@ -966,8 +967,8 @@ struct MHD_StringNullable
   __attribute__ ((access (read_write,pram_num)))
 #      endif /* !MHD_FN_PAR_INOUT_ */
 
- /* Override detected value of MHD_FN_PAR_INOUT_SIZE_ by defining it before
-  * including the header */
+/* Override detected value of MHD_FN_PAR_INOUT_SIZE_ by defining it before
+ * including the header */
 #      if ! defined(MHD_FN_PAR_INOUT_SIZE_)
 /**
  * MHD_FN_PAR_INOUT_SIZE_ indicates function parameter points to data
@@ -980,8 +981,8 @@ struct MHD_StringNullable
 
 #    endif /* access */
 
- /* Override detected value of MHD_FN_PAR_FD_READ_ by defining it before
-  * including the header */
+/* Override detected value of MHD_FN_PAR_FD_READ_ by defining it before
+ * including the header */
 #    if __has_attribute (fd_arg_read) && \
   ! defined(MHD_FN_PAR_FD_READ_)
 /**
@@ -992,8 +993,8 @@ struct MHD_StringNullable
   __attribute__ ((fd_arg_read (param_num)))
 #    endif /* fd_arg_read && !MHD_FN_PAR_FD_READ_ */
 
- /* Override detected value of MHD_FN_PAR_CSTR_ by defining it before
-  * including the header */
+/* Override detected value of MHD_FN_PAR_CSTR_ by defining it before
+ * including the header */
 #    if __has_attribute (null_terminated_string_arg) && \
   ! defined(MHD_FN_PAR_CSTR_)
 /**
@@ -1004,8 +1005,8 @@ struct MHD_StringNullable
   __attribute__ ((null_terminated_string_arg (param_num)))
 #    endif /* null_terminated_string_arg && !MHD_FN_PAR_CSTR_ */
 
- /* Override detected value of MHD_FN_RETURNS_NONNULL_ by defining it before
-  * including the header */
+/* Override detected value of MHD_FN_RETURNS_NONNULL_ by defining it before
+ * including the header */
 #    if __has_attribute (returns_nonnull) && \
   ! defined(MHD_FN_RETURNS_NONNULL_)
 /**
@@ -1014,8 +1015,8 @@ struct MHD_StringNullable
 #      define MHD_FN_RETURNS_NONNULL_ __attribute__ ((returns_nonnull))
 #    endif /* returns_nonnull && !MHD_FN_RETURNS_NONNULL_ */
 
- /* Override detected value of MHD_FN_WARN_UNUSED_RESULT_ by defining it before
-  * including the header */
+/* Override detected value of MHD_FN_WARN_UNUSED_RESULT_ by defining it before
+ * including the header */
 #    if __has_attribute (warn_unused_result) && \
   ! defined(MHD_FN_WARN_UNUSED_RESULT_)
 /**
@@ -1028,8 +1029,8 @@ struct MHD_StringNullable
 #  endif /* __has_attribute */
 #endif /* ! MHD_NO_FUNC_ATTRIBUTES */
 
- /* Override detected value of MHD_FN_PAR_DYN_ARR_SIZE_() by defining it
-  * before including the header */
+/* Override detected value of MHD_FN_PAR_DYN_ARR_SIZE_() by defining it
+ * before including the header */
 #ifndef MHD_FN_PAR_DYN_ARR_SIZE_
 #  if MHD_C_MINV_99
 #    if MHD_USE_VLA
@@ -1042,14 +1043,14 @@ struct MHD_StringNullable
 #  endif /* ! MHD_C_MINV_99 */
 #endif /* MHD_FN_PAR_DYN_ARR_SIZE_ */
 
- /* Override detected value of MHD_FN_PAR_FIX_ARR_SIZE_() by defining it
-  * before including the header */
+/* Override detected value of MHD_FN_PAR_FIX_ARR_SIZE_() by defining it
+ * before including the header */
 #ifndef MHD_FN_PAR_FIX_ARR_SIZE_
 #  if MHD_C_MINV_99
-     /* The size must be constant expression */
+/* The size must be constant expression */
 #    define MHD_FN_PAR_FIX_ARR_SIZE_(size)    static size
 #  else
-     /* The size must be constant expression */
+/* The size must be constant expression */
 #    define MHD_FN_PAR_FIX_ARR_SIZE_(size)    size
 #  endif /* MHD_C_MINV_99 */
 #endif /* MHD_FN_PAR_FIX_ARR_SIZE_ */
@@ -2601,7 +2602,7 @@ MHD_FN_PAR_NONNULL_ (1);
  */
 MHD_EXTERN_ MHD_socket
 MHD_daemon_quiesce (struct MHD_Daemon *daemon)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_INOUT_(1);
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_INOUT_ (1);
 
 
 /**
@@ -2798,7 +2799,7 @@ struct MHD_EventUpdateContext;
  * @ingroup event
  */
 typedef MHD_APP_SOCKET_CNTX_TYPE *
-(MHD_FN_PAR_NONNULL_(5)
+(MHD_FN_PAR_NONNULL_ (5)
  *MHD_SocketRegistrationUpdateCallback)(
   void *cls,
   MHD_socket fd,
@@ -2824,7 +2825,7 @@ MHD_daemon_event_update (
   struct MHD_Daemon *daemon,
   struct MHD_EventUpdateContext *ecb_cntx,
   enum MHD_FdState fd_current_state)
-MHD_FN_PAR_NONNULL_(1) MHD_FN_PAR_NONNULL_(2);
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2);
 
 
 /**
@@ -2847,7 +2848,7 @@ MHD_FN_PAR_NONNULL_(1) MHD_FN_PAR_NONNULL_(2);
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_deamon_process_reg_events(struct MHD_Daemon *daemon,
                               uint_fast64_t *next_max_wait)
-MHD_FN_PAR_NONNULL_(1);
+MHD_FN_PAR_NONNULL_ (1);
 
 /* ********************* daemon options ************** */
 
@@ -2969,7 +2970,6 @@ struct MHD_WorkModeWithParam
    */
   union MHD_WorkModeParam params;
 };
-
 
 
 #if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_DESIG_NEST_INIT)
@@ -3094,7 +3094,7 @@ MHD_NOWARN_UNUSED_FUNC_
  * @return the object of struct MHD_WorkModeWithParam with requested values
  */
 static MHD_INLINE struct MHD_WorkModeWithParam
-MHD_WM_OPTION_EXTERNAL_PERIODIC(void)
+MHD_WM_OPTION_EXTERNAL_PERIODIC (void)
 {
   struct MHD_WorkModeWithParam wm_val;
 
@@ -3102,6 +3102,7 @@ MHD_WM_OPTION_EXTERNAL_PERIODIC(void)
 
   return wm_val;
 }
+
 
 /**
  * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
@@ -3113,9 +3114,9 @@ MHD_WM_OPTION_EXTERNAL_PERIODIC(void)
  * @return the object of struct MHD_WorkModeWithParam with requested values
  */
 static MHD_INLINE struct MHD_WorkModeWithParam
-MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL(
-    MHD_SocketRegistrationUpdateCallback cb_val,
-    void *cb_cls_val)
+MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL (
+  MHD_SocketRegistrationUpdateCallback cb_val,
+  void *cb_cls_val)
 {
   struct MHD_WorkModeWithParam wm_val;
 
@@ -3125,6 +3126,7 @@ MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL(
 
   return wm_val;
 }
+
 
 /**
  * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
@@ -3136,9 +3138,9 @@ MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL(
  * @return the object of struct MHD_WorkModeWithParam with requested values
  */
 static MHD_INLINE struct MHD_WorkModeWithParam
-MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE(
-    MHD_SocketRegistrationUpdateCallback cb_val,
-    void *cb_cls_val)
+MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE (
+  MHD_SocketRegistrationUpdateCallback cb_val,
+  void *cb_cls_val)
 {
   struct MHD_WorkModeWithParam wm_val;
 
@@ -3148,6 +3150,7 @@ MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE(
 
   return wm_val;
 }
+
 
 /**
  * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
@@ -3162,7 +3165,7 @@ MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE(
  * @return the object of struct MHD_WorkModeWithParam with requested values
  */
 static MHD_INLINE struct MHD_WorkModeWithParam
-MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH(void)
+MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH (void)
 {
   struct MHD_WorkModeWithParam wm_val;
 
@@ -3170,6 +3173,7 @@ MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH(void)
 
   return wm_val;
 }
+
 
 /**
  * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
@@ -3182,7 +3186,7 @@ MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH(void)
  * @return the object of struct MHD_WorkModeWithParam with requested values
  */
 static MHD_INLINE struct MHD_WorkModeWithParam
-MHD_WM_OPTION_WORKER_THREADS(unsigned int num_workers)
+MHD_WM_OPTION_WORKER_THREADS (unsigned int num_workers)
 {
   struct MHD_WorkModeWithParam wm_val;
 
@@ -3191,6 +3195,7 @@ MHD_WM_OPTION_WORKER_THREADS(unsigned int num_workers)
 
   return wm_val;
 }
+
 
 /**
  * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
@@ -3201,7 +3206,7 @@ MHD_WM_OPTION_WORKER_THREADS(unsigned int num_workers)
  * @return the object of struct MHD_WorkModeWithParam with requested values
  */
 static MHD_INLINE struct MHD_WorkModeWithParam
-MHD_WM_OPTION_THREAD_PER_CONNECTION(void)
+MHD_WM_OPTION_THREAD_PER_CONNECTION (void)
 {
   struct MHD_WorkModeWithParam wm_val;
 
@@ -3209,6 +3214,7 @@ MHD_WM_OPTION_THREAD_PER_CONNECTION(void)
 
   return wm_val;
 }
+
 
 MHD_RESTORE_WARN_UNUSED_FUNC_
 #endif /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
@@ -3224,8 +3230,8 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  * @ingroup logging
  */
 typedef void
-(MHD_FN_PAR_NONNULL_(3)
- MHD_FN_PAR_CSTR_(3)
+(MHD_FN_PAR_NONNULL_ (3)
+ MHD_FN_PAR_CSTR_ (3)
  *MHD_LoggingCallback)(void *cls,
                        enum MHD_StatusCode sc,
                        const char *fm,
@@ -3280,7 +3286,6 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_TCPFastOpenType
    */
   MHD_FOM_REQUIRE = 1
 };
-
 
 
 /**
@@ -3787,8 +3792,8 @@ struct MHD_StreamNotificationData
 typedef void
 (MHD_FN_PAR_NONNULL_ (2)
  *MHD_NotifyStreamCallback)(
-   void *cls,
-   const struct MHD_StreamNotificationData *data);
+  void *cls,
+  const struct MHD_StreamNotificationData *data);
 
 
 /**
@@ -4221,12 +4226,12 @@ struct MHD_DaemonOptionValueBind
    * the #MHD_AF_NONE to disable listen socket (the same effect as if this
    * option is not used)
    */
-    enum MHD_AddressFamily v_af;
+  enum MHD_AddressFamily v_af;
   /**
    * Port to use, 0 to let system assign any free port,
    * ignored if @a af is #MHD_AF_NONE
    */
-    uint_fast16_t v_port;
+  uint_fast16_t v_port;
 };
 
 /**
@@ -4237,12 +4242,12 @@ struct MHD_DaemonOptionValueSA
   /**
    * The size of the socket address pointed by @a sa.
    */
-    size_t v_sa_len;
+  size_t v_sa_len;
   /**
    * The address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or even a
    * UNIX domain socket (AF_UNIX)
    */
-    const struct sockaddr *v_sa;
+  const struct sockaddr *v_sa;
 };
 
 /**
@@ -4253,12 +4258,12 @@ struct MHD_DaemonOptionValueTFO
   /**
    * The type use of of TCP FastOpen
    */
-    enum MHD_TCPFastOpenType v_option;
+  enum MHD_TCPFastOpenType v_option;
   /**
    * The length of the queue, zero to use system or MHD default,
    * silently ignored on platforms without support for custom queue size
    */
-    unsigned int v_queue_length;
+  unsigned int v_queue_length;
 };
 
 /**
@@ -4269,11 +4274,11 @@ struct MHD_DaemonOptionValueTlsPskCB
   /**
    * The function to call to obtain pre-shared key
    */
-    MHD_PskServerCredentialsCallback v_psk_cb;
+  MHD_PskServerCredentialsCallback v_psk_cb;
   /**
    * The closure for @a psk_cb
    */
-    void *v_psk_cb_cls;
+  void *v_psk_cb_cls;
 };
 
 /**
@@ -4284,11 +4289,11 @@ struct MHD_DaemonOptionValueAcceptPol
   /**
    * The accept policy callback
    */
-    MHD_AcceptPolicyCallback v_apc;
+  MHD_AcceptPolicyCallback v_apc;
   /**
    * The closure for the callback
    */
-    void *v_apc_cls;
+  void *v_apc_cls;
 };
 
 /**
@@ -4299,11 +4304,11 @@ struct MHD_DaemonOptionValueStrctLvl
   /**
    * The level of strictness
    */
-    enum MHD_ProtocolStrictLevel v_sl;
+  enum MHD_ProtocolStrictLevel v_sl;
   /**
    * The way how to use the requested level
    */
-    enum MHD_UseStictLevel v_how;
+  enum MHD_UseStictLevel v_how;
 };
 
 /**
@@ -4314,11 +4319,11 @@ struct MHD_DaemonOptionValueUriCB
   /**
    * The early URI callback
    */
-    MHD_EarlyUriLogCallback v_cb;
+  MHD_EarlyUriLogCallback v_cb;
   /**
    * The closure for the callback
    */
-    void *v_cls;
+  void *v_cls;
 };
 
 /**
@@ -4329,11 +4334,11 @@ struct MHD_DaemonOptionValueReadyCB
   /**
    * The pre-start callback
    */
-    MHD_DaemonReadyCallback v_cb;
+  MHD_DaemonReadyCallback v_cb;
   /**
    * The closure for the callback
    */
-    void *v_cb_cls;
+  void *v_cb_cls;
 };
 
 /**
@@ -4344,11 +4349,11 @@ struct MHD_DaemonOptionValueNotifConnCB
   /**
    * The callback for notifications
    */
-    MHD_NotifyConnectionCallback v_ncc;
+  MHD_NotifyConnectionCallback v_ncc;
   /**
    * The closure for the callback
    */
-    void *v_cls;
+  void *v_cls;
 };
 
 /**
@@ -4359,11 +4364,11 @@ struct MHD_DaemonOptionValueNotifStreamCB
   /**
    * The callback for notifications
    */
-    MHD_NotifyStreamCallback v_nsc;
+  MHD_NotifyStreamCallback v_nsc;
   /**
    * The closure for the callback
    */
-    void *v_cls;
+  void *v_cls;
 };
 
 /**
@@ -4374,11 +4379,11 @@ struct MHD_DaemonOptionValueRand
   /**
    * The size of the buffer
    */
-    size_t v_buf_size;
+  size_t v_buf_size;
   /**
    * The buffer with strong random data, the content will be copied by MHD
    */
-    const void *v_buf;
+  const void *v_buf;
 };
 
 /* = MHD Demon Option structures above are generated automatically = */
@@ -5307,6 +5312,7 @@ MHD_DAEMON_OPTION_WORK_MODE (struct MHD_WorkModeWithParam wmp)
   return opt_val;
 }
 
+
 /**
  * Select a sockets watch system call used for internal polling.
  * @param els the value of the parameter
@@ -5323,6 +5329,7 @@ MHD_DAEMON_OPTION_POLL_SYSCALL (enum MHD_SockPollSyscall els)
 
   return opt_val;
 }
+
 
 /**
  * Bind to the given TCP port and address family.
@@ -5355,6 +5362,7 @@ MHD_DAEMON_OPTION_BIND_PORT (
   return opt_val;
 }
 
+
 /**
  * Bind to the given socket address.
  *
@@ -5384,6 +5392,7 @@ MHD_DAEMON_OPTION_BIND_SA (
   return opt_val;
 }
 
+
 /**
  * Accept connections from the given socket.  Socket
  * must be a TCP or UNIX domain (SOCK_STREAM) socket.
@@ -5410,6 +5419,7 @@ MHD_DAEMON_OPTION_LISTEN_SOCKET (MHD_socket listen_fd)
   return opt_val;
 }
 
+
 /**
  * Select mode of reusing address:port listen address.
  *
@@ -5429,6 +5439,7 @@ MHD_DAEMON_OPTION_LISTEN_ADDR_REUSE (enum MHD_DaemonOptionBindType reuse_type)
 
   return opt_val;
 }
+
 
 /**
  * Configure TCP_FASTOPEN option, including setting a
@@ -5462,6 +5473,7 @@ MHD_DAEMON_OPTION_TCP_FASTOPEN (
   return opt_val;
 }
 
+
 /**
  * Use the given backlog for the listen() call.
  *
@@ -5481,6 +5493,7 @@ MHD_DAEMON_OPTION_LISTEN_BACKLOG (unsigned int backlog_size)
 
   return opt_val;
 }
+
 
 /**
  * Inform that SIGPIPE is suppressed or handled by application.
@@ -5503,6 +5516,7 @@ MHD_DAEMON_OPTION_SIGPIPE_SUPPRESSED (enum MHD_Bool bool_val)
   return opt_val;
 }
 
+
 /**
  * Enable TLS (HTTPS) and select TLS backend
  * @param backend the TLS backend to use,
@@ -5520,6 +5534,7 @@ MHD_DAEMON_OPTION_TLS (enum MHD_TlsBackend backend)
 
   return opt_val;
 }
+
 
 /**
  * Configure PSK to use for the TLS key exchange.
@@ -5542,6 +5557,7 @@ MHD_DAEMON_OPTION_TLS_PSK_CALLBACK (
   return opt_val;
 }
 
+
 /**
  * Control ALPN for TLS connection.
  * Silently ignored for non-TLS.
@@ -5560,6 +5576,7 @@ MHD_DAEMON_OPTION_NO_ALPN (enum MHD_Bool bool_val)
 
   return opt_val;
 }
+
 
 /**
  * Specify inactivity timeout for connection.
@@ -5581,6 +5598,7 @@ MHD_DAEMON_OPTION_DEFAULT_TIMEOUT (unsigned int timeout)
   return opt_val;
 }
 
+
 /**
  * Maximum number of (concurrent) network connections served by daemon
  * @param glob_limit the value of the parameter
@@ -5597,6 +5615,7 @@ MHD_DAEMON_OPTION_GLOBAL_CONNECTION_LIMIT (unsigned int glob_limit)
 
   return opt_val;
 }
+
 
 /**
  * Limit on the number of (concurrent) network connections made to the server
@@ -5618,6 +5637,7 @@ MHD_DAEMON_OPTION_PER_IP_LIMIT (unsigned int per_ip_limit)
 
   return opt_val;
 }
+
 
 /**
  * Set a policy callback that accepts/rejects connections based on the client's
@@ -5642,6 +5662,7 @@ MHD_DAEMON_OPTION_ACCEPT_POLICY (
   return opt_val;
 }
 
+
 /**
  * Set how strictly MHD will enforce the HTTP protocol.
  * @param sl the level of strictness
@@ -5662,6 +5683,7 @@ MHD_DAEMON_OPTION_PROTOCOL_STRICT_LEVEL (
 
   return opt_val;
 }
+
 
 /**
  * Set a callback to be called first for every request when the request line is
@@ -5689,6 +5711,7 @@ MHD_DAEMON_OPTION_EARLY_URI_LOGGER (
   return opt_val;
 }
 
+
 /**
  * Disable converting plus ('+') character to space in GET parameters (URI part
  * after '?').
@@ -5711,6 +5734,7 @@ MHD_DAEMON_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE (enum MHD_Bool bool_val)
   return opt_val;
 }
 
+
 /**
  * Suppresse use of "Date:" header.
  * According to RFC should be suppressed only if the system has no RTC.
@@ -5730,6 +5754,7 @@ MHD_DAEMON_OPTION_SUPPRESS_DATE_HEADER (enum MHD_Bool bool_val)
   return opt_val;
 }
 
+
 /**
  * Use SHOUTcast for responses.
  * This will cause *all* responses to begin with the SHOUTcast "ICY" line
@@ -5748,6 +5773,7 @@ MHD_DAEMON_OPTION_ENABLE_SHOUTCAST (enum MHD_Bool bool_val)
 
   return opt_val;
 }
+
 
 /**
  * Maximum memory size per connection.
@@ -5772,6 +5798,7 @@ MHD_DAEMON_OPTION_CONN_MEMORY_LIMIT (size_t sizet_val)
   return opt_val;
 }
 
+
 /**
  * Desired size of the stack for the threads started by MHD.
  * Use 0 for system default, which is also MHD default.
@@ -5791,6 +5818,7 @@ MHD_DAEMON_OPTION_STACK_SIZE (size_t sizet_val)
 
   return opt_val;
 }
+
 
 /**
  * The the maximum FD value.
@@ -5819,6 +5847,7 @@ MHD_DAEMON_OPTION_FD_NUMBER_LIMIT (MHD_socket max_fd)
   return opt_val;
 }
 
+
 /**
  * Enable `turbo`.
  * Disables certain calls to `shutdown()`, enables aggressive non-blocking
@@ -5839,6 +5868,7 @@ MHD_DAEMON_OPTION_TURBO (enum MHD_Bool bool_val)
 
   return opt_val;
 }
+
 
 /**
  * Disable some internal thread safety.
@@ -5866,6 +5896,7 @@ MHD_DAEMON_OPTION_DISABLE_THREAD_SAFETY (enum MHD_Bool bool_val)
   return opt_val;
 }
 
+
 /**
  * You need to set this option if you want to disable use of HTTP "Upgrade".
  * "Upgrade" may require usage of additional internal resources, which we can
@@ -5888,6 +5919,7 @@ MHD_DAEMON_OPTION_DISALLOW_UPGRADE (enum MHD_Bool bool_val)
   return opt_val;
 }
 
+
 /**
  * Disable #MHD_action_suspend() functionality.
  *
@@ -5908,6 +5940,7 @@ MHD_DAEMON_OPTION_DISALLOW_SUSPEND_RESUME (enum MHD_Bool bool_val)
 
   return opt_val;
 }
+
 
 /**
  * Set a callback to be called for pre-start finalisation.
@@ -5934,6 +5967,7 @@ MHD_DAEMON_OPTION_DAEMON_READY_CALLBACK (
   return opt_val;
 }
 
+
 /**
  * Set a function that should be called whenever a connection is started or
  * closed.
@@ -5955,6 +5989,7 @@ MHD_DAEMON_OPTION_NOTIFY_CONNECTION (
 
   return opt_val;
 }
+
 
 /**
  * Register a function that should be called whenever a stream is started or
@@ -5978,6 +6013,7 @@ MHD_DAEMON_OPTION_NOTIFY_STREAM (
 
   return opt_val;
 }
+
 
 /**
  * Set strong random data to be used by MHD.
@@ -6006,6 +6042,7 @@ MHD_DAEMON_OPTION_RANDOM_ENTROPY (
   return opt_val;
 }
 
+
 /**
  * Specify the size of the internal hash map array that tracks generated digest
  * nonces usage.
@@ -6027,6 +6064,7 @@ MHD_DAEMON_OPTION_DAUTH_MAP_SIZE (size_t size)
   return opt_val;
 }
 
+
 /**
  * Control the scope of validity of MHD-generated nonces.
  * This regulates how "nonces" are generated and how "nonces" are checked by
@@ -6040,7 +6078,9 @@ MHD_DAEMON_OPTION_DAUTH_MAP_SIZE (size_t size)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_DAUTH_NONCE_BIND_TYPE (enum MHD_DaemonOptionValueDAuthBindNonce bind_type)
+MHD_DAEMON_OPTION_DAUTH_NONCE_BIND_TYPE (enum
+                                         MHD_DaemonOptionValueDAuthBindNonce
+                                         bind_type)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -6049,6 +6089,7 @@ MHD_DAEMON_OPTION_DAUTH_NONCE_BIND_TYPE (enum MHD_DaemonOptionValueDAuthBindNonc
 
   return opt_val;
 }
+
 
 /**
  * Default nonce timeout value (in seconds) used for Digest Auth.
@@ -6069,6 +6110,7 @@ MHD_DAEMON_OPTION_DAUTH_DEF_NONCE_TIMEOUT (unsigned int timeout)
   return opt_val;
 }
 
+
 /**
  * Default maximum nc (nonce count) value used for Digest Auth.
  * Silently ignored if followed by zero value.
@@ -6088,10 +6130,10 @@ MHD_DAEMON_OPTION_DAUTH_DEF_MAX_NC (uint_fast32_t max_nc)
   return opt_val;
 }
 
+
 /* = MHD Demon Option static functions above are generated automatically = */
 MHD_RESTORE_WARN_UNUSED_FUNC_
 #endif /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
-
 
 
 /**
@@ -6206,7 +6248,8 @@ MHD_FN_PAR_NONNULL_ALL_;
 
 #ifdef MHD_USE_VARARG_MACROS
 MHD_NOWARN_VARIADIC_MACROS_
-#  if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_COMP_LIT_FUNC_PARAMS)
+#  if defined(MHD_USE_COMPOUND_LITERALS) && \
+  defined(MHD_USE_COMP_LIT_FUNC_PARAMS)
 /**
  * Set the requested options for the daemon.
  *
@@ -6309,7 +6352,7 @@ MHD_RESTORE_WARN_VARIADIC_MACROS_
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_daemon_process_blocking (struct MHD_Daemon *daemon,
                              uint_fast64_t microsec)
-MHD_FN_PAR_NONNULL_(1);
+MHD_FN_PAR_NONNULL_ (1);
 
 /**
  * Run webserver operations (without blocking unless in client
@@ -6367,7 +6410,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
                            const struct sockaddr *addr,
                            void *connection_cntx)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_IN_SIZE_(4,3);
+MHD_FN_PAR_IN_SIZE_ (4,3);
 
 
 /* ********************* connection options ************** */
@@ -6444,8 +6487,8 @@ MHD_NOWARN_UNUSED_FUNC_
 
 /* Do not use directly */
 static MHD_INLINE struct MHD_ConnectionOptionAndValue
-MHD_C_OPTION_UINT_SET_(enum MHD_ConnectionOption option,
-                       unsigned int uint_val)
+MHD_C_OPTION_UINT_SET_ (enum MHD_ConnectionOption option,
+                        unsigned int uint_val)
 {
   struct MHD_ConnectionOptionAndValue opt_val;
 
@@ -6455,12 +6498,13 @@ MHD_C_OPTION_UINT_SET_(enum MHD_ConnectionOption option,
   return opt_val;
 }
 
+
 /**
  * Terminate the list of the options
  * @return the terminating object of struct MHD_ConnectionOptionAndValue
  */
 static MHD_INLINE struct MHD_ConnectionOptionAndValue
-MHD_C_OPTION_TERMINATE(void)
+MHD_C_OPTION_TERMINATE (void)
 {
   struct MHD_ConnectionOptionAndValue opt_val;
 
@@ -6468,6 +6512,7 @@ MHD_C_OPTION_TERMINATE(void)
 
   return opt_val;
 }
+
 
 MHD_RESTORE_WARN_UNUSED_FUNC_
 #endif /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
@@ -6511,7 +6556,8 @@ MHD_FN_PAR_NONNULL_ALL_;
 
 #ifdef MHD_USE_VARARG_MACROS
 MHD_NOWARN_VARIADIC_MACROS_
-#  if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_COMP_LIT_FUNC_PARAMS)
+#  if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_COMP_LIT_FUNC_PARAMS \
+                                                    )
 /**
  * Set the requested options for the connection.
  *
@@ -6720,7 +6766,7 @@ MHD_request_get_values_list (
   size_t num_elements,
   struct MHD_NameValueKind elements[MHD_FN_PAR_DYN_ARR_SIZE_ (num_elements)])
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_OUT_(4);
+MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_OUT_ (4);
 
 
 /**
@@ -6742,7 +6788,6 @@ MHD_request_get_value (struct MHD_Request *request,
                        const char *key)
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_(3);
-
 
 
 /**
@@ -7184,7 +7229,6 @@ MHD_response_set_options_bool (struct MHD_Response *response,
 MHD_FN_PAR_NONNULL_ALL_;
 
 
-
 /**
  * The `enum MHD_RequestTerminationCode` specifies reasons
  * why a request has been terminated (or completed).
@@ -7506,7 +7550,7 @@ MHD_EXTERN_ struct MHD_Response *
 MHD_response_from_buffer (
   enum MHD_HTTP_StatusCode sc,
   size_t buffer_size,
-  const char buffer[MHD_FN_PAR_DYN_ARR_SIZE_(buffer_size)],
+  const char buffer[MHD_FN_PAR_DYN_ARR_SIZE_ (buffer_size)],
   MHD_FreeCallback free_cb,
   void *free_cb_cls)
 MHD_FN_PAR_IN_SIZE_(3,2);
@@ -7539,7 +7583,7 @@ MHD_EXTERN_ struct MHD_Response *
 MHD_response_from_buffer_copy (
   enum MHD_HTTP_StatusCode sc,
   size_t buffer_size,
-  const char buffer[MHD_FN_PAR_DYN_ARR_SIZE_(buffer_size)])
+  const char buffer[MHD_FN_PAR_DYN_ARR_SIZE_ (buffer_size)])
 MHD_FN_PAR_IN_SIZE_(3,2);
 
 
@@ -7566,7 +7610,7 @@ MHD_EXTERN_ struct MHD_Response *
 MHD_response_from_iovec (
   enum MHD_HTTP_StatusCode sc,
   unsigned int iov_count,
-  const struct MHD_IoVec iov[MHD_FN_PAR_DYN_ARR_SIZE_(iov_count)],
+  const struct MHD_IoVec iov[MHD_FN_PAR_DYN_ARR_SIZE_ (iov_count)],
   MHD_FreeCallback free_cb,
   void *free_cb_cls);
 
@@ -7652,7 +7696,7 @@ MHD_response_add_header (struct MHD_Response *response,
                          const char *value)
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_(2)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_(3);
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
 
 
 /**
@@ -7671,7 +7715,7 @@ MHD_response_add_predef_header (struct MHD_Response *response,
                                 enum MHD_PredefinedHeader stk,
                                 const char *content)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_(3);
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
 
 
 /* ************ (b) Upload and PostProcessor functions ********************** */
@@ -7813,14 +7857,14 @@ MHD_FN_PAR_NONNULL_ (1);
  */
 typedef const struct MHD_Action *
 (*MHD_PostDataReader) (struct MHD_Request *req,
-                         void *cls,
-                         const struct MHD_String *name,
-                         const struct MHD_String *filename,
-                         const struct MHD_String *content_type,
-                         const struct MHD_String *encoding,
-                         const void *data,
-                         uint_fast64_t off,
-                         size_t size);
+                       void *cls,
+                       const struct MHD_String *name,
+                       const struct MHD_String *filename,
+                       const struct MHD_String *content_type,
+                       const struct MHD_String *encoding,
+                       const void *data,
+                       uint_fast64_t off,
+                       size_t size);
 
 
 /**
@@ -7832,7 +7876,7 @@ typedef const struct MHD_Action *
  */
 typedef const struct MHD_Action *
 (*MHD_PostDataFinished) (struct MHD_Request *req,
-                        void *cls);
+                         void *cls);
 
 
 /**
@@ -7954,7 +7998,7 @@ MHD_request_get_post_data_list (
   size_t num_elements,
   struct MHD_PostData elements[MHD_FN_PAR_DYN_ARR_SIZE_ (num_elements)])
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_(3);
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
 /* ***************** (c) WebSocket support ********** */
 
@@ -8421,7 +8465,7 @@ MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo algo,
 MHD_FN_PURE_
 MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_CSTR_(2) MHD_FN_PAR_CSTR_(3)
-MHD_FN_PAR_OUT_SIZE_(4,3);
+MHD_FN_PAR_OUT_SIZE_ (4,3);
 
 
 /**
@@ -8468,11 +8512,11 @@ MHD_digest_auth_calc_userhash_hex (
   const char *username,
   const char *realm,
   size_t hex_buf_size,
-  char userhash_hex[MHD_FN_PAR_DYN_ARR_SIZE_(hex_buf_size)])
+  char userhash_hex[MHD_FN_PAR_DYN_ARR_SIZE_ (hex_buf_size)])
 MHD_FN_PURE_
 MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_CSTR_(2) MHD_FN_PAR_CSTR_(3)
-MHD_FN_PAR_OUT_SIZE_(4,3);
+MHD_FN_PAR_OUT_SIZE_ (4,3);
 ;
 
 
@@ -8778,7 +8822,6 @@ struct MHD_DigestAuthUsernameInfo
 };
 
 
-
 /**
  * The result of digest authentication of the client.
  *
@@ -8911,7 +8954,7 @@ MHD_digest_auth_check (struct MHD_Request *request,
 MHD_FN_PAR_NONNULL_(1)
 MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_CSTR_(2)
 MHD_FN_PAR_NONNULL_(3) MHD_FN_PAR_CSTR_(3)
-MHD_FN_PAR_NONNULL_(4) MHD_FN_PAR_CSTR_(4);
+MHD_FN_PAR_NONNULL_(4) MHD_FN_PAR_CSTR_ (4);
 
 
 /**
@@ -8955,7 +8998,7 @@ MHD_FN_PURE_ MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_CSTR_(2)
 MHD_FN_PAR_CSTR_(3)
 MHD_FN_PAR_CSTR_(4)
-MHD_FN_PAR_OUT_SIZE_(6,5);
+MHD_FN_PAR_OUT_SIZE_ (6,5);
 
 
 /**
@@ -9001,18 +9044,18 @@ MHD_FN_PAR_OUT_SIZE_(6,5);
  */
 MHD_EXTERN_ enum MHD_DigestAuthResult
 MHD_digest_auth_check_digest (struct MHD_Request *request,
-                               const char *realm,
-                               const char *username,
-                               const void *userdigest,
-                               size_t userdigest_size,
-                               unsigned int nonce_timeout,
-                               uint_fast32_t max_nc,
-                               enum MHD_DigestAuthMultiQOP mqop,
-                               enum MHD_DigestAuthMultiAlgo malgo)
+                              const char *realm,
+                              const char *username,
+                              const void *userdigest,
+                              size_t userdigest_size,
+                              unsigned int nonce_timeout,
+                              uint_fast32_t max_nc,
+                              enum MHD_DigestAuthMultiQOP mqop,
+                              enum MHD_DigestAuthMultiAlgo malgo)
 MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_CSTR_(2)
 MHD_FN_PAR_CSTR_(3)
-MHD_FN_PAR_CSTR_(4);
+MHD_FN_PAR_CSTR_ (4);
 
 
 /**
@@ -9147,9 +9190,7 @@ MHD_queue_basic_auth_required_response (struct MHD_Connection *connection,
                                         struct MHD_Response *response);
 
 
-
 /* ********************** (f) Introspection ********************** */
-
 
 
 /**
@@ -9590,8 +9631,8 @@ union MHD_LibInfoFixedData
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
-                            union MHD_LibInfoFixedData *return_data,
-                            size_t return_data_size)
+                           union MHD_LibInfoFixedData *return_data,
+                           size_t return_data_size)
 MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_OUT_SIZE_(2,3)
 MHD_FN_PURE_;
 
@@ -9675,7 +9716,7 @@ MHD_EXTERN_ enum MHD_StatusCode
 MHD_lib_get_info_dynamic_sz (enum MHD_LibDynamicInfo info_type,
                              union MHD_LibDynamicInfoData *return_data,
                              size_t return_data_size)
-MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_OUT_SIZE_(2,3);
+MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_OUT_SIZE_ (2,3);
 
 /**
  * Get dynamic information about MHD that may be changed at run-time.
@@ -9781,9 +9822,9 @@ union MHD_DaemonInfoFixedData
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_daemon_get_info_fixed_sz (struct MHD_Daemon *daemon,
-                               enum MHD_DaemonInfoFixedType info_type,
-                               union MHD_DaemonInfoFixedData *return_value,
-                               size_t return_value_size)
+                              enum MHD_DaemonInfoFixedType info_type,
+                              union MHD_DaemonInfoFixedData *return_value,
+                              size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_(3,4)
 MHD_FN_PURE_;
@@ -9804,7 +9845,6 @@ MHD_FN_PURE_;
 #define MHD_daemon_get_info_fixed(daemon,info_type,return_value) \
   MHD_daemon_get_info_fixed_sz ((daemon), (info_type), (return_value), \
                                  sizeof(*(return_value)))
-
 
 
 /**
@@ -9893,7 +9933,7 @@ MHD_daemon_get_info_dynamic_sz (struct MHD_Daemon *daemon,
                                 union MHD_DaemonInfoDynamicData *return_value,
                                 size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_(3,4);
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4);
 
 /**
  * Obtain dynamic information about the given daemon.
@@ -10183,7 +10223,7 @@ MHD_connection_get_info_dynamic_sz (
   union MHD_ConnectionInfoDynamicData *return_value,
   size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_(3,4);
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4);
 
 
 /**
@@ -10352,7 +10392,7 @@ MHD_stream_get_info_dynamic_sz (
   union MHD_StreamInfoDynamicData *return_value,
   size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_(3,4);
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4);
 
 
 /**
@@ -10370,7 +10410,6 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_(3,4);
 #define MHD_stream_get_info_dynamic(stream,info_type,return_value) \
   MHD_stream_get_info_dynamic_sz ((stream),(info_type),(return_value), \
                                      sizeof(*(return_value)))
-
 
 
 /**
@@ -10496,7 +10535,6 @@ MHD_FN_PURE_;
 #define MHD_request_get_info_fixed(request,info_type,return_value) \
   MHD_request_get_info_fixed_sz ((request), (info_type), (return_value), \
                                   sizeof(*(return_value)))
-
 
 
 /**
@@ -10662,7 +10700,6 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    */
   MHD_REQUEST_INFO_DYNAMIC_SENTINEL = 65535
 };
-
 
 
 /**
