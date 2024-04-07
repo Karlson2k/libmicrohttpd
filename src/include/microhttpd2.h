@@ -3832,6 +3832,13 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
   MHD_D_O_POLL_SYSCALL = 41
   ,
   /**
+   * Set a callback to use for logging
+   * The parameter value must be placed to the
+   * @a v_log_callback member.
+   */
+  MHD_D_O_LOG_CALLBACK = 60
+  ,
+  /**
    * Bind to the given TCP port and address family.
    *
    * Does not work with #MHD_DAEMON_OPTION_BIND_SA() or
@@ -3928,11 +3935,28 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
   MHD_D_O_TLS = 120
   ,
   /**
+   * Provide TLS key and certificate data in-memory.
+   * Works only if TLS mode is enabled.
+   * The parameter value must be placed to the
+   * @a v_tls_key_cert member.
+   */
+  MHD_D_O_TLS_KEY_CERT = 121
+  ,
+  /**
+   * Provide the certificate of the certificate authority (CA) to be used by
+   * the MHD daemon for client authentication.
+   * Works only if TLS mode is enabled.
+   * The parameter value must be placed to the
+   * @a v_tls_client_ca member.
+   */
+  MHD_D_O_TLS_CLIENT_CA = 122
+  ,
+  /**
    * Configure PSK to use for the TLS key exchange.
    * The parameter value must be placed to the
    * @a v_tls_psk_callback member.
    */
-  MHD_D_O_TLS_PSK_CALLBACK = 121
+  MHD_D_O_TLS_PSK_CALLBACK = 130
   ,
   /**
    * Control ALPN for TLS connection.
@@ -3941,7 +3965,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
    * The parameter value must be placed to the
    * @a v_no_alpn member.
    */
-  MHD_D_O_NO_ALPN = 122
+  MHD_D_O_NO_ALPN = 140
   ,
   /**
    * Specify inactivity timeout for connection.
@@ -4126,7 +4150,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
    *
    * The specified callback will be called one time, after network
    * initialisation, TLS pre-initialisation, but before the start of the
-   * internal threads (if allowed)ю
+   * internal threads (if allowed)
    * The parameter value must be placed to the
    * @a v_daemon_ready_callback member.
    */
@@ -4217,6 +4241,22 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
 
 /* = MHD Daemon Option structures below are generated automatically = */
 /**
+ * Data for #MHD_D_O_LOG_CALLBACK
+ */
+struct MHD_DaemonOptionValueLog
+{
+  /**
+   * The callback to use for logging,
+   * NULL to disable logging
+   */
+  MHD_LoggingCallback v_log_cb;
+  /**
+   * The closure for the logging callback
+   */
+  void *v_lob_cb_cls;
+};
+
+/**
  * Data for #MHD_D_O_BIND_PORT
  */
 struct MHD_DaemonOptionValueBind
@@ -4264,6 +4304,26 @@ struct MHD_DaemonOptionValueTFO
    * silently ignored on platforms without support for custom queue size
    */
   unsigned int v_queue_length;
+};
+
+/**
+ * Data for #MHD_D_O_TLS_KEY_CERT
+ */
+struct MHD_DaemonOptionValueTlsCert
+{
+  /**
+   * The private key loaded into memory (not a filename)
+   */
+  const char *v_mem_key;
+  /**
+   * The certificate loaded into memory (not a filename)
+   */
+  const char *v_mem_cert;
+  /**
+   * The option passphrase phrase to decrypt the private key,
+   * could be NULL is private does not need a password
+   */
+  const char *v_mem_cert;
 };
 
 /**
@@ -4404,6 +4464,10 @@ union MHD_DaemonOptionValue
    */
   enum MHD_SockPollSyscall v_poll_syscall;
   /**
+   * Value for #MHD_D_O_LOG_CALLBACK
+   */
+  struct MHD_DaemonOptionValueLog v_log_callback;
+  /**
    * Value for #MHD_D_O_BIND_PORT
    */
   struct MHD_DaemonOptionValueBind v_bind_port;
@@ -4435,6 +4499,14 @@ union MHD_DaemonOptionValue
    * Value for #MHD_D_O_TLS
    */
   enum MHD_TlsBackend v_tls;
+  /**
+   * Value for #MHD_D_O_TLS_KEY_CERT
+   */
+  struct MHD_DaemonOptionValueTlsCert v_tls_key_cert;
+  /**
+   * Value for #MHD_D_O_TLS_CLIENT_CA
+   */
+  const char *v_tls_client_ca;
   /**
    * Value for #MHD_D_O_TLS_PSK_CALLBACK
    */
@@ -4600,6 +4672,24 @@ struct MHD_DaemonOptionAndValue
     { \
       .opt = (MHD_D_O_POLL_SYSCALL), \
       .val.v_poll_syscall = (els) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Set a callback to use for logging
+ * @param log_cb the callback to use for logging,
+ *               NULL to disable logging
+ * @param lob_cb_cls the closure for the logging callback
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_LOG_CALLBACK(log_cb,lob_cb_cls) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_LOG_CALLBACK), \
+      .val.v_log_callback.v_log_cb = (log_cb), \
+      .val.v_log_callback.v_lob_cb_cls = (lob_cb_cls) \
     } \
     MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
@@ -4775,6 +4865,44 @@ struct MHD_DaemonOptionAndValue
     { \
       .opt = (MHD_D_O_TLS), \
       .val.v_tls = (backend) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Provide TLS key and certificate data in-memory.
+ * Works only if TLS mode is enabled.
+ * @param mem_key the private key loaded into memory (not a filename)
+ * @param mem_cert the certificate loaded into memory (not a filename)
+ * @param mem_cert the option passphrase phrase to decrypt the private key,
+ *                 could be NULL is private does not need a password
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_TLS_KEY_CERT(mem_key,mem_cert,mem_cert) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_TLS_KEY_CERT), \
+      .val.v_tls_key_cert.v_mem_key = (mem_key), \
+      .val.v_tls_key_cert.v_mem_cert = (mem_cert), \
+      .val.v_tls_key_cert.v_mem_cert = (mem_cert) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * Provide the certificate of the certificate authority (CA) to be used by the
+ * MHD daemon for client authentication.
+ * Works only if TLS mode is enabled.
+ * @param mem_client_ca the CA certificate in memory (not a filename)
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_DAEMON_OPTION_TLS_CLIENT_CA(mem_client_ca) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_TLS_CLIENT_CA), \
+      .val.v_tls_client_ca = (mem_client_ca) \
     } \
     MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
@@ -5127,7 +5255,7 @@ struct MHD_DaemonOptionAndValue
  *
  * The specified callback will be called one time, after network
  * initialisation, TLS pre-initialisation, but before the start of the internal
- * threads (if allowed)ю
+ * threads (if allowed)
  * @param cb the pre-start callback
  * @param cb_cls the closure for the callback
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
@@ -5326,6 +5454,29 @@ MHD_DAEMON_OPTION_POLL_SYSCALL (enum MHD_SockPollSyscall els)
 
   opt_val.opt = MHD_D_O_POLL_SYSCALL;
   opt_val.val.v_poll_syscall = els;
+
+  return opt_val;
+}
+
+
+/**
+ * Set a callback to use for logging
+ * @param log_cb the callback to use for logging,
+ *               NULL to disable logging
+ * @param lob_cb_cls the closure for the logging callback
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_LOG_CALLBACK (
+  MHD_LoggingCallback log_cb,
+  void *lob_cb_cls)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_LOG_CALLBACK;
+  opt_val.val.v_log_callback.v_log_cb = log_cb;
+  opt_val.val.v_log_callback.v_lob_cb_cls = lob_cb_cls;
 
   return opt_val;
 }
@@ -5531,6 +5682,53 @@ MHD_DAEMON_OPTION_TLS (enum MHD_TlsBackend backend)
 
   opt_val.opt = MHD_D_O_TLS;
   opt_val.val.v_tls = backend;
+
+  return opt_val;
+}
+
+
+/**
+ * Provide TLS key and certificate data in-memory.
+ * Works only if TLS mode is enabled.
+ * @param mem_key the private key loaded into memory (not a filename)
+ * @param mem_cert the certificate loaded into memory (not a filename)
+ * @param mem_cert the option passphrase phrase to decrypt the private key,
+ *                 could be NULL is private does not need a password
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_TLS_KEY_CERT (
+  const char *mem_key,
+  const char *mem_cert,
+  const char *mem_cert)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_TLS_KEY_CERT;
+  opt_val.val.v_tls_key_cert.v_mem_key = mem_key;
+  opt_val.val.v_tls_key_cert.v_mem_cert = mem_cert;
+  opt_val.val.v_tls_key_cert.v_mem_cert = mem_cert;
+
+  return opt_val;
+}
+
+
+/**
+ * Provide the certificate of the certificate authority (CA) to be used by the
+ * MHD daemon for client authentication.
+ * Works only if TLS mode is enabled.
+ * @param mem_client_ca the CA certificate in memory (not a filename)
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_DAEMON_OPTION_TLS_CLIENT_CA (const char *mem_client_ca)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_TLS_CLIENT_CA;
+  opt_val.val.v_tls_client_ca = mem_client_ca;
 
   return opt_val;
 }
@@ -5947,7 +6145,7 @@ MHD_DAEMON_OPTION_DISALLOW_SUSPEND_RESUME (enum MHD_Bool bool_val)
  *
  * The specified callback will be called one time, after network
  * initialisation, TLS pre-initialisation, but before the start of the internal
- * threads (if allowed)ю
+ * threads (if allowed)
  * @param cb the pre-start callback
  * @param cb_cls the closure for the callback
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
@@ -6078,9 +6276,8 @@ MHD_DAEMON_OPTION_DAUTH_MAP_SIZE (size_t size)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_DAUTH_NONCE_BIND_TYPE (enum
-                                         MHD_DaemonOptionValueDAuthBindNonce
-                                         bind_type)
+MHD_DAEMON_OPTION_DAUTH_NONCE_BIND_TYPE (
+  enum MHD_DaemonOptionValueDAuthBindNonce bind_type)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
