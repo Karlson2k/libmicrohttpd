@@ -4068,6 +4068,18 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
   MHD_D_O_CONN_MEMORY_LIMIT = 280
   ,
   /**
+   * The size of the shared memory pool for accamulated upload processing.
+   * The same "large" pool is shared for all connections server by MHD and used
+   * when application requests avoiding of incremental upload processing to
+   * accamulate complete content upload before giving it to the application.
+   * Default is 8Mb.
+   * Can be set to zero to disable share pool.
+   * The parameter value must be placed to the
+   * @a v_large_pool_size member.
+   */
+  MHD_D_O_LARGE_POOL_SIZE = 281
+  ,
+  /**
    * Desired size of the stack for the threads started by MHD.
    * Use 0 for system default, which is also MHD default.
    * Works only with ##MHD_DAEMON_OPTION_WORKER_THREADS() or
@@ -4075,7 +4087,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
    * The parameter value must be placed to the
    * @a v_stack_size member.
    */
-  MHD_D_O_STACK_SIZE = 281
+  MHD_D_O_STACK_SIZE = 282
   ,
   /**
    * The the maximum FD value.
@@ -4092,7 +4104,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
    * The parameter value must be placed to the
    * @a v_fd_number_limit member.
    */
-  MHD_D_O_FD_NUMBER_LIMIT = 282
+  MHD_D_O_FD_NUMBER_LIMIT = 283
   ,
   /**
    * Enable `turbo`.
@@ -4555,6 +4567,10 @@ union MHD_DaemonOptionValue
    * Value for #MHD_D_O_CONN_MEMORY_LIMIT
    */
   size_t v_conn_memory_limit;
+  /**
+   * Value for #MHD_D_O_LARGE_POOL_SIZE
+   */
+  size_t v_large_pool_size;
   /**
    * Value for #MHD_D_O_STACK_SIZE
    */
@@ -5122,6 +5138,26 @@ struct MHD_DaemonOptionAndValue
     { \
       .opt = (MHD_D_O_CONN_MEMORY_LIMIT), \
       .val.v_conn_memory_limit = (sizet_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+
+/**
+ * The size of the shared memory pool for accamulated upload processing.
+ * The same "large" pool is shared for all connections server by MHD and used
+ * when application requests avoiding of incremental upload processing to
+ * accamulate complete content upload before giving it to the application.
+ * Default is 8Mb.
+ * Can be set to zero to disable share pool.
+ * @param sizet_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_D_OPTION_LARGE_POOL_SIZE(sizet_val) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_LARGE_POOL_SIZE), \
+      .val.v_large_pool_size = (sizet_val) \
     } \
     MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
@@ -6004,6 +6040,29 @@ MHD_D_OPTION_CONN_MEMORY_LIMIT (size_t sizet_val)
 
   opt_val.opt = MHD_D_O_CONN_MEMORY_LIMIT;
   opt_val.val.v_conn_memory_limit = sizet_val;
+
+  return opt_val;
+}
+
+
+/**
+ * The size of the shared memory pool for accamulated upload processing.
+ * The same "large" pool is shared for all connections server by MHD and used
+ * when application requests avoiding of incremental upload processing to
+ * accamulate complete content upload before giving it to the application.
+ * Default is 8Mb.
+ * Can be set to zero to disable share pool.
+ * @param sizet_val the value of the parameter
+ * @return the object of struct MHD_DaemonOptionAndValue with the requested
+ *         values
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_D_OPTION_LARGE_POOL_SIZE (size_t sizet_val)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_LARGE_POOL_SIZE;
+  opt_val.val.v_large_pool_size = sizet_val;
 
   return opt_val;
 }
@@ -8566,8 +8625,8 @@ typedef const struct MHD_Action *
  *
  * @param request the request to create action for
  * @param upload_buffer_size how large should the upload buffer be.
- *                           May allocate memory from the large memory pool
- *                           if necessary and non-zero is given.
+ *                           May allocate memory from the shared "large"
+ *                           memory pool if necessary and non-zero is given.
  *                           Must be zero if @a uc_full is NULL.
  * @param uc_full the function to call when complete upload
  *                is received (only if fit @a upload_buffer_size),
@@ -8581,6 +8640,7 @@ typedef const struct MHD_Action *
  *               can be NULL if uc_full is not NULL
  * @param uc_inc_cls closure for @a uc_inc
  * @return NULL on error (out of memory. both @a uc_full and @a uc_inc are NULL)
+ * @sa #MHD_D_OPTION_LARGE_POOL_SIZE()
  * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_Action *
@@ -8670,6 +8730,9 @@ typedef const struct MHD_Action *
 
 /**
  * @param pp_buffer_size how much data should the post processor
+ *                       buffer in memory. May allocate memory from
+ *                       the shared "large" memory pool if necessary.
+ * @param pp_buffer_size how much data should the post processor
  *   buffer in memory
  * @param pp_stream_limit values above which length should be
  *   given to @a iter for stream processing
@@ -8683,6 +8746,7 @@ typedef const struct MHD_Action *
  *   fit into @a pp_buffer_size will be available via
  *   #MHD_request_get_values_cb(), #MHD_request_get_values_list() and
  *   #MHD_request_get_post_processor_values()
+ * @sa #MHD_D_OPTION_LARGE_POOL_SIZE()
  */
 MHD_EXTERN_ struct MHD_Action *
 MHD_action_post_processor (struct MHD_Request *req,
