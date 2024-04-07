@@ -353,7 +353,11 @@ do
             [[ $M -gt 1 ]] && SFArguments+=','
             SFArguments+=$'\n'"  ${arg_type}$arg_name"
         else
-            SFArguments+="${arg_type}$arg_name"
+            if (( ${#SName} + ${#arg_type} + ${#arg_name} <= $max_width )); then
+                SFArguments+="${arg_type}$arg_name"
+            else
+                SFArguments+=$'\n'"  ${arg_type}$arg_name"
+            fi
         fi
         
         #[[ $M -gt 1 ]] && CLBody+=', \'$'\n'"    "
@@ -372,7 +376,7 @@ do
             StBody+="  /**"$'\n'
             format_doxy '   * ' "$(capitalise_first "$arg_descr")" || err_exit
             StBody+="$format_doxy_res"$'\n'"   */"$'\n'
-            StBody+="    ${arg_type}$nest_membr;"
+            StBody+="  ${arg_type}$nest_membr;"
         fi
     done
     
