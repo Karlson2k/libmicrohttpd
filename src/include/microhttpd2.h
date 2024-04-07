@@ -6627,6 +6627,16 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_ConnectionOption
    * Setting this option resets connection timeout timer.
    */
   MHD_C_O_TIMEOUT = 1
+  ,
+
+
+  /* * Sentinel * */
+  /**
+   * The sentinel value.
+   * This value enforces specific underlying integer type for the enum.
+   * Do not use.
+   */
+  MHD_C_O_SENTINEL = 65535
 };
 
 struct MHD_ReservedStruct
@@ -6635,15 +6645,25 @@ struct MHD_ReservedStruct
   void *reserved2;
 };
 
+
+/**
+ * Parameters for MHD connection options
+ */
 union MHD_ConnectionOptionValue
 {
-  unsigned int v_uint;
+  /**
+   * Value for #MHD_C_O_TIMEOUT
+   */
+  unsigned int v_timeout;
   /**
    * Reserved member. Do not use.
    */
   struct MHD_ReservedStruct reserved;
 };
 
+/**
+ * Combination of MHD connection option with parameters values
+ */
 struct MHD_ConnectionOptionAndValue
 {
   /**
@@ -6657,40 +6677,53 @@ struct MHD_ConnectionOptionAndValue
 };
 
 #if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_DESIG_NEST_INIT)
-/* Do not use directly */ // TODO: convert to explicict
-#  define MHD_C_OPTION_UINT_SET_(option,uint_val)       \
-  MHD_NOWARN_COMPOUND_LITERALS_                         \
-  (const struct MHD_ConnectionOptionAndValue)           \
-  {                                                     \
-    .opt = (option),                                    \
-    .val.v_uint = (uint_val)                            \
-  }                                                     \
+/**
+ * Set custom timeout for the given connection.
+ * Specified as the number of seconds.  Use zero for no timeout.
+ * Setting this option resets connection timeout timer.
+ * @param timeout the in seconds, zero for no timeout
+ * @return the object of struct MHD_ConnectionOptionAndValue with the requested
+ *         values
+ */
+#  define MHD_C_OPTION_TIMEOUT(timeout)         \
+  MHD_NOWARN_COMPOUND_LITERALS_                 \
+  (const struct MHD_ConnectionOptionAndValue)   \
+  {                                             \
+    .opt = (option),                            \
+    .val.v_timeout = (timeout)                  \
+  }                                             \
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Terminate the list of the options
- * @return the terminating object of struct MHD_DaemonOptionAndValue
+ * @return the terminating object of struct MHD_ConnectionOptionAndValue
  */
-#  define MHD_C_OPTION_TERMINATE()                      \
-  MHD_NOWARN_COMPOUND_LITERALS_                         \
-  (const struct MHD_DaemonOptionAndValue)               \
-  {                                                     \
-    .opt = (MHD_C_O_END)                                \
-  }                                                     \
+#  define MHD_C_OPTION_TERMINATE()              \
+  MHD_NOWARN_COMPOUND_LITERALS_                 \
+  (const struct MHD_ConnectionOptionAndValue)   \
+  {                                             \
+    .opt = (MHD_C_O_END)                        \
+  }                                             \
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 #else  /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 MHD_NOWARN_UNUSED_FUNC_
 
-/* Do not use directly */
+/**
+ * Set custom timeout for the given connection.
+ * Specified as the number of seconds.  Use zero for no timeout.
+ * Setting this option resets connection timeout timer.
+ * @param timeout the in seconds, zero for no timeout
+ * @return the object of struct MHD_ConnectionOptionAndValue with the requested
+ *         values
+ */
 static MHD_INLINE struct MHD_ConnectionOptionAndValue
-MHD_C_OPTION_UINT_SET_ (enum MHD_ConnectionOption option,
-                        unsigned int uint_val)
+MHD_C_OPTION_TIMEOUT (unsigned int timeout)
 {
   struct MHD_ConnectionOptionAndValue opt_val;
 
   opt_val.opt = option;
-  opt_val.val.v_uint = uint_val;
+  opt_val.val.v_timeout = timeout;
 
   return opt_val;
 }
@@ -6714,8 +6747,6 @@ MHD_C_OPTION_TERMINATE (void)
 MHD_RESTORE_WARN_UNUSED_FUNC_
 #endif /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 
-#define MHD_C_OPTION_TIMEOUT(v_uint) \
-  MHD_C_OPTION_UINT_SET_(MHD_C_O_TIMEOUT,v_uint)
 /**
  * Set the requested options for the connection.
  *
