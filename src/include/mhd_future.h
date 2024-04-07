@@ -344,3 +344,18 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (4); // TODO: convert like previous
 /* FUTURE:
    (with eventually option "number of masters")
    MHD_TM_WORKER_THREADS_WITH_MASTER_LISTENER = 3 */
+
+
+// FIXME: remove completely?
+/**
+ * Configure DH parameters (dh.pem) to use for the TLS key
+ * exchange.
+ *
+ * @param daemon daemon to configure tls for
+ * @param dh parameters to use
+ * @return #MHD_SC_OK upon success; TODO: define failure modes
+ */
+MHD_EXTERN_ enum MHD_StatusCode
+MHD_daemon_tls_mem_dhparams (struct MHD_Daemon *daemon,
+                             const char *dh)
+MHD_FN_PAR_NONNULL_ (1);

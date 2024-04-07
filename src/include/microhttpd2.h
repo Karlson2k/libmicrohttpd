@@ -1878,6 +1878,8 @@ MHD_FN_PURE_;
 #define MHD_HTTP_METHOD_STR_OPTIONS  "OPTIONS"
 /* Safe.     Idempotent.     RFC9110, Section 9.3.8. */
 #define MHD_HTTP_METHOD_STR_TRACE    "TRACE"
+/* Not safe. Not idempotent. RFC9110, Section 18.2. */
+#define MHD_HTTP_METHOD_STR_ASTERISK       "*"
 
 /* Additional HTTP methods. */
 /* Not safe. Idempotent.     RFC3744, Section 8.1. */
@@ -1942,15 +1944,13 @@ MHD_FN_PURE_;
 #define MHD_HTTP_METHOD_STR_UPDATEREDIRECTREF "UPDATEREDIRECTREF"
 /* Not safe. Idempotent.     RFC3253, Section 3.5. */
 #define MHD_HTTP_METHOD_STR_VERSION_CONTROL "VERSION-CONTROL"
-/* Not safe. Not idempotent. RFC9110, Section 18.2. */
-#define MHD_HTTP_METHOD_STR_ASTERISK       "*"
 
 /** @} */ /* end of group methods */
 
 
 /**
  * @defgroup postenc HTTP POST encodings
- * See also: http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4
+ * See also: https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-2
  * @{
  */
 
@@ -1971,7 +1971,7 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_HTTP_PostEncoding
   ,
   /**
    * "multipart/form-data"
-   * See https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#url-encoded-form-data
+   * See https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart-form-data
    * See https://www.rfc-editor.org/rfc/rfc7578.html
    */
   MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA = 2
@@ -3215,17 +3215,6 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
 
 
 /**
- * Specify threading mode to use.
- *
- * @param[in,out] daemon daemon to configure
- * @param tm mode to use
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_threading_mode (struct MHD_Daemon *daemon,
-                               enum MHD_ThreadingMode tm)
-MHD_FN_PAR_NONNULL_ (1);
-
-/**
  * Type of a callback function used for logging by MHD.
  *
  * @param cls closure
@@ -3241,17 +3230,6 @@ typedef void
                        enum MHD_StatusCode sc,
                        const char *fm,
                        va_list ap);
-
-// FIXME: convert
-/**
- * Convenience macro used to disable logging.
- *
- * @param daemon which instance to disable logging for
- */
-#define MHD_daemon_disable_logging(daemon) \
-  MHD_daemon_set_logger ((daemon), \
-                         MHD_STATIC_CAST_(MHD_LoggingCallback,NULL),   \
-                         NULL)
 
 /**
  * Parameter for listen socket binding type
@@ -3277,7 +3255,6 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOptionBindType
   MHD_DAEMON_OPTION_BIND_TYPE_EXCLUSIVE = 2
 };
 
-// FIXME: transform everything to option
 
 /**
  * Possible levels of enforcement for TCP_FASTOPEN.
@@ -3341,144 +3318,6 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_AddressFamily
 
 
 /**
- * Bind to the given socket address.
- * Ineffective in conjunction with #MHD_daemon_listen_socket().
- *
- * @param[in,out] daemon which instance to configure the binding address for
- * @param sa address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6)
- *        or even a UNIX domain socket (AF_UNIX)
- * @param sa_len number of bytes in @a sa
- * @return #MHD_SC_OK on on success,
- *         #MHD_SC_TOO_LATE if this option was set after the daemon was started and it cannot be set anymore
- *         #MHD_SC_FEATURE_DISABLED,
- *         #MHD_SC_FEATURE_NOT_AVAILABLE,
- *         #MHD_SC_OPTIONS_CONFLICT
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_bind_socket_address (struct MHD_Daemon *daemon,
-                                const struct sockaddr *sa,
-                                size_t sa_len)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_;
-
-// TODO: Sort values and assign numbers
-enum MHD_DeamonOptionUInt
-{
-  /**
-   * Use the given backlog for the listen() call.
-   * Ineffective in conjunction with #MHD_daemon_listen_socket()
-   */
-  MHD_DAEMON_OPTION_UINT_LISTEN_BACKLOG,
-  /**
-   * Maximum number of (concurrent) network connections served
-   * by daemon
-   */
-  MHD_DAEMON_OPTION_UINT_GLOBAL_CONNECTION_LIMIT,
-  /**
-   * Limit on the number of (concurrent) network connections
-   * made to the server from the same IP address.
-   * Can be used to prevent one IP from taking over all of
-   * the allowed connections. If the same IP tries to establish
-   * more than the specified number of connections, they will
-   * be immediately rejected.
-   */
-  MHD_DAEMON_OPTION_UINT_IP_CONNECTION_LIMIT,
-
-  /**
-   * After how many seconds of inactivity should a
-   * connection automatically be timed out?
-   * Use zero for no timeout, which is also the (unsafe!) default.
-   */
-  MHD_DAEMON_OPTION_UINT_DEFAULT_TIMEOUT,
-
-  /**
-   * The number of worker threads.
-   * Only useful if the selected threading mode
-   * is #MHD_TM_WORKER_THREADS.
-   * Zero number is silently ignored.
-   */
-  MHD_DAEMON_OPTION_UINT_NUM_WORKERS
-
-};
-
-/**
- * Set unsigned integer MHD option.
- *
- * @param[in,out] daemon which instance to set uint @a option for
- * @param option option to modify
- * @param value new value for the option
- * @return #MHD_SC_OK on on success,
- *         #MHD_SC_TOO_LATE if this option was set after the daemon was started and it cannot be set anymore
- *         #MHD_SC_FEATURE_DISABLED if this option is not implemented in this version of the library,
- *         #MHD_SC_FEATURE_NOT_AVAILABLE if this options is not supported on this system
- *         #MHD_SC_OPTIONS_CONFLICT
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_option_uint (struct MHD_Daemon *daemon,
-                            enum MHD_DeamonOptionUInt option,
-                            unsigned int value)
-MHD_FN_PAR_NONNULL_ (1);
-
-// FIXME: Alternative or additional implementation.
-
-struct MHD_DaemonOptioniUIntEntry
-{
-  /**
-   * The option to update the @a value
-   */
-  enum MHD_DeamonOptionUInt option;
-  /**
-   * The value to update for the @a option
-   */
-  unsigned int value;
-  // TODO: union
-};
-
-#if 0
-/**
- * Set unsigned integer MHD options.
- *
- * @param[in,out] daemon which instance to set uint @a option for
- * @param num_entries the number of entries in the @a opt_val array
- *                    and in @a results (if not NULL)
- * @param[in] opt_val the array with options and values to modify
- * @param[out] results the results for the applying the options,
- *                     can be NULL,
- *                     if not NULL must have @a num_entries entries
- * @return #MHD_YES if all options have applied successfully
- *         #MHD_NO if at least single option failed (for more
- *         details check @a results)
- */
-MHD_EXTERN_ enum MHD_StatusCode // First failed // TODO: Document that rest may be used
-MHD_daemon_set_option_uint (
-  struct MHD_Daemon *daemon,
-  size_t num_entries,
-  struct MHD_DaemonOptioniUIntEntry opt_val[MHD_C99_ (static num_entries)])
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (3);
-#endif
-// TODO: combine all types of options into single list with union
-/**
- * Accept connections from the given socket.  Socket
- * must be a TCP or UNIX domain (stream) socket.
- *
- * Unless MHD_INVALID_SOCKET is given, this disables
- * other listen options.
- *
- * @param daemon daemon to set listen socket for
- * @param listen_socket listen socket to use,
- *        MHD_INVALID_SOCKET value will cause this call to be
- *        ignored (other binding options may still be effective)
- * @return #MHD_SC_OK on on success,
- *         #MHD_SC_TOO_LATE if this option was set after the daemon was started and it cannot be set anymore
- *         #MHD_SC_FEATURE_DISABLED if this option is not implemented in this version of the library,
- *         #MHD_SC_FEATURE_NOT_AVAILABLE if this options is not supported on this system
- *         #MHD_SC_OPTIONS_CONFLICT
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_listen_socket (struct MHD_Daemon *daemon,
-                          MHD_socket listen_socket)
-MHD_FN_PAR_NONNULL_ (1);
-
-/**
  * Sockets polling internal syscalls used by MHD.
  */
 enum MHD_FIXED_ENUM_APP_SET_ MHD_SockPollSyscall
@@ -3504,23 +3343,6 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_SockPollSyscall
    */
   MHD_ELS_EPOLL = 3
 };
-
-
-/**
- * Force use of a particular event loop system call.
- *
- * @param daemon daemon to set event loop style for
- * @param els event loop syscall to use
- * @return #MHD_SC_OK on on success,
- *         #MHD_SC_TOO_LATE if this option was set after the daemon was started and it cannot be set anymore
- *         #MHD_SC_FEATURE_DISABLED if this option is not implemented in this version of the library,
- *         #MHD_SC_FEATURE_NOT_AVAILABLE if this options is not supported on this system
- *         #MHD_SC_OPTIONS_CONFLICT
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_event_loop (struct MHD_Daemon *daemon,
-                       enum MHD_EventLoopSyscall els)
-MHD_FN_PAR_NONNULL_ (1);
 
 
 /**
@@ -3635,76 +3457,6 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_UseStictLevel
   MHD_USL_NEAREST = 2
 };
 
-/**
- * Set how strictly MHD will enforce the HTTP protocol.
- *
- * @param[in,out] daemon daemon to configure strictness for
- * @param sl the level of strictness
- * @param how the way how to use the requested level
- * @return #MHD_SC_OK on on success,
- *         #MHD_SC_TOO_LATE if this option was set after the daemon was started and it cannot be set anymore
- *         #MHD_SC_FEATURE_DISABLED if this option is not implemented in this version of the library,
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_protocol_strict_level (struct MHD_Daemon *daemon,
-                                  enum MHD_ProtocolStrictLevel sl,
-                                  enum MHD_UseStictLevel how)
-MHD_FN_PAR_NONNULL_ (1);
-
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_option_string (struct MHD_Daemon *daemon,
-                              enum foo,
-                              const char *value)
-MHD_FN_PAR_NONNULL_ (1);
-
-/**
- * Provide TLS key and certificate data in-memory.
- *
- * @param daemon which instance should be configured
- * @param mem_key private key (key.pem) to be used by the
- *     HTTPS daemon.  Must be the actual data in-memory, not a filename.
- * @param mem_cert certificate (cert.pem) to be used by the
- *     HTTPS daemon.  Must be the actual data in-memory, not a filename.
- * @param pass passphrase phrase to decrypt 'key.pem', NULL
- *     if @param mem_key is in cleartext already
- * @return #MHD_SC_OK upon success;
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_tls_key_and_cert_from_memory (struct MHD_Daemon *daemon,
-                                         const char *mem_key,
-                                         const char *mem_cert,
-                                         const char *pass)
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2)
-MHD_FN_PAR_NONNULL_ (3);
-
-
-/**
- * Configure DH parameters (dh.pem) to use for the TLS key
- * exchange.
- *
- * @param daemon daemon to configure tls for
- * @param dh parameters to use
- * @return #MHD_SC_OK upon success; TODO: define failure modes
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_tls_mem_dhparams (struct MHD_Daemon *daemon,
-                             const char *dh)
-MHD_FN_PAR_NONNULL_ (1);
-
-/**
- * Memory pointer for the certificate (ca.pem) to be used by the
- * HTTPS daemon for client authentication.
- *
- * @param daemon daemon to configure tls for
- * @param mem_trust memory pointer to the certificate
- * @return #MHD_SC_OK upon success; TODO: define failure modes
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_tls_mem_trust (struct MHD_Daemon *daemon,
-                          const char *mem_trust)
-MHD_FN_PAR_NONNULL_ (1);
-
-
 /* ********************** (d) TLS support ********************** */
 
 /**
@@ -3794,24 +3546,6 @@ enum MHD_FIXED_FLAGS_ENUM_APP_SET_ MHD_DaemonOptionValueDAuthBindNonce
   MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_CLIENT_IP = 1 << 3
 };
 
-/**
- * Enable and configure TLS.
- *
- * @param daemon which instance should be configured
- * @param tls_backend which TLS backend should be used,
- *    currently only "gnutls" is supported.  You can
- *    also specify NULL for best-available (which is the default).
- * @return status code, #MHD_SC_OK upon success
- *     #MHD_TLS_BACKEND_UNSUPPORTED if the @a backend is unknown
- *     #MHD_TLS_DISABLED if this build of MHD does not support TLS
- *     #MHD_TLS_CIPHERS_INVALID if the given @a ciphers are not supported
- *     by this backend
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_tls_backend (struct MHD_Daemon *daemon,
-                            enum MHD_TlsBackend backend)
-MHD_FN_PAR_NONNULL_ (1);
-
 
 /**
  * Context required to provide a pre-shared key to the
@@ -3854,35 +3588,17 @@ typedef void
 
 
 /**
- * Configure PSK to use for the TLS key exchange.
+ * The specified callback will be called one time,
+ * after network initialisation, TLS pre-initialisation, but before
+ * the start of the internal threads (if allowed).
  *
- * @param daemon daemon to configure tls for
- * @param psk_cb function to call to obtain pre-shared key
- * @param psk_cb_cls closure for @a psk_cb
- * @return #MHD_SC_OK upon success; TODO: define failure modes
+ * This callback may use introspection call to retrieve and adjust
+ * some of the daemon aspects. For example, TLS backend handler can be used
+ * to configure some TLS aspects.
+ * @param cls the callback closure
  */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_tls_psk_callback (struct MHD_Daemon *daemon,
-                                 MHD_PskServerCredentialsCallback psk_cb,
-                                 void *psk_cb_cls)
-MHD_FN_PAR_NONNULL_ (1);
-
-
-
-// Callback invoked between full initialization of MHD
-// during MHD_daemon_start() and actual event loop
-// starting to accept incoming connections. So at this
-// point, the listen socket (and if applicable TLS context)
-// will be available for introspection.
 typedef void
 (*MHD_DaemonReadyCallback)(void *cls);
-
-
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_daemon_ready_callback (struct MHD_Daemon *daemon,
-                                      MHD_DaemonReadyCallback cb,
-                                      void *cb)
-MHD_FN_PAR_NONNULL_ (1);
 
 
 /**
@@ -3898,22 +3614,6 @@ typedef enum MHD_Bool
 (*MHD_AcceptPolicyCallback)(void *cls,
                             size_t addr_len,
                             const struct sockaddr *addr);
-
-
-/**
- * Set a policy callback that accepts/rejects connections
- * based on the client's IP address.  This function will be called
- * before a connection object is created.
- *
- * @param daemon daemon to set policy for
- * @param apc function to call to check the policy
- * @param apc_cls closure for @a apc
- */
-MHD_EXTERN_ void
-MHD_daemon_accept_policy (struct MHD_Daemon *daemon,
-                          MHD_AcceptPolicyCallback apc,
-                          void *apc_cls)
-MHD_FN_PAR_NONNULL_ (1);
 
 
 /**
@@ -3933,23 +3633,6 @@ typedef void
  *MHD_EarlyUriLogCallback)(void *cls,
                            struct MHD_Request *request,
                            const struct MHD_String *full_uri);
-
-
-/**
- * Register a callback to be called first for every request
- * (before any parsing of the header).  Makes it easy to
- * log the full URL.
- *
- * @param daemon daemon for which to set the logger
- * @param cb function to call
- * @param cb_cls closure for @a cb
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_early_uri_logger (struct MHD_Daemon *daemon,
-                                 MHD_EarlyUriLogCallback cb,
-                                 void *cb_cls)
-MHD_FN_PAR_NONNULL_ (1);
-
 
 /**
  * The `enum MHD_ConnectionNotificationCode` specifies types
@@ -4026,21 +3709,6 @@ typedef void
 (MHD_FN_PAR_NONNULL_ (2)
  *MHD_NotifyConnectionCallback)(void *cls,
                                 struct MHD_ConnectionNotificationData *data);
-
-
-/**
- * Register a function that should be called whenever a connection is
- * started or closed.
- *
- * @param daemon daemon to set callback for
- * @param ncc function to call to check the policy
- * @param ncc_cls closure for @a apc
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_notify_connection (struct MHD_Daemon *daemon,
-                                  MHD_NotifyConnectionCallback ncc,
-                                  void *ncc_cls)
-MHD_FN_PAR_NONNULL_ (1);
 
 
 /**
@@ -4124,75 +3792,6 @@ typedef void
 
 
 /**
- * Register a function that should be called whenever a stream is
- * started or closed.
- *
- * @param daemon daemon to set callback for
- * @param nsc function to call to check the policy
- * @param nsc_cls closure for @a apc
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_notify_stream (struct MHD_Daemon *daemon,
-                              MHD_NotifyStreamCallback nsc,
-                              void *nsc_cls)
-MHD_FN_PAR_NONNULL_ (1);
-
-enum MHD_DaemonOptionSizet
-{
-  /**
-   * Maximum memory size per connection.
-   * Default is 32 kb (#MHD_POOL_SIZE_DEFAULT).
-   * Values above 128k are unlikely to result in much performance benefit,
-   * as half of the memory will be typically used for IO, and TCP buffers
-   * are unlikely to support window sizes above 64k on most systems.
-   * The size should be large enough to fit all request headers (together
-   * with internal parsing information).
-   */
-  MHD_DAEMON_OPTION_SIZET_CONN_MEM_LIMIT,
-  /**
-   * Desired size of the stack for threads created by MHD.
-   * Use 0 for system default, which is also MHD default.
-   * Only useful if the selected threading mode
-   * is not #MHD_TM_EXTERNAL_EVENT_LOOP.
-   */
-  MHD_DAEMON_OPTION_SIZET_STACK_SIZE,
-
-};
-MHD_EXTERN_ void
-MHD_daemon_option_set_sizet (struct MHD_Daemon *daemon,
-                             enum MHD_DaemonOptionSizet option,
-                             size_t value)
-MHD_FN_PAR_NONNULL_ (1);
-
-/**
- * Set random values to be used by the Digest Auth module.  Note that
- * the application must ensure that @a buf remains allocated and
- * unmodified while the daemon is running.
- *
- * @param daemon daemon to configure
- * @param buf_size number of bytes in @a buf
- * @param buf entropy buffer
- */
-MHD_EXTERN_ void
-MHD_daemon_digest_auth_random (struct MHD_Daemon *daemon,
-                               size_t buf_size,
-                               const void *buf)
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (3);
-
-/**
- * Length of the internal array holding the map of the nonce and
- * the nonce counter.
- *
- * @param daemon daemon to configure
- * @param nc_length desired array length
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_digest_auth_nc_length (struct MHD_Daemon *daemon,
-                                      size_t nc_length)
-MHD_FN_PAR_NONNULL_ (1);
-
-
-/**
  * The options (parameters) for MHD daemon
  */
 enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
@@ -4205,7 +3804,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
   MHD_D_O_END = 0
   ,
 
-  /* = enum MHD_DaemonOption values below are generated automatically = */
+  /* = MHD Demon Option enum values below are generated automatically = */
   /**
    * Set MHD work (threading and polling) mode.
    * Consider use of #MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC(),
@@ -4599,7 +4198,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
    */
   MHD_D_O_DAUTH_DEF_MAX_NC = 404
   ,
-  /* = enum MHD_DaemonOption values above are generated automatically = */
+  /* = MHD Demon Option enum values above are generated automatically = */
 
   /* * Sentinel * */
   /**
@@ -4611,7 +4210,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
 
 };
 
-/* = structures below are generated automatically = */
+/* = MHD Demon Option structures below are generated automatically = */
 /**
  * Data for #MHD_D_O_BIND_PORT
  */
@@ -4782,7 +4381,7 @@ struct MHD_DaemonOptionValueRand
     const void *v_buf;
 };
 
-/* = structures above are generated automatically = */
+/* = MHD Demon Option structures above are generated automatically = */
 
 
 /**
@@ -4790,7 +4389,7 @@ struct MHD_DaemonOptionValueRand
  */
 union MHD_DaemonOptionValue
 {
-  /* = union MHD_DaemonOptionValue members below are generated automatically = */
+  /* = MHD Demon Option union members below are generated automatically = */
   /**
    * Value for #MHD_D_O_WORK_MODE
    */
@@ -4935,7 +4534,7 @@ union MHD_DaemonOptionValue
    * Value for #MHD_D_O_DAUTH_DEF_MAX_NC
    */
   uint_fast32_t v_dauth_def_max_nc;
-  /* = union MHD_DaemonOptionValue members above are generated automatically = */
+  /* = MHD Demon Option union members above are generated automatically = */
 };
 
 /**
@@ -4955,7 +4554,7 @@ struct MHD_DaemonOptionAndValue
 
 
 #if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_DESIG_NEST_INIT)
-/* = macros below are generated automatically = */
+/* = MHD Demon Option macros below are generated automatically = */
 /**
  * Set MHD work (threading and polling) mode.
  * Consider use of #MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC(),
@@ -5673,11 +5272,11 @@ struct MHD_DaemonOptionAndValue
     } \
     MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
-/* = macros above are generated automatically = */
+/* = MHD Demon Option macros above are generated automatically = */
 
 #else  /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 MHD_NOWARN_UNUSED_FUNC_
-/* = static functions below are generated automatically = */
+/* = MHD Demon Option static functions below are generated automatically = */
 /**
  * Set MHD work (threading and polling) mode.
  * Consider use of #MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC(),
@@ -6489,33 +6088,87 @@ MHD_DAEMON_OPTION_DAUTH_DEF_MAX_NC (uint_fast32_t max_nc)
   return opt_val;
 }
 
-/* = static functions above are generated automatically = */
+/* = MHD Demon Option static functions above are generated automatically = */
 MHD_RESTORE_WARN_UNUSED_FUNC_
 #endif /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 
 
 
 /**
- * Suppresses use of "Date:" header.
- * According to RFC should be used only if the system has no RTC.
- * @param bool_val the value of the parameter
+ * Create parameter for #MHD_daemon_options_set() for work mode with
+ * no internal threads.
+ * The application periodically calls #MHD_daemon_process_blocking(), where
+ * MHD internally checks all sockets automatically.
+ * This is the default mode.
  * @return the object of struct MHD_DaemonOptionAndValue with requested values
  */
-#define MHD_D_OPTION_SUPPRESS_DATE_HEADER(bool_val) \
-  MHD_D_OPTION_BOOL_SET_(MHD_D_O_BOOL_SUPPRESS_DATE_HEADER,(bool_val))
+#define MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC() \
+  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_EXTERNAL_PERIODIC())
 
 /**
- * Disable #MHD_action_suspend() functionality.
- *
- * You should only use this function if you are sure you do
- * satisfy all of its requirements and need a generally minor
- * boost in performance.
- * @param bool_val the value of the parameter
+* Create parameter for #MHD_daemon_options_set() for work mode with
+* an external event loop with level triggers.
+* Application uses #MHD_SocketRegistrationUpdateCallback, level triggered
+* sockets polling (like select() or poll()) and #MHD_daemon_event_update().
+* @param cb_val the callback for sockets registration
+* @param cb_cls_val the closure for the @a cv_val callback
+* @return the object of struct MHD_DaemonOptionAndValue with requested values
+*/
+#define MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(cb_val,cb_cls_val) \
+  MHD_DAEMON_OPTION_WORK_MODE( \
+    MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL((cb_val),(cb_cls_val)))
+
+/**
+ * Create parameter for #MHD_daemon_options_set() for work mode with
+ * an external event loop with edge triggers.
+ * Application uses #MHD_SocketRegistrationUpdateCallback, edge triggered
+ * sockets polling (like epoll with EPOLLET) and #MHD_daemon_event_update().
+ * @param cb_val the callback for sockets registration
+ * @param cb_cls_val the closure for the @a cv_val callback
  * @return the object of struct MHD_DaemonOptionAndValue with requested values
  */
-#define MHD_D_OPTION_DISALLOW_SUSPEND_RESUME(bool_val) \
-  MHD_D_OPTION_BOOL_SET_(MHD_D_O_BOOL_DISALLOW_SUSPEND_RESUME,(bool_val))
+#define MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(cb_val,cb_cls_val) \
+  MHD_DAEMON_OPTION_WORK_MODE( \
+    MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE((cb_val),(cb_cls_val)))
 
+/**
+ * Create parameter for #MHD_daemon_options_set() for work mode with
+ * no internal threads and aggregate watch FD.
+ * Application uses #MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD to get single FD
+ * that gets triggered by any MHD event.
+ * This FD can be watched as an aggregate indicator for all MHD events.
+ * This mode is available only on selected platforms (currently
+ * GNU/Linux only), see #MHD_LIB_INFO_FIXED_HAS_AGGREGATE_FD.
+ * When the FD is triggered, #MHD_daemon_process_nonblocking() should
+ * be called.
+ * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ */
+#define MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH() \
+  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH())
+
+/**
+ * Create parameter for #MHD_daemon_options_set() for work mode with
+ * one or more worker threads.
+ * If number of threads is one, then daemon starts with single worker thread
+ * that handles all connections.
+ * If number of threads is larger than one, then that number of worker threads,
+ * and handling of connection is distributed among the workers.
+ * @param num_workers the number of worker threads, zero is treated as one
+ * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ */
+#define MHD_DAEMON_OPTION_WORKER_THREADS(num_workers) \
+  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_WORKER_THREADS(num_workers))
+
+/**
+ * Create parameter for #MHD_daemon_options_set() for work mode with
+ * one internal thread for listening and additional threads per every
+ * connection.  Use this if handling requests is CPU-intensive or blocking,
+ * your application is thread-safe and you have plenty of memory (per
+ * connection).
+ * @return the object of struct MHD_DaemonOptionAndValue with requested values
+ */
+#define MHD_DAEMON_OPTION_THREAD_PER_CONNECTION() \
+  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_THREAD_PER_CONNECTION())
 
 /**
  * Set the requested options for the daemon.
@@ -6608,83 +6261,6 @@ extern "C"
 #  endif
 MHD_RESTORE_WARN_VARIADIC_MACROS_
 #endif /* MHD_USE_VARARG_MACROS && MHD_USE_COMP_LIT_FUNC_PARAMS */
-
-
-/**
- * Create parameter for #MHD_daemon_options_set() for work mode with
- * no internal threads.
- * The application periodically calls #MHD_daemon_process_blocking(), where
- * MHD internally checks all sockets automatically.
- * This is the default mode.
- * @return the object of struct MHD_DaemonOptionAndValue with requested values
- */
-#define MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC() \
-  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_EXTERNAL_PERIODIC())
-
-/**
-* Create parameter for #MHD_daemon_options_set() for work mode with
-* an external event loop with level triggers.
-* Application uses #MHD_SocketRegistrationUpdateCallback, level triggered
-* sockets polling (like select() or poll()) and #MHD_daemon_event_update().
-* @param cb_val the callback for sockets registration
-* @param cb_cls_val the closure for the @a cv_val callback
-* @return the object of struct MHD_DaemonOptionAndValue with requested values
-*/
-#define MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(cb_val,cb_cls_val) \
-  MHD_DAEMON_OPTION_WORK_MODE( \
-    MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL((cb_val),(cb_cls_val)))
-
-/**
- * Create parameter for #MHD_daemon_options_set() for work mode with
- * an external event loop with edge triggers.
- * Application uses #MHD_SocketRegistrationUpdateCallback, edge triggered
- * sockets polling (like epoll with EPOLLET) and #MHD_daemon_event_update().
- * @param cb_val the callback for sockets registration
- * @param cb_cls_val the closure for the @a cv_val callback
- * @return the object of struct MHD_DaemonOptionAndValue with requested values
- */
-#define MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(cb_val,cb_cls_val) \
-  MHD_DAEMON_OPTION_WORK_MODE( \
-    MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE((cb_val),(cb_cls_val)))
-
-/**
- * Create parameter for #MHD_daemon_options_set() for work mode with
- * no internal threads and aggregate watch FD.
- * Application uses #MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD to get single FD
- * that gets triggered by any MHD event.
- * This FD can be watched as an aggregate indicator for all MHD events.
- * This mode is available only on selected platforms (currently
- * GNU/Linux only), see #MHD_LIB_INFO_FIXED_HAS_AGGREGATE_FD.
- * When the FD is triggered, #MHD_daemon_process_nonblocking() should
- * be called.
- * @return the object of struct MHD_DaemonOptionAndValue with requested values
- */
-#define MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH() \
-  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH())
-
-/**
- * Create parameter for #MHD_daemon_options_set() for work mode with
- * one or more worker threads.
- * If number of threads is one, then daemon starts with single worker thread
- * that handles all connections.
- * If number of threads is larger than one, then that number of worker threads,
- * and handling of connection is distributed among the workers.
- * @param num_workers the number of worker threads, zero is treated as one
- * @return the object of struct MHD_DaemonOptionAndValue with requested values
- */
-#define MHD_DAEMON_OPTION_WORKER_THREADS(num_workers) \
-  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_WORKER_THREADS(num_workers))
-
-/**
- * Create parameter for #MHD_daemon_options_set() for work mode with
- * one internal thread for listening and additional threads per every
- * connection.  Use this if handling requests is CPU-intensive or blocking,
- * your application is thread-safe and you have plenty of memory (per
- * connection).
- * @return the object of struct MHD_DaemonOptionAndValue with requested values
- */
-#define MHD_DAEMON_OPTION_THREAD_PER_CONNECTION() \
-  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_THREAD_PER_CONNECTION())
 
 
 /* ******************* Event loop ************************ */
