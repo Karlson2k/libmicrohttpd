@@ -1,2 +1,4 @@
 d_options_preproc.rec
-*_insert.h
+/*_insert?.h
+/microhttpd2.h
+/microhttpd2_tmp?.h

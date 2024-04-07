@@ -50,7 +50,7 @@ Comment: Bind to the given TCP port and address family.
 +
 + If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(), #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used, MHD does not listen for incoming connection.
 Argument1: enum MHD_AddressFamily af
-Description1: the address family to use, 
+Description1: the address family to use,
 + the #MHD_AF_NONE to disable listen socket (the same effect as if this option is not used)
 Argument2: uint_fast16_t port
 Description2: port to use, 0 to let system assign any free port,
@@ -257,7 +257,7 @@ Comment: Desired size of the stack for the threads started by MHD.
 Name: fd_number_limit
 Value: 282
 Comment: The the maximum FD value.
-+ The limit is applied to all sockets used by MHD. 
++ The limit is applied to all sockets used by MHD.
 + If listen socket FD is equal or higher that specified value, the daemon fail to start.
 + If new connection FD is equal or higher that specified value, the connection is rejected.
 + Useful if application uses select() for polling the sockets, system FD_SETSIZE is good value for this option in such case.
@@ -270,7 +270,7 @@ Argument1: MHD_socket max_fd
 Name: TURBO
 Value: 320
 Type: enum MHD_Bool
-Comment: Enable `turbo`.  
+Comment: Enable `turbo`.
 + Disables certain calls to `shutdown()`, enables aggressive non-blocking optimistic reads and other potentially unsafe optimisations.
 + Most effects only happen with internal threads with epoll.
 + The 'turbo' mode is not enabled (mode is disabled) by default.
@@ -307,7 +307,7 @@ Name: daemon_ready_callback
 Value: 360
 Type: struct MHD_DaemonOptionValueReadyCB
 Comment: Set a callback to be called for pre-start finalisation.
-+ 
++
 + The specified callback will be called one time, after network initialisation, TLS pre-initialisation, but before the start of the internal threads (if allowed)
 Argument1: MHD_DaemonReadyCallback cb
 Description1: the pre-start callback

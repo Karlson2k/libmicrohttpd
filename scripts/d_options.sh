@@ -115,6 +115,7 @@ cut_str_word () {
     [[ $len -le 0 ]] && return 1
     if cut_str_nl "${str:0:$(( len + 1 ))}"; then
         cut_str_word_res="${cut_str_nl_res}"
+        cut_str_word_res="${cut_str_word_res% }"
         return 0
     fi
     if [[ ${#str} -le $len ]]; then
@@ -123,10 +124,12 @@ cut_str_word () {
     fi
     if [[ "${str:${len}:1}" = " " ]]; then
         cut_str_word_res="${str:0:${len}}"
+        cut_str_word_res="${cut_str_word_res% }"
         return 0
     fi
     cut_str_word_res="${str:0:${len}}"
     cut_str_word_res="${cut_str_word_res% *}"
+    cut_str_word_res="${cut_str_word_res% }"
     return 0
 }
 
@@ -149,12 +152,14 @@ format_doxy() {
 ${prefix2}${tmp_str:${#prefix2}}"
     cut_str_word "$desc" $width_r || return 1
     format_doxy_res="${prefix1}${cut_str_word_res}"
+    format_doxy_res="${format_doxy_res% }"
     desc="${desc:${#cut_str_word_res}}"
     desc="${desc#"${desc%%[! ]*}"}" # trim leading spaces
     desc="${desc#$'\n'}" # remove leading newline character
     while [[ -n "$desc" ]]; do
         cut_str_word "$desc" $width_r || return 1
-        format_doxy_res+="${prefix2}${cut_str_word_res}"
+        tmp_str="${prefix2}${cut_str_word_res}"
+        format_doxy_res+="${tmp_str% }"
         desc="${desc:${#cut_str_word_res}}"
         desc="${desc#"${desc%%[! ]*}"}" # trim leading spaces
         desc="${desc#$'\n'}" # remove leading newline character
@@ -179,7 +184,13 @@ capitalise_first() {
     printf '%s' "${first_char^^}${1:1}"
 }
 
+echo "Trimming lines in '$input_rec'..."
+${SED-sed} -E -e 's/ +$//' -i "$input_rec" || err_exit
+echo "OK"
+
+echo "Checking '$input_rec'..."
 recfix --check "$input_rec" || exit 3
+echo "OK"
 
 cat << _EOF_ > "$tmp_rec_file"
 %rec: ${tmp_rec_name}
@@ -200,6 +211,7 @@ do
       echo "The 'Name' field is empty for 'Value=$N'" >&2
       exit 2
     fi
+    echo -n '.'
     COMMENT=$(recsel -t MHD_Option -P Comment -e "Value = $N" "$input_rec")
     if [[ -z $COMMENT ]]; then
       echo "The 'Comment' field is empty for '$NAME' ('Value=$N')" >&2
@@ -223,7 +235,7 @@ do
     clean_name="${NAME//_/ }"
     clean_name="${clean_name,,}" # Lowercase space-delimited
 
-    echo "$N: ${clean_name// /_}"
+    echo -n "$N: ${clean_name// /_}"
 
     EName="${clean_name^^}"
     EName="MHD_D_O_${EName// /_}" # Uppercase '_'-joined
@@ -252,6 +264,7 @@ do
         DESCRS[$M]="$(recsel -t MHD_Option -P Description${M} -e "Value = $N" "$input_rec")"
         MEMBERS[$M]="$(recsel -t MHD_Option -P Member${M} -e "Value = $N" "$input_rec")"
         (( M++ ))
+        echo -n '.'
     done
     
     # Basic data checks
@@ -378,6 +391,7 @@ do
             StBody+="$format_doxy_res"$'\n'"   */"$'\n'
             StBody+="  ${arg_type}$nest_membr;"
         fi
+        echo -n '.'
     done
     
     UType="$TYPE"
@@ -402,19 +416,84 @@ do
         -f SFBody -v "$SFBody" \
         -f StBody -v "$StBody" \
         --verbose "$tmp_rec_file" || err_exit
+    echo '.'
 done
 echo "finished."
 
-echo "Generating output files..."
-echo "enum..."
-recfmt -f d_options_enum.template < "$tmp_rec_file" > enum_insert.h
-echo "structs..."
-recsel -e "StBody != ''" "$tmp_rec_file" | recfmt -f d_options_struct.template > struct_insert.h
-echo "union..."
-recfmt -f d_options_union.template < "$tmp_rec_file" > union_insert.h
-echo "macros..."
-recfmt -f d_options_macro.template < "$tmp_rec_file" | ${SED-sed} -e 's/##removeme##//g' - > macro_insert.h
-echo "functions..."
-recfmt -f d_options_func.template < "$tmp_rec_file" > func_insert.h
-# rm "$tmp_rec_file"
+echo "Updating header file..."
+header_name='microhttpd2.h'
+start_of_marker=' = MHD Daemon Option '
+end_of_start_marker=' below are generated automatically = '
+end_of_end_marker=' above are generated automatically = '
+I=0
+
+cp "../src/include/${header_name}" "./${header_name}" || err_exit
+
+middle_of_marker='enum values'
+echo "${middle_of_marker}..."
+in_file="${header_name}"
+out_file="${header_name%.h}_tmp$((++I)).h"
+recfmt -f d_options_enum.template < "$tmp_rec_file" > "header_insert${I}.h" || err_exit
+middle_of_marker='enum values'
+start_marker="${start_of_marker}${middle_of_marker}${end_of_start_marker}" && end_marker="${start_of_marker}${middle_of_marker}${end_of_end_marker}" || err_exit
+${SED-sed} -e '/'"$start_marker"'/{p; r header_insert'"$I"'.h
+}
+/'"$end_marker"'/p
+/'"$start_marker"'/,/'"$end_marker"'/d' "${in_file}" > "${out_file}" || err_exit
+
+middle_of_marker='structures'
+echo "${middle_of_marker}..."
+in_file="${out_file}"
+out_file="${header_name%.h}_tmp$((++I)).h"
+recsel -e "StBody != ''" "$tmp_rec_file" | recfmt -f d_options_struct.template > "header_insert${I}.h" || err_exit
+start_marker="${start_of_marker}${middle_of_marker}${end_of_start_marker}" && end_marker="${start_of_marker}${middle_of_marker}${end_of_end_marker}" || err_exit
+${SED-sed} -e '/'"$start_marker"'/{p; r header_insert'"$I"'.h
+}
+/'"$end_marker"'/p
+/'"$start_marker"'/,/'"$end_marker"'/d' "${in_file}" > "${out_file}" || err_exit
+
+middle_of_marker='union members'
+echo "${middle_of_marker}..."
+in_file="${out_file}"
+out_file="${header_name%.h}_tmp$((++I)).h"
+recfmt -f d_options_union.template < "$tmp_rec_file" > "header_insert${I}.h" || err_exit
+start_marker="${start_of_marker}${middle_of_marker}${end_of_start_marker}" && end_marker="${start_of_marker}${middle_of_marker}${end_of_end_marker}" || err_exit
+${SED-sed} -e '/'"$start_marker"'/{p; r header_insert'"$I"'.h
+}
+/'"$end_marker"'/p
+/'"$start_marker"'/,/'"$end_marker"'/d' "${in_file}" > "${out_file}" || err_exit
+
+middle_of_marker='macros'
+echo "${middle_of_marker}..."
+in_file="${out_file}"
+out_file="${header_name%.h}_tmp$((++I)).h"
+recfmt -f d_options_macro.template < "$tmp_rec_file" | ${SED-sed} -e 's/##removeme##//g' - > "header_insert${I}.h" || err_exit
+start_marker="${start_of_marker}${middle_of_marker}${end_of_start_marker}" && end_marker="${start_of_marker}${middle_of_marker}${end_of_end_marker}" || err_exit
+${SED-sed} -e '/'"$start_marker"'/{p; r header_insert'"$I"'.h
+}
+/'"$end_marker"'/p
+/'"$start_marker"'/,/'"$end_marker"'/d' "${in_file}" > "${out_file}" || err_exit
+
+middle_of_marker='static functions'
+echo "${middle_of_marker}..."
+in_file="${out_file}"
+out_file="${header_name%.h}_tmp$((++I)).h"
+recfmt -f d_options_func.template < "$tmp_rec_file" > "header_insert${I}.h" || err_exit
+start_marker="${start_of_marker}${middle_of_marker}${end_of_start_marker}" && end_marker="${start_of_marker}${middle_of_marker}${end_of_end_marker}" || err_exit
+${SED-sed} -e '/'"$start_marker"'/{p; r header_insert'"$I"'.h
+}
+/'"$end_marker"'/p
+/'"$start_marker"'/,/'"$end_marker"'/d' "${in_file}" > "${out_file}" || err_exit
+
 echo "finished."
+
+if diff "../src/include/${header_name}" "${out_file}" > /dev/null; then
+    echo "The updated header '${header_name}' content is equal to the previous content, the file remains the same."
+else
+    mv "${out_file}" "../src/include/${header_name}" || err_exit
+    echo "The header '${header_name}' has been updated with the new content."
+fi
+
+echo "Cleanup..."
+rm -f "$tmp_rec_file" ${header_name%.h}_tmp?.h
+echo "completed."
