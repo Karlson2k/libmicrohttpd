@@ -3809,7 +3809,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
   MHD_D_O_END = 0
   ,
 
-  /* = MHD Demon Option enum values below are generated automatically = */
+  /* = MHD Daemon Option enum values below are generated automatically = */
   /**
    * Set MHD work (threading and polling) mode.
    * Consider use of #MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC(),
@@ -4203,7 +4203,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
    */
   MHD_D_O_DAUTH_DEF_MAX_NC = 404
   ,
-  /* = MHD Demon Option enum values above are generated automatically = */
+  /* = MHD Daemon Option enum values above are generated automatically = */
 
   /* * Sentinel * */
   /**
@@ -4215,7 +4215,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
 
 };
 
-/* = MHD Demon Option structures below are generated automatically = */
+/* = MHD Daemon Option structures below are generated automatically = */
 /**
  * Data for #MHD_D_O_BIND_PORT
  */
@@ -4386,7 +4386,7 @@ struct MHD_DaemonOptionValueRand
   const void *v_buf;
 };
 
-/* = MHD Demon Option structures above are generated automatically = */
+/* = MHD Daemon Option structures above are generated automatically = */
 
 
 /**
@@ -4394,7 +4394,7 @@ struct MHD_DaemonOptionValueRand
  */
 union MHD_DaemonOptionValue
 {
-  /* = MHD Demon Option union members below are generated automatically = */
+  /* = MHD Daemon Option union members below are generated automatically = */
   /**
    * Value for #MHD_D_O_WORK_MODE
    */
@@ -4539,7 +4539,7 @@ union MHD_DaemonOptionValue
    * Value for #MHD_D_O_DAUTH_DEF_MAX_NC
    */
   uint_fast32_t v_dauth_def_max_nc;
-  /* = MHD Demon Option union members above are generated automatically = */
+  /* = MHD Daemon Option union members above are generated automatically = */
 };
 
 /**
@@ -4559,7 +4559,7 @@ struct MHD_DaemonOptionAndValue
 
 
 #if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_DESIG_NEST_INIT)
-/* = MHD Demon Option macros below are generated automatically = */
+/* = MHD Daemon Option macros below are generated automatically = */
 /**
  * Set MHD work (threading and polling) mode.
  * Consider use of #MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC(),
@@ -5277,11 +5277,11 @@ struct MHD_DaemonOptionAndValue
     } \
     MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
-/* = MHD Demon Option macros above are generated automatically = */
+/* = MHD Daemon Option macros above are generated automatically = */
 
 #else  /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 MHD_NOWARN_UNUSED_FUNC_
-/* = MHD Demon Option static functions below are generated automatically = */
+/* = MHD Daemon Option static functions below are generated automatically = */
 /**
  * Set MHD work (threading and polling) mode.
  * Consider use of #MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC(),
@@ -6131,7 +6131,7 @@ MHD_DAEMON_OPTION_DAUTH_DEF_MAX_NC (uint_fast32_t max_nc)
 }
 
 
-/* = MHD Demon Option static functions above are generated automatically = */
+/* = MHD Daemon Option static functions above are generated automatically = */
 MHD_RESTORE_WARN_UNUSED_FUNC_
 #endif /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 
