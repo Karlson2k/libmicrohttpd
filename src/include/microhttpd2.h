@@ -4651,7 +4651,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_WORK_MODE(wmp) \
+#  define MHD_D_OPTION_WORK_MODE(wmp) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4666,7 +4666,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_POLL_SYSCALL(els) \
+#  define MHD_D_OPTION_POLL_SYSCALL(els) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4683,7 +4683,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_LOG_CALLBACK(log_cb,lob_cb_cls) \
+#  define MHD_D_OPTION_LOG_CALLBACK(log_cb,lob_cb_cls) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4710,7 +4710,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_BIND_PORT(af,port) \
+#  define MHD_D_OPTION_BIND_PORT(af,port) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4735,7 +4735,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_BIND_SA(sa_len,sa) \
+#  define MHD_D_OPTION_BIND_SA(sa_len,sa) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4760,7 +4760,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_LISTEN_SOCKET(listen_fd) \
+#  define MHD_D_OPTION_LISTEN_SOCKET(listen_fd) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4778,7 +4778,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_LISTEN_ADDR_REUSE(reuse_type) \
+#  define MHD_D_OPTION_LISTEN_ADDR_REUSE(reuse_type) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4805,7 +4805,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_TCP_FASTOPEN(option,queue_length) \
+#  define MHD_D_OPTION_TCP_FASTOPEN(option,queue_length) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4824,7 +4824,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_LISTEN_BACKLOG(backlog_size) \
+#  define MHD_D_OPTION_LISTEN_BACKLOG(backlog_size) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4843,7 +4843,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_SIGPIPE_SUPPRESSED(bool_val) \
+#  define MHD_D_OPTION_SIGPIPE_SUPPRESSED(bool_val) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4859,7 +4859,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_TLS(backend) \
+#  define MHD_D_OPTION_TLS(backend) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4878,7 +4878,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_TLS_KEY_CERT(mem_key,mem_cert,mem_cert) \
+#  define MHD_D_OPTION_TLS_KEY_CERT(mem_key,mem_cert,mem_cert) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4897,7 +4897,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_TLS_CLIENT_CA(mem_client_ca) \
+#  define MHD_D_OPTION_TLS_CLIENT_CA(mem_client_ca) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4913,7 +4913,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_TLS_PSK_CALLBACK(psk_cb,psk_cb_cls) \
+#  define MHD_D_OPTION_TLS_PSK_CALLBACK(psk_cb,psk_cb_cls) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4931,7 +4931,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_NO_ALPN(bool_val) \
+#  define MHD_D_OPTION_NO_ALPN(bool_val) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4949,7 +4949,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_DEFAULT_TIMEOUT(timeout) \
+#  define MHD_D_OPTION_DEFAULT_TIMEOUT(timeout) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4964,7 +4964,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_GLOBAL_CONNECTION_LIMIT(glob_limit) \
+#  define MHD_D_OPTION_GLOBAL_CONNECTION_LIMIT(glob_limit) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -4983,7 +4983,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_PER_IP_LIMIT(per_ip_limit) \
+#  define MHD_D_OPTION_PER_IP_LIMIT(per_ip_limit) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5001,7 +5001,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_ACCEPT_POLICY(apc,apc_cls) \
+#  define MHD_D_OPTION_ACCEPT_POLICY(apc,apc_cls) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5018,7 +5018,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_PROTOCOL_STRICT_LEVEL(sl,how) \
+#  define MHD_D_OPTION_PROTOCOL_STRICT_LEVEL(sl,how) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5040,7 +5040,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_EARLY_URI_LOGGER(cb,cls) \
+#  define MHD_D_OPTION_EARLY_URI_LOGGER(cb,cls) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5061,7 +5061,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE(bool_val) \
+#  define MHD_D_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE(bool_val) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5078,7 +5078,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_SUPPRESS_DATE_HEADER(bool_val) \
+#  define MHD_D_OPTION_SUPPRESS_DATE_HEADER(bool_val) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5095,7 +5095,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_ENABLE_SHOUTCAST(bool_val) \
+#  define MHD_D_OPTION_ENABLE_SHOUTCAST(bool_val) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5116,7 +5116,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_CONN_MEMORY_LIMIT(sizet_val) \
+#  define MHD_D_OPTION_CONN_MEMORY_LIMIT(sizet_val) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5134,7 +5134,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_STACK_SIZE(sizet_val) \
+#  define MHD_D_OPTION_STACK_SIZE(sizet_val) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5159,7 +5159,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_FD_NUMBER_LIMIT(max_fd) \
+#  define MHD_D_OPTION_FD_NUMBER_LIMIT(max_fd) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5178,7 +5178,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_TURBO(bool_val) \
+#  define MHD_D_OPTION_TURBO(bool_val) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5202,7 +5202,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_DISABLE_THREAD_SAFETY(bool_val) \
+#  define MHD_D_OPTION_DISABLE_THREAD_SAFETY(bool_val) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5222,7 +5222,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_DISALLOW_UPGRADE(bool_val) \
+#  define MHD_D_OPTION_DISALLOW_UPGRADE(bool_val) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5241,7 +5241,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_DISALLOW_SUSPEND_RESUME(bool_val) \
+#  define MHD_D_OPTION_DISALLOW_SUSPEND_RESUME(bool_val) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5261,7 +5261,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_DAEMON_READY_CALLBACK(cb,cb_cls) \
+#  define MHD_D_OPTION_DAEMON_READY_CALLBACK(cb,cb_cls) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5279,7 +5279,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_NOTIFY_CONNECTION(ncc,cls) \
+#  define MHD_D_OPTION_NOTIFY_CONNECTION(ncc,cls) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5298,7 +5298,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_NOTIFY_STREAM(nsc,cls) \
+#  define MHD_D_OPTION_NOTIFY_STREAM(nsc,cls) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5321,7 +5321,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_RANDOM_ENTROPY(buf_size,buf) \
+#  define MHD_D_OPTION_RANDOM_ENTROPY(buf_size,buf) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5341,7 +5341,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_DAUTH_MAP_SIZE(size) \
+#  define MHD_D_OPTION_DAUTH_MAP_SIZE(size) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5362,7 +5362,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_DAUTH_NONCE_BIND_TYPE(bind_type) \
+#  define MHD_D_OPTION_DAUTH_NONCE_BIND_TYPE(bind_type) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5379,7 +5379,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_DAUTH_DEF_NONCE_TIMEOUT(timeout) \
+#  define MHD_D_OPTION_DAUTH_DEF_NONCE_TIMEOUT(timeout) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5396,7 +5396,7 @@ struct MHD_DaemonOptionAndValue
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_DAEMON_OPTION_DAUTH_DEF_MAX_NC(max_nc) \
+#  define MHD_D_OPTION_DAUTH_DEF_MAX_NC(max_nc) \
     MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
     { \
@@ -5406,6 +5406,18 @@ struct MHD_DaemonOptionAndValue
     MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /* = MHD Daemon Option macros above are generated automatically = */
+
+/**
+ * Terminate the list of the options
+ * @return the terminating object of struct MHD_DaemonOptionAndValue
+ */
+#  define MHD_D_OPTION_TERMINATE() \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
+    (const struct MHD_DaemonOptionAndValue) \
+    { \
+      .opt = (MHD_D_O_END) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 #else  /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 MHD_NOWARN_UNUSED_FUNC_
@@ -5430,7 +5442,7 @@ MHD_NOWARN_UNUSED_FUNC_
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_WORK_MODE (struct MHD_WorkModeWithParam wmp)
+MHD_D_OPTION_WORK_MODE (struct MHD_WorkModeWithParam wmp)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5448,7 +5460,7 @@ MHD_DAEMON_OPTION_WORK_MODE (struct MHD_WorkModeWithParam wmp)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_POLL_SYSCALL (enum MHD_SockPollSyscall els)
+MHD_D_OPTION_POLL_SYSCALL (enum MHD_SockPollSyscall els)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5468,7 +5480,7 @@ MHD_DAEMON_OPTION_POLL_SYSCALL (enum MHD_SockPollSyscall els)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_LOG_CALLBACK (
+MHD_D_OPTION_LOG_CALLBACK (
   MHD_LoggingCallback log_cb,
   void *lob_cb_cls)
 {
@@ -5500,7 +5512,7 @@ MHD_DAEMON_OPTION_LOG_CALLBACK (
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_BIND_PORT (
+MHD_D_OPTION_BIND_PORT (
   enum MHD_AddressFamily af,
   uint_fast16_t port)
 {
@@ -5530,7 +5542,7 @@ MHD_DAEMON_OPTION_BIND_PORT (
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_BIND_SA (
+MHD_D_OPTION_BIND_SA (
   size_t sa_len,
   const struct sockaddr *sa)
 {
@@ -5560,7 +5572,7 @@ MHD_DAEMON_OPTION_BIND_SA (
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_LISTEN_SOCKET (MHD_socket listen_fd)
+MHD_D_OPTION_LISTEN_SOCKET (MHD_socket listen_fd)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5581,7 +5593,7 @@ MHD_DAEMON_OPTION_LISTEN_SOCKET (MHD_socket listen_fd)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_LISTEN_ADDR_REUSE (enum MHD_DaemonOptionBindType reuse_type)
+MHD_D_OPTION_LISTEN_ADDR_REUSE (enum MHD_DaemonOptionBindType reuse_type)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5611,7 +5623,7 @@ MHD_DAEMON_OPTION_LISTEN_ADDR_REUSE (enum MHD_DaemonOptionBindType reuse_type)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_TCP_FASTOPEN (
+MHD_D_OPTION_TCP_FASTOPEN (
   enum MHD_TCPFastOpenType option,
   unsigned int queue_length)
 {
@@ -5635,7 +5647,7 @@ MHD_DAEMON_OPTION_TCP_FASTOPEN (
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_LISTEN_BACKLOG (unsigned int backlog_size)
+MHD_D_OPTION_LISTEN_BACKLOG (unsigned int backlog_size)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5657,7 +5669,7 @@ MHD_DAEMON_OPTION_LISTEN_BACKLOG (unsigned int backlog_size)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_SIGPIPE_SUPPRESSED (enum MHD_Bool bool_val)
+MHD_D_OPTION_SIGPIPE_SUPPRESSED (enum MHD_Bool bool_val)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5676,7 +5688,7 @@ MHD_DAEMON_OPTION_SIGPIPE_SUPPRESSED (enum MHD_Bool bool_val)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_TLS (enum MHD_TlsBackend backend)
+MHD_D_OPTION_TLS (enum MHD_TlsBackend backend)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5698,7 +5710,7 @@ MHD_DAEMON_OPTION_TLS (enum MHD_TlsBackend backend)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_TLS_KEY_CERT (
+MHD_D_OPTION_TLS_KEY_CERT (
   const char *mem_key,
   const char *mem_cert,
   const char *mem_cert)
@@ -5723,7 +5735,7 @@ MHD_DAEMON_OPTION_TLS_KEY_CERT (
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_TLS_CLIENT_CA (const char *mem_client_ca)
+MHD_D_OPTION_TLS_CLIENT_CA (const char *mem_client_ca)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5742,7 +5754,7 @@ MHD_DAEMON_OPTION_TLS_CLIENT_CA (const char *mem_client_ca)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_TLS_PSK_CALLBACK (
+MHD_D_OPTION_TLS_PSK_CALLBACK (
   MHD_PskServerCredentialsCallback psk_cb,
   void *psk_cb_cls)
 {
@@ -5765,7 +5777,7 @@ MHD_DAEMON_OPTION_TLS_PSK_CALLBACK (
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_NO_ALPN (enum MHD_Bool bool_val)
+MHD_D_OPTION_NO_ALPN (enum MHD_Bool bool_val)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5786,7 +5798,7 @@ MHD_DAEMON_OPTION_NO_ALPN (enum MHD_Bool bool_val)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_DEFAULT_TIMEOUT (unsigned int timeout)
+MHD_D_OPTION_DEFAULT_TIMEOUT (unsigned int timeout)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5804,7 +5816,7 @@ MHD_DAEMON_OPTION_DEFAULT_TIMEOUT (unsigned int timeout)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_GLOBAL_CONNECTION_LIMIT (unsigned int glob_limit)
+MHD_D_OPTION_GLOBAL_CONNECTION_LIMIT (unsigned int glob_limit)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5826,7 +5838,7 @@ MHD_DAEMON_OPTION_GLOBAL_CONNECTION_LIMIT (unsigned int glob_limit)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_PER_IP_LIMIT (unsigned int per_ip_limit)
+MHD_D_OPTION_PER_IP_LIMIT (unsigned int per_ip_limit)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5847,7 +5859,7 @@ MHD_DAEMON_OPTION_PER_IP_LIMIT (unsigned int per_ip_limit)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_ACCEPT_POLICY (
+MHD_D_OPTION_ACCEPT_POLICY (
   MHD_AcceptPolicyCallback apc,
   void *apc_cls)
 {
@@ -5869,7 +5881,7 @@ MHD_DAEMON_OPTION_ACCEPT_POLICY (
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_PROTOCOL_STRICT_LEVEL (
+MHD_D_OPTION_PROTOCOL_STRICT_LEVEL (
   enum MHD_ProtocolStrictLevel sl,
   enum MHD_UseStictLevel how)
 {
@@ -5896,7 +5908,7 @@ MHD_DAEMON_OPTION_PROTOCOL_STRICT_LEVEL (
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_EARLY_URI_LOGGER (
+MHD_D_OPTION_EARLY_URI_LOGGER (
   MHD_EarlyUriLogCallback cb,
   void *cls)
 {
@@ -5922,7 +5934,7 @@ MHD_DAEMON_OPTION_EARLY_URI_LOGGER (
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE (enum MHD_Bool bool_val)
+MHD_D_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE (enum MHD_Bool bool_val)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5942,7 +5954,7 @@ MHD_DAEMON_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE (enum MHD_Bool bool_val)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_SUPPRESS_DATE_HEADER (enum MHD_Bool bool_val)
+MHD_D_OPTION_SUPPRESS_DATE_HEADER (enum MHD_Bool bool_val)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5962,7 +5974,7 @@ MHD_DAEMON_OPTION_SUPPRESS_DATE_HEADER (enum MHD_Bool bool_val)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_ENABLE_SHOUTCAST (enum MHD_Bool bool_val)
+MHD_D_OPTION_ENABLE_SHOUTCAST (enum MHD_Bool bool_val)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -5986,7 +5998,7 @@ MHD_DAEMON_OPTION_ENABLE_SHOUTCAST (enum MHD_Bool bool_val)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_CONN_MEMORY_LIMIT (size_t sizet_val)
+MHD_D_OPTION_CONN_MEMORY_LIMIT (size_t sizet_val)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -6007,7 +6019,7 @@ MHD_DAEMON_OPTION_CONN_MEMORY_LIMIT (size_t sizet_val)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_STACK_SIZE (size_t sizet_val)
+MHD_D_OPTION_STACK_SIZE (size_t sizet_val)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -6035,7 +6047,7 @@ MHD_DAEMON_OPTION_STACK_SIZE (size_t sizet_val)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_FD_NUMBER_LIMIT (MHD_socket max_fd)
+MHD_D_OPTION_FD_NUMBER_LIMIT (MHD_socket max_fd)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -6057,7 +6069,7 @@ MHD_DAEMON_OPTION_FD_NUMBER_LIMIT (MHD_socket max_fd)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_TURBO (enum MHD_Bool bool_val)
+MHD_D_OPTION_TURBO (enum MHD_Bool bool_val)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -6084,7 +6096,7 @@ MHD_DAEMON_OPTION_TURBO (enum MHD_Bool bool_val)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_DISABLE_THREAD_SAFETY (enum MHD_Bool bool_val)
+MHD_D_OPTION_DISABLE_THREAD_SAFETY (enum MHD_Bool bool_val)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -6107,7 +6119,7 @@ MHD_DAEMON_OPTION_DISABLE_THREAD_SAFETY (enum MHD_Bool bool_val)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_DISALLOW_UPGRADE (enum MHD_Bool bool_val)
+MHD_D_OPTION_DISALLOW_UPGRADE (enum MHD_Bool bool_val)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -6129,7 +6141,7 @@ MHD_DAEMON_OPTION_DISALLOW_UPGRADE (enum MHD_Bool bool_val)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_DISALLOW_SUSPEND_RESUME (enum MHD_Bool bool_val)
+MHD_D_OPTION_DISALLOW_SUSPEND_RESUME (enum MHD_Bool bool_val)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -6152,7 +6164,7 @@ MHD_DAEMON_OPTION_DISALLOW_SUSPEND_RESUME (enum MHD_Bool bool_val)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_DAEMON_READY_CALLBACK (
+MHD_D_OPTION_DAEMON_READY_CALLBACK (
   MHD_DaemonReadyCallback cb,
   void *cb_cls)
 {
@@ -6175,7 +6187,7 @@ MHD_DAEMON_OPTION_DAEMON_READY_CALLBACK (
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_NOTIFY_CONNECTION (
+MHD_D_OPTION_NOTIFY_CONNECTION (
   MHD_NotifyConnectionCallback ncc,
   void *cls)
 {
@@ -6199,7 +6211,7 @@ MHD_DAEMON_OPTION_NOTIFY_CONNECTION (
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_NOTIFY_STREAM (
+MHD_D_OPTION_NOTIFY_STREAM (
   MHD_NotifyStreamCallback nsc,
   void *cls)
 {
@@ -6227,7 +6239,7 @@ MHD_DAEMON_OPTION_NOTIFY_STREAM (
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_RANDOM_ENTROPY (
+MHD_D_OPTION_RANDOM_ENTROPY (
   size_t buf_size,
   const void *buf)
 {
@@ -6252,7 +6264,7 @@ MHD_DAEMON_OPTION_RANDOM_ENTROPY (
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_DAUTH_MAP_SIZE (size_t size)
+MHD_D_OPTION_DAUTH_MAP_SIZE (size_t size)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -6276,7 +6288,7 @@ MHD_DAEMON_OPTION_DAUTH_MAP_SIZE (size_t size)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_DAUTH_NONCE_BIND_TYPE (
+MHD_D_OPTION_DAUTH_NONCE_BIND_TYPE (
   enum MHD_DaemonOptionValueDAuthBindNonce bind_type)
 {
   struct MHD_DaemonOptionAndValue opt_val;
@@ -6297,7 +6309,7 @@ MHD_DAEMON_OPTION_DAUTH_NONCE_BIND_TYPE (
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_DAUTH_DEF_NONCE_TIMEOUT (unsigned int timeout)
+MHD_D_OPTION_DAUTH_DEF_NONCE_TIMEOUT (unsigned int timeout)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -6317,7 +6329,7 @@ MHD_DAEMON_OPTION_DAUTH_DEF_NONCE_TIMEOUT (unsigned int timeout)
  *         values
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_DAEMON_OPTION_DAUTH_DEF_MAX_NC (uint_fast32_t max_nc)
+MHD_D_OPTION_DAUTH_DEF_MAX_NC (uint_fast32_t max_nc)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
@@ -6329,6 +6341,21 @@ MHD_DAEMON_OPTION_DAUTH_DEF_MAX_NC (uint_fast32_t max_nc)
 
 
 /* = MHD Daemon Option static functions above are generated automatically = */
+/**
+ * Terminate the list of the options
+ * @return the terminating object of struct MHD_DaemonOptionAndValue
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_D_OPTION_TERMINATE (void)
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_END;
+
+  return opt_val;
+}
+
+
 MHD_RESTORE_WARN_UNUSED_FUNC_
 #endif /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 
@@ -6341,8 +6368,8 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  * This is the default mode.
  * @return the object of struct MHD_DaemonOptionAndValue with requested values
  */
-#define MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC() \
-  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_EXTERNAL_PERIODIC())
+#define MHD_D_OPTION_WM_EXTERNAL_PERIODIC() \
+  MHD_D_OPTION_WORK_MODE(MHD_WM_OPTION_EXTERNAL_PERIODIC())
 
 /**
 * Create parameter for #MHD_daemon_options_set() for work mode with
@@ -6353,8 +6380,8 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
 * @param cb_cls_val the closure for the @a cv_val callback
 * @return the object of struct MHD_DaemonOptionAndValue with requested values
 */
-#define MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(cb_val,cb_cls_val) \
-  MHD_DAEMON_OPTION_WORK_MODE( \
+#define MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(cb_val,cb_cls_val) \
+  MHD_D_OPTION_WORK_MODE( \
     MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL((cb_val),(cb_cls_val)))
 
 /**
@@ -6366,8 +6393,8 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  * @param cb_cls_val the closure for the @a cv_val callback
  * @return the object of struct MHD_DaemonOptionAndValue with requested values
  */
-#define MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(cb_val,cb_cls_val) \
-  MHD_DAEMON_OPTION_WORK_MODE( \
+#define MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(cb_val,cb_cls_val) \
+  MHD_D_OPTION_WORK_MODE( \
     MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE((cb_val),(cb_cls_val)))
 
 /**
@@ -6382,8 +6409,8 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  * be called.
  * @return the object of struct MHD_DaemonOptionAndValue with requested values
  */
-#define MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH() \
-  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH())
+#define MHD_D_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH() \
+  MHD_D_OPTION_WORK_MODE(MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH())
 
 /**
  * Create parameter for #MHD_daemon_options_set() for work mode with
@@ -6395,8 +6422,8 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  * @param num_workers the number of worker threads, zero is treated as one
  * @return the object of struct MHD_DaemonOptionAndValue with requested values
  */
-#define MHD_DAEMON_OPTION_WORKER_THREADS(num_workers) \
-  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_WORKER_THREADS(num_workers))
+#define MHD_D_OPTION_WORKER_THREADS(num_workers) \
+  MHD_D_OPTION_WORK_MODE(MHD_WM_OPTION_WORKER_THREADS(num_workers))
 
 /**
  * Create parameter for #MHD_daemon_options_set() for work mode with
@@ -6406,8 +6433,8 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  * connection).
  * @return the object of struct MHD_DaemonOptionAndValue with requested values
  */
-#define MHD_DAEMON_OPTION_THREAD_PER_CONNECTION() \
-  MHD_DAEMON_OPTION_WORK_MODE(MHD_WM_OPTION_THREAD_PER_CONNECTION())
+#define MHD_D_OPTION_THREAD_PER_CONNECTION() \
+  MHD_D_OPTION_WORK_MODE(MHD_WM_OPTION_THREAD_PER_CONNECTION())
 
 /**
  * Set the requested options for the daemon.
@@ -6419,7 +6446,7 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  *                    option, but not later than after processing
  *                    @a options_max_num entries
  * @param options_max_num the maximum number of entries in the @a options,
- *                        use MHD_OPTIONS_ARRAY_MAX_SIZE if options processing
+ *                        use #MHD_OPTIONS_ARRAY_MAX_SIZE if options processing
  *                        must stop only at zero-termination option
  * @return ::MHD_SC_OK on success,
  *         error code otherwise
@@ -6459,7 +6486,7 @@ MHD_NOWARN_VARIADIC_MACROS_
  *
  * @param daemon the daemon to set the options
  * @param ... the list of the options, each option must be created
- *            by helpers MHD_DAEMON_OPTION_NameOfOption(option_value)
+ *            by helpers MHD_D_OPTION_NameOfOption(option_value)
  * @return ::MHD_SC_OK on success,
  *         error code otherwise
  */
@@ -6757,7 +6784,7 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  *                    option, but not later than after processing
  *                    @a options_max_num entries
  * @param options_max_num the maximum number of entries in the @a options,
- *                        use MHD_OPTIONS_ARRAY_MAX_SIZE if options processing
+ *                        use #MHD_OPTIONS_ARRAY_MAX_SIZE if options processing
  *                        must stop only at zero-termination option
  * @return ::MHD_SC_OK on success,
  *         error code otherwise
