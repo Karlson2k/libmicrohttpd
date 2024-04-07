@@ -29,6 +29,16 @@ Value: 41
 Comment: Select a sockets watch system call used for internal polling.
 Argument1: enum MHD_SockPollSyscall els
 
+Name: log_callback
+Value: 60
+Comment: Set a callback to use for logging
+Type: struct MHD_DaemonOptionValueLog
+Argument1: MHD_LoggingCallback log_cb
+Description1: the callback to use for logging,
++ NULL to disable logging
+Argument2: void *lob_cb_cls
+Description2: the closure for the logging callback
+
 # Listen socket
 
 Name: bind_port
@@ -117,8 +127,28 @@ Argument1: enum MHD_TlsBackend backend
 Description1: the TLS backend to use,
 + #MHD_TLS_BACKEND_NONE for non-TLS (plain TCP) connections
 
-Name: tls_psk_callback
+Name: tls_key_cert
 Value: 121
+Comment: Provide TLS key and certificate data in-memory.
++ Works only if TLS mode is enabled.
+Type: struct MHD_DaemonOptionValueTlsCert
+Argument1: const char *mem_key
+Description1: the private key loaded into memory (not a filename)
+Argument2: const char *mem_cert
+Description2: the certificate loaded into memory (not a filename)
+Argument3: const char *mem_cert
+Description3: the option passphrase phrase to decrypt the private key,
++ could be NULL is private does not need a password
+
+Name: tls_client_ca
+Value: 122
+Comment: Provide the certificate of the certificate authority (CA) to be used by the MHD daemon for client authentication.
++ Works only if TLS mode is enabled.
+Argument1: const char *mem_client_ca
+Description1: the CA certificate in memory (not a filename)
+
+Name: tls_psk_callback
+Value: 130
 Type: struct MHD_DaemonOptionValueTlsPskCB
 Comment: Configure PSK to use for the TLS key exchange.
 Argument1: MHD_PskServerCredentialsCallback psk_cb
@@ -127,7 +157,7 @@ Argument2: void *psk_cb_cls
 Description2: the closure for @a psk_cb
 
 Name: no alpn
-Value: 122
+Value: 140
 Type: enum MHD_Bool
 Comment: Control ALPN for TLS connection.
 + Silently ignored for non-TLS.
@@ -278,7 +308,7 @@ Value: 360
 Type: struct MHD_DaemonOptionValueReadyCB
 Comment: Set a callback to be called for pre-start finalisation.
 + 
-+ The specified callback will be called one time, after network initialisation, TLS pre-initialisation, but before the start of the internal threads (if allowed)ю
++ The specified callback will be called one time, after network initialisation, TLS pre-initialisation, but before the start of the internal threads (if allowed)
 Argument1: MHD_DaemonReadyCallback cb
 Description1: the pre-start callback
 Argument2: void *cb_cls
