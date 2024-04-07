@@ -247,15 +247,23 @@ Comment: Maximum memory size per connection.
 + Values above 128kb are unlikely to result in much performance benefit, as half of the memory will be typically used for IO, and TCP buffers are unlikely to support window sizes above 64k on most systems.
 + The size should be large enough to fit all request headers (together with internal parsing information).
 
-Name: stack size
+Name: large pool size
 Value: 281
+Type: size_t
+Comment: The size of the shared memory pool for accamulated upload processing.
++ The same "large" pool is shared for all connections server by MHD and used when application requests avoiding of incremental upload processing to accamulate complete content upload before giving it to the application.
++ Default is 8Mb.
++ Can be set to zero to disable share pool.
+
+Name: stack size
+Value: 282
 Type: size_t
 Comment: Desired size of the stack for the threads started by MHD.
 + Use 0 for system default, which is also MHD default.
 + Works only with ##MHD_DAEMON_OPTION_WORKER_THREADS() or #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
 
 Name: fd_number_limit
-Value: 282
+Value: 283
 Comment: The the maximum FD value.
 + The limit is applied to all sockets used by MHD.
 + If listen socket FD is equal or higher that specified value, the daemon fail to start.
