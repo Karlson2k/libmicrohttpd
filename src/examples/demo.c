@@ -991,24 +991,27 @@ main (int argc, char *const *argv)
                                             (const void *) INTERNAL_ERROR_PAGE);
   mark_as_html (internal_error_response);
   update_directory ();
-  d = MHD_start_daemon (MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD
-                        | MHD_USE_ERROR_LOG,
-                        (uint16_t) port,
-                        NULL, NULL,
-                        &generate_page, NULL,
-                        MHD_OPTION_CONNECTION_MEMORY_LIMIT, (size_t) (256
-                                                                      * 1024),
+  d = MHD_start_daemon (
+    MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD
+    | MHD_USE_ERROR_LOG,
+    (uint16_t) port,
+    NULL, NULL,
+    &generate_page,
+    NULL,
+    MHD_OPTION_CONNECTION_MEMORY_LIMIT,
+    (size_t) (256 * 1024),
 #ifdef PRODUCTION
-                        MHD_OPTION_PER_IP_CONNECTION_LIMIT, (unsigned int) (64),
+    MHD_OPTION_PER_IP_CONNECTION_LIMIT,
+    (unsigned int) (64),
 #endif
-                        MHD_OPTION_CONNECTION_TIMEOUT, (unsigned
-                                                        int) (120 /* seconds */)
-                        ,
-                        MHD_OPTION_THREAD_POOL_SIZE, (unsigned
-                                                      int) NUMBER_OF_THREADS,
-                        MHD_OPTION_NOTIFY_COMPLETED,
-                        &response_completed_callback, NULL,
-                        MHD_OPTION_END);
+    MHD_OPTION_CONNECTION_TIMEOUT,
+    (unsigned int) (120 /* seconds */),
+    MHD_OPTION_THREAD_POOL_SIZE,
+    (unsigned int) NUMBER_OF_THREADS,
+    MHD_OPTION_NOTIFY_COMPLETED,
+    &response_completed_callback,
+    NULL,
+    MHD_OPTION_END);
   if (NULL == d)
     return 1;
   fprintf (stderr, "HTTP server running. Press ENTER to stop the server.\n");

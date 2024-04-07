@@ -98,6 +98,74 @@ The main changes these objectives inspired are to:
   supported by the compiler), such as arguments not being NULL, etc.
 - Removal of various legacy symbols only exported for API compatibility.
 
+While these are lots of changes, we want to give you a first brief
+preview of how this will impact client code using the library.  Here is an example of how clients used to initialize
+the MHD daemon (from demo.c):
+
+OLD>>
+d = MHD_start_daemon (
+    MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD
+    | MHD_USE_ERROR_LOG,
+    (uint16_t) port,
+    NULL, NULL,
+    &generate_page,
+    NULL,
+    MHD_OPTION_CONNECTION_MEMORY_LIMIT,
+    (size_t) (256 * 1024),
+#ifdef PRODUCTION
+    MHD_OPTION_PER_IP_CONNECTION_LIMIT,
+    (unsigned int) (64),
+#endif
+    MHD_OPTION_CONNECTION_TIMEOUT,
+    (unsigned int) (120 /* seconds */),
+    MHD_OPTION_THREAD_POOL_SIZE,
+    (unsigned int) NUMBER_OF_THREADS,
+    MHD_OPTION_NOTIFY_COMPLETED,
+    &response_completed_callback,
+    NULL,
+    MHD_OPTION_END);
+if (NULL == d)
+  error();
+<<
+
+This was one big variadic mess, and getting any of the
+types wrong for any of the options could result in
+trouble, sometimes depending on the target platform.
+
+With MHD 2.0, the same code will look like this:
+
+NEW>>
+d = MHD_daemon_create (&generate_page,
+                       NULL);
+
+start_daemon (
+    MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD
+    | MHD_USE_ERROR_LOG,
+    (uint16_t) port,
+    NULL, NULL,
+    &generate_page,
+    NULL,
+    MHD_OPTION_CONNECTION_MEMORY_LIMIT,
+    (size_t) (256 * 1024),
+#ifdef PRODUCTION
+    MHD_OPTION_PER_IP_CONNECTION_LIMIT,
+    (unsigned int) (64),
+#endif
+    MHD_OPTION_CONNECTION_TIMEOUT,
+    (unsigned int) (120 /* seconds */),
+    MHD_OPTION_THREAD_POOL_SIZE,
+    (unsigned int) NUMBER_OF_THREADS,
+    MHD_OPTION_NOTIFY_COMPLETED,
+    &response_completed_callback,
+    NULL,
+    MHD_OPTION_END);
+if (NULL == d)
+  error();
+
+
+<<
+
+
 
 While we thought hard about the new API and poured our experience into the
 re-design, we still might have overlooked something and thus value community
