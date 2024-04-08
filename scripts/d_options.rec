@@ -136,7 +136,7 @@ Argument1: const char *mem_key
 Description1: the private key loaded into memory (not a filename)
 Argument2: const char *mem_cert
 Description2: the certificate loaded into memory (not a filename)
-Argument3: const char *mem_cert
+Argument3: const char *mem_pass
 Description3: the option passphrase phrase to decrypt the private key,
 + could be NULL is private does not need a password
 
