@@ -65,11 +65,11 @@ The main changes these objectives inspired are to:
   client's upload. Removed the need for troublesome (for
   application) incremental processing (especially problematic
   for forms processing), while keeping automatic limits
-  for memory allocations, preventing by design wide range
-  of remote attacks
+  for memory allocations, preventing by design a wide range
+  of remote attacks.
 - Added unified and detailed introspection API for library,
   daemon, connection, stream and request objects.
-  The API is designed in the same way for all object, simplifying 
+  The API is designed in the same way for all object, simplifying
   use for the application. The new API is detailed and allow
   application to extract any required information in a simple
   way. Also separated "fixed" and "dynamic" properties of objects
@@ -92,7 +92,7 @@ The main changes these objectives inspired are to:
   in the common case where uploaded data is small, while also
   nicely supporting use-cases with large data streams.
 - Made responses unmodifiable after first use. Modifiable responses
-  are not be thread-safe. However, MHD-generated headers (Date,
+  cannot be thread-safe. However, MHD-generated headers (Date,
   Connection/Keep-Alive) are part of the *request* and do not count
   as part of the immutable "response" here.  Removed "footers" from
   responses.  With unmodifiable responses everything should be "headers".
