@@ -18,127 +18,128 @@
      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-/**
- * Main goals for the libmicrohttpd 2.0 API:
- *
- * - simplify application callbacks by splitting header/upload/post
- *   functionality currently provided by calling the same
- *   MHD_AccessHandlerCallback 3+ times into separate callbacks.
- * - keep the API very simple for simple requests, but allow
- *   more complex logic to be incrementally introduced
- *   (via new struct MHD_Action construction)
- * - avoid repeated scans for URL matches via the new
- *   struct MHD_Action construction
- * - better types, in particular avoid varargs for options
- * - make it harder to pass inconsistent options
- * - combine options and flags into more uniform API (at least
- *   exterally!)
- * - simplify API use by using sane defaults (benefiting from
- *   breaking backwards compatibility) and making all options
- *   really optional, and where applicable avoid having options
- *   where the default works if nothing is specified
- * - simplify API by moving rarely used http_version into
- *   MHD_request_get_info_fixed()
- * - avoid 'int' for MHD_YES/MHD_NO by introducing `enum MHD_Bool`
- * - improve terminology by eliminating confusion between
- *   'request' and 'connection'; add 'session' for HTTP2/3;
- *   use clear separation between connection and request. Do not mix the kind
- *   data in the callbacks.  Currently we are mixing things in
- *   MHD_AccessHandlerCallback and MHD_RequestCompletedCallback. Instead of
- *   pointers to struct MHD_Connection we should use pointers to (new) struct
- *   MHD_Request.
- * - prepare API for having multiple TLS backends
- * - use more consistent prefixes for related functions
- *   by using MHD_subject_verb_object naming convention, also
- *   at the same time avoid symbol conflict with legacy names
- *   (so we can have one binary implementing old and new
- *   library API at the same time via compatibility layer).
- * - make it impossible to queue a response at the wrong time
- * - make it impossible to suspend a connection/request at the
- *   wrong time (improves thread-safety)
- * - make it clear which response status codes are "properly"
- *   supported (include the descriptive string) by using an enum;
- * - simplify API for common-case of one-shot responses by
- *   eliminating need for destroy response in most cases;
- * - avoid fixed types, like uint32_t. They may not exist on some
- *   platforms. Instead use uint_fast32_t.
- *   It is also better for future-proof.
- * - check portability for embedded platforms. Some of them support
- *   64 bits, but 'int' could be just 16 bits resulting of silently
- *   dropping enum values higher than 65535.
- *   => in general, more functions, fewer enums for setup
- * - Avoid returning pointers to internal members. It is not thread-safe and
- *   even in single thread the value could change over the time. Prefer pointers to
- *   app-allocated memory with the size, like MHD_daemon_get_static_info(enum
- *   MHD_enum_name info_type, void *buf, size_t buf_size).
- *   => Except in cases where zero-copy matters.
- * - Use separate app calls/functions for data the will not change for the
- *   lifetime of the object and dynamic data. The only difference should be the
- *   name. Like MHD_daemon_get_static_info(enum MHD_enum_name info_type, void *buf,
- *   size_t buf_size) MHD_daemon_get_dynamic_info(enum MHD_enum_name info_type,
- *   void *buf, size_t buf_size) Examples of static data: listen socket, number of
- *   workers, daemon flags.  Examples of dynamic data: number of connections,
- *   quiesce status.  It should give a clear idea whether the data could be changed
- *   over the time (could be not obvious for some data) and thus may change the
- *   approach how to use the data in app.  The same for: library, daemon,
- *   connection, request. Not sure that dynamic data makes sense for the library.
- * - Define response code in response object. There are a very little
- *   chance that response body designed for 404 or 403 codes will be used with
- *   200 code. However, the responses body for 307 and 308 could be the same. So:
- *   Add default response code in response object.
- * - Make responses unmodifiable after first use. It is not thread-safe.
- *   MHD-generated headers (Date, Connection/Keep-Alive) are again
- *   part of the *request* and do not count as part of the "response" here.
- * - Remove "footers" from responses. With unmodifiable responses everything should
- *   be "headers". Add footers to *requests* instead.
- * - Add API for adding request-specific response headers and footers. To
- *   simplify the things it should just copy the strings (to avoid dealing with
- *   complicated deinit of possible dynamic strings).  After this change it should
- *   be possible to simplify DAuth handling as response could be reused (currently
- *   403 responses are modified for each reply).
- * - Control response behaviour mainly by response flags, not by additional
- *   headers (like MHD_RF_FORCE_CLOSE instead of "Connection: close").
- *   It is easier&faster for both: app and MHD.
- * - Move response codes from MHD_HTTP_xxx namespace to MHD_HTTP_CODE_xxx
- *   namespace. It already may clash with other HTTP values.
- * - Postprocessor is unusable night-mare when doing "stream processing"
- *   for tiny values where the application basically has to copy together
- *   the stream back into a single compact heap value, just making the
- *   parsing highly more complicated (see examples in Challenger)
- * - non-stream processing variant for request bodies, give apps a
- *   way to request the full body in one buffer; give apps a way
- *   to request a 'large new allocation' for such buffers; give apps
- *   a way to specify a global quota for large allocations to ensure
- *   memory usage has a hard bound
- *
- * - Internals: carefully check where locking is really required. Probably
- *   separate locks. Check out-of-thread value reading. Currently code assumes
- *   atomic reading of values used in other threads, which mostly true on x86,
- *   but not OK on other arches. Probably use read/write locking to minimize
- *   the threads interference.
- * - Internals: figure out how to do portable variant of cork/uncork
- * - Internals: remove request data from memory pool when response is queued
- *   (IF no callbacks and thus data cannot be used anymore, or IF
- *    application permits explictly per daemon) to get more space
- *   for building response;
- * - Internals: Fix TCP FIN graceful closure issue for upgraded
- *   connections (API implications?)
- *
- * - Enable providing default logarithmic implementation of URL scan
- *   => reduce strcmp(url) from >= 3n operations to "log n"
- *      per request. Match on method + URL (longest-prefix /foo/bar/* /foo/ /foo /fo, etc).
- *      "GET /foo/$ARG/$BAR/match"
- *    struct MHD_Dispatcher;
- *
- *    struct MHD_Dispatcher *
- *    MHD_dispatcher_create (...);
- *    enum {no_url, no_method, found}
- *    MHD_dispatcher_dispatch (dispatcher, url, method, *result);
- *    MHD_RequestCallback
- *    MHD_dispatcher_get_callback (struct MHD_Dispatcher *dispatcher);
- *    struct MHD_dispatcher_destroy (*dispatcher);
- *
+/*
+  Main goals for the libmicrohttpd 2.0 API:
+
+  - simplify application callbacks by splitting header/upload/post
+    functionality currently provided by calling the same
+    MHD_AccessHandlerCallback 3+ times into separate callbacks.
+  - keep the API very simple for simple requests, but allow
+    more complex logic to be incrementally introduced
+    (via new struct MHD_Action construction)
+  - avoid repeated scans for URL matches via the new
+    struct MHD_Action construction
+  - better types, in particular avoid varargs for options
+  - make it harder to pass inconsistent options
+  - combine options and flags into more uniform API (at least
+    exterally!)
+  - simplify API use by using sane defaults (benefiting from
+    breaking backwards compatibility) and making all options
+    really optional, and where applicable avoid having options
+    where the default works if nothing is specified
+  - simplify API by moving rarely used http_version into
+    MHD_request_get_info_fixed()
+  - avoid 'int' for MHD_YES/MHD_NO by introducing `enum MHD_Bool`
+  - improve terminology by eliminating confusion between
+    'request' and 'connection'; add 'session' for HTTP2/3;
+    use clear separation between connection and request. Do not mix the kind
+    data in the callbacks.  Currently we are mixing things in
+    MHD_AccessHandlerCallback and MHD_RequestCompletedCallback. Instead of
+    pointers to struct MHD_Connection we should use pointers to (new) struct
+    MHD_Request.
+  - prepare API for having multiple TLS backends
+  - use more consistent prefixes for related functions
+    by using MHD_subject_verb_object naming convention, also
+    at the same time avoid symbol conflict with legacy names
+    (so we can have one binary implementing old and new
+    library API at the same time via compatibility layer).
+  - make it impossible to queue a response at the wrong time
+  - make it impossible to suspend a connection/request at the
+    wrong time (improves thread-safety)
+  - make it clear which response status codes are "properly"
+    supported (include the descriptive string) by using an enum;
+  - simplify API for common-case of one-shot responses by
+    eliminating need for destroy response in most cases;
+  - avoid fixed types, like uint32_t. They may not exist on some
+    platforms. Instead use uint_fast32_t.
+    It is also better for future-proof.
+  - check portability for embedded platforms. Some of them support
+    64 bits, but 'int' could be just 16 bits resulting of silently
+    dropping enum values higher than 65535.
+    => in general, more functions, fewer enums for setup
+  - Avoid returning pointers to internal members. It is not thread-safe and
+    even in single thread the value could change over the time. Prefer pointers to
+    app-allocated memory with the size, like MHD_daemon_get_static_info(enum
+    MHD_enum_name info_type, void *buf, size_t buf_size).
+    => Except in cases where zero-copy matters.
+  - Use separate app calls/functions for data the will not change for the
+    lifetime of the object and dynamic data. The only difference should be the
+    name. Like MHD_daemon_get_static_info(enum MHD_enum_name info_type, void *buf,
+    size_t buf_size) MHD_daemon_get_dynamic_info(enum MHD_enum_name info_type,
+    void *buf, size_t buf_size) Examples of static data: listen socket, number of
+    workers, daemon flags.  Examples of dynamic data: number of connections,
+    quiesce status.  It should give a clear idea whether the data could be changed
+    over the time (could be not obvious for some data) and thus may change the
+    approach how to use the data in app.  The same for: library, daemon,
+    connection, request. Not sure that dynamic data makes sense for the library.
+  - Define response code in response object. There are a very little
+    chance that response body designed for 404 or 403 codes will be used with
+    200 code. However, the responses body for 307 and 308 could be the same. So:
+    Add default response code in response object.
+  - Make responses unmodifiable after first use. It is not thread-safe.
+    MHD-generated headers (Date, Connection/Keep-Alive) are again
+    part of the *request* and do not count as part of the "response" here.
+  - Remove "footers" from responses. With unmodifiable responses everything should
+    be "headers". Add footers to *requests* instead.
+  - Add API for adding request-specific response headers and footers. To
+    simplify the things it should just copy the strings (to avoid dealing with
+    complicated deinit of possible dynamic strings).  After this change it should
+    be possible to simplify DAuth handling as response could be reused (currently
+    403 responses are modified for each reply).
+  - Control response behaviour mainly by response flags, not by additional
+    headers (like MHD_RF_FORCE_CLOSE instead of "Connection: close").
+    It is easier&faster for both: app and MHD.
+  - Move response codes from MHD_HTTP_xxx namespace to MHD_HTTP_CODE_xxx
+    namespace. It already may clash with other HTTP values.
+  - Postprocessor is unusable night-mare when doing "stream processing"
+    for tiny values where the application basically has to copy together
+    the stream back into a single compact heap value, just making the
+    parsing highly more complicated (see examples in Challenger)
+  - non-stream processing variant for request bodies, give apps a
+    way to request the full body in one buffer; give apps a way
+    to request a 'large new allocation' for such buffers; give apps
+    a way to specify a global quota for large allocations to ensure
+    memory usage has a hard bound
+
+  - Internals: carefully check where locking is really required. Probably
+    separate locks. Check out-of-thread value reading. Currently code assumes
+    atomic reading of values used in other threads, which mostly true on x86,
+    but not OK on other arches. Probably use read/write locking to minimize
+    the threads interference.
+  - Internals: figure out how to do portable variant of cork/uncork
+  - Internals: remove request data from memory pool when response is queued
+    (IF no callbacks and thus data cannot be used anymore, or IF
+     application permits explictly per daemon) to get more space
+    for building response;
+  - Internals: Fix TCP FIN graceful closure issue for upgraded
+    connections (API implications?)
+
+  - Enable providing default logarithmic implementation of URL scan
+    => reduce strcmp(url) from >= 3n operations to "log n"
+       per request. Match on method + URL (longest-prefix /foo/bar/* /foo/ /foo /fo, etc).
+       "GET /foo/$ARG/$BAR/match"
+     struct MHD_Dispatcher;
+
+     struct MHD_Dispatcher *
+     MHD_dispatcher_create (...);
+     enum {no_url, no_method, found}
+     MHD_dispatcher_dispatch (dispatcher, url, method, *result);
+     MHD_RequestCallback
+     MHD_dispatcher_get_callback (struct MHD_Dispatcher *dispatcher);
+     struct MHD_dispatcher_destroy (*dispatcher);
+
  */
+
 #ifndef MICROHTTPD2_H
 #define MICROHTTPD2_H
 
@@ -187,9 +188,9 @@ MHD_C_DECLRATIONS_START_HERE_
 
 /**
  * Current version of the library.
- * 0x01093001 = 1.9.30-1.
+ * Packed BCD: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x02000001
+#define MHD_VERSION 0x01990001
 
 /**
  * Representation of 'bool' in the public API as stdbool.h may not
@@ -1121,6 +1122,18 @@ struct MHD_Request;
  * @defgroup action Request actions
  */
 struct MHD_Action;
+
+/**
+ * @defgroup general Primary MHD functions and data
+ */
+
+/**
+ * @defgroup specialized Introspection and other special control
+ */
+
+/**
+ * @defgroup authentication Digest and other HTTP authentications
+ */
 
 
 /**
@@ -2545,7 +2558,6 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_IN_ (1);
  * @param[in,out] daemon daemon to start; you can no longer set
  *        options on this daemon after this call!
  * @return #MHD_SC_OK on success
- * @ingroup event
  * @ingroup daemon
  */
 MHD_EXTERN_ enum MHD_StatusCode
@@ -2566,7 +2578,6 @@ MHD_FN_PAR_NONNULL_ (1);
  * @return the old listen socket on success, #MHD_INVALID_SOCKET if
  *         the daemon was already not listening anymore, or
  *         was never started, or has no listen socket.
- * @ingroup specialized
  * @ingroup daemon
  */
 MHD_EXTERN_ MHD_socket
@@ -2578,7 +2589,6 @@ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_INOUT_ (1);
  * Shutdown and destroy an HTTP daemon.
  *
  * @param[in] daemon daemon to stop
- * @ingroup event
  * @ingroup daemon
  */
 MHD_EXTERN_ void
@@ -2586,6 +2596,10 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
 MHD_FN_PAR_NONNULL_ALL_;
 
 /* ******************* External event loop ************************ */
+
+/**
+ * @defgroup event External network events processing
+ */
 
 /**
  * The network status of the socket.
@@ -2735,11 +2749,6 @@ enum MHD_FIXED_ENUM_ MHD_FdState
   MHD_FD_STATE_CLEAR ((var),MHD_FD_STATE_EXCEPT)
 
 
-/* Changes:
- * + status update callback replaced with function
- * + status update accepts array of updates
- */
-
 /**
  * The context data to be used for updates of the socket state
  */
@@ -2787,15 +2796,15 @@ typedef MHD_APP_SOCKET_CNTX_TYPE *
 /**
  * Update the sockets state.
  * Must be called for every socket that got state updated.
- * For #MHD_TM_EXTERNAL_EVENT_LOOP_CB_LEVEL mode should be called for each
- * socket.
- * Available only for daemons stated in #MHD_TM_EXTERNAL_EVENT_LOOP_CB_LEVEL or
- * #MHD_TM_EXTERNAL_EVENT_LOOP_CB_EDGE modes.
+ * For #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL() mode
+ * should be called for each socket.
+ * Available only for daemons stated in
+ * #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL or
+ * #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE modes.
  * @param daemon the daemon handle
  * @param ecb_cntx the context handle provided
  *                 for #MHD_SocketRegistrationUpdateCallback
  * @param fd_current_state the current state of the socket
- * @ingroup daemon
  * @ingroup event
  */
 MHD_EXTERN_ void
@@ -2822,7 +2831,6 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2);
  *                           polling function, can be NULL
  * @return #MHD_SC_OK on success,
  *         error code otherwise
- * @ingroup daemon
  * @ingroup event
  */
 MHD_EXTERN_ enum MHD_StatusCode
@@ -2843,6 +2851,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_WorkMode
    * The application periodically calls #MHD_daemon_process_blocking(), where
    * MHD internally checks all sockets automatically.
    * This is the default mode.
+   * Use helper macro #MHD_D_OPTION_WM_EXTERNAL_PERIODIC() to enable
+   * this mode.
    */
   MHD_WM_EXTERNAL_PERIODIC = 0
   ,
@@ -2850,6 +2860,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_WorkMode
    * Work mode with an external event loop with level triggers.
    * Application uses #MHD_SocketRegistrationUpdateCallback, level triggered
    * sockets polling (like select() or poll()) and #MHD_daemon_event_update().
+   * Use helper macro #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL() to enable
+   * this mode.
    */
   MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL = 8
   ,
@@ -2857,6 +2869,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_WorkMode
    * Work mode with an external event loop with edge triggers.
    * Application uses #MHD_SocketRegistrationUpdateCallback, edge triggered
    * sockets polling (like epoll with EPOLLET) and #MHD_daemon_event_update().
+   * Use helper macro #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE() to enable
+   * this mode.
    */
   MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE = 9
   ,
@@ -2869,17 +2883,21 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_WorkMode
    * GNU/Linux only), see #MHD_LIB_INFO_FIXED_HAS_AGGREGATE_FD.
    * When the FD is triggered, #MHD_daemon_process_nonblocking() should
    * be called.
+   * Use helper macro #MHD_D_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH() to enable
+   * this mode.
    */
   MHD_WM_EXTERNAL_SINGLE_FD_WATCH = 16
   ,
   /**
    * Work mode with one or more worker threads.
-   * If #MHD_DAEMON_OPTION_UINT_NUM_WORKERS is not specified
+   * If #MHD_D_OPTION_UINT_NUM_WORKERS is not specified
    * then daemon starts with single worker thread that process
    * all connections.
-   * If #MHD_DAEMON_OPTION_UINT_NUM_WORKERS used with value more
+   * If #MHD_D_OPTION_UINT_NUM_WORKERS used with value more
    * than one, then that number of worker threads and distributed
    * processing of requests among the workers.
+   * Use helper macro #MHD_D_OPTION_WM_WORKER_THREADS() to enable
+   * this mode.
    */
   MHD_WM_WORKER_THREADS = 24
   ,
@@ -2888,6 +2906,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_WorkMode
    * per every connection.  Use this if handling requests is CPU-intensive or
    * blocking, your application is thread-safe and you have plenty of
    * memory (per connection).
+   * Use helper macro #MHD_D_OPTION_WM_THREAD_PER_CONNECTION() to enable
+   * this mode.
    */
   MHD_WM_THREAD_PER_CONNECTION = 32
 };
@@ -3199,6 +3219,10 @@ MHD_WM_OPTION_THREAD_PER_CONNECTION (void)
 MHD_RESTORE_WARN_UNUSED_FUNC_
 #endif /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 
+/**
+ * @defgroup logging Log events and control
+ */
+
 
 /**
  * Type of a callback function used for logging by MHD.
@@ -3226,19 +3250,19 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOptionBindType
    * The listen socket bind to the networks address without sharing the address.
    * Default.
    */
-  MHD_DAEMON_OPTION_BIND_TYPE_NOT_SHARED = 0
+  MHD_D_OPTION_BIND_TYPE_NOT_SHARED = 0
   ,
   /**
    * The listen socket bind to the networks address with sharing the address.
    * Several sockets can bind to the same address.
    */
-  MHD_DAEMON_OPTION_BIND_TYPE_SHARED = 1
+  MHD_D_OPTION_BIND_TYPE_SHARED = 1
   ,
   /**
    * The list socket bind to the networks address in explicit exclusive mode.
    * Ignored on platforms without support for the explicit exclusive socket use.
    */
-  MHD_DAEMON_OPTION_BIND_TYPE_EXCLUSIVE = 2
+  MHD_D_OPTION_BIND_TYPE_EXCLUSIVE = 2
 };
 
 
@@ -3494,12 +3518,12 @@ enum MHD_FIXED_FLAGS_ENUM_APP_SET_ MHD_DaemonOptionValueDAuthBindNonce
    * when clients' requests are intensive.
    * This value cannot be biwise-OR combined with other values.
    */
-  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_NONE = 0
+  MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_NONE = 0
   ,
   /**
    * Generated nonces are valid only for the same realm.
    */
-  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_REALM = (1 << 0)
+  MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_REALM = (1 << 0)
   ,
   /**
    * Generated nonces are valid only for the same URI (excluding parameters
@@ -3508,10 +3532,8 @@ enum MHD_FIXED_FLAGS_ENUM_APP_SET_ MHD_DaemonOptionValueDAuthBindNonce
    * RFC 7616 allows clients to re-use server-generated nonces for any URI
    * in the same "protection space" which by default consists of all server
    * URIs.
-   * Before #MHD_VERSION 0x00097701 this was default (and only supported)
-   * nonce bind type.
    */
-  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_URI = (1 << 1)
+  MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_URI = (1 << 1)
   ,
 
   /**
@@ -3520,7 +3542,7 @@ enum MHD_FIXED_FLAGS_ENUM_APP_SET_ MHD_DaemonOptionValueDAuthBindNonce
    * This value implies #MHD_DAUTH_BIND_NONCE_URI.
    * Not recommended for that same reasons as #MHD_DAUTH_BIND_NONCE_URI.
    */
-  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_URI_PARAMS = (1 << 2)
+  MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_URI_PARAMS = (1 << 2)
   ,
 
   /**
@@ -3530,7 +3552,7 @@ enum MHD_FIXED_FLAGS_ENUM_APP_SET_ MHD_DaemonOptionValueDAuthBindNonce
    * Multi-NAT, different proxy chain and other reasons), while IP address
    * spoofing could be used relatively easily.
    */
-  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_CLIENT_IP = (1 << 3)
+  MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_CLIENT_IP = (1 << 3)
 };
 
 
@@ -3794,13 +3816,13 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
   /* = MHD Daemon Option enum values below are generated automatically = */
   /**
    * Set MHD work (threading and polling) mode.
-   * Consider use of #MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC(),
-   * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
-   * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(),
-   * #MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(),
-   * #MHD_DAEMON_OPTION_WM_WORKER_THREADS() or
-   * #MHD_DAEMON_OPTION_WM_THREAD_PER_CONNECTION() instead of direct use of
-   * this parameter.
+   * Consider use of #MHD_D_OPTION_WM_EXTERNAL_PERIODIC(),
+   * #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
+   * #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(),
+   * #MHD_D_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(),
+   * #MHD_D_OPTION_WM_WORKER_THREADS() or
+   * #MHD_D_OPTION_WM_THREAD_PER_CONNECTION() instead of direct use of this
+   * parameter.
    * The parameter value must be placed to the
    * @a v_work_mode member.
    */
@@ -3823,12 +3845,12 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
   /**
    * Bind to the given TCP port and address family.
    *
-   * Does not work with #MHD_DAEMON_OPTION_BIND_SA() or
-   * #MHD_DAEMON_OPTION_LISTEN_SOCKET().
+   * Does not work with #MHD_D_OPTION_BIND_SA() or
+   * #MHD_D_OPTION_LISTEN_SOCKET().
    *
-   * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
-   * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are
-   * used, MHD does not listen for incoming connection.
+   * If no listen socket optins (#MHD_D_OPTION_BIND_PORT(),
+   * #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does
+   * not listen for incoming connection.
    * The parameter value must be placed to the
    * @a v_bind_port member.
    */
@@ -3837,12 +3859,12 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
   /**
    * Bind to the given socket address.
    *
-   * Does not work with #MHD_DAEMON_OPTION_BIND_PORT() or
-   * #MHD_DAEMON_OPTION_LISTEN_SOCKET().
+   * Does not work with #MHD_D_OPTION_BIND_PORT() or
+   * #MHD_D_OPTION_LISTEN_SOCKET().
    *
-   * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
-   * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are
-   * used, MHD does not listen for incoming connection.
+   * If no listen socket optins (#MHD_D_OPTION_BIND_PORT(),
+   * #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does
+   * not listen for incoming connection.
    * The parameter value must be placed to the
    * @a v_bind_sa member.
    */
@@ -3852,12 +3874,11 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
    * Accept connections from the given socket.  Socket
    * must be a TCP or UNIX domain (SOCK_STREAM) socket.
    *
-   * Does not work with #MHD_DAEMON_OPTION_BIND_PORT() or
-   * #MHD_DAEMON_OPTION_BIND_SA().
+   * Does not work with #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA().
    *
-   * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
-   * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are
-   * used, MHD does not listen for incoming connection.
+   * If no listen socket optins (#MHD_D_OPTION_BIND_PORT(),
+   * #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does
+   * not listen for incoming connection.
    * The parameter value must be placed to the
    * @a v_listen_socket member.
    */
@@ -3866,8 +3887,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
   /**
    * Select mode of reusing address:port listen address.
    *
-   * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
-   * #MHD_DAEMON_OPTION_BIND_SA() are used.
+   * Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are
+   * used.
    * The parameter value must be placed to the
    * @a v_listen_addr_reuse member.
    */
@@ -3881,8 +3902,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
    * attack as the TCP stack has to now allocate resources for the SYN
    * packet along with its DATA.
    *
-   * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
-   * #MHD_DAEMON_OPTION_BIND_SA() are used.
+   * Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are
+   * used.
    * The parameter value must be placed to the
    * @a v_tcp_fastopen member.
    */
@@ -3891,8 +3912,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
   /**
    * Use the given backlog for the listen() call.
    *
-   * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
-   * #MHD_DAEMON_OPTION_BIND_SA() are used.
+   * Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are
+   * used.
    * The parameter value must be placed to the
    * @a v_listen_backlog member.
    */
@@ -4064,8 +4085,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
   /**
    * Desired size of the stack for the threads started by MHD.
    * Use 0 for system default, which is also MHD default.
-   * Works only with ##MHD_DAEMON_OPTION_WORKER_THREADS() or
-   * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
+   * Works only with #MHD_D_OPTION_WM_WORKER_THREADS() or
+   * #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
    * The parameter value must be placed to the
    * @a v_stack_size member.
    */
@@ -4080,8 +4101,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
    * connection is rejected.
    * Useful if application uses select() for polling the sockets, system
    * FD_SETSIZE is good value for this option in such case.
-   * Does not work with ##MHD_DAEMON_OPTION_WORKER_THREADS() or
-   * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
+   * Does not work with #MHD_D_OPTION_WM_WORKER_THREADS() or
+   * #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
    * Does not work on W32 (WinSock sockets).
    * The parameter value must be placed to the
    * @a v_fd_number_limit member.
@@ -4197,7 +4218,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
    * This option allows bitwise OR combination of
    * #MHD_DaemonOptionValueDAuthBindNonce values.
    * When this option is not used then default value is
-   * #MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
+   * #MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
    * The parameter value must be placed to the
    * @a v_dauth_nonce_bind_type member.
    */
@@ -4632,12 +4653,12 @@ struct MHD_DaemonOptionAndValue
 /* = MHD Daemon Option macros below are generated automatically = */
 /**
  * Set MHD work (threading and polling) mode.
- * Consider use of #MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC(),
- * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
- * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(),
- * #MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(),
- * #MHD_DAEMON_OPTION_WM_WORKER_THREADS() or
- * #MHD_DAEMON_OPTION_WM_THREAD_PER_CONNECTION() instead of direct use of this
+ * Consider use of #MHD_D_OPTION_WM_EXTERNAL_PERIODIC(),
+ * #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
+ * #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(),
+ * #MHD_D_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(),
+ * #MHD_D_OPTION_WM_WORKER_THREADS() or
+ * #MHD_D_OPTION_WM_THREAD_PER_CONNECTION() instead of direct use of this
  * parameter.
  * @param wmp the object created by one of the next functions/macros:
  *            #MHD_WM_OPTION_EXTERNAL_PERIODIC(),
@@ -4694,12 +4715,11 @@ struct MHD_DaemonOptionAndValue
 /**
  * Bind to the given TCP port and address family.
  *
- * Does not work with #MHD_DAEMON_OPTION_BIND_SA() or
- * #MHD_DAEMON_OPTION_LISTEN_SOCKET().
+ * Does not work with #MHD_D_OPTION_BIND_SA() or #MHD_D_OPTION_LISTEN_SOCKET().
  *
- * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
- * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used,
- * MHD does not listen for incoming connection.
+ * If no listen socket optins (#MHD_D_OPTION_BIND_PORT(),
+ * #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does
+ * not listen for incoming connection.
  * @param af the address family to use,
  *           the #MHD_AF_NONE to disable listen socket (the same effect as if
  *           this option is not used)
@@ -4721,12 +4741,12 @@ struct MHD_DaemonOptionAndValue
 /**
  * Bind to the given socket address.
  *
- * Does not work with #MHD_DAEMON_OPTION_BIND_PORT() or
- * #MHD_DAEMON_OPTION_LISTEN_SOCKET().
+ * Does not work with #MHD_D_OPTION_BIND_PORT() or
+ * #MHD_D_OPTION_LISTEN_SOCKET().
  *
- * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
- * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used,
- * MHD does not listen for incoming connection.
+ * If no listen socket optins (#MHD_D_OPTION_BIND_PORT(),
+ * #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does
+ * not listen for incoming connection.
  * @param sa_len the size of the socket address pointed by @a sa.
  * @param sa the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or
  *           even a UNIX domain socket (AF_UNIX)
@@ -4747,12 +4767,11 @@ struct MHD_DaemonOptionAndValue
  * Accept connections from the given socket.  Socket
  * must be a TCP or UNIX domain (SOCK_STREAM) socket.
  *
- * Does not work with #MHD_DAEMON_OPTION_BIND_PORT() or
- * #MHD_DAEMON_OPTION_BIND_SA().
+ * Does not work with #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA().
  *
- * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
- * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used,
- * MHD does not listen for incoming connection.
+ * If no listen socket optins (#MHD_D_OPTION_BIND_PORT(),
+ * #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does
+ * not listen for incoming connection.
  * @param listen_fd the listen socket to use, ignored if set to
  *                  #MHD_INVALID_SOCKET
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
@@ -4770,8 +4789,8 @@ struct MHD_DaemonOptionAndValue
 /**
  * Select mode of reusing address:port listen address.
  *
- * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
- * #MHD_DAEMON_OPTION_BIND_SA() are used.
+ * Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are
+ * used.
  * @param reuse_type the value of the parameter
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
@@ -4793,8 +4812,8 @@ struct MHD_DaemonOptionAndValue
  * attack as the TCP stack has to now allocate resources for the SYN
  * packet along with its DATA.
  *
- * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
- * #MHD_DAEMON_OPTION_BIND_SA() are used.
+ * Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are
+ * used.
  * @param option the type use of of TCP FastOpen
  * @param queue_length the length of the queue, zero to use system or MHD
  *                     default,
@@ -4816,8 +4835,8 @@ struct MHD_DaemonOptionAndValue
 /**
  * Use the given backlog for the listen() call.
  *
- * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
- * #MHD_DAEMON_OPTION_BIND_SA() are used.
+ * Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are
+ * used.
  * @param backlog_size the value of the parameter
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
@@ -5146,8 +5165,8 @@ struct MHD_DaemonOptionAndValue
 /**
  * Desired size of the stack for the threads started by MHD.
  * Use 0 for system default, which is also MHD default.
- * Works only with ##MHD_DAEMON_OPTION_WORKER_THREADS() or
- * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
+ * Works only with #MHD_D_OPTION_WM_WORKER_THREADS() or
+ * #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
  * @param sizet_val the value of the parameter
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
@@ -5170,8 +5189,8 @@ struct MHD_DaemonOptionAndValue
  * is rejected.
  * Useful if application uses select() for polling the sockets, system
  * FD_SETSIZE is good value for this option in such case.
- * Does not work with ##MHD_DAEMON_OPTION_WORKER_THREADS() or
- * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
+ * Does not work with #MHD_D_OPTION_WM_WORKER_THREADS() or
+ * #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
  * Does not work on W32 (WinSock sockets).
  * @param max_fd the value of the parameter
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
@@ -5375,7 +5394,7 @@ struct MHD_DaemonOptionAndValue
  * This option allows bitwise OR combination of
  * #MHD_DaemonOptionValueDAuthBindNonce values.
  * When this option is not used then default value is
- * #MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
+ * #MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
  * @param bind_type the value of the parameter
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
@@ -5442,12 +5461,12 @@ MHD_NOWARN_UNUSED_FUNC_
 /* = MHD Daemon Option static functions below are generated automatically = */
 /**
  * Set MHD work (threading and polling) mode.
- * Consider use of #MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC(),
- * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
- * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(),
- * #MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(),
- * #MHD_DAEMON_OPTION_WM_WORKER_THREADS() or
- * #MHD_DAEMON_OPTION_WM_THREAD_PER_CONNECTION() instead of direct use of this
+ * Consider use of #MHD_D_OPTION_WM_EXTERNAL_PERIODIC(),
+ * #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
+ * #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(),
+ * #MHD_D_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(),
+ * #MHD_D_OPTION_WM_WORKER_THREADS() or
+ * #MHD_D_OPTION_WM_THREAD_PER_CONNECTION() instead of direct use of this
  * parameter.
  * @param wmp the object created by one of the next functions/macros:
  *            #MHD_WM_OPTION_EXTERNAL_PERIODIC(),
@@ -5515,12 +5534,11 @@ MHD_D_OPTION_LOG_CALLBACK (
 /**
  * Bind to the given TCP port and address family.
  *
- * Does not work with #MHD_DAEMON_OPTION_BIND_SA() or
- * #MHD_DAEMON_OPTION_LISTEN_SOCKET().
+ * Does not work with #MHD_D_OPTION_BIND_SA() or #MHD_D_OPTION_LISTEN_SOCKET().
  *
- * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
- * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used,
- * MHD does not listen for incoming connection.
+ * If no listen socket optins (#MHD_D_OPTION_BIND_PORT(),
+ * #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does
+ * not listen for incoming connection.
  * @param af the address family to use,
  *           the #MHD_AF_NONE to disable listen socket (the same effect as if
  *           this option is not used)
@@ -5547,12 +5565,12 @@ MHD_D_OPTION_BIND_PORT (
 /**
  * Bind to the given socket address.
  *
- * Does not work with #MHD_DAEMON_OPTION_BIND_PORT() or
- * #MHD_DAEMON_OPTION_LISTEN_SOCKET().
+ * Does not work with #MHD_D_OPTION_BIND_PORT() or
+ * #MHD_D_OPTION_LISTEN_SOCKET().
  *
- * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
- * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used,
- * MHD does not listen for incoming connection.
+ * If no listen socket optins (#MHD_D_OPTION_BIND_PORT(),
+ * #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does
+ * not listen for incoming connection.
  * @param sa_len the size of the socket address pointed by @a sa.
  * @param sa the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or
  *           even a UNIX domain socket (AF_UNIX)
@@ -5578,12 +5596,11 @@ MHD_D_OPTION_BIND_SA (
  * Accept connections from the given socket.  Socket
  * must be a TCP or UNIX domain (SOCK_STREAM) socket.
  *
- * Does not work with #MHD_DAEMON_OPTION_BIND_PORT() or
- * #MHD_DAEMON_OPTION_BIND_SA().
+ * Does not work with #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA().
  *
- * If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(),
- * #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used,
- * MHD does not listen for incoming connection.
+ * If no listen socket optins (#MHD_D_OPTION_BIND_PORT(),
+ * #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does
+ * not listen for incoming connection.
  * @param listen_fd the listen socket to use, ignored if set to
  *                  #MHD_INVALID_SOCKET
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
@@ -5604,8 +5621,8 @@ MHD_D_OPTION_LISTEN_SOCKET (MHD_socket listen_fd)
 /**
  * Select mode of reusing address:port listen address.
  *
- * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
- * #MHD_DAEMON_OPTION_BIND_SA() are used.
+ * Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are
+ * used.
  * @param reuse_type the value of the parameter
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
@@ -5630,8 +5647,8 @@ MHD_D_OPTION_LISTEN_ADDR_REUSE (enum MHD_DaemonOptionBindType reuse_type)
  * attack as the TCP stack has to now allocate resources for the SYN
  * packet along with its DATA.
  *
- * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
- * #MHD_DAEMON_OPTION_BIND_SA() are used.
+ * Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are
+ * used.
  * @param option the type use of of TCP FastOpen
  * @param queue_length the length of the queue, zero to use system or MHD
  *                     default,
@@ -5658,8 +5675,8 @@ MHD_D_OPTION_TCP_FASTOPEN (
 /**
  * Use the given backlog for the listen() call.
  *
- * Works only when #MHD_DAEMON_OPTION_BIND_PORT() or
- * #MHD_DAEMON_OPTION_BIND_SA() are used.
+ * Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are
+ * used.
  * @param backlog_size the value of the parameter
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
@@ -6053,8 +6070,8 @@ MHD_D_OPTION_LARGE_POOL_SIZE (size_t sizet_val)
 /**
  * Desired size of the stack for the threads started by MHD.
  * Use 0 for system default, which is also MHD default.
- * Works only with ##MHD_DAEMON_OPTION_WORKER_THREADS() or
- * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
+ * Works only with #MHD_D_OPTION_WM_WORKER_THREADS() or
+ * #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
  * @param sizet_val the value of the parameter
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
@@ -6080,8 +6097,8 @@ MHD_D_OPTION_STACK_SIZE (size_t sizet_val)
  * is rejected.
  * Useful if application uses select() for polling the sockets, system
  * FD_SETSIZE is good value for this option in such case.
- * Does not work with ##MHD_DAEMON_OPTION_WORKER_THREADS() or
- * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
+ * Does not work with #MHD_D_OPTION_WM_WORKER_THREADS() or
+ * #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
  * Does not work on W32 (WinSock sockets).
  * @param max_fd the value of the parameter
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
@@ -6323,7 +6340,7 @@ MHD_D_OPTION_DAUTH_MAP_SIZE (size_t size)
  * This option allows bitwise OR combination of
  * #MHD_DaemonOptionValueDAuthBindNonce values.
  * When this option is not used then default value is
- * #MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
+ * #MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
  * @param bind_type the value of the parameter
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
@@ -7322,6 +7339,11 @@ MHD_FN_PAR_NONNULL_ALL_;
 
 
 /* ************** Action and Response manipulation functions **************** */
+
+/**
+ * @defgroup response Response objects control
+ */
+
 
 /**
  * Name with value pair as C strings
@@ -8331,9 +8353,6 @@ MHD_FN_RETURNS_NONNULL_;
  *        the sum of all data sizes provided by this callback
  * @param[out] buf where to copy the data
  * @param max maximum number of bytes to copy to @a buf (size of @a buf)
- * @param[out] action the action to set,
- *                    the pointer is only valid until
- *                    the callback returns
  * @return action to use,
  *         NULL in case of any error (the response will be aborted)
  */
@@ -9346,7 +9365,6 @@ MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_OUT_SIZE_ (4,3);
  * @return MHD_SC_OK on success,
  *         error code otherwise
  * @sa #MHD_digest_auth_calc_userhash()
- * @note Available since #MHD_VERSION 0x00097701
  * @ingroup authentication
  */
 MHD_EXTERN_ enum MHD_StatusCode
@@ -9957,7 +9975,6 @@ MHD_FN_PAR_CSTR_ (4);
  * @return pointer to the action on success,
  *         NULL on failure
  * @ingroup authentication
- * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_Action *
 MHD_action_digest_auth_required_response (
@@ -10024,7 +10041,6 @@ struct MHD_BasicAuthInfo
  * @return pointer to the action on success,
  *         NULL on failure
  * @ingroup authentication
- * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_Action *
 MHD_action_basic_auth_required_response (
@@ -10127,8 +10143,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoFixed
   /**
    * Get whether the early version the Digest Authorization (RFC 2069) is
    * supported (digest authorisation without QOP parameter).
-   * Since #MHD_VERSION 0x00097701 it is always supported if Digest Auth
-   * module is built.
+   * Currently it is always supported if Digest Auth module is built.
    * The result is placed in @a v_bool member.
    */
   MHD_LIB_INFO_FIXED_HAS_DIGEST_AUTH_RFC2069 = 22
@@ -10599,7 +10614,7 @@ enum MHD_DaemonInfoFixedType
   /**
    * Request the port number of daemon's listen socket.
    * No extra arguments should be passed.
-   * Note: if port '0' was specified for #MHD_option_port(), returned
+   * Note: if port '0' was specified for #MHD_D_OPTION_BIND_PORT(), returned
    * value will be real port number.
    * The result is placed in @a v_port member.
    */
@@ -10703,9 +10718,9 @@ enum MHD_DaemonInfoDynamicType
    * If resulting value is zero then daemon data processing function should be
    * called as soon as possible as some data processing is already pending.
    * The data processing function can also be called earlier as well.
-   * Available only for daemons stated in #MHD_TM_EXTERNAL_PERIODIC,
-   * #MHD_TM_EXTERNAL_EVENT_LOOP_CB_LEVEL, #MHD_TM_EXTERNAL_EVENT_LOOP_CB_EDGE
-   * or #MHD_TM_EXTERNAL_SINGLE_FD_WATCH modes.
+   * Available only for daemons stated in #MHD_WM_EXTERNAL_PERIODIC,
+   * #MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL, #MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE
+   * or #MHD_WM_EXTERNAL_SINGLE_FD_WATCH modes.
    * The result is placed in @a v_uint64 member.
    */
   MHD_DAEMON_INFO_DYNAMIC_MAX_TIME_TO_WAIT = 1
@@ -10713,9 +10728,9 @@ enum MHD_DaemonInfoDynamicType
   /**
    * Request the number of current connections handled by the daemon.
    * No extra arguments should be passed.
-   * Note: when using MHD in external polling mode, this type of request
-   * could be used only when #MHD_run()/#MHD_run_from_select is not
-   * working in other thread at the same time.
+   * Note: when using MHD without internal threads, this type of request
+   * could be used only when MHD is is not processing the connection data
+   * in other thread at the same time.
    * The result is placed in @a v_uint member.
    */
   MHD_DAEMON_INFO_DYNAMIC_CURRENT_CONNECTIONS = 20
