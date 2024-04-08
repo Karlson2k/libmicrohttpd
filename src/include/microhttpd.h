@@ -80,13 +80,18 @@
 #ifndef MHD_MICROHTTPD_H
 #define MHD_MICROHTTPD_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#if 0                           /* keep Emacsens' auto-indent happy */
-}
-#endif
-#endif
+#ifndef __cplusplus
+#  define MHD_C_DECLRATIONS_START_HERE_   /* Empty */
+#  define MHD_C_DECLRATIONS_FINISH_HERE_  /* Empty */
+#else  /* __cplusplus */
+/* *INDENT-OFF* */
+#  define MHD_C_DECLRATIONS_START_HERE_   extern "C" {
+#  define MHD_C_DECLRATIONS_FINISH_HERE_  }
+/* *INDENT-ON* */
+#endif /* __cplusplus */
+
+
+MHD_C_DECLRATIONS_START_HERE_
 
 
 /**
@@ -6519,11 +6524,6 @@ _MHD_EXTERN enum MHD_Result
 MHD_is_feature_supported (enum MHD_FEATURE feature);
 
 
-#ifdef __cplusplus
-#if 0                           /* keep Emacsens' auto-indent happy */
-{
-#endif
-}
-#endif
+MHD_C_DECLRATIONS_FINISH_HERE_
 
 #endif
