@@ -161,24 +161,18 @@ MHD_C_DECLRATIONS_START_HERE_
    to build out-of-the-box for beginning users on common systems.
 
    If generic headers don't work on your platform, include headers
-   which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
-   'uint16_t', 'uint32_t', 'uint64_t', 'off_t', 'struct sockaddr',
-   'socklen_t', 'fd_set' and "#define MHD_PLATFORM_H" before
-   including "microhttpd.h". Then the following "standard"
+   which define 'va_list', 'size_t', 'uint_fast16_t', 'uint_fat32_t',
+   'uint_fast64_t', 'struct sockaddr', and "#define MHD_PLATFORM_H"
+   before including "microhttpd.h".  Then the following "standard"
    includes won't be used (which might be a good idea, especially
    on platforms where they do not exist).
    */
-// TODO: review the list of includes, reduce it
 #ifndef MHD_PLATFORM_H
 #include <stdarg.h>
 #include <stdint.h>
 #include <sys/types.h>
 #if defined(_WIN32) && ! defined(__CYGWIN__)
 #include <ws2tcpip.h>
-#if defined(_MSC_FULL_VER) && ! defined(_SSIZE_T_DEFINED)
-#define _SSIZE_T_DEFINED
-typedef intptr_t ssize_t;
-#endif /* !_SSIZE_T_DEFINED */
 #else
 #include <unistd.h>
 #include <sys/time.h>
