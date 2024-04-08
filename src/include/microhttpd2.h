@@ -4312,12 +4312,10 @@ struct MHD_DaemonOptionValueTlsCert
    * The private key loaded into memory (not a filename)
    */
   const char *v_mem_key;
-
   /**
    * The certificate loaded into memory (not a filename)
    */
   const char *v_mem_cert;
-
   /**
    * The option passphrase phrase to decrypt the private key,
    * could be NULL is private does not need a password
@@ -4655,13 +4653,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_WORK_MODE(wmp) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_WORK_MODE), \
-    .val.v_work_mode = (wmp) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_WORK_MODE), \
+      .val.v_work_mode = (wmp) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Select a sockets watch system call used for internal polling.
@@ -4670,13 +4668,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_POLL_SYSCALL(els) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_POLL_SYSCALL), \
-    .val.v_poll_syscall = (els) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_POLL_SYSCALL), \
+      .val.v_poll_syscall = (els) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set a callback to use for logging
@@ -4687,14 +4685,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_LOG_CALLBACK(log_cb,lob_cb_cls) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_LOG_CALLBACK), \
-    .val.v_log_callback.v_log_cb = (log_cb), \
-    .val.v_log_callback.v_lob_cb_cls = (lob_cb_cls) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_LOG_CALLBACK), \
+      .val.v_log_callback.v_log_cb = (log_cb), \
+      .val.v_log_callback.v_lob_cb_cls = (lob_cb_cls) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Bind to the given TCP port and address family.
@@ -4714,14 +4712,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_BIND_PORT(af,port) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_BIND_PORT), \
-    .val.v_bind_port.v_af = (af), \
-    .val.v_bind_port.v_port = (port) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_BIND_PORT), \
+      .val.v_bind_port.v_af = (af), \
+      .val.v_bind_port.v_port = (port) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Bind to the given socket address.
@@ -4739,14 +4737,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_BIND_SA(sa_len,sa) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_BIND_SA), \
-    .val.v_bind_sa.v_sa_len = (sa_len), \
-    .val.v_bind_sa.v_sa = (sa) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_BIND_SA), \
+      .val.v_bind_sa.v_sa_len = (sa_len), \
+      .val.v_bind_sa.v_sa = (sa) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Accept connections from the given socket.  Socket
@@ -4764,13 +4762,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_LISTEN_SOCKET(listen_fd) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_LISTEN_SOCKET), \
-    .val.v_listen_socket = (listen_fd) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_LISTEN_SOCKET), \
+      .val.v_listen_socket = (listen_fd) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Select mode of reusing address:port listen address.
@@ -4782,13 +4780,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_LISTEN_ADDR_REUSE(reuse_type) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_LISTEN_ADDR_REUSE), \
-    .val.v_listen_addr_reuse = (reuse_type) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_LISTEN_ADDR_REUSE), \
+      .val.v_listen_addr_reuse = (reuse_type) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Configure TCP_FASTOPEN option, including setting a
@@ -4809,14 +4807,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_TCP_FASTOPEN(option,queue_length) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_TCP_FASTOPEN), \
-    .val.v_tcp_fastopen.v_option = (option), \
-    .val.v_tcp_fastopen.v_queue_length = (queue_length) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_TCP_FASTOPEN), \
+      .val.v_tcp_fastopen.v_option = (option), \
+      .val.v_tcp_fastopen.v_queue_length = (queue_length) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Use the given backlog for the listen() call.
@@ -4828,13 +4826,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_LISTEN_BACKLOG(backlog_size) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_LISTEN_BACKLOG), \
-    .val.v_listen_backlog = (backlog_size) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_LISTEN_BACKLOG), \
+      .val.v_listen_backlog = (backlog_size) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Inform that SIGPIPE is suppressed or handled by application.
@@ -4847,13 +4845,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_SIGPIPE_SUPPRESSED(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_SIGPIPE_SUPPRESSED), \
-    .val.v_sigpipe_suppressed = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_SIGPIPE_SUPPRESSED), \
+      .val.v_sigpipe_suppressed = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Enable TLS (HTTPS) and select TLS backend
@@ -4863,34 +4861,34 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_TLS(backend) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_TLS), \
-    .val.v_tls = (backend) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_TLS), \
+      .val.v_tls = (backend) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Provide TLS key and certificate data in-memory.
  * Works only if TLS mode is enabled.
  * @param mem_key the private key loaded into memory (not a filename)
  * @param mem_cert the certificate loaded into memory (not a filename)
- * @param mem_cert the option passphrase phrase to decrypt the private key,
+ * @param mem_pass the option passphrase phrase to decrypt the private key,
  *                 could be NULL is private does not need a password
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
  */
-#  define MHD_D_OPTION_TLS_KEY_CERT(mem_key,mem_cert,mem_cert) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+#  define MHD_D_OPTION_TLS_KEY_CERT(mem_key,mem_cert,mem_pass) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_TLS_KEY_CERT), \
-    .val.v_tls_key_cert.v_mem_key = (mem_key), \
-    .val.v_tls_key_cert.v_mem_cert = (mem_cert), \
-    .val.v_tls_key_cert.v_mem_cert = (mem_cert) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_TLS_KEY_CERT), \
+      .val.v_tls_key_cert.v_mem_key = (mem_key), \
+      .val.v_tls_key_cert.v_mem_cert = (mem_cert), \
+      .val.v_tls_key_cert.v_mem_pass = (mem_pass) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Provide the certificate of the certificate authority (CA) to be used by the
@@ -4901,13 +4899,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_TLS_CLIENT_CA(mem_client_ca) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_TLS_CLIENT_CA), \
-    .val.v_tls_client_ca = (mem_client_ca) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_TLS_CLIENT_CA), \
+      .val.v_tls_client_ca = (mem_client_ca) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Configure PSK to use for the TLS key exchange.
@@ -4917,14 +4915,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_TLS_PSK_CALLBACK(psk_cb,psk_cb_cls) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_TLS_PSK_CALLBACK), \
-    .val.v_tls_psk_callback.v_psk_cb = (psk_cb), \
-    .val.v_tls_psk_callback.v_psk_cb_cls = (psk_cb_cls) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_TLS_PSK_CALLBACK), \
+      .val.v_tls_psk_callback.v_psk_cb = (psk_cb), \
+      .val.v_tls_psk_callback.v_psk_cb_cls = (psk_cb_cls) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Control ALPN for TLS connection.
@@ -4935,13 +4933,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_NO_ALPN(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_NO_ALPN), \
-    .val.v_no_alpn = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_NO_ALPN), \
+      .val.v_no_alpn = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Specify inactivity timeout for connection.
@@ -4953,13 +4951,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DEFAULT_TIMEOUT(timeout) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_DEFAULT_TIMEOUT), \
-    .val.v_default_timeout = (timeout) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_DEFAULT_TIMEOUT), \
+      .val.v_default_timeout = (timeout) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Maximum number of (concurrent) network connections served by daemon
@@ -4968,13 +4966,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_GLOBAL_CONNECTION_LIMIT(glob_limit) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_GLOBAL_CONNECTION_LIMIT), \
-    .val.v_global_connection_limit = (glob_limit) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_GLOBAL_CONNECTION_LIMIT), \
+      .val.v_global_connection_limit = (glob_limit) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Limit on the number of (concurrent) network connections made to the server
@@ -4987,13 +4985,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_PER_IP_LIMIT(per_ip_limit) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_PER_IP_LIMIT), \
-    .val.v_per_ip_limit = (per_ip_limit) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_PER_IP_LIMIT), \
+      .val.v_per_ip_limit = (per_ip_limit) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set a policy callback that accepts/rejects connections based on the client's
@@ -5005,14 +5003,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_ACCEPT_POLICY(apc,apc_cls) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_ACCEPT_POLICY), \
-    .val.v_accept_policy.v_apc = (apc), \
-    .val.v_accept_policy.v_apc_cls = (apc_cls) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_ACCEPT_POLICY), \
+      .val.v_accept_policy.v_apc = (apc), \
+      .val.v_accept_policy.v_apc_cls = (apc_cls) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set how strictly MHD will enforce the HTTP protocol.
@@ -5022,14 +5020,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_PROTOCOL_STRICT_LEVEL(sl,how) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_PROTOCOL_STRICT_LEVEL), \
-    .val.v_protocol_strict_level.v_sl = (sl), \
-    .val.v_protocol_strict_level.v_how = (how) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_PROTOCOL_STRICT_LEVEL), \
+      .val.v_protocol_strict_level.v_sl = (sl), \
+      .val.v_protocol_strict_level.v_how = (how) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set a callback to be called first for every request when the request line is
@@ -5044,14 +5042,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_EARLY_URI_LOGGER(cb,cls) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_EARLY_URI_LOGGER), \
-    .val.v_early_uri_logger.v_cb = (cb), \
-    .val.v_early_uri_logger.v_cls = (cls) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_EARLY_URI_LOGGER), \
+      .val.v_early_uri_logger.v_cb = (cb), \
+      .val.v_early_uri_logger.v_cls = (cls) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Disable converting plus ('+') character to space in GET parameters (URI part
@@ -5065,13 +5063,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_DISABLE_URI_QUERY_PLUS_AS_SPACE), \
-    .val.v_disable_uri_query_plus_as_space = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_DISABLE_URI_QUERY_PLUS_AS_SPACE), \
+      .val.v_disable_uri_query_plus_as_space = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Suppresse use of "Date:" header.
@@ -5082,13 +5080,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_SUPPRESS_DATE_HEADER(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_SUPPRESS_DATE_HEADER), \
-    .val.v_suppress_date_header = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_SUPPRESS_DATE_HEADER), \
+      .val.v_suppress_date_header = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Use SHOUTcast for responses.
@@ -5099,13 +5097,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_ENABLE_SHOUTCAST(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_ENABLE_SHOUTCAST), \
-    .val.v_enable_shoutcast = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_ENABLE_SHOUTCAST), \
+      .val.v_enable_shoutcast = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Maximum memory size per connection.
@@ -5120,13 +5118,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_CONN_MEMORY_LIMIT(sizet_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_CONN_MEMORY_LIMIT), \
-    .val.v_conn_memory_limit = (sizet_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_CONN_MEMORY_LIMIT), \
+      .val.v_conn_memory_limit = (sizet_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * The size of the shared memory pool for accamulated upload processing.
@@ -5140,13 +5138,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_LARGE_POOL_SIZE(sizet_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_LARGE_POOL_SIZE), \
-    .val.v_large_pool_size = (sizet_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_LARGE_POOL_SIZE), \
+      .val.v_large_pool_size = (sizet_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Desired size of the stack for the threads started by MHD.
@@ -5158,13 +5156,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_STACK_SIZE(sizet_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_STACK_SIZE), \
-    .val.v_stack_size = (sizet_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_STACK_SIZE), \
+      .val.v_stack_size = (sizet_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * The the maximum FD value.
@@ -5183,13 +5181,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_FD_NUMBER_LIMIT(max_fd) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_FD_NUMBER_LIMIT), \
-    .val.v_fd_number_limit = (max_fd) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_FD_NUMBER_LIMIT), \
+      .val.v_fd_number_limit = (max_fd) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Enable `turbo`.
@@ -5202,13 +5200,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_TURBO(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_TURBO), \
-    .val.v_turbo = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_TURBO), \
+      .val.v_turbo = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Disable some internal thread safety.
@@ -5226,13 +5224,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DISABLE_THREAD_SAFETY(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_DISABLE_THREAD_SAFETY), \
-    .val.v_disable_thread_safety = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_DISABLE_THREAD_SAFETY), \
+      .val.v_disable_thread_safety = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * You need to set this option if you want to disable use of HTTP "Upgrade".
@@ -5246,13 +5244,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DISALLOW_UPGRADE(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_DISALLOW_UPGRADE), \
-    .val.v_disallow_upgrade = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_DISALLOW_UPGRADE), \
+      .val.v_disallow_upgrade = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Disable #MHD_action_suspend() functionality.
@@ -5265,13 +5263,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DISALLOW_SUSPEND_RESUME(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_DISALLOW_SUSPEND_RESUME), \
-    .val.v_disallow_suspend_resume = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_DISALLOW_SUSPEND_RESUME), \
+      .val.v_disallow_suspend_resume = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set a callback to be called for pre-start finalisation.
@@ -5285,14 +5283,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DAEMON_READY_CALLBACK(cb,cb_cls) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_DAEMON_READY_CALLBACK), \
-    .val.v_daemon_ready_callback.v_cb = (cb), \
-    .val.v_daemon_ready_callback.v_cb_cls = (cb_cls) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_DAEMON_READY_CALLBACK), \
+      .val.v_daemon_ready_callback.v_cb = (cb), \
+      .val.v_daemon_ready_callback.v_cb_cls = (cb_cls) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set a function that should be called whenever a connection is started or
@@ -5303,14 +5301,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_NOTIFY_CONNECTION(ncc,cls) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_NOTIFY_CONNECTION), \
-    .val.v_notify_connection.v_ncc = (ncc), \
-    .val.v_notify_connection.v_cls = (cls) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_NOTIFY_CONNECTION), \
+      .val.v_notify_connection.v_ncc = (ncc), \
+      .val.v_notify_connection.v_cls = (cls) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Register a function that should be called whenever a stream is started or
@@ -5322,14 +5320,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_NOTIFY_STREAM(nsc,cls) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_NOTIFY_STREAM), \
-    .val.v_notify_stream.v_nsc = (nsc), \
-    .val.v_notify_stream.v_cls = (cls) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_NOTIFY_STREAM), \
+      .val.v_notify_stream.v_nsc = (nsc), \
+      .val.v_notify_stream.v_cls = (cls) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set strong random data to be used by MHD.
@@ -5345,14 +5343,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_RANDOM_ENTROPY(buf_size,buf) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_RANDOM_ENTROPY), \
-    .val.v_random_entropy.v_buf_size = (buf_size), \
-    .val.v_random_entropy.v_buf = (buf) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_RANDOM_ENTROPY), \
+      .val.v_random_entropy.v_buf_size = (buf_size), \
+      .val.v_random_entropy.v_buf = (buf) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Specify the size of the internal hash map array that tracks generated digest
@@ -5365,13 +5363,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DAUTH_MAP_SIZE(size) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_DAUTH_MAP_SIZE), \
-    .val.v_dauth_map_size = (size) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_DAUTH_MAP_SIZE), \
+      .val.v_dauth_map_size = (size) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Control the scope of validity of MHD-generated nonces.
@@ -5386,13 +5384,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DAUTH_NONCE_BIND_TYPE(bind_type) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_DAUTH_NONCE_BIND_TYPE), \
-    .val.v_dauth_nonce_bind_type = (bind_type) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_DAUTH_NONCE_BIND_TYPE), \
+      .val.v_dauth_nonce_bind_type = (bind_type) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Default nonce timeout value (in seconds) used for Digest Auth.
@@ -5403,13 +5401,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DAUTH_DEF_NONCE_TIMEOUT(timeout) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_DAUTH_DEF_NONCE_TIMEOUT), \
-    .val.v_dauth_def_nonce_timeout = (timeout) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_DAUTH_DEF_NONCE_TIMEOUT), \
+      .val.v_dauth_def_nonce_timeout = (timeout) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Default maximum nc (nonce count) value used for Digest Auth.
@@ -5420,13 +5418,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DAUTH_DEF_MAX_NC(max_nc) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-  { \
-    .opt = (MHD_D_O_DAUTH_DEF_MAX_NC), \
-    .val.v_dauth_def_max_nc = (max_nc) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_D_O_DAUTH_DEF_MAX_NC), \
+      .val.v_dauth_def_max_nc = (max_nc) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /* = MHD Daemon Option macros above are generated automatically = */
 
@@ -5727,7 +5725,7 @@ MHD_D_OPTION_TLS (enum MHD_TlsBackend backend)
  * Works only if TLS mode is enabled.
  * @param mem_key the private key loaded into memory (not a filename)
  * @param mem_cert the certificate loaded into memory (not a filename)
- * @param mem_cert the option passphrase phrase to decrypt the private key,
+ * @param mem_pass the option passphrase phrase to decrypt the private key,
  *                 could be NULL is private does not need a password
  * @return the object of struct MHD_DaemonOptionAndValue with the requested
  *         values
@@ -5736,14 +5734,14 @@ static MHD_INLINE struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_TLS_KEY_CERT (
   const char *mem_key,
   const char *mem_cert,
-  const char *mem_cert)
+  const char *mem_pass)
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_TLS_KEY_CERT;
   opt_val.val.v_tls_key_cert.v_mem_key = mem_key;
   opt_val.val.v_tls_key_cert.v_mem_cert = mem_cert;
-  opt_val.val.v_tls_key_cert.v_mem_cert = mem_cert;
+  opt_val.val.v_tls_key_cert.v_mem_pass = mem_pass;
 
   return opt_val;
 }
