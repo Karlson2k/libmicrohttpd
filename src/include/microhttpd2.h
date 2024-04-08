@@ -865,7 +865,7 @@ typedef SOCKET MHD_socket;
  * that must not be modified by the function
  */
 #        define MHD_FN_PAR_IN_(param_num) \
-  __attribute__ ((access (read_only,pram_num)))
+  __attribute__ ((access (read_only,param_num)))
 #      endif /* !MHD_FN_PAR_IN_ */
 
 /* Override detected value of MHD_FN_PAR_IN_SIZE_ by defining it before
@@ -877,7 +877,7 @@ typedef SOCKET MHD_socket;
  * modified by the function
  */
 #        define MHD_FN_PAR_IN_SIZE_(param_num,size_num) \
-  __attribute__ ((access (read_only,pram_num,size_num)))
+  __attribute__ ((access (read_only,param_num,size_num)))
 #      endif /* !MHD_FN_PAR_IN_SIZE_ */
 
 /* Override detected value of MHD_FN_PAR_OUT_ by defining it before
@@ -888,7 +888,7 @@ typedef SOCKET MHD_socket;
  * that could be written by the function, but not read.
  */
 #        define MHD_FN_PAR_OUT_(param_num) \
-  __attribute__ ((access (write_only,pram_num)))
+  __attribute__ ((access (write_only,param_num)))
 #      endif /* !MHD_FN_PAR_OUT_ */
 
 /* Override detected value of MHD_FN_PAR_OUT_SIZE_ by defining it before
@@ -900,7 +900,7 @@ typedef SOCKET MHD_socket;
  * written by the function, but not read.
  */
 #        define MHD_FN_PAR_OUT_SIZE_(param_num,size_num) \
-  __attribute__ ((access (write_only,pram_num,size_num)))
+  __attribute__ ((access (write_only,param_num,size_num)))
 #      endif /* !MHD_FN_PAR_OUT_SIZE_ */
 
 /* Override detected value of MHD_FN_PAR_INOUT_ by defining it before
@@ -911,7 +911,7 @@ typedef SOCKET MHD_socket;
  * that could be both read and written by the function.
  */
 #        define MHD_FN_PAR_INOUT_(param_num) \
-  __attribute__ ((access (read_write,pram_num)))
+  __attribute__ ((access (read_write,param_num)))
 #      endif /* !MHD_FN_PAR_INOUT_ */
 
 /* Override detected value of MHD_FN_PAR_INOUT_SIZE_ by defining it before
@@ -923,7 +923,7 @@ typedef SOCKET MHD_socket;
  * both read and written by the function.
  */
 #        define MHD_FN_PAR_INOUT_SIZE_(param_num,size_num) \
-  __attribute__ ((access (read_write,pram_num,size_num)))
+  __attribute__ ((access (read_write,param_num,size_num)))
 #      endif /* !MHD_FN_PAR_INOUT_SIZE_ */
 
 #    endif /* access */
@@ -2486,6 +2486,23 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_HTTP_PostEncoding
 /* Obsoleted.     W3C Mobile Web Best Practices Working Group */
 #define MHD_HTTP_HEADER_X_DEVICE_USER_AGENT "X-Device-User-Agent"
 
+
+/**
+ * Predefined list of headers
+ */
+enum MHD_PredefinedHeader;
+
+/**
+ * Get text version of the predefined header.
+ * @param stk the code of the predefined header
+ * @return the pointer to the text version,
+ *         NULL if method is MHD_HTTP_METHOD_OTHER
+ *         or not known.
+ */
+MHD_EXTERN_ const struct MHD_String *
+MHD_predef_header_to_string (enum MHD_PredefinedHeader stk)
+MHD_FN_PURE_;
+
 /** @} */ /* end of group headers */
 
 /**
@@ -2530,7 +2547,7 @@ typedef const struct MHD_Action *
 MHD_EXTERN_ struct MHD_Daemon *
 MHD_daemon_create (MHD_RequestCallback req_cb,
                    void *req_cb_cls)
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_IN_ (1);
+MHD_FN_MUST_CHECK_RESULT_;
 
 
 /**
@@ -2548,7 +2565,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_IN_ (1);
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_daemon_start (struct MHD_Daemon *daemon)
-MHD_FN_PAR_NONNULL_ (1);
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_MUST_CHECK_RESULT_;
 
 
 /**
@@ -6673,7 +6690,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
                            const struct sockaddr *addr,
                            void *connection_cntx)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_IN_SIZE_ (4,3);
+MHD_FN_PAR_IN_ (4);
 
 
 /* ********************* connection options ************** */
@@ -7064,7 +7081,7 @@ MHD_request_get_values_list (
   size_t num_elements,
   struct MHD_NameValueKind elements[MHD_FN_PAR_DYN_ARR_SIZE_ (num_elements)])
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_OUT_ (4);
+MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_OUT_SIZE_ (4,3);
 
 
 /**
@@ -8425,6 +8442,24 @@ MHD_FN_PAR_IN_SIZE_ (3,2);
 
 
 /**
+ * I/O vector type. Provided for use with #MHD_response_from_iovec().
+ * @ingroup response
+ */
+struct MHD_IoVec
+{
+  /**
+   * The pointer to the memory region for I/O.
+   */
+  const void *iov_base;
+
+  /**
+   * The size in bytes of the memory region for I/O.
+   */
+  size_t iov_len;
+};
+
+
+/**
  * Create a response object with an array of memory buffers
  * used as the response body.
  *
@@ -8604,7 +8639,7 @@ MHD_action_continue (struct MHD_Request *req);
  * @ingroup action
  */
 typedef const struct MHD_Action *
-(MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_NONNULL_ (3)
+(MHD_FN_PAR_NONNULL_ (2)  MHD_FN_PAR_IN_SIZE_ (4,3)
  *MHD_UploadCallback)(void *upload_cls,
                       struct MHD_Request *request,
                       size_t content_data_size,
@@ -8754,7 +8789,7 @@ MHD_action_post_processor (struct MHD_Request *request,
                            void *reader_cls,
                            MHD_PostDataFinished done_cb,
                            void *done_cb_cls)
-MHD_FN_PAR_NONNULL_ (2);
+MHD_FN_PAR_NONNULL_ (1);
 
 
 /**
@@ -8848,7 +8883,7 @@ MHD_request_get_post_data_list (
   size_t num_elements,
   struct MHD_PostData elements[MHD_FN_PAR_DYN_ARR_SIZE_ (num_elements)])
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_SIZE_ (3,2);
 
 /* ***************** (c) WebSocket support ********** */
 
@@ -9313,7 +9348,7 @@ MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo algo,
                                size_t bin_buf_size,
                                void *userhash_bin)
 MHD_FN_PURE_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_CSTR_ (2)
-MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_OUT_SIZE_ (4,3);
+MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_OUT_SIZE_ (5,4);
 
 
 /**
@@ -9361,7 +9396,7 @@ MHD_digest_auth_calc_userhash_hex (
   size_t hex_buf_size,
   char userhash_hex[MHD_FN_PAR_DYN_ARR_SIZE_ (hex_buf_size)])
 MHD_FN_PURE_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_CSTR_ (2)
-MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_OUT_SIZE_ (4,3);
+MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_OUT_SIZE_ (5,4);
 
 
 /**
@@ -9574,7 +9609,7 @@ struct MHD_DigestAuthInfo
    * The 'realm' parameter value, as specified by client.
    * If not specified by client then string pointer is NULL.
    */
-  struct MHD_StringNull realm;
+  struct MHD_StringNullable realm;
 
   /**
    * The 'qop' parameter value.
@@ -10460,7 +10495,7 @@ MHD_EXTERN_ enum MHD_StatusCode
 MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
                            union MHD_LibInfoFixedData *return_data,
                            size_t return_data_size)
-MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_SIZE_ (2,3)
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2)
 MHD_FN_PURE_;
 
 /**
@@ -10540,10 +10575,10 @@ union MHD_LibInfoDynamicData
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_lib_get_info_dynamic_sz (enum MHD_LibDynamicInfo info_type,
-                             union MHD_LibDynamicInfoData *return_data,
+MHD_lib_get_info_dynamic_sz (enum MHD_LibInfoDynamic info_type,
+                             union MHD_LibInfoDynamicData *return_data,
                              size_t return_data_size)
-MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_SIZE_ (2,3);
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2);
 
 /**
  * Get dynamic information about MHD that may be changed at run-time.
@@ -10653,7 +10688,7 @@ MHD_daemon_get_info_fixed_sz (struct MHD_Daemon *daemon,
                               union MHD_DaemonInfoFixedData *return_value,
                               size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_(3)
 MHD_FN_PURE_;
 
 /**
@@ -10711,7 +10746,7 @@ enum MHD_DaemonInfoDynamicType
    * This value enforces specific underlying integer type for the enum.
    * Do not use.
    */
-  MHD_DAEMON_INFO_FIXED_SENTINEL = 65535
+  MHD_DAEMON_INFO_DYNAMIC_SENTINEL = 65535
 };
 
 
@@ -10760,7 +10795,7 @@ MHD_daemon_get_info_dynamic_sz (struct MHD_Daemon *daemon,
                                 union MHD_DaemonInfoDynamicData *return_value,
                                 size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4);
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
 /**
  * Obtain dynamic information about the given daemon.
@@ -10861,7 +10896,7 @@ MHD_connection_get_info_fixed_sz (
   union MHD_ConnectionInfoFixedData *return_value,
   size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_(3)
 MHD_FN_PURE_;
 
 
@@ -11050,7 +11085,7 @@ MHD_connection_get_info_dynamic_sz (
   union MHD_ConnectionInfoDynamicData *return_value,
   size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4);
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
 
 /**
@@ -11139,7 +11174,7 @@ MHD_stream_get_info_fixed_sz (
   union MHD_StreamInfoFixedData *return_value,
   size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_(3)
 MHD_FN_PURE_;
 
 
@@ -11219,7 +11254,7 @@ MHD_stream_get_info_dynamic_sz (
   union MHD_StreamInfoDynamicData *return_value,
   size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4);
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
 
 /**
@@ -11314,7 +11349,7 @@ union MHD_RequestInfoFixedData
   /**
    * The HTTP version type.
    */
-  enum MHD_HTTP_Version v_http_ver;
+  enum MHD_HTTP_ProtocolVersion v_http_ver;
 
   /**
    * The HTTP method type.
@@ -11343,7 +11378,7 @@ MHD_request_get_info_fixed_sz (struct MHD_Request *request,
                                union MHD_RequestInfoFixedData *return_value,
                                size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_(3)
 MHD_FN_PURE_;
 
 
@@ -11591,7 +11626,7 @@ MHD_request_get_info_dynamic_sz (struct MHD_Request *request,
                                  union MHD_RequestInfoDynamicData *return_value,
                                  size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_(3)
 MHD_FN_PURE_;
 
 
