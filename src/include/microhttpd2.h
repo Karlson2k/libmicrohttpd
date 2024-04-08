@@ -568,7 +568,7 @@ typedef SOCKET MHD_socket;
   _Pragma(MHD_MACRO_STR_(GCC diagnostic ignored MHD_MACRO_STR__(warn)))
 #    ifdef MHD_USE_VARARG_MACROS_EXT
 #      define MHD_NOWARN_VARIADIC_MACROS_ \
-  MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wvariadic - macros)
+         MHD_WARN_PUSH_ MHD_WARN_INGORE_(-Wvariadic-macros)
 #      define MHD_RESTORE_WARN_VARIADIC_MACROS_ MHD_WARN_POP_
 #    endif
 #    ifdef MHD_USE_COMPOUND_LITERALS_EXT
@@ -576,7 +576,7 @@ typedef SOCKET MHD_socket;
 #      define MHD_RESTORE_WARN_COMPOUND_LITERALS_       /* empty */
 #    endif
 #    define MHD_NOWARN_UNUSED_FUNC_ \
-  MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wunused - function)
+        MHD_WARN_PUSH_  MHD_WARN_INGORE_(-Wunused-function)
 #    define MHD_RESTORE_WARN_UNUSED_FUNC_ MHD_WARN_POP_
 #  elif MHD_CLANG_MINV (3,1)
 #    define MHD_WARN_PUSH_ _Pragma("clang diagnostic push")
@@ -585,27 +585,27 @@ typedef SOCKET MHD_socket;
   _Pragma(MHD_MACRO_STR_(clang diagnostic ignored MHD_MACRO_STR__(warn)))
 #    ifdef MHD_USE_VARARG_MACROS_EXT
 #      define MHD_NOWARN_VARIADIC_MACROS_ \
-  MHD_WARN_PUSH_ \
-  MHD_WARN_INGORE_ (-Wvariadic - macros) \
-  MHD_WARN_INGORE_ (-Wc++ 98 - compat - pedantic)
+         MHD_WARN_PUSH_ \
+         MHD_WARN_INGORE_(-Wvariadic-macros) \
+         MHD_WARN_INGORE_(-Wc++98-compat-pedantic)
 #      define MHD_RESTORE_WARN_VARIADIC_MACROS_ MHD_WARN_POP_
 #    else  /* ! MHD_USE_VARARG_MACROS_EXT */
 #      define MHD_NOWARN_VARIADIC_MACROS_ \
-  MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc++ 98 - compat - pedantic)
+         MHD_WARN_PUSH_  MHD_WARN_INGORE_(-Wc++98-compat-pedantic)
 #      define MHD_RESTORE_WARN_VARIADIC_MACROS_ MHD_WARN_POP_
 #    endif
 #    ifdef MHD_USE_CPP_INIT_LIST
 #      define MHD_NOWARN_CPP_INIT_LIST_ \
-  MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc++ 98 - compat)
+         MHD_WARN_PUSH_  MHD_WARN_INGORE_(-Wc++98-compat)
 #      define MHD_RESTORE_WARN_CPP_INIT_LIST_ MHD_WARN_POP_
 #    endif
 #    ifdef MHD_USE_COMPOUND_LITERALS_EXT
 #      define MHD_NOWARN_COMPOUND_LITERALS_ \
-  MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc99 - extensions)
+         MHD_WARN_PUSH_  MHD_WARN_INGORE_(-Wc99-extensions)
 #      define MHD_RESTORE_WARN_COMPOUND_LITERALS_ MHD_WARN_POP_
 #    endif
 #    define MHD_NOWARN_UNUSED_FUNC_ \
-  MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wunused - function)
+        MHD_WARN_PUSH_  MHD_WARN_INGORE_(-Wunused-function)
 #    define MHD_RESTORE_WARN_UNUSED_FUNC_ MHD_WARN_POP_
 #  elif MHD_MSC_MINV (1500)
 #    define MHD_WARN_PUSH_ __pragma(warning(push))
@@ -2622,49 +2622,49 @@ enum MHD_FIXED_ENUM_ MHD_FdState
    * #MHD_process_watched_fds())
    */
   MHD_FD_STATE_RECV = 1 << 0,
-    /**
-     * Indicates that socket should be watched for availability for sending
-     * (when set by #MHD_get_watched_fds())
-     * / socket has ability to send data (when used for
-     * #MHD_process_watched_fds())
-     */
-    MHD_FD_STATE_SEND = 1 << 1,
-    /**
-     * Indicates that socket should be watched for disconnect, out-of-band
-     * data available or high priority data available (when set by
-     * #MHD_get_watched_fds())
-     * / socket has been disconnected, has out-of-band data available or
-     * has high priority data available (when used for
-     * #MHD_process_watched_fds()). This status must not include "remote
-     * peer shut down writing" status.
-     * Note: #MHD_get_watched_fds() always set it as exceptions must be
-     * always watched.
-     */
-    MHD_FD_STATE_EXCEPT = 1 << 2,
+  /**
+   * Indicates that socket should be watched for availability for sending
+   * (when set by #MHD_get_watched_fds())
+   * / socket has ability to send data (when used for
+   * #MHD_process_watched_fds())
+   */
+  MHD_FD_STATE_SEND = 1 << 1,
+  /**
+   * Indicates that socket should be watched for disconnect, out-of-band
+   * data available or high priority data available (when set by
+   * #MHD_get_watched_fds())
+   * / socket has been disconnected, has out-of-band data available or
+   * has high priority data available (when used for
+   * #MHD_process_watched_fds()). This status must not include "remote
+   * peer shut down writing" status.
+   * Note: #MHD_get_watched_fds() always set it as exceptions must be
+   * always watched.
+   */
+  MHD_FD_STATE_EXCEPT = 1 << 2,
 
-    /* The rest of the list is a bit-wise combination of three main
-     * states. Application may use three main states directly as
-     * a bit-mask instead of using of following values
-     */
+  /* The rest of the list is a bit-wise combination of three main
+   * states. Application may use three main states directly as
+   * a bit-mask instead of using of following values
+   */
 
-    /**
-     * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_SEND states.
-     */
-    MHD_FD_STATE_RECV_SEND = MHD_FD_STATE_RECV | MHD_FD_STATE_SEND,
-    /**
-     * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
-     */
-    MHD_FD_STATE_RECV_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
-    /**
-     * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
-     */
-    MHD_FD_STATE_SEND_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
-    /**
-     * Combination of #MHD_FD_STATE_RECV, #MHD_FD_STATE_SEND and
-     * #MHD_FD_STATE_EXCEPT states.
-     */
-    MHD_FD_STATE_RECV_SEND_EXCEPT = \
-      MHD_FD_STATE_RECV | MHD_FD_STATE_SEND | MHD_FD_STATE_EXCEPT
+  /**
+   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_SEND states.
+   */
+  MHD_FD_STATE_RECV_SEND = MHD_FD_STATE_RECV | MHD_FD_STATE_SEND,
+  /**
+   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
+   */
+  MHD_FD_STATE_RECV_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
+  /**
+   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
+   */
+  MHD_FD_STATE_SEND_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
+  /**
+   * Combination of #MHD_FD_STATE_RECV, #MHD_FD_STATE_SEND and
+   * #MHD_FD_STATE_EXCEPT states.
+   */
+  MHD_FD_STATE_RECV_SEND_EXCEPT = \
+    MHD_FD_STATE_RECV | MHD_FD_STATE_SEND | MHD_FD_STATE_EXCEPT
 };
 
 /**
@@ -3498,34 +3498,34 @@ enum MHD_FIXED_FLAGS_ENUM_APP_SET_ MHD_DaemonOptionValueDAuthBindNonce
    */
   MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_REALM = 1 << 0,
 
-    /**
-     * Generated nonces are valid only for the same URI (excluding parameters
-     * after '?' in URI) and request method (GET, POST etc).
-     * Not recommended unless "protection space" is limited to a single URI as
-     * RFC 7616 allows clients to re-use server-generated nonces for any URI
-     * in the same "protection space" which by default consists of all server
-     * URIs.
-     * Before #MHD_VERSION 0x00097701 this was default (and only supported)
-     * nonce bind type.
-     */
-    MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_URI = 1 << 1,
+  /**
+   * Generated nonces are valid only for the same URI (excluding parameters
+   * after '?' in URI) and request method (GET, POST etc).
+   * Not recommended unless "protection space" is limited to a single URI as
+   * RFC 7616 allows clients to re-use server-generated nonces for any URI
+   * in the same "protection space" which by default consists of all server
+   * URIs.
+   * Before #MHD_VERSION 0x00097701 this was default (and only supported)
+   * nonce bind type.
+   */
+  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_URI = 1 << 1,
 
-    /**
-     * Generated nonces are valid only for the same URI including URI parameters
-     * and request method (GET, POST etc).
-     * This value implies #MHD_DAUTH_BIND_NONCE_URI.
-     * Not recommended for that same reasons as #MHD_DAUTH_BIND_NONCE_URI.
-     */
-    MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_URI_PARAMS = 1 << 2,
+  /**
+   * Generated nonces are valid only for the same URI including URI parameters
+   * and request method (GET, POST etc).
+   * This value implies #MHD_DAUTH_BIND_NONCE_URI.
+   * Not recommended for that same reasons as #MHD_DAUTH_BIND_NONCE_URI.
+   */
+  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_URI_PARAMS = 1 << 2,
 
-    /**
-     * Generated nonces are valid only for the single client's IP.
-     * While it looks like security improvement, in practice the same client may
-     * jump from one IP to another (mobile or Wi-Fi handover, DHCP re-assignment,
-     * Multi-NAT, different proxy chain and other reasons), while IP address
-     * spoofing could be used relatively easily.
-     */
-    MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_CLIENT_IP = 1 << 3
+  /**
+   * Generated nonces are valid only for the single client's IP.
+   * While it looks like security improvement, in practice the same client may
+   * jump from one IP to another (mobile or Wi-Fi handover, DHCP re-assignment,
+   * Multi-NAT, different proxy chain and other reasons), while IP address
+   * spoofing could be used relatively easily.
+   */
+  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_CLIENT_IP = 1 << 3
 };
 
 
@@ -9439,16 +9439,16 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthQOP
    */
   MHD_DIGEST_AUTH_QOP_NONE = 1 << 0,
 
-    /**
-     * The 'auth' QOP type.
-     */
-    MHD_DIGEST_AUTH_QOP_AUTH = 1 << 1,
+  /**
+   * The 'auth' QOP type.
+   */
+  MHD_DIGEST_AUTH_QOP_AUTH = 1 << 1,
 
-    /**
-     * The 'auth-int' QOP type.
-     * Not supported by MHD for authentication.
-     */
-    MHD_DIGEST_AUTH_QOP_AUTH_INT = 1 << 2
+  /**
+   * The 'auth-int' QOP type.
+   * Not supported by MHD for authentication.
+   */
+  MHD_DIGEST_AUTH_QOP_AUTH_INT = 1 << 2
 };
 
 /**
