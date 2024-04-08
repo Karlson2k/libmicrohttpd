@@ -2621,14 +2621,16 @@ enum MHD_FIXED_ENUM_ MHD_FdState
    * / socket has incoming data ready to read (when used for
    * #MHD_process_watched_fds())
    */
-  MHD_FD_STATE_RECV = 1 << 0,
+  MHD_FD_STATE_RECV = 1 << 0
+  ,
   /**
    * Indicates that socket should be watched for availability for sending
    * (when set by #MHD_get_watched_fds())
    * / socket has ability to send data (when used for
    * #MHD_process_watched_fds())
    */
-  MHD_FD_STATE_SEND = 1 << 1,
+  MHD_FD_STATE_SEND = 1 << 1
+  ,
   /**
    * Indicates that socket should be watched for disconnect, out-of-band
    * data available or high priority data available (when set by
@@ -2640,7 +2642,8 @@ enum MHD_FIXED_ENUM_ MHD_FdState
    * Note: #MHD_get_watched_fds() always set it as exceptions must be
    * always watched.
    */
-  MHD_FD_STATE_EXCEPT = 1 << 2,
+  MHD_FD_STATE_EXCEPT = 1 << 2
+  ,
 
   /* The rest of the list is a bit-wise combination of three main
    * states. Application may use three main states directly as
@@ -2650,15 +2653,18 @@ enum MHD_FIXED_ENUM_ MHD_FdState
   /**
    * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_SEND states.
    */
-  MHD_FD_STATE_RECV_SEND = MHD_FD_STATE_RECV | MHD_FD_STATE_SEND,
+  MHD_FD_STATE_RECV_SEND = MHD_FD_STATE_RECV | MHD_FD_STATE_SEND
+  ,
   /**
    * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
    */
-  MHD_FD_STATE_RECV_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
+  MHD_FD_STATE_RECV_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT
+  ,
   /**
    * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
    */
-  MHD_FD_STATE_SEND_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
+  MHD_FD_STATE_SEND_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT
+  ,
   /**
    * Combination of #MHD_FD_STATE_RECV, #MHD_FD_STATE_SEND and
    * #MHD_FD_STATE_EXCEPT states.
@@ -3356,8 +3362,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_ProtocolStrictLevel
    * Be particularly permissive about the protocol, within
    * the limits set by RFCs for HTTP servers.
    */
-  MHD_PSL_PERMISSIVE = -1,
-
+  MHD_PSL_PERMISSIVE = -1
+  ,
   /* * Special levels * */
   /**
    * Stricter protocol interpretation, even stricter then allowed
@@ -3396,8 +3402,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_ProtocolStrictLevel
    * allows whitespaces in cookie values.
    * This level can be used in isolated environments.
    */
-  MHD_PSL_VERY_PERMISSIVE = -2,
-
+  MHD_PSL_VERY_PERMISSIVE = -2
+  ,
   /**
    * The most flexible protocol interpretation, beyond
    * RFCs' "MUST" type of restrictions for HTTP server.
@@ -3491,13 +3497,13 @@ enum MHD_FIXED_FLAGS_ENUM_APP_SET_ MHD_DaemonOptionValueDAuthBindNonce
    * when clients' requests are intensive.
    * This value cannot be biwise-OR combined with other values.
    */
-  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_NONE = 0,
-
+  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_NONE = 0
+  ,
   /**
    * Generated nonces are valid only for the same realm.
    */
-  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_REALM = 1 << 0,
-
+  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_REALM = (1 << 0)
+  ,
   /**
    * Generated nonces are valid only for the same URI (excluding parameters
    * after '?' in URI) and request method (GET, POST etc).
@@ -3508,7 +3514,8 @@ enum MHD_FIXED_FLAGS_ENUM_APP_SET_ MHD_DaemonOptionValueDAuthBindNonce
    * Before #MHD_VERSION 0x00097701 this was default (and only supported)
    * nonce bind type.
    */
-  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_URI = 1 << 1,
+  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_URI = (1 << 1)
+  ,
 
   /**
    * Generated nonces are valid only for the same URI including URI parameters
@@ -3516,7 +3523,8 @@ enum MHD_FIXED_FLAGS_ENUM_APP_SET_ MHD_DaemonOptionValueDAuthBindNonce
    * This value implies #MHD_DAUTH_BIND_NONCE_URI.
    * Not recommended for that same reasons as #MHD_DAUTH_BIND_NONCE_URI.
    */
-  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_URI_PARAMS = 1 << 2,
+  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_URI_PARAMS = (1 << 2)
+  ,
 
   /**
    * Generated nonces are valid only for the single client's IP.
@@ -3525,7 +3533,7 @@ enum MHD_FIXED_FLAGS_ENUM_APP_SET_ MHD_DaemonOptionValueDAuthBindNonce
    * Multi-NAT, different proxy chain and other reasons), while IP address
    * spoofing could be used relatively easily.
    */
-  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_CLIENT_IP = 1 << 3
+  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_CLIENT_IP = (1 << 3)
 };
 
 
@@ -6923,18 +6931,18 @@ enum MHD_FLAGS_ENUM_ MHD_ValueKind
   /**
    * HTTP header.
    */
-  MHD_VK_HEADER = 1
+  MHD_VK_HEADER = (1 << 0)
   ,
   /**
    * Cookies.  Note that the original HTTP header containing
    * the cookie(s) will still be available and intact.
    */
-  MHD_VK_COOKIE = 2
+  MHD_VK_COOKIE = (1 << 1)
   ,
   /**
    * GET (URI) arguments.
    */
-  MHD_VK_GET_ARGUMENT = 4
+  MHD_VK_GET_ARGUMENT = (1 << 2)
   ,
   /**
    * POST data.
@@ -6948,18 +6956,18 @@ enum MHD_FLAGS_ENUM_ MHD_ValueKind
    * important to check used "Transfer-Encoding". While it is deprecated and
    * not used by modern clients, hypothetically it can be used.
    */
-  MHD_VK_POSTDATA = 8
+  MHD_VK_POSTDATA = (1 << 3)
   ,
   /**
    * HTTP footer (only for HTTP 1.1 chunked encodings).
    */
-  MHD_VK_FOOTER = 16
+  MHD_VK_FOOTER = (1 << 4)
   ,
   /**
    * Header and footer values
    */
-  MHD_VK_HEADER_FOOTER = MHD_VK_HEADER | MHD_VK_FOOTER,
-
+  MHD_VK_HEADER_FOOTER = MHD_VK_HEADER | MHD_VK_FOOTER
+  ,
   /**
    * Values from get arguments or post data
    */
@@ -9046,14 +9054,14 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestBaseAlgo
    * MD5 hash algorithm.
    * As specified by RFC1321
    */
-  MHD_DIGEST_BASE_ALGO_MD5 = (1 << 0),
-
+  MHD_DIGEST_BASE_ALGO_MD5 = (1 << 0)
+  ,
   /**
    * SHA-256 hash algorithm.
    * As specified by FIPS PUB 180-4
    */
-  MHD_DIGEST_BASE_ALGO_SHA256 = (1 << 1),
-
+  MHD_DIGEST_BASE_ALGO_SHA256 = (1 << 1)
+  ,
   /**
    * SHA-512/256 hash algorithm.
    * As specified by FIPS PUB 180-4
@@ -9089,34 +9097,34 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthAlgo
    * The 'MD5' algorithm, non-session version.
    */
   MHD_DIGEST_AUTH_ALGO_MD5 =
-    MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_AUTH_ALGO_NON_SESSION,
-
+    MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_AUTH_ALGO_NON_SESSION
+  ,
   /**
    * The 'MD5-sess' algorithm.
    * Not supported by MHD for authentication.
    */
   MHD_DIGEST_AUTH_ALGO_MD5_SESSION =
-    MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_AUTH_ALGO_SESSION,
-
+    MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_AUTH_ALGO_SESSION
+  ,
   /**
    * The 'SHA-256' algorithm, non-session version.
    */
   MHD_DIGEST_AUTH_ALGO_SHA256 =
-    MHD_DIGEST_BASE_ALGO_SHA256 | MHD_DIGEST_AUTH_ALGO_NON_SESSION,
-
+    MHD_DIGEST_BASE_ALGO_SHA256 | MHD_DIGEST_AUTH_ALGO_NON_SESSION
+  ,
   /**
    * The 'SHA-256-sess' algorithm.
    * Not supported by MHD for authentication.
    */
   MHD_DIGEST_AUTH_ALGO_SHA256_SESSION =
-    MHD_DIGEST_BASE_ALGO_SHA256 | MHD_DIGEST_AUTH_ALGO_SESSION,
-
+    MHD_DIGEST_BASE_ALGO_SHA256 | MHD_DIGEST_AUTH_ALGO_SESSION
+  ,
   /**
    * The 'SHA-512-256' (SHA-512/256) algorithm.
    */
   MHD_DIGEST_AUTH_ALGO_SHA512_256 =
-    MHD_DIGEST_BASE_ALGO_SHA512_256 | MHD_DIGEST_AUTH_ALGO_NON_SESSION,
-
+    MHD_DIGEST_BASE_ALGO_SHA512_256 | MHD_DIGEST_AUTH_ALGO_NON_SESSION
+  ,
   /**
    * The 'SHA-512-256-sess' (SHA-512/256 session) algorithm.
    * Not supported by MHD for authentication.
@@ -9154,60 +9162,60 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthMultiAlgo
   /**
    * Unknown or wrong algorithm type.
    */
-  MHD_DIGEST_AUTH_MULT_ALGO_INVALID = MHD_DIGEST_AUTH_ALGO_INVALID,
-
+  MHD_DIGEST_AUTH_MULT_ALGO_INVALID = MHD_DIGEST_AUTH_ALGO_INVALID
+  ,
   /**
    * The 'MD5' algorithm, non-session version.
    */
-  MHD_DIGEST_AUTH_MULT_ALGO_MD5 = MHD_DIGEST_AUTH_ALGO_MD5,
-
+  MHD_DIGEST_AUTH_MULT_ALGO_MD5 = MHD_DIGEST_AUTH_ALGO_MD5
+  ,
   /**
    * The 'MD5-sess' algorithm.
    * Not supported by MHD for authentication.
    * Reserved value.
    */
-  MHD_DIGEST_AUTH_MULT_ALGO_MD5_SESSION = MHD_DIGEST_AUTH_ALGO_MD5_SESSION,
-
+  MHD_DIGEST_AUTH_MULT_ALGO_MD5_SESSION = MHD_DIGEST_AUTH_ALGO_MD5_SESSION
+  ,
   /**
    * The 'SHA-256' algorithm, non-session version.
    */
-  MHD_DIGEST_AUTH_MULT_ALGO_SHA256 = MHD_DIGEST_AUTH_ALGO_SHA256,
-
+  MHD_DIGEST_AUTH_MULT_ALGO_SHA256 = MHD_DIGEST_AUTH_ALGO_SHA256
+  ,
   /**
    * The 'SHA-256-sess' algorithm.
    * Not supported by MHD for authentication.
    * Reserved value.
    */
   MHD_DIGEST_AUTH_MULT_ALGO_SHA256_SESSION =
-    MHD_DIGEST_AUTH_ALGO_SHA256_SESSION,
-
+    MHD_DIGEST_AUTH_ALGO_SHA256_SESSION
+  ,
   /**
    * The 'SHA-512-256' (SHA-512/256) algorithm, non-session version.
    */
-  MHD_DIGEST_AUTH_MULT_ALGO_SHA512_256 = MHD_DIGEST_AUTH_ALGO_SHA512_256,
-
+  MHD_DIGEST_AUTH_MULT_ALGO_SHA512_256 = MHD_DIGEST_AUTH_ALGO_SHA512_256
+  ,
   /**
    * The 'SHA-512-256-sess' (SHA-512/256 session) algorithm.
    * Not supported by MHD for authentication.
    * Reserved value.
    */
   MHD_DIGEST_AUTH_MULT_ALGO_SHA512_256_SESSION =
-    MHD_DIGEST_AUTH_ALGO_SHA512_256_SESSION,
-
+    MHD_DIGEST_AUTH_ALGO_SHA512_256_SESSION
+  ,
   /**
    * SHA-256 or SHA-512/256 non-session algorithm, MHD will choose
    * the preferred or the matching one.
    */
   MHD_DIGEST_AUTH_MULT_ALGO_SHA_ANY_NON_SESSION =
-    MHD_DIGEST_AUTH_ALGO_SHA256 | MHD_DIGEST_AUTH_ALGO_SHA512_256,
-
+    MHD_DIGEST_AUTH_ALGO_SHA256 | MHD_DIGEST_AUTH_ALGO_SHA512_256
+  ,
   /**
    * Any non-session algorithm, MHD will choose the preferred or
    * the matching one.
    */
   MHD_DIGEST_AUTH_MULT_ALGO_ANY_NON_SESSION =
-    (0x3F) | MHD_DIGEST_AUTH_ALGO_NON_SESSION,
-
+    (0x3F) | MHD_DIGEST_AUTH_ALGO_NON_SESSION
+  ,
   /**
    * The SHA-256 or SHA-512/256 session algorithm.
    * Not supported by MHD.
@@ -9215,47 +9223,47 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthMultiAlgo
    */
   MHD_DIGEST_AUTH_MULT_ALGO_SHA_ANY_SESSION =
     MHD_DIGEST_AUTH_ALGO_SHA256_SESSION
-    | MHD_DIGEST_AUTH_ALGO_SHA512_256_SESSION,
-
+    | MHD_DIGEST_AUTH_ALGO_SHA512_256_SESSION
+  ,
   /**
    * Any session algorithm.
    * Not supported by MHD.
    * Reserved value.
    */
   MHD_DIGEST_AUTH_MULT_ALGO_ANY_SESSION =
-    (0x3F) | MHD_DIGEST_AUTH_ALGO_SESSION,
-
+    (0x3F) | MHD_DIGEST_AUTH_ALGO_SESSION
+  ,
   /**
    * The MD5 algorithm, session or non-session.
    * Currently supported as non-session only.
    */
   MHD_DIGEST_AUTH_MULT_ALGO_MD5_ANY =
-    MHD_DIGEST_AUTH_MULT_ALGO_MD5 | MHD_DIGEST_AUTH_MULT_ALGO_MD5_SESSION,
-
+    MHD_DIGEST_AUTH_MULT_ALGO_MD5 | MHD_DIGEST_AUTH_MULT_ALGO_MD5_SESSION
+  ,
   /**
    * The SHA-256 algorithm, session or non-session.
    * Currently supported as non-session only.
    */
   MHD_DIGEST_AUTH_MULT_ALGO_SHA256_ANY =
     MHD_DIGEST_AUTH_MULT_ALGO_SHA256
-    | MHD_DIGEST_AUTH_MULT_ALGO_SHA256_SESSION,
-
+    | MHD_DIGEST_AUTH_MULT_ALGO_SHA256_SESSION
+  ,
   /**
    * The SHA-512/256 algorithm, session or non-session.
    * Currently supported as non-session only.
    */
   MHD_DIGEST_AUTH_MULT_ALGO_SHA512_256_ANY =
     MHD_DIGEST_AUTH_MULT_ALGO_SHA512_256
-    | MHD_DIGEST_AUTH_MULT_ALGO_SHA512_256_SESSION,
-
+    | MHD_DIGEST_AUTH_MULT_ALGO_SHA512_256_SESSION
+  ,
   /**
    * The SHA-256 or SHA-512/256 algorithm, session or non-session.
    * Currently supported as non-session only.
    */
   MHD_DIGEST_AUTH_MULT_ALGO_SHA_ANY_ANY =
     MHD_DIGEST_AUTH_MULT_ALGO_SHA_ANY_NON_SESSION
-    | MHD_DIGEST_AUTH_MULT_ALGO_SHA_ANY_SESSION,
-
+    | MHD_DIGEST_AUTH_MULT_ALGO_SHA_ANY_SESSION
+  ,
   /**
    * Any algorithm, MHD will choose the preferred or the matching one.
    */
@@ -9307,10 +9315,8 @@ MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo algo,
                                const char *realm,
                                size_t bin_buf_size,
                                void *userhash_bin)
-MHD_FN_PURE_
-MHD_FN_PAR_NONNULL_ALL_
-  MHD_FN_PAR_CSTR_ (2) MHD_FN_PAR_CSTR_ (3)
-MHD_FN_PAR_OUT_SIZE_ (4,3);
+MHD_FN_PURE_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_CSTR_ (2)
+MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_OUT_SIZE_ (4,3);
 
 
 /**
@@ -9358,12 +9364,8 @@ MHD_digest_auth_calc_userhash_hex (
   const char *realm,
   size_t hex_buf_size,
   char userhash_hex[MHD_FN_PAR_DYN_ARR_SIZE_ (hex_buf_size)])
-MHD_FN_PURE_
-MHD_FN_PAR_NONNULL_ALL_
-  MHD_FN_PAR_CSTR_ (2) MHD_FN_PAR_CSTR_ (3)
-MHD_FN_PAR_OUT_SIZE_ (4,3);
-
-;
+MHD_FN_PURE_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_CSTR_ (2)
+MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_OUT_SIZE_ (4,3);
 
 
 /**
@@ -9389,23 +9391,23 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthUsernameType
   /**
    * The 'username' parameter is used to specify the username.
    */
-  MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD = (1 << 2),
-
+  MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD = (1 << 2)
+  ,
   /**
    * The username is specified by 'username*' parameter with
    * the extended notation (see RFC 5987 #section-3.2.1).
    * The only difference between standard and extended types is
    * the way how username value is encoded in the header.
    */
-  MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED = (1 << 3),
-
+  MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED = (1 << 3)
+  ,
   /**
    * The username provided in form of 'userhash' as
    * specified by RFC 7616 #section-3.4.4.
    * @sa #MHD_digest_auth_calc_userhash_hex(), #MHD_digest_auth_calc_userhash()
    */
-  MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH = (1 << 1),
-
+  MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH = (1 << 1)
+  ,
   /**
    * The invalid combination of username parameters are used by client.
    * Either:
@@ -9437,13 +9439,13 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthQOP
    * parameter).
    * This mode is less secure than other modes and inefficient.
    */
-  MHD_DIGEST_AUTH_QOP_NONE = 1 << 0,
-
+  MHD_DIGEST_AUTH_QOP_NONE = 1 << 0
+  ,
   /**
    * The 'auth' QOP type.
    */
-  MHD_DIGEST_AUTH_QOP_AUTH = 1 << 1,
-
+  MHD_DIGEST_AUTH_QOP_AUTH = 1 << 1
+  ,
   /**
    * The 'auth-int' QOP type.
    * Not supported by MHD for authentication.
@@ -9462,8 +9464,8 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthMultiQOP
   /**
    * Invalid/unknown QOP.
    */
-  MHD_DIGEST_AUTH_MULT_QOP_INVALID = MHD_DIGEST_AUTH_QOP_INVALID,
-
+  MHD_DIGEST_AUTH_MULT_QOP_INVALID = MHD_DIGEST_AUTH_QOP_INVALID
+  ,
   /**
    * No QOP parameter.
    * As described in old RFC 2069 original specification.
@@ -9472,20 +9474,20 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthMultiQOP
    * parameter).
    * This mode is less secure than other modes and inefficient.
    */
-  MHD_DIGEST_AUTH_MULT_QOP_NONE = MHD_DIGEST_AUTH_QOP_NONE,
-
+  MHD_DIGEST_AUTH_MULT_QOP_NONE = MHD_DIGEST_AUTH_QOP_NONE
+  ,
   /**
    * The 'auth' QOP type.
    */
-  MHD_DIGEST_AUTH_MULT_QOP_AUTH = MHD_DIGEST_AUTH_QOP_AUTH,
-
+  MHD_DIGEST_AUTH_MULT_QOP_AUTH = MHD_DIGEST_AUTH_QOP_AUTH
+  ,
   /**
    * The 'auth-int' QOP type.
    * Not supported by MHD.
    * Reserved value.
    */
-  MHD_DIGEST_AUTH_MULT_QOP_AUTH_INT = MHD_DIGEST_AUTH_QOP_AUTH_INT,
-
+  MHD_DIGEST_AUTH_MULT_QOP_AUTH_INT = MHD_DIGEST_AUTH_QOP_AUTH_INT
+  ,
   /**
    * The 'auth' QOP type OR the old RFC2069 (no QOP) type.
    * In other words: any types except 'auth-int'.
@@ -9493,8 +9495,8 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthMultiQOP
    * when it is really necessary.
    */
   MHD_DIGEST_AUTH_MULT_QOP_ANY_NON_INT =
-    MHD_DIGEST_AUTH_QOP_NONE | MHD_DIGEST_AUTH_QOP_AUTH,
-
+    MHD_DIGEST_AUTH_QOP_NONE | MHD_DIGEST_AUTH_QOP_AUTH
+  ,
   /**
    * Any 'auth' QOP type ('auth' or 'auth-int').
    * Currently supported as 'auth' QOP type only.
@@ -9690,38 +9692,38 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthResult
    * Also may be returned if required parameters in client Authorisation header
    * are missing or broken (in invalid format).
    */
-  MHD_DAUTH_WRONG_HEADER = -1,
-
+  MHD_DAUTH_WRONG_HEADER = -1
+  ,
   /**
    * Wrong 'username'.
    */
-  MHD_DAUTH_WRONG_USERNAME = -2,
-
+  MHD_DAUTH_WRONG_USERNAME = -2
+  ,
   /**
    * Wrong 'realm'.
    */
-  MHD_DAUTH_WRONG_REALM = -3,
-
+  MHD_DAUTH_WRONG_REALM = -3
+  ,
   /**
    * Wrong 'URI' (or URI parameters).
    */
-  MHD_DAUTH_WRONG_URI = -4,
-
+  MHD_DAUTH_WRONG_URI = -4
+  ,
   /**
    * Wrong 'qop'.
    */
-  MHD_DAUTH_WRONG_QOP = -5,
-
+  MHD_DAUTH_WRONG_QOP = -5
+  ,
   /**
    * Wrong 'algorithm'.
    */
-  MHD_DAUTH_WRONG_ALGO = -6,
-
+  MHD_DAUTH_WRONG_ALGO = -6
+  ,
   /**
    * Too large (>64 KiB) Authorization parameter value.
    */
-  MHD_DAUTH_TOO_LARGE = -15,
-
+  MHD_DAUTH_TOO_LARGE = -15
+  ,
   /* The different form of naming is intentionally used for the results below,
    * as they are more important */
 
@@ -9730,8 +9732,8 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthResult
    * username and password to get the fresh 'nonce'.
    * The validity of the 'nonce' may be not checked.
    */
-  MHD_DAUTH_NONCE_STALE = -17,
-
+  MHD_DAUTH_NONCE_STALE = -17
+  ,
   /**
    * The 'nonce' was generated by MHD for other conditions.
    * This value is only returned if #MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE
@@ -9744,13 +9746,13 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthResult
    * it is know that clients have fixed IP addresses, this return code could
    * be handled like #MHD_DAUTH_NONCE_WRONG.
    */
-  MHD_DAUTH_NONCE_OTHER_COND = -18,
-
+  MHD_DAUTH_NONCE_OTHER_COND = -18
+  ,
   /**
    * The 'nonce' is wrong. May indicate an attack attempt.
    */
-  MHD_DAUTH_NONCE_WRONG = -33,
-
+  MHD_DAUTH_NONCE_WRONG = -33
+  ,
   /**
    * The 'response' is wrong. May indicate an attack attempt.
    */
@@ -9841,7 +9843,7 @@ MHD_digest_auth_calc_userdigest (enum MHD_DigestAuthAlgo algo,
                                  size_t bin_buf_size,
                                  void *userdigest_bin)
 MHD_FN_PURE_ MHD_FN_PAR_NONNULL_ALL_
-  MHD_FN_PAR_CSTR_ (2)
+MHD_FN_PAR_CSTR_ (2)
 MHD_FN_PAR_CSTR_ (3)
 MHD_FN_PAR_CSTR_ (4)
 MHD_FN_PAR_OUT_SIZE_ (6,5);
@@ -9899,7 +9901,7 @@ MHD_digest_auth_check_digest (struct MHD_Request *request,
                               enum MHD_DigestAuthMultiQOP mqop,
                               enum MHD_DigestAuthMultiAlgo malgo)
 MHD_FN_PAR_NONNULL_ALL_
-  MHD_FN_PAR_CSTR_ (2)
+MHD_FN_PAR_CSTR_ (2)
 MHD_FN_PAR_CSTR_ (3)
 MHD_FN_PAR_CSTR_ (4);
 
@@ -11498,7 +11500,6 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    */
   MHD_REQUEST_INFO_DYNAMIC_HEADER_SIZE = 21
   ,
-
   /**
    * Returns the client-specific pointer to a `void *` that
    * is specific to this request. // TODO: check reference
@@ -11506,7 +11507,6 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    */
   MHD_REQUEST_INFO_DYNAMIC_CLIENT_CONTEXT = 31
   ,
-
   /**
    * Returns pointer to information about username in client's digest auth
    * request.
@@ -11539,7 +11539,6 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    */
   MHD_REQUEST_INFO_DYNAMIC_BAUTH_REQ_INFO = 51
   ,
-
   /* * Sentinel * */
   /**
    * The sentinel value.
