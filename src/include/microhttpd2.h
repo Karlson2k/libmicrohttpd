@@ -124,21 +124,7 @@
   - Internals: Fix TCP FIN graceful closure issue for upgraded
     connections (API implications?)
 
-  - Enable providing default logarithmic implementation of URL scan
-    => reduce strcmp(url) from >= 3n operations to "log n"
-       per request. Match on method + URL (longest-prefix /foo/bar/* /foo/ /foo /fo, etc).
-       "GET /foo/$ARG/$BAR/match"
-     struct MHD_Dispatcher;
-
-     struct MHD_Dispatcher *
-     MHD_dispatcher_create (...);
-     enum {no_url, no_method, found}
-     MHD_dispatcher_dispatch (dispatcher, url, method, *result);
-     MHD_RequestCallback
-     MHD_dispatcher_get_callback (struct MHD_Dispatcher *dispatcher);
-     struct MHD_dispatcher_destroy (*dispatcher);
-
- */
+*/
 
 #ifndef MICROHTTPD2_H
 #define MICROHTTPD2_H
@@ -2571,7 +2557,7 @@ MHD_FN_PAR_NONNULL_ (1);
  * connections.  Note that the caller is responsible for closing the
  * returned socket; however, if MHD is run using threads (anything but
  * external select mode), it must not be closed until AFTER
- * #MHD_daemon_stop() has been called (as it is theoretically possible
+ * #MHD_daemon_destroy() has been called (as it is theoretically possible
  * that an existing thread is still using it).
  *
  * @param[in,out] daemon the daemon to stop accepting new connections for
@@ -2603,11 +2589,11 @@ MHD_FN_PAR_NONNULL_ALL_;
 
 /**
  * The network status of the socket.
- * When set by MHD (by #MHD_get_watched_fds(), #MHD_get_watched_fds_update() and
+ * When set by MHD (by #MHD_SocketRegistrationUpdateCallback and
  * similar) it indicates a request to watch for specific socket state:
  * readiness for receiving the data, readiness for sending the data and/or
  * exception state of the socket.
- * When set by application (and provided for #MHD_process_watched_fds() and
+ * When set by application (and provided for #MHD_daemon_event_update() and
  * similar) it must indicate the actual status of the socket.
  *
  * Any actual state is a bitwise OR combination of #MHD_FD_STATE_RECV,
@@ -2620,7 +2606,7 @@ enum MHD_FIXED_ENUM_ MHD_FdState
    * The socket is not ready for receiving or sending and
    * does not have any exceptional state.
    * The state never set by MHD, except de-registration of the sockets
-   * in a MHD_SocketRegistrationUpdateCallback.
+   * in a #MHD_SocketRegistrationUpdateCallback.
    */
   MHD_FD_STATE_NONE = 0
   ,
@@ -2628,30 +2614,30 @@ enum MHD_FIXED_ENUM_ MHD_FdState
 
   /**
    * Indicates that socket should be watched for incoming data
-   * (when set by #MHD_get_watched_fds())
+   * (when set by #MHD_SocketRegistrationUpdateCallback)
    * / socket has incoming data ready to read (when used for
-   * #MHD_process_watched_fds())
+   * #MHD_daemon_event_update())
    */
   MHD_FD_STATE_RECV = 1 << 0
   ,
   /**
    * Indicates that socket should be watched for availability for sending
-   * (when set by #MHD_get_watched_fds())
+   * (when set by #MHD_SocketRegistrationUpdateCallback)
    * / socket has ability to send data (when used for
-   * #MHD_process_watched_fds())
+   * #MHD_daemon_event_update())
    */
   MHD_FD_STATE_SEND = 1 << 1
   ,
   /**
    * Indicates that socket should be watched for disconnect, out-of-band
    * data available or high priority data available (when set by
-   * #MHD_get_watched_fds())
+   * #MHD_SocketRegistrationUpdateCallback)
    * / socket has been disconnected, has out-of-band data available or
    * has high priority data available (when used for
-   * #MHD_process_watched_fds()). This status must not include "remote
+   * #MHD_daemon_event_update()). This status must not include "remote
    * peer shut down writing" status.
-   * Note: #MHD_get_watched_fds() always set it as exceptions must be
-   * always watched.
+   * Note: #MHD_SocketRegistrationUpdateCallback() always set it as exceptions
+   * must be always watched.
    */
   MHD_FD_STATE_EXCEPT = 1 << 2
   ,
@@ -2822,8 +2808,8 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2);
  * network events (if any) and then calls #MHD_SocketRegistrationUpdateCallback
  * callback for every socket that needs to be added/updated/removed.
  *
- * Available only for daemons stated in #MHD_TM_EXTERNAL_EVENT_LOOP_CB_LEVEL or
- * #MHD_TM_EXTERNAL_EVENT_LOOP_CB_EDGE modes.
+ * Available only for daemons stated in #MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL or
+ * #MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE modes.
  *
  * @param daemon the daemon handle
  * @param[out] next_max_wait the optional pointer to receive the next maximum
@@ -2890,12 +2876,10 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_WorkMode
   ,
   /**
    * Work mode with one or more worker threads.
-   * If #MHD_D_OPTION_UINT_NUM_WORKERS is not specified
-   * then daemon starts with single worker thread that process
-   * all connections.
-   * If #MHD_D_OPTION_UINT_NUM_WORKERS used with value more
-   * than one, then that number of worker threads and distributed
-   * processing of requests among the workers.
+   * If specified number of threads is one, then daemon starts with single
+   * worker thread that handles all connections.
+   * If number of threads is larger than one, then that number of worker
+   * threads, and handling of connection is distributed among the workers.
    * Use helper macro #MHD_D_OPTION_WM_WORKER_THREADS() to enable
    * this mode.
    */
@@ -3713,7 +3697,7 @@ struct MHD_ConnectionNotificationData
  *
  * @param cls client-defined closure
  * @param[in,out]  data the details about the event
- * @see #MHD_daemon_set_notify_connection()
+ * @see #MHD_D_OPTION_NOTIFY_CONNECTION()
  * @ingroup request
  */
 typedef void
@@ -3792,7 +3776,7 @@ struct MHD_StreamNotificationData
  *
  * @param cls client-defined closure
  * @param data the details about the event
- * @see #MHD_OPTION_NOTIFY_CONNECTION
+ * @see #MHD_D_OPTION_NOTIFY_STREAM()
  * @ingroup request
  */
 typedef void
@@ -6595,8 +6579,8 @@ MHD_RESTORE_WARN_VARIADIC_MACROS_
 /**
  * Run websever operation with possible blocking.
  *
- * Supported only in #MHD_TM_EXTERNAL_PERIODIC and
- * #MHD_TM_EXTERNAL_SINGLE_FD_WATCH modes.
+ * Supported only in #MHD_WM_EXTERNAL_PERIODIC and
+ * #MHD_WM_EXTERNAL_SINGLE_FD_WATCH modes.
  *
  * This function does the following: waits for any network event not more than
  * specified number of microseconds, processes all incoming and outgoing data,
@@ -6608,7 +6592,7 @@ MHD_RESTORE_WARN_VARIADIC_MACROS_
  * if application needs to run a single thread only and does not have any other
  * network activity.
  *
- * In #MHD_TM_EXTERNAL_PERIODIC mode if @a microsec parameter is not zero
+ * In #MHD_WM_EXTERNAL_PERIODIC mode if @a microsec parameter is not zero
  * this function determines the internal daemon timeout and use returned value
  * as maximum wait time if it less than value of @a microsec parameter.
  *
@@ -6621,13 +6605,13 @@ MHD_RESTORE_WARN_VARIADIC_MACROS_
  *                 time, especially in user callbacks).
  *                 If set to '0' then function does not block and processes
  *                 only already available data (if any). Zero value is
- *                 recommended when used in #MHD_TM_EXTERNAL_SINGLE_FD_WATCH
+ *                 recommended when used in #MHD_WM_EXTERNAL_SINGLE_FD_WATCH
  *                 and the watched FD has been triggered.
  *                 If set to #MHD_WAIT_INDEFINITELY then function waits
  *                 for events indefinitely (blocks until next network activity
  *                 or connection timeout).
  *                 Always used as zero value in
- *                 #MHD_TM_EXTERNAL_SINGLE_FD_WATCH mode.
+ *                 #MHD_WM_EXTERNAL_SINGLE_FD_WATCH mode.
  * @return #MHD_SC_OK on success, otherwise
  *         an error code
  * @ingroup event
@@ -6641,7 +6625,7 @@ MHD_FN_PAR_NONNULL_ (1);
  * Run webserver operations (without blocking unless in client
  * callbacks).
  *
- * Supported only in #MHD_TM_EXTERNAL_SINGLE_FD_WATCH mode.
+ * Supported only in #MHD_WM_EXTERNAL_SINGLE_FD_WATCH mode.
  *
  * This function does the following: processes all incoming and outgoing data,
  * processes new connections, processes any timed-out connection, and does
@@ -6649,7 +6633,7 @@ MHD_FN_PAR_NONNULL_ (1);
  * Once all connections are processed, function returns.
  *
  * The optional @a next_max_wait pointer returns the same value as
- * if #MHD_daemon_get_timeout() would called immediately.
+ * if #MHD_DAEMON_INFO_DYNAMIC_MAX_TIME_TO_WAIT would requested immediately.
  *
  * @param daemon the daemon to run
  * @return #MHD_SC_OK on success, otherwise
@@ -6666,10 +6650,6 @@ MHD_FN_PAR_NONNULL_ (1);
  * connections on the server socket).  Use this API in special cases,
  * for example if your HTTP server is behind NAT and needs to connect
  * out to the HTTP client, or if you are building a proxy.
- *
- * If you use this API in conjunction with a internal select or a
- * thread pool, you must set the option #MHD_USE_ITC to ensure that
- * the freshly added connection is immediately processed by MHD.
  *
  * The given client socket will be managed (and closed!) by MHD after
  * this call and must no longer be used directly by the application
@@ -6963,10 +6943,10 @@ enum MHD_FLAGS_ENUM_ MHD_ValueKind
    * fits within the available memory pool.
    *
    * @warning The encoding "multipart/form-data" has more fields than just
-   * "name" and "value". See #MHD_request_get_post_processor_values_cb() and
-   * #MHD_request_get_post_processor_values_list(). In particular it could be
-   * important to check used "Transfer-Encoding". While it is deprecated and
-   * not used by modern clients, hypothetically it can be used.
+   * "name" and "value". See #MHD_request_get_post_data_cb() and
+   * #MHD_request_get_post_data_list(). In particular it could be important
+   * to check used "Transfer-Encoding". While it is deprecated and not used
+   * by modern clients, formally it can be used.
    */
   MHD_VK_POSTDATA = (1 << 3)
   ,
@@ -7403,7 +7383,7 @@ MHD_action_suspend (struct MHD_Request *request,
 MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_;
 
 /**
- * Converts a @a response to an action.  If @a MHD_R_O_REUSABLE
+ * Converts a @a response to an action.  If #MHD_R_O_REUSABLE
  * is not set, the reference to the @a response is consumed
  * by the conversion. If #MHD_R_O_REUSABLE is #MHD_YES,
  * then the @a response can be used again to create actions in
@@ -7524,7 +7504,7 @@ struct MHD_RequestTerminationData
  * @param data the details about the event
  * @param request_context request context value, as originally
  *         returned by the #MHD_EarlyUriLogCallback
- * @see #MHD_option_request_completion()
+ * @see #MHD_R_OPTION_TERMINATION_CALLBACK()
  * @ingroup request
  */
 typedef void
@@ -7558,8 +7538,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_ResponseOption
   /**
    * Enable special processing of the response as body-less (with undefined
    * body size). No automatic "Content-Length" or "Transfer-Encoding: chunked"
-   * headers are added when the response is used with #MHD_HTTP_NOT_MODIFIED
-   * code or to respond to HEAD request.
+   * headers are added when the response is used with
+   * #MHD_HTTP_STATUS_NOT_MODIFIED code or to respond to HEAD request.
    * The flag also allow to set arbitrary "Content-Length" by
    * #MHD_response_add_header() function.
    * This flag value can be used only with responses created without body
@@ -7600,9 +7580,9 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_ResponseOption
    * This option can be used to communicate with some broken client, which does
    * not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
    * The parameter value must be placed to the
-   * @a v_http_1_0_compatible_stric member.
+   * @a v_http_1_0_compatible_strict member.
    */
-  MHD_R_O_HTTP_1_0_COMPATIBLE_STRIC = 80
+  MHD_R_O_HTTP_1_0_COMPATIBLE_STRICT = 80
   ,
   /**
    * Only respond in HTTP/1.0-mode.
@@ -7694,9 +7674,9 @@ union MHD_ResponseOptionValue
    */
   enum MHD_Bool v_conn_close;
   /**
-   * Value for #MHD_R_O_HTTP_1_0_COMPATIBLE_STRIC
+   * Value for #MHD_R_O_HTTP_1_0_COMPATIBLE_STRICT
    */
-  enum MHD_Bool v_http_1_0_compatible_stric;
+  enum MHD_Bool v_http_1_0_compatible_strict;
   /**
    * Value for #MHD_R_O_HTTP_1_0_SERVER
    */
@@ -7740,19 +7720,19 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_REUSABLE(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-  { \
-    .opt = (MHD_R_O_REUSABLE), \
-    .val.v_reusable = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_R_O_REUSABLE), \
+      .val.v_reusable = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Enable special processing of the response as body-less (with undefined body
  * size). No automatic "Content-Length" or "Transfer-Encoding: chunked" headers
- * are added when the response is used with #MHD_HTTP_NOT_MODIFIED code or to
- * respond to HEAD request.
+ * are added when the response is used with #MHD_HTTP_STATUS_NOT_MODIFIED code
+ * or to respond to HEAD request.
  * The flag also allow to set arbitrary "Content-Length" by
  * #MHD_response_add_header() function.
  * This flag value can be used only with responses created without body
@@ -7766,13 +7746,13 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_HEAD_ONLY_RESPONSE(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-  { \
-    .opt = (MHD_R_O_HEAD_ONLY_RESPONSE), \
-    .val.v_head_only_response = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_R_O_HEAD_ONLY_RESPONSE), \
+      .val.v_head_only_response = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Force use of chunked encoding even if the response content size is known.
@@ -7782,13 +7762,13 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_CHUNKED_ENC(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-  { \
-    .opt = (MHD_R_O_CHUNKED_ENC), \
-    .val.v_chunked_enc = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_R_O_CHUNKED_ENC), \
+      .val.v_chunked_enc = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Force close connection after sending the response, prevents keep-alive
@@ -7798,13 +7778,13 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_CONN_CLOSE(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-  { \
-    .opt = (MHD_R_O_CONN_CLOSE), \
-    .val.v_conn_close = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_R_O_CONN_CLOSE), \
+      .val.v_conn_close = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Only respond in conservative (dumb) HTTP/1.0-compatible mode.
@@ -7820,14 +7800,14 @@ struct MHD_ResponseOptionAndValue
  * @return the object of struct MHD_ResponseOptionAndValue with the requested
  *         values
  */
-#  define MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRIC(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+#  define MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRICT(bool_val) \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-  { \
-    .opt = (MHD_R_O_HTTP_1_0_COMPATIBLE_STRIC), \
-    .val.v_http_1_0_compatible_stric = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_R_O_HTTP_1_0_COMPATIBLE_STRICT), \
+      .val.v_http_1_0_compatible_strict = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Only respond in HTTP/1.0-mode.
@@ -7848,13 +7828,13 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_HTTP_1_0_SERVER(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-  { \
-    .opt = (MHD_R_O_HTTP_1_0_SERVER), \
-    .val.v_http_1_0_server = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_R_O_HTTP_1_0_SERVER), \
+      .val.v_http_1_0_server = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Disable sanity check preventing clients from manually setting the HTTP
@@ -7866,13 +7846,13 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_INSANITY_HEADER_CONTENT_LENGTH(bool_val) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-  { \
-    .opt = (MHD_R_O_INSANITY_HEADER_CONTENT_LENGTH), \
-    .val.v_insanity_header_content_length = (bool_val) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_R_O_INSANITY_HEADER_CONTENT_LENGTH), \
+      .val.v_insanity_header_content_length = (bool_val) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set a function to be called once MHD is finished with the request.
@@ -7883,14 +7863,14 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_TERMINATION_CALLBACK(term_cb,term_cb_cls) \
-  MHD_NOWARN_COMPOUND_LITERALS_ \
+    MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-  { \
-    .opt = (MHD_R_O_TERMINATION_CALLBACK), \
-    .val.v_termination_callback.v_term_cb = (term_cb), \
-    .val.v_termination_callback.v_term_cb_cls = (term_cb_cls) \
-  } \
-  MHD_RESTORE_WARN_COMPOUND_LITERALS_
+    { \
+      .opt = (MHD_R_O_TERMINATION_CALLBACK), \
+      .val.v_termination_callback.v_term_cb = (term_cb), \
+      .val.v_termination_callback.v_term_cb_cls = (term_cb_cls) \
+    } \
+    MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /* = MHD Response Option macros above are generated automatically = */
 
@@ -7933,8 +7913,8 @@ MHD_R_OPTION_REUSABLE (enum MHD_Bool bool_val)
 /**
  * Enable special processing of the response as body-less (with undefined body
  * size). No automatic "Content-Length" or "Transfer-Encoding: chunked" headers
- * are added when the response is used with #MHD_HTTP_NOT_MODIFIED code or to
- * respond to HEAD request.
+ * are added when the response is used with #MHD_HTTP_STATUS_NOT_MODIFIED code
+ * or to respond to HEAD request.
  * The flag also allow to set arbitrary "Content-Length" by
  * #MHD_response_add_header() function.
  * This flag value can be used only with responses created without body
@@ -8012,12 +7992,12 @@ MHD_R_OPTION_CONN_CLOSE (enum MHD_Bool bool_val)
  *         values
  */
 static MHD_INLINE struct MHD_ResponseOptionAndValue
-MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRIC (enum MHD_Bool bool_val)
+MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRICT (enum MHD_Bool bool_val)
 {
   struct MHD_ResponseOptionAndValue opt_val;
 
-  opt_val.opt = MHD_R_O_HTTP_1_0_COMPATIBLE_STRIC;
-  opt_val.val.v_http_1_0_compatible_stric = bool_val;
+  opt_val.opt = MHD_R_O_HTTP_1_0_COMPATIBLE_STRICT;
+  opt_val.val.v_http_1_0_compatible_strict = bool_val;
 
   return opt_val;
 }
@@ -8133,7 +8113,7 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  *         error code otherwise
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_response_options_set (struct MHD_Response *daemon,
+MHD_response_options_set (struct MHD_Response *response,
                           const struct MHD_ResponseOptionAndValue *options,
                           size_t options_max_num)
 MHD_FN_PAR_NONNULL_ALL_;
@@ -8392,8 +8372,8 @@ MHD_response_from_callback (enum MHD_HTTP_StatusCode sc,
  * header information.
  *
  * @param sc status code to use for the response;
- *           #MHD_HTTP_NO_CONTENT is only valid if @a size is 0;
- * @param size the size of the data portion of the response
+ *           #MHD_HTTP_STATUS_NO_CONTENT is only valid if @a size is 0;
+ * @param buffer_size the size of the data portion of the response
  * @param buffer the @a size bytes containing the response's data portion,
  *               needs to be valid while the response is used
  * @param free_cb the callback to free any allocated data, called
@@ -8429,7 +8409,7 @@ MHD_FN_PAR_IN_SIZE_ (3,2);
  * header information.
  *
  * @param sc status code to use for the response
- * @param size the size of the data portion of the response
+ * @param buffer_size the size of the data portion of the response
  * @param buffer the @a size bytes containing the response's data portion,
  *               an internal copy will be made, there is no need to
  *               keep this data after return from this function
@@ -8454,6 +8434,7 @@ MHD_FN_PAR_IN_SIZE_ (3,2);
  * of the response is not used, while all headers (including automatic
  * headers) are used.
  *
+ * @param sc status code to use for the response
  * @param iov_count the number of elements in @a iov
  * @param iov the array for response data buffers, an internal copy of this
  *        will be made
@@ -8483,10 +8464,10 @@ MHD_response_from_iovec (
  *        fd should be in 'blocking' mode
  * @param offset offset to start reading from in the file;
  *        reading file beyond 2 GiB may be not supported by OS or
- *        MHD build; see ::MHD_FEATURE_LARGE_FILE
+ *        MHD build; see #MHD_LIB_INFO_FIXED_HAS_LARGE_FILE
  * @param size size of the data portion of the response;
  *        sizes larger than 2 GiB may be not supported by OS or
- *        MHD build; see ::MHD_FEATURE_LARGE_FILE
+ *        MHD build; see #MHD_LIB_INFO_FIXED_HAS_LARGE_FILE
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
@@ -8508,6 +8489,7 @@ MHD_FN_PAR_FD_READ_ (2);
  * of the response is not used, while all headers (including automatic
  * headers) are used.
  *
+ * @param sc status code to use for the response
  * @param fd file descriptor referring to a read-end of a pipe with the
  *        data; will be closed when response is destroyed;
  *        fd should be in 'blocking' mode
@@ -8522,8 +8504,8 @@ MHD_response_from_pipe (enum MHD_HTTP_StatusCode sc,
 /**
  * Destroy response.
  * Should be called if response was created but not consumed.
- * Also must be called if response has #MHD_RESP_OPT_BOOL_REUSABLE
- * set. The actual destroy can be happen later, if the response
+ * Also must be called if response has #MHD_R_O_REUSABLE set.
+ * The actual destroy can be happen later, if the response
  * is still being used in any request.
  * The function does not block.
  *
@@ -8604,8 +8586,8 @@ MHD_action_continue (struct MHD_Request *req);
 /**
  * Function to process data uploaded by a client.
  *
- * @param cls argument given together with the function
- *        pointer when the handler was registered with MHD
+ * @param upload_cls the argument given together with the function
+ *                   pointer when the handler was registered with MHD
  * @param request the request is being processed
  * @param content_data_size the size of the @a content_data,
  *                          zero if all data have been processed
@@ -8743,6 +8725,7 @@ typedef const struct MHD_Action *
 /**
  * Create an action to parse the POSTed body from the client.
  *
+ * @param request the request to create action for
  * @param pp_buffer_size how much data should the post processor
  *                       buffer in memory. May allocate memory from
  *                       the shared "large" memory pool if necessary.
@@ -8757,12 +8740,13 @@ typedef const struct MHD_Action *
  *   the final action; values smaller than @a pp_stream_limit that
  *   fit into @a pp_buffer_size will be available via
  *   #MHD_request_get_values_cb(), #MHD_request_get_values_list() and
- *   #MHD_request_get_post_processor_values()
+ *   #MHD_request_get_post_data_cb(), #MHD_request_get_post_data_list()
+ * @param done_cb_cls closure for @a done_cb
  * @sa #MHD_D_OPTION_LARGE_POOL_SIZE()
  * @ingroup action
  */
 MHD_EXTERN_ struct MHD_Action *
-MHD_action_post_processor (struct MHD_Request *req,
+MHD_action_post_processor (struct MHD_Request *request,
                            size_t pp_buffer_size,
                            size_t pp_stream_limit,
                            enum MHD_HTTP_PostEncoding enc,
@@ -8818,7 +8802,7 @@ struct MHD_PostData
  * is queued. If the data is needed beyond this point, it should be copied.
  *
  * @param cls closure
- * @param nvt the name, the value and the kind of the element
+ * @param data the element of the post data
  * @return #MHD_YES to continue iterating,
  *         #MHD_NO to abort the iteration
  * @ingroup request
@@ -9313,10 +9297,10 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthMultiAlgo
  * @param realm the realm
  * @param[out] userhash_bin the output buffer for userhash as binary data;
  *                          if this function succeeds, then this buffer has
- *                          #MHD_digest_get_hash_size(algo) bytes of userhash
+ *                          #MHD_digest_get_hash_size() bytes of userhash
  *                          upon return
  * @param bin_buf_size the size of the @a userhash_bin buffer, must be
- *                     at least #MHD_digest_get_hash_size(algo) bytes long
+ *                     at least #MHD_digest_get_hash_size() bytes long
  * @return MHD_SC_OK on success,
  *         error code otherwise
  * @sa #MHD_digest_auth_calc_userhash_hex()
@@ -9359,10 +9343,10 @@ MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_OUT_SIZE_ (4,3);
  * @param username the username
  * @param realm the realm
  * @param hex_buf_size the size of the @a userhash_hex buffer, must be
- *                     at least #MHD_digest_get_hash_size(algo)*2+1 chars long
+ *                     at least #MHD_digest_get_hash_size()*2+1 chars long
  * @param[out] userhash_hex the output buffer for userhash as hex string;
  *                          if this function succeeds, then this buffer has
- *                          #MHD_digest_get_hash_size(algo)*2 chars long
+ *                          #MHD_digest_get_hash_size()*2 chars long
  *                          userhash zero-terminated string
  * @return MHD_SC_OK on success,
  *         error code otherwise
@@ -9565,7 +9549,7 @@ struct MHD_DigestAuthInfo
    * Used only if username type is userhash, always NULL otherwise.
    * When not NULL, this points to binary sequence @a userhash_bin_size bytes
    * long.
-   * The valid size should be #MHD_digest_get_hash_size(algo) bytes.
+   * The valid size should be #MHD_digest_get_hash_size() bytes.
    * @warning This is a binary data, no zero termination.
    * @warning To avoid buffer overruns, always check the size of the data before
    *          use, because @a userhash_bin can point even to zero-sized
@@ -9636,7 +9620,7 @@ struct MHD_DigestAuthUsernameInfo
   /**
    * The type of username used by client.
    * The 'invalid' and 'missing' types are not used in this structure,
-   * instead NULL is returned by #MHD_digest_auth_get_username3().
+   * instead NULL is returned for #MHD_REQUEST_INFO_DYNAMIC_DAUTH_USERNAME_INFO.
    */
   enum MHD_DigestAuthUsernameType uname_type;
 
@@ -9648,8 +9632,8 @@ struct MHD_DigestAuthUsernameInfo
    * extracted from the extended notation).
    * When userhash is used by the client, this member is NULL and
    * @a userhash_hex and @a userhash_bin are set.
-   * The buffer pointed by the @a username becomes invalid when the pointer
-   * to the structure is freed by #MHD_free().
+   * The buffer pointed by the @a username becomes invalid when a response
+   * for the requested is provided (or request is aborted).
    */
   struct MHD_String username;
 
@@ -9658,8 +9642,8 @@ struct MHD_DigestAuthUsernameInfo
    * Valid only if username type is userhash.
    * This is unqoted string without decoding of the hexadecimal
    * digits (as provided by the client).
-   * The buffer pointed by the @a userhash_hex becomes invalid when the pointer
-   * to the structure is freed by #MHD_free().
+   * The buffer pointed by the @a userhash_hex becomes invalid when a response
+   * for the requested is provided (or request is aborted).
    * @sa #MHD_digest_auth_calc_userhash_hex()
    */
   struct MHD_String userhash_hex;
@@ -9669,9 +9653,9 @@ struct MHD_DigestAuthUsernameInfo
    * Used only if username type is userhash, always NULL otherwise.
    * When not NULL, this points to binary sequence @a userhash_hex_len /2 bytes
    * long.
-   * The valid size should be #MHD_digest_get_hash_size(algo) bytes.
-   * The buffer pointed by the @a userhash_bin becomes invalid when the pointer
-   * to the structure is freed by #MHD_free().
+   * The valid size should be #MHD_digest_get_hash_size() bytes.
+   * The buffer pointed by the @a userhash_bin becomes invalid when a response
+   * for the requested is provided (or request is aborted).
    * @warning This is a binary data, no zero termination.
    * @warning To avoid buffer overruns, always check the size of the data before
    *          use, because @a userhash_bin can point even to zero-sized
@@ -9838,10 +9822,10 @@ MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_CSTR_ (4);
  * @param realm the realm
  * @param password the password
  * @param bin_buf_size the size of the @a userdigest_bin buffer, must be
- *                       at least #MHD_digest_get_hash_size(algo) bytes long
+ *                     at least #MHD_digest_get_hash_size() bytes long
  * @param[out] userdigest_bin the output buffer for userdigest;
  *                            if this function succeeds, then this buffer has
- *                            #MHD_digest_get_hash_size(algo) bytes of
+ *                            #MHD_digest_get_hash_size() bytes of
  *                            userdigest upon return
  * @return #MHD_SC_OK on success,
  *         error code otherwise.
@@ -10524,7 +10508,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoDynamic
 
 
 /**
- * The data provided by #MHD_lib_get_dynamic_info_sz().
+ * The data provided by #MHD_lib_get_info_dynamic_sz().
  * The resulting value may vary over time.
  */
 union MHD_LibInfoDynamicData
@@ -11495,7 +11479,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
   ,
   /**
    * Returns the client-specific pointer to a `void *` that
-   * is specific to this request. // TODO: check reference
+   * is specific to this request.
    * The result is placed in @a v_pvoid member.
    */
   MHD_REQUEST_INFO_DYNAMIC_CLIENT_CONTEXT = 31
