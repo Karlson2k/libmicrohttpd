@@ -163,14 +163,13 @@ d = MHD_daemon_create (&generate_page,
 if (MHD_SC_OK !=
     MHD_daemon_options_set (
       d,
-      MHD_DAEMON_OPTION_BIND_PORT (MHD_AF_DUAL, port),
-      MHD_DAEMON_OPTION_WORK_MODE (
-        MHD_WM_OPTION_WORKER_THREADS (NUMBER_OF_THREADS)),
-      MHD_DAEMON_OPTION_CONN_MEMORY_LIMIT (256*1024),
-      MHD_DAEMON_OPTION_PER_IP_LIMIT (64),
-      MHD_DAEMON_OPTION_DEFAULT_TIMEOUT (120),
-      MHD_DAEMON_OPTION_NOTIFY_CONNECTION (&response_completed_callback,
-                                           NULL)))
+      MHD_D_OPTION_BIND_PORT (MHD_AF_DUAL, port),
+      MHD_D_OPTION_WORKER_THREADS (NUMBER_OF_THREADS),
+      MHD_D_OPTION_CONN_MEMORY_LIMIT (256*1024),
+      MHD_D_OPTION_PER_IP_LIMIT (64),
+      MHD_D_OPTION_DEFAULT_TIMEOUT (120),
+      MHD_D_OPTION_NOTIFY_CONNECTION (&response_completed_callback,
+                                      NULL)))
   error();
 if (MHD_SC_OK !=
     MHD_daemon_start (d))
