@@ -29,7 +29,7 @@ Comment: Make the response object re-usable.
 Name: HEAD_ONLY_RESPONSE
 Value: 40
 Type: enum MHD_Bool
-Comment: Enable special processing of the response as body-less (with undefined body size). No automatic "Content-Length" or "Transfer-Encoding: chunked" headers are added when the response is used with #MHD_HTTP_NOT_MODIFIED code or to respond to HEAD request.
+Comment: Enable special processing of the response as body-less (with undefined body size). No automatic "Content-Length" or "Transfer-Encoding: chunked" headers are added when the response is used with #MHD_HTTP_STATUS_NOT_MODIFIED code or to respond to HEAD request.
 + The flag also allow to set arbitrary "Content-Length" by #MHD_response_add_header() function.
 + This flag value can be used only with responses created without body (zero-size body).
 + Responses with this flag enabled cannot be used in situations where reply body must be sent to the client.
@@ -50,7 +50,7 @@ Comment: Force close connection after sending the response, prevents keep-alive 
 
 # Compatibility settings
 
-Name: HTTP_1_0_COMPATIBLE_STRIC
+Name: HTTP_1_0_COMPATIBLE_STRICT
 Value: 80
 Type: enum MHD_Bool
 Comment: Only respond in conservative (dumb) HTTP/1.0-compatible mode.
