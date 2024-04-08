@@ -3816,9 +3816,9 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
    * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
    * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(),
    * #MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(),
-   * #MHD_DAEMON_OPTION_WORKER_THREADS() or
-   * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION() instead of direct use of this
-   * parameter.
+   * #MHD_DAEMON_OPTION_WM_WORKER_THREADS() or
+   * #MHD_DAEMON_OPTION_WM_THREAD_PER_CONNECTION() instead of direct use of
+   * this parameter.
    * The parameter value must be placed to the
    * @a v_work_mode member.
    */
@@ -4654,8 +4654,8 @@ struct MHD_DaemonOptionAndValue
  * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
  * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(),
  * #MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(),
- * #MHD_DAEMON_OPTION_WORKER_THREADS() or
- * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION() instead of direct use of this
+ * #MHD_DAEMON_OPTION_WM_WORKER_THREADS() or
+ * #MHD_DAEMON_OPTION_WM_THREAD_PER_CONNECTION() instead of direct use of this
  * parameter.
  * @param wmp the object created by one of the next functions/macros:
  *            #MHD_WM_OPTION_EXTERNAL_PERIODIC(),
@@ -5464,8 +5464,8 @@ MHD_NOWARN_UNUSED_FUNC_
  * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
  * #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(),
  * #MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(),
- * #MHD_DAEMON_OPTION_WORKER_THREADS() or
- * #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION() instead of direct use of this
+ * #MHD_DAEMON_OPTION_WM_WORKER_THREADS() or
+ * #MHD_DAEMON_OPTION_WM_THREAD_PER_CONNECTION() instead of direct use of this
  * parameter.
  * @param wmp the object created by one of the next functions/macros:
  *            #MHD_WM_OPTION_EXTERNAL_PERIODIC(),
