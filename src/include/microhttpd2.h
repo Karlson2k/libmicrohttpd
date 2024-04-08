@@ -19,15 +19,8 @@
 */
 
 /**
- * Just includes the NEW definitions for the NG-API.
- * Note that we do not indicate which of the OLD APIs
- * simply need to be kept vs. deprecated.
+ * Main goals for the libmicrohttpd 2.0 API:
  *
- *
- * The goal is to provide a basis for discussion!
- * Little of this is implemented yet.
- *
- * Main goals:
  * - simplify application callbacks by splitting header/upload/post
  *   functionality currently provided by calling the same
  *   MHD_AccessHandlerCallback 3+ times into separate callbacks.
@@ -36,20 +29,6 @@
  *   (via new struct MHD_Action construction)
  * - avoid repeated scans for URL matches via the new
  *   struct MHD_Action construction
- * - provide default logarithmic implementation of URL scan
- *   => reduce strcmp(url) from >= 3n operations to "log n"
- *      per request. Match on method + URL (longest-prefix /foo/bar/* /foo/ /foo /fo, etc).
- *      "GET /foo/$ARG/$BAR/match"
- *    struct MHD_Dispatcher;
- *
- *    struct MHD_Dispatcher *
- *    MHD_dispatcher_create (...);
- *    enum {no_url, no_method, found}
- *    MHD_dispatcher_dispatch (dispatcher, url, method, *result);
- *    MHD_RequestCallback
- *    MHD_dispatcher_get_callback (struct MHD_Dispatcher *dispatcher);
- *    struct MHD_dispatcher_destroy (*dispatcher);
- *
  * - better types, in particular avoid varargs for options
  * - make it harder to pass inconsistent options
  * - combine options and flags into more uniform API (at least
@@ -62,7 +41,12 @@
  *   MHD_request_get_info_fixed()
  * - avoid 'int' for MHD_YES/MHD_NO by introducing `enum MHD_Bool`
  * - improve terminology by eliminating confusion between
- *   'request' and 'connection'
+ *   'request' and 'connection'; add 'session' for HTTP2/3;
+ *   use clear separation between connection and request. Do not mix the kind
+ *   data in the callbacks.  Currently we are mixing things in
+ *   MHD_AccessHandlerCallback and MHD_RequestCompletedCallback. Instead of
+ *   pointers to struct MHD_Connection we should use pointers to (new) struct
+ *   MHD_Request.
  * - prepare API for having multiple TLS backends
  * - use more consistent prefixes for related functions
  *   by using MHD_subject_verb_object naming convention, also
@@ -76,8 +60,6 @@
  *   supported (include the descriptive string) by using an enum;
  * - simplify API for common-case of one-shot responses by
  *   eliminating need for destroy response in most cases;
- *
- * NEW-EG:
  * - avoid fixed types, like uint32_t. They may not exist on some
  *   platforms. Instead use uint_fast32_t.
  *   It is also better for future-proof.
@@ -85,99 +67,80 @@
  *   64 bits, but 'int' could be just 16 bits resulting of silently
  *   dropping enum values higher than 65535.
  *   => in general, more functions, fewer enums for setup
- *
  * - Avoid returning pointers to internal members. It is not thread-safe and
- * even in single thread the value could change over the time. Prefer pointers to
- * app-allocated memory with the size, like MHD_daemon_get_static_info(enum
- * MHD_enum_name info_type, void *buf, size_t buf_size).
+ *   even in single thread the value could change over the time. Prefer pointers to
+ *   app-allocated memory with the size, like MHD_daemon_get_static_info(enum
+ *   MHD_enum_name info_type, void *buf, size_t buf_size).
  *   => Except in cases where zero-copy matters.
- *
  * - Use separate app calls/functions for data the will not change for the
- * lifetime of the object and dynamic data. The only difference should be the
- * name. Like MHD_daemon_get_static_info(enum MHD_enum_name info_type, void *buf,
- * size_t buf_size) MHD_daemon_get_dynamic_info(enum MHD_enum_name info_type,
- * void *buf, size_t buf_size) Examples of static data: listen socket, number of
- * workers, daemon flags.  Examples of dynamic data: number of connections,
- * quiesce status.  It should give a clear idea whether the data could be changed
- * over the time (could be not obvious for some data) and thus may change the
- * approach how to use the data in app.  The same for: library, daemon,
- * connection, request. Not sure that dynamic data makes sense for the library.
- *
- * - Use clear separation between connection and request. Do not mix the kind
- * data in the callbacks.  Currently we are mixing things in
- * MHD_AccessHandlerCallback and MHD_RequestCompletedCallback. Instead of
- * pointers to struct MHD_Connection we should use pointers to (new) struct
- * MHD_Request.  Probably some other functions are mixing the things as well, to
- * be re-checked.
- *
- * - Define default response code in response object. There are a very little
- * chance that response body designed for 404 or 403 codes will be used with
- * 200 code. However, the responses body for 307 and 308 could be the same. So:
- * * add default response code in response object. Use zero for default 200.
- * * When app sending the response use zero for response's default code or
- *   use specific code to override response's default value.
- *
+ *   lifetime of the object and dynamic data. The only difference should be the
+ *   name. Like MHD_daemon_get_static_info(enum MHD_enum_name info_type, void *buf,
+ *   size_t buf_size) MHD_daemon_get_dynamic_info(enum MHD_enum_name info_type,
+ *   void *buf, size_t buf_size) Examples of static data: listen socket, number of
+ *   workers, daemon flags.  Examples of dynamic data: number of connections,
+ *   quiesce status.  It should give a clear idea whether the data could be changed
+ *   over the time (could be not obvious for some data) and thus may change the
+ *   approach how to use the data in app.  The same for: library, daemon,
+ *   connection, request. Not sure that dynamic data makes sense for the library.
+ * - Define response code in response object. There are a very little
+ *   chance that response body designed for 404 or 403 codes will be used with
+ *   200 code. However, the responses body for 307 and 308 could be the same. So:
+ *   Add default response code in response object.
  * - Make responses unmodifiable after first use. It is not thread-safe.
  *   MHD-generated headers (Date, Connection/Keep-Alive) are again
  *   part of the *request* and do not count as part of the "response" here.
- *
- * - Remove "footers" from responses. With unmodifiable responses everything should be "headers".
- *   Add footers to *requests* instead.
- *
+ * - Remove "footers" from responses. With unmodifiable responses everything should
+ *   be "headers". Add footers to *requests* instead.
  * - Add API for adding request-specific response headers and footers. To
- * simplify the things it should just copy the strings (to avoid dealing with
- * complicated deinit of possible dynamic strings).  After this change it should
- * be possible to simplify DAuth handling as response could be reused (currently
- * 403 responses are modified for each reply).
- *
+ *   simplify the things it should just copy the strings (to avoid dealing with
+ *   complicated deinit of possible dynamic strings).  After this change it should
+ *   be possible to simplify DAuth handling as response could be reused (currently
+ *   403 responses are modified for each reply).
  * - Control response behaviour mainly by response flags, not by additional
- * headers (like MHD_RF_FORCE_CLOSE instead of "Connection: close").
- * It is easier for both: app and MHD.
- *
+ *   headers (like MHD_RF_FORCE_CLOSE instead of "Connection: close").
+ *   It is easier&faster for both: app and MHD.
  * - Move response codes from MHD_HTTP_xxx namespace to MHD_HTTP_CODE_xxx
  *   namespace. It already may clash with other HTTP values.
- *
- * - plus other things that was discussed already, like avoiding extra calls
- *   for body-less requests. I assume it should be resolved with fundamental
- *   re-design of request/response cycle handling.
- *
- * - Internals: carefully check where locking is really required. Probably
- *   separate locks. Check out-of-thread value reading. Currently code assumes
- *   atomic reading of values used in other threads, which mostly true on x86,
- *   but not OK on other arches. Probably use read/write locking to minimize
- *   the threads interference.
- *
- * - figure out how to do portable variant of cork/uncork
- *
- * NEW-CG:
  * - Postprocessor is unusable night-mare when doing "stream processing"
  *   for tiny values where the application basically has to copy together
  *   the stream back into a single compact heap value, just making the
  *   parsing highly more complicated (see examples in Challenger)
- *
  * - non-stream processing variant for request bodies, give apps a
  *   way to request the full body in one buffer; give apps a way
  *   to request a 'large new allocation' for such buffers; give apps
  *   a way to specify a global quota for large allocations to ensure
  *   memory usage has a hard bound
  *
- * - remove request data from memory pool when response is queued
+ * - Internals: carefully check where locking is really required. Probably
+ *   separate locks. Check out-of-thread value reading. Currently code assumes
+ *   atomic reading of values used in other threads, which mostly true on x86,
+ *   but not OK on other arches. Probably use read/write locking to minimize
+ *   the threads interference.
+ * - Internals: figure out how to do portable variant of cork/uncork
+ * - Internals: remove request data from memory pool when response is queued
  *   (IF no callbacks and thus data cannot be used anymore, or IF
  *    application permits explictly per daemon) to get more space
  *   for building response;
- *
- * - Fix TCP FIN graceful closure issue for upgraded
+ * - Internals: Fix TCP FIN graceful closure issue for upgraded
  *   connections (API implications?)
  *
- * TODO:
- * - varargs in upgrade is still there and ugly (and not even used!)
- * - migrate event loop apis (get fdset, timeout, MHD_run(), etc.)
+ * - Enable providing default logarithmic implementation of URL scan
+ *   => reduce strcmp(url) from >= 3n operations to "log n"
+ *      per request. Match on method + URL (longest-prefix /foo/bar/* /foo/ /foo /fo, etc).
+ *      "GET /foo/$ARG/$BAR/match"
+ *    struct MHD_Dispatcher;
+ *
+ *    struct MHD_Dispatcher *
+ *    MHD_dispatcher_create (...);
+ *    enum {no_url, no_method, found}
+ *    MHD_dispatcher_dispatch (dispatcher, url, method, *result);
+ *    MHD_RequestCallback
+ *    MHD_dispatcher_get_callback (struct MHD_Dispatcher *dispatcher);
+ *    struct MHD_dispatcher_destroy (*dispatcher);
+ *
  */
 #ifndef MICROHTTPD2_H
 #define MICROHTTPD2_H
-
-// TODO: finish daemon options with recutils
-// TODO: finish response options with recutils
 
 
 #ifdef __cplusplus
@@ -235,7 +198,7 @@ typedef intptr_t ssize_t;
  * always be available and presence of 'bool' keyword may depend on
  * used C version.
  * It is always safe to cast 'MHD_Bool' variable to 'bool' and vice versa.
- * Note: it may be NOT safe to cast pointers 'MHD_Bool*' to 'bool*' and
+ * Note: it may be UNSAFE to cast pointers 'MHD_Bool*' to 'bool*' and
  *       vice versa.
  */
 enum MHD_Bool
@@ -294,10 +257,10 @@ struct MHD_StringNullable
 
 #ifndef __cplusplus
 #  define MHD_STATIC_CAST_(type,value) \
-   ((type)(value))
+  ((type) (value))
 #else
 #  define MHD_STATIC_CAST_(type,value) \
-   (static_cast<type>(value))
+  (static_cast<type>(value))
 #endif
 
 /**
@@ -307,7 +270,7 @@ struct MHD_StringNullable
 #ifdef UINT64_MAX
 #  define MHD_SIZE_UNKNOWN UINT64_MAX
 #else
-#  define MHD_SIZE_UNKNOWN MHD_STATIC_CAST_(uint_fast64_t,0xffffffffffffffffU)
+#  define MHD_SIZE_UNKNOWN MHD_STATIC_CAST_ (uint_fast64_t,0xffffffffffffffffU)
 #endif
 
 
@@ -318,7 +281,7 @@ struct MHD_StringNullable
 #  define MHD_WAIT_INDEFINITELY UINT64_MAX
 #else
 #  define MHD_WAIT_INDEFINITELY \
-  MHD_STATIC_CAST_(uint_fast64_t,0xffffffffffffffffU)
+  MHD_STATIC_CAST_ (uint_fast64_t,0xffffffffffffffffU)
 #endif
 
 
@@ -326,7 +289,7 @@ struct MHD_StringNullable
  * Constant used to indicate that options array is limited by zero-termination
  */
 #define MHD_OPTIONS_ARRAY_MAX_SIZE \
-  MHD_STATIC_CAST_(size_t,~ MHD_STATIC_CAST_(size_t, 0))
+  MHD_STATIC_CAST_ (size_t,~MHD_STATIC_CAST_(size_t, 0))
 
 
 #ifndef MHD_EXTERN_
@@ -365,31 +328,31 @@ typedef SOCKET MHD_socket;
 /* Stringify macro parameter literally */
 #define MHD_MACRO_STR__(x) #x
 /* Stringify macro parameter after expansion */
-#define MHD_MACRO_STR_(x) MHD_MACRO_STR__(x)
+#define MHD_MACRO_STR_(x) MHD_MACRO_STR__ (x)
 
 /* Concatenate macro parameters literally */
 #define MHD_MACRO_CAT__(a,b) a ## b
 /* Concatenate macro parameters after expansion */
-#define MHD_MACRO_CAT_(a,b) MHD_MACRO_CAT__(a,b)
+#define MHD_MACRO_CAT_(a,b) MHD_MACRO_CAT__ (a,b)
 
 #ifdef __GNUC__
 #  define MHD_GNUC_MINV(major,minor)    \
-     ((__GNUC__ > (major)) ||           \
-      ((__GNUC__ == (major)) && (__GNUC_MINOR__ >= (minor+0))))
+  ((__GNUC__ > (major)) ||           \
+   ((__GNUC__ == (major)) && (__GNUC_MINOR__ >= (minor + 0))))
 #else  /* ! __GNUC__ */
 #  define MHD_GNUC_MINV(major,minor) (0)
 #endif /* ! __GNUC__ */
 
 #ifdef __clang__
 #  define MHD_CLANG_MINV(major,minor)    \
-     ((__clang_major__ > (major)) ||           \
-      ((__clang_major__ == (major)) && (__clang_minor__ >= (minor+0))))
+  ((__clang_major__ > (major)) ||           \
+   ((__clang_major__ == (major)) && (__clang_minor__ >= (minor + 0))))
 #else  /* ! __GNUC__ */
 #  define MHD_CLANG_MINV(major,minor) (0)
 #endif /* ! __GNUC__ */
 
 #if defined(_MSC_FULL_VER)
-#  define MHD_MSC_MINV(version) (_MSC_VER >= (version+0))
+#  define MHD_MSC_MINV(version) (_MSC_VER >= (version + 0))
 #  if defined(_MSC_FULL_VER) \
   && (! defined(__STDC__) || defined(_MSC_EXTENSIONS))
 /* Visual C with extensions */
@@ -405,16 +368,16 @@ typedef SOCKET MHD_socket;
 #  define MHD_C_MINV(version)   (0)
 #endif
 
-#define MHD_C_MINV_99     MHD_C_MINV(199901)
+#define MHD_C_MINV_99     MHD_C_MINV (199901)
 
 
 #ifndef __cplusplus
 #  define MHD_CXX_MINV(version) (0)
 #elif ! defined(_MSC_FULL_VER) || ! defined(_MSVC_LANG)
-#  define MHD_CXX_MINV(version) ((__cplusplus+0) >= version)
+#  define MHD_CXX_MINV(version) ((__cplusplus + 0) >= version)
 #else
 #  define MHD_CXX_MINV(version) \
-  ((__cplusplus+0) >= version) || ((_MSVC_LANG+0) >= version)
+  ((__cplusplus + 0) >= version) || ((_MSVC_LANG + 0) >= version)
 #endif
 
 /* Use compound literals? */
@@ -602,10 +565,10 @@ typedef SOCKET MHD_socket;
 #    define MHD_WARN_PUSH_ _Pragma("GCC diagnostic push")
 #    define MHD_WARN_POP_  _Pragma("GCC diagnostic pop")
 #    define MHD_WARN_INGORE_(warn) \
-       _Pragma(MHD_MACRO_STR_(GCC diagnostic ignored MHD_MACRO_STR__(warn)))
+  _Pragma(MHD_MACRO_STR_(GCC diagnostic ignored MHD_MACRO_STR__(warn)))
 #    ifdef MHD_USE_VARARG_MACROS_EXT
 #      define MHD_NOWARN_VARIADIC_MACROS_ \
-         MHD_WARN_PUSH_ MHD_WARN_INGORE_(-Wvariadic-macros)
+  MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wvariadic - macros)
 #      define MHD_RESTORE_WARN_VARIADIC_MACROS_ MHD_WARN_POP_
 #    endif
 #    ifdef MHD_USE_COMPOUND_LITERALS_EXT
@@ -613,43 +576,43 @@ typedef SOCKET MHD_socket;
 #      define MHD_RESTORE_WARN_COMPOUND_LITERALS_       /* empty */
 #    endif
 #    define MHD_NOWARN_UNUSED_FUNC_ \
-        MHD_WARN_PUSH_  MHD_WARN_INGORE_(-Wunused-function)
+  MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wunused - function)
 #    define MHD_RESTORE_WARN_UNUSED_FUNC_ MHD_WARN_POP_
 #  elif MHD_CLANG_MINV (3,1)
 #    define MHD_WARN_PUSH_ _Pragma("clang diagnostic push")
 #    define MHD_WARN_POP_  _Pragma("clang diagnostic pop")
 #    define MHD_WARN_INGORE_(warn) \
-       _Pragma(MHD_MACRO_STR_(clang diagnostic ignored MHD_MACRO_STR__(warn)))
+  _Pragma(MHD_MACRO_STR_(clang diagnostic ignored MHD_MACRO_STR__(warn)))
 #    ifdef MHD_USE_VARARG_MACROS_EXT
 #      define MHD_NOWARN_VARIADIC_MACROS_ \
-         MHD_WARN_PUSH_ \
-         MHD_WARN_INGORE_(-Wvariadic-macros) \
-         MHD_WARN_INGORE_(-Wc++98-compat-pedantic)
+  MHD_WARN_PUSH_ \
+  MHD_WARN_INGORE_ (-Wvariadic - macros) \
+  MHD_WARN_INGORE_ (-Wc++ 98 - compat - pedantic)
 #      define MHD_RESTORE_WARN_VARIADIC_MACROS_ MHD_WARN_POP_
 #    else  /* ! MHD_USE_VARARG_MACROS_EXT */
 #      define MHD_NOWARN_VARIADIC_MACROS_ \
-         MHD_WARN_PUSH_  MHD_WARN_INGORE_(-Wc++98-compat-pedantic)
+  MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc++ 98 - compat - pedantic)
 #      define MHD_RESTORE_WARN_VARIADIC_MACROS_ MHD_WARN_POP_
 #    endif
 #    ifdef MHD_USE_CPP_INIT_LIST
 #      define MHD_NOWARN_CPP_INIT_LIST_ \
-         MHD_WARN_PUSH_  MHD_WARN_INGORE_(-Wc++98-compat)
+  MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc++ 98 - compat)
 #      define MHD_RESTORE_WARN_CPP_INIT_LIST_ MHD_WARN_POP_
 #    endif
 #    ifdef MHD_USE_COMPOUND_LITERALS_EXT
 #      define MHD_NOWARN_COMPOUND_LITERALS_ \
-         MHD_WARN_PUSH_  MHD_WARN_INGORE_(-Wc99-extensions)
+  MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc99 - extensions)
 #      define MHD_RESTORE_WARN_COMPOUND_LITERALS_ MHD_WARN_POP_
 #    endif
 #    define MHD_NOWARN_UNUSED_FUNC_ \
-        MHD_WARN_PUSH_  MHD_WARN_INGORE_(-Wunused-function)
+  MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wunused - function)
 #    define MHD_RESTORE_WARN_UNUSED_FUNC_ MHD_WARN_POP_
 #  elif MHD_MSC_MINV (1500)
 #    define MHD_WARN_PUSH_ __pragma(warning(push))
 #    define MHD_WARN_POP_  __pragma(warning(pop))
 #    define MHD_WARN_INGORE_(warn)      __pragma(warning(disable:warn))
 #    define MHD_NOWARN_UNUSED_FUNC_ \
-        MHD_WARN_PUSH_  MHD_WARN_INGORE_(4514)
+  MHD_WARN_PUSH_ MHD_WARN_INGORE_ (4514)
 #    define MHD_RESTORE_WARN_UNUSED_FUNC_ MHD_WARN_POP_
 #  endif
 #endif /*!  MHD_NO__PRAGMA */
@@ -705,31 +668,31 @@ typedef SOCKET MHD_socket;
  * To be used outside other macros */
 #    define MHD_DEPR_MACRO_(msg) _Pragma(MHD_MACRO_STR_(GCC warning msg))
 /* Print warning message when another macro which includes this macro is used */
-#    define MHD_DEPR_IN_MACRO_(msg) MHD_DEPR_MACRO_(msg)
+#    define MHD_DEPR_IN_MACRO_(msg) MHD_DEPR_MACRO_ (msg)
 #  elif (MHD_CLANG_MINV (3,3) && ! defined(__apple_build_version__)) \
   || MHD_CLANG_MINV (5,0)
 /* clang >= 3.3 (or XCode's clang >= 5.0) */
 /* Print warning when the macro is processed (if not excluded from processing).
  * To be used outside other macros */
-#    define MHD_DEPR_MACRO_(msg) _Pragma (MHD_MACRO_STR_(clang warning msg))
+#    define MHD_DEPR_MACRO_(msg) _Pragma(MHD_MACRO_STR_(clang warning msg))
 /* Print warning message when another macro which includes this macro is used */
 #    define MHD_DEPR_IN_MACRO_(msg) MHD_DEPR_MACRO_ (msg)
 #  elif MHD_MSC_MINV (1500)
 /* Print warning when the macro is processed (if not excluded from processing).
  * To be used outside other macros */
 #    define MHD_DEPR_MACRO_(msg) \
-      __pragma(message (__FILE__ "(" MHD_MACRO_STR_ ( __LINE__) ") : " \
-                        "warning MHDWARN01 : " msg))
+  __pragma(message (__FILE__ "(" MHD_MACRO_STR_ ( __LINE__) ") : " \
+  "warning MHDWARN01 : " msg))
 /* Print warning message when another macro which includes this macro is used */
 #    define MHD_DEPR_IN_MACRO_(msg) MHD_DEPR_MACRO_ (msg)
 #  elif MHD_GNUC_MINV (3,0) /* 3.0 <= GCC < 4.8 */
 /* Print warning when the macro is processed (if not excluded from processing).
  * To be used outside other macros */
-#    define MHD_DEPR_MACRO_(msg) _Pragma (MHD_MACRO_STR_(message msg))
+#    define MHD_DEPR_MACRO_(msg) _Pragma(MHD_MACRO_STR_(message msg))
 #  elif MHD_CLANG_MINV (2,9)
 /* Print warning when the macro is processed (if not excluded from processing).
  * To be used outside other macros */
-#    define MHD_DEPR_MACRO_(msg) _Pragma (MHD_MACRO_STR_(message msg))
+#    define MHD_DEPR_MACRO_(msg) _Pragma(MHD_MACRO_STR_(message msg))
 /* Print warning message when another macro which includes this macro is used */
 #    define MHD_DEPR_IN_MACRO_(msg) MHD_DEPR_MACRO_ (msg)
 /* #  elif defined(SOMEMACRO) */ /* add compiler-specific macros here if required */
@@ -1110,6 +1073,8 @@ typedef SOCKET MHD_socket;
  *
  * Manages the listen socket, event loop, optional threads and server
  * settings.
+ *
+ * @defgroup daemon HTTP server handling client connections
  */
 struct MHD_Daemon;
 
@@ -1120,7 +1085,7 @@ struct MHD_Daemon;
  * A single network (i.e. TCP) connection can be used for
  * a single (in HTTP/1.1) data stream.
  *
- * @ingroup connection
+ * @defgroup connection client connection with streams
  */
 struct MHD_Connection;
 
@@ -1132,7 +1097,7 @@ struct MHD_Connection;
  * A data stream may be used for multiple requests, which
  * in HTTP/1.1 must be processed sequentially.
  *
- * @ingroup connection
+ * @defgroup stream stream of HTTP requests
  */
 struct MHD_Stream;
 
@@ -1147,14 +1112,16 @@ struct MHD_Stream;
  * renamed to better reflect what this object truly represents to
  * the application using MHD.
  *
- * @ingroup request
+ * @defgroup request HTTP requests
  */
 struct MHD_Request;
 
 
 /**
- * Actions are returned by the application to drive the request
+ * @brief Actions are returned by the application to drive the request
  * handling of MHD.
+ *
+ * @defgroup action Request actions
  */
 struct MHD_Action;
 
@@ -1170,6 +1137,8 @@ struct MHD_Action;
  * Values from 40000-49999 indicate client errors.
  * Values from 50000-59999 indicate MHD server errors.
  * Values from 60000-65535 indicate application errors.
+ *
+ * @ingroup general
  */
 enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
 {
@@ -1755,28 +1724,33 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
  * @param code the MHD code to get description for
  * @return the pointer to the text description,
  *         NULL if MHD code in not known.
+ *
+ * @ingroup general
  */
 MHD_EXTERN_ const struct MHD_String *
 MHD_status_code_to_string (enum MHD_StatusCode code)
 MHD_FN_PURE_;
 
 /**
- * HTTP methods explicitly supported by MHD.  Note that for
- * non-canonical methods, MHD will return #MHD_METHOD_UNKNOWN
- * and you can use #MHD_REQUEST_INFORMATION_HTTP_METHOD to get
- * the original string.
- *
- * However, applications must check for "#MHD_METHOD_UNKNOWN" *or* any
- * enum-value above those in this list, as future versions of MHD may
- * add additional methods (as per IANA registry), thus even if the API
- * returns "unknown" today, it may return a method-specific header in
- * the future!
+ * @brief HTTP request methods
  *
  * @defgroup methods HTTP methods
- * HTTP methods (as strings).
- * See: http://www.iana.org/assignments/http-methods/http-methods.xml
- * Registry Version 2015-05-19
+ *
+ * See: https://www.iana.org/assignments/http-methods/http-methods.xml
+ * Registry export date: 2023-10-02
  * @{
+ */
+
+/**
+ * HTTP methods explicitly supported by MHD.  Note that for non-canonical
+ * methods, MHD will return #MHD_HTTP_METHOD_OTHER and you can use
+ * #MHD_REQUEST_INFO_FIXED_HTTP_METHOD to get the original string.
+ *
+ * However, applications must check for #MHD_HTTP_METHOD_OTHER *or* any enum-value
+ * above those in this list, as future versions of MHD may add additional
+ * methods (as per IANA registry), thus even if the API returns
+ * #MHD_HTTP_METHOD_OTHER today, it may return a method-specific header in the
+ * future!
  */
 enum MHD_FIXED_ENUM_ MHD_HTTP_Method
 {
@@ -1853,14 +1827,6 @@ enum MHD_FIXED_ENUM_ MHD_HTTP_Method
 MHD_EXTERN_ const struct MHD_String *
 MHD_http_method_to_string (enum MHD_HTTP_Method method)
 MHD_FN_PURE_;
-
-/**
- * @defgroup methods HTTP methods
- * HTTP methods (as strings).
- * See: https://www.iana.org/assignments/http-methods/http-methods.xml
- * Registry export date: 2023-10-02
- * @{
- */
 
 /* Main HTTP methods. */
 /* Safe.     Idempotent.     RFC9110, Section 9.3.1. */
@@ -1950,6 +1916,8 @@ MHD_FN_PURE_;
 
 
 /**
+ * @brief Possible encodings for HTML forms submitted as HTTP POST requests
+ *
  * @defgroup postenc HTTP POST encodings
  * See also: https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-2
  * @{
@@ -1991,9 +1959,11 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_HTTP_PostEncoding
 
 
 /**
- * @defgroup headers HTTP headers
- * The standard headers found in HTTP requests and responses.
+ * @brief Standard headers found in HTTP requests and responses.
+ *
  * See: https://www.iana.org/assignments/http-fields/http-fields.xhtml
+ *
+ * @defgroup headers HTTP headers
  * Registry export date: 2023-10-02
  * @{
  */
@@ -2564,7 +2534,7 @@ typedef const struct MHD_Action *
 MHD_EXTERN_ struct MHD_Daemon *
 MHD_daemon_create (MHD_RequestCallback req_cb,
                    void *req_cb_cls)
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_IN_(1);
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_IN_ (1);
 
 
 /**
@@ -2579,6 +2549,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_IN_(1);
  *        options on this daemon after this call!
  * @return #MHD_SC_OK on success
  * @ingroup event
+ * @ingroup daemon
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_daemon_start (struct MHD_Daemon *daemon)
@@ -2591,7 +2562,7 @@ MHD_FN_PAR_NONNULL_ (1);
  * connections.  Note that the caller is responsible for closing the
  * returned socket; however, if MHD is run using threads (anything but
  * external select mode), it must not be closed until AFTER
- * #MHD_stop_daemon has been called (as it is theoretically possible
+ * #MHD_daemon_stop() has been called (as it is theoretically possible
  * that an existing thread is still using it).
  *
  * @param[in,out] daemon the daemon to stop accepting new connections for
@@ -2599,6 +2570,7 @@ MHD_FN_PAR_NONNULL_ (1);
  *         the daemon was already not listening anymore, or
  *         was never started, or has no listen socket.
  * @ingroup specialized
+ * @ingroup daemon
  */
 MHD_EXTERN_ MHD_socket
 MHD_daemon_quiesce (struct MHD_Daemon *daemon)
@@ -2610,6 +2582,7 @@ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_INOUT_ (1);
  *
  * @param[in] daemon daemon to stop
  * @ingroup event
+ * @ingroup daemon
  */
 MHD_EXTERN_ void
 MHD_daemon_destroy (struct MHD_Daemon *daemon)
@@ -2636,7 +2609,7 @@ enum MHD_FIXED_ENUM_ MHD_FdState
    * The socket is not ready for receiving or sending and
    * does not have any exceptional state.
    * The state never set by MHD, except de-registration of the sockets
-   * for #MHD_SocketRegistrationUpdateCallback().
+   * in a MHD_SocketRegistrationUpdateCallback.
    */
   MHD_FD_STATE_NONE = 0
   ,
@@ -2649,49 +2622,49 @@ enum MHD_FIXED_ENUM_ MHD_FdState
    * #MHD_process_watched_fds())
    */
   MHD_FD_STATE_RECV = 1 << 0,
-  /**
-   * Indicates that socket should be watched for availability for sending
-   * (when set by #MHD_get_watched_fds())
-   * / socket has ability to send data (when used for
-   * #MHD_process_watched_fds())
-   */
-  MHD_FD_STATE_SEND = 1 << 1,
-  /**
-   * Indicates that socket should be watched for disconnect, out-of-band
-   * data available or high priority data available (when set by
-   * #MHD_get_watched_fds())
-   * / socket has been disconnected, has out-of-band data available or
-   * has high priority data available (when used for
-   * #MHD_process_watched_fds()). This status must not include "remote
-   * peer shut down writing" status.
-   * Note: #MHD_get_watched_fds() always set it as exceptions must be
-   * always watched.
-   */
-  MHD_FD_STATE_EXCEPT = 1 << 2,
+    /**
+     * Indicates that socket should be watched for availability for sending
+     * (when set by #MHD_get_watched_fds())
+     * / socket has ability to send data (when used for
+     * #MHD_process_watched_fds())
+     */
+    MHD_FD_STATE_SEND = 1 << 1,
+    /**
+     * Indicates that socket should be watched for disconnect, out-of-band
+     * data available or high priority data available (when set by
+     * #MHD_get_watched_fds())
+     * / socket has been disconnected, has out-of-band data available or
+     * has high priority data available (when used for
+     * #MHD_process_watched_fds()). This status must not include "remote
+     * peer shut down writing" status.
+     * Note: #MHD_get_watched_fds() always set it as exceptions must be
+     * always watched.
+     */
+    MHD_FD_STATE_EXCEPT = 1 << 2,
 
-  /* The rest of the list is a bit-wise combination of three main
-   * states. Application may use three main states directly as
-   * a bit-mask instead of using of following values
-   */
+    /* The rest of the list is a bit-wise combination of three main
+     * states. Application may use three main states directly as
+     * a bit-mask instead of using of following values
+     */
 
-  /**
-   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_SEND states.
-   */
-  MHD_FD_STATE_RECV_SEND = MHD_FD_STATE_RECV | MHD_FD_STATE_SEND,
-  /**
-   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
-   */
-  MHD_FD_STATE_RECV_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
-  /**
-   * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
-   */
-  MHD_FD_STATE_SEND_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
-  /**
-   * Combination of #MHD_FD_STATE_RECV, #MHD_FD_STATE_SEND and
-   * #MHD_FD_STATE_EXCEPT states.
-   */
-  MHD_FD_STATE_RECV_SEND_EXCEPT = \
-    MHD_FD_STATE_RECV | MHD_FD_STATE_SEND | MHD_FD_STATE_EXCEPT
+    /**
+     * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_SEND states.
+     */
+    MHD_FD_STATE_RECV_SEND = MHD_FD_STATE_RECV | MHD_FD_STATE_SEND,
+    /**
+     * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
+     */
+    MHD_FD_STATE_RECV_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
+    /**
+     * Combination of #MHD_FD_STATE_RECV and #MHD_FD_STATE_EXCEPT states.
+     */
+    MHD_FD_STATE_SEND_EXCEPT = MHD_FD_STATE_RECV | MHD_FD_STATE_EXCEPT,
+    /**
+     * Combination of #MHD_FD_STATE_RECV, #MHD_FD_STATE_SEND and
+     * #MHD_FD_STATE_EXCEPT states.
+     */
+    MHD_FD_STATE_RECV_SEND_EXCEPT = \
+      MHD_FD_STATE_RECV | MHD_FD_STATE_SEND | MHD_FD_STATE_EXCEPT
 };
 
 /**
@@ -2819,6 +2792,8 @@ typedef MHD_APP_SOCKET_CNTX_TYPE *
  * @param ecb_cntx the context handle provided
  *                 for #MHD_SocketRegistrationUpdateCallback
  * @param fd_current_state the current state of the socket
+ * @ingroup daemon
+ * @ingroup event
  */
 MHD_EXTERN_ void
 MHD_daemon_event_update (
@@ -2842,12 +2817,14 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2);
  * @param[out] next_max_wait the optional pointer to receive the next maximum
  *                           wait time in microseconds to be used for sockets
  *                           polling function, can be NULL
- * @return MHD_SC_OK on success,
+ * @return #MHD_SC_OK on success,
  *         error code otherwise
+ * @ingroup daemon
+ * @ingroup event
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_deamon_process_reg_events(struct MHD_Daemon *daemon,
-                              uint_fast64_t *next_max_wait)
+MHD_deamon_process_reg_events (struct MHD_Daemon *daemon,
+                               uint_fast64_t *next_max_wait)
 MHD_FN_PAR_NONNULL_ (1);
 
 /* ********************* daemon options ************** */
@@ -2950,7 +2927,7 @@ union MHD_WorkModeParam
 };
 
 /**
- * Parameter for #MHD_DAEMON_OPTION_WORK_MODE().
+ * Parameter for #MHD_D_O_WORK_MODE().
  * Not recommended to be used directly, better use macro/functions to create it:
  * #MHD_WM_OPTION_EXTERNAL_PERIODIC(),
  * #MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL(),
@@ -2974,7 +2951,7 @@ struct MHD_WorkModeWithParam
 
 #if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_DESIG_NEST_INIT)
 /**
- * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * Create parameter for #MHD_D_O_WORK_MODE() for work mode with
  * no internal threads.
  * The application periodically calls #MHD_daemon_process_blocking(), where
  * MHD internally checks all sockets automatically.
@@ -2983,14 +2960,14 @@ struct MHD_WorkModeWithParam
  */
 #  define MHD_WM_OPTION_EXTERNAL_PERIODIC()     \
   MHD_NOWARN_COMPOUND_LITERALS_                 \
-  (const struct MHD_WorkModeWithParam)          \
+    (const struct MHD_WorkModeWithParam)          \
   {                                             \
     .mode = (MHD_WM_EXTERNAL_PERIODIC)          \
   }                                             \
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
- * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * Create parameter for #MHD_D_O_WORK_MODE() for work mode with
  * an external event loop with level triggers.
  * Application uses #MHD_SocketRegistrationUpdateCallback, level triggered
  * sockets polling (like select() or poll()) and #MHD_daemon_event_update().
@@ -3000,7 +2977,7 @@ struct MHD_WorkModeWithParam
  */
 #  define MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL(cb_val,cb_cls_val) \
   MHD_NOWARN_COMPOUND_LITERALS_                                         \
-  (const struct MHD_WorkModeWithParam)                                  \
+    (const struct MHD_WorkModeWithParam)                                  \
   {                                                                     \
     .mode = (MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL),                      \
     .params.v_external_event_loop_cb.reg_cb = (cb_val),                 \
@@ -3009,7 +2986,7 @@ struct MHD_WorkModeWithParam
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
- * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * Create parameter for #MHD_D_O_WORK_MODE() for work mode with
  * an external event loop with edge triggers.
  * Application uses #MHD_SocketRegistrationUpdateCallback, edge triggered
  * sockets polling (like epoll with EPOLLET) and #MHD_daemon_event_update().
@@ -3019,7 +2996,7 @@ struct MHD_WorkModeWithParam
  */
 #  define MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE(cb_val,cb_cls_val)  \
   MHD_NOWARN_COMPOUND_LITERALS_                                         \
-  (const struct MHD_WorkModeWithParam)                                  \
+    (const struct MHD_WorkModeWithParam)                                  \
   {                                                                     \
     .mode = (MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE),                       \
     .params.v_external_event_loop_cb.reg_cb = (cb_val),                 \
@@ -3028,7 +3005,7 @@ struct MHD_WorkModeWithParam
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
- * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * Create parameter for #MHD_D_O_WORK_MODE() for work mode with
  * no internal threads and aggregate watch FD.
  * Application uses #MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD to get single FD
  * that gets triggered by any MHD event.
@@ -3041,14 +3018,14 @@ struct MHD_WorkModeWithParam
  */
 #  define MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH()      \
   MHD_NOWARN_COMPOUND_LITERALS_                         \
-  (const struct MHD_WorkModeWithParam)                  \
+    (const struct MHD_WorkModeWithParam)                  \
   {                                                     \
     .mode = (MHD_WM_EXTERNAL_SINGLE_FD_WATCH)           \
   }                                                     \
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
- * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * Create parameter for #MHD_D_O_WORK_MODE() for work mode with
  * one or more worker threads.
  * If number of threads is one, then daemon starts with single worker thread
  * that handles all connections.
@@ -3059,7 +3036,7 @@ struct MHD_WorkModeWithParam
  */
 #  define MHD_WM_OPTION_WORKER_THREADS(num_workers)     \
   MHD_NOWARN_COMPOUND_LITERALS_                         \
-  (const struct MHD_WorkModeWithParam)                  \
+    (const struct MHD_WorkModeWithParam)                  \
   {                                                     \
     .mode = (MHD_WM_WORKER_THREADS),                    \
     .params.num_worker_threads = (num_workers)          \
@@ -3067,7 +3044,7 @@ struct MHD_WorkModeWithParam
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
- * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * Create parameter for #MHD_D_O_WORK_MODE() for work mode with
  * one internal thread for listening and additional threads per every
  * connection.  Use this if handling requests is CPU-intensive or blocking,
  * your application is thread-safe and you have plenty of memory (per
@@ -3076,7 +3053,7 @@ struct MHD_WorkModeWithParam
  */
 #  define MHD_WM_OPTION_THREAD_PER_CONNECTION() \
   MHD_NOWARN_COMPOUND_LITERALS_                 \
-  (const struct MHD_WorkModeWithParam)          \
+    (const struct MHD_WorkModeWithParam)          \
   {                                             \
     .mode = (MHD_WM_THREAD_PER_CONNECTION)      \
   }                                             \
@@ -3086,7 +3063,7 @@ struct MHD_WorkModeWithParam
 MHD_NOWARN_UNUSED_FUNC_
 
 /**
- * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * Create parameter for #MHD_D_O_WORK_MODE() for work mode with
  * no internal threads.
  * The application periodically calls #MHD_daemon_process_blocking(), where
  * MHD internally checks all sockets automatically.
@@ -3105,7 +3082,7 @@ MHD_WM_OPTION_EXTERNAL_PERIODIC (void)
 
 
 /**
- * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * Create parameter for #MHD_D_O_WORK_MODE() for work mode with
  * an external event loop with level triggers.
  * Application uses #MHD_SocketRegistrationUpdateCallback, level triggered
  * sockets polling (like select() or poll()) and #MHD_daemon_event_update().
@@ -3129,7 +3106,7 @@ MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL (
 
 
 /**
- * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * Create parameter for #MHD_D_O_WORK_MODE() for work mode with
  * an external event loop with edge triggers.
  * Application uses #MHD_SocketRegistrationUpdateCallback, edge triggered
  * sockets polling (like epoll with EPOLLET) and #MHD_daemon_event_update().
@@ -3153,7 +3130,7 @@ MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE (
 
 
 /**
- * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * Create parameter for #MHD_D_O_WORK_MODE() for work mode with
  * no internal threads and aggregate watch FD.
  * Application uses #MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD to get single FD
  * that gets triggered by any MHD event.
@@ -3176,7 +3153,7 @@ MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH (void)
 
 
 /**
- * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * Create parameter for #MHD_D_O_WORK_MODE() for work mode with
  * one or more worker threads.
  * If number of threads is one, then daemon starts with single worker thread
  * that handles all connections.
@@ -3198,7 +3175,7 @@ MHD_WM_OPTION_WORKER_THREADS (unsigned int num_workers)
 
 
 /**
- * Create parameter for #MHD_DAEMON_OPTION_WORK_MODE() for work mode with
+ * Create parameter for #MHD_D_O_WORK_MODE() for work mode with
  * one internal thread for listening and additional threads per every
  * connection.  Use this if handling requests is CPU-intensive or blocking,
  * your application is thread-safe and you have plenty of memory (per
@@ -3521,34 +3498,34 @@ enum MHD_FIXED_FLAGS_ENUM_APP_SET_ MHD_DaemonOptionValueDAuthBindNonce
    */
   MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_REALM = 1 << 0,
 
-  /**
-   * Generated nonces are valid only for the same URI (excluding parameters
-   * after '?' in URI) and request method (GET, POST etc).
-   * Not recommended unless "protection space" is limited to a single URI as
-   * RFC 7616 allows clients to re-use server-generated nonces for any URI
-   * in the same "protection space" which by default consists of all server
-   * URIs.
-   * Before #MHD_VERSION 0x00097701 this was default (and only supported)
-   * nonce bind type.
-   */
-  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_URI = 1 << 1,
+    /**
+     * Generated nonces are valid only for the same URI (excluding parameters
+     * after '?' in URI) and request method (GET, POST etc).
+     * Not recommended unless "protection space" is limited to a single URI as
+     * RFC 7616 allows clients to re-use server-generated nonces for any URI
+     * in the same "protection space" which by default consists of all server
+     * URIs.
+     * Before #MHD_VERSION 0x00097701 this was default (and only supported)
+     * nonce bind type.
+     */
+    MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_URI = 1 << 1,
 
-  /**
-   * Generated nonces are valid only for the same URI including URI parameters
-   * and request method (GET, POST etc).
-   * This value implies #MHD_DAUTH_BIND_NONCE_URI.
-   * Not recommended for that same reasons as #MHD_DAUTH_BIND_NONCE_URI.
-   */
-  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_URI_PARAMS = 1 << 2,
+    /**
+     * Generated nonces are valid only for the same URI including URI parameters
+     * and request method (GET, POST etc).
+     * This value implies #MHD_DAUTH_BIND_NONCE_URI.
+     * Not recommended for that same reasons as #MHD_DAUTH_BIND_NONCE_URI.
+     */
+    MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_URI_PARAMS = 1 << 2,
 
-  /**
-   * Generated nonces are valid only for the single client's IP.
-   * While it looks like security improvement, in practice the same client may
-   * jump from one IP to another (mobile or Wi-Fi handover, DHCP re-assignment,
-   * Multi-NAT, different proxy chain and other reasons), while IP address
-   * spoofing could be used relatively easily.
-   */
-  MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_CLIENT_IP = 1 << 3
+    /**
+     * Generated nonces are valid only for the single client's IP.
+     * While it looks like security improvement, in practice the same client may
+     * jump from one IP to another (mobile or Wi-Fi handover, DHCP re-assignment,
+     * Multi-NAT, different proxy chain and other reasons), while IP address
+     * spoofing could be used relatively easily.
+     */
+    MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_CLIENT_IP = 1 << 3
 };
 
 
@@ -3610,9 +3587,9 @@ typedef void
  * Allow or deny a client to connect.
  *
  * @param cls closure
- * @param addrlen length of @a addr
+ * @param addr_len length of @a addr
  * @param addr address information from the client
- * @see #MHD_daemon_accept_policy()
+ * @see #MHD_D_OPTION_ACCEPT_POLICY()
  * @return #MHD_YES if connection is allowed, #MHD_NO if not
  */
 typedef enum MHD_Bool
@@ -3631,7 +3608,7 @@ typedef enum MHD_Bool
  * @param cls client-defined closure
  * @param[in,out] request the HTTP request handle (headers are
  *         not yet available)
- * @param uri the full URI from the HTTP request including parameters (after '?')
+ * @param full_uri the full URI from the HTTP request including parameters (after '?')
  */
 typedef void
 (MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_NONNULL_ (3)
@@ -4327,15 +4304,17 @@ struct MHD_DaemonOptionValueTlsCert
    * The private key loaded into memory (not a filename)
    */
   const char *v_mem_key;
+
   /**
    * The certificate loaded into memory (not a filename)
    */
   const char *v_mem_cert;
+
   /**
    * The option passphrase phrase to decrypt the private key,
    * could be NULL is private does not need a password
    */
-  const char *v_mem_cert;
+  const char *v_mem_pass;
 };
 
 /**
@@ -4668,13 +4647,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_WORK_MODE(wmp) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_WORK_MODE), \
-      .val.v_work_mode = (wmp) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_WORK_MODE), \
+    .val.v_work_mode = (wmp) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Select a sockets watch system call used for internal polling.
@@ -4683,13 +4662,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_POLL_SYSCALL(els) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_POLL_SYSCALL), \
-      .val.v_poll_syscall = (els) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_POLL_SYSCALL), \
+    .val.v_poll_syscall = (els) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set a callback to use for logging
@@ -4700,14 +4679,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_LOG_CALLBACK(log_cb,lob_cb_cls) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_LOG_CALLBACK), \
-      .val.v_log_callback.v_log_cb = (log_cb), \
-      .val.v_log_callback.v_lob_cb_cls = (lob_cb_cls) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_LOG_CALLBACK), \
+    .val.v_log_callback.v_log_cb = (log_cb), \
+    .val.v_log_callback.v_lob_cb_cls = (lob_cb_cls) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Bind to the given TCP port and address family.
@@ -4727,14 +4706,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_BIND_PORT(af,port) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_BIND_PORT), \
-      .val.v_bind_port.v_af = (af), \
-      .val.v_bind_port.v_port = (port) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_BIND_PORT), \
+    .val.v_bind_port.v_af = (af), \
+    .val.v_bind_port.v_port = (port) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Bind to the given socket address.
@@ -4752,14 +4731,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_BIND_SA(sa_len,sa) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_BIND_SA), \
-      .val.v_bind_sa.v_sa_len = (sa_len), \
-      .val.v_bind_sa.v_sa = (sa) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_BIND_SA), \
+    .val.v_bind_sa.v_sa_len = (sa_len), \
+    .val.v_bind_sa.v_sa = (sa) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Accept connections from the given socket.  Socket
@@ -4777,13 +4756,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_LISTEN_SOCKET(listen_fd) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_LISTEN_SOCKET), \
-      .val.v_listen_socket = (listen_fd) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_LISTEN_SOCKET), \
+    .val.v_listen_socket = (listen_fd) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Select mode of reusing address:port listen address.
@@ -4795,13 +4774,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_LISTEN_ADDR_REUSE(reuse_type) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_LISTEN_ADDR_REUSE), \
-      .val.v_listen_addr_reuse = (reuse_type) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_LISTEN_ADDR_REUSE), \
+    .val.v_listen_addr_reuse = (reuse_type) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Configure TCP_FASTOPEN option, including setting a
@@ -4822,14 +4801,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_TCP_FASTOPEN(option,queue_length) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_TCP_FASTOPEN), \
-      .val.v_tcp_fastopen.v_option = (option), \
-      .val.v_tcp_fastopen.v_queue_length = (queue_length) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_TCP_FASTOPEN), \
+    .val.v_tcp_fastopen.v_option = (option), \
+    .val.v_tcp_fastopen.v_queue_length = (queue_length) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Use the given backlog for the listen() call.
@@ -4841,13 +4820,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_LISTEN_BACKLOG(backlog_size) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_LISTEN_BACKLOG), \
-      .val.v_listen_backlog = (backlog_size) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_LISTEN_BACKLOG), \
+    .val.v_listen_backlog = (backlog_size) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Inform that SIGPIPE is suppressed or handled by application.
@@ -4860,13 +4839,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_SIGPIPE_SUPPRESSED(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_SIGPIPE_SUPPRESSED), \
-      .val.v_sigpipe_suppressed = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_SIGPIPE_SUPPRESSED), \
+    .val.v_sigpipe_suppressed = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Enable TLS (HTTPS) and select TLS backend
@@ -4876,13 +4855,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_TLS(backend) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_TLS), \
-      .val.v_tls = (backend) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_TLS), \
+    .val.v_tls = (backend) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Provide TLS key and certificate data in-memory.
@@ -4895,15 +4874,15 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_TLS_KEY_CERT(mem_key,mem_cert,mem_cert) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_TLS_KEY_CERT), \
-      .val.v_tls_key_cert.v_mem_key = (mem_key), \
-      .val.v_tls_key_cert.v_mem_cert = (mem_cert), \
-      .val.v_tls_key_cert.v_mem_cert = (mem_cert) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_TLS_KEY_CERT), \
+    .val.v_tls_key_cert.v_mem_key = (mem_key), \
+    .val.v_tls_key_cert.v_mem_cert = (mem_cert), \
+    .val.v_tls_key_cert.v_mem_cert = (mem_cert) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Provide the certificate of the certificate authority (CA) to be used by the
@@ -4914,13 +4893,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_TLS_CLIENT_CA(mem_client_ca) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_TLS_CLIENT_CA), \
-      .val.v_tls_client_ca = (mem_client_ca) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_TLS_CLIENT_CA), \
+    .val.v_tls_client_ca = (mem_client_ca) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Configure PSK to use for the TLS key exchange.
@@ -4930,14 +4909,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_TLS_PSK_CALLBACK(psk_cb,psk_cb_cls) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_TLS_PSK_CALLBACK), \
-      .val.v_tls_psk_callback.v_psk_cb = (psk_cb), \
-      .val.v_tls_psk_callback.v_psk_cb_cls = (psk_cb_cls) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_TLS_PSK_CALLBACK), \
+    .val.v_tls_psk_callback.v_psk_cb = (psk_cb), \
+    .val.v_tls_psk_callback.v_psk_cb_cls = (psk_cb_cls) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Control ALPN for TLS connection.
@@ -4948,13 +4927,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_NO_ALPN(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_NO_ALPN), \
-      .val.v_no_alpn = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_NO_ALPN), \
+    .val.v_no_alpn = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Specify inactivity timeout for connection.
@@ -4966,13 +4945,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DEFAULT_TIMEOUT(timeout) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_DEFAULT_TIMEOUT), \
-      .val.v_default_timeout = (timeout) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_DEFAULT_TIMEOUT), \
+    .val.v_default_timeout = (timeout) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Maximum number of (concurrent) network connections served by daemon
@@ -4981,13 +4960,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_GLOBAL_CONNECTION_LIMIT(glob_limit) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_GLOBAL_CONNECTION_LIMIT), \
-      .val.v_global_connection_limit = (glob_limit) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_GLOBAL_CONNECTION_LIMIT), \
+    .val.v_global_connection_limit = (glob_limit) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Limit on the number of (concurrent) network connections made to the server
@@ -5000,13 +4979,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_PER_IP_LIMIT(per_ip_limit) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_PER_IP_LIMIT), \
-      .val.v_per_ip_limit = (per_ip_limit) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_PER_IP_LIMIT), \
+    .val.v_per_ip_limit = (per_ip_limit) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set a policy callback that accepts/rejects connections based on the client's
@@ -5018,14 +4997,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_ACCEPT_POLICY(apc,apc_cls) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_ACCEPT_POLICY), \
-      .val.v_accept_policy.v_apc = (apc), \
-      .val.v_accept_policy.v_apc_cls = (apc_cls) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_ACCEPT_POLICY), \
+    .val.v_accept_policy.v_apc = (apc), \
+    .val.v_accept_policy.v_apc_cls = (apc_cls) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set how strictly MHD will enforce the HTTP protocol.
@@ -5035,14 +5014,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_PROTOCOL_STRICT_LEVEL(sl,how) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_PROTOCOL_STRICT_LEVEL), \
-      .val.v_protocol_strict_level.v_sl = (sl), \
-      .val.v_protocol_strict_level.v_how = (how) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_PROTOCOL_STRICT_LEVEL), \
+    .val.v_protocol_strict_level.v_sl = (sl), \
+    .val.v_protocol_strict_level.v_how = (how) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set a callback to be called first for every request when the request line is
@@ -5057,14 +5036,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_EARLY_URI_LOGGER(cb,cls) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_EARLY_URI_LOGGER), \
-      .val.v_early_uri_logger.v_cb = (cb), \
-      .val.v_early_uri_logger.v_cls = (cls) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_EARLY_URI_LOGGER), \
+    .val.v_early_uri_logger.v_cb = (cb), \
+    .val.v_early_uri_logger.v_cls = (cls) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Disable converting plus ('+') character to space in GET parameters (URI part
@@ -5078,13 +5057,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_DISABLE_URI_QUERY_PLUS_AS_SPACE), \
-      .val.v_disable_uri_query_plus_as_space = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_DISABLE_URI_QUERY_PLUS_AS_SPACE), \
+    .val.v_disable_uri_query_plus_as_space = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Suppresse use of "Date:" header.
@@ -5095,13 +5074,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_SUPPRESS_DATE_HEADER(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_SUPPRESS_DATE_HEADER), \
-      .val.v_suppress_date_header = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_SUPPRESS_DATE_HEADER), \
+    .val.v_suppress_date_header = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Use SHOUTcast for responses.
@@ -5112,13 +5091,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_ENABLE_SHOUTCAST(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_ENABLE_SHOUTCAST), \
-      .val.v_enable_shoutcast = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_ENABLE_SHOUTCAST), \
+    .val.v_enable_shoutcast = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Maximum memory size per connection.
@@ -5133,13 +5112,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_CONN_MEMORY_LIMIT(sizet_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_CONN_MEMORY_LIMIT), \
-      .val.v_conn_memory_limit = (sizet_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_CONN_MEMORY_LIMIT), \
+    .val.v_conn_memory_limit = (sizet_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * The size of the shared memory pool for accamulated upload processing.
@@ -5153,13 +5132,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_LARGE_POOL_SIZE(sizet_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_LARGE_POOL_SIZE), \
-      .val.v_large_pool_size = (sizet_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_LARGE_POOL_SIZE), \
+    .val.v_large_pool_size = (sizet_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Desired size of the stack for the threads started by MHD.
@@ -5171,13 +5150,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_STACK_SIZE(sizet_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_STACK_SIZE), \
-      .val.v_stack_size = (sizet_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_STACK_SIZE), \
+    .val.v_stack_size = (sizet_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * The the maximum FD value.
@@ -5196,13 +5175,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_FD_NUMBER_LIMIT(max_fd) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_FD_NUMBER_LIMIT), \
-      .val.v_fd_number_limit = (max_fd) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_FD_NUMBER_LIMIT), \
+    .val.v_fd_number_limit = (max_fd) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Enable `turbo`.
@@ -5215,13 +5194,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_TURBO(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_TURBO), \
-      .val.v_turbo = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_TURBO), \
+    .val.v_turbo = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Disable some internal thread safety.
@@ -5239,13 +5218,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DISABLE_THREAD_SAFETY(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_DISABLE_THREAD_SAFETY), \
-      .val.v_disable_thread_safety = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_DISABLE_THREAD_SAFETY), \
+    .val.v_disable_thread_safety = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * You need to set this option if you want to disable use of HTTP "Upgrade".
@@ -5259,13 +5238,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DISALLOW_UPGRADE(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_DISALLOW_UPGRADE), \
-      .val.v_disallow_upgrade = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_DISALLOW_UPGRADE), \
+    .val.v_disallow_upgrade = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Disable #MHD_action_suspend() functionality.
@@ -5278,13 +5257,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DISALLOW_SUSPEND_RESUME(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_DISALLOW_SUSPEND_RESUME), \
-      .val.v_disallow_suspend_resume = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_DISALLOW_SUSPEND_RESUME), \
+    .val.v_disallow_suspend_resume = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set a callback to be called for pre-start finalisation.
@@ -5298,14 +5277,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DAEMON_READY_CALLBACK(cb,cb_cls) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_DAEMON_READY_CALLBACK), \
-      .val.v_daemon_ready_callback.v_cb = (cb), \
-      .val.v_daemon_ready_callback.v_cb_cls = (cb_cls) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_DAEMON_READY_CALLBACK), \
+    .val.v_daemon_ready_callback.v_cb = (cb), \
+    .val.v_daemon_ready_callback.v_cb_cls = (cb_cls) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set a function that should be called whenever a connection is started or
@@ -5316,14 +5295,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_NOTIFY_CONNECTION(ncc,cls) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_NOTIFY_CONNECTION), \
-      .val.v_notify_connection.v_ncc = (ncc), \
-      .val.v_notify_connection.v_cls = (cls) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_NOTIFY_CONNECTION), \
+    .val.v_notify_connection.v_ncc = (ncc), \
+    .val.v_notify_connection.v_cls = (cls) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Register a function that should be called whenever a stream is started or
@@ -5335,14 +5314,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_NOTIFY_STREAM(nsc,cls) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_NOTIFY_STREAM), \
-      .val.v_notify_stream.v_nsc = (nsc), \
-      .val.v_notify_stream.v_cls = (cls) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_NOTIFY_STREAM), \
+    .val.v_notify_stream.v_nsc = (nsc), \
+    .val.v_notify_stream.v_cls = (cls) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set strong random data to be used by MHD.
@@ -5358,14 +5337,14 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_RANDOM_ENTROPY(buf_size,buf) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_RANDOM_ENTROPY), \
-      .val.v_random_entropy.v_buf_size = (buf_size), \
-      .val.v_random_entropy.v_buf = (buf) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_RANDOM_ENTROPY), \
+    .val.v_random_entropy.v_buf_size = (buf_size), \
+    .val.v_random_entropy.v_buf = (buf) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Specify the size of the internal hash map array that tracks generated digest
@@ -5378,13 +5357,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DAUTH_MAP_SIZE(size) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_DAUTH_MAP_SIZE), \
-      .val.v_dauth_map_size = (size) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_DAUTH_MAP_SIZE), \
+    .val.v_dauth_map_size = (size) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Control the scope of validity of MHD-generated nonces.
@@ -5399,13 +5378,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DAUTH_NONCE_BIND_TYPE(bind_type) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_DAUTH_NONCE_BIND_TYPE), \
-      .val.v_dauth_nonce_bind_type = (bind_type) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_DAUTH_NONCE_BIND_TYPE), \
+    .val.v_dauth_nonce_bind_type = (bind_type) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Default nonce timeout value (in seconds) used for Digest Auth.
@@ -5416,13 +5395,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DAUTH_DEF_NONCE_TIMEOUT(timeout) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_DAUTH_DEF_NONCE_TIMEOUT), \
-      .val.v_dauth_def_nonce_timeout = (timeout) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_DAUTH_DEF_NONCE_TIMEOUT), \
+    .val.v_dauth_def_nonce_timeout = (timeout) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Default maximum nc (nonce count) value used for Digest Auth.
@@ -5433,13 +5412,13 @@ struct MHD_DaemonOptionAndValue
  *         values
  */
 #  define MHD_D_OPTION_DAUTH_DEF_MAX_NC(max_nc) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_DAUTH_DEF_MAX_NC), \
-      .val.v_dauth_def_max_nc = (max_nc) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_DAUTH_DEF_MAX_NC), \
+    .val.v_dauth_def_max_nc = (max_nc) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /* = MHD Daemon Option macros above are generated automatically = */
 
@@ -5448,12 +5427,12 @@ struct MHD_DaemonOptionAndValue
  * @return the terminating object of struct MHD_DaemonOptionAndValue
  */
 #  define MHD_D_OPTION_TERMINATE() \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_DaemonOptionAndValue) \
-    { \
-      .opt = (MHD_D_O_END) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_D_O_END) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 #else  /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 MHD_NOWARN_UNUSED_FUNC_
@@ -6428,7 +6407,7 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  * @return the object of struct MHD_DaemonOptionAndValue with requested values
  */
 #define MHD_D_OPTION_WM_EXTERNAL_PERIODIC() \
-  MHD_D_OPTION_WORK_MODE(MHD_WM_OPTION_EXTERNAL_PERIODIC())
+  MHD_D_OPTION_WORK_MODE (MHD_WM_OPTION_EXTERNAL_PERIODIC ())
 
 /**
 * Create parameter for #MHD_daemon_options_set() for work mode with
@@ -6440,8 +6419,8 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
 * @return the object of struct MHD_DaemonOptionAndValue with requested values
 */
 #define MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(cb_val,cb_cls_val) \
-  MHD_D_OPTION_WORK_MODE( \
-    MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL((cb_val),(cb_cls_val)))
+  MHD_D_OPTION_WORK_MODE ( \
+    MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL ((cb_val),(cb_cls_val)))
 
 /**
  * Create parameter for #MHD_daemon_options_set() for work mode with
@@ -6453,8 +6432,8 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  * @return the object of struct MHD_DaemonOptionAndValue with requested values
  */
 #define MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(cb_val,cb_cls_val) \
-  MHD_D_OPTION_WORK_MODE( \
-    MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE((cb_val),(cb_cls_val)))
+  MHD_D_OPTION_WORK_MODE ( \
+    MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE ((cb_val),(cb_cls_val)))
 
 /**
  * Create parameter for #MHD_daemon_options_set() for work mode with
@@ -6469,7 +6448,7 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  * @return the object of struct MHD_DaemonOptionAndValue with requested values
  */
 #define MHD_D_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH() \
-  MHD_D_OPTION_WORK_MODE(MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH())
+  MHD_D_OPTION_WORK_MODE (MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH ())
 
 /**
  * Create parameter for #MHD_daemon_options_set() for work mode with
@@ -6482,7 +6461,7 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  * @return the object of struct MHD_DaemonOptionAndValue with requested values
  */
 #define MHD_D_OPTION_WM_WORKER_THREADS(num_workers) \
-  MHD_D_OPTION_WORK_MODE(MHD_WM_OPTION_WORKER_THREADS(num_workers))
+  MHD_D_OPTION_WORK_MODE (MHD_WM_OPTION_WORKER_THREADS (num_workers))
 
 /**
  * Create parameter for #MHD_daemon_options_set() for work mode with
@@ -6493,7 +6472,7 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  * @return the object of struct MHD_DaemonOptionAndValue with requested values
  */
 #define MHD_D_OPTION_WM_THREAD_PER_CONNECTION() \
-  MHD_D_OPTION_WORK_MODE(MHD_WM_OPTION_THREAD_PER_CONNECTION())
+  MHD_D_OPTION_WORK_MODE (MHD_WM_OPTION_THREAD_PER_CONNECTION ())
 
 /**
  * Set the requested options for the daemon.
@@ -6511,9 +6490,9 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  *         error code otherwise
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_options_set(struct MHD_Daemon *daemon,
-                       const struct MHD_DaemonOptionAndValue *options,
-                       size_t options_max_num)
+MHD_daemon_options_set (struct MHD_Daemon *daemon,
+                        const struct MHD_DaemonOptionAndValue *options,
+                        size_t options_max_num)
 MHD_FN_PAR_NONNULL_ALL_;
 
 
@@ -6521,12 +6500,12 @@ MHD_FN_PAR_NONNULL_ALL_;
  * Set the requested single option for the daemon.
  *
  * @param daemon the daemon to set the option
- * @param[in] options the pointer to the option
+ * @param[in] option_ptr the pointer to the option
  * @return ::MHD_SC_OK on success,
  *         error code otherwise
  */
 #define MHD_daemon_option_set(daemon, option_ptr) \
-  MHD_daemon_options_set(daemon, options_ptr, 1)
+  MHD_daemon_options_set (daemon, options_ptr, 1)
 
 
 #ifdef MHD_USE_VARARG_MACROS
@@ -6551,10 +6530,10 @@ MHD_NOWARN_VARIADIC_MACROS_
  */
 #    define MHD_DAEMON_OPTIONS_SET(daemon,...)      \
   MHD_NOWARN_COMPOUND_LITERALS_                     \
-  MHD_daemon_options_set(daemon,                    \
-    ((const struct MHD_DaemonOptionAndValue[])      \
-       {__VA_ARGS__, MHD_D_OPTION_TERMINATE()}),       \
-    MHD_OPTIONS_ARRAY_MAX_SIZE)                     \
+  MHD_daemon_options_set (daemon,                    \
+                          ((const struct MHD_DaemonOptionAndValue[])      \
+                           {__VA_ARGS__, MHD_D_OPTION_TERMINATE ()}),       \
+                          MHD_OPTIONS_ARRAY_MAX_SIZE)                     \
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
 #  elif defined(MHD_USE_CPP_INIT_LIST)
 } /* extern "C" */
@@ -6579,10 +6558,10 @@ extern "C"
  */
 #    define MHD_DAEMON_OPTIONS_SET(daemon,...)      \
   MHD_NOWARN_CPP_INIT_LIST_                         \
-  MHD_daemon_options_set(daemon,                      \
-    (std::vector<struct MHD_DaemonOptionAndValue>   \
-     {__VA_ARGS__,MHD_D_OPTION_TERMINATE()}).data(),   \
-    MHD_OPTIONS_ARRAY_MAX_SIZE)                     \
+  MHD_daemon_options_set (daemon,                      \
+                          (std::vector<struct MHD_DaemonOptionAndValue>   \
+                           {__VA_ARGS__,MHD_D_OPTION_TERMINATE ()}).data (),   \
+                          MHD_OPTIONS_ARRAY_MAX_SIZE)                     \
   MHD_RESTORE_WARN_CPP_INIT_LIST_
 #  endif
 MHD_RESTORE_WARN_VARIADIC_MACROS_
@@ -6599,7 +6578,7 @@ MHD_RESTORE_WARN_VARIADIC_MACROS_
  * #MHD_TM_EXTERNAL_SINGLE_FD_WATCH modes.
  *
  * This function does the following: waits for any network event not more than
- * specified number of milliseconds, processes all incoming and outgoing data,
+ * specified number of microseconds, processes all incoming and outgoing data,
  * processes new connections, processes any timed-out connection, and does
  * other things required to run webserver.
  * Once all connections are processed, function returns.
@@ -6608,12 +6587,12 @@ MHD_RESTORE_WARN_VARIADIC_MACROS_
  * if application needs to run a single thread only and does not have any other
  * network activity.
  *
- * In #MHD_TM_EXTERNAL_PERIODIC mode if @a millisec parameter is not zero
- * this function calls #MHD_get_timeout()internally and use returned value
- * as maximum wait time if it less than value of @a millisec parameter.
+ * In #MHD_TM_EXTERNAL_PERIODIC mode if @a microsec parameter is not zero
+ * this function determines the internal daemon timeout and use returned value
+ * as maximum wait time if it less than value of @a microsec parameter.
  *
  * @param daemon the daemon to run
- * @param millisec the maximum time in milliseconds to wait for network and
+ * @param microsec the maximum time in microseconds to wait for network and
  *                 other events. Note: there is no guarantee that function
  *                 blocks for the specified amount of time. The real processing
  *                 time can be shorter (if some data or connection timeout
@@ -6657,7 +6636,7 @@ MHD_FN_PAR_NONNULL_ (1);
  * @ingroup event
  */
 #define MHD_daemon_process_nonblocking(daemon) \
-    MHD_daemon_process_blocking(daemon, 0)
+  MHD_daemon_process_blocking (daemon, 0)
 
 
 /**
@@ -6725,6 +6704,11 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_ConnectionOption
   MHD_C_O_SENTINEL = 65535
 };
 
+
+/**
+ * Dummy-struct for space allocation.
+ * Do not use in application logic.
+ */
 struct MHD_ReservedStruct
 {
   uint_fast64_t reserved1;
@@ -6773,7 +6757,7 @@ struct MHD_ConnectionOptionAndValue
  */
 #  define MHD_C_OPTION_TIMEOUT(timeout)         \
   MHD_NOWARN_COMPOUND_LITERALS_                 \
-  (const struct MHD_ConnectionOptionAndValue)   \
+    (const struct MHD_ConnectionOptionAndValue)   \
   {                                             \
     .opt = (option),                            \
     .val.v_timeout = (timeout)                  \
@@ -6786,7 +6770,7 @@ struct MHD_ConnectionOptionAndValue
  */
 #  define MHD_C_OPTION_TERMINATE()              \
   MHD_NOWARN_COMPOUND_LITERALS_                 \
-  (const struct MHD_ConnectionOptionAndValue)   \
+    (const struct MHD_ConnectionOptionAndValue)   \
   {                                             \
     .opt = (MHD_C_O_END)                        \
   }                                             \
@@ -6849,7 +6833,7 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  *         error code otherwise
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_connection_options_set(
+MHD_connection_options_set (
   struct MHD_Connection *connection,
   const struct MHD_ConnectionOptionAndValue *options,
   size_t options_max_num)
@@ -6860,12 +6844,12 @@ MHD_FN_PAR_NONNULL_ALL_;
  * Set the requested single option for the connection.
  *
  * @param connection the connection to set the options
- * @param[in] options the pointer to the option
+ * @param[in] option_ptr the pointer to the option
  * @return ::MHD_SC_OK on success,
  *         error code otherwise
  */
 #define MHD_connection_option_set(connection, option_ptr) \
-  MHD_connection_options_set(connection, options_ptr, 1)
+  MHD_connection_options_set (connection, options_ptr, 1)
 
 
 #ifdef MHD_USE_VARARG_MACROS
@@ -6889,10 +6873,10 @@ MHD_NOWARN_VARIADIC_MACROS_
  */
 #    define MHD_CONNECTION_OPTIONS_SET(connection,...)  \
   MHD_NOWARN_COMPOUND_LITERALS_                         \
-  MHD_connection_options_set(daemon,                    \
-    ((const struct MHD_ConnectionOptionAndValue[])      \
-       {__VA_ARGS__, MHD_C_OPTION_TERMINATE()}),        \
-    MHD_OPTIONS_ARRAY_MAX_SIZE)                         \
+  MHD_connection_options_set (daemon,                    \
+                              ((const struct MHD_ConnectionOptionAndValue[])      \
+                               {__VA_ARGS__, MHD_C_OPTION_TERMINATE ()}),        \
+                              MHD_OPTIONS_ARRAY_MAX_SIZE)                         \
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
 #  elif defined(MHD_USE_CPP_INIT_LIST)
 } /* extern "C" */
@@ -6916,10 +6900,10 @@ extern "C"
  */
 #    define MHD_CONNECTION_OPTIONS_SET(daemon,...)      \
   MHD_NOWARN_CPP_INIT_LIST_                             \
-  MHD_daemon_options_set(daemon,                        \
-    (std::vector<struct MHD_ConnectionOptionAndValue>   \
-     {__VA_ARGS__,MHD_C_OPTION_TERMINATE()}).data(),    \
-    MHD_OPTIONS_ARRAY_MAX_SIZE)                         \
+  MHD_daemon_options_set (daemon,                        \
+                          (std::vector<struct MHD_ConnectionOptionAndValue>   \
+                           {__VA_ARGS__,MHD_C_OPTION_TERMINATE ()}).data (),    \
+                          MHD_OPTIONS_ARRAY_MAX_SIZE)                         \
   MHD_RESTORE_WARN_CPP_INIT_LIST_
 #  endif
 MHD_RESTORE_WARN_VARIADIC_MACROS_
@@ -7101,12 +7085,13 @@ MHD_request_get_value (struct MHD_Request *request,
                        enum MHD_ValueKind kind,
                        const char *key)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_(3);
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
 
 
 /**
- * @defgroup httpcode HTTP response codes.
- * These are the status codes defined for HTTP responses.
+ * @brief Status codes defined for HTTP responses.
+ *
+ * @defgroup httpcode HTTP response codes
  * @{
  */
 /* See http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml */
@@ -7262,9 +7247,8 @@ MHD_FN_PURE_;
 
 
 /**
+ * @brief HTTP protocol versions
  * @defgroup versions HTTP versions
- * These strings should be used to match against the first line of the
- * HTTP header.
  * @{
  */
 enum MHD_FIXED_ENUM_MHD_SET_ MHD_HTTP_ProtocolVersion
@@ -7323,11 +7307,11 @@ MHD_FN_PURE_;
  * function on a request that was not previously suspended will
  * result in undefined behaviour.
  *
- * If you are using this function in ``external'' select mode, you must
- * make sure to run #MHD_run() afterwards (before again calling
- * #MHD_get_fdset(), as otherwise the change may not be reflected in
- * the set returned by #MHD_get_fdset() and you may end up with a
- * request that is stuck until the next network activity.
+ * If you are using this function in ``external'' select mode, you must make
+ * sure to run #MHD_daemon_process_blocking() afterwards (as otherwise the
+ * change may not be reflected in the set returned to your
+ * MHD_SocketRegistrationUpdateCallback and you may end up with a request
+ * that is stuck until the next network activity.
  *
  * @param[in,out] request the request to resume
  */
@@ -7376,7 +7360,7 @@ struct MHD_Response;
  * request is suspended, MHD may not detect disconnects by the
  * client.
  *
- * @param[in,out] requests the request for which the action is generated
+ * @param[in,out] request the request for which the action is generated
  * @param suspend_microsec the maximum duration of suspension after which
  *                         the request is automatically resumed, if not
  *                         resumed earlier by #MHD_request_resume(),
@@ -7386,6 +7370,7 @@ struct MHD_Response;
  *                         if set to #MHD_WAIT_INDEFINITELY (or higher)
  *                         the request is not resumed automatically
  * @return action to cause a request to be suspended.
+ * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_Action *
 MHD_action_suspend (struct MHD_Request *request,
@@ -7393,14 +7378,15 @@ MHD_action_suspend (struct MHD_Request *request,
 MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_;
 
 /**
- * Converts a @a response to an action.  If @a MHD_RESP_OPT_BOOL_REUSABLE
+ * Converts a @a response to an action.  If @a MHD_R_O_REUSABLE
  * is not set, the reference to the @a response is consumed
- * by the conversion. If #MHD_RESP_OPT_BOOL_REUSABLE is #MHD_YES,
+ * by the conversion. If #MHD_R_O_REUSABLE is #MHD_YES,
  * then the @a response can be used again to create actions in
  * the future.
  * However, the @a response is frozen by this step and
  * must no longer be modified (i.e. by setting headers).
  *
+ * @param request the request to create the action for
  * @param[in] response the response to convert,
  *                     if NULL then this function is equivalent to
  *                     #MHD_action_close_connection() call
@@ -7409,6 +7395,7 @@ MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_;
  *         NULL if failed (no memory), when failed
  *         the response object is consumed and need not
  *         to be "destroyed".
+ * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_Action *
 MHD_action_from_response (struct MHD_Request *request,
@@ -7728,13 +7715,13 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_REUSABLE(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-    { \
-      .opt = (MHD_R_O_REUSABLE), \
-      .val.v_reusable = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_R_O_REUSABLE), \
+    .val.v_reusable = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Enable special processing of the response as body-less (with undefined body
@@ -7754,13 +7741,13 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_HEAD_ONLY_RESPONSE(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-    { \
-      .opt = (MHD_R_O_HEAD_ONLY_RESPONSE), \
-      .val.v_head_only_response = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_R_O_HEAD_ONLY_RESPONSE), \
+    .val.v_head_only_response = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Force use of chunked encoding even if the response content size is known.
@@ -7770,13 +7757,13 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_CHUNKED_ENC(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-    { \
-      .opt = (MHD_R_O_CHUNKED_ENC), \
-      .val.v_chunked_enc = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_R_O_CHUNKED_ENC), \
+    .val.v_chunked_enc = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Force close connection after sending the response, prevents keep-alive
@@ -7786,13 +7773,13 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_CONN_CLOSE(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-    { \
-      .opt = (MHD_R_O_CONN_CLOSE), \
-      .val.v_conn_close = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_R_O_CONN_CLOSE), \
+    .val.v_conn_close = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Only respond in conservative (dumb) HTTP/1.0-compatible mode.
@@ -7809,13 +7796,13 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRIC(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-    { \
-      .opt = (MHD_R_O_HTTP_1_0_COMPATIBLE_STRIC), \
-      .val.v_http_1_0_compatible_stric = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_R_O_HTTP_1_0_COMPATIBLE_STRIC), \
+    .val.v_http_1_0_compatible_stric = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Only respond in HTTP/1.0-mode.
@@ -7836,13 +7823,13 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_HTTP_1_0_SERVER(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-    { \
-      .opt = (MHD_R_O_HTTP_1_0_SERVER), \
-      .val.v_http_1_0_server = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_R_O_HTTP_1_0_SERVER), \
+    .val.v_http_1_0_server = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Disable sanity check preventing clients from manually setting the HTTP
@@ -7854,13 +7841,13 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_INSANITY_HEADER_CONTENT_LENGTH(bool_val) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-    { \
-      .opt = (MHD_R_O_INSANITY_HEADER_CONTENT_LENGTH), \
-      .val.v_insanity_header_content_length = (bool_val) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_R_O_INSANITY_HEADER_CONTENT_LENGTH), \
+    .val.v_insanity_header_content_length = (bool_val) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /**
  * Set a function to be called once MHD is finished with the request.
@@ -7871,14 +7858,14 @@ struct MHD_ResponseOptionAndValue
  *         values
  */
 #  define MHD_R_OPTION_TERMINATION_CALLBACK(term_cb,term_cb_cls) \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-    { \
-      .opt = (MHD_R_O_TERMINATION_CALLBACK), \
-      .val.v_termination_callback.v_term_cb = (term_cb), \
-      .val.v_termination_callback.v_term_cb_cls = (term_cb_cls) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_R_O_TERMINATION_CALLBACK), \
+    .val.v_termination_callback.v_term_cb = (term_cb), \
+    .val.v_termination_callback.v_term_cb_cls = (term_cb_cls) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 /* = MHD Response Option macros above are generated automatically = */
 
@@ -7887,12 +7874,12 @@ struct MHD_ResponseOptionAndValue
  * @return the terminating object of struct MHD_ResponseOptionAndValue
  */
 #  define MHD_R_OPTION_TERMINATE() \
-    MHD_NOWARN_COMPOUND_LITERALS_ \
+  MHD_NOWARN_COMPOUND_LITERALS_ \
     (const struct MHD_ResponseOptionAndValue) \
-    { \
-      .opt = (MHD_R_O_END) \
-    } \
-    MHD_RESTORE_WARN_COMPOUND_LITERALS_
+  { \
+    .opt = (MHD_R_O_END) \
+  } \
+  MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
 #else  /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 MHD_NOWARN_UNUSED_FUNC_
@@ -8121,9 +8108,9 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  *         error code otherwise
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_response_options_set(struct MHD_Response *daemon,
-                         const struct MHD_ResponseOptionAndValue *options,
-                         size_t options_max_num)
+MHD_response_options_set (struct MHD_Response *daemon,
+                          const struct MHD_ResponseOptionAndValue *options,
+                          size_t options_max_num)
 MHD_FN_PAR_NONNULL_ALL_;
 
 
@@ -8131,12 +8118,13 @@ MHD_FN_PAR_NONNULL_ALL_;
  * Set the requested single option for the response.
  *
  * @param response the response to set the option
- * @param[in] options the pointer to the option
+ * @param[in] option_ptr the pointer to the option
  * @return ::MHD_SC_OK on success,
  *         error code otherwise
+ * @ingroup response
  */
 #define MHD_response_option_set(response,option_ptr) \
-  MHD_response_options_set(response,options_ptr,1)
+  MHD_response_options_set (response,option_ptr,1)
 
 
 #ifdef MHD_USE_VARARG_MACROS
@@ -8161,10 +8149,10 @@ MHD_NOWARN_VARIADIC_MACROS_
  */
 #    define MHD_RESPONSE_OPTIONS_SET(response,...)      \
   MHD_NOWARN_COMPOUND_LITERALS_                         \
-  MHD_response_options_set(daemon,                      \
-    ((const struct MHD_ResponseOptionAndValue[])        \
-       {__VA_ARGS__, MHD_R_OPTION_TERMINATE()}),        \
-    MHD_OPTIONS_ARRAY_MAX_SIZE)                         \
+  MHD_response_options_set (daemon,                      \
+                            ((const struct MHD_ResponseOptionAndValue[])        \
+                             {__VA_ARGS__, MHD_R_OPTION_TERMINATE ()}),        \
+                            MHD_OPTIONS_ARRAY_MAX_SIZE)                         \
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
 #  elif defined(MHD_USE_CPP_INIT_LIST)
 } /* extern "C" */
@@ -8189,10 +8177,10 @@ extern "C"
  */
 #    define MHD_DAEMON_OPTIONS_SET(daemon,...)      \
   MHD_NOWARN_CPP_INIT_LIST_                         \
-  MHD_daemon_options_set(daemon,                      \
-    (std::vector<struct MHD_DaemonOptionAndValue>   \
-     {__VA_ARGS__,MHD_R_OPTION_TERMINATE()}).data(),   \
-    MHD_OPTIONS_ARRAY_MAX_SIZE)                     \
+  MHD_daemon_options_set (daemon,                      \
+                          (std::vector<struct MHD_DaemonOptionAndValue>   \
+                           {__VA_ARGS__,MHD_R_OPTION_TERMINATE ()}).data (),   \
+                          MHD_OPTIONS_ARRAY_MAX_SIZE)                     \
   MHD_RESTORE_WARN_CPP_INIT_LIST_
 #  endif
 MHD_RESTORE_WARN_VARIADIC_MACROS_
@@ -8274,10 +8262,10 @@ MHD_DCC_action_continue_zc (
   const struct MHD_DynContentZCIoVec *iov_data,
   const char *chunk_ext)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_CSTR_(4);
+MHD_FN_PAR_CSTR_ (4);
 
 #define MHD_DCC_action_continue(ctx,data_size,chunk_ext) \
-    MHD_DCC_action_continue_zc (ctx, data_size, NULL, chunk_ext)
+  MHD_DCC_action_continue_zc (ctx, data_size, NULL, chunk_ext)
 
 /**
  * Set action to "finished".
@@ -8324,7 +8312,7 @@ MHD_FN_RETURNS_NONNULL_;
  * @return always NULL (the action "stop with error")
  */
 #define MHD_DCC_action_abort(ctx) \
-  MHD_STATIC_CAST_(const struct MHD_DynamicContentCreatorAction *, NULL)
+  MHD_STATIC_CAST_ (const struct MHD_DynamicContentCreatorAction *, NULL)
 
 /**
  * Callback used by libmicrohttpd in order to obtain content.  The
@@ -8401,7 +8389,7 @@ MHD_response_from_buffer (
   const char buffer[MHD_FN_PAR_DYN_ARR_SIZE_ (buffer_size)],
   MHD_FreeCallback free_cb,
   void *free_cb_cls)
-MHD_FN_PAR_IN_SIZE_(3,2);
+MHD_FN_PAR_IN_SIZE_ (3,2);
 
 
 /**
@@ -8432,7 +8420,7 @@ MHD_response_from_buffer_copy (
   enum MHD_HTTP_StatusCode sc,
   size_t buffer_size,
   const char buffer[MHD_FN_PAR_DYN_ARR_SIZE_ (buffer_size)])
-MHD_FN_PAR_IN_SIZE_(3,2);
+MHD_FN_PAR_IN_SIZE_ (3,2);
 
 
 /**
@@ -8486,7 +8474,7 @@ MHD_response_from_fd (enum MHD_HTTP_StatusCode sc,
                       int fd,
                       uint_fast64_t offset,
                       uint_fast64_t size)
-MHD_FN_PAR_FD_READ_(2);
+MHD_FN_PAR_FD_READ_ (2);
 
 /**
  * Create a response object with the response body created by reading
@@ -8543,7 +8531,7 @@ MHD_response_add_header (struct MHD_Response *response,
                          const char *name,
                          const char *value)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_(2)
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
 
 
@@ -8552,7 +8540,7 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
  *
  * @param response response to add a header to
  * @param stk the code of the predefined header
- * @param value the value of the header to add,
+ * @param content the value of the header to add,
  *              an internal copy of the string will be made
  * @return #MHD_SC_OK on success,
  *         error code otherwise
@@ -8574,6 +8562,7 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
  *
  * @param req the request to make an action
  * @return action operation, never NULL
+ * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_Action *
 MHD_action_continue (struct MHD_Request *req);
@@ -8585,9 +8574,10 @@ MHD_action_continue (struct MHD_Request *req);
  *
  * @param req the request to make an action
  * @return action operation, always NULL
+ * @ingroup action
  */
 #define MHD_action_close_connection(req) \
-  MHD_STATIC_CAST_(const struct MHD_Action *, NULL)
+  MHD_STATIC_CAST_ (const struct MHD_Action *, NULL)
 
 
 /**
@@ -8608,6 +8598,7 @@ MHD_action_continue (struct MHD_Request *req);
  *              the request is resumed,
  *         MHD_action_close_connection to close the socket, or a response
  *         to discard the rest of the upload and return the data given
+ * @ingroup action
  */
 typedef const struct MHD_Action *
 (MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_NONNULL_ (3)
@@ -8665,8 +8656,8 @@ MHD_FN_PAR_NONNULL_ (1);
  * @return NULL on error (out of memory. both @a uc_full and @a uc_inc are NULL)
  * @ingroup action
  */
-#define MHD_action_process_upload_full(req,buff_size,uc,uc_cls) \
-  MHD_action_process_upload(req, buff_size, uc, uc_cls, NULL, NULL)
+#define MHD_action_process_upload_full(request,buff_size,uc,uc_cls) \
+  MHD_action_process_upload (request, buff_size, uc, uc_cls, NULL, NULL)
 
 /**
  * Create an action that handles an upload incrementally.
@@ -8677,8 +8668,8 @@ MHD_FN_PAR_NONNULL_ (1);
  * @return NULL on error (out of memory. both @a uc_full and @a uc_inc are NULL)
  * @ingroup action
  */
-#define MHD_action_process_upload_inc(req,uc,uc_cls) \
-  MHD_action_process_upload(req, 0, NULL, NULL, uc, uc_cls)
+#define MHD_action_process_upload_inc(request,uc,uc_cls) \
+  MHD_action_process_upload (request, 0, NULL, NULL, uc, uc_cls)
 
 
 /**
@@ -8703,10 +8694,10 @@ MHD_FN_PAR_NONNULL_ (1);
  *              the request is resumed,
  *         NULL to close the socket, or a response
  *         to discard the rest of the upload and return the data given
+ * @ingroup action
  */
 typedef const struct MHD_Action *
-(*MHD_PostDataReader) (struct MHD_Request *req,
-                       void *cls,
+(*MHD_PostDataReader) (void *cls,
                        const struct MHD_String *name,
                        const struct MHD_String *filename,
                        const struct MHD_String *content_type,
@@ -8729,11 +8720,11 @@ typedef const struct MHD_Action *
 
 
 /**
+ * Create an action to parse the POSTed body from the client.
+ *
  * @param pp_buffer_size how much data should the post processor
  *                       buffer in memory. May allocate memory from
  *                       the shared "large" memory pool if necessary.
- * @param pp_buffer_size how much data should the post processor
- *   buffer in memory
  * @param pp_stream_limit values above which length should be
  *   given to @a iter for stream processing
  * @param enc the data encoding to use,
@@ -8747,6 +8738,7 @@ typedef const struct MHD_Action *
  *   #MHD_request_get_values_cb(), #MHD_request_get_values_list() and
  *   #MHD_request_get_post_processor_values()
  * @sa #MHD_D_OPTION_LARGE_POOL_SIZE()
+ * @ingroup action
  */
 MHD_EXTERN_ struct MHD_Action *
 MHD_action_post_processor (struct MHD_Request *req,
@@ -8926,7 +8918,7 @@ MHD_FN_PAR_NONNULL_ (1);
  * treat data from @a extra_in as if it had read it from the socket.
  *
  * Note that the application must not close() @a sock directly,
- * but instead use #MHD_upgrade_action() for special operations
+ * but instead use #MHD_action_upgrade() for special operations
  * on @a sock.
  *
  * Data forwarding to "upgraded" @a sock will be started as soon
@@ -8936,11 +8928,11 @@ MHD_FN_PAR_NONNULL_ (1);
  * of this function should never block (as it will still be called
  * from within the main event loop).
  *
- * @param cls closure, whatever was given to #MHD_response_create_for_upgrade().
- * @param connection original HTTP connection handle,
+ * @param cls closure, whatever was given to #MHD_action_upgrade().
+ * @param request original HTTP request handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
- * @param req_cls last value left in `req_cls` of the `MHD_AccessHandlerCallback`
+ * @param extra_in_size number of bytes in @a extra_in
  * @param extra_in if we happened to have read bytes after the
  *                 HTTP header already (because the client sent
  *                 more than the HTTP header of the request before
@@ -8948,7 +8940,6 @@ MHD_FN_PAR_NONNULL_ (1);
  *                 these are the extra bytes already read from @a sock
  *                 by MHD.  The application should treat these as if
  *                 it had read them from @a sock.
- * @param extra_in_size number of bytes in @a extra_in
  * @param sock socket to use for bi-directional communication
  *        with the client.  For HTTPS, this may not be a socket
  *        that is directly connected to the client and thus certain
@@ -8958,7 +8949,7 @@ MHD_FN_PAR_NONNULL_ (1);
  *        to perform read()/recv() and write()/send() calls on the socket.
  *        The application may also call shutdown(), but must not call
  *        close() directly.
- * @param urh argument for #MHD_upgrade_action()s on this @a respose.
+ * @param urh argument for #MHD_upgrade_operation() on this @a respose.
  *        Applications must eventually use this callback to (indirectly)
  *        perform the close() action on the @a sock.
  */
@@ -8981,7 +8972,7 @@ typedef void
  * connection error handling code will be performed.
  *
  * MHD will automatically set the correct HTTP status
- * code (#MHD_HTTP_SWITCHING_PROTOCOLS).
+ * code (#MHD_HTTP_STATUS_SWITCHING_PROTOCOLS).
  * Setting correct HTTP headers for the upgrade must be done
  * manually (this way, it is possible to implement most existing
  * WebSocket versions using this API; in fact, this API might be useful
@@ -9001,6 +8992,7 @@ typedef void
  *                this function),
  *                can be NULL if @a num_headers is zero
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup action
  */
 MHD_EXTERN_ struct MHD_Action *
 MHD_action_upgrade (struct MHD_Request *request,
@@ -9317,7 +9309,7 @@ MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo algo,
                                void *userhash_bin)
 MHD_FN_PURE_
 MHD_FN_PAR_NONNULL_ALL_
-MHD_FN_PAR_CSTR_(2) MHD_FN_PAR_CSTR_(3)
+  MHD_FN_PAR_CSTR_ (2) MHD_FN_PAR_CSTR_ (3)
 MHD_FN_PAR_OUT_SIZE_ (4,3);
 
 
@@ -9347,7 +9339,7 @@ MHD_FN_PAR_OUT_SIZE_ (4,3);
  * @param algo the algorithm for userhash calculations
  * @param username the username
  * @param realm the realm
- * @param bin_buf_size the size of the @a userhash_bin buffer, must be
+ * @param hex_buf_size the size of the @a userhash_hex buffer, must be
  *                     at least #MHD_digest_get_hash_size(algo)*2+1 chars long
  * @param[out] userhash_hex the output buffer for userhash as hex string;
  *                          if this function succeeds, then this buffer has
@@ -9368,8 +9360,9 @@ MHD_digest_auth_calc_userhash_hex (
   char userhash_hex[MHD_FN_PAR_DYN_ARR_SIZE_ (hex_buf_size)])
 MHD_FN_PURE_
 MHD_FN_PAR_NONNULL_ALL_
-MHD_FN_PAR_CSTR_(2) MHD_FN_PAR_CSTR_(3)
+  MHD_FN_PAR_CSTR_ (2) MHD_FN_PAR_CSTR_ (3)
 MHD_FN_PAR_OUT_SIZE_ (4,3);
+
 ;
 
 
@@ -9446,16 +9439,16 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthQOP
    */
   MHD_DIGEST_AUTH_QOP_NONE = 1 << 0,
 
-  /**
-   * The 'auth' QOP type.
-   */
-  MHD_DIGEST_AUTH_QOP_AUTH = 1 << 1,
+    /**
+     * The 'auth' QOP type.
+     */
+    MHD_DIGEST_AUTH_QOP_AUTH = 1 << 1,
 
-  /**
-   * The 'auth-int' QOP type.
-   * Not supported by MHD for authentication.
-   */
-  MHD_DIGEST_AUTH_QOP_AUTH_INT = 1 << 2
+    /**
+     * The 'auth-int' QOP type.
+     * Not supported by MHD for authentication.
+     */
+    MHD_DIGEST_AUTH_QOP_AUTH_INT = 1 << 2
 };
 
 /**
@@ -9804,10 +9797,10 @@ MHD_digest_auth_check (struct MHD_Request *request,
                        uint_fast32_t max_nc,
                        enum MHD_DigestAuthMultiQOP mqop,
                        enum MHD_DigestAuthMultiAlgo malgo)
-MHD_FN_PAR_NONNULL_(1)
-MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_CSTR_(2)
-MHD_FN_PAR_NONNULL_(3) MHD_FN_PAR_CSTR_(3)
-MHD_FN_PAR_NONNULL_(4) MHD_FN_PAR_CSTR_ (4);
+MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3)
+MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_CSTR_ (4);
 
 
 /**
@@ -9829,12 +9822,12 @@ MHD_FN_PAR_NONNULL_(4) MHD_FN_PAR_CSTR_ (4);
  * @param username the username
  * @param realm the realm
  * @param password the password
+ * @param bin_buf_size the size of the @a userdigest_bin buffer, must be
+ *                       at least #MHD_digest_get_hash_size(algo) bytes long
  * @param[out] userdigest_bin the output buffer for userdigest;
  *                            if this function succeeds, then this buffer has
  *                            #MHD_digest_get_hash_size(algo) bytes of
  *                            userdigest upon return
- * @param userdigest_bin the size of the @a userdigest_bin buffer, must be
- *                       at least #MHD_digest_get_hash_size(algo) bytes long
  * @return #MHD_SC_OK on success,
  *         error code otherwise.
  * @sa #MHD_digest_auth_check_digest()
@@ -9848,9 +9841,9 @@ MHD_digest_auth_calc_userdigest (enum MHD_DigestAuthAlgo algo,
                                  size_t bin_buf_size,
                                  void *userdigest_bin)
 MHD_FN_PURE_ MHD_FN_PAR_NONNULL_ALL_
-MHD_FN_PAR_CSTR_(2)
-MHD_FN_PAR_CSTR_(3)
-MHD_FN_PAR_CSTR_(4)
+  MHD_FN_PAR_CSTR_ (2)
+MHD_FN_PAR_CSTR_ (3)
+MHD_FN_PAR_CSTR_ (4)
 MHD_FN_PAR_OUT_SIZE_ (6,5);
 
 
@@ -9906,8 +9899,8 @@ MHD_digest_auth_check_digest (struct MHD_Request *request,
                               enum MHD_DigestAuthMultiQOP mqop,
                               enum MHD_DigestAuthMultiAlgo malgo)
 MHD_FN_PAR_NONNULL_ALL_
-MHD_FN_PAR_CSTR_(2)
-MHD_FN_PAR_CSTR_(3)
+  MHD_FN_PAR_CSTR_ (2)
+MHD_FN_PAR_CSTR_ (3)
 MHD_FN_PAR_CSTR_ (4);
 
 
@@ -9943,7 +9936,7 @@ MHD_FN_PAR_CSTR_ (4);
  *                 note: this function sets the "WWW Authenticate" header and
  *                 the caller should not set this header;
  *                 the response must have #MHD_HTTP_STATUS_FORBIDDEN status
- *                 code, must not have #MHD_RESP_OPT_BOOL_REUSABLE enabled;
+ *                 code, must not have #MHD_R_O_REUSABLE enabled;
  *                 the NULL is tolerated (the result is NULL)
  * @param signal_stale if set to #MHD_YES then indication of stale nonce used in
  *                     the client's request is signalled by adding 'stale=true'
@@ -9951,7 +9944,7 @@ MHD_FN_PAR_CSTR_ (4);
  *                     to retry immediately with the new nonce and the same
  *                     credentials, without asking user for the new password
  * @param mqop the QOP to use
- * @param malgo digest algorithm to use; if several algorithms are allowed
+ * @param algo digest algorithm to use; if several algorithms are allowed
  *               then MD5 is preferred (currently, may be changed in next
  *               versions)
  * @param userhash_support if set to non-zero value (#MHD_YES) then support of
@@ -9970,20 +9963,22 @@ MHD_FN_PAR_CSTR_ (4);
  * @return pointer to the action on success,
  *         NULL on failure
  * @ingroup authentication
+ * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_Action *
-MHD_queue_auth_required_response (struct MHD_Request *request,
-                                  const char *realm,
-                                  const char *opaque,
-                                  const char *domain,
-                                  struct MHD_Response *response,
-                                  enum MHD_Bool signal_stale,
-                                  enum MHD_DigestAuthMultiQOP mqop,
-                                  enum MHD_DigestAuthMultiAlgo algo,
-                                  enum MHD_Bool userhash_support,
-                                  enum MHD_Bool prefer_utf8)
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_(2)
-MHD_FN_PAR_CSTR_(3) MHD_FN_PAR_CSTR_(4) MHD_FN_PAR_NONNULL_ (5);
+MHD_action_digest_auth_required_response (
+  struct MHD_Request *request,
+  const char *realm,
+  const char *opaque,
+  const char *domain,
+  struct MHD_Response *response,
+  enum MHD_Bool signal_stale,
+  enum MHD_DigestAuthMultiQOP mqop,
+  enum MHD_DigestAuthMultiAlgo algo,
+  enum MHD_Bool userhash_support,
+  enum MHD_Bool prefer_utf8)
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
+MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_CSTR_ (4) MHD_FN_PAR_NONNULL_ (5);
 
 
 /**
@@ -10018,7 +10013,7 @@ struct MHD_BasicAuthInfo
 /**
  * Send a response to request basic authentication from the client.
  *
- * See RFC 7617#section-2 for details.
+ * See RFC 7617, section-2 for details.
  *
  * @param connection the MHD connection structure
  * @param realm the realm presented to the client
@@ -10030,17 +10025,19 @@ struct MHD_BasicAuthInfo
  *                 note: this function sets the "WWW Authenticate" header and
  *                 the caller should not set this header;
  *                 the response must have #MHD_HTTP_STATUS_FORBIDDEN status
- *                 code, must not have #MHD_RESP_OPT_BOOL_REUSABLE enabled;
+ *                 code, must not have #MHD_R_O_REUSABLE enabled;
  *                 the NULL is tolerated (the result is NULL)
  * @return pointer to the action on success,
  *         NULL on failure
  * @ingroup authentication
+ * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_Action *
-MHD_queue_basic_auth_required_response (struct MHD_Connection *connection,
-                                        const char *realm,
-                                        enum MHD_Bool prefer_utf8,
-                                        struct MHD_Response *response);
+MHD_action_basic_auth_required_response (
+  struct MHD_Connection *connection,
+  const char *realm,
+  enum MHD_Bool prefer_utf8,
+  struct MHD_Response *response);
 
 
 /* ********************** (f) Introspection ********************** */
@@ -10103,25 +10100,22 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoFixed
   ,
   /**
    * Get whether postprocessor is supported. If supported then
-   * functions #MHD_create_post_processor(), #MHD_post_process() and
-   * #MHD_destroy_post_processor() can
-   * be used.
+   * #MHD_action_post_processor() can be used.
    * The result is placed in @a v_bool member.
    */
   MHD_LIB_INFO_FIXED_HAS_POSTPROCESSOR = 15
   ,
   /**
    * Get whether HTTP "Upgrade" is supported.
-   * If supported then #MHD_ALLOW_UPGRADE, #MHD_upgrade_action() and
-   * #MHD_create_response_for_upgrade() can be used.
+   * If supported then #MHD_action_upgrade() can be used.
    * The result is placed in @a v_bool member.
    */
   MHD_LIB_INFO_FIXED_HAS_UPGRADE = 16
   ,
   /**
    * Get whether HTTP Basic authorization is supported. If supported
-   * then functions #MHD_basic_auth_get_username_password and
-   * #MHD_queue_basic_auth_fail_response can be used.
+   * then functions #MHD_action_basic_auth_required_response ()
+   * and #MHD_REQUEST_INFO_DYNAMIC_BAUTH_REQ_INFO can be used.
    * The result is placed in @a v_bool member.
    */
   MHD_LIB_INFO_FIXED_HAS_BASIC_AUTH = 20
@@ -10129,7 +10123,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoFixed
   /**
    * Get whether HTTP Digest authorization is supported. If
    * supported then options #MHD_OPTION_DIGEST_AUTH_RANDOM,
-   * #MHD_OPTION_NONCE_NC_SIZE and
+   * #MHD_OPTION_NONCE_NC_SIZE and functions
+   * #MHD_action_digest_auth_required_response () and
    * #MHD_digest_auth_check() can be used.
    * The result is placed in @a v_bool member.
    */
@@ -10486,7 +10481,7 @@ MHD_EXTERN_ enum MHD_StatusCode
 MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
                            union MHD_LibInfoFixedData *return_data,
                            size_t return_data_size)
-MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_OUT_SIZE_(2,3)
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_SIZE_ (2,3)
 MHD_FN_PURE_;
 
 /**
@@ -10501,7 +10496,7 @@ MHD_FN_PURE_;
  * @ingroup specialized
  */
 #define MHD_lib_get_info_fixed(info,data) \
-    MHD_lib_get_info_fixed_sz((info),(data),sizeof(*(data)))
+  MHD_lib_get_info_fixed_sz ((info),(data),sizeof(*(data)))
 
 /**
  * Types of information about MHD,
@@ -10569,7 +10564,7 @@ MHD_EXTERN_ enum MHD_StatusCode
 MHD_lib_get_info_dynamic_sz (enum MHD_LibDynamicInfo info_type,
                              union MHD_LibDynamicInfoData *return_data,
                              size_t return_data_size)
-MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_OUT_SIZE_ (2,3);
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_SIZE_ (2,3);
 
 /**
  * Get dynamic information about MHD that may be changed at run-time.
@@ -10581,7 +10576,7 @@ MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_OUT_SIZE_ (2,3);
  * @ingroup specialized
  */
 #define MHD_lib_get_info_dynamic(info,data) \
-    MHD_lib_get_info_fixed_sz((info),(data),sizeof(*(data)))
+  MHD_lib_get_info_fixed_sz ((info),(data),sizeof(*(data)))
 
 
 /**
@@ -10679,7 +10674,7 @@ MHD_daemon_get_info_fixed_sz (struct MHD_Daemon *daemon,
                               union MHD_DaemonInfoFixedData *return_value,
                               size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_(3,4)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4)
 MHD_FN_PURE_;
 
 /**
@@ -10697,7 +10692,7 @@ MHD_FN_PURE_;
  */
 #define MHD_daemon_get_info_fixed(daemon,info_type,return_value) \
   MHD_daemon_get_info_fixed_sz ((daemon), (info_type), (return_value), \
-                                 sizeof(*(return_value)))
+                                sizeof(*(return_value)))
 
 
 /**
@@ -10887,7 +10882,7 @@ MHD_connection_get_info_fixed_sz (
   union MHD_ConnectionInfoFixedData *return_value,
   size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_(3,4)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4)
 MHD_FN_PURE_;
 
 
@@ -10905,7 +10900,7 @@ MHD_FN_PURE_;
  */
 #define MHD_connection_get_info_fixed(connection,info_type,return_value) \
   MHD_connection_get_info_fixed_sz ((connection),(info_type),(return_value), \
-                                     sizeof(*(return_value)))
+                                    sizeof(*(return_value)))
 
 
 /**
@@ -11093,7 +11088,7 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4);
  */
 #define MHD_connection_get_info_dynamic(connection,info_type,return_value) \
   MHD_connection_get_info_dynamic_sz ((connection),(info_type),(return_value), \
-                                     sizeof(*(return_value)))
+                                      sizeof(*(return_value)))
 
 
 /**
@@ -11165,7 +11160,7 @@ MHD_stream_get_info_fixed_sz (
   union MHD_StreamInfoFixedData *return_value,
   size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_(3,4)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4)
 MHD_FN_PURE_;
 
 
@@ -11182,8 +11177,8 @@ MHD_FN_PURE_;
  * @ingroup specialized
  */
 #define MHD_stream_get_info_fixed(stream,info_type,return_value) \
-    MHD_stream_get_info_fixed_sz ((stream),(info_type),(return_value), \
-                                     sizeof(*(return_value)))
+  MHD_stream_get_info_fixed_sz ((stream),(info_type),(return_value), \
+                                sizeof(*(return_value)))
 
 
 /**
@@ -11262,7 +11257,7 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4);
  */
 #define MHD_stream_get_info_dynamic(stream,info_type,return_value) \
   MHD_stream_get_info_dynamic_sz ((stream),(info_type),(return_value), \
-                                     sizeof(*(return_value)))
+                                  sizeof(*(return_value)))
 
 
 /**
@@ -11369,7 +11364,7 @@ MHD_request_get_info_fixed_sz (struct MHD_Request *request,
                                union MHD_RequestInfoFixedData *return_value,
                                size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_(3,4)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4)
 MHD_FN_PURE_;
 
 
@@ -11387,7 +11382,7 @@ MHD_FN_PURE_;
  */
 #define MHD_request_get_info_fixed(request,info_type,return_value) \
   MHD_request_get_info_fixed_sz ((request), (info_type), (return_value), \
-                                  sizeof(*(return_value)))
+                                 sizeof(*(return_value)))
 
 
 /**
@@ -11620,7 +11615,7 @@ MHD_request_get_info_dynamic_sz (struct MHD_Request *request,
                                  union MHD_RequestInfoDynamicData *return_value,
                                  size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_(3,4)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_SIZE_ (3,4)
 MHD_FN_PURE_;
 
 
@@ -11638,7 +11633,7 @@ MHD_FN_PURE_;
  */
 #define MHD_request_get_info_dynamic(request,info_type,return_value) \
   MHD_request_get_info_dynamic_sz ((request), (info_type), (return_value), \
-                                  sizeof(*(return_value)))
+                                   sizeof(*(return_value)))
 
 /**
  * Callback for serious error condition. The default action is to print
@@ -11680,7 +11675,7 @@ MHD_lib_set_panic_func (MHD_PanicCallback cb,
                         void *cls);
 
 #define MHD_lib_set_panic_func_default() \
-  MHD_lib_set_panic_func (MHD_STATIC_CAST_(MHD_PanicCallback,NULL),NULL)
+  MHD_lib_set_panic_func (MHD_STATIC_CAST_ (MHD_PanicCallback,NULL),NULL)
 
 
 #endif
