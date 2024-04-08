@@ -20,7 +20,7 @@
 Name: WORK_MODE
 Value: 40
 Comment: Set MHD work (threading and polling) mode.
-+ Consider use of #MHD_DAEMON_OPTION_WM_EXTERNAL_PERIODIC(), #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(), #MHD_DAEMON_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(), #MHD_DAEMON_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(), #MHD_DAEMON_OPTION_WM_WORKER_THREADS() or #MHD_DAEMON_OPTION_WM_THREAD_PER_CONNECTION() instead of direct use of this parameter.
++ Consider use of #MHD_D_OPTION_WM_EXTERNAL_PERIODIC(), #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL(), #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE(), #MHD_D_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH(), #MHD_D_OPTION_WM_WORKER_THREADS() or #MHD_D_OPTION_WM_THREAD_PER_CONNECTION() instead of direct use of this parameter.
 Argument1: struct MHD_WorkModeWithParam wmp
 Description1: the object created by one of the next functions/macros: #MHD_WM_OPTION_EXTERNAL_PERIODIC(), #MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL(), #MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE(), #MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH(), #MHD_WM_OPTION_WORKER_THREADS(), #MHD_WM_OPTION_THREAD_PER_CONNECTION()
 
@@ -46,9 +46,9 @@ Value: 80
 Type: struct MHD_DaemonOptionValueBind
 Comment: Bind to the given TCP port and address family.
 +
-+ Does not work with #MHD_DAEMON_OPTION_BIND_SA() or #MHD_DAEMON_OPTION_LISTEN_SOCKET().
++ Does not work with #MHD_D_OPTION_BIND_SA() or #MHD_D_OPTION_LISTEN_SOCKET().
 +
-+ If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(), #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used, MHD does not listen for incoming connection.
++ If no listen socket optins (#MHD_D_OPTION_BIND_PORT(), #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does not listen for incoming connection.
 Argument1: enum MHD_AddressFamily af
 Description1: the address family to use,
 + the #MHD_AF_NONE to disable listen socket (the same effect as if this option is not used)
@@ -61,9 +61,9 @@ Value: 81
 Type: struct MHD_DaemonOptionValueSA
 Comment: Bind to the given socket address.
 +
-+ Does not work with #MHD_DAEMON_OPTION_BIND_PORT() or #MHD_DAEMON_OPTION_LISTEN_SOCKET().
++ Does not work with #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_LISTEN_SOCKET().
 +
-+ If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(), #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used, MHD does not listen for incoming connection.
++ If no listen socket optins (#MHD_D_OPTION_BIND_PORT(), #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does not listen for incoming connection.
 Argument1: size_t sa_len
 Description1: the size of the socket address pointed by @a sa.
 Argument2: const struct sockaddr *sa
@@ -74,9 +74,9 @@ Value: 82
 Comment: Accept connections from the given socket.  Socket
 + must be a TCP or UNIX domain (SOCK_STREAM) socket.
 +
-+ Does not work with #MHD_DAEMON_OPTION_BIND_PORT() or #MHD_DAEMON_OPTION_BIND_SA().
++ Does not work with #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA().
 +
-+ If no listen socket optins (#MHD_DAEMON_OPTION_BIND_PORT(), #MHD_DAEMON_OPTION_BIND_SA(), #MHD_DAEMON_OPTION_LISTEN_SOCKET()) are used, MHD does not listen for incoming connection.
++ If no listen socket optins (#MHD_D_OPTION_BIND_PORT(), #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does not listen for incoming connection.
 Argument1: MHD_socket listen_fd
 Description1: the listen socket to use, ignored if set to #MHD_INVALID_SOCKET
 
@@ -84,7 +84,7 @@ Name: listen addr reuse
 Value: 100
 Comment: Select mode of reusing address:port listen address.
 +
-+ Works only when #MHD_DAEMON_OPTION_BIND_PORT() or #MHD_DAEMON_OPTION_BIND_SA() are used.
++ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
 Argument1: enum MHD_DaemonOptionBindType reuse_type
 
 Name: tcp_fastopen
@@ -97,7 +97,7 @@ Comment: Configure TCP_FASTOPEN option, including setting a
 + attack as the TCP stack has to now allocate resources for the SYN
 + packet along with its DATA.
 +
-+ Works only when #MHD_DAEMON_OPTION_BIND_PORT() or #MHD_DAEMON_OPTION_BIND_SA() are used.
++ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
 Argument1: enum MHD_TCPFastOpenType option
 Description1: the type use of of TCP FastOpen
 Argument2: unsigned int queue_length
@@ -108,7 +108,7 @@ Name: LISTEN_BACKLOG
 Value: 102
 Comment: Use the given backlog for the listen() call.
 +
-+ Works only when #MHD_DAEMON_OPTION_BIND_PORT() or #MHD_DAEMON_OPTION_BIND_SA() are used.
++ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
 Argument1: unsigned int backlog_size
 
 Name: sigpipe suppressed
@@ -260,7 +260,7 @@ Value: 282
 Type: size_t
 Comment: Desired size of the stack for the threads started by MHD.
 + Use 0 for system default, which is also MHD default.
-+ Works only with ##MHD_DAEMON_OPTION_WORKER_THREADS() or #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
++ Works only with #MHD_D_OPTION_WM_WORKER_THREADS() or #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
 
 Name: fd_number_limit
 Value: 283
@@ -269,7 +269,7 @@ Comment: The the maximum FD value.
 + If listen socket FD is equal or higher that specified value, the daemon fail to start.
 + If new connection FD is equal or higher that specified value, the connection is rejected.
 + Useful if application uses select() for polling the sockets, system FD_SETSIZE is good value for this option in such case.
-+ Does not work with ##MHD_DAEMON_OPTION_WORKER_THREADS() or #MHD_DAEMON_OPTION_THREAD_PER_CONNECTION().
++ Does not work with #MHD_D_OPTION_WM_WORKER_THREADS() or #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
 + Does not work on W32 (WinSock sockets).
 Argument1: MHD_socket max_fd
 
@@ -369,7 +369,7 @@ Type: enum MHD_DaemonOptionValueDAuthBindNonce
 Comment: Control the scope of validity of MHD-generated nonces.
 + This regulates how "nonces" are generated and how "nonces" are checked by #MHD_digest_auth_check() and similar functions.
 + This option allows bitwise OR combination of #MHD_DaemonOptionValueDAuthBindNonce values.
-+ When this option is not used then default value is #MHD_DAEMON_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
++ When this option is not used then default value is #MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
 Argument1: bind_type
 
 Name: dauth_def_nonce_timeout
