@@ -6481,7 +6481,7 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  * @param num_workers the number of worker threads, zero is treated as one
  * @return the object of struct MHD_DaemonOptionAndValue with requested values
  */
-#define MHD_D_OPTION_WORKER_THREADS(num_workers) \
+#define MHD_D_OPTION_WM_WORKER_THREADS(num_workers) \
   MHD_D_OPTION_WORK_MODE(MHD_WM_OPTION_WORKER_THREADS(num_workers))
 
 /**
@@ -6492,7 +6492,7 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  * connection).
  * @return the object of struct MHD_DaemonOptionAndValue with requested values
  */
-#define MHD_D_OPTION_THREAD_PER_CONNECTION() \
+#define MHD_D_OPTION_WM_THREAD_PER_CONNECTION() \
   MHD_D_OPTION_WORK_MODE(MHD_WM_OPTION_THREAD_PER_CONNECTION())
 
 /**
