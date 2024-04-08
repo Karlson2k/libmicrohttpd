@@ -142,14 +142,18 @@
 #ifndef MICROHTTPD2_H
 #define MICROHTTPD2_H
 
+#ifndef __cplusplus
+#  define MHD_C_DECLRATIONS_START_HERE_   /* Empty */
+#  define MHD_C_DECLRATIONS_FINISH_HERE_  /* Empty */
+#else  /* __cplusplus */
+/* *INDENT-OFF* */
+#  define MHD_C_DECLRATIONS_START_HERE_   extern "C" {
+#  define MHD_C_DECLRATIONS_FINISH_HERE_  }
+/* *INDENT-ON* */
+#endif /* __cplusplus */
 
-#ifdef __cplusplus
-extern "C"
-{
-#if 0                           /* keep Emacsens' auto-indent happy */
-}
-#endif
-#endif
+
+MHD_C_DECLRATIONS_START_HERE_
 
 /* While we generally would like users to use a configure-driven
    build process which detects which headers are present and
@@ -6542,10 +6546,9 @@ MHD_NOWARN_VARIADIC_MACROS_
                           MHD_OPTIONS_ARRAY_MAX_SIZE)                     \
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
 #  elif defined(MHD_USE_CPP_INIT_LIST)
-} /* extern "C" */
+MHD_C_DECLRATIONS_FINISH_HERE_
 #    include <vector>
-extern "C"
-{
+MHD_C_DECLRATIONS_START_HERE_
 /**
  * Set the requested options for the daemon.
  *
@@ -6885,10 +6888,9 @@ MHD_NOWARN_VARIADIC_MACROS_
                               MHD_OPTIONS_ARRAY_MAX_SIZE)                         \
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
 #  elif defined(MHD_USE_CPP_INIT_LIST)
-} /* extern "C" */
+MHD_C_DECLRATIONS_FINISH_HERE_
 #    include <vector>
-extern "C"
-{
+MHD_C_DECLRATIONS_START_HERE_
 /**
  * Set the requested options for the connection.
  *
@@ -8161,10 +8163,9 @@ MHD_NOWARN_VARIADIC_MACROS_
                             MHD_OPTIONS_ARRAY_MAX_SIZE)                         \
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
 #  elif defined(MHD_USE_CPP_INIT_LIST)
-} /* extern "C" */
+MHD_C_DECLRATIONS_FINISH_HERE_
 #    include <vector>
-extern "C"
-{
+MHD_C_DECLRATIONS_START_HERE_
 /**
  * Set the requested options for the daemon.
  *
@@ -11674,5 +11675,6 @@ MHD_lib_set_panic_func (MHD_PanicCallback cb,
 #define MHD_lib_set_panic_func_default() \
   MHD_lib_set_panic_func (MHD_STATIC_CAST_ (MHD_PanicCallback,NULL),NULL)
 
+MHD_C_DECLRATIONS_FINISH_HERE_
 
-#endif
+#endif /* ! MICROHTTPD2_H */
