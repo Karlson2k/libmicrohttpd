@@ -1,8 +1,59 @@
-#!/bin/sh
+#!/bin/bash
 
 # use as .git/hooks/pre-commit
 
+function vercomp () {
+    if [[ $1 == $2 ]]
+    then
+        return 0
+    fi
+    local IFS=.
+    local i ver1=($1) ver2=($2)
+    # fill empty fields in ver1 with zeros
+    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
+    do
+        ver1[i]=0
+    done
+    for ((i=0; i<${#ver1[@]}; i++))
+    do
+        if [[ -z ${ver2[i]} ]]
+        then
+            # fill empty fields in ver2 with zeros
+            ver2[i]=0
+        fi
+        if ((10#${ver1[i]} > 10#${ver2[i]}))
+        then
+            return 1
+        fi
+        if ((10#${ver1[i]} < 10#${ver2[i]}))
+        then
+            return 2
+        fi
+    done
+    return 0
+}
+
 exec 1>&2
+
+if ! uncrustify --version > /dev/null
+then
+    echo 'uncrustify required'
+    exit 1
+fi
+
+HAVE=$(uncrustify --version | sed -e 's/.*-//' -e 's/_.//')
+
+vercmp 0.78.0 "$HAVE"
+case $? in
+    0)
+    ;;
+    1)
+        echo "your uncrustify is too old";
+        exit 1
+        ;;
+    2)
+        ;;
+esac
 
 RET=0
 changed=$(git diff --cached --name-only)
