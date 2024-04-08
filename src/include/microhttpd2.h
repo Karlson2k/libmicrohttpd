@@ -2489,8 +2489,13 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_HTTP_PostEncoding
 
 /**
  * Predefined list of headers
+ * To be filled with HPACK static data
  */
-enum MHD_PredefinedHeader;
+enum MHD_PredefinedHeader
+{
+  MHD_PREDEF_ACCEPT_CHARSET = 15,
+  MHD_PREDEF_ACCEPT_LANGUAGE = 17
+};
 
 /**
  * Get text version of the predefined header.
@@ -2938,7 +2943,7 @@ union MHD_WorkModeParam
    * Work mode parameters for #MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL and
    * #MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE modes
    */
-  MHD_SocketRegistrationUpdateCallback v_external_event_loop_cb;
+  struct MHD_WorkModeExternalEventLoopCBParam v_external_event_loop_cb;
   /**
    * Number of worker threads for #MHD_WM_WORKER_THREADS.
    * If set to one, then daemon starts with single worker thread that process
@@ -6775,9 +6780,9 @@ struct MHD_ConnectionOptionAndValue
  */
 #  define MHD_C_OPTION_TIMEOUT(timeout)         \
   MHD_NOWARN_COMPOUND_LITERALS_                 \
-    (const struct MHD_ConnectionOptionAndValue)   \
+    (const struct MHD_ConnectionOptionAndValue) \
   {                                             \
-    .opt = (option),                            \
+    .opt = (MHD_C_O_TIMEOUT),                   \
     .val.v_timeout = (timeout)                  \
   }                                             \
   MHD_RESTORE_WARN_COMPOUND_LITERALS_
@@ -6788,7 +6793,7 @@ struct MHD_ConnectionOptionAndValue
  */
 #  define MHD_C_OPTION_TERMINATE()              \
   MHD_NOWARN_COMPOUND_LITERALS_                 \
-    (const struct MHD_ConnectionOptionAndValue)   \
+    (const struct MHD_ConnectionOptionAndValue) \
   {                                             \
     .opt = (MHD_C_O_END)                        \
   }                                             \
@@ -6810,7 +6815,7 @@ MHD_C_OPTION_TIMEOUT (unsigned int timeout)
 {
   struct MHD_ConnectionOptionAndValue opt_val;
 
-  opt_val.opt = option;
+  opt_val.opt = MHD_C_O_TIMEOUT;
   opt_val.val.v_timeout = timeout;
 
   return opt_val;
@@ -8171,7 +8176,7 @@ MHD_NOWARN_VARIADIC_MACROS_
  */
 #    define MHD_RESPONSE_OPTIONS_SET(response,...)      \
   MHD_NOWARN_COMPOUND_LITERALS_                         \
-  MHD_response_options_set (daemon,                      \
+  MHD_response_options_set (response,                      \
                             ((const struct MHD_ResponseOptionAndValue[])        \
                              {__VA_ARGS__, MHD_R_OPTION_TERMINATE ()}),        \
                             MHD_OPTIONS_ARRAY_MAX_SIZE)                         \
@@ -8181,7 +8186,7 @@ MHD_C_DECLRATIONS_FINISH_HERE_
 #    include <vector>
 MHD_C_DECLRATIONS_START_HERE_
 /**
- * Set the requested options for the daemon.
+ * Set the requested options for the response.
  *
  * If any option fail other options may be or may be not applied.
  *
@@ -8190,16 +8195,16 @@ MHD_C_DECLRATIONS_START_HERE_
  * MHD_RESPONE_OPTIONS_SET(d, MHD_R_OPTION_REUSABLE(MHD_YES),
  *                         MHD_R_OPTION_TERMINATION_CALLBACK(func, cls))
  *
- * @param daemon the daemon to set the options
+ * @param response the response to set the option
  * @param ... the list of the options, each option must be created
- *            by helpers MHD_D_OPTION_NameOfOption(option_value)
+ *            by helpers MHD_RESPONSE_OPTION_NameOfOption(option_value)
  * @return ::MHD_SC_OK on success,
  *         error code otherwise
  */
-#    define MHD_DAEMON_OPTIONS_SET(daemon,...)      \
+#    define MHD_RESPONSE_OPTIONS_SET(response,...)      \
   MHD_NOWARN_CPP_INIT_LIST_                         \
-  MHD_daemon_options_set (daemon,                      \
-                          (std::vector<struct MHD_DaemonOptionAndValue>   \
+  MHD_response_options_set (response,                      \
+                          (std::vector<struct MHD_ResponseOptionAndValue>   \
                            {__VA_ARGS__,MHD_R_OPTION_TERMINATE ()}).data (),   \
                           MHD_OPTIONS_ARRAY_MAX_SIZE)                     \
   MHD_RESTORE_WARN_CPP_INIT_LIST_
