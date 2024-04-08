@@ -524,8 +524,7 @@ typedef SOCKET MHD_socket;
 /* Use variable-length arrays? */
 #if ! defined(MHD_NO_VLA)
 #  if ! defined(MHD_USE_VLA)
-#    if MHD_C_MINV_99 && \
-  (! defined(__STDC_NO_VLA__) || __STDC_NO_VLA__ + 0 != 0)
+#    if MHD_C_MINV_99 && (! defined(__STDC_NO_VLA__))
 #      if defined(__GNUC__) || defined(__clang__)
 #        define MHD_USE_VLA     1
 #      elif defined(_MSC_VER)
