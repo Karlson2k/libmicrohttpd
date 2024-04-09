@@ -6556,12 +6556,13 @@ MHD_NOWARN_VARIADIC_MACROS_
  * @return ::MHD_SC_OK on success,
  *         error code otherwise
  */
-#    define MHD_DAEMON_OPTIONS_SET(daemon,...)      \
-        MHD_NOWARN_COMPOUND_LITERALS_                     \
-        MHD_daemon_options_set (daemon,                    \
-                                ((const struct MHD_DaemonOptionAndValue[])      \
-                                 {__VA_ARGS__, MHD_D_OPTION_TERMINATE ()}),       \
-                                MHD_OPTIONS_ARRAY_MAX_SIZE)                     \
+#    define MHD_DAEMON_OPTIONS_SET(daemon,...)          \
+        MHD_NOWARN_COMPOUND_LITERALS_                   \
+          MHD_daemon_options_set (                      \
+          daemon,                                       \
+          ((const struct MHD_DaemonOptionAndValue[])    \
+           {__VA_ARGS__, MHD_D_OPTION_TERMINATE ()}),   \
+          MHD_OPTIONS_ARRAY_MAX_SIZE)                   \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 #  elif defined(MHD_USE_CPP_INIT_LIST)
 MHD_C_DECLRATIONS_FINISH_HERE_
@@ -6583,13 +6584,13 @@ MHD_C_DECLRATIONS_START_HERE_
  * @return ::MHD_SC_OK on success,
  *         error code otherwise
  */
-#    define MHD_DAEMON_OPTIONS_SET(daemon,...)      \
-        MHD_NOWARN_CPP_INIT_LIST_                         \
-        MHD_daemon_options_set (daemon,                      \
-                                (std::vector<struct MHD_DaemonOptionAndValue>   \
-                                 {__VA_ARGS__,MHD_D_OPTION_TERMINATE ()}).data \
-                                  (),   \
-                                MHD_OPTIONS_ARRAY_MAX_SIZE)                     \
+#    define MHD_DAEMON_OPTIONS_SET(daemon,...)                  \
+        MHD_NOWARN_CPP_INIT_LIST_                               \
+          MHD_daemon_options_set (                              \
+          daemon,                                               \
+          (std::vector<struct MHD_DaemonOptionAndValue>         \
+           {__VA_ARGS__,MHD_D_OPTION_TERMINATE ()}).data (),    \
+          MHD_OPTIONS_ARRAY_MAX_SIZE)                           \
         MHD_RESTORE_WARN_CPP_INIT_LIST_
 #  endif
 MHD_RESTORE_WARN_VARIADIC_MACROS_
@@ -6895,13 +6896,13 @@ MHD_NOWARN_VARIADIC_MACROS_
  * @return ::MHD_SC_OK on success,
  *         error code otherwise
  */
-#    define MHD_CONNECTION_OPTIONS_SET(connection,...)  \
-        MHD_NOWARN_COMPOUND_LITERALS_                         \
-        MHD_connection_options_set (daemon,                    \
-                                    ((const struct MHD_ConnectionOptionAndValue \
-                                      [])      \
-                                     {__VA_ARGS__, MHD_C_OPTION_TERMINATE ()}),        \
-                                    MHD_OPTIONS_ARRAY_MAX_SIZE)                         \
+#    define MHD_CONNECTION_OPTIONS_SET(connection,...)          \
+        MHD_NOWARN_COMPOUND_LITERALS_                           \
+          MHD_connection_options_set (                          \
+          daemon,                                               \
+          ((const struct MHD_ConnectionOptionAndValue [])       \
+           {__VA_ARGS__, MHD_C_OPTION_TERMINATE ()}),           \
+          MHD_OPTIONS_ARRAY_MAX_SIZE)                           \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 #  elif defined(MHD_USE_CPP_INIT_LIST)
 MHD_C_DECLRATIONS_FINISH_HERE_
@@ -6922,14 +6923,13 @@ MHD_C_DECLRATIONS_START_HERE_
  * @return ::MHD_SC_OK on success,
  *         error code otherwise
  */
-#    define MHD_CONNECTION_OPTIONS_SET(daemon,...)      \
-        MHD_NOWARN_CPP_INIT_LIST_                             \
-        MHD_daemon_options_set (daemon,                        \
-                                (std::vector<struct MHD_ConnectionOptionAndValue \
-                                 >   \
-                                 {__VA_ARGS__,MHD_C_OPTION_TERMINATE ()}).data \
-                                  (),    \
-                                MHD_OPTIONS_ARRAY_MAX_SIZE)                         \
+#    define MHD_CONNECTION_OPTIONS_SET(daemon,...)              \
+        MHD_NOWARN_CPP_INIT_LIST_                               \
+          MHD_daemon_options_set (                              \
+          daemon,                                               \
+          (std::vector<struct MHD_ConnectionOptionAndValue>     \
+           {__VA_ARGS__,MHD_C_OPTION_TERMINATE ()}).data (),    \
+          MHD_OPTIONS_ARRAY_MAX_SIZE)                           \
         MHD_RESTORE_WARN_CPP_INIT_LIST_
 #  endif
 MHD_RESTORE_WARN_VARIADIC_MACROS_
@@ -8178,12 +8178,13 @@ MHD_NOWARN_VARIADIC_MACROS_
  * @return ::MHD_SC_OK on success,
  *         error code otherwise
  */
-#    define MHD_RESPONSE_OPTIONS_SET(response,...)      \
-        MHD_NOWARN_COMPOUND_LITERALS_                         \
-        MHD_response_options_set (response,                      \
-                                  ((const struct MHD_ResponseOptionAndValue[])        \
-                                   {__VA_ARGS__, MHD_R_OPTION_TERMINATE ()}),        \
-                                  MHD_OPTIONS_ARRAY_MAX_SIZE)                         \
+#    define MHD_RESPONSE_OPTIONS_SET(response,...)              \
+        MHD_NOWARN_COMPOUND_LITERALS_                           \
+          MHD_response_options_set (                            \
+          response,                                             \
+          ((const struct MHD_ResponseOptionAndValue[])          \
+           {__VA_ARGS__, MHD_R_OPTION_TERMINATE ()}),           \
+          MHD_OPTIONS_ARRAY_MAX_SIZE)                           \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 #  elif defined(MHD_USE_CPP_INIT_LIST)
 MHD_C_DECLRATIONS_FINISH_HERE_
@@ -8205,14 +8206,13 @@ MHD_C_DECLRATIONS_START_HERE_
  * @return ::MHD_SC_OK on success,
  *         error code otherwise
  */
-#    define MHD_RESPONSE_OPTIONS_SET(response,...)      \
-        MHD_NOWARN_CPP_INIT_LIST_                         \
-        MHD_response_options_set (response,                      \
-                                  (std::vector<struct MHD_ResponseOptionAndValue \
-                                   >   \
-                                   {__VA_ARGS__,MHD_R_OPTION_TERMINATE ()}).data \
-                                    (),   \
-                                  MHD_OPTIONS_ARRAY_MAX_SIZE)                     \
+#    define MHD_RESPONSE_OPTIONS_SET(response,...)              \
+        MHD_NOWARN_CPP_INIT_LIST_                               \
+          MHD_response_options_set (                            \
+          response,                                             \
+          (std::vector<struct MHD_ResponseOptionAndValue>       \
+           {__VA_ARGS__,MHD_R_OPTION_TERMINATE ()}).data (),    \
+          MHD_OPTIONS_ARRAY_MAX_SIZE)                           \
         MHD_RESTORE_WARN_CPP_INIT_LIST_
 #  endif
 MHD_RESTORE_WARN_VARIADIC_MACROS_
