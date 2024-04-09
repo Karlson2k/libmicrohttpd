@@ -1,7 +1,7 @@
 Dear all,
 
 We're happy to announce reaching the first milestone for the
-STF MHD 2.0 project, which is completing the MHD HTTP header
+STF-funded MHD 2.0 project, which is completing the MHD HTTP header
 and thus the design for the next generation API.  We have now
 spent several months iterating between discussing, designing,
 optimising, editing, and testing details and are finally
