@@ -11503,7 +11503,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * The result is placed in @a v_uint64 member.
    * @ingroup request
    */
-  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_PROCESSED = 12
+  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_PROCESSED = 14
   ,
   /**
    * Get the total size of the content upload left to be processed.
@@ -11515,7 +11515,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * The result is placed in @a v_uint64 member.
    * @ingroup request
    */
-  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_TO_PROCESS = 13
+  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_TO_PROCESS = 15
   ,
   /**
    * Return length of the client's HTTP request header.
