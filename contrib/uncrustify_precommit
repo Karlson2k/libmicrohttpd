@@ -43,7 +43,7 @@ fi
 
 HAVE=$(uncrustify --version | sed -e 's/.*-//' -e 's/_.//')
 
-vercmp 0.78.0 "$HAVE"
+vercomp 0.78.0 "$HAVE"
 case $? in
     0)
     ;;
