@@ -28,6 +28,7 @@ Name: poll_syscall
 Value: 41
 Comment: Select a sockets watch system call used for internal polling.
 Argument1: enum MHD_SockPollSyscall els
+Description1: FIXME
 
 Name: log_callback
 Value: 60
@@ -80,12 +81,13 @@ Comment: Accept connections from the given socket.  Socket
 Argument1: MHD_socket listen_fd
 Description1: the listen socket to use, ignored if set to #MHD_INVALID_SOCKET
 
-Name: listen addr reuse
+Name: listen_addr_reuse
 Value: 100
 Comment: Select mode of reusing address:port listen address.
 +
 + Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
 Argument1: enum MHD_DaemonOptionBindType reuse_type
+Description1: FIXME
 
 Name: tcp_fastopen
 Value: 101
@@ -110,8 +112,9 @@ Comment: Use the given backlog for the listen() call.
 +
 + Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
 Argument1: unsigned int backlog_size
+Description1: FIXME
 
-Name: sigpipe suppressed
+Name: sigpipe_suppressed
 Value: 103
 Type: enum MHD_Bool
 Comment: Inform that SIGPIPE is suppressed or handled by application.
@@ -156,7 +159,7 @@ Description1: the function to call to obtain pre-shared key
 Argument2: void *psk_cb_cls
 Description2: the closure for @a psk_cb
 
-Name: no alpn
+Name: no_alpn
 Value: 140
 Type: enum MHD_Bool
 Comment: Control ALPN for TLS connection.
@@ -177,12 +180,14 @@ Name: GLOBAL_CONNECTION_LIMIT
 Value: 161
 Comment: Maximum number of (concurrent) network connections served by daemon
 Argument1: unsigned int glob_limit
+Description1: FIXME
 
 Name: PER_IP_LIMIT
 Value: 162
 Comment: Limit on the number of (concurrent) network connections made to the server from the same IP address.
 + Can be used to prevent one IP from taking over all of the allowed connections. If the same IP tries to establish more than the specified number of connections, they will be immediately rejected.
 Argument1: unsigned int per_ip_limit
+Description1: FIXME
 
 Name: accept_policy
 Value: 163
@@ -227,19 +232,19 @@ Comment: Disable converting plus ('+') character to space in GET parameters (URI
 Name: SUPPRESS_DATE_HEADER
 Value: 240
 Type: enum MHD_Bool
-Comment: Suppresse use of "Date:" header.
+Comment: Suppresse use of 'Date:' header.
 + According to RFC should be suppressed only if the system has no RTC.
-+ The "Date:" is not suppressed (the header is enabled) by default.
++ The 'Date:' is not suppressed (the header is enabled) by default.
 
 Name: ENABLE_SHOUTCAST
 Value: 241
 Type: enum MHD_Bool
 Comment: Use SHOUTcast for responses.
-+ This will cause *all* responses to begin with the SHOUTcast "ICY" line instead of "HTTP".
++ This will cause *all* responses to begin with the SHOUTcast 'ICY' line instead of 'HTTP'.
 
 # MHD limits
 
-Name: conn memory limit
+Name: conn_memory_limit
 Value: 280
 Type: size_t
 Comment: Maximum memory size per connection.
@@ -247,15 +252,15 @@ Comment: Maximum memory size per connection.
 + Values above 128kb are unlikely to result in much performance benefit, as half of the memory will be typically used for IO, and TCP buffers are unlikely to support window sizes above 64k on most systems.
 + The size should be large enough to fit all request headers (together with internal parsing information).
 
-Name: large pool size
+Name: large_pool_size
 Value: 281
 Type: size_t
 Comment: The size of the shared memory pool for accamulated upload processing.
-+ The same "large" pool is shared for all connections server by MHD and used when application requests avoiding of incremental upload processing to accamulate complete content upload before giving it to the application.
++ The same large pool is shared for all connections server by MHD and used when application requests avoiding of incremental upload processing to accamulate complete content upload before giving it to the application.
 + Default is 8Mb.
 + Can be set to zero to disable share pool.
 
-Name: stack size
+Name: stack_size
 Value: 282
 Type: size_t
 Comment: Desired size of the stack for the threads started by MHD.
@@ -272,6 +277,7 @@ Comment: The the maximum FD value.
 + Does not work with #MHD_D_OPTION_WM_WORKER_THREADS() or #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
 + Does not work on W32 (WinSock sockets).
 Argument1: MHD_socket max_fd
+Description1: FIXME
 
 # MHD optimisations
 
@@ -296,10 +302,10 @@ Comment: Disable some internal thread safety.
 Name: DISALLOW_UPGRADE
 Value: 322
 Type: enum MHD_Bool
-Comment: You need to set this option if you want to disable use of HTTP "Upgrade".
-+ "Upgrade" may require usage of additional internal resources, which we can avoid providing if they will not be used.
-+ You should only use this option if you do not use "Upgrade" functionality and need a generally minor boost in performance and resources saving.
-+ The "Upgrade" is not disallowed ("upgrade" is allowed) by default.
+Comment: You need to set this option if you want to disable use of HTTP Upgrade.
++ Upgrade may require usage of additional internal resources, which we can avoid providing if they will not be used.
++ You should only use this option if you do not use upgrade functionality and need a generally minor boost in performance and resources saving.
++ The upgrade is not disallowed (upgrade is allowed) by default.
 
 Name: DISALLOW_SUSPEND_RESUME
 Value: 323
@@ -343,7 +349,7 @@ Description2: the closure for the callback
 
 # Digest Auth settings
 
-Name: random entropy
+Name: random_entropy
 Value: 400
 Type: struct MHD_DaemonOptionValueRand
 Comment: Set strong random data to be used by MHD.
@@ -358,7 +364,7 @@ Description2: the buffer with strong random data, the content will be copied by 
 Name: dauth_map_size
 Value: 401
 Comment: Specify the size of the internal hash map array that tracks generated digest nonces usage.
-+ When the size of the map is too small then need to handle concurrent DAuth requests, a lot of "stale nonce" results will be produced.
++ When the size of the map is too small then need to handle concurrent DAuth requests, a lot of stale nonce results will be produced.
 + By default the size is 8 bytes (very small).
 Argument1: size_t size
 Description1: the size of the map array
@@ -367,10 +373,11 @@ Name: dauth_nonce_bind_type
 Value: 402
 Type: enum MHD_DaemonOptionValueDAuthBindNonce
 Comment: Control the scope of validity of MHD-generated nonces.
-+ This regulates how "nonces" are generated and how "nonces" are checked by #MHD_digest_auth_check() and similar functions.
++ This regulates how nonces are generated and how nonces are checked by #MHD_digest_auth_check() and similar functions.
 + This option allows bitwise OR combination of #MHD_DaemonOptionValueDAuthBindNonce values.
 + When this option is not used then default value is #MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
-Argument1: bind_type
+Argument1: enum MHD_DaemonOptionValueDAuthBindNonce bind_type
+Description1: FIXME
 
 Name: dauth_def_nonce_timeout
 Value: 403
@@ -378,6 +385,7 @@ Comment: Default nonce timeout value (in seconds) used for Digest Auth.
 + Silently ignored if followed by zero value.
 + @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
 Argument1: unsigned int timeout
+Description1: FIXME
 
 Name: dauth_def_max_nc
 Value: 404
@@ -385,3 +393,4 @@ Comment: Default maximum nc (nonce count) value used for Digest Auth.
 + Silently ignored if followed by zero value.
 + @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
 Argument1: uint_fast32_t max_nc
+Description1: FIXME
