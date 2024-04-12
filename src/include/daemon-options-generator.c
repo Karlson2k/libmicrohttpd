@@ -706,7 +706,7 @@ main ()
            "  size_t options_max_num)\n"
            "{\n");
   fprintf (f,
-           "  for (size_t i=0;i<options_max_num;i++) {\n"
+           "  for (size_t i=0;i<options_max_num;i++)\n"
            "  {\n"
            "    switch (options[i].opt) {\n");
   iterate (j,
