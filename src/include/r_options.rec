@@ -29,11 +29,11 @@ Comment: Make the response object re-usable.
 Name: HEAD_ONLY_RESPONSE
 Value: 40
 Type: enum MHD_Bool
-Comment: Enable special processing of the response as body-less (with undefined body size). No automatic "Content-Length" or "Transfer-Encoding: chunked" headers are added when the response is used with #MHD_HTTP_STATUS_NOT_MODIFIED code or to respond to HEAD request.
-+ The flag also allow to set arbitrary "Content-Length" by #MHD_response_add_header() function.
+Comment: Enable special processing of the response as body-less (with undefined body size). No automatic 'Content-Length' or 'Transfer-Encoding: chunked' headers are added when the response is used with #MHD_HTTP_STATUS_NOT_MODIFIED code or to respond to HEAD request.
++ The flag also allow to set arbitrary 'Content-Length' by #MHD_response_add_header() function.
 + This flag value can be used only with responses created without body (zero-size body).
 + Responses with this flag enabled cannot be used in situations where reply body must be sent to the client.
-+ This flag is primarily intended to be used when automatic "Content-Length" header is undesirable in response to HEAD requests.
++ This flag is primarily intended to be used when automatic 'Content-Length' header is undesirable in response to HEAD requests.
 
 Name: CHUNKED_ENC
 Value: 41
@@ -46,7 +46,7 @@ Comment: Force use of chunked encoding even if the response content size is know
 Name: CONN_CLOSE
 Value: 60
 Type: enum MHD_Bool
-Comment: Force close connection after sending the response, prevents keep-alive connections and adds "Connection: close" header.
+Comment: Force close connection after sending the response, prevents keep-alive connections and adds 'Connection: close' header.
 
 # Compatibility settings
 
@@ -64,11 +64,11 @@ Value: 81
 Type: enum MHD_Bool
 Comment: Only respond in HTTP/1.0-mode.
 + Contrary to the #MHD_R_O_HTTP_1_0_COMPATIBLE_STRICT flag, the response's HTTP version will always be set to 1.0 and keep-alive connections will be used if explicitly requested by the client.
-+ The "Connection:" header will be added for both "close" and "keep-alive" connections.
++ The 'Connection:' header will be added for both 'close' and 'keep-alive' connections.
 + Chunked encoding will not be used for the response.
 + Due to backward compatibility, responses still can be used with HTTP/1.1 clients.
 + This option can be used to emulate HTTP/1.0 server (for response part only as chunked encoding in requests (if any) is processed by MHD).
-+ With this option HTTP/1.0 server is emulated (with support for "keep-alive" connections).
++ With this option HTTP/1.0 server is emulated (with support for 'keep-alive' connections).
 
 # Violate HTTP and/or RFCs
 
@@ -76,7 +76,7 @@ Name: INSANITY_HEADER_CONTENT_LENGTH
 Value: 100
 Type: enum MHD_Bool
 Comment: Disable sanity check preventing clients from manually setting the HTTP content length option.
-+ Allow to set several "Content-Length" headers. These headers will be used even with replies without body.
++ Allow to set several 'Content-Length' headers. These headers will be used even with replies without body.
 
 # Callbacks
 

@@ -2992,3 +2992,112 @@ typedef void
   const struct MHD_StreamNotificationData *data);
 
 #include "microhttpd2_generated_daemon_options.h"
+
+
+/**
+ * The `enum MHD_RequestTerminationCode` specifies reasons
+ * why a request has been terminated (or completed).
+ * @ingroup request
+ */
+enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestTerminationCode
+{
+
+  /**
+   * The response was successfully sent.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_COMPLETED_OK = 0
+  ,
+  /**
+   * The application terminated request without response.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_BY_APP = 1
+  ,
+  /**
+   * The request is not valid according to
+   * HTTP specifications.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR = 2
+  ,
+  /**
+   * The client terminated the connection by closing the socket
+   * for writing (TCP half-closed) before sending complete request;
+   * MHD aborted sending the response according to RFC 2616, section 8.1.4.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_CLIENT_ABORT = 3
+  ,
+  /**
+   * Error handling the connection due to resources exhausted.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_NO_RESOURCES = 4
+  ,
+  /**
+   * We had to close the session since MHD was being shut down.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 5
+  ,
+  /**
+   * No activity on the connection for the number of seconds specified using
+   * #MHD_C_OPTION_TIMEOUT().
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED = 6
+  ,
+  /**
+   * The connection was broken or TLS protocol error.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_CONNECTION_ERROR = 7
+};
+
+/**
+ * Additional information about request termination
+ */
+union MHD_RequestTerminationDetail
+{
+  /**
+   * Reserved member.
+   * Do not use.
+   */
+  void *reserved;
+};
+
+/**
+ * Request termination data structure
+ */
+struct MHD_RequestTerminationData
+{
+  /**
+   * The code of the event
+   */
+  enum MHD_RequestTerminationCode code;
+  /**
+   * Detailed information about termination event
+   */
+  union MHD_RequestTerminationDetail details;
+};
+
+
+/**
+ * Signature of the callback used by MHD to notify the application
+ * about completed requests.
+ *
+ * @param cls client-defined closure
+ * @param data the details about the event
+ * @param request_context request context value, as originally
+ *         returned by the #MHD_EarlyUriLogCallback
+ * @see #MHD_R_OPTION_TERMINATION_CALLBACK()
+ * @ingroup request
+ */
+typedef void
+(*MHD_RequestTerminationCallback) (void *cls,
+                                   struct MHD_RequestTerminationData *data,
+                                   void *request_context);
+
+
+#include "microhttpd2_generated_response_options.h"

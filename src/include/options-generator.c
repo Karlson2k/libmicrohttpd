@@ -17,7 +17,7 @@
      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 /**
- * @file daemon-options-generator.c
+ * @file options-generator.c
  * @brief Generates code based on JSON-converted Recutils database
  * @author Christian Grothoff
  */
@@ -31,6 +31,7 @@
 
 static FILE *f;
 
+static char *category;
 
 typedef void
 (*Callback) (const char *name,
@@ -138,9 +139,13 @@ indent (char *pfx,
         const char *input)
 {
   char *ret = strdup (input);
+  char *xfx = strdup (pfx);
   char *off;
   size_t pos = 0;
 
+  while ( (strlen (xfx) > 0) &&
+          (isspace (xfx[strlen (xfx) - 1])) )
+    xfx[strlen (xfx) - 1] = '\0';
   while (NULL != (off = strchr (ret + pos, '\n')))
   {
     char *tmp;
@@ -149,7 +154,9 @@ indent (char *pfx,
               "%.*s\n%s%s",
               (int) (off - ret),
               ret,
-              pfx,
+              (off[1] == '\n')
+              ? xfx
+              : pfx,
               off + 1);
     pos = (off - ret) + strlen (pfx) + 1;
     free (ret);
@@ -166,6 +173,16 @@ uppercase (const char *input)
 
   for (size_t i = 0; '\0' != ret[i]; i++)
     ret[i] = toupper (ret[i]);
+  return ret;
+}
+
+
+static char *
+capitalize (const char *input)
+{
+  char *ret = strdup (input);
+
+  ret[0] = toupper (ret[0]);
   return ret;
 }
 
@@ -190,8 +207,9 @@ dump_enum (const char *name,
            json_t *args,
            json_t *descs)
 {
-  printf ("  /**\n   * %s\n   */\n  MHD_D_O_%s = %u\n  ,\n\n",
+  printf ("  /**\n   * %s\n   */\n  MHD_%c_O_%s = %u\n  ,\n\n",
           indent ("   * ", comment),
+          (char) toupper (*category),
           uppercase (name),
           value);
 }
@@ -223,7 +241,8 @@ dump_union_members (const char *name,
   if (1 >= json_array_size (args))
     return;
 
-  printf ("/**\n * Data for #MHD_D_O_%s\n */\n%s\n{\n",
+  printf ("/**\n * Data for #MHD_%c_O_%s\n */\n%s\n{\n",
+          (char) toupper (*category),
           uppercase (name),
           type);
   for (unsigned int i = 0; i<json_array_size (args); i++)
@@ -259,7 +278,10 @@ dump_union (const char *name,
   xcomment = json_string_value (json_array_get (descs,
                                                 0));
   fprintf (f,
-           "  /**\n   * Value for #MHD_D_O_%s.%s%s\n   */\n",
+           "  /**\n"
+           "   * Value for #MHD_%c_O_%s.%s%s\n"
+           "   */\n",
+           (char) toupper (*category),
            uppercase (name),
            NULL != xcomment
           ? "\n   * "
@@ -281,7 +303,7 @@ dump_union (const char *name,
     const char *vn = var_name (arg);
 
     fprintf (f,
-             "  %.*s %s;\n",
+             "  %.*s%s;\n",
              (int) (vn - arg),
              arg,
              lowercase (name));
@@ -301,8 +323,9 @@ dump_struct (const char *name,
              json_t *descs)
 {
   if (NULL != conditional)
-    printf ("#ifdef HAVE_%s",
-            uppercase (conditional));
+    fprintf (f,
+             "#ifdef HAVE_%s",
+             uppercase (conditional));
   dump_union (name,
               value,
               comment,
@@ -311,8 +334,10 @@ dump_struct (const char *name,
               args,
               descs);
   if (NULL != conditional)
-    printf ("#endif\n");
-  printf ("\n");
+    fprintf (f,
+             "#endif\n");
+  fprintf (f,
+           "\n");
 }
 
 
@@ -346,7 +371,8 @@ dump_option_macros (const char *name,
   if (0 == json_array_size (descs))
     printf (" * @param val the value of the parameter");
   printf (" * @return structure with the requested setting\n */\n");
-  printf ("#  define MHD_D_OPTION_%s(",
+  printf ("#  define MHD_%c_OPTION_%s(",
+          (char) toupper (*category),
           uppercase (name));
   if (0 == json_array_size (args))
     printf ("val");
@@ -363,9 +389,11 @@ dump_option_macros (const char *name,
     }
   printf (") \\\n"
           "        MHD_NOWARN_COMPOUND_LITERALS_ \\\n"
-          "          (const struct MHD_DaemonOptionAndValue) \\\n"
+          "          (const struct MHD_%sOptionAndValue) \\\n"
           "        { \\\n"
-          "          .opt = MHD_D_O_%s,  \\\n",
+          "          .opt = MHD_%c_O_%s,  \\\n",
+          capitalize (category),
+          (char) toupper (*category),
           uppercase (name));
   if (0 == json_array_size (args))
     printf ("          .val.%s = (val) \\\n",
@@ -396,7 +424,7 @@ dump_option_macros (const char *name,
     }
 
   printf ("        } \\\n"
-          "        MHD_RESTORE_WARN_COMPOUND_LITERALS_\n\n");
+          "        MHD_RESTORE_WARN_COMPOUND_LITERALS_\n");
 }
 
 
@@ -413,6 +441,7 @@ dump_option_static_functions (const char *name,
   json_t *pos;
 
   printf (
+    "\n"
     "/**\n * %s\n",
     indent (" * ", comment));
   json_array_foreach (descs, off, pos)
@@ -430,11 +459,13 @@ dump_option_static_functions (const char *name,
   if (0 == json_array_size (descs))
     printf (" * @param val the value of the parameter");
   printf (" * @return structure with the requested setting\n */\n");
-  printf ("static MHD_INLINE struct MHD_DaemonOptionAndValue\n"
-          "MHD_D_OPTION_%s(",
+  printf ("static MHD_INLINE struct MHD_%sOptionAndValue\n"
+          "MHD_%c_OPTION_%s (\n",
+          category,
+          (char) toupper (*category),
           uppercase (name));
   if (0 == json_array_size (args))
-    printf ("%s val",
+    printf ("  %s val",
             NULL != type
             ? type
             : json_string_value (
@@ -450,14 +481,20 @@ dump_option_static_functions (const char *name,
       const char *vn
         = var_name (arg);
       if (0 != i)
-        printf (", ");
-      printf ("%.*s %s",
+        printf (",\n");
+      printf ("  %.*s%s",
               (int) (vn - arg),
               arg,
               vn);
     }
   printf (
-    ")\n{\n  struct MHD_DaemonOptionAndValue opt_val;\n\n  opt_val.opt = MHD_D_O_%s;\n",
+    "\n"
+    "  )\n"
+    "{\n"
+    "  struct MHD_%sOptionAndValue opt_val;\n\n"
+    "  opt_val.opt = MHD_%c_O_%s;\n",
+    capitalize (category),
+    (char) toupper (*category),
     uppercase (name));
   if (0 == json_array_size (args))
     printf ("  opt_val.val.%s = (val); \\\n",
@@ -514,14 +551,17 @@ dump_option_documentation_functions (const char *name,
   if (0 == json_array_size (descs))
     fprintf (f, " * @param val the value of the parameter");
   fprintf (f, " * @return structure with the requested setting\n */\n");
-  fprintf (f,"struct MHD_DaemonOptionAndValue\n"
-           "MHD_D_OPTION_%s(",
+  fprintf (f,"struct MHD_%sOptionAndValue\n"
+           "MHD_%c_OPTION_%s (\n",
+           capitalize (category),
+           (char) toupper (*category),
            uppercase (name));
   if (0 == json_array_size (args))
-    fprintf (f, "%s val",
+    fprintf (f,
+             "  %s val",
              NULL != type
-            ? type
-            : json_string_value (
+             ? type
+             : json_string_value (
                json_array_get (args,
                                0)));
   else
@@ -534,14 +574,15 @@ dump_option_documentation_functions (const char *name,
       const char *vn
         = var_name (arg);
       if (0 != i)
-        fprintf (f, ", ");
-      fprintf (f, "%.*s %s",
+        fprintf (f, ",\n");
+      fprintf (f,
+               "  %.*s%s",
                (int) (vn - arg),
                arg,
                vn);
     }
   fprintf (f,
-           ");\n\n");
+           "\n  );\n\n");
 }
 
 
@@ -559,11 +600,13 @@ dump_option_set_switch (const char *name,
              "#ifdef HAVE_%s",
              uppercase (conditional));
   fprintf (f,
-           "    case MHD_D_OPTION_%s:\n",
+           "    case MHD_%c_OPTION_%s:\n",
+           (char) toupper (*category),
            uppercase (name));
   if (0 == json_array_size (args))
     fprintf (f,
-             "      daemon->settings.%s = option->val.%s;\n",
+             "      %s->settings.%s = option->val.%s;\n",
+             category,
              lowercase (name),
              lowercase (name));
   else
@@ -576,14 +619,16 @@ dump_option_set_switch (const char *name,
 
       if (1 < json_array_size (args))
         fprintf (f,
-                 "      daemon->settings.%s.v_%s = option->val.%s.v_%s;\n",
+                 "      %s->settings.%s.v_%s = option->val.%s.v_%s;\n",
+                 category,
                  lowercase (name),
                  vn,
                  lowercase (name),
                  vn);
       else
         fprintf (f,
-                 "      daemon->settings.%s = option->val.%s;\n",
+                 "      %s->settings.%s = option->val.%s;\n",
+                 category,
                  lowercase (name),
                  lowercase (name));
     }
@@ -596,157 +641,272 @@ dump_option_set_switch (const char *name,
 
 
 int
-main ()
+main (int argc,
+      char **argv)
 {
   json_t *j;
   json_error_t err;
 
-  j = json_load_file ("d_options.json", 0, &err);
-  if (NULL == j)
+  if (argc < 2)
   {
     fprintf (stderr,
-             "Failed to parse d_options.json: %s at %d:%d\n",
-             err.text,
-             err.line,
-             err.column);
-    return 2;
+             "Category argument required\n");
+    return 3;
+  }
+  category = argv[1];
+
+  {
+    char *fn;
+
+    asprintf (&fn,
+              "%c_options.json",
+              *category);
+    j = json_load_file (fn, 0, &err);
+    if (NULL == j)
+    {
+      fprintf (stderr,
+               "Failed to parse %s: %s at %d:%d\n",
+               fn,
+               err.text,
+               err.line,
+               err.column);
+      free (fn);
+      return 2;
+    }
+    free (fn);
   }
   iterate (j,
            &check);
 
-  /* Generate enum MHD_DaemonOption */
-  printf (
-    "/**\n * The options (parameters) for MHD daemon\n */\nenum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption\n{");
-  printf (
-    "/**\n   * Not a real option.\n   * Should not be used directly.\n   * This value indicates the end of the list of the options.\n   */\n  MHD_D_O_END = 0\n  ,\n\n");
+  /* Generate enum MHD_${CATEGORY}Option */
+  printf ("/**\n"
+          " * The options (parameters) for MHD %s\n"
+          " */\n"
+          "enum MHD_FIXED_ENUM_APP_SET_ MHD_%sOption\n"
+          "{",
+          category,
+          capitalize (category));
+  printf ("  /**\n"
+          "   * Not a real option.\n"
+          "   * Should not be used directly.\n"
+          "   * This value indicates the end of the list of the options.\n"
+          "   */\n"
+          "  MHD_%c_O_END = 0\n"
+          "  ,\n\n",
+          (char) toupper (*category));
   iterate (j,
            &dump_enum);
-  printf (
-    "  /**\n   * The sentinel value.\n   * This value enforces specific underlying integer type for the enum.\n   * Do not use.\n   */\n  MHD_D_O_SENTINEL = 65535\n\n");
+  printf ("  /**\n"
+          "   * The sentinel value.\n"
+          "   * This value enforces specific underlying integer type for the enum.\n"
+          "   * Do not use.\n"
+          "   */\n"
+          "  MHD_%c_O_SENTINEL = 65535\n\n",
+          (char) toupper (*category));
   printf ("};\n\n");
   iterate (j,
            &dump_union_members);
 
-  /* Generate union MHD_DaemonOptionValue */
-  printf (
-    "/**\n * Parameters for MHD daemon options\n */\nunion MHD_DaemonOptionValue\n{\n");
+  /* Generate union MHD_${CATEGORY}OptionValue */
+  printf ("/**\n"
+          " * Parameters for MHD %s options\n"
+          " */\n"
+          "union MHD_%sOptionValue\n"
+          "{\n",
+          category,
+          capitalize (category));
   f = stdout;
   iterate (j,
            &dump_union);
   f = NULL;
   printf ("};\n\n");
 
-  printf (
-    "\n\nstruct MHD_DaemonOptionAndValue\n{\n  /**\n   * The daemon configuration option\n   */\n  enum MHD_DaemonOption opt;\n  /**\n   * The value for the @a opt option\n   */\n  union MHD_DaemonOptionValue val;\n};\n\n");
-
-
+  printf ("\n"
+          "struct MHD_%sOptionAndValue\n"
+          "{\n"
+          "  /**\n"
+          "   * The %s configuration option\n"
+          "   */\n"
+          "  enum MHD_%sOption opt;\n\n"
+          "  /**\n"
+          "   * The value for the @a opt option\n"
+          "   */\n"
+          "  union MHD_%sOptionValue val;\n"
+          "};\n\n",
+          capitalize (category),
+          category,
+          capitalize (category),
+          capitalize (category));
   printf (
     "#if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_DESIG_NEST_INIT)\n");
   iterate (j,
            &dump_option_macros);
   printf (
-    "/**\n * Terminate the list of the options\n * @return the terminating object of struct MHD_DaemonOptionAndValue\n */\n#  define MHD_D_OPTION_TERMINATE() \\\n        MHD_NOWARN_COMPOUND_LITERALS_ \\\n          (const struct MHD_DaemonOptionAndValue) \\\n        { \\\n          .opt = (MHD_D_O_END) \\\n        } \\\n        MHD_RESTORE_WARN_COMPOUND_LITERALS_\n\n");
+    "\n"
+    "/**\n"
+    " * Terminate the list of the options\n"
+    " * @return the terminating object of struct MHD_%sOptionAndValue\n"
+    " */\n"
+    "#  define MHD_%c_OPTION_TERMINATE() \\\n"
+    "        MHD_NOWARN_COMPOUND_LITERALS_ \\\n"
+    "          (const struct MHD_%sOptionAndValue) \\\n"
+    "        { \\\n"
+    "          .opt = (MHD_%c_O_END) \\\n"
+    "        } \\\n"
+    "        MHD_RESTORE_WARN_COMPOUND_LITERALS_\n\n",
+    capitalize (category),
+    (char) toupper (*category),
+    capitalize (category),
+    (char) toupper (*category));
 
   printf (
     "#else /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */\n");
   printf ("MHD_NOWARN_UNUSED_FUNC_");
   iterate (j, &dump_option_static_functions);
-  printf (
-    "/**\n * Terminate the list of the options\n * @return the terminating object of struct MHD_DaemonOptionAndValue\n */\nstatic MHD_INLINE struct MHD_DaemonOptionAndValue\nMHD_D_OPTION_TERMINATE (void)\n{\n  struct MHD_DaemonOptionAndValue opt_val;\n\n  opt_val.opt = MHD_D_O_END;\n\n  return opt_val;\n}\n\n");
+  printf ("\n/**\n"
+          " * Terminate the list of the options\n"
+          " * @return the terminating object of struct MHD_%sOptionAndValue\n"
+          " */\n"
+          "static MHD_INLINE struct MHD_%sOptionAndValue\n"
+          "MHD_%c_OPTION_TERMINATE (void)\n"
+          "{\n"
+          "  struct MHD_%sOptionAndValue opt_val;\n\n"
+          "  opt_val.opt = MHD_%c_O_END;\n\n"
+          "  return opt_val;\n"
+          "}\n\n\n",
+          capitalize (category),
+          capitalize (category),
+          (char) toupper (*category),
+          capitalize (category),
+          (char) toupper (*category));
 
   printf ("MHD_RESTORE_WARN_UNUSED_FUNC_\n");
   printf (
     "#endif /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */\n");
 
-
-  (void) unlink ("microhttpd2_inline_documentation.h.in");
-  f = fopen ("microhttpd2_inline_documentation.h.in", "w");
-  if (NULL == f)
   {
-    fprintf (stderr,
-             "Failed to open `microhttpd2_inline_documentation.h.in'\n");
-    return 2;
+    char *doc_in;
+
+    asprintf (&doc_in,
+              "microhttpd2_inline_%s_documentation.h.in",
+              category);
+    (void) unlink (doc_in);
+    f = fopen (doc_in, "w");
+    if (NULL == f)
+    {
+      fprintf (stderr,
+               "Failed to open `%s'\n",
+               doc_in);
+      return 2;
+    }
+    fprintf (f,
+             "/* Beginning of generated code documenting how to use options.\n"
+             "   You should treat the following functions *as if* they were\n"
+             "   part of the header/API. The actual declarations are more\n"
+             "   complex, so these here are just for documentation!\n"
+             "   We do not actually *build* this code... */\n"
+             "#if 0\n\n");
+    iterate (j,
+             &dump_option_documentation_functions);
+    fprintf (f,
+             "/* End of generated code documenting how to use options */\n#endif\n\n");
+    fclose (f);
+    chmod (doc_in, S_IRUSR | S_IRGRP | S_IROTH);
   }
-  fprintf (f,
-           "/* Beginning of generated code documenting how to use options.\n"
-           "   You should treat the following functions *as if* they were\n"
-           "   part of the header/API. The actual declarations are more\n"
-           "   complex, so these here are just for documentation!\n"
-           "   We do not actually *build* this code... */\n"
-           "#if 0\n\n");
-  iterate (j,
-           &dump_option_documentation_functions);
-  fprintf (f,
-           "/* End of generated code documenting how to use options */\n#endif\n\n");
-  fclose (f);
-  chmod ("microhttpd2_inline_documentation.h.in", S_IRUSR | S_IRGRP | S_IROTH);
 
-
-  (void) unlink ("../lib/daemon_set_options.c");
-  f = fopen ("../lib/daemon_set_options.c", "w");
-  if (NULL == f)
   {
-    fprintf (stderr,
-             "Failed to open `../lib/daemon_set_options.c'\n");
-    return 2;
+    char *so_c;
+
+    asprintf (&so_c,
+              "../mhd2/%s_set_options.c",
+              category);
+    (void) unlink (so_c);
+    f = fopen (so_c, "w");
+    if (NULL == f)
+    {
+      fprintf (stderr,
+               "Failed to open `%s'\n",
+               so_c);
+      return 2;
+    }
+    fprintf (f,
+             "/* This is generated code, it is still under LGPLv3+.\n"
+             "   Do not edit directly! */\n"
+             "/* *INDENT-OFF* */\n"
+             "/**\n"
+             "/* @file %s_set_options.c\n"
+             "/* @author %s-options-generator.c\n"
+             " */\n\n"
+             "#include \"microhttpd2.h\"\n"
+             "#include \"internal.h\"\n\n"
+             "enum MHD_StatusCode\n"
+             "MHD_%s_set_options (\n"
+             "  struct MHD_%s *%s,\n"
+             "  const struct MHD_%sOptionAndValue *options,\n"
+             "  size_t options_max_num)\n"
+             "{\n",
+             category,
+             category,
+             category,
+             capitalize (category),
+             category,
+             capitalize (category));
+    fprintf (f,
+             "  for (size_t i=0;i<options_max_num;i++)\n"
+             "  {\n"
+             "    switch (options[i].opt) {\n");
+    iterate (j,
+             &dump_option_set_switch);
+    fprintf (f,
+             "    }\n"
+             "    return MHD_SC_OPTION_UNSUPPORTED;\n"
+             "  }\n"
+             "  return MHD_SC_OK;\n");
+    fprintf (f,
+             "}\n");
+
+    fclose (f);
+    chmod (so_c, S_IRUSR | S_IRGRP | S_IROTH);
+    free (so_c);
   }
-  fprintf (f,
-           "/* This is generated code, it is still under LGPLv3+.\n"
-           "   Do not edit directly! */\n"
-           "/**\n"
-           "/* @file daemon_set_options.c\n"
-           "/* @author daemon-options-generator.c\n"
-           " */\n\n"
-           "#include \"microhttpd2.h\"\n"
-           "#include \"internal.h\"\n\n"
-           "enum MHD_StatusCode\n"
-           "MHD_daemon_set_options (\n"
-           "  struct MHD_Daemon *daemon,\n"
-           "  const struct MHD_DaemonOptionAndValue *options,\n"
-           "  size_t options_max_num)\n"
-           "{\n");
-  fprintf (f,
-           "  for (size_t i=0;i<options_max_num;i++)\n"
-           "  {\n"
-           "    switch (options[i].opt) {\n");
-  iterate (j,
-           &dump_option_set_switch);
-  fprintf (f,
-           "    }\n"
-           "    return MHD_SC_OPTION_UNSUPPORTED;\n"
-           "  }\n"
-           "  return MHD_SC_OK;\n");
-  fprintf (f,
-           "}\n");
 
-  fclose (f);
-  chmod ("../lib/daemon_set_options.c", S_IRUSR | S_IRGRP | S_IROTH);
-
-
-  (void) unlink ("../lib/daemon_options.h");
-  f = fopen ("../lib/daemon_options.h", "w");
-  if (NULL == f)
   {
-    fprintf (stderr,
-             "Failed to open `../lib/daemon_options.h'\n");
-    return 2;
+    char *do_h;
+
+    asprintf (&do_h,
+              "../mhd2/%s_options.h",
+              category);
+    (void) unlink (do_h);
+    f = fopen (do_h, "w");
+    if (NULL == f)
+    {
+      fprintf (stderr,
+               "Failed to open `%s'\n",
+               do_h);
+      return 2;
+    }
+    fprintf (f,
+             "/* This is generated code, it is still under LGPLv3+.\n"
+             "   Do not edit directly! */\n"
+             "/* *INDENT-OFF* */\n"
+             "/**\n"
+             "/* @file %s_options.h\n"
+             "/* @author %s-options-generator.c\n"
+             " */\n\n"
+             "#include \"microhttpd2.h\"\n"
+             "#include \"internal.h\"\n\n"
+             "struct %sOptions {\n",
+             category,
+             category,
+             capitalize (category));
+    iterate (j,
+             &dump_struct);
+    fprintf (f,
+             "};\n");
+    fclose (f);
+    chmod (do_h, S_IRUSR | S_IRGRP | S_IROTH);
+    free (do_h);
   }
-  fprintf (f,
-           "/* This is generated code, it is still under LGPLv3+.\n"
-           "   Do not edit directly! */\n"
-           "/**\n"
-           "/* @file daemon_options.h\n"
-           "/* @author daemon-options-generator.c\n"
-           " */\n\n"
-           "#include \"microhttpd2.h\"\n"
-           "#include \"internal.h\"\n\n"
-           "struct DaemonOptions {\n");
-  iterate (j,
-           &dump_struct);
-  fprintf (f,
-           "};\n");
-  fclose (f);
-  chmod ("../lib/daemon_options.h", S_IRUSR | S_IRGRP | S_IROTH);
 
 
   json_decref (j);

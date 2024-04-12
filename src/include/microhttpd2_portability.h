@@ -1,4 +1,5 @@
 MHD_C_DECLRATIONS_START_HERE_
+/* *INDENT-OFF* */
 
 /* While we generally would like users to use a configure-driven
    build process which detects which headers are present and
@@ -91,7 +92,7 @@ typedef SOCKET MHD_socket;
 #ifdef __GNUC__
 #  define MHD_GNUC_MINV(major,minor)    \
         ((__GNUC__ > (major)) ||           \
-         ((__GNUC__ == (major)) && (__GNUC_MINOR__ >= (minor + 0))))
+         ((__GNUC__ == (major)) && (__GNUC_MINOR__ >= (minor+0))))
 #else  /* ! __GNUC__ */
 #  define MHD_GNUC_MINV(major,minor) (0)
 #endif /* ! __GNUC__ */
@@ -99,13 +100,13 @@ typedef SOCKET MHD_socket;
 #ifdef __clang__
 #  define MHD_CLANG_MINV(major,minor)    \
         ((__clang_major__ > (major)) ||           \
-         ((__clang_major__ == (major)) && (__clang_minor__ >= (minor + 0))))
+         ((__clang_major__ == (major)) && (__clang_minor__ >= (minor+0))))
 #else  /* ! __GNUC__ */
 #  define MHD_CLANG_MINV(major,minor) (0)
 #endif /* ! __GNUC__ */
 
 #if defined(_MSC_FULL_VER)
-#  define MHD_MSC_MINV(version) (_MSC_VER >= (version + 0))
+#  define MHD_MSC_MINV(version) (_MSC_VER >= (version+0))
 #  if defined(_MSC_FULL_VER) \
   && (! defined(__STDC__) || defined(_MSC_EXTENSIONS))
 /* Visual C with extensions */
@@ -127,10 +128,10 @@ typedef SOCKET MHD_socket;
 #ifndef __cplusplus
 #  define MHD_CXX_MINV(version) (0)
 #elif ! defined(_MSC_FULL_VER) || ! defined(_MSVC_LANG)
-#  define MHD_CXX_MINV(version) ((__cplusplus + 0) >= version)
+#  define MHD_CXX_MINV(version) ((__cplusplus+0) >= version)
 #else
 #  define MHD_CXX_MINV(version) \
-        ((__cplusplus + 0) >= version) || ((_MSVC_LANG + 0) >= version)
+        ((__cplusplus+0) >= version) || ((_MSVC_LANG+0) >= version)
 #endif
 
 /* Use compound literals? */
@@ -320,7 +321,7 @@ typedef SOCKET MHD_socket;
         _Pragma(MHD_MACRO_STR_(GCC diagnostic ignored MHD_MACRO_STR__(warn)))
 #    ifdef MHD_USE_VARARG_MACROS_EXT
 #      define MHD_NOWARN_VARIADIC_MACROS_ \
-        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wvariadic - macros)
+        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wvariadic-macros)
 #      define MHD_RESTORE_WARN_VARIADIC_MACROS_ MHD_WARN_POP_
 #    endif
 #    ifdef MHD_USE_COMPOUND_LITERALS_EXT
@@ -328,7 +329,7 @@ typedef SOCKET MHD_socket;
 #      define MHD_RESTORE_WARN_COMPOUND_LITERALS_       /* empty */
 #    endif
 #    define MHD_NOWARN_UNUSED_FUNC_ \
-        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wunused - function)
+        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wunused-function)
 #    define MHD_RESTORE_WARN_UNUSED_FUNC_ MHD_WARN_POP_
 #  elif MHD_CLANG_MINV (3,1)
 #    define MHD_WARN_PUSH_ _Pragma("clang diagnostic push")
@@ -338,26 +339,26 @@ typedef SOCKET MHD_socket;
 #    ifdef MHD_USE_VARARG_MACROS_EXT
 #      define MHD_NOWARN_VARIADIC_MACROS_ \
         MHD_WARN_PUSH_ \
-        MHD_WARN_INGORE_ (-Wvariadic - macros) \
-        MHD_WARN_INGORE_ (-Wc++ 98 - compat - pedantic)
+        MHD_WARN_INGORE_ (-Wvariadic-macros) \
+        MHD_WARN_INGORE_ (-Wc++98-compat-pedantic)
 #      define MHD_RESTORE_WARN_VARIADIC_MACROS_ MHD_WARN_POP_
 #    else  /* ! MHD_USE_VARARG_MACROS_EXT */
 #      define MHD_NOWARN_VARIADIC_MACROS_ \
-        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc++ 98 - compat - pedantic)
+        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc++98-compat-pedantic)
 #      define MHD_RESTORE_WARN_VARIADIC_MACROS_ MHD_WARN_POP_
 #    endif
 #    ifdef MHD_USE_CPP_INIT_LIST
 #      define MHD_NOWARN_CPP_INIT_LIST_ \
-        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc++ 98 - compat)
+        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc++98-compat)
 #      define MHD_RESTORE_WARN_CPP_INIT_LIST_ MHD_WARN_POP_
 #    endif
 #    ifdef MHD_USE_COMPOUND_LITERALS_EXT
 #      define MHD_NOWARN_COMPOUND_LITERALS_ \
-        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc99 - extensions)
+        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc99-extensions)
 #      define MHD_RESTORE_WARN_COMPOUND_LITERALS_ MHD_WARN_POP_
 #    endif
 #    define MHD_NOWARN_UNUSED_FUNC_ \
-        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wunused - function)
+        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wunused-function)
 #    define MHD_RESTORE_WARN_UNUSED_FUNC_ MHD_WARN_POP_
 #  elif MHD_MSC_MINV (1500)
 #    define MHD_WARN_PUSH_ __pragma(warning(push))
