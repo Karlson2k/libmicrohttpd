@@ -23,11 +23,27 @@
  */
 #define _GNU_SOURCE
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
-#include <jansson.h>
 #include <sys/stat.h>
+
+#define MAX_ARGS 3
+
+struct Option
+{
+  struct Option *next;
+  char *name;
+  unsigned int value;
+  char *type;
+  char *comment;
+  unsigned int argc;
+  char *arguments[MAX_ARGS];
+  unsigned int desc;
+  char *descriptions[MAX_ARGS];
+  char *conditional;
+};
 
 static FILE *f;
 
@@ -39,48 +55,30 @@ typedef void
              const char *comment,
              const char *type,
              const char *conditional,
-             json_t *args,
-             json_t *descs);
+             unsigned int argc,
+             char **arguments,
+             unsigned int desc,
+             char **descriptions);
 
 
 static void
-iterate (json_t *input,
+iterate (struct Option *head,
          Callback cb)
 {
-  const char *name;
-  json_t *obj;
-
-  json_object_foreach (input, name, obj)
+  for (struct Option *o = head; NULL != o; o = o->next)
   {
-    unsigned int value
-      = json_integer_value (json_object_get (obj,
-                                             "Value"));
-    const char *comment
-      = json_string_value (json_object_get (obj,
-                                            "Comment"));
-    const char *type
-      = json_string_value (json_object_get (obj,
-                                            "Type"));
-    const char *conditional
-      = json_string_value (json_object_get (obj,
-                                            "Conditional"));
-    json_t *args
-      = json_object_get (obj,
-                         "Arguments");
-    json_t *descs
-      = json_object_get (obj,
-                         "Descriptions");
-
     if (0 == strcmp ("end",
-                     name))
+                     o->name))
       continue;
-    cb (name,
-        value,
-        comment,
-        type,
-        conditional,
-        args,
-        descs);
+    cb (o->name,
+        o->value,
+        o->comment,
+        o->type,
+        o->conditional,
+        o->argc,
+        o->arguments,
+        o->desc,
+        o->descriptions);
   }
 }
 
@@ -91,10 +89,12 @@ check (const char *name,
        const char *comment,
        const char *type,
        const char *conditional,
-       json_t *args,
-       json_t *descs)
+       unsigned int argc,
+       char **arguments,
+       unsigned int desc,
+       char **descriptions)
 {
-  if (json_array_size (args) != json_array_size (descs))
+  if (argc != desc)
   {
     fprintf (stderr,
              "Mismatch between descriptions and arguments for `%s'\n",
@@ -102,18 +102,17 @@ check (const char *name,
     exit (2);
   }
   if ( (NULL == type) &&
-       ( (NULL == args) ||
-         (1 != json_array_size (args)) ) )
+       ( (0 == argc) ||
+         (1 != argc) ) )
   {
     fprintf (stderr,
              "Type and argument missing for `%s' and not exactly 1 argument\n",
              name);
     exit (2);
   }
-  for (unsigned int i = 0; i<json_array_size (args); i++)
+  for (unsigned int i = 0; i<argc; i++)
   {
-    const char *arg = json_string_value (json_array_get (args,
-                                                         0));
+    const char *arg = arguments[i];
 
     if (NULL == (strrchr (arg, ' ')))
     {
@@ -204,8 +203,10 @@ dump_enum (const char *name,
            const char *comment,
            const char *type,
            const char *conditional,
-           json_t *args,
-           json_t *descs)
+           unsigned int argc,
+           char **arguments,
+           unsigned int desc,
+           char **descriptions)
 {
   printf ("  /**\n   * %s\n   */\n  MHD_%c_O_%s = %u\n  ,\n\n",
           indent ("   * ", comment),
@@ -233,24 +234,24 @@ dump_union_members (const char *name,
                     const char *comment,
                     const char *type,
                     const char *conditional,
-                    json_t *args,
-                    json_t *descs)
+                    unsigned int argc,
+                    char **arguments,
+                    unsigned int desct,
+                    char **descriptions)
 {
   if (NULL == type)
     return;
-  if (1 >= json_array_size (args))
+  if (1 >= argc)
     return;
 
   printf ("/**\n * Data for #MHD_%c_O_%s\n */\n%s\n{\n",
           (char) toupper (*category),
           uppercase (name),
           type);
-  for (unsigned int i = 0; i<json_array_size (args); i++)
+  for (unsigned int i = 0; i<argc; i++)
   {
-    const char *arg = json_string_value (json_array_get (args,
-                                                         i));
-    const char *desc = json_string_value (json_array_get (descs,
-                                                          i));
+    const char *arg = arguments[i];
+    const char *desc = descriptions[i];
     const char *vn = var_name (arg);
 
     printf ("  /**\n   * %s\n   */\n  %.*sv_%s;\n\n",
@@ -270,13 +271,13 @@ dump_union (const char *name,
             const char *comment,
             const char *type,
             const char *conditional,
-            json_t *args,
-            json_t *descs)
+            unsigned int argc,
+            char **arguments,
+            unsigned int desc,
+            char **descriptions)
 {
-  const char *xcomment = NULL;
+  const char *xcomment = xcomment = descriptions[0];
 
-  xcomment = json_string_value (json_array_get (descs,
-                                                0));
   fprintf (f,
            "  /**\n"
            "   * Value for #MHD_%c_O_%s.%s%s\n"
@@ -298,8 +299,7 @@ dump_union (const char *name,
   }
   else
   {
-    const char *arg = json_string_value (json_array_get (args,
-                                                         0));
+    const char *arg = arguments[0];
     const char *vn = var_name (arg);
 
     fprintf (f,
@@ -319,8 +319,10 @@ dump_struct (const char *name,
              const char *comment,
              const char *type,
              const char *conditional,
-             json_t *args,
-             json_t *descs)
+             unsigned int argc,
+             char **arguments,
+             unsigned int desc,
+             char **descriptions)
 {
   if (NULL != conditional)
     fprintf (f,
@@ -331,8 +333,10 @@ dump_struct (const char *name,
               comment,
               type,
               conditional,
-              args,
-              descs);
+              argc,
+              arguments,
+              desc,
+              descriptions);
   if (NULL != conditional)
     fprintf (f,
              "#endif\n");
@@ -347,20 +351,18 @@ dump_option_macros (const char *name,
                     const char *comment,
                     const char *type,
                     const char *conditional,
-                    json_t *args,
-                    json_t *descs)
+                    unsigned int argc,
+                    char **arguments,
+                    unsigned int desct,
+                    char **descriptions)
 {
-  size_t off;
-  json_t *pos;
-
   printf (
     "/**\n * %s\n",
     indent (" * ", comment));
-  json_array_foreach (descs, off, pos)
+  for (unsigned int off = 0; off<desct; off++)
   {
-    const char *arg = json_string_value (json_array_get (args,
-                                                         off));
-    const char *desc = json_string_value (pos);
+    const char *arg = arguments[off];
+    const char *desc = descriptions[off];
     const char *vn = var_name (arg);
 
     printf (" * @param %s %s\n",
@@ -368,24 +370,21 @@ dump_option_macros (const char *name,
             indent (" *   ",
                     desc));
   }
-  if (0 == json_array_size (descs))
+  if (0 == desct)
     printf (" * @param val the value of the parameter");
   printf (" * @return structure with the requested setting\n */\n");
   printf ("#  define MHD_%c_OPTION_%s(",
           (char) toupper (*category),
           uppercase (name));
-  if (0 == json_array_size (args))
+  if (0 == argc)
     printf ("val");
   else
-    for (unsigned int i = 0; i<json_array_size (args); i++)
+    for (unsigned int i = 0; i<argc; i++)
     {
       if (0 != i)
         printf (",");
       printf ("%s",
-              var_name (
-                json_string_value (
-                  json_array_get (args,
-                                  i))));
+              var_name (arguments[i]));
     }
   printf (") \\\n"
           "        MHD_NOWARN_COMPOUND_LITERALS_ \\\n"
@@ -395,30 +394,27 @@ dump_option_macros (const char *name,
           capitalize (category),
           (char) toupper (*category),
           uppercase (name));
-  if (0 == json_array_size (args))
+  if (0 == argc)
     printf ("          .val.%s = (val) \\\n",
             lowercase (name));
   else
-    for (unsigned int i = 0; i<json_array_size (args); i++)
+    for (unsigned int i = 0; i<argc; i++)
     {
-      const char *vn = var_name (
-        json_string_value (
-          json_array_get (args,
-                          i)));
+      const char *vn = var_name (arguments[i]);
 
-      if (1 < json_array_size (args))
+      if (1 < argc)
         printf ("          .val.%s.v_%s = (%s)%s \\\n",
                 lowercase (name),
                 vn,
                 vn,
-                (i < json_array_size (args) - 1)
+                (i < argc - 1)
               ? ","
               : "");
       else
         printf ("          .val.%s = (%s)%s \\\n",
                 lowercase (name),
                 vn,
-                (i < json_array_size (args) - 1)
+                (i < argc - 1)
                 ? ","
                 : "");
     }
@@ -434,21 +430,19 @@ dump_option_static_functions (const char *name,
                               const char *comment,
                               const char *type,
                               const char *conditional,
-                              json_t *args,
-                              json_t *descs)
+                              unsigned int argc,
+                              char **arguments,
+                              unsigned int desct,
+                              char **descriptions)
 {
-  size_t off;
-  json_t *pos;
-
   printf (
     "\n"
     "/**\n * %s\n",
     indent (" * ", comment));
-  json_array_foreach (descs, off, pos)
+  for (unsigned int off = 0; off < desct; off++)
   {
-    const char *arg = json_string_value (json_array_get (args,
-                                                         off));
-    const char *desc = json_string_value (pos);
+    const char *arg = arguments[off];
+    const char *desc = descriptions[off];
     const char *vn = var_name (arg);
 
     printf (" * @param %s %s\n",
@@ -456,7 +450,7 @@ dump_option_static_functions (const char *name,
             indent (" *   ",
                     desc));
   }
-  if (0 == json_array_size (descs))
+  if (0 == desct)
     printf (" * @param val the value of the parameter");
   printf (" * @return structure with the requested setting\n */\n");
   printf ("static MHD_INLINE struct MHD_%sOptionAndValue\n"
@@ -464,22 +458,18 @@ dump_option_static_functions (const char *name,
           category,
           (char) toupper (*category),
           uppercase (name));
-  if (0 == json_array_size (args))
+  if (0 == argc)
     printf ("  %s val",
             NULL != type
             ? type
-            : json_string_value (
-              json_array_get (args,
-                              0)));
+            : arguments[0]);
   else
-    for (unsigned int i = 0; i<json_array_size (args); i++)
+    for (unsigned int i = 0; i<argc; i++)
     {
-      const char *arg
-        = json_string_value (
-            json_array_get (args,
-                            i));
+      const char *arg = arguments[i];
       const char *vn
         = var_name (arg);
+
       if (0 != i)
         printf (",\n");
       printf ("  %.*s%s",
@@ -496,18 +486,15 @@ dump_option_static_functions (const char *name,
     capitalize (category),
     (char) toupper (*category),
     uppercase (name));
-  if (0 == json_array_size (args))
+  if (0 == argc)
     printf ("  opt_val.val.%s = (val); \\\n",
             lowercase (name));
   else
-    for (unsigned int i = 0; i<json_array_size (args); i++)
+    for (unsigned int i = 0; i<argc; i++)
     {
-      const char *vn = var_name (
-        json_string_value (
-          json_array_get (args,
-                          i)));
+      const char *vn = var_name (arguments[i]);
 
-      if (1 < json_array_size (args))
+      if (1 < argc)
         printf ("  opt_val.val.%s.v_%s = %s;\n",
                 lowercase (name),
                 vn,
@@ -527,20 +514,19 @@ dump_option_documentation_functions (const char *name,
                                      const char *comment,
                                      const char *type,
                                      const char *conditional,
-                                     json_t *args,
-                                     json_t *descs)
+                                     unsigned int argc,
+                                     char **arguments,
+                                     unsigned int desct,
+                                     char **descriptions)
 {
-  size_t off;
-  json_t *pos;
 
   fprintf (f,
            "/**\n * %s\n",
            indent (" * ", comment));
-  json_array_foreach (descs, off, pos)
+  for (unsigned int off = 0; off<desct; off++)
   {
-    const char *arg = json_string_value (json_array_get (args,
-                                                         off));
-    const char *desc = json_string_value (pos);
+    const char *arg = arguments[off];
+    const char *desc = descriptions[off];
     const char *vn = var_name (arg);
 
     fprintf (f, " * @param %s %s\n",
@@ -548,7 +534,7 @@ dump_option_documentation_functions (const char *name,
              indent (" *   ",
                      desc));
   }
-  if (0 == json_array_size (descs))
+  if (0 == desct)
     fprintf (f, " * @param val the value of the parameter");
   fprintf (f, " * @return structure with the requested setting\n */\n");
   fprintf (f,"struct MHD_%sOptionAndValue\n"
@@ -556,23 +542,18 @@ dump_option_documentation_functions (const char *name,
            capitalize (category),
            (char) toupper (*category),
            uppercase (name));
-  if (0 == json_array_size (args))
+  if (0 == argc)
     fprintf (f,
              "  %s val",
              NULL != type
              ? type
-             : json_string_value (
-               json_array_get (args,
-                               0)));
+             : arguments[0]);
   else
-    for (unsigned int i = 0; i<json_array_size (args); i++)
+    for (unsigned int i = 0; i<argc; i++)
     {
-      const char *arg
-        = json_string_value (
-            json_array_get (args,
-                            i));
-      const char *vn
-        = var_name (arg);
+      const char *arg = arguments[i];
+      const char *vn = var_name (arg);
+
       if (0 != i)
         fprintf (f, ",\n");
       fprintf (f,
@@ -592,8 +573,10 @@ dump_option_set_switch (const char *name,
                         const char *comment,
                         const char *type,
                         const char *conditional,
-                        json_t *args,
-                        json_t *descs)
+                        unsigned int argc,
+                        char **arguments,
+                        unsigned int desc,
+                        char **descriptions)
 {
   if (NULL != conditional)
     fprintf (f,
@@ -603,21 +586,18 @@ dump_option_set_switch (const char *name,
            "    case MHD_%c_OPTION_%s:\n",
            (char) toupper (*category),
            uppercase (name));
-  if (0 == json_array_size (args))
+  if (0 == argc)
     fprintf (f,
              "      %s->settings.%s = option->val.%s;\n",
              category,
              lowercase (name),
              lowercase (name));
   else
-    for (unsigned int i = 0; i<json_array_size (args); i++)
+    for (unsigned int i = 0; i<argc; i++)
     {
-      const char *vn = var_name (
-        json_string_value (
-          json_array_get (args,
-                          i)));
+      const char *vn = var_name (arguments[i]);
 
-      if (1 < json_array_size (args))
+      if (1 < argc)
         fprintf (f,
                  "      %s->settings.%s.v_%s = option->val.%s.v_%s;\n",
                  category,
@@ -640,12 +620,26 @@ dump_option_set_switch (const char *name,
 }
 
 
+static char **
+parse (char **target,
+       const char *prefix,
+       const char *input)
+{
+  if (0 != strncasecmp (prefix,
+                        input,
+                        strlen (prefix)))
+    return NULL;
+  *target = strdup (input + strlen (prefix));
+  return target;
+}
+
+
 int
 main (int argc,
       char **argv)
 {
-  json_t *j;
-  json_error_t err;
+  static char *dummy;
+  struct Option *head = NULL;
 
   if (argc < 2)
   {
@@ -657,25 +651,160 @@ main (int argc,
 
   {
     char *fn;
+    char *line = NULL;
+    char **larg = NULL;
+    unsigned int off;
+    size_t len;
+    struct Option *last = NULL;
 
     asprintf (&fn,
-              "%c_options.json",
+              "%c_options.rec",
               *category);
-    j = json_load_file (fn, 0, &err);
-    if (NULL == j)
+    f = fopen (fn, "r");
+    if (NULL == f)
     {
       fprintf (stderr,
-               "Failed to parse %s: %s at %d:%d\n",
-               fn,
-               err.text,
-               err.line,
-               err.column);
+               "Failed to open %s\n",
+               fn);
       free (fn);
       return 2;
     }
+    off = 0;
+TOP:
+    while (1)
+    {
+      ssize_t r;
+
+      free (line);
+      line = NULL;
+      len = 0;
+      r = getline (&line,
+                   &len,
+                   f);
+      off++;
+      if (r <= 0)
+        break;
+      while ( (r > 0) &&
+              ( (isspace (line[r - 1])) ||
+                (line[r - 1] == '\n') ) )
+        line[--r] = '\0'; /* remove new line */
+      if (0 == r)
+      {
+        larg = NULL;
+        continue;
+      }
+      if ( (NULL != larg) &&
+           ( (0 == strncmp ("+ ",
+                            line,
+                            2) ) ||
+             (0 == strcmp ("+",
+                           line) ) ) )
+      {
+        if (larg == &dummy)
+        {
+          fprintf (stderr,
+                   "Continuation after 'Value:' not supported on line %u\n",
+                   off);
+          exit (2);
+        }
+
+        *larg = realloc (*larg,
+                         strlen (*larg) + r + 2);
+        strcat (*larg,
+                "\n");
+        if (0 != strcmp ("+",
+                         line) )
+          strcat (*larg,
+                  line + 2);
+        continue;
+      }
+      if ( ('%' == line[0]) ||
+           ('#' == line[0]) )
+        continue;
+      if (NULL == larg)
+      {
+        struct Option *o = malloc (sizeof (struct Option));
+
+        memset (o, 0, sizeof (*o));
+        if (NULL == head)
+          head = o;
+        else
+          last->next = o;
+        last = o;
+      }
+      if (NULL != (larg = parse (&last->name,
+                                 "Name: ",
+                                 line)))
+        continue;
+      if (NULL != (larg = parse (&last->comment,
+                                 "Comment: ",
+                                 line)))
+        continue;
+      if (NULL != (larg = parse (&last->type,
+                                 "Type: ",
+                                 line)))
+        continue;
+      if (NULL != (larg = parse (&last->conditional,
+                                 "Conditional: ",
+                                 line)))
+        continue;
+      if (0 == strncasecmp (line,
+                            "Value: ",
+                            strlen ("Value: ")))
+      {
+        char xdummy;
+
+        if (1 == sscanf (line + strlen ("Value: "),
+                         "%u%c",
+                         &last->value,
+                         &xdummy))
+        {
+          larg = &dummy;
+          continue;
+        }
+        fprintf (stderr,
+                 "Value on line %d not a number\n",
+                 off);
+        return 2;
+      }
+      for (unsigned int i = 0; i<MAX_ARGS; i++)
+      {
+        char name[32];
+
+        snprintf (name,
+                  sizeof (name),
+                  "Argument%u: ",
+                  i + 1);
+        if (NULL != (larg = parse (&last->arguments[i],
+                                   name,
+                                   line)))
+        {
+          last->argc = i + 1;
+          goto TOP;
+        }
+        snprintf (name,
+                  sizeof (name),
+                  "Description%u: ",
+                  i + 1);
+        if (NULL != (larg = parse (&last->descriptions[i],
+                                   name,
+                                   line)))
+        {
+          last->desc = i + 1;
+          goto TOP;
+        }
+      }
+      fprintf (stderr,
+               "Could not parse line %u: `%s'\n",
+               off,
+               line);
+      exit (2);
+    }
     free (fn);
+    free (line);
   }
-  iterate (j,
+
+  iterate (head,
            &check);
 
   /* Generate enum MHD_${CATEGORY}Option */
@@ -694,7 +823,7 @@ main (int argc,
           "  MHD_%c_O_END = 0\n"
           "  ,\n\n",
           (char) toupper (*category));
-  iterate (j,
+  iterate (head,
            &dump_enum);
   printf ("  /**\n"
           "   * The sentinel value.\n"
@@ -704,7 +833,7 @@ main (int argc,
           "  MHD_%c_O_SENTINEL = 65535\n\n",
           (char) toupper (*category));
   printf ("};\n\n");
-  iterate (j,
+  iterate (head,
            &dump_union_members);
 
   /* Generate union MHD_${CATEGORY}OptionValue */
@@ -716,7 +845,7 @@ main (int argc,
           category,
           capitalize (category));
   f = stdout;
-  iterate (j,
+  iterate (head,
            &dump_union);
   f = NULL;
   printf ("};\n\n");
@@ -739,7 +868,7 @@ main (int argc,
           capitalize (category));
   printf (
     "#if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_DESIG_NEST_INIT)\n");
-  iterate (j,
+  iterate (head,
            &dump_option_macros);
   printf (
     "\n"
@@ -762,7 +891,7 @@ main (int argc,
   printf (
     "#else /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */\n");
   printf ("MHD_NOWARN_UNUSED_FUNC_");
-  iterate (j, &dump_option_static_functions);
+  iterate (head, &dump_option_static_functions);
   printf ("\n/**\n"
           " * Terminate the list of the options\n"
           " * @return the terminating object of struct MHD_%sOptionAndValue\n"
@@ -806,7 +935,7 @@ main (int argc,
              "   complex, so these here are just for documentation!\n"
              "   We do not actually *build* this code... */\n"
              "#if 0\n\n");
-    iterate (j,
+    iterate (head,
              &dump_option_documentation_functions);
     fprintf (f,
              "/* End of generated code documenting how to use options */\n#endif\n\n");
@@ -855,7 +984,7 @@ main (int argc,
              "  for (size_t i=0;i<options_max_num;i++)\n"
              "  {\n"
              "    switch (options[i].opt) {\n");
-    iterate (j,
+    iterate (head,
              &dump_option_set_switch);
     fprintf (f,
              "    }\n"
@@ -899,7 +1028,7 @@ main (int argc,
              category,
              category,
              capitalize (category));
-    iterate (j,
+    iterate (head,
              &dump_struct);
     fprintf (f,
              "};\n");
@@ -908,7 +1037,5 @@ main (int argc,
     free (do_h);
   }
 
-
-  json_decref (j);
   return 0;
 }
