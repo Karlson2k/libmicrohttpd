@@ -48,6 +48,8 @@ AC_SUBST([PACKAGE_VERSION_SUBMINOR])
 AC_SUBST([MHD_W32_DLL_SUFF])
 AC_CONFIG_FILES([src/mhd2/w32_lib_res.rc])
 
+CONF_FINAL_WARNS=""
+
 MHD_LIB_CPPFLAGS=""
 MHD_LIB_CFLAGS=""
 MHD_LIB_LDFLAGS=""
@@ -1734,24 +1736,21 @@ AX_PTHREAD(
   [
     mhd_have_posix_threads='yes'
     AC_DEFINE([[HAVE_PTHREAD_H]],[[1]],[Define to 1 if you have the <pthread.h> header file.])
-	AC_CACHE_CHECK([[whether pthread_sigmask(3) is available]],
-	  [[mhd_cv_func_pthread_sigmask]], [dnl
-	  save_LIBS="$LIBS"
-	  LIBS="$PTHREAD_LIBS $LIBS"
-  	  CFLAGS="${CFLAGS_ac} ${PTHREAD_CFLAGS} ${user_CFLAGS}"
-	  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <signal.h>]],
-	    [[
-	      sigset_t nset, oset;
-	      sigemptyset (&nset);
-	      sigaddset (&nset, SIGPIPE);
-	      if (0 != pthread_sigmask(SIG_BLOCK, &nset, &oset)) return 1;
-	    ]])],
-	    [[mhd_cv_func_pthread_sigmask="yes"]],[[mhd_cv_func_pthread_sigmask="no"]])
-	  LIBS="${save_LIBS}"
-      CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
-	])
-	AS_VAR_IF([mhd_cv_func_pthread_sigmask],["yes"],
-	  [AC_DEFINE([[HAVE_PTHREAD_SIGMASK]],[[1]],[Define to 1 if you have the pthread_sigmask(3) function.])])
+    CFLAGS="${CFLAGS_ac} ${PTHREAD_CFLAGS} ${user_CFLAGS}"
+    MHD_CHECK_FUNC([pthread_sigmask],
+      [[
+#include <pthread.h>
+#include <signal.h>
+      ]],
+      [[
+        sigset_t nset, oset;
+        sigemptyset (&nset);
+        sigaddset (&nset, SIGPIPE);
+        i][f (0 != pthread_sigmask(SIG_BLOCK, &nset, &oset)) return 1;
+      ]],
+      [AC_DEFINE([[HAVE_PTHREAD_SIGMASK]],[[1]],[Define to 1 if you have the pthread_sigmask(3) function.])]
+    )
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
   ],[[mhd_have_posix_threads='no']])
 AM_CONDITIONAL([HAVE_POSIX_THREADS],[test "x$mhd_have_posix_threads" = "xyes"])
 
@@ -2951,8 +2950,18 @@ AC_ARG_ENABLE([[epoll]],
 )
 AS_IF([test "$enable_epoll" != "no"],
   [
-    AX_HAVE_EPOLL
-    AS_IF([test "${ax_cv_have_epoll}" = "yes"],
+    MHD_CHECK_FUNC_RUN([epoll_create],
+      [[
+#include <sys/epoll.h>
+#include <unistd.h>
+      ]],
+      [[
+        int epfd = epoll_create(64);
+        i][f (0 > epfd) return -epfd;
+        (void) close(epfd);
+        return 0;
+      ]],
+      [cacheVar="assuming yes"],
       [
         AC_DEFINE([[HAVE_EPOLL]],[[1]],[Define to '1' if epoll is supported on your platform])
         AC_DEFINE([[MHD_USE_EPOLL]],[[1]],[Define to '1' to enable 'epoll' functionality])
@@ -2963,6 +2972,23 @@ AS_IF([test "$enable_epoll" != "no"],
           [AC_MSG_ERROR([[Support for epoll was explicitly requested but cannot be enabled on this platform.]])]
         )
         enable_epoll='no'
+      ]
+    )
+    AS_UNSET([warn_msg])
+    AS_VAR_IF([mhd_cv_works_func_epoll_create],["assuming yes"],
+      [[warn_msg="When cross-compiling it is not possible to check whether 'epoll_create()' really works on the host (final) platform.
+'epoll' is enabled as most probably the host kernel supports it (CONFIG_EPOLL option enabled in case of Linux kernel).
+Use './configure mhd_cv_works_func_epoll_create=yes' to mute this warning."]]
+    )
+    AS_VAR_SET_IF([warn_msg],[AC_MSG_WARN([$warn_msg])
+        AS_IF([test -n "${CONF_FINAL_WARNS}" ],
+           [
+             CONF_FINAL_WARNS="${CONF_FINAL_WARNS}
+
+WARNING: "
+           ]
+        )
+        CONF_FINAL_WARNS="${CONF_FINAL_WARNS}${warn_msg}"
       ]
     )
   ]
@@ -3125,11 +3151,8 @@ AC_CHECK_MEMBERS([struct sockaddr.sa_len, struct sockaddr_storage.ss_len,
 #endif
    ])
 
-MHD_CHECK_LINK_RUN([[f][or working getsockname()]],[[mhd_cv_getsockname_usable]],
-  [[mhd_cv_getsockname_usable='assuming yes']],
-  [
-    AC_LANG_SOURCE(
-      [[
+MHD_CHECK_FUNC_RUN([getsockname],
+  [[
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -3159,8 +3182,8 @@ MHD_CHECK_LINK_RUN([[f][or working getsockname()]],[[mhd_cv_getsockname_usable]]
 static void zr_mem(void *ptr, socklen_t size)
 { char *mem = ptr; while(size--) {mem[0] = 0; mem++;} }
 
-int main(void)
-{
+  ]],
+  [[
   const socklen_t c_addr_size = (socklen_t)sizeof(struct sockaddr_in);
   struct sockaddr_in sa;
   socklen_t addr_size;
@@ -3209,10 +3232,8 @@ int main(void)
   WSACleanup();
 #endif
   return ret;
-}
-      ]]
-    )
-  ],
+  ]],
+  [cacheVar='assuming yes'],
   [AC_DEFINE([[MHD_USE_GETSOCKNAME]], [[1]], [Define if you have usable `getsockname' function.])]
 )
 
@@ -3449,15 +3470,12 @@ AS_UNSET([[use_itc]])
 
 AS_IF([[test "x$enable_itc" = "xeventfd" || test "x$enable_itc" = "xauto"]],
   [
-    MHD_CHECK_LINK_RUN([[f][or working eventfd(2)]],[[mhd_cv_eventfd_usable]],[[mhd_cv_eventfd_usable='assuming no']],
-      [
-        AC_LANG_SOURCE([[
+    MHD_CHECK_FUNC_RUN([eventfd],[[
 #include <sys/eventfd.h>
 #include <unistd.h>
-
-int main(void)
-{
-  unsigned char buf[8];
+      ]],
+      [[
+  static unsigned char buf[8];
   int ret;
   int efd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
   if (0 > efd)
@@ -3473,8 +3491,10 @@ int main(void)
   }
   close(efd);
   return ret;
-}
-          ]]
+      ]],
+      [
+        AS_VAR_IF([enable_itc],["eventfd"],
+          [cacheVar="assuming yes"],[cacheVar="assuming no"]
         )
       ],
       [
@@ -3486,8 +3506,27 @@ int main(void)
         AS_VAR_IF([[enable_itc]], [["eventfd"]], [AC_MSG_ERROR([[eventfd(2) is not usable, consider using other type of inter-thread communication]])])
       ]
     )
-    AS_VAR_IF([mhd_cv_eventfd_usable],["assuming no"],
-      [AC_MSG_WARN([if you have 'eventfd' support enabled on your target system consider overriding test result by "mhd_cv_eventfd_usable=yes" configure parameter])]
+    AS_UNSET([warn_msg])
+    AS_VAR_IF([mhd_cv_works_func_eventfd],["assuming yes"],
+      [[warn_msg="When cross-compiling it is not possible to check whether 'eventfd()' really works on the host (final) platform.
+'eventfd' is enabled as requested by configure parameters.
+Use './configure mhd_cv_works_func_eventfd=yes' to mute this warning."]]
+    )
+    AS_VAR_IF([mhd_cv_works_func_eventfd],["assuming no"],
+      [[warn_msg="When cross-compiling it is not possible to check whether 'eventfd()' really works on the host (final) platform.
+'eventfd()' is disabled. If it is available use './configure mhd_cv_works_func_eventfd=yes' to enable.
+Use './configure mhd_cv_works_func_eventfd=no' to mute this warning."]]
+    )
+    AS_VAR_SET_IF([warn_msg],[AC_MSG_WARN([$warn_msg])
+        AS_IF([test -n "${CONF_FINAL_WARNS}" ],
+           [
+             CONF_FINAL_WARNS="${CONF_FINAL_WARNS}
+
+WARNING: "
+           ]
+        )
+        CONF_FINAL_WARNS="${CONF_FINAL_WARNS}${warn_msg}"
+      ]
     )
   ]
 )
@@ -3515,30 +3554,27 @@ AC_INCLUDES_DEFAULT
       use_itc='pipe'
       enable_itc="$use_itc"
       AC_DEFINE([[MHD_ITC_PIPE_]], [[1]], [Define to use pipe for inter-thread communication])
-      MHD_CHECK_LINK_RUN([[whether pipe2(2) is usable]],[[mhd_cv_pipe2_usable]],
-        [
-          # Cross-compiling
-          AS_CASE([${host_os}], [kfreebsd*-gnu], [[mhd_cv_pipe2_usable='assuming no']],
-            [[mhd_cv_pipe2_usable='assuming yes']])
-        ],
-        [
-          AC_LANG_PROGRAM([
+      MHD_CHECK_FUNC_RUN([pipe2],[
 AC_INCLUDES_DEFAULT
+[
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-            ], [[
-              int arr[2];
-              int res;
-              res = pipe2(arr, O_CLOEXEC | O_NONBLOCK);
-              if (res != 0) return 33;
-              close (arr[0]);
-              close (arr[1]);
-            ]]
-          )
+        ]],[[
+          int arr[2];
+          int res;
+          res = pipe2(arr, O_CLOEXEC | O_NONBLOCK);
+          i][f (res != 0) return 33;
+          close (arr[0]);
+          close (arr[1]);
+          return 0;
+        ]],[
+          # Cross-compiling
+          AS_CASE([${host_os}], [kfreebsd*-gnu], [cacheVar='assuming no'],
+            [cacheVar='assuming yes'])
         ],
         [AC_DEFINE([[HAVE_PIPE2_FUNC]], [[1]], [Define if you have usable pipe2(2) function])]
       )
@@ -7305,3 +7341,4 @@ AS_IF([test "x$enable_bauth" != "xyes" || \
    test "x$enable_postparser" != "xyes"],
    [AC_MSG_WARN([This will be a custom build with missing symbols. Do NOT use this build in a distribution. Building with these kinds of configure options is only for custom builds for embedded systems.])]
 )
+AS_IF([test -n "${CONF_FINAL_WARNS}"],[AC_MSG_WARN([${CONF_FINAL_WARNS}])])
