@@ -752,8 +752,8 @@ AS_VAR_IF([enable_linker_hardening],["yes"],
 )
 
 
-AH_TEMPLATE([[HAVE_STDBOOL_H]], [Define to 1 if you have the <stdbool.h> header file and <stdbool.h> defines 'bool' type.])
-AH_TEMPLATE([[HAVE_BUILTIN_TYPE_BOOL]], [Define to 1 if you have the real boolean type.])
+AH_TEMPLATE([[HAVE_STDBOOL_H]], [Define to 1 i][f you have the <stdbool.h> header file and <stdbool.h> defines 'bool' type.])
+AH_TEMPLATE([[HAVE_BUILTIN_TYPE_BOOL]], [Define to 1 i][f you have the real boolean type.])
 AH_TEMPLATE([[bool]], [Define to type name which will be used as boolean type.])
 AC_CHECK_HEADER([stdbool.h],
   [
@@ -1277,8 +1277,9 @@ AS_CASE([[$with_threads]],
     [AC_MSG_ERROR([[incorrect parameter "$with_threads" specified for --with-threads]])]
 )
 
-# Check for posix threads support, regardless of configure parameters as
-# testsuite uses only posix threads.
+# Check for posix threads support.
+# As the testsuite uses only posix threads, the checks are required even
+# if the library does not use posit threads.
 AX_PTHREAD(
   [
     mhd_have_posix_threads='yes'
@@ -2626,7 +2627,6 @@ MHD_CHECK_FUNC_RUN([getsockname],
 #include <arpa/inet.h>
 #endif
 
-
 static void zr_mem(void *ptr, socklen_t size)
 { char *mem = ptr; while(size--) {mem[0] = 0; mem++;} }
 
@@ -2644,35 +2644,35 @@ static void zr_mem(void *ptr, socklen_t size)
   const SOCKET invld_sckt = INVALID_SOCKET;
   WSADATA wsa_data;
 
-  if (0 != WSAStartup(MAKEWORD(2, 2), &wsa_data) || MAKEWORD(2, 2) != wsa_data.wVersion)
+  i][f (0 != WSAStartup(MAKEWORD(2, 2), &wsa_data) || MAKEWORD(2, 2) != wsa_data.wVersion)
     return 20;
 #endif
 
   sckt = socket (PF_INET, SOCK_STREAM, 0);
-  if (invld_sckt != sckt)
+  i][f (invld_sckt != sckt)
   {
     zr_mem(&sa, c_addr_size);
     sa.sin_family = AF_INET;
 #ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
     sa.sin_len = c_addr_size;
 #endif
-    if (0 == bind (sckt, (struct sockaddr *)&sa, c_addr_size))
+    i][f (0 == bind (sckt, (struct sockaddr *)&sa, c_addr_size))
     {
-      if (0 == listen (sckt, 1))
+      i][f (0 == listen (sckt, 1))
       {
         addr_size = c_addr_size;
-        if (0 == getsockname (sckt, (struct sockaddr  *)&sa, &addr_size))
+        i][f (0 == getsockname (sckt, (struct sockaddr  *)&sa, &addr_size))
         {
-          if (c_addr_size >= addr_size)
+          i][f (c_addr_size >= addr_size)
           {
-            if (0 != ntohs(sa.sin_port))
+            i][f (0 != ntohs(sa.sin_port))
             { ret = 0;
-            } else ret = 7;
-          } else ret = 6;
-        } else ret = 5;
-      } else ret = 4;
-    } else ret = 3;
-  } else ret = 2;
+            } el][se ret = 7;
+          } el][se ret = 6;
+        } el][se ret = 5;
+      } el][se ret = 4;
+    } el][se ret = 3;
+  } el][se ret = 2;
 #if !defined(_WIN32) || defined(__CYGWIN__)
   close (sckt);
 #else
@@ -2852,15 +2852,15 @@ AS_IF([[test "x$enable_itc" = "xeventfd" || test "x$enable_itc" = "xauto"]],
   static unsigned char buf[8];
   int ret;
   int efd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-  if (0 > efd)
+  i][f (0 > efd)
     return 2;
   ret = 0;
   buf[3] = 1;
-  if (8 != write(efd, buf, 8))
+  i][f (8 != write(efd, buf, 8))
     ret = 3;
-  else
+  el][se
   {
-    if (8 != read(efd, buf, 8))
+    i][f (8 != read(efd, buf, 8))
       ret = 4;
   }
   close(efd);
@@ -2947,7 +2947,7 @@ AC_INCLUDES_DEFAULT
           AS_CASE([${host_os}], [kfreebsd*-gnu], [cacheVar='assuming no'],
             [cacheVar='assuming yes'])
         ],
-        [AC_DEFINE([[HAVE_PIPE2_FUNC]], [[1]], [Define if you have usable pipe2(2) function])]
+        [AC_DEFINE([[HAVE_PIPE2_FUNC]], [[1]], [Define i][f you have usable pipe2(2) function])],
       )
     ], [
       AS_VAR_IF([[enable_itc]], [["pipe"]], [AC_MSG_ERROR([[pipe(3) is not usable, consider using other type of inter-thread communication]])])
