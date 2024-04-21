@@ -4508,7 +4508,7 @@ MHD_CHECK_FUNC([magic_open],
   [],
   [-lmagic]
 )
-AM_CONDITIONAL([MHD_HAVE_LIBMAGIC], [[test "x$mhd_cv_func_magic_open" = "xyes"]])
+AM_CONDITIONAL([MHD_HAVE_LIBMAGIC], [[test "x$mhd_cv_have_func_magic_open" = "xyes"]])
 
 # large file support (> 4 GB)
 AC_SYS_LARGEFILE
@@ -5942,7 +5942,7 @@ AS_VAR_IF([enable_tools],["yes"],
         )
       ]
     )
-    AS_VAR_IF([mhd_cv_func_CPU_COUNT_S],["yes"],
+    AS_VAR_IF([mhd_cv_have_func_CPU_COUNT_S],["yes"],
       [
         AC_CACHE_CHECK([whether CPU_COUNT_S() expects max CPU number as 'size' parameter],[mhd_cv_func_cpu_count_s_cpus],
           [
