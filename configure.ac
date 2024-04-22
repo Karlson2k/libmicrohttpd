@@ -3071,7 +3071,8 @@ AC_CACHE_CHECK([size of tv_sec member of struct timeval], [mhd_cv_size_timeval_t
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
-static struct timeval test_var;
+extern struct timeval test_var; /* Declaration */
+struct timeval test_var = {0, 0}; /* Definition */
       ]],
       [
         # The size is used only to exclude additional checks/comparison in code
@@ -3156,6 +3157,7 @@ MHD_CHECK_FUNC_RUN([getsockname],
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
+#include <string.h>
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
@@ -3178,10 +3180,6 @@ MHD_CHECK_FUNC_RUN([getsockname],
 #include <arpa/inet.h>
 #endif
 
-
-static void zr_mem(void *ptr, socklen_t size)
-{ char *mem = ptr; while(size--) {mem[0] = 0; mem++;} }
-
   ]],
   [[
   const socklen_t c_addr_size = (socklen_t)sizeof(struct sockaddr_in);
@@ -3203,7 +3201,7 @@ static void zr_mem(void *ptr, socklen_t size)
   sckt = socket (PF_INET, SOCK_STREAM, 0);
   if (invld_sckt != sckt)
   {
-    zr_mem(&sa, c_addr_size);
+    memset(&sa, 0, c_addr_size);
     sa.sin_family = AF_INET;
 #ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
     sa.sin_len = c_addr_size;
