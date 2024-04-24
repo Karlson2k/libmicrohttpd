@@ -161,7 +161,14 @@ CPPFLAGS_ac=""
 
 MHD_SYS_EXT([CPPFLAGS_ac])
 CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+m4_version_prereq([2.72],
+  [
+AC_SYS_YEAR2038
+  ],
+  [
 AC_SYS_LARGEFILE
+  ]
+)
 AC_FUNC_FSEEKO
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
