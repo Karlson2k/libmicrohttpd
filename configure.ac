@@ -161,6 +161,8 @@ CPPFLAGS_ac=""
 
 MHD_SYS_EXT([CPPFLAGS_ac])
 CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+AC_SYS_LARGEFILE
+AC_FUNC_FSEEKO
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
 
@@ -3383,8 +3385,6 @@ MHD_CHECK_FUNC([magic_open],
 AM_CONDITIONAL([MHD_HAVE_LIBMAGIC], [[test "x$mhd_cv_have_func_magic_open" = "xyes"]])
 
 # large file support (> 4 GB)
-AC_SYS_LARGEFILE
-AC_FUNC_FSEEKO
 MHD_CHECK_FUNC([lseek64],
   [[
 #if defined(HAVE_SYS_TYPES_H)
