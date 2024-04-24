@@ -995,6 +995,14 @@ AS_CASE(["$host_os"],
      AC_DEFINE([_REENTRANT],[1],[Need with solaris or errno does not work])
      mhd_host_os='Solaris'
      AC_MSG_RESULT([[$mhd_host_os]])],
+  [linux-gnu],
+  [AC_DEFINE([LINUX],[1],[This is a Linux kernel])
+     mhd_host_os='GNU/Linux'
+     AC_MSG_RESULT([[$mhd_host_os]])],
+  [linux-android*],
+  [AC_DEFINE([LINUX],[1],[This is a Linux kernel])
+     mhd_host_os='Android'
+     AC_MSG_RESULT([[$mhd_host_os]])],
   [*linux*],
   [AC_DEFINE([LINUX],[1],[This is a Linux kernel])
      mhd_host_os='Linux'
