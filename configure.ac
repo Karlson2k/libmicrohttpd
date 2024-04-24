@@ -4047,7 +4047,7 @@ AS_VAR_IF([enable_dauth], ["yes"],
     AC_MSG_CHECKING([[for Digest Authentication default nonce timeout value]])
     AC_ARG_ENABLE([dauth-def-timeout],
       [AS_HELP_STRING([--enable-dauth-def-timeout=NNN],
-                      [set default Digest Auth nonce validity time to NNN seconds])],
+                      [set default Digest Auth nonce validity time to NNN seconds [90]])],
       [enable_dauth_def_timeout="${enableval}"],
       [enable_dauth_def_timeout=""]
     )
@@ -4090,7 +4090,7 @@ AS_VAR_IF([enable_dauth], ["yes"],
     AC_MSG_CHECKING([[for Digest Authentication default maximum nc value]])
     AC_ARG_ENABLE([dauth-def-max-nc],
       [AS_HELP_STRING([--enable-dauth-def-max-nc=NNN],
-                      [set default Digest Auth maximum nc (nonce count) value to NNN])],
+                      [set default Digest Auth maximum nc (nonce count) value to NNN [1000]])],
       [enable_dauth_def_max_nc="${enableval}"],
       [enable_dauth_def_max_nc=""]
     )
