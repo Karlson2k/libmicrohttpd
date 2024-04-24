@@ -55,6 +55,11 @@ else
     echo "Uncrustify not detected, hook not installed. Please install uncrustify if you plan on doing development."
 fi
 
+WANT_AUTOCONF=latest
+WANT_AUTOMAKE=latest
+export WANT_AUTOCONF
+export WANT_AUTOMAKE
+
 aclocal -I m4 --install && \
   libtoolize -c -i -v && \
   autoconf && \
