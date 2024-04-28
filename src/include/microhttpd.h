@@ -3966,8 +3966,9 @@ MHD_create_response_from_callback (uint64_t size,
  * @deprecated use #MHD_create_response_from_buffer instead
  * @ingroup response
  */
-_MHD_DEPR_FUNC ("MHD_create_response_from_data() is deprecated, " \
-                "use MHD_create_response_from_buffer()") \
+_MHD_DEPR_FUNC ( \
+  "MHD_create_response_from_data() is deprecated, use MHD_create_response_from_buffer()" \
+  ) \
   _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_data (size_t size,
                                void *data,
@@ -4240,8 +4241,9 @@ MHD_create_response_from_fd64 (uint64_t size,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-_MHD_DEPR_FUNC ("Function MHD_create_response_from_fd_at_offset() is " \
-                "deprecated, use MHD_create_response_from_fd_at_offset64()") \
+_MHD_DEPR_FUNC ( \
+  "Function MHD_create_response_from_fd_at_offset() is deprecated, use MHD_create_response_from_fd_at_offset64()" \
+  ) \
   _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd_at_offset (size_t size,
                                        int fd,
@@ -6505,8 +6507,7 @@ enum MHD_FEATURE
 };
 
 #define MHD_FEATURE_HTTPS_COOKIE_PARSING _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_FEATURE_HTTPS_COOKIE_PARSING is deprecated, " \
-    "use MHD_FEATURE_COOKIE_PARSING" \
+  "Value MHD_FEATURE_HTTPS_COOKIE_PARSING is deprecated, use MHD_FEATURE_COOKIE_PARSING" \
     ) MHD_FEATURE_COOKIE_PARSING
 
 /**
