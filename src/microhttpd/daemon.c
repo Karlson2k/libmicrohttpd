@@ -9718,7 +9718,7 @@ MHD_is_feature_supported (enum MHD_FEATURE feature)
 #else
     return MHD_NO;
 #endif
-  case MHD_FEATURE_HTTPS_COOKIE_PARSING:
+  case MHD_FEATURE_COOKIE_PARSING:
 #if defined(COOKIE_SUPPORT)
     return MHD_YES;
 #else
