@@ -1,0 +1,86 @@
+- The header is NOT readable:
+-- Having the **third** version of the every type of options ("documenting...")
+   makes reading even worse. Absolutely unclear *why* the reader should treat
+   the excluded code as an actual code. Not clear how it is supposed to work.
+   I hardly believe that many readers will just blindly follow disabled part
+   of the header. In practice it would be the opposite: many readers just
+   ignore disabled parts of the headers (as IDEs gray-out or even hide them).
+-- IDEs will be cryptic as well when decoding hierarchical macros (the options
+   itself, then macros that set the options).
+-- IDEs will not point to "generated ... documenting", when one would try
+   to follow the definition/declaration
+-- Trying to "grep" for the keyword (as previously suggested way to find the
+   declaration) is giving too many false results. This makes understanding
+   even more complicated and even less straightforward.
+-- '#include "microhttpd2_generated_daemon_options.h"' is far from "generated
+    code documenting..."
+-- All macros that switching from "static inline" to macros with compound
+   literals are not clear for the user. Even right now it is not clear how
+   they are supposed to work. Not clear that one form is used for C compilers,
+   while another form is used for C++ compilers (and, actually, the third
+   possible version, for not compatible compilers, for C89, and before C++11
+   however it is not the largest concern). It is not clear that app code is
+   supposed to look the same in both C and C++. Actually, even with modern
+   compilers (and language version) there are three possible combinations:
+   - macros for option with macro to make an array (C),
+   - static functions for options with macro to make an array (C++ with clang),
+   - static functions with vector (C++ in general).
+   And this is repeated for every section with the options.
+-- Functions with ALL CAPS are hard to read. ALL CAPS are usually macros.
+
+It is supposed to make the header maintainable so someone may take care about
+it later. BUT
+- The header is hardly maintainable:
+-- The structure of generated parts, static parts, databases and the build
+   system is not obvious at all. You need to dig very deep just to understand
+   now to start modifying it. It is NOT a good design.
+   The worst thing that actually the current version is not good enough for
+   the production. The production version has to be even more complicated,
+   which makes it even less maintainable.
+-- Simple question: what if it will be needed to change the formatting of
+   header? Which file should I edit? Is it obvious? For example, change
+   the indent.
+-- Adding new type of settings (for example, for the stream) is complicated
+   and multiply already large number of input files.
+-- It is always not nice that relatively often modifiable file (the main
+   header) cannot be modified directly. Every time when I change something
+   in the main header, I have to run the build system before starting using
+   the new header. This may require update of the generated makefiles or re-run
+   the configure. Currently re-run of configure takes 6 minutes on W32. 
+   With the additional checks for build host compilers (and other new checks)
+   it will be even longer. So, more then 6 minutes after edit of some part
+   of the header before getting the result. No efficient at all!
+
+- The build system for the header is broken currently.
+-- Need to add the section to the configure for the build compilers, document
+   additional parameters, pass them correctly to makefiles, make custom build
+   rules for binaries for build host (libtool cannot be used), make everything
+   similar to rules for target host
+-- Need to fix makefiles for out-of-tree builds
+-- Need to fix makefiles for parallel builds (this is not easy! check the "po"
+   part)
+-- Need to fix the generator itself. Currently it is not POSIX, using
+   unportable extensions. Need to make it with proper memory handling and
+   correct checking for all errors. "It works fast" will not be an excuse for
+   security audits. It sounds like "I'll commit a crime, but I'll do it very
+   quickly, so it will not be a crime". Memory leaks are not acceptable for
+   proper design, even on developers machines.
+   I expect also many reports from users that use any kind of "sanitizers" or
+   analysers that immaculately report tons of problems.
+   In short: we cannot afford this code in our repo.
+-- More inputs requires more checks to keep them in sync. More test, more
+   makefile rules, more problems with "make distcheck".
+-- All these fixes makes build system even more complicated, even less obvious,
+   even less readable, even harder maintainable. Problems will be multiplied
+   with additional types of the settings.
+
+! Errors: struct MHD_responseOptionAndValue vs struct MHD_ResponseOptionAndValue
+! Errors: struct MHD_daemonOptionAndValue vs struct MHD_DaemonOptionAndValue
+! Errors: Doxy lines are too long.
+! Errors: Some doxy lines are broken (do not start with " *")
+! Errors: Several "@param"s are in single doxy line
+! Wrong: The body of some static functions with single parameter are formed as macros
+
+Positive:
++ The excluded "portability" macros is fine (actually, the excluded part is
+  not about the portability only)
