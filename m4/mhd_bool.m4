@@ -5,14 +5,14 @@
 # DESCRIPTION
 #
 #   This macro checks whether the boolean keywords "bool", "true", "false"
-#   are supported by compiler. If they are not supported, a suitable
-#   replacement macros are defined
+#   are supported by compiler. If they are not supported, suitable replacement
+#   macros are defined.
 #
 #   Example usage:
 #
 #     MHD_BOOL
 #
-#   The cache variables are used in check so if any test will not work
+#   The cache variables are used in the checks so if any test will not work
 #   correctly on some platform, user may simply fix it by giving cache
 #   variable in configure parameters, for example:
 #
@@ -30,7 +30,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 1
+#serial 2
 
 AC_DEFUN([MHD_BOOL],[dnl
 AC_PREREQ([2.64])dnl for AS_VAR_IF
@@ -89,8 +89,8 @@ int main(void)
 {
   static bool var1 = false || false;
   static bool var2 = false;
-  static bool bool_arr[2 - 3 * ((int) (false))] = {false, (bool) 0};
-  i][f(var1 || var2 || bool_arr[0] || bool_arr[1] || false)
+  static bool bool_arr[2 - 3 * ((int) (false))] = {false, !false};
+  i][f(var1 || var2 || bool_arr[0] || !bool_arr[1] || false)
     return 5;
   return 0;
 }
@@ -106,8 +106,8 @@ int main(void)
 {
   static bool var1 = true && true;
   static bool var2 = true;
-  static bool bool_arr[2 - 3 * ((int) (!true))] = {true, !false};
-  i][f(!var1 || !var2 || !bool_arr[0] || !bool_arr[1] || false)
+  static bool bool_arr[2 - 3 * ((int) (!true))] = {true, !true};
+  i][f(!var1 || !var2 || !bool_arr[0] || bool_arr[1] || !true)
     return 5;
   return 0;
 }
