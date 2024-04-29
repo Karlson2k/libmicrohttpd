@@ -123,7 +123,7 @@ AC_CACHE_CHECK([[whether the defined "bool", "true" and "false" can work togethe
 ])
 dnl end of AC_CACHE_CHECK
 AS_VAR_IF([[mhd_cv_bool_true_false_work]], [["yes"]],[[:]],[dnl
-AC_MSG_FAILURE([cannot find suitable replacemnt for "bool", "true" and "false"])
+AC_MSG_FAILURE([cannot find suitable replacements for "bool", "true" and "false"])
 ])
 dnl end of AS_VAR_IF mhd_cv_bool_true_false_work "yes"
 ])
