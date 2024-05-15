@@ -4410,7 +4410,13 @@ AS_IF([test "x$enable_dauth" != "xno"],
 AC_CACHE_CHECK([[for calloc()]], [[mhd_cv_have_func_calloc]],
   [
    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#elif defined(HAVE_MALLOC_H)
+#include <malloc.h>
+#else
+#include <unistd.h>
+#endif
        ]],[[void * ptr = calloc(1, 2); if (ptr) return 1;]])
      ],
      [[mhd_cv_have_func_calloc='yes']],
