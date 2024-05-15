@@ -4,7 +4,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   $(CPPFLAGS_ac)
 
-AM_CFLAGS = $(CFLAGS_ac) $(HIDDEN_VISIBILITY_CFLAGS)
+AM_CFLAGS = $(CFLAGS_ac)
 
 AM_LDFLAGS = $(LDFLAGS_ac)
 

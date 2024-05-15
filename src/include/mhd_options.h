@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2016-2021 Karlson2k (Evgeny Grin)
+  Copyright (C) 2016-2024 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -41,17 +41,33 @@
  */
 #define _(String) (String)
 
-#if defined(_MHD_EXTERN) && ! defined(BUILDING_MHD_LIB)
-#undef _MHD_EXTERN
-#endif /* _MHD_EXTERN && ! BUILDING_MHD_LIB */
+#ifdef HAVE_ATTR_VISIBILITY_DEFAULT
+#  define MHD_VISIBILITY_EXTERN __attribute__((visibility ("default")))
+#else
+#  define MHD_VISIBILITY_EXTERN /* empty */
+#endif
+
+#if ! defined(_WIN32) || \
+  (! defined(DLL_EXPORT)    /* Defined by libtool for shared version */ \
+  && ! defined(MHD_W32DLL) /* Defined by MS VS projects for MHD DLL */)
+#  define MHD_EXPORTED /* empty */
+#else
+#  define MHD_EXPORTED __declspec(dllexport)
+#endif
+
+#if defined(_MHD_EXTERN) && defined(BUILDING_MHD_LIB)
+#  undef _MHD_EXTERN
+#endif /* _MHD_EXTERN && BUILDING_MHD_LIB */
 
 #ifndef _MHD_EXTERN
-#if defined(BUILDING_MHD_LIB) && defined(_WIN32) && \
-  (defined(DLL_EXPORT) || defined(MHD_W32DLL))
-#define _MHD_EXTERN __declspec(dllexport) extern
-#else   /* !BUILDING_MHD_LIB || !_WIN32 || (!DLL_EXPORT && !MHD_W32DLL) */
-#define _MHD_EXTERN extern
-#endif  /* !BUILDING_MHD_LIB || !_WIN32 || (!DLL_EXPORT && !MHD_W32DLL) */
+#  ifdef BUILDING_MHD_LIB
+/* Building MHD itself */
+#    define _MHD_EXTERN \
+  extern MHD_VISIBILITY_EXTERN MHD_EXPORTED
+#  else  /* ! BUILDING_MHD_LIB */
+/* Test or example code, using MHD as a library */
+#    define _MHD_EXTERN extern
+#  endif /* ! BUILDING_MHD_LIB */
 #endif  /* ! _MHD_EXTERN */
 
 /* Some platforms (FreeBSD, Solaris, W32) allow to override

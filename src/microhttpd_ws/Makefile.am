@@ -3,7 +3,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/src/include \
   -I$(top_srcdir)/src/microhttpd
 
-AM_CFLAGS = $(HIDDEN_VISIBILITY_CFLAGS)
+AM_CFLAGS = $(CFLAGS_ac)
 
 $(top_builddir)/src/microhttpd/libmicrohttpd.la: $(top_builddir)/src/microhttpd/Makefile
 	@echo ' cd $(top_builddir)/src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd.la'; \
