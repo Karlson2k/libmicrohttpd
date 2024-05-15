@@ -480,8 +480,8 @@ CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 # Additional flags are checked and added at the end of 'configure'
 
 # Check for headers that are ALWAYS required
-AC_CHECK_HEADERS_ONCE([stdio.h string.h stdint.h errno.h limits.h fcntl.h], [],
-  [AC_MSG_ERROR([Compiling libmicrohttpd requires standard POSIX headers files])], [AC_INCLUDES_DEFAULT])
+AC_CHECK_HEADERS_ONCE([stdio.h string.h stdint.h stdarg.h errno.h limits.h fcntl.h], [],
+  [AC_MSG_ERROR([Compiling libmicrohttpd requires standard C and POSIX headers files])], [AC_INCLUDES_DEFAULT])
 
 # Check for basic optional headers
 AC_CHECK_HEADERS([stddef.h stdlib.h inttypes.h sys/types.h sys/stat.h unistd.h \
