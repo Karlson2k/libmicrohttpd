@@ -485,7 +485,7 @@ AC_CHECK_HEADERS_ONCE([stdio.h string.h stdint.h stdarg.h errno.h limits.h fcntl
 
 # Check for basic optional headers
 AC_CHECK_HEADERS([stddef.h stdlib.h inttypes.h sys/types.h sys/stat.h unistd.h \
-                  sys/uio.h], [], [], [AC_INCLUDES_DEFAULT])
+                  sys/uio.h crtdefs.h malloc.h], [], [], [AC_INCLUDES_DEFAULT])
 
 # Check for clock-specific optional headers
 AC_CHECK_HEADERS([sys/time.h time.h], [], [], [AC_INCLUDES_DEFAULT])
