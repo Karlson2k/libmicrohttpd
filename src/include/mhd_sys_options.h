@@ -108,20 +108,20 @@
 
 #if defined(_WIN32) && ! defined(__CYGWIN__)
 /* Declare POSIX-compatible names */
-#define _CRT_DECLARE_NONSTDC_NAMES 1
+#  define _CRT_DECLARE_NONSTDC_NAMES 1
 /* Do not warn about POSIX name usage */
-#define _CRT_NONSTDC_NO_WARNINGS 1
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
-#else /* _WIN32_WINNT */
-#if _WIN32_WINNT < 0x0501
+#  define _CRT_NONSTDC_NO_WARNINGS 1
+#  ifndef _WIN32_WINNT
+#    define _WIN32_WINNT 0x0600
+#  else /* _WIN32_WINNT */
+#    if _WIN32_WINNT < 0x0501
 #error "Headers for Windows XP or later are required"
-#endif /* _WIN32_WINNT < 0x0501 */
-#endif /* _WIN32_WINNT */
-#ifndef WIN32_LEAN_AND_MEAN
+#    endif /* _WIN32_WINNT < 0x0501 */
+#  endif /* _WIN32_WINNT */
+#  ifndef WIN32_LEAN_AND_MEAN
 /* Do not include unneeded parts of W32 headers. */
-#define WIN32_LEAN_AND_MEAN 1
-#endif /* !WIN32_LEAN_AND_MEAN */
+#    define WIN32_LEAN_AND_MEAN 1
+#  endif /* !WIN32_LEAN_AND_MEAN */
 #endif /* _WIN32 && ! __CYGWIN__ */
 
 #if defined(__VXWORKS__) || defined(__vxworks) || defined(OS_VXWORKS)
@@ -193,9 +193,9 @@
 #  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_ /* empty */
 #else  /* _MSC_FULL_VER */
 #  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_ \
-   __pragma(runtime_checks("c", off))
+        __pragma(runtime_checks("c", off))
 #  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_ \
-   __pragma(runtime_checks("c", restore))
+        __pragma(runtime_checks("c", restore))
 #endif /* _MSC_FULL_VER */
 
 /**
