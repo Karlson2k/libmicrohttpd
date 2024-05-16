@@ -3267,6 +3267,69 @@ MHD_CHECK_FUNC([[nanosleep]], [[#include <time.h>]], [[struct timespec ts2, ts1 
 
 # NOTE: require setting of errattr_CFLAGS above
 CFLAGS="${CFLAGS_ac} ${user_CFLAGS} ${errattr_CFLAGS}"
+AC_CACHE_CHECK([whether $CC supports __attribute__((used))],[mhd_cv_cc_attr_used],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+extern __attribute__((used)) int
+test_func(void);
+
+extern __attribute__((used)) int
+test_func(void) {return 0;}
+          ]])
+      ],
+      [mhd_cv_cc_attr_used="yes"],[mhd_cv_cc_attr_used="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_used],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_USED],[1],
+      [Define to '1' if your compiler supports __attribute__((used))]
+    )
+  ]
+)
+AC_CACHE_CHECK([whether $CC supports __attribute__((pure))],[mhd_cv_cc_attr_pure],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+extern __attribute__((pure)) int
+test_func(const char *ptr);
+
+extern __attribute__((pure)) int
+test_func(const char *ptr) {return (0 == (*ptr));}
+          ]])
+      ],
+      [mhd_cv_cc_attr_pure="yes"],[mhd_cv_cc_attr_pure="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_pure],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_PURE],[1],
+      [Define to '1' if your compiler supports __attribute__((pure))]
+    )
+  ]
+)
+AC_CACHE_CHECK([whether $CC supports __attribute__((const))],[mhd_cv_cc_attr_const],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+extern __attribute__((const)) int
+test_func(int a);
+
+extern __attribute__((const)) int
+test_func(int a) {return a + 1;}
+          ]])
+      ],
+      [mhd_cv_cc_attr_const="yes"],[mhd_cv_cc_attr_const="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_const],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_CONST],[1],
+      [Define to '1' if your compiler supports __attribute__((const))]
+    )
+  ]
+)
 AC_CACHE_CHECK([whether $CC supports __attribute__((visibility("default")))],[mhd_cv_cc_attr_visibility_default],
   [
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
@@ -3285,6 +3348,28 @@ AS_VAR_IF([mhd_cv_cc_attr_visibility_default],["yes"],
   [
     AC_DEFINE([HAVE_ATTR_VISIBILITY_DEFAULT],[1],
       [Define to '1' if your compiler supports __attribute__((visibility("default")))]
+    )
+
+    AC_CACHE_CHECK([whether $CC supports __attribute__((visibility("internal")))],[mhd_cv_cc_attr_visibility_internal],
+      [
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+__attribute__((visibility("internal"))) int
+test_extrn_func(void);
+
+__attribute__((visibility("internal"))) int
+test_extrn_func(void) {return 0;}
+              ]])
+          ],
+          [mhd_cv_cc_attr_visibility_internal="yes"],[mhd_cv_cc_attr_visibility_internal="no"]
+        )
+      ]
+    )
+    AS_VAR_IF([mhd_cv_cc_attr_visibility_internal],["yes"],
+      [
+        AC_DEFINE([HAVE_ATTR_VISIBILITY_INTERNAL],[1],
+          [Define to '1' if your compiler supports __attribute__((visibility("internal")))]
+        )
+      ]
     )
 
     CFLAGS="${user_CFLAGS}"
