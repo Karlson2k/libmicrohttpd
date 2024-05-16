@@ -1,29 +1,37 @@
 MHD_C_DECLRATIONS_START_HERE_
 /* *INDENT-OFF* */
 
-/* If generic headers don't work on your platform, include headers
-   which define 'va_list', 'size_t', 'uint_fast16_t', 'uint_fat32_t',
-   'uint_fast64_t', 'struct sockaddr', and "#define MHD_PLATFORM_H"
-   before including "microhttpd.h".  Then the following "standard"
-   includes won't be used (which might be a good idea, especially
-   on platforms where they do not exist).
+/* If generic headers don't work on your platform, include headers which define
+   'va_list', 'size_t', 'uint_fast16_t', 'uint_fast32_t', 'uint_fast64_t',
+   'struct sockaddr', and then "#define MHD_HAVE_SYS_HEADERS_INCLUDED" before
+   including "microhttpd2.h".
+   When 'MHD_HAVE_SYS_HEADERS_INCLUDED' is defined the following "standard"
+   includes won't be used (which might be a good idea, especially on platforms
+   where they do not exist).
    */
-#ifndef MHD_PLATFORM_H
-#include <stdarg.h>
-#include <stdint.h>
-#include <sys/types.h>
-#if defined(_WIN32) && ! defined(__CYGWIN__)
-#include <ws2tcpip.h>
-#else
-#include <unistd.h>
-#include <sys/time.h>
-#include <sys/socket.h>
-#endif
-#endif
-
-#if defined(__CYGWIN__) && ! defined(_SYS_TYPES_FD_SET)
-/* Do not define __USE_W32_SOCKETS under Cygwin! */
-#error Cygwin with winsock fd_set is not supported
+#ifndef MHD_HAVE_SYS_HEADERS_INCLUDED
+#  include <stdarg.h>
+#  ifndef MHD_SYS_BASE_TYPES_H
+     /* Headers for uint_fastXX_t, size_t */
+#    include <stdint.h>
+#    include <stddef.h>
+#    include <sys/types.h>
+#  endif
+#  ifndef MHD_SYS_SOCKET_TYPES_H
+     /* Headers for 'struct sockaddr' */
+#    if !defined(_WIN32) || defined(__CYGWIN__)
+#      include <sys/socket.h>
+#    else
+     /* Prevent conflict of <winsock.h> and <winsock2.h> */
+#      if !defined(_WINSOCK2API_) && !defined(_WINSOCKAPI_)
+#        ifndef WIN32_LEAN_AND_MEAN
+       /* Do not use unneeded parts of W32 headers. */
+#          define WIN32_LEAN_AND_MEAN 1
+#        endif /* !WIN32_LEAN_AND_MEAN */
+#        include <winsock2.h>
+#      endif
+#    endif
+#  endif
 #endif
 
 #ifndef __cplusplus
