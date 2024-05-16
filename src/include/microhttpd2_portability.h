@@ -1,12 +1,7 @@
 MHD_C_DECLRATIONS_START_HERE_
 /* *INDENT-OFF* */
 
-/* While we generally would like users to use a configure-driven
-   build process which detects which headers are present and
-   hence works on any platform, we use "standard" includes here
-   to build out-of-the-box for beginning users on common systems.
-
-   If generic headers don't work on your platform, include headers
+/* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'uint_fast16_t', 'uint_fat32_t',
    'uint_fast64_t', 'struct sockaddr', and "#define MHD_PLATFORM_H"
    before including "microhttpd.h".  Then the following "standard"
