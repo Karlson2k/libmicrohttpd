@@ -63,21 +63,20 @@
 #  define MHD_EXTERN_USED /* empty */
 #endif
 
-#if defined(_MHD_EXTERN) && defined(BUILDING_MHD_LIB)
-#  undef _MHD_EXTERN
-#endif /* _MHD_EXTERN && BUILDING_MHD_LIB */
+#if defined(MHD_EXTERN_) && defined(BUILDING_MHD_LIB)
+#  undef MHD_EXTERN_
+#endif /* MHD_EXTERN_ && BUILDING_MHD_LIB */
 
-#ifndef _MHD_EXTERN
+#ifndef MHD_EXTERN_
 #  ifdef BUILDING_MHD_LIB
 /* Building MHD itself */
-#    define _MHD_EXTERN \
-  extern MHD_VISIBILITY_EXTERN MHD_EXPORTED
+#    define MHD_EXTERN_ \
         extern MHD_VISIBILITY_EXTERN MHD_EXPORTED MHD_EXTERN_USED
 #  else  /* ! BUILDING_MHD_LIB */
 /* Test or example code, using MHD as a library */
-#    define _MHD_EXTERN extern
+#    define MHD_EXTERN_ extern
 #  endif /* ! BUILDING_MHD_LIB */
-#endif  /* ! _MHD_EXTERN */
+#endif  /* ! MHD_EXTERN_ */
 
 #ifdef HAVE_ATTR_VISIBILITY_INTERNAL
 /* To be used with internal non-static functions */
