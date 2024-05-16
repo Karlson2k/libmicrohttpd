@@ -18,7 +18,7 @@
 */
 
 /**
- * @file include/mhd_options.h
+ * @file src/include/mhd_sys_options.h
  * @brief  additional automatic macros for MHD_config.h
  * @author Karlson2k (Evgeny Grin)
  *
@@ -28,8 +28,8 @@
  * to prevent double inclusion of MHD_config.h
  */
 
-#ifndef MHD_OPTIONS_H
-#define MHD_OPTIONS_H 1
+#ifndef MHD_SYS_OPTIONS_H
+#define MHD_SYS_OPTIONS_H 1
 
 #include "MHD_config.h"
 
@@ -301,4 +301,4 @@
 #  define MHD_DAUTH_DEF_MAX_NC_ 1000
 #endif /* ! MHD_DAUTH_DEF_MAX_NC_ */
 
-#endif /* MHD_OPTIONS_H */
+#endif /* MHD_SYS_OPTIONS_H */
