@@ -1,3 +1,5 @@
+/* EDITED MANUALLY */
+
 /**
  * The options (parameters) for MHD daemon
  */
@@ -615,7 +617,7 @@ union MHD_DaemonOptionValue
    * Value for #MHD_D_O_LISTEN_SOCKET.
    * the listen socket to use, ignored if set to #MHD_INVALID_SOCKET
    */
-  MHD_socket listen_socket;
+  MHD_Socket listen_socket;
 
   /**
    * Value for #MHD_D_O_LISTEN_ADDR_REUSE.
@@ -740,7 +742,7 @@ union MHD_DaemonOptionValue
    * Value for #MHD_D_O_FD_NUMBER_LIMIT.
    * FIXME
    */
-  MHD_socket fd_number_limit;
+  MHD_Socket fd_number_limit;
 
   /**
    * Value for #MHD_D_O_TURBO.
@@ -1596,7 +1598,7 @@ If no listen socket optins (#MHD_D_OPTION_BIND_PORT(), #MHD_D_OPTION_BIND_SA(), 
  */
 static MHD_INLINE struct MHD_daemonOptionAndValue
 MHD_D_OPTION_LISTEN_SOCKET (
-  MHD_socket listen_fd
+  MHD_Socket listen_fd
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
@@ -2071,7 +2073,7 @@ MHD_D_OPTION_STACK_SIZE (
  */
 static MHD_INLINE struct MHD_daemonOptionAndValue
 MHD_D_OPTION_FD_NUMBER_LIMIT (
-  MHD_socket max_fd
+  MHD_Socket max_fd
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;

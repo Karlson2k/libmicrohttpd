@@ -1771,7 +1771,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_MUST_CHECK_RESULT_;
  *         was never started, or has no listen socket.
  * @ingroup daemon
  */
-MHD_EXTERN_ MHD_socket
+MHD_EXTERN_ MHD_Socket
 MHD_daemon_quiesce (struct MHD_Daemon *daemon)
 MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_INOUT_ (1);
 
@@ -1978,7 +1978,7 @@ typedef MHD_APP_SOCKET_CNTX_TYPE *
 (MHD_FN_PAR_NONNULL_ (5)
  *MHD_SocketRegistrationUpdateCallback)(
   void *cls,
-  MHD_socket fd,
+  MHD_Socket fd,
   enum MHD_FdState watch_for,
   MHD_APP_SOCKET_CNTX_TYPE *app_cntx_old,
   struct MHD_EventUpdateContext *ecb_cntx);
@@ -3188,7 +3188,7 @@ If no listen socket optins (#MHD_D_OPTION_BIND_PORT(), #MHD_D_OPTION_BIND_SA(), 
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_LISTEN_SOCKET (
-  MHD_socket listen_fd
+  MHD_Socket listen_fd
   );
 
 /**
@@ -3458,7 +3458,7 @@ MHD_D_OPTION_STACK_SIZE (
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_FD_NUMBER_LIMIT (
-  MHD_socket max_fd
+  MHD_Socket max_fd
   );
 
 /**
@@ -3989,7 +3989,7 @@ MHD_FN_PAR_NONNULL_ (1);
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_daemon_add_connection (struct MHD_Daemon *daemon,
-                           MHD_socket client_socket,
+                           MHD_Socket client_socket,
                            size_t addrlen,
                            const struct sockaddr *addr,
                            void *connection_cntx)
@@ -5620,7 +5620,7 @@ typedef void
                       struct MHD_Request *request,
                       size_t extra_in_size,
                       const char *extra_in,
-                      MHD_socket sock,
+                      MHD_Socket sock,
                       struct MHD_UpgradeHandle *urh);
 
 
@@ -7267,7 +7267,7 @@ union MHD_DaemonInfoFixedData
   /**
    * The socket type of data.
    */
-  MHD_socket v_socket;
+  MHD_Socket v_socket;
 
   /**
    * File descriptor, except sockets
@@ -7487,7 +7487,7 @@ union MHD_ConnectionInfoFixedData
   /**
    * Socket type
    */
-  MHD_socket v_fd;
+  MHD_Socket v_fd;
 
   /**
    * Daemon handler type

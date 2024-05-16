@@ -151,7 +151,7 @@ struct MHD_WatchedFD
    * The watched socket.
    * Ignored if set by application to #MHD_INVALID_SOCKET. TODO: Improve wording
    */
-  MHD_socket fd;
+  MHD_Socket fd;
 
   /**
    * Indicates that socket should be watched for specific network state

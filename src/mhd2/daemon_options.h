@@ -6,6 +6,8 @@
 /* @author daemon-options-generator.c
  */
 
+/* EDITED MANUALLY */
+
 #include "microhttpd2.h"
 #include "internal.h"
 
@@ -51,7 +53,7 @@ struct DaemonOptions {
    * Value for #MHD_D_O_LISTEN_SOCKET.
    * the listen socket to use, ignored if set to #MHD_INVALID_SOCKET
    */
-  MHD_socket listen_socket;
+  MHD_Socket listen_socket;
 
 
   /**
@@ -198,7 +200,7 @@ struct DaemonOptions {
    * Value for #MHD_D_O_FD_NUMBER_LIMIT.
    * FIXME
    */
-  MHD_socket fd_number_limit;
+  MHD_Socket fd_number_limit;
 
 
   /**
