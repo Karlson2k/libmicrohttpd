@@ -26,6 +26,9 @@
  * in MHD_config.h, compiler built-in macros and commandline-defined macros
  * (but not based on values defined in other headers). Works also as a guard
  * to prevent double inclusion of MHD_config.h
+ *
+ * This file must be included always before other headers as this header
+ * defines macros that control behaviour of other included headers.
  */
 
 #ifndef MHD_SYS_OPTIONS_H
