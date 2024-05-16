@@ -79,6 +79,29 @@
 #  endif /* ! BUILDING_MHD_LIB */
 #endif  /* ! _MHD_EXTERN */
 
+#ifdef HAVE_ATTR_VISIBILITY_INTERNAL
+/* To be used with internal non-static functions */
+#  define MHD_VISIBILITY_INTERNAL __attribute__((visibility ("internal")))
+#else
+/* To be used with internal non-static functions */
+#  define MHD_VISIBILITY_INTERNAL /* empty */
+#endif
+
+#ifdef HAVE_ATTR_PURE
+#  define MHD_FN_PURE_ __attribute__((pure))
+#else
+#  define MHD_FN_PURE_ /* empty */
+#endif
+
+#ifdef HAVE_ATTR_CONST
+#  define MHD_FN_CONST_ __attribute__((const))
+#else
+#  define MHD_FN_CONST_ MHD_FN_PURE_
+#endif
+
+/* To be used with internal non-static functions */
+#define MHD_INTERNAL MHD_VISIBILITY_INTERNAL
+
 /* Some platforms (FreeBSD, Solaris, W32) allow to override
    default FD_SETSIZE by defining it before including
    headers. */
