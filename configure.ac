@@ -528,6 +528,31 @@ AC_CHECK_HEADERS([sys/socket.h sys/select.h netinet/in_systm.h netinet/in.h \
 # Check for other optional headers
 AC_CHECK_HEADERS([sys/msg.h sys/mman.h signal.h], [], [], [AC_INCLUDES_DEFAULT])
 
+AC_CHECK_TYPES([size_t, ssize_t, ptrdiff_t, intptr_t],[],[],
+  [[
+/* Keep in sync with src/mhd2/sys_base_types.h */
+#include <stdint.h> /* uint_fast_XXt, int_fast_XXt */
+#if defined(HAVE_STDDEF_H)
+#  include <stddef.h> /* size_t, NULL */
+#elif defined(HAVE_STDLIB_H)
+#  include <stdlib.h> /* should provide size_t, NULL */
+#else
+#  include <stdio.h> /* should provide size_t, NULL */
+#endif
+#if defined(HAVE_SYS_TYPES_H)
+#  include <sys/types.h> /* ssize_t */
+#elif defined(HAVE_UNISTD_H)
+#  include <unistd.h> /* should provide ssize_t */
+#endif
+#ifdef HAVE_CRTDEFS_H
+#  include <crtdefs.h> /* W32-specific header */
+#endif
+  ]]
+)
+AS_IF([test "x$ac_cv_type_size_t" != "xyes"],
+  [AC_MSG_FAILURE(['size_t' type is not provided by system headers])]
+)
+
 AC_CHECK_HEADER([[search.h]],
   [
     MHD_CHECK_LINK_RUN([[for proper tsearch(), tfind() and tdelete()]],[[mhd_cv_sys_tsearch_usable]],
