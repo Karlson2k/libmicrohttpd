@@ -49,16 +49,12 @@ MHD_C_DECLRATIONS_START_HERE_
         MHD_STATIC_CAST_ (size_t,~MHD_STATIC_CAST_(size_t, 0))
 
 
-#ifndef MHD_EXTERN_
-#  if ! defined(_WIN32)
-#    define MHD_EXTERN_ extern
-#  else /* defined(_WIN32) */
-#    if ! defined(MHD_W32LIB)
-#      define MHD_EXTERN_ extern
-#    else /* defined(_WIN32) && efined(MHD_W32LIB) */
 /* Define MHD_W32DLL when using MHD as W32 .DLL to speed up linker a little */
-#      define MHD_EXTERN_ extern __declspec(dllimport)
-#    endif
+#ifndef MHD_EXTERN_
+#  if ! defined(_WIN32) || ! defined(MHD_W32LIB)
+#    define MHD_EXTERN_ extern
+#  else /* defined(_WIN32) && defined(MHD_W32LIB) */
+#    define MHD_EXTERN_ extern __declspec(dllimport)
 #  endif
 #endif
 
