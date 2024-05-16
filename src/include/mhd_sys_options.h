@@ -55,6 +55,14 @@
 #  define MHD_EXPORTED __declspec(dllexport)
 #endif
 
+#if defined(HAVE_ATTR_USED) \
+  && (defined(PIC) || defined(DLL_EXPORT) || defined(MHD_W32DLL))
+/* Used externally, only for functions in shared library */
+#  define MHD_EXTERN_USED __attribute__((used))
+#else
+#  define MHD_EXTERN_USED /* empty */
+#endif
+
 #if defined(_MHD_EXTERN) && defined(BUILDING_MHD_LIB)
 #  undef _MHD_EXTERN
 #endif /* _MHD_EXTERN && BUILDING_MHD_LIB */
@@ -64,6 +72,7 @@
 /* Building MHD itself */
 #    define _MHD_EXTERN \
   extern MHD_VISIBILITY_EXTERN MHD_EXPORTED
+        extern MHD_VISIBILITY_EXTERN MHD_EXPORTED MHD_EXTERN_USED
 #  else  /* ! BUILDING_MHD_LIB */
 /* Test or example code, using MHD as a library */
 #    define _MHD_EXTERN extern
