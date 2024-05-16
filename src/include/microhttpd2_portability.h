@@ -1,6 +1,9 @@
 MHD_C_DECLRATIONS_START_HERE_
 /* *INDENT-OFF* */
 
+
+// FIXME: Move this block to the main header for higher visibility?
+
 /* If generic headers don't work on your platform, include headers which define
    'va_list', 'size_t', 'uint_fast16_t', 'uint_fast32_t', 'uint_fast64_t',
    'struct sockaddr', and then "#define MHD_HAVE_SYS_HEADERS_INCLUDED" before
@@ -15,7 +18,7 @@ MHD_C_DECLRATIONS_START_HERE_
      /* Headers for uint_fastXX_t, size_t */
 #    include <stdint.h>
 #    include <stddef.h>
-#    include <sys/types.h>
+#    include <sys/types.h> /* This header is actually optional */
 #  endif
 #  ifndef MHD_SYS_SOCKET_TYPES_H
      /* Headers for 'struct sockaddr' */
@@ -57,6 +60,8 @@ MHD_C_DECLRATIONS_START_HERE_
 #    define MHD_EXTERN_ extern __declspec(dllimport)
 #  endif
 #endif
+
+// FIXME: Move this block to the main header for higher visibility? Users should know what is the 'MHD_Socket'
 
 #ifndef MHD_INVALID_SOCKET
 /**
