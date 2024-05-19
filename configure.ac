@@ -3694,19 +3694,48 @@ AS_IF([[test "x$found_sendfile" = "xno" && test "x$enable_sendfile" = "xyes"]],
   [AC_MSG_ERROR([[sendfile() usage was requested by configure parameter, but no usable sendfile() function is detected]])]
 )
 
-# optional: enable error and informational messages
-AC_MSG_CHECKING([[whether to generate text messages]])
+# optional: disable log and HTTP automatic messages
 AC_ARG_ENABLE([messages],
-   [AS_HELP_STRING([--disable-messages],
-               [disable error, warning messages and text bodies for ]
-               [automatic HTTP responses (to reduce the binary size)])],
-   [enable_messages=${enableval}],
-   [enable_messages=yes])
-AS_IF([[test "x$enable_messages" = "xyes"]],
-  [ AC_DEFINE([HAVE_MESSAGES],[1],[Define to 1 to enable support for text messages.]) ],
-  [[ enable_messages=no ]])
-AC_MSG_RESULT([[$enable_messages]])
-AM_CONDITIONAL([HAVE_MESSAGES], [test "x$enable_messages" != "xno"])
+  [
+    AS_HELP_STRING([--disable-messages],
+      [disable log messages and text bodies for ]
+      [automatic HTTP responses (to reduce the binary size)]
+    )
+  ],
+  [],[enable_messages="yes"]
+)
+
+AC_MSG_CHECKING([[whether to support internal logging functionality and build messages for log]])
+AC_ARG_ENABLE([log-messages],
+  [
+    AS_HELP_STRING([--disable-log-messages],
+      [disable logger functionality and exclude log mesages from binary]
+    )
+  ],
+  [],[enable_log_messages="$enable_messages"]
+)
+AS_VAR_IF([enable_log_messages],["yes"],
+  [AC_DEFINE([HAVE_LOG_FUNCTIONALITY],[1],[Define to '1' to enable internal logging and log messages.])],
+  [enable_log_messages="no"]
+)
+AC_MSG_RESULT([[$enable_log_messages]])
+AM_CONDITIONAL([HAVE_LOG_FUNCTIONALITY], [test "x$enable_log_messages" != "xno"])
+
+AC_MSG_CHECKING([[whether to build text bodies for automatic HTTP response messages]])
+AC_ARG_ENABLE([http-messages],
+  [
+    AS_HELP_STRING([--disable-http-messages],
+      [use empty bodies for automatic HTTP responses (less verbose for clients)]
+    )
+  ],
+  [],[enable_http_messages="$enable_messages"]
+)
+AS_VAR_IF([enable_http_messages],["yes"],
+  [AC_DEFINE([HAVE_HTTP_AUTO_MESSAGES_BODIES],[1],[Define to '1' to enable verbose text bodies for automatic HTTP replies.])],
+  [enable_http_messages="no"]
+)
+AC_MSG_RESULT([[$enable_http_messages]])
+AM_CONDITIONAL([HAVE_HTTP_AUTO_MESSAGES_BODIES], [test "x$enable_http_messages" != "xno"])
 
 
 # optional: have postprocessor?
@@ -6138,7 +6167,8 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   epoll support:     ${enable_epoll=no}
   sendfile used:     ${found_sendfile}
   HTTPS support:     ${MSG_HTTPS}
-  Messages:          ${enable_messages}
+  Logging support:   ${enable_log_messages}
+  Verbose auto replies: ${enable_http_messages}
   Cookie parsing:    ${enable_cookie}
   Postproc:          ${enable_postprocessor}
   Basic auth.:       ${enable_bauth}

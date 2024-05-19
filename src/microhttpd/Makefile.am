@@ -295,7 +295,7 @@ endif
 endif
 
 if HAVE_ANYAUTH
-if HAVE_MESSAGES
+if HAVE_LOG_FUNCTIONALITY
 check_PROGRAMS += \
   test_auth_parse
 endif
