@@ -5994,7 +5994,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Build shared lib:  ${enable_shared}
   Build docs:        ${enable_doc}
   Build examples:    ${enable_examples}
-  Build tools:       ${enable_examples}
+  Build tools:       ${enable_tools}
   Test with libcurl: ${MSG_CURL}
   Heavy tests:       ${use_heavy_tests_MSG}
   Fuzzing tests:     ${run_zzuf_tests_MSG=no}
