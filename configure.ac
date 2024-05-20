@@ -871,75 +871,84 @@ AS_VAR_IF([[mhd_cv_macro_true_false_valid]], [["yes"]], [[:]],
   [AC_MSG_ERROR([[Value of "true" or value of "false" is not valid. Check config.log for details.]])])
 
 
-AX_CHECK_COMPILE_FLAG([[-Werror=attributes]],
+AC_C_INLINE
+AS_UNSET([errattr_CFLAGS])
+CFLAGS="${user_CFLAGS}"
+MHD_CHECK_CC_CFLAG([-Werror=attributes],[CFLAGS_ac],
   [
-   AC_MSG_CHECKING([[whether -Werror=attributes actually works]])
-   CFLAGS="${CFLAGS_ac} ${user_CFLAGS} -Werror=attributes"
-   AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[__attribute__((non_existing_attrb_dummy)) static int SimpleFunc(void) {return 3;}]],
-       [[int r = SimpleFunc(); if (r) return r;]])],
-     [
-       AC_MSG_RESULT([[no]])
-       errattr_CFLAGS=""
-     ], [
-       AC_MSG_RESULT([[yes]])
-       errattr_CFLAGS="-Werror=attributes"
-     ])
-   CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
-  ],
-                      [[errattr_CFLAGS=""]], [], [])
-
-AC_MSG_CHECKING([[for function inline keywords supported by $CC]])
-CFLAGS="${CFLAGS_ac} ${user_CFLAGS} $errattr_CFLAGS"
-inln_prfx="none"
-# Prefer always inline functions
-for inln_prfx_chk in InlineWithAttr __forceinline inline __inline__ __inline _inline _Inline
-do
-  # Try to link to avoid "symbol undefined" problems at build time
-  AS_IF([[test "x$inln_prfx_chk" = "xInlineWithAttr"]],
-    [
-     AS_IF([[test "x$errattr_CFLAGS" = "x"]],
-       [[ # Skip test with attribute as negative result can't be detected
-          inln_prfx_chk="__forceinline" # use next value
-       ]],[[inln_prfx_chk="inline __attribute__((always_inline))"]])
-    ])
-  AC_LINK_IFELSE(
-    [
-     AC_LANG_PROGRAM(
-       [[
-#ifdef __cplusplus
-#error This test is only for C.
-choke me
-#endif
+    AC_CACHE_CHECK([whether -Werror=attributes actually works],[mhd_cv_cflag_werror_attr_works],
+      [
+        CFLAGS="${CFLAGS_ac} ${user_CFLAGS} -Werror=attributes"
+        AC_COMPILE_IFELSE([
+            AC_LANG_PROGRAM(
+              [[__attribute__((non_existing_attrb_dummy)) static int SimpleFunc(void) {return 3;}]],
+              [[int r = SimpleFunc(); if (r) return r;]]
+            )
+          ],
+          [mhd_cv_cflag_werror_attr_works="no"],
+          [mhd_cv_cflag_werror_attr_works="yes"]
+        )
+      ]
+    )
+    AS_VAR_IF([mhd_cv_cflag_werror_attr_works],["yes"],
+      [errattr_CFLAGS="-Werror=attributes"]
+    )
+  ]
+)
+CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+AS_IF([test "x$ac_cv_c_inline" != "xno"],
+  [
+    AC_DEFINE([HAVE_INLINE_FUNCS],[1],[Define to 1 if your C compiler supports inline functions.])
+    AC_CACHE_CHECK([for function force inline keywords supported by $CC],[mhd_cv_cc_kwd_forceinline],
+      [
+        MHD_SAVED_ac_c_werror_flag="$ac_c_werror_flag"
+        ac_c_werror_flag=yes
+        mhd_cv_cc_kwd_forceinline="none"
+        CFLAGS="${CFLAGS_ac} ${user_CFLAGS} $errattr_CFLAGS"
+        for keyword_chk in "inline __attribute__((always_inline))" __forceinline
+        do
+          AS_CASE([${keyword_chk}],
+            [*attribute*],
+            [AS_IF([test "x$errattr_CFLAGS" = "x"],[continue])]
+          )
+          AC_LINK_IFELSE([
+              AC_LANG_SOURCE([[
 #ifdef HAVE_STDBOOL_H
 #include <stdbool.h>
 #endif
-         static $inln_prfx_chk bool cmpfn(int x, int y)
-         { return x > y; }
-         static $inln_prfx_chk int sumfn(int x, int y)
-         { return x + y; }
-       ]],[[
-       int a = 1, b = 100, c;
-       if (cmpfn(a, b))
-         c = sumfn(a, b);
-       else
-         c = 0 - sumfn(a, b);
-       if (c)
-         return 0;
-       ]])
-    ],
-    [[ inln_prfx="$inln_prfx_chk" ]])
-  test "x$inln_prfx" != "xnone" && break
-done
-AS_IF([[test "x$inln_prfx" != "xnone"]],
-      [
-       AC_DEFINE([INLINE_FUNC],[1],[Define to 1 if your C compiler supports inline functions.])
-       AC_DEFINE_UNQUOTED([_MHD_static_inline],[static $inln_prfx],[Define to prefix which will be used with MHD static inline functions.])
-      ], [
-       AC_DEFINE([_MHD_static_inline],[static],[Define to prefix which will be used with MHD static inline functions.])
-      ])
-AC_MSG_RESULT([[$inln_prfx]])
-CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+static ${keyword_chk} bool cmpfn(int x, int y)
+{ return x > y; }
+static ${keyword_chk} int sumfn(int x, int y)
+{ return x + y; }
+
+int main(void)
+{
+  int a = 1, b = 100, c;
+  if (cmpfn(a, b))
+    c = sumfn(a, b);
+  else
+    c = 0 - sumfn(a, b);
+  return (cmpfn(0, c) ? 0 : 5);
+}
+                ]]
+              )
+            ],
+            [mhd_cv_cc_kwd_forceinline="${keyword_chk}"]
+          )
+          test "x${mhd_cv_cc_kwd_forceinline}" != "xnone" && break
+        done
+        CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+        ac_c_werror_flag="$MHD_SAVED_ac_c_werror_flag"
+        AS_UNSET([MHD_SAVED_ac_c_werror_flag])
+      ]
+    )
+  ]
+)
+AS_IF([test "x$ac_cv_c_inline" != "xno" && test "x${mhd_cv_cc_kwd_forceinline}" != "xnone"],
+  [AC_DEFINE_UNQUOTED([MHD_static_inline_],[static $mhd_cv_cc_kwd_forceinline],[Define to prefix which will be used with MHD static inline functions.])]
+  ,
+  [AC_DEFINE([MHD_static_inline_],[static inline],[Define to prefix which will be used with MHD static inline functions.])]
+)
 
 AC_CHECK_HEADERS([stdalign.h], [], [], [AC_INCLUDES_DEFAULT])
 AC_CACHE_CHECK([[for C11 'alignof()' support]], [[mhd_cv_c_alignof]],
