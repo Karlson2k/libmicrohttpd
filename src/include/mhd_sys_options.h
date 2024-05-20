@@ -104,6 +104,10 @@
 /* To be used with internal non-static functions */
 #define MHD_INTERNAL MHD_VISIBILITY_INTERNAL
 
+#ifdef HAVE_MACRO_VARIADIC
+#  define MHD_USE_VARARG_MACROS 1
+#endif
+
 /* Some platforms (FreeBSD, Solaris, W32) allow to override
    default FD_SETSIZE by defining it before including
    headers. */

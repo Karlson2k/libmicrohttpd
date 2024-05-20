@@ -939,6 +939,45 @@ AS_IF([test "x${mhd_cv_ptr_null_all_zeros}" = "xyes" || test "x${mhd_cv_ptr_null
   [AC_DEFINE([HAVE_NULL_PTR_ALL_ZEROS],[1],[Define to '1' if NULL pointers binary representation is all zero bits])]
 )
 
+AC_CACHE_CHECK([whether $CC supports variadic macros],[mhd_cv_cc_macro_variadic],
+  [
+    AS_CASE([$ac_prog_cc_stdc],
+      [c89],[:],
+      [c??],[mhd_cv_cc_macro_variadic="yes"]
+    )
+    AS_VAR_SET_IF([mhd_cv_cc_macro_variadic],[:],
+      [
+        MHD_SAVED_ac_c_werror_flag="$ac_c_werror_flag"
+        ac_c_werror_flag=yes
+        AC_COMPILE_IFELSE(
+          [
+            AC_LANG_SOURCE([[
+#define GET_THIRD(arg1,arg2,arg3,arg4) (arg3)
+#define GET_THIRD_VARIADIC(...) GET_THIRD(__VA_ARGS__)
+
+int main(void)
+{
+  int arr[GET_THIRD_VARIADIC(-1,-2,5,-3) - 4] = {0};
+  if (0 != arr[GET_THIRD_VARIADIC(100,1000,0,10000)])
+    return 2;
+  return 0;
+}
+              ]]
+            )
+          ],
+          [mhd_cv_cc_macro_variadic="yes"],
+          [mhd_cv_cc_macro_variadic="no"]
+        )
+        ac_c_werror_flag="$MHD_SAVED_ac_c_werror_flag"
+        AS_UNSET([MHD_SAVED_ac_c_werror_flag])
+      ]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_macro_variadic],["yes"],
+  [AC_DEFINE([HAVE_MACRO_VARIADIC],[1],[Define to '1' if your compiler supports variadic macros])]
+)
+
 AC_C_INLINE
 AS_UNSET([errattr_CFLAGS])
 CFLAGS="${user_CFLAGS}"
