@@ -871,6 +871,74 @@ AS_VAR_IF([[mhd_cv_macro_true_false_valid]], [["yes"]], [[:]],
   [AC_MSG_ERROR([[Value of "true" or value of "false" is not valid. Check config.log for details.]])])
 
 
+AC_CACHE_CHECK([whether the NULL pointer has all zero bits],
+  [mhd_cv_ptr_null_all_zeros],
+  [
+    AC_RUN_IFELSE(
+      [
+        AC_LANG_SOURCE([[
+#include <string.h>
+#if defined(HAVE_STDDEF_H)
+#include <stddef.h>
+#elif define(HAVE_STDLIB_H)
+#include <stdlib.h>
+#else
+#include <stdio.h>
+#endif
+
+int main(void)
+{
+  void *ptr1;
+  void *ptr2;
+
+  ptr1 = &ptr2;
+  ptr2 = NULL;
+  memset(&ptr1, 0, sizeof(ptr1));
+  if (ptr2 != ptr1)
+    return 2;
+
+  ptr2 = &ptr1;
+  ptr1 = NULL;
+  memset(&ptr2, 0, sizeof(ptr2));
+  if (0 != memcmp (&ptr1, &ptr2, sizeof(ptr1)))
+    return 3;
+
+  ptr1 = &ptr1;
+  ptr2 = &ptr2;
+  memset(&ptr1, 0, sizeof(ptr1));
+  memset(&ptr2, 0, sizeof(ptr2));
+  if (NULL != ptr1)
+    return 4;
+  if (NULL != ptr2)
+    return 5;
+
+  return 0;
+}
+          ]]
+        )
+      ],
+      [mhd_cv_ptr_null_all_zeros="yes"],
+      [mhd_cv_ptr_null_all_zeros="no"],
+      [
+        AS_CASE([$host_cpu],dnl
+          [[i[234567]86|x86_64|amd64|arm|armeb|armv[0123456789]|armv[0123456789]eb|aarch64|aarch64_be|arm64|mips|mipsel|mips64|mips64el|powerpc|powerpcle|powerpc64|powerpc64le|riscv32|riscv32be|riscv64|riscv64be]],
+          [
+            AS_CASE([$host_os],dnl
+              [[linux*|freebsd|cygwin|mingw*|msys|gnu|netbsd*|openbsd*|darwin*|solaris2*|haiku]],
+              [mhd_cv_ptr_null_all_zeros="assuming yes"],
+              [mhd_cv_ptr_null_all_zeros="assuming no"]
+            )
+          ],
+          [mhd_cv_ptr_null_all_zeros="assuming no"]
+        )
+      ]
+    )
+  ]
+)
+AS_IF([test "x${mhd_cv_ptr_null_all_zeros}" = "xyes" || test "x${mhd_cv_ptr_null_all_zeros}" = "xassuming yes"],
+  [AC_DEFINE([HAVE_NULL_PTR_ALL_ZEROS],[1],[Define to '1' if NULL pointers binary representation is all zero bits])]
+)
+
 AC_C_INLINE
 AS_UNSET([errattr_CFLAGS])
 CFLAGS="${user_CFLAGS}"
