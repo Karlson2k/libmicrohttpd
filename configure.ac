@@ -2619,8 +2619,8 @@ int main (int argc, char *const *argv)
   ]
 )
 AS_VAR_IF([mhd_cv_decl_noreturn], ["none"],
-  [AC_DEFINE([_MHD_NORETURN], [], [Define to supported 'noreturn' function declaration])],
-  [AC_DEFINE_UNQUOTED([_MHD_NORETURN], [${mhd_cv_decl_noreturn}], [Define to supported 'noreturn' function declaration])]
+  [AC_DEFINE([MHD_NORETURN_], [[/* empty */]], [Define to the supported 'noreturn' function declaration])],
+  [AC_DEFINE_UNQUOTED([MHD_NORETURN_], [${mhd_cv_decl_noreturn}], [Define to the supported 'noreturn' function declaration])]
 )
 
 # Check for types sizes
