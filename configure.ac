@@ -2399,7 +2399,9 @@ AC_CACHE_CHECK([for supported 'noreturn' keyword], [mhd_cv_decl_noreturn],
   [
     mhd_cv_decl_noreturn="none"
     CFLAGS="${CFLAGS_ac} ${user_CFLAGS} ${errattr_CFLAGS}"
-    for decl_noret in '_Noreturn' '__attribute__((__noreturn__))' '__declspec(noreturn)'
+    MHD_SAVED_ac_c_werror_flag="$ac_c_werror_flag"
+    ac_c_werror_flag=yes
+    for decl_noret in ['[[noreturn]]'] '_Noreturn' '__attribute__((__noreturn__))' '__declspec(noreturn)'
     do
       AC_LINK_IFELSE([AC_LANG_SOURCE(
           [[
@@ -2428,7 +2430,9 @@ int main (int argc, char *const *argv)
       )
       AS_IF([test "x${mhd_cv_decl_noreturn}" != "xnone"], [break])
     done
-   CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    ac_c_werror_flag="$MHD_SAVED_ac_c_werror_flag"
+    AS_UNSET([MHD_SAVED_ac_c_werror_flag])
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
   ]
 )
 AS_VAR_IF([mhd_cv_decl_noreturn], ["none"],
