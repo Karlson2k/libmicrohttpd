@@ -498,7 +498,7 @@ AC_CHECK_HEADERS([endian.h machine/endian.h sys/endian.h sys/byteorder.h \
 # Check for network and sockets optional headers
 AC_CHECK_HEADERS([sys/socket.h sys/select.h netinet/in_systm.h netinet/in.h \
                   arpa/inet.h netinet/ip.h netinet/tcp.h net/if.h \
-                  netdb.h sockLib.h inetLib.h], [], [],
+                  netdb.h sockLib.h inetLib.h selectLib.h], [], [],
   [AC_INCLUDES_DEFAULT
    [
 #ifdef HAVE_SYS_TYPES_H
