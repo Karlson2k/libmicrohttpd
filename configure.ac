@@ -2373,7 +2373,7 @@ AC_C_VARARRAYS
 
 AC_CACHE_CHECK([[whether __func__ magic-macro is available]],
   [[mhd_cv_macro___func___avail]], [dnl
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stddef.h>]],[[const char *funcname = __func__ ; if (NULL == funcname) return 1;]])],
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],[[const char *funcname = __func__ ; if (!funcname) return 1;]])],
     [[mhd_cv_macro___func___avail="yes"]],[[mhd_cv_macro___func___avail="no"]])
 ])
 AS_VAR_IF([mhd_cv_macro___func___avail], ["yes"],
@@ -2381,7 +2381,7 @@ AS_VAR_IF([mhd_cv_macro___func___avail], ["yes"],
   [
     AC_CACHE_CHECK([[whether __FUNCTION__ magic-macro is available]],
       [[mhd_cv_macro___function___avail]], [dnl
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stddef.h>]],[[const char *funcname = __FUNCTION__ ; if (NULL == funcname) return 1;]])],
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],[[const char *funcname = __FUNCTION__ ; if (!funcname) return 1;]])],
         [[mhd_cv_macro___function___avail="yes"]],[[mhd_cv_macro___function___avail="no"]])
     ])
     AS_VAR_IF([mhd_cv_macro___function___avail], ["yes"],
@@ -2389,7 +2389,7 @@ AS_VAR_IF([mhd_cv_macro___func___avail], ["yes"],
       [
         AC_CACHE_CHECK([[whether __PRETTY_FUNCTION__ magic-macro is available]],
           [[mhd_cv_macro___pretty_function___avail]], [dnl
-          AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stddef.h>]],[[const char *funcname = __PRETTY_FUNCTION__ ; if (NULL == funcname) return 1;]])],
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],[[const char *funcname = __PRETTY_FUNCTION__ ; if (!funcname) return 1;]])],
             [[mhd_cv_macro___pretty_function___avail="yes"]],[[mhd_cv_macro___pretty_function___avail="no"]])
         ])
         AS_VAR_IF([mhd_cv_macro___pretty_function___avail], ["yes"],
