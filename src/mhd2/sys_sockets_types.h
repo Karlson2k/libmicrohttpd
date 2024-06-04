@@ -19,24 +19,31 @@
 */
 
 /**
- * @file src/mhd2/sys_socket_types.h
+ * @file src/mhd2/sys_sockets_types.h
  * @brief  The header for system types related to sockets
  * @author Karlson2k (Evgeny Grin)
  *
  * This header should provide declaration of 'struct sockaddr'.
  */
 
-#ifndef MHD_SYS_SOCKET_TYPES_H
-#define MHD_SYS_SOCKET_TYPES_H 1
+#ifndef MHD_SYS_SOCKETS_TYPES_H
+#define MHD_SYS_SOCKETS_TYPES_H 1
 
 #include "mhd_sys_options.h"
 
 #include "mhd_socket_type.h"
 
 #ifdef MHD_POSIX_SOCKETS
-#  include <sys/socket.h>
+#  ifdef HAVE_SYS_SOCKET_H
+#    include <sys/socket.h>
+#  else
+#    include <sys/types.h> /* bad fallback */
+#    ifdef HAVE_SOCKLIB_H
+#      include <sockLib.h>
+#    endif
+#  endif
 #else
 #  include <winsock2.h>
 #endif
 
-#endif /* ! MHD_SYS_SOCKET_TYPES_H */
+#endif /* ! MHD_SYS_SOCKETS_TYPES_H */
