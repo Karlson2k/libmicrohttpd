@@ -172,6 +172,7 @@ AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
+lt_prog_compiler_pic_RC="$lt_prog_compiler_pic_RC -DDLL_EXPORT" # Used only on W32
 
 AC_ARG_ENABLE([compact-code],
   [AS_HELP_STRING([[--enable-compact-code]],
