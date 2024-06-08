@@ -24,6 +24,9 @@ MHD_daemon_set_options (struct MHD_Daemon *daemon,
 {
   size_t i;
 
+  if (mhd_DAEMON_STATE_NOT_STARTED != daemon->state)
+    return MHD_SC_TOO_LATE;
+
   for (i=0;i<options_max_num;i++)
   {
     const struct MHD_DaemonOptionAndValue *const option = options + i;

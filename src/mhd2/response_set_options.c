@@ -23,6 +23,9 @@ MHD_response_set_options (struct MHD_Response *response,
 {
   size_t i;
 
+  if (response->frozen)
+    return MHD_SC_TOO_LATE;
+
   for (i=0;i<options_max_num;i++)
   {
     const struct MHD_ResponseOptionAndValue *const option = options + i;
