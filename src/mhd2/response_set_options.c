@@ -32,28 +32,28 @@ MHD_response_set_options (struct MHD_Response *response,
     switch (option->opt) {
     case MHD_R_O_END:
       return MHD_SC_OK;
-    case MHD_R_OPTION_REUSABLE:
+    case MHD_R_O_REUSABLE:
       response->settings.reusable = option->val.reusable;
       continue;
-    case MHD_R_OPTION_HEAD_ONLY_RESPONSE:
+    case MHD_R_O_HEAD_ONLY_RESPONSE:
       response->settings.head_only_response = option->val.head_only_response;
       continue;
-    case MHD_R_OPTION_CHUNKED_ENC:
+    case MHD_R_O_CHUNKED_ENC:
       response->settings.chunked_enc = option->val.chunked_enc;
       continue;
-    case MHD_R_OPTION_CONN_CLOSE:
+    case MHD_R_O_CONN_CLOSE:
       response->settings.conn_close = option->val.conn_close;
       continue;
-    case MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRICT:
+    case MHD_R_O_HTTP_1_0_COMPATIBLE_STRICT:
       response->settings.http_1_0_compatible_strict = option->val.http_1_0_compatible_strict;
       continue;
-    case MHD_R_OPTION_HTTP_1_0_SERVER:
+    case MHD_R_O_HTTP_1_0_SERVER:
       response->settings.http_1_0_server = option->val.http_1_0_server;
       continue;
-    case MHD_R_OPTION_INSANITY_HEADER_CONTENT_LENGTH:
+    case MHD_R_O_INSANITY_HEADER_CONTENT_LENGTH:
       response->settings.insanity_header_content_length = option->val.insanity_header_content_length;
       continue;
-    case MHD_R_OPTION_TERMINATION_CALLBACK:
+    case MHD_R_O_TERMINATION_CALLBACK:
       response->settings.termination_callback.v_term_cb = option->val.termination_callback.v_term_cb;
       response->settings.termination_callback.v_term_cb_cls = option->val.termination_callback.v_term_cb_cls;
       continue;
