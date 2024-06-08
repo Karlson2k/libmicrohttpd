@@ -8,8 +8,12 @@
 
 /* EDITED MANUALLY */
 
-#include "microhttpd2.h"
-#include "internal.h"
+
+#include "mhd_sys_options.h"
+#include "sys_base_types.h"
+#include "mhd_response.h"
+#include "response_options.h"
+#include "mhd_public_api.h"
 
 enum MHD_StatusCode
 MHD_response_set_options (
