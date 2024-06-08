@@ -49,8 +49,21 @@ MHD_daemon_set_options (struct MHD_Daemon *daemon,
       settings->bind_port.v_port = option->val.bind_port.v_port;
       continue;
     case MHD_D_O_BIND_SA:
-      settings->bind_sa.v_sa_len = option->val.bind_sa.v_sa_len;
-      settings->bind_sa.v_sa = option->val.bind_sa.v_sa;
+      /* The is not an easy for automatic generations */
+      if (0 != option->val.bind_sa.v_sa_len)
+      {
+        if (NULL != settings->bind_sa.v_sa)
+          free (settings->bind_sa.v_sa);
+
+        settings->bind_sa.v_sa = malloc (option->val.bind_sa.v_sa_len);
+        if (NULL == settings->bind_sa.v_sa)
+          return MHD_SC_DAEMON_MALLOC_FAILURE;
+
+        memcpy (settings->bind_sa.v_sa, option->val.bind_sa.v_sa,
+                option->val.bind_sa.v_sa_len);
+        settings->bind_sa.v_sa_len = option->val.bind_sa.v_sa_len;
+        settings->bind_sa.v_dual = option->val.bind_sa.v_dual;
+      }
       continue;
     case MHD_D_O_LISTEN_SOCKET:
       settings->listen_socket = option->val.listen_socket;
@@ -153,8 +166,23 @@ MHD_daemon_set_options (struct MHD_Daemon *daemon,
       settings->notify_stream.v_cls = option->val.notify_stream.v_cls;
       continue;
     case MHD_D_O_RANDOM_ENTROPY:
-      settings->random_entropy.v_buf_size = option->val.random_entropy.v_buf_size;
-      settings->random_entropy.v_buf = option->val.random_entropy.v_buf;
+      /* The is not an easy for automatic generations */
+      if (0 != option->val.random_entropy.v_buf_size)
+      {
+        if (NULL != settings->random_entropy.v_buf)
+          free (settings->random_entropy.v_buf);
+
+        settings->random_entropy.v_buf =
+          malloc (option->val.random_entropy.v_buf_size);
+        if (NULL == settings->random_entropy.v_buf)
+          return MHD_SC_DAEMON_MALLOC_FAILURE;
+
+        memcpy (settings->random_entropy.v_buf,
+                option->val.random_entropy.v_buf,
+                option->val.random_entropy.v_buf_size);
+        settings->random_entropy.v_buf_size =
+          option->val.random_entropy.v_buf_size;
+      }
       continue;
     case MHD_D_O_DAUTH_MAP_SIZE:
       settings->dauth_map_size = option->val.dauth_map_size;
