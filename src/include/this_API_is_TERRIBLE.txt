@@ -14,19 +14,45 @@
    even more complicated and even less straightforward.
 -- '#include "microhttpd2_generated_daemon_options.h"' is far from "generated
     code documenting..."
--- All macros that switching from "static inline" to macros with compound
+-- All macros that switch from "static inline" to macros with compound
    literals are not clear for the user. Even right now it is not clear how
    they are supposed to work. Not clear that one form is used for C compilers,
    while another form is used for C++ compilers (and, actually, the third
    possible version, for not compatible compilers, for C89, and before C++11
    however it is not the largest concern). It is not clear that app code is
    supposed to look the same in both C and C++. Actually, even with modern
-   compilers (and language version) there are three possible combinations:
+   compilers (and language versions) there are three possible combinations:
    - macros for option with macro to make an array (C),
    - static functions for options with macro to make an array (C++ with clang),
    - static functions with vector (C++ in general).
    And this is repeated for every section with the options.
--- Functions with ALL CAPS are hard to read. ALL CAPS are usually macros.
+-- Functions with ALL CAPS (like MHD_D_OPTION_WORK_MODE) are hard to read. ALL
+   CAPS are usually macros.
+-- The "parts" of the main headers are badly visualised by IDEs as they are
+   incomplete (do not have macros used in declarations, like
+   MHD_FIXED_ENUM_APP_SET_).
+-- Having both MHD_D_O_XXX and (two times of each) MHD_D_OPTION_XXX is
+   confusion and not obvious. Even you was confused with similar names and
+   used MHD_D_OPTION_XXX as switch values, while it must be MHD_D_O_XXX.
+
+- This design is less secure by nature. The sizes of arrays or memory
+  allocations cannot be checked by compilers (like 
+  "size_t num, int arr[num]").
+- Automatic generated setting function cannot check for build-time configurable
+  features availability, neither for system/platform available features. 
+  Only daemon_start() can make any checks leaving no chance for the application
+  to understand where the problem is. The result is less detailed and less
+  flexible API.
+- Some generated settings processing functions are incorrect. When setting is
+  documented to ignore some specific parameter value (like MHD_INVALID_SOCKET),
+  it must NOT override previously set value. This requires even more
+  complicated generation.
+- Some options (MHD_D_O_BIND_SA, MHD_D_O_RANDOM_ENTROPY) require copying of 
+  user memory. Need either further heavy customizing or kind of manual
+  exceptions. Future "large" options will need malloc() and copy for each(!) of
+  them during "set" phase, without error checking for the options content.
+- Generated settings and set function cannot skip code parts excluded by
+  configure parameters, making the library less flexible and less "micro".
 
 It is supposed to make the header maintainable so someone may take care about
 it later. BUT
@@ -40,8 +66,8 @@ it later. BUT
 -- Simple question: what if it will be needed to change the formatting of
    header? Which file should I edit? Is it obvious? For example, change
    the indent.
--- Adding new type of settings (for example, for the stream) is complicated
-   and multiply already large number of input files.
+-- Adding new type of settings (for example, for the HTTP stream settings) is
+   complicated and multiply already large number of input files.
 -- It is always not nice that relatively often modifiable file (the main
    header) cannot be modified directly. Every time when I change something
    in the main header, I have to run the build system before starting using
@@ -50,6 +76,19 @@ it later. BUT
    With the additional checks for build host compilers (and other new checks)
    it will be even longer. So, more then 6 minutes after edit of some part
    of the header before getting the result. No efficient at all!
+-- Quite inconvenient edit generated sources file by editing other files. Even
+   minor corrections (like change list of included files) becomes problematic,
+   as it may change the generation logic. In long term it is a bad design.
+-- To insert the "generated code documenting" in different parts of the header,
+   more slicing of the main header is required.  Currently it must be at least
+   four parts of the header, with every additional type of option the number
+   will increase further. It is easy to lost between parts of the main header.
+   Editing of any part of the header becoming more time-consuming, as every
+   time it is required to find which part is needed to be edited.
+-- Too error-prone, like not working macro for "per_ip_limit". All macro
+   parameters must be different from any token used within the macro.
+-- The future parameters that require larger size will need pointers,
+   which break "the beauty" of the client use, which is the main goal.
 
 - The build system for the header is broken currently.
 -- Need to add the section to the configure for the build compilers, document
@@ -59,7 +98,7 @@ it later. BUT
 -- Need to fix makefiles for out-of-tree builds
 -- Need to fix makefiles for parallel builds (this is not easy! check the "po"
    part)
--- Need to fix the generator itself. Currently it is not POSIX, using
+-- Need to fix the generator itself. Currently it is not POSIX, is using
    unportable extensions. Need to make it with proper memory handling and
    correct checking for all errors. "It works fast" will not be an excuse for
    security audits. It sounds like "I'll commit a crime, but I'll do it very
@@ -76,11 +115,15 @@ it later. BUT
 
 ! Errors: struct MHD_responseOptionAndValue vs struct MHD_ResponseOptionAndValue
 ! Errors: struct MHD_daemonOptionAndValue vs struct MHD_DaemonOptionAndValue
+! Errors: deamon_options.h does not have macro guards against double inclusion
 ! Errors: Doxy lines are too long.
 ! Errors: Some doxy lines are broken (do not start with " *")
 ! Errors: Several "@param"s are in single doxy line
+! Errors: MHD_D_OPTION_PER_IP_LIMIT does not work - parameter token used as member name
 ! Wrong: The body of some static functions with single parameter are formed as macros
 
 Positive:
-+ The excluded "portability" macros is fine (actually, the excluded part is
-  not about the portability only)
++ The exclude of "portability" macros is fine (actually, the excluded part is
+  not about the portability only). However, even this part is easier to use
+  when it is fully integrated. To keep it separated the scope must be reduced,
+  to avoid having types declarations in it.
