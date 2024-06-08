@@ -41,8 +41,8 @@ MHD_daemon_set_options (struct MHD_Daemon *daemon,
       settings->poll_syscall = option->val.poll_syscall;
       continue;
     case MHD_D_O_LOG_CALLBACK:
-      settings->log_callback.v_log_cb = option->val.log_callback.v_log_cb;
-      settings->log_callback.v_lob_cb_cls = option->val.log_callback.v_lob_cb_cls;
+      /* Note: set directly to the daemon! */
+      daemon->log_params = option->val.log_callback;
       continue;
     case MHD_D_O_BIND_PORT:
       settings->bind_port.v_af = option->val.bind_port.v_af;
