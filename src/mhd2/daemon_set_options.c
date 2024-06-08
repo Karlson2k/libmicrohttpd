@@ -26,7 +26,8 @@ MHD_daemon_set_options (struct MHD_Daemon *daemon,
 
   for (i=0;i<options_max_num;i++)
   {
-    switch (options[i].opt) {
+    const struct MHD_DaemonOptionAndValue *const option = options + i;
+    switch (option->opt) {
     case MHD_D_OPTION_WORK_MODE:
       daemon->settings.work_mode = option->val.work_mode;
       continue;
