@@ -2,8 +2,8 @@
    Do not edit directly! */
 /* *INDENT-OFF* */
 /**
-/* @file daemon_set_options.c
-/* @author daemon-options-generator.c
+ * @file daemon_set_options.c
+ * @author daemon-options-generator.c
  */
 
 /* EDITED MANUALLY */

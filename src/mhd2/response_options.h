@@ -2,8 +2,8 @@
    Do not edit directly! */
 /* *INDENT-OFF* */
 /**
-/* @file response_options.h
-/* @author response-options-generator.c
+ * @file response_options.h
+ * @author response-options-generator.c
  */
 
 /* EDITED MANUALLY */
