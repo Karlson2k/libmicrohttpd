@@ -15,11 +15,11 @@
 #include "response_options.h"
 #include "mhd_public_api.h"
 
-enum MHD_StatusCode
-MHD_response_set_options (
-  struct MHD_Response *response,
-  const struct MHD_ResponseOptionAndValue *options,
-  size_t options_max_num)
+
+MHD_FN_PAR_NONNULL_ALL_ MHD_EXTERN_ enum MHD_StatusCode
+MHD_response_set_options (struct MHD_Response *response,
+                          const struct MHD_ResponseOptionAndValue *options,
+                          size_t options_max_num)
 {
   for (size_t i=0;i<options_max_num;i++)
   {

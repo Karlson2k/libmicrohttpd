@@ -16,11 +16,11 @@
 #include "daemon_options.h"
 #include "mhd_public_api.h"
 
-enum MHD_StatusCode
-MHD_daemon_set_options (
-  struct MHD_Daemon *daemon,
-  const struct MHD_DaemonOptionAndValue *options,
-  size_t options_max_num)
+
+MHD_FN_PAR_NONNULL_ALL_ MHD_EXTERN_ enum MHD_StatusCode
+MHD_daemon_set_options (struct MHD_Daemon *daemon,
+                        const struct MHD_DaemonOptionAndValue *options,
+                        size_t options_max_num)
 {
   for (size_t i=0;i<options_max_num;i++)
   {
