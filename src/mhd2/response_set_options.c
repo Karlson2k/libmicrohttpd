@@ -21,7 +21,9 @@ MHD_response_set_options (struct MHD_Response *response,
                           const struct MHD_ResponseOptionAndValue *options,
                           size_t options_max_num)
 {
-  for (size_t i=0;i<options_max_num;i++)
+  size_t i;
+
+  for (i=0;i<options_max_num;i++)
   {
     switch (options[i].opt) {
     case MHD_R_OPTION_REUSABLE:
