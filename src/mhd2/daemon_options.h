@@ -11,8 +11,10 @@
 #ifndef MHD_DAEMON_OPTIONS_H
 #define MHD_DAEMON_OPTIONS_H 1
 
-#include "microhttpd2.h"
-#include "internal.h"
+#include "mhd_sys_options.h"
+
+#include "mhd_public_api.h"
+
 
 struct DaemonOptions {
   /**
