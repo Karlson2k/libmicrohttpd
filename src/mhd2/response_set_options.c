@@ -1,10 +1,12 @@
-/* This is generated code, it is still under LGPLv3+.
+/* This is generated code, it is still under LGPLv2.1+.
    Do not edit directly! */
 /* *INDENT-OFF* */
 /**
 /* @file response_set_options.c
 /* @author response-options-generator.c
  */
+
+/* EDITED MANUALLY */
 
 #include "microhttpd2.h"
 #include "internal.h"

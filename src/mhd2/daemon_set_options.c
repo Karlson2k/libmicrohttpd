@@ -1,10 +1,12 @@
-/* This is generated code, it is still under LGPLv3+.
+/* This is generated code, it is still under LGPLv2.1+.
    Do not edit directly! */
 /* *INDENT-OFF* */
 /**
 /* @file daemon_set_options.c
 /* @author daemon-options-generator.c
  */
+
+/* EDITED MANUALLY */
 
 #include "microhttpd2.h"
 #include "internal.h"

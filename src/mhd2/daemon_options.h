@@ -1,4 +1,4 @@
-/* This is generated code, it is still under LGPLv3+.
+/* This is generated code, it is still under LGPLv2.1+.
    Do not edit directly! */
 /* *INDENT-OFF* */
 /**
