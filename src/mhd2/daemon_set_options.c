@@ -31,6 +31,8 @@ MHD_daemon_set_options (struct MHD_Daemon *daemon,
   {
     const struct MHD_DaemonOptionAndValue *const option = options + i;
     switch (option->opt) {
+    case MHD_D_O_END:
+      return MHD_SC_OK;
     case MHD_D_OPTION_WORK_MODE:
       daemon->settings.work_mode = option->val.work_mode;
       continue;
@@ -165,8 +167,11 @@ MHD_daemon_set_options (struct MHD_Daemon *daemon,
     case MHD_D_OPTION_DAUTH_DEF_MAX_NC:
       daemon->settings.dauth_def_max_nc = option->val.dauth_def_max_nc;
       continue;
+    case MHD_D_O_SENTINEL:
+    default:
+      break;
     }
-    return MHD_SC_OPTION_UNSUPPORTED;
+    return MHD_SC_OPTION_UNKNOWN;
   }
   return MHD_SC_OK;
 }

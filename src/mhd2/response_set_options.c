@@ -30,6 +30,8 @@ MHD_response_set_options (struct MHD_Response *response,
   {
     const struct MHD_ResponseOptionAndValue *const option = options + i;
     switch (option->opt) {
+    case MHD_R_O_END:
+      return MHD_SC_OK;
     case MHD_R_OPTION_REUSABLE:
       response->settings.reusable = option->val.reusable;
       continue;
@@ -55,8 +57,11 @@ MHD_response_set_options (struct MHD_Response *response,
       response->settings.termination_callback.v_term_cb = option->val.termination_callback.v_term_cb;
       response->settings.termination_callback.v_term_cb_cls = option->val.termination_callback.v_term_cb_cls;
       continue;
+    case MHD_R_O_SENTINEL:
+    default:
+      break;
     }
-    return MHD_SC_OPTION_UNSUPPORTED;
+    return MHD_SC_OPTION_UNKNOWN;
   }
   return MHD_SC_OK;
 }
