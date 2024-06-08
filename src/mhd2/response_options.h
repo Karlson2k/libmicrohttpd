@@ -8,6 +8,9 @@
 
 /* EDITED MANUALLY */
 
+#ifndef MHD_RESPONSE_OPTIONS_H
+#define MHD_RESPONSE_OPTIONS_H 1
+
 #include "microhttpd2.h"
 #include "internal.h"
 
@@ -63,3 +66,5 @@ struct ResponseOptions {
 
 
 };
+
+#endif /* ! MHD_RESPONSE_OPTIONS_H 1 */

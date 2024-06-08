@@ -8,6 +8,9 @@
 
 /* EDITED MANUALLY */
 
+#ifndef MHD_DAEMON_OPTIONS_H
+#define MHD_DAEMON_OPTIONS_H 1
+
 #include "microhttpd2.h"
 #include "internal.h"
 
@@ -284,3 +287,5 @@ struct DaemonOptions {
 
 
 };
+
+#endif /* ! MHD_DAEMON_OPTIONS_H */
