@@ -1,5 +1,3 @@
-/* EDITED MANUALLY */
-
 /**
  * The options (parameters) for MHD daemon
  */
@@ -869,16 +867,16 @@ struct MHD_DaemonOptionAndValue
  * Set a callback to use for logging
  * @param log_cb the callback to use for logging,
  *   NULL to disable logging
- * @param lob_cb_cls the closure for the logging callback
+ * @param log_cb_cls the closure for the logging callback
  * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_LOG_CALLBACK(log_cb,lob_cb_cls) \
+#  define MHD_D_OPTION_LOG_CALLBACK(log_cb,log_cb_cls) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
           .opt = MHD_D_O_LOG_CALLBACK,  \
           .val.log_callback.v_log_cb = (log_cb), \
-          .val.log_callback.v_lob_cb_cls = (lob_cb_cls) \
+          .val.log_callback.v_log_cb_cls = (log_cb_cls) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -1522,20 +1520,20 @@ MHD_D_OPTION_POLL_SYSCALL (
  * Set a callback to use for logging
  * @param log_cb the callback to use for logging,
  *   NULL to disable logging
- * @param lob_cb_cls the closure for the logging callback
+ * @param log_cb_cls the closure for the logging callback
  * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_daemonOptionAndValue
 MHD_D_OPTION_LOG_CALLBACK (
   MHD_LoggingCallback log_cb,
-  void *lob_cb_cls
+  void *log_cb_cls
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_LOG_CALLBACK;
   opt_val.val.log_callback.v_log_cb = log_cb;
-  opt_val.val.log_callback.v_lob_cb_cls = lob_cb_cls;
+  opt_val.val.log_callback.v_log_cb_cls = log_cb_cls;
 
   return opt_val;
 }

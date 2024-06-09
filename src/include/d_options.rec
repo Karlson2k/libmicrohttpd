@@ -37,8 +37,11 @@ Type: struct MHD_DaemonOptionValueLog
 Argument1: MHD_LoggingCallback log_cb
 Description1: the callback to use for logging,
 + NULL to disable logging
-Argument2: void *lob_cb_cls
+Argument2: void *log_cb_cls
 Description2: the closure for the logging callback
+# Note: CG does not exactly like this...
+CustomSetter: /* Note: set directly to the daemon */
++ daemon->log_params = option->val.log_callback;
 
 # Listen socket
 
@@ -69,6 +72,20 @@ Argument1: size_t sa_len
 Description1: the size of the socket address pointed by @a sa.
 Argument2: const struct sockaddr *sa
 Description2: the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or even a UNIX domain socket (AF_UNIX)
+CustomSetter: /* custom setter */
++ if (0 != option->val.bind_sa.v_sa_len)
++ {
++   if (NULL != settings->bind_sa.v_sa)
++     free (settings->bind_sa.v_sa);
++   settings->bind_sa.v_sa = malloc (option->val.bind_sa.v_sa_len);
++   if (NULL == settings->bind_sa.v_sa)
++     return MHD_SC_DAEMON_MALLOC_FAILURE;
++   memcpy (settings->bind_sa.v_sa,
++           option->val.bind_sa.v_sa,
++           option->val.bind_sa.v_sa_len);
++   settings->bind_sa.v_sa_len = option->val.bind_sa.v_sa_len;
++   settings->bind_sa.v_dual = option->val.bind_sa.v_dual;
++ }
 
 Name: listen_socket
 Value: 82
@@ -78,7 +95,7 @@ Comment: Accept connections from the given socket.  Socket
 + Does not work with #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA().
 +
 + If no listen socket optins (#MHD_D_OPTION_BIND_PORT(), #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does not listen for incoming connection.
-Argument1: MHD_socket listen_fd
+Argument1: MHD_Socket listen_fd
 Description1: the listen socket to use, ignored if set to #MHD_INVALID_SOCKET
 
 Name: listen_addr_reuse
@@ -276,7 +293,7 @@ Comment: The the maximum FD value.
 + Useful if application uses select() for polling the sockets, system FD_SETSIZE is good value for this option in such case.
 + Does not work with #MHD_D_OPTION_WM_WORKER_THREADS() or #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
 + Does not work on W32 (WinSock sockets).
-Argument1: MHD_socket max_fd
+Argument1: MHD_Socket max_fd
 Description1: FIXME
 
 # MHD optimisations
@@ -360,6 +377,22 @@ Argument1: size_t buf_size
 Description1: the size of the buffer
 Argument2: const void *buf
 Description2: the buffer with strong random data, the content will be copied by MHD
+CustomSetter: /* custom setter */
++ if (0 != option->val.random_entropy.v_buf_size)
++ {
++   if (NULL != settings->random_entropy.v_buf)
++     free (settings->random_entropy.v_buf);
++   settings->random_entropy.v_buf
++     = malloc (option->val.random_entropy.v_buf_size);
++   if (NULL == settings->random_entropy.v_buf)
++     return MHD_SC_DAEMON_MALLOC_FAILURE;
++   memcpy (settings->random_entropy.v_buf,
++           option->val.random_entropy.v_buf,
++           option->val.random_entropy.v_buf_size);
++   settings->random_entropy.v_buf_size
++     = option->val.random_entropy.v_buf_size;
++ }
+
 
 Name: dauth_map_size
 Value: 401

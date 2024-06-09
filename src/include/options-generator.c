@@ -38,6 +38,7 @@ struct Option
   unsigned int value;
   char *type;
   char *comment;
+  char *custom_setter;
   unsigned int argc;
   char *arguments[MAX_ARGS];
   unsigned int desc;
@@ -55,6 +56,7 @@ typedef void
              const char *comment,
              const char *type,
              const char *conditional,
+             const char *custom_setter,
              unsigned int argc,
              char **arguments,
              unsigned int desc,
@@ -75,6 +77,7 @@ iterate (struct Option *head,
         o->comment,
         o->type,
         o->conditional,
+        o->custom_setter,
         o->argc,
         o->arguments,
         o->desc,
@@ -89,6 +92,7 @@ check (const char *name,
        const char *comment,
        const char *type,
        const char *conditional,
+       const char *custom_setter,
        unsigned int argc,
        char **arguments,
        unsigned int desc,
@@ -203,6 +207,7 @@ dump_enum (const char *name,
            const char *comment,
            const char *type,
            const char *conditional,
+           const char *custom_setter,
            unsigned int argc,
            char **arguments,
            unsigned int desc,
@@ -234,6 +239,7 @@ dump_union_members (const char *name,
                     const char *comment,
                     const char *type,
                     const char *conditional,
+                    const char *custom_setter,
                     unsigned int argc,
                     char **arguments,
                     unsigned int desct,
@@ -271,6 +277,7 @@ dump_union (const char *name,
             const char *comment,
             const char *type,
             const char *conditional,
+            const char *custom_setter,
             unsigned int argc,
             char **arguments,
             unsigned int desc,
@@ -319,6 +326,7 @@ dump_struct (const char *name,
              const char *comment,
              const char *type,
              const char *conditional,
+             const char *custom_setter,
              unsigned int argc,
              char **arguments,
              unsigned int desc,
@@ -333,6 +341,7 @@ dump_struct (const char *name,
               comment,
               type,
               conditional,
+              custom_setter,
               argc,
               arguments,
               desc,
@@ -351,6 +360,7 @@ dump_option_macros (const char *name,
                     const char *comment,
                     const char *type,
                     const char *conditional,
+                    const char *custom_setter,
                     unsigned int argc,
                     char **arguments,
                     unsigned int desct,
@@ -430,6 +440,7 @@ dump_option_static_functions (const char *name,
                               const char *comment,
                               const char *type,
                               const char *conditional,
+                              const char *custom_setter,
                               unsigned int argc,
                               char **arguments,
                               unsigned int desct,
@@ -514,6 +525,7 @@ dump_option_documentation_functions (const char *name,
                                      const char *comment,
                                      const char *type,
                                      const char *conditional,
+                                     const char *custom_setter,
                                      unsigned int argc,
                                      char **arguments,
                                      unsigned int desct,
@@ -573,6 +585,7 @@ dump_option_set_switch (const char *name,
                         const char *comment,
                         const char *type,
                         const char *conditional,
+                        const char *custom_setter,
                         unsigned int argc,
                         char **arguments,
                         unsigned int desc,
@@ -583,35 +596,46 @@ dump_option_set_switch (const char *name,
              "#ifdef HAVE_%s",
              uppercase (conditional));
   fprintf (f,
-           "    case MHD_%c_OPTION_%s:\n",
+           "    case MHD_%c_O_%s:\n",
            (char) toupper (*category),
            uppercase (name));
-  if (0 == argc)
+  if (NULL != custom_setter)
+  {
     fprintf (f,
-             "      %s->settings.%s = option->val.%s;\n",
-             category,
-             lowercase (name),
-             lowercase (name));
+             "      %s\n",
+             indent ("      ",
+                     custom_setter));
+  }
   else
-    for (unsigned int i = 0; i<argc; i++)
+  {
+    if (0 == argc)
     {
-      const char *vn = var_name (arguments[i]);
-
-      if (1 < argc)
-        fprintf (f,
-                 "      %s->settings.%s.v_%s = option->val.%s.v_%s;\n",
-                 category,
-                 lowercase (name),
-                 vn,
-                 lowercase (name),
-                 vn);
-      else
-        fprintf (f,
-                 "      %s->settings.%s = option->val.%s;\n",
-                 category,
-                 lowercase (name),
-                 lowercase (name));
+      fprintf (f,
+               "      settings->%s = option->val.%s;\n",
+               lowercase (name),
+               lowercase (name));
     }
+    else
+    {
+      for (unsigned int i = 0; i<argc; i++)
+      {
+        const char *vn = var_name (arguments[i]);
+
+        if (1 < argc)
+          fprintf (f,
+                   "      settings->%s.v_%s = option->val.%s.v_%s;\n",
+                   lowercase (name),
+                   vn,
+                   lowercase (name),
+                   vn);
+        else
+          fprintf (f,
+                   "      settings->%s = option->val.%s;\n",
+                   lowercase (name),
+                   lowercase (name));
+      }
+    }
+  }
   fprintf (f,
            "      continue;\n");
   if (NULL != conditional)
@@ -746,6 +770,10 @@ TOP:
         continue;
       if (NULL != (larg = parse (&last->conditional,
                                  "Conditional: ",
+                                 line)))
+        continue;
+      if (NULL != (larg = parse (&last->custom_setter,
+                                 "CustomSetter: ",
                                  line)))
         continue;
       if (0 == strncasecmp (line,
@@ -891,7 +919,8 @@ TOP:
   printf (
     "#else /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */\n");
   printf ("MHD_NOWARN_UNUSED_FUNC_");
-  iterate (head, &dump_option_static_functions);
+  iterate (head,
+           &dump_option_static_functions);
   printf ("\n/**\n"
           " * Terminate the list of the options\n"
           " * @return the terminating object of struct MHD_%sOptionAndValue\n"
@@ -959,15 +988,24 @@ TOP:
       return 2;
     }
     fprintf (f,
-             "/* This is generated code, it is still under LGPLv3+.\n"
+             "/* This is generated code, it is still under LGPLv2.1+.\n"
              "   Do not edit directly! */\n"
              "/* *INDENT-OFF* */\n"
              "/**\n"
-             "/* @file %s_set_options.c\n"
-             "/* @author %s-options-generator.c\n"
-             " */\n\n"
-             "#include \"microhttpd2.h\"\n"
-             "#include \"internal.h\"\n\n"
+             " * @file %s_set_options.c\n"
+             " * @author %s-options-generator.c\n"
+             " */\n"
+             "\n"
+             "#include \"mhd_sys_options.h\"\n"
+             "#include \"sys_base_types.h\"\n"
+             "#include \"sys_malloc.h\"\n"
+             "#include <string.h>\n"
+             "#include \"mhd_daemon.h\"\n"
+             "#include \"mhd_response.h\"\n"
+             "#include \"%s_options.h\"\n"
+             "#include \"mhd_public_api.h\"\n"
+             "\n"
+             "MHD_FN_PAR_NONNULL_ALL_ MHD_EXTERN_\n"
              "enum MHD_StatusCode\n"
              "MHD_%s_set_options (\n"
              "  struct MHD_%s *%s,\n"
@@ -977,18 +1015,38 @@ TOP:
              category,
              category,
              category,
+             category,
              capitalize (category),
              category,
              capitalize (category));
     fprintf (f,
-             "  for (size_t i=0;i<options_max_num;i++)\n"
+             "  struct %sOptions *const settings = %s->settings;\n"
+             "  size_t i;\n"
+             "\n"
+             "  if (%s->frozen)\n"
+             "    return MHD_SC_TOO_LATE;\n"
+             "\n"
+             "  for (i=0;i<options_max_num;i++)\n"
              "  {\n"
-             "    switch (options[i].opt) {\n");
+             "    const struct MHD_%sOptionAndValue *const option = options + i;\n"
+             "    switch (option->opt) {\n",
+             capitalize (category),
+             category,
+             category,
+             capitalize (category));
+    fprintf (f,
+             "    case MHD_%c_O_END:\n"
+             "      return MHD_SC_OK;\n",
+             (char) toupper (*category));
     iterate (head,
              &dump_option_set_switch);
     fprintf (f,
+             "    case MHD_%c_O_SENTINEL:\n"
+             "      break;\n",
+             (char) toupper (*category));
+    fprintf (f,
              "    }\n"
-             "    return MHD_SC_OPTION_UNSUPPORTED;\n"
+             "    return MHD_SC_OPTION_UNKNOWN;\n"
              "  }\n"
              "  return MHD_SC_OK;\n");
     fprintf (f,
@@ -1015,23 +1073,32 @@ TOP:
       return 2;
     }
     fprintf (f,
-             "/* This is generated code, it is still under LGPLv3+.\n"
+             "/* This is generated code, it is still under LGPLv2.1+.\n"
              "   Do not edit directly! */\n"
              "/* *INDENT-OFF* */\n"
              "/**\n"
              "/* @file %s_options.h\n"
              "/* @author %s-options-generator.c\n"
              " */\n\n"
-             "#include \"microhttpd2.h\"\n"
-             "#include \"internal.h\"\n\n"
+             "#ifndef MHD_%s_OPTIONS_H\n"
+             "#define MHD_%s_OTPIONS_H 1\n"
+             "\n"
+             "#include \"mhd_sys_options.h\"\n"
+             "#include \"mhd_public_api.h\"\n"
+             "\n"
              "struct %sOptions {\n",
              category,
              category,
+             uppercase (category),
+             uppercase (category),
              capitalize (category));
     iterate (head,
              &dump_struct);
     fprintf (f,
-             "};\n");
+             "};\n"
+             "\n"
+             "#endif /* ! MHD_%s_OPTIONS_H */\n",
+             uppercase (category));
     fclose (f);
     chmod (do_h, S_IRUSR | S_IRGRP | S_IROTH);
     free (do_h);
