@@ -43,6 +43,8 @@
   Only daemon_start() can make any checks leaving no chance for the application
   to understand where the problem is. The result is less detailed and less
   flexible API.
+
+
 - Some generated settings processing functions are incorrect. When setting is
   documented to ignore some specific parameter value (like MHD_INVALID_SOCKET),
   it must NOT override previously set value. This requires even more
@@ -53,6 +55,9 @@
   them during "set" phase, without error checking for the options content.
 - Generated settings and set function cannot skip code parts excluded by
   configure parameters, making the library less flexible and less "micro".
+- Some settings require different storage format and parameters format.
+  For example, when parameter is copied, the storage format shouldn't be
+  pointer to const as we need to free it.
 
 It is supposed to make the header maintainable so someone may take care about
 it later. BUT
@@ -113,9 +118,6 @@ it later. BUT
    even less readable, even harder maintainable. Problems will be multiplied
    with additional types of the settings.
 
-! Errors: struct MHD_responseOptionAndValue vs struct MHD_ResponseOptionAndValue
-! Errors: struct MHD_daemonOptionAndValue vs struct MHD_DaemonOptionAndValue
-! Errors: deamon_options.h does not have macro guards against double inclusion
 ! Errors: Doxy lines are too long.
 ! Errors: Some doxy lines are broken (do not start with " *")
 ! Errors: Several "@param"s are in single doxy line
