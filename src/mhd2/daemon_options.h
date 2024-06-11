@@ -2,12 +2,12 @@
    Do not edit directly! */
 /* *INDENT-OFF* */
 /**
-/* @file daemon_options.h
-/* @author daemon-options-generator.c
+ * @file daemon_options.h
+ * @author daemon-options-generator.c
  */
 
 #ifndef MHD_DAEMON_OPTIONS_H
-#define MHD_DAEMON_OTPIONS_H 1
+#define MHD_DAEMON_OPTIONS_H 1
 
 #include "mhd_sys_options.h"
 #include "mhd_public_api.h"
