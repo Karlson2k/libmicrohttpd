@@ -73,6 +73,11 @@ Description1: the size of the socket address pointed by @a sa.
 Argument2: const struct sockaddr *sa
 Description2: the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or even a UNIX domain socket (AF_UNIX)
 CustomSetter: /* custom setter */
++ #if FIXME_EG
++   struct sockaddr_storage bind_sa;
++   if (option->val.bind_sa.v_sa_len > sizeof (bind_sa)) return FREAKOUT;
++   memcpy (&settings->bind_sa, option->val.bind_sa.v_sa, option->val.bind_sa.v_sa_len);
++ #endif
 + if (0 != option->val.bind_sa.v_sa_len)
 + {
 +   if (NULL != settings->bind_sa.v_sa)
@@ -203,7 +208,7 @@ Name: PER_IP_LIMIT
 Value: 162
 Comment: Limit on the number of (concurrent) network connections made to the server from the same IP address.
 + Can be used to prevent one IP from taking over all of the allowed connections. If the same IP tries to establish more than the specified number of connections, they will be immediately rejected.
-Argument1: unsigned int per_ip_limit
+Argument1: unsigned int limit
 Description1: FIXME
 
 Name: accept_policy
@@ -380,6 +385,11 @@ Description2: the buffer with strong random data, the content will be copied by 
 CustomSetter: /* custom setter */
 + if (0 != option->val.random_entropy.v_buf_size)
 + {
++ #if FIXME_EG
++   MHD_entropy_hash_ (&settings->random_entropy,
++                      option->val.random_entropy.v_buf,
++                      option->val.random_entropy.v_buf_size);
++ #endif
 +   if (NULL != settings->random_entropy.v_buf)
 +     free (settings->random_entropy.v_buf);
 +   settings->random_entropy.v_buf

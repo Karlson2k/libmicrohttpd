@@ -3871,12 +3871,12 @@ MHD_D_OPTION_GLOBAL_CONNECTION_LIMIT (
 /**
  * Limit on the number of (concurrent) network connections made to the server from the same IP address.
  * Can be used to prevent one IP from taking over all of the allowed connections. If the same IP tries to establish more than the specified number of connections, they will be immediately rejected.
- * @param per_ip_limit FIXME
+ * @param limit FIXME
  * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_PER_IP_LIMIT (
-  unsigned int per_ip_limit
+  unsigned int limit
   );
 
 /**

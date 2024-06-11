@@ -21,16 +21,17 @@ MHD_daemon_set_options (
   const struct MHD_DaemonOptionAndValue *options,
   size_t options_max_num)
 {
-  struct DaemonOptions *const settings = daemon->settings;
+  struct DaemonOptions *const settings = daemon->psettings;
   size_t i;
 
-  if (daemon->frozen)
+  if (NULL == settings)
     return MHD_SC_TOO_LATE;
 
-  for (i=0;i<options_max_num;i++)
+  for (i = 0; i < options_max_num; i++)
   {
-    const struct MHD_DaemonOptionAndValue *const option = options + i;
-    switch (option->opt) {
+    const struct MHD_daemonOptionAndValue *const option = options + i;
+    switch (option->opt)
+    {
     case MHD_D_O_END:
       return MHD_SC_OK;
     case MHD_D_O_WORK_MODE:
@@ -193,6 +194,7 @@ MHD_daemon_set_options (
       settings->dauth_def_max_nc = option->val.dauth_def_max_nc;
       continue;
     case MHD_D_O_SENTINEL:
+    default: /* for -WFIXME_EG */ 
       break;
     }
     return MHD_SC_OPTION_UNKNOWN;

@@ -1111,15 +1111,15 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
 /**
  * Limit on the number of (concurrent) network connections made to the server from the same IP address.
  * Can be used to prevent one IP from taking over all of the allowed connections. If the same IP tries to establish more than the specified number of connections, they will be immediately rejected.
- * @param per_ip_limit FIXME
+ * @param limit FIXME
  * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_PER_IP_LIMIT(per_ip_limit) \
+#  define MHD_D_OPTION_PER_IP_LIMIT(limit) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
           .opt = MHD_D_O_PER_IP_LIMIT,  \
-          .val.per_ip_limit = (per_ip_limit) \
+          .val.per_ip_limit = (limit) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -1861,18 +1861,18 @@ MHD_D_OPTION_GLOBAL_CONNECTION_LIMIT (
 /**
  * Limit on the number of (concurrent) network connections made to the server from the same IP address.
  * Can be used to prevent one IP from taking over all of the allowed connections. If the same IP tries to establish more than the specified number of connections, they will be immediately rejected.
- * @param per_ip_limit FIXME
+ * @param limit FIXME
  * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_daemonOptionAndValue
 MHD_D_OPTION_PER_IP_LIMIT (
-  unsigned int per_ip_limit
+  unsigned int limit
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_PER_IP_LIMIT;
-  opt_val.val.per_ip_limit = per_ip_limit;
+  opt_val.val.per_ip_limit = limit;
 
   return opt_val;
 }
