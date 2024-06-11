@@ -892,6 +892,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * already set.
    */
   MHD_SC_OPTIONS_CONFLICT = 60010
+  ,
+  /**
+   * Attempted to set an invalid option value.
+   */
+  MHD_SC_OPTIONS_INVALID = 60011
 
 
 };
@@ -2834,6 +2839,7 @@ typedef void
  *MHD_EarlyUriLogCallback)(void *cls,
                            struct MHD_Request *request,
                            const struct MHD_String *full_uri);
+
 
 /**
  * The `enum MHD_ConnectionNotificationCode` specifies types

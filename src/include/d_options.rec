@@ -73,24 +73,12 @@ Description1: the size of the socket address pointed by @a sa.
 Argument2: const struct sockaddr *sa
 Description2: the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or even a UNIX domain socket (AF_UNIX)
 CustomSetter: /* custom setter */
-+ #if FIXME_EG
-+   struct sockaddr_storage bind_sa;
-+   if (option->val.bind_sa.v_sa_len > sizeof (bind_sa)) return FREAKOUT;
-+   memcpy (&settings->bind_sa, option->val.bind_sa.v_sa, option->val.bind_sa.v_sa_len);
-+ #endif
-+ if (0 != option->val.bind_sa.v_sa_len)
-+ {
-+   if (NULL != settings->bind_sa.v_sa)
-+     free (settings->bind_sa.v_sa);
-+   settings->bind_sa.v_sa = malloc (option->val.bind_sa.v_sa_len);
-+   if (NULL == settings->bind_sa.v_sa)
-+     return MHD_SC_DAEMON_MALLOC_FAILURE;
-+   memcpy (settings->bind_sa.v_sa,
++   if (option->val.bind_sa.v_sa_len > sizeof (bind_sa))
++     return MHD_SC_OPTIONS_INVALID;
++   memcpy (&settings->bind_sa.ss,
 +           option->val.bind_sa.v_sa,
 +           option->val.bind_sa.v_sa_len);
-+   settings->bind_sa.v_sa_len = option->val.bind_sa.v_sa_len;
-+   settings->bind_sa.v_dual = option->val.bind_sa.v_dual;
-+ }
++   settings->bind_sa.ss_len = option->val.bind_sa.v_sa_len;
 
 Name: listen_socket
 Value: 82
@@ -373,7 +361,6 @@ Description2: the closure for the callback
 
 Name: random_entropy
 Value: 400
-Type: struct MHD_DaemonOptionValueRand
 Comment: Set strong random data to be used by MHD.
 + Currently the data is only needed for Digest Auth module.
 + The recommended size is between 8 and 32 bytes. Security can be lower for sizes less or equal four.
@@ -382,25 +369,13 @@ Argument1: size_t buf_size
 Description1: the size of the buffer
 Argument2: const void *buf
 Description2: the buffer with strong random data, the content will be copied by MHD
+Type: struct MHD_DaemonOptionEntropySeed
 CustomSetter: /* custom setter */
 + if (0 != option->val.random_entropy.v_buf_size)
 + {
-+ #if FIXME_EG
 +   MHD_entropy_hash_ (&settings->random_entropy,
 +                      option->val.random_entropy.v_buf,
 +                      option->val.random_entropy.v_buf_size);
-+ #endif
-+   if (NULL != settings->random_entropy.v_buf)
-+     free (settings->random_entropy.v_buf);
-+   settings->random_entropy.v_buf
-+     = malloc (option->val.random_entropy.v_buf_size);
-+   if (NULL == settings->random_entropy.v_buf)
-+     return MHD_SC_DAEMON_MALLOC_FAILURE;
-+   memcpy (settings->random_entropy.v_buf,
-+           option->val.random_entropy.v_buf,
-+           option->val.random_entropy.v_buf_size);
-+   settings->random_entropy.v_buf_size
-+     = option->val.random_entropy.v_buf_size;
 + }
 
 

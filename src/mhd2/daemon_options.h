@@ -259,7 +259,7 @@ struct DaemonOptions {
    * Value for #MHD_D_O_RANDOM_ENTROPY.
    * the size of the buffer
    */
-  struct MHD_DaemonOptionValueRand random_entropy;
+  struct MHD_DaemonOptionEntropySeed random_entropy;
 
 
   /**

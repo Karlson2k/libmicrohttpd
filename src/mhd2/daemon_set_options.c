@@ -50,19 +50,12 @@ MHD_daemon_set_options (
       continue;
     case MHD_D_O_BIND_SA:
       /* custom setter */
-      if (0 != option->val.bind_sa.v_sa_len)
-      {
-        if (NULL != settings->bind_sa.v_sa)
-          free (settings->bind_sa.v_sa);
-        settings->bind_sa.v_sa = malloc (option->val.bind_sa.v_sa_len);
-        if (NULL == settings->bind_sa.v_sa)
-          return MHD_SC_DAEMON_MALLOC_FAILURE;
-        memcpy (settings->bind_sa.v_sa,
+        if (option->val.bind_sa.v_sa_len > sizeof (bind_sa))
+          return MHD_SC_OPTIONS_INVALID;
+        memcpy (&settings->bind_sa.ss,
                 option->val.bind_sa.v_sa,
                 option->val.bind_sa.v_sa_len);
-        settings->bind_sa.v_sa_len = option->val.bind_sa.v_sa_len;
-        settings->bind_sa.v_dual = option->val.bind_sa.v_dual;
-      }
+        settings->bind_sa.ss_len = option->val.bind_sa.v_sa_len;
       continue;
     case MHD_D_O_LISTEN_SOCKET:
       settings->listen_socket = option->val.listen_socket;
@@ -168,17 +161,9 @@ MHD_daemon_set_options (
       /* custom setter */
       if (0 != option->val.random_entropy.v_buf_size)
       {
-        if (NULL != settings->random_entropy.v_buf)
-          free (settings->random_entropy.v_buf);
-        settings->random_entropy.v_buf
-          = malloc (option->val.random_entropy.v_buf_size);
-        if (NULL == settings->random_entropy.v_buf)
-          return MHD_SC_DAEMON_MALLOC_FAILURE;
-        memcpy (settings->random_entropy.v_buf,
-                option->val.random_entropy.v_buf,
-                option->val.random_entropy.v_buf_size);
-        settings->random_entropy.v_buf_size
-          = option->val.random_entropy.v_buf_size;
+        MHD_entropy_hash_ (&settings->random_entropy,
+                           option->val.random_entropy.v_buf,
+                           option->val.random_entropy.v_buf_size);
       }
       continue;
     case MHD_D_O_DAUTH_MAP_SIZE:
