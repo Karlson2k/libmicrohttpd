@@ -18,7 +18,7 @@
 */
 /**
  * @file options-generator.c
- * @brief Generates code based on JSON-converted Recutils database
+ * @brief Generates code based on Recutils database
  * @author Christian Grothoff
  */
 #define _GNU_SOURCE
