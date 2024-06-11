@@ -1029,7 +1029,8 @@ TOP:
              "  for (i = 0; i < options_max_num; i++)\n"
              "  {\n"
              "    const struct MHD_%sOptionAndValue *const option = options + i;\n"
-             "    switch (option->opt) {\n",
+             "    switch (option->opt)\n"
+             "    {\n",
              capitalize (category),
              category,
              category,
