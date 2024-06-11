@@ -1023,7 +1023,7 @@ TOP:
              "  struct %sOptions *const settings = %s->psettings;\n"
              "  size_t i;\n"
              "\n"
-             "  if (%s->frozen)\n"
+             "  if (NULL == settings)\n"
              "    return MHD_SC_TOO_LATE;\n"
              "\n"
              "  for (i = 0; i < options_max_num; i++)\n"
