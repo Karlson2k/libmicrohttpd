@@ -1020,13 +1020,13 @@ TOP:
              category,
              capitalize (category));
     fprintf (f,
-             "  struct %sOptions *const settings = %s->settings;\n"
+             "  struct %sOptions *const settings = %s->psettings;\n"
              "  size_t i;\n"
              "\n"
              "  if (%s->frozen)\n"
              "    return MHD_SC_TOO_LATE;\n"
              "\n"
-             "  for (i=0;i<options_max_num;i++)\n"
+             "  for (i = 0; i < options_max_num; i++)\n"
              "  {\n"
              "    const struct MHD_%sOptionAndValue *const option = options + i;\n"
              "    switch (option->opt) {\n",
@@ -1042,6 +1042,7 @@ TOP:
              &dump_option_set_switch);
     fprintf (f,
              "    case MHD_%c_O_SENTINEL:\n"
+             "    default: /* for -WFIXME_EG */ \n"
              "      break;\n",
              (char) toupper (*category));
     fprintf (f,
