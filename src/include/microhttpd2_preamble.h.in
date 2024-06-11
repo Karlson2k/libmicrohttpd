@@ -1771,7 +1771,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_MUST_CHECK_RESULT_;
  *         was never started, or has no listen socket.
  * @ingroup daemon
  */
-MHD_EXTERN_ MHD_socket
+MHD_EXTERN_ MHD_Socket
 MHD_daemon_quiesce (struct MHD_Daemon *daemon)
 MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_INOUT_ (1);
 
@@ -1978,7 +1978,7 @@ typedef MHD_APP_SOCKET_CNTX_TYPE *
 (MHD_FN_PAR_NONNULL_ (5)
  *MHD_SocketRegistrationUpdateCallback)(
   void *cls,
-  MHD_socket fd,
+  MHD_Socket fd,
   enum MHD_FdState watch_for,
   MHD_APP_SOCKET_CNTX_TYPE *app_cntx_old,
   struct MHD_EventUpdateContext *ecb_cntx);

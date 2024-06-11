@@ -266,7 +266,7 @@ MHD_FN_PAR_NONNULL_ (1);
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_daemon_add_connection (struct MHD_Daemon *daemon,
-                           MHD_socket client_socket,
+                           MHD_Socket client_socket,
                            size_t addrlen,
                            const struct sockaddr *addr,
                            void *connection_cntx)
@@ -1949,7 +1949,7 @@ typedef void
                       struct MHD_Request *request,
                       size_t extra_in_size,
                       const char *extra_in,
-                      MHD_socket sock,
+                      MHD_Socket sock,
                       struct MHD_UpgradeHandle *urh);
 
 
@@ -3596,7 +3596,7 @@ union MHD_DaemonInfoFixedData
   /**
    * The socket type of data.
    */
-  MHD_socket v_socket;
+  MHD_Socket v_socket;
 
   /**
    * File descriptor, except sockets
@@ -3816,7 +3816,7 @@ union MHD_ConnectionInfoFixedData
   /**
    * Socket type
    */
-  MHD_socket v_fd;
+  MHD_Socket v_fd;
 
   /**
    * Daemon handler type
