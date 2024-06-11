@@ -1000,8 +1000,7 @@ TOP:
              "#include \"sys_base_types.h\"\n"
              "#include \"sys_malloc.h\"\n"
              "#include <string.h>\n"
-             "#include \"mhd_daemon.h\"\n"
-             "#include \"mhd_response.h\"\n"
+             "#include \"mhd_%s.h\"\n"
              "#include \"%s_options.h\"\n"
              "#include \"mhd_public_api.h\"\n"
              "\n"
@@ -1012,6 +1011,7 @@ TOP:
              "  const struct MHD_%sOptionAndValue *options,\n"
              "  size_t options_max_num)\n"
              "{\n",
+             category,
              category,
              category,
              category,

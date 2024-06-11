@@ -11,7 +11,6 @@
 #include "sys_malloc.h"
 #include <string.h>
 #include "mhd_daemon.h"
-#include "mhd_response.h"
 #include "daemon_options.h"
 #include "mhd_public_api.h"
 
