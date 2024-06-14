@@ -39,9 +39,6 @@ gcc/Stretch:
     - ./bootstrap
     - ./configure $CONFIGURE_BASE_FLAGS --enable-build-type=debug --disable-sanitizers
     - make -j$(nproc) && make check
-  tags:
-    - shared
-    - linux
   artifacts:
     expire_in: 2 weeks
     when: on_failure
@@ -63,9 +60,6 @@ Sanitizers/Stretch:
     - export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-3.8/bin/llvm-symbolizer
     - ./configure $CONFIGURE_BASE_FLAGS --disable-doc --enable-build-type=debug --enable-sanitizers
     - make -j$(nproc) && make check
-  tags:
-    - shared
-    - linux
   artifacts:
     expire_in: 2 weeks
     when: on_failure
@@ -83,9 +77,6 @@ Scan-Build/Debian:
     - scan-build --use-cc=clang-3.8 ./configure $CONFIGURE_BASE_FLAGS --enable-build-type=debug --disable-sanitizers
     - scan-build --use-cc="ccache clang-3.8" -v -enable-checker security,nullability --status-bugs -o scan-build make -j$(nproc)
     - scan-build --use-cc="ccache clang-3.8" -v -enable-checker security,nullability --status-bugs -o scan-build make -k check
-  tags:
-    - shared
-    - linux
   except:
     - tags
   artifacts:
@@ -102,9 +93,6 @@ MinGW/Debian:
     - ./bootstrap
     - ./configure $CONFIGURE_BASE_FLAGS --build=x86_64-pc-linux-gnu --host=$PREFIX --enable-build-type=release
     - make -j$(nproc)
-  tags:
-    - shared
-    - linux
 
 dist/Stretch:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$DEBIAN_BUILD
@@ -113,9 +101,6 @@ dist/Stretch:
     - ./bootstrap
     - ./configure $CONFIGURE_BASE_FLAGS --enable-build-type=release
     - make -j$(nproc) dist
-  tags:
-    - shared
-    - linux
   artifacts:
     name: "$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
     expire_in: 2 weeks
