@@ -1722,15 +1722,18 @@ MHD_hex_to_bin (const char *hex,
   if (0 != len % 2)
   {
     /* Assume the first byte is encoded with single digit */
-    const int l = toxdigitvalue (hex[r++]);
+    const char c2 = hex[r++];
+    const int l = toxdigitvalue (c2);
     if (0 > l)
       return 0;
     out[w++] = (uint8_t) ((unsigned int) l);
   }
   while (r < len)
   {
-    const int h = toxdigitvalue (hex[r++]);
-    const int l = toxdigitvalue (hex[r++]);
+    const char c1 = hex[r++];
+    const char c2 = hex[r++];
+    const int h = toxdigitvalue (c1);
+    const int l = toxdigitvalue (c2);
     if ((0 > h) || (0 > l))
       return 0;
     out[w++] = (uint8_t) ( ((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
@@ -1774,8 +1777,10 @@ MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
           return 0;
         else
         {
-          const int h = toxdigitvalue (pct_encoded[++r]);
-          const int l = toxdigitvalue (pct_encoded[++r]);
+          const char c1 = pct_encoded[++r];
+          const char c2 = pct_encoded[++r];
+          const int h = toxdigitvalue (c1);
+          const int l = toxdigitvalue (c2);
           unsigned char out;
           if ((0 > h) || (0 > l))
             return 0;
@@ -1804,8 +1809,10 @@ MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
         return 0;
       else
       {
-        const int h = toxdigitvalue (pct_encoded[++r]);
-        const int l = toxdigitvalue (pct_encoded[++r]);
+        const char c1 = pct_encoded[++r];
+        const char c2 = pct_encoded[++r];
+        const int h = toxdigitvalue (c1);
+        const int l = toxdigitvalue (c2);
         unsigned char out;
         if ((0 > h) || (0 > l))
           return 0;
@@ -1854,8 +1861,10 @@ MHD_str_pct_decode_lenient_n_ (const char *pct_encoded,
         }
         else
         {
-          const int h = toxdigitvalue (pct_encoded[++r]);
-          const int l = toxdigitvalue (pct_encoded[++r]);
+          const char c1 = pct_encoded[++r];
+          const char c2 = pct_encoded[++r];
+          const int h = toxdigitvalue (c1);
+          const int l = toxdigitvalue (c2);
           unsigned char out;
           if ((0 > h) || (0 > l))
           {
@@ -1896,8 +1905,10 @@ MHD_str_pct_decode_lenient_n_ (const char *pct_encoded,
       }
       else
       {
-        const int h = toxdigitvalue (pct_encoded[++r]);
-        const int l = toxdigitvalue (pct_encoded[++r]);
+        const char c1 = pct_encoded[++r];
+        const char c2 = pct_encoded[++r];
+        const int h = toxdigitvalue (c1);
+        const int l = toxdigitvalue (c2);
         if ((0 > h) || (0 > l))
         {
           r -= 2;
