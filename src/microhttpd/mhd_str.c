@@ -42,8 +42,8 @@
    functions instead.
    This may give more flexibility for size optimizations. */
 #define _MHD_static_inline static
-#ifndef INLINE_FUNC
-#define INLINE_FUNC 1
+#ifndef HAVE_INLINE_FUNCS
+#define HAVE_INLINE_FUNCS 1
 #endif /* !INLINE_FUNC */
 #endif /* MHD_FAVOR_SMALL_CODE */
 
@@ -52,7 +52,7 @@
  * standards. Not affected by current locale settings.
  */
 
-#ifdef INLINE_FUNC
+#ifdef HAVE_INLINE_FUNCS
 
 #if 0 /* Disable unused functions. */
 /**
@@ -668,7 +668,7 @@ charsequalcaseless (const char c1, const char c2)
              (((c1) - 'A' + 'a') == (c2)) : \
              (((c1) == ((c2) - 'A' + 'a')) && isasciiupper (c2))) )
 
-#endif /* !INLINE_FUNC */
+#endif /* !HAVE_INLINE_FUNCS */
 
 
 #ifndef MHD_FAVOR_SMALL_CODE
