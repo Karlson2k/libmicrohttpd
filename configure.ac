@@ -555,6 +555,39 @@ AS_IF([test "x$ac_cv_type_size_t" != "xyes"],
   [AC_MSG_FAILURE(['size_t' type is not provided by system headers])]
 )
 
+AC_CHECK_TYPE([socklen_t],
+  [],
+  [AC_DEFINE([socklen_t],[int],[Define to suitable 'socklen_t' replacement if 'socklen_t' is not defined by system headers])],
+  [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+#include <stdint.h>
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif /* HAVE_INTTYPES_H */
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif /* HAVE_SYS_SOCKET_H */
+#ifdef HAVE_NETINET_IN_SYSTM_H
+#include <netinet/in_systm.h>
+#endif /* HAVE_NETINET_IN_SYSTM_H */
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif /* HAVE_NETINET_IN_H */
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif /* HAVE_SOCKLIB_H */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif /* _WIN32 && ! __CYGWIN__ */
+  ]]
+)
+
 AC_CHECK_HEADER([[search.h]],
   [
     MHD_CHECK_LINK_RUN([[for proper tsearch(), tfind() and tdelete()]],[[mhd_cv_sys_tsearch_usable]],
