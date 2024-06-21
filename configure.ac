@@ -3149,6 +3149,51 @@ AS_VAR_IF([[os_is_native_w32]], [["yes"]],[],
   ]
 )
 
+AC_CHECK_DECLS([AF_UNIX,AF_LOCAL,SOMAXCONN,IPV6_V6ONLY,SO_REUSEADDR,SO_REUSEPORT,\
+                TCP_NODELAY,TCP_FASTOPEN],[],[],
+  [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#if defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
+#ifdef HAVE_SOCKLIB_H
+#include <sockLib.h>
+#endif
+#ifdef HAVE_SYS_UN_H
+#include <sys/un.h>
+#endif
+#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif
+#ifdef HAVE_INETLIB_H
+#include <inetLib.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
+#if !defined(HAVE_NETINET_IN_H) && !defined(HAVE_ARPA_INET_H) && defined(HAVE_NETDB_H)
+#include <netdb.h>
+#endif
+#ifdef HAVE_NETINET_TCP_H
+#include <netinet/tcp.h>
+#endif
+#ifdef HAVE_AFUNIX_H
+#include <afunix.h>
+#endif
+#ifdef HAVE_WS2TCPIP_H
+#include <ws2tcpip.h>
+#endif
+  ]]
+)
+
 AC_CACHE_CHECK([for usable PAGESIZE macro], [mhd_cv_macro_pagesize_usable],
   [
     AC_LINK_IFELSE(
