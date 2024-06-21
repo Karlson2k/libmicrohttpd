@@ -3810,6 +3810,8 @@ test_func(void);
 
 extern __attribute__((used)) int
 test_func(void) {return 0;}
+
+int main(void) {return test_func();}
           ]])
       ],
       [mhd_cv_cc_attr_used="yes"],[mhd_cv_cc_attr_used="no"]
@@ -3831,6 +3833,8 @@ test_func(const char *ptr);
 
 extern __attribute__((pure)) int
 test_func(const char *ptr) {return (0 == (*ptr));}
+
+int main(void) {return test_func("");}
           ]])
       ],
       [mhd_cv_cc_attr_pure="yes"],[mhd_cv_cc_attr_pure="no"]
@@ -3852,6 +3856,8 @@ test_func(int a);
 
 extern __attribute__((const)) int
 test_func(int a) {return a + 1;}
+
+int main(void) {return test_func(-1);}
           ]])
       ],
       [mhd_cv_cc_attr_const="yes"],[mhd_cv_cc_attr_const="no"]
@@ -3873,6 +3879,8 @@ test_extrn_func(void);
 
 extern __attribute__((visibility("default"))) int
 test_extrn_func(void) {return 0;}
+
+int main(void) {return test_extrn_func();}
           ]])
       ],
       [mhd_cv_cc_attr_visibility_default="yes"],[mhd_cv_cc_attr_visibility_default="no"]
@@ -3889,10 +3897,12 @@ AS_VAR_IF([mhd_cv_cc_attr_visibility_default],["yes"],
       [
         AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 __attribute__((visibility("internal"))) int
-test_extrn_func(void);
+test_intern_func(void);
 
 __attribute__((visibility("internal"))) int
-test_extrn_func(void) {return 0;}
+test_intern_func(void) {return 0;}
+
+int main(void) {return test_intern_func();}
               ]])
           ],
           [mhd_cv_cc_attr_visibility_internal="yes"],[mhd_cv_cc_attr_visibility_internal="no"]
