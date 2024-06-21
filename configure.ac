@@ -1014,6 +1014,220 @@ int main(void)
 AS_VAR_IF([mhd_cv_cc_macro_variadic],["yes"],
   [AC_DEFINE([HAVE_MACRO_VARIADIC],[1],[Define to '1' if your compiler supports variadic macros])]
 )
+AC_CACHE_CHECK([whether $CC supports compound literals],[mhd_cv_cc_compound_literals],
+  [
+    MHD_SAVED_ac_c_werror_flag="$ac_c_werror_flag"
+    ac_c_werror_flag=yes
+    AC_COMPILE_IFELSE(
+      [
+        AC_LANG_SOURCE([[
+struct test_strct
+{
+  char c;
+  int i;
+};
+
+int main(void)
+{
+  struct test_strct strct_var;
+  int i;
+
+  strct_var = (struct test_strct) { 'a', 0 };
+
+  i = (int){0};
+
+  if (strct_var.i != i)  /* Process all variables to avoid warnings */
+    return 2;
+
+  return 0;
+}
+          ]]
+        )
+      ],
+      [mhd_cv_cc_compound_literals="yes"],
+      [mhd_cv_cc_compound_literals="no"]
+    )
+    ac_c_werror_flag="$MHD_SAVED_ac_c_werror_flag"
+    AS_UNSET([MHD_SAVED_ac_c_werror_flag])
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_compound_literals],["yes"],
+  [
+    AC_DEFINE([HAVE_COMPOUND_LITERALS],[1],[Define to '1' if your compiler supports compound literals])
+
+    AC_CACHE_CHECK([whether $CC supports compound literals as arrays of the scope],[mhd_cv_cc_compound_literals_arr_scope],
+      [
+        MHD_SAVED_ac_c_werror_flag="$ac_c_werror_flag"
+        ac_c_werror_flag=yes
+        AC_COMPILE_IFELSE(
+          [
+            AC_LANG_SOURCE([[
+#ifdef __cplusplus
+choke me now; /* Clang++ actually may handle this check properly, but it is too tricky to test it corretly */
+#error This is a C++ compiler
+#endif
+
+struct test_strct
+{
+  char c;
+  int i;
+};
+
+static int test_strct_func(struct test_strct *strc)
+{
+  return 3 == strc->i;
+}
+
+int main(void)
+{
+  struct test_strct *strct_ptr1;
+  struct test_strct *strct_ptr2;
+  int *int_ptr;
+  void *ptr;
+
+  ptr = (struct test_strct[]) { { 'p', 11 }, { 'q', 22 }, { 'r', 33 } };
+  strct_ptr1 = (struct test_strct[]) { { 'a', 1 }, { 'b', 2 }, { 'c', 3 } };
+  int_ptr = (int[]){0xFF,0xFE,0xFD,0xFC,0xFB,0xFA};
+
+  if (2 != (strct_ptr1 + 1)->i)
+    return 3;
+
+  strct_ptr2 = (struct test_strct[]) { { 'a', 8 }, { 'b', 9 }, { 'c', 7 } };
+
+  if (0xFE != int_ptr[1])
+    return 4;
+
+  if (*(int_ptr + 4) != 0xFB)
+    return 5;
+
+  if (!test_strct_func(strct_ptr1 + 2))
+    return 6;
+
+  if (int_ptr[2] != 0xFD)
+    return 7;
+
+  if (((struct test_strct *)ptr)[0].c == 'p')
+    ptr = (struct test_strct[]) { { 'x', 55 }, { 'y', 66 }, { 'z', 77 } };
+
+  if (*((char *)ptr) != 'x')
+    return 8;
+
+  if (*(int_ptr + 5) != 0xFA)
+    return 9;
+
+  if (strct_ptr2[1].c != 'b')
+    return 10;
+
+  return strct_ptr1[1].i == 2 ? 0 : 11;
+}
+              ]]
+            )
+          ],
+          [mhd_cv_cc_compound_literals_arr_scope="yes"],
+          [mhd_cv_cc_compound_literals_arr_scope="no"]
+        )
+        ac_c_werror_flag="$MHD_SAVED_ac_c_werror_flag"
+        AS_UNSET([MHD_SAVED_ac_c_werror_flag])
+      ]
+    )
+    AS_VAR_IF([mhd_cv_cc_compound_literals_arr_scope],["yes"],
+      [AC_DEFINE([HAVE_COMPOUND_LITERALS_ARRAYS_SCOPE],[1],[Define to '1' if your compiler supports compound literals as arrays of the scope])]
+    )
+
+    AC_CACHE_CHECK([whether $CC supports compound literals as local arrays],[mhd_cv_cc_compound_literals_arr_local],
+      [
+        MHD_SAVED_ac_c_werror_flag="$ac_c_werror_flag"
+        ac_c_werror_flag=yes
+        AC_COMPILE_IFELSE(
+          [
+            AC_LANG_SOURCE([[
+struct test_strct
+{
+  char c;
+  int i;
+};
+
+static int test_strct_func(struct test_strct *strc)
+{
+  return 0 == strc->i;
+}
+
+int main(void)
+{
+  if (test_strct_func((struct test_strct[]) { { 'a', 0 }, { 'b', 1 }, { 'c', 2 } }))
+    return 4;
+
+  return ((struct test_strct[]) { { 'a', 0 }, { 'b', 1 }, { 'c', 2 } })->i;
+}
+              ]]
+            )
+          ],
+          [mhd_cv_cc_compound_literals_arr_local="yes"],
+          [mhd_cv_cc_compound_literals_arr_local="no"]
+        )
+        ac_c_werror_flag="$MHD_SAVED_ac_c_werror_flag"
+        AS_UNSET([MHD_SAVED_ac_c_werror_flag])
+      ]
+    )
+    AS_VAR_IF([mhd_cv_cc_compound_literals_arr_local],["yes"],
+      [AC_DEFINE([HAVE_COMPOUND_LITERALS_ARRAYS_LOCAL],[1],[Define to '1' if your compiler supports compound literals as local arrays])]
+    )
+
+    AC_CACHE_CHECK([whether $CC supports compound literals as lvalue],[mhd_cv_cc_compound_literals_lvalues],
+      [
+        MHD_SAVED_ac_c_werror_flag="$ac_c_werror_flag"
+        ac_c_werror_flag=yes
+        AC_COMPILE_IFELSE(
+          [
+            AC_LANG_SOURCE([[
+struct test_strct
+{
+  char c;
+  int i;
+};
+
+static int test_strct_func(struct test_strct *strc)
+{
+  return 0 != strc->i;
+}
+
+int main(void)
+{
+  struct test_strct *strct_ptr;
+  int int_var;
+  int *int_ptr;
+
+  int_var = ++(int) {0};
+  int_ptr = &((int) {1});
+
+  if (int_var != *int_ptr)  /* Process all variables to avoid warnings */
+    return 2;
+
+  if (test_strct_func(&( (struct test_strct) { 'a', 0 } )))
+    return 4;
+
+  return 0;
+}
+              ]]
+            )
+          ],
+          [mhd_cv_cc_compound_literals_lvalues="yes"],
+          [mhd_cv_cc_compound_literals_lvalues="no"]
+        )
+        ac_c_werror_flag="$MHD_SAVED_ac_c_werror_flag"
+        AS_UNSET([MHD_SAVED_ac_c_werror_flag])
+      ]
+    )
+    AS_VAR_IF([mhd_cv_cc_compound_literals_lvalues],["yes"],
+      [AC_DEFINE([HAVE_COMPOUND_LITERALS_LVALUES],[1],[Define to '1' if your compiler supports compound literals as lvalues])]
+    )
+  ],
+  [
+    AS_UNSET([mhd_cv_cc_compound_literals_arr_local])
+    AS_UNSET([mhd_cv_cc_compound_literals_lvalue])
+    AS_UNSET([mhd_cv_cc_compound_literals_arr_scope])
+  ]
+)
 
 AC_C_INLINE
 AS_UNSET([errattr_CFLAGS])
