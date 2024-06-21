@@ -87,6 +87,7 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
    * Use the given backlog for the listen() call.
    *
 Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
+   * Zero parameter treated as MHD/system default.
    */
   MHD_D_O_LISTEN_BACKLOG = 102
   ,
@@ -142,7 +143,10 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
   ,
 
   /**
-   * Maximum number of (concurrent) network connections served by daemon
+   * Maximum number of (concurrent) network connections served by daemon.
+   * @note The real maximum number of network connections could be smaller
+   *       than requested due to the system limitations, like FD_SETSIZE when
+   *       polling by select() is used.
    */
   MHD_D_O_GLOBAL_CONNECTION_LIMIT = 161
   ,
@@ -229,8 +233,7 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
    * If listen socket FD is equal or higher that specified value, the daemon fail to start.
    * If new connection FD is equal or higher that specified value, the connection is rejected.
    * Useful if application uses select() for polling the sockets, system FD_SETSIZE is good value for this option in such case.
-   * Does not work with #MHD_D_OPTION_WM_WORKER_THREADS() or #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
-   * Does not work on W32 (WinSock sockets).
+   * Silently ignored on W32 (WinSock sockets).
    */
   MHD_D_O_FD_NUMBER_LIMIT = 283
   ,
@@ -359,7 +362,7 @@ struct MHD_DaemonOptionValueLog
   /**
    * the closure for the logging callback
    */
-  void *v_lob_cb_cls;
+  void *v_log_cb_cls;
 
 };
 
@@ -395,7 +398,13 @@ struct MHD_DaemonOptionValueSA
   /**
    * the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or even a UNIX domain socket (AF_UNIX)
    */
-  const struct sockaddr *v_sa;
+  /* const */ struct sockaddr *v_sa;
+
+  /**
+   * When a previous version of the protocol exist (like IPv4 when @a v_sa is
+   * IPv6) bind to both protocols (IPv6 and IPv4).
+   */
+  enum MHD_Bool v_dual;
 
 };
 
@@ -572,7 +581,7 @@ struct MHD_DaemonOptionValueRand
   /**
    * the buffer with strong random data, the content will be copied by MHD
    */
-  const void *v_buf;
+  /* const */ void *v_buf;
 
 };
 
