@@ -43,7 +43,7 @@
 #    include <string.h>
 #  endif
 
-#  define MHD_calloc_ calloc
+#  define mhd_calloc calloc
 #else
 
 #  include "sys_base_types.h" /* for size_t, NULL */
@@ -58,7 +58,7 @@
  *         the NULL pointer on failure.
  */
 MHD_INTERNAL void *
-MHD_calloc_ (size_t nelem, size_t elsize);
+mhd_calloc (size_t nelem, size_t elsize);
 
 #endif /* ! HAVE_CALLOC */
 

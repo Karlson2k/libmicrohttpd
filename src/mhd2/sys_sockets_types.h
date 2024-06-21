@@ -23,7 +23,8 @@
  * @brief  The header for system types related to sockets
  * @author Karlson2k (Evgeny Grin)
  *
- * This header should provide declaration of 'struct sockaddr'.
+ * This header should provide declaration of 'struct sockaddr' and
+ * socklen_t (if it is present in headers).
  */
 
 #ifndef MHD_SYS_SOCKETS_TYPES_H

@@ -23,10 +23,10 @@
 #
 AC_PREREQ([2.64])
 LT_PREREQ([2.4.0])
-AC_INIT([GNU libmicrohttpd],[1.0.1],[libmicrohttpd@gnu.org])
+AC_INIT([GNU libmicrohttpd],[1.99.0],[libmicrohttpd@gnu.org])
 AC_CONFIG_AUX_DIR([build-aux])
 MHD_AUX_DIR='build-aux' # Must be set to the same value as in the previous line
-AC_CONFIG_HEADERS([MHD_config.h])
+AC_CONFIG_HEADERS([src/incl_priv/mhd_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 m4_pattern_forbid([^_?MHD_[A-Z_]+_CC_])dnl
 
@@ -46,7 +46,7 @@ AC_SUBST([PACKAGE_VERSION_MAJOR])
 AC_SUBST([PACKAGE_VERSION_MINOR])
 AC_SUBST([PACKAGE_VERSION_SUBMINOR])
 AC_SUBST([MHD_W32_DLL_SUFF])
-AC_CONFIG_FILES([src/microhttpd/microhttpd_dll_res.rc])
+AC_CONFIG_FILES([src/mhd2/w32_lib_res.rc])
 
 MHD_LIB_CPPFLAGS=""
 MHD_LIB_CFLAGS=""
@@ -485,7 +485,7 @@ AC_CHECK_HEADERS_ONCE([stdio.h string.h stdint.h stdarg.h errno.h limits.h fcntl
 
 # Check for basic optional headers
 AC_CHECK_HEADERS([stddef.h stdlib.h inttypes.h sys/types.h sys/stat.h unistd.h \
-                  sys/uio.h crtdefs.h malloc.h], [], [], [AC_INCLUDES_DEFAULT])
+                  sys/uio.h crtdefs.h malloc.h io.h], [], [], [AC_INCLUDES_DEFAULT])
 
 # Check for clock-specific optional headers
 AC_CHECK_HEADERS([sys/time.h time.h], [], [], [AC_INCLUDES_DEFAULT])
@@ -1801,7 +1801,7 @@ AS_IF([test "x$USE_THREADS" = "xposix"],
    [AC_DEFINE([MHD_USE_W32_THREADS],[1],[define to use W32 threads])])])
 AM_CONDITIONAL([USE_POSIX_THREADS], [test "x$USE_THREADS" = "xposix"])
 AM_CONDITIONAL([USE_W32_THREADS], [test "x$USE_THREADS" = "xw32"])
-AM_CONDITIONAL([USE_THREADS], [test "x$USE_THREADS" != "xnone"])
+AM_CONDITIONAL([MHD_USE_THREADS], [test "x$USE_THREADS" != "xnone"])
 AM_CONDITIONAL([DISABLE_THREADS], [test "x$USE_THREADS" = "xnone"])
 AC_MSG_RESULT([$USE_THREADS])
 
@@ -2595,14 +2595,14 @@ AC_CACHE_CHECK([whether socket value is a signed type],[mhd_cv_socket_signed],
 
 /* Keep in sync with microhttpd.h */
 #if ! defined(_WIN32) || defined(_SYS_TYPES_FD_SET)
-typedef int MHD_socket;
+typedef int MHD_Socket;
 #else /* defined(_WIN32) && ! defined(_SYS_TYPES_FD_SET) */
-typedef SOCKET MHD_socket;
+typedef SOCKET MHD_Socket;
 #endif /* defined(_WIN32) && ! defined(_SYS_TYPES_FD_SET) */
 
 int main(void)
 {
-  int test_arr[2 - 5*(!!(0 < ((MHD_socket)-1)))];
+  int test_arr[2 - 5*(!!(0 < ((MHD_Socket)-1)))];
   test_arr[1] = 0;
   return test_arr[1];
 }
@@ -2710,14 +2710,14 @@ AS_VAR_IF([mhd_cv_macro___func___avail], ["yes"],
 )
 AC_CACHE_CHECK([[whether __builtin_bswap32() is available]],
   [[mhd_cv_func___builtin_bswap32_avail]], [dnl
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include<stdint.h>]], [[uint32_t a = 1; uint32_t b = __builtin_bswap32(a); a = b; (void) a;]])],
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include<stdint.h>]], [[uint_fast32_t a = 1; uint_fast32_t b = __builtin_bswap32(a); a = b; (void) a;]])],
     [[mhd_cv_func___builtin_bswap32_avail="yes"]],[[mhd_cv_func___builtin_bswap32_avail="no"]])
 ])
 AS_IF([[test "x$mhd_cv_func___builtin_bswap32_avail" = "xyes"]],
   [AC_DEFINE([[MHD_HAVE___BUILTIN_BSWAP32]], [[1]], [Define to 1 if you have __builtin_bswap32() builtin function])])
 AC_CACHE_CHECK([[whether __builtin_bswap64() is available]],
   [[mhd_cv_func___builtin_bswap64_avail]], [dnl
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include<stdint.h>]], [[uint64_t a = 1; uint64_t b = __builtin_bswap64(a); a = b; (void) a;]])],
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include<stdint.h>]], [[uint_fast64_t a = 1; uint_fast64_t b = __builtin_bswap64(a); a = b; (void) a;]])],
     [[mhd_cv_func___builtin_bswap64_avail="yes"]], [[mhd_cv_func___builtin_bswap64_avail="no"]])
 ])
 AS_IF([[test "x$mhd_cv_func___builtin_bswap64_avail" = "xyes"]],
@@ -2795,70 +2795,163 @@ AM_CONDITIONAL([HEAVY_TESTS],[test "x$use_heavy_tests" = "xyes"])
 AM_CONDITIONAL([VHEAVY_TESTS],[test "x$use_vheavy_tests" = "xyes"])
 AM_CONDITIONAL([TESTS_STRESS_OS],[false])
 
-AC_ARG_ENABLE([[poll]],
-  [AS_HELP_STRING([[--enable-poll[=ARG]]], [enable poll support (yes, no, auto) [auto]])],
-    [enable_poll=${enableval}],
-    [enable_poll='auto']
-  )
-
-AS_IF([test "$enable_poll" != "no"],
+AC_ARG_ENABLE([[select]],
   [
-    AS_IF([test "$os_is_native_w32" != "yes"],
+    AS_HELP_STRING([[--enable-select[=ARG]]], [enable 'select()' support (yes, no, auto) [auto]])
+  ],[],[enable_select='auto']
+)
+AC_CACHE_CHECK([for select() function],[mhd_cv_func_select],
+  [
+    AS_IF([test "x$os_is_native_w32" = "xyes"],
+      [mhd_cv_func_select="yes"],
       [
-        AC_CHECK_HEADERS([poll.h],
+        AC_LINK_IFELSE(
           [
-            MHD_CHECK_FUNC([poll],
-              [[
+            AC_LANG_SOURCE([[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+#ifdef HAVE_SELECTLIB_H
+#include <selectLib.h>
+#endif
+
+int main(void)
+{
+  int res;
+  fd_set rfds;
+  fd_set wfds;
+  fd_set efds;
+  struct timeval tv_to;
+
+  tv_to.tv_sec = 1;
+  tv_to.tv_usec = 0;
+  FD_ZERO(&rfds);
+  FD_ZERO(&wfds);
+  FD_ZERO(&efds);
+  FD_SET(1, &wfds);
+
+  res = select(2, &rfds, &wfds, &efds, &tv_to);
+  if (res < 0)
+    return 3;
+
+  FD_CLR(1, &efds);
+  if (FD_ISSET(1, &efds)
+    return 4;
+
+  return 0;
+}
+              ]]
+            )
+          ],
+          [mhd_cv_func_select="yes"],
+          [mhd_cv_func_select="no"]
+        )
+      ]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_func_select],["yes"],
+  [
+    AC_DEFINE([[HAVE_SELECT]],[[1]],[Define to '1' if select() is supported on your platform])
+    AS_IF([test "x$enable_select" != "xno"],
+      [
+        enable_select="yes"
+        AC_DEFINE([[MHD_USE_SELECT]],[[1]],[Define to '1' to enable use of select() system call])
+      ]
+    )
+  ],
+  [
+    AS_VAR_IF([enable_select],["yes"],
+      [AC_MSG_ERROR([Support for select() was explicitly requested but cannot be enabled on this platform.])]
+    )
+  ]
+)
+AM_CONDITIONAL([MHD_USE_SELECT],[test "x${enable_select}" = "xyes"])
+
+AC_ARG_ENABLE([[poll]],
+  [
+    AS_HELP_STRING([[--enable-poll[=ARG]]], [enable 'poll()' support (yes, no, auto) [auto]])
+  ],[],[enable_poll='auto']
+)
+AS_IF([test "$os_is_native_w32" != "yes"],
+  [
+    AC_CHECK_HEADERS([poll.h],[AC_INCLUDES_DEFAULT])
+    MHD_CHECK_FUNC([poll],
+      [[
 #include <poll.h>
-              ]],
-              [[
+      ]],
+      [[
   struct pollfd fds[2];
 
   fds[0].fd = 0;
   fds[0].events = POLLIN;
   if (0 > poll(fds, 1, 0))
     return 2;
-              ]],
-              [have_poll='yes'], [have_poll='no']
-            )
-          ], [], [AC_INCLUDES_DEFAULT]
-        )
-      ],
-      [
-        MHD_CHECK_FUNC([WSAPoll],
-          [[
+      ]],
+      [have_poll='yes'],[have_poll='no']
+    )
+  ],
+  [
+    MHD_CHECK_FUNC([WSAPoll],
+      [[
 #include <winsock2.h>
-          ]],
-          [[
+      ]],
+      [[
   WSAPOLLFD fda[2];
   WSAPoll(fda, 2, 0);
-          ]],
-          [
-            have_poll='yes'
-            AC_DEFINE([HAVE_POLL],[1])
-          ],
-          [have_poll='no']
-        )
-      ]
+      ]],
+      [have_poll='yes'],[have_poll='no']
     )
-    AS_IF([test "$enable_poll" = "yes" && test "$have_poll" != "yes"],
-      [AC_MSG_ERROR([[Support for poll was explicitly requested but cannot be enabled on this platform.]])])
-    enable_poll="$have_poll"
   ]
 )
+AS_VAR_IF([have_poll],["yes"],
+  [
+    AC_DEFINE([[HAVE_POLL]],[[1]],[Define to '1' if poll() is supported on your platform])
+    AC_CHECK_DECLS([POLLRDNORM,POLLIN,POLLRDBAND,POLLWRNORM,POLLOUT,POLLWRBAND,POLLPRI],[],[],[[
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#endif
+#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif
+      ]]
+    )
+    AS_IF([test "x$enable_poll" != "xno"],
+      [
+        enable_poll="yes"
+        AC_DEFINE([[MHD_USE_POLL]],[[1]],[Define to '1' to enable use of select() system call])
+      ]
+    )
+  ],
+  [
+    AS_VAR_IF([enable_poll],["yes"],
+      [AC_MSG_ERROR([Support for poll() was explicitly requested but cannot be enabled on this platform.])]
+    )
+  ]
+)
+AM_CONDITIONAL([MHD_USE_POLL],[test "x${enable_poll}" = "xyes"])
 
 AC_ARG_ENABLE([[epoll]],
-  [AS_HELP_STRING([[--enable-epoll[=ARG]]], [enable epoll support (yes, no, auto) [auto]])],
-    [enable_epoll=${enableval}],
-    [enable_epoll='auto']
-  )
-
+  [
+    AS_HELP_STRING([[--enable-epoll[=ARG]]], [enable epoll support (yes, no, auto) [auto]])
+  ],[],[enable_epoll='auto']
+)
 AS_IF([test "$enable_epoll" != "no"],
   [
     AX_HAVE_EPOLL
     AS_IF([test "${ax_cv_have_epoll}" = "yes"],
       [
-        AC_DEFINE([[EPOLL_SUPPORT]],[[1]],[Define to 1 to enable epoll support])
+        AC_DEFINE([[HAVE_EPOLL]],[[1]],[Define to '1' if epoll is supported on your platform])
+        AC_DEFINE([[MHD_USE_EPOLL]],[[1]],[Define to '1' to enable 'epoll' functionality])
         enable_epoll='yes'
       ],
       [
@@ -2870,8 +2963,7 @@ AS_IF([test "$enable_epoll" != "no"],
     )
   ]
 )
-
-AM_CONDITIONAL([MHD_HAVE_EPOLL], [[test "x$enable_epoll" = xyes]])
+AM_CONDITIONAL([MHD_USE_EPOLL], [[test "x${enable_epoll}" = "xyes"]])
 
 AS_IF([test "x$enable_epoll" = "xyes"],
   [
@@ -2964,8 +3056,8 @@ static struct timeval test_var;
 )
 AC_DEFINE_UNQUOTED([SIZEOF_STRUCT_TIMEVAL_TV_SEC], [$mhd_cv_size_timeval_tv_sec],
   [The size of `tv_sec' member of `struct timeval', as computed by sizeof])
-AC_CHECK_SIZEOF([int64_t], [], [[#include <stdint.h>]])
-AC_CHECK_SIZEOF([uint64_t], [], [[#include <stdint.h>]])
+AC_CHECK_SIZEOF([int_fast64_t], [], [[#include <stdint.h>]])
+AC_CHECK_SIZEOF([uint_fast64_t], [], [[#include <stdint.h>]])
 AC_CHECK_SIZEOF([int], [], [[#include <stdint.h>]])
 AC_CHECK_SIZEOF([unsigned int], [], [[#include <stdint.h>]])
 AC_CHECK_SIZEOF([unsigned long long], [], [[#include <stdint.h>]])
@@ -3384,7 +3476,7 @@ int main(void)
       [
         use_itc='eventfd'
         enable_itc="$use_itc"
-        AC_DEFINE([[_MHD_ITC_EVENTFD]], [[1]], [Define to use eventFD for inter-thread communication])
+        AC_DEFINE([[MHD_ITC_EVENTFD_]], [[1]], [Define to use eventFD for inter-thread communication])
       ],
       [
         AS_VAR_IF([[enable_itc]], [["eventfd"]], [AC_MSG_ERROR([[eventfd(2) is not usable, consider using other type of inter-thread communication]])])
@@ -3418,7 +3510,7 @@ AC_INCLUDES_DEFAULT
     AS_VAR_IF([[mhd_cv_pipe_usable]], [["yes"]], [
       use_itc='pipe'
       enable_itc="$use_itc"
-      AC_DEFINE([[_MHD_ITC_PIPE]], [[1]], [Define to use pipe for inter-thread communication])
+      AC_DEFINE([[MHD_ITC_PIPE_]], [[1]], [Define to use pipe for inter-thread communication])
       MHD_CHECK_LINK_RUN([[whether pipe2(2) is usable]],[[mhd_cv_pipe2_usable]],
         [
           # Cross-compiling
@@ -3452,42 +3544,69 @@ AC_INCLUDES_DEFAULT
   ])
 ])
 
-AS_IF([[test "x$enable_itc" = "xsocketpair" || test "x$enable_itc" = "xauto"]], [
-  AS_VAR_IF([[os_is_native_w32]], [["yes"]], [[mhd_cv_socketpair_usable='yes']], [
-    AC_CACHE_CHECK([[whether socketpair(3) is usable]], [[mhd_cv_socketpair_usable]], [
-      AC_LINK_IFELSE([
-        AC_LANG_PROGRAM([
-AC_INCLUDES_DEFAULT
+AS_IF([[test "x$enable_itc" = "xsocketpair" || test "x$enable_itc" = "xauto"]],
+  [
+    AS_IF([test "x${os_is_native_w32}" = "xyes"],
+      [mhd_cv_socketpair_usable='yes'],
+      [test "x${mhd_cv_func_socketpair}" = "xyes"],
+      [
+        AC_CACHE_CHECK([[whether socketpair(3) is usable]], [[mhd_cv_socketpair_usable]],
+          [
+            AC_LINK_IFELSE([
+                AC_LANG_PROGRAM(
+                  [[
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-        ], [[
-          int arr[2];
-          int res;
-#if defined(AF_LOCAL)
-          res = socketpair(AF_LOCAL, SOCK_STREAM, 0, arr);
-#elif defined(AF_UNIX)
-          res = socketpair(AF_UNIX, SOCK_STREAM, 0, arr);
+#if defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_UN_H
+#include <sys/un.h>
+#endif
+                  ]], [[
+              int arr[2];
+              int res;
+#if defined(AF_UNIX)
+              res = socketpair(AF_UNIX, SOCK_STREAM, 0, arr);
+#elif defined(AF_LOCAL)
+              res = socketpair(AF_LOCAL, SOCK_STREAM, 0, arr);
 #else
 #error AF_LOCAL and AF_UNIX are both undefined
-          choke me now;
+              choke me now;
 #endif
-          if (res != 0) return 1
-        ]])
-      ], [[mhd_cv_socketpair_usable='yes']], [[mhd_cv_socketpair_usable='no']])
-    ])
-  ])
-  AS_VAR_IF([[mhd_cv_socketpair_usable]], [["yes"]], [
-    use_itc='socketpair'
-    enable_itc="$use_itc"
-    AC_DEFINE([[_MHD_ITC_SOCKETPAIR]], [[1]], [Define to use socketpair for inter-thread communication])
-  ], [
-    AS_VAR_IF([[enable_itc]], [["socketpair"]], [AC_MSG_ERROR([[socketpair(3) is not usable, consider using other type of inter-thread communication]])])
-  ])
-])
+              if (res != 0) return 1;
+              close (arr[1]);
+              close (arr[0]);
+                  ]]
+                )
+              ],
+              [[mhd_cv_socketpair_usable='yes']],
+              [[mhd_cv_socketpair_usable='no']]
+            )
+          ]
+        )
+      ],
+      [AS_UNSET([mhd_cv_socketpair_usable])]
+    )
+
+    AS_VAR_IF([[mhd_cv_socketpair_usable]], [["yes"]],
+      [
+        use_itc='socketpair'
+        enable_itc="$use_itc"
+        AC_DEFINE([[MHD_ITC_SOCKETPAIR_]], [[1]], [Define to use socketpair for inter-thread communication])
+      ],
+      [
+        AS_VAR_IF([[enable_itc]], [["socketpair"]], [
+          AC_MSG_ERROR([[socketpair(3) is not usable, consider using other type of inter-thread communication]])]
+        )
+      ]
+    )
+  ]
+)
 
 AS_IF([[test -z "$use_itc"]], [AC_MSG_ERROR([[cannot find usable type of inter-thread communication]])])
 
@@ -3929,6 +4048,313 @@ int main(void) {return test_intern_func();}
   ]
 )
 CFLAGS="${CFLAGS_ac} ${user_CFLAGS} ${errattr_CFLAGS}"
+AC_CACHE_CHECK([whether $CC supports __attribute__ ((warn_unused_result))],[mhd_cv_cc_attr_warn_unused_res],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+static __attribute__ ((warn_unused_result)) int
+test_func(void) {return 0; }
+
+int main(void) { return test_func(); }
+          ]])
+      ],
+      [mhd_cv_cc_attr_warn_unused_res="yes"],[mhd_cv_cc_attr_warn_unused_res="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_warn_unused_res],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_WARN_UNUSED_RES],[1],
+      [Define to '1' if your compiler supports __attribute__ ((warn_unused_result))]
+    )
+  ]
+)
+AC_CACHE_CHECK([whether $CC supports __attribute__ ((returns_nonnull))],[mhd_cv_cc_attr_ret_nonnull],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+static __attribute__ ((returns_nonnull)) int *
+test_func(void) {
+  static int i = 0;
+  return &i;
+}
+
+int main(void) {
+  return *(test_func());
+}
+          ]])
+      ],
+      [mhd_cv_cc_attr_ret_nonnull="yes"],[mhd_cv_cc_attr_ret_nonnull="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_ret_nonnull],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_RET_NONNULL],[1],
+      [Define to '1' if your compiler supports __attribute__ ((returns_nonnull))]
+    )
+  ]
+)
+AC_CACHE_CHECK([whether $CC supports __attribute__ ((nonnull))],[mhd_cv_cc_attr_nonnull],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+static __attribute__ ((nonnull)) int
+test_func(int *p) {return 0 == *p;}
+
+int main(void) {
+  int i = 0;
+  return test_func(&i) ? 0 : 5;
+}
+          ]])
+      ],
+      [mhd_cv_cc_attr_nonnull="yes"],[mhd_cv_cc_attr_nonnull="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_nonnull],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_NONNULL],[1],
+      [Define to '1' if your compiler supports __attribute__ ((nonnull))]
+    )
+  ]
+)
+AC_CACHE_CHECK([whether $CC supports __attribute__ ((nonnull(NUM)))],[mhd_cv_cc_attr_nonnull_num],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+static __attribute__ ((nonnull(2))) int
+test_func(int *p1, int *p2) {
+  return (((int *)(void *)0) == p1) && (0 == *p2);
+}
+
+int main(void) {
+  int i = 0;
+  return test_func( (int *)(void *)0, &i) ? 0 : 5;
+}
+          ]])
+      ],
+      [mhd_cv_cc_attr_nonnull_num="yes"],[mhd_cv_cc_attr_nonnull_num="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_nonnull_num],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_NONNULL_NUM],[1],
+      [Define to '1' if your compiler supports __attribute__ ((nonnull(NUM)))]
+    )
+  ]
+)
+AC_CACHE_CHECK([whether $CC supports __attribute__ ((access (read_only,NUM)))],[mhd_cv_cc_attr_access_read],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+static __attribute__ ((access (read_only,1))) int
+test_func(int *p) {return 0 == *p;}
+
+int main(void) {
+  int i = 0;
+  return test_func(&i) ? 0 : 5;
+}
+          ]])
+      ],
+      [mhd_cv_cc_attr_access_read="yes"],[mhd_cv_cc_attr_access_read="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_access_read],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_ACCESS_READ],[1],
+      [Define to '1' if your compiler supports __attribute__ ((access (read_only,NUM)))]
+    )
+  ]
+)
+AC_CACHE_CHECK([whether $CC supports __attribute__ ((access (write_only,NUM)))],[mhd_cv_cc_attr_access_write],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+static __attribute__ ((access (write_only,1))) void
+test_func(int *p) {*p = 0;}
+
+int main(void) {
+  int i = 1;
+  test_func(&i);
+  return i;
+}
+          ]])
+      ],
+      [mhd_cv_cc_attr_access_write="yes"],[mhd_cv_cc_attr_access_write="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_access_write],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_ACCESS_WRITE],[1],
+      [Define to '1' if your compiler supports __attribute__ ((access (write_only,NUM)))]
+    )
+  ]
+)
+AC_CACHE_CHECK([whether $CC supports __attribute__ ((access (read_write,NUM)))],[mhd_cv_cc_attr_access_read_write],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+static __attribute__ ((access (read_write,1))) void
+test_func(int *p) {*p = *p - 1;}
+
+int main(void) {
+  int i = 1;
+  test_func(&i);
+  return i;
+}
+          ]])
+      ],
+      [mhd_cv_cc_attr_access_read_write="yes"],[mhd_cv_cc_attr_access_read_write="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_access_read_write],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_ACCESS_READ_WRITE],[1],
+      [Define to '1' if your compiler supports __attribute__ ((access (read_write,NUM)))]
+    )
+  ]
+)
+AC_CACHE_CHECK([whether $CC supports __attribute__ ((access (read_only,NUM,NUM_SIZE)))],[mhd_cv_cc_attr_access_read_size],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+static __attribute__ ((access (read_only,2,1))) int
+test_func(unsigned int num, int *arr) {return 2 == arr[num - 1];}
+
+int main(void) {
+  int arr[4] = {5, 4, 3, 2};
+  return test_func(4, arr) ? 0 : 5;
+}
+          ]])
+      ],
+      [mhd_cv_cc_attr_access_read_size="yes"],[mhd_cv_cc_attr_access_read_size="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_access_read_size],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_ACCESS_READ_SIZE],[1],
+      [Define to '1' if your compiler supports __attribute__ ((access (read_only,NUM,NUM_SIZE)))]
+    )
+  ]
+)
+AC_CACHE_CHECK([whether $CC supports __attribute__ ((access (write_only,NUM,NUM_SIZE)))],[mhd_cv_cc_attr_access_write_size],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+static __attribute__ ((access (write_only,2,1))) void
+test_func(unsigned int num, int *arr) {arr[num-1] = 0;}
+
+int main(void) {
+  int arr[4] = {5, 4, 3, 2};
+  test_func(4, arr);
+  return arr[3];
+}
+          ]])
+      ],
+      [mhd_cv_cc_attr_access_write_size="yes"],[mhd_cv_cc_attr_access_write_size="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_access_write_size],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_ACCESS_WRITE_SIZE],[1],
+      [Define to '1' if your compiler supports __attribute__ ((access (write_only,NUM,NUM_SIZE)))]
+    )
+  ]
+)
+AC_CACHE_CHECK([whether $CC supports __attribute__ ((access (read_write,NUM,NUM_SIZE)))],[mhd_cv_cc_attr_access_read_write_size],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+static __attribute__ ((access (read_write,2,1))) void
+test_func(unsigned int num, int *arr) {arr[num-1] = arr[1] - 4;}
+
+int main(void) {
+  int arr[4] = {5, 4, 3, 2};
+  test_func(4, arr);
+  return arr[3];
+}
+          ]])
+      ],
+      [mhd_cv_cc_attr_access_read_write_size="yes"],[mhd_cv_cc_attr_access_read_write_size="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_access_read_write_size],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_ACCESS_READ_WRITE_SIZE],[1],
+      [Define to '1' if your compiler supports __attribute__ ((access (read_write,NUM,NUM_SIZE)))]
+    )
+  ]
+)
+AC_CACHE_CHECK([whether $CC supports __attribute__ ((fd_arg_read (NUM)))],[mhd_cv_cc_attr_fd_arg_read],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#ifndef _CRT_NONSTDC_NO_WARNINGS
+#define _CRT_NONSTDC_NO_WARNINGS 1
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#include <stdio.h>
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+#include <fcntl.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+static __attribute__ ((fd_arg_read (1))) int
+test_func(int fd)
+{
+  int data_in;
+  int read_size;
+  read_size = (int) read(fd, &data_in, sizeof(data_in));
+  if (read_size < (int) sizeof(data_in)) return 4;
+  return data_in;
+}
+
+int main(void) {
+  int fd = open("test.txt", O_RDONLY);
+  int res = test_func(fd);
+  close (fd);
+  return res;
+}
+          ]])
+      ],
+      [mhd_cv_cc_attr_fd_arg_read="yes"],[mhd_cv_cc_attr_fd_arg_read="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_fd_arg_read],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_FD_ARG_READ],[1],
+      [Define to '1' if your compiler supports __attribute__ ((fd_arg_read (NUM)))]
+    )
+  ]
+)
+AC_CACHE_CHECK([whether $CC supports __attribute__ ((null_terminated_string_arg (NUM)))],[mhd_cv_cc_attr_null_term_str],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+static __attribute__ ((null_terminated_string_arg (1))) int
+test_func(const char *str) {return (0 == str[0]) ? 5 : 0;}
+
+int main(void) {
+  return test_func("test");
+}
+          ]])
+      ],
+      [mhd_cv_cc_attr_null_term_str="yes"],[mhd_cv_cc_attr_null_term_str="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_null_term_str],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_NULL_TERM_STR],[1],
+      [Define to '1' if your compiler supports __attribute__ ((null_terminated_string_arg (NUM)))]
+    )
+  ]
+)
 AC_CACHE_CHECK([whether $CC supports __attribute__((enum_extensibility (closed)))],[mhd_cv_cc_attr_enum_extns_closed],
   [
     SAVE_ac_c_werror_flag="$ac_c_werror_flag"
@@ -3989,6 +4415,52 @@ AS_VAR_IF([mhd_cv_cc_attr_flag_enum],["yes"],
   [
     AC_DEFINE([HAVE_ATTR_FLAG_ENUM],[1],
       [Define to '1' if your compiler supports __attribute__((flag_enum))]
+    )
+  ]
+)
+AC_CACHE_CHECK([[whether $CC supports array[static N] with fixed N as a function parameter]],[mhd_cv_cc_func_param_arr_static_fixed],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+static int
+test_func(int arr[static 4]) { return arr[2] - 4; }
+
+int main(void) {
+  int arr[4] = {5, 4, 3, 2};
+  return test_func(arr);
+}
+          ]])
+      ],
+      [mhd_cv_cc_func_param_arr_static_fixed="yes"],[mhd_cv_cc_func_param_arr_static_fixed="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_func_param_arr_static_fixed],["yes"],
+  [
+    AC_DEFINE([HAVE_FUNC_PARAM_ARR_STATIC_FIXED],[1],
+      [[Define to '1' if your compiler supports 'array[static N]' with fixed N as function parameter]]
+    )
+  ]
+)
+AC_CACHE_CHECK([[whether $CC supports array[static N] with variable N as a function parameter]],[mhd_cv_cc_func_param_arr_static_var],
+  [
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+static int
+test_func(int num, int arr[static num]) { return arr[num-2] - 4; }
+
+int main(void) {
+  int arr[4] = {5, 4, 3, 2};
+  return test_func(4, arr);
+}
+          ]])
+      ],
+      [mhd_cv_cc_func_param_arr_static_var="yes"],[mhd_cv_cc_func_param_arr_static_var="no"]
+    )
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_func_param_arr_static_var],["yes"],
+  [
+    AC_DEFINE([HAVE_FUNC_PARAM_ARR_STATIC_VAR],[1],
+      [[Define to '1' if your compiler supports 'array[static N]' with variable N as a function parameter]]
     )
   ]
 )
@@ -4099,10 +4571,10 @@ AS_VAR_IF([[found_sendfile]], [["no"]],
 static void empty_func(void)
 {
 /* Check for declaration */
+#ifndef sendfile
   (void)sendfile;
+#endif
 }
-/* Declare again to check form match */
-ssize_t sendfile(int, int, off_t*, size_t);
         ]],
         [[
           int fd1=0, fd2=2;
@@ -4155,11 +4627,10 @@ AS_VAR_IF([[found_sendfile]], [["no"]],
 static void empty_func(void)
 {
 /* Check for declaration */
+#ifndef sendfile
   (void)sendfile;
+#endif
 }
-/* Declare again to check form match */
-int sendfile(int, int, off_t, size_t,
-             struct sf_hdtr*, off_t*, int);
        ]],
        [[
          int fd1=0, fd2=1;
@@ -4167,7 +4638,7 @@ int sendfile(int, int, off_t, size_t,
          size_t s = 5;
          off_t r1;
          int r2;
-         r2 = sendfile (fd1, fd2, o, s, (void*)0, &r1, 0);
+         r2 = sendfile (fd1, fd2, o, s, (struct sf_hdtr *)0, &r1, 0);
          if (r2)
            empty_func();
        ]]
@@ -4203,18 +4674,17 @@ AS_VAR_IF([[found_sendfile]], [["no"]],
 static void empty_func(void)
 {
 /* Check for declaration */
+#ifndef sendfile
   (void)sendfile;
+#endif
 }
-/* Declare again to check form match */
-int sendfile(int, int, off_t, off_t*,
-             struct sf_hdtr *, int);
        ]],
        [[
          int fd=0, s=1;
          off_t o = 0;
          off_t l = 5;
          int r;
-         r = sendfile (fd, s, o, &l, (void*)0, 0);
+         r = sendfile (fd, s, o, &l, (struct sf_hdtr *)0, 0);
          if (r)
            empty_func();
        ]]
@@ -4233,7 +4703,7 @@ int sendfile(int, int, off_t, off_t*,
 
 AS_VAR_IF([[found_sendfile]], [["no"]],
   [
-   AC_MSG_CHECKING([[for Solaris-style sendfile(3)]])
+   AC_MSG_CHECKING([[for old Solaris-style sendfile(3)]])
    SAVE_LIBS="$LIBS"
    LIBS="-lsendfile $LIBS"
    AC_LINK_IFELSE(
@@ -4253,11 +4723,10 @@ AS_VAR_IF([[found_sendfile]], [["no"]],
 static void empty_func(void)
 {
 /* Check for declaration */
+#ifndef sendfile
   (void)sendfile;
+#endif
 }
-/* Declare again to check form match */
-ssize_t sendfile(int out_fd, int in_fd,
-                 off_t *off, size_t len);
        ]],
        [[
          int fd1=0, fd2=1;
@@ -4271,7 +4740,8 @@ ssize_t sendfile(int out_fd, int in_fd,
       )
      ],
      [
-       AC_DEFINE([HAVE_SOLARIS_SENDFILE], [1], [Define to 1 if you have Solaris-style sendfile(3).])
+       # Solaris uses the same format as GNU/Linux. Old versions need libsendfile.
+       AC_DEFINE([HAVE_LINUX_SENDFILE], [1], [Define to 1 if you have linux-style sendfile(2).])
        found_sendfile="yes, Solaris-style"
        MHD_LIBDEPS="-lsendfile $MHD_LIBDEPS"
        MHD_LIBDEPS_PKGCFG="-lsendfile $MHD_LIBDEPS_PKGCFG"
@@ -4291,6 +4761,9 @@ ssize_t sendfile(int out_fd, int in_fd,
          ]],
          [[
   off64_t f_offset = (off64_t) 0;
+#ifndef sendfile64
+  (void)sendfile64;
+#endif
   if (0 > sendfile64 (0, 1, &f_offset, 1))
     return 3;
          ]]
@@ -4820,7 +5293,7 @@ AS_VAR_IF([enable_dauth], ["yes"],
 #include <stdint.h>
               ]],
               [[
-  static int arr[((int) 2) - 4 * (int)(${enable_dauth_def_max_nc} != ((uint32_t)${enable_dauth_def_max_nc}))];
+  static int arr[((int) 2) - 4 * (int)(${enable_dauth_def_max_nc} != ((uint_fast32_t)${enable_dauth_def_max_nc}))];
   (void) arr;
               ]]
             )
@@ -5175,6 +5648,7 @@ AC_CACHE_CHECK([[for calloc()]], [[mhd_cv_have_func_calloc]],
 )
 AS_VAR_IF([[mhd_cv_have_func_calloc]], [["yes"]],
   [AC_DEFINE([[HAVE_CALLOC]], [[1]], [Define to 1 if you have the usable `calloc' function.])])
+AM_CONDITIONAL([HAVE_SYS_CALLOC], [[test "x${mhd_cv_have_func_calloc}" = "xyes"]])
 
 # Some systems have IPv6 disabled in kernel at run-time
 AS_IF([[test "x${mhd_cv_have_inet6}" = "xyes" && test "x${cross_compiling}" = "xno"]],
@@ -5267,6 +5741,8 @@ int main(void)
 AS_VAR_IF([mhd_cv_ipv6_for_testing],["yes"],
 	[AC_DEFINE([[USE_IPV6_TESTING]], [[1]], [Define to 1 if your kernel supports IPv6 and IPv6 is enabled and useful for testing.])]
 )
+AM_CONDITIONAL([USE_IPV6_TESTING], [[test "x$mhd_cv_ipv6_for_testing" = "xyes"]])
+
 
 AS_VAR_IF([enable_tools],["yes"],
   [
@@ -6713,9 +7189,11 @@ doc/doxygen/Makefile
 doc/examples/Makefile
 m4/Makefile
 src/Makefile
+src/incl_priv/Makefile
 src/include/Makefile
-src/lib/Makefile
-src/microhttpd/Makefile
+src/mhd2/Makefile
+src/tests/Makefile
+src/tests/basic/Makefile
 src/microhttpd_ws/Makefile
 src/examples/Makefile
 src/tools/Makefile
@@ -6775,7 +7253,8 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Threading lib:     ${USE_THREADS}
   Inter-thread comm: ${use_itc}
   Shutdown of listening socket triggers select: ${mhd_cv_host_shtdwn_trgr_select}
-  poll support:      ${enable_poll=no}
+  select() support:  ${enable_select}
+  poll() support:    ${enable_poll=no}
   epoll support:     ${enable_epoll=no}
   sendfile used:     ${found_sendfile}
   HTTPS support:     ${MSG_HTTPS}

@@ -11,51 +11,86 @@
 
 #include "mhd_sys_options.h"
 #include "sys_base_types.h"
-#include "mhd_response.h"
 #include "response_options.h"
+#include "mhd_response.h"
 #include "mhd_public_api.h"
+#include "sys_bool_type.h"
+#include "mhd_locks.h"
 
 
-MHD_FN_PAR_NONNULL_ALL_ MHD_EXTERN_ enum MHD_StatusCode
-MHD_response_set_options (struct MHD_Response *response,
-                          const struct MHD_ResponseOptionAndValue *options,
-                          size_t options_max_num)
+/**
+ * Internal version of the #MHD_response_set_options()
+ * Assuming that settings lock is held by the MHD_response_set_options()
+ * @param response the response to change
+ * @param options the options to use
+ * @param options_max_num the maximum number of @a options to use
+ * @return #MHD_SC_OK on success, error code otherwise
+ */
+static enum MHD_StatusCode
+response_set_options_int (
+  struct MHD_Response *volatile response,
+  const struct MHD_ResponseOptionAndValue *volatile options,
+  size_t options_max_num)
 {
+  struct ResponseOptions *volatile settings;
   size_t i;
 
   if (response->frozen)
-    return MHD_SC_TOO_LATE;
+    return MHD_SC_TOO_LATE; /* Re-check under the lock (if any) */
 
-  for (i=0;i<options_max_num;i++)
+  settings = response->settings;
+
+  for (i = 0; i < options_max_num; i++)
   {
-    const struct MHD_ResponseOptionAndValue *const option = options + i;
-    switch (option->opt) {
+    const struct MHD_ResponseOptionAndValue *const volatile option =
+      options + i;
+
+    switch (option->opt)
+    {
     case MHD_R_O_END:
       return MHD_SC_OK;
     case MHD_R_O_REUSABLE:
-      response->settings.reusable = option->val.reusable;
+      if (response->reuse.reusable && !option->val.reusable)
+        return MHD_SC_RESPONSE_CANNOT_CLEAR_REUSE;
+      else if (response->reuse.reusable)
+        continue; /* This flag has been set before */
+      else
+      {
+        if (mhd_mutex_init(&(response->reuse.settings_lock)))
+        {
+          if (mhd_mutex_init_short(&(response->reuse.cnt_lock)))
+          {
+            response->reuse.counter = 1;
+            response->reuse.reusable = true;
+            continue;
+          }
+          mhd_mutex_destroy_chk(&(response->reuse.settings_lock));
+        }
+        return MHD_SC_RESPONSE_MUTEX_INIT_FAILED;
+      }
+      settings->reusable = option->val.reusable;
       continue;
     case MHD_R_O_HEAD_ONLY_RESPONSE:
-      response->settings.head_only_response = option->val.head_only_response;
+      settings->head_only_response = option->val.head_only_response;
       continue;
     case MHD_R_O_CHUNKED_ENC:
-      response->settings.chunked_enc = option->val.chunked_enc;
+      settings->chunked_enc = option->val.chunked_enc;
       continue;
     case MHD_R_O_CONN_CLOSE:
-      response->settings.conn_close = option->val.conn_close;
+      settings->conn_close = option->val.conn_close;
       continue;
     case MHD_R_O_HTTP_1_0_COMPATIBLE_STRICT:
-      response->settings.http_1_0_compatible_strict = option->val.http_1_0_compatible_strict;
+      settings->http_1_0_compatible_strict = option->val.http_1_0_compatible_strict;
       continue;
     case MHD_R_O_HTTP_1_0_SERVER:
-      response->settings.http_1_0_server = option->val.http_1_0_server;
+      settings->http_1_0_server = option->val.http_1_0_server;
       continue;
     case MHD_R_O_INSANITY_HEADER_CONTENT_LENGTH:
-      response->settings.insanity_header_content_length = option->val.insanity_header_content_length;
+      settings->insanity_header_content_length = option->val.insanity_header_content_length;
       continue;
     case MHD_R_O_TERMINATION_CALLBACK:
-      response->settings.termination_callback.v_term_cb = option->val.termination_callback.v_term_cb;
-      response->settings.termination_callback.v_term_cb_cls = option->val.termination_callback.v_term_cb_cls;
+      settings->termination_callback.v_term_cb = option->val.termination_callback.v_term_cb;
+      settings->termination_callback.v_term_cb_cls = option->val.termination_callback.v_term_cb_cls;
       continue;
     case MHD_R_O_SENTINEL:
     default:
@@ -64,4 +99,33 @@ MHD_response_set_options (struct MHD_Response *response,
     return MHD_SC_OPTION_UNKNOWN;
   }
   return MHD_SC_OK;
+}
+
+MHD_FN_PAR_NONNULL_ALL_ MHD_EXTERN_ enum MHD_StatusCode
+MHD_response_set_options (struct MHD_Response *response,
+                          const struct MHD_ResponseOptionAndValue *options,
+                          size_t options_max_num)
+{
+  bool need_lock;
+  enum MHD_StatusCode res;
+
+  if (response->frozen)
+    return MHD_SC_TOO_LATE;
+
+  if (response->reuse.reusable)
+  {
+    need_lock = true;
+    if (! mhd_mutex_lock(&(response->reuse.settings_lock)))
+      return MHD_SC_RESPONSE_MUTEX_LOCK_FAILED;
+    mhd_assert (1 == response->reuse.counter);
+  }
+  else
+    need_lock = false;
+
+  res = response_set_options_int(response, options, options_max_num);
+
+  if (need_lock)
+    mhd_mutex_unlock_chk(&(response->reuse.settings_lock));
+
+  return res;
 }

@@ -319,11 +319,11 @@ typedef SOCKET MHD_Socket;
       * 'pragma push/pop' support was added in GCC 4.6.0 */
 #    define MHD_WARN_PUSH_ _Pragma("GCC diagnostic push")
 #    define MHD_WARN_POP_  _Pragma("GCC diagnostic pop")
-#    define MHD_WARN_INGORE_(warn) \
+#    define MHD_WARN_IGNORE_(warn) \
         _Pragma(MHD_MACRO_STR_(GCC diagnostic ignored MHD_MACRO_STR__(warn)))
 #    ifdef MHD_USE_VARARG_MACROS_EXT
 #      define MHD_NOWARN_VARIADIC_MACROS_ \
-        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wvariadic-macros)
+        MHD_WARN_PUSH_ MHD_WARN_IGNORE_ (-Wvariadic-macros)
 #      define MHD_RESTORE_WARN_VARIADIC_MACROS_ MHD_WARN_POP_
 #    endif
 #    ifdef MHD_USE_COMPOUND_LITERALS_EXT
@@ -331,43 +331,43 @@ typedef SOCKET MHD_Socket;
 #      define MHD_RESTORE_WARN_COMPOUND_LITERALS_       /* empty */
 #    endif
 #    define MHD_NOWARN_UNUSED_FUNC_ \
-        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wunused-function)
+        MHD_WARN_PUSH_ MHD_WARN_IGNORE_ (-Wunused-function)
 #    define MHD_RESTORE_WARN_UNUSED_FUNC_ MHD_WARN_POP_
 #  elif MHD_CLANG_MINV (3,1)
 #    define MHD_WARN_PUSH_ _Pragma("clang diagnostic push")
 #    define MHD_WARN_POP_  _Pragma("clang diagnostic pop")
-#    define MHD_WARN_INGORE_(warn) \
+#    define MHD_WARN_IGNORE_(warn) \
         _Pragma(MHD_MACRO_STR_(clang diagnostic ignored MHD_MACRO_STR__(warn)))
 #    ifdef MHD_USE_VARARG_MACROS_EXT
 #      define MHD_NOWARN_VARIADIC_MACROS_ \
         MHD_WARN_PUSH_ \
-        MHD_WARN_INGORE_ (-Wvariadic-macros) \
-        MHD_WARN_INGORE_ (-Wc++98-compat-pedantic)
+        MHD_WARN_IGNORE_ (-Wvariadic-macros) \
+        MHD_WARN_IGNORE_ (-Wc++98-compat-pedantic)
 #      define MHD_RESTORE_WARN_VARIADIC_MACROS_ MHD_WARN_POP_
 #    else  /* ! MHD_USE_VARARG_MACROS_EXT */
 #      define MHD_NOWARN_VARIADIC_MACROS_ \
-        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc++98-compat-pedantic)
+        MHD_WARN_PUSH_ MHD_WARN_IGNORE_ (-Wc++98-compat-pedantic)
 #      define MHD_RESTORE_WARN_VARIADIC_MACROS_ MHD_WARN_POP_
 #    endif
 #    ifdef MHD_USE_CPP_INIT_LIST
 #      define MHD_NOWARN_CPP_INIT_LIST_ \
-        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc++98-compat)
+        MHD_WARN_PUSH_ MHD_WARN_IGNORE_ (-Wc++98-compat)
 #      define MHD_RESTORE_WARN_CPP_INIT_LIST_ MHD_WARN_POP_
 #    endif
 #    ifdef MHD_USE_COMPOUND_LITERALS_EXT
 #      define MHD_NOWARN_COMPOUND_LITERALS_ \
-        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wc99-extensions)
+        MHD_WARN_PUSH_ MHD_WARN_IGNORE_ (-Wc99-extensions)
 #      define MHD_RESTORE_WARN_COMPOUND_LITERALS_ MHD_WARN_POP_
 #    endif
 #    define MHD_NOWARN_UNUSED_FUNC_ \
-        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (-Wunused-function)
+        MHD_WARN_PUSH_ MHD_WARN_IGNORE_ (-Wunused-function)
 #    define MHD_RESTORE_WARN_UNUSED_FUNC_ MHD_WARN_POP_
 #  elif MHD_MSC_MINV (1500)
 #    define MHD_WARN_PUSH_ __pragma(warning(push))
 #    define MHD_WARN_POP_  __pragma(warning(pop))
-#    define MHD_WARN_INGORE_(warn)      __pragma(warning(disable:warn))
+#    define MHD_WARN_IGNORE_(warn)      __pragma(warning(disable:warn))
 #    define MHD_NOWARN_UNUSED_FUNC_ \
-        MHD_WARN_PUSH_ MHD_WARN_INGORE_ (4514)
+        MHD_WARN_PUSH_ MHD_WARN_IGNORE_ (4514)
 #    define MHD_RESTORE_WARN_UNUSED_FUNC_ MHD_WARN_POP_
 #  endif
 #endif /*!  MHD_NO__PRAGMA */
@@ -378,8 +378,8 @@ typedef SOCKET MHD_Socket;
 #ifndef MHD_WARN_POP_
 #  define MHD_WARN_POP_         /* empty */
 #endif
-#ifndef MHD_WARN_INGORE_
-#  define MHD_WARN_INGORE_(ignored)     /* empty */
+#ifndef MHD_WARN_IGNORE_
+#  define MHD_WARN_IGNORE_(ignored)     /* empty */
 #endif
 #ifndef MHD_NOWARN_VARIADIC_MACROS_
 #  define MHD_NOWARN_VARIADIC_MACROS_   /* empty */
@@ -485,14 +485,18 @@ typedef SOCKET MHD_Socket;
 #endif /* !MHD_DEPR_FUNC_ */
 
 #ifdef __has_attribute
-#  if __has_attribute (enum_extensibility)
+#  ifndef MHD_FIXED_ENUM_
+#    if __has_attribute (enum_extensibility)
 /* Enum will not be extended */
-#    define MHD_FIXED_ENUM_ __attribute__((enum_extensibility (closed)))
-#  endif /* enum_extensibility */
-#  if __has_attribute (flag_enum)
+#      define MHD_FIXED_ENUM_ __attribute__((enum_extensibility (closed)))
+#    endif /* enum_extensibility */
+#  endif
+#  ifndef MHD_FLAGS_ENUM_
+#    if __has_attribute (flag_enum)
 /* Enum is a bitmap */
-#    define MHD_FLAGS_ENUM_ __attribute__((flag_enum))
-#  endif /* flag_enum */
+#      define MHD_FLAGS_ENUM_ __attribute__((flag_enum))
+#    endif /* flag_enum */
+#  endif
 #endif /* __has_attribute */
 
 #ifndef MHD_FIXED_ENUM_
@@ -592,6 +596,16 @@ typedef SOCKET MHD_Socket;
 #      endif
 #    endif /* const && !MHD_FN_CONST_ */
 
+/* Override detected value of MHD_FN_RETURNS_NONNULL_ by defining it before
+ * including the header */
+#    if __has_attribute (returns_nonnull) && \
+  ! defined(MHD_FN_RETURNS_NONNULL_)
+/**
+ * MHD_FN_RETURNS_NONNULL_ indicates that function never returns NULL.
+ */
+#      define MHD_FN_RETURNS_NONNULL_ __attribute__ ((returns_nonnull))
+#    endif /* returns_nonnull && !MHD_FN_RETURNS_NONNULL_ */
+
 /* Override detected value of MHD_FN_MUST_CHECK_RESULT_ by defining it before
  * including the header */
 #    if __has_attribute (warn_unused_result) && \
@@ -629,7 +643,7 @@ typedef SOCKET MHD_Socket;
 #    if __has_attribute (access)
 
 /* Override detected value of MHD_FN_PAR_IN_ by defining it before
-  * including the header */
+ * including the header */
 #      if ! defined(MHD_FN_PAR_IN_)
 /**
  * MHD_FN_PAR_IN_ indicates function parameter points to data
@@ -704,7 +718,7 @@ typedef SOCKET MHD_Socket;
 #    if __has_attribute (fd_arg_read) && \
   ! defined(MHD_FN_PAR_FD_READ_)
 /**
- * MHD_FN_PAR_IN_ indicates function parameter is file descriptor that
+ * MHD_FN_PAR_FD_READ_ indicates function parameter is file descriptor that
  * must be in open state and available for reading
  */
 #      define MHD_FN_PAR_FD_READ_(param_num) \
@@ -716,33 +730,12 @@ typedef SOCKET MHD_Socket;
 #    if __has_attribute (null_terminated_string_arg) && \
   ! defined(MHD_FN_PAR_CSTR_)
 /**
- * MHD_FN_PAR_IN_ indicates function parameter is file descriptor that
+ * MHD_FN_PAR_CSTR_ indicates function parameter is file descriptor that
  * must be in open state and available for reading
  */
 #      define MHD_FN_PAR_CSTR_(param_num) \
         __attribute__ ((null_terminated_string_arg (param_num)))
 #    endif /* null_terminated_string_arg && !MHD_FN_PAR_CSTR_ */
-
-/* Override detected value of MHD_FN_RETURNS_NONNULL_ by defining it before
- * including the header */
-#    if __has_attribute (returns_nonnull) && \
-  ! defined(MHD_FN_RETURNS_NONNULL_)
-/**
- * MHD_FN_RETURNS_NONNULL_ indicates that function never returns NULL.
- */
-#      define MHD_FN_RETURNS_NONNULL_ __attribute__ ((returns_nonnull))
-#    endif /* returns_nonnull && !MHD_FN_RETURNS_NONNULL_ */
-
-/* Override detected value of MHD_FN_WARN_UNUSED_RESULT_ by defining it before
- * including the header */
-#    if __has_attribute (warn_unused_result) && \
-  ! defined(MHD_FN_WARN_UNUSED_RESULT_)
-/**
- * MHD_FN_WARN_UNUSED_RESULT_ that function return value should not be ignored
- */
-#      define MHD_FN_WARN_UNUSED_RESULT_ \
-        __attribute__ ((warn_unused_result))
-#    endif /* warn_unused_result && !MHD_FN_WARN_UNUSED_RESULT_ */
 
 #  endif /* __has_attribute */
 #endif /* ! MHD_NO_FUNC_ATTRIBUTES */
@@ -780,6 +773,9 @@ typedef SOCKET MHD_Socket;
 #ifndef MHD_FN_PURE_
 #  define MHD_FN_PURE_        /* empty */
 #endif /* ! MHD_FN_PURE_ */
+#ifndef MHD_FN_RETURNS_NONNULL_
+#  define MHD_FN_RETURNS_NONNULL_       /* empty */
+#endif /* ! MHD_FN_RETURNS_NONNULL_ */
 #ifndef MHD_FN_MUST_CHECK_RESULT_
 #  define MHD_FN_MUST_CHECK_RESULT_   /* empty */
 #endif /* ! MHD_FN_MUST_CHECK_RESULT_ */
@@ -813,9 +809,3 @@ typedef SOCKET MHD_Socket;
 #ifndef MHD_FN_PAR_CSTR_
 #  define MHD_FN_PAR_CSTR_(param_num)   /* empty */
 #endif /* ! MHD_FN_PAR_CSTR_ */
-#ifndef MHD_FN_RETURNS_NONNULL_
-#  define MHD_FN_RETURNS_NONNULL_       /* empty */
-#endif /* ! MHD_FN_RETURNS_NONNULL_ */
-#ifndef MHD_FN_WARN_UNUSED_RESULT_
-#  define MHD_FN_WARN_UNUSED_RESULT_    /* empty */
-#endif /* ! MHD_FN_WARN_UNUSED_RESULT_ */

@@ -3,7 +3,7 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = contrib m4 src .
 
 if BUILD_DOC
-SUBDIRS += doc
+# SUBDIRS += doc
 endif
 
 

@@ -19,42 +19,51 @@
 */
 
 /**
- * @file memorypool.c
+ * @file src/mhd2/mhd_mempool.h
  * @brief memory pool
  * @author Christian Grothoff
  * @author Karlson2k (Evgeny Grin)
+ * TODO:
+ * + Update code style
+ * + Detect mmap() in configure (it is purely optional!)
  */
-#include "memorypool.h"
+#include "mhd_mempool.h"
 #ifdef HAVE_STDLIB_H
-#include <stdlib.h>
+#  include <stdlib.h>
 #endif /* HAVE_STDLIB_H */
 #include <string.h>
-#include <stdint.h>
 #include "mhd_assert.h"
 #ifdef HAVE_SYS_MMAN_H
-#include <sys/mman.h>
+#  include <sys/mman.h>
 #endif
 #ifdef _WIN32
-#include <windows.h>
+#  include <windows.h>
 #endif
 #ifdef HAVE_SYSCONF
-#include <unistd.h>
-#if defined(_SC_PAGE_SIZE)
-#define MHD_SC_PAGESIZE _SC_PAGE_SIZE
-#elif defined(_SC_PAGESIZE)
-#define MHD_SC_PAGESIZE _SC_PAGESIZE
-#endif /* _SC_PAGESIZE */
+#  include <unistd.h>
+#  if defined(_SC_PAGE_SIZE)
+#    define MHD_SC_PAGESIZE _SC_PAGE_SIZE
+#  elif defined(_SC_PAGESIZE)
+#    define MHD_SC_PAGESIZE _SC_PAGESIZE
+#  endif /* _SC_PAGESIZE */
 #endif /* HAVE_SYSCONF */
-#include "mhd_limits.h" /* for SIZE_MAX, PAGESIZE / PAGE_SIZE */
 
 #if defined(MHD_USE_PAGESIZE_MACRO) || defined(MHD_USE_PAGE_SIZE_MACRO)
-#ifndef HAVE_SYSCONF /* Avoid duplicate include */
-#include <unistd.h>
-#endif /* HAVE_SYSCONF */
-#ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif /* HAVE_SYS_PARAM_H */
+#  ifndef HAVE_SYSCONF /* Avoid duplicate include */
+#    include <unistd.h>
+#  endif /* HAVE_SYSCONF */
+#  ifdef HAVE_LIMITS_H
+#    include <limits.h>
+#  endif
+#  ifdef HAVE_SYS_PARAM_H
+#    include <sys/param.h>
+#  endif /* HAVE_SYS_PARAM_H */
 #endif /* MHD_USE_PAGESIZE_MACRO || MHD_USE_PAGE_SIZE_MACRO */
+
+#ifndef SIZE_MAX
+/* This file does not use SIZE_MAX macro with preprocessor */
+#  define SIZE_MAX ((size_t) ~((size_t) 0))
+#endif
 
 /**
  * Fallback value of page size
@@ -99,40 +108,42 @@
 #ifndef MHD_ASAN_POISON_ACTIVE
 #define _MHD_NOSANITIZE_PTRS /**/
 #define _MHD_RED_ZONE_SIZE (0)
-#define ROUND_TO_ALIGN_PLUS_RED_ZONE(n) ROUND_TO_ALIGN(n)
-#define _MHD_POISON_MEMORY(pointer, size) (void)0
-#define _MHD_UNPOISON_MEMORY(pointer, size) (void)0
+#define ROUND_TO_ALIGN_PLUS_RED_ZONE(n) ROUND_TO_ALIGN (n)
+#define _MHD_POISON_MEMORY(pointer, size) (void) 0
+#define _MHD_UNPOISON_MEMORY(pointer, size) (void) 0
 /**
  * Boolean 'true' if the first pointer is less or equal the second pointer
  */
 #define mp_ptr_le_(p1,p2) \
-  (((const uint8_t*)(p1)) <= ((const uint8_t*)(p2)))
+        (((const uint8_t*) (p1)) <= ((const uint8_t*) (p2)))
 /**
  * The difference in bytes between positions of the first and
  * the second pointers
  */
 #define mp_ptr_diff_(p1,p2) \
-  ((size_t)(((const uint8_t*)(p1)) - ((const uint8_t*)(p2))))
+        ((size_t) (((const uint8_t*) (p1)) - ((const uint8_t*) (p2))))
 #else  /* MHD_ASAN_POISON_ACTIVE */
 #define _MHD_RED_ZONE_SIZE (ALIGN_SIZE)
-#define ROUND_TO_ALIGN_PLUS_RED_ZONE(n) (ROUND_TO_ALIGN(n) + _MHD_RED_ZONE_SIZE)
+#define ROUND_TO_ALIGN_PLUS_RED_ZONE(n) \
+        (ROUND_TO_ALIGN (n) + _MHD_RED_ZONE_SIZE)
 #define _MHD_POISON_MEMORY(pointer, size) \
-  ASAN_POISON_MEMORY_REGION ((pointer), (size))
+        ASAN_POISON_MEMORY_REGION ((pointer), (size))
 #define _MHD_UNPOISON_MEMORY(pointer, size) \
-  ASAN_UNPOISON_MEMORY_REGION ((pointer), (size))
+        ASAN_UNPOISON_MEMORY_REGION ((pointer), (size))
 #if defined(FUNC_PTRCOMPARE_CAST_WORKAROUND_WORKS)
 /**
  * Boolean 'true' if the first pointer is less or equal the second pointer
  */
 #define mp_ptr_le_(p1,p2) \
-  (((uintptr_t)((const void*)(p1))) <= ((uintptr_t)((const void*)(p2))))
+        (((uintptr_t) ((const void*) (p1))) <= \
+         ((uintptr_t) ((const void*) (p2))))
 /**
  * The difference in bytes between positions of the first and
  * the second pointers
  */
 #define mp_ptr_diff_(p1,p2) \
-  ((size_t)(((uintptr_t)((const uint8_t*)(p1))) - \
-            ((uintptr_t)((const uint8_t*)(p2)))))
+        ((size_t) (((uintptr_t) ((const uint8_t*) (p1))) - \
+                   ((uintptr_t) ((const uint8_t*) (p2)))))
 #elif defined(FUNC_ATTR_PTRCOMPARE_WORKS) && \
   defined(FUNC_ATTR_PTRSUBTRACT_WORKS)
 #ifdef _DEBUG

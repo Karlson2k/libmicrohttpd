@@ -40,7 +40,7 @@
 #endif /* __GNUC__ >= 5 */
 
 MHD_INTERNAL void *
-MHD_calloc_ (size_t nelem, size_t elsize)
+mhd_calloc (size_t nelem, size_t elsize)
 {
   size_t alloc_size;
   void *ptr;

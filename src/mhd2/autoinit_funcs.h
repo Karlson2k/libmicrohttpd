@@ -85,13 +85,13 @@
   (defined(__SUNPRO_C) && __SUNPRO_C + 0 >= 0x5100)
 
 #define GNUC_SET_INIT_AND_DEINIT(FI,FD) \
-  void __attribute__ ((constructor)) _GNUC_init_helper_ ## FI (void);  \
-  void __attribute__ ((destructor)) _GNUC_deinit_helper_ ## FD (void); \
-  void __attribute__ ((constructor)) _GNUC_init_helper_ ## FI (void)   \
-  { (void) (FI) (); } \
-  void __attribute__ ((destructor)) _GNUC_deinit_helper_ ## FD (void)  \
-  { (void) (FD) (); } \
-  struct _GNUC_dummy_str_ ## FI {int i;}
+        void __attribute__ ((constructor)) _GNUC_init_helper_ ## FI (void);  \
+        void __attribute__ ((destructor)) _GNUC_deinit_helper_ ## FD (void); \
+        void __attribute__ ((constructor)) _GNUC_init_helper_ ## FI (void)   \
+        { (void) (FI) (); } \
+        void __attribute__ ((destructor)) _GNUC_deinit_helper_ ## FD (void)  \
+        { (void) (FD) (); } \
+        struct _GNUC_dummy_str_ ## FI {int i;}
 
 #define _SET_INIT_AND_DEINIT_FUNCS(FI,FD) GNUC_SET_INIT_AND_DEINIT (FI,FD)
 #define _AUTOINIT_FUNCS_ARE_SUPPORTED 1
@@ -144,7 +144,7 @@
 /* Internal variable prefix (can be any) */
 #define W32_INITHELPERVARNAME(f) _initHelperDummy_ ## f
 #define W32_INITHELPERVARNAMEDECORSTR(f) \
-  W32_VARDECORPREFIXSTR _STRMACRO (W32_INITHELPERVARNAME (f))
+        W32_VARDECORPREFIXSTR _STRMACRO (W32_INITHELPERVARNAME (f))
 
 /* Declare section (segment), put variable pointing to init function to chosen segment,
    force linker to always include variable to avoid omitting by optimiser */
@@ -152,10 +152,10 @@
    void __cdecl FuncName(void) */
 /* "extern" with initialisation value means that variable is declared AND defined. */
 #define W32_VFPTR_IN_SEG(S,F) \
-  __pragma (section (S,long,read)) \
-  __pragma (comment (linker, "/INCLUDE:" W32_INITHELPERVARNAMEDECORSTR (F))) \
-  W32_INITVARDECL __declspec(allocate (S))void \
-    (__cdecl * W32_INITHELPERVARNAME (F))(void) = &F
+        __pragma(section (S,long,read)) \
+        __pragma (comment (linker, "/INCLUDE:" W32_INITHELPERVARNAMEDECORSTR (F))) \
+        W32_INITVARDECL __declspec(allocate (S))void \
+        (__cdecl * W32_INITHELPERVARNAME (F))(void) = &F
 
 /* Sections (segments) for pointers to initialisers/deinitialisers */
 
@@ -181,10 +181,10 @@
 /* Startup process is aborted if initialiser returns non-zero */
 /* "extern" with initialisation value means that variable is declared AND defined. */
 #define W32_IFPTR_IN_SEG(S,F) \
-  __pragma (section (S,long,read)) \
-  __pragma (comment (linker, "/INCLUDE:" W32_INITHELPERVARNAMEDECORSTR (F))) \
-  W32_INITVARDECL __declspec(allocate (S))int \
-    (__cdecl * W32_INITHELPERVARNAME (F))(void) = &F
+        __pragma(section (S,long,read)) \
+        __pragma (comment (linker, "/INCLUDE:" W32_INITHELPERVARNAMEDECORSTR (F))) \
+        W32_INITVARDECL __declspec(allocate (S))int \
+        (__cdecl * W32_INITHELPERVARNAME (F))(void) = &F
 
 /* Unsafe sections (segments) for pointers to initialisers with
    "int" return type */
@@ -229,9 +229,9 @@
   ((defined(_LIB) && ! defined(_CONSOLE)) || defined(_USRDLL)) || \
   defined(AUTOINIT_FUNCS_FORCE_EARLY_INIT)) && \
   ! defined(AUTOINIT_FUNCS_FORCE_LATE_INIT)
-#define W32_REGISTER_INIT(F) W32_REG_INIT_EARLY(F)
+#define W32_REGISTER_INIT(F) W32_REG_INIT_EARLY (F)
 #else
-#define W32_REGISTER_INIT(F) W32_REG_INIT_LATE(F)
+#define W32_REGISTER_INIT(F) W32_REG_INIT_LATE (F)
 #endif
 
 #endif /* ! _USRDLL || ! AUTOINIT_FUNCS_DECLARE_STATIC_REG
@@ -243,13 +243,13 @@
 #include <stdlib.h> /* required for atexit() */
 
 #define W32_SET_INIT_AND_DEINIT(FI,FD) \
-  void __cdecl _W32_init_helper_ ## FI (void);    \
-  void __cdecl _W32_deinit_helper_ ## FD (void); \
-  void __cdecl _W32_init_helper_ ## FI (void)     \
-  { (void) (FI) (); atexit (_W32_deinit_helper_ ## FD); } \
-  void __cdecl _W32_deinit_helper_ ## FD (void)  \
-  { (void) (FD) (); } \
-  W32_REGISTER_INIT (_W32_init_helper_ ## FI)
+        void __cdecl _W32_init_helper_ ## FI (void);    \
+        void __cdecl _W32_deinit_helper_ ## FD (void); \
+        void __cdecl _W32_init_helper_ ## FI (void)     \
+        { (void) (FI) (); atexit (_W32_deinit_helper_ ## FD); } \
+        void __cdecl _W32_deinit_helper_ ## FD (void)  \
+        { (void) (FD) (); } \
+        W32_REGISTER_INIT (_W32_init_helper_ ## FI)
 #else  /* _USRDLL */
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -262,22 +262,22 @@
    and rename DllMain to usr_DllMain */
 #ifndef AUTOINIT_FUNCS_CALL_USR_DLLMAIN
 #define W32_SET_INIT_AND_DEINIT(FI,FD) \
-  BOOL WINAPI DllMain (HINSTANCE hinst,DWORD reason,LPVOID unused); \
-  BOOL WINAPI DllMain (HINSTANCE hinst,DWORD reason,LPVOID unused)  \
-  { (void) hinst; (void) unused; \
-    if (DLL_PROCESS_ATTACH==reason) {(void) (FI) ();} \
-    else if (DLL_PROCESS_DETACH==reason) {(void) (FD) ();} \
-    return TRUE; \
-  } struct _W32_dummy_strc_ ## FI {int i;}
+        BOOL WINAPI DllMain (HINSTANCE hinst,DWORD reason,LPVOID unused); \
+        BOOL WINAPI DllMain (HINSTANCE hinst,DWORD reason,LPVOID unused)  \
+        { (void) hinst; (void) unused; \
+          if (DLL_PROCESS_ATTACH==reason) {(void) (FI) ();} \
+          else if (DLL_PROCESS_DETACH==reason) {(void) (FD) ();} \
+          return TRUE; \
+        } struct _W32_dummy_strc_ ## FI {int i;}
 #else  /* AUTOINIT_FUNCS_CALL_USR_DLLMAIN */
 #define W32_SET_INIT_AND_DEINIT(FI,FD) \
-  BOOL WINAPI usr_DllMain (HINSTANCE hinst,DWORD reason,LPVOID unused); \
-  BOOL WINAPI DllMain (HINSTANCE hinst,DWORD reason,LPVOID unused); \
-  BOOL WINAPI DllMain (HINSTANCE hinst,DWORD reason,LPVOID unused)  \
-  { if (DLL_PROCESS_ATTACH==reason) {(void) (FI) ();} \
-    else if (DLL_PROCESS_DETACH==reason) {(void) (FD) ();} \
-    return usr_DllMain (hinst,reason,unused); \
-  } struct _W32_dummy_strc_ ## FI {int i;}
+        BOOL WINAPI usr_DllMain (HINSTANCE hinst,DWORD reason,LPVOID unused); \
+        BOOL WINAPI DllMain (HINSTANCE hinst,DWORD reason,LPVOID unused); \
+        BOOL WINAPI DllMain (HINSTANCE hinst,DWORD reason,LPVOID unused)  \
+        { if (DLL_PROCESS_ATTACH==reason) {(void) (FI) ();} \
+          else if (DLL_PROCESS_DETACH==reason) {(void) (FD) ();} \
+          return usr_DllMain (hinst,reason,unused); \
+        } struct _W32_dummy_strc_ ## FI {int i;}
 #endif /* AUTOINIT_FUNCS_CALL_USR_DLLMAIN */
 #endif /* _USRDLL */
 

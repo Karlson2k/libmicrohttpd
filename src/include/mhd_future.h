@@ -111,9 +111,6 @@
 #ifndef MHD_FN_RETURNS_NONNULL_
 #  define MHD_FN_RETURNS_NONNULL_       /* empty */
 #endif /* ! MHD_FN_RETURNS_NONNULL_ */
-#ifndef MHD_FN_WARN_UNUSED_RESULT_
-#  define MHD_FN_WARN_UNUSED_RESULT_    /* empty */
-#endif /* ! MHD_FN_WARN_UNUSED_RESULT_ */
 
 
 /**

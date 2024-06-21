@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2015-2021 Karlson2k (Evgeny Grin)
+  Copyright (C) 2015-2024 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -18,46 +18,29 @@
 */
 
 /**
- * @file microhttpd/mhd_mono_clock.h
+ * @file src/mhd2/mhd_mono_clock.h
  * @brief  internal monotonic clock functions declarations
  * @author Karlson2k (Evgeny Grin)
  */
 
 #ifndef MHD_MONO_CLOCK_H
 #define MHD_MONO_CLOCK_H 1
-#include "mhd_options.h"
+#include "mhd_sys_options.h"
 
-#if defined(HAVE_TIME_H)
-#include <time.h>
-#elif defined(HAVE_SYS_TYPES_H)
-#include <sys/types.h>
-#endif
-#include <stdint.h>
+#include "sys_base_types.h"
 
 /**
- * Initialise monotonic seconds and milliseconds counters.
+ * Initialise milliseconds counters.
  */
 void
-MHD_monotonic_sec_counter_init (void);
+MHD_monotonic_msec_counter_init (void);
 
 
 /**
- * Deinitialise monotonic seconds  and milliseconds counters by freeing
- * any allocated resources
+ * Deinitialise milliseconds counters by freeing any allocated resources
  */
 void
-MHD_monotonic_sec_counter_finish (void);
-
-
-/**
- * Monotonic seconds counter.
- * Tries to be not affected by manually setting the system real time
- * clock or adjustments by NTP synchronization.
- *
- * @return number of seconds from some fixed moment
- */
-time_t
-MHD_monotonic_sec_counter (void);
+MHD_monotonic_msec_counter_finish (void);
 
 
 /**
@@ -67,7 +50,7 @@ MHD_monotonic_sec_counter (void);
  *
  * @return number of microseconds from some fixed moment
  */
-uint64_t
+uint_fast64_t
 MHD_monotonic_msec_counter (void);
 
 #endif /* MHD_MONO_CLOCK_H */

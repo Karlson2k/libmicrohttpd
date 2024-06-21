@@ -19,24 +19,22 @@
 */
 
 /**
- * @file memorypool.h
+ * @file src/mhd2/mhd_mempool.h
  * @brief memory pool; mostly used for efficient (de)allocation
  *        for each connection and bounding memory use for each
  *        request
  * @author Christian Grothoff
  * @author Karlson2k (Evgeny Grin)
+ *
+ * TODO: Update code style
  */
 
-#ifndef MEMORYPOOL_H
-#define MEMORYPOOL_H
+#ifndef MHD_MEMPOOL_H
+#define MHD_MEMPOOL_H 1
 
-#include "mhd_options.h"
-#ifdef HAVE_STDDEF_H
-#include <stddef.h>
-#endif /* HAVE_STDDEF_H */
-#ifdef HAVE_STDBOOL_H
-#include <stdbool.h>
-#endif
+#include "mhd_sys_options.h"
+#include "sys_base_types.h"
+#include "sys_bool_type.h"
 
 /**
  * Opaque handle for a memory pool.
@@ -198,4 +196,4 @@ MHD_pool_reset (struct MemoryPool *pool,
                 size_t copy_bytes,
                 size_t new_size);
 
-#endif
+#endif /* ! MHD_MEMPOOL_H */

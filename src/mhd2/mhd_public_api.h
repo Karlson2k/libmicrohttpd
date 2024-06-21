@@ -33,7 +33,8 @@
 #include "mhd_sys_options.h"
 
 #include "sys_base_types.h"
-#include "sys_socket_types.h"
+#include "mhd_socket_type.h"
+#include "sys_sockets_types.h"
 
 #include "microhttpd2.h"
 

@@ -107,14 +107,14 @@ AC_DEFUN([_MHD_RUN_CHECK_SOCKET_SHUTDOWN_TRIGGER],[dnl
 #  ifdef HAVE_NETINET_TCP_H
 #    include <netinet/tcp.h>
 #  endif
-   typedef int MHD_socket;
+   typedef int MHD_Socket;
 #  define MHD_INVALID_SOCKET (-1)
 #  define MHD_POSIX_SOCKETS 1
 #else
 #  include <winsock2.h>
 #  include <ws2tcpip.h>
 #  include <windows.h>
-   typedef SOCKET MHD_socket;
+   typedef SOCKET MHD_Socket;
 #  define MHD_INVALID_SOCKET (INVALID_SOCKET)
 #  define MHD_WINSOCK_SOCKETS 1
 #endif
@@ -176,7 +176,7 @@ static void* select_thrd_func(void* param)
 #endif
   fd_set rs;
   struct timeval tmot = {0, 0};
-  MHD_socket fd = *((MHD_socket*)param);
+  MHD_Socket fd = *((MHD_Socket*)param);
 
   FD_ZERO(&rs);
   FD_SET(fd, &rs);
@@ -196,10 +196,10 @@ static void* select_thrd_func(void* param)
 }
 
 
-static MHD_socket create_socket(void)
+static MHD_Socket create_socket(void)
 { return socket (AF_INET, SOCK_STREAM, 0); }
 
-static void close_socket(MHD_socket fd)
+static void close_socket(MHD_Socket fd)
 {
 #ifdef MHD_POSIX_SOCKETS
   close(fd);
@@ -208,10 +208,10 @@ static void close_socket(MHD_socket fd)
 #endif
 }
 
-static MHD_socket
+static MHD_Socket
 create_socket_listen(int port)
 {
-  MHD_socket fd;
+  MHD_Socket fd;
   struct sockaddr_in sock_addr;
   fd = create_socket();
   if (MHD_INVALID_SOCKET == fd)
@@ -240,7 +240,7 @@ create_socket_listen(int port)
 static long long test_run_select(int timeout_millsec, int use_shutdown, long long delay_before_shutdown)
 {
   pthread_t select_thrd;
-  MHD_socket fd;
+  MHD_Socket fd;
 #ifdef HAVE_GETTIMEOFDAY
   struct timeval start, stop;
 #else

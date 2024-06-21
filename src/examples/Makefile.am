@@ -44,7 +44,7 @@ noinst_PROGRAMS += \
   websocket_chatserver_example
 endif
 
-if MHD_HAVE_EPOLL
+if MHD_USE_EPOLL
 noinst_PROGRAMS += \
   suspend_resume_epoll
 endif

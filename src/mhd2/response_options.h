@@ -16,11 +16,12 @@
 #include "mhd_public_api.h"
 
 
-struct ResponseOptions {
+struct ResponseOptions
+{
   /**
    * Value for #MHD_R_O_REUSABLE.
    */
-  enum MHD_Bool reusable;
+  enum MHD_Bool reusable; /* Not used in this struct. FIXME: remove? */
 
 
   /**

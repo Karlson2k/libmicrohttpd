@@ -34,7 +34,11 @@
 #ifndef MHD_SYS_OPTIONS_H
 #define MHD_SYS_OPTIONS_H 1
 
-#include "MHD_config.h"
+#ifndef HAVE_CONFIG_H
+#error HAVE_CONFIG_H must be defind
+#endif
+
+#include "mhd_config.h"
 
 /**
  * Macro to make it easy to mark text for translation. Note that
@@ -89,6 +93,9 @@
 #  define MHD_VISIBILITY_INTERNAL /* empty */
 #endif
 
+/* To be used with internal non-static functions */
+#define MHD_INTERNAL MHD_VISIBILITY_INTERNAL
+
 #ifdef HAVE_ATTR_PURE
 #  define MHD_FN_PURE_ __attribute__((pure))
 #else
@@ -101,41 +108,229 @@
 #  define MHD_FN_CONST_ MHD_FN_PURE_
 #endif
 
-/* To be used with internal non-static functions */
-#define MHD_INTERNAL MHD_VISIBILITY_INTERNAL
+#ifdef HAVE_ATTR_WARN_UNUSED_RES
+#  define MHD_FN_MUST_CHECK_RESULT_ __attribute__ ((warn_unused_result))
+#else
+#  define MHD_FN_MUST_CHECK_RESULT_       /* empty */
+#endif
 
-#ifdef HAVE_MACRO_VARIADIC
-#  define MHD_USE_VARARG_MACROS 1
+#ifdef HAVE_ATTR_RET_NONNULL
+#  define MHD_FN_RETURNS_NONNULL_ __attribute__ ((returns_nonnull))
+#else
+#  define MHD_FN_RETURNS_NONNULL_       /* empty */
+#endif
+
+#ifdef HAVE_ATTR_NONNULL_NUM
+#  define MHD_FN_PAR_NONNULL_(param_num) __attribute__ ((nonnull (param_num)))
+#else
+#  define MHD_FN_PAR_NONNULL_(param_num)       /* empty */
+#endif
+
+#ifdef HAVE_ATTR_NONNULL
+#  define MHD_FN_PAR_NONNULL_ALL_ __attribute__ ((nonnull))
+#else
+#  define MHD_FN_PAR_NONNULL_ALL_       /* empty */
+#endif
+
+#ifdef HAVE_ATTR_ACCESS_READ
+#  define MHD_FN_PAR_IN_(param_num) \
+        __attribute__ ((access (read_only,param_num)))
+#else
+#  define MHD_FN_PAR_IN_(param_num)       /* empty */
+#endif
+
+#ifdef HAVE_ATTR_ACCESS_READ_SIZE
+#  define MHD_FN_PAR_IN_SIZE_(param_num,size_num) \
+        __attribute__ ((access (read_only,param_num,size_num)))
+#else
+#  define MHD_FN_PAR_IN_SIZE_(param_num,size_num)       /* empty */
+#endif
+
+#ifdef HAVE_ATTR_ACCESS_READ_WRITE
+#  define MHD_FN_PAR_OUT_(param_num) \
+        __attribute__ ((access (write_only,param_num)))
+#else
+#  define MHD_FN_PAR_OUT_(param_num)       /* empty */
+#endif
+
+#ifdef HAVE_ATTR_ACCESS_WRITE
+#  define MHD_FN_PAR_OUT_SIZE_(param_num,size_num) \
+        __attribute__ ((access (write_only,param_num,size_num)))
+#else
+#  define MHD_FN_PAR_OUT_SIZE_(param_num,size_num)       /* empty */
+#endif
+
+#ifdef HAVE_ATTR_ACCESS_READ_WRITE
+#  define MHD_FN_PAR_INOUT_(param_num) \
+        __attribute__ ((access (read_write,param_num)))
+#else
+#  define MHD_FN_PAR_INOUT_(param_num)       /* empty */
+#endif
+
+#ifdef HAVE_ATTR_ACCESS_READ_WRITE_SIZE
+#  define MHD_FN_PAR_INOUT_SIZE_(param_num,size_num) \
+        __attribute__ ((access (read_write,param_num,size_num)))
+#else
+#  define MHD_FN_PAR_INOUT_SIZE_(param_num,size_num)       /* empty */
+#endif
+
+#ifdef HAVE_ATTR_FD_ARG_READ
+#  define MHD_FN_PAR_FD_READ_(param_num) \
+        __attribute__ ((fd_arg_read (param_num)))
+#else
+#  define MHD_FN_PAR_FD_READ_(param_num)       /* empty */
+#endif
+
+#ifdef HAVE_ATTR_NULL_TERM_STR
+#  define MHD_FN_PAR_CSTR_(param_num) \
+        __attribute__ ((null_terminated_string_arg (param_num)))
+#else
+#  define MHD_FN_PAR_CSTR_(param_num)       /* empty */
+#endif
+
+#ifdef HAVE_FUNC_PARAM_ARR_STATIC_FIXED
+#  define MHD_FN_PAR_FIX_ARR_SIZE_(size)  static size
+#else
+#  define MHD_FN_PAR_FIX_ARR_SIZE_(size)  size
+#endif
+
+#ifdef HAVE_FUNC_PARAM_ARR_STATIC_VAR
+#  define MHD_FN_PAR_DYN_ARR_SIZE_(size)  static size
+#else
+#  define MHD_FN_PAR_DYN_ARR_SIZE_(size)  1
+#endif
+
+#ifdef HAVE_ATTR_ENUM_EXTNS_CLOSED
+#  define MHD_FIXED_ENUM_ __attribute__((enum_extensibility (closed)))
+#else
+#  define MHD_FIXED_ENUM_       /* empty */
+#endif
+
+#ifdef HAVE_ATTR_FLAG_ENUM
+#  define MHD_FLAGS_ENUM_ __attribute__((flag_enum))
+#else
+#  define MHD_FLAGS_ENUM_       /* empty */
+#endif /* MHD_FLAGS_ENUM_ */
+
+#define MHD_FIXED_FLAGS_ENUM_ MHD_FIXED_ENUM_ MHD_FLAGS_ENUM_
+
+
+#ifdef BUILDING_MHD_LIB
+#  define MHD_FIXED_ENUM_APP_SET_ /* empty */ /* handle unknown values set by the app */
+#else
+#  define MHD_FIXED_ENUM_APP_SET_ MHD_FIXED_ENUM_
+#endif
+
+#ifdef BUILDING_MHD_LIB
+#  define MHD_FLAGS_ENUM_APP_SET_ MHD_FLAGS_ENUM_
+#else
+#  define MHD_FLAGS_ENUM_APP_SET_ MHD_FLAGS_ENUM_
+#endif
+
+#ifdef BUILDING_MHD_LIB
+#  define MHD_FIXED_FLAGS_ENUM_APP_SET_ MHD_FLAGS_ENUM_ /* handle unknown values set by the app */
+#else
+#  define MHD_FIXED_FLAGS_ENUM_APP_SET_ MHD_FIXED_FLAGS_ENUM_
+#endif
+
+#ifdef BUILDING_MHD_LIB
+#  define MHD_FIXED_ENUM_MHD_SET_ MHD_FIXED_ENUM_
+#else
+#  define MHD_FIXED_ENUM_MHD_SET_ /* empty */ /* enum can be extended in next MHD versions */
+#endif
+
+#ifdef BUILDING_MHD_LIB
+#  define MHD_FLAGS_ENUM_MHD_SET_ MHD_FLAGS_ENUM_
+#else
+#  define MHD_FLAGS_ENUM_MHD_SET_ MHD_FLAGS_ENUM_
+#endif
+
+#ifdef BUILDING_MHD_LIB
+#  define MHD_FIXED_FLAGS_ENUM_MHD_SET_ MHD_FIXED_FLAGS_ENUM_
+#else
+#  define MHD_FIXED_FLAGS_ENUM_MHD_SET_ MHD_FLAGS_ENUM_ /* enum can be extended in next MHD versions */
+#endif
+
+#ifdef BUILDING_MHD_LIB
+#  define MHD_FIXED_ENUM_MHD_APP_SET_ /* empty */ /* handle unknown values set by the app */
+#else
+#  define MHD_FIXED_ENUM_MHD_APP_SET_ /* empty */ /* enum can be extended in next MHD versions */
+#endif
+
+#ifdef BUILDING_MHD_LIB
+#  define MHD_FLAGS_ENUM_MHD_APP_SET_ MHD_FLAGS_ENUM_
+#else
+#  define MHD_FLAGS_ENUM_MHD_APP_SET_ MHD_FLAGS_ENUM_
+#endif
+
+#ifdef BUILDING_MHD_LIB
+#  define MHD_FIXED_FLAGS_ENUM_MHD_APP_SET_ MHD_FLAGS_ENUM_ /* handle unknown values set by the app */
+#else
+#  define MHD_FIXED_FLAGS_ENUM_MHD_APP_SET_ MHD_FLAGS_ENUM_ /* enum can be extended in next MHD versions */
+#endif
+
+/**
+ * Automatic string with the name of the current function
+ */
+#if defined(HAVE___FUNC__)
+#  define MHD_FUNC_       __func__
+#  define MHD_HAVE_MHD_FUNC_ 1
+#elif defined(HAVE___FUNCTION__)
+#  define MHD_FUNC_       __FUNCTION__
+#  define MHD_HAVE_MHD_FUNC_ 1
+#elif defined(HAVE___PRETTY_FUNCTION__)
+#  define MHD_FUNC_       __PRETTY_FUNCTION__
+#  define MHD_HAVE_MHD_FUNC_ 1
+#else
+#  define MHD_FUNC_       "**name unavailable**"
+#  ifdef MHD_HAVE_MHD_FUNC_
+#    undef MHD_HAVE_MHD_FUNC_
+#  endif /* MHD_HAVE_MHD_FUNC_ */
 #endif
 
 /* Some platforms (FreeBSD, Solaris, W32) allow to override
    default FD_SETSIZE by defining it before including
    headers. */
 #ifdef FD_SETSIZE
-/* FD_SETSIZE defined in command line or in MHD_config.h */
+/* FD_SETSIZE defined in command line or in mhd_config.h */
 #elif defined(_WIN32) || defined(__CYGWIN__)
 /* Platform with WinSock and without overridden FD_SETSIZE */
-#define FD_SETSIZE 2048 /* Override default small value (64) */
+#  ifdef _WIN64
+#    define FD_SETSIZE 4096 /* Override default small value (64) */
+#  else
+#    define FD_SETSIZE 1024 /* Override default small value (64) */
+#  endif
 #else  /* !FD_SETSIZE && !W32 */
 /* System default value of FD_SETSIZE is used */
-#define _MHD_FD_SETSIZE_IS_DEFAULT 1
+#  define MHD_FD_SETSIZE_IS_DEFAULT_ 1
 #endif /* !FD_SETSIZE && !W32 */
 
 #if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE) || \
-  defined(HAVE_DARWIN_SENDFILE) || defined(HAVE_SOLARIS_SENDFILE)
+  defined(HAVE_DARWIN_SENDFILE)
 /* Have any supported sendfile() function. */
-#define _MHD_HAVE_SENDFILE
-#endif /* HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE ||
-          HAVE_DARWIN_SENDFILE || HAVE_SOLARIS_SENDFILE */
-#if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_SOLARIS_SENDFILE)
-#define MHD_LINUX_SOLARIS_SENDFILE 1
-#endif /* HAVE_LINUX_SENDFILE || HAVE_SOLARIS_SENDFILE */
+#  define MHD_USE_SENDFILE 1
+#endif /* HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE
+          || HAVE_DARWIN_SENDFILE */
 
 #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
 #  ifndef MHD_USE_THREADS
 #    define MHD_USE_THREADS 1
 #  endif
 #endif /* MHD_USE_POSIX_THREADS || MHD_USE_W32_THREADS */
+
+/**
+ * Macro to drop 'const' qualifier from pointer.
+ * Try to avoid compiler warning.
+ * To be used *only* to deal with broken external APIs, which require non-const
+ * pointer to unmodifiable data.
+ * Must not be used to transform pointers for internal MHD needs.
+ */
+#ifdef HAVE_UINTPTR_T
+#  define mhd_DROP_CONST(ptr)  ((void *) ((uintptr_t) ((const void *) (ptr))))
+#else
+#  define mhd_DROP_CONST(ptr)  ((void *) ((const void *) (ptr)))
+#endif
+
 
 #if defined(OS390)
 #define _OPEN_THREADS
@@ -162,6 +357,12 @@
 #  endif /* !WIN32_LEAN_AND_MEAN */
 #endif /* _WIN32 && ! __CYGWIN__ */
 
+#if defined(__MINGW32__)
+#  ifdef __USE_MINGW_ANSI_STDIO
+#    define __USE_MINGW_ANSI_STDIO 0 /* Force use native printf, the code is well-adapted */
+#  endif
+#endif
+
 #if defined(__VXWORKS__) || defined(__vxworks) || defined(OS_VXWORKS)
 #define RESTRICT __restrict__
 #endif /* __VXWORKS__ || __vxworks || OS_VXWORKS */
@@ -176,6 +377,14 @@
 /* Special macro is required to enable C11 definition of gmtime_s() function */
 #define __STDC_WANT_LIB_EXT1__ 1
 #endif /* HAVE_C11_GMTIME_S */
+
+#if ! defined(_DEBUG) && ! defined(NDEBUG)
+#  ifndef DEBUG /* Used by some toolchains */
+#    define NDEBUG 1 /* Use NDEBUG by default */
+#  else  /* DEBUG */
+#    define _DEBUG 1 /* Non-standart macro */
+#  endif /* DEBUG */
+#endif /* !_DEBUG && !NDEBUG */
 
 #if defined(MHD_FAVOR_FAST_CODE) && defined(MHD_FAVOR_SMALL_CODE)
 #error \
@@ -235,25 +444,6 @@
 #  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_ \
         __pragma(runtime_checks("c", restore))
 #endif /* _MSC_FULL_VER */
-
-/**
- * Automatic string with the name of the current function
- */
-#if defined(HAVE___FUNC__)
-#define MHD_FUNC_       __func__
-#define MHD_HAVE_MHD_FUNC_ 1
-#elif defined(HAVE___FUNCTION__)
-#define MHD_FUNC_       __FUNCTION__
-#define MHD_HAVE_MHD_FUNC_ 1
-#elif defined(HAVE___PRETTY_FUNCTION__)
-#define MHD_FUNC_       __PRETTY_FUNCTION__
-#define MHD_HAVE_MHD_FUNC_ 1
-#else
-#define MHD_FUNC_       "**name unavailable**"
-#ifdef MHD_HAVE_MHD_FUNC_
-#undef MHD_HAVE_MHD_FUNC_
-#endif /* MHD_HAVE_MHD_FUNC_ */
-#endif
 
 /* Un-define some HAVE_DECL_* macro if they equal zero.
    This should allow safely use #ifdef in the code.
@@ -338,5 +528,14 @@
 #ifndef MHD_DAUTH_DEF_MAX_NC_
 #  define MHD_DAUTH_DEF_MAX_NC_ 1000
 #endif /* ! MHD_DAUTH_DEF_MAX_NC_ */
+
+/* Eclipse parse compatibility */
+#ifdef __CDT_PARSER__
+#  undef MHD_NORETURN_
+#  define MHD_NORETURN_ __attribute__((__noreturn__))
+#endif
+
+/* Avoid interference with third-party headers */
+#undef HAVE_CONFIG_H
 
 #endif /* MHD_SYS_OPTIONS_H */

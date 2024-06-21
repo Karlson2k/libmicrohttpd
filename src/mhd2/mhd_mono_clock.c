@@ -18,60 +18,53 @@
 */
 
 /**
- * @file microhttpd/mhd_mono_clock.h
+ * @file src/mhd2/mhd_mono_clock.h
  * @brief  internal monotonic clock functions implementations
  * @author Karlson2k (Evgeny Grin)
+ *
+ * TODO: update code style
  */
 
 #include "mhd_mono_clock.h"
 
 #if defined(_WIN32) && ! defined(__CYGWIN__)
 /* Prefer native clock source over wrappers */
-#ifdef HAVE_CLOCK_GETTIME
-#undef HAVE_CLOCK_GETTIME
-#endif /* HAVE_CLOCK_GETTIME */
-#ifdef HAVE_GETTIMEOFDAY
-#undef HAVE_GETTIMEOFDAY
-#endif /* HAVE_GETTIMEOFDAY */
+#  ifdef HAVE_CLOCK_GETTIME
+#    undef HAVE_CLOCK_GETTIME
+#  endif /* HAVE_CLOCK_GETTIME */
+#  ifdef HAVE_GETTIMEOFDAY
+#    undef HAVE_GETTIMEOFDAY
+#  endif /* HAVE_GETTIMEOFDAY */
 #endif /* _WIN32 && ! __CYGWIN__ */
 
 #ifdef HAVE_TIME_H
-#include <time.h>
+#  include <time.h>
 #endif /* HAVE_TIME_H */
 #ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
+#  include <sys/time.h>
 #endif /* HAVE_SYS_TIME_H */
 
 #ifdef HAVE_CLOCK_GET_TIME
-#include <mach/mach.h>
+#  include <mach/mach.h>
 /* for host_get_clock_service(), mach_host_self(), mach_task_self() */
-#include <mach/clock.h>
+#  include <mach/clock.h>
 /* for clock_get_time() */
 
-#define _MHD_INVALID_CLOCK_SERV ((clock_serv_t) -2)
+#  define _MHD_INVALID_CLOCK_SERV ((clock_serv_t) -2)
 
 static clock_serv_t mono_clock_service = _MHD_INVALID_CLOCK_SERV;
 #endif /* HAVE_CLOCK_GET_TIME */
 
 #ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-/* Do not include unneeded parts of W32 headers. */
-#define WIN32_LEAN_AND_MEAN 1
-#endif /* !WIN32_LEAN_AND_MEAN */
-#include <windows.h>
-#include <stdint.h>
+#  include <windows.h>
 #endif /* _WIN32 */
 
-#ifndef NULL
-#define NULL ((void*)0)
-#endif /* ! NULL */
-
 #ifdef HAVE_CLOCK_GETTIME
-#ifdef CLOCK_REALTIME
-#define _MHD_UNWANTED_CLOCK CLOCK_REALTIME
-#else  /* !CLOCK_REALTIME */
-#define _MHD_UNWANTED_CLOCK ((clockid_t) -2)
-#endif /* !CLOCK_REALTIME */
+#  ifdef CLOCK_REALTIME
+#    define _MHD_UNWANTED_CLOCK CLOCK_REALTIME
+#  else  /* !CLOCK_REALTIME */
+#    define _MHD_UNWANTED_CLOCK ((clockid_t) -2)
+#  endif /* !CLOCK_REALTIME */
 
 static clockid_t mono_clock_id = _MHD_UNWANTED_CLOCK;
 #endif /* HAVE_CLOCK_GETTIME */
@@ -81,21 +74,24 @@ static clockid_t mono_clock_id = _MHD_UNWANTED_CLOCK;
   defined(HAVE_GETHRTIME)
 static time_t mono_clock_start;
 #endif /* HAVE_CLOCK_GETTIME || HAVE_CLOCK_GET_TIME || HAVE_GETHRTIME */
+
 #if defined(HAVE_TIMESPEC_GET) || defined(HAVE_GETTIMEOFDAY)
 /* The start value shared for timespec_get() and gettimeofday () */
 static time_t gettime_start;
 #endif /* HAVE_TIMESPEC_GET || HAVE_GETTIMEOFDAY */
 static time_t sys_clock_start;
+
 #ifdef HAVE_GETHRTIME
 static hrtime_t hrtime_start;
 #endif /* HAVE_GETHRTIME */
+
 #ifdef _WIN32
-#if _WIN32_WINNT >= 0x0600
+#  if _WIN32_WINNT >= 0x0600
 static uint64_t tick_start;
-#else  /* _WIN32_WINNT < 0x0600 */
+#  else  /* _WIN32_WINNT < 0x0600 */
 static uint64_t perf_freq;
 static uint64_t perf_start;
-#endif /* _WIN32_WINNT < 0x0600 */
+#  endif /* _WIN32_WINNT < 0x0600 */
 #endif /* _WIN32 */
 
 
@@ -137,10 +133,10 @@ enum _MHD_mono_clock_source
 
 
 /**
- * Initialise monotonic seconds and milliseconds counters.
+ * Initialise milliseconds counters.
  */
 void
-MHD_monotonic_sec_counter_init (void)
+MHD_monotonic_msec_counter_init (void)
 {
 #ifdef HAVE_CLOCK_GET_TIME
   mach_timespec_t cur_time;
@@ -360,11 +356,10 @@ MHD_monotonic_sec_counter_init (void)
 
 
 /**
- * Deinitialise monotonic seconds  and milliseconds counters by freeing
- * any allocated resources
+ * Deinitialise milliseconds counters by freeing any allocated resources
  */
 void
-MHD_monotonic_sec_counter_finish (void)
+MHD_monotonic_msec_counter_finish (void)
 {
 #ifdef HAVE_CLOCK_GET_TIME
   if (_MHD_INVALID_CLOCK_SERV != mono_clock_service)
@@ -378,65 +373,13 @@ MHD_monotonic_sec_counter_finish (void)
 
 
 /**
- * Monotonic seconds counter.
- * Tries to be not affected by manually setting the system real time
- * clock or adjustments by NTP synchronization.
- *
- * @return number of seconds from some fixed moment
- */
-time_t
-MHD_monotonic_sec_counter (void)
-{
-#ifdef HAVE_CLOCK_GETTIME
-  struct timespec ts;
-
-  if ( (_MHD_UNWANTED_CLOCK != mono_clock_id) &&
-       (0 == clock_gettime (mono_clock_id,
-                            &ts)) )
-    return ts.tv_sec - mono_clock_start;
-#endif /* HAVE_CLOCK_GETTIME */
-#ifdef HAVE_CLOCK_GET_TIME
-  if (_MHD_INVALID_CLOCK_SERV != mono_clock_service)
-  {
-    mach_timespec_t cur_time;
-
-    if (KERN_SUCCESS == clock_get_time (mono_clock_service,
-                                        &cur_time))
-      return cur_time.tv_sec - mono_clock_start;
-  }
-#endif /* HAVE_CLOCK_GET_TIME */
-#if defined(_WIN32)
-#if _WIN32_WINNT >= 0x0600
-  if (1)
-    return (time_t) (((uint64_t) (GetTickCount64 () - tick_start)) / 1000);
-#else  /* _WIN32_WINNT < 0x0600 */
-  if (0 != perf_freq)
-  {
-    LARGE_INTEGER perf_counter;
-
-    QueryPerformanceCounter (&perf_counter);   /* never fail on XP and later */
-    return (time_t) (((uint64_t) perf_counter.QuadPart - perf_start)
-                     / perf_freq);
-  }
-#endif /* _WIN32_WINNT < 0x0600 */
-#endif /* _WIN32 */
-#ifdef HAVE_GETHRTIME
-  if (1)
-    return (time_t) (((uint64_t) (gethrtime () - hrtime_start)) / 1000000000);
-#endif /* HAVE_GETHRTIME */
-
-  return time (NULL) - sys_clock_start;
-}
-
-
-/**
  * Monotonic milliseconds counter, useful for timeout calculation.
  * Tries to be not affected by manually setting the system real time
  * clock or adjustments by NTP synchronization.
  *
  * @return number of microseconds from some fixed moment
  */
-uint64_t
+uint_fast64_t
 MHD_monotonic_msec_counter (void)
 {
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_TIMESPEC_GET)
@@ -447,8 +390,9 @@ MHD_monotonic_msec_counter (void)
   if ( (_MHD_UNWANTED_CLOCK != mono_clock_id) &&
        (0 == clock_gettime (mono_clock_id,
                             &ts)) )
-    return (uint64_t) (((uint64_t) (ts.tv_sec - mono_clock_start)) * 1000
-                       + (uint64_t) (ts.tv_nsec / 1000000));
+    return (uint_fast64_t) (((uint_fast64_t) (ts.tv_sec - mono_clock_start))
+                            * 1000
+                            + (uint_fast64_t) (ts.tv_nsec / 1000000));
 #endif /* HAVE_CLOCK_GETTIME */
 #ifdef HAVE_CLOCK_GET_TIME
   if (_MHD_INVALID_CLOCK_SERV != mono_clock_service)
@@ -457,22 +401,24 @@ MHD_monotonic_msec_counter (void)
 
     if (KERN_SUCCESS == clock_get_time (mono_clock_service,
                                         &cur_time))
-      return (uint64_t) (((uint64_t) (cur_time.tv_sec - mono_clock_start))
-                         * 1000 + (uint64_t) (cur_time.tv_nsec / 1000000));
+      return (uint_fast64_t) (((uint_fast64_t) (cur_time.tv_sec
+                                                - mono_clock_start))
+                              * 1000 + (uint_fast64_t) (cur_time.tv_nsec
+                                                        / 1000000));
   }
 #endif /* HAVE_CLOCK_GET_TIME */
 #if defined(_WIN32)
 #if _WIN32_WINNT >= 0x0600
   if (1)
-    return (uint64_t) (GetTickCount64 () - tick_start);
+    return (uint_fast64_t) (GetTickCount64 () - tick_start);
 #else  /* _WIN32_WINNT < 0x0600 */
   if (0 != perf_freq)
   {
     LARGE_INTEGER perf_counter;
-    uint64_t num_ticks;
+    uint_fast64_t num_ticks;
 
     QueryPerformanceCounter (&perf_counter);   /* never fail on XP and later */
-    num_ticks = (uint64_t) (perf_counter.QuadPart - perf_start);
+    num_ticks = (uint_fast64_t) (perf_counter.QuadPart - perf_start);
     return ((num_ticks / perf_freq) * 1000)
            + ((num_ticks % perf_freq) / (perf_freq / 1000));
   }
@@ -480,24 +426,25 @@ MHD_monotonic_msec_counter (void)
 #endif /* _WIN32 */
 #ifdef HAVE_GETHRTIME
   if (1)
-    return ((uint64_t) (gethrtime () - hrtime_start)) / 1000000;
+    return ((uint_fast64_t) (gethrtime () - hrtime_start)) / 1000000;
 #endif /* HAVE_GETHRTIME */
 
   /* Fallbacks, affected by system time change */
 #ifdef HAVE_TIMESPEC_GET
   if (TIME_UTC == timespec_get (&ts, TIME_UTC))
-    return (uint64_t) (((uint64_t) (ts.tv_sec - gettime_start)) * 1000
-                       + (uint64_t) (ts.tv_nsec / 1000000));
+    return (uint_fast64_t) (((uint_fast64_t) (ts.tv_sec - gettime_start)) * 1000
+                            + (uint_fast64_t) (ts.tv_nsec / 1000000));
 #elif defined(HAVE_GETTIMEOFDAY)
   if (1)
   {
     struct timeval tv;
     if (0 == gettimeofday (&tv, NULL))
-      return (uint64_t) (((uint64_t) (tv.tv_sec - gettime_start)) * 1000
-                         + (uint64_t) (tv.tv_usec / 1000));
+      return (uint_fast64_t) (((uint_fast64_t) (tv.tv_sec - gettime_start))
+                              * 1000
+                              + (uint_fast64_t) (tv.tv_usec / 1000));
   }
 #endif /* HAVE_GETTIMEOFDAY */
 
   /* The last resort fallback with very low resolution */
-  return (uint64_t) (time (NULL) - sys_clock_start) * 1000;
+  return (uint_fast64_t) (time (NULL) - sys_clock_start) * 1000;
 }

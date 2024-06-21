@@ -32,6 +32,11 @@
 
 #include "mhd_sys_options.h"
 
+#if defined(HAVE_SYS_TYPES_H)
+#  include <sys/types.h> /* ssize_t */
+#elif defined(HAVE_UNISTD_H)
+#  include <unistd.h> /* should provide ssize_t */
+#endif
 #include <stdint.h> /* uint_fast_XXt, int_fast_XXt */
 #if defined(HAVE_STDDEF_H)
 #  include <stddef.h> /* size_t, NULL */
@@ -39,11 +44,6 @@
 #  include <stdlib.h> /* should provide size_t, NULL */
 #else
 #  include <stdio.h> /* should provide size_t, NULL */
-#endif
-#if defined(HAVE_SYS_TYPES_H)
-#  include <sys/types.h> /* ssize_t */
-#elif defined(HAVE_UNISTD_H)
-#  include <unistd.h> /* should provide ssize_t */
 #endif
 #ifdef HAVE_CRTDEFS_H
 #  include <crtdefs.h> /* W32-specific header */
