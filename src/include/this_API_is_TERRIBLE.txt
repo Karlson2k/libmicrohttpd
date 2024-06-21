@@ -34,6 +34,12 @@
 -- Having both MHD_D_O_XXX and (two times of each) MHD_D_OPTION_XXX is
    confusion and not obvious. Even you was confused with similar names and
    used MHD_D_OPTION_XXX as switch values, while it must be MHD_D_O_XXX.
+-- Try to work with simple things: find how to set "epoll" syscall; find how
+   to enable internal thread pool.  The header is written in the way that
+   is very inconvenient to find needed options and the way how to set them.
+-- The API should be self-documenting. This is main goal defined everywhere.
+   This API is **NOT** self-documenting. Three levels of macros for basic
+   things, like "work mode" is not acceptable!
 
 - This design is less secure by nature. The sizes of arrays or memory
   allocations cannot be checked by compilers (like 
