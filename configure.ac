@@ -1321,6 +1321,47 @@ AS_IF([test "x$ac_cv_c_inline" != "xno" && test "x${mhd_cv_cc_kwd_forceinline}" 
   [AC_DEFINE([MHD_static_inline_],[static inline],[Define to prefix which will be used with MHD static inline functions.])]
 )
 
+AC_CACHE_CHECK([for 'unreachable' keywords supported by $CC],[mhd_cv_cc_kwd_unreachable],
+  [
+    mhd_cv_cc_kwd_unreachable="none"
+    for keyword_chk in '__builtin_unreachable()' '__assume(0)' 'unreachable()'
+    do
+      AC_LINK_IFELSE([
+          AC_LANG_SOURCE([[
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>
+#endif
+
+int zero_if_positive(int val)
+{
+  if (val > 0)
+    return 0;
+  ${keyword_chk};
+  return 1;
+}
+
+int main(void)
+{
+  return zero_if_positive(1);
+}
+            ]]
+          )
+        ],
+        [mhd_cv_cc_kwd_unreachable="$keyword_chk"]
+      )
+      test "x${mhd_cv_cc_kwd_unreachable}" != "xnone" && break
+    done
+  ]
+)
+AS_IF([test "x${mhd_cv_cc_kwd_unreachable}" != "xnone"],
+  [
+    AC_DEFINE_UNQUOTED([MHD_UNREACHABLE_],[$mhd_cv_cc_kwd_unreachable],[Define to keyword used to indicate unreachable code paths])
+    AS_IF([test "x${mhd_cv_cc_kwd_unreachable}" = 'xunreachable()'],
+      AC_DEFINE([MHD_UNREACHABLE_NEEDS_STDDEF_H],[$mhd_cv_cc_kwd_unreachable],[Define to '1' if MHD_UNREACHABLE_() requires include of <stddef.h> header])
+    )
+  ]
+)
+
 AC_CHECK_HEADERS([stdalign.h], [], [], [AC_INCLUDES_DEFAULT])
 AC_CACHE_CHECK([[for C11 'alignof()' support]], [[mhd_cv_c_alignof]],
   [AC_COMPILE_IFELSE(
