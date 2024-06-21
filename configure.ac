@@ -3120,6 +3120,35 @@ int main(void)
   [AC_DEFINE([[MHD_USE_GETSOCKNAME]], [[1]], [Define if you have usable `getsockname' function.])]
 )
 
+AS_VAR_IF([[os_is_native_w32]], [["yes"]],[],
+  [
+    MHD_CHECK_FUNC([socketpair],
+      [[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#if defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_UN_H
+#include <sys/un.h>
+#endif
+      ]],
+      [[
+          int arr[2];
+          i][f (0 != socketpair(0, SOCK_STREAM, 0, arr)) return 2;
+          close (arr[1]);
+          close (arr[0]);
+      ]],
+      [],
+      [AS_UNSET([mhd_cv_socketpair_usable])]
+    )
+  ]
+)
+
 AC_CACHE_CHECK([for usable PAGESIZE macro], [mhd_cv_macro_pagesize_usable],
   [
     AC_LINK_IFELSE(
