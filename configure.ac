@@ -509,7 +509,9 @@ AC_CHECK_HEADERS([sys/socket.h sys/select.h netinet/in_systm.h netinet/in.h \
 #endif /* HAVE_INTTYPES_H */
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
-#endif /* HAVE_SYS_SOCKET_H */
+#elif defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
 #ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
 #endif /* HAVE_NETINET_IN_SYSTM_H */
@@ -685,7 +687,9 @@ AC_CHECK_HEADERS([sys/sysctl.h netinet/ip_icmp.h netinet/icmp_var.h], [], [],
 #endif /* HAVE_SYS_SYSCTL_H */
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
-#endif /* HAVE_SYS_SOCKET_H */
+#elif defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
 #ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
 #endif /* HAVE_NETINET_IN_SYSTM_H */
@@ -1743,6 +1747,8 @@ MHD_FIND_LIB([socket],
 #endif
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#elif defined(HAVE_UNISTD_H)
+#include <unistd.h>
 #endif
 #ifdef HAVE_SOCKLIB_H
 #include <sockLib.h>
@@ -2329,6 +2335,8 @@ MHD_FIND_LIB([sendmsg],
 #endif
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#elif defined(HAVE_UNISTD_H)
+#include <unistd.h>
 #endif
 #ifdef HAVE_SOCKLIB_H
 #include <sockLib.h>
@@ -2706,6 +2714,8 @@ AC_CHECK_MEMBERS([struct sockaddr.sa_len, struct sockaddr_storage.ss_len,
 #endif
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#elif defined(HAVE_UNISTD_H)
+#include <unistd.h>
 #endif
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -3229,6 +3239,8 @@ AC_CHECK_DECL([SOCK_NONBLOCK], [AC_DEFINE([HAVE_SOCK_NONBLOCK], [1], [SOCK_NONBL
 #  include <sys/socket.h>
 #elif defined(HAVE_WINSOCK2_H)
 #  include <winsock2.h>
+#elif defined(HAVE_UNISTD_H)
+#  include <unistd.h>
 #endif
   ]]
 )
@@ -3310,11 +3322,13 @@ AC_CACHE_CHECK([for IPv6],[mhd_cv_have_inet6],
   [
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
-#ifdef HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#elif defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
 #endif
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
@@ -3324,9 +3338,8 @@ AC_CACHE_CHECK([for IPv6],[mhd_cv_have_inet6],
 #endif
           ]], [[
   int af=AF_INET6;
-  int pf=PF_INET6;
   struct sockaddr_in6 sa;
-  printf("%d %d %p\n", af, pf, (void*) &sa);
+  printf("%d %p\n", (int) af, (void*) &sa);
           ]]
         )
       ],
@@ -3371,7 +3384,9 @@ MHD_CHECK_FUNC([[sysctl]], [[
 #endif /* HAVE_SYS_SYSCTL_H */
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
-#endif /* HAVE_SYS_SOCKET_H */
+#elif defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
 #ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
 #endif /* HAVE_NETINET_IN_SYSTM_H */
@@ -3677,8 +3692,15 @@ AS_VAR_IF([[found_sendfile]], [["no"]],
    AC_LINK_IFELSE(
      [AC_LANG_PROGRAM(
        [[
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
 #include <sys/uio.h>
 
 static void empty_func(void)
@@ -3718,8 +3740,15 @@ AS_VAR_IF([[found_sendfile]], [["no"]],
    AC_LINK_IFELSE(
      [AC_LANG_PROGRAM(
        [[
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
 #include <sys/uio.h>
 
 static void empty_func(void)
@@ -3761,8 +3790,15 @@ AS_VAR_IF([[found_sendfile]], [["no"]],
    AC_LINK_IFELSE(
      [AC_LANG_PROGRAM(
        [[
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
 #include <sys/sendfile.h>
 
 static void empty_func(void)
@@ -3793,8 +3829,15 @@ ssize_t sendfile(int out_fd, int in_fd,
        AC_MSG_RESULT([[yes]])
        MHD_CHECK_FUNC([sendfile64],
          [[
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
 #include <sys/sendfile.h>
          ]],
          [[
