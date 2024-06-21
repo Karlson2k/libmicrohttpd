@@ -1229,6 +1229,19 @@ int main(void)
   ]
 )
 
+AS_VAR_SET_IF([ac_cv_c_restrict],[],
+  [
+    # "cache" result in advance if it is known from the compiler test
+    AS_CASE([$ac_prog_cc_stdc],
+      [c89],[:],
+      [c??],[ac_cv_c_restrict="restrict"]
+    )
+  ]
+)
+AC_C_RESTRICT
+AS_VAR_IF([ac_cv_c_restrict],["no"],[],
+  [AC_DEFINE([HAVE_RESTRICT],[1],[Define to '1' if your compiler supports 'restrict' keyword])]
+)
 AC_C_INLINE
 AS_UNSET([errattr_CFLAGS])
 CFLAGS="${user_CFLAGS}"
