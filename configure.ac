@@ -3928,6 +3928,70 @@ int main(void) {return test_intern_func();}
     )
   ]
 )
+CFLAGS="${CFLAGS_ac} ${user_CFLAGS} ${errattr_CFLAGS}"
+AC_CACHE_CHECK([whether $CC supports __attribute__((enum_extensibility (closed)))],[mhd_cv_cc_attr_enum_extns_closed],
+  [
+    SAVE_ac_c_werror_flag="$ac_c_werror_flag"
+    ac_c_werror_flag="yes"
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+enum __attribute__((enum_extensibility (closed))) Test_Enum
+{Val_A = 0, Val_B = 3};
+
+int main(void)
+{
+  enum Test_Enum var = Val_A;
+  return (var != Val_B) ? 0 : 3;
+}
+          ]])
+      ],
+      [mhd_cv_cc_attr_enum_extns_closed="yes"],[mhd_cv_cc_attr_enum_extns_closed="no"]
+    )
+    ac_c_werror_flag="$SAVE_ac_c_werror_flag"
+    AS_UNSET([SAVE_ac_c_werror_flag])
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_enum_extns_closed],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_ENUM_EXTNS_CLOSED],[1],
+      [Define to '1' if your compiler supports __attribute__((enum_extensibility (closed)))]
+    )
+  ]
+)
+AC_CACHE_CHECK([whether $CC supports __attribute__((flag_enum))],[mhd_cv_cc_attr_flag_enum],
+  [
+    SAVE_ac_c_werror_flag="$ac_c_werror_flag"
+    ac_c_werror_flag="yes"
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#ifdef HAVE_ATTR_ENUM_EXTNS_CLOSED
+#define ATTR_EXTNS_CLOSED_IF_SUPPORTED __attribute__((enum_extensibility (closed)))
+#else
+#define ATTR_EXTNS_CLOSED_IF_SUPPORTED /* empty */
+#endif
+enum ATTR_EXTNS_CLOSED_IF_SUPPORTED __attribute__((flag_enum)) Test_Enum
+{Flag_A = 1 << 0, Flag_B = 1 << 1, Flag_C = 1 << 2, Flag_D = 1 << 3};
+
+int main(void)
+{
+  enum Test_Enum var = Flag_A;
+  var |= Flag_C;
+  var = var | Flag_D | Flag_A;
+  return (var != Flag_B) ? 0 : 3;
+}
+          ]])
+      ],
+      [mhd_cv_cc_attr_flag_enum="yes"],[mhd_cv_cc_attr_flag_enum="no"]
+    )
+    ac_c_werror_flag="$SAVE_ac_c_werror_flag"
+    AS_UNSET([SAVE_ac_c_werror_flag])
+  ]
+)
+AS_VAR_IF([mhd_cv_cc_attr_flag_enum],["yes"],
+  [
+    AC_DEFINE([HAVE_ATTR_FLAG_ENUM],[1],
+      [Define to '1' if your compiler supports __attribute__((flag_enum))]
+    )
+  ]
+)
 CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
 
 # libcurl (required for testing)
