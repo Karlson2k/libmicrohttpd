@@ -1959,8 +1959,8 @@ MHD_FN_CONST_;
 typedef const struct MHD_Action *
 (MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_NONNULL_ (3)
  *MHD_RequestCallback)(void *cls,
-                       struct MHD_Request *request,
-                       const struct MHD_String *path,
+                       struct MHD_Request *MHD_RESTRICT request,
+                       const struct MHD_String *MHD_RESTRICT path,
                        enum MHD_HTTP_Method method,
                        uint_fast64_t upload_size);
 
@@ -2243,8 +2243,8 @@ typedef MHD_APP_SOCKET_CNTX_TYPE *
  */
 MHD_EXTERN_ void
 MHD_daemon_event_update (
-  struct MHD_Daemon *daemon,
-  struct MHD_EventUpdateContext *ecb_cntx,
+  struct MHD_Daemon *MHD_RESTRICT daemon,
+  struct MHD_EventUpdateContext *MHD_RESTRICT ecb_cntx,
   enum MHD_FdState fd_current_state)
 MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2);
 
@@ -2268,8 +2268,8 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2);
  * @ingroup event
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_deamon_process_reg_events (struct MHD_Daemon *daemon,
-                               uint_fast64_t *next_max_wait)
+MHD_deamon_process_reg_events (struct MHD_Daemon *MHD_RESTRICT daemon,
+                               uint_fast64_t *MHD_RESTRICT next_max_wait)
 MHD_FN_PAR_NONNULL_ (1);
 
 /* ********************* daemon options ************** */
@@ -3056,8 +3056,8 @@ MHD_connection_set_psk (
 typedef void
 (*MHD_PskServerCredentialsCallback)(
   void *cls,
-  const struct MHD_Connection *connection,
-  const struct MHD_String *username,
+  const struct MHD_Connection *MHD_RESTRICT connection,
+  const struct MHD_String *MHD_RESTRICT username,
   struct MHD_ServerCredentialsContext *mscc);
 
 
@@ -4086,9 +4086,10 @@ MHD_R_OPTION_TERMINATION_CALLBACK (
  *         error code otherwise
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_options (struct MHD_Daemon *daemon,
-                        const struct MHD_DaemonOptionAndValue *options,
-                        size_t options_max_num)
+MHD_daemon_set_options (
+  struct MHD_Daemon *MHD_RESTRICT daemon,
+  const struct MHD_DaemonOptionAndValue *MHD_RESTRICT options,
+  size_t options_max_num)
 MHD_FN_PAR_NONNULL_ALL_;
 
 
@@ -4258,7 +4259,7 @@ MHD_FN_PAR_NONNULL_ (1);
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_add_connection (struct MHD_Daemon *daemon,
+MHD_daemon_add_connection (struct MHD_Daemon *MHD_RESTRICT daemon,
                            MHD_Socket client_socket,
                            size_t addrlen,
                            const struct sockaddr *addr,
@@ -4426,8 +4427,8 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_connection_set_options (
-  struct MHD_Connection *connection,
-  const struct MHD_ConnectionOptionAndValue *options,
+  struct MHD_Connection *MHD_RESTRICT connection,
+  const struct MHD_ConnectionOptionAndValue *MHD_RESTRICT options,
   size_t options_max_num)
 MHD_FN_PAR_NONNULL_ALL_;
 
@@ -4676,9 +4677,9 @@ MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_OUT_SIZE_ (4,3);
  * @ingroup request
  */
 MHD_EXTERN_ const struct MHD_String *
-MHD_request_get_value (struct MHD_Request *request,
+MHD_request_get_value (struct MHD_Request *MHD_RESTRICT request,
                        enum MHD_ValueKind kind,
-                       const char *key)
+                       const char *MHD_RESTRICT key)
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
 
@@ -5004,8 +5005,8 @@ MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_;
  * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_Action *
-MHD_action_from_response (struct MHD_Request *request,
-                          struct MHD_Response *response)
+MHD_action_from_response (struct MHD_Request *MHD_RESTRICT request,
+                          struct MHD_Response *MHD_RESTRICT response)
 MHD_FN_PAR_NONNULL_(1);
 
 
@@ -5037,9 +5038,10 @@ MHD_FN_PAR_NONNULL_(1);
  *         error code otherwise
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_response_set_options (struct MHD_Response *response,
-                          const struct MHD_ResponseOptionAndValue *options,
-                          size_t options_max_num)
+MHD_response_set_options (
+  struct MHD_Response *MHD_RESTRICT response,
+  const struct MHD_ResponseOptionAndValue *MHD_RESTRICT options,
+  size_t options_max_num)
 MHD_FN_PAR_NONNULL_ALL_;
 
 
@@ -5192,7 +5194,7 @@ MHD_DCC_action_continue_zc (
   struct MHD_DynamicContentCreatorContext *ctx,
   size_t data_size,
   const struct MHD_DynContentZCIoVec *iov_data,
-  const char *chunk_ext)
+  const char *MHD_RESTRICT chunk_ext)
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_CSTR_ (4);
 
@@ -5217,7 +5219,7 @@ MHD_EXTERN_ const struct MHD_DynamicContentCreatorAction *
 MHD_DCC_action_finished_with_footer (
   struct MHD_DynamicContentCreatorContext *ctx,
   size_t num_footers,
-  const struct MHD_NameValueCStr *footers)
+  const struct MHD_NameValueCStr *MHD_RESTRICT footers)
 MHD_FN_PAR_NONNULL_ (1);
 
 
@@ -5483,7 +5485,7 @@ MHD_FN_PAR_NONNULL_ (1);
  * @ingroup response
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_response_add_header (struct MHD_Response *response,
+MHD_response_add_header (struct MHD_Response *MHD_RESTRICT response,
                          const char *name,
                          const char *value)
 MHD_FN_PAR_NONNULL_ (1)
@@ -5503,9 +5505,9 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
  * @ingroup response
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_response_add_predef_header (struct MHD_Response *response,
+MHD_response_add_predef_header (struct MHD_Response *MHD_RESTRICT response,
                                 enum MHD_PredefinedHeader stk,
-                                const char *content)
+                                const char *MHD_RESTRICT content)
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
 
@@ -5555,8 +5557,8 @@ MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_;
  * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_UploadAction *
-MHD_upload_action_from_response (struct MHD_Request *request,
-                                 struct MHD_Response *response)
+MHD_upload_action_from_response (struct MHD_Request *MHD_RESTRICT request,
+                                 struct MHD_Response *MHD_RESTRICT response)
 MHD_FN_PAR_NONNULL_(1);
 
 /**
@@ -5976,11 +5978,11 @@ MHD_FN_PAR_NONNULL_ (1);
  */
 typedef void
 (*MHD_UpgradeHandler)(void *cls,
-                      struct MHD_Request *request,
+                      struct MHD_Request *MHD_RESTRICT request,
                       size_t extra_in_size,
                       const char *extra_in,
                       MHD_Socket sock,
-                      struct MHD_UpgradeHandle *urh);
+                      struct MHD_UpgradeHandle *MHD_RESTRICT urh);
 
 
 /**
@@ -6327,7 +6329,7 @@ MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo algo,
                                const char *username,
                                const char *realm,
                                size_t bin_buf_size,
-                               void *userhash_bin)
+                               void *MHD_RESTRICT userhash_bin)
 MHD_FN_PURE_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_CSTR_ (2)
 MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_OUT_SIZE_ (5,4);
 

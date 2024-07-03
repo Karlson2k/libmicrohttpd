@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2015-2023 Karlson2k (Evgeny Grin)
+  Copyright (C) 2015-2024 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,7 @@
 */
 
 /**
- * @file microhttpd/mhd_str.h
+ * @file src/mhd2/mhd_str.h
  * @brief  Header for string manipulating helpers
  * @author Karlson2k (Evgeny Grin)
  */
@@ -26,28 +26,10 @@
 #ifndef MHD_STR_H
 #define MHD_STR_H 1
 
-#include "mhd_options.h"
-#include <stdint.h>
-#ifdef HAVE_STDDEF_H
-#include <stddef.h>
-#endif /* HAVE_STDDEF_H */
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif /* HAVE_SYS_TYPES_H */
-#ifdef HAVE_STDBOOL_H
-#include <stdbool.h>
-#endif /* HAVE_STDBOOL_H */
-
-#include "mhd_str_types.h"
-
-#if defined(_MSC_FULL_VER) && ! defined(_SSIZE_T_DEFINED)
-#define _SSIZE_T_DEFINED
-typedef intptr_t ssize_t;
-#endif /* !_SSIZE_T_DEFINED */
-
-#ifdef MHD_FAVOR_SMALL_CODE
-#include "mhd_limits.h"
-#endif /* MHD_FAVOR_SMALL_CODE */
+#include "mhd_sys_options.h"
+#include "sys_base_types.h"
+#include "sys_bool_type.h"
+#include "mhd_str_macros.h"
 
 /*
  * Block of functions/macros that use US-ASCII charset as required by HTTP
@@ -63,13 +45,13 @@ typedef intptr_t ssize_t;
  * @return non-zero if two strings are equal, zero otherwise.
  */
 int
-MHD_str_equal_caseless_ (const char *str1,
-                         const char *str2);
+mhd_str_equal_caseless (const char *str1,
+                        const char *str2);
 
 #else  /* MHD_FAVOR_SMALL_CODE */
-/* Reuse MHD_str_equal_caseless_n_() to reduce size */
-#define MHD_str_equal_caseless_(s1,s2) MHD_str_equal_caseless_n_ ((s1),(s2), \
-                                                                  SIZE_MAX)
+/* Reuse mhd_str_equal_caseless_n() to reduce size */
+#define mhd_str_equal_caseless(s1,s2) \
+        mhd_str_equal_caseless_n ((s1),(s2), SIZE_MAX)
 #endif /* MHD_FAVOR_SMALL_CODE */
 
 
@@ -84,9 +66,9 @@ MHD_str_equal_caseless_ (const char *str1,
  * @return non-zero if two strings are equal, zero otherwise.
  */
 int
-MHD_str_equal_caseless_n_ (const char *const str1,
-                           const char *const str2,
-                           size_t maxlen);
+mhd_str_equal_caseless_n (const char *const str1,
+                          const char *const str2,
+                          size_t maxlen);
 
 
 /**
@@ -100,9 +82,9 @@ MHD_str_equal_caseless_n_ (const char *const str1,
  * @return non-zero if @a len bytes are equal, zero otherwise.
  */
 bool
-MHD_str_equal_caseless_bin_n_ (const char *const str1,
-                               const char *const str2,
-                               size_t len);
+mhd_str_equal_caseless_bin_n (const char *const str1,
+                              const char *const str2,
+                              size_t len);
 
 
 /**
@@ -119,9 +101,9 @@ MHD_str_equal_caseless_bin_n_ (const char *const str1,
  * @param len number of characters to compare
  * @return non-zero if @a len bytes are equal, zero otherwise.
  */
-#define MHD_str_equal_caseless_s_bin_n_(a,s,l) \
-  ((MHD_STATICSTR_LEN_(a) == (l)) \
-   && MHD_str_equal_caseless_bin_n_(a,s,l))
+#define mhd_str_equal_caseless_s_bin_n(a,s,l) \
+        ((mhd_SSTR_LEN (a) == (l)) \
+         && mhd_str_equal_caseless_bin_n (a,s,l))
 
 /**
  * Check whether @a str has case-insensitive @a token.
@@ -137,9 +119,9 @@ MHD_str_equal_caseless_bin_n_ (const char *const str1,
  * @return non-zero if two strings are equal, zero otherwise.
  */
 bool
-MHD_str_has_token_caseless_ (const char *str,
-                             const char *const token,
-                             size_t token_len);
+mhd_str_has_token_caseless (const char *str,
+                            const char *const token,
+                            size_t token_len);
 
 /**
  * Check whether @a str has case-insensitive static @a tkn.
@@ -151,8 +133,8 @@ MHD_str_has_token_caseless_ (const char *str,
  * @param tkn the static string of token to find
  * @return non-zero if two strings are equal, zero otherwise.
  */
-#define MHD_str_has_s_token_caseless_(str,tkn) \
-  MHD_str_has_token_caseless_ ((str),(tkn),MHD_STATICSTR_LEN_ (tkn))
+#define mhd_str_has_s_token_caseless(str,tkn) \
+        mhd_str_has_token_caseless ((str),(tkn),mhd_SSTR_LEN (tkn))
 
 
 /**
@@ -184,12 +166,12 @@ MHD_str_has_token_caseless_ (const char *str,
  *         'false' otherwise.
  */
 bool
-MHD_str_remove_token_caseless_ (const char *str,
-                                size_t str_len,
-                                const char *const token,
-                                const size_t token_len,
-                                char *buf,
-                                ssize_t *buf_size);
+mhd_str_remove_token_caseless (const char *str,
+                               size_t str_len,
+                               const char *const token,
+                               const size_t token_len,
+                               char *buf,
+                               ssize_t *buf_size);
 
 
 /**
@@ -216,114 +198,114 @@ MHD_str_remove_token_caseless_ (const char *str,
  *         'false' otherwise.
  */
 bool
-MHD_str_remove_tokens_caseless_ (char *str,
-                                 size_t *str_len,
-                                 const char *const tokens,
-                                 const size_t tokens_len);
+mhd_str_remove_tokens_caseless (char *str,
+                                size_t *str_len,
+                                const char *const tokens,
+                                const size_t tokens_len);
 
 
 #ifndef MHD_FAVOR_SMALL_CODE
 /* Use individual function for each case to improve speed */
 
 /**
- * Convert decimal US-ASCII digits in string to number in uint64_t.
+ * Convert decimal US-ASCII digits in string to number in uint_fast64_t.
  * Conversion stopped at first non-digit character.
  *
  * @param str string to convert
- * @param[out] out_val pointer to uint64_t to store result of conversion
+ * @param[out] out_val pointer to uint_fast64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint64_t or @a out_val is NULL
+ *         then possible to store in uint_fast64_t or @a out_val is NULL
  */
 size_t
-MHD_str_to_uint64_ (const char *str,
-                    uint64_t *out_val);
+mhd_str_to_uint64 (const char *str,
+                   uint_fast64_t *out_val);
 
 /**
  * Convert not more then @a maxlen decimal US-ASCII digits in string to
- * number in uint64_t.
+ * number in uint_fast64_t.
  * Conversion stopped at first non-digit character or after @a maxlen
  * digits.
  *
  * @param str string to convert
  * @param maxlen maximum number of characters to process
- * @param[out] out_val pointer to uint64_t to store result of conversion
+ * @param[out] out_val pointer to uint_fast64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint64_t or @a out_val is NULL
+ *         then possible to store in uint_fast64_t or @a out_val is NULL
  */
 size_t
-MHD_str_to_uint64_n_ (const char *str,
+mhd_str_to_uint64_n (const char *str,
+                     size_t maxlen,
+                     uint_fast64_t *out_val);
+
+
+/**
+ * Convert hexadecimal US-ASCII digits in string to number in uint_fast32_t.
+ * Conversion stopped at first non-digit character.
+ *
+ * @param str string to convert
+ * @param[out] out_val pointer to uint_fast32_t to store result of conversion
+ * @return non-zero number of characters processed on succeed,
+ *         zero if no digit is found, resulting value is larger
+ *         then possible to store in uint_fast32_t or @a out_val is NULL
+ */
+size_t
+mhd_strx_to_uint32 (const char *str,
+                    uint_fast32_t *out_val);
+
+
+/**
+ * Convert not more then @a maxlen hexadecimal US-ASCII digits in string
+ * to number in uint_fast32_t.
+ * Conversion stopped at first non-digit character or after @a maxlen
+ * digits.
+ *
+ * @param str string to convert
+ * @param maxlen maximum number of characters to process
+ * @param[out] out_val pointer to uint_fast32_t to store result of conversion
+ * @return non-zero number of characters processed on succeed,
+ *         zero if no digit is found, resulting value is larger
+ *         then possible to store in uint_fast32_t or @a out_val is NULL
+ */
+size_t
+mhd_strx_to_uint32_n (const char *str,
                       size_t maxlen,
-                      uint64_t *out_val);
+                      uint_fast32_t *out_val);
 
 
 /**
- * Convert hexadecimal US-ASCII digits in string to number in uint32_t.
+ * Convert hexadecimal US-ASCII digits in string to number in uint_fast64_t.
  * Conversion stopped at first non-digit character.
  *
  * @param str string to convert
- * @param[out] out_val pointer to uint32_t to store result of conversion
+ * @param[out] out_val pointer to uint_fast64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint32_t or @a out_val is NULL
+ *         then possible to store in uint_fast64_t or @a out_val is NULL
  */
 size_t
-MHD_strx_to_uint32_ (const char *str,
-                     uint32_t *out_val);
+mhd_strx_to_uint64 (const char *str,
+                    uint_fast64_t *out_val);
 
 
 /**
  * Convert not more then @a maxlen hexadecimal US-ASCII digits in string
- * to number in uint32_t.
+ * to number in uint_fast64_t.
  * Conversion stopped at first non-digit character or after @a maxlen
  * digits.
  *
  * @param str string to convert
  * @param maxlen maximum number of characters to process
- * @param[out] out_val pointer to uint32_t to store result of conversion
+ * @param[out] out_val pointer to uint_fast64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint32_t or @a out_val is NULL
+ *         then possible to store in uint_fast64_t or @a out_val is NULL
  */
 size_t
-MHD_strx_to_uint32_n_ (const char *str,
-                       size_t maxlen,
-                       uint32_t *out_val);
-
-
-/**
- * Convert hexadecimal US-ASCII digits in string to number in uint64_t.
- * Conversion stopped at first non-digit character.
- *
- * @param str string to convert
- * @param[out] out_val pointer to uint64_t to store result of conversion
- * @return non-zero number of characters processed on succeed,
- *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint64_t or @a out_val is NULL
- */
-size_t
-MHD_strx_to_uint64_ (const char *str,
-                     uint64_t *out_val);
-
-
-/**
- * Convert not more then @a maxlen hexadecimal US-ASCII digits in string
- * to number in uint64_t.
- * Conversion stopped at first non-digit character or after @a maxlen
- * digits.
- *
- * @param str string to convert
- * @param maxlen maximum number of characters to process
- * @param[out] out_val pointer to uint64_t to store result of conversion
- * @return non-zero number of characters processed on succeed,
- *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint64_t or @a out_val is NULL
- */
-size_t
-MHD_strx_to_uint64_n_ (const char *str,
-                       size_t maxlen,
-                       uint64_t *out_val);
+mhd_strx_to_uint64_n (const char *str,
+                      size_t maxlen,
+                      uint_fast64_t *out_val);
 
 #else  /* MHD_FAVOR_SMALL_CODE */
 /* Use one universal function and macros to reduce size */
@@ -346,50 +328,58 @@ MHD_strx_to_uint64_n_ (const char *str,
  *         then @a max_val, @a val_size is not 4/8 or @a out_val is NULL
  */
 size_t
-MHD_str_to_uvalue_n_ (const char *str,
-                      size_t maxlen,
-                      void *out_val,
-                      size_t val_size,
-                      uint64_t max_val,
-                      unsigned int base);
+mhd_str_to_uvalue_n (const char *str,
+                     size_t maxlen,
+                     void *out_val,
+                     size_t val_size,
+                     uint_fast64_t max_val,
+                     unsigned int base);
 
-#define MHD_str_to_uint64_(s,ov) MHD_str_to_uvalue_n_ ((s),SIZE_MAX,(ov), \
-                                                       sizeof(uint64_t), \
-                                                       UINT64_MAX,10)
+#define mhd_str_to_uint64(s,ov) \
+        mhd_str_to_uvalue_n ((s),SIZE_MAX,(ov), \
+                             sizeof(uint_fast64_t), \
+                             UINT64_MAX,10)
 
-#define MHD_str_to_uint64_n_(s,ml,ov) MHD_str_to_uvalue_n_ ((s),(ml),(ov), \
-                                                            sizeof(uint64_t), \
-                                                            UINT64_MAX,10)
+#define mhd_str_to_uint64_n(s,ml,ov) \
+        mhd_str_to_uvalue_n ((s),(ml),(ov), \
+                             sizeof(uint_fast64_t), \
+                             UINT64_MAX,10)
 
-#define MHD_strx_to_sizet_(s,ov) MHD_str_to_uvalue_n_ ((s),SIZE_MAX,(ov), \
-                                                       sizeof(size_t),SIZE_MAX, \
-                                                       16)
+#define mhd_strx_to_sizet(s,ov) \
+        mhd_str_to_uvalue_n ((s),SIZE_MAX,(ov), \
+                             sizeof(size_t),SIZE_MAX, \
+                             16)
 
-#define MHD_strx_to_sizet_n_(s,ml,ov) MHD_str_to_uvalue_n_ ((s),(ml),(ov), \
-                                                            sizeof(size_t), \
-                                                            SIZE_MAX,16)
+#define mhd_strx_to_sizet_n(s,ml,ov) \
+        mhd_str_to_uvalue_n ((s),(ml),(ov), \
+                             sizeof(size_t), \
+                             SIZE_MAX,16)
 
-#define MHD_strx_to_uint32_(s,ov) MHD_str_to_uvalue_n_ ((s),SIZE_MAX,(ov), \
-                                                        sizeof(uint32_t), \
-                                                        UINT32_MAX,16)
+#define mhd_strx_to_uint32(s,ov) \
+        mhd_str_to_uvalue_n ((s),SIZE_MAX,(ov), \
+                             sizeof(uint_fast32_t), \
+                             UINT32_MAX,16)
 
-#define MHD_strx_to_uint32_n_(s,ml,ov) MHD_str_to_uvalue_n_ ((s),(ml),(ov), \
-                                                             sizeof(uint32_t), \
-                                                             UINT32_MAX,16)
+#define mhd_strx_to_uint32_n(s,ml,ov) \
+        mhd_str_to_uvalue_n ((s),(ml),(ov), \
+                             sizeof(uint_fast32_t), \
+                             UINT32_MAX,16)
 
-#define MHD_strx_to_uint64_(s,ov) MHD_str_to_uvalue_n_ ((s),SIZE_MAX,(ov), \
-                                                        sizeof(uint64_t), \
-                                                        UINT64_MAX,16)
+#define mhd_strx_to_uint64(s,ov) \
+        mhd_str_to_uvalue_n ((s),SIZE_MAX,(ov), \
+                             sizeof(uint_fast64_t), \
+                             UINT64_MAX,16)
 
-#define MHD_strx_to_uint64_n_(s,ml,ov) MHD_str_to_uvalue_n_ ((s),(ml),(ov), \
-                                                             sizeof(uint64_t), \
-                                                             UINT64_MAX,16)
+#define mhd_strx_to_uint64_n(s,ml,ov) \
+        mhd_str_to_uvalue_n ((s),(ml),(ov), \
+                             sizeof(uint_fast64_t), \
+                             UINT64_MAX,16)
 
 #endif /* MHD_FAVOR_SMALL_CODE */
 
 
 /**
- * Convert uint32_t value to hexdecimal US-ASCII string.
+ * Convert uint_fast32_t value to hexdecimal US-ASCII string.
  * @note: result is NOT zero-terminated.
  * @param val the value to convert
  * @param buf the buffer to result to
@@ -398,14 +388,14 @@ MHD_str_to_uvalue_n_ (const char *str,
  *         zero if buffer is too small (buffer may be modified).
  */
 size_t
-MHD_uint32_to_strx (uint32_t val,
+mhd_uint32_to_strx (uint_fast32_t val,
                     char *buf,
                     size_t buf_size);
 
 
 #ifndef MHD_FAVOR_SMALL_CODE
 /**
- * Convert uint16_t value to decimal US-ASCII string.
+ * Convert uint_fast16_t value to decimal US-ASCII string.
  * @note: result is NOT zero-terminated.
  * @param val the value to convert
  * @param buf the buffer to result to
@@ -414,17 +404,17 @@ MHD_uint32_to_strx (uint32_t val,
  *         zero if buffer is too small (buffer may be modified).
  */
 size_t
-MHD_uint16_to_str (uint16_t val,
+mhd_uint16_to_str (uint_fast16_t val,
                    char *buf,
                    size_t buf_size);
 
 #else  /* MHD_FAVOR_SMALL_CODE */
-#define MHD_uint16_to_str(v,b,s) MHD_uint64_to_str(v,b,s)
+#define MHD_uint16_to_str(v,b,s) MHD_uint64_to_str (v,b,s)
 #endif /* MHD_FAVOR_SMALL_CODE */
 
 
 /**
- * Convert uint64_t value to decimal US-ASCII string.
+ * Convert uint_fast64_t value to decimal US-ASCII string.
  * @note: result is NOT zero-terminated.
  * @param val the value to convert
  * @param buf the buffer to result to
@@ -433,13 +423,13 @@ MHD_uint16_to_str (uint16_t val,
  *         zero if buffer is too small (buffer may be modified).
  */
 size_t
-MHD_uint64_to_str (uint64_t val,
+mhd_uint64_to_str (uint_fast64_t val,
                    char *buf,
                    size_t buf_size);
 
 
 /**
- * Convert uint16_t value to decimal US-ASCII string padded with
+ * Convert uint_fast16_t value to decimal US-ASCII string padded with
  * zeros on the left side.
  *
  * @note: result is NOT zero-terminated.
@@ -454,7 +444,7 @@ MHD_uint64_to_str (uint64_t val,
  *         zero if buffer is too small (buffer may be modified).
  */
 size_t
-MHD_uint8_to_str_pad (uint8_t val,
+mhd_uint8_to_str_pad (uint8_t val,
                       uint8_t min_digits,
                       char *buf,
                       size_t buf_size);
@@ -470,7 +460,7 @@ MHD_uint8_to_str_pad (uint8_t val,
  * @return The number of characters written to the output buffer.
  */
 size_t
-MHD_bin_to_hex (const void *bin,
+mhd_bin_to_hex (const void *bin,
                 size_t size,
                 char *hex);
 
@@ -484,7 +474,7 @@ MHD_bin_to_hex (const void *bin,
  *         not including terminating zero.
  */
 size_t
-MHD_bin_to_hex_z (const void *bin,
+mhd_bin_to_hex_z (const void *bin,
                   size_t size,
                   char *hex);
 
@@ -502,7 +492,7 @@ MHD_bin_to_hex_z (const void *bin,
  *         zero if found any character which is not hexadecimal digits
  */
 size_t
-MHD_hex_to_bin (const char *hex,
+mhd_hex_to_bin (const char *hex,
                 size_t len,
                 void *bin);
 
@@ -525,7 +515,7 @@ MHD_hex_to_bin (const char *hex,
  *         small to hold the result
  */
 size_t
-MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
+mhd_str_pct_decode_strict_n_ (const char *pct_encoded,
                               size_t pct_encoded_len,
                               char *decoded,
                               size_t buf_size);
@@ -553,7 +543,7 @@ MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
  *         zero if output buffer is too small to hold the result
  */
 size_t
-MHD_str_pct_decode_lenient_n_ (const char *pct_encoded,
+mhd_str_pct_decode_lenient_n_ (const char *pct_encoded,
                                size_t pct_encoded_len,
                                char *decoded,
                                size_t buf_size,
@@ -620,7 +610,7 @@ MHD_str_pct_decode_in_place_lenient_ (char *str,
  *         first string.
  */
 bool
-MHD_str_equal_quoted_bin_n (const char *quoted,
+mhd_str_equal_quoted_bin_n (const char *quoted,
                             size_t quoted_len,
                             const char *unquoted,
                             size_t unquoted_len);
@@ -642,7 +632,7 @@ MHD_str_equal_quoted_bin_n (const char *quoted,
  *         first string.
  */
 #define MHD_str_equal_quoted_s_bin_n(q,l,u) \
-    MHD_str_equal_quoted_bin_n(q,l,u,MHD_STATICSTR_LEN_(u))
+        MHD_str_equal_quoted_bin_n (q,l,u,mhd_SSTR_LEN (u))
 
 /**
  * Check two strings for equality, "unquoting" the first string from quoted
@@ -665,7 +655,7 @@ MHD_str_equal_quoted_bin_n (const char *quoted,
  *         first string.
  */
 bool
-MHD_str_equal_caseless_quoted_bin_n (const char *quoted,
+mhd_str_equal_caseless_quoted_bin_n (const char *quoted,
                                      size_t quoted_len,
                                      const char *unquoted,
                                      size_t unquoted_len);
@@ -688,7 +678,7 @@ MHD_str_equal_caseless_quoted_bin_n (const char *quoted,
  *         first string.
  */
 #define MHD_str_equal_caseless_quoted_s_bin_n(q,l,u) \
-    MHD_str_equal_caseless_quoted_bin_n(q,l,u,MHD_STATICSTR_LEN_(u))
+        MHD_str_equal_caseless_quoted_bin_n (q,l,u,mhd_SSTR_LEN (u))
 
 /**
  * Convert string from quoted to unquoted form as specified by
@@ -706,7 +696,7 @@ MHD_str_equal_caseless_quoted_bin_n (const char *quoted,
  *         @a quoted_len is zero).
  */
 size_t
-MHD_str_unquote (const char *quoted,
+mhd_str_unquote (const char *quoted,
                  size_t quoted_len,
                  char *result);
 
@@ -730,7 +720,7 @@ MHD_str_unquote (const char *quoted,
  *         string is larger than @a buf_size.
  */
 size_t
-MHD_str_quote (const char *unquoted,
+mhd_str_quote (const char *unquoted,
                size_t unquoted_len,
                char *result,
                size_t buf_size);
@@ -767,7 +757,7 @@ MHD_str_quote (const char *unquoted,
  *         (base64_len / 4 * 3), depending on the number of padding characters.
  */
 size_t
-MHD_base64_to_bin_n (const char *base64,
+mhd_base64_to_bin_n (const char *base64,
                      size_t base64_len,
                      void *bin,
                      size_t bin_size);

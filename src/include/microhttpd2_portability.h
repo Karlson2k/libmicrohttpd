@@ -312,6 +312,23 @@ typedef SOCKET MHD_Socket;
 #  endif
 #endif /* MHD_INLINE */
 
+#if ! defined(MHD_RESTRICT)
+#  if defined(restrict)
+/* Assume that proper value of 'restrict' was already defined */
+#    define MHD_RESTRICT restrict
+#  elif MHD_C_MINV_99
+/* C99 (and later) supports 'restrict' */
+#    define MHD_RESTRICT restrict
+#  elif (MHD_GNUC_MINV (3,0) || MHD_CLANG_MINV(3,0))\
+  && ! defined(__STRICT_ANSI__)
+#    define MHD_RESTRICT __restrict__
+#  elif defined(MHD_HAS_MSC_EXTENSION) && MHD_MSC_MINV (1400)
+#    define MHD_RESTRICT __restrict
+#  else
+#    define MHD_RESTRICT /* empty */
+#  endif
+#endif /* MHD_INLINE */
+
 
 #if ! defined(MHD_NO__PRAGMA)
 #  if MHD_GNUC_MINV (4,6) && ! defined(__clang__)

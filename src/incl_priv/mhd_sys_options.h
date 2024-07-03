@@ -214,6 +214,10 @@
 
 #define MHD_FIXED_FLAGS_ENUM_ MHD_FIXED_ENUM_ MHD_FLAGS_ENUM_
 
+/* 'inline' and 'restrict' are defined in mhd_config.h if needed */
+#define MHD_INLINE inline
+
+#define MHD_RESTRICT restrict
 
 #ifdef BUILDING_MHD_LIB
 #  define MHD_FIXED_ENUM_APP_SET_ /* empty */ /* handle unknown values set by the app */

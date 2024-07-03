@@ -25,9 +25,6 @@
 
 #include "mhd_str.h"
 
-#ifdef HAVE_STDBOOL_H
-#include <stdbool.h>
-#endif /* HAVE_STDBOOL_H */
 #include <string.h>
 
 #include "mhd_assert.h"
@@ -35,16 +32,16 @@
 #include "mhd_assert.h"
 
 #ifdef MHD_FAVOR_SMALL_CODE
-#ifdef _MHD_static_inline
-#undef _MHD_static_inline
-#endif /* _MHD_static_inline */
+#  ifdef MHD_static_inline_
+#    undef MHD_static_inline_
+#  endif /* MHD_static_inline_ */
 /* Do not force inlining and do not use macro functions, use normal static
    functions instead.
    This may give more flexibility for size optimizations. */
-#define _MHD_static_inline static
-#ifndef INLINE_FUNC
-#define INLINE_FUNC 1
-#endif /* !INLINE_FUNC */
+#  define MHD_static_inline_ static
+#  ifndef HAVE_INLINE_FUNCS
+#    define HAVE_INLINE_FUNCS 1
+#  endif /* !HAVE_INLINE_FUNCS */
 #endif /* MHD_FAVOR_SMALL_CODE */
 
 /*
@@ -52,7 +49,7 @@
  * standards. Not affected by current locale settings.
  */
 
-#ifdef INLINE_FUNC
+#ifdef HAVE_INLINE_FUNCS
 
 #if 0 /* Disable unused functions. */
 /**
@@ -61,7 +58,7 @@
  * @param c character to check
  * @return non-zero if character is lower case letter, zero otherwise
  */
-_MHD_static_inline bool
+MHD_static_inline_ bool
 isasciilower (char c)
 {
   return (c >= 'a') && (c <= 'z');
@@ -77,7 +74,7 @@ isasciilower (char c)
  * @param c character to check
  * @return non-zero if character is upper case letter, zero otherwise
  */
-_MHD_static_inline bool
+MHD_static_inline_ bool
 isasciiupper (char c)
 {
   return (c >= 'A') && (c <= 'Z');
@@ -91,7 +88,7 @@ isasciiupper (char c)
  * @param c character to check
  * @return non-zero if character is letter in US-ASCII, zero otherwise
  */
-_MHD_static_inline bool
+MHD_static_inline_ bool
 isasciialpha (char c)
 {
   return isasciilower (c) || isasciiupper (c);
@@ -107,7 +104,7 @@ isasciialpha (char c)
  * @param c character to check
  * @return non-zero if character is decimal digit, zero otherwise
  */
-_MHD_static_inline bool
+MHD_static_inline_ bool
 isasciidigit (char c)
 {
   return (c >= '0') && (c <= '9');
@@ -121,7 +118,7 @@ isasciidigit (char c)
  * @param c character to check
  * @return non-zero if character is decimal digit, zero otherwise
  */
-_MHD_static_inline bool
+MHD_static_inline_ bool
 isasciixdigit (char c)
 {
   return isasciidigit (c) ||
@@ -136,7 +133,7 @@ isasciixdigit (char c)
  * @param c character to check
  * @return non-zero if character is decimal digit or letter, zero otherwise
  */
-_MHD_static_inline bool
+MHD_static_inline_ bool
 isasciialnum (char c)
 {
   return isasciialpha (c) || isasciidigit (c);
@@ -156,7 +153,7 @@ isasciialnum (char c)
  * @param c character to convert
  * @return converted to lower case character
  */
-_MHD_static_inline char
+MHD_static_inline_ char
 toasciilower (char c)
 {
   return isasciiupper (c) ? (c - 'A' + 'a') : c;
@@ -172,7 +169,7 @@ toasciilower (char c)
  * @param c character to convert
  * @return converted to upper case character
  */
-_MHD_static_inline char
+MHD_static_inline_ char
 toasciiupper (char c)
 {
   return isasciilower (c) ? (c - 'a' + 'A') : c;
@@ -189,7 +186,7 @@ toasciiupper (char c)
  * @param c character to convert
  * @return value of decimal digit or -1 if @ c is not decimal digit
  */
-_MHD_static_inline int
+MHD_static_inline_ int
 todigitvalue (char c)
 {
   if (isasciidigit (c))
@@ -208,7 +205,7 @@ todigitvalue (char c)
  * @param c character to convert
  * @return value of hexadecimal digit or -1 if @ c is not hexadecimal digit
  */
-_MHD_static_inline int
+MHD_static_inline_ int
 toxdigitvalue (char c)
 {
 #if ! defined(MHD_FAVOR_SMALL_CODE)
@@ -532,7 +529,7 @@ toxdigitvalue (char c)
  * @param c2 the second char to compare
  * @return boolean 'true' if chars are caseless equal, false otherwise
  */
-_MHD_static_inline bool
+MHD_static_inline_ bool
 charsequalcaseless (const char c1, const char c2)
 {
   return ( (c1 == c2) ||
@@ -542,7 +539,7 @@ charsequalcaseless (const char c1, const char c2)
 }
 
 
-#else  /* !INLINE_FUNC */
+#else  /* !HAVE_INLINE_FUNCS */
 
 
 /**
@@ -663,12 +660,12 @@ charsequalcaseless (const char c1, const char c2)
  * @return boolean 'true' if chars are caseless equal, false otherwise
  */
 #define charsequalcaseless(c1, c2) \
-  ( ((c1) == (c2)) || \
-           (isasciiupper (c1) ? \
-             (((c1) - 'A' + 'a') == (c2)) : \
-             (((c1) == ((c2) - 'A' + 'a')) && isasciiupper (c2))) )
+        ( ((c1) == (c2)) || \
+          (isasciiupper (c1) ? \
+           (((c1) - 'A' + 'a') == (c2)) : \
+           (((c1) == ((c2) - 'A' + 'a')) && isasciiupper (c2))) )
 
-#endif /* !INLINE_FUNC */
+#endif /* !HAVE_INLINE_FUNCS */
 
 
 #ifndef MHD_FAVOR_SMALL_CODE
@@ -1183,21 +1180,21 @@ MHD_str_remove_tokens_caseless_ (char *str,
 /* Use individual function for each case */
 
 /**
- * Convert decimal US-ASCII digits in string to number in uint64_t.
+ * Convert decimal US-ASCII digits in string to number in uint_fast64_t.
  * Conversion stopped at first non-digit character.
  *
  * @param str string to convert
- * @param[out] out_val pointer to uint64_t to store result of conversion
+ * @param[out] out_val pointer to uint_fast64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint64_t or @a out_val is NULL
+ *         then possible to store in uint_fast64_t or @a out_val is NULL
  */
 size_t
 MHD_str_to_uint64_ (const char *str,
-                    uint64_t *out_val)
+                    uint_fast64_t *out_val)
 {
   const char *const start = str;
-  uint64_t res;
+  uint_fast64_t res;
 
   if (! str || ! out_val || ! isasciidigit (str[0]))
     return 0;
@@ -1208,7 +1205,7 @@ MHD_str_to_uint64_ (const char *str,
     const int digit = (unsigned char) (*str) - '0';
     if ( (res > (UINT64_MAX / 10)) ||
          ( (res == (UINT64_MAX / 10)) &&
-           ((uint64_t) digit > (UINT64_MAX % 10)) ) )
+           ((uint_fast64_t) digit > (UINT64_MAX % 10)) ) )
       return 0;
 
     res *= 10;
@@ -1223,23 +1220,23 @@ MHD_str_to_uint64_ (const char *str,
 
 /**
  * Convert not more then @a maxlen decimal US-ASCII digits in string to
- * number in uint64_t.
+ * number in uint_fast64_t.
  * Conversion stopped at first non-digit character or after @a maxlen
  * digits.
  *
  * @param str string to convert
  * @param maxlen maximum number of characters to process
- * @param[out] out_val pointer to uint64_t to store result of conversion
+ * @param[out] out_val pointer to uint_fast64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint64_t or @a out_val is NULL
+ *         then possible to store in uint_fast64_t or @a out_val is NULL
  */
 size_t
 MHD_str_to_uint64_n_ (const char *str,
                       size_t maxlen,
-                      uint64_t *out_val)
+                      uint_fast64_t *out_val)
 {
-  uint64_t res;
+  uint_fast64_t res;
   size_t i;
 
   if (! str || ! maxlen || ! out_val || ! isasciidigit (str[0]))
@@ -1253,7 +1250,7 @@ MHD_str_to_uint64_n_ (const char *str,
 
     if ( (res > (UINT64_MAX / 10)) ||
          ( (res == (UINT64_MAX / 10)) &&
-           ((uint64_t) digit > (UINT64_MAX % 10)) ) )
+           ((uint_fast64_t) digit > (UINT64_MAX % 10)) ) )
       return 0;
 
     res *= 10;
@@ -1268,21 +1265,21 @@ MHD_str_to_uint64_n_ (const char *str,
 
 
 /**
- * Convert hexadecimal US-ASCII digits in string to number in uint32_t.
+ * Convert hexadecimal US-ASCII digits in string to number in uint_fast32_t.
  * Conversion stopped at first non-digit character.
  *
  * @param str string to convert
- * @param[out] out_val pointer to uint32_t to store result of conversion
+ * @param[out] out_val pointer to uint_fast32_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint32_t or @a out_val is NULL
+ *         then possible to store in uint_fast32_t or @a out_val is NULL
  */
 size_t
 MHD_strx_to_uint32_ (const char *str,
-                     uint32_t *out_val)
+                     uint_fast32_t *out_val)
 {
   const char *const start = str;
-  uint32_t res;
+  uint_fast32_t res;
   int digit;
 
   if (! str || ! out_val)
@@ -1294,7 +1291,7 @@ MHD_strx_to_uint32_ (const char *str,
   {
     if ( (res < (UINT32_MAX / 16)) ||
          ((res == (UINT32_MAX / 16)) &&
-          ( (uint32_t) digit <= (UINT32_MAX % 16)) ) )
+          ( (uint_fast32_t) digit <= (UINT32_MAX % 16)) ) )
     {
       res *= 16;
       res += (unsigned int) digit;
@@ -1313,24 +1310,24 @@ MHD_strx_to_uint32_ (const char *str,
 
 /**
  * Convert not more then @a maxlen hexadecimal US-ASCII digits in string
- * to number in uint32_t.
+ * to number in uint_fast32_t.
  * Conversion stopped at first non-digit character or after @a maxlen
  * digits.
  *
  * @param str string to convert
  * @param maxlen maximum number of characters to process
- * @param[out] out_val pointer to uint32_t to store result of conversion
+ * @param[out] out_val pointer to uint_fast32_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint32_t or @a out_val is NULL
+ *         then possible to store in uint_fast32_t or @a out_val is NULL
  */
 size_t
 MHD_strx_to_uint32_n_ (const char *str,
                        size_t maxlen,
-                       uint32_t *out_val)
+                       uint_fast32_t *out_val)
 {
   size_t i;
-  uint32_t res;
+  uint_fast32_t res;
   int digit;
   if (! str || ! out_val)
     return 0;
@@ -1341,7 +1338,7 @@ MHD_strx_to_uint32_n_ (const char *str,
   {
     if ( (res > (UINT32_MAX / 16)) ||
          ((res == (UINT32_MAX / 16)) &&
-          ( (uint32_t) digit > (UINT32_MAX % 16)) ) )
+          ( (uint_fast32_t) digit > (UINT32_MAX % 16)) ) )
       return 0;
 
     res *= 16;
@@ -1356,21 +1353,21 @@ MHD_strx_to_uint32_n_ (const char *str,
 
 
 /**
- * Convert hexadecimal US-ASCII digits in string to number in uint64_t.
+ * Convert hexadecimal US-ASCII digits in string to number in uint_fast64_t.
  * Conversion stopped at first non-digit character.
  *
  * @param str string to convert
- * @param[out] out_val pointer to uint64_t to store result of conversion
+ * @param[out] out_val pointer to uint_fast64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint64_t or @a out_val is NULL
+ *         then possible to store in uint_fast64_t or @a out_val is NULL
  */
 size_t
 MHD_strx_to_uint64_ (const char *str,
-                     uint64_t *out_val)
+                     uint_fast64_t *out_val)
 {
   const char *const start = str;
-  uint64_t res;
+  uint_fast64_t res;
   int digit;
   if (! str || ! out_val)
     return 0;
@@ -1381,7 +1378,7 @@ MHD_strx_to_uint64_ (const char *str,
   {
     if ( (res < (UINT64_MAX / 16)) ||
          ((res == (UINT64_MAX / 16)) &&
-          ( (uint64_t) digit <= (UINT64_MAX % 16)) ) )
+          ( (uint_fast64_t) digit <= (UINT64_MAX % 16)) ) )
     {
       res *= 16;
       res += (unsigned int) digit;
@@ -1400,24 +1397,24 @@ MHD_strx_to_uint64_ (const char *str,
 
 /**
  * Convert not more then @a maxlen hexadecimal US-ASCII digits in string
- * to number in uint64_t.
+ * to number in uint_fast64_t.
  * Conversion stopped at first non-digit character or after @a maxlen
  * digits.
  *
  * @param str string to convert
  * @param maxlen maximum number of characters to process
- * @param[out] out_val pointer to uint64_t to store result of conversion
+ * @param[out] out_val pointer to uint_fast64_t to store result of conversion
  * @return non-zero number of characters processed on succeed,
  *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint64_t or @a out_val is NULL
+ *         then possible to store in uint_fast64_t or @a out_val is NULL
  */
 size_t
 MHD_strx_to_uint64_n_ (const char *str,
                        size_t maxlen,
-                       uint64_t *out_val)
+                       uint_fast64_t *out_val)
 {
   size_t i;
-  uint64_t res;
+  uint_fast64_t res;
   int digit;
   if (! str || ! out_val)
     return 0;
@@ -1428,7 +1425,7 @@ MHD_strx_to_uint64_n_ (const char *str,
   {
     if ( (res > (UINT64_MAX / 16)) ||
          ((res == (UINT64_MAX / 16)) &&
-          ( (uint64_t) digit > (UINT64_MAX % 16)) ) )
+          ( (uint_fast64_t) digit > (UINT64_MAX % 16)) ) )
       return 0;
 
     res *= 16;
@@ -1466,13 +1463,13 @@ MHD_str_to_uvalue_n_ (const char *str,
                       size_t maxlen,
                       void *out_val,
                       size_t val_size,
-                      uint64_t max_val,
+                      uint_fast64_t max_val,
                       unsigned int base)
 {
   size_t i;
-  uint64_t res;
-  const uint64_t max_v_div_b = max_val / base;
-  const uint64_t max_v_mod_b = max_val % base;
+  uint_fast64_t res;
+  const uint_fast64_t max_v_div_b = max_val / base;
+  const uint_fast64_t max_v_mod_b = max_val % base;
 
   if (! str || ! out_val ||
       ((base != 16) && (base != 10)) )
@@ -1488,7 +1485,8 @@ MHD_str_to_uvalue_n_ (const char *str,
     if (0 > digit)
       break;
     if ( ((max_v_div_b) < res) ||
-         (( (max_v_div_b) == res) && ( (max_v_mod_b) < (uint64_t) digit) ) )
+         (( (max_v_div_b) == res) &&
+          ( (max_v_mod_b) < (uint_fast64_t) digit) ) )
       return 0;
 
     res *= base;
@@ -1499,9 +1497,9 @@ MHD_str_to_uvalue_n_ (const char *str,
   if (i)
   {
     if (8 == val_size)
-      *(uint64_t *) out_val = res;
+      *(uint_fast64_t *) out_val = res;
     else if (4 == val_size)
-      *(uint32_t *) out_val = (uint32_t) res;
+      *(uint_fast32_t *) out_val = (uint_fast32_t) res;
     else
       return 0;
   }
@@ -1513,7 +1511,7 @@ MHD_str_to_uvalue_n_ (const char *str,
 
 
 size_t
-MHD_uint32_to_strx (uint32_t val,
+MHD_uint32_to_strx (uint_fast32_t val,
                     char *buf,
                     size_t buf_size)
 {
@@ -1547,13 +1545,13 @@ MHD_uint32_to_strx (uint32_t val,
 
 #ifndef MHD_FAVOR_SMALL_CODE
 size_t
-MHD_uint16_to_str (uint16_t val,
+MHD_uint16_to_str (uint_fast16_t val,
                    char *buf,
                    size_t buf_size)
 {
   char *chr;  /**< pointer to the current printed digit */
   /* The biggest printable number is 65535 */
-  uint16_t divisor = UINT16_C (10000);
+  uint_fast16_t divisor = UINT16_C (10000);
   int digit;
 
   chr = buf;
@@ -1575,7 +1573,7 @@ MHD_uint16_to_str (uint16_t val,
     buf_size--;
     if (1 == divisor)
       return (size_t) (chr - buf);
-    val = (uint16_t) (val % divisor);
+    val = (uint_fast16_t) (val % divisor);
     divisor /= 10;
     digit = (int) (val / divisor);
     mhd_assert (digit < 10);
@@ -1588,13 +1586,13 @@ MHD_uint16_to_str (uint16_t val,
 
 
 size_t
-MHD_uint64_to_str (uint64_t val,
+MHD_uint64_to_str (uint_fast64_t val,
                    char *buf,
                    size_t buf_size)
 {
   char *chr;  /**< pointer to the current printed digit */
   /* The biggest printable number is 18446744073709551615 */
-  uint64_t divisor = UINT64_C (10000000000000000000);
+  uint_fast64_t divisor = UINT64_C (10000000000000000000);
   int digit;
 
   chr = buf;
