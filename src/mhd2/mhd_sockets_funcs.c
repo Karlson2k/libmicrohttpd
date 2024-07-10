@@ -60,7 +60,7 @@ mhd_socket_nonblocking (MHD_Socket sckt)
   if (0 > get_flags)
     return false;
 
-  set_flags = (flags | O_NONBLOCK);
+  set_flags = (get_flags | O_NONBLOCK);
   if (get_flags == set_flags)
     return true;
 
@@ -88,10 +88,10 @@ mhd_socket_noninheritable (MHD_Socket sckt)
   int set_flags;
 
   get_flags = fcntl (sckt, F_GETFD);
-  if (0 > flags)
+  if (0 > get_flags)
     return false;
 
-  set_flags = (flags | FD_CLOEXEC);
+  set_flags = (get_flags | FD_CLOEXEC);
   if (get_flags == set_flags)
     return true;
 
