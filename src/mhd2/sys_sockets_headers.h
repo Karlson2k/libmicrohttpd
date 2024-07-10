@@ -45,7 +45,7 @@
 #  include <winsock2.h>
 #endif
 #ifdef HAVE_SYS_UN_H
-#  include <sys/uh.h>
+#  include <sys/un.h>
 #endif
 
 #if defined(HAVE_SOCK_NONBLOCK) && ! defined(MHD_WINSOCK_SOCKETS)
