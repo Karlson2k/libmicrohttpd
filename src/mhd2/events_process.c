@@ -40,6 +40,9 @@
 #include "daemon_logger.h"
 #include "mhd_connection.h"
 #include "daemon_add_conn.h"
+#include "daemon_funcs.h"
+#include "conn_data_process.h"
+
 
 
 MHD_FN_PAR_NONNULL_ (1) static void
@@ -209,15 +212,20 @@ daemon_accept_new_conns (struct MHD_Daemon *restrict d)
 static bool
 daemon_process_all_act_coons (struct MHD_Daemon *restrict d)
 {
-  struct MHD_Connection *restrict c;
+  struct MHD_Connection *c;
   mhd_assert (! mhd_D_HAS_WORKERS (d));
 
-  for (c = mhd_DLINKEDL_GET_FIRST (&(d->events),proc_ready); c != NULL;
-       c = mhd_DLINKEDL_GET_NEXT (c, proc_ready))
+  c = mhd_DLINKEDL_GET_FIRST (&(d->events),proc_ready);
+  while (NULL != c)
   {
+    struct MHD_Connection *next;
+    next = mhd_DLINKEDL_GET_NEXT (c, proc_ready); /* The current connection can be closed */
+    if (! mhd_conn_process_recv_send_data(c))
+      mhd_conn_close_final(c);
 
+    c = next;
   }
-  return false;
+  return true;
 }
 
 
@@ -524,6 +532,9 @@ mhd_worker_all_events (void *cls)
 
   while (! d->threading.stop_requested)
   {
+    if (d->threading.resume_requested)
+      mhd_daemon_resume_conns (d);
+
     if (! process_all_events_and_data (d))
       break;
   }

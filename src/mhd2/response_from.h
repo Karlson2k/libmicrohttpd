@@ -32,5 +32,13 @@
 
 struct MHD_Response; /* forward declaration */
 
+/**
+ * Deinit / free / cleanup content data of the response
+ * @param r the response to use
+ */
+MHD_INTERNAL void
+mhd_response_deinit_content_data (struct MHD_Response *restrict r)
+MHD_FN_PAR_NONNULL_ (1);
+
 
 #endif /* ! MHD_RESPONSE_FROM_H */

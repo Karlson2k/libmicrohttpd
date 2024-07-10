@@ -289,7 +289,7 @@ mhd_itc_nonblocking (struct mhd_itc *pitc);
  * @return non-zero if succeeded, zero otherwise
  */
 #  define mhd_itc_activate(itc) \
-        ((0 < mhd_send ((itc).sk[1], "", 1)) || mhd_SCKT_LERR_IS_EAGAIN ())
+        ((0 < mhd_sys_send ((itc).sk[1], "", 1)) || mhd_SCKT_LERR_IS_EAGAIN ())
 
 /**
  * Return read FD of @a itc which can be used for poll(), select() etc.

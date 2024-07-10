@@ -49,33 +49,45 @@
 #endif
 
 #if defined(HAVE_SOCK_NONBLOCK) && ! defined(MHD_WINSOCK_SOCKETS)
-#  define MHD_SOCK_NONBLOCK SOCK_NONBLOCK
+#  define mhd_SOCK_NONBLOCK SOCK_NONBLOCK
 #else
-#  define MHD_SOCK_NONBLOCK (0)
+#  define mhd_SOCK_NONBLOCK (0)
 #endif
 
 #if defined(SOCK_CLOEXEC) && ! defined(MHD_WINSOCK_SOCKETS)
-#  define MHD_SOCK_CLOEXEC SOCK_CLOEXEC
+#  define mhd_SOCK_CLOEXEC SOCK_CLOEXEC
 #else
-#  define MHD_SOCK_CLOEXEC (0)
+#  define mhd_SOCK_CLOEXEC (0)
 #endif
 
 #if defined(SOCK_NOSIGPIPE) && ! defined(MHD_WINSOCK_SOCKETS)
-#  define MHD_SOCK_NOSIGPIPE SOCK_NOSIGPIPE
+#  define mhd_SOCK_NOSIGPIPE SOCK_NOSIGPIPE
 #else
-#  define MHD_SOCK_NOSIGPIPE (0)
+#  define mhd_SOCK_NOSIGPIPE (0)
 #endif
 
 #if defined(MSG_NOSIGNAL) && ! defined(MHD_WINSOCK_SOCKETS)
-#  define MHD_MSG_NOSIGNAL MSG_NOSIGNAL
+#  define mhd_MSG_NOSIGNAL MSG_NOSIGNAL
 #else
-#  define MHD_MSG_NOSIGNAL (0)
+#  define mhd_MSG_NOSIGNAL (0)
 #endif
 
-#if defined(MSG_NOSIGNAL) && ! defined(MHD_WINSOCK_SOCKETS)
-#  define MHD_MSG_NOSIGNAL MSG_MORE
+#ifdef MSG_MORE
+#  ifdef __linux__
+/* MSG_MORE signal kernel to buffer outbond data and works like
+ * TCP_CORK per call without actually setting TCP_CORK value.
+ * It's known to work on Linux. Add more OSes if they are compatible. */
+/**
+ * Indicate MSG_MORE is usable for buffered send().
+ */
+#    define mhd_USE_MSG_MORE 1
+#  endif /* __linux__ */
+#endif /* MSG_MORE */
+
+#ifdef mhd_USE_MSG_MORE
+#  define mhd_MSG_MORE MSG_MORE
 #else
-#  define MHD_MSG_NOSIGNAL (0)
+#  define mhd_MSG_MORE (0)
 #endif
 
 
@@ -127,5 +139,27 @@ typedef int mhd_SCKT_SEND_SIZE;
 #elif defined(__gnu_linux__) || defined(__linux__)
 #  define MHD_ACCEPTED_DOES_NOT_INHERIT_NONBLOCK 1
 #endif
+
+
+#if defined(MHD_socket_nosignal_) || \
+  (defined(SOL_SOCKET) && defined(SO_NOSIGPIPE))
+/**
+ * Indicate that SIGPIPE can be suppressed by MHD for normal send() by flags
+ * or socket options.
+ * If this macro is undefined, MHD cannot suppress SIGPIPE for socket functions
+ * so sendfile() or writev() calls are avoided in application threads.
+ */
+#  define mhd_SEND_SPIPE_SUPPRESS_POSSIBLE   1
+#endif /* MHD_WINSOCK_SOCKETS || MHD_socket_nosignal_ || MSG_NOSIGNAL */
+
+
+#if ! defined(MHD_WINSOCK_SOCKETS)
+/**
+ * Indicate that suppression of SIGPIPE is required for some network
+ * system calls.
+ */
+#  define mhd_SEND_SPIPE_SUPPRESS_NEEDED     1
+#endif
+
 
 #endif /* ! MHD_SYS_SOCKETS_HEADERS_H */

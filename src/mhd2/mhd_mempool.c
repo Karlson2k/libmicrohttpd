@@ -60,10 +60,7 @@
 #  endif /* HAVE_SYS_PARAM_H */
 #endif /* MHD_USE_PAGESIZE_MACRO || MHD_USE_PAGE_SIZE_MACRO */
 
-#ifndef SIZE_MAX
-/* This file does not use SIZE_MAX macro with preprocessor */
-#  define SIZE_MAX ((size_t) ~((size_t) 0))
-#endif
+#include "mhd_limits.h"
 
 /**
  * Fallback value of page size

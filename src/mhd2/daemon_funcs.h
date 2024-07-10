@@ -46,6 +46,16 @@ struct MHD_Daemon; /* forward declaration */
 MHD_INTERNAL bool
 mhd_daemon_trigger_itc (struct MHD_Daemon *restrict d);
 
+
+
+/**
+ * Check whether any resuming connections are pending and resume them
+ * @param d the daemon to use
+ */
+MHD_INTERNAL void
+mhd_daemon_resume_conns (struct MHD_Daemon *restrict d)
+MHD_FN_PAR_NONNULL_ALL_ ;
+
 #endif /* MHD_USE_THREADS */
 
 #endif /* ! MHD_DAEMON_FUNCS_H */

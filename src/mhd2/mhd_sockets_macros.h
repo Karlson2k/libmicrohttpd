@@ -55,7 +55,7 @@
 #endif
 
 /**
- * mhd_send4 is a wrapper for system's send()
+ * mhd_sys_send4 is a wrapper for system's send()
  * @param s the socket to use
  * @param b the buffer with data to send
  * @param l the length of data in @a b
@@ -64,11 +64,11 @@
  */
 #define mhd_sys_send4(s,b,l,f) \
         ((ssize_t) send ((s),(const void*) (b),(mhd_SCKT_SEND_SIZE) (l), \
-                         ((MHD_MSG_NOSIGNAL) | (f))))
+                         ((mhd_MSG_NOSIGNAL) | (f))))
 
 
 /**
- * mhd_send is a simple wrapper for system's send()
+ * mhd_sys_send is a simple wrapper for system's send()
  * @param s the socket to use
  * @param b the buffer with data to send
  * @param l the length of data in @a b
@@ -219,6 +219,16 @@
 #endif
 
 #if defined(MHD_POSIX_SOCKETS)
+#  ifdef ENOPROTOOPT
+#    define mhd_SCKT_ERR_IS_NOPROTOOPT(err) (ENOPROTOOPT == (err))
+#  else
+#    define mhd_SCKT_ERR_IS_NOPROTOOPT(err) ((void) (err), ! ! 0)
+#  endif
+#elif defined(MHD_WINSOCK_SOCKETS)
+#  define mhd_SCKT_ERR_IS_NOPROTOOPT(err) (WSAENOPROTOOPT == (err))
+#endif
+
+#if defined(MHD_POSIX_SOCKETS)
 #  ifdef EBADF
 #    define mhd_SCKT_ERR_IS_BADF(err) (EBADF == (err))
 #  else
@@ -236,6 +246,16 @@
 #  endif
 #elif defined(MHD_WINSOCK_SOCKETS)
 #  define mhd_SCKT_ERR_IS_NOTSOCK(err) (WSAENOTSOCK == (err))
+#endif
+
+#if defined(MHD_POSIX_SOCKETS)
+#  ifdef EPIPE
+#    define mhd_SCKT_ERR_IS_PIPE(err) (EPIPE == (err))
+#  else
+#    define mhd_SCKT_ERR_IS_PIPE(err) ((void) (err), ! ! 0)
+#  endif
+#elif defined(MHD_WINSOCK_SOCKETS)
+#  define mhd_SCKT_ERR_IS_PIPE(err) (WSAESHUTDOWN == (err))
 #endif
 
 /**
@@ -262,8 +282,8 @@
  */
 #if defined(MHD_POSIX_SOCKETS)
 /* + EHOSTUNREACH: probably reported by intermediate
-    + ETIMEDOUT: probably keep-alive ping failure
-    + ENETUNREACH: probably cable physically disconnected or similar */
+   + ETIMEDOUT: probably keep-alive ping failure
+   + ENETUNREACH: probably cable physically disconnected or similar */
 #    define mhd_SCKT_ERR_IS_CONN_BROKEN(err) \
         ((0 != (err)) && \
          ((MHD_EHOSTUNREACH_OR_ZERO == (err)) || \
@@ -317,8 +337,8 @@
 #    if defined(HAVE_SOCK_NONBLOCK)
 #      ifdef MHD_AF_UNIX
 #        define mhd_socket_pair_nblk(fdarr_ptr) \
-        (0 != socketpair (MHD_AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, ( \
-                            fdarr_ptr)))
+        (0 != socketpair (MHD_AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, \
+                          (fdarr_ptr)))
 #      else
 #        define mhd_socket_pair_nblk(fdarr_ptr) \
         (0 != socketpair (AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0, (fdarr_ptr))) /* Fallback, could be broken on many platforms */
@@ -330,5 +350,31 @@
 #ifndef mhd_socket_pair
 /* mhd_socket_pair() implemented in "mhd_sockets_funcs.h" based on local function */
 #endif
+
+#if defined(SOL_SOCKET) && defined(SO_NOSIGPIPE)
+/**
+ * Helper for mhd_socket_nosignal()
+ */
+#  ifdef HAVE_COMPOUND_LITERALS_LVALUES
+#    define mhd_socket_nosig_helper_int_one ((int){1})
+#  else
+/**
+ * Internal static const helper for mhd_socket_nosignal()
+ */
+static const int mhd_socket_nosig_helper_int_one = 1;
+#  endif
+
+
+/**
+ * Change socket options to no signal on remote disconnect / broken connection.
+ *
+ * @param sock socket to manipulate
+ * @return non-zero if succeeded, zero otherwise
+ */
+#  define mhd_socket_nosignal(sock) \
+        (! setsockopt ((sock),SOL_SOCKET,SO_NOSIGPIPE, \
+                       &mhd_socket_nosig_helper_int_one, sizeof(int)))
+#endif /* SOL_SOCKET && SO_NOSIGPIPE */
+
 
 #endif /* ! MHD_SOCKETS_MACROS_H */

@@ -42,6 +42,8 @@
 #include "sys_sockets_types.h"
 #include "sys_sockets_headers.h"
 
+#include <string.h>
+
 #include "compat_calloc.h"
 
 #include "mhd_panic.h"
@@ -59,6 +61,7 @@
 #include "events_process.h"
 
 #include "response_from.h"
+#include "response_destroy.h"
 
 
 /**
@@ -736,7 +739,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
 
     for (i = 0; i < daemon->threading.hier.pool.num; ++i)
     {
-      struct MHD_Daemon *const volatile worker =
+      struct MHD_Daemon *const restrict worker =
         daemon->threading.hier.pool.workers
         + (i + offset) % daemon->threading.hier.pool.num;
       if (worker->conns.block_new)

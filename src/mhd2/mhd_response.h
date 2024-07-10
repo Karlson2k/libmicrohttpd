@@ -39,7 +39,11 @@
 
 #include "mhd_iovec.h"
 
-#include "mhd_locks.h"
+#ifdef MHD_USE_THREADS
+#  include "mhd_locks.h"
+#endif
+
+#include "mhd_atomic_counter.h"
 
 
 struct ResponseOptions; /* forward declaration */
@@ -72,17 +76,17 @@ struct mhd_ResponseHeader
 /**
  * The type of content
  */
-enum mhd_ResponseContentType
+enum mhd_ResponseContentDataType
 {
-  mhd_RESPONSE_CONTENT_INVALID = 0
+  mhd_RESPONSE_CONTENT_DATA_INVALID = 0
   ,
-  mhd_RESPONSE_CONTENT_BUFFER
+  mhd_RESPONSE_CONTENT_DATA_BUFFER
   ,
-  mhd_RESPONSE_CONTENT_IOVEC
+  mhd_RESPONSE_CONTENT_DATA_IOVEC
   ,
-  mhd_RESPONSE_CONTENT_FILE
+  mhd_RESPONSE_CONTENT_DATA_FILE
   ,
-  mhd_RESPONSE_CONTENT_CALLBACK
+  mhd_RESPONSE_CONTENT_DATA_CALLBACK
 };
 
 /**
@@ -159,7 +163,7 @@ union mhd_ResponseContent
   const unsigned char *restrict buf;
 
   /**
-   * The
+   * The I/O vector data
    */
   struct mhd_ResponseIoVec iovec;
 
@@ -202,17 +206,10 @@ struct mhd_ResponseReuseData
    * The number of active uses of the response.
    * Used only when @a reusable is 'true'.
    * When number reached zero, the response is destroyed.
-   * Must be checked only under the @a cnt_lock
    */
-  volatile uint_fast64_t counter;
+  struct mhd_AtomicCounter counter;
 
 #ifdef MHD_USE_THREADS
-  /**
-   * The mutex for @a counter access.
-   * Used only when @a reusable is 'true'.
-   */
-  mhd_mutex cnt_lock;
-
   /**
    * The mutex for @a settings access.
    * Used only when @a reusable is 'true'.
@@ -261,6 +258,8 @@ struct mhd_ResponseDebug
 
 mhd_DLINKEDL_LIST_DEF (mhd_ResponseHeader);
 
+// TODO: Group members in structs
+
 struct MHD_Response
 {
   /**
@@ -272,12 +271,12 @@ struct MHD_Response
    * The size of the response.
    * #MHD_SIZE_UNKNOWN if size is undefined
    */
-  uint_fast64_t size;
+  uint_fast64_t cntn_size;
 
   /**
    * The type of the content data
    */
-  enum mhd_ResponseContentType cntn_type;
+  enum mhd_ResponseContentDataType cntn_dtype;
 
   /**
    * The data of the content of the response

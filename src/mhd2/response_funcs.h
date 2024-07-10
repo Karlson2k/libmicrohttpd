@@ -28,8 +28,29 @@
 #define MHD_RESPONSE_FUNCS_H 1
 
 #include "mhd_sys_options.h"
+#include "sys_bool_type.h"
+
 
 struct MHD_Response; /* forward declaration */
+
+/**
+ * Make response re-usable, initialise all required data
+ * @param r the response to make re-usable
+ * @return 'true' if succeed, 'false' if failed
+ */
+MHD_INTERNAL bool
+response_make_reusable (struct MHD_Response *restrict r)
+MHD_FN_PAR_NONNULL_ (1);
+
+
+/**
+ * De-initialise re-usability data
+ * @param r the response to de-initialise re-usability data
+ */
+MHD_INTERNAL void
+mhd_response_deinit_reusable (struct MHD_Response *restrict r)
+MHD_FN_PAR_NONNULL_ (1);
+
 
 /**
  * Check whether response is "frozen" (modifications blocked) and "freeze"
@@ -37,15 +58,7 @@ struct MHD_Response; /* forward declaration */
  * @param response the response to manipulate
  */
 MHD_INTERNAL void
-mhd_response_check_frozen_freeze (struct MHD_Response *restrict response);
-
-/**
- * Free/destroy non-reusable response, decrement use count for reusable
- * response and free/destroy if it is not used any more.
- * @param response the response to manipulate
- */
-MHD_INTERNAL void
-mhd_response_dec_use_count (struct MHD_Response *restrict response);
+mhd_response_check_frozen_freeze (struct MHD_Response *restrict r);
 
 
 #endif /* ! MHD_RESPONSE_FUNCS_H */

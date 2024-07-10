@@ -682,6 +682,11 @@ struct mhd_DaemonThreadingData
   volatile bool stop_requested;
 
   /**
+   * 'True' if resuming of any connection has been requested.
+   */
+  volatile bool resume_requested;
+
+  /**
    * The handle of the daemon's thread (if managed by the daemon)
    */
   mhd_thread_handle_ID tid;
@@ -765,6 +770,29 @@ struct mhd_DaemonConnections
 };
 
 
+/**
+ * Settings for requests processing
+ */
+struct mhd_DaemonRequestProcessingSettings
+{
+  /**
+   * Request callback.
+   * The main request processing callback.
+   */
+  MHD_RequestCallback cb;
+
+  /**
+   * The closure for @a req_cb
+   */
+  void *cb_cls;
+
+  /**
+   * Protocol strictness enforced by MHD on clients.
+   */
+  enum MHD_ProtocolStrictLevel strictnees;
+};
+
+
 #ifndef NDEBUG
 /**
  * Various debugging data
@@ -830,15 +858,9 @@ struct MHD_Daemon
   /* Request processing data */
 
   /**
-   * Request callback.
-   * The main request processing callback.
+   * Settings for requests processing
    */
-  MHD_RequestCallback req_cb;
-
-  /**
-   * The closure for @a req_cb
-   */
-  void *req_cb_cls;
+  struct mhd_DaemonRequestProcessingSettings req_cfg;
 
   /* Other data */
 

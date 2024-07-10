@@ -530,7 +530,7 @@ AC_CHECK_HEADERS([sys/socket.h sys/select.h netinet/in_systm.h netinet/in.h \
 # Check for other optional headers
 AC_CHECK_HEADERS([sys/msg.h sys/mman.h signal.h], [], [], [AC_INCLUDES_DEFAULT])
 
-AC_CHECK_TYPES([size_t,ssize_t,ptrdiff_t,intptr_t,uintptr_t],[],[],
+AC_CHECK_TYPES([size_t,ssize_t,ptrdiff_t,intptr_t,uintptr_t,uint8_t],[],[],
   [[
 /* Keep in sync with src/mhd2/sys_base_types.h */
 #include <stdint.h> /* uint_fast_XXt, int_fast_XXt */
@@ -554,6 +554,14 @@ AC_CHECK_TYPES([size_t,ssize_t,ptrdiff_t,intptr_t,uintptr_t],[],[],
 AS_IF([test "x$ac_cv_type_size_t" != "xyes"],
   [AC_MSG_FAILURE(['size_t' type is not provided by system headers])]
 )
+AS_IF([test "x$ac_cv_type_uint8_t" != "xyes"],
+  [AC_MSG_FAILURE(['uint8_t' type is not provided by system headers])]
+)
+AC_CHECK_SIZEOF([char])
+AS_IF([test "x$ac_cv_sizeof_char" != "x1"],
+  [AC_MSG_FAILURE(['char' type with size different from '1' is not supported])]
+)
+
 
 AC_CHECK_TYPE([socklen_t],
   [],

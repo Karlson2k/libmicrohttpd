@@ -19,28 +19,26 @@
 */
 
 /**
- * @file src/mhd2/http_status_str.h
- * @brief  The declaration for internal HTTP status string functions
+ * @file src/mhd2/response_add_header.h
+ * @brief  The declarations of the response header manipulation internal
+ *         functions
  * @author Karlson2k (Evgeny Grin)
  */
 
-#ifndef MHD_HTTP_STATUS_STR_H
-#define MHD_HTTP_STATUS_STR_H 1
+#ifndef MHD_RESPONSE_ADD_HEADER_H
+#define MHD_RESPONSE_ADD_HEADER_H 1
 
 #include "mhd_sys_options.h"
 
-#include "mhd_str_types.h"
+struct MHD_Response; /* forward declaration */
 
 /**
- * Get string for provided HTTP status code.
- * Substitute a replacement string for unknown codes.
- *
- * @param code the HTTP status code
- * @return pointer to MHD_String, never NULL.
+ * Remove all response headers
+ * @param r the response to use
  */
-MHD_INTERNAL const struct MHD_String *
-mhd_HTTP_status_code_to_string_int (enum MHD_HTTP_StatusCode code)
-MHD_FN_CONST_;
+MHD_INTERNAL void
+mhd_response_remove_all_headers (struct MHD_Response *restrict r)
+MHD_FN_PAR_NONNULL_ (1);
 
 
-#endif /* ! MHD_HTTP_STATUS_STR_H */
+#endif /* ! MHD_RESPONSE_ADD_HEADER_H */

@@ -53,4 +53,63 @@
 #  include <ws2tcpip.h>
 #endif
 
+#ifdef IPPROTO_TCP
+#  if defined(TCP_CORK)
+/**
+ * Value of TCP_CORK or TCP_NOPUSH
+ */
+#    define mhd_TCP_CORK_NOPUSH TCP_CORK
+#  elif defined(TCP_NOPUSH)
+/**
+ * Value of TCP_CORK or TCP_NOPUSH
+ */
+#    define mhd_TCP_CORK_NOPUSH TCP_NOPUSH
+#  endif /* TCP_NOPUSH */
+#endif /* IPPROTO_TCP */
+
+#ifdef mhd_TCP_CORK_NOPUSH
+#  ifdef __linux__
+/**
+ * Indicate that reset of TCP_CORK / TCP_NOPUSH push data to the network
+ */
+#    define mhd_CORK_RESET_PUSH_DATA 1
+/**
+ * Indicate that reset of TCP_CORK / TCP_NOPUSH push data to the network
+ * even if TCP_CORK/TCP_NOPUSH was in switched off state.
+ */
+#    define mhd_CORK_RESET_PUSH_DATA_ALWAYS 1
+#endif /* __linux__ */
+#if (defined(__FreeBSD__) && \
+  ((__FreeBSD__ + 0) >= 5 || (__FreeBSD_version + 0) >= 450000)) || \
+  (defined(__FreeBSD_kernel_version) && \
+  (__FreeBSD_kernel_version + 0) >= 450000)
+/* FreeBSD pushes data to the network with reset of TCP_NOPUSH
+ * starting from version 4.5. */
+/**
+ * Indicate that reset of TCP_CORK / TCP_NOPUSH push data to the network
+ */
+#define mhd_CORK_RESET_PUSH_DATA 1
+#endif /* __FreeBSD_version >= 450000 */
+#ifdef __OpenBSD__
+/* OpenBSD took implementation from FreeBSD */
+/**
+ * Indicate that reset of TCP_CORK / TCP_NOPUSH push data to the network
+ */
+#define mhd_CORK_RESET_PUSH_DATA 1
+#endif /* __OpenBSD__ */
+#endif /* MHD_TCP_CORK_NOPUSH */
+
+#ifdef __linux__
+/**
+ * Indicate that set of TCP_NODELAY push data to the network
+ */
+#  define mhd_NODELAY_SET_PUSH_DATA 1
+/**
+ * Indicate that set of TCP_NODELAY push data to the network even
+ * if TCP_DELAY was already set and regardless of TCP_CORK / TCP_NOPUSH state
+ */
+#  define mhd_NODELAY_SET_PUSH_DATA_ALWAYS 1
+#endif /* __linux__ */
+
+
 #endif /* ! MHD_SYS_IP_HEADERS_H */

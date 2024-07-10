@@ -1,13 +1,13 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2015-2024 Karlson2k (Evgeny Grin)
+  Copyright (C) 2015-2024 Evgeny Grin (Karlson2k)
 
-  This library is free software; you can redistribute it and/or
+  GNU libmicrohttpd is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
   version 2.1 of the License, or (at your option) any later version.
 
-  This library is distributed in the hope that it will be useful,
+  GNU libmicrohttpd is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
   Lesser General Public License for more details.
@@ -77,7 +77,7 @@ isasciilower (char c)
 MHD_static_inline_ bool
 isasciiupper (char c)
 {
-  return (c >= 'A') && (c <= 'Z');
+  return (c <= 'Z') && (c >= 'A');
 }
 
 
@@ -107,7 +107,7 @@ isasciialpha (char c)
 MHD_static_inline_ bool
 isasciidigit (char c)
 {
-  return (c >= '0') && (c <= '9');
+  return (c <= '9') && (c >= '0');
 }
 
 
@@ -122,8 +122,8 @@ MHD_static_inline_ bool
 isasciixdigit (char c)
 {
   return isasciidigit (c) ||
-         ( (c >= 'A') && (c <= 'F') ) ||
-         ( (c >= 'a') && (c <= 'f') );
+         ( (c <= 'F') && (c >= 'A') ) ||
+         ( (c <= 'f') && (c >= 'a') );
 }
 
 
@@ -179,7 +179,7 @@ toasciiupper (char c)
 #endif /* Disable unused functions. */
 
 
-#if defined(MHD_FAVOR_SMALL_CODE) /* Used only in MHD_str_to_uvalue_n_() */
+#if defined(MHD_FAVOR_SMALL_CODE) /* Used only in mhd_str_to_uvalue_n() */
 /**
  * Convert US-ASCII decimal digit to its value.
  *
@@ -510,12 +510,21 @@ toxdigitvalue (char c)
   }
   return -1;
 #else  /* MHD_FAVOR_SMALL_CODE */
-  if (isasciidigit (c))
-    return (unsigned char) (c - '0');
-  if ( (c >= 'A') && (c <= 'F') )
-    return (unsigned char) (c - 'A' + 10);
-  if ( (c >= 'a') && (c <= 'f') )
-    return (unsigned char) (c - 'a' + 10);
+  if (c <= 9)
+  {
+     if (c >= 0)
+       return (unsigned char) (c - '0');
+  }
+  else if (c <= 'F')
+  {
+    if (c >= 'A')
+      return (unsigned char) (c - 'A' + 10);
+  }
+  else if (c <= 'F')
+  {
+    if (c >= 'a')
+      return (unsigned char) (c - 'a' + 10);
+  }
 
   return -1;
 #endif /* MHD_FAVOR_SMALL_CODE */
@@ -549,7 +558,7 @@ charsequalcaseless (const char c1, const char c2)
  * @return boolean true if character is lower case letter,
  *         boolean false otherwise
  */
-#define isasciilower(c) (((char) (c)) >= 'a' && ((char) (c)) <= 'z')
+#define isasciilower(c) ((((char) (c)) >= 'a') && (((char) (c)) <= 'z'))
 
 
 /**
@@ -559,7 +568,7 @@ charsequalcaseless (const char c1, const char c2)
  * @return boolean true if character is upper case letter,
  *         boolean false otherwise
  */
-#define isasciiupper(c) (((char) (c)) >= 'A' && ((char) (c)) <= 'Z')
+#define isasciiupper(c) ((((char) (c)) <= 'Z') && (((char) (c)) >= 'A'))
 
 
 /**
@@ -579,7 +588,7 @@ charsequalcaseless (const char c1, const char c2)
  * @return boolean true if character is decimal digit, boolean false
  *         otherwise
  */
-#define isasciidigit(c) (((char) (c)) >= '0' && ((char) (c)) <= '9')
+#define isasciidigit(c) ((((char) (c)) <= '9') && (((char) (c)) >= '0'))
 
 
 /**
@@ -590,8 +599,8 @@ charsequalcaseless (const char c1, const char c2)
  *         boolean false otherwise
  */
 #define isasciixdigit(c) (isasciidigit ((c)) || \
-                          (((char) (c)) >= 'A' && ((char) (c)) <= 'F') || \
-                          (((char) (c)) >= 'a' && ((char) (c)) <= 'f') )
+                          (((char) (c)) <= 'F' && ((char) (c)) >= 'A') || \
+                          (((char) (c)) <= 'f' && ((char) (c)) >= 'a'))
 
 
 /**
@@ -669,15 +678,8 @@ charsequalcaseless (const char c1, const char c2)
 
 
 #ifndef MHD_FAVOR_SMALL_CODE
-/**
- * Check two strings for equality, ignoring case of US-ASCII letters.
- *
- * @param str1 first string to compare
- * @param str2 second string to compare
- * @return non-zero if two strings are equal, zero otherwise.
- */
-int
-MHD_str_equal_caseless_ (const char *str1,
+MHD_INTERNAL bool
+mhd_str_equal_caseless (const char *str1,
                          const char *str2)
 {
   while (0 != (*str1))
@@ -690,7 +692,7 @@ MHD_str_equal_caseless_ (const char *str1,
       str2++;
     }
     else
-      return 0;
+      return false;
   }
   return 0 == (*str2);
 }
@@ -699,19 +701,8 @@ MHD_str_equal_caseless_ (const char *str1,
 #endif /* ! MHD_FAVOR_SMALL_CODE */
 
 
-/**
- * Check two string for equality, ignoring case of US-ASCII letters and
- * checking not more than @a maxlen characters.
- * Compares up to first terminating null character, but not more than
- * first @a maxlen characters.
- *
- * @param str1 first string to compare
- * @param str2 second string to compare
- * @param maxlen maximum number of characters to compare
- * @return non-zero if two strings are equal, zero otherwise.
- */
-int
-MHD_str_equal_caseless_n_ (const char *const str1,
+MHD_INTERNAL bool
+mhd_str_equal_caseless_n (const char *const str1,
                            const char *const str2,
                            size_t maxlen)
 {
@@ -726,26 +717,16 @@ MHD_str_equal_caseless_n_ (const char *const str1,
     if (charsequalcaseless (c1, c2))
       continue;
     else
-      return 0;
+      return false;
   }
-  return ! 0;
+  return true;
 }
 
 
-/**
- * Check two string for equality, ignoring case of US-ASCII letters and
- * checking not more than @a len bytes.
- * Compares not more first than @a len bytes, including binary zero characters.
- * Comparison stops at first unmatched byte.
- * @param str1 first string to compare
- * @param str2 second string to compare
- * @param len number of characters to compare
- * @return non-zero if @a len bytes are equal, zero otherwise.
- */
-bool
-MHD_str_equal_caseless_bin_n_ (const char *const str1,
-                               const char *const str2,
-                               size_t len)
+MHD_INTERNAL bool
+mhd_str_equal_caseless_bin_n (const char *const str1,
+                              const char *const str2,
+                              size_t len)
 {
   size_t i;
 
@@ -762,21 +743,8 @@ MHD_str_equal_caseless_bin_n_ (const char *const str1,
 }
 
 
-/**
- * Check whether @a str has case-insensitive @a token.
- * Token could be surrounded by spaces and tabs and delimited by comma.
- * Match succeed if substring between start, end (of string) or comma
- * contains only case-insensitive token and optional spaces and tabs.
- * @warning token must not contain null-characters except optional
- *          terminating null-character.
- * @param str the string to check
- * @param token the token to find
- * @param token_len length of token, not including optional terminating
- *                  null-character.
- * @return non-zero if two strings are equal, zero otherwise.
- */
-bool
-MHD_str_has_token_caseless_ (const char *str,
+MHD_INTERNAL bool
+mhd_str_has_token_caseless (const char *str,
                              const char *const token,
                              size_t token_len)
 {
@@ -822,41 +790,13 @@ MHD_str_has_token_caseless_ (const char *str,
 }
 
 
-/**
- * Remove case-insensitive @a token from the @a str and put result
- * to the output @a buf.
- *
- * Tokens in @a str could be surrounded by spaces and tabs and delimited by
- * comma. The token match succeed if substring between start, end (of string)
- * or comma contains only case-insensitive token and optional spaces and tabs.
- * The quoted strings and comments are not supported by this function.
- *
- * The output string is normalised: empty tokens and repeated whitespaces
- * are removed, no whitespaces before commas, exactly one space is used after
- * each comma.
- *
- * @param str the string to process
- * @param str_len the length of the @a str, not including optional
- *                terminating null-character.
- * @param token the token to find
- * @param token_len the length of @a token, not including optional
- *                  terminating null-character.
- * @param[out] buf the output buffer, not null-terminated.
- * @param[in,out] buf_size pointer to the size variable, at input it
- *                         is the size of allocated buffer, at output
- *                         it is the size of the resulting string (can
- *                         be up to 50% larger than input) or negative value
- *                         if there is not enough space for the result
- * @return 'true' if token has been removed,
- *         'false' otherwise.
- */
-bool
-MHD_str_remove_token_caseless_ (const char *str,
-                                size_t str_len,
-                                const char *const token,
-                                const size_t token_len,
-                                char *buf,
-                                ssize_t *buf_size)
+MHD_INTERNAL bool
+mhd_str_remove_token_caseless (const char *restrict str,
+                               size_t str_len,
+                               const char *const restrict token,
+                               const size_t token_len,
+                               char *restrict buf,
+                               ssize_t *restrict buf_size)
 {
   const char *s1; /**< the "input" string / character */
   char *s2;       /**< the "output" string / character */
@@ -1003,40 +943,16 @@ MHD_str_remove_token_caseless_ (const char *str,
 }
 
 
-/**
- * Perform in-place case-insensitive removal of @a tokens from the @a str.
- *
- * Token could be surrounded by spaces and tabs and delimited by comma.
- * The token match succeed if substring between start, end (of the string), or
- * comma contains only case-insensitive token and optional spaces and tabs.
- * The quoted strings and comments are not supported by this function.
- *
- * The input string must be normalised: empty tokens and repeated whitespaces
- * are removed, no whitespaces before commas, exactly one space is used after
- * each comma. The string is updated in-place.
- *
- * Behavior is undefined is the input string in not normalised.
- *
- * @param[in,out] str the string to update
- * @param[in,out] str_len the length of the @a str, not including optional
- *                        terminating null-character, not null-terminated
- * @param tokens the token to find
- * @param tokens_len the length of @a tokens, not including optional
- *                   terminating null-character.
- * @return 'true' if any token has been removed,
- *         'false' otherwise.
- */
-bool
-MHD_str_remove_tokens_caseless_ (char *str,
-                                 size_t *str_len,
-                                 const char *const tokens,
-                                 const size_t tokens_len)
+MHD_INTERNAL bool
+mhd_str_remove_tokens_caseless (char *restrict str,
+                                size_t *restrict str_len,
+                                const char *const restrict tkns,
+                                const size_t tokens_len)
 {
-  const char *const t = tokens;   /**< a short alias for @a tokens */
   size_t pt;                      /**< position in @a tokens */
   bool token_removed;
 
-  mhd_assert (NULL == memchr (tokens, 0, tokens_len));
+  mhd_assert (NULL == memchr (tkns, 0, tokens_len));
 
   token_removed = false;
   pt = 0;
@@ -1048,36 +964,36 @@ MHD_str_remove_tokens_caseless_ (char *str,
 
     /* Skip any initial whitespaces and empty tokens in 'tokens' */
     while ( (pt < tokens_len) &&
-            ((' ' == t[pt]) || ('\t' == t[pt]) || (',' == t[pt])) )
+            ((' ' == tkns[pt]) || ('\t' == tkns[pt]) || (',' == tkns[pt])) )
       pt++;
 
     if (pt >= tokens_len)
       break; /* No more tokens, nothing to remove */
 
     /* Found non-whitespace char which is not a comma */
-    tkn = t + pt;
+    tkn = tkns + pt;
     do
     {
       do
       {
         pt++;
       } while (pt < tokens_len &&
-               (' ' != t[pt] && '\t' != t[pt] && ',' != t[pt]));
+               (' ' != tkns[pt] && '\t' != tkns[pt] && ',' != tkns[pt]));
       /* Found end of the token string, space, tab, or comma */
-      tkn_len = pt - (size_t) (tkn - t);
+      tkn_len = pt - (size_t) (tkn - tkns);
 
       /* Skip all spaces and tabs */
-      while (pt < tokens_len && (' ' == t[pt] || '\t' == t[pt]))
+      while (pt < tokens_len && (' ' == tkns[pt] || '\t' == tkns[pt]))
         pt++;
       /* Found end of the token string or non-whitespace char */
-    } while (pt < tokens_len && ',' != t[pt]);
+    } while (pt < tokens_len && ',' != tkns[pt]);
 
     /* 'tkn' is the input token with 'tkn_len' chars */
     mhd_assert (0 != tkn_len);
 
     if (*str_len == tkn_len)
     {
-      if (MHD_str_equal_caseless_bin_n_ (str, tkn, tkn_len))
+      if (mhd_str_equal_caseless_bin_n (str, tkn, tkn_len))
       {
         *str_len = 0;
         token_removed = true;
@@ -1104,7 +1020,7 @@ MHD_str_remove_tokens_caseless_ (char *str,
         mhd_assert (pr >= pw);
         mhd_assert ((*str_len) >= (pr + tkn_len));
         if ( ( ((*str_len) == (pr + tkn_len)) || (',' == str[pr + tkn_len]) ) &&
-             MHD_str_equal_caseless_bin_n_ (str + pr, tkn, tkn_len) )
+             mhd_str_equal_caseless_bin_n (str + pr, tkn, tkn_len) )
         {
           /* current token in the input string matches the 'tkn', skip it */
           mhd_assert ((*str_len == pr + tkn_len) || \
@@ -1179,19 +1095,9 @@ MHD_str_remove_tokens_caseless_ (char *str,
 #ifndef MHD_FAVOR_SMALL_CODE
 /* Use individual function for each case */
 
-/**
- * Convert decimal US-ASCII digits in string to number in uint_fast64_t.
- * Conversion stopped at first non-digit character.
- *
- * @param str string to convert
- * @param[out] out_val pointer to uint_fast64_t to store result of conversion
- * @return non-zero number of characters processed on succeed,
- *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint_fast64_t or @a out_val is NULL
- */
-size_t
-MHD_str_to_uint64_ (const char *str,
-                    uint_fast64_t *out_val)
+MHD_INTERNAL size_t
+mhd_str_to_uint64 (const char *restrict str,
+                    uint_fast64_t *restrict out_val)
 {
   const char *const start = str;
   uint_fast64_t res;
@@ -1203,13 +1109,15 @@ MHD_str_to_uint64_ (const char *str,
   do
   {
     const int digit = (unsigned char) (*str) - '0';
-    if ( (res > (UINT64_MAX / 10)) ||
-         ( (res == (UINT64_MAX / 10)) &&
-           ((uint_fast64_t) digit > (UINT64_MAX % 10)) ) )
-      return 0;
+    uint_fast64_t prev_res = res;
 
     res *= 10;
+    if (res / 10 != prev_res)
+      return 0;
     res += (unsigned int) digit;
+    if (res < (unsigned int) digit)
+      return 0;
+
     str++;
   } while (isasciidigit (*str));
 
@@ -1218,23 +1126,10 @@ MHD_str_to_uint64_ (const char *str,
 }
 
 
-/**
- * Convert not more then @a maxlen decimal US-ASCII digits in string to
- * number in uint_fast64_t.
- * Conversion stopped at first non-digit character or after @a maxlen
- * digits.
- *
- * @param str string to convert
- * @param maxlen maximum number of characters to process
- * @param[out] out_val pointer to uint_fast64_t to store result of conversion
- * @return non-zero number of characters processed on succeed,
- *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint_fast64_t or @a out_val is NULL
- */
-size_t
-MHD_str_to_uint64_n_ (const char *str,
+MHD_INTERNAL size_t
+mhd_str_to_uint64_n (const char *restrict str,
                       size_t maxlen,
-                      uint_fast64_t *out_val)
+                      uint_fast64_t *restrict out_val)
 {
   uint_fast64_t res;
   size_t i;
@@ -1247,14 +1142,14 @@ MHD_str_to_uint64_n_ (const char *str,
   do
   {
     const int digit = (unsigned char) str[i] - '0';
-
-    if ( (res > (UINT64_MAX / 10)) ||
-         ( (res == (UINT64_MAX / 10)) &&
-           ((uint_fast64_t) digit > (UINT64_MAX % 10)) ) )
-      return 0;
+    uint_fast64_t prev_res = res;
 
     res *= 10;
+    if (res / 10 != prev_res)
+      return 0;
     res += (unsigned int) digit;
+    if (res < (unsigned int) digit)
+      return 0;
     i++;
   } while ( (i < maxlen) &&
             isasciidigit (str[i]) );
@@ -1264,19 +1159,9 @@ MHD_str_to_uint64_n_ (const char *str,
 }
 
 
-/**
- * Convert hexadecimal US-ASCII digits in string to number in uint_fast32_t.
- * Conversion stopped at first non-digit character.
- *
- * @param str string to convert
- * @param[out] out_val pointer to uint_fast32_t to store result of conversion
- * @return non-zero number of characters processed on succeed,
- *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint_fast32_t or @a out_val is NULL
- */
-size_t
-MHD_strx_to_uint32_ (const char *str,
-                     uint_fast32_t *out_val)
+MHD_INTERNAL size_t
+mhd_strx_to_uint32 (const char *restrict str,
+                     uint_fast32_t *restrict out_val)
 {
   const char *const start = str;
   uint_fast32_t res;
@@ -1289,15 +1174,15 @@ MHD_strx_to_uint32_ (const char *str,
   digit = toxdigitvalue (*str);
   while (digit >= 0)
   {
-    if ( (res < (UINT32_MAX / 16)) ||
-         ((res == (UINT32_MAX / 16)) &&
-          ( (uint_fast32_t) digit <= (UINT32_MAX % 16)) ) )
-    {
-      res *= 16;
-      res += (unsigned int) digit;
-    }
-    else
+    uint_fast32_t prev_res = res;
+
+    res *= 16;
+    if (res / 16 != prev_res)
       return 0;
+    res += (unsigned int) digit;
+    if (res < (unsigned int) digit)
+      return 0;
+
     str++;
     digit = toxdigitvalue (*str);
   }
@@ -1308,23 +1193,10 @@ MHD_strx_to_uint32_ (const char *str,
 }
 
 
-/**
- * Convert not more then @a maxlen hexadecimal US-ASCII digits in string
- * to number in uint_fast32_t.
- * Conversion stopped at first non-digit character or after @a maxlen
- * digits.
- *
- * @param str string to convert
- * @param maxlen maximum number of characters to process
- * @param[out] out_val pointer to uint_fast32_t to store result of conversion
- * @return non-zero number of characters processed on succeed,
- *         zero if no digit is found, resulting value is larger
- *         then possible to store in uint_fast32_t or @a out_val is NULL
- */
-size_t
-MHD_strx_to_uint32_n_ (const char *str,
+MHD_INTERNAL size_t
+mhd_strx_to_uint32_n (const char *restrict str,
                        size_t maxlen,
-                       uint_fast32_t *out_val)
+                       uint_fast32_t *restrict out_val)
 {
   size_t i;
   uint_fast32_t res;
@@ -1336,9 +1208,13 @@ MHD_strx_to_uint32_n_ (const char *str,
   i = 0;
   while (i < maxlen && (digit = toxdigitvalue (str[i])) >= 0)
   {
-    if ( (res > (UINT32_MAX / 16)) ||
-         ((res == (UINT32_MAX / 16)) &&
-          ( (uint_fast32_t) digit > (UINT32_MAX % 16)) ) )
+    uint_fast32_t prev_res = res;
+
+    res *= 16;
+    if (res / 16 != prev_res)
+      return 0;
+    res += (unsigned int) digit;
+    if (res < (unsigned int) digit)
       return 0;
 
     res *= 16;
@@ -1362,9 +1238,9 @@ MHD_strx_to_uint32_n_ (const char *str,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint_fast64_t or @a out_val is NULL
  */
-size_t
-MHD_strx_to_uint64_ (const char *str,
-                     uint_fast64_t *out_val)
+MHD_INTERNAL size_t
+mhd_strx_to_uint64 (const char *restrict str,
+                     uint_fast64_t *restrict out_val)
 {
   const char *const start = str;
   uint_fast64_t res;
@@ -1376,15 +1252,15 @@ MHD_strx_to_uint64_ (const char *str,
   digit = toxdigitvalue (*str);
   while (digit >= 0)
   {
-    if ( (res < (UINT64_MAX / 16)) ||
-         ((res == (UINT64_MAX / 16)) &&
-          ( (uint_fast64_t) digit <= (UINT64_MAX % 16)) ) )
-    {
-      res *= 16;
-      res += (unsigned int) digit;
-    }
-    else
+    uint_fast64_t prev_res = res;
+
+    res *= 16;
+    if (res / 16 != prev_res)
       return 0;
+    res += (unsigned int) digit;
+    if (res < (unsigned int) digit)
+      return 0;
+
     str++;
     digit = toxdigitvalue (*str);
   }
@@ -1408,10 +1284,10 @@ MHD_strx_to_uint64_ (const char *str,
  *         zero if no digit is found, resulting value is larger
  *         then possible to store in uint_fast64_t or @a out_val is NULL
  */
-size_t
-MHD_strx_to_uint64_n_ (const char *str,
+MHD_INTERNAL size_t
+mhd_strx_to_uint64_n (const char *restrict str,
                        size_t maxlen,
-                       uint_fast64_t *out_val)
+                       uint_fast64_t *restrict out_val)
 {
   size_t i;
   uint_fast64_t res;
@@ -1423,13 +1299,14 @@ MHD_strx_to_uint64_n_ (const char *str,
   i = 0;
   while (i < maxlen && (digit = toxdigitvalue (str[i])) >= 0)
   {
-    if ( (res > (UINT64_MAX / 16)) ||
-         ((res == (UINT64_MAX / 16)) &&
-          ( (uint_fast64_t) digit > (UINT64_MAX % 16)) ) )
-      return 0;
+    uint_fast64_t prev_res = res;
 
     res *= 16;
+    if (res / 16 != prev_res)
+      return 0;
     res += (unsigned int) digit;
+    if (res < (unsigned int) digit)
+      return 0;
     i++;
   }
 
@@ -1458,10 +1335,10 @@ MHD_strx_to_uint64_n_ (const char *str,
  *         zero if no digit is found, resulting value is larger
  *         then @a max_val, @a val_size is not 4/8 or @a out_val is NULL
  */
-size_t
-MHD_str_to_uvalue_n_ (const char *str,
+MHD_INTERNAL size_t
+mhd_str_to_uvalue_n (const char *restrict str,
                       size_t maxlen,
-                      void *out_val,
+                      void *restrict out_val,
                       size_t val_size,
                       uint_fast64_t max_val,
                       unsigned int base)
@@ -1510,8 +1387,8 @@ MHD_str_to_uvalue_n_ (const char *str,
 #endif /* MHD_FAVOR_SMALL_CODE */
 
 
-size_t
-MHD_uint32_to_strx (uint_fast32_t val,
+MHD_INTERNAL size_t
+mhd_uint32_to_strx (uint_fast32_t val,
                     char *buf,
                     size_t buf_size)
 {
@@ -1544,8 +1421,8 @@ MHD_uint32_to_strx (uint_fast32_t val,
 
 
 #ifndef MHD_FAVOR_SMALL_CODE
-size_t
-MHD_uint16_to_str (uint_fast16_t val,
+MHD_INTERNAL size_t
+mhd_uint16_to_str (uint_fast16_t val,
                    char *buf,
                    size_t buf_size)
 {
@@ -1585,14 +1462,14 @@ MHD_uint16_to_str (uint_fast16_t val,
 #endif /* !MHD_FAVOR_SMALL_CODE */
 
 
-size_t
-MHD_uint64_to_str (uint_fast64_t val,
+MHD_INTERNAL size_t
+mhd_uint64_to_str (uint_fast64_t val,
                    char *buf,
                    size_t buf_size)
 {
   char *chr;  /**< pointer to the current printed digit */
   /* The biggest printable number is 18446744073709551615 */
-  uint_fast64_t divisor = UINT64_C (10000000000000000000);
+  uint_fast64_t divisor = (uint_fast64_t) 10000000000000000000U;
   int digit;
 
   chr = buf;
@@ -1623,8 +1500,8 @@ MHD_uint64_to_str (uint_fast64_t val,
 }
 
 
-size_t
-MHD_uint8_to_str_pad (uint8_t val,
+MHD_INTERNAL size_t
+mhd_uint8_to_str_pad (uint8_t val,
                       uint8_t min_digits,
                       char *buf,
                       size_t buf_size)
@@ -1670,10 +1547,10 @@ MHD_uint8_to_str_pad (uint8_t val,
 }
 
 
-size_t
-MHD_bin_to_hex (const void *bin,
+MHD_INTERNAL size_t
+mhd_bin_to_hex (const void *restrict bin,
                 size_t size,
-                char *hex)
+                char *restrict hex)
 {
   size_t i;
 
@@ -1690,26 +1567,25 @@ MHD_bin_to_hex (const void *bin,
 }
 
 
-size_t
-MHD_bin_to_hex_z (const void *bin,
+MHD_INTERNAL size_t
+mhd_bin_to_hex_z (const void *restrict bin,
                   size_t size,
-                  char *hex)
+                  char *restrict hex)
 {
   size_t res;
 
-  res = MHD_bin_to_hex (bin, size, hex);
+  res = mhd_bin_to_hex (bin, size, hex);
   hex[res] = 0;
 
   return res;
 }
 
 
-size_t
-MHD_hex_to_bin (const char *hex,
+MHD_INTERNAL size_t
+mhd_hex_to_bin (const char *restrict hex,
                 size_t len,
-                void *bin)
+                void *restrict bin)
 {
-  uint8_t *const out = (uint8_t *) bin;
   size_t r;
   size_t w;
 
@@ -1723,7 +1599,7 @@ MHD_hex_to_bin (const char *hex,
     const int l = toxdigitvalue (hex[r++]);
     if (0 > l)
       return 0;
-    out[w++] = (uint8_t) ((unsigned int) l);
+    ((uint8_t *)bin)[w++] = (uint8_t) ((unsigned int) l);
   }
   while (r < len)
   {
@@ -1731,8 +1607,9 @@ MHD_hex_to_bin (const char *hex,
     const int l = toxdigitvalue (hex[r++]);
     if ((0 > h) || (0 > l))
       return 0;
-    out[w++] = (uint8_t) ( ((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
-                           | ((uint8_t) ((unsigned int) l)) );
+    ((uint8_t *)bin)[w++] = (uint8_t) ( ((uint8_t) (((uint8_t)
+                                       ((unsigned int) h)) << 4))
+                                       | ((uint8_t) ((unsigned int) l)) );
   }
   mhd_assert (len == r);
   mhd_assert ((len + 1) / 2 == w);
@@ -1740,8 +1617,8 @@ MHD_hex_to_bin (const char *hex,
 }
 
 
-size_t
-MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
+MHD_INTERNAL size_t
+mhd_str_pct_decode_strict_n (const char *pct_encoded,
                               size_t pct_encoded_len,
                               char *decoded,
                               size_t buf_size)
@@ -1750,7 +1627,7 @@ MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
   bool broken;
   size_t res;
 
-  res = MHD_str_pct_decode_lenient_n_ (pct_encoded, pct_encoded_len, decoded,
+  res = mhd_str_pct_decode_lenient_n (pct_encoded, pct_encoded_len, decoded,
                                        buf_size, &broken);
   if (broken)
     return 0;
@@ -1823,8 +1700,8 @@ MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
 }
 
 
-size_t
-MHD_str_pct_decode_lenient_n_ (const char *pct_encoded,
+MHD_INTERNAL size_t
+mhd_str_pct_decode_lenient_n (const char *pct_encoded,
                                size_t pct_encoded_len,
                                char *decoded,
                                size_t buf_size,
@@ -1922,14 +1799,14 @@ MHD_str_pct_decode_lenient_n_ (const char *pct_encoded,
 }
 
 
-size_t
-MHD_str_pct_decode_in_place_strict_ (char *str)
+MHD_INTERNAL size_t
+mhd_str_pct_decode_in_place_strict (char *str)
 {
 #ifdef MHD_FAVOR_SMALL_CODE
   size_t res;
   bool broken;
 
-  res = MHD_str_pct_decode_in_place_lenient_ (str, &broken);
+  res = mhd_str_pct_decode_in_place_lenient (str, &broken);
   if (broken)
   {
     res = 0;
@@ -1978,8 +1855,8 @@ MHD_str_pct_decode_in_place_strict_ (char *str)
 }
 
 
-size_t
-MHD_str_pct_decode_in_place_lenient_ (char *str,
+MHD_INTERNAL size_t
+mhd_str_pct_decode_in_place_lenient (char *str,
                                       bool *broken_encoding)
 {
 #ifdef MHD_FAVOR_SMALL_CODE
@@ -1987,7 +1864,7 @@ MHD_str_pct_decode_in_place_lenient_ (char *str,
   size_t res;
 
   len = strlen (str);
-  res = MHD_str_pct_decode_lenient_n_ (str, len, str, len, broken_encoding);
+  res = mhd_str_pct_decode_lenient_n (str, len, str, len, broken_encoding);
   str[res] = 0;
 
   return res;
@@ -2055,8 +1932,8 @@ MHD_str_pct_decode_in_place_lenient_ (char *str,
 
 
 #ifdef DAUTH_SUPPORT
-bool
-MHD_str_equal_quoted_bin_n (const char *quoted,
+MHD_INTERNAL bool
+mhd_str_equal_quoted_bin_n (const char *quoted,
                             size_t quoted_len,
                             const char *unquoted,
                             size_t unquoted_len)
@@ -2085,8 +1962,8 @@ MHD_str_equal_quoted_bin_n (const char *quoted,
 }
 
 
-bool
-MHD_str_equal_caseless_quoted_bin_n (const char *quoted,
+MHD_INTERNAL bool
+mhd_str_equal_caseless_quoted_bin_n (const char *quoted,
                                      size_t quoted_len,
                                      const char *unquoted,
                                      size_t unquoted_len)
@@ -2115,8 +1992,8 @@ MHD_str_equal_caseless_quoted_bin_n (const char *quoted,
 }
 
 
-size_t
-MHD_str_unquote (const char *quoted,
+MHD_INTERNAL size_t
+mhd_str_unquote (const char *quoted,
                  size_t quoted_len,
                  char *result)
 {
@@ -2144,8 +2021,8 @@ MHD_str_unquote (const char *quoted,
 
 #if defined(DAUTH_SUPPORT) || defined(BAUTH_SUPPORT)
 
-size_t
-MHD_str_quote (const char *unquoted,
+MHD_INTERNAL size_t
+mhd_str_quote (const char *unquoted,
                size_t unquoted_len,
                char *result,
                size_t buf_size)
@@ -2224,23 +2101,23 @@ MHD_str_quote (const char *unquoted,
 #endif /* MHD_BASE64_FUNC_VERSION < 1 || MHD_BASE64_FUNC_VERSION > 3 */
 
 #if MHD_BASE64_FUNC_VERSION == 3
-#define MHD_base64_map_type_ int
+#define mhd_base64_map_type int
 #else  /* MHD_BASE64_FUNC_VERSION < 3 */
-#define MHD_base64_map_type_ int8_t
+#define mhd_base64_map_type int8_t
 #endif /* MHD_BASE64_FUNC_VERSION < 3 */
 
 #if MHD_BASE64_FUNC_VERSION == 1
-static MHD_base64_map_type_
+static mhd_base64_map_type
 base64_char_to_value_ (uint8_t c)
 {
   if ('Z' >= c)
   {
     if ('A' <= c)
-      return (MHD_base64_map_type_) ((c - 'A') + 0);
+      return (mhd_base64_map_type) ((c - 'A') + 0);
     if ('0' <= c)
     {
       if ('9' >= c)
-        return (MHD_base64_map_type_) ((c - '0') + 52);
+        return (mhd_base64_map_type) ((c - '0') + 52);
       if ('=' == c)
         return -2;
       return -1;
@@ -2252,7 +2129,7 @@ base64_char_to_value_ (uint8_t c)
     return -1;
   }
   if (('z' >= c) && ('a' <= c))
-    return (MHD_base64_map_type_) ((c - 'a') + 26);
+    return (mhd_base64_map_type) ((c - 'a') + 26);
   return -1;
 }
 
@@ -2263,14 +2140,14 @@ base64_char_to_value_ (uint8_t c)
 MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_
 
 
-size_t
-MHD_base64_to_bin_n (const char *base64,
+MHD_INTERNAL size_t
+mhd_base64_to_bin_n (const char *base64,
                      size_t base64_len,
                      void *bin,
                      size_t bin_size)
 {
 #if MHD_BASE64_FUNC_VERSION >= 2
-  static const MHD_base64_map_type_ map[] = {
+  static const mhd_base64_map_type map[] = {
     /* -1 = invalid char, -2 = padding
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
     NUL,  SOH,  STX,  ETX,  EOT,  ENQ,  ACK,  BEL,  */
@@ -2370,10 +2247,10 @@ MHD_base64_to_bin_n (const char *base64,
 #endif /* MHD_BASE64_FUNC_VERSION == 2 */
     if (1)
     {
-      const MHD_base64_map_type_ v1 = base64_char_to_value_ (in[i + 0]);
-      const MHD_base64_map_type_ v2 = base64_char_to_value_ (in[i + 1]);
-      const MHD_base64_map_type_ v3 = base64_char_to_value_ (in[i + 2]);
-      const MHD_base64_map_type_ v4 = base64_char_to_value_ (in[i + 3]);
+      const mhd_base64_map_type v1 = base64_char_to_value_ (in[i + 0]);
+      const mhd_base64_map_type v2 = base64_char_to_value_ (in[i + 1]);
+      const mhd_base64_map_type v3 = base64_char_to_value_ (in[i + 2]);
+      const mhd_base64_map_type v4 = base64_char_to_value_ (in[i + 3]);
       if ((0 > v1) || (0 > v2) || (0 > v3) || (0 > v4))
         return 0;
       out[j + 0] = (uint8_t) (((uint8_t) (((uint8_t) v1) << 2))
@@ -2391,10 +2268,10 @@ MHD_base64_to_bin_n (const char *base64,
 #endif /* MHD_BASE64_FUNC_VERSION == 2 */
   if (1)
   { /* The last four chars block */
-    const MHD_base64_map_type_ v1 = base64_char_to_value_ (in[i + 0]);
-    const MHD_base64_map_type_ v2 = base64_char_to_value_ (in[i + 1]);
-    const MHD_base64_map_type_ v3 = base64_char_to_value_ (in[i + 2]);
-    const MHD_base64_map_type_ v4 = base64_char_to_value_ (in[i + 3]);
+    const mhd_base64_map_type v1 = base64_char_to_value_ (in[i + 0]);
+    const mhd_base64_map_type v2 = base64_char_to_value_ (in[i + 1]);
+    const mhd_base64_map_type v3 = base64_char_to_value_ (in[i + 2]);
+    const mhd_base64_map_type v4 = base64_char_to_value_ (in[i + 3]);
     if ((0 > v1) || (0 > v2))
       return 0; /* Invalid char or padding at first two positions */
     mhd_assert (j < bin_size);
@@ -2435,6 +2312,6 @@ MHD_base64_to_bin_n (const char *base64,
 MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_
 
 
-#undef MHD_base64_map_type_
+#undef mhd_base64_map_type
 
 #endif /* BAUTH_SUPPORT */

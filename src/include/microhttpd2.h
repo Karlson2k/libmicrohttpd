@@ -475,11 +475,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_UPGRADE_FORWARD_INCOMPLETE = 30100
   ,
   /**
-   * We failed to allocate memory for generating the response from our
-   * memory pool.  Likely the request header was too large to leave
+   * Failed to allocate memory from our memory pool for processing
+   * the request.  Likely the request fields are too large to leave
    * enough room.
    */
-  MHD_SC_CONNECTION_POOL_MALLOC_FAILURE = 30130
+  MHD_SC_CONNECTION_POOL_MALLOC_FAILURE_REQ = 30130
   ,
 
   /* 40000-level errors are caused by the HTTP client
@@ -527,6 +527,31 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * The given uploaded, chunked-encoded body was malformed.
    */
   MHD_SC_CHUNKED_ENCODING_MALFORMED = 40007
+  ,
+  /**
+   * The first header line has whitespace at the start
+   */
+  MHD_SC_REQ_FIRST_HEADER_LINE_SPACE_PREFIXED = 40100
+  ,
+  /**
+   * Wrong bare CR characters has been replaced with space.
+   */
+  MHD_SC_REQ_HEADER_CR_REPLACED = 40120
+  ,
+  /**
+   * Header line has not colon and skipped.
+   */
+  MHD_SC_REQ_HEADER_LINE_NO_COLON = 40121
+  ,
+  /**
+   * Wrong bare CR characters has been replaced with space.
+   */
+  MHD_SC_REQ_FOOTER_CR_REPLACED = 40140
+  ,
+  /**
+   * Footer line has not colon and skipped.
+   */
+  MHD_SC_REQ_FOOTER_LINE_NO_COLON = 40141
   ,
 
   /* 50000-level errors are because of an error internal
@@ -1003,6 +1028,27 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * Unable to allocate memory for the response header
    */
   MHD_SC_RESPONSE_HEADER_MALLOC_FAILED = 50540
+  ,
+  /**
+   * Failed to switch TCP_NODELAY option for the socket
+   */
+  MHD_SC_SOCKET_TCP_NODELAY_FAILED = 50600
+  ,
+  /**
+   * Failed to switch TCP_CORK or TCP_NOPUSH option for the socket
+   */
+  MHD_SC_SOCKET_TCP_CORK_NOPUSH_FAILED = 50601
+  ,
+  /**
+   * Failed to force flush the last part of the response header or
+   * the response content
+   */
+  MHD_SC_SOCKET_FLUSH_LAST_PART_FAILED = 50620
+  ,
+  /**
+   * Failed to push buffered data by zero-sized send()
+   */
+  MHD_SC_SOCKET_ZERO_SEND_FAILED = 50621
   ,
   /**
    * Something wrong in the internal MHD logic.
@@ -4672,7 +4718,8 @@ MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_OUT_SIZE_ (4,3);
  *
  * @param request request to get values from
  * @param kind what kind of value are we looking for
- * @param key the header to look for, NULL to lookup 'trailing' value without a key
+ * @param key the header to look for, empty to lookup 'trailing' value
+ *            without a key
  * @return NULL if no such item was found
  * @ingroup request
  */
@@ -4690,140 +4737,220 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
  * @defgroup httpcode HTTP response codes
  * @{
  */
+/* Registry export date: 2023-09-29 */
 /* See http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml */
 enum MHD_FIXED_ENUM_APP_SET_ MHD_HTTP_StatusCode
 {
+  /* 100 "Continue".            RFC9110, Section 15.2.1. */
+  MHD_HTTP_STATUS_CONTINUE =                    100
+  ,
+  /* 101 "Switching Protocols". RFC9110, Section 15.2.2. */
+  MHD_HTTP_STATUS_SWITCHING_PROTOCOLS =         101
+  ,
+  /* 102 "Processing".          RFC2518. */
+  MHD_HTTP_STATUS_PROCESSING =                  102
+  ,
+  /* 103 "Early Hints".         RFC8297. */
+  MHD_HTTP_STATUS_EARLY_HINTS =                 103
+  ,
 
-  MHD_HTTP_STATUS_CONTINUE = 100
+  /* 200 "OK".                  RFC9110, Section 15.3.1. */
+  MHD_HTTP_STATUS_OK =                          200
   ,
-  MHD_HTTP_STATUS_SWITCHING_PROTOCOLS = 101
+  /* 201 "Created".             RFC9110, Section 15.3.2. */
+  MHD_HTTP_STATUS_CREATED =                     201
   ,
-  MHD_HTTP_STATUS_PROCESSING = 102
+  /* 202 "Accepted".            RFC9110, Section 15.3.3. */
+  MHD_HTTP_STATUS_ACCEPTED =                    202
   ,
-  MHD_HTTP_STATUS_OK = 200
-  ,
-  MHD_HTTP_STATUS_CREATED = 201
-  ,
-  MHD_HTTP_STATUS_ACCEPTED = 202
-  ,
+  /* 203 "Non-Authoritative Information". RFC9110, Section 15.3.4. */
   MHD_HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION = 203
   ,
-  MHD_HTTP_STATUS_NO_CONTENT = 204
+  /* 204 "No Content".          RFC9110, Section 15.3.5. */
+  MHD_HTTP_STATUS_NO_CONTENT =                  204
   ,
-  MHD_HTTP_STATUS_RESET_CONTENT = 205
+  /* 205 "Reset Content".       RFC9110, Section 15.3.6. */
+  MHD_HTTP_STATUS_RESET_CONTENT =               205
   ,
-  MHD_HTTP_STATUS_PARTIAL_CONTENT = 206
+  /* 206 "Partial Content".     RFC9110, Section 15.3.7. */
+  MHD_HTTP_STATUS_PARTIAL_CONTENT =             206
   ,
-  MHD_HTTP_STATUS_MULTI_STATUS = 207
+  /* 207 "Multi-Status".        RFC4918. */
+  MHD_HTTP_STATUS_MULTI_STATUS =                207
   ,
-  MHD_HTTP_STATUS_ALREADY_REPORTED = 208
+  /* 208 "Already Reported".    RFC5842. */
+  MHD_HTTP_STATUS_ALREADY_REPORTED =            208
   ,
-  MHD_HTTP_STATUS_IM_USED = 226
+
+  /* 226 "IM Used".             RFC3229. */
+  MHD_HTTP_STATUS_IM_USED =                     226
   ,
-  MHD_HTTP_STATUS_MULTIPLE_CHOICES = 300
+
+  /* 300 "Multiple Choices".    RFC9110, Section 15.4.1. */
+  MHD_HTTP_STATUS_MULTIPLE_CHOICES =            300
   ,
-  MHD_HTTP_STATUS_MOVED_PERMANENTLY = 301
+  /* 301 "Moved Permanently".   RFC9110, Section 15.4.2. */
+  MHD_HTTP_STATUS_MOVED_PERMANENTLY =           301
   ,
-  MHD_HTTP_STATUS_FOUND = 302
+  /* 302 "Found".               RFC9110, Section 15.4.3. */
+  MHD_HTTP_STATUS_FOUND =                       302
   ,
-  MHD_HTTP_STATUS_SEE_OTHER = 303
+  /* 303 "See Other".           RFC9110, Section 15.4.4. */
+  MHD_HTTP_STATUS_SEE_OTHER =                   303
   ,
-  MHD_HTTP_STATUS_NOT_MODIFIED = 304
+  /* 304 "Not Modified".        RFC9110, Section 15.4.5. */
+  MHD_HTTP_STATUS_NOT_MODIFIED =                304
   ,
-  MHD_HTTP_STATUS_USE_PROXY = 305
+  /* 305 "Use Proxy".           RFC9110, Section 15.4.6. */
+  MHD_HTTP_STATUS_USE_PROXY =                   305
   ,
-  MHD_HTTP_STATUS_SWITCH_PROXY = 306 /* IANA: unused */
+  /* 306 "Switch Proxy".        Not used! RFC9110, Section 15.4.7. */
+  MHD_HTTP_STATUS_SWITCH_PROXY =                306
   ,
-  MHD_HTTP_STATUS_TEMPORARY_REDIRECT = 307
+  /* 307 "Temporary Redirect".  RFC9110, Section 15.4.8. */
+  MHD_HTTP_STATUS_TEMPORARY_REDIRECT =          307
   ,
-  MHD_HTTP_STATUS_PERMANENT_REDIRECT = 308
+  /* 308 "Permanent Redirect".  RFC9110, Section 15.4.9. */
+  MHD_HTTP_STATUS_PERMANENT_REDIRECT =          308
   ,
-  MHD_HTTP_STATUS_BAD_REQUEST = 400
+
+  /* 400 "Bad Request".         RFC9110, Section 15.5.1. */
+  MHD_HTTP_STATUS_BAD_REQUEST =                 400
   ,
-  MHD_HTTP_STATUS_UNAUTHORIZED = 401
+  /* 401 "Unauthorized".        RFC9110, Section 15.5.2. */
+  MHD_HTTP_STATUS_UNAUTHORIZED =                401
   ,
-  MHD_HTTP_STATUS_PAYMENT_REQUIRED = 402
+  /* 402 "Payment Required".    RFC9110, Section 15.5.3. */
+  MHD_HTTP_STATUS_PAYMENT_REQUIRED =            402
   ,
-  MHD_HTTP_STATUS_FORBIDDEN = 403
+  /* 403 "Forbidden".           RFC9110, Section 15.5.4. */
+  MHD_HTTP_STATUS_FORBIDDEN =                   403
   ,
-  MHD_HTTP_STATUS_NOT_FOUND = 404
+  /* 404 "Not Found".           RFC9110, Section 15.5.5. */
+  MHD_HTTP_STATUS_NOT_FOUND =                   404
   ,
-  MHD_HTTP_STATUS_METHOD_NOT_ALLOWED = 405
+  /* 405 "Method Not Allowed".  RFC9110, Section 15.5.6. */
+  MHD_HTTP_STATUS_METHOD_NOT_ALLOWED =          405
   ,
-  MHD_HTTP_STATUS_NOT_ACCEPTABLE = 406
+  /* 406 "Not Acceptable".      RFC9110, Section 15.5.7. */
+  MHD_HTTP_STATUS_NOT_ACCEPTABLE =              406
   ,
+  /* 407 "Proxy Authentication Required". RFC9110, Section 15.5.8. */
   MHD_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED = 407
   ,
-  MHD_HTTP_STATUS_REQUEST_TIMEOUT = 408
+  /* 408 "Request Timeout".     RFC9110, Section 15.5.9. */
+  MHD_HTTP_STATUS_REQUEST_TIMEOUT =             408
   ,
-  MHD_HTTP_STATUS_CONFLICT = 409
+  /* 409 "Conflict".            RFC9110, Section 15.5.10. */
+  MHD_HTTP_STATUS_CONFLICT =                    409
   ,
-  MHD_HTTP_STATUS_GONE = 410
+  /* 410 "Gone".                RFC9110, Section 15.5.11. */
+  MHD_HTTP_STATUS_GONE =                        410
   ,
-  MHD_HTTP_STATUS_LENGTH_REQUIRED = 411
+  /* 411 "Length Required".     RFC9110, Section 15.5.12. */
+  MHD_HTTP_STATUS_LENGTH_REQUIRED =             411
   ,
-  MHD_HTTP_STATUS_PRECONDITION_FAILED = 412
+  /* 412 "Precondition Failed". RFC9110, Section 15.5.13. */
+  MHD_HTTP_STATUS_PRECONDITION_FAILED =         412
   ,
-  MHD_HTTP_STATUS_PAYLOAD_TOO_LARGE = 413
+  /* 413 "Content Too Large".   RFC9110, Section 15.5.14. */
+  MHD_HTTP_STATUS_CONTENT_TOO_LARGE =           413
   ,
-  MHD_HTTP_STATUS_URI_TOO_LONG = 414
+  /* 414 "URI Too Long".        RFC9110, Section 15.5.15. */
+  MHD_HTTP_STATUS_URI_TOO_LONG =                414
   ,
-  MHD_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE = 415
+  /* 415 "Unsupported Media Type". RFC9110, Section 15.5.16. */
+  MHD_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE =      415
   ,
-  MHD_HTTP_STATUS_RANGE_NOT_SATISFIABLE = 416
+  /* 416 "Range Not Satisfiable". RFC9110, Section 15.5.17. */
+  MHD_HTTP_STATUS_RANGE_NOT_SATISFIABLE =       416
   ,
-  MHD_HTTP_STATUS_EXPECTATION_FAILED = 417
+  /* 417 "Expectation Failed".  RFC9110, Section 15.5.18. */
+  MHD_HTTP_STATUS_EXPECTATION_FAILED =          417
   ,
-  MHD_HTTP_STATUS_MISDIRECTED_REQUEST = 421
+
+
+  /* 421 "Misdirected Request". RFC9110, Section 15.5.20. */
+  MHD_HTTP_STATUS_MISDIRECTED_REQUEST =         421
   ,
-  MHD_HTTP_STATUS_UNPROCESSABLE_ENTITY = 422
+  /* 422 "Unprocessable Content". RFC9110, Section 15.5.21. */
+  MHD_HTTP_STATUS_UNPROCESSABLE_CONTENT =       422
   ,
-  MHD_HTTP_STATUS_LOCKED = 423
+  /* 423 "Locked".              RFC4918. */
+  MHD_HTTP_STATUS_LOCKED =                      423
   ,
-  MHD_HTTP_STATUS_FAILED_DEPENDENCY = 424
+  /* 424 "Failed Dependency".   RFC4918. */
+  MHD_HTTP_STATUS_FAILED_DEPENDENCY =           424
   ,
-  MHD_HTTP_STATUS_UNORDERED_COLLECTION = 425 /* IANA: unused */
+  /* 425 "Too Early".           RFC8470. */
+  MHD_HTTP_STATUS_TOO_EARLY =                   425
   ,
-  MHD_HTTP_STATUS_UPGRADE_REQUIRED = 426
+  /* 426 "Upgrade Required".    RFC9110, Section 15.5.22. */
+  MHD_HTTP_STATUS_UPGRADE_REQUIRED =            426
   ,
-  MHD_HTTP_STATUS_PRECONDITION_REQUIRED = 428
+
+  /* 428 "Precondition Required". RFC6585. */
+  MHD_HTTP_STATUS_PRECONDITION_REQUIRED =       428
   ,
-  MHD_HTTP_STATUS_TOO_MANY_REQUESTS = 429
+  /* 429 "Too Many Requests".   RFC6585. */
+  MHD_HTTP_STATUS_TOO_MANY_REQUESTS =           429
   ,
+
+  /* 431 "Request Header Fields Too Large". RFC6585. */
   MHD_HTTP_STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE = 431
   ,
-  MHD_HTTP_STATUS_NO_RESPONSE = 444 /* IANA: unused */
-  ,
-  MHD_HTTP_STATUS_RETRY_WITH = 449 /* IANA: unused */
-  ,
-  MHD_HTTP_STATUS_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS = 450  /* IANA: unused */
-  ,
+
+  /* 451 "Unavailable For Legal Reasons". RFC7725. */
   MHD_HTTP_STATUS_UNAVAILABLE_FOR_LEGAL_REASONS = 451
   ,
-  MHD_HTTP_STATUS_INTERNAL_SERVER_ERROR = 500
-  ,
-  MHD_HTTP_STATUS_NOT_IMPLEMENTED = 501
-  ,
-  MHD_HTTP_STATUS_BAD_GATEWAY = 502
-  ,
-  MHD_HTTP_STATUS_SERVICE_UNAVAILABLE = 503
-  ,
-  MHD_HTTP_STATUS_GATEWAY_TIMEOUT = 504
-  ,
-  MHD_HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED = 505
-  ,
-  MHD_HTTP_STATUS_VARIANT_ALSO_NEGOTIATES = 506
-  ,
-  MHD_HTTP_STATUS_INSUFFICIENT_STORAGE = 507
-  ,
-  MHD_HTTP_STATUS_LOOP_DETECTED = 508
-  ,
-  MHD_HTTP_STATUS_BANDWIDTH_LIMIT_EXCEEDED = 509  /* IANA: unused */
-  ,
-  MHD_HTTP_STATUS_NOT_EXTENDED = 510
-  ,
-  MHD_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED = 511
 
+  /* 500 "Internal Server Error". RFC9110, Section 15.6.1. */
+  MHD_HTTP_STATUS_INTERNAL_SERVER_ERROR =       500
+  ,
+  /* 501 "Not Implemented".     RFC9110, Section 15.6.2. */
+  MHD_HTTP_STATUS_NOT_IMPLEMENTED =             501
+  ,
+  /* 502 "Bad Gateway".         RFC9110, Section 15.6.3. */
+  MHD_HTTP_STATUS_BAD_GATEWAY =                 502
+  ,
+  /* 503 "Service Unavailable". RFC9110, Section 15.6.4. */
+  MHD_HTTP_STATUS_SERVICE_UNAVAILABLE =         503
+  ,
+  /* 504 "Gateway Timeout".     RFC9110, Section 15.6.5. */
+  MHD_HTTP_STATUS_GATEWAY_TIMEOUT =             504
+  ,
+  /* 505 "HTTP Version Not Supported". RFC9110, Section 15.6.6. */
+  MHD_HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED =  505
+  ,
+  /* 506 "Variant Also Negotiates". RFC2295. */
+  MHD_HTTP_STATUS_VARIANT_ALSO_NEGOTIATES =     506
+  ,
+  /* 507 "Insufficient Storage". RFC4918. */
+  MHD_HTTP_STATUS_INSUFFICIENT_STORAGE =        507
+  ,
+  /* 508 "Loop Detected".       RFC5842. */
+  MHD_HTTP_STATUS_LOOP_DETECTED =               508
+  ,
+
+  /* 510 "Not Extended".        (OBSOLETED) RFC2774; status-change-http-experiments-to-historic. */
+  MHD_HTTP_STATUS_NOT_EXTENDED =                510
+  ,
+  /* 511 "Network Authentication Required". RFC6585. */
+  MHD_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED = 511
+  ,
+
+
+  /* Not registered non-standard codes */
+  /* 449 "Reply With".          MS IIS extension. */
+  MHD_HTTP_STATUS_RETRY_WITH =                  449
+  ,
+
+  /* 450 "Blocked by Windows Parental Controls". MS extension. */
+  MHD_HTTP_STATUS_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS = 450
+  ,
+
+  /* 509 "Bandwidth Limit Exceeded". Apache extension. */
+  MHD_HTTP_STATUS_BANDWIDTH_LIMIT_EXCEEDED =    509
 };
 
 
@@ -4864,9 +4991,9 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_HTTP_ProtocolVersion
   ,
   MHD_HTTP_VERSION_1_1 = 2
   ,
-  MHD_HTTP_VERSION_2_0 = 3
+  MHD_HTTP_VERSION_2 = 3
   ,
-  MHD_HTTP_VERSION_3_0 = 4
+  MHD_HTTP_VERSION_3 = 4
   ,
   MHD_HTTP_VERSION_FUTURE = 255
 };
@@ -4889,22 +5016,22 @@ MHD_FN_CONST_;
 /**
  * HTTP/1.0 identification string
  */
-#define MHD_HTTP_VERSION_1_0 "HTTP/1.0"
+#define MHD_HTTP_VERSION_1_0_STR "HTTP/1.0"
 /**
  * HTTP/1.1 identification string
  */
-#define MHD_HTTP_VERSION_1_1 "HTTP/1.1"
+#define MHD_HTTP_VERSION_1_1_STR "HTTP/1.1"
 /**
  * HTTP/2 identification string.
  * Not used by the HTTP protocol (except non-TLS handshake), useful for logs and
  * similar proposes.
  */
-#define MHD_HTTP_VERSION_2 "HTTP/2"
+#define MHD_HTTP_VERSION_2_STR "HTTP/2"
 /**
  * HTTP/3 identification string.
  * Not used by the HTTP protocol, useful for logs and similar proposes.
  */
-#define MHD_HTTP_VERSION_3 "HTTP/3"
+#define MHD_HTTP_VERSION_3_STR "HTTP/3"
 
 /** @} */ /* end of group versions */
 
@@ -4980,7 +5107,7 @@ struct MHD_Response;
  */
 MHD_EXTERN_ const struct MHD_Action *
 MHD_action_suspend (struct MHD_Request *request)
-MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_;
+MHD_FN_PAR_NONNULL_ALL_;
 
 
 /**

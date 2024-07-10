@@ -39,6 +39,17 @@ struct MHD_Connection; /* forward declaration */
  *         false if connection needs to be closed
  */
 MHD_INTERNAL bool
-mhd_connection_process_recv_send_data (struct MHD_Connection restrict *c);
+mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_ ;
+
+/**
+ * Finally close and clean-up connection.
+ * Must be performed only when connection thread (for thread-per-connection)
+ * has stopped.
+ * @param c the connection to close
+ */
+MHD_INTERNAL void
+mhd_conn_close_final (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_ ;
 
 #endif /* ! MHD_DATA_PROCESS_H */

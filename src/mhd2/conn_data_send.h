@@ -19,28 +19,32 @@
 */
 
 /**
- * @file src/mhd2/http_status_str.h
- * @brief  The declaration for internal HTTP status string functions
+ * @file src/mhd2/conn_data_send.h
+ * @brief  The definition of data sending functions for connection
  * @author Karlson2k (Evgeny Grin)
  */
 
-#ifndef MHD_HTTP_STATUS_STR_H
-#define MHD_HTTP_STATUS_STR_H 1
+#ifndef MHD_CONN_DATA_SEND_H
+#define MHD_CONN_DATA_SEND_H 1
 
 #include "mhd_sys_options.h"
 
-#include "mhd_str_types.h"
+#include "sys_bool_type.h"
+
+struct MHD_Connection; /* forward declarations */
 
 /**
- * Get string for provided HTTP status code.
- * Substitute a replacement string for unknown codes.
+ * Perform data sending for the connection and try to detect the socket error
+ * type.
  *
- * @param code the HTTP status code
- * @return pointer to MHD_String, never NULL.
+ * @param c the connection to use
+ * @param has_err if 'true' then just check for the network error
+ *        type is performed
  */
-MHD_INTERNAL const struct MHD_String *
-mhd_HTTP_status_code_to_string_int (enum MHD_HTTP_StatusCode code)
-MHD_FN_CONST_;
+MHD_INTERNAL void
+mhd_conn_data_send (struct MHD_Connection restrict *c,
+                    bool has_err)
+MHD_FN_PAR_NONNULL_ALL_;
 
 
-#endif /* ! MHD_HTTP_STATUS_STR_H */
+#endif /* ! MHD_CONN_DATA_SEND_H */

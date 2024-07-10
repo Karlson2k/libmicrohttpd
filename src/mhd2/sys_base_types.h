@@ -48,6 +48,9 @@
 #ifdef HAVE_CRTDEFS_H
 #  include <crtdefs.h> /* W32-specific header */
 #endif
+#ifdef HAVE_INTTYPES_H
+#  include <inttypes.h>
+#endif
 
 #ifndef HAVE_SSIZE_T
 #  if defined(HAVE_PTRDIFF_T)
@@ -64,5 +67,13 @@ typedef intptr_t ssize_t;
 #    define _SSIZE_T_DEFINED
 #  endif
 #endif /* ! HAVE_SSIZE_T */
+
+#ifndef PRIuFAST64
+#  ifdef PRIu64
+#    define PRIuFAST64 PRIu64
+#  else
+#    define PRIuFAST64 "llu"
+#  endif
+#endif
 
 #endif /* ! MHD_SYS_BASE_TYPES_H */

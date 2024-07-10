@@ -93,8 +93,8 @@ MHD_daemon_create (MHD_RequestCallback req_cb,
   s->fd_number_limit = MHD_INVALID_SOCKET;
 
   d->log_params.v_log_cb = mhd_logger_default;
-  d->req_cb = req_cb;
-  d->req_cb_cls = req_cb_cls;
+  d->req_cfg.cb = req_cb;
+  d->req_cfg.cb_cls = req_cb_cls;
   d->settings = s;
 
   return d;

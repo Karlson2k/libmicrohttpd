@@ -28,6 +28,7 @@
 #include "mhd_panic.h"
 #include "mhd_mono_clock.h"
 #include "mhd_socket_type.h"
+#include "mhd_send.h"
 #ifdef MHD_WINSOCK_SOCKETS
 #  include <winsock2.h>
 #endif
@@ -46,12 +47,15 @@ mhd_lib_global_init (void)
       MHD_PANIC ("Failed to initialise WinSock.");
   }
 #endif /* MHD_WINSOCK_SOCKETS */
+  MHD_monotonic_msec_counter_init();
+  mhd_send_init_static_vars();
 }
 
 
 void
 mhd_lib_global_deinit (void)
 {
+  MHD_monotonic_msec_counter_finish();
 #if defined(MHD_WINSOCK_SOCKETS)
   (void) WSACleanup ();
 #endif /* MHD_WINSOCK_SOCKETS */

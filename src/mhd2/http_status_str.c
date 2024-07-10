@@ -175,7 +175,7 @@ static const struct mhd_HttpStatusesBlock statuses[] = {
 };
 
 MHD_EXTERN_ MHD_FN_CONST_ const struct MHD_String *
-MHD_HTTP_status_code_to_string (enum MHD_StatusCode code)
+MHD_HTTP_status_code_to_string (enum MHD_HTTP_StatusCode code)
 {
   struct MHD_String *res;
   const unsigned int code_i = (unsigned int) code;
@@ -193,7 +193,7 @@ MHD_HTTP_status_code_to_string (enum MHD_StatusCode code)
 
 
 MHD_INTERNAL MHD_FN_CONST_ const struct MHD_String *
-mhd_HTTP_status_code_to_string_int (enum MHD_StatusCode code)
+mhd_HTTP_status_code_to_string_int (enum MHD_HTTP_StatusCode code)
 {
   static const struct MHD_String no_status =
     mhd_MSTR_INIT ("Nonstandard Status");

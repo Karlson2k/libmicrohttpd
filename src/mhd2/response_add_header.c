@@ -34,6 +34,54 @@
 #include "mhd_public_api.h"
 
 
+MHD_INTERNAL
+MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_IN_SIZE_(3,2)
+MHD_FN_PAR_NONNULL_ (5) MHD_FN_PAR_CSTR_ (5) MHD_FN_PAR_IN_SIZE_(5,4) bool
+response_add_header_no_check (
+  struct MHD_Response *response,
+  size_t name_len,
+  const char name[MHD_FN_PAR_DYN_ARR_SIZE_(name_len)],
+  size_t value_len,
+  const char value[MHD_FN_PAR_DYN_ARR_SIZE_(value_len)])
+{
+  char *buf;
+  struct mhd_ResponseHeader *new_hdr;
+
+  buf = malloc (sizeof(struct mhd_ResponseHeader) + name_len + value_len + 2);
+  if (NULL == buf)
+    return false;
+
+  new_hdr = (struct mhd_ResponseHeader *) buf;
+  buf += sizeof(struct mhd_ResponseHeader);
+  memcpy (buf, name, name_len);
+  buf[name_len] = 0;
+  new_hdr->name.cstr = buf;
+  new_hdr->name.len = name_len;
+  buf += name_len + 1;
+  memcpy (buf, value, value_len);
+  buf[value_len] = 0;
+  new_hdr->value.cstr = buf;
+  new_hdr->value.len = value_len;
+
+  mhd_DLINKEDL_INS_LAST (response, new_hdr, headers);
+  return true;
+}
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ (1) void
+mhd_response_remove_all_headers (struct MHD_Response *restrict r)
+{
+  struct mhd_ResponseHeader *hdr;
+
+  for (hdr = mhd_DLINKEDL_GET_LAST(r, headers); NULL != hdr;
+       hdr = mhd_DLINKEDL_GET_LAST(r, headers))
+  {
+    mhd_DLINKEDL_DEL(r, hdr, headers);
+    free (hdr);
+  }
+}
+
+
 static enum MHD_StatusCode
 response_add_header_int (struct MHD_Response *response,
                          const char *name,
@@ -41,8 +89,6 @@ response_add_header_int (struct MHD_Response *response,
 {
   const size_t name_len = strlen (name);
   const size_t value_len = strlen (name);
-  char *buf;
-  struct mhd_ResponseHeader *new_hdr;
 
   if (response->frozen) /* Re-check with the lock held */
     return MHD_SC_TOO_LATE;
@@ -57,21 +103,8 @@ response_add_header_int (struct MHD_Response *response,
       (NULL != memchr (value, '\r', value_len)))
     return MHD_SC_RESP_HEADER_VALUE_INVALID;
 
-  buf = malloc (sizeof(struct mhd_ResponseHeader) + name_len + value_len + 2);
-  if (NULL == buf)
+  if (!response_add_header_no_check(response, name_len, name, value_len, value))
     return MHD_SC_RESPONSE_HEADER_MALLOC_FAILED;
-
-  new_hdr = (struct mhd_ResponseHeader *) buf;
-  buf += sizeof(struct mhd_ResponseHeader);
-  memcpy (buf, name, name_len + 1);
-  new_hdr->name.cstr = buf;
-  new_hdr->name.len = name_len;
-  buf += name_len + 1;
-  memcpy (buf, value, value_len + 1);
-  new_hdr->value.cstr = buf;
-  new_hdr->value.len = value_len;
-
-  mhd_DLINKEDL_INS_LAST (response, new_hdr, headers);
 
   return MHD_SC_OK;
 }
@@ -85,7 +118,7 @@ MHD_response_add_header (struct MHD_Response *response,
                          const char *name,
                          const char *value)
 {
-  bool need_lock;
+  bool need_unlock;
   enum MHD_StatusCode res;
 
   if (response->frozen)
@@ -93,19 +126,19 @@ MHD_response_add_header (struct MHD_Response *response,
 
   if (response->reuse.reusable)
   {
-    need_lock = true;
+    need_unlock = true;
     if (! mhd_mutex_lock (&(response->reuse.settings_lock)))
       return MHD_SC_RESPONSE_MUTEX_LOCK_FAILED;
-    mhd_assert (1 == response->reuse.counter);
+    mhd_assert (1 == mhd_atomic_counter_get(&(response->reuse.counter)));
   }
   else
-    need_lock = false;
+    need_unlock = false;
 
   // TODO: add special processing for "Date", "Connection", "Content-Length"
 
   res = response_add_header_int (response, name, value);
 
-  if (need_lock)
+  if (need_unlock)
     mhd_mutex_unlock_chk (&(response->reuse.settings_lock));
 
   return res;

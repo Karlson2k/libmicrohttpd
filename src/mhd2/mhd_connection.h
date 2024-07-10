@@ -37,6 +37,7 @@
 
 #include "sys_bool_type.h"
 #include "sys_base_types.h"
+#include "mhd_socket_type.h"
 
 #include "mhd_threads.h"
 
@@ -49,6 +50,22 @@
 #include "mhd_socket_error.h"
 
 #include "mhd_public_api.h"
+
+/**
+ * Minimum reasonable size by which MHD tries to increment read/write buffers.
+ * We usually begin with half the available pool space for the
+ * IO-buffer, but if absolutely needed we additively grow by the
+ * number of bytes given here (up to -- theoretically -- the full pool
+ * space).
+ *
+ * Currently set to reasonable maximum MSS size.
+ */
+#define mhd_BUF_INC_SIZE 1500
+
+/**
+ * Message to transmit when http 1.1 request is received
+ */
+#define mdh_HTTP_1_1_100_CONTINUE_REPLY "HTTP/1.1 100 Continue\r\n\r\n"
 
 
 struct MHD_Connection; /* forward declaration */
@@ -112,6 +129,56 @@ enum MHD_FIXED_FLAGS_ENUM_ mhd_SocketNetState
   mhd_SOCKET_NET_STATE_ERROR_READY = 1 << 2
 };
 
+
+/**
+ * The reason for the socket closure
+ */
+enum mhd_SocketClosureReason
+{
+  /**
+   * The socket is not closed / closing.
+   */
+  mhd_SCOKET_CLOSURE_REASON_NO_CLOSURE = 0
+  ,
+  /**
+   * Socket has to be closed because HTTP protocol successfully finished data
+   * exchange.
+   */
+  mhd_SCOKET_CLOSURE_REASON_PROTOCOL_SUCCESS
+  ,
+  /**
+   * Socket has to be closed because remote side violated some HTTP
+   * specification requirements or request processed with an error.
+   * The HTTP error response should be sent.
+   */
+  mhd_SCOKET_CLOSURE_REASON_PROTOCOL_FAILURE_SOFT
+  ,
+  /**
+   * Timeout expired
+   */
+  mhd_SCOKET_CLOSURE_REASON_TIMEOUT
+  ,
+  /**
+   * Socket has to be closed because received data cannot be interpreted as
+   * valid HTTP data.
+   */
+  mhd_SCOKET_CLOSURE_REASON_PROTOCOL_FAILURE_HARD
+  ,
+  /**
+   * Unrecoverable TLS error
+   */
+  mhd_SCOKET_CLOSURE_REASON_TLS_ERROR
+  ,
+  /**
+   * The remote side closed connection in abortive way
+   */
+  mhd_SCOKET_CLOSURE_REASON_REMOTE_HARD_DISCONN
+  ,
+  /**
+   * The connection has been broken for some reason
+   */
+  mhd_SCOKET_CLOSURE_REASON_CONN_BROKEN
+};
 
 /**
  * States in a state machine for a connection.
@@ -317,7 +384,7 @@ struct MHD_Connection
 
   /**
    * Set to 'true' when the client shut down write/send and
-   * the last byte from remote has been read.
+   * __the last byte from the remote has been read__.
    */
   bool sk_rmt_shut_wr;
 
@@ -330,6 +397,16 @@ struct MHD_Connection
    * The list of connections sorted by timeout
    */
   mhd_DLNKDL_LINKS (MHD_Connection,by_timeout);
+
+  /**
+   * True if connection is suspended
+   */
+  bool suspended;
+
+  /**
+   * True if connection is resuming
+   */
+  bool resuming;
 
   /**
    * Reference to the MHD_Daemon struct.
@@ -465,7 +542,7 @@ struct MHD_Connection
   enum mhd_Tristate is_nonip;
 
   /**
-   * true if #socket_fd is non-blocking, false otherwise.
+   * true if @a socket_fd is non-blocking, false otherwise.
    */
   bool sk_nonblck;
 
@@ -474,10 +551,12 @@ struct MHD_Connection
    */
   bool sk_spipe_suppress;
 
+//#ifndef MHD_WINSOCK_SOCKETS // TODO: conditionally use in the code
   /**
    * Tracks TCP_CORK / TCP_NOPUSH of the connection socket.
    */
   enum mhd_Tristate sk_corked;
+//#endif
 
   /**
    * Tracks TCP_NODELAY state of the connection socket.

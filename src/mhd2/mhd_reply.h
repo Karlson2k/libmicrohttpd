@@ -55,13 +55,37 @@ struct MHD_Reply_Properties
   bool chunked; /**< Use chunked encoding for reply */
 };
 
-#if defined(MHD_USE_SENDFILE)
-enum MHD_resp_sender_
+/**
+ * The location of the reply content
+ */
+enum MHD_FIXED_ENUM_ mhd_ReplyContentLocation
 {
-  MHD_resp_sender_std = 0,
-  MHD_resp_sender_sendfile
+  /**
+   * Reply content is absent
+   */
+  mhd_REPLY_CNTN_LOC_NOWHERE = 0
+  ,
+  /**
+   * Reply content is in the response buffer
+   */
+  mhd_REPLY_CNTN_LOC_RESP_BUF
+  ,
+  /**
+   * Reply content is in the connection buffer
+   */
+  mhd_REPLY_CNTN_LOC_CONN_BUF
+  ,
+  /**
+   * Reply content is in the vector data
+   */
+  mhd_REPLY_CNTN_LOC_IOV
+  ,
+  /**
+   * Reply content is in the file, to be used with sendfile() function
+   */
+  mhd_REPLY_CNTN_LOC_FILE
 };
-#endif /* MHD_USE_SENDFILE */
+
 
 /**
  * Reply-specific values.
@@ -88,11 +112,13 @@ struct MHD_Reply
   bool responseIcy;
 
   /**
-   * Current write position in the actual response
-   * (excluding headers, content only; should be 0
-   * while sending headers).
+   * Current rest position in the actual content (should be 0 while
+   * sending headers).
+   * When sending buffers located in the connection buffers, it is updated
+   * when the data copied to the buffers. In other cases it is updated when
+   * data is actually sent.
    */
-  uint_fast64_t rsp_write_position;
+  uint_fast64_t rsp_cntn_read_pos;
 
   /**
    * The copy of iov response.
@@ -102,9 +128,10 @@ struct MHD_Reply
    */
   struct mhd_iovec_track resp_iov;
 
-#if defined(MHD_USE_SENDFILE)
-  enum MHD_resp_sender_ resp_sender;
-#endif /* MHD_USE_SENDFILE */
+  /**
+   * The location of the reply content
+   */
+  enum mhd_ReplyContentLocation cntn_loc;
 
   /**
    * Reply-specific properties

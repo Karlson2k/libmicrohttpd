@@ -10,13 +10,14 @@
 
 
 #include "mhd_sys_options.h"
+#include "response_set_options.h"
 #include "sys_base_types.h"
+#include "sys_bool_type.h"
 #include "response_options.h"
 #include "mhd_response.h"
 #include "mhd_public_api.h"
-#include "sys_bool_type.h"
 #include "mhd_locks.h"
-
+#include "mhd_assert.h"
 
 /**
  * Internal version of the #MHD_response_set_options()
@@ -26,13 +27,13 @@
  * @param options_max_num the maximum number of @a options to use
  * @return #MHD_SC_OK on success, error code otherwise
  */
-static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ALL_ enum MHD_StatusCode
 response_set_options_int (
-  struct MHD_Response *volatile response,
-  const struct MHD_ResponseOptionAndValue *volatile options,
+  struct MHD_Response *restrict response,
+  const struct MHD_ResponseOptionAndValue *restrict options,
   size_t options_max_num)
 {
-  struct ResponseOptions *volatile settings;
+  struct ResponseOptions *restrict settings;
   size_t i;
 
   if (response->frozen)
@@ -55,20 +56,8 @@ response_set_options_int (
       else if (response->reuse.reusable)
         continue; /* This flag has been set before */
       else
-      {
-        if (mhd_mutex_init(&(response->reuse.settings_lock)))
-        {
-          if (mhd_mutex_init_short(&(response->reuse.cnt_lock)))
-          {
-            response->reuse.counter = 1;
-            response->reuse.reusable = true;
-            continue;
-          }
-          mhd_mutex_destroy_chk(&(response->reuse.settings_lock));
-        }
-        return MHD_SC_RESPONSE_MUTEX_INIT_FAILED;
-      }
-      settings->reusable = option->val.reusable;
+        if (! response_make_reusable(response))
+          return MHD_SC_RESPONSE_MUTEX_INIT_FAILED;
       continue;
     case MHD_R_O_HEAD_ONLY_RESPONSE:
       settings->head_only_response = option->val.head_only_response;
@@ -106,25 +95,24 @@ MHD_response_set_options (struct MHD_Response *response,
                           const struct MHD_ResponseOptionAndValue *options,
                           size_t options_max_num)
 {
-  bool need_lock;
+  bool need_unlock;
   enum MHD_StatusCode res;
 
   if (response->frozen)
     return MHD_SC_TOO_LATE;
 
+  need_unlock = false;
   if (response->reuse.reusable)
   {
-    need_lock = true;
+    need_unlock = true;
     if (! mhd_mutex_lock(&(response->reuse.settings_lock)))
       return MHD_SC_RESPONSE_MUTEX_LOCK_FAILED;
-    mhd_assert (1 == response->reuse.counter);
+    mhd_assert (1 == mhd_atomic_counter_get(&(response->reuse.counter)));
   }
-  else
-    need_lock = false;
 
   res = response_set_options_int(response, options, options_max_num);
 
-  if (need_lock)
+  if (need_unlock)
     mhd_mutex_unlock_chk(&(response->reuse.settings_lock));
 
   return res;

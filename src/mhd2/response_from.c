@@ -34,6 +34,7 @@
 
 #include "compat_calloc.h"
 #include "sys_malloc.h"
+#include "sys_file_fd.h"
 
 #include "mhd_public_api.h"
 
@@ -43,15 +44,7 @@
 
 #include "mhd_assert.h"
 
-#include <limits.h>
-
-#ifndef ULONG_MAX
-#  define ULONG_MAX ((unsigned long) ~((unsigned long) 0))
-#endif
-
-#ifndef SIZE_MAX
-#  define ULONG_MAX ((unsigned long) ~((unsigned long) 0))
-#endif
+#include "mhd_limits.h"
 
 static struct MHD_Response *
 response_create_basic (enum MHD_HTTP_StatusCode sc,
@@ -76,7 +69,7 @@ response_create_basic (enum MHD_HTTP_StatusCode sc,
 #endif /* ! HAVE_NULL_PTR_ALL_ZEROS */
 
       r->sc = sc;
-      r->size = cntn_size;
+      r->cntn_size = cntn_size;
       r->free.cb = free_cb;
       r->free.cls = free_cb_cls;
       r->settings = s;
@@ -88,37 +81,18 @@ response_create_basic (enum MHD_HTTP_StatusCode sc,
   return NULL; /* Failure exit point */
 }
 
-
-static void
-response_destroy_unfrozen (struct MHD_Response *restrict r)
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ (1) void
+mhd_response_deinit_content_data (struct MHD_Response *restrict r)
 {
-  mhd_assert (NULL != r->settings);
-  mhd_assert (! r->frozen);
-
-  // TODO: remove headers
-
-  if (mhd_RESPONSE_CONTENT_INVALID != r->cntn_type)
-  { /* Free callback has been set correctly already */
-    if (mhd_RESPONSE_CONTENT_IOVEC == r->cntn_type)
-      free (r->cntn.iovec.iov);
-    else if (mhd_RESPONSE_CONTENT_FILE == r->cntn_type)
-      close (r->cntn.file.fd);
-    /* For #mhd_RESPONSE_CONTENT_IOVEC clean-up performed by callback
-       for both modes: internal copy and external cleanup */
-    if (NULL != r->free.cb)
-      r->free.cb (r->free.cls);
-  }
-  free (r->settings);
-  free (r);
-}
-
-
-MHD_INTERNAL void
-mhd_response_dec_use_count (struct MHD_Response *restrict response)
-{
-  (void) response;
-  // TODO: implement
-  return;
+  mhd_assert (mhd_RESPONSE_CONTENT_DATA_INVALID != r->cntn_dtype);
+  if (mhd_RESPONSE_CONTENT_DATA_IOVEC == r->cntn_dtype)
+    free (r->cntn.iovec.iov);
+  else if (mhd_RESPONSE_CONTENT_DATA_FILE == r->cntn_dtype)
+    close (r->cntn.file.fd);
+  /* For #mhd_RESPONSE_CONTENT_IOVEC clean-up performed by callback
+     for both modes: internal copy and external cleanup */
+  if (NULL != r->free.cb)
+    r->free.cb (r->free.cls);
 }
 
 
@@ -133,7 +107,7 @@ MHD_response_from_callback (enum MHD_HTTP_StatusCode sc,
   res = response_create_basic (sc, size, dyn_cont_fc, dyn_cont_cls);
   if (NULL != res)
   {
-    res->cntn_type = mhd_RESPONSE_CONTENT_CALLBACK;
+    res->cntn_dtype = mhd_RESPONSE_CONTENT_DATA_CALLBACK;
     res->cntn.dyn.cb = dyn_cont;
     res->cntn.dyn.cls = dyn_cont_cls;
   }
@@ -160,7 +134,7 @@ MHD_response_from_buffer (
   res = response_create_basic (sc, buffer_size, free_cb, free_cb_cls);
   if (NULL != res)
   {
-    res->cntn_type = mhd_RESPONSE_CONTENT_BUFFER;
+    res->cntn_dtype = mhd_RESPONSE_CONTENT_DATA_BUFFER;
     res->cntn.buf = (0 != buffer_size) ?
                     (const unsigned char *) buffer : empty_buf;
   }
@@ -207,7 +181,7 @@ MHD_response_from_buffer_copy (
 
   if (NULL != res)
   {
-    res->cntn_type = mhd_RESPONSE_CONTENT_BUFFER;
+    res->cntn_dtype = mhd_RESPONSE_CONTENT_DATA_BUFFER;
     res->cntn.buf = buf_copy;
   }
   return res;
@@ -255,8 +229,8 @@ MHD_response_from_iovec (
     {
       size_t i_add;
 
-      i_add = (size_t) (iov[i].iov_len / MHD_IOV_ELMN_MAX_SIZE);
-      if (0 != iov[i].iov_len % MHD_IOV_ELMN_MAX_SIZE)
+      i_add = (size_t) (iov[i].iov_len / mhd_IOV_ELMN_MAX_SIZE);
+      if (0 != iov[i].iov_len % mhd_IOV_ELMN_MAX_SIZE)
         i_add++;
       i_cp += i_add;
       if (i_cp < i_add)
@@ -271,7 +245,7 @@ MHD_response_from_iovec (
     res = response_create_basic (sc, 0, free_cb, free_cb_cls);
     if (NULL != res)
     {
-      res->cntn_type = mhd_RESPONSE_CONTENT_BUFFER;
+      res->cntn_dtype = mhd_RESPONSE_CONTENT_DATA_BUFFER;
       res->cntn.buf = empty_buf;
     }
     return res;
@@ -299,17 +273,17 @@ MHD_response_from_iovec (
       if (0 == element_size)
         continue;         /* skip zero-sized elements */
 #if defined(MHD_WINSOCK_SOCKETS) && defined(_WIN64)
-      while (MHD_IOV_ELMN_MAX_SIZE < element_size)
+      while (mhd_IOV_ELMN_MAX_SIZE < element_size)
       {
         iov_copy[i_cp].iov_base = (char *) mhd_DROP_CONST (buf);
-        iov_copy[i_cp].iov_len = MHD_IOV_ELMN_MAX_SIZE;
-        buf += MHD_IOV_ELMN_MAX_SIZE;
-        element_size -= MHD_IOV_ELMN_MAX_SIZE;
+        iov_copy[i_cp].iov_len = mhd_IOV_ELMN_MAX_SIZE;
+        buf += mhd_IOV_ELMN_MAX_SIZE;
+        element_size -= mhd_IOV_ELMN_MAX_SIZE;
         i_cp++;
       }
 #endif /* MHD_WINSOCK_SOCKETS && _WIN64 */
       iov_copy[i_cp].iov_base = mhd_DROP_CONST (buf);
-      iov_copy[i_cp].iov_len = (mhd_iov_size) element_size;
+      iov_copy[i_cp].iov_len = (mhd_iov_elmn_size) element_size;
       i_cp++;
     }
     mhd_assert (num_copy_elements == i_cp);
@@ -318,7 +292,7 @@ MHD_response_from_iovec (
     res = response_create_basic (sc, total_size, free_cb, free_cb_cls);
     if (NULL != res)
     {
-      res->cntn_type = mhd_RESPONSE_CONTENT_IOVEC;
+      res->cntn_dtype = mhd_RESPONSE_CONTENT_DATA_IOVEC;
       res->cntn.iovec.iov = iov_copy;
       res->cntn.iovec.cnt = i_cp;
       return res;
@@ -340,7 +314,7 @@ MHD_response_from_fd (enum MHD_HTTP_StatusCode sc,
   res = response_create_basic (sc, size, NULL, NULL);
   if (NULL != res)
   {
-    res->cntn_type = mhd_RESPONSE_CONTENT_FILE;
+    res->cntn_dtype = mhd_RESPONSE_CONTENT_DATA_FILE;
     res->cntn.file.fd = fd;
     res->cntn.file.offset = offset;
     res->cntn.file.is_pipe = false; /* Not necessary */
@@ -358,7 +332,7 @@ MHD_response_from_pipe (enum MHD_HTTP_StatusCode sc,
   res = response_create_basic (sc, MHD_SIZE_UNKNOWN, NULL, NULL);
   if (NULL != res)
   {
-    res->cntn_type = mhd_RESPONSE_CONTENT_FILE;
+    res->cntn_dtype = mhd_RESPONSE_CONTENT_DATA_FILE;
     res->cntn.file.fd = fd;
     res->cntn.file.offset = 0; /* Not necessary */
     res->cntn.file.is_pipe = true;

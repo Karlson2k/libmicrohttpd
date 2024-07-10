@@ -74,6 +74,8 @@
 #  include "daemon_funcs.h"
 #endif
 
+#include "mhd_limits.h"
+
 
 /**
  * The default value for fastopen queue length (currently GNU/Linux only)
@@ -614,8 +616,8 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
     if (MHD_INVALID_SOCKET == sk)
 #endif /* MHD_WINSOCK_SOCKETS && WSA_FLAG_NO_HANDLE_INHERIT */
     sk = socket (p_use_sa->sa_family,
-                 SOCK_STREAM | MHD_SOCK_NONBLOCK
-                 | MHD_SOCK_CLOEXEC | MHD_SOCK_NOSIGPIPE, 0);
+                 SOCK_STREAM | mhd_SOCK_NONBLOCK
+                 | mhd_SOCK_CLOEXEC | mhd_SOCK_NOSIGPIPE, 0);
 
     if (MHD_INVALID_SOCKET == sk)
     {
@@ -639,8 +641,8 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 
       return MHD_SC_FAILED_TO_OPEN_LISTEN_SOCKET;
     }
-    is_non_block = (0 != MHD_SOCK_NONBLOCK);
-    is_non_inhr = (0 == MHD_SOCK_CLOEXEC);
+    is_non_block = (0 != mhd_SOCK_NONBLOCK);
+    is_non_inhr = (0 == mhd_SOCK_CLOEXEC);
   }
   else
   {
@@ -1958,8 +1960,8 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
 #endif /* MHD_USE_THREADS */
 
   limit_by_conf = s->global_connection_limit;
-  limit_by_num = (unsigned int) ~((unsigned int) 0); /* UINT_MAX */
-  limit_by_select = (unsigned int) ~((unsigned int) 0); /* UINT_MAX */
+  limit_by_num = UINT_MAX;
+  limit_by_select = UINT_MAX;
 
   error_by_fd_setsize = false;
 #ifdef MHD_POSIX_SOCKETS
@@ -1996,7 +1998,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
       }
     }
     else
-      limit_by_num = (unsigned int) ~((unsigned int) 0); /* UINT_MAX */
+      limit_by_num = UINT_MAX;
   }
 #elif defined(MHD_WINSOCK_SOCKETS)
   if (1)
@@ -2020,7 +2022,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
       {
         limit_by_select = limit_per_worker * num_worker_daemons;
         if (limit_by_select / limit_per_worker != num_worker_daemons)
-          limit_by_select = (unsigned int) ~((unsigned int) 0); /* UINT_MAX */
+          limit_by_select = UINT_MAX;
       }
     }
 #endif /* MHD_USE_SELECT */

@@ -20,7 +20,8 @@
 
 /**
  * @file src/mhd2/mhd_socket_error.h
- * @brief  The definition of the mhd_SocketError enum
+ * @brief  The definition of the mhd_SocketError enum and related macros and
+ *         declarations of related functions
  * @author Karlson2k (Evgeny Grin)
  */
 
@@ -28,9 +29,11 @@
 #define MHD_SOCKET_ERROR_H 1
 
 #include "mhd_sys_options.h"
+#include "mhd_socket_type.h"
 
+// TODO: better classification, when clearer local closing / network aborts
 /**
- * Recognised socket errors
+ * Recognised socket errors for recv() and send()
  */
 enum MHD_FIXED_ENUM_ mhd_SocketError
 {
@@ -73,6 +76,23 @@ enum MHD_FIXED_ENUM_ mhd_SocketError
   mhd_SOCKET_ERR_NOTCONN
   ,
   /**
+   * General TLS encryption or decryption error
+   */
+  mhd_SOCKET_ERR_TLS
+  ,
+  /**
+   * The socket has been shut down for writing or no longer connected
+   * Only for 'send()'.
+   */
+  mhd_SOCKET_ERR_PIPE
+  ,
+  /**
+   * The error status reported, but concrete code error has not been
+   * checked by MHD
+   */
+  mhd_SOCKET_ERR_NOT_CHECKED
+  ,
+  /**
    * The socket FD is invalid
    */
   mhd_SOCKET_ERR_BADF
@@ -93,21 +113,15 @@ enum MHD_FIXED_ENUM_ mhd_SocketError
   mhd_SOCKET_ERR_NOTSOCK
   ,
   /**
-   * The remote side shut down reading, the socket has been shut down
-   * for writing or no longer connected
-   * Only for 'send()'.
-   */
-  mhd_SOCKET_ERR_PIPE
-  ,
-  /**
-   * General TLS encryption or decryption error
-   */
-  mhd_SOCKET_ERR_TLS
-  ,
-  /**
    * Other socket error
    */
   mhd_SOCKET_ERR_OTHER
+  ,
+  /**
+   * Internal (MHD) error
+   * Not actually reported by the OS
+   */
+  mhd_SOCKET_ERR_INTERNAL
 
 };
 
@@ -115,5 +129,28 @@ enum MHD_FIXED_ENUM_ mhd_SocketError
  * Check whether the socket error is unrecoverable
  */
 #define mhd_SOCKET_ERR_IS_HARD(err) (mhd_SOCKET_ERR_CONNRESET <= (err))
+
+/**
+ * Check whether the socket error is unexpected
+ */
+#define mhd_SOCKET_ERR_IS_BAD(err) (mhd_SOCKET_ERR_BADF <= (err))
+
+/**
+ * Map recv() / send() system socket error to the enum value
+ * @param socket_err the system socket error
+ * @return the enum value for the @a socket_err
+ */
+MHD_INTERNAL enum mhd_SocketError
+mhd_socket_error_get_from_sys_err (int socket_err);
+
+/**
+ * Get the last socket error recoded for the given socket
+ * @param fd the socket to check for the error
+ * @return the recorded error @a fd,
+ *         #mhd_SOCKET_ERR_NOT_CHECKED if not possible to check @a fd for
+ *         the error
+ */
+MHD_INTERNAL enum mhd_SocketError
+mhd_socket_error_get_from_socket (MHD_Socket fd);
 
 #endif /* ! MHD_SOCKET_ERROR_H */

@@ -29,6 +29,7 @@
 
 #include "mhd_sys_options.h"
 #include "mhd_socket_type.h"
+#include "sys_base_types.h"
 
 #if defined(HAVE_WRITEV) || defined(HAVE_SENDMSG)
 #  ifdef HAVE_SYS_TYPES_H
@@ -47,6 +48,8 @@
 #  endif
 #endif
 
+#include "mhd_limits.h"
+
 #if defined(MHD_WINSOCK_SOCKETS)
 /**
  * Internally used I/O vector type for use with winsock.
@@ -58,24 +61,30 @@ struct mhd_w32_iovec
   char *iov_base;
 };
 typedef struct mhd_w32_iovec mhd_iovec;
-#define MHD_IOV_ELMN_MAX_SIZE    ULONG_MAX
-typedef unsigned long mhd_iov_size;
+#define mhd_IOV_ELMN_MAX_SIZE    ULONG_MAX
+typedef unsigned long mhd_iov_elmn_size;
+#define mhd_IOV_RET_MAX_SIZE    LONG_MAX
+typedef long mhd_iov_ret_type;
 #elif defined(HAVE_SENDMSG) || defined(HAVE_WRITEV)
 /**
  * Internally used I/O vector type for use when writev or sendmsg
  * is available. Matches system "struct iovec".
  */
 typedef struct iovec mhd_iovec;
-#define MHD_IOV_ELMN_MAX_SIZE    SIZE_MAX
-typedef size_t mhd_iov_size;
+#define mhd_IOV_ELMN_MAX_SIZE    SIZE_MAX
+typedef size_t mhd_iov_elmn_size;
+#define mhd_IOV_RET_MAX_SIZE     SSIZE_MAX
+typedef ssize_t mhd_iov_ret_type;
 #else
 /**
  * Internally used I/O vector type for use when writev or sendmsg
  * is not available.
  */
 typedef struct MHD_IoVec mhd_iovec;
-#define MHD_IOV_ELMN_MAX_SIZE    SIZE_MAX
-typedef size_t mhd_iov_size;
+#define mhd_IOV_ELMN_MAX_SIZE    SIZE_MAX
+typedef size_t mhd_iov_elmn_size;
+#define mhd_IOV_RET_MAX_SIZE     SSIZE_MAX
+typedef ssize_t mhd_iov_ret_type;
 #endif
 
 

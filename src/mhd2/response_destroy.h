@@ -19,28 +19,25 @@
 */
 
 /**
- * @file src/mhd2/http_status_str.h
- * @brief  The declaration for internal HTTP status string functions
+ * @file src/mhd2/response_destroy.h
+ * @brief  The declarations of internal functions for response deletion
  * @author Karlson2k (Evgeny Grin)
  */
 
-#ifndef MHD_HTTP_STATUS_STR_H
-#define MHD_HTTP_STATUS_STR_H 1
+#ifndef MHD_RESPONSE_DESTROY_H
+#define MHD_RESPONSE_DESTROY_H 1
 
 #include "mhd_sys_options.h"
 
-#include "mhd_str_types.h"
+struct MHD_Response; /* forward declaration */
 
 /**
- * Get string for provided HTTP status code.
- * Substitute a replacement string for unknown codes.
- *
- * @param code the HTTP status code
- * @return pointer to MHD_String, never NULL.
+ * Free/destroy non-reusable response, decrement use count for reusable
+ * response and free/destroy if it is not used any more.
+ * @param response the response to manipulate
  */
-MHD_INTERNAL const struct MHD_String *
-mhd_HTTP_status_code_to_string_int (enum MHD_HTTP_StatusCode code)
-MHD_FN_CONST_;
+MHD_INTERNAL void
+mhd_response_dec_use_count (struct MHD_Response *restrict response);
 
 
-#endif /* ! MHD_HTTP_STATUS_STR_H */
+#endif /* ! MHD_RESPONSE_DESTROY_H */

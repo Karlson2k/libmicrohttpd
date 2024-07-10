@@ -26,10 +26,47 @@
 
 #include "mhd_sys_options.h"
 
+#include "sys_malloc.h"
+
 #include "sys_null_macro.h"
 #include "mhd_response.h"
 #include "response_funcs.h"
 #include "mhd_locks.h"
+
+
+#include "mhd_atomic_counter.h"
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ (1) bool
+response_make_reusable (struct MHD_Response *restrict r)
+{
+  mhd_assert (! r->reuse.reusable);
+  mhd_assert (! r->frozen);
+  mhd_assert (NULL != r->settings);
+
+  if (mhd_mutex_init(&(r->reuse.settings_lock)))
+  {
+    if (mhd_atomic_counter_init(&(r->reuse.counter), 1))
+    {
+      r->reuse.reusable = true;
+      return true;
+    }
+    (void) mhd_mutex_destroy(&(r->reuse.settings_lock));
+  }
+  return false;
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ (1) void
+mhd_response_deinit_reusable (struct MHD_Response *restrict r)
+{
+  mhd_assert(r->reuse.reusable);
+  mhd_assert(0 == mhd_atomic_counter_get(&(r->reuse.counter)));
+
+  mhd_atomic_counter_deinit(&(r->reuse.counter));
+  mhd_mutex_destroy_chk(&(r->reuse.settings_lock));
+}
+
 
 static void
 response_set_properties (struct MHD_Response *restrict r)
@@ -47,12 +84,13 @@ response_set_properties (struct MHD_Response *restrict r)
   else
   {
     r->cfg.conn_close = s->conn_close;
-    r->cfg.chunked = s->chunked_enc || (MHD_SIZE_UNKNOWN == r->size);
+    r->cfg.chunked = s->chunked_enc || (MHD_SIZE_UNKNOWN == r->cntn_size);
   }
   r->cfg.mode_1_0 = s->http_1_0_server;
   r->cfg.cnt_len_by_app = s->insanity_header_content_length; // TODO: set only if "content-lengh" header is used
 
   r->settings = NULL;
+  free (s);
 }
 
 
@@ -64,22 +102,22 @@ response_set_properties (struct MHD_Response *restrict r)
 MHD_INTERNAL void
 mhd_response_check_frozen_freeze (struct MHD_Response *restrict response)
 {
-  bool need_lock;
+  bool need_unlock;
   if (response->frozen)
     return;
 
   if (response->reuse.reusable)
   {
-    need_lock = true;
+    need_unlock = true;
     mhd_mutex_lock_chk (&(response->reuse.settings_lock));
-    mhd_assert (1 == response->reuse.counter);
+    mhd_assert (1 == mhd_atomic_counter_get(&(response->reuse.counter)));
   }
   else
-    need_lock = false;
+    need_unlock = false;
 
   if (! response->frozen)/* Re-check under the lock */
     response_set_properties (response);
 
-  if (need_lock)
+  if (need_unlock)
     mhd_mutex_unlock_chk (&(response->reuse.settings_lock));
 }

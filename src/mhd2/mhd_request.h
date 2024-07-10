@@ -32,6 +32,8 @@
 #include "mhd_sys_options.h"
 #include "sys_base_types.h"
 #include "sys_bool_type.h"
+#include "mhd_public_api.h"
+
 #include "mhd_dlinked_list.h"
 
 #include "http_prot_ver.h"
@@ -175,48 +177,27 @@ union MHD_StartOrSize
   size_t size;
 };
 
-struct MHD_HTTP_Req_Header; /* forward declarations */
+struct mhd_RequestField; /* forward declarations */
 
-mhd_DLINKEDL_LINKS_DEF (MHD_HTTP_Req_Header);
+mhd_DLINKEDL_LINKS_DEF (mhd_RequestField);
 
 /**
  * Header, footer, or cookie for HTTP request.
  */
-struct MHD_HTTP_Req_Header
+struct mhd_RequestField
 {
+  /**
+   * The field data
+   */
+  struct MHD_NameValueKind field;
+
   /**
    * Headers are kept in a double-linked list.
    */
-  mhd_DLNKDL_LINKS (MHD_HTTP_Req_Header,list);
-
-  /**
-   * The name of the header (key), without the colon.
-   */
-  const char *header;
-
-  /**
-   * The length of the @a header, not including the final zero termination.
-   */
-  size_t header_size;
-
-  /**
-   * The value of the header.
-   */
-  const char *value;
-
-  /**
-   * The length of the @a value, not including the final zero termination.
-   */
-  size_t value_size;
-
-  /**
-   * Type of the value.
-   */
-  enum MHD_ValueKind kind;
-
+  mhd_DLNKDL_LINKS (mhd_RequestField,fields);
 };
 
-mhd_DLINKEDL_LIST_DEF (MHD_HTTP_Req_Header);
+mhd_DLINKEDL_LIST_DEF (mhd_RequestField);
 
 /**
  * Request-specific values.
@@ -228,7 +209,7 @@ struct MHD_Request
   /**
    * Linked list of parsed headers.
    */
-  mhd_DLNKDL_LIST (MHD_HTTP_Req_Header,list);
+  mhd_DLNKDL_LIST (mhd_RequestField,fields);
 
   /**
    * The action set by the application
