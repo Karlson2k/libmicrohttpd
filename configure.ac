@@ -2852,7 +2852,7 @@ int main(void)
     return 3;
 
   FD_CLR(1, &efds);
-  if (FD_ISSET(1, &efds)
+  if (FD_ISSET(1, &efds))
     return 4;
 
   return 0;
@@ -5782,7 +5782,7 @@ AS_VAR_IF([enable_tools],["yes"],
         i][f (1 != pstat_getdynamic(&psd_data, sizeof(psd_data), (size_t)1, 0))
           return 2;
         i][f (0 >= psd_data.psd_proc_cnt)
-          return 3; 
+          return 3;
       ]]
     )
     MHD_CHECK_FUNC([vxCpuEnabledGet],[[#include <vxCpuLib.h>]],
