@@ -30,7 +30,7 @@ BEGIN
 #ifdef DLL_EXPORT
             VALUE "FileDescription", "GNU libmicrohttpd2 DLL for Windows (MinGW build, @W32CRT@ run-time lib)\0"
 #else
-            VALUE "FileDescription", "GNU libmicrohttpd2 static library for Windows (MinGW build, MSVCRT run-time lib)\0"
+            VALUE "FileDescription", "GNU libmicrohttpd2 static library for Windows (MinGW build, @W32CRT@ run-time lib)\0"
 #endif
             VALUE "InternalName", "libmicrohttpd2\0"
 #ifdef DLL_EXPORT
