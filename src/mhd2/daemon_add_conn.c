@@ -484,7 +484,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
   /* Direct add to master daemon could never happen. */
   mhd_assert (! mhd_D_HAS_WORKERS (daemon));
 
-  if (! mhd_FD_FITS_DAEMON (d, client_socket))
+  if (! mhd_FD_FITS_DAEMON (daemon, client_socket))
   {
     MHD_LOG_MSG (daemon, MHD_SC_SOCKET_OUTSIDE_OF_SET_RANGE, \
                  "New connection socket descriptor value is too large for " \

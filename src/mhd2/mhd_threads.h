@@ -533,7 +533,7 @@ mhd_create_thread (mhd_thread_handle_ID *handle_id,
  * @param arg argument  for start_routine
  * @return non-zero on success; zero otherwise
  */
-int
+bool
 mhd_create_named_thread (mhd_thread_handle_ID *handle_id,
                          const char *thread_name,
                          size_t stack_size,
