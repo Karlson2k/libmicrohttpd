@@ -44,6 +44,7 @@
 
 #include "conn_data_recv.h"
 #include "conn_data_send.h"
+#include "stream_process_states.h"
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
@@ -62,7 +63,7 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
     bool use_recv;
     use_recv = (0 != (mhd_SOCKET_NET_STATE_RECV_READY & c->sk_ready));
     use_recv = use_recv ||
-      (has_sock_err && c->sk_nonblck);
+               (has_sock_err && c->sk_nonblck);
 
     if (use_recv)
     {
@@ -86,9 +87,9 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
        or has not been performed yet. */
     use_send = (0 != (mhd_SOCKET_NET_STATE_SEND_READY & c->sk_ready));
     use_send = use_send ||
-      (data_processed && (! send_ready_state_known) && c->sk_nonblck);
+               (data_processed && (! send_ready_state_known) && c->sk_nonblck);
     use_send = use_send ||
-      (has_sock_err && c->sk_nonblck);
+               (has_sock_err && c->sk_nonblck);
 
     if (use_send)
     {

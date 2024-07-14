@@ -214,7 +214,7 @@ static size_t MHD_sys_page_size_ = (size_t)
  * Initialise values for memory pools
  */
 void
-MHD_init_mem_pools_ (void)
+mhd_init_mem_pools (void)
 {
 #ifdef MHD_SC_PAGESIZE
   long result;
@@ -238,7 +238,7 @@ MHD_init_mem_pools_ (void)
  * Handle for a memory pool.  Pools are not reentrant and must not be
  * used by multiple threads.
  */
-struct MemoryPool
+struct mhd_MemoryPool
 {
 
   /**
@@ -274,15 +274,15 @@ struct MemoryPool
  * @param max maximum size of the pool
  * @return NULL on error
  */
-struct MemoryPool *
-MHD_pool_create (size_t max)
+MHD_INTERNAL struct mhd_MemoryPool *
+mdh_pool_create (size_t max)
 {
-  struct MemoryPool *pool;
+  struct mhd_MemoryPool *pool;
   size_t alloc_size;
 
   mhd_assert (max > 0);
   alloc_size = 0;
-  pool = malloc (sizeof (struct MemoryPool));
+  pool = malloc (sizeof (struct mhd_MemoryPool));
   if (NULL == pool)
     return NULL;
 #if defined(MAP_ANONYMOUS) || defined(_WIN32)
@@ -345,8 +345,8 @@ MHD_pool_create (size_t max)
  *
  * @param pool memory pool to destroy
  */
-void
-MHD_pool_destroy (struct MemoryPool *pool)
+MHD_INTERNAL void
+mhd_pool_destroy (struct mhd_MemoryPool *restrict pool)
 {
   if (NULL == pool)
     return;
@@ -378,8 +378,8 @@ MHD_pool_destroy (struct MemoryPool *pool)
  * @param pool pool to check
  * @return number of bytes still available in @a pool
  */
-size_t
-MHD_pool_get_free (struct MemoryPool *pool)
+MHD_INTERNAL size_t
+mhd_pool_get_free (struct mhd_MemoryPool *restrict pool)
 {
   mhd_assert (pool->end >= pool->pos);
   mhd_assert (pool->size >= pool->end - pool->pos);
@@ -403,8 +403,8 @@ MHD_pool_get_free (struct MemoryPool *pool)
  * @return NULL if the pool cannot support size more
  *         bytes
  */
-void *
-MHD_pool_allocate (struct MemoryPool *pool,
+MHD_INTERNAL void *
+mhd_pool_allocate (struct mhd_MemoryPool *restrict pool,
                    size_t size,
                    bool from_end)
 {
@@ -444,9 +444,9 @@ MHD_pool_allocate (struct MemoryPool *pool,
  * @return true if block can be resized in-place in the optimal way,
  *         false otherwise
  */
-bool
-MHD_pool_is_resizable_inplace (struct MemoryPool *pool,
-                               void *block,
+MHD_INTERNAL bool
+mhd_pool_is_resizable_inplace (struct mhd_MemoryPool *restrict pool,
+                               void *restrict block,
                                size_t block_size)
 {
   mhd_assert (pool->end >= pool->pos);
@@ -485,10 +485,10 @@ MHD_pool_is_resizable_inplace (struct MemoryPool *pool,
  *         with amount of space needed to be freed in rellocatable area or
  *         set to SIZE_MAX if requested size is too large for the pool.
  */
-void *
-MHD_pool_try_alloc (struct MemoryPool *pool,
+MHD_INTERNAL void *
+mhd_pool_try_alloc (struct mhd_MemoryPool *restrict pool,
                     size_t size,
-                    size_t *required_bytes)
+                    size_t *restrict required_bytes)
 {
   void *ret;
   size_t asize;
@@ -537,9 +537,9 @@ MHD_pool_try_alloc (struct MemoryPool *pool,
  *         NULL if the pool cannot support @a new_size
  *         bytes (old continues to be valid for @a old_size)
  */
-void *
-MHD_pool_reallocate (struct MemoryPool *pool,
-                     void *old,
+MHD_INTERNAL void *
+mhd_pool_reallocate (struct mhd_MemoryPool *pool,
+                     void *restrict old,
                      size_t old_size,
                      size_t new_size)
 {
@@ -629,9 +629,9 @@ MHD_pool_reallocate (struct MemoryPool *pool,
  * @param block the allocated block, the NULL is tolerated
  * @param block_size the size of the allocated block
  */
-void
-MHD_pool_deallocate (struct MemoryPool *pool,
-                     void *block,
+MHD_INTERNAL void
+mhd_pool_deallocate (struct mhd_MemoryPool *restrict pool,
+                     void *restrict block,
                      size_t block_size)
 {
   mhd_assert (pool->end >= pool->pos);
@@ -733,9 +733,9 @@ MHD_pool_deallocate (struct MemoryPool *pool,
  *                 (should be larger or equal to @a copy_bytes)
  * @return addr new address of @a keep (if it had to change)
  */
-void *
-MHD_pool_reset (struct MemoryPool *pool,
-                void *keep,
+MHD_INTERNAL void *
+mhd_pool_reset (struct mhd_MemoryPool *restrict pool,
+                void *restrict keep,
                 size_t copy_bytes,
                 size_t new_size)
 {

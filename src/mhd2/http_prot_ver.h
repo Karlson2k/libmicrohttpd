@@ -55,4 +55,17 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_HTTP_ProtocolVersion
 #define MHD_HTTP_PROTOCOL_VER_DEFINED 1
 #endif /* ! MHD_HTTP_PROTOCOL_VER_DEFINED */
 
+/**
+ * Check whether version of HTTP protocol is supported
+ */
+#define MHD_HTTP_VERSION_IS_SUPPORTED(v) \
+        ((MHD_HTTP_VERSION_1_0 <= (v)) && (MHD_HTTP_VERSION_1_1 >= (v)))
+
+/**
+ * Check whether version of HTTP protocol is valid
+ */
+#define MHD_HTTP_VERSION_IS_VALID(v) \
+        (((MHD_HTTP_VERSION_1_0 <= (v)) && (MHD_HTTP_VERSION_3 >= (v))) || \
+         (MHD_HTTP_VERSION_FUTURE == (v)))
+
 #endif /* ! MHD_HTTP_PROT_VER_H */

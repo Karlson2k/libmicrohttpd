@@ -27,6 +27,8 @@
  */
 #include "mhd_sys_options.h"
 
+#include "http_status_str.h"
+
 #include "sys_base_types.h"
 #include "mhd_public_api.h"
 #include "mhd_str_macros.h"
@@ -177,7 +179,7 @@ static const struct mhd_HttpStatusesBlock statuses[] = {
 MHD_EXTERN_ MHD_FN_CONST_ const struct MHD_String *
 MHD_HTTP_status_code_to_string (enum MHD_HTTP_StatusCode code)
 {
-  struct MHD_String *res;
+  const struct MHD_String *res;
   const unsigned int code_i = (unsigned int) code;
   if (100 > code_i)
     return NULL;
@@ -185,7 +187,7 @@ MHD_HTTP_status_code_to_string (enum MHD_HTTP_StatusCode code)
     return NULL;
   if (statuses[code_i / 100].max > (code_i % 100))
     return NULL;
-  res = statuses[code_i / 100] + (code_i % 100);
+  res = statuses[code_i / 100].data + (code_i % 100);
   if (NULL == res->cstr)
     return NULL;
   return res;
@@ -193,13 +195,13 @@ MHD_HTTP_status_code_to_string (enum MHD_HTTP_StatusCode code)
 
 
 MHD_INTERNAL MHD_FN_CONST_ const struct MHD_String *
-mhd_HTTP_status_code_to_string_int (enum MHD_HTTP_StatusCode code)
+mhd_HTTP_status_code_to_string_int (unsigned int code)
 {
   static const struct MHD_String no_status =
     mhd_MSTR_INIT ("Nonstandard Status");
   const struct MHD_String *res;
 
-  res = MHD_status_code_to_string (code);
+  res = MHD_HTTP_status_code_to_string ((enum MHD_HTTP_StatusCode) code);
   if (NULL != res)
     return res;
 

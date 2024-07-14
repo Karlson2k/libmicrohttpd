@@ -100,12 +100,6 @@ struct MHD_Reply
   struct MHD_Response *response;
 
   /**
-   * HTTP response code.  Only valid if response object
-   * is already set.
-   */
-  unsigned int responseCode;
-
-  /**
    * The "ICY" response.
    * Reply begins with the SHOUTcast "ICY" line instead of "HTTP".
    */

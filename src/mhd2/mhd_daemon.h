@@ -38,6 +38,7 @@
 #ifdef MHD_USE_THREADS
 #  include "mhd_threads.h"
 #  include "mhd_itc_types.h"
+#  include "mhd_locks.h"
 #endif
 
 #if defined(MHD_USE_SELECT) && defined(MHD_POSIX_SOCKETS)
@@ -769,6 +770,38 @@ struct mhd_DaemonConnections
   struct mhd_DaemonConnectionsSettings cfg;
 };
 
+/**
+ * Early URI callback
+ */
+struct mhd_DaemonRequestUriCB
+{
+  /**
+   * The callback
+   */
+  MHD_EarlyUriLogCallback cb;
+  /**
+   * The callback closure
+   */
+  void *cls;
+};
+
+/**
+ * Shared large buffer data
+ */
+struct mhd_DeamonLargeBuffer
+{
+  /**
+   * The amount of memory left allowed to be allocated for the large buffer
+   */
+  size_t space_left;
+
+#ifdef MHD_USE_THREADS
+  /**
+   * The mutex to change or check the @a space_left value
+   */
+  mhd_mutex lock;
+#endif
+};
 
 /**
  * Settings for requests processing
@@ -790,6 +823,16 @@ struct mhd_DaemonRequestProcessingSettings
    * Protocol strictness enforced by MHD on clients.
    */
   enum MHD_ProtocolStrictLevel strictnees;
+
+  /**
+   * Early URI callback
+   */
+  struct mhd_DaemonRequestUriCB uri_cb; // TODO: set from settings
+
+  /**
+   * Shared large buffer data
+   */
+  struct mhd_DeamonLargeBuffer large_buf; // TODO: set from settings
 };
 
 

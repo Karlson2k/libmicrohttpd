@@ -34,35 +34,41 @@
 #include "mhd_public_api.h"
 
 #include "mhd_dlinked_list.h"
+#include "mhd_assert.h"
 
 
-MHD_INTERNAL MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3) const struct MHD_String *
-mhd_request_get_value_len (struct MHD_Request *MHD_RESTRICT request,
-                           enum MHD_ValueKind kind,
-                           size_t key_len,
-                           const char *restrict key)
+MHD_INTERNAL
+MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_CSTR_ (4) const struct MHD_StringNullable *
+mhd_request_get_value_n (struct MHD_Request *MHD_RESTRICT request,
+                         enum MHD_ValueKind kind,
+                         size_t key_len,
+                         const char *restrict key)
 {
   struct mhd_RequestField *f;
 
-  for (f = mhd_DLINKEDL_GET_FIRST(request, fields); NULL != f;
-       f = mhd_DLINKEDL_GET_NEXT(f, fields))
+  mhd_assert (strlen (key) == key_len);
+
+  for (f = mhd_DLINKEDL_GET_FIRST (request, fields); NULL != f;
+       f = mhd_DLINKEDL_GET_NEXT (f, fields))
   {
     if ((key_len == f->field.nv.name.len) &&
         (kind == f->field.kind) &&
-        (0 == memcmp(key, f->field.nv.name.cstr)))
+        (0 == memcmp (key, f->field.nv.name.cstr, key_len)))
       return &(f->field.nv.value);
   }
   return NULL;
 }
 
-MHD_EXTERN_ MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3) const struct MHD_String *
+
+MHD_EXTERN_
+MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3) const struct MHD_StringNullable *
 MHD_request_get_value (struct MHD_Request *MHD_RESTRICT request,
                        enum MHD_ValueKind kind,
                        const char *MHD_RESTRICT key)
 {
   size_t len;
-  len = strlen(key);
-  return mhd_request_get_value_len(request, kind, len, key);
+  len = strlen (key);
+  return mhd_request_get_value_n (request, kind, len, key);
 }

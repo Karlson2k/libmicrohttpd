@@ -39,6 +39,7 @@
 #include "http_prot_ver.h"
 #include "http_method.h"
 #include "mhd_action.h"
+#include "mhd_buffer.h"
 
 
 /**
@@ -199,6 +200,36 @@ struct mhd_RequestField
 
 mhd_DLINKEDL_LIST_DEF (mhd_RequestField);
 
+
+/**
+ * The request content data
+ */
+struct mhd_ReqContentData
+{
+  /**
+   * The pointer to the large buffer
+   * Must be NULL if large buffer is not allocated.
+   */
+  struct mhd_Buffer lbuf;
+
+  /**
+   * The total size of the request content.
+   * #MHD_SIZE_UNKNOWN if the size is not yet known (chunked upload).
+   */
+  uint_fast64_t cntn_size;
+
+  /**
+   * The size of the received content
+   */
+  uint_fast64_t recv_size;
+
+  /**
+   * The size of the processed content
+   */
+  uint_fast64_t proc_size;
+};
+
+
 /**
  * Request-specific values.
  *
@@ -215,6 +246,11 @@ struct MHD_Request
    * The action set by the application
    */
   struct mhd_ApplicationAction app_act;
+
+  /**
+   * The request content data
+   */
+  struct mhd_ReqContentData cntn;
 
   /**
    * HTTP version string (i.e. http/1.1).  Allocated
@@ -270,12 +306,6 @@ struct MHD_Request
    * the terminating empty line.
    */
   union MHD_StartOrSize field_lines;
-
-  /**
-   * How many more bytes of the body do we expect
-   * to read? #MHD_SIZE_UNKNOWN for unknown.
-   */
-  uint_fast64_t remaining_upload_size;
 
   /**
    * Are we receiving with chunked encoding?

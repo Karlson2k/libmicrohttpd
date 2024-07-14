@@ -37,13 +37,16 @@
 
 #include "mhd_sys_options.h"
 
+#include <string.h>
+
 #include "mhd_send.h"
 #include "sys_sockets_headers.h"
 #include "sys_ip_headers.h"
 #include "mhd_sockets_macros.h"
 #include "daemon_logger.h"
 
-#include <string.h>
+#include "mhd_connection.h"
+#include "mhd_response.h"
 
 #include "mhd_iovec.h"
 #ifdef HAVE_LINUX_SENDFILE
@@ -74,8 +77,8 @@
 
 #ifdef mhd_USE_VECT_SEND
 #  if (! defined(HAVE_SENDMSG) || ! defined(MSG_NOSIGNAL)) && \
-    defined(mhd_SEND_SPIPE_SUPPRESS_POSSIBLE) && \
-    defined(mhd_SEND_SPIPE_SUPPRESS_NEEDED)
+  defined(mhd_SEND_SPIPE_SUPPRESS_POSSIBLE) && \
+  defined(mhd_SEND_SPIPE_SUPPRESS_NEEDED)
 #    define mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED 1
 #  endif /* (!HAVE_SENDMSG || !MSG_NOSIGNAL) &&
             mhd_SEND_SPIPE_SUPPRESS_POSSIBLE && mhd_SEND_SPIPE_SUPPRESS_NEEDED */
@@ -124,13 +127,13 @@ freebsd_sendfile_init_ (void)
     freebsd_sendfile_flags_thd_p_c_ =
       SF_FLAGS ((uint_fast16_t) \
                 ((mhd_SENFILE_CHUNK_SIZE_FOR_THR_P_C + sys_page_size - 1) \
-                  / sys_page_size) & 0xFFFFU, SF_NODISKIO);
+                 / sys_page_size) & 0xFFFFU, SF_NODISKIO);
   }
 }
 
 
 #else  /* ! HAVE_FREEBSD_SENDFILE || ! SF_FLAGS */
-#  define freebsd_sendfile_init_() (void)0
+#  define freebsd_sendfile_init_() (void) 0
 #endif /* HAVE_FREEBSD_SENDFILE */
 
 
@@ -162,7 +165,7 @@ iov_max_init_ (void)
  */
 #  define mhd_IOV_MAX    mhd_iov_max_
 #else  /* ! HAVE_SYSCONF || ! _SC_IOV_MAX */
-#  define iov_max_init_() (void)0
+#  define iov_max_init_() (void) 0
 #    if defined(IOV_MAX)
 
 /**
@@ -197,7 +200,7 @@ mhd_connection_set_nodelay_state (struct MHD_Connection *connection,
   static const mhd_SCKT_OPT_BOOL on_val = 1;
   int err_code;
 
-  if (mhd_T_IS_YES(connection->is_nonip))
+  if (mhd_T_IS_YES (connection->is_nonip))
     return false;
 
   if (0 == setsockopt (connection->socket_fd,
@@ -211,10 +214,10 @@ mhd_connection_set_nodelay_state (struct MHD_Connection *connection,
   }
 
   err_code = mhd_SCKT_GET_LERR ();
-  if ((mhd_T_IS_NOT_YES(connection->is_nonip)) &&
-       (mhd_SCKT_ERR_IS_EINVAL (err_code) ||
-        mhd_SCKT_ERR_IS_NOPROTOOPT (err_code) ||
-        mhd_SCKT_ERR_IS_NOTSOCK (err_code)))
+  if ((mhd_T_IS_NOT_YES (connection->is_nonip)) &&
+      (mhd_SCKT_ERR_IS_EINVAL (err_code) ||
+       mhd_SCKT_ERR_IS_NOPROTOOPT (err_code) ||
+       mhd_SCKT_ERR_IS_NOTSOCK (err_code)))
   {
     connection->is_nonip = mhd_T_YES;
   }
@@ -240,7 +243,7 @@ mhd_connection_set_cork_state (struct MHD_Connection *connection,
   static const mhd_SCKT_OPT_BOOL on_val = 1;
   int err_code;
 
-  if (mhd_T_IS_YES(connection->is_nonip))
+  if (mhd_T_IS_YES (connection->is_nonip))
     return false;
 
   if (0 == setsockopt (connection->socket_fd,
@@ -254,10 +257,10 @@ mhd_connection_set_cork_state (struct MHD_Connection *connection,
   }
 
   err_code = mhd_SCKT_GET_LERR ();
-  if ((mhd_T_IS_NOT_YES(connection->is_nonip)) &&
-       (mhd_SCKT_ERR_IS_EINVAL (err_code) ||
-        mhd_SCKT_ERR_IS_NOPROTOOPT (err_code) ||
-        mhd_SCKT_ERR_IS_NOTSOCK (err_code)))
+  if ((mhd_T_IS_NOT_YES (connection->is_nonip)) &&
+      (mhd_SCKT_ERR_IS_EINVAL (err_code) ||
+       mhd_SCKT_ERR_IS_NOPROTOOPT (err_code) ||
+       mhd_SCKT_ERR_IS_NOTSOCK (err_code)))
   {
     connection->is_nonip = mhd_T_YES;
   }
@@ -299,7 +302,7 @@ pre_send_setopt (struct MHD_Connection *connection,
    * Final piece is indicated by push_data == true. */
   const bool buffer_data = (! push_data);
 
-  if (mhd_T_IS_YES(connection->is_nonip))
+  if (mhd_T_IS_YES (connection->is_nonip))
     return;
 
   // TODO: support inheriting of TCP_NODELAY and TCP_NOPUSH
@@ -321,7 +324,7 @@ pre_send_setopt (struct MHD_Connection *connection,
 #endif /* ! mhd_USE_MSG_MORE */
 
 #ifdef mhd_TCP_CORK_NOPUSH
-    if (mhd_T_IS_YES(connection->sk_corked))
+    if (mhd_T_IS_YES (connection->sk_corked))
       return; /* The connection was already corked. */
 
     /* Prefer 'cork' over 'no delay' as the 'cork' buffers better, regardless
@@ -332,7 +335,7 @@ pre_send_setopt (struct MHD_Connection *connection,
     /* Failed to cork the connection.
      * Really unlikely to happen on TCP connections. */
 #endif /* mhd_TCP_CORK_NOPUSH */
-    if (mhd_T_IS_NO(connection->sk_nodelay))
+    if (mhd_T_IS_NO (connection->sk_nodelay))
       return; /* TCP_NODELAY was not set for the socket.
                * Nagle's algorithm will buffer some data. */
 
@@ -396,17 +399,17 @@ pre_send_setopt (struct MHD_Connection *connection,
   /* This is typical modern FreeBSD and OpenBSD behaviour. */
 #        endif /* ! mhd_NODELAY_SET_PUSH_DATA */
 
-  if (mhd_T_IS_YES(connection->sk_corked))
+  if (mhd_T_IS_YES (connection->sk_corked))
     return; /* Socket is corked. Data can be pushed by resetting of
              * TCP_CORK / TCP_NOPUSH after send() */
-  else if (mhd_T_IS_NO(connection->sk_corked))
+  else if (mhd_T_IS_NO (connection->sk_corked))
   {
     /* The socket is not corked. */
-    if (mhd_T_IS_YES(connection->sk_nodelay))
+    if (mhd_T_IS_YES (connection->sk_nodelay))
       return; /* TCP_NODELAY was already set,
                * data will be pushed automatically by the next send() */
 #        ifdef mhd_NODELAY_SET_PUSH_DATA
-    else if (mhd_T_IS_MAYBE(connection->sk_nodelay))
+    else if (mhd_T_IS_MAYBE (connection->sk_nodelay))
     {
       /* Setting TCP_NODELAY may push data NOW.
        * Cork socket here and uncork after send(). */
@@ -469,7 +472,7 @@ pre_send_setopt (struct MHD_Connection *connection,
              * TCP_CORK / TCP_NOPUSH after send() */
   /* The socket cannot be corked.
    * Really unlikely to happen on TCP connections */
-  if (mhd_T_IS_YES(connection->sk_nodelay))
+  if (mhd_T_IS_YES (connection->sk_nodelay))
     return; /* TCP_NODELAY was already set,
              * data will be pushed by the next send() */
 
@@ -498,11 +501,11 @@ pre_send_setopt (struct MHD_Connection *connection,
   /* This is old FreeBSD and Darwin behaviour. */
 
   /* Uncork socket if socket wasn't uncorked. */
-  if (mhd_T_IS_NOT_NO(connection->sk_corked))
+  if (mhd_T_IS_NOT_NO (connection->sk_corked))
     mhd_connection_set_cork_state (connection, false);
 
   /* Set TCP_NODELAY if it wasn't set. */
-  if (mhd_T_IS_NOT_YES(connection->sk_nodelay))
+  if (mhd_T_IS_NOT_YES (connection->sk_nodelay))
     mhd_connection_set_nodelay_state (connection, true);
 
   return;
@@ -524,7 +527,7 @@ pre_send_setopt (struct MHD_Connection *connection,
   /* Buffering of data is controlled only by
    * Nagel's algorithm. */
   /* Set TCP_NODELAY if it wasn't set. */
-  if (mhd_T_IS_NOT_YES(connection->sk_nodelay))
+  if (mhd_T_IS_NOT_YES (connection->sk_nodelay))
     mhd_connection_set_nodelay_state (connection, true);
 #endif /* ! mhd_TCP_CORK_NOPUSH */
 }
@@ -545,13 +548,12 @@ pre_send_setopt (struct MHD_Connection *connection,
 static bool
 zero_send (struct MHD_Connection *connection)
 {
-  static const int dummy;
+  static const int dummy = 0;
 
-  if (mhd_T_IS_YES(connection->is_nonip))
+  if (mhd_T_IS_YES (connection->is_nonip))
     return false;
-  mhd_assert (mhd_T_IS_NO(connection->sk_corked));
-  mhd_assert (mhd_T_IS_YES(connection->sk_nodelay));
-  dummy = 0; /* Mute compiler and analyzer warnings */
+  mhd_assert (mhd_T_IS_NO (connection->sk_corked));
+  mhd_assert (mhd_T_IS_YES (connection->sk_nodelay));
   if (0 == mhd_sys_send (connection->socket_fd, &dummy, 0))
     return true;
   MHD_LOG_MSG (connection->daemon, MHD_SC_SOCKET_ZERO_SEND_FAILED, \
@@ -581,7 +583,7 @@ post_send_setopt (struct MHD_Connection *connection,
    * Final piece is indicated by push_data == true. */
   const bool buffer_data = (! push_data);
 
-  if (mhd_T_IS_YES(connection->is_nonip))
+  if (mhd_T_IS_YES (connection->is_nonip))
     return;
   if (buffer_data)
     return; /* Nothing to do after the send(). */
@@ -592,8 +594,8 @@ post_send_setopt (struct MHD_Connection *connection,
 
   /* Need to push data. */
 #ifdef mhd_TCP_CORK_NOPUSH
-  if (mhd_T_IS_YES(connection->sk_nodelay) && \
-      mhd_T_IS_NO(connection->sk_corked))
+  if (mhd_T_IS_YES (connection->sk_nodelay) && \
+      mhd_T_IS_NO (connection->sk_corked))
     return; /* Data has been already pushed by last send(). */
 
 #  ifdef mhd_CORK_RESET_PUSH_DATA_ALWAYS
@@ -620,7 +622,7 @@ post_send_setopt (struct MHD_Connection *connection,
    * resetting of TCP_CORK so next final send without MSG_MORE will push
    * data to the network (without additional sys-call to push data).  */
 
-  if (mhd_T_IS_NOT_YES(connection->sk_nodelay) ||
+  if (mhd_T_IS_NOT_YES (connection->sk_nodelay) ||
       (! plain_send_next))
   {
     if (mhd_connection_set_nodelay_state (connection, true))
@@ -672,9 +674,9 @@ post_send_setopt (struct MHD_Connection *connection,
 #  else  /* ! mhd_CORK_RESET_PUSH_DATA_ALWAYS */
   /* This is old FreeBSD or Darwin kernel. */
 
-  if (mhd_T_IS_NO(connection->sk_corked))
+  if (mhd_T_IS_NO (connection->sk_corked))
   {
-    mhd_assert(mhd_T_IS_NOT_YES(connection->sk_nodelay));
+    mhd_assert (mhd_T_IS_NOT_YES (connection->sk_nodelay));
 
     /* Unlikely to reach this code.
      * TCP_NODELAY should be turned on before send(). */
@@ -700,14 +702,14 @@ post_send_setopt (struct MHD_Connection *connection,
     {
 #ifdef mhd_CORK_RESET_PUSH_DATA
       /* Modern FreeBSD or OpenBSD kernel */
-      if (mhd_T_IS_YES(old_cork_state))
+      if (mhd_T_IS_YES (old_cork_state))
         return; /* Data has been pushed by uncorking the socket. */
 #endif /* mhd_CORK_RESET_PUSH_DATA */
 
       /* Unlikely to reach this code.
        * The data should be pushed by uncorking (FreeBSD) or
        * the socket should be uncorked before send(). */
-      if (mhd_T_IS_YES(connection->sk_nodelay) ||
+      if (mhd_T_IS_YES (connection->sk_nodelay) ||
           (mhd_connection_set_nodelay_state (connection, true)))
       {
         /* TCP_NODELAY is turned ON on uncorked socket.
@@ -722,8 +724,8 @@ post_send_setopt (struct MHD_Connection *connection,
 #else  /* ! mhd_TCP_CORK_NOPUSH */
   /* Corking is not supported. Buffering is controlled
    * by TCP_NODELAY only. */
-  mhd_assert (mhd_T_IS_NOT_YES(connection->sk_corked));
-  if (mhd_T_IS_YES(connection->sk_nodelay))
+  mhd_assert (mhd_T_IS_NOT_YES (connection->sk_corked));
+  if (mhd_T_IS_YES (connection->sk_nodelay))
     return; /* Data was already pushed by send(). */
 
   /* Unlikely to reach this code.
@@ -746,11 +748,13 @@ post_send_setopt (struct MHD_Connection *connection,
   return;
 }
 
-static MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_ (3,2)
+
+static MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_IN_SIZE_ (3,2)
 MHD_FN_PAR_OUT_ (5) enum mhd_SocketError
 mhd_plain_send (struct MHD_Connection *restrict c,
                 size_t buf_size,
-                const char buf[MHD_FN_PAR_DYN_ARR_SIZE_(buf_size)],
+                const char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
                 bool push_data,
                 size_t *restrict sent)
 {
@@ -766,12 +770,12 @@ mhd_plain_send (struct MHD_Connection *restrict c,
 
   pre_send_setopt (c, true, push_data);
 #ifdef mhd_USE_MSG_MORE
-  res = mhd_sys_send4 (s,
-                   buffer,
-                   buffer_size,
-                   push_data ? 0 : MSG_MORE);
+  res = mhd_sys_send4 (c->socket_fd,
+                       buffer,
+                       buffer_size,
+                       push_data ? 0 : MSG_MORE);
 #else
-  res = mhd_sys_send4 (c,
+  res = mhd_sys_send4 (c->socket_fd,
                        buf,
                        buf_size,
                        0);
@@ -781,12 +785,13 @@ mhd_plain_send (struct MHD_Connection *restrict c,
   {
     enum mhd_SocketError err;
 
-    err = mhd_socket_error_get_from_sys_err(mhd_SCKT_GET_LERR ());
+    err = mhd_socket_error_get_from_sys_err (mhd_SCKT_GET_LERR ());
 
     if (mhd_SOCKET_ERR_AGAIN == err)
       c->sk_ready = (enum mhd_SocketNetState) /* Clear 'send-ready' */
                     (((unsigned int) c->sk_ready)
-                     & (~mhd_SOCKET_NET_STATE_SEND_READY));
+                     & (~(enum mhd_SocketNetState)
+                        mhd_SOCKET_NET_STATE_SEND_READY));
 
     return err;
   }
@@ -797,31 +802,32 @@ mhd_plain_send (struct MHD_Connection *restrict c,
   if (! full_buf_sent)
     c->sk_ready = (enum mhd_SocketNetState) /* Clear 'send-ready' */
                   (((unsigned int) c->sk_ready)
-                   & (~mhd_SOCKET_NET_STATE_SEND_READY));
+                   & (~(enum mhd_SocketNetState)
+                      mhd_SOCKET_NET_STATE_SEND_READY));
 
   /* If there is a need to push the data from network buffers
    * call post_send_setopt(). */
   /* It's unknown whether sendfile() (or other send function without
    * MSG_MORE support) will be used for the next reply so assume
    * that next sending will be the same, like this call. */
-  if ( push_data && full_buf_sent)
+  if (push_data && full_buf_sent)
     post_send_setopt (c, false, push_data);
 
   return mhd_SOCKET_ERR_NO_ERROR;
 }
 
 
-MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_ (3,2)
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_IN_SIZE_ (3,2)
 MHD_FN_PAR_OUT_ (5) enum mhd_SocketError
 mhd_send_data (struct MHD_Connection *restrict connection,
                size_t buf_size,
-               const char buf[MHD_FN_PAR_DYN_ARR_SIZE_(buf_size)],
+               const char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
                bool push_data,
                size_t *restrict sent)
 {
   MHD_Socket s = connection->socket_fd;
 
-  enum mhd_SocketError ret;
   const bool tls_conn = false; // TODO: TLS support
 
   mhd_assert (MHD_INVALID_SOCKET != s);
@@ -838,10 +844,12 @@ mhd_send_data (struct MHD_Connection *restrict connection,
     return mhd_SOCKET_ERR_OTHER;
   }
 
-  return mhd_plain_send(connection, buf_size, buf, push_data, sent);
+  return mhd_plain_send (connection, buf_size, buf, push_data, sent);
 }
 
-MHD_INTERNAL MHD_FN_PAR_NONNULL_(1) MHD_FN_PAR_NONNULL_(3)
+
+MHD_INTERNAL
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (3)
 MHD_FN_PAR_IN_SIZE_ (3,2) MHD_FN_PAR_IN_SIZE_ (6,5) enum mhd_SocketError
 mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
                        size_t header_size,
@@ -920,17 +928,16 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
 #else  /* mhd_USE_VECT_SEND */
   no_vec = (no_vec || (0 == body_size));
   no_vec = (no_vec || ((sizeof(mhd_iov_elmn_size) <= sizeof(size_t)) &&
-      (((size_t) mhd_IOV_ELMN_MAX_SIZE) < header_size)));
+                       (((size_t) mhd_IOV_ELMN_MAX_SIZE) < header_size)));
 #endif /* mhd_USE_VECT_SEND */
-
 
 
   if (no_vec)
   {
     enum mhd_SocketError ret;
     ret = mhd_send_data (connection,
-                         header,
                          header_size,
+                         header,
                          push_hdr,
                          sent);
 
@@ -947,14 +954,14 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
        * the next round. */
 
       ret = mhd_send_data (connection,
-                           body,
                            body_size,
+                           body,
                            push_body,
                            &sent_b);
 
       if (mhd_SOCKET_ERR_NO_ERROR == ret)
         *sent += sent_b;
-      else if (mhd_SOCKET_ERR_IS_HARD(ret))
+      else if (mhd_SOCKET_ERR_IS_HARD (ret))
         return ret; /* Unrecoverable error */
 
       return mhd_SOCKET_ERR_NO_ERROR; /* The header has been sent successfully */
@@ -971,8 +978,8 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
     push_body = complete_response;
   }
   if (((mhd_iov_ret_type) (header_size + body_size)) < 0 ||
-      ((size_t)(mhd_iov_ret_type) (header_size + body_size)) !=
-          (header_size + body_size))
+      ((size_t) (mhd_iov_ret_type) (header_size + body_size)) !=
+      (header_size + body_size))
   {
     /* Send sys-call total amount limit */
     body_size = mhd_IOV_RET_MAX_SIZE - header_size;
@@ -1004,8 +1011,8 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
   msg.msg_controllen = 0;
   msg.msg_flags = 0;
 
-  res = sendmsg (s, &msg, mhd_MSG_NOSIGNAL |
-                          ((push_hdr || push_body) ? 0 : mhd_MSG_MORE));
+  res = sendmsg (s, &msg, mhd_MSG_NOSIGNAL
+                 | ((push_hdr || push_body) ? 0 : mhd_MSG_MORE));
 #elif defined(HAVE_WRITEV)
   res = writev (s, vector, 2);
 #endif /* HAVE_WRITEV */
@@ -1038,19 +1045,21 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
   {
     enum mhd_SocketError err;
 
-    err = mhd_socket_error_get_from_sys_err(mhd_SCKT_GET_LERR ());
+    err = mhd_socket_error_get_from_sys_err (mhd_SCKT_GET_LERR ());
 
     if (mhd_SOCKET_ERR_AGAIN == err)
       connection->sk_ready = (enum mhd_SocketNetState) /* Clear 'send-ready' */
                              (((unsigned int) connection->sk_ready)
-                              & (~mhd_SOCKET_NET_STATE_SEND_READY));
+                              & (~(enum mhd_SocketNetState)
+                                 mhd_SOCKET_NET_STATE_SEND_READY));
 
     return err;
   }
   if ((header_size + body_size) > *sent)
     connection->sk_ready = (enum mhd_SocketNetState) /* Clear 'send-ready' */
                            (((unsigned int) connection->sk_ready)
-                            & (~mhd_SOCKET_NET_STATE_SEND_READY));
+                            & (~(enum mhd_SocketNetState)
+                               mhd_SOCKET_NET_STATE_SEND_READY));
 
   /* If there is a need to push the data from network buffers
    * call post_send_setopt(). */
@@ -1091,7 +1100,8 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
 
 
 #if defined(MHD_USE_SENDFILE) // TODO: adapt, update
-MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (2) enum mhd_SocketError
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_ (2) enum mhd_SocketError
 mhd_send_sendfile (struct MHD_Connection *restrict connection,
                    size_t *restrict sent)
 {
@@ -1324,13 +1334,13 @@ mhd_send_sendfile (struct MHD_Connection *restrict connection,
  * @return mhd_SOCKET_ERR_NO_ERROR if send succeed (the @a sent gets
  *         the sent size) or socket error
  */
-static MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (4) enum mhd_SocketError
+static MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_ (4) enum mhd_SocketError
 send_iov_nontls (struct MHD_Connection *restrict connection,
                  struct mhd_iovec_track *const restrict r_iov,
                  bool push_data,
                  size_t *restrict sent)
 {
-  ssize_t res;
   bool send_error;
   size_t items_to_send;
 #ifdef HAVE_SENDMSG
@@ -1410,12 +1420,13 @@ send_iov_nontls (struct MHD_Connection *restrict connection,
   {
     enum mhd_SocketError err;
 
-    err = mhd_socket_error_get_from_sys_err(mhd_SCKT_GET_LERR ());
+    err = mhd_socket_error_get_from_sys_err (mhd_SCKT_GET_LERR ());
 
     if (mhd_SOCKET_ERR_AGAIN == err)
       connection->sk_ready = (enum mhd_SocketNetState) /* Clear 'send-ready' */
                              (((unsigned int) connection->sk_ready)
-                              & (~mhd_SOCKET_NET_STATE_SEND_READY));
+                              & (~(enum mhd_SocketNetState)
+                                 mhd_SOCKET_NET_STATE_SEND_READY));
 
     return err;
   }
@@ -1439,7 +1450,8 @@ send_iov_nontls (struct MHD_Connection *restrict connection,
     {
       connection->sk_ready = (enum mhd_SocketNetState) /* Clear 'send-ready' */
                              (((unsigned int) connection->sk_ready)
-                              & (~mhd_SOCKET_NET_STATE_SEND_READY));
+                              & (~(enum mhd_SocketNetState)
+                                 mhd_SOCKET_NET_STATE_SEND_READY));
       if (0 != track_sent)
       {
         mhd_assert (r_iov->cnt > r_iov->sent);
@@ -1477,7 +1489,8 @@ send_iov_nontls (struct MHD_Connection *restrict connection,
  * @return mhd_SOCKET_ERR_NO_ERROR if send succeed (the @a sent gets
  *         the sent size) or socket error
  */
-static MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (4) enum mhd_SocketError
+static MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_ (4) enum mhd_SocketError
 send_iov_emu (struct MHD_Connection *restrict connection,
               struct mhd_iovec_track *const restrict r_iov,
               bool push_data,
@@ -1485,33 +1498,31 @@ send_iov_emu (struct MHD_Connection *restrict connection,
 {
   const bool non_blk = connection->sk_nonblck;
   size_t total_sent;
-  size_t sent_elements;
   size_t max_elelements_to_sent;
 
   mhd_assert (NULL != r_iov->iov);
   total_sent = 0;
-  sent_elements = 0;
   max_elelements_to_sent = 8; /* Do not make too many sys-calls for just one connection */
   do
   {
     enum mhd_SocketError res;
     size_t sent_el_size;
 
-    if (total_sent > (size_t)(r_iov->iov[r_iov->sent].iov_len + total_sent))
+    if (total_sent > (size_t) (r_iov->iov[r_iov->sent].iov_len + total_sent))
       break; /* return value would overflow */
 
     res = mhd_send_data (connection,
-                          r_iov->iov[r_iov->sent].iov_base,
-                          r_iov->iov[r_iov->sent].iov_len,
-                          push_data && (r_iov->cnt == r_iov->sent + 1),
-                          &sent_el_size);
+                         r_iov->iov[r_iov->sent].iov_len,
+                         r_iov->iov[r_iov->sent].iov_base,
+                         push_data && (r_iov->cnt == r_iov->sent + 1),
+                         &sent_el_size);
     if (mhd_SOCKET_ERR_NO_ERROR == res)
     {
       /* Result is an error */
       if (0 == total_sent)
         return res; /* Nothing was sent, return error as is */
 
-      if (mhd_SOCKET_ERR_IS_HARD(res))
+      if (mhd_SOCKET_ERR_IS_HARD (res))
         return res; /* Any kind of a hard error */
 
       break; /* Return the amount of the sent data */
@@ -1543,7 +1554,8 @@ send_iov_emu (struct MHD_Connection *restrict connection,
 #endif /* !mhd_USE_VECT_SEND || HTTPS_SUPPORT
           || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
 
-MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (4) enum mhd_SocketError
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_ (4) enum mhd_SocketError
 mhd_send_iovec (struct MHD_Connection *restrict connection,
                 struct mhd_iovec_track *const restrict r_iov,
                 bool push_data,
@@ -1564,7 +1576,7 @@ mhd_send_iovec (struct MHD_Connection *restrict connection,
 #if defined(HTTPS_SUPPORT) || \
   defined(mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)
 #ifdef HTTPS_SUPPORT
-  use_iov_send = use_iov_send &
+  use_iov_send = use_iov_send &&
                  (true); // TODO: TLS support
 #endif /* HTTPS_SUPPORT */
 #ifdef mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED
@@ -1573,12 +1585,12 @@ mhd_send_iovec (struct MHD_Connection *restrict connection,
 #endif /* mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
   if (use_iov_send)
 #endif /* HTTPS_SUPPORT || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
-  return send_iov_nontls (connection, r_iov, push_data);
+  return send_iov_nontls (connection, r_iov, push_data, sent);
 #endif /* mhd_USE_VECT_SEND */
 
 #if ! defined(mhd_USE_VECT_SEND) || defined(HTTPS_SUPPORT) || \
   defined(mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)
-  return send_iov_emu (connection, r_iov, push_data);
+  return send_iov_emu (connection, r_iov, push_data, sent);
 #endif /* !mhd_USE_VECT_SEND || HTTPS_SUPPORT
           || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
 }

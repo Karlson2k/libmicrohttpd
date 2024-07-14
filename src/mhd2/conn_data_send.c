@@ -69,13 +69,13 @@ check_write_done (struct MHD_Connection *restrict connection,
 
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
-mhd_conn_data_send (struct MHD_Connection restrict *c,
+mhd_conn_data_send (struct MHD_Connection *restrict c,
                     bool has_err)
 {
   static const char http_100_continue_msg[] =
     mdh_HTTP_1_1_100_CONTINUE_REPLY;
   static const size_t http_100_continue_msg_len =
-      mhd_SSTR_LEN(mdh_HTTP_1_1_100_CONTINUE_REPLY);
+    mhd_SSTR_LEN (mdh_HTTP_1_1_100_CONTINUE_REPLY);
   enum mhd_SocketError res;
   size_t sent;
 
@@ -121,8 +121,8 @@ mhd_conn_data_send (struct MHD_Connection restrict *c,
       mhd_assert (mhd_RESPONSE_CONTENT_DATA_BUFFER == resp->cntn_dtype);
 
       res = mhd_send_hdr_and_body (c,
-                                   c->write_buffer +
-                                   c->write_buffer_send_offset,
+                                   c->write_buffer
+                                   + c->write_buffer_send_offset,
                                    wb_ready,
                                    false,
                                    (const char *) resp->cntn.buf,
@@ -136,8 +136,8 @@ mhd_conn_data_send (struct MHD_Connection restrict *c,
        * for any other reason or reply body is dynamically generated. */
       /* Do not send the body data even if it's available. */
       res = mhd_send_hdr_and_body (c,
-                                   c->write_buffer +
-                                   c->write_buffer_send_offset,
+                                   c->write_buffer
+                                   + c->write_buffer_send_offset,
                                    wb_ready,
                                    false,
                                    NULL,
@@ -183,8 +183,8 @@ mhd_conn_data_send (struct MHD_Connection restrict *c,
       mhd_assert (mhd_RESPONSE_CONTENT_DATA_BUFFER == resp->cntn_dtype);
 
       res = mhd_send_data (c,
-                           (const char *) resp->cntn.buf +
-                           c->rp.rsp_cntn_read_pos,
+                           (const char *) resp->cntn.buf
+                           + c->rp.rsp_cntn_read_pos,
                            c->rp.rsp_cntn_read_pos - resp->cntn_size,
                            true,
                            &sent);
@@ -245,8 +245,8 @@ mhd_conn_data_send (struct MHD_Connection restrict *c,
   else if (MHD_CONNECTION_FOOTERS_SENDING == c->state)
   {
     res = mhd_send_data (c,
-                         c->write_buffer +
-                         c->write_buffer_send_offset,
+                         c->write_buffer
+                         + c->write_buffer_send_offset,
                          c->write_buffer_append_offset
                          - c->write_buffer_send_offset,
                          true,
@@ -267,9 +267,9 @@ mhd_conn_data_send (struct MHD_Connection restrict *c,
 
   if (mhd_SOCKET_ERR_NO_ERROR != res)
   {
-    MHD_update_last_activity_ (c);  // TODO: centralise activity mark updates
+    mhd_stream_update_activity_mark (c);  // TODO: centralise activity mark updates
   }
-  else if (mhd_SOCKET_ERR_IS_HARD(res))
+  else if (mhd_SOCKET_ERR_IS_HARD (res))
   {
     c->sk_discnt_err = res;
     c->sk_ready =

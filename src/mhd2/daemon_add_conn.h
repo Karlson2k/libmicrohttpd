@@ -35,6 +35,7 @@
 #include "sys_bool_type.h"
 
 struct MHD_Daemon; /* Forward declaration */
+struct MHD_Connection; /* Forward declaration */
 
 /**
  * The result of the accepting of the new connection
@@ -78,6 +79,16 @@ enum mhd_DaemonAcceptResult
  */
 MHD_INTERNAL enum mhd_DaemonAcceptResult
 mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon);
+
+/**
+ * Finally close and clean-up connection.
+ * Must be performed only when connection thread (for thread-per-connection)
+ * has stopped.
+ * @param c the connection to close
+ */
+MHD_INTERNAL void
+mhd_conn_close_final (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
 
 
 #endif /* ! MHD_DAEMON_ADD_CONN */

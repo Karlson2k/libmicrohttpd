@@ -37,7 +37,7 @@ const struct MHD_Action *
 MHD_action_suspend (struct MHD_Request *request)
 {
   struct MHD_Action *const restrict head_act = &(request->app_act.head_act);
-  if (mhd_UPLOAD_ACTION_NO_ACTION != head_act->act)
+  if (mhd_ACTION_NO_ACTION != head_act->act)
     return (const struct MHD_Action *) NULL;
 
   head_act->act = mhd_ACTION_SUSPEND;
@@ -100,7 +100,7 @@ MHD_action_process_upload (struct MHD_Request *request,
 
 
 MHD_EXTERN_
-MHD_FN_PAR_NONNULL_ (1) struct MHD_Action *
+MHD_FN_PAR_NONNULL_ (1) const struct MHD_Action *
 MHD_action_post_processor (struct MHD_Request *request,
                            size_t pp_buffer_size,
                            size_t pp_stream_limit,
@@ -110,7 +110,8 @@ MHD_action_post_processor (struct MHD_Request *request,
                            MHD_PostDataFinished done_cb,
                            void *done_cb_cls)
 {
-  struct MHD_Action *const restrict head_act = &(request->app_act.head_act);
+  struct MHD_Action *const restrict head_act =
+    &(request->app_act.head_act);
   if (mhd_ACTION_NO_ACTION != head_act->act)
     return (const struct MHD_Action *) NULL;
   if (NULL == done_cb)
@@ -133,7 +134,8 @@ MHD_EXTERN_ MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_
 const struct MHD_UploadAction *
 MHD_upload_action_suspend (struct MHD_Request *request)
 {
-  struct MHD_Action *const restrict upl_act = &(request->app_act.upl_act);
+  struct MHD_UploadAction *const restrict upl_act =
+    &(request->app_act.upl_act);
   if (mhd_UPLOAD_ACTION_NO_ACTION != upl_act->act)
     return (const struct MHD_UploadAction *) NULL;
 
@@ -148,7 +150,8 @@ MHD_FN_PAR_NONNULL_ (1) const struct MHD_UploadAction *
 MHD_upload_action_from_response (struct MHD_Request *request,
                                  struct MHD_Response *response)
 {
-  struct MHD_Action *const restrict upl_act = &(request->app_act.upl_act);
+  struct MHD_UploadAction *const restrict upl_act =
+    &(request->app_act.upl_act);
   if (mhd_UPLOAD_ACTION_NO_ACTION != upl_act->act)
     return (const struct MHD_UploadAction *) NULL;
 
@@ -162,7 +165,8 @@ MHD_upload_action_from_response (struct MHD_Request *request,
 MHD_EXTERN_ MHD_FN_RETURNS_NONNULL_ const struct MHD_UploadAction *
 MHD_upload_action_continue (struct MHD_Request *request)
 {
-  struct MHD_Action *const restrict upl_act = &(request->app_act.upl_act);
+  struct MHD_UploadAction *const restrict upl_act =
+    &(request->app_act.upl_act);
   if (mhd_UPLOAD_ACTION_NO_ACTION != upl_act->act)
     return (const struct MHD_UploadAction *) NULL;
 

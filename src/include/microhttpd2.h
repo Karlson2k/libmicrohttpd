@@ -481,6 +481,17 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    */
   MHD_SC_CONNECTION_POOL_MALLOC_FAILURE_REQ = 30130
   ,
+  /**
+   * Failed to allocate memory from our memory pool to store GET parameter.
+   * Likely the request URI or header fields are too large to leave enough room.
+   */
+  MHD_SC_CONNECTION_POOL_NO_MEM_GET_PARAM = 30131
+  ,
+  /**
+   * Failed to allocate memory from our memory pool to store parsed cookie.
+   */
+  MHD_SC_CONNECTION_POOL_NO_MEM_COOKIE = 30132
+  ,
 
   /* 40000-level errors are caused by the HTTP client
      (or the network) */
@@ -497,41 +508,56 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_CONNECTION_RESET_CLOSED = 40001
   ,
   /**
-   * MHD is closing a connection because reading the
+   * MHD is closing a connection because receiving the
    * request failed.
    */
-  MHD_SC_CONNECTION_READ_FAIL_CLOSED = 40002
+  MHD_SC_CONNECTION_RECV_FAIL_CLOSED = 40002
   ,
   /**
-   * MHD is closing a connection because writing the response failed.
+   * MHD is closing a connection because sending the response failed.
    */
-  MHD_SC_CONNECTION_WRITE_FAIL_CLOSED = 40003
+  MHD_SC_CONNECTION_SEND_FAIL_CLOSED = 40003
   ,
   /**
    * MHD is returning an error because the header provided
    * by the client is too big.
    */
-  MHD_SC_CLIENT_HEADER_TOO_BIG = 40004
+  MHD_SC_CLIENT_HEADER_TOO_BIG = 40020
   ,
   /**
    * An HTTP/1.1 request was sent without the "Host:" header.
    */
-  MHD_SC_HOST_HEADER_MISSING = 40005
+  MHD_SC_HOST_HEADER_MISSING = 40060
   ,
   /**
    * The given content length was not a number.
    */
-  MHD_SC_CONTENT_LENGTH_MALFORMED = 40006
+  MHD_SC_CONTENT_LENGTH_MALFORMED = 40061
+  ,
+  /**
+   * The BOTH Content-Length and Transfer-Encoding headers are used.
+   */
+  MHD_SC_CONTENT_LENGTH_AND_TR_ENC = 40062
+  ,
+  /**
+   * The Content-Length is too large to be handled.
+   */
+  MHD_SC_CONTENT_LENGTH_TOO_LARGE = 40062
   ,
   /**
    * The given uploaded, chunked-encoded body was malformed.
    */
-  MHD_SC_CHUNKED_ENCODING_MALFORMED = 40007
+  MHD_SC_CHUNKED_ENCODING_MALFORMED = 40080
   ,
   /**
    * The first header line has whitespace at the start
    */
   MHD_SC_REQ_FIRST_HEADER_LINE_SPACE_PREFIXED = 40100
+  ,
+  /**
+   * The request target (URI) has whitespace character
+   */
+  MHD_SC_REQ_TARGET_HAS_WHITESPACE = 40101
   ,
   /**
    * Wrong bare CR characters has been replaced with space.
@@ -552,6 +578,28 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * Footer line has not colon and skipped.
    */
   MHD_SC_REQ_FOOTER_LINE_NO_COLON = 40141
+  ,
+  /**
+   * The cookie string has been parsed, but it is not fully compliant with
+   * specifications
+   */
+  MHD_SC_REQ_COOKIE_PARSED_NOT_COMPLIANT = 40142
+  ,
+  /**
+   * The cookie string has been parsed only partially
+   */
+  MHD_SC_REQ_COOKIE_PARSED_PARTIALLY = 40142
+  ,
+  /**
+   * The cookie string is ignored, as it is not fully compliant with
+   * specifications
+   */
+  MHD_SC_REQ_COOKIE_IGNORED_NOT_COMPLIANT = 40143
+  ,
+  /**
+   * The cookie string has been ignored as it is invalid
+   */
+  MHD_SC_REQ_COOKIE_INVALID = 40143
   ,
 
   /* 50000-level errors are because of an error internal
@@ -784,6 +832,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * due to unsupported address family being used.
    */
   MHD_SC_LISTEN_PORT_INTROSPECTION_UNKNOWN_AF = 50081
+  ,
+  /**
+   * Failed to initialise mutex.
+   */
+  MHD_SC_MUTEX_INIT_FAILURE = 50085
   ,
   /**
    * Failed to allocate memory for the thread pool.
@@ -1163,6 +1216,16 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * The response header value has forbidden characters
    */
   MHD_SC_RESP_HEADER_VALUE_INVALID = 60051
+  ,
+  /**
+   * The the provided MHD_Action is invalid
+   */
+  MHD_SC_ACTION_INVALID = 60080
+  ,
+  /**
+   * The the provided MHD_UploadAction is invalid
+   */
+  MHD_SC_UPLOAD_ACTION_INVALID = 60081
 
 };
 
@@ -1997,7 +2060,7 @@ MHD_FN_CONST_;
  *                    #MHD_SIZE_UNKNOWN for chunked uploads (if the
  *                    final chunk has not been processed yet)
  * @return action how to proceed, NULL
- *         if the request must be closed due to a serious
+ *         if the request must be aborted due to a serious
  *         error while handling the request (implies closure
  *         of underling data stream, for HTTP/1.1 it means
  *         socket closure).
@@ -2259,7 +2322,7 @@ struct MHD_EventUpdateContext;
  *                     NULL if @a fd socket was not registered before
  * @param ecb_cntx the context handle to be used
  *                 with #MHD_daemon_event_update()
- * @return NULL if error (to connection will be closed),
+ * @return NULL if error (to connection will be aborted),
  *         or the new socket context
  * @ingroup event
  */
@@ -3238,13 +3301,13 @@ typedef void
 enum MHD_FIXED_ENUM_MHD_SET_ MHD_StreamNotificationCode
 {
   /**
-   * A new connection has been started.
+   * A new stream has been started.
    * @ingroup request
    */
   MHD_STREAM_NOTIFY_STARTED = 0
   ,
   /**
-   * A connection is closed.
+   * A stream is closed.
    * @ingroup request
    */
   MHD_STREAM_NOTIFY_CLOSED = 1
@@ -4723,7 +4786,7 @@ MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_OUT_SIZE_ (4,3);
  * @return NULL if no such item was found
  * @ingroup request
  */
-MHD_EXTERN_ const struct MHD_String *
+MHD_EXTERN_ const struct MHD_StringNullable *
 MHD_request_get_value (struct MHD_Request *MHD_RESTRICT request,
                        enum MHD_ValueKind kind,
                        const char *MHD_RESTRICT key)
@@ -5122,7 +5185,7 @@ MHD_FN_PAR_NONNULL_ALL_;
  * @param request the request to create the action for
  * @param[in] response the response to convert,
  *                     if NULL then this function is equivalent to
- *                     #MHD_action_close_connection() call
+ *                     #MHD_action_abort_connection() call
  * @return pointer to the action, the action must be consumed
  *         otherwise response object may leak;
  *         NULL if failed (no memory) or if any action has been already
@@ -5145,7 +5208,7 @@ MHD_FN_PAR_NONNULL_(1);
  * @return action operation, always NULL
  * @ingroup action
  */
-#define MHD_action_close_connection(req) \
+#define MHD_action_abort_request(req) \
         MHD_STATIC_CAST_ (const struct MHD_Action *, NULL)
 
 
@@ -5674,7 +5737,7 @@ MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_;
  * @param request the request to create the action for
  * @param[in] response the response to convert,
  *                     if NULL then this function is equivalent to
- *                     #MHD_upload_action_close_connection() call
+ *                     #MHD_upload_action_abort_request() call
  * @return pointer to the action, the action must be consumed
  *         otherwise response object may leak;
  *         NULL if failed (no memory) or if any action has been already
@@ -5690,6 +5753,9 @@ MHD_FN_PAR_NONNULL_(1);
 
 /**
  * Action telling MHD to continue processing the upload.
+ * Valid only for incremental upload processing.
+ * Works as #MHD_upload_action_abort_request() if used for full upload callback
+ * or for the final (with zero data) incremental callback.
  *
  * @param request the request to make an action
  * @return action operation,
@@ -5709,7 +5775,7 @@ MHD_FN_RETURNS_NONNULL_;
  * @return action operation, always NULL
  * @ingroup action
  */
-#define MHD_upload_action_close_connection(req) \
+#define MHD_upload_action_abort_request(req) \
         MHD_STATIC_CAST_ (const struct MHD_UploadAction *, NULL)
 
 #ifndef MHD_UPLOADCALLBACK_DEFINED
@@ -5727,10 +5793,11 @@ MHD_FN_RETURNS_NONNULL_;
  *                         valid only until return from the callback,
  *                         NULL when all data have been processed
  * @return action specifying how to proceed:
- *         #MHD_upload_action_continue() if all is well,
+ *         #MHD_upload_action_continue() to continue upload (for incremental
+ *         upload processing only),
  *         #MHD_upload_action_suspend() to stop reading the upload until
  *         the request is resumed,
- *         #MHD_upload_action_close_connection() to close the socket,
+ *         #MHD_upload_action_abort_request() to close the socket,
  *         or a response to discard the rest of the upload and transmit
  *         the response
  * @ingroup action
@@ -5833,7 +5900,7 @@ MHD_FN_PAR_NONNULL_ (1);
  *         #MHD_upload_action_continue() if all is well,
  *         #MHD_upload_action_suspend() to stop reading the upload until
  *         the request is resumed,
- *         #MHD_upload_action_close_connection() to close the socket,
+ *         #MHD_upload_action_abort_request() to close the socket,
  *         or a response to discard the rest of the upload and transmit
  *         the response
  * @ingroup action
@@ -5890,7 +5957,7 @@ typedef const struct MHD_UploadAction *
  * @sa #MHD_D_OPTION_LARGE_POOL_SIZE()
  * @ingroup action
  */
-MHD_EXTERN_ struct MHD_Action *
+MHD_EXTERN_ const struct MHD_Action *
 MHD_action_post_processor (struct MHD_Request *request,
                            size_t pp_buffer_size,
                            size_t pp_stream_limit, // FIXME: Remove? Duplicated with pp_buffer_size

@@ -33,6 +33,7 @@
 
 #include "mhd_str_types.h"
 
+
 /**
  * The type of the action requested by application
  */
@@ -49,16 +50,6 @@ enum mhd_ActionType
   mhd_ACTION_RESPONSE
   ,
   /**
-   * Suspend requests (connection)
-   */
-  mhd_ACTION_SUSPEND
-  ,
-  /**
-   * Hard close request with no response
-   */
-  mhd_ACTION_CLOSE
-  ,
-  /**
    * Process clients upload by application callback
    */
   mhd_ACTION_UPLOAD
@@ -67,11 +58,27 @@ enum mhd_ActionType
    * Process clients upload by POST processor
    */
   mhd_ACTION_POST_PROCESS
+  ,
+  /**
+   * Suspend requests (connection)
+   */
+  mhd_ACTION_SUSPEND
+  ,
+  /**
+   * Hard close request with no response
+   */
+  mhd_ACTION_ABORT
 };
+
+/**
+ * Check whether provided mhd_ActionType value is valid
+ */
+#define mhd_ACTION_IS_VALID(act) \
+        ((mhd_ACTION_RESPONSE <= (act)) && (mhd_ACTION_ABORT >= (act)))
 
 
 struct MHD_Response; /* forward declaration */
-
+struct MHD_Request;  /* forward declaration */
 
 #ifndef MHD_UPLOADCALLBACK_DEFINED
 
@@ -243,6 +250,11 @@ enum mhd_UploadActionType
   mhd_UPLOAD_ACTION_NO_ACTION = 0
   ,
   /**
+   * Continue processing the upload
+   */
+  mhd_UPLOAD_ACTION_CONTINUE
+  ,
+  /**
    * Start replying with the response
    */
   mhd_UPLOAD_ACTION_RESPONSE
@@ -255,13 +267,16 @@ enum mhd_UploadActionType
   /**
    * Hard close request with no response
    */
-  mhd_UPLOAD_ACTION_CLOSE
-  ,
-  /**
-   * Continue processing the upload
-   */
-  mhd_UPLOAD_ACTION_CONTINUE
+  mhd_UPLOAD_ACTION_ABORT
 };
+
+/**
+ * Check whether provided mhd_UploadActionType value is valid
+ */
+#define mhd_UPLOAD_ACTION_IS_VALID(act) \
+        ((mhd_UPLOAD_ACTION_CONTINUE <= (act)) && \
+         (mhd_UPLOAD_ACTION_ABORT >= (act)))
+
 
 /**
  * The data for the application action

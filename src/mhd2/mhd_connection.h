@@ -207,124 +207,131 @@ enum MHD_FIXED_ENUM_ MHD_CONNECTION_STATE
    * Part of the request line was received.
    * Wait for complete line.
    */
-  MHD_CONNECTION_REQ_LINE_RECEIVING = MHD_CONNECTION_INIT + 1,
+  MHD_CONNECTION_REQ_LINE_RECEIVING,
 
   /**
    * We got the URL (and request type and version).  Wait for a header line.
    *
    * A milestone state. No received data is processed in this state.
    */
-  MHD_CONNECTION_REQ_LINE_RECEIVED = MHD_CONNECTION_REQ_LINE_RECEIVING + 1,
+  MHD_CONNECTION_REQ_LINE_RECEIVED,
 
   /**
    * Receiving request headers.  Wait for the rest of the headers.
    */
-  MHD_CONNECTION_REQ_HEADERS_RECEIVING = MHD_CONNECTION_REQ_LINE_RECEIVED + 1,
+  MHD_CONNECTION_REQ_HEADERS_RECEIVING,
 
   /**
    * We got the request headers.  Process them.
    */
-  MHD_CONNECTION_HEADERS_RECEIVED = MHD_CONNECTION_REQ_HEADERS_RECEIVING + 1,
+  MHD_CONNECTION_HEADERS_RECEIVED,
 
   /**
    * We have processed the request headers.  Call application callback.
    */
-  MHD_CONNECTION_HEADERS_PROCESSED = MHD_CONNECTION_HEADERS_RECEIVED + 1,
+  MHD_CONNECTION_HEADERS_PROCESSED,
 
   /**
    * We have processed the headers and need to send 100 CONTINUE.
    */
-  MHD_CONNECTION_CONTINUE_SENDING = MHD_CONNECTION_HEADERS_PROCESSED + 1,
+  MHD_CONNECTION_CONTINUE_SENDING,
 
   /**
    * We have sent 100 CONTINUE (or do not need to).  Read the message body.
    */
-  MHD_CONNECTION_BODY_RECEIVING = MHD_CONNECTION_CONTINUE_SENDING + 1,
+  MHD_CONNECTION_BODY_RECEIVING,
 
   /**
    * We got the request body.
    *
    * A milestone state. No received data is processed in this state.
    */
-  MHD_CONNECTION_BODY_RECEIVED = MHD_CONNECTION_BODY_RECEIVING + 1,
+  MHD_CONNECTION_BODY_RECEIVED,
 
   /**
    * We are reading the request footers.
    */
-  MHD_CONNECTION_FOOTERS_RECEIVING = MHD_CONNECTION_BODY_RECEIVED + 1,
+  MHD_CONNECTION_FOOTERS_RECEIVING,
 
   /**
    * We received the entire footer.
    *
-   * A milestone state. No received data is processed in this state.
+   * A milestone state. No data is receiving in this state.
    */
-  MHD_CONNECTION_FOOTERS_RECEIVED = MHD_CONNECTION_FOOTERS_RECEIVING + 1,
+  MHD_CONNECTION_FOOTERS_RECEIVED,
 
   /**
    * We received the entire request.
-   * Wait for a response to be queued.
+   *
+   * A milestone state. No data is receiving in this state.
    */
-  MHD_CONNECTION_FULL_REQ_RECEIVED = MHD_CONNECTION_FOOTERS_RECEIVED + 1,
+  MHD_CONNECTION_FULL_REQ_RECEIVED,
+
+  /**
+   * Finished receiving request data: either complete request received or
+   * MHD is going to send reply early, without getting full request.
+   */
+  MHD_CONNECTION_REQ_RECV_FINISHED,
 
   /**
    * Finished reading of the request and the response is ready.
    * Switch internal logic from receiving to sending, prepare connection
    * sending the reply and build the reply header.
    */
-  MHD_CONNECTION_START_REPLY = MHD_CONNECTION_FULL_REQ_RECEIVED + 1,
+  MHD_CONNECTION_START_REPLY,
 
   /**
    * We have prepared the response headers in the write buffer.
    * Send the response headers.
    */
-  MHD_CONNECTION_HEADERS_SENDING = MHD_CONNECTION_START_REPLY + 1,
+  MHD_CONNECTION_HEADERS_SENDING,
 
   /**
    * We have sent the response headers.  Get ready to send the body.
    */
-  MHD_CONNECTION_HEADERS_SENT = MHD_CONNECTION_HEADERS_SENDING + 1,
+  MHD_CONNECTION_HEADERS_SENT,
 
   /**
    * We are waiting for the client to provide more
    * data of a non-chunked body.
    */
-  MHD_CONNECTION_NORMAL_BODY_UNREADY = MHD_CONNECTION_HEADERS_SENT + 1,
+  MHD_CONNECTION_NORMAL_BODY_UNREADY,
 
   /**
    * We are ready to send a part of a non-chunked body.  Send it.
    */
-  MHD_CONNECTION_NORMAL_BODY_READY = MHD_CONNECTION_NORMAL_BODY_UNREADY + 1,
+  MHD_CONNECTION_NORMAL_BODY_READY,
 
   /**
    * We are waiting for the client to provide a chunk of the body.
    */
-  MHD_CONNECTION_CHUNKED_BODY_UNREADY = MHD_CONNECTION_NORMAL_BODY_READY + 1,
+  MHD_CONNECTION_CHUNKED_BODY_UNREADY,
 
   /**
    * We are ready to send a chunk.
    */
-  MHD_CONNECTION_CHUNKED_BODY_READY = MHD_CONNECTION_CHUNKED_BODY_UNREADY + 1,
+  MHD_CONNECTION_CHUNKED_BODY_READY,
 
   /**
    * We have sent the chunked response body. Prepare the footers.
    */
-  MHD_CONNECTION_CHUNKED_BODY_SENT = MHD_CONNECTION_CHUNKED_BODY_READY + 1,
+  MHD_CONNECTION_CHUNKED_BODY_SENT,
 
   /**
    * We have prepared the response footer.  Send it.
    */
-  MHD_CONNECTION_FOOTERS_SENDING = MHD_CONNECTION_CHUNKED_BODY_SENT + 1,
+  MHD_CONNECTION_FOOTERS_SENDING,
 
   /**
    * We have sent the entire reply.
    * Shutdown connection or restart processing to get a new request.
    */
-  MHD_CONNECTION_FULL_REPLY_SENT = MHD_CONNECTION_FOOTERS_SENDING + 1,
+  MHD_CONNECTION_FULL_REPLY_SENT,
 
   /**
    * This connection is to be closed.
    */
-  MHD_CONNECTION_CLOSED = MHD_CONNECTION_FULL_REPLY_SENT + 1
+  MHD_CONNECTION_CLOSED
 
 };
 
@@ -359,7 +366,6 @@ enum MHD_FIXED_ENUM_ MHD_ConnKeepAlive
  * The helper struct for the connections list
  */
 mhd_DLINKEDL_LINKS_DEF (MHD_Connection);
-
 
 /**
  * State kept for HTTP network connection.
@@ -431,7 +437,7 @@ struct MHD_Connection
    * response (which maybe shared between connections) and the IP
    * address (which persists across individual requests).
    */
-  struct MemoryPool *pool;
+  struct mhd_MemoryPool *pool;
 
   /**
    * We allow the main application to associate some pointer with the
@@ -551,12 +557,12 @@ struct MHD_Connection
    */
   bool sk_spipe_suppress;
 
-//#ifndef MHD_WINSOCK_SOCKETS // TODO: conditionally use in the code
+// #ifndef MHD_WINSOCK_SOCKETS // TODO: conditionally use in the code
   /**
    * Tracks TCP_CORK / TCP_NOPUSH of the connection socket.
    */
   enum mhd_Tristate sk_corked;
-//#endif
+// #endif
 
   /**
    * Tracks TCP_NODELAY state of the connection socket.

@@ -107,8 +107,8 @@ dsettings_release (struct DaemonOptions *s)
  * @return MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2)
-MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2)
+MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 daemon_set_work_mode (struct MHD_Daemon *restrict d,
                       struct DaemonOptions *restrict s)
 {
@@ -982,7 +982,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
  * Detect and set the type and port of the listening socket
  * @param d the daemon to use
  */
-MHD_FN_PAR_NONNULL_ (1) static void
+static MHD_FN_PAR_NONNULL_ (1) void
 detect_listen_type_and_port (struct MHD_Daemon *restrict d)
 {
   union mhd_SockaddrAny sa_all;
@@ -1053,7 +1053,7 @@ detect_listen_type_and_port (struct MHD_Daemon *restrict d)
 /**
  * Initialise daemon's epoll FD
  */
-MHD_FN_PAR_NONNULL_ (1) static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1) enum MHD_StatusCode
 init_epoll (struct MHD_Daemon *restrict d)
 {
   int e_fd;
@@ -1129,8 +1129,8 @@ deinit_epoll (struct MHD_Daemon *restrict d)
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) \
-  MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) \
+  MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
                                   struct DaemonOptions *restrict s)
 {
@@ -1318,8 +1318,8 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) \
-  MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) \
+  MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 daemon_init_net (struct MHD_Daemon *restrict d,
                  struct DaemonOptions *restrict s)
 {
@@ -1433,6 +1433,42 @@ dauth_init (struct MHD_Daemon *restrict d,
 
 #endif
 
+/**
+ * Initialise large buffer tracking.
+ * @param d the daemon object
+ * @param s the user settings
+ * @return #MHD_SC_OK on success,
+ *         the error code otherwise
+ */
+static MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) \
+  MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
+daemon_init_large_buf (struct MHD_Daemon *restrict d,
+                       struct DaemonOptions *restrict s)
+{
+  d->req_cfg.large_buf.space_left = s->global_large_buffer_size;
+  if (! mhd_mutex_init_short (&(d->req_cfg.large_buf.lock)))
+  {
+    MHD_LOG_MSG (d, MHD_SC_MUTEX_INIT_FAILURE, \
+                 "Failed to initialise mutex for the global large buffer.");
+    return MHD_SC_MUTEX_INIT_FAILURE;
+  }
+  return MHD_SC_OK;
+}
+
+
+/**
+ * Initialise large buffer tracking.
+ * @param d the daemon object
+ * @param s the user settings
+ * @return #MHD_SC_OK on success,
+ *         the error code otherwise
+ */
+static MHD_FN_PAR_NONNULL_ (1) void
+daemon_deinit_large_buf (struct MHD_Daemon *restrict d)
+{
+  mhd_mutex_destroy_chk (&(d->req_cfg.large_buf.lock));
+}
+
 
 /**
  * Finish initialisation of events processing
@@ -1440,8 +1476,8 @@ dauth_init (struct MHD_Daemon *restrict d,
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) \
-  MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 allocate_events (struct MHD_Daemon *restrict d)
 {
   mhd_assert (0 != d->conns.cfg.count_limit);
@@ -1586,7 +1622,7 @@ allocate_events (struct MHD_Daemon *restrict d)
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) static void
+static MHD_FN_PAR_NONNULL_ (1) void
 deallocate_events (struct MHD_Daemon *restrict d)
 {
   mhd_assert (0 != d->conns.cfg.count_limit);
@@ -1638,8 +1674,8 @@ deallocate_events (struct MHD_Daemon *restrict d)
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) \
-  MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 init_itc (struct MHD_Daemon *restrict d)
 {
   mhd_assert (mhd_D_TYPE_IS_VALID (d->threading.d_type));
@@ -1679,7 +1715,7 @@ init_itc (struct MHD_Daemon *restrict d)
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) static void
+static MHD_FN_PAR_NONNULL_ (1) void
 deinit_itc (struct MHD_Daemon *restrict d)
 {
   mhd_assert (mhd_D_TYPE_IS_VALID (d->threading.d_type));
@@ -1699,8 +1735,8 @@ deinit_itc (struct MHD_Daemon *restrict d)
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
 {
   mhd_assert (d->dbg.net_inited);
@@ -1813,8 +1849,8 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) \
-  MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2)
+MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 init_individual_conns (struct MHD_Daemon *restrict d,
                        struct DaemonOptions *restrict s)
 {
@@ -1849,8 +1885,8 @@ init_individual_conns (struct MHD_Daemon *restrict d,
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) \
-  MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2)
+MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 init_individual_thread_data_events_conns (struct MHD_Daemon *restrict d,
                                           struct DaemonOptions *restrict s)
 {
@@ -1903,7 +1939,7 @@ init_individual_thread_data_events_conns (struct MHD_Daemon *restrict d,
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) static void
+static MHD_FN_PAR_NONNULL_ (1) void
 deinit_individual_thread_data_events_conns (struct MHD_Daemon *restrict d)
 {
   deinit_itc (d);
@@ -1924,8 +1960,8 @@ deinit_individual_thread_data_events_conns (struct MHD_Daemon *restrict d)
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) \
-  MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2)
+MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 set_connections_total_limits (struct MHD_Daemon *restrict d,
                               struct DaemonOptions *restrict s)
 {
@@ -2157,7 +2193,7 @@ set_d_threading_type (struct MHD_Daemon *restrict d)
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) static void
+static MHD_FN_PAR_NONNULL_ (1) void
 deinit_workers_pool (struct MHD_Daemon *restrict d,
                      unsigned int num_workers)
 {
@@ -2189,6 +2225,17 @@ deinit_workers_pool (struct MHD_Daemon *restrict d,
 
 
 /**
+ * Nullify worker daemon member that should be set only in master daemon
+ * @param d
+ */
+static MHD_FN_PAR_NONNULL_ (1) void
+reset_master_only_areas (struct MHD_Daemon *restrict d)
+{
+  memset (&(d->req_cfg.large_buf), 0, sizeof(d->req_cfg.large_buf));
+}
+
+
+/**
  * Initialise workers pool, including workers daemons.
  * Do not start the threads.
  * @param d the daemon object
@@ -2196,8 +2243,8 @@ deinit_workers_pool (struct MHD_Daemon *restrict d,
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) \
-  MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2)
+MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 init_workers_pool (struct MHD_Daemon *restrict d,
                    struct DaemonOptions *restrict s)
 {
@@ -2252,6 +2299,8 @@ init_workers_pool (struct MHD_Daemon *restrict d,
     struct MHD_Daemon *restrict const worker =
       d->threading.hier.pool.workers + i;
     memcpy (worker, d, sizeof(struct MHD_Daemon));
+    reset_master_only_areas (d);
+
     worker->threading.d_type = mhd_DAEMON_TYPE_WORKER;
     worker->threading.hier.master = d;
     worker->conns.cfg.count_limit = conn_per_daemon;
@@ -2318,8 +2367,8 @@ init_workers_pool (struct MHD_Daemon *restrict d,
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) \
-  MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2)
+MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 daemon_init_threading_and_conn (struct MHD_Daemon *restrict d,
                                 struct DaemonOptions *restrict s)
 {
@@ -2375,7 +2424,7 @@ daemon_init_threading_and_conn (struct MHD_Daemon *restrict d,
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) static void
+static MHD_FN_PAR_NONNULL_ (1) void
 daemon_deinit_threading_and_conn (struct MHD_Daemon *restrict d)
 {
   mhd_assert (d->dbg.net_inited);
@@ -2418,8 +2467,8 @@ daemon_deinit_threading_and_conn (struct MHD_Daemon *restrict d)
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 start_individual_daemon_thread (struct MHD_Daemon *restrict d)
 {
   mhd_assert (d->dbg.threading_inited);
@@ -2513,7 +2562,7 @@ stop_individual_daemon_thread (struct MHD_Daemon *restrict d)
  * @param d the daemon object, the workers threads must be running
  * @param num_workers the number of threads to stop
  */
-MHD_FN_PAR_NONNULL_ (1) static void
+static MHD_FN_PAR_NONNULL_ (1) void
 stop_worker_pool_threads (struct MHD_Daemon *restrict d,
                           unsigned int num_workers)
 {
@@ -2560,8 +2609,8 @@ stop_worker_pool_threads (struct MHD_Daemon *restrict d,
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 start_worker_pool_threads (struct MHD_Daemon *restrict d)
 {
   enum MHD_StatusCode res;
@@ -2602,8 +2651,8 @@ start_worker_pool_threads (struct MHD_Daemon *restrict d)
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 daemon_start_threads (struct MHD_Daemon *restrict d)
 {
   mhd_assert (d->dbg.net_inited);
@@ -2641,7 +2690,7 @@ daemon_start_threads (struct MHD_Daemon *restrict d)
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) static void
+static MHD_FN_PAR_NONNULL_ (1) void
 daemon_stop_threads (struct MHD_Daemon *restrict d)
 {
   mhd_assert (d->dbg.net_inited);
@@ -2681,8 +2730,8 @@ daemon_stop_threads (struct MHD_Daemon *restrict d)
  * @return #MHD_SC_OK on success,
  *         the error code otherwise
  */
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2)
-MHD_FN_MUST_CHECK_RESULT_ static enum MHD_StatusCode
+static MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2)
+MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 daemon_start_internal (struct MHD_Daemon *restrict d,
                        struct DaemonOptions *restrict s)
 {
@@ -2696,33 +2745,38 @@ daemon_start_internal (struct MHD_Daemon *restrict d,
   if (MHD_SC_OK != res)
     return res;
 
-  // TODO: Other init
-
-  res = daemon_init_threading_and_conn (d, s);
+  res = daemon_init_large_buf (d, s);
   if (MHD_SC_OK == res)
   {
-    mhd_assert (d->dbg.net_inited);
-    mhd_assert (d->dbg.threading_inited);
-    mhd_assert (! mhd_D_TYPE_IS_INTERNAL_ONLY (d->threading.d_type));
 
-    res = daemon_start_threads (d);
+    // TODO: Other init
+
+    res = daemon_init_threading_and_conn (d, s);
     if (MHD_SC_OK == res)
     {
-      return MHD_SC_OK;
+      mhd_assert (d->dbg.net_inited);
+      mhd_assert (d->dbg.threading_inited);
+      mhd_assert (! mhd_D_TYPE_IS_INTERNAL_ONLY (d->threading.d_type));
+
+      res = daemon_start_threads (d);
+      if (MHD_SC_OK == res)
+      {
+        return MHD_SC_OK;
+      }
+
+      /* Below is a clean-up path */
+      daemon_deinit_threading_and_conn (d);
     }
-
-    /* Below is a clean-up path */
-    daemon_deinit_threading_and_conn (d);
+    daemon_deinit_large_buf (d);
   }
-
   daemon_deinit_net (d);
   mhd_assert (MHD_SC_OK != res);
   return res;
 }
 
 
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_MUST_CHECK_RESULT_ \
-  MHD_EXTERN_ enum MHD_StatusCode
+MHD_EXTERN_
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 MHD_daemon_start (struct MHD_Daemon *daemon)
 {
   struct MHD_Daemon *const d = daemon; /* a short alias */
@@ -2747,7 +2801,7 @@ MHD_daemon_start (struct MHD_Daemon *daemon)
 }
 
 
-MHD_FN_PAR_NONNULL_ALL_ MHD_EXTERN_ void
+MHD_EXTERN_ MHD_FN_PAR_NONNULL_ALL_ void
 MHD_daemon_destroy (struct MHD_Daemon *daemon)
 {
   bool not_yet_started = (mhd_DAEMON_STATE_NOT_STARTED == daemon->state);
@@ -2770,6 +2824,8 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
     daemon_stop_threads (daemon);
 
     daemon_deinit_threading_and_conn (daemon);
+
+    daemon_deinit_large_buf (daemon);
 
     daemon_deinit_net (daemon);
   }

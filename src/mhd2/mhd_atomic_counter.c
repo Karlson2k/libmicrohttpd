@@ -30,44 +30,49 @@
 
 #if defined(mhd_ATOMIC_BY_LOCKS)
 
+#include "mhd_assert.h"
+
 MHD_INTERNAL mhd_ATOMIC_COUNTER_TYPE
 mhd_atomic_counter_inc_get (struct mhd_AtomicCounter *pcnt)
 {
   mhd_ATOMIC_COUNTER_TYPE ret;
 
-  mhd_mutex_lock_chk(&(pcnt->lock));
+  mhd_mutex_lock_chk (&(pcnt->lock));
   ret = ++(pcnt->count);
-  mhd_mutex_unlock_chk(&(pcnt->lock));
+  mhd_mutex_unlock_chk (&(pcnt->lock));
 
   mhd_assert (0 != ret); /* check for overflow */
 
   return ret;
 }
 
+
 MHD_INTERNAL mhd_ATOMIC_COUNTER_TYPE
 mhd_atomic_counter_dec_get (struct mhd_AtomicCounter *pcnt)
 {
   mhd_ATOMIC_COUNTER_TYPE ret;
 
-  mhd_mutex_lock_chk(&(pcnt->lock));
+  mhd_mutex_lock_chk (&(pcnt->lock));
   ret = --(pcnt->count);
-  mhd_mutex_unlock_chk(&(pcnt->lock));
+  mhd_mutex_unlock_chk (&(pcnt->lock));
 
   mhd_assert (mhd_ATOMIC_COUNTER_MAX != ret); /* check for underflow */
 
   return ret;
 }
 
+
 MHD_INTERNAL mhd_ATOMIC_COUNTER_TYPE
 mhd_atomic_counter_get (struct mhd_AtomicCounter *pcnt)
 {
   mhd_ATOMIC_COUNTER_TYPE ret;
 
-  mhd_mutex_lock_chk(&(pcnt->lock));
+  mhd_mutex_lock_chk (&(pcnt->lock));
   ret = pcnt->count;
-  mhd_mutex_unlock_chk(&(pcnt->lock));
+  mhd_mutex_unlock_chk (&(pcnt->lock));
 
   return ret;
 }
+
 
 #endif /* mhd_ATOMIC_BY_LOCKS */

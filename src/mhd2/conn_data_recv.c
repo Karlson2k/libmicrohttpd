@@ -1,7 +1,6 @@
 /*
   This file is part of GNU libmicrohttpd
-  Copyright (C) 2015-2024 Evgeny Grin (Karlson2k)
-  Copyright (C) 2007-2020 Daniel Pittman and Christian Grothoff
+  Copyright (C) 2024 Evgeny Grin (Karlson2k)
 
   GNU libmicrohttpd is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -23,9 +22,6 @@
  * @file src/mhd2/conn_data_recv.c
  * @brief  The implementation of data receiving functions for connection
  * @author Karlson2k (Evgeny Grin)
- *
- * Based on the MHD v0.x code by Daniel Pittman, Christian Grothoff, Evgeny Grin
- * and other contributors.
  */
 
 #include "conn_data_recv.h"
@@ -40,13 +36,12 @@
 #include "mhd_connection.h"
 
 #include "mhd_recv.h"
+#include "stream_funcs.h"
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
-mhd_conn_data_recv (struct MHD_Connection restrict *c,
-                       bool has_err)
+mhd_conn_data_recv (struct MHD_Connection *restrict c,
+                    bool has_err)
 {
-  ssize_t bytes_read;
-  uint_fast64_t dummy_buf;
   void *buf;
   size_t buf_size;
   size_t received;
@@ -74,7 +69,7 @@ mhd_conn_data_recv (struct MHD_Connection restrict *c,
     {
       /* Re-try last time to detect the error */
       uint_fast64_t dummy_buf;
-      res = mhd_recv (c, &dummy_buf, sizeof(dummy_buf), &received);
+      res = mhd_recv (c, sizeof(dummy_buf), (char *) &dummy_buf, &received);
     }
     if (mhd_SOCKET_ERR_IS_HARD (res))
     {
@@ -86,11 +81,11 @@ mhd_conn_data_recv (struct MHD_Connection restrict *c,
     return;
   }
 
-  if (0 == bytes_read)
+  if (0 == received)
     c->sk_rmt_shut_wr = true;
 
-  c->read_buffer_offset += (size_t) bytes_read;
-  MHD_update_last_activity_ (c); // TODO: centralise activity update
+  c->read_buffer_offset += received;
+  mhd_stream_update_activity_mark (c); // TODO: centralise activity update
   return;
 }
 

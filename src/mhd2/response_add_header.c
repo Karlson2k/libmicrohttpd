@@ -26,6 +26,7 @@
 
 #include "mhd_sys_options.h"
 
+#include "response_add_header.h"
 #include "mhd_response.h"
 #include "mhd_locks.h"
 
@@ -34,26 +35,27 @@
 #include "mhd_public_api.h"
 
 
-MHD_INTERNAL
+static
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_IN_SIZE_(3,2)
-MHD_FN_PAR_NONNULL_ (5) MHD_FN_PAR_CSTR_ (5) MHD_FN_PAR_IN_SIZE_(5,4) bool
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_IN_SIZE_ (3,2)
+MHD_FN_PAR_NONNULL_ (5) MHD_FN_PAR_CSTR_ (5) MHD_FN_PAR_IN_SIZE_ (5,4) bool
 response_add_header_no_check (
   struct MHD_Response *response,
   size_t name_len,
-  const char name[MHD_FN_PAR_DYN_ARR_SIZE_(name_len)],
+  const char name[MHD_FN_PAR_DYN_ARR_SIZE_ (name_len)],
   size_t value_len,
-  const char value[MHD_FN_PAR_DYN_ARR_SIZE_(value_len)])
+  const char value[MHD_FN_PAR_DYN_ARR_SIZE_ (value_len)])
 {
   char *buf;
   struct mhd_ResponseHeader *new_hdr;
 
-  buf = malloc (sizeof(struct mhd_ResponseHeader) + name_len + value_len + 2);
-  if (NULL == buf)
+  new_hdr = (struct mhd_ResponseHeader *)
+            malloc (sizeof(struct mhd_ResponseHeader) + name_len
+                    + value_len + 2);
+  if (NULL == new_hdr)
     return false;
 
-  new_hdr = (struct mhd_ResponseHeader *) buf;
-  buf += sizeof(struct mhd_ResponseHeader);
+  buf = ((char *) new_hdr) + sizeof(struct mhd_ResponseHeader);
   memcpy (buf, name, name_len);
   buf[name_len] = 0;
   new_hdr->name.cstr = buf;
@@ -68,15 +70,17 @@ response_add_header_no_check (
   return true;
 }
 
-MHD_INTERNAL MHD_FN_PAR_NONNULL_ (1) void
+
+MHD_INTERNAL
+MHD_FN_PAR_NONNULL_ (1) void
 mhd_response_remove_all_headers (struct MHD_Response *restrict r)
 {
   struct mhd_ResponseHeader *hdr;
 
-  for (hdr = mhd_DLINKEDL_GET_LAST(r, headers); NULL != hdr;
-       hdr = mhd_DLINKEDL_GET_LAST(r, headers))
+  for (hdr = mhd_DLINKEDL_GET_LAST (r, headers); NULL != hdr;
+       hdr = mhd_DLINKEDL_GET_LAST (r, headers))
   {
-    mhd_DLINKEDL_DEL(r, hdr, headers);
+    mhd_DLINKEDL_DEL (r, hdr, headers);
     free (hdr);
   }
 }
@@ -103,7 +107,8 @@ response_add_header_int (struct MHD_Response *response,
       (NULL != memchr (value, '\r', value_len)))
     return MHD_SC_RESP_HEADER_VALUE_INVALID;
 
-  if (!response_add_header_no_check(response, name_len, name, value_len, value))
+  if (! response_add_header_no_check (response, name_len, name,
+                                      value_len, value))
     return MHD_SC_RESPONSE_HEADER_MALLOC_FAILED;
 
   return MHD_SC_OK;
@@ -129,7 +134,7 @@ MHD_response_add_header (struct MHD_Response *response,
     need_unlock = true;
     if (! mhd_mutex_lock (&(response->reuse.settings_lock)))
       return MHD_SC_RESPONSE_MUTEX_LOCK_FAILED;
-    mhd_assert (1 == mhd_atomic_counter_get(&(response->reuse.counter)));
+    mhd_assert (1 == mhd_atomic_counter_get (&(response->reuse.counter)));
   }
   else
     need_unlock = false;

@@ -18,6 +18,7 @@
 #include "mhd_public_api.h"
 #include "mhd_locks.h"
 #include "mhd_assert.h"
+#include "response_funcs.h"
 
 /**
  * Internal version of the #MHD_response_set_options()

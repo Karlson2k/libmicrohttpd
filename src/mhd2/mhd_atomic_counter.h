@@ -44,7 +44,7 @@
  * The maximum counter value
  */
 #define mhd_ATOMIC_COUNTER_MAX \
-  ((mhd_ATOMIC_COUNTER_TYPE)(~((mhd_ATOMIC_COUNTER_TYPE)0)))
+        ((mhd_ATOMIC_COUNTER_TYPE) (~((mhd_ATOMIC_COUNTER_TYPE) 0)))
 
 #ifdef MHD_USE_THREADS
 
@@ -109,23 +109,25 @@ struct mhd_AtomicCounter
  *          already.
  */
 #  define mhd_atomic_counter_init(pcnt,initial_value) \
-  ((pcnt)->count=(initial_value), mhd_mutex_init_short(&(pcnt->lock)))
+        ((pcnt)->count = (initial_value), \
+         mhd_mutex_init_short (&((pcnt)->lock)))
 
 /**
  * Deinitialise the counter.
  * @param pcnt the pointer to the counter to deinitialise
  * @warning Must be called only for the counters that has been initialised.
  */
-#  define mhd_atomic_counter_deinit(pcnt) mhd_mutex_destroy_chk(&((pcnt)->lock))
+#  define mhd_atomic_counter_deinit(pcnt) \
+        mhd_mutex_destroy_chk (&((pcnt)->lock))
 
 /**
  * Atomically increment the value of the counter
  * @param pcnt the pointer to the counter to increment
  */
 #  define mhd_atomic_counter_inc(pcnt)  do { \
-      mhd_mutex_lock_chk(&(pcnt->lock));     \
-      ++(pcnt->count);                       \
-      mhd_mutex_unlock_chk(&(pcnt->lock)); } while (0)
+          mhd_mutex_lock_chk (&((pcnt)->lock));     \
+          ++(pcnt->count);                       \
+          mhd_mutex_unlock_chk (&((pcnt)->lock)); } while (0)
 
 /**
  * Atomically increment the value of the counter and return the result
@@ -162,14 +164,14 @@ mhd_atomic_counter_get (struct mhd_AtomicCounter *pcnt);
  *          already.
  */
 #  define mhd_atomic_counter_init(pcnt,initial_value) \
-  ((pcnt)->count=(initial_value), (! 0))
+        ((pcnt)->count = (initial_value), (! 0))
 
 /**
  * Deinitialise the counter.
  * @param pcnt the pointer to the counter to deinitialise
  * @warning Must be called only for the counters that has been initialised.
  */
-#  define mhd_atomic_counter_deinit(pcnt) ((void)0)
+#  define mhd_atomic_counter_deinit(pcnt) ((void) 0)
 
 /**
  * Atomically increment the value of the counter

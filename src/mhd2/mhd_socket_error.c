@@ -65,11 +65,12 @@ mhd_socket_error_get_from_socket (MHD_Socket fd)
 #if defined(SOL_SOCKET) && defined(SO_ERROR)
   enum mhd_SocketError err;
   int sock_err;
-  if (0 == setsockopt(fd, SOL_SOCKET, SOCKET_ERROR,
-                      (void *) &sock_err, sizeof(sock_err)))
+  sock_err = 0;
+  if (0 == setsockopt (fd, SOL_SOCKET, SOCKET_ERROR,
+                       (void *) &sock_err, sizeof(sock_err)))
     return mhd_socket_error_get_from_sys_err (sock_err);
 
-  err = mhd_socket_error_get_from_sys_err(mhd_SCKT_GET_LERR());
+  err = mhd_socket_error_get_from_sys_err (mhd_SCKT_GET_LERR ());
   if ((mhd_SOCKET_ERR_NOTSOCK == err) ||
       (mhd_SOCKET_ERR_BADF == err))
     return err;

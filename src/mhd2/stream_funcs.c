@@ -39,17 +39,17 @@ MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void *
 mhd_stream_alloc_memory (struct MHD_Connection *restrict c,
                          size_t size)
 {
-  struct MemoryPool *const restrict pool = c->pool;     /* a short alias */
+  struct mhd_MemoryPool *const restrict pool = c->pool;     /* a short alias */
   size_t need_to_be_freed = 0; /**< The required amount of additional free memory */
   void *res;
 
-  res = MHD_pool_try_alloc (pool,
+  res = mhd_pool_try_alloc (pool,
                             size,
                             &need_to_be_freed);
   if (NULL != res)
     return res;
 
-  if (MHD_pool_is_resizable_inplace (pool,
+  if (mhd_pool_is_resizable_inplace (pool,
                                      c->write_buffer,
                                      c->write_buffer_size))
   {
@@ -58,7 +58,7 @@ mhd_stream_alloc_memory (struct MHD_Connection *restrict c,
     {
       char *buf;
       const size_t new_buf_size = c->write_buffer_size - need_to_be_freed;
-      buf = MHD_pool_reallocate (pool,
+      buf = mhd_pool_reallocate (pool,
                                  c->write_buffer,
                                  c->write_buffer_size,
                                  new_buf_size);
@@ -71,7 +71,7 @@ mhd_stream_alloc_memory (struct MHD_Connection *restrict c,
     else
       return NULL;
   }
-  else if (MHD_pool_is_resizable_inplace (pool,
+  else if (mhd_pool_is_resizable_inplace (pool,
                                           c->read_buffer,
                                           c->read_buffer_size))
   {
@@ -79,7 +79,7 @@ mhd_stream_alloc_memory (struct MHD_Connection *restrict c,
     {
       char *buf;
       const size_t new_buf_size = c->read_buffer_size - need_to_be_freed;
-      buf = MHD_pool_reallocate (pool,
+      buf = mhd_pool_reallocate (pool,
                                  c->read_buffer,
                                  c->read_buffer_size,
                                  new_buf_size);
@@ -93,9 +93,87 @@ mhd_stream_alloc_memory (struct MHD_Connection *restrict c,
   }
   else
     return NULL;
-  res = MHD_pool_allocate (pool, size, true);
+  res = mhd_pool_allocate (pool, size, true);
   mhd_assert (NULL != res); /* It has been checked that pool has enough space */
   return res;
+}
+
+
+/**
+ * Shrink stream read buffer to the zero size of free space in the buffer
+ * @param c the connection whose read buffer is being manipulated
+ */
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+mhd_stream_shrink_read_buffer (struct MHD_Connection *restrict c)
+{
+  void *new_buf;
+
+  if ((NULL == c->read_buffer) || (0 == c->read_buffer_size))
+  {
+    mhd_assert (0 == c->read_buffer_size);
+    mhd_assert (0 == c->read_buffer_offset);
+    return;
+  }
+
+  mhd_assert (c->read_buffer_offset <= c->read_buffer_size);
+  if (0 == c->read_buffer_offset)
+  {
+    mhd_pool_deallocate (c->pool, c->read_buffer, c->read_buffer_size);
+    c->read_buffer = NULL;
+    c->read_buffer_size = 0;
+  }
+  else
+  {
+    mhd_assert (mhd_pool_is_resizable_inplace (c->pool, c->read_buffer, \
+                                               c->read_buffer_size));
+    new_buf = mhd_pool_reallocate (c->pool, c->read_buffer, c->read_buffer_size,
+                                   c->read_buffer_offset);
+    mhd_assert (c->read_buffer == new_buf);
+    c->read_buffer = new_buf;
+    c->read_buffer_size = c->read_buffer_offset;
+  }
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ size_t
+mhd_stream_maximize_write_buffer (struct MHD_Connection *restrict c)
+{
+  struct mhd_MemoryPool *const restrict pool = c->pool;
+  void *new_buf;
+  size_t new_size;
+  size_t free_size;
+
+  mhd_assert ((NULL != c->write_buffer) || (0 == c->write_buffer_size));
+  mhd_assert (c->write_buffer_append_offset >= c->write_buffer_send_offset);
+  mhd_assert (c->write_buffer_size >= c->write_buffer_append_offset);
+
+  free_size = mhd_pool_get_free (pool);
+  if (0 != free_size)
+  {
+    new_size = c->write_buffer_size + free_size;
+    /* This function must not move the buffer position.
+     * mhd_pool_reallocate () may return the new position only if buffer was
+     * allocated 'from_end' or is not the last allocation,
+     * which should not happen. */
+    mhd_assert ((NULL == c->write_buffer) || \
+                mhd_pool_is_resizable_inplace (pool, c->write_buffer, \
+                                               c->write_buffer_size));
+    new_buf = mhd_pool_reallocate (pool,
+                                   c->write_buffer,
+                                   c->write_buffer_size,
+                                   new_size);
+    mhd_assert ((c->write_buffer == new_buf) || (NULL == c->write_buffer));
+    c->write_buffer = new_buf;
+    c->write_buffer_size = new_size;
+    if (c->write_buffer_send_offset == c->write_buffer_append_offset)
+    {
+      /* All data have been sent, reset offsets to zero. */
+      c->write_buffer_send_offset = 0;
+      c->write_buffer_append_offset = 0;
+    }
+  }
+
+  return c->write_buffer_size - c->write_buffer_append_offset;
 }
 
 
@@ -169,7 +247,8 @@ mhd_stream_alloc_memory (struct MHD_Connection *restrict c,
 #endif /* ! MHD_MIN_REASONABLE_REQ_CHUNK_LINE_LENGTH_ */
 
 
-MHD_INTERNAL MHD_FN_PAR_NONNULL_(1) MHD_FN_PAR_IN_SIZE_(4,3) unsigned int
+MHD_INTERNAL
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_IN_SIZE_ (4,3) unsigned int
 mhd_stream_get_no_space_err_status_code (struct MHD_Connection *restrict c,
                                          enum MHD_ProcRecvDataStage stage,
                                          size_t add_element_size,
@@ -220,8 +299,8 @@ mhd_stream_get_no_space_err_status_code (struct MHD_Connection *restrict c,
       && ( (0 == add_element[header_host_key_len])
            || (':' == add_element[header_host_key_len]) )
       && mhd_str_equal_caseless_bin_n (MHD_HTTP_HEADER_HOST,
-                                        add_element,
-                                        header_host_key_len);
+                                       add_element,
+                                       header_host_key_len);
     if (is_host_header)
     {
       const bool is_parsed = ! (
@@ -249,11 +328,11 @@ mhd_stream_get_no_space_err_status_code (struct MHD_Connection *restrict c,
   {
     static const size_t host_field_name_len =
       mhd_SSTR_LEN (MHD_HTTP_HEADER_HOST);
-    struct MHD_String *host_value;
-    host_value = mhd_request_get_value_len(&(c->rq),
-                                           MHD_VK_HEADER,
-                                           MHD_HTTP_HEADER_HOST,
-                                           host_field_name_len);
+    const struct MHD_StringNullable *host_value;
+    host_value = mhd_request_get_value_n (&(c->rq),
+                                          MHD_VK_HEADER,
+                                          host_field_name_len,
+                                          MHD_HTTP_HEADER_HOST);
     if (NULL != host_value)
     {
       /* Calculate the minimal size of the field line: no space between
@@ -368,4 +447,12 @@ mhd_stream_get_no_space_err_status_code (struct MHD_Connection *restrict c,
     return MHD_HTTP_STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE;
 
   return MHD_HTTP_STATUS_URI_TOO_LONG;
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+mhd_stream_switch_from_recv_to_send (struct MHD_Connection *c)
+{
+  /* Read buffer is not needed for this request, shrink it.*/
+  mhd_stream_shrink_read_buffer (c);
 }

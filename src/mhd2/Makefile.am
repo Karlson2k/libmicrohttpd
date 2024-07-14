@@ -26,25 +26,38 @@ libmicrohttpd2_la_SOURCES = \
   autoinit_funcs.h \
   sys_null_macro.h          sys_base_types.h          sys_bool_type.h \
   sys_sockets_types.h       sys_sockets_headers.h     sys_ip_headers.h \
-  sys_errno.h               sys_malloc.h \
+  sys_errno.h               sys_file_fd.h             sys_malloc.h \
   sys_poll.h \
   sys_sendfile.h \
   compat_calloc.h \
   mhd_assert.h \
   mhd_tristate.h \
-  mhd_socket_types.h        mhd_sockets_macros.h \
+  mhd_socket_type.h         mhd_sockets_macros.h \
   mhd_sockets_funcs.c       mhd_sockets_funcs.h \
+  mhd_socket_error.c        mhd_socket_error.h \
+  mhd_atomic_counter.c      mhd_atomic_counter.h \
+  mhd_str.c                 mhd_str.h \
+  mhd_str_macros.h          mhd_str_types.h \
+  mhd_buffer.h \
+  mhd_limits.h \
   mhd_iovec.h \
   mhd_panic.c               mhd_panic.h \
   mhd_lib_init.c            mhd_lib_init_impl.h       mhd_lib_init.h \
   mhd_dlinked_list.h \
+  mhd_connection.h \
   mhd_locks.h \
   mhd_itc.c                 mhd_itc.h                 mhd_itc_types.h \
   mhd_threads.c             mhd_threads.h             sys_thread_entry_type.h \
   mhd_mono_clock.c          mhd_mono_clock.h \
   mhd_mempool.c             mhd_mempool.h \
-  mhd_daemon.h              daemon_funcs.c            daemon_funcs.h \
+  mhd_recv.c                mhd_recv.h \
+  mhd_send.c                mhd_send.h \
+  mhd_daemon.h \
   mhd_public_api.h \
+  mhd_request.h             mhd_reply.h               mhd_response.h \
+  http_method.h             http_prot_ver.h \
+  http_status_str.c         http_status_str.h \
+  action.c                  mhd_action.h \
   events_process.c          events_process.h \
   daemon_logger.c           daemon_logger.h \
   daemon_logger_default.c   daemon_logger_default.h \
@@ -52,9 +65,21 @@ libmicrohttpd2_la_SOURCES = \
   daemon_create.c \
   daemon_start.c \
   daemon_add_conn.c         daemon_add_conn.h \
-  mhd_connection.h          mhd_request.h             mhd_reply.h \
-  response_from.c           response_from.h
-
+  daemon_funcs.c            daemon_funcs.h \
+  conn_data_process.c       conn_data_process.h \
+  conn_data_recv.c          conn_data_recv.h \
+  request_funcs.c           request_funcs.h \
+  request_get_value.c       request_get_value.h \
+  respond_with_error.h \
+  response_from.c           response_from.h \
+  response_add_header.c     response_add_header.h \
+  response_destroy.c        response_destroy.h \
+  response_funcs.c          response_funcs.h \
+  response_set_options.c    response_set_options.h    response_options.h \
+  stream_funcs.c            stream_funcs.h \
+  stream_process_states.c   stream_process_states.h \
+  stream_process_request.c  stream_process_request.h \
+  stream_process_reply.h
 
 if ! HAVE_SYS_CALLOC
 libmicrohttpd2_la_SOURCES += \

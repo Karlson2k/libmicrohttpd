@@ -19,28 +19,31 @@
 */
 
 /**
- * @file src/mhd2/http_status_str.h
- * @brief  The declaration for internal HTTP status string functions
+ * @file src/mhd2/mhd_buffer.h
+ * @brief  The definition of the MHD_Buffer type
  * @author Karlson2k (Evgeny Grin)
  */
 
-#ifndef MHD_HTTP_STATUS_STR_H
-#define MHD_HTTP_STATUS_STR_H 1
+#ifndef MHD_BUFFER_H
+#define MHD_BUFFER_H 1
 
 #include "mhd_sys_options.h"
-
-#include "mhd_str_types.h"
+#include "sys_base_types.h"
 
 /**
- * Get string for provided HTTP status code.
- * Substitute a replacement string for unknown codes.
- *
- * @param code the HTTP status code
- * @return pointer to MHD_String, never NULL.
+ * The buffer with size
  */
-MHD_INTERNAL const struct MHD_String *
-mhd_HTTP_status_code_to_string_int (unsigned int code)
-MHD_FN_CONST_;
+struct mhd_Buffer
+{
+  /**
+   * The size of the allocated @a buf buffer
+   */
+  size_t size;
 
+  /**
+   * The pointer to the allocation
+   */
+  char *buf;
+};
 
-#endif /* ! MHD_HTTP_STATUS_STR_H */
+#endif /* ! MHD_BUFFER_H */

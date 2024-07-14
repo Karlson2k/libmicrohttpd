@@ -32,39 +32,42 @@
 #include "mhd_response.h"
 #include "response_funcs.h"
 #include "mhd_locks.h"
+#include "response_options.h"
 
 
 #include "mhd_atomic_counter.h"
 
 
-MHD_INTERNAL MHD_FN_PAR_NONNULL_ (1) bool
+MHD_INTERNAL
+MHD_FN_PAR_NONNULL_ (1) bool
 response_make_reusable (struct MHD_Response *restrict r)
 {
   mhd_assert (! r->reuse.reusable);
   mhd_assert (! r->frozen);
   mhd_assert (NULL != r->settings);
 
-  if (mhd_mutex_init(&(r->reuse.settings_lock)))
+  if (mhd_mutex_init (&(r->reuse.settings_lock)))
   {
-    if (mhd_atomic_counter_init(&(r->reuse.counter), 1))
+    if (mhd_atomic_counter_init (&(r->reuse.counter), 1))
     {
       r->reuse.reusable = true;
       return true;
     }
-    (void) mhd_mutex_destroy(&(r->reuse.settings_lock));
+    (void) mhd_mutex_destroy (&(r->reuse.settings_lock));
   }
   return false;
 }
 
 
-MHD_INTERNAL MHD_FN_PAR_NONNULL_ (1) void
+MHD_INTERNAL
+MHD_FN_PAR_NONNULL_ (1) void
 mhd_response_deinit_reusable (struct MHD_Response *restrict r)
 {
-  mhd_assert(r->reuse.reusable);
-  mhd_assert(0 == mhd_atomic_counter_get(&(r->reuse.counter)));
+  mhd_assert (r->reuse.reusable);
+  mhd_assert (0 == mhd_atomic_counter_get (&(r->reuse.counter)));
 
-  mhd_atomic_counter_deinit(&(r->reuse.counter));
-  mhd_mutex_destroy_chk(&(r->reuse.settings_lock));
+  mhd_atomic_counter_deinit (&(r->reuse.counter));
+  mhd_mutex_destroy_chk (&(r->reuse.settings_lock));
 }
 
 
@@ -110,7 +113,7 @@ mhd_response_check_frozen_freeze (struct MHD_Response *restrict response)
   {
     need_unlock = true;
     mhd_mutex_lock_chk (&(response->reuse.settings_lock));
-    mhd_assert (1 == mhd_atomic_counter_get(&(response->reuse.counter)));
+    mhd_assert (1 == mhd_atomic_counter_get (&(response->reuse.counter)));
   }
   else
     need_unlock = false;

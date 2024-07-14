@@ -100,10 +100,10 @@ mhd_str_equal_caseless_bin_n (const char *const str1,
  * Comparison stops at first unmatched byte.
  * @param a the statically allocated string to compare
  * @param s the string to compare
- * @param len number of characters to compare
+ * @param l the number of characters in the @a s string
  * @return 'true' if two strings are equal, 'false' otherwise.
  */
-#define mhd_str_equal_caseless_s_bin_n(a,s,l) \
+#define mhd_str_equal_caseless_n_st(a,s,l) \
         ((mhd_SSTR_LEN (a) == (l)) \
          && mhd_str_equal_caseless_bin_n (a,s,l))
 
@@ -517,10 +517,10 @@ mhd_hex_to_bin (const char *restrict hex,
  *         small to hold the result
  */
 MHD_INTERNAL size_t
-mhd_str_pct_decode_strict_n_ (const char *pct_encoded,
-                              size_t pct_encoded_len,
-                              char *decoded,
-                              size_t buf_size);
+mhd_str_pct_decode_strict_n (const char *pct_encoded,
+                             size_t pct_encoded_len,
+                             char *decoded,
+                             size_t buf_size);
 
 /**
  * Decode string with percent-encoded characters as defined by
@@ -545,11 +545,11 @@ mhd_str_pct_decode_strict_n_ (const char *pct_encoded,
  *         zero if output buffer is too small to hold the result
  */
 MHD_INTERNAL size_t
-mhd_str_pct_decode_lenient_n_ (const char *pct_encoded,
-                               size_t pct_encoded_len,
-                               char *decoded,
-                               size_t buf_size,
-                               bool *broken_encoding);
+mhd_str_pct_decode_lenient_n (const char *pct_encoded,
+                              size_t pct_encoded_len,
+                              char *decoded,
+                              size_t buf_size,
+                              bool *broken_encoding);
 
 
 /**
@@ -589,7 +589,7 @@ mhd_str_pct_decode_in_place_strict (char *str);
  */
 MHD_INTERNAL size_t
 mhd_str_pct_decode_in_place_lenient (char *str,
-                                      bool *broken_encoding);
+                                     bool *broken_encoding);
 
 #ifdef DAUTH_SUPPORT
 /**

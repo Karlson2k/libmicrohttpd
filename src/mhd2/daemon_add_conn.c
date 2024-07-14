@@ -99,7 +99,7 @@ connection_set_initial_state (struct MHD_Connection *restrict c)
   c->read_buffer_offset = 0;
   read_buf_size = c->daemon->conns.cfg.mem_pool_size / 2;
   c->read_buffer
-    = MHD_pool_allocate (c->pool,
+    = mhd_pool_allocate (c->pool,
                          read_buf_size,
                          false);
   c->read_buffer_size = read_buf_size;
@@ -131,7 +131,7 @@ connection_clean_destroy (struct MHD_Connection *restrict c,
 
   // TODO: upgrade support
 
-  MHD_pool_destroy (c->pool);
+  mhd_pool_destroy (c->pool);
 
   // TODO: TLS deinit
 
@@ -314,7 +314,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
    * intensively used memory area is allocated in "good"
    * (for the thread) memory region. It is important with
    * NUMA and/or complex cache hierarchy. */
-  connection->pool = MHD_pool_create (daemon->conns.cfg.mem_pool_size);
+  connection->pool = mdh_pool_create (daemon->conns.cfg.mem_pool_size);
   if (NULL == connection->pool)
   { /* 'pool' creation failed */
     MHD_LOG_MSG (daemon, MHD_SC_POOL_MALLOC_FAILURE, \
@@ -430,7 +430,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
       daemon->conns.count--;
       daemon->conns.block_new = false;
     }
-    MHD_pool_destroy (connection->pool);
+    mhd_pool_destroy (connection->pool);
   }
   /* Free resources allocated before the call of this functions */
 

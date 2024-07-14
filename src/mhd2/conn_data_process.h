@@ -40,16 +40,17 @@ struct MHD_Connection; /* forward declaration */
  */
 MHD_INTERNAL bool
 mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
-MHD_FN_PAR_NONNULL_ALL_ ;
+MHD_FN_PAR_NONNULL_ALL_;
 
 /**
- * Finally close and clean-up connection.
- * Must be performed only when connection thread (for thread-per-connection)
- * has stopped.
- * @param c the connection to close
+ * Update "active" state, move to the activity lists if necessary.
+ * Update "event loop info"
+ * @param c the connection to use
+ * @return true if data processed successfully,
+ *         false if connection needs to be closed
  */
-MHD_INTERNAL void
-mhd_conn_close_final (struct MHD_Connection *restrict c)
-MHD_FN_PAR_NONNULL_ALL_ ;
+MHD_INTERNAL bool
+mhd_conn_update_active_state (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
 
 #endif /* ! MHD_DATA_PROCESS_H */

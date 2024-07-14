@@ -41,19 +41,20 @@ mhd_stream_add_field_nullable (struct MHD_Connection *restrict c,
   struct mhd_RequestField *f;
 
   f = (struct mhd_RequestField *)
-       mhd_stream_alloc_memory (sizeof(struct mhd_RequestField));
+      mhd_stream_alloc_memory (c, sizeof(struct mhd_RequestField));
   if (NULL == f)
     return false;
 
-  f->field.nv.name = name;
-  f->field.nv.value = value;
+  f->field.nv.name = *name;
+  f->field.nv.value = *value;
   f->field.kind = kind;
-  mhd_DLINKEDL_INIT_LINKS(f, fields);
+  mhd_DLINKEDL_INIT_LINKS (f, fields);
 
-  mhd_DLINKEDL_INS_LAST(&(c->rq),f,fields);
+  mhd_DLINKEDL_INS_LAST (&(c->rq),f,fields);
 
   return true;
 }
+
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_stream_add_field (struct MHD_Connection *restrict c,
@@ -66,5 +67,5 @@ mhd_stream_add_field (struct MHD_Connection *restrict c,
   value2.len = value->len;
   value2.cstr = value->cstr;
 
-  return mhd_stream_add_field_nullable(c, kind, name, &value2);
+  return mhd_stream_add_field_nullable (c, kind, name, &value2);
 }

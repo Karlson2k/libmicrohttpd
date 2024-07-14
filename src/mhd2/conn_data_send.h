@@ -42,7 +42,7 @@ struct MHD_Connection; /* forward declarations */
  *        type is performed
  */
 MHD_INTERNAL void
-mhd_conn_data_send (struct MHD_Connection restrict *c,
+mhd_conn_data_send (struct MHD_Connection *restrict c,
                     bool has_err)
 MHD_FN_PAR_NONNULL_ALL_;
 

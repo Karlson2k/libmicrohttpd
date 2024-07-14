@@ -263,7 +263,7 @@ mhd_DLINKEDL_LIST_DEF (mhd_ResponseHeader);
 struct MHD_Response
 {
   /**
-   * The response status code
+   * The response HTTP status code
    */
   enum MHD_HTTP_StatusCode sc;
 

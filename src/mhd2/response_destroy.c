@@ -35,6 +35,7 @@
 
 #include "response_add_header.h"
 #include "response_funcs.h"
+#include "response_from.h"
 
 /**
  * Perform full response de-initialisation, with cleaning-up / freeing
@@ -47,8 +48,8 @@ response_full_detinit (struct MHD_Response *restrict r)
 {
   mhd_response_remove_all_headers (r);
   if (r->reuse.reusable)
-    mhd_response_deinit_reusable(r);
-  mhd_response_deinit_content_data(r);
+    mhd_response_deinit_reusable (r);
+  mhd_response_deinit_content_data (r);
   free (r);
 }
 
@@ -56,11 +57,11 @@ response_full_detinit (struct MHD_Response *restrict r)
 MHD_INTERNAL void
 mhd_response_dec_use_count (struct MHD_Response *restrict r)
 {
-  mhd_assert(r->frozen);
+  mhd_assert (r->frozen);
 
   if (r->reuse.reusable)
   {
-    if (0 != mhd_atomic_counter_dec_get(&(r->reuse.counter)))
+    if (0 != mhd_atomic_counter_dec_get (&(r->reuse.counter)))
       return; /* The response is still used somewhere */
   }
 
@@ -68,7 +69,8 @@ mhd_response_dec_use_count (struct MHD_Response *restrict r)
 }
 
 
-MHD_EXTERN_ MHD_FN_PAR_NONNULL_ (1) void
+MHD_EXTERN_
+MHD_FN_PAR_NONNULL_ (1) void
 MHD_response_destroy (struct MHD_Response *response)
 {
   if (! response->frozen)
@@ -78,7 +80,7 @@ MHD_response_destroy (struct MHD_Response *response)
     free (response->settings);
 #ifndef NDEBUG
     /* Decrement counter to avoid triggering assert in deinit function */
-    mhd_assert (0 == mhd_atomic_counter_dec_get(&(response->reuse.counter)));
+    mhd_assert (0 == mhd_atomic_counter_dec_get (&(response->reuse.counter)));
 #endif
     response_full_detinit (response);
     return;

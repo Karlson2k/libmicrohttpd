@@ -30,6 +30,7 @@
 #include "mhd_sys_options.h"
 #include "sys_base_types.h"
 
+
 struct MHD_Connection; /* forward declaration */
 
 
@@ -65,6 +66,25 @@ mhd_stream_alloc_memory (struct MHD_Connection *restrict connection,
 MHD_FN_PAR_NONNULL_ALL_;
 
 /**
+ * Shrink stream read buffer to the zero size of free space in the buffer
+ * @param c the connection whose read buffer is being manipulated
+ */
+MHD_INTERNAL void
+mhd_stream_shrink_read_buffer (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
+/**
+ * Allocate the maximum available amount of memory from MemoryPool
+ * for write buffer.
+ * @param c the connection whose write buffer is being manipulated
+ * @return the size of the free space in the write buffer
+ */
+MHD_INTERNAL size_t
+mhd_stream_maximize_write_buffer (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
+
+/**
  * Select the HTTP error status code for "out of receive buffer space" error.
  * @param c the connection to process
  * @param stage the current stage of request receiving
@@ -81,6 +101,69 @@ mhd_stream_get_no_space_err_status_code (struct MHD_Connection *restrict c,
                                          enum MHD_ProcRecvDataStage stage,
                                          size_t add_element_size,
                                          const char *restrict add_element)
-MHD_FN_PAR_NONNULL_(1) MHD_FN_PAR_IN_SIZE_(4,3);
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_IN_SIZE_ (4,3);
+
+/**
+ * Switch connection from recv mode to send mode.
+ *
+ * Current request header or body will not be read anymore,
+ * response must be assigned to connection.
+ * @param c the connection to prepare for sending.
+ */
+MHD_INTERNAL void
+mhd_stream_switch_from_recv_to_send (struct MHD_Connection *c)
+MHD_FN_PAR_NONNULL_ALL_;
+
+
+enum mhd_StreamAbortReason
+{
+  mhd_STREAM_ABORT_CLIENT_HTTP_ERR
+};
+
+/**
+ * Close stream with error
+ *
+ * @param c the connection to close.
+ */
+MHD_INTERNAL void
+mhd_stream_abort (struct MHD_Connection *c,
+                  enum mhd_StreamAbortReason reason,
+                  const char *log_msg)
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
+
+#ifdef HAVE_LOG_FUNCTIONALITY
+#  define mhd_STREAM_ABORT(c,r,m) (mhd_stream_abort ((c),(r),(m)))
+#else  /* ! HAVE_LOG_FUNCTIONALITY */
+#  define mhd_STREAM_ABORT(c,r,m) (mhd_stream_abort ((c),(r),NULL))
+#endif /* ! HAVE_LOG_FUNCTIONALITY */
+
+/**
+ * Update last activity mark to the current time..
+ * @param c the connection to update
+ */
+MHD_INTERNAL void
+mhd_stream_update_activity_mark (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
+
+/**
+ * Perform initial clean-up and mark for closing.
+ * Set the reason to "aborted by application"
+ * @param c to make
+ */
+MHD_INTERNAL void
+mhd_conn_pre_close_app_abort (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
+
+/**
+ * Perform initial clean-up and mark for closing.
+ * Set the reason to "socket error"
+ * @param c to make
+ */
+MHD_INTERNAL void
+mhd_conn_pre_close_skt_err (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
 
 #endif /* ! MHD_STREAM_FUNCS_H */

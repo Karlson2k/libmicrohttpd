@@ -1,6 +1,7 @@
 /*
   This file is part of GNU libmicrohttpd
-  Copyright (C) 2024 Evgeny Grin (Karlson2k)
+  Copyright (C) 2014-2024 Evgeny Grin (Karlson2k)
+  Copyright (C) 2007-2020 Daniel Pittman and Christian Grothoff
 
   GNU libmicrohttpd is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -23,13 +24,20 @@
  * @brief  The definitions of internal functions for processing
  *         stream states
  * @author Karlson2k (Evgeny Grin)
+ *
+ * Based on the MHD v0.x code by Daniel Pittman, Christian Grothoff and other
+ * contributors.
  */
 
 #include "mhd_sys_options.h"
 #include "sys_bool_type.h"
 
+#include "mhd_str_macros.h"
+
 #include "mhd_connection.h"
 #include "stream_process_states.h"
+#include "stream_funcs.h"
+#include "stream_process_request.h"
 
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
@@ -37,19 +45,24 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
 {
   struct MHD_Daemon *const restrict d = c->daemon;
 
-  enum MHD_Result ret;
-
   /* 'daemon' is not used if epoll is not available and asserts are disabled */
   (void) d; /* Mute compiler warning */
+
+  mhd_assert (c->resuming || ! c->suspended);
+  if (c->resuming)
+  {
+    // TODO: finish resuming, update activity mark
+    // TODO: move to special function
+  }
 
   if ((mhd_SOCKET_ERR_NO_ERROR != c->sk_discnt_err) ||
       (0 != (c->sk_ready & mhd_SOCKET_NET_STATE_ERROR_READY)))
   {
     mhd_assert ((mhd_SOCKET_ERR_NO_ERROR != c->sk_discnt_err) || \
-                mhd_SOCKET_ERR_IS_HARD(c->sk_discnt_err));
+                mhd_SOCKET_ERR_IS_HARD (c->sk_discnt_err));
     if ((mhd_SOCKET_ERR_NO_ERROR == c->sk_discnt_err) ||
         (mhd_SOCKET_ERR_NOT_CHECKED == c->sk_discnt_err))
-      c->sk_discnt_err = mhd_socket_error_get_from_socket(c->socket_fd);
+      c->sk_discnt_err = mhd_socket_error_get_from_socket (c->socket_fd);
     mhd_conn_pre_close_skt_err (c);
     return false;
   }
@@ -63,21 +76,21 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     {
     case MHD_CONNECTION_INIT:
     case MHD_CONNECTION_REQ_LINE_RECEIVING:
-      if (mhd_get_request_line (c))
+      if (mhd_stream_get_request_line (c))
       {
         mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING < c->state);
-        mhd_assert ((MHD_IS_HTTP_VER_SUPPORTED (c->rq.http_ver)) \
+        mhd_assert ((MHD_HTTP_VERSION_IS_SUPPORTED (c->rq.http_ver)) \
                     || (c->discard_request));
         continue;
       }
       mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING >= c->state);
       break;
     case MHD_CONNECTION_REQ_LINE_RECEIVED:
-      mhd_switch_to_rq_headers_processing (c);
+      mhd_stream_switch_to_rq_headers_proc (c);
       mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVED != c->state);
       continue;
     case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
-      if (mhd_get_req_headers (c, false))
+      if (mhd_stream_get_request_headers (c, false))
       {
         mhd_assert (MHD_CONNECTION_REQ_HEADERS_RECEIVING < c->state);
         mhd_assert ((MHD_CONNECTION_HEADERS_RECEIVED == c->state) || \
@@ -87,91 +100,49 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       mhd_assert (MHD_CONNECTION_REQ_HEADERS_RECEIVING == c->state);
       break;
     case MHD_CONNECTION_HEADERS_RECEIVED:
-      mhd_parse_connection_headers (c);
-      if (MHD_CONNECTION_HEADERS_RECEIVED != c->state)
-        continue;
-      c->state = MHD_CONNECTION_HEADERS_PROCESSED;
-      if (c->suspended)
-        break;
+      mhd_stream_parse_connection_headers (c);
+      mhd_assert (c->state != MHD_CONNECTION_HEADERS_RECEIVED);
       continue;
     case MHD_CONNECTION_HEADERS_PROCESSED:
-      call_connection_handler (c);
-      if (MHD_CONNECTION_HEADERS_PROCESSED != c->state)
-        continue;
-      if (c->suspended)
-        continue;
-
-      if ( (NULL == c->rp.response) &&
-           (need_100_continue (c)) &&
-           /* If the client is already sending the payload (body)
-              there is no need to send "100 Continue" */
-           (0 == c->read_buffer_offset) )
+      if (mhd_stream_call_app_request_cb (c))
       {
-        c->state = MHD_CONNECTION_CONTINUE_SENDING;
-        break;
+        mhd_assert (MHD_CONNECTION_HEADERS_PROCESSED < c->state);
+        continue;
       }
-      if ( (NULL != c->rp.response) &&
-           (0 != c->rq.remaining_upload_size) )
-      {
-        /* we refused (no upload allowed!) */
-        c->rq.remaining_upload_size = 0;
-        /* force close, in case client still tries to upload... */
-        c->discard_request = true;
-      }
-      c->state = (0 == c->rq.remaining_upload_size)
-                          ? MHD_CONNECTION_FULL_REQ_RECEIVED
-                          : MHD_CONNECTION_BODY_RECEIVING;
-      if (c->suspended)
-        break;
-      continue;
+      // TODO: add assert
+      break;
     case MHD_CONNECTION_CONTINUE_SENDING:
       if (c->continue_message_write_offset ==
-          mhd_SSTR_LEN (HTTP_100_CONTINUE))
+          mhd_SSTR_LEN (mdh_HTTP_1_1_100_CONTINUE_REPLY))
       {
         c->state = MHD_CONNECTION_BODY_RECEIVING;
         continue;
       }
       break;
     case MHD_CONNECTION_BODY_RECEIVING:
-      mhd_assert (0 != c->rq.remaining_upload_size);
+      mhd_assert (c->rq.cntn.recv_size < c->rq.cntn.cntn_size);
       mhd_assert (! c->discard_request);
       mhd_assert (NULL == c->rp.response);
-      if (0 != c->read_buffer_offset)
-      {
-        process_request_body (c);           /* loop call */
-        if (MHD_CONNECTION_BODY_RECEIVING != c->state)
-          continue;
-      }
-      /* Modify here when queueing of the response during data processing
-         will be supported */
-      mhd_assert (! c->discard_request);
-      mhd_assert (NULL == c->rp.response);
-      if (0 == c->rq.remaining_upload_size)
-      {
-        c->state = MHD_CONNECTION_BODY_RECEIVED;
+      if (0 == c->read_buffer_offset)
+        break; /* Need more data to process */
+
+      if (mhd_stream_process_request_body (c))
         continue;
-      }
+      mhd_assert (! c->discard_request);
+      mhd_assert (NULL == c->rp.response);
       break;
     case MHD_CONNECTION_BODY_RECEIVED:
       mhd_assert (! c->discard_request);
       mhd_assert (NULL == c->rp.response);
-      if (0 == c->rq.remaining_upload_size)
-      {
-        if (c->rq.have_chunked_upload)
-        {
-          /* Reset counter variables reused for footers */
-          c->rq.num_cr_sp_replaced = 0;
-          c->rq.skipped_broken_lines = 0;
-          reset_rq_header_processing_state (c);
-          c->state = MHD_CONNECTION_FOOTERS_RECEIVING;
-        }
-        else
-          c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
-        continue;
-      }
-      break;
+      mhd_assert (c->rq.have_chunked_upload);
+      /* Reset counter variables reused for footers */
+      c->rq.num_cr_sp_replaced = 0;
+      c->rq.skipped_broken_lines = 0;
+      mhd_stream_reset_rq_hdr_proc_state (c);
+      c->state = MHD_CONNECTION_FOOTERS_RECEIVING;
+      continue;
     case MHD_CONNECTION_FOOTERS_RECEIVING:
-      if (get_req_headers (c, true))
+      if (mhd_stream_get_request_headers (c, true))
       {
         mhd_assert (MHD_CONNECTION_FOOTERS_RECEIVING < c->state);
         mhd_assert ((MHD_CONNECTION_FOOTERS_RECEIVED == c->state) || \
@@ -181,22 +152,22 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       mhd_assert (MHD_CONNECTION_FOOTERS_RECEIVING == c->state);
       break;
     case MHD_CONNECTION_FOOTERS_RECEIVED:
-      /* The header, the body, and the footers of the request has been received,
-       * switch to the final processing of the request. */
       c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
       continue;
     case MHD_CONNECTION_FULL_REQ_RECEIVED:
-      call_connection_handler (c);     /* "final" call */
-      if (c->state != MHD_CONNECTION_FULL_REQ_RECEIVED)
+      if (mhd_stream_call_app_final_upload_cb (c))
+      {
+        mhd_assert (MHD_CONNECTION_FOOTERS_RECEIVING != c->state);
         continue;
-      if (NULL == c->rp.response)
-        break;                  /* try again next time */
-      /* Response is ready, start reply */
-      c->state = MHD_CONNECTION_START_REPLY;
-      continue;
+      }
+      break;
+    case MHD_CONNECTION_REQ_RECV_FINISHED:
+      if (mhd_stream_process_req_recv_finished (c))
+        continue;
+      break;
     case MHD_CONNECTION_START_REPLY:
       mhd_assert (NULL != c->rp.response);
-      connection_switch_from_recv_to_send (c);
+      mhd_stream_switch_from_recv_to_send (c);
       if (MHD_NO == build_header_response (c))
       {
         /* oops - close! */
@@ -213,7 +184,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       break;
     case MHD_CONNECTION_HEADERS_SENT:
       mhd_assert (0 && "Not implemented yet");
-#if 0 //def UPGRADE_SUPPORT // TODO: upgrade support
+#if 0 // def UPGRADE_SUPPORT // TODO: upgrade support
       if (NULL != c->rp.response->upgrade_handler)
       {
         c->state = MHD_CONNECTION_UPGRADE;
@@ -296,7 +267,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
         if (MHD_NO != try_ready_chunked_body (c, &finished))
         {
           c->state = finished ? MHD_CONNECTION_CHUNKED_BODY_SENT :
-                              MHD_CONNECTION_CHUNKED_BODY_READY;
+                     MHD_CONNECTION_CHUNKED_BODY_READY;
           continue;
         }
         /* mutex was already unlocked by try_ready_chunked_body */
@@ -346,7 +317,13 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     }
     break;
   }
-  if (connection_check_timedout (c))
+
+  if (c->suspended)
+  {
+    // TODO: process
+  }
+
+  if (connection_check_timedout (c)) // TODO: centralise timeout checks
   {
     MHD_connection_close_ (c,
                            MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
