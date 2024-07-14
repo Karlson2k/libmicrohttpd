@@ -468,7 +468,7 @@ struct mhd_ListenSocket
    *
    * Zero if unknown and for non-IP socket.
    */
-  uint_fast16_t port;
+  uint_least16_t port;
 };
 
 /**

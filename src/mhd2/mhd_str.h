@@ -397,7 +397,7 @@ mhd_uint32_to_strx (uint_fast32_t val,
 
 #ifndef MHD_FAVOR_SMALL_CODE
 /**
- * Convert uint_fast16_t value to decimal US-ASCII string.
+ * Convert uint_least16_t value to decimal US-ASCII string.
  * @note: result is NOT zero-terminated.
  * @param val the value to convert
  * @param buf the buffer to result to
@@ -406,7 +406,7 @@ mhd_uint32_to_strx (uint_fast32_t val,
  *         zero if buffer is too small (buffer may be modified).
  */
 MHD_INTERNAL size_t
-mhd_uint16_to_str (uint_fast16_t val,
+mhd_uint16_to_str (uint_least16_t val,
                    char *buf,
                    size_t buf_size);
 
@@ -431,7 +431,7 @@ mhd_uint64_to_str (uint_fast64_t val,
 
 
 /**
- * Convert uint_fast16_t value to decimal US-ASCII string padded with
+ * Convert uint_least16_t value to decimal US-ASCII string padded with
  * zeros on the left side.
  *
  * @note: result is NOT zero-terminated.

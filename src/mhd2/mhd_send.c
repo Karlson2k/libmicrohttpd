@@ -121,11 +121,11 @@ freebsd_sendfile_init_ (void)
   else
   {
     freebsd_sendfile_flags_ =
-      SF_FLAGS ((uint_fast16_t) \
+      SF_FLAGS ((uint_least16_t) \
                 ((mhd_SENFILE_CHUNK_SIZE + sys_page_size - 1) / sys_page_size) \
                 & 0xFFFFU, SF_NODISKIO);
     freebsd_sendfile_flags_thd_p_c_ =
-      SF_FLAGS ((uint_fast16_t) \
+      SF_FLAGS ((uint_least16_t) \
                 ((mhd_SENFILE_CHUNK_SIZE_FOR_THR_P_C + sys_page_size - 1) \
                  / sys_page_size) & 0xFFFFU, SF_NODISKIO);
   }
@@ -771,8 +771,8 @@ mhd_plain_send (struct MHD_Connection *restrict c,
   pre_send_setopt (c, true, push_data);
 #ifdef mhd_USE_MSG_MORE
   res = mhd_sys_send4 (c->socket_fd,
-                       buffer,
-                       buffer_size,
+                       buf,
+                       buf_size,
                        push_data ? 0 : MSG_MORE);
 #else
   res = mhd_sys_send4 (c->socket_fd,
@@ -1105,7 +1105,7 @@ MHD_FN_PAR_OUT_ (2) enum mhd_SocketError
 mhd_send_sendfile (struct MHD_Connection *restrict connection,
                    size_t *restrict sent)
 {
-#ifdef 0
+#if 0
   ssize_t ret;
   const int file_fd = connection->rp.response->fd;
   uint64_t left;
@@ -1343,6 +1343,9 @@ send_iov_nontls (struct MHD_Connection *restrict connection,
 {
   bool send_error;
   size_t items_to_send;
+#ifndef MSG_NOSIGNAL_OR_ZERO
+  ssize_t res;
+#endif
 #ifdef HAVE_SENDMSG
   struct msghdr msg;
 #elif defined(MHD_WINSOCK_SOCKETS)
@@ -1379,7 +1382,7 @@ send_iov_nontls (struct MHD_Connection *restrict connection,
 
   pre_send_setopt (connection, true, push_data);
   res = sendmsg (connection->socket_fd, &msg,
-                 MSG_NOSIGNAL_OR_ZERO | (push_data ? 0 : mhd_MSG_MORE));
+                 mhd_MSG_NOSIGNAL | (push_data ? 0 : mhd_MSG_MORE));
   if (0 < res)
     *sent = (size_t) res;
   else

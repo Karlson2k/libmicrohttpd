@@ -512,8 +512,8 @@ toxdigitvalue (char c)
 #else  /* MHD_FAVOR_SMALL_CODE */
   if (c <= 9)
   {
-     if (c >= 0)
-       return (unsigned char) (c - '0');
+    if (c >= 0)
+      return (unsigned char) (c - '0');
   }
   else if (c <= 'F')
   {
@@ -680,7 +680,7 @@ charsequalcaseless (const char c1, const char c2)
 #ifndef MHD_FAVOR_SMALL_CODE
 MHD_INTERNAL bool
 mhd_str_equal_caseless (const char *str1,
-                         const char *str2)
+                        const char *str2)
 {
   while (0 != (*str1))
   {
@@ -703,8 +703,8 @@ mhd_str_equal_caseless (const char *str1,
 
 MHD_INTERNAL bool
 mhd_str_equal_caseless_n (const char *const str1,
-                           const char *const str2,
-                           size_t maxlen)
+                          const char *const str2,
+                          size_t maxlen)
 {
   size_t i;
 
@@ -745,8 +745,8 @@ mhd_str_equal_caseless_bin_n (const char *const str1,
 
 MHD_INTERNAL bool
 mhd_str_has_token_caseless (const char *str,
-                             const char *const token,
-                             size_t token_len)
+                            const char *const token,
+                            size_t token_len)
 {
   if (0 == token_len)
     return false;
@@ -1097,7 +1097,7 @@ mhd_str_remove_tokens_caseless (char *restrict str,
 
 MHD_INTERNAL size_t
 mhd_str_to_uint64 (const char *restrict str,
-                    uint_fast64_t *restrict out_val)
+                   uint_fast64_t *restrict out_val)
 {
   const char *const start = str;
   uint_fast64_t res;
@@ -1128,8 +1128,8 @@ mhd_str_to_uint64 (const char *restrict str,
 
 MHD_INTERNAL size_t
 mhd_str_to_uint64_n (const char *restrict str,
-                      size_t maxlen,
-                      uint_fast64_t *restrict out_val)
+                     size_t maxlen,
+                     uint_fast64_t *restrict out_val)
 {
   uint_fast64_t res;
   size_t i;
@@ -1161,7 +1161,7 @@ mhd_str_to_uint64_n (const char *restrict str,
 
 MHD_INTERNAL size_t
 mhd_strx_to_uint32 (const char *restrict str,
-                     uint_fast32_t *restrict out_val)
+                    uint_fast32_t *restrict out_val)
 {
   const char *const start = str;
   uint_fast32_t res;
@@ -1195,8 +1195,8 @@ mhd_strx_to_uint32 (const char *restrict str,
 
 MHD_INTERNAL size_t
 mhd_strx_to_uint32_n (const char *restrict str,
-                       size_t maxlen,
-                       uint_fast32_t *restrict out_val)
+                      size_t maxlen,
+                      uint_fast32_t *restrict out_val)
 {
   size_t i;
   uint_fast32_t res;
@@ -1240,7 +1240,7 @@ mhd_strx_to_uint32_n (const char *restrict str,
  */
 MHD_INTERNAL size_t
 mhd_strx_to_uint64 (const char *restrict str,
-                     uint_fast64_t *restrict out_val)
+                    uint_fast64_t *restrict out_val)
 {
   const char *const start = str;
   uint_fast64_t res;
@@ -1286,8 +1286,8 @@ mhd_strx_to_uint64 (const char *restrict str,
  */
 MHD_INTERNAL size_t
 mhd_strx_to_uint64_n (const char *restrict str,
-                       size_t maxlen,
-                       uint_fast64_t *restrict out_val)
+                      size_t maxlen,
+                      uint_fast64_t *restrict out_val)
 {
   size_t i;
   uint_fast64_t res;
@@ -1337,11 +1337,11 @@ mhd_strx_to_uint64_n (const char *restrict str,
  */
 MHD_INTERNAL size_t
 mhd_str_to_uvalue_n (const char *restrict str,
-                      size_t maxlen,
-                      void *restrict out_val,
-                      size_t val_size,
-                      uint_fast64_t max_val,
-                      unsigned int base)
+                     size_t maxlen,
+                     void *restrict out_val,
+                     size_t val_size,
+                     uint_fast64_t max_val,
+                     unsigned int base)
 {
   size_t i;
   uint_fast64_t res;
@@ -1422,13 +1422,13 @@ mhd_uint32_to_strx (uint_fast32_t val,
 
 #ifndef MHD_FAVOR_SMALL_CODE
 MHD_INTERNAL size_t
-mhd_uint16_to_str (uint_fast16_t val,
+mhd_uint16_to_str (uint_least16_t val,
                    char *buf,
                    size_t buf_size)
 {
   char *chr;  /**< pointer to the current printed digit */
   /* The biggest printable number is 65535 */
-  uint_fast16_t divisor = UINT16_C (10000);
+  uint_least16_t divisor = UINT16_C (10000);
   int digit;
 
   chr = buf;
@@ -1450,7 +1450,7 @@ mhd_uint16_to_str (uint_fast16_t val,
     buf_size--;
     if (1 == divisor)
       return (size_t) (chr - buf);
-    val = (uint_fast16_t) (val % divisor);
+    val = (uint_least16_t) (val % divisor);
     divisor /= 10;
     digit = (int) (val / divisor);
     mhd_assert (digit < 10);
@@ -1599,7 +1599,7 @@ mhd_hex_to_bin (const char *restrict hex,
     const int l = toxdigitvalue (hex[r++]);
     if (0 > l)
       return 0;
-    ((uint8_t *)bin)[w++] = (uint8_t) ((unsigned int) l);
+    ((uint8_t *) bin)[w++] = (uint8_t) ((unsigned int) l);
   }
   while (r < len)
   {
@@ -1607,9 +1607,9 @@ mhd_hex_to_bin (const char *restrict hex,
     const int l = toxdigitvalue (hex[r++]);
     if ((0 > h) || (0 > l))
       return 0;
-    ((uint8_t *)bin)[w++] = (uint8_t) ( ((uint8_t) (((uint8_t)
-                                       ((unsigned int) h)) << 4))
-                                       | ((uint8_t) ((unsigned int) l)) );
+    ((uint8_t *) bin)[w++] = (uint8_t) ( ((uint8_t) (((uint8_t)
+                                                      ((unsigned int) h)) << 4))
+                                         | ((uint8_t) ((unsigned int) l)) );
   }
   mhd_assert (len == r);
   mhd_assert ((len + 1) / 2 == w);
@@ -1619,16 +1619,16 @@ mhd_hex_to_bin (const char *restrict hex,
 
 MHD_INTERNAL size_t
 mhd_str_pct_decode_strict_n (const char *pct_encoded,
-                              size_t pct_encoded_len,
-                              char *decoded,
-                              size_t buf_size)
+                             size_t pct_encoded_len,
+                             char *decoded,
+                             size_t buf_size)
 {
 #ifdef MHD_FAVOR_SMALL_CODE
   bool broken;
   size_t res;
 
   res = mhd_str_pct_decode_lenient_n (pct_encoded, pct_encoded_len, decoded,
-                                       buf_size, &broken);
+                                      buf_size, &broken);
   if (broken)
     return 0;
   return res;
@@ -1702,10 +1702,10 @@ mhd_str_pct_decode_strict_n (const char *pct_encoded,
 
 MHD_INTERNAL size_t
 mhd_str_pct_decode_lenient_n (const char *pct_encoded,
-                               size_t pct_encoded_len,
-                               char *decoded,
-                               size_t buf_size,
-                               bool *broken_encoding)
+                              size_t pct_encoded_len,
+                              char *decoded,
+                              size_t buf_size,
+                              bool *broken_encoding)
 {
   size_t r;
   size_t w;
@@ -1857,7 +1857,7 @@ mhd_str_pct_decode_in_place_strict (char *str)
 
 MHD_INTERNAL size_t
 mhd_str_pct_decode_in_place_lenient (char *str,
-                                      bool *broken_encoding)
+                                     bool *broken_encoding)
 {
 #ifdef MHD_FAVOR_SMALL_CODE
   size_t len;

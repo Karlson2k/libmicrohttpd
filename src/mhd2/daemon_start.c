@@ -279,7 +279,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
   union mhd_SockaddrAny sa_all;
   const struct sockaddr *p_use_sa;
   socklen_t use_sa_size;
-  uint_fast16_t sk_port;
+  uint_least16_t sk_port;
   bool is_non_block;
   bool is_non_inhr;
   enum MHD_StatusCode ret;
@@ -351,7 +351,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
           return MHD_SC_CONFIGURATION_WRONG_SA_SIZE;
         }
         memcpy (&(sa_all.sa_i4), s->bind_sa.v_sa, sizeof(sa_all.sa_i4));
-        sk_port = (uint_fast16_t) ntohs (sa_all.sa_i4.sin_port);
+        sk_port = (uint_least16_t) ntohs (sa_all.sa_i4.sin_port);
 #ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
         sa_all.sa_i4.sin_len = (socklen_t) sizeof(sa_all.sa_i4);
 #endif
@@ -369,7 +369,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
           return MHD_SC_CONFIGURATION_WRONG_SA_SIZE;
         }
         memcpy (&(sa_all.sa_i6), s->bind_sa.v_sa, s->bind_sa.v_sa_len);
-        sk_port = (uint_fast16_t) ntohs (sa_all.sa_i6.sin6_port);
+        sk_port = (uint_least16_t) ntohs (sa_all.sa_i6.sin6_port);
 #ifdef HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
         sa_all.sa_i6.sin6_len = (socklen_t) s->bind_sa.v_sa_len;
 #endif
@@ -1019,12 +1019,12 @@ detect_listen_type_and_port (struct MHD_Daemon *restrict d)
     {
     case AF_INET:
       d->net.listen.type = mhd_SOCKET_TYPE_IP;
-      d->net.listen.port = (uint_fast16_t) ntohs (sa_all.sa_i4.sin_port);
+      d->net.listen.port = (uint_least16_t) ntohs (sa_all.sa_i4.sin_port);
       break;
 #ifdef HAVE_INET6
     case AF_INET6:
       d->net.listen.type = mhd_SOCKET_TYPE_IP;
-      d->net.listen.port = (uint_fast16_t) ntohs (sa_all.sa_i6.sin6_port);
+      d->net.listen.port = (uint_least16_t) ntohs (sa_all.sa_i6.sin6_port);
       break;
 #endif /* HAVE_INET6 */
 #ifdef MHD_AF_UNIX
@@ -1068,7 +1068,7 @@ init_epoll (struct MHD_Daemon *restrict d)
   mhd_assert ((mhd_POLL_TYPE_EPOLL != d->events.poll_type) || \
               (MHD_INVALID_SOCKET == d->events.data.epoll.e_fd));
 #ifdef HAVE_EPOLL_CREATE1
-  e_fd = epoll_create1 (FD_CLOEXEC);
+  e_fd = epoll_create1 (EFD_CLOEXEC);
 #else  /* ! HAVE_EPOLL_CREATE1 */
   e_fd = epoll_create (128); /* The number is usually ignored */
   if (0 <= e_fd)
@@ -1573,7 +1573,7 @@ allocate_events (struct MHD_Daemon *restrict d)
 #ifdef MHD_USE_THREADS
       ++num_elements;  /* For ITC */
 #endif
-      if (MHD_INVALID_SOCKET != d->net.listen)
+      if (MHD_INVALID_SOCKET != d->net.listen.fd)
         ++num_elements;
 
       /* Trade neglectable performance penalty for memory saving */
@@ -1723,7 +1723,7 @@ deinit_itc (struct MHD_Daemon *restrict d)
 #ifdef MHD_USE_THREADS
   // TODO: add and process "thread unsafe" daemon's option
   mhd_assert (! mhd_ITC_IS_INVALID (d->threading.itc));
-  mhd_itc_destroy (d->threading.itc);
+  (void) mhd_itc_destroy (d->threading.itc);
 #endif /* MHD_USE_THREADS */
 }
 
@@ -1801,7 +1801,7 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
       reg_event.events = EPOLLIN;
       reg_event.data.u64 = (uint64_t) mhd_SOCKET_REL_MARKER_ITC; /* uint64_t is used in the epoll header */
       if (0 != epoll_ctl (d->events.data.epoll.e_fd, EPOLL_CTL_ADD,
-                          mhd_itc_r_fd (d->threading.itc), reg_event))
+                          mhd_itc_r_fd (d->threading.itc), &reg_event))
       {
         MHD_LOG_MSG (d, MHD_SC_EPOLL_ADD_DAEMON_FDS_FAILURE, \
                      "Failed to add ITC fd to the epoll monitoring.");
@@ -2003,7 +2003,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
 #ifdef MHD_POSIX_SOCKETS
   if (1)
   {
-    limit_by_num = d->net.cfg.max_fd_num;
+    limit_by_num = (unsigned int) d->net.cfg.max_fd_num;
     if (0 != limit_by_num)
     {
       /* Find the upper limit.
