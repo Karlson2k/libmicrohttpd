@@ -28,6 +28,7 @@
 #include "mhd_socket_error.h"
 #include "sys_sockets_headers.h"
 #include "mhd_sockets_macros.h"
+#include "sys_sockets_types.h"
 
 MHD_INTERNAL enum mhd_SocketError
 mhd_socket_error_get_from_sys_err (int socket_err)

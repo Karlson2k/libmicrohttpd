@@ -45,6 +45,7 @@
 #  endif
 #else
 #  include <winsock2.h>
+#  include <ws2tcpip.h>
 #endif
 
 #endif /* ! MHD_SYS_SOCKETS_TYPES_H */

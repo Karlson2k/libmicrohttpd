@@ -1343,7 +1343,7 @@ send_iov_nontls (struct MHD_Connection *restrict connection,
 {
   bool send_error;
   size_t items_to_send;
-#ifndef MSG_NOSIGNAL_OR_ZERO
+#ifndef MHD_WINSOCK_SOCKETS
   ssize_t res;
 #endif
 #ifdef HAVE_SENDMSG

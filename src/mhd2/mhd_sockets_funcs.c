@@ -24,6 +24,7 @@
  * @author Karlson2k (Evgeny Grin)
  */
 #include "mhd_sys_options.h"
+#include "sys_sockets_types.h"
 #include "mhd_sockets_funcs.h"
 #include "sys_sockets_headers.h"
 #include "sys_ip_headers.h"

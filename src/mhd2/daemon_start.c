@@ -30,6 +30,7 @@
 #include "sys_malloc.h"
 
 #include <string.h>
+#include "sys_sockets_types.h"
 #include "sys_sockets_headers.h"
 #include "sys_ip_headers.h"
 
