@@ -5516,6 +5516,22 @@ MHD_FN_PAR_IN_SIZE_ (3,2);
 
 
 /**
+ * Create a response object with body that is a
+ * statically allocated buffer that never needs to
+ * be freed as its lifetime exceeds that of the
+ * daemon.
+ *
+ * The response object can be extended with header information and then be used
+ * any number of times.
+ * @param sc status code to use for the response
+ * @param len number of bytes in @a buf
+ * @param buf buffer with response payload
+ */
+#define MHD_response_from_buffer_static(sc, len, buf)       \
+        MHD_response_from_buffer (sc, len, buf, NULL, NULL)
+
+
+/**
  * Create a response object with empty (zero size) body.
  *
  * The response object can be extended with header information and then be used
@@ -5523,7 +5539,7 @@ MHD_FN_PAR_IN_SIZE_ (3,2);
  * @param sc status code to use for the response
  */
 #define MHD_response_from_empty(sc) \
-        MHD_response_from_buffer (sc, 0, "", NULL, NULL)
+        MHD_response_from_buffer_static (sc, 0, "")
 
 
 /**

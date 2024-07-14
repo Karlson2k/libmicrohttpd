@@ -19,7 +19,7 @@
 */
 
 /**
- * @file test_start_destroy.c
+ * @file test_basic_checks.c
  * @brief  test for create, start and destroy
  * @author Karlson2k (Evgeny Grin)
  */
