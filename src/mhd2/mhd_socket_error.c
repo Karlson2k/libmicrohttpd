@@ -62,21 +62,18 @@ mhd_socket_error_get_from_sys_err (int socket_err)
 MHD_INTERNAL enum mhd_SocketError
 mhd_socket_error_get_from_socket (MHD_Socket fd)
 {
-#if defined(SOL_SOCKET) && (defined(SO_ERROR) || defined(SOCKET_ERROR))
+#if defined(SOL_SOCKET) && defined(SO_ERROR)
   enum mhd_SocketError err;
   int sock_err;
   socklen_t optlen = sizeof (sock_err);
 
   sock_err = 0;
-  if (0 == getsockopt (fd,
-                       SOL_SOCKET,
-#if defined(SO_ERROR)
-                       SO_ERROR,
-#else
-                       SOCKET_ERROR,
-#endif
-                       (void *) &sock_err,
-                       &optlen))
+  if ((0 == getsockopt (fd,
+                        SOL_SOCKET,
+                        SO_ERROR,
+                        (void *) &sock_err,
+                        &optlen))
+      && (sizeof(sock_err) == optlen))
     return mhd_socket_error_get_from_sys_err (sock_err);
 
   err = mhd_socket_error_get_from_sys_err (mhd_SCKT_GET_LERR ());
