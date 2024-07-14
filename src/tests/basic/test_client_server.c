@@ -40,6 +40,23 @@ main (int argc, char *argv[])
       .timeout_ms = 5,
       .num_clients = 10
     },
+    // Basic upload
+    // HTTP client header
+    // Response with custom header
+#if 0
+    // URL with query parameters
+    {
+      .label = "URL with query parameters",
+      .server_cb = &MHDT_server_reply_check_query,
+      .server_cb_cls = "TODO",
+      .client_cb = &MHDT_client_get_with_query,
+      .client_cb_cls = "a=b&c",
+      .timeout_ms = 5,
+      .num_clients = 10
+    },
+#endif
+    // chunked upload
+    // chunked download
     {
       .label = NULL,
     },
@@ -47,6 +64,9 @@ main (int argc, char *argv[])
   (void) argc; /* Unused. Silence compiler warning. */
   (void) argv; /* Unused. Silence compiler warning. */
 
+  // threading modi
+  // socket polling functions (select, poll, epoll, internal, external edge, external level)
+  //
   return MHDT_test (&MHDT_server_setup_minimal,
                     NULL,
                     &MHDT_server_run_blocking,
