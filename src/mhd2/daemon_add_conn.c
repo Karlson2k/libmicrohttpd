@@ -396,7 +396,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
 
           event.events = EPOLLIN | EPOLLOUT | EPOLLET;
           event.data.ptr = connection;
-          if (0 != epoll_ctl (daemon->epoll_fd,
+          if (0 != epoll_ctl (daemon->events.data.epoll.e_fd,
                               EPOLL_CTL_ADD,
                               connection->socket_fd,
                               &event))
