@@ -31,6 +31,8 @@
 #include "mhd_assert.h"
 #include "mhd_atomic_counter.h"
 
+#include "sys_malloc.h"
+
 #include "mhd_public_api.h"
 
 #include "response_add_header.h"

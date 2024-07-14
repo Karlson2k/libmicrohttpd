@@ -381,7 +381,7 @@ struct MHD_DaemonOptionValueBind
    * port to use, 0 to let system assign any free port,
    * ignored if @a af is #MHD_AF_NONE
    */
-  uint_fast16_t v_port;
+  uint_least16_t v_port;
 
 };
 
@@ -1556,7 +1556,7 @@ If no listen socket optins (#MHD_D_OPTION_BIND_PORT(), #MHD_D_OPTION_BIND_SA(), 
 static MHD_INLINE struct MHD_daemonOptionAndValue
 MHD_D_OPTION_BIND_PORT (
   enum MHD_AddressFamily af,
-  uint_fast16_t port
+  uint_least16_t port
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;

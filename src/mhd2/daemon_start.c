@@ -1813,7 +1813,7 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
         reg_event.events = EPOLLIN;
         reg_event.data.u64 = (uint64_t) mhd_SOCKET_REL_MARKER_LISTEN; /* uint64_t is used in the epoll header */
         if (0 != epoll_ctl (d->events.data.epoll.e_fd, EPOLL_CTL_ADD,
-                            d->net.listen.fd, reg_event))
+                            d->net.listen.fd, &reg_event))
         {
           MHD_LOG_MSG (d, MHD_SC_EPOLL_ADD_DAEMON_FDS_FAILURE, \
                        "Failed to add listening fd to the epoll monitoring.");
@@ -2016,7 +2016,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
       if (MHD_INVALID_SOCKET != d->net.listen.fd)
         --limit_by_num; /* One FD is used for the listening socket */
       if ((num_worker_daemons > limit_by_num) ||
-          (limit_by_num > d->net.cfg.max_fd_num) /* Underflow */)
+          (limit_by_num > (unsigned int) d->net.cfg.max_fd_num) /* Underflow */)
       {
         if (d->net.cfg.max_fd_num == s->fd_number_limit)
         {

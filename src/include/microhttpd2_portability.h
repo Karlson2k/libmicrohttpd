@@ -5,7 +5,7 @@ MHD_C_DECLRATIONS_START_HERE_
 // FIXME: Move this block to the main header for higher visibility?
 
 /* If generic headers don't work on your platform, include headers which define
-   'va_list', 'size_t', 'uint_fast16_t', 'uint_fast32_t', 'uint_fast64_t',
+   'va_list', 'size_t', 'uint_least16_t', 'uint_fast32_t', 'uint_fast64_t',
    'struct sockaddr', and then "#define MHD_HAVE_SYS_HEADERS_INCLUDED" before
    including "microhttpd2.h".
    When 'MHD_HAVE_SYS_HEADERS_INCLUDED' is defined the following "standard"

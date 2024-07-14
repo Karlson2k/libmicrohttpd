@@ -43,6 +43,9 @@
 #include "sys_sockets_headers.h"
 
 #include <string.h>
+#ifdef MHD_USE_EPOLL
+#  include <sys/epoll.h>
+#endif
 
 #include "compat_calloc.h"
 

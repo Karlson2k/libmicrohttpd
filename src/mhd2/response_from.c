@@ -29,6 +29,8 @@
 
 #include "response_from.h"
 
+#include <string.h>
+
 #include "sys_bool_type.h"
 #include "sys_base_types.h"
 
@@ -81,7 +83,9 @@ response_create_basic (enum MHD_HTTP_StatusCode sc,
   return NULL; /* Failure exit point */
 }
 
-MHD_INTERNAL MHD_FN_PAR_NONNULL_ (1) void
+
+MHD_INTERNAL
+MHD_FN_PAR_NONNULL_ (1) void
 mhd_response_deinit_content_data (struct MHD_Response *restrict r)
 {
   mhd_assert (mhd_RESPONSE_CONTENT_DATA_INVALID != r->cntn_dtype);

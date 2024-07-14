@@ -3539,7 +3539,7 @@ If no listen socket optins (#MHD_D_OPTION_BIND_PORT(), #MHD_D_OPTION_BIND_SA(), 
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_BIND_PORT (
   enum MHD_AddressFamily af,
-  uint_fast16_t port
+  uint_least16_t port
   );
 
 /**
@@ -7832,7 +7832,7 @@ union MHD_DaemonInfoFixedData
   /**
    * Port number
    */
-  uint_fast16_t v_port;
+  uint_least16_t v_port;
 
   /**
    * Unused member.

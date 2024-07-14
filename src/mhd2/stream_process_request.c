@@ -35,6 +35,8 @@
 #include "sys_bool_type.h"
 #include "sys_base_types.h"
 
+#include "sys_malloc.h"
+
 #include "mhd_str_types.h"
 #include "mhd_str_macros.h"
 #include "mhd_str.h"

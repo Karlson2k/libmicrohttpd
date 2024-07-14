@@ -25,9 +25,10 @@
  */
 
 #include "mhd_sys_options.h"
-#include "mhd_connection.h"
-#include "mhd_public_api.h"
 #include "stream_funcs.h"
+#include "mhd_connection.h"
+#include <string.h>
+#include "mhd_public_api.h"
 #include "mhd_assert.h"
 #include "mhd_mempool.h"
 #include "mhd_str.h"

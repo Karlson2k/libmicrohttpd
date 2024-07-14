@@ -31,6 +31,7 @@
 #include "mhd_locks.h"
 
 #include <string.h>
+#include "sys_malloc.h"
 
 #include "mhd_public_api.h"
 
