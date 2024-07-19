@@ -31,16 +31,19 @@
 
 #include "mhd_request.h"
 
-#include "mhd_public_api.h"
+#include "mhd_connection.h"
 
 #include "mhd_dlinked_list.h"
 #include "mhd_assert.h"
+#include "mhd_str.h"
+
+#include "mhd_public_api.h"
 
 
 MHD_INTERNAL
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_CSTR_ (4) const struct MHD_StringNullable *
-mhd_request_get_value_n (struct MHD_Request *MHD_RESTRICT request,
+mhd_request_get_value_n (struct MHD_Request *restrict request,
                          enum MHD_ValueKind kind,
                          size_t key_len,
                          const char *restrict key)
@@ -71,4 +74,36 @@ MHD_request_get_value (struct MHD_Request *MHD_RESTRICT request,
   size_t len;
   len = strlen (key);
   return mhd_request_get_value_n (request, kind, len, key);
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_CSTR_ (3)
+MHD_FN_PAR_CSTR_ (5) bool
+mhd_stream_has_header_token (const struct MHD_Connection *restrict c,
+                             size_t header_len,
+                             const char *restrict header,
+                             size_t token_len,
+                             const char *restrict token)
+{
+  struct mhd_RequestField *f;
+
+  mhd_assert (MHD_CONNECTION_START_REPLY >= c->state);
+
+  for (f = mhd_DLINKEDL_GET_FIRST (&(c->rq), fields);
+       NULL != f;
+       f = mhd_DLINKEDL_GET_NEXT (f, fields))
+  {
+    if ((MHD_VK_HEADER == f->field.kind) &&
+        (header_len == f->field.nv.name.len) &&
+        (mhd_str_equal_caseless_bin_n (header,
+                                       f->field.nv.name.cstr,
+                                       header_len)) &&
+        (mhd_str_has_token_caseless (f->field.nv.value.cstr,
+                                     token,
+                                     token_len)))
+      return true;
+  }
+
+  return false;
 }

@@ -306,6 +306,17 @@
         "</html>"
 
 /**
+ * Response text used when the request has more than one "Host:" header.
+ */
+#define ERR_RSP_REQUEST_HAS_SEVERAL_HOSTS \
+        "<html>" \
+        "<head>" \
+        "<title>Several &quot;Host:&quot; headers used</title></head>" \
+        "<body>" \
+        "Request with more than one <b>&quot;Host:&quot;</b> header.</body>" \
+        "</html>"
+
+/**
  * Response text used when the request has unsupported "Transfer-Encoding:".
  */
 #define ERR_RSP_UNSUPPORTED_TR_ENCODING \
@@ -342,6 +353,14 @@
         "<body>HTTP request has wrong value for " \
         "<b>Content-Length</b> header.</body></html>"
 
+/**
+ * Response text used when the request has more than one "Content-Length:"
+ * header.
+ */
+#define ERR_RSP_REQUEST_CONTENTLENGTH_SEVERAL \
+        "<html><head><title>Request malformed</title></head>" \
+        "<body>HTTP request has several " \
+        "<b>Content-Length</b> headers.</body></html>"
 
 /**
  * Response text used when the request HTTP chunked encoding is
@@ -1200,7 +1219,7 @@ process_request_target (struct MHD_Connection *c)
                               &request_add_get_arg,
                               c))
     {
-      MHD_LOG_MSG (c->daemon, MHD_SC_CONNECTION_POOL_NO_MEM_GET_PARAM,
+      mhd_LOG_MSG (c->daemon, MHD_SC_CONNECTION_POOL_NO_MEM_GET_PARAM,
                    "Not enough memory in the pool to store GET parameter");
 
       mhd_RESPOND_WITH_ERROR_STATIC (
@@ -1708,7 +1727,7 @@ get_req_header (struct MHD_Connection *restrict c,
              See RFC 9112, Section 2.2-8 */
           mhd_assert (allow_wsp_at_start);
 
-          MHD_LOG_MSG (c->daemon, MHD_SC_REQ_FIRST_HEADER_LINE_SPACE_PREFIXED,
+          mhd_LOG_MSG (c->daemon, MHD_SC_REQ_FIRST_HEADER_LINE_SPACE_PREFIXED,
                        "Whitespace-prefixed first header line " \
                        "has been skipped.");
           skip_line = true;
@@ -2012,11 +2031,11 @@ mhd_stream_get_request_headers (struct MHD_Connection *restrict c,
         mhd_assert (hdr_name.cstr < hdr_value.cstr);
 
         if (! process_footers)
-          MHD_LOG_MSG (c->daemon, MHD_SC_CONNECTION_POOL_MALLOC_FAILURE_REQ, \
+          mhd_LOG_MSG (c->daemon, MHD_SC_CONNECTION_POOL_MALLOC_FAILURE_REQ, \
                        "Failed to allocate memory in the connection memory " \
                        "pool to store header.");
         else
-          MHD_LOG_MSG (c->daemon, MHD_SC_CONNECTION_POOL_MALLOC_FAILURE_REQ, \
+          mhd_LOG_MSG (c->daemon, MHD_SC_CONNECTION_POOL_MALLOC_FAILURE_REQ, \
                        "Failed to allocate memory in the connection memory " \
                        "pool to store footer.");
 
@@ -2062,25 +2081,25 @@ mhd_stream_get_request_headers (struct MHD_Connection *restrict c,
   if (1 == c->rq.num_cr_sp_replaced)
   {
     if (! process_footers)
-      MHD_LOG_MSG (c->daemon, MHD_SC_REQ_HEADER_CR_REPLACED, \
+      mhd_LOG_MSG (c->daemon, MHD_SC_REQ_HEADER_CR_REPLACED, \
                    "One bare CR character has been replaced with space " \
                    "in the request line or in the request headers.");
     else
-      MHD_LOG_MSG (c->daemon, MHD_SC_REQ_FOOTER_CR_REPLACED, \
+      mhd_LOG_MSG (c->daemon, MHD_SC_REQ_FOOTER_CR_REPLACED, \
                    "One bare CR character has been replaced with space " \
                    "in the request footers.");
   }
   else if (0 != c->rq.num_cr_sp_replaced)
   {
     if (! process_footers)
-      MHD_LOG_PRINT (c->daemon, MHD_SC_REQ_HEADER_CR_REPLACED, \
-                     MHD_LOG_FMT ("%" PRIuFAST64 " bare CR characters have " \
+      mhd_LOG_PRINT (c->daemon, MHD_SC_REQ_HEADER_CR_REPLACED, \
+                     mhd_LOG_FMT ("%" PRIuFAST64 " bare CR characters have " \
                                   "been replaced with spaces in the request " \
                                   "line and/or in the request headers."), \
                      (uint_fast64_t) c->rq.num_cr_sp_replaced);
     else
-      MHD_LOG_PRINT (c->daemon, MHD_SC_REQ_HEADER_CR_REPLACED, \
-                     MHD_LOG_FMT ("%" PRIuFAST64 " bare CR characters have " \
+      mhd_LOG_PRINT (c->daemon, MHD_SC_REQ_HEADER_CR_REPLACED, \
+                     mhd_LOG_FMT ("%" PRIuFAST64 " bare CR characters have " \
                                   "been replaced with spaces in the request " \
                                   "footers."), \
                      (uint_fast64_t) c->rq.num_cr_sp_replaced);
@@ -2090,22 +2109,22 @@ mhd_stream_get_request_headers (struct MHD_Connection *restrict c,
   if (1 == c->rq.skipped_broken_lines)
   {
     if (! process_footers)
-      MHD_LOG_MSG (c->daemon, MHD_SC_REQ_HEADER_LINE_NO_COLON, \
+      mhd_LOG_MSG (c->daemon, MHD_SC_REQ_HEADER_LINE_NO_COLON, \
                    "One header line without colon has been skipped.");
     else
-      MHD_LOG_MSG (c->daemon, MHD_SC_REQ_FOOTER_LINE_NO_COLON, \
+      mhd_LOG_MSG (c->daemon, MHD_SC_REQ_FOOTER_LINE_NO_COLON, \
                    "One footer line without colon has been skipped.");
   }
   else if (0 != c->rq.skipped_broken_lines)
   {
     if (! process_footers)
-      MHD_LOG_PRINT (c->daemon, MHD_SC_REQ_HEADER_CR_REPLACED, \
-                     MHD_LOG_FMT ("%" PRIu64 " header lines without colons "
+      mhd_LOG_PRINT (c->daemon, MHD_SC_REQ_HEADER_CR_REPLACED, \
+                     mhd_LOG_FMT ("%" PRIu64 " header lines without colons "
                                   "have been skipped."),
                      (uint_fast64_t) c->rq.skipped_broken_lines);
     else
-      MHD_LOG_PRINT (c->daemon, MHD_SC_REQ_HEADER_CR_REPLACED, \
-                     MHD_LOG_FMT ("%" PRIu64 " footer lines without colons "
+      mhd_LOG_PRINT (c->daemon, MHD_SC_REQ_HEADER_CR_REPLACED, \
+                     mhd_LOG_FMT ("%" PRIu64 " footer lines without colons "
                                   "have been skipped."),
                      (uint_fast64_t) c->rq.skipped_broken_lines);
   }
@@ -2390,12 +2409,13 @@ parse_cookies_string (const size_t str_len,
  * Parse the cookie header (see RFC 6265).
  *
  * @param connection connection to parse header of
+ * @param cookie_val the value of the "Cookie:" header
  * @return #MHD_PARSE_COOKIE_OK for success, error code otherwise
  */
 static enum _MHD_ParseCookie
-parse_cookie_header (struct MHD_Connection *restrict connection)
+parse_cookie_header (struct MHD_Connection *restrict connection,
+                     struct MHD_StringNullable *restrict cookie_val)
 {
-  const struct MHD_StringNullable *hvalue;
   char *cpy;
   size_t i;
   enum _MHD_ParseCookie parse_res;
@@ -2404,31 +2424,28 @@ parse_cookie_header (struct MHD_Connection *restrict connection)
   const bool allow_partially_correct_cookie =
     (1 >= connection->daemon->req_cfg.strictnees);
 
-  hvalue = mhd_request_get_value_st (&(connection->rq),
-                                     MHD_VK_HEADER,
-                                     MHD_HTTP_HEADER_COOKIE);
-  if (NULL == hvalue)
+  if (NULL == cookie_val)
     return MHD_PARSE_COOKIE_OK;
-  if (0 == hvalue->len)
+  if (0 == cookie_val->len)
     return MHD_PARSE_COOKIE_OK;
 
   cpy = mhd_stream_alloc_memory (connection,
-                                 hvalue->len + 1);
+                                 cookie_val->len + 1);
   if (NULL == cpy)
     parse_res = MHD_PARSE_COOKIE_NO_MEMORY;
   else
   {
     memcpy (cpy,
-            hvalue->cstr,
-            hvalue->len + 1);
-    mhd_assert (0 == cpy[hvalue->len]);
+            cookie_val->cstr,
+            cookie_val->len + 1);
+    mhd_assert (0 == cpy[cookie_val->len]);
 
     /* Must not have initial whitespaces */
     mhd_assert (' ' != cpy[0]);
     mhd_assert ('\t' != cpy[0]);
 
     i = 0;
-    parse_res = parse_cookies_string (hvalue->len - i, cpy + i, connection);
+    parse_res = parse_cookies_string (cookie_val->len - i, cpy + i, connection);
   }
 
   switch (parse_res)
@@ -2437,7 +2454,7 @@ parse_cookie_header (struct MHD_Connection *restrict connection)
     break;
   case MHD_PARSE_COOKIE_OK_LAX:
     if (saved_tail != connection->rq.fields.last)
-      MHD_LOG_MSG (connection->daemon, MHD_SC_REQ_COOKIE_PARSED_NOT_COMPLIANT, \
+      mhd_LOG_MSG (connection->daemon, MHD_SC_REQ_COOKIE_PARSED_NOT_COMPLIANT, \
                    "The Cookie header has been parsed, but it is not "
                    "fully compliant with specifications.");
     break;
@@ -2450,21 +2467,21 @@ parse_cookie_header (struct MHD_Connection *restrict connection)
         /* Memory remains allocated until the end of the request processing */
         connection->rq.fields.last = saved_tail;  // FIXME: a better way?
         saved_tail->fields.next = NULL;  // FIXME: a better way?
-        MHD_LOG_MSG ( \
+        mhd_LOG_MSG ( \
           connection->daemon, MHD_SC_REQ_COOKIE_IGNORED_NOT_COMPLIANT, \
           "The Cookie header is ignored as it contains malformed data.");
       }
       else
-        MHD_LOG_MSG (connection->daemon, MHD_SC_REQ_COOKIE_PARSED_PARTIALLY, \
+        mhd_LOG_MSG (connection->daemon, MHD_SC_REQ_COOKIE_PARSED_PARTIALLY, \
                      "The Cookie header has been only partially parsed " \
                      "as it contains malformed data.");
     }
     else
-      MHD_LOG_MSG (connection->daemon, MHD_SC_REQ_COOKIE_INVALID,
+      mhd_LOG_MSG (connection->daemon, MHD_SC_REQ_COOKIE_INVALID,
                    "The Cookie header has malformed data.");
     break;
   case MHD_PARSE_COOKIE_NO_MEMORY:
-    MHD_LOG_MSG (connection->daemon, MHD_SC_CONNECTION_POOL_NO_MEM_COOKIE,
+    mhd_LOG_MSG (connection->daemon, MHD_SC_CONNECTION_POOL_NO_MEM_COOKIE,
                  "Not enough memory in the connection pool to "
                  "parse client cookies!\n");
     break;
@@ -2509,116 +2526,234 @@ handle_req_cookie_no_space (struct MHD_Connection *restrict c)
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
 mhd_stream_parse_connection_headers (struct MHD_Connection *restrict c)
 {
-  const struct MHD_StringNullable *hcntnlen;
-  const struct MHD_StringNullable *htrenc;
-
-#ifdef COOKIE_SUPPORT
-  if (MHD_PARSE_COOKIE_NO_MEMORY == parse_cookie_header (c))
-  {
-    handle_req_cookie_no_space (c);
-    return;
-  }
-#endif /* COOKIE_SUPPORT */
-
-  if ( (-3 < c->daemon->req_cfg.strictnees) &&
-       (MHD_HTTP_VERSION_1_1 == c->rq.http_ver) &&
-       (NULL == mhd_request_get_value_st (&(c->rq),
-                                          MHD_VK_HEADER,
-                                          MHD_HTTP_HEADER_HOST)))
-  {
-    MHD_LOG_MSG (c->daemon, MHD_SC_HOST_HEADER_MISSING, \
-                 "Received HTTP/1.1 request without 'Host' header.");
-    mhd_RESPOND_WITH_ERROR_STATIC (c,
-                                   MHD_HTTP_STATUS_BAD_REQUEST,
-                                   ERR_RSP_REQUEST_LACKS_HOST);
-    return;
-  }
+  bool has_host;
+  bool has_trenc;
+  bool has_cntnlen;
+  bool has_keepalive;
+  struct mhd_RequestField *f;
 
   /* The presence of the request body is indicated by "Content-Length:" or
      "Transfer-Encoding:" request headers.
      Unless one of these two headers is used, the request has no request body.
      See RFC9112, Section 6, paragraph 4. */
+  c->rq.have_chunked_upload = false;
   c->rq.cntn.cntn_size = 0;
-  htrenc = mhd_request_get_value_st (&(c->rq),
-                                     MHD_VK_HEADER,
-                                     MHD_HTTP_HEADER_TRANSFER_ENCODING);
 
-  if (NULL != htrenc)
+  has_host = false;
+  has_trenc = false;
+  has_cntnlen = false;
+  has_keepalive = true;
+
+  for (f = mhd_DLINKEDL_GET_FIRST (&(c->rq), fields);
+       NULL != f;
+       f = mhd_DLINKEDL_GET_NEXT (f, fields))
   {
-    if (! mhd_str_equal_caseless_n_st ("chunked", htrenc->cstr, htrenc->len))
+    if (MHD_VK_HEADER != f->field.kind)
+      continue;
+
+    /* "Host:" */
+    if (mhd_str_equal_caseless_n_st (MHD_HTTP_HEADER_HOST,
+                                     f->field.nv.name.cstr,
+                                     f->field.nv.name.len))
     {
-      mhd_RESPOND_WITH_ERROR_STATIC (c,
-                                     MHD_HTTP_STATUS_BAD_REQUEST,
-                                     ERR_RSP_UNSUPPORTED_TR_ENCODING);
-      return;
+      if ((has_host)
+          && (-3 < c->daemon->req_cfg.strictnees))
+      {
+        mhd_LOG_MSG (c->daemon, MHD_SC_HOST_HEADER_SEVERAL, \
+                     "Received request with more than one 'Host' header.");
+        mhd_RESPOND_WITH_ERROR_STATIC (c,
+                                       MHD_HTTP_STATUS_BAD_REQUEST,
+                                       ERR_RSP_REQUEST_HAS_SEVERAL_HOSTS);
+        return;
+      }
+      has_host = true;
+      continue;
     }
 
-    c->rq.have_chunked_upload = true;
+#ifdef COOKIE_SUPPORT
+    /* "Cookie:" */
+    if (mhd_str_equal_caseless_n_st (MHD_HTTP_HEADER_COOKIE,
+                                     f->field.nv.name.cstr,
+                                     f->field.nv.name.len))
+    {
+      if (MHD_PARSE_COOKIE_NO_MEMORY ==
+          parse_cookie_header (c,
+                               &(f->field.nv.value)))
+      {
+        handle_req_cookie_no_space (c);
+        return;
+      }
+      continue;
+    }
+#endif /* COOKIE_SUPPORT */
+
+    /* "Content-Length:" */
+    if (mhd_str_equal_caseless_n_st (MHD_HTTP_HEADER_CONTENT_LENGTH,
+                                     f->field.nv.name.cstr,
+                                     f->field.nv.name.len))
+    {
+      size_t num_digits;
+      uint_fast64_t cntn_size;
+
+      num_digits = mhd_str_to_uint64_n (f->field.nv.name.cstr,
+                                        f->field.nv.name.len,
+                                        &cntn_size);
+      if (((0 == num_digits) &&
+           (0 != f->field.nv.name.len) &&
+           ('9' >= f->field.nv.name.cstr[0])
+           && ('0' <= f->field.nv.name.cstr[0]))
+          || (MHD_SIZE_UNKNOWN == c->rq.cntn.cntn_size))
+      {
+        mhd_LOG_MSG (c->daemon, MHD_SC_CONTENT_LENGTH_TOO_LARGE, \
+                     "Too large value of 'Content-Length' header. " \
+                     "Closing connection.");
+        mhd_RESPOND_WITH_ERROR_STATIC (c, \
+                                       MHD_HTTP_STATUS_CONTENT_TOO_LARGE, \
+                                       ERR_RSP_REQUEST_CONTENTLENGTH_TOOLARGE);
+        return;
+      }
+      else if ((f->field.nv.name.len != num_digits) ||
+               (0 == num_digits))
+      {
+        mhd_LOG_MSG (c->daemon, MHD_SC_CONTENT_LENGTH_MALFORMED, \
+                     "Failed to parse 'Content-Length' header. " \
+                     "Closing connection.");
+        mhd_RESPOND_WITH_ERROR_STATIC (c, \
+                                       MHD_HTTP_STATUS_BAD_REQUEST, \
+                                       ERR_RSP_REQUEST_CONTENTLENGTH_MALFORMED);
+        return;
+      }
+
+      if (has_cntnlen)
+      {
+        bool send_err;
+        send_err = false;
+        if (c->rq.cntn.cntn_size == cntn_size)
+        {
+          if (0 < c->daemon->req_cfg.strictnees)
+          {
+            mhd_LOG_MSG (c->daemon, MHD_SC_CONTENT_LENGTH_SEVERAL_SAME, \
+                         "Received request with more than one " \
+                         "'Content-Length' header with the same value.");
+            send_err = true;
+          }
+        }
+        else
+        {
+          mhd_LOG_MSG (c->daemon, MHD_SC_CONTENT_LENGTH_SEVERAL_DIFFERENT, \
+                       "Received request with more than one " \
+                       "'Content-Length' header with conflicting values.");
+          send_err = true;
+        }
+
+        if (send_err)
+        {
+          mhd_RESPOND_WITH_ERROR_STATIC ( \
+            c, \
+            MHD_HTTP_STATUS_BAD_REQUEST, \
+            ERR_RSP_REQUEST_CONTENTLENGTH_SEVERAL);
+          return;
+        }
+      }
+      mhd_assert ((0 == c->rq.cntn.cntn_size) || \
+                  (c->rq.cntn.cntn_size == cntn_size));
+      c->rq.cntn.cntn_size = cntn_size;
+      has_cntnlen = true;
+      continue;
+    }
+
+    /* "Connection:" */
+    if (mhd_str_equal_caseless_n_st (MHD_HTTP_HEADER_CONNECTION,
+                                     f->field.nv.name.cstr,
+                                     f->field.nv.name.len))
+    {
+      if (mhd_str_has_token_caseless (f->field.nv.name.cstr,
+                                      "close",
+                                      mhd_SSTR_LEN ("close")))
+      {
+        mhd_assert (mhd_CONN_MUST_UPGRADE != c->conn_reuse);
+        c->conn_reuse = mhd_CONN_MUST_CLOSE;
+      }
+      else if ((MHD_HTTP_VERSION_1_0 == c->rq.http_ver)
+               && (mhd_CONN_MUST_CLOSE != c->conn_reuse))
+      {
+        if (mhd_str_has_token_caseless (f->field.nv.name.cstr,
+                                        "keep-alive",
+                                        mhd_SSTR_LEN ("keep-alive")))
+          has_keepalive = true;
+      }
+
+      continue;
+    }
+
+    /* "Transfer-Encoding:" */
+    if (mhd_str_equal_caseless_n_st (MHD_HTTP_HEADER_TRANSFER_ENCODING,
+                                     f->field.nv.name.cstr,
+                                     f->field.nv.name.len))
+    {
+      if (mhd_str_equal_caseless_n_st ("chunked",
+                                       f->field.nv.value.cstr,
+                                       f->field.nv.value.len))
+      {
+        c->rq.have_chunked_upload = true;
+        c->rq.cntn.cntn_size = MHD_SIZE_UNKNOWN;
+      }
+      else
+      {
+        mhd_LOG_MSG (c->daemon, MHD_SC_CHUNKED_ENCODING_UNSUPPORTED, \
+                     "The 'Transfer-Encoding' used in request is " \
+                     "unsupported or invalid.");
+        mhd_RESPOND_WITH_ERROR_STATIC (c,
+                                       MHD_HTTP_STATUS_BAD_REQUEST,
+                                       ERR_RSP_UNSUPPORTED_TR_ENCODING);
+        return;
+      }
+      has_trenc = true;
+      continue;
+    }
+  }
+
+  if (has_trenc && has_cntnlen)
+  {
+    if (0 < c->daemon->req_cfg.strictnees)
+    {
+      mhd_RESPOND_WITH_ERROR_STATIC ( \
+        c, \
+        MHD_HTTP_STATUS_BAD_REQUEST, \
+        ERR_RSP_REQUEST_CNTNLENGTH_WITH_TR_ENCODING);
+      return;
+    }
+    /* Must close connection after reply to prevent potential attack */
+    c->conn_reuse = mhd_CONN_MUST_CLOSE;
     c->rq.cntn.cntn_size = MHD_SIZE_UNKNOWN;
-
-    if (MHD_HTTP_VERSION_1_1 != c->rq.http_ver)
-      c->keepalive = MHD_CONN_MUST_CLOSE; /* Framing could in incorrect */
+    mhd_assert (c->rq.have_chunked_upload);
+    mhd_LOG_MSG (c->daemon, MHD_SC_CONTENT_LENGTH_AND_TR_ENC, \
+                 "The 'Content-Length' request header is ignored " \
+                 "as chunked 'Transfer-Encoding' is used " \
+                 "for this request.");
   }
 
-  hcntnlen = mhd_request_get_value_st (&(c->rq),
-                                       MHD_VK_HEADER,
-                                       MHD_HTTP_HEADER_CONTENT_LENGTH);
-
-  if ((NULL != hcntnlen) && (NULL != htrenc))
+  if (MHD_HTTP_VERSION_1_1 <= c->rq.http_ver)
   {
-    /* TODO: add individual settings */
-    if (1 <= c->daemon->req_cfg.strictnees)
+    if ((! has_host) &&
+        (-3 < c->daemon->req_cfg.strictnees))
     {
+      mhd_LOG_MSG (c->daemon, MHD_SC_HOST_HEADER_MISSING, \
+                   "Received HTTP/1.1 request without 'Host' header.");
       mhd_RESPOND_WITH_ERROR_STATIC (c,
                                      MHD_HTTP_STATUS_BAD_REQUEST,
-                                     ERR_RSP_REQUEST_CNTNLENGTH_WITH_TR_ENCODING);
+                                     ERR_RSP_REQUEST_LACKS_HOST);
       return;
     }
-    else
-    {
-      /* Must close connection after reply to prevent potential attack */
-      c->keepalive = MHD_CONN_MUST_CLOSE;
-      MHD_LOG_MSG (c->daemon, MHD_SC_CONTENT_LENGTH_AND_TR_ENC, \
-                   "The 'Content-Length' request header is ignored " \
-                   "as chunked Transfer-Encoding is used " \
-                   "for this request.");
-    }
   }
-  else if (NULL != hcntnlen)
+  else
   {
-    size_t num_digits;
-
-    num_digits = mhd_str_to_uint64_n (hcntnlen->cstr,
-                                      hcntnlen->len,
-                                      &c->rq.cntn.cntn_size);
-
-    if (((0 == num_digits) &&
-         (0 != hcntnlen->len) &&
-         ('0' <= hcntnlen->cstr[0]) && ('9' >= hcntnlen->cstr[0]))
-        || (MHD_SIZE_UNKNOWN == c->rq.cntn.cntn_size))
-    {
-      c->rq.cntn.cntn_size = 0;
-      MHD_LOG_MSG (c->daemon, MHD_SC_CONTENT_LENGTH_TOO_LARGE, \
-                   "Too large value of 'Content-Length' header. " \
-                   "Closing connection.");
-      mhd_RESPOND_WITH_ERROR_STATIC (c,
-                                     MHD_HTTP_STATUS_CONTENT_TOO_LARGE,
-                                     ERR_RSP_REQUEST_CONTENTLENGTH_TOOLARGE);
-      return;
-    }
-    else if ((hcntnlen->len != num_digits) ||
-             (0 == num_digits))
-    {
-      c->rq.cntn.cntn_size = 0;
-      MHD_LOG_MSG (c->daemon, MHD_SC_CONTENT_LENGTH_MALFORMED, \
-                   "Failed to parse 'Content-Length' header. " \
-                   "Closing connection.");
-      mhd_RESPOND_WITH_ERROR_STATIC (c,
-                                     MHD_HTTP_STATUS_BAD_REQUEST,
-                                     ERR_RSP_REQUEST_CONTENTLENGTH_MALFORMED);
-      return;
-    }
+    if (! has_keepalive)
+      c->conn_reuse = mhd_CONN_MUST_CLOSE; /* Do not re-use HTTP/1.0 connection by default */
+    if (has_trenc)
+      c->conn_reuse = mhd_CONN_MUST_CLOSE; /* Framing could be incorrect */
   }
+
   c->state = MHD_CONNECTION_HEADERS_PROCESSED;
   return;
 }
@@ -2741,7 +2876,7 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
   if (((NULL != a) && (&(c->rq.app_act.head_act) != a)) ||
       ! mhd_ACTION_IS_VALID (c->rq.app_act.head_act.act))
   {
-    MHD_LOG_MSG (d, MHD_SC_ACTION_INVALID, \
+    mhd_LOG_MSG (d, MHD_SC_ACTION_INVALID, \
                  "Provided action is not a correct action generated " \
                  "for the current request.");
     a = NULL;
@@ -2807,7 +2942,7 @@ process_upload_action (struct MHD_Connection *restrict c,
       (final &&
        (mhd_UPLOAD_ACTION_CONTINUE == c->rq.app_act.upl_act.act)))
   {
-    MHD_LOG_MSG (c->daemon, MHD_SC_UPLOAD_ACTION_INVALID, \
+    mhd_LOG_MSG (c->daemon, MHD_SC_UPLOAD_ACTION_INVALID, \
                  "Provided action is not a correct action generated " \
                  "for the current request.");
     act = NULL;

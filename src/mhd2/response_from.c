@@ -57,6 +57,9 @@ response_create_basic (enum MHD_HTTP_StatusCode sc,
   struct MHD_Response *restrict r;
   struct ResponseOptions *restrict s;
 
+  if ((100 > sc) || (999 < sc))
+    return NULL;
+
   r = mhd_calloc (1, sizeof(struct MHD_Response));
   if (NULL != r)
   {
@@ -321,6 +324,9 @@ MHD_response_from_fd (enum MHD_HTTP_StatusCode sc,
     res->cntn_dtype = mhd_RESPONSE_CONTENT_DATA_FILE;
     res->cntn.file.fd = fd;
     res->cntn.file.offset = offset;
+#ifdef MHD_USE_SENDFILE
+    res->cntn.file.use_sf = true;
+#endif
     res->cntn.file.is_pipe = false; /* Not necessary */
   }
   return res;
@@ -339,6 +345,9 @@ MHD_response_from_pipe (enum MHD_HTTP_StatusCode sc,
     res->cntn_dtype = mhd_RESPONSE_CONTENT_DATA_FILE;
     res->cntn.file.fd = fd;
     res->cntn.file.offset = 0; /* Not necessary */
+#ifdef MHD_USE_SENDFILE
+    res->cntn.file.use_sf = false; /* Not necessary */
+#endif
     res->cntn.file.is_pipe = true;
   }
   return res;

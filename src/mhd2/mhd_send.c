@@ -223,7 +223,7 @@ mhd_connection_set_nodelay_state (struct MHD_Connection *connection,
   }
   else
   {
-    MHD_LOG_MSG (connection->daemon, MHD_SC_SOCKET_TCP_NODELAY_FAILED, \
+    mhd_LOG_MSG (connection->daemon, MHD_SC_SOCKET_TCP_NODELAY_FAILED, \
                  "Failed to set required TCP_NODELAY option for the socket.");
   }
 #else  /* ! TCP_NODELAY */
@@ -267,10 +267,10 @@ mhd_connection_set_cork_state (struct MHD_Connection *connection,
   else
   {
 #  ifdef TCP_CORK
-    MHD_LOG_MSG (connection->daemon, MHD_SC_SOCKET_TCP_CORK_NOPUSH_FAILED, \
+    mhd_LOG_MSG (connection->daemon, MHD_SC_SOCKET_TCP_CORK_NOPUSH_FAILED, \
                  "Failed to set required TCP_CORK option for the socket.");
 #  else
-    MHD_LOG_MSG (connection->daemon, MHD_SC_SOCKET_TCP_CORK_NOPUSH_FAILED, \
+    mhd_LOG_MSG (connection->daemon, MHD_SC_SOCKET_TCP_CORK_NOPUSH_FAILED, \
                  "Failed to set required TCP_NOPUSH option for the socket.");
 #  endif
   }
@@ -556,7 +556,7 @@ zero_send (struct MHD_Connection *connection)
   mhd_assert (mhd_T_IS_YES (connection->sk_nodelay));
   if (0 == mhd_sys_send (connection->socket_fd, &dummy, 0))
     return true;
-  MHD_LOG_MSG (connection->daemon, MHD_SC_SOCKET_ZERO_SEND_FAILED, \
+  mhd_LOG_MSG (connection->daemon, MHD_SC_SOCKET_ZERO_SEND_FAILED, \
                "Failed to push the data by zero-sized send.");
   return false;
 }
@@ -740,7 +740,7 @@ post_send_setopt (struct MHD_Connection *connection,
 
   /* Failed to push the data. */
 #endif /* ! mhd_TCP_CORK_NOPUSH */
-  MHD_LOG_MSG (connection->daemon, MHD_SC_SOCKET_FLUSH_LAST_PART_FAILED, \
+  mhd_LOG_MSG (connection->daemon, MHD_SC_SOCKET_FLUSH_LAST_PART_FAILED, \
                "Failed to force flush the last part of the response header " \
                "or the response content that might have been buffered by " \
                "the kernel. The client may experience some delay (usually " \

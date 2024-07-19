@@ -1422,13 +1422,13 @@ mhd_uint32_to_strx (uint_fast32_t val,
 
 #ifndef MHD_FAVOR_SMALL_CODE
 MHD_INTERNAL size_t
-mhd_uint16_to_str (uint_least16_t val,
+mhd_uint16_to_str (uint_fast16_t val,
                    char *buf,
                    size_t buf_size)
 {
   char *chr;  /**< pointer to the current printed digit */
   /* The biggest printable number is 65535 */
-  uint_least16_t divisor = UINT16_C (10000);
+  uint_fast16_t divisor = UINT16_C (10000);
   int digit;
 
   chr = buf;
@@ -1450,7 +1450,7 @@ mhd_uint16_to_str (uint_least16_t val,
     buf_size--;
     if (1 == divisor)
       return (size_t) (chr - buf);
-    val = (uint_least16_t) (val % divisor);
+    val = (uint_fast16_t) (val % divisor);
     divisor /= 10;
     digit = (int) (val / divisor);
     mhd_assert (digit < 10);

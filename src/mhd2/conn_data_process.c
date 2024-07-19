@@ -93,7 +93,7 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
 
     if (use_send)
     {
-      mhd_conn_data_send (c, has_sock_err);
+      mhd_conn_data_send (c);
       if (! mhd_conn_process_data (c))
         return false;
       data_processed = true;
@@ -149,7 +149,7 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
     /* If all headers were sent by single write_handler() and
      * response body is prepared by single MHD_connection_handle_idle()
      * call - continue. */
-    if ((MHD_CONNECTION_NORMAL_BODY_READY == c->state) ||
+    if ((MHD_CONNECTION_UNCHUNKED_BODY_READY == c->state) ||
         (MHD_CONNECTION_CHUNKED_BODY_READY == c->state))
     {
       MHD_connection_handle_write (c);

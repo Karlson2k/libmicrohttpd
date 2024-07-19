@@ -200,7 +200,7 @@ struct mhd_ResponseReuseData
   /**
    * Indicate that response could be used more than one time
    */
-  bool reusable;
+  volatile bool reusable;
 
   /**
    * The number of active uses of the response.
@@ -236,10 +236,12 @@ struct mhd_ResponseConfiguration
   /**
    * If 'true', "Connection: close" header must be always used
    */
-  bool conn_close;
+  bool close_forced;
 
   /**
    * Use "HTTP/1.0" in the reply header
+   * @a chunked is 'false' if this flag set.
+   * @a close_forced is 'true' is this flag set.
    */
   bool mode_1_0;
 
@@ -247,6 +249,16 @@ struct mhd_ResponseConfiguration
    * The (possible incorrect) content length is provided by application
    */
   bool cnt_len_by_app;
+
+  /**
+   * Response has "Date:" header
+   */
+  bool has_hdr_date; // TODO: set the member
+
+  /**
+   * Response has "Connection:" header
+   */
+  bool has_hdr_conn; // TODO: set the member
 };
 
 #ifndef NDEBUG

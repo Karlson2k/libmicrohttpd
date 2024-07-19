@@ -34,13 +34,16 @@
 #include "sys_bool_type.h"
 #include "sys_base_types.h"
 #include "mhd_str_macros.h"
-#include "mhd_socket_error.h"
 
 #include "mhd_assert.h"
 
 #include "mhd_connection.h"
+#include "mhd_response.h"
+
+#include "mhd_socket_error.h"
 
 #include "mhd_send.h"
+#include "stream_funcs.h"
 
 
 /**
@@ -69,8 +72,7 @@ check_write_done (struct MHD_Connection *restrict connection,
 
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
-mhd_conn_data_send (struct MHD_Connection *restrict c,
-                    bool has_err)
+mhd_conn_data_send (struct MHD_Connection *restrict c)
 {
   static const char http_100_continue_msg[] =
     mdh_HTTP_1_1_100_CONTINUE_REPLY;
@@ -90,10 +92,10 @@ mhd_conn_data_send (struct MHD_Connection *restrict c,
   if (MHD_CONNECTION_CONTINUE_SENDING == c->state)
   {
     res = mhd_send_data (c,
-                         http_100_continue_msg
-                         [c->continue_message_write_offset],
                          http_100_continue_msg_len
                          - c->continue_message_write_offset,
+                         http_100_continue_msg
+                         + c->continue_message_write_offset,
                          true,
                          &sent);
     if (mhd_SOCKET_ERR_NO_ERROR != res)
@@ -107,26 +109,26 @@ mhd_conn_data_send (struct MHD_Connection *restrict c,
     mhd_assert (c->write_buffer_append_offset >= \
                 c->write_buffer_send_offset);
     mhd_assert (NULL != resp);
-    mhd_assert ((MHD_CONN_MUST_UPGRADE != c->keepalive) || \
+    mhd_assert ((mhd_CONN_MUST_UPGRADE != c->conn_reuse) || \
                 (! c->rp.props.send_reply_body));
 
     // TODO: support body generating alongside with header sending
 
     if ((c->rp.props.send_reply_body) &&
-        (mhd_REPLY_CNTN_LOC_RESP_BUF == c->rp.cntn_loc) &&
-        (! c->rp.props.chunked) )
+        (mhd_REPLY_CNTN_LOC_RESP_BUF == c->rp.cntn_loc))
     {
       /* Send response headers alongside the response body, if the body
        * data is available. */
       mhd_assert (mhd_RESPONSE_CONTENT_DATA_BUFFER == resp->cntn_dtype);
+      mhd_assert (! c->rp.props.chunked);
 
       res = mhd_send_hdr_and_body (c,
+                                   wb_ready,
                                    c->write_buffer
                                    + c->write_buffer_send_offset,
-                                   wb_ready,
                                    false,
-                                   (const char *) resp->cntn.buf,
                                    resp->cntn_size,
+                                   (const char *) resp->cntn.buf,
                                    true,
                                    &sent);
     }
@@ -136,12 +138,12 @@ mhd_conn_data_send (struct MHD_Connection *restrict c,
        * for any other reason or reply body is dynamically generated. */
       /* Do not send the body data even if it's available. */
       res = mhd_send_hdr_and_body (c,
+                                   wb_ready,
                                    c->write_buffer
                                    + c->write_buffer_send_offset,
-                                   wb_ready,
                                    false,
-                                   NULL,
                                    0,
+                                   NULL,
                                    ((0 == resp->cntn_size) ||
                                     (! c->rp.props.send_reply_body)),
                                    &sent);
@@ -170,7 +172,7 @@ mhd_conn_data_send (struct MHD_Connection *restrict c,
     }
 
   }
-  else if ((MHD_CONNECTION_NORMAL_BODY_READY == c->state) ||
+  else if ((MHD_CONNECTION_UNCHUNKED_BODY_READY == c->state) ||
            (MHD_CONNECTION_CHUNKED_BODY_READY == c->state))
   {
     struct MHD_Response *const restrict resp = c->rp.response;
@@ -183,9 +185,9 @@ mhd_conn_data_send (struct MHD_Connection *restrict c,
       mhd_assert (mhd_RESPONSE_CONTENT_DATA_BUFFER == resp->cntn_dtype);
 
       res = mhd_send_data (c,
+                           c->rp.rsp_cntn_read_pos - resp->cntn_size,
                            (const char *) resp->cntn.buf
                            + c->rp.rsp_cntn_read_pos,
-                           c->rp.rsp_cntn_read_pos - resp->cntn_size,
                            true,
                            &sent);
     }
@@ -195,9 +197,9 @@ mhd_conn_data_send (struct MHD_Connection *restrict c,
                   c->write_buffer_send_offset);
 
       res = mhd_send_data (c,
-                           c->write_buffer + c->write_buffer_send_offset,
                            c->write_buffer_append_offset
                            - c->write_buffer_send_offset,
+                           c->write_buffer + c->write_buffer_send_offset,
                            true,
                            &sent);
     }
@@ -245,10 +247,10 @@ mhd_conn_data_send (struct MHD_Connection *restrict c,
   else if (MHD_CONNECTION_FOOTERS_SENDING == c->state)
   {
     res = mhd_send_data (c,
-                         c->write_buffer
-                         + c->write_buffer_send_offset,
                          c->write_buffer_append_offset
                          - c->write_buffer_send_offset,
+                         c->write_buffer
+                         + c->write_buffer_send_offset,
                          true,
                          &sent);
     if (mhd_SOCKET_ERR_NO_ERROR != res)

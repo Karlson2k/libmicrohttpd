@@ -57,7 +57,7 @@ mhd_daemon_trigger_itc (struct MHD_Daemon *restrict d)
   mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
   if (! mhd_itc_activate (d->threading.itc))
   {
-    MHD_LOG_MSG (d, MHD_SC_ITC_USE_FAILED, \
+    mhd_LOG_MSG (d, MHD_SC_ITC_USE_FAILED, \
                  "Failed to communicate by ITC with the daemon thread.");
     return false;
   }

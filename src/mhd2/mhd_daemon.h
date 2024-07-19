@@ -833,6 +833,11 @@ struct mhd_DaemonRequestProcessingSettings
    * Shared large buffer data
    */
   struct mhd_DeamonLargeBuffer large_buf; // TODO: set from settings
+
+  /**
+   * Suppress "Date:" header in responses
+   */
+  bool suppress_date; // TODO: set from settings
 };
 
 
@@ -951,6 +956,14 @@ struct MHD_Daemon
 #  define mhd_D_HAS_THREADS(d) mhd_WM_INT_HAS_THREADS ((d)->wmode_int)
 #else
 #  define mhd_D_HAS_THREADS(d) (0)
+#endif
+
+#ifdef MHD_USE_THREADS
+#  define mhd_D_HAS_THR_PER_CONN(d) \
+        (mhd_WM_INT_INTERNAL_EVENTS_THREAD_PER_CONNECTION == \
+         ((d)->wmode_int))
+#else
+#  define mhd_D_HAS_THR_PER_CONN(d) (0)
 #endif
 
 #define mhd_D_HAS_WORKERS(d) mhd_D_TYPE_HAS_WORKERS ((d)->threading.d_type)

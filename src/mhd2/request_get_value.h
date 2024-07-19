@@ -29,9 +29,10 @@
 
 #include "mhd_sys_options.h"
 #include "sys_base_types.h"
-#include "mhd_public_api.h"
-
+#include "sys_bool_type.h"
 #include "mhd_str_macros.h"
+
+#include "mhd_public_api.h"
 
 /**
  * Get specified field value from request
@@ -74,3 +75,42 @@ MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_CSTR_ (4);
         mhd_request_get_value_n ((r),(k),mhd_SSTR_LEN (str),(str))
 
 #endif /* ! MHD_REQUEST_GET_VALUE_H */
+
+
+/**
+ * Check whether the request header contains particular token.
+ *
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * Case-insensitive match used for header names and tokens.
+ * @param c          the connection to check values
+ * @param header_len the length of header, not including optional
+ *                   terminating null-character
+ * @param header     the header name
+ * @param token_len  the length of token, not including optional
+ *                   terminating null-character.
+ * @param token      the token to find
+ * @return true if the token is found in the specified header,
+ *         false otherwise
+ */
+MHD_INTERNAL bool
+mhd_stream_has_header_token (const struct MHD_Connection *restrict c,
+                             size_t header_len,
+                             const char *restrict header,
+                             size_t token_len,
+                             const char *restrict token)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_CSTR_ (5);
+
+/**
+ * Check whether the request header contains particular token.
+ *
+ * Token could be surrounded by spaces and tabs and delimited by comma.
+ * Case-insensitive match used for header names and tokens.
+ * @param c          the connection to check values
+ * @param hdr        the statically allocated header name string
+ * @param token      the statically allocated string of token to find
+ * @return true if the token is found in the specified header,
+ *         false otherwise
+ */
+#define mhd_stream_has_header_token_st(c,hdr,tkn) \
+        mhd_stream_has_header_token ((c), mhd_SSTR_LEN (hdr), (hdr), \
+                                     mhd_SSTR_LEN (tkn), (tkn))

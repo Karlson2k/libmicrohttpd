@@ -46,6 +46,10 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_ResponseOption
    * Response still use HTTP/1.1 version in header, but always close the connection after sending the response and do not use chunked encoding for the response.
    * You can also set the #MHD_R_O_HTTP_1_0_SERVER flag to force HTTP/1.0 version in the response.
    * Responses are still compatible with HTTP/1.1.
+   * Summary:
+   * + declared reply version: HTTP/1.1
+   * + keep-alive: no
+   * + chunked: no
    *
    * This option can be used to communicate with some broken client, which does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
    */
@@ -59,6 +63,10 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_ResponseOption
    * Chunked encoding will not be used for the response.
    * Due to backward compatibility, responses still can be used with HTTP/1.1 clients.
    * This option can be used to emulate HTTP/1.0 server (for response part only as chunked encoding in requests (if any) is processed by MHD).
+   * Summary:
+   * + declared reply version: HTTP/1.0
+   * + keep-alive: possible
+   * + chunked: no
    *
    * With this option HTTP/1.0 server is emulated (with support for 'keep-alive' connections).
    */

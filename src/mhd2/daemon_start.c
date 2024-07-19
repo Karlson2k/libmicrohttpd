@@ -122,7 +122,7 @@ daemon_set_work_mode (struct MHD_Daemon *restrict d,
   case MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE:
     if (MHD_SPS_AUTO != s->poll_syscall)
     {
-      MHD_LOG_MSG ( \
+      mhd_LOG_MSG ( \
         d, MHD_SC_SYSCALL_WORK_MODE_COMBINATION_INVALID, \
         "The requested work mode is not compatible with setting " \
         "socket polling syscall.");
@@ -137,14 +137,14 @@ daemon_set_work_mode (struct MHD_Daemon *restrict d,
     if ((MHD_SPS_AUTO != s->poll_syscall) &&
         (MHD_SPS_EPOLL != s->poll_syscall))
     {
-      MHD_LOG_MSG ( \
+      mhd_LOG_MSG ( \
         d, MHD_SC_SYSCALL_WORK_MODE_COMBINATION_INVALID, \
         "The requested work mode MHD_WM_EXTERNAL_SINGLE_FD_WATCH " \
         "is not compatible with requested socket polling syscall.");
       return MHD_SC_SYSCALL_WORK_MODE_COMBINATION_INVALID;
     }
 #ifndef MHD_USE_EPOLL
-    MHD_LOG_MSG ( \
+    mhd_LOG_MSG ( \
       d, MHD_SC_FEATURE_DISABLED, \
       "The epoll is required for the requested work mode " \
       "MHD_WM_EXTERNAL_SINGLE_FD_WATCH, but not available on this " \
@@ -157,7 +157,7 @@ daemon_set_work_mode (struct MHD_Daemon *restrict d,
   case MHD_WM_THREAD_PER_CONNECTION:
     if (MHD_SPS_EPOLL == s->poll_syscall)
     {
-      MHD_LOG_MSG ( \
+      mhd_LOG_MSG ( \
         d, MHD_SC_SYSCALL_WORK_MODE_COMBINATION_INVALID, \
         "The requested work mode MHD_WM_THREAD_PER_CONNECTION " \
         "is not compatible with 'epoll' sockets polling.");
@@ -166,7 +166,7 @@ daemon_set_work_mode (struct MHD_Daemon *restrict d,
   /* Intentional fallthrough */
   case MHD_WM_WORKER_THREADS:
 #ifndef MHD_USE_THREADS
-    MHD_LOG_MSG (d, MHD_SC_FEATURE_DISABLED, \
+    mhd_LOG_MSG (d, MHD_SC_FEATURE_DISABLED, \
                  "The internal threads modes are not supported by this " \
                  "build of MHD.");
     return MHD_SC_FEATURE_DISABLED;
@@ -180,7 +180,7 @@ daemon_set_work_mode (struct MHD_Daemon *restrict d,
 #endif /* MHD_USE_THREADS */
     break;
   default:
-    MHD_LOG_MSG (d, MHD_SC_CONFIGURATION_UNEXPECTED_WM, \
+    mhd_LOG_MSG (d, MHD_SC_CONFIGURATION_UNEXPECTED_WM, \
                  "Wrong requested work mode.");
     return MHD_SC_CONFIGURATION_UNEXPECTED_WM;
   }
@@ -304,14 +304,14 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
     /* Check for options conflicts */
     if (0 != s->bind_sa.v_sa_len)
     {
-      MHD_LOG_MSG (d, MHD_SC_OPTIONS_CONFLICT, \
+      mhd_LOG_MSG (d, MHD_SC_OPTIONS_CONFLICT, \
                    "MHD_D_O_BIND_SA cannot be used together " \
                    "with MHD_D_O_LISTEN_SOCKET");
       return MHD_SC_OPTIONS_CONFLICT;
     }
     else if (MHD_AF_NONE != s->bind_port.v_af)
     {
-      MHD_LOG_MSG (d, MHD_SC_OPTIONS_CONFLICT, \
+      mhd_LOG_MSG (d, MHD_SC_OPTIONS_CONFLICT, \
                    "MHD_D_O_BIND_PORT cannot be used together " \
                    "with MHD_D_O_LISTEN_SOCKET");
       return MHD_SC_OPTIONS_CONFLICT;
@@ -333,7 +333,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
       /* Check for options conflicts */
       if (MHD_AF_NONE != s->bind_port.v_af)
       {
-        MHD_LOG_MSG (d, MHD_SC_OPTIONS_CONFLICT, \
+        mhd_LOG_MSG (d, MHD_SC_OPTIONS_CONFLICT, \
                      "MHD_D_O_BIND_SA cannot be used together " \
                      "with MHD_D_O_BIND_PORT");
         return MHD_SC_OPTIONS_CONFLICT;
@@ -346,7 +346,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
         sk_type = mhd_SKT_IP_V4_ONLY;
         if (sizeof(sa_all.sa_i4) > s->bind_sa.v_sa_len)
         {
-          MHD_LOG_MSG (d, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
+          mhd_LOG_MSG (d, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
                        "The size of the provided sockaddr does not match "
                        "used address family");
           return MHD_SC_CONFIGURATION_WRONG_SA_SIZE;
@@ -364,7 +364,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
         sk_type = mhd_SKT_IP_V6_ONLY;
         if (sizeof(sa_all.sa_i6) > s->bind_sa.v_sa_len)
         {
-          MHD_LOG_MSG (d, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
+          mhd_LOG_MSG (d, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
                        "The size of the provided sockaddr does not match "
                        "used address family");
           return MHD_SC_CONFIGURATION_WRONG_SA_SIZE;
@@ -393,7 +393,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
       {
         if (mhd_SKT_IP_V6_ONLY != sk_type)
         {
-          MHD_LOG_MSG (d, MHD_SC_LISTEN_DUAL_STACK_NOT_SUITABLE, \
+          mhd_LOG_MSG (d, MHD_SC_LISTEN_DUAL_STACK_NOT_SUITABLE, \
                        "IP dual stack is not possible for provided sockaddr");
         }
 #ifdef HAVE_INET6
@@ -402,7 +402,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 #ifdef IPV6_V6ONLY // TODO: detect constants declarations in configure
           sk_type = mhd_SKT_IP_DUAL_REQUIRED;
 #else  /* ! IPV6_V6ONLY */
-          MHD_LOG_MSG (d, \
+          mhd_LOG_MSG (d, \
                        MHD_SC_LISTEN_DUAL_STACK_CONFIGURATION_NOT_SUPPORTED, \
                        "IP dual stack is not supported by this platform or " \
                        "by this MHD build");
@@ -469,7 +469,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 #ifdef HAVE_INET6
         sk_type = mhd_SKT_IP_V6_ONLY;
 #else  /* ! HAVE_INET6 */
-        MHD_LOG_MSG (d, MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD, \
+        mhd_LOG_MSG (d, MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD, \
                      "IPv6 is not supported by this MHD build or " \
                      "by this platform");
         return MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD;
@@ -482,14 +482,14 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 #ifdef IPV6_V6ONLY // TODO: detect constants declarations in configure
         sk_type = mhd_SKT_IP_DUAL_REQUIRED;
 #else  /* ! IPV6_V6ONLY */
-        MHD_LOG_MSG (d,
+        mhd_LOG_MSG (d,
                      MHD_SC_LISTEN_DUAL_STACK_CONFIGURATION_NOT_SUPPORTED, \
                      "IP dual stack is not supported by this platform or " \
                      "by this MHD build");
         sk_type = mhd_SKT_IP_V6_ONLY;
 #endif /* ! IPV6_V6ONLY */
 #else  /* ! HAVE_INET6 */
-        MHD_LOG_MSG (d, MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD, \
+        mhd_LOG_MSG (d, MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD, \
                      "IPv6 is not supported by this MHD build or " \
                      "by this platform");
         return MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD;
@@ -505,7 +505,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
         sk_type = mhd_SKT_IP_V6_ONLY;
 #endif /* ! IPV6_V6ONLY */
 #else  /* ! HAVE_INET6 */
-        MHD_LOG_MSG (d, MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD, \
+        mhd_LOG_MSG (d, MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD, \
                      "IPv6 is not supported by this MHD build or " \
                      "by this platform");
         return MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD;
@@ -527,7 +527,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 #endif /* ! HAVE_INET6 */
         break;
       default:
-        MHD_LOG_MSG (d, MHD_SC_AF_NOT_SUPPORTED_BY_BUILD, \
+        mhd_LOG_MSG (d, MHD_SC_AF_NOT_SUPPORTED_BY_BUILD, \
                      "Unknown address family specified");
         return MHD_SC_AF_NOT_SUPPORTED_BY_BUILD;
       }
@@ -625,7 +625,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
       bool is_af_err = mhd_SCKT_LERR_IS_AF ();
 
       if (is_af_err)
-        MHD_LOG_MSG (d, MHD_SC_AF_NOT_AVAILABLE, \
+        mhd_LOG_MSG (d, MHD_SC_AF_NOT_AVAILABLE, \
                      "The requested socket address family is rejected " \
                      "by the OS");
 
@@ -637,7 +637,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 #endif /* HAVE_INET6 */
 
       if (! is_af_err)
-        MHD_LOG_MSG (d, MHD_SC_FAILED_TO_OPEN_LISTEN_SOCKET, \
+        mhd_LOG_MSG (d, MHD_SC_FAILED_TO_OPEN_LISTEN_SOCKET, \
                      "Failed to open listen socket");
 
       return MHD_SC_FAILED_TO_OPEN_LISTEN_SOCKET;
@@ -660,7 +660,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
   { /* The scope for automatic socket close for error returns */
     if (! mhd_FD_FITS_DAEMON (d,sk))
     {
-      MHD_LOG_MSG (d, MHD_SC_LISTEN_FD_OUTSIDE_OF_SET_RANGE, \
+      mhd_LOG_MSG (d, MHD_SC_LISTEN_FD_OUTSIDE_OF_SET_RANGE, \
                    "The listen FD value is higher than allowed");
       ret = MHD_SC_LISTEN_FD_OUTSIDE_OF_SET_RANGE;
       break;
@@ -669,7 +669,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
     if (! is_non_inhr)
     {
       if (! mhd_socket_noninheritable (sk))
-        MHD_LOG_MSG (d, MHD_SC_LISTEN_SOCKET_NOINHERIT_FAILED, \
+        mhd_LOG_MSG (d, MHD_SC_LISTEN_SOCKET_NOINHERIT_FAILED, \
                      "OS refused to make the listen socket non-inheritable");
     }
 
@@ -729,7 +729,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
               /* The dual-stack state is definitely wrong */
               if (mhd_SKT_IP_V6_ONLY == sk_type)
               {
-                MHD_LOG_MSG ( \
+                mhd_LOG_MSG ( \
                   d, MHD_SC_LISTEN_DUAL_STACK_CONFIGURATION_REJECTED, \
                   "Failed to disable IP dual-stack configuration " \
                   "for the listen socket");
@@ -738,7 +738,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
               }
               else if (mhd_SKT_UNKNOWN != sk_type)
               {
-                MHD_LOG_MSG ( \
+                mhd_LOG_MSG ( \
                   d, MHD_SC_LISTEN_DUAL_STACK_CONFIGURATION_REJECTED, \
                   "Cannot enable IP dual-stack configuration " \
                   "for the listen socket");
@@ -753,7 +753,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
             {
               /* The dual-stack state is unknown */
               if (mhd_SKT_UNKNOWN != sk_type)
-                MHD_LOG_MSG (
+                mhd_LOG_MSG (
                   d, MHD_SC_LISTEN_DUAL_STACK_CONFIGURATION_UNKNOWN, \
                   "Failed to set dual-stack (IPV6_ONLY) configuration " \
                   "for the listen socket, using system defaults");
@@ -784,7 +784,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
                              (const void *) &fo_param,
                              sizeof (fo_param)))
         {
-          MHD_LOG_MSG (d, MHD_SC_LISTEN_FAST_OPEN_FAILURE, \
+          mhd_LOG_MSG (d, MHD_SC_LISTEN_FAST_OPEN_FAILURE, \
                        "OS refused to enable TCP Fast Open on " \
                        "the listen socket");
           if (MHD_FOM_AUTO < d->settings->tcp_fastopen.v_option)
@@ -796,7 +796,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 #else  /* ! TCP_FASTOPEN */
         if (MHD_FOM_AUTO < d->settings->tcp_fastopen.v_option)
         {
-          MHD_LOG_MSG (d, MHD_SC_LISTEN_FAST_OPEN_FAILURE, \
+          mhd_LOG_MSG (d, MHD_SC_LISTEN_FAST_OPEN_FAILURE, \
                        "The OS does not support TCP Fast Open");
           ret = MHD_SC_LISTEN_FAST_OPEN_FAILURE;
           break;
@@ -812,12 +812,12 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
         if (0 != setsockopt (sk, IPPROTO_TCP, SO_REUSEADDR,
                              (const void *) &on_val1, sizeof (on_val1)))
         {
-          MHD_LOG_MSG (d, MHD_SC_LISTEN_PORT_REUSE_ENABLE_FAILED, \
+          mhd_LOG_MSG (d, MHD_SC_LISTEN_PORT_REUSE_ENABLE_FAILED, \
                        "OS refused to enable address reuse on " \
                        "the listen socket");
         }
 #else  /* ! SO_REUSEADDR */
-        MHD_LOG_MSG (d, MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_NOT_SUPPORTED, \
+        mhd_LOG_MSG (d, MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_NOT_SUPPORTED, \
                      "The OS does not support address reuse for sockets");
 #endif /* ! SO_REUSEADDR */
 #endif /* ! MHD_WINSOCK_SOCKETS */
@@ -833,14 +833,14 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 #endif /* ! MHD_WINSOCK_SOCKETS */
                                (const void *) &on_val2, sizeof (on_val2)))
           {
-            MHD_LOG_MSG (d, MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_FAILED, \
+            mhd_LOG_MSG (d, MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_FAILED, \
                          "OS refused to enable address sharing " \
                          "on the listen socket");
             ret = MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_FAILED;
             break;
           }
 #else  /* ! SO_REUSEADDR && ! MHD_WINSOCK_SOCKETS */
-          MHD_LOG_MSG (d, MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_NOT_SUPPORTED, \
+          mhd_LOG_MSG (d, MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_NOT_SUPPORTED, \
                        "The OS does not support address sharing for sockets");
           ret = MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_NOT_SUPPORTED;
           break;
@@ -860,7 +860,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 #endif
                              (const void *) &on_val, sizeof (on_val)))
         {
-          MHD_LOG_MSG (d, MHD_SC_LISTEN_ADDRESS_EXCLUSIVE_ENABLE_FAILED, \
+          mhd_LOG_MSG (d, MHD_SC_LISTEN_ADDRESS_EXCLUSIVE_ENABLE_FAILED, \
                        "OS refused to enable exclusive address use " \
                        "on the listen socket");
           ret = MHD_SC_LISTEN_ADDRESS_EXCLUSIVE_ENABLE_FAILED;
@@ -885,7 +885,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
           return create_bind_listen_stream_socket (d, s, true, false);
         }
 #endif /* HAVE_INET6 */
-        MHD_LOG_MSG (d, MHD_SC_LISTEN_SOCKET_BIND_FAILED, \
+        mhd_LOG_MSG (d, MHD_SC_LISTEN_SOCKET_BIND_FAILED, \
                      "Failed to bind the listen socket");
         ret = MHD_SC_LISTEN_SOCKET_BIND_FAILED;
         break;
@@ -919,7 +919,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
             return create_bind_listen_stream_socket (d, s, true, false);
           }
 #endif /* HAVE_INET6 */
-          MHD_LOG_MSG (d, MHD_SC_LISTEN_FAILURE, \
+          mhd_LOG_MSG (d, MHD_SC_LISTEN_FAILURE, \
                        "Failed to start listening on the listen socket");
           ret = MHD_SC_LISTEN_FAILURE;
           break;
@@ -932,7 +932,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
     {
       is_non_block = mhd_socket_nonblocking (sk);
       if (! is_non_block)
-        MHD_LOG_MSG (d, MHD_SC_LISTEN_SOCKET_NONBLOCKING_FAILURE, \
+        mhd_LOG_MSG (d, MHD_SC_LISTEN_SOCKET_NONBLOCKING_FAILURE, \
                      "OS refused to make the listen socket non-blocking");
     }
 
@@ -998,7 +998,7 @@ detect_listen_type_and_port (struct MHD_Daemon *restrict d)
   if (0 != getsockname (d->net.listen.fd, &(sa_all.sa), &sa_size))
   {
     if (mhd_SOCKET_TYPE_IP == d->net.listen.type)
-      MHD_LOG_MSG (d, MHD_SC_LISTEN_PORT_DETECT_FAILURE, \
+      mhd_LOG_MSG (d, MHD_SC_LISTEN_PORT_DETECT_FAILURE, \
                    "Failed to detect the port number on the listening socket");
     return;
   }
@@ -1043,7 +1043,7 @@ detect_listen_type_and_port (struct MHD_Daemon *restrict d)
 
   if ((declared_type != d->net.listen.type)
       && (mhd_SOCKET_TYPE_IP == declared_type))
-    MHD_LOG_MSG (d, MHD_SC_UNEXPECTED_SOCKET_ERROR, \
+    mhd_LOG_MSG (d, MHD_SC_UNEXPECTED_SOCKET_ERROR, \
                  "The type of listen socket is detected as non-IP, while " \
                  "the socket has been created as an IP socket");
 }
@@ -1075,20 +1075,20 @@ init_epoll (struct MHD_Daemon *restrict d)
   if (0 <= e_fd)
   {
     if (! mhd_socket_noninheritable (e_fd))
-      MHD_LOG_MSG (d, MHD_SC_EPOLL_CTL_CONFIGURE_NOINHERIT_FAILED, \
+      mhd_LOG_MSG (d, MHD_SC_EPOLL_CTL_CONFIGURE_NOINHERIT_FAILED, \
                    "Failed to make epoll control FD non-inheritable");
   }
 #endif /* ! HAVE_EPOLL_CREATE1 */
   if (0 > e_fd)
   {
-    MHD_LOG_MSG (d, MHD_SC_EPOLL_CTL_CREATE_FAILED, \
+    mhd_LOG_MSG (d, MHD_SC_EPOLL_CTL_CREATE_FAILED, \
                  "Failed to create epoll control FD");
     return MHD_SC_EPOLL_CTL_CREATE_FAILED; /* Failure exit point */
   }
 
   if (! mhd_FD_FITS_DAEMON (d, e_fd))
   {
-    MHD_LOG_MSG (d, MHD_SC_EPOLL_CTL_OUTSIDE_OF_SET_RANGE, \
+    mhd_LOG_MSG (d, MHD_SC_EPOLL_CTL_OUTSIDE_OF_SET_RANGE, \
                  "The epoll control FD value is higher than allowed");
     (void) close (e_fd);
     return MHD_SC_EPOLL_CTL_OUTSIDE_OF_SET_RANGE; /* Failure exit point */
@@ -1156,7 +1156,7 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
   case MHD_SPS_SELECT:
     mhd_assert (! mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
 #ifndef MHD_USE_SELECT
-    MHD_LOG_MSG (d, MHD_SC_SELECT_SYSCALL_NOT_AVAILABLE, \
+    mhd_LOG_MSG (d, MHD_SC_SELECT_SYSCALL_NOT_AVAILABLE, \
                  "'select()' is not supported by the platform or " \
                  "this MHD build");
     return MHD_SC_SELECT_SYSCALL_NOT_AVAILABLE;
@@ -1167,7 +1167,7 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
   case MHD_SPS_POLL:
     mhd_assert (! mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
 #ifndef MHD_USE_POLL
-    MHD_LOG_MSG (d, MHD_SC_POLL_SYSCALL_NOT_AVAILABLE, \
+    mhd_LOG_MSG (d, MHD_SC_POLL_SYSCALL_NOT_AVAILABLE, \
                  "'poll()' is not supported by the platform or " \
                  "this MHD build");
     return MHD_SC_POLL_SYSCALL_NOT_AVAILABLE;
@@ -1178,7 +1178,7 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
   case MHD_SPS_EPOLL:
     mhd_assert (! mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
 #ifndef MHD_USE_EPOLL
-    MHD_LOG_MSG (d, MHD_SC_EPOLL_SYSCALL_NOT_AVAILABLE, \
+    mhd_LOG_MSG (d, MHD_SC_EPOLL_SYSCALL_NOT_AVAILABLE, \
                  "'epoll' is not supported by the platform or " \
                  "this MHD build");
     return MHD_SC_EPOLL_SYSCALL_NOT_AVAILABLE;
@@ -1187,7 +1187,7 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
 #endif /* MHD_USE_EPOLL */
     break;
   default:
-    MHD_LOG_MSG (d, MHD_SC_CONFIGURATION_UNEXPECTED_SPS,
+    mhd_LOG_MSG (d, MHD_SC_CONFIGURATION_UNEXPECTED_SPS,
                  "Wrong socket polling syscall specified");
     return MHD_SC_CONFIGURATION_UNEXPECTED_SPS;
   }
@@ -1243,7 +1243,7 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
 #elif defined(MHD_USE_SELECT)
     chosen_type = mhd_POLL_TYPE_SELECT;
 #else
-    MHD_LOG_MSG (d, MHD_SC_FEATURE_DISABLED, \
+    mhd_LOG_MSG (d, MHD_SC_FEATURE_DISABLED, \
                  "All suitable internal sockets polling technologies are " \
                  "disabled in this MHD build");
     return MHD_SC_FEATURE_DISABLED;
@@ -1361,7 +1361,7 @@ daemon_init_net (struct MHD_Daemon *restrict d,
           && ((mhd_WM_INT_EXTERNAL_EVENTS_EDGE == d->wmode_int) ||
               (mhd_WM_INT_INTERNAL_EVENTS_THREAD_POOL == d->wmode_int)))
       {
-        MHD_LOG_MSG (d, MHD_SC_LISTEN_SOCKET_NONBLOCKING_FAILURE, \
+        mhd_LOG_MSG (d, MHD_SC_LISTEN_SOCKET_NONBLOCKING_FAILURE, \
                      "The selected daemon work mode requires listening socket "
                      "in non-blocking mode");
         ret = MHD_SC_LISTEN_SOCKET_NONBLOCKING_FAILURE;
@@ -1449,7 +1449,7 @@ daemon_init_large_buf (struct MHD_Daemon *restrict d,
   d->req_cfg.large_buf.space_left = s->global_large_buffer_size;
   if (! mhd_mutex_init_short (&(d->req_cfg.large_buf.lock)))
   {
-    MHD_LOG_MSG (d, MHD_SC_MUTEX_INIT_FAILURE, \
+    mhd_LOG_MSG (d, MHD_SC_MUTEX_INIT_FAILURE, \
                  "Failed to initialise mutex for the global large buffer.");
     return MHD_SC_MUTEX_INIT_FAILURE;
   }
@@ -1520,7 +1520,7 @@ allocate_events (struct MHD_Daemon *restrict d)
       }
       free (d->events.data.select.rfds);
     }
-    MHD_LOG_MSG (d, MHD_SC_FD_SET_MEMORY_ALLOCATE_FAILURE, \
+    mhd_LOG_MSG (d, MHD_SC_FD_SET_MEMORY_ALLOCATE_FAILURE, \
                  "Failed to allocate memory for fd_sets for the daemon");
     return MHD_SC_FD_SET_MEMORY_ALLOCATE_FAILURE;
     break;
@@ -1553,7 +1553,7 @@ allocate_events (struct MHD_Daemon *restrict d)
         free (d->events.data.poll.fds);
       }
     }
-    MHD_LOG_MSG (d, MHD_SC_POLL_FDS_MEMORY_ALLOCATE_FAILURE, \
+    mhd_LOG_MSG (d, MHD_SC_POLL_FDS_MEMORY_ALLOCATE_FAILURE, \
                  "Failed to allocate memory for fd_sets for the daemon");
     return MHD_SC_POLL_FDS_MEMORY_ALLOCATE_FAILURE;
     break;
@@ -1594,7 +1594,7 @@ allocate_events (struct MHD_Daemon *restrict d)
         return MHD_SC_OK; /* Success exit point */
       }
     }
-    MHD_LOG_MSG (d, MHD_SC_POLL_FDS_MEMORY_ALLOCATE_FAILURE, \
+    mhd_LOG_MSG (d, MHD_SC_POLL_FDS_MEMORY_ALLOCATE_FAILURE, \
                  "Failed to allocate memory for fd_sets for the daemon");
     return MHD_SC_POLL_FDS_MEMORY_ALLOCATE_FAILURE;
     break;
@@ -1686,20 +1686,20 @@ init_itc (struct MHD_Daemon *restrict d)
   if (! mhd_itc_init (&(d->threading.itc)))
   {
 #if defined(MHD_ITC_EVENTFD_)
-    MHD_LOG_MSG ( \
+    mhd_LOG_MSG ( \
       d, MHD_SC_ITC_INITIALIZATION_FAILED, \
       "Failed to initialise eventFD for inter-thread communication");
 #elif defined(MHD_ITC_PIPE_)
-    MHD_LOG_MSG ( \
+    mhd_LOG_MSG ( \
       d, MHD_SC_ITC_INITIALIZATION_FAILED, \
       "Failed to create a pipe for inter-thread communication");
 #elif defined(MHD_ITC_SOCKETPAIR_)
-    MHD_LOG_MSG ( \
+    mhd_LOG_MSG ( \
       d, MHD_SC_ITC_INITIALIZATION_FAILED, \
       "Failed to create a socketpair for inter-thread communication");
 #else
 #warning Missing expicit handling of the ITC type
-    MHD_LOG_MSG ( \
+    mhd_LOG_MSG ( \
       d, MHD_SC_ITC_INITIALIZATION_FAILED, \
       "Failed to initialise inter-thread communication");
 #endif
@@ -1804,7 +1804,7 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
       if (0 != epoll_ctl (d->events.data.epoll.e_fd, EPOLL_CTL_ADD,
                           mhd_itc_r_fd (d->threading.itc), &reg_event))
       {
-        MHD_LOG_MSG (d, MHD_SC_EPOLL_ADD_DAEMON_FDS_FAILURE, \
+        mhd_LOG_MSG (d, MHD_SC_EPOLL_ADD_DAEMON_FDS_FAILURE, \
                      "Failed to add ITC fd to the epoll monitoring.");
         return MHD_SC_EPOLL_ADD_DAEMON_FDS_FAILURE;
       }
@@ -1816,7 +1816,7 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
         if (0 != epoll_ctl (d->events.data.epoll.e_fd, EPOLL_CTL_ADD,
                             d->net.listen.fd, &reg_event))
         {
-          MHD_LOG_MSG (d, MHD_SC_EPOLL_ADD_DAEMON_FDS_FAILURE, \
+          mhd_LOG_MSG (d, MHD_SC_EPOLL_ADD_DAEMON_FDS_FAILURE, \
                        "Failed to add listening fd to the epoll monitoring.");
           return MHD_SC_EPOLL_ADD_DAEMON_FDS_FAILURE;
         }
@@ -1983,7 +1983,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
         (0 != s->work_mode.params.num_worker_threads) &&
         (s->global_connection_limit < s->work_mode.params.num_worker_threads))
     {
-      MHD_LOG_MSG ( \
+      mhd_LOG_MSG ( \
         d, MHD_SC_CONFIGURATION_CONN_LIMIT_TOO_SMALL, \
         "The limit specified by MHD_D_O_GLOBAL_CONNECTION_LIMIT is smaller " \
         "then the number of worker threads.");
@@ -2021,7 +2021,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
       {
         if (d->net.cfg.max_fd_num == s->fd_number_limit)
         {
-          MHD_LOG_MSG ( \
+          mhd_LOG_MSG ( \
             d, MHD_SC_MAX_FD_NUMBER_LIMIT_TOO_STRICT, \
             "The limit specified by MHD_D_O_FD_NUMBER_LIMIT is too strict " \
             "for this daemon settings.");
@@ -2068,7 +2068,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
 #endif /* MHD_POSIX_SOCKETS */
   if (error_by_fd_setsize)
   {
-    MHD_LOG_MSG ( \
+    mhd_LOG_MSG ( \
       d, MHD_SC_SYS_FD_SETSIZE_TOO_STRICT, \
       "The FD_SETSIZE is too strict to run daemon with the polling " \
       "by select() and with the specified number of workers.");
@@ -2272,7 +2272,7 @@ init_workers_pool (struct MHD_Daemon *restrict d,
     (sizeof(struct MHD_Daemon) * num_workers);
   if (workers_pool_size / num_workers != sizeof(struct MHD_Daemon))
   { /* Overflow */
-    MHD_LOG_MSG ( \
+    mhd_LOG_MSG ( \
       d, MHD_SC_THREAD_POOL_MALLOC_FAILURE, \
       "The size of the thread pool is too large.");
     return MHD_SC_THREAD_POOL_MALLOC_FAILURE;
@@ -2286,7 +2286,7 @@ init_workers_pool (struct MHD_Daemon *restrict d,
   d->threading.hier.pool.workers = malloc (workers_pool_size);
   if (NULL == d->threading.hier.pool.workers)
   {
-    MHD_LOG_MSG ( \
+    mhd_LOG_MSG ( \
       d, MHD_SC_THREAD_POOL_MALLOC_FAILURE, \
       "Failed to allocate memory for the thread pool.");
     return MHD_SC_THREAD_POOL_MALLOC_FAILURE;
@@ -2486,7 +2486,7 @@ start_individual_daemon_thread (struct MHD_Daemon *restrict d)
           &mhd_worker_all_events, \
           (void*) d))
     {
-      MHD_LOG_MSG (d, MHD_SC_THREAD_MAIN_LAUNCH_FAILURE, \
+      mhd_LOG_MSG (d, MHD_SC_THREAD_MAIN_LAUNCH_FAILURE, \
                    "Failed to start daemon main thread.");
       return MHD_SC_THREAD_MAIN_LAUNCH_FAILURE;
     }
@@ -2499,7 +2499,7 @@ start_individual_daemon_thread (struct MHD_Daemon *restrict d)
           &mhd_worker_all_events, \
           (void*) d))
     {
-      MHD_LOG_MSG (d, MHD_SC_THREAD_WORKER_LAUNCH_FAILURE, \
+      mhd_LOG_MSG (d, MHD_SC_THREAD_WORKER_LAUNCH_FAILURE, \
                    "Failed to start daemon worker thread.");
       return MHD_SC_THREAD_WORKER_LAUNCH_FAILURE;
     }
@@ -2512,7 +2512,7 @@ start_individual_daemon_thread (struct MHD_Daemon *restrict d)
           &mhd_worker_listening_only, \
           (void*) d))
     {
-      MHD_LOG_MSG (d, MHD_SC_THREAD_LISTENING_LAUNCH_FAILURE, \
+      mhd_LOG_MSG (d, MHD_SC_THREAD_LISTENING_LAUNCH_FAILURE, \
                    "Failed to start daemon listening thread.");
       return MHD_SC_THREAD_LISTENING_LAUNCH_FAILURE;
     }
@@ -2551,7 +2551,7 @@ stop_individual_daemon_thread (struct MHD_Daemon *restrict d)
   mhd_daemon_trigger_itc (d);
   if (! mhd_thread_handle_ID_join_thread (d->threading.tid))
   {
-    MHD_LOG_MSG (d, MHD_SC_DAEMON_THREAD_STOP_ERROR, \
+    mhd_LOG_MSG (d, MHD_SC_DAEMON_THREAD_STOP_ERROR, \
                  "Failed to stop daemon main thread.");
   }
 }
@@ -2596,7 +2596,7 @@ stop_worker_pool_threads (struct MHD_Daemon *restrict d,
     mhd_assert (mhd_thread_handle_ID_is_valid_handle (worker->threading.tid));
     if (! mhd_thread_handle_ID_join_thread (worker->threading.tid))
     {
-      MHD_LOG_MSG (d, MHD_SC_DAEMON_THREAD_STOP_ERROR, \
+      mhd_LOG_MSG (d, MHD_SC_DAEMON_THREAD_STOP_ERROR, \
                    "Failed to stop a worker thread.");
     }
   }

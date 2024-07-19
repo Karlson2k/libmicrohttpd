@@ -29,6 +29,7 @@
 
 #include "mhd_sys_options.h"
 #include "sys_base_types.h"
+#include "sys_bool_type.h"
 
 
 struct MHD_Connection; /* forward declaration */
@@ -114,10 +115,33 @@ MHD_INTERNAL void
 mhd_stream_switch_from_recv_to_send (struct MHD_Connection *c)
 MHD_FN_PAR_NONNULL_ALL_;
 
+/**
+ * Finish request serving.
+ * The stream will be re-used or closed.
+ *
+ * @param c the connection to use.
+ */
+MHD_INTERNAL void
+mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
+                               bool reuse)
+MHD_FN_PAR_NONNULL_ALL_;
+
+/**
+ * Update last activity mark to the current time..
+ * @param c the connection to update
+ */
+MHD_INTERNAL void
+mhd_stream_update_activity_mark (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
 
 enum mhd_StreamAbortReason
 {
   mhd_STREAM_ABORT_CLIENT_HTTP_ERR
+  ,
+  mhd_STREAM_ABORT_NO_POOL_MEM_FOR_REPLY
+  ,
+  mhd_STREAM_ABORT_APP_ERROR
 };
 
 /**
@@ -140,9 +164,11 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
 /**
  * Update last activity mark to the current time..
  * @param c the connection to update
+ * @return 'true' if connection has not been timed out,
+ *         'false' otherwise
  */
-MHD_INTERNAL void
-mhd_stream_update_activity_mark (struct MHD_Connection *restrict c)
+MHD_INTERNAL bool
+mhd_stream_check_timedout (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 
 
@@ -163,6 +189,24 @@ MHD_FN_PAR_NONNULL_ALL_;
  */
 MHD_INTERNAL void
 mhd_conn_pre_close_skt_err (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
+/**
+ * Perform initial clean-up and mark for closing.
+ * Set the reason to "request finished"
+ * @param c to make
+ */
+MHD_INTERNAL void
+mhd_conn_pre_close_req_finished (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
+/**
+ * Perform initial clean-up and mark for closing.
+ * Set the reason to "timed out".
+ * @param c to make
+ */
+MHD_INTERNAL void
+mhd_conn_pre_close_timedout (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 
 

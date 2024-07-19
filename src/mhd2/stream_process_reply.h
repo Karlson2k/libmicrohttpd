@@ -35,4 +35,48 @@
 struct MHD_Connection; /* forward declaration */
 
 
+/**
+ * Allocate the connection's write buffer and fill it with all of the
+ * headers from the response.
+ * Required headers are added here.
+ *
+ * @param c the connection to process
+ * @return 'true' if state has been update,
+ *         'false' if connection is going to be aborted
+ */
+MHD_INTERNAL bool
+mhd_stream_build_header_response (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
+
+/**
+ * Prepare the unchunked response content of this connection for sending.
+ *
+ * @param c the connection
+ */
+MHD_INTERNAL void
+mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
+
+/**
+ * Prepare the chunked response content of this connection for sending.
+ *
+ * @param c the connection
+ */
+MHD_INTERNAL void
+mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
+
+/**
+ * Allocate the connection's write buffer (if necessary) and fill it
+ * with response footers.
+ *
+ * @param c the connection
+ */
+MHD_INTERNAL void
+mhd_stream_prep_chunked_footer (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
 #endif /* ! MHD_STREAM_PROCESS_REPLY_H */

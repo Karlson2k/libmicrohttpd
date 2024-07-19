@@ -79,7 +79,7 @@ connection_set_initial_state (struct MHD_Connection *restrict c)
 
   mhd_assert (MHD_CONNECTION_INIT == c->state);
 
-  c->keepalive = MHD_CONN_KEEPALIVE_UNKOWN;
+  c->conn_reuse = mhd_CONN_KEEPALIVE_POSSIBLE;
   c->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
 
   memset (&c->rq, 0, sizeof(c->rq));
@@ -241,7 +241,7 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
 
   if (NULL == (connection = mhd_calloc (1, sizeof (struct MHD_Connection))))
   {
-    MHD_LOG_MSG (daemon, MHD_SC_CONNECTION_MALLOC_FAILURE,
+    mhd_LOG_MSG (daemon, MHD_SC_CONNECTION_MALLOC_FAILURE,
                  "Failed to allocate memory for the new connection");
     mhd_socket_close (client_socket);
     return MHD_SC_CONNECTION_MALLOC_FAILURE;
@@ -262,7 +262,7 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
   {
     if (NULL == (connection->addr = malloc (addrlen)))
     {
-      MHD_LOG_MSG (daemon, MHD_SC_CONNECTION_MALLOC_FAILURE,
+      mhd_LOG_MSG (daemon, MHD_SC_CONNECTION_MALLOC_FAILURE,
                    "Failed to allocate memory for the new connection");
       mhd_socket_close (client_socket);
       free (connection);
@@ -320,7 +320,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
   connection->pool = mdh_pool_create (daemon->conns.cfg.mem_pool_size);
   if (NULL == connection->pool)
   { /* 'pool' creation failed */
-    MHD_LOG_MSG (daemon, MHD_SC_POOL_MALLOC_FAILURE, \
+    mhd_LOG_MSG (daemon, MHD_SC_POOL_MALLOC_FAILURE, \
                  "Failed to allocate memory for the connection memory pool.");
     res = MHD_SC_POOL_MALLOC_FAILURE;
   }
@@ -329,7 +329,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
 
     if (daemon->conns.block_new)
     { /* Connections limit */
-      MHD_LOG_MSG (daemon, MHD_SC_LIMIT_CONNECTIONS_REACHED, \
+      mhd_LOG_MSG (daemon, MHD_SC_LIMIT_CONNECTIONS_REACHED, \
                    "Server reached connection limit. " \
                    "Closing inbound connection.");
       res = MHD_SC_LIMIT_CONNECTIONS_REACHED;
@@ -363,7 +363,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
 #ifdef EAGAIN
           if (EAGAIN == errno)
           {
-            MHD_LOG_MSG (daemon, MHD_SC_CONNECTION_THREAD_SYS_LIMITS_REACHED,
+            mhd_LOG_MSG (daemon, MHD_SC_CONNECTION_THREAD_SYS_LIMITS_REACHED,
                          "Failed to create a new thread because it would "
                          "have exceeded the system limit on the number of "
                          "threads or no system resources available.");
@@ -373,7 +373,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
 #endif /* EAGAIN */
           if (1)
           {
-            MHD_LOG_MSG (daemon, MHD_SC_CONNECTION_THREAD_LAUNCH_FAILURE,
+            mhd_LOG_MSG (daemon, MHD_SC_CONNECTION_THREAD_LAUNCH_FAILURE,
                          "Failed to create a thread.");
             res = MHD_SC_CONNECTION_THREAD_LAUNCH_FAILURE;
           }
@@ -401,7 +401,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
                               connection->socket_fd,
                               &event))
           {
-            MHD_LOG_MSG (daemon, MHD_SC_EPOLL_CTL_ADD_FAILED,
+            mhd_LOG_MSG (daemon, MHD_SC_EPOLL_CTL_ADD_FAILED,
                          "Failed to add connection socket .");
             res = MHD_SC_EPOLL_CTL_ADD_FAILED;
           }
@@ -489,7 +489,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 
   if (! mhd_FD_FITS_DAEMON (daemon, client_socket))
   {
-    MHD_LOG_MSG (daemon, MHD_SC_SOCKET_OUTSIDE_OF_SET_RANGE, \
+    mhd_LOG_MSG (daemon, MHD_SC_SOCKET_OUTSIDE_OF_SET_RANGE, \
                  "New connection socket descriptor value is too large for " \
                  "the daemon configuration.");
     (void) mhd_socket_close (client_socket);
@@ -500,7 +500,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
       ((mhd_POLL_TYPE_EPOLL == daemon->events.poll_type) ||
        (mhd_WM_INT_EXTERNAL_EVENTS_EDGE == daemon->wmode_int)))
   {
-    MHD_LOG_MSG (daemon, MHD_SC_NONBLOCKING_REQUIRED, \
+    mhd_LOG_MSG (daemon, MHD_SC_NONBLOCKING_REQUIRED, \
                  "The daemon configuration requires non-blocking sockets, "
                  "the new socket has not been added.");
     (void) mhd_socket_close (client_socket);
@@ -622,7 +622,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
     {
       if (sizeof(struct sockaddr_in) > addrlen)
       {
-        MHD_LOG_MSG (daemon, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
+        mhd_LOG_MSG (daemon, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
                      "MHD_add_connection() has been called with " \
                      "incorrect 'addrlen' value.");
         return MHD_SC_CONFIGURATION_WRONG_SA_SIZE;
@@ -631,7 +631,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
       if ((0 != addr->sa_len) &&
           (sizeof(struct sockaddr_in) > (size_t) addr->sa_len) )
       {
-        MHD_LOG_MSG (daemon, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
+        mhd_LOG_MSG (daemon, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
                      "MHD_add_connection() has been called with " \
                      "non-zero value of 'sa_len' member of " \
                      "'struct sockaddr' which does not match 'sa_family'.");
@@ -644,7 +644,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
     {
       if (sizeof(struct sockaddr_in6) > addrlen)
       {
-        MHD_LOG_MSG (daemon, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
+        mhd_LOG_MSG (daemon, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
                      "MHD_add_connection() has been called with " \
                      "incorrect 'addrlen' value.");
         return MHD_SC_CONFIGURATION_WRONG_SA_SIZE;
@@ -653,7 +653,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
       if ((0 != addr->sa_len) &&
           (sizeof(struct sockaddr_in6) > (size_t) addr->sa_len) )
       {
-        MHD_LOG_MSG (daemon, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
+        mhd_LOG_MSG (daemon, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
                      "MHD_add_connection() has been called with " \
                      "non-zero value of 'sa_len' member of " \
                      "'struct sockaddr' which does not match 'sa_family'.");
@@ -671,7 +671,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
 
   if (! mhd_socket_nonblocking (client_socket))
   {
-    MHD_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NONBLOCKING_FAILED, \
+    mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NONBLOCKING_FAILED, \
                  "Failed to set nonblocking mode on the new client socket.");
     sk_nonbl = false;
   }
@@ -688,7 +688,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
     sk_spipe_supprs = MHD_socket_nosignal_ (client_socket);
   if (! sk_spipe_supprs)
   {
-    MHD_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NOSIGPIPE_FAILED, \
+    mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NOSIGPIPE_FAILED, \
                  "Failed to suppress SIGPIPE on the new client socket.");
 #ifndef MSG_NOSIGNAL
     /* Application expects that SIGPIPE will be suppressed,
@@ -707,7 +707,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
   if (1) // TODO: implement turbo
   {
     if (! mhd_socket_noninheritable (client_socket))
-      MHD_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NOINHERIT_FAILED, \
+      mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NOINHERIT_FAILED, \
                    "Failed to set noninheritable mode on new client socket.");
   }
 
@@ -874,7 +874,7 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
         /* Not setting 'block_new' flag, as there is no way it
            would ever be cleared.  Instead trying to produce
            bit fat ugly warning. */
-        MHD_LOG_MSG (daemon, MHD_SC_ACCEPT_SYSTEM_LIMIT_REACHED_INSTANTLY, \
+        mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_SYSTEM_LIMIT_REACHED_INSTANTLY, \
                      "Hit process or system resource limit at FIRST " \
                      "connection. This is really bad as there is no sane " \
                      "way to proceed. Will try busy waiting for system " \
@@ -883,8 +883,8 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
       else
       {
         daemon->conns.block_new = true;
-        MHD_LOG_PRINT (daemon, MHD_SC_ACCEPT_SYSTEM_LIMIT_REACHED, \
-                       MHD_LOG_FMT ("Hit process or system resource limit " \
+        mhd_LOG_PRINT (daemon, MHD_SC_ACCEPT_SYSTEM_LIMIT_REACHED, \
+                       mhd_LOG_FMT ("Hit process or system resource limit " \
                                     "at %u connections, temporarily " \
                                     "suspending accept(). Consider setting " \
                                     "a lower MHD_OPTION_CONNECTION_LIMIT."), \
@@ -892,14 +892,14 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
       }
       return mhd_DAEMON_ACCEPT_FAILED;
     }
-    MHD_LOG_MSG (daemon, MHD_SC_ACCEPT_FAILED_UNEXPECTEDLY,
+    mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_FAILED_UNEXPECTEDLY,
                  "Error accepting connection.");
     return mhd_DAEMON_ACCEPT_FAILED;
   }
 
   if (mhd_FD_FITS_DAEMON (daemon, s))
   {
-    MHD_LOG_MSG (daemon, MHD_SC_ACCEPT_OUTSIDE_OF_SET_RANGE, \
+    mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_OUTSIDE_OF_SET_RANGE, \
                  "The accepted socket has value outside of allowed range.");
     (void) mhd_socket_close (s);
     return mhd_DAEMON_ACCEPT_FAILED;
@@ -913,7 +913,7 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
   if (0 >= addrlen)
   {
     if (mhd_SOCKET_TYPE_IP == daemon->net.listen.type)
-      MHD_LOG_MSG (daemon, MHD_SC_ACCEPTED_UNKNOWN_TYPE, \
+      mhd_LOG_MSG (daemon, MHD_SC_ACCEPTED_UNKNOWN_TYPE, \
                    "Accepted socket has non-positive length of the address. " \
                    "Processing the new socket as a socket with " \
                    "unknown type.");
@@ -924,7 +924,7 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
   {
     /* Should not happen as 'sockaddr_storage' must be large enough to
      * store any address supported by the system. */
-    MHD_LOG_MSG (daemon, MHD_SC_ACCEPTED_SOCKADDR_TOO_LARGE, \
+    mhd_LOG_MSG (daemon, MHD_SC_ACCEPTED_SOCKADDR_TOO_LARGE, \
                  "Accepted socket address is larger than expected by " \
                  "system headers. Processing the new socket as a socket with " \
                  "unknown type.");
@@ -943,7 +943,7 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
 
   if (! sk_nonbl && ! mhd_socket_nonblocking (s))
   {
-    MHD_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NONBLOCKING_FAILED, \
+    mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NONBLOCKING_FAILED, \
                  "Failed to set nonblocking mode on incoming connection " \
                  "socket.");
   }
@@ -952,7 +952,7 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
 
   if (! sk_cloexec && ! mhd_socket_noninheritable (s))
   {
-    MHD_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NOINHERIT_FAILED, \
+    mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NOINHERIT_FAILED, \
                  "Failed to set non-inheritable mode on incoming connection " \
                  "socket.");
   }
@@ -960,7 +960,7 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
 #if defined(MHD_socket_nosignal_)
   if (! sk_spipe_supprs && ! MHD_socket_nosignal_ (s))
   {
-    MHD_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NOSIGPIPE_FAILED,
+    mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NOSIGPIPE_FAILED,
                  "Failed to suppress SIGPIPE on incoming connection " \
                  "socket.");
 #ifndef MSG_NOSIGNAL
@@ -985,4 +985,17 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
                                                 sk_spipe_supprs,
                                                 sk_non_ip)) ?
          mhd_DAEMON_ACCEPT_FAILED : mhd_DAEMON_ACCEPT_SUCCESS;
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+mhd_conn_close_final (struct MHD_Connection *restrict c)
+{
+  if ((NULL != mhd_DLINKEDL_GET_NEXT (c, proc_ready)) ||
+      (NULL != mhd_DLINKEDL_GET_PREV (c, proc_ready)) ||
+      (c == mhd_DLINKEDL_GET_FIRST (&(c->daemon->events), proc_ready)))
+    mhd_DLINKEDL_DEL (&(c->daemon->events), c, proc_ready);
+
+  mhd_assert (0 && "Not finished yet");
+  // TODO: finish
 }

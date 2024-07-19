@@ -68,6 +68,7 @@ libmicrohttpd2_la_SOURCES = \
   daemon_funcs.c            daemon_funcs.h \
   conn_data_process.c       conn_data_process.h \
   conn_data_recv.c          conn_data_recv.h \
+  conn_data_send.c          conn_data_send.h \
   request_funcs.c           request_funcs.h \
   request_get_value.c       request_get_value.h \
   respond_with_error.h \
@@ -79,7 +80,7 @@ libmicrohttpd2_la_SOURCES = \
   stream_funcs.c            stream_funcs.h \
   stream_process_states.c   stream_process_states.h \
   stream_process_request.c  stream_process_request.h \
-  stream_process_reply.h
+  stream_process_reply.c    stream_process_reply.h
 
 if ! HAVE_SYS_CALLOC
 libmicrohttpd2_la_SOURCES += \

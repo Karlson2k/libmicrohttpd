@@ -140,7 +140,7 @@ MHD_response_add_header (struct MHD_Response *response,
   else
     need_unlock = false;
 
-  // TODO: add special processing for "Date", "Connection", "Content-Length"
+  // TODO: add special processing for "Date", "Connection", "Content-Length", "Transfer-Encoding"
 
   res = response_add_header_int (response, name, value);
 

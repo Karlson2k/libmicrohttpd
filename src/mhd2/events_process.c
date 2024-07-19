@@ -44,7 +44,6 @@
 #include "conn_data_process.h"
 
 
-
 MHD_FN_PAR_NONNULL_ (1) static void
 update_conn_net_status (struct MHD_Daemon *restrict d,
                         struct MHD_Connection *restrict c,
@@ -220,8 +219,8 @@ daemon_process_all_act_coons (struct MHD_Daemon *restrict d)
   {
     struct MHD_Connection *next;
     next = mhd_DLINKEDL_GET_NEXT (c, proc_ready); /* The current connection can be closed */
-    if (! mhd_conn_process_recv_send_data(c))
-      mhd_conn_close_final(c);
+    if (! mhd_conn_process_recv_send_data (c))
+      mhd_conn_close_final (c);
 
     c = next;
   }
@@ -303,7 +302,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
               d->events.data.poll.rel[i_s].fd_id);
   if (0 != (d->events.data.poll.fds[i_s].revents & (POLLERR | POLLNVAL)))
   {
-    MHD_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
+    mhd_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
                  "System reported that ITC has an error status.");
     /* ITC is broken, need to stop the daemon thread now as otherwise
        application will not be able to stop the thread. */
@@ -334,7 +333,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
     if (0 != (revents & (POLLERR | POLLNVAL | POLLHUP)))
     {
       --num_events;
-      MHD_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
+      mhd_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
                    "System reported that the listening socket has an error " \
                    "status. The daemon will not listen any more.");
       /* Close the listening socket unless the master daemon should close it */
@@ -442,11 +441,11 @@ get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
     {
       if (is_hard_error)
       {
-        MHD_LOG_MSG (d, MHD_SC_POLL_HARD_ERROR, \
+        mhd_LOG_MSG (d, MHD_SC_POLL_HARD_ERROR, \
                      "The poll() encountered unrecoverable error.");
         return false;
       }
-      MHD_LOG_MSG (d, MHD_SC_POLL_SOFT_ERROR, \
+      mhd_LOG_MSG (d, MHD_SC_POLL_SOFT_ERROR, \
                    "The poll() encountered error.");
     }
   }
@@ -540,7 +539,7 @@ mhd_worker_all_events (void *cls)
   }
   if (! d->threading.stop_requested)
   {
-    MHD_LOG_MSG (d, MHD_SC_DAEMON_THREAD_STOP_UNEXPECTED, \
+    mhd_LOG_MSG (d, MHD_SC_DAEMON_THREAD_STOP_UNEXPECTED, \
                  "The daemon thread is stopping, but termination has not " \
                  "been requested by the daemon.");
   }
@@ -599,7 +598,7 @@ mhd_worker_listening_only (void *cls)
   }
   if (! d->threading.stop_requested)
   {
-    MHD_LOG_MSG (d, MHD_SC_DAEMON_THREAD_STOP_UNEXPECTED, \
+    mhd_LOG_MSG (d, MHD_SC_DAEMON_THREAD_STOP_UNEXPECTED, \
                  "The daemon thread is stopping, but termination has not been " \
                  "requested by the daemon.");
   }

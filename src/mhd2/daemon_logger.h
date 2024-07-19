@@ -56,20 +56,20 @@ mhd_logger (struct MHD_Daemon *daemon,
  * Any '%' symbols should be doubled ('%%') to avoid interpretation as a format
  * specifier symbol.
  */
-#define MHD_LOG_MSG(daemon,sc,msg) mhd_logger (daemon,sc,msg)
+#define mhd_LOG_MSG(daemon,sc,msg) mhd_logger (daemon,sc,msg)
 
 /**
  * Format message and log it
  *
- * Always use with #MHD_LOG_FMT() for the format string.
+ * Always use with #mhd_LOG_FMT() for the format string.
  */
-#define MHD_LOG_PRINT mhd_logger
+#define mhd_LOG_PRINT mhd_logger
 
 /**
  * The wrapper macro for the format string to be used for format parameter for
- * the #MHD_LOG_FMT() macro
+ * the #mhd_LOG_FMT() macro
  */
-#define MHD_LOG_FMT(format_string) format_string
+#define mhd_LOG_FMT(format_string) format_string
 
 #else  /* ! HAVE_LOG_FUNCTIONALITY */
 
@@ -83,14 +83,14 @@ mhd_logger (struct MHD_Daemon *daemon,
  * Any '%' symbols should be doubled ('%%') to avoid interpretation as a format
  * specifier symbol.
  */
-#define MHD_LOG_MSG(daemon,sc,msg)  do { (void) daemon; } while (0)
+#define mhd_LOG_MSG(daemon,sc,msg)  do { (void) daemon; } while (0)
 
 /**
  * Format message and log it
  *
- * Always use with #MHD_LOG_FMT() for the format string.
+ * Always use with #mhd_LOG_FMT() for the format string.
  */
-#define MHD_LOG_PRINT(daemon,sc,fm,...)  do { (void) daemon; } while (0)
+#define mhd_LOG_PRINT(daemon,sc,fm,...)  do { (void) daemon; } while (0)
 
 #else  /* ! HAVE_MACRO_VARIADIC */
 
@@ -99,10 +99,10 @@ mhd_logger (struct MHD_Daemon *daemon,
 /**
  * Format message and log it
  *
- * Always use with #MHD_LOG_FMT() for the format string.
+ * Always use with #mhd_LOG_FMT() for the format string.
  */
 MHD_static_inline_ void
-MHD_LOG_PRINT (struct MHD_Daemon *daemon,
+mhd_LOG_PRINT (struct MHD_Daemon *daemon,
                enum MHD_StatusCode sc,
                const char *fm,
                ...)
@@ -118,15 +118,15 @@ MHD_LOG_PRINT (struct MHD_Daemon *daemon,
  * Any '%' symbols should be doubled ('%%') to avoid interpretation as a format
  * specifier symbol.
  */
-#define MHD_LOG_MSG(daemon,sc,msg) MHD_LOG_PRINT (daemon,sc,NULL)
+#define mhd_LOG_MSG(daemon,sc,msg) mhd_LOG_PRINT (daemon,sc,NULL)
 
 #endif /* ! HAVE_MACRO_VARIADIC */
 
 /**
  * The wrapper macro for the format string to be used for format parameter for
- * the #MHD_LOG_FMT() macro
+ * the #mhd_LOG_FMT() macro
  */
-#define MHD_LOG_FMT(format_string) NULL
+#define mhd_LOG_FMT(format_string) NULL
 
 #endif /* ! HAVE_LOG_FUNCTIONALITY */
 

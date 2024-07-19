@@ -53,6 +53,7 @@ struct MHD_Reply_Properties
   bool use_reply_body_headers; /**< Use reply body-specific headers */
   bool send_reply_body; /**< Send reply body (can be zero-sized) */
   bool chunked; /**< Use chunked encoding for reply */
+  bool end_by_closing; /**< Signal end of content (only) by closing connection */
 };
 
 /**

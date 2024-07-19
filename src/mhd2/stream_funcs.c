@@ -25,15 +25,23 @@
  */
 
 #include "mhd_sys_options.h"
+
 #include "stream_funcs.h"
-#include "mhd_connection.h"
+
 #include <string.h>
-#include "mhd_public_api.h"
+
+#include "mhd_daemon.h"
+#include "mhd_connection.h"
 #include "mhd_assert.h"
 #include "mhd_mempool.h"
 #include "mhd_str.h"
 #include "mhd_str_macros.h"
+
 #include "request_get_value.h"
+#include "response_destroy.h"
+#include "mhd_mono_clock.h"
+
+#include "mhd_public_api.h"
 
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void *
@@ -456,4 +464,124 @@ mhd_stream_switch_from_recv_to_send (struct MHD_Connection *c)
 {
   /* Read buffer is not needed for this request, shrink it.*/
   mhd_stream_shrink_read_buffer (c);
+}
+
+
+/**
+ * Finish request serving.
+ * The stream will be re-used or closed.
+ *
+ * @param c the connection to use.
+ */
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
+                               bool reuse)
+{
+  struct MHD_Daemon *const restrict d = c->daemon;
+
+  if (! reuse)
+  {
+    /* Next function will destroy response, notify client,
+     * destroy memory pool, and set connection state to "CLOSED" */
+    mhd_conn_pre_close_req_finished (c);
+    c->read_buffer = NULL;
+    c->read_buffer_size = 0;
+    c->read_buffer_offset = 0;
+    c->write_buffer = NULL;
+    c->write_buffer_size = 0;
+    c->write_buffer_send_offset = 0;
+    c->write_buffer_append_offset = 0;
+  }
+  else
+  {
+    /* Reset connection to process the next request */
+    size_t new_read_buf_size;
+    mhd_assert (! c->stop_with_error);
+    mhd_assert (! c->discard_request);
+
+#if 0 // TODO: notification callback
+    if ( (NULL != d->notify_completed) &&
+         (c->rq.client_aware) )
+      d->notify_completed (d->notify_completed_cls,
+                           c,
+                           &c->rq.client_context,
+                           MHD_REQUEST_TERMINATED_COMPLETED_OK);
+#endif
+    c->rq.client_aware = false;
+
+    if (NULL != c->rp.response)
+      mhd_response_dec_use_count (c->rp.response);
+    c->rp.response = NULL;
+
+    c->conn_reuse = mhd_CONN_KEEPALIVE_POSSIBLE;
+    c->state = MHD_CONNECTION_INIT;
+    c->event_loop_info =
+      (0 == c->read_buffer_offset) ?
+      MHD_EVENT_LOOP_INFO_READ : MHD_EVENT_LOOP_INFO_PROCESS;
+
+    memset (&c->rq, 0, sizeof(c->rq));
+
+    /* iov (if any) will be deallocated by mhd_pool_reset */
+    memset (&c->rp, 0, sizeof(c->rp));
+
+    c->write_buffer = NULL;
+    c->write_buffer_size = 0;
+    c->write_buffer_send_offset = 0;
+    c->write_buffer_append_offset = 0;
+    c->continue_message_write_offset = 0;
+
+    /* Reset the read buffer to the starting size,
+       preserving the bytes we have already read. */
+    new_read_buf_size = d->conns.cfg.mem_pool_size / 2;
+    if (c->read_buffer_offset > new_read_buf_size)
+      new_read_buf_size = c->read_buffer_offset;
+
+    c->read_buffer
+      = mhd_pool_reset (c->pool,
+                        c->read_buffer,
+                        c->read_buffer_offset,
+                        new_read_buf_size);
+    c->read_buffer_size = new_read_buf_size;
+  }
+  c->rq.client_context = NULL;
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
+mhd_stream_check_timedout (struct MHD_Connection *restrict c)
+{
+  (void) c;
+  // TODO: implement
+  return false;
+}
+
+
+/**
+ * Update last activity mark to the current time..
+ * @param c the connection to update
+ */
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+mhd_stream_update_activity_mark (struct MHD_Connection *restrict c)
+{
+  struct MHD_Daemon *const restrict d = c->daemon;
+#if defined(MHD_USE_THREADS)
+  mhd_assert (! mhd_D_HAS_WORKERS (d));
+#endif /* MHD_USE_THREADS */
+
+  mhd_assert (! c->suspended);
+
+  if (0 == c->connection_timeout_ms)
+    return;  /* Skip update of activity for connections
+               without timeout timer. */
+
+  c->last_activity = MHD_monotonic_msec_counter ();
+  if (mhd_D_HAS_THR_PER_CONN (d))
+    return; /* each connection has personal timeout */
+
+  if (c->connection_timeout_ms != d->conns.cfg.timeout)
+    return; /* custom timeout, no need to move it in "normal" DLL */
+
+  /* move connection to head of timeout list (by remove + add operation) */
+  mhd_DLINKEDL_DEL_D (&(d->conns.def_timeout), c, by_timeout);
+  mhd_DLINKEDL_INS_FIRST_D (&(d->conns.def_timeout), c, by_timeout);
 }

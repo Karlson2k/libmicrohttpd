@@ -195,7 +195,7 @@ MHD_HTTP_status_code_to_string (enum MHD_HTTP_StatusCode code)
 
 
 MHD_INTERNAL MHD_FN_CONST_ const struct MHD_String *
-mhd_HTTP_status_code_to_string_int (unsigned int code)
+mhd_HTTP_status_code_to_string_int (uint_fast16_t code)
 {
   static const struct MHD_String no_status =
     mhd_MSTR_INIT ("Nonstandard Status");

@@ -29,6 +29,7 @@
 
 #include "mhd_sys_options.h"
 
+#include "sys_base_types.h"
 #include "mhd_str_types.h"
 
 /**
@@ -39,7 +40,7 @@
  * @return pointer to MHD_String, never NULL.
  */
 MHD_INTERNAL const struct MHD_String *
-mhd_HTTP_status_code_to_string_int (unsigned int code)
+mhd_HTTP_status_code_to_string_int (uint_fast16_t code)
 MHD_FN_CONST_;
 
 

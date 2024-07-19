@@ -35,9 +35,18 @@
 #include "mhd_str_macros.h"
 
 #include "mhd_connection.h"
+#include "mhd_response.h"
 #include "stream_process_states.h"
 #include "stream_funcs.h"
 #include "stream_process_request.h"
+#include "stream_process_reply.h"
+
+static MHD_FN_PAR_NONNULL_ALL_ bool
+update_active_state (struct MHD_Connection *restrict c)
+{
+  mhd_assert (0); (void) c;
+  return true;
+}
 
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
@@ -142,6 +151,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       c->state = MHD_CONNECTION_FOOTERS_RECEIVING;
       continue;
     case MHD_CONNECTION_FOOTERS_RECEIVING:
+      mhd_assert (c->rq.have_chunked_upload);
       if (mhd_stream_get_request_headers (c, true))
       {
         mhd_assert (MHD_CONNECTION_FOOTERS_RECEIVING < c->state);
@@ -152,6 +162,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       mhd_assert (MHD_CONNECTION_FOOTERS_RECEIVING == c->state);
       break;
     case MHD_CONNECTION_FOOTERS_RECEIVED:
+      mhd_assert (c->rq.have_chunked_upload);
       c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
       continue;
     case MHD_CONNECTION_FULL_REQ_RECEIVED:
@@ -165,28 +176,22 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       if (mhd_stream_process_req_recv_finished (c))
         continue;
       break;
+    // TODO: add stage for setup and full request buffers cleanup
     case MHD_CONNECTION_START_REPLY:
       mhd_assert (NULL != c->rp.response);
       mhd_stream_switch_from_recv_to_send (c);
-      if (MHD_NO == build_header_response (c))
-      {
-        /* oops - close! */
-        CONNECTION_CLOSE_ERROR (c,
-                                _ ("Closing connection (failed to create "
-                                   "response header).\n"));
-        continue;
-      }
-      c->state = MHD_CONNECTION_HEADERS_SENDING;
+      if (! mhd_stream_build_header_response (c))
+        break;
+      mhd_assert (MHD_CONNECTION_START_REPLY != c->state);
       break;
-
     case MHD_CONNECTION_HEADERS_SENDING:
-      /* no default action */
+      /* no default action, wait for sending all the headers */
       break;
     case MHD_CONNECTION_HEADERS_SENT:
-      mhd_assert (0 && "Not implemented yet");
 #if 0 // def UPGRADE_SUPPORT // TODO: upgrade support
       if (NULL != c->rp.response->upgrade_handler)
       {
+        mhd_assert (0 && "Not implemented yet");
         c->state = MHD_CONNECTION_UPGRADE;
         /* This connection is "upgraded".  Pass socket to application. */
         if (MHD_NO ==
@@ -215,36 +220,25 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
         if (c->rp.props.chunked)
           c->state = MHD_CONNECTION_CHUNKED_BODY_UNREADY;
         else
-          c->state = MHD_CONNECTION_NORMAL_BODY_UNREADY;
+          c->state = MHD_CONNECTION_UNCHUNKED_BODY_UNREADY;
       }
       else
         c->state = MHD_CONNECTION_FULL_REPLY_SENT;
       continue;
-    case MHD_CONNECTION_NORMAL_BODY_READY:
+    case MHD_CONNECTION_UNCHUNKED_BODY_READY:
       mhd_assert (c->rp.props.send_reply_body);
       mhd_assert (! c->rp.props.chunked);
-      /* nothing to do here */
+      /* nothing to do here, send the data */
       break;
-    case MHD_CONNECTION_NORMAL_BODY_UNREADY:
+    case MHD_CONNECTION_UNCHUNKED_BODY_UNREADY:
       mhd_assert (c->rp.props.send_reply_body);
       mhd_assert (! c->rp.props.chunked);
       if (0 == c->rp.response->cntn_size)
-      {
-        if (c->rp.props.chunked)
-          c->state = MHD_CONNECTION_CHUNKED_BODY_SENT;
-        else
-          c->state = MHD_CONNECTION_FULL_REPLY_SENT;
+      { /* a shortcut */
+        c->state = MHD_CONNECTION_FULL_REPLY_SENT;
         continue;
       }
-      if (MHD_NO != try_ready_normal_body (c))
-      {
-        c->state = MHD_CONNECTION_NORMAL_BODY_READY;
-        /* Buffering for flushable socket was already enabled*/
-
-        break;
-      }
-      /* mutex was already unlocked by "try_ready_normal_body */
-      /* not ready, no socket action */
+      mhd_stream_prep_unchunked_body (c);
       break;
     case MHD_CONNECTION_CHUNKED_BODY_READY:
       mhd_assert (c->rp.props.send_reply_body);
@@ -261,17 +255,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
         c->state = MHD_CONNECTION_CHUNKED_BODY_SENT;
         continue;
       }
-      if (1)
-      { /* pseudo-branch for local variables scope */
-        bool finished;
-        if (MHD_NO != try_ready_chunked_body (c, &finished))
-        {
-          c->state = finished ? MHD_CONNECTION_CHUNKED_BODY_SENT :
-                     MHD_CONNECTION_CHUNKED_BODY_READY;
-          continue;
-        }
-        /* mutex was already unlocked by try_ready_chunked_body */
-      }
+      mhd_stream_prep_chunked_body (c);
       break;
     case MHD_CONNECTION_CHUNKED_BODY_SENT:
       mhd_assert (c->rp.props.send_reply_body);
@@ -279,18 +263,8 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       mhd_assert (c->write_buffer_send_offset <= \
                   c->write_buffer_append_offset);
 
-      if (MHD_NO == build_connection_chunked_response_footer (c))
-      {
-        /* oops - close! */
-        CONNECTION_CLOSE_ERROR (c,
-                                _ ("Closing connection (failed to create " \
-                                   "response footer)."));
-        continue;
-      }
-      mhd_assert (c->write_buffer_send_offset < \
-                  c->write_buffer_append_offset);
-      c->state = MHD_CONNECTION_FOOTERS_SENDING;
-      continue;
+      mhd_stream_prep_chunked_footer (c);
+      break;
     case MHD_CONNECTION_FOOTERS_SENDING:
       mhd_assert (c->rp.props.send_reply_body);
       mhd_assert (c->rp.props.chunked);
@@ -299,20 +273,22 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     case MHD_CONNECTION_FULL_REPLY_SENT:
       // FIXME: support MHD_HTTP_STATUS_PROCESSING ?
       /* Reset connection after complete reply */
-      connection_reset (c,
-                        MHD_CONN_USE_KEEPALIVE == c->keepalive &&
-                        ! c->read_closed &&
-                        ! c->discard_request);
+      mhd_stream_finish_req_serving ( \
+        c,
+        mhd_CONN_KEEPALIVE_POSSIBLE == c->conn_reuse
+        && ! c->discard_request
+        && ! c->sk_rmt_shut_wr);
       continue;
     case MHD_CONNECTION_CLOSED:
-      cleanup_connection (c);
-      return MHD_NO;
+      mhd_assert (0 && "Should be unreachable");
+      MHD_UNREACHABLE_;
+      return false;
 #if 0 // def UPGRADE_SUPPORT
     case MHD_CONNECTION_UPGRADE:
       return MHD_YES;     /* keep open */
 #endif /* UPGRADE_SUPPORT */
     default:
-      mhd_assert (0);
+      mhd_assert (0 && "Impossible value");
       break;
     }
     break;
@@ -323,13 +299,12 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     // TODO: process
   }
 
-  if (connection_check_timedout (c)) // TODO: centralise timeout checks
+  if (mhd_stream_check_timedout (c)) // TODO: centralise timeout checks
   {
-    MHD_connection_close_ (c,
-                           MHD_REQUEST_TERMINATED_TIMEOUT_REACHED);
-    return MHD_YES;
+    mhd_conn_pre_close_timedout (c);
+    return false;
   }
-  mhd_conn_update_active_state (c);
+  update_active_state (c);
   /* MHD_connection_update_event_loop_info (c);*/
 
   return true;

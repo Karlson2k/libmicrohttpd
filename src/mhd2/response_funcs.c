@@ -81,16 +81,26 @@ response_set_properties (struct MHD_Response *restrict r)
   r->cfg.head_only = s->head_only_response;
   if (s->http_1_0_compatible_strict)
   {
-    r->cfg.conn_close = true;
+    r->cfg.close_forced = true;
     r->cfg.chunked = false;
+    r->cfg.mode_1_0 = s->http_1_0_server;
+  }
+  else if (s->http_1_0_server)
+  {
+    r->cfg.close_forced = s->conn_close || (MHD_SIZE_UNKNOWN == r->cntn_size);
+    r->cfg.chunked = false;
+    r->cfg.mode_1_0 = true;
   }
   else
   {
-    r->cfg.conn_close = s->conn_close;
+    r->cfg.close_forced = s->conn_close;
     r->cfg.chunked = s->chunked_enc || (MHD_SIZE_UNKNOWN == r->cntn_size);
+    r->cfg.mode_1_0 = false;
   }
-  r->cfg.mode_1_0 = s->http_1_0_server;
+
   r->cfg.cnt_len_by_app = s->insanity_header_content_length; // TODO: set only if "content-lengh" header is used
+
+  // TODO: calculate size of the headers and the "Connection:" header
 
   r->settings = NULL;
   free (s);

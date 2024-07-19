@@ -530,19 +530,40 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_HOST_HEADER_MISSING = 40060
   ,
   /**
+   * Request has more than one "Host:" header.
+   */
+  MHD_SC_HOST_HEADER_SEVERAL = 40061
+  ,
+  /**
    * The given content length was not a number.
    */
-  MHD_SC_CONTENT_LENGTH_MALFORMED = 40061
+  MHD_SC_CONTENT_LENGTH_MALFORMED = 40062
+  ,
+  /**
+   * Request has more than one "Content-Length:" header with the same value.
+   */
+  MHD_SC_CONTENT_LENGTH_SEVERAL_SAME = 40063
+  ,
+  /**
+   * Request has more than one "Content-Length:" header with the different
+   * values.
+   */
+  MHD_SC_CONTENT_LENGTH_SEVERAL_DIFFERENT = 40064
   ,
   /**
    * The BOTH Content-Length and Transfer-Encoding headers are used.
    */
-  MHD_SC_CONTENT_LENGTH_AND_TR_ENC = 40062
+  MHD_SC_CONTENT_LENGTH_AND_TR_ENC = 40065
   ,
   /**
    * The Content-Length is too large to be handled.
    */
-  MHD_SC_CONTENT_LENGTH_TOO_LARGE = 40062
+  MHD_SC_CONTENT_LENGTH_TOO_LARGE = 40066
+  ,
+  /**
+   * Transfer encoding in request is unsupported or invalid.
+   */
+  MHD_SC_CHUNKED_ENCODING_UNSUPPORTED = 40067
   ,
   /**
    * The given uploaded, chunked-encoded body was malformed.
@@ -1218,14 +1239,24 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_RESP_HEADER_VALUE_INVALID = 60051
   ,
   /**
-   * The the provided MHD_Action is invalid
+   * The provided MHD_Action is invalid
    */
   MHD_SC_ACTION_INVALID = 60080
   ,
   /**
-   * The the provided MHD_UploadAction is invalid
+   * The provided MHD_UploadAction is invalid
    */
   MHD_SC_UPLOAD_ACTION_INVALID = 60081
+  ,
+  /**
+   * The response must be empty
+   */
+  MHD_SC_REPLY_NOT_EMPTY_RESPONSE = 60101
+  ,
+  /**
+   * The "Content-Length" header is not allowed in the reply
+   */
+  MHD_SC_REPLY_CONTENT_LENGTH_NOT_ALLOWED = 60102
 
 };
 

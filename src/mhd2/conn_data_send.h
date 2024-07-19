@@ -38,12 +38,9 @@ struct MHD_Connection; /* forward declarations */
  * type.
  *
  * @param c the connection to use
- * @param has_err if 'true' then just check for the network error
- *        type is performed
  */
 MHD_INTERNAL void
-mhd_conn_data_send (struct MHD_Connection *restrict c,
-                    bool has_err)
+mhd_conn_data_send (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 
 

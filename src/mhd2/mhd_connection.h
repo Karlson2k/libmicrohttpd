@@ -295,12 +295,12 @@ enum MHD_FIXED_ENUM_ MHD_CONNECTION_STATE
    * We are waiting for the client to provide more
    * data of a non-chunked body.
    */
-  MHD_CONNECTION_NORMAL_BODY_UNREADY,
+  MHD_CONNECTION_UNCHUNKED_BODY_UNREADY,
 
   /**
    * We are ready to send a part of a non-chunked body.  Send it.
    */
-  MHD_CONNECTION_NORMAL_BODY_READY,
+  MHD_CONNECTION_UNCHUNKED_BODY_READY,
 
   /**
    * We are waiting for the client to provide a chunk of the body.
@@ -339,27 +339,22 @@ enum MHD_FIXED_ENUM_ MHD_CONNECTION_STATE
 /**
  * Ability to use same connection for next request
  */
-enum MHD_FIXED_ENUM_ MHD_ConnKeepAlive
+enum MHD_FIXED_ENUM_ mhd_ConnReuse
 {
   /**
    * Connection must be closed after sending response.
    */
-  MHD_CONN_MUST_CLOSE = -1,
-
+  mhd_CONN_MUST_CLOSE = -1
+  ,
   /**
-   * KeelAlive state is not yet determined
+   * KeepAlive state is possible
    */
-  MHD_CONN_KEEPALIVE_UNKOWN = 0,
-
-  /**
-   * Connection can be used for serving next request
-   */
-  MHD_CONN_USE_KEEPALIVE = 1,
-
+  mhd_CONN_KEEPALIVE_POSSIBLE = 0
+  ,
   /**
    * Connection will be upgraded
    */
-  MHD_CONN_MUST_UPGRADE = 2
+  mhd_CONN_MUST_UPGRADE = 1
 };
 
 /**
@@ -450,10 +445,10 @@ struct MHD_Connection
 
   /**
    * Close connection after sending response?
-   * Functions may change value from "Unknown" or "KeepAlive" to "Must close",
+   * Functions may change value from "KeepAlive" to "Must close",
    * but no functions reset value "Must Close" to any other value.
    */
-  enum MHD_ConnKeepAlive keepalive;
+  enum mhd_ConnReuse conn_reuse;
 
   /**
    * Buffer for reading requests.  Allocated in pool.  Actually one
@@ -568,14 +563,6 @@ struct MHD_Connection
    * Tracks TCP_NODELAY state of the connection socket.
    */
   enum mhd_Tristate sk_nodelay;
-
-  /**
-   * Has this socket been closed for reading (i.e.  other side closed
-   * the connection)?  If so, we must completely close the connection
-   * once we are done sending our response (and stop trying to read
-   * from this socket).
-   */
-  bool read_closed;
 
   /**
    * Some error happens during processing the connection therefore this
