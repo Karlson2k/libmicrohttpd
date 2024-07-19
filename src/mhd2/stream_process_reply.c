@@ -34,6 +34,7 @@
 #include "sys_bool_type.h"
 #include "sys_base_types.h"
 
+#include <string.h>
 #ifdef HAVE_TIME_H
 #  include <time.h>
 #endif
@@ -829,7 +830,7 @@ build_header_response_inn (struct MHD_Connection *restrict c)
       else
       {
         mhd_assert ((! c->rp.props.send_reply_body) || \
-                    (mhd_CONN_MUST_CLOSE = c->conn_reuse));
+                    (mhd_CONN_MUST_CLOSE == c->conn_reuse));
         (void) 0;
       }
     }

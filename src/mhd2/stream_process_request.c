@@ -1132,7 +1132,7 @@ mhd_parse_get_args (size_t args_len,
         if (i < args_len)
           args[i] = 0;
         mhd_assert (0 == args[i]);
-        break; /* End if the parameter */
+        break; /* End of the parameter */
       }
     }
 
@@ -1143,9 +1143,10 @@ mhd_parse_get_args (size_t args_len,
       mhd_assert (name_start + 2 <= value_start);
       name_len = value_start - name_start - 2;
 
-      value_len = mhd_str_pct_decode_lenient_n (args + value_start, value_len,
-                                                args + value_start, value_len,
-                                                NULL); // TODO: add support for broken encoding detection
+      value_len =
+        mhd_str_pct_decode_lenient_n (args + value_start, i - value_len,
+                                      args + value_start, i - value_len,
+                                      NULL); // TODO: add support for broken encoding detection
       value.cstr = args + value_start;
       value.len = value_len;
     }
