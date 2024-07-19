@@ -1144,8 +1144,8 @@ mhd_parse_get_args (size_t args_len,
       name_len = value_start - name_start - 2;
 
       value_len =
-        mhd_str_pct_decode_lenient_n (args + value_start, i - value_len,
-                                      args + value_start, i - value_len,
+        mhd_str_pct_decode_lenient_n (args + value_start, i - value_start,
+                                      args + value_start, i - value_start,
                                       NULL); // TODO: add support for broken encoding detection
       value.cstr = args + value_start;
       value.len = value_len;
