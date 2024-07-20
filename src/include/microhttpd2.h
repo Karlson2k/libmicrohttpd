@@ -3231,22 +3231,46 @@ typedef enum MHD_Bool
 
 
 /**
- * Function called by MHD to allow the application to log
- * the @a full_uri of a @a request.
+ * The data for the #MHD_EarlyUriLogCallback
+ */
+struct MHD_EarlyUriCbData
+{
+  /**
+   * The request handle.
+   * Headers are not yet available.
+   */
+  struct MHD_Request *request;
+
+  /**
+   * Pointer to the application context for the request.
+   * Modifiable. Initially to NULL.
+   */
+  void *request_app_context;
+};
+
+/**
+ * Function called by MHD to allow the application to log the @a full_uri
+ * of the new request.
+ * If this callback is set then it is the first application function called
+ * for the new request.
  * This is the only moment when unmodified URI is provided.
- * After this callback MHD parses the URI and modifies it
- * by extracting GET parameters in-place.
+ * After this callback MHD parses the URI and modifies it by extracting
+ * GET parameters in-place.
+ * If #MHD_RequestTerminationCallback is set then it is guaranteed that
+ * #MHD_RequestTerminationCallback is called for the same request. Application
+ * may allocate request specific data in this callback and de-allocate
+ * the data in #MHD_RequestTerminationCallback.
  *
  * @param cls client-defined closure
- * @param[in,out] request the HTTP request handle (headers are
- *         not yet available)
- * @param full_uri the full URI from the HTTP request including parameters (after '?')
+ * @param full_uri the full URI ("request target") from the HTTP request
+ *                 including parameters (the part after '?')
+ * @param[in,out] req_data the request data
  */
 typedef void
-(MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_NONNULL_ (3)
+(MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_ (3)
  *MHD_EarlyUriLogCallback)(void *cls,
-                           struct MHD_Request *request,
-                           const struct MHD_String *full_uri);
+                           const struct MHD_String *full_uri,
+                           struct MHD_EarlyUriCbData *req_data);
 
 /**
  * The `enum MHD_ConnectionNotificationCode` specifies types
@@ -3437,7 +3461,6 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestTerminationCode
   /**
    * The client terminated the connection by closing the socket
    * for writing (TCP half-closed) before sending complete request;
-   * MHD aborted sending the response according to RFC 2616, section 8.1.4.
    * @ingroup request
    */
   MHD_REQUEST_TERMINATED_CLIENT_ABORT = 3
@@ -3449,7 +3472,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestTerminationCode
   MHD_REQUEST_TERMINATED_NO_RESOURCES = 4
   ,
   /**
-   * We had to close the session since MHD was being shut down.
+   * Closing the session since MHD is being shut down.
    * @ingroup request
    */
   MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 5
@@ -3493,6 +3516,11 @@ struct MHD_RequestTerminationData
    * Detailed information about termination event
    */
   union MHD_RequestTerminationDetail details;
+  /**
+   * Pointer to the application context for the request.
+   * NULL unless other value set by application when processing the request.
+   */
+  void *request_app_context;
 };
 
 
@@ -3509,8 +3537,7 @@ struct MHD_RequestTerminationData
  */
 typedef void
 (*MHD_RequestTerminationCallback) (void *cls,
-                                   struct MHD_RequestTerminationData *data,
-                                   void *request_context);
+                                   struct MHD_RequestTerminationData *data);
 
 
 #include "microhttpd2_generated_response_options.h"
@@ -8739,11 +8766,15 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
   MHD_REQUEST_INFO_DYNAMIC_HEADER_SIZE = 21
   ,
   /**
-   * Returns the client-specific pointer to a `void *` that
-   * is specific to this request.
-   * The result is placed in @a v_pvoid member.
+   * Returns the request-specific pointer to a `void *`. The pointer obtainable
+   * by this pointer is the same as provided for #MHD_EarlyUriLogCallback and
+   * #MHD_RequestTerminationCallback.
+   * By using provided pointer application may get or set the pointer to
+   * any data specific for the particular request.
+   * The result is placed in @a v_ppvoid member.
+   * @ingroup request
    */
-  MHD_REQUEST_INFO_DYNAMIC_CLIENT_CONTEXT = 31
+  MHD_REQUEST_INFO_DYNAMIC_APP_CONTEXT = 31
   ,
   /**
    * Returns pointer to information about username in client's digest auth
@@ -8810,10 +8841,9 @@ union MHD_RequestInfoDynamicData
    */
   uint_fast64_t v_uint64;
   /**
-   * The pointer to void
+   * The pointer to pointer to the data.
    */
-  void *v_pvoid;
-
+  void **v_ppvoid;
   /**
    * The information about client provided username for digest auth
    */
