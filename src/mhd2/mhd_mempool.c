@@ -265,6 +265,8 @@ struct mhd_MemoryPool
    * 'false' if pool was malloc'ed, 'true' if mmapped (VirtualAlloc'ed for W32).
    */
   bool is_mmap;
+
+  // TODO: implement *optional* zeroing on reset on reallocs
 };
 
 

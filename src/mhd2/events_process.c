@@ -416,7 +416,7 @@ get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
 
   // TODO: handle empty list situation
 
-  num_events = mhd_poll (d->events.data.poll.fds, num_fds, -1);
+  num_events = mhd_poll (d->events.data.poll.fds, num_fds, -1); // TODO: use correct timeout value
   if (0 > num_events)
   {
     int err;

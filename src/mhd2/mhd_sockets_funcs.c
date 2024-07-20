@@ -126,6 +126,38 @@ mhd_socket_set_nodelay (MHD_Socket sckt,
 }
 
 
+MHD_INTERNAL bool
+mhd_socket_set_hard_close (MHD_Socket sckt)
+{
+  // TODO: detect constants in configure
+#if defined(SOL_SOCKET) && defined(SO_LINGER)
+  struct linger par;
+
+  par.l_onoff = 1;
+  par.l_linger = 0;
+
+  return 0 == setsockopt (sckt, SOL_SOCKET, SO_LINGER,
+                          (const void *) &par, sizeof (par));
+#else  /* ! TCP_NODELAY */
+  (void) sock;
+  return false;
+#endif /* ! TCP_NODELAY */
+}
+
+
+MHD_INTERNAL bool
+mhd_socket_shut_wr (MHD_Socket sckt)
+{
+#if defined(SHUT_WR) // TODO: detect constants in configure
+  return 0 == shutdown (sckt, SHUT_WR);
+#elif defined(SD_SEND) // TODO: detect constants in configure
+  return 0 == shutdown (sckt, SD_SEND);
+#else
+  return false;
+#endif
+}
+
+
 #ifndef HAVE_SOCKETPAIR
 
 static bool

@@ -134,33 +134,6 @@ MHD_INTERNAL void
 mhd_stream_update_activity_mark (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 
-
-enum mhd_StreamAbortReason
-{
-  mhd_STREAM_ABORT_CLIENT_HTTP_ERR
-  ,
-  mhd_STREAM_ABORT_NO_POOL_MEM_FOR_REPLY
-  ,
-  mhd_STREAM_ABORT_APP_ERROR
-};
-
-/**
- * Close stream with error
- *
- * @param c the connection to close.
- */
-MHD_INTERNAL void
-mhd_stream_abort (struct MHD_Connection *c,
-                  enum mhd_StreamAbortReason reason,
-                  const char *log_msg)
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
-
-#ifdef HAVE_LOG_FUNCTIONALITY
-#  define mhd_STREAM_ABORT(c,r,m) (mhd_stream_abort ((c),(r),(m)))
-#else  /* ! HAVE_LOG_FUNCTIONALITY */
-#  define mhd_STREAM_ABORT(c,r,m) (mhd_stream_abort ((c),(r),NULL))
-#endif /* ! HAVE_LOG_FUNCTIONALITY */
-
 /**
  * Update last activity mark to the current time..
  * @param c the connection to update
@@ -171,43 +144,136 @@ MHD_INTERNAL bool
 mhd_stream_check_timedout (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 
-
 /**
- * Perform initial clean-up and mark for closing.
- * Set the reason to "aborted by application"
- * @param c to make
+ * The reason to close the connection
  */
-MHD_INTERNAL void
-mhd_conn_pre_close_app_abort (struct MHD_Connection *restrict c)
-MHD_FN_PAR_NONNULL_ALL_;
+enum mhd_ConnCloseReason
+{
+  /* Hard problem while receiving */
+  /**
+   * Client sent data that cannot be interpreted as HTTP data
+   */
+  mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN
+  ,
+  /**
+   * No space in the connection pool memory for receiving or processing
+   * the request
+   */
+  mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REQUEST
+  ,
+  /**
+   * The client shut down send before complete request sent
+   */
+  mhd_CONN_CLOSE_CLIENT_SHUTDOWN_EARLY
+  ,
 
+  /* Hard problem while sending */
 
-/**
- * Perform initial clean-up and mark for closing.
- * Set the reason to "socket error"
- * @param c to make
- */
-MHD_INTERNAL void
-mhd_conn_pre_close_skt_err (struct MHD_Connection *restrict c)
-MHD_FN_PAR_NONNULL_ALL_;
+  /**
+   * No space in the connection pool memory for the reply
+   */
+  mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REPLY
+  ,
+  /**
+   * Application behaves incorrectly
+   */
+  mhd_CONN_CLOSE_APP_ERROR
+  ,
+  /**
+   * Application requested about of the stream
+   */
+  mhd_CONN_CLOSE_APP_ABORTED
+  ,
+
+  /* Hard problem while receiving or sending */
+  /**
+   * MHD internal error.
+   * Should never appear.
+   */
+  mhd_CONN_CLOSE_INT_ERROR
+  ,
+  /**
+   * The TCP or TLS connection is broken or aborted due to error on socket
+   * or TLS
+   */
+  mhd_CONN_CLOSE_SOCKET_ERR
+  ,
+
+  /* Could be hard or soft error depending on connection state */
+  /**
+   * Timeout detected when receiving request
+   */
+  mhd_CONN_CLOSE_TIMEDOUT
+  ,
+
+  /* Soft problem */
+  /**
+   * The connection must be closed after error response as the client
+   * violates HTTP specification
+   */
+  mhd_CONN_CLOSE_CLIENT_HTTP_ERR_SENT_ERR
+  ,
+
+  /* Graceful closing */
+  /**
+   * Close connection after graceful completion of HTTP communication
+   */
+  mhd_CONN_CLOSE_HTTP_COMPLETED
+
+};
+
 
 /**
  * Perform initial clean-up and mark for closing.
  * Set the reason to "request finished"
- * @param c to make
+ * @param c the connection for pre-closing
  */
 MHD_INTERNAL void
-mhd_conn_pre_close_req_finished (struct MHD_Connection *restrict c)
-MHD_FN_PAR_NONNULL_ALL_;
+mhd_conn_pre_close (struct MHD_Connection *restrict c,
+                    enum mhd_ConnCloseReason reason,
+                    const char *log_msg)
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
+
+/**
+ * Abort the stream and log message
+ */
+#ifdef HAVE_LOG_FUNCTIONALITY
+#  define mhd_STREAM_ABORT(c,r,m) (mhd_conn_pre_close ((c),(r),(m)))
+#else  /* ! HAVE_LOG_FUNCTIONALITY */
+#  define mhd_STREAM_ABORT(c,r,m) (mhd_conn_pre_close ((c),(r),NULL))
+#endif /* ! HAVE_LOG_FUNCTIONALITY */
+
+/**
+ * Perform initial clean-up and mark for closing.
+ * Set the reason to "aborted by application"
+ * @param c the connection for pre-closing
+ */
+#define mhd_conn_pre_close_app_abort(c) \
+        mhd_conn_pre_close (c, mhd_CONN_CLOSE_APP_ABORTED, NULL)
+
+/**
+ * Perform initial clean-up and mark for closing.
+ * Set the reason to "socket error"
+ * @param c the connection for pre-closing
+ */
+#define mhd_conn_pre_close_skt_err(c) \
+        mhd_conn_pre_close (c, mhd_CONN_CLOSE_SOCKET_ERR, NULL)
+
+/**
+ * Perform initial clean-up and mark for closing.
+ * Set the reason to "request finished"
+ * @param c the connection for pre-closing
+ */
+#define mhd_conn_pre_close_req_finished(c) \
+        mhd_conn_pre_close (c, mhd_CONN_CLOSE_HTTP_COMPLETED, NULL)
 
 /**
  * Perform initial clean-up and mark for closing.
  * Set the reason to "timed out".
- * @param c to make
+ * @param c the connection for pre-closing
  */
-MHD_INTERNAL void
-mhd_conn_pre_close_timedout (struct MHD_Connection *restrict c)
-MHD_FN_PAR_NONNULL_ALL_;
+#define mhd_conn_pre_close_timedout(c) \
+        mhd_conn_pre_close (c, mhd_CONN_CLOSE_TIMEDOUT, NULL)
 
 
 #endif /* ! MHD_STREAM_FUNCS_H */

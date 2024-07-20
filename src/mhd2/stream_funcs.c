@@ -37,9 +37,12 @@
 #include "mhd_str.h"
 #include "mhd_str_macros.h"
 
+#include "mhd_sockets_funcs.h"
+
 #include "request_get_value.h"
 #include "response_destroy.h"
 #include "mhd_mono_clock.h"
+#include "daemon_logger.h"
 
 #include "mhd_public_api.h"
 
@@ -501,13 +504,13 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
 
 #if 0 // TODO: notification callback
     if ( (NULL != d->notify_completed) &&
-         (c->rq.client_aware) )
+         (c->rq.app_aware) )
       d->notify_completed (d->notify_completed_cls,
                            c,
-                           &c->rq.client_context,
+                           &c->rq.app_context,
                            MHD_REQUEST_TERMINATED_COMPLETED_OK);
+    c->rq.app_aware = false;
 #endif
-    c->rq.client_aware = false;
 
     if (NULL != c->rp.response)
       mhd_response_dec_use_count (c->rp.response);
@@ -523,6 +526,8 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
 
     /* iov (if any) will be deallocated by mhd_pool_reset */
     memset (&c->rp, 0, sizeof(c->rp));
+
+    // TODO: set all rq and tp pointers to NULL manually. Do the same in other places.
 
     c->write_buffer = NULL;
     c->write_buffer_size = 0;
@@ -543,15 +548,51 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
                         new_read_buf_size);
     c->read_buffer_size = new_read_buf_size;
   }
-  c->rq.client_context = NULL;
+  c->rq.app_context = NULL;
 }
 
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_stream_check_timedout (struct MHD_Connection *restrict c)
 {
-  (void) c;
-  // TODO: implement
+  const uint_fast64_t timeout = c->connection_timeout_ms;
+  uint_fast64_t now;
+  uint_fast64_t since_actv;
+
+  mhd_assert (! c->suspended);
+
+  if (0 == timeout)
+    return false;
+
+  now = MHD_monotonic_msec_counter (); // TODO: Get and use timer value one time only per round
+  since_actv = now - c->last_activity;
+  /* Keep the next lines in sync with #connection_get_wait() to avoid
+   * undesired side-effects like busy-waiting. */
+  if (timeout < since_actv)
+  {
+    const uint_fast64_t jump_back = c->last_activity - now;
+    if (jump_back < since_actv)
+    {
+      /* Very unlikely that it is more than quarter-million years pause.
+       * More likely that system clock jumps back. */
+      if (4000 >= jump_back)
+      {
+        c->last_activity = now; /* Avoid repetitive messages.
+                                   Warn: the order of connections sorted
+                                   by timeout is not updated. */
+        mhd_LOG_PRINT (c->daemon, MHD_SC_SYS_CLOCK_JUMP_BACK_CORRECTED, \
+                       mhd_LOG_FMT ("Detected system clock %u " \
+                                    "milliseconds jump back."),
+                       (unsigned int) jump_back);
+        return false;
+      }
+      mhd_LOG_PRINT (c->daemon, MHD_SC_SYS_CLOCK_JUMP_BACK_LARGE, \
+                     mhd_LOG_FMT ("Detected too large system clock %" \
+                                  PRIuFAST64 " milliseconds jump back"),
+                     jump_back);
+    }
+    return true;
+  }
   return false;
 }
 
@@ -574,7 +615,7 @@ mhd_stream_update_activity_mark (struct MHD_Connection *restrict c)
     return;  /* Skip update of activity for connections
                without timeout timer. */
 
-  c->last_activity = MHD_monotonic_msec_counter ();
+  c->last_activity = MHD_monotonic_msec_counter (); // TODO: Get and use time value one time per round
   if (mhd_D_HAS_THR_PER_CONN (d))
     return; /* each connection has personal timeout */
 
@@ -584,4 +625,173 @@ mhd_stream_update_activity_mark (struct MHD_Connection *restrict c)
   /* move connection to head of timeout list (by remove + add operation) */
   mhd_DLINKEDL_DEL_D (&(d->conns.def_timeout), c, by_timeout);
   mhd_DLINKEDL_INS_FIRST_D (&(d->conns.def_timeout), c, by_timeout);
+}
+
+
+MHD_INTERNAL
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3) void
+mhd_conn_pre_close (struct MHD_Connection *restrict c,
+                    enum mhd_ConnCloseReason reason,
+                    const char *log_msg)
+{
+  bool close_hard;
+  enum MHD_RequestTerminationCode term_code;
+  enum MHD_StatusCode sc;
+
+  sc = MHD_SC_INTERNAL_ERROR;
+  switch (reason)
+  {
+  case mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN:
+    close_hard = true;
+    term_code = MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR;
+    sc = MHD_SC_REQ_MALFORMED;
+    break;
+  case mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REQUEST:
+    close_hard = true;
+    term_code = MHD_REQUEST_TERMINATED_NO_RESOURCES;
+    break;
+  case mhd_CONN_CLOSE_CLIENT_SHUTDOWN_EARLY:
+    close_hard = true;
+    term_code = MHD_REQUEST_TERMINATED_CLIENT_ABORT;
+    sc = MHD_SC_REPLY_POOL_ALLOCATION_FAILURE;
+    break;
+  case mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REPLY:
+    close_hard = true;
+    term_code = MHD_REQUEST_TERMINATED_NO_RESOURCES;
+    break;
+  case mhd_CONN_CLOSE_APP_ERROR:
+    close_hard = true;
+    term_code = MHD_REQUEST_TERMINATED_BY_APP_ERROR;
+    sc = MHD_SC_APPLICATION_DATA_GENERATION_FAILURE_CLOSED;
+    break;
+  case mhd_CONN_CLOSE_APP_ABORTED:
+    close_hard = true;
+    term_code = MHD_REQUEST_TERMINATED_BY_APP_ABORT;
+    sc = MHD_SC_APPLICATION_CALLBACK_ABORT_ACTION;
+    break;
+  case mhd_CONN_CLOSE_INT_ERROR:
+    close_hard = true;
+    term_code = MHD_REQUEST_TERMINATED_NO_RESOURCES;
+    break;
+  case mhd_CONN_CLOSE_SOCKET_ERR:
+    close_hard = true;
+    switch (c->sk_discnt_err)
+    {
+    case mhd_SOCKET_ERR_NOMEM:
+      term_code = MHD_REQUEST_TERMINATED_NO_RESOURCES;
+      break;
+    case mhd_SOCKET_ERR_CONNRESET:
+      term_code = MHD_REQUEST_TERMINATED_CLIENT_ABORT;
+      break;
+    case mhd_SOCKET_ERR_CONN_BROKEN:
+    case mhd_SOCKET_ERR_NOTCONN:
+    case mhd_SOCKET_ERR_TLS:
+    case mhd_SOCKET_ERR_PIPE:
+    case mhd_SOCKET_ERR_NOT_CHECKED:
+    case mhd_SOCKET_ERR_BADF:
+    case mhd_SOCKET_ERR_INVAL:
+    case mhd_SOCKET_ERR_OPNOTSUPP:
+    case mhd_SOCKET_ERR_NOTSOCK:
+    case mhd_SOCKET_ERR_OTHER:
+    case mhd_SOCKET_ERR_INTERNAL:
+      term_code = MHD_REQUEST_TERMINATED_CONNECTION_ERROR;
+      break;
+    case mhd_SOCKET_ERR_NO_ERROR:
+    case mhd_SOCKET_ERR_AGAIN:
+    case mhd_SOCKET_ERR_INTR:
+    default:
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+    }
+    break;
+
+  case mhd_CONN_CLOSE_TIMEDOUT:
+    if (MHD_CONNECTION_INIT == c->state)
+    {
+      close_hard = false;
+      term_code = MHD_REQUEST_TERMINATED_COMPLETED_OK; /* Not used */
+      break;
+    }
+    close_hard = true;
+    term_code = MHD_REQUEST_TERMINATED_TIMEOUT_REACHED;
+    break;
+
+  case mhd_CONN_CLOSE_CLIENT_HTTP_ERR_SENT_ERR:
+    close_hard = false;
+    term_code = c->rq.too_large ?
+                MHD_REQUEST_TERMINATED_NO_RESOURCES :
+                MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR;
+    break;
+  case mhd_CONN_CLOSE_HTTP_COMPLETED:
+    close_hard = false;
+    term_code = MHD_REQUEST_TERMINATED_COMPLETED_OK;
+    break;
+
+  default:
+    mhd_assert (0 && "Unreachable code");
+    MHD_UNREACHABLE_;
+    term_code = MHD_REQUEST_TERMINATED_COMPLETED_OK;
+    close_hard = false;
+  }
+
+  mhd_assert ((NULL == log_msg) || (MHD_SC_INTERNAL_ERROR != sc));
+
+  /* Make changes on the socket early to let the kernel and the remote
+   * to process the changes in parallel. */
+  if (close_hard)
+  {
+    /* Use abortive closing, send RST to remote to indicate a problem */
+    (void) mhd_socket_set_hard_close (c->socket_fd);
+    c->state = MHD_CONNECTION_CLOSED;
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
+  }
+  else
+  {
+    if (mhd_socket_shut_wr (c->socket_fd) && (! c->sk_rmt_shut_wr))
+    {
+      (void) 0; // TODO: start local lingering phase
+      c->state = MHD_CONNECTION_CLOSED; // TODO: start local lingering phase
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP; // TODO: start local lingering phase
+    }
+    else
+    {  /* No need / not possible to linger */
+      c->state = MHD_CONNECTION_CLOSED;
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
+    }
+  }
+
+#ifdef HAVE_LOG_FUNCTIONALITY
+  if (NULL != log_msg)
+  {
+    mhd_LOG_MSG (c->daemon, sc, log_msg);
+  }
+#else  /* ! HAVE_LOG_FUNCTIONALITY */
+  (void) log_msg;
+#endif /* ! HAVE_LOG_FUNCTIONALITY */
+
+#if 0 // TODO: notification callback
+  if ( (NULL != d->notify_completed) &&
+       (c->rq.app_aware) )
+    d->notify_completed (d->notify_completed_cls,
+                         c,
+                         &c->rq.app_context,
+                         MHD_REQUEST_TERMINATED_COMPLETED_OK);
+#else
+  (void) term_code;
+#endif
+
+  if (NULL != c->rp.response)
+    mhd_response_dec_use_count (c->rp.response);
+  c->rp.response = NULL;
+
+  mhd_assert (NULL != c->pool);
+  c->read_buffer_offset = 0;
+  c->read_buffer_size = 0;
+  c->read_buffer = NULL;
+  c->write_buffer_send_offset = 0;
+  c->write_buffer_append_offset = 0;
+  c->write_buffer_size = 0;
+  c->write_buffer = NULL;
+  mhd_pool_destroy (c->pool);
+  c->pool = NULL;
 }

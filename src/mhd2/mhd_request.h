@@ -253,6 +253,11 @@ struct MHD_Request
   struct mhd_ReqContentData cntn;
 
   /**
+   * Set to true if request is too large to be handled
+   */
+  bool too_large;
+
+  /**
    * HTTP version string (i.e. http/1.1).  Allocated
    * in pool.
    */
@@ -357,14 +362,14 @@ struct MHD_Request
    * and some other API calls.  Here is where we store it.  (MHD does
    * not know or care what it is).
    */
-  void *client_context;
+  void *app_context;
 
   /**
    * Did we ever call the "default_handler" on this request?
    * This flag determines if we have called the #MHD_OPTION_NOTIFY_COMPLETED
    * handler when the request finishes.
    */
-  bool client_aware;
+  bool app_aware;
 
   /**
    * Number of bare CR characters that were replaced with space characters

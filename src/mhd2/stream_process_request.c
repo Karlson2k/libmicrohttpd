@@ -630,7 +630,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
                               MHD_MAX_EMPTY_LINES_SKIP : 1)) <
              c->rq.hdrs.rq_line.skipped_empty_lines))
         {
-          mhd_STREAM_ABORT (c, mhd_STREAM_ABORT_CLIENT_HTTP_ERR,
+          mhd_STREAM_ABORT (c, mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN,
                             "Too many meaningless extra empty lines " \
                             "received before the request.");
           return true; /* Process connection closure */
@@ -706,7 +706,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
                                            ERR_RSP_BARE_CR_IN_HEADER);
           }
           else
-            mhd_STREAM_ABORT (c, mhd_STREAM_ABORT_CLIENT_HTTP_ERR,
+            mhd_STREAM_ABORT (c, mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN,
                               "Bare CR characters are not allowed " \
                               "in the request line.");
 
@@ -734,7 +734,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
                                          ERR_RSP_BARE_LF_IN_HEADER);
         }
         else
-          mhd_STREAM_ABORT (c, mhd_STREAM_ABORT_CLIENT_HTTP_ERR,
+          mhd_STREAM_ABORT (c, mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN,
                             "Bare LF characters are not allowed " \
                             "in the request line.");
         return true; /* Error in the request */
@@ -859,7 +859,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
                                        ERR_RSP_REQUEST_MALFORMED);
       }
       else
-        mhd_STREAM_ABORT (c, mhd_STREAM_ABORT_CLIENT_HTTP_ERR,
+        mhd_STREAM_ABORT (c, mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN,
                           "The request line is malformed.");
 
       return true;
@@ -922,7 +922,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
           mhd_assert (NULL == c->rq.version);
           if (0 == p)
           {
-            mhd_STREAM_ABORT (c, mhd_STREAM_ABORT_CLIENT_HTTP_ERR,
+            mhd_STREAM_ABORT (c, mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN,
                               "The request line starts with a whitespace.");
             return true; /* Error in the request */
           }
@@ -959,7 +959,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
                                                ERR_RSP_RQ_LINE_TOO_MANY_WSP);
               }
               else
-                mhd_STREAM_ABORT (c, mhd_STREAM_ABORT_CLIENT_HTTP_ERR,
+                mhd_STREAM_ABORT (c, mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN,
                                   "The request line has more than "
                                   "two whitespaces.");
               return true; /* Error in the request */
@@ -1048,7 +1048,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
         }
         else
         {
-          mhd_STREAM_ABORT (c, mhd_STREAM_ABORT_CLIENT_HTTP_ERR,
+          mhd_STREAM_ABORT (c, mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN,
                             "Invalid character is in the request line.");
           return true; /* Error in the request */
         }
@@ -1056,7 +1056,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
       else if (0 == chr)
       {
         /* NUL character */
-        mhd_STREAM_ABORT (c, mhd_STREAM_ABORT_CLIENT_HTTP_ERR,
+        mhd_STREAM_ABORT (c, mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN,
                           "The NUL character is in the request line.");
         return true; /* Error in the request */
       }
@@ -1196,12 +1196,16 @@ process_request_target (struct MHD_Connection *c)
   if (NULL != c->daemon->req_cfg.uri_cb.cb)
   {
     struct MHD_String full_uri;
+    struct MHD_EarlyUriCbData req_data;
     full_uri.cstr = c->rq.hdrs.rq_line.rq_tgt;
     full_uri.len = c->rq.req_target_len;
-    c->rq.client_aware = true;
+    req_data.request = &(c->rq);
+    req_data.request_app_context = NULL;
+    c->rq.app_aware = true;
     c->daemon->req_cfg.uri_cb.cb (c->daemon->req_cfg.uri_cb.cls,
-                                  &(c->rq),
-                                  &full_uri);
+                                  &full_uri,
+                                  &req_data);
+    c->rq.app_context = req_data.request_app_context;
   }
 
   if (NULL != c->rq.hdrs.rq_line.rq_tgt_qmark)
@@ -1286,7 +1290,7 @@ send_redirect_fixed_rq_target (struct MHD_Connection *restrict c)
        (fixed_uri_len > MHD_MAX_FIXED_URI_LEN) ||
        (NULL == (b = malloc (fixed_uri_len + 1))) )
   {
-    mhd_STREAM_ABORT (c, mhd_STREAM_ABORT_CLIENT_HTTP_ERR, \
+    mhd_STREAM_ABORT (c, mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN, \
                       "The request has whitespace character is " \
                       "in the URI and the URI is too large to " \
                       "send automatic redirect to fixed URI.");
@@ -1350,7 +1354,7 @@ send_redirect_fixed_rq_target (struct MHD_Connection *restrict c)
     return;
   }
   free (b);
-  mhd_STREAM_ABORT (c, mhd_STREAM_ABORT_CLIENT_HTTP_ERR,
+  mhd_STREAM_ABORT (c, mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN,
                     "The request has whitespace character is in the URI.");
   return;
 }
@@ -2867,7 +2871,7 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
   path.cstr = c->rq.url;
   path.len = c->rq.url_len;
 
-  c->rq.client_aware = true;
+  c->rq.app_aware = true;
   a = d->req_cfg.cb (d->req_cfg.cb_cls,
                      &(c->rq),
                      &path,
@@ -3181,7 +3185,7 @@ process_request_chunked_body (struct MHD_Connection *restrict c)
                                        ERR_RSP_REQUEST_CHUNK_TOO_LARGE);
       return true;
     }
-    mhd_assert (c->rq.client_aware);
+    mhd_assert (c->rq.app_aware);
 
     if (mhd_ACTION_POST_PROCESS == c->rq.app_act.head_act.act)
     {
@@ -3288,7 +3292,7 @@ process_request_nonchunked_body (struct MHD_Connection *restrict c)
   mhd_assert (! c->rq.have_chunked_upload);
   mhd_assert (MHD_SIZE_UNKNOWN != c->rq.cntn.cntn_size);
   mhd_assert (c->rq.cntn.recv_size < c->rq.cntn.cntn_size);
-  mhd_assert (c->rq.client_aware);
+  mhd_assert (c->rq.app_aware);
 
   if ((c->rq.cntn.cntn_size - c->rq.cntn.recv_size) < c->read_buffer_offset)
     cntn_data_ready = (size_t) (c->rq.cntn.cntn_size - c->rq.cntn.recv_size);

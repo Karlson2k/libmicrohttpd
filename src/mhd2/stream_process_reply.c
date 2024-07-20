@@ -853,7 +853,7 @@ mhd_stream_build_header_response (struct MHD_Connection *restrict c)
   if (! build_header_response_inn (c))
   {
     mhd_STREAM_ABORT (c,
-                      mhd_STREAM_ABORT_NO_POOL_MEM_FOR_REPLY,
+                      mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REPLY,
                       "No memory in the pool for the reply headers.");
     return false;
   }
@@ -928,7 +928,7 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
     {
       /* not enough memory */
       mhd_STREAM_ABORT (c,
-                        mhd_STREAM_ABORT_NO_POOL_MEM_FOR_REPLY,
+                        mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REPLY,
                         "No memory in the pool for the response data.");
       return;
     }
@@ -978,7 +978,7 @@ mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
   if (32 > c->write_buffer_size)
   {
     mhd_STREAM_ABORT (c,
-                      mhd_STREAM_ABORT_NO_POOL_MEM_FOR_REPLY,
+                      mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REPLY,
                       "No memory in the pool for the reply chunked content.");
   }
   mhd_assert (max_chunk_overhead < \
@@ -1025,7 +1025,7 @@ mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
   if (size_to_fill < filled)
   {
     mhd_STREAM_ABORT (c,
-                      mhd_STREAM_ABORT_APP_ERROR,
+                      mhd_CONN_CLOSE_APP_ERROR,
                       "Closing connection (application returned more data "
                       "than requested).");
     return;
@@ -1133,7 +1133,7 @@ mhd_stream_prep_chunked_footer (struct MHD_Connection *restrict c)
   if (! prep_chunked_footer_inn (c))
   {
     mhd_STREAM_ABORT (c,
-                      mhd_STREAM_ABORT_NO_POOL_MEM_FOR_REPLY,
+                      mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REPLY,
                       "No memory in the pool for the reply chunked footer.");
     return;
   }

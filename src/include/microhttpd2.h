@@ -492,6 +492,16 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    */
   MHD_SC_CONNECTION_POOL_NO_MEM_COOKIE = 30132
   ,
+  /**
+   * Detected jump back of system clock
+   */
+  MHD_SC_SYS_CLOCK_JUMP_BACK_LARGE = 30140
+  ,
+  /**
+   * Detected correctable jump back of system clock
+   */
+  MHD_SC_SYS_CLOCK_JUMP_BACK_CORRECTED = 30141
+  ,
 
   /* 40000-level errors are caused by the HTTP client
      (or the network) */
@@ -601,26 +611,31 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_REQ_FOOTER_LINE_NO_COLON = 40141
   ,
   /**
+   * The request is malformed.
+   */
+  MHD_SC_REQ_MALFORMED = 40155
+  ,
+  /**
    * The cookie string has been parsed, but it is not fully compliant with
    * specifications
    */
-  MHD_SC_REQ_COOKIE_PARSED_NOT_COMPLIANT = 40142
+  MHD_SC_REQ_COOKIE_PARSED_NOT_COMPLIANT = 40160
   ,
   /**
    * The cookie string has been parsed only partially
    */
-  MHD_SC_REQ_COOKIE_PARSED_PARTIALLY = 40142
+  MHD_SC_REQ_COOKIE_PARSED_PARTIALLY = 40161
   ,
   /**
    * The cookie string is ignored, as it is not fully compliant with
    * specifications
    */
-  MHD_SC_REQ_COOKIE_IGNORED_NOT_COMPLIANT = 40143
+  MHD_SC_REQ_COOKIE_IGNORED_NOT_COMPLIANT = 40162
   ,
   /**
    * The cookie string has been ignored as it is invalid
    */
-  MHD_SC_REQ_COOKIE_INVALID = 40143
+  MHD_SC_REQ_COOKIE_INVALID = 40163
   ,
 
   /* 50000-level errors are because of an error internal
@@ -1050,7 +1065,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   /**
    * MHD failed to build the response header.
    */
-  MHD_SC_FAILED_RESPONSE_HEADER_GENERATION = 50230
+  MHD_SC_REPLY_FAILED_HEADER_GENERATION = 50230
+  ,
+  /**
+   * Failed to allocate memory in connection's pool for the reply.
+   */
+  MHD_SC_REPLY_POOL_ALLOCATION_FAILURE = 50231
   ,
   /**
    * The feature is not supported by this MHD build (either
@@ -1168,7 +1188,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * MHD is closing a connection because the application
    * callback told it to do so.
    */
-  MHD_SC_APPLICATION_CALLBACK_FAILURE_CLOSED = 60006
+  MHD_SC_APPLICATION_CALLBACK_ABORT_ACTION = 60006
   ,
   /**
    * Application only partially processed upload and did
@@ -3446,49 +3466,56 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestTerminationCode
   MHD_REQUEST_TERMINATED_COMPLETED_OK = 0
   ,
   /**
-   * The application terminated request without response.
+   * No activity on the connection for the number of seconds specified using
+   * #MHD_C_OPTION_TIMEOUT().
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_BY_APP = 1
+  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED = 10
+  ,
+  /**
+   * The connection was broken or TLS protocol error.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_CONNECTION_ERROR = 20
+  ,
+  /**
+   * The client terminated the connection by closing the socket either
+   * completely or for writing (TCP half-closed) before sending complete
+   * request.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_CLIENT_ABORT = 30
   ,
   /**
    * The request is not valid according to
    * HTTP specifications.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR = 2
+  MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR = 31
   ,
   /**
-   * The client terminated the connection by closing the socket
-   * for writing (TCP half-closed) before sending complete request;
+   * The application aborted request without response.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_CLIENT_ABORT = 3
+  MHD_REQUEST_TERMINATED_BY_APP_ABORT = 40
+  ,
+  /**
+   * The application aborted request without response.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_BY_APP_ERROR = 41
   ,
   /**
    * Error handling the connection due to resources exhausted.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_NO_RESOURCES = 4
+  MHD_REQUEST_TERMINATED_NO_RESOURCES = 50
   ,
   /**
    * Closing the session since MHD is being shut down.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 5
-  ,
-  /**
-   * No activity on the connection for the number of seconds specified using
-   * #MHD_C_OPTION_TIMEOUT().
-   * @ingroup request
-   */
-  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED = 6
-  ,
-  /**
-   * The connection was broken or TLS protocol error.
-   * @ingroup request
-   */
-  MHD_REQUEST_TERMINATED_CONNECTION_ERROR = 7
+  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 60
 };
 
 /**

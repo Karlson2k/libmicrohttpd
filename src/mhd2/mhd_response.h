@@ -259,6 +259,11 @@ struct mhd_ResponseConfiguration
    * Response has "Connection:" header
    */
   bool has_hdr_conn; // TODO: set the member
+
+  /**
+   * Response is internal-only error response
+   */
+  bool int_err_resp;
 };
 
 #ifndef NDEBUG

@@ -51,6 +51,23 @@ mhd_socket_nonblocking (MHD_Socket sckt);
 MHD_INTERNAL bool
 mhd_socket_noninheritable (MHD_Socket sckt);
 
+/**
+ * Change socket options to be closed "hard".
+ *
+ * @param sock the socket to manipulate
+ * @return true on success, false otherwise
+ */
+MHD_INTERNAL bool
+mhd_socket_set_hard_close (MHD_Socket sckt);
+
+/**
+ * Shutdown sending on socket
+ *
+ * @param sock the socket to manipulate
+ * @return true on success, false otherwise
+ */
+MHD_INTERNAL bool
+mhd_socket_shut_wr (MHD_Socket sckt);
 
 /**
  * Control Nagle's algorithm on @a sock.
