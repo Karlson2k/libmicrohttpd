@@ -278,6 +278,10 @@ run_single_client (void *cls)
   struct ClientContext *cc = cls;
   const char *err;
 
+  fprintf (stderr,
+           "Client %u started in phase %s\n",
+           cc->pc.client_id,
+           cc->phase->label);
   err = cc->phase->client_cb (cc->phase->client_cb_cls,
                               &cc->pc);
   if (NULL != err)
@@ -300,6 +304,10 @@ run_single_client (void *cls)
               write (cc->p2,
                      "s",
                      1));
+  fprintf (stderr,
+           "Client %u finished in phase %s\n",
+           cc->pc.client_id,
+           cc->phase->label);
   return NULL;
 }
 
@@ -367,12 +375,20 @@ run_client_phase (const struct MHDT_Phase *phase,
   for (i = phase->timeout_ms - 1; i>0; i--)
   {
     struct timespec ms = {
-      .tv_nsec = 1000 * 1000
+      .tv_nsec = 1000 * 1000,
+      .tv_sec = 1000 // for debugging...
     };
+    struct timespec rem;
     char c;
 
-    nanosleep (&ms,
-               NULL);
+    if (0 != nanosleep (&ms,
+                        &rem))
+    {
+      fprintf (stderr,
+               "nanosleep() interrupted (%s), trying again\n",
+               strerror (errno));
+      i++;
+    }
     /* This is a non-blocking read */
     while (1 == read (p[0],
                       &c,
@@ -537,10 +553,11 @@ MHDT_test (MHDT_ServerSetup ss_cb,
              strerror (errno));
     return 77;
   }
-  // FIXME: start some thread to run the actual server!
-
-  for (i = 0; NULL == phases[i].label; i++)
+  for (i = 0; NULL != phases[i].label; i++)
   {
+    fprintf (stderr,
+             "Running test phase %s\n",
+             phases[i].label);
     if (! run_client_phase (&phases[i],
                             &pc))
     {

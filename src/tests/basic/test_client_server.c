@@ -38,7 +38,6 @@ main (int argc, char *argv[])
       .client_cb = &MHDT_client_get_root,
       .client_cb_cls = "Hello world",
       .timeout_ms = 5,
-      .num_clients = 10
     },
     // Basic upload
     // HTTP client header
@@ -83,7 +82,7 @@ main (int argc, char *argv[])
   //
   return MHDT_test (&MHDT_server_setup_minimal,
                     NULL,
-                    &MHDT_server_run_blocking,
+                    &MHDT_server_run_minimal,
                     NULL,
                     phases);
 }

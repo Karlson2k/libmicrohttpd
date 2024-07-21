@@ -315,6 +315,21 @@ typedef void
 
 
 /**
+ * Function that starts an MHD daemon with the
+ * simple #MHD_daemon_start() method until
+ * a read() against @a finsig succeeds.
+ *
+ * @param cls closure
+ * @param finsig fd to read from to detect termination request
+ * @param[in,out] d daemon to run
+ */
+void
+MHDT_server_run_minimal (void *cls,
+                         int finsig,
+                         struct MHD_Daemon *d);
+
+
+/**
  * Function that runs an MHD daemon in blocking mode until
  * a read() against @a finsig succeeds.
  *

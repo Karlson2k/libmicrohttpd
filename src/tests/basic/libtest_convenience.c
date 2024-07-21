@@ -47,6 +47,38 @@ MHDT_server_setup_minimal (void *cls,
 
 
 void
+MHDT_server_run_minimal (void *cls,
+                         int finsig,
+                         struct MHD_Daemon *d)
+{
+  fd_set r;
+
+  FD_ZERO (&r);
+  FD_SET (finsig, &r);
+  while (1)
+  {
+    if ( (-1 ==
+          select (finsig + 1,
+                  &r,
+                  NULL,
+                  NULL,
+                  NULL)) &&
+         (EAGAIN != errno) )
+    {
+      fprintf (stderr,
+               "Failure waiting on termination signal: %s\n",
+               strerror (errno));
+      break;
+    }
+    if (FD_ISSET (finsig,
+                  &r))
+      break;
+  }
+}
+
+
+#if FUTURE
+void
 MHDT_server_run_blocking (void *cls,
                           int finsig,
                           struct MHD_Daemon *d)
@@ -75,6 +107,9 @@ MHDT_server_run_blocking (void *cls,
     }
   }
 }
+
+
+#endif
 
 
 const struct MHD_Action *
@@ -223,6 +258,8 @@ MHDT_server_reply_check_header (
   enum MHD_HTTP_Method method,
   uint_fast64_t upload_size)
 {
+  if (1)
+    return NULL; // force failure...
   // FIXME: actual check logic missing...
   return MHD_action_from_response (
     request,
