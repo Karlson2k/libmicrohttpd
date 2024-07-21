@@ -463,7 +463,6 @@ MHDT_test (MHDT_ServerSetup ss_cb,
   struct MHD_Daemon *d;
   int res;
   const char *err;
-  enum MHD_StatusCode sc;
   pthread_t server_phase_thr;
   pthread_t server_run_thr;
   struct MHDT_PhaseContext pc;
@@ -489,13 +488,17 @@ MHDT_test (MHDT_ServerSetup ss_cb,
              err);
     return 1;
   }
-  sc = MHD_daemon_start (d);
-  if (MHD_SC_OK != sc)
   {
-    fprintf (stderr,
-             "Failed to start server: %s\n",
-             err);
-    return 1;
+    enum MHD_StatusCode sc;
+
+    sc = MHD_daemon_start (d);
+    if (MHD_SC_OK != sc)
+    {
+      fprintf (stderr,
+               "Failed to start server: %s\n",
+               err);
+      return 1;
+    }
   }
   {
     union MHD_DaemonInfoFixedData info;
@@ -553,7 +556,7 @@ MHDT_test (MHDT_ServerSetup ss_cb,
 cleanup:
   /* stop thread that runs the actual server */
   {
-    void *res;
+    void *pres;
 
     test_check (1 ==
                 write (p[1],
@@ -561,10 +564,10 @@ cleanup:
                        1));
     test_check (0 ==
                 pthread_join (server_run_thr,
-                              &res));
+                              &pres));
   }
   {
-    void *res;
+    void *pres;
 
     /* Unblock the #server_phase_logic() even if we had
        an error */
@@ -572,7 +575,7 @@ cleanup:
       semaphore_up (&ctx.client_sem);
     test_check (0 ==
                 pthread_join (server_phase_thr,
-                              &res));
+                              &pres));
   }
   MHD_daemon_destroy (d);
   semaphore_destroy (&ctx.client_sem);
