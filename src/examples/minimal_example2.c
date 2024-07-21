@@ -105,11 +105,7 @@ main (int argc,
       (void) fgetc (stdin);
     }
   }
-  printf ("The MHD daemon is listening on port %d.\n"
-          "Press ENTER to stop.\n",
-          port);
-  (void) fgetc (stdin);
-  printf ("Stopping...\n");
+  printf ("Stopping... ");
   MHD_daemon_destroy (d);
   printf ("OK\n");
   return 0;
