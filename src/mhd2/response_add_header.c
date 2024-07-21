@@ -22,6 +22,7 @@
  * @file src/mhd2/response_add_header.c
  * @brief  The definitions of MHD_response_add_*header() functions
  * @author Karlson2k (Evgeny Grin)
+ * @author Christian Grothoff
  */
 
 #include "mhd_sys_options.h"
@@ -93,7 +94,7 @@ response_add_header_int (struct MHD_Response *response,
                          const char *value)
 {
   const size_t name_len = strlen (name);
-  const size_t value_len = strlen (name);
+  const size_t value_len = strlen (value);
 
   if (response->frozen) /* Re-check with the lock held */
     return MHD_SC_TOO_LATE;

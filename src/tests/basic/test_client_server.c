@@ -42,7 +42,7 @@ main (int argc, char *argv[])
     // Basic upload
     // HTTP client header
     {
-      .label = "server response with custom header",
+      .label = "client request with custom header",
       .server_cb = &MHDT_server_reply_check_header,
       .server_cb_cls = "C-Header:testvalue",
       .client_cb = &MHDT_client_set_header,

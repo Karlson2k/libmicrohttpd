@@ -245,7 +245,7 @@ MHDT_server_reply_check_query (
         if (NULL != sn->cstr)
         {
           fprintf (stderr,
-                   "NULL expected for key %s, got %s\n",
+                   "NULL expected for query key %s, got %s\n",
                    arg,
                    sn->cstr);
           return NULL;
@@ -256,7 +256,7 @@ MHDT_server_reply_check_query (
         if (NULL == sn->cstr)
         {
           fprintf (stderr,
-                   "%s expected for key %s, got NULL\n",
+                   "%s expected for query key %s, got NULL\n",
                    val,
                    arg);
           return NULL;
@@ -265,7 +265,7 @@ MHDT_server_reply_check_query (
                          sn->cstr))
         {
           fprintf (stderr,
-                   "%s expected for key %s, got %s\n",
+                   "%s expected for query key %s, got %s\n",
                    val,
                    arg,
                    sn->cstr);
@@ -277,9 +277,8 @@ MHDT_server_reply_check_query (
 
   return MHD_action_from_response (
     request,
-    MHD_response_from_buffer_static (MHD_HTTP_STATUS_OK,
-                                     strlen ("ok"),
-                                     "ok"));
+    MHD_response_from_empty (
+      MHD_HTTP_STATUS_NO_CONTENT));
 }
 
 
@@ -291,14 +290,63 @@ MHDT_server_reply_check_header (
   enum MHD_HTTP_Method method,
   uint_fast64_t upload_size)
 {
-  if (1)
-    return NULL; // force failure...
-  // FIXME: actual check logic missing...
+  const char *want = cls;
+  size_t wlen = strlen (want) + 1;
+  char key[wlen];
+  const char *colon = strchr (want, ':');
+  const struct MHD_StringNullable *have;
+  const char *value;
+
+  memcpy (key,
+          want,
+          wlen);
+  if (NULL != colon)
+  {
+    key[colon - want] = '\0';
+    value = &key[colon - want + 1];
+  }
+  else
+  {
+    value = NULL;
+  }
+  have = MHD_request_get_value (request,
+                                MHD_VK_HEADER,
+                                key);
+  if (NULL == value)
+  {
+    if (NULL != have->cstr)
+    {
+      fprintf (stderr,
+               "Have unexpected client header `%s': `%s'\n",
+               key,
+               have->cstr);
+      return NULL;
+    }
+  }
+  else
+  {
+    if (NULL == have->cstr)
+    {
+      fprintf (stderr,
+               "Missing expected client header `%s'\n",
+               want);
+      return NULL;
+    }
+    if (0 != strcmp (have->cstr,
+                     value))
+    {
+      fprintf (stderr,
+               "Client HTTP header `%s' was expected to be `%s' but is `%s'\n",
+               key,
+               value,
+               have->cstr);
+      return NULL;
+    }
+  }
   return MHD_action_from_response (
     request,
-    MHD_response_from_buffer_static (MHD_HTTP_STATUS_OK,
-                                     strlen ("ok"),
-                                     "ok"));
+    MHD_response_from_empty (
+      MHD_HTTP_STATUS_NO_CONTENT));
 }
 
 
@@ -474,7 +522,7 @@ check_status (CURL *c,
   if (status != expected_status)
   {
     fprintf (stderr,
-             "Expected %u, got %ld\n",
+             "Expected HTTP status %u, got %ld\n",
              expected_status,
              status);
     return false;
