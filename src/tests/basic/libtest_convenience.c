@@ -38,9 +38,11 @@ MHDT_server_setup_minimal (void *cls,
                            struct MHD_Daemon *d)
 {
   if (MHD_SC_OK !=
-      MHD_DAEMON_SET_OPTIONS (d,
-                              MHD_D_OPTION_BIND_PORT (MHD_AF_DUAL,
-                                                      0)))
+      MHD_DAEMON_SET_OPTIONS (
+        d,
+        MHD_D_OPTION_WM_WORKER_THREADS (1),
+        MHD_D_OPTION_BIND_PORT (MHD_AF_AUTO,
+                                0)))
     return "Failed to bind to port 0!";
   return NULL;
 }
@@ -83,20 +85,30 @@ MHDT_server_run_blocking (void *cls,
                           int finsig,
                           struct MHD_Daemon *d)
 {
-  char e;
+  fd_set r;
 
-  while (-1 ==
-         read (finsig,
-               &e,
-               1))
+  FD_ZERO (&r);
+  FD_SET (finsig, &r);
+  while (1)
   {
-    if (EAGAIN != errno)
+    struct timeval timeout = {
+      .tv_usec = 1000 /* 1000 microseconds */
+    };
+
+    if ( (-1 ==
+          select (finsig + 1,
+                  &r,
+                  NULL,
+                  NULL,
+                  &timeout)) &&
+         (EAGAIN != errno) )
     {
       fprintf (stderr,
-               "Failure reading termination signal: %s\n",
+               "Failure waiting on termination signal: %s\n",
                strerror (errno));
       break;
     }
+
     if (MHD_SC_OK !=
         MHD_daemon_process_blocking (d,
                                      1000))

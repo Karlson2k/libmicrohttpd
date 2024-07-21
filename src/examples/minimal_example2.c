@@ -36,13 +36,17 @@ req_cb (void *cls,
 {
   static const char res_msg[] = "Hello there!";
 
-  (void) cls; (void) path; (void) method; (void) upload_size; /* Unused */
+  (void) cls;
+  (void) path;
+  (void) method;
+  (void) upload_size; /* Unused */
 
   return MHD_action_from_response (
     request,
-    MHD_response_from_buffer_static (MHD_HTTP_STATUS_OK,
-                                     sizeof(res_msg) / sizeof(char) - 1,
-                                     res_msg));
+    MHD_response_from_buffer_static (
+      MHD_HTTP_STATUS_OK,
+      sizeof(res_msg) / sizeof(char) - 1,
+      res_msg));
 }
 
 
@@ -55,7 +59,9 @@ main (int argc,
 
   if (argc != 2)
   {
-    fprintf (stderr,"Usage:\n%s PORT\n", argv[0]);
+    fprintf (stderr,
+             "Usage:\n%s PORT\n",
+             argv[0]);
     return 1;
   }
   port = atoi (argv[1]);
@@ -65,33 +71,39 @@ main (int argc,
              "The port must be a number between 1 and 65535.\n");
     return 2;
   }
-  d = MHD_daemon_create (&req_cb, NULL);
-  if (NULL != d)
+  d = MHD_daemon_create (&req_cb,
+                         NULL);
+  if (NULL == d)
   {
-    if (MHD_SC_OK ==
-        MHD_DAEMON_SET_OPTIONS (d,
-                                MHD_D_OPTION_WM_WORKER_THREADS (1),
-                                MHD_D_OPTION_BIND_PORT (MHD_AF_AUTO,
-                                                        (uint_least16_t) port)))
-    {
-      if (MHD_SC_OK == MHD_daemon_start (d))
-      {
-        printf ("The MHD daemon is listening on port %d\n"
-                "Press ENTER to stop.\n", port);
-        (void) fgetc (stdin);
-      }
-      else
-        fprintf (stderr, "Failed to start MHD daemon.\n");
-    }
-    else
-      fprintf (stderr, "Failed to set MHD daemon run parameters.\n");
-    printf ("Stopping... ");
-    MHD_daemon_destroy (d);
-    printf ("OK\n");
-
+    fprintf (stderr,
+             "Failed to create MHD daemon.\n");
+    return 3;
   }
-  else
-    fprintf (stderr, "Failed to create MHD daemon.\n");
-
+  if (MHD_SC_OK !=
+      MHD_DAEMON_SET_OPTIONS (
+        d,
+        MHD_D_OPTION_WM_WORKER_THREADS (1),
+        MHD_D_OPTION_BIND_PORT (MHD_AF_AUTO,
+                                (uint_least16_t) port)))
+  {
+    fprintf (stderr,
+             "Failed to set MHD daemon run parameters.\n");
+    MHD_daemon_destroy (d);
+    return 4;
+  }
+  if (MHD_SC_OK !=
+      MHD_daemon_start (d))
+  {
+    fprintf (stderr,
+             "Failed to start MHD daemon.\n");
+    MHD_daemon_destroy (d);
+    return 5;
+  }
+  printf ("The MHD daemon is listening on port %d\n"
+          "Press ENTER to stop.\n", port);
+  (void) fgetc (stdin);
+  printf ("Stopping... ");
+  MHD_daemon_destroy (d);
+  printf ("OK\n");
   return 0;
 }
