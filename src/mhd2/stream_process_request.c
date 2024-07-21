@@ -1185,7 +1185,7 @@ mhd_parse_get_args (size_t args_len,
     if (0 != value_start) /* Value cannot start at zero position */
     { /* Name with value */
       mhd_assert (name_start + 2 <= value_start);
-      name_len = value_start - name_start - 2;
+      name_len = value_start - name_start - 1;
 
       value_len =
         mhd_str_pct_decode_lenient_n (args + value_start, i - value_start,
