@@ -24,12 +24,124 @@
  * @author Christian Grothoff
  */
 #include <microhttpd2.h>
+#include "mhd_config.h"
 #include "libtest.h"
 
 
 int
 main (int argc, char *argv[])
 {
+  struct MHD_DaemonOptionAndValue thread1select[] = {
+    MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_SELECT),
+    MHD_D_OPTION_WM_WORKER_THREADS (1),
+    MHD_D_OPTION_TERMINATE ()
+  };
+  struct MHD_DaemonOptionAndValue thread2select[] = {
+    MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_SELECT),
+    MHD_D_OPTION_WM_WORKER_THREADS (2),
+    MHD_D_OPTION_TERMINATE ()
+  };
+  struct MHD_DaemonOptionAndValue thread1poll[] = {
+    MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_POLL),
+    MHD_D_OPTION_WM_WORKER_THREADS (1),
+    MHD_D_OPTION_TERMINATE ()
+  };
+  struct MHD_DaemonOptionAndValue thread2poll[] = {
+    MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_POLL),
+    MHD_D_OPTION_WM_WORKER_THREADS (1),
+    MHD_D_OPTION_TERMINATE ()
+  };
+  struct MHD_DaemonOptionAndValue thread1epoll[] = {
+    MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_EPOLL),
+    MHD_D_OPTION_WM_WORKER_THREADS (1),
+    MHD_D_OPTION_TERMINATE ()
+  };
+  struct MHD_DaemonOptionAndValue thread2epoll[] = {
+    MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_EPOLL),
+    MHD_D_OPTION_WM_WORKER_THREADS (1),
+    MHD_D_OPTION_TERMINATE ()
+  };
+  struct MHD_DaemonOptionAndValue thread1auto[] = {
+    MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_AUTO),
+    MHD_D_OPTION_WM_WORKER_THREADS (1),
+    MHD_D_OPTION_TERMINATE ()
+  };
+  struct MHD_DaemonOptionAndValue external0auto[] = {
+    MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_AUTO),
+    MHD_D_OPTION_WM_EXTERNAL_PERIODIC (),
+    MHD_D_OPTION_TERMINATE ()
+  };
+  struct ServerType
+  {
+    const char *label;
+    MHDT_ServerSetup server_setup;
+    void *server_setup_cls;
+    MHDT_ServerRunner server_runner;
+    void *server_runner_cls;
+  } configs[] = {
+    {
+      .label = "single threaded select",
+      .server_setup = &MHDT_server_setup_minimal,
+      .server_setup_cls = thread1select,
+      .server_runner = &MHDT_server_run_minimal,
+    },
+    {
+      .label = "multi-threaded select",
+      .server_setup = &MHDT_server_setup_minimal,
+      .server_setup_cls = thread2select,
+      .server_runner = &MHDT_server_run_minimal,
+    },
+#if HAVE_POLL
+    {
+      .label = "single threaded poll",
+      .server_setup = &MHDT_server_setup_minimal,
+      .server_setup_cls = thread1poll,
+      .server_runner = &MHDT_server_run_minimal,
+    },
+    {
+      .label = "multi-threaded poll",
+      .server_setup = &MHDT_server_setup_minimal,
+      .server_setup_cls = thread2poll,
+      .server_runner = &MHDT_server_run_minimal,
+    },
+#endif
+#if HAVE_EPOLL_CREATE1
+    {
+      .label = "single threaded epoll",
+      .server_setup = &MHDT_server_setup_minimal,
+      .server_setup_cls = thread1epoll,
+      .server_runner = &MHDT_server_run_minimal,
+    },
+    {
+      .label = "multi-threaded epoll",
+      .server_setup = &MHDT_server_setup_minimal,
+      .server_setup_cls = thread2epoll,
+      .server_runner = &MHDT_server_run_minimal,
+    },
+#endif
+    {
+      .label = "auto-selected mode, single threaded",
+      .server_setup = &MHDT_server_setup_minimal,
+      .server_setup_cls = thread1auto,
+      .server_runner = &MHDT_server_run_minimal,
+    },
+#if 1
+    /* FIXME: remove once MHD_daemon_process_blocking
+       has been implemented */
+    {
+      .label = "END"
+    },
+#endif
+    {
+      .label = "auto-selected external event loop mode, no threads",
+      .server_setup = &MHDT_server_setup_minimal,
+      .server_setup_cls = external0auto,
+      .server_runner = &MHDT_server_run_blocking,
+    },
+    {
+      .label = "END"
+    }
+  };
   struct MHDT_Phase phases[] = {
     {
       .label = "simple get",
@@ -74,15 +186,31 @@ main (int argc, char *argv[])
       .label = NULL,
     },
   };
+  unsigned int i;
+
   (void) argc; /* Unused. Silence compiler warning. */
   (void) argv; /* Unused. Silence compiler warning. */
 
-  // threading modi
-  // socket polling functions (select, poll, epoll, internal, external edge, external level)
-  //
-  return MHDT_test (&MHDT_server_setup_minimal,
-                    NULL,
-                    &MHDT_server_run_minimal,
-                    NULL,
-                    phases);
+  for (i = 0; NULL != configs[i].server_setup; i++)
+  {
+    int ret;
+
+    fprintf (stderr,
+             "Running tests with server setup `%s'\n",
+             configs[i].label);
+    ret = MHDT_test (configs[i].server_setup,
+                     configs[i].server_setup_cls,
+                     configs[i].server_runner,
+                     configs[i].server_runner_cls,
+                     phases);
+    if (0 != ret)
+    {
+      fprintf (stderr,
+               "Test failed with server of type `%s' (%u)\n",
+               configs[i].label,
+               i);
+      return ret;
+    }
+  }
+  return 0;
 }

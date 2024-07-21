@@ -37,11 +37,19 @@ const char *
 MHDT_server_setup_minimal (void *cls,
                            struct MHD_Daemon *d)
 {
+  const struct MHD_DaemonOptionAndValue *options = cls;
+
+  if (MHD_SC_OK !=
+      MHD_daemon_set_options (
+        d,
+        options,
+        MHD_OPTIONS_ARRAY_MAX_SIZE))
+    return "Failed to configure threading mode!";
+  return NULL;
+
   if (MHD_SC_OK !=
       MHD_DAEMON_SET_OPTIONS (
         d,
-        MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_POLL),
-        MHD_D_OPTION_WM_WORKER_THREADS (1),
         MHD_D_OPTION_BIND_PORT (MHD_AF_AUTO,
                                 0)))
     return "Failed to bind to port 0!";
@@ -90,7 +98,6 @@ MHDT_server_run_minimal (void *cls,
 }
 
 
-#if FUTURE
 void
 MHDT_server_run_blocking (void *cls,
                           int finsig,
@@ -120,7 +127,7 @@ MHDT_server_run_blocking (void *cls,
                strerror (errno));
       break;
     }
-
+#if FIXME
     if (MHD_SC_OK !=
         MHD_daemon_process_blocking (d,
                                      1000))
@@ -129,6 +136,9 @@ MHDT_server_run_blocking (void *cls,
                "Failure running MHD_daemon_process_blocking()\n");
       break;
     }
+#else
+    abort ();
+#endif
   }
   if ( (FD_ISSET (finsig,
                   &r)) &&
@@ -140,6 +150,3 @@ MHDT_server_run_blocking (void *cls,
              "Failed to drain termination signal\n");
   }
 }
-
-
-#endif

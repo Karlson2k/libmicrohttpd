@@ -5332,7 +5332,7 @@ MHD_FN_PAR_NONNULL_ALL_;
 MHD_EXTERN_ const struct MHD_Action *
 MHD_action_from_response (struct MHD_Request *MHD_RESTRICT request,
                           struct MHD_Response *MHD_RESTRICT response)
-MHD_FN_PAR_NONNULL_(1);
+MHD_FN_PAR_NONNULL_ (1);
 
 
 /**
@@ -5900,7 +5900,7 @@ MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_;
 MHD_EXTERN_ const struct MHD_UploadAction *
 MHD_upload_action_from_response (struct MHD_Request *MHD_RESTRICT request,
                                  struct MHD_Response *MHD_RESTRICT response)
-MHD_FN_PAR_NONNULL_(1);
+MHD_FN_PAR_NONNULL_ (1);
 
 /**
  * Action telling MHD to continue processing the upload.

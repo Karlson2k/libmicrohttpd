@@ -319,7 +319,9 @@ typedef void
  * simple #MHD_daemon_start() method until
  * a read() against @a finsig succeeds.
  *
- * @param cls closure
+ * @param cls closure, pass a NULL-terminated (!)
+ *   array of `struct MHD_DaemonOptionAndValue` with the
+ *   the threading mode to use
  * @param finsig fd to read from to detect termination request
  * @param[in,out] d daemon to run
  */
