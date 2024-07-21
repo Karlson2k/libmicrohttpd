@@ -864,7 +864,7 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
                         c->socket_fd,
                         &event))
     {
-      mhd_LOG_MSG (daemon, MHD_SC_EPOLL_CTL_REMOVE_FAILED,
+      mhd_LOG_MSG (c->daemon, MHD_SC_EPOLL_CTL_REMOVE_FAILED,
                    "Failed to remove connection socket from epoll.");
     }
   }
