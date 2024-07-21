@@ -168,6 +168,14 @@ main (int argc, char *argv[])
       .timeout_ms = 5,
     },
     {
+      .label = "client PUT with 2 chunks",
+      .server_cb = &MHDT_server_reply_check_upload,
+      .server_cb_cls = "chunky-upload-value",
+      .client_cb = &MHDT_client_chunk_data,
+      .client_cb_cls = "chunky-upload-value",
+      .timeout_ms = 5,
+    },
+    {
       .label = "client request with custom header",
       .server_cb = &MHDT_server_reply_check_header,
       .server_cb_cls = "C-Header:testvalue",
@@ -192,7 +200,6 @@ main (int argc, char *argv[])
       .timeout_ms = 5,
       .num_clients = 10
     },
-    // TODO: chunked upload
     // TODO: chunked download
     {
       .label = NULL,

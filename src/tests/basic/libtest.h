@@ -132,6 +132,19 @@ MHDT_client_put_data (void *cls,
 
 
 /**
+ * Run chunked upload against the base URL and expect a
+ * 204 No Content response.
+ *
+ * @param cls 0-terminated string with data to PUT
+ * @param pc context for the client
+ * @return error message, NULL on success
+ */
+const char *
+MHDT_client_chunk_data (void *cls,
+                        const struct MHDT_PhaseContext *pc);
+
+
+/**
  * A phase defines some server and client-side
  * behaviors to execute.
  */

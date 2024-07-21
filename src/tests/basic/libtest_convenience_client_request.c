@@ -407,6 +407,11 @@ struct ReadBuffer
    */
   size_t pos;
 
+  /**
+   * Number of chunks to user when sending.
+   */
+  unsigned int chunks;
+
 };
 
 
@@ -433,6 +438,12 @@ read_cb (void *ptr,
     return CURLE_WRITE_ERROR;
   if (limit > rb->len - rb->pos)
     limit = rb->len - rb->pos;
+  if ( (rb->chunks > 1) &&
+       (limit > 1) )
+  {
+    limit /= rb->chunks;
+    rb->chunks--;
+  }
   memcpy (ptr,
           rb->buf + rb->pos,
           limit);
@@ -495,6 +506,62 @@ MHDT_client_put_data (
   {
     curl_easy_cleanup (c);
     return "Failed to set INFILESIZE_LARGE for curl request";
+  }
+  PERFORM_REQUEST (c);
+  CHECK_STATUS (c,
+                MHD_HTTP_STATUS_NO_CONTENT);
+  curl_easy_cleanup (c);
+  return NULL;
+}
+
+
+const char *
+MHDT_client_chunk_data (
+  void *cls,
+  const struct MHDT_PhaseContext *pc)
+{
+  const char *text = cls;
+  struct ReadBuffer rb = {
+    .buf = text,
+    .len = strlen (text),
+    .chunks = 2
+  };
+  CURL *c;
+
+  c = curl_easy_init ();
+  if (NULL == c)
+    return "Failed to initialize Curl handle";
+  if (CURLE_OK !=
+      curl_easy_setopt (c,
+                        CURLOPT_URL,
+                        pc->base_url))
+  {
+    curl_easy_cleanup (c);
+    return "Failed to set URL for curl request";
+  }
+  if (CURLE_OK !=
+      curl_easy_setopt (c,
+                        CURLOPT_UPLOAD,
+                        1L))
+  {
+    curl_easy_cleanup (c);
+    return "Failed to set PUT method for curl request";
+  }
+  if (CURLE_OK !=
+      curl_easy_setopt (c,
+                        CURLOPT_READFUNCTION,
+                        &read_cb))
+  {
+    curl_easy_cleanup (c);
+    return "Failed to set READFUNCTION for curl request";
+  }
+  if (CURLE_OK !=
+      curl_easy_setopt (c,
+                        CURLOPT_READDATA,
+                        &rb))
+  {
+    curl_easy_cleanup (c);
+    return "Failed to set READFUNCTION for curl request";
   }
   PERFORM_REQUEST (c);
   CHECK_STATUS (c,
