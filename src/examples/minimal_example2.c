@@ -65,10 +65,10 @@ main (int argc,
     return 1;
   }
   port = atoi (argv[1]);
-  if ( (1 > port) || (port > 65535) )
+  if ((1 > port) || (65535 < port))
   {
     fprintf (stderr,
-             "The port must be a number between 1 and 65535.\n");
+             "The PORT must be a numeric value between 1 and 65535.\n");
     return 2;
   }
   d = MHD_daemon_create (&req_cb,
@@ -88,21 +88,24 @@ main (int argc,
   {
     fprintf (stderr,
              "Failed to set MHD daemon run parameters.\n");
-    MHD_daemon_destroy (d);
-    return 4;
   }
-  if (MHD_SC_OK !=
-      MHD_daemon_start (d))
+  else
   {
-    fprintf (stderr,
-             "Failed to start MHD daemon.\n");
-    MHD_daemon_destroy (d);
-    return 5;
+    if (MHD_SC_OK !=
+        MHD_daemon_start (d))
+    {
+      fprintf (stderr,
+               "Failed to start MHD daemon.\n");
+    }
+    else
+    {
+      printf ("The MHD daemon is listening on port %d\n"
+              "Press ENTER to stop.\n", port);
+      (void) fgetc (stdin);
+    }
   }
-  printf ("The MHD daemon is listening on port %d\n"
-          "Press ENTER to stop.\n", port);
-  (void) fgetc (stdin);
-  printf ("Stopping... ");
+
+  printf ("Stopping daemon... ");
   MHD_daemon_destroy (d);
   printf ("OK\n");
   return 0;
