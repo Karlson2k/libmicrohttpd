@@ -152,7 +152,6 @@ main (int argc, char *argv[])
       .timeout_ms = 5,
     },
     // Basic upload
-    // HTTP client header
     {
       .label = "client request with custom header",
       .server_cb = &MHDT_server_reply_check_header,
@@ -161,7 +160,6 @@ main (int argc, char *argv[])
       .client_cb_cls = "C-Header:testvalue",
       .timeout_ms = 5,
     },
-    // Response with custom header
     {
       .label = "server response with custom header",
       .server_cb = &MHDT_server_reply_with_header,
@@ -170,7 +168,6 @@ main (int argc, char *argv[])
       .client_cb_cls = "X-Header:testvalue",
       .timeout_ms = 5,
     },
-    // URL with query parameters
     {
       .label = "URL with query parameters",
       .server_cb = &MHDT_server_reply_check_query,
