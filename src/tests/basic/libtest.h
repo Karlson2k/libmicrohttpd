@@ -104,8 +104,8 @@ MHDT_client_set_header (void *cls,
 
 
 /**
- * Run request against the base URL and expect the
- * header from @a cls to be set in the 200 OK response.
+ * Run request against the base URL and expect the header from @a cls to be
+ * set in the 204 No content response.
  *
  * @param cls closure with custom header to set,
  *      must be of the format "$KEY:$VALUE"
@@ -116,6 +116,19 @@ MHDT_client_set_header (void *cls,
 const char *
 MHDT_client_expect_header (void *cls,
                            const struct MHDT_PhaseContext *pc);
+
+
+/**
+ * Run simple upload against the base URL and expect a
+ * 204 No Content response.
+ *
+ * @param cls 0-terminated string with data to PUT
+ * @param pc context for the client
+ * @return error message, NULL on success
+ */
+const char *
+MHDT_client_put_data (void *cls,
+                      const struct MHDT_PhaseContext *pc);
 
 
 /**
@@ -193,6 +206,35 @@ MHDT_server_reply_text (
 
 
 /**
+ * Returns writes text from @a cls to a temporary file
+ * and then uses the file descriptor to serve the
+ * content to the client.
+ *
+ * @param cls argument given together with the function
+ *        pointer when the handler was registered with MHD
+ * @param request the request object
+ * @param path the requested uri (without arguments after "?")
+ * @param method the HTTP method used (#MHD_HTTP_METHOD_GET,
+ *        #MHD_HTTP_METHOD_PUT, etc.)
+ * @param upload_size the size of the message upload content payload,
+ *                    #MHD_SIZE_UNKNOWN for chunked uploads (if the
+ *                    final chunk has not been processed yet)
+ * @return action how to proceed, NULL
+ *         if the request must be aborted due to a serious
+ *         error while handling the request (implies closure
+ *         of underling data stream, for HTTP/1.1 it means
+ *         socket closure).
+ */
+const struct MHD_Action *
+MHDT_server_reply_file (
+  void *cls,
+  struct MHD_Request *MHD_RESTRICT request,
+  const struct MHD_String *MHD_RESTRICT path,
+  enum MHD_HTTP_Method method,
+  uint_fast64_t upload_size);
+
+
+/**
  * Returns an emtpy response with a custom header
  * set from @a cls and the #MHD_HTTP_STATUS_NO_CONTENT.
  *
@@ -250,7 +292,7 @@ MHDT_server_reply_check_query (
 
 /**
  * Checks that the client request includes the given
- * custom header.  If so, returns #MHD_SC_OK with "ok".
+ * custom header.  If so, returns #MHD_HTTP_STATUS_NO_CONTENT.
  *
  * @param cls expected header with "$NAME:$VALUE" format.
  * @param request the request object
@@ -268,6 +310,33 @@ MHDT_server_reply_check_query (
  */
 const struct MHD_Action *
 MHDT_server_reply_check_header (
+  void *cls,
+  struct MHD_Request *MHD_RESTRICT request,
+  const struct MHD_String *MHD_RESTRICT path,
+  enum MHD_HTTP_Method method,
+  uint_fast64_t upload_size);
+
+
+/**
+ * Checks that the client request includes the given
+ * upload.  If so, returns #MHD_HTTP_STATUS_NO_CONTENT.
+ *
+ * @param cls expected upload data as a 0-terminated string.
+ * @param request the request object
+ * @param path the requested uri (without arguments after "?")
+ * @param method the HTTP method used (#MHD_HTTP_METHOD_GET,
+ *        #MHD_HTTP_METHOD_PUT, etc.)
+ * @param upload_size the size of the message upload content payload,
+ *                    #MHD_SIZE_UNKNOWN for chunked uploads (if the
+ *                    final chunk has not been processed yet)
+ * @return action how to proceed, NULL
+ *         if the request must be aborted due to a serious
+ *         error while handling the request (implies closure
+ *         of underling data stream, for HTTP/1.1 it means
+ *         socket closure).
+ */
+const struct MHD_Action *
+MHDT_server_reply_check_upload (
   void *cls,
   struct MHD_Request *MHD_RESTRICT request,
   const struct MHD_String *MHD_RESTRICT path,

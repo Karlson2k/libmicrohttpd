@@ -151,7 +151,22 @@ main (int argc, char *argv[])
       .client_cb_cls = "Hello world",
       .timeout_ms = 5,
     },
-    // Basic upload
+    {
+      .label = "GET with sendfile",
+      .server_cb = &MHDT_server_reply_file,
+      .server_cb_cls = "Hello world",
+      .client_cb = &MHDT_client_get_root,
+      .client_cb_cls = "Hello world",
+      .timeout_ms = 5,
+    },
+    {
+      .label = "client PUT with content-length",
+      .server_cb = &MHDT_server_reply_check_upload,
+      .server_cb_cls = "simple-upload-value",
+      .client_cb = &MHDT_client_put_data,
+      .client_cb_cls = "simple-upload-value",
+      .timeout_ms = 5,
+    },
     {
       .label = "client request with custom header",
       .server_cb = &MHDT_server_reply_check_header,
@@ -177,8 +192,8 @@ main (int argc, char *argv[])
       .timeout_ms = 5,
       .num_clients = 10
     },
-    // chunked upload
-    // chunked download
+    // TODO: chunked upload
+    // TODO: chunked download
     {
       .label = NULL,
     },

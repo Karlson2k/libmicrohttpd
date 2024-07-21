@@ -385,3 +385,120 @@ MHDT_client_expect_header (void *cls,
   curl_easy_cleanup (c);
   return NULL;
 }
+
+
+/**
+ * Closure for the read_cb().
+ */
+struct ReadBuffer
+{
+  /**
+   * Origin of data to upload.
+   */
+  const char *buf;
+
+  /**
+   * Number of bytes in @e buf.
+   */
+  size_t len;
+
+  /**
+   * Current read offset in @e buf.
+   */
+  size_t pos;
+
+};
+
+
+/**
+ * Callback for CURLOPT_READFUNCTION for uploading
+ * data to the HTTP server.
+ *
+ * @param ptr data uploaded
+ * @param size size of a member
+ * @param nmemb number of members
+ * @param stream must be a `struct ReadBuffer`
+ * @return bytes processed (size*nmemb) or error
+ */
+static size_t
+read_cb (void *ptr,
+         size_t size,
+         size_t nmemb,
+         void *stream)
+{
+  struct ReadBuffer *rb = stream;
+  size_t limit = size * nmemb;
+
+  if (limit / size != nmemb)
+    return CURLE_WRITE_ERROR;
+  if (limit > rb->len - rb->pos)
+    limit = rb->len - rb->pos;
+  memcpy (ptr,
+          rb->buf + rb->pos,
+          limit);
+  rb->pos += limit;
+  return limit;
+}
+
+
+const char *
+MHDT_client_put_data (
+  void *cls,
+  const struct MHDT_PhaseContext *pc)
+{
+  const char *text = cls;
+  struct ReadBuffer rb = {
+    .buf = text,
+    .len = strlen (text)
+  };
+  CURL *c;
+
+  c = curl_easy_init ();
+  if (NULL == c)
+    return "Failed to initialize Curl handle";
+  if (CURLE_OK !=
+      curl_easy_setopt (c,
+                        CURLOPT_URL,
+                        pc->base_url))
+  {
+    curl_easy_cleanup (c);
+    return "Failed to set URL for curl request";
+  }
+  if (CURLE_OK !=
+      curl_easy_setopt (c,
+                        CURLOPT_UPLOAD,
+                        1L))
+  {
+    curl_easy_cleanup (c);
+    return "Failed to set PUT method for curl request";
+  }
+  if (CURLE_OK !=
+      curl_easy_setopt (c,
+                        CURLOPT_READFUNCTION,
+                        &read_cb))
+  {
+    curl_easy_cleanup (c);
+    return "Failed to set READFUNCTION for curl request";
+  }
+  if (CURLE_OK !=
+      curl_easy_setopt (c,
+                        CURLOPT_READDATA,
+                        &rb))
+  {
+    curl_easy_cleanup (c);
+    return "Failed to set READFUNCTION for curl request";
+  }
+  if (CURLE_OK !=
+      curl_easy_setopt (c,
+                        CURLOPT_INFILESIZE_LARGE,
+                        (curl_off_t) rb.len))
+  {
+    curl_easy_cleanup (c);
+    return "Failed to set INFILESIZE_LARGE for curl request";
+  }
+  PERFORM_REQUEST (c);
+  CHECK_STATUS (c,
+                MHD_HTTP_STATUS_NO_CONTENT);
+  curl_easy_cleanup (c);
+  return NULL;
+}

@@ -27,6 +27,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
 #include "microhttpd2.h"
@@ -49,6 +50,50 @@ MHDT_server_reply_text (
     MHD_response_from_buffer_static (MHD_HTTP_STATUS_OK,
                                      strlen (text),
                                      text));
+}
+
+
+const struct MHD_Action *
+MHDT_server_reply_file (
+  void *cls,
+  struct MHD_Request *MHD_RESTRICT request,
+  const struct MHD_String *MHD_RESTRICT path,
+  enum MHD_HTTP_Method method,
+  uint_fast64_t upload_size)
+{
+  const char *text = cls;
+  size_t tlen = strlen (text);
+  char fn[] = "/tmp/mhd-test-XXXXXX";
+  int fd;
+
+  fd = mkstemp (fn);
+  if (-1 == fd)
+  {
+    fprintf (stderr,
+             "Failed to mkstemp() temporary file\n");
+    return NULL;
+  }
+  if (tlen != write (fd, text, tlen))
+  {
+    fprintf (stderr,
+             "Failed to write() temporary file in one go: %s\n",
+             strerror (errno));
+    return NULL;
+  }
+  fsync (fd);
+  if (0 != remove (fn))
+  {
+    fprintf (stderr,
+             "Failed to remove() temporary file %s: %s\n",
+             fn,
+             strerror (errno));
+  }
+  return MHD_action_from_response (
+    request,
+    MHD_response_from_fd (MHD_HTTP_STATUS_OK,
+                          fd,
+                          0 /* offset */,
+                          tlen));
 }
 
 
@@ -236,4 +281,108 @@ MHDT_server_reply_check_header (
     request,
     MHD_response_from_empty (
       MHD_HTTP_STATUS_NO_CONTENT));
+}
+
+
+/**
+ * Function to process data uploaded by a client.
+ *
+ * @param cls the payload we expect to be uploaded as a 0-terminated string
+ * @param request the request is being processed
+ * @param content_data_size the size of the @a content_data,
+ *                          zero when all data have been processed
+ * @param[in] content_data the uploaded content data,
+ *                         may be modified in the callback,
+ *                         valid only until return from the callback,
+ *                         NULL when all data have been processed
+ * @return action specifying how to proceed:
+ *         #MHD_upload_action_continue() to continue upload (for incremental
+ *         upload processing only),
+ *         #MHD_upload_action_suspend() to stop reading the upload until
+ *         the request is resumed,
+ *         #MHD_upload_action_abort_request() to close the socket,
+ *         or a response to discard the rest of the upload and transmit
+ *         the response
+ * @ingroup action
+ */
+static const struct MHD_UploadAction *
+check_upload_cb (void *cls,
+                 struct MHD_Request *request,
+                 size_t content_data_size,
+                 void *content_data)
+{
+  const char *want = cls;
+  size_t wlen = strlen (want);
+
+  if (content_data_size != wlen)
+  {
+    fprintf (stderr,
+             "Invalid body size given to full upload callback\n");
+    return NULL;
+  }
+  if (0 != memcmp (want,
+                   content_data,
+                   wlen))
+  {
+    fprintf (stderr,
+             "Invalid body data given to full upload callback\n");
+    return NULL;
+  }
+  /* success! */
+  return MHD_upload_action_from_response (
+    request,
+    MHD_response_from_empty (
+      MHD_HTTP_STATUS_NO_CONTENT));
+}
+
+
+const struct MHD_Action *
+MHDT_server_reply_check_upload (
+  void *cls,
+  struct MHD_Request *MHD_RESTRICT request,
+  const struct MHD_String *MHD_RESTRICT path,
+  enum MHD_HTTP_Method method,
+  uint_fast64_t upload_size)
+{
+  const char *want = cls;
+  size_t wlen = strlen (want);
+  const struct MHD_StringNullable *clen;
+  unsigned int len;
+  char dummy;
+
+  clen = MHD_request_get_value (request,
+                                MHD_VK_HEADER,
+                                MHD_HTTP_HEADER_CONTENT_LENGTH);
+  if (NULL == clen->cstr)
+  {
+    fprintf (stderr,
+             "Content-Length header missing\n");
+    return NULL;
+  }
+  if (1 != sscanf (clen->cstr,
+                   "%u%c",
+                   &len,
+                   &dummy))
+  {
+    fprintf (stderr,
+             "Content-Length header invalid\n");
+    return NULL;
+  }
+  if (len != upload_size)
+  {
+    fprintf (stderr,
+             "Content-Length in API does not match\n");
+    return NULL;
+  }
+  if (len != wlen)
+  {
+    fprintf (stderr,
+             "Content-Length does not match expectations\n");
+    return NULL;
+  }
+
+  return MHD_action_process_upload_full (request,
+                                         wlen,
+                                         &check_upload_cb,
+                                         (void *) want);
 }
