@@ -279,7 +279,7 @@ run_single_client (void *cls)
   const char *err;
 
   fprintf (stderr,
-           "Client %u started in phase %s\n",
+           "Client %u started in phase `%s'\n",
            cc->pc.client_id,
            cc->phase->label);
   err = cc->phase->client_cb (cc->phase->client_cb_cls,
@@ -287,7 +287,7 @@ run_single_client (void *cls)
   if (NULL != err)
   {
     fprintf (stderr,
-             "Client %u failed in phase %s: %s\n",
+             "Client %u failed in phase `%s': %s\n",
              cc->pc.client_id,
              cc->phase->label,
              err);
@@ -305,7 +305,7 @@ run_single_client (void *cls)
                      "s",
                      1));
   fprintf (stderr,
-           "Client %u finished in phase %s\n",
+           "Client %u finished in phase `%s'\n",
            cc->pc.client_id,
            cc->phase->label);
   return NULL;
@@ -356,11 +356,16 @@ run_client_phase (const struct MHDT_Phase *phase,
   bool ret = true;
 
   make_pipe (p);
+  fprintf (stderr,
+           "Starting phase `%s'\n",
+           phase->label);
   for (i = 0; i<num_clients; i++)
   {
     cctxs[i].phase = phase;
     cctxs[i].pc = *pc;
     cctxs[i].pc.client_id = i;
+    cctxs[i].p2 = p[1];
+    cctxs[i].status = false;
     if (0 !=
         pthread_create (&clients[i],
                         NULL,
@@ -375,8 +380,7 @@ run_client_phase (const struct MHDT_Phase *phase,
   for (i = phase->timeout_ms - 1; i>0; i--)
   {
     struct timespec ms = {
-      .tv_nsec = 1000 * 1000,
-      .tv_sec = 1000 // for debugging...
+      .tv_nsec = 1000 * 1000
     };
     struct timespec rem;
     char c;
@@ -400,7 +404,7 @@ run_client_phase (const struct MHDT_Phase *phase,
   if (0 != clients_left)
   {
     fprintf (stderr,
-             "Timeout (%u ms) in phase %s: %u clients still running\n",
+             "Timeout (%u ms) in phase `%s': %u clients still running\n",
              phase->timeout_ms,
              phase->label,
              clients_left);
@@ -419,6 +423,10 @@ cleanup:
   }
   test_check (0 == close (p[0]));
   test_check (0 == close (p[1]));
+  fprintf (stderr,
+           "Finished phase `%s' with %s\n",
+           phase->label,
+           ret ? "success" : "FAILURE");
   return ret;
 }
 
@@ -436,12 +444,17 @@ server_phase_logic (void *cls)
   struct ServerContext *ctx = cls;
   unsigned int i;
 
-  for (i = 0; NULL == ctx->phase->label; i++)
+  for (i = 0; NULL != ctx->phase->label; i++)
   {
+    fprintf (stderr,
+             "Running server phase `%s'\n",
+             ctx->phase->label);
     semaphore_down (&ctx->client_sem);
     ctx->phase++;
     semaphore_up (&ctx->server_sem);
   }
+  fprintf (stderr,
+           "Server terminating\n");
   return NULL;
 }
 
@@ -556,7 +569,7 @@ MHDT_test (MHDT_ServerSetup ss_cb,
   for (i = 0; NULL != phases[i].label; i++)
   {
     fprintf (stderr,
-             "Running test phase %s\n",
+             "Running test phase `%s'\n",
              phases[i].label);
     if (! run_client_phase (&phases[i],
                             &pc))
@@ -588,7 +601,7 @@ cleanup:
 
     /* Unblock the #server_phase_logic() even if we had
        an error */
-    for (i = 0; NULL == phases[i].label; i++)
+    for (i = 0; NULL != phases[i].label; i++)
       semaphore_up (&ctx.client_sem);
     test_check (0 ==
                 pthread_join (server_phase_thr,

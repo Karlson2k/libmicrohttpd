@@ -82,6 +82,7 @@ main (int argc,
   if (MHD_SC_OK !=
       MHD_DAEMON_SET_OPTIONS (
         d,
+        MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_POLL),
         MHD_D_OPTION_WM_WORKER_THREADS (1),
         MHD_D_OPTION_BIND_PORT (MHD_AF_AUTO,
                                 (uint_least16_t) port)))
@@ -104,8 +105,11 @@ main (int argc,
       (void) fgetc (stdin);
     }
   }
-
-  printf ("Stopping daemon... ");
+  printf ("The MHD daemon is listening on port %d.\n"
+          "Press ENTER to stop.\n",
+          port);
+  (void) fgetc (stdin);
+  printf ("Stopping...\n");
   MHD_daemon_destroy (d);
   printf ("OK\n");
   return 0;

@@ -40,6 +40,7 @@ MHDT_server_setup_minimal (void *cls,
   if (MHD_SC_OK !=
       MHD_DAEMON_SET_OPTIONS (
         d,
+        MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_POLL),
         MHD_D_OPTION_WM_WORKER_THREADS (1),
         MHD_D_OPTION_BIND_PORT (MHD_AF_AUTO,
                                 0)))
@@ -54,6 +55,7 @@ MHDT_server_run_minimal (void *cls,
                          struct MHD_Daemon *d)
 {
   fd_set r;
+  char c;
 
   FD_ZERO (&r);
   FD_SET (finsig, &r);
@@ -76,6 +78,15 @@ MHDT_server_run_minimal (void *cls,
                   &r))
       break;
   }
+  if ( (FD_ISSET (finsig,
+                  &r)) &&
+       (1 != read (finsig,
+                   &c,
+                   1)) )
+  {
+    fprintf (stderr,
+             "Failed to drain termination signal\n");
+  }
 }
 
 
@@ -86,6 +97,7 @@ MHDT_server_run_blocking (void *cls,
                           struct MHD_Daemon *d)
 {
   fd_set r;
+  char c;
 
   FD_ZERO (&r);
   FD_SET (finsig, &r);
@@ -117,6 +129,15 @@ MHDT_server_run_blocking (void *cls,
                "Failure running MHD_daemon_process_blocking()\n");
       break;
     }
+  }
+  if ( (FD_ISSET (finsig,
+                  &r)) &&
+       (1 != read (finsig,
+                   &c,
+                   1)) )
+  {
+    fprintf (stderr,
+             "Failed to drain termination signal\n");
   }
 }
 
