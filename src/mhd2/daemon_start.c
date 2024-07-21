@@ -2548,6 +2548,8 @@ stop_individual_daemon_thread (struct MHD_Daemon *restrict d)
               (mhd_DAEMON_STATE_STARTING == d->state));
   mhd_assert (mhd_thread_handle_ID_is_valid_handle (d->threading.tid));
 
+  d->threading.stop_requested = true;
+
   mhd_daemon_trigger_itc (d);
   if (! mhd_thread_handle_ID_join_thread (d->threading.tid))
   {
@@ -2583,6 +2585,7 @@ stop_worker_pool_threads (struct MHD_Daemon *restrict d,
   /* Trigger all threads */
   for (i = num_workers - 1; num_workers > i; --i)
   { /* Note: loop exits after underflow of 'i' */
+    d->threading.hier.pool.workers[i].threading.stop_requested = true;
     mhd_assert (mhd_ITC_IS_VALID ( \
                   d->threading.hier.pool.workers[i].threading.itc));
     mhd_daemon_trigger_itc (d->threading.hier.pool.workers + i);
