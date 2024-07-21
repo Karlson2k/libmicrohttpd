@@ -23,6 +23,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <microhttpd2.h>
 
 static MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_NONNULL_ (3)

@@ -1222,9 +1222,8 @@ mhd_parse_get_args (size_t args_len,
 static MHD_FN_PAR_NONNULL_ALL_ bool
 process_request_target (struct MHD_Connection *c)
 {
-#ifdef _DEBUG
   size_t params_len;
-#endif /* _DEBUG */
+
   mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
   mhd_assert (NULL == c->rq.url);
   mhd_assert (0 == c->rq.url_len);

@@ -826,25 +826,32 @@ mhd_send_data (struct MHD_Connection *restrict connection,
                bool push_data,
                size_t *restrict sent)
 {
-  MHD_Socket s = connection->socket_fd;
-
   const bool tls_conn = false; // TODO: TLS support
 
-  mhd_assert (MHD_INVALID_SOCKET != s);
+  mhd_assert (MHD_INVALID_SOCKET != connection->socket_fd);
   mhd_assert (MHD_CONNECTION_CLOSED != connection->state);
 
   if (tls_conn)
   {
+    enum mhd_SocketError ret;
+
 #ifdef HTTPS_SUPPORT
-    pre_send_setopt (connection, (! tls_conn), push_data);
-#else  /* ! HTTPS_SUPPORT  */
-    ret = MHD_ERR_NOTCONN_;
-#endif /* ! HTTPS_SUPPORT  */
+    pre_send_setopt (connection,
+                     (! tls_conn),
+                     push_data);
+    ret = mhd_SOCKET_ERR_OTHER;
     mhd_assert (0 && "Not implemented yet");
-    return mhd_SOCKET_ERR_OTHER;
+#else  /* ! HTTPS_SUPPORT  */
+    ret = mhd_SOCKET_ERR_NOTCONN;
+#endif /* ! HTTPS_SUPPORT  */
+    return ret;
   }
 
-  return mhd_plain_send (connection, buf_size, buf, push_data, sent);
+  return mhd_plain_send (connection,
+                         buf_size,
+                         buf,
+                         push_data,
+                         sent);
 }
 
 
