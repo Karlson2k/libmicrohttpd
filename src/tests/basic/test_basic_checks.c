@@ -146,7 +146,6 @@ my_req_process (void *cls,
                 uint_fast64_t upload_size)
 {
   (void) cls; (void) request; (void) path; (void) method; (void) upload_size;
-  // MHD_lib_global_fake();
   fprintf (stderr, "Unexpected call of the request callback.\n");
   err_flag = ! 0;
   return NULL;

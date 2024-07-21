@@ -64,6 +64,7 @@ libmicrohttpd2_la_SOURCES = \
   daemon_options.h          daemon_set_options.c \
   daemon_create.c \
   daemon_start.c \
+  daemon_get_info.c \
   daemon_add_conn.c         daemon_add_conn.h \
   daemon_funcs.c            daemon_funcs.h \
   conn_data_process.c       conn_data_process.h \

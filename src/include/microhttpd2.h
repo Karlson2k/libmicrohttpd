@@ -1292,6 +1292,41 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * The "Content-Length" header is not allowed in the reply
    */
   MHD_SC_REPLY_CONTENT_LENGTH_NOT_ALLOWED = 60102
+  ,
+  /**
+   * The requested type of information is not recognised.
+   */
+  MHD_SC_INFO_TYPE_UNKNOWN = 60200
+  ,
+  /**
+   * The requested type of information is not recognised.
+   */
+  MHD_SC_INFO_GET_INFO_TYPE_UNKNOWN = 60200
+  ,
+  /**
+   * The information of the requested type is too large to fit into
+   * the provided buffer.
+   */
+  MHD_SC_INFO_GET_BUFF_TOO_SMALL = 60201
+  ,
+  /**
+   * The type of the information is not supported by this MHD build.
+   * It can be information not supported on the current platform or related
+   * to feature disabled for this build.
+   */
+  MHD_SC_INFO_GET_TYPE_NOT_SUPP_BY_BUILD = 60202
+  ,
+  /**
+   * The type of the information is not available due to configuration
+   * or state of the object.
+   */
+  MHD_SC_INFO_GET_TYPE_UNSUPPORTED = 60203
+  ,
+  /**
+   * The type of the information should be available for the object, but
+   * cannot be provided due to some error or other reasons.
+   */
+  MHD_SC_INFO_GET_TYPE_UNAVAILALBE = 60204
 
 };
 
@@ -8990,8 +9025,5 @@ MHD_lib_set_panic_func (MHD_PanicCallback cb,
 #define MHD_lib_set_panic_func_default() \
         MHD_lib_set_panic_func (MHD_STATIC_CAST_ (MHD_PanicCallback,NULL),NULL)
 MHD_C_DECLRATIONS_FINISH_HERE_
-
-MHD_EXTERN_ void
-MHD_lib_global_fake (void);
 
 #endif /* ! MICROHTTPD2_H */
