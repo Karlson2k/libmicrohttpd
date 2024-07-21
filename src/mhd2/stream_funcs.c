@@ -29,6 +29,9 @@
 #include "stream_funcs.h"
 
 #include <string.h>
+#ifdef MHD_USE_EPOLL
+#  include <sys/epoll.h>
+#endif
 
 #include "mhd_daemon.h"
 #include "mhd_connection.h"
@@ -850,7 +853,7 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
   c->pool = NULL;
 
 #ifdef MHD_USE_EPOLL
-  if (mhd_POLL_TYPE_EPOLL == daemon->events.poll_type)
+  if (mhd_POLL_TYPE_EPOLL == c->daemon->events.poll_type)
   {
     struct epoll_event event;
 
