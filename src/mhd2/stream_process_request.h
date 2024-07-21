@@ -180,5 +180,21 @@ MHD_INTERNAL bool
 mhd_stream_process_req_recv_finished (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 
+/**
+ * Check whether enough space is available in the read buffer for the next
+ * operation.
+ * Handles grow of the buffer if required and error conditions (when buffer
+ * grow is required but not possible).
+ * Must be called only when processing the event loop states and when
+ * reading is required for the next phase.
+ * @param c the connection to check
+ * @return true if connection handled successfully and enough buffer
+ *         is available,
+ *         false if not enough buffer is available and the loop's states
+ *         must be processed again as connection is in the error state.
+ */
+MHD_INTERNAL bool
+mhd_stream_check_and_grow_read_buffer_space (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
 
 #endif /* ! MHD_STREAM_PROCESS_REQUEST_H */

@@ -28,8 +28,12 @@
 
 #include "mhd_action.h"
 #include "mhd_request.h"
-#include "mhd_public_api.h"
+
 #include "daemon_logger.h"
+
+#include "response_funcs.h"
+
+#include "mhd_public_api.h"
 
 
 MHD_EXTERN_ MHD_FN_PAR_NONNULL_ALL_
@@ -55,6 +59,8 @@ MHD_action_from_response (struct MHD_Request *request,
     return (const struct MHD_Action *) NULL;
   if (NULL == response)
     return (const struct MHD_Action *) NULL;
+
+  mhd_response_check_frozen_freeze (response);
 
   head_act->act = mhd_ACTION_RESPONSE;
   head_act->data.response = response;
@@ -154,6 +160,8 @@ MHD_upload_action_from_response (struct MHD_Request *request,
     &(request->app_act.upl_act);
   if (mhd_UPLOAD_ACTION_NO_ACTION != upl_act->act)
     return (const struct MHD_UploadAction *) NULL;
+
+  mhd_response_check_frozen_freeze (response);
 
   upl_act->act = mhd_UPLOAD_ACTION_SUSPEND;
   upl_act->data.response = response;

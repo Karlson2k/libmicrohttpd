@@ -266,6 +266,23 @@ struct mhd_ResponseConfiguration
   bool int_err_resp;
 };
 
+/**
+ * Special data for internal error responses
+ */
+struct mhd_ResponseInternalErrData
+{
+  /**
+   * The length of the @a spec_hdr
+   */
+  size_t spec_hdr_len;
+  /**
+   * The special header string.
+   * The final CRLF is not included.
+   * Must be deallocated if not NULL.
+   */
+  char *spec_hdr;
+};
+
 #ifndef NDEBUG
 struct mhd_ResponseDebug
 {
@@ -332,7 +349,12 @@ struct MHD_Response
    */
   mhd_DLNKDL_LIST (mhd_ResponseHeader,headers);
 
-#ifndef NDEBUG
+  /**
+   * Special data for internal error responses
+   */
+  struct mhd_ResponseInternalErrData special_resp;
+
+  #ifndef NDEBUG
   struct mhd_ResponseDebug dbg;
 #endif
 };

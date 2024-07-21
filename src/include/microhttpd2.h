@@ -637,6 +637,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    */
   MHD_SC_REQ_COOKIE_INVALID = 40163
   ,
+  /**
+   * The request cannot be processed. Sending error reply.
+   */
+  MHD_SC_REQ_PROCCESSING_ERR_REPLY = 40200
+  ,
 
   /* 50000-level errors are because of an error internal
      to the MHD logic, possibly including our interaction
@@ -921,7 +926,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_ITC_STATUS_ERROR = 500104
   ,
   /**
-   * We failed to add a socket to the epoll() set.
+   * Failed to add a socket to the epoll set.
    */
   MHD_SC_EPOLL_CTL_ADD_FAILED = 500110
   ,
@@ -962,6 +967,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * (should never happen).
    */
   MHD_SC_UNEXPECTED_SELECT_ERROR = 50116
+  ,
+  /**
+   * Failed to remove a socket to the epoll set.
+   */
+  MHD_SC_EPOLL_CTL_REMOVE_FAILED = 50117
   ,
   /**
    * poll() is not supported.
@@ -1071,6 +1081,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * Failed to allocate memory in connection's pool for the reply.
    */
   MHD_SC_REPLY_POOL_ALLOCATION_FAILURE = 50231
+  ,
+  /**
+   * Failed to allocate memory in connection's pool for the reply.
+   */
+  MHD_SC_ERR_RESPONSE_ALLOCATION_FAILURE = 50250
   ,
   /**
    * The feature is not supported by this MHD build (either

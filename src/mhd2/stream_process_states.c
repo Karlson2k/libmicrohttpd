@@ -44,7 +44,122 @@
 static MHD_FN_PAR_NONNULL_ALL_ bool
 update_active_state (struct MHD_Connection *restrict c)
 {
-  mhd_assert (0); (void) c;
+  /* Do not update states of suspended connection */
+  mhd_assert (! c->suspended);
+#if 0 // def HTTPS_SUPPORT // TODO: implement TLS support
+  if (MHD_TLS_CONN_NO_TLS != connection->tls_state)
+  {   /* HTTPS connection. */
+    switch (connection->tls_state)
+    {
+    }
+  }
+#endif /* HTTPS_SUPPORT */
+  while (1)
+  {
+    switch (c->state)
+    {
+    case MHD_CONNECTION_INIT:
+    case MHD_CONNECTION_REQ_LINE_RECEIVING:
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+      break;
+    case MHD_CONNECTION_REQ_LINE_RECEIVED:
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+      break;
+    case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+      break;
+    case MHD_CONNECTION_HEADERS_RECEIVED:
+    case MHD_CONNECTION_HEADERS_PROCESSED:
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+      break;
+    case MHD_CONNECTION_CONTINUE_SENDING:
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
+      break;
+    case MHD_CONNECTION_BODY_RECEIVING:
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+      break;
+    case MHD_CONNECTION_BODY_RECEIVED:
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+      break;
+    case MHD_CONNECTION_FOOTERS_RECEIVING:
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+      break;
+    case MHD_CONNECTION_FOOTERS_RECEIVED:
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+      break;
+    case MHD_CONNECTION_FULL_REQ_RECEIVED:
+      mhd_assert (0 && "Should not be possible");
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+      break;
+    case MHD_CONNECTION_REQ_RECV_FINISHED:
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+      break;
+    case MHD_CONNECTION_START_REPLY:
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+      break;
+    case MHD_CONNECTION_HEADERS_SENDING:
+      /* headers in buffer, keep writing */
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
+      break;
+    case MHD_CONNECTION_HEADERS_SENT:
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+      break;
+    case MHD_CONNECTION_UNCHUNKED_BODY_UNREADY:
+      mhd_assert (0 && "Should not be possible");
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+      break;
+    case MHD_CONNECTION_UNCHUNKED_BODY_READY:
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
+      break;
+    case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
+      mhd_assert (0 && "Should not be possible");
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+      break;
+    case MHD_CONNECTION_CHUNKED_BODY_READY:
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
+      break;
+    case MHD_CONNECTION_CHUNKED_BODY_SENT:
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+      break;
+    case MHD_CONNECTION_FOOTERS_SENDING:
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
+      break;
+    case MHD_CONNECTION_FULL_REPLY_SENT:
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+      break;
+    case MHD_CONNECTION_CLOSED:
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
+      return false;           /* do nothing, not even reading */
+#if 0 // def UPGRADE_SUPPORT // TODO: Upgrade support
+    case MHD_CONNECTION_UPGRADE:
+      mhd_assert (0);
+      break;
+#endif /* UPGRADE_SUPPORT */
+    default:
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+    }
+
+    if (0 != (MHD_EVENT_LOOP_INFO_READ & c->event_loop_info))
+    {
+      /* Check whether the space is available to receive data */
+      if (! mhd_stream_check_and_grow_read_buffer_space (c))
+      {
+        mhd_assert (c->discard_request);
+        continue;
+      }
+    }
+    break; /* Everything was processed. */
+  }
   return true;
 }
 
@@ -67,7 +182,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
   if ((mhd_SOCKET_ERR_NO_ERROR != c->sk_discnt_err) ||
       (0 != (c->sk_ready & mhd_SOCKET_NET_STATE_ERROR_READY)))
   {
-    mhd_assert ((mhd_SOCKET_ERR_NO_ERROR != c->sk_discnt_err) || \
+    mhd_assert ((mhd_SOCKET_ERR_NO_ERROR == c->sk_discnt_err) || \
                 mhd_SOCKET_ERR_IS_HARD (c->sk_discnt_err));
     if ((mhd_SOCKET_ERR_NO_ERROR == c->sk_discnt_err) ||
         (mhd_SOCKET_ERR_NOT_CHECKED == c->sk_discnt_err))
@@ -280,23 +395,27 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
         && ! c->sk_rmt_shut_wr);
       continue;
     case MHD_CONNECTION_CLOSED:
-      mhd_assert (0 && "Should be unreachable");
-      MHD_UNREACHABLE_;
-      return false;
+      break;
 #if 0 // def UPGRADE_SUPPORT
     case MHD_CONNECTION_UPGRADE:
       return MHD_YES;     /* keep open */
 #endif /* UPGRADE_SUPPORT */
     default:
       mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
       break;
     }
     break;
   }
 
+  if (MHD_CONNECTION_CLOSED == c->state)
+    return false;
+
   if (c->suspended)
   {
     // TODO: process
+    mhd_assert (0 && "Not implemented yet");
+    return true;
   }
 
   if (mhd_stream_check_timedout (c)) // TODO: centralise timeout checks

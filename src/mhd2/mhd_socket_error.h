@@ -58,6 +58,11 @@ enum MHD_FIXED_ENUM_ mhd_SocketError
   mhd_SOCKET_ERR_NOMEM
   ,
   /**
+   * The connection has been gracefully closed by remote peer
+   */
+  mhd_SOCKET_ERR_REMT_DISCONN
+  ,
+  /**
    * The connection has been hard-closed by remote peer.
    */
   mhd_SOCKET_ERR_CONNRESET
@@ -128,7 +133,7 @@ enum MHD_FIXED_ENUM_ mhd_SocketError
 /**
  * Check whether the socket error is unrecoverable
  */
-#define mhd_SOCKET_ERR_IS_HARD(err) (mhd_SOCKET_ERR_CONNRESET <= (err))
+#define mhd_SOCKET_ERR_IS_HARD(err) (mhd_SOCKET_ERR_REMT_DISCONN <= (err))
 
 /**
  * Check whether the socket error is unexpected

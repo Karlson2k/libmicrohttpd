@@ -29,6 +29,7 @@
 #define MHD_RESPONSE_FROM_H 1
 
 #include "mhd_sys_options.h"
+#include "sys_base_types.h"
 
 struct MHD_Response; /* forward declaration */
 
@@ -39,6 +40,14 @@ struct MHD_Response; /* forward declaration */
 MHD_INTERNAL void
 mhd_response_deinit_content_data (struct MHD_Response *restrict r)
 MHD_FN_PAR_NONNULL_ (1);
+
+MHD_INTERNAL struct MHD_Response *
+mhd_response_special_for_error (unsigned int sc,
+                                size_t cntn_len,
+                                const char *cntn,
+                                size_t spec_hdr_len,
+                                char *spec_hdr)
+MHD_FN_PAR_CSTR_(3) MHD_FN_PAR_CSTR_(5);
 
 
 #endif /* ! MHD_RESPONSE_FROM_H */

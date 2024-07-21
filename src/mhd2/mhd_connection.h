@@ -335,6 +335,11 @@ enum MHD_FIXED_ENUM_ MHD_CONNECTION_STATE
 
 };
 
+struct mhd_ConnDebugData
+{
+  bool pre_closed;
+  bool pre_cleaned;
+};
 
 /**
  * Ability to use same connection for next request
@@ -603,6 +608,13 @@ struct MHD_Connection
    * What is this connection waiting for?
    */
   enum MHD_ConnectionEventLoopInfo event_loop_info;
+
+#ifndef NDEBUG
+  /**
+   * Debugging data
+   */
+  struct mhd_ConnDebugData dbg;
+#endif
 };
 
 

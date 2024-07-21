@@ -84,6 +84,8 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon);
  * Finally close and clean-up connection.
  * Must be performed only when connection thread (for thread-per-connection)
  * has stopped.
+ * The connection data deallocated by this function and cannot be used anymore.
+ * The function must be the last function called for connection object.
  * @param c the connection to close
  */
 MHD_INTERNAL void

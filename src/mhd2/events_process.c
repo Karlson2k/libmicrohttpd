@@ -67,11 +67,10 @@ update_conn_net_status (struct MHD_Daemon *restrict d,
                (sk_state | (unsigned int) mhd_SOCKET_NET_STATE_ERROR_READY);
   c->sk_ready = sk_state;
 
-  if (NULL != mhd_DLINKEDL_GET_PREV (c,proc_ready))
+  if ((NULL != mhd_DLINKEDL_GET_NEXT (c, proc_ready)) ||
+      (NULL != mhd_DLINKEDL_GET_PREV (c, proc_ready)) ||
+      (c == mhd_DLINKEDL_GET_FIRST (&(c->daemon->events), proc_ready)))
     return; /* In the 'proc_ready' list already */
-
-  mhd_assert (0 != (((unsigned int) c->event_loop_info) \
-                    & MHD_EVENT_LOOP_INFO_PROCESS));
 
   if ((0 !=
        (((unsigned int) c->sk_ready) & ((unsigned int) c->event_loop_info)
@@ -209,7 +208,7 @@ daemon_accept_new_conns (struct MHD_Daemon *restrict d)
 
 
 static bool
-daemon_process_all_act_coons (struct MHD_Daemon *restrict d)
+daemon_process_all_act_conns (struct MHD_Daemon *restrict d)
 {
   struct MHD_Connection *c;
   mhd_assert (! mhd_D_HAS_WORKERS (d));
@@ -264,10 +263,11 @@ poll_update_fds (struct MHD_Daemon *restrict d,
   {
     unsigned short events; /* 'unsigned' for correct bits manipulations */
     mhd_assert ((i_c - i_s) < d->conns.cfg.count_limit);
+    mhd_assert (MHD_CONNECTION_CLOSED != c->state);
 
     d->events.data.poll.fds[i_c].fd = c->socket_fd;
     d->events.data.poll.rel[i_c].connection = c;
-    events = POLLHUP; /* Actually, not needed and should be ignored in 'events' */
+    events = 0;
     if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_READ))
       events |= MHD_POLL_IN;
     if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_WRITE))
@@ -506,8 +506,8 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
     else if (! d->net.listen.non_block)
       d->events.act_req.accept = false;
   }
-  daemon_process_all_act_coons (d);
-  return false;
+  daemon_process_all_act_conns (d);
+  return ! d->threading.stop_requested;
 }
 
 
@@ -519,6 +519,7 @@ mhd_THRD_RTRN_TYPE mhd_THRD_CALL_SPEC
 mhd_worker_all_events (void *cls)
 {
   struct MHD_Daemon *const restrict d = (struct MHD_Daemon *) cls;
+  mhd_thread_handle_ID_set_current_thread_ID (&(d->threading.tid));
   mhd_assert (d->dbg.net_inited);
   mhd_assert (! d->dbg.net_deinited);
   mhd_assert (mhd_D_TYPE_IS_VALID (d->threading.d_type));
@@ -584,6 +585,8 @@ mhd_THRD_RTRN_TYPE mhd_THRD_CALL_SPEC
 mhd_worker_listening_only (void *cls)
 {
   struct MHD_Daemon *const restrict d = (struct MHD_Daemon *) cls;
+  mhd_thread_handle_ID_set_current_thread_ID (&(d->threading.tid));
+
   mhd_assert (d->dbg.net_inited);
   mhd_assert (! d->dbg.net_deinited);
   mhd_assert (mhd_DAEMON_TYPE_LISTEN_ONLY == d->threading.d_type);
@@ -599,8 +602,8 @@ mhd_worker_listening_only (void *cls)
   if (! d->threading.stop_requested)
   {
     mhd_LOG_MSG (d, MHD_SC_DAEMON_THREAD_STOP_UNEXPECTED, \
-                 "The daemon thread is stopping, but termination has not been " \
-                 "requested by the daemon.");
+                 "The daemon thread is stopping, but termination has " \
+                 "not been requested by the daemon.");
   }
   return (mhd_THRD_RTRN_TYPE) 0;
 }

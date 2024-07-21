@@ -32,6 +32,7 @@
 
 #include "mhd_daemon.h"
 #include "mhd_connection.h"
+#include "mhd_response.h"
 #include "mhd_assert.h"
 #include "mhd_mempool.h"
 #include "mhd_str.h"
@@ -43,6 +44,7 @@
 #include "response_destroy.h"
 #include "mhd_mono_clock.h"
 #include "daemon_logger.h"
+#include "daemon_funcs.h"
 
 #include "mhd_public_api.h"
 
@@ -275,6 +277,8 @@ mhd_stream_get_no_space_err_status_code (struct MHD_Connection *restrict c,
   mhd_assert (MHD_PROC_RECV_HEADERS <= stage);
   mhd_assert ((0 == add_element_size) || (NULL != add_element));
 
+  c->rq.too_large = true;
+
   if (MHD_CONNECTION_HEADERS_RECEIVED > c->state)
   {
     mhd_assert (NULL != c->rq.field_lines.start);
@@ -484,16 +488,15 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
 
   if (! reuse)
   {
+    mhd_assert (! c->stop_with_error || (NULL == c->rp.response) || \
+                (c->rp.response->cfg.int_err_resp));
     /* Next function will destroy response, notify client,
-     * destroy memory pool, and set connection state to "CLOSED" */
-    mhd_conn_pre_close_req_finished (c);
-    c->read_buffer = NULL;
-    c->read_buffer_size = 0;
-    c->read_buffer_offset = 0;
-    c->write_buffer = NULL;
-    c->write_buffer_size = 0;
-    c->write_buffer_send_offset = 0;
-    c->write_buffer_append_offset = 0;
+     * destroy memory pool and set connection state to "CLOSED" */
+    mhd_conn_pre_close (c,
+                        c->stop_with_error ?
+                        mhd_CONN_CLOSE_ERR_REPLY_SENT :
+                        mhd_CONN_CLOSE_HTTP_COMPLETED,
+                        NULL);
   }
   else
   {
@@ -501,6 +504,7 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
     size_t new_read_buf_size;
     mhd_assert (! c->stop_with_error);
     mhd_assert (! c->discard_request);
+    mhd_assert (NULL == c->rq.cntn.lbuf.buf);
 
 #if 0 // TODO: notification callback
     if ( (NULL != d->notify_completed) &&
@@ -635,6 +639,7 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
                     const char *log_msg)
 {
   bool close_hard;
+  bool use_local_lingering;
   enum MHD_RequestTerminationCode term_code;
   enum MHD_StatusCode sc;
 
@@ -657,7 +662,17 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
     break;
   case mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REPLY:
     close_hard = true;
-    term_code = MHD_REQUEST_TERMINATED_NO_RESOURCES;
+    term_code = (! c->stop_with_error || c->rq.too_large) ?
+                MHD_REQUEST_TERMINATED_NO_RESOURCES :
+                MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR;
+    sc = MHD_SC_REPLY_POOL_ALLOCATION_FAILURE;
+    break;
+  case mhd_CONN_CLOSE_NO_MEM_FOR_ERR_RESPONSE:
+    close_hard = true;
+    term_code = c->rq.too_large ?
+                MHD_REQUEST_TERMINATED_NO_RESOURCES :
+                MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR;
+    sc = MHD_SC_ERR_RESPONSE_ALLOCATION_FAILURE;
     break;
   case mhd_CONN_CLOSE_APP_ERROR:
     close_hard = true;
@@ -679,6 +694,10 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
     {
     case mhd_SOCKET_ERR_NOMEM:
       term_code = MHD_REQUEST_TERMINATED_NO_RESOURCES;
+      break;
+    case mhd_SOCKET_ERR_REMT_DISCONN:
+      close_hard = false;
+      term_code = MHD_REQUEST_TERMINATED_CLIENT_ABORT;
       break;
     case mhd_SOCKET_ERR_CONNRESET:
       term_code = MHD_REQUEST_TERMINATED_CLIENT_ABORT;
@@ -716,7 +735,7 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
     term_code = MHD_REQUEST_TERMINATED_TIMEOUT_REACHED;
     break;
 
-  case mhd_CONN_CLOSE_CLIENT_HTTP_ERR_SENT_ERR:
+  case mhd_CONN_CLOSE_ERR_REPLY_SENT:
     close_hard = false;
     term_code = c->rq.too_large ?
                 MHD_REQUEST_TERMINATED_NO_RESOURCES :
@@ -736,6 +755,7 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
 
   mhd_assert ((NULL == log_msg) || (MHD_SC_INTERNAL_ERROR != sc));
 
+  use_local_lingering = false;
   /* Make changes on the socket early to let the kernel and the remote
    * to process the changes in parallel. */
   if (close_hard)
@@ -752,6 +772,7 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
       (void) 0; // TODO: start local lingering phase
       c->state = MHD_CONNECTION_CLOSED; // TODO: start local lingering phase
       c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP; // TODO: start local lingering phase
+      // use_local_lingering = true;
     }
     else
     {  /* No need / not possible to linger */
@@ -780,6 +801,38 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
   (void) term_code;
 #endif
 
+  if (! mhd_D_HAS_THR_PER_CONN (c->daemon))
+  {
+    if (c->connection_timeout_ms == c->daemon->conns.cfg.timeout)
+      mhd_DLINKEDL_DEL_D (&(c->daemon->conns.def_timeout), \
+                          c, by_timeout);
+    else
+      mhd_DLINKEDL_DEL_D (&(c->daemon->conns.cust_timeout), \
+                          c, by_timeout);
+  }
+
+#ifndef NDEBUG
+  c->dbg.pre_closed = true;
+#endif
+
+  if (! use_local_lingering)
+    mhd_conn_pre_clean (c);
+}
+
+
+MHD_INTERNAL
+MHD_FN_PAR_NONNULL_ (1) void
+mhd_conn_pre_clean (struct MHD_Connection *restrict c)
+{
+  // TODO: support suspended connections
+  if ((NULL != mhd_DLINKEDL_GET_NEXT (c, proc_ready)) ||
+      (NULL != mhd_DLINKEDL_GET_PREV (c, proc_ready)) ||
+      (c == mhd_DLINKEDL_GET_FIRST (&(c->daemon->events), proc_ready)))
+    mhd_DLINKEDL_DEL (&(c->daemon->events), c, proc_ready);
+
+  if (NULL != c->rq.cntn.lbuf.buf)
+    mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
+  c->rq.cntn.lbuf.buf = NULL;
   if (NULL != c->rp.response)
     mhd_response_dec_use_count (c->rp.response);
   c->rp.response = NULL;
@@ -792,6 +845,30 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
   c->write_buffer_append_offset = 0;
   c->write_buffer_size = 0;
   c->write_buffer = NULL;
+  // TODO: call in the thread where it was allocated for thread-per-connection
   mhd_pool_destroy (c->pool);
   c->pool = NULL;
+
+#ifdef MHD_USE_EPOLL
+  if (mhd_POLL_TYPE_EPOLL == daemon->events.poll_type)
+  {
+    struct epoll_event event;
+
+    event.events = 0;
+    event.data.ptr = NULL;
+    if (0 != epoll_ctl (c->daemon->events.data.epoll.e_fd,
+                        EPOLL_CTL_DEL,
+                        c->socket_fd,
+                        &event))
+    {
+      mhd_LOG_MSG (daemon, MHD_SC_EPOLL_CTL_REMOVE_FAILED,
+                   "Failed to remove connection socket from epoll.");
+    }
+  }
+#endif /* MHD_USE_EPOLL */
+
+
+#ifndef NDEBUG
+  c->dbg.pre_cleaned = true;
+#endif
 }

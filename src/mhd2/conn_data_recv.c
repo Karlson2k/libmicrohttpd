@@ -65,6 +65,11 @@ mhd_conn_data_recv (struct MHD_Connection *restrict c,
   if ((mhd_SOCKET_ERR_NO_ERROR != res) || has_err)
   {
     /* Handle errors */
+    if ((mhd_SOCKET_ERR_NO_ERROR == res) && (0 == received))
+    {
+      c->sk_rmt_shut_wr = true;
+      res = mhd_SOCKET_ERR_REMT_DISCONN;
+    }
     if (has_err && ! mhd_SOCKET_ERR_IS_HARD (res) && c->sk_nonblck)
     {
       /* Re-try last time to detect the error */

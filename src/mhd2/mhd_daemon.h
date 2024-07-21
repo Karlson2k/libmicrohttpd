@@ -741,9 +741,14 @@ struct mhd_DaemonConnections
   mhd_DLNKDL_LIST (MHD_Connection,all_conn);
 
   /**
-   * The list of all daemon's connections
+   * The list of connections sorted by last activity
    */
   mhd_DLNKDL_LIST (MHD_Connection,def_timeout);
+
+  /**
+   * The list of connections with custom timeouts
+   */
+  mhd_DLNKDL_LIST (MHD_Connection,cust_timeout);
 
   /**
    * The list of all daemon's connections

@@ -161,7 +161,7 @@ static const struct MHD_String five_hundred[] = {
 
 struct mhd_HttpStatusesBlock
 {
-  size_t max;
+  size_t num_elmnts;
   const struct MHD_String *const data;
 };
 
@@ -185,7 +185,7 @@ MHD_HTTP_status_code_to_string (enum MHD_HTTP_StatusCode code)
     return NULL;
   if (600 < code)
     return NULL;
-  if (statuses[code_i / 100].max > (code_i % 100))
+  if (statuses[code_i / 100].num_elmnts <= (code_i % 100))
     return NULL;
   res = statuses[code_i / 100].data + (code_i % 100);
   if (NULL == res->cstr)

@@ -148,8 +148,10 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
                                     (! c->rp.props.send_reply_body)),
                                    &sent);
     }
-    if (mhd_SOCKET_ERR_NO_ERROR != res)
+    if (mhd_SOCKET_ERR_NO_ERROR == res)
     {
+      mhd_assert (MHD_CONNECTION_HEADERS_SENDING == c->state);
+
       if (sent > wb_ready)
       {
         /* The complete header and some response data have been sent,
@@ -157,17 +159,20 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
         mhd_assert (0 == c->rp.rsp_cntn_read_pos);
         mhd_assert (! c->rp.props.chunked);
         mhd_assert (c->rp.props.send_reply_body);
+        c->state = MHD_CONNECTION_UNCHUNKED_BODY_READY;
         c->write_buffer_send_offset += wb_ready;
         c->rp.rsp_cntn_read_pos = sent - wb_ready;
+        if (c->rp.rsp_cntn_read_pos == c->rp.response->cntn_size)
+          c->state = MHD_CONNECTION_FULL_REPLY_SENT;
       }
       else
+      {
         c->write_buffer_send_offset += sent;
+        // TODO: move it to data processing
+        check_write_done (c,
+                          MHD_CONNECTION_HEADERS_SENT);
+      }
 
-      mhd_assert (MHD_CONNECTION_HEADERS_SENDING == c->state);
-
-      // TODO: move it to data processing
-      check_write_done (c,
-                        MHD_CONNECTION_HEADERS_SENT);
 
     }
 
@@ -226,7 +231,7 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
       res = mhd_SOCKET_ERR_INTERNAL;
     }
 
-    if (mhd_SOCKET_ERR_NO_ERROR != res)
+    if (mhd_SOCKET_ERR_NO_ERROR == res)
     {
       if (mhd_REPLY_CNTN_LOC_CONN_BUF != c->rp.cntn_loc)
         c->rp.rsp_cntn_read_pos += sent;
@@ -253,7 +258,7 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
                          + c->write_buffer_send_offset,
                          true,
                          &sent);
-    if (mhd_SOCKET_ERR_NO_ERROR != res)
+    if (mhd_SOCKET_ERR_NO_ERROR == res)
     {
       c->write_buffer_send_offset += sent;
       // TODO: move it to data processing
@@ -267,7 +272,7 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
     res = mhd_SOCKET_ERR_INTERNAL;
   }
 
-  if (mhd_SOCKET_ERR_NO_ERROR != res)
+  if (mhd_SOCKET_ERR_NO_ERROR == res)
   {
     mhd_stream_update_activity_mark (c);  // TODO: centralise activity mark updates
   }

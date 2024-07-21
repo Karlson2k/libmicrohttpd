@@ -175,6 +175,11 @@ enum mhd_ConnCloseReason
   mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REPLY
   ,
   /**
+   * No memory to create error response
+   */
+  mhd_CONN_CLOSE_NO_MEM_FOR_ERR_RESPONSE
+  ,
+  /**
    * Application behaves incorrectly
    */
   mhd_CONN_CLOSE_APP_ERROR
@@ -211,7 +216,7 @@ enum mhd_ConnCloseReason
    * The connection must be closed after error response as the client
    * violates HTTP specification
    */
-  mhd_CONN_CLOSE_CLIENT_HTTP_ERR_SENT_ERR
+  mhd_CONN_CLOSE_ERR_REPLY_SENT
   ,
 
   /* Graceful closing */
@@ -224,9 +229,10 @@ enum mhd_ConnCloseReason
 
 
 /**
- * Perform initial clean-up and mark for closing.
- * Set the reason to "request finished"
+ * Prepare connection for closing.
  * @param c the connection for pre-closing
+ * @param reason the reason for closing
+ * @param log_msg the message for the log
  */
 MHD_INTERNAL void
 mhd_conn_pre_close (struct MHD_Connection *restrict c,
@@ -249,7 +255,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  * @param c the connection for pre-closing
  */
 #define mhd_conn_pre_close_app_abort(c) \
-        mhd_conn_pre_close (c, mhd_CONN_CLOSE_APP_ABORTED, NULL)
+        mhd_conn_pre_close ((c), mhd_CONN_CLOSE_APP_ABORTED, NULL)
 
 /**
  * Perform initial clean-up and mark for closing.
@@ -257,7 +263,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  * @param c the connection for pre-closing
  */
 #define mhd_conn_pre_close_skt_err(c) \
-        mhd_conn_pre_close (c, mhd_CONN_CLOSE_SOCKET_ERR, NULL)
+        mhd_conn_pre_close ((c), mhd_CONN_CLOSE_SOCKET_ERR, NULL)
 
 /**
  * Perform initial clean-up and mark for closing.
@@ -265,7 +271,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  * @param c the connection for pre-closing
  */
 #define mhd_conn_pre_close_req_finished(c) \
-        mhd_conn_pre_close (c, mhd_CONN_CLOSE_HTTP_COMPLETED, NULL)
+        mhd_conn_pre_close ((c), mhd_CONN_CLOSE_HTTP_COMPLETED, NULL)
 
 /**
  * Perform initial clean-up and mark for closing.
@@ -273,7 +279,15 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  * @param c the connection for pre-closing
  */
 #define mhd_conn_pre_close_timedout(c) \
-        mhd_conn_pre_close (c, mhd_CONN_CLOSE_TIMEDOUT, NULL)
+        mhd_conn_pre_close ((c), mhd_CONN_CLOSE_TIMEDOUT, NULL)
 
+/**
+ * Perform initial connection cleanup.
+ * The connection must be prepared for closing.
+ * @param c the connection for pre-closing
+ */
+MHD_INTERNAL void
+mhd_conn_pre_clean (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ (1);
 
 #endif /* ! MHD_STREAM_FUNCS_H */

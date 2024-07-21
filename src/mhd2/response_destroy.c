@@ -49,6 +49,8 @@ static MHD_FN_PAR_NONNULL_ (1) void
 response_full_detinit (struct MHD_Response *restrict r)
 {
   mhd_response_remove_all_headers (r);
+  if (NULL != r->special_resp.spec_hdr)
+    free (r->special_resp.spec_hdr);
   if (r->reuse.reusable)
     mhd_response_deinit_reusable (r);
   mhd_response_deinit_content_data (r);

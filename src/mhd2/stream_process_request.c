@@ -45,17 +45,21 @@
 
 #include "mhd_daemon.h"
 #include "mhd_connection.h"
-#include "mhd_public_api.h"
 
 #include "daemon_logger.h"
 #include "mhd_assert.h"
 #include "mhd_panic.h"
+
+#include "mhd_mempool.h"
 
 #include "request_funcs.h"
 #include "request_get_value.h"
 #include "respond_with_error.h"
 #include "stream_funcs.h"
 #include "daemon_funcs.h"
+
+#include "mhd_public_api.h"
+
 
 /**
  * Response text used when the request (http header) is
@@ -294,6 +298,35 @@
         "<body>Request HTTP header is too big for the memory constraints " \
         "of this webserver.</body>" \
         "</html>"
+/**
+ * Response text used when the request chunk size line with chunk extension
+ * cannot fit the buffer.
+ */
+#define ERR_RSP_REQUEST_CHUNK_LINE_EXT_TOO_BIG \
+        "<html>" \
+        "<head><title>Request too big</title></head>" \
+        "<body><p>The total size of the request target, the request field lines " \
+        "and the chunk size line exceeds the memory constraints of this web " \
+        "server.</p>" \
+        "<p>The request could be re-tried without chunk extensions, with a smaller " \
+        "chunk size, shorter field lines, a shorter request target or a shorter " \
+        "request method token.</p></body>" \
+        "</html>"
+
+/**
+ * Response text used when the request chunk size line without chunk extension
+ * cannot fit the buffer.
+ */
+#define ERR_RSP_REQUEST_CHUNK_LINE_TOO_BIG \
+        "<html>" \
+        "<head><title>Request too big</title></head>" \
+        "<body><p>The total size of the request target, the request field lines " \
+        "and the chunk size line exceeds the memory constraints of this web " \
+        "server.</p>" \
+        "<p>The request could be re-tried with a smaller " \
+        "chunk size, shorter field lines, a shorter request target or a shorter " \
+        "request method token.</p></body>" \
+        "</html>"
 
 /**
  * Response text used when the request (http header) does not
@@ -377,6 +410,17 @@
         "<html><head><title>Request content too large</title></head>" \
         "<body>The chunk size used in HTTP chunked encoded " \
         "request is too large.</body></html>"
+
+
+/**
+ * The reasonable length of the upload chunk "header" (the size specifier
+ * with optional chunk extension).
+ * MHD tries to keep the space in the read buffer large enough to read
+ * the chunk "header" in one step.
+ * The real "header" could be much larger, it will be handled correctly
+ * anyway, however it may require several rounds of buffer grow.
+ */
+#define MHD_CHUNK_HEADER_REASONABLE_LEN 24
 
 /**
  * Get whether bare LF in HTTP header and other protocol elements
@@ -1229,7 +1273,10 @@ process_request_target (struct MHD_Connection *c)
 
       mhd_RESPOND_WITH_ERROR_STATIC (
         c,
-        mhd_stream_get_no_space_err_status_code (c,MHD_PROC_RECV_URI, 0, NULL),
+        mhd_stream_get_no_space_err_status_code (c,
+                                                 MHD_PROC_RECV_URI,
+                                                 0,
+                                                 NULL),
         ERR_RSP_MSG_REQUEST_TOO_BIG);
       mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING != c->state);
       return false;
@@ -1273,12 +1320,14 @@ process_request_target (struct MHD_Connection *c)
 static void
 send_redirect_fixed_rq_target (struct MHD_Connection *restrict c)
 {
+  static const char hdr_prefix[] = MHD_HTTP_HEADER_LOCATION ": ";
+  static const size_t hdr_prefix_len =
+    mhd_SSTR_LEN (MHD_HTTP_HEADER_LOCATION ": ");
+  char *hdr_line;
   char *b;
   size_t fixed_uri_len;
   size_t i;
   size_t o;
-  char *hdr_name;
-  size_t hdr_name_len;
 
   mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
   mhd_assert (0 != c->rq.hdrs.rq_line.num_ws_in_uri);
@@ -1288,7 +1337,7 @@ send_redirect_fixed_rq_target (struct MHD_Connection *restrict c)
                   + 2 * c->rq.hdrs.rq_line.num_ws_in_uri;
   if ( (fixed_uri_len + 200 > c->daemon->conns.cfg.mem_pool_size) ||
        (fixed_uri_len > MHD_MAX_FIXED_URI_LEN) ||
-       (NULL == (b = malloc (fixed_uri_len + 1))) )
+       (NULL == (hdr_line = malloc (fixed_uri_len + 1 + hdr_prefix_len))) )
   {
     mhd_STREAM_ABORT (c, mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN, \
                       "The request has whitespace character is " \
@@ -1296,6 +1345,8 @@ send_redirect_fixed_rq_target (struct MHD_Connection *restrict c)
                       "send automatic redirect to fixed URI.");
     return;
   }
+  memcpy (hdr_line, hdr_prefix, hdr_prefix_len);
+  b = hdr_line + hdr_prefix_len;
   i = 0;
   o = 0;
 
@@ -1336,26 +1387,12 @@ send_redirect_fixed_rq_target (struct MHD_Connection *restrict c)
   mhd_assert (fixed_uri_len == o);
   b[o] = 0; /* Zero-terminate the result */
 
-  hdr_name_len = mhd_SSTR_LEN (MHD_HTTP_HEADER_LOCATION);
-  hdr_name = malloc (hdr_name_len + 1);
-  if (NULL != hdr_name)
-  {
-    memcpy (hdr_name,
-            MHD_HTTP_HEADER_LOCATION,
-            hdr_name_len + 1);
-    /* hdr_name and b are free()d within this call */
-    mhd_RESPOND_WITH_ERROR_HEADER (c,
-                                   MHD_HTTP_STATUS_MOVED_PERMANENTLY,
-                                   ERR_RSP_RQ_TARGET_INVALID_CHAR,
-                                   hdr_name_len,
-                                   hdr_name,
-                                   o,
-                                   b);
-    return;
-  }
-  free (b);
-  mhd_STREAM_ABORT (c, mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN,
-                    "The request has whitespace character is in the URI.");
+  mhd_RESPOND_WITH_ERROR_HEADER (c,
+                                 MHD_HTTP_STATUS_MOVED_PERMANENTLY,
+                                 ERR_RSP_RQ_TARGET_INVALID_CHAR,
+                                 o + hdr_prefix_len,
+                                 hdr_line);
+
   return;
 }
 
@@ -3410,9 +3447,386 @@ mhd_stream_process_req_recv_finished (struct MHD_Connection *restrict c)
 {
   if (NULL != c->rq.cntn.lbuf.buf)
     mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
+  c->rq.cntn.lbuf.buf = NULL;
   if (c->rq.cntn.cntn_size != c->rq.cntn.proc_size)
     c->discard_request = true;
   mhd_assert (NULL != c->rp.response);
   c->state = MHD_CONNECTION_START_REPLY;
   return true;
+}
+
+
+/**
+ * Send error reply when receive buffer space exhausted while receiving
+ * the chunk size line.
+ * @param c the connection to handle
+ * @param add_header the optional pointer to the partially received
+ *                   the current chunk size line.
+ *                   Could be not zero-terminated and can contain binary zeros.
+ *                   Can be NULL.
+ * @param add_header_size the size of the @a add_header
+ */
+static void
+handle_req_chunk_size_line_no_space (struct MHD_Connection *c,
+                                     const char *chunk_size_line,
+                                     size_t chunk_size_line_size)
+{
+  unsigned int err_code;
+
+  if (NULL != chunk_size_line)
+  {
+    const char *semicol;
+    /* Check for chunk extension */
+    semicol = memchr (chunk_size_line, ';', chunk_size_line_size);
+    if (NULL != semicol)
+    { /* Chunk extension present. It could be removed without any loss of the
+         details of the request. */
+      mhd_RESPOND_WITH_ERROR_STATIC (c,
+                                     MHD_HTTP_STATUS_CONTENT_TOO_LARGE,
+                                     ERR_RSP_REQUEST_CHUNK_LINE_EXT_TOO_BIG);
+    }
+  }
+  err_code = mhd_stream_get_no_space_err_status_code (c,
+                                                      MHD_PROC_RECV_BODY_CHUNKED,
+                                                      chunk_size_line_size,
+                                                      chunk_size_line);
+  mhd_RESPOND_WITH_ERROR_STATIC (c,
+                                 err_code,
+                                 ERR_RSP_REQUEST_CHUNK_LINE_TOO_BIG);
+}
+
+
+/**
+ * Handle situation with read buffer exhaustion.
+ * Must be called when no more space left in the read buffer, no more
+ * space left in the memory pool to grow the read buffer, but more data
+ * need to be received from the client.
+ * Could be called when the result of received data processing cannot be
+ * stored in the memory pool (like some header).
+ * @param c the connection to process
+ * @param stage the receive stage where the exhaustion happens.
+ */
+static MHD_FN_PAR_NONNULL_ALL_ void
+handle_recv_no_space (struct MHD_Connection *c,
+                      enum MHD_ProcRecvDataStage stage)
+{
+  mhd_assert (MHD_PROC_RECV_INIT <= stage);
+  mhd_assert (MHD_PROC_RECV_FOOTERS >= stage);
+  mhd_assert (MHD_CONNECTION_FULL_REQ_RECEIVED > c->state);
+  mhd_assert ((MHD_PROC_RECV_INIT != stage) || \
+              (MHD_CONNECTION_INIT == c->state));
+  mhd_assert ((MHD_PROC_RECV_METHOD != stage) || \
+              (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state));
+  mhd_assert ((MHD_PROC_RECV_URI != stage) || \
+              (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state));
+  mhd_assert ((MHD_PROC_RECV_HTTPVER != stage) || \
+              (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state));
+  mhd_assert ((MHD_PROC_RECV_HEADERS != stage) || \
+              (MHD_CONNECTION_REQ_HEADERS_RECEIVING == c->state));
+  mhd_assert (MHD_PROC_RECV_COOKIE != stage); /* handle_req_cookie_no_space() must be called directly */
+  mhd_assert ((MHD_PROC_RECV_BODY_NORMAL != stage) || \
+              (MHD_CONNECTION_BODY_RECEIVING == c->state));
+  mhd_assert ((MHD_PROC_RECV_BODY_CHUNKED != stage) || \
+              (MHD_CONNECTION_BODY_RECEIVING == c->state));
+  mhd_assert ((MHD_PROC_RECV_FOOTERS != stage) || \
+              (MHD_CONNECTION_FOOTERS_RECEIVING == c->state));
+  mhd_assert ((MHD_PROC_RECV_BODY_NORMAL != stage) || \
+              (! c->rq.have_chunked_upload));
+  mhd_assert ((MHD_PROC_RECV_BODY_CHUNKED != stage) || \
+              (c->rq.have_chunked_upload));
+  switch (stage)
+  {
+  case MHD_PROC_RECV_INIT:
+  case MHD_PROC_RECV_METHOD:
+    /* Some data has been received, but it is not clear yet whether
+     * the received data is an valid HTTP request */
+    mhd_STREAM_ABORT (c, mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REQUEST, \
+                      "No space left in the read buffer when " \
+                      "receiving the initial part of " \
+                      "the request line.");
+    return;
+  case MHD_PROC_RECV_URI:
+  case MHD_PROC_RECV_HTTPVER:
+    /* Some data has been received, but the request line is incomplete */
+    mhd_assert (mhd_HTTP_METHOD_NO_METHOD != c->rq.http_mthd);
+    mhd_assert (MHD_HTTP_VERSION_INVALID == c->rq.http_ver);
+    /* A quick simple check whether the incomplete line looks
+     * like an HTTP request */
+    if ((mhd_HTTP_METHOD_GET <= c->rq.http_mthd) &&
+        (mhd_HTTP_METHOD_DELETE >= c->rq.http_mthd))
+    {
+      mhd_RESPOND_WITH_ERROR_STATIC (c,
+                                     MHD_HTTP_STATUS_URI_TOO_LONG,
+                                     ERR_RSP_MSG_REQUEST_TOO_BIG);
+      return;
+    }
+    mhd_STREAM_ABORT (c, mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REQUEST, \
+                      "No space left in the read buffer when " \
+                      "receiving the URI in " \
+                      "the request line. " \
+                      "The request uses non-standard HTTP request " \
+                      "method token.");
+    return;
+  case MHD_PROC_RECV_HEADERS:
+    handle_req_headers_no_space (c, c->read_buffer, c->read_buffer_offset);
+    return;
+  case MHD_PROC_RECV_BODY_NORMAL:
+    /* A header probably has been added to a suspended connection and
+       it took precisely all the space in the buffer.
+       Very low probability. */
+    mhd_assert (! c->rq.have_chunked_upload);
+    handle_req_headers_no_space (c, NULL, 0); // FIXME: check
+    return;
+  case MHD_PROC_RECV_BODY_CHUNKED:
+    mhd_assert (c->rq.have_chunked_upload);
+    if (c->rq.current_chunk_offset != c->rq.current_chunk_size)
+    { /* Receiving content of the chunk */
+      /* A header probably has been added to a suspended connection and
+         it took precisely all the space in the buffer.
+         Very low probability. */
+      handle_req_headers_no_space (c, NULL, 0);  // FIXME: check
+    }
+    else
+    {
+      if (0 != c->rq.current_chunk_size)
+      { /* Waiting for chunk-closing CRLF */
+        /* Not really possible as some payload should be
+           processed and the space used by payload should be available. */
+        handle_req_headers_no_space (c, NULL, 0);  // FIXME: check
+      }
+      else
+      { /* Reading the line with the chunk size */
+        handle_req_chunk_size_line_no_space (c,
+                                             c->read_buffer,
+                                             c->read_buffer_offset);
+      }
+    }
+    return;
+  case MHD_PROC_RECV_FOOTERS:
+    handle_req_footers_no_space (c, c->read_buffer, c->read_buffer_offset);
+    return;
+  /* The next cases should not be possible */
+  case MHD_PROC_RECV_COOKIE:
+  default:
+    break;
+  }
+  mhd_assert (0 && "Should be unreachable");
+}
+
+
+/**
+ * Try growing the read buffer.  We initially claim half the available
+ * buffer space for the read buffer (the other half being left for
+ * management data structures; the write buffer can in the end take
+ * virtually everything as the read buffer can be reduced to the
+ * minimum necessary at that point.
+ *
+ * @param connection the connection
+ * @param required set to 'true' if grow is required, i.e. connection
+ *                 will fail if no additional space is granted
+ * @return 'true' on success, 'false' on failure
+ */
+static MHD_FN_PAR_NONNULL_ALL_ bool
+try_grow_read_buffer (struct MHD_Connection *restrict connection,
+                      bool required)
+{
+  size_t new_size;
+  size_t avail_size;
+  const size_t def_grow_size = 1536; // TODO: remove hardcoded increment
+  void *rb;
+
+  avail_size = mhd_pool_get_free (connection->pool);
+  if (0 == avail_size)
+    return false;               /* No more space available */
+  if (0 == connection->read_buffer_size)
+    new_size = avail_size / 2;  /* Use half of available buffer for reading */
+  else
+  {
+    size_t grow_size;
+
+    grow_size = avail_size / 8;
+    if (def_grow_size > grow_size)
+    {                  /* Shortage of space */
+      const size_t left_free =
+        connection->read_buffer_size - connection->read_buffer_offset;
+      mhd_assert (connection->read_buffer_size >= \
+                  connection->read_buffer_offset);
+      if ((def_grow_size <= grow_size + left_free)
+          && (left_free < def_grow_size))
+        grow_size = def_grow_size - left_free;  /* Use precise 'def_grow_size' for new free space */
+      else if (! required)
+        return false;                           /* Grow is not mandatory, leave some space in pool */
+      else
+      {
+        /* Shortage of space, but grow is mandatory */
+        const size_t small_inc =
+          ((mhd_BUF_INC_SIZE > def_grow_size) ?
+           def_grow_size : mhd_BUF_INC_SIZE) / 8;
+        if (small_inc < avail_size)
+          grow_size = small_inc;
+        else
+          grow_size = avail_size;
+      }
+    }
+    new_size = connection->read_buffer_size + grow_size;
+  }
+  /* Make sure that read buffer will not be moved */
+  if ((NULL != connection->read_buffer) &&
+      ! mhd_pool_is_resizable_inplace (connection->pool,
+                                       connection->read_buffer,
+                                       connection->read_buffer_size))
+  {
+    mhd_assert (0);
+    return false;
+  }
+  /* we can actually grow the buffer, do it! */
+  rb = mhd_pool_reallocate (connection->pool,
+                            connection->read_buffer,
+                            connection->read_buffer_size,
+                            new_size);
+  if (NULL == rb)
+  {
+    /* This should NOT be possible: we just computed 'new_size' so that
+       it should fit. If it happens, somehow our read buffer is not in
+       the right position in the pool, say because someone called
+       mhd_pool_allocate() without 'from_end' set to 'true'? Anyway,
+       should be investigated! (Ideally provide all data from
+       *pool and connection->read_buffer and new_size for debugging). */
+    mhd_assert (0);
+    return false;
+  }
+  mhd_assert (connection->read_buffer == rb);
+  connection->read_buffer = rb;
+  mhd_assert (NULL != connection->read_buffer);
+  connection->read_buffer_size = new_size;
+  return true;
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
+mhd_stream_check_and_grow_read_buffer_space (struct MHD_Connection *restrict c)
+{
+  /**
+   * The increase of read buffer size is desirable.
+   */
+  bool rbuff_grow_desired;
+  /**
+   * The increase of read buffer size is a hard requirement.
+   */
+  bool rbuff_grow_required;
+
+  mhd_assert (0 != (MHD_EVENT_LOOP_INFO_READ & c->event_loop_info));
+  mhd_assert (! c->discard_request);
+
+  rbuff_grow_required = (c->read_buffer_offset == c->read_buffer_size);
+  if (rbuff_grow_required)
+    rbuff_grow_desired = true;
+  else
+  {
+    rbuff_grow_desired = (c->read_buffer_offset + 1536 > // TODO: remove handcoded buffer grow size
+                          c->read_buffer_size);
+
+    if ((rbuff_grow_desired) &&
+        (MHD_CONNECTION_BODY_RECEIVING == c->state))
+    {
+      if (! c->rq.have_chunked_upload)
+      {
+        mhd_assert (MHD_SIZE_UNKNOWN != c->rq.cntn.cntn_size);
+        /* Do not grow read buffer more than necessary to process the current
+           request. */
+        rbuff_grow_desired =
+          (c->rq.cntn.cntn_size - c->rq.cntn.recv_size > c->read_buffer_size); // FIXME
+      }
+      else
+      {
+        mhd_assert (MHD_SIZE_UNKNOWN == c->rq.cntn.cntn_size);
+        if (0 == c->rq.current_chunk_size)
+          rbuff_grow_desired =  /* Reading value of the next chunk size */
+                               (MHD_CHUNK_HEADER_REASONABLE_LEN >
+                                c->read_buffer_size);
+        else
+        {
+          const uint_fast64_t cur_chunk_left =
+            c->rq.current_chunk_size - c->rq.current_chunk_offset;
+          /* Do not grow read buffer more than necessary to process the current
+             chunk with terminating CRLF. */
+          mhd_assert (c->rq.current_chunk_offset <= c->rq.current_chunk_size);
+          rbuff_grow_desired =
+            ((cur_chunk_left + 2) > (uint_fast64_t) (c->read_buffer_size));
+        }
+      }
+    }
+  }
+
+  if (! rbuff_grow_desired)
+    return true; /* No need to increase the buffer */
+
+  if (try_grow_read_buffer (c, rbuff_grow_required))
+    return true; /* Buffer increase succeed */
+
+  if (! rbuff_grow_required)
+    return true; /* Can continue without buffer increase */
+
+  /* Failed to increase the read buffer size, but need to read the data
+     from the network.
+     No more space left in the buffer, no more space to increase the buffer. */
+
+  if (1)
+  {
+    enum MHD_ProcRecvDataStage stage;
+
+    switch (c->state)
+    {
+    case MHD_CONNECTION_INIT:
+      stage = MHD_PROC_RECV_INIT;
+      break;
+    case MHD_CONNECTION_REQ_LINE_RECEIVING:
+      if (mhd_HTTP_METHOD_NO_METHOD == c->rq.http_mthd)
+        stage = MHD_PROC_RECV_METHOD;
+      else if (0 == c->rq.req_target_len)
+        stage = MHD_PROC_RECV_URI;
+      else
+        stage = MHD_PROC_RECV_HTTPVER;
+      break;
+    case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
+      stage = MHD_PROC_RECV_HEADERS;
+      break;
+    case MHD_CONNECTION_BODY_RECEIVING:
+      stage = c->rq.have_chunked_upload ?
+              MHD_PROC_RECV_BODY_CHUNKED : MHD_PROC_RECV_BODY_NORMAL;
+      break;
+    case MHD_CONNECTION_FOOTERS_RECEIVING:
+      stage = MHD_PROC_RECV_FOOTERS;
+      break;
+    case MHD_CONNECTION_REQ_LINE_RECEIVED:
+    case MHD_CONNECTION_HEADERS_RECEIVED:
+    case MHD_CONNECTION_HEADERS_PROCESSED:
+    case MHD_CONNECTION_CONTINUE_SENDING:
+    case MHD_CONNECTION_BODY_RECEIVED:
+    case MHD_CONNECTION_FOOTERS_RECEIVED:
+    case MHD_CONNECTION_FULL_REQ_RECEIVED:
+    case MHD_CONNECTION_REQ_RECV_FINISHED:
+    case MHD_CONNECTION_START_REPLY:
+    case MHD_CONNECTION_HEADERS_SENDING:
+    case MHD_CONNECTION_HEADERS_SENT:
+    case MHD_CONNECTION_UNCHUNKED_BODY_UNREADY:
+    case MHD_CONNECTION_UNCHUNKED_BODY_READY:
+    case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
+    case MHD_CONNECTION_CHUNKED_BODY_READY:
+    case MHD_CONNECTION_CHUNKED_BODY_SENT:
+    case MHD_CONNECTION_FOOTERS_SENDING:
+    case MHD_CONNECTION_FULL_REPLY_SENT:
+    case MHD_CONNECTION_CLOSED:
+#if 0 // def UPGRADE_SUPPORT // TODO: Upgrade support
+    case MHD_CONNECTION_UPGRADE:
+#endif
+    default:
+      mhd_assert (0);
+      MHD_UNREACHABLE_;
+      stage = MHD_PROC_RECV_BODY_NORMAL;
+    }
+
+    handle_recv_no_space (c, stage);
+  }
+  return false;
 }

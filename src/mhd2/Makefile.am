@@ -71,7 +71,7 @@ libmicrohttpd2_la_SOURCES = \
   conn_data_send.c          conn_data_send.h \
   request_funcs.c           request_funcs.h \
   request_get_value.c       request_get_value.h \
-  respond_with_error.h \
+  respond_with_error.c      respond_with_error.h \
   response_from.c           response_from.h \
   response_add_header.c     response_add_header.h \
   response_destroy.c        response_destroy.h \

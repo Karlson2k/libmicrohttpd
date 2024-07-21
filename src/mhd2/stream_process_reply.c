@@ -749,6 +749,19 @@ build_header_response_inn (struct MHD_Connection *restrict c)
 
   /* * The headers * */
 
+  /* A special custom header */
+  if (0 != r->special_resp.spec_hdr_len)
+  {
+    mhd_assert (r->cfg.int_err_resp);
+    if (buf_size < pos + r->special_resp.spec_hdr_len + 2)
+      return false;
+    memcpy (buf + pos,
+            r->special_resp.spec_hdr,
+            r->special_resp.spec_hdr_len);
+    buf[pos++] = '\r';
+    buf[pos++] = '\n';
+  }
+
   /* Main automatic headers */
 
   /* The "Date:" header */
@@ -809,8 +822,8 @@ build_header_response_inn (struct MHD_Connection *restrict c)
           (! r->cfg.chunked) &&
           (! r->cfg.head_only))
       { /* The size is known and can be indicated by the header */
-        if (r->cfg.cnt_len_by_app)
-        { /* The response does not have "Content-Length" header */
+        if (! r->cfg.cnt_len_by_app)
+        { /* The response does not have app-defined "Content-Length" header */
           if (! buffer_append_s (buf, &pos, buf_size,
                                  MHD_HTTP_HEADER_CONTENT_LENGTH ": "))
             return false;

@@ -41,6 +41,7 @@
 #include "sys_base_types.h"
 #include "sys_sockets_types.h"
 #include "sys_sockets_headers.h"
+#include "sys_ip_headers.h"
 
 #include <string.h>
 #ifdef MHD_USE_EPOLL
@@ -49,22 +50,23 @@
 
 #include "compat_calloc.h"
 
+#include "mhd_sockets_macros.h"
+#include "mhd_sockets_funcs.h"
+
 #include "mhd_panic.h"
 
 #include "mhd_daemon.h"
 #include "mhd_connection.h"
-#include "mhd_public_api.h"
+
 #include "daemon_logger.h"
-#include "sys_sockets_headers.h"
-#include "sys_ip_headers.h"
-#include "mhd_sockets_macros.h"
-#include "mhd_sockets_funcs.h"
 #include "mhd_mono_clock.h"
 #include "mhd_mempool.h"
 #include "events_process.h"
 
 #include "response_from.h"
 #include "response_destroy.h"
+
+#include "mhd_public_api.h"
 
 
 /**
@@ -146,6 +148,9 @@ connection_clean_destroy (struct MHD_Connection *restrict c,
 
   /* Connection must not be in 'process ready' list */
   mhd_assert (NULL == mhd_DLINKEDL_GET_NEXT (c, proc_ready));
+  mhd_assert (NULL == mhd_DLINKEDL_GET_PREV (c, proc_ready));
+  mhd_assert (c != mhd_DLINKEDL_GET_FIRST (&(d->events), proc_ready));
+  mhd_assert (c != mhd_DLINKEDL_GET_LAST (&(d->events), proc_ready));
 
 #ifdef MHD_USE_EPOLL
   if (mhd_D_IS_USING_EPOLL (d))
@@ -402,7 +407,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
                               &event))
           {
             mhd_LOG_MSG (daemon, MHD_SC_EPOLL_CTL_ADD_FAILED,
-                         "Failed to add connection socket .");
+                         "Failed to add connection socket to epoll.");
             res = MHD_SC_EPOLL_CTL_ADD_FAILED;
           }
           else
@@ -897,7 +902,7 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
     return mhd_DAEMON_ACCEPT_FAILED;
   }
 
-  if (mhd_FD_FITS_DAEMON (daemon, s))
+  if (! mhd_FD_FITS_DAEMON (daemon, s))
   {
     mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_OUTSIDE_OF_SET_RANGE, \
                  "The accepted socket has value outside of allowed range.");
@@ -984,18 +989,36 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
                                                 sk_nonbl,
                                                 sk_spipe_supprs,
                                                 sk_non_ip)) ?
-         mhd_DAEMON_ACCEPT_FAILED : mhd_DAEMON_ACCEPT_SUCCESS;
+         mhd_DAEMON_ACCEPT_SUCCESS : mhd_DAEMON_ACCEPT_FAILED;
 }
 
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
 mhd_conn_close_final (struct MHD_Connection *restrict c)
 {
-  if ((NULL != mhd_DLINKEDL_GET_NEXT (c, proc_ready)) ||
-      (NULL != mhd_DLINKEDL_GET_PREV (c, proc_ready)) ||
-      (c == mhd_DLINKEDL_GET_FIRST (&(c->daemon->events), proc_ready)))
-    mhd_DLINKEDL_DEL (&(c->daemon->events), c, proc_ready);
+  mhd_assert (c->dbg.pre_closed);
+  mhd_assert (c->dbg.pre_cleaned);
+  mhd_assert (NULL == c->rp.response);
+  mhd_assert (! c->rq.app_aware);
+  mhd_assert (NULL == mhd_DLINKEDL_GET_NEXT (c, proc_ready));
+  mhd_assert (NULL == mhd_DLINKEDL_GET_PREV (c, proc_ready));
+  mhd_assert (c != mhd_DLINKEDL_GET_FIRST (&(c->daemon->events), proc_ready));
+  mhd_assert (c != mhd_DLINKEDL_GET_LAST (&(c->daemon->events), proc_ready));
 
-  mhd_assert (0 && "Not finished yet");
-  // TODO: finish
+  if (mhd_D_HAS_THR_PER_CONN (c->daemon))
+  {
+    mhd_assert (0 && "Not implemented yet");
+    // TODO: Support "thread per connection"
+  }
+  mhd_assert (NULL == mhd_DLINKEDL_GET_NEXT (c, by_timeout));
+  mhd_assert (NULL == mhd_DLINKEDL_GET_PREV (c, by_timeout));
+  mhd_assert (NULL == c->pool);
+
+  mhd_DLINKEDL_DEL (&(c->daemon->conns), c, all_conn);
+
+  // TODO: update per-IP limits
+  if (NULL != c->addr)
+    free (c->addr);
+  mhd_socket_close (c->socket_fd);
+  free (c);
 }

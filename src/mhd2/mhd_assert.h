@@ -78,4 +78,11 @@
 #  endif /* ! HAVE_ASSERT */
 #endif /* NDEBUG */
 
+#ifdef _DEBUG
+#  ifdef MHD_UNREACHABLE_
+#    undef MHD_UNREACHABLE_
+#  endif
+#  define MHD_UNREACHABLE_ ((void) 0)
+#endif
+
 #endif /* ! MHD_ASSERT_H */

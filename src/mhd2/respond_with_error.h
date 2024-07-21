@@ -34,17 +34,28 @@
 
 struct MHD_Connection; /* forward declaration */
 
+/**
+ * Respond with provided error response.
+ * Current request will be aborted, stream will be closed after sending
+ * error response.
+ * @param c the connection to use
+ * @param http_code the reply HTTP status code
+ * @param msg_len the length of the @a msg
+ * @param msg the reply content, could be NULL
+ * @param add_hdr_line_len the length the @a add_hdr_line
+ * @param add_hdr_line the additional special header line, could be NULL,
+ *                     if not NULL it will be deallocated by free().
+ *
+ */
 MHD_INTERNAL void
 respond_with_error_len (struct MHD_Connection *c,
                         unsigned int http_code,
                         size_t msg_len,
                         const char *msg,
-                        size_t add_hdr_name_len,
-                        const char *add_hdr_name,
-                        size_t add_hdr_value_len,
-                        const char *add_hdr_value)
+                        size_t add_hdr_line_len,
+                        char *add_hdr_line)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_CSTR_ (4) MHD_FN_PAR_CSTR_ (6) MHD_FN_PAR_CSTR_ (8);
+MHD_FN_PAR_CSTR_ (4) MHD_FN_PAR_CSTR_ (6);
 
 #ifdef HAVE_HTTP_AUTO_MESSAGES_BODIES
 /**
@@ -53,16 +64,15 @@ MHD_FN_PAR_CSTR_ (4) MHD_FN_PAR_CSTR_ (6) MHD_FN_PAR_CSTR_ (8);
 #  define mhd_RESPOND_WITH_ERROR_STATIC(c, code, msg) \
         respond_with_error_len ((c), (code), \
                                 mhd_SSTR_LEN (msg), (msg), \
-                                0, NULL, 0, NULL)
+                                0, NULL)
 
 /**
  * Transmit static string as error response and add specified header
  */
-#  define mhd_RESPOND_WITH_ERROR_HEADER(c,code,m,hd_n_l,hd_n,hd_v_l,hd_v) \
+#  define mhd_RESPOND_WITH_ERROR_HEADER(c,code,m,hdrl_l,hdrl) \
         respond_with_error_len ((c), (code), \
                                 mhd_SSTR_LEN (m), (m), \
-                                (hd_n_l), (hd_n), \
-                                (hd_v_l), (hd_v))
+                                (hdrl_l), (hdrl))
 
 #else
 /**
@@ -71,16 +81,15 @@ MHD_FN_PAR_CSTR_ (4) MHD_FN_PAR_CSTR_ (6) MHD_FN_PAR_CSTR_ (8);
 #  define mhd_RESPOND_WITH_ERROR_STATIC(c, code, msg) \
         respond_with_error_len ((c), (code), \
                                 0, NULL, \
-                                0, NULL, 0, NULL)
+                                0, NULL)
 
 /**
  * Transmit static string as error response and add specified header
  */
-#  define mhd_RESPOND_WITH_ERROR_HEADER(c,code,m,hd_n_l,hd_n,hd_v_l,hd_v) \
+#  define mhd_RESPOND_WITH_ERROR_HEADER(c,code,m,hdrl_l,hdrl) \
         respond_with_error_len ((c), (code), \
                                 0, NULL, \
-                                (hd_n_l), (hd_n), \
-                                (hd_v_l), (hd_v))
+                                (hdrl_l), (hdrl))
 #endif
 
 #endif /* ! MHD_RESPOND_WITH_ERROR_H */

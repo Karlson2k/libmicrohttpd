@@ -68,6 +68,9 @@ response_create_basic (enum MHD_HTTP_StatusCode sc,
     {
 #ifndef HAVE_NULL_PTR_ALL_ZEROS
       mhd_DLINKEDL_INIT_LIST (r, headers);
+      r->free.cb = NULL;
+      r->free.cls = NULL;
+      r->special_resp.spec_hdr = NULL;
 
       s->termination_callback.v_term_cb = NULL;
       s->termination_callback.v_term_cb_cls = NULL;
@@ -352,4 +355,53 @@ MHD_response_from_pipe (enum MHD_HTTP_StatusCode sc,
   }
   return res;
 
+}
+
+
+/**
+ * Create special internal response for sending error reply
+ * @param sc the HTTP status code
+ * @param cntn_len the length of the @a cntn
+ * @param cntn the content of the response, could be NULL
+ * @param spec_hdr_len the length of the @a spec_hdr
+ * @param spec_hdr the special header line, without last CRLF,
+ *                 if not NULL it will be deallocated by free().
+ * @return
+ */
+MHD_INTERNAL
+MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_CSTR_ (5) struct MHD_Response *
+mhd_response_special_for_error (unsigned int sc,
+                                size_t cntn_len,
+                                const char *cntn,
+                                size_t spec_hdr_len,
+                                char *spec_hdr)
+{
+  struct MHD_Response *restrict res;
+
+  mhd_assert (100 <= sc);
+  mhd_assert (600 > sc);
+  mhd_assert ((NULL != cntn) || (0 == cntn_len));
+  mhd_assert ((NULL != spec_hdr) || (0 == spec_hdr_len));
+
+  res = mhd_calloc (1, sizeof(struct MHD_Response));
+  if (NULL == res)
+    return NULL;
+
+#ifndef HAVE_NULL_PTR_ALL_ZEROS
+  mhd_DLINKEDL_INIT_LIST (res, headers);
+  res->free.cb = NULL;
+  res->free.cls = NULL;
+  res->special_resp.spec_hdr = NULL;
+#endif /* ! HAVE_NULL_PTR_ALL_ZEROS */
+  res->sc = (enum MHD_HTTP_StatusCode) sc;
+  res->cntn_size = cntn_len;
+  res->cntn_dtype = mhd_RESPONSE_CONTENT_DATA_BUFFER;
+  res->cntn.buf = (const unsigned char *) ((0 != cntn_len) ? cntn : "");
+  res->cfg.close_forced = true;
+  res->cfg.int_err_resp = true;
+  res->special_resp.spec_hdr_len = spec_hdr_len;
+  res->special_resp.spec_hdr = spec_hdr;
+  res->frozen = true;
+
+  return res;
 }
