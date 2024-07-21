@@ -22,7 +22,9 @@ noinst_LTLIBRARIES = \
 
 libmhdt_la_SOURCES = \
   libtest.c libtest.h \
-  libtest_convenience.c
+  libtest_convenience.c \
+  libtest_convenience_client_request.c \
+  libtest_convenience_server_reply.c
 libmhdt_la_LIBADD = \
   -lpthread \
   -lcurl
@@ -84,7 +86,7 @@ check_PROGRAMS += \
   test_create_start_destroy_thread_pool \
   test_create_start_destroy_thread_pool_ipv4 \
   $(EMPTY_ITEM)
-  
+
 if MHD_USE_SELECT
 check_PROGRAMS += \
   test_create_start_destroy_select_int_thread_ipv4 \
@@ -195,4 +197,3 @@ test_create_start_destroy_poll_thread_per_conn_ipv4_SOURCES = $(basic_test_sourc
 test_create_start_destroy_epoll_int_thread_ipv4_SOURCES = $(basic_test_sources)
 
 test_create_start_destroy_epoll_thread_per_conn_ipv4_SOURCES = $(basic_test_sources)
-
