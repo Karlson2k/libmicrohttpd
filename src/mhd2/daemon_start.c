@@ -40,7 +40,6 @@
 #ifdef MHD_USE_EPOLL
 #  include <sys/epoll.h>
 #endif
-#include <fcntl.h>
 
 #include "mhd_public_api.h"
 
@@ -52,6 +51,7 @@
 #include "mhd_sockets_funcs.h"
 #include "mhd_sockets_macros.h"
 #ifdef MHD_POSIX_SOCKETS
+#  include <fcntl.h>
 #  ifdef MHD_USE_SELECT
 #    ifdef HAVE_SYS_SELECT_H
 #      include <sys/select.h> /* For FD_SETSIZE */
@@ -1070,7 +1070,7 @@ init_epoll (struct MHD_Daemon *restrict d)
   mhd_assert ((mhd_POLL_TYPE_EPOLL != d->events.poll_type) || \
               (MHD_INVALID_SOCKET == d->events.data.epoll.e_fd));
 #ifdef HAVE_EPOLL_CREATE1
-  e_fd = epoll_create1 (FD_CLOEXEC);
+  e_fd = epoll_create1 (EPOLL_CLOEXEC);
 #else  /* ! HAVE_EPOLL_CREATE1 */
   e_fd = epoll_create (128); /* The number is usually ignored */
   if (0 <= e_fd)
