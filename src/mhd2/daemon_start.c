@@ -1110,7 +1110,6 @@ MHD_FN_PAR_NONNULL_ (1) static void
 deinit_epoll (struct MHD_Daemon *restrict d)
 {
   mhd_assert (mhd_POLL_TYPE_EPOLL == d->events.poll_type);
-  mhd_assert (MHD_INVALID_SOCKET != d->events.data.epoll.e_fd);
   /* With thread pool the epoll control FD could be migrated to the
    * first worker daemon. */
   mhd_assert ((MHD_INVALID_SOCKET != d->events.data.epoll.e_fd) || \
