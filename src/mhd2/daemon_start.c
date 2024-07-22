@@ -1069,7 +1069,7 @@ init_epoll (struct MHD_Daemon *restrict d)
   mhd_assert ((mhd_POLL_TYPE_EPOLL != d->events.poll_type) || \
               (MHD_INVALID_SOCKET == d->events.data.epoll.e_fd));
 #ifdef HAVE_EPOLL_CREATE1
-  e_fd = epoll_create1 (EFD_CLOEXEC);
+  e_fd = epoll_create1 (FD_CLOEXEC);
 #else  /* ! HAVE_EPOLL_CREATE1 */
   e_fd = epoll_create (128); /* The number is usually ignored */
   if (0 <= e_fd)

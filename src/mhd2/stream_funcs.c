@@ -701,7 +701,9 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
       break;
     case mhd_SOCKET_ERR_REMT_DISCONN:
       close_hard = false;
-      term_code = MHD_REQUEST_TERMINATED_CLIENT_ABORT;
+      term_code = (MHD_CONNECTION_INIT == c->state) ?
+                  MHD_REQUEST_TERMINATED_COMPLETED_OK /* Not used */ :
+      MHD_REQUEST_TERMINATED_CLIENT_ABORT;
       break;
     case mhd_SOCKET_ERR_CONNRESET:
       term_code = MHD_REQUEST_TERMINATED_CLIENT_ABORT;
@@ -799,6 +801,7 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
 #endif /* ! HAVE_LOG_FUNCTIONALITY */
 
 #if 0 // TODO: notification callback
+  mhd_assert ((MHD_CONNECTION_INIT != c->state) || (! c->rq.app_aware));
   if ( (NULL != d->notify_completed) &&
        (c->rq.app_aware) )
     d->notify_completed (d->notify_completed_cls,
