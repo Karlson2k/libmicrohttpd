@@ -163,7 +163,7 @@ MHD_upload_action_from_response (struct MHD_Request *request,
 
   mhd_response_check_frozen_freeze (response);
 
-  upl_act->act = mhd_UPLOAD_ACTION_SUSPEND;
+  upl_act->act = mhd_UPLOAD_ACTION_RESPONSE;
   upl_act->data.response = response;
 
   return upl_act;
