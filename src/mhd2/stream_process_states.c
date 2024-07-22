@@ -210,6 +210,19 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
   /* 'daemon' is not used if epoll is not available and asserts are disabled */
   (void) d; /* Mute compiler warning */
 
+  if ((c->sk_rmt_shut_wr) && (MHD_CONNECTION_START_REPLY > c->state))
+  {
+    if (0 == c->read_buffer_offset)
+    { /* Read buffer is empty, connection state is actual */
+      mhd_conn_pre_close (c,
+                          (MHD_CONNECTION_INIT == c->state) ?
+                          mhd_CONN_CLOSE_HTTP_COMPLETED :
+                          mhd_CONN_CLOSE_CLIENT_SHUTDOWN_EARLY,
+                          NULL);
+      return false;
+    }
+  }
+
   mhd_assert (c->resuming || ! c->suspended);
   if (c->resuming)
   {
@@ -464,6 +477,16 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     // TODO: process
     mhd_assert (0 && "Not implemented yet");
     return true;
+  }
+
+  if ((c->sk_rmt_shut_wr) && (MHD_CONNECTION_START_REPLY > c->state))
+  {
+    mhd_conn_pre_close (c,
+                        (MHD_CONNECTION_INIT == c->state) ?
+                        mhd_CONN_CLOSE_HTTP_COMPLETED :
+                        mhd_CONN_CLOSE_CLIENT_SHUTDOWN_EARLY,
+                        NULL);
+    return false;
   }
 
   if (mhd_stream_check_timedout (c)) // TODO: centralise timeout checks
