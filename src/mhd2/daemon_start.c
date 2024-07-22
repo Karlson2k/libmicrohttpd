@@ -1777,14 +1777,14 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
       i = 0;
 #ifdef MHD_USE_THREADS
       d->events.data.poll.fds[i].fd = mhd_itc_r_fd (d->threading.itc);
-      d->events.data.poll.fds[i].events = MHD_POLL_IN;
+      d->events.data.poll.fds[i].events = POLLIN;
       d->events.data.poll.rel[i].fd_id = mhd_SOCKET_REL_MARKER_ITC;
       ++i;
 #endif
       if (MHD_INVALID_SOCKET != d->net.listen.fd)
       {
         d->events.data.poll.fds[i].fd = d->net.listen.fd;
-        d->events.data.poll.fds[i].events = MHD_POLL_IN;
+        d->events.data.poll.fds[i].events = POLLIN;
         d->events.data.poll.rel[i].fd_id = mhd_SOCKET_REL_MARKER_LISTEN;
       }
     }

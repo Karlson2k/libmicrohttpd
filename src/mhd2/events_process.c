@@ -429,8 +429,8 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
     c = d->events.data.poll.rel[i_c].connection;
     mhd_assert (c->socket_fd == d->events.data.poll.fds[i_c].fd);
     revents = d->events.data.poll.fds[i_c].revents;
-    recv_ready = (0 != (revents & MHD_POLL_IN));
-    send_ready = (0 != (revents & MHD_POLL_OUT));
+    recv_ready = (0 != (revents & (MHD_POLL_IN | POLLIN)));
+    send_ready = (0 != (revents & (MHD_POLL_OUT | POLLOUT)));
 #ifndef MHD_POLLHUP_ON_REM_SHUT_WR
     err_state = (0 != (revents & (POLLHUP | POLLERR | POLLNVAL)));
 #else
@@ -438,20 +438,20 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
     if (0 != (revents & POLLHUP))
     { /* This can be a disconnect OR remote side set SHUT_WR */
       recv_ready = true; /* Check the socket by reading */
-      if (0 != (d->events.data.poll.fds[i_c].events | MHD_POLL_IN))
+      if (0 == (c->event_loop_info & MHD_EVENT_LOOP_INFO_READ))
         err_state = true; /* The socket will not be checked by reading, the only way to avoid spinning */
     }
 #endif
     if (0 != (revents & (MHD_POLLPRI | MHD_POLLRDBAND)))
     { /* Statuses were not requested, but returned */
       if (! recv_ready ||
-          (0 != (d->events.data.poll.fds[i_c].events | MHD_POLL_IN)))
+          (0 == (c->event_loop_info & MHD_EVENT_LOOP_INFO_READ)))
         err_state = true; /* The socket will not be read, the only way to avoid spinning */
     }
     if (0 != (revents & MHD_POLLWRBAND))
     { /* Status was not requested, but returned */
       if (! send_ready ||
-          (0 != (d->events.data.poll.fds[i_c].events | MHD_POLL_OUT)))
+          (0 == (c->event_loop_info & MHD_EVENT_LOOP_INFO_WRITE)))
         err_state = true; /* The socket will not be written, the only way to avoid spinning */
     }
 
