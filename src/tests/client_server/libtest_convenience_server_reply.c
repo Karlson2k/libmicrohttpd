@@ -174,12 +174,19 @@ MHDT_server_reply_check_query (
       sn = MHD_request_get_value (request,
                                   MHD_VK_GET_ARGUMENT,
                                   arg);
+      if (NULL == sn)
+      {
+        fprintf (stderr,
+                 "NULL returned for query key %s\n",
+                 arg);
+        return NULL;
+      }
       if (NULL == val)
       {
         if (NULL != sn->cstr)
         {
           fprintf (stderr,
-                   "NULL expected for query key %s, got %s\n",
+                   "NULL expected for value for query key %s, got %s\n",
                    arg,
                    sn->cstr);
           return NULL;
@@ -190,7 +197,7 @@ MHDT_server_reply_check_query (
         if (NULL == sn->cstr)
         {
           fprintf (stderr,
-                   "%s expected for query key %s, got NULL\n",
+                   "%s expected for value for query key %s, got NULL\n",
                    val,
                    arg);
           return NULL;
@@ -199,7 +206,7 @@ MHDT_server_reply_check_query (
                          sn->cstr))
         {
           fprintf (stderr,
-                   "%s expected for query key %s, got %s\n",
+                   "%s expected for value for query key %s, got %s\n",
                    val,
                    arg,
                    sn->cstr);
@@ -246,6 +253,13 @@ MHDT_server_reply_check_header (
   have = MHD_request_get_value (request,
                                 MHD_VK_HEADER,
                                 key);
+  if (NULL == have)
+  {
+    fprintf (stderr,
+             "Missing client header `%s'\n",
+             want);
+    return NULL;
+  }
   if (NULL == value)
   {
     if (NULL != have->cstr)
@@ -262,7 +276,7 @@ MHDT_server_reply_check_header (
     if (NULL == have->cstr)
     {
       fprintf (stderr,
-               "Missing expected client header `%s'\n",
+               "Missing value for client header `%s'\n",
                want);
       return NULL;
     }
@@ -353,10 +367,16 @@ MHDT_server_reply_check_upload (
   clen = MHD_request_get_value (request,
                                 MHD_VK_HEADER,
                                 MHD_HTTP_HEADER_CONTENT_LENGTH);
-  if (NULL == clen->cstr)
+  if (NULL == clen)
   {
     fprintf (stderr,
              "Content-Length header missing\n");
+    return NULL;
+  }
+  if (NULL == clen->cstr)
+  {
+    fprintf (stderr,
+             "Content-Length header value missing\n");
     return NULL;
   }
   if (1 != sscanf (clen->cstr,
