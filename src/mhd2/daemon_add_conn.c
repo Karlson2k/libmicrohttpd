@@ -122,94 +122,6 @@ notify_app_conn (struct MHD_Daemon *restrict daemon,
 }
 
 
-static void
-connection_clean_destroy (struct MHD_Connection *restrict c,
-                          struct MHD_Daemon *restrict d)
-{
-  mhd_assert (c->daemon == d);
-
-#if defined(MHD_USE_THREADS)
-  if (mhd_D_HAS_THREADS (d) &&
-      (! c->thread_joined) &&
-      (! mhd_thread_handle_ID_join_thread (c->tid)) )
-    MHD_PANIC ("Failed to join a thread.");
-#endif
-
-  // TODO: upgrade support
-
-  mhd_pool_destroy (c->pool);
-
-  // TODO: TLS deinit
-
-
-  /* clean up the connection */
-  notify_app_conn (d,c, true);
-
-  // TODO: per IP limit
-
-  /* Connection must not be in 'process ready' list */
-  mhd_assert (! c->in_proc_ready);
-  mhd_assert (NULL == mhd_DLINKEDL_GET_NEXT (c, proc_ready));
-  mhd_assert (NULL == mhd_DLINKEDL_GET_PREV (c, proc_ready));
-  mhd_assert (c != mhd_DLINKEDL_GET_FIRST (&(d->events), proc_ready));
-  mhd_assert (c != mhd_DLINKEDL_GET_LAST (&(d->events), proc_ready));
-
-#ifdef MHD_USE_EPOLL
-  if (mhd_D_IS_USING_EPOLL (d))
-  {
-    /* epoll documentation suggests that closing a FD
-       automatically removes it from the epoll set, but it
-       happens only if all FD copies are closed as well.
-       To avoid problems with new events with pointers to closed
-       connection, remove FD manually */
-    if (0 != epoll_ctl (d->events.data.epoll.e_fd,
-                        EPOLL_CTL_DEL,
-                        c->socket_fd,
-                        NULL))
-      MHD_PANIC ("Failed to remove FD from epoll set.\n");
-  }
-#endif
-  if (NULL != c->rp.response)
-  {
-    mhd_response_dec_use_count (c->rp.response);
-    c->rp.response = NULL;
-  }
-  if (MHD_INVALID_SOCKET != c->socket_fd)
-    (void) mhd_socket_close (c->socket_fd);
-  if (NULL != c->addr)
-    free (c->addr);
-  free (c);
-}
-
-
-/**
- * Free resources associated with all closed connections.
- * (destroy responses, free buffers, etc.).  All closed
- * connections are kept in the "cleanup" doubly-linked list.
- * @remark To be called only from thread that
- * process daemon's select()/poll()/etc.
- *
- * @param daemon daemon to clean up
- */
-static void
-MHD_cleanup_connections (struct MHD_Daemon *daemon) // FIXME: Remove??
-{
-  struct MHD_Connection *pos;
-  mhd_assert (! mhd_D_TYPE_HAS_WORKERS (daemon->threading.d_type));
-
-  for (pos = mhd_DLINKEDL_GET_FIRST_D (&(daemon->conns.to_clean));
-       NULL != pos; pos = mhd_DLINKEDL_GET_FIRST_D (&(daemon->conns.to_clean)))
-  {
-    mhd_DLINKEDL_DEL_D (&(daemon->conns.to_clean), pos, all_conn);
-
-    connection_clean_destroy (pos, daemon);
-
-    daemon->conns.count--;
-    daemon->conns.block_new = false;
-  }
-}
-
-
 /**
  * Do basic preparation work on the new incoming connection.
  *
@@ -617,7 +529,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
 
   if ((! mhd_D_HAS_THREADS (daemon)) &&
       (daemon->conns.block_new))
-    MHD_cleanup_connections (daemon);
+    (void) 0; // FIXME: remove already pending connections?
 
   if (! mhd_D_TYPE_HAS_WORKERS (daemon->threading.d_type)
       && daemon->conns.block_new)

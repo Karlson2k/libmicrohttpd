@@ -413,6 +413,12 @@ struct mhd_DaemonEventMonitoringData
   struct mhd_DaemonEventActionRequired act_req;
 
   /**
+   * Indicate that daemon already has some data to be processed on the next
+   * cycle
+   */
+  bool zero_wait;
+
+  /**
    * The list of the daemon's connections that need processing
    */
   mhd_DLNKDL_LIST (MHD_Connection,proc_ready);

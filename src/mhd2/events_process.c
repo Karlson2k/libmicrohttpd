@@ -67,8 +67,27 @@
 #include "daemon_add_conn.h"
 #include "daemon_funcs.h"
 #include "conn_data_process.h"
+#include "stream_funcs.h"
 
 #include "mhd_public_api.h"
+
+static int
+get_max_wait (struct MHD_Daemon *restrict d)
+{
+  bool zero_wait = d->events.zero_wait;
+  if (d->events.act_req.accept && d->conns.block_new)
+    d->events.act_req.accept = false;
+
+  d->events.zero_wait = false; /* Reset as this pending data will be processed */
+  if (d->events.act_req.accept)
+    return 0;
+  if (zero_wait)
+    return 0;
+  if (NULL != mhd_DLINKEDL_GET_FIRST (&(d->events), proc_ready))
+    return 0;
+
+  return -1; // TODO: calculate correct timeout value
+}
 
 
 MHD_FN_PAR_NONNULL_ (1) static void
@@ -131,6 +150,8 @@ daemon_accept_new_conns (struct MHD_Daemon *restrict d)
       /* Limit to a reasonable number */
       if (((sizeof(void *) > 4) ? 4096 : 1024) < num_to_accept)
         num_to_accept = ((sizeof(void *) > 4) ? 4096 : 1024);
+      if (slots_left < num_to_accept)
+        num_to_accept = slots_left;
     }
 #ifdef MHD_USE_THREADS
     else
@@ -246,6 +267,21 @@ daemon_process_all_active_conns (struct MHD_Daemon *restrict d)
     c = next;
   }
   return true;
+}
+
+
+static void
+close_all_daemon_conns (struct MHD_Daemon *restrict d)
+{
+  struct MHD_Connection *c;
+
+  for (c = mhd_DLINKEDL_GET_LAST (&(d->conns),all_conn);
+       NULL != c;
+       c = mhd_DLINKEDL_GET_LAST (&(d->conns),all_conn))
+  {
+    mhd_conn_pre_close_d_shutdown (c);
+    mhd_conn_close_final (c);
+  }
 }
 
 
@@ -438,7 +474,9 @@ get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
 
   // TODO: handle empty list situation
 
-  num_events = mhd_poll (d->events.data.poll.fds, num_fds, -1); // TODO: use correct timeout value
+  num_events = mhd_poll (d->events.data.poll.fds,
+                         num_fds,
+                         get_max_wait (d)); // TODO: use correct timeout value
   if (0 > num_events)
   {
     int err;
@@ -574,7 +612,7 @@ get_all_net_updates_by_epoll (struct MHD_Daemon *restrict d)
   // TODO: add listen socket enable/disable
 
   events_processed = 0;
-  max_wait = -1; // TODO: use proper timeout
+  max_wait = get_max_wait (d); // TODO: use correct timeout value
   do
   {
     num_events = epoll_wait (d->events.data.epoll.e_fd,
@@ -690,8 +728,10 @@ mhd_worker_all_events (void *cls)
   {
     mhd_LOG_MSG (d, MHD_SC_DAEMON_THREAD_STOP_UNEXPECTED, \
                  "The daemon thread is stopping, but termination has not " \
-                 "been requested by the daemon.");
+                 "been requested for the daemon.");
   }
+  close_all_daemon_conns (d);
+
   return (mhd_THRD_RTRN_TYPE) 0;
 }
 
