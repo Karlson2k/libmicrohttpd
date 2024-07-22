@@ -1447,6 +1447,8 @@ daemon_init_large_buf (struct MHD_Daemon *restrict d,
                        struct DaemonOptions *restrict s)
 {
   d->req_cfg.large_buf.space_left = s->global_large_buffer_size;
+  if (0 == d->req_cfg.large_buf.space_left)             // TODO: USE SETTINGS!
+    d->req_cfg.large_buf.space_left = 1024 * 1024U;     // TODO: USE SETTINGS!
   if (! mhd_mutex_init_short (&(d->req_cfg.large_buf.lock)))
   {
     mhd_LOG_MSG (d, MHD_SC_MUTEX_INIT_FAILURE, \
