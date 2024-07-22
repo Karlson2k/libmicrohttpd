@@ -395,6 +395,12 @@ struct MHD_Connection
   bool sk_rmt_shut_wr;
 
   /**
+   * 'true' if connection is in 'process ready' list,
+   * 'false' otherwise
+   */
+  bool in_proc_ready;
+
+  /**
    * The list with all daemon's connections that ready to processing
    */
   mhd_DLNKDL_LINKS (MHD_Connection,proc_ready);

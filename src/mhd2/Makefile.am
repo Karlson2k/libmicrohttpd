@@ -70,6 +70,7 @@ libmicrohttpd2_la_SOURCES = \
   conn_data_process.c       conn_data_process.h \
   conn_data_recv.c          conn_data_recv.h \
   conn_data_send.c          conn_data_send.h \
+  conn_mark_ready.h \
   request_funcs.c           request_funcs.h \
   request_get_value.c       request_get_value.h \
   respond_with_error.c      respond_with_error.h \

@@ -24,11 +24,34 @@
  * @author Karlson2k (Evgeny Grin)
  */
 
+#include "mhd_sys_options.h"
 #include "events_process.h"
 
+#include "mhd_socket_type.h"
 #include "sys_poll.h"
-
-#include "mhd_public_api.h"
+#ifdef MHD_USE_EPOLL
+#  include <sys/epoll.h>
+#endif
+#ifdef MHD_POSIX_SOCKETS
+#  ifdef MHD_USE_SELECT
+#    ifdef HAVE_SYS_SELECT_H
+#      include <sys/select.h> /* For FD_SETSIZE */
+#    else
+#      ifdef HAVE_SYS_TIME_H
+#        include <sys/time.h>
+#      endif
+#      ifdef HAVE_SYS_TYPES_H
+#        include <sys/types.h>
+#      endif
+#      ifdef HAVE_UNISTD_H
+#        include <unistd.h>
+#      endif
+#    endif
+#  endif
+#endif
+#ifdef MHD_POSIX_SOCKETS
+#  include <errno.h>
+#endif
 
 #include "mhd_itc.h"
 
@@ -37,11 +60,15 @@
 #include "mhd_sockets_macros.h"
 
 #include "mhd_daemon.h"
-#include "daemon_logger.h"
 #include "mhd_connection.h"
+
+#include "conn_mark_ready.h"
+#include "daemon_logger.h"
 #include "daemon_add_conn.h"
 #include "daemon_funcs.h"
 #include "conn_data_process.h"
+
+#include "mhd_public_api.h"
 
 
 MHD_FN_PAR_NONNULL_ (1) static void
@@ -67,18 +94,13 @@ update_conn_net_status (struct MHD_Daemon *restrict d,
                (sk_state | (unsigned int) mhd_SOCKET_NET_STATE_ERROR_READY);
   c->sk_ready = sk_state;
 
-  if ((NULL != mhd_DLINKEDL_GET_NEXT (c, proc_ready)) ||
-      (NULL != mhd_DLINKEDL_GET_PREV (c, proc_ready)) ||
-      (c == mhd_DLINKEDL_GET_FIRST (&(c->daemon->events), proc_ready)))
-    return; /* In the 'proc_ready' list already */
-
   if ((0 !=
        (((unsigned int) c->sk_ready) & ((unsigned int) c->event_loop_info)
-        & (MHD_EVENT_LOOP_INFO_READ | MHD_EVENT_LOOP_INFO_WRITE))) ||
-      err_state)
-  {
-    mhd_DLINKEDL_INS_LAST (&(d->events),c,proc_ready);
-  }
+        & (MHD_EVENT_LOOP_INFO_READ | MHD_EVENT_LOOP_INFO_WRITE)))
+      || err_state)
+    mhd_conn_mark_ready (c, d);
+  else
+    mhd_conn_mark_unready (c, d);
 }
 
 
@@ -208,7 +230,7 @@ daemon_accept_new_conns (struct MHD_Daemon *restrict d)
 
 
 static bool
-daemon_process_all_act_conns (struct MHD_Daemon *restrict d)
+daemon_process_all_active_conns (struct MHD_Daemon *restrict d)
 {
   struct MHD_Connection *c;
   mhd_assert (! mhd_D_HAS_WORKERS (d));
@@ -337,7 +359,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
                    "System reported that the listening socket has an error " \
                    "status. The daemon will not listen any more.");
       /* Close the listening socket unless the master daemon should close it */
-      if (! mhd_D_TYPE_HAS_MASTER_DAEMON (d->threading.d_type))
+      if (! mhd_D_HAS_MASTER (d))
         mhd_socket_close (d->net.listen.fd);
 
       /* Stop monitoring socket to avoid spinning with busy-waiting */
@@ -459,6 +481,131 @@ get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
 
 #endif /* MHD_USE_POLL */
 
+#ifdef MHD_USE_EPOLL
+
+/**
+ * Map events provided by epoll to connection states, ITC and
+ * listen socket states
+ */
+MHD_FN_PAR_NONNULL_ (1) static bool
+poll_update_statuses_from_eevents (struct MHD_Daemon *restrict d,
+                                   unsigned int num_events)
+{
+  unsigned int i;
+  struct epoll_event *const restrict events =
+    d->events.data.epoll.events;
+  for (i = 0; num_events > i; ++i)
+  {
+    struct epoll_event *const e = events + i;
+    if (((uint64_t) mhd_SOCKET_REL_MARKER_ITC) == e->data.u64) /* uint64_t is in the system header */
+    {
+      if (0 != (e->events & (EPOLLPRI | EPOLLERR | EPOLLHUP)))
+      {
+        mhd_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
+                     "System reported that ITC has an error status.");
+        /* ITC is broken, need to stop the daemon thread now as otherwise
+           application will not be able to stop the thread. */
+        return false;
+      }
+      if (0 != (e->events & EPOLLIN))
+      {
+        /* Clear ITC here, as before any other data processing.
+         * Any external events may activate ITC again if any data to process is
+         * added externally. Cleaning ITC early ensures guaranteed that new data
+         * will not be missed. */
+        mhd_itc_clear (d->threading.itc);
+      }
+    }
+    else if (((uint64_t) mhd_SOCKET_REL_MARKER_LISTEN) == e->data.u64) /* uint64_t is in the system header */
+    {
+      if (0 != (e->events & (EPOLLPRI | EPOLLERR | EPOLLHUP)))
+      {
+        mhd_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
+                     "System reported that the listening socket has an error " \
+                     "status. The daemon will not listen any more.");
+
+        // TODO: remove listen from epoll monitoring
+
+        /* Close the listening socket unless the master daemon should close it */
+        if (! mhd_D_HAS_MASTER (d))
+          mhd_socket_close (d->net.listen.fd);
+
+        /* Stop monitoring socket to avoid spinning with busy-waiting */
+        d->net.listen.fd = MHD_INVALID_SOCKET;
+      }
+      if (0 != (e->events & EPOLLIN))
+        d->events.act_req.accept = true;
+    }
+    else
+    {
+      bool recv_ready;
+      bool send_ready;
+      bool err_state;
+      struct MHD_Connection *const restrict c =
+        (struct MHD_Connection *) e->data.ptr;
+      recv_ready = (0 != (e->events & (EPOLLIN | EPOLLERR | EPOLLHUP)));
+      send_ready = (0 != (e->events & (EPOLLOUT | EPOLLERR | EPOLLHUP)));
+      err_state = (0 != (e->events & (EPOLLERR | EPOLLHUP)));
+
+      update_conn_net_status (d, c, recv_ready, send_ready, err_state);
+    }
+  }
+  return true;
+}
+
+
+/**
+ * Update states of all connections, check for connection pending
+ * to be accept()'ed, check for the events on ITC.
+ */
+MHD_FN_PAR_NONNULL_ (1) static bool
+get_all_net_updates_by_epoll (struct MHD_Daemon *restrict d)
+{
+  int num_events;
+  unsigned int events_processed;
+  int max_wait;
+  mhd_assert (mhd_POLL_TYPE_EPOLL == d->events.poll_type);
+  mhd_assert (0 < ((int) d->events.data.epoll.num_elements));
+  mhd_assert (d->events.data.epoll.num_elements == \
+              (size_t) ((int) d->events.data.epoll.num_elements));
+  mhd_assert (0 != d->events.data.epoll.num_elements);
+  mhd_assert (0 != d->conns.cfg.count_limit);
+
+  // TODO: add listen socket enable/disable
+
+  events_processed = 0;
+  max_wait = -1; // TODO: use proper timeout
+  do
+  {
+    num_events = epoll_wait (d->events.data.epoll.e_fd,
+                             d->events.data.epoll.events,
+                             (int) d->events.data.epoll.num_elements,
+                             max_wait);
+    max_wait = 0;
+    if (0 > num_events)
+    {
+      const int err = errno;
+      if (EINTR != err)
+      {
+        mhd_LOG_MSG (d, MHD_SC_EPOLL_HARD_ERROR, \
+                     "The epoll_wait() encountered unrecoverable error.");
+        return false;
+      }
+      return true; /* EINTR, try next time */
+    }
+    if (! poll_update_statuses_from_eevents (d, (unsigned int) num_events))
+      return false;
+
+    events_processed += (unsigned int) num_events; /* Avoid reading too many events */
+  } while ((((unsigned int) num_events) == d->events.data.epoll.num_elements) &&
+           (events_processed < d->conns.cfg.count_limit + 2));
+
+  return true;
+}
+
+
+#endif /* MHD_USE_EPOLL */
+
 
 MHD_FN_PAR_NONNULL_ (1) static bool
 process_all_events_and_data (struct MHD_Daemon *restrict d)
@@ -481,7 +628,8 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
 #endif /* MHD_USE_POLL */
 #ifdef MHD_USE_EPOLL
   case mhd_POLL_TYPE_EPOLL:
-    return false; // TODO: implement
+    if (! get_all_net_updates_by_epoll (d))
+      return false;
     break;
 #endif /* MHD_USE_EPOLL */
 #ifndef MHD_USE_SELECT
@@ -506,7 +654,7 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
     else if (! d->net.listen.non_block)
       d->events.act_req.accept = false;
   }
-  daemon_process_all_act_conns (d);
+  daemon_process_all_active_conns (d);
   return ! d->threading.stop_requested;
 }
 

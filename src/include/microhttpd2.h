@@ -991,7 +991,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   /**
    * System reported error conditions on the listening socket.
    */
-  MHD_SC_LISTEN_STATUS_ERROR = 500104
+  MHD_SC_LISTEN_STATUS_ERROR = 50129
+  ,
+  /**
+   * Encountered an unrecoverable error from epoll function.
+   */
+  MHD_SC_EPOLL_HARD_ERROR = 50130
   ,
   /**
    * We failed to configure accepted socket

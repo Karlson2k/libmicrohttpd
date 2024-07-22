@@ -391,8 +391,8 @@
 #endif /* !_DEBUG && !NDEBUG */
 
 #if defined(MHD_FAVOR_FAST_CODE) && defined(MHD_FAVOR_SMALL_CODE)
-#error \
-  MHD_FAVOR_FAST_CODE and MHD_FAVOR_SMALL_CODE are both defined. Cannot favor speed and size at the same time.
+#error MHD_FAVOR_FAST_CODE and MHD_FAVOR_SMALL_CODE are both defined.
+#error Cannot favor speed and size at the same time.
 #endif /* MHD_FAVOR_FAST_CODE && MHD_FAVOR_SMALL_CODE */
 
 /* Define MHD_FAVOR_FAST_CODE to force fast code path or
@@ -400,17 +400,22 @@
 #if ! defined(MHD_FAVOR_FAST_CODE) && ! defined(MHD_FAVOR_SMALL_CODE)
 /* Try to detect user preferences */
 /* Defined by GCC and many compatible compilers */
-#if defined(__OPTIMIZE_SIZE__)
-#define MHD_FAVOR_SMALL_CODE 1
-#elif defined(__OPTIMIZE__)
-#define MHD_FAVOR_FAST_CODE 1
-#endif /* __OPTIMIZE__ */
+#  if defined(__OPTIMIZE_SIZE__)
+#    define MHD_FAVOR_SMALL_CODE 1
+#  elif defined(__OPTIMIZE__)
+#    define MHD_FAVOR_FAST_CODE 1
+#  endif /* __OPTIMIZE__ */
 #endif /* !MHD_FAVOR_FAST_CODE && !MHD_FAVOR_SMALL_CODE */
 
 #if ! defined(MHD_FAVOR_FAST_CODE) && ! defined(MHD_FAVOR_SMALL_CODE)
 /* Use faster code by default */
-#define MHD_FAVOR_FAST_CODE 1
+#  define MHD_FAVOR_FAST_CODE 1
 #endif /* !MHD_FAVOR_FAST_CODE && !MHD_FAVOR_SMALL_CODE */
+
+#if defined(MHD_FAVOR_SMALL_CODE) && defined(MHD_static_inline_)
+#  undef MHD_static_inline_
+#  define MHD_static_inline_ static inline /* give compiler more freedom */
+#endif
 
 #ifndef MHD_ASAN_ACTIVE
 #if (defined(__GNUC__) || defined(_MSC_VER)) && defined(__SANITIZE_ADDRESS__)

@@ -643,7 +643,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
       return MHD_SC_FAILED_TO_OPEN_LISTEN_SOCKET;
     }
     is_non_block = (0 != mhd_SOCK_NONBLOCK);
-    is_non_inhr = (0 == mhd_SOCK_CLOEXEC);
+    is_non_inhr = (0 != mhd_SOCK_CLOEXEC);
   }
   else
   {
@@ -809,7 +809,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 #ifndef MHD_WINSOCK_SOCKETS
 #ifdef SO_REUSEADDR
         mhd_SCKT_OPT_BOOL on_val1 = 1;
-        if (0 != setsockopt (sk, IPPROTO_TCP, SO_REUSEADDR,
+        if (0 != setsockopt (sk, SOL_SOCKET, SO_REUSEADDR,
                              (const void *) &on_val1, sizeof (on_val1)))
         {
           mhd_LOG_MSG (d, MHD_SC_LISTEN_PORT_REUSE_ENABLE_FAILED, \
@@ -825,7 +825,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
         {
 #if defined(SO_REUSEPORT) || defined(MHD_WINSOCK_SOCKETS)
           mhd_SCKT_OPT_BOOL on_val2 = 1;
-          if (0 != setsockopt (sk, IPPROTO_TCP,
+          if (0 != setsockopt (sk, SOL_SOCKET,
 #ifndef MHD_WINSOCK_SOCKETS
                                SO_REUSEPORT,
 #else  /* ! MHD_WINSOCK_SOCKETS */
@@ -852,7 +852,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
                d->settings->listen_addr_reuse)
       {
         mhd_SCKT_OPT_BOOL on_val = 1;
-        if (0 != setsockopt (sk, IPPROTO_TCP,
+        if (0 != setsockopt (sk, SOL_SOCKET,
 #ifdef SO_EXCLUSIVEADDRUSE
                              SO_EXCLUSIVEADDRUSE,
 #else

@@ -203,6 +203,11 @@ enum mhd_ConnCloseReason
    */
   mhd_CONN_CLOSE_SOCKET_ERR
   ,
+  /**
+   * The daemon is being shut down, all connection must be closed
+   */
+  mhd_CONN_CLOSE_DAEMON_SHUTDOWN
+  ,
 
   /* Could be hard or soft error depending on connection state */
   /**
@@ -280,6 +285,14 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  */
 #define mhd_conn_pre_close_timedout(c) \
         mhd_conn_pre_close ((c), mhd_CONN_CLOSE_TIMEDOUT, NULL)
+
+/**
+ * Perform initial clean-up and mark for closing.
+ * Set the reason to "daemon shutdown".
+ * @param c the connection for pre-closing
+ */
+#define mhd_conn_pre_close_d_shutdown(c) \
+        mhd_conn_pre_close ((c), mhd_CONN_CLOSE_DAEMON_SHUTDOWN, NULL)
 
 /**
  * Perform initial connection cleanup.

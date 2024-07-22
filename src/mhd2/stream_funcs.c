@@ -48,6 +48,7 @@
 #include "mhd_mono_clock.h"
 #include "daemon_logger.h"
 #include "daemon_funcs.h"
+#include "conn_mark_ready.h"
 
 #include "mhd_public_api.h"
 
@@ -726,6 +727,10 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
       MHD_UNREACHABLE_;
     }
     break;
+  case mhd_CONN_CLOSE_DAEMON_SHUTDOWN:
+    close_hard = true;
+    term_code = MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN;
+    break;
 
   case mhd_CONN_CLOSE_TIMEDOUT:
     if (MHD_CONNECTION_INIT == c->state)
@@ -828,10 +833,8 @@ MHD_FN_PAR_NONNULL_ (1) void
 mhd_conn_pre_clean (struct MHD_Connection *restrict c)
 {
   // TODO: support suspended connections
-  if ((NULL != mhd_DLINKEDL_GET_NEXT (c, proc_ready)) ||
-      (NULL != mhd_DLINKEDL_GET_PREV (c, proc_ready)) ||
-      (c == mhd_DLINKEDL_GET_FIRST (&(c->daemon->events), proc_ready)))
-    mhd_DLINKEDL_DEL (&(c->daemon->events), c, proc_ready);
+
+  mhd_conn_mark_unready (c, c->daemon);
 
   if (NULL != c->rq.cntn.lbuf.buf)
     mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
@@ -869,7 +872,6 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
     }
   }
 #endif /* MHD_USE_EPOLL */
-
 
 #ifndef NDEBUG
   c->dbg.pre_cleaned = true;

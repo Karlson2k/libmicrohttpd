@@ -65,6 +65,7 @@
 
 #include "response_from.h"
 #include "response_destroy.h"
+#include "conn_mark_ready.h"
 
 #include "mhd_public_api.h"
 
@@ -147,6 +148,7 @@ connection_clean_destroy (struct MHD_Connection *restrict c,
   // TODO: per IP limit
 
   /* Connection must not be in 'process ready' list */
+  mhd_assert (! c->in_proc_ready);
   mhd_assert (NULL == mhd_DLINKEDL_GET_NEXT (c, proc_ready));
   mhd_assert (NULL == mhd_DLINKEDL_GET_PREV (c, proc_ready));
   mhd_assert (c != mhd_DLINKEDL_GET_FIRST (&(d->events), proc_ready));
@@ -416,7 +418,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
             {
               connection->sk_ready = mhd_SOCKET_NET_STATE_RECV_READY
                                      | mhd_SOCKET_NET_STATE_SEND_READY;
-              mhd_DLINKEDL_INS_LAST (&(daemon->events), connection, proc_ready);
+              mhd_conn_mark_ready (connection, daemon);
             }
             return MHD_SC_OK;  /* *** Function success exit point *** */
           }
@@ -1000,6 +1002,7 @@ mhd_conn_close_final (struct MHD_Connection *restrict c)
   mhd_assert (c->dbg.pre_cleaned);
   mhd_assert (NULL == c->rp.response);
   mhd_assert (! c->rq.app_aware);
+  mhd_assert (! c->in_proc_ready);
   mhd_assert (NULL == mhd_DLINKEDL_GET_NEXT (c, proc_ready));
   mhd_assert (NULL == mhd_DLINKEDL_GET_PREV (c, proc_ready));
   mhd_assert (c != mhd_DLINKEDL_GET_FIRST (&(c->daemon->events), proc_ready));
@@ -1020,5 +1023,9 @@ mhd_conn_close_final (struct MHD_Connection *restrict c)
   if (NULL != c->addr)
     free (c->addr);
   mhd_socket_close (c->socket_fd);
+
+  c->daemon->conns.count--;
+  c->daemon->conns.block_new = false;
+
   free (c);
 }

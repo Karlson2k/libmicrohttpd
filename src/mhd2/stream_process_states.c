@@ -30,22 +30,44 @@
  */
 
 #include "mhd_sys_options.h"
+
 #include "sys_bool_type.h"
 
 #include "mhd_str_macros.h"
 
+#include "mhd_daemon.h"
 #include "mhd_connection.h"
 #include "mhd_response.h"
+
 #include "stream_process_states.h"
 #include "stream_funcs.h"
 #include "stream_process_request.h"
 #include "stream_process_reply.h"
 
+#include "conn_mark_ready.h"
+
+/**
+ * Update current processing state: need to receive, need to send.
+ * Mark stream as ready or not ready for processing.
+ * Grow the receive buffer if neccesary, close stream if no buffer space left,
+ * but connection needs to receive.
+ * @param c the connection to update
+ * @return true if connection states updated successfully,
+ *         false if connection has been prepared for closing
+ */
 static MHD_FN_PAR_NONNULL_ALL_ bool
 update_active_state (struct MHD_Connection *restrict c)
 {
   /* Do not update states of suspended connection */
   mhd_assert (! c->suspended);
+
+  if (0 != (c->sk_ready & mhd_SOCKET_NET_STATE_ERROR_READY))
+  {
+    mhd_assert (0 && "Should be handled earlier");
+    mhd_conn_pre_close_skt_err (c);
+    return false;
+  }
+
 #if 0 // def HTTPS_SUPPORT // TODO: implement TLS support
   if (MHD_TLS_CONN_NO_TLS != connection->tls_state)
   {   /* HTTPS connection. */
@@ -158,6 +180,21 @@ update_active_state (struct MHD_Connection *restrict c)
         continue;
       }
     }
+
+    /* Current MHD design assumes that data must be always processes when
+     * available. If it is not possible, connection must be suspended. */
+    mhd_assert (MHD_EVENT_LOOP_INFO_PROCESS != c->event_loop_info);
+
+    /* Sockets errors must be already handled */
+    mhd_assert (0 == (c->sk_ready & mhd_SOCKET_NET_STATE_ERROR_READY));
+
+    if (0 !=
+        (((unsigned int) c->sk_ready) & ((unsigned int) c->event_loop_info)
+         & (MHD_EVENT_LOOP_INFO_READ | MHD_EVENT_LOOP_INFO_WRITE)))
+      mhd_conn_mark_ready (c, c->daemon);
+    else
+      mhd_conn_mark_unready (c, c->daemon);
+
     break; /* Everything was processed. */
   }
   return true;
@@ -167,7 +204,8 @@ update_active_state (struct MHD_Connection *restrict c)
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_conn_process_data (struct MHD_Connection *restrict c)
 {
-  struct MHD_Daemon *const restrict d = c->daemon;
+  struct MHD_Daemon *const d = c->daemon;
+  bool daemon_closing;
 
   /* 'daemon' is not used if epoll is not available and asserts are disabled */
   (void) d; /* Mute compiler warning */
@@ -188,6 +226,16 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
         (mhd_SOCKET_ERR_NOT_CHECKED == c->sk_discnt_err))
       c->sk_discnt_err = mhd_socket_error_get_from_socket (c->socket_fd);
     mhd_conn_pre_close_skt_err (c);
+    return false;
+  }
+
+  daemon_closing = (mhd_DAEMON_STATE_STOPPING == d->state);
+#ifdef MHD_USE_THREADS
+  daemon_closing = daemon_closing || d->threading.stop_requested;
+#endif /* MHD_USE_THREADS */
+  if (daemon_closing)
+  {
+    mhd_conn_pre_close_d_shutdown (c);
     return false;
   }
 

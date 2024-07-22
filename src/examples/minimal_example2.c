@@ -82,7 +82,6 @@ main (int argc,
   if (MHD_SC_OK !=
       MHD_DAEMON_SET_OPTIONS (
         d,
-        MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_POLL),
         MHD_D_OPTION_WM_WORKER_THREADS (1),
         MHD_D_OPTION_BIND_PORT (MHD_AF_AUTO,
                                 (uint_least16_t) port)))
