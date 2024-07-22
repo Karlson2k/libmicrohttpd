@@ -45,8 +45,6 @@ MHDT_server_setup_minimal (void *cls,
         options,
         MHD_OPTIONS_ARRAY_MAX_SIZE))
     return "Failed to configure threading mode!";
-  return NULL;
-
   if (MHD_SC_OK !=
       MHD_DAEMON_SET_OPTIONS (
         d,
