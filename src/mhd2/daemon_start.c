@@ -40,6 +40,7 @@
 #ifdef MHD_USE_EPOLL
 #  include <sys/epoll.h>
 #endif
+#include <fcntl.h>
 
 #include "mhd_public_api.h"
 
