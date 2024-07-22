@@ -105,6 +105,7 @@ main (int argc,
     }
   }
   printf ("Stopping... ");
+  fflush (stdout);
   MHD_daemon_destroy (d);
   printf ("OK\n");
   return 0;
