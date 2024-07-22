@@ -2164,12 +2164,12 @@ set_d_threading_type (struct MHD_Daemon *restrict d)
   case mhd_WM_INT_INTERNAL_EVENTS_THREAD_PER_CONNECTION:
     mhd_assert (mhd_WM_INT_HAS_THREADS (d->wmode_int));
     mhd_assert (mhd_POLL_TYPE_EXT != d->events.poll_type);
+    mhd_assert (mhd_POLL_TYPE_EPOLL != d->events.poll_type);
     d->threading.d_type = mhd_DAEMON_TYPE_LISTEN_ONLY;
     return MHD_SC_OK;
   case mhd_WM_INT_INTERNAL_EVENTS_THREAD_POOL:
     mhd_assert (mhd_WM_INT_HAS_THREADS (d->wmode_int));
     mhd_assert (mhd_POLL_TYPE_EXT != d->events.poll_type);
-    mhd_assert (mhd_POLL_TYPE_EPOLL != d->events.poll_type);
     d->threading.d_type = mhd_DAEMON_TYPE_MASTER_CONTROL_ONLY;
     return MHD_SC_OK;
 #else  /* ! MHD_USE_THREADS */
