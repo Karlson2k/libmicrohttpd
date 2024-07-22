@@ -366,7 +366,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
        application will not be able to stop the thread. */
     return false;
   }
-  if (0 != (d->events.data.poll.fds[i_s].revents & MHD_POLL_IN))
+  if (0 != (d->events.data.poll.fds[i_s].revents & (MHD_POLL_IN | POLLIN)))
   {
     --num_events;
     /* Clear ITC here, as before any other data processing.
@@ -401,7 +401,8 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
       /* Stop monitoring socket to avoid spinning with busy-waiting */
       d->net.listen.fd = MHD_INVALID_SOCKET;
     }
-    else if (0 != (d->events.data.poll.fds[i_s].revents & MHD_POLL_IN))
+    else if (0 !=
+             (d->events.data.poll.fds[i_s].revents & (MHD_POLL_IN | POLLIN)))
     {
       --num_events;
       d->events.act_req.accept = true;
