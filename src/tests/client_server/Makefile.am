@@ -18,6 +18,7 @@ if USE_COVERAGE
 endif
 
 LDADD = $(top_builddir)/src/mhd2/libmicrohttpd2.la
+LIBADD = $(top_builddir)/src/mhd2/libmicrohttpd2.la
 
 $(top_builddir)/src/mhd2/libmicrohttpd2.la: $(top_builddir)/src/mhd2/Makefile
 	@echo ' cd $(top_builddir)/src/mhd2 && $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd2.la'; \
@@ -25,6 +26,9 @@ $(top_builddir)/src/mhd2/libmicrohttpd2.la: $(top_builddir)/src/mhd2/Makefile
 
 check_PROGRAMS = \
   test_client_server
+
+TESTS = $(check_PROGRAMS)
+
 
 noinst_LTLIBRARIES = \
   libmhdt.la
@@ -36,9 +40,10 @@ libmhdt_la_SOURCES = \
   libtest_convenience_server_reply.c
 libmhdt_la_LIBADD = \
   -lpthread \
-  -lcurl
+  -lcurl \
+  $(LIBADD)
 
 test_client_server_SOURCES = \
   test_client_server.c
 test_client_server_LDADD = \
-  libmhdt.la
+  libmhdt.la 
