@@ -360,46 +360,6 @@ MHDT_server_reply_check_upload (
 {
   const char *want = cls;
   size_t wlen = strlen (want);
-  const struct MHD_StringNullable *clen;
-  unsigned int len;
-  char dummy;
-
-  clen = MHD_request_get_value (request,
-                                MHD_VK_HEADER,
-                                MHD_HTTP_HEADER_CONTENT_LENGTH);
-  if (NULL == clen)
-  {
-    fprintf (stderr,
-             "Content-Length header missing\n");
-    return NULL;
-  }
-  if (NULL == clen->cstr)
-  {
-    fprintf (stderr,
-             "Content-Length header value missing\n");
-    return NULL;
-  }
-  if (1 != sscanf (clen->cstr,
-                   "%u%c",
-                   &len,
-                   &dummy))
-  {
-    fprintf (stderr,
-             "Content-Length header invalid\n");
-    return NULL;
-  }
-  if (len != upload_size)
-  {
-    fprintf (stderr,
-             "Content-Length in API does not match\n");
-    return NULL;
-  }
-  if (len != wlen)
-  {
-    fprintf (stderr,
-             "Content-Length does not match expectations\n");
-    return NULL;
-  }
 
   return MHD_action_process_upload_full (request,
                                          wlen,
