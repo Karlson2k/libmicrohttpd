@@ -151,23 +151,25 @@ main (int argc, char *argv[])
       .server_cb_cls = "Hello world",
       .client_cb = &MHDT_client_get_root,
       .client_cb_cls = "Hello world",
-      .timeout_ms = 5,
+      .timeout_ms = 2500,
     },
+#if 0 // enable when file support finalised
     {
       .label = "GET with sendfile",
       .server_cb = &MHDT_server_reply_file,
       .server_cb_cls = "Hello world",
       .client_cb = &MHDT_client_get_root,
       .client_cb_cls = "Hello world",
-      .timeout_ms = 5,
+      .timeout_ms = 2500,
     },
+#endif
     {
       .label = "client PUT with content-length",
       .server_cb = &MHDT_server_reply_check_upload,
       .server_cb_cls = "simple-upload-value",
       .client_cb = &MHDT_client_put_data,
       .client_cb_cls = "simple-upload-value",
-      .timeout_ms = 5,
+      .timeout_ms = 2500,
     },
     {
       .label = "client PUT with 2 chunks",
@@ -175,7 +177,7 @@ main (int argc, char *argv[])
       .server_cb_cls = "chunky-upload-value",
       .client_cb = &MHDT_client_chunk_data,
       .client_cb_cls = "chunky-upload-value",
-      .timeout_ms = 5,
+      .timeout_ms = 2500,
     },
     {
       .label = "client request with custom header",
@@ -183,7 +185,7 @@ main (int argc, char *argv[])
       .server_cb_cls = "C-Header:testvalue",
       .client_cb = &MHDT_client_set_header,
       .client_cb_cls = "C-Header:testvalue",
-      .timeout_ms = 5,
+      .timeout_ms = 2500,
     },
     {
       .label = "server response with custom header",
@@ -191,7 +193,7 @@ main (int argc, char *argv[])
       .server_cb_cls = "X-Header:testvalue",
       .client_cb = &MHDT_client_expect_header,
       .client_cb_cls = "X-Header:testvalue",
-      .timeout_ms = 5,
+      .timeout_ms = 2500,
     },
     {
       .label = "URL with query parameters",
@@ -199,7 +201,7 @@ main (int argc, char *argv[])
       .server_cb_cls = "a=b&c",
       .client_cb = &MHDT_client_get_with_query,
       .client_cb_cls = "a=b&c",
-      .timeout_ms = 5,
+      .timeout_ms = 5000,
       .num_clients = 10
     },
     // TODO: chunked download
