@@ -285,7 +285,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       mhd_assert (MHD_CONNECTION_REQ_HEADERS_RECEIVING == c->state);
       break;
     case MHD_CONNECTION_HEADERS_RECEIVED:
-      mhd_stream_parse_connection_headers (c);
+      mhd_stream_parse_request_headers (c);
       mhd_assert (c->state != MHD_CONNECTION_HEADERS_RECEIVED);
       continue;
     case MHD_CONNECTION_HEADERS_PROCESSED:

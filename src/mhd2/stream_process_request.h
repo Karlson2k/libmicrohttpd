@@ -129,7 +129,7 @@ MHD_FN_PAR_NONNULL_ALL_;
  * @param c the connection to process
  */
 MHD_INTERNAL void
-mhd_stream_parse_connection_headers (struct MHD_Connection *restrict c)
+mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 
 /**

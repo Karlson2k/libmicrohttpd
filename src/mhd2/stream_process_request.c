@@ -2565,7 +2565,7 @@ handle_req_cookie_no_space (struct MHD_Connection *restrict c)
 
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
-mhd_stream_parse_connection_headers (struct MHD_Connection *restrict c)
+mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
 {
   bool has_host;
   bool has_trenc;
@@ -2636,13 +2636,13 @@ mhd_stream_parse_connection_headers (struct MHD_Connection *restrict c)
       size_t num_digits;
       uint_fast64_t cntn_size;
 
-      num_digits = mhd_str_to_uint64_n (f->field.nv.name.cstr,
-                                        f->field.nv.name.len,
+      num_digits = mhd_str_to_uint64_n (f->field.nv.value.cstr,
+                                        f->field.nv.value.len,
                                         &cntn_size);
       if (((0 == num_digits) &&
-           (0 != f->field.nv.name.len) &&
-           ('9' >= f->field.nv.name.cstr[0])
-           && ('0' <= f->field.nv.name.cstr[0]))
+           (0 != f->field.nv.value.len) &&
+           ('9' >= f->field.nv.value.cstr[0])
+           && ('0' <= f->field.nv.value.cstr[0]))
           || (MHD_SIZE_UNKNOWN == c->rq.cntn.cntn_size))
       {
         mhd_LOG_MSG (c->daemon, MHD_SC_CONTENT_LENGTH_TOO_LARGE, \
@@ -2653,7 +2653,7 @@ mhd_stream_parse_connection_headers (struct MHD_Connection *restrict c)
                                        ERR_RSP_REQUEST_CONTENTLENGTH_TOOLARGE);
         return;
       }
-      else if ((f->field.nv.name.len != num_digits) ||
+      else if ((f->field.nv.value.len != num_digits) ||
                (0 == num_digits))
       {
         mhd_LOG_MSG (c->daemon, MHD_SC_CONTENT_LENGTH_MALFORMED, \
@@ -2708,7 +2708,7 @@ mhd_stream_parse_connection_headers (struct MHD_Connection *restrict c)
                                      f->field.nv.name.cstr,
                                      f->field.nv.name.len))
     {
-      if (mhd_str_has_token_caseless (f->field.nv.name.cstr,
+      if (mhd_str_has_token_caseless (f->field.nv.value.cstr, // TODO: compare as size string
                                       "close",
                                       mhd_SSTR_LEN ("close")))
       {
@@ -2718,7 +2718,7 @@ mhd_stream_parse_connection_headers (struct MHD_Connection *restrict c)
       else if ((MHD_HTTP_VERSION_1_0 == c->rq.http_ver)
                && (mhd_CONN_MUST_CLOSE != c->conn_reuse))
       {
-        if (mhd_str_has_token_caseless (f->field.nv.name.cstr,
+        if (mhd_str_has_token_caseless (f->field.nv.value.cstr,  // TODO: compare as size string
                                         "keep-alive",
                                         mhd_SSTR_LEN ("keep-alive")))
           has_keepalive = true;
