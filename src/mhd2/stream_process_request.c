@@ -2914,8 +2914,9 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
                      (enum MHD_HTTP_Method) c->rq.http_mthd,
                      c->rq.cntn.cntn_size);
 
-  if (((NULL != a) && (&(c->rq.app_act.head_act) != a)) ||
-      ! mhd_ACTION_IS_VALID (c->rq.app_act.head_act.act))
+  if ((NULL != a)
+      && (((&(c->rq.app_act.head_act) != a))
+          || ! mhd_ACTION_IS_VALID (c->rq.app_act.head_act.act)))
   {
     mhd_LOG_MSG (d, MHD_SC_ACTION_INVALID, \
                  "Provided action is not a correct action generated " \
@@ -2978,15 +2979,18 @@ process_upload_action (struct MHD_Connection *restrict c,
                        const struct MHD_UploadAction *act,
                        bool final)
 {
-  if (((NULL != act) && (&(c->rq.app_act.upl_act) != act)) ||
-      ! mhd_UPLOAD_ACTION_IS_VALID (c->rq.app_act.upl_act.act) ||
-      (final &&
-       (mhd_UPLOAD_ACTION_CONTINUE == c->rq.app_act.upl_act.act)))
+  if (NULL != act)
   {
-    mhd_LOG_MSG (c->daemon, MHD_SC_UPLOAD_ACTION_INVALID, \
-                 "Provided action is not a correct action generated " \
-                 "for the current request.");
-    act = NULL;
+    if ((&(c->rq.app_act.upl_act) != act) ||
+        ! mhd_UPLOAD_ACTION_IS_VALID (c->rq.app_act.upl_act.act) ||
+        (final &&
+         (mhd_UPLOAD_ACTION_CONTINUE == c->rq.app_act.upl_act.act)))
+    {
+      mhd_LOG_MSG (c->daemon, MHD_SC_UPLOAD_ACTION_INVALID, \
+                   "Provided action is not a correct action generated " \
+                   "for the current request.");
+      act = NULL;
+    }
   }
   if (NULL == act)
     c->rq.app_act.upl_act.act = mhd_UPLOAD_ACTION_ABORT;
