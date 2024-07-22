@@ -1,6 +1,5 @@
 # This Makefile.am is in the public domain
 
-SUBDIRS = basic
-
+SUBDIRS = basic client_server
 
 .NOTPARALLEL:

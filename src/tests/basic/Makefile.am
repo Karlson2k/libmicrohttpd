@@ -17,18 +17,6 @@ if USE_COVERAGE
   AM_CFLAGS += -fprofile-arcs -ftest-coverage
 endif
 
-noinst_LTLIBRARIES = \
-  libmhdt.la
-
-libmhdt_la_SOURCES = \
-  libtest.c libtest.h \
-  libtest_convenience.c \
-  libtest_convenience_client_request.c \
-  libtest_convenience_server_reply.c
-libmhdt_la_LIBADD = \
-  -lpthread \
-  -lcurl
-
 LDADD = $(top_builddir)/src/mhd2/libmicrohttpd2.la
 
 $(top_builddir)/src/mhd2/libmicrohttpd2.la: $(top_builddir)/src/mhd2/Makefile
@@ -36,7 +24,6 @@ $(top_builddir)/src/mhd2/libmicrohttpd2.la: $(top_builddir)/src/mhd2/Makefile
 	$(am__cd) $(top_builddir)/src/mhd2 && $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd2.la
 
 check_PROGRAMS = \
-  test_client_server \
   test_create_destroy \
   test_create_start_destroy \
   test_create_destroy_ipv4 \
@@ -116,12 +103,6 @@ check_PROGRAMS += \
 endif
 
 TESTS = $(check_PROGRAMS)
-
-test_client_server_SOURCES = \
-  test_client_server.c
-test_client_server_LDADD = \
-  libmhdt.la \
-  $(top_builddir)/src/mhd2/libmicrohttpd2.la
 
 # The universal sources used in all tests
 basic_test_sources = test_basic_checks.c
