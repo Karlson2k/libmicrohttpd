@@ -811,6 +811,7 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
 #else
   (void) term_code;
 #endif
+  c->rq.app_aware = false;
 
   if (! mhd_D_HAS_THR_PER_CONN (c->daemon))
   {
