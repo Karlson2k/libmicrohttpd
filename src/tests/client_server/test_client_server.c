@@ -79,6 +79,7 @@ main (int argc, char *argv[])
     MHDT_ServerRunner server_runner;
     void *server_runner_cls;
   } configs[] = {
+#if 0  // def MHD_USE_SELECT // select() does not work yet
     {
       .label = "single threaded select",
       .server_setup = &MHDT_server_setup_minimal,
@@ -91,7 +92,8 @@ main (int argc, char *argv[])
       .server_setup_cls = thread2select,
       .server_runner = &MHDT_server_run_minimal,
     },
-#if HAVE_POLL
+#endif
+#ifdef MHD_USE_POLL
     {
       .label = "single threaded poll",
       .server_setup = &MHDT_server_setup_minimal,
@@ -105,7 +107,7 @@ main (int argc, char *argv[])
       .server_runner = &MHDT_server_run_minimal,
     },
 #endif
-#if HAVE_EPOLL_CREATE1
+#if MHD_USE_EPOLL
     {
       .label = "single threaded epoll",
       .server_setup = &MHDT_server_setup_minimal,
