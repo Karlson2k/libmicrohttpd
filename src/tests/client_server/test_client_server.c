@@ -171,7 +171,7 @@ main (int argc, char *argv[])
       .client_cb_cls = "simple-upload-value",
       .timeout_ms = 2500,
     },
-#if EVGENY
+#if 1 || EVGENY
     {
       .label = "client PUT with 2 chunks",
       .server_cb = &MHDT_server_reply_check_upload,
