@@ -98,7 +98,7 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
                          + c->continue_message_write_offset,
                          true,
                          &sent);
-    if (mhd_SOCKET_ERR_NO_ERROR != res)
+    if (mhd_SOCKET_ERR_NO_ERROR == res)
       c->continue_message_write_offset += sent;
   }
   else if (MHD_CONNECTION_HEADERS_SENDING == c->state)
@@ -233,10 +233,10 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
 
     if (mhd_SOCKET_ERR_NO_ERROR == res)
     {
-      if (mhd_REPLY_CNTN_LOC_CONN_BUF != c->rp.cntn_loc)
-        c->rp.rsp_cntn_read_pos += sent;
-      else
+      if (mhd_REPLY_CNTN_LOC_CONN_BUF == c->rp.cntn_loc)
         c->write_buffer_send_offset += sent;
+      else
+        c->rp.rsp_cntn_read_pos += sent;
     }
 
     if (MHD_CONNECTION_CHUNKED_BODY_READY == c->state)

@@ -719,9 +719,9 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
     case mhd_SOCKET_ERR_NOTSOCK:
     case mhd_SOCKET_ERR_OTHER:
     case mhd_SOCKET_ERR_INTERNAL:
+    case mhd_SOCKET_ERR_NO_ERROR:
       term_code = MHD_REQUEST_TERMINATED_CONNECTION_ERROR;
       break;
-    case mhd_SOCKET_ERR_NO_ERROR:
     case mhd_SOCKET_ERR_AGAIN:
     case mhd_SOCKET_ERR_INTR:
     default:
