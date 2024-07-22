@@ -1171,14 +1171,16 @@ mhd_parse_get_args (size_t args_len,
           if ('+' == args[i])
             args[i] = ' ';
           else if ('&' == args[i]) /* delimiter for the next parameter */
-            break;
+            break; /* Next parameter */
         }
-        if (i < args_len)
-          args[i] = 0;
-        mhd_assert (0 == args[i]);
-        break; /* End of the parameter */
+        break; /* End of the current parameter */
       }
+      else if ('&' == args[i])
+        break; /* End of the name of the parameter without a value */
     }
+    if (i < args_len) /* Zero-terminate if not terminated */
+      args[i] = 0;
+    mhd_assert (0 == args[i]);
 
     /* Store found parameter */
 
