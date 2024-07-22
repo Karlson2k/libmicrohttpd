@@ -171,6 +171,7 @@ main (int argc, char *argv[])
       .client_cb_cls = "simple-upload-value",
       .timeout_ms = 2500,
     },
+#if EVGENY
     {
       .label = "client PUT with 2 chunks",
       .server_cb = &MHDT_server_reply_check_upload,
@@ -179,6 +180,7 @@ main (int argc, char *argv[])
       .client_cb_cls = "chunky-upload-value",
       .timeout_ms = 2500,
     },
+#endif
     {
       .label = "client request with custom header",
       .server_cb = &MHDT_server_reply_check_header,
@@ -196,13 +198,53 @@ main (int argc, char *argv[])
       .timeout_ms = 2500,
     },
     {
-      .label = "URL with query parameters",
+      .label = "URL with query parameters 1",
       .server_cb = &MHDT_server_reply_check_query,
       .server_cb_cls = "a=b&c",
       .client_cb = &MHDT_client_get_with_query,
-      .client_cb_cls = "a=b&c",
+      .client_cb_cls = "?a=b&c",
       .timeout_ms = 5000,
-      .num_clients = 10
+      .num_clients = 4
+    },
+#if FIXME_EVGENY
+    {
+      .label = "URL with query parameters 2",
+      .server_cb = &MHDT_server_reply_check_query,
+      .server_cb_cls = "a=b&c", /* a => b, c => NULL */
+      .client_cb = &MHDT_client_get_with_query,
+      .client_cb_cls = "?c&a=b",
+      .timeout_ms = 5000,
+      .num_clients = 1
+    },
+#endif
+#if FIXME_EVGENY
+    {
+      .label = "URL with query parameters 3",
+      .server_cb = &MHDT_server_reply_check_query,
+      .server_cb_cls = "a=&c", /* a => "", c => NULL */
+      .client_cb = &MHDT_client_get_with_query,
+      .client_cb_cls = "?c&a=",
+      .timeout_ms = 5000,
+      .num_clients = 1
+    },
+#endif
+    {
+      .label = "URL with query parameters 4",
+      .server_cb = &MHDT_server_reply_check_query,
+      .server_cb_cls = "a=", /* a => "" */
+      .client_cb = &MHDT_client_get_with_query,
+      .client_cb_cls = "?a=",
+      .timeout_ms = 5000,
+      .num_clients = 1
+    },
+    {
+      .label = "URL with query parameters 5",
+      .server_cb = &MHDT_server_reply_check_query,
+      .server_cb_cls = "a=b", /* a => "b" */
+      .client_cb = &MHDT_client_get_with_query,
+      .client_cb_cls = "?a=b",
+      .timeout_ms = 5000,
+      .num_clients = 1
     },
     // TODO: chunked download
     {

@@ -252,8 +252,6 @@ MHDT_client_get_with_query (
   CURL *c;
   size_t blen = strlen (pc->base_url);
   char u[alen + blen + 1];
-  const char *text = "ok";
-  DECLARE_WB (text);
 
   memcpy (u,
           pc->base_url,
@@ -274,11 +272,10 @@ MHDT_client_get_with_query (
     curl_easy_cleanup (c);
     return "Failed to set URL for curl request";
   }
-  SETUP_WB (c);
   PERFORM_REQUEST (c);
-  CHECK_STATUS (c, MHD_HTTP_STATUS_OK);
+  CHECK_STATUS (c,
+                MHD_HTTP_STATUS_NO_CONTENT);
   curl_easy_cleanup (c);
-  CHECK_WB (text);
   return NULL;
 }
 
