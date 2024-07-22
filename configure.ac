@@ -7202,6 +7202,7 @@ src/include/Makefile
 src/mhd2/Makefile
 src/tests/Makefile
 src/tests/basic/Makefile
+src/tests/client_server/Makefile
 src/microhttpd_ws/Makefile
 src/examples/Makefile
 src/tools/Makefile

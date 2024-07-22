@@ -24,7 +24,7 @@ $(top_builddir)/src/mhd2/libmicrohttpd2.la: $(top_builddir)/src/mhd2/Makefile
 	$(am__cd) $(top_builddir)/src/mhd2 && $(MAKE) $(AM_MAKEFLAGS) libmicrohttpd2.la
 
 check_PROGRAMS = \
-  test_client_server \
+  test_client_server
 
 noinst_LTLIBRARIES = \
   libmhdt.la
