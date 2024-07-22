@@ -68,6 +68,7 @@ response_add_header_no_check (
   new_hdr->value.cstr = buf;
   new_hdr->value.len = value_len;
 
+  mhd_DLINKEDL_INIT_LINKS (new_hdr, headers);
   mhd_DLINKEDL_INS_LAST (response, new_hdr, headers);
   return true;
 }
