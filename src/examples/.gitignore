@@ -39,3 +39,4 @@ http_compression
 minimal_example_empty
 minimal_example_empty_tls
 /digest_auth_example_adv
+/minimal_example2
