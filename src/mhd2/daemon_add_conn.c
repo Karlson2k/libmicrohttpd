@@ -525,7 +525,10 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
 
   if (! mhd_D_TYPE_HAS_WORKERS (daemon->threading.d_type)
       && daemon->conns.block_new)
+  {
+    (void) mhd_socket_close (client_socket);
     return MHD_SC_LIMIT_CONNECTIONS_REACHED;
+  }
 
   if (0 != addrlen)
   {
@@ -536,6 +539,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
         mhd_LOG_MSG (daemon, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
                      "MHD_add_connection() has been called with " \
                      "incorrect 'addrlen' value.");
+        (void) mhd_socket_close (client_socket);
         return MHD_SC_CONFIGURATION_WRONG_SA_SIZE;
       }
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
@@ -546,6 +550,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
                      "MHD_add_connection() has been called with " \
                      "non-zero value of 'sa_len' member of " \
                      "'struct sockaddr' which does not match 'sa_family'.");
+        (void) mhd_socket_close (client_socket);
         return MHD_SC_CONFIGURATION_WRONG_SA_SIZE;
       }
 #endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
@@ -558,6 +563,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
         mhd_LOG_MSG (daemon, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
                      "MHD_add_connection() has been called with " \
                      "incorrect 'addrlen' value.");
+        (void) mhd_socket_close (client_socket);
         return MHD_SC_CONFIGURATION_WRONG_SA_SIZE;
       }
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
@@ -568,6 +574,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
                      "MHD_add_connection() has been called with " \
                      "non-zero value of 'sa_len' member of " \
                      "'struct sockaddr' which does not match 'sa_family'.");
+        (void) mhd_socket_close (client_socket);
         return MHD_SC_CONFIGURATION_WRONG_SA_SIZE;
       }
 #endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
@@ -584,6 +591,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
   {
     mhd_LOG_MSG (daemon, MHD_SC_NEW_CONN_FD_OUTSIDE_OF_SET_RANGE, \
                  "The new connection FD value is higher than allowed");
+    (void) mhd_socket_close (client_socket);
     return MHD_SC_NEW_CONN_FD_OUTSIDE_OF_SET_RANGE;
   }
 
@@ -676,6 +684,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
     }
 
     /* all pools are at their connection limit, must refuse */
+    (void) mhd_socket_close (client_socket);
     return MHD_SC_LIMIT_CONNECTIONS_REACHED;
   }
 #endif /* MHD_USE_THREADS */

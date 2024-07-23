@@ -4512,6 +4512,7 @@ MHD_FN_PAR_NONNULL_ (1);
  * The given client socket will be managed (and closed!) by MHD after
  * this call and must no longer be used directly by the application
  * afterwards.
+ * The client socket will be closed by MHD even if error returned.
  *
  * @param daemon daemon that manages the connection
  * @param client_socket socket to manage (MHD will expect
