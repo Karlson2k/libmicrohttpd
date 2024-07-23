@@ -79,7 +79,7 @@ main (int argc, char *argv[])
     MHDT_ServerRunner server_runner;
     void *server_runner_cls;
   } configs[] = {
-#if 0  // def MHD_USE_SELECT // select() does not work yet
+#ifdef MHD_USE_SELECT
     {
       .label = "single threaded select",
       .server_setup = &MHDT_server_setup_minimal,
@@ -171,7 +171,6 @@ main (int argc, char *argv[])
       .client_cb_cls = "simple-upload-value",
       .timeout_ms = 2500,
     },
-#if 1 || EVGENY
     {
       .label = "client PUT with 2 chunks",
       .server_cb = &MHDT_server_reply_check_upload,
@@ -180,7 +179,6 @@ main (int argc, char *argv[])
       .client_cb_cls = "chunky-upload-value",
       .timeout_ms = 2500,
     },
-#endif
     {
       .label = "client request with custom header",
       .server_cb = &MHDT_server_reply_check_header,
@@ -206,7 +204,6 @@ main (int argc, char *argv[])
       .timeout_ms = 5000,
       .num_clients = 4
     },
-#if FIXME_EVGENY
     {
       .label = "URL with query parameters 2",
       .server_cb = &MHDT_server_reply_check_query,
@@ -216,8 +213,6 @@ main (int argc, char *argv[])
       .timeout_ms = 5000,
       .num_clients = 1
     },
-#endif
-#if FIXME_EVGENY
     {
       .label = "URL with query parameters 3",
       .server_cb = &MHDT_server_reply_check_query,
@@ -227,7 +222,6 @@ main (int argc, char *argv[])
       .timeout_ms = 5000,
       .num_clients = 1
     },
-#endif
     {
       .label = "URL with query parameters 4",
       .server_cb = &MHDT_server_reply_check_query,
