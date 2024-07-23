@@ -1485,8 +1485,7 @@ static MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 allocate_events (struct MHD_Daemon *restrict d)
 {
-#if ! defined(NDEBUG) && \
-  (defined(MHD_USE_POLL) || defined(MHD_USE_EPOLL))
+#if defined(MHD_USE_POLL) || defined(MHD_USE_EPOLL)
   /**
    * The number of elements to be monitored by sockets polling function
    */
@@ -1499,7 +1498,7 @@ allocate_events (struct MHD_Daemon *restrict d)
     ++num_elements;  /* For the listening socket */
   if (! mhd_D_HAS_THR_PER_CONN (d))
     num_elements += d->conns.cfg.count_limit;
-#endif /* ! NDEBUG && (MHD_USE_POLL || MHD_USE_EPOLL) */
+#endif /* MHD_USE_POLL || MHD_USE_EPOLL */
 
   mhd_assert (0 != d->conns.cfg.count_limit);
   mhd_assert (mhd_D_TYPE_HAS_EVENTS_PROCESSING (d->threading.d_type));
