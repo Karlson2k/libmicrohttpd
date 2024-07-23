@@ -2255,7 +2255,9 @@ deinit_workers_pool (struct MHD_Daemon *restrict d,
 static MHD_FN_PAR_NONNULL_ (1) void
 reset_master_only_areas (struct MHD_Daemon *restrict d)
 {
-  memset (&(d->req_cfg.large_buf), 0, sizeof(d->req_cfg.large_buf));
+  /* Not needed. It is initialised later */
+  /* memset (&(d->req_cfg.large_buf), 0, sizeof(d->req_cfg.large_buf)); */
+  (void) d;
 }
 
 
@@ -2775,19 +2777,19 @@ daemon_start_internal (struct MHD_Daemon *restrict d,
   if (MHD_SC_OK != res)
     return res;
 
-  res = daemon_init_large_buf (d, s);
+
+  // TODO: Other init
+
+  res = daemon_init_threading_and_conn (d, s);
   if (MHD_SC_OK == res)
   {
+    mhd_assert (d->dbg.net_inited);
+    mhd_assert (d->dbg.threading_inited);
+    mhd_assert (! mhd_D_TYPE_IS_INTERNAL_ONLY (d->threading.d_type));
 
-    // TODO: Other init
-
-    res = daemon_init_threading_and_conn (d, s);
+    res = daemon_init_large_buf (d, s);
     if (MHD_SC_OK == res)
     {
-      mhd_assert (d->dbg.net_inited);
-      mhd_assert (d->dbg.threading_inited);
-      mhd_assert (! mhd_D_TYPE_IS_INTERNAL_ONLY (d->threading.d_type));
-
       res = daemon_start_threads (d);
       if (MHD_SC_OK == res)
       {
@@ -2795,10 +2797,12 @@ daemon_start_internal (struct MHD_Daemon *restrict d,
       }
 
       /* Below is a clean-up path */
-      daemon_deinit_threading_and_conn (d);
+      daemon_deinit_large_buf (d);
     }
-    daemon_deinit_large_buf (d);
+    daemon_deinit_threading_and_conn (d);
   }
+
+
   daemon_deinit_net (d);
   mhd_assert (MHD_SC_OK != res);
   return res;
