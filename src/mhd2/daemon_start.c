@@ -1447,6 +1447,7 @@ static MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) \
 daemon_init_large_buf (struct MHD_Daemon *restrict d,
                        struct DaemonOptions *restrict s)
 {
+  mhd_assert (! mhd_D_HAS_MASTER (d));
   d->req_cfg.large_buf.space_left = s->global_large_buffer_size;
   if (0 == d->req_cfg.large_buf.space_left)             // TODO: USE SETTINGS!
     d->req_cfg.large_buf.space_left = 1024 * 1024U;     // TODO: USE SETTINGS!
@@ -2322,7 +2323,7 @@ init_workers_pool (struct MHD_Daemon *restrict d,
     struct MHD_Daemon *restrict const worker =
       d->threading.hier.pool.workers + i;
     memcpy (worker, d, sizeof(struct MHD_Daemon));
-    reset_master_only_areas (d);
+    reset_master_only_areas (worker);
 
     worker->threading.d_type = mhd_DAEMON_TYPE_WORKER;
     worker->threading.hier.master = d;
