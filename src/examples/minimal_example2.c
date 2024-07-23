@@ -34,7 +34,7 @@ req_cb (void *cls,
         enum MHD_HTTP_Method method,
         uint_fast64_t upload_size)
 {
-  static const char res_msg[] = "Hello there!";
+  static const char res_msg[] = "Hello there!\n";
 
   (void) cls;
   (void) path;
