@@ -1585,7 +1585,7 @@ allocate_events (struct MHD_Daemon *restrict d)
     mhd_assert (0 == d->events.data.epoll.num_elements);
     if (num_elements > d->conns.cfg.count_limit) /* Check for value overflow */
     {
-      const size_t upper_limit = (sizeof(void*) >= 8) ? 4096 : 1024;
+      const unsigned int upper_limit = (sizeof(void*) >= 8) ? 4096 : 1024;
 
       /* Trade neglectable performance penalty for memory saving */
       /* Very large amount of new events processed in batches */
@@ -1721,7 +1721,7 @@ init_itc (struct MHD_Daemon *restrict d)
     mhd_LOG_MSG (d, MHD_SC_ITC_FD_OUTSIDE_OF_SET_RANGE, \
                  "The inter-thread communication FD value is " \
                  "higher than allowed");
-    mhd_itc_destroy (d->threading.itc);
+    (void) mhd_itc_destroy (d->threading.itc);
     mhd_itc_set_invalid (&(d->threading.itc));
     return MHD_SC_ITC_FD_OUTSIDE_OF_SET_RANGE;
   }
