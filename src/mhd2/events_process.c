@@ -35,7 +35,7 @@
 #ifdef MHD_POSIX_SOCKETS
 #  ifdef MHD_USE_SELECT
 #    ifdef HAVE_SYS_SELECT_H
-#      include <sys/select.h> /* For FD_SETSIZE */
+#      include <sys/select.h>
 #    else
 #      ifdef HAVE_SYS_TIME_H
 #        include <sys/time.h>
@@ -48,9 +48,7 @@
 #      endif
 #    endif
 #  endif
-#endif
-#ifdef MHD_POSIX_SOCKETS
-#  include <errno.h>
+#  include "sys_errno.h"
 #endif
 
 #include "mhd_itc.h"
@@ -86,7 +84,7 @@ get_max_wait (struct MHD_Daemon *restrict d)
   if (NULL != mhd_DLINKEDL_GET_FIRST (&(d->events), proc_ready))
     return 0;
 
-  return -1; // TODO: calculate correct timeout value
+  return INT_MAX; // TODO: calculate correct timeout value
 }
 
 
@@ -271,7 +269,7 @@ daemon_process_all_active_conns (struct MHD_Daemon *restrict d)
 
 
 static void
-close_all_daemon_conns (struct MHD_Daemon *restrict d)
+close_all_daemon_conns (struct MHD_Daemon *d)
 {
   struct MHD_Connection *c;
 
@@ -285,9 +283,317 @@ close_all_daemon_conns (struct MHD_Daemon *restrict d)
 }
 
 
+#ifdef MHD_USE_SELECT
+
+/**
+ * Add socket to the fd_set
+ * @param fd the socket to add
+ * @param fs the pointer to fd_set
+ * @param max the pointer to variable to be updated with maximum FD value (or
+ *            set to non-zero in case of WinSock)
+ * @param d the daemon object
+ */
+MHD_static_inline_ MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_INOUT_ (2)
+MHD_FN_PAR_INOUT_ (3) void
+fd_set_wrap (MHD_Socket fd,
+             fd_set *restrict fs,
+             int *restrict max,
+             struct MHD_Daemon *restrict d)
+{
+  mhd_assert (mhd_FD_FITS_DAEMON (d, fd)); /* Must be checked for every FD before
+                                            it is added */
+  mhd_assert (mhd_POLL_TYPE_SELECT == d->events.poll_type);
+  (void) d; /* Unused with non-debug builds */
+#if defined(MHD_POSIX_SOCKETS)
+  FD_SET (fd, fs);
+  if (*max < fd)
+    *max = fd;
+#elif defined(MHD_WINSOCK_SOCKETS)
+  /* Use custom set function to take advantage of know uniqueness of
+   * used sockets (to skip useless (for this function) check for duplicated
+   * sockets implemented in system's macro). */
+  mhd_assert (fs->fd_count < FD_SETSIZE - 1); /* Daemon limits set to always fit FD_SETSIZE */
+  mhd_assert (! FD_ISSET (fd, fs)); /* All sockets must be unique */
+  fs->fd_array[fs->fd_count++] = fd;
+  *max = 1;
+#else
+#error Unknown sockets type
+#endif
+}
+
+
+/**
+ * Set daemon's FD_SETs to monitor all daemon's sockets
+ * @param d the daemon to use
+ * @param listen_only set to 'true' if connections's sockets should NOT
+ *                    be monitored
+ * @return with POSIX sockets: the maximum number of the socket used in
+ *                             the FD_SETs;
+ *         with winsock: non-zero if at least one socket has been added to
+ *                       the FD_SETs,
+ *                       zero if no sockets in the FD_SETs
+ */
+static MHD_FN_PAR_NONNULL_ (1) int
+select_update_fdsets (struct MHD_Daemon *restrict d,
+                      bool listen_only)
+{
+  struct MHD_Connection *c;
+  fd_set *const restrict rfds = d->events.data.select.rfds;
+  fd_set *const restrict wfds = d->events.data.select.wfds;
+  fd_set *const restrict efds = d->events.data.select.efds;
+  int ret;
+
+  mhd_assert (mhd_POLL_TYPE_SELECT == d->events.poll_type);
+  mhd_assert (NULL != rfds);
+  mhd_assert (NULL != wfds);
+  mhd_assert (NULL != efds);
+  FD_ZERO (rfds);
+  FD_ZERO (wfds);
+  FD_ZERO (efds);
+
+  ret = 0;
+#ifdef MHD_USE_THREADS
+  mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
+  fd_set_wrap (mhd_itc_r_fd (d->threading.itc),
+               rfds,
+               &ret,
+               d);
+  fd_set_wrap (mhd_itc_r_fd (d->threading.itc),
+               efds,
+               &ret,
+               d);
+#endif
+  if (MHD_INVALID_SOCKET != d->net.listen.fd)
+  {
+    fd_set_wrap (d->net.listen.fd,
+                 rfds,
+                 &ret,
+                 d);
+    fd_set_wrap (d->net.listen.fd,
+                 efds,
+                 &ret,
+                 d);
+  }
+  if (listen_only)
+    return ret;
+
+  for (c = mhd_DLINKEDL_GET_FIRST (&(d->conns),all_conn); NULL != c;
+       c = mhd_DLINKEDL_GET_NEXT (c,all_conn))
+  {
+    mhd_assert (MHD_CONNECTION_CLOSED != c->state);
+
+    if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_READ))
+      fd_set_wrap (c->socket_fd,
+                   rfds,
+                   &ret,
+                   d);
+    if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_WRITE))
+      fd_set_wrap (c->socket_fd,
+                   wfds,
+                   &ret,
+                   d);
+    fd_set_wrap (c->socket_fd,
+                 efds,
+                 &ret,
+                 d);
+  }
+
+  return ret;
+}
+
+
+static MHD_FN_PAR_NONNULL_ (1) bool
+select_update_statuses_from_fdsets (struct MHD_Daemon *d,
+                                    int num_events)
+{
+  struct MHD_Connection *c;
+  fd_set *const restrict rfds = d->events.data.select.rfds;
+  fd_set *const restrict wfds = d->events.data.select.wfds;
+  fd_set *const restrict efds = d->events.data.select.efds;
+
+  mhd_assert (mhd_POLL_TYPE_SELECT == d->events.poll_type);
+  mhd_assert (0 <= num_events);
+  mhd_assert (((unsigned int) num_events) <= d->dbg.num_events_elements);
+
+#ifndef MHD_FAVOR_SMALL_CODE
+  if (0 == num_events)
+    return true;
+#endif /* MHD_FAVOR_SMALL_CODE */
+
+#ifdef MHD_USE_THREADS
+  mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
+  if (FD_ISSET (mhd_itc_r_fd (d->threading.itc), efds))
+  {
+    mhd_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
+                 "System reported that ITC has an error status.");
+    /* ITC is broken, need to stop the daemon thread now as otherwise
+       application will not be able to stop the thread. */
+    return false;
+  }
+  if (FD_ISSET (mhd_itc_r_fd (d->threading.itc), rfds))
+  {
+    --num_events;
+    /* Clear ITC here, as before any other data processing.
+     * Any external events may activate ITC again if any data to process is
+     * added externally. Cleaning ITC early ensures guaranteed that new data
+     * will not be missed. */
+    mhd_itc_clear (d->threading.itc);
+  }
+
+#ifndef MHD_FAVOR_SMALL_CODE
+  if (0 == num_events)
+    return true;
+#endif /* MHD_FAVOR_SMALL_CODE */
+#endif /* MHD_USE_THREADS */
+
+  if (MHD_INVALID_SOCKET != d->net.listen.fd)
+  {
+    if (FD_ISSET (d->net.listen.fd, efds))
+    {
+      --num_events;
+      mhd_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
+                   "System reported that the listening socket has an error " \
+                   "status. The daemon will not listen any more.");
+      /* Close the listening socket unless the master daemon should close it */
+      if (! mhd_D_HAS_MASTER (d))
+        mhd_socket_close (d->net.listen.fd);
+
+      /* Stop monitoring socket to avoid spinning with busy-waiting */
+      d->net.listen.fd = MHD_INVALID_SOCKET;
+    }
+    else if (FD_ISSET (d->net.listen.fd, rfds))
+    {
+      --num_events;
+      d->events.act_req.accept = true;
+    }
+  }
+
+  mhd_assert ((0 == num_events) || \
+              (mhd_DAEMON_TYPE_LISTEN_ONLY != d->threading.d_type));
+
+#ifdef MHD_FAVOR_SMALL_CODE
+  (void) num_events;
+  num_events = 1; /* Use static value to optimise out the next look */
+#endif /* ! MHD_FAVOR_SMALL_CODE */
+
+  for (c = mhd_DLINKEDL_GET_FIRST (&(d->conns), all_conn);
+       (NULL != c) && (0 != num_events);
+       c = mhd_DLINKEDL_GET_NEXT (c, all_conn))
+  {
+    const MHD_Socket sk = c->socket_fd;
+    bool recv_ready = FD_ISSET (sk, rfds);
+    bool send_ready = FD_ISSET (sk, wfds);
+    bool err_state = FD_ISSET (sk, efds);
+
+    update_conn_net_status (d,
+                            c,
+                            recv_ready,
+                            send_ready,
+                            err_state);
+#ifndef MHD_FAVOR_SMALL_CODE
+    if (recv_ready || send_ready || err_state)
+      --num_events;
+#endif /* MHD_FAVOR_SMALL_CODE */
+  }
+
+  #ifndef MHD_FAVOR_SMALL_CODE
+  mhd_assert (0 == num_events);
+#endif /* MHD_FAVOR_SMALL_CODE */
+  return true;
+}
+
+
+/**
+ * Update states of all connections, check for connection pending
+ * to be accept()'ed, check for the events on ITC.
+ * @param listen_only set to 'true' if connections's sockets should NOT
+ *                    be monitored
+ * @return 'true' if processed successfully,
+ *         'false' is unrecoverable error occurs and the daemon must be
+ *         closed
+ */
+static MHD_FN_PAR_NONNULL_ (1) bool
+get_all_net_updates_by_select (struct MHD_Daemon *restrict d,
+                               bool listen_only)
+{
+  int max_socket;
+  int max_wait;
+  struct timeval tmvl;
+  int num_events;
+  mhd_assert (mhd_POLL_TYPE_SELECT == d->events.poll_type);
+
+  max_socket = select_update_fdsets (d,
+                                     listen_only);
+
+  max_wait = get_max_wait (d); // TODO: use correct timeout value
+
+#ifdef MHD_WINSOCK_SOCKETS
+  if (0 == max_socket)
+  {
+    Sleep ((unsigned int) max_wait);
+    return true;
+  }
+#endif /* MHD_WINSOCK_SOCKETS */
+
+  tmvl.tv_sec = max_wait / 1000;
+#ifndef MHD_WINSOCK_SOCKETS
+  tmvl.tv_usec = (uint_least16_t) ((max_wait % 1000) * 1000);
+#else
+  tmvl.tv_usec = (int) ((max_wait % 1000) * 1000);
+#endif
+
+  num_events = select (max_socket + 1,
+                       d->events.data.select.rfds,
+                       d->events.data.select.wfds,
+                       d->events.data.select.efds,
+                       &tmvl);
+
+  if (0 > num_events)
+  {
+    int err;
+    bool is_hard_error;
+    bool is_ignored_error;
+    is_hard_error = false;
+    is_ignored_error = false;
+#if defined(MHD_POSIX_SOCKETS)
+    err = errno;
+    if (0 != err)
+    {
+      is_hard_error =
+        ((mhd_EBADF_OR_ZERO == err) || (mhd_EINVAL_OR_ZERO == err));
+      is_ignored_error = (mhd_EINTR_OR_ZERO == err);
+    }
+#elif defined(MHD_WINSOCK_SOCKETS)
+    err = WSAGetLastError ();
+    is_hard_error =
+      ((WSAENETDOWN == err) || (WSAEFAULT == err) || (WSAEINVAL == err) ||
+       (WSANOTINITIALISED == err));
+#endif
+    if (! is_ignored_error)
+    {
+      if (is_hard_error)
+      {
+        mhd_LOG_MSG (d, MHD_SC_SELECT_HARD_ERROR, \
+                     "The select() encountered unrecoverable error.");
+        return false;
+      }
+      mhd_LOG_MSG (d, MHD_SC_SELECT_SOFT_ERROR, \
+                   "The select() encountered error.");
+      return true;
+    }
+  }
+
+  return select_update_statuses_from_fdsets (d, num_events);
+}
+
+
+#endif /* MHD_USE_SELECT */
+
+
 #ifdef MHD_USE_POLL
 
-MHD_FN_PAR_NONNULL_ (1) static unsigned int
+static MHD_FN_PAR_NONNULL_ (1) unsigned int
 poll_update_fds (struct MHD_Daemon *restrict d,
                  bool listen_only)
 {
@@ -321,6 +627,7 @@ poll_update_fds (struct MHD_Daemon *restrict d,
   {
     unsigned short events; /* 'unsigned' for correct bits manipulations */
     mhd_assert ((i_c - i_s) < d->conns.cfg.count_limit);
+    mhd_assert (i_c < d->dbg.num_events_elements);
     mhd_assert (MHD_CONNECTION_CLOSED != c->state);
 
     d->events.data.poll.fds[i_c].fd = c->socket_fd;
@@ -335,11 +642,12 @@ poll_update_fds (struct MHD_Daemon *restrict d,
     ++i_c;
   }
   mhd_assert (d->conns.count == (i_c - i_s));
+  mhd_assert (i_c <= d->dbg.num_events_elements);
   return i_c;
 }
 
 
-MHD_FN_PAR_NONNULL_ (1) static bool
+static MHD_FN_PAR_NONNULL_ (1) bool
 poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
                                int num_events)
 {
@@ -347,6 +655,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
   unsigned int i_c;
   mhd_assert (mhd_POLL_TYPE_POLL == d->events.poll_type);
   mhd_assert (0 <= num_events);
+  mhd_assert (((unsigned int) num_events) <= d->dbg.num_events_elements);
 
   if (0 == num_events)
     return true;
@@ -420,6 +729,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
     bool send_ready;
     bool err_state;
     short revents;
+    mhd_assert (i_c < d->dbg.num_events_elements);
     mhd_assert (mhd_SOCKET_REL_MARKER_EMPTY != \
                 d->events.data.poll.rel[i_c].fd_id);
     mhd_assert (mhd_SOCKET_REL_MARKER_ITC != \
@@ -459,11 +769,12 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
     update_conn_net_status (d, c, recv_ready, send_ready, err_state);
   }
   mhd_assert (d->conns.count >= (i_c - i_s));
+  mhd_assert (i_c <= d->dbg.num_events_elements);
   return true;
 }
 
 
-MHD_FN_PAR_NONNULL_ (1) static bool
+static MHD_FN_PAR_NONNULL_ (1) bool
 get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
                              bool listen_only)
 {
@@ -490,8 +801,8 @@ get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
     if (0 != err)
     {
       is_hard_error =
-        ((MHD_EFAULT_OR_ZERO == err) || (MHD_EINVAL_OR_ZERO == err));
-      is_ignored_error = (MHD_EINTR_OR_ZERO == err);
+        ((mhd_EFAULT_OR_ZERO == err) || (mhd_EINVAL_OR_ZERO == err));
+      is_ignored_error = (mhd_EINTR_OR_ZERO == err);
     }
 #elif defined(MHD_WINSOCK_SOCKETS)
     err = WSAGetLastError ();
@@ -509,12 +820,10 @@ get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
       mhd_LOG_MSG (d, MHD_SC_POLL_SOFT_ERROR, \
                    "The poll() encountered error.");
     }
+    return true;
   }
 
-  if (! poll_update_statuses_from_fds (d, num_events))
-    return false;
-
-  return true;
+  return poll_update_statuses_from_fds (d, num_events);
 }
 
 
@@ -526,7 +835,7 @@ get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
  * Map events provided by epoll to connection states, ITC and
  * listen socket states
  */
-MHD_FN_PAR_NONNULL_ (1) static bool
+static MHD_FN_PAR_NONNULL_ (1) bool
 poll_update_statuses_from_eevents (struct MHD_Daemon *restrict d,
                                    unsigned int num_events)
 {
@@ -597,7 +906,7 @@ poll_update_statuses_from_eevents (struct MHD_Daemon *restrict d,
  * Update states of all connections, check for connection pending
  * to be accept()'ed, check for the events on ITC.
  */
-MHD_FN_PAR_NONNULL_ (1) static bool
+static MHD_FN_PAR_NONNULL_ (1) bool
 get_all_net_updates_by_epoll (struct MHD_Daemon *restrict d)
 {
   int num_events;
@@ -609,6 +918,7 @@ get_all_net_updates_by_epoll (struct MHD_Daemon *restrict d)
               (size_t) ((int) d->events.data.epoll.num_elements));
   mhd_assert (0 != d->events.data.epoll.num_elements);
   mhd_assert (0 != d->conns.cfg.count_limit);
+  mhd_assert (d->events.data.epoll.num_elements == d->dbg.num_events_elements);
 
   // TODO: add listen socket enable/disable
 
@@ -646,7 +956,7 @@ get_all_net_updates_by_epoll (struct MHD_Daemon *restrict d)
 #endif /* MHD_USE_EPOLL */
 
 
-MHD_FN_PAR_NONNULL_ (1) static bool
+static MHD_FN_PAR_NONNULL_ (1) bool
 process_all_events_and_data (struct MHD_Daemon *restrict d)
 {
   switch (d->events.poll_type)
@@ -656,7 +966,8 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
     break;
 #ifdef MHD_USE_SELECT
   case mhd_POLL_TYPE_SELECT:
-    return false; // TODO: implement
+    if (! get_all_net_updates_by_select (d, false))
+      return false;
     break;
 #endif /* MHD_USE_SELECT */
 #ifdef MHD_USE_POLL
@@ -737,7 +1048,7 @@ mhd_worker_all_events (void *cls)
 }
 
 
-MHD_FN_PAR_NONNULL_ (1) static bool
+static MHD_FN_PAR_NONNULL_ (1) bool
 process_listening_and_itc_only (struct MHD_Daemon *restrict d)
 {
   if (false)

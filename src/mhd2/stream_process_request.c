@@ -2829,11 +2829,11 @@ need_100_continue (struct MHD_Connection *restrict c)
   if (NULL == hvalue)
     return false;
 
-  if (! mhd_str_equal_caseless_n_st ("100-continue", \
-                                     hvalue->cstr, hvalue->len))
-    return false;
+  if (mhd_str_equal_caseless_n_st ("100-continue", \
+                                   hvalue->cstr, hvalue->len))
+    return true;
 
-  return true;
+  return false;
 }
 
 

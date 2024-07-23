@@ -46,7 +46,7 @@
 #  else
 #    include <stdlib.h>
 #  endif /* HAVE_UNISTD_H */
-#  include <errno.h>
+#  include "sys_errno.h"
 
 /**
  * Number of FDs used by every ITC.
@@ -137,7 +137,7 @@ static const uint_fast64_t mhd_ITC_WR_DATA = 1;
 #  else
 #    include <stdlib.h>
 #  endif /* HAVE_UNISTD_H */
-#  include <errno.h>
+#  include "sys_errno.h"
 #  if defined(HAVE_PIPE2_FUNC) && defined(O_CLOEXEC) && defined(O_NONBLOCK)
 #    define MHD_USE_PIPE2 1
 #  else

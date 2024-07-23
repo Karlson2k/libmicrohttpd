@@ -30,23 +30,70 @@
 #include "mhd_sys_options.h"
 #include <errno.h>
 
-#ifdef EFAULT
-#  define MHD_EFAULT_OR_ZERO EFAULT
+#ifdef EBADF
+#  define mhd_EBADF_OR_ZERO EBADF
 #else
-#  define MHD_EFAULT_OR_ZERO (0)
+#  define mhd_EBADF_OR_ZERO (0)
+#endif
+
+#ifdef EFAULT
+#  define mhd_EFAULT_OR_ZERO EFAULT
+#else
+#  define mhd_EFAULT_OR_ZERO (0)
 #endif
 
 #ifdef EINVAL
-#  define MHD_EINVAL_OR_ZERO EINVAL
+#  define mhd_EINVAL_OR_ZERO EINVAL
 #else
-#  define MHD_EINVAL_OR_ZERO (0)
+#  define mhd_EINVAL_OR_ZERO (0)
 #endif
 
 #ifdef EINTR
-#  define MHD_EINTR_OR_ZERO EINTR
+#  define mhd_EINTR_OR_ZERO EINTR
 #else
-#  define MHD_EINTR_OR_ZERO (0)
+#  define mhd_EINTR_OR_ZERO (0)
 #endif
 
+#ifdef ENOMEM
+#  define mhd_ENOMEM_OR_ZERO ENOMEM
+#else
+#  define mhd_ENOMEM_OR_ZERO (0)
+#endif
+
+#ifdef EMFILE
+#  define mhd_EMFILE_OR_ZERO EMFILE
+#else
+#  define mhd_EMFILE_OR_ZERO (0)
+#endif
+
+#ifdef ENFILE
+#  define mhd_ENFILE_OR_ZERO ENFILE
+#else
+#  define mhd_ENFILE_OR_ZERO (0)
+#endif
+
+#ifdef ENOBUFS
+#  define mhd_ENOBUFS_OR_ZERO ENOBUFS
+#else
+#  define mhd_ENOBUFS_OR_ZERO (0)
+#endif
+
+#ifdef EHOSTUNREACH
+#  define mhd_EHOSTUNREACH_OR_ZERO EHOSTUNREACH
+#else
+#  define mhd_EHOSTUNREACH_OR_ZERO (0)
+#endif
+
+#ifdef ETIMEDOUT
+#  define mhd_ETIMEDOUT_OR_ZERO ETIMEDOUT
+#else
+#  define mhd_ETIMEDOUT_OR_ZERO (0)
+#endif
+
+#ifdef ENETUNREACH
+#  define mhd_ENETUNREACH_OR_ZERO ENETUNREACH
+#else
+#  define mhd_ENETUNREACH_OR_ZERO (0)
+#endif
 
 #endif /* ! MHD_SYS_ERRNO_H */

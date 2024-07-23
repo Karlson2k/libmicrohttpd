@@ -405,15 +405,7 @@ internal_add_connection (struct MHD_Daemon *daemon,
 
   /* Direct add to master daemon could never happen. */
   mhd_assert (! mhd_D_HAS_WORKERS (daemon));
-
-  if (! mhd_FD_FITS_DAEMON (daemon, client_socket))
-  {
-    mhd_LOG_MSG (daemon, MHD_SC_SOCKET_OUTSIDE_OF_SET_RANGE, \
-                 "New connection socket descriptor value is too large for " \
-                 "the daemon configuration.");
-    (void) mhd_socket_close (client_socket);
-    return MHD_SC_SOCKET_OUTSIDE_OF_SET_RANGE;
-  }
+  mhd_assert (mhd_FD_FITS_DAEMON (daemon, client_socket));
 
   if ((! non_blck) &&
       ((mhd_POLL_TYPE_EPOLL == daemon->events.poll_type) ||
@@ -586,6 +578,13 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
       addrlen = (size_t) addr->sa_len;   /* Use safest value */
 #endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
 #endif /* HAVE_INET6 */
+  }
+
+  if (! mhd_FD_FITS_DAEMON (daemon, client_socket))
+  {
+    mhd_LOG_MSG (daemon, MHD_SC_NEW_CONN_FD_OUTSIDE_OF_SET_RANGE, \
+                 "The new connection FD value is higher than allowed");
+    return MHD_SC_NEW_CONN_FD_OUTSIDE_OF_SET_RANGE;
   }
 
   if (! mhd_socket_nonblocking (client_socket))

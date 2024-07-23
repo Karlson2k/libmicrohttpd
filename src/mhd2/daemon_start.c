@@ -32,24 +32,16 @@
 #include <string.h>
 #include "sys_sockets_types.h"
 #include "sys_sockets_headers.h"
+#include "mhd_sockets_macros.h"
 #include "sys_ip_headers.h"
 
 #ifdef MHD_POSIX_SOCKETS
-#  include <errno.h>
+#  include "sys_errno.h"
 #endif
 #ifdef MHD_USE_EPOLL
 #  include <sys/epoll.h>
 #endif
 
-#include "mhd_public_api.h"
-
-#include "mhd_daemon.h"
-#include "daemon_options.h"
-
-#include "daemon_logger.h"
-#include "mhd_assert.h"
-#include "mhd_sockets_funcs.h"
-#include "mhd_sockets_macros.h"
 #ifdef MHD_POSIX_SOCKETS
 #  include <fcntl.h>
 #  ifdef MHD_USE_SELECT
@@ -69,6 +61,15 @@
 #  endif
 #endif
 
+#include "mhd_limits.h"
+
+#include "mhd_daemon.h"
+#include "daemon_options.h"
+
+#include "mhd_assert.h"
+#include "mhd_sockets_funcs.h"
+#include "daemon_logger.h"
+
 #ifdef MHD_USE_THREADS
 #  include "mhd_itc.h"
 #  include "mhd_threads.h"
@@ -76,7 +77,7 @@
 #  include "daemon_funcs.h"
 #endif
 
-#include "mhd_limits.h"
+#include "mhd_public_api.h"
 
 
 /**
@@ -1483,6 +1484,22 @@ static MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 allocate_events (struct MHD_Daemon *restrict d)
 {
+#if ! defined(NDEBUG) && \
+  (defined(MHD_USE_POLL) || defined(MHD_USE_EPOLL))
+  /**
+   * The number of elements to be monitored by sockets polling function
+   */
+  unsigned int num_elements;
+  num_elements = 0;
+#ifdef MHD_USE_THREADS
+  ++num_elements;  /* For the ITC */
+#endif
+  if (MHD_INVALID_SOCKET != d->net.listen.fd)
+    ++num_elements;  /* For the listening socket */
+  if (! mhd_D_HAS_THR_PER_CONN (d))
+    num_elements += d->conns.cfg.count_limit;
+#endif /* ! NDEBUG && (MHD_USE_POLL || MHD_USE_EPOLL) */
+
   mhd_assert (0 != d->conns.cfg.count_limit);
   mhd_assert (mhd_D_TYPE_HAS_EVENTS_PROCESSING (d->threading.d_type));
 
@@ -1513,6 +1530,7 @@ allocate_events (struct MHD_Daemon *restrict d)
         if (NULL != d->events.data.select.efds)
         {
 #ifndef NDEBUG
+          d->dbg.num_events_elements = FD_SETSIZE;
           d->dbg.events_allocated = true;
 #endif
           return MHD_SC_OK; /* Success exit point */
@@ -1532,22 +1550,19 @@ allocate_events (struct MHD_Daemon *restrict d)
     /* The pointers have been set to NULL during pre-initialisations of the events */
     mhd_assert (NULL == d->events.data.poll.fds);
     mhd_assert (NULL == d->events.data.poll.rel);
-    if (1)
+    if (num_elements > d->conns.cfg.count_limit) /* Check for value overflow */
     {
-      unsigned int num_slots;
-      num_slots = 2; /* For ITC and listening, even if they are unused */
-      if (mhd_WM_INT_INTERNAL_EVENTS_THREAD_PER_CONNECTION != d->wmode_int)
-        num_slots += d->conns.cfg.count_limit;
       d->events.data.poll.fds =
-        (struct pollfd *) malloc (sizeof(struct pollfd) * num_slots);
+        (struct pollfd *) malloc (sizeof(struct pollfd) * num_elements);
       if (NULL != d->events.data.poll.fds)
       {
         d->events.data.poll.rel =
           (union mhd_SocketRelation *) malloc (sizeof(union mhd_SocketRelation)
-                                               * num_slots);
+                                               * num_elements);
         if (NULL != d->events.data.poll.rel)
         {
 #ifndef NDEBUG
+          d->dbg.num_events_elements = num_elements;
           d->dbg.events_allocated = true;
 #endif
           return MHD_SC_OK; /* Success exit point */
@@ -1562,22 +1577,15 @@ allocate_events (struct MHD_Daemon *restrict d)
 #endif /* MHD_USE_POLL */
 #ifdef MHD_USE_EPOLL
   case mhd_POLL_TYPE_EPOLL:
+    mhd_assert (! mhd_D_HAS_THR_PER_CONN (d));
     /* The event FD has been created during pre-initialisations of the events */
     mhd_assert (MHD_INVALID_SOCKET != d->events.data.epoll.e_fd);
     /* The pointer has been set to NULL during pre-initialisations of the events */
     mhd_assert (NULL == d->events.data.epoll.events);
     mhd_assert (0 == d->events.data.epoll.num_elements);
-    if (1)
+    if (num_elements > d->conns.cfg.count_limit) /* Check for value overflow */
     {
-      size_t num_elements;
       const size_t upper_limit = (sizeof(void*) >= 8) ? 4096 : 1024;
-
-      num_elements = d->conns.cfg.count_limit;
-#ifdef MHD_USE_THREADS
-      ++num_elements;  /* For ITC */
-#endif
-      if (MHD_INVALID_SOCKET != d->net.listen.fd)
-        ++num_elements;
 
       /* Trade neglectable performance penalty for memory saving */
       /* Very large amount of new events processed in batches */
@@ -1591,6 +1599,7 @@ allocate_events (struct MHD_Daemon *restrict d)
       {
         d->events.data.epoll.num_elements = num_elements;
 #ifndef NDEBUG
+        d->dbg.num_events_elements = num_elements;
         d->dbg.events_allocated = true;
 #endif
         return MHD_SC_OK; /* Success exit point */
@@ -1706,6 +1715,15 @@ init_itc (struct MHD_Daemon *restrict d)
       "Failed to initialise inter-thread communication");
 #endif
     return MHD_SC_ITC_INITIALIZATION_FAILED;
+  }
+  if (! mhd_FD_FITS_DAEMON (d,mhd_itc_r_fd (d->threading.itc)))
+  {
+    mhd_LOG_MSG (d, MHD_SC_ITC_FD_OUTSIDE_OF_SET_RANGE, \
+                 "The inter-thread communication FD value is " \
+                 "higher than allowed");
+    mhd_itc_destroy (d->threading.itc);
+    mhd_itc_set_invalid (&(d->threading.itc));
+    return MHD_SC_ITC_FD_OUTSIDE_OF_SET_RANGE;
   }
 #endif /* MHD_USE_THREADS */
   return MHD_SC_OK;
@@ -1975,7 +1993,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
   bool error_by_fd_setsize;
   unsigned int num_worker_daemons;
 
-  mhd_assert (! mhd_D_TYPE_IS_INTERNAL_ONLY (d->threading.d_type));
+  mhd_assert (! mhd_D_HAS_MASTER (d));
   mhd_assert (mhd_D_TYPE_IS_VALID (d->threading.d_type));
 
   if (mhd_WM_INT_INTERNAL_EVENTS_THREAD_POOL == d->wmode_int)
@@ -2037,7 +2055,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
       }
     }
     else
-      limit_by_num = UINT_MAX;
+      limit_by_num = (unsigned int) INT_MAX;
   }
 #elif defined(MHD_WINSOCK_SOCKETS)
   if (1)

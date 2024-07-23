@@ -989,6 +989,16 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_POLL_HARD_ERROR = 50122
   ,
   /**
+   * Encountered a (potentially) recoverable error from select().
+   */
+  MHD_SC_SELECT_SOFT_ERROR = 50123
+  ,
+  /**
+   * Encountered an unrecoverable error from select().
+   */
+  MHD_SC_SELECT_HARD_ERROR = 50124
+  ,
+  /**
    * System reported error conditions on the listening socket.
    */
   MHD_SC_LISTEN_STATUS_ERROR = 50129
@@ -1297,6 +1307,13 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * The "Content-Length" header is not allowed in the reply
    */
   MHD_SC_REPLY_CONTENT_LENGTH_NOT_ALLOWED = 60102
+  ,
+  /**
+   * The new connection cannot be used because the FD number is higher than
+   * the limit set by FD_SETSIZE (if internal polling with select is used) or
+   * by application.
+   */
+  MHD_SC_NEW_CONN_FD_OUTSIDE_OF_SET_RANGE = 60140
   ,
   /**
    * The requested type of information is not recognised.

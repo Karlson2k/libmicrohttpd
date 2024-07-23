@@ -861,6 +861,7 @@ struct mhd_daemon_debug
   bool net_inited;
   bool net_deinited;
   bool events_allocated;
+  unsigned int num_events_elements;
   bool events_fully_inited;
   bool thread_pool_inited;
   bool threading_inited;

@@ -40,6 +40,7 @@
 #  else
 #    include <stdlib.h>
 #  endif
+#  include "sys_errno.h"
 #elif defined(MHD_WINSOCK_SOCKETS)
 #  include <winsock2.h>
 #endif
@@ -86,48 +87,6 @@
  */
 #define mhd_sys_recv(s,b,l) \
         ((ssize_t) recv ((s),(void*) (b),(mhd_SCKT_SEND_SIZE) (l), 0))
-
-#ifdef EMFILE
-#  define MHD_EMFILE_OR_ZERO EMFILE
-#else
-#  define MHD_EMFILE_OR_ZERO (0)
-#endif
-
-#ifdef ENFILE
-#  define MHD_ENFILE_OR_ZERO ENFILE
-#else
-#  define MHD_ENFILE_OR_ZERO (0)
-#endif
-
-#ifdef ENOMEM
-#  define MHD_ENOMEM_OR_ZERO ENOMEM
-#else
-#  define MHD_ENOMEM_OR_ZERO (0)
-#endif
-
-#ifdef ENOBUFS
-#  define MHD_ENOBUFS_OR_ZERO ENOBUFS
-#else
-#  define MHD_ENOBUFS_OR_ZERO (0)
-#endif
-
-#ifdef EHOSTUNREACH
-#  define MHD_EHOSTUNREACH_OR_ZERO EHOSTUNREACH
-#else
-#  define MHD_EHOSTUNREACH_OR_ZERO (0)
-#endif
-
-#ifdef ETIMEDOUT
-#  define MHD_ETIMEDOUT_OR_ZERO ETIMEDOUT
-#else
-#  define MHD_ETIMEDOUT_OR_ZERO (0)
-#endif
-
-#ifdef ENETUNREACH
-#  define MHD_ENETUNREACH_OR_ZERO ENETUNREACH
-#else
-#  define MHD_ENETUNREACH_OR_ZERO (0)
-#endif
 
 /**
  * Last socket error
@@ -286,9 +245,9 @@
    + ENETUNREACH: probably cable physically disconnected or similar */
 #    define mhd_SCKT_ERR_IS_CONN_BROKEN(err) \
         ((0 != (err)) && \
-         ((MHD_EHOSTUNREACH_OR_ZERO == (err)) || \
-          (MHD_ETIMEDOUT_OR_ZERO == (err)) || \
-          (MHD_ENETUNREACH_OR_ZERO == (err))))
+         ((mhd_EHOSTUNREACH_OR_ZERO == (err)) || \
+          (mhd_ETIMEDOUT_OR_ZERO == (err)) || \
+          (mhd_ENETUNREACH_OR_ZERO == (err))))
 #elif defined(MHD_WINSOCK_SOCKETS)
 #  define mhd_SCKT_ERR_IS_CONN_BROKEN(err) \
         ( (WSAENETRESET == (err)) || (WSAECONNABORTED == (err)) || \
@@ -303,8 +262,8 @@
 #if defined(MHD_POSIX_SOCKETS)
 #    define mhd_SCKT_ERR_IS_LOW_RESOURCES(err) \
         ((0 != (err)) && \
-         ((MHD_EMFILE_OR_ZERO == (err)) || (MHD_ENFILE_OR_ZERO == (err)) || \
-          (MHD_ENOMEM_OR_ZERO == (err)) || (MHD_ENOBUFS_OR_ZERO == (err))))
+         ((mhd_EMFILE_OR_ZERO == (err)) || (mhd_ENFILE_OR_ZERO == (err)) || \
+          (mhd_ENOMEM_OR_ZERO == (err)) || (mhd_ENOBUFS_OR_ZERO == (err))))
 #elif defined(MHD_WINSOCK_SOCKETS)
 #  define mhd_SCKT_ERR_IS_LOW_RESOURCES(err) \
         ( (WSAEMFILE == (err)) || (WSAENOBUFS == (err)) )
@@ -319,7 +278,7 @@
 #if defined(MHD_POSIX_SOCKETS)
 #    define mhd_SCKT_ERR_IS_LOW_MEM(err) \
         ((0 != (err)) && \
-         ((MHD_ENOMEM_OR_ZERO == (err)) || (MHD_ENOBUFS_OR_ZERO == (err))))
+         ((mhd_ENOMEM_OR_ZERO == (err)) || (mhd_ENOBUFS_OR_ZERO == (err))))
 #elif defined(MHD_WINSOCK_SOCKETS)
 #  define mhd_SCKT_ERR_IS_LOW_MEM(err) (WSAENOBUFS == (err))
 #endif

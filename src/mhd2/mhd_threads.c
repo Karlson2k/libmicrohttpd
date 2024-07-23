@@ -37,7 +37,7 @@
 #    include <pthread_np.h>
 #  endif /* HAVE_PTHREAD_NP_H */
 #endif /* MHD_USE_THREAD_NAME_ */
-#include <errno.h>
+#include "sys_errno.h"
 #include "mhd_assert.h"
 
 #ifndef MHD_USE_THREAD_NAME_
