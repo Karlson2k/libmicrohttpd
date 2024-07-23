@@ -1550,7 +1550,8 @@ allocate_events (struct MHD_Daemon *restrict d)
     /* The pointers have been set to NULL during pre-initialisations of the events */
     mhd_assert (NULL == d->events.data.poll.fds);
     mhd_assert (NULL == d->events.data.poll.rel);
-    if (num_elements > d->conns.cfg.count_limit) /* Check for value overflow */
+    if ((num_elements > d->conns.cfg.count_limit) /* Check for value overflow */
+        || (mhd_D_HAS_THR_PER_CONN (d)))
     {
       d->events.data.poll.fds =
         (struct pollfd *) malloc (sizeof(struct pollfd) * num_elements);
@@ -1571,7 +1572,7 @@ allocate_events (struct MHD_Daemon *restrict d)
       }
     }
     mhd_LOG_MSG (d, MHD_SC_POLL_FDS_MEMORY_ALLOCATE_FAILURE, \
-                 "Failed to allocate memory for fd_sets for the daemon");
+                 "Failed to allocate memory for poll fds for the daemon");
     return MHD_SC_POLL_FDS_MEMORY_ALLOCATE_FAILURE;
     break;
 #endif /* MHD_USE_POLL */
@@ -1583,7 +1584,8 @@ allocate_events (struct MHD_Daemon *restrict d)
     /* The pointer has been set to NULL during pre-initialisations of the events */
     mhd_assert (NULL == d->events.data.epoll.events);
     mhd_assert (0 == d->events.data.epoll.num_elements);
-    if (num_elements > d->conns.cfg.count_limit) /* Check for value overflow */
+    if ((num_elements > d->conns.cfg.count_limit) /* Check for value overflow */
+        || (mhd_D_HAS_THR_PER_CONN (d)))
     {
       const unsigned int upper_limit = (sizeof(void*) >= 8) ? 4096 : 1024;
 
@@ -1605,9 +1607,9 @@ allocate_events (struct MHD_Daemon *restrict d)
         return MHD_SC_OK; /* Success exit point */
       }
     }
-    mhd_LOG_MSG (d, MHD_SC_POLL_FDS_MEMORY_ALLOCATE_FAILURE, \
-                 "Failed to allocate memory for fd_sets for the daemon");
-    return MHD_SC_POLL_FDS_MEMORY_ALLOCATE_FAILURE;
+    mhd_LOG_MSG (d, MHD_SC_EPOLL_EVENTS_MEMORY_ALLOCATE_FAILURE, \
+                 "Failed to allocate memory for epoll events for the daemon");
+    return MHD_SC_EPOLL_EVENTS_MEMORY_ALLOCATE_FAILURE;
     break;
 #endif /* MHD_USE_EPOLL */
 #ifndef MHD_USE_SELECT
@@ -2421,17 +2423,20 @@ daemon_init_threading_and_conn (struct MHD_Daemon *restrict d,
     return MHD_SC_INTERNAL_ERROR;
 #endif /* ! MHD_USE_THREADS */
   }
-  mhd_assert (d->dbg.events_allocated || \
-              mhd_D_TYPE_HAS_WORKERS (d->threading.d_type));
-  mhd_assert (! mhd_D_TYPE_HAS_WORKERS (d->threading.d_type) || \
-              ! d->dbg.events_allocated);
-  mhd_assert (! d->dbg.thread_pool_inited || \
-              mhd_D_TYPE_HAS_WORKERS (d->threading.d_type));
-  mhd_assert (! mhd_D_TYPE_HAS_WORKERS (d->threading.d_type) || \
-              d->dbg.thread_pool_inited);
-  mhd_assert (! mhd_D_TYPE_IS_INTERNAL_ONLY (d->threading.d_type));
-  mhd_assert (! d->dbg.events_allocated || d->dbg.connections_inited);
-  mhd_assert (! d->dbg.connections_inited || d->dbg.events_allocated);
+  if (MHD_SC_OK == res)
+  {
+    mhd_assert (d->dbg.events_allocated || \
+                mhd_D_TYPE_HAS_WORKERS (d->threading.d_type));
+    mhd_assert (! mhd_D_TYPE_HAS_WORKERS (d->threading.d_type) || \
+                ! d->dbg.events_allocated);
+    mhd_assert (! d->dbg.thread_pool_inited || \
+                mhd_D_TYPE_HAS_WORKERS (d->threading.d_type));
+    mhd_assert (! mhd_D_TYPE_HAS_WORKERS (d->threading.d_type) || \
+                d->dbg.thread_pool_inited);
+    mhd_assert (! mhd_D_TYPE_IS_INTERNAL_ONLY (d->threading.d_type));
+    mhd_assert (! d->dbg.events_allocated || d->dbg.connections_inited);
+    mhd_assert (! d->dbg.connections_inited || d->dbg.events_allocated);
+  }
   return res;
 }
 

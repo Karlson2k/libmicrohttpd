@@ -42,7 +42,7 @@ MHD_FN_MUST_CHECK_RESULT_ struct MHD_Daemon *
 mhd_daemon_get_master_daemon (struct MHD_Daemon *restrict d)
 {
 #ifdef MHD_USE_THREADS
-  if (mhd_D_TYPE_HAS_MASTER_DAEMON (d->threading.d_type))
+  if (mhd_D_HAS_MASTER (d))
     return d->threading.hier.master;
 #endif /* MHD_USE_THREADS */
   return d;
