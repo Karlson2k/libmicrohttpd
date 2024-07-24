@@ -38,23 +38,4 @@
 
 #include "microhttpd2.h"
 
-
-struct MHD_DaemonOptionValueSA
-{
-  struct sockaddr_storage ss;
-  size_t ss_len;
-};
-
-struct MHD_DaemonOptionEntropySeed
-{
-  uint32_t seed[256 / sizeof (uint32_t)];
-};
-
-
-void
-MHD_entropy_hash_ (struct MHD_DaemonOptionEntropySeed *seed,
-                   const void *entropy_input,
-                   size_t entropy_input_size);
-
-
 #endif /* ! MHD_PUBLIC_API_H */
