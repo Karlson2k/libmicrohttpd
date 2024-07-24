@@ -1129,16 +1129,19 @@ struct MHD_DynContentZCIoVec
    * The number of elements in @a iov
    */
   unsigned int iov_count;
+
   /**
    * The pointer to the array with @a iov_count elements.
    */
   const struct MHD_IoVec *iov;
+
   /**
    * The callback to free resources.
    * It is called once the full array of iov elements is sent.
    * No callback is called if NULL.
    */
   MHD_FreeCallback iov_fcb;
+
   /**
    * The parameter for @a iov_fcb
    */
@@ -1149,6 +1152,7 @@ struct MHD_DynContentZCIoVec
  * The action type returned by Dynamic Content Creator callback
  */
 struct MHD_DynamicContentCreatorAction;
+
 /**
  * The context used for Dynamic Content Creator callback
  */
@@ -1163,7 +1167,7 @@ struct MHD_DynamicContentCreatorContext;
  * The total size of the data in the buffer and in @a iov_data must
  * be non-zero.
  * @param[in,out] ctx the pointer the context as provided to the callback
- * @param data_size the amount of the data placed to the provided buffer,
+ * @param data_size the amount of the data placed to the provided buffer (not @a iov_data),
  *                  cannot be larger than provided buffer size,
  *                  must be non-zero if @a iov_data is NULL or has no data,
  * @param iov_data the optional pointer to the iov data,
@@ -1184,13 +1188,52 @@ MHD_DCC_action_continue_zc (
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_CSTR_ (4);
 
-#define MHD_DCC_action_continue(ctx,data_size,chunk_ext) \
+
+/**
+ * Set action to "continue processing", the data is provided in the
+ * buffer and/or in the zero-copy @a iov_data.
+ * If data is provided both in the buffer and @a ivo_data then
+ * data in the buffer sent first, following the iov data.
+ * The total size of the data in the buffer and in @a iov_data must
+ * be non-zero.
+ * @param[in,out] ctx the pointer the context as provided to the callback
+ * @param data_size the amount of the data placed to the provided buffer (not @a iov_data),
+ *                  cannot be larger than provided buffer size,
+ *                  must be non-zero.
+ * @param chunk_ext the optional pointer to chunk extension string,
+ *                  can be NULL to not use chunk extension,
+ *                  ignored if chunked encoding is not used
+ * @return the pointer to the action if succeed,
+ *         NULL (equivalent of MHD_DCC_action_abort())in case of any error
+ */
+#define MHD_DCC_action_continue_ce(ctx,data_size,chunk_ext) \
         MHD_DCC_action_continue_zc (ctx, data_size, NULL, chunk_ext)
+
+
+/**
+ * Set action to "continue processing", the data is provided in the
+ * buffer and/or in the zero-copy @a iov_data.
+ * If data is provided both in the buffer and @a ivo_data then
+ * data in the buffer sent first, following the iov data.
+ * The total size of the data in the buffer and in @a iov_data must
+ * be non-zero.
+ * @param[in,out] ctx the pointer the context as provided to the callback
+ * @param data_size the amount of the data placed to the provided buffer;
+ *                  cannot be larger than provided buffer size,
+ *                  must be non-zero.
+ *
+ * @return the pointer to the action if succeed,
+ *         NULL (equivalent of MHD_DCC_action_abort())in case of any error
+ */
+#define MHD_DCC_action_continue(ctx,data_size) \
+        MHD_DCC_action_continue_ce (ctx, data_size, NULL)
+
 
 /**
  * Set action to "finished".
  * If function failed for any reason, the action is automatically
  * set to "stop with error".
+ *
  * @param[in,out] ctx the pointer the context as provided to the callback
  * @param num_footers number of elements in the @a footers array,
  *                    must be zero if @a footers is NULL
@@ -1209,8 +1252,17 @@ MHD_DCC_action_finished_with_footer (
 MHD_FN_PAR_NONNULL_ (1);
 
 
-#define MHD_DCC_action_finished(action) \
-        MHD_DCC_set_action_finished_with_footer (action, 0, NULL)
+/**
+ * Set action to "finished".
+ * If function failed for any reason, the action is automatically
+ * set to "stop with error".
+ *
+ * @param[in,out] ctx the pointer the context as provided to the callback
+ * @return the pointer to the action if succeed,
+ *         NULL (equivalent of MHD_DCC_action_abort())in case of any error
+ */
+#define MHD_DCC_action_finished(ctx) \
+        MHD_DCC_set_action_finished_with_footer (ctx, 0, NULL)
 
 
 /**

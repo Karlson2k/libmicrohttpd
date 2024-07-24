@@ -238,6 +238,14 @@ main (int argc, char *argv[])
       .timeout_ms = 5000,
       .num_clients = 1
     },
+    {
+      .label = "chunked response get",
+      .server_cb = &MHDT_server_reply_chunked_text,
+      .server_cb_cls = "Hello world",
+      .client_cb = &MHDT_client_get_root,
+      .client_cb_cls = "Hello world",
+      .timeout_ms = 2500,
+    },
     // TODO: chunked download
     {
       .label = NULL,

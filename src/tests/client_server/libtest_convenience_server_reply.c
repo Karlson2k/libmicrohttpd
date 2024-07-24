@@ -366,3 +366,85 @@ MHDT_server_reply_check_upload (
                                          &check_upload_cb,
                                          (void *) want);
 }
+
+
+/**
+ * Closure for #chunk_return.
+ */
+struct ChunkContext
+{
+  /**
+   * Where we are in the buffer.
+   */
+  const char *pos;
+};
+
+
+/**
+ * Function that returns a string in chunks.
+ *
+ * @param dyn_cont_cls must be a `struct ChunkContext`
+ * @param ctx the context to produce the action to return,
+ *            the pointer is only valid until the callback returns
+ * @param pos position in the datastream to access;
+ *        note that if a `struct MHD_Response` object is re-used,
+ *        it is possible for the same content reader to
+ *        be queried multiple times for the same data;
+ *        however, if a `struct MHD_Response` is not re-used,
+ *        libmicrohttpd guarantees that "pos" will be
+ *        the sum of all data sizes provided by this callback
+ * @param[out] buf where to copy the data
+ * @param max maximum number of bytes to copy to @a buf (size of @a buf)
+ * @return action to use,
+ *         NULL in case of any error (the response will be aborted)
+ */
+static const struct MHD_DynamicContentCreatorAction *
+chunk_return (void *cls,
+              struct MHD_DynamicContentCreatorContext *ctx,
+              uint_fast64_t pos,
+              void *buf,
+              size_t max)
+{
+  struct ChunkContext *cc = cls;
+  size_t imax = strlen (cc->pos);
+  const char *space = strchr (cc->pos, ' ');
+
+  if (0 == imax)
+    return MHD_DCC_action_finished (ctx);
+  if (imax > space - cc->pos + 1)
+    imax = space - cc->pos;
+  if (imax > max)
+    imax = max;
+  memcpy (buf,
+          cc->pos,
+          imax);
+  cc->pos += imax;
+  return MHD_DCC_action_continue (ctx,
+                                  imax);
+}
+
+
+const struct MHD_Action *
+MHDT_server_reply_chunked_text (
+  void *cls,
+  struct MHD_Request *MHD_RESTRICT request,
+  const struct MHD_String *MHD_RESTRICT path,
+  enum MHD_HTTP_Method method,
+  uint_fast64_t upload_size)
+{
+  const char *text = cls;
+  struct ChunkContext *cc;
+
+  cc = malloc (sizeof (struct ChunkContext));
+  if (NULL == cc)
+    return NULL;
+  cc->pos = text;
+
+  return MHD_action_from_response (
+    request,
+    MHD_response_from_callback (MHD_HTTP_STATUS_OK,
+                                MHD_SIZE_UNKNOWN,
+                                &chunk_return,
+                                cc,
+                                &free));
+}

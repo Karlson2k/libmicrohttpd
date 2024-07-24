@@ -219,6 +219,35 @@ MHDT_server_reply_text (
 
 
 /**
+ * Returns the text from @a cls as the response to any
+ * request, but using chunks by returning @a cls
+ * word-wise (breaking into chunks at spaces).
+ *
+ * @param cls argument given together with the function
+ *        pointer when the handler was registered with MHD
+ * @param request the request object
+ * @param path the requested uri (without arguments after "?")
+ * @param method the HTTP method used (#MHD_HTTP_METHOD_GET,
+ *        #MHD_HTTP_METHOD_PUT, etc.)
+ * @param upload_size the size of the message upload content payload,
+ *                    #MHD_SIZE_UNKNOWN for chunked uploads (if the
+ *                    final chunk has not been processed yet)
+ * @return action how to proceed, NULL
+ *         if the request must be aborted due to a serious
+ *         error while handling the request (implies closure
+ *         of underling data stream, for HTTP/1.1 it means
+ *         socket closure).
+ */
+const struct MHD_Action *
+MHDT_server_reply_chunked_text (
+  void *cls,
+  struct MHD_Request *MHD_RESTRICT request,
+  const struct MHD_String *MHD_RESTRICT path,
+  enum MHD_HTTP_Method method,
+  uint_fast64_t upload_size);
+
+
+/**
  * Returns writes text from @a cls to a temporary file
  * and then uses the file descriptor to serve the
  * content to the client.
