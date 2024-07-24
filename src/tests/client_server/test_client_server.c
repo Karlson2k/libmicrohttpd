@@ -153,7 +153,6 @@ main (int argc, char *argv[])
       .client_cb_cls = "Hello world",
       .timeout_ms = 2500,
     },
-#if 0 // enable when file support finalised
     {
       .label = "GET with sendfile",
       .server_cb = &MHDT_server_reply_file,
@@ -162,7 +161,6 @@ main (int argc, char *argv[])
       .client_cb_cls = "Hello world",
       .timeout_ms = 2500,
     },
-#endif
     {
       .label = "client PUT with content-length",
       .server_cb = &MHDT_server_reply_check_upload,

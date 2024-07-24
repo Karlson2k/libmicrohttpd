@@ -63,7 +63,7 @@ mhd_send_init_static_vars (void);
 MHD_INTERNAL enum mhd_SocketError
 mhd_send_data (struct MHD_Connection *restrict connection,
                size_t buf_size,
-               const char buf[MHD_FN_PAR_DYN_ARR_SIZE_(buf_size)],
+               const char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
                bool push_data,
                size_t *restrict sent)
 MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_ (3,2) MHD_FN_PAR_OUT_ (5);
@@ -92,12 +92,12 @@ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_ (3,2) MHD_FN_PAR_OUT_ (5);
 MHD_INTERNAL enum mhd_SocketError
 mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
                        size_t header_size,
-                        const char *restrict header,
-                        bool never_push_hdr,
-                        size_t body_size,
-                        const char *restrict body,
-                        bool complete_response,
-                        size_t *restrict sent)
+                       const char *restrict header,
+                       bool never_push_hdr,
+                       size_t body_size,
+                       const char *restrict body,
+                       bool complete_response,
+                       size_t *restrict sent)
 MHD_FN_PAR_NONNULL_(1) MHD_FN_PAR_NONNULL_(3)
 MHD_FN_PAR_IN_SIZE_ (3,2) MHD_FN_PAR_IN_SIZE_ (6,5) MHD_FN_PAR_OUT_ (8);
 
@@ -112,9 +112,9 @@ MHD_FN_PAR_IN_SIZE_ (3,2) MHD_FN_PAR_IN_SIZE_ (6,5) MHD_FN_PAR_OUT_ (8);
  *         the sent size) or socket error
  */
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (2) enum mhd_SocketError
-mhd_send_sendfile (struct MHD_Connection *restrict connection,
+mhd_send_sendfile (struct MHD_Connection *restrict c,
                    size_t *restrict sent)
-MHD_FN_PAR_NONNULL_ALL_ ;
+MHD_FN_PAR_NONNULL_ALL_;
 
 #endif
 
@@ -167,7 +167,7 @@ MHD_FN_PAR_NONNULL_ALL_;
  */
 MHD_INTERNAL bool
 mhd_connection_set_cork_state (struct MHD_Connection *connection,
-                                bool cork_state)
+                               bool cork_state)
 MHD_FN_PAR_NONNULL_ALL_;
 
 

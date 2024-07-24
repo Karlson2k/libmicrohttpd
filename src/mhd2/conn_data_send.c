@@ -87,6 +87,8 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
   // TODO: TLS support, handshake
 #endif /* HTTPS_SUPPORT */
 
+  // TODO: MOVE out STATES PROCESSING
+
   res = mhd_SOCKET_ERR_INTERNAL;
 
   if (MHD_CONNECTION_CONTINUE_SENDING == c->state)
@@ -223,6 +225,15 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
       mhd_assert (mhd_RESPONSE_CONTENT_DATA_FILE == resp->cntn_dtype);
 
       res = mhd_send_sendfile (c, &sent);
+      if (mhd_SOCKET_ERR_INTR == res)
+      {
+        if (! c->rp.response->cntn.file.use_sf)
+        { /* Switch to filereader */
+          mhd_assert (! c->rp.props.chunked);
+          c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_CONN_BUF;
+          c->state = MHD_CONNECTION_UNCHUNKED_BODY_UNREADY;
+        }
+      }
     }
 #endif /* MHD_USE_SENDFILE */
     else
@@ -234,20 +245,31 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
     if (mhd_SOCKET_ERR_NO_ERROR == res)
     {
       if (mhd_REPLY_CNTN_LOC_CONN_BUF == c->rp.cntn_loc)
+      {
+        enum MHD_CONNECTION_STATE next_state;
         c->write_buffer_send_offset += sent;
+        // TODO: move it to data processing
+        if (MHD_CONNECTION_CHUNKED_BODY_READY == c->state)
+          next_state =
+            (c->rp.response->cntn_size == c->rp.rsp_cntn_read_pos) ?
+            MHD_CONNECTION_CHUNKED_BODY_SENT :
+            MHD_CONNECTION_CHUNKED_BODY_UNREADY;
+        else
+          next_state =
+            (c->rp.rsp_cntn_read_pos == resp->cntn_size) ?
+            MHD_CONNECTION_FULL_REPLY_SENT :
+            MHD_CONNECTION_UNCHUNKED_BODY_UNREADY;
+        check_write_done (c,
+                          next_state);
+      }
       else
+      {
         c->rp.rsp_cntn_read_pos += sent;
+        if (c->rp.rsp_cntn_read_pos == resp->cntn_size)
+          c->state = MHD_CONNECTION_FULL_REPLY_SENT;
+      }
     }
 
-    if (MHD_CONNECTION_CHUNKED_BODY_READY == c->state)
-    {
-      // TODO: move it to data processing
-      check_write_done (c,
-                        (c->rp.response->cntn_size ==
-                         c->rp.rsp_cntn_read_pos) ?
-                        MHD_CONNECTION_CHUNKED_BODY_SENT :
-                        MHD_CONNECTION_CHUNKED_BODY_UNREADY);
-    }
   }
   else if (MHD_CONNECTION_FOOTERS_SENDING == c->state)
   {

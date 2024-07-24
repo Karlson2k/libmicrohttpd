@@ -210,16 +210,6 @@ MHD_response_from_iovec (
   size_t i_cp = 0;   /**< Index in the copy of iov */
   uint_fast64_t total_size = 0;
 
-#if 0
-  response = mhd_calloc (1, sizeof (struct MHD_Response));
-  if (NULL == response)
-    return NULL;
-  if (! MHD_mutex_init_ (&response->mutex))
-  {
-    free (response);
-    return NULL;
-  }
-#endif
   /* Calculate final size, number of valid elements, and check 'iov' */
   for (i = 0; i < iov_count; ++i)
   {
@@ -321,6 +311,13 @@ MHD_response_from_fd (enum MHD_HTTP_StatusCode sc,
                       uint_fast64_t size)
 {
   struct MHD_Response *restrict res;
+  if (offset == MHD_SIZE_UNKNOWN)
+    return NULL;
+  if (size != MHD_SIZE_UNKNOWN)
+  {
+    if (size > ((size + offset) & 0xFFFFFFFFFFFFFFFFU))
+      return NULL;
+  }
   res = response_create_basic (sc, size, NULL, NULL);
   if (NULL != res)
   {
@@ -328,7 +325,7 @@ MHD_response_from_fd (enum MHD_HTTP_StatusCode sc,
     res->cntn.file.fd = fd;
     res->cntn.file.offset = offset;
 #ifdef MHD_USE_SENDFILE
-    res->cntn.file.use_sf = true;
+    res->cntn.file.use_sf = (size < MHD_SIZE_UNKNOWN);
 #endif
     res->cntn.file.is_pipe = false; /* Not necessary */
   }
@@ -354,7 +351,6 @@ MHD_response_from_pipe (enum MHD_HTTP_StatusCode sc,
     res->cntn.file.is_pipe = true;
   }
   return res;
-
 }
 
 

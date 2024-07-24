@@ -45,6 +45,7 @@
 #include "mhd_sockets_macros.h"
 #include "daemon_logger.h"
 
+#include "mhd_daemon.h"
 #include "mhd_connection.h"
 #include "mhd_response.h"
 
@@ -1106,218 +1107,232 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
 }
 
 
-#if defined(MHD_USE_SENDFILE) // TODO: adapt, update
+#if defined(MHD_USE_SENDFILE)
+
+#if defined(HAVE_LINUX_SENDFILE) && defined(HAVE_SENDFILE64)
+#  define mhd_off_t off64_t
+#else
+#  define mhd_off_t off_t
+#endif
+
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_OUT_ (2) enum mhd_SocketError
-mhd_send_sendfile (struct MHD_Connection *restrict connection,
+mhd_send_sendfile (struct MHD_Connection *restrict c,
                    size_t *restrict sent)
 {
-#if 0
-  ssize_t ret;
-  const int file_fd = connection->rp.response->fd;
-  uint64_t left;
-  uint64_t offsetu64;
-#ifndef HAVE_SENDFILE64
-  const uint64_t max_off_t = (uint64_t) OFF_T_MAX;
-#else  /* HAVE_SENDFILE64 */
-  const uint64_t max_off_t = (uint64_t) OFF64_T_MAX;
-#endif /* HAVE_SENDFILE64 */
-#ifdef MHD_LINUX_SOLARIS_SENDFILE
-#ifndef HAVE_SENDFILE64
-  off_t offset;
-#else  /* HAVE_SENDFILE64 */
-  off64_t offset;
-#endif /* HAVE_SENDFILE64 */
-#endif /* MHD_LINUX_SOLARIS_SENDFILE */
-#ifdef HAVE_FREEBSD_SENDFILE
-  off_t sent_bytes;
-  int flags = 0;
-#endif
-#ifdef HAVE_DARWIN_SENDFILE
-  off_t len;
-#endif /* HAVE_DARWIN_SENDFILE */
+  enum mhd_SocketError ret;
   const bool used_thr_p_c =
-    MHD_D_IS_USING_THREAD_PER_CONN_ (connection->daemon);
-  const size_t chunk_size = used_thr_p_c ? mhd_SENFILE_CHUNK_SIZE_FOR_THR_P_C :
-                            mhd_SENFILE_CHUNK_SIZE;
-  size_t send_size = 0;
+    mhd_D_HAS_THR_PER_CONN (c->daemon);
+  const size_t chunk_size =
+    used_thr_p_c ?
+    mhd_SENFILE_CHUNK_SIZE_FOR_THR_P_C : mhd_SENFILE_CHUNK_SIZE;
+  const int file_fd = c->rp.response->cntn.file.fd;
+  mhd_off_t offset;
+  size_t send_size;
+  size_t sent_bytes;
   bool push_data;
-  mhd_assert (mhd_resp_sender_sendfile == connection->rp.resp_sender);
-  mhd_assert (0 == (connection->daemon->options & MHD_USE_TLS));
+  bool fallback_to_filereader;
+  mhd_assert (mhd_REPLY_CNTN_LOC_FILE == c->rp.cntn_loc);
+  mhd_assert (MHD_SIZE_UNKNOWN != c->rp.response->cntn_size);
+  mhd_assert (chunk_size <= (size_t) SSIZE_MAX);
+  // mhd_assert (0 == (connection->daemon->options & MHD_USE_TLS)); // TODO: TLS support
 
-  offsetu64 = connection->rp.rsp_cntn_read_pos
-              + connection->rp.response->fd_off;
-  if (max_off_t < offsetu64)
-  {   /* Retry to send with standard 'send()'. */
-    connection->rp.resp_sender = mhd_resp_sender_std;
-    return MHD_ERR_AGAIN_;
-  }
-
-  left = connection->rp.response->total_size
-         - connection->rp.rsp_cntn_read_pos;
-
-  if ( (uint64_t) SSIZE_MAX < left)
-    left = SSIZE_MAX;
-
-  /* Do not allow system to stick sending on single fast connection:
-   * use 128KiB chunks (2MiB for thread-per-connection). */
-  if (chunk_size < left)
+  send_size = 0;
+  push_data = true;
+  if (1)
   {
-    send_size = chunk_size;
-    push_data = false; /* No need to push data, there is more to send. */
-  }
-  else
-  {
-    send_size = (size_t) left;
-    push_data = true; /* Final piece of data, need to push to the network. */
-  }
-  pre_send_setopt (connection, false, push_data);
+    bool too_large;
+    uint_fast64_t left;
 
-#ifdef MHD_LINUX_SOLARIS_SENDFILE
+    offset = (mhd_off_t)
+             (c->rp.rsp_cntn_read_pos + c->rp.response->cntn.file.offset);
+    too_large = (((uint_fast64_t) offset) < c->rp.rsp_cntn_read_pos);
+    too_large = too_large ||
+                (((uint_fast64_t) offset) !=
+                 (c->rp.rsp_cntn_read_pos + c->rp.response->cntn.file.offset));
+    too_large = too_large || (0 > offset);
+    if (too_large)
+    {   /* Retry to send with file reader and standard 'send()'. */
+      c->rp.response->cntn.file.use_sf = false;
+      return mhd_SOCKET_ERR_INTR;
+    }
+
+    left = c->rp.response->cntn_size - c->rp.rsp_cntn_read_pos;
+
+    /* Do not allow system to stick sending on single fast connection:
+     * use 128KiB chunks (2MiB for thread-per-connection). */
+    if (chunk_size < left) /* This also limit to SSIZE_MAX automatically */
+    {
+      send_size = chunk_size;
+      push_data = false; /* No need to push data, there is more to send. */
+    }
+    else
+      send_size = (size_t) left;
+  }
+  mhd_assert (0 != send_size);
+
+  pre_send_setopt (c, false, push_data);
+
+  sent_bytes = 0;
+  ret = mhd_SOCKET_ERR_NO_ERROR;
+  fallback_to_filereader = false;
+#if defined(HAVE_LINUX_SENDFILE)
+  if (1)
+  {
+    ssize_t res;
 #ifndef HAVE_SENDFILE64
-  offset = (off_t) offsetu64;
-  ret = sendfile (connection->socket_fd,
-                  file_fd,
-                  &offset,
-                  send_size);
-#else  /* HAVE_SENDFILE64 */
-  offset = (off64_t) offsetu64;
-  ret = sendfile64 (connection->socket_fd,
+    ret = sendfile (c->socket_fd,
                     file_fd,
                     &offset,
                     send_size);
+#else  /* HAVE_SENDFILE64 */
+    res = sendfile64 (c->socket_fd,
+                      file_fd,
+                      &offset,
+                      send_size);
 #endif /* HAVE_SENDFILE64 */
-  if (0 > ret)
-  {
-    const int err = mhd_socket_get_error ();
-    if (MHD_SCKT_ERR_IS_EAGAIN_ (err))
+    if (0 > res)
     {
-#ifdef EPOLL_SUPPORT
-      /* EAGAIN --- no longer write-ready */
-      connection->epoll_state &=
-        ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
-#endif /* EPOLL_SUPPORT */
-      return MHD_ERR_AGAIN_;
-    }
-    if (MHD_SCKT_ERR_IS_EINTR_ (err))
-      return MHD_ERR_AGAIN_;
-#ifdef HAVE_LINUX_SENDFILE
-    if (MHD_SCKT_ERR_IS_ (err,
-                          MHD_SCKT_EBADF_))
-      return MHD_ERR_BADF_;
-    /* sendfile() failed with EINVAL if mmap()-like operations are not
-       supported for FD or other 'unusual' errors occurred, so we should try
-       to fall back to 'SEND'; see also this thread for info on
-       odd libc/Linux behavior with sendfile:
-       http://lists.gnu.org/archive/html/libmicrohttpd/2011-02/msg00015.html */
-    connection->rp.resp_sender = mhd_resp_sender_std;
-    return MHD_ERR_AGAIN_;
-#else  /* HAVE_SOLARIS_SENDFILE */
-    if ( (EAFNOSUPPORT == err) ||
-         (EINVAL == err) ||
-         (EOPNOTSUPP == err) )
-    {     /* Retry with standard file reader. */
-      connection->rp.resp_sender = mhd_resp_sender_std;
-      return MHD_ERR_AGAIN_;
-    }
-    if ( (ENOTCONN == err) ||
-         (EPIPE == err) )
-    {
-      return MHD_ERR_CONNRESET_;
-    }
-    return MHD_ERR_BADF_;   /* Fail hard */
-#endif /* HAVE_SOLARIS_SENDFILE */
-  }
-#ifdef EPOLL_SUPPORT
-  else if (send_size > (size_t) ret)
-    connection->epoll_state &=
-      ~((enum MHD_EpollState) MHD_EPOLL_STATE_WRITE_READY);
-#endif /* EPOLL_SUPPORT */
-#elif defined(HAVE_FREEBSD_SENDFILE)
-#ifdef SF_FLAGS
-  flags = used_thr_p_c ?
-          freebsd_sendfile_flags_thd_p_c_ : freebsd_sendfile_flags_;
-#endif /* SF_FLAGS */
-  if (0 != sendfile (file_fd,
-                     connection->socket_fd,
-                     (off_t) offsetu64,
-                     send_size,
-                     NULL,
-                     &sent_bytes,
-                     flags))
-  {
-    const int err = mhd_socket_get_error ();
-    if (MHD_SCKT_ERR_IS_EAGAIN_ (err) ||
-        MHD_SCKT_ERR_IS_EINTR_ (err) ||
-        (EBUSY == err) )
-    {
-      mhd_assert (SSIZE_MAX >= sent_bytes);
-      if (0 != sent_bytes)
-        return (ssize_t) sent_bytes;
+      const int sk_err = mhd_SCKT_GET_LERR ();
 
-      return MHD_ERR_AGAIN_;
+      if ((EINVAL == sk_err) ||
+          (EOVERFLOW == sk_err) ||
+#ifdef EIO
+          (EIO == sk_err) ||
+#endif
+#ifdef EAFNOSUPPORT
+          (EAFNOSUPPORT == sk_err) ||
+#endif
+          (EOPNOTSUPP == sk_err))
+        fallback_to_filereader = true;
+      else
+        ret = mhd_socket_error_get_from_sys_err (sk_err);
     }
-    /* Some unrecoverable error. Possibly file FD is not suitable
-     * for sendfile(). Retry with standard send(). */
-    connection->rp.resp_sender = mhd_resp_sender_std;
-    return MHD_ERR_AGAIN_;
+    else
+      sent_bytes = (size_t) res;
   }
-  mhd_assert (0 < sent_bytes);
-  mhd_assert (SSIZE_MAX >= sent_bytes);
-  ret = (ssize_t) sent_bytes;
-#elif defined(HAVE_DARWIN_SENDFILE)
-  len = (off_t) send_size; /* chunk always fit */
-  if (0 != sendfile (file_fd,
-                     connection->socket_fd,
-                     (off_t) offsetu64,
-                     &len,
-                     NULL,
-                     0))
+#elif defined(HAVE_FREEBSD_SENDFILE)
+  if (1)
   {
-    const int err = mhd_socket_get_error ();
-    if (MHD_SCKT_ERR_IS_EAGAIN_ (err) ||
-        MHD_SCKT_ERR_IS_EINTR_ (err))
+    off_t sent_bytes_offt = 0;
+    int flags = 0;
+    bool sent_something = false;
+#ifdef SF_FLAGS
+    flags = used_thr_p_c ?
+            freebsd_sendfile_flags_thd_p_c_ : freebsd_sendfile_flags_;
+#endif /* SF_FLAGS */
+    if (0 != sendfile (file_fd,
+                       c->socket_fd,
+                       offset,
+                       send_size,
+                       NULL,
+                       &sent_bytes_offt,
+                       flags))
+    {
+      const int sk_err = mhd_SCKT_GET_LERR ();
+
+      sent_something =
+        (((EAGAIN == sk_err) || (EBUSY == sk_err) || (EINTR == sk_err)) &&
+         (0 != sent_bytes_offt));
+
+      if (! sent_something)
+      {
+        enum mhd_SocketError err;
+        if ((EINVAL == sk_err) ||
+            (EIO == sk_err) ||
+            (EOPNOTSUPP == sk_err))
+          fallback_to_filereader = true;
+        else
+          ret = mhd_socket_error_get_from_sys_err (sk_err);
+      }
+    }
+    else
+      sent_something = true;
+
+    if (sent_something)
+    {
+      mhd_assert (0 <= sent_bytes_offt);
+      mhd_assert (SIZE_MAX >= sent_bytes_offt);
+      sent_bytes = (size_t) sent_bytes_offt;
+    }
+  }
+#elif defined(HAVE_DARWIN_SENDFILE)
+  if (1)
+  {
+    off_t len;
+    bool sent_something;
+
+    sent_something = false;
+    len = (off_t) send_size; /* chunk always fit */
+
+    if (0 != sendfile (file_fd,
+                       c->socket_fd,
+                       offset,
+                       &len,
+                       NULL,
+                       0))
+    {
+      const int sk_err = mhd_SCKT_GET_LERR ();
+
+      sent_something =
+        ((EAGAIN == sk_err) || (EINTR == sk_err)) &&
+        (0 != len);
+
+      if (! sent_something)
+      {
+        enum mhd_SocketError err;
+        if ((ENOTSUP == sk_err) ||
+            (EOPNOTSUPP == sk_err))
+          fallback_to_filereader = true;
+        else
+          ret = mhd_socket_error_get_from_sys_err (sk_err);
+      }
+    }
+    else
+      sent_something = true;
+
+    if (sent_something)
     {
       mhd_assert (0 <= len);
-      mhd_assert (SSIZE_MAX >= len);
-      mhd_assert (send_size >= (size_t) len);
-      if (0 != len)
-        return (ssize_t) len;
-
-      return MHD_ERR_AGAIN_;
+      mhd_assert (SIZE_MAX >= len);
+      sent_bytes = (size_t) len;
     }
-    if ((ENOTCONN == err) ||
-        (EPIPE == err) )
-      return MHD_ERR_CONNRESET_;
-    if ((ENOTSUP == err) ||
-        (EOPNOTSUPP == err) )
-    {     /* This file FD is not suitable for sendfile().
-           * Retry with standard send(). */
-      connection->rp.resp_sender = mhd_resp_sender_std;
-      return MHD_ERR_AGAIN_;
-    }
-    return MHD_ERR_BADF_;   /* Return hard error. */
   }
-  mhd_assert (0 <= len);
-  mhd_assert (SSIZE_MAX >= len);
-  mhd_assert (send_size >= (size_t) len);
-  ret = (ssize_t) len;
-#endif /* HAVE_FREEBSD_SENDFILE */
+#else
+#error No sendfile() function
+#endif
+
+  mhd_assert (send_size >= sent_bytes);
+
+  /* Some platforms indicate "beyond of the end of the file" by returning
+   * success with zero bytes. Let filereader to re-detect this kind of error. */
+  if ((fallback_to_filereader) ||
+      ((mhd_SOCKET_ERR_NO_ERROR == ret) && (0 == sent_bytes)))
+  {   /* Retry to send with file reader and standard 'send()'. */
+    c->rp.response->cntn.file.use_sf = false;
+    return mhd_SOCKET_ERR_INTR;
+  }
+
+  if ((mhd_SOCKET_ERR_AGAIN == ret) ||
+      ((mhd_SOCKET_ERR_NO_ERROR == ret) && (send_size > sent_bytes)))
+    c->sk_ready = (enum mhd_SocketNetState) /* Clear 'send-ready' */
+                  (((unsigned int) c->sk_ready)
+                   & (~(enum mhd_SocketNetState)
+                      mhd_SOCKET_NET_STATE_SEND_READY));
+
+  if (mhd_SOCKET_ERR_NO_ERROR != ret)
+    return ret;
 
   /* If there is a need to push the data from network buffers
    * call post_send_setopt(). */
   /* It's unknown whether sendfile() will be used in the next
    * response so assume that next response will be the same. */
-  if ( (push_data) &&
-       (send_size == (size_t) ret) )
-    post_send_setopt (connection, false, push_data);
+  if ((push_data) &&
+      (send_size == sent_bytes))
+    post_send_setopt (c, true, push_data);
 
+  *sent = sent_bytes;
   return ret;
-#else
-  (void) connection; (void) sent;
-  mhd_assert (0 && "Not implemented yet");
-  return mhd_SOCKET_ERR_INTERNAL;
-#endif
 }
 
 
