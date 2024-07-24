@@ -72,7 +72,7 @@ Argument1: size_t sa_len
 Description1: the size of the socket address pointed by @a sa.
 Argument2: /* const */ struct sockaddr *sa
 Description2: the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or even a UNIX domain socket (AF_UNIX)
-Argument3: enum MHD_Bool v_dual
+Argument3: enum MHD_Bool dual
 Description3: When a previous version of the protocol exist (like IPv4 when @a v_sa is IPv6) bind to both protocols (IPv6 and IPv4).
 CustomSetter: /* custom setter */
 +  if (0 != option->val.bind_sa.v_sa_len)
@@ -380,7 +380,7 @@ Comment: Set strong random data to be used by MHD.
 + Sizes larger then 32 (or, probably, larger than 16 - debatable) will not increase the security.
 Argument1: size_t buf_size
 Description1: the size of the buffer
-Argument2: const void *buf
+Argument2: /* const */ void *buf
 Description2: the buffer with strong random data, the content will be copied by MHD
 Type: struct MHD_DaemonOptionEntropySeed
 CustomSetter: /* custom setter */
