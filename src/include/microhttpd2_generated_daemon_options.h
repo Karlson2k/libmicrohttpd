@@ -1,3 +1,5 @@
+/* EDITED MANUALLY */
+
 /**
  * The options (parameters) for MHD daemon
  */
@@ -569,7 +571,7 @@ struct MHD_DaemonOptionValueNotifStreamCB
 /**
  * Data for #MHD_D_O_RANDOM_ENTROPY
  */
-struct MHD_DaemonOptionEntropySeed
+struct MHD_DaemonOptionValueRand
 {
   /**
    * the size of the buffer
@@ -793,7 +795,7 @@ union MHD_DaemonOptionValue
    * Value for #MHD_D_O_RANDOM_ENTROPY.
    * the size of the buffer
    */
-  struct MHD_DaemonOptionEntropySeed random_entropy;
+  struct MHD_DaemonOptionValueRand random_entropy;
 
   /**
    * Value for #MHD_D_O_DAUTH_MAP_SIZE.

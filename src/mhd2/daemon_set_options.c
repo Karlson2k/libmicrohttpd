@@ -6,6 +6,8 @@
  * @author daemon-options-generator.c
  */
 
+/* EDITED MANUALLY */
+
 #include "mhd_sys_options.h"
 #include "sys_base_types.h"
 #include "sys_malloc.h"
@@ -14,24 +16,22 @@
 #include "daemon_options.h"
 #include "mhd_public_api.h"
 
-MHD_FN_PAR_NONNULL_ALL_ MHD_EXTERN_
-enum MHD_StatusCode
-MHD_daemon_set_options (
-  struct MHD_Daemon *daemon,
-  const struct MHD_DaemonOptionAndValue *options,
-  size_t options_max_num)
+
+MHD_FN_PAR_NONNULL_ALL_ MHD_EXTERN_ enum MHD_StatusCode
+MHD_daemon_set_options (struct MHD_Daemon *daemon,
+                        const struct MHD_DaemonOptionAndValue *options,
+                        size_t options_max_num)
 {
-  struct DaemonOptions *const settings = daemon->psettings;
+  struct DaemonOptions *const settings = daemon->settings;
   size_t i;
 
-  if (NULL == settings)
+  if (mhd_DAEMON_STATE_NOT_STARTED != daemon->state)
     return MHD_SC_TOO_LATE;
 
-  for (i = 0; i < options_max_num; i++)
+  for (i=0;i<options_max_num;i++)
   {
-    const struct MHD_daemonOptionAndValue *const option = options + i;
-    switch (option->opt)
-    {
+    const struct MHD_DaemonOptionAndValue *const option = options + i;
+    switch (option->opt) {
     case MHD_D_O_END:
       return MHD_SC_OK;
     case MHD_D_O_WORK_MODE:
@@ -41,7 +41,7 @@ MHD_daemon_set_options (
       settings->poll_syscall = option->val.poll_syscall;
       continue;
     case MHD_D_O_LOG_CALLBACK:
-      /* Note: set directly to the daemon */
+      /* Note: set directly to the daemon! */
       daemon->log_params = option->val.log_callback;
       continue;
     case MHD_D_O_BIND_PORT:
@@ -49,13 +49,21 @@ MHD_daemon_set_options (
       settings->bind_port.v_port = option->val.bind_port.v_port;
       continue;
     case MHD_D_O_BIND_SA:
-      /* custom setter */
-        if (option->val.bind_sa.v_sa_len > sizeof (bind_sa))
-          return MHD_SC_OPTIONS_INVALID;
-        memcpy (&settings->bind_sa.ss,
-                option->val.bind_sa.v_sa,
+      /* The is not an easy for automatic generations */
+      if (0 != option->val.bind_sa.v_sa_len)
+      {
+        if (NULL != settings->bind_sa.v_sa)
+          free (settings->bind_sa.v_sa);
+
+        settings->bind_sa.v_sa = malloc (option->val.bind_sa.v_sa_len);
+        if (NULL == settings->bind_sa.v_sa)
+          return MHD_SC_DAEMON_MALLOC_FAILURE;
+
+        memcpy (settings->bind_sa.v_sa, option->val.bind_sa.v_sa,
                 option->val.bind_sa.v_sa_len);
-        settings->bind_sa.ss_len = option->val.bind_sa.v_sa_len;
+        settings->bind_sa.v_sa_len = option->val.bind_sa.v_sa_len;
+        settings->bind_sa.v_dual = option->val.bind_sa.v_dual;
+      }
       continue;
     case MHD_D_O_LISTEN_SOCKET:
       settings->listen_socket = option->val.listen_socket;
@@ -158,12 +166,22 @@ MHD_daemon_set_options (
       settings->notify_stream.v_cls = option->val.notify_stream.v_cls;
       continue;
     case MHD_D_O_RANDOM_ENTROPY:
-      /* custom setter */
+      /* The is not an easy for automatic generations */
       if (0 != option->val.random_entropy.v_buf_size)
       {
-        MHD_entropy_hash_ (&settings->random_entropy,
-                           option->val.random_entropy.v_buf,
-                           option->val.random_entropy.v_buf_size);
+        if (NULL != settings->random_entropy.v_buf)
+          free (settings->random_entropy.v_buf);
+
+        settings->random_entropy.v_buf =
+          malloc (option->val.random_entropy.v_buf_size);
+        if (NULL == settings->random_entropy.v_buf)
+          return MHD_SC_DAEMON_MALLOC_FAILURE;
+
+        memcpy (settings->random_entropy.v_buf,
+                option->val.random_entropy.v_buf,
+                option->val.random_entropy.v_buf_size);
+        settings->random_entropy.v_buf_size =
+          option->val.random_entropy.v_buf_size;
       }
       continue;
     case MHD_D_O_DAUTH_MAP_SIZE:
@@ -179,7 +197,7 @@ MHD_daemon_set_options (
       settings->dauth_def_max_nc = option->val.dauth_def_max_nc;
       continue;
     case MHD_D_O_SENTINEL:
-    default: /* for -WFIXME_EG */ 
+    default:
       break;
     }
     return MHD_SC_OPTION_UNKNOWN;
