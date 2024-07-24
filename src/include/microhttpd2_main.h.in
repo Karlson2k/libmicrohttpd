@@ -90,9 +90,10 @@
  *         error code otherwise
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_options (struct MHD_Daemon *daemon,
-                        const struct MHD_DaemonOptionAndValue *options,
-                        size_t options_max_num)
+MHD_daemon_set_options (
+  struct MHD_Daemon *MHD_RESTRICT daemon,
+  const struct MHD_DaemonOptionAndValue *MHD_RESTRICT options,
+  size_t options_max_num)
 MHD_FN_PAR_NONNULL_ALL_;
 
 
@@ -230,9 +231,6 @@ MHD_FN_PAR_NONNULL_ (1);
  * other things required to run webserver.
  * Once all connections are processed, function returns.
  *
- * The optional @a next_max_wait pointer returns the same value as
- * if #MHD_DAEMON_INFO_DYNAMIC_MAX_TIME_TO_WAIT would requested immediately.
- *
  * @param daemon the daemon to run
  * @return #MHD_SC_OK on success, otherwise
  *         an error code
@@ -252,6 +250,7 @@ MHD_FN_PAR_NONNULL_ (1);
  * The given client socket will be managed (and closed!) by MHD after
  * this call and must no longer be used directly by the application
  * afterwards.
+ * The client socket will be closed by MHD even if error returned.
  *
  * @param daemon daemon that manages the connection
  * @param client_socket socket to manage (MHD will expect
@@ -265,7 +264,7 @@ MHD_FN_PAR_NONNULL_ (1);
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_add_connection (struct MHD_Daemon *daemon,
+MHD_daemon_add_connection (struct MHD_Daemon *MHD_RESTRICT daemon,
                            MHD_Socket client_socket,
                            size_t addrlen,
                            const struct sockaddr *addr,
@@ -433,8 +432,8 @@ MHD_RESTORE_WARN_UNUSED_FUNC_
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_connection_set_options (
-  struct MHD_Connection *connection,
-  const struct MHD_ConnectionOptionAndValue *options,
+  struct MHD_Connection *MHD_RESTRICT connection,
+  const struct MHD_ConnectionOptionAndValue *MHD_RESTRICT options,
   size_t options_max_num)
 MHD_FN_PAR_NONNULL_ALL_;
 
@@ -678,14 +677,15 @@ MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_OUT_SIZE_ (4,3);
  *
  * @param request request to get values from
  * @param kind what kind of value are we looking for
- * @param key the header to look for, NULL to lookup 'trailing' value without a key
+ * @param key the header to look for, empty to lookup 'trailing' value
+ *            without a key
  * @return NULL if no such item was found
  * @ingroup request
  */
-MHD_EXTERN_ const struct MHD_String *
-MHD_request_get_value (struct MHD_Request *request,
+MHD_EXTERN_ const struct MHD_StringNullable *
+MHD_request_get_value (struct MHD_Request *MHD_RESTRICT request,
                        enum MHD_ValueKind kind,
-                       const char *key)
+                       const char *MHD_RESTRICT key)
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
 
@@ -696,140 +696,220 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
  * @defgroup httpcode HTTP response codes
  * @{
  */
+/* Registry export date: 2023-09-29 */
 /* See http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml */
 enum MHD_FIXED_ENUM_APP_SET_ MHD_HTTP_StatusCode
 {
+  /* 100 "Continue".            RFC9110, Section 15.2.1. */
+  MHD_HTTP_STATUS_CONTINUE =                    100
+  ,
+  /* 101 "Switching Protocols". RFC9110, Section 15.2.2. */
+  MHD_HTTP_STATUS_SWITCHING_PROTOCOLS =         101
+  ,
+  /* 102 "Processing".          RFC2518. */
+  MHD_HTTP_STATUS_PROCESSING =                  102
+  ,
+  /* 103 "Early Hints".         RFC8297. */
+  MHD_HTTP_STATUS_EARLY_HINTS =                 103
+  ,
 
-  MHD_HTTP_STATUS_CONTINUE = 100
+  /* 200 "OK".                  RFC9110, Section 15.3.1. */
+  MHD_HTTP_STATUS_OK =                          200
   ,
-  MHD_HTTP_STATUS_SWITCHING_PROTOCOLS = 101
+  /* 201 "Created".             RFC9110, Section 15.3.2. */
+  MHD_HTTP_STATUS_CREATED =                     201
   ,
-  MHD_HTTP_STATUS_PROCESSING = 102
+  /* 202 "Accepted".            RFC9110, Section 15.3.3. */
+  MHD_HTTP_STATUS_ACCEPTED =                    202
   ,
-  MHD_HTTP_STATUS_OK = 200
-  ,
-  MHD_HTTP_STATUS_CREATED = 201
-  ,
-  MHD_HTTP_STATUS_ACCEPTED = 202
-  ,
+  /* 203 "Non-Authoritative Information". RFC9110, Section 15.3.4. */
   MHD_HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION = 203
   ,
-  MHD_HTTP_STATUS_NO_CONTENT = 204
+  /* 204 "No Content".          RFC9110, Section 15.3.5. */
+  MHD_HTTP_STATUS_NO_CONTENT =                  204
   ,
-  MHD_HTTP_STATUS_RESET_CONTENT = 205
+  /* 205 "Reset Content".       RFC9110, Section 15.3.6. */
+  MHD_HTTP_STATUS_RESET_CONTENT =               205
   ,
-  MHD_HTTP_STATUS_PARTIAL_CONTENT = 206
+  /* 206 "Partial Content".     RFC9110, Section 15.3.7. */
+  MHD_HTTP_STATUS_PARTIAL_CONTENT =             206
   ,
-  MHD_HTTP_STATUS_MULTI_STATUS = 207
+  /* 207 "Multi-Status".        RFC4918. */
+  MHD_HTTP_STATUS_MULTI_STATUS =                207
   ,
-  MHD_HTTP_STATUS_ALREADY_REPORTED = 208
+  /* 208 "Already Reported".    RFC5842. */
+  MHD_HTTP_STATUS_ALREADY_REPORTED =            208
   ,
-  MHD_HTTP_STATUS_IM_USED = 226
+
+  /* 226 "IM Used".             RFC3229. */
+  MHD_HTTP_STATUS_IM_USED =                     226
   ,
-  MHD_HTTP_STATUS_MULTIPLE_CHOICES = 300
+
+  /* 300 "Multiple Choices".    RFC9110, Section 15.4.1. */
+  MHD_HTTP_STATUS_MULTIPLE_CHOICES =            300
   ,
-  MHD_HTTP_STATUS_MOVED_PERMANENTLY = 301
+  /* 301 "Moved Permanently".   RFC9110, Section 15.4.2. */
+  MHD_HTTP_STATUS_MOVED_PERMANENTLY =           301
   ,
-  MHD_HTTP_STATUS_FOUND = 302
+  /* 302 "Found".               RFC9110, Section 15.4.3. */
+  MHD_HTTP_STATUS_FOUND =                       302
   ,
-  MHD_HTTP_STATUS_SEE_OTHER = 303
+  /* 303 "See Other".           RFC9110, Section 15.4.4. */
+  MHD_HTTP_STATUS_SEE_OTHER =                   303
   ,
-  MHD_HTTP_STATUS_NOT_MODIFIED = 304
+  /* 304 "Not Modified".        RFC9110, Section 15.4.5. */
+  MHD_HTTP_STATUS_NOT_MODIFIED =                304
   ,
-  MHD_HTTP_STATUS_USE_PROXY = 305
+  /* 305 "Use Proxy".           RFC9110, Section 15.4.6. */
+  MHD_HTTP_STATUS_USE_PROXY =                   305
   ,
-  MHD_HTTP_STATUS_SWITCH_PROXY = 306 /* IANA: unused */
+  /* 306 "Switch Proxy".        Not used! RFC9110, Section 15.4.7. */
+  MHD_HTTP_STATUS_SWITCH_PROXY =                306
   ,
-  MHD_HTTP_STATUS_TEMPORARY_REDIRECT = 307
+  /* 307 "Temporary Redirect".  RFC9110, Section 15.4.8. */
+  MHD_HTTP_STATUS_TEMPORARY_REDIRECT =          307
   ,
-  MHD_HTTP_STATUS_PERMANENT_REDIRECT = 308
+  /* 308 "Permanent Redirect".  RFC9110, Section 15.4.9. */
+  MHD_HTTP_STATUS_PERMANENT_REDIRECT =          308
   ,
-  MHD_HTTP_STATUS_BAD_REQUEST = 400
+
+  /* 400 "Bad Request".         RFC9110, Section 15.5.1. */
+  MHD_HTTP_STATUS_BAD_REQUEST =                 400
   ,
-  MHD_HTTP_STATUS_UNAUTHORIZED = 401
+  /* 401 "Unauthorized".        RFC9110, Section 15.5.2. */
+  MHD_HTTP_STATUS_UNAUTHORIZED =                401
   ,
-  MHD_HTTP_STATUS_PAYMENT_REQUIRED = 402
+  /* 402 "Payment Required".    RFC9110, Section 15.5.3. */
+  MHD_HTTP_STATUS_PAYMENT_REQUIRED =            402
   ,
-  MHD_HTTP_STATUS_FORBIDDEN = 403
+  /* 403 "Forbidden".           RFC9110, Section 15.5.4. */
+  MHD_HTTP_STATUS_FORBIDDEN =                   403
   ,
-  MHD_HTTP_STATUS_NOT_FOUND = 404
+  /* 404 "Not Found".           RFC9110, Section 15.5.5. */
+  MHD_HTTP_STATUS_NOT_FOUND =                   404
   ,
-  MHD_HTTP_STATUS_METHOD_NOT_ALLOWED = 405
+  /* 405 "Method Not Allowed".  RFC9110, Section 15.5.6. */
+  MHD_HTTP_STATUS_METHOD_NOT_ALLOWED =          405
   ,
-  MHD_HTTP_STATUS_NOT_ACCEPTABLE = 406
+  /* 406 "Not Acceptable".      RFC9110, Section 15.5.7. */
+  MHD_HTTP_STATUS_NOT_ACCEPTABLE =              406
   ,
+  /* 407 "Proxy Authentication Required". RFC9110, Section 15.5.8. */
   MHD_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED = 407
   ,
-  MHD_HTTP_STATUS_REQUEST_TIMEOUT = 408
+  /* 408 "Request Timeout".     RFC9110, Section 15.5.9. */
+  MHD_HTTP_STATUS_REQUEST_TIMEOUT =             408
   ,
-  MHD_HTTP_STATUS_CONFLICT = 409
+  /* 409 "Conflict".            RFC9110, Section 15.5.10. */
+  MHD_HTTP_STATUS_CONFLICT =                    409
   ,
-  MHD_HTTP_STATUS_GONE = 410
+  /* 410 "Gone".                RFC9110, Section 15.5.11. */
+  MHD_HTTP_STATUS_GONE =                        410
   ,
-  MHD_HTTP_STATUS_LENGTH_REQUIRED = 411
+  /* 411 "Length Required".     RFC9110, Section 15.5.12. */
+  MHD_HTTP_STATUS_LENGTH_REQUIRED =             411
   ,
-  MHD_HTTP_STATUS_PRECONDITION_FAILED = 412
+  /* 412 "Precondition Failed". RFC9110, Section 15.5.13. */
+  MHD_HTTP_STATUS_PRECONDITION_FAILED =         412
   ,
-  MHD_HTTP_STATUS_PAYLOAD_TOO_LARGE = 413
+  /* 413 "Content Too Large".   RFC9110, Section 15.5.14. */
+  MHD_HTTP_STATUS_CONTENT_TOO_LARGE =           413
   ,
-  MHD_HTTP_STATUS_URI_TOO_LONG = 414
+  /* 414 "URI Too Long".        RFC9110, Section 15.5.15. */
+  MHD_HTTP_STATUS_URI_TOO_LONG =                414
   ,
-  MHD_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE = 415
+  /* 415 "Unsupported Media Type". RFC9110, Section 15.5.16. */
+  MHD_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE =      415
   ,
-  MHD_HTTP_STATUS_RANGE_NOT_SATISFIABLE = 416
+  /* 416 "Range Not Satisfiable". RFC9110, Section 15.5.17. */
+  MHD_HTTP_STATUS_RANGE_NOT_SATISFIABLE =       416
   ,
-  MHD_HTTP_STATUS_EXPECTATION_FAILED = 417
+  /* 417 "Expectation Failed".  RFC9110, Section 15.5.18. */
+  MHD_HTTP_STATUS_EXPECTATION_FAILED =          417
   ,
-  MHD_HTTP_STATUS_MISDIRECTED_REQUEST = 421
+
+
+  /* 421 "Misdirected Request". RFC9110, Section 15.5.20. */
+  MHD_HTTP_STATUS_MISDIRECTED_REQUEST =         421
   ,
-  MHD_HTTP_STATUS_UNPROCESSABLE_ENTITY = 422
+  /* 422 "Unprocessable Content". RFC9110, Section 15.5.21. */
+  MHD_HTTP_STATUS_UNPROCESSABLE_CONTENT =       422
   ,
-  MHD_HTTP_STATUS_LOCKED = 423
+  /* 423 "Locked".              RFC4918. */
+  MHD_HTTP_STATUS_LOCKED =                      423
   ,
-  MHD_HTTP_STATUS_FAILED_DEPENDENCY = 424
+  /* 424 "Failed Dependency".   RFC4918. */
+  MHD_HTTP_STATUS_FAILED_DEPENDENCY =           424
   ,
-  MHD_HTTP_STATUS_UNORDERED_COLLECTION = 425 /* IANA: unused */
+  /* 425 "Too Early".           RFC8470. */
+  MHD_HTTP_STATUS_TOO_EARLY =                   425
   ,
-  MHD_HTTP_STATUS_UPGRADE_REQUIRED = 426
+  /* 426 "Upgrade Required".    RFC9110, Section 15.5.22. */
+  MHD_HTTP_STATUS_UPGRADE_REQUIRED =            426
   ,
-  MHD_HTTP_STATUS_PRECONDITION_REQUIRED = 428
+
+  /* 428 "Precondition Required". RFC6585. */
+  MHD_HTTP_STATUS_PRECONDITION_REQUIRED =       428
   ,
-  MHD_HTTP_STATUS_TOO_MANY_REQUESTS = 429
+  /* 429 "Too Many Requests".   RFC6585. */
+  MHD_HTTP_STATUS_TOO_MANY_REQUESTS =           429
   ,
+
+  /* 431 "Request Header Fields Too Large". RFC6585. */
   MHD_HTTP_STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE = 431
   ,
-  MHD_HTTP_STATUS_NO_RESPONSE = 444 /* IANA: unused */
-  ,
-  MHD_HTTP_STATUS_RETRY_WITH = 449 /* IANA: unused */
-  ,
-  MHD_HTTP_STATUS_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS = 450  /* IANA: unused */
-  ,
+
+  /* 451 "Unavailable For Legal Reasons". RFC7725. */
   MHD_HTTP_STATUS_UNAVAILABLE_FOR_LEGAL_REASONS = 451
   ,
-  MHD_HTTP_STATUS_INTERNAL_SERVER_ERROR = 500
-  ,
-  MHD_HTTP_STATUS_NOT_IMPLEMENTED = 501
-  ,
-  MHD_HTTP_STATUS_BAD_GATEWAY = 502
-  ,
-  MHD_HTTP_STATUS_SERVICE_UNAVAILABLE = 503
-  ,
-  MHD_HTTP_STATUS_GATEWAY_TIMEOUT = 504
-  ,
-  MHD_HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED = 505
-  ,
-  MHD_HTTP_STATUS_VARIANT_ALSO_NEGOTIATES = 506
-  ,
-  MHD_HTTP_STATUS_INSUFFICIENT_STORAGE = 507
-  ,
-  MHD_HTTP_STATUS_LOOP_DETECTED = 508
-  ,
-  MHD_HTTP_STATUS_BANDWIDTH_LIMIT_EXCEEDED = 509  /* IANA: unused */
-  ,
-  MHD_HTTP_STATUS_NOT_EXTENDED = 510
-  ,
-  MHD_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED = 511
 
+  /* 500 "Internal Server Error". RFC9110, Section 15.6.1. */
+  MHD_HTTP_STATUS_INTERNAL_SERVER_ERROR =       500
+  ,
+  /* 501 "Not Implemented".     RFC9110, Section 15.6.2. */
+  MHD_HTTP_STATUS_NOT_IMPLEMENTED =             501
+  ,
+  /* 502 "Bad Gateway".         RFC9110, Section 15.6.3. */
+  MHD_HTTP_STATUS_BAD_GATEWAY =                 502
+  ,
+  /* 503 "Service Unavailable". RFC9110, Section 15.6.4. */
+  MHD_HTTP_STATUS_SERVICE_UNAVAILABLE =         503
+  ,
+  /* 504 "Gateway Timeout".     RFC9110, Section 15.6.5. */
+  MHD_HTTP_STATUS_GATEWAY_TIMEOUT =             504
+  ,
+  /* 505 "HTTP Version Not Supported". RFC9110, Section 15.6.6. */
+  MHD_HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED =  505
+  ,
+  /* 506 "Variant Also Negotiates". RFC2295. */
+  MHD_HTTP_STATUS_VARIANT_ALSO_NEGOTIATES =     506
+  ,
+  /* 507 "Insufficient Storage". RFC4918. */
+  MHD_HTTP_STATUS_INSUFFICIENT_STORAGE =        507
+  ,
+  /* 508 "Loop Detected".       RFC5842. */
+  MHD_HTTP_STATUS_LOOP_DETECTED =               508
+  ,
+
+  /* 510 "Not Extended".        (OBSOLETED) RFC2774; status-change-http-experiments-to-historic. */
+  MHD_HTTP_STATUS_NOT_EXTENDED =                510
+  ,
+  /* 511 "Network Authentication Required". RFC6585. */
+  MHD_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED = 511
+  ,
+
+
+  /* Not registered non-standard codes */
+  /* 449 "Reply With".          MS IIS extension. */
+  MHD_HTTP_STATUS_RETRY_WITH =                  449
+  ,
+
+  /* 450 "Blocked by Windows Parental Controls". MS extension. */
+  MHD_HTTP_STATUS_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS = 450
+  ,
+
+  /* 509 "Bandwidth Limit Exceeded". Apache extension. */
+  MHD_HTTP_STATUS_BANDWIDTH_LIMIT_EXCEEDED =    509
 };
 
 
@@ -843,10 +923,19 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_HTTP_StatusCode
  */
 MHD_EXTERN_ const struct MHD_String *
 MHD_HTTP_status_code_to_string (enum MHD_HTTP_StatusCode code)
-MHD_FN_PURE_;
+MHD_FN_CONST_;
+
+/**
+ * Get the pointer to the C string for the HTTP response code, never NULL.
+ */
+#define MHD_HTTP_status_code_to_string_lazy(code) \
+        (MHD_HTTP_status_code_to_string ((code)) ? \
+         ((MHD_HTTP_status_code_to_string (code))->cstr) : ("[No status]") )
+
 
 /** @} */ /* end of group httpcode */
 
+#ifndef MHD_HTTP_PROTOCOL_VER_DEFINED
 
 /**
  * @brief HTTP protocol versions
@@ -861,12 +950,15 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_HTTP_ProtocolVersion
   ,
   MHD_HTTP_VERSION_1_1 = 2
   ,
-  MHD_HTTP_VERSION_2_0 = 3
+  MHD_HTTP_VERSION_2 = 3
   ,
-  MHD_HTTP_VERSION_3_0 = 4
+  MHD_HTTP_VERSION_3 = 4
   ,
-  MHD_HTTP_VERSION_FUTURE = 99
+  MHD_HTTP_VERSION_FUTURE = 255
 };
+
+#define MHD_HTTP_PROTOCOL_VER_DEFINED 1
+#endif /* ! MHD_HTTP_PROTOCOL_VER_DEFINED */
 
 /**
  * Return the string representation of the requested HTTP version.
@@ -878,27 +970,27 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_HTTP_ProtocolVersion
  */
 MHD_EXTERN_ const struct MHD_String *
 MHD_protocol_version_to_string (enum MHD_HTTP_ProtocolVersion pv)
-MHD_FN_PURE_;
+MHD_FN_CONST_;
 
 /**
  * HTTP/1.0 identification string
  */
-#define MHD_HTTP_VERSION_1_0 "HTTP/1.0"
+#define MHD_HTTP_VERSION_1_0_STR "HTTP/1.0"
 /**
  * HTTP/1.1 identification string
  */
-#define MHD_HTTP_VERSION_1_1 "HTTP/1.1"
+#define MHD_HTTP_VERSION_1_1_STR "HTTP/1.1"
 /**
  * HTTP/2 identification string.
  * Not used by the HTTP protocol (except non-TLS handshake), useful for logs and
  * similar proposes.
  */
-#define MHD_HTTP_VERSION_2 "HTTP/2"
+#define MHD_HTTP_VERSION_2_STR "HTTP/2"
 /**
  * HTTP/3 identification string.
  * Not used by the HTTP protocol, useful for logs and similar proposes.
  */
-#define MHD_HTTP_VERSION_3 "HTTP/3"
+#define MHD_HTTP_VERSION_3_STR "HTTP/3"
 
 /** @} */ /* end of group versions */
 
@@ -968,21 +1060,14 @@ struct MHD_Response;
  * client.
  *
  * @param[in,out] request the request for which the action is generated
- * @param suspend_microsec the maximum duration of suspension after which
- *                         the request is automatically resumed, if not
- *                         resumed earlier by #MHD_request_resume(),
- *                         the precise resume moment is not guaranteed, it
- *                         may happen later (but not earlier) depending
- *                         on timer granularity and the system load;
- *                         if set to #MHD_WAIT_INDEFINITELY (or higher)
- *                         the request is not resumed automatically
- * @return action to cause a request to be suspended.
+ * @return action to cause a request to be suspended,
+ *         NULL if any action has been already created for the @a request
  * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_Action *
-MHD_action_suspend (struct MHD_Request *request,
-                    uint_fast64_t suspend_microsec)
-MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_;
+MHD_action_suspend (struct MHD_Request *request)
+MHD_FN_PAR_NONNULL_ALL_;
+
 
 /**
  * Converts a @a response to an action.  If #MHD_R_O_REUSABLE
@@ -996,17 +1081,31 @@ MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_;
  * @param request the request to create the action for
  * @param[in] response the response to convert,
  *                     if NULL then this function is equivalent to
- *                     #MHD_action_close_connection() call
+ *                     #MHD_action_abort_connection() call
  * @return pointer to the action, the action must be consumed
  *         otherwise response object may leak;
- *         NULL if failed (no memory), when failed
- *         the response object is consumed and need not
- *         to be "destroyed".
+ *         NULL if failed (no memory) or if any action has been already
+ *         created for the @a request;
+ *         when failed the response object is consumed and need not
+ *         to be "destroyed"
  * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_Action *
-MHD_action_from_response (struct MHD_Request *request,
-                          struct MHD_Response *response);
+MHD_action_from_response (struct MHD_Request *MHD_RESTRICT request,
+                          struct MHD_Response *MHD_RESTRICT response)
+MHD_FN_PAR_NONNULL_ (1);
+
+
+/**
+ * Action telling MHD to close the connection hard
+ * (kind-of breaking HTTP specification).
+ *
+ * @param req the request to make an action
+ * @return action operation, always NULL
+ * @ingroup action
+ */
+#define MHD_action_abort_request(req) \
+        MHD_STATIC_CAST_ (const struct MHD_Action *, NULL)
 
 
 /**
@@ -1025,9 +1124,10 @@ MHD_action_from_response (struct MHD_Request *request,
  *         error code otherwise
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_response_set_options (struct MHD_Response *response,
-                          const struct MHD_ResponseOptionAndValue *options,
-                          size_t options_max_num)
+MHD_response_set_options (
+  struct MHD_Response *MHD_RESTRICT response,
+  const struct MHD_ResponseOptionAndValue *MHD_RESTRICT options,
+  size_t options_max_num)
 MHD_FN_PAR_NONNULL_ALL_;
 
 
@@ -1129,19 +1229,16 @@ struct MHD_DynContentZCIoVec
    * The number of elements in @a iov
    */
   unsigned int iov_count;
-
   /**
    * The pointer to the array with @a iov_count elements.
    */
   const struct MHD_IoVec *iov;
-
   /**
    * The callback to free resources.
    * It is called once the full array of iov elements is sent.
    * No callback is called if NULL.
    */
   MHD_FreeCallback iov_fcb;
-
   /**
    * The parameter for @a iov_fcb
    */
@@ -1167,7 +1264,7 @@ struct MHD_DynamicContentCreatorContext;
  * The total size of the data in the buffer and in @a iov_data must
  * be non-zero.
  * @param[in,out] ctx the pointer the context as provided to the callback
- * @param data_size the amount of the data placed to the provided buffer (not @a iov_data),
+ * @param data_size the amount of the data placed to the provided buffer,
  *                  cannot be larger than provided buffer size,
  *                  must be non-zero if @a iov_data is NULL or has no data,
  * @param iov_data the optional pointer to the iov data,
@@ -1184,7 +1281,7 @@ MHD_DCC_action_continue_zc (
   struct MHD_DynamicContentCreatorContext *ctx,
   size_t data_size,
   const struct MHD_DynContentZCIoVec *iov_data,
-  const char *chunk_ext)
+  const char *MHD_RESTRICT chunk_ext)
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_CSTR_ (4);
 
@@ -1325,6 +1422,7 @@ typedef const struct MHD_DynamicContentCreatorAction *
  * @param dyn_cont_cls extra argument to @a crc
  * @param dyn_cont_fc callback to call to free @a dyn_cont_cls resources
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * FIXME: Call free callback on error?
  * @ingroup response
  */
 MHD_EXTERN_ struct MHD_Response *
@@ -1349,6 +1447,7 @@ MHD_response_from_callback (enum MHD_HTTP_StatusCode sc,
  *                to skip the free/cleanup callback
  * @param free_cb_cls the parameter for @a free_cb
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * FIXME: Call free callback on error?
  * @ingroup response
  */
 MHD_EXTERN_ struct MHD_Response *
@@ -1362,6 +1461,22 @@ MHD_FN_PAR_IN_SIZE_ (3,2);
 
 
 /**
+ * Create a response object with body that is a
+ * statically allocated buffer that never needs to
+ * be freed as its lifetime exceeds that of the
+ * daemon.
+ *
+ * The response object can be extended with header information and then be used
+ * any number of times.
+ * @param sc status code to use for the response
+ * @param len number of bytes in @a buf
+ * @param buf buffer with response payload
+ */
+#define MHD_response_from_buffer_static(sc, len, buf)       \
+        MHD_response_from_buffer (sc, len, buf, NULL, NULL)
+
+
+/**
  * Create a response object with empty (zero size) body.
  *
  * The response object can be extended with header information and then be used
@@ -1369,7 +1484,7 @@ MHD_FN_PAR_IN_SIZE_ (3,2);
  * @param sc status code to use for the response
  */
 #define MHD_response_from_empty(sc) \
-        MHD_response_from_buffer (sc, 0, NULL, NULL, NULL)
+        MHD_response_from_buffer_static (sc, 0, "")
 
 
 /**
@@ -1382,6 +1497,7 @@ MHD_FN_PAR_IN_SIZE_ (3,2);
  *               an internal copy will be made, there is no need to
  *               keep this data after return from this function
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * FIXME: Call free callback on error?
  * @ingroup response
  */
 MHD_EXTERN_ struct MHD_Response *
@@ -1455,6 +1571,7 @@ MHD_response_from_iovec (
  *        sizes larger than 2 GiB may be not supported by OS or
  *        MHD build; see #MHD_LIB_INFO_FIXED_HAS_LARGE_FILE
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * FIXME: Call free callback on error?
  * @ingroup response
  */
 MHD_EXTERN_ struct MHD_Response *
@@ -1484,7 +1601,9 @@ MHD_FN_PAR_FD_READ_ (2);
  */
 MHD_EXTERN_ struct MHD_Response *
 MHD_response_from_pipe (enum MHD_HTTP_StatusCode sc,
-                        int fd);
+                        int fd)
+MHD_FN_PAR_FD_READ_ (2);
+;
 
 
 /**
@@ -1516,7 +1635,7 @@ MHD_FN_PAR_NONNULL_ (1);
  * @ingroup response
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_response_add_header (struct MHD_Response *response,
+MHD_response_add_header (struct MHD_Response *MHD_RESTRICT response,
                          const char *name,
                          const char *value)
 MHD_FN_PAR_NONNULL_ (1)
@@ -1536,9 +1655,9 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
  * @ingroup response
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_response_add_predef_header (struct MHD_Response *response,
+MHD_response_add_predef_header (struct MHD_Response *MHD_RESTRICT response,
                                 enum MHD_PredefinedHeader stk,
-                                const char *content)
+                                const char *MHD_RESTRICT content)
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
 
@@ -1547,14 +1666,65 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
 
 
 /**
- * Action telling MHD to continue processing the upload.
+ * Suspend handling of network data for a given request.  This can
+ * be used to dequeue a request from MHD's event loop for a while.
  *
- * @param req the request to make an action
- * @return action operation, never NULL
+ * Suspended requests continue to count against the total number of
+ * requests allowed (per daemon, as well as per IP, if such limits
+ * are set).  Suspended requests will NOT time out; timeouts will
+ * restart when the request handling is resumed.  While a
+ * request is suspended, MHD may not detect disconnects by the
+ * client.
+ *
+ * @param[in,out] request the request for which the action is generated
+ * @return action to cause a request to be suspended,
+ *         NULL if any action has been already created for the @a request
  * @ingroup action
  */
-MHD_EXTERN_ const struct MHD_Action *
-MHD_action_continue (struct MHD_Request *req);
+MHD_EXTERN_ const struct MHD_UploadAction *
+MHD_upload_action_suspend (struct MHD_Request *request)
+MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_;
+
+/**
+ * Converts a @a response to an action.  If #MHD_R_O_REUSABLE
+ * is not set, the reference to the @a response is consumed
+ * by the conversion. If #MHD_R_O_REUSABLE is #MHD_YES,
+ * then the @a response can be used again to create actions in
+ * the future.
+ * However, the @a response is frozen by this step and
+ * must no longer be modified (i.e. by setting headers).
+ *
+ * @param request the request to create the action for
+ * @param[in] response the response to convert,
+ *                     if NULL then this function is equivalent to
+ *                     #MHD_upload_action_abort_request() call
+ * @return pointer to the action, the action must be consumed
+ *         otherwise response object may leak;
+ *         NULL if failed (no memory) or if any action has been already
+ *         created for the @a request;
+ *         when failed the response object is consumed and need not
+ *         to be "destroyed"
+ * @ingroup action
+ */
+MHD_EXTERN_ const struct MHD_UploadAction *
+MHD_upload_action_from_response (struct MHD_Request *MHD_RESTRICT request,
+                                 struct MHD_Response *MHD_RESTRICT response)
+MHD_FN_PAR_NONNULL_ (1);
+
+/**
+ * Action telling MHD to continue processing the upload.
+ * Valid only for incremental upload processing.
+ * Works as #MHD_upload_action_abort_request() if used for full upload callback
+ * or for the final (with zero data) incremental callback.
+ *
+ * @param request the request to make an action
+ * @return action operation,
+ *         NULL if any action has been already created for the @a request
+ * @ingroup action
+ */
+MHD_EXTERN_ const struct MHD_UploadAction *
+MHD_upload_action_continue (struct MHD_Request *request)
+MHD_FN_RETURNS_NONNULL_;
 
 
 /**
@@ -1565,9 +1735,10 @@ MHD_action_continue (struct MHD_Request *req);
  * @return action operation, always NULL
  * @ingroup action
  */
-#define MHD_action_close_connection(req) \
-        MHD_STATIC_CAST_ (const struct MHD_Action *, NULL)
+#define MHD_upload_action_abort_request(req) \
+        MHD_STATIC_CAST_ (const struct MHD_UploadAction *, NULL)
 
+#ifndef MHD_UPLOADCALLBACK_DEFINED
 
 /**
  * Function to process data uploaded by a client.
@@ -1576,26 +1747,30 @@ MHD_action_continue (struct MHD_Request *req);
  *                   pointer when the handler was registered with MHD
  * @param request the request is being processed
  * @param content_data_size the size of the @a content_data,
- *                          zero if all data have been processed
+ *                          zero when all data have been processed
  * @param[in] content_data the uploaded content data,
  *                         may be modified in the callback,
  *                         valid only until return from the callback,
- *                         NULL is all data have been processed
- * @return action specifying how to proceed, often
- *         #MHD_action_continue() if all is well,
- *         #MHD_action_suspend() to stop reading the upload until
- *              the request is resumed,
- *         MHD_action_close_connection to close the socket, or a response
- *         to discard the rest of the upload and return the data given
+ *                         NULL when all data have been processed
+ * @return action specifying how to proceed:
+ *         #MHD_upload_action_continue() to continue upload (for incremental
+ *         upload processing only),
+ *         #MHD_upload_action_suspend() to stop reading the upload until
+ *         the request is resumed,
+ *         #MHD_upload_action_abort_request() to close the socket,
+ *         or a response to discard the rest of the upload and transmit
+ *         the response
  * @ingroup action
  */
-typedef const struct MHD_Action *
-(MHD_FN_PAR_NONNULL_ (2)  MHD_FN_PAR_IN_SIZE_ (4,3)
+typedef const struct MHD_UploadAction *
+(MHD_FN_PAR_NONNULL_ (2)  MHD_FN_PAR_INOUT_SIZE_ (4,3)
  *MHD_UploadCallback)(void *upload_cls,
                       struct MHD_Request *request,
                       size_t content_data_size,
                       void *content_data);
 
+#define MHD_UPLOADCALLBACK_DEFINED 1
+#endif /* ! MHD_UPLOADCALLBACK_DEFINED */
 
 /**
  * Create an action that handles an upload.
@@ -1604,10 +1779,10 @@ typedef const struct MHD_Action *
  * then request is aborted without response.
  *
  * @param request the request to create action for
- * @param upload_buffer_size how large should the upload buffer be.
- *                           May allocate memory from the shared "large"
- *                           memory pool if necessary and non-zero is given.
- *                           Must be zero if @a uc_full is NULL.
+ * @param large_buffer_size how large should the upload buffer be.
+ *                          May allocate memory from the shared "large"
+ *                          memory pool if necessary and non-zero is given.
+ *                          Must be zero if @a uc_full is NULL.
  * @param uc_full the function to call when complete upload
  *                is received (only if fit @a upload_buffer_size),
  *                can be NULL if uc_inc is not NULL,
@@ -1619,14 +1794,17 @@ typedef const struct MHD_Action *
  *               @a uc_full is NULL,
  *               can be NULL if uc_full is not NULL
  * @param uc_inc_cls closure for @a uc_inc
- * @return NULL on error (out of memory. both @a uc_full and @a uc_inc are NULL)
+ * @return NULL on error (out of memory, invalid parameters)
+ * @return pointer to the action,
+ *         NULL if failed (no memory) or if any action has been already
+ *         created for the @a request.
  * @sa #MHD_D_OPTION_LARGE_POOL_SIZE()
  * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_Action *
 MHD_action_process_upload (
   struct MHD_Request *request,
-  size_t upload_buffer_size,
+  size_t large_buffer_size,
   MHD_UploadCallback uc_full,
   void *uc_full_cls,
   MHD_UploadCallback uc_inc,
@@ -1642,7 +1820,7 @@ MHD_FN_PAR_NONNULL_ (1);
  * @param uc the function to call when complete upload
  *           is received (only if fit @a upload_buffer_size)
  * @param uc_cls closure for @a uc
- * @return NULL on error (out of memory. both @a uc_full and @a uc_inc are NULL)
+ * @return NULL on error (out of memory. both @a uc is NULL)
  * @ingroup action
  */
 #define MHD_action_process_upload_full(request,buff_size,uc,uc_cls) \
@@ -1654,12 +1832,13 @@ MHD_FN_PAR_NONNULL_ (1);
  * @param request the request to create action for
  * @param uc the function to incrementally process the upload data
  * @param uc_cls closure for @a uc
- * @return NULL on error (out of memory. both @a uc_full and @a uc_inc are NULL)
+ * @return NULL on error (out of memory. both @a uc is NULL)
  * @ingroup action
  */
 #define MHD_action_process_upload_inc(request,uc,uc_cls) \
         MHD_action_process_upload (request, 0, NULL, NULL, uc, uc_cls)
 
+#ifndef MHD_POST_DATA_READER_DEFINED
 
 /**
  * Iterator over key-value pairs where the value maybe made available
@@ -1677,15 +1856,16 @@ MHD_FN_PAR_NONNULL_ (1);
  *             NOT zero-terminated
  * @param off offset of data in the overall value
  * @param size number of bytes in @a data available
- * @return action specifying how to proceed, often
- *         #MHD_action_continue() if all is well,
- *         #MHD_action_suspend() to stop reading the upload until
- *              the request is resumed,
- *         NULL to close the socket, or a response
- *         to discard the rest of the upload and return the data given
+ * @return action specifying how to proceed:
+ *         #MHD_upload_action_continue() if all is well,
+ *         #MHD_upload_action_suspend() to stop reading the upload until
+ *         the request is resumed,
+ *         #MHD_upload_action_abort_request() to close the socket,
+ *         or a response to discard the rest of the upload and transmit
+ *         the response
  * @ingroup action
  */
-typedef const struct MHD_Action *
+typedef const struct MHD_UploadAction *
 (*MHD_PostDataReader) (void *cls,
                        const struct MHD_String *name,
                        const struct MHD_String *filename,
@@ -1701,12 +1881,15 @@ typedef const struct MHD_Action *
  * of the postprocessor upload data.
  * @param req the request
  * @param cls the closure
- * @return the action to proceed
+ * @return the action to proceed, #MHD_upload_action_continue() is not possible
+ *         an
  */
-typedef const struct MHD_Action *
+typedef const struct MHD_UploadAction *
 (*MHD_PostDataFinished) (struct MHD_Request *req,
                          void *cls);
 
+#define MHD_POST_DATA_READER_DEFINED 1
+#endif /* ! MHD_POST_DATA_READER_DEFINED */
 
 /**
  * Create an action to parse the POSTed body from the client.
@@ -1715,8 +1898,8 @@ typedef const struct MHD_Action *
  * @param pp_buffer_size how much data should the post processor
  *                       buffer in memory. May allocate memory from
  *                       the shared "large" memory pool if necessary.
- * @param pp_stream_limit values above which length should be
- *   given to @a iter for stream processing
+ * @param pp_stream_limit values above which length should be // FIXME: Remove? Duplicated with pp_buffer_size
+ *   given to @a iter for stream processing // FIXME: iter??
  * @param enc the data encoding to use,
  *            set to #MHD_HTTP_POST_ENCODING_OTHER to detect automatically
  * @param reader function to call for "oversize" values in the stream,
@@ -1728,13 +1911,16 @@ typedef const struct MHD_Action *
  *   #MHD_request_get_values_cb(), #MHD_request_get_values_list() and
  *   #MHD_request_get_post_data_cb(), #MHD_request_get_post_data_list()
  * @param done_cb_cls closure for @a done_cb
+ * @return pointer to the action,
+ *         NULL if failed (no memory) or if any action has been already
+ *         created for the @a request.
  * @sa #MHD_D_OPTION_LARGE_POOL_SIZE()
  * @ingroup action
  */
-MHD_EXTERN_ struct MHD_Action *
+MHD_EXTERN_ const struct MHD_Action *
 MHD_action_post_processor (struct MHD_Request *request,
                            size_t pp_buffer_size,
-                           size_t pp_stream_limit,
+                           size_t pp_stream_limit, // FIXME: Remove? Duplicated with pp_buffer_size
                            enum MHD_HTTP_PostEncoding enc,
                            MHD_PostDataReader reader,
                            void *reader_cls,
@@ -1946,11 +2132,11 @@ MHD_FN_PAR_NONNULL_ (1);
  */
 typedef void
 (*MHD_UpgradeHandler)(void *cls,
-                      struct MHD_Request *request,
+                      struct MHD_Request *MHD_RESTRICT request,
                       size_t extra_in_size,
                       const char *extra_in,
                       MHD_Socket sock,
-                      struct MHD_UpgradeHandle *urh);
+                      struct MHD_UpgradeHandle *MHD_RESTRICT urh);
 
 
 /**
@@ -2297,7 +2483,7 @@ MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo algo,
                                const char *username,
                                const char *realm,
                                size_t bin_buf_size,
-                               void *userhash_bin)
+                               void *MHD_RESTRICT userhash_bin)
 MHD_FN_PURE_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_CSTR_ (2)
 MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_OUT_SIZE_ (5,4);
 
@@ -3606,7 +3792,7 @@ union MHD_DaemonInfoFixedData
   /**
    * Port number
    */
-  uint_fast16_t v_port;
+  uint_least16_t v_port;
 
   /**
    * Unused member.
@@ -4466,11 +4652,15 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
   MHD_REQUEST_INFO_DYNAMIC_HEADER_SIZE = 21
   ,
   /**
-   * Returns the client-specific pointer to a `void *` that
-   * is specific to this request.
-   * The result is placed in @a v_pvoid member.
+   * Returns the request-specific pointer to a `void *`. The pointer obtainable
+   * by this pointer is the same as provided for #MHD_EarlyUriLogCallback and
+   * #MHD_RequestTerminationCallback.
+   * By using provided pointer application may get or set the pointer to
+   * any data specific for the particular request.
+   * The result is placed in @a v_ppvoid member.
+   * @ingroup request
    */
-  MHD_REQUEST_INFO_DYNAMIC_CLIENT_CONTEXT = 31
+  MHD_REQUEST_INFO_DYNAMIC_APP_CONTEXT = 31
   ,
   /**
    * Returns pointer to information about username in client's digest auth
@@ -4537,9 +4727,9 @@ union MHD_RequestInfoDynamicData
    */
   uint_fast64_t v_uint64;
   /**
-   * The pointer to void
+   * The pointer to pointer to the data.
    */
-  void *v_pvoid;
+  void **v_ppvoid;
 
   /**
    * The information about client provided username for digest auth
@@ -4603,19 +4793,23 @@ MHD_FN_PURE_;
  * Callback for serious error condition. The default action is to print
  * an error message and `abort()`.
  * The callback should not return.
+ * Some parameters could be empty strings (the strings with zero-termination at
+ * zero position) if MHD built without log messages (only for embedded
+ * projects).
  *
  * @param cls user specified value
- * @param file where the error occurred, could be NULL if MHD built without
- *             messages (only for embedded project)
+ * @param file where the error occurred, could be empty
+ * @param func the name of the function, where the error occurred, may be empty
  * @param line where the error occurred
- * @param reason error detail, may be NULL
+ * @param message the error details, could be empty
  * @ingroup logging
  */
 typedef void
 (*MHD_PanicCallback) (void *cls,
                       const char *file,
+                      const char *func,
                       unsigned int line,
-                      const char *reason);
+                      const char *message);
 
 
 /**

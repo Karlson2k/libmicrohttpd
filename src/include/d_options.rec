@@ -56,7 +56,7 @@ Comment: Bind to the given TCP port and address family.
 Argument1: enum MHD_AddressFamily af
 Description1: the address family to use,
 + the #MHD_AF_NONE to disable listen socket (the same effect as if this option is not used)
-Argument2: uint_fast16_t port
+Argument2: uint_least16_t port
 Description2: port to use, 0 to let system assign any free port,
 + ignored if @a af is #MHD_AF_NONE
 
@@ -70,15 +70,25 @@ Comment: Bind to the given socket address.
 + If no listen socket optins (#MHD_D_OPTION_BIND_PORT(), #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does not listen for incoming connection.
 Argument1: size_t sa_len
 Description1: the size of the socket address pointed by @a sa.
-Argument2: const struct sockaddr *sa
+Argument2: /* const */ struct sockaddr *sa
 Description2: the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or even a UNIX domain socket (AF_UNIX)
+Argument3: enum MHD_Bool v_dual
+Description3: When a previous version of the protocol exist (like IPv4 when @a v_sa is IPv6) bind to both protocols (IPv6 and IPv4).
 CustomSetter: /* custom setter */
-+   if (option->val.bind_sa.v_sa_len > sizeof (bind_sa))
-+     return MHD_SC_OPTIONS_INVALID;
-+   memcpy (&settings->bind_sa.ss,
-+           option->val.bind_sa.v_sa,
-+           option->val.bind_sa.v_sa_len);
-+   settings->bind_sa.ss_len = option->val.bind_sa.v_sa_len;
++  if (0 != option->val.bind_sa.v_sa_len)
++  {
++    if (NULL != settings->bind_sa.v_sa)
++      free (settings->bind_sa.v_sa);
++
++    settings->bind_sa.v_sa = malloc (option->val.bind_sa.v_sa_len);
++    if (NULL == settings->bind_sa.v_sa)
++      return MHD_SC_DAEMON_MALLOC_FAILURE;
++
++    memcpy (settings->bind_sa.v_sa, option->val.bind_sa.v_sa,
++            option->val.bind_sa.v_sa_len);
++    settings->bind_sa.v_sa_len = option->val.bind_sa.v_sa_len;
++    settings->bind_sa.v_dual = option->val.bind_sa.v_dual;
++  }
 
 Name: listen_socket
 Value: 82
@@ -121,6 +131,7 @@ Value: 102
 Comment: Use the given backlog for the listen() call.
 +
 + Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
++ Zero parameter treated as MHD/system default.
 Argument1: unsigned int backlog_size
 Description1: FIXME
 
@@ -188,7 +199,10 @@ Description1: the in seconds, zero for no timeout
 
 Name: GLOBAL_CONNECTION_LIMIT
 Value: 161
-Comment: Maximum number of (concurrent) network connections served by daemon
+Comment: Maximum number of (concurrent) network connections served by daemon.
++ @note The real maximum number of network connections could be smaller
++       than requested due to the system limitations, like FD_SETSIZE when
++       polling by select() is used.
 Argument1: unsigned int glob_limit
 Description1: FIXME
 
@@ -284,8 +298,7 @@ Comment: The the maximum FD value.
 + If listen socket FD is equal or higher that specified value, the daemon fail to start.
 + If new connection FD is equal or higher that specified value, the connection is rejected.
 + Useful if application uses select() for polling the sockets, system FD_SETSIZE is good value for this option in such case.
-+ Does not work with #MHD_D_OPTION_WM_WORKER_THREADS() or #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
-+ Does not work on W32 (WinSock sockets).
++ Silently ignored on W32 (WinSock sockets).
 Argument1: MHD_Socket max_fd
 Description1: FIXME
 
@@ -371,12 +384,23 @@ Argument2: const void *buf
 Description2: the buffer with strong random data, the content will be copied by MHD
 Type: struct MHD_DaemonOptionEntropySeed
 CustomSetter: /* custom setter */
-+ if (0 != option->val.random_entropy.v_buf_size)
-+ {
-+   MHD_entropy_hash_ (&settings->random_entropy,
-+                      option->val.random_entropy.v_buf,
-+                      option->val.random_entropy.v_buf_size);
-+ }
++  /* The is not an easy for automatic generations */
++  if (0 != option->val.random_entropy.v_buf_size)
++  {
++    if (NULL != settings->random_entropy.v_buf)
++      free (settings->random_entropy.v_buf);
++
++    settings->random_entropy.v_buf =
++      malloc (option->val.random_entropy.v_buf_size);
++    if (NULL == settings->random_entropy.v_buf)
++      return MHD_SC_DAEMON_MALLOC_FAILURE;
++
++    memcpy (settings->random_entropy.v_buf,
++            option->val.random_entropy.v_buf,
++            option->val.random_entropy.v_buf_size);
++    settings->random_entropy.v_buf_size =
++      option->val.random_entropy.v_buf_size;
++  }
 
 
 Name: dauth_map_size

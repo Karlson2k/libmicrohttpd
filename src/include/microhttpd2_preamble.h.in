@@ -171,6 +171,8 @@ enum MHD_Bool
   MHD_YES = 1
 };
 
+#ifndef MHD_STRINGS_DEFINED
+
 
 /**
  * String with length data.
@@ -209,20 +211,24 @@ struct MHD_StringNullable
   const char *cstr;
 };
 
+#define MHD_STRINGS_DEFINED 1
+#endif /* ! MHD_STRINGS_DEFINED */
 
 /**
- * Constant used to indicate unknown size (use when
- * creating a response).
+ * Constant used to indicate unknown size (use when creating a response).
+ * Any possible larger sizes are interpreted as the same value.
  */
 #ifdef UINT64_MAX
 #  define MHD_SIZE_UNKNOWN UINT64_MAX
 #else
-#  define MHD_SIZE_UNKNOWN MHD_STATIC_CAST_ (uint_fast64_t,0xffffffffffffffffU)
+#  define MHD_SIZE_UNKNOWN \
+        MHD_STATIC_CAST_ (uint_fast64_t,0xffffffffffffffffU)
 #endif
 
 
 /**
  * Constant used to indicate unlimited wait time.
+ * Any possible larger values are interpreted as the this value.
  */
 #ifdef UINT64_MAX
 #  define MHD_WAIT_INDEFINITELY UINT64_MAX
@@ -285,12 +291,21 @@ struct MHD_Request;
 
 
 /**
- * @brief Actions are returned by the application to drive the request
- * handling of MHD.
+ * @brief Actions are returned by the application when processed client header
+ * to drive the request handling of MHD.
  *
  * @defgroup action Request actions
  */
 struct MHD_Action;
+
+
+/**
+ * @brief Actions are returned by the application when processing client upload
+ * to drive the request handling of MHD.
+ *
+ * @defgroup action Request actions
+ */
+struct MHD_UploadAction;
 
 /**
  * @defgroup general Primary MHD functions and data
@@ -331,11 +346,6 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    */
   MHD_SC_OK = 0
   ,
-  /**
-   * We were asked to return a timeout, but, there is no timeout.
-   */
-  MHD_SC_NO_TIMEOUT = 1
-  ,
 
   /* 10000-level status codes indicate intermediate
      results of some kind. */
@@ -365,6 +375,17 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    */
   MHD_SC_ACCEPT_FAILED_EAGAIN = 10004
   ,
+  /**
+   * Accepted socket is unknown type (probably non-IP).
+   */
+  MHD_SC_ACCEPTED_UNKNOWN_TYPE = 10040
+  ,
+  /**
+   * The sockaddr for the accepted socket does not fit the buffer.
+   * (Strange)
+   */
+  MHD_SC_ACCEPTED_SOCKADDR_TOO_LARGE = 10041
+  ,
 
   /* 20000-level status codes indicate success of some kind. */
 
@@ -392,70 +413,95 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_LIMIT_CONNECTIONS_REACHED = 30000
   ,
   /**
-   * We failed to allocate memory for poll() syscall.
-   * (May be transient.)
-   */
-  MHD_SC_POLL_MALLOC_FAILURE = 30001
-  ,
-  /**
    * The operation failed because the respective
    * daemon is already too deep inside of the shutdown
    * activity.
    */
-  MHD_SC_DAEMON_ALREADY_SHUTDOWN = 30002
+  MHD_SC_DAEMON_ALREADY_SHUTDOWN = 30020
   ,
   /**
-   * We failed to start a thread.
+   * Failed to start new thread because of system limits.
    */
-  MHD_SC_THREAD_LAUNCH_FAILURE = 30003
+  MHD_SC_CONNECTION_THREAD_SYS_LIMITS_REACHED = 30030
+  ,
+  /**
+   * Failed to start a thread.
+   */
+  MHD_SC_CONNECTION_THREAD_LAUNCH_FAILURE = 30031
   ,
   /**
    * The operation failed because we either have no
    * listen socket or were already quiesced.
    */
-  MHD_SC_DAEMON_ALREADY_QUIESCED = 30004
+  MHD_SC_DAEMON_ALREADY_QUIESCED = 30040
   ,
   /**
    * The operation failed because client disconnected
    * faster than we could accept().
    */
-  MHD_SC_ACCEPT_FAST_DISCONNECT = 30005
+  MHD_SC_ACCEPT_FAST_DISCONNECT = 30040
   ,
   /**
    * Operating resource limits hit on accept().
    */
-  MHD_SC_ACCEPT_SYSTEM_LIMIT_REACHED = 30006
+  MHD_SC_ACCEPT_SYSTEM_LIMIT_REACHED = 30060
   ,
   /**
    * Connection was refused by accept policy callback.
    */
-  MHD_SC_ACCEPT_POLICY_REJECTED = 30007
+  MHD_SC_ACCEPT_POLICY_REJECTED = 30070
+  ,
+  /**
+   * Failed to allocate memory for the daemon resources.
+   */
+  MHD_SC_DAEMON_MALLOC_FAILURE = 30081
   ,
   /**
    * We failed to allocate memory for the connection.
    * (May be transient.)
    */
-  MHD_SC_CONNECTION_MALLOC_FAILURE = 30008
+  MHD_SC_CONNECTION_MALLOC_FAILURE = 30082
   ,
   /**
    * We failed to allocate memory for the connection's memory pool.
    * (May be transient.)
    */
-  MHD_SC_POOL_MALLOC_FAILURE = 30009
+  MHD_SC_POOL_MALLOC_FAILURE = 30083
   ,
   /**
    * We failed to forward data from a Web socket to the
    * application to the remote side due to the socket
    * being closed prematurely. (May be transient.)
    */
-  MHD_SC_UPGRADE_FORWARD_INCOMPLETE = 30010
+  MHD_SC_UPGRADE_FORWARD_INCOMPLETE = 30100
   ,
   /**
-   * We failed to allocate memory for generating the response from our
-   * memory pool.  Likely the request header was too large to leave
+   * Failed to allocate memory from our memory pool for processing
+   * the request.  Likely the request fields are too large to leave
    * enough room.
    */
-  MHD_SC_CONNECTION_POOL_MALLOC_FAILURE = 30011
+  MHD_SC_CONNECTION_POOL_MALLOC_FAILURE_REQ = 30130
+  ,
+  /**
+   * Failed to allocate memory from our memory pool to store GET parameter.
+   * Likely the request URI or header fields are too large to leave enough room.
+   */
+  MHD_SC_CONNECTION_POOL_NO_MEM_GET_PARAM = 30131
+  ,
+  /**
+   * Failed to allocate memory from our memory pool to store parsed cookie.
+   */
+  MHD_SC_CONNECTION_POOL_NO_MEM_COOKIE = 30132
+  ,
+  /**
+   * Detected jump back of system clock
+   */
+  MHD_SC_SYS_CLOCK_JUMP_BACK_LARGE = 30140
+  ,
+  /**
+   * Detected correctable jump back of system clock
+   */
+  MHD_SC_SYS_CLOCK_JUMP_BACK_CORRECTED = 30141
   ,
 
   /* 40000-level errors are caused by the HTTP client
@@ -473,36 +519,129 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_CONNECTION_RESET_CLOSED = 40001
   ,
   /**
-   * MHD is closing a connection because reading the
+   * MHD is closing a connection because receiving the
    * request failed.
    */
-  MHD_SC_CONNECTION_READ_FAIL_CLOSED = 40002
+  MHD_SC_CONNECTION_RECV_FAIL_CLOSED = 40002
   ,
   /**
-   * MHD is closing a connection because writing the response failed.
+   * MHD is closing a connection because sending the response failed.
    */
-  MHD_SC_CONNECTION_WRITE_FAIL_CLOSED = 40003
+  MHD_SC_CONNECTION_SEND_FAIL_CLOSED = 40003
   ,
   /**
    * MHD is returning an error because the header provided
    * by the client is too big.
    */
-  MHD_SC_CLIENT_HEADER_TOO_BIG = 40004
+  MHD_SC_CLIENT_HEADER_TOO_BIG = 40020
   ,
   /**
    * An HTTP/1.1 request was sent without the "Host:" header.
    */
-  MHD_SC_HOST_HEADER_MISSING = 40005
+  MHD_SC_HOST_HEADER_MISSING = 40060
+  ,
+  /**
+   * Request has more than one "Host:" header.
+   */
+  MHD_SC_HOST_HEADER_SEVERAL = 40061
   ,
   /**
    * The given content length was not a number.
    */
-  MHD_SC_CONTENT_LENGTH_MALFORMED = 40006
+  MHD_SC_CONTENT_LENGTH_MALFORMED = 40062
+  ,
+  /**
+   * Request has more than one "Content-Length:" header with the same value.
+   */
+  MHD_SC_CONTENT_LENGTH_SEVERAL_SAME = 40063
+  ,
+  /**
+   * Request has more than one "Content-Length:" header with the different
+   * values.
+   */
+  MHD_SC_CONTENT_LENGTH_SEVERAL_DIFFERENT = 40064
+  ,
+  /**
+   * The BOTH Content-Length and Transfer-Encoding headers are used.
+   */
+  MHD_SC_CONTENT_LENGTH_AND_TR_ENC = 40065
+  ,
+  /**
+   * The Content-Length is too large to be handled.
+   */
+  MHD_SC_CONTENT_LENGTH_TOO_LARGE = 40066
+  ,
+  /**
+   * Transfer encoding in request is unsupported or invalid.
+   */
+  MHD_SC_CHUNKED_ENCODING_UNSUPPORTED = 40067
   ,
   /**
    * The given uploaded, chunked-encoded body was malformed.
    */
-  MHD_SC_CHUNKED_ENCODING_MALFORMED = 40007
+  MHD_SC_CHUNKED_ENCODING_MALFORMED = 40080
+  ,
+  /**
+   * The first header line has whitespace at the start
+   */
+  MHD_SC_REQ_FIRST_HEADER_LINE_SPACE_PREFIXED = 40100
+  ,
+  /**
+   * The request target (URI) has whitespace character
+   */
+  MHD_SC_REQ_TARGET_HAS_WHITESPACE = 40101
+  ,
+  /**
+   * Wrong bare CR characters has been replaced with space.
+   */
+  MHD_SC_REQ_HEADER_CR_REPLACED = 40120
+  ,
+  /**
+   * Header line has not colon and skipped.
+   */
+  MHD_SC_REQ_HEADER_LINE_NO_COLON = 40121
+  ,
+  /**
+   * Wrong bare CR characters has been replaced with space.
+   */
+  MHD_SC_REQ_FOOTER_CR_REPLACED = 40140
+  ,
+  /**
+   * Footer line has not colon and skipped.
+   */
+  MHD_SC_REQ_FOOTER_LINE_NO_COLON = 40141
+  ,
+  /**
+   * The request is malformed.
+   */
+  MHD_SC_REQ_MALFORMED = 40155
+  ,
+  /**
+   * The cookie string has been parsed, but it is not fully compliant with
+   * specifications
+   */
+  MHD_SC_REQ_COOKIE_PARSED_NOT_COMPLIANT = 40160
+  ,
+  /**
+   * The cookie string has been parsed only partially
+   */
+  MHD_SC_REQ_COOKIE_PARSED_PARTIALLY = 40161
+  ,
+  /**
+   * The cookie string is ignored, as it is not fully compliant with
+   * specifications
+   */
+  MHD_SC_REQ_COOKIE_IGNORED_NOT_COMPLIANT = 40162
+  ,
+  /**
+   * The cookie string has been ignored as it is invalid
+   */
+  MHD_SC_REQ_COOKIE_INVALID = 40163
+  ,
+  /**
+   * The request cannot be processed. Sending error reply.
+   */
+  MHD_SC_REQ_PROCCESSING_ERR_REPLY = 40200
   ,
 
   /* 50000-level errors are because of an error internal
@@ -532,276 +671,437 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_ITC_INITIALIZATION_FAILED = 50005
   ,
   /**
-   * File descriptor for ITC channel too large.
+   * File descriptor for ITC cannot be used because the FD number is higher
+   * than the limit set by FD_SETSIZE (if internal polling with select is used)
+   * or by application.
    */
-  MHD_SC_ITC_DESCRIPTOR_TOO_LARGE = 50006
+  MHD_SC_ITC_FD_OUTSIDE_OF_SET_RANGE = 50006
   ,
   /**
    * The specified value for the NC length is way too large
    * for this platform (integer overflow on `size_t`).
    */
-  MHD_SC_DIGEST_AUTH_NC_LENGTH_TOO_BIG = 50007
+  MHD_SC_DIGEST_AUTH_NC_LENGTH_TOO_BIG = 50010
   ,
   /**
    * We failed to allocate memory for the specified nonce
    * counter array.  The option was not set.
    */
-  MHD_SC_DIGEST_AUTH_NC_ALLOCATION_FAILURE = 50008
+  MHD_SC_DIGEST_AUTH_NC_ALLOCATION_FAILURE = 50011
   ,
   /**
    * This build of the library does not support
    * digest authentication.
    */
-  MHD_SC_DIGEST_AUTH_NOT_SUPPORTED_BY_BUILD = 50009
+  MHD_SC_DIGEST_AUTH_NOT_SUPPORTED_BY_BUILD = 50012
   ,
   /**
    * IPv6 requested but not supported by this build.
+   * @sa #MHD_SC_AF_NOT_SUPPORTED_BY_BUILD
    */
-  MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD = 50010
+  MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD = 50020
   ,
   /**
-   * We failed to open the listen socket. Maybe the build
-   * supports IPv6, but your kernel does not?
+   * Specified address/protocol family is not supported by this build.
+   * @sa MHD_SC_IPV6_NOT_SUPPORTED_BY_BUILD
    */
-  MHD_SC_FAILED_TO_OPEN_LISTEN_SOCKET = 50011
+  MHD_SC_AF_NOT_SUPPORTED_BY_BUILD = 50021
   ,
   /**
-   * Specified address family is not supported by this build.
+   * The requested address/protocol family is rejected by the OS.
+   * @sa #MHD_SC_AF_NOT_SUPPORTED_BY_BUILD
    */
-  MHD_SC_AF_NOT_SUPPORTED_BY_BUILD = 50012
+  MHD_SC_AF_NOT_AVAILABLE = 500022
+  ,
+  /**
+   * We failed to open the listen socket.
+   */
+  MHD_SC_FAILED_TO_OPEN_LISTEN_SOCKET = 50040
+  ,
+  /**
+   * Failed to enable listen port reuse.
+   */
+  MHD_SC_LISTEN_PORT_REUSE_ENABLE_FAILED = 50041
+  ,
+  /**
+   * Failed to enable listen port reuse.
+   */
+  MHD_SC_LISTEN_PORT_REUSE_ENABLE_NOT_SUPPORTED = 50042
   ,
   /**
    * Failed to enable listen address reuse.
    */
-  MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_FAILED = 50013
+  MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_FAILED = 50043
   ,
   /**
    * Enabling listen address reuse is not supported by this platform.
    */
-  MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_NOT_SUPPORTED = 50014
+  MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_NOT_SUPPORTED = 50044
   ,
   /**
-   * Failed to disable listen address reuse.
+   * Failed to enable exclusive use of listen address.
    */
-  MHD_SC_LISTEN_ADDRESS_REUSE_DISABLE_FAILED = 50015
+  MHD_SC_LISTEN_ADDRESS_EXCLUSIVE_ENABLE_FAILED = 50045
   ,
   /**
-   * Disabling listen address reuse is not supported by this platform.
+   * Dual stack configuration is not possible for provided sockaddr.
    */
-  MHD_SC_LISTEN_ADDRESS_REUSE_DISABLE_NOT_SUPPORTED = 50016
+  MHD_SC_LISTEN_DUAL_STACK_NOT_SUITABLE = 50046
   ,
   /**
-   * We failed to explicitly enable or disable dual stack for
-   * the IPv6 listen socket.  The socket will be used in whatever
-   * the default is the OS gives us.
+   * Failed to enable or disable dual stack for the IPv6 listen socket.
+   * The OS default dual-stack setting is different from what is requested.
    */
-  MHD_SC_LISTEN_DUAL_STACK_CONFIGURATION_FAILED = 50017
+  MHD_SC_LISTEN_DUAL_STACK_CONFIGURATION_REJECTED = 50047
+  ,
+  /**
+   * Failed to enable or disable dual stack for the IPv6 listen socket.
+   * The socket will be used in whatever the default is the OS uses.
+   */
+  MHD_SC_LISTEN_DUAL_STACK_CONFIGURATION_UNKNOWN = 50048
   ,
   /**
    * On this platform, MHD does not support explicitly configuring
-   * dual stack behavior.
+   * dual stack behaviour.
    */
-  MHD_SC_LISTEN_DUAL_STACK_CONFIGURATION_NOT_SUPPORTED = 50018
+  MHD_SC_LISTEN_DUAL_STACK_CONFIGURATION_NOT_SUPPORTED = 50049
   ,
   /**
    * Failed to enable TCP FAST OPEN option.
    */
-  MHD_SC_FAST_OPEN_FAILURE = 50020
+  MHD_SC_LISTEN_FAST_OPEN_FAILURE = 50050
   ,
   /**
-   * Failed to start listening on listen socket.
+   * TCP FAST OPEN is not supported by the platform or by this MHD build.
    */
-  MHD_SC_LISTEN_FAILURE = 50021
-  ,
-  /**
-   * Failed to obtain our listen port via introspection.
-   */
-  MHD_SC_LISTEN_PORT_INTROSPECTION_FAILURE = 50022
-  ,
-  /**
-   * Failed to obtain our listen port via introspection
-   * due to unsupported address family being used.
-   */
-  MHD_SC_LISTEN_PORT_INTROSPECTION_UNKNOWN_AF = 50023
+  MHD_SC_FAST_OPEN_NOT_SUPPORTED = 50051
   ,
   /**
    * We failed to set the listen socket to non-blocking.
    */
-  MHD_SC_LISTEN_SOCKET_NONBLOCKING_FAILURE = 50024
+  MHD_SC_LISTEN_SOCKET_NONBLOCKING_FAILURE = 50052
   ,
   /**
-   * Listen socket value is too large (for use with select()).
+   * Failed to configure listen socket to be non-inheritable.
    */
-  MHD_SC_LISTEN_SOCKET_TOO_LARGE = 50025
+  MHD_SC_LISTEN_SOCKET_NOINHERIT_FAILED = 50053
   ,
   /**
-   * We failed to allocate memory for the thread pool.
+   * Listen socket FD cannot be used because the FD number is higher than
+   * the limit set by FD_SETSIZE (if internal polling with select is used) or
+   * by application.
    */
-  MHD_SC_THREAD_POOL_MALLOC_FAILURE = 50026
+  MHD_SC_LISTEN_FD_OUTSIDE_OF_SET_RANGE = 50054
   ,
   /**
-   * We failed to allocate mutex for thread pool worker.
+   * We failed to bind the listen socket.
    */
-  MHD_SC_THREAD_POOL_CREATE_MUTEX_FAILURE = 50027
+  MHD_SC_LISTEN_SOCKET_BIND_FAILED = 50055
   ,
   /**
-   * There was an attempt to upgrade a connection on
-   * a daemon where upgrades are disallowed.
+   * Failed to start listening on listen socket.
    */
-  MHD_SC_UPGRADE_ON_DAEMON_WITH_UPGRADE_DISALLOWED = 50028
+  MHD_SC_LISTEN_FAILURE = 50056
   ,
   /**
-   * Failed to signal via ITC channel.
+   * Failed to detect the port number on the listening socket
    */
-  MHD_SC_ITC_USE_FAILED = 50029
-  ,
-  /**
-   * We failed to initialize the main thread for listening.
-   */
-  MHD_SC_THREAD_MAIN_LAUNCH_FAILURE = 50030
-  ,
-  /**
-   * We failed to initialize the threads for the worker pool.
-   */
-  MHD_SC_THREAD_POOL_LAUNCH_FAILURE = 50031
-  ,
-  /**
-   * We failed to add a socket to the epoll() set.
-   */
-  MHD_SC_EPOLL_CTL_ADD_FAILED = 50032
+  MHD_SC_LISTEN_PORT_DETECT_FAILURE = 50057
   ,
   /**
    * We failed to create control socket for the epoll().
    */
-  MHD_SC_EPOLL_CTL_CREATE_FAILED = 50034
+  MHD_SC_EPOLL_CTL_CREATE_FAILED = 50060
   ,
   /**
    * We failed to configure control socket for the epoll()
    * to be non-inheritable.
    */
-  MHD_SC_EPOLL_CTL_CONFIGURE_NOINHERIT_FAILED = 50035
+  MHD_SC_EPOLL_CTL_CONFIGURE_NOINHERIT_FAILED = 50061
   ,
   /**
-   * We failed to build the FD set because a socket was
-   * outside of the permitted range.
+   * The epoll() control FD cannot be used because the FD number is higher
+   * than the limit set by application.
    */
-  MHD_SC_SOCKET_OUTSIDE_OF_FDSET_RANGE = 50036
+  MHD_SC_EPOLL_CTL_OUTSIDE_OF_SET_RANGE = 50062
   ,
   /**
-   * This daemon was not configured with options that
-   * would allow us to build an FD set for select().
+   * Failed to allocate memory for daemon's fd_sets
    */
-  MHD_SC_CONFIGURATION_MISMATCH_FOR_GET_FDSET = 50037
+  MHD_SC_FD_SET_MEMORY_ALLOCATE_FAILURE = 50063
+  ,
+  /**
+   * Failed to allocate memory for poll() structures
+   */
+  MHD_SC_POLL_FDS_MEMORY_ALLOCATE_FAILURE = 50063
+  ,
+  /**
+   * Failed to allocate memory for epoll data
+   */
+  MHD_SC_EPOLL_EVENTS_MEMORY_ALLOCATE_FAILURE = 50064
+  ,
+  /**
+   * Failed to add daemon's FDs (ITC and/or listening) to the epoll monitoring
+   */
+  MHD_SC_EPOLL_ADD_DAEMON_FDS_FAILURE = 50065
+  ,
+  /**
+   * The select() syscall is not available on this platform or in this MHD
+   * build.
+   */
+  MHD_SC_SELECT_SYSCALL_NOT_AVAILABLE = 50070
+  ,
+  /**
+   * The poll() syscall is not available on this platform or in this MHD
+   * build.
+   */
+  MHD_SC_POLL_SYSCALL_NOT_AVAILABLE = 50071
+  ,
+  /**
+   * The epoll syscalls are not available on this platform or in this MHD
+   * build.
+   */
+  MHD_SC_EPOLL_SYSCALL_NOT_AVAILABLE = 50072
+  ,
+  /**
+   * Failed to obtain our listen port via introspection.
+   * FIXME: remove?
+   */
+  MHD_SC_LISTEN_PORT_INTROSPECTION_FAILURE = 50080
+  ,
+  /**
+   * Failed to obtain our listen port via introspection
+   * due to unsupported address family being used.
+   */
+  MHD_SC_LISTEN_PORT_INTROSPECTION_UNKNOWN_AF = 50081
+  ,
+  /**
+   * Failed to initialise mutex.
+   */
+  MHD_SC_MUTEX_INIT_FAILURE = 50085
+  ,
+  /**
+   * Failed to allocate memory for the thread pool.
+   */
+  MHD_SC_THREAD_POOL_MALLOC_FAILURE = 50090
+  ,
+  /**
+   * We failed to allocate mutex for thread pool worker.
+   */
+  MHD_SC_THREAD_POOL_CREATE_MUTEX_FAILURE = 50093
+  ,
+  /**
+   * Failed to start the main daemon thread.
+   */
+  MHD_SC_THREAD_MAIN_LAUNCH_FAILURE = 50095
+  ,
+  /**
+   * Failed to start the daemon thread for listening.
+   */
+  MHD_SC_THREAD_LISTENING_LAUNCH_FAILURE = 50096
+  ,
+  /**
+   * Failed to start the worker thread for the thread pool.
+   */
+  MHD_SC_THREAD_WORKER_LAUNCH_FAILURE = 50097
+  ,
+  /**
+   * There was an attempt to upgrade a connection on
+   * a daemon where upgrades are disallowed.
+   */
+  MHD_SC_UPGRADE_ON_DAEMON_WITH_UPGRADE_DISALLOWED = 50100
+  ,
+  /**
+   * Failed to signal via ITC channel.
+   */
+  MHD_SC_ITC_USE_FAILED = 500101
+  ,
+  /**
+   * Failed to check for the signal on the ITC channel.
+   */
+  MHD_SC_ITC_CHECK_FAILED = 500102
+  ,
+  /**
+   * System reported error conditions on the ITC FD..
+   */
+  MHD_SC_ITC_STATUS_ERROR = 500104
+  ,
+  /**
+   * Failed to add a socket to the epoll set.
+   */
+  MHD_SC_EPOLL_CTL_ADD_FAILED = 500110
+  ,
+  /**
+   * Socket FD cannot be used because the FD number is higher than the limit set
+   * by FD_SETSIZE (if internal polling with select is used) or by application.
+   */
+  MHD_SC_SOCKET_OUTSIDE_OF_SET_RANGE = 500111
+  ,
+  /**
+   * The daemon cannot be started with the specified settings as no space
+   * left for the connections sockets within limits set by FD_SETSIZE.
+   * Consider use another sockets polling syscall (only select() has such
+   * limitations)
+   */
+  MHD_SC_SYS_FD_SETSIZE_TOO_STRICT = 50112
   ,
   /**
    * This daemon was not configured with options that
    * would allow us to obtain a meaningful timeout.
    */
-  MHD_SC_CONFIGURATION_MISMATCH_FOR_GET_TIMEOUT = 50038
+  MHD_SC_CONFIGURATION_MISMATCH_FOR_GET_TIMEOUT = 50113
   ,
   /**
    * This daemon was not configured with options that
    * would allow us to run with select() data.
    */
-  MHD_SC_CONFIGURATION_MISMATCH_FOR_RUN_SELECT = 50039
+  MHD_SC_CONFIGURATION_MISMATCH_FOR_RUN_SELECT = 50114
   ,
   /**
    * This daemon was not configured to run with an
    * external event loop.
    */
-  MHD_SC_CONFIGURATION_MISMATCH_FOR_RUN_EXTERNAL = 50040
-  ,
-  /**
-   * Encountered an unexpected event loop style
-   * (should never happen).
-   */
-  MHD_SC_CONFIGURATION_UNEXPECTED_ELS = 50041
+  MHD_SC_CONFIGURATION_MISMATCH_FOR_RUN_EXTERNAL = 50115
   ,
   /**
    * Encountered an unexpected error from select()
    * (should never happen).
    */
-  MHD_SC_UNEXPECTED_SELECT_ERROR = 50042
+  MHD_SC_UNEXPECTED_SELECT_ERROR = 50116
+  ,
+  /**
+   * Failed to remove a socket to the epoll set.
+   */
+  MHD_SC_EPOLL_CTL_REMOVE_FAILED = 50117
   ,
   /**
    * poll() is not supported.
    */
-  MHD_SC_POLL_NOT_SUPPORTED = 50043
+  MHD_SC_POLL_NOT_SUPPORTED = 50120
   ,
   /**
-   * Encountered an unexpected error from poll()
-   * (should never happen).
+   * Encountered a (potentially) recoverable error from poll().
    */
-  MHD_SC_UNEXPECTED_POLL_ERROR = 50044
+  MHD_SC_POLL_SOFT_ERROR = 50121
+  ,
+  /**
+   * Encountered an unrecoverable error from poll().
+   */
+  MHD_SC_POLL_HARD_ERROR = 50122
+  ,
+  /**
+   * Encountered a (potentially) recoverable error from select().
+   */
+  MHD_SC_SELECT_SOFT_ERROR = 50123
+  ,
+  /**
+   * Encountered an unrecoverable error from select().
+   */
+  MHD_SC_SELECT_HARD_ERROR = 50124
+  ,
+  /**
+   * System reported error conditions on the listening socket.
+   */
+  MHD_SC_LISTEN_STATUS_ERROR = 50129
+  ,
+  /**
+   * Encountered an unrecoverable error from epoll function.
+   */
+  MHD_SC_EPOLL_HARD_ERROR = 50130
   ,
   /**
    * We failed to configure accepted socket
-   * to not use a signal pipe.
+   * to not use a SIGPIPE.
    */
-  MHD_SC_ACCEPT_CONFIGURE_NOSIGPIPE_FAILED = 50045
-  ,
-  /**
-   * Encountered an unexpected error from epoll_wait()
-   * (should never happen).
-   */
-  MHD_SC_UNEXPECTED_EPOLL_WAIT_ERROR = 50046
-  ,
-  /**
-   * epoll file descriptor is invalid (strange)
-   */
-  MHD_SC_EPOLL_FD_INVALID = 50047
+  MHD_SC_ACCEPT_CONFIGURE_NOSIGPIPE_FAILED = 50140
   ,
   /**
    * We failed to configure accepted socket
    * to be non-inheritable.
    */
-  MHD_SC_ACCEPT_CONFIGURE_NOINHERIT_FAILED = 50048
+  MHD_SC_ACCEPT_CONFIGURE_NOINHERIT_FAILED = 50141
   ,
   /**
    * We failed to configure accepted socket
    * to be non-blocking.
    */
-  MHD_SC_ACCEPT_CONFIGURE_NONBLOCKING_FAILED = 50049
+  MHD_SC_ACCEPT_CONFIGURE_NONBLOCKING_FAILED = 50142
   ,
   /**
-   * accept() returned non-transient error.
+   * The accepted socket FD value is too large.
    */
-  MHD_SC_ACCEPT_FAILED_UNEXPECTEDLY = 50050
+  MHD_SC_ACCEPT_OUTSIDE_OF_SET_RANGE = 50143
+  ,
+  /**
+   * accept() returned unexpected error.
+   */
+  MHD_SC_ACCEPT_FAILED_UNEXPECTEDLY = 50144
   ,
   /**
    * Operating resource limits hit on accept() while
    * zero connections are active. Oopsie.
    */
-  MHD_SC_ACCEPT_SYSTEM_LIMIT_REACHED_INSTANTLY = 50051
+  MHD_SC_ACCEPT_SYSTEM_LIMIT_REACHED_INSTANTLY = 50145
+  ,
+  /**
+   * The daemon sockets polling mode requires non-blocking sockets.
+   */
+  MHD_SC_NONBLOCKING_REQUIRED = 50146
+  ,
+  /**
+   * Encountered an unexpected error from epoll_wait()
+   * (should never happen).
+   */
+  MHD_SC_UNEXPECTED_EPOLL_WAIT_ERROR = 50150
+  ,
+  /**
+   * epoll file descriptor is invalid (strange)
+   */
+  MHD_SC_EPOLL_FD_INVALID = 50151
+  ,
+  /**
+   * Unexpected socket error (strange)
+   */
+  MHD_SC_UNEXPECTED_SOCKET_ERROR = 50152
   ,
   /**
    * Failed to add IP address to per-IP counter for
    * some reason.
    */
-  MHD_SC_IP_COUNTER_FAILURE = 50052
+  MHD_SC_IP_COUNTER_FAILURE = 50160
   ,
   /**
    * Application violated our API by calling shutdown
    * while having an upgrade connection still open.
    */
-  MHD_SC_SHUTDOWN_WITH_OPEN_UPGRADED_CONNECTION = 50053
+  MHD_SC_SHUTDOWN_WITH_OPEN_UPGRADED_CONNECTION = 50180
   ,
   /**
    * Due to an unexpected internal error with the
    * state machine, we closed the connection.
    */
-  MHD_SC_STATEMACHINE_FAILURE_CONNECTION_CLOSED = 50054
+  MHD_SC_STATEMACHINE_FAILURE_CONNECTION_CLOSED = 50200
   ,
   /**
    * Failed to allocate memory in connection's pool
    * to parse the cookie header.
    */
-  MHD_SC_COOKIE_POOL_ALLOCATION_FAILURE = 50055
+  MHD_SC_COOKIE_POOL_ALLOCATION_FAILURE = 50220
   ,
   /**
    * MHD failed to build the response header.
    */
-  MHD_SC_FAILED_RESPONSE_HEADER_GENERATION = 50056
+  MHD_SC_REPLY_FAILED_HEADER_GENERATION = 50230
+  ,
+  /**
+   * Failed to allocate memory in connection's pool for the reply.
+   */
+  MHD_SC_REPLY_POOL_ALLOCATION_FAILURE = 50231
+  ,
+  /**
+   * Failed to allocate memory in connection's pool for the reply.
+   */
+  MHD_SC_ERR_RESPONSE_ALLOCATION_FAILURE = 50250
   ,
   /**
    * The feature is not supported by this MHD build (either
@@ -812,7 +1112,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * will be run on another kernel, computer or system
    * configuration.
    */
-  MHD_SC_FEATURE_DISABLED = 500057
+  MHD_SC_FEATURE_DISABLED = 50300
   ,
   /**
    * The feature is not supported by this platform, while
@@ -821,7 +1121,66 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * running on another computer or with other system
    * configuration.
    */
-  MHD_SC_FEATURE_NOT_AVAILABLE = 500058
+  MHD_SC_FEATURE_NOT_AVAILABLE = 50320
+  ,
+  /**
+   * Failed to stop the thread
+   */
+  MHD_SC_DAEMON_THREAD_STOP_ERROR = 50350
+  ,
+  /**
+   * Unexpected reasons for thread stop
+   */
+  MHD_SC_DAEMON_THREAD_STOP_UNEXPECTED = 50350
+  ,
+  /**
+   * Failed to acquire response mutex lock
+   */
+  MHD_SC_RESPONSE_MUTEX_LOCK_FAILED = 50500
+  ,
+  /**
+   * Failed to initialise response mutex
+   */
+  MHD_SC_RESPONSE_MUTEX_INIT_FAILED = 50501
+  ,
+  /**
+   * Unable to clear "reusable" flag.
+   * One this flag set, it cannot be removed for the response lifetime.
+   */
+  MHD_SC_RESPONSE_CANNOT_CLEAR_REUSE = 50520
+  ,
+  /**
+   * Unable to allocate memory for the response header
+   */
+  MHD_SC_RESPONSE_HEADER_MALLOC_FAILED = 50540
+  ,
+  /**
+   * Failed to switch TCP_NODELAY option for the socket
+   */
+  MHD_SC_SOCKET_TCP_NODELAY_FAILED = 50600
+  ,
+  /**
+   * Failed to switch TCP_CORK or TCP_NOPUSH option for the socket
+   */
+  MHD_SC_SOCKET_TCP_CORK_NOPUSH_FAILED = 50601
+  ,
+  /**
+   * Failed to force flush the last part of the response header or
+   * the response content
+   */
+  MHD_SC_SOCKET_FLUSH_LAST_PART_FAILED = 50620
+  ,
+  /**
+   * Failed to push buffered data by zero-sized send()
+   */
+  MHD_SC_SOCKET_ZERO_SEND_FAILED = 50621
+  ,
+  /**
+   * Something wrong in the internal MHD logic.
+   * This error should be never returned if MHD works as expected.
+   * If this code is ever returned, please report to MHD maintainers.
+   */
+  MHD_SC_INTERNAL_ERROR = 51000
   ,
 
   /* 60000-level errors are because the application
@@ -829,20 +1188,15 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
 
   /**
    * MHD does not support the requested combination of
-   * EPOLL with thread-per-connection mode.
+   * the sockets polling syscall and the work mode.
    */
-  MHD_SC_SYSCALL_THREAD_COMBINATION_INVALID = 60000
+  MHD_SC_SYSCALL_WORK_MODE_COMBINATION_INVALID = 60000
   ,
   /**
    * MHD does not support quiescing if ITC was disabled
    * and threads are used.
    */
   MHD_SC_SYSCALL_QUIESCE_REQUIRES_ITC = 60001
-  ,
-  /**
-   * We failed to bind the listen socket.
-   */
-  MHD_SC_LISTEN_SOCKET_BIND_FAILED = 60002
   ,
   /**
    * The application requested an unsupported TLS backend to be used.
@@ -865,7 +1219,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * MHD is closing a connection because the application
    * callback told it to do so.
    */
-  MHD_SC_APPLICATION_CALLBACK_FAILURE_CLOSED = 60006
+  MHD_SC_APPLICATION_CALLBACK_ABORT_ACTION = 60006
   ,
   /**
    * Application only partially processed upload and did
@@ -894,11 +1248,108 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_OPTIONS_CONFLICT = 60010
   ,
   /**
-   * Attempted to set an invalid option value.
+   * Attempted to set an option that not recognised by MHD.
    */
-  MHD_SC_OPTIONS_INVALID = 60011
-
-
+  MHD_SC_OPTION_UNKNOWN = 60011
+  ,
+  /**
+   * Parameter specified unknown work mode.
+   */
+  MHD_SC_CONFIGURATION_UNEXPECTED_WM = 60012
+  ,
+  /**
+   * Parameter specified unknown socket poll syscall.
+   */
+  MHD_SC_CONFIGURATION_UNEXPECTED_SPS = 60013
+  ,
+  /**
+   * The size of the provided sockaddr does not match address family.
+   */
+  MHD_SC_CONFIGURATION_WRONG_SA_SIZE = 60014
+  ,
+  /**
+   * The number set by #MHD_D_O_FD_NUMBER_LIMIT is too strict to run
+   * the daemon
+   */
+  MHD_SC_MAX_FD_NUMBER_LIMIT_TOO_STRICT = 60015
+  ,
+  /**
+   * The number set by #MHD_D_O_GLOBAL_CONNECTION_LIMIT is too for the daemon
+   * configuration
+   */
+  MHD_SC_CONFIGURATION_CONN_LIMIT_TOO_SMALL = 60016
+  ,
+  /**
+   * The response header name has forbidden characters
+   */
+  MHD_SC_RESP_HEADER_NAME_INVALID = 60050
+  ,
+  /**
+   * The response header value has forbidden characters
+   */
+  MHD_SC_RESP_HEADER_VALUE_INVALID = 60051
+  ,
+  /**
+   * The provided MHD_Action is invalid
+   */
+  MHD_SC_ACTION_INVALID = 60080
+  ,
+  /**
+   * The provided MHD_UploadAction is invalid
+   */
+  MHD_SC_UPLOAD_ACTION_INVALID = 60081
+  ,
+  /**
+   * The response must be empty
+   */
+  MHD_SC_REPLY_NOT_EMPTY_RESPONSE = 60101
+  ,
+  /**
+   * The "Content-Length" header is not allowed in the reply
+   */
+  MHD_SC_REPLY_CONTENT_LENGTH_NOT_ALLOWED = 60102
+  ,
+  /**
+   * The new connection cannot be used because the FD number is higher than
+   * the limit set by FD_SETSIZE (if internal polling with select is used) or
+   * by application.
+   */
+  MHD_SC_NEW_CONN_FD_OUTSIDE_OF_SET_RANGE = 60140
+  ,
+  /**
+   * The requested type of information is not recognised.
+   */
+  MHD_SC_INFO_TYPE_UNKNOWN = 60200
+  ,
+  /**
+   * The requested type of information is not recognised.
+   */
+  MHD_SC_INFO_GET_INFO_TYPE_UNKNOWN = 60200
+  ,
+  /**
+   * The information of the requested type is too large to fit into
+   * the provided buffer.
+   */
+  MHD_SC_INFO_GET_BUFF_TOO_SMALL = 60201
+  ,
+  /**
+   * The type of the information is not supported by this MHD build.
+   * It can be information not supported on the current platform or related
+   * to feature disabled for this build.
+   */
+  MHD_SC_INFO_GET_TYPE_NOT_SUPP_BY_BUILD = 60202
+  ,
+  /**
+   * The type of the information is not available due to configuration
+   * or state of the object.
+   */
+  MHD_SC_INFO_GET_TYPE_UNSUPPORTED = 60203
+  ,
+  /**
+   * The type of the information should be available for the object, but
+   * cannot be provided due to some error or other reasons.
+   */
+  MHD_SC_INFO_GET_TYPE_UNAVAILALBE = 60204
 };
 
 /**
@@ -913,7 +1364,16 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
  */
 MHD_EXTERN_ const struct MHD_String *
 MHD_status_code_to_string (enum MHD_StatusCode code)
-MHD_FN_PURE_;
+MHD_FN_CONST_;
+
+/**
+ * Get the pointer to the C string for the MHD error code, never NULL.
+ */
+#define MHD_status_code_to_string_lazy(code) \
+        (MHD_status_code_to_string ((code)) ? \
+         ((MHD_status_code_to_string (code))->cstr) : ("[No code]") )
+
+#ifndef MHD_HTTP_METHOD_DEFINED
 
 /**
  * @brief HTTP request methods
@@ -936,13 +1396,13 @@ MHD_FN_PURE_;
  * #MHD_HTTP_METHOD_OTHER today, it may return a method-specific header in the
  * future!
  */
-enum MHD_FIXED_ENUM_ MHD_HTTP_Method
+enum MHD_FIXED_ENUM_MHD_SET_ MHD_HTTP_Method
 {
 
   /**
    * Method did not match any of the methods given below.
    */
-  MHD_HTTP_METHOD_OTHER = 0
+  MHD_HTTP_METHOD_OTHER = 255
   ,
   /* Main HTTP methods. */
 
@@ -1001,6 +1461,9 @@ enum MHD_FIXED_ENUM_ MHD_HTTP_Method
   MHD_HTTP_METHOD_ASTERISK = 9
 };
 
+#define MHD_HTTP_METHOD_DEFINED 1
+#endif /* ! MHD_HTTP_METHOD_DEFINED */
+
 /**
  * Get text version of the method name.
  * @param method the method to get the text version
@@ -1010,7 +1473,8 @@ enum MHD_FIXED_ENUM_ MHD_HTTP_Method
  */
 MHD_EXTERN_ const struct MHD_String *
 MHD_http_method_to_string (enum MHD_HTTP_Method method)
-MHD_FN_PURE_;
+MHD_FN_CONST_;
+
 
 /* Main HTTP methods. */
 /* Safe.     Idempotent.     RFC9110, Section 9.3.1. */
@@ -1030,7 +1494,7 @@ MHD_FN_PURE_;
 /* Safe.     Idempotent.     RFC9110, Section 9.3.8. */
 #define MHD_HTTP_METHOD_STR_TRACE    "TRACE"
 /* Not safe. Not idempotent. RFC9110, Section 18.2. */
-#define MHD_HTTP_METHOD_STR_ASTERISK       "*"
+#define MHD_HTTP_METHOD_STR_ASTERISK  "*"
 
 /* Additional HTTP methods. */
 /* Not safe. Idempotent.     RFC3744, Section 8.1. */
@@ -1098,6 +1562,8 @@ MHD_FN_PURE_;
 
 /** @} */ /* end of group methods */
 
+#ifndef MHD_HTTP_POSTENCODING_DEFINED
+
 
 /**
  * @brief Possible encodings for HTML forms submitted as HTTP POST requests
@@ -1140,6 +1606,9 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_HTTP_PostEncoding
 
 
 /** @} */ /* end of group postenc */
+
+#define MHD_HTTP_POSTENCODING_DEFINED 1
+#endif /* ! MHD_HTTP_POSTENCODING_DEFINED */
 
 
 /**
@@ -1694,7 +2163,7 @@ enum MHD_PredefinedHeader
  */
 MHD_EXTERN_ const struct MHD_String *
 MHD_predef_header_to_string (enum MHD_PredefinedHeader stk)
-MHD_FN_PURE_;
+MHD_FN_CONST_;
 
 /** @} */ /* end of group headers */
 
@@ -1702,6 +2171,9 @@ MHD_FN_PURE_;
  * A client has requested the given url using the given method
  * (#MHD_HTTP_METHOD_GET, #MHD_HTTP_METHOD_PUT,
  * #MHD_HTTP_METHOD_DELETE, #MHD_HTTP_METHOD_POST, etc).
+ * If @a upload_size is not zero and response action is provided by this
+ * callback, then upload will be discarded and the stream (the connection for
+ * HTTP/1.1) will be closed after sending the response.
  *
  * @param cls argument given together with the function
  *        pointer when the handler was registered with MHD
@@ -1713,7 +2185,7 @@ MHD_FN_PURE_;
  *                    #MHD_SIZE_UNKNOWN for chunked uploads (if the
  *                    final chunk has not been processed yet)
  * @return action how to proceed, NULL
- *         if the request must be closed due to a serious
+ *         if the request must be aborted due to a serious
  *         error while handling the request (implies closure
  *         of underling data stream, for HTTP/1.1 it means
  *         socket closure).
@@ -1721,8 +2193,8 @@ MHD_FN_PURE_;
 typedef const struct MHD_Action *
 (MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_NONNULL_ (3)
  *MHD_RequestCallback)(void *cls,
-                       struct MHD_Request *request,
-                       const struct MHD_String *path,
+                       struct MHD_Request *MHD_RESTRICT request,
+                       const struct MHD_String *MHD_RESTRICT path,
                        enum MHD_HTTP_Method method,
                        uint_fast64_t upload_size);
 
@@ -1975,7 +2447,7 @@ struct MHD_EventUpdateContext;
  *                     NULL if @a fd socket was not registered before
  * @param ecb_cntx the context handle to be used
  *                 with #MHD_daemon_event_update()
- * @return NULL if error (to connection will be closed),
+ * @return NULL if error (to connection will be aborted),
  *         or the new socket context
  * @ingroup event
  */
@@ -2005,8 +2477,8 @@ typedef MHD_APP_SOCKET_CNTX_TYPE *
  */
 MHD_EXTERN_ void
 MHD_daemon_event_update (
-  struct MHD_Daemon *daemon,
-  struct MHD_EventUpdateContext *ecb_cntx,
+  struct MHD_Daemon *MHD_RESTRICT daemon,
+  struct MHD_EventUpdateContext *MHD_RESTRICT ecb_cntx,
   enum MHD_FdState fd_current_state)
 MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2);
 
@@ -2076,7 +2548,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_WorkMode
    * that gets triggered by any MHD event.
    * This FD can be watched as an aggregate indicator for all MHD events.
    * This mode is available only on selected platforms (currently
-   * GNU/Linux only), see #MHD_LIB_INFO_FIXED_HAS_AGGREGATE_FD.
+   * GNU/Linux and OpenIndiana only), see #MHD_LIB_INFO_FIXED_HAS_AGGREGATE_FD.
    * When the FD is triggered, #MHD_daemon_process_nonblocking() should
    * be called.
    * Use helper macro #MHD_D_OPTION_WM_EXTERNAL_SINGLE_FD_WATCH() to enable
@@ -2441,20 +2913,38 @@ typedef void
 enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOptionBindType
 {
   /**
-   * The listen socket bind to the networks address without sharing the address.
+   * The listen socket bind to the networks address with sharing the address.
+   * Several sockets can bind to the same address.
+   */
+  MHD_D_OPTION_BIND_TYPE_SHARED = -1
+  ,
+  /**
+   * The listen socket bind to the networks address without sharing the address,
+   * except allowing binding to port/address which has TIME_WAIT state (the
+   * state after closing connection).
+   * On some platforms it may also allow to bind to specific address if other
+   * socket already bond to the same port of wildcard address (or bind to
+   * wildcard address when other socket already bond to specific address
+   * with the same port).
+   * Typically achieved by enabling 'SO_REUSEADDR' socket option.
    * Default.
    */
   MHD_D_OPTION_BIND_TYPE_NOT_SHARED = 0
   ,
   /**
-   * The listen socket bind to the networks address with sharing the address.
-   * Several sockets can bind to the same address.
+   * The listen socket bind to the networks address without sharing the address.
+   * The daemon way fail to start when any sockets still in "TIME_WAIT" state
+   * on the same port, which effectively prevents quick restart of the daemon
+   * on the same port.
+   * On W32 systems it works like #MHD_D_OPTION_BIND_TYPE_NOT_SHARED due to
+   * the OS limitations.
    */
-  MHD_D_OPTION_BIND_TYPE_SHARED = 1
+  MHD_D_OPTION_BIND_TYPE_NOT_SHARED_STRICTER = 1
   ,
   /**
    * The list socket bind to the networks address in explicit exclusive mode.
-   * Ignored on platforms without support for the explicit exclusive socket use.
+   * Works as #MHD_D_OPTION_BIND_TYPE_NOT_SHARED_STRICTER on platforms without
+   * support for the explicit exclusive socket use.
    */
   MHD_D_OPTION_BIND_TYPE_EXCLUSIVE = 2
 };
@@ -2479,8 +2969,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_TCPFastOpenType
   ,
   /**
    * Require TCP_FASTOPEN.
-   * Also causes #MHD_daemon_start() to fail if setting
-   * the option fails later.
+   * Also causes #MHD_daemon_start() to fail if TCP_FASTOPEN cannot be enabled.
    */
   MHD_FOM_REQUIRE = 1
 };
@@ -2504,19 +2993,32 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_AddressFamily
   MHD_AF_AUTO = 1
   ,
   /**
-   * Use IPv4.
+   * Use IPv4 only.
    */
   MHD_AF_INET4 = 2
   ,
   /**
-   * Use IPv6.
+   * Use IPv6 only.
    */
   MHD_AF_INET6 = 3
   ,
   /**
-   * Use dual stack.
+   * Use dual stack (IPv4 and IPv6 on the same socket).
    */
   MHD_AF_DUAL = 4
+  ,
+  /**
+   * Use dual stack (IPv4 and IPv6 on the same socket),
+   * fallback to pure IPv6 if dual stack is not possible.
+   */
+  MHD_AF_DUAL_v4_OPTIONAL = 5
+  ,
+  /**
+   * Use dual stack (IPv4 and IPv6 on the same socket),
+   * fallback to pure IPv4 if dual stack is not possible.
+   */
+  MHD_AF_DUAL_v6_OPTIONAL = 6
+
 };
 
 
@@ -2529,22 +3031,22 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_SockPollSyscall
    * Automatic selection of best-available method. This is also the
    * default.
    */
-  MHD_ELS_AUTO = 0
+  MHD_SPS_AUTO = 0
   ,
   /**
    * Use select().
    */
-  MHD_ELS_SELECT = 1
+  MHD_SPS_SELECT = 1
   ,
   /**
    * Use poll().
    */
-  MHD_ELS_POLL = 2
+  MHD_SPS_POLL = 2
   ,
   /**
    * Use epoll.
    */
-  MHD_ELS_EPOLL = 3
+  MHD_SPS_EPOLL = 3
 };
 
 
@@ -2788,8 +3290,8 @@ MHD_connection_set_psk (
 typedef void
 (*MHD_PskServerCredentialsCallback)(
   void *cls,
-  const struct MHD_Connection *connection,
-  const struct MHD_String *username,
+  const struct MHD_Connection *MHD_RESTRICT connection,
+  const struct MHD_String *MHD_RESTRICT username,
   struct MHD_ServerCredentialsContext *mscc);
 
 
@@ -2823,22 +3325,46 @@ typedef enum MHD_Bool
 
 
 /**
- * Function called by MHD to allow the application to log
- * the @a full_uri of a @a request.
+ * The data for the #MHD_EarlyUriLogCallback
+ */
+struct MHD_EarlyUriCbData
+{
+  /**
+   * The request handle.
+   * Headers are not yet available.
+   */
+  struct MHD_Request *request;
+
+  /**
+   * Pointer to the application context for the request.
+   * Modifiable. Initially to NULL.
+   */
+  void *request_app_context;
+};
+
+/**
+ * Function called by MHD to allow the application to log the @a full_uri
+ * of the new request.
+ * If this callback is set then it is the first application function called
+ * for the new request.
  * This is the only moment when unmodified URI is provided.
- * After this callback MHD parses the URI and modifies it
- * by extracting GET parameters in-place.
+ * After this callback MHD parses the URI and modifies it by extracting
+ * GET parameters in-place.
+ * If #MHD_RequestTerminationCallback is set then it is guaranteed that
+ * #MHD_RequestTerminationCallback is called for the same request. Application
+ * may allocate request specific data in this callback and de-allocate
+ * the data in #MHD_RequestTerminationCallback.
  *
  * @param cls client-defined closure
- * @param[in,out] request the HTTP request handle (headers are
- *         not yet available)
- * @param full_uri the full URI from the HTTP request including parameters (after '?')
+ * @param full_uri the full URI ("request target") from the HTTP request
+ *                 including parameters (the part after '?')
+ * @param[in,out] req_data the request data
  */
 typedef void
-(MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_NONNULL_ (3)
+(MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_ (3)
  *MHD_EarlyUriLogCallback)(void *cls,
-                           struct MHD_Request *request,
-                           const struct MHD_String *full_uri);
+                           const struct MHD_String *full_uri,
+                           struct MHD_EarlyUriCbData *req_data);
 
 
 /**
@@ -2925,17 +3451,16 @@ typedef void
 enum MHD_FIXED_ENUM_MHD_SET_ MHD_StreamNotificationCode
 {
   /**
-   * A new connection has been started.
+   * A new stream has been started.
    * @ingroup request
    */
   MHD_STREAM_NOTIFY_STARTED = 0
   ,
   /**
-   * A connection is closed.
+   * A stream is closed.
    * @ingroup request
    */
   MHD_STREAM_NOTIFY_CLOSED = 1
-
 };
 
 /**
@@ -3015,50 +3540,56 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestTerminationCode
   MHD_REQUEST_TERMINATED_COMPLETED_OK = 0
   ,
   /**
-   * The application terminated request without response.
+   * No activity on the connection for the number of seconds specified using
+   * #MHD_C_OPTION_TIMEOUT().
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_BY_APP = 1
+  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED = 10
+  ,
+  /**
+   * The connection was broken or TLS protocol error.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_CONNECTION_ERROR = 20
+  ,
+  /**
+   * The client terminated the connection by closing the socket either
+   * completely or for writing (TCP half-closed) before sending complete
+   * request.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_CLIENT_ABORT = 30
   ,
   /**
    * The request is not valid according to
    * HTTP specifications.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR = 2
+  MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR = 31
   ,
   /**
-   * The client terminated the connection by closing the socket
-   * for writing (TCP half-closed) before sending complete request;
-   * MHD aborted sending the response according to RFC 2616, section 8.1.4.
+   * The application aborted request without response.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_CLIENT_ABORT = 3
+  MHD_REQUEST_TERMINATED_BY_APP_ABORT = 40
+  ,
+  /**
+   * The application aborted request without response.
+   * @ingroup request
+   */
+  MHD_REQUEST_TERMINATED_BY_APP_ERROR = 41
   ,
   /**
    * Error handling the connection due to resources exhausted.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_NO_RESOURCES = 4
+  MHD_REQUEST_TERMINATED_NO_RESOURCES = 50
   ,
   /**
-   * We had to close the session since MHD was being shut down.
+   * Closing the session since MHD is being shut down.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 5
-  ,
-  /**
-   * No activity on the connection for the number of seconds specified using
-   * #MHD_C_OPTION_TIMEOUT().
-   * @ingroup request
-   */
-  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED = 6
-  ,
-  /**
-   * The connection was broken or TLS protocol error.
-   * @ingroup request
-   */
-  MHD_REQUEST_TERMINATED_CONNECTION_ERROR = 7
+  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 60
 };
 
 /**
@@ -3086,6 +3617,11 @@ struct MHD_RequestTerminationData
    * Detailed information about termination event
    */
   union MHD_RequestTerminationDetail details;
+  /**
+   * Pointer to the application context for the request.
+   * NULL unless other value set by application when processing the request.
+   */
+  void *request_app_context;
 };
 
 
@@ -3102,8 +3638,7 @@ struct MHD_RequestTerminationData
  */
 typedef void
 (*MHD_RequestTerminationCallback) (void *cls,
-                                   struct MHD_RequestTerminationData *data,
-                                   void *request_context);
+                                   struct MHD_RequestTerminationData *data);
 
 
 #include "microhttpd2_generated_response_options.h"

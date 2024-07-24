@@ -1043,7 +1043,7 @@ TOP:
              &dump_option_set_switch);
     fprintf (f,
              "    case MHD_%c_O_SENTINEL:\n"
-             "    default: /* for -WFIXME_EG */ \n"
+             "    default: /* for -Wswitch-default -Wswitch-enum */ \n"
              "      break;\n",
              (char) toupper (*category));
     fprintf (f,
