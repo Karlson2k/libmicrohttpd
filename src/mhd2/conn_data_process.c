@@ -166,7 +166,7 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
    * TLS read-ready connection in 'read info' state as connection
    * without space in read buffer will be marked as 'info block'. */
   if ( (! c->daemon->data_already_pending) &&
-       (! MHD_D_IS_USING_THREAD_PER_CONN_ (c->daemon)) )
+       (! mhd_D_HAS_THR_PER_CONN (c->daemon)) )
   {
     if (0 != (MHD_EVENT_LOOP_INFO_PROCESS & c->event_loop_info))
       c->daemon->data_already_pending = true;
