@@ -3537,7 +3537,8 @@ queue_auth_required_response3_inner (struct MHD_Connection *connection,
   size_t p; /* The position in the buffer */
   char *hdr_name;
 
-  if (0 == (((unsigned int) malgo3) & MHD_DIGEST_AUTH_ALGO3_NON_SESSION))
+  if ((0 == (((unsigned int) malgo3) & MHD_DIGEST_AUTH_ALGO3_NON_SESSION)) ||
+      (0 != (((unsigned int) malgo3) & MHD_DIGEST_AUTH_ALGO3_SESSION)))
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (connection->daemon,
