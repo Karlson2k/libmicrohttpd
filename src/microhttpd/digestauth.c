@@ -215,7 +215,7 @@ get_base_digest_algo (enum MHD_DigestAuthAlgo3 algo3)
     ((unsigned int) algo3)
     & ~((unsigned int)
         (MHD_DIGEST_AUTH_ALGO3_NON_SESSION
-         | MHD_DIGEST_AUTH_ALGO3_NON_SESSION));
+         | MHD_DIGEST_AUTH_ALGO3_SESSION));
   return (enum MHD_DigestBaseAlgo) base_algo;
 }
 
