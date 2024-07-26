@@ -466,7 +466,7 @@ dump_option_static_functions (const char *name,
   printf (" * @return structure with the requested setting\n */\n");
   printf ("static MHD_INLINE struct MHD_%sOptionAndValue\n"
           "MHD_%c_OPTION_%s (\n",
-          category,
+          capitalize (category),
           (char) toupper (*category),
           uppercase (name));
   if (0 == argc)
@@ -1020,20 +1020,31 @@ TOP:
              category,
              capitalize (category));
     fprintf (f,
-             "  struct %sOptions *const settings = %s->psettings;\n"
+             "  struct %sOptions *const settings = %s->settings;\n"
              "  size_t i;\n"
-             "\n"
-             "  if (NULL == settings)\n"
-             "    return MHD_SC_TOO_LATE;\n"
-             "\n"
+             "\n",
+             capitalize (category),
+             category);
+    if (0 == strcmp (category, "daemon"))
+    {
+      fprintf (f,
+               "  if (mhd_DAEMON_STATE_NOT_STARTED != daemon->state)\n"
+               "    return MHD_SC_TOO_LATE;\n"
+               "\n");
+    }
+    else
+    {
+      fprintf (f,
+               "  if (NULL == settings)\n"
+               "    return MHD_SC_TOO_LATE;\n"
+               "\n");
+    }
+    fprintf (f,
              "  for (i = 0; i < options_max_num; i++)\n"
              "  {\n"
              "    const struct MHD_%sOptionAndValue *const option = options + i;\n"
              "    switch (option->opt)\n"
              "    {\n",
-             capitalize (category),
-             category,
-             category,
              capitalize (category));
     fprintf (f,
              "    case MHD_%c_O_END:\n"
