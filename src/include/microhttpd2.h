@@ -173,6 +173,7 @@ enum MHD_Bool
 
 #ifndef MHD_STRINGS_DEFINED
 
+
 /**
  * String with length data.
  * This type should always have valid @a cstr pointer.
@@ -290,8 +291,8 @@ struct MHD_Request;
 
 
 /**
- * @brief Actions are returned by the application to drive the request
- * handling of MHD.
+ * @brief Actions are returned by the application when processed client header
+ * to drive the request handling of MHD.
  *
  * @defgroup action Request actions
  */
@@ -1349,7 +1350,6 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * cannot be provided due to some error or other reasons.
    */
   MHD_SC_INFO_GET_TYPE_UNAVAILALBE = 60204
-
 };
 
 /**
@@ -1494,7 +1494,7 @@ MHD_FN_CONST_;
 /* Safe.     Idempotent.     RFC9110, Section 9.3.8. */
 #define MHD_HTTP_METHOD_STR_TRACE    "TRACE"
 /* Not safe. Not idempotent. RFC9110, Section 18.2. */
-#define MHD_HTTP_METHOD_STR_ASTERISK "*"
+#define MHD_HTTP_METHOD_STR_ASTERISK  "*"
 
 /* Additional HTTP methods. */
 /* Not safe. Idempotent.     RFC3744, Section 8.1. */
@@ -1564,6 +1564,7 @@ MHD_FN_CONST_;
 
 #ifndef MHD_HTTP_POSTENCODING_DEFINED
 
+
 /**
  * @brief Possible encodings for HTML forms submitted as HTTP POST requests
  *
@@ -1608,6 +1609,7 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_HTTP_PostEncoding
 
 #define MHD_HTTP_POSTENCODING_DEFINED 1
 #endif /* ! MHD_HTTP_POSTENCODING_DEFINED */
+
 
 /**
  * @brief Standard headers found in HTTP requests and responses.
@@ -3364,6 +3366,7 @@ typedef void
                            const struct MHD_String *full_uri,
                            struct MHD_EarlyUriCbData *req_data);
 
+
 /**
  * The `enum MHD_ConnectionNotificationCode` specifies types
  * of connection notifications.
@@ -3458,7 +3461,6 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StreamNotificationCode
    * @ingroup request
    */
   MHD_STREAM_NOTIFY_CLOSED = 1
-
 };
 
 /**
@@ -3672,13 +3674,13 @@ MHD_D_OPTION_POLL_SYSCALL (
  * Set a callback to use for logging
  * @param log_cb the callback to use for logging,
  *   NULL to disable logging
- * @param lob_cb_cls the closure for the logging callback
+ * @param log_cb_cls the closure for the logging callback
  * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_LOG_CALLBACK (
   MHD_LoggingCallback log_cb,
-  void *lob_cb_cls
+  void *log_cb_cls
   );
 
 /**
@@ -3707,12 +3709,14 @@ Does not work with #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_LISTEN_SOCKET().
 If no listen socket optins (#MHD_D_OPTION_BIND_PORT(), #MHD_D_OPTION_BIND_SA(), #MHD_D_OPTION_LISTEN_SOCKET()) are used, MHD does not listen for incoming connection.
  * @param sa_len the size of the socket address pointed by @a sa.
  * @param sa the address to bind to; can be IPv4 (AF_INET), IPv6 (AF_INET6) or even a UNIX domain socket (AF_UNIX)
+ * @param dual When a previous version of the protocol exist (like IPv4 when @a v_sa is IPv6) bind to both protocols (IPv6 and IPv4).
  * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_BIND_SA (
   size_t sa_len,
-  const struct sockaddr *sa
+  /* const */ struct sockaddr *sa,
+  enum MHD_Bool dual
   );
 
 /**
@@ -3766,6 +3770,7 @@ MHD_D_OPTION_TCP_FASTOPEN (
  * Use the given backlog for the listen() call.
  *
 Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
+ * Zero parameter treated as MHD/system default.
  * @param backlog_size FIXME
  * @return structure with the requested setting
  */
@@ -3859,7 +3864,10 @@ MHD_D_OPTION_DEFAULT_TIMEOUT (
   );
 
 /**
- * Maximum number of (concurrent) network connections served by daemon
+ * Maximum number of (concurrent) network connections served by daemon.
+ * @note The real maximum number of network connections could be smaller
+ *       than requested due to the system limitations, like FD_SETSIZE when
+ *       polling by select() is used.
  * @param glob_limit FIXME
  * @return structure with the requested setting
  */
@@ -3990,8 +3998,7 @@ MHD_D_OPTION_STACK_SIZE (
  * If listen socket FD is equal or higher that specified value, the daemon fail to start.
  * If new connection FD is equal or higher that specified value, the connection is rejected.
  * Useful if application uses select() for polling the sockets, system FD_SETSIZE is good value for this option in such case.
- * Does not work with #MHD_D_OPTION_WM_WORKER_THREADS() or #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
- * Does not work on W32 (WinSock sockets).
+ * Silently ignored on W32 (WinSock sockets).
  * @param max_fd FIXME
  * @return structure with the requested setting
  */
@@ -4101,7 +4108,7 @@ MHD_D_OPTION_NOTIFY_STREAM (
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_RANDOM_ENTROPY (
   size_t buf_size,
-  const void *buf
+  /* const */ void *buf
   );
 
 /**
@@ -4211,7 +4218,12 @@ MHD_R_OPTION_CONN_CLOSE (
  * Response still use HTTP/1.1 version in header, but always close the connection after sending the response and do not use chunked encoding for the response.
  * You can also set the #MHD_R_O_HTTP_1_0_SERVER flag to force HTTP/1.0 version in the response.
  * Responses are still compatible with HTTP/1.1.
- * This option can be used to communicate with some broken client, which does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
+ * Summary:
+ * + declared reply version: HTTP/1.1
+ * + keep-alive: no
+ * + chunked: no
+ *
+This option can be used to communicate with some broken client, which does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
  * @param val the value of the parameter * @return structure with the requested setting
  */
 struct MHD_ResponseOptionAndValue
@@ -4226,7 +4238,12 @@ MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRICT (
  * Chunked encoding will not be used for the response.
  * Due to backward compatibility, responses still can be used with HTTP/1.1 clients.
  * This option can be used to emulate HTTP/1.0 server (for response part only as chunked encoding in requests (if any) is processed by MHD).
- * With this option HTTP/1.0 server is emulated (with support for 'keep-alive' connections).
+ * Summary:
+ * + declared reply version: HTTP/1.0
+ * + keep-alive: possible
+ * + chunked: no
+ *
+With this option HTTP/1.0 server is emulated (with support for 'keep-alive' connections).
  * @param val the value of the parameter * @return structure with the requested setting
  */
 struct MHD_ResponseOptionAndValue
@@ -5228,7 +5245,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_HTTP_ProtocolVersion
  * HTTP/2 (and later) is not used inside the HTTP protocol.
  * @param pv the protocol version
  * @return the string representation of the protocol version,
- *         NULL for unknown values
+ *         NULL for invalid values
  */
 MHD_EXTERN_ const struct MHD_String *
 MHD_protocol_version_to_string (enum MHD_HTTP_ProtocolVersion pv)
@@ -5511,6 +5528,7 @@ struct MHD_DynContentZCIoVec
  * The action type returned by Dynamic Content Creator callback
  */
 struct MHD_DynamicContentCreatorAction;
+
 /**
  * The context used for Dynamic Content Creator callback
  */
@@ -5518,8 +5536,9 @@ struct MHD_DynamicContentCreatorContext;
 
 
 /**
- * Set action to "continue processing", the data is provided in the
- * buffer and/or in the zero-copy @a iov_data.
+ * Create "continue processing" action with optional chunk-extension.
+ * The data is provided in the buffer and/or in the zero-copy @a iov_data.
+ *
  * If data is provided both in the buffer and @a ivo_data then
  * data in the buffer sent first, following the iov data.
  * The total size of the data in the buffer and in @a iov_data must
@@ -5546,13 +5565,45 @@ MHD_DCC_action_continue_zc (
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_CSTR_ (4);
 
-#define MHD_DCC_action_continue(ctx,data_size,chunk_ext) \
-        MHD_DCC_action_continue_zc (ctx, data_size, NULL, chunk_ext)
 
 /**
- * Set action to "finished".
+ * Create "continue processing" action with optional chunk-extension.
+ * The data is provided in the buffer.
+ *
+ * @param[in,out] ctx the pointer the context as provided to the callback
+ * @param data_size the amount of the data placed to the provided buffer (not @a iov_data),
+ *                  cannot be larger than provided buffer size,
+ *                  must be non-zero.
+ * @param chunk_ext the optional pointer to chunk extension string,
+ *                  can be NULL to not use chunk extension,
+ *                  ignored if chunked encoding is not used
+ * @return the pointer to the action if succeed,
+ *         NULL (equivalent of MHD_DCC_action_abort())in case of any error
+ */
+#define MHD_DCC_action_continue_ce(ctx,data_size,chunk_ext) \
+        MHD_DCC_action_continue_zc ((ctx), (data_size), NULL, (chunk_ext))
+
+
+/**
+ * Create "continue processing" action, the data is provided in the buffer.
+ *
+ * @param[in,out] ctx the pointer the context as provided to the callback
+ * @param data_size the amount of the data placed to the provided buffer;
+ *                  cannot be larger than provided buffer size,
+ *                  must be non-zero.
+ *
+ * @return the pointer to the action if succeed,
+ *         NULL (equivalent of MHD_DCC_action_abort())in case of any error
+ */
+#define MHD_DCC_action_continue(ctx,data_size) \
+        MHD_DCC_action_continue_ce ((ctx), (data_size), NULL)
+
+
+/**
+ * Create "finished" action with optional footers.
  * If function failed for any reason, the action is automatically
  * set to "stop with error".
+ *
  * @param[in,out] ctx the pointer the context as provided to the callback
  * @param num_footers number of elements in the @a footers array,
  *                    must be zero if @a footers is NULL
@@ -5571,12 +5622,21 @@ MHD_DCC_action_finished_with_footer (
 MHD_FN_PAR_NONNULL_ (1);
 
 
-#define MHD_DCC_action_finished(action) \
-        MHD_DCC_set_action_finished_with_footer (action, 0, NULL)
+/**
+ * Create "finished" action.
+ * If function failed for any reason, the action is automatically
+ * set to "stop with error".
+ *
+ * @param[in,out] ctx the pointer the context as provided to the callback
+ * @return the pointer to the action if succeed,
+ *         NULL (equivalent of MHD_DCC_action_abort())in case of any error
+ */
+#define MHD_DCC_action_finished(ctx) \
+        MHD_DCC_action_finished_with_footer ((ctx), 0, NULL)
 
 
 /**
- * Set action to "suspend".
+ * Create "suspend" action.
  * If function failed for any reason, the action is automatically
  * set to "stop with error".
  * @param[in,out] ctx the pointer the context as provided to the callback
@@ -5589,7 +5649,7 @@ MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_RETURNS_NONNULL_;
 
 /**
- * Set action to "stop with error".
+ * Create "stop with error" action.
  * @param[in,out] ctx the pointer the context as provided to the callback
  * @return always NULL (the action "stop with error")
  */
@@ -8944,6 +9004,7 @@ union MHD_RequestInfoDynamicData
    * The pointer to pointer to the data.
    */
   void **v_ppvoid;
+
   /**
    * The information about client provided username for digest auth
    */

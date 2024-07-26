@@ -51,7 +51,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_ResponseOption
    * + keep-alive: no
    * + chunked: no
    *
-   * This option can be used to communicate with some broken client, which does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
+This option can be used to communicate with some broken client, which does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
    */
   MHD_R_O_HTTP_1_0_COMPATIBLE_STRICT = 80
   ,
@@ -68,7 +68,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_ResponseOption
    * + keep-alive: possible
    * + chunked: no
    *
-   * With this option HTTP/1.0 server is emulated (with support for 'keep-alive' connections).
+With this option HTTP/1.0 server is emulated (with support for 'keep-alive' connections).
    */
   MHD_R_O_HTTP_1_0_SERVER = 81
   ,
@@ -237,7 +237,12 @@ struct MHD_ResponseOptionAndValue
  * Response still use HTTP/1.1 version in header, but always close the connection after sending the response and do not use chunked encoding for the response.
  * You can also set the #MHD_R_O_HTTP_1_0_SERVER flag to force HTTP/1.0 version in the response.
  * Responses are still compatible with HTTP/1.1.
- * This option can be used to communicate with some broken client, which does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
+ * Summary:
+ * + declared reply version: HTTP/1.1
+ * + keep-alive: no
+ * + chunked: no
+ *
+This option can be used to communicate with some broken client, which does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
  * @param val the value of the parameter * @return structure with the requested setting
  */
 #  define MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRICT(val) \
@@ -255,7 +260,12 @@ struct MHD_ResponseOptionAndValue
  * Chunked encoding will not be used for the response.
  * Due to backward compatibility, responses still can be used with HTTP/1.1 clients.
  * This option can be used to emulate HTTP/1.0 server (for response part only as chunked encoding in requests (if any) is processed by MHD).
- * With this option HTTP/1.0 server is emulated (with support for 'keep-alive' connections).
+ * Summary:
+ * + declared reply version: HTTP/1.0
+ * + keep-alive: possible
+ * + chunked: no
+ *
+With this option HTTP/1.0 server is emulated (with support for 'keep-alive' connections).
  * @param val the value of the parameter * @return structure with the requested setting
  */
 #  define MHD_R_OPTION_HTTP_1_0_SERVER(val) \
@@ -394,7 +404,12 @@ MHD_R_OPTION_CONN_CLOSE (
  * Response still use HTTP/1.1 version in header, but always close the connection after sending the response and do not use chunked encoding for the response.
  * You can also set the #MHD_R_O_HTTP_1_0_SERVER flag to force HTTP/1.0 version in the response.
  * Responses are still compatible with HTTP/1.1.
- * This option can be used to communicate with some broken client, which does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
+ * Summary:
+ * + declared reply version: HTTP/1.1
+ * + keep-alive: no
+ * + chunked: no
+ *
+This option can be used to communicate with some broken client, which does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
  * @param val the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_responseOptionAndValue
@@ -418,7 +433,12 @@ MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRICT (
  * Chunked encoding will not be used for the response.
  * Due to backward compatibility, responses still can be used with HTTP/1.1 clients.
  * This option can be used to emulate HTTP/1.0 server (for response part only as chunked encoding in requests (if any) is processed by MHD).
- * With this option HTTP/1.0 server is emulated (with support for 'keep-alive' connections).
+ * Summary:
+ * + declared reply version: HTTP/1.0
+ * + keep-alive: possible
+ * + chunked: no
+ *
+With this option HTTP/1.0 server is emulated (with support for 'keep-alive' connections).
  * @param val the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_responseOptionAndValue

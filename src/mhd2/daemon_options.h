@@ -134,12 +134,6 @@ struct DaemonOptions {
 
 
   /**
-   * // TODO: add settings
-   */
-  size_t global_large_buffer_size;
-
-
-  /**
    * Value for #MHD_D_O_PER_IP_LIMIT.
    * FIXME
    */

@@ -6,8 +6,6 @@
  * @author daemon-options-generator.c
  */
 
-/* EDITED MANUALLY */
-
 #include "mhd_sys_options.h"
 #include "sys_base_types.h"
 #include "sys_malloc.h"
@@ -16,11 +14,12 @@
 #include "daemon_options.h"
 #include "mhd_public_api.h"
 
-
-MHD_FN_PAR_NONNULL_ALL_ MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_set_options (struct MHD_Daemon *daemon,
-                        const struct MHD_DaemonOptionAndValue *options,
-                        size_t options_max_num)
+MHD_FN_PAR_NONNULL_ALL_ MHD_EXTERN_
+enum MHD_StatusCode
+MHD_daemon_set_options (
+  struct MHD_Daemon *daemon,
+  const struct MHD_DaemonOptionAndValue *options,
+  size_t options_max_num)
 {
   struct DaemonOptions *const settings = daemon->settings;
   size_t i;
@@ -28,10 +27,11 @@ MHD_daemon_set_options (struct MHD_Daemon *daemon,
   if (mhd_DAEMON_STATE_NOT_STARTED != daemon->state)
     return MHD_SC_TOO_LATE;
 
-  for (i=0;i<options_max_num;i++)
+  for (i = 0; i < options_max_num; i++)
   {
     const struct MHD_DaemonOptionAndValue *const option = options + i;
-    switch (option->opt) {
+    switch (option->opt)
+    {
     case MHD_D_O_END:
       return MHD_SC_OK;
     case MHD_D_O_WORK_MODE:
@@ -41,7 +41,7 @@ MHD_daemon_set_options (struct MHD_Daemon *daemon,
       settings->poll_syscall = option->val.poll_syscall;
       continue;
     case MHD_D_O_LOG_CALLBACK:
-      /* Note: set directly to the daemon! */
+      /* Note: set directly to the daemon */
       daemon->log_params = option->val.log_callback;
       continue;
     case MHD_D_O_BIND_PORT:
@@ -49,21 +49,21 @@ MHD_daemon_set_options (struct MHD_Daemon *daemon,
       settings->bind_port.v_port = option->val.bind_port.v_port;
       continue;
     case MHD_D_O_BIND_SA:
-      /* The is not an easy for automatic generations */
-      if (0 != option->val.bind_sa.v_sa_len)
-      {
-        if (NULL != settings->bind_sa.v_sa)
-          free (settings->bind_sa.v_sa);
+      /* custom setter */
+       if (0 != option->val.bind_sa.v_sa_len)
+       {
+         if (NULL != settings->bind_sa.v_sa)
+           free (settings->bind_sa.v_sa);
 
-        settings->bind_sa.v_sa = malloc (option->val.bind_sa.v_sa_len);
-        if (NULL == settings->bind_sa.v_sa)
-          return MHD_SC_DAEMON_MALLOC_FAILURE;
+   settings->bind_sa.v_sa = malloc (option->val.bind_sa.v_sa_len);
+         if (NULL == settings->bind_sa.v_sa)
+           return MHD_SC_DAEMON_MALLOC_FAILURE;
 
-        memcpy (settings->bind_sa.v_sa, option->val.bind_sa.v_sa,
-                option->val.bind_sa.v_sa_len);
-        settings->bind_sa.v_sa_len = option->val.bind_sa.v_sa_len;
-        settings->bind_sa.v_dual = option->val.bind_sa.v_dual;
-      }
+   memcpy (settings->bind_sa.v_sa, option->val.bind_sa.v_sa,
+                 option->val.bind_sa.v_sa_len);
+         settings->bind_sa.v_sa_len = option->val.bind_sa.v_sa_len;
+         settings->bind_sa.v_dual = option->val.bind_sa.v_dual;
+       }
       continue;
     case MHD_D_O_LISTEN_SOCKET:
       settings->listen_socket = option->val.listen_socket;
@@ -166,23 +166,24 @@ MHD_daemon_set_options (struct MHD_Daemon *daemon,
       settings->notify_stream.v_cls = option->val.notify_stream.v_cls;
       continue;
     case MHD_D_O_RANDOM_ENTROPY:
-      /* The is not an easy for automatic generations */
-      if (0 != option->val.random_entropy.v_buf_size)
-      {
-        if (NULL != settings->random_entropy.v_buf)
-          free (settings->random_entropy.v_buf);
+      /* custom setter */
+       /* The is not an easy for automatic generations */
+       if (0 != option->val.random_entropy.v_buf_size)
+       {
+         if (NULL != settings->random_entropy.v_buf)
+           free (settings->random_entropy.v_buf);
 
-        settings->random_entropy.v_buf =
-          malloc (option->val.random_entropy.v_buf_size);
-        if (NULL == settings->random_entropy.v_buf)
-          return MHD_SC_DAEMON_MALLOC_FAILURE;
+   settings->random_entropy.v_buf =
+           malloc (option->val.random_entropy.v_buf_size);
+         if (NULL == settings->random_entropy.v_buf)
+           return MHD_SC_DAEMON_MALLOC_FAILURE;
 
-        memcpy (settings->random_entropy.v_buf,
-                option->val.random_entropy.v_buf,
-                option->val.random_entropy.v_buf_size);
-        settings->random_entropy.v_buf_size =
-          option->val.random_entropy.v_buf_size;
-      }
+   memcpy (settings->random_entropy.v_buf,
+                 option->val.random_entropy.v_buf,
+                 option->val.random_entropy.v_buf_size);
+         settings->random_entropy.v_buf_size =
+           option->val.random_entropy.v_buf_size;
+       }
       continue;
     case MHD_D_O_DAUTH_MAP_SIZE:
       settings->dauth_map_size = option->val.dauth_map_size;
@@ -197,7 +198,7 @@ MHD_daemon_set_options (struct MHD_Daemon *daemon,
       settings->dauth_def_max_nc = option->val.dauth_def_max_nc;
       continue;
     case MHD_D_O_SENTINEL:
-    default:
+    default: /* for -Wswitch-default -Wswitch-enum */ 
       break;
     }
     return MHD_SC_OPTION_UNKNOWN;
