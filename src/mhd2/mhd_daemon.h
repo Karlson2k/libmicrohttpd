@@ -41,28 +41,11 @@
 #  include "mhd_locks.h"
 #endif
 
-#if defined(MHD_USE_SELECT) && defined(MHD_POSIX_SOCKETS)
-#  ifdef HAVE_SYS_SELECT_H
-#    include <sys/select.h>
-#  else
-#    ifdef HAVE_SYS_TIME_H
-#      include <sys/time.h>
-#    endif
-#    ifdef HAVE_SYS_TYPES_H
-#      include <sys/types.h>
-#    endif
-#    ifdef HAVE_UNISTD_H
-#      include <unistd.h>
-#    else
-#      include <stdlib.h>
-#    endif
-#    ifdef HAVE_SELECTLIB_H
-#      include  <selectLib.h>
-#    endif
-#  endif
-#endif
-
+#include "sys_select.h"
 #include "sys_poll.h"
+#ifdef MHD_USE_EPOLL
+#  include <sys/epoll.h>
+#endif
 
 #include "mhd_dlinked_list.h"
 
@@ -73,10 +56,6 @@ struct MHD_Connection; /* Forward declaration */
  * The helper struct for the connections list
  */
 mhd_DLINKEDL_LIST_DEF (MHD_Connection);
-
-// #define MHD_USE_EPOLL /////////////////////////////////////////
-// #undef MHD_WINSOCK_SOCKETS
-// #define MHD_POSIX_SOCKETS /////////////////////////////
 
 /**
  * The current phase of the daemon life
@@ -503,7 +482,7 @@ struct mhd_DaemonNetwork
    */
   struct mhd_ListenSocket listen;
 
-#ifdef HAVE_EPOLL
+#ifdef MHD_USE_EPOLL
   /**
    * The epoll FD.
    * Set to '-1' when epoll is not used.

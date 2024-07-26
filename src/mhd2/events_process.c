@@ -29,25 +29,11 @@
 
 #include "mhd_socket_type.h"
 #include "sys_poll.h"
+#include "sys_select.h"
 #ifdef MHD_USE_EPOLL
 #  include <sys/epoll.h>
 #endif
 #ifdef MHD_POSIX_SOCKETS
-#  ifdef MHD_USE_SELECT
-#    ifdef HAVE_SYS_SELECT_H
-#      include <sys/select.h>
-#    else
-#      ifdef HAVE_SYS_TIME_H
-#        include <sys/time.h>
-#      endif
-#      ifdef HAVE_SYS_TYPES_H
-#        include <sys/types.h>
-#      endif
-#      ifdef HAVE_UNISTD_H
-#        include <unistd.h>
-#      endif
-#    endif
-#  endif
 #  include "sys_errno.h"
 #endif
 
@@ -302,7 +288,7 @@ fd_set_wrap (MHD_Socket fd,
              struct MHD_Daemon *restrict d)
 {
   mhd_assert (mhd_FD_FITS_DAEMON (d, fd)); /* Must be checked for every FD before
-                                            it is added */
+                                              it is added */
   mhd_assert (mhd_POLL_TYPE_SELECT == d->events.poll_type);
   (void) d; /* Unused with non-debug builds */
 #if defined(MHD_POSIX_SOCKETS)

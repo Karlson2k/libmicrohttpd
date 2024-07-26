@@ -27,7 +27,7 @@ libmicrohttpd2_la_SOURCES = \
   sys_null_macro.h          sys_base_types.h          sys_bool_type.h \
   sys_sockets_types.h       sys_sockets_headers.h     sys_ip_headers.h \
   sys_errno.h               sys_file_fd.h             sys_malloc.h \
-  sys_poll.h \
+  sys_select.h              sys_poll.h \
   sys_sendfile.h \
   compat_calloc.h \
   mhd_assert.h \
