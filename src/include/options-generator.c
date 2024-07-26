@@ -730,6 +730,7 @@ TOP:
                  sizeof (line),
                  f))
         break;
+      r = strlen (line);
       off++;
       while ( (r > 0) &&
               ( (isspace (line[r - 1])) ||
