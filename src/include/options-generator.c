@@ -1019,6 +1019,7 @@ TOP:
              " * @author %s-options-generator.c\n"
              " */\n"
              "\n"
+             "#include \"mhd_sys_options.h\"\n"
              "#include \"sys_bool_type.h\"\n"
              "#include \"sys_base_types.h\"\n"
              "#include \"sys_malloc.h\"\n"
@@ -1075,6 +1076,11 @@ TOP:
                "    if (! mhd_mutex_lock(&response->reuse.settings_lock))\n"
                "      return MHD_SC_RESPONSE_MUTEX_LOCK_FAILED;\n"
                "    mhd_assert (1 == mhd_atomic_counter_get(&response->reuse.counter));\n"
+               "    if (! response->frozen) /* Firm re-check under the lock */\n"
+               "    {\n"
+               "      mhd_mutex_unlock_chk(&response->reuse.settings_lock);\n"
+               "      return MHD_SC_TOO_LATE;\n"
+               "    }\n"
                "  }\n"
                "\n");
     }
@@ -1116,7 +1122,7 @@ TOP:
       fprintf (f,
                "\n"
                "  if (need_unlock)\n"
-               "    mhd_mutex_lock_chk(&response->reuse.settings_lock);\n"
+               "    mhd_mutex_unlock_chk(&response->reuse.settings_lock);\n"
                "\n");
     }
     fprintf (f,

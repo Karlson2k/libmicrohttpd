@@ -6,6 +6,7 @@
  * @author response-options-generator.c
  */
 
+#include "mhd_sys_options.h"
 #include "sys_bool_type.h"
 #include "sys_base_types.h"
 #include "sys_malloc.h"
@@ -37,6 +38,11 @@ MHD_response_set_options (
     if (! mhd_mutex_lock(&response->reuse.settings_lock))
       return MHD_SC_RESPONSE_MUTEX_LOCK_FAILED;
     mhd_assert (1 == mhd_atomic_counter_get(&response->reuse.counter));
+    if (! response->frozen) /* Firm re-check under the lock */
+    {
+      mhd_mutex_unlock_chk(&response->reuse.settings_lock);
+      return MHD_SC_TOO_LATE;
+    }
   }
 
   for (i = 0; i < options_max_num; i++)
@@ -82,7 +88,7 @@ MHD_response_set_options (
   }
 
   if (need_unlock)
-    mhd_mutex_lock_chk(&response->reuse.settings_lock);
+    mhd_mutex_unlock_chk(&response->reuse.settings_lock);
 
   return res;
 }

@@ -6,6 +6,7 @@
  * @author daemon-options-generator.c
  */
 
+#include "mhd_sys_options.h"
 #include "sys_bool_type.h"
 #include "sys_base_types.h"
 #include "sys_malloc.h"
