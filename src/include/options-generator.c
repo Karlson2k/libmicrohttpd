@@ -24,6 +24,7 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
@@ -61,6 +62,32 @@ typedef void
              char **arguments,
              unsigned int desc,
              char **descriptions);
+
+
+static int
+my_asprintf (char **buf,
+             const char *format,
+             ...)
+{
+  int ret;
+  va_list args;
+
+  va_start (args,
+            format);
+  ret = vsnprintf (NULL,
+                   0,
+                   format,
+                   args);
+  va_end (args);
+  *buf = malloc (ret + 1);
+  va_start (args,
+            format);
+  ret = vsprintf (*buf,
+                  format,
+                  args);
+  va_end (args);
+  return ret;
+}
 
 
 static void
@@ -153,14 +180,14 @@ indent (char *pfx,
   {
     char *tmp;
 
-    asprintf (&tmp,
-              "%.*s\n%s%s",
-              (int) (off - ret),
-              ret,
-              (off[1] == '\n')
+    my_asprintf (&tmp,
+                 "%.*s\n%s%s",
+                 (int) (off - ret),
+                 ret,
+                 (off[1] == '\n')
               ? xfx
               : pfx,
-              off + 1);
+                 off + 1);
     pos = (off - ret) + strlen (pfx) + 1;
     free (ret);
     ret = tmp;
@@ -675,15 +702,14 @@ main (int argc,
 
   {
     char *fn;
-    char *line = NULL;
+    char line[4092];
     char **larg = NULL;
     unsigned int off;
-    size_t len;
     struct Option *last = NULL;
 
-    asprintf (&fn,
-              "%c_options.rec",
-              *category);
+    my_asprintf (&fn,
+                 "%c_options.rec",
+                 *category);
     f = fopen (fn, "r");
     if (NULL == f)
     {
@@ -699,15 +725,12 @@ TOP:
     {
       ssize_t r;
 
-      free (line);
-      line = NULL;
-      len = 0;
-      r = getline (&line,
-                   &len,
-                   f);
-      off++;
-      if (r <= 0)
+      if (NULL ==
+          fgets (line,
+                 sizeof (line),
+                 f))
         break;
+      off++;
       while ( (r > 0) &&
               ( (isspace (line[r - 1])) ||
                 (line[r - 1] == '\n') ) )
@@ -829,7 +852,6 @@ TOP:
       exit (2);
     }
     free (fn);
-    free (line);
   }
 
   iterate (head,
@@ -945,9 +967,9 @@ TOP:
   {
     char *doc_in;
 
-    asprintf (&doc_in,
-              "microhttpd2_inline_%s_documentation.h.in",
-              category);
+    my_asprintf (&doc_in,
+                 "microhttpd2_inline_%s_documentation.h.in",
+                 category);
     (void) unlink (doc_in);
     f = fopen (doc_in, "w");
     if (NULL == f)
@@ -975,9 +997,9 @@ TOP:
   {
     char *so_c;
 
-    asprintf (&so_c,
-              "../mhd2/%s_set_options.c",
-              category);
+    my_asprintf (&so_c,
+                 "../mhd2/%s_set_options.c",
+                 category);
     (void) unlink (so_c);
     f = fopen (so_c, "w");
     if (NULL == f)
@@ -1073,9 +1095,9 @@ TOP:
   {
     char *do_h;
 
-    asprintf (&do_h,
-              "../mhd2/%s_options.h",
-              category);
+    my_asprintf (&do_h,
+                 "../mhd2/%s_options.h",
+                 category);
     (void) unlink (do_h);
     f = fopen (do_h, "w");
     if (NULL == f)
