@@ -6,22 +6,18 @@
  * @author response-options-generator.c
  */
 
-/* EDITED MANUALLY */
-
 #ifndef MHD_RESPONSE_OPTIONS_H
 #define MHD_RESPONSE_OPTIONS_H 1
 
 #include "mhd_sys_options.h"
-
 #include "mhd_public_api.h"
-
 
 struct ResponseOptions
 {
   /**
    * Value for #MHD_R_O_REUSABLE.
    */
-  enum MHD_Bool reusable; /* Not used in this struct. FIXME: remove? */
+  enum MHD_Bool reusable;
 
 
   /**

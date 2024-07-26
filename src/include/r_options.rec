@@ -20,7 +20,7 @@
 Name: REUSABLE
 Value: 20
 Type: enum MHD_Bool
-Comment: Make the response object re-usable.
+Comment: Make the response object re-usable. (FIXME: not used in struct ResponseOptions; remove!?)
 + The response will not be consumed by MHD_action_from_response() and must be destroyed by MHD_response_destroy().
 + Useful if the same response is often used to reply.
 

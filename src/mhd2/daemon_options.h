@@ -12,7 +12,8 @@
 #include "mhd_sys_options.h"
 #include "mhd_public_api.h"
 
-struct DaemonOptions {
+struct DaemonOptions
+{
   /**
    * Value for #MHD_D_O_WORK_MODE.
    * the object created by one of the next functions/macros: #MHD_WM_OPTION_EXTERNAL_PERIODIC(), #MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_LEVEL(), #MHD_WM_OPTION_EXTERNAL_EVENT_LOOP_CB_EDGE(), #MHD_WM_OPTION_EXTERNAL_SINGLE_FD_WATCH(), #MHD_WM_OPTION_WORKER_THREADS(), #MHD_WM_OPTION_THREAD_PER_CONNECTION()
@@ -286,4 +287,4 @@ struct DaemonOptions {
 
 };
 
-#endif /* ! MHD_DAEMON_OPTIONS_H */
+#endif /* ! MHD_DAEMON_OPTIONS_H 1 */

@@ -6,7 +6,7 @@
  * @author daemon-options-generator.c
  */
 
-#include "mhd_sys_options.h"
+#include "sys_bool_type.h"
 #include "sys_base_types.h"
 #include "sys_malloc.h"
 #include <string.h>
@@ -21,7 +21,8 @@ MHD_daemon_set_options (
   const struct MHD_DaemonOptionAndValue *options,
   size_t options_max_num)
 {
-  struct DaemonOptions *const settings = daemon->settings;
+  struct DaemonOptions *restrict settings = daemon->settings;
+  enum MHD_StatusCode res = MHD_SC_OK;
   size_t i;
 
   if (mhd_DAEMON_STATE_NOT_STARTED != daemon->state)
@@ -29,11 +30,13 @@ MHD_daemon_set_options (
 
   for (i = 0; i < options_max_num; i++)
   {
-    const struct MHD_DaemonOptionAndValue *const option = options + i;
+    const struct MHD_DaemonOptionAndValue *const option
+      = options + i;
     switch (option->opt)
     {
     case MHD_D_O_END:
-      return MHD_SC_OK;
+      i = options_max_num - 1;
+      break;
     case MHD_D_O_WORK_MODE:
       settings->work_mode = option->val.work_mode;
       continue;
@@ -50,20 +53,18 @@ MHD_daemon_set_options (
       continue;
     case MHD_D_O_BIND_SA:
       /* custom setter */
-       if (0 != option->val.bind_sa.v_sa_len)
-       {
-         if (NULL != settings->bind_sa.v_sa)
-           free (settings->bind_sa.v_sa);
-
-   settings->bind_sa.v_sa = malloc (option->val.bind_sa.v_sa_len);
-         if (NULL == settings->bind_sa.v_sa)
-           return MHD_SC_DAEMON_MALLOC_FAILURE;
-
-   memcpy (settings->bind_sa.v_sa, option->val.bind_sa.v_sa,
-                 option->val.bind_sa.v_sa_len);
-         settings->bind_sa.v_sa_len = option->val.bind_sa.v_sa_len;
-         settings->bind_sa.v_dual = option->val.bind_sa.v_dual;
-       }
+      if (0 != option->val.bind_sa.v_sa_len)
+      {
+        if (NULL != settings->bind_sa.v_sa)
+          free (settings->bind_sa.v_sa);
+        settings->bind_sa.v_sa = malloc (option->val.bind_sa.v_sa_len);
+        if (NULL == settings->bind_sa.v_sa)
+          return MHD_SC_DAEMON_MALLOC_FAILURE;
+        memcpy (settings->bind_sa.v_sa, option->val.bind_sa.v_sa,
+                option->val.bind_sa.v_sa_len);
+        settings->bind_sa.v_sa_len = option->val.bind_sa.v_sa_len;
+        settings->bind_sa.v_dual = option->val.bind_sa.v_dual;
+      }
       continue;
     case MHD_D_O_LISTEN_SOCKET:
       settings->listen_socket = option->val.listen_socket;
@@ -167,23 +168,21 @@ MHD_daemon_set_options (
       continue;
     case MHD_D_O_RANDOM_ENTROPY:
       /* custom setter */
-       /* The is not an easy for automatic generations */
-       if (0 != option->val.random_entropy.v_buf_size)
-       {
-         if (NULL != settings->random_entropy.v_buf)
-           free (settings->random_entropy.v_buf);
-
-   settings->random_entropy.v_buf =
-           malloc (option->val.random_entropy.v_buf_size);
-         if (NULL == settings->random_entropy.v_buf)
-           return MHD_SC_DAEMON_MALLOC_FAILURE;
-
-   memcpy (settings->random_entropy.v_buf,
-                 option->val.random_entropy.v_buf,
-                 option->val.random_entropy.v_buf_size);
-         settings->random_entropy.v_buf_size =
-           option->val.random_entropy.v_buf_size;
-       }
+      /* The is not an easy for automatic generations */
+      if (0 != option->val.random_entropy.v_buf_size)
+      {
+        if (NULL != settings->random_entropy.v_buf)
+          free (settings->random_entropy.v_buf);
+        settings->random_entropy.v_buf =
+          malloc (option->val.random_entropy.v_buf_size);
+        if (NULL == settings->random_entropy.v_buf)
+          return MHD_SC_DAEMON_MALLOC_FAILURE;
+        memcpy (settings->random_entropy.v_buf,
+                option->val.random_entropy.v_buf,
+                option->val.random_entropy.v_buf_size);
+        settings->random_entropy.v_buf_size =
+          option->val.random_entropy.v_buf_size;
+      }
       continue;
     case MHD_D_O_DAUTH_MAP_SIZE:
       settings->dauth_map_size = option->val.dauth_map_size;
@@ -199,9 +198,10 @@ MHD_daemon_set_options (
       continue;
     case MHD_D_O_SENTINEL:
     default: /* for -Wswitch-default -Wswitch-enum */ 
+      res = MHD_SC_OPTION_UNKNOWN;
+      i = options_max_num - 1;
       break;
     }
-    return MHD_SC_OPTION_UNKNOWN;
   }
-  return MHD_SC_OK;
+  return res;
 }

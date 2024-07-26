@@ -11,7 +11,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_ResponseOption
   ,
 
   /**
-   * Make the response object re-usable.
+   * Make the response object re-usable. (FIXME: not used in struct ResponseOptions; remove!?)
    * The response will not be consumed by MHD_action_from_response() and must be destroyed by MHD_response_destroy().
    * Useful if the same response is often used to reply.
    */
@@ -178,7 +178,7 @@ struct MHD_ResponseOptionAndValue
 
 #if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_DESIG_NEST_INIT)
 /**
- * Make the response object re-usable.
+ * Make the response object re-usable. (FIXME: not used in struct ResponseOptions; remove!?)
  * The response will not be consumed by MHD_action_from_response() and must be destroyed by MHD_response_destroy().
  * Useful if the same response is often used to reply.
  * @param val the value of the parameter * @return structure with the requested setting
@@ -321,12 +321,12 @@ With this option HTTP/1.0 server is emulated (with support for 'keep-alive' conn
 #else /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 MHD_NOWARN_UNUSED_FUNC_
 /**
- * Make the response object re-usable.
+ * Make the response object re-usable. (FIXME: not used in struct ResponseOptions; remove!?)
  * The response will not be consumed by MHD_action_from_response() and must be destroyed by MHD_response_destroy().
  * Useful if the same response is often used to reply.
  * @param val the value of the parameter * @return structure with the requested setting
  */
-static MHD_INLINE struct MHD_responseOptionAndValue
+static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_REUSABLE (
   enum MHD_Bool val
   )
@@ -348,7 +348,7 @@ MHD_R_OPTION_REUSABLE (
  * This flag is primarily intended to be used when automatic 'Content-Length' header is undesirable in response to HEAD requests.
  * @param val the value of the parameter * @return structure with the requested setting
  */
-static MHD_INLINE struct MHD_responseOptionAndValue
+static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_HEAD_ONLY_RESPONSE (
   enum MHD_Bool val
   )
@@ -367,7 +367,7 @@ MHD_R_OPTION_HEAD_ONLY_RESPONSE (
  * Ignored when the reply cannot have body/content.
  * @param val the value of the parameter * @return structure with the requested setting
  */
-static MHD_INLINE struct MHD_responseOptionAndValue
+static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_CHUNKED_ENC (
   enum MHD_Bool val
   )
@@ -385,7 +385,7 @@ MHD_R_OPTION_CHUNKED_ENC (
  * Force close connection after sending the response, prevents keep-alive connections and adds 'Connection: close' header.
  * @param val the value of the parameter * @return structure with the requested setting
  */
-static MHD_INLINE struct MHD_responseOptionAndValue
+static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_CONN_CLOSE (
   enum MHD_Bool val
   )
@@ -412,7 +412,7 @@ MHD_R_OPTION_CONN_CLOSE (
 This option can be used to communicate with some broken client, which does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
  * @param val the value of the parameter * @return structure with the requested setting
  */
-static MHD_INLINE struct MHD_responseOptionAndValue
+static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRICT (
   enum MHD_Bool val
   )
@@ -441,7 +441,7 @@ MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRICT (
 With this option HTTP/1.0 server is emulated (with support for 'keep-alive' connections).
  * @param val the value of the parameter * @return structure with the requested setting
  */
-static MHD_INLINE struct MHD_responseOptionAndValue
+static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_HTTP_1_0_SERVER (
   enum MHD_Bool val
   )
@@ -460,7 +460,7 @@ MHD_R_OPTION_HTTP_1_0_SERVER (
  * Allow to set several 'Content-Length' headers. These headers will be used even with replies without body.
  * @param val the value of the parameter * @return structure with the requested setting
  */
-static MHD_INLINE struct MHD_responseOptionAndValue
+static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_INSANITY_HEADER_CONTENT_LENGTH (
   enum MHD_Bool val
   )
@@ -481,7 +481,7 @@ MHD_R_OPTION_INSANITY_HEADER_CONTENT_LENGTH (
  * @param term_cb_cls the closure for the callback
  * @return structure with the requested setting
  */
-static MHD_INLINE struct MHD_responseOptionAndValue
+static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_TERMINATION_CALLBACK (
   MHD_RequestTerminationCallback term_cb,
   void *term_cb_cls

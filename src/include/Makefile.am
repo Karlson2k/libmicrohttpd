@@ -5,10 +5,10 @@ microhttpd2_inline_daemon_documentation.h.in microhttpd2_generated_daemon_option
 	rm -f microhttpd2_inline_daemon_documentation.h.in microhttpd2_generated_daemon_options.h
 	./options-generator daemon > microhttpd2_generated_daemon_options.h
 	chmod -w $@
-#microhttpd2_inline_response_documentation.h.in microhttpd2_generated_response_options.h: r_options.rec options-generator
-#	rm -f microhttpd2_inline_response_documentation.h.in microhttpd2_generated_response_options.h
-#	./options-generator response > microhttpd2_generated_response_options.h
-#	chmod -w $@
+microhttpd2_inline_response_documentation.h.in microhttpd2_generated_response_options.h: r_options.rec options-generator
+	rm -f microhttpd2_inline_response_documentation.h.in microhttpd2_generated_response_options.h
+	./options-generator response > microhttpd2_generated_response_options.h
+	chmod -w $@
 
 microhttpd2.h: microhttpd2_preamble.h.in microhttpd2_inline_daemon_documentation.h.in microhttpd2_inline_response_documentation.h.in microhttpd2_main.h.in microhttpd2_postamble.h.in
 	rm -f $@

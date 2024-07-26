@@ -1019,13 +1019,23 @@ TOP:
              " * @author %s-options-generator.c\n"
              " */\n"
              "\n"
-             "#include \"mhd_sys_options.h\"\n"
+             "#include \"sys_bool_type.h\"\n"
              "#include \"sys_base_types.h\"\n"
              "#include \"sys_malloc.h\"\n"
              "#include <string.h>\n"
              "#include \"mhd_%s.h\"\n"
              "#include \"%s_options.h\"\n"
-             "#include \"mhd_public_api.h\"\n"
+             "#include \"mhd_public_api.h\"\n",
+             category,
+             category,
+             category,
+             category);
+    if (0 == strcmp (category, "response"))
+      fprintf (f,
+               "#include \"mhd_locks.h\"\n"
+               "#include \"mhd_assert.h\"\n"
+               "#include \"response_funcs.h\"\n");
+    fprintf (f,
              "\n"
              "MHD_FN_PAR_NONNULL_ALL_ MHD_EXTERN_\n"
              "enum MHD_StatusCode\n"
@@ -1035,29 +1045,43 @@ TOP:
              "  size_t options_max_num)\n"
              "{\n",
              category,
-             category,
-             category,
-             category,
-             category,
              capitalize (category),
              category,
              capitalize (category));
     fprintf (f,
-             "  struct %sOptions *const settings = %s->settings;\n"
-             "  size_t i;\n"
-             "\n",
+             "  struct %sOptions *restrict settings = %s->settings;\n"
+             "  enum MHD_StatusCode res = MHD_SC_OK;\n"
+             "  size_t i;\n",
              capitalize (category),
              category);
     if (0 == strcmp (category, "daemon"))
     {
       fprintf (f,
+               "\n"
                "  if (mhd_DAEMON_STATE_NOT_STARTED != daemon->state)\n"
                "    return MHD_SC_TOO_LATE;\n"
+               "\n");
+    }
+    else if (0 == strcmp (category, "response"))
+    {
+      fprintf (f,
+               "  bool need_unlock = false;\n"
+               "\n"
+               "  if (response->frozen)\n"
+               "    return MHD_SC_TOO_LATE;\n"
+               "  if (response->reuse.reusable)\n"
+               "  {\n"
+               "    need_unlock = true;\n"
+               "    if (! mhd_mutex_lock(&response->reuse.settings_lock))\n"
+               "      return MHD_SC_RESPONSE_MUTEX_LOCK_FAILED;\n"
+               "    mhd_assert (1 == mhd_atomic_counter_get(&response->reuse.counter));\n"
+               "  }\n"
                "\n");
     }
     else
     {
       fprintf (f,
+               "\n"
                "  if (NULL == settings)\n"
                "    return MHD_SC_TOO_LATE;\n"
                "\n");
@@ -1065,29 +1089,39 @@ TOP:
     fprintf (f,
              "  for (i = 0; i < options_max_num; i++)\n"
              "  {\n"
-             "    const struct MHD_%sOptionAndValue *const option = options + i;\n"
+             "    const struct MHD_%sOptionAndValue *const option\n"
+             "      = options + i;\n"
              "    switch (option->opt)\n"
              "    {\n",
              capitalize (category));
     fprintf (f,
              "    case MHD_%c_O_END:\n"
-             "      return MHD_SC_OK;\n",
+             "      i = options_max_num - 1;\n"
+             "      break;\n",
              (char) toupper (*category));
     iterate (head,
              &dump_option_set_switch);
     fprintf (f,
              "    case MHD_%c_O_SENTINEL:\n"
              "    default: /* for -Wswitch-default -Wswitch-enum */ \n"
+             "      res = MHD_SC_OPTION_UNKNOWN;\n"
+             "      i = options_max_num - 1;\n"
              "      break;\n",
              (char) toupper (*category));
     fprintf (f,
              "    }\n"
-             "    return MHD_SC_OPTION_UNKNOWN;\n"
-             "  }\n"
-             "  return MHD_SC_OK;\n");
+             "  }\n");
+    if (0 == strcmp (category, "response"))
+    {
+      fprintf (f,
+               "\n"
+               "  if (need_unlock)\n"
+               "    mhd_mutex_lock_chk(&response->reuse.settings_lock);\n"
+               "\n");
+    }
     fprintf (f,
+             "  return res;\n"
              "}\n");
-
     fclose (f);
     chmod (so_c, S_IRUSR | S_IRGRP | S_IROTH);
     free (so_c);
@@ -1122,7 +1156,8 @@ TOP:
              "#include \"mhd_sys_options.h\"\n"
              "#include \"mhd_public_api.h\"\n"
              "\n"
-             "struct %sOptions {\n",
+             "struct %sOptions\n"
+             "{\n",
              category,
              category,
              uppercase (category),
@@ -1133,7 +1168,7 @@ TOP:
     fprintf (f,
              "};\n"
              "\n"
-             "#endif /* ! MHD_%s_OPTIONS_H */\n",
+             "#endif /* ! MHD_%s_OPTIONS_H 1 */\n",
              uppercase (category));
     fclose (f);
     chmod (do_h, S_IRUSR | S_IRGRP | S_IROTH);
