@@ -2502,8 +2502,8 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2);
  * @ingroup event
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_deamon_process_reg_events (struct MHD_Daemon *daemon,
-                               uint_fast64_t *next_max_wait)
+MHD_deamon_process_reg_events (struct MHD_Daemon *MHD_RESTRICT daemon,
+                               uint_fast64_t *MHD_RESTRICT next_max_wait)
 MHD_FN_PAR_NONNULL_ (1);
 
 /* ********************* daemon options ************** */

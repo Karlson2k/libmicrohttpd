@@ -1257,8 +1257,9 @@ struct MHD_DynamicContentCreatorContext;
 
 
 /**
- * Set action to "continue processing", the data is provided in the
- * buffer and/or in the zero-copy @a iov_data.
+ * Create "continue processing" action with optional chunk-extension.
+ * The data is provided in the buffer and/or in the zero-copy @a iov_data.
+ *
  * If data is provided both in the buffer and @a ivo_data then
  * data in the buffer sent first, following the iov data.
  * The total size of the data in the buffer and in @a iov_data must
@@ -1287,12 +1288,9 @@ MHD_FN_PAR_CSTR_ (4);
 
 
 /**
- * Set action to "continue processing", the data is provided in the
- * buffer and/or in the zero-copy @a iov_data.
- * If data is provided both in the buffer and @a ivo_data then
- * data in the buffer sent first, following the iov data.
- * The total size of the data in the buffer and in @a iov_data must
- * be non-zero.
+ * Create "continue processing" action with optional chunk-extension.
+ * The data is provided in the buffer.
+ *
  * @param[in,out] ctx the pointer the context as provided to the callback
  * @param data_size the amount of the data placed to the provided buffer (not @a iov_data),
  *                  cannot be larger than provided buffer size,
@@ -1304,16 +1302,12 @@ MHD_FN_PAR_CSTR_ (4);
  *         NULL (equivalent of MHD_DCC_action_abort())in case of any error
  */
 #define MHD_DCC_action_continue_ce(ctx,data_size,chunk_ext) \
-        MHD_DCC_action_continue_zc (ctx, data_size, NULL, chunk_ext)
+        MHD_DCC_action_continue_zc ((ctx), (data_size), NULL, (chunk_ext))
 
 
 /**
- * Set action to "continue processing", the data is provided in the
- * buffer and/or in the zero-copy @a iov_data.
- * If data is provided both in the buffer and @a ivo_data then
- * data in the buffer sent first, following the iov data.
- * The total size of the data in the buffer and in @a iov_data must
- * be non-zero.
+ * Create "continue processing" action, the data is provided in the buffer.
+ *
  * @param[in,out] ctx the pointer the context as provided to the callback
  * @param data_size the amount of the data placed to the provided buffer;
  *                  cannot be larger than provided buffer size,
@@ -1323,11 +1317,11 @@ MHD_FN_PAR_CSTR_ (4);
  *         NULL (equivalent of MHD_DCC_action_abort())in case of any error
  */
 #define MHD_DCC_action_continue(ctx,data_size) \
-        MHD_DCC_action_continue_ce (ctx, data_size, NULL)
+        MHD_DCC_action_continue_ce ((ctx), (data_size), NULL)
 
 
 /**
- * Set action to "finished".
+ * Create "finished" action with optional footers.
  * If function failed for any reason, the action is automatically
  * set to "stop with error".
  *
@@ -1345,12 +1339,12 @@ MHD_EXTERN_ const struct MHD_DynamicContentCreatorAction *
 MHD_DCC_action_finished_with_footer (
   struct MHD_DynamicContentCreatorContext *ctx,
   size_t num_footers,
-  const struct MHD_NameValueCStr *footers)
+  const struct MHD_NameValueCStr *MHD_RESTRICT footers)
 MHD_FN_PAR_NONNULL_ (1);
 
 
 /**
- * Set action to "finished".
+ * Create "finished" action.
  * If function failed for any reason, the action is automatically
  * set to "stop with error".
  *
@@ -1359,11 +1353,11 @@ MHD_FN_PAR_NONNULL_ (1);
  *         NULL (equivalent of MHD_DCC_action_abort())in case of any error
  */
 #define MHD_DCC_action_finished(ctx) \
-        MHD_DCC_set_action_finished_with_footer (ctx, 0, NULL)
+        MHD_DCC_action_finished_with_footer ((ctx), 0, NULL)
 
 
 /**
- * Set action to "suspend".
+ * Create "suspend" action.
  * If function failed for any reason, the action is automatically
  * set to "stop with error".
  * @param[in,out] ctx the pointer the context as provided to the callback
@@ -1376,7 +1370,7 @@ MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_RETURNS_NONNULL_;
 
 /**
- * Set action to "stop with error".
+ * Create "stop with error" action.
  * @param[in,out] ctx the pointer the context as provided to the callback
  * @return always NULL (the action "stop with error")
  */
@@ -1544,6 +1538,7 @@ struct MHD_IoVec
  *        the response is destroyed.
  * @param free_cb_cls the argument passed to @a free_cb
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * FIXME: Call free callback on error?
  * @ingroup response
  */
 MHD_EXTERN_ struct MHD_Response *
@@ -1571,7 +1566,7 @@ MHD_response_from_iovec (
  *        sizes larger than 2 GiB may be not supported by OS or
  *        MHD build; see #MHD_LIB_INFO_FIXED_HAS_LARGE_FILE
  * @return NULL on error (i.e. invalid arguments, out of memory)
- * FIXME: Call free callback on error?
+ * FIXME: Close FD on error?
  * @ingroup response
  */
 MHD_EXTERN_ struct MHD_Response *
@@ -1597,13 +1592,13 @@ MHD_FN_PAR_FD_READ_ (2);
  *        data; will be closed when response is destroyed;
  *        fd should be in 'blocking' mode
  * @return NULL on error (i.e. invalid arguments, out of memory)
+ * FIXME: Close pipe FD on error?
  * @ingroup response
  */
 MHD_EXTERN_ struct MHD_Response *
 MHD_response_from_pipe (enum MHD_HTTP_StatusCode sc,
                         int fd)
 MHD_FN_PAR_FD_READ_ (2);
-;
 
 
 /**
