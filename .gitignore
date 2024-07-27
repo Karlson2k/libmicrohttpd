@@ -55,3 +55,11 @@ src/microhttpd_ws/test_websocket
 *.exe.manifest
 /libmicrohttpd-*.*.*.tar.*
 /config.cache
+config.guess
+config.sub
+missing
+compile
+config
+depcomp
+install-sh
+ltmain.sh
