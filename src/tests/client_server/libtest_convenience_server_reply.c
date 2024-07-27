@@ -410,7 +410,7 @@ chunk_return (void *cls,
   const char *space = strchr (cc->pos, ' ');
 
   if (0 == imax)
-    return MHD_DCC_action_finished (ctx);
+    return MHD_DCC_action_finish (ctx);
   if (imax > space - cc->pos + 1)
     imax = space - cc->pos;
   if (imax > max)

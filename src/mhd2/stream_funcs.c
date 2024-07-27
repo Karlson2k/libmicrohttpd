@@ -32,6 +32,7 @@
 #ifdef MHD_USE_EPOLL
 #  include <sys/epoll.h>
 #endif
+#include "sys_malloc.h"
 
 #include "mhd_daemon.h"
 #include "mhd_connection.h"
@@ -49,6 +50,7 @@
 #include "daemon_logger.h"
 #include "daemon_funcs.h"
 #include "conn_mark_ready.h"
+#include "stream_process_reply.h"
 
 #include "mhd_public_api.h"
 
@@ -520,6 +522,13 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
     c->rq.app_aware = false;
 #endif
 
+    mhd_stream_call_dcc_cleanup_if_needed (c);
+    if (NULL != c->rp.resp_iov.iov)
+    {
+      free (c->rp.resp_iov.iov);
+      c->rp.resp_iov.iov = NULL;
+    }
+
     if (NULL != c->rp.response)
       mhd_response_dec_use_count (c->rp.response);
     c->rp.response = NULL;
@@ -799,6 +808,13 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
 #else  /* ! HAVE_LOG_FUNCTIONALITY */
   (void) log_msg;
 #endif /* ! HAVE_LOG_FUNCTIONALITY */
+
+  mhd_stream_call_dcc_cleanup_if_needed (c);
+  if (NULL != c->rp.resp_iov.iov)
+  {
+    free (c->rp.resp_iov.iov);
+    c->rp.resp_iov.iov = NULL;
+  }
 
 #if 0 // TODO: notification callback
   mhd_assert ((MHD_CONNECTION_INIT != c->state) || (! c->rq.app_aware));

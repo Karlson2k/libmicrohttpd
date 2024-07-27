@@ -58,6 +58,7 @@ libmicrohttpd2_la_SOURCES = \
   http_method.h             http_prot_ver.h \
   http_status_str.c         http_status_str.h \
   action.c                  mhd_action.h \
+  dcc_action.c              mhd_dcc_action.h \
   events_process.c          events_process.h \
   daemon_logger.c           daemon_logger.h \
   daemon_logger_default.c   daemon_logger_default.h \

@@ -414,7 +414,8 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
         c->state = MHD_CONNECTION_FULL_REPLY_SENT;
         continue;
       }
-      mhd_stream_prep_unchunked_body (c);
+      if (mhd_stream_prep_unchunked_body (c))
+        continue;
       break;
     case MHD_CONNECTION_CHUNKED_BODY_READY:
       mhd_assert (c->rp.props.send_reply_body);
@@ -431,14 +432,15 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
         c->state = MHD_CONNECTION_CHUNKED_BODY_SENT;
         continue;
       }
-      mhd_stream_prep_chunked_body (c);
+      if (mhd_stream_prep_chunked_body (c))
+        continue;
       break;
     case MHD_CONNECTION_CHUNKED_BODY_SENT:
       mhd_assert (c->rp.props.send_reply_body);
       mhd_assert (c->rp.props.chunked);
       mhd_assert (c->write_buffer_send_offset <= \
                   c->write_buffer_append_offset);
-
+      mhd_stream_call_dcc_cleanup_if_needed (c);
       mhd_stream_prep_chunked_footer (c);
       break;
     case MHD_CONNECTION_FOOTERS_SENDING:

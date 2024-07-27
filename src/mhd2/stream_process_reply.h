@@ -36,6 +36,17 @@ struct MHD_Connection; /* forward declaration */
 
 
 /**
+ * Check whether Dynamic Content Creator cleanup callback is set and
+ * call it, if needed.
+ * Un-set cleanup callback after calling.
+ * @param c the connection to process
+ */
+MHD_INTERNAL void
+mhd_stream_call_dcc_cleanup_if_needed (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
+
+/**
  * Allocate the connection's write buffer and fill it with all of the
  * headers from the response.
  * Required headers are added here.
@@ -53,8 +64,10 @@ MHD_FN_PAR_NONNULL_ALL_;
  * Prepare the unchunked response content of this connection for sending.
  *
  * @param c the connection
+ * @return 'true' if connection new state could be processed now,
+ *         'false' if no new state processing is needed.
  */
-MHD_INTERNAL void
+MHD_INTERNAL bool
 mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 
@@ -62,9 +75,10 @@ MHD_FN_PAR_NONNULL_ALL_;
 /**
  * Prepare the chunked response content of this connection for sending.
  *
- * @param c the connection
+ * @return 'true' if connection new state could be processed now,
+ *         'false' if no new state processing is needed.
  */
-MHD_INTERNAL void
+MHD_INTERNAL bool
 mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 

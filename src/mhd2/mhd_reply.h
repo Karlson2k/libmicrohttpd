@@ -38,6 +38,8 @@
 
 #include "sys_bool_type.h"
 
+#include "mhd_dcc_action.h"
+
 #include "mhd_iovec.h"
 
 struct MHD_Response; /* forward declaration */
@@ -95,6 +97,18 @@ enum MHD_FIXED_ENUM_ mhd_ReplyContentLocation
  */
 struct MHD_Reply
 {
+  /**
+   * The action provided by application when content is dynamically created.
+   * Used only when mhd_RESPONSE_CONTENT_DATA_CALLBACK == response->cntn_dtype
+   */
+  struct MHD_DynamicContentCreatorAction app_act;
+
+  /**
+   * The context provided for application callback for dynamic content.
+   * Used only when mhd_RESPONSE_CONTENT_DATA_CALLBACK == response->cntn_dtype
+   */
+  struct MHD_DynamicContentCreatorContext app_act_ctx;
+
   /**
    * Response to transmit (initially NULL).
    */

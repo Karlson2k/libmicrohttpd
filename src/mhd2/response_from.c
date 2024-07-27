@@ -99,7 +99,7 @@ mhd_response_deinit_content_data (struct MHD_Response *restrict r)
     free (r->cntn.iovec.iov);
   else if (mhd_RESPONSE_CONTENT_DATA_FILE == r->cntn_dtype)
     close (r->cntn.file.fd);
-  /* For #mhd_RESPONSE_CONTENT_IOVEC clean-up performed by callback
+  /* For #mhd_RESPONSE_CONTENT_DATA_BUFFER clean-up performed by callback
      for both modes: internal copy and external cleanup */
   if (NULL != r->free.cb)
     r->free.cb (r->free.cls);
@@ -295,8 +295,10 @@ MHD_response_from_iovec (
       res->cntn_dtype = mhd_RESPONSE_CONTENT_DATA_IOVEC;
       res->cntn.iovec.iov = iov_copy;
       res->cntn.iovec.cnt = i_cp;
-      return res;
+      return res; /* Success exit point */
     }
+
+    /* Below is a cleanup path */
     free (iov_copy);
   }
   return NULL;

@@ -55,6 +55,26 @@
 
 #include "mhd_public_api.h"
 
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+mhd_stream_call_dcc_cleanup_if_needed (struct MHD_Connection *restrict c)
+{
+  if (mhd_DCC_ACTION_CONTINUE != c->rp.app_act.act)
+    return;
+  if (NULL == c->rp.app_act.data.cntnue.iov_data)
+    return;
+
+  mhd_assert (mhd_RESPONSE_CONTENT_DATA_CALLBACK == \
+              c->rp.response->cntn_dtype);
+
+  if (NULL != c->rp.app_act.data.cntnue.iov_data->iov_fcb)
+  {
+    c->rp.app_act.data.cntnue.iov_data->iov_fcb (
+      c->rp.app_act.data.cntnue.iov_data->iov_fcb_cls);
+  }
+
+  c->rp.app_act.data.cntnue.iov_data = NULL;
+}
+
 
 /**
  * This enum type describes requirements for reply body and reply bode-specific
@@ -875,7 +895,76 @@ mhd_stream_build_header_response (struct MHD_Connection *restrict c)
 }
 
 
-MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+/**
+ * Pre-process DCC action provided by application.
+ * 'abort' and 'suspend' actions are fully processed,
+ * 'continue' and 'finish' actions needs to be processed by the caller.
+ * @param c the stream to use
+ * @param act the action provided by application
+ * @return 'true' if action if 'continue' or 'finish' and need to be
+ *         processed,
+ *         'false' if action is 'suspend' or 'abort' and is already processed.
+ */
+static MHD_FN_PAR_NONNULL_ (1) bool
+preprocess_dcc_action (struct MHD_Connection *restrict c,
+                       const struct MHD_DynamicContentCreatorAction *act)
+{
+  /**
+   * The action created for the current request
+   */
+  struct MHD_DynamicContentCreatorAction *const a =
+    &(c->rp.app_act);
+
+  if (NULL != act)
+  {
+    if ((a != act) ||
+        ! mhd_DCC_ACTION_IS_VALID (c->rp.app_act.act) ||
+        ((MHD_SIZE_UNKNOWN != c->rp.response->cntn_size) &&
+         (mhd_DCC_ACTION_FINISH == c->rp.app_act.act)))
+    {
+      mhd_LOG_MSG (c->daemon, MHD_SC_ACTION_INVALID, \
+                   "Provided Dynamic Content Creator action is not " \
+                   "a correct action generated for the current request.");
+      act = NULL;
+    }
+  }
+  if (NULL == act)
+    a->act = mhd_DCC_ACTION_ABORT;
+
+  switch (a->act)
+  {
+  case mhd_DCC_ACTION_CONTINUE:
+    return true;
+  case mhd_DCC_ACTION_FINISH:
+    mhd_assert (MHD_SIZE_UNKNOWN == c->rp.response->cntn_size);
+    return true;
+  case mhd_DCC_ACTION_SUSPEND:
+    mhd_assert (0 && "Not implemented yet");
+    // TODO: Implement suspend;
+    mhd_STREAM_ABORT (c,
+                      mhd_CONN_CLOSE_INT_ERROR,
+                      "Suspending connection is not implemented yet");
+    return false;
+  case mhd_DCC_ACTION_ABORT:
+    mhd_STREAM_ABORT (c,
+                      mhd_CONN_CLOSE_APP_ABORTED,
+                      "Dynamic Content Creator requested abort " \
+                      "of the request");
+    return false;
+  case mhd_DCC_ACTION_NO_ACTION:
+  default:
+    break;
+  }
+  mhd_assert (0 && "Impossible value");
+  MHD_UNREACHABLE_;
+  mhd_STREAM_ABORT (c,
+                    mhd_CONN_CLOSE_INT_ERROR,
+                    "Impossible code path");
+  return false;
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
 {
   struct MHD_Response *const restrict r = c->rp.response;
@@ -883,8 +972,13 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
   mhd_assert (c->rp.props.send_reply_body);
   mhd_assert (c->rp.rsp_cntn_read_pos != r->cntn_size);
 
+  mhd_stream_call_dcc_cleanup_if_needed (c);
+
   if (0 == r->cntn_size)
-    return;  /* 0-byte response is always ready */
+  { /* 0-byte response is always ready */
+    c->state = MHD_CONNECTION_FULL_REPLY_SENT;
+    return true;
+  }
 
   mhd_assert (mhd_REPLY_CNTN_LOC_NOWHERE != c->rp.cntn_loc);
   if (mhd_REPLY_CNTN_LOC_RESP_BUF == c->rp.cntn_loc)
@@ -893,45 +987,77 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
   }
   else if (mhd_REPLY_CNTN_LOC_CONN_BUF == c->rp.cntn_loc)
   {
-    // TODO: implement
+    if (mhd_RESPONSE_CONTENT_DATA_CALLBACK == r->cntn_dtype)
+    {
+      const struct MHD_DynamicContentCreatorAction *act;
+      const size_t size_to_fill =
+        c->write_buffer_size - c->write_buffer_append_offset;
+      size_t filled;
+
+      mhd_assert (c->write_buffer_append_offset < c->write_buffer_size);
+      mhd_assert (NULL == c->rp.app_act_ctx.connection);
+
+      c->rp.app_act_ctx.connection = c;
+      c->rp.app_act.act = mhd_DCC_ACTION_NO_ACTION;
+
+      act =
+        r->cntn.dyn.cb (r->cntn.dyn.cls,
+                        &(c->rp.app_act_ctx),
+                        c->rp.rsp_cntn_read_pos,
+                        (void *)
+                        (c->write_buffer + c->write_buffer_append_offset),
+                        size_to_fill);
+      c->rp.app_act_ctx.connection = NULL; /* Block any attempt to create a new action */
+      if (! preprocess_dcc_action (c, act))
+        return false;
+      if (mhd_DCC_ACTION_FINISH == c->rp.app_act.act)
+      {
+        mhd_assert (MHD_SIZE_UNKNOWN == r->cntn_size);
+        mhd_assert (c->rp.props.end_by_closing);
+
+        c->state = MHD_CONNECTION_FULL_REPLY_SENT;
+
+        return true;
+      }
+      mhd_assert (mhd_DCC_ACTION_CONTINUE == c->rp.app_act.act);
+      // TODO: implement iov sending
+
+      filled = c->rp.app_act.data.cntnue.buf_data_size;
+      if (size_to_fill < filled)
+      {
+        mhd_STREAM_ABORT (c,
+                          mhd_CONN_CLOSE_APP_ERROR,
+                          "Closing connection (application returned more data "
+                          "than requested).");
+        return false;
+      }
+      c->rp.rsp_cntn_read_pos += filled;
+      c->write_buffer_append_offset += filled;
+    }
+    else if (mhd_RESPONSE_CONTENT_DATA_FILE == r->cntn_dtype)
+    {
+      // TODO: implement fallback
+      mhd_assert (0 && "Not implemented yet");
+      c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_NOWHERE;
+      c->rp.rsp_cntn_read_pos = r->cntn_size;
+    }
+    else
+    {
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+      c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_NOWHERE;
+      c->rp.rsp_cntn_read_pos = r->cntn_size;
+    }
+
     mhd_assert (0 && "Not implemented yet");
     c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_NOWHERE;
     c->rp.rsp_cntn_read_pos = r->cntn_size;
-#if 0
-    ret = response->crc (response->crc_cls,
-                         connection->rp.rsp_cntn_read_pos,
-                         (char *) response->data,
-                         (size_t) MHD_MIN ((uint64_t)
-                                           response->data_buffer_size,
-                                           response->total_size
-                                           - connection->rp.rsp_cntn_read_pos));
-    if (0 > ret)
-    {
-      /* either error or http 1.0 transfer, close socket! */
-      /* TODO: do not update total size, check whether response
-       * was really with unknown size */
-      response->total_size = connection->rp.rsp_cntn_read_pos;
-  #if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-      MHD_mutex_unlock_chk_ (&response->mutex);
-  #endif
-      if (MHD_CONTENT_READER_END_OF_STREAM == ret)
-        MHD_connection_close_ (connection,
-                               MHD_REQUEST_TERMINATED_COMPLETED_OK);
-      else
-        CONNECTION_CLOSE_ERROR (connection,
-                                _ ("Closing connection (application reported " \
-                                   "error generating data)."));
-      return MHD_NO;
-    }
-    response->data_start = connection->rp.rsp_cntn_read_pos;
-    response->data_size = (size_t) ret;
-#endif
   }
   else if (mhd_REPLY_CNTN_LOC_IOV == c->rp.cntn_loc)
   {
     size_t copy_size;
 
-    mhd_assert (NULL != c->rp.resp_iov.iov);
+    mhd_assert (NULL == c->rp.resp_iov.iov);
     mhd_assert (mhd_RESPONSE_CONTENT_DATA_IOVEC == r->cntn_dtype);
 
     copy_size = r->cntn.iovec.cnt * sizeof(mhd_iovec);
@@ -943,7 +1069,7 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
       mhd_STREAM_ABORT (c,
                         mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REPLY,
                         "No memory in the pool for the response data.");
-      return;
+      return false;
     }
     memcpy (c->rp.resp_iov.iov,
             &(r->cntn.iovec.iov),
@@ -954,7 +1080,7 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
 #if defined(MHD_USE_SENDFILE)
   else if (mhd_REPLY_CNTN_LOC_FILE == c->rp.cntn_loc)
   {
-    (void) 0; /* Nothing to do, file should be ready directly */
+    (void) 0; /* Nothing to do, file should be read directly */
   }
 #endif /* MHD_USE_SENDFILE */
   else
@@ -966,10 +1092,11 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
   }
 
   c->state = MHD_CONNECTION_UNCHUNKED_BODY_READY;
+  return false;
 }
 
 
-MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
 {
   size_t filled;
@@ -986,6 +1113,8 @@ mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
 
   mhd_assert (0 == c->write_buffer_append_offset);
   mhd_assert (0 == c->write_buffer_send_offset);
+
+  mhd_stream_call_dcc_cleanup_if_needed (c);
 
   /* The buffer must be reasonably large enough */
   if (32 > c->write_buffer_size)
@@ -1019,7 +1148,8 @@ mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
   if ((0 == left_to_send) &&
       (mhd_RESPONSE_CONTENT_DATA_CALLBACK != r->cntn_dtype))
   {
-    filled = 0;
+    c->state = MHD_CONNECTION_CHUNKED_BODY_SENT;
+    return true;
   }
   else if (mhd_RESPONSE_CONTENT_DATA_BUFFER == r->cntn_dtype)
   {
@@ -1030,25 +1160,53 @@ mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
             size_to_fill);
     filled = size_to_fill;
   }
+  else if (mhd_RESPONSE_CONTENT_DATA_CALLBACK == r->cntn_dtype)
+  {
+    const struct MHD_DynamicContentCreatorAction *act;
+
+    mhd_assert (NULL == c->rp.app_act_ctx.connection);
+
+    c->rp.app_act_ctx.connection = c;
+    c->rp.app_act.act = mhd_DCC_ACTION_NO_ACTION;
+
+    act =
+      r->cntn.dyn.cb (r->cntn.dyn.cls,
+                      &(c->rp.app_act_ctx),
+                      c->rp.rsp_cntn_read_pos,
+                      (void *)
+                      (c->write_buffer + max_chunk_hdr_len),
+                      size_to_fill);
+    c->rp.app_act_ctx.connection = NULL; /* Block any attempt to create a new action */
+    if (! preprocess_dcc_action (c, act))
+      return false;
+    if (mhd_DCC_ACTION_FINISH == c->rp.app_act.act)
+    {
+      mhd_assert (MHD_SIZE_UNKNOWN == r->cntn_size);
+      c->state = MHD_CONNECTION_CHUNKED_BODY_SENT;
+
+      return true;
+    }
+    mhd_assert (mhd_DCC_ACTION_CONTINUE == c->rp.app_act.act);
+    // TODO: implement iov sending
+
+    filled = c->rp.app_act.data.cntnue.buf_data_size;
+    if (size_to_fill < filled)
+    {
+      mhd_STREAM_ABORT (c,
+                        mhd_CONN_CLOSE_APP_ERROR,
+                        "Closing connection (application returned more data "
+                        "than requested).");
+      return false;
+    }
+    c->rp.rsp_cntn_read_pos += filled;
+    c->write_buffer_append_offset += filled;
+  }
   else
   {
     mhd_assert (0 && "Not implemented yet");
     filled = 0;
   }
-  if (size_to_fill < filled)
-  {
-    mhd_STREAM_ABORT (c,
-                      mhd_CONN_CLOSE_APP_ERROR,
-                      "Closing connection (application returned more data "
-                      "than requested).");
-    return;
-  }
 
-  if (0 == filled)
-  {
-    c->state = MHD_CONNECTION_CHUNKED_BODY_SENT;
-    return;
-  }
   chunk_hdr_len = mhd_uint32_to_strx ((uint_fast32_t) filled,
                                       chunk_hdr,
                                       sizeof(chunk_hdr));
@@ -1069,6 +1227,8 @@ mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
     c->rp.rsp_cntn_read_pos = r->cntn_size;
 
   c->state = MHD_CONNECTION_CHUNKED_BODY_READY;
+
+  return false;
 }
 
 

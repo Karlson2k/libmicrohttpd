@@ -1300,6 +1300,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_UPLOAD_ACTION_INVALID = 60081
   ,
   /**
+   * The provided Dynamic Content Creator action is invalid
+   */
+  MHD_SC_DCC_ACTION_INVALID = 60082
+  ,
+  /**
    * The response must be empty
    */
   MHD_SC_REPLY_NOT_EMPTY_RESPONSE = 60101
@@ -5338,6 +5343,8 @@ struct MHD_Response;
  * request is suspended, MHD may not detect disconnects by the
  * client.
  *
+ * At most one action can be created for any request.
+ *
  * @param[in,out] request the request for which the action is generated
  * @return action to cause a request to be suspended,
  *         NULL if any action has been already created for the @a request
@@ -5356,6 +5363,8 @@ MHD_FN_PAR_NONNULL_ALL_;
  * the future.
  * However, the @a response is frozen by this step and
  * must no longer be modified (i.e. by setting headers).
+ *
+ * At most one action can be created for any request.
  *
  * @param request the request to create the action for
  * @param[in] response the response to convert,
@@ -5485,6 +5494,7 @@ MHD_RESTORE_WARN_VARIADIC_MACROS_
 #endif /* MHD_USE_VARARG_MACROS && MHD_USE_COMP_LIT_FUNC_PARAMS */
 /* *INDENT-ON* */
 
+#ifndef MHD_FREECALLBACK_DEFINED
 
 /**
  * This method is called by libmicrohttpd when response with dynamic content
@@ -5496,6 +5506,10 @@ MHD_RESTORE_WARN_VARIADIC_MACROS_
  */
 typedef void
 (*MHD_FreeCallback) (void *free_cls);
+
+#define MHD_FREECALLBACK_DEFINED 1
+#endif /* ! MHD_FREECALLBACK_DEFINED */
+#ifndef MHD_DYNCONTENTZCIOVEC_DEFINED
 
 
 /**
@@ -5524,6 +5538,9 @@ struct MHD_DynContentZCIoVec
   void *iov_fcb_cls;
 };
 
+#define MHD_DYNCONTENTZCIOVEC_DEFINED 1
+#endif /* ! MHD_DYNCONTENTZCIOVEC_DEFINED */
+
 /**
  * The action type returned by Dynamic Content Creator callback
  */
@@ -5543,6 +5560,12 @@ struct MHD_DynamicContentCreatorContext;
  * data in the buffer sent first, following the iov data.
  * The total size of the data in the buffer and in @a iov_data must
  * be non-zero.
+ * If response content size is known and total size of content provided earlier
+ * for this request combined with the size provided by this action is larger
+ * then known response content size, then NULL is returned.
+ *
+ * At most one DCC action can be created for one content callback.
+ *
  * @param[in,out] ctx the pointer the context as provided to the callback
  * @param data_size the amount of the data placed to the provided buffer,
  *                  cannot be larger than provided buffer size,
@@ -5570,6 +5593,8 @@ MHD_FN_PAR_CSTR_ (4);
  * Create "continue processing" action with optional chunk-extension.
  * The data is provided in the buffer.
  *
+ * At most one DCC action can be created for one content callback.
+ *
  * @param[in,out] ctx the pointer the context as provided to the callback
  * @param data_size the amount of the data placed to the provided buffer (not @a iov_data),
  *                  cannot be larger than provided buffer size,
@@ -5586,6 +5611,8 @@ MHD_FN_PAR_CSTR_ (4);
 
 /**
  * Create "continue processing" action, the data is provided in the buffer.
+ *
+ * At most one DCC action can be created for one content callback.
  *
  * @param[in,out] ctx the pointer the context as provided to the callback
  * @param data_size the amount of the data placed to the provided buffer;
@@ -5604,6 +5631,8 @@ MHD_FN_PAR_CSTR_ (4);
  * If function failed for any reason, the action is automatically
  * set to "stop with error".
  *
+ * At most one DCC action can be created for one content callback.
+ *
  * @param[in,out] ctx the pointer the context as provided to the callback
  * @param num_footers number of elements in the @a footers array,
  *                    must be zero if @a footers is NULL
@@ -5615,7 +5644,7 @@ MHD_FN_PAR_CSTR_ (4);
  *         NULL (equivalent of MHD_DCC_action_abort())in case of any error
  */
 MHD_EXTERN_ const struct MHD_DynamicContentCreatorAction *
-MHD_DCC_action_finished_with_footer (
+MHD_DCC_action_finish_with_footer (
   struct MHD_DynamicContentCreatorContext *ctx,
   size_t num_footers,
   const struct MHD_NameValueCStr *MHD_RESTRICT footers)
@@ -5627,18 +5656,23 @@ MHD_FN_PAR_NONNULL_ (1);
  * If function failed for any reason, the action is automatically
  * set to "stop with error".
  *
+ * At most one DCC action can be created for one content callback.
+ *
  * @param[in,out] ctx the pointer the context as provided to the callback
  * @return the pointer to the action if succeed,
  *         NULL (equivalent of MHD_DCC_action_abort())in case of any error
  */
-#define MHD_DCC_action_finished(ctx) \
-        MHD_DCC_action_finished_with_footer ((ctx), 0, NULL)
+#define MHD_DCC_action_finish(ctx) \
+        MHD_DCC_action_finish_with_footer ((ctx), 0, NULL)
 
 
 /**
  * Create "suspend" action.
  * If function failed for any reason, the action is automatically
  * set to "stop with error".
+ *
+ * At most one DCC action can be created for one content callback.
+ *
  * @param[in,out] ctx the pointer the context as provided to the callback
  * @return the pointer to the action if succeed,
  *         NULL (equivalent of MHD_DCC_action_abort())in case of any error
@@ -5672,7 +5706,9 @@ MHD_FN_RETURNS_NONNULL_;
  *        libmicrohttpd guarantees that "pos" will be
  *        the sum of all data sizes provided by this callback
  * @param[out] buf where to copy the data
- * @param max maximum number of bytes to copy to @a buf (size of @a buf)
+ * @param max maximum number of bytes to copy to @a buf (size of @a buf),
+              if the size of the content of the response is known then size
+              of the buffer is never larger than amount of the content left
  * @return action to use,
  *         NULL in case of any error (the response will be aborted)
  */
@@ -5950,6 +5986,8 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
  * request is suspended, MHD may not detect disconnects by the
  * client.
  *
+ * At most one upload action can be created for one upload callback.
+ *
  * @param[in,out] request the request for which the action is generated
  * @return action to cause a request to be suspended,
  *         NULL if any action has been already created for the @a request
@@ -5967,6 +6005,8 @@ MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_;
  * the future.
  * However, the @a response is frozen by this step and
  * must no longer be modified (i.e. by setting headers).
+ *
+ * At most one upload action can be created for one upload callback.
  *
  * @param request the request to create the action for
  * @param[in] response the response to convert,
@@ -5990,6 +6030,8 @@ MHD_FN_PAR_NONNULL_ (1);
  * Valid only for incremental upload processing.
  * Works as #MHD_upload_action_abort_request() if used for full upload callback
  * or for the final (with zero data) incremental callback.
+ *
+ * At most one upload action can be created for one upload callback.
  *
  * @param request the request to make an action
  * @return action operation,
@@ -6051,6 +6093,8 @@ typedef const struct MHD_UploadAction *
  *
  * If @a uc_inc is NULL and upload cannot fit the allocated buffer
  * then request is aborted without response.
+ *
+ * At most one action can be created for any request.
  *
  * @param request the request to create action for
  * @param large_buffer_size how large should the upload buffer be.
@@ -6155,8 +6199,7 @@ typedef const struct MHD_UploadAction *
  * of the postprocessor upload data.
  * @param req the request
  * @param cls the closure
- * @return the action to proceed, #MHD_upload_action_continue() is not possible
- *         an
+ * @return the action to proceed
  */
 typedef const struct MHD_UploadAction *
 (*MHD_PostDataFinished) (struct MHD_Request *req,
@@ -6167,6 +6210,8 @@ typedef const struct MHD_UploadAction *
 
 /**
  * Create an action to parse the POSTed body from the client.
+ *
+ * At most one action can be created for any request.
  *
  * @param request the request to create action for
  * @param pp_buffer_size how much data should the post processor
@@ -6432,6 +6477,8 @@ typedef void
  * As usual, the response object can be extended with header
  * information and then be used any number of times (as long as the
  * header information is not connection-specific).
+ *
+ * At most one action can be created for any request.
  *
  * @param request the request to create action for
  * @param upgrade_handler function to call with the "upgraded" socket
@@ -7361,6 +7408,8 @@ MHD_FN_PAR_CSTR_ (4);
  * 'charset'). For better compatibility with clients, it is recommended (but
  * not required) to set @a domain to NULL in this mode.
  *
+ * At most one action can be created for any request.
+ *
  * @param request the request
  * @param realm the realm presented to the client
  * @param opaque the string for opaque value, can be NULL, but NULL is
@@ -7458,6 +7507,8 @@ struct MHD_BasicAuthInfo
  * Send a response to request basic authentication from the client.
  *
  * See RFC 7617, section-2 for details.
+ *
+ * At most one action can be created for any request.
  *
  * @param connection the MHD connection structure
  * @param realm the realm presented to the client

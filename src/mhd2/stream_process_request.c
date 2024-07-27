@@ -2225,10 +2225,13 @@ mhd_stream_get_request_headers (struct MHD_Connection *restrict c,
  */
 enum _MHD_ParseCookie
 {
-  MHD_PARSE_COOKIE_OK = MHD_YES,      /**< Success or no cookies in headers */
-  MHD_PARSE_COOKIE_OK_LAX = 2,        /**< Cookies parsed, but workarounds used */
-  MHD_PARSE_COOKIE_MALFORMED = -1,    /**< Invalid cookie header */
-  MHD_PARSE_COOKIE_NO_MEMORY = MHD_NO /**< Not enough memory in the pool */
+  MHD_PARSE_COOKIE_OK_LAX = 2        /**< Cookies parsed, but workarounds used */
+  ,
+  MHD_PARSE_COOKIE_OK = 1            /**< Success or no cookies in headers */
+  ,
+  MHD_PARSE_COOKIE_NO_MEMORY = 0     /**< Not enough memory in the pool */
+  ,
+  MHD_PARSE_COOKIE_MALFORMED = -1    /**< Invalid cookie header */
 };
 
 

@@ -1300,6 +1300,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_UPLOAD_ACTION_INVALID = 60081
   ,
   /**
+   * The provided Dynamic Content Creator action is invalid
+   */
+  MHD_SC_DCC_ACTION_INVALID = 60082
+  ,
+  /**
    * The response must be empty
    */
   MHD_SC_REPLY_NOT_EMPTY_RESPONSE = 60101
