@@ -411,8 +411,8 @@ chunk_return (void *cls,
 
   if (0 == imax)
     return MHD_DCC_action_finish (ctx);
-  if (imax > space - cc->pos + 1)
-    imax = space - cc->pos;
+  if (NULL != space)
+    imax = space - cc->pos + 1;
   if (imax > max)
     imax = max;
   memcpy (buf,
