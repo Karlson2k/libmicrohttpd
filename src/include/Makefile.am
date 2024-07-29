@@ -19,7 +19,7 @@ noinst_PROGRAMS = \
   options-generator
 
 options_generator_SOURCES = \
- options-generator.c
+  options-generator.c
 
 mhd2includedir = $(includedir)/mhd2
 
@@ -48,4 +48,9 @@ EXTRA_DIST = \
   microhttpd2_generated_daemon_options.h \
   microhttpd2_generated_response_options.h \
   microhttpd2_portability.h \
+  microhttpd2.h
+
+.NOTPARALLEL: \
+  microhttpd2_inline_daemon_documentation.h.in microhttpd2_generated_daemon_options.h \
+  microhttpd2_inline_response_documentation.h.in microhttpd2_generated_response_options.h \
   microhttpd2.h
