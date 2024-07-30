@@ -169,7 +169,7 @@ check_PROGRAMS += \
   test_basicauth_oldapi test_basicauth_preauth_oldapi
 endif
 
-if HAVE_POSTPROCESSOR
+if HAVE_POST_PARSER
 check_PROGRAMS += \
   test_post \
   test_postform \

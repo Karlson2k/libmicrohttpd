@@ -107,14 +107,14 @@ MHD_action_process_upload (struct MHD_Request *request,
 
 MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ (1) const struct MHD_Action *
-MHD_action_post_processor (struct MHD_Request *request,
-                           size_t pp_buffer_size,
-                           size_t pp_stream_limit,
-                           enum MHD_HTTP_PostEncoding enc,
-                           MHD_PostDataReader reader,
-                           void *reader_cls,
-                           MHD_PostDataFinished done_cb,
-                           void *done_cb_cls)
+MHD_action_parse_post (struct MHD_Request *request,
+                       size_t buffer_size,
+                       size_t auto_stream_size,
+                       enum MHD_HTTP_PostEncoding enc,
+                       MHD_PostDataReader stream_reader,
+                       void *reader_cls,
+                       MHD_PostDataFinished done_cb,
+                       void *done_cb_cls)
 {
   struct MHD_Action *const restrict head_act =
     &(request->app_act.head_act);
@@ -124,10 +124,10 @@ MHD_action_post_processor (struct MHD_Request *request,
     return (const struct MHD_Action *) NULL;
 
   head_act->act = mhd_ACTION_POST_PROCESS;
-  head_act->data.post_process.pp_buffer_size = pp_buffer_size;
-  head_act->data.post_process.pp_stream_limit = pp_stream_limit;
+  head_act->data.post_process.buffer_size = buffer_size;
+  head_act->data.post_process.auto_stream_size = auto_stream_size;
   head_act->data.post_process.enc = enc;
-  head_act->data.post_process.reader = reader;
+  head_act->data.post_process.stream_reader = stream_reader;
   head_act->data.post_process.reader_cls = reader_cls;
   head_act->data.post_process.done_cb = done_cb;
   head_act->data.post_process.done_cb_cls = done_cb_cls;

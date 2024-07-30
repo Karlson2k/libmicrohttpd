@@ -162,7 +162,7 @@ libmicrohttpd_la_SOURCES += \
   tsearch.c tsearch.h
 endif
 
-if HAVE_POSTPROCESSOR
+if HAVE_POST_PARSER
 libmicrohttpd_la_SOURCES += \
   postprocessor.c postprocessor.h
 endif
@@ -270,7 +270,7 @@ endif
 endif
 endif
 
-if HAVE_POSTPROCESSOR
+if HAVE_POST_PARSER
 check_PROGRAMS += \
   test_postprocessor \
   test_postprocessor_large \

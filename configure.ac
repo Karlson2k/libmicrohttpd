@@ -4832,17 +4832,17 @@ AM_CONDITIONAL([HAVE_HTTP_AUTO_MESSAGES_BODIES], [test "x$enable_http_messages" 
 
 
 # optional: have postprocessor?
-AC_MSG_CHECKING([[whether to enable postprocessor]])
-AC_ARG_ENABLE([postprocessor],
-   [AS_HELP_STRING([--disable-postprocessor],
-               [disable MHD PostProcessor functionality])],
-   [enable_postprocessor=${enableval}],
-   [enable_postprocessor=yes])
-AS_IF([[test "x$enable_postprocessor" != "xno"]],
-  [ enable_postprocessor=yes
-    AC_DEFINE([HAVE_POSTPROCESSOR],[1],[Define to 1 if libmicrohttpd is compiled with postprocessor support.]) ])
-AM_CONDITIONAL([HAVE_POSTPROCESSOR], [test "x$enable_postprocessor" != "xno"])
-AC_MSG_RESULT([[$enable_postprocessor]])
+AC_MSG_CHECKING([[whether to enable POST parser]])
+AC_ARG_ENABLE([postparser],
+   [AS_HELP_STRING([--disable-postparser],
+               [disable MHD POST parser functionality])],
+   [enable_postparser=${enableval}],
+   [enable_postparser=yes])
+AS_IF([[test "x$enable_postparser" != "xno"]],
+  [ enable_postparser=yes
+    AC_DEFINE([HAVE_POST_PARSER],[1],[Define to 1 if libmicrohttpd is compiled with POST parser support.]) ])
+AM_CONDITIONAL([HAVE_POST_PARSER], [test "x$enable_postparser" != "xno"])
+AC_MSG_RESULT([[$enable_postparser]])
 
 have_gnutls=no
 have_gnutls_sni=no
@@ -5340,7 +5340,7 @@ AC_MSG_RESULT([[$enable_httpupgrade]])
 # optional: HTTP cookie parsing support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP cookie parsing]])
 AC_ARG_ENABLE([[cookie]],
-    [AS_HELP_STRING([[--disable-cookie]], [disable HTTP cookie parsing support])],
+    [AS_HELP_STRING([[--disable-cookie]], [disable HTTP cookie parser support])],
     [AS_VAR_IF([[enable_cookie]],[["no"]],[],[[enable_cookie='yes']])],
     [[enable_cookie='yes']])
 AS_VAR_IF([[enable_cookie]],[["yes"]],
@@ -7269,8 +7269,8 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   HTTPS support:     ${MSG_HTTPS}
   Logging support:   ${enable_log_messages}
   Verbose auto replies: ${enable_http_messages}
-  Cookie parsing:    ${enable_cookie}
-  Postproc:          ${enable_postprocessor}
+  Cookie parser:     ${enable_cookie}
+  POST parser:       ${enable_postparser}
   Basic auth.:       ${enable_bauth}
   Digest auth.:      ${enable_dauth}
   Digest auth. defaults: ${dauth_defs_MSG}
@@ -7309,6 +7309,6 @@ AS_IF([test "x$enable_bauth" != "xyes" || \
    test "x$enable_httpupgrade" != "xyes" || \
    test "x$enable_cookie" != "xyes" || \
    test "x$enable_httpupgrade" != "xyes" || \
-   test "x$enable_postprocessor" != "xyes"],
+   test "x$enable_postparser" != "xyes"],
    [AC_MSG_WARN([This will be a custom build with missing symbols. Do NOT use this build in a distribution. Building with these kinds of configure options is only for custom builds for embedded systems.])]
 )

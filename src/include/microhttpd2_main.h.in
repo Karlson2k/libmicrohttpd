@@ -1875,10 +1875,9 @@ MHD_FN_PAR_NONNULL_ (1);
 #ifndef MHD_POST_DATA_READER_DEFINED
 
 /**
- * Iterator over key-value pairs where the value maybe made available
- * in increments and/or may not be zero-terminated.  Used for
- * MHD parsing POST data.  To access "raw" data from POST or PUT
- * requests, use #MHD_action_process_upload() instead.
+ * "Stream" reader for POST data.
+ * This callback is called to incrementally process parsed POST data sent by
+ * the client.
  *
  * @param cls user-specified closure
  * @param name 0-terminated key for the value
@@ -1902,9 +1901,9 @@ MHD_FN_PAR_NONNULL_ (1);
 typedef const struct MHD_UploadAction *
 (*MHD_PostDataReader) (void *cls,
                        const struct MHD_String *name,
-                       const struct MHD_String *filename,
-                       const struct MHD_String *content_type,
-                       const struct MHD_String *encoding,
+                       const struct MHD_StringNullable *filename,
+                       const struct MHD_StringNullable *content_type,
+                       const struct MHD_StringNullable *encoding,
                        const void *data,
                        uint_fast64_t off,
                        size_t size);
@@ -1925,27 +1924,38 @@ typedef const struct MHD_UploadAction *
 #endif /* ! MHD_POST_DATA_READER_DEFINED */
 
 /**
- * Create an action to parse the POSTed body from the client.
+ * Create an action to parse the POSTed content from the client.
+ *
+ * The action starts parsing of the POST data. Any value that does not fit
+ * @a buffer_size or larger that @a auto_stream_size is given to
+ * @a stream_reader (if it is not NULL).
+ *
+ * If @a buffer_size is zero, then buffers will be limited to the connection's
+ * memory pool. To force all POST data process via @a stream_reader
+ * set @a auto_stream_size to zero.
  *
  * At most one action can be created for any request.
  *
  * @param request the request to create action for
- * @param pp_buffer_size how much data should the post processor
- *                       buffer in memory. May allocate memory from
- *                       the shared "large" memory pool if necessary.
- * @param pp_stream_limit values above which length should be // FIXME: Remove? Duplicated with pp_buffer_size
- *   given to @a iter for stream processing // FIXME: iter??
+ * @param buffer_size the maximum size allowed for the buffers to parse this
+ *                    request POST data. Within the set limit the buffer is
+ *                    allocated automatically from the "large" shared memory
+ *                    pool if necessary.
+ * @param auto_stream_size the size above which values are not buffered and
+ *                         processed by the @a steam_reader automatically,
+ *                         ignored if @a stream_reader is NULL
  * @param enc the data encoding to use,
- *            set to #MHD_HTTP_POST_ENCODING_OTHER to detect automatically
- * @param reader function to call for "oversize" values in the stream,
- *               can be NULL
- * @param reader_cls closure for @a reader
+ *            use #MHD_HTTP_POST_ENCODING_OTHER to detect automatically
+ * @param stream_reader the function to call for "oversize" values in
+ *                      the stream; can be NULL if @a auto_stream_size is
+ *                      not zero
+ * @param reader_cls the closure for the @a stream_reader
  * @param done_cb called once all data has been processed for
- *   the final action; values smaller than @a pp_stream_limit that
- *   fit into @a pp_buffer_size will be available via
+ *   the final action; values smaller than @a auto_stream_size that
+ *   fit into @a buffer_size will be available via
  *   #MHD_request_get_values_cb(), #MHD_request_get_values_list() and
  *   #MHD_request_get_post_data_cb(), #MHD_request_get_post_data_list()
- * @param done_cb_cls closure for @a done_cb
+ * @param done_cb_cls the closure for the @a done_cb
  * @return pointer to the action,
  *         NULL if failed (no memory) or if any action has been already
  *         created for the @a request.
@@ -1953,14 +1963,14 @@ typedef const struct MHD_UploadAction *
  * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_Action *
-MHD_action_post_processor (struct MHD_Request *request,
-                           size_t pp_buffer_size,
-                           size_t pp_stream_limit, // FIXME: Remove? Duplicated with pp_buffer_size
-                           enum MHD_HTTP_PostEncoding enc,
-                           MHD_PostDataReader reader,
-                           void *reader_cls,
-                           MHD_PostDataFinished done_cb,
-                           void *done_cb_cls)
+MHD_action_parse_post (struct MHD_Request *request,
+                       size_t buffer_size,
+                       size_t auto_stream_size,
+                       enum MHD_HTTP_PostEncoding enc,
+                       MHD_PostDataReader stream_reader,
+                       void *reader_cls,
+                       MHD_PostDataFinished done_cb,
+                       void *done_cb_cls)
 MHD_FN_PAR_NONNULL_ (1);
 
 
@@ -3313,7 +3323,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoFixed
    * #MHD_action_post_processor() can be used.
    * The result is placed in @a v_bool member.
    */
-  MHD_LIB_INFO_FIXED_HAS_POSTPROCESSOR = 15
+  MHD_LIB_INFO_FIXED_HAS_POST_PARSER = 15
   ,
   /**
    * Get whether HTTP "Upgrade" is supported.

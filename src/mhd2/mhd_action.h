@@ -192,10 +192,10 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_HTTP_PostEncoding
 // TODO: correct and describe
 struct mhd_PostProcessorActionData
 {
-  size_t pp_buffer_size;
-  size_t pp_stream_limit; // FIXME: Remove? Duplicated with pp_buffer_size
+  size_t buffer_size;
+  size_t auto_stream_size;
   enum MHD_HTTP_PostEncoding enc;
-  MHD_PostDataReader reader;
+  MHD_PostDataReader stream_reader;
   void *reader_cls;
   MHD_PostDataFinished done_cb;
   void *done_cb_cls;
