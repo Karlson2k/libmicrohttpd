@@ -3567,7 +3567,7 @@ queue_auth_required_response3_inner (struct MHD_Connection *connection,
 #endif /* MHD_SHA512_256_SUPPORT */
   {
     if (0 == (((unsigned int) malgo3)
-              & (MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_BASE_ALGO_SHA512_256
+              & (MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_BASE_ALGO_SHA256
                  | MHD_DIGEST_BASE_ALGO_SHA512_256)))
       MHD_PANIC (_ ("Wrong 'malgo3' value, API violation"));
     else
