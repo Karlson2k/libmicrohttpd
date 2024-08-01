@@ -2803,8 +2803,7 @@ AM_CONDITIONAL([VHEAVY_TESTS],[test "x$use_vheavy_tests" = "xyes"])
 AM_CONDITIONAL([TESTS_STRESS_OS],[false])
 
 AC_ARG_ENABLE([[select]],
-  [
-    AS_HELP_STRING([[--enable-select[=ARG]]], [enable 'select()' support (yes, no, auto) [auto]])
+  [AS_HELP_STRING([[--enable-select[=ARG]]], [enable 'select()' support (yes, no, auto) [auto]])
   ],[],[enable_select='auto']
 )
 AC_CACHE_CHECK([for select() function],[mhd_cv_func_select],
@@ -2885,8 +2884,7 @@ AS_VAR_IF([mhd_cv_func_select],["yes"],
 AM_CONDITIONAL([MHD_USE_SELECT],[test "x${enable_select}" = "xyes"])
 
 AC_ARG_ENABLE([[poll]],
-  [
-    AS_HELP_STRING([[--enable-poll[=ARG]]], [enable 'poll()' support (yes, no, auto) [auto]])
+  [AS_HELP_STRING([[--enable-poll[=ARG]]], [enable 'poll()' support (yes, no, auto) [auto]])
   ],[],[enable_poll='auto']
 )
 AS_IF([test "$os_is_native_w32" != "yes"],
@@ -2948,8 +2946,7 @@ AS_VAR_IF([have_poll],["yes"],
 AM_CONDITIONAL([MHD_USE_POLL],[test "x${enable_poll}" = "xyes"])
 
 AC_ARG_ENABLE([[epoll]],
-  [
-    AS_HELP_STRING([[--enable-epoll[=ARG]]], [enable epoll support (yes, no, auto) [auto]])
+  [AS_HELP_STRING([[--enable-epoll[=ARG]]], [enable epoll support (yes, no, auto) [auto]])
   ],[],[enable_epoll='auto']
 )
 AS_IF([test "$enable_epoll" != "no"],
@@ -4788,8 +4785,7 @@ AS_IF([[test "x$found_sendfile" = "xno" && test "x$enable_sendfile" = "xyes"]],
 
 # optional: disable log and HTTP automatic messages
 AC_ARG_ENABLE([messages],
-  [
-    AS_HELP_STRING([--disable-messages],
+  [AS_HELP_STRING([--disable-messages],
       [disable log messages and text bodies for ]
       [automatic HTTP responses (to reduce the binary size)]
     )
@@ -4799,8 +4795,7 @@ AC_ARG_ENABLE([messages],
 
 AC_MSG_CHECKING([[whether to support internal logging functionality and build messages for log]])
 AC_ARG_ENABLE([log-messages],
-  [
-    AS_HELP_STRING([--disable-log-messages],
+  [AS_HELP_STRING([--disable-log-messages],
       [disable logger functionality and exclude log mesages from binary]
     )
   ],
@@ -4815,8 +4810,7 @@ AM_CONDITIONAL([HAVE_LOG_FUNCTIONALITY], [test "x$enable_log_messages" != "xno"]
 
 AC_MSG_CHECKING([[whether to build text bodies for automatic HTTP response messages]])
 AC_ARG_ENABLE([http-messages],
-  [
-    AS_HELP_STRING([--disable-http-messages],
+  [AS_HELP_STRING([--disable-http-messages],
       [use empty bodies for automatic HTTP responses (less verbose for clients)]
     )
   ],
