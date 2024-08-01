@@ -4823,9 +4823,9 @@ enum MHD_FLAGS_ENUM_ MHD_ValueKind
   ,
   /**
    * POST data.
-   * This is available only if a content encoding
-   * supported by MHD is used, and only if the posted content
-   * fits within the available memory pool.
+   * This is available only if #MHD_action_parse_post() action is used,
+   * a content encoding is supported by MHD, and only if the posted content
+   * fits within the specified memory buffers.
    *
    * @warning The encoding "multipart/form-data" has more fields than just
    * "name" and "value". See #MHD_request_get_post_data_cb() and

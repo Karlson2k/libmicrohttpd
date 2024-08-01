@@ -36,7 +36,7 @@
 
 /**
  * Get specified field value from request
- * If multiple values match the kind, return any one of them.
+ * If multiple values match the kind, return first found.
  *
  * The returned pointer is valid until the response is queued.
  * If the data is needed beyond this point, it should be copied.

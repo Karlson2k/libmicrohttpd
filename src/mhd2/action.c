@@ -116,6 +116,7 @@ MHD_action_parse_post (struct MHD_Request *request,
                        MHD_PostDataFinished done_cb,
                        void *done_cb_cls)
 {
+#ifdef HAVE_POST_PARSER
   struct MHD_Action *const restrict head_act =
     &(request->app_act.head_act);
   if (mhd_ACTION_NO_ACTION != head_act->act)
@@ -123,16 +124,22 @@ MHD_action_parse_post (struct MHD_Request *request,
   if (NULL == done_cb)
     return (const struct MHD_Action *) NULL;
 
-  head_act->act = mhd_ACTION_POST_PROCESS;
-  head_act->data.post_process.buffer_size = buffer_size;
-  head_act->data.post_process.auto_stream_size = auto_stream_size;
-  head_act->data.post_process.enc = enc;
-  head_act->data.post_process.stream_reader = stream_reader;
-  head_act->data.post_process.reader_cls = reader_cls;
-  head_act->data.post_process.done_cb = done_cb;
-  head_act->data.post_process.done_cb_cls = done_cb_cls;
+  head_act->act = mhd_ACTION_POST_PARSE;
+  head_act->data.post_parse.buffer_size = buffer_size;
+  head_act->data.post_parse.auto_stream_size = auto_stream_size;
+  head_act->data.post_parse.enc = enc;
+  head_act->data.post_parse.stream_reader = stream_reader;
+  head_act->data.post_parse.reader_cls = reader_cls;
+  head_act->data.post_parse.done_cb = done_cb;
+  head_act->data.post_parse.done_cb_cls = done_cb_cls;
 
   return head_act;
+#else  /* ! HAVE_POST_PARSER */
+  (void) request; (void) buffer_size; (void) auto_stream_size;
+  (void) enc; (void) stream_reader; (void) reader_cls;
+  (void) done_cb; (void) done_cb_cls;
+  return NULL;
+#endif /* ! HAVE_POST_PARSER */
 }
 
 

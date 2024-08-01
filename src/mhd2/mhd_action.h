@@ -55,9 +55,9 @@ enum mhd_ActionType
   mhd_ACTION_UPLOAD
   ,
   /**
-   * Process clients upload by POST processor
+   * Process POST data clients upload by POST parser
    */
-  mhd_ACTION_POST_PROCESS
+  mhd_ACTION_POST_PARSE
   ,
   /**
    * Suspend requests (connection)
@@ -190,7 +190,7 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_HTTP_PostEncoding
 
 
 // TODO: correct and describe
-struct mhd_PostProcessorActionData
+struct mhd_PostParseActionData
 {
   size_t buffer_size;
   size_t auto_stream_size;
@@ -217,9 +217,9 @@ union mhd_ActionData
   struct mhd_UploadCallbacks upload;
 
   /**
-   * The data for the action #mhd_ACTION_POST_PROCESS
+   * The data for the action #mhd_ACTION_POST_PARSE
    */
-  struct mhd_PostProcessorActionData post_process;
+  struct mhd_PostParseActionData post_parse;
 };
 
 

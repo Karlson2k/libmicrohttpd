@@ -2852,7 +2852,7 @@ static MHD_FN_PAR_NONNULL_ALL_ bool
 check_and_alloc_buf_for_upload_processing (struct MHD_Connection *restrict c)
 {
   mhd_assert ((mhd_ACTION_UPLOAD == c->rq.app_act.head_act.act) || \
-              (mhd_ACTION_POST_PROCESS == c->rq.app_act.head_act.act));
+              (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act));
 
   if (c->rq.have_chunked_upload)
     return true; /* The size is unknown, buffers will be dynamically allocated
@@ -2952,7 +2952,7 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
     }
     c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
     return true;
-  case mhd_ACTION_POST_PROCESS:
+  case mhd_ACTION_POST_PARSE:
     mhd_assert (0 && "Not implemented yet");
     return true;
   case mhd_ACTION_SUSPEND:
@@ -3232,7 +3232,7 @@ process_request_chunked_body (struct MHD_Connection *restrict c)
     }
     mhd_assert (c->rq.app_aware);
 
-    if (mhd_ACTION_POST_PROCESS == c->rq.app_act.head_act.act)
+    if (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act)
     {
       mhd_assert (0 && "Not implemented yet"); // TODO: implement POST
       return false;
@@ -3344,7 +3344,7 @@ process_request_nonchunked_body (struct MHD_Connection *restrict c)
   else
     cntn_data_ready = c->read_buffer_offset;
 
-  if (mhd_ACTION_POST_PROCESS == c->rq.app_act.head_act.act)
+  if (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act)
   {
     mhd_assert (0 && "Not implemented yet"); // TODO: implement POST
     return false;
@@ -3413,10 +3413,10 @@ MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_stream_call_app_final_upload_cb (struct MHD_Connection *restrict c)
 {
   const struct MHD_UploadAction *act;
-  mhd_assert (mhd_ACTION_POST_PROCESS == c->rq.app_act.head_act.act || \
+  mhd_assert (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act || \
               mhd_ACTION_UPLOAD == c->rq.app_act.head_act.act);
 
-  if (mhd_ACTION_POST_PROCESS == c->rq.app_act.head_act.act)
+  if (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act)
   {
     mhd_assert (0 && "Not implemented yet"); // TODO: implement POST
     return false;
