@@ -2889,7 +2889,7 @@ AC_ARG_ENABLE([[poll]],
 )
 AS_IF([test "$os_is_native_w32" != "yes"],
   [
-    AC_CHECK_HEADERS([poll.h],[AC_INCLUDES_DEFAULT])
+    AC_CHECK_HEADERS([poll.h],[],[],[AC_INCLUDES_DEFAULT])
     MHD_CHECK_FUNC([poll],
       [[
 #include <poll.h>
