@@ -576,6 +576,15 @@ MHDT_client_do_post (
   struct MHDT_PostInstructions *pi = cls;
   CURL *c;
 
+  /* reset wants in case we re-use the array */
+  if (NULL != pi->wants)
+  {
+    for (unsigned int i = 0; NULL != pi->wants[i].key; i++)
+    {
+      pi->wants[i].value_off = 0;
+      pi->wants[i].satisfied = false;
+    }
+  }
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
@@ -632,5 +641,18 @@ MHDT_client_do_post (
   CHECK_STATUS (c,
                 MHD_HTTP_STATUS_NO_CONTENT);
   curl_easy_cleanup (c);
+  if (NULL != pi->wants)
+  {
+    for (unsigned int i = 0; NULL != pi->wants[i].key; i++)
+    {
+      if (! pi->wants[i].satisfied)
+      {
+        fprintf (stderr,
+                 "Server did not correctly detect key `%s'\n",
+                 pi->wants[i].key);
+        return "key-value data not matched by server";
+      }
+    }
+  }
   return NULL;
 }

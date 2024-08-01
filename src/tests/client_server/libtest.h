@@ -145,6 +145,54 @@ MHDT_client_chunk_data (void *cls,
 
 
 /**
+ * Information about a result we expect from the PP.
+ */
+struct MHDT_PostWant
+{
+  /**
+   * key for the result
+   */
+  const char *key;
+
+  /**
+   * Value for the result.
+   */
+  const char *value;
+
+  /**
+   * Filename attribute for the result, NULL for none.
+   */
+  const char *filename;
+
+  /**
+   * Content type attribute for the result, NULL for none.
+   */
+  const char *content_type;
+
+  /**
+   * Number of bytes in @a value, 0 if value is 0-terminated.
+   */
+  size_t value_size;
+
+  /**
+   * Internal book-keeping for @e incremental processing.
+   */
+  size_t value_off;
+
+  /**
+   * True if @e value may be transmitted incrementally.
+   */
+  bool incremental;
+
+  /**
+   * Set to true if a matching record was returned.
+   */
+  bool satisfied;
+
+};
+
+
+/**
  * Arguments and state for the #MHDT_server_reply_check_post and
  * #MHDT_client_do_post() functions.
  */
@@ -173,6 +221,12 @@ struct MHDT_PostInstructions
   struct curl_slist *request_hdr;
 
   /**
+   * NULL-terminated array of expected POST data for
+   * the server.
+   */
+  struct MHDT_PostWant *wants;
+
+  /**
    * Number of bytes in @e postdata, use 0 for
    * 0-terminated @e postdata.
    */
@@ -191,11 +245,14 @@ struct MHDT_PostInstructions
 
 
 /**
- * Perform POST request suitable for testing the
- * post processor and expect a
+ * Perform POST request suitable for testing the post processor and expect a
  * 204 No Content response.
  *
- * @param cls 0-terminated string with `struct MHDT_PostInstructions`
+ * Note that @a cls cannot be used by multiple commands
+ * simultaneously, so do not use this in concurrent
+ * tests aliasing @a cls.
+ *
+ * @param cls information what to post of type `struct MHDT_PostInstructions`
  * @param pc context for the client
  * @return error message, NULL on success
  */
@@ -451,7 +508,11 @@ MHDT_server_reply_check_upload (
  * Checks that the client request against the expected
  * POST data.  If so, returns #MHD_HTTP_STATUS_NO_CONTENT.
  *
- * @param cls expected upload data as a 0-terminated string.
+ * Note that @a cls cannot be used by multiple commands
+ * simultaneously, so do not use this in concurrent
+ * tests aliasing @a cls.
+ *
+ * @param cls a `struct MHD_PostInstructions`
  * @param request the request object
  * @param path the requested uri (without arguments after "?")
  * @param method the HTTP method used (#MHD_HTTP_METHOD_GET,

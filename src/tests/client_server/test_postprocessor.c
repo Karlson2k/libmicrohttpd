@@ -54,12 +54,26 @@ main (int argc, char *argv[])
       .label = "END"
     }
   };
+  struct MHDT_PostWant simple_wants[] = {
+    {
+      .key = "V1",
+      .value = "One"
+    },
+    {
+      .key = "V2",
+      .value = "Two"
+    },
+    {
+      .key = NULL
+    }
+  };
   struct MHDT_PostInstructions simple_pi = {
     .enc = MHD_HTTP_POST_ENCODING_FORM_URLENCODED,
     .postdata = "V1=One&V2=Two",
     .postheader = "application/x-www-form-urlencoded",
     .buffer_size = 32,
-    .auto_stream_size = 16
+    .auto_stream_size = 16,
+    .wants = simple_wants
   };
   struct MHDT_PostInstructions simple_mp = {
     .enc = MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA,
@@ -86,7 +100,8 @@ main (int argc, char *argv[])
     .postdata = "V1=One\r\nV2=Two\r\n",
     .postheader = "text/plain",
     .buffer_size = 32,
-    .auto_stream_size = 16
+    .auto_stream_size = 16,
+    .wants = simple_wants
   };
   struct MHDT_Phase phases[] = {
     {
