@@ -56,6 +56,35 @@ main (int argc, char *argv[])
   };
   struct MHDT_PostInstructions simple_pi = {
     .enc = MHD_HTTP_POST_ENCODING_FORM_URLENCODED,
+    .postdata = "V1=One&V2=Two",
+    .postheader = "application/x-www-form-urlencoded",
+    .buffer_size = 32,
+    .auto_stream_size = 16
+  };
+  struct MHDT_PostInstructions simple_mp = {
+    .enc = MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA,
+    .postdata = "--{boundary string}\n"
+                "Content-Disposition: form-data; name=\"username\",\n"
+                "\n"
+                "Bob\n"
+                "--XXXX\n"
+                "Content-Disposition: form-data; name=\"password\",\n"
+                "\n"
+                "Passwo3d\n"
+                "--XXXX\n"
+                "Content-Disposition: form-data; name=\"file\"; filename=\"image.jpg\"\n"
+                "Content-Type: image/jpeg,\n"
+                "\n"
+                "IMAGEDATA"
+                "--XXXX--\n",
+    .postheader = "multipart/form-data; boundary=XXXX",
+    .buffer_size = 32,
+    .auto_stream_size = 16
+  };
+  struct MHDT_PostInstructions simple_tp = {
+    .enc = MHD_HTTP_POST_ENCODING_TEXT_PLAIN,
+    .postdata = "V1=One\r\nV2=Two\r\n",
+    .postheader = "text/plain",
     .buffer_size = 32,
     .auto_stream_size = 16
   };
@@ -66,6 +95,22 @@ main (int argc, char *argv[])
       .server_cb_cls = &simple_pi,
       .client_cb = &MHDT_client_do_post,
       .client_cb_cls = &simple_pi,
+      .timeout_ms = 2500,
+    },
+    {
+      .label = "multipart post",
+      .server_cb = &MHDT_server_reply_check_post,
+      .server_cb_cls = &simple_mp,
+      .client_cb = &MHDT_client_do_post,
+      .client_cb_cls = &simple_mp,
+      .timeout_ms = 2500,
+    },
+    {
+      .label = "plain text post",
+      .server_cb = &MHDT_server_reply_check_post,
+      .server_cb_cls = &simple_tp,
+      .client_cb = &MHDT_client_do_post,
+      .client_cb_cls = &simple_tp,
       .timeout_ms = 2500,
     },
     {

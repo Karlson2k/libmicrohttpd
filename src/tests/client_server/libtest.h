@@ -156,6 +156,29 @@ struct MHDT_PostInstructions
   enum MHD_HTTP_PostEncoding enc;
 
   /**
+   * Data to be POSTed to the server.
+   */
+  const char *postdata;
+
+  /**
+   * HTTP header to set POST content encoding, use
+   * NULL if you want to set @e request_hdr directly.
+   */
+  const char *postheader;
+
+  /**
+   * HTTP header values for the request, automatically
+   * updated to include @e postheader.
+   */
+  struct curl_slist *request_hdr;
+
+  /**
+   * Number of bytes in @e postdata, use 0 for
+   * 0-terminated @e postdata.
+   */
+  size_t postdata_size;
+
+  /**
    * size to use for the buffer.
    */
   size_t buffer_size;

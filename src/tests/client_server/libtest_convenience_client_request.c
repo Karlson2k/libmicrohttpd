@@ -574,12 +574,6 @@ MHDT_client_do_post (
   const struct MHDT_PhaseContext *pc)
 {
   struct MHDT_PostInstructions *pi = cls;
-  const char *text = "fixme";
-  struct ReadBuffer rb = {
-    .buf = text,
-    .len = strlen (text),
-    .chunks = 2
-  };
   CURL *c;
 
   c = curl_easy_init ();
@@ -595,27 +589,44 @@ MHDT_client_do_post (
   }
   if (CURLE_OK !=
       curl_easy_setopt (c,
-                        CURLOPT_UPLOAD,
+                        CURLOPT_POST,
                         1L))
   {
     curl_easy_cleanup (c);
-    return "Failed to set PUT method for curl request";
+    return "Failed to set POST method for curl request";
   }
   if (CURLE_OK !=
       curl_easy_setopt (c,
-                        CURLOPT_READFUNCTION,
-                        &read_cb))
+                        CURLOPT_POSTFIELDS,
+                        pi->postdata))
   {
     curl_easy_cleanup (c);
-    return "Failed to set READFUNCTION for curl request";
+    return "Failed to set POSTFIELDS for curl request";
+  }
+  if (0 != pi->postdata_size)
+  {
+    if (CURLE_OK !=
+        curl_easy_setopt (c,
+                          CURLOPT_POSTFIELDSIZE_LARGE,
+                          (curl_off_t) pi->postdata_size))
+    {
+      curl_easy_cleanup (c);
+      return "Failed to set POSTFIELDS for curl request";
+    }
+  }
+  if (NULL != pi->postheader)
+  {
+    pi->request_hdr = curl_slist_append (pi->request_hdr,
+                                         pi->postheader);
+    pi->postheader = NULL;
   }
   if (CURLE_OK !=
       curl_easy_setopt (c,
-                        CURLOPT_READDATA,
-                        &rb))
+                        CURLOPT_HTTPHEADER,
+                        pi->request_hdr))
   {
     curl_easy_cleanup (c);
-    return "Failed to set READFUNCTION for curl request";
+    return "Failed to set HTTPHEADER for curl request";
   }
   PERFORM_REQUEST (c);
   CHECK_STATUS (c,
