@@ -1201,7 +1201,6 @@ static int test_strct_func(struct test_strct *strc)
 
 int main(void)
 {
-  struct test_strct *strct_ptr;
   int int_var;
   int *int_ptr;
 
