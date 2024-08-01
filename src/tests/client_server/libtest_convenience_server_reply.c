@@ -451,6 +451,28 @@ MHDT_server_reply_chunked_text (
 
 
 /**
+ * Compare two strings, succeed if both are NULL.
+ *
+ * @param wants string we want
+ * @param have string we have
+ * @return true if what we @a want is what we @a have
+ */
+static bool
+nstrcmp (const char *wants,
+         const struct MHD_StringNullable *have)
+{
+  if ( (NULL == wants) &&
+       (NULL == have->cstr) )
+    return true;
+  if ( (NULL == wants) ||
+       (NULL == have->cstr) )
+    return false;
+  return (0 == strcmp (wants,
+                       have->cstr));
+}
+
+
+/**
  * "Stream" reader for POST data.
  * This callback is called to incrementally process parsed POST data sent by
  * the client.
@@ -485,6 +507,51 @@ post_stream_reader (void *cls,
                     size_t size)
 {
   struct MHDT_PostInstructions *pi = cls;
+  struct MHDT_PostWant *wants = pi->wants;
+
+  if (NULL != wants)
+  {
+    for (unsigned int i = 0; NULL != wants[i].key; i++)
+    {
+      struct MHDT_PostWant *want = &wants[i];
+
+      if (want->satisfied)
+        continue;
+      if (0 != strcmp (want->key,
+                       name->cstr))
+        continue;
+      if (! nstrcmp (want->filename,
+                     filename))
+        continue;
+      if (! nstrcmp (want->content_type,
+                     content_type))
+        continue;
+      if (want->incremental)
+      {
+        if (want->value_off != off)
+          continue;
+        if (want->value_size < off + size)
+          continue;
+        if (0 != memcmp (data,
+                         want->value + off,
+                         size))
+          continue;
+        want->value_off += size;
+        want->satisfied = (want->value_size == want->value_off);
+      }
+      else
+      {
+        if (0 != off)
+          continue;
+        if (want->value_size != size)
+          continue;
+        if (0 == memcmp (data,
+                         want->value,
+                         size))
+          want->satisfied = true;
+      }
+    }
+  }
 
   return MHD_upload_action_continue (NULL);
 }
@@ -503,6 +570,7 @@ post_stream_done (struct MHD_Request *req,
 {
   struct MHDT_PostInstructions *pi = cls;
 
+  // FIXME: compare non-incremental values here!
   return MHD_upload_action_from_response (
     req,
     MHD_response_from_empty (
