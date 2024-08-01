@@ -145,6 +145,44 @@ MHDT_client_chunk_data (void *cls,
 
 
 /**
+ * Arguments and state for the #MHDT_server_reply_check_post and
+ * #MHDT_client_do_post() functions.
+ */
+struct MHDT_PostInstructions
+{
+  /**
+   * Encoding to use when decoding.
+   */
+  enum MHD_HTTP_PostEncoding enc;
+
+  /**
+   * size to use for the buffer.
+   */
+  size_t buffer_size;
+
+  /**
+   * Size above which we switch to stream processing.
+   */
+  size_t auto_stream_size;
+};
+
+
+/**
+ * Perform POST request suitable for testing the
+ * post processor and expect a
+ * 204 No Content response.
+ *
+ * @param cls 0-terminated string with `struct MHDT_PostInstructions`
+ * @param pc context for the client
+ * @return error message, NULL on success
+ */
+const char *
+MHDT_client_do_post (
+  void *cls,
+  const struct MHDT_PhaseContext *pc);
+
+
+/**
  * A phase defines some server and client-side
  * behaviors to execute.
  */
@@ -379,6 +417,33 @@ MHDT_server_reply_check_header (
  */
 const struct MHD_Action *
 MHDT_server_reply_check_upload (
+  void *cls,
+  struct MHD_Request *MHD_RESTRICT request,
+  const struct MHD_String *MHD_RESTRICT path,
+  enum MHD_HTTP_Method method,
+  uint_fast64_t upload_size);
+
+
+/**
+ * Checks that the client request against the expected
+ * POST data.  If so, returns #MHD_HTTP_STATUS_NO_CONTENT.
+ *
+ * @param cls expected upload data as a 0-terminated string.
+ * @param request the request object
+ * @param path the requested uri (without arguments after "?")
+ * @param method the HTTP method used (#MHD_HTTP_METHOD_GET,
+ *        #MHD_HTTP_METHOD_PUT, etc.)
+ * @param upload_size the size of the message upload content payload,
+ *                    #MHD_SIZE_UNKNOWN for chunked uploads (if the
+ *                    final chunk has not been processed yet)
+ * @return action how to proceed, NULL
+ *         if the request must be aborted due to a serious
+ *         error while handling the request (implies closure
+ *         of underling data stream, for HTTP/1.1 it means
+ *         socket closure).
+ */
+const struct MHD_Action *
+MHDT_server_reply_check_post (
   void *cls,
   struct MHD_Request *MHD_RESTRICT request,
   const struct MHD_String *MHD_RESTRICT path,

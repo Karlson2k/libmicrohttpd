@@ -448,3 +448,84 @@ MHDT_server_reply_chunked_text (
                                 cc,
                                 &free));
 }
+
+
+/**
+ * "Stream" reader for POST data.
+ * This callback is called to incrementally process parsed POST data sent by
+ * the client.
+ *
+ * @param cls user-specified closure
+ * @param name 0-terminated key for the value
+ * @param filename name of the uploaded file, NULL if not known
+ * @param content_type mime-type of the data, NULL if not known
+ * @param encoding the encoding of the data
+ * @param data pointer to @a size bytes of data at the
+ *             specified @a off offset,
+ *             NOT zero-terminated
+ * @param off offset of data in the overall value
+ * @param size number of bytes in @a data available
+ * @return action specifying how to proceed:
+ *         #MHD_upload_action_continue() if all is well,
+ *         #MHD_upload_action_suspend() to stop reading the upload until
+ *         the request is resumed,
+ *         #MHD_upload_action_abort_request() to close the socket,
+ *         or a response to discard the rest of the upload and transmit
+ *         the response
+ * @ingroup action
+ */
+static const struct MHD_UploadAction *
+post_stream_reader (void *cls,
+                    const struct MHD_String *name,
+                    const struct MHD_StringNullable *filename,
+                    const struct MHD_StringNullable *content_type,
+                    const struct MHD_StringNullable *encoding,
+                    const void *data,
+                    uint_fast64_t off,
+                    size_t size)
+{
+  struct MHDT_PostInstructions *pi = cls;
+
+  return MHD_upload_action_continue (NULL);
+}
+
+
+/**
+ * The callback to be called when finished with processing
+ * of the postprocessor upload data.
+ * @param req the request
+ * @param cls the closure
+ * @return the action to proceed
+ */
+static const struct MHD_UploadAction *
+post_stream_done (struct MHD_Request *req,
+                  void *cls)
+{
+  struct MHDT_PostInstructions *pi = cls;
+
+  return MHD_upload_action_from_response (
+    req,
+    MHD_response_from_empty (
+      MHD_HTTP_STATUS_NO_CONTENT));
+}
+
+
+const struct MHD_Action *
+MHDT_server_reply_check_post (
+  void *cls,
+  struct MHD_Request *MHD_RESTRICT request,
+  const struct MHD_String *MHD_RESTRICT path,
+  enum MHD_HTTP_Method method,
+  uint_fast64_t upload_size)
+{
+  struct MHDT_PostInstructions *pi = cls;
+
+  return MHD_action_parse_post (request,
+                                pi->buffer_size,
+                                pi->auto_stream_size,
+                                pi->enc,
+                                &post_stream_reader,
+                                pi,
+                                &post_stream_done,
+                                pi);
+}
