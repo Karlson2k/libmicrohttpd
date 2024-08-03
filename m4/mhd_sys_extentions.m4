@@ -47,7 +47,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 3
+#serial 4
 
 AC_DEFUN([MHD_SYS_EXT],[dnl
   AC_PREREQ([2.64])dnl for AS_VAR_IF, AS_VAR_SET_IF, m4_ifnblank
@@ -282,7 +282,7 @@ int main()
 }
 "
   AC_CACHE_CHECK([[for useful system-specific features]],
-    [[mhd_cv_headers_useful_features_present]], [dnl
+    [[mhd_cv_headers_useful_features_present]], [
     mhd_SYS_EXT_SAVE_CFLAGS="$CFLAGS"
     CFLAGS="$CFLAGS $ac_[]_AC_LANG_ABBREV[]_undeclared_builtin_options"
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
