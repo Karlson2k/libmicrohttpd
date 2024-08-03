@@ -526,34 +526,69 @@ post_stream_reader (void *cls,
       if (! nstrcmp (want->content_type,
                      content_type))
         continue;
-      if (want->incremental)
-      {
-        if (want->value_off != off)
-          continue;
-        if (want->value_size < off + size)
-          continue;
-        if (0 != memcmp (data,
-                         want->value + off,
-                         size))
-          continue;
-        want->value_off += size;
-        want->satisfied = (want->value_size == want->value_off);
-      }
-      else
-      {
-        if (0 != off)
-          continue;
-        if (want->value_size != size)
-          continue;
-        if (0 == memcmp (data,
-                         want->value,
-                         size))
-          want->satisfied = true;
-      }
+      if (! want->incremental)
+        continue;
+      if (want->value_off != off)
+        continue;
+      if (want->value_size < off + size)
+        continue;
+      if (0 != memcmp (data,
+                       want->value + off,
+                       size))
+        continue;
+      want->value_off += size;
+      want->satisfied = (want->value_size == want->value_off);
     }
   }
 
   return MHD_upload_action_continue (NULL);
+}
+
+
+/**
+ * Iterator over name-value pairs.  This iterator can be used to
+ * iterate over all of the cookies, headers, or POST-data fields of a
+ * request, and also to iterate over the headers that have been added
+ * to a response.
+ *
+ * The pointers to the strings in @a nvt are valid until the response
+ * is queued. If the data is needed beyond this point, it should be copied.
+ *
+ * @param cls closure
+ * @param nvt the name, the value and the kind of the element
+ * @return #MHD_YES to continue iterating,
+ *         #MHD_NO to abort the iteration
+ * @ingroup request
+ */
+static enum MHD_Bool
+check_complete_value (
+  void *cls,
+  const struct MHD_NameValueKind *nvt)
+{
+  struct MHDT_PostInstructions *pi = cls;
+  struct MHDT_PostWant *wants = pi->wants;
+
+  if (NULL == wants)
+    return MHD_NO;
+  for (unsigned int i = 0; NULL != wants[i].key; i++)
+  {
+    struct MHDT_PostWant *want = &wants[i];
+
+    if (want->satisfied)
+      continue;
+    if (want->incremental)
+      continue;
+    if (0 != strcmp (want->key,
+                     nvt->nv.name.cstr))
+      continue;
+    if (want->value_size != nvt->nv.value.len)
+      continue;
+    if (0 == memcmp (nvt->nv.value.cstr,
+                     want->value,
+                     want->value_size))
+      want->satisfied = true;
+  }
+  return MHD_YES;
 }
 
 
@@ -570,7 +605,26 @@ post_stream_done (struct MHD_Request *req,
 {
   struct MHDT_PostInstructions *pi = cls;
 
-  // FIXME: compare non-incremental values here!
+  MHD_request_get_values_cb (req,
+                             MHD_VK_POSTDATA,
+                             &check_complete_value,
+                             pi);
+  struct MHDT_PostWant *wants = pi->wants;
+
+  if (NULL != wants)
+  {
+    for (unsigned int i = 0; NULL != wants[i].key; i++)
+    {
+      struct MHDT_PostWant *want = &wants[i];
+
+      if (want->satisfied)
+        continue;
+      fprintf (stderr,
+               "Expected key-value pair `%s' missing\n",
+               want->key);
+      return NULL;
+    }
+  }
   return MHD_upload_action_from_response (
     req,
     MHD_response_from_empty (
