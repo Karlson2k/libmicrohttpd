@@ -47,7 +47,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 4
+#serial 5
 
 AC_DEFUN([MHD_SYS_EXT],[dnl
   AC_PREREQ([2.64])dnl for AS_VAR_IF, AS_VAR_SET_IF, m4_ifnblank
@@ -309,7 +309,7 @@ ${mhd_mse_sys_features_src}
             )dnl
           ])dnl
         ]
-      )dnl
+      )
     CFLAGS="$mhd_SYS_EXT_SAVE_CFLAGS"
     AS_UNSET([mhd_SYS_EXT_SAVE_CFLAGS])
     ]
