@@ -62,7 +62,7 @@ libmicrohttpd2_la_SOURCES = \
   events_process.c          events_process.h \
   daemon_logger.c           daemon_logger.h \
   daemon_logger_default.c   daemon_logger_default.h \
-  daemon_options.h          daemon_set_options.c \
+  daemon_set_options.c \
   daemon_create.c \
   daemon_start.c \
   daemon_get_info.c \
@@ -79,7 +79,7 @@ libmicrohttpd2_la_SOURCES = \
   response_add_header.c     response_add_header.h \
   response_destroy.c        response_destroy.h \
   response_funcs.c          response_funcs.h \
-  response_set_options.c    response_set_options.h    response_options.h \
+  response_set_options.c    response_set_options.h \
   stream_funcs.c            stream_funcs.h \
   stream_process_states.c   stream_process_states.h \
   stream_process_request.c  stream_process_request.h \
@@ -108,7 +108,7 @@ libmicrohttpd2_la_LIBADD = \
 AM_V_RC = $(am__v_RC_@AM_V@)
 am__v_RC_ = $(am__v_RC_@AM_DEFAULT_V@)
 am__v_RC_0 = @echo "  RC      " $@;
-am__v_RC_1 = 
+am__v_RC_1 =
 
 # General rule is not required, but keep it just in case
 # Note: windres does not understand '-isystem' flag, so all
@@ -126,7 +126,7 @@ libmicrohttpd2_la-w32_lib_res.lo: $(builddir)/w32_lib_res.rc
 if HAVE_W32
 MHD_DLL_RES_LO = libmicrohttpd2_la-w32_lib_res.lo
 else
-MHD_DLL_RES_LO = 
+MHD_DLL_RES_LO =
 endif
 
 EXTRA_libmicrohttpd2_la_DEPENDENCIES = $(MHD_DLL_RES_LO)
