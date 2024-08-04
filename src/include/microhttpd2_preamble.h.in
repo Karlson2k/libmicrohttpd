@@ -639,6 +639,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_REQ_COOKIE_INVALID = 40163
   ,
   /**
+   * The request does not have "Content-Type:" header and POST data cannot
+   * be parsed
+   */
+  MHD_SC_REQ_POST_PARSE_FAILED_NO_CNTN_TYPE = 40180
+  ,
+  /**
    * The request cannot be processed. Sending error reply.
    */
   MHD_SC_REQ_PROCCESSING_ERR_REPLY = 40200
@@ -1577,7 +1583,6 @@ MHD_FN_CONST_;
  * See also: https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-2
  * @{
  */
-
 enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_HTTP_PostEncoding
 {
   /**
@@ -3341,35 +3346,43 @@ struct MHD_EarlyUriCbData
   struct MHD_Request *request;
 
   /**
-   * Pointer to the application context for the request.
-   * Modifiable. Initially to NULL.
+   * The full URI ("request target") from the HTTP request, including URI
+   * parameters (the part after '?')
    */
-  void *request_app_context;
+  struct MHD_String full_uri;
+
+  /**
+   * The request HTTP method
+   */
+  enum MHD_HTTP_Method method;
 };
 
 /**
  * Function called by MHD to allow the application to log the @a full_uri
  * of the new request.
- * If this callback is set then it is the first application function called
- * for the new request.
  * This is the only moment when unmodified URI is provided.
  * After this callback MHD parses the URI and modifies it by extracting
  * GET parameters in-place.
- * If #MHD_RequestTerminationCallback is set then it is guaranteed that
- * #MHD_RequestTerminationCallback is called for the same request. Application
+ *
+ * If this callback is set then it is the first application function called
+ * for the new request.
+ *
+ * If #MHD_RequestEndedCallback is also set then it is guaranteed that
+ * #MHD_RequestEndedCallback is called for the same request. Application
  * may allocate request specific data in this callback and de-allocate
- * the data in #MHD_RequestTerminationCallback.
+ * the data in #MHD_RequestEndedCallback.
  *
  * @param cls client-defined closure
- * @param full_uri the full URI ("request target") from the HTTP request
- *                 including parameters (the part after '?')
- * @param[in,out] req_data the request data
+ * @param req_data the request data
+ * @param request_app_context_ptr the pointer to variable that can be set to
+ *                                the application context for the request;
+ *                                initially the variable set to NULL
  */
 typedef void
-(MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_INOUT_ (3)
+(MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_INOUT_ (3)
  *MHD_EarlyUriLogCallback)(void *cls,
-                           const struct MHD_String *full_uri,
-                           struct MHD_EarlyUriCbData *req_data);
+                           const struct MHD_EarlyUriCbData *req_data,
+                           void **request_app_context_ptr);
 
 
 /**
@@ -3531,31 +3544,31 @@ typedef void
 
 
 /**
- * The `enum MHD_RequestTerminationCode` specifies reasons
- * why a request has been terminated (or completed).
+ * The `enum MHD_RequestEndedCode` specifies reasons
+ * why a request has been ended.
  * @ingroup request
  */
-enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestTerminationCode
+enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestEndedCode
 {
 
   /**
    * The response was successfully sent.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_COMPLETED_OK = 0
+  MHD_REQUEST_ENDED_COMPLETED_OK = 0
   ,
   /**
    * No activity on the connection for the number of seconds specified using
    * #MHD_C_OPTION_TIMEOUT().
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_TIMEOUT_REACHED = 10
+  MHD_REQUEST_ENDED_TIMEOUT_REACHED = 10
   ,
   /**
    * The connection was broken or TLS protocol error.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_CONNECTION_ERROR = 20
+  MHD_REQUEST_ENDED_CONNECTION_ERROR = 20
   ,
   /**
    * The client terminated the connection by closing the socket either
@@ -3563,44 +3576,44 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestTerminationCode
    * request.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_CLIENT_ABORT = 30
+  MHD_REQUEST_ENDED_CLIENT_ABORT = 30
   ,
   /**
    * The request is not valid according to
    * HTTP specifications.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR = 31
+  MHD_REQUEST_ENDED_HTTP_PROTOCOL_ERROR = 31
   ,
   /**
    * The application aborted request without response.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_BY_APP_ABORT = 40
+  MHD_REQUEST_ENDED_BY_APP_ABORT = 40
   ,
   /**
    * The application aborted request without response.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_BY_APP_ERROR = 41
+  MHD_REQUEST_ENDED_BY_APP_ERROR = 41
   ,
   /**
    * Error handling the connection due to resources exhausted.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_NO_RESOURCES = 50
+  MHD_REQUEST_ENDED_NO_RESOURCES = 50
   ,
   /**
    * Closing the session since MHD is being shut down.
    * @ingroup request
    */
-  MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN = 60
+  MHD_REQUEST_ENDED_DAEMON_SHUTDOWN = 60
 };
 
 /**
- * Additional information about request termination
+ * Additional information about request ending
  */
-union MHD_RequestTerminationDetail
+union MHD_RequestEndedDetail
 {
   /**
    * Reserved member.
@@ -3612,21 +3625,21 @@ union MHD_RequestTerminationDetail
 /**
  * Request termination data structure
  */
-struct MHD_RequestTerminationData
+struct MHD_RequestEndedData
 {
+  /**
+   * The request handle.
+   * Note that most of the request data may be already unvailable.
+   */
+  struct MHD_Request *req;
   /**
    * The code of the event
    */
-  enum MHD_RequestTerminationCode code;
+  enum MHD_RequestEndedCode code;
   /**
-   * Detailed information about termination event
+   * Detailed information about the event
    */
-  union MHD_RequestTerminationDetail details;
-  /**
-   * Pointer to the application context for the request.
-   * NULL unless other value set by application when processing the request.
-   */
-  void *request_app_context;
+  union MHD_RequestEndedDetail details;
 };
 
 
@@ -3634,16 +3647,20 @@ struct MHD_RequestTerminationData
  * Signature of the callback used by MHD to notify the application
  * about completed requests.
  *
+ * This is the last callback called for any request (if provided by
+ * the application).
+ *
  * @param cls client-defined closure
  * @param data the details about the event
- * @param request_context request context value, as originally
- *         returned by the #MHD_EarlyUriLogCallback
+ * @param request_app_context the application request context, as possibly set
+                              by the #MHD_EarlyUriLogCallback
  * @see #MHD_R_OPTION_TERMINATION_CALLBACK()
  * @ingroup request
  */
 typedef void
-(*MHD_RequestTerminationCallback) (void *cls,
-                                   struct MHD_RequestTerminationData *data);
+(*MHD_RequestEndedCallback) (void *cls,
+                             const struct MHD_RequestEndedData *data,
+                             void *request_app_context);
 
 
 #include "microhttpd2_generated_response_options.h"

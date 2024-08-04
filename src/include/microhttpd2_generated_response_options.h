@@ -98,18 +98,18 @@ With this option HTTP/1.0 server is emulated (with support for 'keep-alive' conn
 /**
  * Data for #MHD_R_O_TERMINATION_CALLBACK
  */
-struct MHD_ResponeOptionValueTermCB
+struct MHD_ResponeOptionValueEndedCB
 {
   /**
    * the function to call,
    * NULL to not use the callback
    */
-  MHD_RequestTerminationCallback v_term_cb;
+  MHD_RequestEndedCallback v_ended_cb;
 
   /**
    * the closure for the callback
    */
-  void *v_term_cb_cls;
+  void *v_ended_cb_cls;
 
 };
 
@@ -158,7 +158,7 @@ union MHD_ResponseOptionValue
    * the function to call,
    * NULL to not use the callback
    */
-  struct MHD_ResponeOptionValueTermCB termination_callback;
+  struct MHD_ResponeOptionValueEndedCB termination_callback;
 
 };
 
@@ -291,18 +291,18 @@ With this option HTTP/1.0 server is emulated (with support for 'keep-alive' conn
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
  * Set a function to be called once MHD is finished with the request.
- * @param term_cb the function to call,
+ * @param ended_cb the function to call,
  *   NULL to not use the callback
- * @param term_cb_cls the closure for the callback
+ * @param ended_cb_cls the closure for the callback
  * @return structure with the requested setting
  */
-#  define MHD_R_OPTION_TERMINATION_CALLBACK(term_cb,term_cb_cls) \
+#  define MHD_R_OPTION_TERMINATION_CALLBACK(ended_cb,ended_cb_cls) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_ResponseOptionAndValue) \
         { \
           .opt = MHD_R_O_TERMINATION_CALLBACK,  \
-          .val.termination_callback.v_term_cb = (term_cb), \
-          .val.termination_callback.v_term_cb_cls = (term_cb_cls) \
+          .val.termination_callback.v_ended_cb = (ended_cb), \
+          .val.termination_callback.v_ended_cb_cls = (ended_cb_cls) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
@@ -476,22 +476,22 @@ MHD_R_OPTION_INSANITY_HEADER_CONTENT_LENGTH (
 
 /**
  * Set a function to be called once MHD is finished with the request.
- * @param term_cb the function to call,
+ * @param ended_cb the function to call,
  *   NULL to not use the callback
- * @param term_cb_cls the closure for the callback
+ * @param ended_cb_cls the closure for the callback
  * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_TERMINATION_CALLBACK (
-  MHD_RequestTerminationCallback term_cb,
-  void *term_cb_cls
+  MHD_RequestEndedCallback ended_cb,
+  void *ended_cb_cls
   )
 {
   struct MHD_ResponseOptionAndValue opt_val;
 
   opt_val.opt = MHD_R_O_TERMINATION_CALLBACK;
-  opt_val.val.termination_callback.v_term_cb = term_cb;
-  opt_val.val.termination_callback.v_term_cb_cls = term_cb_cls;
+  opt_val.val.termination_callback.v_ended_cb = ended_cb;
+  opt_val.val.termination_callback.v_ended_cb_cls = ended_cb_cls;
 
   return opt_val;
 }

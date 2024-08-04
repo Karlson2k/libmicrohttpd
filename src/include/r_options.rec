@@ -92,10 +92,10 @@ Comment: Disable sanity check preventing clients from manually setting the HTTP 
 
 Name: termination_callback
 Value: 121
-Type: struct MHD_ResponeOptionValueTermCB
+Type: struct MHD_ResponeOptionValueEndedCB
 Comment: Set a function to be called once MHD is finished with the request.
-Argument1: MHD_RequestTerminationCallback term_cb
+Argument1: MHD_RequestEndedCallback ended_cb
 Description1: the function to call,
 + NULL to not use the callback
-Argument2: void *term_cb_cls
+Argument2: void *ended_cb_cls
 Description2: the closure for the callback
