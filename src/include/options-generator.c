@@ -714,8 +714,9 @@ main (int argc,
     if (NULL == f)
     {
       fprintf (stderr,
-               "Failed to open %s\n",
-               fn);
+               "Failed to open %s: %s\n",
+               fn,
+               strerror (errno));
       free (fn);
       return 2;
     }
@@ -976,8 +977,9 @@ TOP:
     if (NULL == f)
     {
       fprintf (stderr,
-               "Failed to open `%s'\n",
-               doc_in);
+               "Failed to open `%s': %s\n",
+               doc_in,
+               strerror (errno));
       return 2;
     }
     fprintf (f,
@@ -1006,8 +1008,9 @@ TOP:
     if (NULL == f)
     {
       fprintf (stderr,
-               "Failed to open `%s'\n",
-               so_c);
+               "Failed to open `%s': %s\n",
+               so_c,
+               strerror (errno));
       return 2;
     }
     fprintf (f,
@@ -1144,8 +1147,9 @@ TOP:
     if (NULL == f)
     {
       fprintf (stderr,
-               "Failed to open `%s'\n",
-               do_h);
+               "Failed to open `%s': %s\n",
+               do_h,
+               strerror (errno));
       return 2;
     }
     fprintf (f,
