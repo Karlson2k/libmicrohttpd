@@ -76,8 +76,8 @@ MHD_response_set_options (
       settings->insanity_header_content_length = option->val.insanity_header_content_length;
       continue;
     case MHD_R_O_TERMINATION_CALLBACK:
-      settings->termination_callback.v_term_cb = option->val.termination_callback.v_term_cb;
-      settings->termination_callback.v_term_cb_cls = option->val.termination_callback.v_term_cb_cls;
+      settings->termination_callback.v_ended_cb = option->val.termination_callback.v_ended_cb;
+      settings->termination_callback.v_ended_cb_cls = option->val.termination_callback.v_ended_cb_cls;
       continue;
     case MHD_R_O_SENTINEL:
     default: /* for -Wswitch-default -Wswitch-enum */ 

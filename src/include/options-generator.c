@@ -1140,7 +1140,7 @@ TOP:
     char *do_h;
 
     my_asprintf (&do_h,
-                 "%s_options.h",
+                 "../mhd2/%s_options.h",
                  category);
     (void) unlink (do_h);
     f = fopen (do_h, "w");

@@ -3,7 +3,3 @@ microhttpd2_inline_response_documentation.h.in
 d_options.json
 options-generator
 r_options.json
-daemon_options.h
-response_options.h
-microhttpd2_generated_daemon_options.h
-microhttpd2_generated_response_options.h

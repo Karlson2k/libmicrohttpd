@@ -62,7 +62,7 @@ libmicrohttpd2_la_SOURCES = \
   events_process.c          events_process.h \
   daemon_logger.c           daemon_logger.h \
   daemon_logger_default.c   daemon_logger_default.h \
-  daemon_set_options.c \
+  daemon_options.h          daemon_set_options.c \
   daemon_create.c \
   daemon_start.c \
   daemon_get_info.c \
@@ -79,7 +79,7 @@ libmicrohttpd2_la_SOURCES = \
   response_add_header.c     response_add_header.h \
   response_destroy.c        response_destroy.h \
   response_funcs.c          response_funcs.h \
-  response_set_options.c    response_set_options.h \
+  response_set_options.c    response_set_options.h    response_options.h \
   stream_funcs.c            stream_funcs.h \
   stream_process_states.c   stream_process_states.h \
   stream_process_request.c  stream_process_request.h \
@@ -104,6 +104,18 @@ libmicrohttpd2_la_LDFLAGS = \
 libmicrohttpd2_la_LIBADD = \
   $(MHD_LIBDEPS) $(MHD_TLS_LIBDEPS)
 
+
+INCL_SRC_DIR = $(srcdir)/../include
+
+# $(srcdir)/daemon_options.h - excluded to allow parallel builds in this dir
+$(srcdir)/daemon_set_options.c: $(INCL_SRC_DIR)/d_options.rec $(INCL_SRC_DIR)/options-generator.c
+	@echo "cd $(INCL_SRC_DIR) && $(MAKE) $(AM_MAKEFLAGS) update-daemon-gen-files" && \
+	  $(am__cd) $(INCL_SRC_DIR) && $(MAKE) $(AM_MAKEFLAGS) update-daemon-gen-files
+
+# $(srcdir)/response_options.h - excluded to allow parallel builds in this dir
+$(srcdir)/response_set_options.c: $(INCL_SRC_DIR)/r_options.rec $(INCL_SRC_DIR)/options-generator.c
+	@echo "cd $(INCL_SRC_DIR) && $(MAKE) $(AM_MAKEFLAGS) update-response-gen-files" && \
+	  $(am__cd) $(INCL_SRC_DIR) && $(MAKE) $(AM_MAKEFLAGS) update-response-gen-files
 
 AM_V_RC = $(am__v_RC_@AM_V@)
 am__v_RC_ = $(am__v_RC_@AM_DEFAULT_V@)
@@ -145,6 +157,7 @@ $(top_srcdir)/po/POTFILES.in: $(srcdir)/Makefile.am
 
 .PHONY: update-po-POTFILES.in
 
+.NOTPARALLEL: $(srcdir)/daemon_options.h $(srcdir)/daemon_set_options.c $(srcdir)/response_options.h $(srcdir)/response_set_options.c
 
 $(CONFIG_HEADER): $(builddir)/../incl_priv/mhd_config.h.in $(top_srcdir)/configure $(top_builddir)/config.status
 	@echo "cd $(srcdir)/../incl_priv && $(MAKE) $(AM_MAKEFLAGS) mhd_config.h" && \
