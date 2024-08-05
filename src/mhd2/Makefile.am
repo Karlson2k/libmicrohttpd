@@ -108,7 +108,7 @@ libmicrohttpd2_la_LIBADD = \
 AM_V_RC = $(am__v_RC_@AM_V@)
 am__v_RC_ = $(am__v_RC_@AM_DEFAULT_V@)
 am__v_RC_0 = @echo "  RC      " $@;
-am__v_RC_1 =
+am__v_RC_1 = 
 
 # General rule is not required, but keep it just in case
 # Note: windres does not understand '-isystem' flag, so all
@@ -126,7 +126,7 @@ libmicrohttpd2_la-w32_lib_res.lo: $(builddir)/w32_lib_res.rc
 if HAVE_W32
 MHD_DLL_RES_LO = libmicrohttpd2_la-w32_lib_res.lo
 else
-MHD_DLL_RES_LO =
+MHD_DLL_RES_LO = 
 endif
 
 EXTRA_libmicrohttpd2_la_DEPENDENCIES = $(MHD_DLL_RES_LO)
