@@ -1240,17 +1240,14 @@ process_request_target (struct MHD_Connection *c)
   /* Log callback before the request-target is modified/decoded */
   if (NULL != c->daemon->req_cfg.uri_cb.cb)
   {
-    struct MHD_String full_uri;
     struct MHD_EarlyUriCbData req_data;
-    full_uri.cstr = c->rq.hdrs.rq_line.rq_tgt;
-    full_uri.len = c->rq.req_target_len;
     req_data.request = &(c->rq);
-    req_data.request_app_context = NULL;
+    req_data.full_uri.cstr = c->rq.hdrs.rq_line.rq_tgt;
+    req_data.full_uri.len = c->rq.req_target_len;
     c->rq.app_aware = true;
     c->daemon->req_cfg.uri_cb.cb (c->daemon->req_cfg.uri_cb.cls,
-                                  &full_uri,
-                                  &req_data);
-    c->rq.app_context = req_data.request_app_context;
+                                  &req_data,
+                                  &(c->rq.app_context));
   }
 
   if (NULL != c->rq.hdrs.rq_line.rq_tgt_qmark)

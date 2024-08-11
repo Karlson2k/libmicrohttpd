@@ -510,7 +510,7 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
     size_t new_read_buf_size;
     mhd_assert (! c->stop_with_error);
     mhd_assert (! c->discard_request);
-    mhd_assert (NULL == c->rq.cntn.lbuf.buf);
+    mhd_assert (NULL == c->rq.cntn.lbuf.data);
 
 #if 0 // TODO: notification callback
     if ( (NULL != d->notify_completed) &&
@@ -518,7 +518,7 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
       d->notify_completed (d->notify_completed_cls,
                            c,
                            &c->rq.app_context,
-                           MHD_REQUEST_TERMINATED_COMPLETED_OK);
+                           MHD_REQUEST_ENDED_COMPLETED_OK);
     c->rq.app_aware = false;
 #endif
 
@@ -653,7 +653,7 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
 {
   bool close_hard;
   bool use_local_lingering;
-  enum MHD_RequestTerminationCode term_code;
+  enum MHD_RequestEndedCode end_code;
   enum MHD_StatusCode sc;
 
   sc = MHD_SC_INTERNAL_ERROR;
@@ -661,61 +661,61 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
   {
   case mhd_CONN_CLOSE_CLIENT_HTTP_ERR_ABORT_CONN:
     close_hard = true;
-    term_code = MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR;
+    end_code = MHD_REQUEST_ENDED_HTTP_PROTOCOL_ERROR;
     sc = MHD_SC_REQ_MALFORMED;
     break;
   case mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REQUEST:
     close_hard = true;
-    term_code = MHD_REQUEST_TERMINATED_NO_RESOURCES;
+    end_code = MHD_REQUEST_ENDED_NO_RESOURCES;
     break;
   case mhd_CONN_CLOSE_CLIENT_SHUTDOWN_EARLY:
     close_hard = true;
-    term_code = MHD_REQUEST_TERMINATED_CLIENT_ABORT;
+    end_code = MHD_REQUEST_ENDED_CLIENT_ABORT;
     sc = MHD_SC_REPLY_POOL_ALLOCATION_FAILURE;
     break;
   case mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REPLY:
     close_hard = true;
-    term_code = (! c->stop_with_error || c->rq.too_large) ?
-                MHD_REQUEST_TERMINATED_NO_RESOURCES :
-                MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR;
+    end_code = (! c->stop_with_error || c->rq.too_large) ?
+               MHD_REQUEST_ENDED_NO_RESOURCES :
+               MHD_REQUEST_ENDED_HTTP_PROTOCOL_ERROR;
     sc = MHD_SC_REPLY_POOL_ALLOCATION_FAILURE;
     break;
   case mhd_CONN_CLOSE_NO_MEM_FOR_ERR_RESPONSE:
     close_hard = true;
-    term_code = c->rq.too_large ?
-                MHD_REQUEST_TERMINATED_NO_RESOURCES :
-                MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR;
+    end_code = c->rq.too_large ?
+               MHD_REQUEST_ENDED_NO_RESOURCES :
+               MHD_REQUEST_ENDED_HTTP_PROTOCOL_ERROR;
     sc = MHD_SC_ERR_RESPONSE_ALLOCATION_FAILURE;
     break;
   case mhd_CONN_CLOSE_APP_ERROR:
     close_hard = true;
-    term_code = MHD_REQUEST_TERMINATED_BY_APP_ERROR;
+    end_code = MHD_REQUEST_ENDED_BY_APP_ERROR;
     sc = MHD_SC_APPLICATION_DATA_GENERATION_FAILURE_CLOSED;
     break;
   case mhd_CONN_CLOSE_APP_ABORTED:
     close_hard = true;
-    term_code = MHD_REQUEST_TERMINATED_BY_APP_ABORT;
+    end_code = MHD_REQUEST_ENDED_BY_APP_ABORT;
     sc = MHD_SC_APPLICATION_CALLBACK_ABORT_ACTION;
     break;
   case mhd_CONN_CLOSE_INT_ERROR:
     close_hard = true;
-    term_code = MHD_REQUEST_TERMINATED_NO_RESOURCES;
+    end_code = MHD_REQUEST_ENDED_NO_RESOURCES;
     break;
   case mhd_CONN_CLOSE_SOCKET_ERR:
     close_hard = true;
     switch (c->sk_discnt_err)
     {
     case mhd_SOCKET_ERR_NOMEM:
-      term_code = MHD_REQUEST_TERMINATED_NO_RESOURCES;
+      end_code = MHD_REQUEST_ENDED_NO_RESOURCES;
       break;
     case mhd_SOCKET_ERR_REMT_DISCONN:
       close_hard = false;
-      term_code = (MHD_CONNECTION_INIT == c->state) ?
-                  MHD_REQUEST_TERMINATED_COMPLETED_OK /* Not used */ :
-      MHD_REQUEST_TERMINATED_CLIENT_ABORT;
+      end_code = (MHD_CONNECTION_INIT == c->state) ?
+                 MHD_REQUEST_ENDED_COMPLETED_OK /* Not used */ :
+      MHD_REQUEST_ENDED_CLIENT_ABORT;
       break;
     case mhd_SOCKET_ERR_CONNRESET:
-      term_code = MHD_REQUEST_TERMINATED_CLIENT_ABORT;
+      end_code = MHD_REQUEST_ENDED_CLIENT_ABORT;
       break;
     case mhd_SOCKET_ERR_CONN_BROKEN:
     case mhd_SOCKET_ERR_NOTCONN:
@@ -729,7 +729,7 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
     case mhd_SOCKET_ERR_OTHER:
     case mhd_SOCKET_ERR_INTERNAL:
     case mhd_SOCKET_ERR_NO_ERROR:
-      term_code = MHD_REQUEST_TERMINATED_CONNECTION_ERROR;
+      end_code = MHD_REQUEST_ENDED_CONNECTION_ERROR;
       break;
     case mhd_SOCKET_ERR_AGAIN:
     case mhd_SOCKET_ERR_INTR:
@@ -740,35 +740,35 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
     break;
   case mhd_CONN_CLOSE_DAEMON_SHUTDOWN:
     close_hard = true;
-    term_code = MHD_REQUEST_TERMINATED_DAEMON_SHUTDOWN;
+    end_code = MHD_REQUEST_ENDED_DAEMON_SHUTDOWN;
     break;
 
   case mhd_CONN_CLOSE_TIMEDOUT:
     if (MHD_CONNECTION_INIT == c->state)
     {
       close_hard = false;
-      term_code = MHD_REQUEST_TERMINATED_COMPLETED_OK; /* Not used */
+      end_code = MHD_REQUEST_ENDED_COMPLETED_OK; /* Not used */
       break;
     }
     close_hard = true;
-    term_code = MHD_REQUEST_TERMINATED_TIMEOUT_REACHED;
+    end_code = MHD_REQUEST_ENDED_TIMEOUT_REACHED;
     break;
 
   case mhd_CONN_CLOSE_ERR_REPLY_SENT:
     close_hard = false;
-    term_code = c->rq.too_large ?
-                MHD_REQUEST_TERMINATED_NO_RESOURCES :
-                MHD_REQUEST_TERMINATED_HTTP_PROTOCOL_ERROR;
+    end_code = c->rq.too_large ?
+               MHD_REQUEST_ENDED_NO_RESOURCES :
+               MHD_REQUEST_ENDED_HTTP_PROTOCOL_ERROR;
     break;
   case mhd_CONN_CLOSE_HTTP_COMPLETED:
     close_hard = false;
-    term_code = MHD_REQUEST_TERMINATED_COMPLETED_OK;
+    end_code = MHD_REQUEST_ENDED_COMPLETED_OK;
     break;
 
   default:
     mhd_assert (0 && "Unreachable code");
     MHD_UNREACHABLE_;
-    term_code = MHD_REQUEST_TERMINATED_COMPLETED_OK;
+    end_code = MHD_REQUEST_ENDED_COMPLETED_OK;
     close_hard = false;
   }
 
@@ -823,9 +823,9 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
     d->notify_completed (d->notify_completed_cls,
                          c,
                          &c->rq.app_context,
-                         MHD_REQUEST_TERMINATED_COMPLETED_OK);
+                         MHD_REQUEST_ENDED_COMPLETED_OK);
 #else
-  (void) term_code;
+  (void) end_code;
 #endif
   c->rq.app_aware = false;
 
@@ -856,9 +856,9 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
 
   mhd_conn_mark_unready (c, c->daemon);
 
-  if (NULL != c->rq.cntn.lbuf.buf)
+  if (NULL != c->rq.cntn.lbuf.data)
     mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
-  c->rq.cntn.lbuf.buf = NULL;
+  c->rq.cntn.lbuf.data = NULL;
   if (NULL != c->rp.response)
     mhd_response_dec_use_count (c->rp.response);
   c->rp.response = NULL;
