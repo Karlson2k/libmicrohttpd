@@ -264,6 +264,7 @@ close_all_daemon_conns (struct MHD_Daemon *d)
        c = mhd_DLINKEDL_GET_LAST (&(d->conns),all_conn))
   {
     mhd_conn_pre_close_d_shutdown (c);
+    mhd_conn_pre_clean (c);
     mhd_conn_close_final (c);
   }
 }

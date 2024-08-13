@@ -252,7 +252,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     return false;
   }
 
-  while (true) // TODO: support suspend
+  while (! c->suspended)
   {
 #ifdef HTTPS_SUPPORT
     // TODO: support TLS, handshake
@@ -357,7 +357,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       mhd_assert (NULL != c->rp.response);
       mhd_stream_switch_from_recv_to_send (c);
       if (! mhd_stream_build_header_response (c))
-        break;
+        continue;
       mhd_assert (MHD_CONNECTION_START_REPLY != c->state);
       break;
     case MHD_CONNECTION_HEADERS_SENDING:
@@ -441,7 +441,8 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       mhd_assert (c->write_buffer_send_offset <= \
                   c->write_buffer_append_offset);
       mhd_stream_call_dcc_cleanup_if_needed (c);
-      mhd_stream_prep_chunked_footer (c);
+      if (mhd_stream_prep_chunked_footer (c))
+        continue;
       break;
     case MHD_CONNECTION_FOOTERS_SENDING:
       mhd_assert (c->rp.props.send_reply_body);
@@ -457,6 +458,9 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
         && ! c->discard_request
         && ! c->sk_rmt_shut_wr);
       continue;
+    case MHD_CONNECTION_PRE_CLOSING:
+      mhd_conn_pre_clean (c);
+      break;
     case MHD_CONNECTION_CLOSED:
       break;
 #if 0 // def UPGRADE_SUPPORT
@@ -470,6 +474,8 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     }
     break;
   }
+
+  mhd_assert (MHD_CONNECTION_PRE_CLOSING != c->state);
 
   if (MHD_CONNECTION_CLOSED == c->state)
     return false;
@@ -488,15 +494,22 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
                         mhd_CONN_CLOSE_HTTP_COMPLETED :
                         mhd_CONN_CLOSE_CLIENT_SHUTDOWN_EARLY,
                         NULL);
+    mhd_conn_pre_clean (c);
     return false;
   }
 
   if (mhd_stream_check_timedout (c)) // TODO: centralise timeout checks
   {
     mhd_conn_pre_close_timedout (c);
+    mhd_conn_pre_clean (c);
     return false;
   }
-  update_active_state (c);
+
+  if (! update_active_state (c))
+  {
+    mhd_conn_pre_clean (c);
+    return false;
+  }
   /* MHD_connection_update_event_loop_info (c);*/
 
   return true;

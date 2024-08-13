@@ -36,6 +36,7 @@ libmicrohttpd2_la_SOURCES = \
   mhd_sockets_funcs.c       mhd_sockets_funcs.h \
   mhd_socket_error.c        mhd_socket_error.h \
   mhd_atomic_counter.c      mhd_atomic_counter.h \
+  mhd_bool.h \
   mhd_str.c                 mhd_str.h \
   mhd_str_macros.h          mhd_str_types.h \
   mhd_buffer.h \
@@ -88,6 +89,15 @@ libmicrohttpd2_la_SOURCES = \
 if ! HAVE_SYS_CALLOC
 libmicrohttpd2_la_SOURCES += \
   compat_calloc.c
+endif
+
+post_parser_files = \
+  http_post_enc.h \
+  mhd_post_parser.h         mhd_post_result.h         mhd_postfield.h \
+  post_parser_funcs.c       post_parser_funcs.h
+
+if HAVE_POST_PARSER
+  libmicrohttpd2_la_SOURCES += $(post_parser_files)
 endif
 
 

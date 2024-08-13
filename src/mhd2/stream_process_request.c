@@ -423,14 +423,6 @@
 #define MHD_CHUNK_HEADER_REASONABLE_LEN 24
 
 /**
- * Get whether bare LF in HTTP header and other protocol elements
- * should be treated as the line termination depending on the configured
- * strictness level.
- * RFC 9112, section 2.2
- */
-#define MHD_ALLOW_BARE_LF_AS_CRLF_(discp_lvl) (0 >= discp_lvl)
-
-/**
  * The valid length of any HTTP version string
  */
 #define HTTP_VER_LEN (mhd_SSTR_LEN (MHD_HTTP_VERSION_1_1_STR))
@@ -586,7 +578,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
     (skip_empty_lines && (-3 >= discp_lvl));
   /* Treat bare LF as the end of the line.
      RFC 9112, section 2.2 */
-  const bool bare_lf_as_crlf = MHD_ALLOW_BARE_LF_AS_CRLF_ (discp_lvl);
+  const bool bare_lf_as_crlf = mhd_ALLOW_BARE_LF_AS_CRLF (discp_lvl);
   /* Treat tab as whitespace delimiter.
      RFC 9112, section 3 */
   const bool tab_as_wsp = (0 >= discp_lvl);
@@ -1561,7 +1553,7 @@ get_req_header (struct MHD_Connection *restrict c,
      RFC 9112, section 2.2-3
      Note: MHD never replaces bare LF with space (RFC 9110, section 5.5-5).
      Bare LF is processed as end of the line or rejected as broken request. */
-  const bool bare_lf_as_crlf = MHD_ALLOW_BARE_LF_AS_CRLF_ (discp_lvl);
+  const bool bare_lf_as_crlf = mhd_ALLOW_BARE_LF_AS_CRLF (discp_lvl);
   /* Keep bare CR character as is.
      Violates RFC 9112, section 2.2-4 */
   const bool bare_cr_keep = (-3 >= discp_lvl);
@@ -2949,15 +2941,36 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
     }
     c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
     return true;
+#ifdef HAVE_POST_PARSER
   case mhd_ACTION_POST_PARSE:
-    mhd_assert (0 && "Not implemented yet");
+    if (0 == c->rq.cntn.cntn_size)
+    {
+      c->rq.u_proc.post.parse_result = MHD_POST_PARSE_RES_REQUEST_EMPTY;
+      c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+      return true;
+    }
+    if (! mhd_stream_prepare_for_post_parse (c))
+    {
+      mhd_assert (MHD_CONNECTION_FOOTERS_RECEIVED < c->state);
+      return true;
+    }
+    if (need_100_continue (c))
+    {
+      c->state = MHD_CONNECTION_CONTINUE_SENDING;
+      return true;
+    }
+    c->state = MHD_CONNECTION_BODY_RECEIVING;
     return true;
+#endif /* HAVE_POST_PARSER */
   case mhd_ACTION_SUSPEND:
     c->suspended = true;
     return false;
   case mhd_ACTION_ABORT:
     mhd_conn_pre_close_app_abort (c);
-    return false;
+    return true;
+#ifndef HAVE_POST_PARSER
+  case mhd_ACTION_POST_PARSE:
+#endif /* ! HAVE_POST_PARSER */
   case mhd_ACTION_NO_ACTION:
   default:
     mhd_assert (0 && "Impossible value");
@@ -2976,10 +2989,10 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
  * @return true if connection state has been changed,
  *         false otherwise
  */
-static MHD_FN_PAR_NONNULL_ (1) bool
-process_upload_action (struct MHD_Connection *restrict c,
-                       const struct MHD_UploadAction *act,
-                       bool final)
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ (1) bool
+mhd_stream_process_upload_action (struct MHD_Connection *restrict c,
+                                  const struct MHD_UploadAction *act,
+                                  bool final)
 {
   if (NULL != act)
   {
@@ -3011,7 +3024,7 @@ process_upload_action (struct MHD_Connection *restrict c,
     return false;
   case mhd_UPLOAD_ACTION_ABORT:
     mhd_conn_pre_close_app_abort (c);
-    return false;
+    return true;
   case mhd_UPLOAD_ACTION_NO_ACTION:
   default:
     mhd_assert (0 && "Impossible value");
@@ -3034,7 +3047,7 @@ process_request_chunked_body (struct MHD_Connection *restrict c)
      RFC 9112, section 2.2-3
      Note: MHD never replaces bare LF with space (RFC 9110, section 5.5-5).
      Bare LF is processed as end of the line or rejected as broken request. */
-  const bool bare_lf_as_crlf = MHD_ALLOW_BARE_LF_AS_CRLF_ (discp_lvl);
+  const bool bare_lf_as_crlf = mhd_ALLOW_BARE_LF_AS_CRLF (discp_lvl);
   /* Allow "Bad WhiteSpace" in chunk extension.
      RFC 9112, Section 7.1.1, Paragraph 2 */
   const bool allow_bws = (2 < discp_lvl);
@@ -3229,79 +3242,94 @@ process_request_chunked_body (struct MHD_Connection *restrict c)
     }
     mhd_assert (c->rq.app_aware);
 
+#ifdef HAVE_POST_PARSER
     if (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act)
     {
-      mhd_assert (0 && "Not implemented yet"); // TODO: implement POST
-      return false;
-    }
-
-    if (NULL != c->rq.app_act.head_act.data.upload.full.cb)
-    {
-      need_inc_proc = false;
-
-      mhd_assert (0 == c->rq.cntn.proc_size);
-      if ((uint_fast64_t) c->rq.cntn.lbuf.size <
-          c->rq.cntn.recv_size + cntn_data_ready)
-      {
-        size_t grow_size;
-
-        grow_size = (size_t) (c->rq.cntn.recv_size + cntn_data_ready
-                              - c->rq.cntn.lbuf.size);
-        if (((size_t) (c->rq.cntn.recv_size + cntn_data_ready) <
-             cntn_data_ready) || (! mhd_daemon_grow_lbuf (d,
-                                                          grow_size,
-                                                          &(c->rq.cntn.lbuf))))
-        {
-          /* Failed to grow the buffer, no space to put the new data */
-          const struct MHD_UploadAction *act;
-          if (NULL != c->rq.app_act.head_act.data.upload.inc.cb)
-          {
-            mhd_RESPOND_WITH_ERROR_STATIC (
-              c,
-              MHD_HTTP_STATUS_CONTENT_TOO_LARGE,
-              ERR_RSP_MSG_REQUEST_TOO_BIG);
-            return true;
-          }
-          c->rq.app_act.head_act.data.upload.full.cb = NULL; /* Cannot process "full" content */
-          /* Process previously buffered data */
-          mhd_assert (c->rq.cntn.recv_size <= c->rq.cntn.lbuf.size);
-          act = c->rq.app_act.head_act.data.upload.inc.cb (
-            c->rq.app_act.head_act.data.upload.inc.cls,
-            &(c->rq),
-            c->rq.cntn.recv_size,
-            c->rq.cntn.lbuf.buf);
-          c->rq.cntn.proc_size = c->rq.cntn.recv_size;
-          mhd_daemon_free_lbuf (d, &(c->rq.cntn.lbuf));
-          if (process_upload_action (c, act, false))
-            return true;
-          need_inc_proc = true;
-        }
-      }
-      if (! need_inc_proc)
-      {
-        memcpy (c->rq.cntn.lbuf.buf + c->rq.cntn.recv_size,
-                buffer_head, cntn_data_ready);
-        c->rq.cntn.recv_size += cntn_data_ready;
-      }
-    }
-    else
-      need_inc_proc = true;
-
-    if (need_inc_proc)
-    {
-      const struct MHD_UploadAction *act;
-      mhd_assert (NULL != c->rq.app_act.head_act.data.upload.inc.cb);
+      size_t size_provided;
 
       c->rq.cntn.recv_size += cntn_data_ready;
-      act = c->rq.app_act.head_act.data.upload.inc.cb (
-        c->rq.app_act.head_act.data.upload.inc.cls,
-        &(c->rq),
-        cntn_data_ready,
-        buffer_head);
-      c->rq.cntn.proc_size += cntn_data_ready;
-      state_updated = process_upload_action (c, act, false);
-    }
+      size_provided = cntn_data_ready;
 
+      state_updated = mhd_stream_post_parse (c,
+                                             &cntn_data_ready,
+                                             buffer_head);
+      mhd_assert (0 == cntn_data_ready); // TODO: support one chunk in-place processing?
+      c->rq.cntn.recv_size += size_provided;
+
+    }
+    else
+#endif /* HAVE_POST_PARSER */
+    if (1)
+    {
+      mhd_assert (mhd_ACTION_UPLOAD == c->rq.app_act.head_act.act);
+      if (NULL != c->rq.app_act.head_act.data.upload.full.cb)
+      {
+        need_inc_proc = false;
+
+        mhd_assert (0 == c->rq.cntn.proc_size);
+        if ((uint_fast64_t) c->rq.cntn.lbuf.size <
+            c->rq.cntn.recv_size + cntn_data_ready)
+        {
+          size_t grow_size;
+
+          grow_size = (size_t) (c->rq.cntn.recv_size + cntn_data_ready
+                                - c->rq.cntn.lbuf.size);
+          if (((size_t) (c->rq.cntn.recv_size + cntn_data_ready) <
+               cntn_data_ready) ||
+              (! mhd_daemon_grow_lbuf (d,
+                                       grow_size,
+                                       &(c->rq.cntn.lbuf))))
+          {
+            /* Failed to grow the buffer, no space to put the new data */
+            const struct MHD_UploadAction *act;
+            if (NULL != c->rq.app_act.head_act.data.upload.inc.cb)
+            {
+              mhd_RESPOND_WITH_ERROR_STATIC (
+                c,
+                MHD_HTTP_STATUS_CONTENT_TOO_LARGE,
+                ERR_RSP_MSG_REQUEST_TOO_BIG);
+              return true;
+            }
+            c->rq.app_act.head_act.data.upload.full.cb = NULL; /* Cannot process "full" content */
+            /* Process previously buffered data */
+            mhd_assert (c->rq.cntn.recv_size <= c->rq.cntn.lbuf.size);
+            act = c->rq.app_act.head_act.data.upload.inc.cb (
+              c->rq.app_act.head_act.data.upload.inc.cls,
+              &(c->rq),
+              c->rq.cntn.recv_size,
+              c->rq.cntn.lbuf.data);
+            c->rq.cntn.proc_size = c->rq.cntn.recv_size;
+            mhd_daemon_free_lbuf (d, &(c->rq.cntn.lbuf));
+            if (process_upload_action (c, act, false))
+              return true;
+            need_inc_proc = true;
+          }
+        }
+        if (! need_inc_proc)
+        {
+          memcpy (c->rq.cntn.lbuf.data + c->rq.cntn.recv_size,
+                  buffer_head, cntn_data_ready);
+          c->rq.cntn.recv_size += cntn_data_ready;
+        }
+      }
+      else
+        need_inc_proc = true;
+
+      if (need_inc_proc)
+      {
+        const struct MHD_UploadAction *act;
+        mhd_assert (NULL != c->rq.app_act.head_act.data.upload.inc.cb);
+
+        c->rq.cntn.recv_size += cntn_data_ready;
+        act = c->rq.app_act.head_act.data.upload.inc.cb (
+          c->rq.app_act.head_act.data.upload.inc.cls,
+          &(c->rq),
+          cntn_data_ready,
+          buffer_head);
+        c->rq.cntn.proc_size += cntn_data_ready;
+        state_updated = process_upload_action (c, act, false);
+      }
+    }
     /* dh left "processed" bytes in buffer for next time... */
     buffer_head += cntn_data_ready;
     available -= cntn_data_ready;
@@ -3341,54 +3369,66 @@ process_request_nonchunked_body (struct MHD_Connection *restrict c)
   else
     cntn_data_ready = c->read_buffer_offset;
 
-  if (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act)
-  {
-    mhd_assert (0 && "Not implemented yet"); // TODO: implement POST
-    return false;
-  }
-
-  mhd_assert (mhd_ACTION_UPLOAD == c->rq.app_act.head_act.act);
   read_buf_reuse = false;
   state_updated = false;
-  if (NULL != c->rq.app_act.head_act.data.upload.full.cb)
+
+  if (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act)
   {
-    // TODO: implement processing in pool memory if buffer is large enough
-    mhd_assert ((c->rq.cntn.recv_size + cntn_data_ready) <=
-                (uint_fast64_t) c->rq.cntn.lbuf.size);
-    memcpy (c->rq.cntn.lbuf.buf + c->rq.cntn.recv_size,
-            c->read_buffer, cntn_data_ready);
+    size_t size_provided;
+
     c->rq.cntn.recv_size += cntn_data_ready;
-    read_buf_reuse = true;
-    if (c->rq.cntn.recv_size == c->rq.cntn.cntn_size)
-    {
-      c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
-      state_updated = true;
-    }
+    size_provided = cntn_data_ready;
+
+    state_updated = mhd_stream_post_parse (c,
+                                           &size_provided,
+                                           c->read_buffer);
+    mhd_assert (0 == size_provided); // TODO: support one chunk in-place processing?
+    read_buf_reuse = true;  // TODO: support one chunk in-place processing?
+    c->rq.cntn.recv_size += cntn_data_ready;
   }
   else
   {
-    const struct MHD_UploadAction *act;
-    mhd_assert (NULL != c->rq.app_act.head_act.data.upload.inc.cb);
+    mhd_assert (mhd_ACTION_UPLOAD == c->rq.app_act.head_act.act);
+    if (NULL != c->rq.app_act.head_act.data.upload.full.cb)
+    {
+      // TODO: implement processing in pool memory if buffer is large enough
+      mhd_assert ((c->rq.cntn.recv_size + cntn_data_ready) <=
+                  (uint_fast64_t) c->rq.cntn.lbuf.size);
+      memcpy (c->rq.cntn.lbuf.data + c->rq.cntn.recv_size,
+              c->read_buffer, cntn_data_ready);
+      c->rq.cntn.recv_size += cntn_data_ready;
+      read_buf_reuse = true;
+      if (c->rq.cntn.recv_size == c->rq.cntn.cntn_size)
+      {
+        c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+        state_updated = true;
+      }
+    }
+    else
+    {
+      const struct MHD_UploadAction *act;
+      mhd_assert (NULL != c->rq.app_act.head_act.data.upload.inc.cb);
 
-    c->rq.cntn.recv_size += cntn_data_ready;
-    act = c->rq.app_act.head_act.data.upload.inc.cb (
-      c->rq.app_act.head_act.data.upload.inc.cls,
-      &(c->rq),
-      cntn_data_ready,
-      c->read_buffer);
-    c->rq.cntn.proc_size += cntn_data_ready;
-    read_buf_reuse = true;
-    state_updated = process_upload_action (c, act, false);
+      c->rq.cntn.recv_size += cntn_data_ready;
+      act = c->rq.app_act.head_act.data.upload.inc.cb (
+        c->rq.app_act.head_act.data.upload.inc.cls,
+        &(c->rq),
+        cntn_data_ready,
+        c->read_buffer);
+      c->rq.cntn.proc_size += cntn_data_ready;
+      read_buf_reuse = true;
+      state_updated = process_upload_action (c, act, false);
+    }
   }
-
   if (read_buf_reuse)
   {
     size_t data_left_size;
     mhd_assert (c->read_buffer_offset >= cntn_data_ready);
     data_left_size = c->read_buffer_offset - cntn_data_ready;
     if (0 != data_left_size)
-      memmove (c->read_buffer, c->read_buffer + cntn_data_ready, data_left_size)
-      ;
+      memmove (c->read_buffer,
+               c->read_buffer + cntn_data_ready,
+               data_left_size);
     c->read_buffer_offset = data_left_size;
   }
 
@@ -3423,14 +3463,14 @@ mhd_stream_call_app_final_upload_cb (struct MHD_Connection *restrict c)
   {
     mhd_assert (c->rq.cntn.recv_size == c->rq.cntn.cntn_size);
     mhd_assert (0 == c->rq.cntn.proc_size);
-    mhd_assert (NULL != c->rq.cntn.lbuf.buf);
+    mhd_assert (NULL != c->rq.cntn.lbuf.data);
     mhd_assert (c->rq.cntn.recv_size <= c->rq.cntn.lbuf.size);
     // TODO: implement processing in pool memory if it is large enough
     act = c->rq.app_act.head_act.data.upload.full.cb (
       c->rq.app_act.head_act.data.upload.full.cls,
       &(c->rq),
       c->rq.cntn.recv_size,
-      c->rq.cntn.lbuf.buf);
+      c->rq.cntn.lbuf.data);
     c->rq.cntn.proc_size = c->rq.cntn.recv_size;
   }
   else
@@ -3450,9 +3490,9 @@ mhd_stream_call_app_final_upload_cb (struct MHD_Connection *restrict c)
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_stream_process_req_recv_finished (struct MHD_Connection *restrict c)
 {
-  if (NULL != c->rq.cntn.lbuf.buf)
+  if (NULL != c->rq.cntn.lbuf.data)
     mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
-  c->rq.cntn.lbuf.buf = NULL;
+  c->rq.cntn.lbuf.data = NULL;
   if (c->rq.cntn.cntn_size != c->rq.cntn.proc_size)
     c->discard_request = true;
   mhd_assert (NULL != c->rp.response);

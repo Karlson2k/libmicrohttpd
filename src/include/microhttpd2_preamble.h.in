@@ -147,6 +147,8 @@
  */
 #define MHD_VERSION 0x01990001
 
+#ifndef MHD_BOOL_DEFINED
+
 /**
  * Representation of 'bool' in the public API as stdbool.h may not
  * always be available and presence of 'bool' keyword may depend on
@@ -170,6 +172,10 @@ enum MHD_Bool
    */
   MHD_YES = 1
 };
+
+
+#define MHD_BOOL_DEFINED 1
+#endif /* ! MHD_BOOL_DEFINED */
 
 #ifndef MHD_STRINGS_DEFINED
 
@@ -639,15 +645,45 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_REQ_COOKIE_INVALID = 40163
   ,
   /**
+   * Parsing of the POST data is incomplete because client used incorrect
+   * format of POST encoding.
+   * Some POST data is available or has been provided via callback.
+   */
+  MHD_SC_REQ_POST_PARSE_PARTIAL_INVALID_POST_FORMAT = 40202
+  ,
+  /**
    * The request does not have "Content-Type:" header and POST data cannot
    * be parsed
    */
-  MHD_SC_REQ_POST_PARSE_FAILED_NO_CNTN_TYPE = 40180
+  MHD_SC_REQ_POST_PARSE_FAILED_NO_CNTN_TYPE = 40280
+  ,
+  /**
+   * The request has unknown POST encoding specified by "Content-Type:" header
+   */
+  MHD_SC_REQ_POST_PARSE_FAILED_UNKNOWN_CNTN_TYPE = 40281
+  ,
+  /**
+   * The request has "Content-Type: multipart/form-data" header without
+   * "boundary" parameter
+   */
+  MHD_SC_REQ_POST_PARSE_FAILED_HEADER_NO_BOUNDARY = 40282
+  ,
+  /**
+   * The request has "Content-Type: multipart/form-data" header with misformed
+   * data
+   */
+  MHD_SC_REQ_POST_PARSE_FAILED_HEADER_MISFORMED = 40283
+  ,
+  /**
+   * The POST data cannot be parsed because client used incorrect format
+   * of POST encoding.
+   */
+  MHD_SC_REQ_POST_PARSE_FAILED_INVALID_POST_FORMAT = 40290
   ,
   /**
    * The request cannot be processed. Sending error reply.
    */
-  MHD_SC_REQ_PROCCESSING_ERR_REPLY = 40200
+  MHD_SC_REQ_PROCCESSING_ERR_REPLY = 41000
   ,
 
   /* 50000-level errors are because of an error internal
@@ -1108,6 +1144,26 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * Failed to allocate memory in connection's pool for the reply.
    */
   MHD_SC_ERR_RESPONSE_ALLOCATION_FAILURE = 50250
+  ,
+  /**
+   * The request POST data cannot be parsed because stream has not enough
+   * pool memory free.
+   */
+  MHD_SC_REQ_POST_PARSE_FAILED_NO_POOL_MEM = 50260
+  ,
+  /**
+   * The POST data cannot be parsed completely because no "large shared buffer"
+   * space is available.
+   * Some POST data may be parsed.
+   */
+  MHD_SC_REQ_POST_PARSE_FAILED_NO_LARGE_BUF_MEM = 50261
+  ,
+  /**
+   * The application set POST encoding to "multipart/form-data", but the request
+   * has no "Content-Type: multipart/form-data" header which is required 
+   * to find "boundary" used in this encoding
+   */
+  MHD_SC_REQ_POST_PARSE_FAILED_HEADER_NOT_MPART = 50284
   ,
   /**
    * The feature is not supported by this MHD build (either

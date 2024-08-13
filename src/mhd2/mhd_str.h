@@ -27,12 +27,19 @@
 #define MHD_STR_H 1
 
 #include "mhd_sys_options.h"
+
 #include "sys_base_types.h"
 #include "sys_bool_type.h"
+
+#include "mhd_str_types.h"
+#include "mhd_buffer.h"
+
 #include "mhd_str_macros.h"
+
 #ifdef MHD_FAVOR_SMALL_CODE
 #  include "mhd_limits.h"
 #endif
+
 /*
  * Block of functions/macros that use US-ASCII charset as required by HTTP
  * standards. Not affected by current locale settings.
@@ -682,6 +689,10 @@ mhd_str_equal_caseless_quoted_bin_n (const char *quoted,
 #define mhd_str_equal_caseless_quoted_s_bin_n(q,l,u) \
         mhd_str_equal_caseless_quoted_bin_n (q,l,u,mhd_SSTR_LEN (u))
 
+#endif /* DAUTH_SUPPORT */
+
+#if defined(DAUTH_SUPPORT) || defined(HAVE_POST_PARSER)
+
 /**
  * Convert string from quoted to unquoted form as specified by
  * RFC7230#section-3.2.6 and RFC7694#quoted.strings.
@@ -702,7 +713,7 @@ mhd_str_unquote (const char *quoted,
                  size_t quoted_len,
                  char *result);
 
-#endif /* DAUTH_SUPPORT */
+#endif /* DAUTH_SUPPORT HAVE_POST_PARSER */
 
 #if defined(DAUTH_SUPPORT) || defined(BAUTH_SUPPORT)
 
@@ -765,5 +776,79 @@ mhd_base64_to_bin_n (const char *base64,
                      size_t bin_size);
 
 #endif /* BAUTH_SUPPORT */
+
+
+/**
+ * Check whether the given field value string starts with given token.
+ * Token matched case-insensitive.
+ *
+ * Matched considered successful if string has given token at the first
+ * position. The token may be followed by optional whitespaces and the semicolon
+ * symbol. The string is not checked after the semicolon (if any).
+ *
+ * @param str the string to check
+ * @param token the token to find, must not be empty
+ * @return 'true' if match is successful,
+ *         'false' otherwise
+ */
+MHD_INTERNAL bool
+mhd_str_starts_with_token_opt_param (const struct MHD_String *restrict str,
+                                     const struct MHD_String *restrict token)
+MHD_FN_PAR_NONNULL_ALL_;
+
+
+/**
+ * The result of check for token with parameter
+ */
+enum MHD_FIXED_ENUM_ mhd_StingStartsWithTokenResult
+{
+  /**
+   * The string does not start with the specified token
+   */
+  mhd_STR_STARTS_W_TOKEN_NO_TOKEN = 0
+  ,
+  /**
+   * The string has specified token at the initial position
+   * @note While formatting problems are not detected, it does not guarantee
+   *       that string has a perfect format.
+   */
+  mhd_STR_STARTS_W_TOKEN_HAS_TOKEN = 1
+  ,
+  /**
+   * The string has specified token at the initial position, but broken
+   * formatting is detected.
+   */
+  mhd_STR_STARTS_W_TOKEN_HAS_TOKEN_BAD_FORMAT = -1
+};
+
+/**
+ * Check whether the given field value string starts with given token, find
+ * required parameter.
+ * Token and parameter matched case-insensitive.
+ *
+ * Matched considered successful if string has given token at the first
+ * position. The token should be followed by optional whitespaces and
+ * one or more parameters, delimited by the semicolon symbol.
+ *
+ * @param str the string to check
+ * @param token the token to find, must not be empty
+ * @param par the name of the parameter, must not be empty
+ * @param[out] par_value set to the found parameter value or @a data member
+ *                       set to NULL if parameter is not found
+ * @param par_value_needs_unquote set to 'true' if @a par_value
+ *                                needs to be "unquoted"
+ * @return result of token detection and string parsing; if token is found
+ *         the presence of the required parameter is indicated only
+ *         by @a par_value
+ *
+ */
+MHD_INTERNAL enum mhd_StingStartsWithTokenResult
+mhd_str_starts_with_token_req_param (
+  const struct MHD_String *restrict str,
+  const struct MHD_String *restrict token,
+  const struct MHD_String *restrict par,
+  struct mhd_BufferConst *restrict par_value,
+  bool *restrict par_value_needs_unquote)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_(4) MHD_FN_PAR_OUT_(5);
 
 #endif /* MHD_STR_H */

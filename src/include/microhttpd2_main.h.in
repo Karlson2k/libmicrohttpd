@@ -611,7 +611,8 @@ struct MHD_NameValueKind
  * is queued. If the data is needed beyond this point, it should be copied.
  *
  * @param cls closure
- * @param nvt the name, the value and the kind of the element
+ * @param nv the name and the value of the element
+ * @param kind the type (kind) of the element
  * @return #MHD_YES to continue iterating,
  *         #MHD_NO to abort the iteration
  * @ingroup request
@@ -619,7 +620,8 @@ struct MHD_NameValueKind
 typedef enum MHD_Bool
 (MHD_FN_PAR_NONNULL_ (2)
  *MHD_NameValueIterator)(void *cls,
-                         const struct MHD_NameValueKind *nvt);
+                         enum MHD_ValueKind kind,
+                         const struct MHD_NameAndValue *nv);
 
 
 /**
@@ -1872,6 +1874,81 @@ MHD_FN_PAR_NONNULL_ (1);
 #define MHD_action_process_upload_inc(request,uc,uc_cls) \
         MHD_action_process_upload (request, 0, NULL, NULL, uc, uc_cls)
 
+#ifndef MHD_POST_PARSE_RESULT_DEFINED
+
+enum MHD_FIXED_ENUM_MHD_SET_ MHD_PostParseResult
+{
+  /**
+   * The POST data parse successfully and completely.
+   */
+  MHD_POST_PARSE_RES_OK = 0
+  ,
+  /**
+   * The POST request has no content or zero-length content.
+   */
+  MHD_POST_PARSE_RES_REQUEST_EMPTY = 1
+  ,
+  /**
+   * Parsing of the POST data is incomplete because client used incorrect
+   * format of POST encoding.
+   * Some POST data is available or has been provided via callback.
+   */
+  MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT = 2
+  ,
+  /**
+   * The POST data cannot be parsed completely because the stream has
+   * no free pool memory.
+   * Some POST data may be parsed.
+   */
+  MHD_POST_PARSE_RES_FAILED_NO_POOL_MEM = 60
+  ,
+  /**
+   * The POST data cannot be parsed completely because no "large shared buffer"
+   * space is available.
+   * Some POST data may be parsed.
+   */
+  MHD_POST_PARSE_RES_FAILED_NO_LARGE_BUF_MEM = 61
+  ,
+  /**
+   * The POST data cannot be parsed because 'Content-Type:' is unknown.
+   */
+  MHD_POST_PARSE_RES_FAILED_UNKNOWN_CNTN_TYPE = 80
+  ,
+  /**
+   * The POST data cannot be parsed because 'Content-Type:' header is not set.
+   */
+  MHD_POST_PARSE_RES_FAILED_NO_CNTN_TYPE = 81
+  ,
+  /**
+   * The POST data cannot be parsed because "Content-Type:" request header has
+   * no "boundary" parameter for "multipart/form-data"
+   */
+  MHD_POST_PARSE_RES_FAILED_HEADER_NO_BOUNDARY = 82
+  ,
+  /**
+   * The POST data cannot be parsed because "Content-Type: multipart/form-data"
+   * request header is misformed
+   */
+  MHD_POST_PARSE_RES_FAILED_HEADER_MISFORMED = 83
+  ,
+  /**
+   * The application set POST encoding to "multipart/form-data", but the request
+   * has no "Content-Type: multipart/form-data" header which is required
+   * to find "boundary" used in this encoding
+   */
+  MHD_POST_PARSE_RES_FAILED_HEADER_NOT_MPART = 84
+  ,
+  /**
+   * The POST data cannot be parsed because client used incorrect format
+   * of POST encoding.
+   */
+  MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT = 90
+
+};
+
+#define MHD_POST_PARSE_RESULT_DEFINED 1
+#endif /* ! MHD_POST_PARSE_RESULT_DEFINED */
+
 #ifndef MHD_POST_DATA_READER_DEFINED
 
 /**
@@ -1881,15 +1958,24 @@ MHD_FN_PAR_NONNULL_ (1);
  *
  * @param req the request
  * @param cls user-specified closure
- * @param name 0-terminated key for the value
- * @param filename name of the uploaded file, NULL if not known
- * @param content_type mime-type of the data, NULL if not known
- * @param encoding the encoding of the data
- * @param data pointer to @a size bytes of data at the
- *             specified @a off offset,
- *             NOT zero-terminated
- * @param off offset of data in the overall value
- * @param size number of bytes in @a data available
+ * @param name the name of the POST field
+ * @param filename the name of the uploaded file, @a cstr member is NULL if not
+ *                 known / not provided
+ * @param content_type the mime-type of the data, cstr member is NULL if not
+ *                     known / not provided
+ * @param encoding the encoding of the data, cstr member is NULL if not known /
+ *                 not provided
+ * @param size the number of bytes in @a data available, may be zero if
+ *             the @a final_data is #MHD_YES
+ * @param data the pointer to @a size bytes of data at the specified
+ *             @a off offset, NOT zero-terminated
+ * @param off the offset of @a data in the overall value, always equal to
+ *            the sum of sizes of previous calls for the same field / file;
+ *            client may provide more than one field with the same name and
+ *            the same filename, the new filed (or file) is indicated by zero
+ *            value of @a off (and the end is indicated by @a final_data)
+ * @param final_data if set to #MHD_YES then full field data is provided,
+ *                   if set to #MHD_NO then more field data may be provided
  * @return action specifying how to proceed:
  *         #MHD_upload_action_continue() if all is well,
  *         #MHD_upload_action_suspend() to stop reading the upload until
@@ -1908,9 +1994,10 @@ typedef const struct MHD_UploadAction *
                        const struct MHD_StringNullable *filename,
                        const struct MHD_StringNullable *content_type,
                        const struct MHD_StringNullable *encoding,
+                       size_t size,
                        const void *data,
                        uint_fast64_t off,
-                       size_t size);
+                       enum MHD_Bool final_data);
 
 
 /**
@@ -1918,15 +2005,14 @@ typedef const struct MHD_UploadAction *
  * of the postprocessor upload data.
  * @param req the request
  * @param cls the closure
- * @param parsing_result the result of POST data parsing: MHD_SC_OK,
-                         MHD_SC_REQ_POST_PARSE_FAILED_NO_CNTN_TYPE or ...
+ * @param parsing_result the result of POST data parsing
  * @return the action to proceed
  */
 typedef const struct MHD_UploadAction *
 (MHD_FN_PAR_NONNULL_ (1)
  *MHD_PostDataFinished) (struct MHD_Request *req,
                          void *cls,
-                         enum MHD_StatusCode parsing_result);
+                         enum MHD_PostParseResult parsing_result);
 
 #define MHD_POST_DATA_READER_DEFINED 1
 #endif /* ! MHD_POST_DATA_READER_DEFINED */
@@ -1949,8 +2035,12 @@ typedef const struct MHD_UploadAction *
  *                    request POST data. Within the set limit the buffer is
  *                    allocated automatically from the "large" shared memory
  *                    pool if necessary.
- * @param auto_stream_size the size above which values are not buffered and
- *                         processed by the @a steam_reader automatically,
+ * @param auto_stream_size the size of the field (in encoded form) above which
+ *                         values are not buffered and processed by
+ *                         the @a steam_reader automatically;
+ *                         useful to have large data (like file uploads)
+ *                         processed incrementally, while keeping buffer space
+ *                         for small fields only;
  *                         ignored if @a stream_reader is NULL
  * @param enc the data encoding to use,
  *            use #MHD_HTTP_POST_ENCODING_OTHER to detect automatically
@@ -1982,43 +2072,53 @@ MHD_action_parse_post (struct MHD_Request *request,
 MHD_FN_PAR_NONNULL_ (1);
 
 
+#ifndef MHD_POSTFILED_DEFINED
+
 /**
  * Post data element.
  * If any member is not provided/set then pointer to C string is NULL.
  * If any member is set to empty string then pointer to C string not NULL,
  * but the length is zero.
  */
-struct MHD_PostData
+struct MHD_PostField
 {
   /**
    * The name of the field
    */
   struct MHD_String name;
   /**
+   * The field data
+   * If not set or defined then to C string is NULL.
+   * If set to empty string then pointer to C string not NULL,
+   * but the length is zero.
+   */
+  struct MHD_StringNullable value;
+  /**
    * The filename if provided (only for "multipart/form-data")
    * If not set or defined then to C string is NULL.
    * If set to empty string then pointer to C string not NULL,
+   * but the length is zero.
    */
   struct MHD_StringNullable filename;
   /**
    * The Content-Type if provided (only for "multipart/form-data")
    * If not set or defined then to C string is NULL.
    * If set to empty string then pointer to C string not NULL,
+   * but the length is zero.
    */
   struct MHD_StringNullable content_type;
   /**
    * The Transfer-Encoding if provided (only for "multipart/form-data")
    * If not set or defined then to C string is NULL.
    * If set to empty string then pointer to C string not NULL,
+   * but the length is zero.
    */
   struct MHD_StringNullable transfer_encoding;
-  /**
-   * The field data
-   * If not set or defined then to C string is NULL.
-   * If set to empty string then pointer to C string not NULL,
-   */
-  struct MHD_StringNullable value;
 };
+
+#define MHD_POSTFILED_DEFINED 1
+#endif /* ! MHD_POSTFILED_DEFINED */
+
 
 /**
  * Iterator over POST data.
@@ -2035,7 +2135,7 @@ struct MHD_PostData
 typedef enum MHD_Bool
 (MHD_FN_PAR_NONNULL_ (2)
  *MHD_PostDataIterator)(void *cls,
-                        const struct MHD_PostData *data);
+                        const struct MHD_PostField *data);
 
 /**
  * Get all of the post data from the request via request.
@@ -2071,7 +2171,7 @@ MHD_EXTERN_ size_t
 MHD_request_get_post_data_list (
   struct MHD_Request *request,
   size_t num_elements,
-  struct MHD_PostData elements[MHD_FN_PAR_DYN_ARR_SIZE_ (num_elements)])
+  struct MHD_PostField elements[MHD_FN_PAR_DYN_ARR_SIZE_ (num_elements)])
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_SIZE_ (3,2);
 

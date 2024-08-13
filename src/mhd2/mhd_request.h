@@ -41,6 +41,11 @@
 #include "mhd_action.h"
 #include "mhd_buffer.h"
 
+#ifdef HAVE_POST_PARSER
+#  include "mhd_postfield.h"
+#  include "mhd_post_parser.h"
+#endif
+
 
 /**
  * The action set by the application
@@ -200,6 +205,33 @@ struct mhd_RequestField
 
 mhd_DLINKEDL_LIST_DEF (mhd_RequestField);
 
+#ifdef HAVE_POST_PARSER
+
+struct mhd_RequestPostField; /* forward declarations */
+
+mhd_DLINKEDL_LINKS_DEF (mhd_RequestPostField);
+
+/**
+ * The data for POST request fields
+ */
+struct mhd_RequestPostField
+{
+  /**
+   * The field data
+   */
+  struct MHD_PostField field;
+
+  /**
+   * Headers are kept in a double-linked list.
+   */
+  mhd_DLNKDL_LINKS (mhd_RequestPostField,post_fields);
+};
+
+mhd_DLINKEDL_LIST_DEF (mhd_RequestPostField);
+
+
+#endif /* HAVE_POST_PARSER */
+
 
 /**
  * The request content data
@@ -219,16 +251,29 @@ struct mhd_ReqContentData
   uint_fast64_t cntn_size;
 
   /**
-   * The size of the received content
+   * The size of the received content.
+   * Excluding chunked encoding framing.
    */
   uint_fast64_t recv_size;
 
   /**
-   * The size of the processed content
+   * The size of the processed content.
+   * Excluding chunked encoding framing.
    */
   uint_fast64_t proc_size;
 };
 
+
+union mhd_ReqContentParsingData
+{
+#ifdef HAVE_POST_PARSER
+  /**
+   * The POST parsing data
+   */
+  struct mhd_PostParserData post;
+#endif /* HAVE_POST_PARSER */
+  // TODO: move "raw" upload processing data here
+};
 
 /**
  * Request-specific values.
@@ -241,6 +286,13 @@ struct MHD_Request
    * Linked list of parsed headers.
    */
   mhd_DLNKDL_LIST (mhd_RequestField,fields);
+
+#ifdef HAVE_POST_PARSER
+  /**
+   * Linked list of parsed POST fields.
+   */
+  mhd_DLNKDL_LIST (mhd_RequestPostField,post_fields);
+#endif /* HAVE_POST_PARSER */
 
   /**
    * The action set by the application
@@ -256,6 +308,11 @@ struct MHD_Request
    * Set to true if request is too large to be handled
    */
   bool too_large;
+
+  /**
+   * Upload processing data
+   */
+  union mhd_ReqContentParsingData u_proc;
 
   /**
    * HTTP version string (i.e. http/1.1).  Allocated

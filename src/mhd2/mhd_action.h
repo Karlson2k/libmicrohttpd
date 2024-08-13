@@ -36,7 +36,8 @@
 #include "http_post_enc.h"
 
 #ifdef HAVE_POST_PARSER
-#  include "mhd_public_api.h"
+#  include "mhd_bool.h"
+#  include "mhd_post_result.h"
 #endif
 
 
@@ -146,16 +147,16 @@ typedef const struct MHD_UploadAction *
                        const struct MHD_StringNullable *filename,
                        const struct MHD_StringNullable *content_type,
                        const struct MHD_StringNullable *encoding,
+                       size_t size,
                        const void *data,
                        uint_fast64_t off,
-                       size_t size);
-
+                       enum MHD_Bool final_data);
 
 typedef const struct MHD_UploadAction *
 (MHD_FN_PAR_NONNULL_ (1)
  *MHD_PostDataFinished) (struct MHD_Request *req,
                          void *cls,
-                         enum MHD_StatusCode parsing_result);
+                         enum MHD_PostParseResult parsing_result);
 
 #define MHD_POST_DATA_READER_DEFINED 1
 #endif /* ! MHD_POST_DATA_READER_DEFINED */

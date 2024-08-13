@@ -62,9 +62,9 @@ respond_with_error_len (struct MHD_Connection *c,
 
   /* Discard most of the request data */
 
-  if (NULL != c->rq.cntn.lbuf.buf)
+  if (NULL != c->rq.cntn.lbuf.data)
     mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
-  c->rq.cntn.lbuf.buf = NULL;
+  c->rq.cntn.lbuf.data = NULL;
 
   c->write_buffer = NULL;
   c->write_buffer_size = 0;

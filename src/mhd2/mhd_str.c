@@ -2003,6 +2003,10 @@ mhd_str_equal_caseless_quoted_bin_n (const char *quoted,
 }
 
 
+#endif /* DAUTH_SUPPORT */
+
+#if defined(DAUTH_SUPPORT) || defined(HAVE_POST_PARSER)
+
 MHD_INTERNAL size_t
 mhd_str_unquote (const char *quoted,
                  size_t quoted_len,
@@ -2027,8 +2031,7 @@ mhd_str_unquote (const char *quoted,
   return w;
 }
 
-
-#endif /* DAUTH_SUPPORT */
+#endif /* DAUTH_SUPPORT HAVE_POST_PARSER */
 
 #if defined(DAUTH_SUPPORT) || defined(BAUTH_SUPPORT)
 
@@ -2326,3 +2329,214 @@ MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_
 #undef mhd_base64_map_type
 
 #endif /* BAUTH_SUPPORT */
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
+mhd_str_starts_with_token_opt_param (const struct MHD_String *restrict str,
+                                     const struct MHD_String *restrict token)
+{
+  size_t i;
+
+  mhd_assert (0 != token->len);
+  mhd_assert (NULL == memchr(token->cstr, '=', token->len));
+  mhd_assert (NULL == memchr(token->cstr, ' ', token->len));
+  mhd_assert (NULL == memchr(token->cstr, '\t', token->len));
+
+  if (str->len < token->len)
+    return false; /* The string is too short to match */
+
+  if (! mhd_str_equal_caseless_bin_n (str->cstr,
+                                      token->cstr,
+                                      token->len))
+    return false; /* The string does not start with the token */
+
+  for (i = token->len; i < str->len; ++i)
+  {
+    const char c = str->cstr[i];
+    if ((' ' == c) || ('\t' == c))
+      continue;
+    if (';' == c)
+      return true; /* Found the start of the token parameters */
+    return false; /* The initial part of the string does not fully match the token */
+  }
+  mhd_assert (0 && "The string should not have whitespace at the end");
+  return true;
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_(4)
+MHD_FN_PAR_OUT_(5) enum mhd_StingStartsWithTokenResult
+mhd_str_starts_with_token_req_param (
+  const struct MHD_String *restrict str,
+  const struct MHD_String *restrict token,
+  const struct MHD_String *restrict par,
+  struct mhd_BufferConst *restrict par_value,
+  bool *restrict par_value_needs_unquote)
+{
+  size_t i;
+  const char *const restrict cstr = str->cstr;
+  bool token_found;
+  bool param_found;
+
+  mhd_assert (0 != token->len);
+  mhd_assert (NULL == memchr(token->cstr, '=', token->len));
+  mhd_assert (NULL == memchr(token->cstr, ' ', token->len));
+  mhd_assert (NULL == memchr(token->cstr, '\t', token->len));
+  mhd_assert (NULL == memchr(par->cstr, '=', par->len));
+  mhd_assert (NULL == memchr(par->cstr, ' ', par->len));
+  mhd_assert (NULL == memchr(par->cstr, '\t', par->len));
+
+  par_value->data = NULL;
+  par_value->size = 0;
+
+  if (str->len < token->len)
+    return false; /* The string is too short to match */
+
+  if (! mhd_str_equal_caseless_bin_n (cstr,
+                                      token->cstr,
+                                      token->len))
+    return mhd_STR_STARTS_W_TOKEN_NO_TOKEN; /* The string does not start with the token */
+  token_found = false;
+  param_found = false;
+
+  i = token->len;
+  do
+  {
+    /* Find start of the next parameter */
+    for ((void) 0; i < str->len; ++i)
+    {
+      const char c = cstr[i];
+      if ((' ' == c) || ('\t' == c))
+        continue;
+      if (';' == c)
+      {
+        /* Found the start of the next token parameter */
+        if (param_found)
+          return mhd_STR_STARTS_W_TOKEN_HAS_TOKEN;
+        break;
+      }
+      if (',' == c)
+        return mhd_STR_STARTS_W_TOKEN_HAS_TOKEN; /* Found the start of the next token */
+
+      if (! token_found)
+      {
+        if (i == token->len)
+        {
+          /* The initial part of the string does not fully match the token or
+             formatting is not correct */
+          return mhd_STR_STARTS_W_TOKEN_NO_TOKEN;
+        }
+        /* The string has garbage after the token and whitespace */
+        return mhd_STR_STARTS_W_TOKEN_HAS_TOKEN_BAD_FORMAT;
+      }
+      /* The garbage after the parameter */
+      return mhd_STR_STARTS_W_TOKEN_HAS_TOKEN_BAD_FORMAT;
+    }
+    token_found = true;
+
+    if (i == str->len)
+      return mhd_STR_STARTS_W_TOKEN_HAS_TOKEN;
+
+    /* 'i' is at the start of the parameter name */
+
+    if (par->len > str->len - i - 1)
+      return mhd_STR_STARTS_W_TOKEN_HAS_TOKEN; /* the token is found, but the parameter is not */
+    else
+    { /* Check the parameter */
+      bool val_needs_unquote;
+      size_t j;
+      const char *const prm_str = cstr + i;
+
+      for (j = 0; j < par->len; ++j)
+        if (! charsequalcaseless (prm_str[j],
+                                  par->cstr[j]))
+          break;
+      i += j;
+      mhd_assert (str->len > i);
+      if ((j == par->len) &&
+          ('=' == cstr[i]))
+      {
+        /* The parameter name matches required parameter */
+        param_found = true;
+        par_value->data = cstr + i + 1;
+      }
+      else
+      {
+        /* i points to the char in the parameter name */
+        while ('=' != cstr[i])
+        {
+          if ((';' == cstr[i])      /* end of the parameter */
+              || (',' == cstr[i])   /* end of the token */
+              || (str->len == ++i)) /* end of the field string */
+          {
+            /* parameter without the value */
+            return mhd_STR_STARTS_W_TOKEN_HAS_TOKEN_BAD_FORMAT;
+          }
+        }
+      }
+      mhd_assert (str->len > i);
+      mhd_assert ('=' == cstr[i]);
+
+      /* 'i' points to '=' between parameter name and parameter value */
+
+      ++i; /* Advance to the first char in the parameter value */
+      if (str->len == i)
+        return mhd_STR_STARTS_W_TOKEN_HAS_TOKEN; /* Zero-length parameter value */
+
+      val_needs_unquote = false;
+
+      /* 'i' points to the char after '=' */
+
+      if ('"' == cstr[i])
+      {
+        /* The value is quoted */
+        ++(par_value->data); /* Point to the first quoted char */
+        do
+        {
+          ++i; /* Advance to the next char */
+          if (str->len == i)
+            return mhd_STR_STARTS_W_TOKEN_HAS_TOKEN_BAD_FORMAT; /* No closing quote */
+          if ('\\' == cstr[i])
+          {
+            val_needs_unquote = true;
+            ++i; /* Skip quoted char */
+            if (str->len == i)
+              return mhd_STR_STARTS_W_TOKEN_HAS_TOKEN_BAD_FORMAT; /* No closing quote */
+          }
+        } while ('"' != cstr[i]);
+        if (param_found)
+        {
+          par_value->size = (size_t) ((cstr + i) - par_value->data);
+          *par_value_needs_unquote = val_needs_unquote;
+        }
+        /* Complete value found */
+        /* Check for the garbage data at the end */
+        ++i; /* Advance to the next char */
+      }
+      else
+      {
+        /* The value is not quoted */
+        while ((' ' != cstr[i]) &&
+               ('\t' != cstr[i]))
+        {
+          if ((';' == cstr[i])      /* end of the parameter */
+              || (',' == cstr[i])   /* end of the token */
+              || (str->len == ++i)) /* end of the field string */
+            break;
+        }
+        /* The end parameter value */
+        if (param_found)
+        {
+          par_value->size = (size_t) ((cstr + i) - par_value->data);
+          *par_value_needs_unquote = false;
+        }
+        /* Check for the garbage data at the end */
+      }
+
+      /* 'i' points to the next char after end of the parameter value */
+    }
+  } while (i < str->len);
+
+  mhd_assert (token_found);
+  return mhd_STR_STARTS_W_TOKEN_HAS_TOKEN;
+}

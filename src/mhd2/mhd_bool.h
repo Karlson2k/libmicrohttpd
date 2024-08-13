@@ -1,5 +1,6 @@
 /*
   This file is part of GNU libmicrohttpd
+  Copyright (C) 2024 Christian Grothoff
   Copyright (C) 2024 Evgeny Grin (Karlson2k)
 
   GNU libmicrohttpd is free software; you can redistribute it and/or
@@ -19,47 +20,35 @@
 */
 
 /**
- * @file src/mhd2/mhd_buffer.h
- * @brief  The definition of the MHD_Buffer type
+ * @file src/mhd2/mhd_bool.h
+ * @brief  The definition of the enum MHD_Bool, which is used in public API
  * @author Karlson2k (Evgeny Grin)
  */
 
-#ifndef MHD_BUFFER_H
-#define MHD_BUFFER_H 1
+#ifndef MHD_BOOL_H
+#define MHD_BOOL_H 1
 
 #include "mhd_sys_options.h"
-#include "sys_base_types.h"
 
-/**
- * The buffer with the size
- */
-struct mhd_Buffer
+#ifndef MHD_BOOL_DEFINED
+
+enum MHD_Bool
 {
   /**
-   * The size of the data or the allocation pointed by @a buf buffer
+   * MHD-internal return code for "NO".
    */
-  size_t size;
-
+  MHD_NO = 0
+  ,
   /**
-   * The pointer to the data or the allocation
+   * MHD-internal return code for "YES".  All non-zero values
+   * will be interpreted as "YES", but MHD will only ever
+   * return #MHD_YES or #MHD_NO.
    */
-  char *data;
+  MHD_YES = 1
 };
 
-/**
- * The data with the size
- */
-struct mhd_BufferConst
-{
-  /**
-   * The size of the data pointed by @a buf buffer
-   */
-  size_t size;
 
-  /**
-   * The pointer to the data
-   */
-  const char *data;
-};
+#define MHD_BOOL_DEFINED 1
+#endif /* ! MHD_BOOL_DEFINED */
 
-#endif /* ! MHD_BUFFER_H */
+#endif /* ! MHD_BOOL_H */

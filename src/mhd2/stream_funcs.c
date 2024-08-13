@@ -496,8 +496,10 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
   {
     mhd_assert (! c->stop_with_error || (NULL == c->rp.response) || \
                 (c->rp.response->cfg.int_err_resp));
-    /* Next function will destroy response, notify client,
-     * destroy memory pool and set connection state to "CLOSED" */
+
+    /* Next function will notify client and set connection
+     * state to "PRE-CLOSING" */
+    /* Later response and memory pool will be destroyed */
     mhd_conn_pre_close (c,
                         c->stop_with_error ?
                         mhd_CONN_CLOSE_ERR_REPLY_SENT :
@@ -652,7 +654,6 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
                     const char *log_msg)
 {
   bool close_hard;
-  bool use_local_lingering;
   enum MHD_RequestEndedCode end_code;
   enum MHD_StatusCode sc;
 
@@ -774,7 +775,6 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
 
   mhd_assert ((NULL == log_msg) || (MHD_SC_INTERNAL_ERROR != sc));
 
-  use_local_lingering = false;
   /* Make changes on the socket early to let the kernel and the remote
    * to process the changes in parallel. */
   if (close_hard)
@@ -789,13 +789,12 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
     if (mhd_socket_shut_wr (c->socket_fd) && (! c->sk_rmt_shut_wr))
     {
       (void) 0; // TODO: start local lingering phase
-      c->state = MHD_CONNECTION_CLOSED; // TODO: start local lingering phase
+      c->state = MHD_CONNECTION_PRE_CLOSING; // TODO: start local lingering phase
       c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP; // TODO: start local lingering phase
-      // use_local_lingering = true;
     }
     else
     {  /* No need / not possible to linger */
-      c->state = MHD_CONNECTION_CLOSED;
+      c->state = MHD_CONNECTION_PRE_CLOSING;
       c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
     }
   }
@@ -808,13 +807,6 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
 #else  /* ! HAVE_LOG_FUNCTIONALITY */
   (void) log_msg;
 #endif /* ! HAVE_LOG_FUNCTIONALITY */
-
-  mhd_stream_call_dcc_cleanup_if_needed (c);
-  if (NULL != c->rp.resp_iov.iov)
-  {
-    free (c->rp.resp_iov.iov);
-    c->rp.resp_iov.iov = NULL;
-  }
 
 #if 0 // TODO: notification callback
   mhd_assert ((MHD_CONNECTION_INIT != c->state) || (! c->rq.app_aware));
@@ -842,9 +834,6 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
 #ifndef NDEBUG
   c->dbg.pre_closed = true;
 #endif
-
-  if (! use_local_lingering)
-    mhd_conn_pre_clean (c);
 }
 
 
@@ -854,7 +843,17 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
 {
   // TODO: support suspended connections
 
+  mhd_assert (c->dbg.pre_closed);
+  mhd_assert (! c->dbg.pre_cleaned);
+
   mhd_conn_mark_unready (c, c->daemon);
+
+  mhd_stream_call_dcc_cleanup_if_needed (c);
+  if (NULL != c->rp.resp_iov.iov)
+  {
+    free (c->rp.resp_iov.iov);
+    c->rp.resp_iov.iov = NULL;
+  }
 
   if (NULL != c->rq.cntn.lbuf.data)
     mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
@@ -893,6 +892,7 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
   }
 #endif /* MHD_USE_EPOLL */
 
+  c->state = MHD_CONNECTION_CLOSED;
 #ifndef NDEBUG
   c->dbg.pre_cleaned = true;
 #endif

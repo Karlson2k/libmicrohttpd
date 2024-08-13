@@ -831,6 +831,15 @@ struct mhd_DaemonRequestProcessingSettings
 };
 
 
+/**
+ * Get whether bare LF in HTTP header and other protocol elements
+ * should be treated as the line termination depending on the configured
+ * strictness level.
+ * RFC 9112, section 2.2
+ */
+#define mhd_ALLOW_BARE_LF_AS_CRLF(discp_lvl) (0 >= discp_lvl)
+
+
 #ifndef NDEBUG
 /**
  * Various debugging data

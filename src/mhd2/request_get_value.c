@@ -1,5 +1,6 @@
 /*
   This file is part of GNU libmicrohttpd
+  Copyright (C) 2024 Christian Grothoff
   Copyright (C) 2024 Evgeny Grin (Karlson2k)
 
   GNU libmicrohttpd is free software; you can redistribute it and/or
@@ -48,18 +49,37 @@ mhd_request_get_value_n (struct MHD_Request *restrict request,
                          size_t key_len,
                          const char *restrict key)
 {
-  struct mhd_RequestField *f;
 
   mhd_assert (strlen (key) == key_len);
 
-  for (f = mhd_DLINKEDL_GET_FIRST (request, fields); NULL != f;
-       f = mhd_DLINKEDL_GET_NEXT (f, fields))
+  if (MHD_VK_POSTDATA != kind)
   {
-    if ((key_len == f->field.nv.name.len) &&
-        (kind == f->field.kind) &&
-        (0 == memcmp (key, f->field.nv.name.cstr, key_len)))
-      return &(f->field.nv.value);
+    struct mhd_RequestField *f;
+
+    for (f = mhd_DLINKEDL_GET_FIRST (request, fields); NULL != f;
+         f = mhd_DLINKEDL_GET_NEXT (f, fields))
+    {
+      if ((key_len == f->field.nv.name.len) &&
+          (0 != (kind & f->field.kind)) &&
+          (0 == memcmp (key, f->field.nv.name.cstr, key_len)))
+        return &(f->field.nv.value);
+    }
   }
+
+#if HAVE_POST_PARSER
+  if (0 != (MHD_VK_POSTDATA & kind))
+  {
+    struct mhd_RequestPostField *f;
+    for (f = mhd_DLINKEDL_GET_FIRST (request, post_fields); NULL != f;
+         f = mhd_DLINKEDL_GET_NEXT (f, post_fields))
+    {
+      if ((key_len == f->field.name.len) &&
+          (0 == memcmp (key, f->field.name.cstr, key_len)))
+        return &(f->field.value);
+    }
+  }
+#endif /* HAVE_POST_PARSER */
+
   return NULL;
 }
 

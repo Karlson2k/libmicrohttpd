@@ -120,11 +120,11 @@ mhd_daemon_get_lbuf (struct MHD_Daemon *restrict d,
   if (! mhd_daemon_claim_lbuf (d, requested_size))
   {
     buf->size = 0;
-    buf->buf = NULL;
+    buf->data = NULL;
     return false;
   }
-  buf->buf = (char *) malloc (requested_size);
-  if (NULL == buf->buf)
+  buf->data = (char *) malloc (requested_size);
+  if (NULL == buf->data)
   {
     buf->size = 0;
     mhd_daemon_reclaim_lbuf (d, requested_size);
@@ -142,23 +142,23 @@ mhd_daemon_grow_lbuf (struct MHD_Daemon *restrict d,
                       struct mhd_Buffer *restrict buf)
 {
   void *new_alloc;
-  mhd_assert (NULL != buf->buf || 0 == buf->size);
-  mhd_assert (0 != buf->size || NULL == buf->buf);
+  mhd_assert (NULL != buf->data || 0 == buf->size);
+  mhd_assert (0 != buf->size || NULL == buf->data);
 
   if (! mhd_daemon_claim_lbuf (d, grow_size))
     return false;
 
-  if (NULL == buf->buf)
+  if (NULL == buf->data)
     new_alloc = malloc (grow_size);
   else
-    new_alloc = realloc (buf->buf, buf->size + grow_size);
+    new_alloc = realloc (buf->data, buf->size + grow_size);
   if (NULL == new_alloc)
   {
     mhd_daemon_reclaim_lbuf (d, grow_size);
     return false;
   }
 
-  buf->buf = (char *) new_alloc;
+  buf->data = (char *) new_alloc;
   buf->size += grow_size;
 
   return true;
@@ -172,11 +172,11 @@ mhd_daemon_free_lbuf (struct MHD_Daemon *restrict d,
 {
   if (0 == buf->size)
   {
-    mhd_assert (NULL == buf->buf);
+    mhd_assert (NULL == buf->data);
     return;
   }
-  free (buf->buf);
-  buf->buf = NULL;
+  free (buf->data);
+  buf->data = NULL;
   mhd_daemon_reclaim_lbuf (d, buf->size);
   buf->size = 0;
 }

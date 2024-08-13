@@ -41,6 +41,16 @@ MHD_INTERNAL void
 mhd_response_deinit_content_data (struct MHD_Response *restrict r)
 MHD_FN_PAR_NONNULL_ (1);
 
+/**
+ * Create special internal-only response for sending automatic error messages
+ * @param sc the HTTP status code (enum MHD_HTTP_StatusCode)
+ * @param cntn_len the length of the @a cntn
+ * @param cntn the response content
+ * @param spec_hdr_len the length of the @a spec_hdr
+ * @param spec_hdr the special string to be used as a header string
+ * @return the response object if succeed,
+ *         NULL if failed (out of memory)
+ */
 MHD_INTERNAL struct MHD_Response *
 mhd_response_special_for_error (unsigned int sc,
                                 size_t cntn_len,

@@ -145,6 +145,22 @@ MHD_INTERNAL bool
 mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 
+
+
+/**
+ * React on provided action for upload
+ * @param c the stream to use
+ * @param act the action provided by application
+ * @param final set to 'true' if this is final upload callback
+ * @return true if connection state has been changed,
+ *         false otherwise
+ */
+MHD_INTERNAL bool
+mhd_stream_process_upload_action (struct MHD_Connection *restrict c,
+                                  const struct MHD_UploadAction *act,
+                                  bool final)
+MHD_FN_PAR_NONNULL_ (1);
+
 /**
  * Process non-chunked request body or upload chunking encoding.
  * Call the upload handler of the application.

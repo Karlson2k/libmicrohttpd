@@ -1009,7 +1009,7 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
                         size_to_fill);
       c->rp.app_act_ctx.connection = NULL; /* Block any attempt to create a new action */
       if (! preprocess_dcc_action (c, act))
-        return false;
+        return true;
       if (mhd_DCC_ACTION_FINISH == c->rp.app_act.act)
       {
         mhd_assert (MHD_SIZE_UNKNOWN == r->cntn_size);
@@ -1029,7 +1029,7 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
                           mhd_CONN_CLOSE_APP_ERROR,
                           "Closing connection (application returned more data "
                           "than requested).");
-        return false;
+        return true;
       }
       c->rp.rsp_cntn_read_pos += filled;
       c->write_buffer_append_offset += filled;
@@ -1122,6 +1122,7 @@ mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
     mhd_STREAM_ABORT (c,
                       mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REPLY,
                       "No memory in the pool for the reply chunked content.");
+    return true;
   }
   mhd_assert (max_chunk_overhead < \
               (c->write_buffer_size));
@@ -1178,7 +1179,7 @@ mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
                       size_to_fill);
     c->rp.app_act_ctx.connection = NULL; /* Block any attempt to create a new action */
     if (! preprocess_dcc_action (c, act))
-      return false;
+      return true;
     if (mhd_DCC_ACTION_FINISH == c->rp.app_act.act)
     {
       mhd_assert (MHD_SIZE_UNKNOWN == r->cntn_size);
@@ -1196,7 +1197,7 @@ mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
                         mhd_CONN_CLOSE_APP_ERROR,
                         "Closing connection (application returned more data "
                         "than requested).");
-      return false;
+      return true;
     }
     c->rp.rsp_cntn_read_pos += filled;
     c->write_buffer_append_offset += filled;
@@ -1300,7 +1301,7 @@ prep_chunked_footer_inn (struct MHD_Connection *restrict c)
 }
 
 
-MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_stream_prep_chunked_footer (struct MHD_Connection *restrict c)
 {
   if (! prep_chunked_footer_inn (c))
@@ -1308,7 +1309,8 @@ mhd_stream_prep_chunked_footer (struct MHD_Connection *restrict c)
     mhd_STREAM_ABORT (c,
                       mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REPLY,
                       "No memory in the pool for the reply chunked footer.");
-    return;
+    return true;
   }
   c->state = MHD_CONNECTION_FOOTERS_SENDING;
+  return false;
 }

@@ -75,6 +75,8 @@ MHD_FN_PAR_NONNULL_ALL_;
 /**
  * Prepare the chunked response content of this connection for sending.
  *
+ * @param c the connection
+ *
  * @return 'true' if connection new state could be processed now,
  *         'false' if no new state processing is needed.
  */
@@ -88,8 +90,11 @@ MHD_FN_PAR_NONNULL_ALL_;
  * with response footers.
  *
  * @param c the connection
+ *
+ * @return 'true' if connection new state could be processed now,
+ *         'false' if no new state processing is needed.
  */
-MHD_INTERNAL void
+MHD_INTERNAL bool
 mhd_stream_prep_chunked_footer (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 
