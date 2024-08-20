@@ -618,7 +618,7 @@ struct MHD_NameValueKind
  * @ingroup request
  */
 typedef enum MHD_Bool
-(MHD_FN_PAR_NONNULL_ (2)
+(MHD_FN_PAR_NONNULL_ (3)
  *MHD_NameValueIterator)(void *cls,
                          enum MHD_ValueKind kind,
                          const struct MHD_NameAndValue *nv);
@@ -1876,10 +1876,13 @@ MHD_FN_PAR_NONNULL_ (1);
 
 #ifndef MHD_POST_PARSE_RESULT_DEFINED
 
+/**
+ * The result of POST data parsing
+ */
 enum MHD_FIXED_ENUM_MHD_SET_ MHD_PostParseResult
 {
   /**
-   * The POST data parse successfully and completely.
+   * The POST data parsed successfully and completely.
    */
   MHD_POST_PARSE_RES_OK = 0
   ,
@@ -1889,11 +1892,19 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_PostParseResult
   MHD_POST_PARSE_RES_REQUEST_EMPTY = 1
   ,
   /**
+   * The POST data parsed successfully, but has missing or incorrect
+   * termination.
+   * The last parsed field may have incorrect data.
+   */
+  MHD_POST_PARSE_RES_OK_BAD_TERMINATION = 2
+  ,
+  /**
    * Parsing of the POST data is incomplete because client used incorrect
    * format of POST encoding.
+   * The last parsed field may have incorrect data.
    * Some POST data is available or has been provided via callback.
    */
-  MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT = 2
+  MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT = 3
   ,
   /**
    * The POST data cannot be parsed completely because the stream has

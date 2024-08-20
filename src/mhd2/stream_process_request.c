@@ -58,6 +58,10 @@
 #include "stream_funcs.h"
 #include "daemon_funcs.h"
 
+#ifdef HAVE_POST_PARSER
+#  include "post_parser_funcs.h"
+#endif /* HAVE_POST_PARSER */
+
 #include "mhd_public_api.h"
 
 
@@ -2989,7 +2993,8 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
  * @return true if connection state has been changed,
  *         false otherwise
  */
-MHD_INTERNAL MHD_FN_PAR_NONNULL_ (1) bool
+MHD_INTERNAL
+MHD_FN_PAR_NONNULL_ (1) bool
 mhd_stream_process_upload_action (struct MHD_Connection *restrict c,
                                   const struct MHD_UploadAction *act,
                                   bool final)
@@ -3300,7 +3305,7 @@ process_request_chunked_body (struct MHD_Connection *restrict c)
               c->rq.cntn.lbuf.data);
             c->rq.cntn.proc_size = c->rq.cntn.recv_size;
             mhd_daemon_free_lbuf (d, &(c->rq.cntn.lbuf));
-            if (process_upload_action (c, act, false))
+            if (mhd_stream_process_upload_action (c, act, false))
               return true;
             need_inc_proc = true;
           }
@@ -3327,7 +3332,7 @@ process_request_chunked_body (struct MHD_Connection *restrict c)
           cntn_data_ready,
           buffer_head);
         c->rq.cntn.proc_size += cntn_data_ready;
-        state_updated = process_upload_action (c, act, false);
+        state_updated = mhd_stream_process_upload_action (c, act, false);
       }
     }
     /* dh left "processed" bytes in buffer for next time... */
@@ -3372,21 +3377,30 @@ process_request_nonchunked_body (struct MHD_Connection *restrict c)
   read_buf_reuse = false;
   state_updated = false;
 
+#ifdef HAVE_POST_PARSER
   if (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act)
   {
     size_t size_provided;
-
+    // TODO: rework to correctly support partial processing
+    // TODO: rework to support receiving directly into "large buffer"
     c->rq.cntn.recv_size += cntn_data_ready;
     size_provided = cntn_data_ready;
 
     state_updated = mhd_stream_post_parse (c,
                                            &size_provided,
                                            c->read_buffer);
-    mhd_assert (0 == size_provided); // TODO: support one chunk in-place processing?
-    read_buf_reuse = true;  // TODO: support one chunk in-place processing?
-    c->rq.cntn.recv_size += cntn_data_ready;
+    mhd_assert (0 == size_provided);
+    read_buf_reuse = true;
+    c->rq.cntn.proc_size += cntn_data_ready;
+    if (c->rq.cntn.recv_size == c->rq.cntn.cntn_size)
+    {
+      c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+      state_updated = true;
+    }
   }
   else
+#endif /* HAVE_POST_PARSER */
+  if (1)
   {
     mhd_assert (mhd_ACTION_UPLOAD == c->rq.app_act.head_act.act);
     if (NULL != c->rq.app_act.head_act.data.upload.full.cb)
@@ -3417,7 +3431,7 @@ process_request_nonchunked_body (struct MHD_Connection *restrict c)
         c->read_buffer);
       c->rq.cntn.proc_size += cntn_data_ready;
       read_buf_reuse = true;
-      state_updated = process_upload_action (c, act, false);
+      state_updated = mhd_stream_process_upload_action (c, act, false);
     }
   }
   if (read_buf_reuse)
@@ -3453,11 +3467,12 @@ mhd_stream_call_app_final_upload_cb (struct MHD_Connection *restrict c)
   mhd_assert (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act || \
               mhd_ACTION_UPLOAD == c->rq.app_act.head_act.act);
 
+#ifdef HAVE_POST_PARSER
   if (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act)
-  {
-    mhd_assert (0 && "Not implemented yet"); // TODO: implement POST
-    return false;
-  }
+    return mhd_stream_process_post_finish (c);
+#endif /* HAVE_POST_PARSER */
+
+  mhd_assert (mhd_ACTION_UPLOAD == c->rq.app_act.head_act.act);
 
   if (NULL != c->rq.app_act.head_act.data.upload.full.cb)
   {
@@ -3483,7 +3498,7 @@ mhd_stream_call_app_final_upload_cb (struct MHD_Connection *restrict c)
       0,
       NULL);
   }
-  return process_upload_action (c, act, true);
+  return mhd_stream_process_upload_action (c, act, true);
 }
 
 
@@ -3861,6 +3876,7 @@ mhd_stream_check_and_grow_read_buffer_space (struct MHD_Connection *restrict c)
     case MHD_CONNECTION_CHUNKED_BODY_SENT:
     case MHD_CONNECTION_FOOTERS_SENDING:
     case MHD_CONNECTION_FULL_REPLY_SENT:
+    case MHD_CONNECTION_PRE_CLOSING:
     case MHD_CONNECTION_CLOSED:
 #if 0 // def UPGRADE_SUPPORT // TODO: Upgrade support
     case MHD_CONNECTION_UPGRADE:

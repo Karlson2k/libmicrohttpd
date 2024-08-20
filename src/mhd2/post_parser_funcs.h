@@ -30,6 +30,7 @@
 #include "mhd_sys_options.h"
 
 #include "sys_bool_type.h"
+#include "sys_base_types.h"
 
 struct MHD_Connection; /* forward declaration */
 
@@ -41,7 +42,7 @@ struct MHD_Connection; /* forward declaration */
  */
 MHD_INTERNAL bool
 mhd_stream_prepare_for_post_parse (struct MHD_Connection *restrict c)
-MHD_FN_PAR_NONNULL_(1);
+MHD_FN_PAR_NONNULL_ (1);
 
 /**
  * Parse POST data.
@@ -50,16 +51,14 @@ MHD_FN_PAR_NONNULL_(1);
  */
 MHD_INTERNAL bool
 mhd_stream_post_parse (struct MHD_Connection *restrict c,
-                       size_t *restrict data_size,
+                       size_t *restrict pdata_size,
                        char *restrict buf)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_INOUT_SIZE_(3, 2);
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_INOUT_ (3);
 
 // TODO: describe
-MHD_INTERNAL void
-mhd_stream_post_final_data (struct MHD_Connection *restrict c,
-                            size_t *restrict data_size,
-                            char *restrict buf)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_INOUT_(3);
+MHD_INTERNAL bool
+mhd_stream_process_post_finish (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
 
 
 #endif /* ! MHD_POST_PARSER_FUNCS_H */

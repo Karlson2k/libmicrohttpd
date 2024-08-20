@@ -40,6 +40,7 @@
 #include "mhd_str_types.h"
 
 struct MHD_Connection; /* forward declaration */
+struct MHD_UploadAction;  /* forward declaration */
 
 /**
  * Callback for iterating over GET parameters
@@ -144,7 +145,6 @@ MHD_FN_PAR_NONNULL_ALL_;
 MHD_INTERNAL bool
 mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
-
 
 
 /**

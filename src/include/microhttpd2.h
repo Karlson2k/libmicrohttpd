@@ -645,11 +645,18 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_REQ_COOKIE_INVALID = 40163
   ,
   /**
+   * The POST data parsed successfully, but has missing or incorrect
+   * termination.
+   * The last parsed field may have incorrect data.
+   */
+  MHD_SC_REQ_POST_PARSE_OK_BAD_TERMINATION = 40202
+  ,
+  /**
    * Parsing of the POST data is incomplete because client used incorrect
    * format of POST encoding.
    * Some POST data is available or has been provided via callback.
    */
-  MHD_SC_REQ_POST_PARSE_PARTIAL_INVALID_POST_FORMAT = 40202
+  MHD_SC_REQ_POST_PARSE_PARTIAL_INVALID_POST_FORMAT = 40203
   ,
   /**
    * The request does not have "Content-Type:" header and POST data cannot
@@ -1160,7 +1167,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   ,
   /**
    * The application set POST encoding to "multipart/form-data", but the request
-   * has no "Content-Type: multipart/form-data" header which is required 
+   * has no "Content-Type: multipart/form-data" header which is required
    * to find "boundary" used in this encoding
    */
   MHD_SC_REQ_POST_PARSE_FAILED_HEADER_NOT_MPART = 50284
@@ -4975,7 +4982,7 @@ struct MHD_NameValueKind
  * @ingroup request
  */
 typedef enum MHD_Bool
-(MHD_FN_PAR_NONNULL_ (2)
+(MHD_FN_PAR_NONNULL_ (3)
  *MHD_NameValueIterator)(void *cls,
                          enum MHD_ValueKind kind,
                          const struct MHD_NameAndValue *nv);
@@ -6233,10 +6240,13 @@ MHD_FN_PAR_NONNULL_ (1);
 
 #ifndef MHD_POST_PARSE_RESULT_DEFINED
 
+/**
+ * The result of POST data parsing
+ */
 enum MHD_FIXED_ENUM_MHD_SET_ MHD_PostParseResult
 {
   /**
-   * The POST data parse successfully and completely.
+   * The POST data parsed successfully and completely.
    */
   MHD_POST_PARSE_RES_OK = 0
   ,
@@ -6246,11 +6256,19 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_PostParseResult
   MHD_POST_PARSE_RES_REQUEST_EMPTY = 1
   ,
   /**
+   * The POST data parsed successfully, but has missing or incorrect
+   * termination.
+   * The last parsed field may have incorrect data.
+   */
+  MHD_POST_PARSE_RES_OK_BAD_TERMINATION = 2
+  ,
+  /**
    * Parsing of the POST data is incomplete because client used incorrect
    * format of POST encoding.
+   * The last parsed field may have incorrect data.
    * Some POST data is available or has been provided via callback.
    */
-  MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT = 2
+  MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT = 3
   ,
   /**
    * The POST data cannot be parsed completely because the stream has
