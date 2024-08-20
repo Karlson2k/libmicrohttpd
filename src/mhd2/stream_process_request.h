@@ -168,7 +168,7 @@ MHD_FN_PAR_NONNULL_ (1);
  *
  * @param c the connection to process
  * @return true if advanced to the next state,
- *         false if more data needed or connection is suspended or aborted
+ *         false if more data needed or connection is suspended
  */
 MHD_INTERNAL bool
 mhd_stream_process_request_body (struct MHD_Connection *restrict c)
@@ -179,7 +179,7 @@ MHD_FN_PAR_NONNULL_ALL_;
  * Advance to the next state, handle errors.
  * @param c the connection to process
  * @return true if advanced to the next state,
- *         false if connection is suspended or aborted
+ *         false if connection is suspended
  */
 MHD_INTERNAL bool
 mhd_stream_call_app_final_upload_cb (struct MHD_Connection *restrict c)
@@ -190,7 +190,7 @@ MHD_FN_PAR_NONNULL_ALL_;
  * Advance to the next state, handle errors.
  * @param c the connection to process
  * @return true if advanced to the next state,
- *         false if connection is suspended or aborted
+ *         false if connection is suspended
  */
 MHD_INTERNAL bool
 mhd_stream_process_req_recv_finished (struct MHD_Connection *restrict c)

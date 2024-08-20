@@ -76,127 +76,128 @@ update_active_state (struct MHD_Connection *restrict c)
     }
   }
 #endif /* HTTPS_SUPPORT */
-  while (1)
+  switch (c->state)
   {
-    switch (c->state)
-    {
-    case MHD_CONNECTION_INIT:
-    case MHD_CONNECTION_REQ_LINE_RECEIVING:
-      c->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
-      break;
-    case MHD_CONNECTION_REQ_LINE_RECEIVED:
-      mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
-      break;
-    case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
-      c->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
-      break;
-    case MHD_CONNECTION_HEADERS_RECEIVED:
-    case MHD_CONNECTION_HEADERS_PROCESSED:
-      mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
-      break;
-    case MHD_CONNECTION_CONTINUE_SENDING:
-      c->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
-      break;
-    case MHD_CONNECTION_BODY_RECEIVING:
-      c->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
-      break;
-    case MHD_CONNECTION_BODY_RECEIVED:
-      mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
-      break;
-    case MHD_CONNECTION_FOOTERS_RECEIVING:
-      c->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
-      break;
-    case MHD_CONNECTION_FOOTERS_RECEIVED:
-      mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
-      break;
-    case MHD_CONNECTION_FULL_REQ_RECEIVED:
-      mhd_assert (0 && "Should not be possible");
-      c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
-      break;
-    case MHD_CONNECTION_REQ_RECV_FINISHED:
-      mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
-      break;
-    case MHD_CONNECTION_START_REPLY:
-      mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
-      break;
-    case MHD_CONNECTION_HEADERS_SENDING:
-      /* headers in buffer, keep writing */
-      c->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
-      break;
-    case MHD_CONNECTION_HEADERS_SENT:
-      mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
-      break;
-    case MHD_CONNECTION_UNCHUNKED_BODY_UNREADY:
-      mhd_assert (0 && "Should not be possible");
-      c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
-      break;
-    case MHD_CONNECTION_UNCHUNKED_BODY_READY:
-      c->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
-      break;
-    case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
-      mhd_assert (0 && "Should not be possible");
-      c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
-      break;
-    case MHD_CONNECTION_CHUNKED_BODY_READY:
-      c->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
-      break;
-    case MHD_CONNECTION_CHUNKED_BODY_SENT:
-      mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
-      break;
-    case MHD_CONNECTION_FOOTERS_SENDING:
-      c->event_loop_info = MHD_EVENT_LOOP_INFO_WRITE;
-      break;
-    case MHD_CONNECTION_FULL_REPLY_SENT:
-      mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
-      break;
-    case MHD_CONNECTION_CLOSED:
-      c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
-      return false;           /* do nothing, not even reading */
+  case MHD_CONNECTION_INIT:
+  case MHD_CONNECTION_REQ_LINE_RECEIVING:
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
+    break;
+  case MHD_CONNECTION_REQ_LINE_RECEIVED:
+    mhd_assert (0 && "Impossible value");
+    MHD_UNREACHABLE_;
+    break;
+  case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
+    break;
+  case MHD_CONNECTION_HEADERS_RECEIVED:
+  case MHD_CONNECTION_HEADERS_PROCESSED:
+    mhd_assert (0 && "Impossible value");
+    MHD_UNREACHABLE_;
+    break;
+  case MHD_CONNECTION_CONTINUE_SENDING:
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_SEND;
+    break;
+  case MHD_CONNECTION_BODY_RECEIVING:
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
+    break;
+  case MHD_CONNECTION_BODY_RECEIVED:
+    mhd_assert (0 && "Impossible value");
+    MHD_UNREACHABLE_;
+    break;
+  case MHD_CONNECTION_FOOTERS_RECEIVING:
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
+    break;
+  case MHD_CONNECTION_FOOTERS_RECEIVED:
+    mhd_assert (0 && "Impossible value");
+    MHD_UNREACHABLE_;
+    break;
+  case MHD_CONNECTION_FULL_REQ_RECEIVED:
+    mhd_assert (0 && "Should not be possible");
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+    break;
+  case MHD_CONNECTION_REQ_RECV_FINISHED:
+    mhd_assert (0 && "Impossible value");
+    MHD_UNREACHABLE_;
+    break;
+  case MHD_CONNECTION_START_REPLY:
+    mhd_assert (0 && "Impossible value");
+    MHD_UNREACHABLE_;
+    break;
+  case MHD_CONNECTION_HEADERS_SENDING:
+    /* headers in buffer, keep writing */
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_SEND;
+    break;
+  case MHD_CONNECTION_HEADERS_SENT:
+    mhd_assert (0 && "Impossible value");
+    MHD_UNREACHABLE_;
+    break;
+  case MHD_CONNECTION_UNCHUNKED_BODY_UNREADY:
+    mhd_assert (0 && "Should not be possible");
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+    break;
+  case MHD_CONNECTION_UNCHUNKED_BODY_READY:
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_SEND;
+    break;
+  case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
+    mhd_assert (0 && "Should not be possible");
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+    break;
+  case MHD_CONNECTION_CHUNKED_BODY_READY:
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_SEND;
+    break;
+  case MHD_CONNECTION_CHUNKED_BODY_SENT:
+    mhd_assert (0 && "Impossible value");
+    MHD_UNREACHABLE_;
+    break;
+  case MHD_CONNECTION_FOOTERS_SENDING:
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_SEND;
+    break;
+  case MHD_CONNECTION_FULL_REPLY_SENT:
+    mhd_assert (0 && "Impossible value");
+    MHD_UNREACHABLE_;
+    break;
+  case MHD_CONNECTION_PRE_CLOSING:
+    mhd_assert (0 && "Should be unreachable");
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
+    break;
+  case MHD_CONNECTION_CLOSED:
+    mhd_assert (0 && "Should be unreachable");
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
+    return false;           /* do nothing, not even reading */
 #if 0 // def UPGRADE_SUPPORT // TODO: Upgrade support
-    case MHD_CONNECTION_UPGRADE:
-      mhd_assert (0);
-      break;
+  case MHD_CONNECTION_UPGRADE:
+    mhd_assert (0);
+    break;
 #endif /* UPGRADE_SUPPORT */
-    default:
-      mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
-    }
-
-    if (0 != (MHD_EVENT_LOOP_INFO_READ & c->event_loop_info))
-    {
-      /* Check whether the space is available to receive data */
-      if (! mhd_stream_check_and_grow_read_buffer_space (c))
-      {
-        mhd_assert (c->discard_request);
-        continue;
-      }
-    }
-
-    /* Current MHD design assumes that data must be always processes when
-     * available. If it is not possible, connection must be suspended. */
-    mhd_assert (MHD_EVENT_LOOP_INFO_PROCESS != c->event_loop_info);
-
-    /* Sockets errors must be already handled */
-    mhd_assert (0 == (c->sk_ready & mhd_SOCKET_NET_STATE_ERROR_READY));
-
-    if (0 !=
-        (((unsigned int) c->sk_ready) & ((unsigned int) c->event_loop_info)
-         & (MHD_EVENT_LOOP_INFO_READ | MHD_EVENT_LOOP_INFO_WRITE)))
-      mhd_conn_mark_ready (c, c->daemon);
-    else
-      mhd_conn_mark_unready (c, c->daemon);
-
-    break; /* Everything was processed. */
+  default:
+    mhd_assert (0 && "Impossible value");
+    MHD_UNREACHABLE_;
   }
+
+  if (0 != (MHD_EVENT_LOOP_INFO_RECV & c->event_loop_info))
+  {
+    /* Check whether the space is available to receive data */
+    if (! mhd_stream_check_and_grow_read_buffer_space (c))
+    {
+      mhd_assert (c->discard_request);
+      return false;
+    }
+  }
+
+  /* Current MHD design assumes that data must be always processes when
+   * available. If it is not possible, connection must be suspended. */
+  mhd_assert (MHD_EVENT_LOOP_INFO_PROCESS != c->event_loop_info);
+
+  /* Sockets errors must be already handled */
+  mhd_assert (0 == (c->sk_ready & mhd_SOCKET_NET_STATE_ERROR_READY));
+
+  if (0 !=
+      (((unsigned int) c->sk_ready) & ((unsigned int) c->event_loop_info)
+       & (MHD_EVENT_LOOP_INFO_RECV | MHD_EVENT_LOOP_INFO_SEND)))
+    mhd_conn_mark_ready (c, c->daemon);
+  else
+    mhd_conn_mark_unready (c, c->daemon);
+
   return true;
 }
 
@@ -214,11 +215,11 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
   {
     if (0 == c->read_buffer_offset)
     { /* Read buffer is empty, connection state is actual */
-      mhd_conn_pre_close (c,
-                          (MHD_CONNECTION_INIT == c->state) ?
-                          mhd_CONN_CLOSE_HTTP_COMPLETED :
-                          mhd_CONN_CLOSE_CLIENT_SHUTDOWN_EARLY,
-                          NULL);
+      mhd_conn_start_closing (c,
+                              (MHD_CONNECTION_INIT == c->state) ?
+                              mhd_CONN_CLOSE_HTTP_COMPLETED :
+                              mhd_CONN_CLOSE_CLIENT_SHUTDOWN_EARLY,
+                              NULL);
       return false;
     }
   }
@@ -459,14 +460,15 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
         && ! c->sk_rmt_shut_wr);
       continue;
     case MHD_CONNECTION_PRE_CLOSING:
-      mhd_conn_pre_clean (c);
-      break;
-    case MHD_CONNECTION_CLOSED:
-      break;
+      return false;
 #if 0 // def UPGRADE_SUPPORT
     case MHD_CONNECTION_UPGRADE:
       return MHD_YES;     /* keep open */
 #endif /* UPGRADE_SUPPORT */
+    case MHD_CONNECTION_CLOSED:
+      mhd_assert (0 && "Should be unreachable");
+      MHD_UNREACHABLE_;
+      break;
     default:
       mhd_assert (0 && "Impossible value");
       MHD_UNREACHABLE_;
@@ -475,10 +477,13 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     break;
   }
 
-  mhd_assert (MHD_CONNECTION_PRE_CLOSING != c->state);
+  mhd_assert (MHD_CONNECTION_CLOSED != c->state);
 
-  if (MHD_CONNECTION_CLOSED == c->state)
+  if (MHD_CONNECTION_PRE_CLOSING == c->state)
+  {
+    mhd_assert (0 && "Pre-closing should be already caught in the loop");
     return false;
+  }
 
   if (c->suspended)
   {
@@ -489,28 +494,22 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
 
   if ((c->sk_rmt_shut_wr) && (MHD_CONNECTION_START_REPLY > c->state))
   {
-    mhd_conn_pre_close (c,
-                        (MHD_CONNECTION_INIT == c->state) ?
-                        mhd_CONN_CLOSE_HTTP_COMPLETED :
-                        mhd_CONN_CLOSE_CLIENT_SHUTDOWN_EARLY,
-                        NULL);
-    mhd_conn_pre_clean (c);
+    mhd_conn_start_closing (c,
+                            (MHD_CONNECTION_INIT == c->state) ?
+                            mhd_CONN_CLOSE_HTTP_COMPLETED :
+                            mhd_CONN_CLOSE_CLIENT_SHUTDOWN_EARLY,
+                            NULL);
     return false;
   }
 
-  if (mhd_stream_check_timedout (c)) // TODO: centralise timeout checks
+  if (mhd_stream_is_timeout_expired (c)) // TODO: centralise timeout checks
   {
     mhd_conn_pre_close_timedout (c);
-    mhd_conn_pre_clean (c);
     return false;
   }
 
   if (! update_active_state (c))
-  {
-    mhd_conn_pre_clean (c);
     return false;
-  }
-  /* MHD_connection_update_event_loop_info (c);*/
 
   return true;
 }

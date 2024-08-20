@@ -99,7 +99,7 @@ update_conn_net_status (struct MHD_Daemon *restrict d,
 
   if ((0 !=
        (((unsigned int) c->sk_ready) & ((unsigned int) c->event_loop_info)
-        & (MHD_EVENT_LOOP_INFO_READ | MHD_EVENT_LOOP_INFO_WRITE)))
+        & (MHD_EVENT_LOOP_INFO_RECV | MHD_EVENT_LOOP_INFO_SEND)))
       || err_state)
     mhd_conn_mark_ready (c, d);
   else
@@ -246,7 +246,10 @@ daemon_process_all_active_conns (struct MHD_Daemon *restrict d)
     struct MHD_Connection *next;
     next = mhd_DLINKEDL_GET_NEXT (c, proc_ready); /* The current connection can be closed */
     if (! mhd_conn_process_recv_send_data (c))
+    {
+      mhd_conn_pre_clean (c);
       mhd_conn_close_final (c);
+    }
 
     c = next;
   }
@@ -259,14 +262,19 @@ close_all_daemon_conns (struct MHD_Daemon *d)
 {
   struct MHD_Connection *c;
 
-  for (c = mhd_DLINKEDL_GET_LAST (&(d->conns),all_conn);
-       NULL != c;
-       c = mhd_DLINKEDL_GET_LAST (&(d->conns),all_conn))
+  if (! mhd_D_HAS_THR_PER_CONN (d))
   {
-    mhd_conn_pre_close_d_shutdown (c);
-    mhd_conn_pre_clean (c);
-    mhd_conn_close_final (c);
+    for (c = mhd_DLINKEDL_GET_LAST (&(d->conns),all_conn);
+         NULL != c;
+         c = mhd_DLINKEDL_GET_LAST (&(d->conns),all_conn))
+    {
+      mhd_conn_pre_close_d_shutdown (c);
+      mhd_conn_pre_clean (c);
+      mhd_conn_close_final (c);
+    }
   }
+  else
+    mhd_assert (0 && "Not implemented yet");
 }
 
 
@@ -370,12 +378,12 @@ select_update_fdsets (struct MHD_Daemon *restrict d,
   {
     mhd_assert (MHD_CONNECTION_CLOSED != c->state);
 
-    if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_READ))
+    if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_RECV))
       fd_set_wrap (c->socket_fd,
                    rfds,
                    &ret,
                    d);
-    if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_WRITE))
+    if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_SEND))
       fd_set_wrap (c->socket_fd,
                    wfds,
                    &ret,
@@ -620,9 +628,9 @@ poll_update_fds (struct MHD_Daemon *restrict d,
     d->events.data.poll.fds[i_c].fd = c->socket_fd;
     d->events.data.poll.rel[i_c].connection = c;
     events = 0;
-    if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_READ))
+    if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_RECV))
       events |= MHD_POLL_IN;
-    if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_WRITE))
+    if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_SEND))
       events |= MHD_POLL_OUT;
 
     d->events.data.poll.fds[i_c].events = (short) events;
@@ -736,20 +744,20 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
     if (0 != (revents & POLLHUP))
     { /* This can be a disconnect OR remote side set SHUT_WR */
       recv_ready = true; /* Check the socket by reading */
-      if (0 == (c->event_loop_info & MHD_EVENT_LOOP_INFO_READ))
+      if (0 == (c->event_loop_info & MHD_EVENT_LOOP_INFO_RECV))
         err_state = true; /* The socket will not be checked by reading, the only way to avoid spinning */
     }
 #endif
     if (0 != (revents & (MHD_POLLPRI | MHD_POLLRDBAND)))
     { /* Statuses were not requested, but returned */
       if (! recv_ready ||
-          (0 == (c->event_loop_info & MHD_EVENT_LOOP_INFO_READ)))
+          (0 == (c->event_loop_info & MHD_EVENT_LOOP_INFO_RECV)))
         err_state = true; /* The socket will not be read, the only way to avoid spinning */
     }
     if (0 != (revents & MHD_POLLWRBAND))
     { /* Status was not requested, but returned */
       if (! send_ready ||
-          (0 == (c->event_loop_info & MHD_EVENT_LOOP_INFO_WRITE)))
+          (0 == (c->event_loop_info & MHD_EVENT_LOOP_INFO_SEND)))
         err_state = true; /* The socket will not be written, the only way to avoid spinning */
     }
 

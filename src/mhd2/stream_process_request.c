@@ -3760,7 +3760,7 @@ mhd_stream_check_and_grow_read_buffer_space (struct MHD_Connection *restrict c)
    */
   bool rbuff_grow_required;
 
-  mhd_assert (0 != (MHD_EVENT_LOOP_INFO_READ & c->event_loop_info));
+  mhd_assert (0 != (MHD_EVENT_LOOP_INFO_RECV & c->event_loop_info));
   mhd_assert (! c->discard_request);
 
   rbuff_grow_required = (c->read_buffer_offset == c->read_buffer_size);

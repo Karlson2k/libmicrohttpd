@@ -500,11 +500,11 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
     /* Next function will notify client and set connection
      * state to "PRE-CLOSING" */
     /* Later response and memory pool will be destroyed */
-    mhd_conn_pre_close (c,
-                        c->stop_with_error ?
-                        mhd_CONN_CLOSE_ERR_REPLY_SENT :
-                        mhd_CONN_CLOSE_HTTP_COMPLETED,
-                        NULL);
+    mhd_conn_start_closing (c,
+                            c->stop_with_error ?
+                            mhd_CONN_CLOSE_ERR_REPLY_SENT :
+                            mhd_CONN_CLOSE_HTTP_COMPLETED,
+                            NULL);
   }
   else
   {
@@ -539,7 +539,7 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
     c->state = MHD_CONNECTION_INIT;
     c->event_loop_info =
       (0 == c->read_buffer_offset) ?
-      MHD_EVENT_LOOP_INFO_READ : MHD_EVENT_LOOP_INFO_PROCESS;
+      MHD_EVENT_LOOP_INFO_RECV : MHD_EVENT_LOOP_INFO_PROCESS;
 
     memset (&c->rq, 0, sizeof(c->rq));
 
@@ -572,7 +572,7 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
 
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
-mhd_stream_check_timedout (struct MHD_Connection *restrict c)
+mhd_stream_is_timeout_expired (struct MHD_Connection *restrict c)
 {
   const uint_fast64_t timeout = c->connection_timeout_ms;
   uint_fast64_t now;
@@ -649,9 +649,9 @@ mhd_stream_update_activity_mark (struct MHD_Connection *restrict c)
 
 MHD_INTERNAL
 MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3) void
-mhd_conn_pre_close (struct MHD_Connection *restrict c,
-                    enum mhd_ConnCloseReason reason,
-                    const char *log_msg)
+mhd_conn_start_closing (struct MHD_Connection *restrict c,
+                        enum mhd_ConnCloseReason reason,
+                        const char *log_msg)
 {
   bool close_hard;
   enum MHD_RequestEndedCode end_code;
@@ -781,7 +781,7 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
   {
     /* Use abortive closing, send RST to remote to indicate a problem */
     (void) mhd_socket_set_hard_close (c->socket_fd);
-    c->state = MHD_CONNECTION_CLOSED;
+    c->state = MHD_CONNECTION_PRE_CLOSING;
     c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
   }
   else
@@ -832,7 +832,7 @@ mhd_conn_pre_close (struct MHD_Connection *restrict c,
   }
 
 #ifndef NDEBUG
-  c->dbg.pre_closed = true;
+  c->dbg.closing_started = true;
 #endif
 }
 
@@ -843,7 +843,7 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
 {
   // TODO: support suspended connections
 
-  mhd_assert (c->dbg.pre_closed);
+  mhd_assert (c->dbg.closing_started);
   mhd_assert (! c->dbg.pre_cleaned);
 
   mhd_conn_mark_unready (c, c->daemon);
@@ -857,7 +857,6 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
 
   if (NULL != c->rq.cntn.lbuf.data)
     mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
-  c->rq.cntn.lbuf.data = NULL;
   if (NULL != c->rp.response)
     mhd_response_dec_use_count (c->rp.response);
   c->rp.response = NULL;

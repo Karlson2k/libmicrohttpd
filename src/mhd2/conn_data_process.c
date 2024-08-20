@@ -49,16 +49,20 @@
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
 {
+  /* The "send-ready" state is known if system polling call is edge-triggered
+     (it always checks for both send- and recv-ready) or if connection needs
+     sending (therefore "send-ready" was explicitly checked by sockets polling
+     call). */
   const bool send_ready_state_known =
     ((mhd_D_IS_USING_EDGE_TRIG (c->daemon)) ||
-     (0 != (MHD_EVENT_LOOP_INFO_WRITE & c->event_loop_info)));
+     (0 != (MHD_EVENT_LOOP_INFO_SEND & c->event_loop_info)));
   const bool has_sock_err =
     (0 != (mhd_SOCKET_NET_STATE_ERROR_READY & c->sk_ready));
   bool data_processed;
 
   data_processed = false;
 
-  if (0 != (MHD_EVENT_LOOP_INFO_READ & c->event_loop_info))
+  if (0 != (MHD_EVENT_LOOP_INFO_RECV & c->event_loop_info))
   {
     bool use_recv;
     use_recv = (0 != (mhd_SOCKET_NET_STATE_RECV_READY & c->sk_ready));
@@ -74,7 +78,7 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
     }
   }
 
-  if (0 != (MHD_EVENT_LOOP_INFO_WRITE & c->event_loop_info))
+  if (0 != (MHD_EVENT_LOOP_INFO_SEND & c->event_loop_info))
   {
     bool use_send;
     /* Perform sending if:
@@ -107,8 +111,8 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
   if (! force_close)
   {
     /* No need to check value of 'ret' here as closed connection
-     * cannot be in MHD_EVENT_LOOP_INFO_WRITE state. */
-    if ( (MHD_EVENT_LOOP_INFO_WRITE == c->event_loop_info) &&
+     * cannot be in MHD_EVENT_LOOP_INFO_SEND state. */
+    if ( (MHD_EVENT_LOOP_INFO_SEND == c->event_loop_info) &&
          write_ready)
     {
       MHD_connection_handle_write (c);
@@ -172,7 +176,7 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
       c->daemon->data_already_pending = true;
 #ifdef HTTPS_SUPPORT
     else if ( (c->tls_read_ready) &&
-              (0 != (MHD_EVENT_LOOP_INFO_READ & c->event_loop_info)) )
+              (0 != (MHD_EVENT_LOOP_INFO_RECV & c->event_loop_info)) )
       c->daemon->data_already_pending = true;
 #endif /* HTTPS_SUPPORT */
   }

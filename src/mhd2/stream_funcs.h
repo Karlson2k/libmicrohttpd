@@ -135,13 +135,14 @@ mhd_stream_update_activity_mark (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 
 /**
- * Update last activity mark to the current time..
+ * Check whether connection's timeout is expired.
  * @param c the connection to update
- * @return 'true' if connection has not been timed out,
+ * @return 'true' if connection timeout expired and connection needs to be
+ *         closed,
  *         'false' otherwise
  */
 MHD_INTERNAL bool
-mhd_stream_check_timedout (struct MHD_Connection *restrict c)
+mhd_stream_is_timeout_expired (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 
 /**
@@ -234,24 +235,35 @@ enum mhd_ConnCloseReason
 
 
 /**
- * Prepare connection for closing.
+ * Start closing of the connection.
+ *
+ * Application is notified about connection closing (if callback is set),
+ * the socket is shut downed for sending and the connection is marked for
+ * closing. The real resource deallocation and socket closing are performed
+ * later.
+ *
+ * As no resources are deallocated by this function, it is safe to call it
+ * "deep" in the code. Upon return all connection resources still could be used,
+ * pointers can be dereferenced etc. The real cleanup is performed when
+ * connection state is processed by #mhd_conn_process_data().
+ *
  * @param c the connection for pre-closing
  * @param reason the reason for closing
  * @param log_msg the message for the log
  */
 MHD_INTERNAL void
-mhd_conn_pre_close (struct MHD_Connection *restrict c,
-                    enum mhd_ConnCloseReason reason,
-                    const char *log_msg)
+mhd_conn_start_closing (struct MHD_Connection *restrict c,
+                        enum mhd_ConnCloseReason reason,
+                        const char *log_msg)
 MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
 
 /**
  * Abort the stream and log message
  */
 #ifdef HAVE_LOG_FUNCTIONALITY
-#  define mhd_STREAM_ABORT(c,r,m) (mhd_conn_pre_close ((c),(r),(m)))
+#  define mhd_STREAM_ABORT(c,r,m) (mhd_conn_start_closing ((c),(r),(m)))
 #else  /* ! HAVE_LOG_FUNCTIONALITY */
-#  define mhd_STREAM_ABORT(c,r,m) (mhd_conn_pre_close ((c),(r),NULL))
+#  define mhd_STREAM_ABORT(c,r,m) (mhd_conn_start_closing ((c),(r),NULL))
 #endif /* ! HAVE_LOG_FUNCTIONALITY */
 
 /**
@@ -260,7 +272,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  * @param c the connection for pre-closing
  */
 #define mhd_conn_pre_close_app_abort(c) \
-        mhd_conn_pre_close ((c), mhd_CONN_CLOSE_APP_ABORTED, NULL)
+        mhd_conn_start_closing ((c), mhd_CONN_CLOSE_APP_ABORTED, NULL)
 
 /**
  * Perform initial clean-up and mark for closing.
@@ -268,7 +280,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  * @param c the connection for pre-closing
  */
 #define mhd_conn_pre_close_skt_err(c) \
-        mhd_conn_pre_close ((c), mhd_CONN_CLOSE_SOCKET_ERR, NULL)
+        mhd_conn_start_closing ((c), mhd_CONN_CLOSE_SOCKET_ERR, NULL)
 
 /**
  * Perform initial clean-up and mark for closing.
@@ -276,7 +288,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  * @param c the connection for pre-closing
  */
 #define mhd_conn_pre_close_req_finished(c) \
-        mhd_conn_pre_close ((c), mhd_CONN_CLOSE_HTTP_COMPLETED, NULL)
+        mhd_conn_start_closing ((c), mhd_CONN_CLOSE_HTTP_COMPLETED, NULL)
 
 /**
  * Perform initial clean-up and mark for closing.
@@ -284,7 +296,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  * @param c the connection for pre-closing
  */
 #define mhd_conn_pre_close_timedout(c) \
-        mhd_conn_pre_close ((c), mhd_CONN_CLOSE_TIMEDOUT, NULL)
+        mhd_conn_start_closing ((c), mhd_CONN_CLOSE_TIMEDOUT, NULL)
 
 /**
  * Perform initial clean-up and mark for closing.
@@ -292,11 +304,13 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  * @param c the connection for pre-closing
  */
 #define mhd_conn_pre_close_d_shutdown(c) \
-        mhd_conn_pre_close ((c), mhd_CONN_CLOSE_DAEMON_SHUTDOWN, NULL)
+        mhd_conn_start_closing ((c), mhd_CONN_CLOSE_DAEMON_SHUTDOWN, NULL)
 
 /**
- * Perform initial connection cleanup.
- * The connection must be prepared for closing.
+ * Perform initial connection cleanup after start of the connection closing
+ * procedure.
+ * This cleanup should be performed in the same thread that processes
+ * the connection recv/send/data.
  * @param c the connection for pre-closing
  */
 MHD_INTERNAL void

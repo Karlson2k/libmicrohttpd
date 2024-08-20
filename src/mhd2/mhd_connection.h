@@ -79,13 +79,13 @@ enum MHD_FIXED_FLAGS_ENUM_ MHD_ConnectionEventLoopInfo
    * We are waiting to be able to read.
    * The same value as #mhd_SOCKET_NET_STATE_RECV_READY
    */
-  MHD_EVENT_LOOP_INFO_READ = 1 << 0
+  MHD_EVENT_LOOP_INFO_RECV = 1 << 0
   ,
   /**
    * We are waiting to be able to write.
    * The same value as #mhd_SOCKET_NET_STATE_SEND_READY
    */
-  MHD_EVENT_LOOP_INFO_WRITE = 1 << 1
+  MHD_EVENT_LOOP_INFO_SEND = 1 << 1
   ,
   /**
    * We are waiting for the application to provide data.
@@ -99,7 +99,7 @@ enum MHD_FIXED_FLAGS_ENUM_ MHD_ConnectionEventLoopInfo
 };
 
 #define MHD_EVENT_LOOP_INFO_PROCESS_READ \
-        (MHD_EVENT_LOOP_INFO_READ | MHD_EVENT_LOOP_INFO_PROCESS)
+        (MHD_EVENT_LOOP_INFO_RECV | MHD_EVENT_LOOP_INFO_PROCESS)
 
 
 /**
@@ -343,7 +343,7 @@ enum MHD_FIXED_ENUM_ MHD_CONNECTION_STATE
 
 struct mhd_ConnDebugData
 {
-  bool pre_closed;
+  bool closing_started;
   bool pre_cleaned;
 };
 

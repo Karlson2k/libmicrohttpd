@@ -83,7 +83,7 @@ connection_set_initial_state (struct MHD_Connection *restrict c)
   mhd_assert (MHD_CONNECTION_INIT == c->state);
 
   c->conn_reuse = mhd_CONN_KEEPALIVE_POSSIBLE;
-  c->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+  c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
 
   memset (&c->rq, 0, sizeof(c->rq));
   memset (&c->rp, 0, sizeof(c->rp));
@@ -203,7 +203,7 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
 #endif /* MHD_USE_THREADS */
   connection->daemon = daemon;
   connection->connection_timeout_ms = daemon->conns.cfg.timeout;
-  connection->event_loop_info = MHD_EVENT_LOOP_INFO_READ;
+  connection->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
   if (0 != connection->connection_timeout_ms)
     connection->last_activity = MHD_monotonic_msec_counter ();
 
@@ -918,7 +918,7 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
 mhd_conn_close_final (struct MHD_Connection *restrict c)
 {
-  mhd_assert (c->dbg.pre_closed);
+  mhd_assert (c->dbg.closing_started);
   mhd_assert (c->dbg.pre_cleaned);
   mhd_assert (NULL == c->rp.response);
   mhd_assert (! c->rq.app_aware);
