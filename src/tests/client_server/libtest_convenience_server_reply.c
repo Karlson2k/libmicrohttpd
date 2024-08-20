@@ -1,6 +1,7 @@
 /*
   This file is part of GNU libmicrohttpd
   Copyright (C) 2024 Christian Grothoff
+  Copyright (C) 2024 Evgeny Grin (Karlson2k)
 
   GNU libmicrohttpd is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -75,14 +76,14 @@ MHDT_server_reply_file (
   {
     fprintf (stderr,
              "Failed to mkstemp() temporary file\n");
-    return NULL;
+    return MHD_action_abort_request (request);
   }
   if (((ssize_t) tlen) != write (fd, text, tlen))
   {
     fprintf (stderr,
              "Failed to write() temporary file in one go: %s\n",
              strerror (errno));
-    return NULL;
+    return MHD_action_abort_request (request);
   }
   fsync (fd);
   if (0 != remove (fn))
@@ -129,7 +130,7 @@ MHDT_server_reply_with_header (
       MHD_response_add_header (resp,
                                name,
                                value))
-    return NULL;
+    return MHD_action_abort_request (request);
   return MHD_action_from_response (
     request,
     resp);
@@ -187,7 +188,7 @@ MHDT_server_reply_check_query (
         fprintf (stderr,
                  "NULL returned for query key %s\n",
                  arg);
-        return NULL;
+        return MHD_action_abort_request (request);
       }
       if (NULL == val)
       {
@@ -197,7 +198,7 @@ MHDT_server_reply_check_query (
                    "NULL expected for value for query key %s, got %s\n",
                    arg,
                    sn->cstr);
-          return NULL;
+          return MHD_action_abort_request (request);
         }
       }
       else
@@ -208,7 +209,7 @@ MHDT_server_reply_check_query (
                    "%s expected for value for query key %s, got NULL\n",
                    val,
                    arg);
-          return NULL;
+          return MHD_action_abort_request (request);
         }
         if (0 != strcmp (val,
                          sn->cstr))
@@ -218,7 +219,7 @@ MHDT_server_reply_check_query (
                    val,
                    arg,
                    sn->cstr);
-          return NULL;
+          return MHD_action_abort_request (request);
         }
       }
     }
@@ -268,7 +269,7 @@ MHDT_server_reply_check_header (
     fprintf (stderr,
              "Missing client header `%s'\n",
              want);
-    return NULL;
+    return MHD_action_abort_request (request);
   }
   if (NULL == value)
   {
@@ -278,7 +279,7 @@ MHDT_server_reply_check_header (
                "Have unexpected client header `%s': `%s'\n",
                key,
                have->cstr);
-      return NULL;
+      return MHD_action_abort_request (request);
     }
   }
   else
@@ -288,7 +289,7 @@ MHDT_server_reply_check_header (
       fprintf (stderr,
                "Missing value for client header `%s'\n",
                want);
-      return NULL;
+      return MHD_action_abort_request (request);
     }
     if (0 != strcmp (have->cstr,
                      value))
@@ -298,7 +299,7 @@ MHDT_server_reply_check_header (
                key,
                value,
                have->cstr);
-      return NULL;
+      return MHD_action_abort_request (request);
     }
   }
   return MHD_action_from_response (
@@ -342,7 +343,7 @@ check_upload_cb (void *cls,
   {
     fprintf (stderr,
              "Invalid body size given to full upload callback\n");
-    return NULL;
+    return MHD_upload_action_abort_request (request);
   }
   if (0 != memcmp (want,
                    content_data,
@@ -350,7 +351,7 @@ check_upload_cb (void *cls,
   {
     fprintf (stderr,
              "Invalid body data given to full upload callback\n");
-    return NULL;
+    return MHD_upload_action_abort_request (request);
   }
   /* success! */
   return MHD_upload_action_from_response (
@@ -640,7 +641,7 @@ post_stream_done (struct MHD_Request *req,
       fprintf (stderr,
                "Expected key-value pair `%s' missing\n",
                want->key);
-      return NULL;
+      return MHD_upload_action_abort_request (req);
     }
   }
   return MHD_upload_action_from_response (
