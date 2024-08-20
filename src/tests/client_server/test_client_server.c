@@ -24,7 +24,7 @@
  * @author Christian Grothoff
  */
 #include "microhttpd2.h"
-#include "mhd_config.h"
+#include "mhd_sys_options.h"
 #include "libtest.h"
 
 

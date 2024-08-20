@@ -26,9 +26,13 @@
 #ifndef LIBTEST_H
 #define LIBTEST_H
 
+#include "mhd_sys_options.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_STDBOOL_H
+#  include <stdbool.h>
+#endif
 #include "microhttpd2.h"
 
 /**
