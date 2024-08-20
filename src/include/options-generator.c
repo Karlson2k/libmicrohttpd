@@ -26,7 +26,9 @@
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+#  include <unistd.h>
+#endif
 #include <sys/stat.h>
 #include <errno.h>
 
