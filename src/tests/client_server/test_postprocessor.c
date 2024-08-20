@@ -23,8 +23,6 @@
  * @brief  test with client against server
  * @author Christian Grothoff
  */
-#include "microhttpd2.h"
-#include "mhd_config.h"
 #include "libtest.h"
 
 

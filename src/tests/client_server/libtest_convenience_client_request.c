@@ -28,7 +28,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include "microhttpd2.h"
 #include "libtest.h"
 #include <curl/curl.h>
 
