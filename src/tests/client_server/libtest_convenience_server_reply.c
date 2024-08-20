@@ -130,7 +130,10 @@ MHDT_server_reply_with_header (
       MHD_response_add_header (resp,
                                name,
                                value))
+  {
+    MHD_response_destroy (resp);
     return MHD_action_abort_request (request);
+  }
   return MHD_action_from_response (
     request,
     resp);
