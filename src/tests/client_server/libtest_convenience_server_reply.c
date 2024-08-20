@@ -482,7 +482,8 @@ nstrcmp (const char *wants,
          const struct MHD_StringNullable *have)
 {
   if ( (NULL == wants) &&
-       (NULL == have->cstr) )
+       (NULL == have->cstr) &&
+       (0 == have->len) )
     return true;
   if ( (NULL == wants) ||
        (NULL == have->cstr) )
@@ -571,7 +572,7 @@ post_stream_reader (struct MHD_Request *req,
                        size))
         continue;
       want->value_off += size;
-      want->satisfied = (want->value_size == want->value_off);
+      want->satisfied = (want->value_size == want->value_off) && final_data;
     }
   }
 
@@ -605,6 +606,8 @@ check_complete_post_value (
 
   if (NULL == wants)
     return MHD_NO;
+  if (MHD_VK_POSTDATA != kind)
+    return MHD_NO;
   for (unsigned int i = 0; NULL != wants[i].key; i++)
   {
     struct MHDT_PostWant *want = &wants[i];
@@ -616,12 +619,25 @@ check_complete_post_value (
     if (0 != strcmp (want->key,
                      nv->name.cstr))
       continue;
-    if (want->value_size != nv->value.len)
-      continue;
-    if (0 == memcmp (nv->value.cstr,
-                     want->value,
-                     want->value_size))
-      want->satisfied = true;
+    if (NULL == want->value)
+    {
+      if (NULL == nv->value.cstr)
+        want->satisfied = true;
+    }
+    else if (0 == want->value_size)
+    {
+      if (0 == strcmp (nv->value.cstr,
+                       want->value))
+        want->satisfied = true;
+    }
+    else
+    {
+      if ((want->value_size == nv->value.len) &&
+          (0 == memcmp (nv->value.cstr,
+                               want->value,
+                               want->value_size)))
+        want->satisfied = true;
+    }
   }
   return MHD_YES;
 }
@@ -642,6 +658,14 @@ post_stream_done (struct MHD_Request *req,
 {
   struct MHDT_PostInstructions *pi = cls;
   struct MHDT_PostWant *wants = pi->wants;
+
+  if (MHD_POST_PARSE_RES_OK != parsing_result)
+  {
+    fprintf (stderr,
+             "POST parsing was not successful. The result: %d\n",
+             (int) parsing_result);
+    return MHD_upload_action_abort_request (req);
+  }
 
   MHD_request_get_values_cb (req,
                              MHD_VK_POSTDATA,
@@ -680,6 +704,14 @@ MHDT_server_reply_check_post (
 
   (void) path; /* Unused */
   (void) upload_size; // TODO: add check
+
+  if (MHD_HTTP_METHOD_POST != method)
+  {
+    fprintf (stderr,
+             "Reported HTTP method other then POST. Reported method: %u\n",
+             (unsigned) method);
+    return MHD_action_abort_request (req);
+  }
 
   return MHD_action_parse_post (request,
                                 pi->buffer_size,
