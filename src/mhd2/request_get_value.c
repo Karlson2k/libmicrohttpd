@@ -127,3 +127,56 @@ mhd_stream_has_header_token (const struct MHD_Connection *restrict c,
 
   return false;
 }
+
+
+MHD_EXTERN_
+MHD_FN_PAR_NONNULL_ (1) size_t
+MHD_request_get_values_cb (struct MHD_Request *request,
+                           enum MHD_ValueKind kind,
+                           MHD_NameValueIterator iterator,
+                           void *iterator_cls)
+{
+  size_t count;
+
+  count = 0;
+  if (MHD_VK_POSTDATA != kind)
+  {
+    struct mhd_RequestField *f;
+
+    for (f = mhd_DLINKEDL_GET_FIRST (request, fields); NULL != f;
+         f = mhd_DLINKEDL_GET_NEXT (f, fields))
+    {
+      ++count;
+      if (NULL != iterator)
+      {
+        if (MHD_NO ==
+            iterator (iterator_cls,
+                      f->field.kind,
+                      &(f->field.nv)))
+          return count;
+      }
+    }
+  }
+
+#if HAVE_POST_PARSER
+  if (0 != (MHD_VK_POSTDATA & kind))
+  {
+    struct mhd_RequestPostField *f;
+    for (f = mhd_DLINKEDL_GET_FIRST (request, post_fields); NULL != f;
+         f = mhd_DLINKEDL_GET_NEXT (f, post_fields))
+    {
+      ++count;
+      if (NULL != iterator)
+      {
+        if (MHD_NO ==
+            iterator (iterator_cls,
+                      MHD_VK_POSTDATA,
+                      (const struct MHD_NameAndValue *) &(f->field)))
+          return count;
+      }
+    }
+  }
+#endif /* HAVE_POST_PARSER */
+
+  return count;
+}
