@@ -201,7 +201,7 @@ check_status (CURL *c,
              "Failed to get HTTP status");
     return false;
   }
-  if (status != expected_status)
+  if (((unsigned int) status) != expected_status)
   {
     fprintf (stderr,
              "Expected HTTP status %u, got %ld\n",

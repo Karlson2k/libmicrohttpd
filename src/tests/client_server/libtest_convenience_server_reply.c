@@ -45,6 +45,8 @@ MHDT_server_reply_text (
 {
   const char *text = cls;
 
+  (void) path; (void) method; (void) upload_size; /* Unused */
+
   return MHD_action_from_response (
     request,
     MHD_response_from_buffer_static (MHD_HTTP_STATUS_OK,
@@ -66,6 +68,8 @@ MHDT_server_reply_file (
   char fn[] = "/tmp/mhd-test-XXXXXX";
   int fd;
 
+  (void) path; (void) method; (void) upload_size; /* Unused */
+
   fd = mkstemp (fn);
   if (-1 == fd)
   {
@@ -73,7 +77,7 @@ MHDT_server_reply_file (
              "Failed to mkstemp() temporary file\n");
     return NULL;
   }
-  if (tlen != write (fd, text, tlen))
+  if (((ssize_t) tlen) != write (fd, text, tlen))
   {
     fprintf (stderr,
              "Failed to write() temporary file in one go: %s\n",
@@ -112,6 +116,8 @@ MHDT_server_reply_with_header (
   const char *value;
   struct MHD_Response *resp;
 
+  (void) path; (void) method; (void) upload_size; /* Unused */
+
   memcpy (name,
           header,
           hlen);
@@ -142,6 +148,8 @@ MHDT_server_reply_check_query (
   size_t qlen = strlen (equery) + 1;
   char qc[qlen];
 
+  (void) path; (void) method; (void) upload_size; /* Unused */
+
   memcpy (qc,
           equery,
           qlen);
@@ -164,7 +172,7 @@ MHDT_server_reply_check_query (
       val = end + 1;
     }
     {
-      size_t alen = end - tok;
+      size_t alen = (size_t) (end - tok);
       char arg[alen + 1];
 
       memcpy (arg,
@@ -237,6 +245,8 @@ MHDT_server_reply_check_header (
   const char *colon = strchr (want, ':');
   const struct MHD_StringNullable *have;
   const char *value;
+
+  (void) path; (void) method; (void) upload_size; /* Unused */
 
   memcpy (key,
           want,
@@ -361,6 +371,8 @@ MHDT_server_reply_check_upload (
   const char *want = cls;
   size_t wlen = strlen (want);
 
+  (void) path; (void) method; (void) upload_size; /* Unused */
+
   return MHD_action_process_upload_full (request,
                                          wlen,
                                          &check_upload_cb,
@@ -409,10 +421,12 @@ chunk_return (void *cls,
   size_t imax = strlen (cc->pos);
   const char *space = strchr (cc->pos, ' ');
 
+  (void) pos; // TODO: add check
+
   if (0 == imax)
     return MHD_DCC_action_finish (ctx);
   if (NULL != space)
-    imax = space - cc->pos + 1;
+    imax = (size_t) (space - cc->pos) + 1;
   if (imax > max)
     imax = max;
   memcpy (buf,
@@ -434,6 +448,8 @@ MHDT_server_reply_chunked_text (
 {
   const char *text = cls;
   struct ChunkContext *cc;
+
+  (void) path; (void) method; (void) upload_size; /* Unused */
 
   cc = malloc (sizeof (struct ChunkContext));
   if (NULL == cc)
@@ -508,6 +524,8 @@ post_stream_reader (void *cls,
 {
   struct MHDT_PostInstructions *pi = cls;
   struct MHDT_PostWant *wants = pi->wants;
+
+  (void) encoding; // TODO: add check
 
   if (NULL != wants)
   {
@@ -641,6 +659,9 @@ MHDT_server_reply_check_post (
   uint_fast64_t upload_size)
 {
   struct MHDT_PostInstructions *pi = cls;
+
+  (void) path; /* Unused */
+  (void) upload_size; // TODO: add check
 
   return MHD_action_parse_post (request,
                                 pi->buffer_size,

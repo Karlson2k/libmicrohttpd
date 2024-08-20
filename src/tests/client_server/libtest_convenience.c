@@ -63,6 +63,9 @@ MHDT_server_run_minimal (void *cls,
   fd_set r;
   char c;
 
+  (void) cls; /* Unused */
+  (void) d;   /* Unused */
+
   FD_ZERO (&r);
   FD_SET (finsig, &r);
   while (1)
@@ -103,6 +106,9 @@ MHDT_server_run_blocking (void *cls,
 {
   fd_set r;
   char c;
+
+  (void) cls; /* Unused */
+  (void) d;   /* Unused */
 
   FD_ZERO (&r);
   FD_SET (finsig, &r);
