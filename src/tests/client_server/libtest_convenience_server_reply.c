@@ -497,16 +497,26 @@ nstrcmp (const char *wants,
  * This callback is called to incrementally process parsed POST data sent by
  * the client.
  *
+ * @param req the request
  * @param cls user-specified closure
- * @param name 0-terminated key for the value
- * @param filename name of the uploaded file, NULL if not known
- * @param content_type mime-type of the data, NULL if not known
- * @param encoding the encoding of the data
- * @param data pointer to @a size bytes of data at the
- *             specified @a off offset,
- *             NOT zero-terminated
- * @param off offset of data in the overall value
- * @param size number of bytes in @a data available
+ * @param name the name of the POST field
+ * @param filename the name of the uploaded file, @a cstr member is NULL if not
+ *                 known / not provided
+ * @param content_type the mime-type of the data, cstr member is NULL if not
+ *                     known / not provided
+ * @param encoding the encoding of the data, cstr member is NULL if not known /
+ *                 not provided
+ * @param size the number of bytes in @a data available, may be zero if
+ *             the @a final_data is #MHD_YES
+ * @param data the pointer to @a size bytes of data at the specified
+ *             @a off offset, NOT zero-terminated
+ * @param off the offset of @a data in the overall value, always equal to
+ *            the sum of sizes of previous calls for the same field / file;
+ *            client may provide more than one field with the same name and
+ *            the same filename, the new filed (or file) is indicated by zero
+ *            value of @a off (and the end is indicated by @a final_data)
+ * @param final_data if set to #MHD_YES then full field data is provided,
+ *                   if set to #MHD_NO then more field data may be provided
  * @return action specifying how to proceed:
  *         #MHD_upload_action_continue() if all is well,
  *         #MHD_upload_action_suspend() to stop reading the upload until
@@ -517,14 +527,16 @@ nstrcmp (const char *wants,
  * @ingroup action
  */
 static const struct MHD_UploadAction *
-post_stream_reader (void *cls,
+post_stream_reader (struct MHD_Request *req,
+                    void *cls,
                     const struct MHD_String *name,
                     const struct MHD_StringNullable *filename,
                     const struct MHD_StringNullable *content_type,
                     const struct MHD_StringNullable *encoding,
+                    size_t size,
                     const void *data,
                     uint_fast64_t off,
-                    size_t size)
+                    enum MHD_Bool final_data)
 {
   struct MHDT_PostInstructions *pi = cls;
   struct MHDT_PostWant *wants = pi->wants;
@@ -563,7 +575,7 @@ post_stream_reader (void *cls,
     }
   }
 
-  return MHD_upload_action_continue (NULL);
+  return MHD_upload_action_continue (req);
 }
 
 
@@ -583,9 +595,10 @@ post_stream_reader (void *cls,
  * @ingroup request
  */
 static enum MHD_Bool
-check_complete_value (
+check_complete_post_value (
   void *cls,
-  const struct MHD_NameValueKind *nvt)
+  enum MHD_ValueKind kind,
+  const struct MHD_NameAndValue *nv)
 {
   struct MHDT_PostInstructions *pi = cls;
   struct MHDT_PostWant *wants = pi->wants;
@@ -601,11 +614,11 @@ check_complete_value (
     if (want->incremental)
       continue;
     if (0 != strcmp (want->key,
-                     nvt->nv.name.cstr))
+                     nv->name.cstr))
       continue;
-    if (want->value_size != nvt->nv.value.len)
+    if (want->value_size != nv->value.len)
       continue;
-    if (0 == memcmp (nvt->nv.value.cstr,
+    if (0 == memcmp (nv->value.cstr,
                      want->value,
                      want->value_size))
       want->satisfied = true;
@@ -619,20 +632,21 @@ check_complete_value (
  * of the postprocessor upload data.
  * @param req the request
  * @param cls the closure
+ * @param parsing_result the result of POST data parsing
  * @return the action to proceed
  */
 static const struct MHD_UploadAction *
 post_stream_done (struct MHD_Request *req,
-                  void *cls)
+                  void *cls,
+                  enum MHD_PostParseResult parsing_result)
 {
   struct MHDT_PostInstructions *pi = cls;
+  struct MHDT_PostWant *wants = pi->wants;
 
   MHD_request_get_values_cb (req,
                              MHD_VK_POSTDATA,
-                             &check_complete_value,
+                             &check_complete_post_value,
                              pi);
-  struct MHDT_PostWant *wants = pi->wants;
-
   if (NULL != wants)
   {
     for (unsigned int i = 0; NULL != wants[i].key; i++)
