@@ -279,7 +279,7 @@ run_single_client (void *cls)
   const char *err;
 
   fprintf (stderr,
-           "Client %u started in phase `%s'\n",
+           "Client %u started in phase '%s'\n",
            cc->pc.client_id,
            cc->phase->label);
   err = cc->phase->client_cb (cc->phase->client_cb_cls,
@@ -287,7 +287,7 @@ run_single_client (void *cls)
   if (NULL != err)
   {
     fprintf (stderr,
-             "Client %u failed in phase `%s': %s\n",
+             "Client %u failed in phase '%s': %s\n",
              cc->pc.client_id,
              cc->phase->label,
              err);
@@ -305,7 +305,7 @@ run_single_client (void *cls)
                      "s",
                      1));
   fprintf (stderr,
-           "Client %u finished in phase `%s'\n",
+           "Client %u finished in phase '%s'\n",
            cc->pc.client_id,
            cc->phase->label);
   return NULL;
@@ -357,7 +357,7 @@ run_client_phase (const struct MHDT_Phase *phase,
 
   make_pipe (p);
   fprintf (stderr,
-           "Starting phase `%s'\n",
+           "Starting phase '%s'\n",
            phase->label);
   for (i = 0; i<num_clients; i++)
   {
@@ -404,7 +404,7 @@ run_client_phase (const struct MHDT_Phase *phase,
   if (0 != clients_left)
   {
     fprintf (stderr,
-             "Timeout (%u ms) in phase `%s': %u clients still running\n",
+             "Timeout (%u ms) in phase '%s': %u clients still running\n",
              phase->timeout_ms,
              phase->label,
              clients_left);
@@ -424,7 +424,7 @@ cleanup:
   test_check (0 == close (p[0]));
   test_check (0 == close (p[1]));
   fprintf (stderr,
-           "Finished phase `%s' with %s\n",
+           "Finished phase '%s' with %s\n",
            phase->label,
            ret ? "success" : "FAILURE");
   return ret;
@@ -447,7 +447,7 @@ server_phase_logic (void *cls)
   for (i = 0; NULL != ctx->phase->label; i++)
   {
     fprintf (stderr,
-             "Running server phase `%s'\n",
+             "Running server phase '%s'\n",
              ctx->phase->label);
     semaphore_down (&ctx->client_sem);
     ctx->phase++;
@@ -569,7 +569,7 @@ MHDT_test (MHDT_ServerSetup ss_cb,
   for (i = 0; NULL != phases[i].label; i++)
   {
     fprintf (stderr,
-             "Running test phase `%s'\n",
+             "Running test phase '%s'\n",
              phases[i].label);
     if (! run_client_phase (&phases[i],
                             &pc))

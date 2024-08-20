@@ -261,7 +261,7 @@ main (int argc, char *argv[])
     int ret;
 
     fprintf (stderr,
-             "Running tests with server setup `%s'\n",
+             "Running tests with server setup '%s'\n",
              configs[i].label);
     ret = MHDT_test (configs[i].server_setup,
                      configs[i].server_setup_cls,
@@ -271,7 +271,7 @@ main (int argc, char *argv[])
     if (0 != ret)
     {
       fprintf (stderr,
-               "Test failed with server of type `%s' (%u)\n",
+               "Test failed with server of type '%s' (%u)\n",
                configs[i].label,
                i);
       return ret;

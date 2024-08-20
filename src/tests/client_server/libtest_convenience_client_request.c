@@ -648,7 +648,7 @@ MHDT_client_do_post (
       if (! pi->wants[i].satisfied)
       {
         fprintf (stderr,
-                 "Server did not correctly detect key `%s'\n",
+                 "Server did not correctly detect key '%s'\n",
                  pi->wants[i].key);
         return "key-value data not matched by server";
       }
