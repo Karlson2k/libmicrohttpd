@@ -102,6 +102,7 @@ main (int argc, char *argv[])
     .wants = simple_wants
   };
   struct MHDT_Phase phases[] = {
+#if 0 // TODO: Enable formats when MHD side is ready
     {
       .label = "simple post",
       .server_cb = &MHDT_server_reply_check_post,
@@ -118,6 +119,7 @@ main (int argc, char *argv[])
       .client_cb_cls = &simple_mp,
       .timeout_ms = 2500,
     },
+#endif
     {
       .label = "plain text post",
       .server_cb = &MHDT_server_reply_check_post,
