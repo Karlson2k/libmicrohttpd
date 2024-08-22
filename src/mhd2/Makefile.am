@@ -154,8 +154,6 @@ endif
 EXTRA_libmicrohttpd2_la_DEPENDENCIES = $(MHD_DLL_RES_LO)
 libmicrohttpd2_la_LIBADD += $(MHD_DLL_RES_LO)
 
-#TESTS = $(check_PROGRAMS)
-
 update-po-POTFILES.in: $(top_srcdir)/po/POTFILES.in
 
 $(top_srcdir)/po/POTFILES.in: $(srcdir)/Makefile.am
@@ -176,12 +174,3 @@ $(CONFIG_HEADER): $(builddir)/../incl_priv/mhd_config.h.in $(top_srcdir)/configu
 $(builddir)/../incl_priv/mhd_config.h.in: $(top_srcdir)/configure.ac
 	@echo "cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh" && \
 	  $(am__cd) $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-
-update-po-POTFILES.in: $(top_srcdir)/po/POTFILES.in
-
-$(top_srcdir)/po/POTFILES.in: $(srcdir)/Makefile.am
-	@echo "Creating $@"
-	@echo  src/include/microhttpd2.h > "$@" && \
-	for src in $(am__libmicrohttpd2_la_SOURCES_DIST) ; do \
-	  echo "$(subdir)/$$src" >> "$@" ; \
-	done
