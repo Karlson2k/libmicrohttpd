@@ -72,12 +72,13 @@ Scan-Build/Debian:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$DEBIAN_BUILD
   script:
     - export CFLAGS="$CFLAGS_DEFAULT"
-    - ./bootstrap
-    - scan-build --use-cc=clang-3.8 ./configure $CONFIGURE_BASE_FLAGS --enable-build-type=debug --disable-sanitizers
     - ln -s "$(which ccache)" "$(pwd)/clang-3.8"
-    - (cd src/include/ && make CC="$(pwd)/../../clang-3.8") # options-generator is badly broken
-    - scan-build --use-cc="$(pwd)/clang-3.8" -v -enable-checker security,nullability --status-bugs -o scan-build make -j$(nproc)
-    - scan-build --use-cc="$(pwd)/clang-3.8" -v -enable-checker security,nullability --status-bugs -o scan-build make -k check
+    - export CC="$(pwd)/clang-3.8"
+    - ./bootstrap
+    - ./configure $CONFIGURE_BASE_FLAGS --enable-build-type=debug --disable-sanitizers
+    - (cd src/include/ && make) # options-generator is badly broken
+    - scan-build --use-cc="$CC" -v -enable-checker security,nullability --status-bugs -o scan-build make -j$(nproc)
+    - scan-build --use-cc="$CC" -v -enable-checker security,nullability --status-bugs -o scan-build make -k check
   except:
     - tags
   artifacts:
