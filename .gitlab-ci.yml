@@ -75,7 +75,7 @@ Scan-Build/Debian:
     - ./bootstrap
     - scan-build --use-cc=clang-3.8 ./configure $CONFIGURE_BASE_FLAGS --enable-build-type=debug --disable-sanitizers
     - ln -s "$(which ccache)" "$(pwd)/clang-3.8"
-    - (cd src/include/ && make CC="$(pwd)/clang-3.8") # options-generator is badly broken
+    - (cd src/include/ && make CC="$(pwd)/../../clang-3.8") # options-generator is badly broken
     - scan-build --use-cc="$(pwd)/clang-3.8" -v -enable-checker security,nullability --status-bugs -o scan-build make -j$(nproc)
     - scan-build --use-cc="$(pwd)/clang-3.8" -v -enable-checker security,nullability --status-bugs -o scan-build make -k check
   except:
