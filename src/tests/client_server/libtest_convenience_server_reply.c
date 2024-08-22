@@ -623,6 +623,8 @@ check_complete_post_value (
       if (NULL == nv->value.cstr)
         want->satisfied = true;
     }
+    else if (NULL == nv->value.cstr)
+      continue;
     else if (0 == want->value_size)
     {
       if (0 == strcmp (nv->value.cstr,
@@ -633,8 +635,8 @@ check_complete_post_value (
     {
       if ((want->value_size == nv->value.len) &&
           (0 == memcmp (nv->value.cstr,
-                               want->value,
-                               want->value_size)))
+                        want->value,
+                        want->value_size)))
         want->satisfied = true;
     }
   }
