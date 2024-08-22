@@ -31,6 +31,20 @@
 #include "libtest.h"
 #include <curl/curl.h>
 
+
+#ifndef CURL_VERSION_BITS
+#  define CURL_VERSION_BITS(x,y,z) ((x) << 16 | (y) << 8 | (z))
+#endif
+#ifndef CURL_AT_LEAST_VERSION
+#  define CURL_AT_LEAST_VERSION(x,y,z) \
+        (LIBCURL_VERSION_NUM >= CURL_VERSION_BITS (x, y, z))
+#endif
+
+#if CURL_AT_LEAST_VERSION (7,83,0)
+#  define HAVE_LIBCRUL_NEW_HDR_API 1
+#endif
+
+
 /**
  * Closure for the write_cb().
  */
@@ -328,6 +342,7 @@ const char *
 MHDT_client_expect_header (void *cls,
                            const struct MHDT_PhaseContext *pc)
 {
+#ifdef HAVE_LIBCRUL_NEW_HDR_API
   const char *hdr = cls;
   size_t hlen = strlen (hdr) + 1;
   char key[hlen];
@@ -380,6 +395,10 @@ MHDT_client_expect_header (void *cls,
   }
   curl_easy_cleanup (c);
   return NULL;
+#else  /* ! HAVE_LIBCRUL_NEW_HDR_API */
+  (void) cls; (void) pc;
+  return NULL;
+#endif /* ! HAVE_LIBCRUL_NEW_HDR_API */
 }
 
 
