@@ -857,6 +857,8 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
 
   if (NULL != c->rq.cntn.lbuf.data)
     mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
+  if (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act)
+    mhd_daemon_free_lbuf (c->daemon, &(c->rq.u_proc.post.lbuf));
   if (NULL != c->rp.response)
     mhd_response_dec_use_count (c->rp.response);
   c->rp.response = NULL;

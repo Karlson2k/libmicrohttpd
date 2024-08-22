@@ -1317,6 +1317,7 @@ mhd_stream_process_post_finish (struct MHD_Connection *restrict c)
 {
   struct mhd_PostParserData *const p_data = &(c->rq.u_proc.post);
   const struct MHD_UploadAction *act;
+  bool state_changed;
 
   // TODO: implement processing in the connection buffer
   if (check_post_leftovers (c))
@@ -1327,5 +1328,8 @@ mhd_stream_process_post_finish (struct MHD_Connection *restrict c)
     c->rq.app_act.head_act.data.post_parse.done_cb_cls,
     p_data->parse_result);
 
-  return mhd_stream_process_upload_action (c, act, true);
+  state_changed = mhd_stream_process_upload_action (c, act, true);
+  if (! c->suspended)
+    mhd_daemon_free_lbuf (c->daemon, &(c->rq.u_proc.post.lbuf));
+  return state_changed;
 }

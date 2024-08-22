@@ -3464,6 +3464,7 @@ MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_stream_call_app_final_upload_cb (struct MHD_Connection *restrict c)
 {
   const struct MHD_UploadAction *act;
+  bool state_changed;
   mhd_assert (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act || \
               mhd_ACTION_UPLOAD == c->rq.app_act.head_act.act);
 
@@ -3498,7 +3499,12 @@ mhd_stream_call_app_final_upload_cb (struct MHD_Connection *restrict c)
       0,
       NULL);
   }
-  return mhd_stream_process_upload_action (c, act, true);
+
+  state_changed = mhd_stream_process_upload_action (c, act, true);
+  if (! c->suspended)
+    mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
+
+  return state_changed;
 }
 
 
