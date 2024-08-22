@@ -697,6 +697,11 @@ process_complete_field_all (struct MHD_Connection *restrict c,
     value.len = value_len;
     value.cstr = buf + value_start;
   }
+  else
+  {
+    value.len = 0;
+    value.cstr = NULL;
+  }
 
   if (! add_parsed_post_field (c,
                                &name,
