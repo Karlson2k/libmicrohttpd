@@ -1448,9 +1448,18 @@ daemon_init_large_buf (struct MHD_Daemon *restrict d,
                        struct DaemonOptions *restrict s)
 {
   mhd_assert (! mhd_D_HAS_MASTER (d));
+  mhd_assert (0 != d->conns.cfg.count_limit);
+  mhd_assert (0 != d->conns.cfg.mem_pool_size);
+
   d->req_cfg.large_buf.space_left = s->large_pool_size;
-  if (0 == d->req_cfg.large_buf.space_left)             // TODO: USE SETTINGS!
-    d->req_cfg.large_buf.space_left = 1024 * 1024U;     // TODO: USE SETTINGS!
+  if (SIZE_MAX == d->req_cfg.large_buf.space_left)
+    d->req_cfg.large_buf.space_left =
+      (d->conns.cfg.count_limit * d->conns.cfg.mem_pool_size) / 32;   /* Use ~3% of the maximum memory used by connections */
+
+#ifndef NDEBUG
+  d->dbg.initial_lbuf_size = d->req_cfg.large_buf.space_left;
+#endif
+
   if (! mhd_mutex_init_short (&(d->req_cfg.large_buf.lock)))
   {
     mhd_LOG_MSG (d, MHD_SC_MUTEX_INIT_FAILURE, \
@@ -1471,6 +1480,8 @@ daemon_init_large_buf (struct MHD_Daemon *restrict d,
 static MHD_FN_PAR_NONNULL_ (1) void
 daemon_deinit_large_buf (struct MHD_Daemon *restrict d)
 {
+  /* All large buffer allocations must be freed / deallocated earlier */
+  mhd_assert (d->dbg.initial_lbuf_size == d->req_cfg.large_buf.space_left);
   mhd_mutex_destroy_chk (&(d->req_cfg.large_buf.lock));
 }
 
@@ -2415,16 +2426,18 @@ daemon_init_threading_and_conn (struct MHD_Daemon *restrict d,
 
   if (! mhd_D_TYPE_HAS_WORKERS (d->threading.d_type))
     res = init_individual_thread_data_events_conns (d, s);
+#ifdef MHD_USE_THREADS
   else
   {
-#ifdef MHD_USE_THREADS
     res = init_workers_pool (d, s);
-#else  /* ! MHD_USE_THREADS */
-    mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
-    return MHD_SC_INTERNAL_ERROR;
-#endif /* ! MHD_USE_THREADS */
+    if (MHD_SC_OK == res)
+    {
+      /* Copy some settings to the master daemon */
+      d->conns.cfg.mem_pool_size =
+        d->threading.hier.pool.workers[0].conns.cfg.mem_pool_size;
+    }
   }
+#endif /* ! MHD_USE_THREADS */
   if (MHD_SC_OK == res)
   {
     mhd_assert (d->dbg.events_allocated || \

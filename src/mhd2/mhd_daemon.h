@@ -855,6 +855,7 @@ struct mhd_daemon_debug
   bool threading_inited;
   bool connections_inited;
   bool avoid_accept4;
+  size_t initial_lbuf_size;
 };
 #endif /* NDEBUG */
 

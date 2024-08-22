@@ -40,6 +40,9 @@
 
 #include "mhd_lib_init.h"
 
+#ifndef SIZE_MAX
+#  define SIZE_MAX ((size_t) (~((size_t) 0)))
+#endif
 
 MHD_FN_MUST_CHECK_RESULT_ MHD_EXTERN_ struct MHD_Daemon *
 MHD_daemon_create (MHD_RequestCallback req_cb,
@@ -88,6 +91,8 @@ MHD_daemon_create (MHD_RequestCallback req_cb,
 
   d->log_params.v_log_cb = NULL; /* optional */
 #endif /* !HAVE_NULL_PTR_ALL_ZEROS */
+
+  s->large_pool_size = SIZE_MAX; /* The impossible value */
 
   s->listen_socket = MHD_INVALID_SOCKET;
   s->fd_number_limit = MHD_INVALID_SOCKET;
