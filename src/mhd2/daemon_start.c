@@ -2847,7 +2847,6 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
   {
     mhd_assert (NULL != daemon->settings);
     dsettings_release (daemon->settings);
-    return;
   }
   else if (! has_failed)
   {
