@@ -18,23 +18,23 @@ RESPONSE_GEN_FILES = \
 update-daemon-gen-files: $(DAEMON_GEN_FILES)
 
 $(DAEMON_GEN_FILES): d_options.rec options-generator.c
-	for f in $(DAEMON_GEN_FILES); do if test -f $$f; then chmod +w $$f; else :; fi; done
+	-for f in $(DAEMON_GEN_FILES); do if test -f $$f; then chmod +w $$f; else :; fi; done
 	$(MAKE) $(AM_MAKEFLAGS) options-generator
 	./options-generator daemon > $(srcdir)/microhttpd2_generated_daemon_options.h
-	chmod -w $(DAEMON_GEN_FILES)
+	-chmod -w $(DAEMON_GEN_FILES)
 
 update-response-gen-files: $(RESPONSE_GEN_FILES)
 
 $(RESPONSE_GEN_FILES): r_options.rec options-generator.c
-	for f in $(RESPONSE_GEN_FILES); do if test -f $$f; then chmod +w $$f; else :; fi; done
+	-for f in $(RESPONSE_GEN_FILES); do if test -f $$f; then chmod +w $$f; else :; fi; done
 	$(MAKE) $(AM_MAKEFLAGS) options-generator
 	./options-generator response > $(srcdir)/microhttpd2_generated_response_options.h
-	chmod -w $(RESPONSE_GEN_FILES)
+	-chmod -w $(RESPONSE_GEN_FILES)
 
 microhttpd2.h: microhttpd2_preamble.h.in microhttpd2_inline_daemon_documentation.h.in microhttpd2_inline_response_documentation.h.in microhttpd2_main.h.in microhttpd2_postamble.h.in
-	rm -f $@
+	-chmod +w $@
 	cat $^ >$@
-	chmod -w $@
+	-chmod -w $@
 
 noinst_PROGRAMS = \
   options-generator
