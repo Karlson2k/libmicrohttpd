@@ -192,8 +192,8 @@ dist-po: po/Makefile $(PO_MAIN_FILES)
 	$(am__cd) po && $(MAKE) $(AM_MAKEFLAGS) distdir="$$rel_distsubdir" distdir
 
 $(srcdir_po)/POTFILES.in: $(top_srcdir)/src/microhttpd/Makefile.am
-	@echo "cd $(top_builddir)/src/microhttpd && $(MAKE) $(AM_MAKEFLAGS) update-po-POTFILES.in" && \
-	$(am__cd) '$(top_builddir)/src/microhttpd' && $(MAKE) $(AM_MAKEFLAGS) update-po-POTFILES.in
+	@echo "cd $(top_builddir)/src/mhd2 && $(MAKE) $(AM_MAKEFLAGS) update-po-POTFILES.in" && \
+	$(am__cd) '$(top_builddir)/src/mhd2' && $(MAKE) $(AM_MAKEFLAGS) update-po-POTFILES.in
 
 AUTOPOINT = autopoint
 AUTOPOINT_FLAGS =
