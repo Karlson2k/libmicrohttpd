@@ -26,13 +26,13 @@ $(DAEMON_GEN_FILES): d_options.rec options-generator.c
 update-response-gen-files: $(RESPONSE_GEN_FILES)
 
 $(RESPONSE_GEN_FILES): r_options.rec options-generator.c
-	-for f in $(RESPONSE_GEN_FILES); do if test -f $$f; then chmod +w $$f; else :; fi; done
+	-for f in $(RESPONSE_GEN_FILES); do if test -f $$f; then chmod +w $$f && rm -f $$f; else :; fi; done
 	$(MAKE) $(AM_MAKEFLAGS) options-generator
 	./options-generator response > $(srcdir)/microhttpd2_generated_response_options.h
 	-chmod -w $(RESPONSE_GEN_FILES)
 
 microhttpd2.h: microhttpd2_preamble.h.in microhttpd2_inline_daemon_documentation.h.in microhttpd2_inline_response_documentation.h.in microhttpd2_main.h.in microhttpd2_postamble.h.in
-	-chmod +w $@
+	-if test -f $@; then chmod +w $@; rm -f $@; fi
 	cat $^ >$@
 	-chmod -w $@
 
@@ -45,8 +45,6 @@ options_generator_SOURCES = \
 mhd2includedir = $(includedir)/mhd2
 
 include_HEADERS = \
-  microhttpd.h
-mhd2include_HEADERS = \
   microhttpd2.h \
   microhttpd2_generated_daemon_options.h \
   microhttpd2_generated_response_options.h \
@@ -61,15 +59,8 @@ include_HEADERS += microhttpd_ws.h
 endif
 
 EXTRA_DIST = \
-  platform.h \
-  autoinit_funcs.h \
-  mhd_options.h \
-  d_options.tmpl \
-  d_options.rec \
-  microhttpd2_generated_daemon_options.h \
-  microhttpd2_generated_response_options.h \
-  microhttpd2_portability.h \
-  microhttpd2.h
+  $(DAEMON_GEN_FILES)           d_options.rec \
+  $(RESPONSE_GEN_FILES)         r_options.rec
 
 .NOTPARALLEL:
 
