@@ -168,13 +168,13 @@ MHD_response_from_buffer_copy (
 {
   struct MHD_Response *restrict res;
   const unsigned char *buf_copy;
+  unsigned char *new_buf;
 
   if (MHD_SIZE_UNKNOWN == buffer_size)
     return NULL;
 
   if (0 != buffer_size)
   {
-    unsigned char *new_buf;
     new_buf = (unsigned char *) malloc (buffer_size);
     if (NULL == new_buf)
       return NULL;
@@ -185,6 +185,7 @@ MHD_response_from_buffer_copy (
   }
   else
   {
+    new_buf = NULL;
     buf_copy = empty_buf;
     res = response_create_basic (sc, 0, NULL, NULL);
   }
@@ -193,8 +194,13 @@ MHD_response_from_buffer_copy (
   {
     res->cntn_dtype = mhd_RESPONSE_CONTENT_DATA_BUFFER;
     res->cntn.buf = buf_copy;
+    return res; /* Success exit point */
   }
-  return res;
+
+  /* Cleanup path */
+  if (NULL != new_buf)
+    free (new_buf);
+  return NULL;
 }
 
 
