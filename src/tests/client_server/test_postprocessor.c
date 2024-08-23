@@ -68,7 +68,8 @@ main (int argc, char *argv[])
   struct MHDT_PostInstructions simple_pi = {
     .enc = MHD_HTTP_POST_ENCODING_FORM_URLENCODED,
     .postdata = "V1=One&V2=Two",
-    .postheader = "application/x-www-form-urlencoded",
+    .postheader = MHD_HTTP_HEADER_CONTENT_TYPE
+                  ": application/x-www-form-urlencoded",
     .buffer_size = 32,
     .auto_stream_size = 16,
     .wants = simple_wants
@@ -89,14 +90,15 @@ main (int argc, char *argv[])
                 "\n"
                 "IMAGEDATA"
                 "--XXXX--\n",
-    .postheader = "multipart/form-data; boundary=XXXX",
+    .postheader = MHD_HTTP_HEADER_CONTENT_TYPE
+                  ": multipart/form-data; boundary=XXXX",
     .buffer_size = 32,
     .auto_stream_size = 16
   };
   struct MHDT_PostInstructions simple_tp = {
     .enc = MHD_HTTP_POST_ENCODING_TEXT_PLAIN,
     .postdata = "V1=One\r\nV2=Two\r\n",
-    .postheader = "text/plain",
+    .postheader = MHD_HTTP_HEADER_CONTENT_TYPE ": text/plain",
     .buffer_size = 32,
     .auto_stream_size = 16,
     .wants = simple_wants
