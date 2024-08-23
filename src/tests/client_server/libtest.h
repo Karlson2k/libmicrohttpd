@@ -219,12 +219,6 @@ struct MHDT_PostInstructions
   const char *postheader;
 
   /**
-   * HTTP header values for the request, automatically
-   * updated to include @e postheader.
-   */
-  struct curl_slist *request_hdr;
-
-  /**
    * NULL-terminated array of expected POST data for
    * the server.
    */

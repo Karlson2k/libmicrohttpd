@@ -593,6 +593,7 @@ MHDT_client_do_post (
 {
   struct MHDT_PostInstructions *pi = cls;
   CURL *c;
+  struct curl_slist *request_hdr = NULL;
 
   /* reset wants in case we re-use the array */
   if (NULL != pi->wants)
@@ -643,22 +644,23 @@ MHDT_client_do_post (
   }
   if (NULL != pi->postheader)
   {
-    pi->request_hdr = curl_slist_append (pi->request_hdr,
-                                         pi->postheader);
-    pi->postheader = NULL;
+    request_hdr = curl_slist_append (request_hdr,
+                                     pi->postheader);
   }
   if (CURLE_OK !=
       curl_easy_setopt (c,
                         CURLOPT_HTTPHEADER,
-                        pi->request_hdr))
+                        request_hdr))
   {
     curl_easy_cleanup (c);
+    curl_slist_free_all (request_hdr);
     return "Failed to set HTTPHEADER for curl request";
   }
   PERFORM_REQUEST (c);
   CHECK_STATUS (c,
                 MHD_HTTP_STATUS_NO_CONTENT);
   curl_easy_cleanup (c);
+  curl_slist_free_all (request_hdr);
   if (NULL != pi->wants)
   {
     for (unsigned int i = 0; NULL != pi->wants[i].key; i++)
