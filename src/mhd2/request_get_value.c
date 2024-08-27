@@ -70,12 +70,23 @@ mhd_request_get_value_n (struct MHD_Request *restrict request,
   if (0 != (MHD_VK_POSTDATA & kind))
   {
     struct mhd_RequestPostField *f;
+    char *const buf = request->cntn.lbuf.data; // TODO: support processing in connection buffer
     for (f = mhd_DLINKEDL_GET_FIRST (request, post_fields); NULL != f;
          f = mhd_DLINKEDL_GET_NEXT (f, post_fields))
     {
       if ((key_len == f->field.name.len) &&
-          (0 == memcmp (key, f->field.name.cstr, key_len)))
-        return &(f->field.value);
+          (0 == memcmp (key, buf + f->field.name.pos, key_len)))
+      {
+        f->field_for_app.value.cstr =
+          (0 == f->field.value.pos) ?
+          NULL : (buf + f->field.value.pos);
+        f->field_for_app.value.len = f->field.value.len;
+
+        mhd_assert ((NULL != f->field_for_app.value.cstr) || \
+                    (0 == f->field_for_app.value.len));
+
+        return &(f->field_for_app.value);
+      }
     }
   }
 #endif /* HAVE_POST_PARSER */
@@ -162,16 +173,27 @@ MHD_request_get_values_cb (struct MHD_Request *request,
   if (0 != (MHD_VK_POSTDATA & kind))
   {
     struct mhd_RequestPostField *f;
+    char *const buf = request->cntn.lbuf.data; // TODO: support processing in connection buffer
     for (f = mhd_DLINKEDL_GET_FIRST (request, post_fields); NULL != f;
          f = mhd_DLINKEDL_GET_NEXT (f, post_fields))
     {
       ++count;
       if (NULL != iterator)
       {
+        if (f->field_for_app.name.cstr != buf + f->field.name.pos)
+        {
+          f->field_for_app.name.cstr = buf + f->field.name.pos;
+          f->field_for_app.name.len = f->field.name.len;
+          f->field_for_app.value.cstr =
+            (0 == f->field.value.pos) ?
+            NULL : (buf + f->field.value.pos);
+          f->field_for_app.value.len = f->field.value.len;
+        }
+
         if (MHD_NO ==
             iterator (iterator_cls,
                       MHD_VK_POSTDATA,
-                      (const struct MHD_NameAndValue *) &(f->field)))
+                      &(f->field_for_app)))
           return count;
       }
     }

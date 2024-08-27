@@ -42,7 +42,7 @@
 #include "mhd_buffer.h"
 
 #ifdef HAVE_POST_PARSER
-#  include "mhd_postfield.h"
+#  include "mhd_postfield_int.h"
 #  include "mhd_post_parser.h"
 #endif
 
@@ -219,7 +219,15 @@ struct mhd_RequestPostField
   /**
    * The field data
    */
-  struct MHD_PostField field;
+  struct mhd_PostFieldInt field;
+
+  /**
+   * Temporal representation of the @a field for application.
+   *
+   * Filled/updated only when application required short form of POST
+   * data.
+   */
+  struct MHD_NameAndValue field_for_app;
 
   /**
    * Headers are kept in a double-linked list.

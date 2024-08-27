@@ -93,7 +93,7 @@ endif
 
 post_parser_files = \
   http_post_enc.h \
-  mhd_post_parser.h         mhd_post_result.h         mhd_postfield.h \
+  mhd_post_parser.h         mhd_post_result.h         mhd_postfield_int.h \
   post_parser_funcs.c       post_parser_funcs.h
 
 if HAVE_POST_PARSER

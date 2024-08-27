@@ -19,55 +19,67 @@
 */
 
 /**
- * @file src/mhd2/mhd_postfield.h
- * @brief  The definition of the struct MHD_PostField
+ * @file src/mhd2/mhd_postfield_int.h
+ * @brief  The definition of the internal struct mhd_PostFieldInt
  * @author Karlson2k (Evgeny Grin)
  */
 
-#ifndef MHD_POSTFIELD_H
-#define MHD_POSTFIELD_H 1
+#ifndef MHD_POSTFIELD_INT_H
+#define MHD_POSTFIELD_INT_H 1
 
 #include "mhd_sys_options.h"
 
-#ifndef MHD_POSTFILED_DEFINED
+#include "sys_base_types.h"
 
-struct MHD_PostField
+/**
+ * Position and length of a string in some buffer
+ */
+struct mhd_PositionAndLength
 {
   /**
-   * The name of the field
+   * The position
    */
-  struct MHD_String name;
+  size_t pos;
   /**
-   * The field data
-   * If not set or defined then to C string is NULL.
-   * If set to empty string then pointer to C string not NULL,
-   * but the length is zero.
+   * The length
    */
-  struct MHD_StringNullable value;
-  /**
-   * The filename if provided (only for "multipart/form-data")
-   * If not set or defined then to C string is NULL.
-   * If set to empty string then pointer to C string not NULL,
-   * but the length is zero.
-   */
-  struct MHD_StringNullable filename;
-  /**
-   * The Content-Type if provided (only for "multipart/form-data")
-   * If not set or defined then to C string is NULL.
-   * If set to empty string then pointer to C string not NULL,
-   * but the length is zero.
-   */
-  struct MHD_StringNullable content_type;
-  /**
-   * The Transfer-Encoding if provided (only for "multipart/form-data")
-   * If not set or defined then to C string is NULL.
-   * If set to empty string then pointer to C string not NULL,
-   * but the length is zero.
-   */
-  struct MHD_StringNullable transfer_encoding;
+  size_t len;
 };
 
-#define MHD_POSTFILED_DEFINED 1
-#endif /* ! MHD_POSTFILED_DEFINED */
+struct mhd_PostFieldInt
+{
+  /**
+   * The name of the field.
+   * May start at zero position.
+   */
+  struct mhd_PositionAndLength name;
+  /**
+   * The field data
+   * If not set or defined then position is zero.
+   */
+  struct mhd_PositionAndLength value;
+  /**
+   * The filename if provided (only for "multipart/form-data")
+   * If not set or defined then position is zero.
+   */
+  struct mhd_PositionAndLength filename;
+  /**
+   * The Content-Type if provided (only for "multipart/form-data")
+   * If not set or defined then position is zero.
+   */
+  struct mhd_PositionAndLength content_type;
+  /**
+   * The Transfer-Encoding if provided (only for "multipart/form-data")
+   * If not set or defined then position is zero.
+   */
+  struct mhd_PositionAndLength transfer_encoding;
+#if 0  // TODO: support processing in connection buffer
+  /**
+   * If 'true' then all strings are in the "large shared buffer".
+   * If 'false' then all strings are in the stream buffer.
+   */
+  bool buf_is_lbuf;
+#endif
+};
 
-#endif /* ! MHD_POSTFIELD_H */
+#endif /* ! MHD_POSTFIELD_INT_H */

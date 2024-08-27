@@ -339,20 +339,14 @@ struct mhd_PostParserData
   union mhd_PostParserDetailedData e_d;
 
   /**
-   * The "large" buffer for POST parsing and POST upload values
-   */
-  struct mhd_Buffer lbuf;
-
-  /**
    * The size of the data currently in the @a lbuf
    */
   size_t lbuf_used;
 
   /**
-   * The remaining size of "large shared buffer" allowed to allocate for this
-   * POST parsing
+   * The maximum possible lbuf allocation size
    */
-  size_t lbuf_left; // TODO: Remove? Rename to 'lbuf_limit'?
+  size_t lbuf_limit;
 
   /**
    * True if any POST data was parsed successfully.
