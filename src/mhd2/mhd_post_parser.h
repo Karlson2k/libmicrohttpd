@@ -36,12 +36,112 @@
 #include "mhd_post_result.h"
 #include "mhd_buffer.h"
 
+#ifdef SIZE_MAX
+#  define mhd_POST_INVALID_POS SIZE_MAX
+#else
+#  define mhd_POST_INVALID_POS ((size_t) (~((size_t) (0))))
+#endif
+
+/**
+ * The states of the "application/x-www-form-urlencoded" field parsing
+ */
+enum MHD_FIXED_ENUM_ mhd_PostUrlEncState
+{
+  /**
+   * The field processing has not been started
+   */
+  mhd_POST_UENC_ST_NOT_STARTED = 0
+  ,
+  /**
+   * Processing name of the field
+   */
+  mhd_POST_UENC_ST_NAME
+  ,
+  /**
+   * At the '=' character after the name.
+   * This is an intermediate state, should be processed and switched to the next
+   * state immediately.
+   * Should not be used outside processing loop.
+   */
+  mhd_POST_UENC_ST_AT_EQ
+  ,
+  /**
+   * The '=' character after the name has been found.
+   * Looking for the first value character.
+   */
+  mhd_POST_UENC_ST_EQ_FOUND
+  ,
+  /**
+   * Processing the value of the field.
+   */
+  mhd_POST_UENC_ST_VALUE
+  ,
+  /**
+   * At the ampersand '&' character.
+   * Means that full field is found.
+   * This is an intermediate state, should be processed and switched to the next
+   * state immediately.
+   * Should not be used outside processing loop.
+   */
+  mhd_POST_UENC_ST_AT_AMPRSND
+  ,
+  /**
+   * Full field found.
+   * This is an intermediate state, should be processed and switched to the next
+   * state immediately.
+   * Should not be used outside processing loop.
+   */
+  mhd_POST_UENC_ST_FULL_FIELD_FOUND
+};
+
 /**
  * The "application/x-www-form-urlencoded" parsing data
  */
 struct mhd_PostParserUrlEncData
 {
+  /**
+   * The parsing state
+   */
+  enum mhd_PostUrlEncState st;
 
+  /**
+   * The index of the start of the name.
+   */
+  size_t name_idx;
+
+  /**
+   * The length of the name of the current field, not including
+   * the terminating zero.
+   * Zero until the length is found.
+   */
+  size_t name_len;
+
+  /**
+   * The index of the start of the value.
+   * Zero until the value is found.
+   * Cannot be zero if any (including zero-length) value available.
+   */
+  size_t value_idx;
+
+  /**
+   * The length of the value of the current field, not including
+   * the terminating zero.
+   * Zero until the length is found.
+   * If @a st is #mhd_POST_UENC_ST_VALUE and @a value_len is not zero,
+   * then it is the length of the partial (decoded) value provided previously
+   * to the "stream" processing callback (which responded with a "suspend"
+   * action).
+   */
+  size_t value_len;
+
+  /**
+   * The index of the last percent ('%') character found.
+   * Set to #mhd_POST_INVALID_POS when no '%' char found.
+   * Used for two proposes:
+   * + indicates that "name" or "value" needs persent-deconding
+   * + helps to detect incomplete percent-encoded char for stream processing
+   */
+  size_t last_pct_idx;
 };
 
 /**

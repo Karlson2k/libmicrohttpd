@@ -166,7 +166,7 @@ typedef const struct MHD_UploadAction *
 struct mhd_PostParseActionData
 {
   size_t buffer_size;
-  size_t auto_stream_size;
+  size_t max_nonstream_size;
   enum MHD_HTTP_PostEncoding enc;
   MHD_PostDataReader stream_reader;
   void *reader_cls;

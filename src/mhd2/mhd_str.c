@@ -1712,7 +1712,7 @@ mhd_str_pct_decode_lenient_n (const char *pct_encoded,
                               size_t pct_encoded_len,
                               char *decoded,
                               size_t buf_size,
-                              bool *broken_encoding)
+                              bool *restrict broken_encoding)
 {
   size_t r;
   size_t w;
@@ -1867,8 +1867,8 @@ mhd_str_pct_decode_in_place_strict (char *str)
 
 
 MHD_INTERNAL size_t
-mhd_str_pct_decode_in_place_lenient (char *str,
-                                     bool *broken_encoding)
+mhd_str_pct_decode_in_place_lenient (char *restrict str,
+                                     bool *restrict broken_encoding)
 {
 #ifdef MHD_FAVOR_SMALL_CODE
   size_t len;
@@ -2030,6 +2030,7 @@ mhd_str_unquote (const char *quoted,
   }
   return w;
 }
+
 
 #endif /* DAUTH_SUPPORT HAVE_POST_PARSER */
 
@@ -2338,9 +2339,9 @@ mhd_str_starts_with_token_opt_param (const struct MHD_String *restrict str,
   size_t i;
 
   mhd_assert (0 != token->len);
-  mhd_assert (NULL == memchr(token->cstr, '=', token->len));
-  mhd_assert (NULL == memchr(token->cstr, ' ', token->len));
-  mhd_assert (NULL == memchr(token->cstr, '\t', token->len));
+  mhd_assert (NULL == memchr (token->cstr, '=', token->len));
+  mhd_assert (NULL == memchr (token->cstr, ' ', token->len));
+  mhd_assert (NULL == memchr (token->cstr, '\t', token->len));
 
   if (str->len < token->len)
     return false; /* The string is too short to match */
@@ -2364,8 +2365,9 @@ mhd_str_starts_with_token_opt_param (const struct MHD_String *restrict str,
 }
 
 
-MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_(4)
-MHD_FN_PAR_OUT_(5) enum mhd_StingStartsWithTokenResult
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_ (4)
+MHD_FN_PAR_OUT_ (5) enum mhd_StingStartsWithTokenResult
 mhd_str_starts_with_token_req_param (
   const struct MHD_String *restrict str,
   const struct MHD_String *restrict token,
@@ -2379,12 +2381,12 @@ mhd_str_starts_with_token_req_param (
   bool param_found;
 
   mhd_assert (0 != token->len);
-  mhd_assert (NULL == memchr(token->cstr, '=', token->len));
-  mhd_assert (NULL == memchr(token->cstr, ' ', token->len));
-  mhd_assert (NULL == memchr(token->cstr, '\t', token->len));
-  mhd_assert (NULL == memchr(par->cstr, '=', par->len));
-  mhd_assert (NULL == memchr(par->cstr, ' ', par->len));
-  mhd_assert (NULL == memchr(par->cstr, '\t', par->len));
+  mhd_assert (NULL == memchr (token->cstr, '=', token->len));
+  mhd_assert (NULL == memchr (token->cstr, ' ', token->len));
+  mhd_assert (NULL == memchr (token->cstr, '\t', token->len));
+  mhd_assert (NULL == memchr (par->cstr, '=', par->len));
+  mhd_assert (NULL == memchr (par->cstr, ' ', par->len));
+  mhd_assert (NULL == memchr (par->cstr, '\t', par->len));
 
   par_value->data = NULL;
   par_value->size = 0;

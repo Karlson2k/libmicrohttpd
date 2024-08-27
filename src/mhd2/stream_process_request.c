@@ -3434,6 +3434,7 @@ process_request_nonchunked_body (struct MHD_Connection *restrict c)
       state_updated = mhd_stream_process_upload_action (c, act, false);
     }
   }
+
   if (read_buf_reuse)
   {
     size_t data_left_size;

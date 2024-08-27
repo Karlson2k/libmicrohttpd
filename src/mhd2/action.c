@@ -109,7 +109,7 @@ MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ (1) const struct MHD_Action *
 MHD_action_parse_post (struct MHD_Request *request,
                        size_t buffer_size,
-                       size_t auto_stream_size,
+                       size_t max_nonstream_size,
                        enum MHD_HTTP_PostEncoding enc,
                        MHD_PostDataReader stream_reader,
                        void *reader_cls,
@@ -126,7 +126,7 @@ MHD_action_parse_post (struct MHD_Request *request,
 
   head_act->act = mhd_ACTION_POST_PARSE;
   head_act->data.post_parse.buffer_size = buffer_size;
-  head_act->data.post_parse.auto_stream_size = auto_stream_size;
+  head_act->data.post_parse.max_nonstream_size = max_nonstream_size;
   head_act->data.post_parse.enc = enc;
   head_act->data.post_parse.stream_reader = stream_reader;
   head_act->data.post_parse.reader_cls = reader_cls;
@@ -135,7 +135,7 @@ MHD_action_parse_post (struct MHD_Request *request,
 
   return head_act;
 #else  /* ! HAVE_POST_PARSER */
-  (void) request; (void) buffer_size; (void) auto_stream_size;
+  (void) request; (void) buffer_size; (void) max_nonstream_size;
   (void) enc; (void) stream_reader; (void) reader_cls;
   (void) done_cb; (void) done_cb_cls;
   return NULL;

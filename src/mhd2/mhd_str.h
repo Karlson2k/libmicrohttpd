@@ -556,7 +556,7 @@ mhd_str_pct_decode_lenient_n (const char *pct_encoded,
                               size_t pct_encoded_len,
                               char *decoded,
                               size_t buf_size,
-                              bool *broken_encoding);
+                              bool *restrict broken_encoding);
 
 
 /**
@@ -595,8 +595,8 @@ mhd_str_pct_decode_in_place_strict (char *str);
  * @return the number of character in decoded string
  */
 MHD_INTERNAL size_t
-mhd_str_pct_decode_in_place_lenient (char *str,
-                                     bool *broken_encoding);
+mhd_str_pct_decode_in_place_lenient (char *restrict str,
+                                     bool *restrict broken_encoding);
 
 #ifdef DAUTH_SUPPORT
 /**
@@ -849,6 +849,6 @@ mhd_str_starts_with_token_req_param (
   const struct MHD_String *restrict par,
   struct mhd_BufferConst *restrict par_value,
   bool *restrict par_value_needs_unquote)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_(4) MHD_FN_PAR_OUT_(5);
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_(4) MHD_FN_PAR_OUT_ (5);
 
 #endif /* MHD_STR_H */

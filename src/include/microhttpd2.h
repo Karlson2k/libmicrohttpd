@@ -6410,13 +6410,13 @@ typedef const struct MHD_UploadAction *
  *                    request POST data. Within the set limit the buffer is
  *                    allocated automatically from the "large" shared memory
  *                    pool if necessary.
- * @param auto_stream_size the size of the field (in encoded form) above which
- *                         values are not buffered and processed by
- *                         the @a steam_reader automatically;
- *                         useful to have large data (like file uploads)
- *                         processed incrementally, while keeping buffer space
- *                         for small fields only;
- *                         ignored if @a stream_reader is NULL
+ * @param max_nonstream_size the size of the field (in encoded form) above which
+ *                           values are not buffered and provided for
+ *                           the @a steam_reader automatically;
+ *                           useful to have large data (like file uploads)
+ *                           processed incrementally, while keeping buffer space
+ *                           for small fields only;
+ *                           ignored if @a stream_reader is NULL
  * @param enc the data encoding to use,
  *            use #MHD_HTTP_POST_ENCODING_OTHER to detect automatically
  * @param stream_reader the function to call for "oversize" values in
@@ -6438,7 +6438,7 @@ typedef const struct MHD_UploadAction *
 MHD_EXTERN_ const struct MHD_Action *
 MHD_action_parse_post (struct MHD_Request *request,
                        size_t buffer_size,
-                       size_t auto_stream_size,
+                       size_t max_nonstream_size,
                        enum MHD_HTTP_PostEncoding enc,
                        MHD_PostDataReader stream_reader,
                        void *reader_cls,
