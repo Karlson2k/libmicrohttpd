@@ -132,7 +132,7 @@ MHD_FN_PAR_IN_SIZE_ (3,2) struct MHD_Response *
 MHD_response_from_buffer (
   enum MHD_HTTP_StatusCode sc,
   size_t buffer_size,
-  const char buffer[MHD_FN_PAR_DYN_ARR_SIZE_ (buffer_size)],
+  const char *buffer,
   MHD_FreeCallback free_cb,
   void *free_cb_cls)
 {
