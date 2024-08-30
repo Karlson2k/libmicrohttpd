@@ -2392,7 +2392,7 @@ mhd_str_starts_with_token_req_param (
   par_value->size = 0;
 
   if (str->len < token->len)
-    return false; /* The string is too short to match */
+    return mhd_STR_STARTS_W_TOKEN_NO_TOKEN; /* The string is too short to match */
 
   if (! mhd_str_equal_caseless_bin_n (cstr,
                                       token->cstr,
@@ -2415,6 +2415,7 @@ mhd_str_starts_with_token_req_param (
         /* Found the start of the next token parameter */
         if (param_found)
           return mhd_STR_STARTS_W_TOKEN_HAS_TOKEN;
+        ++i; /* Move to the next char */
         break;
       }
       if (',' == c)
@@ -2438,6 +2439,14 @@ mhd_str_starts_with_token_req_param (
 
     if (i == str->len)
       return mhd_STR_STARTS_W_TOKEN_HAS_TOKEN;
+
+    /* 'i' is at the start of the parameter */
+
+    while ((' ' == cstr[i]) || ('\t' == cstr[i]))
+    {
+      if (++i == str->len)
+        return mhd_STR_STARTS_W_TOKEN_HAS_TOKEN;
+    }
 
     /* 'i' is at the start of the parameter name */
 
@@ -2492,7 +2501,8 @@ mhd_str_starts_with_token_req_param (
       if ('"' == cstr[i])
       {
         /* The value is quoted */
-        ++(par_value->data); /* Point to the first quoted char */
+        if (param_found)
+          ++(par_value->data); /* Point to the first quoted char */
         do
         {
           ++i; /* Advance to the next char */

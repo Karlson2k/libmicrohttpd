@@ -4967,15 +4967,20 @@ struct MHD_NameValueKind
 
 /**
  * Iterator over name-value pairs.  This iterator can be used to
- * iterate over all of the cookies, headers, or POST-data fields of a
- * request, and also to iterate over the headers that have been added
- * to a response.
+ * iterate over all of the cookies, headers, footers or POST-data fields
+ * of a request.
  *
- * The pointers to the strings in @a nvt are valid until the response
- * is queued. If the data is needed beyond this point, it should be copied.
+ * The @a nv pointer is valid only until return from this function.
+ *
+ * For @a kind other then #MHD_VK_POSTDATA the pointers to the strings in @a nv
+ * are valid until the response is queued.
+ * For the #MHD_VK_POSTDATA @a kind the pointers to the strings in @a nv
+ * are valid until any MHD_UploadAction is provided.
+ * If the data is needed beyond this point, it should be copied.
  *
  * @param cls closure
- * @param nv the name and the value of the element
+ * @param nv the name and the value of the element, the pointer is valid only until
+ *           return from this function
  * @param kind the type (kind) of the element
  * @return #MHD_YES to continue iterating,
  *         #MHD_NO to abort the iteration
@@ -5010,8 +5015,9 @@ MHD_FN_PAR_NONNULL_ (1);
 /**
  * Get all of the headers (or other kind of request data) from the request.
  *
- * The pointers to the strings in @a elements are valid until the response
- * is queued. If the data is needed beyond this point, it should be copied.
+ * The pointers to the strings in @a elements are valid until any
+ * MHD_Action or MHD_UploadAction is provided. If the data is needed beyond
+ * this point, it should be copied.
  *
  * @param[in] request request to get values from
  * @param kind the types of values to get, can be a bitmask
@@ -5038,8 +5044,8 @@ MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_OUT_SIZE_ (4,3);
  * Get a particular header (or other kind of request data) value.
  * If multiple values match the kind, return any one of them.
  *
- * The returned pointer is valid until the response is queued.
- * If the data is needed beyond this point, it should be copied.
+ * The returned pointer is valid until any MHD_Action or MHD_UploadAction is
+ * provided. If the data is needed beyond this point, it should be copied.
  *
  * @param request request to get values from
  * @param kind what kind of value are we looking for
@@ -6330,6 +6336,10 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_PostParseResult
  * "Stream" reader for POST data.
  * This callback is called to incrementally process parsed POST data sent by
  * the client.
+ * The pointers to the MHD_String and MHD_StringNullable are valid only until
+ * return from this callback.
+ * The pointers to the strings and the @a data are valid only until return from
+ * this callback.
  *
  * @param req the request
  * @param cls user-specified closure
@@ -6498,11 +6508,14 @@ struct MHD_PostField
 /**
  * Iterator over POST data.
  *
- * The pointers to the strings in @a data are valid until the response
- * is queued. If the data is needed beyond this point, it should be copied.
+ * The @a data pointer is valid only until return from this function.
+ *
+ * The pointers to the strings in @a data are valid until any MHD_UploadAction
+ * is provided. If the data is needed beyond this point, it should be copied.
  *
  * @param cls closure
- * @param data the element of the post data
+ * @param data the element of the post data, the pointer is valid only until
+ *             return from this function
  * @return #MHD_YES to continue iterating,
  *         #MHD_NO to abort the iteration
  * @ingroup request
@@ -6515,8 +6528,6 @@ typedef enum MHD_Bool
 /**
  * Get all of the post data from the request via request.
  *
- * The pointers to the strings in @a elements are valid until the response
- * is queued. If the data is needed beyond this point, it should be copied.
  * @param request the request to get data for
  * @param iterator callback to call on each header;
  *        maybe NULL (then just count headers)
@@ -6533,8 +6544,9 @@ MHD_FN_PAR_NONNULL_ (1);
 /**
  * Get all of the post data from the request.
  *
- * The pointers to the strings in @a elements are valid until the response
- * is queued. If the data is needed beyond this point, it should be copied.
+ * The pointers to the strings in @a elements are valid until any
+ * MHD_UploadAction is provided. If the data is needed beyond this point,
+ * it should be copied.
  * @param request the request to get data for
  * @param num_elements the number of elements in @a elements array
  * @param[out] elements the array of @a num_elements to get the data

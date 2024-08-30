@@ -123,7 +123,7 @@ process_mpart_header (struct MHD_Connection *restrict c,
 
   mhd_assert (mhd_STR_STARTS_W_TOKEN_HAS_TOKEN == res);
 
-  if (0 != mpart_bound.size)
+  if (0 == mpart_bound.size)
   {
     mhd_LOG_MSG (c->daemon, \
                  MHD_SC_REQ_POST_PARSE_FAILED_HEADER_NO_BOUNDARY, \
@@ -301,15 +301,64 @@ detect_mpart_boundary_from_the_header (struct MHD_Connection *restrict c)
 }
 
 
+/**
+ * Reset field parsing data for "application/x-www-form-urlencoded"
+ * @param pdata the parsing data
+ */
 static MHD_FN_PAR_NONNULL_ (1) void
 reset_parse_field_data_urlenc (struct mhd_PostParserData *pdata)
 {
   mhd_assert (MHD_HTTP_POST_ENCODING_FORM_URLENCODED == pdata->enc);
-  memset (&(pdata->e_d.text), 0, sizeof(pdata->e_d.u_enc));
+  memset (&(pdata->e_d.u_enc), 0, sizeof(pdata->e_d.u_enc));
   pdata->field_start = 0;
 }
 
 
+/**
+ * Initial reset field parsing data for "multipart/form-data"
+ * @param pdata the parsing data
+ */
+static MHD_FN_PAR_NONNULL_ (1) void
+reset_parse_field_data_mpart_init (struct mhd_PostParserData *pdata)
+{
+  mhd_assert (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA == pdata->enc);
+  memset (&(pdata->e_d.m_form.f), 0, sizeof(pdata->e_d.m_form.f));
+  pdata->e_d.m_form.st = mhd_POST_MPART_ST_NOT_STARTED;
+  pdata->e_d.m_form.line_start = mhd_POST_INVALID_POS;
+  pdata->e_d.m_form.delim_check_start = mhd_POST_INVALID_POS;
+  mhd_assert (NULL != pdata->e_d.m_form.bound.data);
+  mhd_assert (0 != pdata->e_d.m_form.bound.size);
+  mhd_assert (NULL == memchr (pdata->e_d.m_form.bound.data, '\r', \
+                              pdata->e_d.m_form.bound.size));
+  mhd_assert (NULL == memchr (pdata->e_d.m_form.bound.data, '\n', \
+                              pdata->e_d.m_form.bound.size));
+  pdata->field_start = 0;
+}
+
+
+/**
+ * Reset field parsing data for "multipart/form-data" after processing
+ * previous field
+ * @param pdata the parsing data
+ * @param final 'true' if last field was "closed" by the "final" delimiter
+ */
+static MHD_FN_PAR_NONNULL_ (1) void
+reset_parse_field_data_mpart_cont (struct mhd_PostParserData *pdata,
+                                   bool final)
+{
+  mhd_assert (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA == pdata->enc);
+  memset (&(pdata->e_d.m_form.f), 0, sizeof(pdata->e_d.m_form.f));
+  pdata->e_d.m_form.st = final ?
+                         mhd_POST_MPART_ST_EPILOGUE :
+                         mhd_POST_MPART_ST_PART_START;
+  pdata->field_start = 0;
+}
+
+
+/**
+ * Reset field parsing data for "text/plain"
+ * @param pdata the parsing data
+ */
 static MHD_FN_PAR_NONNULL_ (1) void
 reset_parse_field_data_text (struct mhd_PostParserData *pdata)
 {
@@ -342,8 +391,7 @@ init_post_parse_data (struct MHD_Connection *restrict c)
     reset_parse_field_data_urlenc (pdata);
     break;
   case MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA:
-    // TODO
-    mhd_assert (0 && "Not yet finished");
+    reset_parse_field_data_mpart_init (pdata);
     break;
   case MHD_HTTP_POST_ENCODING_TEXT_PLAIN:
     reset_parse_field_data_text (pdata);
@@ -488,7 +536,7 @@ is_value_streaming_needed (struct MHD_Connection *restrict c,
  * Add parsed POST field to the list of request's fields
  * @param c the stream to use
  * @param name the name of the field
- * @param filename the filename of the filed
+ * @param filename the filename of the field
  * @param content_type the "Content-Type:" of the field
  * @param transfer_encoding the "Transfer-Encoding:" of the field
  * @param value the value of the field
@@ -586,14 +634,14 @@ make_post_strings_from_buf_and_indices (const char *restrict buf,
 
 
 /**
- * Process new full parsed POST filed
+ * Process new full parsed POST field
  * @param c the stream to use
  * @param buf the buffer, where the data is
- * @param pnext_pos the pointer to variable holding index on the next position
- *                  to be parsed
+ * @param pfield_next_pos the pointer to variable holding index of
+ *                        the next field to be parsed
  * @param pdata_size the pointer to variable holding the size of the data
  * @param field_start the start of the current field in the @a buf
- * @param name_start the start of the name of the filed in the @a buf
+ * @param name_start the start of the name of the field in the @a buf
  * @param name_len the length of the name, not including mandatory terminating
  *                 zero
  * @param filename_start the start of the filename of the field in the @a buf,
@@ -618,7 +666,7 @@ make_post_strings_from_buf_and_indices (const char *restrict buf,
 static MHD_FN_PAR_NONNULL_ALL_ bool
 process_complete_field_all (struct MHD_Connection *restrict c,
                             char *restrict buf,
-                            size_t *restrict pnext_pos,
+                            size_t *restrict pfield_next_pos,
                             size_t *restrict pdata_size,
                             size_t field_start,
                             size_t name_start,
@@ -646,24 +694,24 @@ process_complete_field_all (struct MHD_Connection *restrict c,
               (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA == p_data->enc));
 
   mhd_assert (MHD_CONNECTION_REQ_RECV_FINISHED >= c->state);
-  mhd_assert (value_start + value_len <= *pnext_pos);
+  mhd_assert (value_start + value_len <= *pfield_next_pos);
   mhd_assert ((MHD_CONNECTION_FULL_REQ_RECEIVED <= c->state) || \
-              (value_start + value_len < *pnext_pos));
-  mhd_assert (*pnext_pos <= *pdata_size);
+              (value_start + value_len < *pfield_next_pos));
+  mhd_assert (*pfield_next_pos <= *pdata_size);
   mhd_assert ((name_start + name_len < value_start) || \
               (0 == value_start));
-  mhd_assert (value_start + value_len <= *pnext_pos);
+  mhd_assert (value_start + value_len <= *pfield_next_pos);
   mhd_assert ((MHD_CONNECTION_FULL_REQ_RECEIVED <= c->state) || \
-              (name_start + name_len < *pnext_pos));
+              (name_start + name_len < *pfield_next_pos));
   mhd_assert ((filename_start + filename_len < value_start) || \
               (0 == value_start));
-  mhd_assert (filename_start + filename_len <= *pnext_pos);
+  mhd_assert (filename_start + filename_len <= *pfield_next_pos);
   mhd_assert ((cntn_type_start + cntn_type_len < value_start) || \
               (0 == value_start));
-  mhd_assert (cntn_type_start + cntn_type_len <= *pnext_pos);
+  mhd_assert (cntn_type_start + cntn_type_len <= *pfield_next_pos);
   mhd_assert ((enc_start + enc_len < value_start) || \
               (0 == value_start));
-  mhd_assert (enc_start + enc_len <= *pnext_pos);
+  mhd_assert (enc_start + enc_len <= *pfield_next_pos);
   mhd_assert (field_start <= name_start);
   mhd_assert ((field_start <= filename_start) || (0 == filename_start));
   mhd_assert ((field_start <= cntn_type_start) || (0 == cntn_type_start));
@@ -676,11 +724,11 @@ process_complete_field_all (struct MHD_Connection *restrict c,
 
   p_data->some_data_provided = true;
 
-  if (is_value_streaming_needed (c, (*pnext_pos - field_start)))
+  if (is_value_streaming_needed (c, (*pfield_next_pos - field_start)))
   {
     bool res;
     const struct MHD_UploadAction *act;
-    const size_t field_size = *pnext_pos - field_start;
+    const size_t field_size = *pfield_next_pos - field_start;
     struct MHD_String name;
     struct MHD_StringNullable filename;
     struct MHD_StringNullable content_type;
@@ -715,13 +763,13 @@ process_complete_field_all (struct MHD_Connection *restrict c,
     if (c->suspended)
       return true;
     p_data->value_off = 0;
-    if (*pdata_size > *pnext_pos)
+    if (*pdata_size > *pfield_next_pos)
     {
       memmove (buf + field_start,
-               buf + *pnext_pos,
-               *pdata_size - *pnext_pos);
+               buf + *pfield_next_pos,
+               *pdata_size - *pfield_next_pos);
     }
-    *pnext_pos -= field_size;
+    *pfield_next_pos -= field_size;
     *pdata_size -= field_size;
     return res;
   }
@@ -756,7 +804,7 @@ process_complete_field_all (struct MHD_Connection *restrict c,
       mhd_LOG_MSG (c->daemon, MHD_SC_REQ_POST_PARSE_FAILED_NO_POOL_MEM, \
                    "The request POST data cannot be parsed completely " \
                    "because there is not enough pool memory.");
-      c->rq.u_proc.post.parse_result = MHD_POST_PARSE_RES_FAILED_NO_POOL_MEM;
+      p_data->parse_result = MHD_POST_PARSE_RES_FAILED_NO_POOL_MEM;
       return true;
     }
 
@@ -768,14 +816,14 @@ process_complete_field_all (struct MHD_Connection *restrict c,
 
 
 /**
- * Process new full parsed POST filed
+ * Process new full parsed POST field
  * @param c the stream to use
  * @param buf the buffer, where the data is
- * @param pnext_pos the pointer to variable holding index on the next position
- *                  to be parsed
+ * @param pfield_next_pos the pointer to variable holding index of
+ *                        the next field to be parsed
  * @param pdata_size the pointer to variable holding the size of the data
  * @param field_start the start of the current field in the @a buf
- * @param name_start the start of the name of the filed in the @a buf
+ * @param name_start the start of the name of the field in the @a buf
  * @param name_len the length of the name, not including mandatory terminating
  *                 zero
  * @param value_start the start of the field value in the @a buf, zero if
@@ -788,7 +836,7 @@ process_complete_field_all (struct MHD_Connection *restrict c,
 static MHD_FN_PAR_NONNULL_ALL_ bool
 process_complete_field (struct MHD_Connection *restrict c,
                         char *restrict buf,
-                        size_t *restrict pnext_pos,
+                        size_t *restrict pfield_next_pos,
                         size_t *restrict pdata_size,
                         size_t field_start,
                         size_t name_start,
@@ -797,14 +845,14 @@ process_complete_field (struct MHD_Connection *restrict c,
                         size_t value_len)
 {
   mhd_assert (MHD_CONNECTION_REQ_RECV_FINISHED >= c->state);
-  mhd_assert (value_start + value_len <= *pnext_pos);
+  mhd_assert (value_start + value_len <= *pfield_next_pos);
   mhd_assert ((MHD_CONNECTION_FULL_REQ_RECEIVED <= c->state) || \
-              (value_start + value_len < *pnext_pos));
+              (value_start + value_len < *pfield_next_pos));
   mhd_assert ((name_start + name_len < value_start) || \
               (0 == value_start));
-  mhd_assert (name_start + name_len <= *pnext_pos);
+  mhd_assert (name_start + name_len <= *pfield_next_pos);
   mhd_assert ((MHD_CONNECTION_FULL_REQ_RECEIVED <= c->state) || \
-              (name_start + name_len < *pnext_pos));
+              (name_start + name_len < *pfield_next_pos));
   mhd_assert (field_start <= name_start);
   mhd_assert ((field_start <= value_start) || (0 == value_start));
 
@@ -813,7 +861,7 @@ process_complete_field (struct MHD_Connection *restrict c,
 
   return process_complete_field_all (c,
                                      buf,
-                                     pnext_pos,
+                                     pfield_next_pos,
                                      pdata_size,
                                      field_start,
                                      name_start,
@@ -1003,6 +1051,15 @@ process_partial_value (struct MHD_Connection *restrict c,
 }
 
 
+/**
+ * Parse "application/x-www-form-urlencoded" data
+ * @param c the stream to use
+ * @param pdata_size the pointer to variable holding the size of the data in
+ *                   the @a buf
+ * @param buf the buffer with the data
+ * @return 'true' if stream state changed,
+ *         'false' to continue parsing
+ */
 static MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_INOUT_ (2) MHD_FN_PAR_INOUT_ (3) bool
 parse_post_urlenc (struct MHD_Connection *restrict c,
@@ -1014,7 +1071,7 @@ parse_post_urlenc (struct MHD_Connection *restrict c,
   size_t i;
 
   mhd_assert (MHD_HTTP_POST_ENCODING_FORM_URLENCODED == c->rq.u_proc.post.enc);
-  mhd_assert (MHD_POST_PARSE_RES_OK == c->rq.u_proc.post.parse_result);
+  mhd_assert (MHD_POST_PARSE_RES_OK == p_data->parse_result);
   mhd_assert (! c->discard_request);
   mhd_assert (p_data->next_parse_pos < *pdata_size);
 
@@ -1166,11 +1223,13 @@ parse_post_urlenc (struct MHD_Connection *restrict c,
       {
         if (c->suspended)
           --i; /* Go back to the same position */
+        else
+          reset_parse_field_data_urlenc (p_data);
         p_data->next_parse_pos = i;
         return true;
       }
       mhd_assert (*pdata_size >= i);
-      reset_parse_field_data_urlenc (&(c->rq.u_proc.post));
+      reset_parse_field_data_urlenc (p_data);
       continue; /* Process the next char */
     default:
       mhd_assert (0 && "Impossible value");
@@ -1193,7 +1252,7 @@ parse_post_urlenc (struct MHD_Connection *restrict c,
   mhd_assert (*pdata_size == i);
 
   if ((mhd_POST_UENC_ST_VALUE == uf->st) &&
-      (i != uf->value_idx) && /* Encoded value must be larger then zero */
+      (i != uf->value_idx) && /* Encoded value position must be larger then zero */
       is_value_streaming_needed (c, i - p_data->field_start))
   {
     size_t len_of_value_part;
@@ -1250,6 +1309,721 @@ parse_post_urlenc (struct MHD_Connection *restrict c,
 }
 
 
+/**
+ * Parse "multipart/form-data" data
+ * @param c the stream to use
+ * @param pdata_size the pointer to variable holding the size of the data in
+ *                   the @a buf
+ * @param buf the buffer with the data
+ * @return 'true' if stream state changed,
+ *         'false' to continue parsing
+ */
+static MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_INOUT_ (2) MHD_FN_PAR_INOUT_ (3) bool
+parse_post_mpart (struct MHD_Connection *restrict c,
+                  size_t *restrict pdata_size,
+                  char *restrict buf)
+{
+  const int discp_lvl = c->daemon->req_cfg.strictnees;
+  const bool bare_lf_as_crlf = (-2 >= discp_lvl); /* Bare LF termination is dangerous when used in "multipart/form-data" */
+  struct mhd_PostParserData *const p_data = &(c->rq.u_proc.post);
+  struct mhd_PostParserMPartFormData *const mf = &(p_data->e_d.m_form); /**< the current "form-data" parsing details */
+  size_t i;
+
+  mhd_assert (NULL != mf->bound.data);
+  mhd_assert (NULL == memchr (mf->bound.data, '\r', mf->bound.size));
+  mhd_assert (NULL == memchr (mf->bound.data, '\n', mf->bound.size));
+  mhd_assert (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA == \
+              c->rq.u_proc.post.enc);
+  mhd_assert (MHD_POST_PARSE_RES_OK == p_data->parse_result);
+  mhd_assert (mhd_POST_MPART_ST_FORMAT_ERROR != mf->st);
+  mhd_assert (! c->discard_request);
+  mhd_assert (p_data->next_parse_pos < *pdata_size);
+
+  i = p_data->next_parse_pos;
+  while (*pdata_size > i)
+  {
+    switch (mf->st)
+    {
+    case mhd_POST_MPART_ST_BACK_TO_PREAMBL:
+      mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
+      mf->delim_check_start = mhd_POST_INVALID_POS;
+      mf->line_start = mhd_POST_INVALID_POS;
+      mf->st = mhd_POST_MPART_ST_PREAMBL;
+    /* Intentional fall-through */
+    case mhd_POST_MPART_ST_PREAMBL:
+      mhd_assert (0 == p_data->field_start);
+      mhd_assert (0 == p_data->value_off);
+      mhd_assert (mhd_POST_INVALID_POS == mf->delim_check_start);
+      mhd_assert (mhd_POST_INVALID_POS == mf->line_start);
+      do /* Fast local loop */
+      {
+        if ('\r' == buf[i])
+        {
+          mf->st = mhd_POST_MPART_ST_PREAMBL_CR_FOUND;
+          ++i; /* Go to the next char */
+          break;
+        }
+        else if ('\n' == buf[i] && bare_lf_as_crlf)
+        {
+          mf->st = mhd_POST_MPART_ST_PREAMBL_LINE_START;
+          ++i; /* Go to the next char */
+          break;
+        }
+      } while (*pdata_size > ++i);
+      mhd_assert ((*pdata_size == i) || \
+                  (mhd_POST_MPART_ST_PREAMBL_CR_FOUND == mf->st) || \
+                  (mhd_POST_MPART_ST_PREAMBL_LINE_START == mf->st) );
+      continue;
+    case mhd_POST_MPART_ST_PREAMBL_CR_FOUND:
+      mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
+      mhd_assert (mhd_POST_INVALID_POS == mf->line_start);
+      if ('\n' == buf[i])
+      {
+        mf->st = mhd_POST_MPART_ST_PREAMBL_LINE_START;
+        ++i;
+      }
+      else
+      {
+        mf->delim_check_start = mhd_POST_INVALID_POS;
+        mf->st = mhd_POST_MPART_ST_PREAMBL;
+      }
+      continue;
+    case mhd_POST_MPART_ST_NOT_STARTED:
+      mhd_assert (0 == p_data->field_start);
+      mhd_assert (0 == p_data->value_off);
+      mf->delim_check_start = i;
+    /* Intentional fall-through */
+    case mhd_POST_MPART_ST_PREAMBL_LINE_START:
+      mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
+      mhd_assert (mhd_POST_INVALID_POS == mf->line_start);
+      mf->line_start = i;
+      mf->st = mhd_POST_MPART_ST_PREAMBL_CHECKING_FOR_DELIM;
+    /* Intentional fall-through */
+    case mhd_POST_MPART_ST_PREAMBL_CHECKING_FOR_DELIM:
+      mhd_assert (i >= mf->line_start);
+      do /* Fast local loop */
+      {
+        mhd_assert (i - mf->line_start < mf->bound.size + 2);
+        if (i < mf->line_start + 2)
+        {
+          if ('-' != buf[i])
+          {
+            mf->st = mhd_POST_MPART_ST_BACK_TO_PREAMBL;
+            break;
+          }
+        }
+        else if (i <= mf->line_start + mf->bound.size + 1)
+        {
+          if (mf->bound.data[i - (mf->line_start + 2)] != buf[i])
+          {
+            mf->st = mhd_POST_MPART_ST_BACK_TO_PREAMBL;
+            break;
+          }
+          else if (i == mf->line_start + mf->bound.size + 1)
+          {
+            mf->st = mhd_POST_MPART_ST_FIRST_DELIM_FOUND;
+            ++i;
+            break;
+          }
+        }
+      } while (*pdata_size > ++i);
+      mhd_assert ((*pdata_size == i) || \
+                  (mhd_POST_MPART_ST_FIRST_DELIM_FOUND == mf->st) || \
+                  (mhd_POST_MPART_ST_BACK_TO_PREAMBL == mf->st));
+      continue;
+    case mhd_POST_MPART_ST_FIRST_DELIM_FOUND:
+      mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
+      mhd_assert (mhd_POST_INVALID_POS != mf->line_start);
+      mhd_assert (i >= mf->line_start + mf->bound.size + 2);
+      do /* Fast local loop */
+      {
+        if ('\n' == buf[i])
+        {
+          if (bare_lf_as_crlf ||
+              ('\r' == buf [i - 1]))
+          {
+            mf->st = mhd_POST_MPART_ST_FIRST_PART_START;
+            ++i;
+          }
+          else
+            mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
+
+          break;
+        }
+        else if ('\r' == buf [i - 1])
+        {
+          mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
+          break;
+        }
+        else if ((i == mf->line_start + mf->bound.size + 3) &&
+                 ('-' == buf [i - 1]) &&
+                 ('-' == buf [i]))
+        {
+          mf->st = mhd_POST_MPART_ST_EPILOGUE;
+          break;
+        }
+      } while (*pdata_size > ++i);
+      mhd_assert ((*pdata_size == i) || \
+                  (mhd_POST_MPART_ST_FIRST_PART_START == mf->st) || \
+                  (mhd_POST_MPART_ST_FORMAT_ERROR == mf->st) || \
+                  (mhd_POST_MPART_ST_EPILOGUE == mf->st));
+      continue;
+    case mhd_POST_MPART_ST_FIRST_PART_START:
+      mhd_assert (i > p_data->field_start);
+      mhd_assert (*pdata_size > i);
+      if ((c->rq.app_act.head_act.data.post_parse.max_nonstream_size <
+           i - p_data->field_start) ||
+          (*pdata_size - i < i - p_data->field_start))
+      {
+        /* Discard unused data */
+        const size_t discard_size = i - p_data->field_start;
+        memmove (buf + p_data->field_start,
+                 buf + i,
+                 discard_size);
+        i -= discard_size;
+        *pdata_size -= discard_size;
+        mf->delim_check_start = i;
+      }
+    /* Intentional fall-through */
+    case mhd_POST_MPART_ST_PART_START:
+      mhd_assert (0 == mf->f.name_len);
+      mhd_assert (0 == p_data->value_off);
+      p_data->field_start = mf->delim_check_start;
+      mf->delim_check_start = mhd_POST_INVALID_POS;
+    /* Intentional fall-through */
+    case mhd_POST_MPART_ST_HEADER_LINE_START:
+      mf->line_start = i;
+      mf->st = mhd_POST_MPART_ST_HEADER_LINE;
+    /* Intentional fall-through */
+    case mhd_POST_MPART_ST_HEADER_LINE:
+      mhd_assert (i >= mf->line_start);
+      mhd_assert (mhd_POST_INVALID_POS != mf->line_start);
+      do /* Fast local loop */
+      {
+        if ('\r' == buf[i])
+        {
+          mf->st = mhd_POST_MPART_ST_HEADER_LINE_CR_FOUND;
+          ++i;
+          break;
+        }
+        else if ('\n' == buf[i])
+        {
+          if (bare_lf_as_crlf)
+            mf->st = mhd_POST_MPART_ST_HEADER_LINE_END;
+          else
+            mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
+          break;
+        }
+        else if (mf->line_start + mf->bound.size + 1 == i)
+        {
+          if (('-' == buf[mf->line_start]) &&
+              ('-' == buf[mf->line_start + 1]) &&
+              (0 == memcmp (buf + mf->line_start + 1,
+                            mf->bound.data,
+                            mf->bound.size)))
+          {
+            /* The delimiter before the end of the header */
+            if (! bare_lf_as_crlf)
+              mf->delim_check_start = mf->line_start - 2;
+            else
+              mf->delim_check_start = mf->line_start - 1; /* Actually can be one char earlier */
+            mf->st = mhd_POST_MPART_ST_DELIM_FOUND;
+            break;
+          }
+        }
+      } while (*pdata_size > ++i);
+      mhd_assert ((*pdata_size == i) || \
+                  (mhd_POST_MPART_ST_HEADER_LINE_CR_FOUND == mf->st) || \
+                  (mhd_POST_MPART_ST_HEADER_LINE_END == mf->st) || \
+                  (mhd_POST_MPART_ST_DELIM_FOUND == mf->st) || \
+                  (mhd_POST_MPART_ST_FORMAT_ERROR == mf->st) );
+      continue;
+    case mhd_POST_MPART_ST_HEADER_LINE_CR_FOUND:
+      if ('\n' != buf[i])
+      {
+        mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
+        continue;
+      }
+      mf->st = mhd_POST_MPART_ST_HEADER_LINE_END;
+    /* Intentional fall-through */
+    case mhd_POST_MPART_ST_HEADER_LINE_END:
+      mhd_assert (i >= mf->line_start);
+      mhd_assert (mhd_POST_INVALID_POS != mf->line_start);
+      if (1)
+      {
+        size_t line_len;
+        if (i == mf->line_start)
+          line_len = 0;
+        else if ('\r' == buf[i - 1])
+          line_len = i - mf->line_start - 1;
+        else
+          line_len = i - mf->line_start;
+
+        if (0 == line_len)
+        {
+          ++i;
+          mf->st = mhd_POST_MPART_ST_VALUE_START;
+          continue;
+        }
+        else
+        {
+          static const struct MHD_String hdr =
+            mhd_MSTR_INIT ("Content-Disposition:");
+          static const struct MHD_String tkn = mhd_MSTR_INIT ("form-data");
+          static const struct MHD_String n_par = mhd_MSTR_INIT ("name");
+
+          if ((hdr.len + tkn.len + n_par.len + 2 <= line_len) &&
+              mhd_str_equal_caseless_bin_n (hdr.cstr,
+                                            buf + mf->line_start,
+                                            hdr.len))
+          {
+            size_t hdr_val_start;
+            struct MHD_String hdr_val;
+            enum mhd_StingStartsWithTokenResult res;
+            struct mhd_BufferConst name_buf;
+            bool need_unq;
+
+            buf [mf->line_start + line_len] = 0; /* Zero-terminate the header line */
+            hdr_val_start = mf->line_start + hdr.len;
+            /* Skip all whitespace chars */
+            while ((' ' == buf[hdr_val_start]) || ('\t' == buf[hdr_val_start]))
+              ++hdr_val_start;
+
+            mhd_assert (hdr_val_start <= i);
+
+            hdr_val.cstr = buf + hdr_val_start;
+            hdr_val.len = mf->line_start + line_len - hdr_val_start;
+
+            res = mhd_str_starts_with_token_req_param (&hdr_val,
+                                                       &tkn,
+                                                       &n_par,
+                                                       &name_buf,
+                                                       &need_unq);
+            if (mhd_STR_STARTS_W_TOKEN_HAS_TOKEN_BAD_FORMAT == res)
+            {
+              mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
+              continue;
+            }
+            else if (mhd_STR_STARTS_W_TOKEN_HAS_TOKEN == res)
+            {
+              static const struct MHD_String fn_par =
+                mhd_MSTR_INIT ("filename");
+              struct mhd_BufferConst fname_buf;
+              if (NULL != name_buf.data)
+              {
+                mhd_assert (buf < name_buf.data);
+                if (0 != mf->f.name_idx)
+                {
+                  /* Already have "name" */
+                  mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
+                  continue;
+                }
+                mf->f.name_idx = (size_t) (name_buf.data - buf);
+                if (! need_unq)
+                  mf->f.name_len = name_buf.size;
+                else
+                {
+                  mf->f.name_len = mhd_str_unquote (name_buf.data,
+                                                    name_buf.size,
+                                                    buf + mf->f.name_idx);
+                  if ((0 == mf->f.name_len) && (0 != name_buf.size))
+                  {
+                    mhd_assert (0 && "broken quoting must be detected " \
+                                "earlier by " \
+                                "mhd_str_starts_with_token_req_param()");
+                    MHD_UNREACHABLE_;
+                    mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
+                    continue;
+                  }
+                }
+                mhd_assert (mf->f.name_idx + mf->f.name_len <= i);
+                mf->f.name_len =
+                  mhd_str_pct_decode_lenient_n (buf + mf->f.name_idx,
+                                                mf->f.name_len,
+                                                buf + mf->f.name_idx,
+                                                mf->f.name_len,
+                                                NULL);
+                mhd_assert (mf->f.name_idx + mf->f.name_len <= i);
+                /* Do not zero-terminate here yet as it may break header format */
+              }
+              res = mhd_str_starts_with_token_req_param (&hdr_val,
+                                                         &tkn,
+                                                         &fn_par,
+                                                         &fname_buf,
+                                                         &need_unq);
+              if (mhd_STR_STARTS_W_TOKEN_HAS_TOKEN_BAD_FORMAT == res)
+              {
+                mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
+                continue;
+              }
+              else if (mhd_STR_STARTS_W_TOKEN_HAS_TOKEN == res)
+              {
+                if (NULL != fname_buf.data)
+                {
+                  mhd_assert (buf < fname_buf.data);
+                  if (0 != mf->f.filename_idx)
+                  {
+                    mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
+                    continue;
+                  }
+                  mf->f.filename_idx = (size_t) (fname_buf.data - buf);
+                  if (! need_unq)
+                    mf->f.filename_len = fname_buf.size;
+                  else
+                  {
+                    mf->f.filename_len =
+                      mhd_str_unquote (fname_buf.data,
+                                       fname_buf.size,
+                                       buf + mf->f.filename_idx);
+                    if ((0 == mf->f.filename_len) && (0 != fname_buf.size))
+                    {
+                      mhd_assert (0 && "broken quoting must be detected " \
+                                  "earlier by " \
+                                  "mhd_str_starts_with_token_req_param()");
+                      MHD_UNREACHABLE_;
+                      mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
+                      continue;
+                    }
+                  }
+                  mhd_assert (mf->f.filename_idx + mf->f.filename_len <= i);
+                  mf->f.filename_len =
+                    mhd_str_pct_decode_lenient_n (buf + mf->f.filename_idx,
+                                                  mf->f.filename_len,
+                                                  buf + mf->f.filename_idx,
+                                                  mf->f.filename_len,
+                                                  NULL);
+                  mhd_assert (mf->f.filename_idx + mf->f.filename_len <= i);
+                }
+              }
+              else
+              {
+                mhd_assert (mhd_STR_STARTS_W_TOKEN_NO_TOKEN == res);
+                mhd_assert (0 && "The presence of the token was "
+                            "checked earlier");
+                MHD_UNREACHABLE_;
+              }
+            }
+          }
+        }
+      }
+      ++i;
+      mf->st = mhd_POST_MPART_ST_HEADER_LINE_START;
+      continue;
+    case mhd_POST_MPART_ST_VALUE_START:
+      mhd_assert (mhd_POST_INVALID_POS == mf->delim_check_start);
+      mhd_assert (0 == p_data->value_off);
+      mhd_assert (0 == mf->f.value_idx);
+      mhd_assert (0 == mf->f.value_len);
+      mhd_assert (0 != i && "the 'value' should follow the 'name'");
+      if (0 == mf->f.name_idx)
+      {
+        mhd_LOG_MSG (c->daemon, \
+                     p_data->some_data_provided ? \
+                     MHD_SC_REQ_POST_PARSE_PARTIAL_INVALID_POST_FORMAT : \
+                     MHD_SC_REQ_POST_PARSE_FAILED_INVALID_POST_FORMAT, \
+                     "The request 'multipart/form-data' POST field has no " \
+                     "name of the field.");
+        p_data->parse_result =
+          p_data->some_data_provided ?
+          MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT :
+          MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
+        mf->st = mhd_POST_MPART_ST_EPILOGUE; /* Avoid processing buffer data */
+        c->discard_request = true;
+        c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+        return true; /* Stop parsing the upload */
+      }
+      mhd_assert (0 != mf->f.name_len);
+      mhd_assert (i > mf->f.name_idx);
+      if (0 != mf->f.filename_idx)
+        buf[mf->f.filename_idx + mf->f.filename_len] = 0; /* Zero-terminate the filename */
+      buf[mf->f.name_idx + mf->f.name_len] = 0; /* Zero-terminate the name */
+      mf->f.value_idx = i;
+      mf->line_start = mhd_POST_INVALID_POS;
+    /* Intentional fall-through */
+    case mhd_POST_MPART_ST_BACK_TO_VALUE:
+      mf->delim_check_start = mhd_POST_INVALID_POS;
+      mf->st = mhd_POST_MPART_ST_VALUE;
+    /* Intentional fall-through */
+    case mhd_POST_MPART_ST_VALUE:
+      mhd_assert (mhd_POST_INVALID_POS == mf->delim_check_start);
+      mhd_assert (mhd_POST_INVALID_POS == mf->line_start);
+      do /* Fast local loop */
+      {
+        if ('\r' == buf[i])
+        {
+          mf->delim_check_start = i;
+          mf->st = mhd_POST_MPART_ST_VALUE_CR_FOUND;
+          ++i;
+          break;
+        }
+        else if (bare_lf_as_crlf && '\n' == buf[i])
+        {
+          mf->delim_check_start = i;
+          mf->st = mhd_POST_MPART_ST_VALUE_LINE_START;
+          ++i;
+          break;
+        }
+      } while (*pdata_size > ++i);
+      mhd_assert ((*pdata_size == i) || \
+                  (mhd_POST_MPART_ST_VALUE_CR_FOUND == mf->st) || \
+                  (mhd_POST_MPART_ST_VALUE_LINE_START == mf->st));
+      continue;
+    case mhd_POST_MPART_ST_VALUE_CR_FOUND:
+      if ('\n' != buf[i])
+      {
+        mf->st = mhd_POST_MPART_ST_BACK_TO_VALUE;
+        continue;
+      }
+      mf->st = mhd_POST_MPART_ST_VALUE_LINE_START;
+      ++i;
+      continue;
+    case mhd_POST_MPART_ST_VALUE_LINE_START:
+      mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
+      mf->line_start = i;
+      mf->st = mhd_POST_MPART_ST_VALUE_CHECKING_FOR_DELIM;
+    /* Intentional fall-through */
+    case mhd_POST_MPART_ST_VALUE_CHECKING_FOR_DELIM:
+      mhd_assert (i >= mf->line_start);
+      do /* Fast local loop */
+      {
+        mhd_assert (i - mf->line_start < mf->bound.size + 2);
+        if (i < mf->line_start + 2)
+        {
+          if ('-' != buf[i])
+          {
+            mf->st = mhd_POST_MPART_ST_BACK_TO_VALUE;
+            break;
+          }
+        }
+        else if (i <= mf->line_start + mf->bound.size + 1)
+        {
+          if (mf->bound.data[i - (mf->line_start + 2)] != buf[i])
+          {
+            mf->st = mhd_POST_MPART_ST_BACK_TO_VALUE;
+            break;
+          }
+          if (i == mf->line_start + mf->bound.size + 1)
+          {
+            mf->st = mhd_POST_MPART_ST_DELIM_FOUND;
+            ++i;
+            break;
+          }
+        }
+      } while (*pdata_size > ++i);
+      mhd_assert ((*pdata_size == i) || \
+                  (mhd_POST_MPART_ST_BACK_TO_VALUE == mf->st) || \
+                  (mhd_POST_MPART_ST_DELIM_FOUND == mf->st));
+      continue;
+    case mhd_POST_MPART_ST_DELIM_FOUND:
+      mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
+      mhd_assert (mhd_POST_INVALID_POS != mf->line_start);
+      mhd_assert (i >= mf->line_start + mf->bound.size + 2);
+      do /* Fast local loop */
+      {
+        if ('\n' == buf[i])
+        {
+          if (bare_lf_as_crlf ||
+              ('\r' == buf [i - 1]))
+            mf->st = mhd_POST_MPART_ST_VALUE_END_FOUND;
+          else
+            mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
+
+          break;
+        }
+        else if ('\r' == buf [i - 1])
+        {
+          mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
+          break;
+        }
+        else if ((i == mf->line_start + mf->bound.size + 3) &&
+                 ('-' == buf [i - 1]) &&
+                 ('-' == buf [i]))
+        {
+          mf->st = mhd_POST_MPART_ST_VALUE_END_FOUND_FINAL;
+          break;
+        }
+      } while (*pdata_size > ++i);
+      mhd_assert ((*pdata_size == i) || \
+                  (mhd_POST_MPART_ST_VALUE_END_FOUND == mf->st) || \
+                  (mhd_POST_MPART_ST_VALUE_END_FOUND_FINAL == mf->st) || \
+                  (mhd_POST_MPART_ST_FORMAT_ERROR == mf->st));
+      continue;
+    case mhd_POST_MPART_ST_VALUE_END_FOUND:
+    case mhd_POST_MPART_ST_VALUE_END_FOUND_FINAL:
+      mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
+      mhd_assert (mf->f.value_idx <= mf->delim_check_start);
+      mhd_assert (0 == mf->f.value_len);
+      mhd_assert (0 != mf->f.name_len);
+      mhd_assert (i > mf->f.name_idx);
+      mhd_assert (i > mf->delim_check_start);
+      if (0 != mf->f.value_idx)
+      {
+        mf->f.value_len = mf->delim_check_start - mf->f.value_idx;
+        buf[mf->f.value_idx + mf->f.value_len] = 0; /* Zero-terminate the value */
+        ++mf->delim_check_start; /* Shift start of the delimiter to keep zero-termination */
+      }
+      if (mhd_POST_MPART_ST_VALUE_END_FOUND == mf->st)
+        mf->st = mhd_POST_MPART_ST_FULL_FIELD_FOUND;
+      else
+        mf->st = mhd_POST_MPART_ST_FULL_FIELD_FOUND_FINAL;
+    /* Intentional fall-through */
+    case mhd_POST_MPART_ST_FULL_FIELD_FOUND:
+    case mhd_POST_MPART_ST_FULL_FIELD_FOUND_FINAL:
+      if (1)
+      {
+        size_t new_delim_check_start;
+
+        ++i; /* Consume current character */
+        new_delim_check_start = mf->delim_check_start;
+        if (process_complete_field_all (c,
+                                        buf,
+                                        &new_delim_check_start,
+                                        pdata_size,
+                                        p_data->field_start,
+                                        mf->f.name_idx,
+                                        mf->f.name_len,
+                                        mf->f.filename_idx,
+                                        mf->f.filename_len,
+                                        mf->f.cntn_type_idx,
+                                        mf->f.cntn_type_len,
+                                        mf->f.enc_idx,
+                                        mf->f.enc_len,
+                                        mf->f.value_idx,
+                                        mf->f.value_len))
+        {
+          if (c->suspended)
+          {
+            mhd_assert (mf->delim_check_start == new_delim_check_start);
+            p_data->next_parse_pos = --i; /* Restore position */
+            return true;
+          }
+
+          if (mf->delim_check_start != new_delim_check_start)
+          {
+            size_t shift_size;
+            mhd_assert (mf->delim_check_start > new_delim_check_start);
+
+            shift_size = new_delim_check_start - mf->delim_check_start;
+            mf->delim_check_start = new_delim_check_start;
+            i -= shift_size;
+          }
+
+          mhd_assert (*pdata_size >= i);
+          reset_parse_field_data_mpart_cont (
+            p_data,
+            mhd_POST_MPART_ST_FULL_FIELD_FOUND_FINAL == mf->st);
+          p_data->next_parse_pos = i;
+
+          return true;
+        }
+        mhd_assert (mf->delim_check_start == new_delim_check_start);
+
+        reset_parse_field_data_mpart_cont (
+          p_data,
+          mhd_POST_MPART_ST_FULL_FIELD_FOUND_FINAL == mf->st);
+      }
+      continue; /* Process the next char */
+    case mhd_POST_MPART_ST_EPILOGUE:
+      /* Discard the rest of the content data */
+      *pdata_size = i;
+      p_data->next_parse_pos = i;
+      return false;
+    case mhd_POST_MPART_ST_FORMAT_ERROR:
+      if (p_data->some_data_provided)
+      {
+        mhd_LOG_MSG (c->daemon, \
+                     MHD_SC_REQ_POST_PARSE_PARTIAL_INVALID_POST_FORMAT, \
+                     "The request POST has broken encoding or format and " \
+                     "was parsed only partially.");
+        p_data->parse_result =
+          MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT;
+      }
+      else
+      {
+        mhd_LOG_MSG (c->daemon, \
+                     MHD_SC_REQ_POST_PARSE_FAILED_INVALID_POST_FORMAT, \
+                     "The request POST has broken encoding or format and " \
+                     "cannot be parsed.");
+        p_data->parse_result =
+          MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
+      }
+      c->discard_request = true;
+      c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+      return true;
+    default:
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+      break;
+    }
+    mhd_assert (0 && "Should be unreachable");
+    MHD_UNREACHABLE_;
+    break;
+  }
+
+  mhd_assert (*pdata_size == i);
+
+  mhd_assert (mhd_POST_MPART_ST_NOT_STARTED != mf->st);
+  mhd_assert (mhd_POST_MPART_ST_BACK_TO_PREAMBL != mf->st);
+  mhd_assert (mhd_POST_MPART_ST_PREAMBL_LINE_START != mf->st);
+  mhd_assert (mhd_POST_MPART_ST_HEADER_LINE_END != mf->st);
+  mhd_assert (mhd_POST_MPART_ST_BACK_TO_VALUE != mf->st);
+  mhd_assert (mhd_POST_MPART_ST_VALUE_END_FOUND != mf->st);
+  mhd_assert (mhd_POST_MPART_ST_VALUE_END_FOUND_FINAL != mf->st);
+  mhd_assert ((mhd_POST_MPART_ST_VALUE != mf->st) || \
+              (0 == mf->f.value_len));
+
+  mhd_assert (*pdata_size == i);
+
+  if ((0 != mf->f.value_idx) &&
+      (((mhd_POST_MPART_ST_VALUE == mf->st) &&
+        (i != mf->f.value_idx) &&
+        is_value_streaming_needed (c, i - p_data->field_start)) ||
+       (((mhd_POST_MPART_ST_VALUE_CR_FOUND == mf->st) ||
+         (mhd_POST_MPART_ST_VALUE_LINE_START == mf->st) ||
+         (mhd_POST_MPART_ST_VALUE_CHECKING_FOR_DELIM == mf->st)) &&
+        (i != mf->delim_check_start) &&
+        is_value_streaming_needed (c, i - mf->delim_check_start))))
+  {
+    bool proc_res;
+
+    mhd_assert ((mhd_POST_MPART_ST_VALUE == mf->st) || \
+                (i >= mf->delim_check_start));
+    mhd_assert ((mhd_POST_MPART_ST_VALUE == mf->st) || \
+                (mhd_POST_INVALID_POS != mf->delim_check_start));
+    if (mhd_POST_MPART_ST_VALUE != mf->st)
+    {
+      i = mf->delim_check_start; /* Reset position */
+      mf->delim_check_start = mhd_POST_INVALID_POS;
+      mf->st = mhd_POST_MPART_ST_VALUE;
+    }
+
+    proc_res =
+      process_partial_value_all (c,
+                                 buf,
+                                 &i,
+                                 pdata_size,
+                                 mf->f.name_idx,
+                                 mf->f.name_len,
+                                 mf->f.filename_idx,
+                                 mf->f.filename_len,
+                                 mf->f.cntn_type_idx,
+                                 mf->f.cntn_type_len,
+                                 mf->f.enc_idx,
+                                 mf->f.enc_len,
+                                 mf->f.value_idx,
+                                 i - mf->f.value_idx);
+
+    p_data->next_parse_pos = i;
+
+    return proc_res;
+  }
+
+  p_data->next_parse_pos = i;
+  return false; /* Continue parsing */
+}
+
+
 static MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_INOUT_ (2) MHD_FN_PAR_INOUT_ (3) bool
 parse_post_text (struct MHD_Connection *restrict c,
@@ -1268,7 +2042,7 @@ parse_post_text (struct MHD_Connection *restrict c,
   bool enc_broken;
 
   mhd_assert (MHD_HTTP_POST_ENCODING_TEXT_PLAIN == c->rq.u_proc.post.enc);
-  mhd_assert (MHD_POST_PARSE_RES_OK == c->rq.u_proc.post.parse_result);
+  mhd_assert (MHD_POST_PARSE_RES_OK == p_data->parse_result);
   mhd_assert (! c->discard_request);
   mhd_assert (p_data->next_parse_pos < *pdata_size);
 
@@ -1359,7 +2133,7 @@ parse_post_text (struct MHD_Connection *restrict c,
       if ((0 == tf->name_len) && (0 == tf->value_len))
       { /* Empty line */
         ++i; /* Advance to the next char to be checked */
-        reset_parse_field_data_text (&(c->rq.u_proc.post));
+        reset_parse_field_data_text (p_data);
         tf->st = mhd_POST_TEXT_ST_NOT_STARTED;
       }
       else if (mhd_POST_TEXT_ST_AT_LF_BARE == tf->st)
@@ -1392,11 +2166,13 @@ parse_post_text (struct MHD_Connection *restrict c,
       {
         if (c->suspended)
           --i; /* Go back to the same position */
+        else
+          reset_parse_field_data_text (p_data);
         p_data->next_parse_pos = i;
         return true;
       }
       mhd_assert (*pdata_size >= i);
-      reset_parse_field_data_text (&(c->rq.u_proc.post));
+      reset_parse_field_data_text (p_data);
       continue; /* Process the next char */
     default:
       mhd_assert (0 && "Impossible value");
@@ -1418,7 +2194,7 @@ parse_post_text (struct MHD_Connection *restrict c,
                    MHD_SC_REQ_POST_PARSE_PARTIAL_INVALID_POST_FORMAT, \
                    "The request POST has broken encoding or format and " \
                    "was parsed only partially.");
-      c->rq.u_proc.post.parse_result =
+      p_data->parse_result =
         MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT;
     }
     else
@@ -1427,9 +2203,10 @@ parse_post_text (struct MHD_Connection *restrict c,
                    MHD_SC_REQ_POST_PARSE_FAILED_INVALID_POST_FORMAT, \
                    "The request POST has broken encoding or format and " \
                    "cannot be parsed.");
-      c->rq.u_proc.post.parse_result =
+      p_data->parse_result =
         MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
     }
+    tf->st = mhd_POST_TEXT_ST_NOT_STARTED;
     c->discard_request = true;
     c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
     return true;
@@ -1477,6 +2254,14 @@ mhd_stream_post_parse (struct MHD_Connection *restrict c,
   mhd_assert (MHD_HTTP_POST_ENCODING_OTHER != p_data->enc);
   mhd_assert (c->rq.cntn.lbuf.size <= p_data->lbuf_limit);
 
+  if ((MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA == p_data->enc) &&
+      (mhd_POST_MPART_ST_EPILOGUE == p_data->e_d.m_form.st))
+  {
+    /* No need to process the data */
+    *pdata_size = 0; /* All data has been moved */
+    return false; /* Continue normal processing */
+  }
+
   // TODO: support process in the connection buffer
   if (NULL == c->rq.cntn.lbuf.data)
   {
@@ -1505,7 +2290,7 @@ mhd_stream_post_parse (struct MHD_Connection *restrict c,
                  MHD_SC_REQ_POST_PARSE_FAILED_NO_LARGE_BUF_MEM, \
                  "Not enough large shared buffer memory to " \
                  "parse POST request.");
-    c->rq.u_proc.post.parse_result =
+    p_data->parse_result =
       MHD_POST_PARSE_RES_FAILED_NO_LARGE_BUF_MEM;
     c->discard_request = true;
     c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
@@ -1524,10 +2309,9 @@ mhd_stream_post_parse (struct MHD_Connection *restrict c,
                               &(p_data->lbuf_used),
                               c->rq.cntn.lbuf.data);
   case MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA:
-    // TODO: finish
-    mhd_assert (0 && "Not yet finished");
-    c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
-    return true;
+    return parse_post_mpart (c,
+                             &(p_data->lbuf_used),
+                             c->rq.cntn.lbuf.data);
   case MHD_HTTP_POST_ENCODING_TEXT_PLAIN:
     return parse_post_text (c,
                             &(p_data->lbuf_used),
@@ -1536,7 +2320,7 @@ mhd_stream_post_parse (struct MHD_Connection *restrict c,
   default:
     mhd_assert (0 && "Impossible value");
     MHD_UNREACHABLE_;
-    c->rq.u_proc.post.parse_result =
+    p_data->parse_result =
       MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT;
     c->discard_request = true;
     c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
@@ -1671,7 +2455,156 @@ check_post_leftovers_urlenc (struct MHD_Connection *restrict c,
                               value_len))
     return true;
 
-  reset_parse_field_data_urlenc (&(c->rq.u_proc.post));
+  reset_parse_field_data_urlenc (p_data);
+
+  return false; /* Continue normal processing */
+}
+
+
+/**
+ * Check whether some unprocessed or partially processed data left in buffers
+ * for "multipart/form-data" POST encoding.
+ * @param c the stream to use
+ * @param pdata_size the pointer to the size of the data in the buffer
+ * @param buf the buffer with the data
+ * @return 'true' if stream state was changed,
+ *         'false' to continue normal processing
+ */
+static MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_INOUT_ (2) MHD_FN_PAR_INOUT_ (3) bool
+check_post_leftovers_mpart (struct MHD_Connection *restrict c,
+                            size_t *restrict pdata_size,
+                            char *restrict buf)
+{
+  struct mhd_PostParserData *const p_data = &(c->rq.u_proc.post);
+  struct mhd_PostParserMPartFormData *const mf = &(p_data->e_d.m_form); /**< the current "form-data" parsing details */
+  size_t pos;
+  bool not_terminated;
+  bool add_field;
+  size_t field_pos;
+  size_t field_len;
+
+  pos = p_data->next_parse_pos;  /* Points to the char AFTER the data, valid location as buffer is always at least one byte larger */
+  mhd_assert (pos == p_data->next_parse_pos);
+  mhd_assert (pos < c->rq.cntn.lbuf.size); // TODO: support processing in connection buffer
+  mhd_assert (*pdata_size >= pos);
+
+  not_terminated = false;
+  add_field = false;
+  field_pos = 0;
+  field_len = 0;
+
+  switch (mf->st)
+  {
+  case mhd_POST_MPART_ST_NOT_STARTED:
+  case mhd_POST_MPART_ST_PREAMBL:
+  case mhd_POST_MPART_ST_PREAMBL_CR_FOUND:
+  case mhd_POST_MPART_ST_PREAMBL_CHECKING_FOR_DELIM:
+    mhd_assert (pos == *pdata_size);
+    return false; /* Continue processing */
+  case mhd_POST_MPART_ST_FIRST_DELIM_FOUND:
+  case mhd_POST_MPART_ST_FIRST_PART_START:
+  case mhd_POST_MPART_ST_PART_START:
+    mhd_assert (pos == *pdata_size);
+    not_terminated = true;
+    break;
+  case mhd_POST_MPART_ST_HEADER_LINE_START:
+  case mhd_POST_MPART_ST_HEADER_LINE:
+  case mhd_POST_MPART_ST_HEADER_LINE_CR_FOUND:
+  case mhd_POST_MPART_ST_VALUE_START:
+    mhd_assert (pos == *pdata_size);
+    not_terminated = true;
+    if (0 != mf->f.name_idx)
+    {
+      add_field = true;
+      buf[mf->f.name_idx + mf->f.name_len] = 0; /* Zero-terminate the name */
+      if (0 != mf->f.filename_idx)
+        buf[mf->f.filename_idx + mf->f.filename_len] = 0; /* Zero-terminate the filename */
+    }
+    break;
+  case mhd_POST_MPART_ST_VALUE:
+  case mhd_POST_MPART_ST_VALUE_CR_FOUND:
+  case mhd_POST_MPART_ST_VALUE_LINE_START:
+  case mhd_POST_MPART_ST_VALUE_CHECKING_FOR_DELIM:
+    mhd_assert (0 != mf->f.name_idx);
+    mhd_assert (0 != mf->f.value_idx);
+    not_terminated = true;
+    add_field = true;
+    field_pos = mf->f.value_idx;
+    field_len = pos - field_len;
+    break;
+  case mhd_POST_MPART_ST_DELIM_FOUND:
+    mhd_assert (0 != mf->f.name_idx);
+    mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
+    mhd_assert (pos > mf->delim_check_start);
+    not_terminated = true;
+    add_field = true;
+    if (0 != mf->f.value_idx)
+    {
+      field_pos = mf->f.value_idx;
+      field_len = pos -  mf->delim_check_start;
+    }
+    break;
+  case mhd_POST_MPART_ST_FULL_FIELD_FOUND:
+    not_terminated = true;
+  /* Intentional fall-through */
+  case mhd_POST_MPART_ST_FULL_FIELD_FOUND_FINAL:
+    mhd_assert (0 != mf->f.name_idx);
+    add_field = true;
+    if (0 != mf->f.value_idx)
+    {
+      field_pos = mf->f.value_idx;
+      field_len = mf->f.value_len;
+    }
+    break;
+  case mhd_POST_MPART_ST_EPILOGUE:
+  case mhd_POST_MPART_ST_FORMAT_ERROR:
+    return false; /* Continue processing */
+  case mhd_POST_MPART_ST_BACK_TO_PREAMBL:
+  case mhd_POST_MPART_ST_PREAMBL_LINE_START:
+  case mhd_POST_MPART_ST_HEADER_LINE_END:
+  case mhd_POST_MPART_ST_BACK_TO_VALUE:
+  case mhd_POST_MPART_ST_VALUE_END_FOUND:
+  case mhd_POST_MPART_ST_VALUE_END_FOUND_FINAL:
+  default:
+    mhd_assert (0 && "Impossible value");
+    MHD_UNREACHABLE_;
+    p_data->parse_result = MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
+    return false;
+  }
+
+  if (not_terminated)
+  {
+    /* The "closing" delimiter is missing */
+    mhd_LOG_MSG (c->daemon, \
+                 MHD_SC_REQ_POST_PARSE_OK_BAD_TERMINATION, \
+                 "The request POST has invalid termination / ending. " \
+                 "The last parsed field may be incorrect.");
+    p_data->parse_result = MHD_POST_PARSE_RES_OK_BAD_TERMINATION;
+  }
+
+  if (add_field)
+  {
+    if (process_complete_field_all (c,
+                                    buf,
+                                    &pos,
+                                    pdata_size,
+                                    p_data->field_start,
+                                    mf->f.name_idx,
+                                    mf->f.name_len,
+                                    mf->f.filename_idx,
+                                    mf->f.filename_len,
+                                    mf->f.cntn_type_idx,
+                                    mf->f.cntn_type_len,
+                                    mf->f.enc_idx,
+                                    mf->f.enc_len,
+                                    field_pos,
+                                    field_len))
+      return true;
+  }
+
+  reset_parse_field_data_mpart_cont (p_data,
+                                     ! not_terminated);
 
   return false; /* Continue normal processing */
 }
@@ -1777,7 +2710,7 @@ check_post_leftovers_text (struct MHD_Connection *restrict c,
     mhd_LOG_MSG (c->daemon, \
                  MHD_SC_REQ_POST_PARSE_OK_BAD_TERMINATION, \
                  "The request POST has invalid termination / ending. " \
-                 "The last parsed filed may be incorrect.");
+                 "The last parsed field may be incorrect.");
     p_data->parse_result = MHD_POST_PARSE_RES_OK_BAD_TERMINATION;
   }
 
@@ -1792,7 +2725,7 @@ check_post_leftovers_text (struct MHD_Connection *restrict c,
                               value_len))
     return true;
 
-  reset_parse_field_data_text (&(c->rq.u_proc.post));
+  reset_parse_field_data_text (p_data);
 
   return false; /* Continue normal processing */
 }
@@ -1815,9 +2748,9 @@ check_post_leftovers (struct MHD_Connection *restrict c)
                                         &(p_data->lbuf_used),
                                         c->rq.cntn.lbuf.data);
   case MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA:
-    mhd_assert (0 && "Not yet finished");
-    c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
-    return true;
+    return check_post_leftovers_mpart (c,
+                                       &(p_data->lbuf_used),
+                                       c->rq.cntn.lbuf.data);
   case MHD_HTTP_POST_ENCODING_TEXT_PLAIN:
     return check_post_leftovers_text (c,
                                       &(p_data->lbuf_used),
@@ -1826,7 +2759,7 @@ check_post_leftovers (struct MHD_Connection *restrict c)
   default:
     mhd_assert (0 && "Impossible value");
     MHD_UNREACHABLE_;
-    c->rq.u_proc.post.parse_result =
+    p_data->parse_result =
       MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT;
     c->discard_request = true;
     c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
@@ -1843,9 +2776,12 @@ mhd_stream_process_post_finish (struct MHD_Connection *restrict c)
   const struct MHD_UploadAction *act;
   bool state_changed;
 
-  // TODO: implement processing in the connection buffer
-  if (check_post_leftovers (c))
-    return true;
+  if (MHD_POST_PARSE_RES_OK == p_data->parse_result)
+  {
+    // TODO: implement processing in the connection buffer
+    if (check_post_leftovers (c))
+      return true;
+  }
 
   act = c->rq.app_act.head_act.data.post_parse.done_cb (
     &(c->rq),
