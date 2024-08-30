@@ -181,14 +181,14 @@ struct MHD_ResponseOptionAndValue
  * Make the response object re-usable. (FIXME: not used in struct ResponseOptions; remove!?)
  * The response will not be consumed by MHD_action_from_response() and must be destroyed by MHD_response_destroy().
  * Useful if the same response is often used to reply.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_R_OPTION_REUSABLE(val) \
+#  define MHD_R_OPTION_REUSABLE(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_ResponseOptionAndValue) \
         { \
           .opt = MHD_R_O_REUSABLE,  \
-          .val.reusable = (val) \
+          .val.reusable = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -197,39 +197,39 @@ struct MHD_ResponseOptionAndValue
  * This flag value can be used only with responses created without body (zero-size body).
  * Responses with this flag enabled cannot be used in situations where reply body must be sent to the client.
  * This flag is primarily intended to be used when automatic 'Content-Length' header is undesirable in response to HEAD requests.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_R_OPTION_HEAD_ONLY_RESPONSE(val) \
+#  define MHD_R_OPTION_HEAD_ONLY_RESPONSE(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_ResponseOptionAndValue) \
         { \
           .opt = MHD_R_O_HEAD_ONLY_RESPONSE,  \
-          .val.head_only_response = (val) \
+          .val.head_only_response = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
  * Force use of chunked encoding even if the response content size is known.
  * Ignored when the reply cannot have body/content.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_R_OPTION_CHUNKED_ENC(val) \
+#  define MHD_R_OPTION_CHUNKED_ENC(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_ResponseOptionAndValue) \
         { \
           .opt = MHD_R_O_CHUNKED_ENC,  \
-          .val.chunked_enc = (val) \
+          .val.chunked_enc = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
  * Force close connection after sending the response, prevents keep-alive connections and adds 'Connection: close' header.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_R_OPTION_CONN_CLOSE(val) \
+#  define MHD_R_OPTION_CONN_CLOSE(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_ResponseOptionAndValue) \
         { \
           .opt = MHD_R_O_CONN_CLOSE,  \
-          .val.conn_close = (val) \
+          .val.conn_close = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -243,14 +243,14 @@ struct MHD_ResponseOptionAndValue
  * + chunked: no
  *
 This option can be used to communicate with some broken client, which does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRICT(val) \
+#  define MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRICT(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_ResponseOptionAndValue) \
         { \
           .opt = MHD_R_O_HTTP_1_0_COMPATIBLE_STRICT,  \
-          .val.http_1_0_compatible_strict = (val) \
+          .val.http_1_0_compatible_strict = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -266,27 +266,27 @@ This option can be used to communicate with some broken client, which does not i
  * + chunked: no
  *
 With this option HTTP/1.0 server is emulated (with support for 'keep-alive' connections).
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_R_OPTION_HTTP_1_0_SERVER(val) \
+#  define MHD_R_OPTION_HTTP_1_0_SERVER(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_ResponseOptionAndValue) \
         { \
           .opt = MHD_R_O_HTTP_1_0_SERVER,  \
-          .val.http_1_0_server = (val) \
+          .val.http_1_0_server = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
  * Disable sanity check preventing clients from manually setting the HTTP content length option.
  * Allow to set several 'Content-Length' headers. These headers will be used even with replies without body.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_R_OPTION_INSANITY_HEADER_CONTENT_LENGTH(val) \
+#  define MHD_R_OPTION_INSANITY_HEADER_CONTENT_LENGTH(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_ResponseOptionAndValue) \
         { \
           .opt = MHD_R_O_INSANITY_HEADER_CONTENT_LENGTH,  \
-          .val.insanity_header_content_length = (val) \
+          .val.insanity_header_content_length = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -324,17 +324,17 @@ MHD_NOWARN_UNUSED_FUNC_
  * Make the response object re-usable. (FIXME: not used in struct ResponseOptions; remove!?)
  * The response will not be consumed by MHD_action_from_response() and must be destroyed by MHD_response_destroy().
  * Useful if the same response is often used to reply.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_REUSABLE (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_ResponseOptionAndValue opt_val;
 
   opt_val.opt = MHD_R_O_REUSABLE;
-  opt_val.val.reusable = (val); \
+  opt_val.val.reusable = (value); \
 
   return opt_val;
 }
@@ -346,17 +346,17 @@ MHD_R_OPTION_REUSABLE (
  * This flag value can be used only with responses created without body (zero-size body).
  * Responses with this flag enabled cannot be used in situations where reply body must be sent to the client.
  * This flag is primarily intended to be used when automatic 'Content-Length' header is undesirable in response to HEAD requests.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_HEAD_ONLY_RESPONSE (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_ResponseOptionAndValue opt_val;
 
   opt_val.opt = MHD_R_O_HEAD_ONLY_RESPONSE;
-  opt_val.val.head_only_response = (val); \
+  opt_val.val.head_only_response = (value); \
 
   return opt_val;
 }
@@ -365,17 +365,17 @@ MHD_R_OPTION_HEAD_ONLY_RESPONSE (
 /**
  * Force use of chunked encoding even if the response content size is known.
  * Ignored when the reply cannot have body/content.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_CHUNKED_ENC (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_ResponseOptionAndValue opt_val;
 
   opt_val.opt = MHD_R_O_CHUNKED_ENC;
-  opt_val.val.chunked_enc = (val); \
+  opt_val.val.chunked_enc = (value); \
 
   return opt_val;
 }
@@ -383,17 +383,17 @@ MHD_R_OPTION_CHUNKED_ENC (
 
 /**
  * Force close connection after sending the response, prevents keep-alive connections and adds 'Connection: close' header.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_CONN_CLOSE (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_ResponseOptionAndValue opt_val;
 
   opt_val.opt = MHD_R_O_CONN_CLOSE;
-  opt_val.val.conn_close = (val); \
+  opt_val.val.conn_close = (value); \
 
   return opt_val;
 }
@@ -410,17 +410,17 @@ MHD_R_OPTION_CONN_CLOSE (
  * + chunked: no
  *
 This option can be used to communicate with some broken client, which does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRICT (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_ResponseOptionAndValue opt_val;
 
   opt_val.opt = MHD_R_O_HTTP_1_0_COMPATIBLE_STRICT;
-  opt_val.val.http_1_0_compatible_strict = (val); \
+  opt_val.val.http_1_0_compatible_strict = (value); \
 
   return opt_val;
 }
@@ -439,17 +439,17 @@ MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRICT (
  * + chunked: no
  *
 With this option HTTP/1.0 server is emulated (with support for 'keep-alive' connections).
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_HTTP_1_0_SERVER (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_ResponseOptionAndValue opt_val;
 
   opt_val.opt = MHD_R_O_HTTP_1_0_SERVER;
-  opt_val.val.http_1_0_server = (val); \
+  opt_val.val.http_1_0_server = (value); \
 
   return opt_val;
 }
@@ -458,17 +458,17 @@ MHD_R_OPTION_HTTP_1_0_SERVER (
 /**
  * Disable sanity check preventing clients from manually setting the HTTP content length option.
  * Allow to set several 'Content-Length' headers. These headers will be used even with replies without body.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_INSANITY_HEADER_CONTENT_LENGTH (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_ResponseOptionAndValue opt_val;
 
   opt_val.opt = MHD_R_O_INSANITY_HEADER_CONTENT_LENGTH;
-  opt_val.val.insanity_header_content_length = (val); \
+  opt_val.val.insanity_header_content_length = (value); \
 
   return opt_val;
 }

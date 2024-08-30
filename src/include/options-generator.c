@@ -410,13 +410,13 @@ dump_option_macros (const char *name,
                     desc));
   }
   if (0 == desct)
-    printf (" * @param val the value of the parameter");
+    printf (" * @param value the value of the parameter");
   printf (" * @return structure with the requested setting\n */\n");
   printf ("#  define MHD_%c_OPTION_%s(",
           (char) toupper (*category),
           uppercase (name));
   if (0 == argc)
-    printf ("val");
+    printf ("value");
   else
     for (unsigned int i = 0; i<argc; i++)
     {
@@ -434,7 +434,7 @@ dump_option_macros (const char *name,
           (char) toupper (*category),
           uppercase (name));
   if (0 == argc)
-    printf ("          .val.%s = (val) \\\n",
+    printf ("          .val.%s = (value) \\\n",
             lowercase (name));
   else
     for (unsigned int i = 0; i<argc; i++)
@@ -491,7 +491,7 @@ dump_option_static_functions (const char *name,
                     desc));
   }
   if (0 == desct)
-    printf (" * @param val the value of the parameter");
+    printf (" * @param value the value of the parameter");
   printf (" * @return structure with the requested setting\n */\n");
   printf ("static MHD_INLINE struct MHD_%sOptionAndValue\n"
           "MHD_%c_OPTION_%s (\n",
@@ -499,7 +499,7 @@ dump_option_static_functions (const char *name,
           (char) toupper (*category),
           uppercase (name));
   if (0 == argc)
-    printf ("  %s val",
+    printf ("  %s value",
             NULL != type
             ? type
             : arguments[0]);
@@ -527,7 +527,7 @@ dump_option_static_functions (const char *name,
     (char) toupper (*category),
     uppercase (name));
   if (0 == argc)
-    printf ("  opt_val.val.%s = (val); \\\n",
+    printf ("  opt_val.val.%s = (value); \\\n",
             lowercase (name));
   else
     for (unsigned int i = 0; i<argc; i++)
@@ -576,7 +576,7 @@ dump_option_documentation_functions (const char *name,
                      desc));
   }
   if (0 == desct)
-    fprintf (f, " * @param val the value of the parameter");
+    fprintf (f, " * @param value the value of the parameter");
   fprintf (f, " * @return structure with the requested setting\n */\n");
   fprintf (f,"struct MHD_%sOptionAndValue\n"
            "MHD_%c_OPTION_%s (\n",
@@ -585,7 +585,7 @@ dump_option_documentation_functions (const char *name,
            uppercase (name));
   if (0 == argc)
     fprintf (f,
-             "  %s val",
+             "  %s value",
              NULL != type
              ? type
              : arguments[0]);

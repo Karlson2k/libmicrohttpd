@@ -7152,6 +7152,7 @@ src/tests/basic/Makefile
 src/tests/client_server/Makefile
 src/microhttpd_ws/Makefile
 src/examples/Makefile
+src/examples2/Makefile
 src/tools/Makefile
 src/testcurl/Makefile
 src/testcurl/https/Makefile

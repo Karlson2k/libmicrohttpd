@@ -15,7 +15,7 @@ SUBDIRS += microhttpd_ws
 endif
 
 if BUILD_EXAMPLES
-SUBDIRS += examples
+SUBDIRS += examples examples2
 endif
 
 if BUILD_TOOLS

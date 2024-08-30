@@ -3868,11 +3868,11 @@ MHD_D_OPTION_LISTEN_BACKLOG (
  * Inform that SIGPIPE is suppressed or handled by application.
  * If suppressed/handled, MHD uses network functions that could generate SIGPIPE, like `sendfile()`.
  * Silently ignored when MHD creates internal threads as for them SIGPIPE is suppressed automatically.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_SIGPIPE_SUPPRESSED (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
@@ -3929,11 +3929,11 @@ MHD_D_OPTION_TLS_PSK_CALLBACK (
  * Control ALPN for TLS connection.
  * Silently ignored for non-TLS.
  * By default ALPN is automatically used for TLS connections.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_NO_ALPN (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
@@ -4014,32 +4014,32 @@ MHD_D_OPTION_EARLY_URI_LOGGER (
  * Disable converting plus ('+') character to space in GET parameters (URI part after '?').
  * Plus conversion is not required by HTTP RFCs, however it required by HTML specifications, see https://url.spec.whatwg.org/#application/x-www-form-urlencoded for details.
  * By default plus is converted to space in the query part of URI.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
  * Suppresse use of 'Date:' header.
  * According to RFC should be suppressed only if the system has no RTC.
  * The 'Date:' is not suppressed (the header is enabled) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_SUPPRESS_DATE_HEADER (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
  * Use SHOUTcast for responses.
  * This will cause *all* responses to begin with the SHOUTcast 'ICY' line instead of 'HTTP'.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_ENABLE_SHOUTCAST (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
@@ -4047,11 +4047,11 @@ MHD_D_OPTION_ENABLE_SHOUTCAST (
  * Default is 32kb.
  * Values above 128kb are unlikely to result in much performance benefit, as half of the memory will be typically used for IO, and TCP buffers are unlikely to support window sizes above 64k on most systems.
  * The size should be large enough to fit all request headers (together with internal parsing information).
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_CONN_MEMORY_LIMIT (
-  size_t val
+  size_t value
   );
 
 /**
@@ -4059,22 +4059,22 @@ MHD_D_OPTION_CONN_MEMORY_LIMIT (
  * The same large pool is shared for all connections server by MHD and used when application requests avoiding of incremental upload processing to accamulate complete content upload before giving it to the application.
  * Default is 8Mb.
  * Can be set to zero to disable share pool.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_LARGE_POOL_SIZE (
-  size_t val
+  size_t value
   );
 
 /**
  * Desired size of the stack for the threads started by MHD.
  * Use 0 for system default, which is also MHD default.
  * Works only with #MHD_D_OPTION_WM_WORKER_THREADS() or #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_STACK_SIZE (
-  size_t val
+  size_t value
   );
 
 /**
@@ -4097,11 +4097,11 @@ MHD_D_OPTION_FD_NUMBER_LIMIT (
  * Disables certain calls to `shutdown()`, enables aggressive non-blocking optimistic reads and other potentially unsafe optimisations.
  * Most effects only happen with internal threads with epoll.
  * The 'turbo' mode is not enabled (mode is disabled) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_TURBO (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
@@ -4111,11 +4111,11 @@ MHD_D_OPTION_TURBO (
  * Not compatible with any internal threads modes.
  * If MHD is compiled with custom configuration for embedded projects without threads support, this option is mandatory.
  * Thread safety is not disabled (safety is enabled) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_DISABLE_THREAD_SAFETY (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
@@ -4123,11 +4123,11 @@ MHD_D_OPTION_DISABLE_THREAD_SAFETY (
  * Upgrade may require usage of additional internal resources, which we can avoid providing if they will not be used.
  * You should only use this option if you do not use upgrade functionality and need a generally minor boost in performance and resources saving.
  * The upgrade is not disallowed (upgrade is allowed) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_DISALLOW_UPGRADE (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
@@ -4135,11 +4135,11 @@ MHD_D_OPTION_DISALLOW_UPGRADE (
  *
 You should only use this function if you do not use suspend functionality and need a generally minor boost in performance.
  * The suspend is not disallowed (suspend is allowed) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_DISALLOW_SUSPEND_RESUME (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
@@ -4259,11 +4259,11 @@ MHD_D_OPTION_DAUTH_DEF_MAX_NC (
  * Make the response object re-usable. (FIXME: not used in struct ResponseOptions; remove!?)
  * The response will not be consumed by MHD_action_from_response() and must be destroyed by MHD_response_destroy().
  * Useful if the same response is often used to reply.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_REUSABLE (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
@@ -4272,30 +4272,30 @@ MHD_R_OPTION_REUSABLE (
  * This flag value can be used only with responses created without body (zero-size body).
  * Responses with this flag enabled cannot be used in situations where reply body must be sent to the client.
  * This flag is primarily intended to be used when automatic 'Content-Length' header is undesirable in response to HEAD requests.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_HEAD_ONLY_RESPONSE (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
  * Force use of chunked encoding even if the response content size is known.
  * Ignored when the reply cannot have body/content.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_CHUNKED_ENC (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
  * Force close connection after sending the response, prevents keep-alive connections and adds 'Connection: close' header.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_CONN_CLOSE (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
@@ -4309,11 +4309,11 @@ MHD_R_OPTION_CONN_CLOSE (
  * + chunked: no
  *
 This option can be used to communicate with some broken client, which does not implement HTTP/1.1 features, but advertises HTTP/1.1 support.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRICT (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
@@ -4329,21 +4329,21 @@ MHD_R_OPTION_HTTP_1_0_COMPATIBLE_STRICT (
  * + chunked: no
  *
 With this option HTTP/1.0 server is emulated (with support for 'keep-alive' connections).
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_HTTP_1_0_SERVER (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**
  * Disable sanity check preventing clients from manually setting the HTTP content length option.
  * Allow to set several 'Content-Length' headers. These headers will be used even with replies without body.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 struct MHD_ResponseOptionAndValue
 MHD_R_OPTION_INSANITY_HEADER_CONTENT_LENGTH (
-  enum MHD_Bool val
+  enum MHD_Bool value
   );
 
 /**

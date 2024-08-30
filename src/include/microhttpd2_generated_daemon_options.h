@@ -996,14 +996,14 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
  * Inform that SIGPIPE is suppressed or handled by application.
  * If suppressed/handled, MHD uses network functions that could generate SIGPIPE, like `sendfile()`.
  * Silently ignored when MHD creates internal threads as for them SIGPIPE is suppressed automatically.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_SIGPIPE_SUPPRESSED(val) \
+#  define MHD_D_OPTION_SIGPIPE_SUPPRESSED(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
           .opt = MHD_D_O_SIGPIPE_SUPPRESSED,  \
-          .val.sigpipe_suppressed = (val) \
+          .val.sigpipe_suppressed = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -1072,14 +1072,14 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
  * Control ALPN for TLS connection.
  * Silently ignored for non-TLS.
  * By default ALPN is automatically used for TLS connections.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_NO_ALPN(val) \
+#  define MHD_D_OPTION_NO_ALPN(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
           .opt = MHD_D_O_NO_ALPN,  \
-          .val.no_alpn = (val) \
+          .val.no_alpn = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -1178,41 +1178,41 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
  * Disable converting plus ('+') character to space in GET parameters (URI part after '?').
  * Plus conversion is not required by HTTP RFCs, however it required by HTML specifications, see https://url.spec.whatwg.org/#application/x-www-form-urlencoded for details.
  * By default plus is converted to space in the query part of URI.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE(val) \
+#  define MHD_D_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
           .opt = MHD_D_O_DISABLE_URI_QUERY_PLUS_AS_SPACE,  \
-          .val.disable_uri_query_plus_as_space = (val) \
+          .val.disable_uri_query_plus_as_space = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
  * Suppresse use of 'Date:' header.
  * According to RFC should be suppressed only if the system has no RTC.
  * The 'Date:' is not suppressed (the header is enabled) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_SUPPRESS_DATE_HEADER(val) \
+#  define MHD_D_OPTION_SUPPRESS_DATE_HEADER(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
           .opt = MHD_D_O_SUPPRESS_DATE_HEADER,  \
-          .val.suppress_date_header = (val) \
+          .val.suppress_date_header = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
  * Use SHOUTcast for responses.
  * This will cause *all* responses to begin with the SHOUTcast 'ICY' line instead of 'HTTP'.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_ENABLE_SHOUTCAST(val) \
+#  define MHD_D_OPTION_ENABLE_SHOUTCAST(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
           .opt = MHD_D_O_ENABLE_SHOUTCAST,  \
-          .val.enable_shoutcast = (val) \
+          .val.enable_shoutcast = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -1220,14 +1220,14 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
  * Default is 32kb.
  * Values above 128kb are unlikely to result in much performance benefit, as half of the memory will be typically used for IO, and TCP buffers are unlikely to support window sizes above 64k on most systems.
  * The size should be large enough to fit all request headers (together with internal parsing information).
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_CONN_MEMORY_LIMIT(val) \
+#  define MHD_D_OPTION_CONN_MEMORY_LIMIT(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
           .opt = MHD_D_O_CONN_MEMORY_LIMIT,  \
-          .val.conn_memory_limit = (val) \
+          .val.conn_memory_limit = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -1235,28 +1235,28 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
  * The same large pool is shared for all connections server by MHD and used when application requests avoiding of incremental upload processing to accamulate complete content upload before giving it to the application.
  * Default is 8Mb.
  * Can be set to zero to disable share pool.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_LARGE_POOL_SIZE(val) \
+#  define MHD_D_OPTION_LARGE_POOL_SIZE(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
           .opt = MHD_D_O_LARGE_POOL_SIZE,  \
-          .val.large_pool_size = (val) \
+          .val.large_pool_size = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
  * Desired size of the stack for the threads started by MHD.
  * Use 0 for system default, which is also MHD default.
  * Works only with #MHD_D_OPTION_WM_WORKER_THREADS() or #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_STACK_SIZE(val) \
+#  define MHD_D_OPTION_STACK_SIZE(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
           .opt = MHD_D_O_STACK_SIZE,  \
-          .val.stack_size = (val) \
+          .val.stack_size = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -1282,14 +1282,14 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
  * Disables certain calls to `shutdown()`, enables aggressive non-blocking optimistic reads and other potentially unsafe optimisations.
  * Most effects only happen with internal threads with epoll.
  * The 'turbo' mode is not enabled (mode is disabled) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_TURBO(val) \
+#  define MHD_D_OPTION_TURBO(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
           .opt = MHD_D_O_TURBO,  \
-          .val.turbo = (val) \
+          .val.turbo = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -1299,14 +1299,14 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
  * Not compatible with any internal threads modes.
  * If MHD is compiled with custom configuration for embedded projects without threads support, this option is mandatory.
  * Thread safety is not disabled (safety is enabled) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_DISABLE_THREAD_SAFETY(val) \
+#  define MHD_D_OPTION_DISABLE_THREAD_SAFETY(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
           .opt = MHD_D_O_DISABLE_THREAD_SAFETY,  \
-          .val.disable_thread_safety = (val) \
+          .val.disable_thread_safety = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -1314,14 +1314,14 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
  * Upgrade may require usage of additional internal resources, which we can avoid providing if they will not be used.
  * You should only use this option if you do not use upgrade functionality and need a generally minor boost in performance and resources saving.
  * The upgrade is not disallowed (upgrade is allowed) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_DISALLOW_UPGRADE(val) \
+#  define MHD_D_OPTION_DISALLOW_UPGRADE(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
           .opt = MHD_D_O_DISALLOW_UPGRADE,  \
-          .val.disallow_upgrade = (val) \
+          .val.disallow_upgrade = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -1329,14 +1329,14 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
  *
 You should only use this function if you do not use suspend functionality and need a generally minor boost in performance.
  * The suspend is not disallowed (suspend is allowed) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_DISALLOW_SUSPEND_RESUME(val) \
+#  define MHD_D_OPTION_DISALLOW_SUSPEND_RESUME(value) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
           .opt = MHD_D_O_DISALLOW_SUSPEND_RESUME,  \
-          .val.disallow_suspend_resume = (val) \
+          .val.disallow_suspend_resume = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -1701,17 +1701,17 @@ MHD_D_OPTION_LISTEN_BACKLOG (
  * Inform that SIGPIPE is suppressed or handled by application.
  * If suppressed/handled, MHD uses network functions that could generate SIGPIPE, like `sendfile()`.
  * Silently ignored when MHD creates internal threads as for them SIGPIPE is suppressed automatically.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_SIGPIPE_SUPPRESSED (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_SIGPIPE_SUPPRESSED;
-  opt_val.val.sigpipe_suppressed = (val); \
+  opt_val.val.sigpipe_suppressed = (value); \
 
   return opt_val;
 }
@@ -1810,17 +1810,17 @@ MHD_D_OPTION_TLS_PSK_CALLBACK (
  * Control ALPN for TLS connection.
  * Silently ignored for non-TLS.
  * By default ALPN is automatically used for TLS connections.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_NO_ALPN (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_NO_ALPN;
-  opt_val.val.no_alpn = (val); \
+  opt_val.val.no_alpn = (value); \
 
   return opt_val;
 }
@@ -1961,17 +1961,17 @@ MHD_D_OPTION_EARLY_URI_LOGGER (
  * Disable converting plus ('+') character to space in GET parameters (URI part after '?').
  * Plus conversion is not required by HTTP RFCs, however it required by HTML specifications, see https://url.spec.whatwg.org/#application/x-www-form-urlencoded for details.
  * By default plus is converted to space in the query part of URI.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_DISABLE_URI_QUERY_PLUS_AS_SPACE;
-  opt_val.val.disable_uri_query_plus_as_space = (val); \
+  opt_val.val.disable_uri_query_plus_as_space = (value); \
 
   return opt_val;
 }
@@ -1981,17 +1981,17 @@ MHD_D_OPTION_DISABLE_URI_QUERY_PLUS_AS_SPACE (
  * Suppresse use of 'Date:' header.
  * According to RFC should be suppressed only if the system has no RTC.
  * The 'Date:' is not suppressed (the header is enabled) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_SUPPRESS_DATE_HEADER (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_SUPPRESS_DATE_HEADER;
-  opt_val.val.suppress_date_header = (val); \
+  opt_val.val.suppress_date_header = (value); \
 
   return opt_val;
 }
@@ -2000,17 +2000,17 @@ MHD_D_OPTION_SUPPRESS_DATE_HEADER (
 /**
  * Use SHOUTcast for responses.
  * This will cause *all* responses to begin with the SHOUTcast 'ICY' line instead of 'HTTP'.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_ENABLE_SHOUTCAST (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_ENABLE_SHOUTCAST;
-  opt_val.val.enable_shoutcast = (val); \
+  opt_val.val.enable_shoutcast = (value); \
 
   return opt_val;
 }
@@ -2021,17 +2021,17 @@ MHD_D_OPTION_ENABLE_SHOUTCAST (
  * Default is 32kb.
  * Values above 128kb are unlikely to result in much performance benefit, as half of the memory will be typically used for IO, and TCP buffers are unlikely to support window sizes above 64k on most systems.
  * The size should be large enough to fit all request headers (together with internal parsing information).
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_CONN_MEMORY_LIMIT (
-  size_t val
+  size_t value
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_CONN_MEMORY_LIMIT;
-  opt_val.val.conn_memory_limit = (val); \
+  opt_val.val.conn_memory_limit = (value); \
 
   return opt_val;
 }
@@ -2042,17 +2042,17 @@ MHD_D_OPTION_CONN_MEMORY_LIMIT (
  * The same large pool is shared for all connections server by MHD and used when application requests avoiding of incremental upload processing to accamulate complete content upload before giving it to the application.
  * Default is 8Mb.
  * Can be set to zero to disable share pool.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_LARGE_POOL_SIZE (
-  size_t val
+  size_t value
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_LARGE_POOL_SIZE;
-  opt_val.val.large_pool_size = (val); \
+  opt_val.val.large_pool_size = (value); \
 
   return opt_val;
 }
@@ -2062,17 +2062,17 @@ MHD_D_OPTION_LARGE_POOL_SIZE (
  * Desired size of the stack for the threads started by MHD.
  * Use 0 for system default, which is also MHD default.
  * Works only with #MHD_D_OPTION_WM_WORKER_THREADS() or #MHD_D_OPTION_WM_THREAD_PER_CONNECTION().
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_STACK_SIZE (
-  size_t val
+  size_t value
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_STACK_SIZE;
-  opt_val.val.stack_size = (val); \
+  opt_val.val.stack_size = (value); \
 
   return opt_val;
 }
@@ -2107,17 +2107,17 @@ MHD_D_OPTION_FD_NUMBER_LIMIT (
  * Disables certain calls to `shutdown()`, enables aggressive non-blocking optimistic reads and other potentially unsafe optimisations.
  * Most effects only happen with internal threads with epoll.
  * The 'turbo' mode is not enabled (mode is disabled) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_TURBO (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_TURBO;
-  opt_val.val.turbo = (val); \
+  opt_val.val.turbo = (value); \
 
   return opt_val;
 }
@@ -2130,17 +2130,17 @@ MHD_D_OPTION_TURBO (
  * Not compatible with any internal threads modes.
  * If MHD is compiled with custom configuration for embedded projects without threads support, this option is mandatory.
  * Thread safety is not disabled (safety is enabled) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_DISABLE_THREAD_SAFETY (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_DISABLE_THREAD_SAFETY;
-  opt_val.val.disable_thread_safety = (val); \
+  opt_val.val.disable_thread_safety = (value); \
 
   return opt_val;
 }
@@ -2151,17 +2151,17 @@ MHD_D_OPTION_DISABLE_THREAD_SAFETY (
  * Upgrade may require usage of additional internal resources, which we can avoid providing if they will not be used.
  * You should only use this option if you do not use upgrade functionality and need a generally minor boost in performance and resources saving.
  * The upgrade is not disallowed (upgrade is allowed) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_DISALLOW_UPGRADE (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_DISALLOW_UPGRADE;
-  opt_val.val.disallow_upgrade = (val); \
+  opt_val.val.disallow_upgrade = (value); \
 
   return opt_val;
 }
@@ -2172,17 +2172,17 @@ MHD_D_OPTION_DISALLOW_UPGRADE (
  *
 You should only use this function if you do not use suspend functionality and need a generally minor boost in performance.
  * The suspend is not disallowed (suspend is allowed) by default.
- * @param val the value of the parameter * @return structure with the requested setting
+ * @param value the value of the parameter * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_DISALLOW_SUSPEND_RESUME (
-  enum MHD_Bool val
+  enum MHD_Bool value
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
   opt_val.opt = MHD_D_O_DISALLOW_SUSPEND_RESUME;
-  opt_val.val.disallow_suspend_resume = (val); \
+  opt_val.val.disallow_suspend_resume = (value); \
 
   return opt_val;
 }
