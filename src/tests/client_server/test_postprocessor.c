@@ -52,6 +52,7 @@ main (int argc, char *argv[])
       .label = "END"
     }
   };
+#define MHDT_SOME_BIN_DATA "\x1\x2\x3\x4\x5"
   struct MHDT_PostWant simple_wants[] = {
     {
       .key = "V1",
@@ -60,6 +61,26 @@ main (int argc, char *argv[])
     {
       .key = "V2",
       .value = "Two"
+    },
+    {
+      .key = NULL
+    }
+  };
+  struct MHDT_PostWant mpart_wants[] = {
+    {
+      .key = "username",
+      .value = "Bob"
+    },
+    {
+      .key = "password",
+      .value = "Passwo3d"
+    },
+    {
+      .key = "file",
+      .filename = "image.jpg",
+      .content_type = "image/jpeg",
+      .value = MHDT_SOME_BIN_DATA,
+      .value_size = sizeof(MHDT_SOME_BIN_DATA) / sizeof(char) - 1
     },
     {
       .key = NULL
@@ -76,24 +97,25 @@ main (int argc, char *argv[])
   };
   struct MHDT_PostInstructions simple_mp = {
     .enc = MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA,
-    .postdata = "--{boundary string}\n"
-                "Content-Disposition: form-data; name=\"username\",\n"
-                "\n"
-                "Bob\n"
-                "--XXXX\n"
-                "Content-Disposition: form-data; name=\"password\",\n"
-                "\n"
-                "Passwo3d\n"
-                "--XXXX\n"
-                "Content-Disposition: form-data; name=\"file\"; filename=\"image.jpg\"\n"
-                "Content-Type: image/jpeg,\n"
-                "\n"
-                "IMAGEDATA"
-                "--XXXX--\n",
+    .postdata = "--XXXX\r\n"
+                "Content-Disposition: form-data; name=\"username\"\r\n"
+                "\r\n"
+                "Bob\r\n"
+                "--XXXX\r\n"
+                "Content-Disposition: form-data; name=\"password\"\r\n"
+                "\r\n"
+                "Passwo3d\r\n"
+                "--XXXX\r\n"
+                "Content-Disposition: form-data; name=\"file\"; filename=\"image.jpg\"\r\n"
+                "Content-Type: image/jpeg\r\n"
+                "\r\n"
+                MHDT_SOME_BIN_DATA "\r\n"
+                "--XXXX--\r\n",
     .postheader = MHD_HTTP_HEADER_CONTENT_TYPE
                   ": multipart/form-data; boundary=XXXX",
-    .buffer_size = 32,
-    .auto_stream_size = 16
+    .buffer_size = 512,
+    .auto_stream_size = 128,
+    .wants = mpart_wants
   };
   struct MHDT_PostInstructions simple_tp = {
     .enc = MHD_HTTP_POST_ENCODING_TEXT_PLAIN,
@@ -112,7 +134,6 @@ main (int argc, char *argv[])
       .client_cb_cls = &simple_pi,
       .timeout_ms = 2500,
     },
-#if 0 // TODO: Enable formats when MHD side is ready
     {
       .label = "multipart post",
       .server_cb = &MHDT_server_reply_check_post,
@@ -121,7 +142,6 @@ main (int argc, char *argv[])
       .client_cb_cls = &simple_mp,
       .timeout_ms = 2500,
     },
-#endif
     {
       .label = "plain text post",
       .server_cb = &MHDT_server_reply_check_post,
