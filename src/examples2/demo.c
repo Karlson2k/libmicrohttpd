@@ -360,7 +360,9 @@ update_directory (void)
     update_cached_response (NULL);
     return;
   }
-  memcpy (rdc.buf, INDEX_PAGE_HEADER, len);
+  memcpy (rdc.buf,
+          INDEX_PAGE_HEADER,
+          len);
   rdc.off = len;
   for (language_idx = 0; NULL != languages[language_idx].dirname;
        language_idx++)
@@ -678,7 +680,9 @@ done_cb (struct MHD_Request *req,
   lang = MHD_request_get_value (req,
                                 MHD_VK_POSTDATA,
                                 "language");
-  if ( (NULL == lang->cstr) ||
+  if ( (NULL == lang) ||
+       (NULL == lang->cstr) ||
+       (NULL == cat) ||
        (NULL == cat->cstr) )
   {
     if (uc->have_file)
@@ -693,7 +697,8 @@ done_cb (struct MHD_Request *req,
   upload = MHD_request_get_value (req,
                                   MHD_VK_POSTDATA,
                                   "upload");
-  if (NULL != upload->cstr)
+  if ( (NULL != upload) &&
+       (NULL != upload->cstr) )
   {
     if (uc->have_file)
     {
