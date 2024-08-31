@@ -820,6 +820,16 @@ generate_page (void *cls,
   const char *url = path->cstr;
 
   (void ) cls;
+
+  if ((0 != upload_size) &&
+      ( (MHD_HTTP_METHOD_GET == method) ||
+        (MHD_HTTP_METHOD_HEAD == method) ))
+  {
+    /* Wrong request, refuse */
+    return MHD_action_from_response (request,
+                                     request_refused_response);
+  }
+
   if ( ( (MHD_HTTP_METHOD_GET == method) ||
          (MHD_HTTP_METHOD_HEAD == method) ) &&
        (0 != strcmp (url,
