@@ -39,7 +39,7 @@
 
 
 MHD_INTERNAL
-MHD_FN_PAR_NONNULL_ (1) bool
+MHD_FN_PAR_NONNULL_ALL_ bool
 response_make_reusable (struct MHD_Response *restrict r)
 {
   mhd_assert (! r->reuse.reusable);
@@ -60,7 +60,7 @@ response_make_reusable (struct MHD_Response *restrict r)
 
 
 MHD_INTERNAL
-MHD_FN_PAR_NONNULL_ (1) void
+MHD_FN_PAR_NONNULL_ALL_ void
 mhd_response_deinit_reusable (struct MHD_Response *restrict r)
 {
   mhd_assert (r->reuse.reusable);
@@ -71,7 +71,7 @@ mhd_response_deinit_reusable (struct MHD_Response *restrict r)
 }
 
 
-static void
+static MHD_FN_PAR_NONNULL_ALL_ void
 response_set_properties (struct MHD_Response *restrict r)
 {
   struct ResponseOptions *restrict const s = r->settings;
@@ -108,12 +108,7 @@ response_set_properties (struct MHD_Response *restrict r)
 }
 
 
-/**
- * Check whether response is "frozen" (modifications blocked) and "freeze"
- * it if it was not frozen before
- * @param response the response to manipulate
- */
-MHD_INTERNAL void
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
 mhd_response_check_frozen_freeze (struct MHD_Response *restrict response)
 {
   bool need_unlock;

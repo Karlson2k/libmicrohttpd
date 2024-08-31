@@ -40,7 +40,7 @@ struct MHD_Response; /* forward declaration */
  */
 MHD_INTERNAL bool
 response_make_reusable (struct MHD_Response *restrict r)
-MHD_FN_PAR_NONNULL_ (1);
+MHD_FN_PAR_NONNULL_ALL_;
 
 
 /**
@@ -49,7 +49,7 @@ MHD_FN_PAR_NONNULL_ (1);
  */
 MHD_INTERNAL void
 mhd_response_deinit_reusable (struct MHD_Response *restrict r)
-MHD_FN_PAR_NONNULL_ (1);
+MHD_FN_PAR_NONNULL_ALL_;
 
 
 /**
@@ -58,7 +58,8 @@ MHD_FN_PAR_NONNULL_ (1);
  * @param response the response to manipulate
  */
 MHD_INTERNAL void
-mhd_response_check_frozen_freeze (struct MHD_Response *restrict r);
+mhd_response_check_frozen_freeze (struct MHD_Response *restrict r)
+MHD_FN_PAR_NONNULL_ALL_;
 
 
 #endif /* ! MHD_RESPONSE_FUNCS_H */
