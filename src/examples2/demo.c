@@ -236,10 +236,6 @@ mark_as_html (struct MHD_Response *response)
 static void
 update_cached_response (struct MHD_Response *response)
 {
-  (void) pthread_mutex_lock (&mutex);
-  if (NULL != cached_directory_response)
-    MHD_response_destroy (cached_directory_response);
-  cached_directory_response = response;
   if (NULL != response)
   {
     if (MHD_SC_OK !=
@@ -248,6 +244,10 @@ update_cached_response (struct MHD_Response *response)
                                    MHD_YES)))
       exit (1);
   }
+  (void) pthread_mutex_lock (&mutex);
+  if (NULL != cached_directory_response)
+    MHD_response_destroy (cached_directory_response);
+  cached_directory_response = response;
   (void) pthread_mutex_unlock (&mutex);
 }
 
