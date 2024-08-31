@@ -238,11 +238,14 @@ update_cached_response (struct MHD_Response *response)
   if (NULL != cached_directory_response)
     MHD_response_destroy (cached_directory_response);
   cached_directory_response = response;
-  if (MHD_SC_OK !=
-      MHD_response_set_option (response,
-                               &MHD_R_OPTION_REUSABLE (
-                                 MHD_YES)))
-    exit (1);
+  if (NULL != response)
+  {
+    if (MHD_SC_OK !=
+        MHD_response_set_option (response,
+                                 &MHD_R_OPTION_REUSABLE (
+                                   MHD_YES)))
+      exit (1);
+  }
   (void) pthread_mutex_unlock (&mutex);
 }
 
