@@ -219,6 +219,8 @@ static magic_t magic;
 static void
 mark_as_html (struct MHD_Response *response)
 {
+  if (NULL == response)
+    return;
   (void) MHD_response_add_header (response,
                                   MHD_HTTP_HEADER_CONTENT_TYPE,
                                   "text/html");
