@@ -58,7 +58,7 @@ response_full_deinit (struct MHD_Response *restrict r)
 }
 
 
-MHD_INTERNAL void
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
 mhd_response_dec_use_count (struct MHD_Response *restrict r)
 {
   mhd_assert (r->frozen);
@@ -70,6 +70,18 @@ mhd_response_dec_use_count (struct MHD_Response *restrict r)
   }
 
   response_full_deinit (r);
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+mhd_response_inc_use_count (struct MHD_Response *restrict r)
+{
+  mhd_assert (r->frozen);
+
+  if (! r->reuse.reusable)
+    return;
+
+  (void) mhd_atomic_counter_inc_get (&(r->reuse.counter));
 }
 
 

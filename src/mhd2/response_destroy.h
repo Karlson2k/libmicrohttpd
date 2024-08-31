@@ -34,10 +34,20 @@ struct MHD_Response; /* forward declaration */
 /**
  * Free/destroy non-reusable response, decrement use count for reusable
  * response and free/destroy if it is not used any more.
- * @param response the response to manipulate
+ * @param r the response to manipulate
  */
 MHD_INTERNAL void
-mhd_response_dec_use_count (struct MHD_Response *restrict response);
+mhd_response_dec_use_count (struct MHD_Response *restrict r)
+MHD_FN_PAR_NONNULL_ALL_;
+
+/**
+ * Mark reusable response as being used in (one more) request.
+ * No-op for non-reusable responses
+ * @param r the response to manipulate
+ */
+MHD_INTERNAL void
+mhd_response_inc_use_count (struct MHD_Response *restrict r)
+MHD_FN_PAR_NONNULL_ALL_;
 
 
 #endif /* ! MHD_RESPONSE_DESTROY_H */
