@@ -436,9 +436,8 @@ update_directory (void)
                               rdc.buf);
   mark_as_html (response);
 #ifdef FORCE_CLOSE
-  (void) MHD_response_add_header (response,
-                                  MHD_HTTP_HEADER_CONNECTION,
-                                  "close");
+  (void) MHD_response_set_option (response,
+                                  &MHD_R_OPTION_CONN_CLOSE (MHD_YES));
 #endif
   update_cached_response (response);
 }
