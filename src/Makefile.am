@@ -1,6 +1,12 @@
 # This Makefile.am is in the public domain
 
-SUBDIRS = include incl_priv mhd2 tests .
+if BUILD_EXAMPLES
+examplesdirs = examples examples2
+else
+examplesdirs = 
+endif
+
+SUBDIRS = incl_priv include mhd2 $(examplesdirs) tests .
 
 if RUN_LIBCURL_TESTS
 #SUBDIRS += testcurl
@@ -12,10 +18,6 @@ endif
 # Finally (last!) also build experimental lib...
 if HAVE_EXPERIMENTAL
 SUBDIRS += microhttpd_ws
-endif
-
-if BUILD_EXAMPLES
-SUBDIRS += examples examples2
 endif
 
 if BUILD_TOOLS
