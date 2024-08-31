@@ -177,7 +177,8 @@ MHD_upload_action_from_response (struct MHD_Request *request,
 }
 
 
-MHD_EXTERN_ MHD_FN_RETURNS_NONNULL_ const struct MHD_UploadAction *
+MHD_EXTERN_
+MHD_FN_PAR_NONNULL_ (1) const struct MHD_UploadAction *
 MHD_upload_action_continue (struct MHD_Request *request)
 {
   struct MHD_UploadAction *const restrict upl_act =

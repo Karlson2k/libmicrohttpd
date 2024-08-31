@@ -132,8 +132,7 @@ MHD_DCC_action_finish_with_footer (
 
 
 MHD_EXTERN_
-MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_RETURNS_NONNULL_ const struct MHD_DynamicContentCreatorAction *
+MHD_FN_PAR_NONNULL_ (1) const struct MHD_DynamicContentCreatorAction *
 MHD_DCC_action_suspend (struct MHD_DynamicContentCreatorContext *ctx)
 {
   struct MHD_DynamicContentCreatorAction *ret;

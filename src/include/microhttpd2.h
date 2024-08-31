@@ -5767,8 +5767,7 @@ MHD_FN_PAR_NONNULL_ (1);
  */
 MHD_EXTERN_ const struct MHD_DynamicContentCreatorAction *
 MHD_DCC_action_suspend (struct MHD_DynamicContentCreatorContext *ctx)
-MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_RETURNS_NONNULL_;
+MHD_FN_PAR_NONNULL_ (1);
 
 /**
  * Create "stop with error" action.
@@ -6083,7 +6082,7 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
  */
 MHD_EXTERN_ const struct MHD_UploadAction *
 MHD_upload_action_suspend (struct MHD_Request *request)
-MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_;
+MHD_FN_PAR_NONNULL_ALL_;
 
 /**
  * Converts a @a response to an action.  If #MHD_R_O_REUSABLE
@@ -6128,7 +6127,7 @@ MHD_FN_PAR_NONNULL_ (1);
  */
 MHD_EXTERN_ const struct MHD_UploadAction *
 MHD_upload_action_continue (struct MHD_Request *request)
-MHD_FN_RETURNS_NONNULL_;
+MHD_FN_PAR_NONNULL_ (1);
 
 
 /**
