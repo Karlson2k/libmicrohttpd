@@ -57,7 +57,6 @@
 #include "respond_with_error.h"
 #include "stream_funcs.h"
 #include "daemon_funcs.h"
-#include "response_destroy.h"
 
 #ifdef HAVE_POST_PARSER
 #  include "post_parser_funcs.h"
@@ -2929,7 +2928,6 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
   {
   case mhd_ACTION_RESPONSE:
     c->rp.response = c->rq.app_act.head_act.data.response;
-    mhd_response_inc_use_count (c->rp.response);
     c->state = MHD_CONNECTION_REQ_RECV_FINISHED;
     return true;
   case mhd_ACTION_UPLOAD:

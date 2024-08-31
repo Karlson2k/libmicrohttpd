@@ -32,6 +32,7 @@
 #include "daemon_logger.h"
 
 #include "response_funcs.h"
+#include "response_destroy.h"
 
 #include "mhd_public_api.h"
 
@@ -169,6 +170,7 @@ MHD_upload_action_from_response (struct MHD_Request *request,
     return (const struct MHD_UploadAction *) NULL;
 
   mhd_response_check_frozen_freeze (response);
+  mhd_response_inc_use_count (response);
 
   upl_act->act = mhd_UPLOAD_ACTION_RESPONSE;
   upl_act->data.response = response;
