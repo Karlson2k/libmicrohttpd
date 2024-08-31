@@ -1090,7 +1090,7 @@ main (int argc,
         MHD_D_OPTION_DEFAULT_TIMEOUT (120 /* seconds */),
         MHD_D_OPTION_CONN_MEMORY_LIMIT (256 * 1024),
         MHD_D_OPTION_BIND_PORT (MHD_AF_AUTO,
-                                port)))
+                                (uint_least16_t) port)))
     return 1;
   if (MHD_SC_OK !=
       MHD_daemon_start (d))
