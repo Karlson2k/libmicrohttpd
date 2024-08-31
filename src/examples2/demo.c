@@ -720,18 +720,24 @@ done_cb (struct MHD_Request *req,
                                               request_refused_response);
     }
     // FIXME: error handling, ...
+#if ! defined(_WIN32) || defined(__CYGWIN__)
     write (uc->fd,
            upload->cstr,
            upload->len);
+#else  /* Native W32 */
+    write (uc->fd,
+           upload->cstr,
+           (unsigned int) upload->len);
+#endif /* Native W32 */
     close (uc->fd);
     uc->have_file = true;
   }
   /* create directories -- if they don't exist already */
-#ifdef WINDOWS
-  (void) mkdir (lang->cstr);
-#else
+#if ! defined(_WIN32) || defined(__CYGWIN__)
   (void) mkdir (lang->cstr,
                 S_IRWXU);
+#else
+  (void) mkdir (lang->cstr);
 #endif
   res = snprintf (fn,
                   sizeof (fn),
@@ -745,11 +751,11 @@ done_cb (struct MHD_Request *req,
     return MHD_upload_action_from_response (req,
                                             request_refused_response);
   }
- #ifdef WINDOWS
-  (void) mkdir (fn);
-#else
+#if ! defined(_WIN32) || defined(__CYGWIN__)
   (void) mkdir (fn,
                 S_IRWXU);
+#else
+  (void) mkdir (fn);
 #endif
   /* compute filename */
   res = snprintf (fn,
@@ -967,7 +973,7 @@ generate_page (void *cls,
 }
 
 
-#ifndef MINGW
+#if ! defined(_WIN32) || defined(__CYGWIN__)
 /**
  * Function called if we get a SIGPIPE. Does nothing.
  *
@@ -1032,7 +1038,7 @@ main (int argc,
              "%s PORT\n", argv[0]);
     return 1;
   }
-#ifndef MINGW
+#if ! defined(_WIN32) || defined(__CYGWIN__)
   ignore_sigpipe ();
 #endif
 #ifdef MHD_HAVE_LIBMAGIC
