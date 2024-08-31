@@ -46,7 +46,7 @@
  * @param r the response to free
  */
 static MHD_FN_PAR_NONNULL_ (1) void
-response_full_detinit (struct MHD_Response *restrict r)
+response_full_deinit (struct MHD_Response *restrict r)
 {
   mhd_response_remove_all_headers (r);
   if (NULL != r->special_resp.spec_hdr)
@@ -69,7 +69,7 @@ mhd_response_dec_use_count (struct MHD_Response *restrict r)
       return; /* The response is still used somewhere */
   }
 
-  response_full_detinit (r);
+  response_full_deinit (r);
 }
 
 
@@ -86,7 +86,7 @@ MHD_response_destroy (struct MHD_Response *response)
     /* Decrement counter to avoid triggering assert in deinit function */
     mhd_assert (0 == mhd_atomic_counter_dec_get (&(response->reuse.counter)));
 #endif
-    response_full_detinit (response);
+    response_full_deinit (response);
     return;
   }
 
