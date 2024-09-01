@@ -931,20 +931,15 @@ process_partial_value_all (struct MHD_Connection *restrict c,
 
   mhd_assert (MHD_CONNECTION_REQ_RECV_FINISHED >= c->state);
   mhd_assert (part_value_start + part_value_len <= *pnext_pos);
-  mhd_assert ((MHD_CONNECTION_FULL_REQ_RECEIVED <= c->state) || \
-              (part_value_start + part_value_len < *pnext_pos));
-  mhd_assert (part_value_start + part_value_len == *pnext_pos);
   mhd_assert (0 != part_value_start);
   mhd_assert (0 != part_value_len);
-  mhd_assert (name_start + name_len <= *pnext_pos);
-  mhd_assert ((MHD_CONNECTION_FULL_REQ_RECEIVED <= c->state) || \
-              (name_start + name_len < *pnext_pos));
+  mhd_assert (name_start + name_len < *pnext_pos);
   mhd_assert (filename_start + filename_len < part_value_start);
-  mhd_assert (filename_start + filename_len <= *pnext_pos);
+  mhd_assert (filename_start + filename_len < *pnext_pos);
   mhd_assert (cntn_type_start + cntn_type_len < part_value_start);
-  mhd_assert (cntn_type_start + cntn_type_len <= *pnext_pos);
+  mhd_assert (cntn_type_start + cntn_type_len < *pnext_pos);
   mhd_assert (enc_start + enc_len < part_value_start);
-  mhd_assert (enc_start + enc_len <= *pnext_pos);
+  mhd_assert (enc_start + enc_len < *pnext_pos);
   mhd_assert ((0 != filename_start) || (0 == filename_len));
   mhd_assert ((0 != cntn_type_start) || (0 == cntn_type_len));
   mhd_assert ((0 != enc_start) || (0 == enc_len));
@@ -1026,11 +1021,7 @@ process_partial_value (struct MHD_Connection *restrict c,
 {
   mhd_assert (MHD_CONNECTION_REQ_RECV_FINISHED >= c->state);
   mhd_assert (part_value_start + part_value_len <= *pnext_pos);
-  mhd_assert ((MHD_CONNECTION_FULL_REQ_RECEIVED <= c->state) || \
-              (part_value_start + part_value_len < *pnext_pos));
-  mhd_assert (name_start + name_len <= part_value_start);
-  mhd_assert ((MHD_CONNECTION_FULL_REQ_RECEIVED <= c->state) || \
-              (name_start + name_len < part_value_start));
+  mhd_assert (name_start + name_len < part_value_start);
   mhd_assert (0 != part_value_start);
   mhd_assert (0 != part_value_len);
   mhd_assert (name_start + name_len < *pnext_pos);
