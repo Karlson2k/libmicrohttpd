@@ -1973,7 +1973,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
           size_t shift_size;
           mhd_assert (mf->delim_check_start > new_delim_check_start);
 
-          shift_size = new_delim_check_start - mf->delim_check_start;
+          shift_size = mf->delim_check_start - new_delim_check_start;
           mf->delim_check_start = new_delim_check_start;
           i -= shift_size;
         }
