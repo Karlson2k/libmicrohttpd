@@ -1573,7 +1573,8 @@ parse_post_mpart (struct MHD_Connection *restrict c,
             struct MHD_String hdr_val;
             enum mhd_StingStartsWithTokenResult res;
             struct mhd_BufferConst name_buf;
-            bool need_unq;
+            bool hdr_has_name;
+            bool name_needs_unq;
 
             buf [mf->line_start + line_len] = 0; /* Zero-terminate the header line */
             hdr_val_start = mf->line_start + hdr.len;
@@ -1590,9 +1591,10 @@ parse_post_mpart (struct MHD_Connection *restrict c,
                                                        &tkn,
                                                        &n_par,
                                                        &name_buf,
-                                                       &need_unq);
+                                                       &name_needs_unq);
             if (mhd_STR_STARTS_W_TOKEN_HAS_TOKEN_BAD_FORMAT == res)
             {
+              /* Found two names for one field */
               mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
               continue;
             }
@@ -1601,48 +1603,32 @@ parse_post_mpart (struct MHD_Connection *restrict c,
               static const struct MHD_String fn_par =
                 mhd_MSTR_INIT ("filename");
               struct mhd_BufferConst fname_buf;
+              bool fname_needs_unq;
+
               if (NULL != name_buf.data)
               {
                 mhd_assert (buf < name_buf.data);
                 if (0 != mf->f.name_idx)
                 {
-                  /* Already have "name" */
+                  /* Found two names for one field */
                   mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
                   continue;
                 }
                 mf->f.name_idx = (size_t) (name_buf.data - buf);
-                if (! need_unq)
-                  mf->f.name_len = name_buf.size;
-                else
-                {
-                  mf->f.name_len = mhd_str_unquote (name_buf.data,
-                                                    name_buf.size,
-                                                    buf + mf->f.name_idx);
-                  if ((0 == mf->f.name_len) && (0 != name_buf.size))
-                  {
-                    mhd_assert (0 && "broken quoting must be detected " \
-                                "earlier by " \
-                                "mhd_str_starts_with_token_req_param()");
-                    MHD_UNREACHABLE_;
-                    mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
-                    continue;
-                  }
-                }
-                mhd_assert (mf->f.name_idx + mf->f.name_len <= i);
-                mf->f.name_len =
-                  mhd_str_pct_decode_lenient_n (buf + mf->f.name_idx,
-                                                mf->f.name_len,
-                                                buf + mf->f.name_idx,
-                                                mf->f.name_len,
-                                                NULL);
-                mhd_assert (mf->f.name_idx + mf->f.name_len <= i);
-                /* Do not zero-terminate here yet as it may break header format */
+                mf->f.name_len = name_buf.size;
+                hdr_has_name = true;
+
+                /* Do not process (unquote, url-decode, zero-terminate) here yet
+                 * as it may break the header format */
               }
+              else
+                hdr_has_name = false;
+
               res = mhd_str_starts_with_token_req_param (&hdr_val,
                                                          &tkn,
                                                          &fn_par,
                                                          &fname_buf,
-                                                         &need_unq);
+                                                         &fname_needs_unq);
               if (mhd_STR_STARTS_W_TOKEN_HAS_TOKEN_BAD_FORMAT == res)
               {
                 mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
@@ -1655,11 +1641,12 @@ parse_post_mpart (struct MHD_Connection *restrict c,
                   mhd_assert (buf < fname_buf.data);
                   if (0 != mf->f.filename_idx)
                   {
+                    /* Found two filenames for one field */
                     mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
                     continue;
                   }
                   mf->f.filename_idx = (size_t) (fname_buf.data - buf);
-                  if (! need_unq)
+                  if (! fname_needs_unq)
                     mf->f.filename_len = fname_buf.size;
                   else
                   {
@@ -1685,6 +1672,8 @@ parse_post_mpart (struct MHD_Connection *restrict c,
                                                   mf->f.filename_len,
                                                   NULL);
                   mhd_assert (mf->f.filename_idx + mf->f.filename_len <= i);
+
+                  buf[mf->f.filename_idx + mf->f.filename_len] = 0; /* Zero-terminate the filename */
                 }
               }
               else
@@ -1693,6 +1682,35 @@ parse_post_mpart (struct MHD_Connection *restrict c,
                 mhd_assert (0 && "The presence of the token was "
                             "checked earlier");
                 MHD_UNREACHABLE_;
+              }
+
+              if (hdr_has_name)
+              {
+                if (name_needs_unq)
+                {
+                  mf->f.name_len = mhd_str_unquote (buf + mf->f.name_idx,
+                                                    mf->f.name_len,
+                                                    buf + mf->f.name_idx);
+                  if ((0 == mf->f.name_len) && (0 != name_buf.size))
+                  {
+                    mhd_assert (0 && "broken quoting must be detected " \
+                                "earlier by " \
+                                "mhd_str_starts_with_token_req_param()");
+                    MHD_UNREACHABLE_;
+                    mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
+                    continue;
+                  }
+                }
+                mhd_assert (mf->f.name_idx + mf->f.name_len <= i);
+                mf->f.name_len =
+                  mhd_str_pct_decode_lenient_n (buf + mf->f.name_idx,
+                                                mf->f.name_len,
+                                                buf + mf->f.name_idx,
+                                                mf->f.name_len,
+                                                NULL);
+                mhd_assert (mf->f.name_idx + mf->f.name_len <= i);
+
+                buf[mf->f.name_idx + mf->f.name_len] = 0; /* Zero-terminate the name */
               }
             }
           }
@@ -1726,9 +1744,6 @@ parse_post_mpart (struct MHD_Connection *restrict c,
       }
       mhd_assert (0 != mf->f.name_len);
       mhd_assert (i > mf->f.name_idx);
-      if (0 != mf->f.filename_idx)
-        buf[mf->f.filename_idx + mf->f.filename_len] = 0; /* Zero-terminate the filename */
-      buf[mf->f.name_idx + mf->f.name_len] = 0; /* Zero-terminate the name */
       mf->f.value_idx = i;
       mf->line_start = mhd_POST_INVALID_POS;
     /* Intentional fall-through */
@@ -2505,13 +2520,7 @@ check_post_leftovers_mpart (struct MHD_Connection *restrict c,
   case mhd_POST_MPART_ST_VALUE_START:
     mhd_assert (pos == *pdata_size);
     not_terminated = true;
-    if (0 != mf->f.name_idx)
-    {
-      add_field = true;
-      buf[mf->f.name_idx + mf->f.name_len] = 0; /* Zero-terminate the name */
-      if (0 != mf->f.filename_idx)
-        buf[mf->f.filename_idx + mf->f.filename_len] = 0; /* Zero-terminate the filename */
-    }
+    add_field = (0 != mf->f.name_idx);
     break;
   case mhd_POST_MPART_ST_VALUE:
   case mhd_POST_MPART_ST_VALUE_CR_FOUND:
