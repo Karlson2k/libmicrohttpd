@@ -167,7 +167,7 @@ MHD_upload_action_from_response (struct MHD_Request *request,
   struct MHD_UploadAction *const restrict upl_act =
     &(request->app_act.upl_act);
   if (NULL == response)
-    return (const struct MHD_Action *) NULL;
+    return (const struct MHD_UploadAction *) NULL;
   if (mhd_UPLOAD_ACTION_NO_ACTION != upl_act->act)
     return (const struct MHD_UploadAction *) NULL;
 
