@@ -4256,7 +4256,7 @@ MHD_D_OPTION_DAUTH_DEF_MAX_NC (
 #if 0
 
 /**
- * Make the response object re-usable. (FIXME: not used in struct ResponseOptions; remove!?)
+ * Make the response object re-usable.
  * The response will not be consumed by MHD_action_from_response() and must be destroyed by MHD_response_destroy().
  * Useful if the same response is often used to reply.
  * @param value the value of the parameter * @return structure with the requested setting

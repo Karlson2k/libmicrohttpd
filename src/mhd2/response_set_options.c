@@ -3,20 +3,20 @@
 /* *INDENT-OFF* */
 /**
  * @file response_set_options.c
- * @author response-options-generator.c
+ * @author options-generator.c
  */
 
 #include "mhd_sys_options.h"
-#include "sys_bool_type.h"
+#include "response_set_options.h"
 #include "sys_base_types.h"
-#include "sys_malloc.h"
-#include <string.h>
-#include "mhd_response.h"
+#include "sys_bool_type.h"
 #include "response_options.h"
+#include "mhd_response.h"
 #include "mhd_public_api.h"
 #include "mhd_locks.h"
 #include "mhd_assert.h"
 #include "response_funcs.h"
+
 
 MHD_FN_PAR_NONNULL_ALL_ MHD_EXTERN_
 enum MHD_StatusCode
@@ -38,7 +38,7 @@ MHD_response_set_options (
     if (! mhd_mutex_lock(&response->reuse.settings_lock))
       return MHD_SC_RESPONSE_MUTEX_LOCK_FAILED;
     mhd_assert (1 == mhd_atomic_counter_get(&response->reuse.counter));
-    if (! response->frozen) /* Firm re-check under the lock */
+    if (response->frozen) /* Firm re-check under the lock */
     {
       mhd_mutex_unlock_chk(&response->reuse.settings_lock);
       return MHD_SC_TOO_LATE;
@@ -55,7 +55,23 @@ MHD_response_set_options (
       i = options_max_num - 1;
       break;
     case MHD_R_O_REUSABLE:
-      settings->reusable = option->val.reusable;
+      /* custom setter */
+      if (response->reuse.reusable)
+      {
+        if (MHD_NO == option->val.reusable)
+        {
+          res = MHD_SC_RESPONSE_CANNOT_CLEAR_REUSE;
+          i = options_max_num - 1;
+          break;
+        }
+      }
+      else if ((MHD_NO != option->val.reusable) &&
+               (! response_make_reusable(response)))
+      {
+        res = MHD_SC_RESPONSE_MUTEX_INIT_FAILED;
+        i = options_max_num - 1;
+        break;
+      }
       continue;
     case MHD_R_O_HEAD_ONLY_RESPONSE:
       settings->head_only_response = option->val.head_only_response;

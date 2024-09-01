@@ -1021,26 +1021,38 @@ TOP:
              "/* *INDENT-OFF* */\n"
              "/**\n"
              " * @file %s_set_options.c\n"
-             " * @author %s-options-generator.c\n"
+             " * @author options-generator.c\n"
              " */\n"
-             "\n"
-             "#include \"mhd_sys_options.h\"\n"
-             "#include \"sys_bool_type.h\"\n"
-             "#include \"sys_base_types.h\"\n"
-             "#include \"sys_malloc.h\"\n"
-             "#include <string.h>\n"
-             "#include \"mhd_%s.h\"\n"
-             "#include \"%s_options.h\"\n"
-             "#include \"mhd_public_api.h\"\n",
-             category,
-             category,
-             category,
+             "\n",
              category);
-    if (0 == strcmp (category, "response"))
+    if (0 == strcmp (category, "daemon"))
+    {
       fprintf (f,
+               "#include \"mhd_sys_options.h\"\n"
+               "#include \"sys_base_types.h\"\n"
+               "#include \"sys_malloc.h\"\n"
+               "#include <string.h>\n"
+               "#include \"mhd_daemon.h\"\n"
+               "#include \"daemon_options.h\"\n"
+               "#include \"mhd_public_api.h\"\n"
+               "\n");
+    }
+    else if (0 == strcmp (category, "response"))
+    {
+      fprintf (f,
+               "#include \"mhd_sys_options.h\"\n"
+               "#include \"response_set_options.h\"\n"
+               "#include \"sys_base_types.h\"\n"
+               "#include \"sys_bool_type.h\"\n"
+               "#include \"response_options.h\"\n"
+               "#include \"mhd_response.h\"\n"
+               "#include \"mhd_public_api.h\"\n"
                "#include \"mhd_locks.h\"\n"
                "#include \"mhd_assert.h\"\n"
-               "#include \"response_funcs.h\"\n");
+               "#include \"response_funcs.h\"\n"
+               "\n");
+    }
+
     fprintf (f,
              "\n"
              "MHD_FN_PAR_NONNULL_ALL_ MHD_EXTERN_\n"
@@ -1081,7 +1093,7 @@ TOP:
                "    if (! mhd_mutex_lock(&response->reuse.settings_lock))\n"
                "      return MHD_SC_RESPONSE_MUTEX_LOCK_FAILED;\n"
                "    mhd_assert (1 == mhd_atomic_counter_get(&response->reuse.counter));\n"
-               "    if (! response->frozen) /* Firm re-check under the lock */\n"
+               "    if (response->frozen) /* Firm re-check under the lock */\n"
                "    {\n"
                "      mhd_mutex_unlock_chk(&response->reuse.settings_lock);\n"
                "      return MHD_SC_TOO_LATE;\n"

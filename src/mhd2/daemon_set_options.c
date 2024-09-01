@@ -3,17 +3,17 @@
 /* *INDENT-OFF* */
 /**
  * @file daemon_set_options.c
- * @author daemon-options-generator.c
+ * @author options-generator.c
  */
 
 #include "mhd_sys_options.h"
-#include "sys_bool_type.h"
 #include "sys_base_types.h"
 #include "sys_malloc.h"
 #include <string.h>
 #include "mhd_daemon.h"
 #include "daemon_options.h"
 #include "mhd_public_api.h"
+
 
 MHD_FN_PAR_NONNULL_ALL_ MHD_EXTERN_
 enum MHD_StatusCode

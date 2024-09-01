@@ -11,7 +11,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_ResponseOption
   ,
 
   /**
-   * Make the response object re-usable. (FIXME: not used in struct ResponseOptions; remove!?)
+   * Make the response object re-usable.
    * The response will not be consumed by MHD_action_from_response() and must be destroyed by MHD_response_destroy().
    * Useful if the same response is often used to reply.
    */
@@ -178,7 +178,7 @@ struct MHD_ResponseOptionAndValue
 
 #if defined(MHD_USE_COMPOUND_LITERALS) && defined(MHD_USE_DESIG_NEST_INIT)
 /**
- * Make the response object re-usable. (FIXME: not used in struct ResponseOptions; remove!?)
+ * Make the response object re-usable.
  * The response will not be consumed by MHD_action_from_response() and must be destroyed by MHD_response_destroy().
  * Useful if the same response is often used to reply.
  * @param value the value of the parameter * @return structure with the requested setting
@@ -321,7 +321,7 @@ With this option HTTP/1.0 server is emulated (with support for 'keep-alive' conn
 #else /* !MHD_USE_COMPOUND_LITERALS || !MHD_USE_DESIG_NEST_INIT */
 MHD_NOWARN_UNUSED_FUNC_
 /**
- * Make the response object re-usable. (FIXME: not used in struct ResponseOptions; remove!?)
+ * Make the response object re-usable.
  * The response will not be consumed by MHD_action_from_response() and must be destroyed by MHD_response_destroy().
  * Useful if the same response is often used to reply.
  * @param value the value of the parameter * @return structure with the requested setting
