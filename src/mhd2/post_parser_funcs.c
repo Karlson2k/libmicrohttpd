@@ -1876,58 +1876,59 @@ parse_post_mpart (struct MHD_Connection *restrict c,
     /* Intentional fall-through */
     case mhd_POST_MPART_ST_FULL_FIELD_FOUND:
     case mhd_POST_MPART_ST_FULL_FIELD_FOUND_FINAL:
+      mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
       if (1)
       {
         size_t new_delim_check_start;
+        bool state_changed;
 
         ++i; /* Consume current character */
         new_delim_check_start = mf->delim_check_start;
-        if (process_complete_field_all (c,
-                                        buf,
-                                        &new_delim_check_start,
-                                        pdata_size,
-                                        p_data->field_start,
-                                        mf->f.name_idx,
-                                        mf->f.name_len,
-                                        mf->f.filename_idx,
-                                        mf->f.filename_len,
-                                        mf->f.cntn_type_idx,
-                                        mf->f.cntn_type_len,
-                                        mf->f.enc_idx,
-                                        mf->f.enc_len,
-                                        mf->f.value_idx,
-                                        mf->f.value_len))
+        state_changed =
+          process_complete_field_all (c,
+                                      buf,
+                                      &new_delim_check_start,
+                                      pdata_size,
+                                      p_data->field_start,
+                                      mf->f.name_idx,
+                                      mf->f.name_len,
+                                      mf->f.filename_idx,
+                                      mf->f.filename_len,
+                                      mf->f.cntn_type_idx,
+                                      mf->f.cntn_type_len,
+                                      mf->f.enc_idx,
+                                      mf->f.enc_len,
+                                      mf->f.value_idx,
+                                      mf->f.value_len);
+        if (c->suspended)
         {
-          if (c->suspended)
-          {
-            mhd_assert (mf->delim_check_start == new_delim_check_start);
-            p_data->next_parse_pos = --i; /* Restore position */
-            return true;
-          }
-
-          if (mf->delim_check_start != new_delim_check_start)
-          {
-            size_t shift_size;
-            mhd_assert (mf->delim_check_start > new_delim_check_start);
-
-            shift_size = new_delim_check_start - mf->delim_check_start;
-            mf->delim_check_start = new_delim_check_start;
-            i -= shift_size;
-          }
-
-          mhd_assert (*pdata_size >= i);
-          reset_parse_field_data_mpart_cont (
-            p_data,
-            mhd_POST_MPART_ST_FULL_FIELD_FOUND_FINAL == mf->st);
-          p_data->next_parse_pos = i;
-
+          mhd_assert (mf->delim_check_start == new_delim_check_start);
+          mhd_assert (state_changed);
+          p_data->next_parse_pos = --i; /* Restore position */
           return true;
         }
-        mhd_assert (mf->delim_check_start == new_delim_check_start);
+
+        if (mf->delim_check_start != new_delim_check_start)
+        {
+          size_t shift_size;
+          mhd_assert (mf->delim_check_start > new_delim_check_start);
+
+          shift_size = new_delim_check_start - mf->delim_check_start;
+          mf->delim_check_start = new_delim_check_start;
+          i -= shift_size;
+        }
+
+        mhd_assert (*pdata_size >= i);
 
         reset_parse_field_data_mpart_cont (
           p_data,
           mhd_POST_MPART_ST_FULL_FIELD_FOUND_FINAL == mf->st);
+
+        if (state_changed)
+        {
+          p_data->next_parse_pos = i;
+          return true;
+        }
       }
       continue; /* Process the next char */
     case mhd_POST_MPART_ST_EPILOGUE:
@@ -2001,6 +2002,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
     {
       i = mf->delim_check_start; /* Reset position */
       mf->delim_check_start = mhd_POST_INVALID_POS;
+      mf->line_start = mhd_POST_INVALID_POS;
       mf->st = mhd_POST_MPART_ST_VALUE;
     }
 
