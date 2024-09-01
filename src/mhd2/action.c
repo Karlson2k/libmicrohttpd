@@ -62,6 +62,7 @@ MHD_action_from_response (struct MHD_Request *request,
     return (const struct MHD_Action *) NULL;
 
   mhd_response_check_frozen_freeze (response);
+  mhd_response_inc_use_count (response);
 
   head_act->act = mhd_ACTION_RESPONSE;
   head_act->data.response = response;
