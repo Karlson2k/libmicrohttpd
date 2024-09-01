@@ -561,24 +561,34 @@ stream_reader (struct MHD_Request *req,
   }
   if (-1 == uc->fd)
   {
-    if ( (NULL != strstr (filename->cstr,
-                          "..")) ||
-         (NULL != strchr (filename->cstr,
-                          '/')) ||
-         (NULL != strchr (filename->cstr,
-                          '\\')) )
+    if (0 != filename->len)
     {
-      free (uc);
-      return MHD_upload_action_from_response (req,
-                                              request_refused_response);
+      if ( (NULL != strstr (filename->cstr,
+                            "..")) ||
+           (NULL != strchr (filename->cstr,
+                            '/')) ||
+           (NULL != strchr (filename->cstr,
+                            '\\')) )
+      {
+        free (uc);
+        return MHD_upload_action_from_response (req,
+                                                request_refused_response);
+      }
+      uc->filename = malloc (filename->len + 1);
+      if (NULL != uc->filename)
+        memcpy (uc->filename, filename->cstr, filename->len + 1);
     }
-    uc->filename = strdup (filename->cstr);
+    else
+      uc->filename = strdup ("upload-file");
+
     if (NULL == uc->filename)
     {
       free (uc);
       return MHD_upload_action_from_response (req,
                                               internal_error_response);
     }
+
+    if (1)
     {
       size_t slen = strlen (uc->filename);
       size_t i;
@@ -660,7 +670,8 @@ done_cb (struct MHD_Request *req,
 
   if (MHD_POST_PARSE_RES_OK != parsing_result)
   {
-    free (uc->filename);
+    if (NULL != uc->filename)
+      free (uc->filename);
     free (uc);
     return MHD_upload_action_from_response (req,
                                             request_refused_response);
@@ -673,9 +684,9 @@ done_cb (struct MHD_Request *req,
       fprintf (stderr,
                "Upload of file `%s' failed (incomplete or aborted), removing file.\n",
                uc->filename);
+      free (uc->filename);
     }
     (void) unlink (uc->tmpname);
-    free (uc->filename);
     free (uc);
     return MHD_upload_action_from_response (req,
                                             internal_error_response);
@@ -693,7 +704,8 @@ done_cb (struct MHD_Request *req,
   {
     if (uc->have_file)
       (void) unlink (uc->tmpname);
-    free (uc->filename);
+    if (NULL != uc->filename)
+      free (uc->filename);
     free (uc);
     return MHD_upload_action_from_response (req,
                                             request_refused_response);
@@ -706,21 +718,27 @@ done_cb (struct MHD_Request *req,
   if ( (NULL != upload) &&
        (NULL != upload->cstr) )
   {
-    if (uc->have_file)
+    if ((uc->have_file) ||
+        (NULL != uc->filename))
     {
-      free (uc->filename);
+      if (NULL != uc->filename)
+        free (uc->filename);
       free (uc);
       return MHD_upload_action_from_response (req,
                                               internal_error_response);
     }
-    uc->fd = mkstemp (uc->tmpname);
-    if (-1 == uc->fd)
+    uc->filename = strdup ("upload-file-1"); // FIXME: get the name from the POST parameters
+    if (NULL != uc->filename)
+      uc->fd = mkstemp (uc->tmpname);
+    if ((NULL == uc->filename) ||
+        (-1 == uc->fd))
     {
       fprintf (stderr,
                "Error creating temporary file `%s' for upload: %s\n",
                uc->tmpname,
                strerror (errno));
-      free (uc->filename);
+      if (NULL != uc->filename)
+        free (uc->filename);
       free (uc);
       return MHD_upload_action_from_response (req,
                                               request_refused_response);
