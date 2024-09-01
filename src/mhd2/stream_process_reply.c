@@ -811,6 +811,8 @@ build_header_response_inn (struct MHD_Connection *restrict c)
                              MHD_HTTP_HEADER_CONNECTION ": Keep-Alive\r\n"))
         return false;
     }
+    use_conn_close = false;
+    use_conn_k_alive = false;
   }
 
   /* User-defined headers */
