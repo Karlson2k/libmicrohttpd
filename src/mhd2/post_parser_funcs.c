@@ -2634,7 +2634,7 @@ check_post_leftovers_mpart (struct MHD_Connection *restrict c,
     if (0 != mf->f.value_idx)
     {
       value_pos = mf->f.value_idx;
-      value_len = pos -  mf->delim_check_start;
+      value_len = mf->delim_check_start - mf->f.value_idx;
     }
     break;
   case mhd_POST_MPART_ST_FULL_FIELD_FOUND:
