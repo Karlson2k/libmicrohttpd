@@ -354,7 +354,12 @@ struct MHD_Response
    */
   struct mhd_ResponseInternalErrData special_resp;
 
-  #ifndef NDEBUG
+  /**
+   * Should be always 'false' for the response lifetime
+   */
+  bool was_destroyed;
+
+#ifndef NDEBUG
   struct mhd_ResponseDebug dbg;
 #endif
 };

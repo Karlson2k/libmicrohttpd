@@ -29,6 +29,7 @@
 #include "mhd_response.h"
 
 #include "mhd_assert.h"
+#include "mhd_panic.h"
 #include "mhd_atomic_counter.h"
 
 #include "sys_malloc.h"
@@ -38,6 +39,9 @@
 #include "response_add_header.h"
 #include "response_funcs.h"
 #include "response_from.h"
+
+#define mhd_RESPONSE_DESTOYED "Attempt to use destroyed response, " \
+        "re-use non-reusable response or wrong MHD_Response pointer"
 
 /**
  * Perform full response de-initialisation, with cleaning-up / freeing
@@ -54,6 +58,8 @@ response_full_deinit (struct MHD_Response *restrict r)
   if (r->reuse.reusable)
     mhd_response_deinit_reusable (r);
   mhd_response_deinit_content_data (r);
+
+  r->was_destroyed = true;
   free (r);
 }
 
@@ -62,6 +68,8 @@ MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
 mhd_response_dec_use_count (struct MHD_Response *restrict r)
 {
   mhd_assert (r->frozen);
+  if (r->was_destroyed)
+    MHD_PANIC (mhd_RESPONSE_DESTOYED);
 
   if (r->reuse.reusable)
   {
@@ -77,6 +85,8 @@ MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
 mhd_response_inc_use_count (struct MHD_Response *restrict r)
 {
   mhd_assert (r->frozen);
+  if (r->was_destroyed)
+    MHD_PANIC (mhd_RESPONSE_DESTOYED);
 
   if (! r->reuse.reusable)
     return;
@@ -89,6 +99,9 @@ MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ (1) void
 MHD_response_destroy (struct MHD_Response *response)
 {
+  if (response->was_destroyed)
+    MHD_PANIC (mhd_RESPONSE_DESTOYED);
+
   if (! response->frozen)
   {
     /* This response has been never used for actions */
