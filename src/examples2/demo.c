@@ -265,10 +265,10 @@ struct ResponseDataContext
   /**
    * Number of bytes allocated for 'buf'.
    */
-  size_t buf_len;
+  size_t buf_size;
 
   /**
-   * Current position where we append to 'buf'. Must be smaller or equal to 'buf_len'.
+   * Current position where we append to 'buf'. Must be smaller or equal to 'buf_size'.
    */
   size_t off;
 
@@ -307,25 +307,25 @@ list_directory (struct ResponseDataContext *rdc,
       continue;  /* ugh, failed to 'stat' */
     if (! S_ISREG (sbuf.st_mode))
       continue;  /* not a regular file, skip */
-    if (rdc->off + 1024 > rdc->buf_len)
+    if (rdc->off + 1024 > rdc->buf_size)
     {
       void *r;
 
-      if ( (2 * rdc->buf_len + 1024) < rdc->buf_len)
+      if ( (2 * rdc->buf_size + 1024) < rdc->buf_size)
         break; /* more than SIZE_T _index_ size? Too big for us */
-      rdc->buf_len = 2 * rdc->buf_len + 1024;
-      if (NULL == (r = realloc (rdc->buf, rdc->buf_len)))
+      rdc->buf_size = 2 * rdc->buf_size + 1024;
+      if (NULL == (r = realloc (rdc->buf, rdc->buf_size)))
         break; /* out of memory */
       rdc->buf = r;
     }
-    res = snprintf (&rdc->buf[rdc->off],
-                    rdc->buf_len - rdc->off,
+    res = snprintf (rdc->buf + rdc->off,
+                    rdc->buf_size - rdc->off,
                     "<li><a href=\"/%s\">%s</a></li>\n",
                     fullname,
                     de->d_name);
     if (0 >= res)
       continue;  /* snprintf() error */
-    if (rdc->buf_len - rdc->off <= (size_t) res)
+    if (rdc->buf_size - rdc->off <= (size_t) res)
       continue;  /* buffer too small?? */
     rdc->off += (size_t) res;
   }
@@ -352,23 +352,25 @@ update_directory (void)
   int res;
   size_t len;
 
-  rdc.buf_len = initial_allocation;
-  if (NULL == (rdc.buf = malloc (rdc.buf_len)))
+  rdc.off = 0;
+  rdc.buf_size = initial_allocation;
+  rdc.buf = malloc (rdc.buf_size);
+  if (NULL == rdc.buf)
   {
     update_cached_response (NULL);
     return;
   }
   len = strlen (INDEX_PAGE_HEADER);
-  if (rdc.buf_len <= len)
+  if (rdc.buf_size < len)
   { /* buffer too small */
     free (rdc.buf);
     update_cached_response (NULL);
     return;
   }
-  memcpy (rdc.buf,
+  memcpy (rdc.buf + rdc.off,
           INDEX_PAGE_HEADER,
           len);
-  rdc.off = len;
+  rdc.off += len;
   for (language_idx = 0; NULL != languages[language_idx].dirname;
        language_idx++)
   {
@@ -379,12 +381,12 @@ update_directory (void)
     /* we ensured always +1k room, filenames are ~256 bytes,
        so there is always still enough space for the header
        without need for an additional reallocation check. */
-    res = snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
+    res = snprintf (rdc.buf + rdc.off, rdc.buf_size - rdc.off,
                     "<h2>%s</h2>\n",
                     language->longname);
     if (0 >= res)
       continue;  /* snprintf() error */
-    if (rdc.buf_len - rdc.off <= (size_t) res)
+    if (rdc.buf_size - rdc.off <= (size_t) res)
       continue;  /* buffer too small?? */
     rdc.off += (size_t) res;
     for (category_idx = 0; NULL != categories[category_idx]; category_idx++)
@@ -402,12 +404,12 @@ update_directory (void)
       /* we ensured always +1k room, filenames are ~256 bytes,
          so there is always still enough space for the header
          without need for an additional reallocation check. */
-      res = snprintf (&rdc.buf[rdc.off], rdc.buf_len - rdc.off,
+      res = snprintf (rdc.buf + rdc.off, rdc.buf_size - rdc.off,
                       "<h3>%s</h3>\n",
                       category);
       if (0 >= res)
         continue;  /* snprintf() error */
-      if (rdc.buf_len - rdc.off <= (size_t) res)
+      if (rdc.buf_size - rdc.off <= (size_t) res)
         continue;  /* buffer too small?? */
       rdc.off += (size_t) res;
 
@@ -424,7 +426,7 @@ update_directory (void)
      so there is always still enough space for the footer
      without need for a final reallocation check. */
   len = strlen (INDEX_PAGE_FOOTER);
-  if (rdc.buf_len - rdc.off <= len)
+  if (rdc.buf_size - rdc.off < len)
   { /* buffer too small */
     free (rdc.buf);
     update_cached_response (NULL);
@@ -432,7 +434,7 @@ update_directory (void)
   }
   memcpy (rdc.buf + rdc.off, INDEX_PAGE_FOOTER, len);
   rdc.off += len;
-  initial_allocation = rdc.buf_len; /* remember for next time */
+  initial_allocation = rdc.buf_size; /* remember for next time */
   response =
     MHD_response_from_buffer (MHD_HTTP_STATUS_OK,
                               rdc.off,
