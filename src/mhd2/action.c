@@ -144,7 +144,7 @@ MHD_action_parse_post (struct MHD_Request *request,
 }
 
 
-MHD_EXTERN_ MHD_FN_RETURNS_NONNULL_ MHD_FN_PAR_NONNULL_ALL_
+MHD_EXTERN_ MHD_FN_PAR_NONNULL_ALL_
 const struct MHD_UploadAction *
 MHD_upload_action_suspend (struct MHD_Request *request)
 {
@@ -166,6 +166,8 @@ MHD_upload_action_from_response (struct MHD_Request *request,
 {
   struct MHD_UploadAction *const restrict upl_act =
     &(request->app_act.upl_act);
+  if (NULL == response)
+    return (const struct MHD_Action *) NULL;
   if (mhd_UPLOAD_ACTION_NO_ACTION != upl_act->act)
     return (const struct MHD_UploadAction *) NULL;
 
