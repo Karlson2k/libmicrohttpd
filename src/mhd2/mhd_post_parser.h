@@ -242,7 +242,7 @@ enum MHD_FIXED_ENUM_ mhd_PostMPartState
    * Check for delimiter failed, continuing processing of the "value"
    * This is an intermediate state, should be processed and switched to the next
    * state immediately.
-   * Should not be used outside processing loop.
+   * Can be used outside processing loop if streaming partial value.
    */
   mhd_POST_MPART_ST_BACK_TO_VALUE
   ,
@@ -623,7 +623,12 @@ struct mhd_PostParserData
   size_t field_start;
 
   /**
-   * The offset in the value data.
+   * 'true' if current filed 'value' must be "streamed".
+   */
+  bool force_streamed;
+
+  /**
+   * The offset in the current value data.
    * Used when value is processed incrementally otherwise it is zero.
    */
   size_t value_off;

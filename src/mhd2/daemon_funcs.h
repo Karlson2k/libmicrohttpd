@@ -123,6 +123,22 @@ mhd_daemon_grow_lbuf (struct MHD_Daemon *restrict d,
 MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_
   MHD_FN_PAR_INOUT_ (3);
 
+/**
+ * Grow or allocate the large buffer up to specified grow size.
+ * If the requested grow size is not possible, grow up to max possible size.
+ * @param d the daemon to use
+ * @param desired_grow_size the desired size of grow
+ * @param[in,out] buf the buffer to grow, must be allocated previously or
+ *                    zero-initialised
+ * @return the resulting grow size
+ */
+MHD_INTERNAL size_t
+mhd_daemon_extend_lbuf_up_to (struct MHD_Daemon *restrict d,
+                              size_t desired_grow_size,
+                              struct mhd_Buffer *restrict buf)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_
+  MHD_FN_PAR_INOUT_ (3);
+
 
 /**
  * Free large buffer.

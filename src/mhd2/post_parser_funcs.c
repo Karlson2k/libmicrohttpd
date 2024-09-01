@@ -446,6 +446,8 @@ mhd_stream_prepare_for_post_parse (struct MHD_Connection *restrict c)
 }
 
 
+#if 0 /* Disable unused functions */
+
 /**
  * Allocate memory from "large shared buffer" for POST parsing
  * @param c the stream to use
@@ -501,6 +503,54 @@ grow_lbuf_fixed_size (struct MHD_Connection *restrict c,
 }
 
 
+#endif /* Disable unused functions */
+
+/**
+ * Grow or allocate the new memory from "large shared buffer" for POST parsing
+ * If the requested grow size is not possible, grow up to max possible size.
+ * @param c the stream to use
+ * @param desired_grow_size the desired size to grow
+ * @param[in,out] buf the buffer to grow
+ * @return the resulting grow size
+ */
+static MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_INOUT_ (3) size_t
+extend_lbuf_up_to (struct MHD_Connection *restrict c,
+                   size_t desired_grow_size,
+                   struct mhd_Buffer *restrict buf)
+{
+  mhd_assert (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act);
+  mhd_assert (c->rq.u_proc.post.lbuf_limit >= buf->size);
+
+  if (buf->size + desired_grow_size > c->rq.u_proc.post.lbuf_limit)
+    desired_grow_size = c->rq.u_proc.post.lbuf_limit - buf->size;
+
+  return mhd_daemon_extend_lbuf_up_to (c->daemon,
+                                       desired_grow_size,
+                                       buf);
+}
+
+
+static MHD_FN_PAR_NONNULL_ALL_ bool
+report_low_lbuf_mem (struct MHD_Connection *restrict c)
+{
+  mhd_LOG_MSG (c->daemon, \
+               MHD_SC_REQ_POST_PARSE_FAILED_NO_LARGE_BUF_MEM, \
+               "Not enough large shared buffer memory to " \
+               "parse POST request.");
+  c->rq.u_proc.post.parse_result =
+    MHD_POST_PARSE_RES_FAILED_NO_LARGE_BUF_MEM;
+  if (c->state < MHD_CONNECTION_FULL_REQ_RECEIVED)
+  {
+    c->discard_request = true;
+    c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+
+    return true;
+  }
+  return false;
+}
+
+
 /**
  * Test whether current incomplete value must be provided to the "stream"
  * reader.
@@ -520,13 +570,16 @@ is_value_streaming_needed (struct MHD_Connection *restrict c,
   if (NULL == p_par->stream_reader)
   {
     mhd_assert (0 == p_data->value_off);
+    mhd_assert (! p_data->force_streamed);
     return false; /* No value streaming possible */
   }
 
-  if (0 != p_data->value_off)
-    return true; /* Part of the value has been already provided to "stream"
-                    reader, the rest of the value should be provided
-                    in the same way */
+  /* If part of the value has been already provided to "stream"
+     reader, the rest of the value should be provided
+     in the same way */
+  mhd_assert ((0 == p_data->value_off) || p_data->force_streamed);
+  if (p_data->force_streamed)
+    return true;
 
   return (p_par->max_nonstream_size < field_cur_size);
 }
@@ -721,6 +774,7 @@ process_complete_field_all (struct MHD_Connection *restrict c,
   mhd_assert ((0 != cntn_type_start) || (0 == cntn_type_len));
   mhd_assert ((0 != enc_start) || (0 == enc_len));
   mhd_assert ((0 != value_start) || (0 == value_len));
+  mhd_assert (0 == buf [name_start + name_len]);
 
   p_data->some_data_provided = true;
 
@@ -762,6 +816,7 @@ process_complete_field_all (struct MHD_Connection *restrict c,
     res = mhd_stream_process_upload_action (c, act, false);
     if (c->suspended)
       return true;
+    p_data->force_streamed = false;
     p_data->value_off = 0;
     if (*pdata_size > *pfield_next_pos)
     {
@@ -780,6 +835,10 @@ process_complete_field_all (struct MHD_Connection *restrict c,
     struct mhd_PositionAndLength content_type_i;
     struct mhd_PositionAndLength encoding_i;
     struct mhd_PositionAndLength value_i;
+
+    mhd_assert (! p_data->force_streamed);
+    mhd_assert (0 == p_data->value_off);
+    mhd_assert ((0 == value_start) || (0 == buf [value_start + value_len]));
 
     name_i.pos = name_start;
     name_i.len = name_len;
@@ -971,6 +1030,7 @@ process_partial_value_all (struct MHD_Connection *restrict c,
                               MHD_NO);
 
   p_data->some_data_provided = true;
+  p_data->force_streamed = true;
 
   res = mhd_stream_process_upload_action (c, act, false);
   if (c->suspended)
@@ -1745,9 +1805,9 @@ parse_post_mpart (struct MHD_Connection *restrict c,
       mhd_assert (0 != mf->f.name_len);
       mhd_assert (i > mf->f.name_idx);
       mf->f.value_idx = i;
-      mf->line_start = mhd_POST_INVALID_POS;
     /* Intentional fall-through */
     case mhd_POST_MPART_ST_BACK_TO_VALUE:
+      mf->line_start = mhd_POST_INVALID_POS;
       mf->delim_check_start = mhd_POST_INVALID_POS;
       mf->st = mhd_POST_MPART_ST_VALUE;
     /* Intentional fall-through */
@@ -2001,9 +2061,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
     if (mhd_POST_MPART_ST_VALUE != mf->st)
     {
       i = mf->delim_check_start; /* Reset position */
-      mf->delim_check_start = mhd_POST_INVALID_POS;
-      mf->line_start = mhd_POST_INVALID_POS;
-      mf->st = mhd_POST_MPART_ST_VALUE;
+      mf->st = mhd_POST_MPART_ST_BACK_TO_VALUE;
     }
 
     proc_res =
@@ -2257,7 +2315,7 @@ mhd_stream_post_parse (struct MHD_Connection *restrict c,
                        char *restrict buf)
 {
   struct mhd_PostParserData *const p_data = &(c->rq.u_proc.post);
-  bool alloc_failed;
+  size_t lbuf_left;
 
   mhd_assert (MHD_HTTP_POST_ENCODING_OTHER != p_data->enc);
   mhd_assert (c->rq.cntn.lbuf.size <= p_data->lbuf_limit);
@@ -2266,75 +2324,74 @@ mhd_stream_post_parse (struct MHD_Connection *restrict c,
       (mhd_POST_MPART_ST_EPILOGUE == p_data->e_d.m_form.st))
   {
     /* No need to process the data */
-    *pdata_size = 0; /* All data has been moved */
+    *pdata_size = 0; /* All data has been "processed" */
     return false; /* Continue normal processing */
   }
 
   // TODO: support process in the connection buffer
-  if (NULL == c->rq.cntn.lbuf.data)
-  {
-    alloc_failed = ! get_lbuf_fixed_size (c,
-                                          *pdata_size + 1,
-                                          &(c->rq.cntn.lbuf));
-  }
-  else
-  {
-    size_t space_left;
 
-    mhd_assert (c->rq.cntn.lbuf.size >= p_data->lbuf_used);
-    space_left = c->rq.cntn.lbuf.size - p_data->lbuf_used;
+  mhd_assert (c->rq.cntn.lbuf.size >= p_data->lbuf_used);
+  lbuf_left = c->rq.cntn.lbuf.size - p_data->lbuf_used;
 
-    if (*pdata_size > space_left)
-      alloc_failed = ! grow_lbuf_fixed_size (c,
-                                             *pdata_size - space_left + 1,
-                                             &(c->rq.cntn.lbuf));
-    else
-      alloc_failed = false;
+  if (*pdata_size + 1 > lbuf_left)
+    (void) extend_lbuf_up_to (c,
+                              *pdata_size + 1 - lbuf_left,
+                              &(c->rq.cntn.lbuf));
 
-  }
-  if (alloc_failed)
+  while ((0 != *pdata_size) &&
+         (c->rq.cntn.lbuf.size > p_data->lbuf_used))
   {
-    mhd_LOG_MSG (c->daemon, \
-                 MHD_SC_REQ_POST_PARSE_FAILED_NO_LARGE_BUF_MEM, \
-                 "Not enough large shared buffer memory to " \
-                 "parse POST request.");
-    p_data->parse_result =
-      MHD_POST_PARSE_RES_FAILED_NO_LARGE_BUF_MEM;
-    c->discard_request = true;
-    c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
-    return true;
-  }
-  memcpy (c->rq.cntn.lbuf.data + p_data->lbuf_used,
-          buf,
-          *pdata_size);
-  p_data->lbuf_used += *pdata_size;
-  *pdata_size = 0; /* All data has been moved */
+    size_t data_size_before_parse;
+    size_t copy_size = *pdata_size;
+    lbuf_left = c->rq.cntn.lbuf.size - p_data->lbuf_used;
+    if (lbuf_left < copy_size)
+      copy_size = lbuf_left;
 
-  switch (p_data->enc)
-  {
-  case MHD_HTTP_POST_ENCODING_FORM_URLENCODED:
-    return parse_post_urlenc (c,
-                              &(p_data->lbuf_used),
-                              c->rq.cntn.lbuf.data);
-  case MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA:
-    return parse_post_mpart (c,
+    memcpy (c->rq.cntn.lbuf.data + p_data->lbuf_used,
+            buf,
+            copy_size);
+    p_data->lbuf_used += copy_size;
+    *pdata_size -= copy_size;
+
+    data_size_before_parse = p_data->lbuf_used;
+    switch (p_data->enc)
+    {
+    case MHD_HTTP_POST_ENCODING_FORM_URLENCODED:
+      if (parse_post_urlenc (c,
                              &(p_data->lbuf_used),
-                             c->rq.cntn.lbuf.data);
-  case MHD_HTTP_POST_ENCODING_TEXT_PLAIN:
-    return parse_post_text (c,
+                             c->rq.cntn.lbuf.data))
+        return true;
+      break;
+    case MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA:
+      if (parse_post_mpart (c,
                             &(p_data->lbuf_used),
-                            c->rq.cntn.lbuf.data);
-  case MHD_HTTP_POST_ENCODING_OTHER:
-  default:
-    mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
-    p_data->parse_result =
-      MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT;
-    c->discard_request = true;
-    c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
-    break;
+                            c->rq.cntn.lbuf.data))
+        return true;
+      break;
+    case MHD_HTTP_POST_ENCODING_TEXT_PLAIN:
+      if (parse_post_text (c,
+                           &(p_data->lbuf_used),
+                           c->rq.cntn.lbuf.data))
+        return true;
+      break;
+    case MHD_HTTP_POST_ENCODING_OTHER:
+    default:
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+      p_data->parse_result =
+        MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT;
+      c->discard_request = true;
+      c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+      return true;
+    }
+    if (data_size_before_parse == p_data->lbuf_used)
+      break; /* Nothing consumed, not possible to add new data to the buffer now */
   }
-  return true;
+
+  if (0 != *pdata_size)
+    return report_low_lbuf_mem (c);
+
+  return false; /* Continue normal processing */
 }
 
 
@@ -2360,11 +2417,16 @@ check_post_leftovers_urlenc (struct MHD_Connection *restrict c,
   size_t name_len;
   size_t value_start;
   size_t value_len;
+  bool need_more_space;
+  bool have_extra_space;
+  bool need_value_stream;
 
-  pos = p_data->next_parse_pos;  /* Points to the char AFTER the data, valid location as buffer is always at least one byte larger */
-  mhd_assert (pos == p_data->next_parse_pos);
-  mhd_assert (pos < c->rq.cntn.lbuf.size); // TODO: support processing in connection buffer
+  pos = p_data->next_parse_pos;  /* Points to the char AFTER the data */
+  mhd_assert (pos <= c->rq.cntn.lbuf.size); // TODO: support processing in connection buffer
   mhd_assert (*pdata_size >= pos);
+  have_extra_space = (pos < c->rq.cntn.lbuf.size);
+  need_more_space = false; /**< No space for zero termination */
+  need_value_stream = false; /**< Value cannot be zero-terminated and must be streamed */
   switch (uf->st)
   {
   case mhd_POST_UENC_ST_NOT_STARTED:
@@ -2382,9 +2444,16 @@ check_post_leftovers_urlenc (struct MHD_Connection *restrict c,
                                                NULL);
     else
       name_len = pos - uf->name_idx;
-    buf[name_start + name_len] = 0; /* Zero-terminate the result, an extra byte is always available in the buffer */
-    value_start = 0;
-    value_len = 0;
+    mhd_assert (name_start + name_len <= pos);
+    if (! have_extra_space &&
+        (name_start + name_len == pos))
+      need_more_space = true;
+    else
+    {
+      buf[name_start + name_len] = 0; /* Zero-terminate the result, an extra byte is available */
+      value_start = 0;
+      value_len = 0;
+    }
     break;
   case mhd_POST_UENC_ST_EQ_FOUND:
     mhd_assert (pos == *pdata_size);
@@ -2392,7 +2461,10 @@ check_post_leftovers_urlenc (struct MHD_Connection *restrict c,
     name_len = uf->name_len;
     value_start = pos;
     value_len = 0;
-    buf[value_start] = 0; /* Zero-terminate the result, an extra byte is always available */
+    if (! have_extra_space)
+      need_value_stream = true;
+    else
+      buf[value_start] = 0; /* Zero-terminate the result, an extra byte is available */
     break;
   case mhd_POST_UENC_ST_VALUE:
     mhd_assert (0 != uf->value_idx);
@@ -2426,7 +2498,11 @@ check_post_leftovers_urlenc (struct MHD_Connection *restrict c,
       else
         value_len = pos - uf->value_idx;
     }
-    buf[value_start + value_len] = 0; /* Zero-terminate the result, an extra byte is always available in the buffer */
+    if (! have_extra_space &&
+        (value_start + value_len == pos))
+      need_value_stream = true;
+    else
+      buf[value_start + value_len] = 0; /* Zero-terminate the result, an extra byte is available in the buffer */
     break;
   case mhd_POST_UENC_ST_FULL_FIELD_FOUND:
     /* Full value was found, but the stream has been suspended by
@@ -2452,9 +2528,24 @@ check_post_leftovers_urlenc (struct MHD_Connection *restrict c,
     return false;
   }
 
+  /* Have field data */
+
+  p_data->next_parse_pos = pos;
+
+  if (need_value_stream)
+  {
+    if (NULL != c->rq.app_act.head_act.data.post_parse.stream_reader)
+      p_data->force_streamed = true;
+    else
+      need_more_space = true;
+  }
+
+  if (need_more_space)
+    return report_low_lbuf_mem (c);
+
   if (process_complete_field (c,
                               buf,
-                              &pos,
+                              &(p_data->next_parse_pos),
                               pdata_size,
                               p_data->field_start,
                               name_start,
@@ -2489,18 +2580,17 @@ check_post_leftovers_mpart (struct MHD_Connection *restrict c,
   size_t pos;
   bool not_terminated;
   bool add_field;
-  size_t field_pos;
-  size_t field_len;
+  size_t value_pos;
+  size_t value_len;
 
   pos = p_data->next_parse_pos;  /* Points to the char AFTER the data, valid location as buffer is always at least one byte larger */
-  mhd_assert (pos == p_data->next_parse_pos);
-  mhd_assert (pos < c->rq.cntn.lbuf.size); // TODO: support processing in connection buffer
+  mhd_assert (pos <= c->rq.cntn.lbuf.size); // TODO: support processing in connection buffer
   mhd_assert (*pdata_size >= pos);
 
   not_terminated = false;
   add_field = false;
-  field_pos = 0;
-  field_len = 0;
+  value_pos = 0;
+  value_len = 0;
 
   switch (mf->st)
   {
@@ -2532,8 +2622,8 @@ check_post_leftovers_mpart (struct MHD_Connection *restrict c,
     mhd_assert (0 != mf->f.value_idx);
     not_terminated = true;
     add_field = true;
-    field_pos = mf->f.value_idx;
-    field_len = pos - field_len;
+    value_pos = mf->f.value_idx;
+    value_len = pos - value_len;
     break;
   case mhd_POST_MPART_ST_DELIM_FOUND:
     mhd_assert (0 != mf->f.name_idx);
@@ -2543,8 +2633,8 @@ check_post_leftovers_mpart (struct MHD_Connection *restrict c,
     add_field = true;
     if (0 != mf->f.value_idx)
     {
-      field_pos = mf->f.value_idx;
-      field_len = pos -  mf->delim_check_start;
+      value_pos = mf->f.value_idx;
+      value_len = pos -  mf->delim_check_start;
     }
     break;
   case mhd_POST_MPART_ST_FULL_FIELD_FOUND:
@@ -2555,8 +2645,8 @@ check_post_leftovers_mpart (struct MHD_Connection *restrict c,
     add_field = true;
     if (0 != mf->f.value_idx)
     {
-      field_pos = mf->f.value_idx;
-      field_len = mf->f.value_len;
+      value_pos = mf->f.value_idx;
+      value_len = mf->f.value_len;
     }
     break;
   case mhd_POST_MPART_ST_EPILOGUE:
@@ -2587,9 +2677,18 @@ check_post_leftovers_mpart (struct MHD_Connection *restrict c,
 
   if (add_field)
   {
+    if (c->rq.cntn.lbuf.size > (value_pos + value_len))
+      buf [value_pos + value_len] = 0; /* Zero-terminate the value */
+    else if (NULL != c->rq.app_act.head_act.data.post_parse.stream_reader)
+      p_data->force_streamed = true;
+    else
+      return report_low_lbuf_mem (c);
+
+    p_data->next_parse_pos = pos;
+
     if (process_complete_field_all (c,
                                     buf,
-                                    &pos,
+                                    &p_data->next_parse_pos,
                                     pdata_size,
                                     p_data->field_start,
                                     mf->f.name_idx,
@@ -2600,8 +2699,8 @@ check_post_leftovers_mpart (struct MHD_Connection *restrict c,
                                     mf->f.cntn_type_len,
                                     mf->f.enc_idx,
                                     mf->f.enc_len,
-                                    field_pos,
-                                    field_len))
+                                    value_pos,
+                                    value_len))
       return true;
   }
 
@@ -2636,8 +2735,7 @@ check_post_leftovers_text (struct MHD_Connection *restrict c,
   size_t value_len;
 
   pos = p_data->next_parse_pos;  /* Points to the char AFTER the data, valid location as buffer is always at least one byte larger */
-  mhd_assert (pos == p_data->next_parse_pos);
-  mhd_assert (pos < c->rq.cntn.lbuf.size); // TODO: support processing in connection buffer
+  mhd_assert (pos <= c->rq.cntn.lbuf.size); // TODO: support processing in connection buffer
   switch (tf->st)
   {
   case mhd_POST_TEXT_ST_NOT_STARTED:
@@ -2648,7 +2746,9 @@ check_post_leftovers_text (struct MHD_Connection *restrict c,
     mhd_assert (pos == *pdata_size);
     name_start = tf->name_idx;
     name_len = pos - name_start;
-    buf[pos] = 0; /* Zero-terminate the result, an extra byte is always available */
+    if (pos == c->rq.cntn.lbuf.size)
+      return report_low_lbuf_mem (c);
+    buf[pos] = 0; /* Zero-terminate the result, an extra byte is available */
     value_start = 0;
     value_len = 0;
     break;
@@ -2716,6 +2816,16 @@ check_post_leftovers_text (struct MHD_Connection *restrict c,
     p_data->parse_result = MHD_POST_PARSE_RES_OK_BAD_TERMINATION;
   }
 
+  if (0 != value_start)
+  {
+    if (c->rq.cntn.lbuf.size > (value_start + value_len))
+      buf [value_start + value_len] = 0; /* Zero-terminate the value */
+    else if (NULL != c->rq.app_act.head_act.data.post_parse.stream_reader)
+      p_data->force_streamed = true;
+    else
+      return report_low_lbuf_mem (c);
+  }
+
   if (process_complete_field (c,
                               buf,
                               &pos,
@@ -2743,6 +2853,12 @@ static MHD_FN_PAR_NONNULL_ALL_ bool
 check_post_leftovers (struct MHD_Connection *restrict c)
 {
   struct mhd_PostParserData *const p_data = &(c->rq.u_proc.post);
+  // TODO: implement processing in the connection buffer
+  if (p_data->lbuf_used == c->rq.cntn.lbuf.size)
+    (void) extend_lbuf_up_to (c,
+                              1,
+                              &(c->rq.cntn.lbuf));
+
   switch (p_data->enc)
   {
   case MHD_HTTP_POST_ENCODING_FORM_URLENCODED:

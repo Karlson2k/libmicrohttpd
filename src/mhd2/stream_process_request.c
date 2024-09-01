@@ -3258,9 +3258,11 @@ process_request_chunked_body (struct MHD_Connection *restrict c)
       state_updated = mhd_stream_post_parse (c,
                                              &cntn_data_ready,
                                              buffer_head);
-      mhd_assert (0 == cntn_data_ready); // TODO: support one chunk in-place processing?
+      // TODO: support one chunk in-place processing?
+      mhd_assert ((0 == cntn_data_ready) || \
+                  (MHD_POST_PARSE_RES_OK != c->rq.u_proc.post.parse_result) || \
+                  (MHD_CONNECTION_BODY_RECEIVING != c->state));
       c->rq.cntn.recv_size += size_provided;
-
     }
     else
 #endif /* HAVE_POST_PARSER */
@@ -3389,7 +3391,9 @@ process_request_nonchunked_body (struct MHD_Connection *restrict c)
     state_updated = mhd_stream_post_parse (c,
                                            &size_provided,
                                            c->read_buffer);
-    mhd_assert (0 == size_provided);
+    mhd_assert ((0 == size_provided) || \
+                (MHD_POST_PARSE_RES_OK != c->rq.u_proc.post.parse_result) || \
+                (MHD_CONNECTION_BODY_RECEIVING != c->state));
     read_buf_reuse = true;
     c->rq.cntn.proc_size += cntn_data_ready;
     if (c->rq.cntn.recv_size == c->rq.cntn.cntn_size)

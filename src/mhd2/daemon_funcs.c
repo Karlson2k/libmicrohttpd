@@ -99,6 +99,33 @@ mhd_daemon_claim_lbuf (struct MHD_Daemon *d,
 }
 
 
+static MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_MUST_CHECK_RESULT_ size_t
+mhd_daemon_claim_lbuf_up_to (struct MHD_Daemon *d,
+                             size_t requested_size)
+{
+  size_t ret;
+  struct MHD_Daemon *const masterd = mhd_daemon_get_master_daemon (d);
+  mhd_assert (0 != requested_size);
+  if (0 == masterd->req_cfg.large_buf.space_left)
+    return false; /* Shortcut for typical use without large buffer */
+
+  mhd_mutex_lock_chk (&(masterd->req_cfg.large_buf.lock));
+  if (masterd->req_cfg.large_buf.space_left >= requested_size)
+  {
+    ret = requested_size;
+    masterd->req_cfg.large_buf.space_left -= requested_size;
+  }
+  else
+  {
+    ret = masterd->req_cfg.large_buf.space_left;
+    masterd->req_cfg.large_buf.space_left = 0;
+  }
+  mhd_mutex_unlock_chk (&(masterd->req_cfg.large_buf.lock));
+  return ret;
+}
+
+
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
 mhd_daemon_reclaim_lbuf (struct MHD_Daemon *d,
                          size_t reclaimed_size)
@@ -162,6 +189,59 @@ mhd_daemon_grow_lbuf (struct MHD_Daemon *restrict d,
   buf->size += grow_size;
 
   return true;
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_
+MHD_FN_PAR_INOUT_ (3) size_t
+mhd_daemon_extend_lbuf_up_to (struct MHD_Daemon *restrict d,
+                              size_t desired_grow_size,
+                              struct mhd_Buffer *restrict buf)
+{
+  void *new_alloc;
+  size_t grow_size;
+  mhd_assert (NULL != buf->data || 0 == buf->size);
+  mhd_assert (0 != buf->size || NULL == buf->data);
+
+  grow_size = mhd_daemon_claim_lbuf_up_to (d, desired_grow_size);
+
+  new_alloc = NULL;
+  if (NULL == buf->data)
+  {
+    while ((0 != grow_size) &&
+           (NULL == (new_alloc = malloc (grow_size))))
+    {
+      size_t reduce = grow_size / 2;
+      if (sizeof(void *) >= (grow_size - reduce))
+        reduce = grow_size;
+      mhd_daemon_reclaim_lbuf (d,
+                               reduce);
+      grow_size -= reduce;
+    }
+  }
+  else
+  {
+    while ((0 != grow_size) &&
+           (NULL == (new_alloc = realloc (buf->data,
+                                          buf->size + grow_size))))
+    {
+      size_t reduce = grow_size / 2;
+      if (sizeof(void *) >= (grow_size - reduce))
+        reduce = grow_size;
+      mhd_daemon_reclaim_lbuf (d,
+                               reduce);
+      grow_size -= reduce;
+    }
+  }
+
+  if (NULL != new_alloc)
+  {
+    mhd_assert (0 != grow_size);
+    buf->data = new_alloc;
+    buf->size += grow_size;
+  }
+
+  return grow_size;
 }
 
 
