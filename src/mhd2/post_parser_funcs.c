@@ -531,6 +531,13 @@ extend_lbuf_up_to (struct MHD_Connection *restrict c,
 }
 
 
+/**
+ * Report "no memory in larger shared buffer".
+ * Set parsing status accordingly
+ * @param c the stream to use
+ * @return 'true' if the stream state has been changed,
+ *         'false' otherwise
+ */
 static MHD_FN_PAR_NONNULL_ALL_ bool
 report_low_lbuf_mem (struct MHD_Connection *restrict c)
 {
@@ -548,6 +555,21 @@ report_low_lbuf_mem (struct MHD_Connection *restrict c)
     return true;
   }
   return false;
+}
+
+
+/**
+ * Report broken POST encoding termination
+ * @param c the stream to use
+ */
+static MHD_FN_PAR_NONNULL_ALL_ void
+report_invalid_termination (struct MHD_Connection *restrict c)
+{
+  mhd_LOG_MSG (c->daemon, \
+               MHD_SC_REQ_POST_PARSE_OK_BAD_TERMINATION, \
+               "The POST request content has invalid termination / ending. " \
+               "The last parsed field may be incorrect.");
+  c->rq.u_proc.post.parse_result = MHD_POST_PARSE_RES_OK_BAD_TERMINATION;
 }
 
 
@@ -2676,14 +2698,7 @@ check_post_leftovers_mpart (struct MHD_Connection *restrict c,
   }
 
   if (not_terminated)
-  {
-    /* The "closing" delimiter is missing */
-    mhd_LOG_MSG (c->daemon, \
-                 MHD_SC_REQ_POST_PARSE_OK_BAD_TERMINATION, \
-                 "The request POST has invalid termination / ending. " \
-                 "The last parsed field may be incorrect.");
-    p_data->parse_result = MHD_POST_PARSE_RES_OK_BAD_TERMINATION;
-  }
+    report_invalid_termination (c); /* The "closing" delimiter is missing */
 
   if (add_field)
   {
@@ -2817,14 +2832,7 @@ check_post_leftovers_text (struct MHD_Connection *restrict c,
   }
 
   if (tf->st != mhd_POST_TEXT_ST_FULL_LINE_FOUND)
-  {
-    /* The line must be terminated by CRLF, but it is not */
-    mhd_LOG_MSG (c->daemon, \
-                 MHD_SC_REQ_POST_PARSE_OK_BAD_TERMINATION, \
-                 "The request POST has invalid termination / ending. " \
-                 "The last parsed field may be incorrect.");
-    p_data->parse_result = MHD_POST_PARSE_RES_OK_BAD_TERMINATION;
-  }
+    report_invalid_termination (c); /* The line must be terminated by CRLF, but it is not */
 
   if (0 != value_start)
   {
