@@ -989,6 +989,7 @@ process_partial_value_all (struct MHD_Connection *restrict c,
   bool res;
 
   mhd_assert (MHD_CONNECTION_REQ_RECV_FINISHED >= c->state);
+  mhd_assert (*pnext_pos <= *pdata_size);
   mhd_assert (part_value_start + part_value_len <= *pnext_pos);
   mhd_assert (0 != part_value_start);
   mhd_assert (0 != part_value_len);
@@ -1039,12 +1040,21 @@ process_partial_value_all (struct MHD_Connection *restrict c,
   p_data->value_off += part_value_len;
   if (*pdata_size > *pnext_pos)
   {
+    size_t consumed_size;
+
     memmove (buf + part_value_start,
-             buf + part_value_start + part_value_len,
-             part_value_len);
+             buf + *pnext_pos,
+             *pdata_size - *pnext_pos);
+    consumed_size = *pnext_pos - part_value_start;
+    *pnext_pos = part_value_start;
+    *pdata_size -= consumed_size;
   }
-  *pnext_pos -= part_value_len;
-  *pdata_size -= part_value_len;
+  else
+  {
+    mhd_assert (*pdata_size == *pnext_pos);
+    *pnext_pos = part_value_start;
+    *pdata_size = part_value_start;
+  }
   return res;
 }
 
