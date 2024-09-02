@@ -2911,7 +2911,8 @@ mhd_stream_process_post_finish (struct MHD_Connection *restrict c)
   const struct MHD_UploadAction *act;
   bool state_changed;
 
-  if (MHD_POST_PARSE_RES_OK == p_data->parse_result)
+  if ((MHD_POST_PARSE_RES_OK == p_data->parse_result) &&
+      ! c->discard_request)
   {
     // TODO: implement processing in the connection buffer
     if (check_post_leftovers (c))
