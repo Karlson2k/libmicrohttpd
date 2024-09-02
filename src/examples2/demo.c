@@ -678,6 +678,7 @@ handle_full_upload (void *cls,
     uc->error_file = true;
     return MHD_NO;
   }
+  uc->filename = strdup (data->filename.cstr);
   fd = mkstemp (uc->tmpname);
   if (-1 == fd)
   {
