@@ -574,13 +574,8 @@ stream_reader (struct MHD_Request *req,
         return MHD_upload_action_from_response (req,
                                                 request_refused_response);
       }
-      uc->filename = malloc (filename->len + 1);
-      if (NULL != uc->filename)
-        memcpy (uc->filename, filename->cstr, filename->len + 1);
+      uc->filename = strdup (filename->cstr);
     }
-    else
-      uc->filename = strdup ("upload-file");
-
     if (NULL == uc->filename)
     {
       fprintf (stderr,
@@ -990,7 +985,7 @@ generate_page (void *cls,
     uc->fd = -1;
     return MHD_action_parse_post (request,
                                   64 * 1024 /* buffer size */,
-                                  1024 /* max non-stream size */,
+                                  32 /* max non-stream size */,
                                   MHD_HTTP_POST_ENCODING_OTHER,
                                   &stream_reader,
                                   uc,
