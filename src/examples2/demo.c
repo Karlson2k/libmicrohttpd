@@ -474,6 +474,12 @@ struct UploadContext
    * True once @a tmpfile exists.
    */
   bool have_file;
+
+  /**
+   * True if we had an error handling the upload.
+   */
+  bool error_file;
+
 };
 
 
@@ -636,6 +642,72 @@ stream_reader (struct MHD_Request *req,
 
 
 /**
+ * Iterator over POST data.
+ *
+ * The @a data pointer is valid only until return from this function.
+ *
+ * The pointers to the strings in @a data are valid until any MHD_UploadAction
+ * is provided. If the data is needed beyond this point, it should be copied.
+ *
+ * @param cls closure
+ * @param data the element of the post data, the pointer is valid only until
+ *             return from this function
+ * @return #MHD_YES to continue iterating,
+ *         #MHD_NO to abort the iteration
+ * @ingroup request
+ */
+static enum MHD_Bool
+handle_full_upload (void *cls,
+                    const struct MHD_PostField *data)
+{
+  struct UploadContext *uc = cls;
+  int fd;
+
+  if (0 != strcmp ("upload",
+                   data->name.cstr))
+    return MHD_YES;
+  if (uc->have_file)
+  {
+    uc->error_file = true;
+    return MHD_NO;
+  }
+  if (NULL == data->filename.cstr)
+  {
+    fprintf (stderr,
+             "Filename missing for full upload\n");
+    uc->error_file = true;
+    return MHD_NO;
+  }
+  fd = mkstemp (uc->tmpname);
+  if (-1 == fd)
+  {
+    fprintf (stderr,
+             "Error creating temporary file `%s' for upload: %s\n",
+             uc->tmpname,
+             strerror (errno));
+    uc->error_file = true;
+    return MHD_NO;
+  }
+  if (NULL != data->value.cstr)
+  {
+    // FIXME: error handling, ...
+#if ! defined(_WIN32) || defined(__CYGWIN__)
+    write (fd,
+           data->value.cstr,
+           data->value.len);
+#else  /* Native W32 */
+    write (fd,
+           data->value.cstr,
+           (unsigned int) data->value.len);
+#endif /* Native W32 */
+  }
+  close (fd);
+  uc->have_file = true;
+  return MHD_NO;
+}
+
+
+/**
  * The callback to be called when finished with processing
  * of the postprocessor upload data.
  * @param req the request
@@ -652,7 +724,6 @@ done_cb (struct MHD_Request *req,
   const struct MHD_UploadAction *ret;
   const struct MHD_StringNullable *cat;
   const struct MHD_StringNullable *lang;
-  const struct MHD_StringNullable *upload;
   char fn[PATH_MAX];
   int res;
 
@@ -702,52 +773,18 @@ done_cb (struct MHD_Request *req,
   }
   /* FIXME: ugly that we may have to deal with upload
      here as well! */
-  upload = MHD_request_get_value (req,
-                                  MHD_VK_POSTDATA,
-                                  "upload");
-  if ( (NULL != upload) &&
-       (NULL != upload->cstr) )
+#if FIXME_EVGENY
+  MHD_request_get_post_data_cb (req,
+                                &handle_full_upload,
+                                uc);
+#endif
+  if (uc->error_file)
   {
-    if (uc->have_file)
-    {
-      fprintf (stderr,
-               "Upload data provided twice!\n");
-      ret = MHD_upload_action_from_response (req,
-                                             internal_error_response);
-      goto cleanup;
-    }
-    if (NULL == uc->filename)
-    {
-      fprintf (stderr,
-               "Filename missing for full upload\n");
-      ret = MHD_upload_action_from_response (req,
-                                             internal_error_response);
-      goto cleanup;
-    }
-    uc->fd = mkstemp (uc->tmpname);
-    if (-1 == uc->fd)
-    {
-      fprintf (stderr,
-               "Error creating temporary file `%s' for upload: %s\n",
-               uc->tmpname,
-               strerror (errno));
-      ret = MHD_upload_action_from_response (req,
-                                             request_refused_response);
-      goto cleanup;
-    }
-    // FIXME: error handling, ...
-#if ! defined(_WIN32) || defined(__CYGWIN__)
-    write (uc->fd,
-           upload->cstr,
-           upload->len);
-#else  /* Native W32 */
-    write (uc->fd,
-           upload->cstr,
-           (unsigned int) upload->len);
-#endif /* Native W32 */
-    close (uc->fd);
-    uc->fd = -1;
-    uc->have_file = true;
+    fprintf (stderr,
+             "Upload data provided twice!\n");
+    ret = MHD_upload_action_from_response (req,
+                                           internal_error_response);
+    goto cleanup;
   }
   /* create directories -- if they don't exist already */
 #if ! defined(_WIN32) || defined(__CYGWIN__)
@@ -765,7 +802,7 @@ done_cb (struct MHD_Request *req,
        (sizeof (fn) <= (size_t) res) )
   {
     fprintf (stderr,
-             "snprintf() failed at %u\n", __LINE__);
+             "snprintf() failed at %d\n", __LINE__);
     ret = MHD_upload_action_from_response (req,
                                            request_refused_response);
     goto cleanup;
@@ -787,7 +824,7 @@ done_cb (struct MHD_Request *req,
        (sizeof (fn) <= (size_t) res) )
   {
     fprintf (stderr,
-             "snprintf() failed at %u\n", __LINE__);
+             "snprintf() failed at %d\n", __LINE__);
     ret = MHD_upload_action_from_response (req,
                                            request_refused_response);
     goto cleanup;
