@@ -583,12 +583,13 @@ stream_reader (struct MHD_Request *req,
 
     if (NULL == uc->filename)
     {
+      fprintf (stderr,
+               "No filename for incremental upload\n");
       free (uc);
       return MHD_upload_action_from_response (req,
                                               internal_error_response);
     }
 
-    if (1)
     {
       size_t slen = strlen (uc->filename);
       size_t i;
@@ -670,6 +671,9 @@ done_cb (struct MHD_Request *req,
 
   if (MHD_POST_PARSE_RES_OK != parsing_result)
   {
+    fprintf (stderr,
+             "Upload parsing failed with status %d\n",
+             (int) parsing_result);
     if (NULL != uc->filename)
       free (uc->filename);
     free (uc);
@@ -678,6 +682,8 @@ done_cb (struct MHD_Request *req,
   }
   if (-1 != uc->fd)
   {
+    fprintf (stderr,
+             "Upload incomplete (fd still open)\n");
     (void) close (uc->fd);
     if (NULL != uc->filename)
     {
@@ -702,6 +708,8 @@ done_cb (struct MHD_Request *req,
        (NULL == cat) ||
        (NULL == cat->cstr) )
   {
+    fprintf (stderr,
+             "Required argument missing\n");
     if (uc->have_file)
       (void) unlink (uc->tmpname);
     if (NULL != uc->filename)
@@ -718,27 +726,32 @@ done_cb (struct MHD_Request *req,
   if ( (NULL != upload) &&
        (NULL != upload->cstr) )
   {
-    if ((uc->have_file) ||
-        (NULL != uc->filename))
+    if (uc->have_file)
     {
+      fprintf (stderr,
+               "Upload data provided twice!\n");
       if (NULL != uc->filename)
         free (uc->filename);
       free (uc);
       return MHD_upload_action_from_response (req,
                                               internal_error_response);
     }
-    uc->filename = strdup ("upload-file-1"); // FIXME: get the name from the POST parameters
-    if (NULL != uc->filename)
-      uc->fd = mkstemp (uc->tmpname);
-    if ((NULL == uc->filename) ||
-        (-1 == uc->fd))
+    if (NULL == uc->filename)
+    {
+      fprintf (stderr,
+               "Filename missing for full upload\n");
+      free (uc);
+      return MHD_upload_action_from_response (req,
+                                              internal_error_response);
+    }
+    uc->fd = mkstemp (uc->tmpname);
+    if (-1 == uc->fd)
     {
       fprintf (stderr,
                "Error creating temporary file `%s' for upload: %s\n",
                uc->tmpname,
                strerror (errno));
-      if (NULL != uc->filename)
-        free (uc->filename);
+      free (uc->filename);
       free (uc);
       return MHD_upload_action_from_response (req,
                                               request_refused_response);
@@ -754,6 +767,7 @@ done_cb (struct MHD_Request *req,
            (unsigned int) upload->len);
 #endif /* Native W32 */
     close (uc->fd);
+    uc->fd = -1;
     uc->have_file = true;
   }
   /* create directories -- if they don't exist already */
@@ -771,6 +785,8 @@ done_cb (struct MHD_Request *req,
   if ( (0 >= res) ||
        (sizeof (fn) <= (size_t) res) )
   {
+    fprintf (stderr,
+             "snprintf() failed at %u\n", __LINE__);
     free (uc);
     return MHD_upload_action_from_response (req,
                                             request_refused_response);
@@ -791,6 +807,8 @@ done_cb (struct MHD_Request *req,
   if ( (0 >= res) ||
        (sizeof (fn) <= (size_t) res) )
   {
+    fprintf (stderr,
+             "snprintf() failed at %u\n", __LINE__);
     free (uc);
     return MHD_upload_action_from_response (req,
                                             request_refused_response);
@@ -800,6 +818,11 @@ done_cb (struct MHD_Request *req,
       rename (uc->tmpname,
               uc->filename))
   {
+    fprintf (stderr,
+             "Failed to rename %s to %s: %s\n",
+             uc->tmpname,
+             uc->filename,
+             strerror (errno));
     free (uc->filename);
     free (uc);
     return MHD_upload_action_from_response (req,
@@ -963,7 +986,7 @@ generate_page (void *cls,
             0,
             sizeof (struct UploadContext));
     strcpy (uc->tmpname,
-            "/tmp/mhd-demo-XXXXXX");
+            "mhd-demo-XXXXXX");
     uc->fd = -1;
     return MHD_action_parse_post (request,
                                   64 * 1024 /* buffer size */,
