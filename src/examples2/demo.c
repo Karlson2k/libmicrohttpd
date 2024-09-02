@@ -785,6 +785,14 @@ done_cb (struct MHD_Request *req,
                                            internal_error_response);
     goto cleanup;
   }
+  if (NULL == uc->filename)
+  {
+    fprintf (stderr,
+             "Filename unavailable!?\n");
+    ret = MHD_upload_action_from_response (req,
+                                           internal_error_response);
+    goto cleanup;
+  }
   /* create directories -- if they don't exist already */
 #if ! defined(_WIN32) || defined(__CYGWIN__)
   (void) mkdir (lang->cstr,
@@ -828,22 +836,14 @@ done_cb (struct MHD_Request *req,
                                            request_refused_response);
     goto cleanup;
   }
-  if (NULL == uc->filename)
-  {
-    fprintf (stderr,
-             "Filename unavailable!?\n");
-    ret = MHD_upload_action_from_response (req,
-                                           internal_error_response);
-    goto cleanup;
-  }
   if (0 !=
       rename (uc->tmpname,
-              uc->filename))
+              fn))
   {
     fprintf (stderr,
              "Failed to rename %s to %s: %s\n",
              uc->tmpname,
-             uc->filename,
+             fn,
              strerror (errno));
     ret = MHD_upload_action_from_response (req,
                                            request_refused_response);
@@ -1013,7 +1013,7 @@ generate_page (void *cls,
     uc->fd = -1;
     return MHD_action_parse_post (request,
                                   64 * 1024 /* buffer size */,
-                                  32 /* max non-stream size */,
+                                  1024 /* max non-stream size */,
                                   MHD_HTTP_POST_ENCODING_OTHER,
                                   &stream_reader,
                                   uc,
