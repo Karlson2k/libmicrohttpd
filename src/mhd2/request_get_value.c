@@ -202,3 +202,69 @@ MHD_request_get_values_cb (struct MHD_Request *request,
 
   return count;
 }
+
+
+#if HAVE_POST_PARSER
+
+MHD_EXTERN_
+MHD_FN_PAR_NONNULL_ (1) size_t
+MHD_request_get_post_data_cb (struct MHD_Request *request,
+                              MHD_PostDataIterator iterator,
+                              void *iterator_cls)
+{
+  struct mhd_RequestPostField *f;
+  char *const buf = request->cntn.lbuf.data; // TODO: support processing in connection buffer
+  size_t count;
+
+  count = 0;
+  for (f = mhd_DLINKEDL_GET_FIRST (request, post_fields); NULL != f;
+       f = mhd_DLINKEDL_GET_NEXT (f, post_fields))
+  {
+    ++count;
+    if (NULL != iterator)
+    {
+      struct MHD_PostField field;
+
+      if (f->field_for_app.name.cstr != buf + f->field.name.pos)
+      {
+        f->field_for_app.name.cstr = buf + f->field.name.pos;
+        f->field_for_app.name.len = f->field.name.len;
+        if (0 == f->field.value.pos)
+          f->field_for_app.value.cstr = NULL;
+        else
+          f->field_for_app.value.cstr = buf + f->field.value.pos;
+        f->field_for_app.value.len = f->field.value.len;
+      }
+
+      field.name = f->field_for_app.name;
+      field.value = f->field_for_app.value;
+
+      if (0 == f->field.filename.pos)
+        field.filename.cstr = NULL;
+      else
+        field.filename.cstr = buf + f->field.filename.pos;
+      field.filename.len = f->field.filename.len;
+
+      if (0 == f->field.content_type.pos)
+        field.content_type.cstr = NULL;
+      else
+        field.content_type.cstr = buf + f->field.content_type.pos;
+      field.content_type.len = f->field.content_type.len;
+
+      if (0 == f->field.transfer_encoding.pos)
+        field.transfer_encoding.cstr = NULL;
+      else
+        field.transfer_encoding.cstr = buf + f->field.transfer_encoding.pos;
+      field.transfer_encoding.len = f->field.transfer_encoding.len;
+
+      if (MHD_NO ==
+          iterator (iterator_cls,
+                    &field))
+        return count;
+    }
+  }
+  return count;
+}
+
+
+#endif /* HAVE_POST_PARSER */
