@@ -539,7 +539,6 @@ stream_reader (struct MHD_Request *req,
        (0 == strcmp (name->cstr,
                      "language")) )
   {
-    free (uc);
     return MHD_upload_action_from_response (req,
                                             request_refused_response);
   }
@@ -555,7 +554,6 @@ stream_reader (struct MHD_Request *req,
   {
     fprintf (stderr,
              "No filename, aborting upload.\n");
-    free (uc);
     return MHD_upload_action_from_response (req,
                                             request_refused_response);
   }
@@ -570,7 +568,6 @@ stream_reader (struct MHD_Request *req,
            (NULL != strchr (filename->cstr,
                             '\\')) )
       {
-        free (uc);
         return MHD_upload_action_from_response (req,
                                                 request_refused_response);
       }
@@ -580,7 +577,6 @@ stream_reader (struct MHD_Request *req,
     {
       fprintf (stderr,
                "No filename for incremental upload\n");
-      free (uc);
       return MHD_upload_action_from_response (req,
                                               internal_error_response);
     }
@@ -600,8 +596,6 @@ stream_reader (struct MHD_Request *req,
                "Error creating temporary file `%s' for upload: %s\n",
                uc->tmpname,
                strerror (errno));
-      free (uc->filename);
-      free (uc);
       return MHD_upload_action_from_response (req,
                                               request_refused_response);
     }
@@ -627,9 +621,7 @@ stream_reader (struct MHD_Request *req,
              strerror (errno));
     (void) close (uc->fd);
     uc->fd = -1;
-    free (uc->filename);
     unlink (uc->tmpname);
-    free (uc);
     return MHD_upload_action_from_response (req,
                                             internal_error_response);
   }
@@ -669,11 +661,9 @@ done_cb (struct MHD_Request *req,
     fprintf (stderr,
              "Upload parsing failed with status %d\n",
              (int) parsing_result);
-    if (NULL != uc->filename)
-      free (uc->filename);
-    free (uc);
-    return MHD_upload_action_from_response (req,
-                                            request_refused_response);
+    ret = MHD_upload_action_from_response (req,
+                                           request_refused_response);
+    goto cleanup;
   }
   if (-1 != uc->fd)
   {
@@ -685,12 +675,11 @@ done_cb (struct MHD_Request *req,
       fprintf (stderr,
                "Upload of file `%s' failed (incomplete or aborted), removing file.\n",
                uc->filename);
-      free (uc->filename);
     }
     (void) unlink (uc->tmpname);
-    free (uc);
-    return MHD_upload_action_from_response (req,
-                                            internal_error_response);
+    ret = MHD_upload_action_from_response (req,
+                                           internal_error_response);
+    goto cleanup;
   }
   cat = MHD_request_get_value (req,
                                MHD_VK_POSTDATA,
@@ -707,11 +696,9 @@ done_cb (struct MHD_Request *req,
              "Required argument missing\n");
     if (uc->have_file)
       (void) unlink (uc->tmpname);
-    if (NULL != uc->filename)
-      free (uc->filename);
-    free (uc);
-    return MHD_upload_action_from_response (req,
-                                            request_refused_response);
+    ret = MHD_upload_action_from_response (req,
+                                           request_refused_response);
+    goto cleanup;
   }
   /* FIXME: ugly that we may have to deal with upload
      here as well! */
@@ -725,19 +712,17 @@ done_cb (struct MHD_Request *req,
     {
       fprintf (stderr,
                "Upload data provided twice!\n");
-      if (NULL != uc->filename)
-        free (uc->filename);
-      free (uc);
-      return MHD_upload_action_from_response (req,
-                                              internal_error_response);
+      ret = MHD_upload_action_from_response (req,
+                                             internal_error_response);
+      goto cleanup;
     }
     if (NULL == uc->filename)
     {
       fprintf (stderr,
                "Filename missing for full upload\n");
-      free (uc);
-      return MHD_upload_action_from_response (req,
-                                              internal_error_response);
+      ret = MHD_upload_action_from_response (req,
+                                             internal_error_response);
+      goto cleanup;
     }
     uc->fd = mkstemp (uc->tmpname);
     if (-1 == uc->fd)
@@ -746,10 +731,9 @@ done_cb (struct MHD_Request *req,
                "Error creating temporary file `%s' for upload: %s\n",
                uc->tmpname,
                strerror (errno));
-      free (uc->filename);
-      free (uc);
-      return MHD_upload_action_from_response (req,
-                                              request_refused_response);
+      ret = MHD_upload_action_from_response (req,
+                                             request_refused_response);
+      goto cleanup;
     }
     // FIXME: error handling, ...
 #if ! defined(_WIN32) || defined(__CYGWIN__)
@@ -782,9 +766,9 @@ done_cb (struct MHD_Request *req,
   {
     fprintf (stderr,
              "snprintf() failed at %u\n", __LINE__);
-    free (uc);
-    return MHD_upload_action_from_response (req,
-                                            request_refused_response);
+    ret = MHD_upload_action_from_response (req,
+                                           request_refused_response);
+    goto cleanup;
   }
 #if ! defined(_WIN32) || defined(__CYGWIN__)
   (void) mkdir (fn,
@@ -804,9 +788,9 @@ done_cb (struct MHD_Request *req,
   {
     fprintf (stderr,
              "snprintf() failed at %u\n", __LINE__);
-    free (uc);
-    return MHD_upload_action_from_response (req,
-                                            request_refused_response);
+    ret = MHD_upload_action_from_response (req,
+                                           request_refused_response);
+    goto cleanup;
   }
 
   if (0 !=
@@ -818,15 +802,12 @@ done_cb (struct MHD_Request *req,
              uc->tmpname,
              uc->filename,
              strerror (errno));
-    free (uc->filename);
-    free (uc);
-    return MHD_upload_action_from_response (req,
-                                            request_refused_response);
+    ret = MHD_upload_action_from_response (req,
+                                           request_refused_response);
+    goto cleanup;
   }
   chmod (uc->filename,
          S_IRUSR | S_IWUSR);
-  free (uc->filename);
-  free (uc);
 
   update_directory ();
   (void) pthread_mutex_lock (&mutex);
@@ -837,6 +818,10 @@ done_cb (struct MHD_Request *req,
     ret = MHD_upload_action_from_response (req,
                                            cached_directory_response);
   (void) pthread_mutex_unlock (&mutex);
+cleanup:
+  if (NULL != uc->filename)
+    free (uc->filename);
+  free (uc);
   return ret;
 }
 
