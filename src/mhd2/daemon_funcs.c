@@ -202,6 +202,7 @@ mhd_daemon_extend_lbuf_up_to (struct MHD_Daemon *restrict d,
   size_t grow_size;
   mhd_assert (NULL != buf->data || 0 == buf->size);
   mhd_assert (0 != buf->size || NULL == buf->data);
+  mhd_assert (0 != desired_grow_size);
 
   grow_size = mhd_daemon_claim_lbuf_up_to (d, desired_grow_size);
 

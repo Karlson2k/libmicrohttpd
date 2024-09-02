@@ -525,6 +525,9 @@ extend_lbuf_up_to (struct MHD_Connection *restrict c,
   if (buf->size + desired_grow_size > c->rq.u_proc.post.lbuf_limit)
     desired_grow_size = c->rq.u_proc.post.lbuf_limit - buf->size;
 
+  if (0 == desired_grow_size)
+    return 0;
+
   return mhd_daemon_extend_lbuf_up_to (c->daemon,
                                        desired_grow_size,
                                        buf);
