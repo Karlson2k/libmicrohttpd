@@ -828,7 +828,14 @@ done_cb (struct MHD_Request *req,
                                            request_refused_response);
     goto cleanup;
   }
-
+  if (NULL == uc->filename)
+  {
+    fprintf (stderr,
+             "Filename unavailable!?\n");
+    ret = MHD_upload_action_from_response (req,
+                                           internal_error_response);
+    goto cleanup;
+  }
   if (0 !=
       rename (uc->tmpname,
               uc->filename))
