@@ -804,7 +804,6 @@ process_complete_field_all (struct MHD_Connection *restrict c,
   {
     bool res;
     const struct MHD_UploadAction *act;
-    const size_t field_size = *pfield_next_pos - field_start;
     struct MHD_String name;
     struct MHD_StringNullable filename;
     struct MHD_StringNullable content_type;
@@ -842,12 +841,19 @@ process_complete_field_all (struct MHD_Connection *restrict c,
     p_data->value_off = 0;
     if (*pdata_size > *pfield_next_pos)
     {
+      size_t consumed_size;
       memmove (buf + field_start,
                buf + *pfield_next_pos,
                *pdata_size - *pfield_next_pos);
+      consumed_size = *pfield_next_pos - field_start;
+      *pfield_next_pos = field_start;
+      *pdata_size -= consumed_size;
     }
-    *pfield_next_pos -= field_size;
-    *pdata_size -= field_size;
+    else
+    {
+      *pfield_next_pos = field_start;
+      *pdata_size = field_start;
+    }
     return res;
   }
   else
