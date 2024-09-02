@@ -880,7 +880,6 @@ process_complete_field_all (struct MHD_Connection *restrict c,
                                  &encoding_i,
                                  &value_i))
     {
-      c->discard_request = true;
       c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
       mhd_LOG_MSG (c->daemon, MHD_SC_REQ_POST_PARSE_FAILED_NO_POOL_MEM, \
                    "The request POST data cannot be parsed completely " \
@@ -1828,8 +1827,6 @@ parse_post_mpart (struct MHD_Connection *restrict c,
           p_data->some_data_provided ?
           MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT :
           MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
-        mf->st = mhd_POST_MPART_ST_EPILOGUE; /* Avoid processing buffer data */
-        c->discard_request = true;
         c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
         return true; /* Stop parsing the upload */
       }
@@ -2046,7 +2043,6 @@ parse_post_mpart (struct MHD_Connection *restrict c,
         p_data->parse_result =
           MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
       }
-      c->discard_request = true;
       c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
       return true;
     default:
@@ -2304,7 +2300,6 @@ parse_post_text (struct MHD_Connection *restrict c,
         MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
     }
     tf->st = mhd_POST_TEXT_ST_NOT_STARTED;
-    c->discard_request = true;
     c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
     return true;
   }
@@ -2411,7 +2406,6 @@ mhd_stream_post_parse (struct MHD_Connection *restrict c,
       MHD_UNREACHABLE_;
       p_data->parse_result =
         MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT;
-      c->discard_request = true;
       c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
       return true;
     }
@@ -2896,7 +2890,6 @@ check_post_leftovers (struct MHD_Connection *restrict c)
     MHD_UNREACHABLE_;
     p_data->parse_result =
       MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT;
-    c->discard_request = true;
     c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
     break;
   }
