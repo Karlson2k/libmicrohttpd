@@ -1560,13 +1560,12 @@ parse_post_mpart (struct MHD_Connection *restrict c,
           (*pdata_size - i < i - p_data->field_start))
       {
         /* Discard unused data */
-        const size_t discard_size = i - p_data->field_start;
         memmove (buf + p_data->field_start,
                  buf + i,
-                 discard_size);
-        i -= discard_size;
-        *pdata_size -= discard_size;
-        mf->delim_check_start = i;
+                 *pdata_size - i);
+        *pdata_size -= (i - p_data->field_start);
+        i = p_data->field_start;
+        mf->delim_check_start = p_data->field_start;
       }
     /* Intentional fall-through */
     case mhd_POST_MPART_ST_PART_START:
