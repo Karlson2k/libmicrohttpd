@@ -257,6 +257,13 @@ MHD_request_get_post_data_cb (struct MHD_Request *request,
         field.transfer_encoding.cstr = buf + f->field.transfer_encoding.pos;
       field.transfer_encoding.len = f->field.transfer_encoding.len;
 
+      mhd_assert ((NULL != field.value.cstr) || (0 == field.value.len));
+      mhd_assert ((NULL != field.filename.cstr) || (0 == field.filename.len));
+      mhd_assert ((NULL != field.content_type.cstr) || \
+                  (0 == field.content_type.len));
+      mhd_assert ((NULL != field.transfer_encoding.cstr) || \
+                  (0 == field.transfer_encoding.len));
+
       if (MHD_NO ==
           iterator (iterator_cls,
                     &field))
