@@ -773,11 +773,9 @@ done_cb (struct MHD_Request *req,
   }
   /* FIXME: ugly that we may have to deal with upload
      here as well! */
-#if FIXME_EVGENY
   MHD_request_get_post_data_cb (req,
                                 &handle_full_upload,
                                 uc);
-#endif
   if (uc->error_file)
   {
     fprintf (stderr,
