@@ -1438,12 +1438,10 @@ parse_post_mpart (struct MHD_Connection *restrict c,
     {
     case mhd_POST_MPART_ST_BACK_TO_PREAMBL:
       mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
-      mf->delim_check_start = mhd_POST_INVALID_POS;
       mf->line_start = mhd_POST_INVALID_POS;
       mf->st = mhd_POST_MPART_ST_PREAMBL;
     /* Intentional fall-through */
     case mhd_POST_MPART_ST_PREAMBL:
-      mhd_assert (0 == p_data->field_start);
       mhd_assert (0 == p_data->value_off);
       mhd_assert (mhd_POST_INVALID_POS == mf->delim_check_start);
       mhd_assert (mhd_POST_INVALID_POS == mf->line_start);
@@ -1475,23 +1473,22 @@ parse_post_mpart (struct MHD_Connection *restrict c,
         ++i;
       }
       else
-      {
-        mf->delim_check_start = mhd_POST_INVALID_POS;
         mf->st = mhd_POST_MPART_ST_PREAMBL;
-      }
       continue;
     case mhd_POST_MPART_ST_NOT_STARTED:
       mhd_assert (0 == p_data->field_start);
       mhd_assert (0 == p_data->value_off);
-      mf->delim_check_start = i;
+      mf->delim_check_start = mhd_POST_INVALID_POS; /* Ignored for first delimiter */
+      p_data->field_start = i;
     /* Intentional fall-through */
     case mhd_POST_MPART_ST_PREAMBL_LINE_START:
-      mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
+      mhd_assert (mhd_POST_INVALID_POS == mf->delim_check_start);
       mhd_assert (mhd_POST_INVALID_POS == mf->line_start);
       mf->line_start = i;
       mf->st = mhd_POST_MPART_ST_PREAMBL_CHECKING_FOR_DELIM;
     /* Intentional fall-through */
     case mhd_POST_MPART_ST_PREAMBL_CHECKING_FOR_DELIM:
+      mhd_assert (mhd_POST_INVALID_POS == mf->delim_check_start); /* Ignored for first delimiter */
       mhd_assert (i >= mf->line_start);
       do /* Fast local loop */
       {
@@ -1524,7 +1521,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
                   (mhd_POST_MPART_ST_BACK_TO_PREAMBL == mf->st));
       continue;
     case mhd_POST_MPART_ST_FIRST_DELIM_FOUND:
-      mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
+      mhd_assert (mhd_POST_INVALID_POS == mf->delim_check_start); /* Ignored for first delimiter */
       mhd_assert (mhd_POST_INVALID_POS != mf->line_start);
       mhd_assert (i >= mf->line_start + mf->bound.size + 2);
       do /* Fast local loop */
@@ -1561,6 +1558,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
                   (mhd_POST_MPART_ST_EPILOGUE == mf->st));
       continue;
     case mhd_POST_MPART_ST_FIRST_PART_START:
+      mhd_assert (mhd_POST_INVALID_POS == mf->delim_check_start); /* Ignored for first delimiter */
       mhd_assert (i > p_data->field_start);
       mhd_assert (*pdata_size > i);
       if ((c->rq.app_act.head_act.data.post_parse.max_nonstream_size <
@@ -1573,12 +1571,13 @@ parse_post_mpart (struct MHD_Connection *restrict c,
                  *pdata_size - i);
         *pdata_size -= (i - p_data->field_start);
         i = p_data->field_start;
-        mf->delim_check_start = p_data->field_start;
       }
+      mf->delim_check_start = p_data->field_start;
     /* Intentional fall-through */
     case mhd_POST_MPART_ST_PART_START:
       mhd_assert (0 == mf->f.name_len);
       mhd_assert (0 == p_data->value_off);
+      mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
       p_data->field_start = mf->delim_check_start;
       mf->delim_check_start = mhd_POST_INVALID_POS;
     /* Intentional fall-through */
@@ -1589,6 +1588,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
     case mhd_POST_MPART_ST_HEADER_LINE:
       mhd_assert (i >= mf->line_start);
       mhd_assert (mhd_POST_INVALID_POS != mf->line_start);
+      mhd_assert (mhd_POST_INVALID_POS != p_data->field_start);
       do /* Fast local loop */
       {
         if ('\r' == buf[i])
@@ -1609,12 +1609,14 @@ parse_post_mpart (struct MHD_Connection *restrict c,
         {
           if (('-' == buf[mf->line_start]) &&
               ('-' == buf[mf->line_start + 1]) &&
-              (0 == memcmp (buf + mf->line_start + 1,
+              (0 == memcmp (buf + mf->line_start + 2,
                             mf->bound.data,
                             mf->bound.size)))
           {
             /* The delimiter before the end of the header */
-            if (! bare_lf_as_crlf)
+            if (2 > mf->line_start)
+              mf->delim_check_start = mf->line_start;
+            else if (! bare_lf_as_crlf)
               mf->delim_check_start = mf->line_start - 2;
             else
               mf->delim_check_start = mf->line_start - 1; /* Actually can be one char earlier */
@@ -1638,6 +1640,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
       mf->st = mhd_POST_MPART_ST_HEADER_LINE_END;
     /* Intentional fall-through */
     case mhd_POST_MPART_ST_HEADER_LINE_END:
+      mhd_assert (mhd_POST_INVALID_POS != p_data->field_start);
       mhd_assert (i >= mf->line_start);
       mhd_assert (mhd_POST_INVALID_POS != mf->line_start);
       if (1)
@@ -1820,6 +1823,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
       continue;
     case mhd_POST_MPART_ST_VALUE_START:
       mhd_assert (mhd_POST_INVALID_POS == mf->delim_check_start);
+      mhd_assert (mhd_POST_INVALID_POS != p_data->field_start);
       mhd_assert (0 == p_data->value_off);
       mhd_assert (0 == mf->f.value_idx);
       mhd_assert (0 == mf->f.value_len);
@@ -1844,6 +1848,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
       mf->f.value_idx = i;
     /* Intentional fall-through */
     case mhd_POST_MPART_ST_BACK_TO_VALUE:
+      mhd_assert (mhd_POST_INVALID_POS != p_data->field_start);
       mf->line_start = mhd_POST_INVALID_POS;
       mf->delim_check_start = mhd_POST_INVALID_POS;
       mf->st = mhd_POST_MPART_ST_VALUE;
@@ -1851,6 +1856,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
     case mhd_POST_MPART_ST_VALUE:
       mhd_assert (mhd_POST_INVALID_POS == mf->delim_check_start);
       mhd_assert (mhd_POST_INVALID_POS == mf->line_start);
+      mhd_assert (mhd_POST_INVALID_POS != p_data->field_start);
       do /* Fast local loop */
       {
         if ('\r' == buf[i])
@@ -1883,10 +1889,12 @@ parse_post_mpart (struct MHD_Connection *restrict c,
       continue;
     case mhd_POST_MPART_ST_VALUE_LINE_START:
       mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
+      mhd_assert (mhd_POST_INVALID_POS != p_data->field_start);
       mf->line_start = i;
       mf->st = mhd_POST_MPART_ST_VALUE_CHECKING_FOR_DELIM;
     /* Intentional fall-through */
     case mhd_POST_MPART_ST_VALUE_CHECKING_FOR_DELIM:
+      mhd_assert (mhd_POST_INVALID_POS != p_data->field_start);
       mhd_assert (i >= mf->line_start);
       do /* Fast local loop */
       {
@@ -1921,6 +1929,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
     case mhd_POST_MPART_ST_DELIM_FOUND:
       mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
       mhd_assert (mhd_POST_INVALID_POS != mf->line_start);
+      mhd_assert (mhd_POST_INVALID_POS != p_data->field_start);
       mhd_assert (i >= mf->line_start + mf->bound.size + 2);
       do /* Fast local loop */
       {
@@ -1955,6 +1964,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
     case mhd_POST_MPART_ST_VALUE_END_FOUND:
     case mhd_POST_MPART_ST_VALUE_END_FOUND_FINAL:
       mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
+      mhd_assert (mhd_POST_INVALID_POS != p_data->field_start);
       mhd_assert (mf->f.value_idx <= mf->delim_check_start);
       mhd_assert (0 == mf->f.value_len);
       mhd_assert (0 != mf->f.name_len);
@@ -1964,7 +1974,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
       {
         mf->f.value_len = mf->delim_check_start - mf->f.value_idx;
         buf[mf->f.value_idx + mf->f.value_len] = 0; /* Zero-terminate the value */
-        ++mf->delim_check_start; /* Shift start of the delimiter to keep zero-termination */
+        ++mf->delim_check_start; /* Shift start of the delimiter to add space for zero-termination */
       }
       if (mhd_POST_MPART_ST_VALUE_END_FOUND == mf->st)
         mf->st = mhd_POST_MPART_ST_FULL_FIELD_FOUND;
@@ -1974,6 +1984,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
     case mhd_POST_MPART_ST_FULL_FIELD_FOUND:
     case mhd_POST_MPART_ST_FULL_FIELD_FOUND_FINAL:
       mhd_assert (mhd_POST_INVALID_POS != mf->delim_check_start);
+      mhd_assert (mhd_POST_INVALID_POS != p_data->field_start);
       if (1)
       {
         size_t new_delim_check_start;
