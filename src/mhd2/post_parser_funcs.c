@@ -2785,7 +2785,6 @@ check_post_leftovers_text (struct MHD_Connection *restrict c,
     name_len = tf->name_len;
     value_start = pos;
     value_len = 0;
-    buf[pos] = 0; /* Zero-terminate the result, an extra byte is always available */
     break;
   case mhd_POST_TEXT_ST_VALUE:
     mhd_assert (pos == *pdata_size);
@@ -2795,7 +2794,6 @@ check_post_leftovers_text (struct MHD_Connection *restrict c,
     name_len = tf->name_len;
     value_start = tf->value_idx;
     value_len = pos - value_start;
-    buf[pos] = 0; /* Zero-terminate the result, an extra byte space is always available */
     break;
   case mhd_POST_TEXT_ST_CR_FOUND:
     mhd_assert (pos == *pdata_size);
