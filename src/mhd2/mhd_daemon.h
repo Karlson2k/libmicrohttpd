@@ -944,7 +944,6 @@ struct MHD_Daemon
 #else
 #  define mhd_FD_FITS_DAEMON(d_ptr,fd) (! 0)
 #endif
-#endif /* ! MHD_DAEMON_H */
 
 #ifdef MHD_USE_EPOLL
 #  define mhd_D_IS_USING_EPOLL(d) \
@@ -977,3 +976,5 @@ struct MHD_Daemon
 #define mhd_D_IS_USING_EDGE_TRIG(d) \
         (mhd_D_IS_USING_EPOLL (d) || \
          (mhd_WM_INT_EXTERNAL_EVENTS_EDGE ==((d)->wmode_int)))
+
+#endif /* ! MHD_DAEMON_H */
