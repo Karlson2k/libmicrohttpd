@@ -33,9 +33,8 @@
 
 #include "mhd_str_types.h"
 
-#include "http_post_enc.h"
-
 #ifdef HAVE_POST_PARSER
+#  include "http_post_enc.h"
 #  include "mhd_bool.h"
 #  include "mhd_post_result.h"
 #endif
@@ -60,11 +59,13 @@ enum mhd_ActionType
    * Process clients upload by application callback
    */
   mhd_ACTION_UPLOAD
+#ifdef HAVE_POST_PARSER
   ,
   /**
    * Process POST data clients upload by POST parser
    */
   mhd_ACTION_POST_PARSE
+#endif /* HAVE_POST_PARSER */
   ,
   /**
    * Suspend requests (connection)
@@ -136,6 +137,7 @@ struct mhd_UploadCallbacks
   struct mhd_UploadCallbackData inc;
 };
 
+#ifdef HAVE_POST_PARSER
 #ifndef MHD_POST_DATA_READER_DEFINED
 
 typedef const struct MHD_UploadAction *
@@ -174,6 +176,8 @@ struct mhd_PostParseActionData
   void *done_cb_cls;
 };
 
+#endif /* HAVE_POST_PARSER */
+
 /**
  * The data for the application action
  */
@@ -189,10 +193,12 @@ union mhd_ActionData
    */
   struct mhd_UploadCallbacks upload;
 
+#ifdef HAVE_POST_PARSER
   /**
    * The data for the action #mhd_ACTION_POST_PARSE
    */
   struct mhd_PostParseActionData post_parse;
+#endif /* HAVE_POST_PARSER */
 };
 
 
