@@ -2722,7 +2722,7 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
       }
       else
       {
-        mhd_LOG_MSG (c->daemon, MHD_SC_CHUNKED_ENCODING_UNSUPPORTED, \
+        mhd_LOG_MSG (c->daemon, MHD_SC_TRANSFER_ENCODING_UNSUPPORTED, \
                      "The 'Transfer-Encoding' used in request is " \
                      "unsupported or invalid.");
         mhd_RESPOND_WITH_ERROR_STATIC (c,

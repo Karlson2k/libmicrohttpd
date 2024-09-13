@@ -1,21 +1,21 @@
 /*
-     This file is part of libmicrohttpd
-     Copyright (C) 2006-2024 Christian Grothoff, Karlson2k (Evgeny Grin)
-     (and other contributing authors)
+  This file is part of GNU libmicrohttpd
+  Copyright (C) 2006-2024 Christian Grothoff, Karlson2k (Evgeny Grin)
+  (and other contributing authors)
 
-     This library is free software; you can redistribute it and/or
-     modify it under the terms of the GNU Lesser General Public
-     License as published by the Free Software Foundation; either
-     version 2.1 of the License, or (at your option) any later version.
+  GNU libmicrohttpd is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
 
-     This library is distributed in the hope that it will be useful,
-     but WITHOUT ANY WARRANTY; without even the implied warranty of
-     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     Lesser General Public License for more details.
+  GNU libmicrohttpd is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
 
-     You should have received a copy of the GNU Lesser General Public
-     License along with this library; if not, write to the Free Software
-     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 /*
@@ -580,7 +580,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   /**
    * Transfer encoding in request is unsupported or invalid.
    */
-  MHD_SC_CHUNKED_ENCODING_UNSUPPORTED = 40067
+  MHD_SC_TRANSFER_ENCODING_UNSUPPORTED = 40067
   ,
   /**
    * The given uploaded, chunked-encoded body was malformed.
