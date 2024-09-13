@@ -583,6 +583,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_TRANSFER_ENCODING_UNSUPPORTED = 40067
   ,
   /**
+   * "Expect:" value in request is unsupported or invalid.
+   */
+  MHD_SC_EXPECT_HEADER_VALUE_UNSUPPORTED = 40068
+  ,
+  /**
    * The given uploaded, chunked-encoded body was malformed.
    */
   MHD_SC_CHUNKED_ENCODING_MALFORMED = 40080

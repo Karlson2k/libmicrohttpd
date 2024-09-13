@@ -363,6 +363,16 @@
         "</html>"
 
 /**
+ * Response text used when the request has unsupported "Expect:" value.
+ */
+#define ERR_RSP_UNSUPPORTED_EXPECT_HDR_VALUE \
+        "<html>" \
+        "<head><title>Unsupported 'Expect:'</title></head>" \
+        "<body>The value of 'Expect:' header used in the request is " \
+        "not supported.</body>" \
+        "</html>"
+
+/**
  * Response text used when the request has unsupported both headers:
  * "Transfer-Encoding:" and "Content-Length:"
  */
@@ -2750,6 +2760,31 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
       continue;
     }
 #endif /* COOKIE_SUPPORT */
+
+    /* "Expect: 100-continue" */
+    if (mhd_str_equal_caseless_n_st (MHD_HTTP_HEADER_EXPECT,
+                                     f->field.nv.name.cstr,
+                                     f->field.nv.name.len))
+    {
+      if (mhd_str_equal_caseless_n_st ("100-continue",
+                                       f->field.nv.value.cstr,
+                                       f->field.nv.value.len))
+        c->rq.have_expect_100 = true;
+      else
+      {
+        if (0 < c->daemon->req_cfg.strictnees)
+        {
+          mhd_LOG_MSG (c->daemon, MHD_SC_EXPECT_HEADER_VALUE_UNSUPPORTED, \
+                       "The 'Expect' header value used in request is " \
+                       "unsupported or invalid.");
+          mhd_RESPOND_WITH_ERROR_STATIC (c,
+                                         MHD_HTTP_STATUS_EXPECTATION_FAILED,
+                                         ERR_RSP_UNSUPPORTED_EXPECT_HDR_VALUE);
+          return;
+        }
+      }
+      continue;
+    }
   }
 
   if (has_trenc && has_cntnlen)
@@ -2799,7 +2834,7 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
 
 
 /**
- * Is "100 CONTINUE" needed to be sent for current request?
+ * Is "100 Continue" needed to be sent for current request?
  *
  * @param c the connection to check
  * @return false 100 CONTINUE is not needed,
@@ -2808,28 +2843,23 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
 static MHD_FN_PAR_NONNULL_ALL_ bool
 need_100_continue (struct MHD_Connection *restrict c)
 {
-  const struct MHD_StringNullable *hvalue;
-
   mhd_assert (MHD_HTTP_VERSION_IS_SUPPORTED (c->rq.http_ver));
+  mhd_assert (MHD_CONNECTION_HEADERS_PROCESSED <= c->state);
   mhd_assert (MHD_CONNECTION_BODY_RECEIVING > c->state);
 
-  if (MHD_HTTP_VERSION_1_0 == c->rq.http_ver)
-    return false;
+  if (! c->rq.have_expect_100)
+    return false; /* "100 Continue" has not been requested by the client */
 
   if (0 != c->read_buffer_offset)
     return false; /* Part of the content has been received already */
 
-  hvalue = mhd_request_get_value_st (&(c->rq),
-                                     MHD_VK_HEADER,
-                                     MHD_HTTP_HEADER_EXPECT);
-  if (NULL == hvalue)
-    return false;
+  if (0 == c->rq.cntn.cntn_size)
+    return false; /* There is no content or zero-sized content for this request */
 
-  if (mhd_str_equal_caseless_n_st ("100-continue", \
-                                   hvalue->cstr, hvalue->len))
-    return true;
+  if (MHD_HTTP_VERSION_1_0 == c->rq.http_ver)
+    return false; /* '100 Continue' is not allowed for HTTP/1.0 */
 
-  return false;
+  return true;
 }
 
 

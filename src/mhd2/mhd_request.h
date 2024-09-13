@@ -323,6 +323,11 @@ struct MHD_Request
   union mhd_ReqContentParsingData u_proc;
 
   /**
+   * Have "Expect: 100-continue" request header
+   */
+  bool have_expect_100;
+
+  /**
    * HTTP version string (i.e. http/1.1).  Allocated
    * in pool.
    */
