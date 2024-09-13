@@ -20,7 +20,7 @@
 
 /**
  * @file src/mhd2/mhd_buffer.h
- * @brief  The definition of the MHD_Buffer type
+ * @brief  The definition of the struct mhd_Buffer
  * @author Karlson2k (Evgeny Grin)
  */
 

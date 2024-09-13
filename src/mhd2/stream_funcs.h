@@ -127,7 +127,7 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
 MHD_FN_PAR_NONNULL_ALL_;
 
 /**
- * Update last activity mark to the current time..
+ * Update last activity mark to the current time.
  * @param c the connection to update
  */
 MHD_INTERNAL void
