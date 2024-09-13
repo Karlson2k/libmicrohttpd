@@ -2609,23 +2609,6 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
       continue;
     }
 
-#ifdef COOKIE_SUPPORT
-    /* "Cookie:" */
-    if (mhd_str_equal_caseless_n_st (MHD_HTTP_HEADER_COOKIE,
-                                     f->field.nv.name.cstr,
-                                     f->field.nv.name.len))
-    {
-      if (MHD_PARSE_COOKIE_NO_MEMORY ==
-          parse_cookie_header (c,
-                               &(f->field.nv.value)))
-      {
-        handle_req_cookie_no_space (c);
-        return;
-      }
-      continue;
-    }
-#endif /* COOKIE_SUPPORT */
-
     /* "Content-Length:" */
     if (mhd_str_equal_caseless_n_st (MHD_HTTP_HEADER_CONTENT_LENGTH,
                                      f->field.nv.name.cstr,
@@ -2750,6 +2733,23 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
       has_trenc = true;
       continue;
     }
+
+#ifdef COOKIE_SUPPORT
+    /* "Cookie:" */
+    if (mhd_str_equal_caseless_n_st (MHD_HTTP_HEADER_COOKIE,
+                                     f->field.nv.name.cstr,
+                                     f->field.nv.name.len))
+    {
+      if (MHD_PARSE_COOKIE_NO_MEMORY ==
+          parse_cookie_header (c,
+                               &(f->field.nv.value)))
+      {
+        handle_req_cookie_no_space (c);
+        return;
+      }
+      continue;
+    }
+#endif /* COOKIE_SUPPORT */
   }
 
   if (has_trenc && has_cntnlen)
