@@ -85,12 +85,22 @@
 #  endif /* ! BUILDING_MHD_LIB */
 #endif  /* ! MHD_EXTERN_ */
 
+#ifdef HAVE_ATTR_VISIBILITY_HIDDEN
+/* To be used with internal non-static functions, that can be potentially used
+ * externally via function pointers */
+#  define MHD_VISIBILITY_HIDDEN __attribute__((visibility ("hidden")))
+#else
+/* To be used with internal non-static functions, that can be potentially used
+ * externally via function pointers */
+#  define MHD_VISIBILITY_HIDDEN /* empty */
+#endif
+
 #ifdef HAVE_ATTR_VISIBILITY_INTERNAL
 /* To be used with internal non-static functions */
 #  define MHD_VISIBILITY_INTERNAL __attribute__((visibility ("internal")))
 #else
 /* To be used with internal non-static functions */
-#  define MHD_VISIBILITY_INTERNAL /* empty */
+#  define MHD_VISIBILITY_INTERNAL MHD_VISIBILITY_HIDDEN
 #endif
 
 /* To be used with internal non-static functions */

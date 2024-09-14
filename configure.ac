@@ -3996,6 +3996,30 @@ int main(void) {return test_intern_func();}
       ]
     )
 
+    AC_CACHE_CHECK([whether $CC supports __attribute__((visibility("hidden")))],[mhd_cv_cc_attr_visibility_hidden],
+      [
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+__attribute__((visibility("hidden"))) int
+test_hidden_func(void);
+
+__attribute__((visibility("hidden"))) int
+test_hidden_func(void) {return 0;}
+
+int main(void) {return test_hidden_func();}
+              ]])
+          ],
+          [mhd_cv_cc_attr_visibility_hidden="yes"],[mhd_cv_cc_attr_visibility_hidden="no"]
+        )
+      ]
+    )
+    AS_VAR_IF([mhd_cv_cc_attr_visibility_hidden],["yes"],
+      [
+        AC_DEFINE([HAVE_ATTR_VISIBILITY_HIDDEN],[1],
+          [Define to '1' if your compiler supports __attribute__((visibility("hidden")))]
+        )
+      ]
+    )
+
     CFLAGS="${user_CFLAGS}"
     MHD_CHECK_CC_CFLAG([-fvisibility=hidden],[CFLAGS_ac],
       [
