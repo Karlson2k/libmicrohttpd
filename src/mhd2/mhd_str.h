@@ -105,14 +105,14 @@ mhd_str_equal_caseless_bin_n (const char *const str1,
  *
  * Compares not more first than @a len bytes, including binary zero characters.
  * Comparison stops at first unmatched byte.
- * @param a the statically allocated string to compare
- * @param s the string to compare
+ * @param arr the statically allocated string to compare
+ * @param str the string to compare
  * @param l the number of characters in the @a s string
  * @return 'true' if two strings are equal, 'false' otherwise.
  */
-#define mhd_str_equal_caseless_n_st(a,s,l) \
-        ((mhd_SSTR_LEN (a) == (l)) \
-         && mhd_str_equal_caseless_bin_n (a,s,l))
+#define mhd_str_equal_caseless_n_st(arr,str,l) \
+        ((mhd_SSTR_LEN (arr) == (l)) \
+         && mhd_str_equal_caseless_bin_n (arr,str,l))
 
 /**
  * Check whether @a str has case-insensitive @a token.

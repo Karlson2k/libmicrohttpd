@@ -520,9 +520,9 @@ toxdigitvalue (char c)
     if (c >= 'A')
       return (unsigned char) (c - 'A' + 10);
   }
-  else if (c <= 'F')
+  else if (c >= 'a')
   {
-    if (c >= 'a')
+    if (c <= 'f')
       return (unsigned char) (c - 'a' + 10);
   }
 
@@ -542,8 +542,8 @@ MHD_static_inline_ bool
 charsequalcaseless (const char c1, const char c2)
 {
   return ( (c1 == c2) ||
-           (isasciiupper (c1) ?
-            ((c1 - 'A' + 'a') == c2) :
+           (((c1 - 'A' + 'a') == c2) ?
+            isasciiupper (c1) :
             ((c1 == (c2 - 'A' + 'a')) && isasciiupper (c2))) );
 }
 
@@ -670,8 +670,8 @@ charsequalcaseless (const char c1, const char c2)
  */
 #define charsequalcaseless(c1, c2) \
         ( ((c1) == (c2)) || \
-          (isasciiupper (c1) ? \
-           (((c1) - 'A' + 'a') == (c2)) : \
+          ((((c1) - 'A' + 'a') == (c2)) ? \
+           isasciiupper (c1) : \
            (((c1) == ((c2) - 'A' + 'a')) && isasciiupper (c2))) )
 
 #endif /* !HAVE_INLINE_FUNCS */
