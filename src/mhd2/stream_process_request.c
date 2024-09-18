@@ -3002,9 +3002,6 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
   case mhd_ACTION_ABORT:
     mhd_conn_pre_close_app_abort (c);
     return true;
-#ifndef HAVE_POST_PARSER
-  case mhd_ACTION_POST_PARSE:
-#endif /* ! HAVE_POST_PARSER */
   case mhd_ACTION_NO_ACTION:
   default:
     mhd_assert (0 && "Impossible value");

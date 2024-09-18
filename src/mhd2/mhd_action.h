@@ -164,15 +164,41 @@ typedef const struct MHD_UploadAction *
 #endif /* ! MHD_POST_DATA_READER_DEFINED */
 
 
-// TODO: correct and describe
+/**
+ * The data for performing POST action
+ */
 struct mhd_PostParseActionData
 {
+  /**
+   * The maximum size allowed for the buffers to parse the POST data.
+   */
   size_t buffer_size;
+  /**
+   * The size of the field (in encoded form) above which values are not
+   * buffered and incrementally "streamed"
+   */
   size_t max_nonstream_size;
+  /**
+   * The data encoding to use,
+   * #MHD_HTTP_POST_ENCODING_OTHER indicates automatic detection
+   */
   enum MHD_HTTP_PostEncoding enc;
+  /**
+   * The callback function which process values in "streaming" way.
+   * Can be NULL.
+   */
   MHD_PostDataReader stream_reader;
+  /**
+   * The closure for the @a stream_reader
+   */
   void *reader_cls;
+  /**
+   * The "final" callback, called after all POST data has been parsed.
+   */
   MHD_PostDataFinished done_cb;
+  /**
+   * The closure for the @a done_cb
+   */
   void *done_cb_cls;
 };
 
