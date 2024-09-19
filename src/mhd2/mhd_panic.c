@@ -19,7 +19,7 @@
 */
 
 /**
- * @file src/mhd2/mhd_panic.h
+ * @file src/mhd2/mhd_panic.c
  * @brief  mhd_panic() and MHD_lib_set_panic_func() implementations
  * @author Karlson2k (Evgeny Grin)
  */
