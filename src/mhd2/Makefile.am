@@ -172,10 +172,6 @@ $(top_srcdir)/po/POTFILES.in: $(srcdir)/Makefile.am
 	  echo "$(subdir)/$$src" >> "$@" ; \
 	done
 
-.PHONY: update-po-POTFILES.in
-
-.NOTPARALLEL: $(srcdir)/daemon_options.h $(srcdir)/daemon_set_options.c $(srcdir)/response_options.h $(srcdir)/response_set_options.c
-
 $(CONFIG_HEADER): $(builddir)/../incl_priv/mhd_config.h.in $(top_srcdir)/configure $(top_builddir)/config.status
 	@echo "cd $(srcdir)/../incl_priv && $(MAKE) $(AM_MAKEFLAGS) mhd_config.h" && \
 	  $(am__cd) $(srcdir)/../incl_priv && $(MAKE) $(AM_MAKEFLAGS) mhd_config.h
@@ -183,3 +179,7 @@ $(CONFIG_HEADER): $(builddir)/../incl_priv/mhd_config.h.in $(top_srcdir)/configu
 $(builddir)/../incl_priv/mhd_config.h.in: $(top_srcdir)/configure.ac
 	@echo "cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh" && \
 	  $(am__cd) $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+
+.PHONY: update-po-POTFILES.in
+
+.NOTPARALLEL: $(srcdir)/daemon_options.h $(srcdir)/daemon_set_options.c $(srcdir)/response_options.h $(srcdir)/response_set_options.c
