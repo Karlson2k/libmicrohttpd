@@ -84,6 +84,14 @@ MHD_INTERNAL size_t
 mhd_stream_maximize_write_buffer (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 
+/**
+ * Fully deallocate write buffer, if it was allocated previously.
+ * The write buffer must have no unsent data.
+ * @param c the connection whose write buffer is being manipulated
+ */
+MHD_INTERNAL void
+mhd_stream_release_write_buffer (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
 
 /**
  * Select the HTTP error status code for "out of receive buffer space" error.

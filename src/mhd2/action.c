@@ -34,6 +34,10 @@
 #include "response_funcs.h"
 #include "response_destroy.h"
 
+#ifdef MHD_UPGRADE_SUPPORT
+#  include "upgrade_prep.h"
+#endif
+
 #include "mhd_public_api.h"
 
 
@@ -143,6 +147,82 @@ MHD_action_parse_post (struct MHD_Request *request,
   return NULL;
 #endif /* ! HAVE_POST_PARSER */
 }
+
+
+#ifdef MHD_UPGRADE_SUPPORT
+
+MHD_EXTERN_
+MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
+MHD_FN_PAR_IN_SIZE_ (6,5) const struct MHD_Action *
+MHD_action_upgrade (struct MHD_Request *MHD_RESTRICT request,
+                    const char *MHD_RESTRICT upgrade_hdr_value,
+                    MHD_UpgradeHandler upgrade_handler,
+                    void *upgrade_handler_cls,
+                    size_t num_headers,
+                    const struct MHD_NameValueCStr *MHD_RESTRICT headers)
+{
+  struct MHD_Action *const restrict head_act =
+    &(request->app_act.head_act);
+  if (mhd_ACTION_NO_ACTION != head_act->act)
+    return (const struct MHD_Action *) NULL;
+  if (NULL == upgrade_handler)
+    return (const struct MHD_Action *) NULL;
+  if (request->cntn.cntn_size != request->cntn.recv_size)
+    return (const struct MHD_Action *) NULL; /* Cannot start "Upgrade" if any content upload is pending */
+
+  if (! mhd_upgrade_prep_for_action (request,
+                                     upgrade_hdr_value,
+                                     num_headers,
+                                     headers,
+                                     false))
+    return (const struct MHD_Action *) NULL;
+
+  head_act->act = mhd_ACTION_UPGRADE;
+  head_act->data.upgrd.cb = upgrade_handler;
+  head_act->data.upgrd.cb_cls = upgrade_handler_cls;
+
+  return head_act;
+}
+
+
+MHD_EXTERN_
+MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
+MHD_FN_PAR_IN_SIZE_ (6,5) const struct MHD_UploadAction *
+MHD_upgrade_action_upgrade (
+  struct MHD_Request *MHD_RESTRICT request,
+  const char *MHD_RESTRICT upgrade_hdr_value,
+  MHD_UpgradeHandler upgrade_handler,
+  void *upgrade_handler_cls,
+  size_t num_headers,
+  const struct MHD_NameValueCStr *MHD_RESTRICT headers)
+{
+  struct MHD_UploadAction *const restrict upl_act =
+    &(request->app_act.upl_act);
+  if (mhd_UPLOAD_ACTION_NO_ACTION != upl_act->act)
+    return (const struct MHD_UploadAction *) NULL;
+  if (NULL == upgrade_handler)
+    return (const struct MHD_UploadAction *) NULL;
+  if (request->cntn.cntn_size != request->cntn.recv_size)
+    return (const struct MHD_UploadAction *) NULL; /* Cannot start "Upgrade" if any content upload is pending */
+
+  if (! mhd_upgrade_prep_for_action (request,
+                                     upgrade_hdr_value,
+                                     num_headers,
+                                     headers,
+                                     true))
+    return (const struct MHD_UploadAction *) NULL;
+
+  upl_act->act = mhd_UPLOAD_ACTION_UPGRADE;
+  upl_act->data.upgrd.cb = upgrade_handler;
+  upl_act->data.upgrd.cb_cls = upgrade_handler_cls;
+
+  return upl_act;
+}
+
+
+#endif /* MHD_UPGRADE_SUPPORT */
 
 
 MHD_EXTERN_ MHD_FN_PAR_NONNULL_ALL_

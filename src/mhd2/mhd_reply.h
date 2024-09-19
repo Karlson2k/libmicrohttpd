@@ -109,6 +109,13 @@ struct MHD_Reply
    */
   struct MHD_DynamicContentCreatorContext app_act_ctx;
 
+#ifdef MHD_UPGRADE_SUPPORT
+  /**
+   * Set to 'true' when "100 Continue" response has been sent
+   */
+  bool sent_100_cntn;
+#endif /* MHD_UPGRADE_SUPPORT */
+
   /**
    * Response to transmit (initially NULL).
    */

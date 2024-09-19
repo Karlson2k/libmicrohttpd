@@ -1354,12 +1354,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_CONFIGURATION_CONN_LIMIT_TOO_SMALL = 60016
   ,
   /**
-   * The response header name has forbidden characters
+   * The response header name has forbidden characters or token
    */
   MHD_SC_RESP_HEADER_NAME_INVALID = 60050
   ,
   /**
-   * The response header value has forbidden characters
+   * The response header value has forbidden characters or token
    */
   MHD_SC_RESP_HEADER_VALUE_INVALID = 60051
   ,
@@ -1387,6 +1387,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * The "Content-Length" header is not allowed in the reply
    */
   MHD_SC_REPLY_CONTENT_LENGTH_NOT_ALLOWED = 60102
+  ,
+  /**
+   * The provided reply headers do not fit the connection buffer
+   */
+  MHD_SC_REPLY_HEADERS_TOO_LARGE = 60103
   ,
   /**
    * The new connection cannot be used because the FD number is higher than
@@ -6628,6 +6633,9 @@ MHD_upgrade_operation (struct MHD_UpgradeHandle *urh,
 MHD_FN_PAR_NONNULL_ (1);
 
 
+#ifndef MHD_UPGRADEHANDLER_DEFINED
+
+// TODO: update doxy
 /**
  * Function called after a protocol "upgrade" response was sent
  * successfully and the socket should now be controlled by some
@@ -6677,14 +6685,14 @@ MHD_FN_PAR_NONNULL_ (1);
 typedef void
 (*MHD_UpgradeHandler)(void *cls,
                       struct MHD_Request *MHD_RESTRICT request,
-                      size_t extra_in_size,
-                      const char *extra_in,
-                      MHD_Socket sock,
                       struct MHD_UpgradeHandle *MHD_RESTRICT urh);
+
+#define MHD_UPGRADEHANDLER_DEFINED 1
+#endif /* ! MHD_UPGRADEHANDLER_DEFINED */
 
 
 /**
- * Create a action object that can be used for 101 UPGRADE
+ * Create a action object that can be used for 101 Upgrade
  * responses, for example to implement WebSockets.  After sending the
  * response, control over the data stream is given to the callback (which
  * can then, for example, start some bi-directional communication).
@@ -6699,13 +6707,14 @@ typedef void
  * WebSocket versions using this API; in fact, this API might be useful
  * for any protocol switch, not just WebSockets).
  *
- * As usual, the response object can be extended with header
- * information and then be used any number of times (as long as the
- * header information is not connection-specific).
+ * This action can be created only if the request has no content (upload body)
+ * or if the request content received completely.
  *
  * At most one action can be created for any request.
  *
  * @param request the request to create action for
+ * @param upgrade_hdr_value the value of the "Upgrade:" header, mandatory
+                            string
  * @param upgrade_handler function to call with the "upgraded" socket
  * @param upgrade_handler_cls closure for @a upgrade_handler
  * @param num_headers number of elements in the @a headers array,
@@ -6717,13 +6726,62 @@ typedef void
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup action
  */
-MHD_EXTERN_ struct MHD_Action *
-MHD_action_upgrade (struct MHD_Request *request,
+MHD_EXTERN_ const struct MHD_Action *
+MHD_action_upgrade (struct MHD_Request *MHD_RESTRICT request,
+                    const char *MHD_RESTRICT upgrade_hdr_value,
                     MHD_UpgradeHandler upgrade_handler,
                     void *upgrade_handler_cls,
                     size_t num_headers,
-                    const struct MHD_NameValueCStr *headers)
-MHD_FN_PAR_NONNULL_ (1);
+                    const struct MHD_NameValueCStr *MHD_RESTRICT headers)
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
+MHD_FN_PAR_IN_SIZE_ (6,5);
+
+
+/**
+ * Create a action object that can be used for 101 Upgrade
+ * responses, for example to implement WebSockets.  After sending the
+ * response, control over the data stream is given to the callback (which
+ * can then, for example, start some bi-directional communication).
+ * The callback will ONLY be called after the response header was successfully
+ * passed to the OS; if there are communication errors before, the usual MHD
+ * connection error handling code will be performed.
+ *
+ * MHD will automatically set the correct HTTP status
+ * code (#MHD_HTTP_STATUS_SWITCHING_PROTOCOLS).
+ * Setting correct HTTP headers for the upgrade must be done
+ * manually (this way, it is possible to implement most existing
+ * WebSocket versions using this API; in fact, this API might be useful
+ * for any protocol switch, not just WebSockets).
+ *
+ * This action can be created only if the request has no content (upload body)
+ * or if the request content received completely.
+ *
+ * At most one action can be created for any request.
+ *
+ * @param request the request to create action for
+ * @param upgrade_hdr_value the value of the "Upgrade:" header, mandatory
+                            string
+ * @param upgrade_handler function to call with the "upgraded" socket
+ * @param upgrade_handler_cls closure for @a upgrade_handler
+ * @param num_headers number of elements in the @a headers array,
+ *                    must be zero if @a headers is NULL
+ * @param headers the optional pointer to the array of the headers (the strings
+ *                are copied and does not need to be valid after return from
+ *                this function),
+ *                can be NULL if @a num_headers is zero
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @ingroup action
+ */
+MHD_EXTERN_ const struct MHD_UploadAction *
+MHD_upgrade_action_upgrade (
+  struct MHD_Request *MHD_RESTRICT request,
+  const char *MHD_RESTRICT upgrade_hdr_value,
+  MHD_UpgradeHandler upgrade_handler,
+  void *upgrade_handler_cls,
+  size_t num_headers,
+  const struct MHD_NameValueCStr *MHD_RESTRICT headers)
+MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
+MHD_FN_PAR_IN_SIZE_ (6,5);
 
 
 /* ********************** (e) Client auth ********************** */

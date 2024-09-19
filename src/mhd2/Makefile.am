@@ -24,6 +24,7 @@ MOSTLYCLEANFILES =
 libmicrohttpd2_la_SOURCES = \
   $(CONFIG_HEADER) \
   autoinit_funcs.h \
+  sys_offsetof.h \
   sys_null_macro.h          sys_base_types.h          sys_bool_type.h \
   sys_sockets_types.h       sys_sockets_headers.h     sys_ip_headers.h \
   sys_errno.h               sys_file_fd.h             sys_malloc.h \
@@ -31,6 +32,7 @@ libmicrohttpd2_la_SOURCES = \
   sys_sendfile.h \
   compat_calloc.h \
   mhd_assert.h \
+  mhd_cntnr_ptr.h \
   mhd_tristate.h \
   mhd_socket_type.h         mhd_sockets_macros.h \
   mhd_sockets_funcs.c       mhd_sockets_funcs.h \
@@ -96,10 +98,17 @@ post_parser_files = \
   mhd_post_parser.h         mhd_post_result.h         mhd_postfield_int.h \
   post_parser_funcs.c       post_parser_funcs.h
 
+upgrade_files = \
+  mhd_upgrade.h \
+  upgrade_prep.c             upgrade_prep.h
+
 if HAVE_POST_PARSER
   libmicrohttpd2_la_SOURCES += $(post_parser_files)
 endif
 
+if MHD_UPGRADE_SUPPORT
+  libmicrohttpd2_la_SOURCES += $(upgrade_files)
+endif
 
 libmicrohttpd2_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS) \

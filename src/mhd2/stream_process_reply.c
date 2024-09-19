@@ -154,7 +154,7 @@ get_conn_reuse (struct MHD_Connection *c)
                                         "keep-alive"))
     return mhd_CONN_MUST_CLOSE;
 
-#if 0 // def UPGRADE_SUPPORT // TODO: Implement upgrade support
+#if 0 // def MHD_UPGRADE_SUPPORT // TODO: Implement upgrade support
   /* TODO: Move below the next check when MHD stops closing connections
    * when response is queued in first callback */
   if (NULL != r->upgrade_handler)
@@ -166,7 +166,7 @@ get_conn_reuse (struct MHD_Connection *c)
     mhd_assert (! c->stop_with_error);
     return mhd_CONN_MUST_UPGRADE;
   }
-#endif /* UPGRADE_SUPPORT */
+#endif /* MHD_UPGRADE_SUPPORT */
 
   return mhd_CONN_KEEPALIVE_POSSIBLE;
 }
@@ -198,10 +198,10 @@ is_reply_body_needed (struct MHD_Connection *restrict c,
 
 #if 0
   /* This check is not needed as upgrade handler is used only with code 101 */
-#ifdef UPGRADE_SUPPORT
+#ifdef MHD_UPGRADE_SUPPORT
   if (NULL != rp.response->upgrade_handler)
     return RP_BODY_NONE;
-#endif /* UPGRADE_SUPPORT */
+#endif /* MHD_UPGRADE_SUPPORT */
 #endif
 
 #if 0
@@ -254,10 +254,10 @@ setup_reply_properties (struct MHD_Connection *restrict c)
   c->rp.props.send_reply_body = (use_rp_body > RP_BODY_HEADERS_ONLY);
   c->rp.props.use_reply_body_headers = (use_rp_body >= RP_BODY_HEADERS_ONLY);
 
-#if 0 // def UPGRADE_SUPPORT // TODO: upgrade support
+#if 0 // def MHD_UPGRADE_SUPPORT // TODO: upgrade support
   mhd_assert ( (NULL == r->upgrade_handler) ||
                (RP_BODY_NONE == use_rp_body) );
-#endif /* UPGRADE_SUPPORT */
+#endif /* MHD_UPGRADE_SUPPORT */
 
   use_chunked = false;
   end_by_closing = false;
@@ -660,21 +660,21 @@ build_header_response_inn (struct MHD_Connection *restrict c)
   mhd_assert ((mhd_CONN_MUST_CLOSE == c->conn_reuse) || \
               (mhd_CONN_KEEPALIVE_POSSIBLE == c->conn_reuse) || \
               (mhd_CONN_MUST_UPGRADE == c->conn_reuse));
-#if 0 // def UPGRADE_SUPPORT // TODO: upgrade support
+#if 0 // def MHD_UPGRADE_SUPPORT // TODO: upgrade support
   mhd_assert ((NULL == r->upgrade_handler) || \
               (mhd_CONN_MUST_UPGRADE == c->keepalive));
-#else  /* ! UPGRADE_SUPPORT */
+#else  /* ! MHD_UPGRADE_SUPPORT */
   mhd_assert (mhd_CONN_MUST_UPGRADE != c->conn_reuse);
-#endif /* ! UPGRADE_SUPPORT */
+#endif /* ! MHD_UPGRADE_SUPPORT */
   mhd_assert ((! c->rp.props.chunked) || c->rp.props.use_reply_body_headers);
   mhd_assert ((! c->rp.props.send_reply_body) || \
               c->rp.props.use_reply_body_headers);
   mhd_assert ((! c->rp.props.end_by_closing) || \
               (mhd_CONN_MUST_CLOSE == c->conn_reuse));
-#if 0 // def UPGRADE_SUPPORT  // TODO: upgrade support
+#if 0 // def MHD_UPGRADE_SUPPORT  // TODO: upgrade support
   mhd_assert (NULL == r->upgrade_handler || \
               ! c->rp.props.use_reply_body_headers);
-#endif /* UPGRADE_SUPPORT */
+#endif /* MHD_UPGRADE_SUPPORT */
 
   check_connection_reply (c);
 

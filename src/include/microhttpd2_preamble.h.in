@@ -1354,12 +1354,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_CONFIGURATION_CONN_LIMIT_TOO_SMALL = 60016
   ,
   /**
-   * The response header name has forbidden characters
+   * The response header name has forbidden characters or token
    */
   MHD_SC_RESP_HEADER_NAME_INVALID = 60050
   ,
   /**
-   * The response header value has forbidden characters
+   * The response header value has forbidden characters or token
    */
   MHD_SC_RESP_HEADER_VALUE_INVALID = 60051
   ,
@@ -1387,6 +1387,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * The "Content-Length" header is not allowed in the reply
    */
   MHD_SC_REPLY_CONTENT_LENGTH_NOT_ALLOWED = 60102
+  ,
+  /**
+   * The provided reply headers do not fit the connection buffer
+   */
+  MHD_SC_REPLY_HEADERS_TOO_LARGE = 60103
   ,
   /**
    * The new connection cannot be used because the FD number is higher than

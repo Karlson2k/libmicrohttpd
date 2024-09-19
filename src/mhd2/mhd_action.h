@@ -39,6 +39,8 @@
 #  include "mhd_post_result.h"
 #endif
 
+struct MHD_Response; /* forward declaration */
+struct MHD_Request;  /* forward declaration */
 
 /**
  * The type of the action requested by application
@@ -71,6 +73,13 @@ enum mhd_ActionType
    * Suspend requests (connection)
    */
   mhd_ACTION_SUSPEND
+#ifdef MHD_UPGRADE_SUPPORT
+  ,
+  /**
+   * Perform HTTP "upgrade"
+   */
+  mhd_ACTION_UPGRADE
+#endif /* MHD_UPGRADE_SUPPORT */
   ,
   /**
    * Hard close request with no response
@@ -84,9 +93,6 @@ enum mhd_ActionType
 #define mhd_ACTION_IS_VALID(act) \
         ((mhd_ACTION_RESPONSE <= (act)) && (mhd_ACTION_ABORT >= (act)))
 
-
-struct MHD_Response; /* forward declaration */
-struct MHD_Request;  /* forward declaration */
 
 #ifndef MHD_UPLOADCALLBACK_DEFINED
 
@@ -204,6 +210,41 @@ struct mhd_PostParseActionData
 
 #endif /* HAVE_POST_PARSER */
 
+
+#ifdef MHD_UPGRADE_SUPPORT
+
+struct MHD_UpgradeHandle; /* forward declaration */
+
+#ifndef MHD_UPGRADEHANDLER_DEFINED
+
+typedef void
+(*MHD_UpgradeHandler)(void *cls,
+                      struct MHD_Request *MHD_RESTRICT request,
+                      struct MHD_UpgradeHandle *MHD_RESTRICT urh);
+
+#define MHD_UPGRADEHANDLER_DEFINED 1
+#endif /* ! MHD_UPGRADEHANDLER_DEFINED */
+
+
+/**
+ * The data for "Upgrade" action
+ */
+struct mhd_UpgradeActionData
+{
+  /**
+   * The "upgrade" handler callback
+   */
+  MHD_UpgradeHandler cb;
+
+  /**
+   * The closure for the @a cb callback
+   */
+  void *cb_cls;
+};
+
+#endif /* MHD_UPGRADE_SUPPORT */
+
+
 /**
  * The data for the application action
  */
@@ -225,6 +266,12 @@ union mhd_ActionData
    */
   struct mhd_PostParseActionData post_parse;
 #endif /* HAVE_POST_PARSER */
+#ifdef MHD_UPGRADE_SUPPORT
+  /**
+   * The data for "Upgrade" action
+   */
+  struct mhd_UpgradeActionData upgrd;
+#endif /* MHD_UPGRADE_SUPPORT */
 };
 
 
@@ -268,6 +315,13 @@ enum mhd_UploadActionType
    * Suspend requests (connection)
    */
   mhd_UPLOAD_ACTION_SUSPEND
+#ifdef MHD_UPGRADE_SUPPORT
+  ,
+  /**
+   * Perform HTTP "upgrade"
+   */
+  mhd_UPLOAD_ACTION_UPGRADE
+#endif /* MHD_UPGRADE_SUPPORT */
   ,
   /**
    * Hard close request with no response
@@ -292,6 +346,12 @@ union mhd_UploadActionData
    * The data for the action #mhd_ACTION_RESPONSE
    */
   struct MHD_Response *response;
+#ifdef MHD_UPGRADE_SUPPORT
+  /**
+   * The data for "Upgrade" action
+   */
+  struct mhd_UpgradeActionData upgrd;
+#endif /* MHD_UPGRADE_SUPPORT */
 };
 
 /**

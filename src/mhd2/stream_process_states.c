@@ -164,11 +164,11 @@ update_active_state (struct MHD_Connection *restrict c)
     mhd_assert (0 && "Should be unreachable");
     c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
     return false;           /* do nothing, not even reading */
-#if 0 // def UPGRADE_SUPPORT // TODO: Upgrade support
+#if 0 // def MHD_UPGRADE_SUPPORT // TODO: Upgrade support
   case MHD_CONNECTION_UPGRADE:
     mhd_assert (0);
     break;
-#endif /* UPGRADE_SUPPORT */
+#endif /* MHD_UPGRADE_SUPPORT */
   default:
     mhd_assert (0 && "Impossible value");
     MHD_UNREACHABLE_;
@@ -301,6 +301,9 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       if (c->continue_message_write_offset ==
           mhd_SSTR_LEN (mdh_HTTP_1_1_100_CONTINUE_REPLY))
       {
+#ifdef MHD_UPGRADE_SUPPORT
+        c->rp.sent_100_cntn = true;
+#endif /* MHD_UPGRADE_SUPPORT */
         c->state = MHD_CONNECTION_BODY_RECEIVING;
         continue;
       }
@@ -365,7 +368,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       /* no default action, wait for sending all the headers */
       break;
     case MHD_CONNECTION_HEADERS_SENT:
-#if 0 // def UPGRADE_SUPPORT // TODO: upgrade support
+#if 0 // def MHD_UPGRADE_SUPPORT // TODO: upgrade support
       if (NULL != c->rp.response->upgrade_handler)
       {
         mhd_assert (0 && "Not implemented yet");
@@ -390,7 +393,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
         }
         continue;
       }
-#endif /* UPGRADE_SUPPORT */
+#endif /* MHD_UPGRADE_SUPPORT */
 
       if (c->rp.props.send_reply_body)
       {
@@ -461,10 +464,10 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       continue;
     case MHD_CONNECTION_PRE_CLOSING:
       return false;
-#if 0 // def UPGRADE_SUPPORT
+#if 0 // def MHD_UPGRADE_SUPPORT
     case MHD_CONNECTION_UPGRADE:
       return MHD_YES;     /* keep open */
-#endif /* UPGRADE_SUPPORT */
+#endif /* MHD_UPGRADE_SUPPORT */
     case MHD_CONNECTION_CLOSED:
       mhd_assert (0 && "Should be unreachable");
       MHD_UNREACHABLE_;

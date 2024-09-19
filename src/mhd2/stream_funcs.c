@@ -197,6 +197,24 @@ mhd_stream_maximize_write_buffer (struct MHD_Connection *restrict c)
 }
 
 
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+mhd_stream_release_write_buffer (struct MHD_Connection *restrict c)
+{
+  struct mhd_MemoryPool *const restrict pool = c->pool;
+
+  mhd_assert ((NULL != c->write_buffer) || (0 == c->write_buffer_size));
+  mhd_assert (c->write_buffer_append_offset == c->write_buffer_send_offset);
+  mhd_assert (c->write_buffer_size >= c->write_buffer_append_offset);
+
+  mhd_pool_deallocate (pool, c->write_buffer, c->write_buffer_size);
+  c->write_buffer_send_offset = 0;
+  c->write_buffer_append_offset = 0;
+  c->write_buffer_size = 0;
+  c->write_buffer = NULL;
+
+}
+
+
 #ifndef MHD_MAX_REASONABLE_HEADERS_SIZE_
 /**
  * A reasonable headers size (excluding request line) that should be sufficient

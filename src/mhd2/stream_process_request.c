@@ -3921,7 +3921,7 @@ mhd_stream_check_and_grow_read_buffer_space (struct MHD_Connection *restrict c)
     case MHD_CONNECTION_FULL_REPLY_SENT:
     case MHD_CONNECTION_PRE_CLOSING:
     case MHD_CONNECTION_CLOSED:
-#if 0 // def UPGRADE_SUPPORT // TODO: Upgrade support
+#if 0 // def MHD_UPGRADE_SUPPORT // TODO: Upgrade support
     case MHD_CONNECTION_UPGRADE:
 #endif
     default:

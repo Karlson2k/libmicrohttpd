@@ -5304,8 +5304,8 @@ AC_ARG_ENABLE([[httpupgrade]],
     [[enable_httpupgrade='yes']])
 AS_VAR_IF([[enable_httpupgrade]],[["yes"]],
   [
-   AC_DEFINE([[UPGRADE_SUPPORT]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTP Upgrade support.]) ])
-AM_CONDITIONAL([ENABLE_UPGRADE], [[test "x$enable_httpupgrade" = "xyes"]])
+   AC_DEFINE([[MHD_UPGRADE_SUPPORT]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTP Upgrade support.]) ])
+AM_CONDITIONAL([MHD_UPGRADE_SUPPORT], [[test "x$enable_httpupgrade" = "xyes"]])
 AC_MSG_RESULT([[$enable_httpupgrade]])
 
 # optional: HTTP cookie parsing support. Enabled by default
