@@ -180,6 +180,19 @@ $(builddir)/../incl_priv/mhd_config.h.in: $(top_srcdir)/configure.ac
 	@echo "cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh" && \
 	  $(am__cd) $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-.PHONY: update-po-POTFILES.in
+check-sources-missing:
+	@$(am__cd) "$(srcdir)" && \
+	echo $(ECHO_N) "Checking for missing sources" ; \
+	res="" ; \
+	for src in *.[ch] ; do \
+	  if $(GREP) -q -e "\b$${src//./\.}\b" Makefile.am ; then : ; else \
+	    res="$$res $$src" ; \
+	  fi ; \
+	  echo $(ECHO_N) "." ; \
+	done ; \
+	echo " done" ; \
+	test -z "$$res" || echo "The following sources are missing in Makefile.am:$${res}"
+
+.PHONY: update-po-POTFILES.in check-sources-missing
 
 .NOTPARALLEL: $(srcdir)/daemon_options.h $(srcdir)/daemon_set_options.c $(srcdir)/response_options.h $(srcdir)/response_set_options.c
