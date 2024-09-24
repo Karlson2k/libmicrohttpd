@@ -812,7 +812,7 @@ mhd_plain_send (struct MHD_Connection *restrict c,
    * MSG_MORE support) will be used for the next reply so assume
    * that next sending will be the same, like this call. */
   if (push_data && full_buf_sent)
-    post_send_setopt (c, false, push_data);
+    post_send_setopt (c, true, push_data);
 
   return mhd_SOCKET_ERR_NO_ERROR;
 }
