@@ -93,7 +93,7 @@ typedef CRITICAL_SECTION mhd_mutex;
  * @return nonzero on success, zero otherwise
  */
 #    define mhd_mutex_init(pmutex) \
-        (InitializeCriticalSection (pmutex), ! 0)
+        (((void) InitializeCriticalSection (pmutex)), ! 0)
 #  endif
 #endif
 

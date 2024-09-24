@@ -1107,7 +1107,7 @@ mhd_worker_listening_only (void *cls)
 mhd_THRD_RTRN_TYPE mhd_THRD_CALL_SPEC
 mhd_worker_connection (void *cls)
 {
-  (void) cls;
-  mhd_assert (0 && "Not yet implemented");
+  if (cls) // TODO: Implement
+    MHD_PANIC ("Not yet implemented");
   return (mhd_THRD_RTRN_TYPE) 0;
 }

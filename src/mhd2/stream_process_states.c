@@ -229,6 +229,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
   {
     // TODO: finish resuming, update activity mark
     // TODO: move to special function
+    (void) 0;
   }
 
   if ((mhd_SOCKET_ERR_NO_ERROR != c->sk_discnt_err) ||
@@ -485,6 +486,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
   if (MHD_CONNECTION_PRE_CLOSING == c->state)
   {
     mhd_assert (0 && "Pre-closing should be already caught in the loop");
+    MHD_UNREACHABLE_;
     return false;
   }
 
