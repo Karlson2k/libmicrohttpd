@@ -207,6 +207,11 @@ enum mhd_ConnCloseReason
   mhd_CONN_CLOSE_INT_ERROR
   ,
   /**
+   * No system resources available to handle connection
+   */
+  mhd_CONN_CLOSE_NO_SYS_RESOURCES
+  ,
+  /**
    * The TCP or TLS connection is broken or aborted due to error on socket
    * or TLS
    */
@@ -232,6 +237,18 @@ enum mhd_ConnCloseReason
    */
   mhd_CONN_CLOSE_ERR_REPLY_SENT
   ,
+
+#ifdef MHD_UPGRADE_SUPPORT
+
+  /* Transition to another protocol */
+  /**
+   * The connection stopped HTTP communication and will be used for another
+   * protocol.
+   * The socket is not being closed.
+   */
+  mhd_CONN_CLOSE_UPGRADE
+  ,
+#endif /* MHD_UPGRADE_SUPPORT */
 
   /* Graceful closing */
   /**
@@ -279,7 +296,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  * Set the reason to "aborted by application"
  * @param c the connection for pre-closing
  */
-#define mhd_conn_pre_close_app_abort(c) \
+#define mhd_conn_start_closing_app_abort(c) \
         mhd_conn_start_closing ((c), mhd_CONN_CLOSE_APP_ABORTED, NULL)
 
 /**
@@ -287,7 +304,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  * Set the reason to "socket error"
  * @param c the connection for pre-closing
  */
-#define mhd_conn_pre_close_skt_err(c) \
+#define mhd_conn_start_closing_skt_err(c) \
         mhd_conn_start_closing ((c), mhd_CONN_CLOSE_SOCKET_ERR, NULL)
 
 /**
@@ -295,7 +312,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  * Set the reason to "request finished"
  * @param c the connection for pre-closing
  */
-#define mhd_conn_pre_close_req_finished(c) \
+#define mhd_conn_start_closing_req_finished(c) \
         mhd_conn_start_closing ((c), mhd_CONN_CLOSE_HTTP_COMPLETED, NULL)
 
 /**
@@ -303,7 +320,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  * Set the reason to "timed out".
  * @param c the connection for pre-closing
  */
-#define mhd_conn_pre_close_timedout(c) \
+#define mhd_conn_start_closing_timedout(c) \
         mhd_conn_start_closing ((c), mhd_CONN_CLOSE_TIMEDOUT, NULL)
 
 /**
@@ -311,15 +328,46 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  * Set the reason to "daemon shutdown".
  * @param c the connection for pre-closing
  */
-#define mhd_conn_pre_close_d_shutdown(c) \
+#define mhd_conn_start_closing_d_shutdown(c) \
         mhd_conn_start_closing ((c), mhd_CONN_CLOSE_DAEMON_SHUTDOWN, NULL)
+
+/**
+ * Perform initial clean-up and mark for closing.
+ * Set the reason to "no system resources".
+ * @param c the connection for pre-closing
+ */
+#define mhd_conn_start_closing_no_sys_res(c) \
+        mhd_conn_start_closing ((c), mhd_CONN_CLOSE_NO_SYS_RESOURCES, NULL)
+
+#ifdef MHD_UPGRADE_SUPPORT
+/**
+ * Perform initial clean-up and prepare for HTTP Upgrade.
+ * Set the reason to "upgrading".
+ * @param c the connection for preparing
+ */
+#  define mhd_conn_pre_upgrade(c) \
+        mhd_conn_start_closing ((c), mhd_CONN_CLOSE_UPGRADE, NULL)
+#endif /* MHD_UPGRADE_SUPPORT */
+
+
+/**
+ * Perform first part of the initial connection cleanup.
+ * This function is used for both standard connection cleanup and for transition
+ * to HTTP-Upgraded connection.
+ * This cleanup should be performed in the same thread that processes
+ * the connection recv/send/data.
+ * @param c the connection to perform the first part of for pre-cleaning
+ */
+MHD_INTERNAL void
+mhd_conn_pre_clean_part1 (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ (1);
 
 /**
  * Perform initial connection cleanup after start of the connection closing
  * procedure.
  * This cleanup should be performed in the same thread that processes
  * the connection recv/send/data.
- * @param c the connection for pre-closing
+ * @param c the connection for pre-cleaning
  */
 MHD_INTERNAL void
 mhd_conn_pre_clean (struct MHD_Connection *restrict c)

@@ -509,6 +509,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    */
   MHD_SC_SYS_CLOCK_JUMP_BACK_CORRECTED = 30141
   ,
+  /**
+   * Timeout waiting for communication operation for HTTP-Upgraded connection
+   */
+  MHD_SC_UPGRADED_NET_TIMEOUT = 30161
+  ,
 
   /* 40000-level errors are caused by the HTTP client
      (or the network) */
@@ -1250,6 +1255,33 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_SOCKET_ZERO_SEND_FAILED = 50621
   ,
   /**
+   * The HTTP-Upgraded network connection has been closed / disconnected
+   */
+  MHD_SC_UPGRADED_NET_CONN_CLOSED = 50800
+  ,
+  /**
+   * The HTTP-Upgraded network connection has been broken
+   */
+  MHD_SC_UPGRADED_NET_CONN_BROKEN = 50801
+  ,
+  /**
+   * The TLS communication error on HTTP-Upgraded connection
+   */
+  MHD_SC_UPGRADED_TLS_ERROR = 50801
+  ,
+  /**
+   * Unrecoverable sockets communication error on HTTP-Upgraded connection
+   */
+  MHD_SC_UPGRADED_NET_HARD_ERROR = 50840
+  ,
+  /**
+   * MHD cannot wait for the data on the HTTP-Upgraded connection, because
+   * current build or the platform does not support required functionality.
+   * Communication with zero timeout is fully supported.
+   */
+  MHD_SC_UPGRADED_WAITING_NOT_SUPPORTED = 50840
+  ,
+  /**
    * Something wrong in the internal MHD logic.
    * This error should be never returned if MHD works as expected.
    * If this code is ever returned, please report to MHD maintainers.
@@ -1399,6 +1431,17 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * by application.
    */
   MHD_SC_NEW_CONN_FD_OUTSIDE_OF_SET_RANGE = 60140
+  ,
+  /**
+   * The daemon is being destroyed, while not all HTTP-Upgraded connections
+   * has been closed.
+   */
+  MHD_SC_DAEMON_DESTROYED_WITH_UNCLOSED_UPGRADED = 60160
+  ,
+  /**
+   * The provided pointer to 'struct MHD_UpgradeHandle' is invalid
+   */
+  MHD_SC_UPGRADED_HANDLE_INVALID = 60161
   ,
   /**
    * The requested type of information is not recognised.
@@ -3629,6 +3672,13 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestEndedCode
    * @ingroup request
    */
   MHD_REQUEST_ENDED_COMPLETED_OK = 0
+  ,
+  /**
+   * The response was successfully sent and connection is being switched
+   * to another protocol.
+   * @ingroup request
+   */
+  MHD_REQUEST_ENDED_COMPLETED_OK_UPGRADE = 1
   ,
   /**
    * No activity on the connection for the number of seconds specified using
@@ -6773,7 +6823,7 @@ MHD_FN_PAR_IN_SIZE_ (6,5);
  * @ingroup action
  */
 MHD_EXTERN_ const struct MHD_UploadAction *
-MHD_upgrade_action_upgrade (
+MHD_upload_action_upgrade (
   struct MHD_Request *MHD_RESTRICT request,
   const char *MHD_RESTRICT upgrade_hdr_value,
   MHD_UpgradeHandler upgrade_handler,
@@ -6782,6 +6832,112 @@ MHD_upgrade_action_upgrade (
   const struct MHD_NameValueCStr *MHD_RESTRICT headers)
 MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
 MHD_FN_PAR_IN_SIZE_ (6,5);
+
+
+/**
+ * Receive data on the HTTP-Upgraded connection.
+ *
+ * The function finished if one of the following happens:
+ * + ANY amount of data has been received,
+ * + timeout reached,
+ * + network error occurs
+ *
+ * @param urh the HTTP-Upgraded handle
+ * @param recv_buf_size the size of the @a recv_buf
+ * @param recv_buf the buffer to receive the data
+ * @param received_size the pointer to variable to get amount of received data
+ * @param max_wait_millisec the maximum wait time for the data,
+ *                          non-blocking operation if set to zero,
+ *                          wait indefinitely if larger or equal to
+ *                          #MHD_WAIT_INDEFINITELY,
+ *                          the function may return earlier if waiting is
+ *                          interrupted or by other reasons
+ * @return #MHD_SC_OK if any data received (check @a received_size) or
+ *                    remote shut down send size (indicated by @a received_size
+ *                    set to zero),
+ *         #MHD_SC_UPGRADED_NET_TIMEOUT if no data received but timeout expired,
+ *         #MHD_SC_UPGRADED_NET_CONN_CLOSED if network connection has been
+ *                                          closed,
+ *         #MHD_SC_UPGRADED_NET_CONN_BROKEN if broken network connection has
+ *                                          been detected,
+ *         #MHD_SC_UPGRADED_TLS_ERROR if TLS error occurs (only for TLS),
+ *         #MHD_SC_UPGRADED_NET_HARD_ERROR if any other network or sockets
+ *                                         unrecoverable error occurs,
+ *         #MHD_SC_UPGRADED_HANDLE_INVALID if @a urh is invalid,
+ *         #MHD_SC_UPGRADED_WAITING_NOT_SUPPORTED if timed wait is not supported
+ *                                                by this MHD build or platform
+ */
+MHD_EXTERN_ enum MHD_StatusCode
+mhd_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
+                   size_t recv_buf_size,
+                   void *MHD_RESTRICT recv_buf,
+                   size_t *MHD_RESTRICT received_size,
+                   uint_fast64_t max_wait_millisec)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_SIZE_(3,2)
+MHD_FN_PAR_OUT_ (4);
+
+
+/**
+ * Send data on the HTTP-Upgraded connection.
+ *
+ * The function finished if one of the following happens:
+ * + ALL provided data has been sent,
+ * + timeout reached,
+ * + network error occurs
+ *
+ * @param urh the HTTP-Upgraded handle
+ * @param send_buf_size the amount of data in the @a send_buf
+ * @param send_buf the buffer with the data to send
+ * @param sent_size the pointer to get the amout of sent data
+ * @param max_wait_millisec the maximum wait time for the data,
+ *                          non-blocking operation if set to zero,
+ *                          wait indefinitely if larger or equal to
+ *                          #MHD_WAIT_INDEFINITELY,
+ *                          the function may return earlier if waiting is
+ *                          interrupted or by other reasons
+ * @param partial_data if set to #MHD_YES then MHD tries to avoid sending
+ *                     partial network packets by using extra buffering,
+ *                     if set to #MHD_NO then MHD tries to push the last
+ *                     packet to the network as soon as possible
+ * @return #MHD_SC_OK if any data sent (check @a sent_size),
+ *         #MHD_SC_UPGRADED_NET_TIMEOUT if no data sent but timeout expired,
+ *         #MHD_SC_UPGRADED_NET_CONN_CLOSED if network connection has been
+ *                                          closed,
+ *         #MHD_SC_UPGRADED_NET_CONN_BROKEN if broken network connection has
+ *                                          been detected,
+ *         #MHD_SC_UPGRADED_TLS_ERROR if TLS error occurs (only for TLS),
+ *         #MHD_SC_UPGRADED_NET_HARD_ERROR if any other network or sockets
+ *                                         unrecoverable error occurs,
+ *         #MHD_SC_UPGRADED_HANDLE_INVALID if @a urh is invalid,
+ *         #MHD_SC_UPGRADED_WAITING_NOT_SUPPORTED if timed wait is not supported
+ *                                                by this MHD build or platform
+ */
+MHD_EXTERN_ enum MHD_StatusCode
+mhd_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
+                   size_t send_buf_size,
+                   const void *MHD_RESTRICT send_buf,
+                   size_t *MHD_RESTRICT sent_size,
+                   uint_fast64_t max_wait_millisec,
+                   enum MHD_Bool partial_data)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_(3,2)
+MHD_FN_PAR_OUT_ (4);
+
+
+/**
+ * Close HTTP-Upgraded connection handle.
+ *
+ * The handle cannot be used after successful return from this function.
+ *
+ * The function cannot fail if called correctly: the daemon is not destroyed
+ * and the upgraded connection has not been closed.
+ *
+ * @param urh the handle to close
+ * @return #MHD_SC_OK on success,
+ *         error code otherwise
+ */
+MHD_EXTERN_ enum MHD_StatusCode
+MHD_upgrade_close (struct MHD_UpgradeHandle *urh)
+MHD_FN_PAR_NONNULL_ (1);
 
 
 /* ********************** (e) Client auth ********************** */

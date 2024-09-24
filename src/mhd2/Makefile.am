@@ -100,7 +100,9 @@ post_parser_files = \
 
 upgrade_files = \
   mhd_upgrade.h \
-  upgrade_prep.c             upgrade_prep.h
+  upgrade_prep.c             upgrade_prep.h \
+  upgrade_proc.c             upgrade_proc.h \
+  upgrade_net.c
 
 if HAVE_POST_PARSER
   libmicrohttpd2_la_SOURCES += $(post_parser_files)

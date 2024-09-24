@@ -720,6 +720,10 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
     close_hard = true;
     end_code = MHD_REQUEST_ENDED_NO_RESOURCES;
     break;
+  case mhd_CONN_CLOSE_NO_SYS_RESOURCES:
+    close_hard = true;
+    end_code = MHD_REQUEST_ENDED_NO_RESOURCES;
+    break;
   case mhd_CONN_CLOSE_SOCKET_ERR:
     close_hard = true;
     switch (c->sk_discnt_err)
@@ -779,6 +783,12 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
                MHD_REQUEST_ENDED_NO_RESOURCES :
                MHD_REQUEST_ENDED_HTTP_PROTOCOL_ERROR;
     break;
+#ifdef MHD_UPGRADE_SUPPORT
+  case mhd_CONN_CLOSE_UPGRADE:
+    close_hard = false;
+    end_code = MHD_REQUEST_ENDED_COMPLETED_OK_UPGRADE;
+    break;
+#endif /* MHD_UPGRADE_SUPPORT */
   case mhd_CONN_CLOSE_HTTP_COMPLETED:
     close_hard = false;
     end_code = MHD_REQUEST_ENDED_COMPLETED_OK;
@@ -793,6 +803,14 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
 
   mhd_assert ((NULL == log_msg) || (MHD_SC_INTERNAL_ERROR != sc));
 
+#ifdef MHD_UPGRADE_SUPPORT
+  if (mhd_CONN_CLOSE_UPGRADE == reason)
+  {
+    c->state = MHD_CONNECTION_UPGRADING;
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_UPGRADED;
+  }
+  else
+#endif /* MHD_UPGRADE_SUPPORT */
   /* Make changes on the socket early to let the kernel and the remote
    * to process the changes in parallel. */
   if (close_hard)
@@ -857,6 +875,19 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
 
 MHD_INTERNAL
 MHD_FN_PAR_NONNULL_ (1) void
+mhd_conn_pre_clean_part1 (struct MHD_Connection *restrict c)
+{
+  // TODO: support suspended connections
+  mhd_conn_mark_unready (c, c->daemon);
+
+  mhd_stream_call_dcc_cleanup_if_needed (c);
+  if (NULL != c->rq.cntn.lbuf.data)
+    mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
+}
+
+
+MHD_INTERNAL
+MHD_FN_PAR_NONNULL_ (1) void
 mhd_conn_pre_clean (struct MHD_Connection *restrict c)
 {
   // TODO: support suspended connections
@@ -864,17 +895,13 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
   mhd_assert (c->dbg.closing_started);
   mhd_assert (! c->dbg.pre_cleaned);
 
-  mhd_conn_mark_unready (c, c->daemon);
+  mhd_conn_pre_clean_part1 (c);
 
-  mhd_stream_call_dcc_cleanup_if_needed (c);
   if (NULL != c->rp.resp_iov.iov)
   {
     free (c->rp.resp_iov.iov);
     c->rp.resp_iov.iov = NULL;
   }
-
-  if (NULL != c->rq.cntn.lbuf.data)
-    mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
   if (NULL != c->rp.response)
     mhd_response_dec_use_count (c->rp.response);
   c->rp.response = NULL;

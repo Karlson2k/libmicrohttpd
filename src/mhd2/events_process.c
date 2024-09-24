@@ -27,6 +27,8 @@
 #include "mhd_sys_options.h"
 #include "events_process.h"
 
+#include "mhd_locks.h"
+
 #include "mhd_socket_type.h"
 #include "sys_poll.h"
 #include "sys_select.h"
@@ -52,6 +54,10 @@
 #include "daemon_funcs.h"
 #include "conn_data_process.h"
 #include "stream_funcs.h"
+
+#ifdef MHD_UPGRADE_SUPPORT
+#  include "upgrade_proc.h"
+#endif /* MHD_UPGRADE_SUPPORT */
 
 #include "mhd_public_api.h"
 
@@ -234,6 +240,31 @@ daemon_accept_new_conns (struct MHD_Daemon *restrict d)
 }
 
 
+/**
+ * Check whether particular connection should be excluded from standard HTTP
+ * communication.
+ * @param c the connection the check
+ * @return 'true' if connection should not be used for HTTP communication
+ *         'false' if connection should be processed as HTTP
+ */
+MHD_static_inline_ MHD_FN_PAR_NONNULL_ALL_ bool
+is_conn_excluded_from_http_comm (struct MHD_Connection *restrict c)
+{
+#ifdef MHD_UPGRADE_SUPPORT
+  if (NULL != c->upgr.c)
+  {
+    mhd_assert ((MHD_CONNECTION_UPGRADED == c->state) || \
+                (MHD_CONNECTION_UPGRADED_CLEANING == c->state));
+    return true;
+  }
+#endif /* MHD_UPGRADE_SUPPORT */
+
+  // TODO: Support suspended connection
+
+  return false;
+}
+
+
 static bool
 daemon_process_all_active_conns (struct MHD_Daemon *restrict d)
 {
@@ -248,6 +279,7 @@ daemon_process_all_active_conns (struct MHD_Daemon *restrict d)
     if (! mhd_conn_process_recv_send_data (c))
     {
       mhd_conn_pre_clean (c);
+      mhd_conn_remove_from_daemon (c);
       mhd_conn_close_final (c);
     }
 
@@ -257,24 +289,81 @@ daemon_process_all_active_conns (struct MHD_Daemon *restrict d)
 }
 
 
+#ifdef MHD_UPGRADE_SUPPORT
+/**
+ * Clean-up all HTTP-Upgraded connections scheduled for clean-up
+ * @param d the daemon to process
+ */
+static MHD_FN_PAR_NONNULL_ALL_ void
+daemon_cleanup_upgraded_conns (struct MHD_Daemon *restrict d)
+{
+  mhd_assert (! mhd_D_HAS_WORKERS (d));
+
+  while (true)
+  {
+    struct MHD_Connection *c;
+
+    mhd_mutex_lock_chk (&(d->conns.upgr.ucu_lock));
+    c = mhd_DLINKEDL_GET_FIRST (&(d->conns.upgr), upgr_cleanup);
+    if (NULL != c)
+      mhd_DLINKEDL_DEL (&(d->conns.upgr), c, upgr_cleanup);
+    mhd_mutex_unlock_chk (&(d->conns.upgr.ucu_lock));
+
+    if (NULL == c)
+      break;
+
+    mhd_assert (MHD_CONNECTION_UPGRADED_CLEANING == c->state);
+    mhd_upgraded_deinit (c);
+    mhd_conn_pre_clean (c);
+    mhd_conn_remove_from_daemon (c);
+    mhd_conn_close_final (c);
+  }
+}
+
+
+#else  /* ! MHD_UPGRADE_SUPPORT */
+#define daemon_cleanup_upgraded_conns(d) ((void) d)
+#endif /* ! MHD_UPGRADE_SUPPORT */
+
 static void
 close_all_daemon_conns (struct MHD_Daemon *d)
 {
   struct MHD_Connection *c;
+  bool has_upgraded_unclosed;
 
+  has_upgraded_unclosed = false;
   if (! mhd_D_HAS_THR_PER_CONN (d))
   {
     for (c = mhd_DLINKEDL_GET_LAST (&(d->conns),all_conn);
          NULL != c;
          c = mhd_DLINKEDL_GET_LAST (&(d->conns),all_conn))
     {
-      mhd_conn_pre_close_d_shutdown (c);
+#ifdef MHD_UPGRADE_SUPPORT
+      mhd_assert (MHD_CONNECTION_UPGRADING != c->state);
+      mhd_assert (MHD_CONNECTION_UPGRADED_CLEANING != c->state);
+      if (NULL != c->upgr.c)
+      {
+        mhd_assert (c == c->upgr.c);
+        has_upgraded_unclosed = true;
+        mhd_upgraded_deinit (c);
+      }
+      else /* Combined with the next 'if' */
+#endif
+      if (1)
+        mhd_conn_start_closing_d_shutdown (c);
       mhd_conn_pre_clean (c);
+      mhd_conn_remove_from_daemon (c);
       mhd_conn_close_final (c);
     }
   }
   else
     mhd_assert (0 && "Not implemented yet");
+
+  if (has_upgraded_unclosed)
+    mhd_LOG_MSG (d, MHD_SC_DAEMON_DESTROYED_WITH_UNCLOSED_UPGRADED, \
+                 "The daemon is being destroyed, but at least one " \
+                 "HTTP-Upgraded connection is unclosed. Any use (including " \
+                 "closing) of such connections is undefined behaviour.");
 }
 
 
@@ -377,6 +466,8 @@ select_update_fdsets (struct MHD_Daemon *restrict d,
        c = mhd_DLINKEDL_GET_NEXT (c,all_conn))
   {
     mhd_assert (MHD_CONNECTION_CLOSED != c->state);
+    if (is_conn_excluded_from_http_comm (c))
+      continue;
 
     if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_RECV))
       fd_set_wrap (c->socket_fd,
@@ -476,10 +567,18 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
        (NULL != c) && (0 != num_events);
        c = mhd_DLINKEDL_GET_NEXT (c, all_conn))
   {
-    const MHD_Socket sk = c->socket_fd;
-    bool recv_ready = FD_ISSET (sk, rfds);
-    bool send_ready = FD_ISSET (sk, wfds);
-    bool err_state = FD_ISSET (sk, efds);
+    MHD_Socket sk;
+    bool recv_ready;
+    bool send_ready;
+    bool err_state;
+
+    if (is_conn_excluded_from_http_comm (c))
+      continue;
+
+    sk = c->socket_fd;
+    recv_ready = FD_ISSET (sk, rfds);
+    send_ready = FD_ISSET (sk, wfds);
+    err_state = FD_ISSET (sk, efds);
 
     update_conn_net_status (d,
                             c,
@@ -621,6 +720,10 @@ poll_update_fds (struct MHD_Daemon *restrict d,
        c = mhd_DLINKEDL_GET_NEXT (c,all_conn))
   {
     unsigned short events; /* 'unsigned' for correct bits manipulations */
+
+    if (is_conn_excluded_from_http_comm (c))
+      continue;
+
     mhd_assert ((i_c - i_s) < d->conns.cfg.count_limit);
     mhd_assert (i_c < d->dbg.num_events_elements);
     mhd_assert (MHD_CONNECTION_CLOSED != c->state);
@@ -733,6 +836,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
                 d->events.data.poll.rel[i_c].fd_id);
 
     c = d->events.data.poll.rel[i_c].connection;
+    mhd_assert (! is_conn_excluded_from_http_comm (c));
     mhd_assert (c->socket_fd == d->events.data.poll.fds[i_c].fd);
     revents = d->events.data.poll.fds[i_c].revents;
     recv_ready = (0 != (revents & (MHD_POLL_IN | POLLIN)));
@@ -886,6 +990,7 @@ poll_update_statuses_from_eevents (struct MHD_Daemon *restrict d,
       bool err_state;
       struct MHD_Connection *const restrict c =
         (struct MHD_Connection *) e->data.ptr;
+      mhd_assert (! is_conn_excluded_from_http_comm (c));
       recv_ready = (0 != (e->events & (EPOLLIN | EPOLLERR | EPOLLHUP)));
       send_ready = (0 != (e->events & (EPOLLOUT | EPOLLERR | EPOLLHUP)));
       err_state = (0 != (e->events & (EPOLLERR | EPOLLHUP)));
@@ -1000,6 +1105,7 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
       d->events.act_req.accept = false;
   }
   daemon_process_all_active_conns (d);
+  daemon_cleanup_upgraded_conns (d);
   return ! d->threading.stop_requested;
 }
 

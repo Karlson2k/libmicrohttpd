@@ -19,35 +19,37 @@
 */
 
 /**
- * @file src/mhd2/mhd_upgrade.h
- * @brief  The header for declarations of HTTP "upgrade" related data
+ * @file src/mhd2/upgrade_proc.h
+ * @brief  The declaration of functions for processing data for HTTP Upgrade
  * @author Karlson2k (Evgeny Grin)
  */
 
-#ifndef MHD_UPGRADE_H
-#define MHD_UPGRADE_H 1
+#ifndef MHD_UPGRADE_PROC_H
+#define MHD_UPGRADE_PROC_H 1
 
 #include "mhd_sys_options.h"
 
-#include "mhd_locks.h"
-
+#include "sys_bool_type.h"
 
 struct MHD_Connection; /* forward declaration */
 
+// TODO: describe
+MHD_INTERNAL bool
+mhd_upgrade_try_start_upgrading (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ (1);
+
+
+// TODO: describe
+MHD_INTERNAL bool
+mhd_upgrade_finish_switch_to_upgraded (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ (1);
+
 /**
- * The data for "HTTP-upgraded" connection
+ * De-initialise HTTP-Upgraded-specific data
+ * @param c the connection the de-initialise
  */
-struct MHD_UpgradeHandle
-{
-  /**
-   * The pointer to the "connection" object
-   */
-  struct MHD_Connection *c;
+MHD_INTERNAL void
+mhd_upgraded_deinit (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ (1);
 
-  /**
-   * The mutex for some operations
-   */
-  mhd_mutex lock;
-};
-
-#endif /* ! MHD_UPGRADE_H */
+#endif /* ! MHD_UPGRADE_PROC_H */

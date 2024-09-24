@@ -190,7 +190,7 @@ MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
 MHD_FN_PAR_IN_SIZE_ (6,5) const struct MHD_UploadAction *
-MHD_upgrade_action_upgrade (
+MHD_upload_action_upgrade (
   struct MHD_Request *MHD_RESTRICT request,
   const char *MHD_RESTRICT upgrade_hdr_value,
   MHD_UpgradeHandler upgrade_handler,

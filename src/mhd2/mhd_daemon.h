@@ -713,6 +713,29 @@ struct mhd_DaemonConnectionsSettings
   size_t mem_pool_size;
 };
 
+#ifdef MHD_UPGRADE_SUPPORT
+
+/**
+ * The data for HTTP-Upgraded connections
+ */
+struct mhd_DaemonConnectionsUpgraded
+{
+  /**
+   * The list of HTTP-Upgraded connection closed by application and
+   * queued for cleanup
+   */
+  mhd_DLNKDL_LIST (MHD_Connection,upgr_cleanup);
+
+#ifdef MHD_USE_THREADS
+  /**
+   * The mutex to change or check the @a upgr_cleanup list values
+   */
+  mhd_mutex ucu_lock;
+#endif
+};
+
+#endif /* MHD_UPGRADE_SUPPORT */
+
 /**
  * Connections handling data
  */
@@ -736,11 +759,6 @@ struct mhd_DaemonConnections
   mhd_DLNKDL_LIST (MHD_Connection,cust_timeout);
 
   /**
-   * The list of all daemon's connections
-   */
-  mhd_DLNKDL_LIST (MHD_Connection,to_clean);
-
-  /**
    * The current number of connections handled by the daemon
    */
   unsigned int count;
@@ -758,6 +776,13 @@ struct mhd_DaemonConnections
    * Configured settings for the daemon's connections
    */
   struct mhd_DaemonConnectionsSettings cfg;
+
+#ifdef MHD_UPGRADE_SUPPORT
+  /**
+   * The data for HTTP-Upgraded connections
+   */
+  struct mhd_DaemonConnectionsUpgraded upgr;
+#endif /* MHD_UPGRADE_SUPPORT */
 };
 
 /**

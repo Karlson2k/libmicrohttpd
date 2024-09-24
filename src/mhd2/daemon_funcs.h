@@ -57,7 +57,10 @@ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_;
 MHD_INTERNAL bool
 mhd_daemon_trigger_itc (struct MHD_Daemon *restrict d);
 
-#endif /* MHD_USE_THREADS */
+#else  /* ! MHD_USE_THREADS */
+
+#define mhd_daemon_trigger_itc (d) ((void) d, ! 0)
+#endif /* ! MHD_USE_THREADS */
 
 
 /**

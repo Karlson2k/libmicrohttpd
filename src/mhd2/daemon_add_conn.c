@@ -916,13 +916,15 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
 
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
-mhd_conn_close_final (struct MHD_Connection *restrict c)
+mhd_conn_remove_from_daemon (struct MHD_Connection *restrict c)
 {
   mhd_assert (c->dbg.closing_started);
   mhd_assert (c->dbg.pre_cleaned);
+  mhd_assert (! c->dbg.removed_from_daemon);
   mhd_assert (NULL == c->rp.response);
   mhd_assert (! c->rq.app_aware);
   mhd_assert (! c->in_proc_ready);
+  mhd_assert (NULL == c->rq.cntn.lbuf.data);
   mhd_assert (NULL == mhd_DLINKEDL_GET_NEXT (c, proc_ready));
   mhd_assert (NULL == mhd_DLINKEDL_GET_PREV (c, proc_ready));
   mhd_assert (c != mhd_DLINKEDL_GET_FIRST (&(c->daemon->events), proc_ready));
@@ -940,12 +942,42 @@ mhd_conn_close_final (struct MHD_Connection *restrict c)
   mhd_DLINKEDL_DEL (&(c->daemon->conns), c, all_conn);
 
   // TODO: update per-IP limits
-  if (NULL != c->addr)
-    free (c->addr);
-  mhd_socket_close (c->socket_fd);
 
   c->daemon->conns.count--;
   c->daemon->conns.block_new = false;
+
+#ifndef NDEBUG
+  c->dbg.removed_from_daemon = true;
+#endif /* NDEBUG */
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+mhd_conn_close_final (struct MHD_Connection *restrict c)
+{
+  mhd_assert (c->dbg.closing_started);
+  mhd_assert (c->dbg.pre_cleaned);
+  mhd_assert (c->dbg.removed_from_daemon);
+  mhd_assert (NULL == c->rp.response);
+  mhd_assert (! c->rq.app_aware);
+  mhd_assert (! c->in_proc_ready);
+  mhd_assert (NULL == mhd_DLINKEDL_GET_NEXT (c, proc_ready));
+  mhd_assert (NULL == mhd_DLINKEDL_GET_PREV (c, proc_ready));
+  mhd_assert (c != mhd_DLINKEDL_GET_FIRST (&(c->daemon->events), proc_ready));
+  mhd_assert (c != mhd_DLINKEDL_GET_LAST (&(c->daemon->events), proc_ready));
+
+  mhd_assert (NULL == mhd_DLINKEDL_GET_NEXT (c, by_timeout));
+  mhd_assert (NULL == mhd_DLINKEDL_GET_PREV (c, by_timeout));
+  mhd_assert (NULL == c->pool);
+
+  mhd_assert (NULL == mhd_DLINKEDL_GET_NEXT (c, all_conn));
+  mhd_assert (NULL == mhd_DLINKEDL_GET_PREV (c, all_conn));
+  mhd_assert (c != mhd_DLINKEDL_GET_FIRST (&(c->daemon->conns), all_conn));
+  mhd_assert (c != mhd_DLINKEDL_GET_LAST (&(c->daemon->conns), all_conn));
+
+  if (NULL != c->addr)
+    free (c->addr);
+  mhd_socket_close (c->socket_fd);
 
   free (c);
 }

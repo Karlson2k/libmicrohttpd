@@ -80,12 +80,24 @@ enum mhd_DaemonAcceptResult
 MHD_INTERNAL enum mhd_DaemonAcceptResult
 mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon);
 
+
 /**
- * Finally close and clean-up connection.
+ * Remove all referenced to the connection from the daemon.
+ * Must be performed only when connection thread (for thread-per-connection)
+ * has stopped.
+ * @param c the connection to remove
+ */
+MHD_INTERNAL void
+mhd_conn_remove_from_daemon (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
+
+/**
+ * Finally close and deallocate connection.
  * Must be performed only when connection thread (for thread-per-connection)
  * has stopped.
  * The connection data deallocated by this function and cannot be used anymore.
- * The function must be the last function called for connection object.
+ * This function must be the last function called for connection object.
  * @param c the connection to close
  */
 MHD_INTERNAL void

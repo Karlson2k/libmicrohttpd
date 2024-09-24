@@ -1903,10 +1903,46 @@ init_individual_conns (struct MHD_Daemon *restrict d,
   else if (256 > d->conns.cfg.mem_pool_size)
     d->conns.cfg.mem_pool_size = 256;
 
+#ifdef MHD_UPGRADE_SUPPORT
+  mhd_DLINKEDL_INIT_LIST (&(d->conns.upgr),upgr_cleanup);
+  if (! mhd_mutex_init (&(d->conns.upgr.ucu_lock)))
+  {
+    mhd_LOG_MSG (d, MHD_SC_MUTEX_INIT_FAILURE, \
+                 "Failed to initialise mutex for the upgraded " \
+                 "connection list.");
+    return MHD_SC_MUTEX_INIT_FAILURE;
+  }
+#endif /* MHD_UPGRADE_SUPPORT */
+
 #ifndef NDEBUG
   d->dbg.connections_inited = true;
 #endif
   return MHD_SC_OK;
+}
+
+
+/**
+ * Deinitialise daemon connections' data.
+ * @param d the daemon object
+ */
+static MHD_FN_PAR_NONNULL_ (1) void
+deinit_individual_conns (struct MHD_Daemon *restrict d)
+{
+#ifdef MHD_UPGRADE_SUPPORT
+  mhd_assert (NULL == mhd_DLINKEDL_GET_FIRST (&(d->conns.upgr),upgr_cleanup));
+  mhd_assert (NULL == mhd_DLINKEDL_GET_LAST (&(d->conns.upgr),upgr_cleanup));
+
+  mhd_mutex_destroy_chk (&(d->conns.upgr.ucu_lock));
+#endif /* MHD_UPGRADE_SUPPORT */
+
+  mhd_assert (0 != d->conns.cfg.mem_pool_size);
+  mhd_assert (0 == d->conns.count);
+  mhd_assert (NULL == mhd_DLINKEDL_GET_FIRST (&(d->conns),cust_timeout));
+  mhd_assert (NULL == mhd_DLINKEDL_GET_LAST (&(d->conns),cust_timeout));
+  mhd_assert (NULL == mhd_DLINKEDL_GET_FIRST (&(d->conns),def_timeout));
+  mhd_assert (NULL == mhd_DLINKEDL_GET_LAST (&(d->conns),def_timeout));
+  mhd_assert (NULL == mhd_DLINKEDL_GET_FIRST (&(d->conns),all_conn));
+  mhd_assert (NULL == mhd_DLINKEDL_GET_LAST (&(d->conns),all_conn));
 }
 
 
@@ -1976,6 +2012,7 @@ init_individual_thread_data_events_conns (struct MHD_Daemon *restrict d,
 static MHD_FN_PAR_NONNULL_ (1) void
 deinit_individual_thread_data_events_conns (struct MHD_Daemon *restrict d)
 {
+  deinit_individual_conns (d);
   deinit_itc (d);
   deallocate_events (d);
   mhd_assert (NULL == mhd_DLINKEDL_GET_FIRST (&(d->conns),all_conn));

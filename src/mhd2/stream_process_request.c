@@ -2999,8 +2999,14 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
   case mhd_ACTION_SUSPEND:
     c->suspended = true;
     return false;
+#ifdef MHD_UPGRADE_SUPPORT
+  case mhd_ACTION_UPGRADE:
+    mhd_assert (0 == c->rq.cntn.cntn_size);
+    c->state = MHD_CONNECTION_UPGRADE_HEADERS_SENDING;
+    return false;
+#endif /* MHD_UPGRADE_SUPPORT */
   case mhd_ACTION_ABORT:
-    mhd_conn_pre_close_app_abort (c);
+    mhd_conn_start_closing_app_abort (c);
     return true;
   case mhd_ACTION_NO_ACTION:
   default:
@@ -3054,8 +3060,16 @@ mhd_stream_process_upload_action (struct MHD_Connection *restrict c,
   case mhd_UPLOAD_ACTION_SUSPEND:
     c->suspended = true;
     return false;
+#ifdef MHD_UPGRADE_SUPPORT
+  case mhd_UPLOAD_ACTION_UPGRADE:
+    mhd_assert (c->rq.cntn.recv_size == c->rq.cntn.cntn_size);
+    mhd_assert (! c->rq.have_chunked_upload || \
+                MHD_CONNECTION_FULL_REQ_RECEIVED == c->state);
+    c->state = MHD_CONNECTION_UPGRADE_HEADERS_SENDING;
+    return false;
+#endif /* MHD_UPGRADE_SUPPORT */
   case mhd_UPLOAD_ACTION_ABORT:
-    mhd_conn_pre_close_app_abort (c);
+    mhd_conn_start_closing_app_abort (c);
     return true;
   case mhd_UPLOAD_ACTION_NO_ACTION:
   default:
@@ -3921,9 +3935,12 @@ mhd_stream_check_and_grow_read_buffer_space (struct MHD_Connection *restrict c)
     case MHD_CONNECTION_FULL_REPLY_SENT:
     case MHD_CONNECTION_PRE_CLOSING:
     case MHD_CONNECTION_CLOSED:
-#if 0 // def MHD_UPGRADE_SUPPORT // TODO: Upgrade support
-    case MHD_CONNECTION_UPGRADE:
-#endif
+#ifdef MHD_UPGRADE_SUPPORT
+    case MHD_CONNECTION_UPGRADE_HEADERS_SENDING:
+    case MHD_CONNECTION_UPGRADING:
+    case MHD_CONNECTION_UPGRADED:
+    case MHD_CONNECTION_UPGRADED_CLEANING:
+#endif /* MHD_UPGRADE_SUPPORT */
     default:
       mhd_assert (0);
       MHD_UNREACHABLE_;

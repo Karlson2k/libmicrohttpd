@@ -47,6 +47,10 @@
 #include "mhd_request.h"
 #include "mhd_reply.h"
 
+#ifdef MHD_UPGRADE_SUPPORT
+#  include "mhd_upgrade.h"
+#endif /* MHD_UPGRADE_SUPPORT */
+
 #include "mhd_socket_error.h"
 
 #include "mhd_public_api.h"
@@ -96,6 +100,13 @@ enum MHD_FIXED_FLAGS_ENUM_ MHD_ConnectionEventLoopInfo
    * We are finished and are awaiting cleanup.
    */
   MHD_EVENT_LOOP_INFO_CLEANUP = 1 << 5
+#ifdef MHD_UPGRADE_SUPPORT
+  ,
+  /**
+   * We are finished and are awaiting cleanup.
+   */
+  MHD_EVENT_LOOP_INFO_UPGRADED = 1 << 6
+#endif /* MHD_UPGRADE_SUPPORT */
 };
 
 #define MHD_EVENT_LOOP_INFO_PROCESS_READ \
@@ -290,6 +301,13 @@ enum MHD_FIXED_ENUM_ MHD_CONNECTION_STATE
    * We have sent the response headers.  Get ready to send the body.
    */
   MHD_CONNECTION_HEADERS_SENT
+#ifdef MHD_UPGRADE_SUPPORT
+  ,
+  /**
+   * Sending special HTTP "Upgrade" headers
+   */
+  MHD_CONNECTION_UPGRADE_HEADERS_SENDING
+#endif /* MHD_UPGRADE_SUPPORT */
   ,
   /**
    * We are waiting for the client to provide more
@@ -327,6 +345,25 @@ enum MHD_FIXED_ENUM_ MHD_CONNECTION_STATE
    * Shutdown connection or restart processing to get a new request.
    */
   MHD_CONNECTION_FULL_REPLY_SENT
+#ifdef MHD_UPGRADE_SUPPORT
+  ,
+  /**
+   * Transition to "Upgraded" state
+   */
+  MHD_CONNECTION_UPGRADING
+  ,
+  /**
+   * Sending and receiving data on HTTP-Upgraded connection channel.
+   * Normal data processing and connection handling is not performed
+   * by MHD anymore.
+   */
+  MHD_CONNECTION_UPGRADED
+  ,
+  /**
+   * Closing HTTP-Upgraded connection
+   */
+  MHD_CONNECTION_UPGRADED_CLEANING
+#endif /* MHD_UPGRADE_SUPPORT */
   ,
   /**
    * Finished regular connection processing.
@@ -345,6 +382,7 @@ struct mhd_ConnDebugData
 {
   bool closing_started;
   bool pre_cleaned;
+  bool removed_from_daemon;
 };
 
 /**
@@ -415,6 +453,18 @@ struct MHD_Connection
    * The list of connections sorted by timeout
    */
   mhd_DLNKDL_LINKS (MHD_Connection,by_timeout);
+
+#ifdef MHD_UPGRADE_SUPPORT
+  /**
+   * The data for handling HTTP-Upgraded connection
+   */
+  struct MHD_UpgradeHandle upgr;
+
+  /**
+   * Double-linke list of HTTP-Upgraded connections waiting for clean-up
+   */
+  mhd_DLNKDL_LINKS (MHD_Connection,upgr_cleanup);
+#endif /* MHD_UPGRADE_SUPPORT */
 
   /**
    * True if connection is suspended
