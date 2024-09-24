@@ -39,15 +39,16 @@
 #  include <limits.h>
 #endif /* HAVE_LIMITS_H */
 
-#define mhd_UNSIGNED_TYPE_MAX(type) ((type)(~((type) 0)))
+#define mhd_UNSIGNED_TYPE_MAX(type) ((type) (~((type) 0)))
 
 /* Assume 8 bits per byte, no padding bits. */
 #define mhd_SIGNED_TYPE_MAX(type) \
-  ( (type) ((( ((type) 1) << (sizeof(type) * 8 - 2)) - 1) * 2 + 1) )
+        ( (type) ((( ((type) 1) << (sizeof(type) * 8 - 2)) - 1) * 2 + 1) )
 
 /* The maximum value for signed type, based on knowledge of unsigned counterpart
    type */
-#define mhd_SIGNED_TYPE_MAX2(type,utype) ((type)(((utype)(~((utype)0))) >> 1))
+#define mhd_SIGNED_TYPE_MAX2(type,utype) \
+        ((type) (((utype) (~((utype) 0))) >> 1))
 
 #define mhd_IS_TYPE_SIGNED(type) (((type) 0) > ((type) - 1))
 
@@ -168,9 +169,9 @@
 
 #ifndef TIMEVAL_TV_SEC_MAX
 #  ifndef _WIN32
-#    define TIMEVAL_TV_SEC_MAX TIME_T_MAX
+#    define mhd_TIMEVAL_TV_SEC_MAX TIME_T_MAX
 #  else  /* _WIN32 */
-#    define TIMEVAL_TV_SEC_MAX LONG_MAX
+#    define mhd_TIMEVAL_TV_SEC_MAX LONG_MAX
 #  endif /* _WIN32 */
 #endif /* !TIMEVAL_TV_SEC_MAX */
 
