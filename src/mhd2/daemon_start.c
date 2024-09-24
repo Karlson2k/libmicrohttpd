@@ -1893,7 +1893,7 @@ init_individual_conns (struct MHD_Daemon *restrict d,
 
   mhd_DLINKEDL_INIT_LIST (&(d->conns),all_conn);
   mhd_DLINKEDL_INIT_LIST (&(d->conns),def_timeout);
-  mhd_DLINKEDL_INIT_LIST (&(d->conns),to_clean);
+  mhd_DLINKEDL_INIT_LIST (&(d->conns),cust_timeout);
   d->conns.count = 0;
   d->conns.block_new = false;
 
