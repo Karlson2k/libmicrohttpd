@@ -384,7 +384,7 @@ AS_CASE([${enable_build_type}],[debug|debugger],
     )
     MHD_CHECK_ADD_CC_CFLAGS([-Wformat-overflow -Wformat-truncation -Wformat-security -Wformat-signedness], [CFLAGS_ac])
     MHD_CHECK_ADD_CC_CFLAGS([-Wmissing-include-dirs -Wshift-overflow=2 -Wstringop-overflow=4 -Walloc-zero], [CFLAGS_ac])
-    MHD_CHECK_ADD_CC_CFLAGS([-Wduplicated-branches -Wduplicated-cond -Wfloat-equal -Wshadow -Wpointer-arith], [CFLAGS_ac])
+    MHD_CHECK_ADD_CC_CFLAGS([-Wduplicated-branches -Wduplicated-cond -Wfloat-equal -Wpointer-arith], [CFLAGS_ac])
     MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Wshadow-all], [-Wshadow])
     MHD_CHECK_ADD_CC_CFLAGS([-Wbad-function-cast -Wcast-qual -Wwrite-strings -Wconversion], [CFLAGS_ac])
     MHD_FIND_ADD_CC_CFLAG([CFLAGS_ac], [-Wcast-align=strict], [-Wcast-align])
