@@ -59,6 +59,8 @@ mhd_upgrade_try_start_upgrading (struct MHD_Connection *restrict c)
   if (c->write_buffer_append_offset != c->write_buffer_send_offset)
     return false;
 
+  c->state = MHD_CONNECTION_UPGRADING;
+
   return true;
 }
 
@@ -114,7 +116,7 @@ mhd_upgrade_finish_switch_to_upgraded (struct MHD_Connection *restrict c)
 
 MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ (1) enum MHD_StatusCode
-MHD_upgrade_close (struct MHD_UpgradeHandle *urh)
+MHD_upgraded_close (struct MHD_UpgradeHandle *urh)
 {
   struct MHD_Connection *const restrict c = urh->c;
   struct MHD_Daemon *const restrict d = c->daemon;

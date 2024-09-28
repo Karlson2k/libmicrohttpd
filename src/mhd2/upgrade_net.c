@@ -100,7 +100,7 @@ MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_OUT_SIZE_ (3,2)
 MHD_FN_PAR_OUT_ (4) enum MHD_StatusCode
-mhd_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
+MHD_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
                    size_t recv_buf_size,
                    void *MHD_RESTRICT recv_buf,
                    size_t *MHD_RESTRICT received_size,
@@ -313,19 +313,19 @@ MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_IN_SIZE_ (3,2)
 MHD_FN_PAR_OUT_ (4) enum MHD_StatusCode
-mhd_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
+MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
                    size_t send_buf_size,
                    const void *MHD_RESTRICT send_buf,
                    size_t *MHD_RESTRICT sent_size,
                    uint_fast64_t max_wait_millisec,
-                   enum MHD_Bool partial_data)
+                   enum MHD_Bool more_data_to_come)
 {
   struct MHD_Connection *restrict c = urh->c;
 #if defined(MHD_USE_POLL) || defined(MHD_USE_SELECT)
   const MHD_Socket socket_fd = c->socket_fd;
 #endif /* MHD_USE_POLL || MHD_USE_SELECT */
   const char *restrict buf_char = (const char *) send_buf;
-  const bool push_data = (MHD_NO == partial_data);
+  const bool push_data = (MHD_NO == more_data_to_come);
   bool finish_time_set;
   bool wait_indefinitely;
   uint_fast64_t finish_time = 0;

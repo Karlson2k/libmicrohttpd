@@ -33,16 +33,29 @@
 
 struct MHD_Connection; /* forward declaration */
 
-// TODO: describe
+/**
+ * Switch to "upgrading" state if the full upgrade headers have been sent
+ * completely.
+ * @param c the connection to use
+ * @return 'true' if connection is switched to "upgrading" state,
+ *         'false' if headers has not been sent completely yet.
+ */
 MHD_INTERNAL bool
 mhd_upgrade_try_start_upgrading (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ (1);
 
 
-// TODO: describe
+/**
+ * Switch connection to "upgraded" state, call application callback for
+ * switching to "upgraded" state.
+ * @param c the connection to use
+ * @return 'true' if connection is switched to "upgraded" state,
+ *         'false' if connection failed to switch (initialisation error).
+ */
 MHD_INTERNAL bool
 mhd_upgrade_finish_switch_to_upgraded (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ (1);
+
 
 /**
  * De-initialise HTTP-Upgraded-specific data

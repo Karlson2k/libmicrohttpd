@@ -2200,84 +2200,25 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_SIZE_ (3,2);
 /* ***************** (c) WebSocket support ********** */
 
 /**
- * Enumeration for operations MHD should perform on the underlying socket
- * of the upgrade.  This API is not finalized, and in particular
- * the final set of actions is yet to be decided. This is just an
- * idea for what we might want.
- */
-enum MHD_FIXED_ENUM_APP_SET_ MHD_UpgradeOperation
-{
-
-  /**
-   * Close the socket, the application is done with it.
-   */
-  MHD_UPGRADE_OPERATION_CLOSE = 0
-  ,
-  /**
-   * Turn on flushing the network buffers after each data piece.
-   */
-  MHD_UPGRADE_OPERATION_DISABLE_NETWORK_BUFFERING = 1
-  ,
-  /**
-   * Turn on normal data buffering (default).
-   */
-  MHD_UPGRADE_OPERATION_ENABLE_NETWORK_BUFFERING = 2
-  ,
-
-  /* * Sentinel * */
-  /**
-   * The sentinel value.
-   * This value enforces specific underlying integer type for the enum.
-   * Do not use.
-   */
-  MHD_UPGRADE_OPERATION_SENTINEL = 65535
-};
-
-
-/**
  * Handle given to the application to manage special
  * actions relating to MHD responses that "upgrade"
  * the HTTP protocol (i.e. to WebSockets).
  */
 struct MHD_UpgradeHandle;
 
-/**
- * This connection-specific callback is provided by MHD to
- * applications (unusual) during the #MHD_UpgradeHandler.
- * It allows applications to perform 'special' actions on
- * the underlying socket from the upgrade.
- *
- * @param urh the handle identifying the connection to perform
- *            the upgrade @a action on.
- * @param operation which operation should be performed
- * @param ... arguments to the action (depends on the action)
- * @return #MHD_NO on error, #MHD_YES on success
- */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_upgrade_operation (struct MHD_UpgradeHandle *urh,
-                       enum MHD_UpgradeOperation operation)
-MHD_FN_PAR_NONNULL_ (1);
-
 
 #ifndef MHD_UPGRADEHANDLER_DEFINED
 
-// TODO: update doxy
 /**
- * Function called after a protocol "upgrade" response was sent
- * successfully and the socket should now be controlled by some
- * protocol other than HTTP.
+ * Function called after a protocol "upgrade" response was sent successfully
+ * and the connection is being switched to other protocol.
  *
- * Any data already received on the socket will be made available in
- * @e extra_in.  This can happen if the application sent extra data
- * before MHD send the upgrade response.  The application should
- * treat data from @a extra_in as if it had read it from the socket.
+ * The newly provided handle @a urh can be used to send and receive the data
+ * by #MHD_upgraded_send() and #MHD_upgraded_recv(). The handle must be closed
+ * by #MHD_upgraded_close() before destroying the daemon.
  *
- * Note that the application must not close() @a sock directly,
- * but instead use #MHD_action_upgrade() for special operations
- * on @a sock.
- *
- * Data forwarding to "upgraded" @a sock will be started as soon
- * as this function return.
+ * "Upgraded" connection will not time out, but still counted for daemon
+ * global connections limit and for per-IP limit (if set).
  *
  * Except when in 'thread-per-connection' mode, implementations
  * of this function should never block (as it will still be called
@@ -2285,25 +2226,8 @@ MHD_FN_PAR_NONNULL_ (1);
  *
  * @param cls closure, whatever was given to #MHD_action_upgrade().
  * @param request original HTTP request handle,
- *                   giving the function a last chance
- *                   to inspect the original HTTP request
- * @param extra_in_size number of bytes in @a extra_in
- * @param extra_in if we happened to have read bytes after the
- *                 HTTP header already (because the client sent
- *                 more than the HTTP header of the request before
- *                 we sent the upgrade response),
- *                 these are the extra bytes already read from @a sock
- *                 by MHD.  The application should treat these as if
- *                 it had read them from @a sock.
- * @param sock socket to use for bi-directional communication
- *        with the client.  For HTTPS, this may not be a socket
- *        that is directly connected to the client and thus certain
- *        operations (TCP-specific setsockopt(), getsockopt(), etc.)
- *        may not work as expected (as the socket could be from a
- *        socketpair() or a TCP-loopback).  The application is expected
- *        to perform read()/recv() and write()/send() calls on the socket.
- *        The application may also call shutdown(), but must not call
- *        close() directly.
+ *                giving the function a last chance
+ *                to inspect the original HTTP request
  * @param urh argument for #MHD_upgrade_operation() on this @a response.
  *        Applications must eventually use this callback to (indirectly)
  *        perform the close() action on the @a sock.
@@ -2325,16 +2249,6 @@ typedef void
  * The callback will ONLY be called after the response header was successfully
  * passed to the OS; if there are communication errors before, the usual MHD
  * connection error handling code will be performed.
- *
- * MHD will automatically set the correct HTTP status
- * code (#MHD_HTTP_STATUS_SWITCHING_PROTOCOLS).
- * Setting correct HTTP headers for the upgrade must be done
- * manually (this way, it is possible to implement most existing
- * WebSocket versions using this API; in fact, this API might be useful
- * for any protocol switch, not just WebSockets).
- *
- * This action can be created only if the request has no content (upload body)
- * or if the request content received completely.
  *
  * At most one action can be created for any request.
  *
@@ -2371,16 +2285,6 @@ MHD_FN_PAR_IN_SIZE_ (6,5);
  * The callback will ONLY be called after the response header was successfully
  * passed to the OS; if there are communication errors before, the usual MHD
  * connection error handling code will be performed.
- *
- * MHD will automatically set the correct HTTP status
- * code (#MHD_HTTP_STATUS_SWITCHING_PROTOCOLS).
- * Setting correct HTTP headers for the upgrade must be done
- * manually (this way, it is possible to implement most existing
- * WebSocket versions using this API; in fact, this API might be useful
- * for any protocol switch, not just WebSockets).
- *
- * This action can be created only if the request has no content (upload body)
- * or if the request content received completely.
  *
  * At most one action can be created for any request.
  *
@@ -2428,10 +2332,10 @@ MHD_FN_PAR_IN_SIZE_ (6,5);
  *                          #MHD_WAIT_INDEFINITELY,
  *                          the function may return earlier if waiting is
  *                          interrupted or by other reasons
- * @return #MHD_SC_OK if any data received (check @a received_size) or
- *                    remote shut down send size (indicated by @a received_size
+ * @return #MHD_SC_OK if ANY data received (check the @a received_size) or
+ *                    remote shut down send side (indicated by @a received_size
  *                    set to zero),
- *         #MHD_SC_UPGRADED_NET_TIMEOUT if no data received but timeout expired,
+ *         #MHD_SC_UPGRADED_NET_TIMEOUT if NO data received but timeout expired,
  *         #MHD_SC_UPGRADED_NET_CONN_CLOSED if network connection has been
  *                                          closed,
  *         #MHD_SC_UPGRADED_NET_CONN_BROKEN if broken network connection has
@@ -2444,7 +2348,7 @@ MHD_FN_PAR_IN_SIZE_ (6,5);
  *                                                by this MHD build or platform
  */
 MHD_EXTERN_ enum MHD_StatusCode
-mhd_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
+MHD_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
                    size_t recv_buf_size,
                    void *MHD_RESTRICT recv_buf,
                    size_t *MHD_RESTRICT received_size,
@@ -2461,6 +2365,11 @@ MHD_FN_PAR_OUT_ (4);
  * + timeout reached,
  * + network error occurs
  *
+ * Parameter @a more_data_to_come controls network buffering. When set to
+ * #MHD_YES, the OS waits shortly for additional data and tries to use
+ * the network more effeciently delaying the last network packet, if it is
+ * incomplete, to combine it with the next data provided.
+ *
  * @param urh the HTTP-Upgraded handle
  * @param send_buf_size the amount of data in the @a send_buf
  * @param send_buf the buffer with the data to send
@@ -2471,12 +2380,18 @@ MHD_FN_PAR_OUT_ (4);
  *                          #MHD_WAIT_INDEFINITELY,
  *                          the function may return earlier if waiting is
  *                          interrupted or by other reasons
- * @param partial_data if set to #MHD_YES then MHD tries to avoid sending
- *                     partial network packets by using extra buffering,
- *                     if set to #MHD_NO then MHD tries to push the last
- *                     packet to the network as soon as possible
- * @return #MHD_SC_OK if any data sent (check @a sent_size),
- *         #MHD_SC_UPGRADED_NET_TIMEOUT if no data sent but timeout expired,
+ * @param more_data_to_come set to #MHD_YES if the provided data in
+ *                          the @a send_buf is part of a larger data package,
+ *                          like an incomplete message or streamed
+ *                          (not the final) part of some file, and more data
+ *                          expected to be sent soon over the same connection,
+ *                          set to #MHD_NO the data in the @a send_buf is
+ *                          the complete message or the final part of
+ *                          the message (or file) and it should be pushed
+ *                          to the network (and to the client) as soon
+ *                          as possible
+ * @return #MHD_SC_OK if ANY data sent (check the @a sent_size),
+ *         #MHD_SC_UPGRADED_NET_TIMEOUT if NO data sent but timeout expired,
  *         #MHD_SC_UPGRADED_NET_CONN_CLOSED if network connection has been
  *                                          closed,
  *         #MHD_SC_UPGRADED_NET_CONN_BROKEN if broken network connection has
@@ -2489,12 +2404,12 @@ MHD_FN_PAR_OUT_ (4);
  *                                                by this MHD build or platform
  */
 MHD_EXTERN_ enum MHD_StatusCode
-mhd_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
+MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
                    size_t send_buf_size,
                    const void *MHD_RESTRICT send_buf,
                    size_t *MHD_RESTRICT sent_size,
                    uint_fast64_t max_wait_millisec,
-                   enum MHD_Bool partial_data)
+                   enum MHD_Bool more_data_to_come)
 MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_(3,2)
 MHD_FN_PAR_OUT_ (4);
 
@@ -2504,15 +2419,15 @@ MHD_FN_PAR_OUT_ (4);
  *
  * The handle cannot be used after successful return from this function.
  *
- * The function cannot fail if called correctly: the daemon is not destroyed
- * and the upgraded connection has not been closed.
+ * The function cannot fail if called correctly (the daemon is not destroyed
+ * and the upgraded connection has not been closed yet).
  *
  * @param urh the handle to close
  * @return #MHD_SC_OK on success,
  *         error code otherwise
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_upgrade_close (struct MHD_UpgradeHandle *urh)
+MHD_upgraded_close (struct MHD_UpgradeHandle *urh)
 MHD_FN_PAR_NONNULL_ (1);
 
 
