@@ -392,7 +392,8 @@ MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
       else
       {
         wait_left = finish_time - cur_time;
-        if (wait_left > cur_time - finish_time)
+        if ((wait_left > cur_time - finish_time) ||
+            (0 == wait_left))
           return MHD_SC_UPGRADED_NET_TIMEOUT;
       }
     }
