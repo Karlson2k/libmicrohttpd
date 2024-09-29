@@ -510,14 +510,12 @@ MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
 #  ifndef mhd_HAVE_MHD_SLEEP
       return MHD_SC_UPGRADED_WAITING_NOT_SUPPORTED;
 #  else  /* mhd_HAVE_MHD_SLEEP */
-      uint_fast32_t wait_millisec = (uint_fast32_t) max_wait_millisec;
+      uint_fast32_t wait_millisec = (uint_fast32_t) wait_left;
 
-      if ((wait_millisec != max_wait_millisec) ||
+      if ((wait_millisec != wait_left) ||
           (wait_millisec > 100))
         wait_millisec = 100;
       mhd_sleep (wait_millisec);
-      if (MHD_WAIT_INDEFINITELY > max_wait_millisec)
-        max_wait_millisec -= wait_millisec;
 #  endif /* mhd_HAVE_MHD_SLEEP */
     }
 #endif /* ! MHD_USE_POLL */
