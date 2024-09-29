@@ -216,7 +216,7 @@ MHD_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
 #  if defined(MHD_USE_SELECT)
       bool use_select;
 #    ifdef MHD_POSIX_SOCKETS
-      use_select = socket_fd < FD_SETSIZE;
+      use_select = (socket_fd < FD_SETSIZE);
 #    else  /* MHD_WINSOCK_SOCKETS */
       use_select = true;
 #    endif /* MHD_WINSOCK_SOCKETS */
@@ -228,7 +228,7 @@ MHD_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
         struct timeval tmvl;
 
 #    ifdef MHD_POSIX_SOCKETS
-        tmvl.tv_sec = (long) (max_wait_millisec / 1000);
+        tmvl.tv_sec = (time_t) (max_wait_millisec / 1000);
 #    else  /* MHD_WINSOCK_SOCKETS */
         tmvl.tv_sec = (long) (max_wait_millisec / 1000);
 #    endif /* MHD_WINSOCK_SOCKETS */
@@ -441,7 +441,7 @@ MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
 #else /* ! MHD_USE_POLL */
 #  if defined(MHD_USE_SELECT)
 #    ifdef MHD_POSIX_SOCKETS
-    use_select = socket_fd < FD_SETSIZE;
+    use_select = (socket_fd < FD_SETSIZE);
 #    else  /* MHD_WINSOCK_SOCKETS */
     use_select = true;
 #    endif /* MHD_WINSOCK_SOCKETS */
@@ -462,9 +462,9 @@ MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
       else
       {
 #    ifdef MHD_POSIX_SOCKETS
-        tmvl.tv_sec = (long) (max_wait_millisec / 1000);
+        tmvl.tv_sec = (time_t) (wait_left / 1000);
 #    else  /* MHD_WINSOCK_SOCKETS */
-        tmvl.tv_sec = (long) (max_wait_millisec / 1000);
+        tmvl.tv_sec = (long) (wait_left / 1000);
 #    endif /* MHD_WINSOCK_SOCKETS */
         if ((max_wait_millisec / 1000 != (uint_fast64_t) tmvl.tv_sec) ||
             (0 > tmvl.tv_sec))
