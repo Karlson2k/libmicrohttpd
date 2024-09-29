@@ -694,6 +694,10 @@ poll_update_fds (struct MHD_Daemon *restrict d,
   unsigned int i_s;
   unsigned int i_c;
   struct MHD_Connection *restrict c;
+#ifndef NDEBUG
+  unsigned int num_skipped = 0;
+#endif /* ! NDEBUG */
+
   mhd_assert (mhd_POLL_TYPE_POLL == d->events.poll_type);
 
   i_s = 0;
@@ -722,7 +726,12 @@ poll_update_fds (struct MHD_Daemon *restrict d,
     unsigned short events; /* 'unsigned' for correct bits manipulations */
 
     if (is_conn_excluded_from_http_comm (c))
+    {
+#ifndef NDEBUG
+      ++num_skipped;
+#endif /* ! NDEBUG */
       continue;
+    }
 
     mhd_assert ((i_c - i_s) < d->conns.cfg.count_limit);
     mhd_assert (i_c < d->dbg.num_events_elements);
@@ -739,7 +748,7 @@ poll_update_fds (struct MHD_Daemon *restrict d,
     d->events.data.poll.fds[i_c].events = (short) events;
     ++i_c;
   }
-  mhd_assert (d->conns.count == (i_c - i_s));
+  mhd_assert ((d->conns.count - num_skipped) == (i_c - i_s));
   mhd_assert (i_c <= d->dbg.num_events_elements);
   return i_c;
 }
