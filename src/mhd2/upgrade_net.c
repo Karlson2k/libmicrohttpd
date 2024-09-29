@@ -340,7 +340,7 @@ MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
   finish_time_set = false;
   wait_indefinitely = (MHD_WAIT_INDEFINITELY <= max_wait_millisec);
 
-  while (0 == send_buf_size)
+  while (0 != send_buf_size)
   {
     enum mhd_SocketError res;
     size_t last_block_size;
