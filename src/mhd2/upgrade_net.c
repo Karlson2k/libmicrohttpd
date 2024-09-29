@@ -213,8 +213,8 @@ MHD_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
         max_wait_millisec = 0; /* Re-try only one time */
       }
 #else /* ! MHD_USE_POLL */
-      bool use_select;
 #  if defined(MHD_USE_SELECT)
+      bool use_select;
 #    ifdef MHD_POSIX_SOCKETS
       use_select = socket_fd < FD_SETSIZE;
 #    else  /* MHD_WINSOCK_SOCKETS */
@@ -343,7 +343,7 @@ MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
     enum mhd_SocketError res;
     size_t last_block_size;
     uint_fast64_t wait_left;
-#if ! defined(MHD_USE_POLL)
+#if ! defined(MHD_USE_POLL) && defined(MHD_USE_SELECT)
     bool use_select;
 #endif /* ! MHD_USE_POLL */
 
