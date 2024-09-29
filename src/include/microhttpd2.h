@@ -6749,7 +6749,7 @@ MHD_FN_PAR_IN_SIZE_ (6,5);
  * @param urh the HTTP-Upgraded handle
  * @param recv_buf_size the size of the @a recv_buf
  * @param recv_buf the buffer to receive the data
- * @param[out] received_size the pointer to variable to get amount of received data
+ * @param received_size the pointer to variable to get amount of received data
  * @param max_wait_millisec the maximum wait time for the data,
  *                          non-blocking operation if set to zero,
  *                          wait indefinitely if larger or equal to

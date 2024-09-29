@@ -33,7 +33,7 @@
 
 
 const char *
-MHDT_server_setup_minimal (void *cls,
+MHDT_server_setup_minimal (const void *cls,
                            struct MHD_Daemon *d)
 {
   const struct MHD_DaemonOptionAndValue *options = cls;

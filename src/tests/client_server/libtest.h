@@ -61,7 +61,7 @@ struct MHDT_PhaseContext
  * @return error message, NULL on success
  */
 typedef const char *
-(*MHDT_ClientLogic)(void *cls,
+(*MHDT_ClientLogic)(const void *cls,
                     const struct MHDT_PhaseContext *pc);
 
 
@@ -74,7 +74,7 @@ typedef const char *
  * @return error message, NULL on success
  */
 const char *
-MHDT_client_get_root (void *cls,
+MHDT_client_get_root (const void *cls,
                       const struct MHDT_PhaseContext *pc);
 
 
@@ -89,7 +89,7 @@ MHDT_client_get_root (void *cls,
  * @return error message, NULL on success
  */
 const char *
-MHDT_client_get_with_query (void *cls,
+MHDT_client_get_with_query (const void *cls,
                             const struct MHDT_PhaseContext *pc);
 
 
@@ -103,7 +103,7 @@ MHDT_client_get_with_query (void *cls,
  * @return error message, NULL on success
  */
 const char *
-MHDT_client_set_header (void *cls,
+MHDT_client_set_header (const void *cls,
                         const struct MHDT_PhaseContext *pc);
 
 
@@ -118,7 +118,7 @@ MHDT_client_set_header (void *cls,
  * @return error message, NULL on success
  */
 const char *
-MHDT_client_expect_header (void *cls,
+MHDT_client_expect_header (const void *cls,
                            const struct MHDT_PhaseContext *pc);
 
 
@@ -131,7 +131,7 @@ MHDT_client_expect_header (void *cls,
  * @return error message, NULL on success
  */
 const char *
-MHDT_client_put_data (void *cls,
+MHDT_client_put_data (const void *cls,
                       const struct MHDT_PhaseContext *pc);
 
 
@@ -144,7 +144,7 @@ MHDT_client_put_data (void *cls,
  * @return error message, NULL on success
  */
 const char *
-MHDT_client_chunk_data (void *cls,
+MHDT_client_chunk_data (const void *cls,
                         const struct MHDT_PhaseContext *pc);
 
 
@@ -256,7 +256,7 @@ struct MHDT_PostInstructions
  */
 const char *
 MHDT_client_do_post (
-  void *cls,
+  const void *cls,
   const struct MHDT_PhaseContext *pc);
 
 
@@ -280,7 +280,7 @@ struct MHDT_Phase
   /**
    * Closure for @e server_cb.
    */
-  void *server_cb_cls;
+  const void *server_cb_cls;
 
   /**
    * Logic for the CURL client for this phase.
@@ -290,7 +290,7 @@ struct MHDT_Phase
   /**
    * Closure for @e client_cb.
    */
-  void *client_cb_cls;
+  const void *client_cb_cls;
 
   /**
    * How long is the phase allowed to run at most before
@@ -541,7 +541,7 @@ MHDT_server_reply_check_post (
  * @return error message, NULL on success
  */
 typedef const char *
-(*MHDT_ServerSetup)(void *cls,
+(*MHDT_ServerSetup)(const void *cls,
                     struct MHD_Daemon *d);
 
 
@@ -554,7 +554,7 @@ typedef const char *
  * @return error message, NULL on success
  */
 const char *
-MHDT_server_setup_minimal (void *cls,
+MHDT_server_setup_minimal (const void *cls,
                            struct MHD_Daemon *d);
 
 

@@ -228,7 +228,7 @@ check_status (CURL *c,
 
 const char *
 MHDT_client_get_root (
-  void *cls,
+  const void *cls,
   const struct MHDT_PhaseContext *pc)
 {
   const char *text = cls;
@@ -257,7 +257,7 @@ MHDT_client_get_root (
 
 const char *
 MHDT_client_get_with_query (
-  void *cls,
+  const void *cls,
   const struct MHDT_PhaseContext *pc)
 {
   const char *args = cls;
@@ -294,8 +294,9 @@ MHDT_client_get_with_query (
 
 
 const char *
-MHDT_client_set_header (void *cls,
-                        const struct MHDT_PhaseContext *pc)
+MHDT_client_set_header (
+  const void *cls,
+  const struct MHDT_PhaseContext *pc)
 {
   const char *hdr = cls;
   CURL *c;
@@ -339,7 +340,7 @@ MHDT_client_set_header (void *cls,
 
 
 const char *
-MHDT_client_expect_header (void *cls,
+MHDT_client_expect_header (const void *cls,
                            const struct MHDT_PhaseContext *pc)
 {
 #ifdef HAVE_LIBCRUL_NEW_HDR_API
@@ -469,7 +470,7 @@ read_cb (void *ptr,
 
 const char *
 MHDT_client_put_data (
-  void *cls,
+  const void *cls,
   const struct MHDT_PhaseContext *pc)
 {
   const char *text = cls;
@@ -532,7 +533,7 @@ MHDT_client_put_data (
 
 const char *
 MHDT_client_chunk_data (
-  void *cls,
+  const void *cls,
   const struct MHDT_PhaseContext *pc)
 {
   const char *text = cls;
@@ -588,10 +589,10 @@ MHDT_client_chunk_data (
 
 const char *
 MHDT_client_do_post (
-  void *cls,
+  const void *cls,
   const struct MHDT_PhaseContext *pc)
 {
-  struct MHDT_PostInstructions *pi = cls;
+  const struct MHDT_PostInstructions *pi = cls;
   CURL *c;
   struct curl_slist *request_hdr = NULL;
 
