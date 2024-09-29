@@ -2377,9 +2377,7 @@ MHD_FN_PAR_OUT_ (4);
  * @param max_wait_millisec the maximum wait time for the data,
  *                          non-blocking operation if set to zero,
  *                          wait indefinitely if larger or equal to
- *                          #MHD_WAIT_INDEFINITELY,
- *                          the function may return earlier if waiting is
- *                          interrupted or by other reasons
+ *                          #MHD_WAIT_INDEFINITELY
  * @param more_data_to_come set to #MHD_YES if the provided data in
  *                          the @a send_buf is part of a larger data package,
  *                          like an incomplete message or streamed
