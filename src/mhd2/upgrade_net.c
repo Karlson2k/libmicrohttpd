@@ -1,6 +1,6 @@
 /*
   This file is part of GNU libmicrohttpd
-  Copyright (C) 2024 Evgeny Grin (Karlson2k)
+  Copyright (C) 2024 Evgeny Grin (Karlson2k) & Christian Grothoff
 
   GNU libmicrohttpd is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,7 @@
  * @brief  The implementation of functions for network data exchange
  *         for HTTP Upgraded connections
  * @author Karlson2k (Evgeny Grin)
+ * @author Christian Grothoff
  */
 
 #include "mhd_sys_options.h"
