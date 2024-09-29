@@ -263,15 +263,13 @@ MHD_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
           return MHD_SC_UPGRADED_NET_HARD_ERROR;
         max_wait_millisec = 0; /* Re-try only one time */
       }
-#  else  /* ! MHD_USE_SELECT */
-      use_select = false;
-#  endif /* ! MHD_USE_SELECT */
-#  if ! defined(MHD_WINSOCK_SOCKETS) || ! defined(MHD_USE_SELECT)
-      if (! use_select)
+      else /* combined with the next 'if()' */
+#  endif /* MHD_USE_SELECT */
+      if (1)
       {
-#    ifndef mhd_HAVE_MHD_SLEEP
+#  ifndef mhd_HAVE_MHD_SLEEP
         return MHD_SC_UPGRADED_WAITING_NOT_SUPPORTED;
-#    else  /* mhd_HAVE_MHD_SLEEP */
+#  else  /* mhd_HAVE_MHD_SLEEP */
         uint_fast32_t wait_millisec = max_wait_millisec;
 
         if (wait_millisec > 100)
@@ -279,9 +277,8 @@ MHD_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
         mhd_sleep (wait_millisec);
         if (MHD_WAIT_INDEFINITELY > max_wait_millisec)
           max_wait_millisec -= wait_millisec;
-#    endif /* mhd_HAVE_MHD_SLEEP */
+#  endif /* mhd_HAVE_MHD_SLEEP */
       }
-#  endif /* ! MHD_WINSOCK_SOCKETS) || !  MHD_USE_SELECT */
 #endif /* ! MHD_USE_POLL */
       last_block_size = 0;
       res = mhd_recv (c,
@@ -505,15 +502,13 @@ MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
           ! mhd_SCKT_ERR_IS_LOW_RESOURCES (wait_err))
         return MHD_SC_UPGRADED_NET_HARD_ERROR;
     }
-#  else  /* ! MHD_USE_SELECT */
-    use_select = false;
-#  endif /* ! MHD_USE_SELECT */
-#  if ! defined(MHD_WINSOCK_SOCKETS) || ! defined(MHD_USE_SELECT)
-    if (! use_select)
+    else /* combined with the next 'if()' */
+#  endif /* MHD_USE_SELECT */
+    if (1)
     {
-#    ifndef mhd_HAVE_MHD_SLEEP
+#  ifndef mhd_HAVE_MHD_SLEEP
       return MHD_SC_UPGRADED_WAITING_NOT_SUPPORTED;
-#    else  /* mhd_HAVE_MHD_SLEEP */
+#  else  /* mhd_HAVE_MHD_SLEEP */
       uint_fast32_t wait_millisec = max_wait_millisec;
 
       if (wait_millisec > 100)
@@ -521,9 +516,8 @@ MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
       mhd_sleep (wait_millisec);
       if (MHD_WAIT_INDEFINITELY > max_wait_millisec)
         max_wait_millisec -= wait_millisec;
-#    endif /* mhd_HAVE_MHD_SLEEP */
+#  endif /* mhd_HAVE_MHD_SLEEP */
     }
-#  endif /* ! MHD_WINSOCK_SOCKETS) || !  MHD_USE_SELECT */
 #endif /* ! MHD_USE_POLL */
   }
 
