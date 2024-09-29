@@ -56,7 +56,8 @@
 
 /**
  * Pause execution for specified number of milliseconds.
- * @param ms the number of milliseconds to sleep
+ *
+ * @param millisec the number of milliseconds to sleep
  */
 static void
 mhd_sleep (uint_fast32_t millisec)
@@ -270,14 +271,13 @@ MHD_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
 #    ifndef mhd_HAVE_MHD_SLEEP
         return MHD_SC_UPGRADED_WAITING_NOT_SUPPORTED;
 #    else  /* mhd_HAVE_MHD_SLEEP */
-        mhd_sleep (100);
+        uint_fast32_t wait_millisec = max_wait_millisec;
+
+        if (wait_millisec > 100)
+          wait_millisec = 100;
+        mhd_sleep (wait_millisec);
         if (MHD_WAIT_INDEFINITELY > max_wait_millisec)
-        {
-          if (100 > max_wait_millisec)
-            max_wait_millisec = 0;
-          else
-            max_wait_millisec -= 100;
-        }
+          max_wait_millisec -= wait_millisec;
 #    endif /* mhd_HAVE_MHD_SLEEP */
       }
 #  endif /* ! MHD_WINSOCK_SOCKETS) || !  MHD_USE_SELECT */
