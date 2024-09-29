@@ -6657,7 +6657,8 @@ struct MHD_UpgradeHandle;
  *        perform the close() action on the @a sock.
  */
 typedef void
-(*MHD_UpgradeHandler)(void *cls,
+(MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_NONNULL_ (3)
+ *MHD_UpgradeHandler)(void *cls,
                       struct MHD_Request *MHD_RESTRICT request,
                       struct MHD_UpgradeHandle *MHD_RESTRICT urh);
 
