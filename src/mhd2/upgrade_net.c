@@ -343,7 +343,7 @@ MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
   finish_time_set = false;
   wait_indefinitely = (MHD_WAIT_INDEFINITELY <= max_wait_millisec);
 
-  while (*sent_size != send_buf_size)
+  while (1)
   {
     enum mhd_SocketError res;
     size_t last_block_size;
@@ -359,11 +359,15 @@ MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
                          push_data,
                          &last_block_size);
     if (mhd_SOCKET_ERR_NO_ERROR == res)
+    {
       *sent_size += last_block_size;
+      if (send_buf_size == *sent_size)
+        break;
+    }
     else if (mhd_SOCKET_ERR_IS_HARD (res))
     {
       if (0 != *sent_size)
-        return MHD_SC_OK;
+        break;
 
       if (mhd_SOCKET_ERR_REMT_DISCONN == res)
         return MHD_SC_UPGRADED_NET_CONN_CLOSED;
