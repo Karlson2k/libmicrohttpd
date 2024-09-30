@@ -806,7 +806,7 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
 #ifdef MHD_UPGRADE_SUPPORT
   if (mhd_CONN_CLOSE_UPGRADE == reason)
   {
-    c->state = MHD_CONNECTION_UPGRADING;
+    mhd_assert (MHD_CONNECTION_UPGRADING == c->state);
     c->event_loop_info = MHD_EVENT_LOOP_INFO_UPGRADED;
   }
   else
@@ -883,6 +883,24 @@ mhd_conn_pre_clean_part1 (struct MHD_Connection *restrict c)
   mhd_stream_call_dcc_cleanup_if_needed (c);
   if (NULL != c->rq.cntn.lbuf.data)
     mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
+
+#ifdef MHD_USE_EPOLL
+  if (mhd_POLL_TYPE_EPOLL == c->daemon->events.poll_type)
+  {
+    struct epoll_event event;
+
+    event.events = 0;
+    event.data.ptr = NULL;
+    if (0 != epoll_ctl (c->daemon->events.data.epoll.e_fd,
+                        EPOLL_CTL_DEL,
+                        c->socket_fd,
+                        &event))
+    {
+      mhd_LOG_MSG (c->daemon, MHD_SC_EPOLL_CTL_REMOVE_FAILED,
+                   "Failed to remove connection socket from epoll.");
+    }
+  }
+#endif /* MHD_USE_EPOLL */
 }
 
 
@@ -895,6 +913,9 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
   mhd_assert (c->dbg.closing_started);
   mhd_assert (! c->dbg.pre_cleaned);
 
+#ifdef MHD_UPGRADE_SUPPORT
+  if (NULL == c->upgr.c)
+#endif
   mhd_conn_pre_clean_part1 (c);
 
   if (NULL != c->rp.resp_iov.iov)
@@ -917,24 +938,6 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
   // TODO: call in the thread where it was allocated for thread-per-connection
   mhd_pool_destroy (c->pool);
   c->pool = NULL;
-
-#ifdef MHD_USE_EPOLL
-  if (mhd_POLL_TYPE_EPOLL == c->daemon->events.poll_type)
-  {
-    struct epoll_event event;
-
-    event.events = 0;
-    event.data.ptr = NULL;
-    if (0 != epoll_ctl (c->daemon->events.data.epoll.e_fd,
-                        EPOLL_CTL_DEL,
-                        c->socket_fd,
-                        &event))
-    {
-      mhd_LOG_MSG (c->daemon, MHD_SC_EPOLL_CTL_REMOVE_FAILED,
-                   "Failed to remove connection socket from epoll.");
-    }
-  }
-#endif /* MHD_USE_EPOLL */
 
   c->state = MHD_CONNECTION_CLOSED;
 #ifndef NDEBUG
