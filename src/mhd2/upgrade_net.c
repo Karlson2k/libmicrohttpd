@@ -151,6 +151,8 @@ MHD_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
         c->read_buffer = NULL;
       }
     }
+    else
+      last_block_size = 0;
     mhd_mutex_unlock_chk (&(urh->lock));
     *received_size = last_block_size;
     if (recv_buf_size == last_block_size)
