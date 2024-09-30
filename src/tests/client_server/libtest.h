@@ -280,7 +280,7 @@ struct MHDT_Phase
   /**
    * Closure for @e server_cb.
    */
-  const void *server_cb_cls;
+  void *server_cb_cls;
 
   /**
    * Logic for the CURL client for this phase.
