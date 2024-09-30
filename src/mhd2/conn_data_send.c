@@ -288,6 +288,19 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
                         MHD_CONNECTION_FULL_REPLY_SENT);
     }
     break;
+#ifdef MHD_UPGRADE_SUPPORT
+  case MHD_CONNECTION_UPGRADE_HEADERS_SENDING:
+    res = mhd_send_data (c,
+                         c->write_buffer_append_offset
+                         - c->write_buffer_send_offset,
+                         c->write_buffer
+                         + c->write_buffer_send_offset,
+                         true,
+                         &sent);
+    if (mhd_SOCKET_ERR_NO_ERROR == res)
+      c->write_buffer_send_offset += sent;
+    break;
+#endif /* MHD_UPGRADE_SUPPORT */
   case MHD_CONNECTION_INIT:
   case MHD_CONNECTION_REQ_LINE_RECEIVING:
   case MHD_CONNECTION_REQ_LINE_RECEIVED:
@@ -309,7 +322,6 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
   case MHD_CONNECTION_PRE_CLOSING:
   case MHD_CONNECTION_CLOSED:
 #ifdef MHD_UPGRADE_SUPPORT
-  case MHD_CONNECTION_UPGRADE_HEADERS_SENDING:
   case MHD_CONNECTION_UPGRADING:
   case MHD_CONNECTION_UPGRADED:
   case MHD_CONNECTION_UPGRADED_CLEANING:
