@@ -73,7 +73,7 @@ mhd_upgrade_finish_switch_to_upgraded (struct MHD_Connection *restrict c)
   mhd_assert (MHD_CONNECTION_UPGRADING == c->state);
   mhd_assert (NULL != c->write_buffer);
   mhd_assert ((0 != c->read_buffer_offset) || (NULL == c->read_buffer));
-  mhd_assert (c == c->upgr.c);
+  mhd_assert (NULL == c->upgr.c);
 
   pupgr_data = (mhd_ACTION_UPGRADE == c->rq.app_act.head_act.act) ?
                &(c->rq.app_act.head_act.data.upgrd) :
