@@ -146,7 +146,7 @@ main (int argc, char *argv[])
     {
       .label = "simple get",
       .server_cb = &MHDT_server_reply_text,
-      .server_cb_cls = "Hello world",
+      .server_cb_cls = (void *) "Hello world",
       .client_cb = &MHDT_client_get_root,
       .client_cb_cls = "Hello world",
       .timeout_ms = 2500,
@@ -154,7 +154,7 @@ main (int argc, char *argv[])
     {
       .label = "GET with sendfile",
       .server_cb = &MHDT_server_reply_file,
-      .server_cb_cls = "Hello world",
+      .server_cb_cls = (void *) "Hello world",
       .client_cb = &MHDT_client_get_root,
       .client_cb_cls = "Hello world",
       .timeout_ms = 2500,
@@ -162,7 +162,7 @@ main (int argc, char *argv[])
     {
       .label = "client PUT with content-length",
       .server_cb = &MHDT_server_reply_check_upload,
-      .server_cb_cls = "simple-upload-value",
+      .server_cb_cls = (void *) "simple-upload-value",
       .client_cb = &MHDT_client_put_data,
       .client_cb_cls = "simple-upload-value",
       .timeout_ms = 2500,
@@ -170,7 +170,7 @@ main (int argc, char *argv[])
     {
       .label = "client PUT with 2 chunks",
       .server_cb = &MHDT_server_reply_check_upload,
-      .server_cb_cls = "chunky-upload-value",
+      .server_cb_cls = (void *) "chunky-upload-value",
       .client_cb = &MHDT_client_chunk_data,
       .client_cb_cls = "chunky-upload-value",
       .timeout_ms = 2500,
@@ -178,7 +178,7 @@ main (int argc, char *argv[])
     {
       .label = "client request with custom header",
       .server_cb = &MHDT_server_reply_check_header,
-      .server_cb_cls = "C-Header:testvalue",
+      .server_cb_cls = (void *) "C-Header:testvalue",
       .client_cb = &MHDT_client_set_header,
       .client_cb_cls = "C-Header:testvalue",
       .timeout_ms = 2500,
@@ -186,7 +186,7 @@ main (int argc, char *argv[])
     {
       .label = "server response with custom header",
       .server_cb = &MHDT_server_reply_with_header,
-      .server_cb_cls = "X-Header:testvalue",
+      .server_cb_cls = (void *) "X-Header:testvalue",
       .client_cb = &MHDT_client_expect_header,
       .client_cb_cls = "X-Header:testvalue",
       .timeout_ms = 2500,
@@ -194,7 +194,7 @@ main (int argc, char *argv[])
     {
       .label = "URL with query parameters 1",
       .server_cb = &MHDT_server_reply_check_query,
-      .server_cb_cls = "a=b&c",
+      .server_cb_cls = (void *) "a=b&c",
       .client_cb = &MHDT_client_get_with_query,
       .client_cb_cls = "?a=b&c",
       .timeout_ms = 5000,
@@ -203,7 +203,7 @@ main (int argc, char *argv[])
     {
       .label = "URL with query parameters 2",
       .server_cb = &MHDT_server_reply_check_query,
-      .server_cb_cls = "a=b&c", /* a => b, c => NULL */
+      .server_cb_cls = (void *) "a=b&c", /* a => b, c => NULL */
       .client_cb = &MHDT_client_get_with_query,
       .client_cb_cls = "?c&a=b",
       .timeout_ms = 5000,
@@ -212,7 +212,7 @@ main (int argc, char *argv[])
     {
       .label = "URL with query parameters 3",
       .server_cb = &MHDT_server_reply_check_query,
-      .server_cb_cls = "a=&c", /* a => "", c => NULL */
+      .server_cb_cls = (void *) "a=&c", /* a => "", c => NULL */
       .client_cb = &MHDT_client_get_with_query,
       .client_cb_cls = "?c&a=",
       .timeout_ms = 5000,
@@ -221,7 +221,7 @@ main (int argc, char *argv[])
     {
       .label = "URL with query parameters 4",
       .server_cb = &MHDT_server_reply_check_query,
-      .server_cb_cls = "a=", /* a => "" */
+      .server_cb_cls = (void *) "a=", /* a => "" */
       .client_cb = &MHDT_client_get_with_query,
       .client_cb_cls = "?a=",
       .timeout_ms = 5000,
@@ -230,7 +230,7 @@ main (int argc, char *argv[])
     {
       .label = "URL with query parameters 5",
       .server_cb = &MHDT_server_reply_check_query,
-      .server_cb_cls = "a=b", /* a => "b" */
+      .server_cb_cls = (void *) "a=b", /* a => "b" */
       .client_cb = &MHDT_client_get_with_query,
       .client_cb_cls = "?a=b",
       .timeout_ms = 5000,
@@ -239,7 +239,7 @@ main (int argc, char *argv[])
     {
       .label = "chunked response get",
       .server_cb = &MHDT_server_reply_chunked_text,
-      .server_cb_cls = "Hello world",
+      .server_cb_cls = (void *) "Hello world",
       .client_cb = &MHDT_client_get_root,
       .client_cb_cls = "Hello world",
       .timeout_ms = 2500,
