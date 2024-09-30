@@ -568,6 +568,7 @@ wr_create_tls_sckt (void)
   return NULL;
 }
 
+
 #if defined(HTTPS_SUPPORT) && defined(HAVE_FORK) && defined(HAVE_WAITPID)
 
 /**
@@ -594,6 +595,7 @@ wr_create_from_plain_sckt (MHD_Socket plain_sk)
   make_nodelay (s->fd);
   return s;
 }
+
 
 #endif /* HTTPS_SUPPORT && HAVE_FORK && HAVE_WAITPID */
 
@@ -1352,7 +1354,7 @@ receive_eof (struct wr_socket *sock)
 #endif /* Unused code */
 
 static void
-recv_upg_all (struct MHD_UpgradeHandle *urh,
+recv_upg_all (struct MHD_UpgradedHandle *urh,
               const void *data,
               size_t data_size)
 {
@@ -1410,7 +1412,7 @@ recv_upg_all (struct MHD_UpgradeHandle *urh,
 
 
 static void
-send_upg_all (struct MHD_UpgradeHandle *urh,
+send_upg_all (struct MHD_UpgradedHandle *urh,
               const void *data,
               size_t data_size)
 {
@@ -1435,7 +1437,7 @@ send_upg_all (struct MHD_UpgradeHandle *urh,
  * @param urh the "upgraded" handle to use
  */
 static void
-receive_upg_eof (struct MHD_UpgradeHandle *urh)
+receive_upg_eof (struct MHD_UpgradedHandle *urh)
 {
   size_t rcvd_sise;
   uint8_t buf[1];
@@ -1463,7 +1465,7 @@ receive_upg_eof (struct MHD_UpgradeHandle *urh)
 static void *
 run_usock_server (void *cls)
 {
-  struct MHD_UpgradeHandle *urh = cls;
+  struct MHD_UpgradedHandle *urh = cls;
 
   recv_upg_all (urh,
                 rclient_msg,
@@ -1548,7 +1550,7 @@ run_usock_client (void *cls)
 static void
 upgrade_cb (void *cls,
             struct MHD_Request *MHD_RESTRICT request,
-            struct MHD_UpgradeHandle *MHD_RESTRICT urh)
+            struct MHD_UpgradedHandle *MHD_RESTRICT urh)
 {
   if (NULL != cls)
     mhdErrorExitDesc ("'cls' is not NULL");

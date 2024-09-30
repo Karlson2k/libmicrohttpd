@@ -116,7 +116,7 @@ mhd_upgrade_finish_switch_to_upgraded (struct MHD_Connection *restrict c)
 
 MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ (1) enum MHD_StatusCode
-MHD_upgraded_close (struct MHD_UpgradeHandle *urh)
+MHD_upgraded_close (struct MHD_UpgradedHandle *urh)
 {
   struct MHD_Connection *const restrict c = urh->c;
   struct MHD_Daemon *const restrict d = c->daemon;

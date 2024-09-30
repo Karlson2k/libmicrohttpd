@@ -37,7 +37,7 @@ struct MHD_Connection; /* forward declaration */
 /**
  * The data for "HTTP-upgraded" connection
  */
-struct MHD_UpgradeHandle
+struct MHD_UpgradedHandle
 {
   /**
    * The pointer to the "connection" object

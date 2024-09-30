@@ -1439,7 +1439,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_DAEMON_DESTROYED_WITH_UNCLOSED_UPGRADED = 60160
   ,
   /**
-   * The provided pointer to 'struct MHD_UpgradeHandle' is invalid
+   * The provided pointer to 'struct MHD_UpgradedHandle' is invalid
    */
   MHD_SC_UPGRADED_HANDLE_INVALID = 60161
   ,
@@ -6628,7 +6628,7 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_SIZE_ (3,2);
  * actions relating to MHD responses that "upgrade"
  * the HTTP protocol (i.e. to WebSockets).
  */
-struct MHD_UpgradeHandle;
+struct MHD_UpgradedHandle;
 
 
 #ifndef MHD_UPGRADEHANDLER_DEFINED
@@ -6660,7 +6660,7 @@ typedef void
 (MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_NONNULL_ (3)
  *MHD_UpgradeHandler)(void *cls,
                       struct MHD_Request *MHD_RESTRICT request,
-                      struct MHD_UpgradeHandle *MHD_RESTRICT urh);
+                      struct MHD_UpgradedHandle *MHD_RESTRICT urh);
 
 #define MHD_UPGRADEHANDLER_DEFINED 1
 #endif /* ! MHD_UPGRADEHANDLER_DEFINED */
@@ -6773,7 +6773,7 @@ MHD_FN_PAR_IN_SIZE_ (6,5);
  *                                                by this MHD build or platform
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
+MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
                    size_t recv_buf_size,
                    void *MHD_RESTRICT recv_buf,
                    size_t *MHD_RESTRICT received_size,
@@ -6827,7 +6827,7 @@ MHD_FN_PAR_OUT_ (4);
  *                                                by this MHD build or platform
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
+MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
                    size_t send_buf_size,
                    const void *MHD_RESTRICT send_buf,
                    size_t *MHD_RESTRICT sent_size,
@@ -6850,7 +6850,7 @@ MHD_FN_PAR_OUT_ (4);
  *         error code otherwise
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_upgraded_close (struct MHD_UpgradeHandle *urh)
+MHD_upgraded_close (struct MHD_UpgradedHandle *urh)
 MHD_FN_PAR_NONNULL_ (1);
 
 

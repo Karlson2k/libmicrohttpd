@@ -458,7 +458,7 @@ struct MHD_Connection
   /**
    * The data for handling HTTP-Upgraded connection
    */
-  struct MHD_UpgradeHandle upgr;
+  struct MHD_UpgradedHandle upgr;
 
   /**
    * Double-linke list of HTTP-Upgraded connections waiting for clean-up

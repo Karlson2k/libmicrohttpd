@@ -213,14 +213,14 @@ struct mhd_PostParseActionData
 
 #ifdef MHD_UPGRADE_SUPPORT
 
-struct MHD_UpgradeHandle; /* forward declaration */
+struct MHD_UpgradedHandle; /* forward declaration */
 
 #ifndef MHD_UPGRADEHANDLER_DEFINED
 
 typedef void
 (*MHD_UpgradeHandler)(void *cls,
                       struct MHD_Request *MHD_RESTRICT request,
-                      struct MHD_UpgradeHandle *MHD_RESTRICT urh);
+                      struct MHD_UpgradedHandle *MHD_RESTRICT urh);
 
 #define MHD_UPGRADEHANDLER_DEFINED 1
 #endif /* ! MHD_UPGRADEHANDLER_DEFINED */

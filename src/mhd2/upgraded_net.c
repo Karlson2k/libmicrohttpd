@@ -19,7 +19,7 @@
 */
 
 /**
- * @file src/mhd2/upgrade_net.c
+ * @file src/mhd2/upgraded_net.c
  * @brief  The implementation of functions for network data exchange
  *         for HTTP Upgraded connections
  * @author Karlson2k (Evgeny Grin)
@@ -102,7 +102,7 @@ MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_OUT_SIZE_ (3,2)
 MHD_FN_PAR_OUT_ (4) enum MHD_StatusCode
-MHD_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
+MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
                    size_t recv_buf_size,
                    void *MHD_RESTRICT recv_buf,
                    size_t *MHD_RESTRICT received_size,
@@ -318,7 +318,7 @@ MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_IN_SIZE_ (3,2)
 MHD_FN_PAR_OUT_ (4) enum MHD_StatusCode
-MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
+MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
                    size_t send_buf_size,
                    const void *MHD_RESTRICT send_buf,
                    size_t *MHD_RESTRICT sent_size,

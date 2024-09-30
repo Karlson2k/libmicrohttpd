@@ -1439,7 +1439,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_DAEMON_DESTROYED_WITH_UNCLOSED_UPGRADED = 60160
   ,
   /**
-   * The provided pointer to 'struct MHD_UpgradeHandle' is invalid
+   * The provided pointer to 'struct MHD_UpgradedHandle' is invalid
    */
   MHD_SC_UPGRADED_HANDLE_INVALID = 60161
   ,
