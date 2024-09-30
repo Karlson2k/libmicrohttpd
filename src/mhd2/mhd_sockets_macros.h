@@ -97,6 +97,15 @@
 #  define mhd_SCKT_GET_LERR() (WSAGetLastError ())
 #endif
 
+/**
+ * Set last socket error
+ */
+#if defined(MHD_POSIX_SOCKETS)
+#  define mhd_SCKT_SET_LERR(err) do { errno = (err); } while (0)
+#elif defined(MHD_WINSOCK_SOCKETS)
+#  define mhd_SCKT_SET_LERR(err) WSASetLastError ((err))
+#endif
+
 #if defined(MHD_POSIX_SOCKETS)
 #  if defined(EAGAIN) && defined(EWOULDBLOCK) && \
   ((EWOULDBLOCK + 0) != (EAGAIN + 0))
@@ -215,6 +224,16 @@
 #  endif
 #elif defined(MHD_WINSOCK_SOCKETS)
 #  define mhd_SCKT_ERR_IS_PIPE(err) (WSAESHUTDOWN == (err))
+#endif
+
+#if defined(MHD_POSIX_SOCKETS)
+#  ifdef EINPROGRESS
+#    define mhd_SCKT_ERR_IS_INPROGRESS(err) (EINPROGRESS == (err))
+#  else
+#    define mhd_SCKT_ERR_IS_INPROGRESS(err) ((void) (err), ! ! 0)
+#  endif
+#elif defined(MHD_WINSOCK_SOCKETS)
+#  define mhd_SCKT_ERR_IS_INPROGRESS(err) (WSAEINPROGRESS == (err))
 #endif
 
 /**
