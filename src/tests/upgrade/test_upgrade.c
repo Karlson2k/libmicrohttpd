@@ -220,7 +220,7 @@ static enum tls_tool use_tls_tool;
 /* ** Internal values ** */
 
 /* Could be increased to facilitate debugging */
-static int test_timeout = 5 * 100000;
+static int test_timeout = 5;
 
 static uint_least16_t global_port;
 
