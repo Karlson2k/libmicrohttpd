@@ -1,5 +1,13 @@
 # This Makefile.am is in the public domain
 
-SUBDIRS = basic client_server
+SUBDIRS = basic
+
+if MHD_UPGRADE_SUPPORT
+SUBDIRS += upgrade
+endif
+
+if RUN_LIBCURL_TESTS
+SUBDIRS += client_server
+endif
 
 .NOTPARALLEL:
