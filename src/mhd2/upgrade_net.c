@@ -381,8 +381,7 @@ MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
 
     if (0 == max_wait_millisec)
     {
-      if (0 != *sent_size)
-        return MHD_SC_OK;
+      mhd_assert (0 == *sent_size);
 
       return MHD_SC_UPGRADED_NET_TIMEOUT;
     }
