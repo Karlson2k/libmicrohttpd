@@ -202,14 +202,16 @@ MHD_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
         if ((0 >= poll_res) &&
             (0 != *received_size))
           return MHD_SC_OK;
-        if (0 == poll_res)
+        else if (0 == poll_res)
           return MHD_SC_UPGRADED_NET_TIMEOUT;
-
-        wait_err = mhd_SCKT_GET_LERR ();
-        if (! mhd_SCKT_ERR_IS_EAGAIN (wait_err) &&
-            ! mhd_SCKT_ERR_IS_EINTR (wait_err) &&
-            ! mhd_SCKT_ERR_IS_LOW_RESOURCES (wait_err))
-          return MHD_SC_UPGRADED_NET_HARD_ERROR;
+        else if (0 > poll_res)
+        {
+          wait_err = mhd_SCKT_GET_LERR ();
+          if (! mhd_SCKT_ERR_IS_EAGAIN (wait_err) &&
+              ! mhd_SCKT_ERR_IS_EINTR (wait_err) &&
+              ! mhd_SCKT_ERR_IS_LOW_RESOURCES (wait_err))
+            return MHD_SC_UPGRADED_NET_HARD_ERROR;
+        }
         max_wait_millisec = 0; /* Re-try only one time */
       }
 #else /* ! MHD_USE_POLL */
@@ -253,14 +255,16 @@ MHD_upgraded_recv (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
         if ((0 >= sel_res) &&
             (0 != *received_size))
           return MHD_SC_OK;
-        if (0 == sel_res)
+        else if (0 == sel_res)
           return MHD_SC_UPGRADED_NET_TIMEOUT;
-
-        wait_err = mhd_SCKT_GET_LERR ();
-        if (! mhd_SCKT_ERR_IS_EAGAIN (wait_err) &&
-            ! mhd_SCKT_ERR_IS_EINTR (wait_err) &&
-            ! mhd_SCKT_ERR_IS_LOW_RESOURCES (wait_err))
-          return MHD_SC_UPGRADED_NET_HARD_ERROR;
+        else if (0 > sel_res)
+        {
+          wait_err = mhd_SCKT_GET_LERR ();
+          if (! mhd_SCKT_ERR_IS_EAGAIN (wait_err) &&
+              ! mhd_SCKT_ERR_IS_EINTR (wait_err) &&
+              ! mhd_SCKT_ERR_IS_LOW_RESOURCES (wait_err))
+            return MHD_SC_UPGRADED_NET_HARD_ERROR;
+        }
         max_wait_millisec = 0; /* Re-try only one time */
       }
       else /* combined with the next 'if()' */
@@ -433,6 +437,7 @@ MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
         return MHD_SC_UPGRADED_NET_TIMEOUT;
       }
 
+      mhd_assert (0 > poll_res);
       wait_err = mhd_SCKT_GET_LERR ();
       if (! mhd_SCKT_ERR_IS_EAGAIN (wait_err) &&
           ! mhd_SCKT_ERR_IS_EINTR (wait_err) &&
@@ -498,6 +503,7 @@ MHD_upgraded_send (struct MHD_UpgradeHandle *MHD_RESTRICT urh,
         return MHD_SC_UPGRADED_NET_TIMEOUT;
       }
 
+      mhd_assert (0 > sel_res);
       wait_err = mhd_SCKT_GET_LERR ();
       if (! mhd_SCKT_ERR_IS_EAGAIN (wait_err) &&
           ! mhd_SCKT_ERR_IS_EINTR (wait_err) &&
