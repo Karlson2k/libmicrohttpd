@@ -42,14 +42,14 @@
 #ifdef MHD_USE_THREADS
 
 #if defined(MHD_USE_W32_THREADS)
-#  define MHD_W32_MUTEX_ 1
+#  define mhd_MUTEX_KIND_W32_CS 1
 #  if _WIN32_WINNT >= 0x0602 /* Win8 or later */
 #    include <synchapi.h>
 #  else
 #    include <windows.h>
 #  endif
 #elif defined(HAVE_PTHREAD_H) && defined(MHD_USE_POSIX_THREADS)
-#  define MHD_PTHREAD_MUTEX_ 1
+#  define mhd_MUTEX_KIND_PTHREAD 1
 #  include <pthread.h>
 #  ifdef HAVE_STDDEF_H
 #    include <stddef.h> /* for NULL */
@@ -62,20 +62,20 @@
 
 #include "mhd_panic.h"
 
-#if defined(MHD_PTHREAD_MUTEX_)
+#if defined(mhd_MUTEX_KIND_PTHREAD)
 typedef pthread_mutex_t mhd_mutex;
-#elif defined(MHD_W32_MUTEX_)
+#elif defined(mhd_MUTEX_KIND_W32_CS)
 typedef CRITICAL_SECTION mhd_mutex;
 #endif
 
-#if defined(MHD_PTHREAD_MUTEX_)
+#if defined(mhd_MUTEX_KIND_PTHREAD)
 /**
  * Initialise a new mutex.
  * @param pmutex the pointer to the mutex
  * @return nonzero on success, zero otherwise
  */
 #  define mhd_mutex_init(pmutex) (! (pthread_mutex_init ((pmutex), NULL)))
-#elif defined(MHD_W32_MUTEX_)
+#elif defined(mhd_MUTEX_KIND_W32_CS)
 #  if _WIN32_WINNT < 0x0600
 /* Before Vista */
 /**
@@ -97,7 +97,7 @@ typedef CRITICAL_SECTION mhd_mutex;
 #  endif
 #endif
 
-#ifdef MHD_W32_MUTEX_
+#ifdef mhd_MUTEX_KIND_W32_CS
 #  if _WIN32_WINNT < 0x0600
 /* Before Vista */
 /**
@@ -133,7 +133,7 @@ typedef CRITICAL_SECTION mhd_mutex;
 #  define mhd_mutex_init_short(pmutex) mhd_mutex_init ((pmutex))
 #endif
 
-#if defined(MHD_PTHREAD_MUTEX_)
+#if defined(mhd_MUTEX_KIND_PTHREAD)
 #  if defined(PTHREAD_MUTEX_INITIALIZER)
 /**
  *  Define static mutex and statically initialise it.
@@ -143,14 +143,14 @@ typedef CRITICAL_SECTION mhd_mutex;
 #  endif /* PTHREAD_MUTEX_INITIALIZER */
 #endif
 
-#if defined(MHD_PTHREAD_MUTEX_)
+#if defined(mhd_MUTEX_KIND_PTHREAD)
 /**
  * Destroy previously initialised mutex.
  * @param pmutex the pointer to the mutex
  * @return nonzero on success, zero otherwise
  */
 #  define mhd_mutex_destroy(pmutex) (! (pthread_mutex_destroy ((pmutex))))
-#elif defined(MHD_W32_MUTEX_)
+#elif defined(mhd_MUTEX_KIND_W32_CS)
 /**
  * Destroy previously initialised mutex.
  * @param pmutex the pointer to the mutex
@@ -160,7 +160,7 @@ typedef CRITICAL_SECTION mhd_mutex;
 #endif
 
 
-#if defined(MHD_PTHREAD_MUTEX_)
+#if defined(mhd_MUTEX_KIND_PTHREAD)
 /**
  * Acquire a lock on previously initialised mutex.
  * If the mutex was already locked by other thread, function blocks until
@@ -169,7 +169,7 @@ typedef CRITICAL_SECTION mhd_mutex;
  * @return nonzero on success, zero otherwise
  */
 #  define mhd_mutex_lock(pmutex) (! (pthread_mutex_lock ((pmutex))))
-#elif defined(MHD_W32_MUTEX_)
+#elif defined(mhd_MUTEX_KIND_W32_CS)
 /**
  * Acquire a lock on previously initialised mutex.
  * If the mutex was already locked by other thread, function blocks until
@@ -180,14 +180,14 @@ typedef CRITICAL_SECTION mhd_mutex;
 #  define mhd_mutex_lock(pmutex) (EnterCriticalSection ((pmutex)), ! 0)
 #endif
 
-#if defined(MHD_PTHREAD_MUTEX_)
+#if defined(mhd_MUTEX_KIND_PTHREAD)
 /**
  * Unlock previously locked mutex.
  * @param pmutex the pointer to the mutex
  * @return nonzero on success, zero otherwise
  */
 #  define mhd_mutex_unlock(pmutex) (! (pthread_mutex_unlock ((pmutex))))
-#elif defined(MHD_W32_MUTEX_)
+#elif defined(mhd_MUTEX_KIND_W32_CS)
 /**
  * Unlock previously initialised and locked mutex.
  * @param pmutex pointer to mutex
